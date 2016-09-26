@@ -15,6 +15,8 @@ let Radio = rb.Radio;
 let InputGroupAddon = rb.InputGroupAddon;
 
 export var Input = createComponent({
+  displayName: 'Input',
+
   getValue: function() {
     return ReactDOM.findDOMNode(this.refs.theInput)['value'];
   },

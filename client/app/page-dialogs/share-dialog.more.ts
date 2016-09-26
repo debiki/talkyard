@@ -19,7 +19,7 @@
 /// <reference path="../slim-bundle.d.ts" />
 
 //------------------------------------------------------------------------------
-   module debiki2.pagedialogs {
+   namespace debiki2.pagedialogs {
 //------------------------------------------------------------------------------
 
 var r = React.DOM;
@@ -43,6 +43,8 @@ var Email = 'mail';
 
 // some dupl code [6KUW24]
 var ShareDialog = createComponent({
+  displayName: 'ShareDialog',
+
   getInitialState: function () {
     return {
       isOpen: false,
@@ -117,7 +119,7 @@ var ShareDialog = createComponent({
         r.div({ className: 'esShare' },
           r.div({ className: 'esShare_title' },
             "Copy a link to this post, or click a share button:"),
-          r.input({ className: 'esShare_link', value: url, ref: 'linkInput' }),
+          r.input({ className: 'esShare_link', value: url, ref: 'linkInput', readOnly: true }),
           r.div({ className: 'esShare_social' },
             makeShareButton(Facebook),
             makeShareButton(Twitter),
@@ -127,7 +129,7 @@ var ShareDialog = createComponent({
 
     return (
       DropdownModal({ show: state.isOpen, onHide: this.close, atX: state.atX, atY: state.atY,
-          pullLeft: true },
+          pullLeft: true, showCloseButton: true },
        content));
   }
 });

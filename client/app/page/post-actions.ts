@@ -34,7 +34,7 @@
 /// <reference path="../more-bundle-not-yet-loaded.ts" />
 
 //------------------------------------------------------------------------------
-   module debiki2.page {
+   namespace debiki2.page {
 //------------------------------------------------------------------------------
 
 var React = window['React']; // TypeScript file doesn't work
@@ -63,9 +63,12 @@ export function openMoreDropdown(store, post, moreButton) {
 
 
 export var NoCommentsPageActions = createComponent({
+  displayName: 'NoCommentsPageActions',
+
   onEditClick: function(event) {
     debiki2.ReactActions.editPostWithNr(this.props.post.postId);
   },
+
   render: function() {
     var me: Myself = this.props.me;
     var post: Post = this.props.post;
@@ -86,6 +89,8 @@ export var NoCommentsPageActions = createComponent({
 
 
 export var PostActions = createComponent({
+  displayName: 'PostActions',
+
   onAcceptAnswerClick: function() {
     debiki2.ReactActions.acceptAnswer(this.props.post.uniqueId);
   },
@@ -104,7 +109,7 @@ export var PostActions = createComponent({
     debiki2.ReactActions.editPostWithNr(this.props.post.postId);
   },
   onLinkClick: function(event) {
-    pagedialogs.openShareDialog(this.props.post, event.target);
+    morebundle.openShareDialog(this.props.post, event.target);
   },
   onLikeClick: function(event) {
     loginIfNeededThen(LoginReason.LoginToLike, this.props.post.postNr, () => {
@@ -322,6 +327,8 @@ export var PostActions = createComponent({
 
 // some dupl code [6KUW24]
 var MoreVotesDropdownModal = createComponent({
+  displayName: 'MoreVotesDropdownModal',
+
   mixins: [StoreListenerMixin],
 
   getInitialState: function () {
@@ -430,6 +437,8 @@ var MoreVotesDropdownModal = createComponent({
 
 // some dupl code [6KUW24]
 var MoreDropdownModal = createComponent({
+  displayName: 'MoreDropdownModal',
+
   getInitialState: function () {
     return {
       isOpen: false,

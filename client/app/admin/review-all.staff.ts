@@ -59,6 +59,8 @@ var safeHtmlByMarkdownSource = {};
 
 
 var ReviewTask = createComponent({
+  displayName: 'ReviewTask',
+
   getInitialState: function() {
     return {};
   },
