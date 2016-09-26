@@ -186,8 +186,9 @@ export function loadStaffScriptsBundle(callback) {
     return;
   }
   staffBundleStatus = $.Deferred();
-  // The staff scripts bundle requires more-bundle.js.
-  loadMoreScriptsBundle(() => {
+  // The staff scripts bundle requires both more-bundle.js and editor-bundle.js (to render
+  // previews of CommonMark comments [7PKEW24]). This'll load them both.
+  loadEditorEtcScriptsAndLater(() => {
     window['yepnope']({
       both: [d.i.assetUrlPrefix + 'staff-bundle.' + d.i.minMaxJs],
       complete: () => {

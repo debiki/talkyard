@@ -14,5 +14,15 @@ namespace rb {
   export var TabbedArea = reactCreateFactory(ReactBootstrap.TabbedArea);
   export var TabPane = reactCreateFactory(ReactBootstrap.TabPane);
   export var Alert = reactCreateFactory(ReactBootstrap.Alert);
+
+  export var FormGroup = reactCreateFactory(ReactBootstrap.FormGroup);
+  export var ControlLabel = reactCreateFactory(ReactBootstrap.ControlLabel);
+  export var FormControl = reactCreateFactory(ReactBootstrap.FormControl);
+  export var HelpBlock = reactCreateFactory(ReactBootstrap.HelpBlock);
+  export var Checkbox = reactCreateFactory(ReactBootstrap.Checkbox);
+  export var Radio = reactCreateFactory(ReactBootstrap.Radio);
+  export var InputGroupAddon = reactCreateFactory(ReactBootstrap.InputGroup.Addon);
+
+
 }
 

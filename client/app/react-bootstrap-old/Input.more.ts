@@ -2,16 +2,17 @@
 /// <reference path="../slim-bundle.d.ts" />
 
 //------------------------------------------------------------------------------
-   module debiki2 {
+   namespace debiki2 {
 //------------------------------------------------------------------------------
 
-var r = React.DOM;
-var ReactBootstrap: any = window['ReactBootstrap'];
-var FormGroup = reactCreateFactory(ReactBootstrap.FormGroup);
-var ControlLabel = reactCreateFactory(ReactBootstrap.ControlLabel);
-var FormControl = reactCreateFactory(ReactBootstrap.FormControl);
-var HelpBlock = reactCreateFactory(ReactBootstrap.HelpBlock);
-var Checkbox = reactCreateFactory(ReactBootstrap.Checkbox);
+let r = React.DOM;
+let FormGroup = rb.FormGroup;
+let ControlLabel = rb.ControlLabel;
+let FormControl = rb.FormControl;
+let HelpBlock = rb.HelpBlock;
+let Checkbox = rb.Checkbox;
+let Radio = rb.Radio;
+let InputGroupAddon = rb.InputGroupAddon;
 
 export var Input = createComponent({
   getValue: function() {
@@ -24,8 +25,6 @@ export var Input = createComponent({
 
   render: function() {
     var props = this.props;
-    dieIf(props.type === 'radio', 'no radio [EsE45WWP9]');  // EsE_MORE_UNIMPL
-
     var childProps = _.clone(props);
     childProps.ref = 'theInput';
     childProps.id = props.inputId;
@@ -38,12 +37,16 @@ export var Input = createComponent({
       childProps.componentClass = props.type;
     }
 
-    var result;
-    if (props.type === 'checkbox') {
+    let addonBefore = !props.addonBefore ? null : InputGroupAddon({}, props.addonBefore);
+
+    let result;
+    let isCheckbox = props.type === 'checkbox';
+    let isRadio = props.type === 'radio';
+    if (isCheckbox || isRadio) {
       result = (
         r.div({ className: 'form-group' },
           r.div({ className: props.wrapperClassName },
-            Checkbox(childProps, props.label),
+            (isRadio ? Radio : Checkbox).call(null, childProps, props.label),
             r.span({ className: 'help-block' },
               props.help))));
     }
@@ -59,7 +62,9 @@ export var Input = createComponent({
         FormGroup({controlId: props.id},
           props.label && ControlLabel({ className: props.labelClassName }, props.label),
           r.div({ className: props.wrapperClassName },
-            FormControl(childProps, props.children),
+            r.div({ className: 'input-group' },
+              addonBefore,
+              FormControl(childProps, props.children)),
             props.help && HelpBlock({}, props.help))));
     }
 

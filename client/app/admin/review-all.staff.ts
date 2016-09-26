@@ -174,7 +174,7 @@ var ReviewTask = createComponent({
       // Or use React's shouldComponentUpdate().
       safeHtml = safeHtmlByMarkdownSource[post.currentSource];
       if (!safeHtml) {
-        safeHtml = editor.markdownToSafeHtml(post.currentSource);
+        safeHtml = editor.markdownToSafeHtml(post.currentSource);  // [7PKEW24]
         safeHtmlByMarkdownSource[post.currentSource] = safeHtml;
       }
     }
