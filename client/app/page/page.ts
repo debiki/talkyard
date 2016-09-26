@@ -16,7 +16,6 @@
  */
 
 /// <reference path="../../typedefs/react/react.d.ts" />
-/// <reference path="../plain-old-javascript.d.ts" />
 /// <reference path="../prelude.ts" />
 /// <reference path="../utils/utils.ts" />
 /// <reference path="../utils/react-utils.ts" />
@@ -34,7 +33,7 @@
 // The bug has supposedly been fixed in Java 8u40. Once I'm using that version,
 // remove `var exports = {};` from app/debiki/ReactRenderer.scala.
 //------------------------------------------------------------------------------
-   module debiki2 {
+   namespace debiki2 {
 //------------------------------------------------------------------------------
 
 var r = React.DOM;
@@ -60,20 +59,12 @@ var PageWithState = createComponent({
 var Page = createComponent({
   getInitialState: function() {
     return {
-      // Use compact by default, so mobile phones won't have to rerender anything,
-      // they're much slower than laptops & desktops.
-      // (Cannot check the actual size here — the component hasn't been mounted yet.)
-      useWideLayout: isServerSide() ? false :
-          // (contextbar closed by default)
-          window.innerWidth >= UseWidePageLayoutMinWidth + WatchbarWidth,
+      useWideLayout: this.isPageWide(),
     };
   },
 
   componentDidMount: function() {
-    // Could use https://github.com/marcj/css-element-queries/, but why?
-    // This works fine and is less code.
     // A tiny bit dupl code though, perhaps break out... what? a mixin? [5KFEWR7]
-    this.checkSizeChangeLayout();
     this.timerHandle = setInterval(this.checkSizeChangeLayout, 200);
   },
 
@@ -92,8 +83,7 @@ var Page = createComponent({
   },
 
   isPageWide: function(): boolean {
-    var rect = debiki2.reactGetRefRect(this.refs.outer);
-    return rect.right - rect.left > UseWidePageLayoutMinWidth;
+    return store_getApproxPageWidth(this.props) > UseWidePageLayoutMinWidth;
   },
 
   render: function() {
@@ -103,7 +93,7 @@ var Page = createComponent({
         : debiki2.page.TitleBodyComments({ store: store });
     var compactClass = this.state.useWideLayout ? '' : ' esPage-Compact';
     return (
-      r.div({ className: 'esPage' + compactClass, ref: 'outer' },
+      r.div({ className: 'esPage' + compactClass },
         page_isChatChannel(store.pageRole) ? null : debiki2.reactelements.TopBar({}),
         debiki2.page.ScrollButtons(),
         r.div({ className: 'container' },

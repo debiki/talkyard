@@ -31,12 +31,17 @@
 /// <reference path="../staff-bundle-not-yet-loaded.ts" />
 
 //------------------------------------------------------------------------------
-   module debiki2.sidebar {
+   namespace debiki2.sidebar {
 //------------------------------------------------------------------------------
 
 var keymaster: Keymaster = window['keymaster'];
 var r = React.DOM;
 var ModalDropdownButton = utils.ModalDropdownButton;
+
+// COULD UX RESPONSIVE: add some screen/window/widget width or size state to some React store somehow. [6KP024]
+// Use outerWidth, it won't force a layout reflow.
+var smallWindow = Math.min(window.outerWidth, window.outerHeight) < 500;
+var windowWideEnoughForTabButtons = window.outerWidth > 1010;
 
 var SidebarNumCommentsLimit = 5 + 1;  // 5 + page body
 
@@ -48,7 +53,8 @@ export function createContextbar(elem) {
 }
 
 
-export var Sidebar = createComponent({
+export var Sidebar = createComponent({  // RENAME to ContextBar
+  displayName: 'ContextBar',
   mixins: [debiki2.StoreListenerMixin],
 
   getInitialState: function() {
@@ -321,7 +327,7 @@ export var Sidebar = createComponent({
     var store: Store = this.state.store;
     var me: Myself = store.me;
 
-    var minimapProps = $.extend({ ref: 'minimap' }, store);
+    var minimapProps = _.assign({ ref: 'minimap' }, store);
     var commentsFound = isPageWithComments(store.pageRole) ? this.findComments() : null;
     var isChat = page_isChatChannel(store.pageRole);
     var isStaffOrMyPage = isStaff(me) || store_thisIsMyPage(store);
@@ -444,13 +450,12 @@ export var Sidebar = createComponent({
       tipsGuideOrExtraConfig = this.state.adminGuide || r.p({}, "Loading...");
     }
 
-    var wide = ($(window).width() > 1010);
     var recentButton;
     var starredButton;
     var unreadButton;
     var adminGuideButton;
     if (commentsFound) {
-      if (wide) {
+      if (windowWideEnoughForTabButtons) {
         recentButton = isChat ? null :
             r.button({ className: 'btn btn-default' + recentClass, onClick: this.showRecent },
               'Recent');
@@ -469,7 +474,7 @@ export var Sidebar = createComponent({
     }
 
     if (me.isAdmin) {
-      if (wide) {
+      if (windowWideEnoughForTabButtons) {
         adminGuideButton = r.button({ className: 'btn btn-default' + adminGuideActiveClass,
           onClick: this.showAdminGuide }, "Guide");
       }
@@ -479,7 +484,7 @@ export var Sidebar = createComponent({
     }
 
     var tabButtons;
-    if (wide) {
+    if (windowWideEnoughForTabButtons) {
       tabButtons =
         r.div({},
           recentButton,
@@ -572,8 +577,7 @@ export var Sidebar = createComponent({
 
 
 function makeCommentsContent(comments: Post[], currentPostId: PostId, store: Store, onPostClick) {
-  var smallScreen = Math.min(debiki.window.width(), debiki.window.height()) < 500;
-  var abbreviateHowMuch = smallScreen ? 'Much' : 'ABit';
+  var abbreviateHowMuch = smallWindow ? 'Much' : 'ABit';
   return comments.map((post: Post, index) => {
     var postProps: any = _.clone(store);
     postProps.post = post;

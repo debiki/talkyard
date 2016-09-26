@@ -102,12 +102,11 @@ var ForumComponent = React.createClass(<any> {
   mixins: [debiki2.StoreListenerMixin],
 
   getInitialState: function() {
+    var store: Store = debiki2.ReactStore.allData();
     return {
-      store: debiki2.ReactStore.allData(),
+      store: store,
       topicsInStoreMightBeOld: false,
-      useWideLayout: isServerSide() ? true :
-          // (contextbar closed by default)
-          window.innerWidth >= UseWideForumLayoutMinWidth + WatchbarWidth,
+      useWideLayout: this.isPageWide(store),
     }
   },
 
@@ -121,7 +120,6 @@ var ForumComponent = React.createClass(<any> {
 
   componentDidMount: function() {
     // Dupl code [5KFEWR7]
-    this.checkSizeChangeLayout();
     this.timerHandle = setInterval(this.checkSizeChangeLayout, 200);
   },
 
@@ -139,9 +137,8 @@ var ForumComponent = React.createClass(<any> {
     }
   },
 
-  isPageWide: function() {
-    var rect = reactGetRefRect(this.refs.outer);
-    return rect.right - rect.left >= UseWideForumLayoutMinWidth;
+  isPageWide: function(store?: Store) {
+    return store_getApproxPageWidth(store || this.state.store) > UseWideForumLayoutMinWidth;
   },
 
   getActiveCategory: function() {
@@ -251,7 +248,7 @@ var ForumComponent = React.createClass(<any> {
       debiki2.page.ScrollButtons(),
       r.div({ className: 'container dw-forum' },
         // Include .dw-page to make renderDiscussionPage() in startup.js run: (a bit hacky)
-        r.div({ className: 'dw-page', ref: 'outer' }),
+        r.div({ className: 'dw-page' }),
         ForumIntroText({ store: store }),
         helpMessage,
         ForumButtons(forumButtonProps),

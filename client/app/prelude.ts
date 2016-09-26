@@ -41,6 +41,18 @@ function isServerSide(): boolean {
 }
 
 
+// Use this function to call getBoundingClientRect() and other stuff just before the next repaint,
+// to avoid forced refresh of the layout.
+function doNextFrameOrNow(something: () => void) {
+  if (window.requestAnimationFrame) {
+    window.requestAnimationFrame(something)
+  }
+  else {
+    something();
+  }
+}
+
+
 /**
  * Basic stuff needed by essentially all modules / files.
  */

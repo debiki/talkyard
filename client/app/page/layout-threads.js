@@ -63,7 +63,10 @@ function findMaxNesting(thread) {
  */
 d.i.chooseLayout = function(){
   var shallEnable2d = window.location.toString().search('2d=true') !== -1;
-  var shallDisable2d = window.location.toString().search('2d=false') !== -1 || Math.max($(window).width(), $(window).height()) < 1000;
+  var shallDisable2d = window.location.toString().search('2d=false') !== -1 ||
+      // use window.outerWidth — it doesn't force a layout reflow (and it's fine that it might
+      // be a bit inexact because of browser window borders).
+      Math.max(window.outerWidth, window.outerHeight) < 1000;
   var is2dEnabled = $('html').is('.dw-hz');
   if (is2dEnabled && shallDisable2d) {
     disableHzComments();
@@ -73,19 +76,23 @@ d.i.chooseLayout = function(){
     enableHzComments();
     return 'TreeLayout';
   }
+
   function disableHzComments(){
     $('html').removeClass('dw-hz').addClass('dw-vt');
     $('.dw-depth-0').removeClass('dw-hz');
-    return debiki2.ReactActions.setHorizontalLayout(false);
+    debiki2.ReactActions.setHorizontalLayout(false);
   }
+
   function enableHzComments(){
     $('html').removeClass('dw-vt').addClass('dw-hz');
     $('.dw-depth-0').addClass('dw-hz');
-    return debiki2.ReactActions.setHorizontalLayout(true);
+    debiki2.ReactActions.setHorizontalLayout(true);
   }
+
   if (is2dEnabled) {
     return 'TreeLayout';
-  } else {
+  }
+  else {
     return 'OneColumnLayout';
   }
 };

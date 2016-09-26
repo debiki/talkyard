@@ -222,5 +222,10 @@ var UseWidePageLayoutMinWidth = 750;
 var WatchbarWidth = 230;  // dupl in css [7GYK42]
 var ContextbarMinWidth = 270;  // dupl in css [4FK0ZD]
 
+// No idea what we're rendering for, but mobile phones are common, and slow, so
+// let's help them by trying to give them the correct layout directly.
+// Assume a horizontally tilted phone.
+var ServerSideWindowWidth = 700;
+
 
 // vim: fdm=marker et ts=2 sw=2 tw=0 fo=r list

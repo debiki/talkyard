@@ -41,12 +41,12 @@ function hideShowCollapseButtons() {
          return;
 
       var threadElem = $thread[0];
-      var rect = threadElem.getBoundingClientRect();
+      var rect = threadElem.getBoundingClientRect();  // ooops, FORCED_REFLOW caused by this line
       if (rect.height > 110) {
-         $this.addClass('esP_Z-Show');
+         $this.addClass('esP_Z-Show');                // ... and this
       }
       else {
-         $this.removeClass('esP_Z-Show');
+         $this.removeClass('esP_Z-Show');             // ... and this
       }
    });
 }

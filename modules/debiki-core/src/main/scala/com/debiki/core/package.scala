@@ -237,7 +237,9 @@ package object core {
   def REFACTOR = ()       // This code can be refactored. Also search for "[refactor]".
   def RENAME = ()         // This ought to be renamed.
   def COULD_OPTIMIZE = ()
+  def FORCED_REFLOW = ()  // Browser side only. Makes it slow.
   def UX = ()             // Usability can be improved.
+  def RESPONSIVE = ()     // Would look better with responsive layout. Browser side only.
   def HACK = ()           // Quick crazy fix, probably should be redone later in a better way.
   def DELETE_LATER = ()   // ... hmm. Rename to CLEANUP.
   def CLEAN_UP = ()       // Unused stuff that should be deleted after a grace period.

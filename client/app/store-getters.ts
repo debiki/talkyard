@@ -178,6 +178,39 @@ export function store_canPinPage(store: Store) {
 }
 
 
+// Use for responsive layout, when you need the page width (excluding watchbar and contextbar).
+// Avoid $().width() or elem.getBoundingClientRect() because they force a layout reflow,
+// which makes the initial rendering of the page take longer (about 30ms longer = 8% longer,
+// as of September 2016, core i7 laptop).
+//
+// Could use https://github.com/marcj/css-element-queries/, but store_getApproxPageWidth() is
+// probably faster (since doesn't need to ask the browser about anything, no layout
+// reflows needed), and simpler too (a lot less code, in total).
+//
+export function store_getApproxPageWidth(store: Store) {   // [6KP024]
+  if (isServerSide())
+    return ServerSideWindowWidth;
+
+  // outerWidth supposedly doesn't force a reflow (and I've verified in Chrome Dev Tools Timeline
+  // that it doesn't). So use it instead of innerWidth — they might differ perhaps 10 pixels
+  // because of browser window borders (or what else? There are no window scrollbars [6GKF0WZ]).
+  var browserWidth = window.outerWidth;
+  var width = browserWidth;
+  if (store.isWatchbarOpen) {
+    width -= WatchbarWidth;
+  }
+  if (store.isContextbarOpen) {
+    var contextbarWidth = browserWidth * 0.25;  // 0.25 is dupl in css [5RK9W2]
+    if (contextbarWidth < ContextbarMinWidth) {
+      contextbarWidth = ContextbarMinWidth;
+    }
+    width -= contextbarWidth;
+  }
+  // This is not the exact width in pixels, unless the browser window is in full screen so that
+  // there are no browser window borders.
+  return width;
+}
+
 //------------------------------------------------------------------------------
    }
 //------------------------------------------------------------------------------

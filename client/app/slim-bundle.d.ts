@@ -5,6 +5,7 @@ declare var ReactDOM: any;
 declare var ReactCSSTransitionGroup: any;
 declare var Router: any;
 declare function reactCreateFactory(x);
+declare function doNextFrameOrNow(x);
 
 
 declare namespace debiki2 {

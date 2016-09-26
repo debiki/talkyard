@@ -43,27 +43,38 @@ export function getTopbarHeightInclShadow(): number {
 
 
 export var TopBar = createComponent({
+  displayName: 'TopBar',
   mixins: [debiki2.StoreListenerMixin, debiki2.utils.PageScrollMixin],
 
   getInitialState: function() {
     return {
       store: debiki2.ReactStore.allData(),
       fixed: false,
-      initialOffsetTop: -1,
+      initialOffsetTop: undefined,
       enableGotoTopBtn: false,
       enableGotoEndBtn: true,
     };
   },
 
-  componentWillMount: function() {
+  componentWillUnmount: function() {
+    this.isGone = true;
   },
 
   componentDidMount: function() {
-    var rect = this.getThisRect();
-    var pageTop = getPageScrollableRect().top;
-    this.setState({
-      initialOffsetTop: rect.top - pageTop,
-      fixed: rect.top < -FixedTopDist,
+    doNextFrameOrNow(() => {
+      // This unfortunately still triggers a FORCED_REFLOW before the first paint. Is there any
+      // way to avoid that? Perhaps if window.scrollTop is 0, then we know the topbar should
+      // *not* be position = fixed, initially. And can do:
+      //    getPageScrollableRect().top - this-rect.top
+      // later? — This layout reflow takes about 15 ms (core i7 laptop), that's about 5% of
+      // the total time spent scripting & rendering before the first paint.
+      if (this.isGone) return;
+      var rect = this.getThisRect();
+      var pageTop = getPageScrollableRect().top;
+      this.setState({
+        initialOffsetTop: rect.top - pageTop,
+        fixed: rect.top < -FixedTopDist,
+      });
     });
   },
 
@@ -80,6 +91,9 @@ export var TopBar = createComponent({
   },
 
   onScroll: function() {
+    if (!this.state.initialOffsetTop)
+      return;
+
     var store: Store = this.state.store;
     var pageRect = getPageScrollableRect();
     var pageLeft = pageRect.left;
@@ -88,7 +102,7 @@ export var TopBar = createComponent({
     }
     var pageTop = pageRect.top;
     var newTop = -pageTop - this.state.initialOffsetTop;
-    this.setState({ top: newTop, left: -pageLeft });
+    this.setState({ top: newTop, left: -pageLeft }); // CLEAN_UP `top` not used. What about `left`?
     if (!this.state.fixed) {
       if (-pageTop > this.state.initialOffsetTop + FixedTopDist || pageLeft < -40) {
         this.setState({ fixed: true });
