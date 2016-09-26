@@ -29,8 +29,6 @@ export var Input = createComponent({
     var props = this.props;
     var childProps = _.clone(props);
     childProps.ref = 'theInput';
-    childProps.id = props.inputId;
-    delete childProps.inputId;
     delete childProps.label;
     delete childProps.children;
     delete childProps.help;
@@ -54,14 +52,14 @@ export var Input = createComponent({
     }
     else if (props.type === 'custom') {
       result = (
-        FormGroup({controlId: props.id},
+        FormGroup({},
           props.label && ControlLabel({ className: props.labelClassName }, props.label),
           r.div({ className: props.wrapperClassName },
             props.children)));
     }
     else {
       result = (
-        FormGroup({controlId: props.id},
+        FormGroup({},
           props.label && ControlLabel({ className: props.labelClassName }, props.label),
           r.div({ className: props.wrapperClassName },
             r.div({ className: 'input-group' },

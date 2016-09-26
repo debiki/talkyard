@@ -15,9 +15,19 @@ function count(elems): number {
 
 
 function byBrowser(result) {
-  if (_.isObject(result))
+  if (!_.isObject(result) || result.value) {
+    // This is the results from one single browser. Create a dummy by-browser
+    // result map.
+    return { onlyOneBrowser: result };
+  }
+  else {
+    // This is an object like:
+    //    { browserA: { ..., value: ... }, browserB: { ..., value: ... } }
+    // or like:
+    //    { browserA: "text-found", browserB: "other-text-found" }
+    // That's what we want.
     return result;
-  return { onlyOneBrowser: result };
+  }
 }
 
 function isTheOnly(browserName) {
@@ -40,7 +50,8 @@ function addCommandsToBrowser(browser) {
 
   browser.addCommand('waitUntilModalGone', function() {
     browser.waitUntil(function () {
-      return !browser.isVisible('.modal-backdrop');
+      return !browser.isVisible('.modal-backdrop') && // makes the background darker
+             !browser.isVisible('.fade.modal');     // full window block, with the dialog inside
     });
   });
 

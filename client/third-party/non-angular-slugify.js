@@ -268,5 +268,5 @@ function debikiSlugify(s) {
    return s.replace(/[-\s]+/g, "-");
 }
 
-window.debikiSlugify = debikiSlugify;
+window.debikiSlugify = debikiSlugify;  // [5FK2W08]
 

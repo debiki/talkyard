@@ -103,12 +103,14 @@ function pagesFor(browser) {
       clickViewPeople: function() {
         browser.waitAndClick('.esWB_T-Current .esWB_T_Link');
         browser.waitAndClick('#e2eWB_ViewPeopleB');
+        browser.waitUntilModalGone();
         browser.waitForVisible('.esCtxbar_list_title');
       },
 
       clickLeaveChat: function() {
         browser.waitAndClick('.esWB_T-Current .esWB_T_Link');
         browser.waitAndClick('#e2eWB_LeaveB');
+        browser.waitUntilModalGone();
         browser.waitForVisible('#theJoinChatB');
       },
     },

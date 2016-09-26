@@ -12,6 +12,7 @@ import make = require('../utils/make');
 import logAndDie = require('../utils/log-and-die');
 var logUnusual = logAndDie.logUnusual, die = logAndDie.die, dieIf = logAndDie.dieIf;
 var logMessage = logAndDie.logMessage;
+var SystemUserId = 1;  // [commonjs]
 
 declare var browser: any;
 
@@ -39,7 +40,7 @@ describe('all links', function() {
       id: 'fmp',
       role: <PageRole> 7,  // [commonjs] PageRole.Forum
       categoryId: rootCategoryId,
-      authorId: 1,    // [commonjs] SystemUserId
+      authorId: SystemUserId,
     });
     site.pages.push(forumPage);
 
@@ -87,7 +88,7 @@ describe('all links', function() {
       id: 'whateverTopic',
       role: <PageRole> 12,  // [commonjs] PageRole.Discussion
       categoryId: whateverCategory.id,
-      authorId: -1,    // [commonjs] SystemUserId
+      authorId: SystemUserId,
     });
     site.pages.push(whateverTopic);
 
@@ -110,7 +111,7 @@ describe('all links', function() {
       id: 'questionTopic',
       role: <PageRole> 10,  // [commonjs] PageRole.Question
       categoryId: whateverCategory.id,
-      authorId: -1,    // [commonjs] SystemUserId
+      authorId: SystemUserId,
       // answerPostId
     });
     site.pages.push(questionTopic);

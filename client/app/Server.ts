@@ -152,7 +152,7 @@ var staffBundleStatus;
 // Won't call callback() until a bit later — so if you call React's setState(..), the
 // state will have changed.
 //
-export function loadEditorEtcScriptsAndLater(callback?) {
+export function loadEditorEtcScriptsAndLater(callback?) {  // RENAME? to loadEditorAndMoreBundles
   setTimeout(function() {
     loadEditorEtceteraScripts().done(callback || _.noop)
   }, 0);
