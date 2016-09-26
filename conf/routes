@@ -108,7 +108,6 @@ GET   /-/load-user-info         controllers.UserController.loadUserInfo(userId)
 POST  /-/set-page-notf-level    controllers.UserController.savePageNotfLevel
 GET   /-/list-all-users         controllers.UserController.listAllUsers(usernamePrefix)
 GET   /-/list-usernames         controllers.UserController.listUsernames(pageId, prefix)
-GET   /-/load-user-preferences  controllers.UserController.loadUserPreferences(userId)
 POST  /-/save-user-preferences  controllers.UserController.saveUserPreferences
 POST  /-/save-guest             controllers.UserController.saveGuest
 GET   /-/list-complete-users    controllers.UserController.listCompleteUsers(whichUsers)
@@ -227,7 +226,7 @@ POST  /-/update-sites            controllers.SuperAdminController.updateSites
 
 # Don't change the URL on the next line. The /-/assets/<version-number>/ is
 # updated by the deployment script (asset fingerprinting).
-GET   /-/assets/166/*file       controllers.Assets.at(path = "/public/res", file)
+GET   /-/assets/169/*file       controllers.Assets.at(path = "/public/res", file)
 GET   /robots.txt               controllers.Assets.at(path = "/public", file = "robots.txt")
 GET   /-/debiki-embedded-comments.js   controllers.Assets.at(path = "/public/res", file = "embedded-comments.js")
 GET   /-/debiki-embedded-comments.css  controllers.Assets.at(path = "/public/res", file = "debiki-embedded-comments.css")

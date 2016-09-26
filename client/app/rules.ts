@@ -21,6 +21,9 @@
 
 /// <reference path="prelude.ts" />
 
+//------------------------------------------------------------------------------
+   namespace debiki2 {
+//------------------------------------------------------------------------------
 
 // Tells if a user may do something, and why s/he may do that, or why not.
 interface MayMayNot {
@@ -32,29 +35,29 @@ interface MayMayNot {
   reason?: string;
 }
 
-function mayMayNot(may: boolean, reason: string): MayMayNot {
+export function mayMayNot(may: boolean, reason: string): MayMayNot {
   return { value: may, do_: may, not: !may, yes: may, no: !may, reason: reason };
 }
 
-function mayIndeed() {
+export function mayIndeed() {
   return mayMayNot(true, null);
 }
 
 
-function hasChatSection(pageRole: PageRole) {
+export function hasChatSection(pageRole: PageRole) {
   // On message pages, replies are flat already, so an additional flat section makes no sense.
   // Chat channels don't have any chat comments section (the whole page is nothing but chat msgs).
   return pageRole !== PageRole.FormalMessage && !page_isChatChannel(pageRole);
 }
 
 
-function page_isChatChannel(pageRole: PageRole): boolean {
+export function page_isChatChannel(pageRole: PageRole): boolean {
   return pageRole === PageRole.OpenChat || pageRole === PageRole.PrivateChat;
 }
 
 // Hmm now there's a Discussion topic type (= page role), then page_isDiscussion is an a
 // bit confusing name?
-function page_isDiscussion(pageRole: PageRole): boolean {
+export function page_isDiscussion(pageRole: PageRole): boolean {
   return pageRole && !isSection(pageRole) &&
       pageRole !== PageRole.Form &&
       pageRole !== PageRole.SpecialContent &&
@@ -64,19 +67,19 @@ function page_isDiscussion(pageRole: PageRole): boolean {
 }
 
 // [refactor] Move to page-methods.ts and rename to page_hmmHmmWhat? + isSection too, below.
-function isPageWithComments(pageRole: PageRole): boolean {
+export function isPageWithComments(pageRole: PageRole): boolean {
   return page_isDiscussion(pageRole) && pageRole !== PageRole.FormalMessage;
 }
 
-function isSection(pageRole: PageRole): boolean {
+export function isSection(pageRole: PageRole): boolean {
   return pageRole === PageRole.Forum || pageRole === PageRole.Blog;
 }
 
-function isPageWithSidebar(pageRole: PageRole): boolean {
+export function isPageWithSidebar(pageRole: PageRole): boolean {
   return true; // hmm remove this fn then, now
 }
 
-function pageRole_shallListInRecentTopics(pageRole: PageRole): boolean {
+export function pageRole_shallListInRecentTopics(pageRole: PageRole): boolean {
   switch (pageRole) {
     case PageRole.EmbeddedComments:
     case PageRole.CustomHtmlPage:
@@ -90,12 +93,12 @@ function pageRole_shallListInRecentTopics(pageRole: PageRole): boolean {
 }
 
 
-function me_isStranger(me: Myself): boolean {
+export function me_isStranger(me: Myself): boolean {
   return !me.id;
 }
 
 
-function userGetWatchbarTopicIds(user: Myself): PageId[] {
+export function userGetWatchbarTopicIds(user: Myself): PageId[] {
   var watchbarTopics: WatchbarTopics = user.watchbarTopics;
   if (!watchbarTopics) return [];
   // For now: Concat with something so as to not return the original array.
@@ -103,32 +106,32 @@ function userGetWatchbarTopicIds(user: Myself): PageId[] {
 }
 
 
-function maySendInvites(user: Myself | CompleteUser): MayMayNot {
+export function maySendInvites(user: Myself | CompleteUser): MayMayNot {
   // Currently only admins may send invites.
   if (!user.isAdmin) return mayMayNot(false, "is not admin");
   return mayIndeed();
 }
 
 
-function user_isMember(user: CompleteUser | BriefUser | Myself): boolean {
+export function user_isMember(user: CompleteUser | BriefUser | Myself): boolean {
   return user.id > MaxGuestId;
 }
 
-function isGuest(user) {  // try to remove
+export function isGuest(user) {  // try to remove
   return user_isGuest(user);
 }
 
-function user_isGuest(user) {
+export function user_isGuest(user) {
   // (Should rename userId to id.)
   return user.id <= MaxGuestId ||  // if is a CompleteUser
       user.userId <= MaxGuestId; // in case it's a User or BriefUser
 }
 
-function userId_isGuest(userId) {
+export function userId_isGuest(userId) {
   return userId <= MaxGuestId;  // if is a CompleteUser
 }
 
-function isMember(user: Myself | CompleteUser): boolean {
+export function isMember(user: Myself | CompleteUser): boolean {
   if (!user) return false;
   var id = user['id'] || user['userId'];
   var member = id >= MinMemberId;
@@ -136,34 +139,34 @@ function isMember(user: Myself | CompleteUser): boolean {
   return member;
 }
 
-function isStaff(user: Myself | CompleteUser) {
+export function isStaff(user: Myself | CompleteUser) {
   return user.isAdmin || user.isModerator;
 }
 
 
-function isTalkToMeNotification(notf: Notification): boolean {
+export function isTalkToMeNotification(notf: Notification): boolean {
   return notf.type === NotificationType.DirectReply ||
           notf.type === NotificationType.Mention ||
           notf.type === NotificationType.Message;
 }
 
-function isTalkToOthersNotification(notf: Notification): boolean {
+export function isTalkToOthersNotification(notf: Notification): boolean {
   return notf.type === NotificationType.NewPost;
 }
 
 
 
-function isCollapsed(post) {
+export function isCollapsed(post) {
   return post.isTreeCollapsed || post.isPostCollapsed;
 }
 
 
-function isDeleted(post) {
+export function isDeleted(post) {
   return !post || post.isTreeDeleted || post.isPostDeleted;
 }
 
 
-function isWikiPost(postOrPostType: any) {
+export function isWikiPost(postOrPostType: any) {
   var type;
   if (postOrPostType) {
     type = postOrPostType.postType || postOrPostType;
@@ -172,7 +175,7 @@ function isWikiPost(postOrPostType: any) {
 }
 
 
-function trustLevel_toString(trustLevel: TrustLevel): string {
+export function trustLevel_toString(trustLevel: TrustLevel): string {
   switch (trustLevel) {
     case TrustLevel.New: return "New";
     case TrustLevel.Basic: return "Basic";
@@ -184,7 +187,7 @@ function trustLevel_toString(trustLevel: TrustLevel): string {
 }
 
 
-function threatLevel_toString(threatLevel: ThreatLevel): string {
+export function threatLevel_toString(threatLevel: ThreatLevel): string {
   switch (threatLevel) {
     case ThreatLevel.HopefullySafe: return "Allow";
     case ThreatLevel.MildThreat: return "Review after";
@@ -195,4 +198,7 @@ function threatLevel_toString(threatLevel: ThreatLevel): string {
 }
 
 
+//------------------------------------------------------------------------------
+   }
+//------------------------------------------------------------------------------
 // vim: fdm=marker et ts=2 sw=2 tw=0 fo=r list

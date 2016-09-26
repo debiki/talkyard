@@ -21,8 +21,6 @@
 /// <reference path="../constants.ts" />
 /// <reference path="../utils/react-utils.ts" />
 /// <reference path="../utils/utils.ts" />
-/// <reference path="../editor/editor.ts" />
-/// <reference path="../login/login-dialog.ts" />
 /// <reference path="../utils/window-zoom-resize-mixin.ts" />
 /// <reference path="../utils/DropdownModal.ts" />
 /// <reference path="../util/ExplainingDropdown.ts" />
@@ -30,20 +28,18 @@
 /// <reference path="../ServerApi.ts" />
 /// <reference path="../page/discussion.ts" />
 /// <reference path="../page/scroll-buttons.ts" />
+/// <reference path="../widgets.ts" />
+/// <reference path="../more-bundle-not-yet-loaded.ts" />
+/// <reference path="../editor-bundle-not-yet-loaded.ts" />
 
 //------------------------------------------------------------------------------
    module debiki2.forum {
 //------------------------------------------------------------------------------
 
-var d = { i: debiki.internal, u: debiki.v0.util };
 var r = React.DOM;
-var reactCreateFactory = React['createFactory'];
-var ReactBootstrap: any = window['ReactBootstrap'];
-var Button = reactCreateFactory(ReactBootstrap.Button);
 var DropdownModal = utils.DropdownModal;
 var ExplainingListItem = util.ExplainingListItem;
 type ExplainingTitleText = util.ExplainingTitleText;
-var MenuItem = reactCreateFactory(ReactBootstrap.MenuItem);
 var HelpMessageBox = debiki2.help.HelpMessageBox;
 
 var ReactRouter = window['ReactRouter'];
@@ -106,12 +102,11 @@ var ForumComponent = React.createClass(<any> {
   mixins: [debiki2.StoreListenerMixin],
 
   getInitialState: function() {
+    var store: Store = debiki2.ReactStore.allData();
     return {
-      store: debiki2.ReactStore.allData(),
+      store: store,
       topicsInStoreMightBeOld: false,
-      useWideLayout: isServerSide() ? true :
-          // (contextbar closed by default)
-          window.innerWidth >= UseWideForumLayoutMinWidth + WatchbarWidth,
+      useWideLayout: this.isPageWide(store),
     }
   },
 
@@ -125,7 +120,6 @@ var ForumComponent = React.createClass(<any> {
 
   componentDidMount: function() {
     // Dupl code [5KFEWR7]
-    this.checkSizeChangeLayout();
     this.timerHandle = setInterval(this.checkSizeChangeLayout, 200);
   },
 
@@ -143,9 +137,8 @@ var ForumComponent = React.createClass(<any> {
     }
   },
 
-  isPageWide: function() {
-    var rect = reactGetRefRect(this.refs.outer);
-    return rect.right - rect.left >= UseWideForumLayoutMinWidth;
+  isPageWide: function(store?: Store) {
+    return store_getApproxPageWidth(store || this.state.store) > UseWideForumLayoutMinWidth;
   },
 
   getActiveCategory: function() {
@@ -255,7 +248,7 @@ var ForumComponent = React.createClass(<any> {
       debiki2.page.ScrollButtons(),
       r.div({ className: 'container dw-forum' },
         // Include .dw-page to make renderDiscussionPage() in startup.js run: (a bit hacky)
-        r.div({ className: 'dw-page', ref: 'outer' }),
+        r.div({ className: 'dw-page' }),
         ForumIntroText({ store: store }),
         helpMessage,
         ForumButtons(forumButtonProps),
@@ -283,7 +276,8 @@ var ForumIntroText = createComponent({
       return null;
 
     var anyEditIntroBtn = user.isAdmin
-        ? r.a({ className: 'esForumIntro_edit icon-edit', onClick: openEditIntroDialog }, "Edit")
+        ? r.a({ className: 'esForumIntro_edit icon-edit',
+              onClick: morebundle.openEditIntroDialog }, "Edit")
         : null;
 
     return r.div({ className: 'esForumIntro' },
@@ -433,7 +427,7 @@ var ForumButtons = createComponent({
   }, */
 
   editCategory: function() {
-    debiki2.forum['getEditCategoryDialog'](dialog => {
+    morebundle.getEditCategoryDialog(dialog => {
       if (this.isMounted()) {
         dialog.open(this.props.activeCategory.id);
       }
@@ -441,7 +435,7 @@ var ForumButtons = createComponent({
   },
 
   createCategory: function() {
-    debiki2.forum['getEditCategoryDialog'](dialog => {
+    morebundle.getEditCategoryDialog(dialog => {
       if (this.isMounted()) {
         dialog.open();
       }
@@ -450,7 +444,7 @@ var ForumButtons = createComponent({
 
   createTopic: function() {
     var anyReturnToUrl = window.location.toString().replace(/#/, '__dwHash__');
-    login.loginIfNeeded('LoginToCreateTopic', anyReturnToUrl, () => {
+    morebundle.loginIfNeeded('LoginToCreateTopic', anyReturnToUrl, () => {
       var category: Category = this.props.activeCategory;
       if (category.isForumItself) {
         category = this.findTheDefaultCategory();
@@ -464,7 +458,7 @@ var ForumButtons = createComponent({
         debiki2.editor.editNewForumPage(category.id, newTopicTypes[0]);
       }
       else {
-        forum['getCreateTopicDialog']().open(category);
+        die('EsE4FU0W2'); // I deleted the choose-topic-type dialog: UX hostile, no longer needed.
       }
     });
   },
@@ -510,8 +504,7 @@ var ForumButtons = createComponent({
       makeCategoryLink(RoutePathLatest, "Topic list", 'e2eViewTopicsB', 'esForum_navLink');
 
     var categoryMenuItems = store.categories.map((category: Category) => {
-      return MenuItem({ eventKey: category.slug, key: category.id,
-          active: activeCategory.id === category.id,
+      return MenuItem({ key: category.id, active: activeCategory.id === category.id,
           onClick: () => this.setCategory(category.slug) }, category.name);
     });
 
@@ -522,7 +515,7 @@ var ForumButtons = createComponent({
         activeCategory.isForumItself;
 
     categoryMenuItems.unshift(
-        MenuItem({ eventKey: null, key: -1, active: listsTopicsInAllCats,
+        MenuItem({ key: -1, active: listsTopicsInAllCats,
           onClick: () => this.setCategory('') }, "All categories"));
 
     // [refactor] use ModalDropdownButton instead
@@ -639,15 +632,15 @@ var ForumButtons = createComponent({
     if (sortOrderRoutePath !== RoutePathCategories && !(
           activeCategory.onlyStaffMayCreateTopics && !isStaff(me))) {
      if (this.props.numWaitingForCritique < MaxWaitingForCritique)  // for now only [plugin]
-      createTopicBtn = Button({ onClick: this.createTopic, bsStyle: 'primary', id: 'e2eCreateSth',
+      createTopicBtn = PrimaryButton({ onClick: this.createTopic, id: 'e2eCreateSth',
           className: 'esF_BB_CreateBtn'},
         createTopicBtnTitle(activeCategory));
     }
 
     var createCategoryBtn;
     if (sortOrderRoutePath === RoutePathCategories && me.isAdmin) {
-      createCategoryBtn = Button({ onClick: this.createCategory, bsStyle: 'primary',
-          id: 'e2eCreateCategoryB' }, "Create Category");
+      createCategoryBtn = PrimaryButton({ onClick: this.createCategory, id: 'e2eCreateCategoryB' },
+        "Create Category");
     }
 
     var editCategoryBtn;

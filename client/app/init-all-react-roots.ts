@@ -18,15 +18,10 @@
 /// <reference path="../typedefs/react/react.d.ts" />
 /// <reference path="sidebar/sidebar.ts" />
 /// <reference path="watchbar/watchbar.ts" />
-/// <reference path="editor/editor.ts" />
 /// <reference path="page/metabar.ts" />
 /// <reference path="react-elements/name-login-btns.ts" />
-/// <reference path="users/users-page.ts" />
-/// <reference path="page-dialogs/wikify-dialog.ts" />
-/// <reference path="dialogs.ts" />
-/// <reference path="tags/tags-app.ts" />
-/// <reference path="admin/admin-app.ts" />
-/// <reference path="superadmin/superadmin-app.ts" />
+/// <reference path="more-bundle-already-loaded.d.ts" />
+/// <reference path="staff-bundle-already-loaded.d.ts" />
 
 //------------------------------------------------------------------------------
    module debiki2 {
@@ -73,6 +68,8 @@ export function startRemainingReactRoots() {
   var userPageElem = document.getElementById('dw-react-user-page');
   if (userPageElem) {
     ReactDOM.render(
+        // .routes() always available, because the more-bundle.js is loaded on non-pages.
+        // But unknown at compile time ... currently. Later: incl about user page in slim-bundle.js?
         Router({ history: ReactRouter.browserHistory }, users.routes()), userPageElem);
   }
 

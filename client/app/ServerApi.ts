@@ -16,6 +16,7 @@
  */
 
 /// <reference path="model.ts" />
+/// <reference path="rules.ts" />
 
 
 /* This file is available in both server and client side JS.

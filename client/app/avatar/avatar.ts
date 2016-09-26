@@ -20,8 +20,9 @@
 /// <reference path="../prelude.ts" />
 /// <reference path="../utils/utils.ts" />
 /// <reference path="../utils/react-utils.ts" />
-/// <reference path="../dialogs.ts" />
 /// <reference path="../model.ts" />
+/// <reference path="../rules.ts" />
+/// <reference path="../more-bundle-not-yet-loaded.ts" />
 
 //------------------------------------------------------------------------------
   module debiki2.avatar {
@@ -52,7 +53,7 @@ export var Avatar = createComponent({
       ReactActions.openUserProfile(this.props.user.id);
     }
     else {
-      pagedialogs.getAboutUserDialog().openForUserIdOrUsername(this.props.user.id);
+      morebundle.openAboutUserDialog(this.props.user.id);
     }
   },
 

@@ -16,8 +16,8 @@
  */
 
 /// <reference path="../../typedefs/react/react.d.ts" />
-/// <reference path="../login/login-dialog.ts" />
 /// <reference path="../ReactStore.ts" />
+/// <reference path="../more-bundle-not-yet-loaded.ts" />
 
 //------------------------------------------------------------------------------
    module debiki2.reactelements {
@@ -43,7 +43,7 @@ export var NameLoginBtns = createComponent({
   },
 
   onLoginClick: function() {
-    login.getLoginDialog().openToLogIn(this.props.purpose || 'LoginToLogin');
+    morebundle.openLoginDialog(this.props.purpose || 'LoginToLogin');
   },
 
   onLogoutClick: function() {
@@ -91,7 +91,7 @@ export var NameLoginBtns = createComponent({
 });
 
 
-export function goToUserPage(userId) {
+function goToUserPage(userId) {
   // If using an <a> link, then, if already in the /-/users/ SPA, no rerendering
   // of React elements will be triggered (not sure why) so the contents of the
   // page won't change: it'll show details for one user, but the URL will be

@@ -17,6 +17,7 @@
 
 /// <reference path="../../typedefs/react/react.d.ts" />
 /// <reference path="../model.ts" />
+/// <reference path="../rules.ts" />
 
 //------------------------------------------------------------------------------
    module debiki2.pubsub {

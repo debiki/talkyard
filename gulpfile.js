@@ -76,7 +76,7 @@ var thisIsAConcatenationMessage =
 // - Testing that fallbacks to locally served files work is boring.
 // - Plus I read in comments in some blog that some countries actually sometimes
 //   block Google's CDN.
-var debikiJavascriptFiles = [
+var slimJsFiles = [
       // Place React first so we can replace it at index 0 & 1 with the optimized min.js versions.
       'node_modules/react/dist/react-with-addons.js',
       'node_modules/react-dom/dist/react-dom.js',
@@ -99,17 +99,14 @@ var debikiJavascriptFiles = [
       // keymaster.js declares window.key, rename it to window.keymaster instead,
       // see comment in file for details.
       'client/third-party/rename-key-to-keymaster.js',
-      'node_modules/lodash/lodash.min.js',
-      'node_modules/moment/min/moment.min.js',
+      'client/third-party/lodash-custom.js',
       'node_modules/eventemitter2/lib/eventemitter2.js',
-      'node_modules/react-bootstrap/dist/react-bootstrap.js',
       'node_modules/react-router/umd/ReactRouter.js',
       'node_modules/jquery-resizable/resizable.js',
       'client/third-party/gifffer/gifffer.js',
       'client/third-party/jquery-cookie.js',
       'client/third-party/jquery-scrollable.js', //
       'client/third-party/jquery.browser.js', //
-      'client/third-party/popuplib.js',
       'target/client/app/actions/edit/edit.js',
       'target/client/app/actions/vote.js',
       'target/client/app/actions/reply.js',
@@ -117,8 +114,6 @@ var debikiJavascriptFiles = [
       'target/client/app/utils/jquery-find.js',
       'target/client/app/page/layout-threads.js',
       'target/client/app/page/resize-threads.js',
-      'target/client/app/login/login.js',
-      'target/client/app/login/login-popup.js',
       'target/client/app/editor/mentions-markdown-it-plugin.js',
       'target/client/app/editor/onebox-markdown-it-plugin.js',
       //'target/client/app/posts/monitor-reading-progress-unused.js',
@@ -127,15 +122,26 @@ var debikiJavascriptFiles = [
       //'target/client/app/posts/unread-unused.js',
       'target/client/app/utils/util.js',
       'target/client/app/utils/util-browser.js',
-      'target/client/app/utils/util-play.js',
       'target/client/app/utterscroll/utterscroll-init-tips.js',//
       'client/app/utterscroll/utterscroll.js',//
       'target/client/app/utils/post-json.js',
-      'target/client/all-typescript.js',
+      'target/client/slim-typescript.js',
       'target/client/app/startup.js'];
 
+var moreJsFiles = [
+      'node_modules/react-bootstrap/dist/react-bootstrap.js',
+      'node_modules/classnames/index.js',                               // needed by react-select
+      'node_modules/react-input-autosize/dist/react-input-autosize.js', // needed by react-select
+      'node_modules/react-select/dist/react-select.js',                 // <– react-select
+      'node_modules/moment/min/moment.min.js',
+      'client/third-party/popuplib.js',
+      'target/client/app/login/login-popup.js',
+      'target/client/more-typescript.js'];
 
-var editorEtceteraScripts = [
+var staffJsFiles = [
+      'target/client/staff-typescript.js'];
+
+var editorJsFiles = [
       // We use two different sanitizers, in case there's a security bug in one of them. [5FKEW2]
       // Find the code that "combines" them here: googleCajaSanitizeHtml [6FKP40]
       'modules/sanitize-html/dist/sanitize-html.js',     // 1
@@ -143,19 +149,17 @@ var editorEtceteraScripts = [
       'node_modules/markdown-it/dist/markdown-it.js',
       'node_modules/jquery.caret/dist/jquery.caret.min.js', // needed by jquery.atwho (next line)
       'node_modules/at.js/dist/js/jquery.atwho.js',
-      'node_modules/classnames/index.js', // needed by react-select
-      'node_modules/react-input-autosize/dist/react-input-autosize.js', // needed by react-select
-      'node_modules/blacklist/dist/blacklist.js',
-      'node_modules/react-select/dist/react-select.js',
+      'node_modules/blacklist/dist/blacklist.js',  // needed by what?
       'node_modules/fileapi/dist/FileAPI.js',
       'client/third-party/diff_match_patch.js',
-      'client/third-party/non-angular-slugify.js'];
+      'client/third-party/non-angular-slugify.js',
+      'target/client/editor-typescript.js'];
 
 
 // For both touch devices and desktops.
 // (parten-header.js and parent-footer.js wraps and lazy loads the files inbetween,
 // see client/embedded-comments/readme.txt.)
-var debikiEmbeddedCommentsFiles = [
+var embeddedJsFiles = [
       'client/embedded-comments/parent-header.js',  // not ^target/client/...
       'client/third-party/jquery-scrollable.js',
       'client/third-party/jquery.browser.js',
@@ -181,20 +185,20 @@ gulp.task('wrap-javascript', function () {
 });
 
 
-var serverSideTypescriptProject = typeScript.createProject({
+var serverTypescriptProject = typeScript.createProject({
     target: 'ES5',
     noExternalResolve: true,
-    out: 'renderer.js'
+    out: 'server-bundle.js'
 });
 
 
-function compileServerSideTypescript() {
+function compileServerTypescript() {
   var typescriptStream = gulp.src([
         'client/server/**/*.ts',
         'client/shared/plain-old-javascript.d.ts',
         'client/typedefs/**/*.ts'])
     .pipe(wrap(nextFileTemplate))
-    .pipe(typeScript(serverSideTypescriptProject));
+    .pipe(typeScript(serverTypescriptProject));
 
   if (watchAndLiveForever) {
     typescriptStream.on('error', function() {
@@ -210,54 +214,92 @@ function compileServerSideTypescript() {
         // Don't need any React addons server side (e.g. CSS transitions or performance measurements).
         'node_modules/react/dist/react.min.js',
         'node_modules/react-dom/dist/react-dom-server.min.js',
-        'node_modules/react-bootstrap/dist/react-bootstrap.js',
         'node_modules/react-router/umd/ReactRouter.js',
         'node_modules/markdown-it/dist/markdown-it.min.js',
-        'node_modules/lodash/lodash.min.js',
+        'client/third-party/lodash-custom.js',
         'client/third-party/non-angular-slugify.js',
         'client/app/editor/mentions-markdown-it-plugin.js',
         'client/app/editor/onebox-markdown-it-plugin.js'])
       .pipe(wrap(nextFileTemplate));
 
   return es.merge(typescriptStream, javascriptStream)
-      .pipe(concat('renderer.js'))
+      .pipe(concat('server-bundle.js'))
       .pipe(gulp.dest('public/res/'));
 }
 
 
-var clientSideTypescriptProject = typeScript.createProject({
+var slimTypescriptProject = typeScript.createProject({
     target: 'ES5',
     noExternalResolve: true,
-    out: 'all-typescript.js'
+    out: 'slim-typescript.js'
+});
+
+var moreTypescriptProject = typeScript.createProject({
+  target: 'ES5',
+  noExternalResolve: true,
+  out: 'more-typescript.js'
+});
+
+var staffTypescriptProject = typeScript.createProject({
+  target: 'ES5',
+  noExternalResolve: true,
+  out: 'staff-typescript.js'
+});
+
+var editorTypescriptProject = typeScript.createProject({
+  target: 'ES5',
+  noExternalResolve: true,
+  out: 'editor-typescript.js'
 });
 
 
-function compileClientSideTypescript() {
+function compileFastTypescript() {
   var stream = gulp.src([
         'client/app/**/*.ts',
+        '!client/app/**/*.more.ts',
+        '!client/app/**/*.editor.ts',
+        '!client/app/**/*.staff.ts',
+        '!client/app/slim-bundle.d.ts',
         'client/shared/plain-old-javascript.d.ts',
         'client/typedefs/**/*.ts'])
     .pipe(wrap(nextFileTemplate))
-    .pipe(typeScript(clientSideTypescriptProject));
-
+    .pipe(typeScript(slimTypescriptProject));
   if (watchAndLiveForever) {
     stream.on('error', function() {
-      console.log('\n!!! Error compiling TypeScript !!!\n');
+      console.log('\n!!! Error compiling slim TypeScript [EsE4GDTX8]!!!\n');
     });
   }
+  return stream.pipe(gulp.dest('target/client/'));
+}
 
+function compileMoreTypescript(what, project) {
+  var stream = gulp.src([
+    'client/app/**/*.d.ts',
+    '!client/app/**/*.' + what + '.d.ts',
+    '!client/app/**/' + what + '-bundle-already-loaded.d.ts',
+    'client/app/constants.ts',   // for now COULD_OPTIMIZE, don't need to incl all vars here too
+    'client/app/model.ts',       // for now
+    'client/app/**/*.' + what + '.ts',
+    'client/shared/plain-old-javascript.d.ts',
+    'client/typedefs/**/*.ts'])
+    .pipe(wrap(nextFileTemplate))
+    .pipe(typeScript(project));
+  if (watchAndLiveForever) {
+    stream.on('error', function() {
+      console.log('\n!!! Error compiling ' + what + ' TypeScript [EsE3G6P8S]!!!\n');
+    });
+  }
   return stream.pipe(gulp.dest('target/client/'));
 }
 
 
-// Can speed up this:
-// Recompile only changed file, https://github.com/ivogabe/gulp-typescript/issues/228
-// (and use the IDE for type checking, + when building release)
-//
 gulp.task('compile-typescript', function () {
   return es.merge(
-      compileServerSideTypescript(),
-      compileClientSideTypescript());
+      compileServerTypescript(),
+      compileFastTypescript(),
+      compileMoreTypescript('more', moreTypescriptProject),
+      compileMoreTypescript('staff', staffTypescriptProject),
+      compileMoreTypescript('editor', editorTypescriptProject));
 });
 
 
@@ -283,9 +325,11 @@ function makeConcatDebikiScriptsStream() {
   }
 
   return es.merge(
-      makeConcatStream('combined-debiki.js', debikiJavascriptFiles, 'DoCheckNewer'),
-      makeConcatStream('editor-etcetera.js', editorEtceteraScripts),
-      makeConcatStream('embedded-comments.js', debikiEmbeddedCommentsFiles),
+      makeConcatStream('slim-bundle.js', slimJsFiles, 'DoCheckNewer'),
+      makeConcatStream('more-bundle.js', moreJsFiles, 'DoCheckNewer'),
+      makeConcatStream('staff-bundle.js', staffJsFiles, 'DoCheckNewer'),
+      makeConcatStream('editor-bundle.js', editorJsFiles, 'DoCheckNewer'),
+      makeConcatStream('embedded-comments.js', embeddedJsFiles),
       gulp.src('node_modules/zxcvbn/dist/zxcvbn.js').pipe(gulp.dest('public/res/')));
 };
 
@@ -315,8 +359,9 @@ function makeConcatAllScriptsStream() {
 
 gulp.task('insert-prod-scripts', function() {
   // This script isn't just a minified script — it contains lots of optimizations.
-  debikiJavascriptFiles[0] = 'node_modules/react/dist/react-with-addons.min.js';
-  debikiJavascriptFiles[1] = 'node_modules/react-dom/dist/react-dom.min.js';
+  // So we want to use react-with-addons.min.js, rather than minifying the .js ourselves.
+  slimJsFiles[0] = 'node_modules/react/dist/react-with-addons.min.js';
+  slimJsFiles[1] = 'node_modules/react-dom/dist/react-dom.min.js';
 });
 
 
@@ -367,7 +412,7 @@ gulp.task('compile-stylus', function () {
   }
 
   return es.merge(
-    makeStyleStream('public/res/', 'combined-debiki.css', [
+    makeStyleStream('public/res/', 'styles-bundle.css', [
         'node_modules/bootstrap/dist/css/bootstrap.css',
         'node_modules/at.js/dist/css/jquery.atwho.css',
         'node_modules/react-select/dist/react-select.css',

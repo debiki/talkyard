@@ -16,8 +16,8 @@
  */
 
 /// <reference path="../typedefs/jquery/jquery.d.ts" />
-/// <reference path="users/user-info/UserInfo.ts" />
 /// <reference path="model.ts" />
+/// <reference path="rules.ts" />
 /// <reference path="ServerApi.ts" />
 
 //------------------------------------------------------------------------------
@@ -145,6 +145,8 @@ function appendE2eAndForbiddenPassword(url: string) {
 
 
 var loadEditorScriptsStatus;
+var slowBundleStatus;
+var staffBundleStatus;
 
 
 // Won't call callback() until a bit later — so if you call React's setState(..), the
@@ -154,6 +156,48 @@ export function loadEditorEtcScriptsAndLater(callback?) {
   setTimeout(function() {
     loadEditorEtceteraScripts().done(callback || _.noop)
   }, 0);
+}
+
+
+export function loadMoreScriptsBundle(callback) {
+  if (slowBundleStatus) {
+    // Never call callback() immediately, because it's easier to write caller source code,
+    // if one knows that callback() will never be invoked immediately.
+    setTimeout(() => slowBundleStatus.done(callback), 0);
+    return;
+  }
+  slowBundleStatus = $.Deferred();
+  window['yepnope']({
+    both: [d.i.assetUrlPrefix + 'more-bundle.' + d.i.minMaxJs],
+    complete: () => {
+      slowBundleStatus.resolve();
+      setTimeout(callback, 0);
+    }
+  });
+  return slowBundleStatus;
+}
+
+
+export function loadStaffScriptsBundle(callback) {
+  if (staffBundleStatus) {
+    // Never call callback() immediately, because it's easier to write caller source code,
+    // if one knows that callback() will never be invoked immediately.
+    setTimeout(() => staffBundleStatus.done(callback), 0);
+    return;
+  }
+  staffBundleStatus = $.Deferred();
+  // The staff scripts bundle requires both more-bundle.js and editor-bundle.js (to render
+  // previews of CommonMark comments [7PKEW24]). This'll load them both.
+  loadEditorEtcScriptsAndLater(() => {
+    window['yepnope']({
+      both: [d.i.assetUrlPrefix + 'staff-bundle.' + d.i.minMaxJs],
+      complete: () => {
+        staffBundleStatus.resolve();
+        callback();  // setTimeout(..., 0) not needed — done by loadMoreScriptsBundle() already
+      }
+    });
+  });
+  return staffBundleStatus;
 }
 
 
@@ -170,12 +214,14 @@ export function loadEditorEtceteraScripts() {
   };
 
   loadEditorScriptsStatus = $.Deferred();
-  window['yepnope']({
-    both: [d.i.assetUrlPrefix + 'editor-etcetera.' + d.i.minMaxJs],
-    complete: () => {
-      window['ReactSelect'] = reactCreateFactory(window['Select']);
-      loadEditorScriptsStatus.resolve();
-    }
+  // The editor scripts bundle requires more-bundle.js.
+  loadMoreScriptsBundle(() => {
+    window['yepnope']({
+      both: [d.i.assetUrlPrefix + 'editor-bundle.' + d.i.minMaxJs],
+      complete: () => {
+        loadEditorScriptsStatus.resolve();
+      }
+    });
   });
   return loadEditorScriptsStatus;
 }
@@ -502,38 +548,6 @@ export function loadMyself(callback: (user: any) => void) {
 }
 
 
-export function loadUserInfo(userId, callback: (info: debiki2.users.UserInfo) => void) {
-  $.get(origin + '/-/load-user-info?userId=' + userId)
-    .done((response: any) => {
-      var userInfo = debiki2.users.UserInfo.fromJson(response.userInfo);
-      callback(userInfo);
-    })
-    .fail((x, y, z) => {
-      console.error('Error loading user info: ' + JSON.stringify([x, y, z]));
-      callback(null);
-    });
-}
-
-
-export function loadUserActions(userId,
-      callback: (actions: debiki2.users.ActionListItem[]) => void) {
-  $.get(origin + '/-/list-user-actions?userId=' + userId)
-    .done((response: any) => {
-      var actionItems: debiki2.users.ActionListItem[] = [];
-      for (var i = 0; i < response.actions.length; ++i) {
-        var json = response.actions[i];
-        var c = debiki2.users.ActionListItem.fromJson(json);
-        actionItems.push(c);
-      }
-      callback(actionItems);
-    })
-    .fail((x, y, z) => {
-      console.error('Error loading user actions: ' + JSON.stringify([x, y, z]));
-      callback(null);
-    });
-}
-
-
 export function loadNotifications(userId: number, upToWhenMs: number,
       success: (notfs: Notification[]) => void, error: () => void) {
   var query = '?userId=' + userId + '&upToWhenMs=' + upToWhenMs;
@@ -558,21 +572,6 @@ export function setTagNotfLevel(tagLabel: TagLabel, newNotfLevel: NotfLevel) {
     tagLabel: tagLabel,
     notfLevel: newNotfLevel
   });
-}
-
-
-
-export function loadUserPreferences(userId,
-      callback: (info: debiki2.users.UserPreferences) => void) {
-  $.get(origin + '/-/load-user-preferences?userId=' + userId)
-    .done((response: any) => {
-      var userPrefs = debiki2.users.UserPreferences.fromJson(response.userPreferences);
-      callback(userPrefs);
-    })
-    .fail((x, y, z) => {
-      console.error('Error loading user preferences: ' + JSON.stringify([x, y, z]));
-      callback(null);
-    });
 }
 
 

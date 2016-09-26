@@ -15,8 +15,43 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/// <reference path="plain-old-javascript.d.ts" />
 /// <reference path="../typedefs/react/react.d.ts" />
+/// <reference path="plain-old-javascript.d.ts" />
+
+var React = window['React'];
+var ReactDOM = window['ReactDOM'];
+var ReactDOMServer = window['ReactDOMServer'];
+var ReactCSSTransitionGroup = isServerSide() ? null :
+  reactCreateFactory(React.addons.CSSTransitionGroup);
+var ReactRouter = window['ReactRouter'];
+var Router = reactCreateFactory(ReactRouter.Router);
+
+// backw compat, later, do once per file instead (don't want a global 'r').
+var r = React.DOM;
+
+// Let this be a function, not a variable, so it can be used directly.
+// (Otherwise there's a server side reactCreateFactory-not-yet-inited error)
+function reactCreateFactory(x) {
+  return React['createFactory'](x);
+}
+
+
+function isServerSide(): boolean {
+  return !!window['ReactDOMServer'];
+}
+
+
+// Use this function to call getBoundingClientRect() and other stuff just before the next repaint,
+// to avoid forced refresh of the layout.
+function doNextFrameOrNow(something: () => void) {
+  if (window.requestAnimationFrame) {
+    window.requestAnimationFrame(something)
+  }
+  else {
+    something();
+  }
+}
+
 
 /**
  * Basic stuff needed by essentially all modules / files.
@@ -26,10 +61,9 @@
 //------------------------------------------------------------------------------
 
 // E2e tests won't compile without this. Why not, React.js already included above? Oh well.
-declare var React;
-declare var ReactRouter;
+//declare var React;
+// declare var ReactRouter;
 
-export var reactCreateFactory = React['createFactory'];
 export var Link = reactCreateFactory(ReactRouter.Link);
 
 
@@ -85,18 +119,8 @@ export function anyForbiddenPassword() {
 }
 
 
-export function isServerSide(): boolean {
-  return !!window['ReactDOMServer'];
-}
-
-
-export function isClientSide(): boolean {
-  return !isServerSide();
-}
-
-
 export var findDOMNode = isServerSide() ? null : window['ReactDOM'].findDOMNode;
-dieIf(isClientSide() && !findDOMNode, 'EsE6UMGY2');
+dieIf(!isServerSide() && !findDOMNode, 'EsE6UMGY2');
 
 
 export function hasErrorCode(request: HttpRequest, statusCode: string) {

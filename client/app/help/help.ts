@@ -16,51 +16,30 @@
  */
 
 /// <reference path="../../typedefs/react/react.d.ts" />
-/// <reference path="../react-bootstrap-old/Input.ts" />
-/// <reference path="../plain-old-javascript.d.ts" />
 /// <reference path="../prelude.ts" />
 /// <reference path="../ReactStore.ts" />
 /// <reference path="../utils/utils.ts" />
 /// <reference path="../utils/react-utils.ts" />
 /// <reference path="../model.ts" />
+/// <reference path="../rules.ts" />
+/// <reference path="../widgets.ts" />
+/// <reference path="../more-bundle-not-yet-loaded.ts" />
 
 //------------------------------------------------------------------------------
-  module debiki2.help {
+  namespace debiki2.help {
 //------------------------------------------------------------------------------
 
 var r = React.DOM;
-var reactCreateFactory = React['createFactory'];
-var ReactBootstrap: any = window['ReactBootstrap'];
-var Button = reactCreateFactory(ReactBootstrap.Button);
-var Modal = reactCreateFactory(ReactBootstrap.Modal);
-var ModalBody = reactCreateFactory(ReactBootstrap.ModalBody);
-var ModalFooter = reactCreateFactory(ReactBootstrap.ModalFooter);
-var ModalHeader = reactCreateFactory(ReactBootstrap.ModalHeader);
-var ModalTitle = reactCreateFactory(ReactBootstrap.ModalTitle);
 
 
-export function isHelpMessageClosedAnyVersion(store, messageId: string): boolean {
-  return store.user && !!store.user.closedHelpMessages[messageId];
+export function isHelpMessageClosedAnyVersion(store: Store, messageId: string): boolean {
+  return store.me && !!store.me.closedHelpMessages[messageId];
 }
 
-export function isHelpMessageClosed(store, message) {
-  if (!store.user) return false;
-  var closedVersion = store.user.closedHelpMessages[message.id];
+export function isHelpMessageClosed(store: Store, message: HelpMessage) {
+  if (!store.me) return false;
+  var closedVersion = store.me.closedHelpMessages[message.id];
   return closedVersion && closedVersion === message.version;
-}
-
-export function openHelpDialogUnlessHidden(message) {
-  getHelpDialog().open(message);
-}
-
-
-var helpDialog;
-
-function getHelpDialog() {
-  if (!helpDialog) {
-    helpDialog = ReactDOM.render(HelpDialog(), utils.makeMountNode());
-  }
-  return helpDialog;
 }
 
 
@@ -90,7 +69,8 @@ export var HelpMessageBox = createComponent({
   hideThisHelp: function() {
     ReactActions.hideHelpMessages(this.props.message);
     // Wait a short while with opening this, so one first sees the effect of clicking Close.
-    if (this.props.showUnhideTips !== false) setTimeout(() => openHelpDialogUnlessHidden({
+    if (this.props.showUnhideTips !== false) setTimeout(
+          () => morebundle.openHelpDialogUnlessHidden({
       content: r.span({}, "You can show help messages again, if you are logged in, by " +
         "clicking your name and then ", r.b({}, "Unhide help messages"), "."),
       id: '5YK7EW3',
@@ -119,51 +99,6 @@ export var HelpMessageBox = createComponent({
         r.div({ className: 'dw-help-text' },
           this.props.message.content),
         okayButton));
-  }
-});
-
-
-
-var HelpDialog = createComponent({
-  getInitialState: function () {
-    return { isOpen: false };
-  },
-
-  open: function(message: HelpMessage) {
-    dieIf(!message.content, 'EsE6YK02W');
-    // Bad practice to access the store like this? Oh well. Will rewrite anyway, in [redux] (?).
-    var store = ReactStore.allData();
-    if (!isHelpMessageClosedAnyVersion(store, message.id)) {
-      this.setState({ isOpen: true, message: message });
-    }
-  },
-
-  close: function() {
-    if (this.refs.hideMeCheckbox && this.refs.hideMeCheckbox.getChecked()) {
-      ReactActions.hideHelpMessageWithId(this.state.message.id);
-    }
-    this.setState({ isOpen: false, message: null });
-  },
-
-  render: function () {
-    var message: HelpMessage = this.state.message;
-    var content = message ? message.content : null;
-
-    var hideThisHelpTipsCheckbox = !message || !message.id ? null :
-      Input({ type: 'checkbox', inline: true, defaultChecked: true, ref: 'hideMeCheckbox',
-        label: "Do not show this tips again" });
-
-    content = !content ? null :
-        ModalBody({},
-          r.div({ className: 'esHelpDlg_body_wrap'},
-            r.div({ className: 'esHelpDlg_body' }, content),
-            r.div({ className: 'esHelpDlg_btns' },
-              hideThisHelpTipsCheckbox,
-              Button({ onClick: this.close, bsStyle: 'primary' }, "Okay"))));
-
-    return (
-      Modal({ show: this.state.isOpen, onHide: this.close, dialogClassName: 'esHelpDlg' },
-       content));
   }
 });
 

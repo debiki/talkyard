@@ -11,14 +11,16 @@
 // Columns
 //==============================
 
-$watchbarWidth = 230px  // dupl value, in js too [7GYK42] and in chars [4YK0F2]
+$watchbarWidth = 230px  // dupl value, in js pixels & chars  [7GYK42] & [4YK0F2]
 $sidebarZIndex = 1010
-$contextbarWidth = 25vw; // = win width 1/4, and 4 is used on the next line
+$contextbarWidth = 25vw; // = win width 1/4, and 4 is used on the next line. Dupl in js [5RK9W2]
 $contextbarMinWidth = 270px; // has effect when window width < 270 * 4 = 1080. Dupl in JS [4FK0ZD]
 
 // The maximum window width for which the context bar's width is its min width.
 $contextbarHasMinWidthMaxWinWidth = $contextbarMinWidth * 4;
 
+// The page column has its own scrollbar, and the watchbar and contextbar too, so the window
+// doesn't need any scrollbar. (Some js code knows about this [6GKF0WZ])
 body
   overflow: hidden;
 

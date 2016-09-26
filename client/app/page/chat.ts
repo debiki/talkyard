@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016 Kaj Magnus Lindberg
+ * Copyright (C) 2016 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -23,20 +23,15 @@
 /// <reference path="../utils/window-zoom-resize-mixin.ts" />
 /// <reference path="../avatar/avatar.ts" />
 /// <reference path="../avatar/AvatarAndName.ts" />
-/// <reference path="../login/login.ts" />
-/// <reference path="../editor/editor.ts" />
 /// <reference path="discussion.ts" />
+/// <reference path="../more-bundle-not-yet-loaded.ts" />
+/// <reference path="../editor-bundle-not-yet-loaded.ts" />
 
 //------------------------------------------------------------------------------
    module debiki2.page {
 //------------------------------------------------------------------------------
 
-var d = { i: debiki.internal, u: debiki.v0.util };
 var r = React.DOM;
-var reactCreateFactory = React['createFactory'];
-var ReactBootstrap: any = window['ReactBootstrap'];
-var Button = reactCreateFactory(ReactBootstrap.Button);
-var MenuItem = reactCreateFactory(ReactBootstrap.MenuItem);
 
 var EditorBecomeFixedDist = 5;
 var DefaultEditorRows = 2;
@@ -247,7 +242,7 @@ var JoinChatButton = createComponent({
   },
 
   joinChannel: function() {
-    login.loginIfNeededReturnToHash(LoginReason.LoginToChat, '#theJoinChatB', () => {
+    morebundle.loginIfNeededReturnToAnchor(LoginReason.LoginToChat, '#theJoinChatB', () => {
       if (this.isUnmounted) {
         // Now after having logged in, this join chat button got removed (unmounted) — that's
         // because we've joined the chat already (some time long ago). So, need do nothing, now.
@@ -260,8 +255,8 @@ var JoinChatButton = createComponent({
   render: function() {
     return (
       r.div({ className: 'esJoinChat' },
-        Button({ id: 'theJoinChatB', className: 'esJoinChat_btn',
-            onClick: this.joinChannel, bsStyle: 'primary' },
+        PrimaryButton({ id: 'theJoinChatB', className: 'esJoinChat_btn',
+            onClick: this.joinChannel },
           "Join this chat")));
   }
 });

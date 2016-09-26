@@ -38,7 +38,7 @@ d.i.loadOpenIdResources = (function() {
         d.i.assetsUrlPathStart + 'openid-selector/css/openid.css',
         d.i.assetsUrlPathStart + 'openid-selector/js/openid-jquery.js',
         d.i.assetsUrlPathStart + 'openid-selector/js/openid-en.js'],
-        // d.i.assetsUrlPathStart + 'popuplib.js' are included in combined-debiki.js.
+        // d.i.assetsUrlPathStart + 'popuplib.js' are included in slim-bundle.js.
       complete: function() {
         loadStatus.resolve();
       }

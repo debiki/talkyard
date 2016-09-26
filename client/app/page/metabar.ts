@@ -20,6 +20,7 @@
 /// <reference path="../react-elements/name-login-btns.ts" />
 /// <reference path="../utils/DropdownModal.ts" />
 /// <reference path="../util/ExplainingDropdown.ts" />
+/// <reference path="../widgets.ts" />
 /// <reference path="../oop-methods.ts" />
 
 //------------------------------------------------------------------------------
@@ -28,10 +29,6 @@
 
 var d = { i: debiki.internal, u: debiki.v0.util };
 var r = React.DOM;
-var reactCreateFactory = React['createFactory'];
-var ReactBootstrap: any = window['ReactBootstrap'];
-var Button = reactCreateFactory(ReactBootstrap.Button);
-var MenuItem = reactCreateFactory(ReactBootstrap.MenuItem);
 var DropdownModal = utils.DropdownModal;
 var ExplainingListItem = util.ExplainingListItem;
 
@@ -151,7 +148,7 @@ export var Metabar = createComponent({
           r.div({ className: 'esMetabar_summarize' },
             r.p({}, "There are " + store.numPostsRepliesSection + " replies. " +
               "Estimated reading time: " + Math.ceil(minutes) + " minutes"),
-            Button({onClick: this.summarizeReplies}, "Summarize Replies"), doneSummarizing);
+            Button({ onClick: this.summarizeReplies }, "Summarize Replies"), doneSummarizing);
       }
     }
 

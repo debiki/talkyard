@@ -37,9 +37,9 @@ package object controllers {
   def dieIfAssetsMissingIfDevTest() {
     if (Play.isProd) return
 
-    val serverJavascriptPath = "/public/res/renderer.js"
-    val clientJavascriptPath = "/public/res/combined-debiki.js"
-    val stylesPath = "/public/res/combined-debiki.css"
+    val serverJavascriptPath = "/public/res/server-bundle.js"
+    val clientJavascriptPath = "/public/res/slim-bundle.js"
+    val stylesPath = "/public/res/styles-bundle.css"
 
     val tips = o"""If you ran 'docker-compose up' then this bundle should be
       created automatically, but it might take a minute. You can:""" + i"""

@@ -19,6 +19,7 @@
 /// <reference path="../../typedefs/jquery/jquery.d.ts" />
 /// <reference path="../plain-old-javascript.d.ts" />
 /// <reference path="../model.ts" />
+/// <reference path="../rules.ts" />
 /// <reference path="../page-methods.ts" />
 
 //------------------------------------------------------------------------------

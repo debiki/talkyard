@@ -337,11 +337,13 @@ object UserController extends mvc.Controller {
 
 
   def loadUserInfo(userId: String) = GetAction { request =>
+    untested("EsE4WKG06U") /*
     val userIdInt = Try(userId.toInt) getOrElse throwBadReq("DwE4FKf2", "Bad user id")
     val userInfo = request.dao.loadUserInfoAndStats(userIdInt) getOrElse throwNotFound(
       "DwE512WR8", s"User not found, id: $userId")
     val json = Json.obj("userInfo" -> userInfoToJson(userInfo))
     OkSafeJson(json)
+    */
   }
 
 
@@ -427,17 +429,6 @@ object UserController extends mvc.Controller {
           "username" -> nameAndUsername.username,
           "fullName" -> nameAndUsername.fullName)
       })
-    OkSafeJson(json)
-  }
-
-
-  def loadUserPreferences(userId: String) = GetAction { request =>
-    val userIdInt = Try(userId.toInt) getOrElse throwBadReq("DwE7KBA0", "Bad user id")
-    checkUserPrefsAccess(request, userIdInt)
-    val user = request.dao.loadCompleteUser(userIdInt) getOrElse throwNotFound(
-      "DwE3EJ5O2", s"User not found, id: $userId")
-    val prefs = user.preferences
-    val json = Json.obj("userPreferences" -> userPrefsToJson(prefs, request.theUser))
     OkSafeJson(json)
   }
 

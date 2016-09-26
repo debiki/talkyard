@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014 Kaj Magnus Lindberg (born 1979)
+ * Copyright (C) 2014-2016 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -16,33 +16,23 @@
  */
 
 /// <reference path="../../typedefs/react/react.d.ts" />
+/// <reference path="../../typedefs/keymaster/keymaster.d.ts" />
 /// <reference path="../ReactStore.ts" />
 /// <reference path="../links.ts" />
+/// <reference path="../widgets.ts" />
 /// <reference path="../page-methods.ts" />
-/// <reference path="../login/login-dialog.ts" />
-/// <reference path="../page-tools/page-tools.ts" />
 /// <reference path="../utils/page-scroll-mixin.ts" />
 /// <reference path="../utils/scroll-into-view.ts" />
-/// <reference path="../utils/MenuItemLink.ts" />
-/// <reference path="../utils/DropdownModal.ts" />
 /// <reference path="../utils/utils.ts" />
 /// <reference path="../avatar/avatar.ts" />
-/// <reference path="../notification/Notification.ts" />
-/// <reference path="../../typedefs/keymaster/keymaster.d.ts" />
+/// <reference path="../more-bundle-not-yet-loaded.ts" />
 
 //------------------------------------------------------------------------------
    module debiki2.reactelements {  // rename to debiki2.topbar
 //------------------------------------------------------------------------------
 
 var keymaster: Keymaster = window['keymaster'];
-var d = { i: debiki.internal, u: debiki.v0.util };
 var r = React.DOM;
-var reactCreateFactory = React['createFactory'];
-var ReactBootstrap: any = window['ReactBootstrap'];
-var Button = reactCreateFactory(ReactBootstrap.Button);
-var DropdownButton = reactCreateFactory(ReactBootstrap.DropdownButton);
-var MenuItem = reactCreateFactory(ReactBootstrap.MenuItem);
-var MenuItemLink = utils.MenuItemLink;
 
 var FixedTopDist = 8;
 
@@ -53,29 +43,38 @@ export function getTopbarHeightInclShadow(): number {
 
 
 export var TopBar = createComponent({
+  displayName: 'TopBar',
   mixins: [debiki2.StoreListenerMixin, debiki2.utils.PageScrollMixin],
 
   getInitialState: function() {
     return {
       store: debiki2.ReactStore.allData(),
       fixed: false,
-      initialOffsetTop: -1,
+      initialOffsetTop: undefined,
       enableGotoTopBtn: false,
       enableGotoEndBtn: true,
     };
   },
 
-  componentWillMount: function() {
-    // We call it from render(). (Is that ok?)
-    pagetools.getPageToolsDialog();
+  componentWillUnmount: function() {
+    this.isGone = true;
   },
 
   componentDidMount: function() {
-    var rect = this.getThisRect();
-    var pageTop = getPageScrollableRect().top;
-    this.setState({
-      initialOffsetTop: rect.top - pageTop,
-      fixed: rect.top < -FixedTopDist,
+    doNextFrameOrNow(() => {
+      // This unfortunately still triggers a FORCED_REFLOW before the first paint. Is there any
+      // way to avoid that? Perhaps if window.scrollTop is 0, then we know the topbar should
+      // *not* be position = fixed, initially. And can do:
+      //    getPageScrollableRect().top - this-rect.top
+      // later? — This layout reflow takes about 15 ms (core i7 laptop), that's about 5% of
+      // the total time spent scripting & rendering before the first paint.
+      if (this.isGone) return;
+      var rect = this.getThisRect();
+      var pageTop = getPageScrollableRect().top;
+      this.setState({
+        initialOffsetTop: rect.top - pageTop,
+        fixed: rect.top < -FixedTopDist,
+      });
     });
   },
 
@@ -92,6 +91,9 @@ export var TopBar = createComponent({
   },
 
   onScroll: function() {
+    if (!this.state.initialOffsetTop)
+      return;
+
     var store: Store = this.state.store;
     var pageRect = getPageScrollableRect();
     var pageLeft = pageRect.left;
@@ -100,7 +102,7 @@ export var TopBar = createComponent({
     }
     var pageTop = pageRect.top;
     var newTop = -pageTop - this.state.initialOffsetTop;
-    this.setState({ top: newTop, left: -pageLeft });
+    this.setState({ top: newTop, left: -pageLeft }); // CLEAN_UP `top` not used. What about `left`?
     if (!this.state.fixed) {
       if (-pageTop > this.state.initialOffsetTop + FixedTopDist || pageLeft < -40) {
         this.setState({ fixed: true });
@@ -126,11 +128,11 @@ export var TopBar = createComponent({
   },
 
   onSignUpClick: function() {
-    login.getLoginDialog().openToSignUp(this.props.purpose || 'LoginToLogin');
+    morebundle.openLoginDialogToSignUp(this.props.purpose || 'LoginToLogin');
   },
 
   onLoginClick: function() {
-    login.getLoginDialog().openToLogIn(this.props.purpose || 'LoginToLogin');
+    morebundle.openLoginDialog(this.props.purpose || 'LoginToLogin');
   },
 
   onLogoutClick: function() {
@@ -138,7 +140,11 @@ export var TopBar = createComponent({
   },
 
   showTools: function() {
-    pagetools.getPageToolsDialog().open();
+    morebundle.openPageToolsDialog();
+  },
+
+  openMyMenu: function() {
+    morebundle.openMyMenu(this.state.store, this.refs.myMenuButton);
   },
 
   viewOlderNotfs: function() {
@@ -188,71 +194,26 @@ export var TopBar = createComponent({
     }
 
 
-    // ------- Staff link, notfs, help
+    // ------- My Menu (avatar + username dropdown menu)
 
     var urgentReviewTasks = makeNotfIcon('reviewUrgent', me.numUrgentReviewTasks);
     var otherReviewTasks = makeNotfIcon('reviewOther', me.numOtherReviewTasks);
-    var adminMenuItem = !isStaff(me) ? null :
-      MenuItemLink({ href: linkToAdminPage(), className: 'esMyMenu_admin' },
-        r.span({ className: 'icon-settings' }, "Admin"));
-    var reviewMenuItem = !urgentReviewTasks && !otherReviewTasks ? null :
-      MenuItemLink({ href: linkToReviewPage(), id: 'e2eMM_Review' },
-        "Needs review ", urgentReviewTasks, otherReviewTasks);
-
-    var adminHelpLink = !isStaff(me) ? null :
-      MenuItemLink({ href: externalLinkToAdminHelp(), target: '_blank',
-          className: 'esMyMenu_adminHelp' },
-        r.span({}, (me.isAdmin ? "Admin" : "Staff") + " help ",
-          r.span({ className: 'icon-link-ext' })));
-
-
-    // ------- Personal notf icons
 
     var talkToMeNotfs = makeNotfIcon('toMe', me.numTalkToMeNotfs);
     var talkToOthersNotfs = makeNotfIcon('toOthers', me.numTalkToOthersNotfs);
     var otherNotfs = makeNotfIcon('other', me.numOtherNotfs);
-    var anyDivider = me.notifications.length ? MenuItem({ divider: true }) : null;
-    var notfsElems = me.notifications.map((notf: Notification) =>
-        MenuItemLink({ key: notf.id, href: linkToNotificationSource(notf),
-            className: notf.seen ? '' : 'esNotf-unseen' },
-          notification.Notification({ notification: notf })));
-    if (me.thereAreMoreUnseenNotfs) {
-      notfsElems.push(
-          MenuItem({ key: 'More', onSelect: this.viewOlderNotfs }, "View more notifications..."));
-    }
-
-    // ------- Avatar & username dropdown
-
-    var avatarMenuButtonInclNotfIcons =
-        r.span({},
-          urgentReviewTasks, otherReviewTasks,
-          avatar.Avatar({ user: me, tiny: true, ignoreClicks: true }),
-          r.span({ className: 'esAvtrName_name' }, me.username || me.fullName),
-          r.span({ className: 'esAvtrName_you' }, "You"), // if screen too narrow
-          talkToMeNotfs,
-          talkToOthersNotfs,
-          otherNotfs);
-
-    var stopImpersonatingMenuItem = !store.isImpersonating ? null :
-        MenuItem({ onSelect: Server.stopImpersonatingReloadPage }, "Stop impersonating");
 
     var avatarNameDropdown = !me.isLoggedIn ? null :
-      utils.ModalDropdownButton({ title: avatarMenuButtonInclNotfIcons,
-          className: 'esAvtrName esMyMenu', showCloseButton: true },
-        r.ul({ className: 'dropdown-menu' },
-          adminMenuItem,
-          adminHelpLink,
-          reviewMenuItem,
-          (adminMenuItem || reviewMenuItem) ? MenuItem({ divider: true }) : null,
-          MenuItemLink({ href: linkToMyProfilePage(store), id: 'e2eMM_Profile' },
-            "View/edit your profile"),
-          MenuItem({ onSelect: this.onLogoutClick, id: 'e2eMM_Logout' }, "Log out"),
-          stopImpersonatingMenuItem,
-          anyDivider,
-          notfsElems,
-          MenuItem({ divider: true }),
-          MenuItem({ onSelect: ReactActions.showHelpMessagesAgain },
-            r.span({ className: 'icon-help' }, "Unhide help messages"))));
+      Button({ onClick: this.openMyMenu, className: 'esAvtrName esMyMenu', ref: 'myMenuButton' },
+        urgentReviewTasks,
+        otherReviewTasks,
+        avatar.Avatar({ user: me, tiny: true, ignoreClicks: true }),
+        r.span({ className: 'esAvtrName_name' }, me.username || me.fullName), // if screen wide
+        r.span({ className: 'esAvtrName_you' }, "You"), // if screen narrow
+        talkToMeNotfs,
+        talkToOthersNotfs,
+        otherNotfs);
+
 
     // ------- Login button
 
@@ -261,18 +222,18 @@ export var TopBar = createComponent({
     var hideLogInAndSignUp = me.isLoggedIn || page_isInfoPage(pageRole);
 
     var signupButton = hideLogInAndSignUp ? null :
-      Button({ className: 'dw-login esTopbar_signUp btn-primary', onClick: this.onSignUpClick },
+      PrimaryButton({ className: 'dw-login esTopbar_signUp', onClick: this.onSignUpClick },
         r.span({}, "Sign Up"));
 
     var loginButton = hideLogInAndSignUp ? null :
-        Button({ className: 'dw-login esTopbar_logIn btn-primary', onClick: this.onLoginClick },
+        PrimaryButton({ className: 'dw-login esTopbar_logIn', onClick: this.onLoginClick },
             r.span({ className: 'icon-user' }, 'Log In'));
 
     // ------- Tools button
     // Placed here so it'll be available also when one has scrolled down a bit.
 
     // (Is it ok to call another React component from here? I.e. the page tools dialog.)
-    var toolsButton = !isStaff(me) || pagetools.getPageToolsDialog().isEmpty() ? null :
+    var toolsButton = !isStaff(me) || !store_shallShowPageToolsButton(store) ? null :
         Button({ className: 'dw-a-tools', onClick: this.showTools },
           r.a({ className: 'icon-wrench' }, 'Tools'));
 

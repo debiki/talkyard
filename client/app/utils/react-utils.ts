@@ -16,23 +16,19 @@
  */
 
 /// <reference path="../../typedefs/react/react.d.ts" />
-/// <reference path="../plain-old-javascript.d.ts" />
 /// <reference path="../prelude.ts" />
+/// <reference path="utils.ts" />
+
+//------------------------------------------------------------------------------
+   namespace debiki2 {
+//------------------------------------------------------------------------------
 
 
-// Let this be a function, not a variable, so it can be used directly.
-// (Otherwise there's a server side reactCreateFactory-not-yet-inited error)
-function reactCreateFactory(x) {
-  return React['createFactory'](x);
-}
+export var Link = reactCreateFactory(ReactRouter.Link);
 
 
-var ReactSelect; // lazy loaded.
-var Link = reactCreateFactory(ReactRouter.Link);
-
-
-function createComponent(componentDefinition) { // oops should obviously be named createFactory
-  if (debiki2.isServerSide()) {
+export function createComponent(componentDefinition) { // oops should obviously be named createFactory
+  if (isServerSide()) {
     // The mere presence of these functions cause an unknown error when rendering
     // React-Router server side. So remove them; they're never called server side anyway.
     // The error logs the message '{}' to console.error(); no idea what that means.
@@ -43,12 +39,12 @@ function createComponent(componentDefinition) { // oops should obviously be name
 }
 
 
-function createClassAndFactory(componentDefinition) { // rename createComponent to this
+export function createClassAndFactory(componentDefinition) { // rename createComponent to this
   return createComponent(componentDefinition);
 }
 
 
-var NavLink = createComponent({
+export var NavLink = createComponent({
   contextTypes: {
     router: React.PropTypes.object
   },
@@ -65,7 +61,7 @@ var NavLink = createComponent({
 });
 
 
-function whenMsToIsoDate(whenMs: number) {
+export function whenMsToIsoDate(whenMs: number) {
   return new Date(whenMs).toISOString().replace(/T/, ' ')
 }
 
@@ -75,7 +71,7 @@ function whenMsToIsoDate(whenMs: number) {
  * just below.  The server inculdes only ISO dates, not "x time ago", in its HTML,
  * so that it can be cached.
  */
-function timeAgo(whenMs: number, clazz?: string) {
+export function timeAgo(whenMs: number, clazz?: string) {
   var isoDate = whenMsToIsoDate(whenMs);
   return r.span({ className: 'dw-ago ' + (clazz || '') }, isoDate);
 }
@@ -84,14 +80,18 @@ function timeAgo(whenMs: number, clazz?: string) {
  * Like timeAgo(isoDate) but results in just "5h" instead of "5 hours ago".
  * That is, uses only one single letter, instead of many words.
  */
-function prettyLetterTimeAgo(whenMs: number, clazz?: string) {
+export function prettyLetterTimeAgo(whenMs: number, clazz?: string) {
   var isoDate = whenMsToIsoDate(whenMs);
   return r.span({ className: 'dw-ago-ltr ' + (clazz || '') }, isoDate);
 }
 
-function timeExact(whenMs: number, clazz?: string) {
+export function timeExact(whenMs: number, clazz?: string) {
+  return timeAgo(whenMs, clazz); /*
+  // This no longer works, because moment.js was moved to more-bundle.js, so    [E5F29V]
+  // cannot convert to e.g. "Yesterday 05:30 PM". Instead, show "4 hours ago" or sth like that.
   var isoDate = whenMsToIsoDate(whenMs);
   return r.span({ className: 'esTimeExact ' + (clazz || '') }, isoDate);
+  */
 }
 
 
@@ -103,16 +103,18 @@ function timeExact(whenMs: number, clazz?: string) {
  * that have been processed already.
  */
 // COULD move to page/hacks.ts
-function processTimeAgo(selector?: string) {
+export function processTimeAgo(selector?: string) {
   selector = selector || '';
   var timeDoneClass = 'esTimeDone';
+
   // First handle all long version timestamps (don't end with -ltr ("letter")).
   // Result: e.g. "5 hours ago"
   $(selector + ' .dw-ago:not(.' + timeDoneClass + ')').each(function() {
     var $this = $(this);
     var isoDate = $this.text();
-    // Try to remove moment() from the default JS bundle? [6KFW02] Use instead: http://stackoverflow.com/a/9363445/694469 ?
-    var timeAgoString = moment(isoDate).fromNow();
+    var then = debiki2['isoDateStringToMillis'](isoDate); // typescript compilation error without []
+    var now = Date.now();
+    var timeAgoString = debiki.prettyDuration(then, now);
     $this.text(timeAgoString);
     $this.addClass(timeDoneClass);
     // But don't add any title tooltip attr, see [85YKW20] above.
@@ -123,7 +125,7 @@ function processTimeAgo(selector?: string) {
   $(selector + ' .dw-ago-ltr:not(.' + timeDoneClass + ')').each(function() {
     var $this = $(this);
     var isoDate = $this.text();
-    var then = moment(isoDate).valueOf(); // or exclude Moment from default JS bundle? [6KFW02]
+    var then = debiki2['isoDateStringToMillis'](isoDate); // typescript compilation error without []
     var now = Date.now();
     var durationLetter = debiki.prettyLetterDuration(then, now);
     $this.text(durationLetter);
@@ -133,8 +135,10 @@ function processTimeAgo(selector?: string) {
     $this.addClass(timeDoneClass);
   });
 
+  // This no longer works, here in slim-bundle.js, because moment.js moved to more-bundle.js [E5F29V]
   // & all exact timestamps (end with -exact).
   // Result: e.g. "Yesterday 12:59 am", or, if today, only "13:59".
+  /*
   $(selector + ' .esTimeExact:not(.' + timeDoneClass + ')').each(function() {
     var $this = $(this);
     var isoDate = $this.text();
@@ -155,16 +159,16 @@ function processTimeAgo(selector?: string) {
     $this.addClass(timeDoneClass);
     // But don't add any title tooltip attr, see [85YKW20] above.
   });
+  */
 }
 
+//------------------------------------------------------------------------------
+   }
+//------------------------------------------------------------------------------
 
 //------------------------------------------------------------------------------
    module debiki2.utils {
 //------------------------------------------------------------------------------
-
-export var createComponent = window['createComponent'];
-export var createClassAndFactory = window['createClassAndFactory'];
-export var reactCreateFactory = React['createFactory'];
 
 export function makeMountNode() {
   return $('<div>').appendTo('body')[0];

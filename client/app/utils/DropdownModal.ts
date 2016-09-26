@@ -19,6 +19,9 @@
 /// <reference path="../plain-old-javascript.d.ts" />
 /// <reference path="../prelude.ts" />
 /// <reference path="../model.ts" />
+/// <reference path="../rules.ts" />
+/// <reference path="../widgets.ts" />
+/// <reference path="../utils/react-utils.ts" />
 
 //------------------------------------------------------------------------------
    module debiki2.utils {
@@ -26,9 +29,8 @@
 
 var r = React.DOM;
 var $: JQueryStatic = debiki.internal.$;
-var ReactBootstrap: any = window['ReactBootstrap'];
-var Button = reactCreateFactory(ReactBootstrap.Button);
-var Modal = reactCreateFactory(ReactBootstrap.Modal);
+declare var ReactBootstrap: any;  // lazy loaded
+declare var Modal;                // lazy loaded
 
 
 export var ModalDropdownButton = createComponent({
@@ -94,6 +96,14 @@ export var DropdownModal = createComponent({
     return {};
   },
 
+  componentDidMount: function() {
+    Server.loadMoreScriptsBundle(() => {
+      ReactBootstrap = window['ReactBootstrap'];
+      Modal = reactCreateFactory(ReactBootstrap.Modal);
+      this.setState({ moreBundleLoaded: true });
+    })
+  },
+
   componentDidUpdate: function() {
     if (!this.props.show || !this.refs.content)
       return;
@@ -139,6 +149,9 @@ export var DropdownModal = createComponent({
   },
 
   render: function() {
+    if (!this.state.moreBundleLoaded)
+      return null;
+
     var content;
     if (this.props.show) {
       var closeButton = !this.props.showCloseButton ? null :

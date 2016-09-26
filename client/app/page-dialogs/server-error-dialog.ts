@@ -16,30 +16,14 @@
  */
 
 /// <reference path="../../typedefs/react/react.d.ts" />
-/// <reference path="../prelude.ts" />
-/// <reference path="../utils/react-utils.ts" />
-/// <reference path="../ReactStore.ts" />
-/// <reference path="../Server.ts" />
-
 
 //------------------------------------------------------------------------------
-   module debiki2.pagedialogs {
+   namespace debiki2.pagedialogs {
 //------------------------------------------------------------------------------
 
-var d = { i: debiki.internal, u: debiki.v0.util };
 var r = React.DOM;
-var reactCreateFactory = React['createFactory'];
-var ReactBootstrap: any = window['ReactBootstrap'];
-var Button = reactCreateFactory(ReactBootstrap.Button);
-var Modal = reactCreateFactory(ReactBootstrap.Modal);
-var ModalHeader = reactCreateFactory(ReactBootstrap.ModalHeader);
-var ModalTitle = reactCreateFactory(ReactBootstrap.ModalTitle);
-var ModalBody = reactCreateFactory(ReactBootstrap.ModalBody);
-var ModalFooter = reactCreateFactory(ReactBootstrap.ModalFooter);
-
 
 var serverErrorDialog;
-
 
 export function getServerErrorDialog() {
   if (!serverErrorDialog) {
@@ -92,13 +76,13 @@ var ServerErrorDialog = createComponent({
   },
 
   render: function () {
+    if (!this.state.isOpen)
+      return null;
+
     var title: string;
     var message: string;
 
-    if (!this.state.isOpen) {
-      // Do nothing.
-    }
-    else if (this.state.clientErrorMessage) {
+    if (this.state.clientErrorMessage) {
       title = "Error";
       message = this.state.clientErrorMessage;
       if (debiki2.utils.isMouseDetected) {
@@ -143,14 +127,22 @@ var ServerErrorDialog = createComponent({
 
     message = this.state.dialogMessagePrefix + message;
 
+    // React-Bootstrap migth not yet have been loaded, so Modal, ModalBody etc components might
+    // not yet be available, and we'll have to create all modal dialog elems ourselves here
+    // manually.
     return (
-      Modal({ show: this.state.isOpen, onHide: this.close, dialogClassName: 'dw-server-error',
-          bsSize: 'large' },
-        ModalHeader({}, ModalTitle({}, title)),
-        ModalBody({},
-          r.div({ style: { whiteSpace: 'pre-wrap', fontFamily: 'monospace' }}, message)),
-        ModalFooter({},
-          Button({ onClick: this.close }, 'Close'))));
+      r.div({},
+        r.div({ className: 'modal-backdrop fade in', style: { opacity: 0.5 } }),
+        r.div({ role: 'dialog', tabindex: -1, className: 'fade in modal',
+              style: { display: 'block' }},
+          r.div({ className: 'modal-dialog dw-server-error' },
+            r.div({ className: 'modal-content', role: 'document' },
+              r.div({ className: 'modal-header' },
+                r.h4({ className: 'modal-title' }, title)),
+              r.div({ className: 'modal-body' },
+                r.div({ style: { whiteSpace: 'pre-wrap', fontFamily: 'monospace' }}, message)),
+              r.div({ className: 'modal-footer' },
+                PrimaryButton({ onClick: this.close }, "Close")))))));
   }
 });
 

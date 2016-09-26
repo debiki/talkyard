@@ -23,22 +23,15 @@
 /// <reference path="../utils/react-utils.ts" />
 /// <reference path="../utils/DropdownModal.ts" />
 /// <reference path="../util/ExplainingDropdown.ts" />
-/// <reference path="../dialogs.ts" />
 /// <reference path="../help/help.ts" />
-/// <reference path="../editor/title-editor.ts" />
-/// <reference path="../edit-history/edit-history-dialog.ts" />
 /// <reference path="../topbar/topbar.ts" />
 /// <reference path="../page-methods.ts" />
-/// <reference path="../page-dialogs/wikify-dialog.ts" />
-/// <reference path="../page-dialogs/delete-post-dialog.ts" />
-/// <reference path="../page-dialogs/move-posts-dialog.ts" />
-/// <reference path="../page-dialogs/see-wrench-dialog.ts" />
-/// <reference path="../page-dialogs/share-dialog.ts" />
-/// <reference path="../page-dialogs/tags-dialog.ts" />
 /// <reference path="../help/help.ts" />
 /// <reference path="../model.ts" />
+/// <reference path="../rules.ts" />
 /// <reference path="../Server.ts" />
 /// <reference path="chat.ts" />
+/// <reference path="../more-bundle-not-yet-loaded.ts" />
 
 //------------------------------------------------------------------------------
    module debiki2.page {
@@ -46,8 +39,6 @@
 
 var React = window['React']; // TypeScript file doesn't work
 var r = React.DOM;
-var $: JQueryStatic = debiki.internal.$;
-var ReactBootstrap: any = window['ReactBootstrap'];
 var DropdownModal = utils.DropdownModal;
 var ExplainingListItem = util.ExplainingListItem;
 
@@ -471,17 +462,17 @@ var MoreDropdownModal = createComponent({
   },
 
   openTagsDialog: function(event) {
-    pagedialogs.openTagsDialog(this.state.store, this.state.post);
+    morebundle.openTagsDialog(this.state.store, this.state.post);
     this.close();
   },
 
   onDeleteClick: function(event) {
-    debiki2.pagedialogs.getDeletePostDialog().open(this.state.post);
+    morebundle.openDeletePostDialog(this.state.post);
     this.close();
   },
 
   onWikifyClick: function(event) {
-    debiki2.pagedialogs.getWikifyDialog().open(this.state.post);
+    morebundle.openWikifyDialog(this.state.post);
     this.close();
   },
 
@@ -503,7 +494,7 @@ var MoreDropdownModal = createComponent({
     this.close();
   }, */
   onMoveClick: function(event) {
-    pagedialogs.openMovePostsDialog(this.state.store, this.state.post, this.close);
+    morebundle.openMovePostsDialog(this.state.store, this.state.post, this.close);
   },
   onSeeWrenchClick: function(event) {
     debiki2.pagedialogs.openSeeWrenchDialog();
@@ -656,14 +647,13 @@ var MoreDropdownModal = createComponent({
 
 function flagPost(post: Post) {
   loginIfNeededThen('LoginToFlag', post.postId, () => {
-    debiki2.getFlagDialog().open(post.postId);
+    morebundle.openFlagDialog(post.postId);
   });
 }
 
 
-function loginIfNeededThen(loginToWhat, postNr: PostNr, callback) {
-  login.loginIfNeeded(
-    loginToWhat, debiki.internal.makeReturnToPostUrlForVerifEmail(postNr), callback);
+function loginIfNeededThen(loginToWhat, postNr: PostNr, success: () => void) {
+  morebundle.loginIfNeededReturnToPost(loginToWhat, postNr, success);
 }
 
 //------------------------------------------------------------------------------

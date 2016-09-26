@@ -32,7 +32,9 @@ function trunc(number) {
 // ------- Time utils
 
 
+// Returns e.g. "4 days ago" or "22 hours ago" or "3 years ago".
 // `then' and `now' can be Date:s or milliseconds.
+//
 debiki.prettyDuration = function(then, now) {  // i18n
   var thenMillis = then.getTime ? then.getTime() : then;
   var nowMillis = now.getTime ? now.getTime() : now;
@@ -41,16 +43,13 @@ debiki.prettyDuration = function(then, now) {  // i18n
   var minute = second * 60;
   var hour = second * 3600;
   var day = hour * 24;
-  var week = day * 7;
-  var year = day * 365;
-  var month = year / 12;
+  var round = Math.round;
+  if (diff >= 30 * day) return monthDayYear(then);
   // I prefer `30 hours ago' to `1 day ago', but `2 days ago' to `50 hours ago'.
-  if (diff > 2 * year) return trunc(diff / year) +" years ago";
-  if (diff > 2 * month) return trunc(diff / month) +" months ago";
   // Skip weeks, because prettyLetterDuration() skips weeks.
   // if (diff > 2 * week) return trunc(diff / week) +" weeks ago";
-  if (diff > 2 * day) return trunc(diff / day) +" days ago";
-  if (diff > 2 * hour) return trunc(diff / hour) +" hours ago";
+  if (diff >= 40 * hour) return round(diff / day) +" days ago";
+  if (diff >= 100 * minute) return round(diff / hour) +" hours ago";
   if (diff > 2 * minute) return trunc(diff / minute) +" minutes ago";
   if (diff > 1 * minute) return "1 minute ago";
   if (diff > 2 * second) return trunc(diff / second) +" seconds ago";
@@ -74,11 +73,7 @@ debiki.prettyLetterDuration = function(then, now) {  // i18n
   // Don't use 'm' for months, because it's used for 'minutes' already. Also, dates and
   // years like "Jan 4, 2015" are more user friendly than 17m (months)?
   if (diff > month) {
-    var m = moment(then);
-    if (m.year() !== debiki.currentYear) {
-      return m.format('ll'); // e.g. "Sep 4 2015"
-    }
-    return m.format('MMM D'); // e.g. "Sep 4"
+    return monthDayYear(then);
   }
   // Skip "w" (weeks), it makes me confused.
   if (diff >= 2 * day) return trunc(diff / day) + "d";
@@ -89,6 +84,10 @@ debiki.prettyLetterDuration = function(then, now) {  // i18n
 };
 
 
+function monthDayYear(when) {
+  var date = _.isNumber(when) ? new Date(when) : when;
+  return debiki2.prettyMonthDayYear(date, date.getFullYear() !== debiki.currentYear);
+}
 
 // ------- Bug functions
 
