@@ -22,11 +22,15 @@ Run tests like so:
 
 1. In yet another shell, run the test code:
 
-        scripts/wdio target/e2e/wdio.conf.js --skip3rdPartyDependentTests
-        scripts/wdio target/e2e/wdio.conf.js --skip3  # shorthand for the line above
+        scripts/wdio target/e2e/wdio.conf.js
 
-        # Or if you have configured Google and Facebook etc OpenAuth test accounts:
-        scripts/wdio target/e2e/wdio.conf.js --secretsPath ../conf/e2e-secrets.json
+        # Or if you have configured password for third party stuff, like
+        # Google and Facebook OpenAuth test accounts:
+        scripts/wdio target/e2e/wdio.conf.js -3 --secretsPath /your/path/to/e2e-secrets.json
+
+        # To run all tests:
+        scripts/run-e2e-tests.sh        # in Chrome only
+        scripts/run-e2e-tests.sh --all  # in all browsers
 
     You can run only files that match a certain pattern. The following runs
     all test files matching `*link*`, namely `client/test/e2e/specs/all-links.tests.ts`:
@@ -64,8 +68,12 @@ On Linux, do this: (other platforms? no idea)
     # (Also, specify a not-super-small screen size, otherwise tests will fail.)
     xvfb-run -s '-screen 0 1280x1024x8' node_modules/selenium-standalone/bin/selenium-standalone start
 
+    # There's a script for that:
+    scripts/start-invisible-selenium.sh
+
     # Run some tests, e.g.:
-    scripts/wdio target/e2e/wdio.conf.js --skip3 --only create-site
+    scripts/wdio target/e2e/wdio.conf.js --only create-site
+    scripts/run-e2e-tests.sh --all  #  -3 --secretsPath /your/path/to/e2e-secrets.json
 
 
 ### Typescript
