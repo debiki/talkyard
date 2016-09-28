@@ -38,7 +38,8 @@ describe('/-/create-site  @createsite', function() {
     pages.createSite.fillInFieldsAndSubmit(data);
     browser.click('#e2eLogin');
     pages.loginDialog.createPasswordAccount(data);
-    var email = server.getLastEmailSenTo(data.email);
+    var siteId = pages.getSiteId();
+    var email = server.getLastEmailSenTo(siteId, data.email);
     var link = utils.findFirstLinkToUrlIn(
         data.origin + '/-/login-password-confirm-email', email.bodyHtmlText);
     browser.go(link);

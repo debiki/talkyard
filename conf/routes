@@ -202,7 +202,7 @@ GET  /-/ping-database-and-cache controllers.DebugTestController.pingDatabaseAndC
 GET  /-/origin                  controllers.DebugTestController.origin
 GET  /-/are-scripts-ready       controllers.DebugTestController.areScriptsReady
 GET  /-/create-deadlock         controllers.DebugTestController.createDeadlock
-GET  /-/last-e2e-test-email     controllers.DebugTestController.showLastE2eTestEmailSent(sentTo)
+GET  /-/last-e2e-test-email     controllers.DebugTestController.showLastE2eTestEmailSent(siteId, sentTo)
 GET   /-/site/:siteId/*file     controllers.SiteAssetBundlesController.customAsset(siteId, file)
 GET   /-/site/*file             controllers.SiteAssetBundlesController.at(file)
 

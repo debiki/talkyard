@@ -57,7 +57,8 @@ var NewPasswordPage = createClassAndFactory({
         Input({ type: 'hidden', name: 'emailId', value: this.props.resetPasswordEmailId }),
         oldPasswordInput,
         NewPasswordInput({ newPasswordData: this.props, setPasswordOk: this.setPasswordOk }),
-        InputTypeSubmit({ disabled: !this.state.passwordOk, value: "Submit" })));
+        InputTypeSubmit({ disabled: !this.state.passwordOk, value: "Submit",
+            id: 'e2eSubmit' })));
   }
 });
 

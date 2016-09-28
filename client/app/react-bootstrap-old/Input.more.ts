@@ -25,6 +25,10 @@ export var Input = createComponent({
     return ReactDOM.findDOMNode(this.refs.theInput)['checked'];
   },
 
+  getInputDOMNode: function() {
+    return ReactDOM.findDOMNode(this.refs.theInput);
+  },
+
   render: function() {
     var props = this.props;
     var childProps = _.clone(props);

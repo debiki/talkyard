@@ -39,6 +39,7 @@ function runAllEndToEndTests {
   runEndToEndTest scripts/wdio target/e2e/wdio.3chrome.conf.js  --browser $browser --only categories.3browsers $args
   runEndToEndTest scripts/wdio target/e2e/wdio.3chrome.conf.js  --browser $browser --only private-chat.3browsers $args
   runEndToEndTest scripts/wdio target/e2e/wdio.3chrome.conf.js  --browser $browser --only settings-login-to-read.3browsers $args
+  runEndToEndTest scripts/wdio target/e2e/wdio.3chrome.conf.js  --browser $browser --only password-login-reset.2browsers $args
 }
 
 

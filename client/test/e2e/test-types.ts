@@ -66,6 +66,7 @@ interface Member {
   emailAddress: string;
   emailVerifiedAtMs?: number;
   passwordHash: string;
+  password: string;
   isOwner?: boolean;
   isAdmin?: boolean;
   isModerator?: boolean;

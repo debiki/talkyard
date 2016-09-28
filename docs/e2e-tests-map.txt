@@ -28,7 +28,9 @@ create account -
 login -
   guest:
   password:
-  forgot password:
+  forgot password -
+    reset it:
+    forgot email address:
   providers -
     google:
     facebook:

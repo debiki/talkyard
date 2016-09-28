@@ -17,14 +17,13 @@
 
 package controllers
 
-import java.lang.management.ManagementFactory
-
 import akka.pattern.ask
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki.{ReactRenderer, RateLimits, Globals}
 import debiki.DebikiHttp._
 import io.efdi.server.http._
+import java.lang.management.ManagementFactory
 import java.{util => ju, io => jio}
 import play.api._
 import play.api.libs.json._
@@ -193,7 +192,13 @@ object DebugTestController extends mvc.Controller {
   }
 
 
-  def showLastE2eTestEmailSent(sentTo: String) = ExceptionAction.async(empty) { request =>
+  def showLastE2eTestEmailSent(siteId: SiteId, sentTo: String) = ExceptionAction.async(empty) {
+        request =>
+    SECURITY // COULD add and check an e2e password. Or rate limits.
+
+    if (!Email.isE2eTestEmailAddress(sentTo))
+      throwForbidden("DwEZ4GKE7", "Not an end-to-end test email address")
+
     val timeout = request.queryString.get("timeoutMs") match {
       case Some(values: Seq[String]) if values.nonEmpty =>
         val value = Try(values.head.toInt) getOrElse throwBadArgument("DwE4WK55", "timeoutMs")
@@ -203,14 +208,11 @@ object DebugTestController extends mvc.Controller {
         5000 millis
     }
 
-    SECURITY // COULD add and check an e2e password.
-    if (!sentTo.startsWith("e2e-test--") || !sentTo.endsWith("@example.com"))
-      throwForbidden("DwE5KFW2", "Not an end-to-end test email address")
-
     val futureReply: Future[Any] =
-      Globals.endToEndTestMailer.ask("GetEndToEndTestEmail", sentTo)(akka.util.Timeout(timeout))
+      Globals.endToEndTestMailer.ask(
+          "GetEndToEndTestEmail", s"$siteId:$sentTo")(akka.util.Timeout(timeout))
 
-    futureReply.flatMap({
+    val result: Future[p.mvc.Result] = futureReply.flatMap({
       case futureEmail: Future[Email] =>
         val scheduler = p.libs.concurrent.Akka.system.scheduler
         val futureTimeout = akka.pattern.after(timeout, scheduler)(
@@ -237,6 +239,8 @@ object DebugTestController extends mvc.Controller {
       case throwable: Throwable =>
         InternalErrorResult("DwE4KFE2", "Timeout waiting for email: " + throwable.toString)
     })
+
+    result
   }
 
 }

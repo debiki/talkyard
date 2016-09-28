@@ -34,6 +34,11 @@ function isTheOnly(browserName) {
   return browserName === 'onlyOneBrowser';
 }
 
+function browserNamePrefix(browserName): string {
+  if (isTheOnly(browserName)) return '';
+  return browserName + ': ';
+}
+
 function allBrowserValues(result) {
   var resultByBrowser = byBrowser(result);
   return _.values(resultByBrowser);
@@ -44,14 +49,25 @@ function addCommandsToBrowser(browser) {
 
   browser.addCommand('waitUntilLoadingOverlayGone', function() {
     browser.waitUntil(function () {
-      return !browser.isVisible('#theLoadingOverlay');
+      var resultsByBrowser = browser.isVisible('#theLoadingOverlay');
+      var values = allBrowserValues(resultsByBrowser);
+      return _.every(values, x => !x );
     });
   });
 
   browser.addCommand('waitUntilModalGone', function() {
     browser.waitUntil(function () {
-      return !browser.isVisible('.modal-backdrop') && // makes the background darker
-             !browser.isVisible('.fade.modal');     // full window block, with the dialog inside
+      // Check for the modal backdrop (it makes the stuff not in the dialog darker).
+      var resultsByBrowser = browser.isVisible('.modal-backdrop');
+      var values = allBrowserValues(resultsByBrowser);
+      var anyVisible = _.some(values, x => x);
+      if (anyVisible)
+        return false;
+      // Check for the block containing the modal itself.
+      resultsByBrowser = browser.isVisible('.fade.modal');
+      values = allBrowserValues(resultsByBrowser);
+      anyVisible = _.some(values, x => x);
+      return !anyVisible;
     });
   });
 
@@ -94,9 +110,18 @@ function addCommandsToBrowser(browser) {
     browser.waitForEnabled(selector);
     browser.waitUntilLoadingOverlayGone();
     if (!selector.startsWith('#')) {
-      var elems = browser.elements(selector);
-      assert.equal(count(elems), 1, "Too many elems to click: " + count(elems) +
-        " elems matches selector: " + selector + " [EsE5JKP82]");
+      var errors = '';
+      var length = 1;
+      var byBrowserResults = byBrowser(browser.elements(selector));
+      _.forOwn(byBrowserResults, (result, browserName) => {
+        var elems = result.value;
+        if (elems.length !== 1) {
+          length = elems.length;
+          errors += browserNamePrefix(browserName) + "Bad num elems to click: " + count(elems) +
+              ", should be 1. Elems matches selector: " + selector + " [EsE5JKP82]\n";
+        }
+      });
+      assert.equal(length, 1, errors);
     }
     browser.click(selector);
   });

@@ -115,8 +115,9 @@ function importSiteData(siteData: SiteData): IdAddress {
 }
 
 
-function getLastEmailSenTo(email: string): EmailSubjectBody {
-  var response = getOrDie(settings.mainSiteOrigin + '/-/last-e2e-test-email?sentTo=' + email);
+function getLastEmailSenTo(siteId: SiteId, email: string): EmailSubjectBody {
+  var response = getOrDie(settings.mainSiteOrigin + '/-/last-e2e-test-email?sentTo=' + email +
+    '&siteId=' + siteId);
   return JSON.parse(response.body);
 }
 

@@ -28,7 +28,7 @@ import java.{util => ju}
 import play.{api => p}
 import play.api.Play.current
 import scala.collection.mutable
-import scala.concurrent.{Promise, Future}
+import scala.concurrent.{Future, Promise}
 
 
 object Mailer {
@@ -134,14 +134,14 @@ class Mailer(
   def receive = {
     case (email: Email, tenantId: String) =>
       sendEmail(email, tenantId)
-    case ("GetEndToEndTestEmail", address: String) =>
-      e2eTestEmails.get(address) match {
+    case ("GetEndToEndTestEmail", siteIdColonEmailAddress: String) =>
+      e2eTestEmails.get(siteIdColonEmailAddress) match {
         case Some(promise) =>
           sender() ! promise.future
         case None =>
           SECURITY // DoS attack: don't add infinitely many promises in prod mode
           val newPromise = Promise[Email]()
-          e2eTestEmails.put(address, newPromise)
+          e2eTestEmails.put(siteIdColonEmailAddress, newPromise)
           sender() ! newPromise.future
       }
     /*
@@ -217,11 +217,21 @@ class Mailer(
   def fakeSendAndRememberForE2eTests(email: Email, siteDao: SiteDao) {
     play.api.Logger.debug(i"""
       |Fake-sending email (only logging it to the console): [EsM6LK4J2]
-      |  $email
+      |————————————————————————————————————————————————————————————
+      |$email
+      |————————————————————————————————————————————————————————————
       |""")
     val emailSent = email.copy(sentOn = Some(new ju.Date))
     siteDao.updateSentEmail(emailSent)
-    e2eTestEmails.get(email.sentTo) match {
+    if (Email.isE2eTestEmailAddress(email.sentTo)) {
+      rememberE2eTestEmail(email, siteDao)
+    }
+  }
+
+
+  def rememberE2eTestEmail(email: Email, siteDao: SiteDao) {
+    val siteIdColonEmailAddress = s"${siteDao.siteId}:${email.sentTo}"
+    e2eTestEmails.get(siteIdColonEmailAddress) match {
       case Some(promise: Promise[Email]) =>
         if (promise.isCompleted) {
           p.Logger.debug("Promise already completed, why? [DwM2PK3] Any email: " +
@@ -232,7 +242,7 @@ class Mailer(
         }
       case None =>
         SECURITY // DoS attack: don't remember infinitely many addresses in prod mode
-        e2eTestEmails.put(email.sentTo, Promise.successful(email))
+        e2eTestEmails.put(siteIdColonEmailAddress, Promise.successful(email))
     }
   }
 

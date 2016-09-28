@@ -60,6 +60,8 @@ esPA            = post actions (actually located outside the post (esP) there fo
 
 esRT            = review task
 
+esRPP           = reset password page
+
 esTB            = top bar (with the breadcrump and login & signup, or user name)
 
 esTs            = page/post tags

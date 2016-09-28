@@ -88,6 +88,7 @@ export function getLoginDialog() {   // also called from Scala template
 
 
 var LoginDialog = createClassAndFactory({
+  displayName: 'LoginDialog',
   mixins: [debiki2.StoreListenerMixin],
 
   getInitialState: function () {
@@ -209,7 +210,7 @@ var LoginDialog = createClassAndFactory({
           ModalTitle({ id: 'e2eLoginDialogTitle' }, title));
 
     var modalFooter = state.preventClose ? ModalFooter({}) :
-        ModalFooter({}, Button({ onClick: this.close }, "Cancel"));
+        ModalFooter({}, Button({ onClick: this.close, id: 'e2eLD_Cancel' }, "Cancel"));
 
     return (
       Modal({ show: state.isOpen, onHide: this.close, dialogClassName: 'dw-login-modal' + fade,
@@ -227,6 +228,7 @@ var LoginDialog = createClassAndFactory({
  * in a popup window with no modal dialog around.
  */
 export var LoginDialogContent = createClassAndFactory({
+  displayName: 'LoginDialogContent',
   render: function() {
     var store: Store = this.props.store;
     var loginReason = this.props.loginReason;
@@ -362,6 +364,7 @@ export var LoginDialogContent = createClassAndFactory({
 
 
 var OpenAuthButton = createClassAndFactory({
+  displayName: 'OpenAuthButton',
   onClick: function() {
     var props = this.props;
     // Any new user wouldn't be granted access to the admin page, so don't allow
@@ -414,6 +417,7 @@ function submitOpenIdLoginForm(openidIdentifier)
 
 
 var GuestLoginDialogContent = createClassAndFactory({
+  displayName: 'GuestLoginDialogContent',
   getInitialState: function() {
     return {
       okayStatuses: {
@@ -453,6 +457,8 @@ var GuestLoginDialogContent = createClassAndFactory({
 
 
 var PasswordLoginDialogContent = createClassAndFactory({
+  displayName: 'PasswordLoginDialogContent',
+
   getInitialState: function() {
     return {};
   },

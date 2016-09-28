@@ -14,6 +14,16 @@ var logMessage = logAndDie.logMessage;
 function pagesFor(browser) {
   var api = {
 
+    getSiteId: function(): string {
+      var result = browser.execute(function() {
+        return window['debiki'].siteId;
+      });
+      assert.ok(result.state === 'success',
+          "Error getting site id, result.state: " + result.state);
+      return result.value;
+    },
+
+
     createSite: {
       fillInFieldsAndSubmit: function(data) {
         browser.waitAndSetValue('#e2eEmail', data.email);
@@ -167,11 +177,25 @@ function pagesFor(browser) {
         browser.waitForVisible('#e2eNeedVerifyEmailDialog');
       },
 
-      loginWithPassword: function(data: { username: string, password: string }) {
-        browser.waitAndSetValue('#e2eUsername', data.username);
-        browser.waitAndSetValue('#e2ePassword', data.password);
-        browser.waitAndClick('#e2eSubmit');
+      loginWithPassword: function(username, password?) {
+        // Backw compat
+        if (_.isObject(username)) {
+          password = username.password;
+          username = username.username;
+        }
+        api.loginDialog.tryLogin(username, password);
         browser.waitUntilModalGone();
+      },
+
+      loginButBadPassword: function(username: string, password: string) {
+        api.loginDialog.tryLogin(username, password);
+        browser.waitForVisible('.esLoginDlg_badPwd');
+      },
+
+      tryLogin: function(username: string, password: string) {
+        browser.waitAndSetValue('#e2eUsername', username);
+        browser.waitAndSetValue('#e2ePassword', password);
+        browser.waitAndClick('#e2eSubmit');
       },
 
       loginAsGuest: function(name: string, email?: string) {
@@ -243,8 +267,34 @@ function pagesFor(browser) {
 
         browser.switchBackToFirstTabOrWindow();
       },
+
+      clickResetPasswordSwitchTab: function() {
+        browser.click('.dw-reset-pswd');
+        browser.swithToOtherTabOrWindow();
+        browser.waitForVisible('#e2eRPP_emailI');
+      },
+
+      clickCancel: function() {
+        browser.click('#e2eLD_Cancel');
+        browser.waitUntilModalGone();
+      },
+
+      reopenToClearAnyError: function() {
+        api.loginDialog.clickCancel();
+        api.topbar.clickLogin();
+      },
     },
 
+
+    resetPasswordPage: {
+      fillInAccountOwnerEmailAddress: function(emailAddress: string) {
+        browser.waitAndSetValue('#e2eRPP_emailI', emailAddress);
+      },
+
+      clickSubmit: function() {
+        browser.waitAndClick('#e2eRPP_SubmitB');
+      },
+    },
 
     pageTitle: {
       clickEdit: function() {

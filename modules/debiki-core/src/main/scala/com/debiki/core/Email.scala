@@ -43,6 +43,9 @@ object Email {
       failureText = None)
   }
 
+  def isE2eTestEmailAddress(address: String) =
+    address.startsWith("e2e-test--") && address.endsWith("@example.com")
+
   /**
    * The email id should be a random value, so it cannot be guessed,
    * because it's a key in reset password, unsubscription and create account urls.
