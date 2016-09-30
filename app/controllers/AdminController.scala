@@ -21,7 +21,6 @@ import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki._
 import io.efdi.server.http._
-import java.{util => ju, io => jio}
 import play.api._
 import play.api.mvc.{Action => _, _}
 import play.api.Play.current
@@ -44,6 +43,7 @@ object AdminController extends mvc.Controller {
 
     if (!apiReq.user.exists(_.isStaff)) {
       Ok(views.html.login.loginPopup(
+        SiteTpi(apiReq),
         mode = "LoginToAdministrate",
         serverAddress = s"//${apiReq.host}",
         returnToUrl = apiReq.uri)) as HTML

@@ -272,14 +272,15 @@ export var PostActions = createComponent({
             title: "Like this", onClick: this.onLikeClick });
     }
 
-    var editOwnPostButton = deletedOrCollapsed || !isOwnPost
-        ? null
-        : r.a({ className: 'dw-a dw-a-edit icon-edit', title: "Edit",
+
+    var mayEdit = !deletedOrCollapsed && (isStaff(me) || isOwnPost || (
+          me.isAuthenticated && post.postType === PostType.CommunityWiki));
+    var editButton = !mayEdit ? null :
+        r.a({ className: 'dw-a dw-a-edit icon-edit', title: "Edit",
               onClick: this.onEditClick });
 
-    var link = deletedOrCollapsed
-        ? null
-        : r.a({ className: 'dw-a dw-a-link icon-link', title: "Link to this post",
+    var link = deletedOrCollapsed ? null :
+        r.a({ className: 'dw-a dw-a-link icon-link', title: "Link to this post",
               onClick: this.onLinkClick });
 
     // Build a More... dropdown, but if it would have only one single menu item, inline
@@ -312,7 +313,7 @@ export var PostActions = createComponent({
         flagBtn,
         moreDropdown,
         link,
-        editOwnPostButton,
+        editButton,
         downvotesDropdown,
         likeVoteButton,
         numBurysText,
@@ -460,11 +461,6 @@ var MoreDropdownModal = createComponent({
     this.setState({ isOpen: false });
   },
 
-  onEditClick: function(event) {
-    debiki2.ReactActions.editPostWithNr(this.state.post.postId);
-    this.close();
-  },
-
   onFlagClick: function(event) {
     flagPost(this.state.post);
     this.close();
@@ -528,16 +524,6 @@ var MoreDropdownModal = createComponent({
     var moreLinks = [];
     var isOwnPost = post.authorIdInt === me.userId;
     var isMindMap = store.pageRole === PageRole.MindMap;
-
-    if (!isOwnPost) {
-      var mayEdit = isStaff(me) || (
-        me.isAuthenticated && post.postType === PostType.CommunityWiki);
-      if (mayEdit) {
-        moreLinks.push(
-          r.a({ className: 'dw-a dw-a-edit icon-edit', onClick: this.onEditClick, key: 'ed' },
-            "Edit"));
-      }
-    }
 
     // ----- Report
 

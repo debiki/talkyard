@@ -36,6 +36,7 @@ export var Input = createComponent({
     delete childProps.label;
     delete childProps.children;
     delete childProps.help;
+    delete childProps.addonBefore;
 
     if (props.type === 'select' || props.type === 'textarea') {
       childProps.componentClass = props.type;

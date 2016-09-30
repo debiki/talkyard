@@ -314,13 +314,12 @@ export var LoginDialogContent = createClassAndFactory({
       // Then the user clicked Sign Up explicitly, so need not show a switch-to-login
       // dialog?
     }
-    else if (!store.siteStatus) {
-      // We're probably at /-/login and I haven't added any React store json on this page,
-      // so just hide create-new-account stuff. Currently not needed here anyway. [5PY8FD2]
-    }
     else if (store.siteStatus > SiteStatus.Active) {
       // Right now, don't allow creation of new accounts, for deactivated sites. Later, though,
       // let admins invite new staff, if the site is in ReadAndCleanOnly mode. [5PY8FD2]
+      // BUG currently no store data is included on /-/login, so even if siteStatus > Active,
+      // the "Create account" link inserted below (in `else`) will be added, nevertheless.
+      // SHOULD include store data also in app/views/login/popupMain.scala.html [4PKF02T]
     }
     else {
       // The login dialog opens not only via the Log In button, but also if one clicks

@@ -15,9 +15,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *@
 
-@(mode: String, serverAddress: String, returnToUrl: String)
+@(tpi: debiki.SiteTpi, mode: String, serverAddress: String, returnToUrl: String)
 
-@popupMain(serverAddress) {
+@popupMain(tpi, serverAddress) {
   <!-- views/login/loginPopup.scala.html -->
   <script>
     debiki2.startRemainingReactRoots();

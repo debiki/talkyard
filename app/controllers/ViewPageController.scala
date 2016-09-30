@@ -78,6 +78,7 @@ object ViewPageController extends mvc.Controller {
 
     if (authenticationRequired && !request.isAuthenticated) {
       return Future.successful(Ok(views.html.login.loginPopup(
+        SiteTpi(request),
         mode = "LoginToAuthenticate",
         serverAddress = s"//${request.host}",
         returnToUrl = request.uri)) as HTML)

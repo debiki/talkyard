@@ -20,7 +20,7 @@ package controllers
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki.DebikiHttp._
-import debiki.Globals
+import debiki.{Globals, SiteTpi}
 import io.efdi.server.http._
 import java.{util => ju}
 import play.api._
@@ -79,8 +79,9 @@ object LoginController extends mvc.Controller {
 
     dieIfAssetsMissingIfDevTest()
     Ok(views.html.login.loginPopup(
+      SiteTpi(apiReq),
       mode = loginReason,
-      serverAddress = s"//${apiReq.host}",
+      serverAddress = s"//${apiReq.host}",  // try to remove
       returnToUrl = apiReq.origin + path)) as HTML
   }
 
@@ -90,10 +91,11 @@ object LoginController extends mvc.Controller {
     * iframes — only the iframe would be disabled by the modal dialog, but not
     * the rest of the page.
     */
-  def showLoginPopup(mode: String, returnToUrl: String) = ExceptionAction(empty) { request =>
+  def showLoginPopup(mode: String, returnToUrl: String) = GetActionAllowAnyone { request =>
     Ok(views.html.login.loginPopup(
+      SiteTpi(request),
       mode = mode,
-      serverAddress = s"//${request.host}",
+      serverAddress = s"//${request.host}",  // try to remove
       returnToUrl = returnToUrl)) as HTML
   }
 

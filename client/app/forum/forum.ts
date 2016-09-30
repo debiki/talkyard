@@ -1071,7 +1071,7 @@ var TopicRow = createComponent({
     // We use a table layout, only for wide screens, because table columns = spacy.
     if (this.props.inTable) return (
       r.tr({ className: 'esForum_topics_topic e2eF_T' },
-        r.td({ className: 'dw-tpc-title' },
+        r.td({ className: 'dw-tpc-title e2eTopicTitle' },
           makeTitle(topic, anyPinIconClass),
           excerptIfPinned),
         r.td({}, categoryName),
@@ -1081,7 +1081,7 @@ var TopicRow = createComponent({
         // skip for now:  r.td({ className: 'num dw-tpc-feelings' }, feelings)));  [8PKY25]
     else return (
       r.li({ className: 'esF_TsL_T e2eF_T' },
-        r.div({ className: 'esF_TsL_T_Title' },
+        r.div({ className: 'esF_TsL_T_Title e2eTopicTitle' },
           makeTitle(topic, anyPinIconClass)),
         r.div({ className: 'esF_TsL_T_NumRepls' },
           topic.numPosts - 1, r.span({ className: 'icon-comment-empty' })),

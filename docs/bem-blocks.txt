@@ -20,6 +20,8 @@ esCB            = context bar (the right sidebar)
 
 esE             = The editor
 
+esEID           = Edit intro dialog
+
 esF             = the forum main page, incl sort & filter buttons, and topic list and category list
 esF_BB          = forum button bar: sort & filter buttons
 esF_TsT         = forum topic list, COULD rename Ts_... below to TsT...

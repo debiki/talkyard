@@ -28,13 +28,15 @@ settings.mainSiteOrigin = settings.scheme + '://' + settings.host;
 settings.newSiteDomain = settings.newSiteDomain || settings.host;
 
 settings.debug = args.debug || args.d;
+settings.debugBefore = args.debugBefore || args.db;
 settings.debugAfterwards = args.debugAfterwards || args.da;
 
 // (The default 10 seconds timeout is not enough. When a fresh Docker JVM & Play Framework
 // container is started for the very first time, it's rather slow — it takes 5-10 seconds
 // for Nashorn to compile all JS,/ that could be why. Or some other Java JIT compilation?
 // Whatever. Wait 30 seconds by default.)
-settings.waitforTimeout = settings.debugAfterwards || args.noTimeout || args.nt ? 2147483647 : 30*1000;
+settings.waitforTimeout =
+    settings.debugAfterwards || args.noTimeout || args.nt ? 2147483647 : 30*1000;
 
 settings.browserName = 'chrome';
 if (args.ff) settings.browserName = 'firefox';

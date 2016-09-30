@@ -14,6 +14,7 @@ interface TestSettings {
   mainSiteOrigin: string;
   newSiteDomain: string;
   waitforTimeout: string;
+  debugBefore: boolean;
   debugAfterwards: boolean;
   include3rdPartyDependentTests?: boolean;
   grep: string;

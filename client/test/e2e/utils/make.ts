@@ -19,7 +19,7 @@ var emptySite: SiteData = {
   meta: {
     id: null,
     localHostname: null,
-    creatorEmailAddress: "e2e-test-owner@ex.com",
+    creatorEmailAddress: "e2e-test--owner@example.com",
     status: 2,
     createdAtMs: DefaultCreatedAtMs,
   },
@@ -57,10 +57,10 @@ var make = {
       username: "owen_owner",
       fullName: "Owen Owner",
       createdAtMs: DefaultCreatedAtMs,
-      emailAddress: "owen-owner@ex.com",
+      emailAddress: "e2e-test--owen-owner@example.com",
       emailVerifiedAtMs: DefaultCreatedAtMs,
-      passwordHash: "cleartext:publicOwen",
-      password: "publicOwen",
+      passwordHash: "cleartext:publicOwen123",
+      password: "publicOwen123",
       isOwner: true,
       isAdmin: true,
     };
@@ -74,8 +74,8 @@ var make = {
       createdAtMs: DefaultCreatedAtMs,
       emailAddress: "admin-adam@ex.com",
       emailVerifiedAtMs: DefaultCreatedAtMs,
-      passwordHash: "cleartext:publicAdam",
-      password: "publicAdam",
+      passwordHash: "cleartext:publicAdam123",
+      password: "publicAdam123",
       isAdmin: true,
     };
   },
@@ -88,8 +88,8 @@ var make = {
       createdAtMs: DefaultCreatedAtMs,
       emailAddress: "admin-alice@ex.com",
       emailVerifiedAtMs: DefaultCreatedAtMs,
-      passwordHash: "cleartext:publicAlice",
-      password: "publicAlice",
+      passwordHash: "cleartext:publicAlice123",
+      password: "publicAlice123",
       isAdmin: true,
     };
   },
@@ -102,8 +102,8 @@ var make = {
       createdAtMs: DefaultCreatedAtMs,
       emailAddress: "mod-modya@ex.com",
       emailVerifiedAtMs: DefaultCreatedAtMs,
-      passwordHash: "cleartext:publicModya",
-      password: "publicModya",
+      passwordHash: "cleartext:publicModya123",
+      password: "publicModya123",
       isModerator: true,
     };
   },
@@ -116,8 +116,8 @@ var make = {
       createdAtMs: DefaultCreatedAtMs,
       emailAddress: "mod-mons@ex.com",
       emailVerifiedAtMs: DefaultCreatedAtMs,
-      passwordHash: "cleartext:publicMons",
-      password: "publicMons",
+      passwordHash: "cleartext:publicMons123",
+      password: "publicMons123",
       isModerator: true,
     };
   },
@@ -128,10 +128,10 @@ var make = {
       username: "maria",
       fullName: "Maria",
       createdAtMs: DefaultCreatedAtMs,
-      emailAddress: "maria@ex.com",
+      emailAddress: "e2e-test--maria@example.com",
       emailVerifiedAtMs: DefaultCreatedAtMs,
-      passwordHash: "cleartext:publicMaria",
-      password: "publicMaria",
+      passwordHash: "cleartext:publicMaria123",
+      password: "publicMaria123",
     };
   },
 
@@ -143,8 +143,8 @@ var make = {
       createdAtMs: DefaultCreatedAtMs,
       emailAddress: "e2e-test--michael@example.com",
       emailVerifiedAtMs: DefaultCreatedAtMs,
-      passwordHash: "cleartext:publicMichael",
-      password: "publicMichael",
+      passwordHash: "cleartext:publicMichael123",
+      password: "publicMichael123",
     };
   },
 
@@ -156,8 +156,8 @@ var make = {
       createdAtMs: DefaultCreatedAtMs,
       emailAddress: "mallory@ex.com",
       emailVerifiedAtMs: DefaultCreatedAtMs,
-      passwordHash: "cleartext:publicMallory",
-      password: "publicMallory",
+      passwordHash: "cleartext:publicMallory123",
+      password: "publicMallory123",
     };
   },
 

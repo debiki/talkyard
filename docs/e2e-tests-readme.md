@@ -72,7 +72,7 @@ On Linux, do this: (other platforms? no idea)
     scripts/start-invisible-selenium.sh
 
     # Run some tests, e.g.:
-    scripts/wdio target/e2e/wdio.conf.js --only create-site
+    scripts/wdio target/e2e/wdio.conf.js --only create-site-admin-guide
     scripts/run-e2e-tests.sh --all  #  -3 --secretsPath /your/path/to/e2e-secrets.json
 
 

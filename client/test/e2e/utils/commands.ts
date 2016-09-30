@@ -48,11 +48,7 @@ function allBrowserValues(result) {
 function addCommandsToBrowser(browser) {
 
   browser.addCommand('waitUntilLoadingOverlayGone', function() {
-    browser.waitUntil(function () {
-      var resultsByBrowser = browser.isVisible('#theLoadingOverlay');
-      var values = allBrowserValues(resultsByBrowser);
-      return _.every(values, x => !x );
-    });
+    browser.waitUntilGone('#theLoadingOverlay');
   });
 
   browser.addCommand('waitUntilModalGone', function() {
@@ -71,6 +67,13 @@ function addCommandsToBrowser(browser) {
     });
   });
 
+  browser.addCommand('waitUntilGone', function(what) {
+    browser.waitUntil(function () {
+      var resultsByBrowser = browser.isVisible(what);
+      var values = allBrowserValues(resultsByBrowser);
+      return _.every(values, x => !x );
+    });
+  });
 
   browser.addCommand('waitForAtLeast', function(num, selector) {
     browser.waitUntil(function () {
@@ -222,6 +225,7 @@ function addCommandsToBrowser(browser) {
 
 
   browser.addCommand('waitAndAssertVisibleTextMatches', function(selector, regex) {
+    if (_.isString(regex)) regex = new RegExp(regex);
     var text = browser.waitAndGetVisibleText(selector);
     assert(regex.test(text), "'Elem selected by " + selector + "' didn't match " + regex.toString() +
       ", actual text: '" + text + "'");
@@ -336,6 +340,14 @@ function addCommandsToBrowser(browser) {
 
   browser.addCommand('disableRateLimits', function() {
     browser.setCookie({ name: 'esCoE2eTestPassword', value: settings.e2eTestPassword });
+  });
+
+
+  browser.addCommand('perhapsDebugBefore', function(selector, regex) {
+    if (settings.debugBefore) {
+      console.log("*** Paused. Now you can connect a debugger. ***");
+      browser.debug();
+    }
   });
 
 

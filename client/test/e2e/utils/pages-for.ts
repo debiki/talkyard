@@ -46,7 +46,7 @@ function pagesFor(browser) {
         // Button gone, I'll add it back if there'll be Blog & Wiki too.
         // browser.waitAndClick('#e2eCreateForum');
         browser.pause(200); // [e2erace] otherwise it won't find the next input, in the
-                            // create-site @facebook test
+                            // create-site-all-logins @facebook test
         browser.waitAndSetValue('input[type="text"]', forumTitle);
         browser.waitAndClick('#e2eDoCreateForum');
         var actualTitle = browser.waitAndGetVisibleText('h1.dw-p-ttl');
@@ -74,12 +74,25 @@ function pagesFor(browser) {
           browser.waitUntilModalGone();
           browser.waitForVisible('.esTopbar_logIn');
         }
-      }
+      },
+
+      clickGoToAdmin: function() {
+        browser.rememberCurrentUrl();
+        browser.waitAndClick('.esMyMenu');
+        browser.waitAndClick('.esMyMenu_admin a');
+        browser.waitForNewUrl();
+      },
     },
 
 
     watchbar: {
       titleSelector: '.esWB_T_Title',
+
+      close: function() {
+        browser.waitForVisible('.esWB_CloseB');
+        browser.click('.esWB_CloseB');
+        browser.waitUntilGone('#esWatchbarColumn');
+      },
 
       assertTopicVisible: function(title: string) {
         browser.waitForVisible(api.watchbar.titleSelector);
@@ -127,6 +140,12 @@ function pagesFor(browser) {
 
 
     contextbar: {
+      close: function() {
+        browser.waitForVisible('.esCtxbar_close');
+        browser.click('.esCtxbar_close');
+        browser.waitUntilGone('#esThisbarColumn');
+      },
+
       clickAddPeople: function() {
         browser.waitAndClick('#e2eCB_AddPeopleB');
         browser.waitForVisible('#e2eAddUsD');
@@ -171,7 +190,7 @@ function pagesFor(browser) {
       createPasswordAccount: function(data) {
         browser.waitAndSetValue('#e2eFullName', data.fullName);
         browser.waitAndSetValue('#e2eUsername', data.username);
-        browser.waitAndSetValue('#e2eEmail', data.email);
+        browser.waitAndSetValue('#e2eEmail', data.email || data.emailAddress);
         browser.waitAndSetValue('#e2ePassword', data.password);
         browser.waitAndClick('#e2eSubmit');
         browser.waitForVisible('#e2eNeedVerifyEmailDialog');
@@ -208,6 +227,10 @@ function pagesFor(browser) {
         browser.waitUntilModalGone();
         var nameInHtml = browser.waitAndGetVisibleText('.esTopbar .esAvtrName_name');
         assert(nameInHtml === name);
+      },
+
+      clickCreateAccountInstead: function() {
+        browser.waitAndClick('.esLD_Switch_L');
       },
 
       createGmailAccount: function(data) {
@@ -307,11 +330,24 @@ function pagesFor(browser) {
 
       save: function() {
         browser.click('.e2eSaveBtn');
+        browser.waitForVisible('.dw-p-ttl h1');
       }
     },
 
 
     forumButtons: {
+      clickEditIntroText: function() {
+        browser.waitAndClick('.esForumIntro_edit');
+        browser.waitAndClick('#e2eEID_EditIntroB');
+        browser.waitUntilModalGone();
+      },
+
+      clickRemoveIntroText: function() {
+        browser.waitAndClick('.esForumIntro_edit');
+        browser.waitAndClick('#e2eEID_RemoveIntroB');
+        browser.waitUntilModalGone();
+      },
+
       clickViewCategories: function() {
         browser.waitAndClick('#e2eViewCategoriesB');
       },
@@ -341,14 +377,31 @@ function pagesFor(browser) {
 
 
     forumTopicList: {
+      titleSelector: '.e2eTopicTitle a',  // <– remove, later: '.esF_TsL_T_Title',  CLEAN_UP
+
       waitUntilKnowsIsEmpty: function() {
         browser.waitForVisible('#e2eF_NoTopics');
-      }
+      },
+
+      goToTopic: function(title: string) {
+        browser.rememberCurrentUrl();
+        browser.waitForThenClickText(api.forumTopicList.titleSelector, title);
+        browser.waitForNewUrl();
+        browser.assertPageTitleMatches(title);
+      },
     },
 
 
-    forumCategories: {
+    forumCategoryList: {
+      categoryNameSelector: '.esForum_cats_cat .forum-title',
 
+      openCategory: function(categoryName: string) {
+        browser.rememberCurrentUrl();
+        browser.waitForThenClickText(api.forumCategoryList.categoryNameSelector, categoryName);
+        browser.waitForNewUrl();
+        browser.waitForVisible('.esForum_catsDrop');
+        browser.assertTextMatches('.esForum_catsDrop', categoryName);
+      },
     },
 
 
@@ -436,6 +489,23 @@ function pagesFor(browser) {
       save: function() {
         browser.click('.e2eSaveBtn');
         browser.waitUntilLoadingOverlayGone();
+      },
+
+      saveWaitForNewPage: function() {
+        browser.rememberCurrentUrl();
+        api.editor.save();
+        browser.waitForNewUrl();
+      }
+    },
+
+
+    topic: {
+      clickEditOrigPost: function() {
+        browser.waitAndClick('.dw-ar-t > .dw-p-as .dw-a-edit');
+      },
+
+      clickHomeNavLink: function() {
+        browser.click("a=Home");
       }
     },
 
@@ -460,8 +530,66 @@ function pagesFor(browser) {
         browser.assertTextMatches('h1', "Admin Area");
       },
 
+      clickLeaveAdminArea: function() {
+        browser.rememberCurrentUrl();
+        browser.waitAndClick('.esTopbar_custom_backToSite');
+        browser.waitForNewUrl();
+      },
+
       goToLoginSettings: function(siteIdOrigin) {
         browser.go(siteIdOrigin + '/-/admin/settings/login');
+      },
+
+      settings: {
+        clickSaveAll: function() {
+          browser.waitAndClick('.esA_SaveBar_SaveAllB');
+        },
+
+        clickLegalNavLink: function() {
+          browser.waitAndClick('#e2eAA_Ss_LegalL');
+          browser.waitForVisible('#e2eAA_Ss_OrgNameTI');
+        },
+
+        clickLoginNavLink: function() {
+          browser.waitAndClick('#e2eAA_Ss_LoginL');
+          browser.waitForVisible('#e2eLoginRequiredCB');
+        },
+
+        clickModerationNavLink: function() {
+          browser.waitAndClick('#e2eAA_Ss_ModL');
+        },
+
+        clickAnalyticsNavLink: function() {
+          browser.waitAndClick('#e2eAA_Ss_AnalyticsL');
+        },
+
+        clickAdvancedNavLink: function() {
+          browser.waitAndClick('#e2eAA_Ss_AdvancedL');
+        },
+
+        clickExperimentalNavLink: function() {
+          browser.waitAndClick('#e2eAA_Ss_ExpL');
+        },
+
+        legal: {
+          editOrgName: function(newName: string) {
+            browser.waitAndSetValue('#e2eAA_Ss_OrgNameTI', newName);
+          },
+
+          editOrgNameShort: function(newName: string) {
+            browser.waitAndSetValue('#e2eAA_Ss_OrgNameShortTI', newName);
+          },
+        },
+
+        login: {
+          clickLoginRequired: function() {
+            browser.waitAndClick('#e2eLoginRequiredCB');
+          },
+
+          clickAllowGuestLogin: function() {
+            browser.waitAndClick('#e2eAllowGuestsCB');
+          },
+        },
       }
     },
 
@@ -474,6 +602,15 @@ function pagesFor(browser) {
       loginAsGuestViaTopbar: function(name: string, email?: string) {
         api.topbar.clickLogin();
         api.loginDialog.loginAsGuest(name, email);
+      },
+
+      closeSidebars: function() {
+        if (browser.isVisible('#esWatchbarColumn')) {
+          api.watchbar.close();
+        }
+        if (browser.isVisible('#esThisbarColumn')) {
+          api.contextbar.close();
+        }
       },
 
       createAndSaveTopic: function(data: { title: string, body: string }) {

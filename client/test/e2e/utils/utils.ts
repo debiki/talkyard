@@ -4,22 +4,22 @@
 import assert = require('assert');
 import settings = require('./settings');
 
-function regexEscapeSlashes(origin) {
+function regexEscapeSlashes(origin: string): string {
   return origin.replace(/\//g, '\\/');
 }
 
 
 var utils = {
 
-  generateTestId: function() {
+  generateTestId: function(): string {
     return Date.now().toString().slice(3, 10);
   },
 
-  makeSiteOrigin: function(localHostname) {
+  makeSiteOrigin: function(localHostname: string): string {
     return settings.scheme + '://' + localHostname + '.' + settings.newSiteDomain;
   },
 
-  makeSiteOriginRegexEscaped: function(localHostname) {
+  makeSiteOriginRegexEscaped: function(localHostname: string): string {
     return settings.scheme + ':\\/\\/' + localHostname + '.' + settings.newSiteDomain;
   },
 
@@ -30,7 +30,7 @@ var utils = {
         '&e2eTestPassword=' + settings.e2eTestPassword + '&testSiteOkDelete=true';
   },
 
-  findFirstLinkToUrlIn: function(url, text) {
+  findFirstLinkToUrlIn: function(url: string, text: string): string {
     var regexString = regexEscapeSlashes(url) + '[^"]*';
     var matches = text.match(new RegExp(regexString));
     if (!matches) {

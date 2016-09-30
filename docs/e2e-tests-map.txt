@@ -11,25 +11,26 @@ might be listed at many places in the tree, if it tests different things.
 
 Run all tests in different resolutions? Desktop, laptop, tablet, mobile.
 
-! reset password
 
 create site & forum -
-  create: create-site.test.js
+  create:  create-site-all-logins
   not too many per ip / email:
   not too many in total:
 
 create account -
-  password:  create-site.test.js
-  google:  create-site.test.js
-  facebook:  create-site.test.js
+  password:  create-site-all-logins
+  google:  create-site-all-logins
+  facebook:  create-site-all-logins
   github:
   twitter:
+  email aready in use:
+  username aready in use:
 
 login -
   guest:
-  password:
+  password:  password-login-reset.2browsers.test.ts
   forgot password -
-    reset it:
+    reset it:   password-login-reset.2browsers.test.ts
     forgot email address:
   providers -
     google:
@@ -74,6 +75,7 @@ emails -
   new reply:
   mention:
   watching:
+  unsubscribe:
 
 getting started guide -
   guide present:
@@ -110,7 +112,7 @@ categories -
 topics -
   go back to forum:
   create topic -
-    in no category:  create-site.test.js, part of create-with-password-account (7UC2)
+    in no category:  create-site-all-logins, part of create-with-password-account (7UC2)
     in a category:
     change category:
     change topic type:
@@ -178,12 +180,12 @@ post -
     send message:
 
 chat -
-  create channel,
-  two users chat:  chat.2browsers.test.ts  (4FE2)
-  add/remove member,
-  join/leave channel:
+  create channel:  chat.2browsers.test.ts  (4FE2)
+    two users chat:         ==
+  add/remove member:  private-chat.3browsers.test.ts
+  join/leave channel:       ==
+  private chat:             ==
   shows last 50 messages:
-  private chat - private-chat.3browsers.test.ts
 
 uploads -  (7KFC2)
   upload profile pic:  (8PK2)
@@ -248,6 +250,14 @@ admin -
 
 superadmin -
   ... lots of stuff ...
+
+deactivate site -
+  read-and-clean only:
+  hidden unless staff:
+  hidden unless admin:
+  active again:
+  deleted:
+  purged:
 
 restart server -
   restart app -

@@ -396,6 +396,7 @@ object LoginWithOpenAuthController extends Controller {
       // site and attempted to login, then a login popup window opens (better than
       // showing a login dialog somewhere inside the iframe). ))
       Ok(views.html.login.showCreateUserDialog(
+        SiteTpi(request),
         serverAddress = s"//${request.host}",
         newUserName = oauthDetails.displayName,
         newUserEmail = oauthDetails.email getOrElse "",

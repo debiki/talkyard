@@ -67,13 +67,13 @@ var EditIntroDialog = createClassAndFactory({
   render: function () {
     var editIntroTextButton =
         r.div({ className: 'form-group' },
-          Button({ onClick: this.editIntroText },
+          Button({ onClick: this.editIntroText, id: 'e2eEID_EditIntroB' },
             r.span({ className: 'icon-edit' }, "Edit intro text")),
           r.div({ className: 'help-block' }, "Opens the editor."));
 
     var removeIntroButton =
         r.div({ className: 'form-group' },
-          Button({ onClick: this.removeIntroText },
+          Button({ onClick: this.removeIntroText, id: 'e2eEID_RemoveIntroB' },
             r.span({ className: 'icon-cancel' }, "Remove intro")),
           r.div({ className: 'help-block' }, "Removes the intro text for everyone. " +
             "You can add it back again, by clicking the edit icon (",

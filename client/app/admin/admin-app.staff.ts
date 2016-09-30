@@ -228,12 +228,12 @@ var SettingsPanelComponent = React.createClass(<any> {
     return (
       r.div({ className: 'esA_Ss' },
         r.ul({ className: 'esAdmin_settings_nav col-sm-2 nav nav-pills nav-stacked' },
-          NavLink({ to: AdminRoot + 'settings/legal' }, "Legal"),
-          NavLink({ to: AdminRoot + 'settings/login' }, "Login"),
-          NavLink({ to: AdminRoot + 'settings/moderation'  }, "Moderation"),
-          NavLink({ to: AdminRoot + 'settings/analytics' }, "Analytics"),
-          NavLink({ to: AdminRoot + 'settings/advanced' }, "Advanced"),
-          NavLink({ to: AdminRoot + 'settings/experimental' }, "Experimental")),
+          NavLink({ to: AdminRoot + 'settings/legal', id: 'e2eAA_Ss_LegalL' }, "Legal"),
+          NavLink({ to: AdminRoot + 'settings/login', id: 'e2eAA_Ss_LoginL' }, "Login"),
+          NavLink({ to: AdminRoot + 'settings/moderation', id: 'e2eAA_Ss_ModL'  }, "Moderation"),
+          NavLink({ to: AdminRoot + 'settings/analytics', id: 'e2eAA_Ss_AnalyticsL' }, "Analytics"),
+          NavLink({ to: AdminRoot + 'settings/advanced', id: 'e2eAA_Ss_AdvancedL' }, "Advanced"),
+          NavLink({ to: AdminRoot + 'settings/experimental', id: 'e2eAA_Ss_ExpL' }, "Experimental")),
         r.div({ className: 'form-horizontal esAdmin_settings col-sm-10' },
           React.cloneElement(this.props.children, this.props))));
   }
@@ -255,7 +255,7 @@ var LoginSettingsComponent = React.createClass(<any> {
 
     return (
       r.div({},
-        Setting2(props, { type: 'checkbox', label: 'Login required', id: 'e2eLoginRequiredCB',
+        Setting2(props, { type: 'checkbox', label: "Login required", id: 'e2eLoginRequiredCB',
           help: r.span({}, "Require authentication to read content. Users must then login " +
             "with password or via ", r.i({}, "for example "), "Google or Facebook, but " +
             "anonymous access is disabled.)"),
@@ -483,7 +483,7 @@ var LegalSettingsComponent = React.createClass(<any> {
 
     return (
       r.div({},
-        Setting2(props, { type: 'text', label: "Organization name",
+        Setting2(props, { type: 'text', label: "Organization name", id: 'e2eAA_Ss_OrgNameTI',
           help: r.span({}, "The full name of the company or organization that runs this site. " +
             "Used on your ", termsOfUseLink, " page. You can use your " +
             "own name if there is no organization."),
@@ -495,6 +495,7 @@ var LegalSettingsComponent = React.createClass(<any> {
         }),
 
         Setting2(props, { type: 'text', label: "Organization name, short",
+          id: 'e2eAA_Ss_OrgNameShortTI',
           help: r.span({}, "An optional short name of the company or organization that " +
             "runs this site — can make your Terms of Use easier to read, if the complete name " +
             "is rather long."),

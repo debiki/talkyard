@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *@
 
-@(serverAddress: String, newUserName: String, newUserEmail: String, authDataCacheKey: String, anyContinueToUrl: Option[String])
+@(tpi: debiki.SiteTpi, serverAddress: String, newUserName: String, newUserEmail: String, authDataCacheKey: String, anyContinueToUrl: Option[String])
 
 @* After OpenAuth or OpenID login authentication has been completed in this login popup window,
  * we here continue by showing a create user dialog. This is for embedded comments pages —
@@ -26,7 +26,7 @@
   anyContinueToUrl getOrElse ""
 }
 
-@popupMain(serverAddress) {
+@popupMain(tpi, serverAddress) {
   <!-- views/login/showCreateUserDialog.scala.html -->
   <script>
     debiki.internal.showCreateUserDialog({

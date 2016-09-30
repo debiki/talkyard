@@ -15,14 +15,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *@
 
-@(serverAddress: String)(content: Html)
+@(tpi: debiki.SiteTpi, serverAddress: String)(content: Html)
 
 @asset(file: String) = @{
   controllers.routes.Assets.at(path = "/public/res", file)
 }
-
-@minMaxCss = @{ "min.css" }
-@minMaxJs = @{ "js" }
 
 <!DOCTYPE html>
 <html class="DW dw-pri">
@@ -30,7 +27,9 @@
   <meta name="viewport" content="width=device-width">
   <meta charset="utf-8"/>
   <link rel="stylesheet" href="@asset("fontello/css/fontello-embedded.css")"/>
-  <link rel="stylesheet" href="@asset(s"styles-bundle.$minMaxCss")"/>
+  <link rel="stylesheet" href="@asset(s"styles-bundle.${tpi.minMaxCss}")"/>
+  @* SHOULD include React store data here. Needed if site deactivated,  [4PKF02T]
+  so we'll know if we should show any "Create account" link or not. *@
   <script>
     var debiki = {
       pageDataFromServer: {},
@@ -39,15 +38,16 @@
         isInLoginWindow: true,
         isInLoginPopup: window.opener && window.opener.debiki,
         serverOrigin: '@serverAddress',
-        assetsUrlPathStart: '@serverAddress@asset("")'
+        assetsUrlPathStart: '@serverAddress@asset("")', @* CLEAN_UP remove? + serverAddress too *@
+        assetUrlPrefix: '@tpi.assetUrlPrefix'
       },
       v0: {
        util: {}
       }
     };
   </script>
-  <script src="@asset(s"slim-bundle.$minMaxJs")"></script>
-  <script src="@asset(s"more-bundle.$minMaxJs")"></script>
+  <script src="@asset(s"slim-bundle.${tpi.minMaxJs}")"></script>
+  <script src="@asset(s"more-bundle.${tpi.minMaxJs}")"></script>
 </head>
 <body>
   <!-- views/login/popupMain.scala.html -->

@@ -8,6 +8,7 @@ import _ = require('lodash');
 import assert = require('assert');
 import settings = require('./settings');
 import logAndDie = require('./log-and-die');
+import utils = require('./utils');
 var logUnusual = logAndDie.logUnusual, die = logAndDie.die, dieIf = logAndDie.dieIf;
 var logMessage = logAndDie.logMessage;
 
@@ -122,9 +123,15 @@ function getLastEmailSenTo(siteId: SiteId, email: string): EmailSubjectBody {
 }
 
 
+function getLastVerifyEmailAddressLinkEmailedTo(siteId: SiteId, emailAddress: string): string {
+  var email = getLastEmailSenTo(siteId, emailAddress);
+  return utils.findFirstLinkToUrlIn('https?://.*/-/login-password-confirm-email', email.bodyHtmlText);
+}
+
 export = {
   initOrDie: initOrDie,
   importSiteData: importSiteData,
   getLastEmailSenTo: getLastEmailSenTo,
+  getLastVerifyEmailAddressLinkEmailedTo: getLastVerifyEmailAddressLinkEmailedTo,
 };
 
