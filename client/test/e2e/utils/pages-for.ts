@@ -196,8 +196,7 @@ function pagesFor(browser) {
         browser.waitForVisible('#e2eNeedVerifyEmailDialog');
       },
 
-      loginWithPassword: function(username, password?) {
-        // Backw compat
+      loginWithPassword: function(username, password?: string) {
         if (_.isObject(username)) {
           password = username.password;
           username = username.username;
@@ -291,8 +290,10 @@ function pagesFor(browser) {
         browser.switchBackToFirstTabOrWindow();
       },
 
-      clickResetPasswordSwitchTab: function() {
+      clickResetPasswordCloseDialogSwitchTab: function() {
         browser.click('.dw-reset-pswd');
+        // The login dialog should close when we click the reset-password link. [5KWE02X]
+        browser.waitUntilModalGone();
         browser.swithToOtherTabOrWindow();
         browser.waitForVisible('#e2eRPP_emailI');
       },
@@ -594,9 +595,11 @@ function pagesFor(browser) {
     },
 
     complex: {
-      loginWithPasswordViaTopbar: function(username: string, password: string) {
+      loginWithPasswordViaTopbar: function(username, password?: string) {
         api.topbar.clickLogin();
-        api.loginDialog.loginWithPassword({ username: username, password: password });
+        var credentials = _.isObject(username) ?  // already { username, password } object
+            username : { username: username, password: password };
+        api.loginDialog.loginWithPassword(credentials);
       },
 
       loginAsGuestViaTopbar: function(name: string, email?: string) {

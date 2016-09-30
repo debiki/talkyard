@@ -17,11 +17,8 @@ declare var browserB: any;
 declare var browserC: any;
 
 var everyone;
-var everyonesPages;
 var owen;
-var owensPages;
 var michael;
-var michaelsPages;
 
 var idAddress;
 var forumTitle = "Reset Pwd Test Forum";
@@ -30,12 +27,10 @@ var forumTitle = "Reset Pwd Test Forum";
 describe("private chat", function() {
 
   it("initialize people", function() {
-    everyone = browser;
-    everyonesPages = pagesFor(everyone);
-    owen = browserA;
-    owensPages = pagesFor(owen);
-    michael = browserB;
-    michaelsPages = pagesFor(michael);
+    browser.perhapsDebugBefore();
+    everyone = _.assign(browser, pagesFor(browser));
+    owen = _.assign(browserA, pagesFor(browserA), make.memberOwenOwner());
+    michael = _.assign(browserB, pagesFor(browserB), make.memberMichael());
   });
 
   it("import a site", function() {
@@ -55,37 +50,37 @@ describe("private chat", function() {
   });
 
   it("They can login with password", function() {
-    owensPages.complex.loginWithPasswordViaTopbar(owen.username, owen.password);
-    michaelsPages.complex.loginWithPasswordViaTopbar(michael.username, michael.password);
+    owen.complex.loginWithPasswordViaTopbar(owen);
+    michael.complex.loginWithPasswordViaTopbar(michael);
   });
 
   it("... and can logout", function() {
-    everyonesPages.topbar.clickLogout();
+    everyone.topbar.clickLogout();
   });
 
   it("... but cannot login with the wrong password (they forgot the real ones)", function() {
-    everyonesPages.topbar.clickLogin();
-    owensPages.loginDialog.loginButBadPassword(owen.username, 'wrong-password');
-    michaelsPages.loginDialog.loginButBadPassword(michael.username, 'even-more-wrong');
+    everyone.topbar.clickLogin();
+    owen.loginDialog.loginButBadPassword(owen.username, 'wrong-password');
+    michael.loginDialog.loginButBadPassword(michael.username, 'even-more-wrong');
   });
 
   it("... and cannot login with the wrong username", function() {
-    everyonesPages.loginDialog.reopenToClearAnyError();
-    owensPages.loginDialog.loginButBadPassword('not_owen', owen.password);
-    michaelsPages.loginDialog.loginButBadPassword('not_michael', michael.password);
+    everyone.loginDialog.reopenToClearAnyError();
+    owen.loginDialog.loginButBadPassword('not_owen', owen.password);
+    michael.loginDialog.loginButBadPassword('not_michael', michael.password);
   });
 
   it("... and cannot login with each other's passwords", function() {
-    everyonesPages.loginDialog.reopenToClearAnyError();
-    owensPages.loginDialog.loginButBadPassword(owen.username, michael.password);
-    michaelsPages.loginDialog.loginButBadPassword(michael.username, owen.password);
+    everyone.loginDialog.reopenToClearAnyError();
+    owen.loginDialog.loginButBadPassword(owen.username, michael.password);
+    michael.loginDialog.loginButBadPassword(michael.username, owen.password);
   });
 
   it("Michael resets his password", function() {
-    michaelsPages.loginDialog.clickResetPasswordSwitchTab();
-    michaelsPages.resetPasswordPage.fillInAccountOwnerEmailAddress(michael.emailAddress);
+    michael.loginDialog.clickResetPasswordCloseDialogSwitchTab();
+    michael.resetPasswordPage.fillInAccountOwnerEmailAddress(michael.emailAddress);
     michael.rememberCurrentUrl();
-    michaelsPages.resetPasswordPage.clickSubmit();
+    michael.resetPasswordPage.clickSubmit();
     michael.waitForNewUrl();
     michael.waitForVisible('#e2eRPP_ResetEmailSent');
   });
@@ -113,25 +108,24 @@ describe("private chat", function() {
     michael.waitForVisible("#e2eRPP_PasswordChanged");
   });
 
-  it("... with the new password, he can login, logout and login", function() {
-    michael.switchBackToFirstTabOrWindow();
-    michaelsPages.loginDialog.loginWithPassword(michael.username, newPassword);
-    michaelsPages.topbar.clickLogout();
-    michaelsPages.complex.loginWithPasswordViaTopbar(michael.username, newPassword)
+  it("... he can login with the new password", function() {
+    michael.goAndWaitForNewUrl(idAddress.siteIdOrigin);
+    michael.topbar.clickLogout();
+    michael.complex.loginWithPasswordViaTopbar(michael.username, newPassword);
   });
 
   it("... but not with the old password", function() {
-    michaelsPages.topbar.clickLogout();
-    michaelsPages.topbar.clickLogin();
-    michaelsPages.loginDialog.loginButBadPassword(michael.username, michael.password);
+    michael.topbar.clickLogout();
+    michael.topbar.clickLogin();
+    michael.loginDialog.loginButBadPassword(michael.username, michael.password);
   });
 
   it("Owen cannot login with Michael's new password", function() {
-    owensPages.loginDialog.loginButBadPassword(owen.username, newPassword);
+    owen.loginDialog.loginButBadPassword(owen.username, newPassword);
   });
 
   it("... but with his own, when he remembers it", function() {
-    owensPages.loginDialog.loginWithPassword(owen.username, owen.password);
+    owen.loginDialog.loginWithPassword(owen.username, owen.password);
   });
 
   it("Done", function() {

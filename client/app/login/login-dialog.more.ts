@@ -496,6 +496,11 @@ var PasswordLoginDialogContent = createClassAndFactory({
           "Login" + inOrderTo(this.props.loginReason)),
         r.br(),
         r.a({ href: debiki.internal.serverOrigin + '/-/reset-password/specify-email',
+            // Once the password has been reset, the user will be logged in automatically. Then
+            // it's confusing if this dialog is still open, so close it on click. [5KWE02X]
+            // UX COULD show reset-pwd input in a dialog directly here instead, don't want it
+            // on a separate page.
+            onClick: () => this.props.closeDialog('CloseAllLoginDialogs'),
             target: '_blank', className: 'dw-reset-pswd',
             style: { marginTop: '1ex', display: 'inline-block' }},
           "Did you forget your password?")));

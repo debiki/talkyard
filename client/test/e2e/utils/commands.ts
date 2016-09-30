@@ -178,6 +178,14 @@ function addCommandsToBrowser(browser) {
   });
 
 
+  browser.addCommand('goAndWaitForNewUrl', function(url) {
+    logMessage("Go: " + url);
+    browser.rememberCurrentUrl();
+    browser.url(url);
+    browser.waitForNewUrl();
+  });
+
+
   browser.addCommand('swithToOtherTabOrWindow', function(url) {
     var ids = browser.getTabIds();
     var currentId = browser.getCurrentTabId();

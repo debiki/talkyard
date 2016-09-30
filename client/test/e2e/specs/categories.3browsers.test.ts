@@ -18,11 +18,8 @@ declare var browserC: any;
 
 var everyone;
 var owen;
-var owensPages;
 var mons;
-var monsPages;
 var maria;
-var mariasPages;
 
 var idAddress;
 var WastelandCategorySelector = 'a*=Wasteland';
@@ -33,12 +30,9 @@ describe("categories", function() {
 
   it("initialize people", function() {
     everyone = browser;
-    owen = browserA;
-    owensPages = pagesFor(owen);
-    mons = browserB;
-    monsPages = pagesFor(mons);
-    maria = browserC;
-    mariasPages = pagesFor(maria);
+    owen = _.assign(browserA, pagesFor(browserA), make.memberOwenOwner());
+    mons = _.assign(browserB, pagesFor(browserB), make.memberModeratorMons());
+    maria = _.assign(browserC, pagesFor(browserC), make.memberMaria());
   });
 
   it("import a site", function() {
@@ -50,24 +44,24 @@ describe("categories", function() {
 
   it("Owen logs in, views categories", function() {
     owen.go(idAddress.siteIdOrigin);
-    owensPages.topbar.clickLogin();
-    owensPages.loginDialog.loginWithPassword({ username: 'owen_owner', password: 'publicOwen' });
-    owensPages.forumButtons.clickViewCategories();
+    owen.topbar.clickLogin();
+    owen.loginDialog.loginWithPassword(owen);
+    owen.forumButtons.clickViewCategories();
     owen.waitForAtLeast(1, '.esForum_cats_cat .forum-title');
     owen.assertTextMatches('.esForum_cats_cat .forum-title', /Uncategorized/, /default/);
   });
 
   it("Owen ceates a category", function() {
-    owensPages.forumButtons.clickCreateCategory();
-    owensPages.categoryDialog.fillInFields({ name: "Wasteland" });
-    owensPages.categoryDialog.submit();
+    owen.forumButtons.clickCreateCategory();
+    owen.categoryDialog.fillInFields({ name: "Wasteland" });
+    owen.categoryDialog.submit();
   });
 
   it("Maria logs in, sees the new category", function() {
     maria.go(idAddress.siteIdOrigin + '/categories');
     maria.clickLinkToNewPage(WastelandCategorySelector);
-    mariasPages.topbar.clickLogin();
-    mariasPages.loginDialog.loginWithPassword({ username: 'maria', password: 'publicMaria' });
+    maria.topbar.clickLogin();
+    maria.loginDialog.loginWithPassword(maria);
     maria.assertTextMatches('.e2eF_T', /About/, /Wasteland/);
   });
 
@@ -75,11 +69,11 @@ describe("categories", function() {
   var mariasFirstTopicText = "Marias text text text.";
 
   it("Maria creates a topic, in the new category", function() {
-    mariasPages.forumButtons.clickCreateTopic();
-    mariasPages.editor.editTitle(mariasFirstTopicTitle);
-    mariasPages.editor.editText(mariasFirstTopicText);
+    maria.forumButtons.clickCreateTopic();
+    maria.editor.editTitle(mariasFirstTopicTitle);
+    maria.editor.editText(mariasFirstTopicText);
     maria.rememberCurrentUrl();
-    mariasPages.editor.save();
+    maria.editor.save();
     maria.waitForNewUrl();
     // ensure ancestor Wasteland visible
     maria.assertTextMatches('.dw-p-ttl', mariasFirstTopicTitle);
@@ -92,11 +86,11 @@ describe("categories", function() {
   });
 
   it("Owen renames and unlists the category", function() {
-    owensPages.forumButtons.clickEditCategory();
-    owensPages.categoryDialog.fillInFields({ name: "Wasteland Unlisted" });
+    owen.forumButtons.clickEditCategory();
+    owen.categoryDialog.fillInFields({ name: "Wasteland Unlisted" });
     owen.waitAndClick('#e2eShowUnlistedCB');
     owen.waitAndClick('#e2eUnlistedCB');
-    owensPages.categoryDialog.submit();
+    owen.categoryDialog.submit();
     owen.assertNthTextMatches('.e2eF_T', 1, /Wasteland Unlisted/);
     owen.assertNthTextMatches('.e2eF_T', 2, /Wasteland Unlisted/);
   });
@@ -108,8 +102,8 @@ describe("categories", function() {
   });
 
   it("Mons logs in, sees the unlisted Wasteland category because he's a moderator", function() {
-    monsPages.topbar.clickLogin();
-    monsPages.loginDialog.loginWithPassword({ username: 'mod_mons', password: 'publicMons' });
+    mons.topbar.clickLogin();
+    mons.loginDialog.loginWithPassword(mons);
     mons.waitForVisible(WastelandCategorySelector);
   });
 
@@ -119,7 +113,7 @@ describe("categories", function() {
 
   it("Mons can create a Wasteland topic", function() {
     mons.clickLinkToNewPage(WastelandCategorySelector);
-    monsPages.complex.createAndSaveTopic({ title: "Mons Topic", body: "Mons text text text." });
+    mons.complex.createAndSaveTopic({ title: "Mons Topic", body: "Mons text text text." });
     urlToMonsPage = mons.url().value;
   });
 
@@ -137,13 +131,13 @@ describe("categories", function() {
 
   it("Owen re-lists the category, sets only-staff-may-post", function() {
     owen.go(idAddress.siteIdOrigin + '/latest/wasteland');
-    owensPages.forumButtons.clickEditCategory();
-    owensPages.categoryDialog.fillInFields({ name: "Wasteland Only Staff Create" });
+    owen.forumButtons.clickEditCategory();
+    owen.categoryDialog.fillInFields({ name: "Wasteland Only Staff Create" });
     owen.waitAndClick('#e2eShowUnlistedCB');
     owen.waitAndClick('#e2eUnlistedCB');
     owen.waitAndClick('#e2eShowOnlyStaffCreateCB');
     owen.waitAndClick('#e2eOnlyStaffCreateCB');
-    owensPages.categoryDialog.submit();
+    owen.categoryDialog.submit();
     owen.assertNthTextMatches('.e2eF_T', 1, /Wasteland Only Staff Create/);
     owen.assertNthTextMatches('.e2eF_T', 2, /Wasteland Only Staff Create/);
   });
@@ -151,7 +145,7 @@ describe("categories", function() {
   it("Mons can post a new topic", function() {
     mons.go(idAddress.siteIdOrigin + '/latest/wasteland');
     mons.disableRateLimits(); // otherwise max 1 topic per 15 seconds
-    monsPages.complex.createAndSaveTopic({
+    mons.complex.createAndSaveTopic({
       title: "Mons Only Staff Create Topic",
       body: "Mons Only Staff Create text text text.",
     });
@@ -168,7 +162,7 @@ describe("categories", function() {
 
   it("... but cannot create new topics", function() {
     maria.waitAndClick(WastelandCategorySelector);
-    mariasPages.forumButtons.assertNoCreateTopicButton();
+    maria.forumButtons.assertNoCreateTopicButton();
   });
 
   it ("... she can open the topic", function() {
@@ -178,11 +172,11 @@ describe("categories", function() {
 
   it("Owen sets the category to staff only", function() {
     owen.go(idAddress.siteIdOrigin + '/latest/wasteland');
-    owensPages.forumButtons.clickEditCategory();
-    owensPages.categoryDialog.fillInFields({ name: "Wasteland Staff Only" });
+    owen.forumButtons.clickEditCategory();
+    owen.categoryDialog.fillInFields({ name: "Wasteland Staff Only" });
     owen.waitAndClick('#e2eShowStaffOnlyCB');
     owen.waitAndClick('#e2eStaffOnlyCB');
-    owensPages.categoryDialog.submit();
+    owen.categoryDialog.submit();
     owen.assertNthTextMatches('.e2eF_T', 1, /Wasteland Staff Only/);
     owen.assertNthTextMatches('.e2eF_T', 2, /Wasteland Staff Only/);
     owen.assertNthTextMatches('.e2eF_T', 3, /Wasteland Staff Only/);
@@ -191,7 +185,7 @@ describe("categories", function() {
   it("Mons sees it and can create a 2nd topic", function() {
     mons.go(idAddress.siteIdOrigin + '/categories');
     mons.clickLinkToNewPage(WastelandCategorySelector);
-    monsPages.complex.createAndSaveTopic({ title: "Mons Topic", body: "Mons text text text." });
+    mons.complex.createAndSaveTopic({ title: "Mons Topic", body: "Mons text text text." });
     urlToMonsPage3 = mons.url().value;
   });
 

@@ -18,19 +18,15 @@ declare var browserB: any;
 
 var everyone;
 var owen;
-var owensPages;
 var maria;
-var mariasPages;
 
 
 describe('chat', function() {
 
   it('create site with two members', function() {
     everyone = browser;
-    owen = browserA;
-    owensPages = pagesFor(owen);
-    maria = browserB;
-    mariasPages = pagesFor(maria);
+    owen = _.assign(browserA, pagesFor(browserA), make.memberOwenOwner());
+    maria = _.assign(browserB, pagesFor(browserB), make.memberMaria());
 
     var site: SiteData = make.emptySiteOwnedByOwen();
     site.meta.localHostname = 'chat-' + Date.now();
@@ -81,7 +77,7 @@ describe('chat', function() {
 
   it("Owen logs in, creates a chat topic", function() {
     owen.waitAndClick('#e2eCreateChatB');
-    owensPages.loginDialog.loginWithPassword({ username: 'owen_owner', password: 'publicOwen' });
+    owen.loginDialog.loginWithPassword(owen);
     owen.waitAndSetValue('.esEdtr_titleEtc_title', "Chat channel title");
     owen.setValue('textarea', "Chat channel purpose");
     owen.rememberCurrentUrl();
@@ -91,35 +87,35 @@ describe('chat', function() {
   });
 
   it("Owen writes a chat message", function() {
-    owensPages.chat.addChatMessage("Hi, I'm Owen, and my name is Owen.");
-    owensPages.chat.waitForNumMessages(1);
+    owen.chat.addChatMessage("Hi, I'm Owen, and my name is Owen.");
+    owen.chat.waitForNumMessages(1);
     owen.assertTextMatches('.esC_M', /Owen/);
   });
 
   it("Maria opens the chat page, sees Owens message", function() {
     maria.go(owen.url().value);
-    mariasPages.chat.waitForNumMessages(1);
+    maria.chat.waitForNumMessages(1);
     maria.assertTextMatches('.esC_M', /Owen/);
   });
 
   it("Maria joins the chat topic", function() {
     maria.waitAndClick('#theJoinChatB');
-    mariasPages.loginDialog.loginWithPassword({ username: 'maria', password: 'publicMaria' });
+    maria.loginDialog.loginWithPassword(maria);
   });
 
   it("Maria posts a chat message, and sees it", function() {
-    mariasPages.chat.addChatMessage("Hi, I'm Maria.");
-    mariasPages.chat.waitForNumMessages(2);
+    maria.chat.addChatMessage("Hi, I'm Maria.");
+    maria.chat.waitForNumMessages(2);
     maria.assertNthTextMatches('.esC_M', 2, /Maria/);
   });
 
   it("Owen sees it", function() {
-    owensPages.chat.waitForNumMessages(2);
+    owen.chat.waitForNumMessages(2);
     owen.assertNthTextMatches('.esC_M', 2, /Maria/);
   });
 
   it("Owen posts a chat message, and sees it", function() {
-    owensPages.chat.addChatMessage("Hi, and is your name Maria?");
+    owen.chat.addChatMessage("Hi, and is your name Maria?");
     owen.assertNthTextMatches('.esC_M', 3, /is your name/);
   });
 

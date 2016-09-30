@@ -17,13 +17,9 @@ declare var browserB: any;
 declare var browserC: any;
 
 var everyone;
-var everyonesPages;
 var owen;
-var owensPages;
 var michael;
-var michaelsPages;
 var maria;
-var mariasPages;
 
 var idAddress;
 var forumTitle = "Login to Read Forum";
@@ -32,14 +28,12 @@ var forumTitle = "Login to Read Forum";
 describe("settings-login-to-read", function() {
 
   it("initialize people", function() {
-    everyone = browser;
-    everyonesPages = pagesFor(everyone);
-    owen = browserA;
-    owensPages = pagesFor(owen);
-    michael = browserB;
-    michaelsPages = pagesFor(michael);
-    maria = browserC;
-    mariasPages = pagesFor(maria);
+    browser.perhapsDebugBefore();
+    everyone = _.assign(browser, pagesFor(browser));
+    owen = _.assign(browserA, pagesFor(browserA), make.memberOwenOwner());
+    michael = _.assign(browserB, pagesFor(browserB), make.memberMichael());
+    maria = _.assign(browserC, pagesFor(browserC), make.memberMaria());
+    // SECURITY COULD test that login-as-guest cannot be combined with login-to-read?
   });
 
   it("import a site", function() {
@@ -55,8 +49,8 @@ describe("settings-login-to-read", function() {
   });
 
   it("Owen logs in to admin area", function() {
-    owensPages.adminArea.goToLoginSettings(idAddress.siteIdOrigin);
-    owensPages.loginDialog.loginWithPassword({ username: 'owen_owner', password: 'publicOwen' });
+    owen.adminArea.goToLoginSettings(idAddress.siteIdOrigin);
+    owen.loginDialog.loginWithPassword(owen);
   });
 
   it("...and enables login-required", function() {
@@ -66,13 +60,13 @@ describe("settings-login-to-read", function() {
 
   it("Maria and Michael see the login dialog only", function() {
     everyone.refresh();
-    owensPages.adminArea.waitAssertVisible();
-    mariasPages.loginDialog.waitAssertFullScreen();
-    michaelsPages.loginDialog.waitAssertFullScreen();
+    owen.adminArea.waitAssertVisible();
+    maria.loginDialog.waitAssertFullScreen();
+    michael.loginDialog.waitAssertFullScreen();
   });
 
   it("Maria logs in, sees homepage again", function() {
-    mariasPages.loginDialog.loginWithPassword({ username: 'maria', password: 'publicMaria' });
+    maria.loginDialog.loginWithPassword(maria);
     maria.assertPageTitleMatches(forumTitle);
   });
 
@@ -80,20 +74,20 @@ describe("settings-login-to-read", function() {
   var mariasTopicTitle = "Marias Topic";
 
   it("... and can posts a forum topic", function() {
-    mariasPages.complex.createAndSaveTopic({ title: mariasTopicTitle, body: "Marias text." });
+    maria.complex.createAndSaveTopic({ title: mariasTopicTitle, body: "Marias text." });
     mariasTopicUrl = maria.url().value;
   });
 
   it("Michael only sees the login dialog, when he goes to the forum topic url", function() {
     michael.go(mariasTopicUrl);
-    michaelsPages.loginDialog.waitAssertFullScreen();
+    michael.loginDialog.waitAssertFullScreen();
   });
 
   it("Maria logs out, then she no longer sees her topic or the homepage", function() {
-    mariasPages.topbar.clickLogout({ waitForLoginButton: false });
-    mariasPages.loginDialog.waitAssertFullScreen();
+    maria.topbar.clickLogout({ waitForLoginButton: false });
+    maria.loginDialog.waitAssertFullScreen();
     maria.go(idAddress.siteIdOrigin);
-    mariasPages.loginDialog.waitAssertFullScreen();
+    maria.loginDialog.waitAssertFullScreen();
   });
 
   it("Owen disables login required", function() {

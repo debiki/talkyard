@@ -17,15 +17,10 @@ declare var browserB: any;
 declare var browserC: any;
 
 var everyone;
-var everyonesPages;
 var owen;
-var owensPages;
 var michael;
-var michaelsPages;
 var maria;
-var mariasPages;
 var guest;
-var guestsPages;
 
 var idAddress;
 var forumTitle = "Forum with Private Chat";
@@ -37,17 +32,12 @@ var chatUrl;
 describe("private chat", function() {
 
   it("initialize people", function() {
-    everyone = browser;
-    everyonesPages = pagesFor(everyone);
-    owen = browserA;
-    owensPages = pagesFor(owen);
-    michael = browserB;
-    michaelsPages = pagesFor(michael);
-    maria = browserC;
-    mariasPages = pagesFor(maria);
+    everyone = _.assign(browser, pagesFor(browser));
+    owen = _.assign(browserA, pagesFor(browserA), make.memberOwenOwner());
+    michael = _.assign(browserB, pagesFor(browserB), make.memberMichael());
+    maria = _.assign(browserC, pagesFor(browserC), make.memberMaria());
     // Let's reuse the same browser.
     guest = maria;
-    guestsPages = mariasPages;
   });
 
   it("import a site", function() {
@@ -61,8 +51,8 @@ describe("private chat", function() {
   it("Owen creates a private chat", function() {
     owen.go(idAddress.siteIdOrigin);
     owen.assertPageTitleMatches(forumTitle);
-    owensPages.complex.loginWithPasswordViaTopbar('owen_owner', 'publicOwen');
-    owensPages.complex.createChatChannelViaWatchbar(
+    owen.complex.loginWithPasswordViaTopbar(owen);
+    owen.complex.createChatChannelViaWatchbar(
         { name: chatName, purpose: chatPurpose, public_: false });
     chatUrl = owen.url().value;
   });
@@ -74,38 +64,38 @@ describe("private chat", function() {
 
   it("... and doesn't see it listed in the forum", function() {
     maria.go(idAddress.siteIdOrigin);
-    mariasPages.forumTopicList.waitUntilKnowsIsEmpty();
+    maria.forumTopicList.waitUntilKnowsIsEmpty();
   });
 
   it("Maria logs in, still cannot access it, doesn't see it listed", function() {
-    mariasPages.complex.loginWithPasswordViaTopbar('maria', 'publicMaria');
+    maria.complex.loginWithPasswordViaTopbar(maria);
     maria.go(chatUrl);
     maria.assertNotFoundError();
     maria.go(idAddress.siteIdOrigin);
-    mariasPages.forumTopicList.waitUntilKnowsIsEmpty();
+    maria.forumTopicList.waitUntilKnowsIsEmpty();
   });
 
   it("Owen adds Maria to the chat", function() {
-    owensPages.watchbar.clickViewPeople();
-    owensPages.complex.addPeopleToPageViaContextbar(['maria']);
+    owen.watchbar.clickViewPeople();
+    owen.complex.addPeopleToPageViaContextbar(['maria']);
   });
 
   it("Now Maria sees the chat in her watchbar, but not in the forum topic list", function() {
     maria.refresh();
-    mariasPages.watchbar.assertTopicVisible(chatName);
-    mariasPages.forumTopicList.waitUntilKnowsIsEmpty();
-    mariasPages.watchbar.goToTopic(chatName);
+    maria.watchbar.assertTopicVisible(chatName);
+    maria.forumTopicList.waitUntilKnowsIsEmpty();
+    maria.watchbar.goToTopic(chatName);
   });
 
   it("Michael logs in, cannot access it", function() {
     michael.go(idAddress.siteIdOrigin);
-    michaelsPages.complex.loginWithPasswordViaTopbar('michael', 'publicMichael');
+    michael.complex.loginWithPasswordViaTopbar(michael);
     michael.go(chatUrl);
     michael.assertNotFoundError();
   });
 
   it("Owen adds Michael to the chat", function() {
-    owensPages.complex.addPeopleToPageViaContextbar(['michael']);
+    owen.complex.addPeopleToPageViaContextbar(['michael']);
   });
 
   it("Now Michael can access it", function() {
@@ -114,14 +104,14 @@ describe("private chat", function() {
   });
 
   it("All three post a chat message, which all of them see", function() {
-    owensPages.chat.addChatMessage("I'm Owen.");
-    mariasPages.chat.addChatMessage("I'm Maria.");
-    michaelsPages.chat.addChatMessage("I'm Michael.");
-    everyonesPages.chat.waitForNumMessages(3);
+    owen.chat.addChatMessage("I'm Owen.");
+    maria.chat.addChatMessage("I'm Maria.");
+    michael.chat.addChatMessage("I'm Michael.");
+    everyone.chat.waitForNumMessages(3);
   });
 
   it("Maria leaves the chat", function() {
-    mariasPages.watchbar.clickLeaveChat();
+    maria.watchbar.clickLeaveChat();
   });
 
   it("... and thereafter no longer sees the chat page", function() {
@@ -129,17 +119,17 @@ describe("private chat", function() {
     maria.refresh();
     maria.assertNotFoundError();
     maria.go(idAddress.siteIdOrigin);
-    mariasPages.forumTopicList.waitUntilKnowsIsEmpty();
-    mariasPages.watchbar.assertTopicAbsent(chatName);
-    mariasPages.watchbar.assertTopicVisible(forumTitle);
-    mariasPages.watchbar.asserExactlyNumTopics(1); // the forum
+    maria.forumTopicList.waitUntilKnowsIsEmpty();
+    maria.watchbar.assertTopicAbsent(chatName);
+    maria.watchbar.assertTopicVisible(forumTitle);
+    maria.watchbar.asserExactlyNumTopics(1); // the forum
   });
 
   it("... she logs out, still doesn't see the chat", function() {
-    mariasPages.topbar.clickLogout();
+    maria.topbar.clickLogout();
     maria.refresh();
-    mariasPages.forumTopicList.waitUntilKnowsIsEmpty();
-    mariasPages.watchbar.asserExactlyNumTopics(1);
+    maria.forumTopicList.waitUntilKnowsIsEmpty();
+    maria.watchbar.asserExactlyNumTopics(1);
     maria.go(chatUrl);
     maria.assertNotFoundError();
   });
@@ -150,8 +140,8 @@ describe("private chat", function() {
   });
 
   it("Owen remvose Michael from the chat", function() {
-    owensPages.contextbar.clickUser('michael');
-    owensPages.aboutUserDialog.clickRemoveFromPage();
+    owen.contextbar.clickUser('michael');
+    owen.aboutUserDialog.clickRemoveFromPage();
   });
 
   it("Now Michael can no longer access the page", function() {
@@ -162,19 +152,19 @@ describe("private chat", function() {
 
   it("... doesn't see it in the topic list", function() {
     michael.go(idAddress.siteIdOrigin);
-    michaelsPages.forumTopicList.waitUntilKnowsIsEmpty();
+    michael.forumTopicList.waitUntilKnowsIsEmpty();
   });
 
   it("... and doesn't see it in the watchbar", function() {
-    michaelsPages.watchbar.assertTopicAbsent(chatName);
-    michaelsPages.watchbar.assertTopicVisible(forumTitle);
-    michaelsPages.watchbar.asserExactlyNumTopics(1); // the forum
+    michael.watchbar.assertTopicAbsent(chatName);
+    michael.watchbar.assertTopicVisible(forumTitle);
+    michael.watchbar.asserExactlyNumTopics(1); // the forum
   });
 
   it("A guest logs in (in Maria's browser)", function() {
     assert(guest === maria, 'EsE4FKG6FY0');
     guest.go(idAddress.siteIdOrigin);
-    guestsPages.complex.loginAsGuestViaTopbar("Gunnar Guest");
+    guest.complex.loginAsGuestViaTopbar("Gunnar Guest");
   });
 
   it("... the guest cannot access it via a direct link", function() {
@@ -184,13 +174,13 @@ describe("private chat", function() {
 
   it("... and doesn't see the chat in the forum topic list", function() {
     guest.go(idAddress.siteIdOrigin);
-    guestsPages.forumTopicList.waitUntilKnowsIsEmpty();
+    guest.forumTopicList.waitUntilKnowsIsEmpty();
   });
 
   it("... and it won't appear in the watchbar", function() {
-    guestsPages.watchbar.assertTopicAbsent(chatName);
-    guestsPages.watchbar.assertTopicVisible(forumTitle);
-    guestsPages.watchbar.asserExactlyNumTopics(1); // the forum
+    guest.watchbar.assertTopicAbsent(chatName);
+    guest.watchbar.assertTopicVisible(forumTitle);
+    guest.watchbar.asserExactlyNumTopics(1); // the forum
   });
 
   it("Done", function() {
