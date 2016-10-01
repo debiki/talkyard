@@ -554,6 +554,7 @@ function pagesFor(browser) {
         clickLoginNavLink: function() {
           browser.waitAndClick('#e2eAA_Ss_LoginL');
           browser.waitForVisible('#e2eLoginRequiredCB');
+          browser.pause(1000); // why needed? the button moves a bit while the page gets rendered?
         },
 
         clickModerationNavLink: function() {
