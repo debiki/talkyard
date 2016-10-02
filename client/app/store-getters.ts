@@ -55,7 +55,7 @@ export function store_getUserOrMissing(store: Store, userId: UserId, errorCode2)
       id: userId,
       // The first char is shown in the avatar image. Use a square, not a character, so
       // it'll be easier to debug-find-out that something is amiss.
-      fullName: "□ missing, id: " + userId + " [EsE4FK07]",
+      fullName: "□ missing, id: " + userId + " [EsE4FK07_]",
       isMissing: true,
     };
   }

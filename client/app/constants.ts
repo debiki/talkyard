@@ -88,7 +88,7 @@ enum PinPageWhere {
 }
 
 
-enum PageRole {
+enum PageRole { // dupl in client/e2e/test-types.ts [5F8KW0P2]
   CustomHtmlPage = 1,
   WebPage = 2,  // rename to Info?
   Code = 3,

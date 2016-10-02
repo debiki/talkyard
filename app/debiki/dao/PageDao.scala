@@ -24,6 +24,7 @@ import scala.collection.immutable
 import Prelude._
 
 
+@deprecated("use SiteTransaction directly instead?", "now")
 case class PageDao(override val id: PageId, transaction: SiteTransaction) extends Page {
 
   def sitePageId = SitePageId(transaction.siteId, id)

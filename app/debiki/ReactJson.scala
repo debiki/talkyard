@@ -513,6 +513,7 @@ object ReactJson {
     "watchbar" -> EmptyWatchbar,
     "votes" -> JsObject(Nil),
     "unapprovedPosts" -> JsObject(Nil),
+    "unapprovedPostAuthors" -> JsArray(),
     "postIdsAutoReadLongAgo" -> JsArray(Nil),
     "postIdsAutoReadNow" -> JsArray(Nil),
     "marksByPostId" -> JsObject(Nil),
@@ -569,16 +570,16 @@ object ReactJson {
 
     val notfsAndCounts = loadNotifications(user.id, transaction, unseenFirst = true, limit = 30)
 
-    val (rolePageSettings, anyVotes, anyUnapprovedPosts) =
+    val (rolePageSettings, anyVotes, anyUnapprovedPosts, anyUnapprovedAuthors) =
       anyPageId map { pageId =>
         val rolePageSettings = user.anyRoleId.map({ roleId =>
           val anySettings = transaction.loadRolePageSettings(roleId = roleId, pageId = pageId)
           rolePageSettingsToJson(anySettings getOrElse RolePageSettings.Default)
         }) getOrElse JsNull
-        (rolePageSettings,
-          votesJson(user.id, pageId, transaction),
-          unapprovedPostsJson(user, pageId, transaction))
-      } getOrElse (JsNull, JsNull, JsNull)
+        val votes = votesJson(user.id, pageId, transaction)
+        val (postsJson, postAuthorsJson) = unapprovedPostsAndAuthorsJson(user, pageId, transaction)
+        (rolePageSettings, votes, postsJson, postAuthorsJson)
+      } getOrElse (JsNull, JsNull, JsNull, JsNull)
 
     val threatLevel = user match {
       case member: Member => member.threatLevel
@@ -618,6 +619,7 @@ object ReactJson {
       "restrictedCategories" -> restrictedCategories,
       "votes" -> anyVotes,
       "unapprovedPosts" -> anyUnapprovedPosts,
+      "unapprovedPostAuthors" -> anyUnapprovedAuthors,
       "postIdsAutoReadLongAgo" -> JsArray(Nil),
       "postIdsAutoReadNow" -> JsArray(Nil),
       "marksByPostId" -> JsObject(Nil),
@@ -775,11 +777,12 @@ object ReactJson {
   }
 
 
-  private def unapprovedPostsJson(user: User, pageId: PageId, transaction: SiteTransaction)
-        : JsObject = {
+  private def unapprovedPostsAndAuthorsJson(user: User, pageId: PageId,
+        transaction: SiteTransaction): (
+          JsObject /* why object? try to change to JsArray instead */, JsArray) = {
 
     REFACTOR // Load form replies. For now: (a bit hacky)   (& could rename this fn + more stuff)
-    COULD_OPTIMIZE // don't load the whole page when is-not Form
+    SHOULD;OPTIMIZE // don't load the whole page when is-not Form
     COULD_OPTIMIZE // only load unapproved posts and form replies. [3PF4GK]
     if (user.isAdmin) {
       val page = PageDao(pageId, transaction)
@@ -792,11 +795,13 @@ object ReactJson {
           val tags = tagsByPostId(post.uniqueId)
           post.nr.toString -> postToJsonImpl(post, page, tags, includeUnapproved = true)
         }
-        return JsObject(postIdsAndJson)
+        val authors = transaction.loadUsers(posts.map(_.createdById).toSet)
+        val authorsJson = JsArray(authors map JsUser)
+        return (JsObject(postIdsAndJson), authorsJson)
       }
     }
 
-    JsObject(Nil) // for now
+    (JsObject(Nil), JsArray()) // for now
     /*
     // TOO slow! does a db req each http req. Fix by caching user ids with unappr posts, per page?
     val page = PageDao(pageId, transaction)

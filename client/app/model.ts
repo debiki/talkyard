@@ -184,7 +184,8 @@ interface Myself {
   restrictedCategories: Category[];
 
   votes: any;
-  unapprovedPosts: any;
+  unapprovedPosts: { [id: number]: Post };
+  unapprovedPostAuthors: BriefUser[];
   postIdsAutoReadLongAgo: number[];
   postIdsAutoReadNow: number[];
   marksByPostId: { [postId: number]: any };

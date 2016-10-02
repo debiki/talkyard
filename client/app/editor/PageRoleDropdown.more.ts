@@ -93,37 +93,37 @@ export var PageRoleDropdown = createComponent({
     var isBjjNotStaff = debiki.siteId === '12' && !isStaff(me);
 
     var questionOption = isBjjNotStaff ? null :
-      ExplainingListItem({ onSelect: this.onSelect,
+      ExplainingListItem({ onSelect: this.onSelect, id: 'e2eTTD_QuestionO',
         activeEventKey: pageRole, eventKey: PageRole.Question,
         title: PageRole_Question_IconString,
         text: r.span({}, "One answer can be marked as the accepted answer.") });
 
     var problemOption = isBjjNotStaff ? null :
-      ExplainingListItem({ onSelect: this.onSelect,
+      ExplainingListItem({ onSelect: this.onSelect, id: 'e2eTTD_ProblemO',
         activeEventKey: pageRole, eventKey: PageRole.Problem,
         title: PageRole_Problem_IconString,
         text: "If something is broken or doesn't work. Can be marked as fixed/solved." });
 
     var ideaOption = isBjjNotStaff ? null :
-      ExplainingListItem({ onSelect: this.onSelect,
+      ExplainingListItem({ onSelect: this.onSelect, id: 'e2eTTD_IdeaO',
         activeEventKey: pageRole, eventKey: PageRole.Idea,
         title: PageRole_Idea_IconString,
         text: "A suggestion. Can be marked as done/implemented." });
 
     var chatOption = isBjjNotStaff ? null :
-      ExplainingListItem({ onSelect: this.onSelect,
+      ExplainingListItem({ onSelect: this.onSelect, id: 'e2eTTD_OpenChatO',
         activeEventKey: pageRole, eventKey: PageRole.OpenChat,
         title: PageRole_OpenChat_IconString,
         text: "A perhaps never-ending conversation." });
 
     var privateChatOption = !isStaff(me) ? null :
-      ExplainingListItem({ onSelect: this.onSelect, id: 'e2ePrivChatO',
+      ExplainingListItem({ onSelect: this.onSelect, id: 'e2eTTD_PrivChatO',
         activeEventKey: pageRole, eventKey: PageRole.PrivateChat,
         title: PageRole_PrivateChat_IconString,
         text: "Only visible to people that get invited to join the chat." });
 
     var wikiMindMap = !complicated ? false :
-      ExplainingListItem({ onSelect: this.onSelect,
+      ExplainingListItem({ onSelect: this.onSelect, id: 'e2eTTD_MindMapO',
         activeEventKey: pageRole, eventKey: PageRole.MindMap,
         title: PageRole_MindMap_IconString,
         text: "Comments laid out in a mind map tree." });
@@ -143,20 +143,20 @@ export var PageRoleDropdown = createComponent({
       adminOnlyDivider = r.div({ className: 'esDropModal_header' }, "Only for admins:");
 
       webPageOption =
-        ExplainingListItem({ onSelect: this.onSelect,
+        ExplainingListItem({ onSelect: this.onSelect, id: 'e2eTTD_WebPageO',
           activeEventKey: pageRole, eventKey: PageRole.WebPage,
           title: "Info page",
           text: "A page without comments and author name." });
 
       formOption =  // [6JK8WHI3]
-        ExplainingListItem({ onSelect: this.onSelect,
+        ExplainingListItem({ onSelect: this.onSelect, id: 'e2eTTD_FormO',
           activeEventKey: pageRole, eventKey: PageRole.Form,
           title: "Form",
           text: "A contact form" });
 
       if (complicated) {
         customHtmlPageOption =
-          ExplainingListItem({ onSelect: this.onSelect,
+          ExplainingListItem({ onSelect: this.onSelect, id: 'e2eTTD_CustHtmlO',
             activeEventKey: pageRole, eventKey: PageRole.CustomHtmlPage,
             title: "Custom HTML page",
             text: "Create your own page in HTML and CSS." });

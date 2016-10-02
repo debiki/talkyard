@@ -5,6 +5,7 @@ declare function require(...whatever): any;
 
 import _ = require('lodash');
 import assert = require('assert');
+import TestPageRole = require('../test-constants');
 
 var DefaultCreatedAtMs = 1449198824000;
 var SystemUserId = 1; // [commonjs]
@@ -224,7 +225,7 @@ var make = {
       position: undefined,
       description: undefined,
       newTopicTypes: undefined,
-      defaultTopicType: 12, // PageRole.Discussion,
+      defaultTopicType: TestPageRole.Discussion,
       createdAtMs: forumPage.createdAtMs,
       updatedAtMs: forumPage.updatedAtMs,
       hideInForum: false,
@@ -298,7 +299,7 @@ var make = {
 
     var forumPage = make.page({
       id: 'fmp',
-      role: <PageRole> 7,  // [commonjs] PageRole.Forum
+      role: TestPageRole.Forum,
       categoryId: rootCategoryId,
       authorId: 1,    // [commonjs] SystemUserId
     });

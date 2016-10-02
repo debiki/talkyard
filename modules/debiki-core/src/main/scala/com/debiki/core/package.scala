@@ -140,8 +140,6 @@ package object core {
   def LowestNonGuestId = User.LowestNonGuestId
   def LowestHumanMemberId = User.LowestHumanMemberId
 
-  val KajMagnusSiteId = "3" // for now
-
   val FirstRevisionNr = PostRevision.FirstRevisionNr
 
   case class SiteUserId(siteId: SiteId, userId: UserId)
@@ -236,6 +234,7 @@ package object core {
   def COULD = ()          // Could do this, but not important right now, can wait a year or two.
   def REFACTOR = ()       // This code can be refactored. Also search for "[refactor]".
   def RENAME = ()         // This ought to be renamed.
+  def OPTIMIZE = ()
   def COULD_OPTIMIZE = ()
   def FORCED_REFLOW = ()  // Browser side only. Makes it slow.
   def UX = ()             // Usability can be improved.

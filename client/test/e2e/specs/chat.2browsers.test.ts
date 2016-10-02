@@ -9,6 +9,7 @@ import pagesFor = require('../utils/pages-for');
 import settings = require('../utils/settings');
 import make = require('../utils/make');
 import logAndDie = require('../utils/log-and-die');
+import TestPageRole = require('../test-constants');
 var logUnusual = logAndDie.logUnusual, die = logAndDie.die, dieIf = logAndDie.dieIf;
 var logMessage = logAndDie.logMessage;
 
@@ -38,7 +39,7 @@ describe('chat', function() {
 
     var forumPage = make.page({
       id: 'fmp',
-      role: <PageRole> 7,  // [commonjs] PageRole.Forum
+      role: TestPageRole.Forum,
       categoryId: rootCategoryId,
       authorId: 1,    // [commonjs] SystemUserId
     });

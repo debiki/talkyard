@@ -4,8 +4,35 @@
 import _ = require('lodash');
 import assert = require('assert');
 import logAndDie = require('./log-and-die');
+import TestPageRole = require('../test-constants');
 var logUnusual = logAndDie.logUnusual, die = logAndDie.die, dieIf = logAndDie.dieIf;
 var logMessage = logAndDie.logMessage;
+
+
+function byBrowser(result) {  // dupl code [4WKET0] move all to here?
+  if (!_.isObject(result) || _.isArray(result) || result.value) {
+    // This is the results from one single browser. Create a dummy by-browser
+    // result map.
+    return { onlyOneBrowser: result };
+  }
+  else {
+    // This is an object like:
+    //    { browserA: { ..., value: ... }, browserB: { ..., value: ... } }
+    // or like:
+    //    { browserA: "text-found", browserB: "other-text-found" }
+    // That's what we want.
+    return result;
+  }
+}
+
+function isTheOnly(browserName) {  // dupl code [3PFKD8GU0]
+  return browserName === 'onlyOneBrowser';
+}
+
+function browserNamePrefix(browserName): string { // dupl code [4GK0D8G2]
+  if (isTheOnly(browserName)) return '';
+  return browserName + ': ';
+}
 
 
 // There might be many browsers, when using Webdriver.io's multiremote testing, so
@@ -21,6 +48,20 @@ function pagesFor(browser) {
       assert.ok(result.state === 'success',
           "Error getting site id, result.state: " + result.state);
       return result.value;
+    },
+
+
+    waitForMyDataAdded: function() {
+      browser.waitForVisible('.e2eMyDataAdded');
+    },
+
+
+    assertPageHtmlSourceDoesNotMatch: function(toMatch) {
+      let resultsByBrowser = byBrowser(browser.getSource());
+      let regex = _.isString(toMatch) ? new RegExp(toMatch) : toMatch;
+      _.forOwn(resultsByBrowser, (text, browserName) => {
+        assert(!regex.test(text), browserNamePrefix(browserName) + "Page source does match " + regex);
+      });
     },
 
 
@@ -481,9 +522,20 @@ function pagesFor(browser) {
         browser.waitAndSetValue('.esEdtr_textarea', text);
       },
 
-      setTopicTypePrivateChat: function() {
+      setTopicType: function(type: PageRole) {
+        let optionId = null;
+        var needsClickMore = false;
+        switch (type) {
+          case TestPageRole.Form: optionId = '#e2eTTD_FormO'; needsClickMore = true; break;
+          case TestPageRole.WebPage: optionId = '#e2eTTD_WebPageO'; needsClickMore = true; break;
+          case TestPageRole.PrivateChat: optionId = '#e2eTTD_PrivChatO'; break;
+          default: die('Test unimpl [EsE4WK0UP]');
+        }
         browser.waitAndClick('.esTopicType_dropdown');
-        browser.waitAndClick('#e2ePrivChatO');
+        if (needsClickMore) {
+          browser.waitAndClick('.esPageRole_showMore');
+        }
+        browser.waitAndClick(optionId);
         browser.waitUntilModalGone();
       },
 
@@ -507,7 +559,52 @@ function pagesFor(browser) {
 
       clickHomeNavLink: function() {
         browser.click("a=Home");
-      }
+      },
+    },
+
+
+    customForm: {
+      submit: function() {
+        browser.click('form input[type="submit"]');
+        browser.waitAndAssertVisibleTextMatches('.esFormThanks', "Thank you");
+      },
+
+      assertNumSubmissionVisible: function(num: number) {
+        browser.waitForMyDataAdded();
+        browser.assertExactly(num, '.dw-p-flat');
+      },
+    },
+
+
+    replies: {
+      topLevelReplySelector: '.dw-depth-1 > .dw-p',
+      replySelector: '.dw-depth-1 .dw-p',
+      allRepliesTextSelector: '.dw-depth-0 > .dw-single-and-multireplies > .dw-res',
+
+      assertNumRepliesVisible: function(num: number) {
+        browser.waitForMyDataAdded();
+        browser.assertExactly(num, api.replies.replySelector);
+      },
+
+      assertNumOrigPostRepliesVisible: function(num: number) {
+        browser.waitForMyDataAdded();
+        browser.assertExactly(num, api.replies.topLevelReplySelector);
+      },
+
+      assertNoReplyMatches: function(text) {
+        browser.waitForMyDataAdded();
+        browser.assertNoTextMatches(api.replies.allRepliesTextSelector, text);
+      },
+
+      assertSomeReplyMatches: function(text) {
+        browser.waitForMyDataAdded();
+        browser.assertTextMatches(api.replies.allRepliesTextSelector, text);
+      },
+
+      assertNoAuthorMissing: function() {
+        // There's this error code if a post author isn't included on the page.
+        browser.replies.assertNoReplyMatches("EsE4FK07_");
+      },
     },
 
 
@@ -617,15 +714,21 @@ function pagesFor(browser) {
         }
       },
 
-      createAndSaveTopic: function(data: { title: string, body: string }) {
+      createAndSaveTopic: function(data: { title: string, body: string, type?: PageRole,
+            bodyMatchAfter?: String | boolean }) {
         api.forumButtons.clickCreateTopic();
         api.editor.editTitle(data.title);
         api.editor.editText(data.body);
+        if (data.type) {
+          api.editor.setTopicType(data.type);
+        }
         browser.rememberCurrentUrl();
         api.editor.save();
         browser.waitForNewUrl();
         browser.assertPageTitleMatches(data.title);
-        browser.assertPageBodyMatches(data.body);
+        if (data.bodyMatchAfter !== false) {
+          browser.assertPageBodyMatches(data.bodyMatchAfter || data.body);
+        }
       },
 
       createChatChannelViaWatchbar: function(
@@ -634,7 +737,7 @@ function pagesFor(browser) {
         api.editor.editTitle(data.name);
         api.editor.editText(data.purpose);
         if (data.public_ === false) {
-          api.editor.setTopicTypePrivateChat();
+          api.editor.setTopicType(TestPageRole.PrivateChat);
         }
         browser.rememberCurrentUrl();
         api.editor.save();

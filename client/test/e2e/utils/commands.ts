@@ -14,8 +14,8 @@ function count(elems): number {
 }
 
 
-function byBrowser(result) {
-  if (!_.isObject(result) || result.value) {
+function byBrowser(result) {  // dupl code [4WKET0] move all to pages-for?
+  if (!_.isObject(result) || _.isArray(result) || result.value) {
     // This is the results from one single browser. Create a dummy by-browser
     // result map.
     return { onlyOneBrowser: result };
@@ -30,11 +30,11 @@ function byBrowser(result) {
   }
 }
 
-function isTheOnly(browserName) {
+function isTheOnly(browserName) {  // dupl code [3PFKD8GU0]
   return browserName === 'onlyOneBrowser';
 }
 
-function browserNamePrefix(browserName): string {
+function browserNamePrefix(browserName): string { // dupl code [4GK0D8G2]
   if (isTheOnly(browserName)) return '';
   return browserName + ': ';
 }
@@ -94,9 +94,15 @@ function addCommandsToBrowser(browser) {
 
 
   browser.addCommand('assertExactly', function(num, selector) {
-    var elems = browser.elements(selector);
-    assert(count(elems) === num, "Selector '" + selector + "' matches " + count(elems) +
-        " elems, but there should be exactly " + num);
+    let errorString = '';
+    let resultsByBrowser = byBrowser(browser.elements(selector));
+    _.forOwn(resultsByBrowser, (result, browserName) => {
+      if (result.value.length !== num) {
+        errorString +=browserNamePrefix(browserName) + "Selector '" + selector + "' matches " +
+          result.value.length + " elems, but there should be exactly " + num + "\n";
+      }
+    });
+    assert.ok(!errorString, errorString);
   });
 
 
@@ -105,6 +111,11 @@ function addCommandsToBrowser(browser) {
     browser.waitForEnabled(selector);
     browser.waitUntilLoadingOverlayGone();
     browser.setValue(selector, value);
+  });
+
+
+  browser.addCommand('waitAndSetValueForId', function(id, value) {
+    browser.waitAndSetValue('#' + id, value);
   });
 
 
@@ -250,6 +261,7 @@ function addCommandsToBrowser(browser) {
     var textByBrowserName = byBrowser(browser.getText(selector));
     _.forOwn(textByBrowserName, function(text, browserName) {
       var whichBrowser = isTheOnly(browserName) ? '' : ", browser: " + browserName;
+      assert(!_.isArray(text), "Broken e2e test. Select only 1 elem please [EsE4KF0W2]");
       assert(regex.test(text), "Elem selected by '" + selector + "' didn't match " +
           regex.toString() + ", actual text: '" + text + whichBrowser);
       // COULD use 'arguments' & a loop instead

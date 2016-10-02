@@ -80,6 +80,8 @@ esSA            = super admin
 esPw            = password
 esOb            = onebox
 
+esTTD           = Topic type dropdown
+
 esWB            = watchbar (the left sidebar)
 esWB_T          = watchbar topic
 

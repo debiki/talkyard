@@ -10,6 +10,7 @@ import pages = require('../utils/pages');
 import settings = require('../utils/settings');
 import make = require('../utils/make');
 import logAndDie = require('../utils/log-and-die');
+import TestPageRole = require('../test-constants');
 var logUnusual = logAndDie.logUnusual, die = logAndDie.die, dieIf = logAndDie.dieIf;
 var logMessage = logAndDie.logMessage;
 var SystemUserId = 1;  // [commonjs]
@@ -38,7 +39,7 @@ describe('all links', function() {
 
     var forumPage = make.page({
       id: 'fmp',
-      role: <PageRole> 7,  // [commonjs] PageRole.Forum
+      role: TestPageRole.Forum,
       categoryId: rootCategoryId,
       authorId: SystemUserId,
     });
@@ -86,7 +87,7 @@ describe('all links', function() {
 
     var whateverTopic = make.page({
       id: 'whateverTopic',
-      role: <PageRole> 12,  // [commonjs] PageRole.Discussion
+      role: TestPageRole.Discussion,
       categoryId: whateverCategory.id,
       authorId: SystemUserId,
     });
@@ -109,7 +110,7 @@ describe('all links', function() {
 
     var questionTopic = make.page({
       id: 'questionTopic',
-      role: <PageRole> 10,  // [commonjs] PageRole.Question
+      role: TestPageRole.Question,
       categoryId: whateverCategory.id,
       authorId: SystemUserId,
       // answerPostId

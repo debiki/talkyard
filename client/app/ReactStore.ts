@@ -363,6 +363,10 @@ ReactStore.activateMyself = function(anyNewMe: Myself) {
   store.userSpecificDataAdded = true;
   store.now = new Date().getTime();
 
+  setTimeout(function() {
+    $html.addClass('e2eMyDataAdded');
+  }, 1);
+
   var newMe = anyNewMe;
   if (!newMe) {
     // For now only. Later on, this data should be kept server side instead?
@@ -392,6 +396,10 @@ ReactStore.activateMyself = function(anyNewMe: Myself) {
   // Show the user's own unapproved posts, or all, for admins.
   _.each(store.me.unapprovedPosts, (post: Post) => {
     updatePost(post);
+  });
+
+  _.each(store.me.unapprovedPostAuthors, (author: BriefUser) => {
+    store.usersByIdBrief[author.id] = author;
   });
 
   if (_.isArray(store.topics)) {
@@ -1143,6 +1151,7 @@ function makeStranger(): Myself {
 
     votes: {},
     unapprovedPosts: {},
+    unapprovedPostAuthors: [],
     postIdsAutoReadLongAgo: [],
     postIdsAutoReadNow: [],
     marksByPostId: {},
