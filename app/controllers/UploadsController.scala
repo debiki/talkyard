@@ -91,15 +91,15 @@ object UploadsController extends mvc.Controller {
   /** (Theoretically it's possible that the user uploads 3 completely different images,
     * for the tiny, small and medium avatars. Oh well.)
     */
-  def uploadAvatar = PostFilesAction(RateLimits.UploadFile, maxLength = MaxAvatarUploadSizeBytes) {
-        request =>
-
-    BUG ; COULD // specify target user id, so admins won't change their own pic always when
-          // uploading for *another* user
+  def uploadAvatar(userId: UserId) =
+        PostFilesAction(RateLimits.UploadFile, maxLength = MaxAvatarUploadSizeBytes) { request =>
 
     if (!request.theUser.isAuthenticated)
       throwForbidden("EdE8YWM2", o"""Only authenticated users (but not guests) may upload avatars.
         Please login via for example Google or Facebook, or create a password account""")
+
+    if (request.theUserId != userId && !request.theUser.isStaff)
+      throwForbidden("EdE7KF20F", o"""Only staff may change other users' avatars""")
 
     val multipartFormData = request.body match {
       case Left(maxExceeded: mvc.MaxSizeExceeded) =>
@@ -162,7 +162,7 @@ object UploadsController extends mvc.Controller {
 
     // Now the images are in place in the uploads dir, and we've created metadata entries.
     // We just need to link the user to the images:
-    request.dao.setUserAvatar(request.theUserId, tinyAvatar = Some(tinyAvatarRef),
+    request.dao.setUserAvatar(userId, tinyAvatar = Some(tinyAvatarRef),
       smallAvatar = Some(smallAvatarRef), mediumAvatar = Some(mediumAvatarRef),
       request.theBrowserIdData)
 

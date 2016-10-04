@@ -3447,6 +3447,7 @@ html4.ATTRIBS = {
   'video::controls': 0,
   'video::height': 0,
   'video::loop': 0,
+  'video::autoplay': 0,   // added by kajmagnus
   'video::mediagroup': 5,
   'video::muted': 0,
   'video::poster': 1,
@@ -4832,16 +4833,8 @@ if (typeof window !== 'undefined') {
 
 
 /**
- * (Old comments below! I use Rhino no more, Nashorn instaed)
- *
- * Called from both Java and Javascript:
- * Implements Java interface compiledjs.HtmlSanitizerJS,
- * and is called by debiki.js.
- *
- * Placed in this file because this simplifies the compilation of all
- * this stuff to Java bytecode.
- *
- *  / KajMagnus@Debiki
+ * Placed in this file because it made sense long ago, with Rhino, which is no longer in use.
+ * /kajmagnus
  */
 function googleCajaSanitizeHtml(htmlTextUnsafe, allowClassAndIdAttr,
     allowDataAttr) {
@@ -4875,9 +4868,9 @@ function googleCajaSanitizeHtml(htmlTextUnsafe, allowClassAndIdAttr,
     }
     // These are for ED's own classes and ids.
     if (/^dw-/.test(token)) return '';  // old
-    if (/^ed/.test(token)) return '';   // old
-    if (/^es/.test(token)) return '';   // current naming scheme is esWhatever
-    if (/^the/.test(token)) return '';  // ... or theWhatever, for id attrs
+    if (/^ed-/.test(token)) return '';   // old
+    if (/^es[A-Z]/.test(token)) return '';   // current naming scheme is esWhatever
+    if (/^the[A-Z]/.test(token)) return '';  // ... or theWhatever, for id attrs
     if (/^[a-z]?-/.test(token)) return '';   // in the future?: d-... or t-... or just -Whatever?
     return token;
   }
@@ -4912,7 +4905,7 @@ function googleCajaSanitizeHtml(htmlTextUnsafe, allowClassAndIdAttr,
     allowedAttributes: {
       a: [ 'href', 'name', 'target' ],
       img: ['width', 'height', 'src'],
-      video: ['width', 'height', 'src', 'controls', 'autoplay'],
+      video: ['width', 'height', 'src', 'controls', 'autoplay', 'loop'],
       source: ['src', 'type'],
       form: ['novalidate'], // *not* action= or method= though — handled by Javascript instead
       label: ['for'],

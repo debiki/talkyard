@@ -4,6 +4,7 @@
 import _ = require('lodash');
 import assert = require('assert');
 import logAndDie = require('./log-and-die');
+import settings = require('./settings');
 import TestPageRole = require('../test-constants');
 var logUnusual = logAndDie.logUnusual, die = logAndDie.die, dieIf = logAndDie.dieIf;
 var logMessage = logAndDie.logMessage;
@@ -211,6 +212,24 @@ function pagesFor(browser) {
 
 
     loginDialog: {
+      refreshUntilFullScreen: function() {
+        let startMs = Date.now();
+        let dialogShown = false;
+        let lap = 0;
+        while (Date.now() - startMs < settings.waitforTimeout) {
+          browser.refresh();
+          // Give the page enough time to load:
+          lap += 1;
+          browser.pause(200 * Math.pow(1.5, lap));
+          dialogShown = browser.isVisible('.dw-login-modal') &&
+            browser.isVisible('#e2eLoginDialogTitle');
+          if (dialogShown)
+            break;
+        }
+        assert(dialogShown, "The login dialog never appeared");
+        api.loginDialog.waitAssertFullScreen();
+      },
+
       waitAssertFullScreen: function() {
         browser.waitForVisible('.dw-login-modal');
         browser.waitForText('#e2eLoginDialogTitle');
@@ -651,7 +670,6 @@ function pagesFor(browser) {
         clickLoginNavLink: function() {
           browser.waitAndClick('#e2eAA_Ss_LoginL');
           browser.waitForVisible('#e2eLoginRequiredCB');
-          browser.pause(1000); // why needed? the button moves a bit while the page gets rendered?
         },
 
         clickModerationNavLink: function() {

@@ -17,7 +17,7 @@ function runEndToEndTest {
     echo
     echo "***ERROR*** [EsE5KPY02]"
     echo
-    echo "This end-to-end test failed: (the whole next line)"
+    echo "This end-to-end test failed: (The whole next line. You can copy-paste it and run it.)"
     echo "  $cmd"
     exit 1
   fi
@@ -41,6 +41,7 @@ function runAllEndToEndTests {
   runEndToEndTest scripts/wdio target/e2e/wdio.3chrome.conf.js  --browser $browser --only private-chat.3browsers $args
   runEndToEndTest scripts/wdio target/e2e/wdio.3chrome.conf.js  --browser $browser --only settings-login-to-read.3browsers $args
   runEndToEndTest scripts/wdio target/e2e/wdio.2chrome.conf.js  --browser $browser --only password-login-reset.2browsers $args
+  runEndToEndTest scripts/wdio target/e2e/wdio.3chrome.conf.js  --browser $browser --only custom-forms.3browsers $args
 }
 
 

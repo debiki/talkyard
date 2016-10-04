@@ -54,15 +54,15 @@ describe("settings-login-to-read", function() {
   });
 
   it("...and enables login-required", function() {
-    owen.waitAndClick('#e2eLoginRequiredCB');
-    owen.waitAndClick('.esA_SaveBar_SaveAllB');
+    owen.adminArea.settings.login.clickLoginRequired();
+    owen.adminArea.settings.clickSaveAll();
   });
 
   it("Maria and Michael see the login dialog only", function() {
-    everyone.refresh();
+    owen.refresh();
     owen.adminArea.waitAssertVisible();
-    maria.loginDialog.waitAssertFullScreen();
-    michael.loginDialog.waitAssertFullScreen();
+    maria.loginDialog.refreshUntilFullScreen();
+    michael.loginDialog.refreshUntilFullScreen();
   });
 
   it("Maria logs in, sees homepage again", function() {
@@ -91,8 +91,8 @@ describe("settings-login-to-read", function() {
   });
 
   it("Owen disables login required", function() {
-    owen.waitAndClick('#e2eLoginRequiredCB');
-    owen.waitAndClick('.esA_SaveBar_SaveAllB');
+    owen.adminArea.settings.login.clickLoginRequired();
+    owen.adminArea.settings.clickSaveAll();
   });
 
   it("Now Michael sees the pages again", function() {

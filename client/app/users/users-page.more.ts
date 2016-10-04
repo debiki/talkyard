@@ -254,7 +254,7 @@ var UserInfo = createComponent({
       }, (files, rejected) => {
         dieIf(files.length !== 1, 'DwE5UPM2');
         FileAPI.upload({   // a bit dupl code [2UK503]
-          url: '/-/upload-avatar',
+          url: '/-/upload-avatar?userId=' + this.props.user.id,
           headers: { 'X-XSRF-TOKEN': window['$'].cookie('XSRF-TOKEN') },
           files: { images: files },
           imageOriginal: false,

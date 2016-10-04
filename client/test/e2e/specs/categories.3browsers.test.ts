@@ -29,6 +29,7 @@ var DefaultCategorySelector = 'a*=Uncategorized';
 describe("categories", function() {
 
   it("initialize people", function() {
+    browser.perhapsDebugBefore();
     everyone = browser;
     owen = _.assign(browserA, pagesFor(browserA), make.memberOwenOwner());
     mons = _.assign(browserB, pagesFor(browserB), make.memberModeratorMons());
@@ -76,8 +77,8 @@ describe("categories", function() {
     maria.editor.save();
     maria.waitForNewUrl();
     // ensure ancestor Wasteland visible
-    maria.assertTextMatches('.dw-p-ttl', mariasFirstTopicTitle);
-    maria.assertTextMatches('.esOrigPost', mariasFirstTopicText);
+    maria.assertPageTitleMatches(mariasFirstTopicTitle);
+    maria.assertPageBodyMatches(mariasFirstTopicText);
   });
 
   it("Owen sees Marias' topic", function() {

@@ -170,7 +170,7 @@ GET   /-/load-post-revisions    controllers.EditController.loadPostRevisions(pos
 POST  /-/start-private-group-talk controllers.GroupTalkController.sendMessage
 
 POST  /-/upload-public-file     controllers.UploadsController.uploadPublicFile
-POST  /-/upload-avatar          controllers.UploadsController.uploadAvatar
+POST  /-/upload-avatar          controllers.UploadsController.uploadAvatar(userId: Int)
 POST  /-/remove-avatar          controllers.UploadsController.removeAvatar
 GET   /-/u/*relativePath        controllers.UploadsController.servePublicFile(relativePath)
 GET   /-/uploads/public/*relativePath controllers.UploadsController.servePublicFileLong(relativePath)

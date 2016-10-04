@@ -58,6 +58,7 @@ describe("create site, follow the admin guide", function() {
     owen.go(utils.makeCreateSiteWithFakeIpUrl());
     owen.createSite.fillInFieldsAndSubmit(newSiteData);
     owen.click('#e2eLogin');
+    owen.disableRateLimits();
     owen.loginDialog.createPasswordAccount(owen);
     siteId = owen.getSiteId();
     var link = server.getLastVerifyEmailAddressLinkEmailedTo(siteId, owen.emailAddress);
@@ -82,8 +83,7 @@ describe("create site, follow the admin guide", function() {
   });
 
   it("Now Maria needs to create an account", function() {
-    maria.refresh();
-    maria.loginDialog.waitAssertFullScreen();
+    maria.loginDialog.refreshUntilFullScreen();
   });
 
   it("... she creates an account", function() {

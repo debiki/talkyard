@@ -13,7 +13,7 @@ interface TestSettings {
   forbiddenPassword: string;
   mainSiteOrigin: string;
   newSiteDomain: string;
-  waitforTimeout: string;
+  waitforTimeout: number;
   debugBefore: boolean;
   debugAfterwards: boolean;
   include3rdPartyDependentTests?: boolean;
