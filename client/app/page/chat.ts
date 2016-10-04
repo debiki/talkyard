@@ -110,6 +110,10 @@ var TitleAndLastChatMessages = createComponent({
         // We show the title & body elsewhere.
         return;
       }
+      if (post.isPostDeleted) {
+        messages.push(DeletedChatMessage({ key: post.uniqueId, store: store, post: post }));
+        return;
+      }
       if (post.postId === FirstReplyNr) {
         // (COULD make this work also if post nr FirstReplyNr has been moved to another page
         // and hence will never be found. Fix by scrolling up, noticing that nothing was found,
@@ -163,6 +167,10 @@ var ChatMessage = createComponent({
     });
   },
 
+  delete_: function() {
+    morebundle.openDeletePostDialog(this.props.post);
+  },
+
   render: function () {
     var state = this.state;
     var store: Store = this.props.store;
@@ -174,7 +182,9 @@ var ChatMessage = createComponent({
     headerProps.isFlat = true;
     headerProps.exactTime = true;
     headerProps.stuffToAppend = (me.id !== author.id || state.isEditing) ? [] :
-      [r.button({ className: 'esC_M_EdB icon-edit', key: 'e', onClick: this.edit }, "edit")];
+      [r.button({ className: 'esC_M_EdB icon-edit', key: 'e', onClick: this.edit }, "edit"),
+        // (Don't show a trash icon, makes the page look too cluttered.)
+        r.button({className: 'esC_M_EdB', key: 'd', onClick: this.delete_ }, "delete")];
     //headerProps.stuffToAppend.push(
     //  r.button({ className: 'esC_M_MoreB icon-ellipsis', key: 'm' }, "more"));
     return (
@@ -184,6 +194,17 @@ var ChatMessage = createComponent({
         PostBody({ store: store, post: post })));
   }
 });
+
+
+
+function DeletedChatMessage(props) {
+  var post: Post = props.post;
+  return (
+    r.div({ className: 'esC_M', id: 'post-' + post.postId, key: props.key },
+      r.div({ className: 'dw-p-bd' },
+        r.div({ className: 'dw-p-bd-blk' },
+          "(Message deleted)"))));
+}
 
 
 

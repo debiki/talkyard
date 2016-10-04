@@ -129,8 +129,8 @@ object ImpersonateController extends mvc.Controller {
 
   private def concatAndHash(userId: UserId, unixSeconds: Long, randomString: String) = {
     val CFS = FieldSeparator
-    val toHash = s"$userId$CFS$unixSeconds$CFS$randomString$CFS${Globals.applicationSecret}"
-    val theHash = hashSha1Base64UrlSafe(toHash)
+    val toHash = s"$userId$CFS$unixSeconds$CFS$randomString"
+    val theHash = hashSha1Base64UrlSafe(toHash + CFS + Globals.applicationSecret)
     s"$toHash$CFS$theHash"
   }
 

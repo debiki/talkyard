@@ -310,6 +310,9 @@ trait PostsDao {
       val page = PageDao(pageId, transaction)
       throwIfMayNotPostTo(page, author)(transaction)
 
+      if (!page.role.isChat)
+        throwForbidden("EsE5F0WJ2", s"Page $pageId is not a chat page; cannot insert chat message")
+
       val pageMemberIds = transaction.loadMessageMembers(pageId)
       if (!pageMemberIds.contains(authorId))
         throwForbidden("EsE4UGY7", "You are not a member of this chat channel")
@@ -376,6 +379,10 @@ trait PostsDao {
     val oldMeta = page.meta
     val newMeta = oldMeta.copy(
       bumpedAt = page.isClosed ? oldMeta.bumpedAt | Some(transaction.currentTime),
+      // Chat messages are always visible, so increment all num-replies counters.
+      numRepliesVisible = oldMeta.numRepliesVisible + 1,
+      numRepliesTotal = oldMeta.numRepliesTotal + 1,
+      //numOrigPostRepliesVisible <— leave as is — chat messages aren't orig post replies.
       lastReplyAt = Some(transaction.currentTime),
       lastReplyById = Some(authorId),
       frequentPosterIds = newFrequentPosterIds,
@@ -972,7 +979,10 @@ trait PostsDao {
       val oldMeta = page.meta
       var newMeta = oldMeta.copy(version = oldMeta.version + 1)
       var markSectionPageStale = false
-      if (numVisibleRepliesGone > 0) {
+      // COULD update database to fix this. (Previously, chat pages didn't count num-chat-messages.)
+      val isChatWithWrongReplyCount =
+        page.role.isChat && oldMeta.numRepliesVisible == 0 && numVisibleRepliesGone > 0
+      if (numVisibleRepliesGone > 0 && !isChatWithWrongReplyCount) {
         newMeta = newMeta.copy(
           numRepliesVisible = oldMeta.numRepliesVisible - numVisibleRepliesGone,
           numOrigPostRepliesVisible =

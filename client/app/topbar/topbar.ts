@@ -398,7 +398,7 @@ var SearchForm = createComponent({
           r.input({ type: 'hidden', ref: 'xsrfToken', name: 'dw-fi-xsrf' }),
           r.input({ type: 'text', tabIndex: '1', placeholder: 'Text to search for',
               ref: 'input', className: 'input-medium', name: 'searchPhrase' }),
-          Button({ type: 'submit', bsStyle: 'primary' }, "Search")));
+          InputTypeSubmit({ value: "Search" })));
   }
 });
 

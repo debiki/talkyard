@@ -221,9 +221,11 @@ case class PageMeta(
   require(numOrigPostUnwantedVotes >= 0, "DwE0GFW8")
   require(numOrigPostUnwantedVotes <= numUnwanteds, "DwE4GKY8")
   require(numOrigPostRepliesVisible >= 0, "DwE0GY42")
-  require(numOrigPostRepliesVisible <= numRepliesVisible, "DwE0GY42B")
+  require(numOrigPostRepliesVisible <= numRepliesVisible,
+    s"Fail: $numOrigPostRepliesVisible <= $numRepliesVisible [EsE0GY42B]")
   //require(numRepliesVisible >= 0, "DwE6KPE78") - bug in PostsDao.changePostStatus()?
-  require(numRepliesTotal >= numRepliesVisible, "DwE4REQ2")
+  require(numRepliesTotal >= numRepliesVisible,
+    s"Fail: $numRepliesTotal >= $numRepliesVisible [DwE4REQ2]")
   //require(numChildPages >= 0, "DwE8KPEF0") -- oops fails, not so very important, for now instead:
   require(answeredAt.isEmpty || createdAt.getTime < answeredAt.get.getTime, "DwE4KG22")
   require(plannedAt.isEmpty || createdAt.getTime < plannedAt.get.getTime, "DwE0FUY2")
