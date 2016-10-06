@@ -26,6 +26,7 @@ var r = React.DOM;
 
 export var PrimaryButton: any = makeWidget(r.button, ' btn btn-primary');
 export var Button: any = makeWidget(r.button, ' btn btn-default');
+export var LinkButton: any = makeWidget(r.a, ' btn btn-default');
 export var InputTypeSubmit: any = makeWidget(r.input, ' btn btn-primary', { type: 'submit' });
 
 
@@ -79,7 +80,7 @@ export function MenuItemLink(props, ...children) {
   // Don't do  r.a(props, children)  because that'd result in an """an array or iterator
   // should have a unique "key" prop""" React.js warning.
   var linkProps = { role: 'button', href: props.href, tabIndex: props.tabindex || -1,
-    target: props.target };
+    target: props.target, id: props.id };
   return (
     r.li({ role: 'presentation', className: props.className, key: props.key },
       r.a.apply(null, [linkProps].concat(children))));

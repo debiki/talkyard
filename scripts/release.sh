@@ -126,6 +126,7 @@ sudo docker ps # if anything is running, something is amiss?
 
 # todo: don't do this if WIP version
 
+set -x
 
 sudo docker tag debiki/ed-app debiki/ed-app:$version_tag
 sudo docker tag debiki/ed-web debiki/ed-web:$version_tag
@@ -134,6 +135,8 @@ sudo docker tag debiki/ed-rdb debiki/ed-rdb:$version_tag
 sudo docker push debiki/ed-app:$version_tag
 sudo docker push debiki/ed-web:$version_tag
 sudo docker push debiki/ed-rdb:$version_tag
+
+set +x
 
 echo $version_tag >> modules/ed-versions/version-tags.log
 pushd .

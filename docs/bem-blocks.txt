@@ -16,6 +16,8 @@ esA             = Admin Area
 esA_Ss          = Admin Area, settings
 esA_Ss_S        = Admin Area, a single setting
 
+esA_Us_U        = Admin Area, a single user
+
 esCB            = context bar (the right sidebar)
 
 esE             = The editor
@@ -45,6 +47,9 @@ es/e2eMM        = my menu (one's avatar + username, in the topbar)
 esUD            = About user dialog
 
 esUP            = A user's public profile page
+esUP_Un         = Username
+esUP_FN         = Full name
+esUP_Prefs      = ... the preferences section
 
 esT             = a thread (i.e. a comment thread: a post and descendant replies)
 

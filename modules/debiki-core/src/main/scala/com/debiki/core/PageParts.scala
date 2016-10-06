@@ -30,7 +30,7 @@ object PageParts {
   // Letting the page body / original post be number 1 is compatible with Discourse.
   val TitleNr = 0
   val BodyNr = 1  // (could rename to OrigPostId)
-  val FirstReplyNr = 2
+  val FirstReplyNr = 2  // [5FKF0F2]
 
   val LowestPostNr = TitleNr
   assert(LowestPostNr == 0)

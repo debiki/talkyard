@@ -100,7 +100,7 @@ var GuestPreferences = createComponent({
               defaultValue: guest.email, disabled: true }),
           r.p({ className: 'help-block' }, 'Not shown publicly. Cannot be changed.')),
 
-        Button({ type: 'submit' }, 'Save'),
+        InputTypeSubmit({ id: 'e2eUP_Prefs_SaveB', value: "Save" }),
         savingInfo));
   }
 });
@@ -182,7 +182,7 @@ var ShowAndEditPreferences = createComponent({
                 defaultChecked: user.emailForEveryNewPost }),
               "Be notified about every new post (unless you mute the topic or category)"))),
 
-        Button({ type: 'submit' }, 'Save'),
+        InputTypeSubmit({ id: 'e2eUP_Prefs_SaveB', value: "Save" }),
         savingInfo));
 
     /* Discoruse's email options:

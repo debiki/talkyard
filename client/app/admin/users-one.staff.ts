@@ -96,7 +96,9 @@ export var AdminUserPageComponent = React.createClass(<any> {
     if (!user)
       return r.p({}, 'Loading...');
 
-    var showPublProfileButton = Button({ href: this.publicProfileLink() }, 'Show Public Profile');
+    var showPublProfileButton =
+        LinkButton({ href: this.publicProfileLink(), id: 'e2eA_Us_U_ShowPublProfB' },
+          "Show Public Profile");
 
     var usernameAndFullName = user.username;
     if (user.fullName) {
@@ -153,7 +155,8 @@ export var AdminUserPageComponent = React.createClass(<any> {
       "Change");
 
     var impersonateButton = !me.isAdmin ? null :
-        Button({ onClick: () => Server.impersonateGoToHomepage(user.id) }, "Impersonate");
+        Button({ onClick: () => Server.impersonateGoToHomepage(user.id),
+            id: 'e2eA_Us_U_ImpersonateB' }, "Impersonate");
 
     return (
       r.div({},

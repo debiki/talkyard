@@ -33,6 +33,7 @@
 
 
 export function store_thisIsMyPage(store: Store): boolean {
+  if (!store.allPosts) return false;
   var pageBody = store.allPosts[BodyId];
   dieIf(!pageBody, 'EsE5YKF2');
   return store.me.userId === pageBody.authorIdInt;

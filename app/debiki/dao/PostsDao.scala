@@ -326,7 +326,7 @@ trait PostsDao {
           transaction.currentTime.getTime - post.createdAt.getTime < LastChatMessageRecentMs
       }
       val (postNr, notfs) = anyLastMessageSameUserRecently match {
-        case Some(lastMessage) =>
+        case Some(lastMessage) if !lastMessage.isDeleted =>
           appendToLastChatMessage(lastMessage, textAndHtml, byWho, transaction)
         case None =>
           createNewChatMessage(page, textAndHtml, byWho, transaction)

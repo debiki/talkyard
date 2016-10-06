@@ -188,9 +188,9 @@ var UserBar = createComponent({
     var invitesNavItem = null;
     var preferencesNavItem = null;
     if (showPrivateStuff) {
-      preferencesNavItem = NavItem({ eventKey: 'preferences' }, 'Preferences');
+      preferencesNavItem = NavItem({ eventKey: 'preferences', id: 'e2eUP_PrefsB' }, "Preferences");
       if (maySendInvites(user).value) {
-        invitesNavItem = NavItem({ eventKey: 'invites' }, 'Invites');
+        invitesNavItem = NavItem({ eventKey: 'invites', id: 'e2eUP_InvitesB' }, "Invites");
       }
     }
 
@@ -352,8 +352,8 @@ var UserInfo = createComponent({
             anyUploadPhotoBtn)),
         r.div({ className: 'user-info-col' },
           r.div({ style: { display: 'table-cell' }},
-            r.h1({}, user.username, thatIsYou),
-            r.h2({}, user.fullName, isGuestInfo),
+            r.h1({ className: 'esUP_Un' }, user.username, thatIsYou),
+            r.h2({ className: 'esUP_FN' }, user.fullName, isGuestInfo),
             suspendedInfo))));
   }
 });

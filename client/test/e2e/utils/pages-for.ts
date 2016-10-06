@@ -98,6 +98,22 @@ function pagesFor(browser) {
 
 
     topbar: {
+      waitForVisible: function() {
+        browser.waitForVisible('.esMyMenu');
+      },
+
+      assertMyUsernameMatches: function(username: string) {
+        browser.assertTextMatches('.esMyMenu .esAvtrName_name', username);
+      },
+
+      assertNeedsReviewVisible: function() {
+        assert(browser.isVisible('.esNotfIcon-reviewOther'));
+      },
+
+      getMyUsername: function() {
+        return browser.getText('.esMyMenu .esAvtrName_name');
+      },
+
       clickLogin: function() {
         browser.waitAndClick('.esTopbar_logIn');
       },
@@ -123,6 +139,26 @@ function pagesFor(browser) {
         browser.waitAndClick('.esMyMenu');
         browser.waitAndClick('.esMyMenu_admin a');
         browser.waitForNewUrl();
+      },
+
+      clickGoToProfile: function() {
+        browser.rememberCurrentUrl();
+        browser.waitAndClick('.esMyMenu');
+        browser.waitAndClick('#e2eMM_Profile');
+        browser.waitForNewUrl();
+        browser.waitForVisible('.user-info');
+      },
+
+      clickStopImpersonating: function() {
+        let oldName = api.topbar.getMyUsername();
+        let newName;
+        browser.waitAndClick('.esMyMenu');
+        browser.waitAndClick('#e2eMM_StopImp');
+        browser.waitForVisible('.user-info');
+        do {
+          newName = api.topbar.getMyUsername();
+        }
+        while (oldName === newName);
       },
     },
 
@@ -579,6 +615,10 @@ function pagesFor(browser) {
       clickHomeNavLink: function() {
         browser.click("a=Home");
       },
+
+      assertPostTextMatches: function(postId: PostId, text: string) {
+        browser.assertTextMatches(`#post-${postId} .dw-p-bd`, text)
+      }
     },
 
 
@@ -624,6 +664,14 @@ function pagesFor(browser) {
         // There's this error code if a post author isn't included on the page.
         browser.replies.assertNoReplyMatches("EsE4FK07_");
       },
+
+      clickReplyToOrigPost: function() {
+        browser.waitAndClick('.dw-ar-p + .esPA .dw-a-reply');
+      },
+
+      assertFirstReplyTextMatches: function(text) {
+        api.topic.assertPostTextMatches(2, text); // title = 0, body = 1, first reply = 2 [5FKF0F2]
+      },
     },
 
 
@@ -641,6 +689,26 @@ function pagesFor(browser) {
     },
 
 
+    userProfilePage: {
+      assertIsMyProfile: function() {
+        browser.waitForVisible('.esUP_Un');
+        assert(browser.isVisible('.esProfile_isYou'));
+      },
+
+      assertUsernameIs: function(username: string) {
+        browser.assertTextMatches('.esUP_Un', username);
+      },
+
+      assertFullNameIs: function(name: string) {
+        browser.assertTextMatches('.esUP_FN', name);
+      },
+
+      assertFullNameIsNot: function(name: string) {
+        browser.assertNoTextMatches('.esUP_FN', name);
+      },
+    },
+
+
     adminArea: {
       waitAssertVisible: function() {
         browser.waitForVisible('h1');
@@ -655,6 +723,10 @@ function pagesFor(browser) {
 
       goToLoginSettings: function(siteIdOrigin) {
         browser.go(siteIdOrigin + '/-/admin/settings/login');
+      },
+
+      goToUsers: function(siteIdOrigin) {
+        browser.go(siteIdOrigin + '/-/admin/users');
       },
 
       settings: {
@@ -747,6 +819,20 @@ function pagesFor(browser) {
         if (data.bodyMatchAfter !== false) {
           browser.assertPageBodyMatches(data.bodyMatchAfter || data.body);
         }
+      },
+
+      editPageBody: function(newText: string) {
+        api.topic.clickEditOrigPost();
+        api.editor.editText(newText);
+        api.editor.save();
+        browser.assertPageBodyMatches(newText);
+      },
+
+      replyToOrigPost: function(text: string) {
+        api.replies.clickReplyToOrigPost();
+        api.editor.editText(text);
+        api.editor.save();
+        api.replies.assertFirstReplyTextMatches(text);
       },
 
       createChatChannelViaWatchbar: function(

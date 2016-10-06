@@ -106,7 +106,8 @@ var MyMenuDropdownModal = createComponent({
       // ------- Stop impersonating
 
       var stopImpersonatingMenuItem = !store.isImpersonating ? null :
-          MenuItem({ onClick: Server.stopImpersonatingReloadPage }, "Stop impersonating");
+          MenuItem({ onClick: Server.stopImpersonatingReloadPage,
+              id: 'e2eMM_StopImp' }, "Stop impersonating");
 
       // ------- The menu
 
