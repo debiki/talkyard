@@ -185,6 +185,13 @@
     overflow: hidden;
     word-break: break-word;
 
+.dw-p-ttl > .dw-p-bd
+  margin-bottom: 0; // else too much margin-bottom, author name too far away
+
+// No idea why, but the descender spacing for the title, is missing, so e.g. a 'y' in
+// the title gets cut of (looks more like a v). Add some space. Weird.
+h1.dw-p-ttl
+  padding-bottom: 4px;
 
 .esPendingApproval
   font-size: 15px;
