@@ -24,7 +24,7 @@ EOF
 
 if [ -n "$CREATE_TEST_USER" ]; then
   psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" <<EOF
-  create user ed_test password 'auto-deleted';
+  create user ed_test password 'public';
   create database ed_test;
   grant all privileges on database ed_test to ed_test;
 EOF
