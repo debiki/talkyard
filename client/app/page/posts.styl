@@ -25,7 +25,6 @@
   margin: 0;
   padding: 0;
   top: 0;
-  font-size: 11px
   line-height: 15px // or test w 120%
 
 .dw-p-hd,
@@ -73,32 +72,35 @@
     z-index: 2;
     position: relative;
 
+.dw-p.dw-zd,
 .dw-x-show
   position: relative;
   bottom: 10px;
   padding: 0 0 3px 3px;  // padding-top hides parts of any <p> above
   margin: 7px 0 22px;
   font-style: italic;
-  letter-spacing: 0.22ex;
   background: #fff;
   color: hsl($uiHue, 20%, 50%);
 
-.dw-ts-squashed
-  .dw-x-show
-    bottom: 0;
-    padding: 10px 0 17px 5px;
-    display: block;
-    margin: -8px 0 8px;
-    z-index: 1;
-    float: left;
-    color: hsl(0, 0%, 53%);
-    &:hover
-      background-color: hsl($uiHue, 100%, 97%);
-      color: hsl($uiHue, 100%, 33%);
-      text-decoration: none;
+.dw-p.dw-zd,
+.dw-ts-squashed .dw-x-show
+  bottom: 0;
+  padding: 10px 0 17px 5px;
+  display: block;
+  margin: -8px 0 8px;
+  z-index: 1;
+  float: left;  // see [5FKT02W] below
+  color: hsl(0, 0%, 53%);
+  &:hover
+    background-color: hsl($uiHue, 100%, 97%);
+    color: hsl($uiHue, 100%, 33%);
+    text-decoration: none;
 
-  &.dw-2dcol > .dw-x-show
+.dw-ts-squashed.dw-2dcol > .dw-x-show
     color: hsl(0, 0%, 20%);
+
+.dw-single-and-multireplies
+  clear: both; // because of float: left above [5FKT02W]
 
 .dw-p.dw-x:hover
   .dw-p-hd,
@@ -320,11 +322,22 @@ h1.dw-p-ttl
   font-style: italic;
   color: hsl(0, 0%, 41%);
 
+.dw-rrs
+  padding-bottom: 5px;
+
 .DW .dw-rr // reply receiver
-  padding: 7px 0 6px 5px
+  padding: 7px 0 2px 5px
   display: inline-block;
   font-weight: bold;
   color: hsl(0, 0%, 28%);
+  &:hover
+    background: hsl($uiHue, 100%, 96%);
+    outline: hsl($uiHue, 100%, 87%) 2px solid;
+    text-decoration: none;
+
+.-RRs_RR_Aw
+  color: hsl(0, 0%, 52%); // or too dark
+  margin: 0 2px;
 
 // Make it easier to touch.
 html:not(.mouse) .dw-rr

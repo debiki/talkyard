@@ -998,7 +998,10 @@ var ReplyReceivers = createComponent({
       var author = store_getAuthorOrMissing(store, post);
       var link =
         r.a({ href: '#post-' + post.postId, className: 'dw-rr', key: post.postId },
-          author.username || author.fullName);
+          author.username || author.fullName,
+          // Append an up arrow to indicate that clicking the name will scroll up,
+          // rather than opening an about-user dialog. ⬆ is Unicode upwards-black-arrow U+2B06.
+          r.span({ className: '-RRs_RR_Aw' }, '⬆'));
       if (receivers.length) {
         link = r.span({ key: post.postId }, ' and', link);
       }

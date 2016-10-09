@@ -65,6 +65,10 @@ esP_B           = post body (the actual text)
 
 esPA            = post actions (actually located outside the post (esP) there fore esPA not esP_A)
 
+-RRs            = reply receivers
+-RRs_RR         = one reply receiver in the list
+-RRs_RR_Aw      = arrow after the reply receiver's name, pointing upwarts towards the parent post
+
 esRT            = review task
 
 esRPP           = reset password page
