@@ -49,6 +49,7 @@ describe("create site, follow the admin guide", function() {
     var newSiteData = {
       testId: testId,
       localHostname: localHostname,
+      name: localHostname,
       origin: utils.makeSiteOrigin(localHostname),
       originRegexEscaped: utils.makeSiteOriginRegexEscaped(localHostname),
       orgName: "Owen's E2E Org",

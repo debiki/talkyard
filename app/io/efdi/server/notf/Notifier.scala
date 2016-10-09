@@ -48,7 +48,10 @@ object Notifier {
     val actorRef = actorSystem.actorOf(Props(
       new Notifier(systemDao, siteDaoFactory)),
       name = s"NotifierActor-$testInstanceCounter")
-    actorSystem.scheduler.schedule(10 seconds, 20 seconds, actorRef, "SendNotfs")
+    // For now, check for emails more often, so e2e tests won't have to wait for them to
+    // get sent. SHOULD wait at least for the ninja edit interval before sending any notf email.
+    // But how make that work, with tests?
+    actorSystem.scheduler.schedule(10 seconds, 2 seconds, actorRef, "SendNotfs")  // [5KF0WU2T4]
     testInstanceCounter += 1
     actorRef
   }

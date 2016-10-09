@@ -5,7 +5,7 @@ declare function require(...whatever): any;
 
 import _ = require('lodash');
 import assert = require('assert');
-import TestPageRole = require('../test-constants');
+import c = require('../test-constants');
 
 var DefaultCreatedAtMs = 1449198824000;
 var SystemUserId = 1; // [commonjs]
@@ -19,6 +19,7 @@ function getAndBumpNextPostId() {
 var emptySite: SiteData = {
   meta: {
     id: null,
+    name: null,
     localHostname: null,
     creatorEmailAddress: "e2e-test--owner@example.com",
     status: 2,
@@ -225,7 +226,7 @@ var make = {
       position: undefined,
       description: undefined,
       newTopicTypes: undefined,
-      defaultTopicType: TestPageRole.Discussion,
+      defaultTopicType: c.TestPageRole.Discussion,
       createdAtMs: forumPage.createdAtMs,
       updatedAtMs: forumPage.updatedAtMs,
       hideInForum: false,
@@ -291,6 +292,7 @@ var make = {
   forumOwnedByOwen: function(namePrefix: string, options?): SiteData {
     var site: SiteData = make.emptySiteOwnedByOwen();
     site.meta.localHostname = namePrefix + Date.now();
+    site.meta.name = site.meta.localHostname;
 
     options = options || {};
 
@@ -299,7 +301,7 @@ var make = {
 
     var forumPage = make.page({
       id: 'fmp',
-      role: TestPageRole.Forum,
+      role: c.TestPageRole.Forum,
       categoryId: rootCategoryId,
       authorId: 1,    // [commonjs] SystemUserId
     });

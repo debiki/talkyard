@@ -52,6 +52,7 @@ interface SiteData {
 
 interface SiteMeta {
   id?: string;
+  name: string;
   localHostname: string;
   creatorEmailAddress: string;
   status: SiteStatus,

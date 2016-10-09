@@ -27,5 +27,8 @@ var TestPageRole = {  // dupl in client/app/constants.ts [5F8KW0P2]
 };
 
 
-export = TestPageRole;
+export = {
+  TestPageRole: TestPageRole,
+  FirstReplyNr: 2,  // [5FKF0F2]
+};
 

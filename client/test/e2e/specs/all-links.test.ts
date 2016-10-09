@@ -10,7 +10,7 @@ import pages = require('../utils/pages');
 import settings = require('../utils/settings');
 import make = require('../utils/make');
 import logAndDie = require('../utils/log-and-die');
-import TestPageRole = require('../test-constants');
+import c = require('../test-constants');
 var logUnusual = logAndDie.logUnusual, die = logAndDie.die, dieIf = logAndDie.dieIf;
 var logMessage = logAndDie.logMessage;
 var SystemUserId = 1;  // [commonjs]
@@ -24,6 +24,7 @@ describe('all links', function() {
   it('create site with all links', function() {
     var site: SiteData = make.emptySiteOwnedByOwen();
     site.meta.localHostname = 'all-links-' + Date.now();
+    site.meta.name = site.meta.localHostname;
 
     site.members.push(make.memberAdminAdam());
     site.members.push(make.memberAdminAlice());
@@ -39,7 +40,7 @@ describe('all links', function() {
 
     var forumPage = make.page({
       id: 'fmp',
-      role: TestPageRole.Forum,
+      role: c.TestPageRole.Forum,
       categoryId: rootCategoryId,
       authorId: SystemUserId,
     });
@@ -87,7 +88,7 @@ describe('all links', function() {
 
     var whateverTopic = make.page({
       id: 'whateverTopic',
-      role: TestPageRole.Discussion,
+      role: c.TestPageRole.Discussion,
       categoryId: whateverCategory.id,
       authorId: SystemUserId,
     });
@@ -110,7 +111,7 @@ describe('all links', function() {
 
     var questionTopic = make.page({
       id: 'questionTopic',
-      role: TestPageRole.Question,
+      role: c.TestPageRole.Question,
       categoryId: whateverCategory.id,
       authorId: SystemUserId,
       // answerPostId

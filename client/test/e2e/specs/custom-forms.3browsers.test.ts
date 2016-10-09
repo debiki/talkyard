@@ -10,7 +10,7 @@ import settings = require('../utils/settings');
 import make = require('../utils/make');
 import assert = require('assert');
 import logAndDie = require('../utils/log-and-die');
-import TestPageRole = require('../test-constants');
+import c = require('../test-constants');
 
 declare var browser: any;
 declare var browserA: any;
@@ -105,7 +105,7 @@ describe("private chat", function() {
     owen.assertPageTitleMatches(forumTitle);
     owen.complex.loginWithPasswordViaTopbar(owen);
     owen.complex.createAndSaveTopic(
-        { title: formPageTitle, body: formPageBody, type: TestPageRole.Form,
+        { title: formPageTitle, body: formPageBody, type: c.TestPageRole.Form,
           bodyMatchAfter: false });
     formPageUrl = owen.url().value;
   });

@@ -10,6 +10,7 @@ import settings = require('../utils/settings');
 import make = require('../utils/make');
 import assert = require('assert');
 import logAndDie = require('../utils/log-and-die');
+import c = require('../test-constants');
 
 declare var browser: any;
 declare var browserA: any;
@@ -155,6 +156,7 @@ describe("impersonate", () => {
 
   it("... and post replies", () => {
     maria.complex.replyToOrigPost(origPostReplyText);
+    maria.topic.assertPostTextMatches(c.FirstReplyNr, origPostReplyText);
   });
 
   it("... she goes to her profile page", () => {

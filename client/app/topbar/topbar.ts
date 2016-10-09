@@ -91,7 +91,7 @@ export var TopBar = createComponent({
   },
 
   onScroll: function() {
-    if (!this.state.initialOffsetTop)
+    if (!_.isNumber(this.state.initialOffsetTop))
       return;
 
     var store: Store = this.state.store;
@@ -105,7 +105,13 @@ export var TopBar = createComponent({
     this.setState({ top: newTop, left: -pageLeft }); // CLEAN_UP `top` not used. What about `left`?
     if (!this.state.fixed) {
       if (-pageTop > this.state.initialOffsetTop + FixedTopDist || pageLeft < -40) {
-        this.setState({ fixed: true });
+        var rect = this.getThisRect();
+        this.setState({
+          fixed: true,
+          // Update the height here, not in componentDidMount, because the height might change
+          // if the window is made wider/smaller, after mount.
+          placeholderHeightPx: rect.height + 'px',
+        });
       }
     }
     else if (pageLeft < -20) {
@@ -352,17 +358,29 @@ export var TopBar = createComponent({
 
     var fixItClass = '';
     var styles = {};
+    var placeholderIfFixed;
     if (this.state.fixed) {
       fixItClass = ' dw-fixed-topbar-wrap';
+      // (This placeholder is actually totally needed, otherwise in some cases it'd be
+      // impossible to scroll down — because when the topbar gets removed from the flow
+      // via position:fixed, the page gets shorter, and then sometimes this results in the
+      // scrollbars disappearing and scroll-top becoming 0. Then onScroll() above
+      // gets called, it changes the topbar to position:static again, the topbar gets reinserted
+      // and the bottom of the page gets pushed down again — the effect is that, in this
+      // rare case, it's impossible to scroll down (without this placeholder). )
+      placeholderIfFixed =
+          r.div({ style: { height: this.state.placeholderHeightPx, width: '10px' } });
       // No, use position: fixed instead. CLEAN_UP 2016-10: remove `styles` + this.state.top & left
       //styles = { top: this.state.top, left: this.state.left }
     }
     return (
+      r.div({},
+        placeholderIfFixed,
         r.div({ className: 'esTopbarWrap' + fixItClass, style: styles },
           openWatchbarButton,
           openContextbarButton,
           r.div({ className: 'container' },
-            topbar)));
+            topbar))));
   }
 });
 

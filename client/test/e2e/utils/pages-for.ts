@@ -5,7 +5,7 @@ import _ = require('lodash');
 import assert = require('assert');
 import logAndDie = require('./log-and-die');
 import settings = require('./settings');
-import TestPageRole = require('../test-constants');
+import c = require('../test-constants');
 var logUnusual = logAndDie.logUnusual, die = logAndDie.die, dieIf = logAndDie.dieIf;
 var logMessage = logAndDie.logMessage;
 
@@ -581,9 +581,9 @@ function pagesFor(browser) {
         let optionId = null;
         var needsClickMore = false;
         switch (type) {
-          case TestPageRole.Form: optionId = '#e2eTTD_FormO'; needsClickMore = true; break;
-          case TestPageRole.WebPage: optionId = '#e2eTTD_WebPageO'; needsClickMore = true; break;
-          case TestPageRole.PrivateChat: optionId = '#e2eTTD_PrivChatO'; break;
+          case c.TestPageRole.Form: optionId = '#e2eTTD_FormO'; needsClickMore = true; break;
+          case c.TestPageRole.WebPage: optionId = '#e2eTTD_WebPageO'; needsClickMore = true; break;
+          case c.TestPageRole.PrivateChat: optionId = '#e2eTTD_PrivChatO'; break;
           default: die('Test unimpl [EsE4WK0UP]');
         }
         browser.waitAndClick('.esTopicType_dropdown');
@@ -666,11 +666,34 @@ function pagesFor(browser) {
       },
 
       clickReplyToOrigPost: function() {
-        browser.waitAndClick('.dw-ar-p + .esPA .dw-a-reply');
+        api.replies.clickPostActionButton('.dw-ar-p + .esPA .dw-a-reply');
+      },
+
+      clickReplyToPostNr: function(postNr: PostNr) {
+        api.replies.clickPostActionButton(`#post-${postNr} + .esPA .dw-a-reply`);
+      },
+
+      clickPostActionButton: function(buttonSelector: string) {
+        // If the button is close to the bottom of the window, the fixed bottom bar might
+        // be above it; then, if it's below the [Scroll][Back] buttons, it won't be clickable.
+        // Or the button might be below the lower window edge.
+        // If so, scroll down to the reply button.
+        while (true) {
+          let replyButtonLocation = browser.getLocationInView(buttonSelector);
+          let fixedBarLocation = browser.getLocationInView(api.scrollButtons.fixedBarSelector);
+          if (replyButtonLocation.y + 70 < fixedBarLocation.y)
+            break;
+          browser.execute(function(selector) {
+            window['debiki2'].utils.scrollIntoViewInPageColumn(
+                selector, { marginBottom: 70 + 20, duration: 220 });
+          }, buttonSelector);
+          browser.pause(220 + 10);
+        }
+        browser.waitAndClick(buttonSelector);
       },
 
       assertFirstReplyTextMatches: function(text) {
-        api.topic.assertPostTextMatches(2, text); // title = 0, body = 1, first reply = 2 [5FKF0F2]
+        api.topic.assertPostTextMatches(c.FirstReplyNr, text);
       },
     },
 
@@ -686,6 +709,11 @@ function pagesFor(browser) {
       waitForNumMessages: function(howMany: number) {
         browser.waitForAtLeast(howMany, '.esC_M');
       }
+    },
+
+
+    scrollButtons: {
+      fixedBarSelector: '.esScrollBtns_fixedBar',
     },
 
 
@@ -832,7 +860,12 @@ function pagesFor(browser) {
         api.replies.clickReplyToOrigPost();
         api.editor.editText(text);
         api.editor.save();
-        api.replies.assertFirstReplyTextMatches(text);
+      },
+
+      replyToPostNr: function(postNr: PostNr, text: string) {
+        api.replies.clickReplyToPostNr(postNr);
+        api.editor.editText(text);
+        api.editor.save();
       },
 
       createChatChannelViaWatchbar: function(
@@ -841,7 +874,7 @@ function pagesFor(browser) {
         api.editor.editTitle(data.name);
         api.editor.editText(data.purpose);
         if (data.public_ === false) {
-          api.editor.setTopicType(TestPageRole.PrivateChat);
+          api.editor.setTopicType(c.TestPageRole.PrivateChat);
         }
         browser.rememberCurrentUrl();
         api.editor.save();

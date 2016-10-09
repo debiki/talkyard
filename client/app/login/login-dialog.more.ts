@@ -166,6 +166,7 @@ var LoginDialog = createClassAndFactory({
     $['cookie']('dwCoIsInLoginPopup', null);
     $['cookie']('dwCoMayCreateUser', null);
     $['cookie']('dwCoOAuth2State', null);
+    $['cookie']('esCoImp', null);
   },
 
   close: function() {

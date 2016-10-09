@@ -25,7 +25,7 @@ var $ = d.i.$;
 
 export function calcScrollIntoViewCoordsInPageColumn(what, options?) {
   // Warning: dupl code, see [5GUKF24] below.
-  if (!_.isNumber(what.length)) {
+  if (!_.isNumber(what.length) || _.isString(what)) {
     what = $(what);
   }
   if (!what.length)
@@ -34,7 +34,7 @@ export function calcScrollIntoViewCoordsInPageColumn(what, options?) {
   if (!options) {
     options = {};
   }
-  debiki2.dieIf(options.parent, 'EsE5GKF23');
+  debiki2.dieIf(options.parent, 'EsE77KF28');
   options.parent = $('#esPageColumn');
 
   return d.i.calcScrollIntoViewCoords(what, options);
@@ -43,7 +43,7 @@ export function calcScrollIntoViewCoordsInPageColumn(what, options?) {
 
 export function scrollIntoViewInPageColumn(what, options?) {
   // Warning: dupl code, see [5GUKF24] above.
-  if (!_.isNumber(what.length)) {
+  if (!_.isNumber(what.length) || _.isString(what)) {
     what = $(what);
   }
   if (!what.length)

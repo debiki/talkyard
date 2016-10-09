@@ -128,10 +128,18 @@ function getLastVerifyEmailAddressLinkEmailedTo(siteId: SiteId, emailAddress: st
   return utils.findFirstLinkToUrlIn('https?://.*/-/login-password-confirm-email', email.bodyHtmlText);
 }
 
+
+function getLastUnsubscriptionLinkEmailedTo(siteId: SiteId, emailAddress: string): string {
+  var email = getLastEmailSenTo(siteId, emailAddress);
+  return utils.findFirstLinkToUrlIn('https?://.*/-/unsubscribe', email.bodyHtmlText);
+}
+
+
 export = {
   initOrDie: initOrDie,
   importSiteData: importSiteData,
   getLastEmailSenTo: getLastEmailSenTo,
   getLastVerifyEmailAddressLinkEmailedTo: getLastVerifyEmailAddressLinkEmailedTo,
+  getLastUnsubscriptionLinkEmailedTo: getLastUnsubscriptionLinkEmailedTo,
 };
 

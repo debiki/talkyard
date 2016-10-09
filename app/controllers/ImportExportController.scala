@@ -199,22 +199,34 @@ object ImportExportController extends mvc.Controller {
 
 
   def readSiteMeta(jsObject: JsObject): Site = {
-    val localHostname = readString(jsObject, "localHostname")
+    val name = readString(jsObject, "name")
+    val anyFullHostname = readOptString(jsObject, "fullHostname")
+    untestedIf(anyFullHostname.isDefined, "EsE5FK02", "fullHostname has never been used before")
+
+    def theLocalHostname = {
+      readOptString(jsObject, "localHostname") getOrElse {
+        throw new BadJsonException(s"Neither fullHostname nor localHostname specified [EsE2KF4Y8]")
+      }
+    }
+
     val siteStatusInt = readInt(jsObject, "status")
     val siteStatus = SiteStatus.fromInt(siteStatusInt) getOrElse {
       throwBadRequest("EsE6YK2W4", s"Bad site status int: $siteStatusInt")
     }
+
     val createdAtMs = readLong(jsObject, "createdAtMs")
+    val fullHostname = anyFullHostname.getOrElse(s"$theLocalHostname.${Globals.baseDomainNoPort}")
+
     Site(
       id = "?",
       status = siteStatus,
-      name = localHostname,
+      name = name,
       createdAt = When.fromMillis(createdAtMs),
       creatorIp = "0.0.0.0",
       creatorEmailAddress = readString(jsObject, "creatorEmailAddress"),
       embeddingSiteUrl = None,
       hosts = List(
-        SiteHost(localHostname, SiteHost.RoleCanonical)))
+        SiteHost(fullHostname, SiteHost.RoleCanonical)))
   }
 
 

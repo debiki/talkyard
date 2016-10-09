@@ -9,7 +9,7 @@ import pagesFor = require('../utils/pages-for');
 import settings = require('../utils/settings');
 import make = require('../utils/make');
 import logAndDie = require('../utils/log-and-die');
-import TestPageRole = require('../test-constants');
+import c = require('../test-constants');
 var logUnusual = logAndDie.logUnusual, die = logAndDie.die, dieIf = logAndDie.dieIf;
 var logMessage = logAndDie.logMessage;
 
@@ -31,6 +31,7 @@ describe('chat', function() {
 
     var site: SiteData = make.emptySiteOwnedByOwen();
     site.meta.localHostname = 'chat-' + Date.now();
+    site.meta.name = site.meta.localHostname;
 
     site.members.push(make.memberMaria());
 
@@ -39,7 +40,7 @@ describe('chat', function() {
 
     var forumPage = make.page({
       id: 'fmp',
-      role: TestPageRole.Forum,
+      role: c.TestPageRole.Forum,
       categoryId: rootCategoryId,
       authorId: 1,    // [commonjs] SystemUserId
     });
