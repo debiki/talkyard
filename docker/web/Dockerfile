@@ -1,23 +1,45 @@
-# Parts Copyright (c) NGINX Inc.
-# License: the same License as NGINX itself, 2-clause BSD
-# (See: https://github.com/nginxinc/docker-nginx/issues/80)
-#
 # Parts Copyright (c) 2016 Kaj Magnus Lindberg
-# License: MIT (Kaj Magnus's changes in this file only).
+# License: 2-clause BSD (Kaj Magnus's changes in this file only).
+#
+# Parts Copyright (C) 2011-2016 Nginx, Inc.
+# License: (2-clause BSD)
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions
+# are met:
+# 1. Redistributions of source code must retain the above copyright
+#    notice, this list of conditions and the following disclaimer.
+# 2. Redistributions in binary form must reproduce the above copyright
+#    notice, this list of conditions and the following disclaimer in the
+#    documentation and/or other materials provided with the distribution.
+#
+# THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
+# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
+# FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+# DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+# OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+# HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+# LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+# OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+# SUCH DAMAGE.
 
 
-FROM alpine:3.3
+FROM alpine:3.4
 
 # MAINTAINER NGINX Docker Maintainers "docker-maint@nginx.com"
 
-# When 1.11.x, add $request_id, update test [5FK02FP]
-ENV NGINX_VERSION 1.9.15
+ENV NGINX_VERSION 1.11.4
 
 # Do this first, because we need 'make' early, and also it's boring to wait for Nginx
 # to download.
 RUN \
 	addgroup -S nginx \
 	&& adduser -D -S -h /var/cache/nginx -s /sbin/nologin -G nginx nginx \
+	# '--virtual .build-deps' lets one uninstall all these build dependencies,
+	# like so:  'apk del .build-deps' (done at the end of this file)
 	&& apk add --no-cache --virtual .build-deps \
 		gcc \
 		libc-dev \
@@ -33,6 +55,11 @@ RUN \
 		# gd-dev \
 		# geoip-dev \
 		perl-dev \
+    # Don't include this in the 'apk add' step above, because then libgcc would get
+    # uninstalled a bit below by 'apk del .build-deps'.
+    && apk add --no-cache \
+		# /opt/luajit/lib/libluajit-5.1.so.2 needs shared lib libgcc_s.so.1
+		libgcc \
 	&& curl -fSL http://nginx.org/download/nginx-$NGINX_VERSION.tar.gz -o nginx.tar.gz \
 	&& curl -fSL http://nginx.org/download/nginx-$NGINX_VERSION.tar.gz.asc  -o nginx.tar.gz.asc
 
@@ -81,6 +108,8 @@ ENV CONFIG "\
 	--with-threads \
 	--with-stream \
 	--with-stream_ssl_module \
+	# --with-stream_realip_module \
+	# --with-stream_geoip_module=dynamic \
 	# splits a request into subrequests, each returning a certain range of response -> effective caching of big responses
 	# --with-http_slice_module \
 	# --with-mail \
@@ -123,14 +152,15 @@ RUN \
 	&& rm nginx.tar.gz \
 	&& cd /usr/src/nginx-$NGINX_VERSION \
 	&& ./configure $CONFIG --with-debug \
-	&& make \
+	&& make -j$(getconf _NPROCESSORS_ONLN) \
 	&& mv objs/nginx objs/nginx-debug \
 	# && mv objs/ngx_http_xslt_filter_module.so objs/ngx_http_xslt_filter_module-debug.so \
 	# && mv objs/ngx_http_image_filter_module.so objs/ngx_http_image_filter_module-debug.so \
 	# && mv objs/ngx_http_geoip_module.so objs/ngx_http_geoip_module-debug.so \
 	# && mv objs/ngx_http_perl_module.so objs/ngx_http_perl_module-debug.so \
+	# && mv objs/ngx_stream_geoip_module.so objs/ngx_stream_geoip_module-debug.so \
 	&& ./configure $CONFIG \
-	&& make \
+	&& make -j$(getconf _NPROCESSORS_ONLN) \
 	&& make install \
 	&& rm -rf /etc/nginx/html/ \
 	# apparently this stuff is installed by default, but we don't use it.
@@ -149,21 +179,30 @@ RUN \
 	# && install -m755 objs/ngx_http_image_filter_module-debug.so /usr/lib/nginx/modules/ngx_http_image_filter_module-debug.so \
 	# && install -m755 objs/ngx_http_geoip_module-debug.so /usr/lib/nginx/modules/ngx_http_geoip_module-debug.so \
 	# && install -m755 objs/ngx_http_perl_module-debug.so /usr/lib/nginx/modules/ngx_http_perl_module-debug.so \
+	# && install -m755 objs/ngx_stream_geoip_module-debug.so /usr/lib/nginx/modules/ngx_stream_geoip_module-debug.so \
 	# && ln -s ../../usr/lib/nginx/modules /etc/nginx/modules \
 	&& strip /usr/sbin/nginx* \
 	# All modules above commented out.
 	# && strip /usr/lib/nginx/modules/*.so \
+	&& rm -rf /usr/src/nginx-$NGINX_VERSION \
+	# Bring in gettext so we can get `envsubst`, then throw
+	# the rest away. To do this, we need to install `gettext`
+	# then move `envsubst` out of the way so `gettext` can
+	# be deleted completely, then move `envsubst` back.
+	&& apk add --no-cache --virtual .gettext gettext \
+	&& mv /usr/bin/envsubst /tmp/ \
+	\
 	&& runDeps="$( \
-		scanelf --needed --nobanner /usr/sbin/nginx /usr/lib/nginx/modules/*.so \
+		scanelf --needed --nobanner /usr/sbin/nginx /usr/lib/nginx/modules/*.so /tmp/envsubst \
 			| awk '{ gsub(/,/, "\nso:", $2); print "so:" $2 }' \
 			| sort -u \
 			| xargs -r apk info --installed \
 			| sort -u \
 	)" \
-	&& apk add --virtual .nginx-rundeps $runDeps \
+	&& apk add --no-cache --virtual .nginx-rundeps $runDeps \
 	&& apk del .build-deps \
-	&& rm -rf /usr/src/nginx-$NGINX_VERSION \
-	&& apk add --no-cache gettext \
+	&& apk del .gettext \
+	&& mv /tmp/envsubst /usr/local/bin/ \
 	\
 	# forward request and error logs to docker log collector
 	&& ln -sf /dev/stdout /var/log/nginx/access.log \
