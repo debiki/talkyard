@@ -147,6 +147,11 @@ function addCommandsToBrowser(browser) {
   });
 
 
+  browser.addCommand('waitUntilTextMatches', function(selector, regex) {
+    browser.waitAndGetElemIdWithText(selector, regex);
+  });
+
+
   browser.addCommand('waitAndGetElemIdWithText', function(selector, regex) {
     if (_.isString(regex)) {
       regex = new RegExp(regex);
@@ -252,6 +257,16 @@ function addCommandsToBrowser(browser) {
 
 
   browser.addCommand('assertTextMatches', function(selector, regex, regex2) {
+    assertOneOrAnyTextMatches(false, selector, regex, regex2);
+  });
+
+
+  browser.addCommand('assertAnyTextMatches', function(selector, regex, regex2) {
+    assertOneOrAnyTextMatches(true, selector, regex, regex2);
+  });
+
+
+  function assertOneOrAnyTextMatches(many, selector, regex, regex2) {
     if (_.isString(regex)) {
       regex = new RegExp(regex);
     }
@@ -261,7 +276,9 @@ function addCommandsToBrowser(browser) {
     var textByBrowserName = byBrowser(browser.getText(selector));
     _.forOwn(textByBrowserName, function(text, browserName) {
       var whichBrowser = isTheOnly(browserName) ? '' : ", browser: " + browserName;
-      assert(!_.isArray(text), "Broken e2e test. Select only 1 elem please [EsE4KF0W2]");
+      if (!many) {
+        assert(!_.isArray(text), "Broken e2e test. Select only 1 elem please [EsE4KF0W2]");
+      }
       assert(regex.test(text), "Elem selected by '" + selector + "' didn't match " +
           regex.toString() + ", actual text: '" + text + whichBrowser);
       // COULD use 'arguments' & a loop instead
@@ -270,7 +287,7 @@ function addCommandsToBrowser(browser) {
           regex2.toString() + ", actual text: '" + text + whichBrowser);
       }
     });
-  });
+  }
 
 
   // n starts on 1 not 0.
@@ -296,11 +313,6 @@ function addCommandsToBrowser(browser) {
       assert(regex2.test(text), "Elem " + n + " selected by '" + selector + "' doesn't match " +
           regex2.toString() + ", actual text: '" + text + "'");
     }
-  });
-
-
-  browser.addCommand('assertAnyTextMatches', function(selector, regex) {
-    assertAnyOrNoneMatches(selector, regex, true);
   });
 
 

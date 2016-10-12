@@ -10,6 +10,7 @@ FROM alpine:3.3
 
 # MAINTAINER NGINX Docker Maintainers "docker-maint@nginx.com"
 
+# When 1.11.x, add $request_id, update test [5FK02FP]
 ENV NGINX_VERSION 1.9.15
 
 # Do this first, because we need 'make' early, and also it's boring to wait for Nginx

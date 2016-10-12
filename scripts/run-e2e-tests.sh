@@ -44,6 +44,7 @@ function runAllEndToEndTests {
   runEndToEndTest scripts/wdio target/e2e/wdio.3chrome.conf.js  --browser $browser --only custom-forms.3browsers $args
   runEndToEndTest scripts/wdio target/e2e/wdio.2chrome.conf.js  --browser $browser --only impersonate.2browsers $args
   runEndToEndTest scripts/wdio target/e2e/wdio.2chrome.conf.js  --browser $browser --only unsubscribe.2browsers $args
+  runEndToEndTest scripts/wdio target/e2e/wdio.2chrome.conf.js  --browser $browser --only search-public-basic.2browsers $args
 }
 
 

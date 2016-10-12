@@ -73,6 +73,9 @@ esRT            = review task
 
 esRPP           = reset password page
 
+SERP            = search engine result page -- no, instead, use SRP (not SERP)
+SRP             = search result page
+
 esTB            = top bar (with the breadcrump and login & signup, or user name)
 
 esTs            = page/post tags

@@ -34,7 +34,7 @@
 @* Add later:   , by { hit.post.user_!.displayName }:</em>   *@
 
 @searchResultsHtml = @{
-  if (pagesAndHits.isEmpty) <p>Nothing found.</p>
+  if (pagesAndHits.isEmpty) <p id="e2eSERP_Nothing">Nothing found.</p>
   else <div>{
     var tabindex = 1 // this (1) starts on 2. (The search phrase field has id 1.)
 
@@ -77,6 +77,8 @@
     sectionId = anySectionId, autofocus = true)
 
   <br>
+  <p>Searched for: <b><samp id="e2eSERP_SearchedFor">@searchPhrase</samp></b></p>
+
   @searchResultsHtml
   </div>
 }

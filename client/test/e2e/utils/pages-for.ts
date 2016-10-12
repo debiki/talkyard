@@ -160,6 +160,12 @@ function pagesFor(browser) {
         }
         while (oldName === newName);
       },
+
+      searchFor: function(phrase: string) {
+        browser.waitAndClick('.esTB_SearchBtn');
+        browser.waitAndSetValue('.esTB_SearchDlg input[name="searchPhrase"]', phrase);
+        browser.click('.esTB_SearchDlg input[type="submit"]');
+      },
     },
 
 
@@ -714,6 +720,55 @@ function pagesFor(browser) {
 
     scrollButtons: {
       fixedBarSelector: '.esScrollBtns_fixedBar',
+    },
+
+
+    searchResultsPage: {
+      assertPhraseNotFound: function(phrase: string) {
+        api.searchResultsPage.waitForResults(phrase);
+        assert(browser.isVisible('#e2eSERP_Nothing'));
+      },
+
+      waitForAssertNumPagesFound: function(phrase: string, numPages: number) {
+        api.searchResultsPage.waitForResults(phrase);
+        // oops, search-search-loop needed ...
+        // for now:
+        browser.waitForAtLeast(numPages, '.esSERP_Hit_PageTitle');
+        browser.assertExactly(numPages, '.esSERP_Hit_PageTitle');
+      },
+
+      searchForWaitForResults: function(phrase: string) {
+        browser.setValue('.esSERP_SearchForm_Input', phrase);
+        api.searchResultsPage.clickSearchButton();
+        // Later, with Nginx 1.11.0+, wait until a $request_id in the page has changed [5FK02FP]
+        api.searchResultsPage.waitForResults(phrase);
+      },
+
+      searchForUntilNumPagesFound: function(phrase: string, numResultsToFind: number) {
+        while (true) {
+          api.searchResultsPage.searchForWaitForResults(phrase);
+          var numFound = api.searchResultsPage.countNumPagesFound_1();
+          if (numFound >= numResultsToFind) {
+            assert(numFound === numResultsToFind);
+            break;
+          }
+          browser.pause(333);
+        }
+      },
+
+      clickSearchButton: function() {
+        browser.click('#e2eSRP_SearchB');
+      },
+
+      waitForResults: function(phrase: string) {
+        // Later, check Nginx $request_id to find out if the page has been refreshed
+        // unique request identifier generated from 16 random bytes, in hexadecimal (1.11.0).
+        browser.waitUntilTextMatches('#e2eSERP_SearchedFor', phrase);
+      },
+
+      countNumPagesFound_1: function(): number {
+        return browser.elements('.esSERP_Hit_PageTitle').value.length;
+      },
     },
 
 
