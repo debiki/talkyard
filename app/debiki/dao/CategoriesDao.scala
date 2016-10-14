@@ -208,6 +208,12 @@ trait CategoriesDao {
   }
 
 
+  def loadCategoryBySlug(slug: String): Option[Category] = {
+    val catsStuff = loadBuildRememberCategoryMaps()
+    catsStuff._1.values.find(_.slug == slug)
+  }
+
+
   def loadTheCategory(id: CategoryId): (Category, Boolean) =
     loadCategory(id) getOrElse throwNotFound("DwE8YUF0", s"No category with id $id")
 

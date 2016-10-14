@@ -168,6 +168,9 @@ object PageTitleSettingsController extends mvc.Controller {
       request.dao.readWriteTransaction { transaction =>  // COULD wrap everything in this transaction
                                                           // and move it to PagesDao?
         transaction.updatePageMeta(newMeta, oldMeta = oldMeta, markSectionPageStale = true)
+        if (newMeta.categoryId != oldMeta.categoryId) {
+          transaction.indexAllPostsOnPage(pageId)
+        }
       }
 
       // Update URL path (folder, slug, show/hide page id).

@@ -12,6 +12,8 @@ declare namespace rb {
   var TabbedArea;
   var TabPane;
   var Alert;
+
+  var Expandable;
 }
 
 
@@ -38,6 +40,11 @@ declare namespace debiki2 {
 
   namespace editor {
     var PageRoleDropdown;
+  }
+
+  namespace search {
+    function routes(): any;
+    function urlEncodeSearchQuery(query: string): string;
   }
 
   namespace help {

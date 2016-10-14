@@ -125,6 +125,28 @@ describe('chat', function() {
     maria.assertNthTextMatches('.esC_M', 3, /is your name/);
   });
 
+  /* For demos:
+  it("Maria replies", function() {
+    maria.chat.addChatMessage("What?");
+    maria.pause(3500);
+    maria.chat.addChatMessage("Why, yes.");
+  });
+
+  it("Owen posts another chat message", function() {
+    owen.chat.addChatMessage("Can I call you Maria then?");
+  });
+
+  it("Maria replies", function() {
+    maria.pause(5000);
+    maria.chat.addChatMessage("Yes, sure");
+  });
+
+  it("They talk", function() {
+    owen.chat.addChatMessage("Ok super :- )");
+    owen.chat.addChatMessage("Hi Maria. Nice talking with you.");
+    maria.chat.addChatMessage("You too");
+  }); */
+
   it("Done?", function() {
     everyone.perhapsDebug();
   });

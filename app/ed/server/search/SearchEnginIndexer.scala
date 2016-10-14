@@ -22,13 +22,14 @@ import com.debiki.core._
 import debiki.dao.SystemDao
 import java.{util => ju}
 import org.elasticsearch.action.bulk.BulkResponse
-import org.elasticsearch.action.{ActionListener, ActionFuture}
-import org.elasticsearch.action.index.{IndexRequestBuilder, IndexResponse, IndexRequest}
+import org.elasticsearch.action.ActionListener
+import org.elasticsearch.action.index.{IndexRequestBuilder, IndexResponse}
 import org.{elasticsearch => es}
 import play.{api => p}
 import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext.Implicits.global
 import Prelude._
+import play.api.Logger
 
 
 
@@ -171,24 +172,29 @@ class IndexingActor(
         stuffToIndex.isPageDeleted(siteId, post.pageId) || !post.isVisible
       })
       unindexPosts(siteId, toUnindex)
-      indexPosts(siteId, toIndex)
+      indexPosts(siteId, toIndex, stuffToIndex)
     }
   }
 
 
-  private def indexPosts(siteId: SiteId, posts: Seq[Post]) {
+  private def indexPosts(siteId: SiteId, posts: Seq[Post], stuffToIndex: StuffToIndex) {
     if (posts.isEmpty)
       return
 
     // Later: Use the bulk index API.
     posts foreach { post =>
-      indexPost(post, siteId)
+      indexPost(post, siteId, stuffToIndex)
     }
   }
 
 
-  private def indexPost(post: Post, siteId: String) {
-    val doc = makeElasticSearchJsonDocFor(post, siteId)
+  private def indexPost(post: Post, siteId: String, stuffToIndex: StuffToIndex) {
+    val pageMeta = stuffToIndex.page(siteId, post.pageId) getOrElse {
+      Logger.warn(s"Not indexing s:$siteId/p:${post.uniqueId} — page gone, was just deleted?")
+      return
+    }
+    val tags = stuffToIndex.tags(siteId, post.uniqueId)
+    val doc = makeElasticSearchJsonDocFor(siteId, post, pageMeta.categoryId, tags)
     val docId = makeElasticSearchIdFor(siteId, post)
     val requestBuilder: IndexRequestBuilder =
       client.prepareIndex(IndexName, PostDocType, docId)

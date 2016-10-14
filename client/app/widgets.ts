@@ -24,8 +24,15 @@
 
 var r = React.DOM;
 
+var ReactRouter = window['ReactRouter'];
+export var Route = reactCreateFactory(ReactRouter.Route);
+export var IndexRoute = reactCreateFactory(ReactRouter.IndexRoute);
+export var Redirect = reactCreateFactory(ReactRouter.Redirect);
+export var DefaultRoute = reactCreateFactory(ReactRouter.DefaultRoute);
+
 export var PrimaryButton: any = makeWidget(r.button, ' btn btn-primary');
 export var Button: any = makeWidget(r.button, ' btn btn-default');
+export var PrimaryLinkButton: any = makeWidget(r.a, ' btn btn-primary');
 export var LinkButton: any = makeWidget(r.a, ' btn btn-default');
 export var InputTypeSubmit: any = makeWidget(r.input, ' btn btn-primary', { type: 'submit' });
 

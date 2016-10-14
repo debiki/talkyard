@@ -173,10 +173,14 @@ package object core {
 
   case class StuffToIndex(
     postsBySite: Map[SiteId, immutable.Seq[Post]],
-    pagesBySitePageId: Map[SitePageId, PageMeta]) {
+    pagesBySitePageId: Map[SitePageId, PageMeta],
+    tagsBySitePostId: Map[SitePostId, immutable.Set[TagLabel]]) {
 
     def page(siteId: SiteId, pageId: PageId): Option[PageMeta] =
       pagesBySitePageId.get(SitePageId(siteId, pageId))
+
+    def tags(siteId: SiteId, postId: UniquePostId): Set[TagLabel] =
+      tagsBySitePostId.getOrElse(SitePostId(siteId, postId), Set.empty)
 
     def isPageDeleted(siteId: SiteId, pageId: PageId) = {
       val p = page(siteId, pageId)

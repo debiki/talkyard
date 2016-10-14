@@ -53,10 +53,8 @@ GET   /-/embedded-comments      controllers.EmbeddedTopicsController.showTopic
 GET   /-/embedded-editor        controllers.EmbeddedTopicsController.showEmbeddedEditor
 GET   /-/embedded-comments-help controllers.EmbeddedTopicsController.showSetupInstructions
 
-POST  /-/search                             controllers.SearchController.searchWholeSite()
-GET   /-/search                             controllers.SearchController.searchWholeSiteFor(phrase)
-POST  /-/search-section/:pageId             controllers.SearchController.searchSiteSection(pageId)
-GET   /-/search-section/:pageId/for/:phrase controllers.SearchController.searchSiteSectionFor(phrase, pageId)
+GET   /-/search                 controllers.SearchController.showSearchPage(q: Option[String])
+POST  /-/search                 controllers.SearchController.doSearch
 
 GET   /-/reset-password                  controllers.ResetPasswordController.start
 GET   /-/reset-password/specify-email    controllers.ResetPasswordController.showResetPasswordPage

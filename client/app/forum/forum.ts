@@ -42,12 +42,6 @@ var ExplainingListItem = util.ExplainingListItem;
 type ExplainingTitleText = util.ExplainingTitleText;
 var HelpMessageBox = debiki2.help.HelpMessageBox;
 
-var ReactRouter = window['ReactRouter'];
-var Route = reactCreateFactory(ReactRouter.Route);
-var IndexRoute = reactCreateFactory(ReactRouter.IndexRoute);
-var Redirect = reactCreateFactory(ReactRouter.Redirect);
-var Link = reactCreateFactory(ReactRouter.Link);
-
 var MaxWaitingForCritique = 10; // for now only [plugin]
 
 /** Keep in sync with app/controllers/ForumController.NumTopicsToList. */

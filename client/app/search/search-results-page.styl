@@ -1,16 +1,35 @@
 // SERP means search engine result page (standard abbreviation)
 
 
-.esSERP
-  .esLegal_home
-    margin: 40px 0 0;
+.s_SP
+  margin-top: 30px;
 
-.esSERP_SearchForm_Input
-  width: 60vw;
+.s_SP_QueryTI
+  width: calc(100% - 150px); // 150px = space for 'Search:' and the [Search] button
   min-width: 300px;
-  max-width: 550px;
+  max-width: 750px;
   padding: 6px 0 6px 3px;
   margin-left: 6px;
+  // Make text easy to read, incl "magic" ':' and '+' and '-' tokens:
+  font-size: 14px;
+  font-family: monospace;
+
+.s_SP_SearchB
+  vertical-align: baseline;
+
+.s_SP_Adv
+  margin: 20px 0;
+
+  .s_Expandable_Body
+    background: hsl(0,0%,98.5%);
+
+.s_SP_SearchedFor
+  margin-top: 25px;
+
+.s_SR,
+.s_SR_Hit
+  list-style: none;
+  margin-left: 0;
 
 .esSERP_Hit_PageTitle
   margin-bottom: 10px;

@@ -74,7 +74,11 @@ esRT            = review task
 esRPP           = reset password page
 
 SERP            = search engine result page -- no, instead, use SRP (not SERP)
-SRP             = search result page
+SRP             = search result page -- no, instead, use SP
+SP              = search page
+SP_SRs          = search page, search results
+
+SR              = search result
 
 esTB            = top bar (with the breadcrump and login & signup, or user name)
 

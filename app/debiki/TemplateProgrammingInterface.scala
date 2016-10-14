@@ -42,7 +42,8 @@ object TemplateProgrammingInterface {
 
 object SiteTpi {
 
-  def apply(request: DebikiRequest[_], json: Option[String] = None) = new SiteTpi(request, json)
+  def apply(request: DebikiRequest[_], json: Option[String] = None,
+    isSearchPage: Boolean = false) = new SiteTpi(request, json, isSearchPage)
 
 }
 
@@ -58,7 +59,8 @@ object SiteTpi {
   * There is also a Page Template Programming Interface which is used
   * when rendering e.g. blog and forum pages.
   */
-class SiteTpi protected (val debikiRequest: DebikiRequest[_], val json: Option[String]) {
+class SiteTpi protected (val debikiRequest: DebikiRequest[_], val json: Option[String],
+    isSearchPage: Boolean = false) {
   def request = debikiRequest // rename to request, later
 
   def siteId  = debikiRequest.siteId
@@ -170,7 +172,8 @@ class SiteTpi protected (val debikiRequest: DebikiRequest[_], val json: Option[S
 
   /** The initial data in the React-Flux model, a.k.a. store. */
   def reactStoreSafeJsonString: String =
-    json getOrElse ReactJson.adminAreaOrUserProfileJson(debikiRequest).toString()
+    json getOrElse ReactJson.makeSpecialPageJson(
+        debikiRequest, inclCategoriesJson = isSearchPage).toString()
 
 
   def assetUrl(fileName: String) = assetUrlPrefix + fileName

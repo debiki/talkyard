@@ -35,6 +35,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
  * form-data. This class unifies access to form-data and simple JSON
  * objects.
  */
+// CLEAN_UP try to delete, not really in use?
 case class JsonOrFormDataBody(
   formDataBody: Option[Map[String, Seq[String]]],
   jsonBody: Option[JsObject]) {

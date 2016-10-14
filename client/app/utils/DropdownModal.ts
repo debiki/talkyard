@@ -16,6 +16,7 @@
  */
 
 /// <reference path="../../typedefs/react/react.d.ts" />
+/// <reference path="../../typedefs/keymaster/keymaster.d.ts" />
 /// <reference path="../plain-old-javascript.d.ts" />
 /// <reference path="../prelude.ts" />
 /// <reference path="../model.ts" />
@@ -29,6 +30,7 @@
 
 var r = React.DOM;
 var $: JQueryStatic = debiki.internal.$;
+var keymaster: Keymaster = window['keymaster'];
 declare var ReactBootstrap: any;  // lazy loaded
 declare var Modal;                // lazy loaded
 
@@ -41,6 +43,15 @@ export var ModalDropdownButton = createComponent({
       buttonY: -1,
       modalCreated: false,
     };
+  },
+
+  componentDidMount: function() {
+    keymaster('escape', this.props.onClose);
+    $(this.refs.input).focus();
+  },
+
+  componentWillUnmount: function() {
+    keymaster.unbind('escape', 'all');
   },
 
   openDropdown: function() {

@@ -21,16 +21,23 @@ import com.debiki.core._
 import com.debiki.core.Prelude._
 import controllers.ViewPageController
 import debiki._
-import ed.server.search.{PageAndHits, SearchHit, SearchEngine}
-import io.efdi.server.Who
-import io.efdi.server.http._
-import org.{elasticsearch => es}
-import play.api.Play.current
-import redis.RedisClient
+import ed.server.search.{PageAndHits, SearchHit}
 import scala.collection.immutable.Seq
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
-import SiteDao._
+
+
+case class SearchQuery(
+  fullTextQuery: String,
+  tagNames: Set[String],
+  notTagNames: Set[String],
+  categoryIds: Set[CategoryId]) {
+
+  require(!tagNames.exists(_.isEmpty), "EsE6KWU80")
+
+  def isEmpty = fullTextQuery.trim.isEmpty && tagNames.isEmpty && categoryIds.isEmpty
+
+}
 
 
 
@@ -38,9 +45,9 @@ trait SearchDao {
   this: SiteDao =>
 
 
-  def fullTextSearch(phrase: String, anyRootPageId: Option[PageId], user: Option[User])
+  def fullTextSearch(searchQuery: SearchQuery, anyRootPageId: Option[PageId], user: Option[User])
         : Future[Seq[PageAndHits]] = {
-    searchEngine.fullTextSearch(phrase, anyRootPageId, user) map { hits: Seq[SearchHit] =>
+    searchEngine.search(searchQuery, anyRootPageId, user) map { hits: Seq[SearchHit] =>
       groupByPageFilterAndSort(hits, user)
     }
   }

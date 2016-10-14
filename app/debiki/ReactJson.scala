@@ -21,7 +21,6 @@ import com.debiki.core._
 import com.debiki.core.Prelude._
 import controllers.ForumController
 import debiki.dao.{ReviewStuff, PageStuff, SiteDao, PageDao}
-import debiki.DebikiHttp.throwNotFound
 import io.efdi.server.http._
 import java.{util => ju}
 import play.api.libs.json._
@@ -30,6 +29,7 @@ import scala.collection.mutable.ArrayBuffer
 import scala.math.BigDecimal.decimal
 
 
+// CLEAN_UP COULD rename it to JsonMaker? JsonBuilder? Jsonifier?
 object ReactJson {
 
   /** If there are more than this many visible replies, we'll summarize the page, otherwise
@@ -119,6 +119,9 @@ object ReactJson {
         transaction: SiteTransaction,
         anyPageRoot: Option[PostNr],
         anyPageQuery: Option[PageQuery]): (String, CachedPageVersion) = {
+
+    // The json constructed here will be cached & sent to "everyone", so in this function
+    // we always specify !isStaff and !restrictedOnly.
 
     val socialLinksHtml = dao.loadWholeSiteSettings().socialLinksHtml
     val page = PageDao(pageId, transaction)
@@ -280,10 +283,10 @@ object ReactJson {
   }
 
 
-  def adminAreaOrUserProfileJson(request: DebikiRequest[_]): JsObject = {
+  def makeSpecialPageJson(request: DebikiRequest[_], inclCategoriesJson: Boolean): JsObject = {
     val dao = request.dao
     val siteSettings = dao.loadWholeSiteSettings()
-    Json.obj(
+    var result = Json.obj(
       "appVersion" -> Globals.applicationVersion,
       "siteId" -> JsString(dao.siteId),
       "siteStatus" -> request.dao.theSite().status.toInt,
@@ -293,10 +296,17 @@ object ReactJson {
         "allowGuestLogin" -> JsBoolean(siteSettings.isGuestLoginAllowed),
         "showComplicatedStuff" -> JsBoolean(siteSettings.showComplicatedStuff)),
       // (WOULD move 'me' to the volatile json; suddenly having it here in the main json is
-      // a bit surprising.)
+      // a bit surprising.) CLEAN_UP
       "me" -> userNoPageToJson(request),
       "maxUploadSizeBytes" -> Globals.maxUploadSizeBytes,
       "siteSections" -> makeSiteSectionsJson(dao))
+
+    if (inclCategoriesJson) {
+      result += "categories" -> makeCategoriesJson(
+          isStaff = request.isStaff, restrictedOnly = false, dao)
+    }
+
+    result
   }
 
 

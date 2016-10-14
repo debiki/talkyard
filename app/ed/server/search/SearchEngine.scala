@@ -17,8 +17,10 @@
 
 package ed.server.search
 
+import collection.JavaConverters._
 import com.debiki.core._
 import com.debiki.core.Prelude._
+import debiki.dao.SearchQuery
 import org.elasticsearch.action.search.{SearchRequestBuilder, SearchResponse}
 import org.elasticsearch.client.Client
 import org.elasticsearch.index.query.QueryBuilders
@@ -27,33 +29,56 @@ import org.elasticsearch.action.ActionListener
 import org.{elasticsearch => es}
 import play.{api => p}
 import scala.collection.immutable
-import scala.concurrent.{Promise, Future}
+import scala.concurrent.{Future, Promise}
 
 
 class SearchEngine(
   private val siteId: SiteId,
   private val elasticSearchClient: Client) {
 
-  def fullTextSearch(phrase: String, anyRootPageId: Option[String], user: Option[User])
+  def search(searchQuery: SearchQuery, anyRootPageId: Option[String], user: Option[User])
         : Future[immutable.Seq[SearchHit]] = {
 
-    if (phrase.isEmpty)
+    if (searchQuery.isEmpty)
       return Future.successful(Nil)
 
     // For filter-by-category-id, see [4FYK85] below.
-    var query = QueryBuilders.boolQuery()
-      .must(
+    val boolQuery = QueryBuilders.boolQuery()
+
+    if (searchQuery.fullTextQuery.nonEmpty)
+      boolQuery.must(
         // If is staff, could search unapproved html too, something like:
         // .setQuery(QueryBuilders.multiMatchQuery(phrase, "approvedHtml", "unapprovedSource"))
-        QueryBuilders.matchQuery(PostDocFields.ApprovedPlainText, phrase))
-      .filter(
-        QueryBuilders.termQuery(PostDocFields.SiteId, siteId))
+        // SECURITY ElasticSearch won't interpret any stuff in fullTextQuery as magic commands
+        // and start doing weird things? E.g. do a "*whatever" regex search, enabling a DoS attack?
+        QueryBuilders.matchQuery(PostDocFields.ApprovedPlainText, searchQuery.fullTextQuery))
 
     // Form submissions are private, currently for admins only. [5GDK02]
     if (!user.exists(_.isAdmin)) {
-      query = query.mustNot(
+      boolQuery.mustNot(
         QueryBuilders.termQuery(PostDocFields.PostType, PostType.CompletedForm.toInt))
     }
+
+    if (searchQuery.tagNames.nonEmpty) {
+      boolQuery.must(
+        QueryBuilders.termsQuery(
+            PostDocFields.Tags, searchQuery.tagNames.asJava))
+    }
+
+    if (searchQuery.notTagNames.nonEmpty) {
+      boolQuery.mustNot(
+        QueryBuilders.termsQuery(
+          PostDocFields.Tags, searchQuery.notTagNames.asJava))
+    }
+
+    if (searchQuery.categoryIds.nonEmpty) {
+      boolQuery.filter(
+        QueryBuilders.termsQuery(
+            PostDocFields.CategoryId, searchQuery.categoryIds.asJava))
+    }
+
+    boolQuery.filter(
+      QueryBuilders.termQuery(PostDocFields.SiteId, siteId))
 
     val highlighter = new HighlightBuilder()
       .field(PostDocFields.ApprovedPlainText)
@@ -65,7 +90,7 @@ class SearchEngine(
         "<mark class='esHL7'>")
       .postTags("</mark>")
       // This escapes any <html> stuff in the text, and thus prevents XSS issues. [7YK24W]
-      .encoder("html")
+      .encoder("html"); SECURITY; TESTS_MISSING
 
     val requestBuilder: SearchRequestBuilder = elasticSearchClient.prepareSearch(IndexName)
       .setTypes(PostDocType)
@@ -78,7 +103,7 @@ class SearchEngine(
       // (https://www.elastic.co/guide/en/elasticsearch/client/java-api/master/java-search.html)
       // So just don't specify anything then.
       // Skip: .setSearchType(SearchType.QUERY_AND_FETCH)
-      .setQuery(query)
+      .setQuery(boolQuery)
       .highlighter(highlighter)
       .setFrom(0)        // offset
       .setSize(60)       // num hits to return
@@ -98,7 +123,7 @@ class SearchEngine(
       }
 
       def onFailure(throwable: Throwable) {
-        p.Logger.error(o"""Error when searching for ``$phrase'',
+        p.Logger.error(o"""Error when searching for: $boolQuery,
              search source: ${requestBuilder.toString}""", throwable)
         promise.failure(throwable)
       }

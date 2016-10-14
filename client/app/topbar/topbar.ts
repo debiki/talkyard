@@ -16,7 +16,6 @@
  */
 
 /// <reference path="../../typedefs/react/react.d.ts" />
-/// <reference path="../../typedefs/keymaster/keymaster.d.ts" />
 /// <reference path="../ReactStore.ts" />
 /// <reference path="../links.ts" />
 /// <reference path="../widgets.ts" />
@@ -31,7 +30,6 @@
    module debiki2.reactelements {  // rename to debiki2.topbar
 //------------------------------------------------------------------------------
 
-var keymaster: Keymaster = window['keymaster'];
 var r = React.DOM;
 
 var FixedTopDist = 8;
@@ -268,9 +266,9 @@ export var TopBar = createComponent({
     }
 
     var backToSiteButton;
-    if (this.props.showBackToSite) {
+    if (this.props.showBackToSite || this.props.backToSiteButtonTitle) {
       backToSiteButton = r.a({ className: 'esTopbar_custom_backToSite btn icon-reply',
-          onClick: goBackToSite }, "Back from admin area");
+          onClick: goBackToSite }, this.props.backToSiteButtonTitle || "Back from admin area");
     }
 
     // ------- Open Contextbar button
@@ -393,30 +391,39 @@ function makeNotfIcon(type: string, number: number) {
 }
 
 
+// COULD move SearchForm to more-bundle, so won't need to access via ['search']
+// (needs to do that currently, because not available server side)
+//
 var SearchForm = createComponent({
+  displayName: 'SearchForm',
+
+  getInitialState: function() {
+    return { queryInputText: '' };
+  },
+
   componentDidMount: function() {
-    keymaster('escape', this.props.onClose);
     $(this.refs.input).focus();
   },
 
-  componentWillUnmount: function() {
-    keymaster.unbind('escape', 'all');
-  },
-
-  search: function() {
-    $(this.refs.xsrfToken).val($['cookie']('XSRF-TOKEN'));
-    $(this.refs.form).submit();
+  onQueryChange: function(event) {
+    this.setState({ queryInputText: event.target.value });
   },
 
   render: function() {
+    let urlEncodedQuery = debiki2['search'].urlEncodeSearchQuery(this.state.queryInputText);
+    let searchUrl         = '/-/search?q=' + urlEncodedQuery;
+    let searchUrlAdvanced = '/-/search?advanced=true&q=' + urlEncodedQuery;
     return (
-        r.form({ className: 'esTB_SearchDlg', ref: 'form',
+        r.form({ className: 'esTB_SearchD', ref: 'form',
             method: 'post', acceptCharset: 'UTF-8', action: '/-/search',
             onSubmit: this.search },
-          r.input({ type: 'hidden', ref: 'xsrfToken', name: 'dw-fi-xsrf' }),
-          r.input({ type: 'text', tabIndex: '1', placeholder: 'Text to search for',
-              ref: 'input', className: 'input-medium', name: 'searchPhrase' }),
-          InputTypeSubmit({ value: "Search" })));
+          r.input({ type: 'text', tabIndex: '1', placeholder: "Text to search for",
+              ref: 'input', name: 'searchPhrase',
+              value: this.state.queryInputText, onChange: this.onQueryChange }),
+          PrimaryLinkButton({ href: searchUrl, id: 'e2e_Search' }, "Search"),
+          r.div({},
+            r.a({ className: 'esTB_SearchD_AdvL', href: searchUrlAdvanced },
+              "Advanced search"))));
   }
 });
 

@@ -163,8 +163,8 @@ function pagesFor(browser) {
 
       searchFor: function(phrase: string) {
         browser.waitAndClick('.esTB_SearchBtn');
-        browser.waitAndSetValue('.esTB_SearchDlg input[name="searchPhrase"]', phrase);
-        browser.click('.esTB_SearchDlg input[type="submit"]');
+        browser.waitAndSetValue('.esTB_SearchD input[name="searchPhrase"]', phrase);
+        browser.click('.esTB_SearchD input[type="submit"]');
       },
     },
 
@@ -726,7 +726,7 @@ function pagesFor(browser) {
     searchResultsPage: {
       assertPhraseNotFound: function(phrase: string) {
         api.searchResultsPage.waitForResults(phrase);
-        assert(browser.isVisible('#e2eSERP_Nothing'));
+        assert(browser.isVisible('#e_SP_NothingFound'));
       },
 
       waitForAssertNumPagesFound: function(phrase: string, numPages: number) {
@@ -738,7 +738,7 @@ function pagesFor(browser) {
       },
 
       searchForWaitForResults: function(phrase: string) {
-        browser.setValue('.esSERP_SearchForm_Input', phrase);
+        browser.setValue('.s_SP_QueryTI', phrase);
         api.searchResultsPage.clickSearchButton();
         // Later, with Nginx 1.11.0+, wait until a $request_id in the page has changed [5FK02FP]
         api.searchResultsPage.waitForResults(phrase);
@@ -757,7 +757,7 @@ function pagesFor(browser) {
       },
 
       clickSearchButton: function() {
-        browser.click('#e2eSRP_SearchB');
+        browser.click('.s_SP_SearchB');
       },
 
       waitForResults: function(phrase: string) {

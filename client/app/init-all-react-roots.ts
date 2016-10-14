@@ -68,9 +68,15 @@ export function startRemainingReactRoots() {
   var userPageElem = document.getElementById('dw-react-user-page');
   if (userPageElem) {
     ReactDOM.render(
-        // .routes() always available, because the more-bundle.js is loaded on non-pages.
-        // But unknown at compile time ... currently. Later: incl about user page in slim-bundle.js?
+        // .routes() always available, because the more-bundle.js is loaded on non-pages. [5WKE24]
         Router({ history: ReactRouter.browserHistory }, users.routes()), userPageElem);
+  }
+
+  let searchPageElem = document.getElementById('t_SearchPage');
+  if (searchPageElem) {
+    ReactDOM.render(
+      // .routes() always available, because the more-bundle.js is loaded on non-pages. [5WKE24]
+      Router({ history: ReactRouter.browserHistory }, debiki2['search'].routes()), searchPageElem);
   }
 
   var createSiteElem = document.getElementById('dw-react-create-site');

@@ -10,6 +10,12 @@ declare function doNextFrameOrNow(x);
 
 declare namespace debiki2 {
 
+  // ReactRouter:
+  var Route;
+  var IndexRoute;
+  var Redirect;
+  var DefaultRoute;
+
   var Link; // ReactRouter.Link
   var NavLink: any;
   var createComponent: any;

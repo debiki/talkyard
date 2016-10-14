@@ -133,14 +133,7 @@ package object http {
     PlainApiAction(rateLimits, allowAnyone = allowAnyone, isLogin = isLogin)(
       JsonOrFormDataBody.parser(maxBytes = maxBytes))(f)
 
-  def AsyncJsonOrFormDataPostAction
-        (rateLimits: RateLimits, maxBytes: Int, allowAnyone: Boolean = false,
-         isLogin: Boolean = false)
-        (f: ApiRequest[JsonOrFormDataBody] => Future[Result]): mvc.Action[JsonOrFormDataBody] =
-    PlainApiAction(rateLimits, allowAnyone = allowAnyone, isLogin = isLogin).async(
-      JsonOrFormDataBody.parser(maxBytes = maxBytes))(f)
-
-
+  // CLEAN_UP RENAME maxLength to maxBytes, here and elsewhere
   def AsyncPostJsonAction(rateLimits: RateLimits, maxLength: Int, allowAnyone: Boolean = false)(
         f: JsonPostRequest => Future[Result]) =
   PlainApiAction(rateLimits, allowAnyone = allowAnyone).async(

@@ -88,8 +88,12 @@ trait TagsDao {
       val tagsToAdd = tags -- oldTags
       val tagsToRemove = oldTags -- tags
 
+      COULD_OPTIMIZE // return immediately if tagsToAdd.isEmpty and tagsToRemove.isEmpty.
+      // (so won't reindex post)
+
       transaction.addTagsToPost(tagsToAdd, postId, isPage = post.isOrigPost)
       transaction.removeTagsFromPost(tagsToRemove, postId)
+      transaction.indexPostsSoon(post)
       transaction.updatePageMeta(pageMeta.copyWithNewVersion, oldMeta = pageMeta,
           markSectionPageStale = false)
 
