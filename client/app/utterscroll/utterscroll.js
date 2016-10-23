@@ -407,6 +407,15 @@ debiki.Utterscroll = (function(options) {
 
 
   function doScroll(event) {
+    // Not sure how this can happen — but did happen once, when I clicked a Chrome extension
+    // that popped up a dialog, and then I clicked outside the dialog and then suddenly
+    // $elemToScroll was undefined (although stopScroll() had *not* been called, because
+    // startPost & lastPos etc were *not* undefined).
+    if (!$elemToScroll) {
+      stopScroll(event);
+      return;
+    }
+
     // <iframe> FireFox issue workaround: (FF version 26 on Ubuntu Linux at least)
     // Sometimes the mouseup event never happens, if Debiki runs in an <iframe>.
     // Neither in the <iframe> nor in the parent window. Therefore, detect if the mouse
