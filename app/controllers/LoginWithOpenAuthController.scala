@@ -19,8 +19,8 @@ package controllers
 
 import com.debiki.core._
 import com.debiki.core.Prelude._
+import com.mohiva.play.silhouette
 import com.mohiva.play.silhouette.impl.providers.oauth1.services.PlayOAuth1Service
-import com.mohiva.play.silhouette.{api => sia, impl => sii}
 import com.mohiva.play.silhouette.impl.providers.oauth1.TwitterProvider
 import com.mohiva.play.silhouette.impl.providers.oauth2._
 import com.mohiva.play.silhouette.impl.providers._
@@ -139,7 +139,7 @@ object LoginWithOpenAuthController extends Controller {
     */
   private def authenticate(providerName: String, request: GetRequest): Future[Result] = {
 
-    if (anyLoginOrigin.map(_ == originOf(request)) == Some(false)) {
+    if (anyLoginOrigin.map(_ == originOf(request)).contains(false)) {
       // OAuth providers have been configured to send authentication data to another
       // origin (namely anyLoginOrigin.get); we need to redirect to that origin
       // and login from there.
@@ -166,7 +166,7 @@ object LoginWithOpenAuthController extends Controller {
           handleAuthenticationData(request, profile)
         }
     } recoverWith {
-      case e: sia.exceptions.ProviderException =>
+      case e: silhouette.api.exceptions.ProviderException =>
         Future.successful(Results.Forbidden(s"${e.getMessage} [DwE39DG42]"))
     }
   }
@@ -562,18 +562,31 @@ object LoginWithOpenAuthController extends Controller {
 
 
   private val HttpLayer =
-    new sia.util.PlayHTTPLayer(play.api.libs.ws.WS.client)
+    new silhouette.api.util.PlayHTTPLayer(play.api.libs.ws.WS.client)
 
-  private val Oauth2StateProvider = new sii.providers.oauth2.state.CookieStateProvider(
-    sii.providers.oauth2.state.CookieStateSettings(
-      cookieName = OauthStateCookieName, secureCookie = Globals.secure),
-    new sii.util.SecureRandomIDGenerator(),
-    sia.util.Clock())
+  private val CookieSigner = new silhouette.crypto.JcaCookieSigner(
+    silhouette.crypto.JcaCookieSignerSettings(
+      key = Globals.applicationSecret, pepper = "sil-pepper-kfw93KPUF02wF"))
 
-  private val OAuth1TokenSecretProvider = new sii.providers.oauth1.secrets.CookieSecretProvider(
-    sii.providers.oauth1.secrets.CookieSecretSettings(
-      cookieName = "dwCoOAuth1TokenSecret", secureCookie = Globals.secure),
-    sia.util.Clock())
+  private val Crypter = new silhouette.crypto.JcaCrypter(
+    silhouette.crypto.JcaCrypterSettings(key = Globals.applicationSecret))
+
+  private val Oauth2StateProvider =
+    new silhouette.impl.providers.oauth2.state.CookieStateProvider(
+      silhouette.impl.providers.oauth2.state.CookieStateSettings(
+        cookieName = OauthStateCookieName, secureCookie = Globals.secure),
+      new silhouette.impl.util.SecureRandomIDGenerator(),
+      CookieSigner,
+      silhouette.api.util.Clock())
+
+  private val OAuth1TokenSecretProvider =
+    new silhouette.impl.providers.oauth1.secrets.CookieSecretProvider(
+      silhouette.impl.providers.oauth1.secrets.CookieSecretSettings(
+        cookieName = "dwCoOAuth1TokenSecret", secureCookie = Globals.secure),
+      CookieSigner,
+      Crypter,
+      silhouette.api.util.Clock())
+
 
   private def googleProvider(request: Request[Unit])
         : GoogleProvider with CommonSocialProfileBuilder = {

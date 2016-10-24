@@ -50,7 +50,7 @@ trait CreateSiteDao {
         isTestSiteOkayToDelete: Boolean, skipMaxSitesCheck: Boolean, pricePlan: PricePlan)
         : Site = {
 
-    if (!CreateSiteController.isOkaySiteName(name))
+    if (!Site.isOkayName(name))
       throwForbidden2("EsE7UZF2_", s"Bad site name: '$name'")
 
     dieIf(hostname contains ":", "DwE3KWFE7")

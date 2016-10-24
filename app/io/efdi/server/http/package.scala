@@ -158,9 +158,16 @@ package object http {
 
 
   def PostFilesAction(rateLimits: RateLimits, maxLength: Int, allowAnyone: Boolean = false)(
-        f: ApiRequest[Either[p.mvc.MaxSizeExceeded, MultipartFormData[TemporaryFile]]] => Result) =
+        f: ApiRequest[Either[p.mvc.MaxSizeExceeded, MultipartFormData[TemporaryFile]]] => Result) = {
+    // BodyParsers.parse.maxLength wants a "Materializer", whatever is that?. Later, when
+    // using dependency injection, seems needs to do this instead:
+    //   class MyController @Inject() (implicit val mat: Materializer) {}
+    // read more here:
+    //   http://stackoverflow.com/questions/36004414/play-2-5-migration-error-custom-action-with-bodyparser-could-not-find-implicit
+    implicit val materializer = play.api.Play.materializer  // [6KFW02G]
     PlainApiAction(rateLimits, allowAnyone = allowAnyone)(
         BodyParsers.parse.maxLength(maxLength, BodyParsers.parse.multipartFormData))(f)
+  }
 
 
 

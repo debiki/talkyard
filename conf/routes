@@ -63,17 +63,17 @@ GET   /-/reset-password/email-sent       controllers.ResetPasswordController.sho
 GET   /-/reset-password/choose-password/:resetPasswordEmailId  controllers.ResetPasswordController.showChooseNewPasswordPage(resetPasswordEmailId)
 POST  /-/reset-password/choose-password/:resetPasswordEmailId  controllers.ResetPasswordController.handleNewPasswordForm(resetPasswordEmailId)
 
-GET   /-/create-site                        controllers.CreateSiteController.showPage(isTest = "false")
-GET   /-/create-site/website                controllers.CreateSiteController.showPage(isTest = "false")
-GET   /-/create-site/embedded-comments      controllers.CreateSiteController.showPage(isTest = "false")
-GET   /-/create-test-site                   controllers.CreateSiteController.showPage(isTest = "true")
-GET   /-/create-test-site/website           controllers.CreateSiteController.showPage(isTest = "true")
-GET   /-/create-test-site/embedded-comments controllers.CreateSiteController.showPage(isTest = "true")
-POST  /-/create-site            controllers.CreateSiteController.createSite
+GET   /-/create-site                        @controllers.CreateSiteController.showPage(isTest = "false")
+GET   /-/create-site/website                @controllers.CreateSiteController.showPage(isTest = "false")
+GET   /-/create-site/embedded-comments      @controllers.CreateSiteController.showPage(isTest = "false")
+GET   /-/create-test-site                   @controllers.CreateSiteController.showPage(isTest = "true")
+GET   /-/create-test-site/website           @controllers.CreateSiteController.showPage(isTest = "true")
+GET   /-/create-test-site/embedded-comments @controllers.CreateSiteController.showPage(isTest = "true")
+POST  /-/create-site                        @controllers.CreateSiteController.createSite
 
-GET   /-/admin                  controllers.AdminController.redirectToAdminPage
-GET   /-/admin/                 controllers.AdminController.viewAdminPage(whatever = "")
-GET   /-/admin/*whatever        controllers.AdminController.viewAdminPage(whatever)
+GET   /-/admin                  @controllers.AdminController.redirectToAdminPage
+GET   /-/admin/                 @controllers.AdminController.viewAdminPage(whatever = "")
+GET   /-/admin/*whatever        @controllers.AdminController.viewAdminPage(whatever)
 
 GET   /-/load-site-settings     controllers.SettingsController.loadSiteSettings
 POST  /-/save-site-settings     controllers.SettingsController.saveSiteSettings
@@ -152,7 +152,7 @@ POST  /-/reply                  controllers.ReplyController.handleReply
 POST  /-/chat                   controllers.ReplyController.handleChatMessage
 POST  /-/submit-custom-form     controllers.ReplyController.handleCustomForm
 POST  /-/vote                   controllers.VoteController.handleVotes
-POST  /-/flag                   controllers.Application.flag
+POST  /-/flag                   @controllers.Application.flag
 GET   /-/load-draft-and-guidelines controllers.EditController.loadDraftAndGuidelines(writingWhat, categoryId: Option[Int], pageRole)
 GET   /-/edit                   controllers.EditController.loadCurrentText(pageId, postId)
 POST  /-/edit                   controllers.EditController.edit
@@ -177,10 +177,10 @@ POST  /-/pin-at-position        controllers.PinController.pinAtPosition
 POST  /-/pin-page               controllers.PinController.pinPage
 POST  /-/unpin-page             controllers.PinController.unpinPage
 
-POST  /-/hide-post              controllers.CloseCollapseController.hidePost
-POST  /-/collapse-post          controllers.CloseCollapseController.collapsePost
-POST  /-/collapse-tree          controllers.CloseCollapseController.collapseTree
-POST  /-/close-tree             controllers.CloseCollapseController.closeTree
+POST  /-/hide-post              @controllers.CloseCollapseController.hidePost
+POST  /-/collapse-post          @controllers.CloseCollapseController.collapsePost
+POST  /-/collapse-tree          @controllers.CloseCollapseController.collapseTree
+POST  /-/close-tree             @controllers.CloseCollapseController.closeTree
 #POST  /-/reopen-tree            controllers.CloseCollapseController.reopenTree
 #POST  /-/load-trees             controllers.LoadPagePartsController.loadTrees
 #POST  /-/load-posts             controllers.LoadPagePartsController.loadPosts
@@ -190,17 +190,17 @@ POST  /-/close-tree             controllers.CloseCollapseController.closeTree
 
 POST  /-/import-site            controllers.ImportExportController.importSiteJson
 
-POST /-/log-browser-errors      controllers.DebugTestController.logBrowserErrors
-GET  /-/metrics                 controllers.DebugTestController.showMetrics
-GET  /-/build-info              controllers.DebugTestController.showBuildInfo
-GET  /-/ping-exception-action   controllers.DebugTestController.pingExceptionAction
-GET  /-/ping-session-action     controllers.DebugTestController.pingApiAction
-GET  /-/ping-cache              controllers.DebugTestController.pingCache
-GET  /-/ping-database-and-cache controllers.DebugTestController.pingDatabaseAndCache
-GET  /-/origin                  controllers.DebugTestController.origin
-GET  /-/are-scripts-ready       controllers.DebugTestController.areScriptsReady
-GET  /-/create-deadlock         controllers.DebugTestController.createDeadlock
-GET  /-/last-e2e-test-email     controllers.DebugTestController.showLastE2eTestEmailSent(siteId, sentTo)
+POST /-/log-browser-errors      @controllers.DebugTestController.logBrowserErrors
+GET  /-/metrics                 @controllers.DebugTestController.showMetrics
+GET  /-/build-info              @controllers.DebugTestController.showBuildInfo
+GET  /-/ping-exception-action   @controllers.DebugTestController.pingExceptionAction
+GET  /-/ping-session-action     @controllers.DebugTestController.pingApiAction
+GET  /-/ping-cache              @controllers.DebugTestController.pingCache
+GET  /-/ping-database-and-cache @controllers.DebugTestController.pingDatabaseAndCache
+GET  /-/origin                  @controllers.DebugTestController.origin
+GET  /-/are-scripts-ready       @controllers.DebugTestController.areScriptsReady
+GET  /-/create-deadlock         @controllers.DebugTestController.createDeadlock
+GET  /-/last-e2e-test-email     @controllers.DebugTestController.showLastE2eTestEmailSent(siteId, sentTo)
 GET   /-/site/:siteId/*file     controllers.SiteAssetBundlesController.customAsset(siteId, file)
 GET   /-/site/*file             controllers.SiteAssetBundlesController.at(file)
 
@@ -228,7 +228,7 @@ GET   /-/assets/172/*file       controllers.Assets.at(path = "/public/res", file
 GET   /robots.txt               controllers.Assets.at(path = "/public", file = "robots.txt")
 GET   /-/debiki-embedded-comments.js   controllers.Assets.at(path = "/public/res", file = "embedded-comments.js")
 GET   /-/debiki-embedded-comments.css  controllers.Assets.at(path = "/public/res", file = "debiki-embedded-comments.css")
-GET   /-/*file                  controllers.Application.assetAt(path = "/public", file)
+GET   /-/*file                  controllers.Assets.at(path = "/public", file)
 GET   /favicon.ico              controllers.Assets.at(path = "/public/img", file = "debiki-favicon.ico")
 
 POST  /-/mark-as-seen           controllers.ViewPageController.markPageAsSeen(pageId)

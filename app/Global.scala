@@ -16,30 +16,11 @@
  */
 
 import play.api._
-import play.api.mvc._
-import play.filters.gzip.GzipFilter
-
-
-
-class HtmlJsCssGzipFilter extends GzipFilter(
-  shouldGzip = (request: RequestHeader, response: ResponseHeader) => {
-    // Play Framework won't call this function for responses that already have a content
-    // encoding, e.g. things that have been gzipped already, like min.js.gz files.
-    import org.jboss.netty.handler.codec.http.HttpHeaders.Names
-    assert(response.headers.get(Names.CONTENT_ENCODING).isEmpty)
-
-    // Compressing images tend to make them larger (they're compressed already).
-    val uri = request.uri
-    val isImage = uri.endsWith(".png") || uri.endsWith(".jpg") || uri.endsWith(".gif")
-    val isMovie = uri.endsWith(".mp4") || uri.endsWith(".m4v")
-    !isImage && !isMovie
-  })
-
 
 
 /** Delegates to debiki.Globals.
   */
-object Global extends WithFilters(new HtmlJsCssGzipFilter()) with GlobalSettings {
+object Global extends GlobalSettings {
 
   override def onStart(app: Application) {
     debiki.Globals.onServerStartup(app)

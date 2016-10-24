@@ -21,16 +21,16 @@ import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki._
 import io.efdi.server.http._
+import javax.inject.Inject
 import play.api._
 import play.api.mvc.{Action => _, _}
-import play.api.Play.current
 import DebikiHttp._
 
 
 
 /** Loads the admin app page.
   */
-object AdminController extends mvc.Controller {
+class AdminController @Inject() extends mvc.Controller {
 
 
   def redirectToAdminPage() = GetAction { request =>

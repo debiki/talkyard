@@ -30,6 +30,15 @@ object Site {
 
   val Ipv4AnyPortRegex = """(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})(:\d+)?""".r
 
+
+  /** Must be a valid host name, not too long or too short (less than 6 chars),
+    * no '.' and no leading or trailing '-'. See test suite in SiteCreatorSpec.
+    */
+  def isOkayName(siteName: String): Boolean =
+    OkWebsiteNameRegex matches siteName
+
+  private val OkWebsiteNameRegex = """[a-z][a-z0-9\-]{0,38}[a-z0-9]""".r
+
 }
 
 

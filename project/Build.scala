@@ -37,19 +37,17 @@ object ApplicationBuild extends Build {
   lazy val debikiCore =
     Project("debiki-core", file("modules/debiki-core"))
 
-  lazy val debikiTckDao =
-    (Project("debiki-tck-dao", file("modules/debiki-tck-dao"))
-    dependsOn debikiCore)
-
   lazy val debikiDaoRdb =
     (Project("debiki-dao-rdb", file("modules/debiki-dao-rdb"))
-    dependsOn(debikiCore, debikiTckDao % "test"))
+    dependsOn debikiCore)
 
 
   val appDependencies = Seq(
     play.sbt.Play.autoImport.filters,
     // OpenAuth and OpenID etc Authentication.
-    "com.mohiva" %% "play-silhouette" % "3.0.5",
+    "com.mohiva" %% "play-silhouette" % "4.0.0",
+    "com.mohiva" %% "play-silhouette-crypto-jca" % "4.0.0",
+    // ? "com.mohiva" %% "play-silhouette-password-bcrypt" % "4.0.0",
     // PostgreSQL JDBC client driver
     // see: http://mvnrepository.com/artifact/org.postgresql/postgresql/
     "org.postgresql" % "postgresql" % "9.4.1208",  // there's no 9.5 right now
@@ -62,8 +60,8 @@ object ApplicationBuild extends Build {
     "org.elasticsearch" % "elasticsearch" % "5.0.0-alpha4",
     // ElasticSearch needs log4j
     "log4j" % "log4j" % "1.2.17",
-    "org.apache.commons" % "commons-email" % "1.3.3",
-    "com.google.guava" % "guava" % "13.0.1",
+    "org.apache.commons" % "commons-email" % "1.4",
+    "com.google.guava" % "guava" % "19.0",
     "org.jsoup" % "jsoup" % "1.9.2",
     // java.nio.file.Files.probeContentType doesn't work in Alpine Linux + JRE 8, so use
     // Tika instead. It'll be useful anyway later if indexing PDF or MS Word docs.
@@ -80,8 +78,8 @@ object ApplicationBuild extends Build {
     //              why-do-i-need-jsr305-to-use-guava-in-scala
     "com.google.code.findbugs" % "jsr305" % "1.3.9" % "provided",
     "org.mockito" % "mockito-all" % "1.9.0" % "test", // I use Mockito with Specs2...
-    "org.scalatest" %% "scalatest" % "2.2.4" % "test", // but prefer ScalaTest
-    "org.scalatestplus" %% "play" % "1.4.0-M4" % "test")
+    "org.scalatest" %% "scalatest" % "2.2.6" % "test", // but prefer ScalaTest
+    "org.scalatestplus.play" %% "scalatestplus-play" % "1.5.1" % "test")
 
 
   val main = Project(appName, file(".")).enablePlugins(play.sbt.Play, BuildInfoPlugin)
@@ -106,6 +104,8 @@ object ApplicationBuild extends Build {
       ("Atlassian Releases" at "https://maven.atlassian.com/public/") +:
         Keys.resolvers.value,
 
+    play.sbt.routes.RoutesCompiler.autoImport.routesGenerator :=
+      play.routes.compiler.StaticRoutesGenerator,
 
     BuildInfoKeys.buildInfoPackage := "generatedcode",
     BuildInfoKeys.buildInfoOptions += BuildInfoOption.BuildTime,

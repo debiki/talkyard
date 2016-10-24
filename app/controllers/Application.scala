@@ -18,24 +18,18 @@
 package controllers
 
 import com.debiki.core._
-import com.debiki.core.Prelude._
 import debiki._
 import io.efdi.server.http._
-import java.{util => ju, io => jio}
+import javax.inject.Inject
 import play.api._
-import play.api.libs.MimeTypes
-import play.api.libs.iteratee.Enumerator
 import play.api.mvc.{Action => _, _}
-import play.api.Play.current
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
 import DebikiHttp._
 
 
 
 /** Miscellaneous controller functions -- try to move elsewhere and/or rename this class
   */
-object Application extends mvc.Controller {
+class Application @Inject() extends mvc.Controller {
 
 
   def methodNotAllowed = ExceptionAction { request =>
@@ -131,58 +125,5 @@ object Application extends mvc.Controller {
     OkXml(feedXml, "application/atom+xml")
     */
   } */
-
-
-  def assetAt(path: String, file: String) = ExceptionAction.async { implicit request =>
-    assetAtImpl(path, file, request)
-  }
-
-
-  /** Understands HTTP byte range requests, so that mp4 videos will work on iPhone and iPad.
-    * (You could google for "iphone mp4 byte-range".)
-    * Inspired by https://groups.google.com/d/msg/play-framework/-BN2eUXtzjI/8_l08euEFvcJ
-    * and Samuel Lörtscher's example.
-    *
-    * Play 2.3 doesn't support byte range requests. Here's some ongoing discussion:
-    *   https://github.com/playframework/playframework/issues/1097
-    */
-  private def assetAtImpl(path: String, file: String, request: Request[AnyContent])
-        : Future[Result] = {
-    val rangeHeaderValue = request.headers.get(RANGE) getOrElse {
-      return controllers.Assets.at(path, file)(request)
-    }
-
-    val mimeType = MimeTypes.forFileName(file) getOrElse {
-      if (file.endsWith(".m4v")) "video/mp4"
-      else throwForbidden("DwE5Kf24", "Unknown file type")
-    }
-
-    val stream: jio.InputStream = getClass.getResourceAsStream(s"$path/$file")
-    if (stream == null)
-      throwNotFound("DwE404ZG4", "File not found")
-
-    // `stream.available` might not be the length of the whole file. Depends on the JVM.
-    // But works well for me and my tiny 100kb demo videos. So, for now:
-    val streamLength = stream.available
-    val startAndEnd: Array[String] = rangeHeaderValue.substring("bytes=".length).split("-")
-    val start = startAndEnd(0).toLong
-    val end =
-      if (startAndEnd.length == 1)
-        streamLength - 1
-      else
-        startAndEnd(1).toLong
-
-    stream.skip(start)
-    Future(Result(
-      ResponseHeader(PARTIAL_CONTENT, Map[String, String](
-        CONNECTION -> "keep-alive",
-        CACHE_CONTROL -> "public, max-age=31536000",
-        ACCEPT_RANGES -> "bytes",
-        CONTENT_RANGE -> s"bytes $start-$end/$streamLength",
-        CONTENT_LENGTH -> (end - start + 1).toString,
-        CONTENT_TYPE -> mimeType)),
-      // Does this assume that the client asked for the whole file? That end == streamLength?
-      Enumerator.fromStream(stream)))
-  }
 
 }

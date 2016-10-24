@@ -116,13 +116,10 @@ object DebikiHttp {
     def statusCode = result.header.status
 
     def bodyToString: String = {
-      import scala.concurrent.ExecutionContext.Implicits.global
-      val futureRequestBodyString =
-        Iteratee.flatten(result.body |>> Iteratee.consume[Array[Byte]]()).run.map { byteArray =>
-          new String(byteArray.map(_.toChar))
-        }
-      val bodyString = Await.result(futureRequestBodyString, Duration.fromNanos(1000*1000*1000))
-      bodyString
+      implicit val materializer = play.api.Play.materializer  // what is that [6KFW02G]
+      val futureByteString = result.body.consumeData(materializer)
+      val byteString = Await.result(futureByteString, Duration.fromNanos(1000*1000*1000))
+      byteString.utf8String
     }
 
     // ScalaTest prints the stack trace but not the exception message. However this is

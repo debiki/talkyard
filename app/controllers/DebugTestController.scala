@@ -25,6 +25,7 @@ import debiki.DebikiHttp._
 import io.efdi.server.http._
 import java.lang.management.ManagementFactory
 import java.{util => ju, io => jio}
+import javax.inject.Inject
 import play.api._
 import play.api.libs.json._
 import play.{api => p}
@@ -39,7 +40,7 @@ import scala.util.Try
 
 /** Intended for troubleshooting, via the browser, and helps running End-to-End tests.
   */
-object DebugTestController extends mvc.Controller {
+class DebugTestController @Inject() extends mvc.Controller {
 
 
   /** If a JS error happens in the browser, it'll post the error message to this
@@ -213,7 +214,7 @@ object DebugTestController extends mvc.Controller {
           "GetEndToEndTestEmail", s"$siteId:$sentTo")(akka.util.Timeout(timeout))
 
     val result: Future[p.mvc.Result] = futureReply.flatMap({
-      case futureEmail: Future[Email] =>
+      case futureEmail: Future[_] =>
         val scheduler = p.libs.concurrent.Akka.system.scheduler
         val futureTimeout = akka.pattern.after(timeout, scheduler)(
           failed(ResultException(InternalErrorResult(

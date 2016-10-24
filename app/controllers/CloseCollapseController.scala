@@ -22,14 +22,13 @@ import com.debiki.core.Prelude._
 import debiki._
 import debiki.DebikiHttp._
 import io.efdi.server.http._
-import java.{util => ju}
+import javax.inject.Inject
 import play.api._
-import play.api.libs.json._
 
 
 /** Closes and collapses trees and posts.
   */
-object CloseCollapseController extends mvc.Controller {
+class CloseCollapseController @Inject() extends mvc.Controller {
 
 
   def hidePost = PostJsonAction(RateLimits.CloseCollapsePost, maxLength = 100) { apiReq =>

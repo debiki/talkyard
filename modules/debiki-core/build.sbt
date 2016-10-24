@@ -10,9 +10,9 @@ resolvers += "Scala-Tools Maven2 Repository" at "http://scala-tools.org/repo-rel
 
 libraryDependencies ++= Seq(
   "org.scalactic" %% "scalactic" % "2.2.6",
-  "com.google.guava" % "guava" % "10.0.1",
-  "commons-codec" % "commons-codec" % "1.5",
-  "commons-validator" % "commons-validator" % "1.5.0",
+  "com.google.guava" % "guava" % "19.0",
+  "commons-codec" % "commons-codec" % "1.10",
+  "commons-validator" % "commons-validator" % "1.5.1",
   "nu.validator.htmlparser" % "htmlparser" % "1.2.1",
   "org.owasp.encoder" % "encoder" % "1.1.1",
   "com.typesafe.play" %% "play" % "2.3.1", // for parsing JSON, unfortunately brings in all other Play stuff
@@ -20,7 +20,7 @@ libraryDependencies ++= Seq(
   "com.lambdaworks" % "scrypt" % "1.4.0", // COULD move to debiki-server, see comments in src/main/scala/com/debiki/core/dao-db.scala
   "junit" % "junit" % "4.7" % "test",
   "org.specs2" %% "specs2" % "2.3.12" % "test",
-  "org.scalatest" %% "scalatest" % "2.2.0" % "test"
+  "org.scalatest" %% "scalatest" % "2.2.6" % "test"
 )
 
 scalacOptions += "-deprecation"
