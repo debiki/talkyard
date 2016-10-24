@@ -301,7 +301,7 @@ export var PostActions = createComponent({
     var tagList;
     if (post.tags && post.tags.length) {
       var tags = post.tags.map((label) => {
-        return r.li({}, r.a({ className: 'esTg' }, label));
+        return r.li({ key: label }, r.a({ className: 'esTg' }, label));
       });
       tagList = r.ul({ className: 'esPA_Ts' }, tags);
     }

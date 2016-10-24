@@ -79,6 +79,7 @@ export function startMentionsParserImpl(textarea, onTextEdited) {
 
 
 export var Editor = createComponent({
+  displayName: 'Editor',
   mixins: [debiki2.StoreListenerMixin],
 
   getInitialState: function() {
@@ -802,7 +803,7 @@ export var Editor = createComponent({
   },
 
   clearTextAndClose: function() {
-    this.setState({ text: null, draft: null });
+    this.setState({ text: '', draft: null });
     this.closeEditor();
   },
 
@@ -1136,6 +1137,8 @@ export var Editor = createComponent({
 
 
 var GuidelinesModal = createClassAndFactory({
+  displayName: 'GuidelinesModal',
+
   render: function () {
     var body = !this.props.isOpen ? null :
       r.div({ className: 'dw-editor-guidelines-text',
@@ -1156,6 +1159,8 @@ function isCritiquePage(): boolean {  // [plugin]
 
 
 var SelectCategoryInput = createClassAndFactory({
+  displayName: 'SelectCategoryInput',
+
   render: function () {
     var categoryOptions = this.props.categories.map((category: Category) => {
       return r.option({ value: category.id, key: category.id }, category.name);

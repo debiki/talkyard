@@ -56,9 +56,10 @@ function makeWidget(what, spaceWidgetClasses: string, extraProps?) {
       };
 
       if (origProps.primary) {
-        delete newProps.primary;
         newProps.className = newProps.className + ' btn-primary';
       }
+      // Don't do this inside the above `if`; that won't work if `.primary` is undef/false.
+      delete newProps.primary;
     }
 
     var args = [newProps].concat(children);
