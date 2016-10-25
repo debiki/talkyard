@@ -127,23 +127,25 @@ describe('chat', function() {
 
   /* For demos:
   it("Maria replies", function() {
+    maria.disableRateLimits();
     maria.chat.addChatMessage("What?");
-    maria.pause(3500);
+    //maria.pause(3500);
     maria.chat.addChatMessage("Why, yes.");
   });
 
   it("Owen posts another chat message", function() {
+    owen.disableRateLimits();
     owen.chat.addChatMessage("Can I call you Maria then?");
   });
 
   it("Maria replies", function() {
-    maria.pause(5000);
+    //maria.pause(5000);
     maria.chat.addChatMessage("Yes, sure");
   });
 
   it("They talk", function() {
     owen.chat.addChatMessage("Ok super :- )");
-    owen.chat.addChatMessage("Hi Maria. Nice talking with you.");
+    owen.chat.addChatMessage("Hi Maria. Lorem ipsizzle dolizzle crackalackin, boom shackalack adipiscing elit. Nullizzle fo velizzle, i'm in the shizzle volutpizzle, suscipit quis, gravida boofron, arcu. Nice talking with you!");
     maria.chat.addChatMessage("You too");
   }); */
 

@@ -51,7 +51,7 @@ trait ForumDao {
         PageRole.Forum, PageStatus.Published, anyCategoryId = Some(rootCategoryId),
         anyFolder = Some(folder), anySlug = Some(""), showId = false,
         titleSource = title, titleHtmlSanitized = titleHtmlSanitized,
-        bodySource = introText.source, bodyHtmlSanitized = introText.html,
+        bodySource = ForumIntroText.source, bodyHtmlSanitized = ForumIntroText.html,
         pinOrder = None, pinWhere = None,
         byWho, transaction)
 
@@ -154,22 +154,23 @@ object ForumDao {
   val AboutCategoryTopicPinOrder = 10
 
 
-  lazy val introText = renderCommonMark(i"""
-    |Edit this to tell people what this community is about. Consider linking back to your main website, if any.
+  lazy val ForumIntroText = renderCommonMark(i"""
+    |Edit this to tell people what this community is about. You can link back to your main website, if any.
     """)
 
 
   val WelcomeTopicTitle = "Welcome to this community"
 
   lazy val welcomeTopic = renderCommonMark(i"""
-    |This first paragraph is shown to everyone, on the forum homepage. Edit it to briefly clarify what this community is about. You can edit the topic title too.
+    |Edit this to clarify what this community is about. This first paragraph
+    |is shown to everyone, on the forum homepage.
     |
     |Here, below the first paragraph, add details like:
     |- Who is this community for?
     |- What can they do or find here?
     |- Link to additional info, for example, any FAQ, or main website of yours.
     |
-    |To edit this, click <span class="icon-menu"></span> just below and then <b class="icon-edit">Edit</b>.
+    |To edit this, click the <b class="icon-edit"></b> icon below.
     |""")
 
 

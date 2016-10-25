@@ -895,7 +895,7 @@ fd-slicer@~1.0.1:
   dependencies:
     pend "~1.2.0"
 
-fibers@^1.0.9:
+fibers, fibers@^1.0.9:
   version "1.0.15"
   resolved "https://registry.yarnpkg.com/fibers/-/fibers-1.0.15.tgz#22f039c8f18b856190fbbe4decf056154c1eae9c"
 
@@ -2742,10 +2742,6 @@ progress@1.1.8:
   version "1.1.8"
   resolved "https://registry.yarnpkg.com/progress/-/progress-1.1.8.tgz#e260c78f6161cdd9b0e56cc3e0a85de17c7a57be"
 
-promise.prototype.finally@^1.0.1:
-  version "1.0.1"
-  resolved "https://registry.yarnpkg.com/promise.prototype.finally/-/promise.prototype.finally-1.0.1.tgz#91182f91c92486995740fa05e0da942ac986befa"
-
 promise@^7.1.1:
   version "7.1.1"
   resolved "https://registry.yarnpkg.com/promise/-/promise-7.1.1.tgz#489654c692616b8aa55b0724fa809bb7db49c5bf"
@@ -3688,31 +3684,30 @@ warning@^3.0.0:
   dependencies:
     loose-envify "^1.0.0"
 
-wdio-dot-reporter@^0.0.6:
+wdio-dot-reporter, wdio-dot-reporter@^0.0.6:
   version "0.0.6"
   resolved "https://registry.yarnpkg.com/wdio-dot-reporter/-/wdio-dot-reporter-0.0.6.tgz#153b3e1c5d76777190d893480ffa6f37833740f1"
   dependencies:
     babel-runtime "^5.8.25"
 
-wdio-mocha-framework@=0.4.0:
-  version "0.4.0"
-  resolved "https://registry.yarnpkg.com/wdio-mocha-framework/-/wdio-mocha-framework-0.4.0.tgz#4df1329a4340013bb7666247fc63bca8a3c2c577"
+wdio-mocha-framework:
+  version "0.4.3"
+  resolved "https://registry.yarnpkg.com/wdio-mocha-framework/-/wdio-mocha-framework-0.4.3.tgz#57149ce5c7f27d10a2011440a2fe77f44ab02103"
   dependencies:
     babel-runtime "^5.8.25"
     mocha "^2.3.3"
-    wdio-sync "0.5.10"
+    wdio-sync "0.5.13"
 
-wdio-sync@0.5.10:
-  version "0.5.10"
-  resolved "https://registry.yarnpkg.com/wdio-sync/-/wdio-sync-0.5.10.tgz#bf23c0dce4c1424cab0b590a7851c829cbc51fa5"
+wdio-sync, wdio-sync@0.5.13:
+  version "0.5.13"
+  resolved "https://registry.yarnpkg.com/wdio-sync/-/wdio-sync-0.5.13.tgz#b9b438ca591d51ee06690cb6a248cd6d73726113"
   dependencies:
     fibers "^1.0.9"
     object.assign "^4.0.3"
-    promise.prototype.finally "^1.0.1"
 
-webdriverio@=4.2.7:
-  version "4.2.7"
-  resolved "https://registry.yarnpkg.com/webdriverio/-/webdriverio-4.2.7.tgz#930c721740a74a280cc373cc602375cf7b96dd6d"
+webdriverio:
+  version "4.2.16"
+  resolved "https://registry.yarnpkg.com/webdriverio/-/webdriverio-4.2.16.tgz#c57a709c16ec3c40934e2403b9d95537a27f151e"
   dependencies:
     archiver "1.0.0"
     babel-runtime "^6.9.2"

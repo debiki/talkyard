@@ -38,6 +38,7 @@
     "del": "^2.0.2",
     "es6-promise": "^3.0.2",
     "event-stream": "^3.1.1",
+    "fibers": "^1.0.15",
     "fs": "0.0.2",
     "gulp": "^3.6.0",
     "gulp-concat": "^2.2.0",
@@ -59,7 +60,9 @@
     "request": "^2.64.0",
     "selenium-standalone": "^5.5.0",
     "sync-request": "^3.0.0",
-    "wdio-mocha-framework": "=0.4.0",
-    "webdriverio": "=4.2.7"
+    "wdio-dot-reporter": "^0.0.6",
+    "wdio-mocha-framework": "^0.4.3",
+    "wdio-sync": "^0.5.13",
+    "webdriverio": "^4.2.16"
   }
 }

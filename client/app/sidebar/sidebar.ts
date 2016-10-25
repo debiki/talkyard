@@ -467,9 +467,11 @@ export var Sidebar = createComponent({  // RENAME to ContextBar
               starredBtnTitle);
       }
       else {
-        recentButton = isChat ? null : MenuItem({ onClick: this.showRecent }, "Recent");
+        recentButton = isChat ? null : MenuItem({ onClick: this.showRecent },
+          "Recent ", r.span({ className: 'caret' }));
         //unreadButton = MenuItem({ onClick: this.showUnread }, "Unread"),
-        starredButton = MenuItem({ onClick: this.showStarred }, starredBtnTitle);
+        starredButton = MenuItem({ onClick: this.showStarred },
+          starredBtnTitle, ' ', r.span({ className: 'caret' }));
       }
     }
 
@@ -479,7 +481,8 @@ export var Sidebar = createComponent({  // RENAME to ContextBar
           onClick: this.showAdminGuide }, "Guide");
       }
       else {
-        adminGuideButton = MenuItem({ onClick: this.showAdminGuide }, "Admin Guide");
+        adminGuideButton = MenuItem({ onClick: this.showAdminGuide },
+          "Admin Guide ", r.span({ className: 'caret' }));
       }
     }
 
@@ -501,7 +504,8 @@ export var Sidebar = createComponent({  // RENAME to ContextBar
             recentButton,
             unreadButton,
             starredButton,
-            MenuItem({ onClick: this.showUsers }, usersBtnTitle),
+            MenuItem({ onClick: this.showUsers },
+              usersBtnTitle, ' ', r.span({ className: 'caret' })),
             adminGuideButton));
     }
 
