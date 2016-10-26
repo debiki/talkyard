@@ -1,6 +1,6 @@
 [submodule "modules/ed-dao-rdb"]
 	path = modules/ed-dao-rdb
-	url = https://github.com/debiki/ed-dao-rdb.git
+	url = ../ed-dao-rdb.git
 [submodule "modules/definitely-typed"]
 	path = modules/definitely-typed
 	url = https://github.com/borisyankov/DefinitelyTyped.git
@@ -12,10 +12,10 @@
 	url = https://github.com/JanX2/google-diff-match-patch-git-svn.git
 [submodule "modules/ed-prod-one-test"]
 	path = modules/ed-prod-one-test
-	url = https://github.com/debiki/ed-prod-one.git
+	url = ../ed-prod-one.git
 [submodule "modules/ed-versions"]
 	path = modules/ed-versions
-	url = https://github.com/debiki/ed-versions.git
+	url = ../ed-versions.git
 [submodule "docker/web/modules/nchan"]
 	path = docker/web/modules/nchan
 	url = https://github.com/slact/nchan.git
@@ -39,4 +39,4 @@
 	url = https://github.com/SlexAxton/yepnope.js
 [submodule "modules/sanitize-html"]
 	path = modules/sanitize-html
-	url = https://github.com/debiki/sanitize-html.git
+	url = ../sanitize-html.git
