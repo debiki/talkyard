@@ -186,6 +186,8 @@ This project looks like so:
      | +-web/          <-- Docker build stuff for the Nginx container
      | | +-modules/
      | |   +-nchan/    <-- WebSocket and PubSub for Nginx (a Git submodule)
+     | |   +-luajit/   <-- Lua
+     | |   ...
      | |
      | +-gulp/         <-- Container that runs Node.js and bundles JS and CSS
      | +-gulp-home/    <-- Mounted as Gulp container home-dir = disk cache

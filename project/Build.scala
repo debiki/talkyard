@@ -34,16 +34,18 @@ object ApplicationBuild extends Build {
   }
 
 
-  lazy val debikiCore =
-    Project("debiki-core", file("modules/debiki-core"))
+  // Stuff shared between <repo-root>/app/ and <repo-root>/modules/ed-dao-rdb.
+  lazy val edCore =
+    Project("ed-core", file("modules/ed-core"))
 
   // ed = EffectiveDiscussions, dao = Database Access Object, rdb = Relational DataBase (PostgreSQL)
   lazy val edDaoRdb =
     (Project("ed-dao-rdb", file("modules/ed-dao-rdb"))
-    dependsOn debikiCore)
+    dependsOn edCore)
 
 
   val appDependencies = Seq(
+    // Gzip filter.
     play.sbt.Play.autoImport.filters,
     // OpenAuth and OpenID etc Authentication.
     "com.mohiva" %% "play-silhouette" % "4.0.0",
@@ -54,7 +56,7 @@ object ApplicationBuild extends Build {
     "org.postgresql" % "postgresql" % "9.4.1208",  // there's no 9.5 right now
     // HikariCP — "A solid high-performance JDBC connection pool at last"
     "com.zaxxer" % "HikariCP" % "2.4.7",
-    // We use both a in-the-JVM-memory cache, and Redis:
+    // We use both an in-the-JVM-memory cache, and Redis:
     "com.github.ben-manes.caffeine" % "caffeine" % "2.2.6",
     "com.github.etaty" %% "rediscala" % "1.6.0",
     // Search engine, in https://mvnrepository.com.
@@ -66,7 +68,7 @@ object ApplicationBuild extends Build {
     "org.jsoup" % "jsoup" % "1.9.2",
     // java.nio.file.Files.probeContentType doesn't work in Alpine Linux + JRE 8, so use
     // Tika instead. It'll be useful anyway later if indexing PDF or MS Word docs.
-    "org.apache.tika" % "tika-core" % "1.12",
+    "org.apache.tika" % "tika-core" % "1.13",
     "io.dropwizard.metrics" % "metrics-core" % "3.1.2",
     "nl.grons" %% "metrics-scala" % "3.5.2_a2.3",
     // JSR 305 is requried by Guava, at build time only (so specify "provided"
@@ -85,8 +87,8 @@ object ApplicationBuild extends Build {
 
   val main = Project(appName, file(".")).enablePlugins(play.sbt.Play, BuildInfoPlugin)
     .settings(mainSettings: _*)
-    .dependsOn(debikiCore % "test->test;compile->compile", edDaoRdb)
-    .aggregate(debikiCore) // skip debikiDaoRdb for now, because old broken should-delete-them tests
+    .dependsOn(edCore % "test->test;compile->compile", edDaoRdb)
+    .aggregate(edCore) // skip debikiDaoRdb for now, because old broken should-delete-them tests
 
 
   def mainSettings = List(

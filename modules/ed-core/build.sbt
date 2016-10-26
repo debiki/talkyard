@@ -1,4 +1,4 @@
-name := "debiki-core"
+name := "ed-core"
 
 organization := "com.debiki"
 
@@ -17,7 +17,7 @@ libraryDependencies ++= Seq(
   "org.owasp.encoder" % "encoder" % "1.1.1",
   "com.typesafe.play" %% "play" % "2.3.1", // for parsing JSON, unfortunately brings in all other Play stuff
   //"com.typesafe.play" %% "play-json" % "2.4.6",
-  "com.lambdaworks" % "scrypt" % "1.4.0", // COULD move to debiki-server, see comments in src/main/scala/com/debiki/core/dao-db.scala
+  "com.lambdaworks" % "scrypt" % "1.4.0", // COULD move to ed-server, see comments in src/main/scala/com/debiki/core/dao-db.scala
   "junit" % "junit" % "4.7" % "test",
   "org.specs2" %% "specs2" % "2.3.12" % "test",
   "org.scalatest" %% "scalatest" % "2.2.6" % "test"
