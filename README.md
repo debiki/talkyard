@@ -169,8 +169,8 @@ This project looks like so:
      +-app/            <-- Scala code — a Play Framework 2 app
      |
      +-modules/
-     | +-debiki-dao-rdb/    <-- A database access object (DAO), for PostgreSQL
-     | +-debiki-core/       <-- Code shared by the DAO and by the ./app/ code
+     | +-ed-dao-rdb/        <-- A database access object (DAO), for PostgreSQL
+     | +-ed-core/           <-- Code shared by the DAO and by the ./app/ code
      | +-ed-prod-one-test/  <-- A production installation, for automatic tests
      | |
      | +-local/        <-- Ignored by .gitignore. Here you can override the

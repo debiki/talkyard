@@ -37,8 +37,9 @@ object ApplicationBuild extends Build {
   lazy val debikiCore =
     Project("debiki-core", file("modules/debiki-core"))
 
-  lazy val debikiDaoRdb =
-    (Project("debiki-dao-rdb", file("modules/debiki-dao-rdb"))
+  // ed = EffectiveDiscussions, dao = Database Access Object, rdb = Relational DataBase (PostgreSQL)
+  lazy val edDaoRdb =
+    (Project("ed-dao-rdb", file("modules/ed-dao-rdb"))
     dependsOn debikiCore)
 
 
@@ -84,7 +85,7 @@ object ApplicationBuild extends Build {
 
   val main = Project(appName, file(".")).enablePlugins(play.sbt.Play, BuildInfoPlugin)
     .settings(mainSettings: _*)
-    .dependsOn(debikiCore % "test->test;compile->compile", debikiDaoRdb)
+    .dependsOn(debikiCore % "test->test;compile->compile", edDaoRdb)
     .aggregate(debikiCore) // skip debikiDaoRdb for now, because old broken should-delete-them tests
 
 

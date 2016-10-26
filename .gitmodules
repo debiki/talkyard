@@ -1,3 +1,6 @@
+[submodule "modules/ed-dao-rdb"]
+	path = modules/ed-dao-rdb
+	url = https://github.com/debiki/ed-dao-rdb.git
 [submodule "modules/definitely-typed"]
 	path = modules/definitely-typed
 	url = https://github.com/borisyankov/DefinitelyTyped.git
