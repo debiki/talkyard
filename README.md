@@ -79,8 +79,11 @@ Install Docker-Compose, version 1.7.0+: https://docs.docker.com/compose/install/
 
         ###################################################################
         # EffectiveDiscussions settings
-        net.core.somaxconn=8192    # Up the max backlog queue size (num connections per port), default = 128
-        vm.max_map_count=262144    # ElasticSearch requires (at least) this, default = 65530
+        #
+        # Up the max backlog queue size (num connections per port), default = 128
+        net.core.somaxconn=8192
+        # ElasticSearch requires (at least) this, default = 65530
+        vm.max_map_count=262144
         EOF
 
     (`max_map_count` docs: https://www.kernel.org/doc/Documentation/sysctl/vm.txt)
