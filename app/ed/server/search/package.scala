@@ -218,12 +218,6 @@ package object search {
     def indexSettingsString: String = i"""
       |number_of_shards: 5
       |number_of_replicas: 0
-      |index:
-      |  analysis:
-      |    analyzer:
-      |      analyzer_lowercase_keyword:
-      |        tokenizer: 'keyword'
-      |        filter: 'lowercase'
       |"""
 
     val typeString = """"type": "string""""
@@ -234,13 +228,14 @@ package object search {
     val notAnalyzed = """"index": "not_analyzed""""
     val formatEpochSeconds = """"format": "epoch_second""""
     def analyzerLanguage = s""""analyzer": "$language""""
-    def analyzerLowercaseKeyword = s""""analyzer": "analyzer_lowercase_keyword""""
 
 
     import PostDocFields._
 
-    // (Don't analyze anything with the standard analyzer. It is good for most European
-    // language documents.)
+    // - Don't analyze anything with the standard analyzer. It is good for most European
+    //   language documents.
+    // - A type: keyword field doesn't have any 'analyzer' property (instead, exact matches only).
+    //
     def postMappingString: String = i"""{
       |"$PostDocType": {
       |  "_all": { "enabled": false  },
@@ -253,7 +248,7 @@ package object search {
       |    "$ApprovedPlainText":     { $typeString,  $analyzerLanguage },
       |    "$CurrentRevisionNr":     { $typeInteger, $notIndexed },
       |    "$UnapprovedSource":      { $typeString,  $analyzerLanguage },
-      |    "$Tags":                  { $typeKeyword, $analyzerLowercaseKeyword },
+      |    "$Tags":                  { $typeKeyword },
       |    "$CategoryId":            { $typeInteger, $notAnalyzed },
       |    "$CreatedAtUnixSeconds":  { $typeDate,    $formatEpochSeconds }
       |  }

@@ -1,7 +1,7 @@
 End-to-End tests Readme
 ===================
 
-Webdriver.io is used.
+We use Webdriver.io and write the tests in Typescript.
 
 To run the e2e tests, you currently need Java 8 and Node.js, not just Docker-Compose:
 
@@ -15,13 +15,18 @@ Run tests like so:
 
         docker-compose start
 
-1. In another shell, start Selenium:
+1. In another shell, build a certain Fibers Node.js module, and start Selenium:
 
-        node_modules/selenium-standalone/bin/selenium-standalone install # do once only
-        node_modules/selenium-standalone/bin/selenium-standalone start
+        yarn install  # builds Fibers, needed once only
+        node_modules/.bin/selenium-standalone install # should be needed once only
+        node_modules/.bin/selenium-standalone start
 
-1. In yet another shell, run the test code:
+1. In yet another shell, run the test code. Do one of these:
 
+        # Runs one test: (it'll open *two* browsers)
+        scripts/wdio target/e2e/wdio.2chrome.conf.js --only create-site-admin-guide.2browsers
+
+        # Runs all tests at once: (opens many (!) browsers)
         scripts/wdio target/e2e/wdio.conf.js
 
         # Or if you have configured password for third party stuff, like
@@ -32,10 +37,10 @@ Run tests like so:
         scripts/run-e2e-tests.sh        # in Chrome only
         scripts/run-e2e-tests.sh --all  # in all browsers
 
-    You can run only files that match a certain pattern. The following runs
+    You can choose to run only files that match some pattern. The following runs
     all test files matching `*link*`, namely `client/test/e2e/specs/all-links.tests.ts`:
 
-        scripts/wdio target/e2e/wdio.conf.js --skip3 --only 'links'
+        scripts/wdio target/e2e/wdio.conf.js --only 'links'
 
     If you get this error: "Cannot find module '.../target/e2e/wdio.conf.js'", then
     fix that by building the end-to-end test code:
@@ -44,8 +49,13 @@ Run tests like so:
 
 1. But some tests, e.g. `chat.2browsers.test.ts`, require two browsers. Then use the 2whatever config files, e.g.:
 
-        scripts/wdio target/e2e/wdio.2chrome.conf.js --skip3 --only 'chat.2browsers' --da
-        scripts/wdio target/e2e/wdio.3chrome.conf.js --skip3 --only 'categories.3browsers' --da
+        scripts/wdio target/e2e/wdio.2chrome.conf.js --only 'chat.2browsers'
+        scripts/wdio target/e2e/wdio.3chrome.conf.js --only 'categories.3browsers'
+
+1. To pause before, or after, the tests, use the flag `--db` (debug before) and
+    `--da` (debug afterwards). Example:
+
+        scripts/wdio target/e2e/wdio.2chrome.conf.js --only 'chat.2browsers' --da
 
 
 ### Browsers other than Chrome
@@ -96,7 +106,7 @@ To debug in node.js:
     node-inspector --debug-port 5859 --no-preload
 
     # Run the tests, but add --debug = -d, e.g.:
-    scripts/wdio target/e2e/wdio.3chrome.conf.js -d --skip3 --only 'categories.3browsers'
+    scripts/wdio target/e2e/wdio.3chrome.conf.js -d --only 'categories.3browsers'
 
 
 ### Decisions

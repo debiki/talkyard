@@ -8,5 +8,5 @@ ENTRYPOINT ["/opt/docker-entrypoint.sh"]
 
 WORKDIR /opt/debiki/server/
 
-CMD ["yarn && gulp watch"]
+CMD ["yarn install && gulp watch"]
 

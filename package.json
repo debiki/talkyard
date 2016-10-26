@@ -3,7 +3,7 @@
   "name": "debiki-client",
   "description": "Javascripts and styles for Debiki",
   "version": "0.0.1",
-  "homepage": "http://www.debiki.com",
+  "homepage": "https://www.effectivediscussions.org",
   "license": "AGPL-3.0",
   "repository": {
     "type": "git",
@@ -38,8 +38,6 @@
     "del": "^2.0.2",
     "es6-promise": "^3.0.2",
     "event-stream": "^3.1.1",
-    "fibers": "^1.0.15",
-    "fs": "0.0.2",
     "gulp": "^3.6.0",
     "gulp-concat": "^2.2.0",
     "gulp-gzip": "^1.2.0",
