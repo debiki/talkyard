@@ -1,6 +1,3 @@
-[submodule "modules/debiki-dao-rdb"]
-	path = modules/debiki-dao-rdb
-	url = ../debiki-dao-rdb.git
 [submodule "modules/definitely-typed"]
 	path = modules/definitely-typed
 	url = https://github.com/borisyankov/DefinitelyTyped.git
