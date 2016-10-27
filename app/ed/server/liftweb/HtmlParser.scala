@@ -20,7 +20,7 @@
  * limitations under the License.
  */
 
-package com.debiki.core.liftweb
+package ed.server.liftweb
 
 import scala.xml.{PCData => _, _}
 import parsing._

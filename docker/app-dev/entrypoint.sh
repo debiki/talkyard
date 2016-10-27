@@ -28,12 +28,20 @@ fi
 echo Running the Play CMD:
 
 if [ $file_owner_id -ne 0 ] ; then
+  # Prevent a file-not-found exception in case ~/.ivy2 and ~/.sbt didn't exist, so Docker
+  # created them resulting in them being owned by root:
+  chown owner /home/owner/.ivy2
+  chown owner /home/owner/.sbt
+
   set -x
   # Here, 'exec gosu owner $*' will:
   # 1) run $* as user owner, which has the same user id as the file owner on the Docker host
   # 2) use our current process id, namely 1. Then the Scala app will receive any shutdown signal,
   #    see: https://docs.docker.com/engine/userguide/eng-image/dockerfile_best-practices/#entrypoint
-  exec gosu owner $*
+  # However! 'gosu' doesn't work with "cd ... &&", and we need to have 'owner' cd to /opt/ed/app/.
+  # So instead use 'exec su -c ...'
+  # exec gosu owner $*
+  exec su -c "$*" owner
 else
   # We're root (user id 0), both on the Docker host and here in the container.
   set -x

@@ -18,17 +18,14 @@
 package controllers
 
 import com.debiki.core._
-import com.debiki.core.{liftweb => lw}
-import com.debiki.core.Prelude._
+import ed.server.liftweb
 import debiki._
 import debiki.DebikiHttp._
 import debiki.dao.SiteDao
-import io.efdi.server.http._
-import java.{util => ju, lang => jl}
+import java.{lang => jl}
 import play.api._
 import play.api.libs.json.JsValue
 import play.api.mvc.{Action => _, _}
-import play.api.Play.current
 
 
 object Utils extends Results with http.ContentTypes {
@@ -50,7 +47,7 @@ object Utils extends Results with http.ContentTypes {
    */
   def serializeHtml(htmlNode: xml.NodeSeq): String = {
     require(htmlNode.size == 1)
-    "<!DOCTYPE html>\n"+ lw.Html5.toString(htmlNode.head)
+    "<!DOCTYPE html>\n"+ liftweb.Html5.toString(htmlNode.head)
   }
 
 

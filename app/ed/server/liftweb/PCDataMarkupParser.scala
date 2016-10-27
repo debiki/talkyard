@@ -22,7 +22,7 @@
 
 //package net.liftweb
 //package util
-package com.debiki.core.liftweb
+package ed.server.liftweb
 //import net.liftweb.util._
 
 //import common._

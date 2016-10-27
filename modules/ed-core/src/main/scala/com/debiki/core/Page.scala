@@ -240,8 +240,7 @@ case class PageMeta(
   // A locked or frozen topic, should be closed too.
   require((lockedAt.isEmpty && frozenAt.isEmpty) || closedAt.isDefined, "DwE6UMP3")
   require(answeredAt.isEmpty == answerPostUniqueId.isEmpty, "DwE2PYU5")
-  if (numChildPages < 0)
-    play.api.Logger.warn(s"Negative child page count, parent: $pageId [DwE8KPEF0]")
+  require(numChildPages >= 0, s"Page $pageId has $numChildPages child pages [EsE5FG3W02]")
 
   def isPinned = pinOrder.isDefined
   def isClosed = closedAt.isDefined
