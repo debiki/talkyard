@@ -71,7 +71,7 @@ var HelpDialog = createComponent({
 
     var hideThisHelpTipsCheckbox = !message || !message.id ? null :
       Input({ type: 'checkbox', defaultChecked: true, ref: 'hideMeCheckbox',
-        label: "Do not show this tips again" });
+        label: "Hide this tips" });
 
     content = !content ? null :
         ModalBody({},

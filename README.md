@@ -18,7 +18,7 @@ and Hacker News / Reddit style threaded comments, with some improvements.
 
 Simple installation, if you know a bit about Docker. Automatic upgrades coming soon.
 One installation can host many sites.
-(There's a hosted solution too, if you don't want to maintain a server yourself. See the 'read about it' link above.)
+There's a hosted solution too, if you don't want to install it yourself. See the 'read about it' link above.
 
 ### Screenshots
 
@@ -61,7 +61,7 @@ Getting Started
 
 #### Before you start
 
-You'll need about 3GB free memory. And a somewhat fast internet connection — you'll be downloading perhaps 0.5 (?) GB Docker images.
+You need about 4GB RAM. And a somewhat fast internet connection — you'll be downloading perhaps 0.5 (?) GB Docker images.
 
 Install Docker-Compose, version 1.7.0+: https://docs.docker.com/compose/install/
 
