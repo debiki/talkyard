@@ -38,8 +38,10 @@ export var NewPasswordInput = createClassAndFactory({
       zxcvbnLoaded: false,
       passwordWeakReason: 'too short',
       passwordCrackTimeText: 'instant',
+      password: '',
       passwordLength: 0,
       passwordStrength: 0,
+      forbiddenWords: [],
       showErrors: false,
     };
   },
@@ -69,10 +71,12 @@ export var NewPasswordInput = createClassAndFactory({
       return;
 
     var data = this.props.newPasswordData;
-    var password = this.getValue();
-    var forbiddenWords = [data.email, data.username, 'debiki'];
+    var password: string = this.getValue();
+    var forbiddenWords: string[] = [data.username, 'debiki'];
+    var allEmailParts = (data.email || '').split(/[@\._-]+/);
     var allNameParts = (data.fullName || '').split(/\s+/);
-    forbiddenWords = forbiddenWords.concat(allNameParts);
+    forbiddenWords = forbiddenWords.concat(allEmailParts).concat(allNameParts);
+    forbiddenWords = _.filter(forbiddenWords, w => w.length >= 2);
     var passwordStrength = window['zxcvbn'](password, forbiddenWords);
 
     var crackTimeSecs = passwordStrength.crack_times_seconds.offline_fast_hashing_1e10_per_second;
@@ -101,8 +105,10 @@ export var NewPasswordInput = createClassAndFactory({
       passwordWeakReason: problem,
       passwordCrackTime: crackTimeSecs,
       passwordCrackTimeText: crackTimeText,
+      password: password,
       passwordLength: password.length,
       passwordStrength: passwordStrength.score,
+      forbiddenWords: forbiddenWords,
     });
     this.props.setPasswordOk(!problem);
   },
@@ -111,6 +117,7 @@ export var NewPasswordInput = createClassAndFactory({
     var passwordWarning;
     var makeItStrongerSuggestion;
     var tooWeakReason = this.state.passwordWeakReason;
+    var badWordWarning;
     var strength: number = this.state.passwordStrength;
     var weakClass = '';
     var length: number = this.state.passwordLength;
@@ -122,18 +129,29 @@ export var NewPasswordInput = createClassAndFactory({
       else if (strength <= BadPasswordStrength) {
         // Unfortunately it seems we cannot force people to choose strong passwords,
         // seems they'll just feel annoyed and quit. So this tips will have to do.
-        makeItStrongerSuggestion = r.b({ className: 'esPw_StrongerTips' },
+        makeItStrongerSuggestion = r.b({ className: 's_Pw_StrongerTips' },
             "Fairly weak.");
       }
 
       if (strength < MinPasswordStrength) {
-        weakClass = 'esPw_Strength-TooWeak';
+        weakClass = 's_Pw_Strength-TooWeak';
       }
       else if (strength < BadPasswordStrength) {
-        weakClass = 'esPw_Strength-FairlyWeak';
+        weakClass = 's_Pw_Strength-FairlyWeak';
       }
       else if (strength == BadPasswordStrength) {
-        weakClass = 'esPw_Strength-OkWeak';
+        weakClass = 's_Pw_Strength-OkWeak';
+      }
+
+      // People sometimes include their username or full name in their password, or
+      // the other way around. Then show a warning.
+      let pwdLowercase = this.state.password.toLowerCase();
+      let badWord = _.find(this.state.forbiddenWords, (word: string) => {
+        return pwdLowercase.indexOf(word.toLowerCase()) !== -1;
+      });
+      if (badWord) {
+        badWordWarning = r.div({ className: 's_Pw_BadWordTips' },
+          `Avoid including (parts of) your name or email in the password: "${badWord}"`);
       }
 
       // 100 computers in the message below? Well, zxcvbn assumes 10ms per guess and 100 cores.
@@ -150,17 +168,17 @@ export var NewPasswordInput = createClassAndFactory({
       // Show some progress, since something has been typed.
       strengthPercent = 10;
     }
-    var strengthIndicator = r.div({ className: 'esPw_Strength ' + weakClass },
-      r.span({className: 'esPw_Strength_Lbl' }, "Strength: ",
-        r.div({ className: 'esPw_Strength_Border' },
-          r.div({ className: 'esPw_Strength_Fill', style: { width: strengthPercent + '%' }}))));
+    var strengthIndicator = r.div({ className: 's_Pw_Strength ' + weakClass },
+      r.span({className: 's_Pw_Strength_Lbl' }, "Strength: ",
+        r.div({ className: 's_Pw_Strength_Border' },
+          r.div({ className: 's_Pw_Strength_Fill', style: { width: strengthPercent + '%' }}))));
 
     var passwordHelp = r.div({},
       strengthIndicator,
-      passwordWarning, makeItStrongerSuggestion);
+      passwordWarning, makeItStrongerSuggestion, badWordWarning);
 
     return (
-      r.div({ className: 'form-group esPw' + (passwordWarning ? ' has-error' : '') },
+      r.div({ className: 'form-group s_Pw' + (passwordWarning ? ' has-error' : '') },
         Input({ type: 'password', label: "Password:", name: 'newPassword', ref: 'passwordInput',
             id: 'e2ePassword', onChange: this.checkPasswordStrength, help: passwordHelp,
             tabIndex: this.props.tabIndex,
