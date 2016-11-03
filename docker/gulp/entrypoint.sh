@@ -40,7 +40,9 @@ if [ $file_owner_id -ne 0 ] ; then
   exec su -c "$*" owner
 else
   # We're root (user id 0), both on the Docker host and here in the container.
+  # `exec su ...` is the only way I've found that makes Yarn and Gulp respond to CTRL-C,
+  # so using `su` here although we're root already.
   set -x
-  exec "$*"
+  exec su -c "$*" root
 fi
 

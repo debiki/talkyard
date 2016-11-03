@@ -360,26 +360,30 @@ export var Sidebar = createComponent({  // RENAME to ContextBar
     var usersClass = '';
     var adminGuideActiveClass = '';
     var listItems: any[];
+
+    // (If the page type was just changed to a page without comments, the Recent or Bookmarks
+    // tab might be open, although commentsFound is now null (40WKP20) )
     switch (this.state.commentsType) {
       case 'Recent':
-        title = commentsFound.recent.length ?
-            'Recent comments in this topic:' : 'No comments.';
+        let recentComments = commentsFound ? commentsFound.recent : []; // see (40WKP20) above
+        title = recentComments.length ? "Recent comments in this topic:" : "No comments.";
         recentClass = ' active';
-        listItems = makeCommentsContent(commentsFound.recent, this.state.currentPostId, store,
+        listItems = makeCommentsContent(recentComments, this.state.currentPostId, store,
             this.onPostClick);
         break;
       /*
       case 'Unread':
-        title = commentsFound.unread.length ?
+        let unreadComments = commentsFound ? commentsFound.unread : []; // see (40WKP20) above
+        title = unreadComments.length ?
             'Unread Comments: (click to show)' : 'No unread comments found.';
         unreadClass = ' active';
-        comments = commentsFound.unread;
-        break;
-        */
+        listItems = ...
+        break; */
       case 'Starred':
         title = "Your bookmarks:";
         starredClass = ' active';
-        listItems = makeCommentsContent(commentsFound.starred, this.state.currentPostId, store,
+        let starredComments = commentsFound ? commentsFound.starred : []; // see (40WKP20) above
+        listItems = makeCommentsContent(starredComments, this.state.currentPostId, store,
             this.onPostClick);
         break;
       case 'Users':

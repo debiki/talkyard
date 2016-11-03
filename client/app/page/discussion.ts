@@ -149,8 +149,8 @@ export var TitleBodyComments = createComponent({
                 r.p({}, "Now you have asked for critique. You'll be notified via email later " +
                   "when you get critique."),
                 r.p({},
-                  "If you want to proofread and edit your text below, to make sure it asks for " +
-                  "the right things and is easy to understand, then, to edit it, " +
+                  "Next, proofread your text below, to make sure it asks for " +
+                  "the right things and is easy to understand. To edit it, " +
                   "click the edit icon (", r.span({ className: 'icon-edit' }),
                   ") just below your post.")) };
           }

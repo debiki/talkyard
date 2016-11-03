@@ -46,8 +46,10 @@ Users online:
 
 ### Not totally ready
 
-Development stage: Between Alpha and Beta. So, don't use ED for anything that must be
-up-and-running always, or anything top secret (there might be security bugs), right now.
+Development stage: Between Alpha and Beta. Which means there might be security bugs —
+so don't use ED for anything top secret right now, at least not on a server accessible
+via the public internet.
+
 
 ### How install?
 
@@ -69,7 +71,7 @@ Install Docker-Compose, version 1.7.0+: https://docs.docker.com/compose/install/
 
 1. Clone this repository, `cd` into it. Then update submodules:
 
-        git clone ... ed
+        git clone https://github.com/debiki/ed-server.git ed
         cd ed
         git submodule update --init
 
@@ -83,21 +85,57 @@ Install Docker-Compose, version 1.7.0+: https://docs.docker.com/compose/install/
         # Up the max backlog queue size (num connections per port), default = 128
         net.core.somaxconn=8192
         # ElasticSearch requires (at least) this, default = 65530
+        # Docs: https://www.kernel.org/doc/Documentation/sysctl/vm.txt
         vm.max_map_count=262144
         EOF
-
-    (`max_map_count` docs: https://www.kernel.org/doc/Documentation/sysctl/vm.txt)
 
     Reload the system config:
 
         sudo sysctl --system
 
-1. Start everything: (this will take a while, the first time: some Docker images will be downloaded and built)
+1. Build and start all Docker containers: (this will take a while: some Docker images will be downloaded and built)
 
-        docker-compose up  # use 'sudo' if needed
+        sudo docker-compose up -d
 
-1. Point your browser to http://localhost/ and sign up as admin, with email `admin@example.com`.
-   As username, you can type `admin`, and password e.g. `public1234`.
+        # And tail the logs:
+        sudo docker-compose logs -f
+
+   Wait until this appears in the logs:
+
+        app_1     |
+        app_1     | --- (Running the application, auto-reloading is enabled) ---
+        app_1     |
+        app_1     | [info] p.c.s.NettyServer - Listening for HTTP on /0:0:0:0:0:0:0:0:9000
+        app_1     | [info] p.c.s.NettyServer - Listening for HTTPS on /0:0:0:0:0:0:0:0:9443
+        app_1     |
+        app_1     | (Server started, use Ctrl+D to stop and go back to the console...)
+        app_1     |
+
+
+1. Compile all Scala files, start the server, as follows:
+
+   Point your browser to http://localhost/. This sends a request to Play Framework (port 9000),
+   and Play Framework then starts compiling Scala files. This can take a while.
+   The browser will show a 502 Bad Gateway error message (because Play didn't reply because
+   it's not really running yet — it's compiling stuff).
+
+   Eventually, when done compiling, Play Framework will start. Then this message will get logged:
+
+        app_1  | [info] application - Starting...
+
+   But it's easy to miss, because after that, the server logs even more messages. Instead, when
+   you _no longer_ see these messages:
+
+        [info] Compiling 1 Scala source to ....
+
+   the you'll know the server has probably started _for real_. And you can continue:
+
+
+1. Create a forum
+
+   Reload the browser at http://localhost/. Now eventually a page should be shown.
+   Sign up as admin with this email: `admin@example.com` (must be that email).
+   As username and password you can type `admin` and `public1234`.
 
    You'll be asked to confirm your email address, by clicking a link in an email
    that was sent to you — but in fact the email couldn't be sent, because you haven't configured

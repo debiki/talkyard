@@ -61,10 +61,12 @@ export var Metabar = createComponent({
   },
 
   componentWillUnmount: function() {
+    this.isGone = true;
     debiki2.ReactStore.removeChangeListener(this.onChange);
   },
 
   onChange: function() {
+    if (this.isGone) return;
     this.setState({
       store: debiki2.ReactStore.allData(),
       ui: this.state.ui
