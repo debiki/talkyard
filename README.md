@@ -114,10 +114,11 @@ Install Docker-Compose, version 1.7.0+: https://docs.docker.com/compose/install/
 
 1. Compile all Scala files, start the server, as follows:
 
-   Point your browser to http://localhost/. This sends a request to Play Framework (port 9000),
-   and Play Framework then starts compiling Scala files. This can take a while.
-   The browser will show a 502 Bad Gateway error message (because Play didn't reply because
-   it's not really running yet — it's compiling stuff).
+   Point your browser to http://localhost/. This sends a request to the Docker container
+   named 'web', in which Nginx listens on port 80. Nginx sends the request to Play Framework
+   in the 'app' container, port 9000. Play Framework then starts compiling Scala files; this
+   takes a while — so the browser will show a 502 Bad Gateway error message (because Play
+   didn't reply because it's busy compiling stuff).
 
    Eventually, when done compiling, Play Framework will start. Then this message will get logged:
 

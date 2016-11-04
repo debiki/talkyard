@@ -78,10 +78,48 @@ export var ScrollButtons = createClassAndFactory({
     return {
       visitedPosts: [],
       currentVisitedPostIndex: -1,
+      isShown: false,
     };
   },
 
-  // Crazy with number | string. Oh well, fix later [3KGU02]
+  componentDidMount: function() {
+    // Similar code here: [5KFEWR7]
+    // COULD_OPTIMIZE? Perhaps sync all those time callbacks, so done in same reflow?
+    setTimeout(this.showOrHide, 250);
+
+    addVisitedPosts = this.addVisitedPosts;
+    addVisitedPositionAndPost = this.addVisitedPositionAndPost;
+    addVisitedPosition = this.addVisitedPosition;
+    keymaster('b', this.goBack);
+    keymaster('f', this.goForward);
+    keymaster('1', scrollToTop);
+    keymaster('2', scrollToReplies);
+    keymaster('3', scrollToBottom);
+  },
+
+  componentWillUnmount: function() {
+    this.isGone = true;
+    addVisitedPosts = _.noop;
+    addVisitedPositionAndPost = _.noop;
+    addVisitedPosition = _.noop;
+    keymaster.unbind('b', 'all');
+    keymaster.unbind('f', 'all');
+    keymaster.unbind('1', 'all');
+    keymaster.unbind('2', 'all');
+    keymaster.unbind('3', 'all');
+  },
+
+  showOrHide: function() {
+    if (this.isGone) return;
+    let pageColumn = document.getElementById('esPageScrollable');
+    let pageHasScrollbars = pageColumn.scrollHeight > window.innerHeight;
+    if (this.state.isShown !== pageHasScrollbars) {
+      this.setState({ isShown: pageHasScrollbars });
+    }
+    setTimeout(this.showOrHide, 500);
+  },
+
+  // Crazy with number | string. Oh well, fix later [3KGU02] CLEAN_UP
   addVisitedPosts: function(currentPostId: number, nextPostId: number | string) {
     var visitedPosts = this.state.visitedPosts; // TODO clone, don't modify visitedPosts directly below [immutablejs]
     visitedPosts.splice(this.state.currentVisitedPostIndex + 1, 999999);
@@ -170,28 +208,6 @@ export var ScrollButtons = createClassAndFactory({
         this.state.currentVisitedPostIndex < this.state.visitedPosts.length - 1;
   },
 
-  componentDidMount: function() {
-    addVisitedPosts = this.addVisitedPosts;
-    addVisitedPositionAndPost = this.addVisitedPositionAndPost;
-    addVisitedPosition = this.addVisitedPosition;
-    keymaster('b', this.goBack);
-    keymaster('f', this.goForward);
-    keymaster('1', scrollToTop);
-    keymaster('2', scrollToReplies);
-    keymaster('3', scrollToBottom);
-  },
-
-  componentWillUnmount: function() {
-    addVisitedPosts = _.noop;
-    addVisitedPositionAndPost = _.noop;
-    addVisitedPosition = _.noop;
-    keymaster.unbind('b', 'all');
-    keymaster.unbind('f', 'all');
-    keymaster.unbind('1', 'all');
-    keymaster.unbind('2', 'all');
-    keymaster.unbind('3', 'all');
-  },
-
   openScrollButtonsDialog: function(event) {
     openScrollButtonsDialog(event.target);
   },
@@ -257,6 +273,9 @@ export var ScrollButtons = createClassAndFactory({
   },
 
   render: function() {
+    if (!this.state.isShown)
+      return null;
+
     var openScrollMenuButton = Button({ className: 'esScrollBtns_menu', ref: 'scrollMenuButton',
         onClick: this.openScrollButtonsDialog }, "Scroll");
 
