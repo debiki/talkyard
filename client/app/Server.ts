@@ -852,10 +852,30 @@ export function startPrivateGroupTalk(title: string, text: string, pageRole: Pag
 }
 
 
-export function submitCustomForm(formInputNameValues, success: () => void) {
-  postJsonSuccess('/-/submit-custom-form', success, {
+export function submitCustomFormAsJsonReply(formInputNameValues, success?: () => void) {
+  postJsonSuccess('/-/submit-custom-form-as-json-reply', success, {
     pageId: d.i.pageId,
     formInputs: formInputNameValues,
+  });
+}
+
+
+export function submitCustomFormAsNewTopic(formInputNameValues) {
+  function getOrDie(inpName: string): string {
+    let nameValue: any = _.find(formInputNameValues, (nv: any) => nv.name === inpName);
+    dieIf(!nameValue, `Input missing: ${inpName} [EdE4WKFE02]`);
+    return nameValue.value;
+  }
+
+  function goToNewPage(response) {
+    location.assign(linkToPageId(response.newPageId));
+  }
+
+  postJsonSuccess('/-/submit-custom-form-as-new-topic', goToNewPage, {
+    newTopicTitle: getOrDie('title'),
+    newTopicBody: getOrDie('body'),
+    pageTypeId: getOrDie('pageTypeId'),
+    categorySlug: getOrDie('categorySlug'),
   });
 }
 

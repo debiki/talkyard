@@ -109,6 +109,7 @@ enum PageRole { // dupl in client/e2e/test-types.ts [5F8KW0P2]
   // DirectMessage = 20,
   Form = 20,  // try to remove?
   Critique = 16, // [plugin]
+  UsabilityTesting = 21, // [plugin]
 }
 
 

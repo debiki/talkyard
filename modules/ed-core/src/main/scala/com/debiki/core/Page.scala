@@ -396,6 +396,7 @@ object PageRole {
   case object Form extends PageRole(20, staffOnly = false)  // try to remove?
 
   case object Critique extends PageRole(16, staffOnly = false) // [plugin]
+  case object UsabilityTesting extends PageRole(21, staffOnly = false) // [plugin]
 
 
   def fromInt(value: Int): Option[PageRole] = Some(value match {
@@ -418,6 +419,7 @@ object PageRole {
     case PrivateChat.IntValue => PrivateChat
     case Form.IntValue => Form
     case Critique.IntValue => Critique
+    case UsabilityTesting.IntValue => UsabilityTesting
     //case WikiMainPage.IntValue => WikiMainPage
     //case WikiPage.IntValue => WikiPage
     case _ => return None

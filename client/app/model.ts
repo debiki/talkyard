@@ -217,6 +217,7 @@ interface HelpMessage {
   version: number;
   content: any;
   className?: string;
+  alwaysShow?: boolean;
 }
 
 

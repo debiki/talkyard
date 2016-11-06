@@ -105,19 +105,6 @@ object ReplyController extends mvc.Controller {
   }
 
 
-  def handleCustomForm = PostJsonAction(RateLimits.PostReply, maxLength = MaxPostSize) {
-        request =>
-    val pageId = (request.body \ "pageId").as[PageId]
-    val formInputs = (request.body \ "formInputs").as[JsArray]
-    val textAndHtml = TextAndHtml.withCompletedFormData(formInputs) getOrIfBad { errorMessage =>
-      throwBadRequest("EsE7YK4W0", s"Bad form inputs JSON: $errorMessage")
-    }
-    request.dao.insertReply(textAndHtml, pageId, Set.empty, PostType.CompletedForm,
-        request.whoOrUnknown)
-    Ok
-  }
-
-
   /*
   private def tryCreateEmbeddedCommentsPage(  -- embedded comments disabled [5EU0232]
         request: DebikiRequest[_], pageId: PageId, anyPageUrl: Option[String]): Option[Page] = {

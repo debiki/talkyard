@@ -126,7 +126,8 @@ export var TitleBodyComments = createComponent({
           "This is a ", plannedIcon, " todo task, not yet ", doneIcon, " done.") };
       }
     }
-    if (store.pageRole === PageRole.Critique) {  // [plugin]
+
+    if (store.pageRole === PageRole.Critique) {  // [plugin]. Dupl code, (39pKFU0) below
       if (store.pageClosedAtMs) {
         return { id: 'EdH4KDPU2', version: 1, content: r.span({},
           "This topic has been ", closedIcon, "closed. People won't get any additional " +
@@ -134,7 +135,7 @@ export var TitleBodyComments = createComponent({
       }
       if (!me.isAuthenticated) {
         // Could explain: here someone has asked for critique. X people have answered,
-        // see the Replies section below. And there are Y chat comments or status updates.
+        // see the Replies section below.
         return null;
       }
       else {
@@ -153,6 +154,48 @@ export var TitleBodyComments = createComponent({
                   "the right things and is easy to understand. To edit it, " +
                   "click the edit icon (", r.span({ className: 'icon-edit' }),
                   ") just below your post.")) };
+          }
+        }
+        else {
+          return { id: 'EdH7YM21', version: 1, content: r.span({},
+            "Click ", r.b({}, "Give Critique"), " below, to critique this — then you'll " +
+            "get credits, which you can use to ask for critique yourself.") };
+        }
+      }
+    }
+
+    if (store.pageRole === PageRole.UsabilityTesting) {  // [plugin]. Dupl code, (39pKFU0) above
+      if (store.pageClosedAtMs) {
+        return { id: 'EdH5KFEW3', version: 1, content: r.span({},
+          "This topic has been ", closedIcon, "closed. Find another topic, if you are going " +
+          "to do usability testing.") };
+      }
+      if (!me.isAuthenticated) {
+        // Could explain: here someone has asked for usability testing. X people have answered,
+        // see the Replies section below.
+        return null;
+      }
+      else {
+        var isPageAuthor = bodyPost.authorIdInt === me.userId;
+        if (isPageAuthor) {
+          if (store.numPostsRepliesSection) {
+            return { id: 'EdH5P0WF2', version: 1, content: r.span({},
+              "There's a reply to you below — is it a usability testing video link?") };
+          }
+          else {
+            return { id: 'EdH5PK2W', version: 1, alwaysShow: true, className: 's_UtxHelp_HaveAsked',
+              content: r.div({},
+                r.h1({ className: 's_UtxHelp_HaveAsked_Title' },
+                  "Now you have asked for usability testing."),
+                r.p({}, "You'll be notified via email, " +
+                  "when someone has recorded a video for you."),
+                r.p({},
+                  "Proofread your text below, to make sure it asks for " +
+                  "the right things and is easy to understand. To edit it, " +
+                  "click the edit icon (", r.span({ className: 'icon-edit' }),
+                  ") just below your post. — Thereafter, click Continue."),
+                r.a({ className: 's_UtxHelp_HaveAsked_ContinueB btn btn-primary',
+                    href: '/record-a-video' }, "Continue")) };
           }
         }
         else {

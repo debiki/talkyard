@@ -136,6 +136,7 @@ trait PagesDao {
     require(pinOrder.isDefined == pinWhere.isDefined, "Ese5MJK2")
 
     // Don't allow more than ... 10 topics with no critique? For now only.
+    // For now, don't restrict PageRole.UsabilityTesting — I'll "just" sort by oldest-first instead?
     if (pageRole == PageRole.Critique) { // [plugin] [85SKW32]
       anyCategoryId foreach { categoryId =>
         val pages = listPagesInCategory(categoryId, includeDescendants = true,

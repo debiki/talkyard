@@ -902,10 +902,11 @@ export var Editor = createComponent({
       }
     }
 
-    var editingPostId = this.state.editingPostId;
-    var replyToPostIds = this.state.replyToPostIds;
-    var isChatComment = replyToPostIds.length === 1 && replyToPostIds[0] === NoPostId;
-    var isChatReply = replyToPostIds.indexOf(NoPostId) !== -1 && !isChatComment;
+    let editingPostId = this.state.editingPostId;
+    let replyToPostIds = this.state.replyToPostIds;
+    let isOrigPostReply = _.isEqual([BodyId], replyToPostIds);
+    let isChatComment = replyToPostIds.length === 1 && replyToPostIds[0] === NoPostId;
+    let isChatReply = replyToPostIds.indexOf(NoPostId) !== -1 && !isChatComment;
 
     var doingWhatInfo;
     if (_.isNumber(editingPostId)) {
@@ -940,6 +941,7 @@ export var Editor = createComponent({
         case PageRole.Discussion: break; // use default
         case PageRole.FormalMessage: die('EsE2KFE78'); break;
         case PageRole.Critique: what = "Ask for critique"; break; // [plugin]
+        case PageRole.UsabilityTesting: what = "Do usability testing"; break; // [plugin]
       }
       doingWhatInfo = what + ":";
     }
@@ -949,8 +951,11 @@ export var Editor = createComponent({
     else if (isChatComment) {
       doingWhatInfo = "New chat comment:";
     }
-    else if (_.isEqual([BodyId], replyToPostIds) && isCritiquePage()) { // [plugin]
+    else if (isOrigPostReply && page_isCritique(store.pageRole)) { // [plugin]
       doingWhatInfo = "Your critique:";
+    }
+    else if (isOrigPostReply && page_isUsabilityTesting(store.pageRole)) { // [plugin]
+      doingWhatInfo = "Your usability testing video link + description:";
     }
     else if (replyToPostIds.length > 0) {
       doingWhatInfo =
@@ -983,8 +988,11 @@ export var Editor = createComponent({
       }
       else {
         saveButtonTitle = "Post reply";
-        if (_.isEqual([BodyId], replyToPostIds) && isCritiquePage()) { // [plugin]
+        if (isOrigPostReply && page_isCritique(store.pageRole)) { // [plugin]
           saveButtonTitle = makeSaveTitle("Submit", " critique");
+        }
+        if (isOrigPostReply && page_isUsabilityTesting(store.pageRole)) { // [plugin]
+          saveButtonTitle = makeSaveTitle("Submit", " video");
         }
       }
     }
@@ -1153,8 +1161,13 @@ var GuidelinesModal = createClassAndFactory({
 });
 
 
-function isCritiquePage(): boolean {  // [plugin]
-  return ReactStore.allData().pageRole === PageRole.Critique;
+function page_isCritique(pageType: PageRole): boolean {  // [plugin]
+  return pageType === PageRole.Critique;
+}
+
+
+function page_isUsabilityTesting(pageType: PageRole): boolean {  // [plugin]
+  return pageType === PageRole.UsabilityTesting;
 }
 
 

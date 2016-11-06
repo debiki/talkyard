@@ -387,7 +387,7 @@ object PagePath {
   // PageSlugPtrn:
   //  - PageSlugPtrn: "*+~" have special meanings
   //
-  private val _PageGuidPtrn = "-([a-zA-Z0-9_]*)"  // empty guid ok, read above
+  private val _PageGuidPtrn = "-([a-zA-Z0-9_]*)"  // empty guid ok, read above. NO. CLEAN_UP
   private val _PageSlugPtrn = "([^-*+~/][^*+~/]*)"
   private val _PageIdSlashSlugRegex = s"${_PageGuidPtrn}/${_PageSlugPtrn}".r
   private val _PageIdHyphenSlugRegex = s"${_PageGuidPtrn}-${_PageSlugPtrn}".r

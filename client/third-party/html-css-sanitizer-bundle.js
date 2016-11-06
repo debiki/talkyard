@@ -4833,8 +4833,8 @@ if (typeof window !== 'undefined') {
 
 
 /**
- * Placed in this file because it made sense long ago, with Rhino, which is no longer in use.
- * /kajmagnus
+ * Placed in this file because it made sense long ago, with Rhino — which is no longer
+ * in use though. CLEAN_UP move to some .ts file instead /KajMagnus
  */
 function googleCajaSanitizeHtml(htmlTextUnsafe, allowClassAndIdAttr,
     allowDataAttr) {
@@ -4871,7 +4871,8 @@ function googleCajaSanitizeHtml(htmlTextUnsafe, allowClassAndIdAttr,
     if (/^ed-/.test(token)) return '';   // old
     if (/^es[A-Z]/.test(token)) return '';   // current naming scheme is esWhatever
     if (/^the[A-Z]/.test(token)) return '';  // ... or theWhatever, for id attrs
-    if (/^[a-z]?-/.test(token)) return '';   // in the future?: d-... or t-... or just -Whatever?
+    if (/^[a-z]?-/.test(token)) return '';   // in the future?: d-... or t-... or just -Whatever?...
+    if (/^[a-z]?_/.test(token)) return '';   // ... ok, s_, t_, and e_ will be the magic prefix.
     return token;
   }
   function dataPolicy(attrName, value) {

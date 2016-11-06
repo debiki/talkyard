@@ -58,6 +58,7 @@ object EditController extends mvc.Controller {
         Some(ReplyGuidelines)
       case WriteWhat.ReplyToOriginalPost =>
         if (thePageRole == PageRole.Critique) Some(GiveCritiqueGuidelines) // [plugin]
+        else if (thePageRole == PageRole.UsabilityTesting) Some(UsabilityTestingVideoGuidelines) // [plugin]
         else Some(ReplyGuidelines)
       case WriteWhat.OriginalPost =>
         if (thePageRole == PageRole.Critique) Some(AskForCritiqueGuidelines) // [plugin]
@@ -246,6 +247,14 @@ object EditController extends mvc.Controller {
     |<li>Be friendly and polite.
     |<li>Mention things you like.
     |</ul>
+    |"""
+
+  val UsabilityTestingVideoGuidelines = /* [plugin] */ i"""
+    |<p>Here you can link to any video you've recorded. However, this is a public forum;
+    |anyone can see your link. If you don't like that, then instead post a <i>private message</>
+    |to the Original Post author instead (click his/her name). And, here, just reply someting
+    |like "Video submitted" so other people know about that.
+    |</p>
     |"""
 
   val AskForCritiqueGuidelines = /* [plugin] */ i"""

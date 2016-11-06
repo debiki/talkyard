@@ -133,7 +133,7 @@ var ServerErrorDialog = createComponent({
     return (
       r.div({},
         r.div({ className: 'modal-backdrop fade in', style: { opacity: 0.5 } }),
-        r.div({ role: 'dialog', tabindex: -1, className: 'fade in modal',
+        r.div({ role: 'dialog', tabIndex: -1, className: 'fade in modal',
               style: { display: 'block' }},
           r.div({ className: 'modal-dialog dw-server-error' },
             r.div({ className: 'modal-content', role: 'document' },

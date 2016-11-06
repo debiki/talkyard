@@ -97,7 +97,7 @@ services:
   #    PEER_PASSWORD: 'public'
 
   gulp:
-    mem_limit: 900M
+    mem_limit: 700M
     build: docker/gulp/
     volumes:
       - ./:/opt/debiki/server/

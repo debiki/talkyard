@@ -123,6 +123,9 @@ object TextAndHtml {
     apply(text, isTitle = false, followLinks = followLinks,
       allowClassIdDataAttrs = allowClassIdDataAttrs)
 
+  // COULD escape all CommonMark so becomes real plain text
+  def forBodyOrCommentAsPlainTextWithLinks(text: String) =
+    apply(text, isTitle = false, followLinks = false, allowClassIdDataAttrs = false)
 
   def apply(
     text: String,
