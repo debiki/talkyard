@@ -74,6 +74,7 @@ services:
     image: debiki/ed-rdb
     volumes:
       - ./docker/data/rdb/:/var/lib/postgresql/data/
+      - ./docker/data/rdb-logs/:/var/log/postgresql/
     ports:
       - '5432:5432'
     environment:
