@@ -44,6 +44,12 @@ function allBrowserValues(result) {
   return _.values(resultByBrowser);
 }
 
+function isResponseOk(response): boolean {
+  // Previously, .status === 0' worked, but now .status instead a function that seems to
+  // return the object itself (weird). Use '._status' instead + check '.state' too  :-P
+  return response._status === 0 && response.state === "success";
+}
+
 
 function addCommandsToBrowser(browser) {
 
@@ -303,7 +309,7 @@ function addCommandsToBrowser(browser) {
     var items = browser.elements(selector).value;
     assert(items.length >= n, "Only " + items.length + " elems found, there's no elem no " + n);
     var response = browser.elementIdText(items[n - 1].ELEMENT);
-    assert(response.status === 0, "Bad response.status: " + response.status +
+    assert(isResponseOk(response), "Bad response._status: " + response._status +
         ", state: " + response.state);
     var text = response.value;
     assert(regex.test(text), "Elem " + n + " selected by '" + selector + "' doesn't match " +
