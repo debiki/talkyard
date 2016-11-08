@@ -76,7 +76,7 @@ On Linux, do this: (other platforms? no idea)
 
     # Start Selenium, via Xvbf, so the browsers Selenium will spawn, will be invisible.
     # (Also, specify a not-super-small screen size, otherwise tests will fail.)
-    xvfb-run -s '-screen 0 1280x1024x8' node_modules/selenium-standalone/bin/selenium-standalone start
+    xvfb-run -s '-screen 0 1280x1024x8' node_modules/.bin/selenium-standalone start
 
     # There's a script for that:
     scripts/start-invisible-selenium.sh

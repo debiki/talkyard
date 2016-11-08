@@ -67,6 +67,9 @@ You need about 4GB RAM. And a somewhat fast internet connection — you'll be do
 
 Install Docker-Compose, version 1.7.0+: https://docs.docker.com/compose/install/
 
+Read [A brief intro to Docker-Compose](docs/intro-to-docker-compose.md) — unless you know
+how to use docker-compose already.
+
 #### The instructions
 
 1. Clone this repository, `cd` into it. Then update submodules:

@@ -52,6 +52,16 @@ function pagesFor(browser) {
     },
 
 
+    refresh: function() {
+      // browser.refresh() causes a weird cannot-find-elem problem. Perhaps because of
+      // some incompatibility between webdriver.io and Chrome? Recently there was a stale-
+      // element bug after refresh(), fixed in Webdriver.io 4.3.0. Instead:
+      let url = browser.url().value;
+      browser.go('http://www.google.com');
+      browser.go(url);
+    },
+
+
     waitForMyDataAdded: function() {
       browser.waitForVisible('.e2eMyDataAdded');
     },
@@ -164,7 +174,7 @@ function pagesFor(browser) {
       searchFor: function(phrase: string) {
         browser.waitAndClick('.esTB_SearchBtn');
         browser.waitAndSetValue('.esTB_SearchD input[name="searchPhrase"]', phrase);
-        browser.click('.esTB_SearchD input[type="submit"]');
+        browser.click('.e_SearchB');
       },
     },
 
@@ -684,18 +694,38 @@ function pagesFor(browser) {
         // be above it; then, if it's below the [Scroll][Back] buttons, it won't be clickable.
         // Or the button might be below the lower window edge.
         // If so, scroll down to the reply button.
-        while (true) {
-          let replyButtonLocation = browser.getLocationInView(buttonSelector);
-          let fixedBarLocation = browser.getLocationInView(api.scrollButtons.fixedBarSelector);
-          if (replyButtonLocation.y + 70 < fixedBarLocation.y)
+        //
+        // Why try twice? The scroll buttons aren't shown until a few 100 ms after page load.
+        // So, `browser.isVisible(api.scrollButtons.fixedBarSelector)` might evaluate to false,
+        // and then we won't scroll down — but then just before `browser.waitAndClick`
+        // they appear, so the click fails. That's why we try once more.
+        //
+        for (let attemptNr = 1; attemptNr <= 2; ++attemptNr) {
+          while (true) {
+            let replyButtonLocation = browser.getLocationInView(buttonSelector);
+            let canScroll = browser.isVisible(api.scrollButtons.fixedBarSelector);
+            if (!canScroll)
+              break;
+            let fixedBarLocation = browser.getLocationInView(api.scrollButtons.fixedBarSelector);
+            if (replyButtonLocation.y + 70 < fixedBarLocation.y)
+              break;
+            browser.execute(function(selector) {
+              window['debiki2'].utils.scrollIntoViewInPageColumn(
+                  selector, {marginBottom: 70 + 20, duration: 220});
+            }, buttonSelector);
+            browser.pause(220 + 10);
+          }
+          try {
+            browser.waitAndClick(buttonSelector);
             break;
-          browser.execute(function(selector) {
-            window['debiki2'].utils.scrollIntoViewInPageColumn(
-                selector, { marginBottom: 70 + 20, duration: 220 });
-          }, buttonSelector);
-          browser.pause(220 + 10);
+          }
+          catch (exception) {
+            // Click failed because the scroll buttons appeared after `canScroll = ...isVisible...`
+            // but before `...waitAndClick...`? But that can happen only once.
+            if (attemptNr === 2)
+              throw exception;
+          }
         }
-        browser.waitAndClick(buttonSelector);
       },
 
       assertFirstReplyTextMatches: function(text) {

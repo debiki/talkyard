@@ -420,7 +420,7 @@ var SearchForm = createComponent({
           r.input({ type: 'text', tabIndex: '1', placeholder: "Text to search for",
               ref: 'input', name: 'searchPhrase',
               value: this.state.queryInputText, onChange: this.onQueryChange }),
-          PrimaryLinkButton({ href: searchUrl, id: 'e2e_Search' }, "Search"),
+          PrimaryLinkButton({ href: searchUrl, className: 'e_SearchB' }, "Search"),
           r.div({},
             r.a({ className: 'esTB_SearchD_AdvL', href: searchUrlAdvanced },
               "Advanced search"))));
