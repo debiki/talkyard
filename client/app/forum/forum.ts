@@ -856,12 +856,12 @@ var ForumTopicListComponent = React.createClass(<any> {
     }
 
     var topicsTable = !useTable ? null :
-        r.table({ className: 'esF_TsT dw-topic-list' },
+        r.table({ className: 'esF_TsT s_F_Ts-Wide dw-topic-list' },
           r.thead({},
             r.tr({},
               r.th({}, "Topic"),
-              r.th({}, "Category"),
-              r.th({}, "Users"),
+              r.th({ className: 's_F_Ts_T_CN' }, "Category"),
+              r.th({ className: 's_F_Ts_T_Avs' }, "Users"),
               r.th({ className: 'num dw-tpc-replies' }, "Replies"),
               r.th({ className: 'num' }, "Activity"))),
               // skip for now:  r.th({ className: 'num' }, "Feelings"))),  [8PKY25]
@@ -869,7 +869,7 @@ var ForumTopicListComponent = React.createClass(<any> {
             topics));
 
     var topicRows = useTable ? null :
-        r.ol({ className: 'esF_TsL' },
+        r.ol({ className: 'esF_TsL s_F_Ts-Nrw' },
           topics);
 
     return (
@@ -1035,11 +1035,12 @@ var TopicRow = createComponent({
     }
 
     var anyPinIconClass = topic.pinWhere ? 'icon-pin' : undefined;
-    var showExcerpt = topic.pinWhere === PinPageWhere.Globally ||
+    var showExcerptAsParagraph = topic.pinWhere === PinPageWhere.Globally ||
         (topic.pinWhere && topic.categoryId === this.props.activeCategory.id);
-    var excerptIfPinned = showExcerpt
-        ? r.p({ className: 'dw-p-excerpt' }, topic.excerpt, r.a({ href: topic.url }, 'read more'))
-        : null;
+    let excerpt = showExcerptAsParagraph  // [7PKY2X0]
+        ? r.p({ className: 'dw-p-excerpt' },
+            topic.excerpt, r.a({ href: topic.url }, 'read more'))
+        : r.span({ className: 's_F_Ts_T_Con_B' }, topic.excerpt);
 
     var categoryName = !category ? null :
       r.a({ onClick: () => this.switchCategory(category), className: 'esF_Ts_T_CName' },
@@ -1062,14 +1063,17 @@ var TopicRow = createComponent({
             title: "most recent poster" }));
     }
 
+    let manyLinesClass = showExcerptAsParagraph ? ' s_F_Ts_T_Con-Para' : '';
+
     // We use a table layout, only for wide screens, because table columns = spacy.
     if (this.props.inTable) return (
       r.tr({ className: 'esForum_topics_topic e2eF_T' },
         r.td({ className: 'dw-tpc-title e2eTopicTitle' },
-          makeTitle(topic, anyPinIconClass),
-          excerptIfPinned),
-        r.td({}, categoryName),
-        r.td({}, userAvatars),
+          r.div({ className: 's_F_Ts_T_Con' + manyLinesClass },
+            makeTitle(topic, anyPinIconClass),
+            excerpt)),
+        r.td({ className: 's_F_Ts_T_CN' }, categoryName),
+        r.td({ className: 's_F_Ts_T_Avs' }, userAvatars),
         r.td({ className: 'num dw-tpc-replies' }, topic.numPosts - 1),
         r.td({ className: 'num dw-tpc-activity', title: activityTitle }, activityAgo)));
         // skip for now:  r.td({ className: 'num dw-tpc-feelings' }, feelings)));  [8PKY25]
@@ -1079,7 +1083,7 @@ var TopicRow = createComponent({
           makeTitle(topic, anyPinIconClass)),
         r.div({ className: 'esF_TsL_T_NumRepls' },
           topic.numPosts - 1, r.span({ className: 'icon-comment-empty' })),
-        excerptIfPinned,
+        excerpt,
         r.div({ className: 'esF_TsL_T_Row2' },
           r.div({ className: 'esF_TsL_T_Row2_Users' }, userAvatars),
           r.div({ className: 'esF_TsL_T_Row2_Cat' },

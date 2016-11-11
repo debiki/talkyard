@@ -259,6 +259,58 @@ $tableHeaderFontSize = 14px;
 html.js:not(.dw-react-started) #dw-topic-list tbody
   display: none;
 
+
+.s_F_Ts_T_Avs
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+
+th.dw-tpc-replies
+  padding-left: 0;
+
+/* COULD RESPONSIVE if forum table narrow
+// Smaller distance between stats columns:
+th.num
+  padding-right: 3px;
+*/
+
+td.dw-tpc-activity
+  white-space: normal !important;
+
+.esF_Ts_T_CName,
+.dw-tpc-replies,
+.dw-tpc-activity
+  color: hsl(0, 0%, 51%);
+
+.dw-tpc-title
+  padding: 10px 30px 10px 8px !important;
+
+.dw-tpc-title a
+  color: black;
+
+.s_F_Ts_T_Con
+  line-height: 30px;
+  // some space for highlighting the link inside on hover:
+  padding-left: 6px;
+  position: relative;
+  left: -6px;
+
+.s_F_Ts_T_Con:not(.s_F_Ts_T_Con-Para)
+  height: 31px;
+  overflow: hidden;
+
+.s_F_Ts_T_Con_B
+  color: hsl(0, 0%, 62%);
+  font-size: 13px;
+
+.s_F_Ts-Wide .s_F_Ts_T_Con_B
+  &:before
+    content: '– ';
+    margin: 0 2px 0 1px;
+
+.esF_Ts_T_CName
+  vertical-align: middle;
+  padding: 3px 2px 2px 5px !important;  // dupl 5px left padding, see (305FF220)
+
 .dw-topic-list
   width: 100%
 
@@ -302,8 +354,7 @@ html.js:not(.dw-react-started) #dw-topic-list tbody
           .dw-p-excerpt
             font-size: $tableTopicExcerptFontSize;
         a
-          color: hsl(0, 0%, 13%);
-          $leftPadding = 5px;
+          $leftPadding = 5px;  // dupl 5px, see (305FF220)
           padding: 3px 2px 5px $leftPadding; // makes it easier to click
           position: relative;
           left: - $leftPadding;
@@ -419,9 +470,6 @@ html.js:not(.dw-react-started) #dw-topic-list tbody
 
         &.num:not(.dw-tpc-feelings, .dw-tpc-replies)
           color: hsl(0, 0%, 53%);
-
-        &.dw-tpc-replies
-          color: hsl(0, 0%, 20%);
 
         .dw-p-excerpt
           color: hsl(0, 0%, 44%);
@@ -657,7 +705,7 @@ $row2PaddingBottom = 7px;
 .esF_TsL_T
   list-style: none;
   margin: 0;
-  padding: (11px - $topicTitlePadding) 0 5px;
+  padding: (12px - $topicTitlePadding) 0 6px;
   border-top: 1px solid #ddd;
 
 .esF_TsL_T_Title
@@ -668,7 +716,7 @@ $row2PaddingBottom = 7px;
   > a:first-child
     font-size: 16px;
     font-weight: bold;
-    color: hsl(0, 0%, 17%);
+    color: hsl(0, 0%, 15%);
     padding: $topicTitlePadding 0 7px;
     display: inline-block;
   [class^='icon-']:before
@@ -693,11 +741,14 @@ $row2PaddingBottom = 7px;
     top: -1px;
     right: -1px;
 
-.esF_TsL_T .dw-p-excerpt
-  margin: 0 0 9px;
-  color: #555;
-  a
-    margin-left: 7px;
+.esF_TsL_T
+  .dw-p-excerpt,
+  .s_F_Ts_T_Con_B
+    display: block;
+    margin: 0 0 11px;
+    color: #555;
+    a
+      margin-left: 7px;
 
 .esF_TsL_T_Row2
   clearfix();
@@ -730,6 +781,7 @@ $row2PaddingBottom = 7px;
 .esF_TsL_T_Row2_Cat_Expl
   color: hsl(0, 0%, 50%);
   margin-right: 1px;
+  vertical-align: middle;
 
 
 // vim: fdm=indent et ts=2 sw=2 fo=r list

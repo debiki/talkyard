@@ -20,11 +20,12 @@ package debiki
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import controllers.ForumController
-import debiki.dao.{ReviewStuff, PageStuff, SiteDao, PageDao}
+import debiki.dao.{PageDao, PageStuff, ReviewStuff, SiteDao}
 import io.efdi.server.http._
 import java.{util => ju}
+import org.jsoup.Jsoup
 import play.api.libs.json._
-import scala.collection.{mutable, immutable}
+import scala.collection.{immutable, mutable}
 import scala.collection.mutable.ArrayBuffer
 import scala.math.BigDecimal.decimal
 
@@ -972,16 +973,20 @@ object ReactJson {
   }
 
 
-  def htmlToExcerpt(htmlText: String, length: Int): String = {
-    val ToTextResult(text, _) = htmlToTextWithNewlines(htmlText, firstLineOnly = true)
+  def htmlToExcerpt(htmlText: String, length: Int, firstParagraphOnly: Boolean): String = {
+    val text =
+      if (!firstParagraphOnly) Jsoup.parse(htmlText).body.text // includes no newlines
+      else htmlToTextWithNewlines(htmlText, firstLineOnly = true).text
     var excerpt =
       if (text.length <= length + 3) text
       else text.take(length) + "..."
     var lastChar = 'x'
-    excerpt = excerpt takeWhile { ch =>
-      val newParagraph = ch == '\n' && lastChar == '\n'
-      lastChar = ch
-      !newParagraph
+    if (firstParagraphOnly) {
+      excerpt = excerpt takeWhile { ch =>
+        val newParagraph = ch == '\n' && lastChar == '\n'
+        lastChar = ch
+        !newParagraph
+      }
     }
     excerpt
   }

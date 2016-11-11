@@ -26,7 +26,7 @@ esEID           = Edit intro dialog
 
 esF             = the forum main page, incl sort & filter buttons, and topic list and category list
 esF_BB          = forum button bar: sort & filter buttons
-esF_TsT         = forum topic list, COULD rename Ts_... below to TsT...
+esF_TsT         = forum topic list, ... rename to s_F_Ts
 esF_Ts_T        = a topic in the topic list
 esF_Ts_T_CName  = topic category name
 esF_Cs          = forum category list
@@ -34,6 +34,9 @@ esF_Cs_C        = a category in the category list
 
 esF_TsL         = forum topics list (not table)
 esF_TsL_T       = topic in forum topics list
+s_F_Ts_T_Con_B  = ..., content, body
+s_F_Ts_T_Avs    = Forum topic list, one topic, user avatars
+s_F_Ts_T_CN     = Forum topic list, one topic, category name
 
 esH             = help
 
@@ -43,6 +46,8 @@ esLD_G          = guest login
 esMB            = topic metabar (just below the Orig Post, before all replies)
 
 es/e2eMM        = my menu (one's avatar + username, in the topbar)
+
+Nrw             = narrow
 
 esUD            = About user dialog
 
@@ -85,6 +90,8 @@ esTB            = top bar (with the breadcrump and login & signup, or user name)
 esTs            = page/post tags
 
 esTg            = a single tag
+
+Ttl             = title
 
 esC             = chat
 esC_M           = chat message

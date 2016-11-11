@@ -218,7 +218,7 @@ var ImpersonationCookieName = 'esCoImp';
 
 
 // Some CSS and layout related constants. [6PFDS3]
-var UseWideForumLayoutMinWidth = 625;
+var UseWideForumLayoutMinWidth = 1000;
 var UseWidePageLayoutMinWidth = 750;
 var WatchbarWidth = 230;  // dupl in css [7GYK42]
 var ContextbarMinWidth = 270;  // dupl in css [4FK0ZD]

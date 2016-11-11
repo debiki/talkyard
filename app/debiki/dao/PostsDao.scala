@@ -598,7 +598,8 @@ trait PostsDao {
           // COULD reuse the same transaction, when loading the category. Barely matters.
           val (category, isDefault) = loadTheCategory(page.meta.categoryId getOrDie "DwE2PKF0")
           val newDescription = ReactJson.htmlToExcerpt(
-            newTextAndHtml.safeHtml, Category.DescriptionExcerptLength)
+            newTextAndHtml.safeHtml, Category.DescriptionExcerptLength,
+            firstParagraphOnly = true)
           Some(category.copy(description = Some(newDescription)))
         }
 

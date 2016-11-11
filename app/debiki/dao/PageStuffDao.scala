@@ -54,6 +54,7 @@ trait PageStuffDao {
   self: SiteDao =>
 
   val ExcerptLength = 250
+  val StartLength = 120
 
   val logger = play.api.Logger
 
@@ -104,15 +105,10 @@ trait PageStuffDao {
     var stuffById = Map[PageId, PageStuff]()
     val pageMetasById = transaction.loadPageMetasAsMap(pageIds)
 
-    // Load titles for all pages, and bodies for pinned topics
-    // (because in forum topic lists, we show excerpts of pinned topics).
+    // Load titles and bodies for all pages. (Because in forum topic lists, we show excerpts
+    // of pinned topics, and the start of other topics.)
     val titlesAndBodies = transaction.loadPosts(pageIds flatMap { pageId =>
-      var pagePostIds = Seq(PagePostNr(pageId, TitleNr))
-      val pageMeta = pageMetasById.get(pageId)
-      if (pageMeta.exists(_.isPinned)) {
-        pagePostIds :+= PagePostNr(pageId, BodyNr)
-      }
-      pagePostIds
+      Seq(PagePostNr(pageId, TitleNr), PagePostNr(pageId, BodyNr))
     })
 
     val userIdsToLoad = {
@@ -134,17 +130,14 @@ trait PageStuffDao {
       val anyTitle = titlesAndBodies.find(post => post.pageId == pageId && post.nr == TitleNr)
       val anyAuthor = usersById.get(pageMeta.authorId)
 
-      // The text in the first paragraph, but at most ExcerptLength chars.
-      // For pinned topics only — the excerpt is only shown in forum topic lists for pinned topics.
-      var anyExcerpt: Option[String] = None
-      if (pageMeta.isPinned) {
-        anyExcerpt = anyBody.flatMap(_.approvedHtmlSanitized match {
-          case None => None
-          case Some(html) =>
-            val excerpt = ReactJson.htmlToExcerpt(html, ExcerptLength)
-            Some(excerpt)
-        })
-      }
+      // For pinned topics: The excerpt is only shown in forum topic lists for pinned topics,
+      // and should be the first paragraph only.
+      // Other topics: The excerpt is shown on the same line as the topic title, as much as fits.
+      // [7PKY2X0]
+      val anyExcerpt: Option[String] = anyBody.flatMap(_.approvedHtmlSanitized map { html =>
+        val length = pageMeta.isPinned ? ExcerptLength | StartLength
+        ReactJson.htmlToExcerpt(html, length, firstParagraphOnly = pageMeta.isPinned)
+      })
 
       val summary = PageStuff(
         pageId,

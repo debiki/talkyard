@@ -98,7 +98,7 @@ export function prettyMonthDayYear(when: number, includeCurrentYear): string {
   var day = date.getDate();
   var month = shortMonthNames[date.getMonth()];
   var commaYear = includeCurrentYear ? ', ' + date.getFullYear() : '';
-  return month + ' ' + day + commaYear;
+  return month + '\xa0' + day + commaYear;  // xa0 is the no-break space
 }
 
 export function isoDateStringToMillis(dateString: string) {
