@@ -30,6 +30,7 @@ class MessagesDaoAppSpec extends DaoAppSuite(disableScripts = true, disableBackg
 
     "send a message" in {
       val dao = Globals.siteDao(Site.FirstSiteId)
+      createPasswordOwner("5kwu8f40", dao)
       val userOne = createPasswordUser("zzxxffgg", dao, trustLevel = TrustLevel.Basic)
       val userTwo = createPasswordUser("qqwwffpp", dao, trustLevel = TrustLevel.Basic)
       val pagePath = dao.startGroupTalk(title = TextAndHtml.testTitle("title_558206"),
