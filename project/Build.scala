@@ -55,7 +55,7 @@ object ApplicationBuild extends Build {
     // see: http://mvnrepository.com/artifact/org.postgresql/postgresql/
     "org.postgresql" % "postgresql" % "9.4.1208",  // there's no 9.5 right now
     // HikariCP — "A solid high-performance JDBC connection pool at last"
-    "com.zaxxer" % "HikariCP" % "2.4.7",
+    "com.zaxxer" % "HikariCP" % "2.5.1",
     // We use both an in-the-JVM-memory cache, and Redis:
     "com.github.ben-manes.caffeine" % "caffeine" % "2.2.6",
     "com.github.etaty" %% "rediscala" % "1.6.0",

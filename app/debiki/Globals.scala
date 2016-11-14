@@ -263,7 +263,7 @@ class Globals {
 
 
   def onServerStartup(app: p.Application) {
-    p.Logger.info("Starting... [EsM200HI]")
+    p.Logger.info("Starting... [EsM200HELLO]")
     wasTest // initialise it now
     if (_state ne null)
       throw new jl.IllegalStateException(o"""Server already running, was it not properly
@@ -282,7 +282,7 @@ class Globals {
     try {
       Await.ready(createStateFuture, (Play.isTest ? 99 | 5) seconds)
       if (killed) {
-        p.Logger.info("Killed. Bye. [EsM200KLD]")
+        p.Logger.info("Killed. Bye. [EsM200KILLED]")
         // Play.stop() has no effect, not from here directly, nor from within a Future {},
         // and Future { sleep(100ms); stop() } also doesn't work.
         //  play.api.Play.stop(app)  <-- nope
@@ -296,14 +296,15 @@ class Globals {
         // apparently ignores signals, once we've started (i.e. returned from this function).
       }
       else {
-        p.Logger.info("Started. [EsM200RDY]")
+        p.Logger.info("Started. [EsM200READY]")
       }
     }
     catch {
       case _: TimeoutException =>
         // We'll show a message in any browser that the server is starting, please wait
         // — that's better than a blank page? In case this takes long.
-        p.Logger.info("Still connecting to other services, starting anyway. [EsM200CRZY]")
+        p.Logger.info(
+          "Starting now, although not yet connected to all other services. Trying... [EsM200CRAZY]")
     }
   }
 
@@ -316,23 +317,33 @@ class Globals {
       if (!firsAttempt) {
         // Don't attempt to connect to everything too quickly, because then 100 MB log data
         // with "Error connecting to database ..." are quickly generated.
-        Thread.sleep(1500)
+        Thread.sleep(3000)
         if (killed)
           return
       }
       firsAttempt = false
-      p.Logger.info("Connecting to services... [EsM200CTS]")
+      val cache = makeCache
       try {
+        p.Logger.info("Connecting to database... [EsM200CONNDB]")
         val readOnlyDataSource = Debiki.createPostgresHikariDataSource(readOnly = true)
         val readWriteDataSource = Debiki.createPostgresHikariDataSource(readOnly = false)
-        val newState = new State(readOnlyDataSource, readWriteDataSource)
-        // Apply evolutions before we make the state available in _state, so nothing can
-        // access the database (via _state) before all evolutions have completed.
-        newState.systemDao.applyEvolutions()
+        val dbDaoFactory = new RdbDaoFactory(
+          new Rdb(readOnlyDataSource, readWriteDataSource), ScalaBasedMigrations, Play.isTest)
+
+        // Create any missing database tables before `new State`, otherwise State
+        // creates background threads that might attempt to access the tables.
+        p.Logger.info("Running database migrations... [EsM200MIGRDB]")
+        new SystemDao(dbDaoFactory, cache).applyEvolutions()
+
+        p.Logger.info("Done migrating database. Connecting to other services... [EsM200CONNOTR]")
+        val newState = new State(dbDaoFactory, cache)
+
         if (Play.isTest &&
-          Play.configuration.getBoolean("isTestShallEmptyDatabase").contains(true)) {
+            Play.configuration.getBoolean("isTestShallEmptyDatabase").contains(true)) {
+          p.Logger.info("Emptying database... [EsM200EMPTYDB]")
           newState.systemDao.emptyDatabase()
         }
+
         _state = Good(newState)
       }
       catch {
@@ -365,8 +376,8 @@ class Globals {
       return
 
     p.Logger.info("Shutting down... [EsM200BYE]")
-    state.readOnlyDataSource.close()
-    state.readWriteDataSource.close()
+    state.dbDaoFactory.db.readOnlyDataSource.asInstanceOf[HikariDataSource].close()
+    state.dbDaoFactory.db.readWriteDataSource.asInstanceOf[HikariDataSource].close()
     // Shutdown the notifier before the mailer, so no notifications are lost
     // because there was no mailer that could send them.
     shutdownActorAndWait(state.notifierActorRef)
@@ -386,9 +397,25 @@ class Globals {
   }
 
 
+  /** Caffeine is a lot faster than EhCache, and it doesn't have annoying problems with
+    * a singleton that causes weird classloader related errors on Play app stop-restart.
+    * (For a super large out-of-process survive-restarts cache, we use Redis not EhCache.)
+    */
+  private def makeCache: DaoMemCache = caffeine.cache.Caffeine.newBuilder()
+    .maximumWeight(10*1000)  // change to config value, e.g. 1e9 = 1GB mem cache. Default to 50M?
+    .weigher[String, DaoMemCacheAnyItem](new caffeine.cache.Weigher[String, DaoMemCacheAnyItem] {
+    override def weigh(key: String, value: DaoMemCacheAnyItem): Int = {
+      // For now. Later, use e.g. size of cached HTML page + X bytes for fixed min size?
+      // Can use to measure size: http://stackoverflow.com/a/30021105/694469
+      //   --> http://openjdk.java.net/projects/code-tools/jol/
+      1
+    }
+  }).build()
+
+
   private class State(
-    val readOnlyDataSource: HikariDataSource,
-    val readWriteDataSource: HikariDataSource) {
+    val dbDaoFactory: RdbDaoFactory,
+    val cache: DaoMemCache) {
 
     val ShutdownTimeout = 30 seconds
 
@@ -419,24 +446,6 @@ class Globals {
     // if there're many Redis servers and we want to round robin between them. Not needed, now.)
     val redisHost = conf.getString("debiki.redis.host").noneIfBlank getOrElse "localhost"
     val redisClient = RedisClient(host = redisHost)(Akka.system)
-
-    val dbDaoFactory = new RdbDaoFactory(
-      new Rdb(readOnlyDataSource, readWriteDataSource), ScalaBasedMigrations, Play.isTest)
-
-    // Caffeine is a lot faster than EhCache, and it doesn't have annoying problems with
-    // a singleton that causes weird classloader related errors on Play app stop-restart.
-    // (For a super large out-of-process survive-restarts cache, we use Redis not EhCache.)
-    private val cache: DaoMemCache = caffeine.cache.Caffeine.newBuilder()
-      .maximumWeight(10*1000)  // change to config value, e.g. 1e9 = 1GB mem cache. Default to 50M?
-      .weigher[String, DaoMemCacheAnyItem](new caffeine.cache.Weigher[String, DaoMemCacheAnyItem] {
-        override def weigh(key: String, value: DaoMemCacheAnyItem): Int = {
-          // For now. Later, use e.g. size of cached HTML page + X bytes for fixed min size?
-          // Can use to measure size: http://stackoverflow.com/a/30021105/694469
-          //   --> http://openjdk.java.net/projects/code-tools/jol/
-          1
-        }
-      })
-      .build()
 
     // Online user ids are cached in Redis so they'll be remembered accross server restarts,
     // and will be available to all app servers. But we cache them again with more details here

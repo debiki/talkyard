@@ -67,7 +67,6 @@ object Debiki {
     config.addDataSourceProperty("databaseName", database)
 
     val WaitForConnectionMillis = 3000
-    val TooSlowQuerySeconds = 5 // very long in the context of a web app
 
     // Using too-many-connections temp hack  [7YKG25P]
     if (readOnly) {
@@ -83,7 +82,8 @@ object Debiki {
     // Set these to a little bit more than Hikari's connection timeout, so by default
     // Hikari will complain rather than the driver (Hikari works better I guess).
     // "How long to wait for establishment of a database connection", in seconds.
-    config.addDataSourceProperty("loginTimeout", TooSlowQuerySeconds)
+    config.addDataSourceProperty("loginTimeout", WaitForConnectionMillis / 1000 + 2) // seconds
+
     // "The timeout value used for socket connect operations"
     // "If connecting ... takes longer than this value, the connection is broken." Seconds.
     // config.addDataSourceProperty("connectTimeout", _) --> Property connectTimeout does not exist
@@ -91,7 +91,18 @@ object Debiki {
     // "If reading from the server takes longer than this value, the connection is closed".
     // "can be used as both a brute force global query timeout and a method of detecting
     // network problems". Seconds.
-    config.addDataSourceProperty("socketTimeout", TooSlowQuerySeconds)
+    //
+    // If too small (5 seconds is too small), the initial migration might fail, like so:
+    //    org.postgresql.util.PSQLException: An I/O error occurred while sending to the backend.
+    //        ...
+    //        at com.zaxxer.hikari.pool.HikariProxyStatement.execute(HikariProxyStatement.java)
+    //        ...
+    //        at org.flywaydb.core.internal.command.DbMigrate.doMigrate(DbMigrate.java:352)
+    //    Caused by: java.net.SocketTimeoutException: Read timed out
+    //        ...
+    // and this is hard to troubleshoot, because might happen only on computers with a little bit
+    // slower hardware.
+    config.addDataSourceProperty("socketTimeout", 15) // seconds
 
     config.setReadOnly(readOnly)
     config.setTransactionIsolation("TRANSACTION_SERIALIZABLE")
