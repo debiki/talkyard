@@ -78,7 +78,8 @@ how to use docker-compose already.
         cd ed
         git submodule update --init
 
-1. Edit the system config so that ElasticSearch will work: (run this as one single command, not one line at a time)
+1. Append some settings to the system config so that ElasticSearch will work:
+   (run this as one single command, not one line at a time)
 
         sudo tee -a /etc/sysctl.conf <<EOF
 
@@ -103,6 +104,11 @@ how to use docker-compose already.
         # And tail the logs:
         sudo docker-compose logs -f
 
+  This log message might take 10 - 20 minutes: (lots of stuff is being downloaded — we'll try to
+  include all that in the Docker image directly instead, later)
+
+        Loading project definition from /opt/ed/app/project
+
    Wait until this appears in the logs:
 
         app_1     |
@@ -125,14 +131,12 @@ how to use docker-compose already.
 
    Eventually, when done compiling, Play Framework will start. Then this message will get logged:
 
-        app_1  | [info] application - Starting...
+        app_1  | [info] application - Starting... [EsM200HELLO]
 
-   But it's easy to miss, because after that, the server logs even more messages. Instead, when
-   you _no longer_ see these messages:
+   But it's easy to miss, because after that, the server logs even more messages. You can
+   continue with the next step just below anyway — just keep reloading the browser page until
+   any "is starting" message disappears.
 
-        [info] Compiling 1 Scala source to ....
-
-   the you'll know the server has probably started _for real_. And you can continue:
 
 
 1. Create a forum
@@ -145,7 +149,8 @@ how to use docker-compose already.
    that was sent to you — but in fact the email couldn't be sent, because you haven't configured
    any email server, and `admin@example.com` isn't your address anyway.
 
-   Instead look in the app server log file: `docker-compose logs app`. There you'll find
+   Instead look at the log messages. (Run `sudo docker-compose logs app` if you've closed
+   the terminal with log messages.) There you'll find
    the email — it's written to the log files, in development mode. Copy the
    confirmation link from the `<a href=...>` and paste it in the browser's address bar.
 
@@ -166,7 +171,7 @@ And, if you want to test in a browser other than Chrome, see [Making *.localhost
 
 #### Unit tests
 
-Stop everything: `docker-compose down` and then: `scripts/cli.sh` then type `test` + hit Enter.
+Stop everything: `sudo docker-compose down` and then: `scripts/cli.sh` then type `test` + hit Enter.
 
 
 #### Performance tests

@@ -55,7 +55,8 @@ object Debiki {
       configStr("debiki.postgresql.server"))  // deprecated name
     val port = configStr("debiki.postgresql.port").toInt
 
-    play.Logger.info(s"Connecting to database: $server:$port/$database as user $user")
+    val readOrWrite = readOnly ? "read only" | "read-write"
+    play.Logger.info(s"Connecting to database: $server:$port/$database as user $user, $readOrWrite")
 
     // Weird now with Hikari I can no longer call setReadOnly or setTransactionIsolation. [5JKF2]
     val config = new HikariConfig()
