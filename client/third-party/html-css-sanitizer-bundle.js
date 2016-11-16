@@ -4646,7 +4646,10 @@ var html = (function(html4) {
            html4.ATTRIBS.hasOwnProperty(attribKey))) {
         atype = html4.ATTRIBS[attribKey];
       }
-      if (atype !== null) {
+      if (attribName === 'target' && value === '_blank') { // KajMagnus hack
+        // Allow (don't clear value).
+      }
+      else if (atype !== null) {
         switch (atype) {
           case html4.atype['NONE']: break;
           case html4.atype['SCRIPT']:
