@@ -20,7 +20,7 @@ package controllers
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki.DebikiHttp._
-import debiki.{Globals, SiteTpi}
+import debiki.{Globals, RateLimits, SiteTpi}
 import io.efdi.server.http._
 import java.{util => ju}
 import play.api._
@@ -114,6 +114,25 @@ object LoginController extends mvc.Controller {
     }
     // Keep the xsrf cookie, so login dialog works:
     Ok.discardingCookies(DiscardingSessionCookie)
+  }
+
+
+  def sendSiteOwnerAddrVerifEmailAgain =
+        GetActionRateLimited(RateLimits.Login, allowAnyone = true) { request =>
+    val siteOwner = request.dao.loadSiteOwner() getOrElse {
+      throwNotFound("EdE85FJKY0" , "No owner")
+    }
+
+    val email = LoginWithPasswordController.createEmailAddrVerifEmailLogDontSend(
+      siteOwner.briefUser, anyReturnToUrl = None, request.host, request.dao)
+
+    // Don't send a verif email, if already verified, because of possible security issues (?).
+    // The verif link was written to the log files though (by ...LogDontSend(...) above),
+    // in case needed for some reason.
+    if (siteOwner.emailVerifiedAt.isEmpty) {
+      Globals.sendEmail(email, request.dao.siteId)
+    }
+    Ok
   }
 
 

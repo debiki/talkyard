@@ -407,6 +407,13 @@ trait UserDao {
   }
 
 
+  def loadSiteOwner(): Option[CompleteUser] = {
+    readOnlyTransaction { transaction =>
+      transaction.loadOwner()
+    }
+  }
+
+
   def getUsersAsSeq(userIds: Iterable[UserId]): immutable.Seq[User] = {
     val usersFound = ArrayBuffer[User]()
     val missingIds = ArrayBuffer[UserId]()

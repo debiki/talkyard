@@ -302,6 +302,8 @@ trait SiteTransaction {
     onlyApproved: Boolean = false,
     onlyPendingApproval: Boolean = false): immutable.Seq[CompleteUser]
 
+  def loadOwner(): Option[CompleteUser]
+
   /** Loads users watching the specified page, any parent categories or forums,
     * and people watching everything on the whole site.
     */

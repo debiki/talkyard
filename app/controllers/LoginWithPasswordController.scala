@@ -143,26 +143,54 @@ object LoginWithPasswordController extends mvc.Controller {
 
   val RedirectFromVerificationEmailOnly = "_RedirFromVerifEmailOnly_"
 
-  def sendEmailAddressVerificationEmail(user: Member, anyReturnToUrl: Option[String],
-        host: String, dao: SiteDao) {
+
+  def createEmailAddrVerifEmailLogDontSend(user: Member, anyReturnToUrl: Option[String],
+        host: String, dao: SiteDao): Email = {
+
     val returnToUrl = anyReturnToUrl match {
       case Some(url) => url.replaceAllLiterally(RedirectFromVerificationEmailOnly, "")
       case None => "/"
     }
-    val email = Email(
+    val returnToUrlEscapedHash = returnToUrl.replaceAllLiterally("#", "__dwHash__")
+    val emailId = Email.generateRandomId()
+
+    val emailAddrVerifUrl =
+      debiki.Globals.originOf(host) +
+        routes.LoginWithPasswordController.confirmEmailAddressAndLogin(
+          emailId, returnToUrlEscapedHash)
+
+    val email = Email.newWithId(
+      emailId,
       EmailType.CreateAccount,
       sendTo = user.email,
       toUserId = Some(user.id),
       subject = "Confirm your email address",
-      bodyHtmlText = (emailId: String) => {
+      bodyHtmlText =
         views.html.createaccount.createAccountLinkEmail(
           siteAddress = host,
           username = user.theUsername,
-          emailId = emailId,
-          returnToUrl = returnToUrl,
-          expirationTimeInHours = MaxAddressVerificationEmailAgeInHours).body
-      })
+          verificationUrl = emailAddrVerifUrl,
+          expirationTimeInHours = MaxAddressVerificationEmailAgeInHours).body)
+
     dao.saveUnsentEmail(email)
+
+    if (user.isOwner) {
+      play.api.Logger.info(i"""
+        |
+        |————————————————————————————————————————————————————————————
+        |Copy this site-owner-email-address-verification-URL into your web browser: [EdM5KF0W2]
+        |  $emailAddrVerifUrl
+        |————————————————————————————————————————————————————————————
+        |""")
+    }
+
+    email
+  }
+
+
+  def sendEmailAddressVerificationEmail(user: Member, anyReturnToUrl: Option[String],
+        host: String, dao: SiteDao) {
+    val email = createEmailAddrVerifEmailLogDontSend(user, anyReturnToUrl, host, dao)
     Globals.sendEmail(email, dao.siteId)
   }
 

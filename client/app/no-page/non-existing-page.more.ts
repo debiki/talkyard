@@ -96,15 +96,15 @@ export var SignUpAsAdmin = createComponent({
 
     return debiki.siteId === debiki.FirstSiteId
       ? r.div({},
-          r.h1({}, 'Welcome'),
-          r.p({}, 'You have successfully started the server.'),
-          r.p({}, 'Next, sign up using the email address you specified in the ' +
+          r.h1({}, "Welcome"),
+          r.p({}, "You have successfully started the server."),
+          r.p({}, "Next, sign up using the email address you specified in the " +
             "configuration file in the ", r.code({}, 'becomeOwnerEmailAddress'), " field."),
           anyEmailProblem,
           r.br(),
           loginBtn)
       : r.div({},
-          r.h1({}, 'Welcome'),
+          r.h1({}, "Welcome"),
           r.p({}, "This is your new website"),
           r.p({}, "Look at the address bar above — it starts with the address " +
               "you specified: ", r.code({}, location.hostname)),
@@ -116,15 +116,32 @@ export var SignUpAsAdmin = createComponent({
 
 
 export var LoginToCreateSomething = createComponent({
+  getInitialState: function() {
+    return {};
+  },
+
+  sendEmailAgain: function() {
+    Server.sendAddressVerifEmailAgain(() => {
+      util.openDefaultStupidDialog({
+        body: "Email sent (unless your email address has been verified already)" });
+      this.setState({ emailSentAgain: true });
+    })
+  },
+
   render: function() {
+    let sendEmailAgainButton = this.state.emailSentAgain ? null :
+      Button({ onClick: this.sendEmailAgain, className: 's_NP_EmailAgainB' },
+        "Send email again");
+
     return (
       r.div({},
-        r.h1({}, 'Welcome'),
-        r.p({}, 'Please login as admin to create something here.'),
+        r.h1({}, "Welcome"),
+        r.p({}, "Please login as admin to create something here."),
         r.p({}, "If you haven't done this already: Please click the link in the " +
             "email address verification email I have sent you."),
         r.br(),
-        reactelements.NameLoginBtns({ title: 'Login', purpose: 'LoginAsAdmin' })));
+        reactelements.NameLoginBtns({ title: "Login", purpose: 'LoginAsAdmin' }),
+        sendEmailAgainButton));
   }
 });
 
@@ -134,14 +151,14 @@ export var EmbeddedCommentsLinks = createComponent({
   render: function() {
     return (
       r.div({},
-        r.h1({}, 'Welcome'),
-        r.p({}, 'If you have not yet configured your website to show embedded comments, ' +
-            'click ', r.b({}, 'Setup Embedded Comments'), '.'),
+        r.h1({}, "Welcome"),
+        r.p({}, "If you have not yet configured your website to show embedded comments, " +
+            "click ", r.b({}, "Setup Embedded Comments"), '.'),
         r.div({ className: 'do-what-options' },
           Button({ onClick: () => window.location.assign('/-/embedded-comments-help') },
-              'Setup Embedded Comments'),
+              "Setup Embedded Comments"),
           Button({ onClick: () => window.location.assign('/-/admin/#/moderation') },
-              'Moderate Comments'))));
+              "Moderate Comments"))));
   }
 });
 
@@ -174,7 +191,7 @@ export var CreateSomethingHere = createComponent({
       message = 'This site is empty right now. What do you want to do?';
     }
     else { */
-      message = 'This site is empty right now. Do you want to create a forum?';
+      message = "This site is empty right now. Do you want to create a forum?";
     //}
 
 

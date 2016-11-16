@@ -23,13 +23,13 @@ import Prelude._
 
 object Email {
 
-  def apply(
-        tyype: EmailType,
-        sendTo: String,
-        toUserId: Option[UserId],
-        subject: String,
-        bodyHtmlText: (String) => String): Email = {
-    val emailId = _generateId()
+  def newWithId(
+    emailId: String,
+    tyype: EmailType,
+    sendTo: String,
+    toUserId: Option[UserId],
+    subject: String,
+    bodyHtmlText: String): Email = {
     Email(
       id = emailId,
       tyype = tyype,
@@ -38,19 +38,34 @@ object Email {
       sentOn = None,
       createdAt = new ju.Date(),
       subject = subject,
-      bodyHtmlText = bodyHtmlText(emailId),
+      bodyHtmlText = bodyHtmlText,
       providerEmailId = None,
       failureText = None)
+  }
+
+  def apply(
+        tyype: EmailType,
+        sendTo: String,
+        toUserId: Option[UserId],
+        subject: String,
+        bodyHtmlText: (String) => String): Email = {
+    val emailId = generateRandomId()
+    newWithId(
+      emailId,
+      tyype,
+      sendTo = sendTo,
+      toUserId = toUserId,
+      subject = subject,
+      bodyHtmlText = bodyHtmlText(emailId))
   }
 
   def isE2eTestEmailAddress(address: String) =
     address.startsWith("e2e-test--") && address.endsWith("@example.com")
 
-  /**
-   * The email id should be a random value, so it cannot be guessed,
-   * because it's a key in reset password, unsubscription and create account urls.
-   */
-  private def _generateId(): String = nextRandomString() take 14
+  /** The email id should be a random value, so it cannot be guessed,
+    * because it's a key in reset password, unsubscription and create account urls.
+    */
+  def generateRandomId(): String = nextRandomString() take 16
 }
 
 

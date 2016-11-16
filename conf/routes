@@ -23,6 +23,7 @@
 GET   /-/login                  controllers.LoginController.showLoginPage(as: Option[String], to: Option[String])
 GET   /-/login-popup            controllers.LoginController.showLoginPopup(mode, returnToUrl)
 POST  /-/logout                 controllers.LoginController.logout
+POST  /-/send-addr-verif-email-again  controllers.LoginController.sendSiteOwnerAddrVerifEmailAgain
 
 POST  /-/login-guest            controllers.LoginAsGuestController.loginGuest
 POST  /-/login-password         controllers.LoginWithPasswordController.login

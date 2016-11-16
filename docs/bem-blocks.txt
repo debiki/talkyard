@@ -47,6 +47,8 @@ esMB            = topic metabar (just below the Orig Post, before all replies)
 
 es/e2eMM        = my menu (one's avatar + username, in the topbar)
 
+s_NP            = No page, i.e. login-&-create-something-here stuff
+
 Nrw             = narrow
 
 esUD            = About user dialog
