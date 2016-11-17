@@ -80,6 +80,7 @@ declare namespace debiki2 {
   var isStaff;
   var threatLevel_toString;
   var isGuest;
+  var user_isGuest;
   var me_maySendDirectMessageTo;
   var page_isGroupTalk;
   var store_thisIsMyPage;

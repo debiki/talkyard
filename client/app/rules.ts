@@ -123,7 +123,7 @@ export function isGuest(user) {  // try to remove
 
 export function user_isGuest(user) {
   // (Should rename userId to id.)
-  return user.id <= MaxGuestId ||  // if is a CompleteUser
+  return user.id <= MaxGuestId ||  // if is a CompleteUser or Myself
       user.userId <= MaxGuestId; // in case it's a User or BriefUser
 }
 

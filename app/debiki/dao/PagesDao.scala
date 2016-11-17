@@ -62,6 +62,10 @@ trait PagesDao {
       // Perhaps OpenChat pages should be created via MessagesDao too? [5KTE02Z]
     }
 
+    if (pageRole.isGroupTalk && byWho.isGuest) {
+      throwForbidden("EdE7KFWY64", "Guests may not create group talk pages")
+    }
+
     if (bodyTextAndHtml.safeHtml.trim.isEmpty)
       throwForbidden("DwE3KFE29", "Page body should not be empty")
 

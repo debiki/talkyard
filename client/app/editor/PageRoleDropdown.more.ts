@@ -110,7 +110,7 @@ export var PageRoleDropdown = createComponent({
         title: PageRole_Idea_IconString,
         text: "A suggestion. Can be marked as done/implemented." });
 
-    var chatOption = isBjjNotStaff ? null :
+    var chatOption = user_isGuest(me) || isBjjNotStaff ? null :
       ExplainingListItem({ onSelect: this.onSelect, id: 'e2eTTD_OpenChatO',
         activeEventKey: pageRole, eventKey: PageRole.OpenChat,
         title: PageRole_OpenChat_IconString,
@@ -122,7 +122,7 @@ export var PageRoleDropdown = createComponent({
         title: PageRole_PrivateChat_IconString,
         text: "Only visible to people that get invited to join the chat." });
 
-    var wikiMindMap = !complicated ? false :
+    var wikiMindMap = user_isGuest(me) || !complicated ? false :
       ExplainingListItem({ onSelect: this.onSelect, id: 'e2eTTD_MindMapO',
         activeEventKey: pageRole, eventKey: PageRole.MindMap,
         title: PageRole_MindMap_IconString,
