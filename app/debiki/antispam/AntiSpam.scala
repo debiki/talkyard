@@ -135,7 +135,8 @@ class AntiSpam {
   // One key only, for now. Later on, one per site? + 1 global for non-commercial
   // low traffic newly created sites? + 1 global for commercial low traffic sites?
   // (and one per site for high traffic sites)
-  private val anyAkismetKey: Option[String] = p.Play.configuration.getString("debiki.akismetApiKey")
+  private val anyAkismetKey: Option[String] =
+    p.Play.configuration.getString("debiki.akismetApiKey").noneIfBlank
 
   val AkismetAlwaysSpamName = "viagra-test-123"
 
@@ -494,6 +495,9 @@ class AntiSpam {
             |may not be identified, and some safe sites may be identified in error.
             |
             |""")
+        case weird =>
+          p.Logger.warn(s"Google Safe Browsing API replied with an unexpected status code: $weird")
+          None
       }
     }
   }
