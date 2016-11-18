@@ -114,6 +114,8 @@ export function logoutClientSideOnly() {
   ReactDispatcher.handleViewAction({
     actionType: actionTypes.Logout
   });
+  // Quick fix that reloads the admin page (if one views it) so the login dialog appears:
+  location.reload();
 }
 
 

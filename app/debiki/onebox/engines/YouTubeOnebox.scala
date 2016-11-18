@@ -44,14 +44,18 @@ class YouTubeOnebox extends InstantOneboxEngine {
 
   override val alreadySanitized = true
 
-  def renderInstantly(safeUrl: String) = {
+  def renderInstantly(safeUrl: String): Try[String] = {
     javaUri = new jn.URI(safeUrl)
     findVideoId(javaUri) match {
       case Some(videoId) =>
         // We must sanitize here because alreadySanitized above is true, so that
         // the iframe below won't be removed.
         val safeId = sanitizeUrl(videoId)
-        val safeParams = sanitizeUrl(findParams(javaUri))
+        val unsafeParams = findParams(javaUri) getOrElse {
+          return Failure(com.debiki.core.DebikiException(
+            "EdE7DI60", "Bad YouTube video URL, cannot create onebox"))
+        }
+        val safeParams = sanitizeUrl(unsafeParams)
         // wmode=opaque makes it possible to cover the iframe with a transparent div,
         // which Utterscroll needs so the iframe won't steal mouse move events.
         // The default wmode is windowed which in effect places it above everything.
@@ -104,17 +108,21 @@ object YouTubeOnebox {
   }
 
 
-  def findParams(javaUri: jn.URI): String = {
+  private def findParams(javaUri: jn.URI): Option[String] = {
     import scala.collection.JavaConversions._
     var result = ""
     val params: ju.List[org.apache.http.NameValuePair] =
-      org.apache.http.client.utils.URLEncodedUtils.parse(javaUri, "UTF8")
+      try org.apache.http.client.utils.URLEncodedUtils.parse(javaUri, "UTF8")
+      catch {
+        case exception: Exception =>
+          return None
+      }
     for (nameValue <- params) {
       val name = nameValue.getName
       val value = nameValue.getValue
       // ... fix later ...
     }
-    result
+    Some(result)
   }
 }
 

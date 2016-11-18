@@ -632,8 +632,16 @@ function pagesFor(browser) {
         browser.click("a=Home");
       },
 
-      assertPostTextMatches: function(postId: PostId, text: string) {
-        browser.assertTextMatches(`#post-${postId} .dw-p-bd`, text)
+      waitForPostNrVisible: function(postNr) {
+        browser.waitForVisible('#post-' + postNr);
+      },
+
+      postNrContains: function(postNr: PostNr, selector: string) {
+        return browser.isVisible(`#post-${postNr} .dw-p-bd ${selector}`);
+      },
+
+      assertPostTextMatches: function(postNr: PostNr, text: string) {
+        browser.assertTextMatches(`#post-${postNr} .dw-p-bd`, text)
       }
     },
 
