@@ -417,7 +417,7 @@ class Globals {
     val dbDaoFactory: RdbDaoFactory,
     val cache: DaoMemCache) {
 
-    val ShutdownTimeout = 30 seconds
+    val ShutdownTimeout = 5 seconds
 
     val config = new Config(conf)
 

@@ -29,6 +29,7 @@ import play.{api => p}
 import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext.Implicits.global
 import Prelude._
+import org.postgresql.util.PSQLException
 import play.api.Logger
 
 
@@ -142,7 +143,7 @@ class IndexingActor(
   private val systemDao: SystemDao) extends Actor {
 
   val indexCreator = new IndexCreator()
-
+  val postsRecentlyIndexed = new java.util.concurrent.ConcurrentLinkedQueue[SiteIdAndPost]
 
   def receive = {
     case IndexStuff =>
@@ -150,11 +151,14 @@ class IndexingActor(
       // 2) insert into the index queue entries for stuff in those languages. 3) create indexes.
       val newIndexes: Seq[IndexSettingsAndMappings] = indexCreator.createIndexesIfNeeded(client)
       enqueueEverythingInLanguages(newIndexes.map(_.language).toSet)
+      deleteAlreadyIndexedPostsFromQueue()
       loadAndIndexPendingPosts()
     case ReplyWhenDoneIndexing =>
       ???
       // If StuffToIndex.postsBySite.isEmpty, then: sender ! "Done indexing."
       // Else, somehow wait untily until isEmpty, then reply.
+    case PoisonPill =>
+      deleteAlreadyIndexedPostsFromQueue()
   }
 
 
@@ -206,14 +210,39 @@ class IndexingActor(
     requestBuilder.execute(new ActionListener[IndexResponse] {
       def onResponse(response: IndexResponse) {
         p.Logger.debug("Indexed site:post " + docId)
-        // (This isn't the actor's thread. This is some thread controlled by ElasticSearch.)
-        systemDao.deleteFromIndexQueue(post, siteId)
+        // This isn't the actor's thread. This is some thread controlled by ElasticSearch.
+        // So don't call systemDao.deleteFromIndexQueue(post, siteId) from here
+        // — because then the index queue apparently gets updated by many threads
+        // at the same time, causing serialization errors (SQL state 40001).
+        // Instead, remember and delete later:
+        postsRecentlyIndexed.add(SiteIdAndPost(siteId, post))
       }
 
       def onFailure(throwable: Throwable) {
         p.Logger.error(i"Error when indexing siteId:postId: $docId", throwable)
       }
     })
+  }
+
+
+  private def deleteAlreadyIndexedPostsFromQueue() {
+    var sitePostIds = Vector[SiteIdAndPost]()
+    while (!postsRecentlyIndexed.isEmpty) {
+      sitePostIds +:= postsRecentlyIndexed.remove()
+    }
+    COULD_OPTIMIZE // batch delete all in one statement
+    sitePostIds foreach { siteIdAndPost =>
+      try systemDao.deleteFromIndexQueue(siteIdAndPost.post, siteIdAndPost.siteId)
+      catch {
+        case ex: PSQLException if ex.getSQLState == "40001" =>
+          p.Logger.error(
+            o"""PostgreSQL serialization error when deleting
+                siteId:postId: $siteIdAndPost from index queue [EdE40001]""", ex)
+        case ex: Exception =>
+          p.Logger.error(
+            s"error when deleting siteId:postId: $siteIdAndPost from index queue [EdE5PKW20]", ex)
+      }
+    }
   }
 
 

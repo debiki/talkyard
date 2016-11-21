@@ -430,6 +430,10 @@ case class SitePostId(siteId: SiteId, postId: UniquePostId) {
   def toPrettyString = s"site $siteId, post $postId"
 }
 
+case class SiteIdAndPost(siteId: SiteId, post: Post) {
+  def toPrettyString = s"site $siteId, Post ${post.uniqueId}"
+}
+
 case class SitePageIdVersion(siteId: String, pageId: PageId, version: PageVersion)
 
 case class PageIdVersion(pageId: PageId, version: PageVersion)

@@ -104,7 +104,8 @@ trait ForumDao {
       newTopicTypes = immutable.Seq(PageRole.Discussion),
       unlisted = false,
       staffOnly = false,
-      onlyStaffMayCreateTopics = false), bySystem)(transaction)
+      onlyStaffMayCreateTopics = false,
+      isCreatingNewForum = true), bySystem)(transaction)
 
     // Create the Staff category.
     createCategoryImpl(CategoryToSave(
@@ -119,7 +120,8 @@ trait ForumDao {
       newTopicTypes = immutable.Seq(PageRole.Discussion),
       unlisted = false,
       staffOnly = true,
-      onlyStaffMayCreateTopics = false), bySystem)(transaction)
+      onlyStaffMayCreateTopics = false,
+      isCreatingNewForum = true), bySystem)(transaction)
 
     // Create forum welcome topic.
     createPageImpl(

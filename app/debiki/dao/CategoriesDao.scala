@@ -55,7 +55,8 @@ case class CategoryToSave(
   staffOnly: Boolean,
   onlyStaffMayCreateTopics: Boolean,
   description: String,
-  anyId: Option[CategoryId] = None) { // Some() if editing
+  anyId: Option[CategoryId] = None, // Some() if editing
+  isCreatingNewForum: Boolean = false) {
 
   val aboutTopicTitle = TextAndHtml.forTitle(s"About the $name category")
   val aboutTopicBody = TextAndHtml.forBodyOrComment(description)
@@ -376,7 +377,9 @@ trait CategoriesDao {
 
     // The forum needs to be refreshed because it has cached the category list
     // (in JSON in the cached HTML).
-    refreshPageInMemCache(category.sectionPageId)
+    if (!newCategoryData.isCreatingNewForum) {
+      refreshPageInMemCache(category.sectionPageId)
+    }
 
     (category, aboutPagePath)
   }
