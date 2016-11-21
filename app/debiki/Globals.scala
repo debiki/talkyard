@@ -58,10 +58,10 @@ object Globals extends Globals {
 
   class DatabasePoolInitializationException(cause: Exception) extends RuntimeException(cause)
 
-  val LocalhostUploadsDirConfigValueName = "debiki.uploads.localhostDir"
+  val LocalhostUploadsDirConfigValueName = "ed.uploads.localhostDir"
 
-  val FirstSiteHostnameConfigValue = "debiki.hostname"
-  val BecomeOwnerEmailConfigValue = "debiki.becomeOwnerEmailAddress"
+  val FirstSiteHostnameConfigValue = "ed.hostname"
+  val BecomeOwnerEmailConfigValue = "ed.becomeOwnerEmailAddress"
 
 }
 
@@ -219,7 +219,7 @@ class Globals {
     def portParam = colonPortParam drop 1
     dieIf(colonPortParam.nonEmpty && colonPortParam != colonPort,
       "DwE47SK2", o"""Bad port: $portParam. You're accessing the server via non-standard
-        port $portParam, but then you need to edit/add config value `debiki.port=$portParam`,
+        port $portParam, but then you need to edit/add config value `ed.port=$portParam`,
         otherwise I won't know for sure which port to include in URLs I generate.""")
     s"$scheme://$hostname$colonPort"
   }
@@ -240,7 +240,7 @@ class Globals {
   // Hmm, in this way there'll be just one conf field:
   def config = state.config
 
-  def poweredBy = s"$scheme://www.debiki.com"
+  def poweredBy = s"https://www.effectivediscussions.org"
 
 
   /** If a hostname matches this pattern, the site id can be extracted directly from the url.
@@ -444,7 +444,9 @@ class Globals {
 
     // Redis. (A Redis client pool makes sense if we haven't saturate the CPU on localhost, or
     // if there're many Redis servers and we want to round robin between them. Not needed, now.)
-    val redisHost = conf.getString("debiki.redis.host").noneIfBlank getOrElse "localhost"
+    val redisHost =
+      conf.getString("ed.redis.host").orElse(
+        conf.getString("debiki.redis.host")).noneIfBlank getOrElse "localhost"
     val redisClient = RedisClient(host = redisHost)(Akka.system)
 
     // Online user ids are cached in Redis so they'll be remembered accross server restarts,
@@ -492,7 +494,9 @@ class Globals {
     val indexerActorRef = SearchEngineIndexer.startNewActor(
       indexerBatchSize, indexerIntervalSeconds, elasticSearchClient, Akka.system, systemDao)
 
-    val nginxHost = conf.getString("debiki.nginx.host").noneIfBlank getOrElse "localhost"
+    val nginxHost =
+      conf.getString("ed.nginx.host").orElse(
+        conf.getString("debiki.nginx.host")).noneIfBlank getOrElse "localhost"
     val (pubSub, strangerCounter) = PubSub.startNewActor(Akka.system, nginxHost, redisClient)
 
     val renderContentActorRef = RenderContentService.startNewActor(Akka.system, siteDaoFactory)
@@ -511,13 +515,15 @@ class Globals {
     val applicationSecretNotChanged = applicationSecret == "changeme"
 
     val e2eTestPassword: Option[String] =
-      conf.getString("debiki.e2eTestPassword").noneIfBlank
+      conf.getString("ed.e2eTestPassword").noneIfBlank
 
     val forbiddenPassword: Option[String] =
-      conf.getString("debiki.forbiddenPassword").noneIfBlank
+      conf.getString("ed.forbiddenPassword").noneIfBlank
 
-    val secure = Play.configuration.getBoolean("debiki.secure") getOrElse {
-      p.Logger.info("Config value 'debiki.secure' missing; defaulting to true. [DwM3KEF2]")
+    val secure =
+      conf.getBoolean("ed.secure").orElse(
+        conf.getBoolean("debiki.secure")) getOrElse {
+      p.Logger.info("Config value 'ed.secure' missing; defaulting to true. [DwM3KEF2]")
       true
     }
 
@@ -530,7 +536,7 @@ class Globals {
         sys.props.get("testserver.port").map(_.toInt) getOrElse 19001
       }
       else {
-        Play.configuration.getInt("debiki.port") getOrElse {
+        conf.getInt("ed.port").orElse(conf.getInt("debiki.port")) getOrElse {
           if (secure) 443
           else 80
         }
@@ -539,7 +545,8 @@ class Globals {
 
     val baseDomainNoPort =
       if (Play.isTest) "localhost"
-      else conf.getString("debiki.baseDomain").noneIfBlank getOrElse "localhost"
+      else conf.getString("ed.baseDomain").orElse(
+        conf.getString("debiki.baseDomain")).noneIfBlank getOrElse "localhost"
 
     val baseDomainWithPort =
       if (secure && port == 443) baseDomainNoPort
@@ -548,15 +555,21 @@ class Globals {
 
 
     /** The hostname of the site created by default when setting up a new server. */
-    val firstSiteHostname = conf.getString(FirstSiteHostnameConfigValue).noneIfBlank
+    val firstSiteHostname = conf.getString(FirstSiteHostnameConfigValue).orElse(
+      conf.getString("debiki.hostname")).noneIfBlank
 
     if (firstSiteHostname.exists(_ contains ':'))
-      p.Logger.error("Config value debiki.hostname contains ':' [DwE4KUWF7]")
+      p.Logger.error("Config value ed.hostname contains ':' [DwE4KUWF7]")
 
-    val becomeFirstSiteOwnerEmail = conf.getString(BecomeOwnerEmailConfigValue).noneIfBlank
+    val becomeFirstSiteOwnerEmail = conf.getString(BecomeOwnerEmailConfigValue).orElse(
+      conf.getString("debiki.becomeOwnerEmailAddress")).noneIfBlank
 
-    val anyCreateSiteHostname = conf.getString("debiki.createSiteHostname").noneIfBlank
-    val anyCreateTestSiteHostname = conf.getString("debiki.createTestSiteHostname").noneIfBlank
+    val anyCreateSiteHostname =
+      conf.getString("ed.createSiteHostname").orElse(
+        conf.getString("debiki.createSiteHostname")).noneIfBlank
+    val anyCreateTestSiteHostname =
+      conf.getString("ed.createTestSiteHostname").orElse(
+        conf.getString("debiki.createTestSiteHostname")).noneIfBlank
 
     // The hostname must be directly below the base domain, otherwise
     // wildcard HTTPS certificates won't work: they cover 1 level below the
@@ -565,8 +578,9 @@ class Globals {
     val siteByIdHostnameRegex: Regex =
       s"""^$SiteByIdHostnamePrefix(.*)\\.$baseDomainNoPort$$""".r
 
-    val maxUploadSizeBytes = Play.configuration.getInt("debiki.uploads.maxKiloBytes").map(_ * 1000)
-      .getOrElse(3*1000*1000)
+    val maxUploadSizeBytes =
+      conf.getInt("ed.uploads.maxKiloBytes").orElse(
+        conf.getInt("debiki.uploads.maxKiloBytes").map(_ * 1000)).getOrElse(3*1000*1000)
 
     val anyUploadsDir = {
       import Globals.LocalhostUploadsDirConfigValueName
@@ -592,8 +606,9 @@ class Globals {
 
     val anyPublicUploadsDir = anyUploadsDir.map(_ + "public/")
 
-    val securityComplaintsEmailAddress = Play.configuration.getString(
-      "debiki.securityComplaintsEmailAddress").noneIfBlank
+    val securityComplaintsEmailAddress =
+      conf.getString("ed.securityComplaintsEmailAddress").orElse(
+        conf.getString("debiki.securityComplaintsEmailAddress")).noneIfBlank
   }
 
 }
@@ -623,7 +638,9 @@ class Config(conf: play.api.Configuration) {
     val maxSitesPerPerson = conf.getInt(s"$path.maxSitesPerIp") getOrElse 10
     val maxSitesTotal = conf.getInt(s"$path.maxSitesTotal") getOrElse 1000
     REFACTOR; RENAME // Later: rename to ed.createSite.newSiteQuotaMBs?
-    val quotaLimitMegabytes = conf.getInt("debiki.newSite.quotaLimitMegabytes")
+    val quotaLimitMegabytes =
+      conf.getInt("ed.newSite.quotaLimitMegabytes").orElse(
+        conf.getInt("debiki.newSite.quotaLimitMegabytes"))
   }
 
   object superAdmin {

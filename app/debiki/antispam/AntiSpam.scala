@@ -136,7 +136,7 @@ class AntiSpam {
   // low traffic newly created sites? + 1 global for commercial low traffic sites?
   // (and one per site for high traffic sites)
   private val anyAkismetKey: Option[String] =
-    p.Play.configuration.getString("debiki.akismetApiKey").noneIfBlank
+    p.Play.configuration.getString("ed.akismetApiKey").noneIfBlank
 
   val AkismetAlwaysSpamName = "viagra-test-123"
 
@@ -156,7 +156,7 @@ class AntiSpam {
     val Tweet = "tweet" // twitter messages
   }
 
-  val GoogleApiKeyName = "efdi.security.googleApiKey"
+  val GoogleApiKeyName = "ed.security.googleApiKey"
   val anyGoogleApiKey = p.Play.configuration.getString(GoogleApiKeyName)
 
 

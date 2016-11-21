@@ -56,7 +56,8 @@ object Utils extends Results with http.ContentTypes {
     val safePrefix = ")]}',\n"
     Play.maybeApplication match {
       case Some(app) =>
-        if (app.configuration.getBoolean("debiki.addSafeJsonPrefix").contains(false)) ""
+        if (app.configuration.getBoolean("ed.addSafeJsonPrefix")
+          .orElse(app.configuration.getBoolean("debiki.addSafeJsonPrefix")).contains(false)) ""
         else safePrefix
       case None =>
         safePrefix

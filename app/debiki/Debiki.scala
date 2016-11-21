@@ -31,7 +31,10 @@ object Debiki {
   def createPostgresHikariDataSource(readOnly: Boolean): HikariDataSource = {
 
     def configStr(path: String) =
-      Play.configuration.getString(path) getOrElse
+      Play.configuration.getString(path).orElse({
+        val oldPath = path.replaceFirst("ed\\.", "debiki.")
+        Play.configuration.getString(oldPath)
+      }) getOrElse
         runErr("DwE93KI2", "Config value missing: "+ path)
 
     // I've hardcoded credentials to the test database here, so that it
@@ -40,20 +43,20 @@ object Debiki {
     // with "auto-deleted" as password?)
     def user =
       if (Play.isTest) "ed_test"
-      else configStr("debiki.postgresql.user")
+      else configStr("ed.postgresql.user")
 
     def password =
       if (Play.isTest) "public"
-      else sys.env.get("DEBIKI_POSTGRESQL_PASSWORD") getOrElse
-        configStr("debiki.postgresql.password")
+      else sys.env.get("ED_POSTGRESQL_PASSWORD").orElse(sys.env.get("DEBIKI_POSTGRESQL_PASSWORD"))
+          .getOrElse(configStr("ed.postgresql.password"))
 
     def database =
       if (Play.isTest) "ed_test"
-      else configStr("debiki.postgresql.database")
+      else configStr("ed.postgresql.database")
 
-    val server = Play.configuration.getString("debiki.postgresql.host").getOrElse(
-      configStr("debiki.postgresql.server"))  // deprecated name
-    val port = configStr("debiki.postgresql.port").toInt
+    val server = Play.configuration.getString("ed.postgresql.host").getOrElse(
+      configStr("ed.postgresql.server"))  // deprecated name
+    val port = configStr("ed.postgresql.port").toInt
 
     val readOrWrite = readOnly ? "read only" | "read-write"
     play.Logger.info(s"Connecting to database: $server:$port/$database as user $user, $readOrWrite")

@@ -45,20 +45,20 @@ object Mailer {
     */
   def startNewActor(actorSystem: ActorSystem, daoFactory: SiteDaoFactory): ActorRef = {
     val config = p.Play.configuration
-    val anySmtpServerName = config.getString("debiki.smtp.host").orElse(
-      config.getString("debiki.smtp.server")).noneIfBlank // old deprecated name
-    val anySmtpPort = config.getInt("debiki.smtp.port")
-    val anySmtpSslPort = config.getInt("debiki.smtp.sslPort")
-    val anySmtpUserName = config.getString("debiki.smtp.user").noneIfBlank
-    val anySmtpPassword = config.getString("debiki.smtp.password").noneIfBlank
-    val anyUseSslOrTls = config.getBoolean("debiki.smtp.useSslOrTls")
-    val anyFromAddress = config.getString("debiki.smtp.fromAddress").noneIfBlank
+    val anySmtpServerName = config.getString("ed.smtp.host").orElse(
+      config.getString("ed.smtp.server")).noneIfBlank // old deprecated name
+    val anySmtpPort = config.getInt("ed.smtp.port")
+    val anySmtpSslPort = config.getInt("ed.smtp.sslPort")
+    val anySmtpUserName = config.getString("ed.smtp.user").noneIfBlank
+    val anySmtpPassword = config.getString("ed.smtp.password").noneIfBlank
+    val anyUseSslOrTls = config.getBoolean("ed.smtp.useSslOrTls")
+    val anyFromAddress = config.getString("ed.smtp.fromAddress").noneIfBlank
 
     val actorRef =
         (anySmtpServerName, anySmtpPort, anySmtpSslPort, anySmtpUserName, anySmtpPassword, anyFromAddress) match {
       case (Some(serverName), Some(port), Some(sslPort), Some(userName), Some(password), Some(fromAddress)) =>
         val useSslOrTls = anyUseSslOrTls getOrElse {
-          p.Logger.info(o"""Email config value debiki.smtp.useSslOrTls not configured,
+          p.Logger.info(o"""Email config value ed.smtp.useSslOrTls not configured,
             defaulting to true.""")
           true
         }
@@ -76,12 +76,12 @@ object Mailer {
           name = s"MailerActor-$testInstanceCounter")
       case _ =>
         var message = "I won't send emails, because:"
-        if (anySmtpServerName.isEmpty) message += " No debiki.smtp.host configured."
-        if (anySmtpPort.isEmpty) message += " No debiki.smtp.port configured."
-        if (anySmtpSslPort.isEmpty) message += " No debiki.smtp.sslPort configured."
-        if (anySmtpUserName.isEmpty) message += " No debiki.smtp.user configured."
-        if (anySmtpPassword.isEmpty) message += " No debiki.smtp.password configured."
-        if (anyFromAddress.isEmpty) message += " No debiki.smtp.fromAddress configured."
+        if (anySmtpServerName.isEmpty) message += " No ed.smtp.host configured."
+        if (anySmtpPort.isEmpty) message += " No ed.smtp.port configured."
+        if (anySmtpSslPort.isEmpty) message += " No ed.smtp.sslPort configured."
+        if (anySmtpUserName.isEmpty) message += " No ed.smtp.user configured."
+        if (anySmtpPassword.isEmpty) message += " No ed.smtp.password configured."
+        if (anyFromAddress.isEmpty) message += " No ed.smtp.fromAddress configured."
         p.Logger.info(message)
         actorSystem.actorOf(
           Props(new Mailer(

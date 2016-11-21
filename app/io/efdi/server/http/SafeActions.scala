@@ -62,7 +62,7 @@ object SafeActions {
 
 
   val allowFakeIp = {
-    val allow = !Play.isProd || Play.configuration.getBoolean("debiki.allowFakeIp").getOrElse(false)
+    val allow = !Play.isProd || Play.configuration.getBoolean("ed.allowFakeIp").getOrElse(false)
     if (allow) {
       Logger.info("Enabling fake IPs [DwM0Fk258]")
     }

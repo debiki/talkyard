@@ -66,9 +66,10 @@ object LoginWithOpenAuthController extends Controller {
     IsInLoginWindowCookieName, IsInLoginPopupCookieName, MayCreateUserCookieName,
     OauthStateCookieName).map(DiscardingSecureCookie)
 
-  private val LoginOriginConfValName = "debiki.loginOrigin"
+  private val LoginOriginConfValName = "ed.loginOrigin"
   private var configErrorMessage: Option[String] = None
 
+  def conf = Play.configuration
 
   lazy val anyLoginOrigin =
     if (Play.isTest) {
@@ -77,7 +78,7 @@ object LoginWithOpenAuthController extends Controller {
       Some(s"${Globals.scheme}://${Globals.baseDomainWithPort}")
     }
     else {
-      val anyOrigin = Play.configuration.getString(LoginOriginConfValName) orElse {
+      val anyOrigin = conf.getString(LoginOriginConfValName).orElse(conf.getString("debiki.loginOrigin")) orElse {
         Globals.firstSiteHostname map { hostname =>
           s"${Globals.scheme}://$hostname${Globals.colonPort}"
         }
