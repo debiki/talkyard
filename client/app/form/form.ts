@@ -38,11 +38,16 @@ export function activateAnyCustomForm() {
       let $form = $(this);
       let namesAndValues = $form.serializeArray();
       let doWhat = _.find(namesAndValues, (nv: any) => nv.name === 'doWhat');
-      if (doWhat && doWhat.value === 'CreateTopic') {
-         Server.submitCustomFormAsNewTopic(namesAndValues);
-      }
-      else if (doWhat) {
-         die(`Unknown input name=doWhat value: '${doWhat.value}' [EdE8402F4]`);
+      if (doWhat) {
+        if (doWhat.value === 'CreateTopic') {
+          Server.submitCustomFormAsNewTopic(namesAndValues);
+        }
+        else if (doWhat.value === 'SignUp') {
+          morebundle.loginIfNeeded(LoginReason.SignUp);
+        }
+        else {
+          die(`Unknown input name=doWhat value: '${doWhat.value}' [EdE8402F4]`);
+        }
       }
       else {
         Server.submitCustomFormAsJsonReply(namesAndValues, function() {

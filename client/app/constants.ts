@@ -76,6 +76,7 @@ enum PricePlan {  // [4GKU024S]
 }
 
 enum LoginReason {
+  SignUp = 13,
   LoginToChat = 10,
   LoginToLike = 11,
   BecomeAdmin = 12,

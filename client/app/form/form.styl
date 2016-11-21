@@ -1,4 +1,11 @@
 
+html
+  &:not(.dw-react-started) form.ShowIfNotLoggedIn,
+  &.dw-is-authenticated form.ShowIfNotLoggedIn
+    display: none;
+  &:not(.dw-is-authenticated) form.ShowIfLoggedIn
+    display: none;
+
 .dw-p-bd form,
 .preview-area form
   margin: 13px auto;

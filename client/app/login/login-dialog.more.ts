@@ -64,12 +64,17 @@ export function loginIfNeededReturnToAnchor(loginReason: LoginReason | string,
 
 export function loginIfNeeded(loginReason: LoginReason | string, anyReturnToUrl?: string,
       success?: () => void) {
-  dieIf(!success, 'EsE5YKP2');
+  success = success || function() {};
   if (debiki2.ReactStore.getUser().isLoggedIn) {
     success();
   }
   else {
-    getLoginDialog().openToLogIn(loginReason, anyReturnToUrl, success);
+    if (loginReason === LoginReason.SignUp) {
+      getLoginDialog().openToSignUp(loginReason, anyReturnToUrl, success);
+    }
+    else {
+      getLoginDialog().openToLogIn(loginReason, anyReturnToUrl, success);
+    }
   }
 }
 
