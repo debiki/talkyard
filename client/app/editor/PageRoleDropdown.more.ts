@@ -217,6 +217,7 @@ function pageRole_toIconString(pageRole: PageRole) {
     case PageRole.FormalMessage: return "Message";
     case PageRole.Form: return PageRole_Form_IconString;
     case PageRole.Critique: return "Critique";  // [plugin]
+    case PageRole.UsabilityTesting: return "Usability Testing";  // [plugin]
     default: die('EsE4GUK75Z');
   }
 }

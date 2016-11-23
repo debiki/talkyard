@@ -193,11 +193,12 @@ export var TitleEditor = createComponent({
 
     // Once the complicated stuff has been shown, one cannot hide it, except by cancelling
     // the whole dialog. Because if hiding it, then what about any changes made? Save or ignore?
-    var showAdvancedButton =
+    var existsAdvStuffToEdit = pageRole === PageRole.Forum || store.settings.showComplicatedStuff;
+    var showAdvancedButton = !existsAdvStuffToEdit ||
         this.state.showComplicated || !user.isAdmin || pageRole === PageRole.FormalMessage
         ? null
         : r.a({ className: 'esTtlEdtr_openAdv icon-settings',
-            onClick: this.showComplicated }, 'Advanced');
+            onClick: this.showComplicated }, "Advanced");
 
     var selectCategoryInput;
     if (isForumOrAboutOrMessage) {
