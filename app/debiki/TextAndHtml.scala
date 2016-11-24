@@ -39,7 +39,7 @@ sealed trait TextAndHtml {
 
   /** Domain names used in links. Check against a domain block list.
     */
-  def linkDomains: immutable.Seq[String]
+  def linkDomains: Set[String]
 
   /** Raw ip addresses (ipv4 or 6) of any links that use raw ip addresses rather than
     * domain names. If there is any, the post should probably be blocked as spam?
@@ -70,7 +70,7 @@ object TextAndHtml {
     val text: String,
     val safeHtml: String,
     val links: immutable.Seq[String],
-    val linkDomains: immutable.Seq[String],
+    val linkDomains: immutable.Set[String],
     val linkAddresses: immutable.Seq[String],
     val isTitle: Boolean,
     val followLinks: Boolean,
@@ -87,7 +87,7 @@ object TextAndHtml {
         text + "\n" + more.text,
         safeHtml + "\n" + more.safeHtml,
         (links.toSet ++ more.links.toSet).to[immutable.Seq],
-        (linkDomains.toSet ++ more.linkDomains.toSet).to[immutable.Seq],
+        linkDomains ++ more.linkDomains,
         (linkAddresses.toSet ++ more.linkAddresses.toSet).to[immutable.Seq],
         isTitle = isTitle && more.isTitle,
         followLinks = followLinks,
@@ -102,7 +102,7 @@ object TextAndHtml {
   def withCompletedFormData(formInputs: String): TextAndHtml Or ErrorMessage = {
     CompletedFormRenderer.renderJsonToSafeHtml(formInputs) map { htmlString =>
       new TextAndHtmlImpl(text = formInputs.toString, safeHtml = htmlString,
-          Nil, Nil, Nil, false, false, false)
+          Nil, Set.empty, Nil, false, false, false)
     }
   }
 
@@ -110,7 +110,7 @@ object TextAndHtml {
   def withCompletedFormData(formInputs: JsArray): TextAndHtml Or ErrorMessage = {
     CompletedFormRenderer.renderJsonToSafeHtml(formInputs) map { htmlString =>
       new TextAndHtmlImpl(text = formInputs.toString, safeHtml = htmlString,
-          Nil, Nil, Nil, false, false, false)
+          Nil, Set.empty, Nil, false, false, false)
     }
   }
 
@@ -138,7 +138,7 @@ object TextAndHtml {
     TESTS_MISSING
     if (isTitle) {
       val safeHtml = commonMarkRenderer.sanitizeHtml(text)
-      new TextAndHtmlImpl(text, safeHtml, links = Nil, linkDomains = Nil,
+      new TextAndHtmlImpl(text, safeHtml, links = Nil, linkDomains = Set.empty,
         linkAddresses = Nil, isTitle = true, followLinks = followLinks,
         allowClassIdDataAttrs = allowClassIdDataAttrs)
     }
@@ -146,7 +146,7 @@ object TextAndHtml {
       val safeHtml = commonMarkRenderer.renderAndSanitizeCommonMark(
         text, allowClassIdDataAttrs = allowClassIdDataAttrs, followLinks = followLinks)
       val links = findLinks(safeHtml)
-      var linkDomains = Vector[String]()
+      var linkDomains = Set[String]()
       var linkAddresses = Vector[String]()
       links foreach { link =>
         try {
@@ -166,7 +166,7 @@ object TextAndHtml {
             linkAddresses :+= domainOrAddress
           }
           else {
-            linkDomains :+= domainOrAddress
+            linkDomains += domainOrAddress
           }
         }
         catch {
@@ -187,7 +187,7 @@ object TextAndHtml {
     */
   def test(text: String, isTitle: Boolean): TextAndHtml = {
     dieIf(!Globals.wasTest, "EsE7GPM2")
-    new TextAndHtmlImpl(text, text, links = Nil, linkDomains = Nil,
+    new TextAndHtmlImpl(text, text, links = Nil, linkDomains = Set.empty,
       linkAddresses = Nil, isTitle = isTitle, followLinks = false,
       allowClassIdDataAttrs = false)
   }

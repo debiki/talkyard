@@ -305,12 +305,12 @@ class AntiSpam {
     */
   def throwForbiddenIfLooksSpammy(request: DebikiRequest[_], textAndHtml: TextAndHtml) {
     def throwIfTooManyLinks(maxNumLinks: Int) {
-      if (textAndHtml.linkDomains.length > maxNumLinks)
+      if (textAndHtml.links.length > maxNumLinks)
         throwForbidden("DwE4KFY2", o"""Your text includes more than $maxNumLinks links —
            that makes me nervous about spam. Can you please remove some links?""")
     }
     if (request.isStaff) {
-      throwIfTooManyLinks(15)
+      throwIfTooManyLinks(37)
     }
     else if (request.isAuthenticated) {
       throwIfTooManyLinks(7)
@@ -534,7 +534,7 @@ class AntiSpam {
 
 
   def queryDomainBlockList(blockListDomain: String, blockListName: String,
-        domainsToCheck: Seq[String]): Future[Option[String]] = {
+        domainsToCheck: Set[String]): Future[Option[String]] = {
     // We ask the list if a domain is spam, by querying the DNS system: prefix the
     // suspect domain, reversed, to Spamhaus (e.g. 'dbl.spamhaus.org'), and if any ip
     // is returned, then the domain is in the block list.
