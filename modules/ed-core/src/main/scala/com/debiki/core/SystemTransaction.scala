@@ -67,6 +67,10 @@ trait SystemTransaction {
   def deleteFromIndexQueue(post: Post, siteId: SiteId)
   def addEverythingInLanguagesToIndexQueue(languages: Set[String])
 
+  // ----- Spam check queue
+
+  def loadStuffToSpamCheck(limit: Int): StuffToSpamCheck
+  def deleteFromSpamCheckQueue(siteId: SiteId, postId: UniquePostId, postRevNr: Int)
 
   // ----- Testing
 

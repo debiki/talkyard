@@ -797,3 +797,7 @@ case class BrowserIdData(ip: String, idCookie: String, fingerprint: Int) {
   def inetAddress = com.google.common.net.InetAddresses.forString(ip)
 
 }
+
+object BrowserIdData {
+  val NoFingerprint = 0
+}

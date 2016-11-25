@@ -463,7 +463,7 @@ object ImportExportController extends mvc.Controller {
         closedById = readOptInt(jsObj, "closedById"),
         hiddenAt = readOptDateMs(jsObj, "hiddenAtMs"),
         hiddenById = readOptInt(jsObj, "hiddenById"),
-        //hiddenReason: ?
+        hiddenReason = readOptString(jsObj, "hiddenReason"),
         deletedStatus = deletedStatusDefaultOpen,
         deletedAt = readOptDateMs(jsObj, "deletedAtMs"),
         deletedById = readOptInt(jsObj, "deletedById"),

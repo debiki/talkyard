@@ -21,7 +21,6 @@ import com.debiki.core._
 import com.debiki.core.Prelude._
 import java.{util => ju}
 import debiki.ReactRenderer
-import io.efdi.server.Who
 import scala.collection.{immutable, mutable}
 import ForumDao._
 
@@ -53,7 +52,7 @@ trait ForumDao {
         titleSource = title, titleHtmlSanitized = titleHtmlSanitized,
         bodySource = ForumIntroText.source, bodyHtmlSanitized = ForumIntroText.html,
         pinOrder = None, pinWhere = None,
-        byWho, transaction)
+        byWho, spamRelReqStuff = None, transaction)
 
       val forumPageId = forumPagePath.pageId getOrDie "DwE5KPFW2"
 
@@ -134,6 +133,7 @@ trait ForumDao {
       pinOrder = Some(WelcomeToForumTopicPinOrder),
       pinWhere = Some(PinPageWhere.Globally),
       bySystem,
+      spamRelReqStuff = None,
       transaction)
 
     CreateForumResult(null, defaultCategoryId)

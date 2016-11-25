@@ -23,7 +23,6 @@ import debiki._
 import debiki.DebikiHttp._
 import debiki.ReactJson.JsStringOrNull
 import debiki.onebox.Onebox
-import debiki.antispam.AntiSpam.throwForbiddenIfSpam
 import io.efdi.server.http._
 import play.api._
 import play.api.libs.json._
@@ -92,7 +91,7 @@ object EditController extends mvc.Controller {
 
   /** Edits posts.
     */
-  def edit = AsyncPostJsonAction(RateLimits.EditPost, maxLength = MaxPostSize) {
+  def edit = PostJsonAction(RateLimits.EditPost, maxLength = MaxPostSize) {
         request: JsonPostRequest =>
     val pageId = (request.body \ "pageId").as[PageId]
     val postNr = (request.body \ "postId").as[PostNr]
@@ -111,14 +110,11 @@ object EditController extends mvc.Controller {
       // When follow links? Previously:
       // followLinks = postToEdit.createdByUser(page.parts).isStaff && editor.isStaff
 
-    Globals.antiSpam.detectPostSpam(request, pageId, newTextAndHtml) map { isSpamReason =>
-      throwForbiddenIfSpam(isSpamReason, "DwE6PYU4")
+    request.dao.editPostIfAuth(pageId = pageId, postNr = postNr, request.who,
+      request.spamRelatedStuff, newTextAndHtml)
 
-      request.dao.editPostIfAuth(pageId = pageId, postNr = postNr, request.who, newTextAndHtml)
-
-      OkSafeJson(ReactJson.postToJson2(postNr = postNr, pageId = pageId,
-        request.dao, includeUnapproved = true))
-    }
+    OkSafeJson(ReactJson.postToJson2(postNr = postNr, pageId = pageId,
+      request.dao, includeUnapproved = true))
   }
 
 

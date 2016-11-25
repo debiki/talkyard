@@ -262,6 +262,52 @@ case class PageMeta(
   }
 
   def copyWithNewVersion = copy(version = version + 1)
+
+
+  def copyWithNewRole(newRole: PageRole): PageMeta = {
+    var newClosedAt = closedAt
+    val (newAnsweredAt, newAnswerPostUniqueId) = newRole match {
+      case PageRole.Question => (answeredAt, answerPostUniqueId)
+      case _ =>
+        if (answeredAt.isDefined) {
+          // Reopen it since changing type.
+          newClosedAt = None
+        }
+        (None, None)
+    }
+
+    val newPlannedAt = newRole match {
+      case PageRole.Problem | PageRole.Idea => plannedAt
+      case PageRole.ToDo =>
+        // To-Do:s are always either planned or done.
+        plannedAt orElse Some(When.now().toJavaDate)
+      case _ =>
+        if (plannedAt.isDefined) {
+          // Reopen it since changing type.
+          newClosedAt = None
+        }
+        None
+    }
+
+    val newDoneAt = newRole match {
+      case PageRole.Problem | PageRole.Idea | PageRole.ToDo => doneAt
+      case _ =>
+        if (doneAt.isDefined) {
+          // Reopen it since changing type.
+          newClosedAt = None
+        }
+        None
+    }
+
+    copy(
+      pageRole = newRole,
+      answeredAt = newAnsweredAt,
+      answerPostUniqueId = newAnswerPostUniqueId,
+      plannedAt = newPlannedAt,
+      doneAt = newDoneAt,
+      closedAt = newClosedAt)
+  }
+
 }
 
 

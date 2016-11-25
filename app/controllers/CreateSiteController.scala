@@ -21,7 +21,7 @@ import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki._
 import debiki.DebikiHttp._
-import debiki.antispam.AntiSpam.throwForbiddenIfSpam
+import ed.server.spam.SpamChecker.throwForbiddenIfSpam
 import io.efdi.server.http._
 import javax.inject.Inject
 import play.api.libs.json._
@@ -113,9 +113,9 @@ class CreateSiteController @Inject() extends Controller {
       case x => throwBadArgument("EsE7YKW28", "pricePlan", "not 0, 1 or 2")
     }
 
-    Globals.antiSpam.detectRegistrationSpam(request, name = localHostname,
+    Globals.spamChecker.detectRegistrationSpam(request, name = localHostname,
         email = emailAddress) map { isSpamReason =>
-      throwForbiddenIfSpam(isSpamReason, "DwE4KG28")
+      throwForbiddenIfSpam(isSpamReason, "EdE4KG28")
 
       val hostname = s"$localHostname.${Globals.baseDomainNoPort}"
 

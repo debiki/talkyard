@@ -23,7 +23,6 @@ import com.debiki.core.PageParts.MaxTitleLength
 import debiki._
 import debiki.DebikiHttp._
 import debiki.ReactJson.JsStringOrNull
-import debiki.antispam.AntiSpam.throwForbiddenIfSpam
 import io.efdi.server.http._
 import play.api._
 import play.api.libs.json._
@@ -37,7 +36,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 object PageTitleSettingsController extends mvc.Controller {
 
 
-  def editTitleSaveSettings = AsyncPostJsonAction(RateLimits.EditPost, maxLength = 2000) {
+  def editTitleSaveSettings = PostJsonAction(RateLimits.EditPost, maxLength = 2000) {
         request: JsonPostRequest =>
 
     val pageId = (request.body \ "pageId").as[PageId]
@@ -94,6 +93,11 @@ object PageTitleSettingsController extends mvc.Controller {
     if (anyHtmlTagCssClasses.exists(!HtmlUtils.OkCssClassRegex.matches(_)))
       throwBadReq("DwE5kEF2", s"Bad CSS class, doesn't match: ${HtmlUtils.OkCssClassRegexText}")
 
+    val editsHtmlStuff = anyHtmlTagCssClasses.isDefined || anyHtmlHeadTitle.isDefined ||
+      anyHtmlHeadDescription.isDefined
+    if (editsHtmlStuff && !request.theMember.isStaff)
+      throwForbidden("EdE4WU8F2", "You may not edit CSS classes or HTML tags")
+
     // Race condition below: First title committed, then page settings. If the server crashes in
     // between, only the title will be changed — that's fairly okay I think; ignore for now.
     // Also, if two separate requests, then one might edit the title, the other the slug, with
@@ -106,109 +110,64 @@ object PageTitleSettingsController extends mvc.Controller {
     // Update page title.
     val newTextAndHtml = TextAndHtml(newTitle, isTitle = true)
 
-    Globals.antiSpam.detectPostSpam(request, pageId, newTextAndHtml) map { isSpamReason =>
-      throwForbiddenIfSpam(isSpamReason, "DwE6JG20")
+    request.dao.editPostIfAuth(pageId = pageId, postNr = PageParts.TitleNr,
+      request.who, request.spamRelatedStuff, newTextAndHtml)
 
-      request.dao.editPostIfAuth(pageId = pageId, postNr = PageParts.TitleNr,
-        request.who, newTextAndHtml)
+    // Load old section page id before changing it.
+    val oldSectionPageId: Option[PageId] = oldMeta.categoryId map request.dao.loadTheSectionPageId
 
-      // Load old section page id before changing it.
-      val oldSectionPageId: Option[PageId] = oldMeta.categoryId map request.dao.loadTheSectionPageId
+    // Update page settings.
+    var newMeta = anyNewRole.map(oldMeta.copyWithNewRole).getOrElse(oldMeta)
+    newMeta = newMeta.copy(
+      categoryId = anyNewCategoryId.orElse(oldMeta.categoryId),
+      htmlTagCssClasses = anyHtmlTagCssClasses.getOrElse(oldMeta.htmlTagCssClasses),
+      htmlHeadTitle = anyHtmlHeadTitle.getOrElse(oldMeta.htmlHeadTitle),
+      htmlHeadDescription = anyHtmlHeadDescription.getOrElse(oldMeta.htmlHeadDescription),
+      version = oldMeta.version + 1)
 
-      // Update page settings.
-      // --- Could break out a function: PageMeta.changeRole(..) ----------------------
-      var newClosedAt = oldMeta.closedAt
-      val (newAnsweredAt, newAnswerPostUniqueId) =
-        anyNewRole match {
-          case Some(PageRole.Question) => (oldMeta.answeredAt, oldMeta.answerPostUniqueId)
-          case _ =>
-            if (oldMeta.answeredAt.isDefined) {
-              // Reopen it since changing type.
-              newClosedAt = None
-            }
-            (None, None)
-        }
-      val newPlannedAt =
-        anyNewRole match {
-          case Some(PageRole.Problem) | Some(PageRole.Idea) => oldMeta.plannedAt
-          case Some(PageRole.ToDo) =>
-            // To-Do:s are always either planned or done.
-            oldMeta.plannedAt orElse Some(When.now().toJavaDate)
-          case _ =>
-            if (oldMeta.plannedAt.isDefined) {
-              // Reopen it since changing type.
-              newClosedAt = None
-            }
-            None
-        }
-      val newDoneAt =
-        anyNewRole match {
-          case Some(PageRole.Problem) | Some(PageRole.Idea) | Some(PageRole.ToDo) => oldMeta.doneAt
-          case _ =>
-            if (oldMeta.doneAt.isDefined) {
-              // Reopen it since changing type.
-              newClosedAt = None
-            }
-            None
-        }
-      val newMeta = oldMeta.copy(
-        pageRole = anyNewRole.getOrElse(oldMeta.pageRole),
-        answeredAt = newAnsweredAt,
-        answerPostUniqueId = newAnswerPostUniqueId,
-        plannedAt = newPlannedAt,
-        doneAt = newDoneAt,
-        closedAt = newClosedAt,
-        categoryId = anyNewCategoryId.orElse(oldMeta.categoryId),
-        htmlTagCssClasses = anyHtmlTagCssClasses.getOrElse(oldMeta.htmlTagCssClasses),
-        htmlHeadTitle = anyHtmlHeadTitle.getOrElse(oldMeta.htmlHeadTitle),
-        htmlHeadDescription = anyHtmlHeadDescription.getOrElse(oldMeta.htmlHeadDescription),
-        version = oldMeta.version + 1)
-      // --- /END could break out a function: PageMeta.changeRole(..) ----------------------
-
-      request.dao.readWriteTransaction { transaction =>  // COULD wrap everything in this transaction
-                                                          // and move it to PagesDao?
-        transaction.updatePageMeta(newMeta, oldMeta = oldMeta, markSectionPageStale = true)
-        if (newMeta.categoryId != oldMeta.categoryId) {
-          transaction.indexAllPostsOnPage(pageId)
-        }
+    request.dao.readWriteTransaction { transaction =>  // COULD wrap everything in this transaction
+                                                        // and move it to PagesDao?
+      transaction.updatePageMeta(newMeta, oldMeta = oldMeta, markSectionPageStale = true)
+      if (newMeta.categoryId != oldMeta.categoryId) {
+        transaction.indexAllPostsOnPage(pageId)
       }
-
-      // Update URL path (folder, slug, show/hide page id).
-      // The last thing we do, update the url path, so it cannot happen that we change the
-      // url path, but then afterwards something else fails so we reply error — that would
-      // be bad because the browser wouldn't know if it should update its url path or not.
-      var newPath: Option[PagePath] = None
-      if (anyFolder.orElse(anySlug).orElse(anyShowId).isDefined) {
-        try {
-          newPath = Some(
-            request.dao.moveRenamePage(
-              pageId, newFolder = anyFolder, newSlug = anySlug, showId = anyShowId))
-        }
-        catch {
-          case ex: DbDao.PageNotFoundException =>
-            throwNotFound("DwE34FK81", "The page was deleted just now")
-          case DbDao.PathClashException(existingPagePath, newPagePath) =>
-            throwForbidden(
-              "DwE4FKEU5", o"""Cannot move page to ${existingPagePath.value}. There is
-                already another page there. Please move that page elsewhere, first""")
-        }
-      }
-
-      // Refresh cache, plus any forum page if this page is a forum topic.
-      // (Forum pages cache category JSON and a latest topics list, includes titles.)
-      val newSectionPageId = newMeta.categoryId map request.dao.loadTheSectionPageId
-      val idsToRefresh = (pageId :: oldSectionPageId.toList ::: newSectionPageId.toList).distinct
-      idsToRefresh.foreach(request.dao.refreshPageInMemCache)
-
-      val (_, newAncestorsJson) = ReactJson.makeForumIdAndAncestorsJson(newMeta, request.dao)
-
-      // The browser will update the title and the url path in the address bar.
-      OkSafeJson(Json.obj(
-        "newTitlePost" -> ReactJson.postToJson2(postNr = PageParts.TitleNr, pageId = pageId,
-            request.dao, includeUnapproved = true),
-        "newAncestorsRootFirst" -> newAncestorsJson,
-        "newUrlPath" -> JsStringOrNull(newPath.map(_.value))))
     }
+
+    // Update URL path (folder, slug, show/hide page id).
+    // The last thing we do, update the url path, so it cannot happen that we change the
+    // url path, but then afterwards something else fails so we reply error — that would
+    // be bad because the browser wouldn't know if it should update its url path or not.
+    var newPath: Option[PagePath] = None
+    if (anyFolder.orElse(anySlug).orElse(anyShowId).isDefined) {
+      try {
+        newPath = Some(
+          request.dao.moveRenamePage(
+            pageId, newFolder = anyFolder, newSlug = anySlug, showId = anyShowId))
+      }
+      catch {
+        case ex: DbDao.PageNotFoundException =>
+          throwNotFound("DwE34FK81", "The page was deleted just now")
+        case DbDao.PathClashException(existingPagePath, newPagePath) =>
+          throwForbidden(
+            "DwE4FKEU5", o"""Cannot move page to ${existingPagePath.value}. There is
+              already another page there. Please move that page elsewhere, first""")
+      }
+    }
+
+    // Refresh cache, plus any forum page if this page is a forum topic.
+    // (Forum pages cache category JSON and a latest topics list, includes titles.)
+    val newSectionPageId = newMeta.categoryId map request.dao.loadTheSectionPageId
+    val idsToRefresh = (pageId :: oldSectionPageId.toList ::: newSectionPageId.toList).distinct
+    idsToRefresh.foreach(request.dao.refreshPageInMemCache)
+
+    val (_, newAncestorsJson) = ReactJson.makeForumIdAndAncestorsJson(newMeta, request.dao)
+
+    // The browser will update the title and the url path in the address bar.
+    OkSafeJson(Json.obj(
+      "newTitlePost" -> ReactJson.postToJson2(postNr = PageParts.TitleNr, pageId = pageId,
+          request.dao, includeUnapproved = true),
+      "newAncestorsRootFirst" -> newAncestorsJson,
+      "newUrlPath" -> JsStringOrNull(newPath.map(_.value))))
   }
 
 }

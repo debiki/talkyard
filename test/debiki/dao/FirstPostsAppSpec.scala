@@ -20,7 +20,6 @@ package debiki.dao
 import com.debiki.core._
 import debiki.DebikiHttp.ResultException
 import debiki.TextAndHtml
-import io.efdi.server.Who
 
 
 class FirstPostsAppSpec extends ReviewStuffAppSuite("4FY2") {

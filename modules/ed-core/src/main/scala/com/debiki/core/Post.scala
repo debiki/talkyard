@@ -217,7 +217,7 @@ case class Post(
   closedById: Option[UserId],
   hiddenAt: Option[ju.Date],
   hiddenById: Option[UserId],
-  //hiddenReason: ?
+  hiddenReason: Option[String],
   deletedStatus: DeletedStatus,
   deletedAt: Option[ju.Date],
   deletedById: Option[UserId],
@@ -298,7 +298,7 @@ case class Post(
 
   require(hiddenAt.map(_.getTime >= createdAt.getTime) != Some(false), "DwE6K2I7")
   require(hiddenAt.isDefined == hiddenById.isDefined, "DwE0B7I3")
-  //require(hiddenReason.isEmpty || hiddenAt.isDefined, "DwE3K5I9")
+  require(hiddenReason.isEmpty || hiddenAt.isDefined, "DwE3K5I9")
 
   require(numDistinctEditors >= 0, "DwE2IkG7")
   require(numPendingEditSuggestions >= 0, "DwE0IK0P3")
@@ -320,7 +320,7 @@ case class Post(
   def isDeleted = deletedStatus.isDeleted
   def isSomeVersionApproved = approvedRevisionNr.isDefined
   def isCurrentVersionApproved = approvedRevisionNr == Some(currentRevisionNr)
-  def isVisible = isSomeVersionApproved && !isHidden && !isDeleted  // rename to isActive? isInUse?
+  def isVisible = isSomeVersionApproved && !isHidden && !isDeleted  // rename to isActive? isInUse? isInclOnPage? isShown?
   def isWiki = tyype.isWiki
 
   def pagePostId = PagePostId(pageId, uniqueId)
@@ -410,6 +410,7 @@ case class Post(
     userId: UserId,
     postHidden: Boolean = false,
     postUnhidden: Boolean = false,
+    postHiddenReason: Option[String] = None,
     postCollapsed: Boolean = false,
     treeCollapsed: Boolean = false,
     ancestorsCollapsed: Boolean = false,
@@ -421,16 +422,22 @@ case class Post(
 
     var newHiddenAt = hiddenAt
     var newHiddenById = hiddenById
+    var newHiddenReason = hiddenReason
     if (postHidden && postUnhidden) {
       die("DwE6KUP2")
+    }
+    else if (postUnhidden && postHiddenReason.isDefined) {
+      die("EdE4KF0YW5")
     }
     else if (postHidden && !isHidden) {
       newHiddenAt = Some(currentTime)
       newHiddenById = Some(userId)
+      newHiddenReason = postHiddenReason
     }
     else if (postUnhidden && isHidden) {
       newHiddenAt = None
       newHiddenById = None
+      newHiddenReason = None
     }
 
     // You can collapse a post, although an ancestor is already collapsed. Collapsing it,
@@ -494,6 +501,7 @@ case class Post(
     copy(
       hiddenAt = newHiddenAt,
       hiddenById = newHiddenById,
+      hiddenReason = newHiddenReason,
       collapsedStatus = new CollapsedStatus(newCollapsedUnderlying),
       collapsedById = newCollapsedById,
       collapsedAt = newCollapsedAt,
@@ -619,6 +627,7 @@ object Post {
       closedById = parentsChildrenClosedById,
       hiddenAt = None,
       hiddenById = None,
+      hiddenReason = None,
       deletedStatus = DeletedStatus.NotDeleted,
       deletedAt = None,
       deletedById = None,

@@ -21,12 +21,12 @@ import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki._
 import debiki.DebikiHttp._
-import debiki.antispam.AntiSpam.throwForbiddenIfSpam
+import ed.server.spam.SpamChecker
 import io.efdi.server.http._
 import play.api._
-import play.api.libs.json.JsArray
 import play.api.mvc.{Action => _, _}
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 
 
 /** Saves replies. Lazily creates pages for embedded discussions
@@ -35,7 +35,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 object ReplyController extends mvc.Controller {
 
 
-  def handleReply = AsyncPostJsonAction(RateLimits.PostReply, maxLength = MaxPostSize) {
+  def handleReply = PostJsonAction(RateLimits.PostReply, maxLength = MaxPostSize) {
         request: JsonPostRequest =>
     val body = request.body
     val pageId = (body \ "pageId").as[PageId]
@@ -46,6 +46,9 @@ object ReplyController extends mvc.Controller {
     val whereOpt = if (wherePerhapsEmpty == Some("")) None else wherePerhapsEmpty
     val postType = PostType.fromInt((body \ "postType").as[Int]) getOrElse throwBadReq(
       "DwE6KG4", "Bad post type")
+
+    throwBadRequestIf(text.isEmpty, "EdE85FK03", "Empty post")
+    val textAndHtml = TextAndHtml(text, isTitle = false)
 
     // Construct a request that concerns the specified page. Create the page
     // lazily if it's supposed to be a discussion embedded on a static HTML page.
@@ -61,22 +64,14 @@ object ReplyController extends mvc.Controller {
         */
     }
 
-    if (text.isEmpty)
-      throwBadReq("DwE85FK03", "Empty post")
+    val result = pageReq.dao.insertReply(textAndHtml, pageId = pageId, replyToPostNrs,
+      postType, pageReq.who, pageReq.spamRelatedStuff)
 
-    val textAndHtml = TextAndHtml(text, isTitle = false)
-    Globals.antiSpam.detectPostSpam(request, pageId, textAndHtml) map { isSpamReason =>
-      throwForbiddenIfSpam(isSpamReason, "DwE5JGY0")
-
-      val result = pageReq.dao.insertReply(textAndHtml, pageId = pageId, replyToPostNrs,
-        postType, pageReq.who)
-
-      OkSafeJson(result.storePatchJson)
-    }
+    OkSafeJson(result.storePatchJson)
   }
 
 
-  def handleChatMessage = AsyncPostJsonAction(RateLimits.PostReply, maxLength = MaxPostSize) {
+  def handleChatMessage = PostJsonAction(RateLimits.PostReply, maxLength = MaxPostSize) {
         request =>
     val body = request.body
     val pageId = (body \ "pageId").as[PageId]
@@ -94,14 +89,10 @@ object ReplyController extends mvc.Controller {
       throwBadReq("EsE0WQCB", "Empty chat message")
 
     val textAndHtml = TextAndHtml(text, isTitle = false)
-    Globals.antiSpam.detectPostSpam(request, pageId, textAndHtml, quickButLessSafe = true) map {
-        isSpamReason =>
-      throwForbiddenIfSpam(isSpamReason, "EsE4J7U27")
+    val result = pageReq.dao.insertChatMessage(
+      textAndHtml, pageId = pageId, pageReq.who, pageReq.spamRelatedStuff)
 
-      val result = pageReq.dao.insertChatMessage(textAndHtml, pageId = pageId, pageReq.who)
-
-      OkSafeJson(result.storePatchJson)
-    }
+    OkSafeJson(result.storePatchJson)
   }
 
 

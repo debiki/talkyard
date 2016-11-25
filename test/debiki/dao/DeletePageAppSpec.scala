@@ -20,7 +20,6 @@ package debiki.dao
 import com.debiki.core._
 import debiki.DebikiHttp.ResultException
 import debiki._
-import io.efdi.server.Who
 
 
 class DeletePageAppSpec extends DaoAppSuite(disableScripts = true, disableBackgroundJobs = true) {

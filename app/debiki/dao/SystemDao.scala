@@ -75,7 +75,9 @@ class SystemDao(private val dbDaoFactory: DbDaoFactory, val cache: DaoMemCache) 
 
   def loadNotificationsToMailOut(delayInMinutes: Int, numToLoad: Int)
         : Map[SiteId, Seq[Notification]] =
-    readOnlyTransaction(_.loadNotificationsToMailOut(delayInMinutes, numToLoad))
+    readOnlyTransaction { transaction =>
+      transaction.loadNotificationsToMailOut(delayInMinutes, numToLoad)
+    }
 
 
   def loadCachedPageVersion(sitePageId: SitePageId)
@@ -112,6 +114,56 @@ class SystemDao(private val dbDaoFactory: DbDaoFactory, val cache: DaoMemCache) 
     }
   }
 
+
+  // ----- Spam
+
+  def loadStuffToSpamCheck(limit: Int): StuffToSpamCheck = {
+    readOnlyTransaction { transaction =>
+      transaction.loadStuffToSpamCheck(limit)
+    }
+  }
+
+  def deleteFromSpamCheckQueue(task: SpamCheckTask) {
+    readWriteTransaction { transaction =>
+      transaction.deleteFromSpamCheckQueue(
+          task.siteId, postId = task.postId, postRevNr = task.postRevNr)
+    }
+  }
+
+  def dealWithSpam(spamCheckTask: SpamCheckTask, isSpamReason: String) {
+    // COULD if is new page, no replies, then hide the whole page (no point in showing a spam page).
+    // Then mark section page stale below (4KWEBPF89).
+    readWriteTransaction { transaction =>
+      val siteTransaction = transaction.siteTransaction(spamCheckTask.siteId)
+      val postBefore = siteTransaction.loadPost(spamCheckTask.postId) getOrElse {
+        // It was hard deleted?
+        return
+      }
+
+      val postAfter = postBefore.copy(
+        hiddenAt = Some(siteTransaction.currentTime),
+        hiddenById = Some(SystemUserId),
+        hiddenReason = Some(s"Spam because: $isSpamReason"))
+
+      siteTransaction.updatePost(postAfter)
+
+      if (postBefore.isVisible) {
+        val oldMeta = siteTransaction.loadPageMeta(postAfter.pageId) getOrDie "EdE4FK0YUP"
+
+        val newNumOrigPostRepliesVisible =
+          if (postAfter.parentNr.contains(PageParts.BodyNr)) oldMeta.numOrigPostRepliesVisible - 1
+          else oldMeta.numOrigPostRepliesVisible
+
+        val newMeta = oldMeta.copy(
+          numRepliesVisible = oldMeta.numRepliesVisible - 1,
+          numOrigPostRepliesVisible = newNumOrigPostRepliesVisible,
+          version = oldMeta.version + 1)
+
+        siteTransaction.updatePageMeta(newMeta, oldMeta = oldMeta,
+          markSectionPageStale = false) // (4KWEBPF89)
+      }
+    }
+  }
 
   // ----- Testing
 

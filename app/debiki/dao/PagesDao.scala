@@ -23,7 +23,6 @@ import com.debiki.core.PageParts.MaxTitleLength
 import com.debiki.core.User.SystemUserId
 import debiki._
 import debiki.DebikiHttp._
-import io.efdi.server.{Who, UserAndLevels}
 import io.efdi.server.http.throwIndistinguishableNotFound
 import io.efdi.server.notf.NotificationGenerator
 import java.{util => ju}
@@ -50,7 +49,8 @@ trait PagesDao {
 
   def createPage(pageRole: PageRole, pageStatus: PageStatus, anyCategoryId: Option[CategoryId],
         anyFolder: Option[String], anySlug: Option[String], titleTextAndHtml: TextAndHtml,
-        bodyTextAndHtml: TextAndHtml, showId: Boolean, byWho: Who): PagePath = {
+        bodyTextAndHtml: TextAndHtml, showId: Boolean, byWho: Who,
+        spamRelReqStuff: SpamRelReqStuff): PagePath = {
 
     if (pageRole.isSection) {
       // Should use e.g. ForumController.createForum() instead.
@@ -75,12 +75,14 @@ trait PagesDao {
     if (titleTextAndHtml.safeHtml.trim.isEmpty)
       throwForbidden("DwE5KPEF21", "Page title should not be empty")
 
+    quickCheckIfSpamThenThrow(byWho, bodyTextAndHtml, spamRelReqStuff)
+
     val pagePath = readWriteTransaction { transaction =>
       val (pagePath, bodyPost) = createPageImpl(pageRole, pageStatus, anyCategoryId,
         anyFolder = anyFolder, anySlug = anySlug, showId = showId,
         titleSource = titleTextAndHtml.text, titleHtmlSanitized = titleTextAndHtml.safeHtml,
         bodySource = bodyTextAndHtml.text, bodyHtmlSanitized = bodyTextAndHtml.safeHtml,
-        pinOrder = None, pinWhere = None, byWho, transaction)
+        pinOrder = None, pinWhere = None, byWho, Some(spamRelReqStuff), transaction)
 
       val notifications = NotificationGenerator(transaction)
         .generateForNewPost(PageDao(pagePath.pageId getOrDie "DwE5KWI2", transaction), bodyPost)
@@ -102,14 +104,14 @@ trait PagesDao {
         anyCategoryId: Option[CategoryId] = None,
         anyFolder: Option[String] = None, anySlug: Option[String] = None, showId: Boolean = true,
         pinOrder: Option[Int] = None, pinWhere: Option[PinPageWhere] = None,
-        byWho: Who,
+        byWho: Who, spamRelReqStuff: Option[SpamRelReqStuff],
         transaction: SiteTransaction): (PagePath, Post) =
     createPageImpl(pageRole, pageStatus, anyCategoryId = anyCategoryId,
       anyFolder = anyFolder, anySlug = anySlug, showId = showId,
       titleSource = title.text, titleHtmlSanitized = title.safeHtml,
       bodySource = body.text, bodyHtmlSanitized = body.safeHtml,
       pinOrder = pinOrder, pinWhere = pinWhere,
-      byWho, transaction = transaction)
+      byWho, spamRelReqStuff, transaction = transaction)
 
 
   def createPageImpl(pageRole: PageRole, pageStatus: PageStatus, anyCategoryId: Option[CategoryId],
@@ -117,7 +119,7 @@ trait PagesDao {
       titleSource: String, titleHtmlSanitized: String,
       bodySource: String, bodyHtmlSanitized: String,
       pinOrder: Option[Int], pinWhere: Option[PinPageWhere],
-      byWho: Who,
+      byWho: Who, spamRelReqStuff: Option[SpamRelReqStuff],
       transaction: SiteTransaction, hidePageBody: Boolean = false,
       bodyPostType: PostType = PostType.Normal): (PagePath, Post) = {
 
@@ -232,7 +234,8 @@ trait PagesDao {
       approvedById = approvedById)
       .copy(
         hiddenAt = ifThenSome(hidePageBody, transaction.currentTime),
-        hiddenById = ifThenSome(hidePageBody, authorId))
+        hiddenById = ifThenSome(hidePageBody, authorId),
+        hiddenReason = None) // add `hiddenReason` function parameter?
 
     val uploadPaths = UploadsDao.findUploadRefsInPost(bodyPost)
 
@@ -274,6 +277,7 @@ trait PagesDao {
     insertAuditLogEntry(auditLogEntry, transaction)
 
     transaction.indexPostsSoon(titlePost, bodyPost)
+    spamRelReqStuff.foreach(transaction.spamCheckPostsSoon(byWho, _, titlePost, bodyPost))
 
     // Don't start rendering html for this page in the background. [5KWC58]
     // (Instead, when the user requests the page, we'll render it directly in

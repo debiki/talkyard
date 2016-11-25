@@ -889,8 +889,11 @@ object ReactJson {
           "approvedHtmlSanitized" -> JsStringOrNull(post.approvedHtmlSanitized),
           "approvedRevNr" -> JsNumberOrNull(post.approvedRevisionNr),
           "approvedRevComposedById" -> JsNull, // post.lastApprovedEditById ? ... hmm, see below
-          "approvedRevApprovedById" -> JsNull) // -> post.aprvdRevAprvdById?? ... hmm no,
+          "approvedRevApprovedById" -> JsNull, // -> post.aprvdRevAprvdById?? ... hmm no,
                                                 // better: post.lastApporvedRevision.approvedById
+          "hiddenAtMs" -> JsDateMsOrNull(post.hiddenAt),
+          "hiddenById" -> JsNumberOrNull(post.hiddenById),
+          "hiddenReason" -> JsStringOrNull(post.hiddenReason))
     }
     Json.obj(
       "id" -> stuff.id,

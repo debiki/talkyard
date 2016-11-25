@@ -83,6 +83,7 @@ class SiteDao(
   with PostsDao
   with TagsDao
   with SearchDao
+  with ed.server.spam.QuickSpamCheckDao
   with UploadsDao
   with UserDao
   with MessagesDao

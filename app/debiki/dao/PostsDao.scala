@@ -24,7 +24,6 @@ import com.debiki.core.PageParts.FirstReplyNr
 import controllers.EditController
 import debiki._
 import debiki.DebikiHttp._
-import io.efdi.server.{Who, UserAndLevels}
 import io.efdi.server.notf.NotificationGenerator
 import io.efdi.server.pubsub.StorePatchMessage
 import play.api.libs.json.JsValue
@@ -52,7 +51,8 @@ trait PostsDao {
 
 
   def insertReply(textAndHtml: TextAndHtml, pageId: PageId, replyToPostNrs: Set[PostNr],
-        postType: PostType, byWho: Who): InsertPostResult = {
+        postType: PostType, byWho: Who, spamRelReqStuff: SpamRelReqStuff)
+        : InsertPostResult = {
 
     val authorId = byWho.id
 
@@ -68,6 +68,8 @@ trait PostsDao {
     if (replyToPostNrs.size > 1)
       throwNotImplemented("EsE7GKX2", o"""Please reply to one single person only.
         Multireplies temporarily disabled, sorry""")
+
+    quickCheckIfSpamThenThrow(byWho, textAndHtml, spamRelReqStuff)
 
     val (newPost, author, notifications, anyReviewTask) = readWriteTransaction { transaction =>
       val authorAndLevels = loadUserAndLevels(byWho, transaction)
@@ -176,6 +178,7 @@ trait PostsDao {
 
       transaction.insertPost(newPost)
       transaction.indexPostsSoon(newPost)
+      transaction.spamCheckPostsSoon(byWho, spamRelReqStuff, newPost)
       transaction.updatePageMeta(newMeta, oldMeta = oldMeta, markSectionPageStale = shallApprove)
       uploadRefs foreach { uploadRef =>
         transaction.insertUploadedFileReference(newPost.uniqueId, uploadRef, authorId)
@@ -298,11 +301,14 @@ trait PostsDao {
     * messages in between — then we'll append this new message to the old one, instead
     * of creating a new different chat message.
     */
-  def insertChatMessage(textAndHtml: TextAndHtml, pageId: PageId, byWho: Who): InsertPostResult = {
+  def insertChatMessage(textAndHtml: TextAndHtml, pageId: PageId, byWho: Who,
+        spamRelReqStuff: SpamRelReqStuff): InsertPostResult = {
     val authorId = byWho.id
 
     if (textAndHtml.safeHtml.trim.isEmpty)
       throwBadReq("DwE2U3K8", "Empty chat message")
+
+    quickCheckIfSpamThenThrow(byWho, textAndHtml, spamRelReqStuff)
 
     val (post, author, notifications) = readWriteTransaction { transaction =>
       val author = transaction.loadUser(authorId) getOrElse
@@ -327,9 +333,9 @@ trait PostsDao {
       }
       val (postNr, notfs) = anyLastMessageSameUserRecently match {
         case Some(lastMessage) if !lastMessage.isDeleted =>
-          appendToLastChatMessage(lastMessage, textAndHtml, byWho, transaction)
+          appendToLastChatMessage(lastMessage, textAndHtml, byWho, spamRelReqStuff, transaction)
         case None =>
-          createNewChatMessage(page, textAndHtml, byWho, transaction)
+          createNewChatMessage(page, textAndHtml, byWho, spamRelReqStuff, transaction)
       }
       (postNr, author, notfs)
     }
@@ -345,7 +351,7 @@ trait PostsDao {
 
 
   private def createNewChatMessage(page: PageDao, textAndHtml: TextAndHtml, who: Who,
-        transaction: SiteTransaction): (Post, Notifications) = {
+      spamRelReqStuff: SpamRelReqStuff, transaction: SiteTransaction): (Post, Notifications) = {
 
     // Note: Farily similar to insertReply() a bit above. [4UYKF21]
     val authorId = who.id
@@ -408,6 +414,8 @@ trait PostsDao {
       targetUserId = None)
 
     transaction.insertPost(newPost)
+    transaction.indexPostsSoon(newPost)
+    transaction.spamCheckPostsSoon(who, spamRelReqStuff, newPost)
     transaction.updatePageMeta(newMeta, oldMeta = oldMeta, markSectionPageStale = true)
     uploadRefs foreach { uploadRef =>
       transaction.insertUploadedFileReference(newPost.uniqueId, uploadRef, authorId)
@@ -426,7 +434,7 @@ trait PostsDao {
 
 
   private def appendToLastChatMessage(lastPost: Post, textAndHtml: TextAndHtml, byWho: Who,
-    transaction: SiteTransaction): (Post, Notifications) = {
+        spamRelReqStuff: SpamRelReqStuff, transaction: SiteTransaction): (Post, Notifications) = {
 
     // Note: Farily similar to editPostIfAuth() just below. [2GLK572]
     val authorId = byWho.id
@@ -460,6 +468,7 @@ trait PostsDao {
 
     transaction.updatePost(editedPost)
     transaction.indexPostsSoon(editedPost)
+    transaction.spamCheckPostsSoon(byWho, spamRelReqStuff, editedPost)
     saveDeleteUploadRefs(lastPost, editedPost = editedPost, authorId, transaction)
 
     val oldMeta = transaction.loadThePageMeta(lastPost.pageId)
@@ -483,13 +492,16 @@ trait PostsDao {
 
   /** Edits the post, if authorized to edit it.
     */
-  def editPostIfAuth(pageId: PageId, postNr: PostNr, who: Who, newTextAndHtml: TextAndHtml) {
+  def editPostIfAuth(pageId: PageId, postNr: PostNr, who: Who, spamRelReqStuff: SpamRelReqStuff,
+        newTextAndHtml: TextAndHtml) {
     val editorId = who.id
 
     // Note: Farily similar to appendChatMessageToLastMessage() just above. [2GLK572]
 
     if (newTextAndHtml.safeHtml.trim.isEmpty)
       throwBadReq("DwE4KEL7", EditController.EmptyPostErrorMessage)
+
+    quickCheckIfSpamThenThrow(who, newTextAndHtml, spamRelReqStuff)
 
     readWriteTransaction { transaction =>
       val editor = transaction.loadUser(editorId).getOrElse(
@@ -637,6 +649,7 @@ trait PostsDao {
 
       transaction.updatePost(editedPost)
       transaction.indexPostsSoon(editedPost)
+      transaction.spamCheckPostsSoon(who, spamRelReqStuff, editedPost)
       newRevision.foreach(transaction.insertPostRevision)
       saveDeleteUploadRefs(postToEdit, editedPost = editedPost, editorId, transaction)
 
@@ -1021,7 +1034,7 @@ trait PostsDao {
         throwForbidden("EsE5GYK02", "You're not staff so you cannot approve posts")
 
       // ------ The post
-
+// ?? unhide, if is spam?
       // Later: update lastApprovedEditAt, lastApprovedEditById and numDistinctEditors too,
       // or remove them.
       val postAfter = postBefore.copy(

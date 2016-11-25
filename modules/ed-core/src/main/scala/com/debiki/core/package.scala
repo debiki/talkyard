@@ -109,6 +109,20 @@ package object core {
     def fromMillis(millis: UnixMillis) = new When(millis)
   }
 
+
+  case class Who(id: UserId, browserIdData: BrowserIdData) {
+    def ip: String = browserIdData.ip
+    def idCookie: String = browserIdData.idCookie
+    def browserFingerprint = browserIdData.fingerprint
+    def isGuest = User.isGuestId(id)
+  }
+
+  case class UserAndLevels(user: User, trustLevel: TrustLevel, threatLevel: ThreatLevel) {
+    def id = user.id
+    def isStaff = user.isStaff
+  }
+
+
   sealed trait OrderBy { def isDescending: Boolean = false }
 
   object OrderBy {
@@ -195,6 +209,41 @@ package object core {
     numPages: Int,
     numSubscribers: Int,
     numMuted: Int)
+
+
+  case class StuffToSpamCheck(
+    postsBySite: Map[SiteId, immutable.Seq[Post]],
+    usersBySite: Map[SiteId, Map[UserId, User]],
+    spamCheckTasks: Seq[SpamCheckTask]) {
+
+    def getPost(sitePostId: SitePostId): Option[Post] =
+      postsBySite.get(sitePostId.siteId).flatMap(_.find(_.uniqueId == sitePostId.postId))
+
+    def getUser(siteUserId: SiteUserId): Option[User] =
+      usersBySite.get(siteUserId.siteId).flatMap(_.get(siteUserId.userId))
+  }
+
+
+  /** Spam related request stuff, e.g. referer and user agent.
+    */
+  case class SpamRelReqStuff(
+    userAgent: Option[String],
+    referer: Option[String],
+    uri: String)
+
+
+  case class SpamCheckTask(
+    siteId: SiteId,
+    postId: UniquePostId,
+    postRevNr: Int,
+    who: Who,
+    requestStuff: SpamRelReqStuff) {
+
+    def sitePostId = SitePostId(siteId, postId)
+    def siteUserId = SiteUserId(siteId, who.id)
+  }
+
+
 
   def ifThenSome[A](condition: Boolean, value: A) =
     if (condition) Some(value) else None

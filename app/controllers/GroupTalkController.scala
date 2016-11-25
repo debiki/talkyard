@@ -21,7 +21,6 @@ import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki._
 import debiki.DebikiHttp._
-import debiki.antispam.AntiSpam.throwForbiddenIfSpam
 import io.efdi.server.http._
 import play.api._
 import play.api.mvc.{Action => _, _}
@@ -37,7 +36,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 object GroupTalkController extends mvc.Controller {
 
 
-  def sendMessage = AsyncPostJsonAction(RateLimits.PostReply, maxLength = MaxPostSize) {
+  def sendMessage = PostJsonAction(RateLimits.PostReply, maxLength = MaxPostSize) {
         request: JsonPostRequest =>
     val body = request.body
     val title = (body \ "title").as[String].trim
@@ -65,16 +64,13 @@ object GroupTalkController extends mvc.Controller {
 
     val bodyTextAndHtml = TextAndHtml(text, isTitle = false,
       allowClassIdDataAttrs = true, followLinks = false)
-
     val titleTextAndHtml = TextAndHtml(title, isTitle = true)
 
-    Globals.antiSpam.detectNewPageSpam(request, titleTextAndHtml, bodyTextAndHtml) map {
-        isSpamReason =>
-      throwForbiddenIfSpam(isSpamReason, "DwE5G5F3")
-      val pagePath = request.dao.startGroupTalk(
-        titleTextAndHtml, bodyTextAndHtml, pageRole, toUserIds, sentByWho = request.who)
-      OkSafeJson(JsString(pagePath.pageId.getOrDie("DwE5JKY2")))
-    }
+    val pagePath = request.dao.startGroupTalk(
+      titleTextAndHtml, bodyTextAndHtml, pageRole, toUserIds, sentByWho = request.who,
+      request.spamRelatedStuff)
+
+    OkSafeJson(JsString(pagePath.pageId.getOrDie("DwE5JKY2")))
   }
 
 }
