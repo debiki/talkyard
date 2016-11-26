@@ -52,7 +52,7 @@ object LoginAsGuestController extends mvc.Controller {
 
     Globals.spamChecker.detectRegistrationSpam(request, name = name, email = email) map {
         isSpamReason =>
-      SpamChecker.throwForbiddenIfSpam(isSpamReason, "DwE5KJU3")
+      SpamChecker.throwForbiddenIfSpam(isSpamReason, "EdE5KJU3_")
 
       val loginAttempt = GuestLoginAttempt(
         ip = request.ip,

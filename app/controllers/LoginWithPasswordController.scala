@@ -106,7 +106,7 @@ object LoginWithPasswordController extends mvc.Controller {
 
     Globals.spamChecker.detectRegistrationSpam(request, name = username, email = emailAddress) map {
         isSpamReason =>
-      SpamChecker.throwForbiddenIfSpam(isSpamReason, "EdE7KVF2")
+      SpamChecker.throwForbiddenIfSpam(isSpamReason, "EdE7KVF2_")
 
       // Password strength tested in createPasswordUserCheckPasswordStrong() below.
 

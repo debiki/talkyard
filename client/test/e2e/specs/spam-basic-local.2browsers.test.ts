@@ -27,6 +27,7 @@ let mons;
 let monsBrowser;
 let guest;
 let guestsBrowser;
+let strangersBrowser;
 
 let idAddress: IdAddress;
 let forumTitle = "Basic Spam Test Forum";
@@ -51,6 +52,7 @@ describe("spam test, no external services:", () => {
     mariasBrowser = monsBrowser;
     mallorysBrowser = monsBrowser;
     guestsBrowser = monsBrowser;
+    strangersBrowser = monsBrowser;
   });
 
   it("import a site", () => {
@@ -86,9 +88,8 @@ describe("spam test, no external services:", () => {
         http://www.example.com/link-9
         http://www.example.com/link-10`);
     mallorysBrowser.editor.save();
-    mallorysBrowser.waitAndAssertVisibleTextMatches(
-        '.modal-dialog.dw-server-error', /links.*EdE4KFY2_/);
-    mallorysBrowser.click('.e_ServerErrorD_CloseB');
+    mallorysBrowser.serverErrorDialog.waitAndAssertTextMatches(/links.*EdE4KFY2_/);
+    mallorysBrowser.serverErrorDialog.clickClose();
   });
 
   it("Mallory posts a topic with a few links only, that's OK", () => {
@@ -124,6 +125,39 @@ describe("spam test, no external services:", () => {
   it("... and remains visible", () => {
     mallorysBrowser.pause(2000); // later: server.waitUntilSpamCheckQueueEmpty()
     assert(mallorysBrowser.isVisible('#post-3'));
+  });
+
+  it("Mallory logs out", () => {
+    mallorysBrowser.topbar.clickLogout();
+  });
+
+  it("A stranger attempts to sign up with password + a spammer's email", () => {
+    strangersBrowser.topbar.clickSignUp();
+    strangersBrowser.loginDialog.fillInUsername("stranger");
+    strangersBrowser.loginDialog.fillInEmail('__ed_spam' + '_test_123__@ex.co');
+    strangersBrowser.loginDialog.fillInPassword("public1234");
+    strangersBrowser.loginDialog.clickSubmit();
+  });
+
+  it("... but is rejected", () => {
+    mallorysBrowser.serverErrorDialog.waitAndAssertTextMatches(/spam.*EdE7KVF2_/);
+    mallorysBrowser.serverErrorDialog.clickClose();
+    strangersBrowser.loginDialog.clickCancel();
+  });
+
+  it("The stranger attempts to sign up as guest + a spammer's email", () => {
+    strangersBrowser.topbar.clickLogin();
+    strangersBrowser.loginDialog.clickLoginAsGuest();
+    strangersBrowser.loginDialog.fillInGuestName("Spammy Guest");
+    strangersBrowser.loginDialog.fillInGuestEmail('__ed_spam' + '_test_123__@ex2.co');
+    strangersBrowser.loginDialog.submitGuestLogin();
+  });
+
+  it("... but is rejected again", () => {
+    mallorysBrowser.debug();
+    mallorysBrowser.serverErrorDialog.waitAndAssertTextMatches(/spam.*EdE5KJU3_/);
+    mallorysBrowser.serverErrorDialog.clickClose();
+    strangersBrowser.loginDialog.clickCancelGuestLogin();
   });
 
   it("Done", () => {

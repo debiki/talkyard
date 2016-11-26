@@ -80,6 +80,8 @@ esRT            = review task
 
 esRPP           = reset password page
 
+SED             = server error dialog
+
 SERP            = search engine result page -- no, instead, use SRP (not SERP)
 SRP             = search result page -- no, instead, use SP
 SP              = search page
