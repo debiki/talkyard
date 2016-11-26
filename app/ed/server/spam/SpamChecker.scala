@@ -62,6 +62,8 @@ object NoApiKeyException extends QuickException
   * - Spamhaus: Link to 'dbltest.com', see:
   * - uribl: Link to 'test.uribl.com' or 2.0.0.127, see: http://uribl.com/about.shtml
   * - StopForumSpam: sign up with email test@test.com
+  * - Without any third party stuff, include in a comment or email addr: {{{__ed_spam _test_123__}}}
+  *   but _without the space in the middle_.
   *
   * Which domain block lists to use? Have a look here:
   *   https://www.intra2net.com/en/support/antispam/index.php_sort=accuracy_order=desc.html
@@ -144,6 +146,10 @@ class SpamChecker {
   // spam, always.
   val AlwaysSpamMagicText = "--viagra-test-123--"
 
+  // Break up the string so if someone copy-pastes this code snippet into ED,
+  // it won't be reported as spam.
+  val EdSpamMagicText = "__ed_spam" + "_test_123__"
+
   // All types: http://blog.akismet.com/2012/06/19/pro-tip-tell-us-your-comment_type/
   object AkismetSpamType {
     val Comment = "comment"
@@ -201,14 +207,27 @@ class SpamChecker {
   def detectRegistrationSpam(request: DebikiRequest[_], name: String, email: String)
         : Future[Option[String]] = {
 
-    val stopForumSpamFuture = checkViaStopForumSpam(request, name, email)
+    val spamTestFutures =
+      if (name contains EdSpamMagicText) {
+        Seq(Future.successful(Some(
+          s"Name contains test spam text: '$EdSpamMagicText' [EdM5KSWU7]")))
+      }
+      else if (email contains EdSpamMagicText) {
+        Seq(Future.successful(Some(
+          s"Email contains test spam text: '$EdSpamMagicText' [EdM5KSWU7]")))
+      }
+      else {
+        val stopForumSpamFuture = checkViaStopForumSpam(request, name, email)
 
-    val akismetBody = makeAkismetRequestBody(AkismetSpamType.Signup, request.spamRelatedStuff,
-      user = None, anyName = Some(name), anyEmail = Some(email))
-    val akismetFuture = checkViaAkismet(akismetBody)
+        val akismetBody = makeAkismetRequestBody(AkismetSpamType.Signup, request.spamRelatedStuff,
+          user = None, anyName = Some(name), anyEmail = Some(email))
+        val akismetFuture = checkViaAkismet(akismetBody)
+
+        Seq(stopForumSpamFuture, akismetFuture)
+      }
 
     // Some dupl code (5HK0XC4W2)
-    Future.sequence(Seq(stopForumSpamFuture, akismetFuture)) map { results: Seq[Option[String]] =>
+    Future.sequence(spamTestFutures) map { results: Seq[Option[String]] =>
       val spamResults: Seq[String] = results.filter(_.isDefined).map(_.get)
       SHOULD // insert into audit log (or some spam log?), gather stats, auto block.
       if (spamResults.nonEmpty) {
@@ -244,26 +263,35 @@ class SpamChecker {
 
     val textAndHtml = TextAndHtml(post.currentSource, isTitle = false)
 
-    val urlsAndDomainsFutures = checkUrlsAndDomains(textAndHtml)
-    // COULD postpone the Akismet check until after the domain check has been done? [5KGUF2]
-    // So won't have to pay for Akismet requests, if the site is commercial.
-    // Currently the Spamhaus test happens synchronously already though.
-
-    // Don't send the whole text, because of privacy issues. Send the links only. [4KTF0WCR]
-    // Or yes do that?  dupl question [7KECW2]
-    val userIsABitTrusted = user.isStaff
-    val akismetFuture =
-      if (userIsABitTrusted) Future.successful(None)
+    val spamTestFutures =
+      if (textAndHtml.text contains EdSpamMagicText) {
+        Seq(Future.successful(Some(
+          s"Text contains test spam text: '$EdSpamMagicText' [EdM4DKF03]")))
+      }
       else {
-        val payload = makeAkismetRequestBody(AkismetSpamType.ForumPost,
-          spamCheckTask.requestStuff,
-          text = Some(textAndHtml.safeHtml), // COULD: htmlLinksOnePerLine [4KTF0WCR]
-          user = Some(user))
-        checkViaAkismet(payload)
+        val urlsAndDomainsFutures = checkUrlsAndDomains(textAndHtml)
+        // COULD postpone the Akismet check until after the domain check has been done? [5KGUF2]
+        // So won't have to pay for Akismet requests, if the site is commercial.
+        // Currently the Spamhaus test happens synchronously already though.
+
+        // Don't send the whole text, because of privacy issues. Send the links only. [4KTF0WCR]
+        // Or yes do that?  dupl question [7KECW2]
+        val userIsABitTrusted = user.isStaff
+        val akismetFuture =
+          if (userIsABitTrusted) Future.successful(None)
+          else {
+            val payload = makeAkismetRequestBody(AkismetSpamType.ForumPost,
+              spamCheckTask.requestStuff,
+              text = Some(textAndHtml.safeHtml), // COULD: htmlLinksOnePerLine [4KTF0WCR]
+              user = Some(user))
+            checkViaAkismet(payload)
+          }
+
+        urlsAndDomainsFutures :+ akismetFuture
       }
 
     // Some dupl code (5HK0XC4W2)
-    Future.sequence(urlsAndDomainsFutures :+ akismetFuture) map { results: Seq[Option[String]] =>
+    Future.sequence(spamTestFutures) map { results: Seq[Option[String]] =>
       val spamResults: Seq[String] = results.filter(_.isDefined).map(_.get)
       SHOULD // insert into audit log (or some spam log?), gather stats, auto block.
       if (spamResults.nonEmpty) {

@@ -50,7 +50,7 @@ object QuickSpamCheckDao {
   def throwForbiddenIfLooksSpammy(user: User, textAndHtml: TextAndHtml) {
     def throwIfTooManyLinks(maxNumLinks: Int) {
       if (textAndHtml.links.length > maxNumLinks)
-        throwForbidden("EdE4KFY2", o"""Your text includes more than $maxNumLinks links —
+        throwForbidden("EdE4KFY2_", o"""Your text includes more than $maxNumLinks links —
            that makes me nervous about spam. Can you please remove some links?""")
     }
     if (user.isStaff) {

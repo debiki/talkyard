@@ -26,6 +26,7 @@ import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext.Implicits.global
 import debiki.Globals
 import org.postgresql.util.PSQLException
+import scala.collection.mutable
 
 
 
@@ -54,32 +55,56 @@ class SpamCheckActor(
   private val systemDao: SystemDao) extends Actor {
 
   val spamTasksDone = new java.util.concurrent.ConcurrentLinkedQueue[SpamCheckTask]
-
+  val checkingNow = mutable.HashSet[SitePostId]()
 
   def receive = {
     case CheckForSpam =>
-      deleteAlreadyCheckedPostsFromQueue()
-      checkMorePostsForSpam()
+      try {
+        deleteAlreadyCheckedPostsFromQueue()
+        checkMorePostsForSpam()
+      }
+      catch {
+        case ex: Exception =>
+          p.Logger.error(s"Error processing spam check queue [EdE5GPKS2]", ex)
+      }
     case PoisonPill =>
-      deleteAlreadyCheckedPostsFromQueue()
+      try {
+        deleteAlreadyCheckedPostsFromQueue()
+      }
+      catch {
+        case ex: Exception =>
+          p.Logger.error(s"Error closing spam check queue [EdE4DF7]", ex)
+      }
   }
 
 
   private def checkMorePostsForSpam() {
     val stuff = systemDao.loadStuffToSpamCheck(limit = batchSize)
-    stuff.spamCheckTasks.foreach(checkForSpam(_, stuff))
+    stuff.spamCheckTasks foreach { task =>
+      if (!checkingNow.contains(task.sitePostId)) {
+        checkingNow.add(task.sitePostId)
+        checkForSpam(task, stuff)
+      }
+    }
   }
 
 
   private def checkForSpam(spamCheckTask: SpamCheckTask, stuffToSpamCheck: StuffToSpamCheck) {
     Globals.spamChecker.detectPostSpam(spamCheckTask, stuffToSpamCheck) map { anyIsSpamReason =>
       anyIsSpamReason foreach { isSpamReason =>
-        systemDao.dealWithSpam(spamCheckTask, isSpamReason)
+        // We're not inside receive() any longer, so its try..catch is of no use now.
+        try {
+          systemDao.dealWithSpam(spamCheckTask, isSpamReason)
+          // Not the actor's thread, so deleting the task from the queue in here tend to result
+          // in PostgreSQL serialization errors. Do later instead.
+          spamTasksDone.add(spamCheckTask)
+        }
+        catch {
+          case ex: Exception =>
+            p.Logger.error(
+                s"Error dealing with spam, post id: ${spamCheckTask.sitePostId} [EdE7GSB4]", ex)
+        }
       }
-      // Which thread is this? If it's not the actor's thread, updating the spam check queue
-      // from here tend to result in PostgreSQL serialization errors. For now, instead add
-      // to spamTasksDone.
-      spamTasksDone.add(spamCheckTask)
     }
   }
 
@@ -91,6 +116,7 @@ class SpamCheckActor(
     }
     COULD_OPTIMIZE // batch delete all in one statement
     tasksToDelete foreach { task =>
+      checkingNow.remove(task.sitePostId)
       try systemDao.deleteFromSpamCheckQueue(task)
       catch {
         case ex: PSQLException if ex.getSQLState == "40001" =>

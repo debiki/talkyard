@@ -71,6 +71,13 @@ class SystemDao(private val dbDaoFactory: DbDaoFactory, val cache: DaoMemCache) 
   }
 
 
+  // ----- Pages
+
+  def refreshPageInMemCache(sitePageId: SitePageId) {
+    memCache.firePageSaved(sitePageId)
+  }
+
+
   // ----- Notifications
 
   def loadNotificationsToMailOut(delayInMinutes: Int, numToLoad: Int)
@@ -133,7 +140,7 @@ class SystemDao(private val dbDaoFactory: DbDaoFactory, val cache: DaoMemCache) 
   def dealWithSpam(spamCheckTask: SpamCheckTask, isSpamReason: String) {
     // COULD if is new page, no replies, then hide the whole page (no point in showing a spam page).
     // Then mark section page stale below (4KWEBPF89).
-    readWriteTransaction { transaction =>
+    val sitePageIdToRefresh = readWriteTransaction { transaction =>
       val siteTransaction = transaction.siteTransaction(spamCheckTask.siteId)
       val postBefore = siteTransaction.loadPost(spamCheckTask.postId) getOrElse {
         // It was hard deleted?
@@ -161,8 +168,14 @@ class SystemDao(private val dbDaoFactory: DbDaoFactory, val cache: DaoMemCache) 
 
         siteTransaction.updatePageMeta(newMeta, oldMeta = oldMeta,
           markSectionPageStale = false) // (4KWEBPF89)
+
+        Some(SitePageId(spamCheckTask.siteId, postAfter.pageId))
       }
+      else
+        None
     }
+
+    sitePageIdToRefresh.foreach(refreshPageInMemCache)
   }
 
   // ----- Testing

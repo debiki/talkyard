@@ -150,7 +150,8 @@ object ReactJson {
       // form replies, because they might contain private stuff. (Page type might have
       // been changed to/from Form.) [5GDK02]
       post.tyype != PostType.CompletedForm &&
-      post.tyype != PostType.Flat && ( // flat comments disabled [8KB42]
+      post.tyype != PostType.Flat &&  // flat comments disabled [8KB42]
+      !post.isHidden && (
       !post.deletedStatus.isDeleted || (
         post.deletedStatus.onlyThisDeleted && pageParts.hasNonDeletedSuccessor(post.nr)))
     }

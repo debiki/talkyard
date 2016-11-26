@@ -142,7 +142,8 @@ var ServerErrorDialog = createComponent({
               r.div({ className: 'modal-body' },
                 r.div({ style: { whiteSpace: 'pre-wrap', fontFamily: 'monospace' }}, message)),
               r.div({ className: 'modal-footer' },
-                PrimaryButton({ onClick: this.close }, "Close")))))));
+                PrimaryButton({ onClick: this.close, className: 'e_ServerErrorD_CloseB' },
+                  "Close")))))));
   }
 });
 
