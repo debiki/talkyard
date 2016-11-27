@@ -35,7 +35,7 @@ describe("private chat", function() {
 
   it("import a site", function() {
     var site: SiteData = make.forumOwnedByOwen('reset-pwd', { title: forumTitle });
-    site.settings = { allowGuestLogin: true };
+    site.settings.allowGuestLogin = true;
     site.members.push(make.memberMichael());
     _.assign(michael, make.memberMichael());
     _.assign(owen, make.memberOwenOwner());

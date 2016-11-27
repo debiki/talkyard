@@ -31,7 +31,10 @@ interface TestSettings {
 
 interface SiteData {
   meta: SiteMeta;
-  settings: { allowGuestLogin?: boolean };
+  settings: {
+    companyFullName: string,
+    allowGuestLogin?: boolean,
+  };
   groups: any;
   members: Member[];
   identities: any;

@@ -76,12 +76,19 @@ trait ReviewsDao {
         action match {
           case ReviewAction.Accept =>
             if (post.isCurrentVersionApproved) {
-              // The System user has apparently approved the post already. We're reviewing
-              // the post, after it's been shown already.
+              // The System user has apparently approved the post already.
+              // However, it might have been hidden a tiny bit later, after some  external services
+              // said it's spam. Now, though, we know it's apparently not spam, so show it.
+              if (post.isHidden) {
+                // SPAM RACE COULD unhide only if rev nr that got hidden <=
+                // rev that was reviewed. [6GKC3U]
+                changePostStatusImpl(postNr = post.nr, pageId = post.pageId,
+                    PostStatusAction.UnhidePost, userId = completedById, transaction)
+              }
             }
             else {
               if (task.isForBothTitleAndBody) {
-                // This is for a new page. Approve the title here, and the body in the `if` below.
+                // This is for a new page. Approve the *title* here, and the *body* just below.
                 dieIf(!task.postNr.contains(PageParts.BodyNr), "EsE5TK0I2")
                 approvePostImpl(post.pageId, PageParts.TitleNr, approverId = completedById,
                   transaction)

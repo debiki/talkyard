@@ -25,7 +25,9 @@ var emptySite: SiteData = {
     status: 2,
     createdAtMs: DefaultCreatedAtMs,
   },
-  settings: {},
+  settings: {
+    companyFullName: "E2E Test Org",
+  },
   groups: [],
   members: [],
   identities: [],

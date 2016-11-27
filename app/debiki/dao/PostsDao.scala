@@ -889,28 +889,49 @@ trait PostsDao {
         userId: UserId, transaction: SiteTransaction) {
     import com.debiki.core.{PostStatusAction => PSA}
 
-      val page = PageDao(pageId, transaction)
-      val user = transaction.loadUser(userId) getOrElse throwForbidden("DwE3KFW2", "Bad user id")
-      throwIfMayNotSeePage(page, Some(user))(transaction)
+    val page = PageDao(pageId, transaction)
+    val user = transaction.loadUser(userId) getOrElse throwForbidden("DwE3KFW2", "Bad user id")
+    throwIfMayNotSeePage(page, Some(user))(transaction)
 
-      val postBefore = page.parts.thePost(postNr)
+    val postBefore = page.parts.thePost(postNr)
 
-      // Authorization.
-      if (!user.isStaff) {
-        if (postBefore.createdById != userId)
-          throwForbidden("DwE0PK24", "You may not modify that post, it's not yours")
+    // Authorization.
+    if (!user.isStaff) {
+      if (postBefore.createdById != userId)
+        throwForbidden("DwE0PK24", "You may not modify that post, it's not yours")
 
-        if (!action.isInstanceOf[PSA.DeletePost] && action != PSA.CollapsePost)
-          throwForbidden("DwE5JKF7", "You may not modify the whole tree")
+      if (!action.isInstanceOf[PSA.DeletePost] && action != PSA.CollapsePost)
+        throwForbidden("DwE5JKF7", "You may not modify the whole tree")
+    }
+
+    val isChangingDeletePostToDeleteTree =
+      postBefore.deletedStatus.onlyThisDeleted && action == PSA.DeleteTree
+    if (postBefore.isDeleted && !isChangingDeletePostToDeleteTree)
+      throwForbidden("DwE5GUK5", "This post has already been deleted")
+
+    var numVisibleRepliesGone = 0
+    var numVisibleRepliesBack = 0
+    var numOrigPostVisibleRepliesGone = 0
+    var numOrigPostVisibleRepliesBack = 0
+
+    def updateNumVisible(postBefore: Post, postAfter: Post) {
+      if (!postBefore.isReply)
+        return
+      if (postBefore.isVisible && !postAfter.isVisible) {
+        dieIf(numVisibleRepliesBack > 0, "EdE6PK4W0")
+        numVisibleRepliesGone += 1
+        if (postBefore.isOrigPostReply) {
+          numOrigPostVisibleRepliesGone += 1
+        }
       }
-
-      val isChangingDeletePostToDeleteTree =
-        postBefore.deletedStatus.onlyThisDeleted && action == PSA.DeleteTree
-      if (postBefore.isDeleted && !isChangingDeletePostToDeleteTree)
-        throwForbidden("DwE5GUK5", "This post has already been deleted")
-
-      var numVisibleRepliesGone = 0
-      var numOrigPostVisibleRepliesGone = 0
+      if (!postBefore.isVisible && postAfter.isVisible) {
+        dieIf(numVisibleRepliesGone > 0, "EdE7BST2Z")
+        numVisibleRepliesBack += 1
+        if (postBefore.isOrigPostReply) {
+          numOrigPostVisibleRepliesBack += 1
+        }
+      }
+    }
 
       // Update the directly affected post.
       val postAfter = action match {
@@ -925,23 +946,12 @@ trait PostsDao {
         case PSA.CollapseTree =>
           postBefore.copyWithNewStatus(transaction.currentTime, userId, treeCollapsed = true)
         case PSA.DeletePost(clearFlags) =>
-          if (postBefore.isVisible && postBefore.isReply) {
-            numVisibleRepliesGone += 1
-            if (postBefore.isOrigPostReply) {
-              numOrigPostVisibleRepliesGone += 1
-            }
-          }
           postBefore.copyWithNewStatus(transaction.currentTime, userId, postDeleted = true)
         case PSA.DeleteTree =>
-          if (postBefore.isVisible && postBefore.isReply) {
-            numVisibleRepliesGone += 1
-            if (postBefore.isOrigPostReply) {
-              numOrigPostVisibleRepliesGone += 1
-            }
-          }
           postBefore.copyWithNewStatus(transaction.currentTime, userId, treeDeleted = true)
       }
 
+      updateNumVisible(postBefore, postAfter = postAfter)
       SHOULD // delete any review tasks.
 
       transaction.updatePost(postAfter)
@@ -966,13 +976,6 @@ trait PostsDao {
           case PSA.DeletePost(clearFlags) =>
             None
           case PSA.DeleteTree =>
-            if (successor.isVisible && successor.isReply) {
-              numVisibleRepliesGone += 1
-              if (successor.isOrigPostReply) {
-                // Was the orig post + all replies deleted recursively? Weird.
-                numOrigPostVisibleRepliesGone += 1
-              }
-            }
             if (successor.deletedStatus.areAncestorsDeleted) None
             else Some(successor.copyWithNewStatus(
               transaction.currentTime, userId, ancestorsDeleted = true))
@@ -982,6 +985,7 @@ trait PostsDao {
 
         var postsToReindex = Vector[Post]()
         anyUpdatedSuccessor foreach { updatedSuccessor =>
+          updateNumVisible(postBefore = successor, postAfter = updatedSuccessor)
           transaction.updatePost(updatedSuccessor)
           if (successor.isDeleted != updatedSuccessor.isDeleted) {
             postsToReindex :+= updatedSuccessor
@@ -996,12 +1000,16 @@ trait PostsDao {
       // COULD update database to fix this. (Previously, chat pages didn't count num-chat-messages.)
       val isChatWithWrongReplyCount =
         page.role.isChat && oldMeta.numRepliesVisible == 0 && numVisibleRepliesGone > 0
-      if (numVisibleRepliesGone > 0 && !isChatWithWrongReplyCount) {
+      val numVisibleRepliesChanged = numVisibleRepliesGone > 0 || numVisibleRepliesBack > 0
+
+      if (numVisibleRepliesChanged && !isChatWithWrongReplyCount) {
         newMeta = newMeta.copy(
-          numRepliesVisible = oldMeta.numRepliesVisible - numVisibleRepliesGone,
+          numRepliesVisible =
+              oldMeta.numRepliesVisible + numVisibleRepliesBack - numVisibleRepliesGone,
           numOrigPostRepliesVisible =
             // For now: use max() because the db field was just added so some counts are off.
-            math.max(oldMeta.numOrigPostRepliesVisible - numOrigPostVisibleRepliesGone, 0))
+            math.max(0, oldMeta.numOrigPostRepliesVisible +
+                numOrigPostVisibleRepliesBack - numOrigPostVisibleRepliesGone))
         markSectionPageStale = true
       }
       transaction.updatePageMeta(newMeta, oldMeta = oldMeta, markSectionPageStale)
@@ -1034,7 +1042,7 @@ trait PostsDao {
         throwForbidden("EsE5GYK02", "You're not staff so you cannot approve posts")
 
       // ------ The post
-// ?? unhide, if is spam?
+
       // Later: update lastApprovedEditAt, lastApprovedEditById and numDistinctEditors too,
       // or remove them.
       val postAfter = postBefore.copy(
@@ -1046,7 +1054,11 @@ trait PostsDao {
         approvedSource = Some(postBefore.currentSource),
         approvedHtmlSanitized = Some(postBefore.currentHtmlSanitized(
           commonmarkRenderer, pageMeta.pageRole)),
-        currentSourcePatch = None)
+        currentSourcePatch = None,
+        // SPAM RACE COULD unhide only if rev nr that got hidden <= rev that was reviewed. [6GKC3U]
+        hiddenAt = None,
+        hiddenById = None,
+        hiddenReason = None)
       transaction.updatePost(postAfter)
       transaction.indexPostsSoon(postAfter)
 
@@ -1425,22 +1437,6 @@ trait PostsDao {
     readOnlyTransaction(_.loadPost(pageId, postNr))
 
 
-  def makeReviewTask(causedById: UserId, post: Post, reasons: immutable.Seq[ReviewReason],
-        transaction: SiteTransaction): ReviewTask = {
-    val oldReviewTask = transaction.loadPendingPostReviewTask(post.uniqueId,
-      causedById = causedById)
-    val newTask = ReviewTask(
-      id = oldReviewTask.map(_.id).getOrElse(transaction.nextReviewTaskId()),
-      reasons = reasons,
-      causedById = causedById,
-      createdAt = transaction.currentTime,
-      createdAtRevNr = Some(post.currentRevisionNr),
-      postId = Some(post.uniqueId),
-      postNr = Some(post.nr))
-    newTask.mergeWithAny(oldReviewTask)
-  }
-
-
   private def updateVoteCounts(pageId: PageId, postNr: PostNr, transaction: SiteTransaction) {
     val post = transaction.loadThePost(pageId, postNr = postNr)
     updateVoteCounts(post, transaction)
@@ -1514,7 +1510,22 @@ object PostsDao {
     val mayEditWiki = user.isAuthenticated && post.tyype == PostType.CommunityWiki
     editsOwnPost || user.isStaff || mayEditWiki
   }
+
+
+  def makeReviewTask(causedById: UserId, post: Post, reasons: immutable.Seq[ReviewReason],
+    transaction: SiteTransaction): ReviewTask = {
+    val oldReviewTask = transaction.loadPendingPostReviewTask(post.uniqueId,
+      causedById = causedById)
+    val newTask = ReviewTask(
+      id = oldReviewTask.map(_.id).getOrElse(transaction.nextReviewTaskId()),
+      reasons = reasons,
+      causedById = causedById,
+      createdAt = transaction.currentTime,
+      createdAtRevNr = Some(post.currentRevisionNr),
+      postId = Some(post.uniqueId),
+      postNr = Some(post.nr))
+    newTask.mergeWithAny(oldReviewTask)
+  }
+
 }
-
-
 

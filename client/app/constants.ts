@@ -194,6 +194,7 @@ var ReviewReasons = {
   lateEdit: (reviewTask: ReviewTask) => reviewTask.reasonsLong & (1 << 7),
   postFlagged: (reviewTask: ReviewTask) => reviewTask.reasonsLong & (1 << 8),
   postUnpopular: (reviewTask: ReviewTask) => reviewTask.reasonsLong & (1 << 9),
+  postIsSpam: (reviewTask: ReviewTask) => reviewTask.reasonsLong & (1 << 10),
   userCreated: (reviewTask: ReviewTask) => reviewTask.reasonsLong & (1 << 20),
   userNewAvatar: (reviewTask: ReviewTask) => reviewTask.reasonsLong & (1 << 21),
   userNameEdited: (reviewTask: ReviewTask) => reviewTask.reasonsLong & (1 << 22),

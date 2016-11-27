@@ -47,6 +47,7 @@ trait SettingsDao {
 
 
   def saveSiteSettings(settingsToSave: SettingsToSave) {
+    // ... test settings ...
     readWriteTransaction { transaction =>
       transaction.upsertSiteSettings(settingsToSave)
       val newSettings = loadWholeSiteSettings(transaction)

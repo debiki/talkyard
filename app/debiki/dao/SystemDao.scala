@@ -152,13 +152,19 @@ class SystemDao(private val dbDaoFactory: DbDaoFactory, val cache: DaoMemCache) 
         hiddenById = Some(SystemUserId),
         hiddenReason = Some(s"Spam because: $isSpamReason"))
 
-      siteTransaction.updatePost(postAfter)
+      val reviewTask = PostsDao.makeReviewTask(
+        causedById = postAfter.createdById, postAfter, reasons = Vector(ReviewReason.PostIsSpam),
+        siteTransaction): ReviewTask
 
+      siteTransaction.updatePost(postAfter)
+      siteTransaction.upsertReviewTask(reviewTask)
+
+      // If the post was visible, need to rerender the page + update post counts.
       if (postBefore.isVisible) {
         val oldMeta = siteTransaction.loadPageMeta(postAfter.pageId) getOrDie "EdE4FK0YUP"
 
         val newNumOrigPostRepliesVisible =
-          if (postAfter.parentNr.contains(PageParts.BodyNr)) oldMeta.numOrigPostRepliesVisible - 1
+          if (postAfter.isOrigPostReply) oldMeta.numOrigPostRepliesVisible - 1
           else oldMeta.numOrigPostRepliesVisible
 
         val newMeta = oldMeta.copy(

@@ -67,6 +67,8 @@ object ReviewReason {
   /** If a post gets Unwanted votes or many Bury or Wrong, but few Likes. */
   case object PostUnpopular extends ReviewReason(1 << 9)
 
+  case object PostIsSpam extends ReviewReason(1 << 10)
+
   case object UserCreated extends ReviewReason(1 << 20, isOnPage = false)
   case object UserNewAvatar extends ReviewReason(1 << 21, isOnPage = false)
   case object UserNameEdited extends ReviewReason(1 << 22, isOnPage = false)
@@ -84,6 +86,7 @@ object ReviewReason {
     if ((value & LateEdit.toInt) != 0) reasons.append(LateEdit)
     if ((value & PostFlagged.toInt) != 0) reasons.append(PostFlagged)
     if ((value & PostUnpopular.toInt) != 0) reasons.append(PostUnpopular)
+    if ((value & PostIsSpam.toInt) != 0) reasons.append(PostIsSpam)
     if ((value & UserCreated.toInt) != 0) reasons.append(UserCreated)
     if ((value & UserNewAvatar.toInt) != 0) reasons.append(UserNewAvatar)
     if ((value & UserNameEdited.toInt) != 0) reasons.append(UserNameEdited)

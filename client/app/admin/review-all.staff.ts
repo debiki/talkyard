@@ -110,6 +110,9 @@ var ReviewTask = createComponent({
     if (ReviewReasons.postUnpopular(reviewTask)) {
       whys.push("is unpopular (many downvotes)");
     }
+    if (ReviewReasons.postIsSpam(reviewTask)) {
+      whys.push("seems to be spam");
+    }
 
     /* Later, when reviewing user profiles:
     This user is a new user, and sometimes misbehaves, and:
@@ -142,7 +145,7 @@ var ReviewTask = createComponent({
     var what = whatAndWhys[0];
     var whys = whatAndWhys[1];
 
-    var post = reviewTask.post;
+    var post: PostToReview = reviewTask.post;
 
     var openPostButton = Button({ onClick: this.openPostInNewTab }, "View page");
 
@@ -181,9 +184,13 @@ var ReviewTask = createComponent({
       }
     }
 
-    var colon = whys.length === 1 ? ':' : '';
+    var anyDot = whys.length === 1 ? '.' : '';
     var manyWhysClass = whys.length > 1 ? ' esReviewTask-manyWhys' : '';
-    var hereIsThePost = whys.length > 1 ? 'Here it is:' : '';
+
+    let itHasBeenHidden = !post.hiddenAtMs ? null :
+      "It has been hidden; only staff can see it. ";
+
+    var hereIsThePost = whys.length > 1 ? "Here it is:" : '';
 
     var anyPageTitleToReview = !reviewTask.pageId ? null :
       r.div({ className: 'esRT_TitleToReview' }, reviewTask.pageTitle);
@@ -194,8 +201,9 @@ var ReviewTask = createComponent({
           r.span({ className: 'esReviewTask_what' }, what),
           r.ul({ className: 'esReviewTask_whys' },
             whys.map((why) => r.li({ key: why }, why))),
-          colon),
+          anyDot),
         r.div({},
+          itHasBeenHidden,
           hereIsThePost,
           r.div({ className: 'esReviewTask_it' },
             anyPageTitleToReview,

@@ -313,7 +313,7 @@ case class Post(
   def isReply = PageParts.isReply(nr)
   def isTitle = nr == PageParts.TitleNr
   def isOrigPost = nr == PageParts.BodyNr
-  def isOrigPostReply = PageParts.isReply(nr) && parentNr == Some(PageParts.BodyNr)
+  def isOrigPostReply = PageParts.isReply(nr) && parentNr.contains(PageParts.BodyNr)
   def isMultireply = multireplyPostNrs.nonEmpty
   def isFlat = tyype == PostType.Flat
   def isHidden = hiddenAt.isDefined

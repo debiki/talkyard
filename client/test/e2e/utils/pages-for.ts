@@ -360,7 +360,7 @@ function pagesFor(browser) {
         assert(nameInHtml === name);
       },
 
-      clickLoginAsGuest: function(name: string) {
+      clickLoginAsGuest: function() {
         browser.waitAndClick('.esLoginDlg_guestBtn');
       },
 

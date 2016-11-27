@@ -57,6 +57,8 @@ object SettingsController extends mvc.Controller {
 
   def saveSiteSettings = AdminPostJsonAction(maxLength = 10*1000) { request: JsonPostRequest =>
     val settingsToSave = debiki.Settings2.settingsToSaveFromJson(request.body)
+    throwForbiddenIf(settingsToSave.orgFullName.exists(_.isEmptyOrContainsBlank),
+      "EdE5KP8R2", "Cannot clear the organization name")
     request.dao.saveSiteSettings(settingsToSave)
     loadSiteSettingsImpl(request)
   }

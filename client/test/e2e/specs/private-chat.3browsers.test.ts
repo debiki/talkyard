@@ -43,7 +43,7 @@ describe("private chat", function() {
 
   it("import a site", function() {
     var site: SiteData = make.forumOwnedByOwen('login-to-read', { title: forumTitle });
-    site.settings = { allowGuestLogin: true };
+    site.settings.allowGuestLogin = true;
     site.members.push(make.memberMichael());
     site.members.push(make.memberMaria());
     idAddress = server.importSiteData(site);

@@ -88,8 +88,12 @@ function getOrDie(url) {
 
 function showResponse(response) {
   var bodyString = response.body;
+  if (!_.isString(bodyString) && bodyString.toString) {
+    bodyString = bodyString.toString('utf8');
+  }
   if (!_.isString(bodyString)) {
-    bodyString = response.getBody('utf8');
+    bodyString = "(The response body is not a string, and has no toString function. " +
+        "Don't know how to show it. [EdE7BXE2I])"
   }
   return (
       "Response status code: " + response.statusCode + " (should have been 200)\n" +

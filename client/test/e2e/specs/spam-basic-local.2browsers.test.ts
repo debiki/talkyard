@@ -154,7 +154,6 @@ describe("spam test, no external services:", () => {
   });
 
   it("... but is rejected again", () => {
-    mallorysBrowser.debug();
     mallorysBrowser.serverErrorDialog.waitAndAssertTextMatches(/spam.*EdE5KJU3_/);
     mallorysBrowser.serverErrorDialog.clickClose();
     strangersBrowser.loginDialog.clickCancelGuestLogin();
