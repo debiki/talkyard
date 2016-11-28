@@ -15,10 +15,14 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *@
 
-@(pageMeta: Option[com.debiki.core.PageMeta])
+@(pageMeta: Option[com.debiki.core.PageMeta], pageTitle: Option[String])
 
-@{ /* SHOULD fallback to the title post text */ }
-<title>@{ pageMeta.map(_.htmlHeadTitle) getOrElse "" }</title>
+<title>@{
+  pageMeta.map(_.htmlHeadTitle) match {
+    case Some(title) if title.length > 0 => title
+    case _ => pageTitle.getOrElse("")
+  }
+}</title>
 <meta name="description" content="@{ pageMeta.map(_.htmlHeadDescription) getOrElse "" }">
 
 @* Some other viewport values, and the absence of a value,

@@ -121,7 +121,7 @@ class RenderContentActor(val daoFactory: SiteDaoFactory) extends Actor {
     // COULD add Metrics that times this.
     p.Logger.debug(s"Background rendering ${sitePageId.toPrettyString} [DwM7KGE2]")
     val dao = daoFactory.newSiteDao(sitePageId.siteId)
-    val (json, pageVersion) = ReactJson.pageToJson(sitePageId.pageId, dao)
+    val (json, pageVersion, _) = ReactJson.pageToJson(sitePageId.pageId, dao)
     val html = ReactRenderer.renderPage(json) getOrElse {
       p.Logger.error(s"Error rendering ${sitePageId.toPrettyString} [DwE5KJG2]")
       return

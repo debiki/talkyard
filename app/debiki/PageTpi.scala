@@ -28,7 +28,7 @@ import play.api.Play.current
 import SiteAssetBundlesController.{AssetBundleNameRegex, assetBundleFileName}
 
 
-object TemplateProgrammingInterface {
+object PageTpi {
 
   val (minMax, minMaxJs, minMaxCss) = {
     // Using Play.isDev causes Could not initialize class
@@ -43,7 +43,8 @@ object TemplateProgrammingInterface {
 object SiteTpi {
 
   def apply(request: DebikiRequest[_], json: Option[String] = None,
-    isSearchPage: Boolean = false) = new SiteTpi(request, json, isSearchPage)
+        pageTitle: Option[String] = None, isSearchPage: Boolean = false) =
+    new SiteTpi(request, json, pageTitle = pageTitle, isSearchPage = isSearchPage)
 
 }
 
@@ -59,8 +60,12 @@ object SiteTpi {
   * There is also a Page Template Programming Interface which is used
   * when rendering e.g. blog and forum pages.
   */
-class SiteTpi protected (val debikiRequest: DebikiRequest[_], val json: Option[String],
-    isSearchPage: Boolean = false) {
+class SiteTpi protected (
+  val debikiRequest: DebikiRequest[_],
+  val json: Option[String] = None,
+  pageTitle: Option[String] = None,
+  isSearchPage: Boolean = false) {
+
   def request = debikiRequest // rename to request, later
 
   def siteId  = debikiRequest.siteId
@@ -72,7 +77,7 @@ class SiteTpi protected (val debikiRequest: DebikiRequest[_], val json: Option[S
   def isAuthenticated = debikiRequest.user.map(_.isAuthenticated) == Some(true)
 
   def debikiMeta = {
-    xml.Unparsed(views.html.debikiMeta(anyCurrentPageMeta).body)
+    xml.Unparsed(views.html.debikiMeta(anyCurrentPageMeta, pageTitle).body)
   }
 
   def anyCurrentPageId: Option[PageId] = None
@@ -134,8 +139,8 @@ class SiteTpi protected (val debikiRequest: DebikiRequest[_], val json: Option[S
     else ""
   }
 
-  def minMaxCss = TemplateProgrammingInterface.minMaxCss
-  def minMaxJs = TemplateProgrammingInterface.minMaxJs
+  def minMaxCss = PageTpi.minMaxCss
+  def minMaxJs = PageTpi.minMaxJs
 
   def stylesheetBundle(bundleName: String): xml.NodeSeq = {
 
@@ -195,15 +200,16 @@ class SiteTpi protected (val debikiRequest: DebikiRequest[_], val json: Option[S
 }
 
 
-/** Used by Scala templates.
+/** Page Template Programming Interface, used by Scala templates that render pages.
   */
-class TemplateProgrammingInterface(
+class PageTpi(
   private val pageReq: PageRequest[_],
   override val reactStoreSafeJsonString: String,
   private val jsonVersion: CachedPageVersion,
   private val cachedPageHtml: String,
-  private val cachedVersion: CachedPageVersion)
-  extends SiteTpi(pageReq, None) {
+  private val cachedVersion: CachedPageVersion,
+  private val pageTitle: Option[String])
+  extends SiteTpi(pageReq, json = None, pageTitle = pageTitle) {
 
   override def anyCurrentPageId = Some(pageReq.thePageId)
   override def anyCurrentPageRole = Some(pageReq.thePageRole)

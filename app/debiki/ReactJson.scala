@@ -61,12 +61,13 @@ object ReactJson {
     PostSummaryLength + 80 // one line is roughly 80 chars
 
 
-
+  /** Returns (json, page-version, page-title).
+    */
   def pageToJson(
         pageId: PageId,
         dao: SiteDao,
         anyPageRoot: Option[PostNr] = None,
-        anyPageQuery: Option[PageQuery] = None): (String, CachedPageVersion) = {
+        anyPageQuery: Option[PageQuery] = None): (String, CachedPageVersion, Option[String]) = {
     dao.readOnlyTransaction(
       pageToJsonImpl(pageId, dao, _, anyPageRoot, anyPageQuery))
   }
@@ -119,7 +120,7 @@ object ReactJson {
         dao: SiteDao,
         transaction: SiteTransaction,
         anyPageRoot: Option[PostNr],
-        anyPageQuery: Option[PageQuery]): (String, CachedPageVersion) = {
+        anyPageQuery: Option[PageQuery]): (String, CachedPageVersion, Option[String]) = {
 
     // The json constructed here will be cached & sent to "everyone", so in this function
     // we always specify !isStaff and !restrictedOnly.
@@ -140,6 +141,8 @@ object ReactJson {
         pageParts.loadAllPosts()
         pageParts.allPosts
       }
+
+    val pageTitle = posts.find(_.isTitle).flatMap(_.approvedHtmlSanitized)
 
     var numPosts = 0
     var numPostsRepliesSection = 0
@@ -281,7 +284,7 @@ object ReactJson {
       appVersion = Globals.applicationVersion,
       dataHash = hashSha1Base64UrlSafe(jsonString))
 
-    (jsonString, version)
+    (jsonString, version, pageTitle)
   }
 
 

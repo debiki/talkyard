@@ -65,14 +65,14 @@ trait RenderedPageHtmlDao {
       val anyPageQuery = controllers.ForumController.parsePageQuery(pageRequest)
       val anyPageRoot = pageRequest.pageRoot
 
-      val (currentJson, currentVersion) = ReactJson.pageToJson(
+      val (currentJson, currentVersion, pageTitle) = ReactJson.pageToJson(
         pageRequest.thePageId, this, anyPageRoot, anyPageQuery)
 
       val (cachedHtml, cachedVersion) =
         renderContent(pageRequest.thePageId, currentVersion, currentJson)
 
-      val tpi = new TemplateProgrammingInterface(pageRequest, currentJson, currentVersion,
-        cachedHtml, cachedVersion)
+      val tpi = new PageTpi(pageRequest, currentJson, currentVersion,
+        cachedHtml, cachedVersion, pageTitle)
       val result: String = pageRequest.thePageRole match {
         case PageRole.EmbeddedComments =>
           views.html.templates.embeddedComments(tpi).body
