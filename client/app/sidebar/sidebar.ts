@@ -78,7 +78,7 @@ export var Sidebar = createComponent({  // RENAME to ContextBar
     }
 
     and:
-     localStorage.setItem('debikiShowSidebar', this.state.showSidebar ? 'true' : 'false');
+     putInLocalStorage('debikiShowSidebar', this.state.showSidebar ? 'true' : 'false');
     */
 
     // If is admin, show the admin guide, unless the admin has clicked away from it.

@@ -31,7 +31,7 @@
  */
 
 //------------------------------------------------------------------------------
-   module debiki2 {
+   namespace debiki2 {
 //------------------------------------------------------------------------------
 
 // DefinitelyTyped has defined EventEmitter2 in the wrong module? Unusable when
@@ -191,7 +191,7 @@ ReactDispatcher.register(function(payload) {
 
     case ReactActions.actionTypes.ShowForumIntro:
       store.hideForumIntro = !action.visible;
-      localStorage.setItem('hideForumIntro', action.visible ? 'false' : 'true');
+      putInLocalStorage('hideForumIntro', action.visible ? 'false' : 'true');
       if (store.hideForumIntro) $html.addClass('dw-hide-forum-intro');
       else $html.removeClass('dw-hide-forum-intro');
       break;

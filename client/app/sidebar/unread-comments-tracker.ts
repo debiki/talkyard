@@ -21,7 +21,7 @@
 /// <reference path="../ReactStore.ts" />
 
 //------------------------------------------------------------------------------
-   module debiki2.sidebar.UnreadCommentsTracker {
+   namespace debiki2.sidebar.UnreadCommentsTracker {
 //------------------------------------------------------------------------------
 
 var d = { i: debiki.internal, u: debiki.v0.util };
@@ -173,7 +173,7 @@ function rememberHasBeenRead(postId: number) {
   var postIdsRead = postIdsReadByPageId[pageId] || [];
   postIdsReadByPageId[pageId] = postIdsRead;
   postIdsRead.push(postId);
-  localStorage.setItem(localStorageKey, JSON.stringify(postIdsReadByPageId));
+  putInLocalStorage(localStorageKey, JSON.stringify(postIdsReadByPageId));
 }
 
 

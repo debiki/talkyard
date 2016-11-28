@@ -303,7 +303,7 @@ d.i.startEmbeddedEditor = function() {
 };
 
 if (location.pathname.search(ApiUrlPathPrefix) !== 0) {
-  sessionStorage.setItem('returnToSiteUrl', window.location.toString());
+  debiki2.putInSessionStorage('returnToSiteUrl', window.location.toString());
 }
 
 // Later, when there's a single router for everything, bind this to router events instead:

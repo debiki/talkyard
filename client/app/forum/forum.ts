@@ -452,7 +452,11 @@ var ForumButtons = createComponent({
         debiki2.editor.editNewForumPage(category.id, newTopicTypes[0]);
       }
       else {
-        die('EsE4FU0W2'); // I deleted the choose-topic-type dialog: UX hostile, no longer needed.
+        // There are many topic types specified for this category, because previously there
+        // was a choose-topic-type dialog. But I deleted that dialog; it made people confused.
+        // Right now, just default to Discussion instead. Later, change newTopicTypes from
+        // a collection to a defaultTopicType field; then this else {} can be deleted. [5YKW294]
+        debiki2.editor.editNewForumPage(category.id, PageRole.Discussion);
       }
     });
   },

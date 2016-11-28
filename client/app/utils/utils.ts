@@ -20,24 +20,56 @@
    namespace debiki2 {
 //------------------------------------------------------------------------------
 
+var stupidLocalStorage = {};
+var stupidSessionStorage = {};
+
 
 export function putInLocalStorage(key, value) {
-  localStorage.setItem(key, JSON.stringify(value));
+  // In Safari, private browsing mode, there's no local storage, so setItem() throws an error.
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
+  }
+  catch (exception) {
+    // This'll be lost on page reload, that'll have to do.
+    stupidLocalStorage[key] = value;
+  }
 }
+
 
 export function putInSessionStorage(key, value) {
-  sessionStorage.setItem(key, JSON.stringify(value));
+  // In Safari, private browsing mode, there's no session storage, so setItem() throws an error.
+  try {
+    sessionStorage.setItem(key, JSON.stringify(value));
+  }
+  catch (exception) {
+    // Lost on page reload, fine.
+    stupidSessionStorage[key] = value;
+  }
 }
+
 
 export function getFromLocalStorage(key) {
-  var value = localStorage.getItem(key);
-  return value && JSON.parse(value);
+  return getFromStorage(localStorage, stupidLocalStorage, key);
 }
 
+
 export function getFromSessionStorage(key) {
-  var value = sessionStorage.getItem(key);
-  return value && JSON.parse(value);
+  return getFromStorage(sessionStorage, stupidSessionStorage, key);
 }
+
+
+function getFromStorage(realStorage, stupidStorage, key) {
+  var value = realStorage.getItem(key);
+  value = value && JSON.parse(value);
+  // It's null if missing (not undefined), at least in Chrome.
+  if (value === null) {
+    value = stupidStorage[key];
+    if (_.isUndefined(value))
+      return null;
+  }
+  return value;
+}
+
 
 // There's a server side version (in ../../server/) that throws a helpful error.
 export function removeFromLocalStorage(key) {
