@@ -21,7 +21,6 @@ import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki.DebikiHttp.throwNotFound
 import debiki.TextAndHtml
-import io.efdi.server.Who
 import java.{util => ju}
 import scala.collection.{immutable, mutable}
 import scala.collection.mutable.ArrayBuffer
@@ -367,7 +366,7 @@ trait CategoriesDao {
         bodyHtmlSanitized = newCategoryData.aboutTopicBody.safeHtml,
         pinOrder = Some(ForumDao.AboutCategoryTopicPinOrder),
         pinWhere = Some(PinPageWhere.InCategory),
-        byWho, transaction)
+        byWho, spamRelReqStuff = None, transaction)
 
     if (newCategoryData.shallBeDefaultCategory) {
       setDefaultCategory(category, transaction)

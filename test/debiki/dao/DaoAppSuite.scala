@@ -20,7 +20,6 @@ package debiki.dao
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki.TextAndHtml
-import io.efdi.server.Who
 import org.scalatest._
 import org.scalatestplus.play.OneAppPerSuite
 import play.api.test.FakeApplication
@@ -47,6 +46,8 @@ class DaoAppSuite(
   implicit override lazy val app = FakeApplication(additionalConfiguration = extraConfig)
 
   def browserIdData = BrowserIdData("1.2.3.4", idCookie = "dummy_id_cookie", fingerprint = 334455)
+
+  def dummySpamRelReqStuff = SpamRelReqStuff(userAgent = None, referer = None, uri = "/dummy")
 
 
   def createPasswordOwner(password: String, dao: SiteDao): User = {

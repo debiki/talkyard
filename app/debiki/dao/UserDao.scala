@@ -21,7 +21,6 @@ import com.debiki.core._
 import debiki.DebikiHttp.throwForbidden
 import debiki.{BrowserId, SidStatus, DebikiSecurity}
 import io.efdi.server.http.throwForbiddenIf
-import io.efdi.server.{UserAndLevels, Who}
 import java.{util => ju}
 import play.api.libs.json.JsArray
 import scala.collection.immutable

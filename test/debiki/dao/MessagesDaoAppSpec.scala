@@ -20,7 +20,6 @@ package debiki.dao
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki.{TextAndHtml, Globals}
-import io.efdi.server.Who
 import org.scalatest._
 
 

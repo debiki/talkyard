@@ -20,7 +20,7 @@ package debiki.dao
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import io.efdi.server.notf.NotificationGenerator
-import io.efdi.server.{Who, pubsub}
+import io.efdi.server.pubsub
 import debiki.DebikiHttp.throwForbidden
 import debiki.TextAndHtml
 
@@ -33,7 +33,7 @@ trait MessagesDao {
     * gets auto added to the page? [5KTE02Z]
     */
   def startGroupTalk(title: TextAndHtml, body: TextAndHtml, pageRole: PageRole,
-        toUserIds: Set[UserId], sentByWho: Who): PagePath = {
+        toUserIds: Set[UserId], sentByWho: Who, spamRelReqStuff: SpamRelReqStuff): PagePath = {
 
     if (!pageRole.isPrivateGroupTalk)
       throwForbidden("EsE5FKU02", s"Not a private group talk page role: $pageRole")
@@ -53,6 +53,8 @@ trait MessagesDao {
       throwForbidden("EsE6GK0I2", o"""Cannot send a message to yourself. You are: $sentById,
           sending to: ${ toUserIds.mkString(", ") }""")
 
+    quickCheckIfSpamThenThrow(sentByWho, body, spamRelReqStuff)
+
     val (pagePath, notfs) = readWriteTransaction { transaction =>
       val sender = loadUserAndLevels(sentByWho, transaction)
 
@@ -68,7 +70,7 @@ trait MessagesDao {
       }
 
       val (pagePath, bodyPost) = createPageImpl2(pageRole, title, body,
-        byWho = sentByWho, transaction = transaction)
+        byWho = sentByWho, spamRelReqStuff = Some(spamRelReqStuff), transaction = transaction)
 
       (toUserIds + sentById) foreach { userId =>
         transaction.insertMessageMember(pagePath.pageId.getOrDie("EsE6JMUY2"), userId,

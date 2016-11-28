@@ -20,7 +20,7 @@ package controllers
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki._
-import debiki.antispam.AntiSpam
+import ed.server.spam.SpamChecker
 import debiki.dao.SiteDao
 import debiki.DebikiHttp._
 import io.efdi.server.http._
@@ -104,9 +104,9 @@ object LoginWithPasswordController extends mvc.Controller {
     if (!isValidNonLocalEmailAddress(emailAddress))
       throwUnprocessableEntity("DwE80KFP2", "Bad email address")
 
-    Globals.antiSpam.detectRegistrationSpam(request, name = username, email = emailAddress) map {
+    Globals.spamChecker.detectRegistrationSpam(request, name = username, email = emailAddress) map {
         isSpamReason =>
-      AntiSpam.throwForbiddenIfSpam(isSpamReason, "DwE7KVF2")
+      SpamChecker.throwForbiddenIfSpam(isSpamReason, "EdE7KVF2_")
 
       // Password strength tested in createPasswordUserCheckPasswordStrong() below.
 

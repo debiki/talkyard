@@ -149,6 +149,16 @@ object ImportExportController extends mvc.Controller {
           '${page.pageId}'""")
     }
 
+    def isMissing(what: Option[Option[Any]]) = what.isEmpty || what.get.isEmpty || {
+      what.get.get match {
+        case s: String => s.trim.isEmpty
+        case _ => false
+      }
+    }
+
+    throwForbiddenIf(isMissing(siteData.settings.orgFullName),
+      "EdE7KB4W5", "No organization name specified")
+
     // COULD do this in the same transaction as the one below — then, would need a function
     // `transaction.continueWithSiteId(zzz)`?
     val siteToSave = siteData.site
@@ -463,7 +473,7 @@ object ImportExportController extends mvc.Controller {
         closedById = readOptInt(jsObj, "closedById"),
         hiddenAt = readOptDateMs(jsObj, "hiddenAtMs"),
         hiddenById = readOptInt(jsObj, "hiddenById"),
-        //hiddenReason: ?
+        hiddenReason = readOptString(jsObj, "hiddenReason"),
         deletedStatus = deletedStatusDefaultOpen,
         deletedAt = readOptDateMs(jsObj, "deletedAtMs"),
         deletedById = readOptInt(jsObj, "deletedById"),

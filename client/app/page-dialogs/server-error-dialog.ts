@@ -131,7 +131,7 @@ var ServerErrorDialog = createComponent({
     // not yet be available, and we'll have to create all modal dialog elems ourselves here
     // manually.
     return (
-      r.div({},
+      r.div({ className: 's_SED_Wrap' },
         r.div({ className: 'modal-backdrop fade in', style: { opacity: 0.5 } }),
         r.div({ role: 'dialog', tabIndex: -1, className: 'fade in modal',
               style: { display: 'block' }},
@@ -142,7 +142,8 @@ var ServerErrorDialog = createComponent({
               r.div({ className: 'modal-body' },
                 r.div({ style: { whiteSpace: 'pre-wrap', fontFamily: 'monospace' }}, message)),
               r.div({ className: 'modal-footer' },
-                PrimaryButton({ onClick: this.close }, "Close")))))));
+                PrimaryButton({ onClick: this.close, className: 'e_SED_CloseB' },
+                  "Close")))))));
   }
 });
 

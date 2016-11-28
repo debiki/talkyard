@@ -21,7 +21,7 @@ import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki._
 import debiki.DebikiHttp._
-import debiki.antispam.AntiSpam
+import ed.server.spam.SpamChecker
 import io.efdi.server.http._
 import java.{util => ju}
 import play.api._
@@ -50,9 +50,9 @@ object LoginAsGuestController extends mvc.Controller {
     if (email.nonEmpty && User.emailIsWeird(email))
       throwForbidden("DwE04HK83", "Weird email. Please use a real email address")
 
-    Globals.antiSpam.detectRegistrationSpam(request, name = name, email = email) map {
+    Globals.spamChecker.detectRegistrationSpam(request, name = name, email = email) map {
         isSpamReason =>
-      AntiSpam.throwForbiddenIfSpam(isSpamReason, "DwE5KJU3")
+      SpamChecker.throwForbiddenIfSpam(isSpamReason, "EdE5KJU3_")
 
       val loginAttempt = GuestLoginAttempt(
         ip = request.ip,

@@ -82,7 +82,27 @@ interface ReviewTask {
   user?: BriefUser;
   pageId?: string;
   pageTitle?: string;
-  post?: any;
+  post?: PostToReview;
+}
+
+
+interface PostToReview {
+  pageId: PageId;
+  nr: PostNr;
+  uniqueId: PostId;
+  createdBy?: UserId;
+  currentSource: string;
+  currRevNr: number;
+  currRevComposedBy?: UserId;
+  approvedSource?: string;
+  approvedHtmlSanitized?: string;
+  approvedRevNr?: number;
+  // approvedRevComposedById
+  //approvedRevApprovedById
+  // better: post.lastApporvedRevision.approvedById
+  hiddenAtMs?: number;
+  hiddenById?: UserId;
+  hiddenReason?: string;
 }
 
 

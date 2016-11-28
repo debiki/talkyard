@@ -81,6 +81,17 @@ function addCommandsToBrowser(browser) {
     });
   });
 
+  browser.addCommand('refreshUntilGone', function(what) {
+    while (true) {
+      let resultsByBrowser = browser.isVisible(what);
+      let isVisibleValues = allBrowserValues(resultsByBrowser);
+      let goneEverywhere = !_.some(isVisibleValues);
+      if (goneEverywhere) break;
+      browser.refresh();
+      browser.pause(250);
+    }
+  });
+
   browser.addCommand('waitForAtLeast', function(num, selector) {
     browser.waitUntil(function () {
       var elemsList = allBrowserValues(browser.elements(selector));

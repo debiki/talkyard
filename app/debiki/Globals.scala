@@ -22,19 +22,19 @@ import akka.pattern.gracefulStop
 import com.codahale.metrics
 import com.debiki.core._
 import com.debiki.core.Prelude._
-import com.debiki.dao.rdb.{RdbDaoFactory, Rdb}
+import com.debiki.dao.rdb.{Rdb, RdbDaoFactory}
 import com.github.benmanes.caffeine
 import com.zaxxer.hikari.HikariDataSource
 import debiki.DebikiHttp.throwForbidden
 import debiki.Globals.NoStateError
-import debiki.antispam.AntiSpam
+import ed.server.spam.{SpamCheckActor, SpamChecker}
 import debiki.dao._
 import debiki.dao.migrations.ScalaBasedMigrations
 import ed.server.search.SearchEngineIndexer
 import io.efdi.server.notf.Notifier
 import java.{lang => jl, net => jn}
 import java.util.concurrent.TimeUnit
-import io.efdi.server.pubsub.{PubSubApi, PubSub, StrangerCounterApi}
+import io.efdi.server.pubsub.{PubSub, PubSubApi, StrangerCounterApi}
 import org.{elasticsearch => es}
 import org.scalactic._
 import play.{api => p}
@@ -43,7 +43,7 @@ import play.api.Play
 import play.api.Play.current
 import redis.RedisClient
 import scala.concurrent.duration._
-import scala.concurrent.{Future, Await, TimeoutException}
+import scala.concurrent.{Await, Future, TimeoutException}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util.matching.Regex
 import Globals._
@@ -174,7 +174,7 @@ class Globals {
     }
   }
 
-  def antiSpam: AntiSpam = state.antiSpam
+  def spamChecker: SpamChecker = state.spamChecker
 
   def securityComplaintsEmailAddress = state.securityComplaintsEmailAddress
 
@@ -384,6 +384,7 @@ class Globals {
     shutdownActorAndWait(state.mailerActorRef)
     shutdownActorAndWait(state.renderContentActorRef)
     shutdownActorAndWait(state.indexerActorRef)
+    shutdownActorAndWait(state.spamCheckActorRef)
     state.elasticSearchClient.close()
     state.redisClient.quit()
     _state = null
@@ -494,6 +495,12 @@ class Globals {
     val indexerActorRef = SearchEngineIndexer.startNewActor(
       indexerBatchSize, indexerIntervalSeconds, elasticSearchClient, Akka.system, systemDao)
 
+    def spamCheckBatchSize = conf.getInt("ed.spamcheck.batchSize") getOrElse 20
+    def spamCheckIntervalSeconds = conf.getInt("ed.spamcheck.intervalSeconds") getOrElse 1
+
+    val spamCheckActorRef = SpamCheckActor.startNewActor(
+      spamCheckBatchSize, spamCheckIntervalSeconds, Akka.system, systemDao)
+
     val nginxHost =
       conf.getString("ed.nginx.host").orElse(
         conf.getString("debiki.nginx.host")).noneIfBlank getOrElse "localhost"
@@ -501,8 +508,8 @@ class Globals {
 
     val renderContentActorRef = RenderContentService.startNewActor(Akka.system, siteDaoFactory)
 
-    val antiSpam = new AntiSpam()
-    antiSpam.start()
+    val spamChecker = new SpamChecker()
+    spamChecker.start()
 
     def systemDao: SystemDao = new SystemDao(dbDaoFactory, cache) // [rename] to newSystemDao()?
 

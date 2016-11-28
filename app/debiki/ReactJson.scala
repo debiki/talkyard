@@ -150,7 +150,8 @@ object ReactJson {
       // form replies, because they might contain private stuff. (Page type might have
       // been changed to/from Form.) [5GDK02]
       post.tyype != PostType.CompletedForm &&
-      post.tyype != PostType.Flat && ( // flat comments disabled [8KB42]
+      post.tyype != PostType.Flat &&  // flat comments disabled [8KB42]
+      !post.isHidden && (
       !post.deletedStatus.isDeleted || (
         post.deletedStatus.onlyThisDeleted && pageParts.hasNonDeletedSuccessor(post.nr)))
     }
@@ -889,8 +890,11 @@ object ReactJson {
           "approvedHtmlSanitized" -> JsStringOrNull(post.approvedHtmlSanitized),
           "approvedRevNr" -> JsNumberOrNull(post.approvedRevisionNr),
           "approvedRevComposedById" -> JsNull, // post.lastApprovedEditById ? ... hmm, see below
-          "approvedRevApprovedById" -> JsNull) // -> post.aprvdRevAprvdById?? ... hmm no,
+          "approvedRevApprovedById" -> JsNull, // -> post.aprvdRevAprvdById?? ... hmm no,
                                                 // better: post.lastApporvedRevision.approvedById
+          "hiddenAtMs" -> JsDateMsOrNull(post.hiddenAt),
+          "hiddenById" -> JsNumberOrNull(post.hiddenById),
+          "hiddenReason" -> JsStringOrNull(post.hiddenReason))
     }
     Json.obj(
       "id" -> stuff.id,

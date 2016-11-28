@@ -20,7 +20,6 @@ package debiki.dao
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki.{TextAndHtml, Globals}
-import io.efdi.server.Who
 import java.{util => ju}
 
 
@@ -40,7 +39,7 @@ class TagsAppSpec extends DaoAppSuite() {
   def reply(memberId: UserId, text: String, parentNr: Option[PostNr] = None): Post = {
     dao.insertReply(TextAndHtml.testBody(text), thePageId,
       replyToPostNrs = Set(parentNr getOrElse PageParts.BodyNr), PostType.Normal,
-      Who(memberId, browserIdData)).post
+      Who(memberId, browserIdData), dummySpamRelReqStuff).post
   }
 
   def addRemoveTags(post: Post, tags: Set[TagLabel], memberId: UserId) {

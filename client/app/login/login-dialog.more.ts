@@ -456,7 +456,7 @@ var GuestLoginDialogContent = createClassAndFactory({
             onChangeValueOk: (value, isOk) => this.updateValueOk('email', value, isOk) }),
         Button({ onClick: this.doLogin, disabled: disableSubmit, id: 'e2eLD_G_Submit' },
           "Login" + inOrderTo(this.props.loginReason)),
-        Button({ onClick: this.props.closeDialog }, "Cancel")));
+        Button({ onClick: this.props.closeDialog, className: 'e_LD_G_Cancel' }, "Cancel")));
   }
 });
 

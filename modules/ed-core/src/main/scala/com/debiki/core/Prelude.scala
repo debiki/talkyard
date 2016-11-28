@@ -482,6 +482,9 @@ object Prelude {
   implicit class BlankStringToNone(underlying: Option[String]) {
     def noneIfBlank: Option[String] =
       if (underlying.exists(_.trim.isEmpty)) None else underlying
+
+    def isEmptyOrContainsBlank: Boolean =
+      underlying.isEmpty || underlying.get.trim.isEmpty
   }
 
   /**

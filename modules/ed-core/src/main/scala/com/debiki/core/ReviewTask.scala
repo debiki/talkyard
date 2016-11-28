@@ -41,8 +41,11 @@ object ReviewAction {
   *
   * @param causedById A user that did something possibly harmful and therefore what s/he did
   *   should be reviewed. Or noticed a bad post and flagged it, and in that way actively
-  *   created a review task. Or the system user, when it sees a very unpopular post, and
-  *   therefore creates a review task.
+  *   created a review task.
+  *   Is part of a unique key. So if, for example, someone posts spam, and two different people
+  *   flag the spam post — then three review tasks get created: one with causedById = the spammer;
+  *   it'll be review-reason = post-is-spam. And one for each flagger; these tasks will have
+  *   review reason = post-was-flagged.
   * @param completedById The staff user that had a look at this review task and e.g. deleted
   *   a spam comment, or dismissed the review task if the comment was ok.
   * @param invalidatedAt If there is e.g. a review task about a comment, but the comment gets

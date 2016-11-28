@@ -20,7 +20,6 @@ package debiki.dao
 import com.debiki.core._
 import debiki.DebikiHttp.ResultException
 import debiki.{Globals, TextAndHtml}
-import io.efdi.server.Who
 import org.scalatest.{BeforeAndAfterAll, MustMatchers, FreeSpec}
 
 

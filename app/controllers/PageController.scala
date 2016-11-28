@@ -23,7 +23,6 @@ import controllers.Utils._
 import debiki._
 import debiki.DebikiHttp._
 import debiki.ReactJson.JsLongOrNull
-import debiki.antispam.AntiSpam.throwForbiddenIfSpam
 import io.efdi.server.http._
 import java.{util => ju}
 import play.api._
@@ -36,7 +35,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 object PageController extends mvc.Controller {
 
 
-  def createPage = AsyncPostJsonAction(RateLimits.CreateTopic, maxLength = 20 * 1000) { request =>
+  def createPage = PostJsonAction(RateLimits.CreateTopic, maxLength = 20 * 1000) { request =>
     import request.body
 
     val anyCategoryId = (body \ "categoryId").asOpt[CategoryId]
@@ -55,22 +54,17 @@ object PageController extends mvc.Controller {
 
     val titleTextAndHtml = TextAndHtml(titleText, isTitle = true)
 
-    Globals.antiSpam.detectNewPageSpam(request, titleTextAndHtml, bodyTextAndHtml) map {
-        isSpamReason =>
-      throwForbiddenIfSpam(isSpamReason, "DwE4CKB9")
-
-      // COULD make the Dao transaction like, and run this inside the transaction. [transaction]
-      // Non-staff users shouldn't be able to create anything outside the forum section(s)
-      // — except for private messages.
-      if (!request.theUser.isStaff && anyCategoryId.isEmpty && pageRole != PageRole.FormalMessage) {
-        throwForbidden("DwE8GKE4", "No category specified")
-      }
-
-      val pagePath = request.dao.createPage(pageRole, pageStatus, anyCategoryId, anyFolder,
-        anySlug, titleTextAndHtml, bodyTextAndHtml, showId, request.who)
-
-      OkSafeJson(Json.obj("newPageId" -> pagePath.pageId.getOrDie("DwE8GIK9")))
+    // COULD make the Dao transaction like, and run this inside the transaction. [transaction]
+    // Non-staff users shouldn't be able to create anything outside the forum section(s)
+    // — except for private messages.
+    if (!request.theUser.isStaff && anyCategoryId.isEmpty && pageRole != PageRole.FormalMessage) {
+      throwForbidden("DwE8GKE4", "No category specified")
     }
+
+    val pagePath = request.dao.createPage(pageRole, pageStatus, anyCategoryId, anyFolder,
+      anySlug, titleTextAndHtml, bodyTextAndHtml, showId, request.who, request.spamRelatedStuff)
+
+    OkSafeJson(Json.obj("newPageId" -> pagePath.pageId.getOrDie("DwE8GIK9")))
   }
 
 

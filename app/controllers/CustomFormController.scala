@@ -40,7 +40,7 @@ object CustomFormController extends mvc.Controller {
       throwBadRequest("EsE7YK4W0", s"Bad form inputs JSON: $errorMessage")
     }
     request.dao.insertReply(textAndHtml, pageId, Set.empty, PostType.CompletedForm,
-        request.whoOrUnknown)
+        request.whoOrUnknown, request.spamRelatedStuff)
     Ok
   }
 
@@ -60,7 +60,7 @@ object CustomFormController extends mvc.Controller {
 
     val pagePath = request.dao.createPage(pageType, PageStatus.Published, Some(category.id),
       anyFolder = None, anySlug = None, titleTextAndHtml, bodyTextAndHtml,
-      showId = true, request.who)
+      showId = true, request.who, request.spamRelatedStuff)
 
     OkSafeJson(Json.obj("newPageId" -> pagePath.pageId.getOrDie("DwE8GIK9")))
   }

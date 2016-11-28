@@ -24,7 +24,6 @@ import com.debiki.core.PageParts.FirstReplyNr
 import controllers.EditController
 import debiki._
 import debiki.DebikiHttp._
-import io.efdi.server.{Who, UserAndLevels}
 import io.efdi.server.notf.NotificationGenerator
 import io.efdi.server.pubsub.StorePatchMessage
 import play.api.libs.json.JsValue
@@ -52,7 +51,8 @@ trait PostsDao {
 
 
   def insertReply(textAndHtml: TextAndHtml, pageId: PageId, replyToPostNrs: Set[PostNr],
-        postType: PostType, byWho: Who): InsertPostResult = {
+        postType: PostType, byWho: Who, spamRelReqStuff: SpamRelReqStuff)
+        : InsertPostResult = {
 
     val authorId = byWho.id
 
@@ -68,6 +68,8 @@ trait PostsDao {
     if (replyToPostNrs.size > 1)
       throwNotImplemented("EsE7GKX2", o"""Please reply to one single person only.
         Multireplies temporarily disabled, sorry""")
+
+    quickCheckIfSpamThenThrow(byWho, textAndHtml, spamRelReqStuff)
 
     val (newPost, author, notifications, anyReviewTask) = readWriteTransaction { transaction =>
       val authorAndLevels = loadUserAndLevels(byWho, transaction)
@@ -176,6 +178,7 @@ trait PostsDao {
 
       transaction.insertPost(newPost)
       transaction.indexPostsSoon(newPost)
+      transaction.spamCheckPostsSoon(byWho, spamRelReqStuff, newPost)
       transaction.updatePageMeta(newMeta, oldMeta = oldMeta, markSectionPageStale = shallApprove)
       uploadRefs foreach { uploadRef =>
         transaction.insertUploadedFileReference(newPost.uniqueId, uploadRef, authorId)
@@ -298,11 +301,14 @@ trait PostsDao {
     * messages in between — then we'll append this new message to the old one, instead
     * of creating a new different chat message.
     */
-  def insertChatMessage(textAndHtml: TextAndHtml, pageId: PageId, byWho: Who): InsertPostResult = {
+  def insertChatMessage(textAndHtml: TextAndHtml, pageId: PageId, byWho: Who,
+        spamRelReqStuff: SpamRelReqStuff): InsertPostResult = {
     val authorId = byWho.id
 
     if (textAndHtml.safeHtml.trim.isEmpty)
       throwBadReq("DwE2U3K8", "Empty chat message")
+
+    quickCheckIfSpamThenThrow(byWho, textAndHtml, spamRelReqStuff)
 
     val (post, author, notifications) = readWriteTransaction { transaction =>
       val author = transaction.loadUser(authorId) getOrElse
@@ -327,9 +333,9 @@ trait PostsDao {
       }
       val (postNr, notfs) = anyLastMessageSameUserRecently match {
         case Some(lastMessage) if !lastMessage.isDeleted =>
-          appendToLastChatMessage(lastMessage, textAndHtml, byWho, transaction)
+          appendToLastChatMessage(lastMessage, textAndHtml, byWho, spamRelReqStuff, transaction)
         case None =>
-          createNewChatMessage(page, textAndHtml, byWho, transaction)
+          createNewChatMessage(page, textAndHtml, byWho, spamRelReqStuff, transaction)
       }
       (postNr, author, notfs)
     }
@@ -345,7 +351,7 @@ trait PostsDao {
 
 
   private def createNewChatMessage(page: PageDao, textAndHtml: TextAndHtml, who: Who,
-        transaction: SiteTransaction): (Post, Notifications) = {
+      spamRelReqStuff: SpamRelReqStuff, transaction: SiteTransaction): (Post, Notifications) = {
 
     // Note: Farily similar to insertReply() a bit above. [4UYKF21]
     val authorId = who.id
@@ -408,6 +414,8 @@ trait PostsDao {
       targetUserId = None)
 
     transaction.insertPost(newPost)
+    transaction.indexPostsSoon(newPost)
+    transaction.spamCheckPostsSoon(who, spamRelReqStuff, newPost)
     transaction.updatePageMeta(newMeta, oldMeta = oldMeta, markSectionPageStale = true)
     uploadRefs foreach { uploadRef =>
       transaction.insertUploadedFileReference(newPost.uniqueId, uploadRef, authorId)
@@ -426,7 +434,7 @@ trait PostsDao {
 
 
   private def appendToLastChatMessage(lastPost: Post, textAndHtml: TextAndHtml, byWho: Who,
-    transaction: SiteTransaction): (Post, Notifications) = {
+        spamRelReqStuff: SpamRelReqStuff, transaction: SiteTransaction): (Post, Notifications) = {
 
     // Note: Farily similar to editPostIfAuth() just below. [2GLK572]
     val authorId = byWho.id
@@ -460,6 +468,7 @@ trait PostsDao {
 
     transaction.updatePost(editedPost)
     transaction.indexPostsSoon(editedPost)
+    transaction.spamCheckPostsSoon(byWho, spamRelReqStuff, editedPost)
     saveDeleteUploadRefs(lastPost, editedPost = editedPost, authorId, transaction)
 
     val oldMeta = transaction.loadThePageMeta(lastPost.pageId)
@@ -483,13 +492,16 @@ trait PostsDao {
 
   /** Edits the post, if authorized to edit it.
     */
-  def editPostIfAuth(pageId: PageId, postNr: PostNr, who: Who, newTextAndHtml: TextAndHtml) {
+  def editPostIfAuth(pageId: PageId, postNr: PostNr, who: Who, spamRelReqStuff: SpamRelReqStuff,
+        newTextAndHtml: TextAndHtml) {
     val editorId = who.id
 
     // Note: Farily similar to appendChatMessageToLastMessage() just above. [2GLK572]
 
     if (newTextAndHtml.safeHtml.trim.isEmpty)
       throwBadReq("DwE4KEL7", EditController.EmptyPostErrorMessage)
+
+    quickCheckIfSpamThenThrow(who, newTextAndHtml, spamRelReqStuff)
 
     readWriteTransaction { transaction =>
       val editor = transaction.loadUser(editorId).getOrElse(
@@ -637,6 +649,7 @@ trait PostsDao {
 
       transaction.updatePost(editedPost)
       transaction.indexPostsSoon(editedPost)
+      transaction.spamCheckPostsSoon(who, spamRelReqStuff, editedPost)
       newRevision.foreach(transaction.insertPostRevision)
       saveDeleteUploadRefs(postToEdit, editedPost = editedPost, editorId, transaction)
 
@@ -876,28 +889,49 @@ trait PostsDao {
         userId: UserId, transaction: SiteTransaction) {
     import com.debiki.core.{PostStatusAction => PSA}
 
-      val page = PageDao(pageId, transaction)
-      val user = transaction.loadUser(userId) getOrElse throwForbidden("DwE3KFW2", "Bad user id")
-      throwIfMayNotSeePage(page, Some(user))(transaction)
+    val page = PageDao(pageId, transaction)
+    val user = transaction.loadUser(userId) getOrElse throwForbidden("DwE3KFW2", "Bad user id")
+    throwIfMayNotSeePage(page, Some(user))(transaction)
 
-      val postBefore = page.parts.thePost(postNr)
+    val postBefore = page.parts.thePost(postNr)
 
-      // Authorization.
-      if (!user.isStaff) {
-        if (postBefore.createdById != userId)
-          throwForbidden("DwE0PK24", "You may not modify that post, it's not yours")
+    // Authorization.
+    if (!user.isStaff) {
+      if (postBefore.createdById != userId)
+        throwForbidden("DwE0PK24", "You may not modify that post, it's not yours")
 
-        if (!action.isInstanceOf[PSA.DeletePost] && action != PSA.CollapsePost)
-          throwForbidden("DwE5JKF7", "You may not modify the whole tree")
+      if (!action.isInstanceOf[PSA.DeletePost] && action != PSA.CollapsePost)
+        throwForbidden("DwE5JKF7", "You may not modify the whole tree")
+    }
+
+    val isChangingDeletePostToDeleteTree =
+      postBefore.deletedStatus.onlyThisDeleted && action == PSA.DeleteTree
+    if (postBefore.isDeleted && !isChangingDeletePostToDeleteTree)
+      throwForbidden("DwE5GUK5", "This post has already been deleted")
+
+    var numVisibleRepliesGone = 0
+    var numVisibleRepliesBack = 0
+    var numOrigPostVisibleRepliesGone = 0
+    var numOrigPostVisibleRepliesBack = 0
+
+    def updateNumVisible(postBefore: Post, postAfter: Post) {
+      if (!postBefore.isReply)
+        return
+      if (postBefore.isVisible && !postAfter.isVisible) {
+        dieIf(numVisibleRepliesBack > 0, "EdE6PK4W0")
+        numVisibleRepliesGone += 1
+        if (postBefore.isOrigPostReply) {
+          numOrigPostVisibleRepliesGone += 1
+        }
       }
-
-      val isChangingDeletePostToDeleteTree =
-        postBefore.deletedStatus.onlyThisDeleted && action == PSA.DeleteTree
-      if (postBefore.isDeleted && !isChangingDeletePostToDeleteTree)
-        throwForbidden("DwE5GUK5", "This post has already been deleted")
-
-      var numVisibleRepliesGone = 0
-      var numOrigPostVisibleRepliesGone = 0
+      if (!postBefore.isVisible && postAfter.isVisible) {
+        dieIf(numVisibleRepliesGone > 0, "EdE7BST2Z")
+        numVisibleRepliesBack += 1
+        if (postBefore.isOrigPostReply) {
+          numOrigPostVisibleRepliesBack += 1
+        }
+      }
+    }
 
       // Update the directly affected post.
       val postAfter = action match {
@@ -912,23 +946,12 @@ trait PostsDao {
         case PSA.CollapseTree =>
           postBefore.copyWithNewStatus(transaction.currentTime, userId, treeCollapsed = true)
         case PSA.DeletePost(clearFlags) =>
-          if (postBefore.isVisible && postBefore.isReply) {
-            numVisibleRepliesGone += 1
-            if (postBefore.isOrigPostReply) {
-              numOrigPostVisibleRepliesGone += 1
-            }
-          }
           postBefore.copyWithNewStatus(transaction.currentTime, userId, postDeleted = true)
         case PSA.DeleteTree =>
-          if (postBefore.isVisible && postBefore.isReply) {
-            numVisibleRepliesGone += 1
-            if (postBefore.isOrigPostReply) {
-              numOrigPostVisibleRepliesGone += 1
-            }
-          }
           postBefore.copyWithNewStatus(transaction.currentTime, userId, treeDeleted = true)
       }
 
+      updateNumVisible(postBefore, postAfter = postAfter)
       SHOULD // delete any review tasks.
 
       transaction.updatePost(postAfter)
@@ -953,13 +976,6 @@ trait PostsDao {
           case PSA.DeletePost(clearFlags) =>
             None
           case PSA.DeleteTree =>
-            if (successor.isVisible && successor.isReply) {
-              numVisibleRepliesGone += 1
-              if (successor.isOrigPostReply) {
-                // Was the orig post + all replies deleted recursively? Weird.
-                numOrigPostVisibleRepliesGone += 1
-              }
-            }
             if (successor.deletedStatus.areAncestorsDeleted) None
             else Some(successor.copyWithNewStatus(
               transaction.currentTime, userId, ancestorsDeleted = true))
@@ -969,6 +985,7 @@ trait PostsDao {
 
         var postsToReindex = Vector[Post]()
         anyUpdatedSuccessor foreach { updatedSuccessor =>
+          updateNumVisible(postBefore = successor, postAfter = updatedSuccessor)
           transaction.updatePost(updatedSuccessor)
           if (successor.isDeleted != updatedSuccessor.isDeleted) {
             postsToReindex :+= updatedSuccessor
@@ -983,12 +1000,16 @@ trait PostsDao {
       // COULD update database to fix this. (Previously, chat pages didn't count num-chat-messages.)
       val isChatWithWrongReplyCount =
         page.role.isChat && oldMeta.numRepliesVisible == 0 && numVisibleRepliesGone > 0
-      if (numVisibleRepliesGone > 0 && !isChatWithWrongReplyCount) {
+      val numVisibleRepliesChanged = numVisibleRepliesGone > 0 || numVisibleRepliesBack > 0
+
+      if (numVisibleRepliesChanged && !isChatWithWrongReplyCount) {
         newMeta = newMeta.copy(
-          numRepliesVisible = oldMeta.numRepliesVisible - numVisibleRepliesGone,
+          numRepliesVisible =
+              oldMeta.numRepliesVisible + numVisibleRepliesBack - numVisibleRepliesGone,
           numOrigPostRepliesVisible =
             // For now: use max() because the db field was just added so some counts are off.
-            math.max(oldMeta.numOrigPostRepliesVisible - numOrigPostVisibleRepliesGone, 0))
+            math.max(0, oldMeta.numOrigPostRepliesVisible +
+                numOrigPostVisibleRepliesBack - numOrigPostVisibleRepliesGone))
         markSectionPageStale = true
       }
       transaction.updatePageMeta(newMeta, oldMeta = oldMeta, markSectionPageStale)
@@ -1033,7 +1054,11 @@ trait PostsDao {
         approvedSource = Some(postBefore.currentSource),
         approvedHtmlSanitized = Some(postBefore.currentHtmlSanitized(
           commonmarkRenderer, pageMeta.pageRole)),
-        currentSourcePatch = None)
+        currentSourcePatch = None,
+        // SPAM RACE COULD unhide only if rev nr that got hidden <= rev that was reviewed. [6GKC3U]
+        hiddenAt = None,
+        hiddenById = None,
+        hiddenReason = None)
       transaction.updatePost(postAfter)
       transaction.indexPostsSoon(postAfter)
 
@@ -1412,22 +1437,6 @@ trait PostsDao {
     readOnlyTransaction(_.loadPost(pageId, postNr))
 
 
-  def makeReviewTask(causedById: UserId, post: Post, reasons: immutable.Seq[ReviewReason],
-        transaction: SiteTransaction): ReviewTask = {
-    val oldReviewTask = transaction.loadPendingPostReviewTask(post.uniqueId,
-      causedById = causedById)
-    val newTask = ReviewTask(
-      id = oldReviewTask.map(_.id).getOrElse(transaction.nextReviewTaskId()),
-      reasons = reasons,
-      causedById = causedById,
-      createdAt = transaction.currentTime,
-      createdAtRevNr = Some(post.currentRevisionNr),
-      postId = Some(post.uniqueId),
-      postNr = Some(post.nr))
-    newTask.mergeWithAny(oldReviewTask)
-  }
-
-
   private def updateVoteCounts(pageId: PageId, postNr: PostNr, transaction: SiteTransaction) {
     val post = transaction.loadThePost(pageId, postNr = postNr)
     updateVoteCounts(post, transaction)
@@ -1501,7 +1510,22 @@ object PostsDao {
     val mayEditWiki = user.isAuthenticated && post.tyype == PostType.CommunityWiki
     editsOwnPost || user.isStaff || mayEditWiki
   }
+
+
+  def makeReviewTask(causedById: UserId, post: Post, reasons: immutable.Seq[ReviewReason],
+    transaction: SiteTransaction): ReviewTask = {
+    val oldReviewTask = transaction.loadPendingPostReviewTask(post.uniqueId,
+      causedById = causedById)
+    val newTask = ReviewTask(
+      id = oldReviewTask.map(_.id).getOrElse(transaction.nextReviewTaskId()),
+      reasons = reasons,
+      causedById = causedById,
+      createdAt = transaction.currentTime,
+      createdAtRevNr = Some(post.currentRevisionNr),
+      postId = Some(post.uniqueId),
+      postNr = Some(post.nr))
+    newTask.mergeWithAny(oldReviewTask)
+  }
+
 }
-
-
 

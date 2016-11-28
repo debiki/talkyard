@@ -24,7 +24,7 @@ import com.mohiva.play.silhouette.impl.providers.oauth1.services.PlayOAuth1Servi
 import com.mohiva.play.silhouette.impl.providers.oauth1.TwitterProvider
 import com.mohiva.play.silhouette.impl.providers.oauth2._
 import com.mohiva.play.silhouette.impl.providers._
-import debiki.antispam.AntiSpam
+import ed.server.spam.SpamChecker
 import debiki._
 import debiki.DebikiHttp._
 import io.efdi.server.http._
@@ -463,9 +463,9 @@ object LoginWithOpenAuthController extends Controller {
         None
     }
 
-    Globals.antiSpam.detectRegistrationSpam(request, name = username, email = email) map {
+    Globals.spamChecker.detectRegistrationSpam(request, name = username, email = email) map {
         isSpamReason =>
-      AntiSpam.throwForbiddenIfSpam(isSpamReason, "DwE2KP89")
+      SpamChecker.throwForbiddenIfSpam(isSpamReason, "EdE2KP89")
 
       val becomeOwner = LoginController.shallBecomeOwner(request, email)
 

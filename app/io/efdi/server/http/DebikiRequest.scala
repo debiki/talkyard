@@ -22,7 +22,6 @@ import debiki.DebikiHttp._
 import debiki._
 import debiki.dao.SiteDao
 import java.{util => ju}
-import io.efdi.server.Who
 import play.api.mvc
 import play.api.mvc.{Action => _, _}
 
@@ -62,6 +61,11 @@ abstract class DebikiRequest[A] {
     fingerprint = 0) // skip for now
 
   def browserIdIsNew = browserId.isNew
+
+  def spamRelatedStuff = SpamRelReqStuff(
+    userAgent = headers.get("User-Agent"),
+    referer = request.headers.get("referer"),
+    uri = uri)
 
   def theUser = user_!
   def theUserId = theUser.id

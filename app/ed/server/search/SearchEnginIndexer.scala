@@ -237,7 +237,7 @@ class IndexingActor(
         case ex: PSQLException if ex.getSQLState == "40001" =>
           p.Logger.error(
             o"""PostgreSQL serialization error when deleting
-                siteId:postId: $siteIdAndPost from index queue [EdE40001]""", ex)
+                siteId:postId: $siteIdAndPost from index queue [EdE40001IQ]""", ex)
         case ex: Exception =>
           p.Logger.error(
             s"error when deleting siteId:postId: $siteIdAndPost from index queue [EdE5PKW20]", ex)

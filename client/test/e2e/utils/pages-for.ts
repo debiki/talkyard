@@ -300,12 +300,32 @@ function pagesFor(browser) {
       },
 
       createPasswordAccount: function(data) {
-        browser.waitAndSetValue('#e2eFullName', data.fullName);
-        browser.waitAndSetValue('#e2eUsername', data.username);
-        browser.waitAndSetValue('#e2eEmail', data.email || data.emailAddress);
-        browser.waitAndSetValue('#e2ePassword', data.password);
-        browser.waitAndClick('#e2eSubmit');
+        api.loginDialog.fillInFullName(data.fullName);
+        api.loginDialog.fillInUsername(data.username);
+        api.loginDialog.fillInEmail(data.email || data.emailAddress);
+        api.loginDialog.fillInPassword(data.password);
+        api.loginDialog.clickSubmit();
+        api.loginDialog.waitForNeedVerifyEmailDialog();
+      },
+
+      fillInFullName: function(fullName) {
+        browser.waitAndSetValue('#e2eFullName', fullName);
+      },
+
+      fillInUsername: function(username) {
+        browser.waitAndSetValue('#e2eUsername', username);
+      },
+
+      fillInEmail: function(emailAddress) {
+        browser.waitAndSetValue('#e2eEmail', emailAddress);
+      },
+
+      waitForNeedVerifyEmailDialog: function() {
         browser.waitForVisible('#e2eNeedVerifyEmailDialog');
+      },
+
+      fillInPassword: function(password) {
+        browser.waitAndSetValue('#e2ePassword', password);
       },
 
       loginWithPassword: function(username, password?: string) {
@@ -323,21 +343,42 @@ function pagesFor(browser) {
       },
 
       tryLogin: function(username: string, password: string) {
-        browser.waitAndSetValue('#e2eUsername', username);
-        browser.waitAndSetValue('#e2ePassword', password);
-        browser.waitAndClick('#e2eSubmit');
+        api.loginDialog.fillInUsername(username);
+        api.loginDialog.fillInPassword(password);
+        api.loginDialog.clickSubmit();
       },
 
       loginAsGuest: function(name: string, email?: string) {
-        browser.waitAndClick('.esLoginDlg_guestBtn');
-        browser.waitAndSetValue('#e2eLD_G_Name', name);
+        api.loginDialog.clickLoginAsGuest();
+        api.loginDialog.fillInGuestName(name);
         if (email) {
-          browser.waitAndSetValue('#e2eLD_G_Email', email);
+          api.loginDialog.fillInGuestEmail(email);
         }
-        browser.waitAndClick('#e2eLD_G_Submit');
+        api.loginDialog.submitGuestLogin();
         browser.waitUntilModalGone();
         var nameInHtml = browser.waitAndGetVisibleText('.esTopbar .esAvtrName_name');
         assert(nameInHtml === name);
+      },
+
+      clickLoginAsGuest: function() {
+        browser.waitAndClick('.esLoginDlg_guestBtn');
+      },
+
+      fillInGuestName: function(name: string) {
+        browser.waitAndSetValue('#e2eLD_G_Name', name);
+      },
+
+      fillInGuestEmail: function(email: string) {
+        browser.waitAndSetValue('#e2eLD_G_Email', email);
+      },
+
+      submitGuestLogin: function() {
+        browser.waitAndClick('#e2eLD_G_Submit');
+      },
+
+      clickCancelGuestLogin: function() {
+        browser.waitAndClick('.e_LD_G_Cancel');
+        browser.waitUntilGone('.e_LD_G_Cancel');
       },
 
       clickCreateAccountInstead: function() {
@@ -349,7 +390,7 @@ function pagesFor(browser) {
         // This should be the first time we login with Gmail at this site, so we'll be asked
         // to choose a username.
         browser.waitAndSetValue('#e2eUsername', data.username);
-        browser.waitAndClick('#e2eSubmit');
+        api.loginDialog.clickSubmit();
         browser.waitUntilModalGone();
       },
 
@@ -377,7 +418,7 @@ function pagesFor(browser) {
         // This should be the first time we login with Facebook at this site, so we'll be asked
         // to choose a username.
         browser.waitAndSetValue('#e2eUsername', data.username);
-        browser.waitAndClick('#e2eSubmit');
+        api.loginDialog.clickSubmit();
         browser.waitUntilModalGone();
       },
 
@@ -408,6 +449,10 @@ function pagesFor(browser) {
         browser.waitUntilModalGone();
         browser.swithToOtherTabOrWindow();
         browser.waitForVisible('#e2eRPP_emailI');
+      },
+
+      clickSubmit: function() {
+        browser.waitAndClick('#e2eSubmit');
       },
 
       clickCancel: function() {
@@ -900,6 +945,17 @@ function pagesFor(browser) {
             browser.waitAndClick('#e2eAllowGuestsCB');
           },
         },
+      }
+    },
+
+    serverErrorDialog: {
+      waitAndAssertTextMatches: function(regex) {
+        browser.waitAndAssertVisibleTextMatches('.modal-dialog.dw-server-error', regex);
+      },
+
+      clickClose: function() {
+        browser.click('.e_SED_CloseB');
+        browser.waitUntilGone('.modal-dialog.dw-server-error');
       }
     },
 

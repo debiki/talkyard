@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2015 Kaj Magnus Lindberg
+ * Copyright (C) 2015-2016 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package debiki.antispam
+package ed.server.spam
 
 import com.debiki.core._
 import com.debiki.core.Prelude._
@@ -62,6 +62,8 @@ object NoApiKeyException extends QuickException
   * - Spamhaus: Link to 'dbltest.com', see:
   * - uribl: Link to 'test.uribl.com' or 2.0.0.127, see: http://uribl.com/about.shtml
   * - StopForumSpam: sign up with email test@test.com
+  * - Without any third party stuff, include in a comment or email addr: {{{__ed_spam _test_123__}}}
+  *   but _without the space in the middle_.
   *
   * Which domain block lists to use? Have a look here:
   *   https://www.intra2net.com/en/support/antispam/index.php_sort=accuracy_order=desc.html
@@ -117,7 +119,7 @@ object NoApiKeyException extends QuickException
   *
   * Thread safe.
   */
-class AntiSpam {
+class SpamChecker {
 
   /*
   val request: dispatch.Req = dispatch.url("http://api.hostip.info/country.php").GET
@@ -143,6 +145,10 @@ class AntiSpam {
   // Type the text '--viagra-test-123--' in a comment or title and it should be reported as
   // spam, always.
   val AlwaysSpamMagicText = "--viagra-test-123--"
+
+  // Break up the string so if someone copy-pastes this code snippet into ED,
+  // it won't be reported as spam.
+  val EdSpamMagicText = "__ed_spam" + "_test_123__"
 
   // All types: http://blog.akismet.com/2012/06/19/pro-tip-tell-us-your-comment_type/
   object AkismetSpamType {
@@ -201,99 +207,39 @@ class AntiSpam {
   def detectRegistrationSpam(request: DebikiRequest[_], name: String, email: String)
         : Future[Option[String]] = {
 
-    val stopForumSpamFuture = checkViaStopForumSpam(request, name, email)
-
-    val akismetBody = makeAkismetRequestBody(AkismetSpamType.Signup, request,
-      anyName = Some(name), anyEmail = Some(email))
-    val akismetFuture = checkViaAkismet(akismetBody)
-
-    aggregateResults(Seq(stopForumSpamFuture, akismetFuture), request,
-      nameAndEmail = Some(name, email))
-  }
-
-
-  def detectNewPageSpam(request: DebikiRequest[_], titleTextAndHtml: TextAndHtml,
-        bodyTextAndHtml: TextAndHtml): Future[Option[String]] = {
-
-    throwForbiddenIfLooksSpammy(request, bodyTextAndHtml)
-
-    val allTextAndHtml = titleTextAndHtml append bodyTextAndHtml
-    val urlsAndDomainsFutures = checkUrlsAndDomains(allTextAndHtml)
-    // COULD postpone the Akismet check until after the domain check has been done? [5KGUF2]
-
-    // Don't send the whole text, because of privacy issues. Send the links only.
-    // Or yes do that?  dupl question [7KECW2]
-    val payload = makeAkismetRequestBody(AkismetSpamType.ForumPost, request,
-      text = Some(allTextAndHtml.safeHtml))//htmlLinksOnePerLine))
-    val akismetFuture = checkViaAkismet(payload)
-
-    aggregateResults(urlsAndDomainsFutures :+ akismetFuture, request, Some(allTextAndHtml))
-  }
-
-
-  /** Returns a future that eventually succeeds with Some(reason-why-is-spam-message) if is spam,
-    * or None if not spam, or fails if we couldn't
-    * find out if it's spam or not, e.g. because Akismet is offline or if
-    * the API key has expired.
-    */
-  def detectPostSpam(request: DebikiRequest[_], pageId: PageId, textAndHtml: TextAndHtml,
-        quickButLessSafe: Boolean = false): Future[Option[String]] = {
-
-    throwForbiddenIfLooksSpammy(request, textAndHtml)
-
-    val urlsAndDomainsFutures = checkUrlsAndDomains(textAndHtml)
-    // COULD postpone the Akismet check until after the domain check has been done? [5KGUF2]
-    // So won't have to pay for Akismet requests, if the site is commercial.
-    // Currently the Spamhaus test happens synchronously already though.
-
-    // Don't send the whole text, because of privacy issues. Send the links only.
-    // Or yes do that?  dupl question [7KECW2]
-    val akismetFuture =
-      if (quickButLessSafe) Future.successful(None)
+    val spamTestFutures =
+      if (name contains EdSpamMagicText) {
+        Seq(Future.successful(Some(
+          s"Name contains test spam text: '$EdSpamMagicText' [EdM5KSWU7]")))
+      }
+      else if (email contains EdSpamMagicText) {
+        Seq(Future.successful(Some(
+          s"Email contains test spam text: '$EdSpamMagicText' [EdM5KSWU7]")))
+      }
       else {
-        val payload = makeAkismetRequestBody(AkismetSpamType.ForumPost, request,
-          text = Some(textAndHtml.safeHtml))//htmlLinksOnePerLine))
-        checkViaAkismet(payload)
+        val stopForumSpamFuture = checkViaStopForumSpam(request, name, email)
+
+        val akismetBody = makeAkismetRequestBody(AkismetSpamType.Signup, request.spamRelatedStuff,
+          user = None, anyName = Some(name), anyEmail = Some(email))
+        val akismetFuture = checkViaAkismet(akismetBody)
+
+        Seq(stopForumSpamFuture, akismetFuture)
       }
 
-    aggregateResults(urlsAndDomainsFutures :+ akismetFuture, request, Some(textAndHtml))
-  }
-
-
-  /** If spam found, returns a random is-spam result, and logs details about the spam stuff
-    * and which spam check services think it's spam.
-    */
-  def aggregateResults(futures: Seq[Future[Option[String]]], request: DebikiRequest[_],
-        textAndHtml: Option[TextAndHtml] = None, nameAndEmail: Option[(String, String)] = None)
-        : Future[Option[String]] = {
-    /* Could:
-    implicit class FutureHelper[T](f: Future[T]) extends AnyVal{
-      import akka.pattern.after
-      def orDefault(t: Timeout, default: => T)(implicit system: ActorSystem): Future[T] = {
-        val delayed = after(t.duration, system.scheduler)(Future.successful(default))
-        Future firstCompletedOf Seq(f, delayed)
-      }
-    }
-    see: http://stackoverflow.com/a/17467769/694469  */
-
-    Future.sequence(futures) map { results: Seq[Option[String]] =>
+    // Some dupl code (5HK0XC4W2)
+    Future.sequence(spamTestFutures) map { results: Seq[Option[String]] =>
       val spamResults: Seq[String] = results.filter(_.isDefined).map(_.get)
-      // Log like this and level info, for now only, when testing. Later on, gather stats
-      // and auto block users in some fancy way without blocking the wrong people.
+      SHOULD // insert into audit log (or some spam log?), gather stats, auto block.
       if (spamResults.nonEmpty) {
-        val user = request.user
-        p.Logger.info(i"""Spam (?) detected [DwM5JKF0]:
-           | - client ip: ${request.ip}
-           | - user/guest name: ${user.map(_.usernameOrGuestName) orElse nameAndEmail.map(_._1) }
-           | - user email: ${user.map(_.email) orElse nameAndEmail.map(_._2) }
-           | - user id: ${user.map(_.id)}
-           | - request uri: ${request.uri}
-           | - site: ${request.siteId} == ${request.domain}
-           |--- any text: (empty if registration spam) --------------------------------
-           |${textAndHtml.map(_.text) getOrElse ""}
-           |--- /end any text ---------------------------------------------------------""")
+        p.Logger.info(i"""Registration spam detected: [EdM4FK0W2]
+            | - client ip: ${request.ip}
+            | - user/guest name: $name
+            | - user email: $email
+            | - request uri: ${request.uri}
+            | - site: ${request.siteId} == ${request.domain}
+            |""")
         spamResults foreach { spamReason =>
-          p.Logger.info(s"Spam (?) reason [DwM2KPF8]: $spamReason")
+          p.Logger.info(s"Spam reason [EdM5GKP0R]: $spamReason")
         }
       }
       spamResults.headOption
@@ -301,22 +247,69 @@ class AntiSpam {
   }
 
 
-  /** Does some simple tests to try to fend off spam.
-    */
-  def throwForbiddenIfLooksSpammy(request: DebikiRequest[_], textAndHtml: TextAndHtml) {
-    def throwIfTooManyLinks(maxNumLinks: Int) {
-      if (textAndHtml.linkDomains.length > maxNumLinks)
-        throwForbidden("DwE4KFY2", o"""Your text includes more than $maxNumLinks links —
-           that makes me nervous about spam. Can you please remove some links?""")
+  def detectPostSpam(spamCheckTask: SpamCheckTask, stuffToSpamCheck: StuffToSpamCheck)
+        : Future[Option[String]] = {
+
+    val post = stuffToSpamCheck.getPost(spamCheckTask.sitePostId) getOrElse {
+      // Apparently the post was hard deleted?
+      return Future.successful(None)
     }
-    if (request.isStaff) {
-      throwIfTooManyLinks(15)
+
+    val user = stuffToSpamCheck.getUser(spamCheckTask.siteUserId) getOrElse {
+      // There's a foreign key + not-null constraint, so this is weird.
+      p.Logger.warn(s"User ${spamCheckTask.siteUserId} not found, skipping spam check [EdE3FK6YG1]")
+      return Future.successful(None)
     }
-    else if (request.isAuthenticated) {
-      throwIfTooManyLinks(7)
-    }
-    else {
-      throwIfTooManyLinks(3)
+
+    val textAndHtml = TextAndHtml(post.currentSource, isTitle = false)
+
+    val spamTestFutures =
+      if (textAndHtml.text contains EdSpamMagicText) {
+        Seq(Future.successful(Some(
+          s"Text contains test spam text: '$EdSpamMagicText' [EdM4DKF03]")))
+      }
+      else {
+        val urlsAndDomainsFutures = checkUrlsAndDomains(textAndHtml)
+        // COULD postpone the Akismet check until after the domain check has been done? [5KGUF2]
+        // So won't have to pay for Akismet requests, if the site is commercial.
+        // Currently the Spamhaus test happens synchronously already though.
+
+        // Don't send the whole text, because of privacy issues. Send the links only. [4KTF0WCR]
+        // Or yes do that?  dupl question [7KECW2]
+        val userIsABitTrusted = user.isStaff
+        val akismetFuture =
+          if (userIsABitTrusted) Future.successful(None)
+          else {
+            val payload = makeAkismetRequestBody(AkismetSpamType.ForumPost,
+              spamCheckTask.requestStuff,
+              text = Some(textAndHtml.safeHtml), // COULD: htmlLinksOnePerLine [4KTF0WCR]
+              user = Some(user))
+            checkViaAkismet(payload)
+          }
+
+        urlsAndDomainsFutures :+ akismetFuture
+      }
+
+    // Some dupl code (5HK0XC4W2)
+    Future.sequence(spamTestFutures) map { results: Seq[Option[String]] =>
+      val spamResults: Seq[String] = results.filter(_.isDefined).map(_.get)
+      SHOULD // insert into audit log (or some spam log?), gather stats, auto block.
+      if (spamResults.nonEmpty) {
+        p.Logger.info(i"""Text spam detected [EdM8YKF0]:
+            | - client ip: ${spamCheckTask.who.ip}
+            | - user/guest name: ${user.usernameOrGuestName}
+            | - user email: ${user.email}
+            | - user id: ${user.id}
+            | - request uri: ${spamCheckTask.requestStuff.uri}
+            | - siteId: ${spamCheckTask.siteId}
+            |--- text: ---------------------------------------------------------
+            |${textAndHtml.text}
+            |--- /end text -----------------------------------------------------""")
+        spamResults foreach { spamReason =>
+          p.Logger.info(s"Spam reason [EdM2KPF8]: $spamReason")
+        }
+      }
+      spamResults.headOption
     }
   }
 
@@ -534,7 +527,7 @@ class AntiSpam {
 
 
   def queryDomainBlockList(blockListDomain: String, blockListName: String,
-        domainsToCheck: Seq[String]): Future[Option[String]] = {
+        domainsToCheck: Set[String]): Future[Option[String]] = {
     // We ask the list if a domain is spam, by querying the DNS system: prefix the
     // suspect domain, reversed, to Spamhaus (e.g. 'dbl.spamhaus.org'), and if any ip
     // is returned, then the domain is in the block list.
@@ -621,15 +614,20 @@ class AntiSpam {
   }
 
 
-  private def makeAkismetRequestBody(tyype: String, request: DebikiRequest[_],
-      pageId: Option[PageId] = None, text: Option[String] = None, anyName: Option[String] = None,
-      anyEmail: Option[String] = None): String = {
+  private def makeAkismetRequestBody(tyype: String, spamRelatedStuff: SpamRelReqStuff,
+      pageId: Option[PageId] = None, text: Option[String] = None, user: Option[User],
+      anyName: Option[String] = None, anyEmail: Option[String] = None): String = {
+
+    // Either 1) the user is known, or 2) we're creating a new site or user — then
+    // only name & email known.
+    dieIf(anyEmail.isDefined != anyName.isDefined, "EdE6GTB20")
+    dieIf(anyEmail.isDefined == user.isDefined, "EdE2PW2U4")
+    def theUser = user getOrDie "EdE5PDRA"
 
     if (anyAkismetKey.isEmpty)
       return "No Akismet API key configured [DwM4GLU8]"
 
     val body = new StringBuilder()
-    def theUser = request.theUser
 
     // Documentation: http://akismet.com/development/api/#comment-check
 
@@ -644,18 +642,21 @@ class AntiSpam {
     // (required) User agent string of the web browser submitting the comment - typically
     // the HTTP_USER_AGENT cgi variable. Not to be confused with the user agent
     // of your Akismet library.
-    val browserUserAgent = request.headers.get("User-Agent") getOrElse "Unknown"
+    val browserUserAgent = spamRelatedStuff.userAgent getOrElse "Unknown"
     body.append("&user_agent=" + encode(browserUserAgent))
 
     // The content of the HTTP_REFERER header should be sent here.
-    request.headers.get("referer") foreach { referer =>
-      body.append("&referrer=" + encode(referer)) // should be 2 'r' yes
+    spamRelatedStuff.referer foreach { referer =>
+      // Should be 2 'r' in "referrer" below,
+      // see: https://akismet.com/development/api/#comment-check
+      body.append("&referrer=" + encode(referer))
     }
 
+    /*
     // The permanent location of the entry the comment was submitted to.
     pageId foreach { id =>
       body.append("&permalink=" + encode(request.origin + "/-" + id))
-    }
+    } */
 
     // May be blank, comment, trackback, pingback, or a made up value like "registration".
     // It's important to send an appropriate value, and this is further explained here.
@@ -713,7 +714,7 @@ class AntiSpam {
 }
 
 
-object AntiSpam {
+object SpamChecker {
 
   def throwForbiddenIfSpam(isSpamReason: Option[String], errorCode: String) {
     isSpamReason foreach { reason =>
