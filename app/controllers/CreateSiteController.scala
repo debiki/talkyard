@@ -118,6 +118,7 @@ class CreateSiteController @Inject() extends Controller {
       throwForbiddenIfSpam(isSpamReason, "EdE4KG28")
 
       val hostname = s"$localHostname.${Globals.baseDomainNoPort}"
+      val deleteOldSite = isTestSiteOkayToDelete && hostname.startsWith(SiteHost.E2eTestPrefix)
 
       val goToUrl: String =
         try {
@@ -127,7 +128,7 @@ class CreateSiteController @Inject() extends Controller {
             creatorId = request.user.map(_.id) getOrElse UnknownUserId,
             browserIdData = request.theBrowserIdData, organizationName = organizationName,
             isTestSiteOkayToDelete = isTestSiteOkayToDelete, skipMaxSitesCheck = okE2ePassword,
-            pricePlan = pricePlan)
+            deleteOldSite = deleteOldSite, pricePlan = pricePlan)
           Globals.originOf(hostname)
         }
         catch {

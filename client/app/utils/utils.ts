@@ -74,6 +74,7 @@ function getFromStorage(realStorage, stupidStorage, key) {
 // There's a server side version (in ../../server/) that throws a helpful error.
 export function removeFromLocalStorage(key) {
   localStorage.removeItem(key);
+  delete stupidLocalStorage[key];
 }
 
 // From here: http://stackoverflow.com/a/7616484/694469

@@ -28,6 +28,8 @@ object Site {
     */
   val FirstSiteId = "1"
 
+  val TestIdPrefix = "test__"
+
   val Ipv4AnyPortRegex = """(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})(:\d+)?""".r
 
 
@@ -162,6 +164,9 @@ object SiteHost {
   case object RoleRedirect extends Role(2)
   case object RoleLink extends Role(3)
   case object RoleDuplicate extends Role(4)
+
+  /** Should be used as prefix for both the hostname and the site name, for test sites. */
+  val E2eTestPrefix = "e2e-test-"
 }
 
 

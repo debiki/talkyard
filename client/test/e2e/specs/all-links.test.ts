@@ -22,10 +22,7 @@ describe('all links', function() {
 
 
   it('create site with all links', function() {
-    var site: SiteData = make.emptySiteOwnedByOwen();
-    site.meta.localHostname = 'all-links-' + Date.now();
-    site.meta.name = site.meta.localHostname;
-
+    let site: SiteData = make.emptySiteOwnedByOwen();
     site.members.push(make.memberAdminAdam());
     site.members.push(make.memberAdminAlice());
     site.members.push(make.memberModeratorMons());
@@ -131,7 +128,7 @@ describe('all links', function() {
 
 
     var idAddress = server.importSiteData(site);
-    browser.go(idAddress.siteIdOrigin);
+    browser.go(idAddress.origin);
     // browser.assertTextMatches('body', /login as admin to create something/);
 
     browser.perhapsDebug();

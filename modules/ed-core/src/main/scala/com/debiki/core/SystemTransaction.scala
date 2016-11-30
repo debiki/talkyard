@@ -44,6 +44,8 @@ trait SystemTransaction {
   def lookupCanonicalHost(hostname: String): Option[CanonicalHostLookup]
 
   def insertSiteHost(tenantId: String, host: SiteHost)
+  def deleteAnyHostname(hostname: String): Boolean
+  def deleteSiteByName(name: String): Boolean
 
   //def deleteSite(siteId: SiteId)
 
@@ -81,3 +83,6 @@ trait SystemTransaction {
 
 }
 
+
+case class DuplicateHostnameException(hostname: String) extends QuickMessageException(
+  s"Hostname already exists: '$hostname'")

@@ -44,7 +44,7 @@ class ReviewStuffAppSuite(randomString: String)
         anyCategoryId = Some(categoryId), anyFolder = Some("/"), anySlug = Some(""),
         titleTextAndHtml = TextAndHtml.testTitle("title_62952 $r"),
         bodyTextAndHtml = TextAndHtml.testBody("discussion_230593 $r"),
-        showId = true, Who(theAdmin.id, browserIdData)).thePageId
+        showId = true, Who(theAdmin.id, browserIdData), dummySpamRelReqStuff).thePageId
     }
 
     def testAdminsRepliesApproved(adminId: UserId, pageId: PageId) {

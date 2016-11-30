@@ -47,7 +47,8 @@ trait CreateSiteDao {
   def createSite(name: String, status: SiteStatus, hostname: String,
         embeddingSiteUrl: Option[String], organizationName: String,
         creatorEmailAddress: String, creatorId: UserId, browserIdData: BrowserIdData,
-        isTestSiteOkayToDelete: Boolean, skipMaxSitesCheck: Boolean, pricePlan: PricePlan)
+        isTestSiteOkayToDelete: Boolean, skipMaxSitesCheck: Boolean,
+        deleteOldSite: Boolean, pricePlan: PricePlan)
         : Site = {
 
     if (!Site.isOkayName(name))
@@ -63,6 +64,15 @@ trait CreateSiteDao {
     }
 
     readWriteTransaction { transaction =>
+      if (deleteOldSite) {
+        dieUnless(hostname.startsWith(SiteHost.E2eTestPrefix), "EdE7PK5W8")
+        dieUnless(name.startsWith(SiteHost.E2eTestPrefix), "EdE50K5W4")
+        transaction.asSystem.deleteAnyHostname(hostname)
+        transaction.asSystem.deleteSiteByName(name)
+        // Should add this CreateSiteDao to SystemDao instead? This is a bit weird:
+        debiki.Globals.systemDao.forgetHostname(hostname)
+      }
+
       val newSite = transaction.createSite(name = name, status, hostname = hostname,
         embeddingSiteUrl, creatorIp = browserIdData.ip, creatorEmailAddress = creatorEmailAddress,
         quotaLimitMegabytes = config.createSite.quotaLimitMegabytes,
@@ -87,7 +97,13 @@ trait CreateSiteDao {
         orgFullName = Some(Some(organizationName))))
 
       val newSiteHost = SiteHost(hostname, SiteHost.RoleCanonical)
-      transaction.insertSiteHost(newSiteHost)
+      try transaction.insertSiteHost(newSiteHost)
+      catch {
+        case _: DuplicateHostnameException =>
+          throwForbidden2(
+            "EdE7FKW20", o"""There's already a site with hostname '${newSiteHost.hostname}'. Add
+            the URL param deleteOldSite=true to delete it (works for e2e tests only)""")
+      }
 
       createSystemUser(transaction)
       transaction.createUnknownUser(transaction.currentTime)

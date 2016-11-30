@@ -18,7 +18,8 @@ describe('/-/create-site  @createsite', function() {
 
   function createPasswordTestData() {
     var testId = utils.generateTestId();
-    var localHostname = settings.testLocalHostnamePrefix + 'create-site-' + testId;
+    var localHostname = settings.localHostname ||
+                          settings.testLocalHostnamePrefix + 'create-site-' + testId;
     return {
       testId: testId,
       localHostname: localHostname,
@@ -33,6 +34,7 @@ describe('/-/create-site  @createsite', function() {
   }
 
   it('can create a new site as a Password user  @login @password', function() {
+    browser.perhapsDebugBefore();
     var data = createPasswordTestData();
     browser.go(utils.makeCreateSiteWithFakeIpUrl());
     pages.createSite.fillInFieldsAndSubmit(data);

@@ -42,7 +42,9 @@ import play.api.mvc.{Action => _}
 object ImportExportController extends mvc.Controller {
 
 
-  def importSiteJson = PostJsonAction(RateLimits.NoRateLimits, maxLength = 9999) { request =>
+  def importSiteJson(deleteOldSite: Option[Boolean]) =
+        PostJsonAction(RateLimits.NoRateLimits, maxLength = 9999) { request =>
+
     val okE2ePassword = hasOkE2eTestPassword(request.request)
     if (!okE2ePassword)
       throwForbidden("EsE5JKU2", "Importing sites is only allowed for e2e testing right now")
@@ -58,10 +60,16 @@ object ImportExportController extends mvc.Controller {
               invalid value combinations: ${ex.getMessage}""")
       }
 
-    val newSite = doImportSite(siteData, request)
+    val deleteOld = deleteOldSite.contains(true)
+    throwForbiddenIf(
+      deleteOld && siteData.site.hosts.exists(!_.hostname.startsWith(SiteHost.E2eTestPrefix)),
+      "EdE7GPK4F0", s"Can only overwrite hostnames that start with ${SiteHost.E2eTestPrefix}")
+
+    val newSite = doImportSite(siteData, request, deleteOldSite = deleteOld)
 
     Ok(Json.obj(
       "id" -> newSite.id,
+      "origin" -> (Globals.schemeColonSlashSlash + newSite.theCanonicalHost.hostname),
       "siteIdOrigin" -> Globals.siteByIdOrigin(newSite.id))) as JSON
   }
 
@@ -142,7 +150,8 @@ object ImportExportController extends mvc.Controller {
   }
 
 
-  def doImportSite(siteData: ImportSiteData, request: JsonPostRequest): Site = {
+  def doImportSite(siteData: ImportSiteData, request: JsonPostRequest, deleteOldSite: Boolean)
+        : Site = {
     for (page <- siteData.pages) {
       val path = siteData.pagePaths.find(_.pageId == page.pageId)
       throwBadRequestIf(path.isEmpty, "EsE5GKY2", o"""No PagePath included for page id
@@ -173,6 +182,7 @@ object ImportExportController extends mvc.Controller {
       browserIdData = request.theBrowserIdData,
       isTestSiteOkayToDelete = true,
       skipMaxSitesCheck = true,
+      deleteOldSite = deleteOldSite,
       pricePlan = "Unknown")  // [4GKU024S]
 
     val newDao = Globals.siteDao(site.id)

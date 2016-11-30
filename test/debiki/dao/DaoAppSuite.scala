@@ -94,7 +94,7 @@ class DaoAppSuite(
     dao.createPage(pageRole, PageStatus.Published, anyCategoryId = anyCategoryId,
       anyFolder = Some("/"), anySlug = Some(""),
       titleTextAndHtml = titleTextAndHtml, bodyTextAndHtml = bodyTextAndHtml,
-      showId = true, Who(authorId, browserIdData)).thePageId
+      showId = true, Who(authorId, browserIdData), dummySpamRelReqStuff).thePageId
   }
 
 }

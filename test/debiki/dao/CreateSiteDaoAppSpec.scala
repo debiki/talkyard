@@ -41,7 +41,8 @@ class CreateSiteDaoAppSpec extends DaoAppSuite(maxSitesTotal = Some(75)) {
       embeddingSiteUrl = None, organizationName = s"Org Name $thePrefix",
       creatorEmailAddress = theEmail, creatorId = user.id,
       BrowserIdData(ip = theIp, idCookie = theIdCookie, fingerprint = theFingerprint),
-      isTestSiteOkayToDelete = isTestSite, skipMaxSitesCheck = false, pricePlan = "Unknown")
+      isTestSiteOkayToDelete = isTestSite, skipMaxSitesCheck = false,
+      deleteOldSite = false, pricePlan = "Unknown")
   }
 
 
@@ -53,11 +54,11 @@ class CreateSiteDaoAppSpec extends DaoAppSuite(maxSitesTotal = Some(75)) {
 
       info("a real site")
       val realSite = createOneSite(dao, user, 20, 1)
-      realSite.id mustNot include(TestSiteIdPrefix)
+      realSite.id mustNot include(Site.TestIdPrefix)
 
       info("a test site")
       val testSite = createOneSite(dao, user, 40, 1, isTestSite = true)
-      testSite.id must startWith(TestSiteIdPrefix)
+      testSite.id must startWith(Site.TestIdPrefix)
     }
 
 

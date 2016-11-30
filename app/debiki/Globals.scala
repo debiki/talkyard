@@ -152,7 +152,7 @@ class Globals {
   def forbiddenPassword: Option[String] = state.forbiddenPassword
 
 
-  def systemDao = state.systemDao  // [rename] to newSystemDao()?
+  def systemDao: SystemDao = state.systemDao  // [rename] to newSystemDao()?
 
 
   def siteDao(siteId: SiteId): SiteDao =  // [rename] to newSiteDao?

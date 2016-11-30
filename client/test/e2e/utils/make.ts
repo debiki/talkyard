@@ -1,6 +1,7 @@
 /// <reference path="../test-types.ts"/>
 /// <reference path="../../../../modules/definitely-typed/lodash/lodash.d.ts"/>
 /// <reference path="../../../../modules/definitely-typed/node/node.d.ts"/>
+import settings = require('./settings');
 declare function require(...whatever): any;
 
 import _ = require('lodash');
@@ -16,11 +17,13 @@ function getAndBumpNextPostId() {
   return nextPostId - 1;
 }
 
-var emptySite: SiteData = {
+let localHostname = settings.localHostname || 'e2e-test-site';
+
+let emptySite: SiteData = {
   meta: {
     id: null,
-    name: null,
-    localHostname: null,
+    name: localHostname + '-' + Date.now(),
+    localHostname: localHostname,
     creatorEmailAddress: "e2e-test--owner@example.com",
     status: 2,
     createdAtMs: DefaultCreatedAtMs,
@@ -293,7 +296,7 @@ var make = {
 
   forumOwnedByOwen: function(namePrefix: string, options?): SiteData {
     var site: SiteData = make.emptySiteOwnedByOwen();
-    site.meta.localHostname = namePrefix + Date.now();
+    site.meta.localHostname = site.meta.localHostname || 'e2e-test-' + Date.now(); // namePrefix
     site.meta.name = site.meta.localHostname;
 
     options = options || {};

@@ -11,6 +11,10 @@ export function getFromLocalStorage(key): string {
   return null;
 }
 
+export function getFromSessionStorage(key): string {
+  return null;
+}
+
 export function removeFromLocalStorage(key) {
   throw new Error('removeFromLocalStorage called server side [DwE8PUMK2]');
 }

@@ -7,6 +7,8 @@ interface TestSettings {
   secure: boolean;
   host: string;
   scheme: string;
+  deleteOldSite: boolean;
+  localHostname?: string; // must start with 'e2e-test-' (see settings.ts)
   testLocalHostnamePrefix: string;
   testEmailAddressPrefix: string;
   e2eTestPassword: string;
@@ -259,7 +261,8 @@ interface NewCategoryStuff {
 
 interface IdAddress {
   id: string;
-  siteIdOrigin: string;
+  origin: string, // e.g. kittens-forum.example.com
+  siteIdOrigin: string; // e.g. site-123.example.com
 }
 
 

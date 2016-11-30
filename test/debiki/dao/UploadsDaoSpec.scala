@@ -221,7 +221,7 @@ class UploadsDaoAppSpec extends DaoAppSuite(disableScripts = false) {
       val pagePath = dao.createPage(PageRole.Discussion, PageStatus.Published,
         anyCategoryId = None, anyFolder = None, anySlug = None,
         titleTextAndHtml = titleTextAndHtml, bodyTextAndHtml = bodyTextAndHtml,
-        showId = true, Who(user.id, browserIdData))
+        showId = true, Who(user.id, browserIdData), dummySpamRelReqStuff)
 
       resourceUsage = dao.loadResourceUsage()
       resourceUsage.numUploads mustBe 1
@@ -271,7 +271,7 @@ class UploadsDaoAppSpec extends DaoAppSuite(disableScripts = false) {
       val pagePath = dao.createPage(PageRole.Discussion, PageStatus.Published,
         anyCategoryId = None, anyFolder = None, anySlug = None,
         titleTextAndHtml = titleTextAndHtml, bodyTextAndHtml = bodyTextAndHtml,
-        showId = true, Who(user.id, browserIdData))
+        showId = true, Who(user.id, browserIdData), dummySpamRelReqStuff)
 
       resourceUsage = dao.loadResourceUsage()
       resourceUsage.numUploads mustBe 0
@@ -313,7 +313,8 @@ class UploadsDaoAppSpec extends DaoAppSuite(disableScripts = false) {
       val site2 = dao.createSite("site-two-name", status = SiteStatus.Active, hostname = "site-two",
         embeddingSiteUrl = None, organizationName = "Test Org Name",
         creatorEmailAddress = "t@x.c", creatorId = user.id, browserIdData: BrowserIdData,
-        isTestSiteOkayToDelete = false, skipMaxSitesCheck = true, pricePlan = "Unknown")
+        isTestSiteOkayToDelete = false, skipMaxSitesCheck = true,
+        deleteOldSite = false, pricePlan = "Unknown")
 
       info("create user (owner), site 2")
       val dao2 = Globals.siteDao(site2.id)
@@ -348,12 +349,12 @@ class UploadsDaoAppSpec extends DaoAppSuite(disableScripts = false) {
       val pagePath1 = dao.createPage(PageRole.Discussion, PageStatus.Published,
         anyCategoryId = None, anyFolder = None, anySlug = None,
         titleTextAndHtml = titleTextAndHtml, bodyTextAndHtml = bodyTextAndHtmlSite1,
-        showId = true, Who(user.id, browserIdData))
+        showId = true, Who(user.id, browserIdData), dummySpamRelReqStuff)
 
       dao2.createPage(PageRole.Discussion, PageStatus.Published,
         anyCategoryId = None, anyFolder = None, anySlug = None,
         titleTextAndHtml = titleTextAndHtml, bodyTextAndHtml = bodyTextAndHtmlSite2,
-        showId = true, Who(user2.id, browserIdData))
+        showId = true, Who(user2.id, browserIdData), dummySpamRelReqStuff)
 
       resourceUsage = dao.loadResourceUsage()
       resourceUsage.numUploads mustBe 2

@@ -90,8 +90,6 @@ object SerializingSiteDbDao {
 
 object DbDao {
 
-  val TestSiteIdPrefix = "test__"
-
   case class SiteAlreadyExistsException(name: String) extends QuickException
 
   case class TooManySitesCreatedByYouException(ip: String) extends QuickException {

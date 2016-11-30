@@ -31,6 +31,9 @@ trait SiteTransaction {
 
   def setSiteId(id: SiteId)
 
+  /** Continues using the same connection. */
+  def asSystem: SystemTransaction
+
   def deferConstraints()
 
   def countWebsites(createdFromIp: String, creatorEmailAddress: String, testSites: Boolean): Int

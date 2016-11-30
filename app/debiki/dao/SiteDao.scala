@@ -247,7 +247,11 @@ class SiteDao(
         throwForbidden2("EsE3KYP2", "You've changed hostname too many times")
       }
       transaction.changeCanonicalHostRoleToExtra()
-      transaction.insertSiteHost(SiteHost(newHostname, SiteHost.RoleCanonical))
+      try transaction.insertSiteHost(SiteHost(newHostname, SiteHost.RoleCanonical))
+      catch {
+        case _: DuplicateHostnameException =>
+          throwForbidden2("EdE7FKW20", s"There's already a site with hostname '$newHostname'")
+      }
       uncacheSite()
     }
   }

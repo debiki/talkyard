@@ -194,6 +194,11 @@ class SystemDao(private val dbDaoFactory: DbDaoFactory, val cache: DaoMemCache) 
   }
 
 
+  def forgetHostname(hostname: String) {
+    memCache.remove(canonicalHostKey(hostname))
+  }
+
+
   def lookupCanonicalHost(hostname: String): Option[CanonicalHostLookup] = {
     require(!hostname.contains(":"), "EsE5KYUU7")
 

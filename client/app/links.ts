@@ -18,9 +18,10 @@
 // In this file: Constructs links, e.g. to a user's profile page.
 // Usage: MenuItemLink({ href: linkToCurrentUserProfilePage(store) }, "View your profile")
 
+/// <reference path="utils/utils.ts"/>
 
 //------------------------------------------------------------------------------
-   module debiki2 {
+   namespace debiki2 {
 //------------------------------------------------------------------------------
 
 
@@ -92,7 +93,7 @@ export function linkToAboutPage(): string {
 export function goBackToSite() {
   // Hmm, could inline this instead. Was more complicated in the past, when using
   // an URL param instead of sessionStorage.
-  var previousUrl = sessionStorage.getItem('returnToSiteUrl') || '/';
+  var previousUrl = getFromSessionStorage('returnToSiteUrl') || '/';
   window.location.replace(previousUrl);
 }
 
