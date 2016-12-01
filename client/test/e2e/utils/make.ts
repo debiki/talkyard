@@ -294,10 +294,11 @@ var make = {
     };
   },
 
-  forumOwnedByOwen: function(namePrefix: string, options?): SiteData {
-    var site: SiteData = make.emptySiteOwnedByOwen();
-    site.meta.localHostname = site.meta.localHostname || 'e2e-test-' + Date.now(); // namePrefix
-    site.meta.name = site.meta.localHostname;
+  forumOwnedByOwen: function(name: string, options?): SiteData {
+    let site: SiteData = make.emptySiteOwnedByOwen();
+    let now = Date.now();
+    site.meta.localHostname = site.meta.localHostname || 'e2e-test-' + now;
+    site.meta.name = 'e2e-test-' + name + '-' + now;
 
     options = options || {};
 

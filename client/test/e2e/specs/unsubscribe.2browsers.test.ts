@@ -54,7 +54,7 @@ describe("unsubscribe", () => {
   });
 
   it("import a site", () => {
-    let site: SiteData = make.forumOwnedByOwen('impersonate', { title: forumTitle });
+    let site: SiteData = make.forumOwnedByOwen('unsub', { title: forumTitle });
     site.settings.allowGuestLogin = true;
     site.members.push(make.memberMaria());
     idAddress = server.importSiteData(site);

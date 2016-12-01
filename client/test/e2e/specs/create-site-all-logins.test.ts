@@ -19,7 +19,7 @@ describe('/-/create-site  @createsite', function() {
   function createPasswordTestData() {
     var testId = utils.generateTestId();
     var localHostname = settings.localHostname ||
-                          settings.testLocalHostnamePrefix + 'create-site-' + testId;
+                        settings.testLocalHostnamePrefix + 'create-site-' + testId;
     return {
       testId: testId,
       localHostname: localHostname,

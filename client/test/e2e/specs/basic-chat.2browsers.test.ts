@@ -31,8 +31,6 @@ describe('chat', function() {
     maria = _.assign(browserB, pagesFor(browserB), make.memberMaria());
 
     var site: SiteData = make.emptySiteOwnedByOwen();
-    site.meta.localHostname = 'chat-' + Date.now();
-    site.meta.name = site.meta.localHostname;
 
     site.members.push(make.memberMaria());
 
