@@ -1046,6 +1046,11 @@ var TopicRow = createComponent({
             topic.excerpt, r.a({ href: topic.url }, 'read more'))
         : r.span({ className: 's_F_Ts_T_Con_B' }, topic.excerpt);
 
+    let imgIndex = 0;
+    let anyThumbnails = _.isEmpty(topic.firstImageUrls) ? null :
+        r.div({ className: 's_F_Ts_T_Tmbs' },
+          topic.firstImageUrls.map(url => r.img({ src: url, key: ++imgIndex })));
+
     var categoryName = !category ? null :
       r.a({ onClick: () => this.switchCategory(category), className: 'esF_Ts_T_CName' },
         category.name);
@@ -1075,7 +1080,8 @@ var TopicRow = createComponent({
         r.td({ className: 'dw-tpc-title e2eTopicTitle' },
           r.div({ className: 's_F_Ts_T_Con' + manyLinesClass },
             makeTitle(topic, anyPinIconClass),
-            excerpt)),
+            excerpt),
+          anyThumbnails),
         r.td({ className: 's_F_Ts_T_CN' }, categoryName),
         r.td({ className: 's_F_Ts_T_Avs' }, userAvatars),
         r.td({ className: 'num dw-tpc-replies' }, topic.numPosts - 1),

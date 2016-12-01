@@ -30,6 +30,9 @@ import scala.collection.mutable.ArrayBuffer
 import scala.math.BigDecimal.decimal
 
 
+case class PostExcerpt(text: String, firstImageUrls: immutable.Seq[String])
+
+
 // CLEAN_UP COULD rename it to JsonMaker? JsonBuilder? Jsonifier?
 object ReactJson {
 
@@ -919,6 +922,12 @@ object ReactJson {
 
 
   def htmlToTextWithNewlines(htmlText: String, firstLineOnly: Boolean = false): ToTextResult = {
+    htmlToTextWithNewlinesImpl(htmlText, firstLineOnly)._1
+  }
+
+
+  def htmlToTextWithNewlinesImpl(htmlText: String, firstLineOnly: Boolean = false)
+        : (ToTextResult, org.jsoup.nodes.Document) = {
     // This includes no newlines: Jsoup.parse(htmlText).body.text
     // Instead we'll have to traverse all nodes. There are some alternative approaches
     // at StackOverflow but I think this is the only way to do it properly.
@@ -972,21 +981,33 @@ object ReactJson {
       }
     })
 
-    try { nodeTraversor.traverse(Jsoup.parse(htmlText).body) }
+    val jsoupDoc = Jsoup.parse(htmlText)
+    try nodeTraversor.traverse(jsoupDoc.body)
     catch {
       case _: ControlThrowable => ()
     }
-    ToTextResult(text = result.toString().trim, isSingleParagraph = canStillBeSingleParagraph)
+
+    (ToTextResult(text = result.toString().trim, isSingleParagraph = canStillBeSingleParagraph),
+      jsoupDoc)
   }
 
 
-  def htmlToExcerpt(htmlText: String, length: Int, firstParagraphOnly: Boolean): String = {
-    val text =
-      if (!firstParagraphOnly) Jsoup.parse(htmlText).body.text // includes no newlines
-      else htmlToTextWithNewlines(htmlText, firstLineOnly = true).text
+  def htmlToExcerpt(htmlText: String, length: Int, firstParagraphOnly: Boolean): PostExcerpt = {
+    val (text, jsoupDoc) =
+      if (!firstParagraphOnly) {
+        val doc = Jsoup.parse(htmlText)
+        (doc.body.text, // includes no newlines
+         doc)
+      }
+      else {
+        val (toTextResult, doc) = htmlToTextWithNewlinesImpl(htmlText, firstLineOnly = true)
+        (toTextResult.text, doc)
+      }
+
     var excerpt =
       if (text.length <= length + 3) text
       else text.take(length) + "..."
+
     var lastChar = 'x'
     if (firstParagraphOnly) {
       excerpt = excerpt takeWhile { ch =>
@@ -995,7 +1016,24 @@ object ReactJson {
         !newParagraph
       }
     }
-    excerpt
+
+    // Later: COULD use https://github.com/bytedeco/javacv to extract frame samples from videos.
+    // Sample code: http://stackoverflow.com/a/22107132/694469
+    /*
+    FFmpegFrameGrabber g = new FFmpegFrameGrabber("video.mp4");
+    g.start();
+    for (int i = 0 ; i < numFrames ; i++) {
+        ImageIO.write(g.grab().getBufferedImage(), "png", new File(s"video-frame-$i.png"));
+    }
+    g.stop(); */
+    val imageElems: org.jsoup.select.Elements = jsoupDoc.select("img[src]")
+    var imageUrls = Vector[String]()
+    import collection.JavaConversions._
+    for (elem <- imageElems) {
+      imageUrls :+= elem.attr("src")
+    }
+
+    PostExcerpt(text = excerpt, firstImageUrls = imageUrls.take(5))
   }
 
 

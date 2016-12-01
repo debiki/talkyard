@@ -609,10 +609,10 @@ trait PostsDao {
         else {
           // COULD reuse the same transaction, when loading the category. Barely matters.
           val (category, isDefault) = loadTheCategory(page.meta.categoryId getOrDie "DwE2PKF0")
-          val newDescription = ReactJson.htmlToExcerpt(
+          val excerpt = ReactJson.htmlToExcerpt(
             newTextAndHtml.safeHtml, Category.DescriptionExcerptLength,
             firstParagraphOnly = true)
-          Some(category.copy(description = Some(newDescription)))
+          Some(category.copy(description = Some(excerpt.text)))
         }
 
       val postRecentlyCreated = transaction.currentTime.getTime - postToEdit.createdAt.getTime <=

@@ -270,6 +270,7 @@ interface Topic {
   pinOrder?: number;
   pinWhere?: PinPageWhere;
   excerpt?: string;
+  firstImageUrls?: string[];
   numPosts: number;
   numLikes: number;
   numWrongs: number;

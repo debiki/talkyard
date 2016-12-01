@@ -509,7 +509,7 @@ trait UserDao {
     readOnlyTransaction { transaction =>
       if (me.id != userId) {
         if (!transaction.loadUser(me.id).exists(_.isStaff))
-          throwForbidden("EsE5YKF20", "May not list other users' notifications")
+          throwForbidden("EsE5Y5IKF0", "May not list other users' notifications")
       }
       debiki.ReactJson.loadNotifications(userId, transaction, unseenFirst = false, limit = 100,
         upToWhen = None) // later: Some(upToWhenDate), and change to limit = 50 above?

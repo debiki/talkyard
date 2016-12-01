@@ -34,10 +34,11 @@
 
 export function store_thisIsMyPage(store: Store): boolean {
   if (!store.allPosts) return false;
-  var pageBody = store.allPosts[BodyId];
-  dieIf(!pageBody, 'EsE5YKF2');
-  return store.me.userId === pageBody.authorIdInt;
+  var bodyOrTitle = store.allPosts[BodyId] || store.allPosts[TitleId];
+  dieIf(!bodyOrTitle, 'EsE5YKF2');
+  return store.me.userId === bodyOrTitle.authorIdInt;
 }
+
 
 export function store_getAuthorOrMissing(store: Store, post: Post): BriefUser {
   var user = store_getUserOrMissing(store, post.authorIdInt, false);

@@ -32,7 +32,8 @@ case class PageStuff(
   pageId: PageId,
   pageRole: PageRole,
   title: String,
-  bodyExcerptIfPinned: Option[String],
+  bodyExcerpt: Option[String],
+  bodyImageUrls: immutable.Seq[String],
   authorUserId: UserId,
   lastReplyerId: Option[UserId],
   frequentPosterIds: Seq[UserId])(val pageMeta: PageMeta) extends PageTitleRole {
@@ -134,7 +135,7 @@ trait PageStuffDao {
       // and should be the first paragraph only.
       // Other topics: The excerpt is shown on the same line as the topic title, as much as fits.
       // [7PKY2X0]
-      val anyExcerpt: Option[String] = anyBody.flatMap(_.approvedHtmlSanitized map { html =>
+      val anyExcerpt: Option[PostExcerpt] = anyBody.flatMap(_.approvedHtmlSanitized map { html =>
         val length = pageMeta.isPinned ? ExcerptLength | StartLength
         ReactJson.htmlToExcerpt(html, length, firstParagraphOnly = pageMeta.isPinned)
       })
@@ -143,7 +144,8 @@ trait PageStuffDao {
         pageId,
         pageMeta.pageRole,
         title = anyTitle.flatMap(_.approvedSource) getOrElse "(No title)",
-        bodyExcerptIfPinned = anyExcerpt,
+        bodyExcerpt = anyExcerpt.map(_.text),
+        bodyImageUrls = anyExcerpt.map(_.firstImageUrls).getOrElse(Vector.empty),
         authorUserId = pageMeta.authorId,
         lastReplyerId = pageMeta.lastReplyById,
         frequentPosterIds = pageMeta.frequentPosterIds)(pageMeta)
