@@ -97,6 +97,9 @@ trait SiteTransaction {
   def loadPosts(authorId: Option[UserId], includeTitles: Boolean, includeChatMessages: Boolean,
         limit: Int, orderBy: OrderBy, onPageId: Option[PageId] = None, onlyUnapproved: Boolean = false): immutable.Seq[Post]
         */
+  def loadPopularPostsByPage(pageIds: Iterable[PageId], limitPerPage: Int)
+        : Map[PageId, immutable.Seq[Post]]
+
   def loadPostsToReview(): immutable.Seq[Post]
 
   def loadTitlesPreferApproved(pageIds: Iterable[PageId]): Map[PageId, String] = {

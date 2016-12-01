@@ -282,31 +282,48 @@ td.dw-tpc-activity
   color: hsl(0, 0%, 51%);
 
 .dw-tpc-title
-  padding: 10px 30px 10px 8px !important;
+  padding: 13px 30px 5px 8px !important;
 
 .dw-tpc-title a
   color: black;
 
 .s_F_Ts_T_Con
-  line-height: 30px;
+  line-height: 24px;
   // some space for highlighting the link inside on hover:
   padding-left: 6px;
   position: relative;
   left: -6px;
+  &:not(.s_F_Ts_T_Con-Para):not(.s_F_Ts_T_Con-More)
+    // On click, more excerpt text will be shown.
+    cursor: pointer;
 
 .s_F_Ts_T_Con:not(.s_F_Ts_T_Con-Para)
   height: 31px;
   overflow: hidden;
 
+.s_F_Ts_T_Con-More:not(.s_F_Ts_T_Con-Para)
+  height: auto;
+  margin-bottom: 7px;
+
 .s_F_Ts_T_Con_B
   color: hsl(0, 0%, 62%);
   font-size: 13px;
 
+.s_F_Ts_T_Tmbs
+  max-height: 90px;
+  overflow: hidden;
+  margin-bottom: 5px;
+
+.esF_TsL_T .s_F_Ts_T_Tmbs
+  margin: 2px 0 8px; // some whitespace looks better in mobile view
+  img
+    margin: 6px 10px 7px -1px;
+
 .s_F_Ts_T_Tmbs img
   max-width: 160px;
   max-height: 80px;
-  margin: 6px 0 3px -1px;
-  opacity: 0.75;
+  margin: 6px 10px 7px -1px;
+  opacity: 0.8;
   float: left;
 
 .s_F_Ts-Wide .s_F_Ts_T_Con_B
@@ -713,7 +730,7 @@ $row2PaddingBottom = 7px;
   list-style: none;
   margin: 0;
   padding: (12px - $topicTitlePadding) 0 6px;
-  border-top: 1px solid #ddd;
+  border-top: 1px solid hsl(0, 0%, 83%);
 
 .esF_TsL_T_Title
   display: inline-block;

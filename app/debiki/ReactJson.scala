@@ -920,12 +920,13 @@ object ReactJson {
 
   case class ToTextResult(text: String, isSingleParagraph: Boolean)
 
-
+  // Move to new classs ed.server.util.HtmlUtils? [5WK9GP6FUQ]
   def htmlToTextWithNewlines(htmlText: String, firstLineOnly: Boolean = false): ToTextResult = {
     htmlToTextWithNewlinesImpl(htmlText, firstLineOnly)._1
   }
 
 
+  // Move to new classs ed.server.util.HtmlUtils? [5WK9GP6FUQ]
   def htmlToTextWithNewlinesImpl(htmlText: String, firstLineOnly: Boolean = false)
         : (ToTextResult, org.jsoup.nodes.Document) = {
     // This includes no newlines: Jsoup.parse(htmlText).body.text
@@ -992,6 +993,7 @@ object ReactJson {
   }
 
 
+  // Move to new classs ed.server.util.HtmlUtils? [5WK9GP6FUQ]
   def htmlToExcerpt(htmlText: String, length: Int, firstParagraphOnly: Boolean): PostExcerpt = {
     val (text, jsoupDoc) =
       if (!firstParagraphOnly) {
@@ -1017,6 +1019,19 @@ object ReactJson {
       }
     }
 
+    val imageUrls = findImageUrlsImpl(jsoupDoc)
+
+    PostExcerpt(text = excerpt, firstImageUrls = imageUrls.take(5))
+  }
+
+  // Move to new classs ed.server.util.HtmlUtils? [5WK9GP6FUQ]
+  def findImageUrls(htmlText: String): immutable.Seq[String] = {
+    findImageUrlsImpl(Jsoup.parse(htmlText))
+  }
+
+
+  // Move to new classs ed.server.util.HtmlUtils? [5WK9GP6FUQ]
+  def findImageUrlsImpl(jsoupDoc: org.jsoup.nodes.Document): immutable.Seq[String] = {
     // Later: COULD use https://github.com/bytedeco/javacv to extract frame samples from videos.
     // Sample code: http://stackoverflow.com/a/22107132/694469
     /*
@@ -1026,14 +1041,14 @@ object ReactJson {
         ImageIO.write(g.grab().getBufferedImage(), "png", new File(s"video-frame-$i.png"));
     }
     g.stop(); */
+
     val imageElems: org.jsoup.select.Elements = jsoupDoc.select("img[src]")
     var imageUrls = Vector[String]()
     import collection.JavaConversions._
     for (elem <- imageElems) {
       imageUrls :+= elem.attr("src")
     }
-
-    PostExcerpt(text = excerpt, firstImageUrls = imageUrls.take(5))
+    imageUrls
   }
 
 

@@ -931,6 +931,16 @@ var TopicRow = createComponent({
     router: React.PropTypes.object.isRequired
   },
 
+  getInitialState: function() {
+    return {
+      showMoreExcerpt: false,
+    };
+  },
+
+  showMoreExcerpt: function() {
+    this.setState({ showMoreExcerpt: true });
+  },
+
   // Currently not in use, see [8PKY25].
   styleFeeeling: function(num, total): any {
     if (!total)
@@ -1047,9 +1057,10 @@ var TopicRow = createComponent({
         : r.span({ className: 's_F_Ts_T_Con_B' }, topic.excerpt);
 
     let imgIndex = 0;
-    let anyThumbnails = _.isEmpty(topic.firstImageUrls) ? null :
+    let thumbnailUrls = topic_mediaThumbnailUrls(topic);
+    let anyThumbnails = _.isEmpty(thumbnailUrls) ? null :
         r.div({ className: 's_F_Ts_T_Tmbs' },
-          topic.firstImageUrls.map(url => r.img({ src: url, key: ++imgIndex })));
+          thumbnailUrls.map(url => r.img({ src: url, key: ++imgIndex })));
 
     var categoryName = !category ? null :
       r.a({ onClick: () => this.switchCategory(category), className: 'esF_Ts_T_CName' },
@@ -1072,13 +1083,23 @@ var TopicRow = createComponent({
             title: "most recent poster" }));
     }
 
-    let manyLinesClass = showExcerptAsParagraph ? ' s_F_Ts_T_Con-Para' : '';
+    let manyLinesClass = '';
+    let showMoreClickHandler;
+    if (showExcerptAsParagraph) {
+      manyLinesClass = ' s_F_Ts_T_Con-Para';
+    }
+    else if (this.state.showMoreExcerpt) {
+      manyLinesClass += ' s_F_Ts_T_Con-More';
+    }
+    else {
+      showMoreClickHandler = this.showMoreExcerpt;
+    }
 
     // We use a table layout, only for wide screens, because table columns = spacy.
     if (this.props.inTable) return (
       r.tr({ className: 'esForum_topics_topic e2eF_T' },
         r.td({ className: 'dw-tpc-title e2eTopicTitle' },
-          r.div({ className: 's_F_Ts_T_Con' + manyLinesClass },
+          r.div({ className: 's_F_Ts_T_Con' + manyLinesClass, onClick: showMoreClickHandler },
             makeTitle(topic, anyPinIconClass),
             excerpt),
           anyThumbnails),
@@ -1099,10 +1120,18 @@ var TopicRow = createComponent({
           r.div({ className: 'esF_TsL_T_Row2_Cat' },
             r.span({ className: 'esF_TsL_T_Row2_Cat_Expl' }, "in: "), categoryName),
           r.span({ className: 'esF_TsL_T_Row2_When' },
-            prettyLetterTimeAgo(topic.bumpedAtMs || topic.createdAtMs)))));
+            prettyLetterTimeAgo(topic.bumpedAtMs || topic.createdAtMs))),
+          anyThumbnails));
   }
 });
 
+
+function topic_mediaThumbnailUrls(topic: Topic): string[] {
+  let bodyUrls = topic.firstImageUrls || [];
+  let allUrls = bodyUrls.concat(topic.popularRepliesImageUrls || []);
+  let noGifs = _.filter(allUrls, (url) => url.toLowerCase().indexOf('.gif') === -1);
+  return _.uniq(noGifs);
+}
 
 
 var ForumCategoriesComponent = React.createClass(<any> {

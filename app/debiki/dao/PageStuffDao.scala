@@ -34,6 +34,7 @@ case class PageStuff(
   title: String,
   bodyExcerpt: Option[String],
   bodyImageUrls: immutable.Seq[String],
+  popularRepliesImageUrls: immutable.Seq[String],
   authorUserId: UserId,
   lastReplyerId: Option[UserId],
   frequentPosterIds: Seq[UserId])(val pageMeta: PageMeta) extends PageTitleRole {
@@ -54,8 +55,12 @@ case class PageStuff(
 trait PageStuffDao {
   self: SiteDao =>
 
+  // The whole excerpt is shown immediately; nothing happens on click.
   val ExcerptLength = 250
-  val StartLength = 120
+
+  // Most text initially hidden, only first line shown. On click, everything shown — so
+  // include fairly many chars.
+  val StartLength = 250
 
   val logger = play.api.Logger
 
@@ -112,6 +117,9 @@ trait PageStuffDao {
       Seq(PagePostNr(pageId, TitleNr), PagePostNr(pageId, BodyNr))
     })
 
+    val popularPosts: Map[PageId, immutable.Seq[Post]] =
+      transaction.loadPopularPostsByPage(pageIds, limitPerPage = 10)
+
     val userIdsToLoad = {
       val pageMetas = pageMetasById.values
       val ids = mutable.Set[UserId]()
@@ -130,7 +138,10 @@ trait PageStuffDao {
       val anyBody = titlesAndBodies.find(post => post.pageId == pageId && post.nr == BodyNr)
       val anyTitle = titlesAndBodies.find(post => post.pageId == pageId && post.nr == TitleNr)
       val anyAuthor = usersById.get(pageMeta.authorId)
-
+      val popularPostsBestFirst = popularPosts.getOrElse(pageId, Nil)
+      val popularImageUrls: immutable.Seq[String] = popularPostsBestFirst flatMap { post =>
+        post.approvedHtmlSanitized.flatMap(ReactJson.findImageUrls(_).headOption) take 5
+      }
       // For pinned topics: The excerpt is only shown in forum topic lists for pinned topics,
       // and should be the first paragraph only.
       // Other topics: The excerpt is shown on the same line as the topic title, as much as fits.
@@ -146,6 +157,7 @@ trait PageStuffDao {
         title = anyTitle.flatMap(_.approvedSource) getOrElse "(No title)",
         bodyExcerpt = anyExcerpt.map(_.text),
         bodyImageUrls = anyExcerpt.map(_.firstImageUrls).getOrElse(Vector.empty),
+        popularRepliesImageUrls = popularImageUrls,
         authorUserId = pageMeta.authorId,
         lastReplyerId = pageMeta.lastReplyById,
         frequentPosterIds = pageMeta.frequentPosterIds)(pageMeta)

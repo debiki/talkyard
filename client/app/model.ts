@@ -271,6 +271,7 @@ interface Topic {
   pinWhere?: PinPageWhere;
   excerpt?: string;
   firstImageUrls?: string[];
+  popularRepliesImageUrls?: string[];
   numPosts: number;
   numLikes: number;
   numWrongs: number;
