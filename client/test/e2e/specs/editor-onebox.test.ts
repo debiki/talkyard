@@ -62,7 +62,7 @@ describe("editor onebox:", () => {
   });
 
   it("Owen goes to the homepage and logs in", () => {
-    owensBrowser.go(idAddress.siteIdOrigin);
+    owensBrowser.go(idAddress.origin);
     owensBrowser.assertPageTitleMatches(forumTitle);
     owensBrowser.complex.loginWithPasswordViaTopbar(owen);
   });

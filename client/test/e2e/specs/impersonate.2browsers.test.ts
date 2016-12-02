@@ -50,13 +50,13 @@ describe("impersonate", () => {
   });
 
   it("Maria goes to the homepage and logsin", () => {
-    maria.go(idAddress.siteIdOrigin);
+    maria.go(idAddress.origin);
     maria.assertPageTitleMatches(forumTitle);
     maria.complex.loginWithPasswordViaTopbar(maria);
   });
 
   it("Owen logs in to the admin area", () => {
-    owen.adminArea.goToUsers(idAddress.siteIdOrigin);
+    owen.adminArea.goToUsers(idAddress.origin);
     owen.loginDialog.loginWithPassword(owen);
   });
 
@@ -120,7 +120,7 @@ describe("impersonate", () => {
   });
 
   it("... he goes to the homepage, he's still Owen", () => {
-    owen.go(idAddress.siteIdOrigin);
+    owen.go(idAddress.origin);
     owen.topbar.waitForVisible();
     owen.topbar.assertMyUsernameMatches(owen.username);
   });

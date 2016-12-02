@@ -44,7 +44,7 @@ describe("categories", function() {
   });
 
   it("Owen logs in, views categories", function() {
-    owen.go(idAddress.siteIdOrigin);
+    owen.go(idAddress.origin);
     owen.topbar.clickLogin();
     owen.loginDialog.loginWithPassword(owen);
     owen.forumButtons.clickViewCategories();
@@ -59,7 +59,7 @@ describe("categories", function() {
   });
 
   it("Maria logs in, sees the new category", function() {
-    maria.go(idAddress.siteIdOrigin + '/categories');
+    maria.go(idAddress.origin + '/categories');
     maria.clickLinkToNewPage(WastelandCategorySelector);
     maria.topbar.clickLogin();
     maria.loginDialog.loginWithPassword(maria);
@@ -97,7 +97,7 @@ describe("categories", function() {
   });
 
   it("Mons doesn't sees it, he hasn't logged in", function() {
-    mons.go(idAddress.siteIdOrigin + '/categories');
+    mons.go(idAddress.origin + '/categories');
     mons.waitForVisible(DefaultCategorySelector);
     assert(!mons.isVisible(WastelandCategorySelector));
   });
@@ -119,7 +119,7 @@ describe("categories", function() {
   });
 
   it("Maria no longer sees it, but can access pages in the category", function() {
-    maria.go(idAddress.siteIdOrigin + '/categories');
+    maria.go(idAddress.origin + '/categories');
     maria.waitForVisible(DefaultCategorySelector);
     assert(!maria.isVisible(WastelandCategorySelector));
   });
@@ -131,7 +131,7 @@ describe("categories", function() {
   });
 
   it("Owen re-lists the category, sets only-staff-may-post", function() {
-    owen.go(idAddress.siteIdOrigin + '/latest/wasteland');
+    owen.go(idAddress.origin + '/latest/wasteland');
     owen.forumButtons.clickEditCategory();
     owen.categoryDialog.fillInFields({ name: "Wasteland Only Staff Create" });
     owen.waitAndClick('#e2eShowUnlistedCB');
@@ -144,7 +144,7 @@ describe("categories", function() {
   });
 
   it("Mons can post a new topic", function() {
-    mons.go(idAddress.siteIdOrigin + '/latest/wasteland');
+    mons.go(idAddress.origin + '/latest/wasteland');
     mons.disableRateLimits(); // otherwise max 1 topic per 15 seconds
     mons.complex.createAndSaveTopic({
       title: "Mons Only Staff Create Topic",
@@ -154,7 +154,7 @@ describe("categories", function() {
   });
 
   it("Maria sees the category and the topic", function() {
-    maria.go(idAddress.siteIdOrigin + '/categories');
+    maria.go(idAddress.origin + '/categories');
     maria.waitForVisible(DefaultCategorySelector);
     assert(maria.isVisible(WastelandCategorySelector));
     // She sees Mons' most recent topic in the per category recent topics list.
@@ -172,7 +172,7 @@ describe("categories", function() {
   });
 
   it("Owen sets the category to staff only", function() {
-    owen.go(idAddress.siteIdOrigin + '/latest/wasteland');
+    owen.go(idAddress.origin + '/latest/wasteland');
     owen.forumButtons.clickEditCategory();
     owen.categoryDialog.fillInFields({ name: "Wasteland Staff Only" });
     owen.waitAndClick('#e2eShowStaffOnlyCB');
@@ -184,14 +184,14 @@ describe("categories", function() {
   });
 
   it("Mons sees it and can create a 2nd topic", function() {
-    mons.go(idAddress.siteIdOrigin + '/categories');
+    mons.go(idAddress.origin + '/categories');
     mons.clickLinkToNewPage(WastelandCategorySelector);
     mons.complex.createAndSaveTopic({ title: "Mons Topic", body: "Mons text text text." });
     urlToMonsPage3 = mons.url().value;
   });
 
   it("Maria doesn't see the category", function() {
-    maria.go(idAddress.siteIdOrigin + '/categories');
+    maria.go(idAddress.origin + '/categories');
     maria.waitForVisible(DefaultCategorySelector);
     assert(!maria.isVisible(WastelandCategorySelector));
   });

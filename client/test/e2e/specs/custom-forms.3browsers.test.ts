@@ -101,7 +101,7 @@ describe("private chat", function() {
   });
 
   it("Owen creates a custom form", function() {
-    owen.go(idAddress.siteIdOrigin);
+    owen.go(idAddress.origin);
     owen.assertPageTitleMatches(forumTitle);
     owen.complex.loginWithPasswordViaTopbar(owen);
     owen.complex.createAndSaveTopic(

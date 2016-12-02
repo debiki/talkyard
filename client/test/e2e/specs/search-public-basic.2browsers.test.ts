@@ -59,7 +59,7 @@ describe("basic publ search:", () => {
   });
 
   it("Owen and Maria go to the homepage and log in", () => {
-    everyone.go(idAddress.siteIdOrigin);
+    everyone.go(idAddress.origin);
     everyone.assertPageTitleMatches(forumTitle);
     owen.complex.loginWithPasswordViaTopbar(owen);
     maria.complex.loginWithPasswordViaTopbar(maria);
@@ -182,7 +182,7 @@ describe("basic publ search:", () => {
 
   it(`Maria leaves; a stranger arrives`, () => {
     assert(stranger === maria);
-    maria.go(idAddress.siteIdOrigin);
+    maria.go(idAddress.origin);
     maria.topbar.clickLogout();
   });
 
@@ -198,7 +198,7 @@ describe("basic publ search:", () => {
 
   it(`A guest logs in`, () => {
     assert(guest === stranger);
-    stranger.go(idAddress.siteIdOrigin);
+    stranger.go(idAddress.origin);
     guest.complex.loginAsGuestViaTopbar("Gunnar Guest");
   });
 

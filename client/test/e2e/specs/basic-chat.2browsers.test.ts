@@ -73,7 +73,7 @@ describe('chat', function() {
     site.categories.push(uncategorizedCategory);
 
     var idAddress = server.importSiteData(site);
-    everyone.go(idAddress.siteIdOrigin);
+    everyone.go(idAddress.origin);
   });
 
   it("Owen logs in, creates a chat topic", function() {

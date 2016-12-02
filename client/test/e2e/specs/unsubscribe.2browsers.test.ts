@@ -63,7 +63,7 @@ describe("unsubscribe", () => {
   });
 
   it("Owen goes to the homepage and logs in", () => {
-    owen.go(idAddress.siteIdOrigin);
+    owen.go(idAddress.origin);
     owen.assertPageTitleMatches(forumTitle);
     owen.complex.loginWithPasswordViaTopbar(owen);
   });

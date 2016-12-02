@@ -44,12 +44,12 @@ describe("settings-login-to-read", function() {
   });
 
   it("Owen, Maria and Michael sees the forum, when not logged in", function() {
-    everyone.go(idAddress.siteIdOrigin);
+    everyone.go(idAddress.origin);
     everyone.assertPageTitleMatches(forumTitle);
   });
 
   it("Owen logs in to admin area", function() {
-    owen.adminArea.goToLoginSettings(idAddress.siteIdOrigin);
+    owen.adminArea.goToLoginSettings(idAddress.origin);
     owen.loginDialog.loginWithPassword(owen);
   });
 
@@ -86,7 +86,7 @@ describe("settings-login-to-read", function() {
   it("Maria logs out, then she no longer sees her topic or the homepage", function() {
     maria.topbar.clickLogout({ waitForLoginButton: false });
     maria.loginDialog.waitAssertFullScreen();
-    maria.go(idAddress.siteIdOrigin);
+    maria.go(idAddress.origin);
     maria.loginDialog.waitAssertFullScreen();
   });
 
@@ -98,7 +98,7 @@ describe("settings-login-to-read", function() {
   it("Now Michael sees the pages again", function() {
     michael.refresh();
     michael.assertPageTitleMatches(mariasTopicTitle);
-    michael.go(idAddress.siteIdOrigin);
+    michael.go(idAddress.origin);
     michael.assertPageTitleMatches(forumTitle);
   });
 

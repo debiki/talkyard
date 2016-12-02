@@ -50,7 +50,7 @@ describe("private chat", function() {
   });
 
   it("Owen creates a private chat", function() {
-    owen.go(idAddress.siteIdOrigin);
+    owen.go(idAddress.origin);
     owen.assertPageTitleMatches(forumTitle);
     owen.complex.loginWithPasswordViaTopbar(owen);
     owen.complex.createChatChannelViaWatchbar(
@@ -64,7 +64,7 @@ describe("private chat", function() {
   });
 
   it("... and doesn't see it listed in the forum", function() {
-    maria.go(idAddress.siteIdOrigin);
+    maria.go(idAddress.origin);
     maria.forumTopicList.waitUntilKnowsIsEmpty();
   });
 
@@ -72,7 +72,7 @@ describe("private chat", function() {
     maria.complex.loginWithPasswordViaTopbar(maria);
     maria.go(chatUrl);
     maria.assertNotFoundError();
-    maria.go(idAddress.siteIdOrigin);
+    maria.go(idAddress.origin);
     maria.forumTopicList.waitUntilKnowsIsEmpty();
   });
 
@@ -89,7 +89,7 @@ describe("private chat", function() {
   });
 
   it("Michael logs in, cannot access it", function() {
-    michael.go(idAddress.siteIdOrigin);
+    michael.go(idAddress.origin);
     michael.complex.loginWithPasswordViaTopbar(michael);
     michael.go(chatUrl);
     michael.assertNotFoundError();
@@ -119,7 +119,7 @@ describe("private chat", function() {
     // For now. Should probably redirect to / instead, after refresh? COULD
     maria.refresh();
     maria.assertNotFoundError();
-    maria.go(idAddress.siteIdOrigin);
+    maria.go(idAddress.origin);
     maria.forumTopicList.waitUntilKnowsIsEmpty();
     maria.watchbar.assertTopicAbsent(chatName);
     maria.watchbar.assertTopicVisible(forumTitle);
@@ -152,7 +152,7 @@ describe("private chat", function() {
   });
 
   it("... doesn't see it in the topic list", function() {
-    michael.go(idAddress.siteIdOrigin);
+    michael.go(idAddress.origin);
     michael.forumTopicList.waitUntilKnowsIsEmpty();
   });
 
@@ -164,7 +164,7 @@ describe("private chat", function() {
 
   it("A guest logs in (in Maria's browser)", function() {
     assert(guest === maria, 'EsE4FKG6FY0');
-    guest.go(idAddress.siteIdOrigin);
+    guest.go(idAddress.origin);
     guest.complex.loginAsGuestViaTopbar("Gunnar Guest");
   });
 
@@ -174,7 +174,7 @@ describe("private chat", function() {
   });
 
   it("... and doesn't see the chat in the forum topic list", function() {
-    guest.go(idAddress.siteIdOrigin);
+    guest.go(idAddress.origin);
     guest.forumTopicList.waitUntilKnowsIsEmpty();
   });
 

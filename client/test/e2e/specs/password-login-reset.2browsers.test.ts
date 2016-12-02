@@ -43,7 +43,7 @@ describe("private chat", function() {
   });
 
   it("Owen and Michael go to the homepage", function() {
-    everyone.go(idAddress.siteIdOrigin);
+    everyone.go(idAddress.origin);
     everyone.assertPageTitleMatches(forumTitle);
     // There'll be lots of login attempts.
     everyone.disableRateLimits();
@@ -90,7 +90,7 @@ describe("private chat", function() {
   it("... he gets a reset-pwd email with a choose-new-password page link", function() {
     var email = server.getLastEmailSenTo(idAddress.id, michael.emailAddress);
     resetPwdPageLink = utils.findFirstLinkToUrlIn(
-      idAddress.siteIdOrigin + '/-/reset-password/choose-password/', email.bodyHtmlText);
+      idAddress.origin + '/-/reset-password/choose-password/', email.bodyHtmlText);
   });
 
   it("... he goes to that page", function() {
@@ -109,7 +109,7 @@ describe("private chat", function() {
   });
 
   it("... he can login with the new password", function() {
-    michael.goAndWaitForNewUrl(idAddress.siteIdOrigin);
+    michael.goAndWaitForNewUrl(idAddress.origin);
     michael.topbar.clickLogout();
     michael.complex.loginWithPasswordViaTopbar(michael.username, newPassword);
   });
