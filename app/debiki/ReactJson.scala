@@ -249,6 +249,7 @@ object ReactJson {
       "ancestorsRootFirst" -> ancestorsJsonRootFirst,
       "pageRole" -> JsNumber(page.role.toInt),
       "pagePath" -> JsPagePath(page.thePath),
+      "pageLayout" -> JsNumber(page.meta.layout.bitmask),
       "pageHtmlTagCssClasses" -> JsString(page.meta.htmlTagCssClasses),
       "pageHtmlHeadTitle" -> JsString(page.meta.htmlHeadTitle),
       "pageHtmlHeadDescription" -> JsString(page.meta.htmlHeadDescription),

@@ -34,7 +34,11 @@ export function getServerErrorDialog() {
 
 
 export function showAndThrowClientSideError(errorMessage: string) {
-  getServerErrorDialog().openForBrowserError(errorMessage);
+  // Don't call immediately, in case we're in a React render() pass — then we're not allowed
+  // to render even more stuff, which getServerErrorDialog() might do.
+  setTimeout(function() {
+    getServerErrorDialog().openForBrowserError(errorMessage);
+  }, 1);
   throw new Error(errorMessage);
 }
 

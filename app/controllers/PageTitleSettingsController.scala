@@ -43,12 +43,12 @@ object PageTitleSettingsController extends mvc.Controller {
     val newTitle = (request.body \ "newTitle").as[String].trim
     val anyNewCategoryId = (request.body \ "categoryId").asOpt[CategoryId]
     val anyNewRoleInt = (request.body \ "pageRole").asOpt[Int]
-    val anyLayoutString = (request.body \ "layout").asOpt[String]
     val anyFolder = (request.body \ "folder").asOpt[String] map { folder =>
       if (folder.trim.isEmpty) "/" else folder.trim
     }
     val anySlug = (request.body \ "slug").asOptStringTrimmed
     val anyShowId = (request.body \ "showId").asOpt[Boolean]
+    val anyLayout = (request.body \ "pageLayout").asOpt[Int].map(new PageLayout(_))
     val anyHtmlTagCssClasses = (request.body \ "htmlTagCssClasses").asOptStringTrimmed
     val anyHtmlHeadTitle = (request.body \ "htmlHeadTitle").asOptStringTrimmed
     val anyHtmlHeadDescription = (request.body \ "htmlHeadDescription").asOptStringTrimmed
@@ -60,20 +60,29 @@ object PageTitleSettingsController extends mvc.Controller {
     val hasManuallyEditedSlug = anySlug.exists(slug =>
       slug != ReactRenderer.slugifyTitle(newTitle))
 
+    if (anyLayout.isDefined) {
+      throwForbiddenIf(!request.theUser.isAdmin,
+        "EdE7PK4QL", "Only admins may change the topic list layout")
+      throwForbiddenIf(anyNewRole.exists(_ != PageRole.Forum),
+        "EdEZ5FK20", "Cannot change topic list layout and page type at the same time")
+    }
+
     val oldMeta = request.dao.loadPageMeta(pageId) getOrElse throwNotFound(
       "DwE4KEF20", "The page was deleted just now")
 
     if (anyNewRole.exists(_ != oldMeta.pageRole) && !oldMeta.pageRole.mayChangeRole)
       throwForbidden("DwE5KGU02", s"Cannot change page role ${oldMeta.pageRole} to something else")
 
+    throwForbiddenIf(anyLayout.isDefined && oldMeta.pageRole != PageRole.Forum,
+      "EdE5FKL0P", "Can only specify topic list layout for forum pages")
+
     // Authorization.
     if (!request.theUser.isStaff && request.theUserId != oldMeta.authorId)
       throwForbidden("DwE4KEP2", "You may not rename this page")
 
-    if (anyLayoutString.isDefined || anyFolder.isDefined || hasManuallyEditedSlug ||
-        anyShowId.isDefined) {
+    if (anyFolder.isDefined || hasManuallyEditedSlug || anyShowId.isDefined) {
       if (!request.theUser.isAdmin)
-        throwForbidden("DwE5KEP8", o"""Only admins may change the URL path and layout
+        throwForbidden("DwE5KEP8", o"""Only admins may change the URL path
            and certain other stuff""")
     }
 
@@ -123,6 +132,7 @@ object PageTitleSettingsController extends mvc.Controller {
       htmlTagCssClasses = anyHtmlTagCssClasses.getOrElse(oldMeta.htmlTagCssClasses),
       htmlHeadTitle = anyHtmlHeadTitle.getOrElse(oldMeta.htmlHeadTitle),
       htmlHeadDescription = anyHtmlHeadDescription.getOrElse(oldMeta.htmlHeadDescription),
+      layout = anyLayout.getOrElse(oldMeta.layout),
       version = oldMeta.version + 1)
 
     request.dao.readWriteTransaction { transaction =>  // COULD wrap everything in this transaction

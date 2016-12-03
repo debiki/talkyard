@@ -471,11 +471,10 @@ export var Sidebar = createComponent({  // RENAME to ContextBar
               starredBtnTitle);
       }
       else {
-        recentButton = isChat ? null : MenuItem({ onClick: this.showRecent },
-          "Recent ", r.span({ className: 'caret' }));
+        recentButton = isChat ? null : MenuItem({ onClick: this.showRecent }, "Recent");
         //unreadButton = MenuItem({ onClick: this.showUnread }, "Unread"),
         starredButton = MenuItem({ onClick: this.showStarred },
-          starredBtnTitle, ' ', r.span({ className: 'caret' }));
+          starredBtnTitle);
       }
     }
 
@@ -485,8 +484,7 @@ export var Sidebar = createComponent({  // RENAME to ContextBar
           onClick: this.showAdminGuide }, "Guide");
       }
       else {
-        adminGuideButton = MenuItem({ onClick: this.showAdminGuide },
-          "Admin Guide ", r.span({ className: 'caret' }));
+        adminGuideButton = MenuItem({ onClick: this.showAdminGuide }, "Admin Guide");
       }
     }
 
@@ -502,14 +500,14 @@ export var Sidebar = createComponent({  // RENAME to ContextBar
           adminGuideButton);
     }
     else {
+      let title = r.span({}, this.state.commentsType + ' ', r.span({ className: 'caret' }));
       tabButtons =
-        ModalDropdownButton({ title: this.state.commentsType, key: 'showRecent', pullRight: true },
+        ModalDropdownButton({ title: title, key: 'showRecent', pullRight: true },
           r.ul({ className: 'dropdown-menu' },
             recentButton,
             unreadButton,
             starredButton,
-            MenuItem({ onClick: this.showUsers },
-              usersBtnTitle, ' ', r.span({ className: 'caret' })),
+            MenuItem({ onClick: this.showUsers }, usersBtnTitle),
             adminGuideButton));
     }
 

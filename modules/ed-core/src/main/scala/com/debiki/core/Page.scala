@@ -109,6 +109,7 @@ object PageMeta {
       categoryId = categoryId,
       embeddingPageUrl = url,
       authorId = authorId,
+      layout = PageLayout.Default,
       pinOrder = pinOrder,
       pinWhere = pinWhere,
       numLikes = 0,
@@ -139,6 +140,7 @@ object PageMeta {
   *            is the URL of the embedding page.
   * @param authorId
   * @param frequentPosterIds: Most frequent poster listed first. Author & last-reply-by excluded.
+  * @param layout: A bitmask that tells JS code how to render the page
   * @param numLikes
   * @param numWrongs
   * @param numBurys
@@ -172,6 +174,7 @@ case class PageMeta(
   embeddingPageUrl: Option[String],
   authorId: UserId,
   frequentPosterIds: Seq[UserId] = Seq.empty,
+  layout: PageLayout = new PageLayout(0),
   pinOrder: Option[Int] = None,
   pinWhere: Option[PinPageWhere] = None,
   numLikes: Int = 0,
@@ -473,6 +476,31 @@ object PageRole {
 
 }
 
+
+/** The bitmask:
+  *
+  * Bits:
+  * 1..4: Topic list layout, for forums (decimal: 1..15)
+  * 5..32: Unused.
+  * 33..64: For plugins?
+  */
+class PageLayout(val bitmask: Int) extends AnyVal {
+
+}
+
+object PageLayout {
+
+  val Default = new PageLayout(0)
+
+  object TopicList {
+    val TitleOnly = new PageLayout(1)
+    val TitleExcerptSameLine = new PageLayout(2)
+    val ExcerptBelowTitle = new PageLayout(3)
+    val ThumbnailLeft = new PageLayout(4)
+    val ThumbnailsBelowTitle = new PageLayout(5)
+  }
+
+}
 
 
 /**

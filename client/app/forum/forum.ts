@@ -1049,18 +1049,38 @@ var TopicRow = createComponent({
     }
 
     var anyPinIconClass = topic.pinWhere ? 'icon-pin' : undefined;
-    var showExcerptAsParagraph = topic.pinWhere === PinPageWhere.Globally ||
-        (topic.pinWhere && topic.categoryId === this.props.activeCategory.id);
-    let excerpt = showExcerptAsParagraph  // [7PKY2X0]
-        ? r.p({ className: 'dw-p-excerpt' },
-            topic.excerpt, r.a({ href: topic.url }, 'read more'))
-        : r.span({ className: 's_F_Ts_T_Con_B' }, topic.excerpt);
 
-    let imgIndex = 0;
-    let thumbnailUrls = topic_mediaThumbnailUrls(topic);
-    let anyThumbnails = _.isEmpty(thumbnailUrls) ? null :
+    let excerpt;  // [7PKY2X0]
+    let showExcerptAsParagraph =
+        topic.pinWhere === PinPageWhere.Globally ||
+        (topic.pinWhere && topic.categoryId === this.props.activeCategory.id) ||
+        store.pageLayout >= TopicListLayout.ExcerptBelowTitle;
+    if (showExcerptAsParagraph) {
+      excerpt =
+          r.p({ className: 'dw-p-excerpt' }, topic.excerpt);
+          // , r.a({ href: topic.url }, 'read more')); — no, better make excerpt click open page?
+    }
+    else if (store.pageLayout === TopicListLayout.TitleExcerptSameLine) {
+      excerpt =
+          r.span({ className: 's_F_Ts_T_Con_B' }, topic.excerpt);
+    }
+    else {
+      // No excerpt.
+      dieIf(store.pageLayout && store.pageLayout !== TopicListLayout.TitleOnly,
+          'EdE5FK2W8');
+    }
+
+    let anyThumbnails;
+    if (store.pageLayout === TopicListLayout.ThumbnailLeft) {
+      die('Unimplemented: thumbnail left [EdE7KW4024]')
+    }
+    else if (store.pageLayout === TopicListLayout.ThumbnailsBelowTitle) {
+      let thumbnailUrls = topic_mediaThumbnailUrls(topic);
+      let imgIndex = 0;
+      anyThumbnails = _.isEmpty(thumbnailUrls) ? null :
         r.div({ className: 's_F_Ts_T_Tmbs' },
           thumbnailUrls.map(url => r.img({ src: url, key: ++imgIndex })));
+    }
 
     var categoryName = !category ? null :
       r.a({ onClick: () => this.switchCategory(category), className: 'esF_Ts_T_CName' },
@@ -1092,6 +1112,7 @@ var TopicRow = createComponent({
       manyLinesClass += ' s_F_Ts_T_Con-More';
     }
     else {
+      manyLinesClass += ' s_F_Ts_T_Con-OneLine';
       showMoreClickHandler = this.showMoreExcerpt;
     }
 

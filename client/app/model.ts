@@ -352,6 +352,7 @@ interface Store {
   hideForumIntro?: boolean;
   pageRole: PageRole;
   pagePath: PagePath;
+  pageLayout?: TopicListLayout;
   pageHtmlTagCssClasses?: string;
   pageHtmlHeadTitle?: string;
   pageHtmlHeadDescription?: string;

@@ -123,6 +123,16 @@ enum PostType {
 }
 
 
+// Could change to PageLayout bitmask. For now though:
+enum TopicListLayout {
+  TitleOnly = 1,
+  TitleExcerptSameLine = 2,
+  ExcerptBelowTitle = 3,
+  ThumbnailLeft = 4,
+  ThumbnailsBelowTitle = 5,
+}
+
+
 // Determines which write-post guidelines will be shown in the editor.
 enum WritingWhat {
   NewPage = 1,

@@ -234,7 +234,7 @@ html.js:not(.dw-react-started)
 $tablePaddingLeftNarrow = 4px
 $tablePaddingLeftWide = 8px
 $tableFontSize = 13.4px;
-$tableTopicTitleFontSize = 15px;
+$tableTopicTitleFontSize = 15.3px;
 $tableTopicExcerptFontSize = 14px;
 $tableHeaderFontSize = 14px;
 
@@ -284,8 +284,12 @@ td.dw-tpc-activity
 .dw-tpc-title
   padding: 13px 30px 5px 8px !important;
 
-.dw-tpc-title a
-  color: black;
+.dw-tpc-title
+  a
+    color: black;
+  .s_F_Ts_T_Con-Para a
+    color: hsl(0, 0%, 15%);
+    font-weight: bold;
 
 .s_F_Ts_T_Con
   line-height: 24px;
@@ -293,20 +297,20 @@ td.dw-tpc-activity
   padding-left: 6px;
   position: relative;
   left: -6px;
-  &:not(.s_F_Ts_T_Con-Para):not(.s_F_Ts_T_Con-More)
-    // On click, more excerpt text will be shown.
-    cursor: pointer;
 
-.s_F_Ts_T_Con:not(.s_F_Ts_T_Con-Para)
+.s_F_Ts_T_Con-OneLine
   height: 31px;
   overflow: hidden;
+  // On click, more excerpt text will be shown, by .s_F_Ts_T_Con-More just below.
+  cursor: pointer;
 
-.s_F_Ts_T_Con-More:not(.s_F_Ts_T_Con-Para)
+.s_F_Ts_T_Con-More
+  // Show more excerpt, because -OneLine just above was clicked.
   height: auto;
   margin-bottom: 7px;
 
 .s_F_Ts_T_Con_B
-  color: hsl(0, 0%, 62%);
+  color: hsl(0, 0%, 60%);
   font-size: 13px;
 
 .s_F_Ts_T_Tmbs
@@ -375,6 +379,8 @@ td.dw-tpc-activity
         font-size: $tableFontSize;
         &.dw-tpc-title
           font-size: $tableTopicTitleFontSize;
+          .s_F_Ts_T_Con-Para
+            font-size: $tableTopicTitleFontSize + 1;
           .dw-p-excerpt
             font-size: $tableTopicExcerptFontSize;
         a
@@ -398,6 +404,8 @@ td.dw-tpc-activity
           padding-right: 19px;
           margin-left: 0;
           vertical-align: middle;
+          position: relative;
+          top: -1px;
 
         .esF_Ts_T_CName
           display: inline-block;
@@ -415,9 +423,11 @@ td.dw-tpc-activity
             white-space: normal;
 
         .icon-comment-empty:before
-          font-size: 14px;
+          font-size: 15px;
           margin: 0 9px 0 0;
           color: hsl(0, 0%, 65%);
+          position: relative;
+          top: -1px;
 
         .icon-chat:before
           color: hsl(0, 0%, 70%);
@@ -496,7 +506,7 @@ td.dw-tpc-activity
           color: hsl(0, 0%, 53%);
 
         .dw-p-excerpt
-          color: hsl(0, 0%, 44%);
+          color: hsl(0, 0%, 53%);
           margin: 1ex 20px 1ex 0;
           max-width: 650px;
           font-size: 100%;

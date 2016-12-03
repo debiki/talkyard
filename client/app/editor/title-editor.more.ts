@@ -26,6 +26,7 @@
 
 var r = React.DOM;
 var SelectCategoryDropdown = editor.SelectCategoryDropdown;
+var ModalDropdownButton = utils.ModalDropdownButton;
 
 
 export var TitleEditor = createComponent({
@@ -41,11 +42,14 @@ export var TitleEditor = createComponent({
   },
 
   componentDidMount: function() {
-    var store: Store = this.props;
     Server.loadEditorEtcScriptsAndLater(() => {
       if (!this.isMounted()) return;
       this.setState({ editorScriptsLoaded: true });
     });
+  },
+
+  showLayoutAndSettings: function() {
+    this.setState({ showLayoutAndSettings: true });
   },
 
   showComplicated: function() {
@@ -110,6 +114,7 @@ export var TitleEditor = createComponent({
     var settings: any = {
       categoryId: this.state.categoryId,
       pageRole: this.state.pageRole,
+      pageLayout: this.state.pageLayout,
       folder: addFolderSlashes(this.state.folder),
       slug: this.state.slug,
       showId: this.state.showId,
@@ -136,6 +141,27 @@ export var TitleEditor = createComponent({
       // The title is not shown, so show some whitespace to avoid the page jumping upwards.
       return r.div({ style: { height: 80 }});
     }
+
+    let layoutAndSettings;
+    if (this.state.showLayoutAndSettings) {
+      let title = r.span({},
+          topicListLayout_getName(this.state.pageLayout) + ' ',
+          r.span({ className: 'caret' }));
+      let mkSetter = (layout) => (() => this.setState({ pageLayout: layout }));
+      layoutAndSettings =
+        r.div({},
+          r.div({ className: 'form-horizontal', key: 'layout-settings-key' },
+            Input({ type: 'custom', label: "Topic list layout",
+                labelClassName: 'col-xs-2', wrapperClassName: 'col-xs-10' },
+              ModalDropdownButton({ title: title },
+                r.ul({ className: 'dropdown-menu' },
+                  MenuItem({ onClick: mkSetter(TopicListLayout.TitleOnly) },
+                    topicListLayout_getName(TopicListLayout.TitleOnly)),
+                  MenuItem({ onClick: mkSetter(TopicListLayout.TitleExcerptSameLine) },
+                    topicListLayout_getName(TopicListLayout.TitleExcerptSameLine)),
+                  MenuItem({ onClick: mkSetter(TopicListLayout.ThumbnailsBelowTitle) },
+                    topicListLayout_getName(TopicListLayout.ThumbnailsBelowTitle)))))));
+      }
 
     var complicatedStuff;
     if (this.state.showComplicated) {
@@ -191,16 +217,23 @@ export var TitleEditor = createComponent({
             anyUrlAndCssClassEditor));
     }
 
-    // Once the complicated stuff has been shown, one cannot hide it, except by cancelling
+    // Once more stuff has been shown, one cannot hide it, except by cancelling
     // the whole dialog. Because if hiding it, then what about any changes made? Save or ignore?
-    var existsAdvStuffToEdit = pageRole === PageRole.Forum || store.settings.showComplicatedStuff;
-    var showAdvancedButton = !existsAdvStuffToEdit ||
-        this.state.showComplicated || !user.isAdmin || pageRole === PageRole.FormalMessage
-        ? null
-        : r.a({ className: 'esTtlEdtr_openAdv icon-settings',
-            onClick: this.showComplicated }, "Advanced");
 
-    var selectCategoryInput;
+    let layoutAndSettingsButton =
+        this.state.showLayoutAndSettings || !user.isAdmin || pageRole !== PageRole.Forum
+          ? null
+          : r.a({ className: 'esTtlEdtr_openAdv icon-wrench', onClick: this.showLayoutAndSettings },
+              "Layout and settings");
+
+    let existsAdvStuffToEdit = pageRole === PageRole.Forum || store.settings.showComplicatedStuff;
+    let advancedStuffButton = !existsAdvStuffToEdit ||
+        this.state.showComplicated || !user.isAdmin || pageRole === PageRole.FormalMessage
+          ? null
+          : r.a({ className: 'esTtlEdtr_openAdv icon-settings', onClick: this.showComplicated },
+              "Advanced");
+
+    let selectCategoryInput;
     if (isForumOrAboutOrMessage) {
       // About-category pages cannot be moved to other categories.
     }
@@ -250,14 +283,28 @@ export var TitleEditor = createComponent({
         r.div({ className: 'form-horizontal' }, selectCategoryInput),
         r.div({ className: 'form-horizontal' }, selectTopicType),
         addBackForumIntroButton,
-        showAdvancedButton,
+        // Only allow opening one of layout-and-settings and advanced-stuff at once.
+        complicatedStuff ? null : layoutAndSettingsButton,
+        layoutAndSettings ? null : advancedStuffButton,
         ReactCSSTransitionGroup({ transitionName: 'compl-stuff',
             transitionAppear: true, transitionAppearTimeout: 600,
             transitionEnterTimeout: 600, transitionLeaveTimeout: 500 },
+          layoutAndSettings,
           complicatedStuff),
         saveCancel));
   }
 });
+
+
+function topicListLayout_getName(pageLayout: TopicListLayout): string {
+  switch (pageLayout) {
+    case TopicListLayout.TitleExcerptSameLine: return "Title and excerpt on same line";
+    case TopicListLayout.ThumbnailsBelowTitle: return "Thumbnails and excerpt below title";
+    case TopicListLayout.TitleOnly: // fall through
+    default:
+      return "Show topic title only";
+  }
+}
 
 
 function addFolderSlashes(folder) {
