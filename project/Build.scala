@@ -81,8 +81,8 @@ object ApplicationBuild extends Build {
     //              why-do-i-need-jsr305-to-use-guava-in-scala
     "com.google.code.findbugs" % "jsr305" % "1.3.9" % "provided",
     "org.mockito" % "mockito-all" % "1.9.0" % "test", // I use Mockito with Specs2...
-    "org.scalatest" %% "scalatest" % "2.2.6" % "test", // but prefer ScalaTest
-    "org.scalatestplus.play" %% "scalatestplus-play" % "1.5.1" % "test")
+    "org.scalatest" %% "scalatest" % "3.0.1" % "test", // but prefer ScalaTest
+    "org.scalatestplus.play" %% "scalatestplus-play" % "2.0.0-M1" % Test)
 
 
   val main = Project(appName, file(".")).enablePlugins(play.sbt.Play, BuildInfoPlugin)

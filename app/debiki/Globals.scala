@@ -376,8 +376,6 @@ class Globals {
       return
 
     p.Logger.info("Shutting down... [EsM200BYE]")
-    state.dbDaoFactory.db.readOnlyDataSource.asInstanceOf[HikariDataSource].close()
-    state.dbDaoFactory.db.readWriteDataSource.asInstanceOf[HikariDataSource].close()
     // Shutdown the notifier before the mailer, so no notifications are lost
     // because there was no mailer that could send them.
     shutdownActorAndWait(state.notifierActorRef)
@@ -387,6 +385,8 @@ class Globals {
     shutdownActorAndWait(state.spamCheckActorRef)
     state.elasticSearchClient.close()
     state.redisClient.quit()
+    state.dbDaoFactory.db.readOnlyDataSource.asInstanceOf[HikariDataSource].close()
+    state.dbDaoFactory.db.readWriteDataSource.asInstanceOf[HikariDataSource].close()
     _state = null
   }
 

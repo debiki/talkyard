@@ -24,39 +24,39 @@ import EmbeddedTopicsController._
 
 
 @Ignore
-class EmbeddedTopicsControllerSpec extends FreeSpec with ShouldMatchers {
+class EmbeddedTopicsControllerSpec extends FreeSpec with MustMatchers {
 
 
   "EmbeddedTopicsController can" - {
 
     "generate ids from urls" in {
       assert(hashSha1Base64UrlSafe("") == "2jmj7l5rSw0yVb_vlWAYkK_YBwk")
-      deriveTopicIdFromUrl("") shouldBe "2jmj7l5rSw0yVbvl"
+      deriveTopicIdFromUrl("") mustBe "2jmj7l5rSw0yVbvl"
 
       // Verify works when no '-' or '_' present in base 64 encoded SHA1.
       assert(hashSha1Base64UrlSafe("xyzw") == "ObagQbH2T2BVzoksR19teY0963A")
-      deriveTopicIdFromUrl("xyzw") shouldBe "ObagQbH2T2BVzoks"
+      deriveTopicIdFromUrl("xyzw") mustBe "ObagQbH2T2BVzoks"
 
       // Verify strips '-'.
       assert(hashSha1Base64UrlSafe("xyz") == "ZrJ0F9N-AkxGUmwvbTWKdU_FUvM")
-      deriveTopicIdFromUrl("xyz") shouldBe "ZrJ0F9NAkxGUmwvb"
+      deriveTopicIdFromUrl("xyz") mustBe "ZrJ0F9NAkxGUmwvb"
 
       // Verify strips '_'.
       assert(hashSha1Base64UrlSafe("xyzwå") == "RNQkvfTUxa_jT8zkY5_IPc-Hn6A")
-      deriveTopicIdFromUrl("xyzwå") shouldBe "RNQkvfTUxajT8zkY"
+      deriveTopicIdFromUrl("xyzwå") mustBe "RNQkvfTUxajT8zkY"
 
       // Verify strips both '-' and '_'.
       assert(hashSha1Base64UrlSafe("abcde") == "A95sVwv-JL_DKMzXyka3bq2vQzQ")
-      deriveTopicIdFromUrl("abcde") shouldBe "A95sVwvJLDKMzXyk"
+      deriveTopicIdFromUrl("abcde") mustBe "A95sVwvJLDKMzXyk"
 
       // '=' might appear at the end but it's hard to come up with a test that
       // verifies it's being stripped.
     }
 
     "strip http:// and https:// and // when generating ids" in {
-      deriveTopicIdFromUrl("http://example.com") shouldBe deriveTopicIdFromUrl("example.com")
-      deriveTopicIdFromUrl("https://example.com") shouldBe deriveTopicIdFromUrl("example.com")
-      deriveTopicIdFromUrl("//example.com") shouldBe deriveTopicIdFromUrl("example.com")
+      deriveTopicIdFromUrl("http://example.com") mustBe deriveTopicIdFromUrl("example.com")
+      deriveTopicIdFromUrl("https://example.com") mustBe deriveTopicIdFromUrl("example.com")
+      deriveTopicIdFromUrl("//example.com") mustBe deriveTopicIdFromUrl("example.com")
     }
 
   }
