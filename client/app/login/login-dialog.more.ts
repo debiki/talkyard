@@ -317,8 +317,12 @@ export var LoginDialogContent = createClassAndFactory({
 
     var switchToOtherDialogInstead;
     if (isSignUp) {
-      // Then the user clicked Sign Up explicitly, so need not show a switch-to-login
-      // dialog?
+      switchToOtherDialogInstead =
+        r.div({ className: 'form-group esLD_Switch' },
+          "(", r.i({}, "Already have an account? ",
+            r.a({ className: 'esLD_Switch_L', onClick: this.props.switchBetweenLoginAndSignUp },
+              "Login"),
+            " instead"), " )");
     }
     else if (store.siteStatus > SiteStatus.Active) {
       // Right now, don't allow creation of new accounts, for deactivated sites. Later, though,
