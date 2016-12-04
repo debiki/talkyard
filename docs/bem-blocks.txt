@@ -57,6 +57,7 @@ esUP            = A user's public profile page
 esUP_Un         = Username
 esUP_FN         = Full name
 esUP_Prefs      = ... the preferences section
+UP_Notfs_None   = Notifications, none
 
 esT             = a thread (i.e. a comment thread: a post and descendant replies)
 

@@ -51,7 +51,7 @@ export var UserNotificationsComponent = React.createClass({
     var me: Myself = this.props.loggedInUser;
     if (me.id !== userId && !isStaff(me)) {
       this.setState({
-        error: "May not list an other user's notifications.",
+        error: "May not list an other user's notifications. [EdE7WK2L_]",
         notfs: null,
       });
       return;
@@ -66,7 +66,9 @@ export var UserNotificationsComponent = React.createClass({
 
   render: function() {
     if (this.state.error)
-      return r.p({}, _.isString(this.state.error) ? this.state.error : "Error [EsE7YKW2].");
+      return (
+        r.p({ className: 'e_UP_Notfs_Err' },
+          _.isString(this.state.error) ? this.state.error : "Error [EsE7YKW2]."));
 
     if (!this.state.notfs)
       return r.p({}, "Loading...");
@@ -74,6 +76,9 @@ export var UserNotificationsComponent = React.createClass({
     var user: CompleteUser = this.props.user;
     var isMe = user.id === this.props.loggedInUser.userId;
     var toWho = isMe ? "you" : user.username || user.fullName;
+
+    let anyNoNotfsMessage = this.state.notfs.length ? null :
+        r.p({ className: 'e_UP_Notfs_None' }, "No notifications");
 
     var notfsElems = this.state.notfs.map((notf: Notification) =>
         r.li({ key: notf.id },
@@ -83,6 +88,7 @@ export var UserNotificationsComponent = React.createClass({
     return (
       r.div({},
         r.p({}, "Notifications to " + toWho + ":"),
+        anyNoNotfsMessage,
         r.ol({ className: 'esNotfs' },
           notfsElems)));
   }

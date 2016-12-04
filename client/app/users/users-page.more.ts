@@ -199,7 +199,7 @@ var UserBar = createComponent({
         : null;
 
     var sendMessageButton = me_maySendDirectMessageTo(loggedInUser, user)
-        ? PrimaryButton({ onClick: this.sendMessage }, "Send Message")
+        ? PrimaryButton({ onClick: this.sendMessage, className: 'e_UP_SendMsgB' }, "Send Message")
         : null;
 
     return (

@@ -423,6 +423,7 @@ export var Editor = createComponent({
     this.setState({
       messageToUserIds: [userId],
       text: '',
+      newPageRole: PageRole.FormalMessage,
     });
     this.loadGuidelines(WritingWhat.NewPage, null, PageRole.FormalMessage);
     this.showAndFadeOutBackdrop();

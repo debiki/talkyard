@@ -176,11 +176,35 @@ function pagesFor(browser) {
         browser.waitAndSetValue('.esTB_SearchD input[name="searchPhrase"]', phrase);
         browser.click('.e_SearchB');
       },
+
+      assertNotfToMe: function() {
+        assert(browser.isVisible('.esTopbar .esNotfIcon-toMe'));
+      },
+
+      openNotfToMe: function(options?: { waitForNewUrl?: boolean }) {
+        browser.waitAndClick('.esMyMenu');
+        browser.rememberCurrentUrl();
+        browser.waitAndClick('.esMyMenu .dropdown-menu .esNotf-toMe');
+        if (options && options.waitForNewUrl !== false) {
+          browser.waitForNewUrl();
+        }
+      }
     },
 
 
     watchbar: {
       titleSelector: '.esWB_T_Title',
+
+      open: function() {
+        browser.waitAndClick('.esOpenWatchbarBtn');
+        browser.waitForVisible('#esWatchbarColumn');
+      },
+
+      openIfNeeded: function() {
+        if (!browser.isVisible('#esWatchbarColumn')) {
+          api.watchbar.open();
+        }
+      },
 
       close: function() {
         browser.waitForVisible('.esWB_CloseB');
@@ -687,59 +711,43 @@ function pagesFor(browser) {
 
       assertPostTextMatches: function(postNr: PostNr, text: string) {
         browser.assertTextMatches(`#post-${postNr} .dw-p-bd`, text)
-      }
-    },
-
-
-    customForm: {
-      submit: function() {
-        browser.click('form input[type="submit"]');
-        browser.waitAndAssertVisibleTextMatches('.esFormThanks', "Thank you");
       },
 
-      assertNumSubmissionVisible: function(num: number) {
-        browser.waitForMyDataAdded();
-        browser.assertExactly(num, '.dw-p-flat');
-      },
-    },
-
-
-    replies: {
       topLevelReplySelector: '.dw-depth-1 > .dw-p',
       replySelector: '.dw-depth-1 .dw-p',
       allRepliesTextSelector: '.dw-depth-0 > .dw-single-and-multireplies > .dw-res',
 
       assertNumRepliesVisible: function(num: number) {
         browser.waitForMyDataAdded();
-        browser.assertExactly(num, api.replies.replySelector);
+        browser.assertExactly(num, api.topic.replySelector);
       },
 
       assertNumOrigPostRepliesVisible: function(num: number) {
         browser.waitForMyDataAdded();
-        browser.assertExactly(num, api.replies.topLevelReplySelector);
+        browser.assertExactly(num, api.topic.topLevelReplySelector);
       },
 
       assertNoReplyMatches: function(text) {
         browser.waitForMyDataAdded();
-        browser.assertNoTextMatches(api.replies.allRepliesTextSelector, text);
+        browser.assertNoTextMatches(api.topic.allRepliesTextSelector, text);
       },
 
       assertSomeReplyMatches: function(text) {
         browser.waitForMyDataAdded();
-        browser.assertTextMatches(api.replies.allRepliesTextSelector, text);
+        browser.assertTextMatches(api.topic.allRepliesTextSelector, text);
       },
 
       assertNoAuthorMissing: function() {
         // There's this error code if a post author isn't included on the page.
-        browser.replies.assertNoReplyMatches("EsE4FK07_");
+        browser.topic.assertNoReplyMatches("EsE4FK07_");
       },
 
       clickReplyToOrigPost: function() {
-        api.replies.clickPostActionButton('.dw-ar-p + .esPA .dw-a-reply');
+        api.topic.clickPostActionButton('.dw-ar-p + .esPA .dw-a-reply');
       },
 
       clickReplyToPostNr: function(postNr: PostNr) {
-        api.replies.clickPostActionButton(`#post-${postNr} + .esPA .dw-a-reply`);
+        api.topic.clickPostActionButton(`#post-${postNr} + .esPA .dw-a-reply`);
       },
 
       clickPostActionButton: function(buttonSelector: string) {
@@ -801,6 +809,19 @@ function pagesFor(browser) {
     },
 
 
+    customForm: {
+      submit: function() {
+        browser.click('form input[type="submit"]');
+        browser.waitAndAssertVisibleTextMatches('.esFormThanks', "Thank you");
+      },
+
+      assertNumSubmissionVisible: function(num: number) {
+        browser.waitForMyDataAdded();
+        browser.assertExactly(num, '.dw-p-flat');
+      },
+    },
+
+
     scrollButtons: {
       fixedBarSelector: '.esScrollBtns_fixedBar',
     },
@@ -856,6 +877,14 @@ function pagesFor(browser) {
 
 
     userProfilePage: {
+      openActivityFor: function(who: string, origin?: string) {
+        browser.go((origin || '') + `/-/users/${who}/activity`);
+      },
+
+      openNotfsFor: function(who: string, origin?: string) {
+        browser.go((origin || '') + `/-/users/${who}/notifications`);
+      },
+
       assertIsMyProfile: function() {
         browser.waitForVisible('.esUP_Un');
         assert(browser.isVisible('.esProfile_isYou'));
@@ -872,6 +901,31 @@ function pagesFor(browser) {
       assertFullNameIsNot: function(name: string) {
         browser.assertNoTextMatches('.esUP_FN', name);
       },
+
+      clickSendMessage: function() {
+        browser.waitAndClick('.e_UP_SendMsgB');
+      },
+
+      notfs: {
+        waitUntilKnowsIsEmpty: function() {
+          browser.waitForVisible('.e_UP_Notfs_None');
+        },
+
+        waitUntilSeesNotfs: function() {
+          browser.waitForVisible('.esUP .esNotfs li a');
+        },
+
+        openPageNotfWithText: function(text) {
+          browser.rememberCurrentUrl();
+          browser.waitForThenClickText('.esNotf_page', text);
+          browser.waitForNewUrl();
+        },
+
+        assertMayNotSeeNotfs: function() {
+          browser.waitForVisible('.e_UP_Notfs_Err');
+          browser.assertTextMatches('.e_UP_Notfs_Err', 'EdE7WK2L_');
+        }
+      }
     },
 
 
@@ -1006,13 +1060,13 @@ function pagesFor(browser) {
       },
 
       replyToOrigPost: function(text: string) {
-        api.replies.clickReplyToOrigPost();
+        api.topic.clickReplyToOrigPost();
         api.editor.editText(text);
         api.editor.save();
       },
 
       replyToPostNr: function(postNr: PostNr, text: string) {
-        api.replies.clickReplyToPostNr(postNr);
+        api.topic.clickReplyToPostNr(postNr);
         api.editor.editText(text);
         api.editor.save();
       },
@@ -1040,9 +1094,11 @@ function pagesFor(browser) {
     }
   };
 
+// backw compat, for now
+  api['replies'] = api.topic;
+
   return api;
 }
-
 
 export = pagesFor;
 

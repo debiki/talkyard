@@ -212,13 +212,13 @@ function pageRole_toIconString(pageRole: PageRole) {
     case PageRole.ToDo: return PageRole_Todo_IconString;
     case PageRole.MindMap: return PageRole_MindMap_IconString;
     case PageRole.Discussion: return PageRole_Discussion_IconString;
+    case PageRole.FormalMessage: return "Message";
     case PageRole.OpenChat: return PageRole_OpenChat_IconString;
     case PageRole.PrivateChat: return PageRole_PrivateChat_IconString;
-    case PageRole.FormalMessage: return "Message";
     case PageRole.Form: return PageRole_Form_IconString;
     case PageRole.Critique: return "Critique";  // [plugin]
     case PageRole.UsabilityTesting: return "Usability Testing";  // [plugin]
-    default: die('EsE4GUK75Z');
+    default: die(`Bad page role: ${pageRole} [EsE4GUK75Z]`);
   }
 }
 
