@@ -873,6 +873,17 @@ function pagesFor(browser) {
       countNumPagesFound_1: function(): number {
         return browser.elements('.esSERP_Hit_PageTitle').value.length;
       },
+
+      goToSearchResult: function(linkText?: string) {
+        browser.rememberCurrentUrl();
+        if (!linkText) {
+          browser.waitAndClick('.esSERP_Hit_PageTitle a');
+        }
+        else {
+          browser.waitForThenClickText('.esSERP_Hit_PageTitle a', linkText);
+        }
+        browser.waitForNewUrl();
+      },
     },
 
 
