@@ -77,7 +77,7 @@ describe('chat', function() {
   });
 
   it("Owen logs in, creates a chat topic", function() {
-    owen.waitAndClick('#e2eCreateChatB');
+    owen.watchbar.clickCreateChat();
     owen.loginDialog.loginWithPassword(owen);
     owen.waitAndSetValue('.esEdtr_titleEtc_title', "Chat channel title");
     owen.setValue('textarea', "Chat channel purpose");

@@ -238,6 +238,10 @@ function pagesFor(browser) {
 
       clickCreateChat: function() {
         browser.waitAndClick('#e2eCreateChatB');
+      },
+
+      clickCreateChatWaitForEditor: function() {
+        browser.waitAndClick('#e2eCreateChatB');
         browser.waitForVisible('.esEdtr_titleEtc');
       },
 
@@ -501,6 +505,7 @@ function pagesFor(browser) {
       },
     },
 
+
     pageTitle: {
       clickEdit: function() {
         browser.waitAndClick('#e2eEditTitle');
@@ -513,7 +518,11 @@ function pagesFor(browser) {
       save: function() {
         browser.click('.e2eSaveBtn');
         browser.waitForVisible('.dw-p-ttl h1');
-      }
+      },
+
+      assertMatches: function(regex) {
+        browser.assertPageTitleMatches(regex);
+      },
     },
 
 
@@ -1032,8 +1041,14 @@ function pagesFor(browser) {
         api.loginDialog.loginWithPassword(credentials);
       },
 
-      loginAsGuestViaTopbar: function(name: string, email?: string) {
+      loginAsGuestViaTopbar: function(nameOrObj, email?: string) {
         api.topbar.clickLogin();
+        let name = nameOrObj;
+        if (_.isObject(nameOrObj)) {
+          assert(!email);
+          name = nameOrObj.fullName;
+          email = nameOrObj.emailAddress;
+        }
         api.loginDialog.loginAsGuest(name, email);
       },
 
@@ -1084,7 +1099,7 @@ function pagesFor(browser) {
 
       createChatChannelViaWatchbar: function(
             data: { name: string, purpose: string, public_?: boolean }) {
-        api.watchbar.clickCreateChat();
+        api.watchbar.clickCreateChatWaitForEditor();
         api.editor.editTitle(data.name);
         api.editor.editText(data.purpose);
         if (data.public_ === false) {
