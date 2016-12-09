@@ -867,9 +867,16 @@ export function submitCustomFormAsJsonReply(formInputNameValues, success?: () =>
 
 export function submitCustomFormAsNewTopic(formInputNameValues) {
   function getOrDie(inpName: string): string {
-    let nameValue: any = _.find(formInputNameValues, (nv: any) => nv.name === inpName);
-    dieIf(!nameValue, `Input missing: ${inpName} [EdE4WKFE02]`);
-    return nameValue.value;
+    let concatenatedValues = null;
+    _.each(formInputNameValues, (nameValue: any) => {
+      if (nameValue.name === inpName) {
+        let value = nameValue.value.trim();
+        value = value.replace(/\\n/g, '\n');
+        concatenatedValues = (concatenatedValues || '') + value;
+      }
+    });
+    dieIf(concatenatedValues === null, `Input missing: ${inpName} [EdE4WKFE02]`);
+    return concatenatedValues.trim();
   }
 
   function goToNewPage(response) {
