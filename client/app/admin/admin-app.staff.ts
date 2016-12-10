@@ -56,6 +56,7 @@ export function routes() {
         Route({ path: 'legal', component: LegalSettingsComponent }),
         Route({ path: 'login', component: LoginSettingsComponent }),
         Route({ path: 'moderation', component: ModerationSettingsComponent }),
+        Route({ path: 'spam-flags', component: SpamFlagsSettingsComponent }),
         Route({ path: 'analytics', component: AnalyticsSettingsComponent }),
         Route({ path: 'advanced', component: AdvancedSettingsComponent }),
         Route({ path: 'experimental', component: ExperimentalSettingsComponent })),
@@ -231,6 +232,7 @@ var SettingsPanelComponent = React.createClass(<any> {
           NavLink({ to: AdminRoot + 'settings/legal', id: 'e2eAA_Ss_LegalL' }, "Legal"),
           NavLink({ to: AdminRoot + 'settings/login', id: 'e2eAA_Ss_LoginL' }, "Login"),
           NavLink({ to: AdminRoot + 'settings/moderation', id: 'e2eAA_Ss_ModL'  }, "Moderation"),
+          NavLink({ to: AdminRoot + 'settings/spam-flags', id: 'e2eAA_Ss_SpamFlagsL'  }, "Spam & flags"),
           NavLink({ to: AdminRoot + 'settings/analytics', id: 'e2eAA_Ss_AnalyticsL' }, "Analytics"),
           NavLink({ to: AdminRoot + 'settings/advanced', id: 'e2eAA_Ss_AdvancedL' }, "Advanced"),
           NavLink({ to: AdminRoot + 'settings/experimental', id: 'e2eAA_Ss_ExpL' }, "Experimental")),
@@ -361,6 +363,127 @@ var ModerationSettingsComponent = React.createClass(<any> {
             }
           },
         })));
+  }
+});
+
+
+
+var SpamFlagsSettingsComponent = React.createClass(<any> {
+  render: function() {
+    var props = this.props;
+    var currentSettings: Settings = props.currentSettings;
+    var editedSettings: Settings = props.editedSettings;
+
+    var valueOf = (getter: (s: Settings) => any) =>
+      firstDefinedOf(getter(editedSettings), getter(currentSettings));
+
+    var LargeNumber = 9999;
+
+    return (
+      r.div({},
+        Setting2(props, { type: 'number', min: 0, max: LargeNumber,
+          label: "Num flags to hide post",
+          help: "If a post gets these many flags, it'll get hidden, automatically.",
+          getter: (s: Settings) => s.numFlagsToHidePost,
+          update: (newSettings: Settings, target) => {
+            var num = parseInt(target.value);
+            if (_.isNaN(num)) num = currentSettings.numFlagsToHidePost;
+            if (num < 0) num = 0;
+            if (num > LargeNumber) num = LargeNumber;
+            newSettings.numFlagsToHidePost = num;
+          }
+        }),
+
+        Setting2(props, { type: 'number', min: 0, max: LargeNumber,
+          label: "Num minutes to calm down",
+          help: "If someone gets his/her post hidden because of flags, s/he might get angry. " +
+              "S/he must therefore wait this many minutes before being allowed to edit the post, " +
+              "so s/he won't just insert even more bad stuff.",
+          getter: (s: Settings) => s.cooldownMinutesAfterFlaggedHidden,
+          update: (newSettings: Settings, target) => {
+            var num = parseInt(target.value);
+            if (_.isNaN(num)) num = currentSettings.cooldownMinutesAfterFlaggedHidden;
+            if (num < 0) num = 0;
+            if (num > LargeNumber) num = LargeNumber;
+            newSettings.cooldownMinutesAfterFlaggedHidden = num;
+          }
+        }),
+
+        Setting2(props, { type: 'number', min: 0, max: LargeNumber, indent: true,
+          label: "Num flags to block new user",
+          help: r.span({},
+            "If a new user is flagged these many times by ",
+            r.b({}, r.i({}, "num flaggers to block new user ")),
+            "different users, all his/her posts will get hidden, " +
+            "and s/he won't be allowed to post more posts, until staff has had a look."),
+          getter: (s: Settings) => s.numFlagsToBlockNewUser,
+          update: (newSettings: Settings, target) => {
+            var num = parseInt(target.value);
+            if (_.isNaN(num)) num = currentSettings.numFlagsToBlockNewUser;
+            if (num < 0) num = 0;
+            if (num > LargeNumber) num = LargeNumber;
+            newSettings.numFlagsToBlockNewUser = num;
+          }
+        }),
+
+        Setting2(props, { type: 'number', min: 0, max: LargeNumber, indent: true,
+          label: "Num flaggers to block new user",
+          help: r.span({},
+            "If a new user is flagged ", r.b({}, r.i({}, "num flags to block new users ")),
+            "times by this many different users, all his/her posts will get hidden, " +
+            "and s/he won't be allowed to post more posts, until staff has had a look."),
+          getter: (s: Settings) => s.numFlaggersToBlockNewUser,
+          update: (newSettings: Settings, target) => {
+            var num = parseInt(target.value);
+            if (_.isNaN(num)) num = currentSettings.numFlaggersToBlockNewUser;
+            if (num < 0) num = 0;
+            if (num > LargeNumber) num = LargeNumber;
+            newSettings.numFlaggersToBlockNewUser = num;
+          }
+        }),
+
+        Setting2(props, { type: 'checkbox', min: 0, max: LargeNumber, indent: true,
+          label: "Notify staff if new user blocked",
+          help:
+            "Shall an email be sent to staff, if a new users get blocked? So staff can have " +
+            "a look sooner rather than later",
+          getter: (s: Settings) => s.notifyModsIfUserBlocked,
+          update: (newSettings: Settings, target) => {
+            newSettings.notifyModsIfUserBlocked = target.checked;
+          }
+        }),
+
+        Setting2(props, { type: 'number', min: 0, max: LargeNumber, indent: true,
+          label: "Regular member flag weight",
+          help: r.span({},
+            "How much more should I care about flags from members who visit " +
+            "often and behave well? In comparison to people who visit " +
+            "less frequently, or have been a bit troublesome. E.g. 2 means one flag would count " +
+            "as two flags from two different users"),
+          getter: (s: Settings) => s.regularMemberFlagWeight,
+          update: (newSettings: Settings, target) => {
+            var num = parseFloat(target.value);
+            if (_.isNaN(num)) num = currentSettings.regularMemberFlagWeight;
+            if (num < 0) num = 0;
+            if (num > LargeNumber) num = LargeNumber;
+            newSettings.regularMemberFlagWeight = num;
+          }
+        }),
+
+        Setting2(props, { type: 'number', min: 0, max: LargeNumber, indent: true,
+          label: "Core member flag weight",
+          help: r.span({},
+            "How much more should I care about flags from core members and staff?"),
+          getter: (s: Settings) => s.coreMemberFlagWeight,
+          update: (newSettings: Settings, target) => {
+            var num = parseFloat(target.value);
+            if (_.isNaN(num)) num = currentSettings.coreMemberFlagWeight;
+            if (num < 0) num = 0;
+            if (num > LargeNumber) num = LargeNumber;
+            newSettings.coreMemberFlagWeight = num;
+          }
+        })
+      ));
   }
 });
 

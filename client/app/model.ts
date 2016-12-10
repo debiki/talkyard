@@ -639,13 +639,24 @@ enum ContentLicense {
 }
 
 interface Settings {
+  // Login
   userMustBeAuthenticated: boolean;
   userMustBeApproved: boolean;
   allowGuestLogin: boolean;
 
+  // Moderation
   numFirstPostsToAllow: number;
   numFirstPostsToApprove: number;
   numFirstPostsToReview: number;
+
+  // Spam
+  numFlagsToHidePost: number;
+  cooldownMinutesAfterFlaggedHidden: number;
+  numFlagsToBlockNewUser: number;
+  numFlaggersToBlockNewUser: number;
+  notifyModsIfUserBlocked: boolean;
+  regularMemberFlagWeight: number;
+  coreMemberFlagWeight: number;
 
   showForumCategories: boolean;
   horizontalComments: boolean;

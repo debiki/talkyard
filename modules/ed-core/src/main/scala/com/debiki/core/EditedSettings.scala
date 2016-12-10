@@ -81,7 +81,14 @@ case class EditedSettings(
   contentLicense: Option[ContentLicense],
   googleUniversalAnalyticsTrackingId: Option[String],
   showComplicatedStuff: Option[Boolean],
-  htmlTagCssClasses: Option[String]) {
+  htmlTagCssClasses: Option[String],
+  numFlagsToHidePost: Option[Int],
+  cooldownMinutesAfterFlaggedHidden: Option[Int],
+  numFlagsToBlockNewUser: Option[Int],
+  numFlaggersToBlockNewUser: Option[Int],
+  notifyModsIfUserBlocked: Option[Boolean],
+  regularMemberFlagWeight: Option[Float],
+  coreMemberFlagWeight: Option[Float]) {
 
   numFirstPostsToAllow foreach { num =>
     require(num >= 0 && num <= MaxNumFirstPosts, "EsE4GUK20")
@@ -128,7 +135,14 @@ object EditedSettings {
     contentLicense = None,
     googleUniversalAnalyticsTrackingId = None,
     showComplicatedStuff = None,
-    htmlTagCssClasses = None)
+    htmlTagCssClasses = None,
+    numFlagsToHidePost = None,
+    cooldownMinutesAfterFlaggedHidden = None,
+    numFlagsToBlockNewUser = None,
+    numFlaggersToBlockNewUser = None,
+    notifyModsIfUserBlocked = None,
+    regularMemberFlagWeight = None,
+    coreMemberFlagWeight = None)
 
 }
 
@@ -162,7 +176,14 @@ case class SettingsToSave(
   contentLicense: Option[Option[ContentLicense]] = None,
   googleUniversalAnalyticsTrackingId: Option[Option[String]] = None,
   showComplicatedStuff: Option[Option[Boolean]] = None,
-  htmlTagCssClasses: Option[Option[String]] = None) {
+  htmlTagCssClasses: Option[Option[String]] = None,
+  numFlagsToHidePost: Option[Option[Int]] = None,
+  cooldownMinutesAfterFlaggedHidden: Option[Option[Int]] = None,
+  numFlagsToBlockNewUser: Option[Option[Int]] = None,
+  numFlaggersToBlockNewUser: Option[Option[Int]] = None,
+  notifyModsIfUserBlocked: Option[Option[Boolean]] = None,
+  regularMemberFlagWeight: Option[Option[Float]] = None,
+  coreMemberFlagWeight: Option[Option[Float]] = None) {
 
   if (contribAgreement.contains(Some(ContribAgreement.UseOnThisSiteOnly)) &&
       contentLicense.isDefined) {

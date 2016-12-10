@@ -1158,6 +1158,9 @@ object ReactJson {
   def JsLongOrNull(value: Option[Long]) =
     value.map(JsNumber(_)).getOrElse(JsNull)
 
+  def JsFloatOrNull(value: Option[Float]) =
+    value.map(v => JsNumber(BigDecimal(v))).getOrElse(JsNull)
+
   def JsDateMs(value: ju.Date) =
     JsNumber(value.getTime)
 
