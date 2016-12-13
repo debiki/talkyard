@@ -39,28 +39,27 @@ object ReviewAction {
 
 /** Means that something should be reviewed, e.g. a post or a user should be reviewed.
   *
-  * @param causedById A user that did something possibly harmful and therefore what s/he did
-  *   should be reviewed. Or noticed a bad post and flagged it, and in that way actively
-  *   created a review task.
+  * @param createdById The user that created the review task, e.g. someone who flagged a post.
   *   Is part of a unique key. So if, for example, someone posts spam, and two different people
-  *   flag the spam post — then three review tasks get created: one with causedById = the spammer;
-  *   it'll be review-reason = post-is-spam. And one for each flagger; these tasks will have
-  *   review reason = post-was-flagged.
+  *   flag the spam post — then three review tasks might get created: one with causedById =
+  *   the system user, with review-reason = spam-detected. And one for each flagger; these
+  *   tasks will have review reason = post-was-flagged-as-spamm.
   * @param completedById The staff user that had a look at this review task and e.g. deleted
   *   a spam comment, or dismissed the review task if the comment was ok.
   * @param invalidatedAt If there is e.g. a review task about a comment, but the comment gets
   *   deleted, then the review task becomes invalid. Perhaps just delete the review task instead?
   *   Hmm. StackExchange has an invalidated_at field. Aha, could be useful if the comment gets
   *   undeleted — then we want the review task back again.
-  * @param userId A user who e.g. changed his/her avatar and his/her profile, and therefore should
-  *   be reviewed.
+  * @param maybeBadUserId A user that did something possibly harmful and therefore what s/he did
+  *   should be reviewed. E.g. wrote a post that got flagged. Or changed his/her avatar
+  *   and his/her profile, which therefore should be reviewed.
   * @param pageId A new page that should be reviewed.
   * @param postId A post that should be reviewed, it might be spam for example.
   */
 case class ReviewTask(
   id: ReviewTaskId,
   reasons: immutable.Seq[ReviewReason],
-  causedById: UserId,
+  createdById: UserId,
   createdAt: ju.Date,
   createdAtRevNr: Option[Int] = None,
   moreReasonsAt: Option[ju.Date] = None,
@@ -69,7 +68,10 @@ case class ReviewTask(
   completedById: Option[UserId] = None,
   invalidatedAt: Option[ju.Date] = None,
   resolution: Option[ReviewTaskResolution] = None,
-  userId: Option[UserId] = None,
+  // COULD change to a Set[UserId] and include editors too, hmm. Or just the author +
+  // the 10? most recent editors, or the 10 most recent editors (not the author) for wiki posts.
+  // Or the ones who edited the post, since it was last reviewed & any flags disagreed with?
+  maybeBadUserId: UserId,
   pageId: Option[PageId] = None,
   postId: Option[UniquePostId] = None,
   postNr: Option[PostNr] = None) {
@@ -81,9 +83,6 @@ case class ReviewTask(
   require(completedAt.isEmpty || invalidatedAt.isEmpty, "EsE2FPW1")
   require(completedAt.isEmpty || resolution.isDefined, "EsE0YUM4")
   require(!completedAtRevNr.exists(_ < FirstRevisionNr), "EsE1WL43")
-  // A review task is either about a user, or about a page/post, but not both:
-  require(userId.isEmpty || postId.isEmpty, "EsE6GPVU4")
-  require(userId.isEmpty || pageId.isEmpty, "EsE4JYU7")
   require(!postId.exists(_ <= 0), "EsE3GUL80")
   require(postId.isDefined == postNr.isDefined, "EsE6JUM13")
   require(postId.isDefined == createdAtRevNr.isDefined, "EsE5PUY0")
@@ -101,10 +100,10 @@ case class ReviewTask(
     }
     require(oldTask.id == this.id, "EsE4GPMU0")
     require(oldTask.completedAt.isEmpty, "EsE4FYC2")
-    require(oldTask.causedById == this.causedById, "EsE6GU20")
+    require(oldTask.createdById == this.createdById, "EsE6GU20")
     require(oldTask.createdAt.getTime <= this.createdAt.getTime, "EsE7JGYM2")
     require(!oldTask.moreReasonsAt.exists(_.getTime > this.createdAt.getTime), "EsE2QUX4")
-    require(oldTask.userId == this.userId, "EsE5JMU1")
+    require(oldTask.maybeBadUserId == this.maybeBadUserId, "EsE5JMU1")
     require(oldTask.postId == this.postId, "EsE2UYF7")
     // Cannot add more review reasons to an already completed task.
     require(oldTask.completedAt.isEmpty, "EsE1WQC3")

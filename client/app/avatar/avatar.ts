@@ -59,6 +59,7 @@ export var Avatar = createComponent({
 
   makeTextAvatar: function() {
     var user: BriefUser = this.props.user;
+    let hidden: boolean = this.props.hidden;
     var result = textAvatarsByUserId[user.id];
     if (result)
       return result;
@@ -78,7 +79,11 @@ export var Avatar = createComponent({
       debiki2.die("Name missing: " + JSON.stringify(user) + " [EdE7UMYP3]");
     }
 
-    if (user.id > 0) {
+    if (hidden) {
+      // Give avatars for hidden posts the boring gray guest color.
+      isGuestClass = ' esAvtr-gst';
+    }
+    else if (user.id > 0) {
       // Always use the same color for the same user (unless the color palette gets changed).
       var colorIndex = user.id % NumAvatarColors;
       var hue = AvatarColorHueDistance * colorIndex;
@@ -112,11 +117,11 @@ export var Avatar = createComponent({
 
     // Append a number to make the letters unique on this page.
     // Possibly different numbers on different pages, for the same user.
-    var isUnknownUser = user.id === UnknownUserId;
+    var isUnknownOrHidden = user.id === UnknownUserId || hidden;
     var number = 1;
-    var text = isUnknownUser ? '?' : firstLetterInName;
+    var text = isUnknownOrHidden ? '?' : firstLetterInName;
     var textAndColor = text + colorIndex;
-    var alreadyInUse = !isUnknownUser && textAvatarsTaken[textAndColor];
+    var alreadyInUse = !isUnknownOrHidden && textAvatarsTaken[textAndColor];
     while (alreadyInUse) {
       number += 1;
       if (number >= 10) {
@@ -138,8 +143,10 @@ export var Avatar = createComponent({
       color: color,
     };
 
-    textAvatarsTaken[textAndColor] = true;
-    textAvatarsByUserId[user.id] = result;
+    if (!hidden) {
+      textAvatarsTaken[textAndColor] = true;
+      textAvatarsByUserId[user.id] = result;
+    }
     return result;
   },
 

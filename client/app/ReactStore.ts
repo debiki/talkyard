@@ -228,8 +228,14 @@ ReactDispatcher.register(function(payload) {
       uncollapsePostAndChildren(action.post);
       break;
 
+    case ReactActions.actionTypes.InsertAndShowPost:
+      let post: Post = action.post;
+      updatePost(post);
+      showPostNr(post.postId);
+      break;
+
     case ReactActions.actionTypes.ShowPost:
-      showPost(action.postId, action.showChildrenToo);
+      showPostNr(action.postNr, action.showChildrenToo);
       break;
 
     case ReactActions.actionTypes.SetWatchbar:
@@ -746,7 +752,7 @@ function collapseTree(post: Post) {
 }
 
 
-function showPost(postNr: PostNr, showChildrenToo?: boolean) {
+function showPostNr(postNr: PostNr, showChildrenToo?: boolean) {
   var post = store.allPosts[postNr];
   if (showChildrenToo) {
     uncollapsePostAndChildren(post);
@@ -1026,13 +1032,20 @@ function patchTheStore(storePatch: StorePatch) {
   }
 
   var storePatchPageVersion = storePatch.pageVersionsByPageId[store.pageId];
-  if (!storePatchPageVersion || storePatchPageVersion <= store.pageVersion) {
-    // The store includes these changes already.
+  if (!storePatchPageVersion || storePatchPageVersion < store.pageVersion) {
+    // These changes are old, might be out-of-date, ignore.
     // COULD rename .usersBrief to .authorsBrief so it's apparent that they're related
     // to the posts, and that it's ok to ignore them if the posts are too old.
     return;
   }
-  store.pageVersion = storePatchPageVersion;
+  else if (storePatchPageVersion === store.pageVersion) {
+    // We might be loading the text of a hidden/unapproved comment, in order to show it.
+    // So although store & patch page versions are the same, proceed with updating
+    // any posts below.
+  }
+  else {
+    store.pageVersion = storePatchPageVersion;
+  }
 
   var posts = storePatch.postsByPageId[store.pageId];
   _.each(posts || [], (post: Post) => {
@@ -1044,7 +1057,9 @@ function patchTheStore(storePatch: StorePatch) {
   // (The server doesn't know exactly which page we're looking at — perhaps we have many
   // browser tabs open, for example.)
   // COULD wait with marking it as seen until the user shows s/he is still here.
-  Server.markCurrentPageAsSeen();
+  if (store.me.isAuthenticated) {
+    Server.markCurrentPageAsSeen();
+  }
 }
 
 

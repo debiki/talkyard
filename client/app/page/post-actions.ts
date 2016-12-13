@@ -88,6 +88,18 @@ export var NoCommentsPageActions = createComponent({
 });
 
 
+export function makeReplyBtnTitle(store: Store, post: Post, isAppendReplyButton: boolean) {
+  if (post.postId !== BodyId)
+    return "Reply";
+
+  switch (store.pageRole) {
+    case PageRole.Critique: return "Give Critique"; // [plugin]
+    default:
+      return isAppendReplyButton ? "Reply to the Original Post" : "Reply";
+  }
+}
+
+
 export var PostActions = createComponent({
   displayName: 'PostActions',
 
@@ -116,16 +128,6 @@ export var PostActions = createComponent({
       var toggleOn = !me_hasVoted(this.props.store.me, this.props.post.postId, 'VoteLike');
       debiki.internal.toggleVote(this.props.post.postId, 'VoteLike', toggleOn);
     });
-  },
-
-  makeReplyBtnTitle: function(post: Post) {
-    if (post.postId !== BodyId)
-      return "Reply";
-
-    switch (this.props.store.pageRole) {
-      case PageRole.Critique: return "Give Critique"; // [plugin]
-      default: return "Reply";
-    }
   },
 
   openMoreVotesDropdown: function(event) {
@@ -189,7 +191,7 @@ export var PostActions = createComponent({
     else if (!deletedOrCollapsed) {
       replyButton =
           r.a({ className: 'dw-a dw-a-reply icon-reply', onClick: this.onReplyClick },
-            this.makeReplyBtnTitle(post));
+            makeReplyBtnTitle(store, post, false));
     }
 
     // Show a close button for unanswered questions and pending to-dos, and a reopen

@@ -25,7 +25,7 @@ sealed abstract class TrustLevel(val IntVal: Int) { def toInt = IntVal }
 object TrustLevel {
   case object New extends TrustLevel(1)
   case object Basic extends TrustLevel(2)
-  case object Member extends TrustLevel(3)
+  case object Member extends TrustLevel(3) // rename to Full/Normal/Complete/Common-Member?
   case object Regular extends TrustLevel(4)
   case object CoreMember extends TrustLevel(5)
 

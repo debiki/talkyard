@@ -206,6 +206,10 @@ function addCommandsToBrowser(browser) {
 
 
   browser.addCommand('go', function(url) {
+    if (url[0] === '/') {
+      // Local url, need to add origin.
+      url = browser.origin() + url;
+    }
     logMessage("Go: " + url);
     browser.url(url);
   });

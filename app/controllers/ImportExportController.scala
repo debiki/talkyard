@@ -77,7 +77,7 @@ object ImportExportController extends mvc.Controller {
   private case class ImportSiteData(
     site: Site,
     settings: SettingsToSave,
-    users: Seq[CompleteUser],
+    users: Seq[MemberInclDetails],
     pages: Seq[PageMeta],
     pagePaths: Seq[PagePathWithId],
     categories: Seq[Category],
@@ -111,7 +111,7 @@ object ImportExportController extends mvc.Controller {
 
     val settings = Settings2.settingsToSaveFromJson(settingsJson)
 
-    val users: Seq[CompleteUser] = membersJson.value.zipWithIndex map { case (json, index) =>
+    val users: Seq[MemberInclDetails] = membersJson.value.zipWithIndex map { case (json, index) =>
       readMemberOrBad(json, isE2eTest).getOrIfBad(errorMessage =>
           throwBadReq(
             "EsE0GY72", s"""Invalid user json at index $index in the 'users' list: $errorMessage,
@@ -194,8 +194,7 @@ object ImportExportController extends mvc.Controller {
       transaction.upsertSiteSettings(siteData.settings)
 
       siteData.users foreach { user =>
-        val newId = transaction.nextAuthenticatedUserId
-        transaction.insertAuthenticatedUser(user.copy(id = newId))
+        transaction.insertAuthenticatedUser(user)
       }
       siteData.pages foreach { pageMeta =>
         //val newId = transaction.nextPageId()
@@ -250,7 +249,7 @@ object ImportExportController extends mvc.Controller {
   }
 
 
-  def readMemberOrBad(jsValue: JsValue, isE2eTest: Boolean): CompleteUser Or ErrorMessage = {
+  def readMemberOrBad(jsValue: JsValue, isE2eTest: Boolean): MemberInclDetails Or ErrorMessage = {
     val jsObj = jsValue match {
       case x: JsObject => x
       case bad =>
@@ -269,7 +268,7 @@ object ImportExportController extends mvc.Controller {
     try {
       val passwordHash = readOptString(jsObj, "passwordHash")
       passwordHash.foreach(DebikiSecurity.throwIfBadPassword(_, isE2eTest))
-      Good(CompleteUser(
+      Good(MemberInclDetails(
         id = id,
         username = username,
         fullName = readOptString(jsObj, "fullName"),

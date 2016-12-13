@@ -26,6 +26,7 @@ import debiki._
 import debiki.DebikiHttp._
 import io.efdi.server.notf.NotificationGenerator
 import io.efdi.server.pubsub.StorePatchMessage
+import io.efdi.server.http.throwForbiddenIf
 import play.api.libs.json.JsValue
 import play.{api => p}
 import scala.collection.{mutable, immutable}
@@ -170,9 +171,10 @@ trait PostsDao {
       else Some(ReviewTask(
         id = transaction.nextReviewTaskId(),
         reasons = reviewReasons.to[immutable.Seq],
-        causedById = author.id,
+        createdById = SystemUserId,
         createdAt = transaction.currentTime,
         createdAtRevNr = Some(newPost.currentRevisionNr),
+        maybeBadUserId = authorId,
         postId = Some(newPost.uniqueId),
         postNr = Some(newPost.nr)))
 
@@ -194,7 +196,7 @@ trait PostsDao {
 
     refreshPageInMemCache(pageId)
 
-    val storePatchJson = ReactJson.makeStorePatch(newPost, author, this)
+    val storePatchJson = ReactJson.makeStorePatch(newPost, author, this, showHidden = true)
     pubSub.publish(StorePatchMessage(siteId, pageId, storePatchJson, notifications),
       byId = author.id)
 
@@ -248,7 +250,7 @@ trait PostsDao {
       // to the page members, so we don't know if they are staff.
       // Later: auto bump threat level to ModerateThreat, then MessagesDao will do all this
       // automatically.
-      val tasks = transaction.loadReviewTaskCausedBy(author.id, limit = MaxNumFirstPosts,
+      val tasks = transaction.loadReviewTasksAboutUser(author.id, limit = MaxNumFirstPosts,
         OrderBy.MostRecentFirst)
       val numLoaded = tasks.length
       val numPending = tasks.count(_.resolution.isEmpty)
@@ -266,7 +268,7 @@ trait PostsDao {
     val numFirstToNotify = math.min(MaxNumFirstPosts, settings.numFirstPostsToReview)
 
     if ((numFirstToAllow > 0 && numFirstToApprove > 0) || numFirstToNotify > 0) {
-      val tasks = transaction.loadReviewTaskCausedBy(author.id, limit = MaxNumFirstPosts,
+      val tasks = transaction.loadReviewTasksAboutUser(author.id, limit = MaxNumFirstPosts,
         OrderBy.OldestFirst)
       val numApproved = tasks.count(_.resolution.exists(_.isFine))
       val numLoaded = tasks.length
@@ -313,8 +315,13 @@ trait PostsDao {
     val (post, author, notifications) = readWriteTransaction { transaction =>
       val author = transaction.loadUser(authorId) getOrElse
         throwNotFound("DwE8YK32", "Author not found")
+
       val page = PageDao(pageId, transaction)
       throwIfMayNotPostTo(page, author)(transaction)
+
+      val authorAndLevels = loadUserAndLevels(byWho, transaction)
+      val (reviewReasons: Seq[ReviewReason], _) =
+        throwOrFindReviewPostReasons(page, authorAndLevels, transaction)
 
       if (!page.role.isChat)
         throwForbidden("EsE5F0WJ2", s"Page $pageId is not a chat page; cannot insert chat message")
@@ -331,18 +338,33 @@ trait PostsDao {
         post.createdById == authorId &&
           transaction.currentTime.getTime - post.createdAt.getTime < LastChatMessageRecentMs
       }
-      val (postNr, notfs) = anyLastMessageSameUserRecently match {
+      val (post, notfs) = anyLastMessageSameUserRecently match {
         case Some(lastMessage) if !lastMessage.isDeleted =>
           appendToLastChatMessage(lastMessage, textAndHtml, byWho, spamRelReqStuff, transaction)
         case None =>
-          createNewChatMessage(page, textAndHtml, byWho, spamRelReqStuff, transaction)
+          val (post, notfs) =
+            createNewChatMessage(page, textAndHtml, byWho, spamRelReqStuff, transaction)
+          // For now, let's create review tasks only for new messages, but not when appending
+          // to the prev message. Should work well enough + won't be too many review tasks.
+          val anyReviewTask = if (reviewReasons.isEmpty) None
+          else Some(ReviewTask(
+            id = transaction.nextReviewTaskId(),
+            reasons = reviewReasons.to[immutable.Seq],
+            createdById = SystemUserId,
+            createdAt = transaction.currentTime,
+            createdAtRevNr = Some(post.currentRevisionNr),
+            maybeBadUserId = author.id,
+            postId = Some(post.uniqueId),
+            postNr = Some(post.nr)))
+          anyReviewTask.foreach(transaction.upsertReviewTask)
+          (post, notfs)
       }
-      (postNr, author, notfs)
+      (post, author, notfs)
     }
 
     refreshPageInMemCache(pageId)
 
-    val storePatchJson = ReactJson.makeStorePatch(post, author, this)
+    val storePatchJson = ReactJson.makeStorePatch(post, author, this, showHidden = true)
     pubSub.publish(StorePatchMessage(siteId, pageId, storePatchJson, notifications),
       byId = author.id)
 
@@ -631,7 +653,7 @@ trait PostsDao {
           None
         }
         else {
-          Some(makeReviewTask(editorId, editedPost, immutable.Seq(ReviewReason.LateEdit),
+          Some(makeReviewTask(SystemUserId, editedPost, immutable.Seq(ReviewReason.LateEdit),
             transaction))
         }
 
@@ -1391,22 +1413,200 @@ trait PostsDao {
   }
 
 
-  def flagPost(pageId: PageId, postNr: PostNr, flagType: PostFlagType, flaggerId: UserId) {
+  /** Returns all posts hidden as a result of this flag — which might be many, because
+    * the flag might result in the computer believing the user is Bad, and hide all hens posts.
+    */
+  def flagPost(pageId: PageId, postNr: PostNr, flagType: PostFlagType, flaggerId: UserId)
+        : immutable.Seq[Post] = {
+    val (postAfter, wasHidden) = doFlagPost(pageId, postNr, flagType, flaggerId = flaggerId)
+    var postsHidden = ifBadAuthorCensorEverything(postAfter)
+    if (wasHidden) {
+      postsHidden :+= postAfter
+    }
+    postsHidden
+  }
+
+
+  private def doFlagPost(pageId: PageId, postNr: PostNr, flagType: PostFlagType,
+        flaggerId: UserId): (Post, Boolean) = {
     readWriteTransaction { transaction =>
       val postBefore = transaction.loadThePost(pageId, postNr)
-      val flagger = transaction.loadTheUser(flaggerId)
+      val flagger = transaction.loadTheMember(flaggerId)
       throwIfMayNotSeePost(postBefore, Some(flagger))(transaction)
+      /* later, like Discourse?:
+      throwForbiddenIf(flagger.effectiveTrustLevel == TrustLevel.New, "EdE7KW1Y4",
+          "New users may not flag posts")
+      SECURITY COULD: small forums: everyone may flag. Medium/large: new users may not flag. */
+      val settings = loadWholeSiteSettings(transaction)
 
-      // SHOULD if >= 2 pending flags, then hide post until reviewed? And unhide, if flags cleared.
-      val postAfter = postBefore.copy(numPendingFlags = postBefore.numPendingFlags + 1)
+      val newNumFlags = postBefore.numPendingFlags + 1
+      var postAfter = postBefore.copy(numPendingFlags = newNumFlags)
+
       val reviewTask = makeReviewTask(flaggerId, postAfter,
         immutable.Seq(ReviewReason.PostFlagged), transaction)
+
+      // Hide post, update page?
+      val shallHide = newNumFlags >= settings.numFlagsToHidePost && !postBefore.isHidden
+      if (shallHide) {
+        hidePostsOnPage(Vector(postAfter), pageId, "This post was flagged")(transaction)
+      }
+      else {
+        transaction.updatePost(postAfter)
+      }
+
       transaction.insertFlag(postBefore.uniqueId, pageId, postNr, flagType, flaggerId)
-      transaction.updatePost(postAfter)
       transaction.upsertReviewTask(reviewTask)
-      // Need not update page version: flags aren't shown (except perhaps for staff users).
+      (postAfter, shallHide)
     }
-    refreshPageInMemCache(pageId)
+  }
+
+
+  /** Hides all posts this user has made, if s/he is a new user that gets flagged a lot.
+    */
+  private def ifBadAuthorCensorEverything(post: Post): immutable.Seq[Post] = {
+    val userId = post.createdById
+    val pageIdsToRefresh = mutable.Set[PageId]()
+    val postsHidden = readWriteTransaction { transaction =>
+      val user = transaction.loadUser(userId) getOrDie "EdE6FKW02"
+      if (user.effectiveTrustLevel != TrustLevel.New)
+        return Nil
+
+      val settings = loadWholeSiteSettings(transaction)
+
+      // For members, we'll use the user id.  For guests, we'll use the browser-ip & -id-cookie.
+      var anyBrowserIdData: Option[BrowserIdData] = None
+      def theBrowserIdData = anyBrowserIdData getOrDie "EdE5RW2EB8"
+
+      val tasks =
+        if (user.isMember) {
+          transaction.loadReviewTasksAboutUser(user.id, limit = 999,
+            orderBy = OrderBy.MostRecentFirst)
+        }
+        else {
+          val auditLogEntry = transaction.loadCreatePostAuditLogEntry(post.uniqueId) getOrElse {
+            // Audit log data apparently deleted, so cannot find out if the guest author is bad.
+            return Nil
+          }
+          anyBrowserIdData = Some(auditLogEntry.browserIdData)
+          transaction.loadReviewTasksAboutBrowser(theBrowserIdData, limit = 999,
+            orderBy = OrderBy.MostRecentFirst)
+        }
+
+      // If lots of flags are incorrect, then don't censor the user, at this time.
+      val numResolvedFine = tasks.count(_.resolution.exists(_.isFine))
+      val numResolvedBad = tasks.count(_.resolution.exists(!_.isFine))
+      if (numResolvedFine >= math.max(1, numResolvedBad))
+        return Nil
+
+      // If there are too few flags, or too few distinct human flaggers, don't censor the user.
+      val maybeBadTasks = tasks.filter(!_.resolution.exists(_.isFine))
+      val manyFlags = maybeBadTasks.size >= settings.numFlagsToBlockNewUser
+      val flaggersMaybeInclSystem = maybeBadTasks.map(_.createdById).toSet
+      val numFlaggersExclSystem = (flaggersMaybeInclSystem - SystemUserId).size
+      val manyFlaggers = numFlaggersExclSystem >= settings.numFlaggersToBlockNewUser
+      if (!manyFlags || !manyFlaggers)
+        return Nil
+
+      // Block the user.
+      if (user.isMember) {
+        COULD_OPTIMIZE // edit & save the user directly [6DCU0WYX2]
+        val member = transaction.loadMemberInclDetails(user.id) getOrDie "EdE5KW0U4"
+        val memberAfter = member.copyWithMaxThreatLevel(ThreatLevel.ModerateThreat)
+        transaction.updateMemberInclDetails(memberAfter)
+      }
+      else {
+        blockGuestImpl(theBrowserIdData, user.id, numDays = 31,
+          threatLevel = ThreatLevel.ModerateThreat, blockerId = SystemUserId)(transaction)
+      }
+
+      SECURITY ; BUG // minor: if the author has posted > 999 post, only the most recent ones
+      // will get hidden here, because we loaded only the most recent ones, above.
+      // — However, new users are rate limited, so not super likely to happen.
+
+      // Censor the user's posts.
+      val postToHide =
+        if (user.isMember) {
+          transaction.loadPostsByAuthor(userId, limit = 99, OrderBy.MostRecentFirst)
+              .filter(p => !p.isHidden && !p.isTitle)
+        }
+        else {
+          // Find posts-to-hide by searching for create-post audit log entries by the
+          // same browser-ip and -id-cookie.
+          val manyEntries = transaction.loadCreatePostAuditLogEntriesBy(
+            theBrowserIdData, limit = 99 /* whatever. For now. */, OrderBy.MostRecentFirst)
+          val fewerEntries = manyEntries filter { entry =>
+            User.isGuestId(entry.doerId) && !entry.postNr.contains(PageParts.TitleNr)
+          }
+          val postIds = fewerEntries.flatMap(_.uniquePostId)
+          transaction.loadPostsByUniqueId(postIds).values.filter(!_.isHidden)
+        }
+
+      val postToHideByPage = postToHide.groupBy(_.pageId)
+      for ((pageId, posts) <- postToHideByPage) {
+        hidePostsOnPage(posts, pageId, "Many posts by this author got flagged, hiding all")(
+            transaction)
+        pageIdsToRefresh += pageId
+      }
+      postToHide
+    }
+
+    removeUserFromMemCache(userId)
+    pageIdsToRefresh.foreach(refreshPageInMemCache)
+    postsHidden.to[immutable.Seq]
+  }
+
+
+  private def hidePostsOnPage(posts: Iterable[Post], pageId: PageId, reason: String)(
+        transaction: SiteTransaction) {
+    dieIf(posts.exists(_.pageId != pageId), "EdE7GKU23Y4")
+    dieIf(posts.exists(_.isTitle), "EdE5KP0WY2") ; ANNOYING // end users can trigger internal error
+    val postsToHide = posts.filter(!_.isHidden)
+    if (postsToHide.isEmpty)
+      return
+
+    val pageMetaBefore = transaction.loadPageMeta(pageId) getOrDie "EdE7KP0F2"
+    var numOrigPostRepliesHidden = 0
+    var numRepliesHidden = 0
+    var isHidingOrigPost = false
+
+    postsToHide foreach { postBefore =>
+      numOrigPostRepliesHidden += (postBefore.isVisible && postBefore.isOrigPostReply) ? 1 | 0
+      numRepliesHidden += (postBefore.isVisible && postBefore.isReply) ? 1 | 0
+      isHidingOrigPost ||= postBefore.isOrigPost
+
+      val postAfter = postBefore.copy(
+        hiddenAt = Some(transaction.currentTime),
+        hiddenById = Some(SystemUserId),
+        hiddenReason = Some(reason))
+
+      transaction.updatePost(postAfter)
+    }
+
+    var pageMetaAfter = pageMetaBefore.copy(
+      numRepliesVisible = pageMetaBefore.numRepliesVisible - numRepliesHidden,
+      numOrigPostRepliesVisible =
+          pageMetaBefore.numOrigPostRepliesVisible - numOrigPostRepliesHidden)
+
+    // If none of the posts were visible (e.g. because deleted already), we don't need
+    // to update the page meta.
+    if (pageMetaAfter != pageMetaBefore || isHidingOrigPost) {
+      pageMetaAfter = pageMetaAfter.copy(version = pageMetaBefore.version + 1)
+
+      // Hide page if everything on it hidden.
+      if (!pageMetaBefore.isCensored && pageMetaAfter.numRepliesVisible == 0) {
+        val willOrigPostBeVisible = if (isHidingOrigPost) false else {
+          val anyOrigPost = transaction.loadOrigPost(pageId)
+          anyOrigPost.exists(_.isVisible)
+        }
+        if (!willOrigPostBeVisible) {
+          pageMetaAfter = pageMetaAfter.copy(hiddenAt = Some(transaction.now))
+        }
+      }
+
+      transaction.updatePageMeta(pageMetaAfter, oldMeta = pageMetaBefore,
+        // The page might be hidden now, or num-replies has changed, so refresh forum topic list.
+        markSectionPageStale = true)
+    }
   }
 
 
@@ -1512,16 +1712,17 @@ object PostsDao {
   }
 
 
-  def makeReviewTask(causedById: UserId, post: Post, reasons: immutable.Seq[ReviewReason],
-    transaction: SiteTransaction): ReviewTask = {
+  def makeReviewTask(createdById: UserId, post: Post, reasons: immutable.Seq[ReviewReason],
+        transaction: SiteTransaction): ReviewTask = {
     val oldReviewTask = transaction.loadPendingPostReviewTask(post.uniqueId,
-      causedById = causedById)
+      taskCreatedById = createdById)
     val newTask = ReviewTask(
       id = oldReviewTask.map(_.id).getOrElse(transaction.nextReviewTaskId()),
       reasons = reasons,
-      causedById = causedById,
+      createdById = createdById,
       createdAt = transaction.currentTime,
       createdAtRevNr = Some(post.currentRevisionNr),
+      maybeBadUserId = post.createdById,
       postId = Some(post.uniqueId),
       postNr = Some(post.nr))
     newTask.mergeWithAny(oldReviewTask)

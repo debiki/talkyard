@@ -19,11 +19,12 @@ package com.debiki.core
 
 import java.net.InetAddress
 import java.{net => jn, util => ju}
-import org.scalactic.{Or, Every, ErrorMessage}
+import org.scalactic.{ErrorMessage, Every, Or}
 import scala.collection.mutable
 import EmailNotfPrefs.EmailNotfPrefs
 import Prelude._
 import User._
+import java.util.Date
 
 
 
@@ -71,7 +72,7 @@ case class Invite(
     username
   }
 
-  def makeUser(userId: UserId, currentTime: ju.Date) = CompleteUser(
+  def makeUser(userId: UserId, currentTime: ju.Date) = MemberInclDetails(
     id = userId,
     fullName = None,
     username = deriveUsername,
@@ -109,7 +110,7 @@ sealed abstract class NewUserData {
   def isAdmin: Boolean
   def isOwner: Boolean
 
-  def makeUser(userId: UserId, createdAt: ju.Date) = CompleteUser(
+  def makeUser(userId: UserId, createdAt: ju.Date) = MemberInclDetails(
     id = userId,
     fullName = name,
     username = username,
@@ -147,7 +148,7 @@ case class NewPasswordUserData(
   val passwordHash: String =
     DbDao.saltAndHashPassword(password)
 
-  def makeUser(userId: UserId, createdAt: ju.Date) = CompleteUser(
+  def makeUser(userId: UserId, createdAt: ju.Date) = MemberInclDetails(
     id = userId,
     fullName = name,
     username = username,
@@ -375,12 +376,14 @@ sealed trait User {
   def isModerator: Boolean
   def isSuperAdmin: Boolean
 
+  @deprecated("now", "use isMember instead?")
   def isAuthenticated = isRoleId(id)
   def isApprovedOrStaff = isApproved.contains(true) || isStaff
   def isSystemUser = id == SystemUserId
   def isStaff = isAdmin || isModerator || isSystemUser
   def isHuman = id >= LowestHumanMemberId
 
+  def isMember = User.isMember(id)
   def isGuest = User.isGuestId(id)
   def anyRoleId: Option[RoleId] = if (isRoleId(id)) Some(id) else None
 
@@ -441,7 +444,7 @@ case class Member(
 case class Guest(
   id: UserId,
   guestName: String,
-  guestCookie: Option[String],
+  guestCookie: Option[String], // COULD rename to browserIdCookie, right
   email: String,  // COULD rename to emailAddr
   emailNotfPrefs: EmailNotfPrefs,
   country: String = "",
@@ -473,8 +476,7 @@ case class Guest(
 }
 
 
-// Rename to MemberInclDetails?
-case class CompleteUser(
+case class MemberInclDetails(
   id: UserId,
   fullName: Option[String],
   username: String,
@@ -548,6 +550,10 @@ case class CompleteUser(
       emailForEveryNewPost = preferences.emailForEveryNewPost)
   }
 
+  def copyWithMaxThreatLevel(newThreatLevel: ThreatLevel) =
+    if (this.threatLevel.toInt >= newThreatLevel.toInt) this
+    else copy(threatLevel = newThreatLevel)
+
   def briefUser = Member(
     id = id,
     fullName = fullName,
@@ -566,6 +572,29 @@ case class CompleteUser(
     lockedThreatLevel = lockedThreatLevel,
     isAdmin = isAdmin,
     isOwner = isOwner)
+}
+
+
+
+object UnknownUser extends User {
+  override def id: UserId = UnknownUserId
+  override def email: String = ""
+  override def emailNotfPrefs: EmailNotfPrefs = EmailNotfPrefs.DontReceive
+  override def emailVerifiedAt: Option[Date] = None
+  override def passwordHash: Option[String] = None
+  override def country: String = ""
+  override def website: String = ""
+  override def tinyAvatar: Option[UploadRef] = None
+  override def smallAvatar: Option[UploadRef] = None
+  override def isApproved: Option[Boolean] = None
+  override def suspendedTill: Option[Date] = None
+  override def isAdmin: Boolean = false
+  override def isOwner: Boolean = false
+  override def isModerator: Boolean = false
+  override def isSuperAdmin: Boolean = false
+  override def effectiveTrustLevel: TrustLevel = TrustLevel.New
+  override def theUsername: String = die("EdE4KFU02")
+  override def usernameOrGuestName: String = UnknownUserName
 }
 
 
@@ -601,7 +630,7 @@ case class GuestLoginAttempt(
   date: ju.Date,
   name: String,
   email: String = "",
-  guestCookie: String) {
+  guestCookie: String) { // COULD rename to browserIdCookie
 
   require(ip == ip.trim, "DwE4KWF0")
   require(name == name.trim && name.trim.nonEmpty, "DwE6FKW3")
@@ -710,7 +739,7 @@ case class OpenAuthIdentity(
   override val userId: UserId,
   openAuthDetails: OpenAuthDetails) extends Identity {
 
-  require(userId >= LowestAuthenticatedUserId)
+  require(userId >= LowestAuthenticatedUserId, "EdE4KFJ7C")
 }
 
 
@@ -737,9 +766,9 @@ case class LoginGrant(
    isNewIdentity: Boolean,
    isNewRole: Boolean) {
 
-  require(identity.map(_.id.contains('?')) != Some(true))
-  require(identity.map(_.userId == user.id) != Some(false))
-  require(!isNewRole || isNewIdentity)
+  require(!identity.exists(_.id.contains('?')), "EdE7KP4Y1")
+  require(identity.forall(_.userId == user.id), "EdE2KVB04")
+  require(!isNewRole || isNewIdentity, "EdE6FK4R2")
 }
 
 
@@ -754,9 +783,9 @@ case class Block(
   blockedAt: ju.Date,
   blockedTill: Option[ju.Date]) {
 
-  require(browserIdCookie.isDefined, "DwE5KGU8") // change to String then, not Option[String]?
-  require(blockedTill.isEmpty || blockedTill.get.getTime >= blockedAt.getTime, "Dwe2KWC8")
-  require(browserIdCookie.map(_.trim.isEmpty) != Some(true), "DwE4FUK7")
+  require(browserIdCookie.isDefined, "EdE5KGU8") // change to String then, not Option[String]?
+  require(blockedTill.isEmpty || blockedTill.get.getTime >= blockedAt.getTime, "EdE2KWC8")
+  require(!browserIdCookie.exists(_.trim.isEmpty), "EdE4FUK7")
 
   def isActiveAt(time: UnixMillis): Boolean = blockedTill match {
     case None => true

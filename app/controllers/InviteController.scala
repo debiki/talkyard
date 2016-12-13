@@ -149,7 +149,7 @@ object InviteController extends mvc.Controller {
   }
 
 
-  private def makeWelcomeSetPasswordEmail(newUser: CompleteUser, siteHostname: String) = {
+  private def makeWelcomeSetPasswordEmail(newUser: MemberInclDetails, siteHostname: String) = {
     Email(
       EmailType.InvitePassword,
       sendTo = newUser.emailAddress,
@@ -160,7 +160,7 @@ object InviteController extends mvc.Controller {
   }
 
 
-  def makeYourInviteWasAcceptedEmail(siteHostname: String, newUser: CompleteUser, inviter: User) = {
+  def makeYourInviteWasAcceptedEmail(siteHostname: String, newUser: MemberInclDetails, inviter: User) = {
     Email(
       EmailType.InviteAccepted,
       sendTo = inviter.email,

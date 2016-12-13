@@ -125,6 +125,7 @@ class SiteDao(
   private def thisSiteCacheKey = siteCacheKey(this.siteId)
 
 
+  // Rename to ...NoRetry, add readWriteTransactionWithRetry
   def readWriteTransaction[R](fn: SiteTransaction => R, allowOverQuota: Boolean = false): R = {
     // Serialize writes per site. This avoids all? transaction rollbacks because of
     // serialization errors in Postgres (e.g. if 2 people post 2 comments at the same time).
@@ -138,6 +139,7 @@ class SiteDao(
       dbDao2.readWriteSiteTransaction(siteId, allowOverQuota) {
         fn(_)
       }
+      // If serialization error, try once? twice? again?
     }
   }
 
@@ -198,7 +200,7 @@ class SiteDao(
     Some(site)
   }
 
-  def ensureSiteActiveOrThrow(newMember: CompleteUser, transaction: SiteTransaction) {
+  def ensureSiteActiveOrThrow(newMember: MemberInclDetails, transaction: SiteTransaction) {
     // The throwForbidden exceptions can be triggered for example if someone starts signing up,
     // then the site gets deleted, and then the person clicks the submit button in
     // the signup form. (I.e. a race condition, and that's fine.)
@@ -315,7 +317,7 @@ class SiteDao(
 
 
   // ----- Authorization
-  // (move to separate mixin, later?)
+  // (move to separate mixin, later? ed.server.auth.AuthzSiteDaoMixin?
 
   def throwIfMayNotSeePost(post: Post, author: Option[User])(transaction: SiteTransaction) {
     val pageMeta = transaction.loadPageMeta(post.pageId) getOrElse
@@ -333,6 +335,8 @@ class SiteDao(
 
 
   def throwIfMayNotSeePage(pageMeta: PageMeta, user: Option[User])(transaction: SiteTransaction) {
+    SECURITY ; BUG // staff shouldn't get access to private topics
+    // — use ViewPageController.maySeePage instead?  [2KWU043YU1]
     if (!user.exists(_.isStaff)) {
       val ancestors = pageMeta.categoryId match {
         case Some(id) =>

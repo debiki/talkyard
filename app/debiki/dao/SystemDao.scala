@@ -153,7 +153,7 @@ class SystemDao(private val dbDaoFactory: DbDaoFactory, val cache: DaoMemCache) 
         hiddenReason = Some(s"Spam because: $isSpamReason"))
 
       val reviewTask = PostsDao.makeReviewTask(
-        causedById = postAfter.createdById, postAfter, reasons = Vector(ReviewReason.PostIsSpam),
+        createdById = SystemUserId, postAfter, reasons = Vector(ReviewReason.PostIsSpam),
         siteTransaction): ReviewTask
 
       siteTransaction.updatePost(postAfter)

@@ -73,7 +73,8 @@ class ReviewStuffAppSuite(randomString: String)
         val task = transaction.loadPendingPostReviewTask(post.uniqueId) getOrElse {
           fail("No review task generated for post with text: " + post.currentSource)
         }
-        task.causedById mustBe post.createdById
+        task.createdById mustBe SystemUserId
+        task.maybeBadUserId mustBe post.createdById
         reasons.foreach(task.reasons must contain(_))
         task.createdAtRevNr mustBe Some(FirstRevisionNr)
         task.postId mustBe Some(post.uniqueId)

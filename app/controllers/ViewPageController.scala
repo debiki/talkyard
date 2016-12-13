@@ -48,6 +48,35 @@ object ViewPageController extends mvc.Controller {
     "\"__html_encoded_volatile_json__\""
 
 
+  def loadPost(pageId: PageId, postNr: PostNr) = GetActionAllowAnyone { request =>
+    val dao = request.dao
+    val siteSettings = dao.loadWholeSiteSettings()
+    val authenticationRequired = siteSettings.userMustBeAuthenticated ||
+      siteSettings.userMustBeApproved
+
+    if (authenticationRequired && !request.theUser.isAuthenticated)
+      throwForbidden("EdE7KFW02", "Not authenticated")
+
+    if (siteSettings.userMustBeApproved && !request.theUser.isApprovedOrStaff)
+      throwForbidden("EdE4F8WV0", "Account not approved")
+
+    val pageMeta = dao.loadPageMeta(pageId) getOrElse
+      throwIndistinguishableNotFound("ZE8PK2WY")
+
+    val (maySee, debugCode) = maySeePage(pageMeta, request.user, dao)
+    if (!maySee) {
+      // Don't indicate that the page exists, because the page slug might tell strangers
+      // what it is about. [7C2KF24]
+      throwIndistinguishableNotFound(debugCode)
+    }
+
+    val json = ReactJson.makeStorePatchForPostNr(pageId, postNr, dao, showHidden = true) getOrElse {
+      throwNotFound("EdE6PK4SI2", s"Post ${PagePostNr(pageId, postNr)} not found")
+    }
+    OkSafeJson(json)
+  }
+
+
   def viewPage(path: String) = AsyncGetActionAllowAnyone { request =>
     viewPageImpl(request)
   }
@@ -151,7 +180,7 @@ object ViewPageController extends mvc.Controller {
   /** Returns true/false, + iff false, a why-forbidden debug reason code.
     */
   def maySeePage(pageMeta: PageMeta, user: Option[User], dao: SiteDao): (Boolean, String) = {
-    COULD; REFACTOR; // move this fn to PageDao?
+    COULD; REFACTOR; // move this fn to PageDao?  [2KWU043YU1]
     if (user.exists(_.isAdmin))
       return (true, "")
 

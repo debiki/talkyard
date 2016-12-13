@@ -41,10 +41,10 @@ class ReviewTasksAppSpec extends DaoAppSuite {
 
     "create, find, count tasks" in {
       val dao = Globals.siteDao(Site.FirstSiteId)
-      val causedByUser = createPasswordUser("causedByUser", dao)
-      val causedByUser2 = createPasswordUser("causedByUser2", dao)
-      val completedByUser = createPasswordUser("completedByUser", dao)
-      val concernsUser = createPasswordUser("concernsUser", dao)
+      val createdByUser = createPasswordUser("revwTaskCreator", dao)
+      val createdByUser2 = createPasswordUser("revwTaskCreator2", dao)
+      val completedByUser = createPasswordUser("revwTaskCompleter", dao)
+      val maybeBadUser = createPasswordUser("maybeBadUser", dao)
       val urgentReasons = immutable.Seq(ReviewReason.PostFlagged)
       val otherReasons = immutable.Seq(ReviewReason.LateEdit)
       dao.readWriteTransaction { transaction =>
@@ -53,9 +53,9 @@ class ReviewTasksAppSpec extends DaoAppSuite {
         transaction.upsertReviewTask(ReviewTask(
           id = 1,
           reasons = urgentReasons,
-          causedById = causedByUser.id,
+          createdById = createdByUser.id,
           createdAt = transaction.currentTime,
-          userId = Some(concernsUser.id)))
+          maybeBadUserId = maybeBadUser.id))
 
         info("count the urgent task")
         var counts = transaction.loadReviewTaskCounts(isAdmin = true)
@@ -66,9 +66,9 @@ class ReviewTasksAppSpec extends DaoAppSuite {
         transaction.upsertReviewTask(ReviewTask(
           id = 2,
           reasons = otherReasons,
-          causedById = causedByUser2.id,
+          createdById = createdByUser2.id,
           createdAt = transaction.currentTime,
-          userId = Some(concernsUser.id)))
+          maybeBadUserId = maybeBadUser.id))
 
         info("count the not urgent task")
         counts = transaction.loadReviewTaskCounts(isAdmin = true)
@@ -80,10 +80,12 @@ class ReviewTasksAppSpec extends DaoAppSuite {
       val (stuff, usersById) = dao.loadReviewStuff(olderOrEqualTo = new ju.Date(), limit = 999)
       stuff.length mustBe 2
       // (Most recent first.)
-      stuff.head.causedBy.id mustBe causedByUser2.id
+      stuff.head.createdBy.id mustBe createdByUser2.id
+      stuff.head.maybeBadUser.id mustBe maybeBadUser.id
       stuff.head.reasons mustBe otherReasons
-      stuff.last.causedBy.id mustBe causedByUser.id
+      stuff.last.createdBy.id mustBe createdByUser.id
       stuff.last.reasons mustBe urgentReasons
+      stuff.last.maybeBadUser.id mustBe maybeBadUser.id
     }
 
     "update tasks, complete, delete, etc, etc" in {

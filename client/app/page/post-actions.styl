@@ -189,6 +189,7 @@
 
   &:hover:not(.dw-a-votes),
   &.dw-a-votes:hover:after
+    // dupl code (6KF0WR4Z)
     color: hsl($uiHue, 100%, 25%);
     background: hsl($uiHue, 100%, 98%);
     outline: 1px solid hsl($uiHue, 100%, 92%);
@@ -230,6 +231,7 @@ html:not(.mouse) .dw-t > .dw-p-as .dw-a
       padding-right: 12px; // ... so reduce padding-right instead
 
 // Avoid float drop (the reply button is to the very left)
+.s_APAs_OPRB,
 .DW.DW .dw-p-as .dw-a-reply
   font-weight: bold;
   background: hsl(207, 0%, 95%);
@@ -342,6 +344,24 @@ html:not(.mouse) .dw-t > .dw-p-as .dw-a
     background: hsl($uiHue, 40%, 84%);
     color: hsl($uiHue, 80%, 8%);
 
+
+// After-page-actions
+//---------------------------
+
+.s_APAs
+  clearfix()
+  margin: 16px 0 10px;
+  a:first-child
+    margin-left: 0;
+
+.s_APAs_OPRB
+  float: left
+  &:hover
+    // dupl code (6KF0WR4Z)
+    color: hsl($uiHue, 100%, 25%);
+    background: hsl($uiHue, 100%, 98%);
+    outline: 1px solid hsl($uiHue, 100%, 92%);
+    text-decoration: none;
 
 
 // Inline action menu — currently not in use

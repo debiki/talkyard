@@ -80,7 +80,8 @@ export var StupidDialog = createComponent({
     //if (_.isString(body)) {  -- why this if?
       body = ModalBody({ className: 'clearfix' },
         r.div({ style: { marginBottom: '2em' }}, body),
-        PrimaryButton({ onClick: this.close }, stuff.closeButtonTitle || "Okay"));
+        PrimaryButton({ onClick: this.close, className: 'e_SD_CloseB' },
+          stuff.closeButtonTitle || "Okay"));
     /*}
     else if (body) {
       die("Non-string content not implemented [EsE7KYKW2]");

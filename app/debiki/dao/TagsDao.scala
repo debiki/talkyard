@@ -104,7 +104,7 @@ trait TagsDao {
 
     refreshPageInMemCache(post.pageId)
 
-    val storePatch = ReactJson.makeStorePatch(post, postAuthor, this)
+    val storePatch = ReactJson.makeStorePatch(post, postAuthor, this, showHidden = true)
     pubSub.publish(
       StorePatchMessage(siteId, pageId, storePatch, notifications), byId = postAuthor.id)
     storePatch

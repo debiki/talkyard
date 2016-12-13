@@ -84,7 +84,7 @@ object VoteController extends mvc.Controller {
     }
 
     val json = ReactJson.postToJson2(postNr = postNr, pageId = pageId, request.dao,
-      includeUnapproved = false)
+      includeUnapproved = false, showHidden = true)
     OkSafeJson(json)
   }
 

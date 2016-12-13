@@ -856,7 +856,7 @@ var ForumTopicListComponent = React.createClass(<any> {
     var sortingHowTips;
     if (this.getOrderOffset().sortOrder === TopicSortOrder.LikesAndBumpTime) {
       sortingHowTips =
-          r.p({ className: 'esForum_sortInfo' }, "Topics with the most Like votes:");
+          r.p({ className: 'esForum_sortInfo e_F_SI_Top' }, "Topics with the most Like votes:");
     }
 
     var topicsTable = !useTable ? null :
@@ -1048,7 +1048,10 @@ var TopicRow = createComponent({
       activityTitle += '\nEdited on ' + whenMsToIsoDate(topic.bumpedAtMs);
     }
 
-    var anyPinIconClass = topic.pinWhere ? 'icon-pin' : undefined;
+    let anyPinOrHiddenIconClass = topic.pinWhere ? 'icon-pin' : undefined;
+    if (topic.hiddenAtMs) {
+      anyPinOrHiddenIconClass = 'icon-eye-off';
+    }
 
     let excerpt;  // [7PKY2X0]
     let showExcerptAsParagraph =
@@ -1121,7 +1124,7 @@ var TopicRow = createComponent({
       r.tr({ className: 'esForum_topics_topic e2eF_T' },
         r.td({ className: 'dw-tpc-title e2eTopicTitle' },
           r.div({ className: 's_F_Ts_T_Con' + manyLinesClass, onClick: showMoreClickHandler },
-            makeTitle(topic, anyPinIconClass),
+            makeTitle(topic, anyPinOrHiddenIconClass),
             excerpt),
           anyThumbnails),
         r.td({ className: 's_F_Ts_T_CN' }, categoryName),
@@ -1132,7 +1135,7 @@ var TopicRow = createComponent({
     else return (
       r.li({ className: 'esF_TsL_T e2eF_T' },
         r.div({ className: 'esF_TsL_T_Title e2eTopicTitle' },
-          makeTitle(topic, anyPinIconClass)),
+          makeTitle(topic, anyPinOrHiddenIconClass)),
         r.div({ className: 'esF_TsL_T_NumRepls' },
           topic.numPosts - 1, r.span({ className: 'icon-comment-empty' })),
         excerpt,

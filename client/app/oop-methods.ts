@@ -88,6 +88,11 @@ export function notfLevel_title(notfLevel: NotfLevel): string {
 }
 
 
+export function post_shallRenderAsHidden(post: Post): boolean {
+  return post.isPostHidden && _.isEmpty(post.sanitizedHtml);
+}
+
+
 //------------------------------------------------------------------------------
    }
 //------------------------------------------------------------------------------

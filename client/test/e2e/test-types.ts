@@ -36,6 +36,7 @@ interface SiteData {
   settings: {
     companyFullName: string,
     allowGuestLogin?: boolean,
+    numFlagsToHidePost?: number,
   };
   groups: any;
   members: Member[];
@@ -77,6 +78,8 @@ interface Member {
   isOwner?: boolean;
   isAdmin?: boolean;
   isModerator?: boolean;
+  trustLevel?: TrustLevel;
+  threatLevel?: ThreatLevel;
 }
 
 
@@ -188,6 +191,7 @@ interface PagePathWithId {
 
 interface NewTestPost {
   id?: number;
+  // Not just page id, because needs author, creation date, etc.
   page: Page;
   nr: number;
   parentNr?: number;

@@ -90,6 +90,9 @@ package object core {
   class When(val unixMillis: UnixMillis) extends AnyVal {
     def toJavaDate = new java.util.Date(unixMillis)
     def toUnixMillis = unixMillis
+    def daysSince(other: When) = (unixMillis - other.unixMillis) / OneMinuteInMillis / 60 / 24
+    def hoursSince(other: When) = (unixMillis - other.unixMillis) / OneMinuteInMillis / 60
+    def minutesSince(other: When) = (unixMillis - other.unixMillis) / OneMinuteInMillis
     def millisSince(other: When) = unixMillis - other.unixMillis
     def minusMinutes(minutes: Int) = new When(unixMillis - minutes * OneMinuteInMillis)
     def minusSeconds(seconds: Int) = new When(unixMillis - seconds * 1000)
@@ -285,8 +288,9 @@ package object core {
   def MUST = ()           // Fix before next release.
   def SHOULD = ()         // Fix before release, unless short of time, or it's too boring.
   def COULD = ()          // Could do this, but not important right now, can wait a year or two.
-  def REFACTOR = ()       // This code can be refactored. Also search for "[refactor]".
-  def RENAME = ()         // This ought to be renamed.
+  def ANNOYING = ()       // Something annoying that would be good to fix, not important though
+  def REFACTOR = ()       // The code can be refactored. Also search for "[refactor]".
+  def RENAME = ()         // Something ought to be renamed.
   def OPTIMIZE = ()
   def COULD_OPTIMIZE = ()
   def FORCED_REFLOW = ()  // Browser side only. Makes it slow.
@@ -294,7 +298,8 @@ package object core {
   def RESPONSIVE = ()     // Would look better with responsive layout. Browser side only.
   def HACK = ()           // Quick crazy fix, probably should be redone later in a better way.
   def DELETE_LATER = ()   // ... hmm. Rename to CLEANUP.
-  def CLEAN_UP = ()       // Unused stuff that should be deleted after a grace period.
+  def CLEAN_UP = ()       // Unused stuff that should be deleted after a grace period, or when
+                          // the developers are less short of time.
 
 }
 

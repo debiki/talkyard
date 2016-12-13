@@ -17,6 +17,12 @@ function getAndBumpNextPostId() {
   return nextPostId - 1;
 }
 
+var nextUserId = 101;
+function getAndBumpNextUserId() {
+  nextUserId += 1;
+  return nextUserId - 1;
+}
+
 let localHostname = settings.localHostname || 'e2e-test-site';
 
 let emptySite: SiteData = {
@@ -60,7 +66,7 @@ var make = {
 
   memberOwenOwner: function(): Member {
     return {
-      id: 101,
+      id: getAndBumpNextUserId(),
       username: "owen_owner",
       fullName: "Owen Owner",
       createdAtMs: DefaultCreatedAtMs,
@@ -75,7 +81,7 @@ var make = {
 
   memberAdminAdam: function(): Member {
     return {
-      id: 201,
+      id: getAndBumpNextUserId(),
       username: "admin_adam",
       fullName: "Admin Adam",
       createdAtMs: DefaultCreatedAtMs,
@@ -89,7 +95,7 @@ var make = {
 
   memberAdminAlice: function(): Member {
     return {
-      id: 201,
+      id: getAndBumpNextUserId(),
       username: "admin_alice",
       fullName: "Admin Alice",
       createdAtMs: DefaultCreatedAtMs,
@@ -103,7 +109,7 @@ var make = {
 
   memberModeratorModya: function(): Member {
     return {
-      id: 201,
+      id: getAndBumpNextUserId(),
       username: "mod_modya",
       fullName: "Mod Modya",
       createdAtMs: DefaultCreatedAtMs,
@@ -117,7 +123,7 @@ var make = {
 
   memberModeratorMons: function(): Member {
     return {
-      id: 201,
+      id: getAndBumpNextUserId(),
       username: "mod_mons",
       fullName: "Mod Mons",
       createdAtMs: DefaultCreatedAtMs,
@@ -129,9 +135,22 @@ var make = {
     };
   },
 
+  memberMaja: function(): Member {
+    return {
+      id: getAndBumpNextUserId(),
+      username: "maja",
+      fullName: "Maja Gräddnos",
+      createdAtMs: DefaultCreatedAtMs,
+      emailAddress: "e2e-test--maja@example.com",
+      emailVerifiedAtMs: DefaultCreatedAtMs,
+      passwordHash: "cleartext:publicMaja123",
+      password: "publicMaja123",
+    };
+  },
+
   memberMaria: function(): Member {
     return {
-      id: 201,
+      id: getAndBumpNextUserId(),
       username: "maria",
       fullName: "Maria",
       createdAtMs: DefaultCreatedAtMs,
@@ -144,7 +163,7 @@ var make = {
 
   memberMichael: function(): Member {
     return {
-      id: 201,
+      id: getAndBumpNextUserId(),
       username: "michael",
       fullName: "Michael",
       createdAtMs: DefaultCreatedAtMs,
@@ -157,7 +176,7 @@ var make = {
 
   memberMallory: function(): Member {
     return {
-      id: 201,
+      id: getAndBumpNextUserId(),
       username: "mallory",
       fullName: "Mallory",
       createdAtMs: DefaultCreatedAtMs,
@@ -170,7 +189,7 @@ var make = {
 
   guestGunnar: function(): TestGuest {
     return {
-      id: 201,
+      id: -10,
       fullName: "Guest Gunnar",
       createdAtMs: DefaultCreatedAtMs,
       emailAddress: "guest-gunnar@ex.com",
@@ -180,7 +199,7 @@ var make = {
 
   guestGreta: function(): TestGuest {
     return {
-      id: 201,
+      id: -11,
       fullName: "Guest Greta",
       createdAtMs: DefaultCreatedAtMs,
       emailAddress: "guest-greta@ex.com",
@@ -211,6 +230,15 @@ var make = {
       numOpRepliesVisible: values.numOpRepliesVisible,
       version: values.version || 1,
     }
+  },
+
+  pagePath: function(pageId: PageId, folder: string, showId: boolean, slug?: string): PagePathWithId {
+    return {
+      folder: folder,
+      pageId: pageId,
+      showId: showId,
+      slug: slug || '',
+    };
   },
 
   rootCategoryWithIdFor: function(id: CategoryId, forumPage: Page): TestCategory {

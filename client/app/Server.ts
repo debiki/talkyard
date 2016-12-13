@@ -892,8 +892,16 @@ export function submitCustomFormAsNewTopic(formInputNameValues) {
 }
 
 
+export function loadPostByNr(pageId: PageId, postNr: PostNr, success: (post: Post) => void) {
+  get(`/-/load-post?pageId=${pageId}&postNr=${postNr}`, success);
+}
+
+
 export function flagPost(postId: string, flagType: string, reason: string, success: () => void) {
-  postJsonSuccess('/-/flag', success, {
+  postJsonSuccess('/-/flag', (storePatch: StorePatch) => {
+    ReactActions.patchTheStore(storePatch);
+    if (success) success();
+  }, {
     pageId: d.i.pageId,
     postId: postId,
     type: flagType,

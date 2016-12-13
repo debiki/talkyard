@@ -249,9 +249,10 @@ trait PagesDao {
     else Some(ReviewTask(
       id = transaction.nextReviewTaskId(),
       reasons = reviewReasons.to[immutable.Seq],
-      causedById = author.id,
+      createdById = SystemUserId,
       createdAt = transaction.currentTime,
       createdAtRevNr = Some(bodyPost.currentRevisionNr),
+      maybeBadUserId = authorId,
       pageId = Some(pageId),
       postId = Some(bodyPost.uniqueId),
       postNr = Some(bodyPost.nr)))

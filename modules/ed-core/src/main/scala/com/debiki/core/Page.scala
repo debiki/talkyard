@@ -196,6 +196,7 @@ case class PageMeta(
   lockedAt: Option[ju.Date] = None,
   frozenAt: Option[ju.Date] = None,
   // unwantedAt: Option[ju.Date] = None, -- when enough core members voted Unwanted
+  hiddenAt: Option[When] = None,
   deletedAt: Option[ju.Date] = None,
   htmlTagCssClasses: String = "",  // try to move to EditedSettings, so will be inherited
   htmlHeadTitle: String = "",
@@ -247,6 +248,8 @@ case class PageMeta(
 
   def isPinned = pinOrder.isDefined
   def isClosed = closedAt.isDefined
+  def isVisible = hiddenAt.isEmpty && deletedAt.isEmpty
+  def isCensored = hiddenAt.isDefined
   def isDeleted = deletedAt.isDefined
 
   def isGroupTalk = pageRole.isGroupTalk
@@ -256,13 +259,15 @@ case class PageMeta(
     if (publishedAt.isDefined) PageStatus.Published
     else PageStatus.Draft
 
-  def bumpedOrPublishedOrCreatedAt = bumpedAt orElse publishedAt getOrElse createdAt
+  def bumpedOrPublishedOrCreatedAt: ju.Date = bumpedAt orElse publishedAt getOrElse createdAt
 
   def addUserIdsTo(ids: mutable.Set[UserId]) {
     ids += authorId
     ids ++= frequentPosterIds
     lastReplyById.foreach(ids += _)
   }
+
+  def idVersion = PageIdVersion(pageId, version = version)
 
   def copyWithNewVersion = copy(version = version + 1)
 
@@ -585,11 +590,13 @@ object PageOrderOffset {
   case class ByLikesAndBumpTime(offset: Option[(Int, ju.Date)]) extends PageOrderOffset
 }
 
-sealed abstract class PageFilter
+sealed abstract class PageFilter { def includesDeleted = false }
 object PageFilter {
   case object ShowAll extends PageFilter
   case object ShowWaiting extends PageFilter
-  case object ShowDeleted extends PageFilter
+  case object ShowDeleted extends PageFilter {
+    override def includesDeleted = true
+  }
 }
 
 

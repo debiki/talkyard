@@ -125,7 +125,7 @@ trait CreateSiteDao {
 
 
   private def createSystemUser(transaction: SiteTransaction) {
-    transaction.insertAuthenticatedUser(CompleteUser(
+    transaction.insertAuthenticatedUser(MemberInclDetails(
       id = SystemUserId,
       fullName = Some(SystemUserFullName),
       username = SystemUserUsername,

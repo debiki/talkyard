@@ -51,14 +51,25 @@ class Application @Inject() extends mvc.Controller {
       case x => throwBadReq("DwE7PKTS3", s"Bad flag type: '$x'")
     }
 
-    // SHOULD hide post, since flagged (at least if >= 2 flags?)
     // COULD save `reason` somewhere, but where? Where does Discourse save it?
-    // SHOULD generate notification
 
-    request.dao.flagPost(pageId = pageId, postNr = postNr, flagType,
-      flaggerId = request.theUser.id)
+    val pageMeta = request.dao.loadThePageMeta(pageId)
+    val (maySee, debugCode) = ViewPageController.maySeePage(pageMeta, request.user, request.dao)
+    if (!maySee)
+      throwIndistinguishableNotFound(s"EdE7KWU02-$debugCode")
 
-    val json = ReactJson.postToJson2(postNr = postNr, pageId = pageId, dao = request.dao)
+    val postsHidden = try {
+      request.dao.flagPost(pageId = pageId, postNr = postNr, flagType,
+        flaggerId = request.theUser.id)
+    }
+    catch {
+      case DbDao.DuplicateVoteException =>
+        throwForbidden("EdE5PKY02", "You have already flagged this post")
+    }
+
+    // If some posts got hidden, then rerender them as hidden, so the flagger sees they got hidden.
+    val json = ReactJson.makeStorePatchForPosts(
+      postsHidden.map(_.uniqueId).toSet, showHidden = false, request.dao)
     OkSafeJson(json)
   }
 

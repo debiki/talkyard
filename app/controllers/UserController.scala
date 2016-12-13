@@ -46,7 +46,7 @@ object UserController extends mvc.Controller {
         onlyPendingApproval = true
     }
     request.dao.readOnlyTransaction { transaction =>
-      val usersPendingApproval = transaction.loadCompleteUsers(
+      val usersPendingApproval = transaction.loadMembersInclDetails(
         onlyApproved = onlyApproved,
         onlyPendingApproval = onlyPendingApproval)
       val approverIds = usersPendingApproval.flatMap(_.approvedById)
@@ -77,7 +77,7 @@ object UserController extends mvc.Controller {
     request.dao.readOnlyTransaction { transaction =>
       val usersJson =
         if (User.isRoleId(userIdInt)) {
-          val user = transaction.loadTheCompleteUser(userIdInt)
+          val user = transaction.loadTheMemberInclDetails(userIdInt)
           jsonForCompleteUser(user, Map.empty, callerIsAdmin = callerIsAdmin,
             callerIsStaff = callerIsStaff, callerIsUserHerself = callerIsUserHerself)
         }
@@ -116,7 +116,7 @@ object UserController extends mvc.Controller {
   }
 
 
-  private def jsonForCompleteUser(user: CompleteUser, usersById: Map[UserId, Member],
+  private def jsonForCompleteUser(user: MemberInclDetails, usersById: Map[UserId, Member],
       callerIsAdmin: Boolean, callerIsStaff: Boolean = false, callerIsUserHerself: Boolean = false)
         : JsObject = {
     var userJson = Json.obj(

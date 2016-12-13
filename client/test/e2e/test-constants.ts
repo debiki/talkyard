@@ -26,9 +26,17 @@ var TestPageRole = {  // dupl in client/app/constants.ts [5F8KW0P2]
   Critique: <PageRole> 16, // [plugin]
 };
 
+var TestTrustLevel = {
+  New: <TrustLevel> 1,
+  Basic: <TrustLevel> 2,
+  Member: <TrustLevel> 3,
+  Regular: <TrustLevel> 4,
+  CoreMember: <TrustLevel> 5,
+};
 
 export = {
   TestPageRole: TestPageRole,
+  TestTrustLevel: TestTrustLevel,
   FirstReplyNr: 2,  // [5FKF0F2]
 };
 

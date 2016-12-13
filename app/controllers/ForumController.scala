@@ -134,6 +134,8 @@ object ForumController extends mvc.Controller {
     val categoryIdInt: CategoryId = Try(categoryId.toInt) getOrElse throwBadReq(
       "DwE4KG08", "Bat category id")
     val pageQuery: PageQuery = parseThePageQuery(request)
+    throwForbiddenIf(pageQuery.pageFilter.includesDeleted && !request.isStaff, "EdE5FKZX2",
+      "Only staff can list deleted pages")
     val topics = listTopicsInclPinned(categoryIdInt, pageQuery, request.dao,
       includeDescendantCategories = true, isStaff = request.isStaff, restrictedOnly = false)
     val pageStuffById = request.dao.loadPageStuff(topics.map(_.pageId))
@@ -192,9 +194,15 @@ object ForumController extends mvc.Controller {
         includeDescendantCategories: Boolean, isStaff: Boolean, restrictedOnly: Boolean,
         limit: Int = NumTopicsToList)
         : Seq[PagePathAndMeta] = {
-    val topics: Seq[PagePathAndMeta] = dao.listPagesInCategory(
+    var topics: Seq[PagePathAndMeta] = dao.listPagesInCategory(
       categoryId, includeDescendantCategories, isStaff = isStaff, restrictedOnly = restrictedOnly,
       pageQuery, limit)
+
+    // For now. COULD do the filtering in the db query instead, so won't find 0 pages just because
+    // all most-recent-pages are hidden.
+    if (!isStaff) {
+      topics = topics.filter(!_.meta.isCensored)
+    }
 
     // If sorting by bump time, sort pinned topics first. Otherwise, don't.
     val topicsInclPinned = pageQuery.orderOffset match {
@@ -306,6 +314,7 @@ object ForumController extends mvc.Controller {
       "closedAtMs" -> dateOrNull(topic.meta.closedAt),
       "lockedAtMs" -> dateOrNull(topic.meta.lockedAt),
       "frozenAtMs" -> dateOrNull(topic.meta.frozenAt),
+      "hiddenAtMs" -> JsWhenMsOrNull(topic.meta.hiddenAt),
       "deletedAtMs" -> JsDateMsOrNull(topic.meta.deletedAt))
   }
 

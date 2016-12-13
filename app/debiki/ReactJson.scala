@@ -138,7 +138,7 @@ object ReactJson {
       }
       else if (page.role == PageRole.Form) {
         // Don't load any comments on form pages. [5GDK02]
-        transaction.loadOrigPost(page.id)
+        transaction.loadTitleAndOrigPost(page.id)
       }
       else {
         pageParts.loadAllPosts()
@@ -156,8 +156,7 @@ object ReactJson {
       // form replies, because they might contain private stuff. (Page type might have
       // been changed to/from Form.) [5GDK02]
       post.tyype != PostType.CompletedForm &&
-      post.tyype != PostType.Flat &&  // flat comments disabled [8KB42]
-      !post.isHidden && (
+      post.tyype != PostType.Flat && ( // flat comments disabled [8KB42]
       !post.deletedStatus.isDeleted || (
         post.deletedStatus.onlyThisDeleted && pageParts.hasNonDeletedSuccessor(post.nr)))
     }
@@ -262,6 +261,7 @@ object ReactJson {
       "pageClosedAtMs" -> dateOrNull(page.meta.closedAt),
       "pageLockedAtMs" -> dateOrNull(page.meta.lockedAt),
       "pageFrozenAtMs" -> dateOrNull(page.meta.frozenAt),
+      "pageHiddenAtMs" -> JsWhenMsOrNull(page.meta.hiddenAt),
       "pageDeletedAtMs" -> dateOrNull(page.meta.deletedAt),
       "numPosts" -> numPosts,
       "numPostsRepliesSection" -> numPostsRepliesSection,
@@ -376,33 +376,40 @@ object ReactJson {
   }
 
 
-  def postToJson2(postNr: PostNr, pageId: PageId, dao: SiteDao, includeUnapproved: Boolean = false)
-      : JsObject =
-    postToJson(postNr, pageId, dao, includeUnapproved)._1
+  def postToJson2(postNr: PostNr, pageId: PageId, dao: SiteDao, includeUnapproved: Boolean = false,
+        showHidden: Boolean = false): JsObject =
+    postToJson(postNr, pageId, dao, includeUnapproved = includeUnapproved,
+      showHidden = showHidden)._1
 
 
-  def postToJson(postNr: PostNr, pageId: PageId, dao: SiteDao, includeUnapproved: Boolean = false)
-        : (JsObject, PageVersion) = {
+  def postToJson(postNr: PostNr, pageId: PageId, dao: SiteDao, includeUnapproved: Boolean = false,
+        showHidden: Boolean = false): (JsObject, PageVersion) = {
     dao.readOnlyTransaction { transaction =>
       // COULD optimize: don't load the whole page, load only postNr and the author and last editor.
       val page = PageDao(pageId, transaction)
       val post = page.parts.thePost(postNr)
       val tags = transaction.loadTagsForPost(post.uniqueId)
       val json = postToJsonImpl(post, page, tags,
-        includeUnapproved = includeUnapproved)
+        includeUnapproved = includeUnapproved, showHidden = showHidden)
       (json, page.version)
     }
   }
 
 
+  ANNOYING ; COULD ; REFACTOR // postToJsonImpl's dependency on Page & a transaction is annoying.
+  // Could create a StuffNeededToRenderPost class instead? and make some things, like
+  // depth & siblings, optional, and then just exlude them from the resulting json, and
+  // merge-update the post client side instead.
+
   /** Private, so it cannot be called outside a transaction.
     */
   private def postToJsonImpl(post: Post, page: Page, tags: Set[TagLabel],
-        includeUnapproved: Boolean = false): JsObject = {
-    val people = page.parts
+        includeUnapproved: Boolean = false, showHidden: Boolean = false): JsObject = {
 
     val (anySanitizedHtml: Option[String], isApproved: Boolean) =
-      if (includeUnapproved)
+      if (post.isHidden && !showHidden)
+        (None, post.approvedAt.isDefined)
+      else if (includeUnapproved)
         (Some(post.currentHtmlSanitized(ReactRenderer, page.role)),
           post.isCurrentVersionApproved)
       else
@@ -596,6 +603,7 @@ object ReactJson {
           rolePageSettingsToJson(anySettings getOrElse RolePageSettings.Default)
         }) getOrElse JsNull
         val votes = votesJson(user.id, pageId, transaction)
+        // + flags, interesting for staff, & so people won't attempt to flag twice [7KW20WY1]
         val (postsJson, postAuthorsJson) = unapprovedPostsAndAuthorsJson(user, pageId, transaction)
         (rolePageSettings, votes, postsJson, postAuthorsJson)
       } getOrElse (JsNull, JsNull, JsNull, JsNull)
@@ -637,6 +645,7 @@ object ReactJson {
       "restrictedTopics" -> restrictedTopics,
       "restrictedCategories" -> restrictedCategories,
       "votes" -> anyVotes,
+      // later: "flags" -> JsArray(...) [7KW20WY1]
       "unapprovedPosts" -> anyUnapprovedPosts,
       "unapprovedPostAuthors" -> anyUnapprovedAuthors,
       "postIdsAutoReadLongAgo" -> JsArray(Nil),
@@ -782,6 +791,7 @@ object ReactJson {
 
   private def votesJson(userId: UserId, pageId: PageId, transaction: SiteTransaction): JsObject = {
     val actions = transaction.loadActionsByUserOnPage(userId, pageId)
+    // COULD load flags too, at least if user is staff [7KW20WY1]
     val votes = actions.filter(_.isInstanceOf[PostVote]).asInstanceOf[immutable.Seq[PostVote]]
     val userVotesMap = UserPostVotes.makeMap(votes)
     val votesByPostId = userVotesMap map { case (postNr, votes) =>
@@ -912,7 +922,7 @@ object ReactJson {
       "completedBy" -> JsUserOrNull(stuff.completedBy),
       "invalidatedAt" -> JsDateMsOrNull(stuff.invalidatedAt),
       "resolution" -> JsNumberOrNull(stuff.resolution.map(_.toInt)),
-      "user" -> JsUserOrNull(stuff.user),
+      "user" -> JsUser(stuff.maybeBadUser),
       "pageId" -> JsStringOrNull(stuff.pageId),
       "pageTitle" -> JsStringOrNull(stuff.pageTitle),
       "post" -> anyPost)
@@ -1060,16 +1070,50 @@ object ReactJson {
     WatchbarSection.DirectMessages.toInt.toString -> JsArray(Nil))
 
 
-  def makeStorePatch(post: Post, author: User, dao: SiteDao): JsValue = {
+  def makeStorePatchForPostNr(pageId: PageId, postNr: PostNr, dao: SiteDao, showHidden: Boolean)
+        : Option[JsValue] = {
+    val post = dao.loadPost(pageId, postNr) getOrElse {
+      return None
+    }
+    val author = dao.loadUser(post.createdById) getOrElse {
+      // User was just deleted? Race condition.
+      UnknownUser
+    }
+    Some(makeStorePatch(post, author, dao, showHidden = showHidden))
+  }
+
+
+  def makeStorePatchForPosts(postIds: Set[UniquePostId], showHidden: Boolean, dao: SiteDao)
+        : JsValue = {
+    dao.readOnlyTransaction { transaction =>
+      makeStorePatchForPosts(postIds, showHidden, transaction)
+    }
+  }
+
+
+  def makeStorePatchForPosts(postIds: Set[UniquePostId], showHidden: Boolean,
+        transaction: SiteTransaction): JsValue = {
+    val posts = transaction.loadPostsByUniqueId(postIds).values
+    val tagsByPostId = transaction.loadTagsByPostId(postIds)
+    val pageIds = posts.map(_.pageId).toSet
+    val pageIdVersions = transaction.loadPageMetas(pageIds).map(_.idVersion)
+    val authorIds = posts.map(_.createdById).toSet
+    val authors = transaction.loadUsers(authorIds)
+    makeStorePatch3(pageIdVersions, posts, tagsByPostId, authors)(transaction)
+  }
+
+
+  def makeStorePatch(post: Post, author: User, dao: SiteDao, showHidden: Boolean): JsValue = {
     // Warning: some similar code below [89fKF2]
     require(post.createdById == author.id, "EsE5PKY2")
     val (postJson, pageVersion) = ReactJson.postToJson(
-      post.nr, pageId = post.pageId, dao, includeUnapproved = true)
+      post.nr, pageId = post.pageId, dao, includeUnapproved = true, showHidden = showHidden)
     makeStorePatch(PageIdVersion(post.pageId, pageVersion),
       posts = Seq(postJson), users = Seq(JsUser(author)))
   }
 
 
+  @deprecated("now", "use makeStorePatchForPosts instead")
   def makeStorePatch2(postId: UniquePostId, pageId: PageId, transaction: SiteTransaction)
         : JsValue = {
     // Warning: some similar code above [89fKF2]
@@ -1079,7 +1123,7 @@ object ReactJson {
     val tags = transaction.loadTagsForPost(post.uniqueId)
     val author = transaction.loadTheUser(post.createdById)
     require(post.createdById == author.id, "EsE4JHKX1")
-    val postJson = postToJsonImpl(post, page, tags, includeUnapproved = true)
+    val postJson = postToJsonImpl(post, page, tags, includeUnapproved = true, showHidden = true)
     makeStorePatch(PageIdVersion(post.pageId, page.version),
       posts = Seq(postJson), users = Seq(JsUser(author)))
   }
@@ -1093,6 +1137,33 @@ object ReactJson {
       "pageVersionsByPageId" -> Json.obj(pageIdVersion.pageId -> pageIdVersion.version),
       "usersBrief" -> users,
       "postsByPageId" -> Json.obj(pageIdVersion.pageId -> posts))
+  }
+
+
+  ANNOYING // needs a transaction, because postToJsonImpl needs one. Try to remove
+  private def makeStorePatch3(pageIdVersions: Iterable[PageIdVersion], posts: Iterable[Post],
+        tagsByPostId: Map[UniquePostId, Set[String]], users: Iterable[User])(
+        transaction: SiteTransaction): JsValue = {
+    require(posts.isEmpty || users.nonEmpty, "Posts but no authors [EsE4YK7W2]")
+    val pageVersionsByPageIdJson =
+      JsObject(pageIdVersions.toSeq.map(p => p.pageId -> JsNumber(p.version)))
+    val postsByPageId: Map[PageId, Iterable[Post]] = posts.groupBy(_.pageId)
+    val postsByPageIdJson = JsObject(
+      postsByPageId.toSeq.map(pageIdPosts => {
+        val pageId = pageIdPosts._1
+        val posts = pageIdPosts._2
+        val page = new PageDao(pageId, transaction)
+        val postsJson = posts map { p =>
+          postToJsonImpl(p, page, tagsByPostId.getOrElse(p.uniqueId, Set.empty),
+            includeUnapproved = false, showHidden = false)
+        }
+        pageId -> JsArray(postsJson.toSeq)
+      }))
+    Json.obj(
+      "appVersion" -> Globals.applicationVersion,
+      "pageVersionsByPageId" -> pageVersionsByPageIdJson,
+      "usersBrief" -> users.map(JsUser),
+      "postsByPageId" -> postsByPageIdJson)
   }
 
 
@@ -1161,8 +1232,14 @@ object ReactJson {
   def JsFloatOrNull(value: Option[Float]) =
     value.map(v => JsNumber(BigDecimal(v))).getOrElse(JsNull)
 
+  def JsWhenMs(when: When) =
+    JsNumber(when.unixMillis)
+
   def JsDateMs(value: ju.Date) =
     JsNumber(value.getTime)
+
+  def JsWhenMsOrNull(value: Option[When]) =
+    value.map(when => JsNumber(when.unixMillis)).getOrElse(JsNull)
 
   def JsDateMsOrNull(value: Option[ju.Date]) =
     value.map(JsDateMs).getOrElse(JsNull)

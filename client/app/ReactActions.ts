@@ -51,6 +51,7 @@ export var actionTypes = {
   UnsquashTrees: 'UnsquashTrees',
   CollapseTree: 'CollapseTree',
   UncollapsePost: 'UncollapsePost',
+  InsertAndShowPost: 'InsertAndShowPost',
   ShowPost: 'ShowPost',
   SetWatchbar: 'SetWatchbar',
   SetWatchbarOpen: 'SetWatchbarOpen',
@@ -386,15 +387,26 @@ export function uncollapsePost(post) {
 
 
 export function loadAndShowPost(postNr: PostNr, showChildrenToo?: boolean, callback?) {
-  // Currently all posts are included in the store already; need load nothing.
-  ReactDispatcher.handleViewAction({
-    actionType: actionTypes.ShowPost,
-    postId: postNr,
-    showChildrenToo: showChildrenToo,
-  });
-  if (callback) {
-    // Wait until React has rendered everything. (When exactly does that happen?)
-    setTimeout(callback, 1);
+  let anyPost = debiki2.ReactStore.allData().allPosts[postNr];
+  if (!anyPost || _.isEmpty(anyPost.sanitizedHtml)) {
+    Server.loadPostByNr(debiki.internal.pageId, postNr, (storePatch: StorePatch) => {
+      patchTheStore(storePatch);
+      showAndCallCallback();
+    });
+  }
+  else {
+    showAndCallCallback();
+  }
+  function showAndCallCallback() {
+    ReactDispatcher.handleViewAction({
+      actionType: actionTypes.ShowPost,
+      postNr: postNr,
+      showChildrenToo: showChildrenToo,
+    });
+    if (callback) {
+      // Wait until React has rendered everything. (When exactly does that happen?)
+      setTimeout(callback, 1);
+    }
   }
 }
 

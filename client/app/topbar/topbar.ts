@@ -411,14 +411,14 @@ var SearchForm = createComponent({
 
   render: function() {
     let urlEncodedQuery = debiki2['search'].urlEncodeSearchQuery(this.state.queryInputText);
+    let searchEndpoint    = '/-/search';
     let searchUrl         = '/-/search?q=' + urlEncodedQuery;
     let searchUrlAdvanced = '/-/search?advanced=true&q=' + urlEncodedQuery;
     return (
         r.form({ className: 'esTB_SearchD', ref: 'form',
-            method: 'post', acceptCharset: 'UTF-8', action: '/-/search',
-            onSubmit: this.search },
+            method: 'get', acceptCharset: 'UTF-8', action: searchEndpoint },
           r.input({ type: 'text', tabIndex: '1', placeholder: "Text to search for",
-              ref: 'input', name: 'searchPhrase',
+              ref: 'input', name: 'q',
               value: this.state.queryInputText, onChange: this.onQueryChange }),
           PrimaryLinkButton({ href: searchUrl, className: 'e_SearchB' }, "Search"),
           r.div({},

@@ -86,8 +86,11 @@ trait SiteTransaction {
   def loadThePost(pageId: PageId, postNr: PostNr): Post =
     loadPost(pageId, postNr).getOrElse(throw PostNotFoundException(pageId, postNr))
 
-  def loadOrigPost(pageId: PageId): Seq[Post] =
+  def loadTitleAndOrigPost(pageId: PageId): Seq[Post] =
     loadPosts(Seq(PagePostNr(pageId, PageParts.TitleNr), PagePostNr(pageId, PageParts.BodyNr)))
+
+  def loadOrigPost(pageId: PageId): Option[Post] =
+    loadPosts(Seq(PagePostNr(pageId, PageParts.BodyNr))).headOption
 
   def loadOrigPostAndLatestPosts(pageId: PageId, limit: Int): Seq[Post]
   def loadPostsOnPage(pageId: PageId, siteId: Option[SiteId] = None): immutable.Seq[Post]
@@ -101,6 +104,7 @@ trait SiteTransaction {
         : Map[PageId, immutable.Seq[Post]]
 
   def loadPostsToReview(): immutable.Seq[Post]
+  def loadPostsByAuthor(userId: UserId, limit: Int, orderBy: OrderBy): immutable.Seq[Post]
 
   def loadTitlesPreferApproved(pageIds: Iterable[PageId]): Map[PageId, String] = {
     val titlePosts = loadPosts(pageIds.map(PagePostNr(_, PageParts.TitleNr)))
@@ -175,7 +179,7 @@ trait SiteTransaction {
   /** Loads meta for all forums, blog and wiki main pages. */
   //def loadPageMetaForAllSections(): Seq[PageMeta]
 
-  def loadPageMetas(pageIds: Seq[PageId]): immutable.Seq[PageMeta]
+  def loadPageMetas(pageIds: Iterable[PageId]): immutable.Seq[PageMeta]
   def loadPageMetasAsMap(pageIds: Iterable[PageId]): Map[PageId, PageMeta]
   def insertPageMetaMarkSectionPageStale(newMeta: PageMeta)
 
@@ -218,7 +222,10 @@ trait SiteTransaction {
     newSlug: Option[String] = None): PagePath
 
 
+  @deprecated("now", "use this.now instead")
   def currentTime: ju.Date
+
+  lazy val now: When = When.fromDate(currentTime)
 
 
   /** Remembers that a file has been uploaded and where it's located. */
@@ -254,19 +261,20 @@ trait SiteTransaction {
   def loadIdtyDetailsAndUser(userId: UserId): Option[(Identity, User)]
 
   def nextAuthenticatedUserId: UserId
-  def insertAuthenticatedUser(user: CompleteUser)
+  def insertAuthenticatedUser(user: MemberInclDetails)
 
   def tryLogin(loginAttempt: LoginAttempt): LoginGrant
   def loginAsGuest(loginAttempt: GuestLoginAttempt): GuestLoginResult
   def configIdtySimple(ctime: ju.Date, emailAddr: String, emailNotfPrefs: EmailNotfPrefs)
 
-  def loadCompleteUser(userId: UserId): Option[CompleteUser]
-  def loadMemberInclDetailsByUsername(username: String): Option[CompleteUser]
+  def loadMemberInclDetails(userId: UserId): Option[MemberInclDetails]
+  def loadMemberInclDetailsByUsername(username: String): Option[MemberInclDetails]
 
-  def loadTheCompleteUser(userId: UserId): CompleteUser =
-    loadCompleteUser(userId).getOrElse(throw UserNotFoundException(userId))
+  def loadTheMemberInclDetails(userId: UserId): MemberInclDetails =
+    loadMemberInclDetails(userId).getOrElse(throw UserNotFoundException(userId))
 
-  def updateCompleteUser(user: CompleteUser): Boolean
+  // def updateMember(user: Member): Boolean — could add, [6DCU0WYX2]
+  def updateMemberInclDetails(user: MemberInclDetails): Boolean
   def updateGuest(guest: Guest): Boolean
 
   def loadUser(userId: UserId): Option[User]
@@ -306,11 +314,11 @@ trait SiteTransaction {
   def loadMembersWithPrefix(usernamePrefix: String): immutable.Seq[Member]
 
   def loadUsers(): immutable.Seq[User]
-  def loadCompleteUsers(
+  def loadMembersInclDetails(
     onlyApproved: Boolean = false,
-    onlyPendingApproval: Boolean = false): immutable.Seq[CompleteUser]
+    onlyPendingApproval: Boolean = false): immutable.Seq[MemberInclDetails]
 
-  def loadOwner(): Option[CompleteUser]
+  def loadOwner(): Option[MemberInclDetails]
 
   /** Loads users watching the specified page, any parent categories or forums,
     * and people watching everything on the whole site.
@@ -337,10 +345,12 @@ trait SiteTransaction {
   def upsertReviewTask(reviewTask: ReviewTask)
   def loadReviewTask(id: ReviewTaskId): Option[ReviewTask]
   def loadReviewTasks(olderOrEqualTo: ju.Date, limit: Int): Seq[ReviewTask]
-  def loadReviewTaskCausedBy(userId: UserId, limit: Int, orderBy: OrderBy): Seq[ReviewTask]
+  def loadReviewTasksAboutUser(userId: UserId, limit: Int, orderBy: OrderBy): Seq[ReviewTask]
+  def loadReviewTasksAboutBrowser(browserIdData: BrowserIdData, limit: Int, orderBy: OrderBy)
+        : Seq[ReviewTask]
   def loadReviewTaskCounts(isAdmin: Boolean): ReviewTaskCounts
   def loadPendingPostReviewTask(postId: UniquePostId): Option[ReviewTask]
-  def loadPendingPostReviewTask(postId: UniquePostId, causedById: UserId): Option[ReviewTask]
+  def loadPendingPostReviewTask(postId: UniquePostId, taskCreatedById: UserId): Option[ReviewTask]
 
   def nextNotificationId(): NotificationId
   def saveDeleteNotifications(notifications: Notifications)
@@ -356,6 +366,8 @@ trait SiteTransaction {
   def nextAuditLogEntryId(): (AuditLogEntryId, Option[AuditLogEntryId])
   def insertAuditLogEntry(entry: AuditLogEntry)
   def loadCreatePostAuditLogEntry(postId: UniquePostId): Option[AuditLogEntry]
+  def loadCreatePostAuditLogEntriesBy(browserIdData: BrowserIdData, limit: Int, orderBy: OrderBy)
+        : Seq[AuditLogEntry]
   def loadAuditLogEntriesRecentFirst(userId: UserId, tyype: AuditLogEntryType, limit: Int)
         : immutable.Seq[AuditLogEntry]
 

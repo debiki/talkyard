@@ -105,25 +105,23 @@ var FlagDialog = createComponent({
         ModalBody({},
           r.form({},
             Input({ type: 'radio', label: 'Inappropriate', checked: flagType === 'Inapt',
-                onChange: () => this.chooseFlag('Inapt'),
-                help: "This post contains content that a reasonable person would consider " +
-                  "offensive, abusive." }),
+                onChange: () => this.chooseFlag('Inapt'), className: 'e_FD_InaptRB',
+                help: "This post contains offensive or abusive content." }),
 
             Input({ type: 'radio', label: 'Spam', checked: flagType === 'Spam',
-                onChange: () => this.chooseFlag('Spam'),
-                help: "This post is an advertisement. It is not useful or relevant to " +
-                  "the current topic, but promotional in nature." }),
+                onChange: () => this.chooseFlag('Spam'), lassName: 'e_FD_SpamRB',
+                help: "This post is an unwanted advertisement." }),
 
             Input({ type: 'radio', label: 'Other', checked: flagType === 'Other',
-                onChange: () => this.chooseFlag('Other'),
-                help: "This post requires moderation attention for some reason not " +
-                  "listed above." }))),
+                onChange: () => this.chooseFlag('Other'), className: 'e_FD_OtherRB',
+                help: "Notify staff about this post for some other reason." }))),
 
           anyReasonInput,
 
         ModalFooter({},
-          Button({ onClick: this.submit, disabled: !flagType, bsStyle: 'primary' }, "Submit"),
-          Button({ onClick: this.close }, "Cancel"))));
+          Button({ onClick: this.submit, disabled: !flagType, bsStyle: 'primary',
+              className: 'e_FD_SubmitB' }, "Submit"),
+          Button({ onClick: this.close, className: 'e_FD_CancelB' }, "Cancel"))));
   }
 });
 

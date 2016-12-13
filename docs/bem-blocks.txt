@@ -18,6 +18,9 @@ esA_Ss_S        = Admin Area, a single setting
 
 esA_Us_U        = Admin Area, a single user
 
+s_APAs          = After-page-actions
+s_APAs_OPRB     = After-page orig-post-reply-button
+
 esCB            = context bar (the right sidebar)
 
 esE             = The editor
@@ -37,6 +40,8 @@ esF_TsL_T       = topic in forum topics list
 s_F_Ts_T_Con_B  = ..., content, body
 s_F_Ts_T_Avs    = Forum topic list, one topic, user avatars
 s_F_Ts_T_CN     = Forum topic list, one topic, category name
+
+FD              = flag dialog
 
 esH             = help
 
@@ -70,6 +75,7 @@ esP_H           = post header (author, date, any chat message actions)
 esP_H_At        = at which time the post was posted
 esP_H_By        = author
 esP_B           = post body (the actual text)
+s_P-Hdn         = post, hidden
 
 esPA            = post actions (actually located outside the post (esP) there fore esPA not esP_A)
 
@@ -80,6 +86,8 @@ esPA            = post actions (actually located outside the post (esP) there fo
 esRT            = review task
 
 esRPP           = reset password page
+
+SD              = stupid dialog
 
 SED             = server error dialog
 

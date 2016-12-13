@@ -341,7 +341,10 @@ export var Title = createComponent({
       contents = morebundle.TitleEditor(editorProps);
     }
     else {
-      var pinClass = this.props.pinWhere ? ' icon-pin' : '';
+      var pinOrHiddenClass = this.props.pinWhere ? ' icon-pin' : '';
+      if (store.pageHiddenAtMs) {
+        pinOrHiddenClass = ' icon-eye-off';
+      }
       var tooltip = '';
       var icon;
       // (Some dupl code, see PostActions below and isDone() and isAnswered() in forum.ts [4KEPW2]
@@ -434,7 +437,7 @@ export var Title = createComponent({
       contents =
           r.div({ className: 'dw-p-bd' },
             r.div({ className: 'dw-p-bd-blk' },
-              r.h1({ className: 'dw-p-ttl' + pinClass, title: tooltip },
+              r.h1({ className: 'dw-p-ttl' + pinOrHiddenClass, title: tooltip },
                 deletedIcon, titlePendingApprovalMessage,
                 icon, titleText,
                 anyShowForumInroBtn, anyEditTitleBtn)));
@@ -465,6 +468,20 @@ var RootPostAndComments = createComponent({
     return { showClickReplyInstead: false };
   },
 
+  loadAndShowRootPost: function(event) {
+    event.preventDefault();
+    let store: Store = this.props;
+    ReactActions.loadAndShowPost(store.rootPostId);
+  },
+
+  onOrigPostReplyClick: function() {
+    // Dupl code [69KFUW20]
+    debiki2.morebundle.loginIfNeededReturnToPost('LoginToComment', BodyId, function() {
+      editor.toggleWriteReplyToPost(BodyId, PostType.Normal);
+    });
+  },
+
+  /*
   onChatReplyClick: function() {
     // Unless shown alraedy, or read already, show a tips about clicking "Reply" instead.
     var hasReadClickReplyTips = debiki2.help.isHelpMessageClosed(this.props, clickReplyInsteadHelpMessage);
@@ -474,13 +491,13 @@ var RootPostAndComments = createComponent({
     else {
       this.setState({ showClickReplyInstead: true });
     }
-  },
+  }, */
 
   render: function() {
     var store: Store = this.props;
     var allPosts: { [postId: number]: Post; } = this.props.allPosts;
     var me = store.me;
-    var rootPost = allPosts[this.props.rootPostId];
+    var rootPost: Post = allPosts[this.props.rootPostId];
     if (!rootPost)
       return r.p({}, '(Root post missing, id: ' + this.props.rootPostId +
           ', these are present: ' + _.keys(allPosts) + ' [DwE8WVP4])');
@@ -489,6 +506,7 @@ var RootPostAndComments = createComponent({
     var threadClass = 'dw-t dw-depth-0' + horizontalCss(this.props.horizontalLayout);
     var postIdAttr = 'post-' + rootPost.postId;
     var postClass = 'dw-p';
+    if (post_shallRenderAsHidden(rootPost)) postClass += ' s_P-Hdn';
     var postBodyClass = 'dw-p-bd';
     if (isBody) {
       threadClass += ' dw-ar-t';
@@ -502,11 +520,21 @@ var RootPostAndComments = createComponent({
 
     var body = null;
     if (pageRole !== PageRole.EmbeddedComments) {
+      let bodyContent;
+      if (post_shallRenderAsHidden(rootPost)) {
+        bodyContent = (
+            r.div({ className: 'dw-p-bd-blk esOrigPost', onClick: this.loadAndShowRootPost },
+              "Post hidden; click to show"));
+      }
+      else {
+        bodyContent = (
+            r.div({ className: 'dw-p-bd-blk esOrigPost',
+              dangerouslySetInnerHTML: { __html: rootPost.sanitizedHtml }}));
+      }
       body =
         r.div({ className: postClass, id: postIdAttr },
           r.div({ className: postBodyClass },
-            r.div({ className: 'dw-p-bd-blk esOrigPost',
-              dangerouslySetInnerHTML: { __html: rootPost.sanitizedHtml }})));
+            bodyContent));
     }
 
     if (!page_isDiscussion(pageRole)) {
@@ -582,7 +610,7 @@ var RootPostAndComments = createComponent({
     // it'd be hard & take long to make them simpler to understand.
     var hasChat = false; // hasChatSection(store.pageRole);
 
-    var flatComments = [];
+    var flatComments = []; /*
     if (hasChat) _.each(store.allPosts, (child: Post, childId) => {
       if (!child || child.postType !== PostType.Flat)
         return null;
@@ -597,14 +625,14 @@ var RootPostAndComments = createComponent({
       flatComments.push(
         r.li({ key: childId },
           Thread(threadProps)));
-    });
+    }); */
 
-    var chatSection;
+    var chatSection; /* Perhaps add back later — but probably not? [8KB42]
     if (hasChat) {
       var anyClickReplyInsteadHelpMessage = this.state.showClickReplyInstead
           ? debiki2.help.HelpMessageBox({ large: true, message: clickReplyInsteadHelpMessage })
           : null;
-      var chatSection =
+      chatSection =
         r.div({},
           r.div({ className: 'dw-chat-title', id: 'dw-chat' },
             store.numPostsChatSection + " chat comments"),
@@ -619,16 +647,25 @@ var RootPostAndComments = createComponent({
                   " or post a status update. — However, to reply to someone, " +
                   "instead click Reply just below his or her post." },
               " Add chat comment")));
-    }
+    } */
 
     var flatRepliesClass = repliesAreFlat ? ' dw-chat' : ''; // rename dw-chat... to dw-flat?
+
+    let postActions = post_shallRenderAsHidden(rootPost) ? null :
+         PostActions({ store: this.props, post: rootPost });
+
+    let origPostReplyButton = _.every(threadedChildren, c => _.isEmpty(c)) ? null :
+      r.div({ className: 's_APAs'},
+        r.a({ className: 's_APAs_OPRB dw-a dw-a-reply icon-reply',
+            onClick: this.onOrigPostReplyClick },
+          makeReplyBtnTitle(store, rootPost, true)));
 
     return (
       r.div({ className: threadClass },
         bodyPendingApprovalMessage,
         body,
         solvedBy,
-        PostActions({ store: this.props, post: rootPost }),
+        postActions,
         debiki2.page.Metabar(),
         anyHorizontalArrowToChildren,
         // try to remove the dw-single-and-multireplies div + the dw-singlereplies class,
@@ -636,6 +673,7 @@ var RootPostAndComments = createComponent({
         r.div({ className: 'dw-single-and-multireplies' + flatRepliesClass },
           r.ol({ className: 'dw-res dw-singlereplies' },
             threadedChildren)),
+        origPostReplyButton,
         chatSection));
   },
 });
@@ -783,7 +821,7 @@ var Thread = createComponent({
       });
     }
 
-    var actions = isCollapsed(post)
+    var actions = isCollapsed(post) || post_shallRenderAsHidden(post)
       ? null
       : PostActions({ store: this.props, post: post,
           onClick: this.onAnyActionClick });
@@ -932,7 +970,7 @@ export var Post = createComponent({
       headerElem =
           r.div({ className: 'dw-p-hd' },
             anyAvatar,
-            'Hidden comment pending approval, posted ', timeAgo(post.createdAtMs), '.');
+            'Comment pending approval, posted ', timeAgo(post.createdAtMs), '.');
       extraClasses += ' dw-p-unapproved';
     }
     else {
@@ -987,6 +1025,9 @@ export var Post = createComponent({
 
     if (isFlat)
       extraClasses += ' dw-p-flat';
+
+    if (post_shallRenderAsHidden(post))
+      extraClasses += ' s_P-Hdn';
 
     var unwantedCross;
     if (post.numUnwantedVotes) {
@@ -1217,6 +1258,12 @@ export var PostHeader = createComponent({
 
 
 export var PostBody = createComponent({
+  loadAndShow: function(event) {
+    event.preventDefault();
+    let post: Post = this.props.post;
+    ReactActions.loadAndShowPost(post.postId);
+  },
+
   render: function() {
     var post: Post = this.props.post;
     if (post.summarize) {
@@ -1226,7 +1273,11 @@ export var PostBody = createComponent({
             r.p({}, post.summary))));
     }
     var body;
-    if (this.props.abbreviate) {
+    if (post_shallRenderAsHidden(post)) {
+      body = r.div({ className: 'dw-p-bd-blk', onClick: this.loadAndShow },
+        "Post hidden; click to show");
+    }
+    else if (this.props.abbreviate) {
       // SHOULD OPTIMIZE COULD_OPTIMIZE don't create new <div>s here over and over again.
       // COULD Rename 'length' below to maxCharsToShow?
       // Include the first maxCharsToShow chars, but don't count chars inside tags, e.g.

@@ -67,6 +67,19 @@ function pagesFor(browser) {
     },
 
 
+    // Can be used to wait until a fade-&-scroll-in dialog is done scrolling in, for example.
+    //
+    waitUntilDoesNotMove: function(buttonSelector: string, pollInterval?: number) {
+      for (let attemptNr = 1; attemptNr <= 30; ++attemptNr) {
+        let location = browser.getLocationInView(buttonSelector);
+        browser.pause(pollInterval || 50);
+        let locationLater = browser.getLocationInView(buttonSelector);
+        if (location.y === locationLater.y && location.x === locationLater.x)
+          return;
+      }
+      die(`Never stops moving: '${buttonSelector}' [EdE7KFYU0]`);
+    },
+
     assertPageHtmlSourceDoesNotMatch: function(toMatch) {
       let resultsByBrowser = byBrowser(browser.getSource());
       let regex = _.isString(toMatch) ? new RegExp(toMatch) : toMatch;
@@ -517,11 +530,25 @@ function pagesFor(browser) {
 
       save: function() {
         browser.click('.e2eSaveBtn');
+        api.pageTitle.waitForVisible();
+      },
+
+      waitForVisible: function() {
         browser.waitForVisible('.dw-p-ttl h1');
       },
 
       assertMatches: function(regex) {
         browser.assertPageTitleMatches(regex);
+      },
+
+      assertPageHidden: function() {
+        api.pageTitle.waitForVisible();
+        assert(browser.isVisible('.dw-p-ttl .icon-eye-off'));
+      },
+
+      assertPageNotHidden: function() {
+        api.pageTitle.waitForVisible();
+        assert(!browser.isVisible('.dw-p-ttl .icon-eye-off'));
       },
     },
 
@@ -569,9 +596,24 @@ function pagesFor(browser) {
 
     forumTopicList: {
       titleSelector: '.e2eTopicTitle a',  // <– remove, later: '.esF_TsL_T_Title',  CLEAN_UP
+      hiddenTopicTitleSelector: '.e2eTopicTitle .icon-eye-off a',
 
       waitUntilKnowsIsEmpty: function() {
         browser.waitForVisible('#e2eF_NoTopics');
+      },
+
+      waitForTopics: function() {
+        browser.waitForVisible('.e2eF_T');
+      },
+
+      clickViewLatest: function() {
+        browser.waitAndClick('#e2eSortLatestB');
+        browser.waitUntilGone('.e_F_SI_Top');
+      },
+
+      clickViewTop: function() {
+        browser.waitAndClick('#e2eSortTopB');
+        browser.waitForVisible('.e_F_SI_Top');
       },
 
       goToTopic: function(title: string) {
@@ -579,6 +621,19 @@ function pagesFor(browser) {
         browser.waitForThenClickText(api.forumTopicList.titleSelector, title);
         browser.waitForNewUrl();
         browser.assertPageTitleMatches(title);
+      },
+
+      assertTopicVisible: function(title) {
+        browser.assertAnyTextMatches(api.forumTopicList.titleSelector, title);
+        assert(!browser.isVisible(api.forumTopicList.hiddenTopicTitleSelector));
+      },
+
+      assertTopicNotVisible: function(title) {
+        browser.assertNoTextMatches(api.forumTopicList.titleSelector, title);
+      },
+
+      assertTopicVisibleAsHidden: function(title) {
+        browser.assertAnyTextMatches(api.forumTopicList.hiddenTopicTitleSelector, title);
       },
     },
 
@@ -757,6 +812,28 @@ function pagesFor(browser) {
 
       clickReplyToPostNr: function(postNr: PostNr) {
         api.topic.clickPostActionButton(`#post-${postNr} + .esPA .dw-a-reply`);
+      },
+
+      clickMoreForPostNr: function(postNr: PostNr) {
+        api.topic.clickPostActionButton(`#post-${postNr} + .esPA .dw-a-more`);
+      },
+
+      clickFlagPost: function(postNr: PostNr) {
+        api.topic.clickMoreForPostNr(postNr);
+        browser.waitAndClick('.icon-flag');  // for now, later: e_...
+      },
+
+      assertPostHidden: function(postNr: PostNr) {
+        assert(browser.isVisible(`#post-${postNr}.s_P-Hdn`));
+      },
+
+      assertPostNotHidden: function(postNr: PostNr) {
+        assert(!browser.isVisible(`#post-${postNr}.s_P-Hdn`));
+        assert(browser.isVisible(`#post-${postNr}`));
+        // Check -Hdn again, to prevent some races (but not all), namely that the post gets
+        // loaded, and is invisible, but the first -Hdn check didn't find it because at that time
+        // it hadn't yet been loaded.
+        assert(!browser.isVisible(`#post-${postNr}.s_P-Hdn`));
       },
 
       clickPostActionButton: function(buttonSelector: string) {
@@ -949,6 +1026,31 @@ function pagesFor(browser) {
     },
 
 
+    flagDialog: {
+      waitUntilFadedIn: function() {
+        browser.waitUntilDoesNotMove('.e_FD_InaptRB');
+      },
+
+      clickInappropriate: function() {
+        browser.waitAndClick('.e_FD_InaptRB label');
+      },
+
+      submit: function() {
+        browser.waitAndClick('.e_FD_SubmitB');
+        // Don't: browser.waitUntilModalGone(), because now the stupid-dialog pop ups
+        // and says "Thanks", and needs to be closed.
+      },
+    },
+
+
+    stupidDialog: {
+      close: function() {
+        browser.waitAndClick('.e_SD_CloseB');
+        browser.waitUntilModalGone();
+      },
+    },
+
+
     adminArea: {
       waitAssertVisible: function() {
         browser.waitForVisible('h1');
@@ -1095,6 +1197,19 @@ function pagesFor(browser) {
         api.topic.clickReplyToPostNr(postNr);
         api.editor.editText(text);
         api.editor.save();
+      },
+
+      flagPost: function(postNr: PostNr, reason: 'Inapt' | 'Spam') {
+        api.topic.clickFlagPost(postNr);
+        api.flagDialog.waitUntilFadedIn();
+        if (reason === 'Inapt') {
+          api.flagDialog.clickInappropriate();
+        }
+        else {
+          die('Test code bug [EdE7WK5FY0]');
+        }
+        api.flagDialog.submit();
+        api.stupidDialog.close();
       },
 
       createChatChannelViaWatchbar: function(

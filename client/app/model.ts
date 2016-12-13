@@ -280,14 +280,15 @@ interface Topic {
   lastReplyAtMs: number;
   numOrigPostReplies: number;
   numOrigPostLikes: number;
-  answeredAtMs?: string;
+  answeredAtMs?: number;
   answerPostUniqueId?: number;
-  plannedAtMs?: string;
-  doneAtMs?: string;
-  closedAtMs?: string;
-  lockedAtMs?: string;
-  frozenAtMs?: string;
-  deletedAtMs?: string;
+  plannedAtMs?: number;
+  doneAtMs?: number;
+  closedAtMs?: number;
+  lockedAtMs?: number;
+  frozenAtMs?: number;
+  hiddenAtMs?: number;
+  deletedAtMs?: number;
 }
 
 
@@ -366,6 +367,7 @@ interface Store {
   pageClosedAtMs?: number;
   pageLockedAtMs?: number;
   pageFrozenAtMs?: number;
+  pageHiddenAtMs?: number;
   pageDeletedAtMs?: number;
   numPosts: number;
   numPostsRepliesSection: number;
@@ -409,6 +411,7 @@ interface Store {
 interface SiteSettings {
   allowGuestLogin: boolean;
   showComplicatedStuff: boolean;
+  numFlagsToHidePost: number;
 }
 
 

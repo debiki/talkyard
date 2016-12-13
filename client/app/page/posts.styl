@@ -551,6 +551,25 @@ html:not(.mouse) .dw-rr
   clear: left
   width: 100%
 
+.s_P-Hdn .dw-p-bd-blk
+  padding: 5px 14px !important;
+  margin: 4px 0 33px; // whitespace needed because no post-actions shown below
+  background: hsl(0, 0%, 95.3%);
+  float: left;
+  display: block;
+  width: auto;
+  color: hsl(0, 0%, 26%);
+  cursor: pointer;
+  &.esOrigPost
+    margin-top: 15px;
+    padding: 7px 17px !important;
+  &:hover
+    color: hsl($uiHue, 100%, 20%);
+    background: hsl($uiHue, 70%, 96%);
+    outline: 1px solid hsl($uiHue, 100%, 91%);
+    text-decoration: none;
+
+
 // No margin-top for any title at the top in a comment.
 :not(.dw-ar-p-bd) > .dw-p-bd-blk:first-child
   > h1:not(.dw-p-ttl),

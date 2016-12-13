@@ -15,6 +15,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+// CLEAN_UP, REFACTOR this so this file can be deleted.
+
 var d = { i: debiki.internal, u: debiki.v0.util };
 var $ = d.i.$;
 
@@ -61,6 +63,7 @@ function showReplyFormImpl($this, anyPostType) {
     postId = $this.closest('.dw-t').dwPostId();
   }
 
+  // Dupl code [69KFUW20]
   debiki2.morebundle.loginIfNeededReturnToPost('LoginToComment', postId, function() {
     // Toggle highlighting first, because it'll be cleared later if the
     // editor is closed, and then we don't want to toggle it afterwards.
