@@ -140,23 +140,13 @@ var ForumComponent = React.createClass(<any> {
     var activeCategory: any;
     var activeCategorySlug = this.props.params.categorySlug;
     if (activeCategorySlug) {
-      // (( Old comment, for react-router 0.13, now I use 2.0:
-      // Don't know why, but sometimes after having edited or created a category and
-      // then transitioned to its edited/new slug, then getParams().categorySlug
-      // still points to the old previous slug. Therefore, if we didn't find
-      // activeCategorySlug, try store.newCategorySlug instead. ))
       activeCategory = _.find(store.categories, (category: Category) => {
         return category.slug === activeCategorySlug;
       });
-      if (!activeCategory) {
-        activeCategory = _.find(store.categories, (category: Category) => {
-          var match = category.slug === store.newCategorySlug;
-          console.warn("Weird store.categories code is needed [EsE5GUKS2]");
-          return match;
-        });
-      }
+      // If `activeCategory` is null here, that's probably because the category is
+      // included in user specific data that hasn't been activated yet. (6KEWM02)
     }
-    if (!activeCategory) {
+    else {
       activeCategory = {
         name: "All categories",
         id: store.categoryId, // the forum root category id
@@ -205,7 +195,7 @@ var ForumComponent = React.createClass(<any> {
   render: function() {
     var store: Store = this.state.store;
     var activeCategory = this.getActiveCategory();
-    var helpMessage = this.makeHelpMessage(activeCategory);
+    var helpMessage = activeCategory ? this.makeHelpMessage(activeCategory) : null;
     helpMessage = helpMessage
         ? debiki2.help.HelpMessageBox({ message: helpMessage })
         : null;
@@ -475,7 +465,10 @@ var ForumButtons = createComponent({
       // a category, opened a page and then clicked Back in the browser. Then this page
       // reloads, and the browser then uses cached HTML including JSON in which the new
       // category does not yet exist. Let's try to reload the category list page:
-      return r.p({},
+      // (However, if user-specific-data hasn't yet been activated, the "problem" is probably
+      // just that we're going to show a restricted category, which isn't available before
+      // user specific data added. (6KEWM02). )
+      return !store.userSpecificDataAdded ? null : r.p({},
         "Category not found. Did you just create it? Then reload the page please. [EsE04PK27]");
     }
 
@@ -711,6 +704,12 @@ var ForumTopicListComponent = React.createClass(<any> {
   },
 
   loadTopics: function(nextProps, loadMore) {
+    if (!nextProps.activeCategory) {
+      // Probably a restricted category, won't be available until user-specific-data
+      // has been activated (by ReactStore.activateMyself). (6KEWM02)
+      return;
+    }
+
     var isNewView =
       this.props.location.pathname !== nextProps.location.pathname ||
       this.props.location.search !== nextProps.location.search;
@@ -720,7 +719,7 @@ var ForumTopicListComponent = React.createClass(<any> {
     // Avoid loading the same topics many times:
     // - On page load, componentDidMount() and componentWillReceiveProps() both loads topics.
     // - When we're refreshing the page because of Flux events, don't load the same topics again.
-    if (!isNewView && !loadMore && (this.state.topics || this.state.isLoading))
+    if (!isNewView && !loadMore && (this.state.topics || this.isLoading))
       return;
 
     var orderOffset: OrderOffset = this.getOrderOffset(nextProps);
@@ -736,7 +735,10 @@ var ForumTopicListComponent = React.createClass(<any> {
       delete orderOffset.numLikes;
     }
     var categoryId = nextProps.activeCategory.id;
-    this.setState({ isLoading: true });
+    // Don't use this.state.isLoading, because the state change doesn't happen instantly,
+    // so componentWillReceiveProps() would get called first, and it would call loadTopics again
+    // while this.state.isLoading was still false, resulting in an unneeded server request.
+    this.isLoading = true;
     debiki2.Server.loadForumTopics(categoryId, orderOffset, (newlyLoadedTopics: Topic[]) => {
       if (!this.isMounted())
         return;
@@ -745,9 +747,9 @@ var ForumTopicListComponent = React.createClass(<any> {
       topics = topics.concat(newlyLoadedTopics);
       // `topics` includes at least the last old topic twice.
       topics = _.uniqBy(topics, 'pageId');
+      this.isLoading = false;
       this.setState({
         minHeight: null,
-        isLoading: false,
         topics: topics,
         showLoadMoreButton: newlyLoadedTopics.length >= NumNewTopicsPerRequest
       });
@@ -756,6 +758,7 @@ var ForumTopicListComponent = React.createClass(<any> {
   },
 
   countTopicsWaitingForCritique: function(topics?) { // for now only  [plugin]
+    if (!this.props.activeCategory) return;
     topics = topics || this.state.topics;
     var numWaitingForCritique = 0;
     if (_.isEqual(this.props.activeCategory.newTopicTypes, [PageRole.Critique])) {
@@ -993,14 +996,23 @@ var TopicRow = createComponent({
     return lowerBound;
   },
 
-  switchCategory: function(category: Category) {
+  makeCategoryLink: function(category: Category, skipQuery?: boolean) {
     var store: Store = this.props.store;
-    dieIf(this.props.routes.length < 2, 'EsE5U2Z');
+    dieIf(this.props.routes.length < 2, 'EdE5U2ZG');
     var sortOrderPath = this.props.routes[SortOrderRouteIndex].path;
-    this.context.router.push({
-      pathname: store.pagePath.value + sortOrderPath + '/' + category.slug,
-      query: this.props.location.query,
-    });
+    // this.props.location.query — later: could convert to query string, unless skipQuery === true
+    return store.pagePath.value + sortOrderPath + '/' + category.slug;
+  },
+
+  makeOnCategoryClickFn: function(category: Category) {
+    return (event) => {
+      event.preventDefault();
+      let urlPath = this.makeCategoryLink(category, true);
+      this.context.router.push({
+        pathname: urlPath,
+        query: this.props.location.query,
+      });
+    };
   },
 
   render: function() {
@@ -1086,7 +1098,8 @@ var TopicRow = createComponent({
     }
 
     var categoryName = !category ? null :
-      r.a({ onClick: () => this.switchCategory(category), className: 'esF_Ts_T_CName' },
+      r.a({ href: this.makeCategoryLink(category), className: 'esF_Ts_T_CName',
+            onClick: this.makeOnCategoryClickFn(category) },
         category.name);
 
     var activityAgo = prettyLetterTimeAgo(topic.bumpedAtMs || topic.createdAtMs);

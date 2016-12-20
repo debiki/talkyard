@@ -276,7 +276,9 @@ th.num
 td.dw-tpc-activity
   white-space: normal !important;
 
-.esF_Ts_T_CName,
+// Why both :link and :visited needed? With just :link, a:visited's default color is used instead.
+.esF_Ts_T_CName:link,
+.esF_Ts_T_CName:visited,
 .dw-tpc-replies,
 .dw-tpc-activity
   color: hsl(0, 0%, 51%);
