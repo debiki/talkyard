@@ -346,6 +346,12 @@ function addCommandsToBrowser(browser) {
     if (_.isString(regex)) {
       regex = new RegExp(regex);
     }
+    // Surprisingly, browser.elements(..) blocks forever, if `selector` is absent. So:
+    if (!browser.isVisible(selector)) {
+      if (!shallMatch)
+        return;
+      assert(false, "No visible elems matches " + selector);
+    }
     var elems = browser.elements(selector).value;
     assert(!shallMatch || elems.length, "No elems found matching " + selector);
     for (var i = 0; i < elems.length; ++i) {

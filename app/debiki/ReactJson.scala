@@ -662,6 +662,8 @@ object ReactJson {
   }
 
 
+  COULD ; REFACTOR // move to CategoriesDao? and change from param PageRequest to
+  // user + pageMeta?
   def listRestrictedCategoriesAndTopics(request: PageRequest[_]): (JsArray, Seq[JsValue]) = {
     // Currently there're only 2 types of "personal" topics: unlisted, & staff-only.
     if (!request.isStaff)

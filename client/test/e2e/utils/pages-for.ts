@@ -596,7 +596,7 @@ function pagesFor(browser) {
 
     forumTopicList: {
       titleSelector: '.e2eTopicTitle a',  // <– remove, later: '.esF_TsL_T_Title',  CLEAN_UP
-      hiddenTopicTitleSelector: '.e2eTopicTitle .icon-eye-off a',
+      hiddenTopicTitleSelector: '.e2eTopicTitle a.icon-eye-off',
 
       waitUntilKnowsIsEmpty: function() {
         browser.waitForVisible('#e2eF_NoTopics');
@@ -625,7 +625,7 @@ function pagesFor(browser) {
 
       assertTopicVisible: function(title) {
         browser.assertAnyTextMatches(api.forumTopicList.titleSelector, title);
-        assert(!browser.isVisible(api.forumTopicList.hiddenTopicTitleSelector));
+        browser.assertNoTextMatches(api.forumTopicList.hiddenTopicTitleSelector, title);
       },
 
       assertTopicNotVisible: function(title) {

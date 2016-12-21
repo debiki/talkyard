@@ -665,8 +665,14 @@ var ForumTopicListComponent = React.createClass(<any> {
     // The server has included in the Flux store a list of the most recent topics, and we
     // can use that lis when rendering the topic list server side, or for the first time
     // in the browser (but not after that, because then new topics might have appeared).
-    var store: Store = this.props.store;
-    if (!this.props.topicsInStoreMightBeOld && this.isAllLatestTopicsView()) {
+    let store: Store = this.props.store;
+    // If we're authenticated, the topic list depends a lot on our permissions & groups.
+    // Then, send a request, to get the correct topic list (otherwise,
+    // as of 2016-12, hidden topics won't be included even if they should be [7RIQ29]).
+    let me: Myself = (debiki.volatileDataFromServer || {}).me;
+    let canUseTopicsInScriptTag = !me || !me.isAuthenticated;
+    if (!this.props.topicsInStoreMightBeOld && this.isAllLatestTopicsView() &&
+        canUseTopicsInScriptTag) {
       return {
         topics: store.topics,
         showLoadMoreButton: store.topics.length >= NumNewTopicsPerRequest

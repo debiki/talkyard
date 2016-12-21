@@ -35,6 +35,8 @@ esF_Ts_T_CName  = topic category name
 esF_Cs          = forum category list
 esF_Cs_C        = a category in the category list
 
+e_F_SI_...      = forum sort info: top/latest/etc
+
 esF_TsL         = forum topics list (not table)
 esF_TsL_T       = topic in forum topics list
 s_F_Ts_T_Con_B  = ..., content, body
