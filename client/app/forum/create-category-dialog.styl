@@ -15,10 +15,51 @@
   .checkbox
     margin-bottom: 0;
 
+  // Lots of whitespace because of the delete-category button, so reduce padding-bottom.
+  .modal-body
+    padding-bottom: 8px;
+
 .esCatDlg_slug_help_addr_slug
   font-weight: bold;
   font-size: 105%;
   margin-left: 1px;
+
+
+.s_CD_Dd
+  margin-bottom: 20px;
+  p
+    font-size: 14px;
+    font-weight: bold;
+    display: inline-block;
+    margin-right: 15px;
+
+    &.icon-trash:before
+      content: '\e806';
+      font-size: 22px;
+      position: relative;
+      top: 2px;
+      color: #444;
+      margin-right: 7px;
+
+.s_CD_Btns
+  text-align: right;
+
+.s_CD_DelB
+  border-color: hsl(0, 70%, 55%);
+  color: hsl(0, 70%, 43%);
+
+.s_CD_UndelB
+  font-weight: bold;
+  color: white;
+  background: hsl(0, 82%, 56%);
+  border-color: hsl(0, 82%, 56%);
+
+.s_CD_DelB,
+.s_CD_UndelB
+  &:hover
+    color: white;
+    background: hsl(0, 100%, 68%);
+    border-color: hsl(0, 100%, 68%);
 
 
 // vim: fdm=marker et ts=2 sw=2 tw=0 fo=r list

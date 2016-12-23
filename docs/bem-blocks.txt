@@ -21,6 +21,8 @@ esA_Us_U        = Admin Area, a single user
 s_APAs          = After-page-actions
 s_APAs_OPRB     = After-page orig-post-reply-button
 
+  C             = category
+
 esCB            = context bar (the right sidebar)
 
 esE             = The editor
@@ -100,7 +102,9 @@ SP_SRs          = search page, search results
 
 SR              = search result
 
-esTB            = top bar (with the breadcrump and login & signup, or user name)
+esTB            = topbar (with the breadcrump and login & signup, or user name)
+s_TB_Cs_C       = topbar, ancestor categories, one of them
+s_TB_Cs_C-Dd    = deleted
 
 esTs            = page/post tags
 

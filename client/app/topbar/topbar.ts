@@ -179,8 +179,9 @@ export var TopBar = createComponent({
       ancestorCategories = hide ? null :
         r.ol({ className: 'esTopbar_ancestors' },
           store.ancestorsRootFirst.map((ancestor: Ancestor) => {
+            let deletedClass = ancestor.isDeleted ? ' s_TB_Cs_C-Dd' : '';
             return (
-                r.li({ key: ancestor.categoryId },
+                r.li({ key: ancestor.categoryId, className: 's_TB_Cs_C' + deletedClass },
                   r.a({ className: 'esTopbar_ancestors_link btn', href: ancestor.path },
                     ancestor.title)));
           }));

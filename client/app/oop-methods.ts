@@ -93,6 +93,14 @@ export function post_shallRenderAsHidden(post: Post): boolean {
 }
 
 
+// Store
+//----------------------------------
+
+export function store_isPageDeleted(store: Store): boolean {
+  return !!store.pageDeletedAtMs || _.some(store.ancestorsRootFirst, a => a.isDeleted);
+}
+
+
 //------------------------------------------------------------------------------
    }
 //------------------------------------------------------------------------------

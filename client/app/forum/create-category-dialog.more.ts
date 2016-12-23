@@ -18,6 +18,7 @@
 /// <reference path="../../typedefs/react/react.d.ts" />
 /// <reference path="../slim-bundle.d.ts" />
 /// <reference path="../react-bootstrap-old/Input.more.ts" />
+/// <reference path="../util/stupid-dialog.more.ts" />
 
 //------------------------------------------------------------------------------
    namespace debiki2.forum {
@@ -82,6 +83,7 @@ var EditCategoryDialog = createClassAndFactory({
           unlisted: category.unlisted,
           staffOnly: category.staffOnly,
           onlyStaffMayCreateTopics: category.onlyStaffMayCreateTopics,
+          isDeleted: category.isDeleted,
         });
       });
     }
@@ -165,6 +167,26 @@ var EditCategoryDialog = createClassAndFactory({
     ReactActions.saveCategory(category, this.close, () => {
       this.setState({ isSaving: false });
     });
+  },
+
+  deleteCategory: function() {
+    ReactActions.deleteCategory(this.state.categoryId, () => {
+      this.setState({ isDeleted: true });
+      util.openDefaultStupidDialog({
+        body: "Category deleted. You can undo, by clicking Undelete.",
+        small: true,
+      });
+    }, () => {});
+  },
+
+  undeleteCategory: function() {
+    ReactActions.undeleteCategory(this.state.categoryId, () => {
+      this.setState({ isDeleted: false });
+      util.openDefaultStupidDialog({
+        body: "Done, category undeleted. It is back again.",
+        small: true,
+      });
+    }, () => {});
   },
 
   render: function () {
@@ -256,9 +278,28 @@ var EditCategoryDialog = createClassAndFactory({
           checked: this.state.onlyStaffMayCreateTopics, onChange: this.toggleOnlyStaffMayCreateTopics,
           help: "May only admins and moderators create topics in this category?" }));
 
+    let anyUndeleteInfoAndButton;
+    let anyDeleteButton;
+    if (this.state.isCreatingNewCategory) {
+      // Then cannot delete it yet.
+    }
+    else if (this.state.isDeleted) {
+      anyUndeleteInfoAndButton =
+          r.div({ className: 's_CD_Dd' },
+            r.p({ className: 'icon-trash' }, "This category has been deleted."),
+            Button({ onClick: this.undeleteCategory, className: 's_CD_UndelB' }, "Undelete"));
+    }
+    else {
+      anyDeleteButton =
+        r.div({ className: 's_CD_Btns'},
+          Button({ onClick: this.deleteCategory, className: 'icon-trash s_CD_DelB' },
+            "Delete category"));
+    }
+
     var body = this.state.isLoading
         ? r.div({}, "Loading...")
         : r.div({},
+            anyUndeleteInfoAndButton,
             nameInput,
             editDescriptionLink,
             defaultTopicTypeInput,
@@ -267,7 +308,8 @@ var EditCategoryDialog = createClassAndFactory({
             positionInput,
             unlistedInput,
             staffOnlyInput,
-            onlyStaffMayCreateTopicsInput);
+            onlyStaffMayCreateTopicsInput,
+            anyDeleteButton);
 
     var saveButtonTitle = this.state.isCreating ? "Create Category" : "Save Edits";
     var dialogTitle = this.state.isCreating ? saveButtonTitle : "Edit Category";

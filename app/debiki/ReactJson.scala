@@ -357,7 +357,7 @@ object ReactJson {
   }
 
 
-  /** Returns the URL path, category id and title for a forum or category.
+  /** Returns the URL path, category id and title for a forum or category.  [6FK02QFV]
     */
   private def makeForumOrCategoryJson(forumPath: PagePath, category: Category): JsObject = {
     val forumPathSlash = forumPath.value.endsWith("/") ? forumPath.value | forumPath.value + "/"
@@ -366,13 +366,17 @@ object ReactJson {
         ("Home", s"${forumPathSlash}latest")   // [i18n]
       else
         (category.name, s"${forumPathSlash}latest/${category.slug}")
-    Json.obj(
+    var result = Json.obj(
       "categoryId" -> category.id,
       "title" -> name,
       "path" -> path,
       "unlisted" -> category.unlisted,
       "staffOnly" -> category.staffOnly,
       "onlyStaffMayCreateTopics" -> category.onlyStaffMayCreateTopics)
+    if (category.isDeleted) {
+      result += "isDeleted" -> JsTrue
+    }
+    result
   }
 
 
@@ -854,6 +858,14 @@ object ReactJson {
   }
 
 
+  def makeCategoriesStorePatch(isStaff: Boolean, restrictedOnly: Boolean, dao: SiteDao): JsValue = {
+    val categoriesJson = makeCategoriesJson(isStaff = isStaff, restrictedOnly = restrictedOnly, dao)
+    Json.obj(
+      "appVersion" -> Globals.applicationVersion,
+      "categories" -> categoriesJson)
+  }
+
+
   def makeCategoriesJson(isStaff: Boolean, restrictedOnly: Boolean, dao: SiteDao)
         : JsArray = {
     val (categories, defaultCategoryId) = dao.listAllCategories(isStaff = isStaff,
@@ -886,7 +898,10 @@ object ReactJson {
       json += "recentTopics" -> JsArray(recentTopicsJson)
     }
     if (isDefaultCategory) {
-      json += "isDefaultCategory" -> JsBoolean(true)
+      json += "isDefaultCategory" -> JsTrue
+    }
+    if (category.isDeleted) {
+      json += "isDeleted" -> JsTrue
     }
     json
   }

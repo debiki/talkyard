@@ -294,6 +294,8 @@ trait SiteTransaction {
   def loadTheMember(userId: UserId): Member = loadMember(userId).getOrDie(
     "EsEFK320FG", s"Member $userId missing")
 
+  def isAdmin(userId: UserId): Boolean = loadMember(userId).exists(_.isAdmin)
+
   def loadUsers(userIds: Iterable[UserId]): immutable.Seq[User]
   def loadTheUsers(userIds: UserId*): immutable.Seq[User] = {
     val usersById = loadUsersAsMap(userIds)

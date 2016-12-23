@@ -110,6 +110,12 @@ categories -
   edit about topic:
   edit name, slug, topic types, position:
   unlist:
+  delete -
+    gets marked as deleted for staff:
+    hidden for non-staff:
+    topics hidden unless staff:
+    topics not found when searching:
+    can undelete:
 
 topics -
   go back to forum:

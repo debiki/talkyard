@@ -259,6 +259,20 @@ $tableHeaderFontSize = 14px;
 html.js:not(.dw-react-started) #dw-topic-list tbody
   display: none;
 
+.s_F_CatDdInfo
+  font-weight: bold;
+  font-size: 17px;
+  margin-bottom: 26px;
+  .icon-trash:before
+    font-size: 26px;
+    color: #494949;
+    margin-right: 7px;
+    position: relative;
+    top: 2px;
+
+// Dim topics if category deleted.
+.s_F_Ts-CatDd .dw-tpc-title
+  opacity: 0.61;
 
 .s_F_Ts_T_Avs
   padding-left: 0 !important;
@@ -591,8 +605,12 @@ html.js:not(.dw-react-started) .dw-tpc-activity .dw-ago-ltr
 
 .esForum_cats_cat-new
   animation: esFadeIn 2.5s 0s;
-  animation-timing-function: ease-out;
   animation-timing-function: ease-out-quad;
+
+.s_F_Cs_C-Dd
+  .forum-title,
+  .topic-title
+    crossGray();
 
 @keyframes esFadeIn
   from

@@ -20,6 +20,7 @@ package debiki.dao
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki.DebikiHttp.throwNotFound
+import io.efdi.server.http.throwForbiddenIf
 import debiki.TextAndHtml
 import java.{util => ju}
 import scala.collection.{immutable, mutable}
@@ -265,7 +266,7 @@ trait CategoriesDao {
     })
     // Do include even if startCategory.onlyStaffMayCreate — because category still visible.
     // COULD rename restrictedOnly to ... visibleOnly? Or add a real permissions system.
-    val isRestricted = startCategory.unlisted || startCategory.staffOnly
+    val isRestricted = startCategory.unlisted || startCategory.staffOnly || startCategory.isDeleted
     if (isRestricted && !isStaff)
       return
     if (includeRoot && (!restrictedOnly || isRestricted)) {
@@ -384,6 +385,19 @@ trait CategoriesDao {
     }
 
     (category, aboutPagePath)
+  }
+
+
+  def deleteUndeleteCategory(categoryId: CategoryId, delete: Boolean, who: Who) {
+    readWriteTransaction { transaction =>
+      throwForbiddenIf(!transaction.isAdmin(who.id), "EdEGEF239S", "Not admin")
+      val categoryBefore = transaction.loadCategory(categoryId) getOrElse {
+        throwNotFound("EdE5FK8E2", s"No category with id $categoryId")
+      }
+      val categoryAfter = categoryBefore.copy(
+        deletedAt = if (delete) Some(transaction.now.toJavaDate) else None)
+      transaction.updateCategoryMarkSectionPageStale(categoryAfter)
+    }
   }
 
 

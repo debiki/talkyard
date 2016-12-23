@@ -427,10 +427,11 @@ export var Title = createComponent({
         default:
       }
 
-      var deletedIcon = !store.pageDeletedAtMs ? null :
-        r.span({ className: 'icon-trash', title: "This page has been deleted." });
-
-      if (store.pageDeletedAtMs) {
+      let deletedIcon;
+      if (store_isPageDeleted(store)) {
+        let deletedReason = store.pageDeletedAtMs ?
+            "This page has been deleted" : "Category deleted, so this page was deleted too";
+        deletedIcon = r.span({ className: 'icon-trash', title: deletedReason });
         titleText = r.span({ className: 'esOP_title-deleted' }, titleText);
       }
 

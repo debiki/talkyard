@@ -194,6 +194,8 @@ object ViewPageController extends mvc.Controller {
           val categories = dao.loadCategoriesRootLast(categoryId)
           if (categories.exists(_.staffOnly))
             return (false, "EsE8YGK25")
+          if (categories.exists(_.isDeleted))
+            return (false, "EdE5PK2WS")
         case None =>
           // Fine, as of now, let everyone view pages not placed in any category, by default.
       }

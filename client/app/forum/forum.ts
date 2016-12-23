@@ -819,12 +819,13 @@ var ForumTopicListComponent = React.createClass(<any> {
     if (!this.state.topics.length)
       return r.p({ id: 'e2eF_NoTopics' }, 'No topics.');
 
-    var useTable = this.props.useTable;
+    let useTable = this.props.useTable;
 
-    var topics = this.state.topics.map((topic: Topic) => {
+    let activeCategory: Category = this.props.activeCategory;
+    let topics = this.state.topics.map((topic: Topic) => {
       return TopicRow({
           store: store, topic: topic, categories: store.categories,
-          activeCategory: this.props.activeCategory, now: store.now,
+          activeCategory: activeCategory, now: store.now,
           key: topic.pageId, routes: this.props.routes, location: this.props.location,
           pagePath: store.pagePath, inTable: useTable });
     });
@@ -868,8 +869,13 @@ var ForumTopicListComponent = React.createClass(<any> {
           r.p({ className: 'esForum_sortInfo e_F_SI_Top' }, "Topics with the most Like votes:");
     }
 
+    let deletedClass = !activeCategory.isDeleted ? '' : ' s_F_Ts-CatDd';
+    let categoryDeletedInfo = !activeCategory.isDeleted ? null :
+      r.p({ className: 'icon-trash s_F_CatDdInfo' },
+        "This category has been deleted");
+
     var topicsTable = !useTable ? null :
-        r.table({ className: 'esF_TsT s_F_Ts-Wide dw-topic-list' },
+        r.table({ className: 'esF_TsT s_F_Ts-Wide dw-topic-list' + deletedClass },
           r.thead({},
             r.tr({},
               r.th({}, "Topic"),
@@ -882,11 +888,12 @@ var ForumTopicListComponent = React.createClass(<any> {
             topics));
 
     var topicRows = useTable ? null :
-        r.ol({ className: 'esF_TsL s_F_Ts-Nrw' },
+        r.ol({ className: 'esF_TsL s_F_Ts-Nrw' + deletedClass },
           topics);
 
     return (
       r.div({},
+        categoryDeletedInfo,
         sortingHowTips,
         topicsTable || topicRows,
         loadMoreTopicsBtn));
@@ -1271,17 +1278,21 @@ var CategoryRow = createComponent({
     var isNewClass = category.slug === store.newCategorySlug ?
       ' esForum_cats_cat-new' : '';
 
+    let isDeletedClass = category.isDeleted ? ' s_F_Cs_C-Dd' : '';
+    let isDeletedText = category.isDeleted ?
+        r.small({}, " (deleted)") : null;
+
     var isDefault = category.isDefaultCategory && isStaff(me) ?
         r.small({}, " (default category)") : null;
 
     return (
-      r.tr({ className: 'esForum_cats_cat' + isNewClass },
+      r.tr({ className: 'esForum_cats_cat' + isNewClass + isDeletedClass },
         r.td({ className: 'forum-info' }, // [rename] to esForum_cats_cat_meta
           r.div({ className: 'forum-title-wrap' },
             Link({ to: {
                 pathname: store.pagePath.value + RoutePathLatest + '/' + this.props.category.slug,
                 query: this.props.location.query }, className: 'forum-title' },
-              category.name, isDefault)),
+              category.name, isDefault), isDeletedText),
           r.p({ className: 'forum-description' }, category.description)),
         r.td({},  // class to esForum_cats_cat_topics?
           r.table({ className: 'topic-table-excerpt table table-condensed' },

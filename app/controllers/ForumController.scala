@@ -114,6 +114,25 @@ object ForumController extends mvc.Controller {
   }
 
 
+  def deleteCategory = AdminPostJsonAction(maxLength = 200) { request =>
+    deleteUndeleteCategory(request, delete = true)
+  }
+
+
+  def undeleteCategory = AdminPostJsonAction(maxLength = 200) { request =>
+    deleteUndeleteCategory(request, delete = false)
+  }
+
+
+  private def deleteUndeleteCategory(request: JsonPostRequest, delete: Boolean): Result = {
+    val categoryId = (request.body \ "categoryId").as[CategoryId]
+    request.dao.deleteUndeleteCategory(categoryId, delete = delete, request.who)
+    val patch = ReactJson.makeCategoriesStorePatch(
+      isStaff = true, restrictedOnly = false, request.dao)
+    OkSafeJson(patch)
+  }
+
+
   /** Later, I'll add about user pages? About tag? So category-id is optional, might
     * be user-id or tag-id instead.
     */

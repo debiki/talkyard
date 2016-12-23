@@ -255,6 +255,7 @@ interface Category {
   onlyStaffMayCreateTopics?: boolean;
   isDefaultCategory?: boolean;
   isForumItself?: boolean;
+  isDeleted?: boolean;
 }
 
 
@@ -423,12 +424,14 @@ interface PagePath {
 }
 
 
-interface Ancestor {
+interface Ancestor {  // server side: [6FK02QFV]
   categoryId: number;
   title: string;
   path: string;
   unlisted?: boolean;
   staffOnly?: boolean;
+  onlyStaffMayCreateTopics?: boolean;
+  isDeleted?: boolean;
 }
 
 
@@ -616,6 +619,9 @@ interface StorePatch {
   // Specified by the server, so old messages (that arive after the browser has been upgraded)
   // can be discarded.
   appVersion?: string;
+
+  categories?: Category[];
+
   pageVersionsByPageId?: { [pageId: string]: PageVersion };
   postsByPageId?: { [pageId: string]: Post[] };
   // rename to postAuthorsBrief? So one sees they can be ignored if the posts are

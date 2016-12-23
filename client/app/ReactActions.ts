@@ -132,6 +132,22 @@ export function saveCategory(category, success: () => void, error: () => void) {
 }
 
 
+export function deleteCategory(categoryId: number, success: () => void, error: () => void) {
+  Server.deleteCategory(categoryId, (storePatch: StorePatch) => {
+    patchTheStore(storePatch);
+    success();
+  }, error);
+}
+
+
+export function undeleteCategory(categoryId: number, success: () => void, error: () => void) {
+  Server.undeleteCategory(categoryId, (storePatch: StorePatch) => {
+    patchTheStore(storePatch);
+    success();
+  }, error);
+}
+
+
 export function setCategories(categories: Category[]) {
   ReactDispatcher.handleViewAction({
     actionType: actionTypes.SetCategories,

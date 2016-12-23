@@ -989,6 +989,18 @@ export function saveCategory(data, success: (response: any) => void, error?: () 
 }
 
 
+export function deleteCategory(categoryId: number, success: (StorePatch: any) => void,
+      error?: () => void) {
+  postJsonSuccess('/-/delete-category', success, error, { categoryId: categoryId });
+}
+
+
+export function undeleteCategory(categoryId: number, success: (StorePatch: any) => void,
+      error?: () => void) {
+  postJsonSuccess('/-/undelete-category', success, error, { categoryId: categoryId });
+}
+
+
 export function loadCategory(id: number, success: (response: any) => void) {
   get('/-/load-category?id=' + id, success);
 }

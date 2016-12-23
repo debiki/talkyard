@@ -135,6 +135,8 @@ GET   /-/list-categories        controllers.ForumController.listCategories(forum
 GET   /-/list-categories-topics controllers.ForumController.listCategoriesAndTopics(forumId)
 POST  /-/save-category          controllers.ForumController.saveCategory
 GET   /-/load-category          controllers.ForumController.loadCategory(id)
+POST  /-/delete-category        controllers.ForumController.deleteCategory
+POST  /-/undelete-category      controllers.ForumController.undeleteCategory
 
 GET   /-/redir-to-about         controllers.ForumController.redirectToAboutPage(categoryId: Option[Int])
 

@@ -978,6 +978,12 @@ function patchTheStore(storePatch: StorePatch) {
     store.me = <Myself> _.assign(store.me || {}, storePatch.me);
   }
 
+  if (storePatch.categories) {
+    // [redux] modifying the store in place, again.
+    // Hmm what if the patch contains fever categories? Currently (2016-12), won't happen, though.
+    store.categories = storePatch.categories;
+  }
+
   if (storePatch.tagsStuff) {
     // [redux] modifying the store in place, again.
     store.tagsStuff = _.assign(store.tagsStuff || {}, storePatch.tagsStuff);
