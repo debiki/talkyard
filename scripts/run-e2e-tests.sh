@@ -43,14 +43,17 @@ function runAllEndToEndTests {
   runEndToEndTest scripts/wdio target/e2e/wdio.conf.js            --browser $browser --only editor-onebox $args
   runEndToEndTest scripts/wdio target/e2e/wdio.3chrome.conf.js    --browser $browser --only formal-private-messages.3browsers $args
   runEndToEndTest scripts/wdio target/e2e/wdio.2chrome.conf.js    --browser $browser --only basic-chat.2browsers $args
-  ###runEndToEndTest scripts/wdio target/e2e/wdio.3chrome.conf.js --browser $browser --only categories.3browsers $args
+  runEndToEndTest scripts/wdio target/e2e/wdio.3chrome.conf.js    --browser $browser --only categories-basic.3browsers $args
+  #runEndToEndTest scripts/wdio target/e2e/wdio.2chrome.conf.js    --browser $browser --only categories-delete.2browsers $args
   runEndToEndTest scripts/wdio target/e2e/wdio.3chrome.conf.js    --browser $browser --only private-chat.3browsers $args
   runEndToEndTest scripts/wdio target/e2e/wdio.3chrome.conf.js    --browser $browser --only settings-login-to-read.3browsers $args
   runEndToEndTest scripts/wdio target/e2e/wdio.2chrome.conf.js    --browser $browser --only password-login-reset.2browsers $args
   ###runEndToEndTest scripts/wdio target/e2e/wdio.3chrome.conf.js --browser $browser --only custom-forms.3browsers $args
   runEndToEndTest scripts/wdio target/e2e/wdio.2chrome.conf.js    --browser $browser --only impersonate.2browsers $args
-  ###runEndToEndTest scripts/wdio target/e2e/wdio.2chrome.conf.js --browser $browser --only unsubscribe.2browsers $args
+  runEndToEndTest scripts/wdio target/e2e/wdio.2chrome.conf.js    --browser $browser --only unsubscribe.2browsers $args
   runEndToEndTest scripts/wdio target/e2e/wdio.2chrome.conf.js    --browser $browser --only spam-basic-local.2browsers $args
+  runEndToEndTest scripts/wdio target/e2e/wdio.2chrome.conf.js    --browser $browser --only flag-member-block-agree.2browsers $args
+  #runEndToEndTest scripts/wdio target/e2e/wdio.2chrome.conf.js    --browser $browser --only flag-guest-block-agree.2browsers $args
   runEndToEndTest scripts/wdio target/e2e/wdio.2chrome.conf.js    --browser $browser --only search-public-basic.2browsers $args
 }
 

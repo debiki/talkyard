@@ -138,6 +138,7 @@ describe("private chat", function() {
   });
 
   it("Stranger B fills in and submits", function() {
+    // BUG Hangs here forever, test fails. Was working fine, until new Chrome version released.
     strangerB.waitAndSetValueForId(textInputId, strangerBInputText1);
     strangerB.customForm.submit();
   });

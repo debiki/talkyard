@@ -52,7 +52,7 @@ describe("categories", function() {
     owen.assertTextMatches('.esForum_cats_cat .forum-title', /Uncategorized/, /default/);
   });
 
-  it("Owen ceates a category", function() {
+  it("Owen creates a category", function() {
     owen.forumButtons.clickCreateCategory();
     owen.categoryDialog.fillInFields({ name: "Wasteland" });
     owen.categoryDialog.submit();
@@ -82,8 +82,9 @@ describe("categories", function() {
   });
 
   it("Owen sees Marias' topic", function() {
+    owen.refresh();
     owen.clickLinkToNewPage(WastelandCategorySelector);
-    owen.assertNthTextMatches('.dw-tpc-title', 2, mariasFirstTopicTitle);
+    owen.forumTopicList.assertTopicNrVisible(2, mariasFirstTopicTitle);
   });
 
   it("Owen renames and unlists the category", function() {
