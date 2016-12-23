@@ -51,7 +51,6 @@ export var actionTypes = {
   UnsquashTrees: 'UnsquashTrees',
   CollapseTree: 'CollapseTree',
   UncollapsePost: 'UncollapsePost',
-  InsertAndShowPost: 'InsertAndShowPost',
   ShowPost: 'ShowPost',
   SetWatchbar: 'SetWatchbar',
   SetWatchbarOpen: 'SetWatchbarOpen',

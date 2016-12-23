@@ -892,7 +892,7 @@ export function submitCustomFormAsNewTopic(formInputNameValues) {
 }
 
 
-export function loadPostByNr(pageId: PageId, postNr: PostNr, success: (post: Post) => void) {
+export function loadPostByNr(pageId: PageId, postNr: PostNr, success: (patch: StorePatch) => void) {
   get(`/-/load-post?pageId=${pageId}&postNr=${postNr}`, success);
 }
 

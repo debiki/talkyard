@@ -68,7 +68,7 @@ case class ReviewTask(
   completedById: Option[UserId] = None,
   invalidatedAt: Option[ju.Date] = None,
   resolution: Option[ReviewTaskResolution] = None,
-  // COULD change to a Set[UserId] and include editors too, hmm. Or just the author +
+  // COULD change to a Set[UserId] and include editors too, hmm. [6KW02QS]  Or just the author +
   // the 10? most recent editors, or the 10 most recent editors (not the author) for wiki posts.
   // Or the ones who edited the post, since it was last reviewed & any flags disagreed with?
   maybeBadUserId: UserId,

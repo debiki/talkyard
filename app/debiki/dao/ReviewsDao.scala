@@ -79,7 +79,7 @@ trait ReviewsDao {
               // The System user has apparently approved the post already.
               // However, it might have been hidden a tiny bit later, after some  external services
               // said it's spam. Now, though, we know it's apparently not spam, so show it.
-              if (post.isHidden) {
+              if (post.isBodyHidden) {
                 // SPAM RACE COULD unhide only if rev nr that got hidden <=
                 // rev that was reviewed. [6GKC3U]
                 changePostStatusImpl(postNr = post.nr, pageId = post.pageId,
@@ -121,6 +121,7 @@ trait ReviewsDao {
     val numFirstToAllow = math.min(MaxNumFirstPosts, settings.numFirstPostsToAllow)
     val numFirstToApprove = math.min(MaxNumFirstPosts, settings.numFirstPostsToApprove)
     if (numFirstToAllow > 0 && numFirstToApprove > 0) {
+      UNTESTED // rewritten, bug fixed
       // Load some more review tasks than just MaxNumFirstPosts, in case the user has
       // somehow triggered even more review tasks, e.g. because getting flagged.
       // SECURITY (minor) if other users flag userId's posts 9999 times, we won't load any

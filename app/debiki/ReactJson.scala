@@ -407,7 +407,7 @@ object ReactJson {
         includeUnapproved: Boolean = false, showHidden: Boolean = false): JsObject = {
 
     val (anySanitizedHtml: Option[String], isApproved: Boolean) =
-      if (post.isHidden && !showHidden)
+      if (post.isBodyHidden && !showHidden)
         (None, post.approvedAt.isDefined)
       else if (includeUnapproved)
         (Some(post.currentHtmlSanitized(ReactRenderer, page.role)),
@@ -499,7 +499,7 @@ object ReactJson {
       "sanitizedHtml" -> JsStringOrNull(anySanitizedHtml),
       "tags" -> JsArray(tags.toSeq.map(JsString)))
 
-    if (post.isHidden) fields :+= "isPostHidden" -> JsTrue
+    if (post.isBodyHidden) fields :+= "isBodyHidden" -> JsTrue
 
     JsObject(fields)
   }
@@ -911,9 +911,9 @@ object ReactJson {
           "approvedRevComposedById" -> JsNull, // post.lastApprovedEditById ? ... hmm, see below
           "approvedRevApprovedById" -> JsNull, // -> post.aprvdRevAprvdById?? ... hmm no,
                                                 // better: post.lastApporvedRevision.approvedById
-          "hiddenAtMs" -> JsDateMsOrNull(post.hiddenAt),
-          "hiddenById" -> JsNumberOrNull(post.hiddenById),
-          "hiddenReason" -> JsStringOrNull(post.hiddenReason))
+          "bodyHiddenAtMs" -> JsDateMsOrNull(post.bodyHiddenAt),
+          "bodyHiddenById" -> JsNumberOrNull(post.bodyHiddenById),
+          "bodyHiddenReason" -> JsStringOrNull(post.bodyHiddenReason))
     }
     Json.obj(
       "id" -> stuff.id,

@@ -215,9 +215,9 @@ case class Post(
   closedStatus: ClosedStatus,
   closedAt: Option[ju.Date],
   closedById: Option[UserId],
-  hiddenAt: Option[ju.Date],
-  hiddenById: Option[UserId],
-  hiddenReason: Option[String],
+  bodyHiddenAt: Option[ju.Date],
+  bodyHiddenById: Option[UserId],
+  bodyHiddenReason: Option[String],
   deletedStatus: DeletedStatus,
   deletedAt: Option[ju.Date],
   deletedById: Option[UserId],
@@ -296,9 +296,9 @@ case class Post(
   require(deletedAt.isDefined == deletedStatus.isDeleted, "DwE0IGK2")
   require(deletedAt.isDefined == deletedById.isDefined, "DwE14KI7")
 
-  require(hiddenAt.map(_.getTime >= createdAt.getTime) != Some(false), "DwE6K2I7")
-  require(hiddenAt.isDefined == hiddenById.isDefined, "DwE0B7I3")
-  require(hiddenReason.isEmpty || hiddenAt.isDefined, "DwE3K5I9")
+  require(bodyHiddenAt.map(_.getTime >= createdAt.getTime) != Some(false), "DwE6K2I7")
+  require(bodyHiddenAt.isDefined == bodyHiddenById.isDefined, "DwE0B7I3")
+  require(bodyHiddenReason.isEmpty || bodyHiddenAt.isDefined, "DwE3K5I9")
 
   require(numDistinctEditors >= 0, "DwE2IkG7")
   require(numPendingEditSuggestions >= 0, "DwE0IK0P3")
@@ -316,11 +316,11 @@ case class Post(
   def isOrigPostReply = PageParts.isReply(nr) && parentNr.contains(PageParts.BodyNr)
   def isMultireply = multireplyPostNrs.nonEmpty
   def isFlat = tyype == PostType.Flat
-  def isHidden = hiddenAt.isDefined
+  def isBodyHidden = bodyHiddenAt.isDefined
   def isDeleted = deletedStatus.isDeleted
   def isSomeVersionApproved = approvedRevisionNr.isDefined
   def isCurrentVersionApproved = approvedRevisionNr == Some(currentRevisionNr)
-  def isVisible = isSomeVersionApproved && !isHidden && !isDeleted  // rename to isActive? isInUse? isInclOnPage? isShown?
+  def isVisible = isSomeVersionApproved && !isBodyHidden && !isDeleted  // (rename to isActive? isInUse?)
   def isWiki = tyype.isWiki
 
   def pagePostId = PagePostId(pageId, uniqueId)
@@ -408,9 +408,9 @@ case class Post(
   def copyWithNewStatus(
     currentTime: ju.Date,
     userId: UserId,
-    postHidden: Boolean = false,
-    postUnhidden: Boolean = false,
-    postHiddenReason: Option[String] = None,
+    bodyHidden: Boolean = false,
+    bodyUnhidden: Boolean = false,
+    bodyHiddenReason: Option[String] = None,
     postCollapsed: Boolean = false,
     treeCollapsed: Boolean = false,
     ancestorsCollapsed: Boolean = false,
@@ -420,24 +420,24 @@ case class Post(
     treeDeleted: Boolean = false,
     ancestorsDeleted: Boolean = false): Post = {
 
-    var newHiddenAt = hiddenAt
-    var newHiddenById = hiddenById
-    var newHiddenReason = hiddenReason
-    if (postHidden && postUnhidden) {
+    var newBodyHiddenAt = bodyHiddenAt
+    var newBodyHiddenById = bodyHiddenById
+    var newBodyHiddenReason = bodyHiddenReason
+    if (bodyHidden && bodyUnhidden) {
       die("DwE6KUP2")
     }
-    else if (postUnhidden && postHiddenReason.isDefined) {
+    else if (bodyUnhidden && bodyHiddenReason.isDefined) {
       die("EdE4KF0YW5")
     }
-    else if (postHidden && !isHidden) {
-      newHiddenAt = Some(currentTime)
-      newHiddenById = Some(userId)
-      newHiddenReason = postHiddenReason
+    else if (bodyHidden && !isBodyHidden) {
+      newBodyHiddenAt = Some(currentTime)
+      newBodyHiddenById = Some(userId)
+      newBodyHiddenReason = bodyHiddenReason
     }
-    else if (postUnhidden && isHidden) {
-      newHiddenAt = None
-      newHiddenById = None
-      newHiddenReason = None
+    else if (bodyUnhidden && isBodyHidden) {
+      newBodyHiddenAt = None
+      newBodyHiddenById = None
+      newBodyHiddenReason = None
     }
 
     // You can collapse a post, although an ancestor is already collapsed. Collapsing it,
@@ -499,9 +499,9 @@ case class Post(
     }
 
     copy(
-      hiddenAt = newHiddenAt,
-      hiddenById = newHiddenById,
-      hiddenReason = newHiddenReason,
+      bodyHiddenAt = newBodyHiddenAt,
+      bodyHiddenById = newBodyHiddenById,
+      bodyHiddenReason = newBodyHiddenReason,
       collapsedStatus = new CollapsedStatus(newCollapsedUnderlying),
       collapsedById = newCollapsedById,
       collapsedAt = newCollapsedAt,
@@ -625,9 +625,9 @@ object Post {
       closedStatus = parent.map(_.newChildClosedStatus) getOrElse ClosedStatus.Open,
       closedAt = parentsChildrenClosedAt,
       closedById = parentsChildrenClosedById,
-      hiddenAt = None,
-      hiddenById = None,
-      hiddenReason = None,
+      bodyHiddenAt = None,
+      bodyHiddenById = None,
+      bodyHiddenReason = None,
       deletedStatus = DeletedStatus.NotDeleted,
       deletedAt = None,
       deletedById = None,

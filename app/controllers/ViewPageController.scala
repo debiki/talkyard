@@ -49,6 +49,8 @@ object ViewPageController extends mvc.Controller {
 
 
   def loadPost(pageId: PageId, postNr: PostNr) = GetActionAllowAnyone { request =>
+    // Similar to viewPageImpl, keep in sync. [7PKW0YZ2]
+
     val dao = request.dao
     val siteSettings = dao.loadWholeSiteSettings()
     val authenticationRequired = siteSettings.userMustBeAuthenticated ||
@@ -91,6 +93,8 @@ object ViewPageController extends mvc.Controller {
 
 
   private def viewPageImpl(request: GetRequest): Future[Result] = {
+    // Similar to loadPost, keep in sync. [7PKW0YZ2]
+
     dieIfAssetsMissingIfDevTest()
     Globals.throwForbiddenIfSecretNotChanged()
 

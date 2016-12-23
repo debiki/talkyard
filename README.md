@@ -63,7 +63,8 @@ Getting Started
 
 #### Before you start
 
-You need about 4GB RAM. And a somewhat fast internet connection — you'll be downloading perhaps 0.5 (?) GB Docker images.
+You need about 4 GB RAM for the development environment (whereas the production environment needs about 2 GB).
+And a somewhat fast internet connection — you'll be downloading perhaps 0.5 (?) GB Docker images.
 
 Install Docker-Compose, version 1.7.0+: https://docs.docker.com/compose/install/
 

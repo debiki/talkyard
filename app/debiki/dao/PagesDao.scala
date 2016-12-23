@@ -233,9 +233,9 @@ trait PagesDao {
       postType = bodyPostType,
       approvedById = approvedById)
       .copy(
-        hiddenAt = ifThenSome(hidePageBody, transaction.currentTime),
-        hiddenById = ifThenSome(hidePageBody, authorId),
-        hiddenReason = None) // add `hiddenReason` function parameter?
+        bodyHiddenAt = ifThenSome(hidePageBody, transaction.currentTime),
+        bodyHiddenById = ifThenSome(hidePageBody, authorId),
+        bodyHiddenReason = None) // add `hiddenReason` function parameter?
 
     val uploadPaths = UploadsDao.findUploadRefsInPost(bodyPost)
 

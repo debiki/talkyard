@@ -100,9 +100,9 @@ interface PostToReview {
   // approvedRevComposedById
   //approvedRevApprovedById
   // better: post.lastApporvedRevision.approvedById
-  hiddenAtMs?: number;
-  hiddenById?: UserId;
-  hiddenReason?: string;
+  bodyHiddenAtMs?: number;
+  bodyHiddenById?: UserId;
+  bodyHiddenReason?: string;
 }
 
 
@@ -140,7 +140,7 @@ interface Post {
   summarize: boolean;
   summary?: string;
   squash: boolean;
-  isPostHidden?: boolean;
+  isBodyHidden?: boolean;
   isTreeDeleted: boolean;
   isPostDeleted: boolean;
   // === true means totally collapsed. === 'Truncated' means collapsed but parts of post shown.

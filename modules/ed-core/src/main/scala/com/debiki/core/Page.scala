@@ -249,7 +249,7 @@ case class PageMeta(
   def isPinned = pinOrder.isDefined
   def isClosed = closedAt.isDefined
   def isVisible = hiddenAt.isEmpty && deletedAt.isEmpty
-  def isCensored = hiddenAt.isDefined
+  def isHidden = hiddenAt.isDefined
   def isDeleted = deletedAt.isDefined
 
   def isGroupTalk = pageRole.isGroupTalk

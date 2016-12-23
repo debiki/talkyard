@@ -653,6 +653,7 @@ trait PostsDao {
           None
         }
         else {
+          // Later, COULD specify editor id instead, as ReviewTask.maybeBadUserId [6KW02QS]
           Some(makeReviewTask(SystemUserId, editedPost, immutable.Seq(ReviewReason.LateEdit),
             transaction))
         }
@@ -958,9 +959,9 @@ trait PostsDao {
       // Update the directly affected post.
       val postAfter = action match {
         case PSA.HidePost =>
-          postBefore.copyWithNewStatus(transaction.currentTime, userId, postHidden = true)
+          postBefore.copyWithNewStatus(transaction.currentTime, userId, bodyHidden = true)
         case PSA.UnhidePost =>
-          postBefore.copyWithNewStatus(transaction.currentTime, userId, postUnhidden = true)
+          postBefore.copyWithNewStatus(transaction.currentTime, userId, bodyUnhidden = true)
         case PSA.CloseTree =>
           postBefore.copyWithNewStatus(transaction.currentTime, userId, treeClosed = true)
         case PSA.CollapsePost =>
@@ -1078,9 +1079,9 @@ trait PostsDao {
           commonmarkRenderer, pageMeta.pageRole)),
         currentSourcePatch = None,
         // SPAM RACE COULD unhide only if rev nr that got hidden <= rev that was reviewed. [6GKC3U]
-        hiddenAt = None,
-        hiddenById = None,
-        hiddenReason = None)
+        bodyHiddenAt = None,
+        bodyHiddenById = None,
+        bodyHiddenReason = None)
       transaction.updatePost(postAfter)
       transaction.indexPostsSoon(postAfter)
 
@@ -1446,7 +1447,7 @@ trait PostsDao {
         immutable.Seq(ReviewReason.PostFlagged), transaction)
 
       // Hide post, update page?
-      val shallHide = newNumFlags >= settings.numFlagsToHidePost && !postBefore.isHidden
+      val shallHide = newNumFlags >= settings.numFlagsToHidePost && !postBefore.isBodyHidden
       if (shallHide) {
         hidePostsOnPage(Vector(postAfter), pageId, "This post was flagged")(transaction)
       }
@@ -1527,7 +1528,7 @@ trait PostsDao {
       val postToHide =
         if (user.isMember) {
           transaction.loadPostsByAuthor(userId, limit = 99, OrderBy.MostRecentFirst)
-              .filter(p => !p.isHidden && !p.isTitle)
+              .filter(p => !p.isBodyHidden && !p.isTitle)
         }
         else {
           // Find posts-to-hide by searching for create-post audit log entries by the
@@ -1538,7 +1539,7 @@ trait PostsDao {
             User.isGuestId(entry.doerId) && !entry.postNr.contains(PageParts.TitleNr)
           }
           val postIds = fewerEntries.flatMap(_.uniquePostId)
-          transaction.loadPostsByUniqueId(postIds).values.filter(!_.isHidden)
+          transaction.loadPostsByUniqueId(postIds).values.filter(!_.isBodyHidden)
         }
 
       val postToHideByPage = postToHide.groupBy(_.pageId)
@@ -1559,8 +1560,8 @@ trait PostsDao {
   private def hidePostsOnPage(posts: Iterable[Post], pageId: PageId, reason: String)(
         transaction: SiteTransaction) {
     dieIf(posts.exists(_.pageId != pageId), "EdE7GKU23Y4")
-    dieIf(posts.exists(_.isTitle), "EdE5KP0WY2") ; ANNOYING // end users can trigger internal error
-    val postsToHide = posts.filter(!_.isHidden)
+    dieIf(posts.exists(_.isTitle), "EdE5KP0WY2") ; SECURITY ; ANNOYING // end users can trigger internal error
+    val postsToHide = posts.filter(!_.isBodyHidden)
     if (postsToHide.isEmpty)
       return
 
@@ -1575,9 +1576,9 @@ trait PostsDao {
       isHidingOrigPost ||= postBefore.isOrigPost
 
       val postAfter = postBefore.copy(
-        hiddenAt = Some(transaction.currentTime),
-        hiddenById = Some(SystemUserId),
-        hiddenReason = Some(reason))
+        bodyHiddenAt = Some(transaction.currentTime),
+        bodyHiddenById = Some(SystemUserId),
+        bodyHiddenReason = Some(reason))
 
       transaction.updatePost(postAfter)
     }
@@ -1593,7 +1594,7 @@ trait PostsDao {
       pageMetaAfter = pageMetaAfter.copy(version = pageMetaBefore.version + 1)
 
       // Hide page if everything on it hidden.
-      if (!pageMetaBefore.isCensored && pageMetaAfter.numRepliesVisible == 0) {
+      if (!pageMetaBefore.isHidden && pageMetaAfter.numRepliesVisible == 0) {
         val willOrigPostBeVisible = if (isHidingOrigPost) false else {
           val anyOrigPost = transaction.loadOrigPost(pageId)
           anyOrigPost.exists(_.isVisible)

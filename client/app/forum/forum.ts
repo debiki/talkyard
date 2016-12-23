@@ -256,7 +256,7 @@ var ForumIntroText = createComponent({
     var store: Store = this.props.store;
     var user: Myself = store.me;
     var introPost = store.allPosts[BodyId];
-    if (!introPost || introPost.isPostHidden)
+    if (!introPost || introPost.isBodyHidden)
       return null;
 
     var anyEditIntroBtn = user.isAdmin

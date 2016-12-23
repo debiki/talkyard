@@ -187,7 +187,7 @@ var ReviewTask = createComponent({
     var anyDot = whys.length === 1 ? '.' : '';
     var manyWhysClass = whys.length > 1 ? ' esReviewTask-manyWhys' : '';
 
-    let itHasBeenHidden = !post.hiddenAtMs ? null :
+    let itHasBeenHidden = !post.bodyHiddenAtMs ? null :
       "It has been hidden; only staff can see it. ";
 
     var hereIsThePost = whys.length > 1 ? "Here it is:" : '';

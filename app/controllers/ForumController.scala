@@ -201,7 +201,7 @@ object ForumController extends mvc.Controller {
     // For now. COULD do the filtering in the db query instead, so won't find 0 pages just because
     // all most-recent-pages are hidden.
     if (!isStaff) {
-      topics = topics.filter(!_.meta.isCensored)
+      topics = topics.filter(!_.meta.isHidden)
     }
 
     // If sorting by bump time, sort pinned topics first. Otherwise, don't.

@@ -228,12 +228,6 @@ ReactDispatcher.register(function(payload) {
       uncollapsePostAndChildren(action.post);
       break;
 
-    case ReactActions.actionTypes.InsertAndShowPost:
-      let post: Post = action.post;
-      updatePost(post);
-      showPostNr(post.postId);
-      break;
-
     case ReactActions.actionTypes.ShowPost:
       showPostNr(action.postNr, action.showChildrenToo);
       break;

@@ -260,7 +260,7 @@ export var TitleEditor = createComponent({
     var addBackForumIntroButton;
     if (this.props.pageRole === PageRole.Forum) {
       var introPost = this.props.allPosts[BodyId];
-      var hasIntro = introPost && introPost.sanitizedHtml && !introPost.isPostHidden;
+      var hasIntro = introPost && introPost.sanitizedHtml && !introPost.isBodyHidden;
       if (!hasIntro) {
         addBackForumIntroButton =
             r.a({ className: 'icon-plus', onClick: () => {

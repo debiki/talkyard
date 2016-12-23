@@ -148,9 +148,9 @@ class SystemDao(private val dbDaoFactory: DbDaoFactory, val cache: DaoMemCache) 
       }
 
       val postAfter = postBefore.copy(
-        hiddenAt = Some(siteTransaction.currentTime),
-        hiddenById = Some(SystemUserId),
-        hiddenReason = Some(s"Spam because: $isSpamReason"))
+        bodyHiddenAt = Some(siteTransaction.currentTime),
+        bodyHiddenById = Some(SystemUserId),
+        bodyHiddenReason = Some(s"Spam because: $isSpamReason"))
 
       val reviewTask = PostsDao.makeReviewTask(
         createdById = SystemUserId, postAfter, reasons = Vector(ReviewReason.PostIsSpam),
