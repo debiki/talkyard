@@ -15,6 +15,7 @@ interface TestSettings {
   forbiddenPassword: string;
   mainSiteOrigin: string;
   newSiteDomain: string;
+  bail?: number;
   waitforTimeout: number;
   debugBefore: boolean;
   debugAfterwards: boolean;
@@ -37,6 +38,8 @@ interface SiteData {
     companyFullName: string,
     allowGuestLogin?: boolean,
     numFlagsToHidePost?: number,
+    numFlagsToBlockNewUser?: number,
+    numFlaggersToBlockNewUser?: number,
   };
   groups: any;
   members: Member[];

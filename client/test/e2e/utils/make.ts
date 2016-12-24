@@ -2,6 +2,7 @@
 /// <reference path="../../../../modules/definitely-typed/lodash/lodash.d.ts"/>
 /// <reference path="../../../../modules/definitely-typed/node/node.d.ts"/>
 import settings = require('./settings');
+import log = require('./log-and-die');
 declare function require(...whatever): any;
 
 import _ = require('lodash');
@@ -320,6 +321,15 @@ var make = {
       type: undefined,
       prevRevNr: undefined,
     };
+  },
+
+  findForumPage: function(pages: Page[]): Page {
+    for (let i = 0; i < pages.length; ++i) {
+      let page = pages[i];
+      if (page.role === c.TestPageRole.Forum)
+        return page;
+    }
+    log.die('EdE2KW055');
   },
 
   forumOwnedByOwen: function(name: string, options?): SiteData {

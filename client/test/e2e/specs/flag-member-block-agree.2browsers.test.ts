@@ -339,6 +339,10 @@ describe("spam test, no external services:", () => {
     assertOtherTopicsVisible(michaelsBrowser);
   });
 
+  it("The hidden topics are absent in the category tree too", () =>  {
+    // todo
+  });
+
 
   // Staff see everything
   // -------------------------------------
@@ -372,6 +376,10 @@ describe("spam test, no external services:", () => {
 
   it("... and cannot create more topics", () => {
   });
+
+
+  // Strangers
+  // -------------------------------------
 
   it("A stranger won't see Mallory's old replies and topics", () => {
   });

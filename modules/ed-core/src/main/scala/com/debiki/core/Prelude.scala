@@ -119,6 +119,12 @@ object Prelude {
   def die(errorCode: String, problem: => String = null, cause: => Throwable = null) =
     throw new AssertionError(formatErrorMessage(errorCode, problem), cause)
 
+  def requireIf(condition: Boolean, test: => Boolean, message: => String) {
+    if (condition) {
+      require(test, message)
+    }
+  }
+
   /** Assertion errors do not require a problem description. */
   def assErr(errorCode: String, problem: => String = null) =
     throw new AssertionError(formatErrorMessage(errorCode, problem))

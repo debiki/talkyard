@@ -265,7 +265,9 @@ trait PagesDao {
       doneAt = transaction.currentTime,
       browserIdData = byWho.browserIdData,
       pageId = Some(pageId),
-      pageRole = Some(pageRole))
+      pageRole = Some(pageRole),
+      uniquePostId = Some(bodyPost.uniqueId),
+      postNr = Some(bodyPost.nr))
 
     transaction.insertPageMetaMarkSectionPageStale(pageMeta)
     transaction.insertPagePath(pagePath)

@@ -69,6 +69,9 @@ var api = { config: {
   // with "/", the base url gets prepended.
   baseUrl: settings.mainSiteOrigin,
 
+  // Supposedly aborts if these many tests fail, but ... has never done that.
+  bail: settings.bail || 3,
+
   // Default timeout for all waitForXXX commands.
   waitforTimeout: settings.waitforTimeout || 10000,
 

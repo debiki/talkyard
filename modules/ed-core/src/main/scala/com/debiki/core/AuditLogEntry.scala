@@ -34,7 +34,7 @@ object AuditLogEntryType {
   case object CreateSite extends AuditLogEntryType(1)
   case object ThisSiteCreated extends AuditLogEntryType(2)
   case object NewPage extends AuditLogEntryType(3)
-  case object NewPost extends AuditLogEntryType(4)
+  case object NewReply extends AuditLogEntryType(4)
   case object NewChatMessage extends AuditLogEntryType(5)
   case object EditPost extends AuditLogEntryType(6)
   case object ChangePostSettings extends AuditLogEntryType(7)
@@ -47,7 +47,7 @@ object AuditLogEntryType {
     case AuditLogEntryType.CreateSite.IntVal => AuditLogEntryType.CreateSite
     case AuditLogEntryType.ThisSiteCreated.IntVal => AuditLogEntryType.ThisSiteCreated
     case AuditLogEntryType.NewPage.IntVal => AuditLogEntryType.NewPage
-    case AuditLogEntryType.NewPost.IntVal => AuditLogEntryType.NewPost
+    case AuditLogEntryType.NewReply.IntVal => AuditLogEntryType.NewReply
     case AuditLogEntryType.NewChatMessage.IntVal => AuditLogEntryType.NewChatMessage
     case AuditLogEntryType.EditPost.IntVal => AuditLogEntryType.EditPost
     case AuditLogEntryType.ChangePostSettings.IntVal => AuditLogEntryType.ChangePostSettings
@@ -84,18 +84,22 @@ case class AuditLogEntry(
   isLoading: Boolean = false) {
 
   if (!isLoading) {
-  emailAddress.foreach(Validation.requireOkEmail(_, "EsE5YJK2"))
-  require(pageRole.isEmpty || pageId.isDefined, "DwE4PFKW7")
-  require(postNr.isEmpty || pageId.isDefined, "DwE3574FK2")
-  require(postNr.isDefined == uniquePostId.isDefined, "DwE2WKEFW8")
-  // COULD check uploaded file hash-path-suffix regex, see UploadsDao in debiki-server.
-  require(!uploadHashPathSuffix.exists(_.trim.isEmpty), "DwE0PMF2")
-  require(!uploadFileName.exists(_.trim.isEmpty), "DwE7UPM1")
-  require(!sizeBytes.exists(_ < 0), "DwE7UMF4")
-  require(targetPostNr.isDefined == targetUniquePostId.isDefined, "DwE4QU38")
-  require(targetPostNr.isEmpty || targetPageId.isDefined, "DwE5PFK2")
-  require(!batchId.exists(_ > id), "EsE5PK2L8")
-  require(!batchId.exists(_ <= 0), "EsE8YJK52")
+    val T = AuditLogEntryType
+    emailAddress.foreach(Validation.requireOkEmail(_, "EsE5YJK2"))
+    require(pageRole.isEmpty || pageId.isDefined, "DwE4PFKW7")
+    require(postNr.isEmpty || pageId.isDefined, "DwE3574FK2")
+    require(postNr.isDefined == uniquePostId.isDefined, "DwE2WKEFW8")
+    requireIf(didWhat == T.NewPage, pageId.isDefined && uniquePostId.isDefined, "EdE5PFK2")
+    requireIf(didWhat == T.DeletePage || didWhat == T.UndeletePage,
+                pageId.isDefined && uniquePostId.isEmpty, "EdE7ZXCY4")
+    // COULD check uploaded file hash-path-suffix regex, see UploadsDao in debiki-server.
+    require(!uploadHashPathSuffix.exists(_.trim.isEmpty), "DwE0PMF2")
+    require(!uploadFileName.exists(_.trim.isEmpty), "DwE7UPM1")
+    require(!sizeBytes.exists(_ < 0), "DwE7UMF4")
+    require(targetPostNr.isDefined == targetUniquePostId.isDefined, "DwE4QU38")
+    require(targetPostNr.isEmpty || targetPageId.isDefined, "DwE5PFK2")
+    require(!batchId.exists(_ > id), "EsE5PK2L8")
+    require(!batchId.exists(_ <= 0), "EsE8YJK52")
   }
 }
 

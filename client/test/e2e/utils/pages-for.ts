@@ -628,6 +628,11 @@ function pagesFor(browser) {
         browser.assertNoTextMatches(api.forumTopicList.hiddenTopicTitleSelector, title);
       },
 
+      assertTopicNrVisible: function(nr: number, title: string) {
+        browser.assertNthTextMatches(api.forumTopicList.titleSelector, nr, title);
+        browser.assertNoTextMatches(api.forumTopicList.hiddenTopicTitleSelector, title);
+      },
+
       assertTopicNotVisible: function(title) {
         browser.assertNoTextMatches(api.forumTopicList.titleSelector, title);
       },

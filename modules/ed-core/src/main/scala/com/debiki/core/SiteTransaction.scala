@@ -348,8 +348,7 @@ trait SiteTransaction {
   def loadReviewTask(id: ReviewTaskId): Option[ReviewTask]
   def loadReviewTasks(olderOrEqualTo: ju.Date, limit: Int): Seq[ReviewTask]
   def loadReviewTasksAboutUser(userId: UserId, limit: Int, orderBy: OrderBy): Seq[ReviewTask]
-  def loadReviewTasksAboutBrowser(browserIdData: BrowserIdData, limit: Int, orderBy: OrderBy)
-        : Seq[ReviewTask]
+  def loadReviewTasksAboutPostIds(postIds: Iterable[UniquePostId]): immutable.Seq[ReviewTask]
   def loadReviewTaskCounts(isAdmin: Boolean): ReviewTaskCounts
   def loadPendingPostReviewTask(postId: UniquePostId): Option[ReviewTask]
   def loadPendingPostReviewTask(postId: UniquePostId, taskCreatedById: UserId): Option[ReviewTask]

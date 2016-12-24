@@ -155,7 +155,7 @@ trait PostsDao {
       val auditLogEntry = AuditLogEntry(
         siteId = siteId,
         id = AuditLogEntry.UnassignedId,
-        didWhat = AuditLogEntryType.NewPost,
+        didWhat = AuditLogEntryType.NewReply,
         doerId = authorId,
         doneAt = transaction.currentTime,
         browserIdData = byWho.browserIdData,
@@ -1472,15 +1472,18 @@ trait PostsDao {
       if (user.effectiveTrustLevel != TrustLevel.New)
         return Nil
 
+      // Keep small, there's an O(n^2) loop below (6WKUT02).
+      val numThings = 100
       val settings = loadWholeSiteSettings(transaction)
 
       // For members, we'll use the user id.  For guests, we'll use the browser-ip & -id-cookie.
       var anyBrowserIdData: Option[BrowserIdData] = None
       def theBrowserIdData = anyBrowserIdData getOrDie "EdE5RW2EB8"
+      var guestPostIds = Set[UniquePostId]()
 
-      val tasks =
+      var tasks =
         if (user.isMember) {
-          transaction.loadReviewTasksAboutUser(user.id, limit = 999,
+          transaction.loadReviewTasksAboutUser(user.id, limit = numThings,
             orderBy = OrderBy.MostRecentFirst)
         }
         else {
@@ -1489,9 +1492,12 @@ trait PostsDao {
             return Nil
           }
           anyBrowserIdData = Some(auditLogEntry.browserIdData)
-          transaction.loadReviewTasksAboutBrowser(theBrowserIdData, limit = 999,
-            orderBy = OrderBy.MostRecentFirst)
+          guestPostIds = loadPostIdsByGuestBrowser(theBrowserIdData, limit = numThings,
+              orderBy = OrderBy.MostRecentFirst)(transaction)
+          transaction.loadReviewTasksAboutPostIds(guestPostIds)
         }
+
+      tasks = tasks.filter(_.reasons.contains(ReviewReason.PostFlagged))
 
       // If lots of flags are incorrect, then don't censor the user, at this time.
       val numResolvedFine = tasks.count(_.resolution.exists(_.isFine))
@@ -1520,27 +1526,27 @@ trait PostsDao {
           threatLevel = ThreatLevel.ModerateThreat, blockerId = SystemUserId)(transaction)
       }
 
-      SECURITY ; BUG // minor: if the author has posted > 999 post, only the most recent ones
+      SECURITY ; BUG // minor: if the author has posted > numThings post, only the most recent ones
       // will get hidden here, because we loaded only the most recent ones, above.
       // — However, new users are rate limited, so not super likely to happen.
 
       // Censor the user's posts.
-      val postToHide =
+      val postToMaybeHide =
         if (user.isMember) {
-          transaction.loadPostsByAuthor(userId, limit = 99, OrderBy.MostRecentFirst)
+          transaction.loadPostsByAuthor(userId, limit = numThings, OrderBy.MostRecentFirst)
               .filter(p => !p.isBodyHidden && !p.isTitle)
         }
         else {
-          // Find posts-to-hide by searching for create-post audit log entries by the
-          // same browser-ip and -id-cookie.
-          val manyEntries = transaction.loadCreatePostAuditLogEntriesBy(
-            theBrowserIdData, limit = 99 /* whatever. For now. */, OrderBy.MostRecentFirst)
-          val fewerEntries = manyEntries filter { entry =>
-            User.isGuestId(entry.doerId) && !entry.postNr.contains(PageParts.TitleNr)
-          }
-          val postIds = fewerEntries.flatMap(_.uniquePostId)
-          transaction.loadPostsByUniqueId(postIds).values.filter(!_.isBodyHidden)
+          transaction.loadPostsByUniqueId(guestPostIds).values.filter(!_.isBodyHidden)
         }
+
+      // Don't hide posts that have been reviewed and deemed okay.
+      // (Hmm, could hide them anyway if they were edited later ... oh now gets too complicated.)
+      val postToHide = postToMaybeHide filter { post =>
+        // This is O(n^2), so keep numThings small (6WKUT02), like <= 100.
+        val anyReviewTask = tasks.find(_.postId.contains(post.uniqueId))
+        !anyReviewTask.exists(_.resolution.exists(_.isFine))
+      }
 
       val postToHideByPage = postToHide.groupBy(_.pageId)
       for ((pageId, posts) <- postToHideByPage) {
@@ -1554,6 +1560,20 @@ trait PostsDao {
     removeUserFromMemCache(userId)
     pageIdsToRefresh.foreach(refreshPageInMemCache)
     postsHidden.to[immutable.Seq]
+  }
+
+
+  /** Finds posts created by a certain browser, by searching for create-post audit log entries
+    * by that browser (ip address and browser-id-cookie, perhaps fingerprint later).
+    */
+  private def loadPostIdsByGuestBrowser(browserIdData: BrowserIdData, limit: Int,
+        orderBy: OrderBy)(transaction: SiteTransaction): Set[UniquePostId] = {
+    val manyEntries = transaction.loadCreatePostAuditLogEntriesBy(
+      browserIdData, limit = limit, orderBy)
+    val fewerEntries = manyEntries filter { entry =>
+      User.isGuestId(entry.doerId) && !entry.postNr.contains(PageParts.TitleNr)
+    }
+    fewerEntries.flatMap(_.uniquePostId).toSet
   }
 
 
