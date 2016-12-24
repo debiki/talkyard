@@ -201,6 +201,24 @@ In the future, I suppose there will be a Contributor License Agreement (CLA), si
 [Google's CLA](https://developers.google.com/open-source/cla/individual) — you'd open
 source your code and grant me a copyrigt license.
 
+### Hen and henbirds
+
+Source code comments should be concise, but writing "he or she" everywhere, when referring
+to e.g. a user, becomes a bit verbose (because "he or she" is three words). However, there's
+a short Swedish word that means "he or she", namely "hen". Let's start using it in English too.
+
+So: "hen" = either "he or she", or "him or her", depending on context.
+And "hens" = "his or her", and "hen's" = "he or she is".
+
+If you need to refer to many hen = many-he-or-she, write "people". "Hens" however
+means "his or her", just like "its" means, well, "its" (but not "things").
+
+What about the bird previously called "hen"? Let's call it "henbird" instead.
+
+So, hereafter, the word "hen" means "he or she". And the henbird, which I cannot
+remember having mentioned or even thought about the past year, no longer gets
+to occupy the short and useful word "hen".
+
 
 Directories
 -----------------------------
