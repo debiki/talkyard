@@ -39,6 +39,7 @@ class Application @Inject() extends mvc.Controller {
 
   def flag = PostJsonAction(RateLimits.FlagPost, maxLength = 2000) { request =>
     val body = request.body
+    val dao = request.dao
     val pageId = (body \ "pageId").as[PageId]
     val postNr = (body \ "postId").as[PostNr]
     val typeStr = (body \ "type").as[String]
@@ -53,13 +54,13 @@ class Application @Inject() extends mvc.Controller {
 
     // COULD save `reason` somewhere, but where? Where does Discourse save it?
 
-    val pageMeta = request.dao.loadThePageMeta(pageId)
-    val (maySee, debugCode) = ViewPageController.maySeePage(pageMeta, request.user, request.dao)
+    val pageMeta = dao.loadThePageMeta(pageId)
+    val (maySee, debugCode) = dao.maySeePageUseCache(pageMeta, request.user)
     if (!maySee)
       throwIndistinguishableNotFound(s"EdE7KWU02-$debugCode")
 
     val postsHidden = try {
-      request.dao.flagPost(pageId = pageId, postNr = postNr, flagType,
+      dao.flagPost(pageId = pageId, postNr = postNr, flagType,
         flaggerId = request.theUser.id)
     }
     catch {
@@ -69,7 +70,7 @@ class Application @Inject() extends mvc.Controller {
 
     // If some posts got hidden, then rerender them as hidden, so the flagger sees they got hidden.
     val json = ReactJson.makeStorePatchForPosts(
-      postsHidden.map(_.uniqueId).toSet, showHidden = false, request.dao)
+      postsHidden.map(_.uniqueId).toSet, showHidden = false, dao)
     OkSafeJson(json)
   }
 

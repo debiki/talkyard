@@ -65,7 +65,7 @@ object ViewPageController extends mvc.Controller {
     val pageMeta = dao.loadPageMeta(pageId) getOrElse
       throwIndistinguishableNotFound("ZE8PK2WY")
 
-    val (maySee, debugCode) = maySeePage(pageMeta, request.user, dao)
+    val (maySee, debugCode) = dao.maySeePageUseCache(pageMeta, request.user)
     if (!maySee) {
       // Don't indicate that the page exists, because the page slug might tell strangers
       // what it is about. [7C2KF24]
@@ -147,7 +147,7 @@ object ViewPageController extends mvc.Controller {
       throwIndistinguishableNotFound()
     }
 
-    val (maySee, debugCode) = maySeePage(pageMeta, request.user, dao)
+    val (maySee, debugCode) = dao.maySeePageUseCache(pageMeta, request.user)
     if (!maySee) {
       // Don't indicate that the page exists, because the page slug might tell strangers
       // what it is about. [7C2KF24]
@@ -178,54 +178,6 @@ object ViewPageController extends mvc.Controller {
       request = request.request)
 
     doRenderPage(pageRequest)
-  }
-
-
-  /** Returns true/false, + iff false, a why-forbidden debug reason code.
-    */
-  def maySeePage(pageMeta: PageMeta, user: Option[User], dao: SiteDao): (Boolean, String) = {
-    COULD; REFACTOR; // move this fn to PageDao?  [2KWU043YU1]
-    if (user.exists(_.isAdmin))
-      return (true, "")
-
-    if (!user.exists(_.isStaff)) {
-      pageMeta.categoryId match {
-        case Some(categoryId) =>
-          val categories = dao.loadCategoriesRootLast(categoryId)
-          if (categories.exists(_.staffOnly))
-            return (false, "EsE8YGK25")
-          if (categories.exists(_.isDeleted))
-            return (false, "EdE5PK2WS")
-        case None =>
-          // Fine, as of now, let everyone view pages not placed in any category, by default.
-      }
-
-      pageMeta.pageRole match {
-        case PageRole.SpecialContent | PageRole.Code =>
-          return (false, "EsE4YK02R")
-        case _ =>
-          // Fine.
-      }
-
-      val onlyForAuthor = pageMeta.isDeleted // later: or if !isPublished
-      if (onlyForAuthor && !user.exists(_.id == pageMeta.authorId))
-        return (false, "EsE5GK702")
-    }
-
-    if (pageMeta.pageRole.isPrivateGroupTalk) {
-      val theUser = user getOrElse {
-        return (false, "EsE4YK032-No-User")
-      }
-
-      if (!theUser.isAuthenticated)
-        return (false, "EsE2GYF04-Is-Guest")
-
-      val memberIds = dao.loadMessageMembers(pageMeta.pageId)
-      if (!memberIds.contains(theUser.id))
-        return (false, "EsE5K8W27-Not-Page-Member")
-    }
-
-    (true, "")
   }
 
 

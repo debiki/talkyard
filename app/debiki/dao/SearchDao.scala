@@ -70,7 +70,7 @@ trait SearchDao {
     // and we'll get as many search hits as we want.
     val pageStuffByPageIdInclForbidden = loadPageStuff(hitsByPageId.keys)
     val pageStuffByPageId = pageStuffByPageIdInclForbidden filter { case (pageId, pageStuff) =>
-      val (maySee, _) = ViewPageController.maySeePage(pageStuff.pageMeta, user, this)
+      val (maySee, _) = maySeePageUseCache(pageStuff.pageMeta, user)
       maySee
     }
 
