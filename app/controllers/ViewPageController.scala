@@ -62,10 +62,7 @@ object ViewPageController extends mvc.Controller {
     if (siteSettings.userMustBeApproved && !request.theUser.isApprovedOrStaff)
       throwForbidden("EdE4F8WV0", "Account not approved")
 
-    val pageMeta = dao.loadPageMeta(pageId) getOrElse
-      throwIndistinguishableNotFound("ZE8PK2WY")
-
-    val (maySee, debugCode) = dao.maySeePageUseCache(pageMeta, request.user)
+    val (maySee, debugCode) = dao.maySeePostUseCache(pageId, postNr, request.user)
     if (!maySee) {
       // Don't indicate that the page exists, because the page slug might tell strangers
       // what it is about. [7C2KF24]

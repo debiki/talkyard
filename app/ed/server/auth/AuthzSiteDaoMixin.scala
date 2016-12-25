@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2012-2016 Kaj Magnus Lindberg
+ * Copyright (C) 2016 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -26,64 +26,14 @@ import io.efdi.server.http._
 
 
 trait AuthzSiteDaoMixin {
-  self: debiki.dao.CategoriesDao with debiki.dao.MessagesDao =>
+  self: debiki.dao.CategoriesDao with debiki.dao.MessagesDao with
+    debiki.dao.PagePathMetaDao with debiki.dao.PostsDao =>
 
 
   /** Returns true/false, + iff false, a why-forbidden debug reason code.
     */
   def maySeePageUseCache(pageMeta: PageMeta, user: Option[User]): (Boolean, String) = {
-    COULD; REFACTOR; // move this fn to PageDao?  [2KWU043YU1]
-    if (user.exists(_.isAdmin))
-      return (true, "")
-
-    if (!user.exists(_.isStaff)) {
-      pageMeta.categoryId match {
-        case Some(categoryId) =>
-          val categories = loadCategoriesRootLast(categoryId)
-          if (categories.exists(_.staffOnly))
-            return (false, "EsE8YGK25")
-          if (categories.exists(_.isDeleted))
-            return (false, "EdE5PK2WS")
-        case None =>
-        // Fine, as of now, let everyone view pages not placed in any category, by default.
-      }
-
-      pageMeta.pageRole match {
-        case PageRole.SpecialContent | PageRole.Code =>
-          return (false, "EsE4YK02R")
-        case _ =>
-        // Fine.
-      }
-
-      val onlyForAuthor = pageMeta.isDeleted // later: or if !isPublished
-      if (onlyForAuthor && !user.exists(_.id == pageMeta.authorId))
-        return (false, "EsE5GK702")
-    }
-
-    if (pageMeta.pageRole.isPrivateGroupTalk) {
-      val theUser = user getOrElse {
-        return (false, "EsE4YK032-No-User")
-      }
-
-      if (!theUser.isAuthenticated)
-        return (false, "EsE2GYF04-Is-Guest")
-
-      val memberIds = loadMessageMembers(pageMeta.pageId)
-      if (!memberIds.contains(theUser.id))
-        return (false, "EsE5K8W27-Not-Page-Member")
-    }
-
-    (true, "")
-  }
-
-
-  def throwIfMayNotSeePost(post: Post, author: Option[User])(transaction: SiteTransaction) {
-    val pageMeta = transaction.loadPageMeta(post.pageId) getOrElse
-      throwIndistinguishableNotFound("EsE8YJK40")
-    throwIfMayNotSeePage(pageMeta, author)(transaction)
-    def isStaffOrAuthor = author.exists(_.isStaff) || author.exists(_.id == post.createdById)
-    if (post.isDeleted && !isStaffOrAuthor)
-      throwIndistinguishableNotFound("EsE8YK04W")
+    maySeePageImpl(pageMeta, user, anyTransaction = None)
   }
 
 
@@ -93,36 +43,104 @@ trait AuthzSiteDaoMixin {
 
 
   def throwIfMayNotSeePage(pageMeta: PageMeta, user: Option[User])(transaction: SiteTransaction) {
-    SECURITY ; BUG // staff shouldn't get access to private topics   // xx
-    // — use ViewPageController.maySeePage instead?  [2KWU043YU1]
-    if (!user.exists(_.isStaff)) {
-      val ancestors = pageMeta.categoryId match {
-        case Some(id) =>
-          throwIfMayNotSeeCategory(id, user)(transaction)
-        case None =>
-          // Deny access unless this is a private messages page.
-          if (!pageMeta.pageRole.isPrivateGroupTalk)
-            throwIndistinguishableNotFound("EsE0YK25-No-Category")
-
-          if (user.isEmpty)
-            throwIndistinguishableNotFound("EsE5PK4Z-No-User")
-
-          val pageMembers = transaction.loadMessageMembers(pageMeta.pageId)
-          if (!pageMembers.contains(user.getOrDie("EsE2WY50F3").id))
-            throwIndistinguishableNotFound("EsE5GYK0V-Not-Message-Member")
-      }
-    }
+    val (may, debugCode) = maySeePageImpl(pageMeta, user, Some(transaction))
+    if (!may)
+      throwIndistinguishableNotFound(s"EdE5FKAW0-$debugCode")
   }
 
 
-  private def throwIfMayNotSeeCategory(categoryId: CategoryId, user: Option[User])(
-        transaction: SiteTransaction) {
-    if (user.exists(_.isStaff))
-      return
+  private def maySeePageImpl(pageMeta: PageMeta, user: Option[User],
+        anyTransaction: Option[SiteTransaction]): (Boolean, String) = {
+    // delete other impl:  [2KWU043YU1]
+    if (user.exists(_.isAdmin))
+      return (true, "")
 
-    val categories = transaction.loadCategoryPathRootLast(categoryId)
-    if (categories.exists(_.staffOnly))
-      throwIndistinguishableNotFound("EsE7YKG25")
+    if (!user.exists(_.isStaff)) {
+      pageMeta.categoryId match {
+        case Some(categoryId) =>
+          val categories = anyTransaction.map(_.loadCategoryPathRootLast(categoryId)) getOrElse
+              loadCategoriesRootLast(categoryId)
+          if (categories.exists(_.staffOnly))
+            return (false, "EsE8YGK25-Staff-Only-Cat")
+          if (categories.exists(_.isDeleted))
+            return (false, "EdE5PK2WS-Cat-Deleted")
+        case None =>
+        // Fine, as of now, let everyone view pages not placed in any category, by default.
+      }
+
+      pageMeta.pageRole match {
+        case PageRole.SpecialContent | PageRole.Code =>
+          return (false, "EsE4YK02R-Code")
+        case _ =>
+        // Fine.
+      }
+
+      val onlyForAuthor = pageMeta.isDeleted // later: or if !isPublished
+      if (onlyForAuthor && !user.exists(_.id == pageMeta.authorId))
+        return (false, "EsE5GK702-Page-Deleted")
+    }
+
+    if (pageMeta.pageRole.isPrivateGroupTalk) {
+      val theUser = user getOrElse {
+        return (false, "EsE4YK032-No-User")
+      }
+
+      if (!theUser.isMember)
+        return (false, "EsE2GYF04-Is-Guest")
+
+      val memberIds = loadMessageMembers(pageMeta.pageId)
+      if (!memberIds.contains(theUser.id))
+        return (false, "EsE5K8W27-Not-Page-Member")
+    }
+    else {
+      // Later:
+      // return (false, "EdE0YK25-No-Category")? Merge with `pageRole match ...` above.
+    }
+
+    (true, "")
+  }
+
+
+  /** Returns true/false, + iff false, a why-forbidden debug reason code.
+    */
+  def maySeePostUseCache(pageId: PageId, postNr: PostNr, user: Option[User]): (Boolean, String) = {
+    maySeePostImpl(pageId, postNr, user, anyPost = None, anyTransaction = None)
+  }
+
+
+  def throwIfMayNotSeePost(post: Post, author: Option[User])(transaction: SiteTransaction) {
+    val (may, debugCode) =
+      maySeePostImpl(post.pageId, post.nr, author, anyPost = Some(post),
+        anyTransaction = Some(transaction))
+    if (!may)
+      throwIndistinguishableNotFound(s"EdE4KFA20-$debugCode")
+  }
+
+
+  def maySeePostImpl(pageId: PageId, postNr: PostNr, user: Option[User],
+        anyPost: Option[Post], anyTransaction: Option[SiteTransaction]): (Boolean, String) = {
+
+    val pageMeta =
+      anyTransaction.map(_.loadPageMeta(pageId)).getOrElse(loadPageMeta(pageId)) getOrElse {
+        // Apparently the page was just deleted.
+        return (false, "5KFUP2R0-Page-Not-Found")
+      }
+
+    val (maySeePage, debugCode) = maySeePageImpl(pageMeta, user, anyTransaction)
+    if (!maySeePage)
+      return (false, s"$debugCode-ABX94WN")
+
+    val post = anyPost orElse loadPost(pageId, postNr) getOrElse {
+      return (false, "7URAZ8S-Post-Not-Found")
+    }
+
+    def isStaffOrAuthor =
+      user.exists(_.isStaff) || user.exists(_.id == post.createdById)
+
+    if (post.isDeleted && !isStaffOrAuthor)
+      return (false, "6PKJ2RU-Post-Deleted")
+
+    (true, "")
   }
 
 
