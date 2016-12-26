@@ -155,7 +155,7 @@ class SiteDao(
     memCache.firePageSaved(SitePageId(siteId = siteId, pageId = pageId))
   }
 
-  def refreshPagesInAnyCache(pageIds: Set[PageId]) {
+  def refreshPagesInAnyCache(pageIds: collection.Set[PageId]) {
     pageIds.foreach(refreshPageInMemCache)
   }
 

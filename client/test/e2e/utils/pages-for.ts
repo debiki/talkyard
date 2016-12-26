@@ -201,6 +201,16 @@ function pagesFor(browser) {
         if (options && options.waitForNewUrl !== false) {
           browser.waitForNewUrl();
         }
+      },
+
+      myMenu: {
+        goToAdminReview: function() {
+          browser.rememberCurrentUrl();
+          browser.waitAndClick('.esMyMenu');
+          browser.waitAndClick('#e2eMM_Review');
+          browser.waitForNewUrl();
+          browser.waitForVisible('.e_A_Rvw');
+        },
       }
     },
 
@@ -623,6 +633,10 @@ function pagesFor(browser) {
         browser.assertPageTitleMatches(title);
       },
 
+      assertNumVisible: function(howMany: number) {
+        browser.assertExactly(howMany, '.e2eTopicTitle');
+      },
+
       assertTopicVisible: function(title) {
         browser.assertAnyTextMatches(api.forumTopicList.titleSelector, title);
         browser.assertNoTextMatches(api.forumTopicList.hiddenTopicTitleSelector, title);
@@ -748,9 +762,18 @@ function pagesFor(browser) {
         browser.waitUntilModalGone();
       },
 
+      cancel: function() {
+        browser.click('#debiki-editor-controller .e2eCancelBtn');
+        api.helpDialog.waitForThenClose();
+      },
+
       save: function() {
-        browser.click('.e2eSaveBtn');
+        api.editor.clickSave();
         browser.waitUntilLoadingOverlayGone();
+      },
+
+      clickSave: function() {
+        browser.click('#debiki-editor-controller .e2eSaveBtn');
       },
 
       saveWaitForNewPage: function() {
@@ -768,6 +791,19 @@ function pagesFor(browser) {
 
       clickHomeNavLink: function() {
         browser.click("a=Home");
+      },
+
+      assertPagePendingApprovalBodyHidden: function() {
+        browser.waitForVisible('.dw-ar-t');
+        browser.assertPageTitleMatches(/pending approval/);
+        assert(api.topic._isOrigPostPendingApprovalVisible());
+        assert(!api.topic._isOrigPostBodyVisible());
+      },
+
+      assertPageNotPendingApproval: function() {
+        browser.waitForVisible('.dw-ar-t');
+        assert(!api.topic._isOrigPostPendingApprovalVisible());
+        assert(api.topic._isOrigPostBodyVisible());
       },
 
       waitForPostNrVisible: function(postNr) {
@@ -841,6 +877,24 @@ function pagesFor(browser) {
         assert(!browser.isVisible(`#post-${postNr}.s_P-Hdn`));
       },
 
+      assertPostNeedsApprovalBodyVisible: function(postNr: PostNr) {
+        assert(api.topic._hasPendingModClass(postNr));
+        assert(!api.topic._hasUnapprovedClass(postNr));
+        assert(api.topic._isBodyVisible(postNr));
+      },
+
+      assertPostNeedsApprovalBodyHidden: function(postNr: PostNr) {
+        assert(!api.topic._hasPendingModClass(postNr));
+        assert(api.topic._hasUnapprovedClass(postNr));
+        assert(!api.topic._isBodyVisible(postNr));
+      },
+
+      assertPostNotPendingApproval: function(postNr: PostNr) {
+        assert(!api.topic._hasUnapprovedClass(postNr));
+        assert(!api.topic._hasPendingModClass(postNr));
+        assert(api.topic._isBodyVisible(postNr));
+      },
+
       clickPostActionButton: function(buttonSelector: string) {
         // If the button is close to the bottom of the window, the fixed bottom bar might
         // be above it; then, if it's below the [Scroll][Back] buttons, it won't be clickable.
@@ -882,6 +936,26 @@ function pagesFor(browser) {
 
       assertFirstReplyTextMatches: function(text) {
         api.topic.assertPostTextMatches(c.FirstReplyNr, text);
+      },
+
+      _isOrigPostBodyVisible: function() {
+        return !!browser.getText('#post-1 > .dw-p-bd');
+      },
+
+      _isOrigPostPendingApprovalVisible: function() {
+        return browser.isVisible('.dw-ar-t > .esPendingApproval');
+      },
+
+      _isBodyVisible: function(postNr: PostNr) {
+        return browser.isVisible(`#post-${postNr} .dw-p-bd`);
+      },
+
+      _hasPendingModClass: function(postNr: PostNr) {
+        return browser.isVisible(`#post-${postNr} .dw-p-pending-mod`);
+      },
+
+      _hasUnapprovedClass: function(postNr: PostNr) {
+        return browser.isVisible(`#post-${postNr}.dw-p-unapproved`);
       },
     },
 
@@ -1126,7 +1200,14 @@ function pagesFor(browser) {
             browser.waitAndClick('#e2eAllowGuestsCB');
           },
         },
-      }
+      },
+
+      review: {
+        approveNextWhatever: function() {
+          browser.waitAndClickFirst('.e_A_Rvw_AcptB');
+          browser.waitUntilModalGone();
+        },
+      },
     },
 
     serverErrorDialog: {
@@ -1135,9 +1216,20 @@ function pagesFor(browser) {
       },
 
       clickClose: function() {
+        this.serverErrorDialog.close();
+      },
+
+      close: function() {
         browser.click('.e_SED_CloseB');
         browser.waitUntilGone('.modal-dialog.dw-server-error');
       }
+    },
+
+    helpDialog: {
+      waitForThenClose: function() {
+        browser.waitAndClick('.esHelpDlg .btn-primary');
+        browser.waitUntilModalGone();
+      },
     },
 
     complex: {
@@ -1169,6 +1261,7 @@ function pagesFor(browser) {
       },
 
       createAndSaveTopic: function(data: { title: string, body: string, type?: PageRole,
+            matchAfter?: boolean, titleMatchAfter?: String | boolean,
             bodyMatchAfter?: String | boolean }) {
         api.forumButtons.clickCreateTopic();
         api.editor.editTitle(data.title);
@@ -1179,8 +1272,10 @@ function pagesFor(browser) {
         browser.rememberCurrentUrl();
         api.editor.save();
         browser.waitForNewUrl();
-        browser.assertPageTitleMatches(data.title);
-        if (data.bodyMatchAfter !== false) {
+        if (data.matchAfter !== false && data.titleMatchAfter !== false) {
+          browser.assertPageTitleMatches(data.titleMatchAfter || data.title);
+        }
+        if (data.matchAfter !== false && data.bodyMatchAfter !== false) {
           browser.assertPageBodyMatches(data.bodyMatchAfter || data.body);
         }
       },

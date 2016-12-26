@@ -148,6 +148,7 @@ export var PostActions = createComponent({
     var isDone = store.pageDoneAtMs && (store.pageRole === PageRole.Problem ||
       store.pageRole === PageRole.Idea || store.pageRole === PageRole.ToDo);
 
+    // SHOULD show at least the edit button, so one can edit one's unapproved post. [27WKTU02]
     if (!post.isApproved) // what?:  && !post.text)
       return null;
 

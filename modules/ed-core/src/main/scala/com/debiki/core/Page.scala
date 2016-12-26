@@ -98,8 +98,9 @@ object PageMeta {
         pinWhere: Option[PinPageWhere] = None,
         categoryId: Option[CategoryId] = None,
         url: Option[String] = None,
-        publishDirectly: Boolean = false) =
-    PageMeta(
+        hidden: Boolean = false,
+        publishDirectly: Boolean = false) = {
+    var result = PageMeta(
       pageId = pageId,
       pageRole = pageRole,
       version = 1,
@@ -119,6 +120,11 @@ object PageMeta {
       numRepliesVisible = 0,
       numRepliesTotal = 0,
       numChildPages = 0)
+    if (hidden) {
+      result = result.copy(hiddenAt = Some(When.fromDate(result.createdAt)))
+    }
+    result
+  }
 
   val MinPinOrder = 1
   val MaxPinOrder = 100
@@ -168,8 +174,8 @@ case class PageMeta(
   updatedAt: ju.Date,
   publishedAt: Option[ju.Date] = None,
   bumpedAt: Option[ju.Date] = None,
-  lastReplyAt: Option[ju.Date] = None,
-  lastReplyById: Option[UserId] = None,
+  lastReplyAt: Option[ju.Date] = None,   // could rename to lastApprovedReplyApprovedAt?
+  lastReplyById: Option[UserId] = None,  // could rename to lastApprovedReplyById?
   categoryId: Option[CategoryId] = None,
   embeddingPageUrl: Option[String],
   authorId: UserId,

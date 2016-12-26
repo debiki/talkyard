@@ -239,11 +239,10 @@ trait PagesDao {
 
     val uploadPaths = UploadsDao.findUploadRefsInPost(bodyPost)
 
-    SECURITY ; SHOULD // set publishDirectly = false, if !shallApprove — but this requires
-    // changes elsewhere too, fix later.
     val pageMeta = PageMeta.forNewPage(pageId, pageRole, authorId, transaction.currentTime,
       pinOrder = pinOrder, pinWhere = pinWhere,
-      categoryId = anyCategoryId, url = None, publishDirectly = true)
+      categoryId = anyCategoryId, url = None, publishDirectly = true,
+      hidden = approvedById.isEmpty) // [7AWU2R0]
 
     val reviewTask = if (reviewReasons.isEmpty) None
     else Some(ReviewTask(

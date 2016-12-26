@@ -126,6 +126,7 @@ abstract class PageParts {
 
 
   def numRepliesTotal = allPosts.count(_.isReply)
+
   lazy val numRepliesVisible = allPosts count { post =>
     post.isReply && post.isVisible
   }

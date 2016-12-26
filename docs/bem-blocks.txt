@@ -15,6 +15,7 @@ e2eAddUsD       = Add users dialog
 esA             = Admin Area
 esA_Ss          = Admin Area, settings
 esA_Ss_S        = Admin Area, a single setting
+esA_Rvw         = Admin Area, Review section
 
 esA_Us_U        = Admin Area, a single user
 

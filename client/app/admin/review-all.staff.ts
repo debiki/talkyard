@@ -48,7 +48,7 @@ export var ReviewAllPanelComponent = React.createClass(<any> {
       return r.p({ className: 'esAdminSectionIntro' }, "No comments or replies to review.");
 
     return (
-      r.div({},
+      r.div({ className: 'e_A_Rvw' },
         elems));
   }
 });
@@ -147,7 +147,8 @@ var ReviewTask = createComponent({
 
     var post: PostToReview = reviewTask.post;
 
-    var openPostButton = Button({ onClick: this.openPostInNewTab }, "View page");
+    var openPostButton =
+        Button({ onClick: this.openPostInNewTab, className: 'e_A_Rvw_ViewB' }, "View page");
 
     // For now:
     var complete = (action) => {
@@ -164,8 +165,12 @@ var ReviewTask = createComponent({
     }
     else {
       var acceptText = post.approvedRevNr !== post.currRevNr ? "Approve" : "Looks fine";
-      acceptButton = Button({ onClick: complete(ReviewAction.Accept) }, acceptText);
-      rejectButton = Button({ onClick: complete(ReviewAction.DeletePostOrPage) }, "Delete");
+      acceptButton =
+          Button({ onClick: complete(ReviewAction.Accept),
+              className: 'e_A_Rvw_AcptB' }, acceptText);
+      rejectButton =
+          Button({ onClick: complete(ReviewAction.DeletePostOrPage),
+              className: 'e_A_Rvw_RjctB' }, "Delete");
     }
 
 

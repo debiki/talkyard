@@ -116,12 +116,11 @@ trait ReviewsDao {
     * the user that much.
     */
   private def perhapsCascadeApproval(userId: UserId)(transaction: SiteTransaction) {
-    var pageIdsToRefresh = Set[PageId]()
+    var pageIdsToRefresh = mutable.Set[PageId]()
     val settings = loadWholeSiteSettings(transaction)
     val numFirstToAllow = math.min(MaxNumFirstPosts, settings.numFirstPostsToAllow)
     val numFirstToApprove = math.min(MaxNumFirstPosts, settings.numFirstPostsToApprove)
     if (numFirstToAllow > 0 && numFirstToApprove > 0) {
-      UNTESTED // rewritten, bug fixed
       // Load some more review tasks than just MaxNumFirstPosts, in case the user has
       // somehow triggered even more review tasks, e.g. because getting flagged.
       // SECURITY (minor) if other users flag userId's posts 9999 times, we won't load any
@@ -158,10 +157,20 @@ trait ReviewsDao {
       val shallApproveRemainingFirstPosts = numApproved >= numFirstToApprove
       if (shallApproveRemainingFirstPosts) {
         val pendingTasks = tasks.filter(!_.doneOrGone)
-        val postIdsToApprove = pendingTasks.flatMap(_.postId)
+        val titlesToApprove = mutable.HashSet[PageId]()
+        val postIdsToApprove = pendingTasks flatMap { task =>
+          if (task.postNr.contains(PageParts.BodyNr)) {
+            titlesToApprove += task.pageId getOrDie "EdE2WK0L6"
+          }
+          task.postId
+        }
         val postsToApprove = transaction.loadPostsByUniqueId(postIdsToApprove).values
-        pageIdsToRefresh ++= postsToApprove.map(
-          autoApprovePendingEarlyPost(_, transaction))
+        val titlePostsToApprove = titlesToApprove.flatMap(transaction.loadTitle)
+        val allPostsToApprove = postsToApprove ++ titlePostsToApprove
+        for ((pageId, posts) <- allPostsToApprove.groupBy(_.pageId)) {
+          pageIdsToRefresh += pageId
+          autoApprovePendingEarlyPosts(pageId, posts)(transaction)
+        }
       }
     }
     refreshPagesInAnyCache(pageIdsToRefresh)

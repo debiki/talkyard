@@ -131,7 +131,8 @@ trait PostsDao {
         htmlSanitized = textAndHtml.safeHtml,
         approvedById = approverId)
 
-      val numNewOrigPostReplies = (shallApprove && newPost.isOrigPostReply) ? 1 | 0
+      val shallBumpPage = !page.isClosed && shallApprove
+      val numNewOpRepliesVisible = (shallApprove && newPost.isOrigPostReply) ? 1 | 0
       val newFrequentPosterIds: Seq[UserId] =
         if (shallApprove)
           PageParts.findFrequentPosters(newPost +: page.parts.allPosts,
@@ -141,13 +142,13 @@ trait PostsDao {
 
       val oldMeta = page.meta
       val newMeta = oldMeta.copy(
-        bumpedAt = page.isClosed ? oldMeta.bumpedAt | Some(transaction.currentTime),
+        bumpedAt = shallBumpPage ? Option(transaction.currentTime) | oldMeta.bumpedAt,
         lastReplyAt = shallApprove ? Option(transaction.currentTime) | oldMeta.lastReplyAt,
         lastReplyById = shallApprove ? Option(authorId) | oldMeta.lastReplyById,
         frequentPosterIds = newFrequentPosterIds,
         numRepliesVisible = page.parts.numRepliesVisible + (shallApprove ? 1 | 0),
         numRepliesTotal = page.parts.numRepliesTotal + 1,
-        numOrigPostRepliesVisible = page.parts.numOrigPostRepliesVisible + numNewOrigPostReplies,
+        numOrigPostRepliesVisible = page.parts.numOrigPostRepliesVisible + numNewOpRepliesVisible,
         version = oldMeta.version + 1)
 
       val uploadRefs = UploadsDao.findUploadRefsInPost(newPost)
@@ -1044,11 +1045,6 @@ trait PostsDao {
   }
 
 
-  def approvePost(pageId: PageId, postNr: PostNr, approverId: UserId) {
-    readWriteTransaction(approvePostImpl(pageId, postNr, approverId = approverId, _))
-  }
-
-
   def approvePostImpl(pageId: PageId, postNr: PostNr, approverId: UserId,
         transaction: SiteTransaction) {
 
@@ -1094,6 +1090,17 @@ trait PostsDao {
       val isApprovingNewPost = postBefore.approvedRevisionNr.isEmpty
 
       var newMeta = pageMeta.copy(version = pageMeta.version + 1)
+
+      // If we're approving the page, unhide it.
+      BUG // rather harmless: If page hidden because of flags, then if new reply approved,
+      // the page should be shown, because now there's a visible reply. But it'll remain hidden.
+      val newHiddenAt =
+        if (isApprovingPageBody && isApprovingNewPost) {
+          UNTESTED
+          None
+        }
+        else newMeta.hiddenAt
+
       // Bump page and update reply counts if a new post was approved and became visible,
       // or if the original post was edited.
       var makesSectionPageHtmlStale = false
@@ -1110,6 +1117,7 @@ trait PostsDao {
           numOrigPostRepliesVisible = pageMeta.numOrigPostRepliesVisible + numNewOrigPostReplies,
           lastReplyAt = newLastReplyAt,
           lastReplyById = newLastReplyById,
+          hiddenAt = newHiddenAt,
           bumpedAt = pageMeta.isClosed ? pageMeta.bumpedAt | Some(transaction.currentTime))
         makesSectionPageHtmlStale = true
       }
@@ -1134,46 +1142,76 @@ trait PostsDao {
   }
 
 
-  def autoApprovePendingEarlyPost(post: Post, transaction: SiteTransaction): PageId = {
-    dieIf(post.isSomeVersionApproved, "EsE6YKP2")
+  def autoApprovePendingEarlyPosts(pageId: PageId, posts: Iterable[Post])(
+        transaction: SiteTransaction) {
 
-    val page = PageDao(post.pageId, transaction)
+    if (posts.isEmpty) return
+    require(posts.forall(_.pageId == pageId), "EdE2AX5N6")
+
+    val page = PageDao(pageId, transaction)
     val pageMeta = page.meta
 
-    // ----- The post
+    var numNewVisibleReplies = 0
+    var numNewVisibleOpReplies = 0
 
-    // Don't need to update lastApprovedEditAt, because this post has been invisible until now.
-    // Don't set safeRevisionNr, because this approval hasn't been reviewed by a human.
-    val postAfter = post.copy(
-      approvedRevisionNr = Some(post.currentRevisionNr),
-      approvedAt = Some(transaction.currentTime),
-      approvedById = Some(SystemUserId),
-      approvedSource = Some(post.currentSource),
-      approvedHtmlSanitized = Some(post.currentHtmlSanitized(
-        commonmarkRenderer, pageMeta.pageRole)),
-      currentSourcePatch = None)
-    transaction.updatePost(postAfter)
-    transaction.indexPostsSoon(postAfter)
+    for (post <- posts) {
+      dieIf(post.isSomeVersionApproved, "EsE6YKP2", s"Post ${post.pagePostId} already approved")
+
+      numNewVisibleReplies += post.isReply ? 1 | 0
+      numNewVisibleOpReplies += post.isOrigPostReply ? 1 | 0
+
+      // ----- A post
+
+      // Don't need to update lastApprovedEditAt, because this post has been invisible until now.
+      // Don't set safeRevisionNr, because this approval hasn't been reviewed by a human.
+      val postAfter = post.copy(
+        approvedRevisionNr = Some(post.currentRevisionNr),
+        approvedAt = Some(transaction.currentTime),
+        approvedById = Some(SystemUserId),
+        approvedSource = Some(post.currentSource),
+        approvedHtmlSanitized = Some(post.currentHtmlSanitized(
+          commonmarkRenderer, pageMeta.pageRole)),
+        currentSourcePatch = None)
+
+      transaction.updatePost(postAfter)
+      transaction.indexPostsSoon(postAfter)
+
+      // ------ Notifications
+
+      if (!post.isTitle) {
+        val notfs = NotificationGenerator(transaction).generateForNewPost(page, postAfter)
+        transaction.saveDeleteNotifications(notfs)
+      }
+    }
 
     // ----- The page
 
-    // We're making an unapproved post visible, so the page will change.
-    val numNewOpReplies = postAfter.isOrigPostReply ? 1 | 0
+    // Unhide the page, if is hidden because the orig post hasn't been approved until now.
+    val isNewPage = posts.exists(_.isOrigPost) && posts.exists(_.isTitle)
+    val newHiddenAt = if (isNewPage) None else pageMeta.hiddenAt
+
+    val thereAreNoReplies = isNewPage && posts.size == 2  // title + orig-post = 2
+
+    val (newLastReplyAt, newLastReplyById) =
+      if (thereAreNoReplies) {
+        dieIf(pageMeta.lastReplyAt.isDefined, "EdE2KF80P", s"Page id $pageId")
+        (None, None)
+      }
+      else {
+        val newLastReply = Some(posts.maxBy(_.createdAt.getTime))
+        (Some(transaction.currentTime), newLastReply.map(_.createdById))
+      }
+
     val newMeta = pageMeta.copy(
-      numRepliesVisible = pageMeta.numRepliesVisible + 1,
-      numOrigPostRepliesVisible = pageMeta.numOrigPostRepliesVisible + numNewOpReplies,
-      lastReplyAt = Some(transaction.currentTime),
+      numRepliesVisible = pageMeta.numRepliesVisible + numNewVisibleReplies,
+      numOrigPostRepliesVisible = pageMeta.numOrigPostRepliesVisible + numNewVisibleOpReplies,
+      lastReplyAt = newLastReplyAt,
+      lastReplyById = newLastReplyById,
       bumpedAt = pageMeta.isClosed ? pageMeta.bumpedAt | Some(transaction.currentTime),
+      hiddenAt = newHiddenAt,
       version = pageMeta.version + 1)
 
     transaction.updatePageMeta(newMeta, oldMeta = pageMeta, markSectionPageStale = true)
-
-    // ------ Notifications
-
-    val notfs = NotificationGenerator(transaction).generateForNewPost(page, postAfter)
-    transaction.saveDeleteNotifications(notfs)
-
-    page.id
   }
 
 

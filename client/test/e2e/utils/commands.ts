@@ -137,10 +137,18 @@ function addCommandsToBrowser(browser) {
 
 
   browser.addCommand('waitAndClick', function(selector) {
+    browser._waitAndClickImpl(selector, true);
+  },
+
+  browser.addCommand('waitAndClickFirst', function(selector) {
+      browser._waitAndClickImpl(selector, false);
+  },
+
+  browser.addCommand('_waitAndClickImpl', function(selector, mustBeExactlyOne) {
     browser.waitForVisible(selector);
     browser.waitForEnabled(selector);
     browser.waitUntilLoadingOverlayGone();
-    if (!selector.startsWith('#')) {
+    if (!selector.startsWith('#') && mustBeExactlyOne) {
       var errors = '';
       var length = 1;
       var byBrowserResults = byBrowser(browser.elements(selector));

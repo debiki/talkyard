@@ -372,6 +372,7 @@ export function rejectEdits(post: PostToModerate, doneCallback: () => void) {
 
 
 function doSomethingWithPost(post: PostToModerate, actionUrl: string, success: () => void) {
+  die('EdE7KWWU0');
   postJsonSuccess(actionUrl, success, {
     pageId: post.pageId,
     postId: post.id,

@@ -89,6 +89,9 @@ trait SiteTransaction {
   def loadTitleAndOrigPost(pageId: PageId): Seq[Post] =
     loadPosts(Seq(PagePostNr(pageId, PageParts.TitleNr), PagePostNr(pageId, PageParts.BodyNr)))
 
+  def loadTitle(pageId: PageId): Option[Post] =
+    loadPosts(Seq(PagePostNr(pageId, PageParts.TitleNr))).headOption
+
   def loadOrigPost(pageId: PageId): Option[Post] =
     loadPosts(Seq(PagePostNr(pageId, PageParts.BodyNr))).headOption
 

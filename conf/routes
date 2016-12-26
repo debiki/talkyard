@@ -88,14 +88,14 @@ POST  /-/save-special-content   controllers.SpecialContentController.saveContent
 
 GET   /-/load-review-tasks      controllers.ModerationController.loadReviewTasks
 POST  /-/complete-review-task   controllers.ModerationController.completeReviewTask
-POST  /-/approve                controllers.ModerationController.approve
-POST  /-/hide-new-send-pm       controllers.ModerationController.hideNewPostSendPm
-POST  /-/hide-flagged-send-pm   controllers.ModerationController.hideFlaggedPostSendPm
+#POST  /-/approve                controllers.ModerationController.approve
+#POST  /-/hide-new-send-pm       controllers.ModerationController.hideNewPostSendPm
+#POST  /-/hide-flagged-send-pm   controllers.ModerationController.hideFlaggedPostSendPm
 # Rename to something else or merge with /-/delete-post below?
-POST  /-/delete                 controllers.ModerationController.deletePost
-POST  /-/delete-flagged         controllers.ModerationController.deleteFlaggedPost
-POST  /-/clear-flags            controllers.ModerationController.clearFlags
-POST  /-/reject-edits           controllers.ModerationController.rejectEdits
+#POST  /-/delete                 controllers.ModerationController.deletePost
+#POST  /-/delete-flagged         controllers.ModerationController.deleteFlaggedPost
+#POST  /-/clear-flags            controllers.ModerationController.clearFlags
+#POST  /-/reject-edits           controllers.ModerationController.rejectEdits
 
 GET   /-/users/                 controllers.UserController.viewUserPage(whatever = "")
 GET   /-/users/*whatever        controllers.UserController.viewUserPage(whatever)

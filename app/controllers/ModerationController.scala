@@ -63,6 +63,7 @@ object ModerationController extends mvc.Controller {
   }
 
 
+  /*
   def approve = StaffPostJsonAction(maxLength = 5000) { request =>
     SECURITY ; COULD // restrict approval of edits of any homepage or about page to admins only.
     val PagePostNr(pageId, postNr) = parseBody(request)
@@ -112,7 +113,7 @@ object ModerationController extends mvc.Controller {
     val PagePostNr(pageId, postNr) = parseBody(request)
     ??? // request.dao.rejectEdits(pageId, postId = postId, rejectedById = request.theUserId)
     Ok
-  }
+  } */
 
 
   private def parseBody(request: JsonPostRequest): PagePostNr = {
