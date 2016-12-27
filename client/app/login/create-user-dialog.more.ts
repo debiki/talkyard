@@ -260,8 +260,10 @@ export var CreateUserDialogContent = createClassAndFactory({
       r.form({ className: 'esCreateUser' },
         emailInput,
         usernameInput,
-        passwordInput,
+        // Place the full name input above the password input, because someone thought
+        // the full-name-input was a password verification field.
         fullNameInput,
+        passwordInput,
         PrimaryButton({ onClick: this.doCreateUser, disabled: disableSubmit, id: 'e2eSubmit',
             tabIndex: 2 }, "Create Account")));
   }

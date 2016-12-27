@@ -206,7 +206,9 @@ class DebugTestController @Inject() extends mvc.Controller {
         if (value <= 0) throwBadRequest("DwE6KGU3", "timeoutMs is <= 0")
         value millis
       case None =>
-        5000 millis
+        // lower than the e2e test wait-for-timeout,
+        // but high in comparison to the notifier [5KF0WU2T4]
+        10 seconds
     }
 
     val futureReply: Future[Any] =
@@ -218,7 +220,7 @@ class DebugTestController @Inject() extends mvc.Controller {
         val scheduler = p.libs.concurrent.Akka.system.scheduler
         val futureTimeout = akka.pattern.after(timeout, scheduler)(
           failed(ResultException(InternalErrorResult(
-            "DwE5KGU0", "Timeout waiting for an email to get sent to that address"))))
+            "EdE5KSA0", "Timeout waiting for an email to get sent to that address"))))
 
         firstCompletedOf(Seq(futureEmail, futureTimeout)).map({
           case email: Email =>

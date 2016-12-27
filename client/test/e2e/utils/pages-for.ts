@@ -190,7 +190,7 @@ function pagesFor(browser) {
 
       searchFor: function(phrase: string) {
         browser.waitAndClick('.esTB_SearchBtn');
-        browser.waitAndSetValue('.esTB_SearchD input[name="searchPhrase"]', phrase);
+        browser.waitAndSetValue('.esTB_SearchD input[name="q"]', phrase);
         browser.click('.e_SearchB');
       },
 
@@ -922,9 +922,9 @@ function pagesFor(browser) {
               break;
             browser.execute(function(selector) {
               window['debiki2'].utils.scrollIntoViewInPageColumn(
-                  selector, { marginTop: 60 + 20, marginBottom: 70 + 20, duration: 220 });
+                  selector, { marginTop: 60 + 20, marginBottom: 70 + 20, duration: 200 });
             }, buttonSelector);
-            browser.pause(220 + 30);
+            browser.pause(200 + 50);
           }
           try {
             browser.waitAndClick(buttonSelector);

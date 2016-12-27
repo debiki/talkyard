@@ -37,6 +37,7 @@ settings.debug = args.debug || args.d || settings.debugBefore || settings.debugA
 // (The default 10 seconds timeout is not enough. When a fresh Docker JVM & Play Framework
 // container is started for the very first time, it's rather slow — it takes 5-10 seconds
 // for Nashorn to compile all JS,/ that could be why. Or some other Java JIT compilation?
+// Also, the email sending background threads are sometimes rather slow. [5KF0WU2T4]
 // Whatever. Wait 25 seconds by default.)
 settings.waitforTimeout =
     settings.debugBefore || settings.debugAfterwards || args.noTimeout || args.nt ?

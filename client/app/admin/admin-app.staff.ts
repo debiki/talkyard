@@ -267,6 +267,10 @@ var LoginSettingsComponent = React.createClass(<any> {
             if (target.checked && valueOf(s => s.allowGuestLogin)) {
               newSettings.allowGuestLogin = false;
             }
+            if (!target.checked && valueOf(s => s.userMustBeApproved)) {
+              // See just below [5FKA2E]
+              newSettings.userMustBeApproved = false;
+            }
           }
         }),
 
@@ -275,6 +279,12 @@ var LoginSettingsComponent = React.createClass(<any> {
           getter: (s: Settings) => s.userMustBeApproved,
           update: (newSettings: Settings, target) => {
             newSettings.userMustBeApproved = target.checked;
+            if (target.checked && !valueOf(s => s.userMustBeAuthenticated)) {
+              // Currently if must-be-approved, then an authentication dialog is shown [5FKA2E]
+              // before one can access the site — which means that userMustBeAuthenticated
+              // is in practice true. So don't let people set that option to false then.
+              newSettings.userMustBeAuthenticated = true;
+            }
             if (target.checked && valueOf(s => s.allowGuestLogin)) {
               newSettings.allowGuestLogin = false;
             }
