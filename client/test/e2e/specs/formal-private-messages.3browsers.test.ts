@@ -217,8 +217,10 @@ describe("private chat", () => {
   // ------------------------------------------------------
 
   it("Maria logs out", () => {
-    maria.topbar.clickLogout({ waitForLoginButton: false });
-    // COULD test if becoes 404 Not Found, or redirected to homepage?
+    maria.topbar.clickLogout(
+        // Needed because of a bug in Chrome? Chromedriver? Selenium? Webdriver.io? [E2EBUG]
+        // Without, there's a stale-elem-exception for a totally unrelated elem:
+        { waitForLoginButton: false });
   });
 
   it("... and can access the priv message no more, not in the topic list", () => {

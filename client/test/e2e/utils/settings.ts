@@ -38,10 +38,10 @@ settings.debug = args.debug || args.d || settings.debugBefore || settings.debugA
 // container is started for the very first time, it's rather slow — it takes 5-10 seconds
 // for Nashorn to compile all JS,/ that could be why. Or some other Java JIT compilation?
 // Also, the email sending background threads are sometimes rather slow. [5KF0WU2T4]
-// Whatever. Wait 25 seconds by default.)
+// Whatever. Wait 21 seconds by default.)
 settings.waitforTimeout =
     settings.debugBefore || settings.debugAfterwards || args.noTimeout || args.nt ?
-        2147483647 : 25*1000;
+        2147483647 : 21*1000;
 
 settings.browserName = 'chrome';
 if (args.ff) settings.browserName = 'firefox';

@@ -115,11 +115,11 @@ describe("spam test, no external services:", () => {
   });
 
   it("The spam comment gets hidden, eventually", () => {
-    mallorysBrowser.refreshUntilGone(post2Selector);
+    mallorysBrowser.topic.refreshUntilBodyHidden(2);
   });
 
   it("... but the not-spam comment is still visible", () => {
-    assert(mallorysBrowser.isVisible(post3Selector));
+    mallorysBrowser.topic.assertPostNotHidden(3);
   });
 
   it("... and remains visible", () => {

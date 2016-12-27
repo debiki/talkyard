@@ -57,15 +57,15 @@ function pagesFor(browser) {
       return result.value;
     },
 
-
+    /*
     refresh: function() {
-      // browser.refresh() causes a weird cannot-find-elem problem. Perhaps because of
+      // browser.refresh() causes a weird cannot-find-elem problem. Perhaps because of  [E2EBUG]
       // some incompatibility between webdriver.io and Chrome? Recently there was a stale-
       // element bug after refresh(), fixed in Webdriver.io 4.3.0. Instead:
       let url = browser.url().value;
       browser.go('http://www.google.com');
       browser.go(url);
-    },
+    }, */
 
 
     waitForMyDataAdded: function() {
@@ -196,6 +196,10 @@ function pagesFor(browser) {
       clickLogout: function(options?: { waitForLoginButton?: boolean }) {
         options = options || {};
         api.waitAndClick('.esMyMenu');
+        // Because of a bug in Chrome? Chromedriver? Selenium? Webdriver.io? wait-and-click
+        // attempts to click instantly, before the show-menu anim has completed and the elem
+        // has appeared. So pause for a short while. [E2EBUG]
+        browser.pause(250);
         api.waitAndClick('#e2eMM_Logout');
         if (options.waitForLoginButton !== false) {
           // Then a login dialog will probably have opened now in full screen, with a modal
@@ -912,8 +916,21 @@ function pagesFor(browser) {
         api.waitAndClick('.icon-flag');  // for now, later: e_...
       },
 
+      refreshUntilBodyHidden: function(postNr: PostNr) {
+        while (true) {
+          let isHidden = api.topic.isPostBodyHidden(postNr);
+          if (isHidden) break;
+          browser.refresh();
+          browser.pause(250);
+        }
+      },
+
+      isPostBodyHidden: function(postNr) {
+        return browser.isVisible(`#post-${postNr}.s_P-Hdn`);
+      },
+
       assertPostHidden: function(postNr: PostNr) {
-        assert(browser.isVisible(`#post-${postNr}.s_P-Hdn`));
+        assert(api.topic.isPostBodyHidden(postNr));
       },
 
       assertPostNotHidden: function(postNr: PostNr) {
@@ -1275,7 +1292,7 @@ function pagesFor(browser) {
       },
 
       clickClose: function() {
-        this.serverErrorDialog.close();
+        api.serverErrorDialog.close();
       },
 
       close: function() {
