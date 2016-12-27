@@ -136,36 +136,6 @@ function addCommandsToBrowser(browser) {
   });
 
 
-  browser.addCommand('waitAndClick', function(selector) {
-    browser._waitAndClickImpl(selector, true);
-  });
-
-  browser.addCommand('waitAndClickFirst', function(selector) {
-      browser._waitAndClickImpl(selector, false);
-  });
-
-  browser.addCommand('_waitAndClickImpl', function(selector, mustBeExactlyOne) {
-    browser.waitForVisible(selector);
-    browser.waitForEnabled(selector);
-    browser.waitUntilLoadingOverlayGone();
-    if (!selector.startsWith('#') && mustBeExactlyOne) {
-      var errors = '';
-      var length = 1;
-      var byBrowserResults = byBrowser(browser.elements(selector));
-      _.forOwn(byBrowserResults, (result, browserName) => {
-        var elems = result.value;
-        if (elems.length !== 1) {
-          length = elems.length;
-          errors += browserNamePrefix(browserName) + "Bad num elems to click: " + count(elems) +
-              ", should be 1. Elems matches selector: " + selector + " [EsE5JKP82]\n";
-        }
-      });
-      assert.equal(length, 1, errors);
-    }
-    browser.click(selector);
-  });
-
-
   browser.addCommand('waitForThenClickText', function(selector, regex) {
     var elemId = browser.waitAndGetElemIdWithText(selector, regex);
     browser.elementIdClick(elemId);

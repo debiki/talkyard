@@ -7,7 +7,13 @@ import logAndDie = require('./log-and-die');
 import settings = require('./settings');
 import c = require('../test-constants');
 var logUnusual = logAndDie.logUnusual, die = logAndDie.die, dieIf = logAndDie.dieIf;
+var logError = logAndDie.logError;
 var logMessage = logAndDie.logMessage;
+
+
+function count(elems): number {
+  return elems && elems.value ? elems.value.length : 0;
+}
 
 
 function byBrowser(result) {  // dupl code [4WKET0] move all to here?
@@ -80,6 +86,44 @@ function pagesFor(browser) {
       die(`Never stops moving: '${buttonSelector}' [EdE7KFYU0]`);
     },
 
+
+    // Placed here, because if placed in commands.ts, exception(s) cannot be caught, [7KSU024]
+    // — seems like some weird Chrome - ChromeDriver - Selenium - Fibers - Webdriver.io thing,
+    // probably Chrome? because everything was working until I upgraded Chrome & ChromeDriver.
+    // Anyway, when placed here, exceptions work as they should.
+    //
+    waitAndClick: function(selector) {
+      api._waitAndClickImpl(selector, true);
+    },
+
+
+    waitAndClickFirst: function(selector) {
+      api._waitAndClickImpl(selector, false);
+    },
+
+
+    _waitAndClickImpl: function(selector, mustBeExactlyOne) {
+      browser.waitForVisible(selector);
+      browser.waitForEnabled(selector);
+      browser.waitUntilLoadingOverlayGone();
+      if (!selector.startsWith('#') && mustBeExactlyOne) {
+        var errors = '';
+        var length = 1;
+        var byBrowserResults = byBrowser(browser.elements(selector));
+        _.forOwn(byBrowserResults, (result, browserName) => {
+          var elems = result.value;
+          if (elems.length !== 1) {
+            length = elems.length;
+            errors += browserNamePrefix(browserName) + "Bad num elems to click: " + count(elems) +
+              ", should be 1. Elems matches selector: " + selector + " [EsE5JKP82]\n";
+          }
+        });
+        assert.equal(length, 1, errors);
+      }
+      browser.click(selector);
+    },
+
+
     assertPageHtmlSourceDoesNotMatch: function(toMatch) {
       let resultsByBrowser = byBrowser(browser.getSource());
       let regex = _.isString(toMatch) ? new RegExp(toMatch) : toMatch;
@@ -113,11 +157,11 @@ function pagesFor(browser) {
     createSomething: {
       createForum: function(forumTitle) {
         // Button gone, I'll add it back if there'll be Blog & Wiki too.
-        // browser.waitAndClick('#e2eCreateForum');
+        // api.waitAndClick('#e2eCreateForum');
         browser.pause(200); // [e2erace] otherwise it won't find the next input, in the
                             // create-site-all-logins @facebook test
         browser.waitAndSetValue('input[type="text"]', forumTitle);
-        browser.waitAndClick('#e2eDoCreateForum');
+        api.waitAndClick('#e2eDoCreateForum');
         var actualTitle = browser.waitAndGetVisibleText('h1.dw-p-ttl');
         assert.equal(actualTitle, forumTitle);
       },
@@ -142,17 +186,17 @@ function pagesFor(browser) {
       },
 
       clickLogin: function() {
-        browser.waitAndClick('.esTopbar_logIn');
+        api.waitAndClick('.esTopbar_logIn');
       },
 
       clickSignUp: function() {
-        browser.waitAndClick('.esTopbar_signUp');
+        api.waitAndClick('.esTopbar_signUp');
       },
 
       clickLogout: function(options?: { waitForLoginButton?: boolean }) {
         options = options || {};
-        browser.waitAndClick('.esMyMenu');
-        browser.waitAndClick('#e2eMM_Logout');
+        api.waitAndClick('.esMyMenu');
+        api.waitAndClick('#e2eMM_Logout');
         if (options.waitForLoginButton !== false) {
           // Then a login dialog will probably have opened now in full screen, with a modal
           // backdrop, so don't wait for any backdrop to disappear.
@@ -163,15 +207,15 @@ function pagesFor(browser) {
 
       clickGoToAdmin: function() {
         browser.rememberCurrentUrl();
-        browser.waitAndClick('.esMyMenu');
-        browser.waitAndClick('.esMyMenu_admin a');
+        api.waitAndClick('.esMyMenu');
+        api.waitAndClick('.esMyMenu_admin a');
         browser.waitForNewUrl();
       },
 
       clickGoToProfile: function() {
         browser.rememberCurrentUrl();
-        browser.waitAndClick('.esMyMenu');
-        browser.waitAndClick('#e2eMM_Profile');
+        api.waitAndClick('.esMyMenu');
+        api.waitAndClick('#e2eMM_Profile');
         browser.waitForNewUrl();
         browser.waitForVisible('.user-info');
       },
@@ -179,8 +223,8 @@ function pagesFor(browser) {
       clickStopImpersonating: function() {
         let oldName = api.topbar.getMyUsername();
         let newName;
-        browser.waitAndClick('.esMyMenu');
-        browser.waitAndClick('#e2eMM_StopImp');
+        api.waitAndClick('.esMyMenu');
+        api.waitAndClick('#e2eMM_StopImp');
         browser.waitForVisible('.user-info');
         do {
           newName = api.topbar.getMyUsername();
@@ -189,7 +233,7 @@ function pagesFor(browser) {
       },
 
       searchFor: function(phrase: string) {
-        browser.waitAndClick('.esTB_SearchBtn');
+        api.waitAndClick('.esTB_SearchBtn');
         browser.waitAndSetValue('.esTB_SearchD input[name="q"]', phrase);
         browser.click('.e_SearchB');
       },
@@ -199,9 +243,9 @@ function pagesFor(browser) {
       },
 
       openNotfToMe: function(options?: { waitForNewUrl?: boolean }) {
-        browser.waitAndClick('.esMyMenu');
+        api.waitAndClick('.esMyMenu');
         browser.rememberCurrentUrl();
-        browser.waitAndClick('.esMyMenu .dropdown-menu .esNotf-toMe');
+        api.waitAndClick('.esMyMenu .dropdown-menu .esNotf-toMe');
         if (options && options.waitForNewUrl !== false) {
           browser.waitForNewUrl();
         }
@@ -210,8 +254,8 @@ function pagesFor(browser) {
       myMenu: {
         goToAdminReview: function() {
           browser.rememberCurrentUrl();
-          browser.waitAndClick('.esMyMenu');
-          browser.waitAndClick('#e2eMM_Review');
+          api.waitAndClick('.esMyMenu');
+          api.waitAndClick('#e2eMM_Review');
           browser.waitForNewUrl();
           browser.waitForVisible('.e_A_Rvw');
         },
@@ -223,7 +267,7 @@ function pagesFor(browser) {
       titleSelector: '.esWB_T_Title',
 
       open: function() {
-        browser.waitAndClick('.esOpenWatchbarBtn');
+        api.waitAndClick('.esOpenWatchbarBtn');
         browser.waitForVisible('#esWatchbarColumn');
       },
 
@@ -264,24 +308,24 @@ function pagesFor(browser) {
       },
 
       clickCreateChat: function() {
-        browser.waitAndClick('#e2eCreateChatB');
+        api.waitAndClick('#e2eCreateChatB');
       },
 
       clickCreateChatWaitForEditor: function() {
-        browser.waitAndClick('#e2eCreateChatB');
+        api.waitAndClick('#e2eCreateChatB');
         browser.waitForVisible('.esEdtr_titleEtc');
       },
 
       clickViewPeople: function() {
-        browser.waitAndClick('.esWB_T-Current .esWB_T_Link');
-        browser.waitAndClick('#e2eWB_ViewPeopleB');
+        api.waitAndClick('.esWB_T-Current .esWB_T_Link');
+        api.waitAndClick('#e2eWB_ViewPeopleB');
         browser.waitUntilModalGone();
         browser.waitForVisible('.esCtxbar_list_title');
       },
 
       clickLeaveChat: function() {
-        browser.waitAndClick('.esWB_T-Current .esWB_T_Link');
-        browser.waitAndClick('#e2eWB_LeaveB');
+        api.waitAndClick('.esWB_T-Current .esWB_T_Link');
+        api.waitAndClick('#e2eWB_LeaveB');
         browser.waitUntilModalGone();
         browser.waitForVisible('#theJoinChatB');
       },
@@ -296,7 +340,7 @@ function pagesFor(browser) {
       },
 
       clickAddPeople: function() {
-        browser.waitAndClick('#e2eCB_AddPeopleB');
+        api.waitAndClick('#e2eCB_AddPeopleB');
         browser.waitForVisible('#e2eAddUsD');
       },
 
@@ -416,7 +460,7 @@ function pagesFor(browser) {
       },
 
       clickLoginAsGuest: function() {
-        browser.waitAndClick('.esLoginDlg_guestBtn');
+        api.waitAndClick('.esLoginDlg_guestBtn');
       },
 
       fillInGuestName: function(name: string) {
@@ -428,16 +472,16 @@ function pagesFor(browser) {
       },
 
       submitGuestLogin: function() {
-        browser.waitAndClick('#e2eLD_G_Submit');
+        api.waitAndClick('#e2eLD_G_Submit');
       },
 
       clickCancelGuestLogin: function() {
-        browser.waitAndClick('.e_LD_G_Cancel');
+        api.waitAndClick('.e_LD_G_Cancel');
         browser.waitUntilGone('.e_LD_G_Cancel');
       },
 
       clickCreateAccountInstead: function() {
-        browser.waitAndClick('.esLD_Switch_L');
+        api.waitAndClick('.esLD_Switch_L');
       },
 
       createGmailAccount: function(data) {
@@ -452,7 +496,7 @@ function pagesFor(browser) {
       loginWithGmail: function(data) {
         // Pause or sometimes the click misses the button. Is the browser doing some re-layout?
         browser.pause(100);
-        browser.waitAndClick('#e2eLoginGoogle');
+        api.waitAndClick('#e2eLoginGoogle');
 
         // In Google's login popup window:
         browser.swithToOtherTabOrWindow();
@@ -480,7 +524,7 @@ function pagesFor(browser) {
       loginWithFacebook: function(data) {
         // Pause or sometimes the click misses the button. Is the browser doing some re-layout?
         browser.pause(100);
-        browser.waitAndClick('#e2eLoginFacebook');
+        api.waitAndClick('#e2eLoginFacebook');
 
         // In Facebook's login popup window:
         browser.swithToOtherTabOrWindow();
@@ -488,7 +532,7 @@ function pagesFor(browser) {
         browser.waitAndSetValue('#pass', data.password);
 
         // Facebook recently changed from <input> to <button>. So just find anything with type=submit.
-        browser.waitAndClick('[type=submit]');
+        api.waitAndClick('[type=submit]');
 
         // Facebook somehow auto accepts the confirmation dialog, perhaps because
         // I'm using a Facebook API test user. So need not do this:
@@ -507,7 +551,7 @@ function pagesFor(browser) {
       },
 
       clickSubmit: function() {
-        browser.waitAndClick('#e2eSubmit');
+        api.waitAndClick('#e2eSubmit');
       },
 
       clickCancel: function() {
@@ -528,14 +572,14 @@ function pagesFor(browser) {
       },
 
       clickSubmit: function() {
-        browser.waitAndClick('#e2eRPP_SubmitB');
+        api.waitAndClick('#e2eRPP_SubmitB');
       },
     },
 
 
     pageTitle: {
       clickEdit: function() {
-        browser.waitAndClick('#e2eEditTitle');
+        api.waitAndClick('#e2eEditTitle');
       },
 
       editTitle: function(title: string) {
@@ -569,35 +613,35 @@ function pagesFor(browser) {
 
     forumButtons: {
       clickEditIntroText: function() {
-        browser.waitAndClick('.esForumIntro_edit');
-        browser.waitAndClick('#e2eEID_EditIntroB');
+        api.waitAndClick('.esForumIntro_edit');
+        api.waitAndClick('#e2eEID_EditIntroB');
         browser.waitUntilModalGone();
       },
 
       clickRemoveIntroText: function() {
-        browser.waitAndClick('.esForumIntro_edit');
-        browser.waitAndClick('#e2eEID_RemoveIntroB');
+        api.waitAndClick('.esForumIntro_edit');
+        api.waitAndClick('#e2eEID_RemoveIntroB');
         browser.waitUntilModalGone();
       },
 
       clickViewCategories: function() {
-        browser.waitAndClick('#e2eViewCategoriesB');
+        api.waitAndClick('#e2eViewCategoriesB');
       },
 
       clickViewTopics: function() {
-        browser.waitAndClick('#e2eViewTopicsB');
+        api.waitAndClick('#e2eViewTopicsB');
       },
 
       clickCreateCategory: function() {
-        browser.waitAndClick('#e2eCreateCategoryB');
+        api.waitAndClick('#e2eCreateCategoryB');
       },
 
       clickEditCategory: function() {
-        browser.waitAndClick('.esF_BB_EditCat');
+        api.waitAndClick('.esF_BB_EditCat');
       },
 
       clickCreateTopic: function() {
-        browser.waitAndClick('#e2eCreateSth');
+        api.waitAndClick('#e2eCreateSth');
       },
 
       assertNoCreateTopicButton: function() {
@@ -621,12 +665,12 @@ function pagesFor(browser) {
       },
 
       clickViewLatest: function() {
-        browser.waitAndClick('#e2eSortLatestB');
+        api.waitAndClick('#e2eSortLatestB');
         browser.waitUntilGone('.e_F_SI_Top');
       },
 
       clickViewTop: function() {
-        browser.waitAndClick('#e2eSortTopB');
+        api.waitAndClick('#e2eSortTopB');
         browser.waitForVisible('.e_F_SI_Top');
       },
 
@@ -678,19 +722,19 @@ function pagesFor(browser) {
       fillInFields: function(data) {
         browser.waitAndSetValue('#e2eCatNameI', data.name);
         if (data.setAsDefault) {
-          browser.waitAndClick('#e2eSetDefCat');
+          api.waitAndClick('#e2eSetDefCat');
         }
         /*
          browser.waitAndSetValue('#e2eUsername', data.username);
          browser.waitAndSetValue('#e2eEmail', data.email);
          browser.waitAndSetValue('#e2ePassword', data.password);
-         browser.waitAndClick('#e2eSubmit');
+         api.waitAndClick('#e2eSubmit');
          browser.waitForVisible('#e2eNeedVerifyEmailDialog');
          */
       },
 
       submit: function() {
-        browser.waitAndClick('#e2eSaveCatB');
+        api.waitAndClick('#e2eSaveCatB');
         browser.waitUntilModalGone();
         browser.waitUntilLoadingOverlayGone();
       },
@@ -700,18 +744,18 @@ function pagesFor(browser) {
     aboutUserDialog: {
       clickSendMessage: function() {
         browser.rememberCurrentUrl();
-        browser.waitAndClick('#e2eUD_MessageB');
+        api.waitAndClick('#e2eUD_MessageB');
         browser.waitForNewUrl();
       },
 
       clickViewProfile: function() {
         browser.rememberCurrentUrl();
-        browser.waitAndClick('#e2eUD_ProfileB');
+        api.waitAndClick('#e2eUD_ProfileB');
         browser.waitForNewUrl();
       },
 
       clickRemoveFromPage: function() {
-        browser.waitAndClick('#e2eUD_RemoveB');
+        api.waitAndClick('#e2eUD_RemoveB');
         // Later: browser.waitUntilModalGone();
         // But for now:  [5FKE0WY2]
         browser.waitForVisible('.esStupidDlg');
@@ -722,7 +766,7 @@ function pagesFor(browser) {
 
     addUsersToPageDialog: {
       addOneUser: function(username: string) {
-        browser.waitAndClick('#e2eAddUsD .Select-placeholder');
+        api.waitAndClick('#e2eAddUsD .Select-placeholder');
         browser.waitAndSetValue('#e2eAddUsD .Select-input > input', username);
         browser.keys(['Return']);
         // Weird. The react-select dropdown is open and needs to be closed, otherwise
@@ -758,11 +802,11 @@ function pagesFor(browser) {
           case c.TestPageRole.PrivateChat: optionId = '#e2eTTD_PrivChatO'; break;
           default: die('Test unimpl [EsE4WK0UP]');
         }
-        browser.waitAndClick('.esTopicType_dropdown');
+        api.waitAndClick('.esTopicType_dropdown');
         if (needsClickMore) {
-          browser.waitAndClick('.esPageRole_showMore');
+          api.waitAndClick('.esPageRole_showMore');
         }
-        browser.waitAndClick(optionId);
+        api.waitAndClick(optionId);
         browser.waitUntilModalGone();
       },
 
@@ -790,7 +834,7 @@ function pagesFor(browser) {
 
     topic: {
       clickEditOrigPost: function() {
-        browser.waitAndClick('.dw-ar-t > .dw-p-as .dw-a-edit');
+        api.waitAndClick('.dw-ar-t > .dw-p-as .dw-a-edit');
       },
 
       clickHomeNavLink: function() {
@@ -865,7 +909,7 @@ function pagesFor(browser) {
 
       clickFlagPost: function(postNr: PostNr) {
         api.topic.clickMoreForPostNr(postNr);
-        browser.waitAndClick('.icon-flag');  // for now, later: e_...
+        api.waitAndClick('.icon-flag');  // for now, later: e_...
       },
 
       assertPostHidden: function(postNr: PostNr) {
@@ -927,14 +971,20 @@ function pagesFor(browser) {
             browser.pause(200 + 50);
           }
           try {
-            browser.waitAndClick(buttonSelector);
+            // Now suddenly, after I upgraded to a newer Chrome version?, an elem-is-not-
+            // -clickable exception thrown by waitAndClick, does *not* get caught by this
+            // try-catch, *if* waitAndClick is added to `browser` as a command in commands.ts.
+            // So I moved it to the top of this file instead. [7KSU024]
+            api.waitAndClick(buttonSelector);
             break;
           }
           catch (exception) {
             // Click failed because the scroll buttons appeared after `canScroll = ...isVisible...`
             // but before `...waitAndClick...`? But that can happen only once.
-            if (attemptNr === 2)
+            if (attemptNr === 2) {
+              logError(`Error clicking post action button, selector: ${buttonSelector} [EdE2K045]`);
               throw exception;
+            }
           }
         }
       },
@@ -968,7 +1018,7 @@ function pagesFor(browser) {
     chat: {
       addChatMessage: function(text: string) {
         browser.waitAndSetValue('.esC_Edtr_textarea', text);
-        browser.waitAndClick('.esC_Edtr_SaveB');
+        api.waitAndClick('.esC_Edtr_SaveB');
         browser.waitUntilLoadingOverlayGone();
         // could verify visible
       },
@@ -1047,7 +1097,7 @@ function pagesFor(browser) {
       goToSearchResult: function(linkText?: string) {
         browser.rememberCurrentUrl();
         if (!linkText) {
-          browser.waitAndClick('.esSERP_Hit_PageTitle a');
+          api.waitAndClick('.esSERP_Hit_PageTitle a');
         }
         else {
           browser.waitForThenClickText('.esSERP_Hit_PageTitle a', linkText);
@@ -1084,7 +1134,7 @@ function pagesFor(browser) {
       },
 
       clickSendMessage: function() {
-        browser.waitAndClick('.e_UP_SendMsgB');
+        api.waitAndClick('.e_UP_SendMsgB');
       },
 
       notfs: {
@@ -1116,11 +1166,11 @@ function pagesFor(browser) {
       },
 
       clickInappropriate: function() {
-        browser.waitAndClick('.e_FD_InaptRB label');
+        api.waitAndClick('.e_FD_InaptRB label');
       },
 
       submit: function() {
-        browser.waitAndClick('.e_FD_SubmitB');
+        api.waitAndClick('.e_FD_SubmitB');
         // Don't: browser.waitUntilModalGone(), because now the stupid-dialog pop ups
         // and says "Thanks", and needs to be closed.
       },
@@ -1129,7 +1179,7 @@ function pagesFor(browser) {
 
     stupidDialog: {
       close: function() {
-        browser.waitAndClick('.e_SD_CloseB');
+        api.waitAndClick('.e_SD_CloseB');
         browser.waitUntilModalGone();
       },
     },
@@ -1143,7 +1193,7 @@ function pagesFor(browser) {
 
       clickLeaveAdminArea: function() {
         browser.rememberCurrentUrl();
-        browser.waitAndClick('.esTopbar_custom_backToSite');
+        api.waitAndClick('.esTopbar_custom_backToSite');
         browser.waitForNewUrl();
       },
 
@@ -1157,33 +1207,33 @@ function pagesFor(browser) {
 
       settings: {
         clickSaveAll: function() {
-          browser.waitAndClick('.esA_SaveBar_SaveAllB');
+          api.waitAndClick('.esA_SaveBar_SaveAllB');
         },
 
         clickLegalNavLink: function() {
-          browser.waitAndClick('#e2eAA_Ss_LegalL');
+          api.waitAndClick('#e2eAA_Ss_LegalL');
           browser.waitForVisible('#e2eAA_Ss_OrgNameTI');
         },
 
         clickLoginNavLink: function() {
-          browser.waitAndClick('#e2eAA_Ss_LoginL');
+          api.waitAndClick('#e2eAA_Ss_LoginL');
           browser.waitForVisible('#e2eLoginRequiredCB');
         },
 
         clickModerationNavLink: function() {
-          browser.waitAndClick('#e2eAA_Ss_ModL');
+          api.waitAndClick('#e2eAA_Ss_ModL');
         },
 
         clickAnalyticsNavLink: function() {
-          browser.waitAndClick('#e2eAA_Ss_AnalyticsL');
+          api.waitAndClick('#e2eAA_Ss_AnalyticsL');
         },
 
         clickAdvancedNavLink: function() {
-          browser.waitAndClick('#e2eAA_Ss_AdvancedL');
+          api.waitAndClick('#e2eAA_Ss_AdvancedL');
         },
 
         clickExperimentalNavLink: function() {
-          browser.waitAndClick('#e2eAA_Ss_ExpL');
+          api.waitAndClick('#e2eAA_Ss_ExpL');
         },
 
         legal: {
@@ -1198,18 +1248,18 @@ function pagesFor(browser) {
 
         login: {
           clickLoginRequired: function() {
-            browser.waitAndClick('#e2eLoginRequiredCB');
+            api.waitAndClick('#e2eLoginRequiredCB');
           },
 
           clickAllowGuestLogin: function() {
-            browser.waitAndClick('#e2eAllowGuestsCB');
+            api.waitAndClick('#e2eAllowGuestsCB');
           },
         },
       },
 
       review: {
         approveNextWhatever: function() {
-          browser.waitAndClickFirst('.e_A_Rvw_AcptB');
+          api.waitAndClickFirst('.e_A_Rvw_AcptB');
           browser.waitUntilModalGone();
         },
 
@@ -1236,7 +1286,7 @@ function pagesFor(browser) {
 
     helpDialog: {
       waitForThenClose: function() {
-        browser.waitAndClick('.esHelpDlg .btn-primary');
+        api.waitAndClick('.esHelpDlg .btn-primary');
         browser.waitUntilModalGone();
       },
     },

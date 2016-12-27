@@ -57,11 +57,11 @@
     "minimist": "^1.2.0",
     "react-typescript-definitions": "0.0.6",
     "request": "^2.64.0",
-    "selenium-standalone": "^5.5.0",
+    "selenium-standalone": "^5.9.0",
     "sync-request": "^3.0.0",
     "wdio-dot-reporter": "^0.0.6",
-    "wdio-mocha-framework": "^0.4.3",
-    "wdio-sync": "^0.5.13",
-    "webdriverio": "4.3.0"
+    "wdio-mocha-framework": "^0.5.8",
+    "wdio-sync": "^0.6.10",
+    "webdriverio": "^4.5.2"
   }
 }

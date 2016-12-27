@@ -2,10 +2,12 @@
 /// <reference path="../../../../modules/definitely-typed/node/node.d.ts"/>
 /// <reference path="../../../../modules/definitely-typed/mocha/mocha.d.ts"/>
 
+import _ = require('lodash');
 import assert = require('assert');
 import server = require('../utils/server');
 import utils = require('../utils/utils');
 import pages = require('../utils/pages');
+import pagesFor = require('../utils/pages-for');
 import settings = require('../utils/settings');
 import logAndDie = require('../utils/log-and-die');
 var logUnusual = logAndDie.logUnusual, die = logAndDie.die, dieIf = logAndDie.dieIf;
@@ -34,6 +36,7 @@ describe('/-/create-site  @createsite', function() {
   }
 
   it('can create a new site as a Password user  @login @password', function() {
+    browser = _.assign(browser, pagesFor(browser));
     browser.perhapsDebugBefore();
     var data = createPasswordTestData();
     browser.go(utils.makeCreateSiteWithFakeIpUrl());
