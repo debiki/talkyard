@@ -51,9 +51,13 @@ function runAllEndToEndTests {
   ###runEndToEndTest scripts/wdio target/e2e/wdio.3chrome.conf.js --browser $browser --only custom-forms.3browsers $args
   runEndToEndTest scripts/wdio target/e2e/wdio.2chrome.conf.js    --browser $browser --only impersonate.2browsers $args
   runEndToEndTest scripts/wdio target/e2e/wdio.2chrome.conf.js    --browser $browser --only unsubscribe.2browsers $args
+  runEndToEndTest scripts/wdio target/e2e/wdio.2chrome.conf.js    --browser $browser --only new-user-review-ok.2browsers $args
+  #runEndToEndTest scripts/wdio target/e2e/wdio.2chrome.conf.js    --browser $browser --only new-user-review-bad.2browsers $args
+  runEndToEndTest scripts/wdio target/e2e/wdio.2chrome.conf.js    --browser $browser --only new-member-allow-approve.2browsers $args
+  #runEndToEndTest scripts/wdio target/e2e/wdio.2chrome.conf.js    --browser $browser --only new-member-allow-reject.2browsers $args
   runEndToEndTest scripts/wdio target/e2e/wdio.2chrome.conf.js    --browser $browser --only spam-basic-local.2browsers $args
   runEndToEndTest scripts/wdio target/e2e/wdio.2chrome.conf.js    --browser $browser --only flag-member-block-agree.2browsers $args
-  #runEndToEndTest scripts/wdio target/e2e/wdio.2chrome.conf.js    --browser $browser --only flag-guest-block-agree.2browsers $args
+  runEndToEndTest scripts/wdio target/e2e/wdio.2chrome.conf.js    --browser $browser --only flag-guest-block-agree.2browsers $args
   runEndToEndTest scripts/wdio target/e2e/wdio.2chrome.conf.js    --browser $browser --only search-public-basic.2browsers $args
 }
 

@@ -88,6 +88,10 @@ function pagesFor(browser) {
       });
     },
 
+    assertUrlIs: function(expectedUrl) {
+      let url = browser.url().value;
+      assert(url === expectedUrl);
+    },
 
     createSite: {
       fillInFieldsAndSubmit: function(data) {
@@ -913,13 +917,14 @@ function pagesFor(browser) {
             if (!canScroll)
               break;
             let fixedBarLocation = browser.getLocationInView(api.scrollButtons.fixedBarSelector);
-            if (replyButtonLocation.y + 70 < fixedBarLocation.y)
+            if (replyButtonLocation.y > 60 && // fixed topbar, about 40px tall
+                replyButtonLocation.y + 70 < fixedBarLocation.y)
               break;
             browser.execute(function(selector) {
               window['debiki2'].utils.scrollIntoViewInPageColumn(
-                  selector, {marginBottom: 70 + 20, duration: 220});
+                  selector, { marginTop: 60 + 20, marginBottom: 70 + 20, duration: 220 });
             }, buttonSelector);
-            browser.pause(220 + 10);
+            browser.pause(220 + 30);
           }
           try {
             browser.waitAndClick(buttonSelector);
@@ -1206,6 +1211,10 @@ function pagesFor(browser) {
         approveNextWhatever: function() {
           browser.waitAndClickFirst('.e_A_Rvw_AcptB');
           browser.waitUntilModalGone();
+        },
+
+        isMoreStuffToReview: function() {
+          return browser.isVisible('.e_A_Rvw_AcptB');
         },
       },
     },

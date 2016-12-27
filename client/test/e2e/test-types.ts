@@ -37,7 +37,7 @@ interface SiteData {
   settings: {
     companyFullName: string,
     allowGuestLogin?: boolean,
-    //numFirstPostsToReview?: number,
+    numFirstPostsToReview?: number,
     numFirstPostsToApprove?: number,
     numFirstPostsToAllow?: number,
     numFlagsToHidePost?: number,

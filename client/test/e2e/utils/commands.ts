@@ -138,11 +138,11 @@ function addCommandsToBrowser(browser) {
 
   browser.addCommand('waitAndClick', function(selector) {
     browser._waitAndClickImpl(selector, true);
-  },
+  });
 
   browser.addCommand('waitAndClickFirst', function(selector) {
       browser._waitAndClickImpl(selector, false);
-  },
+  });
 
   browser.addCommand('_waitAndClickImpl', function(selector, mustBeExactlyOne) {
     browser.waitForVisible(selector);

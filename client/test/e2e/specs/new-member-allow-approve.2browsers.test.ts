@@ -37,7 +37,7 @@ let topics = {
 };
 
 
-describe("spam test, no external services:", () => {
+describe("new member, allow, approve:", () => {
 
   it("initialize people", () => {
     browser.perhapsDebugBefore();
