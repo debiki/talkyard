@@ -242,8 +242,10 @@ links -
 
 site settings:
   login -
-    login to read content:  settings-login-to-read.3browsers.test.ts
-    new users need approval:
+    login required:  settings-login-to-read.3browsers.test.ts
+    approve users:
+    allow signup:
+    allow local signup:
     guest login allowed:
   moderation -
     num to review,

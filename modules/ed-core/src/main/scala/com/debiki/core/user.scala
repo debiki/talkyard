@@ -376,7 +376,6 @@ sealed trait User {
   def isModerator: Boolean
   def isSuperAdmin: Boolean
 
-  @deprecated("now", "use isMember instead?")
   def isAuthenticated = isRoleId(id)
   def isApprovedOrStaff = isApproved.contains(true) || isStaff
   def isSystemUser = id == SystemUserId

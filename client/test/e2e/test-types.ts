@@ -36,6 +36,9 @@ interface SiteData {
   meta: SiteMeta;
   settings: {
     companyFullName: string,
+    // inviteOnly?: boolean;
+    allowSignup?: boolean;
+    // allowLocalSignup?: boolean;
     allowGuestLogin?: boolean,
     numFirstPostsToReview?: number,
     numFirstPostsToApprove?: number,

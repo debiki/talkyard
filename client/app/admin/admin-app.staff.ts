@@ -49,7 +49,7 @@ export function routes() {
   return [
     Redirect({ key: 'redir', from: AdminRoot, to: AdminRoot + 'settings' }), // later: --> /dashboard
     Route({ key: 'routes', path: AdminRoot, component: AdminAppComponent },
-      Redirect({ from: 'users', to: AdminRoot + 'users/active' }),
+      Redirect({ from: 'users', to: AdminRoot + 'users/enabled' }),
       Redirect({ from: 'review', to: AdminRoot + 'review/all' }),
       Redirect({ from: 'settings', to: AdminRoot + 'settings/legal' }),
       Route({ path: 'settings', component: SettingsPanelComponent },
@@ -61,12 +61,12 @@ export function routes() {
         Route({ path: 'advanced', component: AdvancedSettingsComponent }),
         Route({ path: 'experimental', component: ExperimentalSettingsComponent })),
       Route({ path: 'users', component: UsersTabComponent },
-        Route({ path: 'active', component: ActiveUsersPanelComponent }),
+        Route({ path: 'enabled', component: ActiveUsersPanelComponent }),
         Route({ path: 'new', component: NewUsersPanelComponent }),
         Route({ path: 'invited', component: InvitedUsersPanelComponent }),
         Route({ path: 'staff', component: NotYetImplementedComponent }),
         Route({ path: 'suspended', component: NotYetImplementedComponent }),
-        Route({ path: 'threads', component: NotYetImplementedComponent }),
+        Route({ path: 'threats', component: NotYetImplementedComponent }),
         Route({ path: 'id/:userId', component: AdminUserPageComponent })),
       Route({ path: 'customize', component: CustomizePanelComponent }),
       Route({ path: 'review', component: ReviewPanelComponent },
@@ -253,48 +253,77 @@ var LoginSettingsComponent = React.createClass(<any> {
       firstDefinedOf(getter(editedSettings), getter(currentSettings));
 
     var canEnableGuestLogin =
-      !valueOf(s => s.userMustBeApproved) && !valueOf(s => s.userMustBeAuthenticated);
+      !valueOf(s => s.userMustBeApproved) && !valueOf(s => s.userMustBeAuthenticated) &&
+        valueOf(s => s.allowSignup);  // && !invite-only (6KWU20)
 
     return (
       r.div({},
         Setting2(props, { type: 'checkbox', label: "Login required", id: 'e2eLoginRequiredCB',
+          className: 'e_A_Ss_S-LoginRequiredCB',
           help: r.span({}, "Require authentication to read content. Users must then login " +
-            "with password or via ", r.i({}, "for example "), "Google or Facebook, but " +
-            "anonymous access is disabled.)"),
+            "with ", r.i({}, "for example"), " password, or Google or Facebook — but " +
+            "anonymous access is disabled."),
           getter: (s: Settings) => s.userMustBeAuthenticated,
           update: (newSettings: Settings, target) => {
             newSettings.userMustBeAuthenticated = target.checked;
             if (target.checked && valueOf(s => s.allowGuestLogin)) {
               newSettings.allowGuestLogin = false;
             }
-            if (!target.checked && valueOf(s => s.userMustBeApproved)) {
-              // See just below [5FKA2E]
-              newSettings.userMustBeApproved = false;
-            }
           }
         }),
 
         Setting2(props, { type: 'checkbox', label: "Approve users", id: 'e2eApproveUsersCB',
+          className: 'e_A_Ss_S-ApproveUsersCB',
           help: "New user need to be approved by staff before they can access the site.",
           getter: (s: Settings) => s.userMustBeApproved,
           update: (newSettings: Settings, target) => {
             newSettings.userMustBeApproved = target.checked;
-            if (target.checked && !valueOf(s => s.userMustBeAuthenticated)) {
-              // Currently if must-be-approved, then an authentication dialog is shown [5FKA2E]
-              // before one can access the site — which means that userMustBeAuthenticated
-              // is in practice true. So don't let people set that option to false then.
-              newSettings.userMustBeAuthenticated = true;
-            }
             if (target.checked && valueOf(s => s.allowGuestLogin)) {
               newSettings.allowGuestLogin = false;
             }
           }
         }),
 
+        /* Not yet implemented: (saved to db but won't have any effect)
+
+        Setting2(props, { type: 'checkbox', label: "Invite only",
+         className: 'e_A_Ss_S-InviteOnlyCB',
+         help: "People can join only after having been invited by other members or staff",
+          ... later ... and enable  (6KWU20) above.
+        });
+
+        Setting2(props, { type: 'checkbox', label: "Allow new registrations",
+          className: 'e_A_Ss_S-AllowSignupCB',
+          help: "Uncheck to prevent people from creating new accounts and join this site.",
+          getter: (s: Settings) => s.allowSignup,
+          update: (newSettings: Settings, target) => {
+            newSettings.allowSignup = target.checked;
+            if (!target.checked) {
+              if (valueOf(s => s.allowLocalSignup)) {
+                newSettings.allowLocalSignup = false;
+              }
+              if (valueOf(s => s.allowGuestLogin)) {
+                newSettings.allowGuestLogin = false;
+              }
+            }
+          }
+        }),
+
+        Setting2(props, { type: 'checkbox', label: "Allow local registrations",
+          className: 'e_A_Ss_S-AllowLoalSignupCB',
+          help: "Uncheck to prevent people from createing email + password accounts at this site.",
+          disabled: !valueOf(s => s.allowSignup),
+          getter: (s: Settings) => s.allowLocalSignup,
+          update: (newSettings: Settings, target) => {
+            newSettings.allowLocalSignup = target.checked;
+          }
+        }), */
+
         Setting2(props, { type: 'checkbox', label: "Allow guest login", id: 'e2eAllowGuestsCB',
+          className: 'e_A_Ss_S-AllowGuestsCB',
           help: "Lets people post comments and create topics, without specifying any " +
             "email address. They wouldn't be notified about replies, and " +
-            "you cannot contact them. Not recommended.",
+            "you cannot contact them. Usually not recommended.",
           disabled: !canEnableGuestLogin,
           getter: (s: Settings) => s.allowGuestLogin,
           update: (newSettings: Settings, target) => {

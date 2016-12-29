@@ -56,11 +56,13 @@ object ViewPageController extends mvc.Controller {
     val authenticationRequired = siteSettings.userMustBeAuthenticated ||
       siteSettings.userMustBeApproved
 
-    if (authenticationRequired && !request.theUser.isAuthenticated)
-      throwForbidden("EdE7KFW02", "Not authenticated")
+    if (authenticationRequired) {
+      if (!request.theUser.isAuthenticated)
+        throwForbidden("EdE7KFW02", "Not authenticated")
 
-    if (siteSettings.userMustBeApproved && !request.theUser.isApprovedOrStaff)
-      throwForbidden("EdE4F8WV0", "Account not approved")
+      if (siteSettings.userMustBeApproved && !request.theUser.isApprovedOrStaff)
+        throwForbidden("EdE4F8WV0", "Account not approved")
+    }
 
     val (maySee, debugCode) = dao.maySeePostUseCache(pageId, postNr, request.user)
     if (!maySee) {
@@ -102,29 +104,32 @@ object ViewPageController extends mvc.Controller {
     }
 
     val dao = request.dao
+    val user = request.user
     val siteSettings = dao.loadWholeSiteSettings()
     val authenticationRequired = siteSettings.userMustBeAuthenticated ||
       siteSettings.userMustBeApproved
 
-    if (authenticationRequired && !request.isAuthenticated) {
-      return Future.successful(Ok(views.html.login.loginPopup(
-        SiteTpi(request),
-        mode = "LoginToAuthenticate",
-        serverAddress = s"//${request.host}",
-        returnToUrl = request.uri)) as HTML)
-    }
-
-    if (siteSettings.userMustBeApproved && !request.isApprovedOrStaff) {
-      val message = request.theUser.isApproved match {
-        case None =>
-          o"""Your account has not yet been approved. Please wait until
-            someone in our staff has approved it."""
-        case Some(false) =>
-          "You may not access this site, sorry. There is no point in trying again."
-        case Some(true) =>
-          die("DwE7KEWK2", "Both not approved and approved")
+    if (authenticationRequired) {
+      if (!user.exists(_.isAuthenticated)) {
+        return Future.successful(Ok(views.html.login.loginPopup(
+          SiteTpi(request),
+          mode = "LoginToAuthenticate",
+          serverAddress = s"//${request.host}",
+          returnToUrl = request.uri)) as HTML)
       }
-      throwForbidden("DwE403KGW0", message)
+
+      if (siteSettings.userMustBeApproved && !user.exists(_.isApprovedOrStaff)) {
+        val message = request.theUser.isApproved match {
+          case None =>
+            o"""Your account has not yet been approved. Please wait until
+              someone in our staff has approved it."""
+          case Some(false) =>
+            "You may not access this site, sorry. There is no point in trying again."
+          case Some(true) =>
+            die("DwE7KEWK2", "Both not approved and approved")
+        }
+        throwForbidden("DwE403KGW0", message)
+      }
     }
 
     val correctPagePath = dao.checkPagePath(specifiedPagePath) getOrElse {

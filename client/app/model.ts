@@ -410,6 +410,9 @@ interface Store {
 
 
 interface SiteSettings {
+  inviteOnly: boolean;
+  allowSignup: boolean;
+  allowLocalSignup: boolean;
   allowGuestLogin: boolean;
   showComplicatedStuff: boolean;
   numFlagsToHidePost: number;
@@ -651,6 +654,9 @@ interface Settings {
   // Login
   userMustBeAuthenticated: boolean;
   userMustBeApproved: boolean;
+  inviteOnly: boolean;
+  allowSignup: boolean;
+  allowLocalSignup: boolean;
   allowGuestLogin: boolean;
 
   // Moderation

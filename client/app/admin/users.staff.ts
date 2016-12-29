@@ -41,7 +41,7 @@ export var UsersTabComponent = React.createClass(<any> {
       r.div({},
         r.div({ className: 'dw-sub-nav' },
           Nav({ bsStyle: 'pills' },
-            r.li({}, Link({ to: '/-/admin/users/active', activeClassName: 'active' }, "Active")),
+            r.li({}, Link({ to: '/-/admin/users/enabled', activeClassName: 'active' }, "Enabled")),
             r.li({}, Link({ to: '/-/admin/users/new', activeClassName: 'active' }, "Waiting")),
             r.li({}, Link({ to: '/-/admin/users/invited', activeClassName: 'active' }, "Invite")))),
             // with react-router-bootstrap, sth like:
@@ -55,8 +55,9 @@ export var UsersTabComponent = React.createClass(<any> {
 export var ActiveUsersPanelComponent = React.createClass({
   render: function() {
     return UserList({ whichUsers: 'ActiveUsers', intro: r.p({},
-      "Active user accounts: (This just means that the ", r.i({}, "account "),
+      "Enabled user accounts:") }); /* (This just means that the ", r.i({}, "account "),
       "is active — it does not mean that the users has been here recently.)") });
+      */
   }
 });
 
