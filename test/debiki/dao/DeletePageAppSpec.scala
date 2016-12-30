@@ -42,36 +42,36 @@ class DeletePageAppSpec extends DaoAppSuite(disableScripts = true, disableBackgr
     "admin can delete and undelete pages of all types" in {
       val admin = createPasswordOwner(s"dltr_admn", dao)
 
-      dao.loadPageMeta(discussionId).get.deletedAt mustBe None
-      dao.loadPageMeta(forumId).get.deletedAt mustBe None
-      dao.loadPageMeta(htmlPageId).get.deletedAt mustBe None
+      dao.getPageMeta(discussionId).get.deletedAt mustBe None
+      dao.getPageMeta(forumId).get.deletedAt mustBe None
+      dao.getPageMeta(htmlPageId).get.deletedAt mustBe None
 
       // Delete all pages.
       dao.deletePagesIfAuth(Seq(discussionId, forumId, htmlPageId),
         admin.id, browserIdData, undelete = false)
 
       // Verify marked as deleted.
-      dao.loadPageMeta(discussionId).get.deletedAt mustBe defined
-      dao.loadPageMeta(forumId).get.deletedAt mustBe defined
-      dao.loadPageMeta(htmlPageId).get.deletedAt mustBe defined
-      dao.loadPageMeta(otherPageId).get.deletedAt mustBe None
+      dao.getPageMeta(discussionId).get.deletedAt mustBe defined
+      dao.getPageMeta(forumId).get.deletedAt mustBe defined
+      dao.getPageMeta(htmlPageId).get.deletedAt mustBe defined
+      dao.getPageMeta(otherPageId).get.deletedAt mustBe None
 
       // Undelete, verify no longer marked as deleted.
       dao.deletePagesIfAuth(Seq(discussionId, forumId, htmlPageId),
         admin.id, browserIdData, undelete = true)
-      dao.loadPageMeta(discussionId).get.deletedAt mustBe None
-      dao.loadPageMeta(forumId).get.deletedAt mustBe None
-      dao.loadPageMeta(htmlPageId).get.deletedAt mustBe None
+      dao.getPageMeta(discussionId).get.deletedAt mustBe None
+      dao.getPageMeta(forumId).get.deletedAt mustBe None
+      dao.getPageMeta(htmlPageId).get.deletedAt mustBe None
     }
 
     "moderators may delete discussions" in {
       val moderator = createPasswordModerator(s"dltr_mod", dao)
 
       dao.deletePagesIfAuth(Seq(discussionId), moderator.id, browserIdData, undelete = false)
-      dao.loadPageMeta(discussionId).get.deletedAt mustBe defined
+      dao.getPageMeta(discussionId).get.deletedAt mustBe defined
 
       dao.deletePagesIfAuth(Seq(discussionId), moderator.id, browserIdData, undelete = true)
-      dao.loadPageMeta(discussionId).get.deletedAt mustBe None
+      dao.getPageMeta(discussionId).get.deletedAt mustBe None
 
       intercept[ResultException] {
         dao.deletePagesIfAuth(Seq(forumId), moderator.id, browserIdData, undelete = false)
@@ -86,7 +86,7 @@ class DeletePageAppSpec extends DaoAppSuite(disableScripts = true, disableBackgr
       val admin = createPasswordOwner(s"dltr_adm2", dao)
       val badPageId = "zzwwffpp"
       dao.deletePagesIfAuth(Seq(badPageId), admin.id, browserIdData, undelete = false)
-      dao.loadPageMeta(badPageId) mustBe None
+      dao.getPageMeta(badPageId) mustBe None
     }
 
     "non-staff may not delete" in {

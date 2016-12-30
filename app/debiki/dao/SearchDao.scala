@@ -68,7 +68,7 @@ trait SearchDao {
     // Later: Have ElasticSearch do as much filtering as possible instead, to e.g. filter
     // out private messages the user isn't not allowed to see, earlier. Better performance,
     // and we'll get as many search hits as we want.
-    val pageStuffByPageIdInclForbidden = loadPageStuff(hitsByPageId.keys)
+    val pageStuffByPageIdInclForbidden = getPageStuffById(hitsByPageId.keys)
     val pageStuffByPageId = pageStuffByPageIdInclForbidden filter { case (pageId, pageStuff) =>
       val (maySee, _) = maySeePageUseCache(pageStuff.pageMeta, user)
       maySee

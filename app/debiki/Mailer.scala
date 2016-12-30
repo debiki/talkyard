@@ -167,7 +167,7 @@ class Mailer(
     logger.debug(s"Sending email: $emailToSend")
 
     // Reload the user and his/her email address in case it's been changed recently.
-    val address = emailToSend.toUserId.flatMap(tenantDao.loadUser).map(_.email) getOrElse
+    val address = emailToSend.toUserId.flatMap(tenantDao.getUser).map(_.email) getOrElse
       emailToSend.sentTo
 
     val email = emailToSend.copy(sentTo = address, sentOn = now, providerEmailId = None)

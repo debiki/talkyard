@@ -41,6 +41,7 @@ import play.{api => p}
   */
 object PinController extends p.mvc.Controller {
 
+  COULD ; REFACTOR // merge w PageController
 
   def pinPage = StaffPostJsonAction(maxLength = 1000) { request =>
     val pageId = (request.body \ "pageId").as[PageId]

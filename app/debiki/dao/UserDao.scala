@@ -458,11 +458,11 @@ trait UserDao {
 
   def loadMember(userId: UserId): Option[Member] = {
     require(userId >= User.LowestMemberId, "EsE4GKX24")
-    loadUser(userId).map(_.asInstanceOf[Member])
+    getUser(userId).map(_.asInstanceOf[Member])
   }
 
 
-  def loadUser(userId: UserId): Option[User] = {
+  def getUser(userId: UserId): Option[User] = {
     memCache.lookup[User](
       key(userId),
       orCacheAndReturn = {
@@ -487,7 +487,7 @@ trait UserDao {
       case Some((identity, user)) => Some((Some(identity), user))
       case None =>
         // No OAuth or OpenID identity, try load password user:
-        loadUser(userId) match {
+        getUser(userId) match {
           case Some(user) =>
             Some((None, user))
           case None =>
@@ -504,14 +504,6 @@ trait UserDao {
       transaction.loadIdtyDetailsAndUser(userId)
     }
   }
-
-
-  def loadUserInfoAndStats(userId: UserId): Option[UserInfoAndStats] =
-    readOnlyTransaction(_.loadUserInfoAndStats(userId))
-
-
-  def listUserActions(userId: UserId): Seq[UserActionInfo] =
-    readOnlyTransaction(_.listUserActions(userId))
 
 
   def loadNotifications(userId: UserId, upToWhen: Option[When], me: Who) = {
@@ -649,7 +641,7 @@ trait UserDao {
   }
 
 
-  def saveRolePreferences(preferences: UserPreferences) = {
+  def saveRolePreferences(preferences: MemberPreferences) = {
     SECURITY // should create audit log entry. Should allow staff to change usernames.
     BUG // the lost update bug.
     readWriteTransaction { transaction =>

@@ -216,7 +216,7 @@ object LoginWithPasswordController extends mvc.Controller {
         GetActionRateLimited(RateLimits.ConfirmEmailAddress, allowAnyone = true) { request =>
 
     val userId = finishEmailAddressVerification(confirmationEmailId, request)
-    val user = request.dao.loadUser(userId) getOrElse {
+    val user = request.dao.getUser(userId) getOrElse {
       throwInternalError("DwE7GJ0", "I've deleted the account")
     }
 

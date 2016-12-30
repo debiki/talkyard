@@ -1571,8 +1571,8 @@ trait PostsDao {
       // Censor the user's posts.
       val postToMaybeHide =
         if (user.isMember) {
-          transaction.loadPostsByAuthor(userId, limit = numThings, OrderBy.MostRecentFirst)
-              .filter(p => !p.isBodyHidden && !p.isTitle)
+          transaction.loadPostsByAuthorSkipTitles(
+              userId, limit = numThings, OrderBy.MostRecentFirst).filter(!_.isBodyHidden)
         }
         else {
           transaction.loadPostsByUniqueId(guestPostIds).values.filter(!_.isBodyHidden)

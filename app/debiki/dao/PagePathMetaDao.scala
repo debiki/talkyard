@@ -84,24 +84,34 @@ trait PagePathMetaDao {
     readOnlyTransaction(_.lookupPagePathAndRedirects(pageId))
 
 
-  def loadPageMeta(pageId: PageId): Option[PageMeta] = {
+  def loadThePageMeta(pageId: PageId) =
+    readOnlyTransaction(_.loadThePageMeta(pageId))
+
+
+  def getThePageMeta(pageId: PageId): PageMeta =
+    getPageMeta(pageId) getOrElse {
+      throw PageNotFoundException(pageId)
+    }
+
+
+  def getPageMeta(pageId: PageId): Option[PageMeta] = {
     memCache.lookup[PageMeta](
       pageMetaByIdKey(SitePageId(siteId, pageId)),
       orCacheAndReturn = readOnlyTransaction(_.loadPageMeta(pageId)))
   }
 
 
-  // COULD override and use the page meta cache, but currently only called
-  // by the moderation page, so not needed right now.
-  def loadPageMetasAsMap(pageIds: Seq[PageId], anySiteId: Option[SiteId] = None)
-        : Map[PageId, PageMeta] =
+  COULD_OPTIMIZE // use the cache
+  def getPageMetasAsMap(pageIds: Seq[PageId], anySiteId: Option[SiteId] = None)
+        : Map[PageId, PageMeta] = {
     readOnlyTransaction(_.loadPageMetasAsMap(pageIds, anySiteId))
+  }
 
 
   def loadPageMetaAndPath(pageId: PageId): Option[PagePathAndMeta] = {
     // I don't think writing a dedicated SQL query that does this in one
     // roundtrip is worth the trouble? Won't work with NoSQL databases anyway?
-    val anyMeta = loadPageMeta(pageId)
+    val anyMeta = getPageMeta(pageId)
     val anyPath = lookupPagePath(pageId)
     for (meta <- anyMeta; path <- anyPath)
       yield PagePathAndMeta(path, meta)

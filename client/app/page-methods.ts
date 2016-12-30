@@ -27,7 +27,7 @@
  */
 
 //------------------------------------------------------------------------------
-   module debiki2 {
+   namespace debiki2 {
 //------------------------------------------------------------------------------
 
 var r = React.DOM;
@@ -69,6 +69,31 @@ export function page_canBeClosed(pageRole: PageRole) {
 }
 
 
+export function pageRole_iconClass(pageRole: PageRole): string {
+  switch (pageRole) {
+    case PageRole.CustomHtmlPage: return '';
+    case PageRole.WebPage: return '';
+    case PageRole.Code: return '';
+    case PageRole.SpecialContent: return '';
+    case PageRole.EmbeddedComments: return '';
+    case PageRole.Blog: return '';
+    case PageRole.Forum: return '';
+    case PageRole.About: return '';
+    case PageRole.Question: return 'icon-help-circled';
+    case PageRole.Problem: return 'icon-attention-circled';
+    case PageRole.Idea: return 'icon-idea';
+    case PageRole.ToDo: return 'icon-check-empty';
+    case PageRole.MindMap: return 'icon-sitemap';
+    case PageRole.Discussion: return 'icon-comment-empty';
+    case PageRole.FormalMessage: return 'icon-mail';
+    case PageRole.OpenChat: return 'icon-chat';
+    case PageRole.PrivateChat: return 'icon-lock';
+    case PageRole.Form: return 'icon-th-list';
+    case PageRole.Critique: return '';  // [plugin]
+    case PageRole.UsabilityTesting: return '';  // [plugin]
+    default: die(`Bad page role: ${pageRole} [EdE2KW4A0]`);
+  }
+}
 
 //------------------------------------------------------------------------------
    }

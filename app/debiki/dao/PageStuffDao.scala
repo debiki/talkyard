@@ -69,42 +69,36 @@ trait PageStuffDao {
   }
 
 
-  def loadPageStuffAsList(pageIds: Iterable[PageId]): Seq[Option[PageStuff]] = {
-    val stuffByPageId = loadPageStuff(pageIds)
-    pageIds.toSeq.map(stuffByPageId.get)
-  }
-
-
-  def loadPageStuff(pageIds: Iterable[PageId]): Map[PageId, PageStuff] = {
-    var summariesById = Map[PageId, PageStuff]()
+  def getPageStuffById(pageIds: Iterable[PageId]): Map[PageId, PageStuff] = {
+    var pageStuffById = Map[PageId, PageStuff]()
     val idsNotCached = ArrayBuffer[PageId]()
 
-    // Look up summaries in cache.
+    // Look up in cache.
     for (pageId <- pageIds) {
-      val anySummary = memCache.lookup[PageStuff](cacheKey(pageId))
-      anySummary match {
-        case Some(summary) => summariesById += pageId -> summary
+      val anyStuff = memCache.lookup[PageStuff](cacheKey(pageId))
+      anyStuff match {
+        case Some(stuff) => pageStuffById += pageId -> stuff
         case None => idsNotCached.append(pageId)
       }
     }
 
-    // Ask the database for any remaining summaries.
-    val reaminingSummaries = if (idsNotCached.isEmpty) Nil else {
+    // Ask the database for any remaining stuff.
+    val reaminingStuff = if (idsNotCached.isEmpty) Nil else {
       readOnlyTransaction { transaction =>
-        loadPageStuffImpl(idsNotCached, transaction)
+        loadPageStuffById(idsNotCached, transaction)
       }
     }
     val siteCacheVersion = memCache.siteCacheVersionNow()
-    for ((pageId, summary) <- reaminingSummaries) {
-      summariesById += pageId -> summary
-      memCache.put(cacheKey(pageId), MemCacheItem(summary, siteCacheVersion))
+    for ((pageId, stuff) <- reaminingStuff) {
+      pageStuffById += pageId -> stuff
+      memCache.put(cacheKey(pageId), MemCacheItem(stuff, siteCacheVersion))
     }
 
-    summariesById
+    pageStuffById
   }
 
 
-  def loadPageStuffImpl(pageIds: Iterable[PageId], transaction: SiteTransaction)
+  def loadPageStuffById(pageIds: Iterable[PageId], transaction: SiteTransaction)
         : Map[PageId, PageStuff] = {
     if (pageIds.isEmpty)
       return Map.empty

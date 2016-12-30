@@ -99,7 +99,7 @@ object InviteController extends mvc.Controller {
       request.dao.saveUnsentEmail(welcomeEmail) // COULD (should?) mark as sent, how?
       debiki.Globals.sendEmail(welcomeEmail, request.siteId)
 
-      val inviter = request.dao.loadUser(invite.createdById) getOrDie "DwE4KDEP0"
+      val inviter = request.dao.getUser(invite.createdById) getOrDie "DwE4KDEP0"
       val inviteAcceptedEmail = makeYourInviteWasAcceptedEmail(request.host, newUser, inviter)
       debiki.Globals.sendEmail(inviteAcceptedEmail, request.siteId)
       // COULD create a notification instead / too.

@@ -23,7 +23,7 @@ import debiki.RateLimits.NoRateLimits
 import debiki._
 import io.efdi.server.http._
 import java.{util => ju}
-import debiki.dao.SiteDao
+import debiki.dao.{PageStuff, SiteDao}
 import play.api._
 import play.api.Play.current
 import play.api.mvc.{Action => _, _}
@@ -46,6 +46,48 @@ object ViewPageController extends mvc.Controller {
 
   val HtmlEncodedVolatileJsonMagicString =
     "\"__html_encoded_volatile_json__\""
+
+
+  def listPosts(authorId: UserId) = GetAction { request: GetRequest =>
+    import request.{dao, user}
+
+    val callerIsStaff = user.exists(_.isStaff)
+    val callerIsStaffOrAuthor = callerIsStaff || user.exists(_.id == authorId)
+    val author = dao.getUser(authorId) getOrElse throwNotFound("EdE2FWKA9", "Author not found")
+
+    val postsInclForbidden = dao.readOnlyTransaction { transaction =>
+      transaction.loadPostsByAuthorSkipTitles(authorId, limit = 999, OrderBy.MostRecentFirst)
+    }
+    val pageIds = postsInclForbidden.map(_.pageId)
+    val pageMetaById = dao.getPageMetasAsMap(pageIds)
+
+    die("EdE2KW0GU46", "Unimpl security stuff")
+    val posts = postsInclForbidden ; SECURITY // todo: filter away forbidden posts
+    SECURITY // exclude priv messages, add e2e test for that?
+
+    val pageStuffById = dao.getPageStuffById(pageIds)
+
+    val postsJson = posts flatMap { post =>
+      var (postJson, pageVersion) = ReactJson.postToJson(
+        post.nr, pageId = post.pageId, dao, includeUnapproved = callerIsStaffOrAuthor,
+        showHidden = true)
+
+      pageStuffById.get(post.pageId) map { pageStuff =>
+        postJson += "pageId" -> JsString(post.pageId)
+        postJson += "pageTitle" -> JsString(pageStuff.title)
+        postJson += "pageRole" -> JsNumber(pageStuff.pageRole.toInt)
+        if (callerIsStaff && (post.numPendingFlags > 0 || post.numHandledFlags > 0)) {
+          postJson += "numPendingFlags" -> JsNumber(post.numPendingFlags)
+          postJson += "numHandledFlags" -> JsNumber(post.numHandledFlags)
+        }
+        postJson
+      }
+    }
+
+    OkSafeJson(Json.obj(
+      "author" -> ReactJson.JsUser(author),
+      "posts" -> JsArray(postsJson)))
+  }
 
 
   def loadPost(pageId: PageId, postNr: PostNr) = GetActionAllowAnyone { request =>
@@ -143,7 +185,7 @@ object ViewPageController extends mvc.Controller {
           request, pageId = EmptyPageId, showId = false, pageRole = PageRole.WebPage))
     }
 
-    val pageMeta = correctPagePath.pageId.flatMap(dao.loadPageMeta) getOrElse {
+    val pageMeta = correctPagePath.pageId.flatMap(dao.getPageMeta) getOrElse {
       // Apparently the page was just deleted.
       // COULD load meta in the checkPagePath transaction (above), so that this cannot happen.
       throwIndistinguishableNotFound()

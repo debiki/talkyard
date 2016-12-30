@@ -121,7 +121,7 @@ class Notifier(val systemDao: SystemDao, val siteDaoFactory: SiteDaoFactory)
       val userIdsBySiteId: Map[String, List[SiteId]] =
         notfsBySiteId.mapValues(_.map(_.recipientUserId))
       val usersBySiteAndId: Map[(SiteId, UserId), User] = loadUsers(userIdsBySiteId) */
-      val anyUser = siteDao.loadUser(userId)
+      val anyUser = siteDao.getUser(userId)
 
       // Send email, or remember why we didn't and don't try again.
       val anyProblem = trySendToSingleUser(userId, anyUser, userNotfs, siteDao)

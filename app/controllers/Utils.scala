@@ -101,7 +101,7 @@ object Utils extends Results with http.ContentTypes {
     val user = sid.userId match {
       case None => None
       case Some(userId) =>
-        dao.loadUser(userId) match {
+        dao.getUser(userId) match {
           case Some(user) =>
             if (Some(user.id) == sid.userId) {
               // Fine.

@@ -157,7 +157,7 @@ object ForumController extends mvc.Controller {
       "Only staff can list deleted pages")
     val topics = listTopicsInclPinned(categoryIdInt, pageQuery, request.dao,
       includeDescendantCategories = true, isStaff = request.isStaff, restrictedOnly = false)
-    val pageStuffById = request.dao.loadPageStuff(topics.map(_.pageId))
+    val pageStuffById = request.dao.getPageStuffById(topics.map(_.pageId))
     val users = request.dao.getUsersAsSeq(pageStuffById.values.flatMap(_.userIds))
     val topicsJson: Seq[JsObject] = topics.map(topicToJson(_, pageStuffById))
     val json = Json.obj(
@@ -198,7 +198,7 @@ object ForumController extends mvc.Controller {
     }
 
     val pageStuffById: Map[PageId, debiki.dao.PageStuff] =
-      request.dao.loadPageStuff(pageIds)
+      request.dao.getPageStuffById(pageIds)
 
     val json = JsArray(categories.map({ category =>
       categoryToJson(category, category.id == defaultCategoryId,

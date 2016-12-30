@@ -22,9 +22,10 @@
    namespace debiki2.users {
 //------------------------------------------------------------------------------
 
-var r = React.DOM;
-var Nav = rb.Nav;
-var NavItem = rb.NavItem;
+let r = React.DOM;
+let Nav = rb.Nav;
+let NavItem = rb.NavItem;
+let Post = page.Post;
 
 
 export let UsersActivityComponent = React.createClass(<any> {
@@ -37,7 +38,7 @@ export let UsersActivityComponent = React.createClass(<any> {
   },
 
   render: function() {
-    var childProps = {
+    let childProps = {
       me: this.props.me,
       user: this.props.user,
       reloadUser: this.props.loadCompleteUser,
@@ -47,25 +48,74 @@ export let UsersActivityComponent = React.createClass(<any> {
     return (
      r.div({ style: { display: 'table', width: '100%' }},
        r.div({ style: { display: 'table-row' }},
-         r.div({ className: 'dw-user-nav' },
+         r.div({ className: 's_UP_Act_Nav' },
            Nav({ bsStyle: 'pills', activeKey: activeRouteName,
                onSelect: this.transitionTo, className: 'dw-sub-nav nav-stacked' },
-             NavItem({ eventKey: 'all' }, "All"),
-             NavItem({ eventKey: 'topics' }, "Topics"),
-             NavItem({ eventKey: 'posts' }, "Posts"))),
+             NavItem({ eventKey: 'posts' }, "Posts"),
+             NavItem({ eventKey: 'topics' }, "Topics"))),
              //NavItem({ eventKey: 'likes-given' }, "Likes Given"),
              //NavItem({ eventKey: 'likes-received' }, "Likes Received"))),
-         r.div({ className: 'dw-user-content' },
+         r.div({ className: 's_UP_Act_List' },
            React.cloneElement(this.props.children, childProps)))));
   }
 });
 
 
 
-export let AllActivityComponent = React.createClass(<any> {
+export let PostsComponent = React.createClass(<any> {
+  getInitialState: function() {
+    return { posts: null };
+  },
+
+  componentDidMount: function() {
+    let user: CompleteUser = this.props.user;
+    this.loadPosts(user.id);
+  },
+
+  componentWillReceiveProps: function(nextProps) {
+    let me: Myself = this.props.me;
+    let user: CompleteUser = this.props.user;
+    let nextMe: Myself = nextProps.me;
+    let nextUser: CompleteUser = nextProps.user;
+    // If we log in as a new user, which posts we may see might change.
+    if (me.userId !== nextMe.userId || user.id !== nextUser.id) {
+      this.loadPosts(nextUser.id);
+    }
+  },
+
+  loadPosts: function(userId: number) {
+    let me: Myself = this.props.me;
+    Server.loadPostsByAuthor(userId, (response: any) => {
+      this.setState({
+        posts: response.posts,
+        author: response.author,
+      });
+    }, () => {
+      // Forget all posts, in case we're no longer allowed to view the posts.
+      this.setState({ error: true, posts: null });
+    });
+  },
+
   render: function() {
+    let me: Myself = this.props.me;
+    let posts: PostWithPage[] = this.state.posts;
+    let author: BriefUser = this.state.author;
+    if (!_.isArray(posts))
+      return (
+        r.p({}, "Loading ..."));
+
+    let postElems = posts.map((post: PostWithPage) => {
+      return (
+        r.li({ key: post.postId, className: 's_UP_Act_Ps_P' },
+          r.a({ href: linkToPostNr(post.pageId, post.postId),
+              className: 's_UP_Act_Ps_P_Link ' + pageRole_iconClass(post.pageRole) },
+            post.pageTitle),
+          avatar.Avatar({ user: author }),
+          Post({ post: post,  me: me, author: author }))); // author: [4WKA8YB]
+    });
+
     return (
-      r.p({}, "Not yet implemented 1"));
+      r.ol({ className: 's_UP_Act_Ps' }, postElems));
   }
 });
 
@@ -75,15 +125,6 @@ export let TopicsComponent = React.createClass(<any> {
   render: function() {
     return (
       r.p({}, "Not yet implemented 2"));
-  }
-});
-
-
-
-export let RepliesAndChatComponent = React.createClass(<any> {
-  render: function() {
-    return (
-      r.p({}, "Not yet implemented 3"));
   }
 });
 

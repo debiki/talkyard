@@ -37,6 +37,14 @@ trait AuthzSiteDaoMixin {
   }
 
 
+  def throwIfMayNotSeePageUseCache(pageId: PageId, user: Option[User]) {
+    val pageMeta = getThePageMeta(pageId)
+    val (may, debugCode) = maySeePageUseCache(pageMeta, user)
+    if (!may)
+      throwIndistinguishableNotFound(s"EdE2WA7GF4-$debugCode")
+  }
+
+
   def throwIfMayNotSeePage(page: Page, user: Option[User])(transaction: SiteTransaction) {
     throwIfMayNotSeePage(page.meta, user)(transaction)
   }
@@ -121,7 +129,7 @@ trait AuthzSiteDaoMixin {
         anyPost: Option[Post], anyTransaction: Option[SiteTransaction]): (Boolean, String) = {
 
     val pageMeta =
-      anyTransaction.map(_.loadPageMeta(pageId)).getOrElse(loadPageMeta(pageId)) getOrElse {
+      anyTransaction.map(_.loadPageMeta(pageId)).getOrElse(getPageMeta(pageId)) getOrElse {
         // Apparently the page was just deleted.
         return (false, "5KFUP2R0-Page-Not-Found")
       }

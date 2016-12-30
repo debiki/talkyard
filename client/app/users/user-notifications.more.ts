@@ -59,7 +59,7 @@ export var UserNotificationsComponent = React.createClass({
     Server.loadNotifications(userId, Date.now(), (notfs: Notification[]) => {
       this.setState({ notfs: notfs });
     }, () => {
-      // Tacke care to clear state.notfs, in case we're no longer allowed to view the notfs.
+      // Clear state.notfs, in case we're no longer allowed to view the notfs.
       this.setState({ error: true, notfs: null });
     });
   },

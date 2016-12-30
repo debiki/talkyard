@@ -54,10 +54,7 @@ class Application @Inject() extends mvc.Controller {
 
     // COULD save `reason` somewhere, but where? Where does Discourse save it?
 
-    val pageMeta = dao.loadThePageMeta(pageId)
-    val (maySee, debugCode) = dao.maySeePageUseCache(pageMeta, request.user)
-    if (!maySee)
-      throwIndistinguishableNotFound(s"EdE7KWU02-$debugCode")
+    dao.throwIfMayNotSeePageUseCache(pageId, request.user)
 
     val postsHidden = try {
       dao.flagPost(pageId = pageId, postNr = postNr, flagType,

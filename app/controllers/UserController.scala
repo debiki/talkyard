@@ -336,17 +336,6 @@ object UserController extends mvc.Controller {
   }
 
 
-  def loadUserInfo(userId: String) = GetAction { request =>
-    untested("EsE4WKG06U") /*
-    val userIdInt = Try(userId.toInt) getOrElse throwBadReq("DwE4FKf2", "Bad user id")
-    val userInfo = request.dao.loadUserInfoAndStats(userIdInt) getOrElse throwNotFound(
-      "DwE512WR8", s"User not found, id: $userId")
-    val json = Json.obj("userInfo" -> userInfoToJson(userInfo))
-    OkSafeJson(json)
-    */
-  }
-
-
   def loadMyPageData(pageId: PageId) = GetAction { request =>
     SECURITY ; COULD // avoid revealing that a page exists: forPageThatExists below might throw
     // a unique NotFound for example.  [7C2KF24]
@@ -362,18 +351,8 @@ object UserController extends mvc.Controller {
   }
 
 
-  def listUserActions(userId: String) = GetAction { request =>
-    throwNotImplemented("DwE4KPE7", "Listing user actions hasn't been implemented") /*
-    val userIdInt = Try(userId.toInt) getOrElse throwBadReq("DwE8UKG4", "Bad user id")
-    val actionInfos: Seq[UserActionInfo] = request.dao.listUserActions(userIdInt)
-    val json = Json.obj("actions" -> actionInfos.map(actionToJson(_)))
-    OkSafeJson(json)
-    */
-  }
-
-
-  SECURITY // rate limit
-  def loadNotifications(userId: String, upToWhenMs: String) = GetAction { request =>
+  def loadNotifications(userId: String, upToWhenMs: String) =
+        GetActionRateLimited(RateLimits.ExpensiveGetRequest) { request =>
     val userIdInt = userId.toIntOrThrow("EsE5GYK2", "Bad userId")
     val upToWhenMsLong = upToWhenMs.toLongOrThrow("EsE2FUY7", "Bad upToWhenMs")
     val upToWhenDate = new ju.Date(upToWhenMsLong)
@@ -401,8 +380,9 @@ object UserController extends mvc.Controller {
   }
 
 
+  SECURITY // don't allow if user listing disabled, & isn't staff [8FKU2A4]
   def listAllUsers(usernamePrefix: String) = GetAction { request =>
-    // Authorization check: Is a member? Add MemberGetAction?  [4KFRP01]
+    // Authorization check: Is a member? Add MemberGetAction?
     request.theMember
 
     val members = request.dao.loadMembersWithPrefix(usernamePrefix)
@@ -417,9 +397,11 @@ object UserController extends mvc.Controller {
   }
 
 
+  /** Listing usernames on a particular page is okay, if one may see the page
+    * — however, listing all usernames for the whole site, isn't always okay. [8FKU2A4]
+    */
   def listUsernames(pageId: PageId, prefix: String) = GetAction { request =>
-    // Authorization check: Is a member? Add MemberGetAction?  [4KFRP01]
-    request.theMember
+    request.dao.throwIfMayNotSeePageUseCache(pageId, request.user)
 
     val names = request.dao.listUsernames(pageId = pageId, prefix = prefix)
     val json = JsArray(
@@ -435,13 +417,15 @@ object UserController extends mvc.Controller {
 
   def saveUserPreferences = PostJsonAction(RateLimits.ConfigUser, maxLength = 1000) { request =>
     val prefs = userPrefsFromJson(request.body)
-    checkUserPrefsAccess(request, prefs.userId)
+    val staffOrSelf = request.theUser.isStaff || request.theUserId == prefs.userId
+    if (!staffOrSelf)
+      throwForbidden("DwE15KFE5", "Not your preferences")
     request.dao.saveRolePreferences(prefs)
     Ok
   }
 
 
-  def saveGuest = PostJsonAction(RateLimits.ConfigUser, maxLength = 300) { request =>
+  def saveGuest = StaffPostJsonAction(maxLength = 300) { request =>
     val guestId = (request.body \ "guestId").as[UserId]
     val name = (request.body \ "name").as[String].trim
     if (name.isEmpty)
@@ -457,14 +441,8 @@ object UserController extends mvc.Controller {
   }
 
 
-  private def checkUserPrefsAccess(request: DebikiRequest[_], prefsUserId: UserId) {
-    val staffOrOwn = request.theUser.isStaff || request.theUserId == prefsUserId
-    if (!staffOrOwn)
-      throwForbidden("DwE15KFE5", "Not your preferences")
-  }
-
-
-  private def userInfoToJson(userInfo: UserInfoAndStats): JsObject = {
+  /*
+  private def userInfoToJson(userInfo: UserInfoAndStats): JsObject = {  // xx
     Json.obj(
       "userId" -> userInfo.info.id,
       "displayName" -> userInfo.info.anyName,
@@ -519,7 +497,7 @@ object UserController extends mvc.Controller {
   }
 
 
-  private def actionToJson(actionInfo: UserActionInfo): JsObject = {
+  private def actionToJson(actionInfo: UserActionInfo): JsObject = {  // xx
     Json.obj(
       "pageUrl" -> s"/-${actionInfo.pageId}", // redirects to the page
       "pageTitle" -> JsString(actionInfo.pageTitle),
@@ -552,9 +530,10 @@ object UserController extends mvc.Controller {
       - moderator_action : false,
      */
   }
+  */
 
 
-  private def userPrefsToJson(prefs: UserPreferences, requester: User): JsObject = {
+  private def userPrefsToJson(prefs: MemberPreferences, requester: User): JsObject = {
     val adminOrOwn = requester.isAdmin || prefs.userId == requester.id
     val safeEmail = adminOrOwn ? prefs.emailAddress | hideEmailLocalPart(prefs.emailAddress)
     Json.obj(
@@ -567,12 +546,12 @@ object UserController extends mvc.Controller {
   }
 
 
-  private def userPrefsFromJson(json: JsValue): UserPreferences = {
+  private def userPrefsFromJson(json: JsValue): MemberPreferences = {
     val username = (json \ "username").as[String]
     if (username.length < MinUsernameLength)
       throwBadReq("DwE44KUY0", "Username too short")
 
-    UserPreferences(
+    MemberPreferences(
       userId = (json \ "userId").as[UserId],
       fullName = (json \ "fullName").asOptStringNoneIfBlank,
       username = username,

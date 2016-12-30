@@ -51,20 +51,8 @@
 .s_UP_About
   margin-top: 12px;
 
-.dw-user-nav
-  display: table-cell;
-  vertical-align: top;
-  width: 150px;
-  padding-right: 20px;
-  li
-    float: none;
-
 #dw-react-user-page .esUP > .nav
   margin-bottom: 16px;
-
-.dw-user-content
-  display: table-cell;
-  vertical-align: top;
 
 .dw-invites-table
   margin-top: 20px;
@@ -123,6 +111,73 @@
   .esMedAvtr_uplBtn
     visibility: visible;
 
+
+// Activity, posts
+// -------------------------
+
+.s_UP_Act_Nav
+  display: table-cell;
+  vertical-align: top;
+  width: 150px;
+  padding-right: 20px;
+  li
+    float: none;
+
+.s_UP_Act_List
+  display: table-cell;
+  vertical-align: top;
+  padding-top: 10px;
+
+.s_UP_Act_Ps_P
+  position: relative;
+  list-style: none;
+  margin: 4px 0 16px 9px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid hsl(0, 0%, 89%);
+  .dw-p-bd
+    margin: 0;
+  .dw-p-bd-blk > p:last-child
+    margin-bottom: 0;  // so same amount of whitespace as a -blk with text only, no <p>
+
+.s_UP_Act_Ps .esAvtr
+  width: 40px;
+  height: 40px;
+  img
+    width: 40px;
+    height: 40px;
+  line-height: 40px;
+  top: 0;
+  margin: 0;
+  font-size: 18px;
+  z-index: 3;
+
+.s_UP_Act_Ps_P_Link,
+.s_UP_Act_Ps .dw-p-hd
+  padding-left: 53px !important;
+
+.s_UP_Act_Ps_P_Link
+  margin-bottom: 6px;
+  display: inline-block;
+  font-size: 15px;
+  &:before
+    font-size: 14px;
+    margin-right: 7px;
+  &:hover:before
+    text-decoration: none;
+  &.icon-chat:before
+    font-size: 16px;
+    position: relative;
+    top: 1px;
+
+.s_UP_Act_Ps .dw-p-hd
+  margin-bottom: 8px !important;
+
+.s_UP_Act_Ps .dw-ar-p-hd
+  opacity: 1 !important;
+
+
+// Preferences
+// -------------------------
 
 .s_UP_Prefs input
   max-width: 430px;

@@ -966,7 +966,8 @@ export var Post = createComponent({
     else if (!post.isApproved && !post.sanitizedHtml) {
       // (Dupl code, for anyAvatar [503KP25])
       var showAvatar = this.props.depth > 1 || this.props.is2dTreeColumn;
-      var author: BriefUser = store_getAuthorOrMissing(store, post);
+      var author: BriefUser = this.props.author || // author specified here: [4WKA8YB]
+          store_getAuthorOrMissing(store, post);
       var anyAvatar = !showAvatar ? null : avatar.Avatar({ tiny: true, user: author });
       headerElem =
           r.div({ className: 'dw-p-hd' },
@@ -1144,7 +1145,8 @@ export var PostHeader = createComponent({
       : null;
 
     // (Dupl code, for anyAvatar [503KP25])
-    var author: BriefUser = store_getAuthorOrMissing(store, post);
+    var author: BriefUser = this.props.author || // author specified here: [4WKA8YB]
+        store_getAuthorOrMissing(store, post);
     var showAvatar = this.props.depth > 1 || this.props.is2dTreeColumn;
     var anyAvatar = !showAvatar ? null : avatar.Avatar({ tiny: true, user: author });
 

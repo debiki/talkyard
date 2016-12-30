@@ -75,7 +75,7 @@ object PageRequest {
     if (!pageExists && pageMustExist)
       throwNotFound("DwE42Im0", s"Page not found, id: ${pagePath.pageId.get}")
 
-    val anyPageMeta = okPath.pageId.flatMap(apiRequest.dao.loadPageMeta(_))
+    val anyPageMeta = okPath.pageId.flatMap(apiRequest.dao.getPageMeta(_))
     if (pageExists && anyPageMeta.isEmpty)
       throwNotFound("DwE56Jb0", s"No page meta found, page id: ${pagePath.pageId.get}")
 

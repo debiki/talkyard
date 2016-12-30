@@ -46,11 +46,12 @@ export function routes() {
       Redirect({ from: ':usernameOrId', to: ':usernameOrId/activity' }),
       Redirect({ from: ':usernameOrId/', to: ':usernameOrId/activity' }),
       Route({ path: ':usernameOrId', component: UserPageComponent },
-        Redirect({ from: 'activity', to: 'activity/all' }),
+        Redirect({ from: 'activity', to: 'activity/posts' }),
         Route({ path: 'activity', component: UsersActivityComponent },
-          Route({ path: 'all', component: AllActivityComponent  }),
-          Route({ path: 'topics', component: TopicsComponent }),
-          Route({ path: 'posts', component: RepliesAndChatComponent })
+          Route({ path: 'posts', component: PostsComponent  }),
+          Route({ path: 'topics', component: TopicsComponent })
+          // mentions? Flarum includes mentions *of* the user, but wouldn't it make more sense
+          // to include mentions *by* the user? Discourse shows: (but -received in the notfs tab)
           //Route({ path: 'likes-given', component: LikesGivenComponent }),
           //Route({ path: 'likes-received', component: LikesReceivedComponent })
           ),
@@ -77,7 +78,8 @@ var UsersHomeComponent = React.createClass(<any> {
   render: function() {
     return (
       r.div({},
-        reactelements.TopBar({ customTitle: "About User", showBackToSite: true, extraMargin: true }),
+        reactelements.TopBar({ customTitle: "About User",
+            backToSiteButtonTitle: "Back from user area", extraMargin: true }),
         this.props.children));
   }
 });

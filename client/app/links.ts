@@ -30,6 +30,11 @@ export function linkToPageId(pageId: PageId): string {
 }
 
 
+export function linkToPostNr(pageId: PageId, postNr: PostNr): string {
+  return linkToPageId(pageId) + '#post-' + postNr;
+}
+
+
 export function linkToAdminPage(hostname?: string): string {
   var origin = hostname ? '//' + hostname : '';
   return origin + '/-/admin/';

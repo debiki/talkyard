@@ -33,7 +33,7 @@ trait QuickSpamCheckDao {
   def quickCheckIfSpamThenThrow(who: Who, textAndHtml: TextAndHtml,
         spamRelReqStuff: SpamRelReqStuff) {
 
-    val user = loadUser(who.id) getOrElse {
+    val user = getUser(who.id) getOrElse {
       throwForbidden("EdE5FK7X2", s"Unknown user: $siteId:${who.id}")
     }
 

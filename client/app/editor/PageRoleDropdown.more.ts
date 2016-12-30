@@ -222,19 +222,20 @@ function pageRole_toIconString(pageRole: PageRole) {
   }
 }
 
+var iconFor = pageRole_iconClass;
 
 var PageRole_Discussion_IconString =
-  r.span({ className: 'icon-comment-empty' }, "Discussion");
-var PageRole_Question_IconString = r.span({ className: 'icon-help-circled' }, "Question");
-var PageRole_Problem_IconString = r.span({ className: 'icon-attention-circled' }, "Problem");
-var PageRole_Idea_IconString = r.span({ className: 'icon-idea' }, "Idea");
-var PageRole_MindMap_IconString = r.span({ className: 'icon-sitemap' }, "Mind Map");
+  r.span({ className: iconFor(PageRole.Discussion) }, "Discussion");
+var PageRole_Question_IconString = r.span({ className: iconFor(PageRole.Question) }, "Question");
+var PageRole_Problem_IconString = r.span({ className: iconFor(PageRole.Problem) }, "Problem");
+var PageRole_Idea_IconString = r.span({ className: iconFor(PageRole.Idea) }, "Idea");
+var PageRole_MindMap_IconString = r.span({ className: iconFor(PageRole.MindMap) }, "Mind Map");
 
-var PageRole_Todo_IconString = r.span({ className: 'icon-check-empty' }, "Todo");
-var PageRole_OpenChat_IconString = r.span({ className: 'icon-chat' }, "Chat");
-var PageRole_PrivateChat_IconString = r.span({ className: 'icon-lock' }, "Private Chat");
+var PageRole_Todo_IconString = r.span({ className: iconFor(PageRole.ToDo) }, "Todo");
+var PageRole_OpenChat_IconString = r.span({ className: iconFor(PageRole.OpenChat) }, "Chat");
+var PageRole_PrivateChat_IconString = r.span({ className: iconFor(PageRole.PrivateChat) }, "Private Chat");
 
-var PageRole_Form_IconString = r.span({ className: 'icon-th-list' }, "Form");
+var PageRole_Form_IconString = r.span({ className: iconFor(PageRole.Form) }, "Form");
 
 
 //------------------------------------------------------------------------------

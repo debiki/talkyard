@@ -67,7 +67,7 @@ trait WatchbarDao {
 
 
   def fillInWatchbarTitlesEtc(watchbar: BareWatchbar): WatchbarWithTitles = {
-    val pageStuffById = loadPageStuff(watchbar.watchedPageIds)
+    val pageStuffById = getPageStuffById(watchbar.watchedPageIds)
     watchbar.addTitlesEtc(pageStuffById)
   }
 

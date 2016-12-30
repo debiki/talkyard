@@ -70,6 +70,7 @@ declare namespace debiki2 {
   var event_isCtrlEnter: any;
   var page_isPrivateGroup: any;
   var page_isPrivateGroup: any;
+  function pageRole_iconClass(pageRole: PageRole): string;
 
   function firstDefinedOf(x, y, z?): any;
   function isNullOrUndefined(x): boolean;
@@ -97,6 +98,8 @@ declare namespace debiki2 {
   var siteStatusToString;
   var cloneRect;
 
+  var linkToPageId;
+  var linkToPostNr;
   var linkToNotificationSource;
   var linkToAdminPageAdvancedSettings;
   var linkToRedirToAboutCategoryPage;
@@ -109,7 +112,9 @@ declare namespace debiki2 {
 
   var anyForbiddenPassword;
 
-  var avatar;
+  namespace avatar {
+    var Avatar;
+  }
 
   // should move to more-bundle.js.
   var notfLevel_title;
@@ -122,6 +127,7 @@ declare namespace debiki2 {
   }
   namespace page {
     var openNotfsLevelDropdown;
+    var Post;
   }
   namespace pagedialogs {
     var getServerErrorDialog;

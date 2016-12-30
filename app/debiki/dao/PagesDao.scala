@@ -43,10 +43,6 @@ trait PagesDao {
   self: SiteDao =>
 
 
-  def loadThePageMeta(pageId: PageId) =
-    readOnlyTransaction(_.loadThePageMeta(pageId))
-
-
   def createPage(pageRole: PageRole, pageStatus: PageStatus, anyCategoryId: Option[CategoryId],
         anyFolder: Option[String], anySlug: Option[String], titleTextAndHtml: TextAndHtml,
         bodyTextAndHtml: TextAndHtml, showId: Boolean, byWho: Who,

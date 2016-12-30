@@ -898,6 +898,12 @@ export function loadPostByNr(pageId: PageId, postNr: PostNr, success: (patch: St
 }
 
 
+export function loadPostsByAuthor(authorId: UserId, success: (response) => void,
+    error?: () => void) {
+  get(`/-/list-posts?authorId=${authorId}`, success);
+}
+
+
 export function flagPost(postId: string, flagType: string, reason: string, success: () => void) {
   postJsonSuccess('/-/flag', (storePatch: StorePatch) => {
     ReactActions.patchTheStore(storePatch);

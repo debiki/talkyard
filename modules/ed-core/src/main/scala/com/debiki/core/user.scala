@@ -525,7 +525,7 @@ case class MemberInclDetails(
 
   def isSuspendedAt(when: ju.Date) = User.isSuspendedAt(when, suspendedTill = suspendedTill)
 
-  def preferences = UserPreferences(
+  def preferences = MemberPreferences(
     userId = id,
     fullName = fullName,
     username = username,
@@ -535,7 +535,7 @@ case class MemberInclDetails(
     url = website,
     emailForEveryNewPost = emailForEveryNewPost)
 
-  def copyWithNewPreferences(preferences: UserPreferences) = {
+  def copyWithNewPreferences(preferences: MemberPreferences) = {
     val newEmailAddress =
       if (isEmailLocalPartHidden(preferences.emailAddress)) this.emailAddress
       else preferences.emailAddress
@@ -568,6 +568,29 @@ case class MemberInclDetails(
     lockedThreatLevel = lockedThreatLevel,
     isAdmin = isAdmin,
     isOwner = isOwner)
+}
+
+
+
+case class MemberPreferences(
+  userId: UserId,
+  fullName: Option[String],
+  username: String,
+  emailAddress: String,
+  about: Option[String],
+  location: Option[String],
+  url: Option[String],
+  emailForEveryNewPost: Boolean = false) {
+
+  require(!fullName.exists(_.trim.isEmpty), "DwE4FUKW049")
+  require(!about.exists(_.trim.isEmpty), "EdE2WU4YG0")
+  require(userId >= User.LowestNonGuestId, "DwE56KX2")
+
+  def changesStuffIncludedEverywhere(member: MemberInclDetails) = {
+    // Email is shown to admins only, not cached anywhere. Url shown on profile page only.
+    username != member.username || fullName != member.fullName
+  }
+
 }
 
 

@@ -107,7 +107,7 @@ trait SiteTransaction {
         : Map[PageId, immutable.Seq[Post]]
 
   def loadPostsToReview(): immutable.Seq[Post]
-  def loadPostsByAuthor(userId: UserId, limit: Int, orderBy: OrderBy): immutable.Seq[Post]
+  def loadPostsByAuthorSkipTitles(userId: UserId, limit: Int, orderBy: OrderBy): immutable.Seq[Post]
 
   def loadTitlesPreferApproved(pageIds: Iterable[PageId]): Map[PageId, String] = {
     val titlePosts = loadPosts(pageIds.map(PagePostNr(_, PageParts.TitleNr)))
@@ -334,9 +334,6 @@ trait SiteTransaction {
   def loadRolePageSettingsOrDefault(roleId: RoleId, pageId: PageId) =
         loadRolePageSettings(roleId, pageId) getOrElse RolePageSettings.Default
 
-  def loadUserInfoAndStats(userId: UserId): Option[UserInfoAndStats]
-  def loadUserStats(userId: UserId): UserStats
-  def listUserActions(userId: UserId): Seq[UserActionInfo]
   def listUsernames(pageId: PageId, prefix: String): Seq[NameAndUsername]
 
   def saveRolePageSettings(roleId: RoleId, pageId: PageId, settings: RolePageSettings)

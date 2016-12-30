@@ -67,7 +67,7 @@ object PageTitleSettingsController extends mvc.Controller {
         "EdEZ5FK20", "Cannot change topic list layout and page type at the same time")
     }
 
-    val oldMeta = request.dao.loadPageMeta(pageId) getOrElse throwNotFound(
+    val oldMeta = request.dao.getPageMeta(pageId) getOrElse throwNotFound(
       "DwE4KEF20", "The page was deleted just now")
 
     if (anyNewRole.exists(_ != oldMeta.pageRole) && !oldMeta.pageRole.mayChangeRole)

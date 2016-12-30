@@ -154,6 +154,15 @@ interface Post {
   childIdsSorted: number[];
   sanitizedHtml?: string;
   tags?: string[];
+  numPendingFlags?: number;
+  numHandledFlags?: number;
+}
+
+
+interface PostWithPage extends Post {
+  pageId: PageId;
+  pageTitle: string;
+  pageRole: PageRole;
 }
 
 

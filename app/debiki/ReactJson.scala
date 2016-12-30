@@ -208,7 +208,7 @@ object ReactJson {
           includeDescendantCategories = true,
           isStaff = false, restrictedOnly = false,
           limit = ForumController.NumTopicsToList)
-        val pageStuffById = dao.loadPageStuff(topics.map(_.pageId))
+        val pageStuffById = dao.getPageStuffById(topics.map(_.pageId))
         topics.foreach(_.meta.addUserIdsTo(userIdsToLoad))
         topics.map(controllers.ForumController.topicToJson(_, pageStuffById))
       }
@@ -703,7 +703,7 @@ object ReactJson {
           isStaff = true,
           restrictedOnly = true,
           limit = ForumController.NumTopicsToList)
-        val pageStuffById = request.dao.loadPageStuff(topics.map(_.pageId))
+        val pageStuffById = request.dao.getPageStuffById(topics.map(_.pageId))
         (topics, pageStuffById)
       }
 
@@ -1092,7 +1092,7 @@ object ReactJson {
     val post = dao.loadPost(pageId, postNr) getOrElse {
       return None
     }
-    val author = dao.loadUser(post.createdById) getOrElse {
+    val author = dao.getUser(post.createdById) getOrElse {
       // User was just deleted? Race condition.
       UnknownUser
     }
