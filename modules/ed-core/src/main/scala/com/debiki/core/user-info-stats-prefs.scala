@@ -53,10 +53,13 @@ case class UserPreferences(
   fullName: Option[String],
   username: String,
   emailAddress: String,
-  url: String = "",
+  about: Option[String],
+  location: Option[String],
+  url: Option[String],
   emailForEveryNewPost: Boolean = false) {
 
-  require(!fullName.map(_.trim).contains(""), "DwE4FUKW049")
+  require(!fullName.exists(_.trim.isEmpty), "DwE4FUKW049")
+  require(!about.exists(_.trim.isEmpty), "EdE2WU4YG0")
   require(userId >= User.LowestNonGuestId, "DwE56KX2")
 
   def changesStuffIncludedEverywhere(member: MemberInclDetails) = {

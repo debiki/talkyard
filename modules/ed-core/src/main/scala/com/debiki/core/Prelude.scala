@@ -489,6 +489,12 @@ object Prelude {
     def noneIfBlank: Option[String] =
       if (underlying.exists(_.trim.isEmpty)) None else underlying
 
+    def trimNoneIfBlank: Option[String] =
+      underlying.map(_.trim) match {
+        case Some("") => None
+        case x => x
+      }
+
     def isEmptyOrContainsBlank: Boolean =
       underlying.isEmpty || underlying.get.trim.isEmpty
   }

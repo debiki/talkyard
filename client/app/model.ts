@@ -507,6 +507,7 @@ interface CompleteUser {
   fullName: string;
   email: string;
   emailForEveryNewPost: boolean;
+  about?: string;
   country: string;
   url: string;
   avatarUrl?: string;

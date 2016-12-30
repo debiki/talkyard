@@ -1151,7 +1151,7 @@ function pagesFor(browser) {
       },
 
       clickSendMessage: function() {
-        api.waitAndClick('.e_UP_SendMsgB');
+        api.waitAndClick('.s_UP_SendMsgB');
       },
 
       notfs: {

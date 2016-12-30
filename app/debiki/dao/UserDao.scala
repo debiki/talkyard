@@ -650,7 +650,8 @@ trait UserDao {
 
 
   def saveRolePreferences(preferences: UserPreferences) = {
-    // BUG: the lost update bug.
+    SECURITY // should create audit log entry. Should allow staff to change usernames.
+    BUG // the lost update bug.
     readWriteTransaction { transaction =>
       val user = transaction.loadTheMemberInclDetails(preferences.userId)
 

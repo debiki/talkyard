@@ -8,14 +8,13 @@
 
 .dw-user-bar
   padding: 15px;
-  margin: 20px 0;
+  margin: 20px 0 12px;
   background: hsl($uiHue, 0%, 91%);
 
   nav.dw-sub-nav
     padding: 0; // no idea why React-Bootstrap adds .dw-sub-nav twice, on the 'nav' too
 
   .dw-sub-nav
-    float: right;
     a
       line-height: 12px;
 
@@ -39,17 +38,33 @@
       font-family: sans-serif;
       font-size: 80%;
 
+.user-info-col:last-child
+  padding-right: 3px;
+
+.s_UP_AdminB,
+.s_UP_SendMsgB
+  float: right;
+
+.s_UP_AdminB
+  color: #333 !important; // not blue link color
+
+.s_UP_About
+  margin-top: 12px;
+
 .dw-user-nav
   display: table-cell;
   vertical-align: top;
-  width: 200px;
+  width: 150px;
+  padding-right: 20px;
   li
     float: none;
+
+#dw-react-user-page .esUP > .nav
+  margin-bottom: 16px;
 
 .dw-user-content
   display: table-cell;
   vertical-align: top;
-  padding-left: 20px;
 
 .dw-invites-table
   margin-top: 20px;
@@ -107,3 +122,8 @@
 .esMedAvtr-missing  // no avatar uploaded, it's misssing
   .esMedAvtr_uplBtn
     visibility: visible;
+
+
+.s_UP_Prefs input
+  max-width: 430px;
+

@@ -276,13 +276,14 @@ object ImportExportController extends mvc.Controller {
         isApproved = readOptBool(jsObj, "isApproved"),
         approvedAt = readOptDateMs(jsObj, "approvedAtMs"),
         approvedById = readOptInt(jsObj, "approvedById"),
-        emailAddress = readString(jsObj, "emailAddress"),
+        emailAddress = readString(jsObj, "emailAddress").trim,
         emailNotfPrefs = EmailNotfPrefs.Receive, // [readlater]
         emailVerifiedAt = readOptDateMs(jsObj, "emailVerifiedAtMs"),
         emailForEveryNewPost = readOptBool(jsObj, "emailForEveryNewPost") getOrElse false,
         passwordHash = passwordHash,
-        country = readOptString(jsObj, "country") getOrElse "",
-        website = readOptString(jsObj, "website") getOrElse "",
+        country = readOptString(jsObj, "country"),
+        website = readOptString(jsObj, "website"),
+        about = readOptString(jsObj, "about"),
         tinyAvatar = None, // [readlater]
         smallAvatar = None, // [readlater]
         mediumAvatar = None, // [readlater]

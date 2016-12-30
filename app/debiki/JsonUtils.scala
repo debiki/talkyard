@@ -59,7 +59,7 @@ object JsonUtils {
 
   def readOptString(json: JsValue, fieldName: String): Option[String] =
     (json \ fieldName).validateOpt[String] match {
-      case JsSuccess(value, _) => value
+      case JsSuccess(value, _) => value.map(_.trim)
       case JsError(errors) =>
         // Will this be readable? Perhaps use json.value[fieldName] match ... instead, above.
         throwBadJson("EsE5GUMK", s"'$fieldName' is not a string: " + errors.toString())

@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2014-2015 Kaj Magnus Lindberg
+ * Copyright (C) 2014-2016 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -17,16 +17,20 @@
 
 /// <reference path="../../typedefs/react/react.d.ts" />
 /// <reference path="../slim-bundle.d.ts" />
-/// <reference path="user-details-actions.more.ts" />
+/// <reference path="user-invites.more.ts" />
+/// <reference path="user-notifications.more.ts" />
+/// <reference path="user-preferences.more.ts" />
+/// <reference path="user-activity.more.ts" />
 
 //------------------------------------------------------------------------------
-   module debiki2.users {
+   namespace debiki2.users {
 //------------------------------------------------------------------------------
 
 var r = React.DOM;
 var Nav = rb.Nav;
 var NavItem = rb.NavItem;
 
+var UsersRoot = '/-/users/';
 var ReactRouter = window['ReactRouter'];
 var Route = reactCreateFactory(ReactRouter.Route);
 var IndexRoute = reactCreateFactory(ReactRouter.IndexRoute);
@@ -37,19 +41,19 @@ var DefaultRoute = reactCreateFactory(ReactRouter.DefaultRoute);
 // Make the components async? So works also if more-bundle.js not yet loaded? [4WP7GU5]
 export function routes() {
   return (
-    Route({ path: '/-/users/', component: UsersHomeComponent },
+    Route({ path: UsersRoot, component: UsersHomeComponent },
       IndexRoute({ component: DefaultComponent }),
-      // [delete] Remove the two 'id/:userId...' links in Jan 2017, they're no longer in use.
-      Redirect({ from: 'id/:userId', to: ':userId/activity' }),   // delete later
-      Redirect({ from: 'id/:userId/', to: ':userId/activity' }),  // delete later
       Redirect({ from: ':usernameOrId', to: ':usernameOrId/activity' }),
       Redirect({ from: ':usernameOrId/', to: ':usernameOrId/activity' }),
       Route({ path: ':usernameOrId', component: UserPageComponent },
-        Route({ path: 'activity', component: UserAllComponent }),
-        Route({ path: 'topics', component: UserTopicsComponent }),
-        Route({ path: 'posts', component: UserPostsComponent }),
-        Route({ path: 'likes-given', component: UserLikesGivenComponent }),
-        Route({ path: 'likes-received', component: UserLikesReceivedComponent }),
+        Redirect({ from: 'activity', to: 'activity/all' }),
+        Route({ path: 'activity', component: UsersActivityComponent },
+          Route({ path: 'all', component: AllActivityComponent  }),
+          Route({ path: 'topics', component: TopicsComponent }),
+          Route({ path: 'posts', component: RepliesAndChatComponent })
+          //Route({ path: 'likes-given', component: LikesGivenComponent }),
+          //Route({ path: 'likes-received', component: LikesReceivedComponent })
+          ),
         Route({ path: 'notifications', component: UserNotificationsComponent }),
         Route({ path: 'preferences', component: debiki2.users.UserPreferencesComponent }),
         Route({ path: 'invites', component: debiki2.users.UserInvitesComponent }))));
@@ -79,11 +83,13 @@ var UsersHomeComponent = React.createClass(<any> {
 });
 
 
+
 var DefaultComponent = React.createClass(<any> {
   render: function() {
     return r.div({}, 'Unexpected URL [DwE7E1W31]');
   }
 });
+
 
 
 var UserPageComponent = React.createClass(<any> {
@@ -95,18 +101,18 @@ var UserPageComponent = React.createClass(<any> {
 
   getInitialState: function() {
     return {
-      loggedInUser: debiki2.ReactStore.getMe(),
+      me: debiki2.ReactStore.getMe(),
       user: null,
     };
   },
 
   onChange: function() {
-    if (this.state.loggedInUser === debiki2.ReactStore.getMe())
+    if (this.state.me === debiki2.ReactStore.getMe())
       return;
 
     // Also reload the user we're showing, because now we might/might-no-longer have access
     // to data about him/her.
-    this.setState({ loggedInUser: debiki2.ReactStore.getMe(), });
+    this.setState({ me: debiki2.ReactStore.getMe(), });
     this.loadCompleteUser();
   },
 
@@ -124,8 +130,8 @@ var UserPageComponent = React.createClass(<any> {
     this.willUnmount = true;
   },
 
-  transitionToRouteName: function(routeName) {
-    this.context.router.push('/-/users/' + this.props.params.usernameOrId + '/' + routeName);
+  transitionTo: function(subPath) {
+    this.context.router.push('/-/users/' + this.props.params.usernameOrId + '/' + subPath);
   },
 
   loadCompleteUser: function() {
@@ -148,74 +154,53 @@ var UserPageComponent = React.createClass(<any> {
   },
 
   render: function() {
-    if (!this.state.user || !this.state.loggedInUser)
+    let me: Myself = this.state.me;
+    let user = this.state.user;
+    if (!user || !me)
       return r.p({}, 'Loading...');
 
     dieIf(!this.props.routes || !this.props.routes[2] || !this.props.routes[2].path, 'EsE5GKUW2');
+
+    let showPrivateStuff = isStaff(me) || (me.isAuthenticated && me.userId === user.id);
+
+    let activityNavItem =
+      NavItem({ eventKey: 'activity', className: 'e_UP_ActivityB' }, "Activity");
+
+    let notificationsNavItem = !showPrivateStuff ? null :
+      NavItem({ eventKey: 'notifications', className: 'e_UP_NotfsB' }, "Notifications");
+
+    let preferencesNavItem = !showPrivateStuff ? null :
+      NavItem({ eventKey: 'preferences', id: 'e2eUP_PrefsB' }, "Preferences");
+
+    let invitesNavItem = !showPrivateStuff || !maySendInvites(user).value ? null :
+      NavItem({ eventKey: 'invites', id: 'e2eUP_InvitesB' }, "Invites");
+
     var childProps = {
-      loggedInUser: this.state.loggedInUser,
-      user: this.state.user,
+      me: me,
+      user: user,
       reloadUser: this.loadCompleteUser,
-      activeRouteName: this.props.routes[2].path,
-      transitionTo: this.transitionToRouteName
+      transitionTo: this.transitionTo
     };
+
+    let activeRouteName = this.props.routes[2].path;
 
     return (
       r.div({ className: 'container esUP' },
-        UserBar(childProps),
-        r.div({ style: { display: 'table', width: '100%' }},
-          r.div({ style: { display: 'table-row' }},
-            UserNav(childProps),
-            r.div({ className: 'dw-user-content' },
-              React.cloneElement(this.props.children, childProps))))));
-  }
-});
-
-
-var UserBar = createComponent({
-  sendMessage: function() {
-    editor.openToWriteMessage(this.props.user.id);
-  },
-
-  render: function() {
-    var loggedInUser: Myself = this.props.loggedInUser;
-    var user = this.props.user;
-    var isMe = loggedInUser.userId === user.id;
-
-    var showPrivateStuff = isStaff(loggedInUser) || (
-        loggedInUser.isAuthenticated && loggedInUser.userId === user.id);
-
-    var invitesNavItem = null;
-    var preferencesNavItem = null;
-    if (showPrivateStuff) {
-      preferencesNavItem = NavItem({ eventKey: 'preferences', id: 'e2eUP_PrefsB' }, "Preferences");
-      if (maySendInvites(user).value) {
-        invitesNavItem = NavItem({ eventKey: 'invites', id: 'e2eUP_InvitesB' }, "Invites");
-      }
-    }
-
-    var adminButton = isStaff(loggedInUser)
-        ? r.li({}, r.a({ href: linkToUserInAdminArea(user.id) }, "View in Admin Area"))
-        : null;
-
-    var sendMessageButton = me_maySendDirectMessageTo(loggedInUser, user)
-        ? PrimaryButton({ onClick: this.sendMessage, className: 'e_UP_SendMsgB' }, "Send Message")
-        : null;
-
-    return (
-      r.div({ className: 'dw-user-bar clearfix' },
-        UserInfo(this.props),
-        Nav({ bsStyle: 'pills', activeKey: this.props.activeRouteName,
-            onSelect: this.props.transitionTo, className: 'dw-sub-nav' },
-          sendMessageButton,
-          adminButton,
+        r.div({ className: 'dw-user-bar clearfix' },
+          AvatarAboutAndButtons(childProps)),
+        Nav({ bsStyle: 'pills', activeKey: activeRouteName,
+            onSelect: this.transitionTo, className: 'dw-sub-nav' },
+          activityNavItem,
+          notificationsNavItem,
           invitesNavItem,
-          preferencesNavItem)));
+          preferencesNavItem),
+        React.cloneElement(this.props.children, childProps)));
   }
 });
 
 
-var UserInfo = createComponent({
+
+var AvatarAboutAndButtons = createComponent({
   getInitialState: function() {
     return {
       isUploadingProfilePic: false,
@@ -296,9 +281,13 @@ var UserInfo = createComponent({
     });
   },
 
+  sendMessage: function() {
+    editor.openToWriteMessage(this.props.user.id);
+  },
+
   render: function() {
     var user = this.props.user;
-    var me: Myself = this.props.loggedInUser;
+    var me: Myself = this.props.me;
     var suspendedInfo;
     if (user.suspendedAtEpoch) {
       var whatAndUntilWhen = user.suspendedTillEpoch === 'Forever'
@@ -344,7 +333,18 @@ var UserInfo = createComponent({
              ref: 'chooseAvatarInput', style: { width: 0, height: 0 }}))
       : null;
 
+
+    var adminButton = !isStaff(me) ? null :
+        LinkButton({ href: linkToUserInAdminArea(user.id), className: 's_UP_AdminB' },
+          "View in Admin Area");
+
+    var sendMessageButton = !me_maySendDirectMessageTo(me, user) ? null :
+        PrimaryButton({ onClick: this.sendMessage, className: 's_UP_SendMsgB' },
+          "Send Message");
+
     return (
+      // This + display: table-row makes the avatar image take less space,
+      // and the name + about text get more space, if the avatar is narrow.
       r.div({ className: 'user-info' },
         r.div({ className: 'user-info-col' },
           r.div({ className: 'esMedAvtr' + avatarMissingClass },
@@ -352,73 +352,12 @@ var UserInfo = createComponent({
             anyUploadPhotoBtn)),
         r.div({ className: 'user-info-col' },
           r.div({ style: { display: 'table-cell' }},
+            sendMessageButton,
+            adminButton,
             r.h1({ className: 'esUP_Un' }, user.username, thatIsYou),
             r.h2({ className: 'esUP_FN' }, user.fullName, isGuestInfo),
+            r.div({ className: 's_UP_About' }, user.about),
             suspendedInfo))));
-  }
-});
-
-
-var UserNav = createComponent({
-  render: function() {
-    var messages = null;
-    var user: BriefUser = this.props.user;
-    var me: Myself = this.props.loggedInUser;
-    var viewNotfsNavItem = isStaff(me) || me.id === user.id
-        ? NavItem({ eventKey: 'notifications' }, 'Notifications')
-        : null;
-    return (
-      r.div({ className: 'dw-user-nav' },
-        Nav({ bsStyle: 'pills', activeKey: this.props.activeRouteName,
-            onSelect: this.props.transitionTo, className: 'dw-sub-nav nav-stacked' },
-          NavItem({ eventKey: 'activity' }, 'Activity'),
-          NavItem({ eventKey: 'topics' }, 'Topics'),
-          NavItem({ eventKey: 'posts' }, 'Posts'),
-          NavItem({ eventKey: 'likes-given' }, 'Likes Given'),
-          NavItem({ eventKey: 'likes-received' }, 'Likes Received'),
-          viewNotfsNavItem,
-          messages)));
-  }
-});
-
-
-
-var UserAllComponent = React.createClass(<any> {
-  render: function() {
-    return (
-      r.p({}, "Not yet implemented"));
-  }
-});
-
-
-var UserTopicsComponent = React.createClass(<any> {
-  render: function() {
-    return (
-      r.p({}, "Not yet implemented"));
-  }
-});
-
-
-var UserPostsComponent = React.createClass(<any> {
-  render: function() {
-    return (
-      r.p({}, "Not yet implemented"));
-  }
-});
-
-
-var UserLikesGivenComponent = React.createClass(<any> {
-  render: function() {
-    return (
-      r.p({}, "Not yet implemented"));
-  }
-});
-
-
-var UserLikesReceivedComponent = React.createClass(<any> {
-  render: function() {
-    return (
-      r.p({}, "Not yet implemented"));
   }
 });
 

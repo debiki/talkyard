@@ -29,17 +29,16 @@ var r = React.DOM;
 
 export var UserPreferencesComponent = React.createClass({
   render: function() {
-    var loggedInUser = this.props.loggedInUser;
+    var me = this.props.me;
     var user = this.props.user;
 
-    var mayViewPrefs = isStaff(loggedInUser) || (
-        loggedInUser.isAuthenticated && loggedInUser.userId === user.id);
+    var mayViewPrefs = isStaff(me) || (me.isAuthenticated && me.userId === user.id);
 
     if (!mayViewPrefs)
       return r.p({}, "Forbidden");
 
     var anyNotYourPrefsInfo = null;
-    if (loggedInUser.userId !== user.id) {
+    if (me.userId !== user.id) {
       anyNotYourPrefsInfo =
         r.p({}, "You are editing ", r.b({}, 'another '),
           "user's preferences. You can do that, because you're an administrator.");
@@ -47,10 +46,10 @@ export var UserPreferencesComponent = React.createClass({
 
     var preferences = isGuest(user)
         ? GuestPreferences({ guest: user })
-        : ShowAndEditPreferences({ user: user });
+        : MemberPreferences({ user: user, me: me });
 
     return (
-      r.div({ className: 'users-page' },
+      r.div({ className: 's_UP_Prefs' },
         anyNotYourPrefsInfo,
         preferences));
   }
@@ -106,7 +105,7 @@ var GuestPreferences = createComponent({
 });
 
 
-var ShowAndEditPreferences = createComponent({
+var MemberPreferences = createComponent({
   getInitialState: function() {
     return {};
   },
@@ -119,6 +118,7 @@ var ShowAndEditPreferences = createComponent({
       fullName: form.find('#fullName').val(),
       username: this.props.user.username,
       emailAddress: form.find('#emailAddress').val(),
+      about: form.find('#t_UP_Prefs_AboutMeTA').val(),
       url: form.find('#url').val(),
       emailForEveryNewPost: form.find('#emailForEveryNewPost').is(':checked')
     };
@@ -132,6 +132,7 @@ var ShowAndEditPreferences = createComponent({
   },
 
   render: function() {
+    var me: Myself = this.props.me;
     var user: CompleteUser = this.props.user;
     var username = user.username || '(not specified)';
 
@@ -165,6 +166,11 @@ var ShowAndEditPreferences = createComponent({
               defaultValue: user.email, disabled: true }),
           r.p({ className: 'help-block' }, 'Not shown publicly.')),
 
+        r.div({ className: 'form-group' },
+          r.label({ htmlFor: 't_UP_AboutMe' }, "About you"),
+          r.textarea({ className: 'form-control', id: 't_UP_Prefs_AboutMeTA',
+              defaultValue: user.about || '' })),
+
         // Later: Verify is really an URL
         r.div({ className: 'form-group' },
           r.label({ htmlFor: 'url' }, 'URL'),
@@ -172,15 +178,15 @@ var ShowAndEditPreferences = createComponent({
               defaultValue: user.url }),
           r.p({ className: 'help-block' }, 'Any website or page of yours.')),
 
-        // Later: + About me
         // Later: + Location
 
+        (!isStaff(me) ? null :  // currently for staff only [EsE7YKF24]
         r.div({ className: 'form-group' },
           r.div({ className: 'checkbox' },
             r.label({},
               r.input({ type: 'checkbox', id: 'emailForEveryNewPost',
                 defaultChecked: user.emailForEveryNewPost }),
-              "Be notified about every new post (unless you mute the topic or category)"))),
+              "Be notified about every new post (unless you mute the topic or category)")))),
 
         InputTypeSubmit({ id: 'e2eUP_Prefs_SaveB', value: "Save" }),
         savingInfo));

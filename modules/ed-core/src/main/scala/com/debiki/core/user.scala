@@ -365,8 +365,6 @@ sealed trait User {
   def emailNotfPrefs: EmailNotfPrefs
   def emailVerifiedAt: Option[ju.Date]
   def passwordHash: Option[String]
-  def country: String
-  def website: String
   def tinyAvatar: Option[UploadRef]
   def smallAvatar: Option[UploadRef]
   def isApproved: Option[Boolean]
@@ -404,8 +402,6 @@ case class Member(
   emailNotfPrefs: EmailNotfPrefs,
   emailVerifiedAt: Option[ju.Date] = None,
   passwordHash: Option[String] = None,
-  country: String = "",
-  website: String = "",
   tinyAvatar: Option[UploadRef] = None,
   smallAvatar: Option[UploadRef] = None,
   isApproved: Option[Boolean],
@@ -446,7 +442,7 @@ case class Guest(
   guestCookie: Option[String], // COULD rename to browserIdCookie, right
   email: String,  // COULD rename to emailAddr
   emailNotfPrefs: EmailNotfPrefs,
-  country: String = "",
+  country: Option[String] = None,  // COULD rename to Location
   lockedThreatLevel: Option[ThreatLevel] = None) extends User {
 
   def theUsername = die("EsE7YKWP4")
@@ -455,7 +451,6 @@ case class Guest(
   def passwordHash: Option[String] = None
   def tinyAvatar: Option[UploadRef] = None
   def smallAvatar: Option[UploadRef] = None
-  def website: String = ""
   def isApproved: Option[Boolean] = None
   def isAdmin: Boolean = false
   def isOwner: Boolean = false
@@ -488,8 +483,9 @@ case class MemberInclDetails(
   emailVerifiedAt: Option[ju.Date] = None,
   emailForEveryNewPost: Boolean = false,
   passwordHash: Option[String] = None,
-  country: String = "",
-  website: String = "",
+  country: Option[String] = None,
+  website: Option[String] = None,
+  about: Option[String] = None,
   tinyAvatar: Option[UploadRef] = None,
   smallAvatar: Option[UploadRef] = None,
   mediumAvatar: Option[UploadRef] = None,
@@ -534,6 +530,8 @@ case class MemberInclDetails(
     fullName = fullName,
     username = username,
     emailAddress = emailAddress,
+    about = about,
+    location = country,
     url = website,
     emailForEveryNewPost = emailForEveryNewPost)
 
@@ -545,6 +543,7 @@ case class MemberInclDetails(
       fullName = preferences.fullName,
       username = preferences.username,
       emailAddress = newEmailAddress,
+      about = preferences.about,
       website = preferences.url,
       emailForEveryNewPost = preferences.emailForEveryNewPost)
   }
@@ -561,8 +560,6 @@ case class MemberInclDetails(
     emailNotfPrefs = emailNotfPrefs,
     emailVerifiedAt = emailVerifiedAt,
     passwordHash = passwordHash,
-    country = country,
-    website = website,
     isApproved = isApproved,
     suspendedTill = suspendedTill,
     trustLevel = trustLevel,
@@ -581,8 +578,6 @@ object UnknownUser extends User {
   override def emailNotfPrefs: EmailNotfPrefs = EmailNotfPrefs.DontReceive
   override def emailVerifiedAt: Option[Date] = None
   override def passwordHash: Option[String] = None
-  override def country: String = ""
-  override def website: String = ""
   override def tinyAvatar: Option[UploadRef] = None
   override def smallAvatar: Option[UploadRef] = None
   override def isApproved: Option[Boolean] = None

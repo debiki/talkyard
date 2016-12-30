@@ -126,8 +126,9 @@ object UserController extends mvc.Controller {
       "fullName" -> user.fullName,
       "isAdmin" -> user.isAdmin,
       "isModerator" -> user.isModerator,
-      "country" -> user.country,
-      "url" -> user.website,
+      "country" -> JsStringOrNull(user.country),
+      "url" -> JsStringOrNull(user.website),
+      "about" -> JsStringOrNull(user.about),
       "avatarUrl" -> JsUploadUrlOrNull(user.smallAvatar),
       "mediumAvatarUrl" -> JsUploadUrlOrNull(user.mediumAvatar),
       "suspendedTillEpoch" -> DateEpochOrNull(user.suspendedTill))
@@ -168,8 +169,7 @@ object UserController extends mvc.Controller {
     var userJson = Json.obj(
       "id" -> user.id,
       "fullName" -> user.guestName,
-      "country" -> user.country,
-      "url" -> user.website)
+      "country" -> JsStringOrNull(user.country))
       // += ipSuspendedTill
       // += browserIdCookieSuspendedTill
     if (callerIsStaff) {
@@ -577,7 +577,9 @@ object UserController extends mvc.Controller {
       fullName = (json \ "fullName").asOptStringNoneIfBlank,
       username = username,
       emailAddress = (json \ "emailAddress").as[String],
-      url = (json \ "url").as[String],
+      about = (json \ "about").asOpt[String].trimNoneIfBlank,
+      location = (json \ "location").asOpt[String].trimNoneIfBlank,
+      url = (json \ "url").asOpt[String].trimNoneIfBlank,
       emailForEveryNewPost = (json \ "emailForEveryNewPost").as[Boolean])
   }
 

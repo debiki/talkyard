@@ -21,7 +21,7 @@
 /// <reference path="../util/EmailInput.more.ts" />
 
 //------------------------------------------------------------------------------
-   module debiki2.users {
+   namespace debiki2.users {
 //------------------------------------------------------------------------------
 
 var r = React.DOM;
@@ -47,8 +47,8 @@ export var UserInvitesComponent = React.createClass({
   },
 
   loadInvites: function(userId: number) {
-    var loggedInUser: Myself = this.props.loggedInUser;
-    var maySeeInvites = loggedInUser.userId === userId || isStaff(loggedInUser);
+    var me: Myself = this.props.me;
+    var maySeeInvites = me.userId === userId || isStaff(me);
     if (!maySeeInvites)
       return;
 
@@ -69,12 +69,12 @@ export var UserInvitesComponent = React.createClass({
 
   render: function() {
     var user: CompleteUser = this.props.user;
-    var loggedInUser: Myself = this.props.loggedInUser;
+    var me: Myself = this.props.me;
 
-    if (isGuest(loggedInUser))
+    if (isGuest(me))
       return r.p({}, "You are logge in as a guest. They may not see invites.");
 
-    if (!isMember(loggedInUser))
+    if (!isMember(me))
       return r.p({}, "You are not logge in.");
 
     if (this.state.errorMessage)
@@ -89,7 +89,7 @@ export var UserInvitesComponent = React.createClass({
         this.state.invites.length
             ? 'Invites that you have already sent are listed below.'
             : 'You have not invited anyone yet.'));
-    if (user.id === loggedInUser.userId && mayInvite.yes) {
+    if (user.id === me.userId && mayInvite.yes) {
       inviteButton =
           Button({ onClick: () => openInviteSomeoneDialog(this.addInvite) }, "Send an Invite");
     }

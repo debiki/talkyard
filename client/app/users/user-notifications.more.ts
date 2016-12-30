@@ -20,7 +20,7 @@
 
 
 //------------------------------------------------------------------------------
-   module debiki2.users {
+   namespace debiki2.users {
 //------------------------------------------------------------------------------
 
 var r = React.DOM;
@@ -37,18 +37,18 @@ export var UserNotificationsComponent = React.createClass({
   },
 
   componentWillReceiveProps: function(nextProps) {
-    var loggedInUser: Myself = this.props.loggedInUser;
+    var me: Myself = this.props.me;
     var user: CompleteUser = this.props.user;
-    var nextLoggedInUser: Myself = nextProps.loggedInUser;
+    var nextLoggedInUser: Myself = nextProps.me;
     var nextUser: CompleteUser = nextProps.user;
-    if (loggedInUser.userId !== nextLoggedInUser.userId ||
+    if (me.userId !== nextLoggedInUser.userId ||
         user.id !== nextUser.id) {
       this.loadNotifications(nextUser.id);
     }
   },
 
   loadNotifications: function(userId: number) {
-    var me: Myself = this.props.loggedInUser;
+    var me: Myself = this.props.me;
     if (me.id !== userId && !isStaff(me)) {
       this.setState({
         error: "May not list an other user's notifications. [EdE7WK2L_]",
@@ -74,7 +74,7 @@ export var UserNotificationsComponent = React.createClass({
       return r.p({}, "Loading...");
 
     var user: CompleteUser = this.props.user;
-    var isMe = user.id === this.props.loggedInUser.userId;
+    var isMe = user.id === this.props.me.userId;
     var toWho = isMe ? "you" : user.username || user.fullName;
 
     let anyNoNotfsMessage = this.state.notfs.length ? null :
