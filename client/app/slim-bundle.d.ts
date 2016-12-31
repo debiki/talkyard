@@ -125,6 +125,11 @@ declare namespace debiki2 {
   namespace help {
 
   }
+
+  namespace forum {
+    var ListTopicsComponent;
+  }
+
   namespace page {
     var openNotfsLevelDropdown;
     var Post;

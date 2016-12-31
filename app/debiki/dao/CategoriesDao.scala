@@ -157,6 +157,11 @@ trait CategoriesDao {
   }
 
 
+  def listPagesByUser(userId: UserId, isStaffOrSelf: Boolean, limit: Int): Seq[PagePathAndMeta] = {
+    readOnlyTransaction(_.loadPagesByUser(userId, isStaffOrSelf = isStaffOrSelf, limit))
+  }
+
+
   /** Lists pages placed directly in one of categoryIds.
     */
   private def listPagesInCategories(categoryIds: Seq[CategoryId], pageQuery: PageQuery, limit: Int)

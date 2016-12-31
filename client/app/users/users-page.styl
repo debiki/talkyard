@@ -18,14 +18,22 @@
     a
       line-height: 12px;
 
-.user-info
-  float: left;
-  display: table-row;
-  .user-info-col
-    display: table-cell;
-    vertical-align: top;
-    padding-right: 30px;
+.s_UP_AvtrAboutBtns
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-start;
 
+.s_UP_Avtr
+  vertical-align: top;
+  padding-right: 30px;
+
+.s_UP_AboutBtns
+  flex: 1;
+  vertical-align: top;
+  padding-right: 3px;
+
+
+.s_UP_AvtrAboutBtns
   h1, h2
     font-size: 26px;
     margin: 0;
@@ -37,9 +45,6 @@
     .dw-is-what
       font-family: sans-serif;
       font-size: 80%;
-
-.user-info-col:last-child
-  padding-right: 3px;
 
 .s_UP_AdminB,
 .s_UP_SendMsgB
@@ -67,7 +72,7 @@
     list-style: none;
     padding: 8px 0;
 
-.esUP
+.s_UP_Avtr
   .esMedAvtr-missing
     background: white;
   .esAvtr-ltr
@@ -181,4 +186,7 @@
 
 .s_UP_Prefs input
   max-width: 430px;
+
+t_UP_Prefs_AboutMeTA
+  min-height: 90px;
 

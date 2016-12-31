@@ -79,7 +79,7 @@ var UsersHomeComponent = React.createClass(<any> {
     return (
       r.div({},
         reactelements.TopBar({ customTitle: "About User",
-            backToSiteButtonTitle: "Back from user area", extraMargin: true }),
+            backToSiteButtonTitle: "Back from user profile", extraMargin: true }),
         this.props.children));
   }
 });
@@ -103,19 +103,23 @@ var UserPageComponent = React.createClass(<any> {
 
   getInitialState: function() {
     return {
-      me: debiki2.ReactStore.getMe(),
+      store: debiki2.ReactStore.allData(),
+      myId: null,
       user: null,
     };
   },
 
   onChange: function() {
-    if (this.state.me === debiki2.ReactStore.getMe())
-      return;
-
-    // Also reload the user we're showing, because now we might/might-no-longer have access
-    // to data about him/her.
-    this.setState({ me: debiki2.ReactStore.getMe(), });
-    this.loadCompleteUser();
+    let myOldId = this.state.myId;
+    let store: Store = debiki2.ReactStore.allData();
+    this.setState({
+      store: store,
+      myId: store.me.id,
+    });
+    if (myOldId !== store.me.id) {
+      // Now we might have access to more/less data about the user, so refresh.
+      this.loadCompleteUser();
+    }
   },
 
   componentDidMount: function() {
@@ -156,7 +160,8 @@ var UserPageComponent = React.createClass(<any> {
   },
 
   render: function() {
-    let me: Myself = this.state.me;
+    let store: Store = this.state.store;
+    let me: Myself = store.me;
     let user = this.state.user;
     if (!user || !me)
       return r.p({}, 'Loading...');
@@ -178,7 +183,8 @@ var UserPageComponent = React.createClass(<any> {
       NavItem({ eventKey: 'invites', id: 'e2eUP_InvitesB' }, "Invites");
 
     var childProps = {
-      me: me,
+      store: store,
+      me: me, // try to remove, incl already in `store`
       user: user,
       reloadUser: this.loadCompleteUser,
       transitionTo: this.transitionTo
@@ -347,19 +353,18 @@ var AvatarAboutAndButtons = createComponent({
     return (
       // This + display: table-row makes the avatar image take less space,
       // and the name + about text get more space, if the avatar is narrow.
-      r.div({ className: 'user-info' },
-        r.div({ className: 'user-info-col' },
+      r.div({ className: 's_UP_AvtrAboutBtns' },
+        r.div({ className: 's_UP_Avtr' },
           r.div({ className: 'esMedAvtr' + avatarMissingClass },
             avatar,
             anyUploadPhotoBtn)),
-        r.div({ className: 'user-info-col' },
-          r.div({ style: { display: 'table-cell' }},
-            sendMessageButton,
-            adminButton,
-            r.h1({ className: 'esUP_Un' }, user.username, thatIsYou),
-            r.h2({ className: 'esUP_FN' }, user.fullName, isGuestInfo),
-            r.div({ className: 's_UP_About' }, user.about),
-            suspendedInfo))));
+        r.div({ className: 's_UP_AboutBtns' },
+          sendMessageButton,
+          adminButton,
+          r.h1({ className: 'esUP_Un' }, user.username, thatIsYou),
+          r.h2({ className: 'esUP_FN' }, user.fullName, isGuestInfo),
+          r.div({ className: 's_UP_About' }, user.about),
+          suspendedInfo)));
   }
 });
 

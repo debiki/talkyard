@@ -33,7 +33,7 @@
 /// <reference path="../editor-bundle-not-yet-loaded.ts" />
 
 //------------------------------------------------------------------------------
-   module debiki2.forum {
+   namespace debiki2.forum {
 //------------------------------------------------------------------------------
 
 var r = React.DOM;
@@ -69,13 +69,13 @@ export function buildForumRoutes() {
       Redirect({ from: RoutePathLatest + '/', to: rootSlash + RoutePathLatest }),
       Redirect({ from: RoutePathTop + '/', to: rootSlash + RoutePathTop }),
       Redirect({ from: RoutePathCategories + '/', to: rootSlash + RoutePathCategories }),
-      Route({ path: RoutePathLatest, component: ForumTopicListComponent },
-        IndexRoute({ component: ForumTopicListComponent }),
-        Route({ path: ':categorySlug', component: ForumTopicListComponent })),
-      Route({ path: RoutePathTop, component: ForumTopicListComponent },
-        IndexRoute({ component: ForumTopicListComponent }),
-        Route({ path: ':categorySlug', component: ForumTopicListComponent })),
-      Route({ path: RoutePathCategories, component: ForumCategoriesComponent }))];
+      Route({ path: RoutePathLatest, component: LoadAndListTopicsComponent },
+        IndexRoute({ component: LoadAndListTopicsComponent }),
+        Route({ path: ':categorySlug', component: LoadAndListTopicsComponent })),
+      Route({ path: RoutePathTop, component: LoadAndListTopicsComponent },
+        IndexRoute({ component: LoadAndListTopicsComponent }),
+        Route({ path: ':categorySlug', component: LoadAndListTopicsComponent })),
+      Route({ path: RoutePathCategories, component: LoadAndListCategoriesComponent }))];
 }
 
 
@@ -660,7 +660,7 @@ var ForumButtons = createComponent({
 
 
 
-var ForumTopicListComponent = React.createClass(<any> {
+var LoadAndListTopicsComponent = React.createClass(<any> {
   getInitialState: function(): any {
     // The server has included in the Flux store a list of the most recent topics, and we
     // can use that lis when rendering the topic list server side, or for the first time
@@ -698,10 +698,6 @@ var ForumTopicListComponent = React.createClass(<any> {
   componentWillReceiveProps: function(nextProps) {
     // This happens when switching category or showing top topics instead of latest topics.
     this.loadTopics(nextProps, false);
-  },
-
-  componentDidUpdate: function() {
-    processTimeAgo();
   },
 
   onLoadMoreTopicsClick: function(event) {
@@ -799,6 +795,36 @@ var ForumTopicListComponent = React.createClass(<any> {
     return orderOffset;
   },
 
+  render: function() {
+    return ListTopicsComponent({
+      topics: this.state.topics,
+      store: this.props.store,
+      useTable: this.props.useTable,
+      minHeight: this.state.minHeight,
+      showLoadMoreButton: this.state.showLoadMoreButton,
+      activeCategory: this.props.activeCategory,
+      orderOffset: this.getOrderOffset(),
+      // `routes` and `location` needed because category clickable. [7FKR0QA]
+      // COULD try to find some other way to link categories to URL paths, that works
+      // also in the user-activity.more.ts topic list. [7FKR0QA]
+      linkCategories: true,
+      routes: this.props.routes,
+      location: this.props.location,
+    });
+  },
+});
+
+
+
+export var ListTopicsComponent = createComponent({
+  getInitialState: function() {
+    return {};
+  },
+
+  componentDidUpdate: function() {
+    processTimeAgo();
+  },
+
   openIconsHelp: function() {
     this.setState({ helpOpened: true });
     ReactActions.showSingleHelpMessageAgain(IconHelpMessage.id);
@@ -806,23 +832,24 @@ var ForumTopicListComponent = React.createClass(<any> {
 
   render: function() {
     var store: Store = this.props.store;
-    if (!this.state.topics) {
+    let topics: Topic[] = this.props.topics;
+    if (!topics) {
       // The min height preserves scrollTop, even though the topic list becomes empty
       // for a short while (which would otherwise reduce the windows height which
       // in turn might reduce scrollTop).
       // COULD make minHeight work when switching to the Categories view too? But should
       // then probably scroll the top of the categories list into view.
       // COULD use store.topics, used when rendering server side, but for now:
-      return r.p({ style: { minHeight: this.state.minHeight } }, 'Loading...');
+      return r.p({ style: { minHeight: this.props.minHeight } }, 'Loading...');
     }
 
-    if (!this.state.topics.length)
+    if (!topics.length)
       return r.p({ id: 'e2eF_NoTopics' }, 'No topics.');
 
     let useTable = this.props.useTable;
 
     let activeCategory: Category = this.props.activeCategory;
-    let topics = this.state.topics.map((topic: Topic) => {
+    let topicElems = topics.map((topic: Topic) => {
       return TopicRow({
           store: store, topic: topic, categories: store.categories,
           activeCategory: activeCategory, now: store.now,
@@ -848,14 +875,14 @@ var ForumTopicListComponent = React.createClass(<any> {
         ? r.a({ className: 'esForum_topics_openIconsHelp icon-info-circled',
               onClick: this.openIconsHelp }, "Explain icons...")
         : HelpMessageBox({ message: IconHelpMessage, showUnhideTips: false });
-    topics.splice(Math.min(topics.length, numFewTopics), 0,
+    topicElems.splice(Math.min(topicElems.length, numFewTopics), 0,
       useTable
         ? r.tr({ key: 'ExplIcns' }, r.td({ colSpan: 5 }, iconsHelpStuff))
         : r.li({ key: 'ExplIcns', className: 'esF_TsL_T clearfix' }, iconsHelpStuff));
 
-    var loadMoreTopicsBtn;
-    if (this.state.showLoadMoreButton) {
-      var orderOffset = this.getOrderOffset();
+    let loadMoreTopicsBtn;
+    let orderOffset = this.props.orderOffset;
+    if (this.props.showLoadMoreButton) {
       var queryString = '?' + debiki2.ServerApi.makeForumTopicsQueryParams(orderOffset);
       loadMoreTopicsBtn =
         r.div({},
@@ -863,8 +890,8 @@ var ForumTopicListComponent = React.createClass(<any> {
               href: queryString }, 'Load more ...'));
     }
 
-    var sortingHowTips;
-    if (this.getOrderOffset().sortOrder === TopicSortOrder.LikesAndBumpTime) {
+    let sortingHowTips;
+    if (orderOffset.sortOrder === TopicSortOrder.LikesAndBumpTime) {
       sortingHowTips =
           r.p({ className: 'esForum_sortInfo e_F_SI_Top' }, "Topics with the most Like votes:");
     }
@@ -885,11 +912,11 @@ var ForumTopicListComponent = React.createClass(<any> {
               r.th({ className: 'num' }, "Activity"))),
               // skip for now:  r.th({ className: 'num' }, "Feelings"))),  [8PKY25]
           r.tbody({},
-            topics));
+            topicElems));
 
     var topicRows = useTable ? null :
         r.ol({ className: 'esF_TsL s_F_Ts-Nrw' + deletedClass },
-          topics);
+          topicElems);
 
     return (
       r.div({},
@@ -1011,7 +1038,7 @@ var TopicRow = createComponent({
 
   makeCategoryLink: function(category: Category, skipQuery?: boolean) {
     var store: Store = this.props.store;
-    dieIf(this.props.routes.length < 2, 'EdE5U2ZG');
+    dieIf(this.props.routes.length < 2, 'EdE5U2ZG');  // [7FKR0QA]
     var sortOrderPath = this.props.routes[SortOrderRouteIndex].path;
     // this.props.location.query — later: could convert to query string, unless skipQuery === true
     return store.pagePath.value + sortOrderPath + '/' + category.slug;
@@ -1023,7 +1050,7 @@ var TopicRow = createComponent({
       let urlPath = this.makeCategoryLink(category, true);
       this.context.router.push({
         pathname: urlPath,
-        query: this.props.location.query,
+        query: this.props.location.query,  // [7FKR0QA]
       });
     };
   },
@@ -1184,7 +1211,7 @@ function topic_mediaThumbnailUrls(topic: Topic): string[] {
 }
 
 
-var ForumCategoriesComponent = React.createClass(<any> {
+var LoadAndListCategoriesComponent = React.createClass(<any> {
   getInitialState: function() {
     return {};
   },

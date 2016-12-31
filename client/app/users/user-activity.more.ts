@@ -39,7 +39,7 @@ export let UsersActivityComponent = React.createClass(<any> {
 
   render: function() {
     let childProps = {
-      me: this.props.me,
+      store: this.props.store,
       user: this.props.user,
       reloadUser: this.props.loadCompleteUser,
     };
@@ -73,18 +73,19 @@ export let PostsComponent = React.createClass(<any> {
   },
 
   componentWillReceiveProps: function(nextProps) {
-    let me: Myself = this.props.me;
+    // a bit dupl code [5AWS2E9]
+    let me: Myself = this.props.store.me;
     let user: CompleteUser = this.props.user;
-    let nextMe: Myself = nextProps.me;
+    let nextMe: Myself = nextProps.store.me;
     let nextUser: CompleteUser = nextProps.user;
-    // If we log in as a new user, which posts we may see might change.
+    // If we log in as someone else, which posts we may see might change.
     if (me.userId !== nextMe.userId || user.id !== nextUser.id) {
       this.loadPosts(nextUser.id);
     }
   },
 
   loadPosts: function(userId: number) {
-    let me: Myself = this.props.me;
+    let me: Myself = this.props.store.me;
     Server.loadPostsByAuthor(userId, (response: any) => {
       this.setState({
         posts: response.posts,
@@ -97,7 +98,8 @@ export let PostsComponent = React.createClass(<any> {
   },
 
   render: function() {
-    let me: Myself = this.props.me;
+    let store: Store = this.props.store;
+    let me: Myself = store.me;
     let posts: PostWithPage[] = this.state.posts;
     let author: BriefUser = this.state.author;
     if (!_.isArray(posts))
@@ -122,9 +124,58 @@ export let PostsComponent = React.createClass(<any> {
 
 
 export let TopicsComponent = React.createClass(<any> {
+  getInitialState: function() {
+    return { topics: null };
+  },
+
+  componentDidMount: function() {
+    let user: CompleteUser = this.props.user;
+    this.loadTopics(user.id);
+  },
+
+  componentWillReceiveProps: function(nextProps) {
+    // a bit dupl code [5AWS2E9]
+    let me: Myself = this.props.store.me;
+    let user: CompleteUser = this.props.user;
+    let nextMe: Myself = nextProps.store.me;
+    let nextUser: CompleteUser = nextProps.user;
+    // If we log in as someone else, which topics we may see might change.
+    if (me.userId !== nextMe.userId || user.id !== nextUser.id) {
+      this.loadTopics(nextUser.id);
+    }
+  },
+
+  loadTopics: function(userId: number) {
+    Server.loadTopicsByUser(userId, (topics: Topic[]) => {
+      this.setState({ topics: topics });
+    });
+  },
+
   render: function() {
+    let store: Store = this.props.store;
+    let me: Myself = store.me;
+    let topics: Topic[] = this.state.topics;
+    if (!_.isArray(topics))
+      return (
+        r.p({}, "Loading ..."));
+
+    let topicsElems = forum.ListTopicsComponent({
+      topics: this.state.topics,
+      store: this.props.store,
+      useTable: true,
+      minHeight: 300,
+      showLoadMoreButton: false,
+      activeCategory: {},
+      orderOffset: <OrderOffset> { sortOrder: TopicSortOrder.BumpTime },
+      // `routes` and `location` only needed if making categories clickable. [7FKR0QA]
+      linkCategories: false,
+      routes: null,
+      location: null,
+    });
+
     return (
-      r.p({}, "Not yet implemented 2"));
+      r.ol({ className: 's_UP_Act_Ts' },
+        topicsElems));
   }
 });
 

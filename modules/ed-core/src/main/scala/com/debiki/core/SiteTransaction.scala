@@ -218,7 +218,9 @@ trait SiteTransaction {
     orderOffset: PageOrderOffset, limit: Int): Seq[PagePathAndMeta]
 
   def loadPagesInCategories(categoryIds: Seq[CategoryId], pageQuery: PageQuery, limit: Int)
-  : Seq[PagePathAndMeta]
+        : Seq[PagePathAndMeta]
+
+  def loadPagesByUser(userId: UserId, isStaffOrSelf: Boolean, limit: Int): Seq[PagePathAndMeta]
 
   def moveRenamePage(pageId: PageId,
     newFolder: Option[String] = None, showId: Option[Boolean] = None,

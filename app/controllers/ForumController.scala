@@ -17,7 +17,7 @@
 
 package controllers
 
-import debiki.dao.{CategoriesDao, CategoryToSave, PageStuff}
+import debiki.dao.{CategoriesDao, CategoryToSave, PageStuff, SiteDao}
 import collection.mutable
 import com.debiki.core._
 import com.debiki.core.Prelude._
@@ -149,16 +149,28 @@ object ForumController extends mvc.Controller {
   }
 
 
-  def listTopics(categoryId: String) = GetAction { request =>
-    val categoryIdInt: CategoryId = Try(categoryId.toInt) getOrElse throwBadReq(
-      "DwE4KG08", "Bat category id")
+  def listTopics(categoryId: Int) = GetAction { request =>
     val pageQuery: PageQuery = parseThePageQuery(request)
     throwForbiddenIf(pageQuery.pageFilter.includesDeleted && !request.isStaff, "EdE5FKZX2",
       "Only staff can list deleted pages")
-    val topics = listTopicsInclPinned(categoryIdInt, pageQuery, request.dao,
+    val topics = listTopicsInclPinned(categoryId, pageQuery, request.dao,
       includeDescendantCategories = true, isStaff = request.isStaff, restrictedOnly = false)
-    val pageStuffById = request.dao.getPageStuffById(topics.map(_.pageId))
-    val users = request.dao.getUsersAsSeq(pageStuffById.values.flatMap(_.userIds))
+    makeTopicsReply(topics, request.dao)
+  }
+
+
+  def listTopicsByUser(userId: UserId) = GetAction { request =>
+    die("EdE2KW0GU46", "Unimpl security stuff")
+    val caller = request.user
+    val isStaffOrSelf = caller.exists(_.isStaff) || caller.exists(_.id == userId)
+    val topics = request.dao.listPagesByUser(userId, isStaffOrSelf = isStaffOrSelf, limit = 200)
+    makeTopicsReply(topics, request.dao)
+  }
+
+
+  def makeTopicsReply(topics: Seq[PagePathAndMeta], dao: SiteDao): Result = {
+    val pageStuffById = dao.getPageStuffById(topics.map(_.pageId))
+    val users = dao.getUsersAsSeq(pageStuffById.values.flatMap(_.userIds))
     val topicsJson: Seq[JsObject] = topics.map(topicToJson(_, pageStuffById))
     val json = Json.obj(
       "topics" -> topicsJson,
@@ -306,8 +318,8 @@ object ForumController extends mvc.Controller {
       "pageRole" -> topic.pageRole.toInt,
       "title" -> topicStuff.title,
       "url" -> topic.path.value,
-      "categoryId" -> topic.categoryId.getOrDie(
-        "DwE49Fk3", s"Topic `${topic.id}', site `${topic.path.siteId}', belongs to no category"),
+      // Private chats & formal messages might not belong to any category.
+      "categoryId" -> JsNumberOrNull(topic.categoryId),
       "pinOrder" -> JsNumberOrNull(topic.meta.pinOrder),
       "pinWhere" -> JsNumberOrNull(topic.meta.pinWhere.map(_.toInt)),
       "excerpt" -> JsStringOrNull(topicStuff.bodyExcerpt),

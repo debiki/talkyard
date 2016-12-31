@@ -646,6 +646,16 @@ export function loadForumTopics(categoryId: string, orderOffset: OrderOffset,
 }
 
 
+export function loadTopicsByUser(userId: UserId,
+        doneCallback: (topics: Topic[]) => void) {
+  var url = `/-/list-topics-by-user?userId=${userId}`;
+  get(url, (response: any) => {
+    ReactActions.patchTheStore({ usersBrief: response.users });
+    doneCallback(response.topics);
+  });
+}
+
+
 export function listAllUsernames(prefix: string, doneCallback: (usernames: BriefUser) => void) {
   var url = '/-/list-all-users?usernamePrefix='+ prefix;
   get(url, doneCallback);
