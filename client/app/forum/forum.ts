@@ -1398,6 +1398,10 @@ function makeTitle(topic: Topic, className: string) {
     tooltip = "This is a mind map";
     title = r.span({}, r.span({ className: 'icon-sitemap' }), title);
   }
+  else if (topic.pageRole === PageRole.FormalMessage) {
+    tooltip = "A private message";
+    title = r.span({}, r.span({ className: 'icon-mail' }), title);
+  }
   else {
     title = r.span({}, r.span({ className: 'icon-comment-empty' }), title);
     tooltip = "A discussion";

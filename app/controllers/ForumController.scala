@@ -160,10 +160,13 @@ object ForumController extends mvc.Controller {
 
 
   def listTopicsByUser(userId: UserId) = GetAction { request =>
-    die("EdE2KW0GU46", "Unimpl security stuff")
     val caller = request.user
     val isStaffOrSelf = caller.exists(_.isStaff) || caller.exists(_.id == userId)
-    val topics = request.dao.listPagesByUser(userId, isStaffOrSelf = isStaffOrSelf, limit = 200)
+    val topicsInclForbidden = request.dao.listPagesByUser(
+      userId, isStaffOrSelf = isStaffOrSelf, limit = 200)
+    val topics = topicsInclForbidden filter { page: PagePathAndMeta =>
+      request.dao.maySeePageUseCache(page.meta, caller)._1
+    }
     makeTopicsReply(topics, request.dao)
   }
 

@@ -116,6 +116,12 @@ trait AuthzSiteDaoMixin {
   }
 
 
+  def maySeePostUseCache(post: Post, pageMeta: PageMeta, user: Option[User]): (Boolean, String) = {
+    maySeePostImpl(null, -1, user, anyPost = Some(post), anyPageMeta = Some(pageMeta),
+      anyTransaction = None)
+  }
+
+
   def throwIfMayNotSeePost(post: Post, author: Option[User])(transaction: SiteTransaction) {
     val (may, debugCode) =
       maySeePostImpl(post.pageId, post.nr, author, anyPost = Some(post),
@@ -126,13 +132,18 @@ trait AuthzSiteDaoMixin {
 
 
   def maySeePostImpl(pageId: PageId, postNr: PostNr, user: Option[User],
-        anyPost: Option[Post], anyTransaction: Option[SiteTransaction]): (Boolean, String) = {
+        anyPost: Option[Post], anyPageMeta: Option[PageMeta] = None,
+        anyTransaction: Option[SiteTransaction]): (Boolean, String) = {
 
-    val pageMeta =
+    require(anyPageMeta.isDefined ^ (pageId ne null), "EdE25KWU24")
+    require(anyPost.isDefined ^ (postNr >= 0), "EdE3DJ8A0")
+
+    val pageMeta = anyPageMeta getOrElse {
       anyTransaction.map(_.loadPageMeta(pageId)).getOrElse(getPageMeta(pageId)) getOrElse {
         // Apparently the page was just deleted.
         return (false, "5KFUP2R0-Page-Not-Found")
       }
+    }
 
     val (maySeePage, debugCode) = maySeePageImpl(pageMeta, user, anyTransaction)
     if (!maySeePage)

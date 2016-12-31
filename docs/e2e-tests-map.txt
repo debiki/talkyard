@@ -63,6 +63,11 @@ profile page -
   create password:
   list & click notfs:
   suspend:
+  posts & topics:
+    won't list hidden or unapproved posts:
+    won't list posts in deleted categories:
+    won't list posts from deleted pages:
+    won't list posts from pages one may not see:
 
 invites -
   view:

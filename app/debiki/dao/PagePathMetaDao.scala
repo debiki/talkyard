@@ -102,7 +102,7 @@ trait PagePathMetaDao {
 
 
   COULD_OPTIMIZE // use the cache
-  def getPageMetasAsMap(pageIds: Seq[PageId], anySiteId: Option[SiteId] = None)
+  def getPageMetasAsMap(pageIds: Iterable[PageId], anySiteId: Option[SiteId] = None)
         : Map[PageId, PageMeta] = {
     readOnlyTransaction(_.loadPageMetasAsMap(pageIds, anySiteId))
   }

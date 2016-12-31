@@ -49,28 +49,33 @@ object ViewPageController extends mvc.Controller {
 
 
   def listPosts(authorId: UserId) = GetAction { request: GetRequest =>
-    import request.{dao, user}
+    import request.{dao, user => caller}
 
-    val callerIsStaff = user.exists(_.isStaff)
-    val callerIsStaffOrAuthor = callerIsStaff || user.exists(_.id == authorId)
+    val callerIsStaff = caller.exists(_.isStaff)
+    val callerIsStaffOrAuthor = callerIsStaff || caller.exists(_.id == authorId)
     val author = dao.getUser(authorId) getOrElse throwNotFound("EdE2FWKA9", "Author not found")
 
     val postsInclForbidden = dao.readOnlyTransaction { transaction =>
       transaction.loadPostsByAuthorSkipTitles(authorId, limit = 999, OrderBy.MostRecentFirst)
     }
-    val pageIds = postsInclForbidden.map(_.pageId)
-    val pageMetaById = dao.getPageMetasAsMap(pageIds)
+    val pageIdsInclForbidden = postsInclForbidden.map(_.pageId).toSet
+    val pageMetaById = dao.getPageMetasAsMap(pageIdsInclForbidden)
 
-    die("EdE2KW0GU46", "Unimpl security stuff")
-    val posts = postsInclForbidden ; SECURITY // todo: filter away forbidden posts
-    SECURITY // exclude priv messages, add e2e test for that?
+    val posts = for {
+      post <- postsInclForbidden
+      pageMeta <- pageMetaById.get(post.pageId)
+      if dao.maySeePostUseCache(post, pageMeta, caller)._1
+    } yield post
 
+    val pageIds = posts.map(_.pageId).distinct
     val pageStuffById = dao.getPageStuffById(pageIds)
+    val tagsByPostId = dao.readOnlyTransaction(_.loadTagsByPostId(posts.map(_.uniqueId)))
 
     val postsJson = posts flatMap { post =>
-      var (postJson, pageVersion) = ReactJson.postToJson(
-        post.nr, pageId = post.pageId, dao, includeUnapproved = callerIsStaffOrAuthor,
-        showHidden = true)
+      val pageMeta = pageMetaById.get(post.pageId) getOrDie "EdE2KW07E"
+      val tags = tagsByPostId.getOrElse(post.uniqueId, Set.empty)
+      var postJson = ReactJson.postToJsonOutsidePage(post, pageMeta.pageRole,
+        showHidden = true, includeUnapproved = callerIsStaffOrAuthor, tags)
 
       pageStuffById.get(post.pageId) map { pageStuff =>
         postJson += "pageId" -> JsString(post.pageId)

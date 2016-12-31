@@ -174,8 +174,8 @@ trait SiteTransaction {
 
   def loadAllPageMetas(): immutable.Seq[PageMeta]
   def loadPageMeta(pageId: PageId): Option[PageMeta]
-  def loadPageMetasAsMap(pageIds: Seq[PageId], anySiteId: Option[SiteId] = None)
-  : Map[PageId, PageMeta]
+  def loadPageMetasAsMap(pageIds: Iterable[PageId], anySiteId: Option[SiteId] = None)
+        : Map[PageId, PageMeta]
   def loadThePageMeta(pageId: PageId): PageMeta =
     loadPageMeta(pageId).getOrElse(throw PageNotFoundException(pageId))
 
@@ -183,7 +183,6 @@ trait SiteTransaction {
   //def loadPageMetaForAllSections(): Seq[PageMeta]
 
   def loadPageMetas(pageIds: Iterable[PageId]): immutable.Seq[PageMeta]
-  def loadPageMetasAsMap(pageIds: Iterable[PageId]): Map[PageId, PageMeta]
   def insertPageMetaMarkSectionPageStale(newMeta: PageMeta)
 
   final def updatePageMeta(newMeta: PageMeta, oldMeta: PageMeta, markSectionPageStale: Boolean) {

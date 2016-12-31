@@ -442,7 +442,7 @@ object UserController extends mvc.Controller {
 
 
   /*
-  private def userInfoToJson(userInfo: UserInfoAndStats): JsObject = {  // xx
+  private def userInfoToJson(userInfo: UserInfoAndStats): JsObject = {
     Json.obj(
       "userId" -> userInfo.info.id,
       "displayName" -> userInfo.info.anyName,
@@ -497,7 +497,7 @@ object UserController extends mvc.Controller {
   }
 
 
-  private def actionToJson(actionInfo: UserActionInfo): JsObject = {  // xx
+  private def actionToJson(actionInfo: UserActionInfo): JsObject = {
     Json.obj(
       "pageUrl" -> s"/-${actionInfo.pageId}", // redirects to the page
       "pageTitle" -> JsString(actionInfo.pageTitle),

@@ -33,7 +33,18 @@ import scala.math.BigDecimal.decimal
 case class PostExcerpt(text: String, firstImageUrls: immutable.Seq[String])
 
 
+class HowRenderPostInPage(
+  val summarize: Boolean,
+  val jsSummary: JsValue,
+  val squash: Boolean,
+  val childrenSorted: immutable.Seq[Post])
+
+
+
 // CLEAN_UP COULD rename it to JsonMaker? JsonBuilder? Jsonifier?
+// REFACTOR COULD split into one class JsonDao, which accesses the database and is a Dao trait?
+// + a class JsonMaker or EdJson that doesn't do any db calls or anything like that.
+//
 object ReactJson {
 
   /** If there are more than this many visible replies, we'll summarize the page, otherwise
@@ -410,15 +421,6 @@ object ReactJson {
   private def postToJsonImpl(post: Post, page: Page, tags: Set[TagLabel],
         includeUnapproved: Boolean = false, showHidden: Boolean = false): JsObject = {
 
-    val (anySanitizedHtml: Option[String], isApproved: Boolean) =
-      if (post.isBodyHidden && !showHidden)
-        (None, post.approvedAt.isDefined)
-      else if (includeUnapproved)
-        (Some(post.currentHtmlSanitized(ReactRenderer, page.role)),
-          post.isCurrentVersionApproved)
-      else
-        (post.approvedHtmlSanitized, post.approvedAt.isDefined)
-
     val depth = page.parts.depthOf(post.nr)
 
     // Find out if we should summarize post, or squash it and its subsequent siblings.
@@ -461,7 +463,36 @@ object ReactJson {
       }
 
     val childrenSorted = page.parts.childrenBestFirstOf(post.nr)
+
+    val howRender = new HowRenderPostInPage(summarize = summarize, jsSummary = jsSummary,
+        squash = squash, childrenSorted = childrenSorted)
+
+    postToJsonNoDbAccess(post, showHidden = showHidden, includeUnapproved = includeUnapproved,
+      pageRole = page.role, tags = tags, howRender)
+  }
+
+
+  def postToJsonOutsidePage(post: Post, pageRole: PageRole, showHidden: Boolean, includeUnapproved: Boolean,
+        tags: Set[TagLabel]): JsObject = {
+    postToJsonNoDbAccess(post, showHidden = showHidden, includeUnapproved = includeUnapproved,
+      pageRole, tags = tags, new HowRenderPostInPage(false, JsNull, false, Nil))
+  }
+
+
+  private def postToJsonNoDbAccess(post: Post, showHidden: Boolean, includeUnapproved: Boolean,
+        pageRole: PageRole, tags: Set[TagLabel], inPageInfo: HowRenderPostInPage): JsObject = {
+
+    import inPageInfo._
     val postType: Option[Int] = if (post.tyype == PostType.Normal) None else Some(post.tyype.toInt)
+
+    val (anySanitizedHtml: Option[String], isApproved: Boolean) =
+      if (post.isBodyHidden && !showHidden)
+        (None, post.approvedAt.isDefined)
+      else if (includeUnapproved)
+        (Some(post.currentHtmlSanitized(ReactRenderer, pageRole)),
+          post.isCurrentVersionApproved)
+      else
+        (post.approvedHtmlSanitized, post.approvedAt.isDefined)
 
     // For now, ignore ninja edits of the very first revision, because otherwise if
     // clicking to view the edit history, it'll be empty.
