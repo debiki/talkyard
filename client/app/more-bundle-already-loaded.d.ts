@@ -118,6 +118,7 @@ declare namespace debiki2.forum {
 
 declare namespace debiki2.users {
   var routes;
+  var InviteRow;
   function openInviteSomeoneDialog(addInvite);
 }
 

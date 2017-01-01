@@ -379,7 +379,87 @@ var make = {
     site.categories.push(uncategorizedCategory);
 
     return site;
-  }
+  },
+
+  // Creates this:
+  //
+  // - owner Owen
+  // - moderator Modya
+  // - moderator Mons
+  // - member Maria
+  // - member Michael
+  // - member Mallory
+  // - guest Gunnar
+  //
+  // - category DeletedCategory
+  //   - topic About-DeletedCategory
+  //   - topic TopicInDeletedCategory-by-Owen
+  //   - topic TopicInDeletedCategory-by-Modya
+  //   - topic TopicInDeletedCategory-by-Maria (-reply-by-Michael)
+  //   - topic TopicInDeletedCategory-by-Guest
+  // - category UnlistedCategory
+  //   - topic About-UnlistedCategory
+  //   - topic TopicInUnlistedCategory-by-Owen
+  //   - topic TopicInUnlistedCategory-by-Modya
+  //   - topic TopicInUnlistedCategory-by-Maria (-reply-by-Michael)
+  //   - topic TopicInUnlistedCategory-by-Guest — category was unlisted after topic created
+  // - category StaffOnlyCategory
+  //   - topic About-StaffOnlyCategory
+  //   - topic TopicInStaffOnlyCategory-by-Owen
+  //   - topic TopicInStaffOnlyCategory-by-Modya
+  //   - topic TopicInStaffOnlyCategory-by-Maria (-reply-by-Michael)
+  //   - topic TopicInStaffOnlyCategory-by-Guest — category made staff-only after topic created
+  // - category CategoryA
+  //   - topic About-CategoryA
+  //   - topic TopicInCategoryA-by-Owen
+  //   - topic TopicInCategoryA-by-Modya
+  //   - topic TopicInCategoryA-by-Maria (-reply-by-Michael)
+  //   - topic TopicInCategoryA-by-Guest
+  //   - topic DeletedTopicInCategoryA-by-Maria (-reply-by-Michael)
+  //   - topic FlaggedHiddenTopicInCategoryA-by-Mallory
+  // - category CategoryB
+  //   - topic About-CategoryB
+  //   - topic TopicInCategoryB-by-Owen
+  //   - topic TopicInCategoryB-by-Modya
+  //   - topic TopicInCategoryB-by-Maria
+  //   - topic TopicInCategoryB-by-Guest
+  //
+  // - private message from Maria to Michael
+  // - private message from Maria to Modya   (only Modya and Owen can see it)
+  //
+  // - topic TopicInNoCategory-by-Michael
+  //
+  /*
+  largeForumOwnedByOwen: function(name: string, options?): SiteBuilder {
+    let site = make.forumOwnedByOwen(name, options);
+
+    var modya = make.memberModeratorModya();
+    site.members.push(modya);
+
+    let rootCategoryId = 1;
+
+    let deletedCategory = site_addCategory(site, {
+      id: 3,
+      parentId: rootCategoryId,
+      name: 'DeletedCategory',
+      slug: 'deleted-category',
+      description: 'This category has been deleted.',
+      deleted: true,
+    });
+
+    site_addPage(site, {
+      categoryId: deletedCategory.id,
+      pageId: '',
+      pageRole: '',
+      folder: '',
+      slug: '',
+      authorId: '',
+      title: '',
+      body: '',
+    });
+
+    return site;
+  } */
 };
 
 

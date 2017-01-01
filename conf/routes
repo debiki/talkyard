@@ -123,7 +123,8 @@ GET   /-/unsubscribe            controllers.UnsubscriptionController.showForm(em
 POST  /-/unsubscribe            controllers.UnsubscriptionController.handleForm(emailId)
 GET   /-/unsubscribed           controllers.UnsubscriptionController.showHasBeenUnsubscribed()
 
-GET   /-/list-invites           controllers.InviteController.listInvites(sentById)
+GET   /-/load-invites           controllers.InviteController.loadInvites(sentById: Int)
+GET   /-/load-all-invites       controllers.InviteController.loadAllInvites
 POST  /-/send-invite            controllers.InviteController.sendInvite
 GET   /-/accept-invite/:key     controllers.InviteController.acceptInvite(key)
 

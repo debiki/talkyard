@@ -19,6 +19,7 @@
 /// <reference path="../../typedefs/moment/moment.d.ts" />
 /// <reference path="../slim-bundle.d.ts" />
 /// <reference path="../util/EmailInput.more.ts" />
+/// <reference path="../page-dialogs/about-user-dialog.more.ts" />
 
 //------------------------------------------------------------------------------
    namespace debiki2.users {
@@ -33,21 +34,24 @@ var EmailInput = util.EmailInput;
 
 export var UserInvitesComponent = React.createClass({
   getInitialState: function() {
+    return { intives: null };
+  },
+
+  componentDidMount: function() {
     this.loadInvites(this.props.user.id);
-    return {
-        intives: null
-    };
   },
 
   componentWillReceiveProps: function(nextProps) {
-    this.setState({
-      invites: null
-    });
+    if (this.props.user.id === nextProps.user.id &&
+        this.props.store.me.id === nextProps.store.me.id)
+      return;
+
     this.loadInvites(nextProps.user.id);
   },
 
   loadInvites: function(userId: number) {
-    var me: Myself = this.props.me;
+    this.setState({ invites: null });
+    let me: Myself = this.props.store.me;
     var maySeeInvites = me.userId === userId || isStaff(me);
     if (!maySeeInvites)
       return;
@@ -68,8 +72,9 @@ export var UserInvitesComponent = React.createClass({
   },
 
   render: function() {
+    let store: Store = this.props.store;
+    var me: Myself = store.me;
     var user: CompleteUser = this.props.user;
-    var me: Myself = this.props.me;
 
     if (isGuest(me))
       return r.p({}, "You are logge in as a guest. They may not see invites.");
@@ -111,50 +116,76 @@ export var UserInvitesComponent = React.createClass({
           introText,
           inviteButton));
 
+    // REFACTOR COULD break out rendering code to separate module — also used in admin. [8HRAE3V]
     var now = Date.now();
     var inviteRows = this.state.invites.map(function(invite) {
-      return InviteRow({ invite: invite, now: now });
+      return InviteRow({ invite: invite, store: store, now: now,
+          // Invited-email + inviter-id is unique. [5GPJ4A0]
+          key: invite.invitedEmailAddress + ' ' + invite.createdById });
     });
 
     return (
-      r.div({},
+      r.div({ className: 's_UP_Inv' },
         introText,
         inviteButton,
+        // Dupl table headers [3GK0YU2]
         r.table({ className: 'dw-invites-table' },
           r.thead({},
             r.tr({},
-              r.th({}, 'Invited User'),
-              r.th({}, 'Invitation Accepted'),
-              r.th({}, 'Invitation Created'))),
+              r.th({}, "Invited email"),
+              r.th({}, "Member who accepted"),
+              r.th({}, "Invitation accepted"),
+              r.th({}, "Invitation sent"))),
             // Later on: Seen, Topics Viewed, Posts Read, Read Time, Days Visited, Trust Level, Threat Level
-          r.tbody({},
+          r.tbody({ className: 's_InvsL'},
             inviteRows))));
   }
 });
 
 
-var InviteRow = createComponent({
-  render: function() {
+// REFACTOR COULD break out to separate module, because also used in the admin area. [8HRAE3V]
+export var InviteRow = createComponent({
+  onInvitedUserClick: function(event) {
+    event.preventDefault();
     var invite: Invite = this.props.invite;
-    var userEmailOrLink;
+    pagedialogs.getAboutUserDialog().openForUserIdOrUsername(invite.userId);
+  },
+
+  onInviterClick: function(event) {
+    event.preventDefault();
+    var invite: Invite = this.props.invite;
+    pagedialogs.getAboutUserDialog().openForUserIdOrUsername(invite.createdById);
+  },
+
+  render: function() {
+    let store = this.props.store;
+    var invite: Invite = this.props.invite;
+    var invitedEmail;
+    var invitedUser;
     var acceptedAt = "Not yet";
     if (invite.userId) {
-      userEmailOrLink = r.a({ href: '/-/users/' + invite.userId }, invite.invitedEmailAddress);
+      let user: BriefUser = store_getUserOrMissing(store, invite.userId);
+      invitedUser = UserName({ user: user, makeLink: true, onClick: this.onInvitedUserClick });
+      invitedEmail = r.samp({}, invite.invitedEmailAddress);
       acceptedAt = moment(invite.acceptedAtEpoch).from(this.props.now);
     }
     else {
-      userEmailOrLink = invite.invitedEmailAddress;
+      invitedEmail = invite.invitedEmailAddress;
     }
+
+    let sentBy;
+    if (this.props.showSender) {
+      let sender: BriefUser = store_getUserOrMissing(store, invite.createdById);
+      sentBy = r.td({}, UserName({ user: sender, makeLink: true, onClick: this.onInviterClick }));
+    }
+
     return (
       r.tr({},
-        r.td({},
-          userEmailOrLink),
-
-        r.td({},
-          acceptedAt),
-
-        r.td({},
-          moment(invite.createdAtEpoch).from(this.props.now))));
+        r.td({}, invitedEmail),
+        r.td({}, invitedUser),
+        r.td({}, acceptedAt),
+        r.td({}, moment(invite.createdAtEpoch).from(this.props.now)),
+        sentBy));
   }
 });
 
@@ -169,7 +200,7 @@ export function openInviteSomeoneDialog(addInvite) {
 }
 
 
-var InviteDialog = createComponent({  // COULD break out to separate debiki2.invite module
+var InviteDialog = createComponent({  // COULD break out to debiki2.invite module [8HRAE3V]
   getInitialState: function() {
     return { isOpen: false };
   },
@@ -192,6 +223,7 @@ var InviteDialog = createComponent({  // COULD break out to separate debiki2.inv
     Server.sendInvite(emailAddress, (invite: Invite) => {
       this.state.addInvite(invite);
       this.close();
+      util.openDefaultStupidDialog({ body: "Done. I'll send him/her an email." });
     }, (failedRequest: HttpRequest) => {
       if (hasErrorCode(failedRequest, '_EsE403IUAM_')) {
         this.setState({ error: "He or she has joined this site already" });

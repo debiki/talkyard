@@ -47,7 +47,7 @@ export var UsersTabComponent = React.createClass(<any> {
             // with react-router-bootstrap, sth like:
             //   NavItem({ eventKey: 'users-new' }, 'New Waiting'))),   ?
         r.div({ className: 'dw-admin-panel' },
-          React.cloneElement(this.props.children, { loggedInUser: this.props.loggedInUser }))));
+          React.cloneElement(this.props.children, { store: this.props.store }))));
   }
 });
 
@@ -71,25 +71,68 @@ export var NewUsersPanelComponent = React.createClass({
 
 
 export var InvitedUsersPanelComponent = React.createClass({
+  getInitialState: function() {
+    return {
+      invites: null
+    };
+  },
+
+  componentDidMount: function() {
+    Server.loadAllInvites(invites => {
+      this.setState({ invites: invites });
+    });
+  },
+
+  componentDidUnmount: function() {
+    this.isGOne = true;
+  },
+
   sendInvites: function() {
-    // Don't: (moving away from the Admin Area is confusing, usability testing shows)
-    // var user = debiki2.ReactStore.getUser();
-    // window.location.assign(linkToInvitesFromUser(user.userId));
-    // Instead open the dialo here directly:
+    // Don't leave the Admin Area and go to the user's page, to send the invite
+    // — usability testing shows that this makes people confused.
+    // Instead open the dialog here, in the admin area.
     users.openInviteSomeoneDialog((invite) => {
-      // Later: add the invite to the list. But for now:
-      util.openDefaultStupidDialog({ body: "Done. I'll send him/her an email." })
+      if (this.isGone) return;
+      this.setState({ invites: this.state.invites.concat(invite) });
     });
   },
 
   render: function() {
+    let store: Store = this.props.store;
+    let invites: Invite[] = this.state.invites;
+    let introText;
+    let listOfInvites;
+    if (!_.isArray(invites)) {
+      introText = "Loading ...";
+    }
+    else if (_.isEmpty(invites)) {
+      introText = "No invites sent.";
+    }
+    else {
+      introText = "People who have been invited to this site:";
+      listOfInvites = invites.map((invite: Invite) => users.InviteRow(
+          { invite: invite, store: store, showSender: true,
+            // Invited-email + inviter-id is unique. [5GPJ4A0]
+            key: invite.invitedEmailAddress + ' ' + invite.createdById }));
+    }
+
+    // Could break out rendering code to separate module — also used in user profile. [8HRAE3V]
     return (
       r.div({},
-        r.div({ className: 'esAdminSectionIntro' }, r.p({},
-          "Users who have been invited to this site:", r.br(),
-          "(This list is not yet implemented.)")),
-        r.div({ style: { height: '1ex' }}),
-        Button({ onClick: this.sendInvites }, 'Send Invites')));
+        Button({ onClick: this.sendInvites, className: 's_AA_Us_Inv_SendB' }, "Send Invites"),
+        r.div({ className: 'esAdminSectionIntro' },
+          r.p({}, introText)),
+        // Dupl table headers [3GK0YU2]
+        r.table({ className: 'dw-invites-table' },
+          r.thead({},
+            r.tr({},
+              r.th({}, "Invited email"),
+              r.th({}, "Member who accepted"),
+              r.th({}, "Invitation accepted"),
+              r.th({}, "Invitation sent"),
+              r.th({}, "Sent by"))),
+          r.tbody({ className: 's_InvsL'},
+            listOfInvites))));
   }
 });
 

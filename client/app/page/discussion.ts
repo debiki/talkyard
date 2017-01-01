@@ -25,6 +25,7 @@
 /// <reference path="../help/help.ts" />
 /// <reference path="../model.ts" />
 /// <reference path="../rules.ts" />
+/// <reference path="../widgets.ts" />
 /// <reference path="post-actions.ts" />
 /// <reference path="chat.ts" />
 /// <reference path="../more-bundle-not-yet-loaded.ts" />
@@ -1121,11 +1122,12 @@ export var PostHeader = createComponent({
   render: function() {
     var store: Store = this.props;
     var post: Post = this.props.post;
+    let abbreviate = this.props.abbreviate;
     if (!post)
       return r.p({}, '(Post missing [DwE7IKW2])');
 
     if (isWikiPost(post)) {
-      if (this.props.abbreviate) {
+      if (abbreviate) {
         return r.div({ className: 'dw-p-hd' }, 'Wiki');
       }
       if (this.props.is2dTreeColumn || post.isTreeCollapsed || post.postId === BodyPostId) {
@@ -1136,8 +1138,7 @@ export var PostHeader = createComponent({
       return r.span({ className: 'dw-a-clps icon-up-open', onClick: this.onCollapseClick });
     }
 
-    var me: Myself = this.props.me;
-    var linkFn = this.props.abbreviate ? 'span' : 'a';
+    var linkFn = abbreviate ? 'span' : 'a';
 
     var anySolutionIcon = store.pageRole === PageRole.Question &&
         post.uniqueId === store.pageAnswerPostUniqueId
@@ -1149,21 +1150,6 @@ export var PostHeader = createComponent({
         store_getAuthorOrMissing(store, post);
     var showAvatar = this.props.depth > 1 || this.props.is2dTreeColumn;
     var anyAvatar = !showAvatar ? null : avatar.Avatar({ tiny: true, user: author });
-
-    // Username link: Some dupl code, see edit-history-dialog.ts & avatar.ts [88MYU2]
-    var authorUrl = '/-/users/' + post.authorId;
-    var guestClass = user_isGuest(author) ? ' esP_By_F-G' : '';
-    var guestMark = user_isGuest(author) ? '? ' : '';
-    var fullName = !author.fullName ? undefined :
-        r.span({ className: 'esP_By_F' + guestClass }, author.fullName + ' ' + guestMark);
-
-    var username = !author.username ? null :
-        r.span({ className: 'esP_By_U' },
-          r.span({ className: 'esP_By_U_at' }, '@'), author.username);
-
-    if (!fullName && !username) {
-      fullName = '(Unknown author)';
-    }
 
     var editInfo = null;
     if (post.lastApprovedEditAtMs) {
@@ -1207,34 +1193,19 @@ export var PostHeader = createComponent({
     var isPageBody = post.postId === BodyPostId;
     var by = isPageBody ? 'By ' : '';
     var isBodyPostClass = isPageBody ? ' dw-ar-p-hd' : '';
-    var suspendedClass = ''; // post.authorSuspendedTill ? ' dw-suspended' : ''; // see below
-
-    var userLinkProps: any = {
-      className: 'dw-p-by esP_By' + suspendedClass,
-      onClick: this.props.abbreviate ? null : this.onUserClick,
-      href: authorUrl
-    };
-
-    /* Disable because the server doesn't rerender the page when the user is activated again.
-    if (post.authorSuspendedTill === 'Forever') {
-      userLinkProps.title = 'User banned';
-    }
-    else if (post.authorSuspendedTill) {
-      userLinkProps.title = 'User suspended until ' + dateTimeFix(post.authorSuspendedTill);
-    } */
 
     var is2dColumn = this.props.horizontalLayout && this.props.depth === 1;
     var collapseIcon = is2dColumn ? 'icon-left-open' : 'icon-up-open';
     var isFlat = this.props.isFlat;
     var toggleCollapsedButton =
-        is2dColumn || this.props.abbreviate || post.isTreeCollapsed || isPageBody || isFlat
+        is2dColumn || abbreviate || post.isTreeCollapsed || isPageBody || isFlat
           ? null
           : r.span({ className: 'dw-a-clps ' + collapseIcon, onClick: this.onCollapseClick });
 
     // For flat replies, show "In response to" here inside the header instead,
     // rather than above the header — that looks better.
     var inReplyTo;
-    if (!this.props.abbreviate && isFlat && (post.parentId || post.multireplyPostIds.length)) {
+    if (!abbreviate && isFlat && (post.parentId || post.multireplyPostIds.length)) {
       inReplyTo = ReplyReceivers({ store: store, post: post, comma: true });
     }
 
@@ -1248,7 +1219,8 @@ export var PostHeader = createComponent({
           anySolutionIcon,
           anyAvatar,
           by,
-          r[linkFn](userLinkProps, fullName, username),
+          UserName({ user: author, makeLink: !abbreviate,
+              onClick: abbreviate ? undefined : this.onUserClick }),
           // COULD add "Posted on ..." tooltip.
           this.props.exactTime ?
               timeExact(post.createdAtMs, timeClass) : timeAgo(post.createdAtMs, timeClass),

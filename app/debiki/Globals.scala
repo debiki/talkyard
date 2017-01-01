@@ -513,7 +513,7 @@ class Globals {
 
     def systemDao: SystemDao = new SystemDao(dbDaoFactory, cache) // [rename] to newSystemDao()?
 
-    val applicationVersion = "0.00.38"  // later, read from some build config file
+    val applicationVersion = "0.00.39"  // later, read from some build config file
 
     val applicationSecret =
       conf.getString("play.crypto.secret").noneIfBlank.getOrDie(

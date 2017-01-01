@@ -99,6 +99,39 @@ export function MenuItemDivider() {
   return r.li({ role: 'separator', className: 'divider' });
 }
 
+
+export function UserName(props: { user: BriefUser, makeLink?: boolean, onClick?: any }) {
+  // Some dupl code, see discussion.ts, edit-history-dialog.ts & avatar.ts [88MYU2]
+  let user = props.user;
+  var guestClass = user_isGuest(user) ? ' esP_By_F-G' : '';
+  var guestMark = user_isGuest(user) ? '? ' : '';
+  var fullName = !user.fullName ? undefined :
+    r.span({ className: 'esP_By_F' + guestClass }, user.fullName + ' ' + guestMark);
+  var username = !user.username ? null :
+    r.span({ className: 'esP_By_U' },
+      r.span({ className: 'esP_By_U_at' }, '@'), user.username);
+
+  if (!fullName && !username) {
+    fullName = '(Unknown author)';
+  }
+
+
+  let linkFn = props.makeLink ? 'a' : 'span';
+  let newProps: any = {
+    className: 'dw-p-by esP_By',
+  };
+
+  if (props.makeLink) {
+    newProps.href = '/-/users/' + user.id;
+  }
+
+  if (props.onClick) {
+    newProps.onClick = props.onClick;
+  }
+
+  return r[linkFn](newProps, fullName, username);
+}
+
 //------------------------------------------------------------------------------
    }
 //------------------------------------------------------------------------------

@@ -106,6 +106,10 @@ export let PostsComponent = React.createClass(<any> {
       return (
         r.p({}, "Loading ..."));
 
+    if (_.isEmpty(posts))
+      return (
+        r.p({}, "No posts."));
+
     let postElems = posts.map((post: PostWithPage) => {
       return (
         r.li({ key: post.postId, className: 's_UP_Act_Ps_P' },

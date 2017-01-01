@@ -90,8 +90,9 @@ export var AdminUserPageComponent = React.createClass(<any> {
   },
 
   render: function() {
+    let store: Store = this.props.store;
     var user: CompleteUser = this.state.user;
-    var loggedInUser: Myself = this.props.loggedInUser;
+    var loggedInUser: Myself = store.me;
     var me = loggedInUser;
     if (!user)
       return r.p({}, 'Loading...');

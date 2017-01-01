@@ -476,14 +476,18 @@ export function sendInvite(toEmailAddress: string, success: (invite: Invite) => 
 
 export function loadInvitesSentBy(userId: number, success: (invites: Invite[]) => void,
         error: (message: string) => void) {
-  $.get(origin + '/-/list-invites?sentById=' + userId)
-    .done(response => {
-      success(response);
-    })
-    .fail((x, y, z) => {
-      console.error('Error loading invites: ' + JSON.stringify([x, y, z]));
-      error(x.responseText);
-    });
+  get('/-/load-invites?sentById=' + userId, response => {
+    ReactActions.patchTheStore({ usersBrief: response.users });
+    success(response.invites);
+  }, error);
+}
+
+
+export function loadAllInvites(success: (invites: Invite[]) => void) {
+  get('/-/load-all-invites', response => {
+    ReactActions.patchTheStore({ usersBrief: response.users });
+    success(response.invites);
+  });
 }
 
 

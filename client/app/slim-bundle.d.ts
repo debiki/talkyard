@@ -85,6 +85,7 @@ declare namespace debiki2 {
   var user_isGuest;
   var me_maySendDirectMessageTo;
   var page_isGroupTalk;
+  let store_getUserOrMissing;
   var store_thisIsMyPage;
   var hasErrorCode;
   var page_mayChangeRole;
@@ -148,6 +149,7 @@ declare namespace debiki2 {
   var MenuItem;
   var MenuItemLink;
   var MenuItemDivider;
+  var UserName;
 
   // More stuff, place where?
   //namespace reactelements {

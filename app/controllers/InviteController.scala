@@ -20,15 +20,14 @@ package controllers
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki._
-import debiki.ReactJson.{DateEpochOrNull, JsStringOrNull, JsBooleanOrNull, JsNumberOrNull}
+import debiki.DebikiHttp.throwForbidden
+import debiki.ReactJson.{DateEpochOrNull, JsNumberOrNull, JsUser}
+import debiki.dao.SiteDao
 import io.efdi.server.http._
 import java.{util => ju}
 import play.api.mvc
 import play.api.libs.json._
 import play.api.mvc.{Action => _, _}
-import scala.util.Try
-import Utils.ValidationImplicits._
-import DebikiHttp.{throwForbidden, throwNotFound, throwBadReq}
 
 
 /** Invites new users to join the site.
@@ -109,16 +108,36 @@ object InviteController extends mvc.Controller {
   }
 
 
-  def listInvites(sentById: String) = GetAction { request =>
-    val senderId = Try(sentById.toInt) getOrElse throwBadReq("DwE6FWV0", "Bad user id")
-    val isAdminOrSelf = request.theUser.isAdmin || request.theUserId == senderId
-    if (!request.theUser.isStaff && request.theUserId != senderId)
+  def loadInvites(sentById: UserId) = GetAction { request =>
+    val isAdminOrSelf = request.theUser.isAdmin || request.theUserId == sentById
+    if (!request.theUser.isStaff && request.theUserId != sentById)
       throwForbidden("DwE403INV0", "Any invites are private")
 
-    request.dao.readOnlyTransaction { transaction =>
-      val invites = transaction.loadInvites(createdById = senderId)
-      OkSafeJson(JsArray(invites.map(jsonForInvite(_, isAdminOrSelf))))
+    val invites = request.dao.readOnlyTransaction { transaction =>
+      transaction.loadInvites(createdById = sentById)
     }
+    makeInvitesResponse(invites, showFullEmails = isAdminOrSelf, request.dao)
+  }
+
+
+  def loadAllInvites = StaffGetAction { request =>
+    val isAdmin = request.theUser.isAdmin
+    val invites = request.dao.readOnlyTransaction { transaction =>
+      transaction.loadAllInvites(limit = 100)
+    }
+    makeInvitesResponse(invites, showFullEmails = isAdmin, request.dao)
+  }
+
+
+  private def makeInvitesResponse(invites: Seq[Invite], showFullEmails: Boolean, dao: SiteDao)
+        : Result = {
+    val senderIds = invites.map(_.createdById)
+    val invitedIds = invites.flatMap(_.userId)
+    val userIds = (senderIds ++ invitedIds).distinct
+    val users = dao.getUsersAsSeq(userIds)
+    OkSafeJson(Json.obj(
+      "users" -> JsArray(users.map(JsUser)),
+      "invites" -> JsArray(invites.map(jsonForInvite(_, showFullEmails)))))
   }
 
 
@@ -128,6 +147,7 @@ object InviteController extends mvc.Controller {
       "invitedEmailAddress" -> safeEmail,
       "invitedById" -> invite.createdById,
       "createdAtEpoch" -> invite.createdAt.getTime,
+      "createdById" -> invite.createdById,
       "acceptedAtEpoch" -> DateEpochOrNull(invite.acceptedAt),
       "deletedAtEpoch" -> DateEpochOrNull(invite.deletedAt),
       "deletedById" -> JsNumberOrNull(invite.deletedById),

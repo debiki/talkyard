@@ -95,7 +95,7 @@ var AdminAppComponent = React.createClass(<any> {
 
   getInitialState: function() {
     return {
-      loggedInUser: debiki2.ReactStore.getUser(),
+      store: debiki2.ReactStore.allData(),
       activeRoute: this.props.routes[1].path,  // try to remove?
       defaultSettings: null,
       currentSettings: null,
@@ -105,7 +105,7 @@ var AdminAppComponent = React.createClass(<any> {
 
   onChange: function() {
     this.setState({
-      loggedInUser: debiki2.ReactStore.getUser()
+      store: debiki2.ReactStore.allData(),
     });
   },
 
@@ -171,14 +171,15 @@ var AdminAppComponent = React.createClass(<any> {
   },
 
   render: function() {
-    var loggedInUser = this.state.loggedInUser;
-    if (!loggedInUser)
+    var store: Store = this.state.store;
+    var me = store.me;
+    if (!me)
       return r.p({}, 'Not logged in');
 
-    var settings = loggedInUser.isAdmin ?
+    var settings = me.isAdmin ?
         NavItem({ eventKey: 'settings' }, 'Settings') : null;
 
-    var customize = loggedInUser.isAdmin ?
+    var customize = me.isAdmin ?
         NavItem({ eventKey: 'customize' }, 'Customize') : null;
 
     var saveBar = _.isEmpty(this.state.editedSettings) ? null :
@@ -200,7 +201,7 @@ var AdminAppComponent = React.createClass(<any> {
           customize,
           NavItem({ eventKey: 'review' }, 'Review')),
         React.cloneElement(this.props.children, {
-          loggedInUser: this.state.loggedInUser,
+          store: store,
           loadAllSettingsIfNeeded: this.loadAllSettingsIfNeeded,
           defaultSettings: this.state.defaultSettings,
           currentSettings: this.state.currentSettings,

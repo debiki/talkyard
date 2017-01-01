@@ -554,6 +554,7 @@ interface Invite {
   invitedEmailAddress: string;
   invitedById: number;
   createdAtEpoch: number;  // change to millis
+  createdById: number;
   acceptedAtEpoch?: number;  // change to millis
   invalidatedAtEpoch?: number;  // change to millis
   deletedAtEpoch?: number;  // change to millis

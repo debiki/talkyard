@@ -259,6 +259,7 @@ trait SiteTransaction {
   def updateInvite(invite: Invite): Boolean
   def loadInvite(secretKey: String): Option[Invite]
   def loadInvites(createdById: UserId): immutable.Seq[Invite]
+  def loadAllInvites(limit: Int): immutable.Seq[Invite]
 
   def nextIdentityId: IdentityId
   def insertIdentity(Identity: Identity)
