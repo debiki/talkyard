@@ -161,10 +161,10 @@ trait PostsDao {
         doneAt = transaction.currentTime,
         browserIdData = byWho.browserIdData,
         pageId = Some(pageId),
-        uniquePostId = Some(newPost.uniqueId),
+        uniquePostId = Some(newPost.id),
         postNr = Some(newPost.nr),
         targetPageId = anyParent.map(_.pageId),
-        targetUniquePostId = anyParent.map(_.uniqueId),
+        targetUniquePostId = anyParent.map(_.id),
         targetPostNr = anyParent.map(_.nr),
         targetUserId = anyParent.map(_.createdById))
 
@@ -176,7 +176,7 @@ trait PostsDao {
         createdAt = transaction.currentTime,
         createdAtRevNr = Some(newPost.currentRevisionNr),
         maybeBadUserId = authorId,
-        postId = Some(newPost.uniqueId),
+        postId = Some(newPost.id),
         postNr = Some(newPost.nr)))
 
       transaction.insertPost(newPost)
@@ -184,7 +184,7 @@ trait PostsDao {
       transaction.spamCheckPostsSoon(byWho, spamRelReqStuff, newPost)
       transaction.updatePageMeta(newMeta, oldMeta = oldMeta, markSectionPageStale = shallApprove)
       uploadRefs foreach { uploadRef =>
-        transaction.insertUploadedFileReference(newPost.uniqueId, uploadRef, authorId)
+        transaction.insertUploadedFileReference(newPost.id, uploadRef, authorId)
       }
       insertAuditLogEntry(auditLogEntry, transaction)
       anyReviewTask.foreach(transaction.upsertReviewTask)
@@ -355,7 +355,7 @@ trait PostsDao {
             createdAt = transaction.currentTime,
             createdAtRevNr = Some(post.currentRevisionNr),
             maybeBadUserId = author.id,
-            postId = Some(post.uniqueId),
+            postId = Some(post.id),
             postNr = Some(post.nr)))
           anyReviewTask.foreach(transaction.upsertReviewTask)
           (post, notfs)
@@ -430,7 +430,7 @@ trait PostsDao {
       doneAt = transaction.currentTime,
       browserIdData = who.browserIdData,
       pageId = Some(page.id),
-      uniquePostId = Some(newPost.uniqueId),
+      uniquePostId = Some(newPost.id),
       postNr = Some(newPost.nr),
       targetUniquePostId = None,
       targetPostNr = None,
@@ -441,7 +441,7 @@ trait PostsDao {
     transaction.spamCheckPostsSoon(who, spamRelReqStuff, newPost)
     transaction.updatePageMeta(newMeta, oldMeta = oldMeta, markSectionPageStale = true)
     uploadRefs foreach { uploadRef =>
-      transaction.insertUploadedFileReference(newPost.uniqueId, uploadRef, authorId)
+      transaction.insertUploadedFileReference(newPost.id, uploadRef, authorId)
     }
     insertAuditLogEntry(auditLogEntry, transaction)
 
@@ -463,7 +463,7 @@ trait PostsDao {
     val authorId = byWho.id
 
     if (lastPost.tyype != PostType.ChatMessage)
-      throwForbidden("EsE6YUW2", o"""Cannot append more chat text; post id ${lastPost.uniqueId}
+      throwForbidden("EsE6YUW2", o"""Cannot append more chat text; post id ${lastPost.id}
           is not a chat message""")
 
     require(lastPost.currentRevisionById == authorId, "EsE5JKU0")
@@ -568,7 +568,7 @@ trait PostsDao {
       // hasn't been flagged, — then don't save a new revision. It's rather uninteresting
       // to track changes, when no discussion is happening.
       // (We avoid saving unneeded revisions, to save disk.)
-      val anyLastRevision = loadLastRevisionWithSource(postToEdit.uniqueId, transaction)
+      val anyLastRevision = loadLastRevisionWithSource(postToEdit.id, transaction)
       def oldRevisionSavedAndNothingHappened = anyLastRevision match {
         case None => false
         case Some(_) =>
@@ -667,7 +667,7 @@ trait PostsDao {
         doneAt = transaction.currentTime,
         browserIdData = who.browserIdData,
         pageId = Some(pageId),
-        uniquePostId = Some(postToEdit.uniqueId),
+        uniquePostId = Some(postToEdit.id),
         postNr = Some(postNr),
         targetUserId = Some(postToEdit.createdById))
 
@@ -714,25 +714,25 @@ trait PostsDao {
     // Because if any of the approved or the current version links to an uploaded file,
     // we should keep the file.
     val currentUploadRefs = UploadsDao.findUploadRefsInPost(editedPost)
-    val oldUploadRefs = transaction.loadUploadedFileReferences(postToEdit.uniqueId)
+    val oldUploadRefs = transaction.loadUploadedFileReferences(postToEdit.id)
     val uploadRefsAdded = currentUploadRefs -- oldUploadRefs
     val uploadRefsRemoved = oldUploadRefs -- currentUploadRefs
 
     uploadRefsAdded foreach { hashPathSuffix =>
-      transaction.insertUploadedFileReference(postToEdit.uniqueId, hashPathSuffix, editorId)
+      transaction.insertUploadedFileReference(postToEdit.id, hashPathSuffix, editorId)
     }
 
     uploadRefsRemoved foreach { hashPathSuffix =>
-      val gone = transaction.deleteUploadedFileReference(postToEdit.uniqueId, hashPathSuffix)
+      val gone = transaction.deleteUploadedFileReference(postToEdit.id, hashPathSuffix)
       if (!gone) {
         p.Logger.warn(o"""Didn't delete this uploaded file ref: $hashPathSuffix, post id:
-            ${postToEdit.uniqueId} [DwE7UMF2]""")
+            ${postToEdit.id} [DwE7UMF2]""")
       }
     }
   }
 
 
-  def loadSomeRevisionsRecentFirst(postId: UniquePostId, revisionNr: Int, atLeast: Int,
+  def loadSomeRevisionsRecentFirst(postId: PostId, revisionNr: Int, atLeast: Int,
         userId: Option[UserId]): (Seq[PostRevision], Map[UserId, User]) = {
     val revisionsRecentFirst = mutable.ArrayStack[PostRevision]()
     var usersById: Map[UserId, User] = null
@@ -762,7 +762,7 @@ trait PostsDao {
   }
 
 
-  private def loadLastRevisionWithSource(postId: UniquePostId, transaction: SiteTransaction)
+  private def loadLastRevisionWithSource(postId: PostId, transaction: SiteTransaction)
         : Option[PostRevision] = {
     val revisionsRecentFirst = mutable.ArrayStack[PostRevision]()
     loadSomeRevisionsWithSourceImpl(postId, PostRevision.LastRevisionMagicNr,
@@ -771,7 +771,7 @@ trait PostsDao {
   }
 
 
-  private def loadSomeRevisionsWithSourceImpl(postId: UniquePostId, revisionNr: Int,
+  private def loadSomeRevisionsWithSourceImpl(postId: PostId, revisionNr: Int,
         revisionsRecentFirst: mutable.ArrayStack[PostRevision], atLeast: Int,
         transaction: SiteTransaction) {
     transaction.loadPostRevision(postId, revisionNr) foreach { revision =>
@@ -808,7 +808,7 @@ trait PostsDao {
   }
 
 
-  def editPostSettings(postId: UniquePostId, branchSideways: Option[Byte], me: Who): JsValue = {
+  def editPostSettings(postId: PostId, branchSideways: Option[Byte], me: Who): JsValue = {
     val (post, patch) = readWriteTransaction { transaction =>
       val postBefore = transaction.loadPostsByUniqueId(Seq(postId)).headOption.getOrElse({
         throwNotFound("EsE5KJ8W2", s"Post not found: $postId")
@@ -823,7 +823,7 @@ trait PostsDao {
         doneAt = transaction.currentTime,
         browserIdData = me.browserIdData,
         pageId = Some(postBefore.pageId),
-        uniquePostId = Some(postBefore.uniqueId),
+        uniquePostId = Some(postBefore.id),
         postNr = Some(postBefore.nr),
         targetUserId = Some(postBefore.createdById))
 
@@ -886,7 +886,7 @@ trait PostsDao {
         doneAt = transaction.currentTime,
         browserIdData = browserIdData,
         pageId = Some(pageId),
-        uniquePostId = Some(postBefore.uniqueId),
+        uniquePostId = Some(postBefore.id),
         postNr = Some(postNr),
         targetUserId = Some(postBefore.createdById))
 
@@ -1277,7 +1277,7 @@ trait PostsDao {
       }
 
       try {
-        transaction.insertVote(post.uniqueId, pageId, postNr, voteType, voterId = voterId)
+        transaction.insertVote(post.id, pageId, postNr, voteType, voterId = voterId)
       }
       catch {
         case DbDao.DuplicateVoteException =>
@@ -1342,7 +1342,7 @@ trait PostsDao {
       // Don't create cycles.
       if (newParentPost.pageId == postToMove.pageId) {
         val ancestorsOfNewParent = fromPage.parts.ancestorsOf(newParentPost.nr)
-        if (ancestorsOfNewParent.exists(_.uniqueId == postToMove.uniqueId))
+        if (ancestorsOfNewParent.exists(_.id == postToMove.id))
           throwForbidden("EsE7KCCL_", o"""Cannot move a post to after one of its descendants
               — doing that, would create a cycle""")
       }
@@ -1355,10 +1355,10 @@ trait PostsDao {
         doneAt = transaction.currentTime,
         browserIdData = browserIdData,
         pageId = Some(postToMove.pageId),
-        uniquePostId = Some(postToMove.uniqueId),
+        uniquePostId = Some(postToMove.id),
         postNr = Some(postToMove.nr),
         targetPageId = Some(newParentPost.pageId),
-        targetUniquePostId = Some(newParentPost.uniqueId),
+        targetUniquePostId = Some(newParentPost.id),
         targetPostNr = Some(newParentPost.nr))
 
       val postAfter =
@@ -1406,7 +1406,7 @@ trait PostsDao {
               doneAt = transaction.currentTime,
               browserIdData = browserIdData,
               pageId = Some(descendant.pageId),
-              uniquePostId = Some(descendant.uniqueId),
+              uniquePostId = Some(descendant.id),
               postNr = Some(descendant.nr),
               targetPageId = Some(descendantAfter.pageId))
               // (leave target post blank — we didn't place decendantAfter at any
@@ -1428,7 +1428,7 @@ trait PostsDao {
         toPage, postAfter, skipMentions = true)
       SHOULD // transaction.saveDeleteNotifications(notfs) — but would cause unique key errors
 
-      val patch = ReactJson.makeStorePatch2(postAfter.uniqueId, toPage.id, transaction)
+      val patch = ReactJson.makeStorePatch2(postAfter.id, toPage.id, transaction)
       (postAfter, patch)
     }
 
@@ -1493,7 +1493,7 @@ trait PostsDao {
         transaction.updatePost(postAfter)
       }
 
-      transaction.insertFlag(postBefore.uniqueId, pageId, postNr, flagType, flaggerId)
+      transaction.insertFlag(postBefore.id, pageId, postNr, flagType, flaggerId)
       transaction.upsertReviewTask(reviewTask)
       (postAfter, shallHide)
     }
@@ -1517,7 +1517,7 @@ trait PostsDao {
       // For members, we'll use the user id.  For guests, we'll use the browser-ip & -id-cookie.
       var anyBrowserIdData: Option[BrowserIdData] = None
       def theBrowserIdData = anyBrowserIdData getOrDie "EdE5RW2EB8"
-      var guestPostIds = Set[UniquePostId]()
+      var guestPostIds = Set[PostId]()
 
       var tasks =
         if (user.isMember) {
@@ -1525,7 +1525,7 @@ trait PostsDao {
             orderBy = OrderBy.MostRecentFirst)
         }
         else {
-          val auditLogEntry = transaction.loadCreatePostAuditLogEntry(post.uniqueId) getOrElse {
+          val auditLogEntry = transaction.loadCreatePostAuditLogEntry(post.id) getOrElse {
             // Audit log data apparently deleted, so cannot find out if the guest author is bad.
             return Nil
           }
@@ -1582,7 +1582,7 @@ trait PostsDao {
       // (Hmm, could hide them anyway if they were edited later ... oh now gets too complicated.)
       val postToHide = postToMaybeHide filter { post =>
         // This is O(n^2), so keep numThings small (6WKUT02), like <= 100.
-        val anyReviewTask = tasks.find(_.postId.contains(post.uniqueId))
+        val anyReviewTask = tasks.find(_.postId.contains(post.id))
         !anyReviewTask.exists(_.resolution.exists(_.isFine))
       }
 
@@ -1605,7 +1605,7 @@ trait PostsDao {
     * by that browser (ip address and browser-id-cookie, perhaps fingerprint later).
     */
   private def loadPostIdsByGuestBrowser(browserIdData: BrowserIdData, limit: Int,
-        orderBy: OrderBy)(transaction: SiteTransaction): Set[UniquePostId] = {
+        orderBy: OrderBy)(transaction: SiteTransaction): Set[PostId] = {
     val manyEntries = transaction.loadCreatePostAuditLogEntriesBy(
       browserIdData, limit = limit, orderBy)
     val fewerEntries = manyEntries filter { entry =>
@@ -1773,7 +1773,7 @@ object PostsDao {
 
   def makeReviewTask(createdById: UserId, post: Post, reasons: immutable.Seq[ReviewReason],
         transaction: SiteTransaction): ReviewTask = {
-    val oldReviewTask = transaction.loadPendingPostReviewTask(post.uniqueId,
+    val oldReviewTask = transaction.loadPendingPostReviewTask(post.id,
       taskCreatedById = createdById)
     val newTask = ReviewTask(
       id = oldReviewTask.map(_.id).getOrElse(transaction.nextReviewTaskId()),
@@ -1782,7 +1782,7 @@ object PostsDao {
       createdAt = transaction.currentTime,
       createdAtRevNr = Some(post.currentRevisionNr),
       maybeBadUserId = post.createdById,
-      postId = Some(post.uniqueId),
+      postId = Some(post.id),
       postNr = Some(post.nr))
     newTask.mergeWithAny(oldReviewTask)
   }

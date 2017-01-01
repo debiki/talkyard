@@ -76,8 +76,8 @@ trait SiteTransaction {
   def updateCategoryMarkSectionPageStale(category: Category)
   def loadAboutCategoryPageId(categoryId: CategoryId): Option[PageId]
 
-  def loadPost(uniquePostId: UniquePostId): Option[Post]
-  def loadThePost(uniquePostId: UniquePostId): Post =
+  def loadPost(uniquePostId: PostId): Option[Post]
+  def loadThePost(uniquePostId: PostId): Post =
     loadPost(uniquePostId).getOrElse(throw PostNotFoundByIdException(uniquePostId))
 
   def loadPost(which: PagePostNr): Option[Post] = loadPost(which.pageId, which.postNr)
@@ -98,7 +98,7 @@ trait SiteTransaction {
   def loadOrigPostAndLatestPosts(pageId: PageId, limit: Int): Seq[Post]
   def loadPostsOnPage(pageId: PageId, siteId: Option[SiteId] = None): immutable.Seq[Post]
   def loadPosts(pagePostNrs: Iterable[PagePostNr]): immutable.Seq[Post]
-  def loadPostsByUniqueId(postIds: Iterable[UniquePostId]): immutable.Map[UniquePostId, Post]
+  def loadPostsByUniqueId(postIds: Iterable[PostId]): immutable.Map[PostId, Post]
   /*
   def loadPosts(authorId: Option[UserId], includeTitles: Boolean, includeChatMessages: Boolean,
         limit: Int, orderBy: OrderBy, onPageId: Option[PageId] = None, onlyUnapproved: Boolean = false): immutable.Seq[Post]
@@ -116,7 +116,7 @@ trait SiteTransaction {
     }): _*)
   }
 
-  def nextPostId(): UniquePostId
+  def nextPostId(): PostId
   def insertPost(newPost: Post)
   def updatePost(newPost: Post)
 
@@ -133,8 +133,8 @@ trait SiteTransaction {
   // Returns recently active pages first.
   def loadPageIdsUserIsMemberOf(userId: UserId, onlyPageRoles: Set[PageRole]): immutable.Seq[PageId]
 
-  def loadLastPostRevision(postId: UniquePostId): Option[PostRevision]
-  def loadPostRevision(postId: UniquePostId, revisionNr: Int): Option[PostRevision]
+  def loadLastPostRevision(postId: PostId): Option[PostRevision]
+  def loadPostRevision(postId: PostId, revisionNr: Int): Option[PostRevision]
   def insertPostRevision(revision: PostRevision)
   def updatePostRevision(revision: PostRevision)
 
@@ -142,7 +142,7 @@ trait SiteTransaction {
   def loadActionsDoneToPost(pageId: PageId, postNr: PostNr): immutable.Seq[PostAction]
 
   def deleteVote(pageId: PageId, postNr: PostNr, voteType: PostVoteType, voterId: UserId): Boolean
-  def insertVote(uniquePostId: UniquePostId, pageId: PageId, postNr: PostNr, voteType: PostVoteType, voterId: UserId)
+  def insertVote(uniquePostId: PostId, pageId: PageId, postNr: PostNr, voteType: PostVoteType, voterId: UserId)
 
   /** Remembers that the specified posts have been read by a certain user.
     */
@@ -156,18 +156,18 @@ trait SiteTransaction {
 
   def loadAllTagsAsSet(): Set[TagLabel]
   def loadTagsAndStats(): Seq[TagAndStats]
-  def loadTagsByPostId(postIds: Iterable[UniquePostId]): Map[UniquePostId, Set[TagLabel]]
-  def loadTagsForPost(postId: UniquePostId): Set[TagLabel] =
+  def loadTagsByPostId(postIds: Iterable[PostId]): Map[PostId, Set[TagLabel]]
+  def loadTagsForPost(postId: PostId): Set[TagLabel] =
     loadTagsByPostId(Seq(postId)).getOrElse(postId, Set.empty)
-  def removeTagsFromPost(labels: Set[TagLabel], postId: UniquePostId)
-  def addTagsToPost(labels: Set[TagLabel], postId: UniquePostId, isPage: Boolean)
+  def removeTagsFromPost(labels: Set[TagLabel], postId: PostId)
+  def addTagsToPost(labels: Set[TagLabel], postId: PostId, isPage: Boolean)
   def renameTag(from: String, to: String)
   def setTagNotfLevel(userId: UserId, tagLabel: TagLabel, notfLevel: NotfLevel)
   def loadTagNotfLevels(userId: UserId): Map[TagLabel, NotfLevel]
   def listUsersWatchingTags(tags: Set[TagLabel]): Set[UserId]
 
   def loadFlagsFor(pagePostNrs: immutable.Seq[PagePostNr]): immutable.Seq[PostFlag]
-  def insertFlag(uniquePostId: UniquePostId, pageId: PageId, postNr: PostNr, flagType: PostFlagType, flaggerId: UserId)
+  def insertFlag(uniquePostId: PostId, pageId: PageId, postNr: PostNr, flagType: PostFlagType, flaggerId: UserId)
   def clearFlags(pageId: PageId, postNr: PostNr, clearedById: UserId)
 
   def nextPageId(): PageId
@@ -243,9 +243,9 @@ trait SiteTransaction {
   def updateUploadedFileReferenceCount(uploadRef: UploadRef)
 
   /** Remembers that an uploaded file is referenced from this post. */
-  def insertUploadedFileReference(postId: UniquePostId, uploadRef: UploadRef, addedById: UserId)
-  def deleteUploadedFileReference(postId: UniquePostId, uploadRef: UploadRef): Boolean
-  def loadUploadedFileReferences(postId: UniquePostId): Set[UploadRef]
+  def insertUploadedFileReference(postId: PostId, uploadRef: UploadRef, addedById: UserId)
+  def deleteUploadedFileReference(postId: PostId, uploadRef: UploadRef): Boolean
+  def loadUploadedFileReferences(postId: PostId): Set[UploadRef]
   def loadSiteIdsUsingUpload(ref: UploadRef): Set[SiteId]
 
   /** Returns the refs currently in use, e.g. as user avatar images or
@@ -349,10 +349,10 @@ trait SiteTransaction {
   def loadReviewTask(id: ReviewTaskId): Option[ReviewTask]
   def loadReviewTasks(olderOrEqualTo: ju.Date, limit: Int): Seq[ReviewTask]
   def loadReviewTasksAboutUser(userId: UserId, limit: Int, orderBy: OrderBy): Seq[ReviewTask]
-  def loadReviewTasksAboutPostIds(postIds: Iterable[UniquePostId]): immutable.Seq[ReviewTask]
+  def loadReviewTasksAboutPostIds(postIds: Iterable[PostId]): immutable.Seq[ReviewTask]
   def loadReviewTaskCounts(isAdmin: Boolean): ReviewTaskCounts
-  def loadPendingPostReviewTask(postId: UniquePostId): Option[ReviewTask]
-  def loadPendingPostReviewTask(postId: UniquePostId, taskCreatedById: UserId): Option[ReviewTask]
+  def loadPendingPostReviewTask(postId: PostId): Option[ReviewTask]
+  def loadPendingPostReviewTask(postId: PostId, taskCreatedById: UserId): Option[ReviewTask]
 
   def nextNotificationId(): NotificationId
   def saveDeleteNotifications(notifications: Notifications)
@@ -360,14 +360,14 @@ trait SiteTransaction {
   def markNotfAsSeenSkipEmail(userId: UserId, notfId: NotificationId)
   def loadNotificationsForRole(roleId: RoleId, limit: Int, unseenFirst: Boolean,
     upToWhen: Option[ju.Date] = None): Seq[Notification]
-  def listUsersNotifiedAboutPost(postId: UniquePostId): Set[UserId]
+  def listUsersNotifiedAboutPost(postId: PostId): Set[UserId]
 
 
   def startAuditLogBatch()
   /** Returns (entry-id, Option(batch-id)). */
   def nextAuditLogEntryId(): (AuditLogEntryId, Option[AuditLogEntryId])
   def insertAuditLogEntry(entry: AuditLogEntry)
-  def loadCreatePostAuditLogEntry(postId: UniquePostId): Option[AuditLogEntry]
+  def loadCreatePostAuditLogEntry(postId: PostId): Option[AuditLogEntry]
   def loadCreatePostAuditLogEntriesBy(browserIdData: BrowserIdData, limit: Int, orderBy: OrderBy)
         : Seq[AuditLogEntry]
   def loadAuditLogEntriesRecentFirst(userId: UserId, tyype: AuditLogEntryType, limit: Int)
@@ -386,6 +386,6 @@ case class PageNotFoundException(pageId: PageId) extends QuickMessageException(
   s"Page found by id: $pageId")
 case class PostNotFoundException(pageId: PageId, postNr: PostNr) extends QuickMessageException(
   s"Post not found by nr, page, post: $pageId, $postNr")
-case class PostNotFoundByIdException(postId: UniquePostId) extends QuickMessageException(
+case class PostNotFoundByIdException(postId: PostId) extends QuickMessageException(
   s"Post not found by id: $postId")
 

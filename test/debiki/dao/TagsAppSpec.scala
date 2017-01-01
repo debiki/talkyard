@@ -43,7 +43,7 @@ class TagsAppSpec extends DaoAppSuite() {
   }
 
   def addRemoveTags(post: Post, tags: Set[TagLabel], memberId: UserId) {
-    dao.addRemoveTagsIfAuth(post.pageId, post.uniqueId, tags, Who(memberId, browserIdData))
+    dao.addRemoveTagsIfAuth(post.pageId, post.id, tags, Who(memberId, browserIdData))
   }
 
   def watchTag(memberId: UserId, tagLabel: TagLabel) {
@@ -56,7 +56,7 @@ class TagsAppSpec extends DaoAppSuite() {
       Who(memberId, browserIdData))
   }
 
-  def countNotificationsToAbout(userId: UserId, postId: UniquePostId): Int = {
+  def countNotificationsToAbout(userId: UserId, postId: PostId): Int = {
     var notfs = dao.loadNotificationsForRole(userId, limit = 999, unseenFirst = true)
     notfs.count({
       case notf: Notification.NewPost => notf.uniquePostId == postId
@@ -89,47 +89,47 @@ class TagsAppSpec extends DaoAppSuite() {
 
       info("load 0 tags")
       dao.loadAllTagsAsSet() mustBe empty
-      dao.loadTagsForPost(postNoTags.uniqueId) mustBe empty
-      dao.loadTagsForPost(postWithTags.uniqueId) mustBe empty
+      dao.loadTagsForPost(postNoTags.id) mustBe empty
+      dao.loadTagsForPost(postWithTags.id) mustBe empty
 
       info("tag a post")
       addRemoveTags(postWithTags, Set(TagLabel1), theMember.id)
 
       info("find the tag")
       dao.loadAllTagsAsSet() mustBe Set(TagLabel1)
-      dao.loadTagsForPost(postNoTags.uniqueId) mustBe empty
-      dao.loadTagsForPost(postWithTags.uniqueId) mustBe Set(TagLabel1)
+      dao.loadTagsForPost(postNoTags.id) mustBe empty
+      dao.loadTagsForPost(postWithTags.id) mustBe Set(TagLabel1)
 
       info("add many tags")
       addRemoveTags(postWithTags, TagsOneTwoThree, theMember.id)
 
       info("find them")
       dao.loadAllTagsAsSet() mustBe TagsOneTwoThree
-      dao.loadTagsForPost(postNoTags.uniqueId) mustBe empty
-      dao.loadTagsForPost(postWithTags.uniqueId) mustBe TagsOneTwoThree
+      dao.loadTagsForPost(postNoTags.id) mustBe empty
+      dao.loadTagsForPost(postWithTags.id) mustBe TagsOneTwoThree
 
       info("remove a tag")
       addRemoveTags(postWithTags, TagsOneThree, theMember.id)
 
       info("now it's gone")
       dao.loadAllTagsAsSet() mustBe TagsOneThree
-      dao.loadTagsForPost(postNoTags.uniqueId) mustBe empty
-      dao.loadTagsForPost(postWithTags.uniqueId) mustBe TagsOneThree
+      dao.loadTagsForPost(postNoTags.id) mustBe empty
+      dao.loadTagsForPost(postWithTags.id) mustBe TagsOneThree
 
       info("add and remove tags at the same time")
       addRemoveTags(postWithTags, TagsTwoFour, theMember.id)
 
       info("find the new tags")
       dao.loadAllTagsAsSet() mustBe TagsTwoFour
-      dao.loadTagsForPost(postNoTags.uniqueId) mustBe empty
-      dao.loadTagsForPost(postWithTags.uniqueId) mustBe TagsTwoFour
+      dao.loadTagsForPost(postNoTags.id) mustBe empty
+      dao.loadTagsForPost(postWithTags.id) mustBe TagsTwoFour
 
       info("tag two posts")
       addRemoveTags(postWithTagsLater, TagsOneTwoThree, theMember.id)
       dao.loadAllTagsAsSet() mustBe TagsOneTwoThreeFour
-      dao.loadTagsForPost(postNoTags.uniqueId) mustBe empty
-      dao.loadTagsForPost(postWithTags.uniqueId) mustBe TagsTwoFour
-      dao.loadTagsForPost(postWithTagsLater.uniqueId) mustBe TagsOneTwoThree
+      dao.loadTagsForPost(postNoTags.id) mustBe empty
+      dao.loadTagsForPost(postWithTags.id) mustBe TagsTwoFour
+      dao.loadTagsForPost(postWithTagsLater.id) mustBe TagsOneTwoThree
     }
 
 
@@ -162,24 +162,24 @@ class TagsAppSpec extends DaoAppSuite() {
       val post = dao.readOnlyTransaction(_.loadThePost(thePageId, PageParts.BodyNr))
 
       info("gets notified about tagged topics")
-      countNotificationsToAbout(theMember.id, post.uniqueId) mustBe 0
+      countNotificationsToAbout(theMember.id, post.id) mustBe 0
       addRemoveTags(post, Set(WatchedTag), theModerator.id)
-      dao.listUsersNotifiedAboutPost(post.uniqueId) mustEqual Set(theMember.id)
-      countNotificationsToAbout(theMember.id, post.uniqueId) mustBe 1
+      dao.listUsersNotifiedAboutPost(post.id) mustEqual Set(theMember.id)
+      countNotificationsToAbout(theMember.id, post.id) mustBe 1
 
       info("only notified once of each post")
       addRemoveTags(post, Set(WatchedTag2), theModerator.id)
-      countNotificationsToAbout(theMember.id, post.uniqueId) mustBe 1
+      countNotificationsToAbout(theMember.id, post.id) mustBe 1
 
       info("gets notified about tagged comments")
       val comment = reply(theModerator.id, "A comment")
-      countNotificationsToAbout(theMember.id, comment.uniqueId) mustBe 0
+      countNotificationsToAbout(theMember.id, comment.id) mustBe 0
       addRemoveTags(comment, Set(WatchedTag), theModerator.id)
-      countNotificationsToAbout(theMember.id, comment.uniqueId) mustBe 1
+      countNotificationsToAbout(theMember.id, comment.id) mustBe 1
 
       info("only notified once of each comment")
       addRemoveTags(comment, Set(WatchedTag2), theModerator.id)
-      countNotificationsToAbout(theMember.id, comment.uniqueId) mustBe 1
+      countNotificationsToAbout(theMember.id, comment.id) mustBe 1
 
       info("can stop watching a tag")
       stopWatchingTag(theMember.id, WatchedTag)
@@ -187,7 +187,7 @@ class TagsAppSpec extends DaoAppSuite() {
       info("no longer gets notified about that tag")
       val comment2 = reply(theModerator.id, "Comment 2")
       addRemoveTags(comment2, Set(WatchedTag), theModerator.id)
-      countNotificationsToAbout(theMember.id, comment2.uniqueId) mustBe 0
+      countNotificationsToAbout(theMember.id, comment2.id) mustBe 0
     }
 
   }

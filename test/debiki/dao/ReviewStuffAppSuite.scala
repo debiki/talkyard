@@ -70,21 +70,21 @@ class ReviewStuffAppSuite(randomString: String)
 
     def checkReviewTaskGenerated(post: Post, reasons: Seq[ReviewReason]) {
       dao.readOnlyTransaction { transaction =>
-        val task = transaction.loadPendingPostReviewTask(post.uniqueId) getOrElse {
+        val task = transaction.loadPendingPostReviewTask(post.id) getOrElse {
           fail("No review task generated for post with text: " + post.currentSource)
         }
         task.createdById mustBe SystemUserId
         task.maybeBadUserId mustBe post.createdById
         reasons.foreach(task.reasons must contain(_))
         task.createdAtRevNr mustBe Some(FirstRevisionNr)
-        task.postId mustBe Some(post.uniqueId)
+        task.postId mustBe Some(post.id)
         task.postNr mustBe Some(post.nr)
       }
     }
 
     def checkNoReviewTask(post: Post) {
       dao.readOnlyTransaction { transaction =>
-        transaction.loadPendingPostReviewTask(post.uniqueId) mustBe None
+        transaction.loadPendingPostReviewTask(post.id) mustBe None
       }
     }
   }

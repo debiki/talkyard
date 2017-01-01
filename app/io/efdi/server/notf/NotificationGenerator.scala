@@ -137,7 +137,7 @@ case class NotificationGenerator(transaction: SiteTransaction) {
       siteId = transaction.siteId,
       id = bumpAndGetNextNotfId(),
       createdAt = newPost.createdAt,
-      uniquePostId = newPost.uniqueId,
+      uniquePostId = newPost.id,
       byUserId = newPost.createdById,
       toUserId = toUser.id)
   }
@@ -161,7 +161,7 @@ case class NotificationGenerator(transaction: SiteTransaction) {
     for (user <- mentionsDeletedForUsers) {
       notfsToDelete += NotificationToDelete.MentionToDelete(
         siteId = transaction.siteId,
-        uniquePostId = newPost.uniqueId,
+        uniquePostId = newPost.id,
         toUserId = user.id)
     }
 
@@ -184,7 +184,7 @@ case class NotificationGenerator(transaction: SiteTransaction) {
 
   def generateForTags(post: Post, tagsAdded: Set[TagLabel]): Notifications = {
     val userIdsWatching = transaction.listUsersWatchingTags(tagsAdded)
-    val userIdsNotified = transaction.listUsersNotifiedAboutPost(post.uniqueId)
+    val userIdsNotified = transaction.listUsersNotifiedAboutPost(post.id)
     val userIdsToNotify = userIdsWatching -- userIdsNotified
     val usersToNotify = transaction.loadUsers(userIdsToNotify.to[immutable.Seq])
     for {

@@ -72,7 +72,7 @@ trait SystemTransaction {
   // ----- Spam check queue
 
   def loadStuffToSpamCheck(limit: Int): StuffToSpamCheck
-  def deleteFromSpamCheckQueue(siteId: SiteId, postId: UniquePostId, postRevNr: Int)
+  def deleteFromSpamCheckQueue(siteId: SiteId, postId: PostId, postRevNr: Int)
 
   // ----- Testing
 

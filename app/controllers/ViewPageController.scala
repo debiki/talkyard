@@ -69,11 +69,11 @@ object ViewPageController extends mvc.Controller {
 
     val pageIds = posts.map(_.pageId).distinct
     val pageStuffById = dao.getPageStuffById(pageIds)
-    val tagsByPostId = dao.readOnlyTransaction(_.loadTagsByPostId(posts.map(_.uniqueId)))
+    val tagsByPostId = dao.readOnlyTransaction(_.loadTagsByPostId(posts.map(_.id)))
 
     val postsJson = posts flatMap { post =>
       val pageMeta = pageMetaById.get(post.pageId) getOrDie "EdE2KW07E"
-      val tags = tagsByPostId.getOrElse(post.uniqueId, Set.empty)
+      val tags = tagsByPostId.getOrElse(post.id, Set.empty)
       var postJson = ReactJson.postToJsonOutsidePage(post, pageMeta.pageRole,
         showHidden = true, includeUnapproved = callerIsStaffOrAuthor, tags)
 

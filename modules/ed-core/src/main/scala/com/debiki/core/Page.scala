@@ -195,7 +195,7 @@ case class PageMeta(
   numOrigPostUnwantedVotes: Int = 0,
   numOrigPostRepliesVisible: Int = 0,
   answeredAt: Option[ju.Date] = None,
-  answerPostUniqueId: Option[UniquePostId] = None,
+  answerPostUniqueId: Option[PostId] = None,
   plannedAt: Option[ju.Date] = None,
   doneAt: Option[ju.Date] = None,
   closedAt: Option[ju.Date] = None,
@@ -606,7 +606,7 @@ object PageFilter {
 }
 
 
-case class PagePostId(pageId: PageId, postId: UniquePostId)
+case class PagePostId(pageId: PageId, postId: PostId)
 
 case class PagePostNr(pageId: PageId, postNr: PostNr) {
   def toList: List[AnyRef] = List(pageId, postNr.asInstanceOf[AnyRef])

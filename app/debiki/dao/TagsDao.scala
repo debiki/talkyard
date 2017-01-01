@@ -46,15 +46,15 @@ trait TagsDao {
     readOnlyTransaction(_.loadTagsAndStats())
 
 
-  def loadTagsByPostId(postIds: Iterable[UniquePostId]) =
+  def loadTagsByPostId(postIds: Iterable[PostId]) =
     readOnlyTransaction(_.loadTagsByPostId(postIds))
 
 
-  def loadTagsForPost(postId: UniquePostId) =
+  def loadTagsForPost(postId: PostId) =
     loadTagsByPostId(Seq(postId)).getOrElse(postId, Set.empty)
 
 
-  def addRemoveTagsIfAuth(pageId: PageId, postId: UniquePostId, tags: Set[Tag], who: Who)
+  def addRemoveTagsIfAuth(pageId: PageId, postId: PostId, tags: Set[Tag], who: Who)
         : JsValue = {
 
     if (tags.size > MaxNumTags) {
@@ -82,7 +82,7 @@ trait TagsDao {
         "EsE4GKU02", o"""Wrong page id: Post $postId is located on page ${post.pageId},
             not page $pageId — perhaps it was just moved""")
 
-      val oldTags: Set[Tag] = transaction.loadTagsForPost(post.uniqueId)
+      val oldTags: Set[Tag] = transaction.loadTagsForPost(post.id)
 
       val tagsToAdd = tags -- oldTags
       val tagsToRemove = oldTags -- tags

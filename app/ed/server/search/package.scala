@@ -105,16 +105,16 @@ package object search {
 
 
   def makeElasticSearchIdFor(siteId: String, post: Post): String =
-    makeElasticSearchIdFor(siteId, postId = post.uniqueId)
+    makeElasticSearchIdFor(siteId, postId = post.id)
 
-  def makeElasticSearchIdFor(siteId: String, postId: UniquePostId): String =
+  def makeElasticSearchIdFor(siteId: String, postId: PostId): String =
     s"$siteId:$postId"
 
 
   case class SearchHit(
     siteId: SiteId,
     pageId: PageId,
-    postId: UniquePostId,
+    postId: PostId,
     postNr: PostNr,
     approvedRevisionNr: Int,
     approvedTextWithHighligtsHtml: immutable.Seq[String],
@@ -144,7 +144,7 @@ package object search {
       // JsonKeys.SectionPageId -> forum or blog page id,
       // JsonKeys.CategoryIds -> list of category ids
       // JsonKeys.TagIds -> list of tag ids
-      Fields.PostId -> post.uniqueId,
+      Fields.PostId -> post.id,
       Fields.PostNr -> post.nr,
       Fields.PostType -> post.tyype.toInt,
       Fields.ApprovedRevisionNr -> post.approvedRevisionNr,
@@ -180,7 +180,7 @@ package object search {
     SearchHit(
       siteId = (json \ Fields.SiteId).as[SiteId],
       pageId = (json \ Fields.PageId).as[PageId],
-      postId = (json \ Fields.PostId).as[UniquePostId],
+      postId = (json \ Fields.PostId).as[PostId],
       postNr = (json \ Fields.PostNr).as[PostNr],
       approvedRevisionNr = (json \ Fields.ApprovedRevisionNr).as[Int],
       approvedTextWithHighligtsHtml = approvedTextWithHighligtsHtml,

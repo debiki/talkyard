@@ -67,7 +67,7 @@ case class NotfHtmlRenderer(siteDao: SiteDao, anyOrigin: Option[String]) {
   def render(notfs: Seq[Notification]): NodeSeq = {
     require(notfs.nonEmpty, "DwE7KYG3")
     siteDao.readOnlyTransaction { transaction =>
-      val postIds: Seq[UniquePostId] = notfs flatMap {
+      val postIds: Seq[PostId] = notfs flatMap {
         case notf: Notification.NewPost => Some(notf.uniquePostId)
         case _ => None
       }

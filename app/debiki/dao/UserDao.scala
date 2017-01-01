@@ -191,7 +191,7 @@ trait UserDao {
   }
 
 
-  def blockGuest(postId: UniquePostId, numDays: Int, threatLevel: ThreatLevel, blockerId: UserId) {
+  def blockGuest(postId: PostId, numDays: Int, threatLevel: ThreatLevel, blockerId: UserId) {
     readWriteTransaction { transaction =>
       val auditLogEntry: AuditLogEntry = transaction.loadCreatePostAuditLogEntry(postId) getOrElse {
         throwForbidden("DwE2WKF5", "Cannot block user: No audit log entry, so no ip and id cookie")
@@ -267,7 +267,7 @@ trait UserDao {
   }
 
 
-  def loadAuthorBlocks(postId: UniquePostId): immutable.Seq[Block] = {
+  def loadAuthorBlocks(postId: PostId): immutable.Seq[Block] = {
     readOnlyTransaction { transaction =>
       val auditLogEntry = transaction.loadCreatePostAuditLogEntry(postId) getOrElse {
         return Nil
@@ -615,7 +615,7 @@ trait UserDao {
     readOnlyTransaction(_.loadUsers())
 
 
-  def listUsersNotifiedAboutPost(postId: UniquePostId): Set[UserId] =
+  def listUsersNotifiedAboutPost(postId: PostId): Set[UserId] =
     readOnlyTransaction(_.listUsersNotifiedAboutPost(postId))
 
 

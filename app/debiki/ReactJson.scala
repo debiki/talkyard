@@ -172,7 +172,7 @@ object ReactJson {
         post.deletedStatus.onlyThisDeleted && pageParts.hasNonDeletedSuccessor(post.nr)))
     }
 
-    val tagsByPostId = transaction.loadTagsByPostId(interestingPosts.map(_.uniqueId))
+    val tagsByPostId = transaction.loadTagsByPostId(interestingPosts.map(_.id))
 
     var allPostsJson = interestingPosts map { post: Post =>
       numPosts += 1
@@ -180,7 +180,7 @@ object ReactJson {
         numPostsChatSection += 1
       else if (!post.isOrigPost && !post.isTitle)
         numPostsRepliesSection += 1
-      val tags = tagsByPostId(post.uniqueId)
+      val tags = tagsByPostId(post.id)
       post.nr.toString -> postToJsonImpl(post, page, tags)
     }
 
@@ -403,7 +403,7 @@ object ReactJson {
       // COULD optimize: don't load the whole page, load only postNr and the author and last editor.
       val page = PageDao(pageId, transaction)
       val post = page.parts.thePost(postNr)
-      val tags = transaction.loadTagsForPost(post.uniqueId)
+      val tags = transaction.loadTagsForPost(post.id)
       val json = postToJsonImpl(post, page, tags,
         includeUnapproved = includeUnapproved, showHidden = showHidden)
       (json, page.version)
@@ -501,7 +501,7 @@ object ReactJson {
       else post.lastApprovedEditAt
 
     var fields = Vector(
-      "uniqueId" -> JsNumber(post.uniqueId),
+      "uniqueId" -> JsNumber(post.id),
       "postId" -> JsNumber(post.nr),
       "parentId" -> post.parentNr.map(JsNumber(_)).getOrElse(JsNull),
       "multireplyPostIds" -> JsArray(post.multireplyPostNrs.toSeq.map(JsNumber(_))),
@@ -764,7 +764,7 @@ object ReactJson {
     var numTalkToOthers = 0
     var numOther = 0
 
-    val postIds: Seq[UniquePostId] = notfs flatMap {
+    val postIds: Seq[PostId] = notfs flatMap {
       case notf: Notification.NewPost => Some(notf.uniquePostId)
       case _ => None
     }
@@ -804,7 +804,7 @@ object ReactJson {
 
 
   private def makeNotificationsJson(notf: Notification, pageTitlesById: Map[PageId, String],
-        postsById: Map[UniquePostId, Post], usersById: Map[UserId, User]): Option[JsObject] = {
+        postsById: Map[PostId, Post], usersById: Map[UserId, User]): Option[JsObject] = {
     Some(notf match {
       case notf: Notification.NewPost =>
         val post = postsById.getOrElse(notf.uniquePostId, {
@@ -856,9 +856,9 @@ object ReactJson {
             page.meta.pageRole == PageRole.Form ||
             page.meta.pageRole == PageRole.WebPage)) {  // hack. Try to remove + fix [3PF4GK] above
         val posts = page.parts.allPosts
-        val tagsByPostId = transaction.loadTagsByPostId(posts.map(_.uniqueId))
+        val tagsByPostId = transaction.loadTagsByPostId(posts.map(_.id))
         val postIdsAndJson: Seq[(String, JsValue)] = posts.toSeq.map { post =>
-          val tags = tagsByPostId(post.uniqueId)
+          val tags = tagsByPostId(post.id)
           post.nr.toString -> postToJsonImpl(post, page, tags, includeUnapproved = true)
         }
         val authors = transaction.loadUsers(posts.map(_.createdById).toSet)
@@ -946,7 +946,7 @@ object ReactJson {
         Json.obj(
           "pageId" -> post.pageId,
           "nr" -> post.nr,
-          "uniqueId" -> post.uniqueId,
+          "uniqueId" -> post.id,
           "createdBy" -> JsUserOrNull(usersById.get(post.createdById)),
           "currentSource" -> post.currentSource,
           "currRevNr" -> post.currentRevisionNr,
@@ -1131,7 +1131,7 @@ object ReactJson {
   }
 
 
-  def makeStorePatchForPosts(postIds: Set[UniquePostId], showHidden: Boolean, dao: SiteDao)
+  def makeStorePatchForPosts(postIds: Set[PostId], showHidden: Boolean, dao: SiteDao)
         : JsValue = {
     dao.readOnlyTransaction { transaction =>
       makeStorePatchForPosts(postIds, showHidden, transaction)
@@ -1139,7 +1139,7 @@ object ReactJson {
   }
 
 
-  def makeStorePatchForPosts(postIds: Set[UniquePostId], showHidden: Boolean,
+  def makeStorePatchForPosts(postIds: Set[PostId], showHidden: Boolean,
         transaction: SiteTransaction): JsValue = {
     val posts = transaction.loadPostsByUniqueId(postIds).values
     val tagsByPostId = transaction.loadTagsByPostId(postIds)
@@ -1162,13 +1162,13 @@ object ReactJson {
 
 
   @deprecated("now", "use makeStorePatchForPosts instead")
-  def makeStorePatch2(postId: UniquePostId, pageId: PageId, transaction: SiteTransaction)
+  def makeStorePatch2(postId: PostId, pageId: PageId, transaction: SiteTransaction)
         : JsValue = {
     // Warning: some similar code above [89fKF2]
     // Load the page so we'll get a version that includes postId, in case it was just added.
     val page = PageDao(pageId, transaction)
     val post = page.parts.postById(postId) getOrDie "EsE8YKPW2"
-    val tags = transaction.loadTagsForPost(post.uniqueId)
+    val tags = transaction.loadTagsForPost(post.id)
     val author = transaction.loadTheUser(post.createdById)
     require(post.createdById == author.id, "EsE4JHKX1")
     val postJson = postToJsonImpl(post, page, tags, includeUnapproved = true, showHidden = true)
@@ -1190,7 +1190,7 @@ object ReactJson {
 
   ANNOYING // needs a transaction, because postToJsonImpl needs one. Try to remove
   private def makeStorePatch3(pageIdVersions: Iterable[PageIdVersion], posts: Iterable[Post],
-        tagsByPostId: Map[UniquePostId, Set[String]], users: Iterable[User])(
+        tagsByPostId: Map[PostId, Set[String]], users: Iterable[User])(
         transaction: SiteTransaction): JsValue = {
     require(posts.isEmpty || users.nonEmpty, "Posts but no authors [EsE4YK7W2]")
     val pageVersionsByPageIdJson =
@@ -1202,7 +1202,7 @@ object ReactJson {
         val posts = pageIdPosts._2
         val page = new PageDao(pageId, transaction)
         val postsJson = posts map { p =>
-          postToJsonImpl(p, page, tagsByPostId.getOrElse(p.uniqueId, Set.empty),
+          postToJsonImpl(p, page, tagsByPostId.getOrElse(p.id, Set.empty),
             includeUnapproved = false, showHidden = false)
         }
         pageId -> JsArray(postsJson.toSeq)

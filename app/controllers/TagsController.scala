@@ -85,7 +85,7 @@ object TagsController extends p.mvc.Controller {
 
   def addRemoveTags = PostJsonAction(RateLimits.EditPost, maxLength = 5000) { request =>
     val pageId = (request.body \ "pageId").as[PageId]
-    val postId = (request.body \ "postId").as[UniquePostId]
+    val postId = (request.body \ "postId").as[PostId]
     val tags = (request.body \ "tags").as[Set[TagLabel]]
     val patch = request.dao.addRemoveTagsIfAuth(pageId, postId, tags, request.who)
     OkSafeJson(patch) // or skip? or somehow include tags *only*? [5GKU0234]

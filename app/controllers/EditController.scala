@@ -83,7 +83,7 @@ object EditController extends mvc.Controller {
       throwForbidden("DwE8FKY0", "Not your post")
 
     OkSafeJson(Json.obj(
-      "postUid" -> post.uniqueId,
+      "postUid" -> post.id,
       "currentText" -> post.currentSource,
       "currentRevisionNr" -> post.currentRevisionNr))
   }
@@ -158,7 +158,7 @@ object EditController extends mvc.Controller {
 
   // Staff only, *for now*.
   def editPostSettings = StaffPostJsonAction(maxLength = 100) { request =>
-    val postId = (request.body \ "postId").as[UniquePostId]
+    val postId = (request.body \ "postId").as[PostId]
     val branchSideways = (request.body \ "branchSideways").asOpt[Byte]
     val patch = request.dao.editPostSettings(postId, branchSideways, request.who)
     OkSafeJson(patch) // or skip? [5GKU0234]
@@ -183,7 +183,7 @@ object EditController extends mvc.Controller {
 
   def movePost = StaffPostJsonAction(maxLength = 100) { request =>
     val pageId = (request.body \ "pageId").as[PageId]
-    val postId = (request.body \ "postId").as[UniquePostId]
+    val postId = (request.body \ "postId").as[PostId]
     val newHost = (request.body \ "newHost").as[SiteId] // ignore for now though
     val newPageId = (request.body \ "newPageId").as[PageId]
     val newParentNr = (request.body \ "newParentNr").as[PostNr]

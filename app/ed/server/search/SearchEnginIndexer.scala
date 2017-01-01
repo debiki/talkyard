@@ -194,10 +194,10 @@ class IndexingActor(
 
   private def indexPost(post: Post, siteId: String, stuffToIndex: StuffToIndex) {
     val pageMeta = stuffToIndex.page(siteId, post.pageId) getOrElse {
-      Logger.warn(s"Not indexing s:$siteId/p:${post.uniqueId} — page gone, was just deleted?")
+      Logger.warn(s"Not indexing s:$siteId/p:${post.id} — page gone, was just deleted?")
       return
     }
-    val tags = stuffToIndex.tags(siteId, post.uniqueId)
+    val tags = stuffToIndex.tags(siteId, post.id)
     val doc = makeElasticSearchJsonDocFor(siteId, post, pageMeta.categoryId, tags)
     val docId = makeElasticSearchIdFor(siteId, post)
     val requestBuilder: IndexRequestBuilder =
@@ -254,7 +254,7 @@ class IndexingActor(
     val bulkRequestBuilder = client.prepareBulk()
     posts foreach { post =>
       val deleteRequestBuilder = client.prepareDelete(
-        IndexName, PostDocType, makeElasticSearchIdFor(siteId, post.uniqueId)).setRouting(siteId)
+        IndexName, PostDocType, makeElasticSearchIdFor(siteId, post.id)).setRouting(siteId)
       bulkRequestBuilder.add(deleteRequestBuilder)
     }
 

@@ -268,7 +268,7 @@ object UserController extends mvc.Controller {
 
 
   def blockGuest = StaffPostJsonAction(maxLength = 100) { request =>
-    val postId = (request.body \ "postId").as[UniquePostId]
+    val postId = (request.body \ "postId").as[PostId]
     val numDays = -1 // (request.body \ "numDays").as[Int] // currently no longer in use
     val threatLevel = ThreatLevel.fromInt((request.body \ "threatLevel").as[Int]).getOrElse(
       throwBadArgument("EsE8GY2W", "threatLevel"))
@@ -278,7 +278,7 @@ object UserController extends mvc.Controller {
 
 
   def unblockGuest = StaffPostJsonAction(maxLength = 100) { request =>
-    val postId = (request.body \ "postId").as[UniquePostId]
+    val postId = (request.body \ "postId").as[PostId]
     request.dao.unblockGuest(postId, unblockerId = request.theUserId)
     Ok
   }

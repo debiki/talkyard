@@ -185,8 +185,7 @@ object PostType {
   * they can notify moderators if posts are being flagged and hidden inappropriately.
   */
 case class Post(
-  // TODO rename to 'id', but first rename 'id' to 'nr'.
-  uniqueId: UniquePostId,
+  id: PostId,
   pageId: PageId,
   nr: PostNr,
   parentNr: Option[PostNr],
@@ -232,7 +231,7 @@ case class Post(
   numUnwantedVotes: Int,
   numTimesRead: Int) {
 
-  require(uniqueId >= 1, "DwE4WEKQ8")
+  require(id >= 1, "DwE4WEKQ8")
   require(!parentNr.contains(nr), "DwE5BK4")
   require(!multireplyPostNrs.contains(nr), "DwE4kWW2")
   require(multireplyPostNrs.size != 1, "DwE2KFE7") // size 1 = does not reply to many people
@@ -323,7 +322,7 @@ case class Post(
   def isVisible = isSomeVersionApproved && !isBodyHidden && !isDeleted  // (rename to isActive? isInUse?)
   def isWiki = tyype.isWiki
 
-  def pagePostId = PagePostId(pageId, uniqueId)
+  def pagePostId = PagePostId(pageId, id)
   def pagePostNr = PagePostNr(pageId, nr)
   def hasAnId = nr >= PageParts.LowestPostNr
 
@@ -553,7 +552,7 @@ object Post {
   val FirstVersion = 1
 
   def create(
-        uniqueId: UniquePostId,
+        uniqueId: PostId,
         pageId: PageId,
         postNr: PostNr,
         parent: Option[Post],
@@ -596,7 +595,7 @@ object Post {
     }
 
     Post(
-      uniqueId = uniqueId,
+      id = uniqueId,
       pageId = pageId,
       nr = postNr,
       parentNr = parent.map(_.nr),
@@ -644,7 +643,7 @@ object Post {
   }
 
   def createTitle(
-        uniqueId: UniquePostId,
+        uniqueId: PostId,
         pageId: PageId,
         createdAt: ju.Date,
         createdById: UserId,
@@ -657,7 +656,7 @@ object Post {
       source = source, htmlSanitized = htmlSanitized, approvedById = approvedById)
 
   def createBody(
-        uniqueId: UniquePostId,
+        uniqueId: PostId,
         pageId: PageId,
         createdAt: ju.Date,
         createdById: UserId,

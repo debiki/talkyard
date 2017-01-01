@@ -28,7 +28,7 @@ import PostRevision._
   *  applied edit suggestions written by *other* people.
   */
 case class PostRevision(
-  postId: UniquePostId,
+  postId: PostId,
   revisionNr: Int,
   previousNr: Option[Int],
   sourcePatch: Option[String],
@@ -78,7 +78,7 @@ object PostRevision {
 
 
   def createFor(post: Post, previousRevision: Option[PostRevision]): PostRevision = {
-    require(!previousRevision.exists(_.postId != post.uniqueId), "DwE5G5K2")
+    require(!previousRevision.exists(_.postId != post.id), "DwE5G5K2")
     require(post.previousRevisionNr == previousRevision.map(_.revisionNr), "DwE5PYF6")
 
     var anySource: Option[String] = None
@@ -107,7 +107,7 @@ object PostRevision {
       else (None, None)
 
     PostRevision(
-      postId = post.uniqueId,
+      postId = post.id,
       revisionNr = post.currentRevisionNr,
       previousNr = post.previousRevisionNr,
       sourcePatch = anyPatch,

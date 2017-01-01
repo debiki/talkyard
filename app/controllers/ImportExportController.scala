@@ -452,7 +452,7 @@ object ImportExportController extends mvc.Controller {
 
     try {
       Good(Post(
-        uniqueId = readInt(jsObj, "id"),
+        id = readInt(jsObj, "id"),
         pageId = readString(jsObj, "pageId"),
         nr = readInt(jsObj, "nr"),
         parentNr = readOptInt(jsObj, "parentNr"),

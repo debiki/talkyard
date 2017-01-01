@@ -73,7 +73,7 @@ case class ReviewTask(
   // Or the ones who edited the post, since it was last reviewed & any flags disagreed with?
   maybeBadUserId: UserId,
   pageId: Option[PageId] = None,
-  postId: Option[UniquePostId] = None,
+  postId: Option[PostId] = None,
   postNr: Option[PostNr] = None) {
 
   require(reasons.nonEmpty, "EsE3FK21")

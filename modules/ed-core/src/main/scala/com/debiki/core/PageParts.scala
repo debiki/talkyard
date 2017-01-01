@@ -119,8 +119,8 @@ abstract class PageParts {
   def post(postNr: PostNr): Option[Post] = postsByNr.get(postNr)
   def post(postNr: Option[PostNr]): Option[Post] = postNr.flatMap(postsByNr.get)
   def thePost(postNr: PostNr): Post = post(postNr) getOrDie "DwE9PKG3"
-  def postById(postId: UniquePostId): Option[Post] = postsByNr.values.find(_.uniqueId == postId)
-  def thePostById(postId: UniquePostId): Post = postById(postId) getOrDie "EsE6YKG72"
+  def postById(postId: PostId): Option[Post] = postsByNr.values.find(_.id == postId)
+  def thePostById(postId: PostId): Post = postById(postId) getOrDie "EsE6YKG72"
   def theBody = thePost(BodyNr)
   def theTitle = thePost(TitleNr)
 

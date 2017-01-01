@@ -58,7 +58,7 @@ class MovePostsAppSpec extends DaoAppSuite(disableScripts = true, disableBackgro
       val postAfter = dao.movePostIfAuth(
         postToMove.pagePostId, secondParent.pagePostNr, theModerator.id, browserIdData)._1
       postAfter.parentNr mustBe Some(secondParent.nr)
-      val reloadedPost = dao.readOnlyTransaction(_.loadThePost(postToMove.uniqueId))
+      val reloadedPost = dao.readOnlyTransaction(_.loadThePost(postToMove.id))
       reloadedPost.parentNr mustBe Some(secondParent.nr)
 
       info("page meta unchanged")
@@ -72,8 +72,8 @@ class MovePostsAppSpec extends DaoAppSuite(disableScripts = true, disableBackgro
       val firstReply = reply(theModerator.id, "1st reply")
       val secondReply = reply(theModerator.id, "2nd reply")
       val (titleId, bodyId) = dao.readOnlyTransaction { transaction =>
-        (transaction.loadThePost(thePageId, TitleNr).uniqueId,
-         transaction.loadThePost(thePageId, BodyNr).uniqueId)
+        (transaction.loadThePost(thePageId, TitleNr).id,
+         transaction.loadThePost(thePageId, BodyNr).id)
       }
 
       info("refuses to move orig post title")
@@ -91,7 +91,7 @@ class MovePostsAppSpec extends DaoAppSuite(disableScripts = true, disableBackgro
       info("refuses to place reply below title")
       intercept[ResultException] {
         dao.movePostIfAuth(
-          PagePostId(thePageId, secondReply.uniqueId), PagePostNr(thePageId, TitleNr),
+          PagePostId(thePageId, secondReply.id), PagePostNr(thePageId, TitleNr),
           theModerator.id, browserIdData)
       }.getMessage must include("EsE4YKJ8_")
 
@@ -104,7 +104,7 @@ class MovePostsAppSpec extends DaoAppSuite(disableScripts = true, disableBackgro
       info("refuses to place reply below non-existing post")
       intercept[ResultException] {
         dao.movePostIfAuth(
-          PagePostId(thePageId, secondReply.uniqueId), PagePostNr(thePageId, 9999),
+          PagePostId(thePageId, secondReply.id), PagePostNr(thePageId, 9999),
           theModerator.id, browserIdData)
       }.getMessage must include("EsE7YKG42_")
     }
@@ -130,7 +130,7 @@ class MovePostsAppSpec extends DaoAppSuite(disableScripts = true, disableBackgro
 
       info("agrees to move D from C to C2, fine")
       dao.movePostIfAuth(postD.pagePostId, postC2.pagePostNr, theModerator.id, browserIdData)
-      val reloadedD = dao.readOnlyTransaction(_.loadThePost(postD.uniqueId))
+      val reloadedD = dao.readOnlyTransaction(_.loadThePost(postD.id))
       reloadedD.parentNr mustBe Some(postC2.nr)
 
       info("won't create C2 —> D —> C2")
@@ -140,7 +140,7 @@ class MovePostsAppSpec extends DaoAppSuite(disableScripts = true, disableBackgro
 
       info("but agrees to move C from to D, fine")
       dao.movePostIfAuth(postC.pagePostId, postD.pagePostNr, theModerator.id, browserIdData)
-      val reloadedC = dao.readOnlyTransaction(_.loadThePost(postC.uniqueId))
+      val reloadedC = dao.readOnlyTransaction(_.loadThePost(postC.id))
       reloadedC.parentNr mustBe Some(postD.nr)
     }
 
@@ -189,7 +189,7 @@ class MovePostsAppSpec extends DaoAppSuite(disableScripts = true, disableBackgro
       postAfter.pageId mustBe pageTwoId
       postAfter.parentNr mustBe Some(postOnPageTwo.nr)
 
-      val reloadedPost = dao.readOnlyTransaction(_.loadThePost(post.uniqueId))
+      val reloadedPost = dao.readOnlyTransaction(_.loadThePost(post.id))
       reloadedPost.pageId mustBe pageTwoId
       reloadedPost.parentNr mustBe Some(postOnPageTwo.nr)
 
@@ -253,11 +253,11 @@ class MovePostsAppSpec extends DaoAppSuite(disableScripts = true, disableBackgro
         firstParts.post(postD2.nr) mustBe None
 
         val secondPage = PageDao(pageTwoId, transaction)
-        val postAAfter = secondPage.parts.thePostById(postA.uniqueId)
-        val postBAfter = secondPage.parts.thePostById(postB.uniqueId)
-        val postCAfter = secondPage.parts.thePostById(postC.uniqueId)
-        val postDAfter = secondPage.parts.thePostById(postD.uniqueId)
-        val postD2After = secondPage.parts.thePostById(postD2.uniqueId)
+        val postAAfter = secondPage.parts.thePostById(postA.id)
+        val postBAfter = secondPage.parts.thePostById(postB.id)
+        val postCAfter = secondPage.parts.thePostById(postC.id)
+        val postDAfter = secondPage.parts.thePostById(postD.id)
+        val postD2After = secondPage.parts.thePostById(postD2.id)
 
         postAAfter.parentNr mustBe Some(postOnPageTwo.nr)
         postBAfter.parentNr mustBe Some(postAAfter.nr)

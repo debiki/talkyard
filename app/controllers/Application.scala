@@ -67,7 +67,7 @@ class Application @Inject() extends mvc.Controller {
 
     // If some posts got hidden, then rerender them as hidden, so the flagger sees they got hidden.
     val json = ReactJson.makeStorePatchForPosts(
-      postsHidden.map(_.uniqueId).toSet, showHidden = false, dao)
+      postsHidden.map(_.id).toSet, showHidden = false, dao)
     OkSafeJson(json)
   }
 

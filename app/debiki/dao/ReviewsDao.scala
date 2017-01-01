@@ -133,7 +133,7 @@ trait ReviewsDao {
 
       // Use a set, because there might be many review tasks for the same post, if different
       // people flag the same post.
-      var postIdsApproved = Set[UniquePostId]()
+      var postIdsApproved = Set[PostId]()
       var numHarmful = 0
       tasks foreach { task =>
         if (task.resolution.exists(_.isFine)) {

@@ -249,7 +249,7 @@ trait PagesDao {
       createdAtRevNr = Some(bodyPost.currentRevisionNr),
       maybeBadUserId = authorId,
       pageId = Some(pageId),
-      postId = Some(bodyPost.uniqueId),
+      postId = Some(bodyPost.id),
       postNr = Some(bodyPost.nr)))
 
     val auditLogEntry = AuditLogEntry(
@@ -261,7 +261,7 @@ trait PagesDao {
       browserIdData = byWho.browserIdData,
       pageId = Some(pageId),
       pageRole = Some(pageRole),
-      uniquePostId = Some(bodyPost.uniqueId),
+      uniquePostId = Some(bodyPost.id),
       postNr = Some(bodyPost.nr))
 
     transaction.insertPageMetaMarkSectionPageStale(pageMeta)
@@ -269,7 +269,7 @@ trait PagesDao {
     transaction.insertPost(titlePost)
     transaction.insertPost(bodyPost)
     uploadPaths foreach { hashPathSuffix =>
-      transaction.insertUploadedFileReference(bodyPost.uniqueId, hashPathSuffix, authorId)
+      transaction.insertUploadedFileReference(bodyPost.id, hashPathSuffix, authorId)
     }
     reviewTask.foreach(transaction.upsertReviewTask)
     insertAuditLogEntry(auditLogEntry, transaction)
@@ -316,7 +316,7 @@ trait PagesDao {
   }
 
 
-  def ifAuthAcceptAnswer(pageId: PageId, postUniqueId: UniquePostId, userId: UserId,
+  def ifAuthAcceptAnswer(pageId: PageId, postUniqueId: PostId, userId: UserId,
         browserIdData: BrowserIdData): Option[ju.Date] = {
     val answeredAt = readWriteTransaction { transaction =>
       val user = transaction.loadTheUser(userId)
@@ -655,7 +655,7 @@ trait PagesDao {
       numOrigPostUnwantedVotes = page.parts.theBody.numUnwantedVotes,
       numOrigPostRepliesVisible = page.parts.numOrigPostRepliesVisible,
       answeredAt = page.anyAnswerPost.map(_.createdAt),
-      answerPostUniqueId = page.anyAnswerPost.map(_.uniqueId),
+      answerPostUniqueId = page.anyAnswerPost.map(_.id),
       version = page.version + 1)
     transaction.updatePageMeta(newMeta, oldMeta = page.meta,
       markSectionPageStale = markSectionPageStale)

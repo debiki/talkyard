@@ -83,27 +83,27 @@ class ThreatLevelsAppSpec extends ReviewStuffAppSuite("6GP4") {
         checkNoReviewTask(post)
 
         info("mild threat guest –> review after")
-        dao.blockGuest(post.uniqueId, numDays = -1, ThreatLevel.MildThreat, theAdmin.id)
+        dao.blockGuest(post.id, numDays = -1, ThreatLevel.MildThreat, theAdmin.id)
         post = reply(guest.id, "reply_63502_b").post
         post.approvedById mustBe Some(SystemUserId)
         checkReviewTaskGenerated(post, Seq(ReviewReason.IsByThreatUser))
 
         info("moderate threat guest –> review before")
-        dao.unblockGuest(post.uniqueId, theAdmin.id) // for now, else unique key error in db [6YF42]
-        dao.blockGuest(post.uniqueId, numDays = -1, ThreatLevel.ModerateThreat, theAdmin.id)
+        dao.unblockGuest(post.id, theAdmin.id) // for now, else unique key error in db [6YF42]
+        dao.blockGuest(post.id, numDays = -1, ThreatLevel.ModerateThreat, theAdmin.id)
         post = reply(guest.id, "reply_63502_c").post
         post.approvedById mustBe None
         checkReviewTaskGenerated(post, Seq(ReviewReason.IsByThreatUser))
 
         info("severe threat –> forbidden")
-        dao.unblockGuest(post.uniqueId, theAdmin.id) // for now, else unique key error in db [6YF42]
-        dao.blockGuest(post.uniqueId, numDays = -1, ThreatLevel.SevereThreat, theAdmin.id)
+        dao.unblockGuest(post.id, theAdmin.id) // for now, else unique key error in db [6YF42]
+        dao.blockGuest(post.id, numDays = -1, ThreatLevel.SevereThreat, theAdmin.id)
         intercept[Exception]{
           reply(guest.id, "reply_02844_d").post
         }.getMessage must include("EsE5Y80G2_")
 
         info("can clear guest threat level")
-        dao.unblockGuest(post.uniqueId, theAdmin.id)
+        dao.unblockGuest(post.id, theAdmin.id)
         post = reply(guest.id, "reply_02844_e").post
         post.approvedById mustBe Some(SystemUserId)
         checkNoReviewTask(post)
