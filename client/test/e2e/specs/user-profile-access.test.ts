@@ -41,6 +41,10 @@ let mariasPrivateMessageBody = "Maria's private message to Michael";
 let michaelPublicReplyToMarias = "Michael's public reply to Maria";
 let michaelPrivateMessageReply = "Michael's private message reply";
 
+let numPublicTopicsByMaria = 3;
+let numPublicPostsByMaria = 4;
+
+
 describe("user profile access:", () => {
 
   it("import a site", () => {
@@ -115,13 +119,64 @@ describe("user profile access:", () => {
     michaelsBrowser.complex.openPageAuthorProfilePage();
   });
 
-  it("... he sees Maria's pages and the reply to him, in Maria's activity list", () => {
-  });
-
-  it("... but he doesn't see the private message", () => {
+  it("... he sees Maria's posts and the reply to him, in Maria's activity list", () => {
+    let posts = michaelsBrowser.userProfilePage.activity.posts;
+    posts.assertPostTextVisible(mariasPrivateMessageBody);
+    posts.assertPostTextVisible(mariasPublicReplyToMichael);
+    posts.assertPostTextVisible(forum.topics.byMariaCategoryA.body);
+    posts.assertPostTextVisible(forum.topics.byMariaCategoryANr2.body);
+    posts.assertPostTextVisible(forum.topics.byMariaCategoryB.body);
+    posts.assertPostTextAbsent(forum.topics.byMariaUnlistedCat.body);
+    posts.assertPostTextAbsent(forum.topics.byMariaStaffOnlyCat.body);
+    posts.assertPostTextAbsent(forum.topics.byMariaDeletedCat.body);
+    posts.assertExactly(numPublicPostsByMaria + 1); // 1 = private message to Michael
   });
 
   it("... and he doesn't see the Notifications tab", () => {
+    assert(!browser.userProfilePage.isNotfsTabVisible());
+  });
+
+  it("... and not the Preferences tab", () => {
+    assert(!browser.userProfilePage.isPrefsTabVisible());
+  });
+
+  it("... he sees Maria's topics, incl the private message to him", () => {
+    michaelsBrowser.userProfilePage.activity.switchToTopics({ shallFindTopics: true });
+    let topics = michaelsBrowser.userProfilePage.activity.topics;
+    topics.assertTopicTitleVisible(forum.topics.byMariaCategoryA.title);
+    topics.assertTopicTitleVisible(forum.topics.byMariaCategoryANr2.title);
+    topics.assertTopicTitleVisible(forum.topics.byMariaCategoryB.title);
+    topics.assertTopicTitleVisible(mariasPrivateMessageTitle);
+    topics.assertTopicTitleAbsent(forum.topics.byMariaUnlistedCat.title);
+    topics.assertTopicTitleAbsent(forum.topics.byMariaStaffOnlyCat.title);
+    topics.assertTopicTitleAbsent(forum.topics.byMariaDeletedCat.title);
+    topics.assertExactly(numPublicTopicsByMaria + 1);  // 1 = private message to Michael
+  });
+
+
+  // ----- Mallory won't see private stuff
+
+  it("Mallory logs in", () => {
+    michaelsBrowser.topbar.clickLogout();
+    mallorysBrowser.refresh();
+    mallorysBrowser.complex.loginWithPasswordViaTopbar(mallory);
+  });
+
+  it("... he doesn't see the private message topic", () => {
+    let topics = mallorysBrowser.userProfilePage.activity.topics;
+    topics.assertTopicTitleVisible(forum.topics.byMariaCategoryA.title);
+    topics.assertTopicTitleVisible(forum.topics.byMariaCategoryANr2.title);
+    topics.assertTopicTitleVisible(forum.topics.byMariaCategoryB.title);
+    topics.assertTopicTitleAbsent(mariasPrivateMessageTitle);
+    topics.assertExactly(numPublicTopicsByMaria);
+  });
+
+  it("... and doesn't see Maria's private message post", () => {
+    mallorysBrowser.userProfilePage.activity.switchToPosts({ shallFindPosts: true });
+    let posts = mallorysBrowser.userProfilePage.activity.posts;
+    posts.assertPostTextVisible(mariasPublicReplyToMichael);
+    posts.assertPostTextAbsent(mariasPrivateMessageBody);
+    posts.assertExactly(numPublicPostsByMaria);
   });
 
 
@@ -143,7 +198,13 @@ describe("user profile access:", () => {
   });
 
 
+  // ----- Maria see everything
+
+  // TODO Maria should see the unlisted topic, because she created it.
+
   // ----- Admins see everything
+
+  // TODO they should first click some "See private stuff, to deal with troublemakers" button?
 
   it("Admin Alice logs in", () => {
   });

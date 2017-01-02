@@ -1135,11 +1135,23 @@ function pagesFor(browser) {
 
     userProfilePage: {
       openActivityFor: function(who: string, origin?: string) {
-        browser.go((origin || '') + `/-/users/${who}/activity`);
+        browser.go((origin || '') + `/-/users/${who}/activity/posts`);
       },
 
       openNotfsFor: function(who: string, origin?: string) {
         browser.go((origin || '') + `/-/users/${who}/notifications`);
+      },
+
+      isNotfsTabVisible: function() {
+        // The activity tab is always visible, if the notfs tab can possibly be visible.
+        browser.waitForVisible('.e_UP_ActivityB');
+        return browser.isVisible('.e_UP_NotfsB');
+      },
+
+      isPrefsTabVisible: function() {
+        // The activity tab is always visible, if the preferences tab can possibly be visible.
+        browser.waitForVisible('.e_UP_ActivityB');
+        return browser.isVisible('.e2eUP_PrefsB');
       },
 
       assertIsMyProfile: function() {
@@ -1161,6 +1173,70 @@ function pagesFor(browser) {
 
       clickSendMessage: function() {
         api.waitAndClick('.s_UP_SendMsgB');
+      },
+
+      activity: {
+        switchToPosts: function(opts: { shallFindPosts: boolean }) {
+          browser.waitAndClick('.s_UP_Act_Nav_PostsB');
+          browser.waitForVisible('.s_UP_Act_Ps');
+          if (opts.shallFindPosts) {
+            browser.waitForVisible('.s_UP_Act_Ps_P');
+          }
+          else {
+            // ?? wait for what ??
+          }
+        },
+
+        switchToTopics: function(opts: { shallFindTopics: boolean }) {
+          browser.waitAndClick('.s_UP_Act_Nav_TopicsB');
+          browser.waitForVisible('.s_UP_Act_Ts');
+          if (opts.shallFindTopics) {
+            browser.waitForVisible('.e2eTopicTitle');
+          }
+          else {
+            // ?? wait for what ??
+          }
+        },
+
+        posts: {
+          postSelector: '.s_UP_Act_Ps_P',
+
+          assertExactly: function(num: number) {
+            browser.assertExactly(num, api.userProfilePage.activity.posts.postSelector);
+          },
+
+          assertPostTextVisible: function(postText: string) {
+            let selector = api.userProfilePage.activity.posts.postSelector;
+            browser.waitForVisible(selector);
+            browser.assertAnyTextMatches(selector, postText);
+          },
+
+          assertPostTextAbsent: function(postText: string) {
+            let selector = api.userProfilePage.activity.posts.postSelector;
+            browser.waitForVisible(selector);
+            browser.assertNoTextMatches(selector, postText);
+          },
+        },
+
+        topics: {
+          topicsSelector: '.s_UP_Act_Ts .e2eTopicTitle',
+
+          assertExactly: function(num: number) {
+            browser.assertExactly(num, api.userProfilePage.activity.topics.topicsSelector);
+          },
+
+          assertTopicTitleVisible: function(title: string) {
+            let selector = api.userProfilePage.activity.topics.topicsSelector;
+            browser.waitForVisible(selector);
+            browser.assertAnyTextMatches(selector, title);
+          },
+
+          assertTopicTitleAbsent: function(title: string) {
+            let selector = api.userProfilePage.activity.topics.topicsSelector;
+            browser.waitForVisible(selector);
+            browser.assertNoTextMatches(selector, title);
+          },
+        }
       },
 
       notfs: {

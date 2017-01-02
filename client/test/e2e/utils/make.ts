@@ -263,7 +263,7 @@ var make = {
       defaultTopicType: c.TestPageRole.Discussion,
       createdAtMs: forumPage.createdAtMs,
       updatedAtMs: forumPage.updatedAtMs,
-      hideInForum: false,
+      unlisted: false,
     };
   },
 

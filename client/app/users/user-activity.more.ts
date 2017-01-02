@@ -51,8 +51,8 @@ export let UsersActivityComponent = React.createClass(<any> {
          r.div({ className: 's_UP_Act_Nav' },
            Nav({ bsStyle: 'pills', activeKey: activeRouteName,
                onSelect: this.transitionTo, className: 'dw-sub-nav nav-stacked' },
-             NavItem({ eventKey: 'posts' }, "Posts"),
-             NavItem({ eventKey: 'topics' }, "Topics"))),
+             NavItem({ eventKey: 'posts', className: 's_UP_Act_Nav_PostsB' }, "Posts"),
+             NavItem({ eventKey: 'topics', className: 's_UP_Act_Nav_TopicsB' }, "Topics"))),
              //NavItem({ eventKey: 'likes-given' }, "Likes Given"),
              //NavItem({ eventKey: 'likes-received' }, "Likes Received"))),
          r.div({ className: 's_UP_Act_List' },
@@ -112,7 +112,7 @@ export let PostsComponent = React.createClass(<any> {
 
     let postElems = posts.map((post: PostWithPage) => {
       return (
-        r.li({ key: post.postId, className: 's_UP_Act_Ps_P' },
+        r.li({ key: post.uniqueId, className: 's_UP_Act_Ps_P' },
           r.a({ href: linkToPostNr(post.pageId, post.postId),
               className: 's_UP_Act_Ps_P_Link ' + pageRole_iconClass(post.pageRole) },
             post.pageTitle),

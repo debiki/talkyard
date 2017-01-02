@@ -61,11 +61,15 @@ let buildSite = function(site?: SiteData) {
       staffOnly?: boolean,
       deletedAtMs?: number,
     }) {
+      assert(!opts.deletedAtMs || opts.deletedAtMs >= forumPage.createdAtMs);
       var category = make.categoryWithIdFor(opts.id, forumPage);
       category.parentId = opts.parentCategoryId;
       category.name = opts.name;
       category.slug = opts.slug;
       category.description = opts.description;
+      category.unlisted = opts.unlisted;
+      category.staffOnly = opts.staffOnly;
+      category.deletedAtMs = opts.deletedAtMs;
       site.categories.push(category);
       return category;
     },
@@ -130,7 +134,7 @@ let buildSite = function(site?: SiteData) {
         approvedHtmlSanitized: `<p>${opts.body}</p>`,
       }));
 
-      return _.assign({}, page, path);
+      return _.assign({}, opts, page, path);
     },
 
 
@@ -219,7 +223,7 @@ let buildSite = function(site?: SiteData) {
         name: "Deleted Category",
         slug: 'deleted-category',
         aboutPageText: "Deleted category description.",
-        deletedAtMs: Date.now(),
+        deletedAtMs: forumPage.createdAtMs + 1000 * 3600 * 24,
       });
 
       // ---- Pages
@@ -230,20 +234,20 @@ let buildSite = function(site?: SiteData) {
         showId: false,
         slug: 'by-maria-category-a',
         role: c.TestPageRole.Discussion,
-        title: 'By Maria in CategoryA',
-        body: 'Text text text.',
+        title: 'By Maria in CategoryA title',
+        body: 'By Maria in CategoryA, text text text.',
         categoryId: forum.categories.categoryA.id,
         authorId: forum.members.maria.id,
       });
 
-      forum.topics.byMariaCategoryA = api.addPage({
+      forum.topics.byMariaCategoryANr2 = api.addPage({
         id: 'byMariaCategoryA_2',
         folder: '/',
         showId: false,
         slug: 'by-maria-category-a-2',
         role: c.TestPageRole.Discussion,
-        title: 'By Maria in CategoryA nr 2',
-        body: 'Text text text, 2.',
+        title: 'By Maria in CategoryA nr 2 title',
+        body: 'By Maria in CategoryA nr 2, text text text, 2.',
         categoryId: forum.categories.categoryA.id,
         authorId: forum.members.maria.id,
       });
@@ -253,8 +257,8 @@ let buildSite = function(site?: SiteData) {
         showId: false,
         slug: 'by-maria-category-b',
         role: c.TestPageRole.Discussion,
-        title: 'By Maria in CategoryB',
-        body: 'Text text text.',
+        title: 'By Maria in CategoryB title',
+        body: 'By Maria in CategoryB, text text text.',
         categoryId: forum.categories.categoryB.id,
         authorId: forum.members.maria.id,
       });
@@ -265,8 +269,8 @@ let buildSite = function(site?: SiteData) {
         showId: false,
         slug: 'by-maria-staff-only-cat',
         role: c.TestPageRole.Discussion,
-        title: 'By Maria in Staff-Only cat',
-        body: 'Text text text.',
+        title: 'By Maria in Staff-Only cat title',
+        body: 'By Maria in Staff-Only cat, text text text.',
         categoryId: forum.categories.staffOnlyCategory.id,
         authorId: forum.members.maria.id,
       });
@@ -277,8 +281,8 @@ let buildSite = function(site?: SiteData) {
         showId: false,
         slug: 'by-maria-unlisted-cat',
         role: c.TestPageRole.Discussion,
-        title: 'By Maria in Unlisted cat',
-        body: 'Text text text.',
+        title: 'By Maria in Unlisted cat title',
+        body: 'By Maria in Unlisted cat, text text text.',
         categoryId: forum.categories.unlistedCategory.id,
         authorId: forum.members.maria.id,
       });
@@ -289,8 +293,8 @@ let buildSite = function(site?: SiteData) {
         showId: false,
         slug: 'by-maria-deleted-cat',
         role: c.TestPageRole.Discussion,
-        title: 'By Maria in Deleted cat',
-        body: 'Text text text.',
+        title: 'By Maria in Deleted cat title',
+        body: 'By Maria in Deleted cat, text text text.',
         categoryId: forum.categories.deletedCategory.id,
         authorId: forum.members.maria.id,
       });
@@ -301,8 +305,8 @@ let buildSite = function(site?: SiteData) {
         showId: false,
         slug: 'by-michael-category-a',
         role: c.TestPageRole.Question,
-        title: 'By Michael in CategoryA',
-        body: 'Text text text.',
+        title: 'By Michael in CategoryA title',
+        body: 'By Michael in CategoryA, text text text.',
         categoryId: forum.categories.categoryA.id,
         authorId: forum.members.michael.id,
       });
