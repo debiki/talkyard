@@ -25,39 +25,26 @@ let buildSite = function(site?: SiteData) {
     addForumPageAndRootCategory: function(opts: {
       id: string,
       folder?: string,
-      rootCategoryId?: number,
+      rootCategoryId: number,
+      defaultCategoryId: number,
       authorId?: number,
       title?: string,
       introText?: string,
     }): Page {
-      var forumPage = make.page({
+      let forumPage = api.addPage({
         id: opts.id,
+        folder: opts.folder || '/',
+        showId: false,
+        slug: '',
         role: c.TestPageRole.Forum,
-        categoryId: opts.rootCategoryId || 1,
+        title: opts.title || "Forum Title",
+        body: opts.introText || "Forum intro text.",
+        categoryId: opts.rootCategoryId,
         authorId: opts.authorId || 1,    // [commonjs] SystemUserId
       });
 
-      site.pages.push(forumPage);
-      site.pagePaths.push({
-          folder: opts.folder || '/', pageId: forumPage.id, showId: false, slug: '' });
-
-      // Forum title.
-      site.posts.push(make.post({
-        page: forumPage,
-        nr: 0,
-        approvedSource: opts.title || "Forum Title",
-        approvedHtmlSanitized: opts.title || "Forum Title",
-      }));
-
-      // Forum intro text.
-      site.posts.push(make.post({
-        page: forumPage,
-        nr: 1,
-        approvedSource: opts.introText || "Forum intro text.",
-        approvedHtmlSanitized: `<p>${opts.introText || "Intro text."}</p>`,
-      }));
-
       let rootCategory = make.rootCategoryWithIdFor(opts.rootCategoryId, forumPage);
+      rootCategory.defaultCategoryId = opts.defaultCategoryId;
       site.categories.push(rootCategory);
 
       return forumPage;
@@ -70,7 +57,9 @@ let buildSite = function(site?: SiteData) {
       name: string,
       slug: string,
       description: string,
-      isDeleted: boolean,
+      unlisted?: boolean,
+      staffOnly?: boolean,
+      deletedAtMs?: number,
     }) {
       var category = make.categoryWithIdFor(opts.id, forumPage);
       category.parentId = opts.parentCategoryId;
@@ -87,8 +76,9 @@ let buildSite = function(site?: SiteData) {
       parentCategoryId: number,
       name: string,
       slug: string,
-      isDefault?: boolean,
-      isDeleted?: boolean,
+      unlisted?: boolean,
+      staffOnly?: boolean,
+      deletedAtMs?: number,
       aboutPageText: string,
     }) {
       let optsWithDescr: any = _.assign({ description: opts.aboutPageText }, opts);
@@ -99,7 +89,7 @@ let buildSite = function(site?: SiteData) {
         showId: false,
         slug: `about-cat-${opts.slug}`,
         role: c.TestPageRole.About,
-        title: `About category ${name}`,
+        title: `About category ${opts.name}`,
         body: opts.aboutPageText,
         categoryId: category.id,
         authorId: 1,
@@ -123,55 +113,201 @@ let buildSite = function(site?: SiteData) {
       let path = make.pagePath(opts.id, opts.folder, opts.showId, opts.slug);
       site.pages.push(page);
       site.pagePaths.push(path);
-      return opts;
+
+      // Page title.
+      site.posts.push(make.post({
+        page: page,
+        nr: 0,
+        approvedSource: opts.title,
+        approvedHtmlSanitized: opts.title,
+      }));
+
+      // Page body.
+      site.posts.push(make.post({
+        page: page,
+        nr: 1,
+        approvedSource: opts.body,
+        approvedHtmlSanitized: `<p>${opts.body}</p>`,
+      }));
+
+      return _.assign({}, page, path);
     },
 
 
-    addLargeForum: function(opts: { title: string, introText?: string }) {
-      let owen = make.memberOwenOwner();
-      let mons = make.memberModeratorMons();
-      let modya = make.memberModeratorModya();
-      let maria = make.memberMaria();
-      let michael = make.memberMichael();
-      let mallory = make.memberMallory();
-      let guest = make.guestGunnar();
-      site.members.push(owen);
-      site.members.push(mons);
-      site.members.push(modya);
-      site.members.push(maria);
-      site.members.push(michael);
-      site.members.push(mallory);
-      site.guests.push(guest);
+    addLargeForum: function(opts: { title: string, introText?: string }): LargeTestForum {
+      let forum = {
+        siteData: site,
+        forumPage: null,
+        members: {
+          owen: site.members[0],
+          mons: make.memberModeratorMons(),
+          modya: make.memberModeratorModya(),
+          maria: make.memberMaria(),
+          michael: make.memberMichael(),
+          mallory: make.memberMallory(),
+        },
+        guests: {
+          gunnar: make.guestGunnar(),
+        },
+        topics: <any> {},
+        categories: <any> {},
+      };
+
+      site.members.push(forum.members.mons);
+      site.members.push(forum.members.modya);
+      site.members.push(forum.members.maria);
+      site.members.push(forum.members.michael);
+      site.members.push(forum.members.mallory);
+      site.guests.push(forum.guests.gunnar);
+
+      _.each(site.members, (m: Member) => m.trustLevel = c.TestTrustLevel.Basic);
 
       let rootCategoryId = 1;
+      let defaultCategoryId = 2;
+      let categoryBId = 3;
+      let staffOnlyCategoryId = 4;
+      let unlistedCategoryId = 5;
+      let deletedCategoryId = 6;
 
-      let forumPage = api.addForumPageAndRootCategory({
+      let forumPage = forum.forumPage = api.addForumPageAndRootCategory({
         id: 'fmp',
         rootCategoryId: rootCategoryId,
+        defaultCategoryId: defaultCategoryId,
         title: opts.title,
         introText: opts.introText,
       });
 
-      let categoryA = api.addCategoryWithAboutPage(forumPage, {
-        id: 3,
+      // ---- Categories
+
+      forum.categories.categoryA = api.addCategoryWithAboutPage(forumPage, {
+        id: defaultCategoryId,
         parentCategoryId: rootCategoryId,
         name: "CategoryA",
         slug: 'category-a',
         aboutPageText: "Category A description.",
-        isDefault: true,
       });
 
-      let topicInCategoryAByMaria = api.addPage({
-        id: 'topicInCategoryAByMaria',
+      forum.categories.categoryB = api.addCategoryWithAboutPage(forumPage, {
+        id: categoryBId,
+        parentCategoryId: rootCategoryId,
+        name: "CategoryB",
+        slug: 'category-b',
+        aboutPageText: "Category B description.",
+      });
+
+      forum.categories.staffOnlyCategory = api.addCategoryWithAboutPage(forumPage, {
+        id: staffOnlyCategoryId,
+        parentCategoryId: rootCategoryId,
+        name: "Staff Only",
+        slug: 'staff-only',
+        aboutPageText: "Staff only category description.",
+        staffOnly: true,
+      });
+
+      forum.categories.unlistedCategory = api.addCategoryWithAboutPage(forumPage, {
+        id: unlistedCategoryId,
+        parentCategoryId: rootCategoryId,
+        name: "Unlisted Cat",
+        slug: 'unlisted-cat',
+        aboutPageText: "Unlisted category description.",
+        unlisted: true,
+      });
+
+      forum.categories.deletedCategory = api.addCategoryWithAboutPage(forumPage, {
+        id: deletedCategoryId,
+        parentCategoryId: rootCategoryId,
+        name: "Deleted Category",
+        slug: 'deleted-category',
+        aboutPageText: "Deleted category description.",
+        deletedAtMs: Date.now(),
+      });
+
+      // ---- Pages
+
+      forum.topics.byMariaCategoryA = api.addPage({
+        id: 'byMariaCategoryA',
         folder: '/',
         showId: false,
-        slug: 'topicInCategoryAByMaria',
+        slug: 'by-maria-category-a',
         role: c.TestPageRole.Discussion,
-        title: 'TopicInCategoryA-by-Maria',
+        title: 'By Maria in CategoryA',
         body: 'Text text text.',
-        categoryId: categoryA.id,
-        authorId: maria.id,
+        categoryId: forum.categories.categoryA.id,
+        authorId: forum.members.maria.id,
       });
+
+      forum.topics.byMariaCategoryA = api.addPage({
+        id: 'byMariaCategoryA_2',
+        folder: '/',
+        showId: false,
+        slug: 'by-maria-category-a-2',
+        role: c.TestPageRole.Discussion,
+        title: 'By Maria in CategoryA nr 2',
+        body: 'Text text text, 2.',
+        categoryId: forum.categories.categoryA.id,
+        authorId: forum.members.maria.id,
+      });
+      forum.topics.byMariaCategoryB = api.addPage({
+        id: 'byMariaCategoryB',
+        folder: '/',
+        showId: false,
+        slug: 'by-maria-category-b',
+        role: c.TestPageRole.Discussion,
+        title: 'By Maria in CategoryB',
+        body: 'Text text text.',
+        categoryId: forum.categories.categoryB.id,
+        authorId: forum.members.maria.id,
+      });
+
+      forum.topics.byMariaStaffOnlyCat = api.addPage({
+        id: 'byMariaStaffOnlyCat',
+        folder: '/',
+        showId: false,
+        slug: 'by-maria-staff-only-cat',
+        role: c.TestPageRole.Discussion,
+        title: 'By Maria in Staff-Only cat',
+        body: 'Text text text.',
+        categoryId: forum.categories.staffOnlyCategory.id,
+        authorId: forum.members.maria.id,
+      });
+
+      forum.topics.byMariaUnlistedCat = api.addPage({
+        id: 'byMariaUnlistedCat',
+        folder: '/',
+        showId: false,
+        slug: 'by-maria-unlisted-cat',
+        role: c.TestPageRole.Discussion,
+        title: 'By Maria in Unlisted cat',
+        body: 'Text text text.',
+        categoryId: forum.categories.unlistedCategory.id,
+        authorId: forum.members.maria.id,
+      });
+
+      forum.topics.byMariaDeletedCat = api.addPage({
+        id: 'byMariaDeletedCat',
+        folder: '/',
+        showId: false,
+        slug: 'by-maria-deleted-cat',
+        role: c.TestPageRole.Discussion,
+        title: 'By Maria in Deleted cat',
+        body: 'Text text text.',
+        categoryId: forum.categories.deletedCategory.id,
+        authorId: forum.members.maria.id,
+      });
+
+      forum.topics.byMichaelCategoryA = api.addPage({
+        id: 'byMichaelCategoryA',
+        folder: '/',
+        showId: false,
+        slug: 'by-michael-category-a',
+        role: c.TestPageRole.Question,
+        title: 'By Michael in CategoryA',
+        body: 'Text text text.',
+        categoryId: forum.categories.categoryA.id,
+        authorId: forum.members.michael.id,
+      });
+
+      return forum;
     }
   };
 

@@ -195,11 +195,7 @@ function pagesFor(browser) {
 
       clickLogout: function(options?: { waitForLoginButton?: boolean }) {
         options = options || {};
-        api.waitAndClick('.esMyMenu');
-        // Because of a bug in Chrome? Chromedriver? Selenium? Webdriver.io? wait-and-click
-        // attempts to click instantly, before the show-menu anim has completed and the elem
-        // has appeared. So pause for a short while. [E2EBUG]
-        browser.pause(250);
+        api.topbar.openMyMenu();
         api.waitAndClick('#e2eMM_Logout');
         if (options.waitForLoginButton !== false) {
           // Then a login dialog will probably have opened now in full screen, with a modal
@@ -209,16 +205,24 @@ function pagesFor(browser) {
         }
       },
 
+      openMyMenu: function() {
+        api.waitAndClick('.esMyMenu');
+        // Because of a bug in Chrome? Chromedriver? Selenium? Webdriver.io? wait-and-click
+        // attempts to click instantly, before the show-menu anim has completed and the elem
+        // has appeared. So pause for a short while. [E2EBUG]
+        browser.pause(333);
+      },
+
       clickGoToAdmin: function() {
         browser.rememberCurrentUrl();
-        api.waitAndClick('.esMyMenu');
+        api.topbar.openMyMenu();
         api.waitAndClick('.esMyMenu_admin a');
         browser.waitForNewUrl();
       },
 
       clickGoToProfile: function() {
         browser.rememberCurrentUrl();
-        api.waitAndClick('.esMyMenu');
+        api.topbar.openMyMenu();
         api.waitAndClick('#e2eMM_Profile');
         browser.waitForNewUrl();
         browser.waitForVisible('.user-info');
@@ -227,7 +231,7 @@ function pagesFor(browser) {
       clickStopImpersonating: function() {
         let oldName = api.topbar.getMyUsername();
         let newName;
-        api.waitAndClick('.esMyMenu');
+        api.topbar.openMyMenu();
         api.waitAndClick('#e2eMM_StopImp');
         browser.waitForVisible('.user-info');
         do {
@@ -247,9 +251,9 @@ function pagesFor(browser) {
       },
 
       openNotfToMe: function(options?: { waitForNewUrl?: boolean }) {
-        api.waitAndClick('.esMyMenu');
+        api.topbar.openMyMenu();
         browser.rememberCurrentUrl();
-        api.waitAndClick('.esMyMenu .dropdown-menu .esNotf-toMe');
+        api.waitAndClickFirst('.esMyMenu .dropdown-menu .esNotf-toMe');
         if (options && options.waitForNewUrl !== false) {
           browser.waitForNewUrl();
         }
@@ -258,7 +262,7 @@ function pagesFor(browser) {
       myMenu: {
         goToAdminReview: function() {
           browser.rememberCurrentUrl();
-          api.waitAndClick('.esMyMenu');
+          api.topbar.openMyMenu();
           api.waitAndClick('#e2eMM_Review');
           browser.waitForNewUrl();
           browser.waitForVisible('.e_A_Rvw');
@@ -597,6 +601,11 @@ function pagesFor(browser) {
 
       waitForVisible: function() {
         browser.waitForVisible('.dw-p-ttl h1');
+      },
+
+      openAboutAuthorDialog: function() {
+        browser.waitAndClick('.dw-ar-p-hd .esP_By');
+        browser.waitForVisible('.esUsrDlg');
       },
 
       assertMatches: function(regex) {
@@ -1386,6 +1395,19 @@ function pagesFor(browser) {
         }
         api.flagDialog.submit();
         api.stupidDialog.close();
+      },
+
+      openPageAuthorProfilePage: function() {
+        api.pageTitle.openAboutAuthorDialog();
+        api.aboutUserDialog.clickViewProfile();
+      },
+
+      sendMessageToPageAuthor: function(messageTitle: string, messageText: string) {
+        api.pageTitle.openAboutAuthorDialog();
+        api.aboutUserDialog.clickSendMessage();
+        api.editor.editTitle(messageTitle);
+        api.editor.editText(messageText);
+        api.editor.saveWaitForNewPage();
       },
 
       createChatChannelViaWatchbar: function(

@@ -43,7 +43,7 @@ object ImportExportController extends mvc.Controller {
 
 
   def importSiteJson(deleteOldSite: Option[Boolean]) =
-        PostJsonAction(RateLimits.NoRateLimits, maxLength = 9999) { request =>
+        PostJsonAction(RateLimits.CreateSite, maxLength = 1001000) { request =>
 
     val okE2ePassword = hasOkE2eTestPassword(request.request)
     if (!okE2ePassword)
@@ -290,6 +290,12 @@ object ImportExportController extends mvc.Controller {
         isOwner = readOptBool(jsObj, "isOwner") getOrElse false,
         isAdmin = readOptBool(jsObj, "isAdmin") getOrElse false,
         isModerator = readOptBool(jsObj, "isModerator") getOrElse false,
+        trustLevel = readOptInt(jsObj, "trustLevel").flatMap(TrustLevel.fromInt)
+                      .getOrElse(TrustLevel.New),
+        lockedTrustLevel = readOptInt(jsObj, "lockedTrustLevel").flatMap(TrustLevel.fromInt),
+        threatLevel = readOptInt(jsObj, "threatLevel").flatMap(ThreatLevel.fromInt)
+                        .getOrElse(ThreatLevel.HopefullySafe),
+        lockedThreatLevel = readOptInt(jsObj, "lockedThreatLevel").flatMap(ThreatLevel.fromInt),
         suspendedAt = readOptDateMs(jsObj, "suspendedAtMs"),
         suspendedTill = readOptDateMs(jsObj, "suspendedTillMs"),
         suspendedById = readOptInt(jsObj, "suspendedById"),
@@ -413,7 +419,8 @@ object ImportExportController extends mvc.Controller {
         createdAt = readDateMs(jsObj, "createdAtMs"),
         updatedAt = readDateMs(jsObj, "updatedAtMs"),
         lockedAt = readOptDateMs(jsObj, "lockedAtMs"),
-        frozenAt = readOptDateMs(jsObj, "frozenAtMs")))
+        frozenAt = readOptDateMs(jsObj, "frozenAtMs"),
+        deletedAt = readOptDateMs(jsObj, "deletedAtMs")))
     }
     catch {
       case ex: IllegalArgumentException =>

@@ -283,3 +283,30 @@ interface EmailSubjectBody {
   subject: string;
   bodyHtmlText: string
 }
+
+
+interface LargeTestForum {
+  siteData: SiteData;
+  forumPage: any;
+  members: {
+    owen: any;
+    mons: any;
+    modya: any;
+    maria: any;
+    michael: any;
+    mallory: any;
+  },
+  guests: {
+    gunnar: any;
+  },
+  topics: {
+    byMariaCategoryA: any;
+    byMariaStaffOnlyCat: any;
+    byMariaUnlistedCat: any;
+    byMariaDeletedCat: any;
+    byMichaelCategoryA: any;
+  },
+  categories: any;
+}
+
+
