@@ -165,7 +165,7 @@ object ForumController extends mvc.Controller {
     val topicsInclForbidden = request.dao.listPagesByUser(
       userId, isStaffOrSelf = isStaffOrSelf, limit = 200)
     val topics = topicsInclForbidden filter { page: PagePathAndMeta =>
-      request.dao.maySeePageUseCache(page.meta, caller)._1
+      request.dao.maySeePageUseCache(page.meta, caller, maySeeUnlisted = isStaffOrSelf)._1
     }
     makeTopicsReply(topics, request.dao)
   }

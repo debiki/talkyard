@@ -57,15 +57,18 @@ function pagesFor(browser) {
       return result.value;
     },
 
-    /*
-    refresh: function() {
-      // browser.refresh() causes a weird cannot-find-elem problem. Perhaps because of  [E2EBUG]
-      // some incompatibility between webdriver.io and Chrome? Recently there was a stale-
-      // element bug after refresh(), fixed in Webdriver.io 4.3.0. Instead:
+
+    // Workaround for bug(s) in Chrome? Chromedriver? Selenium? Webdriver?
+    // 1) browser.refresh() causes a weird cannot-find-elem problem. Perhaps because of  [E2EBUG]
+    //    some incompatibility between webdriver.io and Chrome? Recently there was a stale-
+    //    element bug after refresh(), fixed in Webdriver.io 4.3.0. Instead:
+    // 2) Sometimes waitForVisible stops working = blocks forever, although isVisible returns true
+    //    (because the elem is visible already).
+    toGoogleAndBack: function() {
       let url = browser.url().value;
       browser.go('http://www.google.com');
       browser.go(url);
-    }, */
+    },
 
 
     waitForMyDataAdded: function() {
@@ -1151,7 +1154,7 @@ function pagesFor(browser) {
       isPrefsTabVisible: function() {
         // The activity tab is always visible, if the preferences tab can possibly be visible.
         browser.waitForVisible('.e_UP_ActivityB');
-        return browser.isVisible('.e2eUP_PrefsB');
+        return browser.isVisible('#e2eUP_PrefsB');
       },
 
       assertIsMyProfile: function() {
@@ -1178,6 +1181,8 @@ function pagesFor(browser) {
       activity: {
         switchToPosts: function(opts: { shallFindPosts: boolean }) {
           browser.waitAndClick('.s_UP_Act_Nav_PostsB');
+          api.toGoogleAndBack(); // [E2EBUG] otherwise waitForVisible() on the next line hangs,
+                                 // although this returns true:  browser.isVisible('.s_UP_Act_Ps');
           browser.waitForVisible('.s_UP_Act_Ps');
           if (opts.shallFindPosts) {
             browser.waitForVisible('.s_UP_Act_Ps_P');
@@ -1189,6 +1194,8 @@ function pagesFor(browser) {
 
         switchToTopics: function(opts: { shallFindTopics: boolean }) {
           browser.waitAndClick('.s_UP_Act_Nav_TopicsB');
+          api.toGoogleAndBack(); // [E2EBUG] otherwise waitForVisible() on the next line hangs,
+                                 // although this returns true: browser.isVisible('.s_UP_Act_Ts');
           browser.waitForVisible('.s_UP_Act_Ts');
           if (opts.shallFindTopics) {
             browser.waitForVisible('.e2eTopicTitle');

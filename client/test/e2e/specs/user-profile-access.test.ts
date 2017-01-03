@@ -31,6 +31,7 @@ let mallory;
 let mallorysBrowser;
 let guest;
 let guestsBrowser;
+let strangersBrowser;
 
 let idAddress: IdAddress;
 let forumTitle = "User Profile Access Test Forum";
@@ -71,6 +72,7 @@ describe("user profile access:", () => {
     mallorysBrowser = browser;
     guest = forum.guests.gunnar;
     guestsBrowser = browser;
+    strangersBrowser = browser;
   });
 
 
@@ -132,14 +134,6 @@ describe("user profile access:", () => {
     posts.assertExactly(numPublicPostsByMaria + 1); // 1 = private message to Michael
   });
 
-  it("... and he doesn't see the Notifications tab", () => {
-    assert(!browser.userProfilePage.isNotfsTabVisible());
-  });
-
-  it("... and not the Preferences tab", () => {
-    assert(!browser.userProfilePage.isPrefsTabVisible());
-  });
-
   it("... he sees Maria's topics, incl the private message to him", () => {
     michaelsBrowser.userProfilePage.activity.switchToTopics({ shallFindTopics: true });
     let topics = michaelsBrowser.userProfilePage.activity.topics;
@@ -151,6 +145,11 @@ describe("user profile access:", () => {
     topics.assertTopicTitleAbsent(forum.topics.byMariaStaffOnlyCat.title);
     topics.assertTopicTitleAbsent(forum.topics.byMariaDeletedCat.title);
     topics.assertExactly(numPublicTopicsByMaria + 1);  // 1 = private message to Michael
+  });
+
+  it("... he sees none of the Notifications and Preferences tabs", () => {
+    assert(!michaelsBrowser.userProfilePage.isNotfsTabVisible());
+    assert(!michaelsBrowser.userProfilePage.isPrefsTabVisible());
   });
 
 
@@ -182,29 +181,106 @@ describe("user profile access:", () => {
 
   // ----- Strangers also see only public activity
 
+  it("A stranger arrives", () => {
+    mallorysBrowser.topbar.clickLogout();
+    strangersBrowser.refresh();
+  });
 
-  // ----- Moderators see more activity
+  it("... hen only sees public posts", () => {
+    let posts = strangersBrowser.userProfilePage.activity.posts;
+    posts.assertPostTextAbsent(mariasPrivateMessageBody);
+    posts.assertExactly(numPublicPostsByMaria);
+  });
+
+  it("... and public topics", () => {
+    strangersBrowser.userProfilePage.activity.switchToTopics({ shallFindTopics: true });
+    let topics = strangersBrowser.userProfilePage.activity.topics;
+    topics.assertTopicTitleAbsent(mariasPrivateMessageTitle);
+    topics.assertExactly(numPublicTopicsByMaria);
+  });
+
+
+
+  // ----- Moderators see Unlisted stuff
 
   it("Moderator Modya logs in", () => {
+    modyasBrowser.complex.loginWithPasswordViaTopbar(modya);
+    modyasBrowser.refresh();
   });
 
-  it("... Modya sees Maria's pages and public reply", () => {
+  it("... Modya sees Maria's topics, incl the unlisted, but not the private message", () => {
+    let topics = modyasBrowser.userProfilePage.activity.topics;
+    topics.assertTopicTitleVisible(forum.topics.byMariaCategoryA.title);
+    topics.assertTopicTitleVisible(forum.topics.byMariaCategoryANr2.title);
+    topics.assertTopicTitleVisible(forum.topics.byMariaCategoryB.title);
+    topics.assertTopicTitleVisible(forum.topics.byMariaUnlistedCat.title);
+    topics.assertTopicTitleVisible(forum.topics.byMariaStaffOnlyCat.title);
+    topics.assertTopicTitleVisible(forum.topics.byMariaDeletedCat.title);
+    topics.assertTopicTitleAbsent(mariasPrivateMessageTitle);
+    topics.assertExactly(numPublicTopicsByMaria + 3);  // + 3 = unlisted + staff-only + deleted
   });
 
-  it("... but not the private message", () => {
+  it("... and the public posts + the one on the unlisted page, but not the priv msg post", () => {
+    modyasBrowser.userProfilePage.activity.switchToPosts({ shallFindPosts: true });
+    let posts = modyasBrowser.userProfilePage.activity.posts;
+    posts.assertPostTextVisible(mariasPublicReplyToMichael);
+    posts.assertPostTextVisible(forum.topics.byMariaCategoryA.body);
+    posts.assertPostTextVisible(forum.topics.byMariaCategoryANr2.body);
+    posts.assertPostTextVisible(forum.topics.byMariaCategoryB.body);
+    posts.assertPostTextVisible(forum.topics.byMariaUnlistedCat.body);
+    posts.assertPostTextVisible(forum.topics.byMariaStaffOnlyCat.body);
+    posts.assertPostTextVisible(forum.topics.byMariaDeletedCat.body);
+    posts.assertPostTextAbsent(mariasPrivateMessageBody);
+    posts.assertExactly(numPublicPostsByMaria + 3);  // + 3 = unlisted + staff-only + deleted
   });
 
-  it("... and not the Notifications tab", () => {
+  it("... she sees the Notifications and Preferences tabs", () => {
+    assert(modyasBrowser.userProfilePage.isNotfsTabVisible());
+    assert(modyasBrowser.userProfilePage.isPrefsTabVisible());
+
+    // TODO SHOULD NOT see priv message notf
   });
 
 
-  // ----- Maria see everything
+  // ----- Maria sees everything
 
-  // TODO Maria should see the unlisted topic, because she created it.
+  it("Maria logs in", () => {
+    modyasBrowser.topbar.clickLogout();
+    mariasBrowser.complex.loginWithPasswordViaTopbar(maria);
+    mariasBrowser.refresh();
+  });
+
+  it("... and sees all her posts + except for the deleted & staff-only", () => {
+    let posts = mariasBrowser.userProfilePage.activity.posts;
+    posts.assertPostTextVisible(mariasPublicReplyToMichael);
+    posts.assertPostTextVisible(forum.topics.byMariaCategoryA.body);
+    posts.assertPostTextVisible(forum.topics.byMariaCategoryANr2.body);
+    posts.assertPostTextVisible(forum.topics.byMariaCategoryB.body);
+    posts.assertPostTextVisible(forum.topics.byMariaUnlistedCat.body);
+    posts.assertPostTextVisible(mariasPrivateMessageBody);
+    posts.assertExactly(numPublicPostsByMaria + 2); // 2 = unlisted + private
+  });
+
+  it("... Modya sees Maria's topics, incl the unlisted, but not the private message", () => {
+    mariasBrowser.userProfilePage.activity.switchToTopics({ shallFindTopics: true });
+    let topics = mariasBrowser.userProfilePage.activity.topics;
+    topics.assertTopicTitleVisible(forum.topics.byMariaCategoryA.title);
+    topics.assertTopicTitleVisible(forum.topics.byMariaCategoryANr2.title);
+    topics.assertTopicTitleVisible(forum.topics.byMariaCategoryB.title);
+    topics.assertTopicTitleVisible(forum.topics.byMariaUnlistedCat.title);
+    topics.assertTopicTitleVisible(mariasPrivateMessageTitle);
+    topics.assertExactly(numPublicTopicsByMaria + 2); // 2 = unlisted + private
+  });
+
+  it("... she sees the Notifications and Preferences tabs", () => {
+    assert(mariasBrowser.userProfilePage.isNotfsTabVisible());
+    assert(mariasBrowser.userProfilePage.isPrefsTabVisible());
+  });
+
 
   // ----- Admins see everything
-
-  // TODO they should first click some "See private stuff, to deal with troublemakers" button?
+  /*
+  // they SHOULD first click some "See private stuff, to deal with troublemakers" button?
 
   it("Admin Alice logs in", () => {
   });
@@ -214,7 +290,7 @@ describe("user profile access:", () => {
 
   it("... and the Notifications tab, incl all notifiations", () => {
   });
-
+  */
 
   it("Done", () => {
     everyone.perhapsDebug();

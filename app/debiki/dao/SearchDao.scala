@@ -70,7 +70,9 @@ trait SearchDao {
     // and we'll get as many search hits as we want.
     val pageStuffByPageIdInclForbidden = getPageStuffById(hitsByPageId.keys)
     val pageStuffByPageId = pageStuffByPageIdInclForbidden filter { case (pageId, pageStuff) =>
-      val (maySee, _) = maySeePageUseCache(pageStuff.pageMeta, user)
+      val isStaffOrAuthor = user.exists(u => u.isStaff || u.id == pageStuff.pageMeta.authorId)
+      val (maySee, _) = maySeePageUseCache(pageStuff.pageMeta, user,
+        maySeeUnlisted = isStaffOrAuthor)
       maySee
     }
 

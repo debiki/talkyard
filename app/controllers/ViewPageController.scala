@@ -64,7 +64,8 @@ object ViewPageController extends mvc.Controller {
     val posts = for {
       post <- postsInclForbidden
       pageMeta <- pageMetaById.get(post.pageId)
-      if dao.maySeePostUseCache(post, pageMeta, caller)._1
+      if dao.maySeePostUseCache(post, pageMeta, caller,
+          maySeeUnlistedPages = callerIsStaffOrAuthor)._1
     } yield post
 
     val pageIds = posts.map(_.pageId).distinct
