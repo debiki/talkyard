@@ -51,6 +51,16 @@ var api = { config: {
     // browserName: 'firefox'
   }],
 
+  /* This error happened once:
+
+   ERROR: session not created exception
+   from unknown error: failed to close UI debuggers
+
+   I read it can be fixed by adding  --disable-dev-tools  or --disable-extensions  to Chrome?
+   — but how would one do that?
+
+   And only when running *all* tests, in an invisible browser?
+   */
 
   // ===================
   // Test Configurations

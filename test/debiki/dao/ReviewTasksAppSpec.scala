@@ -41,9 +41,9 @@ class ReviewTasksAppSpec extends DaoAppSuite {
 
     "create, find, count tasks" in {
       val dao = Globals.siteDao(Site.FirstSiteId)
-      val createdByUser = createPasswordUser("revwTaskCreator", dao)
-      val createdByUser2 = createPasswordUser("revwTaskCreator2", dao)
-      val completedByUser = createPasswordUser("revwTaskCompleter", dao)
+      val createdByUser = createPasswordUser("revwTaskMkr", dao)
+      val createdByUser2 = createPasswordUser("revwTaskMkr2", dao)
+      val completedByUser = createPasswordUser("taskCompleter", dao)
       val maybeBadUser = createPasswordUser("maybeBadUser", dao)
       val urgentReasons = immutable.Seq(ReviewReason.PostFlagged)
       val otherReasons = immutable.Seq(ReviewReason.LateEdit)

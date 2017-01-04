@@ -160,6 +160,7 @@ describe("impersonate", () => {
   });
 
   it("... she goes to her profile page", () => {
+    // timed out once
     maria.topbar.clickGoToProfile();
     maria.userProfilePage.assertIsMyProfile();
   });

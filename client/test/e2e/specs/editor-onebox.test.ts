@@ -144,6 +144,7 @@ describe("editor onebox:", () => {
     mariasBrowser.topic.waitForPostNrVisible(5);
     mariasBrowser.topic.assertPostTextMatches(5, "Paragraph one");
     mariasBrowser.topic.assertPostTextMatches(5, "Para two");
+    // Failed once.
     assert(mariasBrowser.topic.postNrContains(5, dotOneboxClass));
     assert(mariasBrowser.topic.postNrContains(5, imageJpgOnebox));
   });

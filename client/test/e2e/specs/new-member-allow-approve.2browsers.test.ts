@@ -200,8 +200,7 @@ describe("new member, allow, approve:", () => {
   });
 
   it("Then Michael sees that reply, but not any others", () => {
-    michaelsBrowser.refresh();
-    michaelsBrowser.topic.assertPostNotPendingApproval(4);
+    michaelsBrowser.topic.refreshUntilPostNotPendingApproval(4);
   });
 
   /* Currently she cannot post any more replies, although one was approved, hmm.
@@ -230,10 +229,13 @@ describe("new member, allow, approve:", () => {
   });
 
   it("So now Michael sees all Maja's replies", () => {
-    michaelsBrowser.refresh();
-    michaelsBrowser.topic.assertPostNotPendingApproval(2);
-    michaelsBrowser.topic.assertPostNotPendingApproval(3);
-    michaelsBrowser.topic.assertPostNotPendingApproval(4);
+    // This often fails:
+    // michaelsBrowser.refresh();
+    // michaelsBrowser.topic.assertPostNotPendingApproval(2); then 3 then 4
+    // Instead: (and need to do like this for all of 2,3,4)
+    michaelsBrowser.topic.refreshUntilPostNotPendingApproval(2);
+    michaelsBrowser.topic.refreshUntilPostNotPendingApproval(3);
+    michaelsBrowser.topic.refreshUntilPostNotPendingApproval(4);
   });
 
   it("... and sees Maja's topic in the topic list", () => {

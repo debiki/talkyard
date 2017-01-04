@@ -121,14 +121,15 @@ trait AuthzSiteDaoMixin {
 
   def maySeePostUseCache(post: Post, pageMeta: PageMeta, user: Option[User],
         maySeeUnlistedPages: Boolean): (Boolean, String) = {
-    maySeePostImpl(null, -1, user, anyPost = Some(post), anyPageMeta = Some(pageMeta),
-      maySeeUnlistedPages = maySeeUnlistedPages, anyTransaction = None)
+    maySeePostImpl(pageId = null, postNr = -1, user, anyPost = Some(post),
+      anyPageMeta = Some(pageMeta), maySeeUnlistedPages = maySeeUnlistedPages,
+      anyTransaction = None)
   }
 
 
   def throwIfMayNotSeePost(post: Post, author: Option[User])(transaction: SiteTransaction) {
     val (may, debugCode) =
-      maySeePostImpl(post.pageId, post.nr, author, anyPost = Some(post),
+      maySeePostImpl(post.pageId, postNr = -1, author, anyPost = Some(post),
         anyTransaction = Some(transaction))
     if (!may)
       throwIndistinguishableNotFound(s"EdE4KFA20-$debugCode")
@@ -155,7 +156,9 @@ trait AuthzSiteDaoMixin {
     if (!maySeePage)
       return (false, s"$debugCode-ABX94WN")
 
-    val post = anyPost orElse loadPost(pageId, postNr) getOrElse {
+    def thePageId = anyPageMeta.map(_.pageId) getOrElse pageId
+
+    val post = anyPost orElse loadPost(thePageId, postNr) getOrElse {
       return (false, "7URAZ8S-Post-Not-Found")
     }
 

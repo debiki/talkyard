@@ -418,7 +418,12 @@ class Globals {
     val dbDaoFactory: RdbDaoFactory,
     val cache: DaoMemCache) {
 
-    val ShutdownTimeout = 5 seconds
+    // 5 seconds sometimes in a test —> """
+    // debiki.RateLimiterSpec *** ABORTED ***
+    // Futures timed out after [5 seconds]
+    // """
+    // (in that case, all tests went fine, but couldn't shutdown the test server quickly enough)
+    val ShutdownTimeout = 10 seconds
 
     val config = new Config(conf)
 

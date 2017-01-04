@@ -228,7 +228,7 @@ function pagesFor(browser) {
         api.topbar.openMyMenu();
         api.waitAndClick('#e2eMM_Profile');
         browser.waitForNewUrl();
-        browser.waitForVisible('.user-info');
+        browser.waitForVisible(api.userProfilePage.avatarAboutButtonsSelector);
       },
 
       clickStopImpersonating: function() {
@@ -236,7 +236,7 @@ function pagesFor(browser) {
         let newName;
         api.topbar.openMyMenu();
         api.waitAndClick('#e2eMM_StopImp');
-        browser.waitForVisible('.user-info');
+        browser.waitForVisible(api.userProfilePage.avatarAboutButtonsSelector);
         do {
           newName = api.topbar.getMyUsername();
         }
@@ -406,7 +406,7 @@ function pagesFor(browser) {
         assert(!browser.isVisible('.esTopbar_custom_backToSite'));
         assert(!browser.isVisible('#dw-react-admin-app'));
         // User profile not shown.
-        assert(!browser.isVisible('.user-info'));
+        assert(!browser.isVisible(api.userProfilePage.avatarAboutButtonsSelector));
       },
 
       createPasswordAccount: function(data) {
@@ -966,10 +966,24 @@ function pagesFor(browser) {
         assert(!api.topic._isBodyVisible(postNr));
       },
 
+      refreshUntilPostNotPendingApproval: function(postNr: PostNr) {
+        for (let i = 0; i < 15; ++i) {
+          if (api.topic.isPostNotPendingApproval(postNr))
+            return;
+          browser.pause(500);
+          browser.refresh(500);
+        }
+        die('EdEKW05Y', `Post nr ${postNr} never gets approved`);
+      },
+
       assertPostNotPendingApproval: function(postNr: PostNr) {
-        assert(!api.topic._hasUnapprovedClass(postNr));
-        assert(!api.topic._hasPendingModClass(postNr));
-        assert(api.topic._isBodyVisible(postNr));
+        assert(api.topic.isPostNotPendingApproval(postNr));
+      },
+
+      isPostNotPendingApproval: function(postNr: PostNr) {
+        return !api.topic._hasUnapprovedClass(postNr) &&
+            !api.topic._hasPendingModClass(postNr) &&
+            api.topic._isBodyVisible(postNr);
       },
 
       clickPostActionButton: function(buttonSelector: string) {
@@ -1137,6 +1151,8 @@ function pagesFor(browser) {
 
 
     userProfilePage: {
+      avatarAboutButtonsSelector: '.s_UP_AvtrAboutBtns',
+
       openActivityFor: function(who: string, origin?: string) {
         browser.go((origin || '') + `/-/users/${who}/activity/posts`);
       },

@@ -140,8 +140,12 @@ describe("private chat", function() {
     michael.assertPageTitleMatches(chatName);
   });
 
-  it("Owen remvose Michael from the chat", function() {
+  it("Owen remvoes Michael from the chat", function() {
     owen.contextbar.clickUser('michael');
+    // Failed once:
+    // "FAIL: Error: An element could not be located on the page using the given search parameters."
+    // in _waitAndClick, this line:  browser.click(selector);
+    // Perhaps I just interrupted the test? Delete this comment after 2017-04-01.
     owen.aboutUserDialog.clickRemoveFromPage();
   });
 
