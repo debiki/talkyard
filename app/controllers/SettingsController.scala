@@ -38,7 +38,7 @@ object SettingsController extends mvc.Controller {
 
 
   private def loadSiteSettingsImpl(request: DebikiRequest[_]) = {
-    val settings = request.dao.loadWholeSiteSettings()
+    val settings = request.dao.getWholeSiteSettings()
     val editedSettings = settings.editedSettingsChain.headOption getOrElse EditedSettings.empty
     // What's the default, if settings from parent categories have been inherited? Therefore:
     dieIf(settings.editedSettingsChain.length > 1, "EsE4GJKU0", "not tested")

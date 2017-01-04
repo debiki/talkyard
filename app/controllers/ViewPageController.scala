@@ -100,7 +100,7 @@ object ViewPageController extends mvc.Controller {
     // Similar to viewPageImpl, keep in sync. [7PKW0YZ2]
 
     val dao = request.dao
-    val siteSettings = dao.loadWholeSiteSettings()
+    val siteSettings = dao.getWholeSiteSettings()
     val authenticationRequired = siteSettings.userMustBeAuthenticated ||
       siteSettings.userMustBeApproved
 
@@ -153,7 +153,7 @@ object ViewPageController extends mvc.Controller {
 
     val dao = request.dao
     val user = request.user
-    val siteSettings = dao.loadWholeSiteSettings()
+    val siteSettings = dao.getWholeSiteSettings()
     val authenticationRequired = siteSettings.userMustBeAuthenticated ||
       siteSettings.userMustBeApproved
 
@@ -232,7 +232,7 @@ object ViewPageController extends mvc.Controller {
 
 
   private def doRenderPage(request: PageGetRequest): Future[Result] = {
-    var pageHtml = request.dao.renderPage(request)
+    var pageHtml = request.dao.renderPageMaybeUseCache(request)
 
     {
       val usersOnlineStuff = request.dao.loadUsersOnlineStuff() // could do asynchronously later

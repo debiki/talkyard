@@ -35,13 +35,12 @@ trait AssetBundleDao {
   self: SiteDao =>
 
 
-  def loadAssetBundleVersion(
-        bundleNameNoSuffix: String, bundleSuffix: String): String =
-    loadBundleAndDependencies(bundleNameNoSuffix, bundleSuffix).version
+  def getAssetBundleVersion(bundleNameNoSuffix: String, bundleSuffix: String): String =
+    getBundleAndDependencies(bundleNameNoSuffix, bundleSuffix).version
 
 
-  def loadAssetBundle(nameNoSuffix: String, suffix: String): AssetBundle = {
-    val bundleAndDeps = loadBundleAndDependencies(nameNoSuffix, suffix)
+  def getAssetBundle(nameNoSuffix: String, suffix: String): AssetBundle = {
+    val bundleAndDeps = getBundleAndDependencies(nameNoSuffix, suffix)
     AssetBundle(bundleAndDeps.assetBundleText, version = bundleAndDeps.version)
   }
 
@@ -70,7 +69,7 @@ trait AssetBundleDao {
   // Could add, when that functionality exists: onGroupPermissionsChanged { ... }
 
 
-  protected def loadBundleAndDependencies(nameNoSuffix: String, suffix: String)
+  private def getBundleAndDependencies(nameNoSuffix: String, suffix: String)
       : AssetBundleAndDependencies = {
     val bundleName = s"$nameNoSuffix.$suffix"
     val bundleKey = makeBundleKey(bundleName, tenantId = siteId)

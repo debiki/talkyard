@@ -93,7 +93,7 @@ object ReactJson {
     require(!pageReq.pageExists, "DwE7KEG2")
     require(pageReq.pagePath.value == HomepageUrlPath, "DwE8UPY4")
     val site = pageReq.dao.theSite()
-    val siteSettings = pageReq.dao.loadWholeSiteSettings()
+    val siteSettings = pageReq.dao.getWholeSiteSettings()
     val isFirstSiteAdminEmailMissing = site.status == SiteStatus.NoAdmin &&
       site.id == FirstSiteId && Globals.becomeFirstSiteOwnerEmail.isEmpty
 
@@ -139,7 +139,7 @@ object ReactJson {
     // The json constructed here will be cached & sent to "everyone", so in this function
     // we always specify !isStaff and !restrictedOnly.
 
-    val socialLinksHtml = dao.loadWholeSiteSettings().socialLinksHtml
+    val socialLinksHtml = dao.getWholeSiteSettings().socialLinksHtml
     val page = PageDao(pageId, transaction)
     val pageParts = page.parts
     val posts =
@@ -232,7 +232,7 @@ object ReactJson {
       idAndUser._1.toString -> JsUser(idAndUser._2)
     })
 
-    val siteSettings = dao.loadWholeSiteSettings()
+    val siteSettings = dao.getWholeSiteSettings()
     //val pageSettings = dao.loadSinglePageSettings(pageId)
     val horizontalLayout = page.role == PageRole.MindMap // || pageSettings.horizontalComments
     val is2dTreeDefault = false // pageSettings.horizontalComments
@@ -305,7 +305,7 @@ object ReactJson {
 
   def makeSpecialPageJson(request: DebikiRequest[_], inclCategoriesJson: Boolean): JsObject = {
     val dao = request.dao
-    val siteSettings = dao.loadWholeSiteSettings()
+    val siteSettings = dao.getWholeSiteSettings()
     var result = Json.obj(
       "appVersion" -> Globals.applicationVersion,
       "siteId" -> JsString(dao.siteId),
@@ -342,7 +342,7 @@ object ReactJson {
       return (None, Nil)
     }
     val forumPageId = categoriesRootFirst.head.sectionPageId
-    dao.lookupPagePath(forumPageId) match {
+    dao.getPagePath(forumPageId) match {
       case None => (None, Nil)
       case Some(forumPath) =>
         val jsonRootFirst = categoriesRootFirst.map(makeForumOrCategoryJson(forumPath, _))
@@ -356,7 +356,7 @@ object ReactJson {
     val jsonObjs = for {
       pageId <- sectionPageIds
       // (We're not in a transaction, the page might be gone [transaction])
-      metaAndPath <- dao.loadPageMetaAndPath(pageId)
+      metaAndPath <- dao.getPagePathAndMeta(pageId)
     } yield {
       Json.obj(
         "pageId" -> metaAndPath.pageId,

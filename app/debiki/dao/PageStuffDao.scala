@@ -70,6 +70,9 @@ trait PageStuffDao {
 
 
   def getPageStuffById(pageIds: Iterable[PageId]): Map[PageId, PageStuff] = {
+    // Somewhat dupl code [5KWE02], PagePathMetaDao.getPageMetasAsMap() and UserDao are similar.
+    // Break out helper function getManyById[K, V](keys) ?
+
     var pageStuffById = Map[PageId, PageStuff]()
     val idsNotCached = ArrayBuffer[PageId]()
 
@@ -83,12 +86,12 @@ trait PageStuffDao {
     }
 
     // Ask the database for any remaining stuff.
+    val siteCacheVersion = memCache.siteCacheVersionNow()
     val reaminingStuff = if (idsNotCached.isEmpty) Nil else {
       readOnlyTransaction { transaction =>
         loadPageStuffById(idsNotCached, transaction)
       }
     }
-    val siteCacheVersion = memCache.siteCacheVersionNow()
     for ((pageId, stuff) <- reaminingStuff) {
       pageStuffById += pageId -> stuff
       memCache.put(cacheKey(pageId), MemCacheItem(stuff, siteCacheVersion))

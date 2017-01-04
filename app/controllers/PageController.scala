@@ -68,6 +68,30 @@ object PageController extends mvc.Controller {
   }
 
 
+  def pinPage = StaffPostJsonAction(maxLength = 1000) { request =>
+    val pageId = (request.body \ "pageId").as[PageId]
+    val pinWhereInt = (request.body \ "pinWhere").as[Int]
+    val pinOrder = (request.body \ "pinOrder").as[Int]
+
+    if (!PageMeta.isOkPinOrder(pinOrder))
+      throwBadReq("DwE4KEF82", o"""Bad pin order. Please enter a number
+           between ${PageMeta.MinPinOrder} and ${PageMeta.MaxPinOrder}""")
+
+    val pinWhere = PinPageWhere.fromInt(pinWhereInt) getOrElse throwBadArgument(
+      "DwE4KE28", "pinWhere")
+
+    request.dao.pinPage(pageId, pinWhere, pinOrder)
+    Ok
+  }
+
+
+  def unpinPage = StaffPostJsonAction(maxLength = 1000) { request =>
+    val pageId = (request.body \ "pageId").as[PageId]
+    request.dao.unpinPage(pageId)
+    Ok
+  }
+
+
   def acceptAnswer = PostJsonAction(RateLimits.TogglePage, maxLength = 100) { request =>
     val pageId = (request.body \ "pageId").as[PageId]
     val postUniqueId = (request.body \ "postId").as[PostId]   // id not nr

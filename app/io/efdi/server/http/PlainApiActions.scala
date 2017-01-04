@@ -227,7 +227,7 @@ private[http] object PlainApiActions {
           if (isXhr) block
           else throwTemporaryRedirect("/")  ;COULD // throwLoginAsTo but undef error [5KUP02]
         }
-        val siteSettings = dao.loadWholeSiteSettings()
+        val siteSettings = dao.getWholeSiteSettings()
 
         if (!anyUser.exists(_.isApprovedOrStaff) && siteSettings.userMustBeApproved)
           goToHomepageOrIfXhrThen(throwForbidden("DwE4HKG5", "Not approved"))

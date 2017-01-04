@@ -141,7 +141,7 @@ trait PagesDao {
     // For now, don't restrict PageRole.UsabilityTesting — I'll "just" sort by oldest-first instead?
     if (pageRole == PageRole.Critique) { // [plugin] [85SKW32]
       anyCategoryId foreach { categoryId =>
-        val pages = listPagesInCategory(categoryId, includeDescendants = true,
+        val pages = loadPagesInCategory(categoryId, includeDescendants = true,
           isStaff = false, restrictedOnly = false,
           PageQuery(PageOrderOffset.Any, PageFilter.ShowWaiting), limit = 20)
         // Client side, the limit is 10. Let's allow a few more topics in case people start

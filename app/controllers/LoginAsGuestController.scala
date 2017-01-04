@@ -40,7 +40,7 @@ object LoginAsGuestController extends mvc.Controller {
     val name = (json \ "name").as[String].trim
     val email = (json \ "email").as[String].trim
 
-    val settings = request.dao.loadWholeSiteSettings()
+    val settings = request.dao.getWholeSiteSettings()
     if (!settings.isGuestLoginAllowed)
       throwForbidden("DwE4K5FW2", "Guest login disabled; you cannot login as guest here")
     if (User nameIsWeird name)

@@ -19,6 +19,8 @@ package debiki.dao
 
 import com.debiki.core._
 import com.debiki.core.Prelude._
+import scala.collection.immutable
+import scala.collection.mutable
 
 
 
@@ -72,7 +74,7 @@ trait PagePathMetaDao {
   }
 
 
-  def lookupPagePath(pageId: PageId): Option[PagePath] = {
+  def getPagePath(pageId: PageId): Option[PagePath] = {
     memCache.lookup(
       _pathByPageIdKey(pageId),
       orCacheAndReturn =
@@ -80,7 +82,7 @@ trait PagePathMetaDao {
   }
 
 
-  def lookupPagePathAndRedirects(pageId: PageId): List[PagePath] =
+  def loadPagePathAndRedirects(pageId: PageId): List[PagePath] =
     readOnlyTransaction(_.lookupPagePathAndRedirects(pageId))
 
 
@@ -101,18 +103,44 @@ trait PagePathMetaDao {
   }
 
 
-  COULD_OPTIMIZE // use the cache
-  def getPageMetasAsMap(pageIds: Iterable[PageId], anySiteId: Option[SiteId] = None)
+  def getPageMetasAsMap(pageIds: Set[PageId], anySiteId: Option[SiteId] = None)
         : Map[PageId, PageMeta] = {
-    readOnlyTransaction(_.loadPageMetasAsMap(pageIds, anySiteId))
+    // Somewhat dupl code [5KWE02], PageStuffDao.getPageStuffById() is similar.
+    // Break out helper function getManyById[K, V](keys) ?
+
+    val pageMetas = mutable.ArrayBuffer[PageMeta]()
+    val missingIds = mutable.HashSet[PageId]()
+
+    pageIds foreach { pageId =>
+      memCache.lookup[PageMeta](pageMetaByIdKey(SitePageId(siteId, pageId))) match {
+        case Some(pageMeta) =>
+          pageMetas.append(pageMeta)
+        case None =>
+          missingIds.add(pageId)
+      }
+    }
+
+    if (missingIds.nonEmpty) {
+      val siteCacheVersion = memCache.siteCacheVersionNow()
+      val remainingPageMetas = readOnlyTransaction(_.loadPageMetas(missingIds))
+      remainingPageMetas foreach { pageMeta =>
+        memCache.put(pageMetaByIdKey(SitePageId(siteId, pageMeta.pageId)),
+          MemCacheItem(pageMeta, siteCacheVersion))
+      }
+      pageMetas.appendAll(remainingPageMetas)
+    }
+
+    immutable.HashMap[PageId, PageMeta](pageMetas map { pageMeta =>
+      pageMeta.pageId -> pageMeta
+    }: _*)
   }
 
 
-  def loadPageMetaAndPath(pageId: PageId): Option[PagePathAndMeta] = {
+  def getPagePathAndMeta(pageId: PageId): Option[PagePathAndMeta] = {
     // I don't think writing a dedicated SQL query that does this in one
     // roundtrip is worth the trouble? Won't work with NoSQL databases anyway?
     val anyMeta = getPageMeta(pageId)
-    val anyPath = lookupPagePath(pageId)
+    val anyPath = getPagePath(pageId)
     for (meta <- anyMeta; path <- anyPath)
       yield PagePathAndMeta(path, meta)
   }

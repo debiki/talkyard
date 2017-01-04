@@ -141,6 +141,8 @@ POST  /-/undelete-category      controllers.ForumController.undeleteCategory
 GET   /-/redir-to-about         controllers.ForumController.redirectToAboutPage(categoryId: Option[Int])
 
 POST  /-/create-page            controllers.PageController.createPage
+POST  /-/pin-page               controllers.PageController.pinPage
+POST  /-/unpin-page             controllers.PageController.unpinPage
 POST  /-/cycle-page-done        controllers.PageController.cyclePageDone
 POST  /-/toggle-page-closed     controllers.PageController.togglePageClosed
 POST  /-/delete-pages           controllers.PageController.deletePages
@@ -177,10 +179,8 @@ POST  /-/remove-avatar          controllers.UploadsController.removeAvatar
 GET   /-/u/*relativePath        controllers.UploadsController.servePublicFile(relativePath)
 GET   /-/uploads/public/*relativePath controllers.UploadsController.servePublicFileLong(relativePath)
 
-POST  /-/pin-at-position        controllers.PinController.pinAtPosition
-POST  /-/pin-page               controllers.PinController.pinPage
-POST  /-/unpin-page             controllers.PinController.unpinPage
-
+# Merge with CloseCollapseController into PostController?
+# POST  /-/pin-at-position      controllers.PinController.pinAtPosition
 POST  /-/hide-post              @controllers.CloseCollapseController.hidePost
 POST  /-/collapse-post          @controllers.CloseCollapseController.collapsePost
 POST  /-/collapse-tree          @controllers.CloseCollapseController.collapseTree

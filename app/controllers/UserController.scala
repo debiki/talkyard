@@ -41,7 +41,7 @@ object UserController extends mvc.Controller {
     var onlyPendingApproval = false
     whichUsers match {
       case "ActiveUsers" =>
-        onlyApproved = request.dao.loadWholeSiteSettings().userMustBeApproved
+        onlyApproved = request.dao.getWholeSiteSettings().userMustBeApproved
       case "NewUsers" =>
         onlyPendingApproval = true
     }

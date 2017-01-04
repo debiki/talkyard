@@ -67,7 +67,7 @@ object SiteAssetBundlesController extends mvc.Controller {
           // SECURITY don't load foreign tenant stuff from any private
           // other-site/_hidden-underscore-folder/, or if read access restricted
           // in some other manner. (Fix later, in AssetBundleLoader?)
-          dao.loadAssetBundle(nameNoSuffix, suffix)
+          dao.getAssetBundle(nameNoSuffix, suffix)
         }
         catch {
           case ex: DebikiException =>

@@ -162,7 +162,7 @@ object ForumController extends mvc.Controller {
   def listTopicsByUser(userId: UserId) = GetAction { request =>
     val caller = request.user
     val isStaffOrSelf = caller.exists(_.isStaff) || caller.exists(_.id == userId)
-    val topicsInclForbidden = request.dao.listPagesByUser(
+    val topicsInclForbidden = request.dao.loadPagesByUser(
       userId, isStaffOrSelf = isStaffOrSelf, limit = 200)
     val topics = topicsInclForbidden filter { page: PagePathAndMeta =>
       request.dao.maySeePageUseCache(page.meta, caller, maySeeUnlisted = isStaffOrSelf)._1
@@ -228,7 +228,7 @@ object ForumController extends mvc.Controller {
         includeDescendantCategories: Boolean, isStaff: Boolean, restrictedOnly: Boolean,
         limit: Int = NumTopicsToList)
         : Seq[PagePathAndMeta] = {
-    var topics: Seq[PagePathAndMeta] = dao.listPagesInCategory(
+    var topics: Seq[PagePathAndMeta] = dao.loadPagesInCategory(
       categoryId, includeDescendantCategories, isStaff = isStaff, restrictedOnly = restrictedOnly,
       pageQuery, limit)
 
@@ -241,7 +241,7 @@ object ForumController extends mvc.Controller {
     // If sorting by bump time, sort pinned topics first. Otherwise, don't.
     val topicsInclPinned = pageQuery.orderOffset match {
       case orderOffset: PageOrderOffset.ByBumpTime if orderOffset.offset.isEmpty =>
-        val pinnedTopics = dao.listPagesInCategory(
+        val pinnedTopics = dao.loadPagesInCategory(
           categoryId, includeDescendantCategories, isStaff = isStaff, restrictedOnly = restrictedOnly,
           pageQuery.copy(orderOffset = PageOrderOffset.ByPinOrderLoadOnlyPinned), limit)
         val notPinned = topics.filterNot(topic => pinnedTopics.exists(_.id == topic.id))

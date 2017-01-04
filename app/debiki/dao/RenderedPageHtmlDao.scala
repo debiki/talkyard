@@ -84,7 +84,7 @@ trait RenderedPageHtmlDao {
   }
 
 
-  def renderPage(pageReq: PageRequest[_]): String = {
+  def renderPageMaybeUseCache(pageReq: PageRequest[_]): String = {
     // Bypass the cache if the page doesn't yet exist (it's being created),
     // because in the past there was some error because non-existing pages
     // had no ids (so feels safer to bypass).
@@ -123,7 +123,7 @@ trait RenderedPageHtmlDao {
   }
 
 
-  def renderContent(pageId: PageId, currentVersion: CachedPageVersion,
+  private def renderContent(pageId: PageId, currentVersion: CachedPageVersion,
         reactStore: String): (String, CachedPageVersion) = {
     // COULD reuse the caller's transaction, but the caller currently uses > 1  :-(
     // Or could even do this outside any transaction.

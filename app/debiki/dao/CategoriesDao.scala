@@ -157,14 +157,14 @@ trait CategoriesDao {
   }
 
 
-  def listPagesByUser(userId: UserId, isStaffOrSelf: Boolean, limit: Int): Seq[PagePathAndMeta] = {
+  def loadPagesByUser(userId: UserId, isStaffOrSelf: Boolean, limit: Int): Seq[PagePathAndMeta] = {
     readOnlyTransaction(_.loadPagesByUser(userId, isStaffOrSelf = isStaffOrSelf, limit))
   }
 
 
   /** Lists pages placed directly in one of categoryIds.
     */
-  private def listPagesInCategories(categoryIds: Seq[CategoryId], pageQuery: PageQuery, limit: Int)
+  private def loadPagesInCategories(categoryIds: Seq[CategoryId], pageQuery: PageQuery, limit: Int)
         : Seq[PagePathAndMeta] = {
     readOnlyTransaction(_.loadPagesInCategories(categoryIds, pageQuery, limit))
   }
@@ -172,7 +172,7 @@ trait CategoriesDao {
 
   /** Lists pages placed in categoryId, optionally including its descendant categories.
     */
-  def listPagesInCategory(categoryId: CategoryId, includeDescendants: Boolean,
+  def loadPagesInCategory(categoryId: CategoryId, includeDescendants: Boolean,
         isStaff: Boolean, restrictedOnly: Boolean, pageQuery: PageQuery, limit: Int)
         : Seq[PagePathAndMeta] = {
     val categoryIds =
@@ -191,7 +191,7 @@ trait CategoriesDao {
         unimplementedIf(!isStaff, "!incl hidden in forum [EsE2PGJ4]")
         Seq(categoryId)
       }
-    listPagesInCategories(categoryIds, pageQuery, limit)
+    loadPagesInCategories(categoryIds, pageQuery, limit)
   }
 
 

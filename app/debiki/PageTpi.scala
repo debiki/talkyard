@@ -154,7 +154,7 @@ class SiteTpi protected (
     }
 
     try {
-      val version = debikiRequest.dao.loadAssetBundleVersion(nameNoSuffix, suffix)
+      val version = debikiRequest.dao.getAssetBundleVersion(nameNoSuffix, suffix)
       val fileName = assetBundleFileName(nameNoSuffix, version, suffix)
         <link rel="stylesheet" href={
           cdnOrServerOrigin + routes.SiteAssetBundlesController.customAsset(siteId, fileName).url

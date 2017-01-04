@@ -41,31 +41,6 @@ import play.{api => p}
   */
 object PinController extends p.mvc.Controller {
 
-  COULD ; REFACTOR // merge w PageController
-
-  def pinPage = StaffPostJsonAction(maxLength = 1000) { request =>
-    val pageId = (request.body \ "pageId").as[PageId]
-    val pinWhereInt = (request.body \ "pinWhere").as[Int]
-    val pinOrder = (request.body \ "pinOrder").as[Int]
-
-    if (!PageMeta.isOkPinOrder(pinOrder))
-      throwBadReq("DwE4KEF82", o"""Bad pin order. Please enter a number
-           between ${PageMeta.MinPinOrder} and ${PageMeta.MaxPinOrder}""")
-
-    val pinWhere = PinPageWhere.fromInt(pinWhereInt) getOrElse throwBadArgument(
-      "DwE4KE28", "pinWhere")
-
-    request.dao.pinPage(pageId, pinWhere, pinOrder)
-    Ok
-  }
-
-
-  def unpinPage = StaffPostJsonAction(maxLength = 1000) { request =>
-    val pageId = (request.body \ "pageId").as[PageId]
-    request.dao.unpinPage(pageId)
-    Ok
-  }
-
 
   def pinAtPosition = PostJsonAction(RateLimits.PinPost, maxLength = 1000) { apiReq =>
     throwNotImplemented("DwE5JKEG3", "Pinning posts") /*

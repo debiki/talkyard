@@ -98,7 +98,7 @@ object PageRequest {
   def forPageThatExists[A](apiRequest: DebikiRequest[A], pageId: PageId): Option[PageRequest[A]] = {
     // COULD try to remove either `lookupPagePath` on the next line, or
     // remove `checkPagePath` in PageRequest.apply(..) above.
-    apiRequest.dao.lookupPagePath(pageId) match {
+    apiRequest.dao.getPagePath(pageId) match {
       case Some(pagePath) =>
         Some(PageRequest.basedOnApiRequest(
           apiRequest, pagePath, pageMustExist = true, fixBadPath = true))
@@ -194,7 +194,7 @@ class PageRequest[A](
       dao.loadPageTreeSettings(theParentPageId.get)
     } */
     else {
-      dao.loadWholeSiteSettings()
+      dao.getWholeSiteSettings()
     }
   }
 

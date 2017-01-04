@@ -423,6 +423,7 @@ trait UserDao {
 
 
   def getUsersAsSeq(userIds: Iterable[UserId]): immutable.Seq[User] = {
+    // Somewhat dupl code [5KWE02]. Break out helper function getManyById[K, V](keys) ?
     val usersFound = ArrayBuffer[User]()
     val missingIds = ArrayBuffer[UserId]()
     userIds foreach { id =>
@@ -431,8 +432,10 @@ trait UserDao {
         case None => missingIds.append(id)
       }
     }
-    val moreUsers = readOnlyTransaction(_.loadUsers(missingIds))
-    usersFound.appendAll(moreUsers)
+    if (missingIds.nonEmpty) {
+      val moreUsers = readOnlyTransaction(_.loadUsers(missingIds))
+      usersFound.appendAll(moreUsers)
+    }
     usersFound.toVector
   }
 
@@ -456,7 +459,7 @@ trait UserDao {
   }
 
 
-  def loadMember(userId: UserId): Option[Member] = {
+  def getMember(userId: UserId): Option[Member] = {
     require(userId >= User.LowestMemberId, "EsE4GKX24")
     getUser(userId).map(_.asInstanceOf[Member])
   }

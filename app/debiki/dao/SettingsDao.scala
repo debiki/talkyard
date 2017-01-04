@@ -29,7 +29,7 @@ import io.efdi.server.http.throwForbidden2
 trait SettingsDao {
   self: SiteDao =>
 
-  def loadWholeSiteSettings(): EffectiveSettings = {
+  def getWholeSiteSettings(): EffectiveSettings = {
     memCache.lookup(
       siteSettingsKey,
       orCacheAndReturn = {
