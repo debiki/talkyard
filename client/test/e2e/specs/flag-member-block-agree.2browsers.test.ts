@@ -348,6 +348,7 @@ describe("spam test, no external services:", () => {
   // -------------------------------------
 
   it("Owen logs in...", () =>  {
+    // Timed out once, sth in here.
     michaelsBrowser.topbar.clickLogout();
     owensBrowser.complex.loginWithPasswordViaTopbar(owen);
     owensBrowser.refresh();

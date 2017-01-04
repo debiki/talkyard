@@ -284,10 +284,12 @@ object UserController extends mvc.Controller {
   }
 
 
-  def loadAuthorBlocks(postId: Int) = StaffGetAction { request =>
+  /** If not staff, returns a summary only.
+    */
+  def loadAuthorBlocks(postId: Int) = GetAction { request =>
     val blocks: Seq[Block] = request.dao.loadAuthorBlocks(postId)
     var json = blocksSummaryJson(blocks, request.ctime)
-    if (request.user.map(_.isStaff) == Some(true)) {
+    if (request.user.exists(_.isStaff)) {
       json += "blocks" -> JsArray(blocks map blockToJson)
     }
     OkSafeJson(json)
