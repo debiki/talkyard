@@ -44,9 +44,6 @@ var $: any = window['jQuery'];
 var WritingSomethingWarningKey = 'WritingSth';
 var WritingSomethingWarning = "You were writing something?";
 
-var getErrorDialog = function(): any {
-  debiki2.util.makeStupidDialogGetter();
-};
 
 
 export function getOrCreateEditor(success) {
@@ -718,7 +715,7 @@ export var Editor = createComponent({
       this.setState({ showTextErrors: true });
     }
     if (errors) {
-      getErrorDialog().open({ body: errors });
+      util.openDefaultStupidDialog({ body: errors });
       throw 'Bad title or text. Not saving this to the server. [EsM7KCW]';
     }
   },
