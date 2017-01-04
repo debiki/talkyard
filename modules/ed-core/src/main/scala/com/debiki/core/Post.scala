@@ -395,7 +395,7 @@ case class Post(
 
 
   def parent(pageParts: PageParts): Option[Post] =
-    parentNr.flatMap(pageParts.post)
+    parentNr.flatMap(pageParts.postByNr)
 
   def children(pageParts: PageParts): Seq[Post] =
     pageParts.childrenBestFirstOf(nr)

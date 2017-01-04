@@ -83,9 +83,9 @@ trait PostsDao {
 
       val uniqueId = transaction.nextPostId()
       val postNr = page.parts.highestReplyNr.map(_ + 1) getOrElse PageParts.FirstReplyNr
-      val commonAncestorId = page.parts.findCommonAncestorNr(replyToPostNrs.toSeq)
+      val commonAncestorNr = page.parts.findCommonAncestorNr(replyToPostNrs.toSeq)
       val anyParent =
-        if (commonAncestorId == PageParts.NoNr) {
+        if (commonAncestorNr == PageParts.NoNr) {
           // Flat chat comments might not reply to anyone in particular.
           // On embedded comments pages, there's no Original Post, so top level comments
           // have no parent post.
@@ -96,9 +96,9 @@ trait PostsDao {
             None
         }
         else {
-          val anyParent = page.parts.post(commonAncestorId)
+          val anyParent = page.parts.postByNr(commonAncestorNr)
           if (anyParent.isEmpty) {
-            throwBadReq("DwEe8HD36", o"""Cannot reply to common ancestor post '$commonAncestorId';
+            throwBadReq("DwEe8HD36", o"""Cannot reply to common ancestor post '$commonAncestorNr';
                 it does not exist""")
           }
           anyParent
@@ -532,7 +532,7 @@ trait PostsDao {
       val page = PageDao(pageId, transaction)
       throwIfMayNotSeePage(page, Some(editor))(transaction)
 
-      val postToEdit = page.parts.post(postNr) getOrElse {
+      val postToEdit = page.parts.postByNr(postNr) getOrElse {
         page.meta // this throws page-not-fount if the page doesn't exist
         throwNotFound("DwE404GKF2", s"Post not found, id: '$postNr'")
       }
@@ -848,7 +848,7 @@ trait PostsDao {
         changerId: UserId, browserIdData: BrowserIdData) {
     readWriteTransaction { transaction =>
       val page = PageDao(pageId, transaction)
-      val postBefore = page.parts.thePost(postNr)
+      val postBefore = page.parts.thePostByNr(postNr)
       val Seq(author, changer) = transaction.loadTheUsers(postBefore.createdById, changerId)
       throwIfMayNotSeePage(page, Some(changer))(transaction)
 
@@ -917,7 +917,7 @@ trait PostsDao {
     val user = transaction.loadUser(userId) getOrElse throwForbidden("DwE3KFW2", "Bad user id")
     throwIfMayNotSeePage(page, Some(user))(transaction)
 
-    val postBefore = page.parts.thePost(postNr)
+    val postBefore = page.parts.thePostByNr(postNr)
 
     // Authorization.
     if (!user.isStaff) {
@@ -1050,7 +1050,7 @@ trait PostsDao {
 
       val page = PageDao(pageId, transaction)
       val pageMeta = page.meta
-      val postBefore = page.parts.thePost(postNr)
+      val postBefore = page.parts.thePostByNr(postNr)
       if (postBefore.isCurrentVersionApproved)
         throwForbidden("DwE4GYUR2", "Post already approved")
 
@@ -1263,7 +1263,7 @@ trait PostsDao {
       val voter = transaction.loadTheUser(voterId)
       throwIfMayNotSeePage(page, Some(voter))(transaction)
 
-      val post = page.parts.thePost(postNr)
+      val post = page.parts.thePostByNr(postNr)
 
       if (voteType == PostVoteType.Bury && !voter.isStaff)
         throwForbidden("DwE2WU74", "Only staff and regular members may Bury-vote")
@@ -1290,8 +1290,8 @@ trait PostsDao {
           // Upvoting a post shouldn't affect its ancestors, because they're on the
           // path to the interesting post so they are a bit useful/interesting. However
           // do mark all earlier siblings as read since they weren't upvoted (this time).
-          val ancestorIds = page.parts.ancestorsOf(postNr).map(_.nr)
-          postNrsRead -- ancestorIds.toSet
+          val ancestorNrs = page.parts.ancestorsOf(postNr).map(_.nr)
+          postNrsRead -- ancestorNrs.toSet
         }
         else {
           // The post got a non-like vote: wrong, bury or unwanted.

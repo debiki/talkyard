@@ -66,7 +66,7 @@ export var NoCommentsPageActions = createComponent({
   displayName: 'NoCommentsPageActions',
 
   onEditClick: function(event) {
-    debiki2.ReactActions.editPostWithNr(this.props.post.postId);
+    debiki2.ReactActions.editPostWithNr(this.props.post.nr);
   },
 
   render: function() {
@@ -89,7 +89,7 @@ export var NoCommentsPageActions = createComponent({
 
 
 export function makeReplyBtnTitle(store: Store, post: Post, isAppendReplyButton: boolean) {
-  if (post.postId !== BodyId)
+  if (post.nr !== BodyId)
     return "Reply";
 
   switch (store.pageRole) {
@@ -118,15 +118,16 @@ export var PostActions = createComponent({
     debiki2.ReactActions.togglePageClosed();
   },
   onEditClick: function(event) {
-    debiki2.ReactActions.editPostWithNr(this.props.post.postId);
+    debiki2.ReactActions.editPostWithNr(this.props.post.nr);
   },
   onLinkClick: function(event) {
     morebundle.openShareDialog(this.props.post, event.target);
   },
   onLikeClick: function(event) {
     loginIfNeededThen(LoginReason.LoginToLike, this.props.post.postNr, () => {
-      var toggleOn = !me_hasVoted(this.props.store.me, this.props.post.postId, 'VoteLike');
-      debiki.internal.toggleVote(this.props.post.postId, 'VoteLike', toggleOn);
+      let post: Post = this.props.post;
+      var toggleOn = !me_hasVoted(this.props.store.me, post.nr, 'VoteLike');
+      debiki.internal.toggleVote(post.nr, 'VoteLike', toggleOn);
     });
   },
 
@@ -155,8 +156,8 @@ export var PostActions = createComponent({
     var me: Myself = store.me;
     var isOwnPost = me.userId === post.authorIdInt;
     var isOwnPage = store_thisIsMyPage(store);
-    var isPageBody = post.postId === BodyPostId;
-    var votes = me.votes[post.postId] || [];
+    var isPageBody = post.nr === BodyPostId;
+    var votes = me.votes[post.nr] || [];
     var isStaffOrOwnPage: boolean = isStaff(me) || isOwnPage;
 
     var deletedOrCollapsed =
@@ -265,7 +266,7 @@ export var PostActions = createComponent({
 
       // Always hide the downvotes inside this dropdown, so one has to click one
       // extra time (to open the dropdown), before one can downvote.
-      downvotesDropdown = post.postId === BodyPostId ? null :
+      downvotesDropdown = post.nr === BodyPostId ? null :
           r.span({ className: 'dropdown navbar-right', title: "More votes...",
               onClick: this.openMoreVotesDropdown },
             r.a({ className: 'dw-a dw-a-votes' + myOtherVotes }, ''));
@@ -367,24 +368,24 @@ var MoreVotesDropdownModal = createComponent({
   },
 
   hasVoted: function(what): boolean {
-    return me_hasVoted(this.state.store.me, this.state.post.postId, what);
+    return me_hasVoted(this.state.store.me, this.state.post.nr, what);
   },
 
   onWrongClick: function(event) {
     loginIfNeededThen('LoginToVote', this.state.post.postNr, () => {
-      debiki.internal.toggleVote(this.state.post.postId, 'VoteWrong', !this.hasVoted('VoteWrong'));
+      debiki.internal.toggleVote(this.state.post.nr, 'VoteWrong', !this.hasVoted('VoteWrong'));
       this.closeSoon();
     });
   },
   onBuryClick: function(event) {
     loginIfNeededThen('LoginToVote', this.state.post.postNr, () => {
-      debiki.internal.toggleVote(this.state.post.postId, 'VoteBury', !this.hasVoted('VoteBury'));
+      debiki.internal.toggleVote(this.state.post.nr, 'VoteBury', !this.hasVoted('VoteBury'));
       this.closeSoon();
     });
   },
   onUnwantedClick: function(event) {
     loginIfNeededThen('LoginToVote', this.state.post.postNr, () => {
-      debiki.internal.toggleVote(this.state.post.postId, 'VoteUnwanted', !this.hasVoted('VoteUnwanted'));
+      debiki.internal.toggleVote(this.state.post.nr, 'VoteUnwanted', !this.hasVoted('VoteUnwanted'));
       this.closeSoon();
     });
   },
@@ -394,7 +395,7 @@ var MoreVotesDropdownModal = createComponent({
     var isFlat = store.isFlat; // hmm shouldn't place in the store object, oh well
     var me: Myself = store.me;
     var post: Post = this.state.post;
-    var votes = me.votes[post.postId] || [];
+    var votes = me.votes[post.nr] || [];
     var isOwnPage = store_thisIsMyPage(store);
     var isStaffOrOwnPage: boolean = isStaff(me) || isOwnPage;
 
@@ -522,7 +523,7 @@ var MoreDropdownModal = createComponent({
     var isFlat = store['isFlat']; // hmm shouldn't place in the store object, oh well
     var me: Myself = store.me;
     var post: Post = this.state.post;
-    var isPageBody = post.postId === BodyPostId;
+    var isPageBody = post.nr === BodyPostId;
 
     var moreLinks = [];
     var isOwnPost = post.authorIdInt === me.userId;
@@ -644,8 +645,8 @@ var MoreDropdownModal = createComponent({
 
 
 function flagPost(post: Post) {
-  loginIfNeededThen('LoginToFlag', post.postId, () => {
-    morebundle.openFlagDialog(post.postId);
+  loginIfNeededThen('LoginToFlag', post.nr, () => {
+    morebundle.openFlagDialog(post.nr);
   });
 }
 

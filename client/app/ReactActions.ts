@@ -331,9 +331,9 @@ export function updatePost(post) {
 
 
 export function changePostType(post: Post, newType: PostType, success: () => void) {
-  Server.changePostType(post.postId, newType, () => {
+  Server.changePostType(post.nr, newType, () => {
     success();
-    post = clonePost(post.postId);
+    post = clonePost(post.nr);
     post.postType = newType;
     ReactDispatcher.handleViewAction({
       actionType: actionTypes.UpdatePost,

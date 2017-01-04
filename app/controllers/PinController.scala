@@ -73,7 +73,7 @@ object PinController extends p.mvc.Controller {
     val pageIdsAndActions: Seq[(PageId, RawPostAction[PAP.PinPostAtPosition])] =
       for (pinPostJson <- apiReq.body.as[Vector[JsObject]]) yield {
         val pageId = (pinPostJson \ "pageId").as[PageId]
-        val postId = (pinPostJson \ "postId").as[PostId]
+        val postId = (pinPostJson \ "postId").as[PostId]  want id or nr?
         val position = (pinPostJson \ "position").as[Int]
         val payload = PAP.PinPostAtPosition(position)
         val action = RawPostAction(

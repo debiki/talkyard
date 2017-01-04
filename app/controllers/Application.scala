@@ -41,7 +41,7 @@ class Application @Inject() extends mvc.Controller {
     val body = request.body
     val dao = request.dao
     val pageId = (body \ "pageId").as[PageId]
-    val postNr = (body \ "postId").as[PostNr]
+    val postNr = (body \ "postNr").as[PostNr]
     val typeStr = (body \ "type").as[String]
     val reason = (body \ "reason").as[String]
 

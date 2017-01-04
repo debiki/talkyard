@@ -50,7 +50,7 @@ var BodyPostId = 1;
 interface PostToModerate {
   pageId: string;
   pageName: string;
-  id: number;
+  id: number;   // rename to nr? CLEAN_UP
   status: string;
   type: string;
   cdati: string;
@@ -121,8 +121,8 @@ interface Flag {
 
 
 interface Post {
-  uniqueId: number; // TODO rename to id
-  postId: number;   // TODO rename to nr
+  uniqueId: number; // CLEAN_UP RENAME to id
+  nr: number;
   parentId: number;
   multireplyPostIds: number[];
   postType?: PostType;
@@ -212,14 +212,14 @@ interface Myself {
   restrictedTopics: Topic[];
   restrictedCategories: Category[];
 
-  votes: any;
+  votes: any; // RENAME to votesByPostNr?   CLEAN_UP also see just below:  id or nr
   unapprovedPosts: { [id: number]: Post };
   unapprovedPostAuthors: BriefUser[];
-  postIdsAutoReadLongAgo: number[];
-  postIdsAutoReadNow: number[];
-  marksByPostId: { [postId: number]: any };
+  postIdsAutoReadLongAgo: number[];           // id or nr?
+  postIdsAutoReadNow: number[];               // id or nr?
+  marksByPostId: { [postId: number]: any };   // id or nr?
   pageHelpMessage?: HelpMessage;
-  closedHelpMessages: { [id: string]: number };  // id --> closed version of message
+  closedHelpMessages: { [id: string]: number };  // id --> closed version of message   — id or nr?
 }
 
 

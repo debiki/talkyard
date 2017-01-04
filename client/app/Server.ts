@@ -595,7 +595,7 @@ export function saveGuest(guest, success: () => void) {
 }
 
 
-export function blockGuest(postId: number, numDays: number, threatLevel: ThreatLevel,
+export function blockGuest(postId: PostId, numDays: number, threatLevel: ThreatLevel,
       success: () => void) {
   postJsonSuccess('/-/block-guest', success, {
     postId: postId,
@@ -698,9 +698,9 @@ export function loadDraftAndGuidelines(writingWhat: WritingWhat, categoryId: num
 }
 
 
-export function loadCurrentPostText(postId: number,
+export function loadCurrentPostText(postNr: PostNr,
       doneCallback: (text: string, postUid: number, revisionNr: number) => void) {
-  get('/-/edit?pageId='+ d.i.pageId + '&postId='+ postId, (response: any) => {
+  get('/-/edit?pageId='+ d.i.pageId + '&postNr='+ postNr, (response: any) => {
     // COULD also load info about whether the user may apply and approve the edits.
     doneCallback(response.currentText, response.postUid, response.currentRevisionNr);
   });
@@ -734,11 +734,11 @@ export function saveVote(data, success: (updatedPost) => void) {
 }
 
 
-export function saveEdits(postId: number, text: string, doneCallback: () => void) {
+export function saveEdits(postNr: number, text: string, doneCallback: () => void) {
   postJson('/-/edit', {
     data: {
       pageId: d.i.pageId,
-      postId: postId,
+      postNr: postNr,
       text: text
     },
     success: (editedPost) => {
@@ -769,7 +769,7 @@ export function savePageTitleAndSettings(newTitle: string, settings: any, succes
 }
 
 
-export function loadLatestPostRevisions(postId: number,
+export function loadLatestPostRevisions(postId: PostId,
     success: (revisions: PostRevision[]) => void) {
   get('/-/load-post-revisions?postId=' + postId + '&revisionNr=LastRevision', success);
 }
@@ -777,7 +777,7 @@ export function loadLatestPostRevisions(postId: number,
 
 /** Loads revision revisionNr and some older revisions.
   */
-export function loadMorePostRevisions(postId: number, revisionNr: number,
+export function loadMorePostRevisions(postId: PostId, revisionNr: number,
     success: (revisions: PostRevision[]) => void) {
   get('/-/load-post-revisions?postId=' + postId + '&revisionNr=' + revisionNr, success);
 }
@@ -797,13 +797,13 @@ export function unpinPage(success: () => void) {
 }
 
 
-export function saveReply(postIds: number[], text: string, anyPostType: number,
+export function saveReply(postNrs: PostNr[], text: string, anyPostType: number,
     success: () => void) {
   postJson('/-/reply', {
     data: {
       pageId: d.i.pageId,
       pageUrl: d.i.iframeBaseUrl || undefined,
-      postIds: postIds,
+      postNrs: postNrs,
       postType: anyPostType || PostType.Normal,
       text: text
     },
@@ -918,13 +918,13 @@ export function loadPostsByAuthor(authorId: UserId, success: (response) => void,
 }
 
 
-export function flagPost(postId: string, flagType: string, reason: string, success: () => void) {
+export function flagPost(postNr: string, flagType: string, reason: string, success: () => void) {
   postJsonSuccess('/-/flag', (storePatch: StorePatch) => {
     ReactActions.patchTheStore(storePatch);
     if (success) success();
   }, {
     pageId: d.i.pageId,
-    postId: postId,
+    postNr: postNr,
     type: flagType,
     reason: reason
   });
@@ -936,11 +936,11 @@ export function hidePostInPage(postNr: number, hide: boolean, success: (postAfte
 }
 
 
-export function deletePostInPage(postId: number, repliesToo: boolean,
+export function deletePostInPage(postNr: number, repliesToo: boolean,
       success: (deletedPost) => void) {
   postJsonSuccess('/-/delete-post', success, {
     pageId: d.i.pageId,
-    postNr: postId,
+    postNr: postNr,
     repliesToo: repliesToo,
   });
 }
@@ -979,10 +979,10 @@ export function addRemovePostTags(postId: PostId, tags: string[], success: () =>
 }
 
 
-export function changePostType(postId: number, newType: PostType, success: () => void) {
+export function changePostType(postNr: number, newType: PostType, success: () => void) {
   postJsonSuccess('/-/change-post-type', success, {
     pageId: d.i.pageId,
-    postNr: postId,
+    postNr: postNr,
     newType: newType,
   });
 }

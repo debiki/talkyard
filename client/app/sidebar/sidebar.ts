@@ -236,9 +236,9 @@ export var Sidebar = createComponent({  // RENAME to ContextBar
 
     // Find 1) all unread comments, sorted in the way they appear on the page
     // And 2) all visible comments.
-    var addRecursively = (postIds: number[]) => {
-      _.each(postIds, (postId) => {
-        var post: Post = store.allPosts[postId];
+    var addRecursively = (postNrs: number[]) => {
+      _.each(postNrs, (postNr) => {
+        var post: Post = store.allPosts[postNr];
         if (post) {
           addPost(post);
           addRecursively(post.childIdsSorted);
@@ -250,9 +250,8 @@ export var Sidebar = createComponent({  // RENAME to ContextBar
       if (isDeleted(post))
         return;
 
-      var postId = post.postId;
       recentComments.push(post);
-      if (this.isStarred(postId)) {
+      if (this.isStarred(post.nr)) {
         starredComments.push(post);
       }
 
@@ -289,7 +288,7 @@ export var Sidebar = createComponent({  // RENAME to ContextBar
         return +1;
       if (a.createdAtMs > b.createdAtMs)
         return -1;
-      return a.postId < b.postId ? +1 : -1;
+      return a.nr < b.nr ? +1 : -1;
     });
     recentComments = _.take(recentComments, 50);
 
@@ -313,10 +312,10 @@ export var Sidebar = createComponent({  // RENAME to ContextBar
   focusPost: function(post: Post) {
     var store: Store = this.state.store;
     this.setState({
-      currentPostId: post.postId
+      currentPostId: post.nr
     });
-    page.addVisitedPosts(null, post.postId);
-    ReactActions.loadAndShowPost(post.postId);
+    page.addVisitedPosts(null, post.nr);
+    ReactActions.loadAndShowPost(post.nr);
     if (store.shallSidebarsOverlayPage) {
       // Won't see the post unless we first close the contextbar.
       ReactActions.closePagebar();
@@ -582,18 +581,18 @@ export var Sidebar = createComponent({  // RENAME to ContextBar
 });
 
 
-function makeCommentsContent(comments: Post[], currentPostId: PostId, store: Store, onPostClick) {
+function makeCommentsContent(comments: Post[], currentPostNr: PostNr, store: Store, onPostClick) {
   var abbreviateHowMuch = smallWindow ? 'Much' : 'ABit';
   return comments.map((post: Post, index) => {
     var postProps: any = _.clone(store);
     postProps.post = post;
     postProps.onClick = (event) => onPostClick(post);
     postProps.abbreviate = abbreviateHowMuch;
-    if (post.postId === currentPostId) {
+    if (post.nr === currentPostNr) {
       postProps.className = 'dw-current-post';
     }
     return (
-        r.div({ key: post.postId },
+        r.div({ key: post.nr },
             page.Post(postProps)));
   });
 }

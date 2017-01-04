@@ -497,7 +497,7 @@ var RootPostAndComments = createComponent({
 
   render: function() {
     var store: Store = this.props;
-    var allPosts: { [postId: number]: Post; } = this.props.allPosts;
+    var allPosts: { [postNr: number]: Post; } = this.props.allPosts;
     var me = store.me;
     var rootPost: Post = allPosts[this.props.rootPostId];
     if (!rootPost)
@@ -506,7 +506,7 @@ var RootPostAndComments = createComponent({
     var isBody = this.props.rootPostId === BodyPostId;
     var pageRole: PageRole = this.props.pageRole;
     var threadClass = 'dw-t dw-depth-0' + horizontalCss(this.props.horizontalLayout);
-    var postIdAttr = 'post-' + rootPost.postId;
+    var postIdAttr = 'post-' + rootPost.nr;
     var postClass = 'dw-p';
     if (post_shallRenderAsHidden(rootPost)) postClass += ' s_P-Hdn';
     var postBodyClass = 'dw-p-bd';
@@ -571,7 +571,7 @@ var RootPostAndComments = createComponent({
     // On form submission pages, people don't see each others submissions, won't talk at all.
     if (store.pageRole === PageRole.FormalMessage || store.pageRole === PageRole.Form) {
       repliesAreFlat = true;
-      childIds = _.values(store.allPosts).map((post: Post) => post.postId);
+      childIds = _.values(store.allPosts).map((post: Post) => post.nr);
     }
 
     var isSquashing = false;
@@ -590,7 +590,7 @@ var RootPostAndComments = createComponent({
       var threadProps = _.clone(this.props);
       if (repliesAreFlat) threadProps.isFlat = true;
       threadProps.elemType = 'div';
-      threadProps.postId = childId;
+      threadProps.postId = childId;  // rename to .postNr, right?
       threadProps.index = childIndex;
       threadProps.depth = 1;
       threadProps.indentationDepth = 0;
@@ -698,9 +698,9 @@ var SquashedThreads = createComponent({
   },
 
   render: function() {
-    var allPosts: { [postId: number]: Post; } = this.props.allPosts;
-    var post = allPosts[this.props.postId];
-    var parentPost = allPosts[post.parentId];
+    var allPosts: { [postNr: number]: Post; } = this.props.allPosts;
+    var post: Post = allPosts[this.props.postId];
+    var parentPost: Post = allPosts[post.parentId];
 
     var arrows = debiki2.renderer.drawArrowsFromParent(
       allPosts, parentPost, this.props.depth, this.props.index,
@@ -710,14 +710,14 @@ var SquashedThreads = createComponent({
     var depthClass = ' dw-depth-' + this.props.depth;
     var indentationDepthClass = ' dw-id' + this.props.indentationDepth;
     var is2dColumnClass = this.props.is2dTreeColumn ? ' dw-2dcol' : '';
-    var postIdDebug = debiki.debug ? '  #' + post.postId : '';
+    var postNrDebug = debiki.debug ? '  #' + post.nr : '';
 
     return (
       baseElem({ className: 'dw-t dw-ts-squashed' + depthClass + indentationDepthClass +
           is2dColumnClass },
         arrows,
         r.a({ className: 'dw-x-show', onClick: this.onClick },
-          "Click to show more replies" + postIdDebug)));
+          "Click to show more replies" + postNrDebug)));
   }
 });
 
@@ -734,7 +734,7 @@ var Thread = createComponent({
 
   render: function() {
     var store: Store = this.props;
-    var allPosts: { [postId: number]: Post; } = store.allPosts;
+    var allPosts: { [postNr: number]: Post; } = store.allPosts;
     var post: Post = allPosts[this.props.postId];
     if (!post) {
       // This tree has been deleted.
@@ -911,7 +911,7 @@ export var Post = createComponent({
       else {
         // Disable for now. This sets quickUpdate = true, which makes isClientSideCollapsed
         // impossible to undo, for nearby threads. And not used anyway.
-        // debiki2.ReactActions.markPostAsRead(this.props.post.postId, true);
+        // debiki2.ReactActions.markPostAsRead(this.props.post.nr, true);
       }
     }
     if (props.onClick) {
@@ -921,14 +921,14 @@ export var Post = createComponent({
 
   onAnyActionClick: function() {
     // Disable for now. Not in use anyway and see comment in this.onClick above.
-    // debiki2.ReactActions.markPostAsRead(this.props.post.postId, true);
+    // debiki2.ReactActions.markPostAsRead(this.props.post.nr, true);
   },
 
   onMarkClick: function(event) {
     // Try to avoid selecting text:
     event.stopPropagation();
     event.preventDefault();
-    debiki2.ReactActions.cycleToNextMark(this.props.post.postId);
+    debiki2.ReactActions.cycleToNextMark(this.props.post.nr);
   },
 
   render: function() {
@@ -1003,7 +1003,7 @@ export var Post = createComponent({
       replyReceivers = ReplyReceivers({ store: store, post: post });
     }
 
-    var mark = me.marksByPostId[post.postId];
+    var mark = me.marksByPostId[post.nr];
     switch (mark) {
       case YellowStarMark: extraClasses += ' dw-p-mark-yellow-star'; break;
       case BlueStarMark: extraClasses += ' dw-p-mark-blue-star'; break;
@@ -1012,8 +1012,8 @@ export var Post = createComponent({
         // Don't add the below class before user specific data has been activated, otherwise
         // all posts would show a big black unread mark on page load, which looks weird.
         if (this.props.userSpecificDataAdded) {
-          var autoRead = me.postIdsAutoReadLongAgo.indexOf(post.postId) !== -1;
-          autoRead = autoRead || me.postIdsAutoReadNow.indexOf(post.postId) !== -1;
+          var autoRead = me.postIdsAutoReadLongAgo.indexOf(post.nr) !== -1;
+          autoRead = autoRead || me.postIdsAutoReadNow.indexOf(post.nr) !== -1;
           if (!autoRead) {
             extraClasses += ' dw-p-unread';
           }
@@ -1042,7 +1042,7 @@ export var Post = createComponent({
       unwantedCross = r.div({ className: 'dw-unwanted-cross' });
     }
 
-    var id = this.props.abbreviate ? undefined : 'post-' + post.postId;
+    var id = this.props.abbreviate ? undefined : 'post-' + post.nr;
 
     return (
       r.div({ className: 'dw-p ' + extraClasses, id: id,
@@ -1084,13 +1084,13 @@ var ReplyReceivers = createComponent({
       }
       var author = store_getAuthorOrMissing(store, post);
       var link =
-        r.a({ href: '#post-' + post.postId, className: 'dw-rr', key: post.postId },
+        r.a({ href: '#post-' + post.nr, className: 'dw-rr', key: post.nr },
           author.username || author.fullName,
           // Append an up arrow to indicate that clicking the name will scroll up,
           // rather than opening an about-user dialog. ⬆ is Unicode upwards-black-arrow U+2B06.
           r.span({ className: '-RRs_RR_Aw' }, '⬆'));
       if (receivers.length) {
-        link = r.span({ key: post.postId }, ' and', link);
+        link = r.span({ key: post.nr }, ' and', link);
       }
       receivers.push(link);
     }
@@ -1130,7 +1130,7 @@ export var PostHeader = createComponent({
       if (abbreviate) {
         return r.div({ className: 'dw-p-hd' }, 'Wiki');
       }
-      if (this.props.is2dTreeColumn || post.isTreeCollapsed || post.postId === BodyPostId) {
+      if (this.props.is2dTreeColumn || post.isTreeCollapsed || post.nr === BodyPostId) {
         return null;
       }
       // Show a collapse button for this wiki post, but no author name because this is
@@ -1169,16 +1169,16 @@ export var PostHeader = createComponent({
 
     var postId;
     var anyMark;
-    if (post.postId !== TitleId && post.postId !== BodyPostId) {
+    if (post.nr !== TitleId && post.nr !== BodyPostId) {
       if (debiki.debug) {
-        postId = r.span({ className: 'dw-p-link' }, '#' + post.postId);
+        postId = r.span({ className: 'dw-p-link' }, '#' + post.nr);
       }
 
       /* COULD: Later on, move the star to the right? Or to the action list? And
          to indicate that the computer has been read, paint a 3px border to the
          left of the header. And to indicate that the human has marked it as read,
          set the header's bg color to white.
-      var mark = user.marksByPostId[post.postId];
+      var mark = user.marksByPostId[post.nr];
       var starClass = ' icon-star';
       if (mark === ManualReadMark) {
         starClass = ' icon-star-empty';
@@ -1190,7 +1190,7 @@ export var PostHeader = createComponent({
       */
     }
 
-    var isPageBody = post.postId === BodyPostId;
+    var isPageBody = post.nr === BodyPostId;
     var by = isPageBody ? 'By ' : '';
     var isBodyPostClass = isPageBody ? ' dw-ar-p-hd' : '';
 
@@ -1236,7 +1236,7 @@ export var PostBody = createComponent({
   loadAndShow: function(event) {
     event.preventDefault();
     let post: Post = this.props.post;
-    ReactActions.loadAndShowPost(post.postId);
+    ReactActions.loadAndShowPost(post.nr);
   },
 
   render: function() {

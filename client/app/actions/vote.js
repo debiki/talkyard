@@ -19,24 +19,24 @@ var d = { i: debiki.internal, u: debiki.v0.util };
 var $ = d.i.$;
 
 
-d.i.toggleVote = function(postId, voteType, toggleOn) {
-  var post = $('#post-' + postId);
+d.i.toggleVote = function(postNr, voteType, toggleOn) {
+  var post = $('#post-' + postNr);
   var action;
-  var postIdsRead = undefined;
+  var postNrsRead = undefined;
   if (!toggleOn) {
     action = 'DeleteVote';
   }
   else {
     action = 'CreateVote';
-    postIdsRead = findPostIdsRead(post);
+    postNrsRead = findPostNrsRead(post);
   }
 
   var data = {
     pageId: d.i.pageId,
-    postId: postId,
+    postNr: postNr,
     vote: voteType,
     action: action,
-    postIdsRead: postIdsRead
+    postNrsRead: postNrsRead
   };
 
   debiki2.Server.saveVote(data, function(updatedPost) {
@@ -45,8 +45,9 @@ d.i.toggleVote = function(postId, voteType, toggleOn) {
 };
 
 
-function findPostIdsRead(postVotedOn) {
-  var postIdsRead = [];
+// Try to remove, use the js objs in the React store instead.
+function findPostNrsRead(postVotedOn) {
+  var postNrsRead = [];
   var parentThreads = postVotedOn.parents('.dw-t');
   parentThreads.each(function() {
     var parentThread = $(this);
@@ -65,10 +66,10 @@ function findPostIdsRead(postVotedOn) {
     // on embedded comment pages.
     var posts = parentAndSiblings.children('.dw-p[id]');
     posts.each(function() {
-      postIdsRead.push($(this).dwPostId());
+      postNrsRead.push($(this).dwPostId());
     });
   });
-  return postIdsRead;
+  return postNrsRead;
 }
 
 

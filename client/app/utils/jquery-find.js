@@ -24,20 +24,20 @@ var $ = d.i.$;
 
 
 
-d.i.findPost$ = function(postId) {
-  return $('#post-'+ postId);
+d.i.findPost$ = function(postNr) {
+  return $('#post-'+ postNr);
 }
 
 
 // Depreacted, use dwPostId() instead.
-$.fn.dwPostIdStr = function() {
+$.fn.dwPostIdStr = function() {   // rename to dwPostNrStr   and try to remove
   var $post = this.is('.dw-t') ? this.children('.dw-p') : this;
   // Drop initial "post-".
   return $post.dwCheckIs('.dw-p').attr('id').substr(5, 999);
 };
 
 
-$.fn.dwPostId = function() {
+$.fn.dwPostId = function() {   // rename to dwPostNr   and try to remove
   return parseInt(this.dwPostIdStr());
 };
 

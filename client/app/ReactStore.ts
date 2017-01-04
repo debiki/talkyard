@@ -340,7 +340,7 @@ function findAnyAcceptedAnswerPostNr() {
 
   _.each(store.allPosts, (post: Post) => {
     if (post.uniqueId === store.pageAnswerPostUniqueId) {
-      store.pageAnswerPostNr = post.postId;
+      store.pageAnswerPostNr = post.nr;
     }
   });
 }
@@ -541,15 +541,15 @@ export var StoreListenerMixin = {
 };
 
 
-export function clonePost(postId: number): Post {
-  return _.cloneDeep(store.allPosts[postId]);
+export function clonePost(postNr: number): Post {
+  return _.cloneDeep(store.allPosts[postNr]);
 }
 
 
 function updatePost(post: Post, isCollapsing?: boolean) {
   store.now = new Date().getTime();
 
-  var oldVersion = store.allPosts[post.postId];
+  var oldVersion = store.allPosts[post.nr];
   if (oldVersion && !isCollapsing) {
     // If we've modified-saved-reloaded-from-the-server this post, then ignore the
     // collapse settings from the server, in case the user has toggled it client side.
@@ -562,44 +562,44 @@ function updatePost(post: Post, isCollapsing?: boolean) {
   else if (!oldVersion) {
     // Hmm, subtract instead, if oldVersion and isDeleted(post). Fix later...
     store.numPosts += 1;
-    if (post.postId !== TitleId) {
+    if (post.nr !== TitleId) {
       store.numPostsExclTitle += 1;
     }
     if (post.postType === PostType.Flat) {
       store.numPostsChatSection += 1;
     }
-    else if (post.postId !== TitleId && post.postId !== BodyPostId) {
+    else if (post.nr !== TitleId && post.nr !== BodyPostId) {
       store.numPostsRepliesSection += 1;
     }
   }
 
   // Add or update the post itself.
-  store.allPosts[post.postId] = post;
+  store.allPosts[post.nr] = post;
 
   // In case this is a new post, update its parent's child id list.
   var parentPost = store.allPosts[post.parentId];
   if (parentPost) {
     var alreadyAChild =
-        _.find(parentPost.childIdsSorted, childId => childId === post.postId);
+        _.find(parentPost.childIdsSorted, childId => childId === post.nr);
     if (!alreadyAChild) {
-      parentPost.childIdsSorted.unshift(post.postId);
+      parentPost.childIdsSorted.unshift(post.nr);
       sortPostIdsInPlaceBestFirst(parentPost.childIdsSorted, store.allPosts);
     }
   }
 
   // Update list of top level comments, for embedded comment pages, and custom form pages.
-  if (!post.parentId && post.postId != BodyPostId && post.postId !== TitleId) {
+  if (!post.parentId && post.nr != BodyPostId && post.nr !== TitleId) {
     store.topLevelCommentIdsSorted = findTopLevelCommentIds(store.allPosts);
     sortPostIdsInPlaceBestFirst(store.topLevelCommentIdsSorted, store.allPosts);
   }
 
-  rememberPostsToQuickUpdate(post.postId);
+  rememberPostsToQuickUpdate(post.nr);
   stopGifsPlayOnClick();
   setTimeout(() => {
     page.Hacks.processPosts();
     if (!oldVersion && post.authorIdInt === store.me.id) {
       // Show the user his/her new post.
-      ReactActions.loadAndShowPost(post.postId);
+      ReactActions.loadAndShowPost(post.nr);
     }
   }, 1);
 }
@@ -608,10 +608,10 @@ function updatePost(post: Post, isCollapsing?: boolean) {
 function voteOnPost(action) {
   var post: Post = action.post;
 
-  var votes = store.me.votes[post.postId];
+  var votes = store.me.votes[post.nr];
   if (!votes) {
     votes = [];
-    store.me.votes[post.postId] = votes;
+    store.me.votes[post.nr] = votes;
   }
 
   if (action.doWhat === 'CreateVote') {
@@ -688,10 +688,10 @@ function summarizeReplies() {
   // For now, just collapse all threads with depth >= 2, if they're too long
   // i.e. they have successors, or consist of a long (high) comment.
   _.each(store.allPosts, (post: Post) => {
-    if (post.postId === BodyPostId || post.postId === TitleId || post.parentId === BodyPostId)
+    if (post.nr === BodyPostId || post.nr === TitleId || post.parentId === BodyPostId)
       return;
 
-    var isTooHigh = () => $('#post-' + post.postId).height() > 150;
+    var isTooHigh = () => $('#post-' + post.nr).height() > 150;
     if (post.childIdsSorted.length || isTooHigh()) {
       post.isTreeCollapsed = 'Truncated';
       post.summarize = true;
@@ -712,17 +712,17 @@ function makeSummaryFor(post: Post, maxLength?: number): string {
 }
 
 
-function unsquashTrees(postId: number) {
-  // Mark postId and its nearest subsequent siblings as not squashed.
-  var post = store.allPosts[postId];
+function unsquashTrees(postNr: number) {
+  // Mark postNr and its nearest subsequent siblings as not squashed.
+  var post: Post = store.allPosts[postNr];
   var parent = store.allPosts[post.parentId];
   var numLeftToUnsquash = -1;
   for (var i = 0; i < parent.childIdsSorted.length; ++i) {
     var childId = parent.childIdsSorted[i];
-    var child = store.allPosts[childId];
+    var child: Post = store.allPosts[childId];
     if (!child)
       continue; // deleted
-    if (child.postId == postId) {
+    if (child.nr == postNr) {
       numLeftToUnsquash = 5;
     }
     if (numLeftToUnsquash !== -1) {
@@ -738,7 +738,7 @@ function unsquashTrees(postId: number) {
 
 
 function collapseTree(post: Post) {
-  post = clonePost(post.postId);
+  post = clonePost(post.nr);
   post.isTreeCollapsed = 'Truncated';
   post.summarize = true;
   post.summary = makeSummaryFor(post, 70);
@@ -787,7 +787,7 @@ function uncollapsePostAndChildren(post: Post) {
 function uncollapseOne(post: Post) {
   if (!post.isTreeCollapsed && !post.isPostCollapsed && !post.summarize && !post.squash)
     return;
-  var p2 = clonePost(post.postId);
+  var p2 = clonePost(post.nr);
   p2.isTreeCollapsed = false;
   p2.isPostCollapsed = false;
   p2.summarize = false;
@@ -799,8 +799,8 @@ function uncollapseOne(post: Post) {
 function findTopLevelCommentIds(allPosts): number[] {
   var ids: number[] = [];
   _.each(allPosts, (post: Post) => {
-    if (!post.parentId && post.postId !== BodyPostId && post.postId !== TitleId) {
-      ids.push(post.postId);
+    if (!post.parentId && post.nr !== BodyPostId && post.nr !== TitleId) {
+      ids.push(post.nr);
     }
   });
   return ids;
@@ -811,10 +811,10 @@ function findTopLevelCommentIds(allPosts): number[] {
  * NOTE: Keep in sync with sortPostsFn() in
  *   modules/debiki-core/src/main/scala/com/debiki/core/Post.scala
  */
-function sortPostIdsInPlaceBestFirst(postIds: PostNr[], allPosts: { [id: number]: Post }) {
-  postIds.sort((idA: number, idB: number) => {
-    var postA: Post = allPosts[idA];
-    var postB: Post = allPosts[idB];
+function sortPostIdsInPlaceBestFirst(postNrs: PostNr[], allPosts: { [nr: number]: Post }) {
+  postNrs.sort((nrA: number, nrB: number) => {
+    var postA: Post = allPosts[nrA];
+    var postB: Post = allPosts[nrB];
 
     // Perhaps the server shouldn't include deleted comments in the children list?
     // Is that why they're null sometimes? COULD try to find out
@@ -1013,7 +1013,7 @@ function patchTheStore(storePatch: StorePatch) {
           if (movedToNewPage || movedOnThisPage) {
             var oldParent = store.allPosts[oldPost.parentId];
             if (oldParent && oldParent.childIdsSorted) {
-              var index = oldParent.childIdsSorted.indexOf(oldPost.postId);
+              var index = oldParent.childIdsSorted.indexOf(oldPost.nr);
               if (index !== -1) {
                 oldParent.childIdsSorted.splice(index, 1);
               }
@@ -1251,7 +1251,7 @@ function rememberPostsToQuickUpdate(startPostId: number) {
   // Need to update all ancestors, otherwise when rendering the React root we won't reach
   // `post` at all.
   while (post) {
-    store.postsToUpdate[post.postId] = true;
+    store.postsToUpdate[post.nr] = true;
     post = store.allPosts[post.parentId];
   }
 }

@@ -34,7 +34,7 @@ object VoteController extends mvc.Controller {
 
   /** Currently handles only one vote at a time. Example post data, in Yaml:
     *   pageId: "123abc"
-    *   postId: 123
+    *   postNr: 123
     *   vote: "VoteLike"      # or "VoteWrong" or "VoteBury"
     *   action: "CreateVote"  # or "DeleteVote"
     *   postIdsRead: [1, 9, 53, 82]
@@ -42,10 +42,10 @@ object VoteController extends mvc.Controller {
   def handleVotes = PostJsonAction(RateLimits.RatePost, maxLength = 500) { request: JsonPostRequest =>
     val body = request.body
     val pageId = (body \ "pageId").as[PageId]
-    val postNr = (body \ "postId").as[PostNr]
+    val postNr = (body \ "postNr").as[PostNr] ; SHOULD // change to id, not nr? [idnotnr]
     val voteStr = (body \ "vote").as[String]
     val actionStr = (body \ "action").as[String]
-    val postNrsReadSeq = (body \ "postIdsRead").asOpt[immutable.Seq[PostNr]]
+    val postNrsReadSeq = (body \ "postNrsRead").asOpt[immutable.Seq[PostNr]]
 
     val postNrsRead = postNrsReadSeq.getOrElse(Nil).toSet
 
@@ -62,9 +62,9 @@ object VoteController extends mvc.Controller {
     }
     else {
       if (postNrsReadSeq.map(_.length) != Some(postNrsRead.size))
-        throwBadReq("DwE942F0", "Duplicate ids in postIdsRead")
+        throwBadReq("DwE942F0", "Duplicate nrs in postNrsRead")
       if (!postNrsRead.contains(postNr))
-        throwBadReq("DwE46F82", "postId not part of postIdsRead")
+        throwBadReq("DwE46F82", "postNr not part of postNrsRead")
     }
 
     val voteType: PostVoteType = voteStr match {

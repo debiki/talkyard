@@ -109,7 +109,7 @@ var ShareDialog = createComponent({
     if (state.isOpen) {
       var post: Post = state.post;
       var origin = location.protocol + '//' + location.host;
-      var url = origin + '/-' + debiki.getPageId() + '#post-' + post.postId;
+      var url = origin + '/-' + debiki.getPageId() + '#post-' + post.nr;
       var makeShareButton = (where: string) => {
         return (
           r.a({ className: 'esShare_social_icon icon-' + where,

@@ -284,9 +284,8 @@ object UserController extends mvc.Controller {
   }
 
 
-  def loadAuthorBlocks(postId: String) = GetAction { request =>
-    val postIdInt = Try(postId.toInt) getOrElse throwBadReq("DwE4WK78", "Bad post id")
-    val blocks: Seq[Block] = request.dao.loadAuthorBlocks(postIdInt)
+  def loadAuthorBlocks(postId: Int) = StaffGetAction { request =>
+    val blocks: Seq[Block] = request.dao.loadAuthorBlocks(postId)
     var json = blocksSummaryJson(blocks, request.ctime)
     if (request.user.map(_.isStaff) == Some(true)) {
       json += "blocks" -> JsArray(blocks map blockToJson)
@@ -501,7 +500,7 @@ object UserController extends mvc.Controller {
     Json.obj(
       "pageUrl" -> s"/-${actionInfo.pageId}", // redirects to the page
       "pageTitle" -> JsString(actionInfo.pageTitle),
-      "postId" -> JsNumber(actionInfo.postNr),
+      "postId" -> JsNumber(actionInfo.postId), & nr ?
       "actionId" -> JsNumber(actionInfo.actionId),
       "actingUserId" -> JsNumber(actionInfo.actingUserId),
       "actingUserDisplayName" -> JsString(actionInfo.actingUserDisplayName),

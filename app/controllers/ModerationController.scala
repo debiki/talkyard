@@ -113,16 +113,16 @@ object ModerationController extends mvc.Controller {
     val PagePostNr(pageId, postNr) = parseBody(request)
     ??? // request.dao.rejectEdits(pageId, postId = postId, rejectedById = request.theUserId)
     Ok
-  } */
+  }
 
 
   private def parseBody(request: JsonPostRequest): PagePostNr = {
     val pageId = (request.body \ "pageId").as[PageId]
-    val postNr = (request.body \ "postId").as[PostNr]
+    val postNr = (request.body \ "postNr").as[PostNr]
     PagePostNr(pageId, postNr)
   }
 
-  /*
+
   private def makeJsonSinglePost(post: Post, thingsToReview: ThingsToReview): JsValue = {
     //val pageMeta = thingsToReview.thePage(post.pageId)
     val author = thingsToReview.theUser(post.createdById)

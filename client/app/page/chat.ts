@@ -106,7 +106,7 @@ var TitleAndLastChatMessages = createComponent({
 
     var messages = [];
     _.each(store.allPosts, (post: Post) => {
-      if (post.postId === TitleId || post.postId === BodyId) {
+      if (post.nr === TitleId || post.nr === BodyId) {
         // We show the title & body elsewhere.
         return;
       }
@@ -114,7 +114,7 @@ var TitleAndLastChatMessages = createComponent({
         messages.push(DeletedChatMessage({ key: post.uniqueId, store: store, post: post }));
         return;
       }
-      if (post.postId === FirstReplyNr) {
+      if (post.nr === FirstReplyNr) {
         // (COULD make this work also if post nr FirstReplyNr has been moved to another page
         // and hence will never be found. Fix by scrolling up, noticing that nothing was found,
         // and remove the you-can-scroll-up indicator?)
@@ -162,7 +162,7 @@ var ChatMessage = createComponent({
   edit: function() {
     this.setState({ isEditing: true });
     var post: Post = this.props.post;
-    editor.openEditorToEditPost(post.postId, (wasSaved, text) => {
+    editor.openEditorToEditPost(post.nr, (wasSaved, text) => {
       this.setState({ isEditing: false });
     });
   },
@@ -188,7 +188,7 @@ var ChatMessage = createComponent({
     //headerProps.stuffToAppend.push(
     //  r.button({ className: 'esC_M_MoreB icon-ellipsis', key: 'm' }, "more"));
     return (
-      r.div({ className: 'esC_M', id: 'post-' + post.postId },
+      r.div({ className: 'esC_M', id: 'post-' + post.nr },
         avatar.Avatar({ user: author }),
         PostHeader(headerProps), // { store: _, post: _, ... } would be better?
         PostBody({ store: store, post: post })));
@@ -200,7 +200,7 @@ var ChatMessage = createComponent({
 function DeletedChatMessage(props) {
   var post: Post = props.post;
   return (
-    r.div({ className: 'esC_M', id: 'post-' + post.postId, key: props.key },
+    r.div({ className: 'esC_M', id: 'post-' + post.nr, key: props.key },
       r.div({ className: 'dw-p-bd' },
         r.div({ className: 'dw-p-bd-blk' },
           "(Message deleted)"))));

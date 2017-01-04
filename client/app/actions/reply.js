@@ -51,29 +51,29 @@ function showReplyFormImpl($this, anyPostType) {
     replyAction = $('.dw-cmts-tlbr .dw-a-reply, .dw-chat-as .dw-a-reply');
   }
 
-  var postId;
+  var postNr;
   if (!$this) {
     // Embedded comments page, Reply button in comments toolbar was clicked.
     // Set postId to NoPostId to indicate that we're replying to the article on
     // the embedding page.
-    postId = NoPostId;
+    postNr = NoPostId;
   }
   else {
     // Non-embedded page; there is no Reply button in the comments toolbar.
-    postId = $this.closest('.dw-t').dwPostId();
+    postNr = $this.closest('.dw-t').dwPostId();
   }
 
   // Dupl code [69KFUW20]
-  debiki2.morebundle.loginIfNeededReturnToPost('LoginToComment', postId, function() {
+  debiki2.morebundle.loginIfNeededReturnToPost('LoginToComment', postNr, function() {
     // Toggle highlighting first, because it'll be cleared later if the
     // editor is closed, and then we don't want to toggle it afterwards.
     toggleReplyButtonHighlighting(replyAction);
     if (d.i.isInEmbeddedCommentsIframe) {
       console.warn("anyPostType ignored [DwE4KEPF0]");
-      sendWriteReplyMessageToEmbeddedEditor(postId, anyPostType);
+      sendWriteReplyMessageToEmbeddedEditor(postNr, anyPostType);
     }
     else {
-      d.i.openEditorToWriteReply(postId, anyPostType);
+      d.i.openEditorToWriteReply(postNr, anyPostType);
     }
   });
 };
@@ -117,7 +117,7 @@ d.i.handleReplyResult = function(data) {
 
 
 function doHandleReplyResult(data) {
-  if (_.isNumber(data.postId)) {
+  if (_.isNumber(data.nr || data.postId)) {  // a Post with a .nr?
     // It's a post. Try to remove this.
     debiki2.ReactActions.updatePost(data);
   }

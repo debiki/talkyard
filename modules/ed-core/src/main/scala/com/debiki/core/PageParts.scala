@@ -95,7 +95,7 @@ abstract class PageParts {
   }
 
   def lastPostButNotOrigPost: Option[Post] =
-    post(highestReplyNr)
+    postByNr(highestReplyNr)
 
   // Could rename to highestPostNrButNotOrigPost? Because includes chat comments & messages too.
   def highestReplyNr: Option[PostNr] = {
@@ -107,7 +107,7 @@ abstract class PageParts {
   }
 
   def pageId: PageId
-  def titlePost: Option[Post] = post(PageParts.TitleNr)
+  def titlePost: Option[Post] = postByNr(PageParts.TitleNr)
 
   def topLevelComments: immutable.Seq[Post] =
     childrenBestFirstByParentNr.getOrElse(PageParts.NoNr, Nil) filterNot { post =>
@@ -116,13 +116,16 @@ abstract class PageParts {
 
   def allPosts: Seq[Post]
 
-  def post(postNr: PostNr): Option[Post] = postsByNr.get(postNr)
-  def post(postNr: Option[PostNr]): Option[Post] = postNr.flatMap(postsByNr.get)
-  def thePost(postNr: PostNr): Post = post(postNr) getOrDie "DwE9PKG3"
-  def postById(postId: PostId): Option[Post] = postsByNr.values.find(_.id == postId)
+  def postByNr(postNr: PostNr): Option[Post] = postsByNr.get(postNr)
+  def postByNr(postNr: Option[PostNr]): Option[Post] = postNr.flatMap(postsByNr.get)
+  def thePostByNr(postNr: PostNr): Post = postByNr(postNr) getOrDie "DwE9PKG3"
+  def postById(postId: PostId): Option[Post] = {
+    COULD_OPTIMIZE // add a (lazy) by-id map?
+    postsByNr.values.find(_.id == postId)
+  }
   def thePostById(postId: PostId): Post = postById(postId) getOrDie "EsE6YKG72"
-  def theBody = thePost(BodyNr)
-  def theTitle = thePost(TitleNr)
+  def theBody = thePostByNr(BodyNr)
+  def theTitle = thePostByNr(TitleNr)
 
 
   def numRepliesTotal = allPosts.count(_.isReply)
@@ -220,7 +223,7 @@ abstract class PageParts {
 
 
   def parentOf(postNr: PostNr): Option[Post] =
-    thePost(postNr).parentNr.map(id => thePost(id))
+    thePostByNr(postNr).parentNr.map(id => thePostByNr(id))
 
 
   def depthOf(postNr: PostNr): Int =
@@ -230,7 +233,7 @@ abstract class PageParts {
   /** Ancestors, starting with postId's parent. */
   def ancestorsOf(postNr: PostNr): List[Post] = {   // COULD change to Vector
     var ancestors: List[Post] = Nil
-    var curPost: Option[Post] = Some(thePost(postNr))
+    var curPost: Option[Post] = Some(thePostByNr(postNr))
     var numLaps = 0
     while ({
       curPost = parentOf(curPost.get.nr)
@@ -252,10 +255,10 @@ abstract class PageParts {
     if (postNrs.isEmpty || postNrs.contains(PageParts.NoNr))
       return PageParts.NoNr
 
-    val firstPost = thePost(postNrs.head)
+    val firstPost = thePostByNr(postNrs.head)
     var commonAncestorNrs: Seq[PostNr] = firstPost.nr :: ancestorsOf(firstPost.nr).map(_.nr)
     for (nextPostNr <- postNrs.tail) {
-      val nextPost = thePost(nextPostNr)
+      val nextPost = thePostByNr(nextPostNr)
       var ancestorNrs = nextPost.nr :: ancestorsOf(nextPost.nr).map(_.nr)
       var commonAncestorFound = false
       while (ancestorNrs.nonEmpty && !commonAncestorFound) {

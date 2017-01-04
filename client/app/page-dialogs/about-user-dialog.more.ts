@@ -236,7 +236,8 @@ var AboutGuest = createComponent({
     var me: Myself = store.me;
     var guest: Guest = this.props.user;
     var blocks: Blocks = this.props.blocks;
-    var postId = this.props.post ? this.props.post.uniqueId : null;
+    let post: Post = this.props.post;
+    var postId = post ? post.uniqueId : null;
 
     var blockButton;
     var blockModal;

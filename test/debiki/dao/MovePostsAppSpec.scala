@@ -158,7 +158,7 @@ class MovePostsAppSpec extends DaoAppSuite(disableScripts = true, disableBackgro
 
       dao.readOnlyTransaction { transaction =>
         val pageParts = PageDao(thePageId, transaction).parts
-        pageParts.thePost(postY.nr).parentNr mustBe Some(postX.nr)
+        pageParts.thePostByNr(postY.nr).parentNr mustBe Some(postX.nr)
         pageParts.ancestorsOf(postY.nr).map(_.nr) mustBe Seq(postX.nr, BodyNr)
         pageParts.ancestorsOf(postA.nr).map(_.nr) mustBe Seq(postY.nr, postX.nr, BodyNr)
         pageParts.ancestorsOf(postC.nr).map(_.nr) mustBe Seq(
@@ -246,11 +246,11 @@ class MovePostsAppSpec extends DaoAppSuite(disableScripts = true, disableBackgro
       info("tree gone one first page, present on second instead")
       val maxNewNr = dao.readOnlyTransaction { transaction =>
         val firstParts = PageDao(thePageId, transaction).parts
-        firstParts.post(postA.nr) mustBe None
-        firstParts.post(postB.nr) mustBe None
-        firstParts.post(postC.nr) mustBe None
-        firstParts.post(postD.nr) mustBe None
-        firstParts.post(postD2.nr) mustBe None
+        firstParts.postByNr(postA.nr) mustBe None
+        firstParts.postByNr(postB.nr) mustBe None
+        firstParts.postByNr(postC.nr) mustBe None
+        firstParts.postByNr(postD.nr) mustBe None
+        firstParts.postByNr(postD2.nr) mustBe None
 
         val secondPage = PageDao(pageTwoId, transaction)
         val postAAfter = secondPage.parts.thePostById(postA.id)

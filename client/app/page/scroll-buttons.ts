@@ -29,8 +29,8 @@ var keymaster: Keymaster = window['keymaster'];
 var r = React.DOM;
 var calcScrollIntoViewCoordsInPageColumn = debiki2.utils.calcScrollIntoViewCoordsInPageColumn;
 
-export var addVisitedPosts: (currentPostId: number, nextPostId: number) => void = _.noop;
-export var addVisitedPositionAndPost: (nextPostId: number) => void = _.noop;
+export var addVisitedPosts: (currentPostNr: number, nextPostNr: number) => void = _.noop;
+export var addVisitedPositionAndPost: (nextPostNr: number) => void = _.noop;
 export var addVisitedPosition: (whereNext?) => void = _.noop;
 
 var WhereTop = 'T';
@@ -120,7 +120,7 @@ export var ScrollButtons = createClassAndFactory({
   },
 
   // Crazy with number | string. Oh well, fix later [3KGU02] CLEAN_UP
-  addVisitedPosts: function(currentPostId: number, nextPostId: number | string) {
+  addVisitedPosts: function(currentPostId: number, nextPostNr: number | string) {
     var visitedPosts = this.state.visitedPosts; // TODO clone, don't modify visitedPosts directly below [immutablejs]
     visitedPosts.splice(this.state.currentVisitedPostIndex + 1, 999999);
     // Don't duplicate the last post, and also remove it if it is empty, which happens when
@@ -129,8 +129,8 @@ export var ScrollButtons = createClassAndFactory({
     var lastPosHasCoords;
     if (lastPost) {
       lastPosHasCoords = _.isNumber(lastPost.windowLeft) && _.isNumber(lastPost.windowTop);
-      var lastPosHasPostNr = !isNullOrUndefined(lastPost.postId);
-      var isSameAsCurrent = lastPosHasPostNr && lastPost.postId === currentPostId;
+      var lastPosHasPostNr = !isNullOrUndefined(lastPost.postNr);
+      var isSameAsCurrent = lastPosHasPostNr && lastPost.postNr === currentPostId;
       var isNothing = !lastPosHasPostNr && !lastPosHasCoords;
       if (isSameAsCurrent || isNothing) {
         visitedPosts.splice(visitedPosts.length - 1, 1);
@@ -141,13 +141,13 @@ export var ScrollButtons = createClassAndFactory({
     var currentPos = {
       windowLeft: $('#esPageColumn').scrollLeft(),
       windowTop: $('#esPageColumn').scrollTop(),
-      postId: currentPostId
+      postNr: currentPostId
     };
     var lastPosTop = lastPost ? lastPost.windowTop : undefined;
     var lastPosLeft = lastPost ? lastPost.windowLeft : undefined;
-    if (lastPost && _.isString(lastPost.postId)) {
+    if (lastPost && _.isString(lastPost.postNr)) {
       lastPosLeft = _.isNumber(lastPosLeft) ? lastPosLeft : currentPos.windowLeft;
-      switch(lastPost.postId) {
+      switch(lastPost.postNr) {
         case WhereTop:
           lastPosTop = 0;
           break;
@@ -164,9 +164,9 @@ export var ScrollButtons = createClassAndFactory({
         default: die('EsE2YWK4X8');
       }
     }
-    if (isNullOrUndefined(currentPostId) && lastPost && _.isNumber(lastPost.postId) &&
+    if (isNullOrUndefined(currentPostId) && lastPost && _.isNumber(lastPost.postNr) &&
         !_.isNumber(lastPosTop)) {
-      var $post = $('#post-' + lastPost.postId);
+      var $post = $('#post-' + lastPost.postNr);
       var scrollCoords = calcScrollIntoViewCoordsInPageColumn($post);
       lastPosTop = scrollCoords.desiredParentTop;
       lastPosLeft = scrollCoords.desiredParentLeft;
@@ -184,15 +184,15 @@ export var ScrollButtons = createClassAndFactory({
         visitedPosts.push(currentPos);
       }
     }
-    visitedPosts.push({ postId: nextPostId });
+    visitedPosts.push({ postNr: nextPostNr });
     this.setState({
       visitedPosts: visitedPosts,
       currentVisitedPostIndex: visitedPosts.length - 1,
     });
   },
 
-  addVisitedPositionAndPost: function(nextPostId: number) {
-    this.addVisitedPosts(null, nextPostId);
+  addVisitedPositionAndPost: function(nextPostNr: number) {
+    this.addVisitedPosts(null, nextPostNr);
   },
 
   addVisitedPosition: function(whereNext?) {
@@ -229,15 +229,15 @@ export var ScrollButtons = createClassAndFactory({
         'scrollTop': backPost.windowTop,
         'scrollLeft': backPost.windowLeft
       }, 'slow', 'swing');
-      if (backPost.postId) {
+      if (backPost.postNr) {
         htmlBody.queue(function(next) {
-          ReactActions.loadAndShowPost(backPost.postId);
+          ReactActions.loadAndShowPost(backPost.postNr);
           next();
         });
       }
     }
-    else if (_.isString(backPost.postId)) {  // crazy, oh well [3KGU02]
-      switch (backPost.postId) {
+    else if (_.isString(backPost.postNr)) {  // crazy, oh well [3KGU02]
+      switch (backPost.postNr) {
         case WhereTop: scrollToTop(false); break;
         case WhereReplies: scrollToReplies(false); break;
         case WhereBottom: scrollToBottom(false); break;
@@ -245,7 +245,7 @@ export var ScrollButtons = createClassAndFactory({
       }
     }
     else {
-      ReactActions.loadAndShowPost(backPost.postId);
+      ReactActions.loadAndShowPost(backPost.postNr);
     }
   },
 
@@ -253,8 +253,8 @@ export var ScrollButtons = createClassAndFactory({
   goForward: function() {
     if (!this.canPerhapsGoForward()) return;
     var forwPost = this.state.visitedPosts[this.state.currentVisitedPostIndex + 1];
-    if (forwPost.postId) {
-      ReactActions.loadAndShowPost(forwPost.postId);
+    if (forwPost.postNr) {
+      ReactActions.loadAndShowPost(forwPost.postNr);
     }
     else if (forwPost.windowTop) {
       $('#esPageColumn').animate({

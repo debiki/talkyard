@@ -124,7 +124,7 @@ var TagsDialog = createComponent({
     }
     else {
       dieIf(!post, 'EsE4GK0IF2');
-      title = post.postId === BodyNr ? "Page tags" : "Post tags";
+      title = post.nr === BodyNr ? "Page tags" : "Post tags";
       content =
         r.div({ className: 'esTsD_CreateTs' },
           rb.ReactSelect({ multi: true, value: makeLabelValues(this.state.tags),

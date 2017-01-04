@@ -181,9 +181,9 @@ export function loginIfNeededReturnToAnchor(loginReason: LoginReason | string,
 }
 
 
-export function loginIfNeededReturnToPost(loginReason: LoginReason | string, postId: PostNr,
+export function loginIfNeededReturnToPost(loginReason: LoginReason | string, postNr: PostNr,
       success: () => void) {
-  loginIfNeededReturnToAnchor('LoginToEdit', '#post-' + postId, success);
+  loginIfNeededReturnToAnchor('LoginToEdit', '#post-' + postNr, success);
 }
 
 

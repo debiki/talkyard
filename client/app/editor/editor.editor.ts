@@ -89,7 +89,7 @@ export var Editor = createComponent({
       text: '',
       draft: '',
       safePreviewHtml: '',
-      replyToPostIds: [],
+      replyToPostNrs: [],
       editingPostId: null,
       editingPostUid: null,
       messageToUserIds: [],
@@ -322,7 +322,7 @@ export var Editor = createComponent({
   toggleWriteReplyToPost: function(postId: number, anyPostType?: number) {
     if (this.alertBadState('WriteReply'))
       return;
-    var postIds = this.state.replyToPostIds;
+    var postIds = this.state.replyToPostNrs;
     var index = postIds.indexOf(postId);
     if (index === -1) {
       postIds.push(postId);
@@ -338,7 +338,7 @@ export var Editor = createComponent({
     }
     this.setState({
       anyPostType: postType,
-      replyToPostIds: postIds,
+      replyToPostNrs: postIds,
       text: this.state.text || this.state.draft || '',
     });
     if (!postIds.length) {
@@ -444,8 +444,8 @@ export var Editor = createComponent({
     setTimeout(fadeBackdrop, 1400);
   },
 
-  scrollPostIntoView: function(postId) {
-    debiki.internal.showAndHighlightPost($('#post-' + postId), {
+  scrollPostIntoView: function(postNr) {
+    debiki.internal.showAndHighlightPost($('#post-' + postNr), {
       marginTop: reactelements.getTopbarHeightInclShadow(),
       // Add + X so one sees the Reply button and a bit below the post.
       marginBottom: this.refs.editor.clientHeight + 90,
@@ -453,7 +453,7 @@ export var Editor = createComponent({
   },
 
   alertBadState: function(wantsToDoWhat = null) {
-    if (wantsToDoWhat !== 'WriteReply' && this.state.replyToPostIds.length > 0) {
+    if (wantsToDoWhat !== 'WriteReply' && this.state.replyToPostNrs.length > 0) {
       alert('Please first finish writing your post');
       return true;
     }
@@ -668,7 +668,7 @@ export var Editor = createComponent({
 
   saveNewPost: function() {
     this.throwIfBadTitleOrText(null, "Please write something.");
-    Server.saveReply(this.state.replyToPostIds, this.state.text, this.state.anyPostType, () => {
+    Server.saveReply(this.state.replyToPostNrs, this.state.text, this.state.anyPostType, () => {
       this.callOnDoneCallback(true);
       this.clearTextAndClose();
     });
@@ -769,7 +769,7 @@ export var Editor = createComponent({
     this.returnSpaceAtBottomForEditor();
     this.setState({
       visible: false,
-      replyToPostIds: [],
+      replyToPostNrs: [],  // post nr for sure, not post id
       editingPostId: null,
       editingPostUid: null,
       isWritingChatMessage: false,
@@ -904,10 +904,10 @@ export var Editor = createComponent({
     }
 
     let editingPostId = this.state.editingPostId;
-    let replyToPostIds = this.state.replyToPostIds;
-    let isOrigPostReply = _.isEqual([BodyId], replyToPostIds);
-    let isChatComment = replyToPostIds.length === 1 && replyToPostIds[0] === NoPostId;
-    let isChatReply = replyToPostIds.indexOf(NoPostId) !== -1 && !isChatComment;
+    let replyToPostNrs = this.state.replyToPostNrs;
+    let isOrigPostReply = _.isEqual([BodyId], replyToPostNrs);
+    let isChatComment = replyToPostNrs.length === 1 && replyToPostNrs[0] === NoPostId;
+    let isChatReply = replyToPostNrs.indexOf(NoPostId) !== -1 && !isChatComment;
 
     var doingWhatInfo;
     if (_.isNumber(editingPostId)) {
@@ -946,7 +946,7 @@ export var Editor = createComponent({
       }
       doingWhatInfo = what + ":";
     }
-    else if (replyToPostIds.length === 0) {
+    else if (replyToPostNrs.length === 0) {
       doingWhatInfo = 'Please select one or more posts to reply to.';
     }
     else if (isChatComment) {
@@ -958,17 +958,17 @@ export var Editor = createComponent({
     else if (isOrigPostReply && page_isUsabilityTesting(store.pageRole)) { // [plugin]
       doingWhatInfo = "Your usability testing video link + description:";
     }
-    else if (replyToPostIds.length > 0) {
+    else if (replyToPostNrs.length > 0) {
       doingWhatInfo =
         r.span({},
           isChatReply ? 'Chat reply to ' : 'Reply to ',
-          _.filter(replyToPostIds, (id) => id !== NoPostId).map((postId, index) => {
+          _.filter(replyToPostNrs, (id) => id !== NoPostId).map((postNr, index) => {
             var anyAnd = index > 0 ? ' and ' : '';
-            var whichPost = postId === 1 ? 'the Original Post' : 'post ' + postId;
+            var whichPost = postNr === 1 ? 'the Original Post' : 'post ' + postNr;
             return (
-              r.span({ key: postId },
+              r.span({ key: postNr },
                 anyAnd,
-                r.a({ onClick: () => this.scrollPostIntoView(postId) }, whichPost)));
+                r.a({ onClick: () => this.scrollPostIntoView(postNr) }, whichPost)));
           }),
           ':');
     }
@@ -983,7 +983,7 @@ export var Editor = createComponent({
     if (_.isNumber(this.state.editingPostId)) {
       saveButtonTitle = makeSaveTitle("Save", " edits");
     }
-    else if (replyToPostIds.length) {
+    else if (replyToPostNrs.length) {
       if (isChatComment) {
         saveButtonTitle = makeSaveTitle("Post", " comment");
       }

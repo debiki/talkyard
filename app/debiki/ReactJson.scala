@@ -402,7 +402,7 @@ object ReactJson {
     dao.readOnlyTransaction { transaction =>
       // COULD optimize: don't load the whole page, load only postNr and the author and last editor.
       val page = PageDao(pageId, transaction)
-      val post = page.parts.thePost(postNr)
+      val post = page.parts.thePostByNr(postNr)
       val tags = transaction.loadTagsForPost(post.id)
       val json = postToJsonImpl(post, page, tags,
         includeUnapproved = includeUnapproved, showHidden = showHidden)
@@ -502,8 +502,8 @@ object ReactJson {
 
     var fields = Vector(
       "uniqueId" -> JsNumber(post.id),
-      "postId" -> JsNumber(post.nr),
-      "parentId" -> post.parentNr.map(JsNumber(_)).getOrElse(JsNull),
+      "nr" -> JsNumber(post.nr),
+      "parentId" -> post.parentNr.map(JsNumber(_)).getOrElse(JsNull),  // rename to parentNr
       "multireplyPostIds" -> JsArray(post.multireplyPostNrs.toSeq.map(JsNumber(_))),
       "postType" -> JsNumberOrNull(postType),
       "authorId" -> JsString(post.createdById.toString),  // COULD remove, but be careful when converting to int client side
@@ -563,7 +563,7 @@ object ReactJson {
 
   /** Creates a dummy root post, needed when rendering React elements. */
   def embeddedCommentsDummyRootPost(topLevelComments: immutable.Seq[Post]) = Json.obj(
-    "postId" -> JsNumber(PageParts.BodyNr),
+    "nr" -> JsNumber(PageParts.BodyNr),
     "childIdsSorted" ->
       JsArray(Post.sortPostsBestFirst(topLevelComments).map(reply => JsNumber(reply.nr))))
 
@@ -1168,6 +1168,8 @@ object ReactJson {
     // Load the page so we'll get a version that includes postId, in case it was just added.
     val page = PageDao(pageId, transaction)
     val post = page.parts.postById(postId) getOrDie "EsE8YKPW2"
+    dieIf(post.pageId != pageId, "EdE4FK0Q2W", o"""Wrong page id: $pageId, was post $postId
+        just moved to page ${post.pageId} instead? Site: ${transaction.siteId}""")
     val tags = transaction.loadTagsForPost(post.id)
     val author = transaction.loadTheUser(post.createdById)
     require(post.createdById == author.id, "EsE4JHKX1")

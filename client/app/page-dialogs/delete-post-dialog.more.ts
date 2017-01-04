@@ -62,7 +62,7 @@ var DeletePostDialog = createComponent({
 
   doDelete: function() {
     var repliesToo = $('#deleteRepliesTooInput').is(':checked');
-    ReactActions.deletePost(this.state.post.postId, repliesToo, this.close);
+    ReactActions.deletePost(this.state.post.nr, repliesToo, this.close);
   },
 
   render: function () {

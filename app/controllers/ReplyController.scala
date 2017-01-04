@@ -40,7 +40,7 @@ object ReplyController extends mvc.Controller {
     val body = request.body
     val pageId = (body \ "pageId").as[PageId]
     val anyPageUrl = (body \ "pageUrl").asOpt[String]
-    val replyToPostNrs = (body \ "postIds").as[Set[PostNr]]
+    val replyToPostNrs = (body \ "postNrs").as[Set[PostNr]]
     val text = (body \ "text").as[String].trim
     val wherePerhapsEmpty = (body \ "where").asOpt[String]
     val whereOpt = if (wherePerhapsEmpty == Some("")) None else wherePerhapsEmpty
