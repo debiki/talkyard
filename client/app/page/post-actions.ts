@@ -89,7 +89,7 @@ export var NoCommentsPageActions = createComponent({
 
 
 export function makeReplyBtnTitle(store: Store, post: Post, isAppendReplyButton: boolean) {
-  if (post.nr !== BodyId)
+  if (post.nr !== BodyNr)
     return "Reply";
 
   switch (store.pageRole) {
@@ -156,7 +156,7 @@ export var PostActions = createComponent({
     var me: Myself = store.me;
     var isOwnPost = me.userId === post.authorIdInt;
     var isOwnPage = store_thisIsMyPage(store);
-    var isPageBody = post.nr === BodyPostId;
+    var isPageBody = post.nr === BodyNr;
     var votes = me.votes[post.nr] || [];
     var isStaffOrOwnPage: boolean = isStaff(me) || isOwnPage;
 
@@ -266,7 +266,7 @@ export var PostActions = createComponent({
 
       // Always hide the downvotes inside this dropdown, so one has to click one
       // extra time (to open the dropdown), before one can downvote.
-      downvotesDropdown = post.nr === BodyPostId ? null :
+      downvotesDropdown = post.nr === BodyNr ? null :
           r.span({ className: 'dropdown navbar-right', title: "More votes...",
               onClick: this.openMoreVotesDropdown },
             r.a({ className: 'dw-a dw-a-votes' + myOtherVotes }, ''));
@@ -523,7 +523,7 @@ var MoreDropdownModal = createComponent({
     var isFlat = store['isFlat']; // hmm shouldn't place in the store object, oh well
     var me: Myself = store.me;
     var post: Post = this.state.post;
-    var isPageBody = post.nr === BodyPostId;
+    var isPageBody = post.nr === BodyNr;
 
     var moreLinks = [];
     var isOwnPost = post.authorIdInt === me.userId;

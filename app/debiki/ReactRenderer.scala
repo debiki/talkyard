@@ -518,7 +518,7 @@ object ReactRenderer extends com.debiki.core.CommonMarkRenderer {
     |    return initialStateJson.user;
     |  },
     |  getPageTitle: function() { // dupl code [5GYK2]
-    |    var titlePost = initialStateJson.allPosts[TitleId];
+    |    var titlePost = initialStateJson.postsByNr[TitleNr];
     |    return titlePost ? titlePost.sanitizedHtml : "(no title)";
     |  }
     |};

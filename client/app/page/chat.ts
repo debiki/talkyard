@@ -96,7 +96,7 @@ var TitleAndLastChatMessages = createComponent({
     var store: Store = this.props.store;
     var title = Title(store); // later: only if not scrolled down too far
 
-    var originalPost = store.allPosts[store.rootPostId];
+    var originalPost = store.postsByNr[store.rootPostId];
     var origPostAuthor = store.usersByIdBrief[originalPost.authorIdInt];
     var headerProps: any = _.clone(store);
     headerProps.post = originalPost;
@@ -105,8 +105,8 @@ var TitleAndLastChatMessages = createComponent({
     var canScrollUpToFetchOlder = true;
 
     var messages = [];
-    _.each(store.allPosts, (post: Post) => {
-      if (post.nr === TitleId || post.nr === BodyId) {
+    _.each(store.postsByNr, (post: Post) => {
+      if (post.nr === TitleNr || post.nr === BodyNr) {
         // We show the title & body elsewhere.
         return;
       }

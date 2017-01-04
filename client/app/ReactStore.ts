@@ -338,7 +338,7 @@ function findAnyAcceptedAnswerPostNr() {
   if (!store.pageAnswerPostUniqueId)
     return;
 
-  _.each(store.allPosts, (post: Post) => {
+  _.each(store.postsByNr, (post: Post) => {
     if (post.uniqueId === store.pageAnswerPostUniqueId) {
       store.pageAnswerPostNr = post.nr;
     }
@@ -490,7 +490,7 @@ ReactStore.getPageRole = function(): PageRole {
 
 
 ReactStore.getPageTitle = function(): string { // dupl code [5GYK2]
-  var titlePost = store.allPosts[TitleId];
+  var titlePost = store.postsByNr[TitleNr];
   return titlePost ? titlePost.sanitizedHtml : "(no title)";
 };
 
@@ -542,14 +542,14 @@ export var StoreListenerMixin = {
 
 
 export function clonePost(postNr: number): Post {
-  return _.cloneDeep(store.allPosts[postNr]);
+  return _.cloneDeep(store.postsByNr[postNr]);
 }
 
 
 function updatePost(post: Post, isCollapsing?: boolean) {
   store.now = new Date().getTime();
 
-  var oldVersion = store.allPosts[post.nr];
+  var oldVersion = store.postsByNr[post.nr];
   if (oldVersion && !isCollapsing) {
     // If we've modified-saved-reloaded-from-the-server this post, then ignore the
     // collapse settings from the server, in case the user has toggled it client side.
@@ -562,35 +562,35 @@ function updatePost(post: Post, isCollapsing?: boolean) {
   else if (!oldVersion) {
     // Hmm, subtract instead, if oldVersion and isDeleted(post). Fix later...
     store.numPosts += 1;
-    if (post.nr !== TitleId) {
+    if (post.nr !== TitleNr) {
       store.numPostsExclTitle += 1;
     }
     if (post.postType === PostType.Flat) {
       store.numPostsChatSection += 1;
     }
-    else if (post.nr !== TitleId && post.nr !== BodyPostId) {
+    else if (post.nr !== TitleNr && post.nr !== BodyNr) {
       store.numPostsRepliesSection += 1;
     }
   }
 
   // Add or update the post itself.
-  store.allPosts[post.nr] = post;
+  store.postsByNr[post.nr] = post;
 
   // In case this is a new post, update its parent's child id list.
-  var parentPost = store.allPosts[post.parentId];
+  var parentPost = store.postsByNr[post.parentNr];
   if (parentPost) {
     var alreadyAChild =
         _.find(parentPost.childIdsSorted, childId => childId === post.nr);
     if (!alreadyAChild) {
       parentPost.childIdsSorted.unshift(post.nr);
-      sortPostIdsInPlaceBestFirst(parentPost.childIdsSorted, store.allPosts);
+      sortPostIdsInPlaceBestFirst(parentPost.childIdsSorted, store.postsByNr);
     }
   }
 
   // Update list of top level comments, for embedded comment pages, and custom form pages.
-  if (!post.parentId && post.nr != BodyPostId && post.nr !== TitleId) {
-    store.topLevelCommentIdsSorted = findTopLevelCommentIds(store.allPosts);
-    sortPostIdsInPlaceBestFirst(store.topLevelCommentIdsSorted, store.allPosts);
+  if (!post.parentNr && post.nr != BodyNr && post.nr !== TitleNr) {
+    store.topLevelCommentIdsSorted = findTopLevelCommentIds(store.postsByNr);
+    sortPostIdsInPlaceBestFirst(store.topLevelCommentIdsSorted, store.postsByNr);
   }
 
   rememberPostsToQuickUpdate(post.nr);
@@ -687,8 +687,8 @@ function cycleToNextMark(postId: number) {
 function summarizeReplies() {
   // For now, just collapse all threads with depth >= 2, if they're too long
   // i.e. they have successors, or consist of a long (high) comment.
-  _.each(store.allPosts, (post: Post) => {
-    if (post.nr === BodyPostId || post.nr === TitleId || post.parentId === BodyPostId)
+  _.each(store.postsByNr, (post: Post) => {
+    if (post.nr === BodyNr || post.nr === TitleNr || post.parentNr === BodyNr)
       return;
 
     var isTooHigh = () => $('#post-' + post.nr).height() > 150;
@@ -714,12 +714,12 @@ function makeSummaryFor(post: Post, maxLength?: number): string {
 
 function unsquashTrees(postNr: number) {
   // Mark postNr and its nearest subsequent siblings as not squashed.
-  var post: Post = store.allPosts[postNr];
-  var parent = store.allPosts[post.parentId];
+  var post: Post = store.postsByNr[postNr];
+  var parent = store.postsByNr[post.parentNr];
   var numLeftToUnsquash = -1;
   for (var i = 0; i < parent.childIdsSorted.length; ++i) {
     var childId = parent.childIdsSorted[i];
-    var child: Post = store.allPosts[childId];
+    var child: Post = store.postsByNr[childId];
     if (!child)
       continue; // deleted
     if (child.nr == postNr) {
@@ -747,14 +747,14 @@ function collapseTree(post: Post) {
 
 
 function showPostNr(postNr: PostNr, showChildrenToo?: boolean) {
-  var post = store.allPosts[postNr];
+  var post: Post = store.postsByNr[postNr];
   if (showChildrenToo) {
     uncollapsePostAndChildren(post);
   }
   // Uncollapse ancestors, to make postId visible.
   while (post) {
     uncollapseOne(post);
-    post = store.allPosts[post.parentId];
+    post = store.postsByNr[post.parentNr];
   }
   setTimeout(() => {
     debiki.internal.showAndHighlightPost($('#post-' + postNr));
@@ -768,13 +768,13 @@ function uncollapsePostAndChildren(post: Post) {
   // Also uncollapse children and grandchildren so one won't have to Click-to-show... all the time.
   for (var i = 0; i < Math.min(post.childIdsSorted.length, 5); ++i) {
     var childId = post.childIdsSorted[i];
-    var child = store.allPosts[childId];
+    var child = store.postsByNr[childId];
     if (!child)
       continue;
     uncollapseOne(child);
     for (var i2 = 0; i2 < Math.min(child.childIdsSorted.length, 3); ++i2) {
       var grandchildId = child.childIdsSorted[i2];
-      var grandchild = store.allPosts[grandchildId];
+      var grandchild = store.postsByNr[grandchildId];
       if (!grandchild)
         continue;
       uncollapseOne(grandchild);
@@ -796,10 +796,10 @@ function uncollapseOne(post: Post) {
 }
 
 
-function findTopLevelCommentIds(allPosts): number[] {
+function findTopLevelCommentIds(postsByNr): number[] {
   var ids: number[] = [];
-  _.each(allPosts, (post: Post) => {
-    if (!post.parentId && post.nr !== BodyPostId && post.nr !== TitleId) {
+  _.each(postsByNr, (post: Post) => {
+    if (!post.parentNr && post.nr !== BodyNr && post.nr !== TitleNr) {
       ids.push(post.nr);
     }
   });
@@ -811,10 +811,10 @@ function findTopLevelCommentIds(allPosts): number[] {
  * NOTE: Keep in sync with sortPostsFn() in
  *   modules/debiki-core/src/main/scala/com/debiki/core/Post.scala
  */
-function sortPostIdsInPlaceBestFirst(postNrs: PostNr[], allPosts: { [nr: number]: Post }) {
+function sortPostIdsInPlaceBestFirst(postNrs: PostNr[], postsByNr: { [nr: number]: Post }) {
   postNrs.sort((nrA: number, nrB: number) => {
-    var postA: Post = allPosts[nrA];
-    var postB: Post = allPosts[nrB];
+    var postA: Post = postsByNr[nrA];
+    var postB: Post = postsByNr[nrB];
 
     // Perhaps the server shouldn't include deleted comments in the children list?
     // Is that why they're null sometimes? COULD try to find out
@@ -846,16 +846,16 @@ function sortPostIdsInPlaceBestFirst(postNrs: PostNr[], allPosts: { [nr: number]
       return +1;
 
     // Place multireplies after normal replies. See Post.scala.
-    if (postA.multireplyPostIds.length && postB.multireplyPostIds.length) {
+    if (postA.multireplyPostNrs.length && postB.multireplyPostNrs.length) {
       if (postA.createdAtMs < postB.createdAtMs)
         return -1;
       if (postA.createdAtMs > postB.createdAtMs)
         return +1;
     }
-    else if (postA.multireplyPostIds.length) {
+    else if (postA.multireplyPostNrs.length) {
       return +1;
     }
-    else if (postB.multireplyPostIds.length) {
+    else if (postB.multireplyPostNrs.length) {
       return -1;
     }
 
@@ -1006,12 +1006,12 @@ function patchTheStore(storePatch: StorePatch) {
     // Remove the post from its former parent, if we're moving it to elsewhere on this page,
     // or to another page.
     _.each(posts, (patchedPost: Post) => {
-      _.each(store.allPosts, (oldPost: Post) => {
+      _.each(store.postsByNr, (oldPost: Post) => {
         if (oldPost.uniqueId === patchedPost.uniqueId) {
           var movedToNewPage = store.pageId !== pageId;
-          var movedOnThisPage = !movedToNewPage && oldPost.parentId !== patchedPost.parentId;
+          var movedOnThisPage = !movedToNewPage && oldPost.parentNr !== patchedPost.parentNr;
           if (movedToNewPage || movedOnThisPage) {
-            var oldParent = store.allPosts[oldPost.parentId];
+            var oldParent = store.postsByNr[oldPost.parentNr];
             if (oldParent && oldParent.childIdsSorted) {
               var index = oldParent.childIdsSorted.indexOf(oldPost.nr);
               if (index !== -1) {
@@ -1232,7 +1232,7 @@ function saveMarksInLocalStorage(marks: { [postId: number]: any }) {
 
 function rememberPostsToQuickUpdate(startPostId: number) {
   store.quickUpdate = true;
-  var post = store.allPosts[startPostId];
+  var post = store.postsByNr[startPostId];
   if (!post) {
     console.warn('Cannot find post to quick update, nr: ' + startPostId + ' [DwE4KJG0]');
     return;
@@ -1242,7 +1242,7 @@ function rememberPostsToQuickUpdate(startPostId: number) {
   // draw an arrow to `post`. However if you've added an Unwanted vote, and post a new reply,
   // then a hereafter unwanted earlier sibling might be moved below startPostId. So we need
   // to update all subsequent siblings too.
-  var parent: any = store.allPosts[post.parentId] || {};
+  var parent: any = store.postsByNr[post.parentNr] || {};
   for (var i = 0; i < (parent.childIdsSorted || []).length; ++i) {
     var siblingId = parent.childIdsSorted[i];
     store.postsToUpdate[siblingId] = true;
@@ -1252,7 +1252,7 @@ function rememberPostsToQuickUpdate(startPostId: number) {
   // `post` at all.
   while (post) {
     store.postsToUpdate[post.nr] = true;
-    post = store.allPosts[post.parentId];
+    post = store.postsByNr[post.parentNr];
   }
 }
 

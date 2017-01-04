@@ -33,8 +33,8 @@
 
 
 export function store_thisIsMyPage(store: Store): boolean {
-  if (!store.allPosts) return false;
-  var bodyOrTitle = store.allPosts[BodyId] || store.allPosts[TitleId];
+  if (!store.postsByNr) return false;
+  var bodyOrTitle = store.postsByNr[BodyNr] || store.postsByNr[TitleNr];
   dieIf(!bodyOrTitle, 'EsE5YKF2');
   return store.me.userId === bodyOrTitle.authorIdInt;
 }
@@ -77,7 +77,7 @@ export function store_getPageMembersList(store: Store): BriefUser[] {
 
 export function store_getUsersOnThisPage(store: Store): BriefUser[] {
   var users: BriefUser[] = [];
-  _.each(store.allPosts, (post: Post) => {
+  _.each(store.postsByNr, (post: Post) => {
     if (_.every(users, u => u.id !== post.authorIdInt)) {
       var user = store_getAuthorOrMissing(store, post);
       users.push(user);
@@ -165,7 +165,7 @@ export function store_isSection(store: Store): boolean {
 
 
 export function store_thereAreFormReplies(store: Store): boolean {
-  return _.some(store.allPosts, (post: Post) => {
+  return _.some(store.postsByNr, (post: Post) => {
     return post.postType === PostType.CompletedForm;
   });
 }

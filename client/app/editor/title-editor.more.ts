@@ -131,7 +131,7 @@ export var TitleEditor = createComponent({
   render: function() {
     var store: Store = this.props;
     var pageRole: PageRole = this.props.pageRole;
-    var titlePost: Post = this.props.allPosts[TitleId];
+    var titlePost: Post = this.props.postsByNr[TitleNr];
     var titleText = titlePost.sanitizedHtml; // for now. TODO only allow plain text?
     var user = this.props.user;
     var isForumOrAboutOrMessage =
@@ -259,12 +259,12 @@ export var TitleEditor = createComponent({
 
     var addBackForumIntroButton;
     if (this.props.pageRole === PageRole.Forum) {
-      var introPost = this.props.allPosts[BodyId];
+      var introPost = this.props.postsByNr[BodyNr];
       var hasIntro = introPost && introPost.sanitizedHtml && !introPost.isBodyHidden;
       if (!hasIntro) {
         addBackForumIntroButton =
             r.a({ className: 'icon-plus', onClick: () => {
-              ReactActions.setPostHidden(BodyId, false);
+              ReactActions.setPostHidden(BodyNr, false);
               debiki2.ReactActions.showForumIntro(true);
             }}, "Add forum intro text");
       }

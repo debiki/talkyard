@@ -144,7 +144,7 @@ export var Metabar = createComponent({
           // Don't show num summarized — only visiblie replies are summarized, so
           // the count would be confusingly low.
           // So don't:  Summarized " + this.state.numRepliesSummarized + " replies.");
-      var minutes = estimateReadingTimeMinutesSkipOrigPost(<Post[]> _.values(store.allPosts));
+      var minutes = estimateReadingTimeMinutesSkipOrigPost(<Post[]> _.values(store.postsByNr));
       if (minutes >= 10 || store.numPostsRepliesSection >= 20) {
         summarizeStuff =
           r.div({ className: 'esMetabar_summarize' },
@@ -333,7 +333,7 @@ function estimateReadingTimeMinutesSkipOrigPost(posts: Post[]): number {
   var removeHtml = 0.8; // guessing that 20% chars is html tags and classes and href=...
   var numChars = _.sumBy(posts, (post: Post) => {
     // Exclude the original post.
-    if (post.nr === BodyId || post.nr === TitleId) return 0;
+    if (post.nr === BodyNr || post.nr === TitleNr) return 0;
     return post.sanitizedHtml ? post.sanitizedHtml.length : 0
   });
   var numWords = numChars * removeHtml / averageWordLength;

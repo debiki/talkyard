@@ -121,7 +121,7 @@ object ReactJson {
       "me" -> NoUserSpecificData,
       "rootPostId" -> JsNumber(PageParts.BodyNr),
       "usersByIdBrief" -> JsObject(Nil),
-      "allPosts" -> JsObject(Nil),
+      "postsByNr" -> JsObject(Nil),
       "topLevelCommentIdsSorted" -> JsArray(),
       "siteSections" -> JsArray(),
       "horizontalLayout" -> JsBoolean(false),
@@ -285,7 +285,7 @@ object ReactJson {
       "me" -> NoUserSpecificData,
       "rootPostId" -> JsNumber(BigDecimal(anyPageRoot getOrElse PageParts.BodyNr)),
       "usersByIdBrief" -> usersByIdJson,
-      "allPosts" -> JsObject(allPostsJson), // COULD rename — doesn't contain all posts, if is chat
+      "postsByNr" -> JsObject(allPostsJson),
       "topLevelCommentIdsSorted" -> JsArray(topLevelCommentIdsSorted),
       "siteSections" -> makeSiteSectionsJson(dao),
       "horizontalLayout" -> JsBoolean(horizontalLayout),
@@ -503,8 +503,8 @@ object ReactJson {
     var fields = Vector(
       "uniqueId" -> JsNumber(post.id),
       "nr" -> JsNumber(post.nr),
-      "parentId" -> post.parentNr.map(JsNumber(_)).getOrElse(JsNull),  // rename to parentNr
-      "multireplyPostIds" -> JsArray(post.multireplyPostNrs.toSeq.map(JsNumber(_))),
+      "parentNr" -> post.parentNr.map(JsNumber(_)).getOrElse(JsNull),
+      "multireplyPostNrs" -> JsArray(post.multireplyPostNrs.toSeq.map(JsNumber(_))),
       "postType" -> JsNumberOrNull(postType),
       "authorId" -> JsString(post.createdById.toString),  // COULD remove, but be careful when converting to int client side
       "authorIdInt" -> JsNumber(post.createdById),  // Rename to authorId when it's been converted to int (the line above)

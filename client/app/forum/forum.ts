@@ -255,7 +255,7 @@ var ForumIntroText = createComponent({
   render: function() {
     var store: Store = this.props.store;
     var user: Myself = store.me;
-    var introPost = store.allPosts[BodyId];
+    var introPost = store.postsByNr[BodyNr];
     if (!introPost || introPost.isBodyHidden)
       return null;
 

@@ -345,7 +345,7 @@ export var Editor = createComponent({
       this.closeEditor();
     }
     var writingWhat = WritingWhat.ReplyToNotOriginalPost;
-    if (_.isEqual([BodyId], postIds)) writingWhat = WritingWhat.ReplyToOriginalPost;
+    if (_.isEqual([BodyNr], postIds)) writingWhat = WritingWhat.ReplyToOriginalPost;
     else if (_.isEqual([NoPostId], postIds)) writingWhat = WritingWhat.ChatComment;
     this.loadGuidelines(writingWhat);
   },
@@ -602,7 +602,7 @@ export var Editor = createComponent({
       return;
 
     // (COULD verify still edits same post/thing, or not needed?)
-    var isEditingBody = this.state.editingPostId === d.i.BodyId;
+    var isEditingBody = this.state.editingPostId === d.i.BodyNr;
     var sanitizerOpts = {
       allowClassAndIdAttr: true, // isEditingBody, SECURITY SHOULD use another sanitizer [7FPKE02]
       // and whitelist CSS classes and ids? Right now it'll be a little bit possible to
@@ -905,7 +905,7 @@ export var Editor = createComponent({
 
     let editingPostId = this.state.editingPostId;
     let replyToPostNrs = this.state.replyToPostNrs;
-    let isOrigPostReply = _.isEqual([BodyId], replyToPostNrs);
+    let isOrigPostReply = _.isEqual([BodyNr], replyToPostNrs);
     let isChatComment = replyToPostNrs.length === 1 && replyToPostNrs[0] === NoPostId;
     let isChatReply = replyToPostNrs.indexOf(NoPostId) !== -1 && !isChatComment;
 

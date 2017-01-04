@@ -20,7 +20,7 @@
 var d = { i: debiki.internal, u: debiki.v0.util };
 var $ = d.i.$;
 
-var NoPostId = -1; // also in constants.ts
+var NoPostNr = -1; // also in constants.ts
 
 
 d.i.$showReplyForm = function(event, anyPostType) {
@@ -54,9 +54,9 @@ function showReplyFormImpl($this, anyPostType) {
   var postNr;
   if (!$this) {
     // Embedded comments page, Reply button in comments toolbar was clicked.
-    // Set postId to NoPostId to indicate that we're replying to the article on
+    // Set postId to NoPostNr to indicate that we're replying to the article on
     // the embedding page.
-    postNr = NoPostId;
+    postNr = NoPostNr;
   }
   else {
     // Non-embedded page; there is no Reply button in the comments toolbar.

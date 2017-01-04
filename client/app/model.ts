@@ -43,8 +43,6 @@ type HttpRequest = XMLHttpRequest
 type ErrorPolicy = number | void;
 var IgnoreThisError: ErrorPolicy = -112233;
 
-var TitleId = 0;
-var BodyPostId = 1;
 
 
 interface PostToModerate {
@@ -123,8 +121,8 @@ interface Flag {
 interface Post {
   uniqueId: number; // CLEAN_UP RENAME to id
   nr: number;
-  parentId: number;
-  multireplyPostIds: number[];
+  parentNr: number;
+  multireplyPostNrs: number[];
   postType?: PostType;
   // these author* are deprecated, should add an author: {...} object instead.
   authorId: string; // COULD change to int and then rename authorIdInt below to authorId.
@@ -396,7 +394,7 @@ interface Store {
   isImpersonating?: boolean;
   rootPostId: number;
   usersByIdBrief: { [userId: number]: BriefUser };
-  allPosts: { [postNr: number]: Post };
+  postsByNr: { [postNr: number]: Post };
   topLevelCommentIdsSorted: number[];
   isWatchbarOpen: boolean;
   isContextbarOpen: boolean;

@@ -55,12 +55,12 @@ var EditIntroDialog = createClassAndFactory({
   },
 
   editIntroText: function() {
-    editor.openEditorToEditPost(BodyId);
+    editor.openEditorToEditPost(BodyNr);
     this.close();
   },
 
   removeIntroText: function() {
-    ReactActions.setPostHidden(BodyId, true);
+    ReactActions.setPostHidden(BodyNr, true);
     this.close();
   },
 

@@ -238,7 +238,7 @@ export var Sidebar = createComponent({  // RENAME to ContextBar
     // And 2) all visible comments.
     var addRecursively = (postNrs: number[]) => {
       _.each(postNrs, (postNr) => {
-        var post: Post = store.allPosts[postNr];
+        var post: Post = store.postsByNr[postNr];
         if (post) {
           addPost(post);
           addRecursively(post.childIdsSorted);
@@ -273,10 +273,10 @@ export var Sidebar = createComponent({  // RENAME to ContextBar
       */
     };
 
-    var rootPost = store.allPosts[store.rootPostId];
+    var rootPost = store.postsByNr[store.rootPostId];
     addRecursively(rootPost.childIdsSorted);
 
-    _.each(store.allPosts, (child: Post, childId) => {
+    _.each(store.postsByNr, (child: Post, childId) => {
       if (child.postType === PostType.Flat) {
         addPost(child);
       }

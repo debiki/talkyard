@@ -51,7 +51,7 @@ export function drawHorizontalArrowFromRootPost(rootPost) {
 
 
 export function drawArrowsFromParent(
-      allPosts: { [postNr: number]: Post; }, parentPost: Post, depth: number,
+      postsByNr: { [postNr: number]: Post; }, parentPost: Post, depth: number,
       index: number, horizontalLayout: boolean, rootPostNr: number,
       // COULD REFACTOR: don't send both horizontalLayout and hmmIs2dTreeColumn.
       hmmIs2dTreeColumn: boolean) {
@@ -61,7 +61,7 @@ export function drawArrowsFromParent(
     return [];
 
   var postNr = parentPost.childIdsSorted[index];
-  var post = allPosts[postNr];
+  var post: Post = postsByNr[postNr];
   if (!post)
     return []; // deleted
 
@@ -72,7 +72,7 @@ export function drawArrowsFromParent(
   if (parentPost) {
     for (var i = index + 1; i < parentPost.childIdsSorted.length; ++i) {
       var siblingId = parentPost.childIdsSorted[i];
-      var sibling = allPosts[siblingId];
+      var sibling: Post = postsByNr[siblingId];
       if (!sibling) {
         // This post has been deleted?
         continue;
@@ -85,7 +85,7 @@ export function drawArrowsFromParent(
         // Don't increase numRemainingWithArrows with more than 1 for a bunch of squashed siblings.
         isSquashing = true;
       }
-      if (sibling.multireplyPostIds.length) {
+      if (sibling.multireplyPostNrs.length) {
         break;
       }
       numRemainingWithArrows += 1;

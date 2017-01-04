@@ -52,7 +52,7 @@ export var TitleBodyComments = createComponent({
   makeHelpMessage: function(): HelpMessage {
     var store: Store = this.props.store;
     var me: Myself = store.me;
-    var bodyPost = store.allPosts[BodyId];
+    var bodyPost = store.postsByNr[BodyNr];
 
     if (store.pageRole === PageRole.Form && store.pageClosedAtMs)
       return { id: 'EsH4PK04', version: 1, content: r.div({},
@@ -229,7 +229,7 @@ export var TitleBodyComments = createComponent({
     var anyTitle = null;
     var pageRole: PageRole = store.pageRole;
     if (pageRole === PageRole.CustomHtmlPage || pageRole === PageRole.EmbeddedComments ||
-        store.rootPostId !== BodyPostId) {
+        store.rootPostId !== BodyNr) {
       // Show no title for the homepage — it should have its own custom HTML with
       // a title and other things.
       // Embedded comment pages have no title, only comments.
@@ -245,12 +245,12 @@ export var TitleBodyComments = createComponent({
         pageRole === PageRole.About || pageRole === PageRole.WebPage ||
         pageRole === PageRole.SpecialContent || pageRole === PageRole.Blog ||
         pageRole === PageRole.EmbeddedComments ||
-        store.rootPostId !== BodyPostId) {
+        store.rootPostId !== BodyNr) {
       // Show no author name or social links for these generic pages.
       // And show nothing if we're showing a comment not the article as the root post.
     }
     else {
-      var post = store.allPosts[store.rootPostId];
+      var post = store.postsByNr[store.rootPostId];
       var headerProps: any = _.clone(store);
       headerProps.post = post;
       anyPostHeader = PostHeader(headerProps);
@@ -279,7 +279,7 @@ export var Title = createComponent({
 
   scrollToAnswer: function() {
     debiki2.ReactActions.loadAndShowPost(this.props.pageAnswerPostNr);
-    debiki2['page'].addVisitedPosts(TitleId, this.props.pageAnswerPostNr);
+    debiki2['page'].addVisitedPosts(TitleNr, this.props.pageAnswerPostNr);
   },
 
   editTitle: function(event) {
@@ -296,7 +296,7 @@ export var Title = createComponent({
 
   render: function() {
     var store: Store = this.props;
-    var titlePost = store.allPosts[TitleId];
+    var titlePost = store.postsByNr[TitleNr];
     if (!titlePost)
       return null;
 
@@ -317,7 +317,7 @@ export var Title = createComponent({
 
     var anyShowForumInroBtn;
     if (!this.props.hideButtons && store.pageRole === PageRole.Forum && store.hideForumIntro) {
-      var introPost = store.allPosts[BodyId];
+      var introPost = store.postsByNr[BodyNr];
       if (introPost && !introPost.isBodyHidden) {
         // Don't show button too early — doing that would make server side and client side
         // React generated html differ.
@@ -478,8 +478,8 @@ var RootPostAndComments = createComponent({
 
   onOrigPostReplyClick: function() {
     // Dupl code [69KFUW20]
-    debiki2.morebundle.loginIfNeededReturnToPost('LoginToComment', BodyId, function() {
-      editor.toggleWriteReplyToPost(BodyId, PostType.Normal);
+    debiki2.morebundle.loginIfNeededReturnToPost('LoginToComment', BodyNr, function() {
+      editor.toggleWriteReplyToPost(BodyNr, PostType.Normal);
     });
   },
 
@@ -497,13 +497,13 @@ var RootPostAndComments = createComponent({
 
   render: function() {
     var store: Store = this.props;
-    var allPosts: { [postNr: number]: Post; } = this.props.allPosts;
+    var postsByNr: { [postNr: number]: Post; } = this.props.postsByNr;
     var me = store.me;
-    var rootPost: Post = allPosts[this.props.rootPostId];
+    var rootPost: Post = postsByNr[this.props.rootPostId];
     if (!rootPost)
       return r.p({}, '(Root post missing, id: ' + this.props.rootPostId +
-          ', these are present: ' + _.keys(allPosts) + ' [DwE8WVP4])');
-    var isBody = this.props.rootPostId === BodyPostId;
+          ', these are present: ' + _.keys(postsByNr) + ' [DwE8WVP4])');
+    var isBody = this.props.rootPostId === BodyNr;
     var pageRole: PageRole = this.props.pageRole;
     var threadClass = 'dw-t dw-depth-0' + horizontalCss(this.props.horizontalLayout);
     var postIdAttr = 'post-' + rootPost.nr;
@@ -571,15 +571,15 @@ var RootPostAndComments = createComponent({
     // On form submission pages, people don't see each others submissions, won't talk at all.
     if (store.pageRole === PageRole.FormalMessage || store.pageRole === PageRole.Form) {
       repliesAreFlat = true;
-      childIds = _.values(store.allPosts).map((post: Post) => post.nr);
+      childIds = _.values(store.postsByNr).map((post: Post) => post.nr);
     }
 
     var isSquashing = false;
 
     var threadedChildren = childIds.map((childId, childIndex) => {
-      if (childId === BodyId || childId === TitleId)
+      if (childId === BodyNr || childId === TitleNr)
         return null;
-      var child = allPosts[childId];
+      var child = postsByNr[childId];
       if (!child)
         return null; // deleted
       if (isSquashing && child.squash)
@@ -613,7 +613,7 @@ var RootPostAndComments = createComponent({
     var hasChat = false; // hasChatSection(store.pageRole);
 
     var flatComments = []; /*
-    if (hasChat) _.each(store.allPosts, (child: Post, childId) => {
+    if (hasChat) _.each(store.postsByNr, (child: Post, childId) => {
       if (!child || child.postType !== PostType.Flat)
         return null;
       var threadProps = _.clone(this.props);
@@ -698,12 +698,12 @@ var SquashedThreads = createComponent({
   },
 
   render: function() {
-    var allPosts: { [postNr: number]: Post; } = this.props.allPosts;
-    var post: Post = allPosts[this.props.postId];
-    var parentPost: Post = allPosts[post.parentId];
+    var postsByNr: { [postNr: number]: Post; } = this.props.postsByNr;
+    var post: Post = postsByNr[this.props.postId];
+    var parentPost: Post = postsByNr[post.parentNr];
 
     var arrows = debiki2.renderer.drawArrowsFromParent(
-      allPosts, parentPost, this.props.depth, this.props.index,
+      postsByNr, parentPost, this.props.depth, this.props.index,
       this.props.horizontalLayout, this.props.rootPostId, !!post.branchSideways);
 
     var baseElem = r[this.props.elemType];
@@ -734,14 +734,14 @@ var Thread = createComponent({
 
   render: function() {
     var store: Store = this.props;
-    var allPosts: { [postNr: number]: Post; } = store.allPosts;
-    var post: Post = allPosts[this.props.postId];
+    var postsByNr: { [postNr: number]: Post; } = store.postsByNr;
+    var post: Post = postsByNr[this.props.postId];
     if (!post) {
       // This tree has been deleted.
       return null;
     }
 
-    var parentPost = allPosts[post.parentId];
+    var parentPost = postsByNr[post.parentNr];
     var deeper = this.props.depth + 1;
     var isFlat = this.props.isFlat;
     var isMindMap = store.pageRole === PageRole.MindMap;
@@ -751,9 +751,9 @@ var Thread = createComponent({
     // Draw arrows, but not to multireplies, because we don't know if they reply to `post`
     // or to other posts deeper in the thread.
     var arrows;
-    if (!post.multireplyPostIds.length && !isFlat) {
+    if (!post.multireplyPostNrs.length && !isFlat) {
       arrows = debiki2.renderer.drawArrowsFromParent(
-        allPosts, parentPost, this.props.depth, this.props.index,
+        postsByNr, parentPost, this.props.depth, this.props.index,
         this.props.horizontalLayout, this.props.rootPostId, thisPostSideways);
     }
 
@@ -766,7 +766,7 @@ var Thread = createComponent({
     var numDeletedChildren = 0;
     for (var i = 0; i < post.childIdsSorted.length; ++i) {
       var childId = post.childIdsSorted[i];
-      if (!allPosts[childId]) {
+      if (!postsByNr[childId]) {
         numDeletedChildren += 1;
       }
     }
@@ -776,7 +776,7 @@ var Thread = createComponent({
     var children = [];
     if (!post.isTreeCollapsed && !post.isTreeDeleted && !isFlat) {
       children = post.childIdsSorted.map((childId, childIndex) => {
-        var child = allPosts[childId];
+        var child = postsByNr[childId];
         if (!child)
           return null; // deleted
         if (isSquashingChildren && child.squash)
@@ -855,7 +855,7 @@ var Thread = createComponent({
       indentationDepthClass = ' dw-id' + this.props.indentationDepth;
     }
     var is2dColumnClass = this.props.is2dTreeColumn ? ' dw-2dcol' : '';
-    var multireplyClass = post.multireplyPostIds.length ? ' dw-mr' : '';
+    var multireplyClass = post.multireplyPostNrs.length ? ' dw-mr' : '';
     var collapsedClass = renderCollapsed ? ' dw-zd' : '';
 
     var branchSidewaysClass = horizontalCss(!!post.branchSideways);
@@ -999,7 +999,7 @@ export var Post = createComponent({
     // that looks better (see PostHeader).
     var replyReceivers;
     if (!this.props.abbreviate && !isFlat && (
-          this.props.index > 0 || post.multireplyPostIds.length)) {
+          this.props.index > 0 || post.multireplyPostNrs.length)) {
       replyReceivers = ReplyReceivers({ store: store, post: post });
     }
 
@@ -1064,10 +1064,10 @@ var ReplyReceivers = createComponent({
     var store: Store = this.props.store;
     var multireplyClass = ' dw-mrrs'; // mrrs = multi reply receivers
     var thisPost: Post = this.props.post;
-    var repliedToPostIds = thisPost.multireplyPostIds;
+    var repliedToPostIds = thisPost.multireplyPostNrs;
     if (!repliedToPostIds || !repliedToPostIds.length) {
       multireplyClass = '';
-      repliedToPostIds = [thisPost.parentId];
+      repliedToPostIds = [thisPost.parentNr];
     }
     var receivers = [];
     for (var index = 0; index < repliedToPostIds.length; ++index) {
@@ -1077,7 +1077,7 @@ var ReplyReceivers = createComponent({
         // button in the chat section, and then replies to someone too.
         continue;
       }
-      var post = store.allPosts[repliedToId];
+      var post = store.postsByNr[repliedToId];
       if (!post) {
         receivers.push(r.i({ key: repliedToId }, 'Unknown [DwE4KFYW2]'));
         continue;
@@ -1130,7 +1130,7 @@ export var PostHeader = createComponent({
       if (abbreviate) {
         return r.div({ className: 'dw-p-hd' }, 'Wiki');
       }
-      if (this.props.is2dTreeColumn || post.isTreeCollapsed || post.nr === BodyPostId) {
+      if (this.props.is2dTreeColumn || post.isTreeCollapsed || post.nr === BodyNr) {
         return null;
       }
       // Show a collapse button for this wiki post, but no author name because this is
@@ -1169,7 +1169,7 @@ export var PostHeader = createComponent({
 
     var postId;
     var anyMark;
-    if (post.nr !== TitleId && post.nr !== BodyPostId) {
+    if (post.nr !== TitleNr && post.nr !== BodyNr) {
       if (debiki.debug) {
         postId = r.span({ className: 'dw-p-link' }, '#' + post.nr);
       }
@@ -1190,7 +1190,7 @@ export var PostHeader = createComponent({
       */
     }
 
-    var isPageBody = post.nr === BodyPostId;
+    var isPageBody = post.nr === BodyNr;
     var by = isPageBody ? 'By ' : '';
     var isBodyPostClass = isPageBody ? ' dw-ar-p-hd' : '';
 
@@ -1205,7 +1205,7 @@ export var PostHeader = createComponent({
     // For flat replies, show "In response to" here inside the header instead,
     // rather than above the header — that looks better.
     var inReplyTo;
-    if (!abbreviate && isFlat && (post.parentId || post.multireplyPostIds.length)) {
+    if (!abbreviate && isFlat && (post.parentNr || post.multireplyPostNrs.length)) {
       inReplyTo = ReplyReceivers({ store: store, post: post, comma: true });
     }
 
