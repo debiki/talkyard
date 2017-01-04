@@ -301,7 +301,6 @@ class FirstPostsAppSpec extends ReviewStuffAppSuite("4FY2") {
       }
     },
 
-    /* How should this work? Skip for now
 
     new NestedPostsSuite {
       override def beforeAll {
@@ -313,6 +312,7 @@ class FirstPostsAppSpec extends ReviewStuffAppSuite("4FY2") {
 
       "PostsDao" - {
         "auto-approves chat messages, and doesn't let them interfere with discussion replies" in {
+          pending
           newAdminAndPage()
           val chatPageId = createPage(PageRole.OpenChat, TextAndHtml.testTitle("Chat Page 594284"),
             TextAndHtml.testBody("Purpose: 594284"), theAdmin.id, browserIdData, dao,
@@ -365,7 +365,7 @@ class FirstPostsAppSpec extends ReviewStuffAppSuite("4FY2") {
         }
       }
     },
-     */
+
 
     new NestedPostsSuite {
       override def beforeAll {
