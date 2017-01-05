@@ -17,6 +17,7 @@
 
 /// <reference path="../../typedefs/react/react.d.ts" />
 /// <reference path="../slim-bundle.d.ts" />
+/// <reference path="../util/UsernameInput.more.ts" />
 
 //------------------------------------------------------------------------------
    namespace debiki2.users {
@@ -46,7 +47,7 @@ export var UserPreferencesComponent = React.createClass({
 
     var preferences = isGuest(user)
         ? GuestPreferences({ guest: user })
-        : MemberPreferences({ user: user, me: me });
+        : MemberPreferences({ user: user, me: me, reloadUser: this.props.reloadUser });
 
     return (
       r.div({ className: 's_UP_Prefs' },
@@ -107,7 +108,42 @@ var GuestPreferences = createComponent({
 
 var MemberPreferences = createComponent({
   getInitialState: function() {
-    return {};
+    let user: CompleteUser = this.props.user;
+    return {
+      fullName: user.fullName,
+      username: user.username,
+    };
+  },
+
+  componentDidUnmount: function() {
+    this.isGone = true;
+  },
+
+  updateFullNameOk: function(newFullName: string, isOk: boolean) {
+    this.setState({
+      fullName: newFullName,
+      isFullNameBad: !isOk,
+    });
+  },
+
+  updateUsernameOk: function(newUsername: string, isOk: boolean) {
+    this.setState({
+      username: newUsername,
+      isUsernameBad: !isOk,
+    });
+  },
+
+  tryChangeUsername: function() {
+      util.openDefaultStupidDialog({
+        body: r.div({},
+          r.p({}, "You may change your username only a few times each year."),
+          r.p({}, "Changing it too often can make others confused — " +
+                    "they won't know how to @mention you.")) });
+      this.setState({ showUsernameInput: true });
+  },
+
+  badPrefs: function() {
+    return this.state.isUsernameBad || this.state.isFullNameBad;
   },
 
   savePrefs: function(event) {
@@ -115,8 +151,8 @@ var MemberPreferences = createComponent({
     var form = $(event.target);
     var prefs = {
       userId: this.props.user.id,
-      fullName: form.find('#fullName').val(),
-      username: this.props.user.username,
+      fullName: this.state.fullName,
+      username: this.state.username,
       emailAddress: form.find('#emailAddress').val(),
       about: form.find('#t_UP_Prefs_AboutMeTA').val(),
       url: form.find('#url').val(),
@@ -126,7 +162,12 @@ var MemberPreferences = createComponent({
     // be automatically fixed when I've ported everything to React and use
     // some global React state instead of cookies to remember the user name.
     Server.saveUserPreferences(prefs, () => {
-      this.setState({ savingStatus: 'Saved' });
+      if (this.isGone) return;
+      this.setState({
+        savingStatus: 'Saved',
+        showUsernameInput: false,
+      });
+      this.props.reloadUser(false);
     });
     this.setState({ savingStatus: 'Saving' });
   },
@@ -144,19 +185,31 @@ var MemberPreferences = createComponent({
       savingInfo = r.i({}, ' Saved.');
     }
 
+    let usernameStuff;
+    if (!this.state.showUsernameInput) {
+      usernameStuff =
+        r.div({ className: 'form-group' },
+          r.label({}, 'Username'),
+          r.div({},
+            r.samp({}, username),
+            r.button({ className: 'btn btn-default s_UP_Prefs_ChangeUNB',
+              onClick: this.tryChangeUsername }, "Change ...")));
+    }
+    else {
+      usernameStuff =
+        util.UsernameInput({ label: "Username", defaultValue: username, className: 's_UP_Prefs_UN',
+            onChangeValueOk: (value, isOk) => this.updateUsernameOk(value, isOk),
+            help: r.b({ className: 's_UP_Prefs_UN_Help' },
+              "You may change it only a few times each year") });
+    }
+
     return (
       r.form({ role: 'form', onSubmit: this.savePrefs },
 
-        r.div({ className: 'form-group' },
-          r.label({ htmlFor: 'fullName' }, 'Name (optional)'),
-          r.input({ className: 'form-control', id: 'fullName',
-              defaultValue: user.fullName })),
+        util.FullNameInput({ label: "Name (optional)", defaultValue: user.fullName,
+            onChangeValueOk: (newName, isOk) => this.updateFullNameOk(newName, isOk) }),
 
-        // Don't allow changing one's username right now. In the future, one should
-        // be allowed to change it but infrequently only.
-        r.div({ className: 'form-group' },
-          r.label({}, 'Username'),
-          r.p({}, username )),
+        usernameStuff,
 
         // Disable the email input — I've not implemented confirmation-emails-to-new-address
         // or any double-check-password-before-changing-email.
@@ -188,7 +241,7 @@ var MemberPreferences = createComponent({
                 defaultChecked: user.emailForEveryNewPost }),
               "Be notified about every new post (unless you mute the topic or category)")))),
 
-        InputTypeSubmit({ id: 'e2eUP_Prefs_SaveB', value: "Save" }),
+        InputTypeSubmit({ id: 'e2eUP_Prefs_SaveB', value: "Save", disabled: this.badPrefs() }),
         savingInfo));
 
     /* Discoruse's email options:

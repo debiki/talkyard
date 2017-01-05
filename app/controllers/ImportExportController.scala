@@ -193,8 +193,10 @@ object ImportExportController extends mvc.Controller {
 
       transaction.upsertSiteSettings(siteData.settings)
 
+      // ... insert old usernames too ...
+
       siteData.users foreach { user =>
-        transaction.insertAuthenticatedUser(user)
+        transaction.insertMember(user)
       }
       siteData.pages foreach { pageMeta =>
         //val newId = transaction.nextPageId()

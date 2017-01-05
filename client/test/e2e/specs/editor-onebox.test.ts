@@ -77,6 +77,7 @@ describe("editor onebox:", () => {
   });
 
   it("The image url gets converted to an onebox <img> tag", () => {
+    // Something in here timed out once.
     // Do this in two steps, so, if breaks, will be simpler to find out what's broken.
     owensBrowser.waitForVisible('#debiki-editor-controller .preview ' + dotOneboxClass);
     owensBrowser.waitForVisible('#debiki-editor-controller .preview ' + imageJpgOnebox);

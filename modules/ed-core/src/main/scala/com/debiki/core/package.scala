@@ -91,6 +91,7 @@ package object core {
     def toJavaDate = new java.util.Date(unixMillis)
     def toUnixMillis = unixMillis
     def daysSince(other: When) = (unixMillis - other.unixMillis) / OneMinuteInMillis / 60 / 24
+    def daysBetween(other: When) = math.abs(daysSince(other))
     def hoursSince(other: When) = (unixMillis - other.unixMillis) / OneMinuteInMillis / 60
     def minutesSince(other: When) = (unixMillis - other.unixMillis) / OneMinuteInMillis
     def millisSince(other: When) = unixMillis - other.unixMillis

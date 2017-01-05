@@ -102,13 +102,28 @@ object UserController extends mvc.Controller {
     if (emailOrUsername.contains("@") && !callerIsAdmin)
       throwForbidden("EsE4UPYW2", "Lookup by email not allowed")
 
-    if (emailOrUsername.contains("@"))
+    val isEmail = emailOrUsername.contains("@")
+    if (isEmail)
       throwNotImplemented("EsE5KY02", "Lookup by email not implemented")
 
     request.dao.readOnlyTransaction { transaction =>
       val member = transaction.loadMemberInclDetailsByUsername(emailOrUsername) getOrElse {
-        throwNotFound("EsE4PYW20", "User not found")
+        if (isEmail)
+          throwNotFound("EsE4PYW20", "User not found")
+
+        // Username perhaps changed? Then ought to update the url, browser side [8KFU24R]
+        val possibleUserIds = transaction.loadUsernameUsages(emailOrUsername).map(_.userId).toSet
+        if (possibleUserIds.isEmpty)
+          throwNotFound("EsEZ6F0U", "User not found")
+
+        if (possibleUserIds.size > 1)
+          throwNotFound("EsE4AK7B", "Many users with this username, weird")
+
+        val userId = possibleUserIds.head
+        transaction.loadMemberInclDetails(userId) getOrElse throwNotFound(
+          "EsE8PKU02", "User not found")
       }
+
       val callerIsUserHerself = request.user.exists(_.id == member.id)
       jsonForCompleteUser(member, Map.empty, callerIsAdmin = callerIsAdmin,
           callerIsStaff = callerIsStaff, callerIsUserHerself = callerIsUserHerself)
@@ -421,7 +436,7 @@ object UserController extends mvc.Controller {
     val staffOrSelf = request.theUser.isStaff || request.theUserId == prefs.userId
     if (!staffOrSelf)
       throwForbidden("DwE15KFE5", "Not your preferences")
-    request.dao.saveRolePreferences(prefs)
+    request.dao.saveMemberPreferences(prefs, request.who)
     Ok
   }
 

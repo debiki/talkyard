@@ -507,7 +507,7 @@ interface BriefUser {
 }
 
 
-interface CompleteUser {
+interface CompleteUser {  // RENAME to MemberInclDetails
   id: any;  // TODO change to number, and User.userId too
   createdAtEpoch: number;  // change to millis
   username: string;

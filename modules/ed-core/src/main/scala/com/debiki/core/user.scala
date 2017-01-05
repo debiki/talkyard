@@ -595,6 +595,22 @@ case class MemberPreferences(
 
 
 
+case class UsernameUsage(
+  username: String,
+  inUseFrom: When,
+  inUseTo: Option[When] = None,
+  userId: UserId,
+  firstMentionAt: Option[When] = None) {
+
+  require(!inUseTo.exists(_.unixMillis <= inUseFrom.unixMillis), "EdE7WKL42")
+  require(!firstMentionAt.exists(_.unixMillis < inUseFrom.unixMillis), "EdE2WKZ0A")
+  inUseTo foreach { toWhen =>
+    require(!firstMentionAt.exists(_.unixMillis > toWhen.unixMillis), "EdE7KG0S3")
+  }
+}
+
+
+
 object UnknownUser extends User {
   override def id: UserId = UnknownUserId
   override def email: String = ""

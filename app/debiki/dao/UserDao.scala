@@ -63,7 +63,7 @@ trait UserDao {
         throwForbidden("DwE8KFG4", o"""You have joined this site already, so this
              join-site invitation link does nothing. Thanks for clicking it anyway""")
 
-      val userId = transaction.nextAuthenticatedUserId
+      val userId = transaction.nextMemberId
       var newUser = invite.makeUser(userId, transaction.currentTime)
       val inviter = transaction.loadUser(invite.createdById) getOrDie "DwE5FKG4"
       if (inviter.isStaff) {
@@ -76,7 +76,9 @@ trait UserDao {
       invite = invite.copy(acceptedAt = Some(transaction.currentTime), userId = Some(userId))
 
       // COULD loop and append 1, 2, 3, ... until there's no username clash.
-      transaction.insertAuthenticatedUser(newUser)
+      transaction.insertMember(newUser)
+      transaction.insertUsernameUsage(UsernameUsage(
+        username = newUser.username, inUseFrom = transaction.now, userId = newUser.id))
       transaction.updateInvite(invite)
       (newUser, invite, false)
     }
@@ -304,12 +306,14 @@ trait UserDao {
 
   def createIdentityUserAndLogin(newUserData: NewUserData): LoginGrant = {
     val loginGrant = readWriteTransaction { transaction =>
-      val userId = transaction.nextAuthenticatedUserId
+      val userId = transaction.nextMemberId
       val user = newUserData.makeUser(userId, transaction.currentTime)
       val identityId = transaction.nextIdentityId
       val identity = newUserData.makeIdentity(userId = userId, identityId = identityId)
       ensureSiteActiveOrThrow(user, transaction)
-      transaction.insertAuthenticatedUser(user)
+      transaction.insertMember(user)
+      transaction.insertUsernameUsage(UsernameUsage(
+        username = user.username, inUseFrom = transaction.now, userId = user.id))
       transaction.insertIdentity(identity)
       LoginGrant(Some(identity), user.briefUser, isNewIdentity = true, isNewRole = true)
     }
@@ -343,10 +347,12 @@ trait UserDao {
       password = userData.password, username = userData.username,
       fullName = userData.name, email = userData.email)
     val user = readWriteTransaction { transaction =>
-      val userId = transaction.nextAuthenticatedUserId
+      val userId = transaction.nextMemberId
       val user = userData.makeUser(userId, transaction.currentTime)
       ensureSiteActiveOrThrow(user, transaction)
-      transaction.insertAuthenticatedUser(user)
+      transaction.insertMember(user)
+      transaction.insertUsernameUsage(UsernameUsage(
+        username = user.username, inUseFrom = transaction.now, userId = user.id))
       user.briefUser
     }
     memCache.fireUserCreated(user)
@@ -644,23 +650,60 @@ trait UserDao {
   }
 
 
-  def saveRolePreferences(preferences: MemberPreferences) = {
+  def saveMemberPreferences(preferences: MemberPreferences, byWho: Who) = {
     SECURITY // should create audit log entry. Should allow staff to change usernames.
-    BUG // the lost update bug.
+    BUG // the lost update bug (if staff + user henself changes the user's prefs at the same time)
     readWriteTransaction { transaction =>
       val user = transaction.loadTheMemberInclDetails(preferences.userId)
+      val me = transaction.loadTheMember(byWho.id)
+      require(me.isStaff || me.id == user.id, "EdE2WK7G4")
 
       // Perhaps there's some security problem that would results in a non-staff user
       // getting an email about each and every new post. So, for now:
       SECURITY // (Later, do some security review, add more tests, and remove this restriction.)
-      if (preferences.emailForEveryNewPost && !user.isStaff)
+      if (preferences.emailForEveryNewPost && (!user.isStaff || !me.isStaff))
         throwForbidden("EsE7YKF24", o"""Currently only staff may choose be notified about
           every new post""")
 
-      // For now, don't allow people to change their username. In the future, changing
-      // it should be alloowed, but only very infrequently? Or only the very first few days.
-      if (user.username != preferences.username)
-        throwForbidden("DwE44ELK9", "Must not modify one's username")
+      // Don't let people change their usernames too often.
+      if (user.username != preferences.username) {
+        val usersOldUsernames: Seq[UsernameUsage] = transaction.loadUsersOldUsernames(user.id)
+        val previousUsages = transaction.loadUsernameUsages(preferences.username)
+
+        // For now: (later, could allow, if never mentioned, after a grace period. Docs [8KFUT20])
+        val usagesByOthers = previousUsages.filter(_.userId != user.id)
+        if (usagesByOthers.nonEmpty)
+          throwForbidden("DwE5D0Y29",
+            "That username is, or has been, in use by someone else. You cannot use it.")
+
+        val maxPerYearTotal = me.isStaff ? 20 | 9
+        val maxPerYearDistinct = me.isStaff ? 8 | 3
+
+        val recentUsernames = usersOldUsernames.filter(
+            _.inUseFrom.daysBetween(transaction.now) < 365)
+        if (recentUsernames.length >= maxPerYearTotal)
+          throwForbidden("DwE5FKW02",
+            "You have changed your username too many times the past year")
+
+        val recentDistinct = recentUsernames.map(_.username).toSet
+        def yetAnotherNewName = !recentDistinct.contains(preferences.username)
+        if (recentDistinct.size >= maxPerYearDistinct && yetAnotherNewName)
+          throwForbidden("DwE7KP4ZZ",
+            "You have changed to different usernames too many times the past year")
+
+        val anyUsernamesToStopUsingNow = usersOldUsernames.filter(_.inUseTo.isEmpty)
+        anyUsernamesToStopUsingNow foreach { usage: UsernameUsage =>
+          val usageStopped = usage.copy(inUseTo = Some(transaction.now))
+          transaction.updateUsernameUsage(usageStopped)
+        }
+
+        transaction.insertUsernameUsage(UsernameUsage(
+          username = preferences.username,
+          inUseFrom = transaction.now,
+          inUseTo = None,
+          userId = user.id,
+          firstMentionAt = None))
+      }
 
       // For now, don't allow the user to change his/her email. I haven't
       // implemented any related security checks, e.g. verifying with the old address

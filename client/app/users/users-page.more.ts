@@ -140,16 +140,16 @@ var UserPageComponent = React.createClass(<any> {
     this.context.router.push('/-/users/' + this.props.params.usernameOrId + '/' + subPath);
   },
 
-  loadCompleteUser: function() {
+  loadCompleteUser: function(redirectToCorrectUsername) {
     var usernameOrId = this.props.params.usernameOrId;
     Server.loadCompleteUser(usernameOrId, (user) => {
       if (this.willUnmount) return;
       this.setState({ user: user });
       // 1) In case the user has changed his/her username, and userIdOrUsername is his/her *old*
-      // name, user.username will be the current name — then show the current name in the url.
+      // name, user.username will be the current name — then show current name in the url [8KFU24R].
       // Also 2) if user id specified, and the user is a member (they have usernames) show
       // username instead,
-      if (user.username && user.username !== usernameOrId) {
+      if (user.username && user.username !== usernameOrId && redirectToCorrectUsername !== false) {
         this.context.router.replace('/-/users/' + user.username);
       }
     }, () => {

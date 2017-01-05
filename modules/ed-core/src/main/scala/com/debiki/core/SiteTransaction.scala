@@ -265,8 +265,8 @@ trait SiteTransaction {
   def insertIdentity(Identity: Identity)
   def loadIdtyDetailsAndUser(userId: UserId): Option[(Identity, User)]
 
-  def nextAuthenticatedUserId: UserId
-  def insertAuthenticatedUser(user: MemberInclDetails)
+  def nextMemberId: UserId
+  def insertMember(user: MemberInclDetails)
 
   def tryLogin(loginAttempt: LoginAttempt): LoginGrant
   def loginAsGuest(loginAttempt: GuestLoginAttempt): GuestLoginResult
@@ -281,6 +281,11 @@ trait SiteTransaction {
   // def updateMember(user: Member): Boolean — could add, [6DCU0WYX2]
   def updateMemberInclDetails(user: MemberInclDetails): Boolean
   def updateGuest(guest: Guest): Boolean
+
+  def insertUsernameUsage(usage: UsernameUsage)
+  def updateUsernameUsage(usage: UsernameUsage)
+  def loadUsersOldUsernames(userId: UserId): Seq[UsernameUsage]
+  def loadUsernameUsages(username: String): Seq[UsernameUsage]
 
   def loadUser(userId: UserId): Option[User]
   def loadTheUser(userId: UserId) = loadUser(userId).getOrElse(throw UserNotFoundException(userId))
