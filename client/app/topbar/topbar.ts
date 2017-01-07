@@ -208,7 +208,7 @@ export var TopBar = createComponent({
     var talkToOthersNotfs = makeNotfIcon('toOthers', me.numTalkToOthersNotfs);
     var otherNotfs = makeNotfIcon('other', me.numOtherNotfs);
 
-    let isImpersonatingClass;
+    let isImpersonatingClass = '';
     let impersonatingStrangerInfo;
     if (store.isImpersonating) {
       isImpersonatingClass = ' s_MMB-IsImp';

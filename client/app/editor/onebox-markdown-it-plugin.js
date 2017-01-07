@@ -27,7 +27,7 @@ var pluginId = 'Onebox';
 debiki.internal.oneboxMarkdownItPlugin = function(md) {
   md.block.ruler.before('paragraph', pluginId, parseOnebox);
   md.renderer.rules[pluginId] = renderOnebox;
-}
+};
 
 
 function parseOnebox(state, startLineIndex, endLineIndex, whatIsThis) {
@@ -39,7 +39,8 @@ function parseOnebox(state, startLineIndex, endLineIndex, whatIsThis) {
   if (nextLine)
     return false;
 
-  if (state.parentType !== 'root')
+  if (state.parentType !== 'root' &&     // works with markdown-it 7
+      state.parentType !== 'paragraph')  // works with markdown-it 8
     return false; // not a top level block
 
   var match = startLine.match(/^https?:\/\/[^\s]+\s*$/);
@@ -57,7 +58,7 @@ function parseOnebox(state, startLineIndex, endLineIndex, whatIsThis) {
   token.link = link;
   token.level = state.level;
   return true;
-};
+}
 
 
 function renderOnebox(tokens, index, options, env, renderer) {
