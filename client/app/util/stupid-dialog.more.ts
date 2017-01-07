@@ -35,6 +35,7 @@ export interface StupidDialogStuff {
   body?: any;
   closeButtonTitle?: any;
   small?: boolean,
+  onCloseOk?: () => void,
 }
 
 
@@ -72,6 +73,10 @@ export var StupidDialog = createComponent({
 
   close: function() {
     this.setState({ isOpen: false });
+    var stuff: StupidDialogStuff = this.state.stuff || {};
+    if (stuff.onCloseOk) {
+      stuff.onCloseOk();
+    }
   },
 
   render: function () {

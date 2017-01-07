@@ -432,7 +432,13 @@ export function makeImpersionateUserAtOtherSiteUrl(siteId: SiteId, userId: UserI
 export function impersonateGoToHomepage(userId: UserId) {
   postJsonSuccess('/-/impersonate?userId=' + userId, () => {
     location.assign('/');
+    location.reload(); // in case we were at / already? Not sure if needed.
   }, null);
+}
+
+
+export function viewAsOther(userId: UserId, success: () => void) {
+  postJsonSuccess(`/-/view-as-other?userId=${userId}`, success, null);
 }
 
 

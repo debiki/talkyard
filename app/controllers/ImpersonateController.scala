@@ -30,15 +30,22 @@ import scala.concurrent.Await
 import scala.concurrent.duration._
 
 
-/** Lets admins and super admins impersonate others, e.g. to troubleshoot some problem
+/** 1) Lets admins and super admins impersonate others, e.g. to troubleshoot some problem
   * that happens to a certain user only, or testing permission settings.
+  *
+  * And 2) lets staff view the site, in read-only mode, as strangers, guests, normal members,
+  * or member of some group. Only partly implemented (2017-01).
   */
 object ImpersonateController extends mvc.Controller {
 
   val MaxBecomeOldUserSeconds = 3600
   val MaxKeyAgeSeconds = 3600
+
+  // This stuff is used client side too. [8AXFC0J2]
   private val ImpersonationCookieName = "esCoImp"
   private val FieldSeparator = '.'
+  private val ViewAsGroupOnly = "VAO"
+  private val ImpersonateRealUser = "IRU"
 
   private def redis: RedisClient = Globals.redisClient
   val RedisTimeout = 5 seconds
@@ -91,19 +98,61 @@ object ImpersonateController extends mvc.Controller {
 
 
   def impersonate(userId: UserId) = AdminGetAction { request =>
-    val cookies = makeCookiesToImpersonate(request.siteId, userId, request.theUserId)
-    Ok.withCookies(cookies: _*)
+    impersonateImpl(Some(userId), viewAsOnly = false, request)
   }
 
 
-  private def makeCookiesToImpersonate(siteId: SiteId, userId: UserId, currentUserId: UserId) = {
-    val (_, _, sidAndXsrfCookies) = Xsrf.newSidAndXsrf(siteId, userId)
+  def viewAsOther(userId: Int) = StaffGetAction { request =>
+    // Ensure userId is a group the requester has access to. Right now, there are no groups,
+    // so only allow strangers, that is, the unknown user:
+    val anyUserId =
+      if (userId == NoUserId) None
+      else {
+        // For now
+        throwForbidden("EdE5FK2AH6", "May only view as stranger")
+      }
+    impersonateImpl(anyUserId, viewAsOnly = true, request)
+  }
+
+
+  private def impersonateImpl(anyUserId: Option[UserId], viewAsOnly: Boolean,
+        request: DebikiRequest[_]) = {
+
+    // To view as another user, the session id should be amended so it includes info like:
+    // "We originally logged in as Nnn and now we're viewing as Nnn2." And pages should be shown
+    // only if _both_ Nnn and Nnn2 may view them. — Not yet implemented, only view-as-stranger
+    // supported right now.
+    dieIf(anyUserId.isDefined && viewAsOnly, "EdE6WKT0S")
+
+    val sidAndXsrfCookies = anyUserId.toList flatMap { userId =>
+      Xsrf.newSidAndXsrf(request.siteId, userId)._3
+    }
+
+    val logoutCookie =
+      if (anyUserId.isEmpty) Seq(LoginController.DiscardingSessionCookie)
+      else Nil
+
+    val impCookie = makeImpersonationCookie(request.siteId, viewAsOnly, request.theUserId)
+    val newCookies = impCookie :: sidAndXsrfCookies
+
+    request.dao.pubSub.unsubscribeUser(request.siteId, request.theUser, request.theBrowserIdData)
+    // Let's not subscribe to events for the user we'll be viewing the site as. Doing that
+    // wouldn't be the purpose of view-site-as.
+    BUG ; SHOULD // resubscribe hen though.
+
+    Ok.withCookies(newCookies: _*).discardingCookies(logoutCookie: _*)
+  }
+
+
+  private def makeImpersonationCookie(siteId: SiteId, viewAsGroupOnly: Boolean,
+      currentUserId: UserId) = {
     val randomString = nextRandomString()
     val unixSeconds = When.now().numSeconds
-    val cookieValue = concatAndHash(currentUserId, unixSeconds, randomString)
+    val cookieValue = concatAndHash(currentUserId, viewAsGroupOnly = viewAsGroupOnly,
+      unixSeconds, randomString)
     val impersonatingCookie = SecureCookie(name = ImpersonationCookieName,
       value = cookieValue, maxAgeSeconds = Some(MaxBecomeOldUserSeconds))
-    impersonatingCookie :: sidAndXsrfCookies
+    impersonatingCookie
   }
 
 
@@ -127,9 +176,11 @@ object ImpersonateController extends mvc.Controller {
   }
 
 
-  private def concatAndHash(userId: UserId, unixSeconds: Long, randomString: String) = {
+  private def concatAndHash(userId: UserId, viewAsGroupOnly: Boolean, unixSeconds: Long,
+        randomString: String) = {
     val CFS = FieldSeparator
-    val toHash = s"$userId$CFS$unixSeconds$CFS$randomString"
+    val viewOnlyString = viewAsGroupOnly ? ViewAsGroupOnly | ImpersonateRealUser
+    val toHash = s"$userId$CFS$viewOnlyString$CFS$unixSeconds$CFS$randomString"
     val theHash = hashSha1Base64UrlSafe(toHash + CFS + Globals.applicationSecret)
     s"$toHash$CFS$theHash"
   }
@@ -137,14 +188,19 @@ object ImpersonateController extends mvc.Controller {
 
   private def throwIfBadHashElseGetAgeAndUserId(value: String): (Long, UserId) = {
     val parts = value.split(FieldSeparator)
-    if (parts.length != 4)
+    if (parts.length != 5)
       throwForbidden(
         "EsE4YK82", s"Bad $ImpersonationCookieName cookie: ${parts.length} parts, not 4")
 
     val oldUserId = parts(0).toIntOrThrow("EsE8IKPW2", "Old user id is not a number")
-    val unixSeconds = parts(1).toLongOrThrow("EsE4YK0W2", "Unix seconds is not a number")
-    val randomString = parts(2)
-    val correctCookieValue = concatAndHash(oldUserId, unixSeconds, randomString)
+    val viewAsGroupOnly = parts(1) match {
+      case ViewAsGroupOnly => true
+      case ImpersonateRealUser => false
+      case bad => throwForbidden("EdE2WK6PX", s"Bad view-only field")
+    }
+    val unixSeconds = parts(2).toLongOrThrow("EsE4YK0W2", "Unix seconds is not a number")
+    val randomString = parts(3)
+    val correctCookieValue = concatAndHash(oldUserId, viewAsGroupOnly, unixSeconds, randomString)
     if (value != correctCookieValue)
       throwForbidden("EsE6YKP2", s"Bad hash")
 

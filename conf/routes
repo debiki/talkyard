@@ -42,6 +42,7 @@ POST  /-/make-impersonate-other-site-url controllers.ImpersonateController.makeI
 GET   /-/make-impersonate-other-site-url controllers.ImpersonateController.makeImpersonateOtherSiteUrl(siteId, userId: Int)
 GET   /-/impersonate-with-key   controllers.ImpersonateController.impersonateWithKey(key: String)
 POST  /-/impersonate            controllers.ImpersonateController.impersonate(userId: Int)
+POST  /-/view-as-other          controllers.ImpersonateController.viewAsOther(userId: Int)
 POST  /-/stop-impersonating     controllers.ImpersonateController.stopImpersonating
 
 GET   /-/api/logout             controllers.LoginController.logout

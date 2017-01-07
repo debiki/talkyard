@@ -235,7 +235,7 @@ function pagesFor(browser) {
         let oldName = api.topbar.getMyUsername();
         let newName;
         api.topbar.openMyMenu();
-        api.waitAndClick('#e2eMM_StopImp');
+        api.waitAndClick('.s_MM_StopImpB');
         browser.waitForVisible(api.userProfilePage.avatarAboutButtonsSelector);
         do {
           newName = api.topbar.getMyUsername();

@@ -136,7 +136,7 @@ var MemberPreferences = createComponent({
   tryChangeUsername: function() {
       util.openDefaultStupidDialog({
         body: r.div({},
-          r.p({}, "You may change your username only a few times each year."),
+          r.p({}, "You may change your username only a few times."),
           r.p({}, "Changing it too often can make others confused — " +
                     "they won't know how to @mention you.")) });
       this.setState({ showUsernameInput: true });
@@ -200,7 +200,7 @@ var MemberPreferences = createComponent({
         util.UsernameInput({ label: "Username", defaultValue: username, className: 's_UP_Prefs_UN',
             onChangeValueOk: (value, isOk) => this.updateUsernameOk(value, isOk),
             help: r.b({ className: 's_UP_Prefs_UN_Help' },
-              "You may change it only a few times each year") });
+              "You may change it only a few times.") });
     }
 
     return (

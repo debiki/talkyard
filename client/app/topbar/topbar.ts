@@ -208,11 +208,30 @@ export var TopBar = createComponent({
     var talkToOthersNotfs = makeNotfIcon('toOthers', me.numTalkToOthersNotfs);
     var otherNotfs = makeNotfIcon('other', me.numOtherNotfs);
 
-    var avatarNameDropdown = !me.isLoggedIn ? null :
-      Button({ onClick: this.openMyMenu, className: 'esAvtrName esMyMenu', ref: 'myMenuButton' },
+    let isImpersonatingClass;
+    let impersonatingStrangerInfo;
+    if (store.isImpersonating) {
+      isImpersonatingClass = ' s_MMB-IsImp';
+      if (!me.isLoggedIn) {
+        isImpersonatingClass += ' s_MMB-IsImp-Stranger';
+        impersonatingStrangerInfo = "Viewing as stranger";
+        // SECURITY COULD add a logout button, so won't need to first click stop-viewing-as,
+        // and then also click Logout. 2 steps = a bit risky, 1 step = simpler, safer.
+      }
+    }
+
+    let myAvatar = !me.isLoggedIn ? null :
+        avatar.Avatar({ user: me, tiny: true, ignoreClicks: true });
+
+    var avatarNameDropdown = !me.isLoggedIn && !impersonatingStrangerInfo ? null :
+      Button({ onClick: this.openMyMenu,
+          // RENAME 'esAvtrName' + 'esMyMenu' to 's_MMB' (my-menu button).
+          className: 'esAvtrName esMyMenu' + isImpersonatingClass,
+          ref: 'myMenuButton' },
         urgentReviewTasks,
         otherReviewTasks,
-        avatar.Avatar({ user: me, tiny: true, ignoreClicks: true }),
+        impersonatingStrangerInfo,
+        myAvatar,
         r.span({ className: 'esAvtrName_name' }, me.username || me.fullName), // if screen wide
         r.span({ className: 'esAvtrName_you' }, "You"), // if screen narrow
         talkToMeNotfs,
@@ -224,7 +243,8 @@ export var TopBar = createComponent({
 
     // Don't show Log In on info pages, like a custom HTML homepage or About pages — that
     // has so far only made people confused.
-    var hideLogInAndSignUp = me.isLoggedIn || page_isInfoPage(pageRole);
+    var hideLogInAndSignUp =
+        me.isLoggedIn || page_isInfoPage(pageRole) || impersonatingStrangerInfo;
 
     var signupButton = hideLogInAndSignUp ? null :
       PrimaryButton({ className: 'dw-login esTopbar_signUp', onClick: this.onSignUpClick },

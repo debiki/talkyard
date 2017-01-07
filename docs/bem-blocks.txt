@@ -56,7 +56,8 @@ esLD_G          = guest login
 
 esMB            = topic metabar (just below the Orig Post, before all replies)
 
-es/e2eMM        = my menu (one's avatar + username, in the topbar)
+s_MMB-IsImp     = my menu button, is-impersonating
+s_MM            = my menu (one's avatar + username, in the topbar)
 
 s_NP            = No page, i.e. login-&-create-something-here stuff
 
@@ -125,6 +126,9 @@ esPw            = password
 esOb            = onebox
 
 esTTD           = Topic type dropdown
+
+s_VAD           = View As dialog
+s_VAD_Sbd       = Somebody to view as
 
 esWB            = watchbar (the left sidebar)
 esWB_T          = watchbar topic

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014-2016 Kaj Magnus Lindberg
+ * Copyright (C) 2014-2017 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -18,6 +18,7 @@
 /// <reference path="../../typedefs/react/react.d.ts" />
 /// <reference path="../slim-bundle.d.ts" />
 /// <reference path="../notification/Notification.more.ts" />
+/// <reference path="../page-dialogs/view-as-dialog.more.ts" />
 
 //------------------------------------------------------------------------------
    namespace debiki2.topbar {
@@ -63,6 +64,10 @@ var MyMenuDropdownModal = createComponent({
     debiki2.ReactActions.logout();
   },
 
+  viewAsOther: function() {
+    pagedialogs.openViewAsDialog();
+  },
+
   viewOlderNotfs: function() {
     ReactActions.goToUsersNotifications(this.state.store.user.userId);
   },
@@ -105,27 +110,69 @@ var MyMenuDropdownModal = createComponent({
 
       // ------- Stop impersonating
 
-      var stopImpersonatingMenuItem = !store.isImpersonating ? null :
-          MenuItem({ onClick: Server.stopImpersonatingReloadPage,
-              id: 'e2eMM_StopImp' }, "Stop impersonating");
+      let isViewingAsHint;
+      let stopImpersonatingMenuItem;
+      let notYourMenuHint;
+      let impersonationStuffDivider;
+      let viewAsOtherItem;
+
+      if (store.isImpersonating) {
+        isViewingAsHint = store.isViewingAs
+            ? "You're viewing this site as someone else."
+            : "You're impersonating another user.";
+        isViewingAsHint = r.p({ className: 's_MM_ImpInfo' }, isViewingAsHint);
+        stopImpersonatingMenuItem = !store.isImpersonating ? null :
+            MenuItem({ onClick: Server.stopImpersonatingReloadPage, className: 's_MM_StopImpB' },
+              store.isViewingAs ? "Stop viewing as other" : "Stop impersonating");
+        if (me.isLoggedIn) {
+          notYourMenuHint = r.div({className: 's_MM_ImpNotYour'},
+            "The menu items below are for that other user.");
+          impersonationStuffDivider = MenuItemDivider();
+        }
+      }
+      else if (isStaff(me)) {
+        viewAsOtherItem =
+            MenuItem({ onClick: this.viewAsOther, className: 's_MM_ViewAsB' },
+              "View this site as ...");
+      }
+
+      // ------- The current user
+
+      let viewProfileMenuItem;
+      let logoutMenuItem;
+      let myStuffDivider;
+      let unhideHelpMenuItem;
+      if (me.isLoggedIn) {
+        viewProfileMenuItem =
+            MenuItemLink({ href: linkToMyProfilePage(store), id: 'e2eMM_Profile' },
+              "View/edit your profile");
+        logoutMenuItem =
+            MenuItem({ onClick: this.onLogoutClick, id: 'e2eMM_Logout' }, "Log out");
+        myStuffDivider = MenuItemDivider();
+        unhideHelpMenuItem =
+          MenuItem({ onClick: ReactActions.showHelpMessagesAgain },
+            r.span({ className: 'icon-help' }, "Unhide help messages"))
+      }
 
       // ------- The menu
 
       menuContent =
         r.ul({ className: 'dropdown-menu', onClick: this.close },
+          isViewingAsHint,
+          stopImpersonatingMenuItem,
+          notYourMenuHint,
+          impersonationStuffDivider,
           adminMenuItem,
           adminHelpLink,
           reviewMenuItem,
           (adminMenuItem || reviewMenuItem) ? MenuItemDivider() : null,
-          MenuItemLink({ href: linkToMyProfilePage(store), id: 'e2eMM_Profile' },
-            "View/edit your profile"),
-          MenuItem({ onClick: this.onLogoutClick, id: 'e2eMM_Logout' }, "Log out"),
-          stopImpersonatingMenuItem,
+          viewProfileMenuItem,
+          viewAsOtherItem,
+          logoutMenuItem,
           notfsDivider,
           notfsElems,
-          MenuItemDivider(),
-          MenuItem({ onClick: ReactActions.showHelpMessagesAgain },
-            r.span({ className: 'icon-help' }, "Unhide help messages")));
+          myStuffDivider,
+          unhideHelpMenuItem);
     }
 
 

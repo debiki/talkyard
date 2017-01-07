@@ -25,6 +25,7 @@ var TitleNr = 0;
 var BodyNr = 1;
 var FirstReplyNr = 2;
 
+let NoUserId = 0;
 var SystemUserId = -1;
 var MinMemberId = SystemUserId;
 
