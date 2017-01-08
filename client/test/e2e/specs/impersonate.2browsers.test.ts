@@ -98,9 +98,9 @@ describe("impersonate", () => {
   });
 
   it("... goes to preferences and changes the full name", () => {
-    owen.waitAndClick('#e2eUP_PrefsB');
-    owen.waitAndSetValue('#fullName', marilonFullName);
-    owen.waitAndClick('#e2eUP_Prefs_SaveB');
+    owen.userProfilePage.clickGoToPreferences();
+    owen.userProfilePage.preferences.setFullName(marilonFullName);
+    owen.userProfilePage.preferences.save();
     owen.refresh();
     owen.userProfilePage.assertUsernameIs(maria.username);
     owen.userProfilePage.assertFullNameIs(marilonFullName);

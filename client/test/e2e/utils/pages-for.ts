@@ -1161,6 +1161,11 @@ function pagesFor(browser) {
         browser.go((origin || '') + `/-/users/${who}/notifications`);
       },
 
+      clickGoToPreferences: function() {
+        browser.waitAndClick('#e2eUP_PrefsB');
+        browser.waitForVisible('.e_UP_Prefs_FN');
+      },
+
       isNotfsTabVisible: function() {
         // The activity tab is always visible, if the notfs tab can possibly be visible.
         browser.waitForVisible('.e_UP_ActivityB');
@@ -1281,6 +1286,16 @@ function pagesFor(browser) {
           browser.waitForVisible('.e_UP_Notfs_Err');
           browser.assertTextMatches('.e_UP_Notfs_Err', 'EdE7WK2L_');
         }
+      },
+
+      preferences: {
+        setFullName: function(fullName: string) {
+          browser.waitAndSetValue('.e_UP_Prefs_FN input', fullName);
+        },
+
+        save: function() {
+          browser.waitAndClick('#e2eUP_Prefs_SaveB');
+        },
       }
     },
 

@@ -49,7 +49,7 @@ export var Input = createComponent({
     let isRadio = props.type === 'radio';
     if (isCheckbox || isRadio) {
       result = (
-        r.div({ className: 'form-group' },
+        r.div({ className: 'form-group ' + (props.className || '') },
           r.div({ className: props.wrapperClassName },
             (isRadio ? Radio : Checkbox).call(null, childProps, props.label),
             r.span({ className: 'help-block' },
@@ -57,14 +57,14 @@ export var Input = createComponent({
     }
     else if (props.type === 'custom') {
       result = (
-        FormGroup({},
+        FormGroup({ className: this.props.className },
           props.label && ControlLabel({ className: props.labelClassName }, props.label),
           r.div({ className: props.wrapperClassName },
             props.children)));
     }
     else {
       result = (
-        FormGroup({},
+        FormGroup({ className: this.props.className },
           props.label && ControlLabel({ className: props.labelClassName }, props.label),
           r.div({ className: props.wrapperClassName },
             r.div({ className: 'input-group' },

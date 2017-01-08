@@ -207,6 +207,7 @@ var MemberPreferences = createComponent({
       r.form({ role: 'form', onSubmit: this.savePrefs },
 
         util.FullNameInput({ label: "Name (optional)", defaultValue: user.fullName,
+            className: 'e_UP_Prefs_FN',
             onChangeValueOk: (newName, isOk) => this.updateFullNameOk(newName, isOk) }),
 
         usernameStuff,
