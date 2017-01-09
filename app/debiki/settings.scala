@@ -54,7 +54,7 @@ trait AllSettings {
   def contribAgreement: ContribAgreement
   def contentLicense: ContentLicense
   def googleUniversalAnalyticsTrackingId: String
-  def showComplicatedStuff: Boolean
+  def showExperimental: Boolean
   def htmlTagCssClasses: String
 
   def numFlagsToHidePost: Int
@@ -94,7 +94,7 @@ trait AllSettings {
     contribAgreement = Some(self.contribAgreement),
     contentLicense = Some(self.contentLicense),
     googleUniversalAnalyticsTrackingId = Some(self.googleUniversalAnalyticsTrackingId),
-    showComplicatedStuff = Some(self.showComplicatedStuff),
+    showExperimental = Some(self.showExperimental),
     htmlTagCssClasses = Some(self.htmlTagCssClasses),
     numFlagsToHidePost = Some(self.numFlagsToHidePost),
     cooldownMinutesAfterFlaggedHidden = Some(self.cooldownMinutesAfterFlaggedHidden),
@@ -143,7 +143,7 @@ object AllSettings {
     var contribAgreement = ContribAgreement.CcBy3And4
     var contentLicense = ContentLicense.CcBySa4
     val googleUniversalAnalyticsTrackingId = ""
-    val showComplicatedStuff = false
+    val showExperimental = false
     val htmlTagCssClasses = ""
     def numFlagsToHidePost = 3
     def cooldownMinutesAfterFlaggedHidden = 10
@@ -194,7 +194,7 @@ case class EffectiveSettings(
   def contribAgreement: ContribAgreement = firstInChain(_.contribAgreement) getOrElse default.contribAgreement
   def contentLicense: ContentLicense = firstInChain(_.contentLicense) getOrElse default.contentLicense
   def googleUniversalAnalyticsTrackingId: String = firstInChain(_.googleUniversalAnalyticsTrackingId) getOrElse default.googleUniversalAnalyticsTrackingId
-  def showComplicatedStuff: Boolean = firstInChain(_.showComplicatedStuff) getOrElse default.showComplicatedStuff
+  def showExperimental: Boolean = firstInChain(_.showExperimental) getOrElse default.showExperimental
   def htmlTagCssClasses: String = firstInChain(_.htmlTagCssClasses) getOrElse default.htmlTagCssClasses
 
   def numFlagsToHidePost: Int = firstInChain(_.numFlagsToHidePost) getOrElse default.numFlagsToHidePost
@@ -250,7 +250,7 @@ object Settings2 {
       "contribAgreement" -> JsNumberOrNull(s.contribAgreement.map(_.toInt)),
       "contentLicense" -> JsNumberOrNull(s.contentLicense.map(_.toInt)),
       "googleUniversalAnalyticsTrackingId" -> JsStringOrNull(s.googleUniversalAnalyticsTrackingId),
-      "showComplicatedStuff" -> JsBooleanOrNull(s.showComplicatedStuff),
+      "showExperimental" -> JsBooleanOrNull(s.showExperimental),
       "htmlTagCssClasses" -> JsStringOrNull(s.htmlTagCssClasses),
       "numFlagsToHidePost" -> JsNumberOrNull(s.numFlagsToHidePost),
       "cooldownMinutesAfterFlaggedHidden" -> JsNumberOrNull(s.cooldownMinutesAfterFlaggedHidden),
@@ -293,7 +293,7 @@ object Settings2 {
       ContentLicense.fromInt(_) getOrElse throwBadRequest("EsE5YK28", "Invalid content license"))),
     googleUniversalAnalyticsTrackingId =
       anyString(json, "googleUniversalAnalyticsTrackingId", d.googleUniversalAnalyticsTrackingId),
-    showComplicatedStuff = anyBool(json, "showComplicatedStuff", d.showComplicatedStuff),
+    showExperimental = anyBool(json, "showExperimental", d.showExperimental),
     htmlTagCssClasses = anyString(json, "htmlTagCssClasses", d.htmlTagCssClasses),
     numFlagsToHidePost = anyInt(json, "numFlagsToHidePost", d.numFlagsToHidePost),
     cooldownMinutesAfterFlaggedHidden = anyInt(json, "cooldownMinutesAfterFlaggedHidden", d.cooldownMinutesAfterFlaggedHidden  ),

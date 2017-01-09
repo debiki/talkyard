@@ -107,7 +107,7 @@ object ReactJson {
       "userMustBeApproved" -> JsBoolean(siteSettings.userMustBeApproved),
       "settings" -> Json.obj(
         "allowGuestLogin" -> JsBoolean(siteSettings.isGuestLoginAllowed),
-        "showComplicatedStuff" -> JsBoolean(siteSettings.showComplicatedStuff)),
+        "showExperimental" -> JsBoolean(siteSettings.showExperimental)),
       "pageId" -> pageReq.thePageId,
       "pageRole" -> JsNumber(pageReq.thePageRole.toInt),
       "pagePath" -> JsPagePath(pageReq.pagePath),
@@ -250,7 +250,7 @@ object ReactJson {
       "userMustBeApproved" -> JsBoolean(siteSettings.userMustBeApproved),
       "settings" -> Json.obj(
         "allowGuestLogin" -> JsBoolean(siteSettings.isGuestLoginAllowed),
-        "showComplicatedStuff" -> JsBoolean(siteSettings.showComplicatedStuff)),
+        "showExperimental" -> JsBoolean(siteSettings.showExperimental)),
       "pageId" -> pageId,
       "pageMemberIds" -> pageMemberIds,
       "categoryId" -> JsNumberOrNull(page.meta.categoryId),
@@ -314,7 +314,7 @@ object ReactJson {
       "userMustBeApproved" -> JsBoolean(siteSettings.userMustBeApproved),
       "settings" -> Json.obj(
         "allowGuestLogin" -> JsBoolean(siteSettings.isGuestLoginAllowed),
-        "showComplicatedStuff" -> JsBoolean(siteSettings.showComplicatedStuff)),
+        "showExperimental" -> JsBoolean(siteSettings.showExperimental)),
       // (WOULD move 'me' to the volatile json; suddenly having it here in the main json is
       // a bit surprising.) CLEAN_UP
       "me" -> userNoPageToJson(request),

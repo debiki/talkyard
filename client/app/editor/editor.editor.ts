@@ -894,7 +894,7 @@ export var Editor = createComponent({
 
       if (this.state.newPageRole) {
         pageRoleDropdown = PageRoleDropdown({ store: store, pageRole: this.state.newPageRole,
-            complicated: store.settings.showComplicatedStuff,
+            complicated: store.settings.showExperimental,
             onSelect: this.changeNewForumPageRole,
             title: 'Topic type', className: 'esEdtr_titleEtc_pageRole' });
       }

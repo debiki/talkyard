@@ -733,9 +733,9 @@ var ExperimentalSettingsComponent = React.createClass(<any> {
         Setting2(props, { type: 'checkbox', label: "Experimental",
           help: "Enables some currently not-well-tested features " +
           "like Wiki MindMaps and custom HTML pages.",
-          getter: (s: Settings) => s.showComplicatedStuff,
+          getter: (s: Settings) => s.showExperimental,
           update: (newSettings: Settings, target) => {
-            newSettings.showComplicatedStuff = target.checked;
+            newSettings.showExperimental = target.checked;
           }
         })));
   }

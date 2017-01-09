@@ -422,7 +422,7 @@ interface SiteSettings {
   allowSignup: boolean;
   allowLocalSignup: boolean;
   allowGuestLogin: boolean;
-  showComplicatedStuff: boolean;
+  showExperimental: boolean;
   numFlagsToHidePost: number;
 }
 
@@ -704,7 +704,7 @@ interface Settings {
 
   googleUniversalAnalyticsTrackingId: string;
 
-  showComplicatedStuff: boolean;
+  showExperimental: boolean;
 }
 
 

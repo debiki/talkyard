@@ -187,7 +187,7 @@ export var TitleEditor = createComponent({
                 "into the <html><head><meta name='description' content='...'> attribute." }));
 
 
-      var anyUrlAndCssClassEditor = !store.settings.showComplicatedStuff ? null :
+      var anyUrlAndCssClassEditor = !store.settings.showExperimental ? null :
         r.div({ className: 'esTtlEdtr_urlSettings' },
           r.p({}, r.b({}, "Ignore this "), "— unless you understand URL addresses and CSS."),
           Input({ label: 'Page slug', type: 'text', ref: 'slugInput', className: 'dw-i-slug',
@@ -226,7 +226,7 @@ export var TitleEditor = createComponent({
           : r.a({ className: 'esTtlEdtr_openAdv icon-wrench', onClick: this.showLayoutAndSettings },
               "Layout and settings");
 
-    let existsAdvStuffToEdit = pageRole === PageRole.Forum || store.settings.showComplicatedStuff;
+    let existsAdvStuffToEdit = pageRole === PageRole.Forum || store.settings.showExperimental;
     let advancedStuffButton = !existsAdvStuffToEdit ||
         this.state.showComplicated || !user.isAdmin || pageRole === PageRole.FormalMessage
           ? null
@@ -251,7 +251,7 @@ export var TitleEditor = createComponent({
           wrapperClassName: 'col-xs-10' },
         editor.PageRoleDropdown({ store: store, pageRole: this.state.pageRole,
           onSelect: this.onPageRoleChanged, pullLeft: true,
-          complicated: store.settings.showComplicatedStuff,
+          complicated: store.settings.showExperimental,
           title: 'Topic type', className: 'esEdtr_titleEtc_pageRole',
           help: "Makes the topic behave differently. For example, topics of type " +
           "Question can be marked as solved, and Idea topics can be New, " +
