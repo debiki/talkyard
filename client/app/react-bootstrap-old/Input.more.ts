@@ -47,7 +47,7 @@ export var Input = createComponent({
     let result;
     let isCheckbox = props.type === 'checkbox';
     let isRadio = props.type === 'radio';
-    if (isCheckbox || isRadio) {
+    if ((isCheckbox || isRadio) && !props.labelFirst) {
       result = (
         r.div({ className: 'form-group ' + (props.className || '') },
           r.div({ className: props.wrapperClassName },
@@ -63,14 +63,25 @@ export var Input = createComponent({
             props.children)));
     }
     else {
+      let theInput;
+      let anyHelp;
+      if (isCheckbox || isRadio) {
+        dieIf(!props.labelFirst, 'EdE2WR8L9');
+        // The help will become the checkbox label, so if it's clicked, the checkbox gets selected.
+        theInput = (isRadio ? Radio : Checkbox).call(null, childProps, props.help);
+      }
+      else {
+        theInput = FormControl(childProps, props.children);
+        anyHelp = props.help && HelpBlock({}, props.help);
+      }
       result = (
         FormGroup({ className: this.props.className },
           props.label && ControlLabel({ className: props.labelClassName }, props.label),
           r.div({ className: props.wrapperClassName },
             r.div({ className: 'input-group' },
               addonBefore,
-              FormControl(childProps, props.children)),
-            props.help && HelpBlock({}, props.help))));
+              theInput),
+            anyHelp)));
     }
 
     return result;

@@ -862,22 +862,23 @@ function Setting2(panelProps, props, anyChildren?) {
     firstDefinedOf(getter(editedSettings), getter(currentSettings));
 
   props.value = firstDefinedOf(editedValue, currentValue);
+  props.className = props.className || '';
+  props.className += ' s_A_Ss_S';
   props.wrapperClassName = 'col-sm-9 esAdmin_settings_setting';
-  if (isDefined2(editedValue)) {
-    props.wrapperClassName += ' esAdmin_settings_setting-unsaved'
-  }
-  if (props.disabled) {
-    props.wrapperClassName += ' disabled';
-  }
+
+  if (isDefined2(editedValue)) props.wrapperClassName += ' esAdmin_settings_setting-unsaved';
+  if (props.disabled) props.wrapperClassName += ' disabled';
+
   if (props.type === 'checkbox') {
-    // No separate label, so indent.
-    props.wrapperClassName += ' col-xs-offset-3 esAdmin_settings_setting-checkbox';
+    props.labelFirst = true;
+    props.labelClassName = 'col-sm-3';
     props.checked = props.value;
     delete props.value;
   }
   else {
     props.labelClassName = 'col-sm-3';
   }
+
   props.onChange = (event) => {
     var newSettings = _.clone(editedSettings);
     props.update(newSettings, event.target);
