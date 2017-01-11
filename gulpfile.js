@@ -187,7 +187,7 @@ gulp.task('wrap-javascript', function () {
 
 var serverTypescriptProject = typeScript.createProject({
     target: 'ES5',
-    noExternalResolve: true,
+    noResolve: true,
     out: 'server-bundle.js'
 });
 
@@ -198,7 +198,7 @@ function compileServerTypescript() {
         'client/shared/plain-old-javascript.d.ts',
         'client/typedefs/**/*.ts'])
     .pipe(wrap(nextFileTemplate))
-    .pipe(typeScript(serverTypescriptProject));
+    .pipe(serverTypescriptProject());
 
   if (watchAndLiveForever) {
     typescriptStream.on('error', function() {
@@ -230,25 +230,25 @@ function compileServerTypescript() {
 
 var slimTypescriptProject = typeScript.createProject({
     target: 'ES5',
-    noExternalResolve: true,
+    noResolve: true,
     out: 'slim-typescript.js'
 });
 
 var moreTypescriptProject = typeScript.createProject({
   target: 'ES5',
-  noExternalResolve: true,
+  noResolve: true,
   out: 'more-typescript.js'
 });
 
 var staffTypescriptProject = typeScript.createProject({
   target: 'ES5',
-  noExternalResolve: true,
+  noResolve: true,
   out: 'staff-typescript.js'
 });
 
 var editorTypescriptProject = typeScript.createProject({
   target: 'ES5',
-  noExternalResolve: true,
+  noResolve: true,
   out: 'editor-typescript.js'
 });
 
@@ -263,7 +263,7 @@ function compileFastTypescript() {
         'client/shared/plain-old-javascript.d.ts',
         'client/typedefs/**/*.ts'])
     .pipe(wrap(nextFileTemplate))
-    .pipe(typeScript(slimTypescriptProject));
+    .pipe(slimTypescriptProject());
   if (watchAndLiveForever) {
     stream.on('error', function() {
       console.log('\n!!! Error compiling slim TypeScript [EsE4GDTX8]!!!\n');
@@ -272,7 +272,7 @@ function compileFastTypescript() {
   return stream.pipe(gulp.dest('target/client/'));
 }
 
-function compileMoreTypescript(what, project) {
+function compileMoreTypescript(what, typescriptProject) {
   var stream = gulp.src([
     'client/app/**/*.d.ts',
     '!client/app/**/*.' + what + '.d.ts',
@@ -283,7 +283,7 @@ function compileMoreTypescript(what, project) {
     'client/shared/plain-old-javascript.d.ts',
     'client/typedefs/**/*.ts'])
     .pipe(wrap(nextFileTemplate))
-    .pipe(typeScript(project));
+    .pipe(typescriptProject());
   if (watchAndLiveForever) {
     stream.on('error', function() {
       console.log('\n!!! Error compiling ' + what + ' TypeScript [EsE3G6P8S]!!!\n');

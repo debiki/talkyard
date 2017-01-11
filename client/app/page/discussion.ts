@@ -403,12 +403,6 @@ export var Title = createComponent({
         icon = r.span({ className: iconClass + clickableClass, onClick: onClick,
             title: iconTooltip });
       }
-      else if (store.pageRole === PageRole.ToDo) {
-        var clickableClass = isStaffOrMyPage ? ' dw-clickable' : '';
-        var onClick = isStaffOrMyPage ? this.cycleIsDone : null;
-        icon = r.span({ className: iconClass + clickableClass, onClick: onClick,
-            title: iconTooltip });
-      }
       else if (store.pageRole === PageRole.FormalMessage) {
         icon = r.span({ className: 'icon-mail' });
         tooltip = "Personal message";
