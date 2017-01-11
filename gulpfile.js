@@ -187,8 +187,7 @@ gulp.task('wrap-javascript', function () {
 
 var serverTypescriptProject = typeScript.createProject({
     target: 'ES5',
-    noResolve: true,
-    out: 'server-bundle.js'
+    outFile: 'server-bundle.js'
 });
 
 
@@ -229,27 +228,23 @@ function compileServerTypescript() {
 
 
 var slimTypescriptProject = typeScript.createProject({
-    target: 'ES5',
-    noResolve: true,
-    out: 'slim-typescript.js'
+  target: 'ES5',
+  outFile: 'slim-typescript.js'
 });
 
 var moreTypescriptProject = typeScript.createProject({
   target: 'ES5',
-  noResolve: true,
-  out: 'more-typescript.js'
+  outFile: 'more-typescript.js'
 });
 
 var staffTypescriptProject = typeScript.createProject({
   target: 'ES5',
-  noResolve: true,
-  out: 'staff-typescript.js'
+  outFile: 'staff-typescript.js'
 });
 
 var editorTypescriptProject = typeScript.createProject({
   target: 'ES5',
-  noResolve: true,
-  out: 'editor-typescript.js'
+  outFile: 'editor-typescript.js'
 });
 
 
