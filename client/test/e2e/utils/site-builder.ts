@@ -228,6 +228,12 @@ let buildSite = function(site?: SiteData) {
 
       // ---- Pages
 
+      forum.topics.aboutCategoryA = { title: 'About category CategoryA' };
+      forum.topics.aboutCategoryB = { title: 'About category CategoryB' };
+      forum.topics.aboutUnlistedCategory = { title: 'About category Unlisted Cat' };
+      forum.topics.aboutStaffOnlyCategory = { title: 'About category Staff Only' };
+      forum.topics.aboutDeletedCategory = { title: 'About category Deleted Category' };
+
       forum.topics.byMariaCategoryA = api.addPage({
         id: 'byMariaCategoryA',
         folder: '/',

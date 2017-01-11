@@ -262,6 +262,25 @@ function pagesFor(browser) {
         }
       },
 
+      viewAsStranger: function() {
+        api.topbar.openMyMenu();
+        api.waitAndClick('.s_MM_ViewAsB');
+        // Currently there's just one view-as button, namely to view-as-stranger.
+        api.waitAndClick('.s_VAD_Sbd button');
+        // Now there's a warning, close it.
+        api.stupidDialog.clickClose();
+        // Then another stupid-dialog appears. Wait for a while so we won't click the
+        // button in the first dialog, before it has disappeared.
+        browser.pause(800);  // COULD give incrementing ids to the stupid dialogs,
+                              // so can avoid this pause?
+        api.stupidDialog.close();
+      },
+
+      stopViewingAsStranger: function() {
+        api.topbar.openMyMenu();
+        api.waitAndClick('.s_MM_StopImpB a');
+      },
+
       myMenu: {
         goToAdminReview: function() {
           browser.rememberCurrentUrl();
@@ -1318,8 +1337,12 @@ function pagesFor(browser) {
 
 
     stupidDialog: {
-      close: function() {
+      clickClose: function() {
         api.waitAndClick('.e_SD_CloseB');
+      },
+
+      close: function() {
+        api.stupidDialog.clickClose();
         browser.waitUntilModalGone();
       },
     },

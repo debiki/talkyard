@@ -50,6 +50,7 @@ function runAllEndToEndTests {
   runEndToEndTest scripts/wdio target/e2e/wdio.2chrome.conf.js    --browser $browser --only password-login-reset.2browsers $args
   runEndToEndTest scripts/wdio target/e2e/wdio.conf.js            --browser $browser --only user-profile-access $args
   ###runEndToEndTest scripts/wdio target/e2e/wdio.3chrome.conf.js --browser $browser --only custom-forms.3browsers $args
+  runEndToEndTest scripts/wdio target/e2e/wdio.conf.js            --browser $browser --only view-as-stranger $args
   runEndToEndTest scripts/wdio target/e2e/wdio.2chrome.conf.js    --browser $browser --only impersonate.2browsers $args
   runEndToEndTest scripts/wdio target/e2e/wdio.2chrome.conf.js    --browser $browser --only unsubscribe.2browsers $args
   runEndToEndTest scripts/wdio target/e2e/wdio.2chrome.conf.js    --browser $browser --only new-user-review-ok.2browsers $args
