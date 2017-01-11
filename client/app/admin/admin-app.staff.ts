@@ -56,6 +56,7 @@ export function routes() {
         Route({ path: 'legal', component: LegalSettingsComponent }),
         Route({ path: 'login', component: LoginSettingsComponent }),
         Route({ path: 'moderation', component: ModerationSettingsComponent }),
+        Route({ path: 'simplify', component: SimplifySettingsComponent }),
         Route({ path: 'spam-flags', component: SpamFlagsSettingsComponent }),
         Route({ path: 'analytics', component: AnalyticsSettingsComponent }),
         Route({ path: 'advanced', component: AdvancedSettingsComponent }),
@@ -233,6 +234,7 @@ var SettingsPanelComponent = React.createClass(<any> {
           NavLink({ to: AdminRoot + 'settings/legal', id: 'e2eAA_Ss_LegalL' }, "Legal"),
           NavLink({ to: AdminRoot + 'settings/login', id: 'e2eAA_Ss_LoginL' }, "Login"),
           NavLink({ to: AdminRoot + 'settings/moderation', id: 'e2eAA_Ss_ModL'  }, "Moderation"),
+          NavLink({ to: AdminRoot + 'settings/simplify', id: 'e_A_Ss_SimplifyL'  }, "Simplify"),
           NavLink({ to: AdminRoot + 'settings/spam-flags', id: 'e2eAA_Ss_SpamFlagsL'  }, "Spam & flags"),
           NavLink({ to: AdminRoot + 'settings/analytics', id: 'e2eAA_Ss_AnalyticsL' }, "Analytics"),
           NavLink({ to: AdminRoot + 'settings/advanced', id: 'e2eAA_Ss_AdvancedL' }, "Advanced"),
@@ -402,6 +404,59 @@ var ModerationSettingsComponent = React.createClass(<any> {
               newSettings.numFirstPostsToApprove = num;
             }
           },
+        })));
+  }
+});
+
+
+
+// REFACTOR UX COULD remove this form here and add to forum layout settings instead.
+// (But keep in settings3 table)
+var SimplifySettingsComponent = React.createClass(<any> {
+  render: function() {
+    var props = this.props;
+
+    return (
+      r.div({},
+        r.p({}, "Here you can ", r.i({}, "remove"), " features from your forum " +
+             "to make it simpler. Uncheck a checkbox to remove a feature."),
+
+        Setting2(props, { type: 'checkbox', label: "Use categories",
+          className: 'e_A_Ss_S-ShowCatsCB',
+          help: "Unckeck to disable categories and hide category related buttons and columns. " +
+              "Suitable for small forums where you don't need different categories.",
+          getter: (s: Settings) => s.showCategories,
+          update: (newSettings: Settings, target) => {
+            newSettings.showCategories = target.checked;
+          }
+        }),
+
+        Setting2(props, { type: 'checkbox', label: "Show topic filter button",
+          className: 'e_A_Ss_S-ShowTopicFilterCB',
+          help: r.span({}, "Uncheck to hide the ", r.i({}, "All Topics"), " / ",
+              r.i({}, "Only Waiting"), " topics filter button"),
+          getter: (s: Settings) => s.showTopicFilterButton,
+          update: (newSettings: Settings, target) => {
+            newSettings.showTopicFilterButton = target.checked;
+          }
+        }),
+
+        Setting2(props, { type: 'checkbox', label: "Show topic type icons",
+          className: 'e_A_Ss_S-ShowTopicTypesCB',
+          help: "Uncheck to hide topic type icons in the forum topic list",
+          getter: (s: Settings) => s.showTopicTypes,
+          update: (newSettings: Settings, target) => {
+            newSettings.showTopicTypes = target.checked;
+          }
+        }),
+
+        Setting2(props, { type: 'checkbox', label: "Choose topic type",
+          className: 'e_A_Ss_S-SelectTopicTypeCB',
+          help: "Uncheck to hide choose-and-change topic type buttons",
+          getter: (s: Settings) => s.selectTopicType,
+          update: (newSettings: Settings, target) => {
+            newSettings.selectTopicType = target.checked;
+          }
         })));
   }
 });

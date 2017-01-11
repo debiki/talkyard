@@ -844,6 +844,7 @@ export var Editor = createComponent({
     var state = this.state;
     var store: Store = state.store;
     var me: Myself = store.me;
+    let settings: SettingsVisibleClientSide = store.settings;
     var isPrivateGroup = page_isPrivateGroup(this.state.newPageRole);
 
     var guidelines = state.guidelines;
@@ -886,13 +887,14 @@ export var Editor = createComponent({
               type: 'text', ref: 'titleInput', tabIndex: 1, onChange: this.onTitleEdited,
               placeholder: "Type a title — what is this about, in one brief sentence?" });
 
-      if (this.state.newForumTopicCategoryId && !isPrivateGroup)
+      if (this.state.newForumTopicCategoryId && !isPrivateGroup &&
+          settings_showCategories(settings, me))
         categoriesDropdown =
           SelectCategoryDropdown({ className: 'esEdtr_titleEtc_category', store: store,
               selectedCategoryId: this.state.newForumTopicCategoryId,
               onCategorySelected: this.changeCategory });
 
-      if (this.state.newPageRole) {
+      if (this.state.newPageRole && settings_selectTopicType(settings, me)) {
         pageRoleDropdown = PageRoleDropdown({ store: store, pageRole: this.state.newPageRole,
             complicated: store.settings.showExperimental,
             onSelect: this.changeNewForumPageRole,

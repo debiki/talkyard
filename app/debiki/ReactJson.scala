@@ -87,6 +87,22 @@ object ReactJson {
   }
 
 
+  def makeSettingsVisibleClientSideJson(settings: EffectiveSettings): JsObject = {
+    // Only include settings that differ from the default. Default settings: [8L4KWU02]
+    var json = Json.obj()
+    if (settings.inviteOnly) json += "inviteOnly" -> JsTrue
+    if (!settings.allowSignup) json += "allowSignup" -> JsFalse
+    if (!settings.allowLocalSignup) json += "allowLocalSignup" -> JsFalse
+    if (settings.isGuestLoginAllowed) json += "allowGuestLogin" -> JsTrue
+    if (settings.showExperimental) json += "showExperimental" -> JsTrue
+    if (!settings.showCategories) json += "showCategories" -> JsFalse
+    if (!settings.showTopicFilterButton) json += "showTopicFilterButton" -> JsFalse
+    if (!settings.showTopicTypes) json += "showTopicTypes" -> JsFalse
+    if (!settings.selectTopicType) json += "selectTopicType" -> JsFalse
+    json
+  }
+
+
   /** When a site has just been created, and has no contents.
     */
   def emptySiteJson(pageReq: PageRequest[_]): JsObject = {
@@ -105,9 +121,7 @@ object ReactJson {
       "isFirstSiteAdminEmailMissing" -> isFirstSiteAdminEmailMissing,
       "userMustBeAuthenticated" -> JsBoolean(siteSettings.userMustBeAuthenticated),
       "userMustBeApproved" -> JsBoolean(siteSettings.userMustBeApproved),
-      "settings" -> Json.obj(
-        "allowGuestLogin" -> JsBoolean(siteSettings.isGuestLoginAllowed),
-        "showExperimental" -> JsBoolean(siteSettings.showExperimental)),
+      "settings" -> makeSettingsVisibleClientSideJson(siteSettings),
       "pageId" -> pageReq.thePageId,
       "pageRole" -> JsNumber(pageReq.thePageRole.toInt),
       "pagePath" -> JsPagePath(pageReq.pagePath),
@@ -248,9 +262,7 @@ object ReactJson {
       // Later: move these two userMustBe... to settings {} too.
       "userMustBeAuthenticated" -> JsBoolean(siteSettings.userMustBeAuthenticated),
       "userMustBeApproved" -> JsBoolean(siteSettings.userMustBeApproved),
-      "settings" -> Json.obj(
-        "allowGuestLogin" -> JsBoolean(siteSettings.isGuestLoginAllowed),
-        "showExperimental" -> JsBoolean(siteSettings.showExperimental)),
+      "settings" -> makeSettingsVisibleClientSideJson(siteSettings),
       "pageId" -> pageId,
       "pageMemberIds" -> pageMemberIds,
       "categoryId" -> JsNumberOrNull(page.meta.categoryId),
@@ -312,9 +324,7 @@ object ReactJson {
       "siteStatus" -> request.dao.theSite().status.toInt,
       "userMustBeAuthenticated" -> JsBoolean(siteSettings.userMustBeAuthenticated),
       "userMustBeApproved" -> JsBoolean(siteSettings.userMustBeApproved),
-      "settings" -> Json.obj(
-        "allowGuestLogin" -> JsBoolean(siteSettings.isGuestLoginAllowed),
-        "showExperimental" -> JsBoolean(siteSettings.showExperimental)),
+      "settings" -> makeSettingsVisibleClientSideJson(siteSettings),
       // (WOULD move 'me' to the volatile json; suddenly having it here in the main json is
       // a bit surprising.) CLEAN_UP
       "me" -> userNoPageToJson(request),

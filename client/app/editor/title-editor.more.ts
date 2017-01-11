@@ -129,12 +129,14 @@ export var TitleEditor = createComponent({
   },
 
   render: function() {
-    var store: Store = this.props;
-    var pageRole: PageRole = this.props.pageRole;
-    var titlePost: Post = this.props.postsByNr[TitleNr];
-    var titleText = titlePost.sanitizedHtml; // for now. TODO only allow plain text?
-    var user = this.props.user;
-    var isForumOrAboutOrMessage =
+    let store: Store = this.props;
+    let me: Myself = store.me;
+    let settings: SettingsVisibleClientSide = store.settings;
+    let pageRole: PageRole = this.props.pageRole;
+    let titlePost: Post = this.props.postsByNr[TitleNr];
+    let titleText = titlePost.sanitizedHtml; // for now. TODO only allow plain text?
+    let user = this.props.user;
+    let isForumOrAboutOrMessage =
       pageRole === PageRole.Forum || pageRole === PageRole.About || pageRole === PageRole.FormalMessage;
 
     if (!this.state.editorScriptsLoaded) {
@@ -237,7 +239,7 @@ export var TitleEditor = createComponent({
     if (isForumOrAboutOrMessage) {
       // About-category pages cannot be moved to other categories.
     }
-    else if (this.props.forumId) {
+    else if (this.props.forumId && settings_showCategories(settings, me)) {
       selectCategoryInput =
         Input({ type: 'custom', label: "Category", labelClassName: 'col-xs-2',
             wrapperClassName: 'col-xs-10' },
@@ -246,7 +248,8 @@ export var TitleEditor = createComponent({
             onCategorySelected: this.onCategoryChanged }));
     }
 
-    var selectTopicType = !page_mayChangeRole(pageRole) ? null :
+    var selectTopicType =
+        !page_mayChangeRole(pageRole) || !settings_selectTopicType(settings, me) ? null :
       Input({ type: 'custom', label: "Topic type", labelClassName: 'col-xs-2',
           wrapperClassName: 'col-xs-10' },
         editor.PageRoleDropdown({ store: store, pageRole: this.state.pageRole,

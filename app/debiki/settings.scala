@@ -36,6 +36,10 @@ trait AllSettings {
   def allowSignup: Boolean
   def allowLocalSignup: Boolean
   def allowGuestLogin: Boolean
+  def showCategories: Boolean
+  def showTopicFilterButton: Boolean
+  def showTopicTypes: Boolean
+  def selectTopicType: Boolean
   def numFirstPostsToReview: Int
   def numFirstPostsToApprove: Int
   def numFirstPostsToAllow: Int
@@ -76,6 +80,10 @@ trait AllSettings {
     allowSignup = Some(self.allowSignup),
     allowLocalSignup = Some(self.allowLocalSignup),
     allowGuestLogin = Some(self.allowGuestLogin),
+    showCategories = Some(self.showCategories),
+    showTopicFilterButton = Some(self.showTopicFilterButton),
+    showTopicTypes = Some(self.showTopicTypes),
+    selectTopicType = Some(self.selectTopicType),
     numFirstPostsToReview = Some(self.numFirstPostsToReview),
     numFirstPostsToApprove = Some(self.numFirstPostsToApprove),
     numFirstPostsToAllow = Some(self.numFirstPostsToAllow),
@@ -114,13 +122,17 @@ object AllSettings {
     */
   val PostRecentlyCreatedLimitMs = 5 * 3600 * 1000
 
-  val Default = new AllSettings {
+  val Default = new AllSettings {  // [8L4KWU02]
     val userMustBeAuthenticated = false
     val userMustBeApproved = false
     val inviteOnly = false
     val allowSignup = true
     val allowLocalSignup = true
     val allowGuestLogin = false
+    val showCategories = true
+    val showTopicFilterButton = true
+    val showTopicTypes = true
+    val selectTopicType = true
     val numFirstPostsToReview = 1
     val numFirstPostsToApprove = 0
     val numFirstPostsToAllow = 0
@@ -176,6 +188,10 @@ case class EffectiveSettings(
   def allowSignup: Boolean = firstInChain(_.allowSignup) getOrElse default.allowSignup
   def allowLocalSignup: Boolean = firstInChain(_.allowLocalSignup) getOrElse default.allowLocalSignup
   def allowGuestLogin: Boolean = firstInChain(_.allowGuestLogin) getOrElse default.allowGuestLogin
+  def showCategories: Boolean = firstInChain(_.showCategories) getOrElse default.showCategories
+  def showTopicFilterButton: Boolean = firstInChain(_.showTopicFilterButton) getOrElse default.showTopicFilterButton
+  def showTopicTypes: Boolean = firstInChain(_.showTopicTypes) getOrElse default.showTopicTypes
+  def selectTopicType: Boolean = firstInChain(_.selectTopicType) getOrElse default.selectTopicType
   def numFirstPostsToReview: Int = firstInChain(_.numFirstPostsToReview) getOrElse default.numFirstPostsToReview
   def numFirstPostsToApprove: Int = firstInChain(_.numFirstPostsToApprove) getOrElse default.numFirstPostsToApprove
   def numFirstPostsToAllow: Int = firstInChain(_.numFirstPostsToAllow) getOrElse default.numFirstPostsToAllow
@@ -232,6 +248,10 @@ object Settings2 {
       "allowSignup" -> JsBooleanOrNull(s.allowSignup),
       "allowLocalSignup" -> JsBooleanOrNull(s.allowLocalSignup),
       "allowGuestLogin" -> JsBooleanOrNull(s.allowGuestLogin),
+      "showCategories" -> JsBooleanOrNull(s.showCategories),
+      "showTopicFilterButton" -> JsBooleanOrNull(s.showTopicFilterButton),
+      "showTopicTypes" -> JsBooleanOrNull(s.showTopicTypes),
+      "selectTopicType" -> JsBooleanOrNull(s.selectTopicType),
       "numFirstPostsToReview" -> JsNumberOrNull(s.numFirstPostsToReview),
       "numFirstPostsToApprove" -> JsNumberOrNull(s.numFirstPostsToApprove),
       "numFirstPostsToAllow" -> JsNumberOrNull(s.numFirstPostsToAllow),
@@ -271,6 +291,10 @@ object Settings2 {
     allowSignup = anyBool(json, "allowSignup", d.allowSignup),
     allowLocalSignup = anyBool(json, "allowLocalSignup", d.allowLocalSignup),
     allowGuestLogin = anyBool(json, "allowGuestLogin", d.allowGuestLogin),
+    showCategories = anyBool(json, "showCategories", d.showCategories),
+    showTopicFilterButton = anyBool(json, "showTopicFilterButton", d.showTopicFilterButton),
+    showTopicTypes = anyBool(json, "showTopicTypes", d.showTopicTypes),
+    selectTopicType = anyBool(json, "selectTopicType", d.selectTopicType),
     numFirstPostsToReview = anyInt(json, "numFirstPostsToReview", d.numFirstPostsToReview),
     numFirstPostsToApprove = anyInt(json, "numFirstPostsToApprove", d.numFirstPostsToApprove),
     numFirstPostsToAllow = anyInt(json, "numFirstPostsToAllow", d.numFirstPostsToAllow),

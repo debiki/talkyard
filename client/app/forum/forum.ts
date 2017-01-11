@@ -361,9 +361,15 @@ var ForumButtons = createComponent({
     if (!sortOrderRoutePath) {
       sortOrderRoutePath = this.props.routes[SortOrderRouteIndex].path;
     }
+    let store: Store = this.props.store;
+    let showTopicFilter = settings_showFilterButton(store.settings, store.me);
+    // If there's no topic filter button, the text "All Topics" won't be visible to the
+    // right of the Latest / Top sort order buttons, which makes it hard to understand what
+    // Latest / Top means? Therefore, if `!showTopicFilter`, type "Latest topics" instead of
+    // just "Latest". (Also, since the filter button is absent, there's more space for this.)
     switch (sortOrderRoutePath) {
-      case RoutePathLatest: return "Latest";
-      case RoutePathTop: return "Top";
+      case RoutePathLatest: return showTopicFilter ? "Latest" : "Latest topics";
+      case RoutePathTop: return showTopicFilter ? "Top" : "Popular topics";
       default: return null;
     }
   },
@@ -456,10 +462,11 @@ var ForumButtons = createComponent({
   },
 
   render: function() {
-    var state = this.state;
-    var store: Store = this.props.store;
-    var me: Myself = store.me;
-    var activeCategory: Category = this.props.activeCategory;
+    let state = this.state;
+    let store: Store = this.props.store;
+    let settings: SettingsVisibleClientSide = store.settings;
+    let me: Myself = store.me;
+    let activeCategory: Category = this.props.activeCategory;
     if (!activeCategory) {
       // The user has typed a non-existing category slug in the URL. Or she has just created
       // a category, opened a page and then clicked Back in the browser. Then this page
@@ -486,7 +493,8 @@ var ForumButtons = createComponent({
       className: 'btn esForum_catsNav_btn ' + (extraClass || ''),
       activeClassName: 'active' }, text);
 
-    var categoryTreeLink = showsCategoryTree ? null :
+    let omitCategoryStuff = showsCategoryTree || !settings_showCategories(store.settings, me);
+    let categoryTreeLink = omitCategoryStuff ? null :
       makeCategoryLink(RoutePathCategories, "Categories", 'e2eViewCategoriesB', 'esForum_navLink');
 
     // COULD remember which topics were listed previously and return to that view.
@@ -510,7 +518,7 @@ var ForumButtons = createComponent({
           onClick: () => this.setCategory('') }, "All categories"));
 
     // [refactor] use ModalDropdownButton instead
-    var categoriesDropdown = showsCategoryTree ? null :
+    let categoriesDropdownButton = omitCategoryStuff ? null :
         Button({ onClick: this.openCategoryDropdown,
             className: 'esForum_catsNav_btn esForum_catsDrop active',
             ref: 'selectCategoryButton' },
@@ -554,11 +562,16 @@ var ForumButtons = createComponent({
       var slashSlug = this.slashCategorySlug();
       latestTopButton =
           r.ul({ className: 'nav esForum_catsNav_sort' },
-            makeCategoryLink(RoutePathLatest + slashSlug, "Latest", 'e2eSortLatestB'),
-            makeCategoryLink(RoutePathTop + slashSlug, "Top", 'e2eSortTopB'));
+            makeCategoryLink(RoutePathLatest + slashSlug, this.getSortOrderName(RoutePathLatest),
+                'e2eSortLatestB'),
+            makeCategoryLink(RoutePathTop + slashSlug, this.getSortOrderName(RoutePathTop),
+                'e2eSortTopB'));
     }
 
-    // The filter topics select.
+    // ------ The filter topics select.
+
+    let showFilterButton = settings_showFilterButton(settings, me);
+
     var topicFilterValue = this.props.location.query.filter || FilterShowAll;
     function makeTopicFilterText(filter) {
       switch (filter) {
@@ -570,18 +583,18 @@ var ForumButtons = createComponent({
     }
 
     // [refactor] use ModalDropdownButton instead
-    var topicFilterButton =
+    var topicFilterButton = !showFilterButton ? null :
       Button({ onClick: this.openTopicFilterDropdown,
           className: 'esForum_filterBtn esForum_catsNav_btn', ref: 'topicFilterButton' },
         makeTopicFilterText(topicFilterValue) + ' ', r.span({ className: 'caret' }));
 
-    var showDeletedFilterItem = !isStaff(me) ? null :
+    var showDeletedFilterItem = !isStaff(me) || !showFilterButton ? null :
       ExplainingListItem({ onSelect: this.setTopicFilter,
         activeEventKey: topicFilterValue, eventKey: FilterShowDeleted,
         title: makeTopicFilterText(FilterShowDeleted),
         text: "Shows all topics, including deleted topics" });
 
-    var topicFilterDropdownModal =
+    var topicFilterDropdownModal = !showFilterButton ? null :
       DropdownModal({ show: state.isTopicFilterDropdownOpen, pullLeft: true,
           onHide: this.closeTopicFilterDropdown, atX: state.topicFilterX,
           atY: state.topicFilterY },
@@ -644,7 +657,7 @@ var ForumButtons = createComponent({
         r.div({ className: 'dw-forum-actionbar clearfix' },
           r.div({ className: 'esForum_catsNav' },
             anyPageTitle,
-            categoriesDropdown,
+            categoriesDropdownButton,
             categoriesDropdownModal,
             latestTopButton,
             latestTopDropdownModal,
@@ -831,7 +844,8 @@ export var ListTopicsComponent = createComponent({
   },
 
   render: function() {
-    var store: Store = this.props.store;
+    let store: Store = this.props.store;
+    let me: Myself = store.me;
     let topics: Topic[] = this.props.topics;
     if (!topics) {
       // The min height preserves scrollTop, even though the topic list becomes empty
@@ -901,12 +915,15 @@ export var ListTopicsComponent = createComponent({
       r.p({ className: 'icon-trash s_F_CatDdInfo' },
         "This category has been deleted");
 
+    let categoryHeader = !settings_showCategories(store.settings, me) ? null :
+        r.th({ className: 's_F_Ts_T_CN' }, "Category");
+
     var topicsTable = !useTable ? null :
         r.table({ className: 'esF_TsT s_F_Ts-Wide dw-topic-list' + deletedClass },
           r.thead({},
             r.tr({},
               r.th({}, "Topic"),
-              r.th({ className: 's_F_Ts_T_CN' }, "Category"),
+              categoryHeader,
               r.th({ className: 's_F_Ts_T_Avs' }, "Users"),
               r.th({ className: 'num dw-tpc-replies' }, "Replies"),
               r.th({ className: 'num' }, "Activity"))),
@@ -1056,9 +1073,11 @@ var TopicRow = createComponent({
   },
 
   render: function() {
-    var store: Store = this.props.store;
-    var topic: Topic = this.props.topic;
-    var category = _.find(store.categories, (category: Category) => {
+    let store: Store = this.props.store;
+    let me = store.me;
+    let settings = store.settings;
+    let topic: Topic = this.props.topic;
+    let category: Category = _.find(store.categories, (category: Category) => {
       return category.id === topic.categoryId;
     });
 
@@ -1137,7 +1156,8 @@ var TopicRow = createComponent({
           thumbnailUrls.map(url => r.img({ src: url, key: ++imgIndex })));
     }
 
-    var categoryName = !category ? null :
+    let showCategories = settings_showCategories(settings, me);
+    let categoryName = !category || !showCategories ? null :
       r.a({ href: this.makeCategoryLink(category), className: 'esF_Ts_T_CName',
             onClick: this.makeOnCategoryClickFn(category) },
         category.name);
@@ -1177,10 +1197,10 @@ var TopicRow = createComponent({
       r.tr({ className: 'esForum_topics_topic e2eF_T' },
         r.td({ className: 'dw-tpc-title e2eTopicTitle' },
           r.div({ className: 's_F_Ts_T_Con' + manyLinesClass, onClick: showMoreClickHandler },
-            makeTitle(topic, anyPinOrHiddenIconClass),
+            makeTitle(topic, anyPinOrHiddenIconClass, settings, me),
             excerpt),
           anyThumbnails),
-        r.td({ className: 's_F_Ts_T_CN' }, categoryName),
+        !showCategories ? null : r.td({ className: 's_F_Ts_T_CN' }, categoryName),
         r.td({ className: 's_F_Ts_T_Avs' }, userAvatars),
         r.td({ className: 'num dw-tpc-replies' }, topic.numPosts - 1),
         r.td({ className: 'num dw-tpc-activity', title: activityTitle }, activityAgo)));
@@ -1188,13 +1208,13 @@ var TopicRow = createComponent({
     else return (
       r.li({ className: 'esF_TsL_T e2eF_T' },
         r.div({ className: 'esF_TsL_T_Title e2eTopicTitle' },
-          makeTitle(topic, anyPinOrHiddenIconClass)),
+          makeTitle(topic, anyPinOrHiddenIconClass, settings, me)),
         r.div({ className: 'esF_TsL_T_NumRepls' },
           topic.numPosts - 1, r.span({ className: 'icon-comment-empty' })),
         excerpt,
         r.div({ className: 'esF_TsL_T_Row2' },
           r.div({ className: 'esF_TsL_T_Row2_Users' }, userAvatars),
-          r.div({ className: 'esF_TsL_T_Row2_Cat' },
+          !showCategories ? null : r.div({ className: 'esF_TsL_T_Row2_Cat' },
             r.span({ className: 'esF_TsL_T_Row2_Cat_Expl' }, "in: "), categoryName),
           r.span({ className: 'esF_TsL_T_Row2_When' },
             prettyLetterTimeAgo(topic.bumpedAtMs || topic.createdAtMs))),
@@ -1294,7 +1314,7 @@ var CategoryRow = createComponent({
       return (
         r.tr({ key: topic.pageId },
           r.td({},
-            makeTitle(topic, 'topic-title' + pinIconClass),
+            makeTitle(topic, 'topic-title' + pinIconClass, store.settings, me),
             r.span({ className: 'topic-details' },
               r.span({ title: numReplies + " replies" },
                 numReplies, r.span({ className: 'icon-comment-empty' })),
@@ -1330,10 +1350,13 @@ var CategoryRow = createComponent({
 
 
 
-function makeTitle(topic: Topic, className: string) {
-  var title = topic.title;
-  var iconClass = '';
-  var tooltip;
+function makeTitle(topic: Topic, className: string, settings: SettingsVisibleClientSide,
+      me: Myself) {
+  let title = topic.title;
+  let iconClass = '';
+  let tooltip;
+  let showIcons = settings_showTopicTypes(settings, me);
+
   if (topic.closedAtMs && !isDone(topic) && !isAnswered(topic)) {
     tooltip = page.makePageClosedTooltipText(topic.pageRole);
     var closedIcon = r.span({ className: 'icon-block' });
@@ -1341,8 +1364,17 @@ function makeTitle(topic: Topic, className: string) {
   }
   else if (topic.pageRole === PageRole.Question) {
     tooltip = page.makeQuestionTooltipText(topic.answeredAtMs);
-    var questionIconClass = topic.answeredAtMs ? 'icon-ok' : 'icon-help-circled';
-    var questionIcon = r.span({ className: questionIconClass });
+    let questionIconClass;
+    if (topic.answeredAtMs) {
+      questionIconClass = 'icon-ok';
+    }
+    else if (!showIcons) {
+      // Then only show, if answered.
+    }
+    else {
+      questionIconClass = 'icon-help-circled';
+    }
+    /* Skip this — feels like unneeded. The reply counts column is enough?
     var answerIcon;
     var answerCount;
     // (Don't show answer count if question already solved — too much clutter.)
@@ -1350,62 +1382,82 @@ function makeTitle(topic: Topic, className: string) {
       /* Skip this answer count stuff for now (or permanently?), too much clutter.
       answerIcon = r.span({ className: 'icon-info-circled dw-icon-inverted' }, ' ');
       answerCount = r.span({ className: 'dw-qa-ans-count' }, topic.numOrigPostReplies);
-      */
+
       tooltip += " with " + topic.numOrigPostReplies;
       if (topic.numOrigPostReplies > 1) tooltip += " answers";
       else tooltip += " answer";
+    } */
+    if (questionIconClass) {
+      title = r.span({}, r.span({ className: questionIconClass }), title);
     }
-    title = r.span({}, questionIcon, answerCount, answerIcon, title);
   }
   else if (topic.pageRole === PageRole.Problem || topic.pageRole === PageRole.Idea) {
-    // (Some dupl code, see [5KEFEW2] in discussion.ts.
-    if (!topic.plannedAtMs) {
+    // (Previously some dupl code, see [5KEFEW2] in discussion.ts.
+    if (topic.doneAtMs) {
+      tooltip = topic.pageRole === PageRole.Problem
+        ? "This has been fixed"
+        : "This has been done";
+      iconClass = 'icon-check';
+    }
+    else if (!showIcons) {
+      // Then don't show icons, unless done/fixed.
+    }
+    else if (!topic.plannedAtMs) {
       tooltip = topic.pageRole === PageRole.Problem
           ? "This is an unsolved problem"
           : "This is an idea";
       iconClass = topic.pageRole === PageRole.Problem ? 'icon-attention-circled' : 'icon-idea';
     }
-    else if (!topic.doneAtMs) {
+    else {
       tooltip = topic.pageRole === PageRole.Problem
           ? "We're planning to fix this"
           : "We're planning to do this";
       iconClass = 'icon-check-empty';
     }
-    else {
-      tooltip = topic.pageRole === PageRole.Problem
-          ? "This has been fixed"
-          : "This has been done";
-      iconClass = 'icon-check';
+    if (iconClass) {
+      title = r.span({}, r.span({ className: iconClass }, title));
     }
-    title = r.span({}, r.span({ className: iconClass }, title));
   }
   else if (topic.pageRole === PageRole.ToDo) {
-    iconClass = topic.doneAtMs ? 'icon-check' : 'icon-check-empty';
-    tooltip = topic.doneAtMs
-        ? "This has been done or fixed"
-        : "This is something to do or to fix";
-    title = r.span({}, r.span({ className: iconClass }, title));
+    if (topic.doneAtMs) {
+      iconClass = 'icon-check';
+      tooltip = "This has been done or fixed";
+    }
+    else if (showIcons) {
+      iconClass = 'icon-check-empty';
+      tooltip = "This is something to do or to fix";
+    }
+    if (iconClass) {
+      title = r.span({}, r.span({ className: iconClass }, title));
+    }
   }
   else if (topic.pageRole === PageRole.OpenChat) {
-    tooltip = "This is a chat channel";
-    title = r.span({}, r.span({ className: 'icon-chat' }), title);
+    if (showIcons) {
+      tooltip = "This is a chat channel";
+      title = r.span({}, r.span({ className: 'icon-chat' }), title);
+    }
   }
   else if (topic.pageRole === PageRole.PrivateChat) {
     tooltip = "This is a private chat channel";
     title = r.span({}, r.span({ className: 'icon-lock' }), title);
   }
   else if (topic.pageRole === PageRole.MindMap) {
-    tooltip = "This is a mind map";
-    title = r.span({}, r.span({ className: 'icon-sitemap' }), title);
+    if (showIcons) {
+      tooltip = "This is a mind map";
+      title = r.span({}, r.span({className: 'icon-sitemap'}), title);
+    }
   }
   else if (topic.pageRole === PageRole.FormalMessage) {
     tooltip = "A private message";
     title = r.span({}, r.span({ className: 'icon-mail' }), title);
   }
   else {
-    title = r.span({}, r.span({ className: 'icon-comment-empty' }), title);
-    tooltip = "A discussion";
+    if (showIcons) {
+      title = r.span({}, r.span({className: 'icon-comment-empty'}), title);
+      tooltip = "A discussion";
+    }
   }
+
   if (topic.deletedAtMs) {
     title = r.span({ className: 'esForum_topics_topic-deleted' },
         r.span({ className: 'icon-trash' }), title);

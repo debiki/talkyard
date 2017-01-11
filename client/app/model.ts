@@ -351,7 +351,7 @@ interface Store {
   isFirstSiteAdminEmailMissing?: boolean;
   userMustBeAuthenticated: boolean;
   userMustBeApproved: boolean;
-  settings: SiteSettings;
+  settings: SettingsVisibleClientSide;
   pageMemberIds: UserId[];
   pageId: string;
   forumId?: string;
@@ -417,13 +417,17 @@ interface Store {
 }
 
 
-interface SiteSettings {
-  inviteOnly: boolean;
-  allowSignup: boolean;
-  allowLocalSignup: boolean;
-  allowGuestLogin: boolean;
-  showExperimental: boolean;
-  numFlagsToHidePost: number;
+// Default settings: [8L4KWU02]
+interface SettingsVisibleClientSide {
+  inviteOnly?: boolean;                 // default: false
+  allowSignup?: boolean;                // default: true
+  allowLocalSignup?: boolean;           // default: true
+  allowGuestLogin?: boolean;            // default: false
+  showExperimental?: boolean;           // default: false
+  showCategories?: boolean;             // default: true
+  showTopicFilterButton?: boolean;      // default: true
+  showTopicTypes?: boolean;             // default: true
+  selectTopicType?: boolean;            // default: true
 }
 
 
@@ -673,6 +677,12 @@ interface Settings {
   numFirstPostsToAllow: number;
   numFirstPostsToApprove: number;
   numFirstPostsToReview: number;
+
+  // Simpify
+  showCategories: boolean;
+  showTopicFilterButton: boolean;
+  showTopicTypes: boolean;
+  selectTopicType: boolean;
 
   // Spam
   numFlagsToHidePost: number;

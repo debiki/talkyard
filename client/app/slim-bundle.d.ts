@@ -113,6 +113,12 @@ declare namespace debiki2 {
 
   var anyForbiddenPassword;
 
+  function settings_showCategories(settings: SettingsVisibleClientSide, me: Myself): boolean;
+  function settings_showFilterButton(settings: SettingsVisibleClientSide, me: Myself): boolean;
+  function settings_showTopicTypes(settings: SettingsVisibleClientSide, me: Myself): boolean;
+  function settings_selectTopicType(settings: SettingsVisibleClientSide, me: Myself): boolean;
+
+
   namespace avatar {
     var Avatar;
   }

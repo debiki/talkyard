@@ -71,6 +71,7 @@ export function topic_sortByLatestActivity(t: Topic, t2: Topic, categoryId: Cate
   return topic_lastActivityAtMs(t2) - topic_lastActivityAtMs(t);
 }
 
+
 export function siteStatusToString(siteStatus: SiteStatus): string {
   return SiteStatusStrings[siteStatus - 1];
 }
@@ -91,6 +92,36 @@ export function notfLevel_title(notfLevel: NotfLevel): string {
 export function post_shallRenderAsHidden(post: Post): boolean {
   return post.isBodyHidden && _.isEmpty(post.sanitizedHtml);
 }
+
+
+
+// Settings
+//----------------------------------
+
+
+export function settings_showCategories(settings: SettingsVisibleClientSide, me: Myself) {
+  // Later: by default, do as 'settings' say, but let user preferences override. [8WK4SD7]
+  return isStaff(me) || settings.showCategories !== false;
+}
+
+
+export function settings_showFilterButton(settings: SettingsVisibleClientSide, me: Myself) {
+  // Later: by default, do as 'settings' say, but let user preferences override. [8WK4SD7]
+  return isStaff(me) || settings.showTopicFilterButton !== false;
+}
+
+
+export function settings_showTopicTypes(settings: SettingsVisibleClientSide, me: Myself) {
+  // Later: by default, do as 'settings' say, but let user preferences override. [8WK4SD7]
+  return isStaff(me) || settings.showTopicTypes !== false;
+}
+
+
+export function settings_selectTopicType(settings: SettingsVisibleClientSide, me: Myself) {
+  // Later: by default, do as 'settings' say, but let user preferences override. [8WK4SD7]
+  return isStaff(me) || settings.selectTopicType !== false;
+}
+
 
 
 // Store

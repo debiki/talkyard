@@ -173,10 +173,16 @@ export var TopBar = createComponent({
 
     // ------- Forum --> Category --> Sub Category
 
-    var ancestorCategories;
-    if (nonEmpty(store.ancestorsRootFirst)) {
-      var hide = isSection(pageRole) || _.some(store.ancestorsRootFirst, a => a.unlisted);
-      ancestorCategories = hide ? null :
+    let ancestorCategories;
+    let shallShowAncestors = settings_showCategories(store.settings, me);
+    let thereAreAncestors = nonEmpty(store.ancestorsRootFirst);
+    let isUnlisted = _.some(store.ancestorsRootFirst, a => a.unlisted);
+
+    if (isUnlisted || isSection(pageRole)) {
+      // Show no ancestors.
+    }
+    else if (thereAreAncestors && shallShowAncestors) {
+      ancestorCategories =
         r.ol({ className: 'esTopbar_ancestors' },
           store.ancestorsRootFirst.map((ancestor: Ancestor) => {
             let deletedClass = ancestor.isDeleted ? ' s_TB_Cs_C-Dd' : '';
@@ -186,16 +192,20 @@ export var TopBar = createComponent({
                     ancestor.title)));
           }));
     }
-
-    // Add a Home link for direct messages. They aren't placed in any category, so the above
-    // code block ignores them.
-    if (!ancestorCategories && store.pageRole === PageRole.FormalMessage) {
+    // Add a Home link 1) if categories hidden (!shallShowAncestors), and 2) for
+    // direct messages, which aren't placed in any category (!thereAreAncestors).
+    else if (thereAreAncestors || store.pageRole === PageRole.FormalMessage) {
       // Currently there's always just one site section, namely the forum.
       var homePath = store.siteSections[0].path;
       ancestorCategories =
         r.ol({ className: 'esTopbar_ancestors' },
           r.li({},
             r.a({ className: 'esTopbar_ancestors_link btn', href: homePath }, "Home")));
+    }
+    else {
+      // This isn't a private-message topic, and still it isn't placed in any section,
+      // — probably an old page, from before I added all pages to some section.
+      // Nowhere to home-link to, so don't show.
     }
 
 

@@ -286,16 +286,9 @@ export function stopRedirectingExtraHostnames(success: () => void) {
 
 export function loadSpecialContent(rootPageId: string, contentId: string,
       doneCallback: (any) => void) {
-  var url = '/-/load-special-content?rootPageId=' + (rootPageId ? rootPageId : '') +
+  let url = '/-/load-special-content?rootPageId=' + (rootPageId ? rootPageId : '') +
       '&contentId=' + contentId;
-  $.get(origin + url)
-    .done((content: any) => {
-      doneCallback(content);
-    })
-    .fail((x, y, z) => {
-      console.error('Error loading special content: ' + JSON.stringify([x, y, z]));
-      doneCallback(null);
-    });
+  get(url, doneCallback);
 }
 
 
@@ -553,14 +546,7 @@ export function savePageNoftLevel(newNotfLevel) {
 
 
 export function loadMyself(callback: (user: any) => void) {
-  $.get(origin + '/-/load-my-page-data?pageId=' + debiki2.ReactStore.getPageId())
-    .done((user: any) => {
-      callback(user);
-    })
-    .fail((x, y, z) => {
-      console.error('Error loading my page data: ' + JSON.stringify([x, y, z]));
-      callback(null);
-    });
+  get(`/-/load-my-page-data?pageId=${debiki2.ReactStore.getPageId()}`, callback);
 }
 
 
@@ -672,16 +658,9 @@ export function listAllUsernames(prefix: string, doneCallback: (usernames: Brief
 }
 
 
-export function listUsernames(prefix: string, doneCallback: (usernames: BriefUser) => void) {
-  var url = origin + '/-/list-usernames?pageId='+ d.i.pageId + '&prefix='+ prefix;
-  $.get(url)
-    .done((response: any) => {
-      doneCallback(response);
-    })
-    .fail((x, y, z) => {
-      console.error('Error listing usernames: ' + JSON.stringify([x, y, z]));
-      doneCallback(null);
-    });
+export function listUsernames(prefix: string, success: (usernames: BriefUser) => void) {
+  let url = `/-/list-usernames?pageId=${d.i.pageId}&prefix=${prefix}`;
+  get(url, success);
 }
 
 
