@@ -36,6 +36,9 @@ describe('/-/create-site  @createsite', function() {
   }
 
   it('can create a new site as a Password user  @login @password', function() {
+    // Something timed out in here, twice. [E2EBUG]
+    // Break up into smaller steps then? To find out what.
+
     browser = _.assign(browser, pagesFor(browser));
     browser.perhapsDebugBefore();
     var data = createPasswordTestData();

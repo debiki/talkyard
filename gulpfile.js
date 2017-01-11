@@ -28,7 +28,7 @@ var gulp = require('gulp');
 var newer = require('gulp-newer');
 var typeScript = require('gulp-typescript');
 var stylus = require('gulp-stylus');
-var minifyCSS = require('gulp-minify-css');
+var cleanCSS = require('gulp-clean-css');;
 var concat = require('gulp-concat');
 var del = require('del');
 var rename = require("gulp-rename");
@@ -385,10 +385,6 @@ gulp.task('compile-stylus', function () {
       currentDirectorySlash + 'client/app/variables.styl'],
   };
 
-  var minifyOpts = {
-    keepSpecialComments: 0
-  };
-
   function makeStyleStream(destDir, destFile, sourceFiles) {
     var stream = gulp.src(sourceFiles)
       .pipe(stylus(stylusOpts));
@@ -403,7 +399,7 @@ gulp.task('compile-stylus', function () {
     return stream
       .pipe(concat(destFile))
       .pipe(gulp.dest(destDir))
-      .pipe(minifyCSS(minifyOpts))
+      .pipe(cleanCSS())
       .pipe(header(copyrightAndLicenseBanner))
       .pipe(rename({ extname: '.min.css' }))
       .pipe(gulp.dest(destDir))
