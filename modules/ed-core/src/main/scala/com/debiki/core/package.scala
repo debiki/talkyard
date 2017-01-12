@@ -253,6 +253,9 @@ package object core {
     if (condition) Some(value) else None
 
 
+  def isBlank(char: Char): Boolean = char <= ' '
+
+
   def isValidNonLocalEmailAddress(address: String): Boolean =
     EmailValidator.getInstance(/* allowLocal = */ false).isValid(address)
 
