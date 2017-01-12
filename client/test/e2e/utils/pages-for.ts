@@ -1180,6 +1180,11 @@ function pagesFor(browser) {
         browser.go((origin || '') + `/-/users/${who}/notifications`);
       },
 
+      goToPreferences: function() {
+        api.userProfilePage.clickGoToPreferences();
+      },
+
+      // rename
       clickGoToPreferences: function() {
         browser.waitAndClick('#e2eUP_PrefsB');
         browser.waitForVisible('.e_UP_Prefs_FN');
@@ -1312,7 +1317,21 @@ function pagesFor(browser) {
           browser.waitAndSetValue('.e_UP_Prefs_FN input', fullName);
         },
 
+        startChangingUsername: function(username: string) {
+          browser.waitAndClick('.s_UP_Prefs_ChangeUNB');
+          api.stupidDialog.close();
+        },
+
+        setUsername: function(username: string) {
+          browser.waitAndSetValue('.s_UP_Prefs_UN input', username);
+        },
+
         save: function() {
+          api.userProfilePage.preferences.clickSave();
+          browser.waitUntilModalGone();
+        },
+
+        clickSave: function() {
           browser.waitAndClick('#e2eUP_Prefs_SaveB');
         },
       }
@@ -1437,6 +1456,7 @@ function pagesFor(browser) {
         browser.waitAndAssertVisibleTextMatches('.modal-dialog.dw-server-error', regex);
       },
 
+      // remove, use close() instead
       clickClose: function() {
         api.serverErrorDialog.close();
       },

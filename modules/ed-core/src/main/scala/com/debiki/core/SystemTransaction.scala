@@ -86,3 +86,6 @@ trait SystemTransaction {
 
 case class DuplicateHostnameException(hostname: String) extends QuickMessageException(
   s"Hostname already exists: '$hostname'")
+
+case class DuplicateUsernameException(username: String) extends QuickMessageException(
+  s"Username already exists: '$username'")
