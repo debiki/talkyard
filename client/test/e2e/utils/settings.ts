@@ -5,8 +5,9 @@
 import _ = require('lodash');
 import minimist = require('minimist');
 import logAndDie = require('./log-and-die');
-var logUnusual = logAndDie.logUnusual, die = logAndDie.die, dieIf = logAndDie.dieIf;
-var logWarning = logAndDie.logWarning, logMessage = logAndDie.logMessage;
+let unusualColor = logAndDie.unusualColor;
+let logUnusual = logAndDie.logUnusual, die = logAndDie.die, dieIf = logAndDie.dieIf;
+let logWarning = logAndDie.logWarning, logMessage = logAndDie.logMessage;
 
 var settings: any = {
   host: 'localhost',
@@ -51,7 +52,7 @@ if (args['3'] || args.include3rdPartyDependentTests) {
   settings.include3rdPartyDependentTests = true;
 }
 
-if (settings.password) {
+if (settings.password && !settings.e2eTestPassword) {
   settings.e2eTestPassword = settings.password;
   delete settings.password;
 }
@@ -87,7 +88,7 @@ else if (settings.include3rdPartyDependentTests) {
 console.log("==================================================");
 console.log("~~~~~~ Test settings:");
 console.log("host: " + settings.host);
-console.log("secure: " + settings.secure);
+console.log("secure: " + !!settings.secure);
 console.log('derived origin: ' + settings.mainSiteOrigin);
 console.log("~~~~~~ Secrets:");
 console.log("e2eTestPassword: " + (settings.e2eTestPassword ? "(yes)" : "undefined"));
@@ -95,9 +96,9 @@ console.log("gmailEmail: " + settings.gmailEmail);
 console.log("facebookAdminEmail: " + settings.facebookAdminEmail);
 console.log("facebookUserEmail: " + settings.facebookUserEmail);
 console.log("~~~~~~ Extra magic:");
-if (settings.pauseForeverAfterTest) {
-  console.log("You said " + unusualColor("--pauseForeverAfterTest") +
-      ", so I will pause forever after the first test.");
+if (settings.debugAfterwards) {
+  console.log("You said " + unusualColor("--debugAfterwards") +
+      ", so I will pause so you can debug, after the first test.");
 }
 if (settings.noTimeout) {
   console.log("You said " + unusualColor("--noTimeout") +

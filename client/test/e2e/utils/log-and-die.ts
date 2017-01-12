@@ -9,6 +9,8 @@ var unusualColor = chalk.black.bgGreen;
 
 
 var api = {
+  unusualColor: unusualColor,
+
   logMessage: function (message: string) {
     console.log(boringColor(message));
   },
