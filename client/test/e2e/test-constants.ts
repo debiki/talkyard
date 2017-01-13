@@ -37,6 +37,8 @@ var TestTrustLevel = {
 export = {
   TestPageRole: TestPageRole,
   TestTrustLevel: TestTrustLevel,
+  TitleNr: 0,
+  BodyNr: 1,
   FirstReplyNr: 2,  // [5FKF0F2]
 };
 

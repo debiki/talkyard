@@ -673,7 +673,7 @@ trait UserDao {
         // For now: (later, could allow, if never mentioned, after a grace period. Docs [8KFUT20])
         val usagesByOthers = previousUsages.filter(_.userId != user.id)
         if (usagesByOthers.nonEmpty)
-          throwForbidden("DwE5D0Y29",
+          throwForbidden("EdE5D0Y29_",
             "That username is, or has been, in use by someone else. You cannot use it.")
 
         val maxPerYearTotal = me.isStaff ? 20 | 9
@@ -688,7 +688,7 @@ trait UserDao {
         val recentDistinct = recentUsernames.map(_.username).toSet
         def yetAnotherNewName = !recentDistinct.contains(preferences.username)
         if (recentDistinct.size >= maxPerYearDistinct && yetAnotherNewName)
-          throwForbidden("DwE7KP4ZZ",
+          throwForbidden("EdE7KP4ZZ_",
             "You have changed to different usernames too many times the past year")
 
         val anyUsernamesToStopUsingNow = usersOldUsernames.filter(_.inUseTo.isEmpty)
@@ -712,7 +712,11 @@ trait UserDao {
         throwForbidden("DwE44ELK9", "Must not modify one's email")
 
       val userAfter = user.copyWithNewPreferences(preferences)
-      transaction.updateMemberInclDetails(userAfter)
+      try transaction.updateMemberInclDetails(userAfter)
+      catch {
+        case e: DuplicateUsernameException =>
+          throwForbidden("EdE2WK8Y4_", "Username already in use")
+      }
 
       removeUserFromMemCache(preferences.userId)
       // Clear the page cache (by clearing all caches), if we changed the user's name.
