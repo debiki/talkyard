@@ -54,7 +54,7 @@ describe("settings-login-to-read", function() {
   });
 
   it("...and enables login-required", function() {
-    owen.adminArea.settings.login.clickLoginRequired();
+    owen.adminArea.settings.login.setLoginRequired(true);
     owen.adminArea.settings.clickSaveAll();
   });
 
@@ -91,7 +91,7 @@ describe("settings-login-to-read", function() {
   });
 
   it("Owen disables login required", function() {
-    owen.adminArea.settings.login.clickLoginRequired();
+    owen.adminArea.settings.login.setLoginRequired(false);
     owen.adminArea.settings.clickSaveAll();
   });
 

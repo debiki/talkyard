@@ -115,6 +115,8 @@ describe("spam test, no external services:", () => {
   });
 
   it("The spam comment gets hidden, eventually", () => {
+    // [E2EBUG] failed x 2:
+    //    "FAIL: Error: unexpected alert open: {Alert text : You were writing something?}"
     mallorysBrowser.topic.refreshUntilBodyHidden(2);
   });
 

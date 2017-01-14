@@ -43,7 +43,10 @@ describe('/-/create-site  @createsite', function() {
     browser.perhapsDebugBefore();
     var data = createPasswordTestData();
     browser.go(utils.makeCreateSiteWithFakeIpUrl());
+    browser.disableRateLimits();
     pages.createSite.fillInFieldsAndSubmit(data);
+    // New site; disable rate limits here too.
+    browser.disableRateLimits();
     browser.click('#e2eLogin');
     pages.loginDialog.createPasswordAccount(data);
     var siteId = pages.getSiteId();

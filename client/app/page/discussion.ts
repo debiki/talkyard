@@ -193,16 +193,13 @@ export var TitleBodyComments = createComponent({
                 r.p({},
                   "Proofread your text below, to make sure it asks for " +
                   "the right things and is easy to understand. To edit it, " +
-                  "click the edit icon (", r.span({ className: 'icon-edit' }),
-                  ") just below your post. — Thereafter, click Continue."),
+                  "click the edit icon (", r.span({ className: 'icon-edit' }), ") ",
+                  // People only see the edit icon for the title — try to fix this, by making
+                  // 'below' bold so they'll look below instead.
+                  r.b({}, "below"), " your post. — Thereafter, click Continue."),
                 r.a({ className: 's_UtxHelp_HaveAsked_ContinueB btn btn-primary',
                     href: '/record-a-video' }, "Continue")) };
           }
-        }
-        else {
-          return { id: 'EdH7YM21', version: 1, content: r.span({},
-            "Click ", r.b({}, "Give Critique"), " below, to critique this — then you'll " +
-            "get credits, which you can use to ask for critique yourself.") };
         }
       }
     }

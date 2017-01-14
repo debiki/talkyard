@@ -429,12 +429,19 @@ function pagesFor(browser) {
       },
 
       createPasswordAccount: function(data) {
+        console.log('createPasswordAccount: fillInFullName...');
         api.loginDialog.fillInFullName(data.fullName);
+        console.log('fillInUsername...');
         api.loginDialog.fillInUsername(data.username);
+        console.log('fillInEmail...');
         api.loginDialog.fillInEmail(data.email || data.emailAddress);
+        console.log('fillInPassword...');
         api.loginDialog.fillInPassword(data.password);
+        console.log('clickSubmit...');
         api.loginDialog.clickSubmit();
+        console.log('waitForNeedVerifyEmailDialog...');
         api.loginDialog.waitForNeedVerifyEmailDialog();
+        console.log('createPasswordAccount: done');
       },
 
       fillInFullName: function(fullName) {
@@ -512,6 +519,9 @@ function pagesFor(browser) {
 
       clickCreateAccountInstead: function() {
         api.waitAndClick('.esLD_Switch_L');
+        browser.waitForVisible('.esCreateUser');
+        browser.waitForVisible('#e2eUsername');
+        browser.waitForVisible('#e2ePassword');
       },
 
       createGmailAccount: function(data) {
@@ -1433,8 +1443,35 @@ function pagesFor(browser) {
         },
 
         login: {
-          clickLoginRequired: function() {
-            api.waitAndClick('#e2eLoginRequiredCB');
+          setLoginRequired: function(isRequired: boolean) {
+            // Sometimes, clicking this checkbox has no effect. Perhaps a sidebar appeared, which
+            // caused the checkbox to move? so the click missed? Therefore, try many times.
+            browser.waitForVisible('#e2eLoginRequiredCB');
+            console.log('#e2eLoginRequiredCB is visible, should be checked: ' + isRequired);
+            for (let i = 0; i < 99; ++i) {
+              let isChecked = browser.isSelected('#e2eLoginRequiredCB');
+              console.log('#e2eLoginRequiredCB is checked: ' + isChecked);
+              if (isChecked === isRequired)
+                break;
+              api.waitAndClick('#e2eLoginRequiredCB');
+              console.log('#e2eLoginRequiredCB **click**');
+            }
+            // Somehow once this function exited with isChecked !== isRequired. Race condition?
+            // Let's find out:
+            let isChecked = browser.isSelected('#e2eLoginRequiredCB');
+            console.log('#e2eLoginRequiredCB is checked: ' + isChecked);
+            browser.pause(100);
+            isChecked = browser.isSelected('#e2eLoginRequiredCB');
+            console.log('#e2eLoginRequiredCB is checked: ' + isChecked);
+            browser.pause(200);
+            isChecked = browser.isSelected('#e2eLoginRequiredCB');
+            console.log('#e2eLoginRequiredCB is checked: ' + isChecked);
+            browser.pause(400);
+            isChecked = browser.isSelected('#e2eLoginRequiredCB');
+            console.log('#e2eLoginRequiredCB is checked: ' + isChecked);
+            browser.pause(800);
+            isChecked = browser.isSelected('#e2eLoginRequiredCB');
+            console.log('#e2eLoginRequiredCB is checked: ' + isChecked);
           },
 
           clickAllowGuestLogin: function() {

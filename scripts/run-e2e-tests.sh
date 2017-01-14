@@ -71,3 +71,5 @@ if [ -n "$run_all" ]; then
   runAllEndToEndTests firefox
 fi
 
+echo "Done running end-to-end tests."
+

@@ -58,14 +58,20 @@ describe("create site, follow the admin guide", function() {
       email: owen.emailAddress,
     };
     owen.go(utils.makeCreateSiteWithFakeIpUrl());
+    console.log("Fills in fields and submits");
     owen.createSite.fillInFieldsAndSubmit(newSiteData);
+    console.log("Clicks login");
     owen.click('#e2eLogin');
     owen.disableRateLimits();
+    console.log("Creates password account");
     owen.loginDialog.createPasswordAccount(owen);
     siteId = owen.getSiteId();
+    console.log("Gets a verification email");
     var link = server.getLastVerifyEmailAddressLinkEmailedTo(siteId, owen.emailAddress);
     owen.go(link);
+    console.log("Clicks continue");
     owen.waitAndClick('#e2eContinue');
+    console.log("Creates a forum");
     owen.createSomething.createForum(forumTitle);
     siteUrl = owen.url().value;
   });
@@ -73,6 +79,7 @@ describe("create site, follow the admin guide", function() {
   it("Maria sees it", function() {
     maria.go(siteUrl);
     maria.assertPageTitleMatches(forumTitle);
+    maria.disableRateLimits();
   });
 
   it("Owen edits settings: requires people to login", function() {
@@ -80,7 +87,7 @@ describe("create site, follow the admin guide", function() {
     owen.complex.closeSidebars(); // otherwise might open later and bump setting positions
     owen.adminArea.settings.legal.editOrgName(newOrgName);
     owen.adminArea.settings.clickLoginNavLink();
-    owen.adminArea.settings.login.clickLoginRequired();
+    owen.adminArea.settings.login.setLoginRequired(true);
     owen.adminArea.settings.clickSaveAll();
   });
 
