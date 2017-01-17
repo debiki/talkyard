@@ -12,7 +12,7 @@ cd ..
 # container is here started with 'run' (not 'up') I would think, so it doesn't
 # get the correct network address ? )
 
-sudo docker-compose run --rm --service-ports app /opt/typesafe-activator/bin/activator \
+docker-compose run --rm --service-ports app /opt/typesafe-activator/bin/activator \
   -jvm-debug 9999 \
   -Dcom.sun.management.jmxremote.port=3333 \
   -Dcom.sun.management.jmxremote.ssl=false \

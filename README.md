@@ -172,7 +172,7 @@ And, if you want to test in a browser other than Chrome, see [Making *.localhost
 
 #### Unit tests
 
-Stop everything: `sudo docker-compose down` and then: `scripts/cli.sh` then type `test` + hit Enter.
+Stop everything: `sudo docker-compose down` and then: `s/cli` then type `test` + hit Enter.
 
 
 #### Performance tests
@@ -270,10 +270,10 @@ This project looks like so:
      |   |                 read-only in Nginx (to serve static files)
      |   ...
      |
-     +-scripts/        <-- Utility scripts
+     +-s/         <-- Utility scripts (typing "scripts/" is too long, boring)
      |
-     +-conf/           <-- Default config files that assume everything
-                           is installed on localohost, and dev mode
+     +-conf/      <-- Default config files that assume everything
+                      is installed on localohost, and dev mode
 
 Naming style
 -----------------------------
