@@ -33,6 +33,7 @@ var concat = require('gulp-concat');
 var del = require('del');
 var rename = require("gulp-rename");
 var header = require('gulp-header');
+var tape = require('gulp-tape');
 var wrap = require('gulp-wrap');
 var uglify = require('gulp-uglify');
 var gzip = require('gulp-gzip');
@@ -446,7 +447,12 @@ gulp.task('release', ['insert-prod-scripts', 'minify-scripts', 'compile-stylus']
 });
 
 
-// ---- Tests -------------------------------------------------------------
+
+// ------------------------------------------------------------------------
+//  End-to-end Tests
+// ------------------------------------------------------------------------
+
+// COULD REFACTOR use ts-node instead of compiling manually. Already using ts-node here (65KAAR3)
 
 gulp.task('clean-e2e', function () {
   return del([
@@ -478,6 +484,21 @@ gulp.task('compile-e2e-scripts', function() {
 // Compiles TypeScript code in test/e2e/ and places it in target/e2e/transpiled/,
 //
 gulp.task('build-e2e', ['clean-e2e', 'compile-e2e-scripts'], function() {
+});
+
+
+
+// ------------------------------------------------------------------------
+//  Security Tests
+// ------------------------------------------------------------------------
+
+
+gulp.task('security-tests', function() {
+  // (ts-node required for *.ts to work.) (65KAAR3)
+  return gulp.src(['tests/security/**/*.ts', 'tests/security/**/*.js'])
+    .pipe(tape({
+      // reporter: tapColorize()
+    }));
 });
 
 

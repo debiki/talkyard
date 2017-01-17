@@ -167,7 +167,14 @@ And, if you want to test in a browser other than Chrome, see [Making *.localhost
 
 #### Security tests
 
-... Soon ...
+The security tests are written in TypeScript and use Tape = test-anything-protocol for Node.js.
+You'll find them in `tests/security/**/*.ts`. Run them like so: (`d-gulp` runs Gulp in a Docker
+container)
+
+```
+sudo docker-compose up -d  # starts everything
+sudo s/d-gulp security-tests
+```
 
 
 #### Unit tests
