@@ -1,0 +1,1 @@
+docker-compose  exec gulp  node --debug-brk --inspect=9229  node_modules/.bin/tape target/security-tests/**/*.js --host web

@@ -28,12 +28,11 @@ var gulp = require('gulp');
 var newer = require('gulp-newer');
 var typeScript = require('gulp-typescript');
 var stylus = require('gulp-stylus');
-var cleanCSS = require('gulp-clean-css');;
+var cleanCSS = require('gulp-clean-css');
 var concat = require('gulp-concat');
 var del = require('del');
 var rename = require("gulp-rename");
 var header = require('gulp-header');
-var tape = require('gulp-tape');
 var wrap = require('gulp-wrap');
 var uglify = require('gulp-uglify');
 var gzip = require('gulp-gzip');
@@ -436,10 +435,11 @@ gulp.task('watch', ['default'], function() {
   gulp.watch(['client/**/*.ts', '!client/test/**/*.ts'] ,['compile-typescript-concat-scripts']).on('change', logChangeFn('TypeScript'));
   gulp.watch('client/**/*.js', ['wrap-javascript-concat-scripts']).on('change', logChangeFn('Javascript'));
   gulp.watch('client/**/*.styl', ['compile-stylus']).on('change', logChangeFn('Stylus'));
-  gulp.watch('client/test/e2e/**/*.ts', ['build-e2e']).on('change', logChangeFn('TypeScript test files'));
+  gulp.watch('client/test/e2e/**/*.ts', ['build-e2e']).on('change', logChangeFn('end-to-end test files'));
+  gulp.watch('tests/security/**/*.ts', ['build-security-tests']).on('change', logChangeFn('security test files'));
 });
 
-gulp.task('default', ['compile-concat-scripts', 'compile-stylus', 'build-e2e'], function () {
+gulp.task('default', ['compile-concat-scripts', 'compile-stylus', 'build-e2e', 'build-security-tests'], function () {
 });
 
 
@@ -452,7 +452,6 @@ gulp.task('release', ['insert-prod-scripts', 'minify-scripts', 'compile-stylus']
 //  End-to-end Tests
 // ------------------------------------------------------------------------
 
-// COULD REFACTOR use ts-node instead of compiling manually. Already using ts-node here (65KAAR3)
 
 gulp.task('clean-e2e', function () {
   return del([
@@ -489,16 +488,35 @@ gulp.task('build-e2e', ['clean-e2e', 'compile-e2e-scripts'], function() {
 
 
 // ------------------------------------------------------------------------
-//  Security Tests
+//  Security tests
 // ------------------------------------------------------------------------
 
+gulp.task('clean-security-tests', function () {
+  return del([
+    'target/security-tests/**/*']);
+});
 
-gulp.task('security-tests', function() {
-  // (ts-node required for *.ts to work.) (65KAAR3)
-  return gulp.src(['tests/security/**/*.ts', 'tests/security/**/*.js'])
-    .pipe(tape({
-      // reporter: tapColorize()
+gulp.task('compile-security-tests', function() {
+  var stream = gulp.src([
+    //'tests/sync-tape.ts',
+    'tests/**/*.ts'])
+    .pipe(typeScript({
+      declarationFiles: true,
+      module: 'commonjs',
     }));
+  // stream.dts.pipe(gulp.dest('target/e2e/...')); — no, don't need d.ts files
+  if (watchAndLiveForever) {
+    stream.on('error', function() {
+      console.log('\n!!! Error compiling security tests TypeScript !!!\n');
+    });
+  }
+  return stream.js
+  // .pipe(sourcemaps.write('.', { sourceRoot: '../../../../externalResolve/' }))
+    .pipe(gulp.dest('target/security-tests'));
+});
+
+
+gulp.task('build-security-tests', ['clean-security-tests', 'compile-security-tests'], function() {
 });
 
 

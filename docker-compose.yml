@@ -104,5 +104,18 @@ services:
     build: docker/gulp/
     volumes:
       - ./:/opt/debiki/server/
+    ports:
+      # This is for debugging tests running in Node.js in this container, and started
+      # via `node --debug-brk --inspect=9229`. [8EA02R4]
+      - '9229:9229'
+    links:
+      # Links for security tests, so the Typescript test code running in this Node.js container can
+      # send HTTP request to the ED tech stack, if it's running in Docker-Compose on localhost.
+      # See tests/security/settings.ts [7PKW4R2]
+      - web
+      - web:test-site-1.web
+      - web:test-site-2.web
+      - web:test-site-3.web
+
 
 # vim: et ts=2 sw=2
