@@ -37,31 +37,31 @@ site_nr=0
 function runAllEndToEndTests {
   browser=$1
   echo "Running all end-to-end tests in $browser..."
-  runEndToEndTest scripts/wdio target/e2e/wdio.conf.js            --browser $browser --only all-links $args
-  runEndToEndTest scripts/wdio target/e2e/wdio.conf.js            --browser $browser --only create-site-all-logins $args
-  runEndToEndTest scripts/wdio target/e2e/wdio.2chrome.conf.js    --browser $browser --only create-site-admin-guide.2browsers $args
-  runEndToEndTest scripts/wdio target/e2e/wdio.conf.js            --browser $browser --only editor-onebox $args
-  runEndToEndTest scripts/wdio target/e2e/wdio.3chrome.conf.js    --browser $browser --only formal-private-messages.3browsers $args
-  runEndToEndTest scripts/wdio target/e2e/wdio.2chrome.conf.js    --browser $browser --only basic-chat.2browsers $args
-  runEndToEndTest scripts/wdio target/e2e/wdio.3chrome.conf.js    --browser $browser --only categories-basic.3browsers $args
-  #runEndToEndTest scripts/wdio target/e2e/wdio.2chrome.conf.js    --browser $browser --only categories-delete.2browsers $args
-  runEndToEndTest scripts/wdio target/e2e/wdio.3chrome.conf.js    --browser $browser --only private-chat.3browsers $args
-  runEndToEndTest scripts/wdio target/e2e/wdio.3chrome.conf.js    --browser $browser --only settings-toggle-login-required.3browsers $args
-  runEndToEndTest scripts/wdio target/e2e/wdio.2chrome.conf.js    --browser $browser --only password-login-reset.2browsers $args
-  runEndToEndTest scripts/wdio target/e2e/wdio.conf.js            --browser $browser --only user-profile-access $args
-  runEndToEndTest scripts/wdio target/e2e/wdio.conf.js            --browser $browser --only user-profile-change-username $args
-  ###runEndToEndTest scripts/wdio target/e2e/wdio.3chrome.conf.js --browser $browser --only custom-forms.3browsers $args
-  runEndToEndTest scripts/wdio target/e2e/wdio.conf.js            --browser $browser --only view-as-stranger $args
-  runEndToEndTest scripts/wdio target/e2e/wdio.2chrome.conf.js    --browser $browser --only impersonate.2browsers $args
-  runEndToEndTest scripts/wdio target/e2e/wdio.2chrome.conf.js    --browser $browser --only unsubscribe.2browsers $args
-  runEndToEndTest scripts/wdio target/e2e/wdio.2chrome.conf.js    --browser $browser --only new-user-review-ok.2browsers $args
-  #runEndToEndTest scripts/wdio target/e2e/wdio.2chrome.conf.js    --browser $browser --only new-user-review-bad.2browsers $args
-  runEndToEndTest scripts/wdio target/e2e/wdio.2chrome.conf.js    --browser $browser --only new-member-allow-approve.2browsers $args
-  #runEndToEndTest scripts/wdio target/e2e/wdio.2chrome.conf.js    --browser $browser --only new-member-allow-reject.2browsers $args
-  runEndToEndTest scripts/wdio target/e2e/wdio.2chrome.conf.js    --browser $browser --only spam-basic-local.2browsers $args
-  runEndToEndTest scripts/wdio target/e2e/wdio.2chrome.conf.js    --browser $browser --only flag-member-block-agree.2browsers $args
-  runEndToEndTest scripts/wdio target/e2e/wdio.2chrome.conf.js    --browser $browser --only flag-guest-block-agree.2browsers $args
-  runEndToEndTest scripts/wdio target/e2e/wdio.2chrome.conf.js    --browser $browser --only search-public-basic.2browsers $args
+  runEndToEndTest s/wdio target/e2e/wdio.conf.js            --browser $browser --only all-links $args
+  runEndToEndTest s/wdio target/e2e/wdio.conf.js            --browser $browser --only create-site-all-logins $args
+  runEndToEndTest s/wdio target/e2e/wdio.2chrome.conf.js    --browser $browser --only create-site-admin-guide.2browsers $args
+  runEndToEndTest s/wdio target/e2e/wdio.conf.js            --browser $browser --only editor-onebox $args
+  runEndToEndTest s/wdio target/e2e/wdio.3chrome.conf.js    --browser $browser --only formal-private-messages.3browsers $args
+  runEndToEndTest s/wdio target/e2e/wdio.2chrome.conf.js    --browser $browser --only basic-chat.2browsers $args
+  runEndToEndTest s/wdio target/e2e/wdio.3chrome.conf.js    --browser $browser --only categories-basic.3browsers $args
+  #runEndToEndTest s/wdio target/e2e/wdio.2chrome.conf.js    --browser $browser --only categories-delete.2browsers $args
+  runEndToEndTest s/wdio target/e2e/wdio.3chrome.conf.js    --browser $browser --only private-chat.3browsers $args
+  runEndToEndTest s/wdio target/e2e/wdio.3chrome.conf.js    --browser $browser --only settings-toggle-login-required.3browsers $args
+  runEndToEndTest s/wdio target/e2e/wdio.2chrome.conf.js    --browser $browser --only password-login-reset.2browsers $args
+  runEndToEndTest s/wdio target/e2e/wdio.conf.js            --browser $browser --only user-profile-access $args
+  runEndToEndTest s/wdio target/e2e/wdio.conf.js            --browser $browser --only user-profile-change-username $args
+  ###runEndToEndTest s/wdio target/e2e/wdio.3chrome.conf.js --browser $browser --only custom-forms.3browsers $args
+  runEndToEndTest s/wdio target/e2e/wdio.conf.js            --browser $browser --only view-as-stranger $args
+  runEndToEndTest s/wdio target/e2e/wdio.2chrome.conf.js    --browser $browser --only impersonate.2browsers $args
+  runEndToEndTest s/wdio target/e2e/wdio.2chrome.conf.js    --browser $browser --only unsubscribe.2browsers $args
+  runEndToEndTest s/wdio target/e2e/wdio.2chrome.conf.js    --browser $browser --only new-user-review-ok.2browsers $args
+  #runEndToEndTest s/wdio target/e2e/wdio.2chrome.conf.js    --browser $browser --only new-user-review-bad.2browsers $args
+  runEndToEndTest s/wdio target/e2e/wdio.2chrome.conf.js    --browser $browser --only new-member-allow-approve.2browsers $args
+  #runEndToEndTest s/wdio target/e2e/wdio.2chrome.conf.js    --browser $browser --only new-member-allow-reject.2browsers $args
+  runEndToEndTest s/wdio target/e2e/wdio.2chrome.conf.js    --browser $browser --only spam-basic-local.2browsers $args
+  runEndToEndTest s/wdio target/e2e/wdio.2chrome.conf.js    --browser $browser --only flag-member-block-agree.2browsers $args
+  runEndToEndTest s/wdio target/e2e/wdio.2chrome.conf.js    --browser $browser --only flag-guest-block-agree.2browsers $args
+  runEndToEndTest s/wdio target/e2e/wdio.2chrome.conf.js    --browser $browser --only search-public-basic.2browsers $args
 }
 
 

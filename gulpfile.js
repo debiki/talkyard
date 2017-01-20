@@ -435,7 +435,7 @@ gulp.task('watch', ['default'], function() {
   gulp.watch(['client/**/*.ts', '!client/test/**/*.ts'] ,['compile-typescript-concat-scripts']).on('change', logChangeFn('TypeScript'));
   gulp.watch('client/**/*.js', ['wrap-javascript-concat-scripts']).on('change', logChangeFn('Javascript'));
   gulp.watch('client/**/*.styl', ['compile-stylus']).on('change', logChangeFn('Stylus'));
-  gulp.watch('client/test/e2e/**/*.ts', ['build-e2e']).on('change', logChangeFn('end-to-end test files'));
+  gulp.watch('tests/e2e/**/*.ts', ['build-e2e']).on('change', logChangeFn('end-to-end test files'));
   gulp.watch('tests/security/**/*.ts', ['build-security-tests']).on('change', logChangeFn('security test files'));
 });
 
@@ -462,7 +462,7 @@ gulp.task('compile-e2e-scripts', function() {
   var stream = gulp.src([
         'client/app/constants.ts',
         'client/app/model.ts',
-        'client/test/e2e/**/*ts'])
+        'tests/e2e/**/*ts'])
       .pipe(typeScript({
         declarationFiles: true,
         module: 'commonjs',
@@ -499,7 +499,7 @@ gulp.task('clean-security-tests', function () {
 gulp.task('compile-security-tests', function() {
   var stream = gulp.src([
     //'tests/sync-tape.ts',
-    'tests/**/*.ts'])
+    'tests/security/**/*.ts'])
     .pipe(typeScript({
       declarationFiles: true,
       module: 'commonjs',

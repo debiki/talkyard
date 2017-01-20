@@ -1,0 +1,6 @@
+https://github.com/defunctzombie/zuul
+https://github.com/substack/tape/issues/148
+https://github.com/substack/tape
+
+https://tanzimsaqib.wordpress.com/2015/06/06/continuous-functional-test-automation-with-gulp-mocha-request-cheerio-chai/
+

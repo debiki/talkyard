@@ -1,6 +1,6 @@
 import * as tape from 'tape';
 let asyncTest = tape;
-import syncTest = require('../sync-tape');
+import syncTest = require('./sync-tape');
 import * as syncRequest from 'sync-request';
 import * as cheerio from 'cheerio';
 import settings = require('./settings');
