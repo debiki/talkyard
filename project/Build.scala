@@ -96,6 +96,10 @@ object ApplicationBuild extends Build {
     libraryDependencies ++= appDependencies,
     scalaVersion := "2.11.8",
 
+    // Place tests in ./tests/app/ instead of ./test/, because there're other tests in
+    // ./tests/, namely security/ and e2e/, and having both ./test/ and ./tests/ seems confusing.
+    scalaSource in Test := { (baseDirectory in Test)(_ / "tests" / "app") }.value,
+
     // Silhouette needs com.atlassian.jwt:jwt-core and jwt-api, but there's a problem:
     // """the problem is that the jwt-lib is hosted on bintray.com and then mirrored to
     // the typesafe.com repository. It seems that the typesafe repository uses a redirect
