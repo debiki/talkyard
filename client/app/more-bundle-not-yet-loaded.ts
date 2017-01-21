@@ -120,7 +120,7 @@ export function openPageToolsDialog() {
 export function getEditCategoryDialog(handler: (dialog) => void) {
   // We need the editor-bundle.js, because it contains window.debikiSlugify [5FK2W08].
   // And the more-bundle.js too. This loads both.
-  Server.loadEditorEtcScriptsAndLater(() => {
+  Server.loadEditorAndMoreBundles(() => {
     debiki2.forum.getEditCategoryDialog(handler);
   });
 }

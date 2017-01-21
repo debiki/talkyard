@@ -31,23 +31,23 @@ import play.api._
 class CloseCollapseController @Inject() extends mvc.Controller {
 
 
-  def hidePost = PostJsonAction(RateLimits.CloseCollapsePost, maxLength = 100) { apiReq =>
+  def hidePost = PostJsonAction(RateLimits.CloseCollapsePost, maxBytes = 100) { apiReq =>
     val hide = (apiReq.body \ "hide").as[Boolean]
     changeStatus(apiReq, if (hide) PostStatusAction.HidePost else PostStatusAction.UnhidePost)
   }
 
 
-  def collapsePost = PostJsonAction(RateLimits.CloseCollapsePost, maxLength = 100) { apiReq =>
+  def collapsePost = PostJsonAction(RateLimits.CloseCollapsePost, maxBytes = 100) { apiReq =>
     changeStatus(apiReq, PostStatusAction.CollapsePost)
   }
 
 
-  def collapseTree = PostJsonAction(RateLimits.CloseCollapsePost, maxLength = 100) { apiReq =>
+  def collapseTree = PostJsonAction(RateLimits.CloseCollapsePost, maxBytes = 100) { apiReq =>
     changeStatus(apiReq, PostStatusAction.CollapseTree)
   }
 
 
-  def closeTree = PostJsonAction(RateLimits.CloseCollapsePost, maxLength = 100) { apiReq =>
+  def closeTree = PostJsonAction(RateLimits.CloseCollapsePost, maxBytes = 100) { apiReq =>
     changeStatus(apiReq, PostStatusAction.CloseTree)
   }
 

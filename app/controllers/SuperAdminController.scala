@@ -47,7 +47,7 @@ object SuperAdminController extends p.mvc.Controller {
   }
 
 
-  def updateSites() = SuperAdminPostJsonAction(maxLength = 10*1000) { request =>
+  def updateSites() = SuperAdminPostJsonAction(maxBytes = 10*1000) { request =>
     val jsObjs = request.body.as[Seq[JsObject]]
     val siteData = jsObjs.map(jsObj => {
       val siteId = (jsObj \ "id").as[SiteId]

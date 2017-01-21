@@ -55,7 +55,7 @@ object SettingsController extends mvc.Controller {
   }
 
 
-  def saveSiteSettings = AdminPostJsonAction(maxLength = 10*1000) { request: JsonPostRequest =>
+  def saveSiteSettings = AdminPostJsonAction(maxBytes = 10*1000) { request: JsonPostRequest =>
     val settingsToSave = debiki.Settings2.settingsToSaveFromJson(request.body)
     throwForbiddenIf(settingsToSave.orgFullName.exists(_.isEmptyOrContainsBlank),
       "EdE5KP8R2", "Cannot clear the organization name")
@@ -64,14 +64,14 @@ object SettingsController extends mvc.Controller {
   }
 
 
-  def changeHostname = AdminPostJsonAction(maxLength = 100) { request: JsonPostRequest =>
+  def changeHostname = AdminPostJsonAction(maxBytes = 100) { request: JsonPostRequest =>
     val newHostname = (request.body \ "newHostname").as[String]
     request.dao.changeSiteHostname(newHostname)
     Ok
   }
 
 
-  def updateExtraHostnames = AdminPostJsonAction(maxLength = 50) { request: JsonPostRequest =>
+  def updateExtraHostnames = AdminPostJsonAction(maxBytes = 50) { request: JsonPostRequest =>
     val redirect = (request.body \ "redirect").as[Boolean]
     val role = if (redirect) SiteHost.RoleRedirect else SiteHost.RoleDuplicate
     request.dao.changeExtraHostsRole(newRole = role)

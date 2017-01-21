@@ -70,7 +70,7 @@ var TagsDialog = createComponent({
       if (this.isUnmounted) return;
       this.setState({ allTags: tags });
     });
-    Server.loadEditorEtcScriptsAndLater(() => {
+    Server.loadEditorAndMoreBundles(() => {
       if (this.isUnmounted || !this.state.isOpen) return;
       this.setState({
         isLoading: false,

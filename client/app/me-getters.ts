@@ -55,7 +55,7 @@ export function me_hasVoted(me: Myself, postId: PostId, what: string): boolean {
 }
 
 
-export function me_maySendDirectMessageTo(me: Myself, user: CompleteUser): boolean {
+export function me_maySendDirectMessageTo(me: Myself, user: MemberInclDetails): boolean {
   if (!user_isMember(me) || !user_isMember(user))
     return false;
 

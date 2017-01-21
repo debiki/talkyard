@@ -152,9 +152,9 @@ var staffBundleStatus;
 // Won't call callback() until a bit later — so if you call React's setState(..), the
 // state will have changed.
 //
-export function loadEditorEtcScriptsAndLater(callback?) {  // RENAME? to loadEditorAndMoreBundles
+export function loadEditorAndMoreBundles(callback?) {
   setTimeout(function() {
-    loadEditorEtceteraScripts().done(callback || _.noop)
+    loadEditorAndMoreBundlesGetDeferred().done(callback || _.noop)
   }, 0);
 }
 
@@ -188,7 +188,7 @@ export function loadStaffScriptsBundle(callback) {
   staffBundleStatus = $.Deferred();
   // The staff scripts bundle requires both more-bundle.js and editor-bundle.js (to render
   // previews of CommonMark comments [7PKEW24]). This'll load them both.
-  loadEditorEtcScriptsAndLater(() => {
+  loadEditorAndMoreBundles(() => {
     window['yepnope']({
       both: [d.i.assetUrlPrefix + 'staff-bundle.' + d.i.minMaxJs],
       complete: () => {
@@ -201,7 +201,7 @@ export function loadStaffScriptsBundle(callback) {
 }
 
 
-export function loadEditorEtceteraScripts() {
+export function loadEditorAndMoreBundlesGetDeferred() {
   if (loadEditorScriptsStatus)
     return loadEditorScriptsStatus;
 
@@ -443,7 +443,7 @@ export function stopImpersonatingReloadPage() {
 
 
 export function loadCompleteUser(userIdOrUsername: UserId | string,
-        doneCallback: (user: CompleteUser) => void, error?: () => void) {
+      doneCallback: (user: MemberInclDetails) => void, error?: () => void) {
   get('/-/load-user-incl-details?who=' + userIdOrUsername, (response) => {
     doneCallback(response.user);
   }, error);
@@ -451,7 +451,7 @@ export function loadCompleteUser(userIdOrUsername: UserId | string,
 
 
 export function listCompleteUsers(whichUsers,
-        doneCallback: (users: CompleteUser[]) => void) {
+        doneCallback: (users: MemberInclDetails[]) => void) {
   $.get(origin + '/-/list-complete-users?whichUsers=' + whichUsers)
     .done(response => {
       doneCallback(response.users);
@@ -495,7 +495,7 @@ export function setIsAdminOrModerator(userId: UserId, doWhat: string, success: (
 }
 
 
-export function approveRejectUser(user: CompleteUser, doWhat: string, success: () => void) {
+export function approveRejectUser(user: MemberInclDetails, doWhat: string, success: () => void) {
   postJsonSuccess( '/-/approve-reject-user', success, {
     userId: user.id,
     doWhat: doWhat

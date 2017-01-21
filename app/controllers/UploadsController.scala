@@ -38,7 +38,7 @@ object UploadsController extends mvc.Controller {
     MaxAvatarTinySizeBytes + MaxAvatarSmallSizeBytes + MaxAvatarMediumSizeBytes
 
 
-  def uploadPublicFile = PostFilesAction(RateLimits.UploadFile, maxLength = maxUploadSizeBytes) {
+  def uploadPublicFile = PostFilesAction(RateLimits.UploadFile, maxBytes = maxUploadSizeBytes) {
         request =>
 
     // COULD disable the file upload dialog for guests. And refuse to receive any data at
@@ -81,7 +81,7 @@ object UploadsController extends mvc.Controller {
   }
 
 
-  def removeAvatar = PostJsonAction(RateLimits.UploadFile, maxLength = 200) { request =>
+  def removeAvatar = PostJsonAction(RateLimits.UploadFile, maxBytes = 200) { request =>
     request.dao.setUserAvatar(request.theUserId, tinyAvatar = None, smallAvatar = None,
       mediumAvatar = None, request.theBrowserIdData)
     Ok
@@ -92,7 +92,7 @@ object UploadsController extends mvc.Controller {
     * for the tiny, small and medium avatars. Oh well.)
     */
   def uploadAvatar(userId: UserId) =
-        PostFilesAction(RateLimits.UploadFile, maxLength = MaxAvatarUploadSizeBytes) { request =>
+        PostFilesAction(RateLimits.UploadFile, maxBytes = MaxAvatarUploadSizeBytes) { request =>
 
     if (!request.theUser.isAuthenticated)
       throwForbidden("EdE8YWM2", o"""Only authenticated users (but not guests) may upload avatars.

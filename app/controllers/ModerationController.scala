@@ -52,7 +52,7 @@ object ModerationController extends mvc.Controller {
   }
 
 
-  def completeReviewTask = StaffPostJsonAction(maxLength = 100) { request =>
+  def completeReviewTask = StaffPostJsonAction(maxBytes = 100) { request =>
     val taskId = (request.body \ "taskId").as[ReviewTaskId]
     val anyRevNr = (request.body \ "revisionNr").asOpt[Int]
     val actionInt = (request.body \ "action").as[Int]
@@ -64,7 +64,7 @@ object ModerationController extends mvc.Controller {
 
 
   /*
-  def approve = StaffPostJsonAction(maxLength = 5000) { request =>
+  def approve = StaffPostJsonAction(maxBytes = 5000) { request =>
     SECURITY ; COULD // restrict approval of edits of any homepage or about page to admins only.
     val PagePostNr(pageId, postNr) = parseBody(request)
     request.dao.approvePost(pageId, postNr = postNr, approverId = request.theUserId)
@@ -72,19 +72,19 @@ object ModerationController extends mvc.Controller {
   }
 
 
-  def hideNewPostSendPm = StaffPostJsonAction(maxLength = 5000) { apiReq =>
+  def hideNewPostSendPm = StaffPostJsonAction(maxBytes = 5000) { apiReq =>
     ???
   }
 
 
-  def hideFlaggedPostSendPm = StaffPostJsonAction(maxLength = 5000) { request =>
+  def hideFlaggedPostSendPm = StaffPostJsonAction(maxBytes = 5000) { request =>
     val PagePostNr(pageId, postNr) = parseBody(request)
     ??? // request.dao.hidePostClearFlag(pageId, postId = postId, hiddenById = request.theUserId)
     Ok
   }
 
 
-  def deletePost = StaffPostJsonAction(maxLength = 5000) { request =>
+  def deletePost = StaffPostJsonAction(maxBytes = 5000) { request =>
     val PagePostNr(pageId, postNr) = parseBody(request)
     request.dao.deletePost(pageId, postNr = postNr, deletedById = request.theUserId,
         request.theBrowserIdData)
@@ -92,7 +92,7 @@ object ModerationController extends mvc.Controller {
   }
 
 
-  def deleteFlaggedPost = StaffPostJsonAction(maxLength = 5000) { request =>
+  def deleteFlaggedPost = StaffPostJsonAction(maxBytes = 5000) { request =>
     // COULD add a specific method deleteFlaggedPost, that also ... marks the flags as accepted?
     // Like Discourse does it. For now:
     val PagePostNr(pageId, postNr) = parseBody(request)
@@ -102,14 +102,14 @@ object ModerationController extends mvc.Controller {
   }
 
 
-  def clearFlags = StaffPostJsonAction(maxLength = 5000) { request =>
+  def clearFlags = StaffPostJsonAction(maxBytes = 5000) { request =>
     val PagePostNr(pageId, postNr) = parseBody(request)
     request.dao.clearFlags(pageId, postNr = postNr, clearedById = request.theUserId)
     Ok
   }
 
 
-  def rejectEdits = StaffPostJsonAction(maxLength = 5000) { request =>
+  def rejectEdits = StaffPostJsonAction(maxBytes = 5000) { request =>
     val PagePostNr(pageId, postNr) = parseBody(request)
     ??? // request.dao.rejectEdits(pageId, postId = postId, rejectedById = request.theUserId)
     Ok

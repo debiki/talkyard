@@ -24,14 +24,14 @@
 
 
 function ensureEditorCreated(success: (editor: any) => void) {
-  Server.loadEditorEtcScriptsAndLater(() => {
+  Server.loadEditorAndMoreBundles(() => {
     debiki2.editor.getOrCreateEditor(success);
   });
 }
 
 
 export function startMentionsParser(textarea, onTextEdited) {
-  Server.loadEditorEtcScriptsAndLater(() => {
+  Server.loadEditorAndMoreBundles(() => {
     // The calling component might have been unmounted; then, `textarea` is gone.
     if (document.body.contains(textarea)) {
       debiki2.editor.startMentionsParserImpl(textarea, onTextEdited);

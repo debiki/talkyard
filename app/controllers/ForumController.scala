@@ -42,7 +42,7 @@ object ForumController extends mvc.Controller {
   val NumTopicsToList = 40
 
 
-  def createForum = StaffPostJsonAction(maxLength = 200) { request =>
+  def createForum = StaffPostJsonAction(maxBytes = 200) { request =>
     val title = (request.body \ "title").as[String]
     val folder = (request.body \ "folder").as[String]
     val pagePath = request.dao.createForum(title, folder = folder, request.who).pagePath
@@ -58,7 +58,7 @@ object ForumController extends mvc.Controller {
   }
 
 
-  def saveCategory = StaffPostJsonAction(maxLength = 1000) { request =>
+  def saveCategory = StaffPostJsonAction(maxBytes = 1000) { request =>
     val body = request.body
     val sectionPageId = (body \ "sectionPageId").as[PageId]
     val unlisted = (body \ "unlisted").asOpt[Boolean].getOrElse(false)
@@ -114,12 +114,12 @@ object ForumController extends mvc.Controller {
   }
 
 
-  def deleteCategory = AdminPostJsonAction(maxLength = 200) { request =>
+  def deleteCategory = AdminPostJsonAction(maxBytes = 200) { request =>
     deleteUndeleteCategory(request, delete = true)
   }
 
 
-  def undeleteCategory = AdminPostJsonAction(maxLength = 200) { request =>
+  def undeleteCategory = AdminPostJsonAction(maxBytes = 200) { request =>
     deleteUndeleteCategory(request, delete = false)
   }
 

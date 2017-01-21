@@ -32,15 +32,15 @@ export var UserNotificationsComponent = React.createClass({
   },
 
   componentDidMount: function() {
-    var user: CompleteUser = this.props.user;
+    var user: MemberInclDetails = this.props.user;
     this.loadNotifications(user.id);
   },
 
   componentWillReceiveProps: function(nextProps) {
     var me: Myself = this.props.me;
-    var user: CompleteUser = this.props.user;
+    var user: MemberInclDetails = this.props.user;
     var nextLoggedInUser: Myself = nextProps.me;
-    var nextUser: CompleteUser = nextProps.user;
+    var nextUser: MemberInclDetails = nextProps.user;
     if (me.id !== nextLoggedInUser.id ||
         user.id !== nextUser.id) {
       this.loadNotifications(nextUser.id);
@@ -73,7 +73,7 @@ export var UserNotificationsComponent = React.createClass({
     if (!this.state.notfs)
       return r.p({}, "Loading...");
 
-    let user: CompleteUser = this.props.user;
+    let user: MemberInclDetails = this.props.user;
     let me: Myself = this.props.me;
     let isMe = user.id === me.id;
     let toWho = isMe ? "you" : user.username || user.fullName;

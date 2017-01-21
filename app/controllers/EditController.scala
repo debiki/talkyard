@@ -91,7 +91,7 @@ object EditController extends mvc.Controller {
 
   /** Edits posts.
     */
-  def edit = PostJsonAction(RateLimits.EditPost, maxLength = MaxPostSize) {
+  def edit = PostJsonAction(RateLimits.EditPost, maxBytes = MaxPostSize) {
         request: JsonPostRequest =>
     val pageId = (request.body \ "pageId").as[PageId]
     val postNr = (request.body \ "postNr").as[PostNr] ; SHOULD // change to id, in case moved to other page [idnotnr]
@@ -143,7 +143,7 @@ object EditController extends mvc.Controller {
   }
 
 
-  def changePostType = PostJsonAction(RateLimits.EditPost, maxLength = 100) { request =>
+  def changePostType = PostJsonAction(RateLimits.EditPost, maxBytes = 100) { request =>
     val pageId = (request.body \ "pageId").as[PageId]
     val postNr = (request.body \ "postNr").as[PostNr]
     val newTypeInt = (request.body \ "newType").as[Int]
@@ -156,7 +156,7 @@ object EditController extends mvc.Controller {
 
 
   // Staff only, *for now*.
-  def editPostSettings = StaffPostJsonAction(maxLength = 100) { request =>
+  def editPostSettings = StaffPostJsonAction(maxBytes = 100) { request =>
     val postId = (request.body \ "postId").as[PostId]
     val branchSideways = (request.body \ "branchSideways").asOpt[Byte]
     val patch = request.dao.editPostSettings(postId, branchSideways, request.who)
@@ -164,7 +164,7 @@ object EditController extends mvc.Controller {
   }
 
 
-  def deletePost = PostJsonAction(RateLimits.DeletePost, maxLength = 5000) { request =>
+  def deletePost = PostJsonAction(RateLimits.DeletePost, maxBytes = 5000) { request =>
     val pageId = (request.body \ "pageId").as[PageId]
     val postNr = (request.body \ "postNr").as[PostNr]
     val repliesToo = (request.body \ "repliesToo").as[Boolean]
@@ -180,7 +180,7 @@ object EditController extends mvc.Controller {
   }
 
 
-  def movePost = StaffPostJsonAction(maxLength = 100) { request =>
+  def movePost = StaffPostJsonAction(maxBytes = 100) { request =>
     val pageId = (request.body \ "pageId").as[PageId]   // apparently not used
     val postId = (request.body \ "postId").as[PostId]   // id not nr
     val newHost = (request.body \ "newHost").as[SiteId] // ignore for now though

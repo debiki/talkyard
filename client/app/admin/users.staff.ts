@@ -149,7 +149,7 @@ var UserList = createComponent({
       return r.p({}, 'Loading...');
 
     var now = new Date().getTime();
-    var userRows = this.state.users.map((user: CompleteUser) => {
+    var userRows = this.state.users.map((user: MemberInclDetails) => {
       return UserRow({ user: user, now: now, key: user.id, whichUsers: this.props.whichUsers });
     });
 
@@ -199,7 +199,7 @@ var UserRow = createComponent({
   },
 
   render: function() {
-    var user: CompleteUser = this.props.user;
+    var user: MemberInclDetails = this.props.user;
 
     var actions;
     if (this.props.whichUsers !== 'NewUsers') {

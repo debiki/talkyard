@@ -37,7 +37,7 @@ class Application @Inject() extends mvc.Controller {
   }
 
 
-  def flag = PostJsonAction(RateLimits.FlagPost, maxLength = 2000) { request =>
+  def flag = PostJsonAction(RateLimits.FlagPost, maxBytes = 2000) { request =>
     val body = request.body
     val dao = request.dao
     val pageId = (body \ "pageId").as[PageId]

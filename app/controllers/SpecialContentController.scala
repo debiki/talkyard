@@ -74,7 +74,7 @@ object SpecialContentController extends mvc.Controller {
     *   useDefaultText: Boolean
     *   anyCustomText
     */
-  def saveContent = AdminPostJsonAction(maxLength = MaxPostSize) { request: JsonPostRequest =>
+  def saveContent = AdminPostJsonAction(maxBytes = MaxPostSize) { request: JsonPostRequest =>
     val rootPageId = (request.body \ "rootPageId").as[PageId]
     val contentId = (request.body \ "contentId").as[PageId]
     val useDefaultText = (request.body \ "useDefaultText").as[Boolean]

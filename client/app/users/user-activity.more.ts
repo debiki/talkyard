@@ -68,16 +68,16 @@ export let PostsComponent = React.createClass(<any> {
   },
 
   componentDidMount: function() {
-    let user: CompleteUser = this.props.user;
+    let user: MemberInclDetails = this.props.user;
     this.loadPosts(user.id);
   },
 
   componentWillReceiveProps: function(nextProps) {
     // a bit dupl code [5AWS2E9]
     let me: Myself = this.props.store.me;
-    let user: CompleteUser = this.props.user;
+    let user: MemberInclDetails = this.props.user;
     let nextMe: Myself = nextProps.store.me;
-    let nextUser: CompleteUser = nextProps.user;
+    let nextUser: MemberInclDetails = nextProps.user;
     // If we log in as someone else, which posts we may see might change.
     if (me.id !== nextMe.id || user.id !== nextUser.id) {
       this.loadPosts(nextUser.id);
@@ -133,16 +133,16 @@ export let TopicsComponent = React.createClass(<any> {
   },
 
   componentDidMount: function() {
-    let user: CompleteUser = this.props.user;
+    let user: MemberInclDetails = this.props.user;
     this.loadTopics(user.id);
   },
 
   componentWillReceiveProps: function(nextProps) {
     // a bit dupl code [5AWS2E9]
     let me: Myself = this.props.store.me;
-    let user: CompleteUser = this.props.user;
+    let user: MemberInclDetails = this.props.user;
     let nextMe: Myself = nextProps.store.me;
-    let nextUser: CompleteUser = nextProps.user;
+    let nextUser: MemberInclDetails = nextProps.user;
     // If we log in as someone else, which topics we may see might change.
     if (me.id !== nextMe.id || user.id !== nextUser.id) {
       this.loadTopics(nextUser.id);

@@ -40,7 +40,7 @@ export function loadDiffMatchPatch(fn) {
     fn(diffMatchPatch);
   }
   else {
-    Server.loadEditorEtcScriptsAndLater(() => {
+    Server.loadEditorAndMoreBundles(() => {
       // For now: (see [7UMFK2] above)
       diff_match_patch = window['diff_match_patch'];
       DIFF_INSERT = window['DIFF_INSERT'];

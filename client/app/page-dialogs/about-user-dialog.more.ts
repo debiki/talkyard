@@ -78,7 +78,7 @@ var AboutUserDialog = createComponent({
   },
 
   loadUser: function(idOrUsername: number | string) {
-    Server.loadCompleteUser(idOrUsername, (user: CompleteUser) => {
+    Server.loadCompleteUser(idOrUsername, (user: MemberInclDetails) => {
       if (!this.isMounted()) return;
       if (!this.state.post) {
         this.setState({ user: user });
@@ -119,7 +119,7 @@ var AboutUserDialog = createComponent({
     var content;
 
     if (this.state.isOpen) {
-      var user: CompleteUser = this.state.user;
+      var user: MemberInclDetails = this.state.user;
       var childProps = $.extend({
         store: this.state.store,
         reload: this.reload,
@@ -163,7 +163,7 @@ var AboutUser = createComponent({
   },
 
   removeFromPage: function() {
-    var user: CompleteUser = this.props.user;
+    var user: MemberInclDetails = this.props.user;
     Server.removeUsersFromPage([user.id], () => {
       if (!this.isUnmounted) this.props.close();
       // [redux] send a page-members patch [5FKE0WY2]
@@ -174,7 +174,7 @@ var AboutUser = createComponent({
 
   render: function() {
     var store: Store = this.props.store;
-    var user: CompleteUser = this.props.user;
+    var user: MemberInclDetails = this.props.user;
     var me: Myself = store.me;
     var userIsMe = user.id === me.id;
 

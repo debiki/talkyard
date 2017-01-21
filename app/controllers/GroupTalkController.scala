@@ -36,7 +36,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 object GroupTalkController extends mvc.Controller {
 
 
-  def sendMessage = PostJsonAction(RateLimits.PostReply, maxLength = MaxPostSize) {
+  def sendMessage = PostJsonAction(RateLimits.PostReply, maxBytes = MaxPostSize) {
         request: JsonPostRequest =>
     val body = request.body
     val title = (body \ "title").as[String].trim

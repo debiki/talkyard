@@ -509,7 +509,7 @@ interface BriefUser {
 }
 
 
-interface CompleteUser {  // RENAME to MemberInclDetails
+interface MemberInclDetails {
   id: UserId;
   createdAtEpoch: number;  // change to millis
   username: string;

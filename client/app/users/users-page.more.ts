@@ -162,7 +162,7 @@ var UserPageComponent = React.createClass(<any> {
   render: function() {
     let store: Store = this.state.store;
     let me: Myself = store.me;
-    let user: CompleteUser = this.state.user;
+    let user: MemberInclDetails = this.state.user;
     if (!user || !me)
       return r.p({}, 'Loading...');
 
@@ -216,7 +216,7 @@ var AvatarAboutAndButtons = createComponent({
   },
 
   componentDidMount: function() {
-    Server.loadEditorEtcScriptsAndLater(this.createUploadAvatarButton);
+    Server.loadEditorAndMoreBundles(this.createUploadAvatarButton);
   },
 
   selectAndUploadAvatar: function() {
@@ -294,7 +294,7 @@ var AvatarAboutAndButtons = createComponent({
   },
 
   render: function() {
-    var user: CompleteUser = this.props.user;
+    var user: MemberInclDetails = this.props.user;
     var me: Myself = this.props.me;
     var suspendedInfo;
     if (user.suspendedAtEpoch) {

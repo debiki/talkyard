@@ -39,7 +39,7 @@ object VoteController extends mvc.Controller {
     *   action: "CreateVote"  # or "DeleteVote"
     *   postIdsRead: [1, 9, 53, 82]
     */
-  def handleVotes = PostJsonAction(RateLimits.RatePost, maxLength = 500) { request: JsonPostRequest =>
+  def handleVotes = PostJsonAction(RateLimits.RatePost, maxBytes = 500) { request: JsonPostRequest =>
     val body = request.body
     val pageId = (body \ "pageId").as[PageId]
     val postNr = (body \ "postNr").as[PostNr] ; SHOULD // change to id, not nr? [idnotnr]

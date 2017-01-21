@@ -55,7 +55,7 @@ object LoginWithOpenIdController extends mvc.Controller {
 
 
   // COULD change to an ErrorAction, and use throwBadReq instead of BadRequest.
-  def loginPost = mvc.Action.async(parse.urlFormEncoded(maxLength = 200)) {
+  def loginPost = mvc.Action.async(parse.urlFormEncoded(maxBytes = 200)) {
         request =>
     asyncLoginWithPostData(returnToUrl = "")(request)
   }

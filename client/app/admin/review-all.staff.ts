@@ -27,9 +27,9 @@ var r = React.DOM;
 
 export var ReviewAllPanelComponent = React.createClass(<any> {
   componentDidMount: function() {
-    var loading = Server.loadEditorEtceteraScripts();
+    let deferred = Server.loadEditorAndMoreBundlesGetDeferred();
     Server.loadReviewTasks(reviewTasks => {
-      loading.done(() => {
+      deferred.done(() => {
         this.setState({ reviewTasks: reviewTasks });
       });
     });

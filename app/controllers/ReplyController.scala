@@ -35,7 +35,7 @@ import scala.concurrent.Future
 object ReplyController extends mvc.Controller {
 
 
-  def handleReply = PostJsonAction(RateLimits.PostReply, maxLength = MaxPostSize) {
+  def handleReply = PostJsonAction(RateLimits.PostReply, maxBytes = MaxPostSize) {
         request: JsonPostRequest =>
     val body = request.body
     val pageId = (body \ "pageId").as[PageId]
@@ -71,7 +71,7 @@ object ReplyController extends mvc.Controller {
   }
 
 
-  def handleChatMessage = PostJsonAction(RateLimits.PostReply, maxLength = MaxPostSize) {
+  def handleChatMessage = PostJsonAction(RateLimits.PostReply, maxBytes = MaxPostSize) {
         request =>
     val body = request.body
     val pageId = (body \ "pageId").as[PageId]

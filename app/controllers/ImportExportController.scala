@@ -43,7 +43,7 @@ object ImportExportController extends mvc.Controller {
 
 
   def importSiteJson(deleteOldSite: Option[Boolean]) =
-        PostJsonAction(RateLimits.CreateSite, maxLength = 1001000) { request =>
+        PostJsonAction(RateLimits.CreateSite, maxBytes = 1001000) { request =>
 
     val okE2ePassword = hasOkE2eTestPassword(request.request)
     if (!okE2ePassword)
@@ -518,7 +518,7 @@ object ImportExportController extends mvc.Controller {
 
 
   /* Later: Need to handle file uploads / streaming, so can import e.g. images.
-  def importSite(siteId: SiteId) = PostFilesAction(RateLimits.NoRateLimits, maxLength = 9999) {
+  def importSite(siteId: SiteId) = PostFilesAction(RateLimits.NoRateLimits, maxBytes = 9999) {
         request =>
 
     SEC URITY ; MU ST // auth. Disable unless e2e.

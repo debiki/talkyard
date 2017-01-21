@@ -35,7 +35,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 object LoginAsGuestController extends mvc.Controller {
 
 
-  def loginGuest = AsyncPostJsonAction(RateLimits.Login, maxLength = 1000) { request =>
+  def loginGuest = AsyncPostJsonAction(RateLimits.Login, maxBytes = 1000) { request =>
     val json = request.body.as[JsObject]
     val name = (json \ "name").as[String].trim
     val email = (json \ "email").as[String].trim

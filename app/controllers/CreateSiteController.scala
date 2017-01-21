@@ -69,7 +69,7 @@ class CreateSiteController @Inject() extends Controller {
   }
 
 
-  def createSite = AsyncPostJsonAction(RateLimits.CreateSite, maxLength = 500) { request =>
+  def createSite = AsyncPostJsonAction(RateLimits.CreateSite, maxBytes = 500) { request =>
     val isTestSiteOkayToDelete = (request.body \ "testSiteOkDelete").asOpt[Boolean].contains(true)
     throwIfMayNotCreateSite(request, isTestSiteOkayToDelete)
 

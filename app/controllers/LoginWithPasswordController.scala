@@ -88,7 +88,7 @@ object LoginWithPasswordController extends mvc.Controller {
   }
 
 
-  def handleCreateUserDialog = AsyncPostJsonAction(RateLimits.CreateUser, maxLength = 1000,
+  def handleCreateUserDialog = AsyncPostJsonAction(RateLimits.CreateUser, maxBytes = 1000,
         // COULD set isLogin (or isLoginOrSignup)= true but currently that'd mean people
         // could sign up for SiteStatus.HiddenUnlessStaff/Admin. So, not right now.
         // Perhaps later though, if staff can be invited directly via invite emails. [5PY8FD2]

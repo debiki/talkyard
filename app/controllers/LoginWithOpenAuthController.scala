@@ -422,7 +422,7 @@ object LoginWithOpenAuthController extends Controller {
   }
 
 
-  def handleCreateUserDialog = AsyncPostJsonAction(RateLimits.CreateUser, maxLength = 1000,
+  def handleCreateUserDialog = AsyncPostJsonAction(RateLimits.CreateUser, maxBytes = 1000,
         // Could set isLogin = true instead, see handleCreateUserDialog(..) in
         // LoginWithPasswordController, + login-dialog.ts [5PY8FD2]
         allowAnyone = true) { request: JsonPostRequest =>

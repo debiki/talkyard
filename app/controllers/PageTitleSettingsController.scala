@@ -36,7 +36,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 object PageTitleSettingsController extends mvc.Controller {
 
 
-  def editTitleSaveSettings = PostJsonAction(RateLimits.EditPost, maxLength = 2000) {
+  def editTitleSaveSettings = PostJsonAction(RateLimits.EditPost, maxBytes = 2000) {
         request: JsonPostRequest =>
 
     val pageId = (request.body \ "pageId").as[PageId]

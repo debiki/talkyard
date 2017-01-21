@@ -294,7 +294,7 @@ var ChatMessageEditor = createComponent({
   },
 
   componentDidMount: function() {
-    Server.loadEditorEtcScriptsAndLater(() => {
+    Server.loadEditorAndMoreBundles(() => {
       if (this.isUnmounted) return;
       editor.startMentionsParser(this.refs.textarea, this.onTextEdited);
     });

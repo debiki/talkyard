@@ -74,7 +74,7 @@ export var UserInvitesComponent = React.createClass({
   render: function() {
     let store: Store = this.props.store;
     var me: Myself = store.me;
-    var user: CompleteUser = this.props.user;
+    var user: MemberInclDetails = this.props.user;
 
     if (isGuest(me))
       return r.p({}, "You are logge in as a guest. They may not see invites.");

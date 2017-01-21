@@ -42,7 +42,7 @@ export var TitleEditor = createComponent({
   },
 
   componentDidMount: function() {
-    Server.loadEditorEtcScriptsAndLater(() => {
+    Server.loadEditorAndMoreBundles(() => {
       if (!this.isMounted()) return;
       this.setState({ editorScriptsLoaded: true });
     });

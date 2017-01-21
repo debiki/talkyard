@@ -196,7 +196,7 @@ object UserController extends mvc.Controller {
   }
 
 
-  def approveRejectUser = StaffPostJsonAction(maxLength = 100) { request =>
+  def approveRejectUser = StaffPostJsonAction(maxBytes = 100) { request =>
     val userId = (request.body \ "userId").as[UserId]
     val doWhat = (request.body \ "doWhat").as[String]
     doWhat match {
@@ -211,7 +211,7 @@ object UserController extends mvc.Controller {
   }
 
 
-  def setIsAdminOrModerator = AdminPostJsonAction(maxLength = 100) { request =>
+  def setIsAdminOrModerator = AdminPostJsonAction(maxBytes = 100) { request =>
     val userId = (request.body \ "userId").as[UserId]
     val doWhat = (request.body \ "doWhat").as[String]
     doWhat match {
@@ -230,7 +230,7 @@ object UserController extends mvc.Controller {
   }
 
 
-  def lockThreatLevel = StaffPostJsonAction(maxLength = 100) { request =>
+  def lockThreatLevel = StaffPostJsonAction(maxBytes = 100) { request =>
     val userId = (request.body \ "userId").as[UserId]
     val threatLevelInt = (request.body \ "threatLevel").as[Int]
     val threatLevel = ThreatLevel.fromInt(threatLevelInt) getOrElse throwBadRequest(
@@ -245,7 +245,7 @@ object UserController extends mvc.Controller {
   }
 
 
-  def unlockThreatLevel = StaffPostJsonAction(maxLength = 100) { request =>
+  def unlockThreatLevel = StaffPostJsonAction(maxBytes = 100) { request =>
     val userId = (request.body \ "userId").as[UserId]
     if (User.isMember(userId)) {
       request.dao.lockMemberThreatLevel(userId, None)
@@ -257,7 +257,7 @@ object UserController extends mvc.Controller {
   }
 
 
-  def suspendUser = StaffPostJsonAction(maxLength = 300) { request =>
+  def suspendUser = StaffPostJsonAction(maxBytes = 300) { request =>
     val userId = (request.body \ "userId").as[UserId]
     val numDays = (request.body \ "numDays").as[Int]
     val reason = (request.body \ "reason").as[String]
@@ -273,7 +273,7 @@ object UserController extends mvc.Controller {
   }
 
 
-  def unsuspendUser = StaffPostJsonAction(maxLength = 100) { request =>
+  def unsuspendUser = StaffPostJsonAction(maxBytes = 100) { request =>
     val userId = (request.body \ "userId").as[UserId]
     if (isGuestId(userId))
       throwBadReq("DwE7GPKU8", "Cannot unsuspend guest user ids")
@@ -282,7 +282,7 @@ object UserController extends mvc.Controller {
   }
 
 
-  def blockGuest = StaffPostJsonAction(maxLength = 100) { request =>
+  def blockGuest = StaffPostJsonAction(maxBytes = 100) { request =>
     val postId = (request.body \ "postId").as[PostId]
     val numDays = -1 // (request.body \ "numDays").as[Int] // currently no longer in use
     val threatLevel = ThreatLevel.fromInt((request.body \ "threatLevel").as[Int]).getOrElse(
@@ -292,7 +292,7 @@ object UserController extends mvc.Controller {
   }
 
 
-  def unblockGuest = StaffPostJsonAction(maxLength = 100) { request =>
+  def unblockGuest = StaffPostJsonAction(maxBytes = 100) { request =>
     val postId = (request.body \ "postId").as[PostId]
     request.dao.unblockGuest(postId, unblockerId = request.theUserId)
     Ok
@@ -384,7 +384,7 @@ object UserController extends mvc.Controller {
   }
 
 
-  def savePageNotfLevel = PostJsonAction(RateLimits.ConfigUser, maxLength = 500) { request =>
+  def savePageNotfLevel = PostJsonAction(RateLimits.ConfigUser, maxBytes = 500) { request =>
     val body = request.body
     val pageId = (body \ "pageId").as[PageId]
     val newNotfLevelInt = (body \ "pageNotfLevel").as[Int]
@@ -431,7 +431,7 @@ object UserController extends mvc.Controller {
   }
 
 
-  def saveUserPreferences = PostJsonAction(RateLimits.ConfigUser, maxLength = 1000) { request =>
+  def saveUserPreferences = PostJsonAction(RateLimits.ConfigUser, maxBytes = 1000) { request =>
     val prefs = userPrefsFromJson(request.body)
     val staffOrSelf = request.theUser.isStaff || request.theUserId == prefs.userId
     if (!staffOrSelf)
@@ -441,7 +441,7 @@ object UserController extends mvc.Controller {
   }
 
 
-  def saveGuest = StaffPostJsonAction(maxLength = 300) { request =>
+  def saveGuest = StaffPostJsonAction(maxBytes = 300) { request =>
     val guestId = (request.body \ "guestId").as[UserId]
     val name = (request.body \ "name").as[String].trim
     if (name.isEmpty)

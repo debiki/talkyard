@@ -43,7 +43,7 @@ import play.api.mvc.{Action => _, _}
 object InviteController extends mvc.Controller {
 
 
-  def sendInvite = PostJsonAction(RateLimits.SendInvite, maxLength = 200) {
+  def sendInvite = PostJsonAction(RateLimits.SendInvite, maxBytes = 200) {
         request =>
     val toEmailAddress = (request.body \ "toEmailAddress").as[String].trim
 

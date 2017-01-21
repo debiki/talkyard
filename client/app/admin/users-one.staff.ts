@@ -53,7 +53,7 @@ export var AdminUserPageComponent = React.createClass(<any> {
   loadCompleteUser: function() {
     this.setState({ user: null });
     var params = this.props.params;
-    Server.loadCompleteUser(params.userId, (user: CompleteUser) => {
+    Server.loadCompleteUser(params.userId, (user: MemberInclDetails) => {
       if (!this.isMounted()) return;
       this.setState({
         user: user
@@ -91,7 +91,7 @@ export var AdminUserPageComponent = React.createClass(<any> {
 
   render: function() {
     let store: Store = this.props.store;
-    var user: CompleteUser = this.state.user;
+    var user: MemberInclDetails = this.state.user;
     var me: Myself = store.me;
     if (!user)
       return r.p({}, 'Loading...');
@@ -238,7 +238,7 @@ var SuspendDialog = createComponent({
 
 var threatLevelDialog;
 
-function openThreatLevelDialog(user: CompleteUser, refreshCallback) {
+function openThreatLevelDialog(user: MemberInclDetails, refreshCallback) {
   if (!threatLevelDialog) {
     threatLevelDialog = ReactDOM.render(MemberThreatLevelDialog(), utils.makeMountNode());
   }
@@ -251,7 +251,7 @@ var MemberThreatLevelDialog = createComponent({
     return { isOpen: false };
   },
 
-  open: function(user: CompleteUser, refreshCallback) {
+  open: function(user: MemberInclDetails, refreshCallback) {
     this.setState({ isOpen: true, user: user, refreshCallback: refreshCallback });
   },
 
@@ -270,7 +270,7 @@ var MemberThreatLevelDialog = createComponent({
     if (!this.state.isOpen)
       return null;
 
-    var user: CompleteUser = this.state.user;
+    var user: MemberInclDetails = this.state.user;
 
     var threatLevelText = user.lockedThreatLevel
       ? "Threat level locked at: " + threatLevel_toString(user.lockedThreatLevel) +

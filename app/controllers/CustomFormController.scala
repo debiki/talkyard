@@ -33,7 +33,7 @@ import play.api.mvc
 object CustomFormController extends mvc.Controller {
 
 
-  def handleJsonReply = PostJsonAction(RateLimits.PostReply, maxLength = MaxPostSize) { request =>
+  def handleJsonReply = PostJsonAction(RateLimits.PostReply, maxBytes = MaxPostSize) { request =>
     val pageId = (request.body \ "pageId").as[PageId]
     val formInputs = (request.body \ "formInputs").as[JsArray]
     val textAndHtml = TextAndHtml.withCompletedFormData(formInputs) getOrIfBad { errorMessage =>
@@ -45,7 +45,7 @@ object CustomFormController extends mvc.Controller {
   }
 
 
-  def handleNewTopic = PostJsonAction(RateLimits.PostReply, maxLength = MaxPostSize) { request =>
+  def handleNewTopic = PostJsonAction(RateLimits.PostReply, maxBytes = MaxPostSize) { request =>
     val pageTypeIdString = (request.body \ "pageTypeId").as[String]
     val pageTypeId = pageTypeIdString.toIntOption.getOrThrowBadArgument("EsE6JFU02", "pageTypeId")
     val pageType = PageRole.fromInt(pageTypeId).getOrThrowBadArgument("EsE39PK01", "pageTypeId")

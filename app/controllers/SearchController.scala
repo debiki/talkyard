@@ -47,7 +47,7 @@ object SearchController extends mvc.Controller {
   }
 
 
-  def doSearch() = AsyncPostJsonAction(RateLimits.FullTextSearch, maxLength = 1000) {
+  def doSearch() = AsyncPostJsonAction(RateLimits.FullTextSearch, maxBytes = 1000) {
         request: JsonPostRequest =>
     val rawQuery = (request.body \ "rawQuery").as[String]
     val searchQuery = parseRawSearchQueryString(rawQuery, categorySlug => {

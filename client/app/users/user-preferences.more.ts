@@ -31,7 +31,7 @@ var r = React.DOM;
 export var UserPreferencesComponent = React.createClass({
   render: function() {
     var me: Myself = this.props.me;
-    var user: CompleteUser = this.props.user;
+    var user: MemberInclDetails = this.props.user;
 
     var mayViewPrefs = isStaff(me) || (me.isAuthenticated && me.id === user.id);
 
@@ -108,7 +108,7 @@ var GuestPreferences = createComponent({
 
 var MemberPreferences = createComponent({
   getInitialState: function() {
-    let user: CompleteUser = this.props.user;
+    let user: MemberInclDetails = this.props.user;
     return {
       fullName: user.fullName,
       username: user.username,
@@ -174,7 +174,7 @@ var MemberPreferences = createComponent({
 
   render: function() {
     var me: Myself = this.props.me;
-    var user: CompleteUser = this.props.user;
+    var user: MemberInclDetails = this.props.user;
     var username = user.username || '(not specified)';
 
     var savingInfo = null;
