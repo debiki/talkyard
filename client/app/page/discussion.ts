@@ -140,7 +140,7 @@ export var TitleBodyComments = createComponent({
         return null;
       }
       else {
-        var isPageAuthor = bodyPost.authorIdInt === me.userId;
+        var isPageAuthor = bodyPost.authorId === me.id;
         if (isPageAuthor) {
           if (store.numPostsRepliesSection) {
             return { id: 'EdH5GUF2', version: 1, content: r.span({},
@@ -177,7 +177,7 @@ export var TitleBodyComments = createComponent({
         return null;
       }
       else {
-        var isPageAuthor = bodyPost.authorIdInt === me.userId;
+        var isPageAuthor = bodyPost.authorId === me.id;
         if (isPageAuthor) {
           if (store.numPostsRepliesSection) {
             return { id: 'EdH5P0WF2', version: 1, content: r.span({},
@@ -969,7 +969,7 @@ export var Post = createComponent({
     }
     else {
       if (!post.isApproved) {
-        var the = post.authorIdInt === me.userId ? 'Your' : 'The';
+        var the = post.authorId === me.id ? 'Your' : 'The';
         pendingApprovalElem = r.div({ className: 'dw-p-pending-mod',
             onClick: this.onUncollapseClick }, the, ' comment below is pending approval.');
       }

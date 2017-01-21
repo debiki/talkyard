@@ -49,7 +49,7 @@ declare namespace debiki2 {
     function editNewForumPage(categoryId: number, role: PageRole);
     function openToEditChatTitleAndPurpose();
     function openToWriteChatMessage(text: string, onDone);
-    function openToWriteMessage(userId: number);
+    function openToWriteMessage(userId: UserId);
   }
 
   function reactGetRefRect(ref): Rect;

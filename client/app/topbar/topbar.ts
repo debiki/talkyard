@@ -152,7 +152,8 @@ export var TopBar = createComponent({
   },
 
   viewOlderNotfs: function() {
-    ReactActions.goToUsersNotifications(this.state.store.user.userId);
+    let store: Store = this.state.store;
+    ReactActions.goToUsersNotifications(store.me.id);
   },
 
   render: function() {

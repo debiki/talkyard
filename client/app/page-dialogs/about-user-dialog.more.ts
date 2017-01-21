@@ -55,7 +55,7 @@ var AboutUserDialog = createComponent({
 
   openForPost: function(post: Post) {
     this.setState({ isOpen: true, user: null, post: post, blocks: {} });
-    this.loadUser(post.authorIdInt);
+    this.loadUser(post.authorId);
   },
 
   openForUserIdOrUsername: function(idOrUsername: number | string) {

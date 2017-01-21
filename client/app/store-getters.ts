@@ -36,13 +36,13 @@ export function store_thisIsMyPage(store: Store): boolean {
   if (!store.postsByNr) return false;
   var bodyOrTitle = store.postsByNr[BodyNr] || store.postsByNr[TitleNr];
   dieIf(!bodyOrTitle, 'EsE5YKF2');
-  return store.me.userId === bodyOrTitle.authorIdInt;
+  return store.me.id === bodyOrTitle.authorId;
 }
 
 
 export function store_getAuthorOrMissing(store: Store, post: Post): BriefUser {
-  var user = store_getUserOrMissing(store, post.authorIdInt, false);
-  if (user.isMissing) logError("Author " + post.authorIdInt + " missing, page: " +
+  var user = store_getUserOrMissing(store, post.authorId, false);
+  if (user.isMissing) logError("Author " + post.authorId + " missing, page: " +
       debiki.pageId + ", post nr: " + post.nr + " [EsE6TK2R0]");
   return user;
 }
@@ -55,8 +55,8 @@ export function store_getUserOrMissing(store: Store, userId: UserId, errorCode2)
         ' [EsE38GT2R-' + errorCode2 + ']');
     return {
       id: userId,
-      // The first char is shown in the avatar image. Use a square, not a character, so
-      // it'll be easier to debug-find-out that something is amiss.
+      // The first char is shown in the avatar image [7ED8A2M]. Use a square, not a character,
+      // so it'll be easier to debug-find-out that something is amiss.
       fullName: "□ missing, id: " + userId + " [EsE4FK07_]",
       isMissing: true,
     };
@@ -78,7 +78,7 @@ export function store_getPageMembersList(store: Store): BriefUser[] {
 export function store_getUsersOnThisPage(store: Store): BriefUser[] {
   var users: BriefUser[] = [];
   _.each(store.postsByNr, (post: Post) => {
-    if (_.every(users, u => u.id !== post.authorIdInt)) {
+    if (_.every(users, u => u.id !== post.authorId)) {
       var user = store_getAuthorOrMissing(store, post);
       users.push(user);
     }
@@ -89,8 +89,8 @@ export function store_getUsersOnThisPage(store: Store): BriefUser[] {
 
 export function store_getUsersOnline(store: Store): BriefUser[] {
   var users = [];
-  // (Using userId:any, otherwise Typescript thinks it's a string)
-  _.forOwn(store.userIdsOnline, (alwaysTrue, userId: any) => {
+  _.forOwn(store.userIdsOnline, (alwaysTrue, userIdString: string) => {
+    let userId: UserId = parseInt(userIdString);
     dieIf(!alwaysTrue, 'EsE7YKW2');
     var user = store_getUserOrMissing(store, userId, 'EsE5GK0Y');
     if (user) users.push(user);

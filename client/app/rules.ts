@@ -121,20 +121,17 @@ export function isGuest(user) {  // try to remove
   return user_isGuest(user);
 }
 
-export function user_isGuest(user) {
-  // (Should rename userId to id.)
-  return user.id <= MaxGuestId ||  // if is a CompleteUser or Myself
-      user.userId <= MaxGuestId; // in case it's a User or BriefUser
+export function user_isGuest(user: CompleteUser | Myself | BriefUser) {
+  return user.id <= MaxGuestId;
 }
 
-export function userId_isGuest(userId) {
-  return userId <= MaxGuestId;  // if is a CompleteUser
+export function userId_isGuest(userId: UserId) {
+  return userId <= MaxGuestId;
 }
 
 export function isMember(user: Myself | CompleteUser): boolean {
   if (!user) return false;
-  var id = user['id'] || user['userId'];
-  var member = id >= MinMemberId;
+  var member = user.id >= MinMemberId;
   //dieIf(isGuest(user) && member, 'EsE7YKU2');
   return member;
 }

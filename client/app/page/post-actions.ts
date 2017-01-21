@@ -154,7 +154,7 @@ export var PostActions = createComponent({
       return null;
 
     var me: Myself = store.me;
-    var isOwnPost = me.userId === post.authorIdInt;
+    var isOwnPost = me.id === post.authorId;
     var isOwnPage = store_thisIsMyPage(store);
     var isPageBody = post.nr === BodyNr;
     var votes = me.votes[post.nr] || [];
@@ -526,7 +526,7 @@ var MoreDropdownModal = createComponent({
     var isPageBody = post.nr === BodyNr;
 
     var moreLinks = [];
-    var isOwnPost = post.authorIdInt === me.userId;
+    var isOwnPost = post.authorId === me.id;
     var isMindMap = store.pageRole === PageRole.MindMap;
 
     // ----- Report

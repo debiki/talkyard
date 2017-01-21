@@ -504,11 +504,6 @@ ReactStore.getMe = function(): Myself {
   return store.me;
 };
 
-// [refactor] Remove, use getMe instead
-ReactStore.getUser = function(): Myself {
-  return store.me;
-};
-
 
 ReactStore.getCategories = function() {
   return store.categories;
@@ -602,7 +597,7 @@ function updatePost(post: Post, isCollapsing?: boolean) {
   stopGifsPlayOnClick();
   setTimeout(() => {
     page.Hacks.processPosts();
-    if (!oldVersion && post.authorIdInt === store.me.id) {
+    if (!oldVersion && post.authorId === store.me.id) {
       // Show the user his/her new post.
       ReactActions.loadAndShowPost(post.nr);
     }

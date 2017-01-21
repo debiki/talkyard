@@ -97,7 +97,7 @@ var TitleAndLastChatMessages = createComponent({
     var title = Title(store); // later: only if not scrolled down too far
 
     var originalPost = store.postsByNr[store.rootPostId];
-    var origPostAuthor = store.usersByIdBrief[originalPost.authorIdInt];
+    var origPostAuthor = store.usersByIdBrief[originalPost.authorId];
     var headerProps: any = _.clone(store);
     headerProps.post = originalPost;
     var origPostHeader = PostHeader(headerProps); // { store: _, post: _ } would be better?

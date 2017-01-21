@@ -68,7 +68,7 @@ var UsersHomeComponent = React.createClass(<any> {
       var usernameOrId = this.props.params.usernameOrId;
       dieIf(/[^0-9]/.test(usernameOrId), 'Not a user id [EsE5YK0P2]');
       var toUserId = parseInt(usernameOrId);
-      var myUserId = ReactStore.getMe().userId;
+      var myUserId = ReactStore.getMe().id;
       dieIf(toUserId === myUserId, 'EsE7UMKW2');
       dieIf(userId_isGuest(toUserId), 'EsE6JKY20');
       editor.openToWriteMessage(toUserId);
@@ -162,13 +162,13 @@ var UserPageComponent = React.createClass(<any> {
   render: function() {
     let store: Store = this.state.store;
     let me: Myself = store.me;
-    let user = this.state.user;
+    let user: CompleteUser = this.state.user;
     if (!user || !me)
       return r.p({}, 'Loading...');
 
     dieIf(!this.props.routes || !this.props.routes[2] || !this.props.routes[2].path, 'EsE5GKUW2');
 
-    let showPrivateStuff = isStaff(me) || (me.isAuthenticated && me.userId === user.id);
+    let showPrivateStuff = isStaff(me) || (me.isAuthenticated && me.id === user.id);
 
     let activityNavItem =
       NavItem({ eventKey: 'activity', className: 'e_UP_ActivityB' }, "Activity");
@@ -294,11 +294,11 @@ var AvatarAboutAndButtons = createComponent({
   },
 
   render: function() {
-    var user = this.props.user;
+    var user: CompleteUser = this.props.user;
     var me: Myself = this.props.me;
     var suspendedInfo;
     if (user.suspendedAtEpoch) {
-      var whatAndUntilWhen = user.suspendedTillEpoch === 'Forever'
+      var whatAndUntilWhen = (<number | string> user.suspendedTillEpoch) === 'Forever'
           ? 'banned'
           : 'suspended until ' + moment(user.suspendedTillEpoch).format('YYYY-MM-DD HH:mm') + ' UTC';
       suspendedInfo = r.div({},
@@ -306,7 +306,7 @@ var AvatarAboutAndButtons = createComponent({
           'Reason: ' + user.suspendedReason);
     }
 
-    var isMe = me.userId === user.id;
+    var isMe = me.id === user.id;
     var isGuestInfo = null;
     if (isGuest(user)) {
       isGuestInfo = ' — a guest user, could be anyone';

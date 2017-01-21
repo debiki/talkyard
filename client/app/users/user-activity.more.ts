@@ -79,12 +79,12 @@ export let PostsComponent = React.createClass(<any> {
     let nextMe: Myself = nextProps.store.me;
     let nextUser: CompleteUser = nextProps.user;
     // If we log in as someone else, which posts we may see might change.
-    if (me.userId !== nextMe.userId || user.id !== nextUser.id) {
+    if (me.id !== nextMe.id || user.id !== nextUser.id) {
       this.loadPosts(nextUser.id);
     }
   },
 
-  loadPosts: function(userId: number) {
+  loadPosts: function(userId: UserId) {
     let me: Myself = this.props.store.me;
     Server.loadPostsByAuthor(userId, (response: any) => {
       this.setState({
@@ -144,12 +144,12 @@ export let TopicsComponent = React.createClass(<any> {
     let nextMe: Myself = nextProps.store.me;
     let nextUser: CompleteUser = nextProps.user;
     // If we log in as someone else, which topics we may see might change.
-    if (me.userId !== nextMe.userId || user.id !== nextUser.id) {
+    if (me.id !== nextMe.id || user.id !== nextUser.id) {
       this.loadTopics(nextUser.id);
     }
   },
 
-  loadTopics: function(userId: number) {
+  loadTopics: function(userId: UserId) {
     Server.loadTopicsByUser(userId, (topics: Topic[]) => {
       this.setState({ topics: topics });
     });

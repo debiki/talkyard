@@ -73,7 +73,7 @@ export var Avatar = createComponent({
       firstLetterInName = user.username[0].toUpperCase();
     }
     else if (user.fullName) {
-      firstLetterInName = user.fullName[0].toUpperCase();
+      firstLetterInName = user.fullName[0].toUpperCase();  // [7ED8A2M]
     }
     else {
       debiki2.die("Name missing: " + JSON.stringify(user) + " [EdE7UMYP3]");

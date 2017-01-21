@@ -42,14 +42,14 @@ keymaster.filter = function(event) {
 
 
 function fireLoginOrLogout() {
-  if (debiki2.ReactStore.getUser().isLoggedIn) {
+  if (debiki2.ReactStore.getMe().isLoggedIn) {
     d.i.refreshFormXsrfTokens();
   }
 };
 
 
 function handleLoginInOtherBrowserTab() {
-  var currentUser = debiki2.ReactStore.getUser();
+  var currentUser = debiki2.ReactStore.getMe();
   var sessionId = $.cookie('dwCoSid');
   if (currentUser.isLoggedIn) {
     if (sessionId) {

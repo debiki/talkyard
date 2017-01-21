@@ -264,7 +264,7 @@ export var Sidebar = createComponent({  // RENAME to ContextBar
       // figure out how the Unread tab works and the 'Let computer determine' checkbox.
       autoReadLongAgo = autoReadLongAgo || store.user.postIdsAutoReadNow.indexOf(postId) !== -1;
       var hasReadItForSure = this.manuallyMarkedAsRead(postId);
-      var ownPost = post.authorId === store.user.userId;
+      var ownPost = post.authorId === store.user.id;
       if (!ownPost && !hasReadItForSure) {
         if (!autoReadLongAgo || this.state.showPerhapsUnread) {
           unreadComments.push(post);

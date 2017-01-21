@@ -32,11 +32,11 @@ export function subscribeToServerEvents(doNothingIfAlreadyPolling?) {
 
   Server.cancelAnyLongPollingRequest();
 
-  var user = ReactStore.getUser();
-  if (!user || !user.userId)
+  var me = ReactStore.getMe();
+  if (!me || !me.id)
     return;
 
-  Server.sendLongPollingRequest(user.userId, event => {
+  Server.sendLongPollingRequest(me.id, event => {
     console.debug("Server event: " + JSON.stringify(event));
     // Continue polling. Todo: specify params so won't get the very first event always only
     subscribeToServerEvents();

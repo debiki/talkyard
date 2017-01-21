@@ -65,7 +65,7 @@ export function loginIfNeededReturnToAnchor(loginReason: LoginReason | string,
 export function loginIfNeeded(loginReason: LoginReason | string, anyReturnToUrl?: string,
       success?: () => void) {
   success = success || function() {};
-  if (debiki2.ReactStore.getUser().isLoggedIn) {
+  if (debiki2.ReactStore.getMe().isLoggedIn) {
     success();
   }
   else {

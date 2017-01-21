@@ -473,7 +473,7 @@ export function sendInvite(toEmailAddress: string, success: (invite: Invite) => 
 }
 
 
-export function loadInvitesSentBy(userId: number, success: (invites: Invite[]) => void,
+export function loadInvitesSentBy(userId: UserId, success: (invites: Invite[]) => void,
         error: (message: string) => void) {
   get('/-/load-invites?sentById=' + userId, response => {
     ReactActions.patchTheStore({ usersBrief: response.users });
@@ -490,7 +490,7 @@ export function loadAllInvites(success: (invites: Invite[]) => void) {
 }
 
 
-export function setIsAdminOrModerator(userId: number, doWhat: string, success: () => void) {
+export function setIsAdminOrModerator(userId: UserId, doWhat: string, success: () => void) {
   postJsonSuccess('/-/set-is-admin-or-moderator', success, { userId: userId, doWhat: doWhat });
 }
 
@@ -503,7 +503,7 @@ export function approveRejectUser(user: CompleteUser, doWhat: string, success: (
 }
 
 
-export function suspendUser(userId: number, numDays: number, reason: string, success: () => void) {
+export function suspendUser(userId: UserId, numDays: number, reason: string, success: () => void) {
   postJsonSuccess('/-/suspend-user', success, {
     userId: userId,
     numDays: numDays,
@@ -512,12 +512,12 @@ export function suspendUser(userId: number, numDays: number, reason: string, suc
 }
 
 
-export function unsuspendUser(userId: number, success: () => void) {
+export function unsuspendUser(userId: UserId, success: () => void) {
   postJsonSuccess('/-/unsuspend-user', success, { userId: userId });
 }
 
 
-export function lockThreatLevel(userId: number, threatLevel: ThreatLevel, success: () => void) {
+export function lockThreatLevel(userId: UserId, threatLevel: ThreatLevel, success: () => void) {
   if (threatLevel) {
     postJsonSuccess('/-/lock-threat-level', () => {
       // ReactActions.patchTheStore();
@@ -550,7 +550,7 @@ export function loadMyself(callback: (user: any) => void) {
 }
 
 
-export function loadNotifications(userId: number, upToWhenMs: number,
+export function loadNotifications(userId: UserId, upToWhenMs: number,
       success: (notfs: Notification[]) => void, error: () => void) {
   var query = '?userId=' + userId + '&upToWhenMs=' + upToWhenMs;
   get('/-/load-notifications' + query, success, error);
@@ -1071,7 +1071,7 @@ var longPollingState = {
 /**
  * Built for talking with Nginx and nchan, see: https://github.com/slact/nchan#long-polling
  */
-export function sendLongPollingRequest(userId: number, success: (event: any) => void,
+export function sendLongPollingRequest(userId: UserId, success: (event: any) => void,
       error: () => void) {
   dieIf(longPollingState.ongoingRequest, "Already long-polling the server [EsE7KYUX2]");
   var options: any = {

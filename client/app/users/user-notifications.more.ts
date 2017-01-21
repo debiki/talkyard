@@ -41,13 +41,13 @@ export var UserNotificationsComponent = React.createClass({
     var user: CompleteUser = this.props.user;
     var nextLoggedInUser: Myself = nextProps.me;
     var nextUser: CompleteUser = nextProps.user;
-    if (me.userId !== nextLoggedInUser.userId ||
+    if (me.id !== nextLoggedInUser.id ||
         user.id !== nextUser.id) {
       this.loadNotifications(nextUser.id);
     }
   },
 
-  loadNotifications: function(userId: number) {
+  loadNotifications: function(userId: UserId) {
     var me: Myself = this.props.me;
     if (me.id !== userId && !isStaff(me)) {
       this.setState({
@@ -73,9 +73,10 @@ export var UserNotificationsComponent = React.createClass({
     if (!this.state.notfs)
       return r.p({}, "Loading...");
 
-    var user: CompleteUser = this.props.user;
-    var isMe = user.id === this.props.me.userId;
-    var toWho = isMe ? "you" : user.username || user.fullName;
+    let user: CompleteUser = this.props.user;
+    let me: Myself = this.props.me;
+    let isMe = user.id === me.id;
+    let toWho = isMe ? "you" : user.username || user.fullName;
 
     let anyNoNotfsMessage = this.state.notfs.length ? null :
         r.p({ className: 'e_UP_Notfs_None' }, "No notifications");

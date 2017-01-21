@@ -20,10 +20,9 @@
 /// <reference path="../more-bundle-not-yet-loaded.ts" />
 
 //------------------------------------------------------------------------------
-   module debiki2.reactelements {
+   namespace debiki2.reactelements {
 //------------------------------------------------------------------------------
 
-var d = { i: debiki.internal, u: debiki.v0.util };
 var r = React.DOM;
 
 
@@ -39,7 +38,7 @@ export var NameLoginBtns = createComponent({
       // Don't know how this can happen, but it does inside the NonExistingPage component.
       return;
     }
-    this.setState(debiki2.ReactStore.allData());
+    this.setState({ store: debiki2.ReactStore.allData() });
   },
 
   onLoginClick: function() {
@@ -51,11 +50,13 @@ export var NameLoginBtns = createComponent({
   },
 
   goToUserPage: function() {
-    goToUserPage(this.state.user.userId);
+    let store: Store = this.state.store;
+    goToUserPage(store.me.id);
   },
 
   render: function() {
-    var user = this.state.user;
+    let store: Store = this.state.store;
+    let user: Myself = store.me;
     var userNameElem = null;
     if (user.isLoggedIn) {
       userNameElem =
@@ -91,7 +92,7 @@ export var NameLoginBtns = createComponent({
 });
 
 
-function goToUserPage(userId) {
+function goToUserPage(userId: UserId) {
   // If using an <a> link, then, if already in the /-/users/ SPA, no rerendering
   // of React elements will be triggered (not sure why) so the contents of the
   // page won't change: it'll show details for one user, but the URL will be

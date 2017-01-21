@@ -54,7 +54,7 @@ interface PostToModerate {
   cdati: string;
   approvedText?: string;
   unapprovedText?: string;
-  userId: string;
+  userId: UserId;
   userDisplayName: string;
   numEditsToReview?: string;
   numHandledFlags?: number;
@@ -124,9 +124,7 @@ interface Post {
   parentNr: number;
   multireplyPostNrs: number[];
   postType?: PostType;
-  // these author* are deprecated, should add an author: {...} object instead.
-  authorId: string; // COULD change to int and then rename authorIdInt below to authorId.
-  authorIdInt: number;
+  authorId: UserId;
   createdAtMs: number;
   lastApprovedEditAtMs: number;
   numEditors: number;
@@ -182,8 +180,7 @@ interface PostRevision {
 
 
 interface Myself {
-  id?: number;
-  userId?: number;  // change to `id`
+  id?: UserId;
   isLoggedIn?: boolean;
   isAdmin?: boolean;
   isModerator?: boolean;
@@ -491,7 +488,7 @@ interface SpecialContent {
 
 
 interface Guest {
-  id: any;  // TODO change to number, and User.userId too
+  id: UserId;
   fullName: string;
   email: string;
   country: string;
@@ -500,7 +497,7 @@ interface Guest {
 
 
 interface BriefUser {
-  id: number;
+  id: UserId;
   fullName: string;
   username?: string;
   isAdmin?: boolean;
@@ -513,7 +510,7 @@ interface BriefUser {
 
 
 interface CompleteUser {  // RENAME to MemberInclDetails
-  id: any;  // TODO change to number, and User.userId too
+  id: UserId;
   createdAtEpoch: number;  // change to millis
   username: string;
   fullName: string;
@@ -555,14 +552,14 @@ interface UsersHere {
 
 interface Invite {
   invitedEmailAddress: string;
-  invitedById: number;
+  invitedById: UserId;
   createdAtEpoch: number;  // change to millis
-  createdById: number;
+  createdById: UserId;
   acceptedAtEpoch?: number;  // change to millis
   invalidatedAtEpoch?: number;  // change to millis
   deletedAtEpoch?: number;  // change to millis
-  deletedById?: number;
-  userId?: number;
+  deletedById?: UserId;
+  userId?: UserId;
   // Later:
   /*
   userFullName?: string;

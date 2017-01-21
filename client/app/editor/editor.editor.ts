@@ -413,7 +413,7 @@ export var Editor = createComponent({
     // No guidelines for chat messages, because usually a smaller "inline" editor is used instead.
   },
 
-  openToWriteMessage: function(userId: number) {
+  openToWriteMessage: function(userId: UserId) {
     if (this.alertBadState())
       return;
     this.showEditor();

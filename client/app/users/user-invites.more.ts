@@ -49,10 +49,10 @@ export var UserInvitesComponent = React.createClass({
     this.loadInvites(nextProps.user.id);
   },
 
-  loadInvites: function(userId: number) {
+  loadInvites: function(userId: UserId) {
     this.setState({ invites: null });
     let me: Myself = this.props.store.me;
-    var maySeeInvites = me.userId === userId || isStaff(me);
+    var maySeeInvites = me.id === userId || isStaff(me);
     if (!maySeeInvites)
       return;
 
@@ -94,7 +94,7 @@ export var UserInvitesComponent = React.createClass({
         this.state.invites.length
             ? 'Invites that you have already sent are listed below.'
             : 'You have not invited anyone yet.'));
-    if (user.id === me.userId && mayInvite.yes) {
+    if (user.id === me.id && mayInvite.yes) {
       inviteButton =
           Button({ onClick: () => openInviteSomeoneDialog(this.addInvite) }, "Send an Invite");
     }

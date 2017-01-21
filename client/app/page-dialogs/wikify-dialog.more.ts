@@ -46,7 +46,7 @@ var WikifyDialog = createComponent({
     return {
       isOpen: false,
       post: null,
-      loggedInUser: debiki2.ReactStore.getUser()
+      loggedInUser: debiki2.ReactStore.getMe()
     };
   },
 

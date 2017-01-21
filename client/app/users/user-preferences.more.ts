@@ -30,16 +30,16 @@ var r = React.DOM;
 
 export var UserPreferencesComponent = React.createClass({
   render: function() {
-    var me = this.props.me;
-    var user = this.props.user;
+    var me: Myself = this.props.me;
+    var user: CompleteUser = this.props.user;
 
-    var mayViewPrefs = isStaff(me) || (me.isAuthenticated && me.userId === user.id);
+    var mayViewPrefs = isStaff(me) || (me.isAuthenticated && me.id === user.id);
 
     if (!mayViewPrefs)
       return r.p({}, "Forbidden");
 
     var anyNotYourPrefsInfo = null;
-    if (me.userId !== user.id) {
+    if (me.id !== user.id) {
       anyNotYourPrefsInfo =
         r.p({}, "You are editing ", r.b({}, 'another '),
           "user's preferences. You can do that, because you're an administrator.");

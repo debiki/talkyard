@@ -612,17 +612,17 @@ export function openPagePostNr(pageId: string, postNr: number) {
 }
 
 
-export function openUserProfile(userId: any) {
+export function openUserProfile(userId: UserId) {
   window.location.assign(linkToUserProfilePage(userId));
 }
 
 
-export function goToUsersNotifications(userId: any) {
+export function goToUsersNotifications(userId: UserId) {
   window.location.assign(linkToUserProfilePage(userId) + '/notifications');
 }
 
 
-export function writeMessage(userId: any) {
+export function writeMessage(userId: UserId) {
   // For now, until I've enabled react-router everywhere and won't have to reload the page.
   location.assign(linkToUserProfilePage(userId) + '/activity/posts#writeMessage');
 }
