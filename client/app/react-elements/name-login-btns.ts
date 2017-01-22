@@ -30,7 +30,7 @@ export var NameLoginBtns = createComponent({
   mixins: [debiki2.StoreListenerMixin],
 
   getInitialState: function() {
-    return debiki2.ReactStore.allData();
+    return { store: debiki2.ReactStore.allData() };
   },
 
   onChange: function() {

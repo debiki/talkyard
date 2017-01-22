@@ -126,6 +126,8 @@ describe("private chat", function() {
     strangerA.customForm.assertNumSubmissionVisible(0);
     // Shouldn't appear after reload:
     strangerA.refresh();
+    // This fails, incorrectly blocks looking for '.dw-p-flat' — skips other commands
+    // that ought to happen before. Very weird.  [E2EBUG]
     strangerA.customForm.assertNumSubmissionVisible(0);
   });
 

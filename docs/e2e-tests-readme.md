@@ -24,6 +24,10 @@ Run tests like so:
         node_modules/.bin/selenium-standalone install # should be needed once only
         node_modules/.bin/selenium-standalone start
 
+    (Note: Whenever Yarn does something, you'll need to reinstall the Selenium files, because
+    Yarn removes them. See https://github.com/yarnpkg/yarn/issues/1955
+    That is, you need to run `node_modules/.bin/selenium-standalone install` again.)
+
 1. In yet another shell, run the test code. Do one of these:
 
         # Runs one test: (with "links" in the test file name)

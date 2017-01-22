@@ -15,14 +15,31 @@ function runEndToEndTest {
   echo "Next test: $cmd"
   $cmd
   if [ $? -ne 0 ]; then
+    # Try again, so some harmless race condition I haven't thought about that breaks the test,
+    # won't result in a false failures. Usually a race condition breaks the tests only very
+    # infrequently, so it's "impossible" to reproduce manually, and thus hard to fix. However,
+    # if the test breaks directly *again*, then apparently the failure / race-condition is easy
+    # to reproduce, so I'll be able to fix it :-)
     echo
-    echo "***ERROR*** [EsE5KPY02]"
+    echo "*** Test failed. Trying once more... [EdM2WK8GB] ***"
+    $cmd
+    if [ $? -ne 0 ]; then
+      echo
+      echo "*** ERROR [EsE5KPY02] ***"
+      echo
+      echo "This end-to-end test failed: (The whole next line. You can copy-paste it and run it.)"
+      # Later: use --localHostname=e2e-test-manual or just e2e-test, instead of -20, so won't overwrite test site nr 20.
+      # (But first add a cname entry for -manual.)
+      echo "  $@ --deleteOldSite --localHostname=e2e-test-20"
+      echo
+      exit 1
+    else
+      echo "Ok, on the 2nd attempt. [EdM3BVP7]"
+      echo
+    fi
+  else
+    echo "Ok. [EdM4RZW0J]"
     echo
-    echo "This end-to-end test failed: (The whole next line. You can copy-paste it and run it.)"
-    # Later: use --localHostname=e2e-test-manual or just e2e-test, instead of -20, so won't overwrite test site nr 20.
-    # (But first add a cname entry for -manual.)
-    echo "  $@ --deleteOldSite --localHostname=e2e-test-20"
-    exit 1
   fi
 }
 
@@ -50,7 +67,7 @@ function runAllEndToEndTests {
   runEndToEndTest s/wdio target/e2e/wdio.2chrome.conf.js    --browser $browser --only password-login-reset.2browsers $args
   runEndToEndTest s/wdio target/e2e/wdio.conf.js            --browser $browser --only user-profile-access $args
   runEndToEndTest s/wdio target/e2e/wdio.conf.js            --browser $browser --only user-profile-change-username $args
-  ###runEndToEndTest s/wdio target/e2e/wdio.3chrome.conf.js --browser $browser --only custom-forms.3browsers $args
+  ## [E2EBUG] runEndToEndTest s/wdio target/e2e/wdio.3chrome.conf.js    --browser $browser --only custom-forms.3browsers $args
   runEndToEndTest s/wdio target/e2e/wdio.conf.js            --browser $browser --only view-as-stranger $args
   runEndToEndTest s/wdio target/e2e/wdio.2chrome.conf.js    --browser $browser --only impersonate.2browsers $args
   runEndToEndTest s/wdio target/e2e/wdio.2chrome.conf.js    --browser $browser --only unsubscribe.2browsers $args
@@ -73,3 +90,4 @@ fi
 
 echo "Done running end-to-end tests."
 
+# vim: et ts=2 sw=2 tw=0

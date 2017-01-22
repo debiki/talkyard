@@ -65,7 +65,7 @@
     "wdio-dot-reporter": "^0.0.6",
     "wdio-mocha-framework": "^0.5.8",
     "wdio-sync": "^0.6.10",
-    "webdriverio": "^4.5.2"
+    "webdriverio": "^4.6.1"
   },
   "greenkeeper": {
     "ignore": [
