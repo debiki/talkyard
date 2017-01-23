@@ -240,9 +240,13 @@ This project looks like so:
      +-client/         <-- Javascript, CSS, React.js components
      | +-app/          <-- Client side code
      | +-server/       <-- React.js components rendered server side
-     | +-test/         <-- End-to-end tests and Javascript unit tests
      |
-     +-app/            <-- Scala code — a Play Framework 2 app
+     +-app/            <-- Scala code — a Play Framework 2 application
+     |
+     +-tests/
+     | +-app/          <-- Unit tests and functional tests, for the app server
+     | +-e2e/          <-- End-to-end tests
+     | +-security/     <-- Security tests
      |
      +-modules/
      | +-ed-dao-rdb/        <-- A database access object (DAO), for PostgreSQL

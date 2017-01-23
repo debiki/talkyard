@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014-2016 Kaj Magnus Lindberg
+ * Copyright (c) 2014-2017 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -31,7 +31,7 @@
 /// <reference path="../more-bundle-not-yet-loaded.ts" />
 
 //------------------------------------------------------------------------------
-   module debiki2.page {
+   namespace debiki2.page {
 //------------------------------------------------------------------------------
 
 var React = window['React']; // TypeScript file doesn't work
@@ -736,8 +736,7 @@ var Thread = createComponent({
     var deeper = this.props.depth + 1;
     var isFlat = this.props.isFlat;
     var isMindMap = store.pageRole === PageRole.MindMap;
-    var childrenSideways = isMindMap && !!post.branchSideways;
-    var thisPostSideways = isMindMap && !!parentPost.branchSideways;
+    var thisAndSiblingsSideways = this.props.is2dTreeColumn && isMindMap;
 
     // Draw arrows, but not to multireplies, because we don't know if they reply to `post`
     // or to other posts deeper in the thread.
@@ -745,13 +744,7 @@ var Thread = createComponent({
     if (!post.multireplyPostNrs.length && !isFlat) {
       arrows = debiki2.renderer.drawArrowsFromParent(
         postsByNr, parentPost, this.props.depth, this.props.index,
-        this.props.horizontalLayout, this.props.rootPostId, thisPostSideways);
-    }
-
-    var anyHorizontalArrowToChildren;
-    if (childrenSideways) {
-      anyHorizontalArrowToChildren =
-        debiki2.renderer.drawHorizontalArrowFromRootPost(post);
+        this.props.horizontalLayout, this.props.rootPostId, thisAndSiblingsSideways);
     }
 
     var numDeletedChildren = 0;
@@ -760,6 +753,15 @@ var Thread = createComponent({
       if (!postsByNr[childId]) {
         numDeletedChildren += 1;
       }
+    }
+    let numNonDeletedChildren = post.childIdsSorted.length - numDeletedChildren;
+    let childrenSideways = isMindMap && !!post.branchSideways && numNonDeletedChildren >= 2;
+
+
+    let anyHorizontalArrowToChildren;
+    if (childrenSideways) {
+      anyHorizontalArrowToChildren =
+        debiki2.renderer.drawHorizontalArrowFromRootPost(post);
     }
 
     var isSquashingChildren = false;
@@ -849,7 +851,7 @@ var Thread = createComponent({
     var multireplyClass = post.multireplyPostNrs.length ? ' dw-mr' : '';
     var collapsedClass = renderCollapsed ? ' dw-zd' : '';
 
-    var branchSidewaysClass = horizontalCss(!!post.branchSideways);
+    var branchSidewaysClass = horizontalCss(childrenSideways);
 
     return (
       baseElem({ className: 'dw-t' + depthClass + indentationDepthClass + multireplyClass +
