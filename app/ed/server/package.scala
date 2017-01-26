@@ -35,5 +35,15 @@ package object server {
     }
   }
 
+
+  /** @param html Html for the whole page.
+    * @param unapprovedPostAuthorIds Ids of authors who have posted stuff that hasn't yet been
+    *   approved. If one of these authors views the page, hens unapproved posts should
+    *   be loaded too, so hen can edit them. (Normally, unapproved posts aren't loaded.)
+    */
+  case class RenderedPage(
+    html: String,
+    unapprovedPostAuthorIds: Set[UserId])
+
 }
 

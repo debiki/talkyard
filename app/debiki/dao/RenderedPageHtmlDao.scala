@@ -26,6 +26,7 @@ import io.efdi.server.http.PageRequest
 import play.{api => p}
 import play.api.Play.current
 import RenderedPageHtmlDao._
+import ed.server.RenderedPage
 
 
 object RenderedPageHtmlDao {
@@ -49,7 +50,7 @@ trait RenderedPageHtmlDao {
   }
 
 
-  private def loadPageFromDatabaseAndRender(pageRequest: PageRequest[_]): String = {
+  private def loadPageFromDatabaseAndRender(pageRequest: PageRequest[_]): RenderedPage = {
     if (!pageRequest.pageExists) {
       if (pageRequest.pageRole.contains(PageRole.EmbeddedComments))
         throwNotImplemented("DwE5KFW2", "Embedded comments disabled right now")
@@ -58,14 +59,16 @@ trait RenderedPageHtmlDao {
         throwNotFound("DwE00404", "Page not found")
 
       val json = ReactJson.emptySiteJson(pageRequest).toString()
-      return views.html.specialpages.createSomethingHerePage(SiteTpi(pageRequest, Some(json))).body
+      val html = views.html.specialpages.createSomethingHerePage(
+        SiteTpi(pageRequest, Some(json))).body
+      return RenderedPage(html, unapprovedPostAuthorIds = Set.empty)
     }
 
     Globals.mostMetrics.getRenderPageTimer(pageRequest.pageRole).time {
       val anyPageQuery = controllers.ForumController.parsePageQuery(pageRequest)
       val anyPageRoot = pageRequest.pageRoot
 
-      val (currentJson, currentVersion, pageTitle) = ReactJson.pageToJson(
+      val (currentJson, currentVersion, pageTitle, unapprovedPostAuthorIds) = ReactJson.pageToJson(
         pageRequest.thePageId, this, anyPageRoot, anyPageQuery)
 
       val (cachedHtml, cachedVersion) =
@@ -73,18 +76,18 @@ trait RenderedPageHtmlDao {
 
       val tpi = new PageTpi(pageRequest, currentJson, currentVersion,
         cachedHtml, cachedVersion, pageTitle)
-      val result: String = pageRequest.thePageRole match {
+      val pageHtml: String = pageRequest.thePageRole match {
         case PageRole.EmbeddedComments =>
           views.html.templates.embeddedComments(tpi).body
         case _ =>
           views.html.templates.page(tpi).body
       }
-      result
+      RenderedPage(pageHtml, unapprovedPostAuthorIds)
     }
   }
 
 
-  def renderPageMaybeUseCache(pageReq: PageRequest[_]): String = {
+  def renderPageMaybeUseCache(pageReq: PageRequest[_]): RenderedPage = {
     // Bypass the cache if the page doesn't yet exist (it's being created),
     // because in the past there was some error because non-existing pages
     // had no ids (so feels safer to bypass).

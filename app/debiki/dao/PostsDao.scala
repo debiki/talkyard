@@ -547,21 +547,9 @@ trait PostsDao {
       if (!userMayEdit(editor, postToEdit))
         throwForbidden("DwE8KF32", "You may not edit that post")
 
-      // The system user auto approves all chat messages; always use SystemUserId for chat.
-      val approverId =
-        if (postToEdit.tyype == PostType.ChatMessage) SystemUserId  // [7YKU24]
-        else if (editor.isStaff) editor.id
-        else SystemUserId
-
       // COULD don't allow sbd else to edit until 3 mins after last edit by sbd else?
       // so won't create too many revs quickly because 2 edits.
       BUG // COULD compare version number: kills the lost update bug.
-
-      val isInNinjaEditWindow = {
-        val ninjaWindowMs = ninjaEditWindowMsFor(page.role)
-        val ninjaEditEndMs = postToEdit.currentRevStaredAt.getTime + ninjaWindowMs
-        transaction.currentTime.getTime < ninjaEditEndMs
-      }
 
       // If we've saved an old revision already, and 1) there hasn't been any more discussion
       // in this sub thread since the current revision was started, and 2) the current revision
@@ -582,6 +570,52 @@ trait PostsDao {
         !anyNewComment && !anyNewFlag
       }
 
+      // Define new field values as if we'll approve the post, but change them below (5AKW02)
+      // if in fact we won't approve it.
+      var editsApproved = true
+      var newCurrentSourcePatch: Option[String] = None
+      var newLastApprovedEditAt = Option(transaction.currentTime)
+      var newLastApprovedEditById = Option(editorId)
+      var newApprovedSource = Option(newTextAndHtml.text)
+      var newApprovedHtmlSanitized = Option(newTextAndHtml.safeHtml)
+      var newApprovedAt = Option(transaction.currentTime)
+
+      val newApprovedById =
+        if (postToEdit.tyype == PostType.ChatMessage) {
+          // The system user auto approves all chat messages; always use SystemUserId for chat.
+          Some(SystemUserId)  // [7YKU24]
+        }
+        else if (editor.isStaff) {
+          Some(editor.id)
+        }
+        else {
+          // For now, let people continue editing a post that has been approved already.
+          // Later, could avoid approving, if user threat level >= mild threat,
+          // or if some not-yet-created site config settings are strict?
+          // Would then need to create a new revision.
+          if (postToEdit.isCurrentVersionApproved) {
+            Some(SystemUserId)
+          }
+          else {
+            // Don't auto-approve these edits. (5AKW02)
+            editsApproved = false
+            newCurrentSourcePatch = Some(makePatch(
+              from = postToEdit.approvedSource.getOrElse(""), to = newTextAndHtml.text))
+            newLastApprovedEditAt = postToEdit.lastApprovedEditAt
+            newLastApprovedEditById = postToEdit.lastApprovedEditById
+            newApprovedSource = postToEdit.approvedSource
+            newApprovedHtmlSanitized = postToEdit.approvedHtmlSanitized
+            newApprovedAt = postToEdit.approvedAt
+            postToEdit.approvedById
+          }
+        }
+
+      val isInNinjaEditWindow = {
+        val ninjaWindowMs = ninjaEditWindowMsFor(page.role)
+        val ninjaEditEndMs = postToEdit.currentRevStaredAt.getTime + ninjaWindowMs
+        transaction.currentTime.getTime < ninjaEditEndMs
+      }
+
       val isNinjaEdit = {
         val sameAuthor = postToEdit.currentRevisionById == editorId
         val ninjaHardEndMs = postToEdit.currentRevStaredAt.getTime + HardMaxNinjaEditWindowMs
@@ -600,33 +634,39 @@ trait PostsDao {
             Some(postToEdit.currentRevisionNr))
         }
 
+      val newApprovedRevNr = editsApproved ? Option(newRevisionNr) | postToEdit.approvedRevisionNr
+
       // COULD send current version from browser to server, reject edits if != oldPost.currentVersion
       // to stop the lost update problem.
-
-      // Later, if post not approved directly: currentSourcePatch = makePatch(from, to)
 
       var editedPost = postToEdit.copy(
         currentRevStaredAt = newStartedAt,
         currentRevLastEditedAt = Some(transaction.currentTime),
         currentRevisionById = editorId,
-        currentSourcePatch = None,
+        currentSourcePatch = newCurrentSourcePatch,
         currentRevisionNr = newRevisionNr,
         previousRevisionNr = newPrevRevNr,
-        lastApprovedEditAt = Some(transaction.currentTime),
-        lastApprovedEditById = Some(editorId),
-        approvedSource = Some(newTextAndHtml.text),
-        approvedHtmlSanitized = Some(newTextAndHtml.safeHtml),
-        approvedAt = Some(transaction.currentTime),
-        approvedById = Some(approverId),
-        approvedRevisionNr = Some(newRevisionNr))
+        lastApprovedEditAt = newLastApprovedEditAt,
+        lastApprovedEditById = newLastApprovedEditById,
+        approvedSource = newApprovedSource,
+        approvedHtmlSanitized = newApprovedHtmlSanitized,
+        approvedAt = newApprovedAt,
+        approvedById = newApprovedById,
+        approvedRevisionNr = newApprovedRevNr)
 
       if (editorId != editedPost.createdById) {
         editedPost = editedPost.copy(numDistinctEditors = 2)  // for now
       }
 
+      // If we're editing an about-category-post == a category description, update the category.
+      val editsAboutCategoryPost = page.role == PageRole.AboutCategory && editedPost.isOrigPost
       val anyEditedCategory =
-        if (page.role != PageRole.AboutCategory || !editedPost.isOrigPost) {
-          // Later: Go here also if new text not yet approved.
+        if (!editsAboutCategoryPost || !editsApproved) {
+          if (editsAboutCategoryPost && !editsApproved) {
+            // Currently needn't fix this? Only staff can edit these posts, right now.
+            unimplemented("Updating a category later when its about-page orig post gets approved",
+              "EdE2WK7AC")
+          }
           None
         }
         else {
@@ -651,6 +691,10 @@ trait PostsDao {
           // The way to do this in a really safe manner: Create a invisible inactive post-edited
           // review task, which gets activated & shown after x hours if too few people have read
           // the post. But if many has seen the post, the review task instead gets deleted.
+          None
+        }
+        else if (!postToEdit.isSomeVersionApproved && !editedPost.isSomeVersionApproved) {
+          // Review task should already have been created.
           None
         }
         else {
@@ -1052,7 +1096,7 @@ trait PostsDao {
       val pageMeta = page.meta
       val postBefore = page.parts.thePostByNr(postNr)
       if (postBefore.isCurrentVersionApproved)
-        throwForbidden("DwE4GYUR2", "Post already approved")
+        throwForbidden("DwE4GYUR2", s"Post nr ${postBefore.nr} already approved")
 
       val approver = transaction.loadTheUser(approverId)
 

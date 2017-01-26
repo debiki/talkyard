@@ -99,6 +99,11 @@ trait SiteTransaction {
   def loadPostsOnPage(pageId: PageId, siteId: Option[SiteId] = None): immutable.Seq[Post]
   def loadPosts(pagePostNrs: Iterable[PagePostNr]): immutable.Seq[Post]
   def loadPostsByUniqueId(postIds: Iterable[PostId]): immutable.Map[PostId, Post]
+
+  def loadAllUnapprovedPosts(pageId: PageId, limit: Int): immutable.Seq[Post]
+  def loadUnapprovedPosts(pageId: PageId, by: UserId, limit: Int): immutable.Seq[Post]
+  def loadCompletedForms(pageId: PageId, limit: Int): immutable.Seq[Post]
+
   /*
   def loadPosts(authorId: Option[UserId], includeTitles: Boolean, includeChatMessages: Boolean,
         limit: Int, orderBy: OrderBy, onPageId: Option[PageId] = None, onlyUnapproved: Boolean = false): immutable.Seq[Post]

@@ -301,9 +301,9 @@ export var Title = createComponent({
     var isMyPage = store_thisIsMyPage(store);
     var isStaffOrMyPage: boolean = isStaff(me) || isMyPage;
 
-    var titlePendingApprovalMessage = titlePost.isApproved ? false :
+    var deletedOrUnapprovedInfo = titlePost.isApproved ? false :
         r.span({ className: 'esPendingApproval' },
-          store.pageDeletedAtMs ? "(Page deleted)" : "(Page pending approval)");
+          store.pageDeletedAtMs ? "(Page deleted)" : "(Title pending approval)");
 
     var titleText = titlePost.sanitizedHtml;
 
@@ -430,8 +430,9 @@ export var Title = createComponent({
       contents =
           r.div({ className: 'dw-p-bd' },
             r.div({ className: 'dw-p-bd-blk' },
+              deletedOrUnapprovedInfo,
               r.h1({ className: 'dw-p-ttl' + pinOrHiddenClass, title: tooltip },
-                deletedIcon, titlePendingApprovalMessage,
+                deletedIcon,
                 icon, titleText,
                 anyShowForumInroBtn, anyEditTitleBtn)));
     }
@@ -507,9 +508,9 @@ var RootPostAndComments = createComponent({
       postBodyClass += ' dw-ar-p-bd';
     }
 
-    var bodyPendingApprovalMessage = rootPost.isApproved ? false :
+    var deletedOrUnapprovedMessage = rootPost.isApproved ? false :
         r.div({ className: 'esPendingApproval' },
-          store.pageDeletedAtMs ? "(Page deleted)" : "(Page pending approval)");
+          store.pageDeletedAtMs ? "(Page deleted)" : "(Text pending approval)");
 
     var body = null;
     if (pageRole !== PageRole.EmbeddedComments) {
@@ -655,7 +656,7 @@ var RootPostAndComments = createComponent({
 
     return (
       r.div({ className: threadClass },
-        bodyPendingApprovalMessage,
+        deletedOrUnapprovedMessage,
         body,
         solvedBy,
         postActions,

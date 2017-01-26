@@ -75,13 +75,14 @@ object ReactJson {
     PostSummaryLength + 80 // one line is roughly 80 chars
 
 
-  /** Returns (json, page-version, page-title).
+  /** Returns (json, page-version, page-title, ids-of-authors-of-not-yet-approved-posts).
     */
   def pageToJson(
         pageId: PageId,
         dao: SiteDao,
         anyPageRoot: Option[PostNr] = None,
-        anyPageQuery: Option[PageQuery] = None): (String, CachedPageVersion, Option[String]) = {
+        anyPageQuery: Option[PageQuery] = None)
+        : (String, CachedPageVersion, Option[String], Set[UserId]) = {
     dao.readOnlyTransaction(
       pageToJsonImpl(pageId, dao, _, anyPageRoot, anyPageQuery))
   }
@@ -148,7 +149,8 @@ object ReactJson {
         dao: SiteDao,
         transaction: SiteTransaction,
         anyPageRoot: Option[PostNr],
-        anyPageQuery: Option[PageQuery]): (String, CachedPageVersion, Option[String]) = {
+        anyPageQuery: Option[PageQuery])
+        : (String, CachedPageVersion, Option[String], Set[UserId]) = {
 
     // The json constructed here will be cached & sent to "everyone", so in this function
     // we always specify !isStaff and !restrictedOnly.
@@ -311,7 +313,10 @@ object ReactJson {
       appVersion = Globals.applicationVersion,
       dataHash = hashSha1Base64UrlSafe(jsonString))
 
-    (jsonString, version, pageTitle)
+    val unapprovedPosts = posts.filter(!_.isSomeVersionApproved)
+    val unapprovedPostAuthorIds = unapprovedPosts.map(_.createdById).toSet
+
+    (jsonString, version, pageTitle, unapprovedPostAuthorIds)
   }
 
 
@@ -592,7 +597,8 @@ object ReactJson {
 
   // Ought to rename this function (i.e. userDataJson) because it really should come as a
   // surprise that it updates the watchbar! But to what? Or reanme the class too? Or break out?
-  def userDataJson(pageRequest: PageRequest[_]): Option[JsObject] = {
+  def userDataJson(pageRequest: PageRequest[_], unapprovedPostAuthorIds: Set[UserId])
+        : Option[JsObject] = {
     val user = pageRequest.user getOrElse {
       return None
     }
@@ -614,7 +620,7 @@ object ReactJson {
     val (restrictedCategories, restrictedTopics) = listRestrictedCategoriesAndTopics(pageRequest)
     dao.readOnlyTransaction { transaction =>
       Some(userDataJsonImpl(user, pageRequest.pageId, watchbarWithTitles, restrictedCategories,
-        restrictedTopics, transaction))
+        restrictedTopics, unapprovedPostAuthorIds, transaction))
     }
   }
 
@@ -626,13 +632,15 @@ object ReactJson {
     val watchbar = request.dao.getOrCreateWatchbar(user.id)
     val watchbarWithTitles = request.dao.fillInWatchbarTitlesEtc(watchbar)
     request.dao.readOnlyTransaction(userDataJsonImpl(user, anyPageId = None, watchbarWithTitles,
-      restrictedCategories = JsArray(), restrictedTopics = Nil, _))
+      restrictedCategories = JsArray(), restrictedTopics = Nil,
+      unapprovedPostAuthorIds = Set.empty, _))
   }
 
 
   private def userDataJsonImpl(user: User, anyPageId: Option[PageId],
         watchbar: WatchbarWithTitles, restrictedCategories: JsArray,
-        restrictedTopics: Seq[JsValue], transaction: SiteTransaction): JsObject = {
+        restrictedTopics: Seq[JsValue], unapprovedPostAuthorIds: Set[UserId],
+        transaction: SiteTransaction): JsObject = {
 
     val reviewTasksAndCounts =
       if (user.isStaff) transaction.loadReviewTaskCounts(user.isAdmin)
@@ -648,7 +656,8 @@ object ReactJson {
         }) getOrElse JsNull
         val votes = votesJson(user.id, pageId, transaction)
         // + flags, interesting for staff, & so people won't attempt to flag twice [7KW20WY1]
-        val (postsJson, postAuthorsJson) = unapprovedPostsAndAuthorsJson(user, pageId, transaction)
+        val (postsJson, postAuthorsJson) =
+          unapprovedPostsAndAuthorsJson(user, pageId, unapprovedPostAuthorIds, transaction)
         (rolePageSettings, votes, postsJson, postAuthorsJson)
       } getOrElse (JsNull, JsNull, JsNull, JsNull)
 
@@ -853,48 +862,47 @@ object ReactJson {
 
 
   private def unapprovedPostsAndAuthorsJson(user: User, pageId: PageId,
-        transaction: SiteTransaction): (
+        unapprovedPostAuthorIds: Set[UserId], transaction: SiteTransaction): (
           JsObject /* why object? try to change to JsArray instead */, JsArray) = {
 
-    REFACTOR // Load form replies. For now: (a bit hacky)   (& could rename this fn + more stuff)
-    SHOULD;OPTIMIZE // don't load the whole page when is-not Form
-    COULD_OPTIMIZE // only load unapproved posts and form replies. [3PF4GK]
-    if (user.isAdmin) {
-      val page = PageDao(pageId, transaction)
-      if (page.exists && (
-            page.meta.pageRole == PageRole.Form ||
-            page.meta.pageRole == PageRole.WebPage)) {  // hack. Try to remove + fix [3PF4GK] above
-        val posts = page.parts.allPosts
-        val tagsByPostId = transaction.loadTagsByPostId(posts.map(_.id))
-        val postIdsAndJson: Seq[(String, JsValue)] = posts.toSeq.map { post =>
-          val tags = tagsByPostId(post.id)
-          post.nr.toString -> postToJsonImpl(post, page, tags, includeUnapproved = true)
-        }
-        val authors = transaction.loadUsers(posts.map(_.createdById).toSet)
-        val authorsJson = JsArray(authors map JsUser)
-        return (JsObject(postIdsAndJson), authorsJson)
+    var posts: Seq[Post] =
+      if (unapprovedPostAuthorIds.isEmpty) {
+        // This is usually the case, and lets us avoid a db query.
+        Nil
       }
+      else if (user.isStaff) {
+        transaction.loadAllUnapprovedPosts(pageId, limit = 999)
+      }
+      else if (unapprovedPostAuthorIds.contains(user.id)) {
+        transaction.loadUnapprovedPosts(pageId, by = user.id, limit = 999)
+      }
+      else {
+        Nil
+      }
+
+    COULD // load form replies also if user is page author?
+    if (user.isAdmin) {
+      posts ++= transaction.loadCompletedForms(pageId, limit = 999)
     }
 
-    (JsObject(Nil), JsArray()) // for now
-    /*
-    // TOO slow! does a db req each http req. Fix by caching user ids with unappr posts, per page?
-    val page = PageDao(pageId, transaction)
-    val posts = page.parts.allPosts filter { post =>
-      (user.isAdmin || post.createdById == user.id) && !post.isCurrentVersionApproved
-    }
-    /* doesn't work currently, because (unfortunately) the whole page is needed:
-    val byId = user.isStaff ? Option(user.id) | None
-    val posts = transaction.loadPosts(authorId = byId, includeTitles = true,
-      includeChatMessages = false, onPageId = Some(pageId), onlyUnapproved = true,
-      orderBy = OrderBy.OldestFirst, limit = 99)
-      */
+    if (posts.isEmpty)
+      return (JsObject(Nil), JsArray())
 
-    val postIdsAndJson: Seq[(String, JsValue)] = posts.toSeq.map { post =>
-      post.nr.toString -> postToJsonImpl(post, page, includeUnapproved = true)
+    val tagsByPostId = transaction.loadTagsByPostId(posts.map(_.id))
+    val pageMeta = transaction.loadThePageMeta(pageId)
+
+    val postIdsAndJson: Seq[(String, JsValue)] = posts.map { post =>
+      val tags = tagsByPostId(post.id)
+      post.nr.toString ->
+        postToJsonNoDbAccess(post, showHidden = true, includeUnapproved = true,
+          pageMeta.pageRole, tags = tags, new HowRenderPostInPage(false, JsNull, false,
+            // Cannot currently reply to unapproved posts, so no children. [8PA2WFM]
+            Nil))
     }
-    JsObject(postIdsAndJson)
-    */
+
+    val authors = transaction.loadUsers(posts.map(_.createdById).toSet)
+    val authorsJson = JsArray(authors map JsUser)
+    (JsObject(postIdsAndJson), authorsJson)
   }
 
 

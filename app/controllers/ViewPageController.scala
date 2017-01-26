@@ -31,6 +31,7 @@ import play.api.libs.json._
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
 import DebikiHttp._
+import ed.server.RenderedPage
 
 
 
@@ -232,11 +233,13 @@ object ViewPageController extends mvc.Controller {
 
 
   private def doRenderPage(request: PageGetRequest): Future[Result] = {
-    var pageHtml = request.dao.renderPageMaybeUseCache(request)
+    val renderedPage = request.dao.renderPageMaybeUseCache(request)
+    var pageHtml = renderedPage.html
 
     {
       val usersOnlineStuff = request.dao.loadUsersOnlineStuff() // could do asynchronously later
-      val anyUserSpecificDataJson = ReactJson.userDataJson(request)
+      val anyUserSpecificDataJson =
+        ReactJson.userDataJson(request, renderedPage.unapprovedPostAuthorIds)
       val volatileJson = Json.obj(
         "usersOnline" -> usersOnlineStuff.usersJson,
         "numStrangersOnline" -> usersOnlineStuff.numStrangers,

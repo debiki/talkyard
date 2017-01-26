@@ -360,8 +360,15 @@ object UserController extends mvc.Controller {
         // Might be an embedded comment page, not yet created because no comments posted.
         // Or we might be in the signup-to-become-owner step, when creating a new site.
         ReactJson.userNoPageToJson(request)
-      case Some(request) =>
-        ReactJson.userDataJson(request) getOrElse ReactJson.NoUserSpecificData
+      case Some(pageRequest) =>
+        if (pageRequest.user.isDefined) {
+          val renderedPage = request.dao.renderPageMaybeUseCache(pageRequest)
+          ReactJson.userDataJson(pageRequest, renderedPage.unapprovedPostAuthorIds).getOrDie(
+            "EdE4ZBXKG")
+        }
+        else {
+          ReactJson.NoUserSpecificData
+        }
     }
     OkSafeJson(myPageData)
   }

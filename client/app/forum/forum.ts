@@ -892,7 +892,7 @@ export var ListTopicsComponent = createComponent({
     topicElems.splice(Math.min(topicElems.length, numFewTopics), 0,
       useTable
         ? r.tr({ key: 'ExplIcns' }, r.td({ colSpan: 5 }, iconsHelpStuff))
-        : r.li({ key: 'ExplIcns', className: 'esF_TsL_T clearfix' }, iconsHelpStuff));
+        : r.li({ key: 'ExplIcns', className: 'esF_TsL_T clearfix' }, iconsHelpStuff)); // (update BJJ CSS before changin this (!))
 
     let loadMoreTopicsBtn;
     let orderOffset = this.props.orderOffset;
@@ -1194,7 +1194,7 @@ var TopicRow = createComponent({
 
     // We use a table layout, only for wide screens, because table columns = spacy.
     if (this.props.inTable) return (
-      r.tr({ className: 'esForum_topics_topic e2eF_T' },
+      r.tr({ className: 'esForum_topics_topic e2eF_T' },  // (update BJJ CSS before renaming 'esForum_topics_topic' (!))
         r.td({ className: 'dw-tpc-title e2eTopicTitle' },
           r.div({ className: 's_F_Ts_T_Con' + manyLinesClass, onClick: showMoreClickHandler },
             makeTitle(topic, anyPinOrHiddenIconClass, settings, me),
@@ -1279,7 +1279,7 @@ var LoadAndListCategoriesComponent = React.createClass(<any> {
         recentTopicsColumnTitle = "Recent topics (including deleted)";
         break;
       default:
-        recentTopicsColumnTitle = "Recent topics (no filter)";
+        recentTopicsColumnTitle = "Recent topics";
     }
 
     return (

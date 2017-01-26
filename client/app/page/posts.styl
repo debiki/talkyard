@@ -195,6 +195,7 @@
 h1.dw-p-ttl
   padding-bottom: 4px;
 
+
 .esPendingApproval
   font-size: 15px;
   font-style: italic;
@@ -204,12 +205,17 @@ h1.dw-p-ttl
   margin-top: 20px;
   display: inline-block;
 
+// If there's a pending-approval message just above the title, then add margin above that
+// message, instead of above the title.
 .dw-p-ttl .esPendingApproval
-  margin-top: 0;
-  display: inline-block;
-  font-size: 26px;
-  font-weight: normal;
+  margin: 20px 0 0 0;
+.esPendingApproval + .dw-p-ttl
+  margin-top: 7px;
+  padding-top: 0;
 
+// Reduce margin between text-pending-approval message and the text
+.DW.DW .esPendingApproval + .dw-ar-p .dw-p-bd-blk > :first-child
+  margin-top: 5px;  // otherwise, would be: (6MKA0EB)
 
 h1.dw-p-ttl
   margin-top: 10px;
@@ -546,7 +552,7 @@ html:not(.mouse) .dw-rr
 // (skip old IE)
 // [8K3U5]
 .dw-ar-t > .dw-p > .dw-p-bd > .dw-p-bd-blk > :first-child:not(h2)
-  margin-top: 26px
+  margin-top: 26px  // (6MKA0EB)
 
 .dw-p-bd-blk
   margin: 0

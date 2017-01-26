@@ -149,10 +149,6 @@ export var PostActions = createComponent({
     var isDone = store.pageDoneAtMs && (store.pageRole === PageRole.Problem ||
       store.pageRole === PageRole.Idea || store.pageRole === PageRole.ToDo);
 
-    // SHOULD show at least the edit button, so one can edit one's unapproved post. [27WKTU02]
-    if (!post.isApproved) // what?:  && !post.text)
-      return null;
-
     var me: Myself = store.me;
     var isOwnPost = me.id === post.authorId;
     var isOwnPage = store_thisIsMyPage(store);
@@ -170,12 +166,13 @@ export var PostActions = createComponent({
 
     var acceptAnswerButton;
     if (isStaffOrOwnPage && isQuestion && !store.pageAnsweredAtMs && !store.pageClosedAtMs &&
-        !isPageBody) {
+        !isPageBody && post.isApproved) {
       acceptAnswerButton = r.a({ className: 'dw-a dw-a-solve icon-ok-circled-empty',
           onClick: this.onAcceptAnswerClick, title: "Accept this as the answer to the " +
               "question or problem" }, "Solution?");
     }
     else if (isQuestion && post.uniqueId === store.pageAnswerPostUniqueId) {
+      // (Do this even if !post.isApproved.)
       var solutionTooltip = isStaffOrOwnPage
           ? "Click to un-accept this answer"
           : "This post has been accepted as the answer";
@@ -190,7 +187,12 @@ export var PostActions = createComponent({
     if (store.pageRole === PageRole.MindMap && !isStaffOrOwnPage) {
       // Currently only staff & the mind map page author may edit a mind map. [7KUE20]
     }
-    else if (!deletedOrCollapsed) {
+    else if (deletedOrCollapsed || !post.isApproved) {
+      // Cannot reply to these posts.
+      // Later, could perhaps let staff reply to unapproved posts, [8PA2WFM] if they aren't
+      // going to approve them, and want to clarify why? E.g. "This is off-topic because ..."
+    }
+    else {
       replyButton =
           r.a({ className: 'dw-a dw-a-reply icon-reply', onClick: this.onReplyClick },
             makeReplyBtnTitle(store, post, false));
@@ -257,7 +259,7 @@ export var PostActions = createComponent({
 
     var downvotesDropdown;
     var likeVoteButton;
-    if (!deletedOrCollapsed && !isOwnPost) {
+    if (!deletedOrCollapsed && post.isApproved && !isOwnPost) {
       var myLikeVote = votes.indexOf('VoteLike') !== -1 ? ' dw-my-vote' : '';
       var myWrongVote = votes.indexOf('VoteWrong') !== -1 ? ' dw-my-vote' : '';
       var myBuryVote = votes.indexOf('VoteBury') !== -1 ? ' dw-my-vote' : '';
