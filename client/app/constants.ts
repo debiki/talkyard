@@ -123,13 +123,19 @@ enum PostType {
 }
 
 
-// Could change to PageLayout bitmask. For now though:
 enum TopicListLayout {
+  Default = 0,
   TitleOnly = 1,
   TitleExcerptSameLine = 2,
   ExcerptBelowTitle = 3,
   ThumbnailLeft = 4,
   ThumbnailsBelowTitle = 5,
+}
+
+
+
+enum CategoriesLayout {
+  Default = 0,
 }
 
 

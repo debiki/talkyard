@@ -60,7 +60,7 @@ export function buildForumRoutes() {
   var store: Store = ReactStore.allData();
   var rootSlash = store.pagePath.value;
   var rootNoSlash = rootSlash.substr(0, rootSlash.length - 1);
-  var defaultPath = rootSlash + (store.showForumCategories ? RoutePathCategories : RoutePathLatest);
+  var defaultPath = rootSlash + (store.settings.forumMainView || RoutePathLatest);
 
   return [
     Redirect({ key: 'redirA', from: rootSlash, to: defaultPath }),
@@ -222,9 +222,10 @@ var ForumComponent = React.createClass(<any> {
       params: this.props.params,
     });
 
+    /* Remove this? Doesn't look nice & makes the categories page look complicated.
     var topsAndCatsHelp = this.props.routes[SortOrderRouteIndex].path === RoutePathCategories
       ? HelpMessageBox({ message: topicsAndCatsHelpMessage, className: 'esForum_topicsCatsHelp' })
-      : null;
+      : null; */
 
     return (
      r.div({},
@@ -236,7 +237,7 @@ var ForumComponent = React.createClass(<any> {
         ForumIntroText({ store: store }),
         helpMessage,
         ForumButtons(forumButtonProps),
-        topsAndCatsHelp,
+        //topsAndCatsHelp,
         React.cloneElement(this.props.children, childProps))));
   }
 });

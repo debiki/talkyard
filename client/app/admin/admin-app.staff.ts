@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2016 Kaj Magnus Lindberg
+ * Copyright (C) 2015-2017 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -52,15 +52,13 @@ export function routes() {
       Redirect({ from: 'users', to: AdminRoot + 'users/enabled' }),
       Redirect({ from: 'review', to: AdminRoot + 'review/all' }),
       Redirect({ from: 'settings', to: AdminRoot + 'settings/legal' }),
+      Redirect({ from: 'customize', to: AdminRoot + 'customize/basic' }),
       Route({ path: 'settings', component: SettingsPanelComponent },
         Route({ path: 'legal', component: LegalSettingsComponent }),
         Route({ path: 'login', component: LoginSettingsComponent }),
         Route({ path: 'moderation', component: ModerationSettingsComponent }),
-        Route({ path: 'simplify', component: SimplifySettingsComponent }),
         Route({ path: 'spam-flags', component: SpamFlagsSettingsComponent }),
-        Route({ path: 'analytics', component: AnalyticsSettingsComponent }),
-        Route({ path: 'advanced', component: AdvancedSettingsComponent }),
-        Route({ path: 'experimental', component: ExperimentalSettingsComponent })),
+        Route({ path: 'advanced', component: AdvancedSettingsComponent })),
       Route({ path: 'users', component: UsersTabComponent },
         Route({ path: 'enabled', component: ActiveUsersPanelComponent }),
         Route({ path: 'new', component: NewUsersPanelComponent }),
@@ -69,7 +67,9 @@ export function routes() {
         Route({ path: 'suspended', component: NotYetImplementedComponent }),
         Route({ path: 'threats', component: NotYetImplementedComponent }),
         Route({ path: 'id/:userId', component: AdminUserPageComponent })),
-      Route({ path: 'customize', component: CustomizePanelComponent }),
+      Route({ path: 'customize', component: CustomizePanelComponent },
+        Route({ path: 'basic', component: CustomizeBasicPanelComponent }),
+        Route({ path: 'html-css', component: CustomizeAdvancedPanelComponent })),
       Route({ path: 'review', component: ReviewPanelComponent },
         Route({ path: 'all', component: ReviewAllPanelComponent })))];
 }
@@ -181,7 +181,7 @@ var AdminAppComponent = React.createClass(<any> {
         NavItem({ eventKey: 'settings' }, 'Settings') : null;
 
     var customize = me.isAdmin ?
-        NavItem({ eventKey: 'customize' }, 'Customize') : null;
+        NavItem({ eventKey: 'customize' }, 'Look and feel') : null;
 
     var saveBar = _.isEmpty(this.state.editedSettings) ? null :
       r.div({ className: 'esA_SaveBar' },
@@ -234,11 +234,8 @@ var SettingsPanelComponent = React.createClass(<any> {
           NavLink({ to: AdminRoot + 'settings/legal', id: 'e2eAA_Ss_LegalL' }, "Legal"),
           NavLink({ to: AdminRoot + 'settings/login', id: 'e2eAA_Ss_LoginL' }, "Login"),
           NavLink({ to: AdminRoot + 'settings/moderation', id: 'e2eAA_Ss_ModL'  }, "Moderation"),
-          NavLink({ to: AdminRoot + 'settings/simplify', id: 'e_A_Ss_SimplifyL'  }, "Simplify"),
           NavLink({ to: AdminRoot + 'settings/spam-flags', id: 'e2eAA_Ss_SpamFlagsL'  }, "Spam & flags"),
-          NavLink({ to: AdminRoot + 'settings/analytics', id: 'e2eAA_Ss_AnalyticsL' }, "Analytics"),
-          NavLink({ to: AdminRoot + 'settings/advanced', id: 'e2eAA_Ss_AdvancedL' }, "Advanced"),
-          NavLink({ to: AdminRoot + 'settings/experimental', id: 'e2eAA_Ss_ExpL' }, "Experimental")),
+          NavLink({ to: AdminRoot + 'settings/advanced', id: 'e2eAA_Ss_AdvancedL' }, "Advanced")),
         r.div({ className: 'form-horizontal esAdmin_settings col-sm-10' },
           React.cloneElement(this.props.children, this.props))));
   }
@@ -410,59 +407,6 @@ var ModerationSettingsComponent = React.createClass(<any> {
 
 
 
-// REFACTOR UX COULD remove this form here and add to forum layout settings instead.
-// (But keep in settings3 table)
-var SimplifySettingsComponent = React.createClass(<any> {
-  render: function() {
-    var props = this.props;
-
-    return (
-      r.div({},
-        r.p({}, "Here you can ", r.i({}, "remove"), " features from your forum " +
-             "to make it simpler. Uncheck a checkbox to remove a feature."),
-
-        Setting2(props, { type: 'checkbox', label: "Use categories",
-          className: 'e_A_Ss_S-ShowCatsCB',
-          help: "Unckeck to disable categories and hide category related buttons and columns. " +
-              "Suitable for small forums where you don't need different categories.",
-          getter: (s: Settings) => s.showCategories,
-          update: (newSettings: Settings, target) => {
-            newSettings.showCategories = target.checked;
-          }
-        }),
-
-        Setting2(props, { type: 'checkbox', label: "Show topic filter button",
-          className: 'e_A_Ss_S-ShowTopicFilterCB',
-          help: r.span({}, "Uncheck to hide the ", r.i({}, "All Topics"), " / ",
-              r.i({}, "Only Waiting"), " topics filter button"),
-          getter: (s: Settings) => s.showTopicFilterButton,
-          update: (newSettings: Settings, target) => {
-            newSettings.showTopicFilterButton = target.checked;
-          }
-        }),
-
-        Setting2(props, { type: 'checkbox', label: "Show topic type icons",
-          className: 'e_A_Ss_S-ShowTopicTypesCB',
-          help: "Uncheck to hide topic type icons in the forum topic list",
-          getter: (s: Settings) => s.showTopicTypes,
-          update: (newSettings: Settings, target) => {
-            newSettings.showTopicTypes = target.checked;
-          }
-        }),
-
-        Setting2(props, { type: 'checkbox', label: "Choose topic type",
-          className: 'e_A_Ss_S-SelectTopicTypeCB',
-          help: "Uncheck to hide choose-and-change topic type buttons",
-          getter: (s: Settings) => s.selectTopicType,
-          update: (newSettings: Settings, target) => {
-            newSettings.selectTopicType = target.checked;
-          }
-        })));
-  }
-});
-
-
-
 var SpamFlagsSettingsComponent = React.createClass(<any> {
   render: function() {
     var props = this.props;
@@ -584,24 +528,6 @@ var SpamFlagsSettingsComponent = React.createClass(<any> {
 
 
 
-var AnalyticsSettingsComponent = React.createClass(<any> {
-  render: function() {
-    var props = this.props;
-    return (
-      r.div({},
-        Setting2(props, { type: 'text', label: "Google Universal Analytics tracking ID",
-          help: r.span({}, "Any Google Universal Analytics tracking ID, e.g. ",
-            r.samp({}, "UA-12345678-9"), ", see http://google.com/analytics."),
-          getter: (s: Settings) => s.googleUniversalAnalyticsTrackingId,
-          update: (newSettings: Settings, target) => {
-            newSettings.googleUniversalAnalyticsTrackingId = target.value;
-          }
-        })));
-  }
-});
-
-
-
 var AdvancedSettingsComponent = React.createClass(<any> {
   redirectExtraHostnames: function() {
     Server.redirectExtraHostnames(() => {
@@ -675,6 +601,26 @@ var AdvancedSettingsComponent = React.createClass(<any> {
 
     return (
       r.div({},
+        Setting2(props, { type: 'text', label: "Google Universal Analytics tracking ID",
+          help: r.span({}, "Any Google Universal Analytics tracking ID, e.g. ",
+            r.samp({}, "UA-12345678-9"), ", see http://google.com/analytics."),
+          getter: (s: Settings) => s.googleUniversalAnalyticsTrackingId,
+          update: (newSettings: Settings, target) => {
+            newSettings.googleUniversalAnalyticsTrackingId = target.value;
+          }
+        }),
+
+        Setting2(props, {
+          type: 'checkbox', label: "Experimental",
+          help: "Enables some currently not-well-tested features " +
+          "like Wiki MindMaps and custom HTML pages.",
+          getter: (s: Settings) => s.showExperimental,
+          update: (newSettings: Settings, target) => {
+            newSettings.showExperimental = target.checked;
+          }
+        }),
+
+        r.hr(),
         changeHostnameFormGroup,
         duplicatingHostsFormGroup,
         redirectingHostsFormGroup));
@@ -780,17 +726,83 @@ var LegalSettingsComponent = React.createClass(<any> {
 
 
 
-var ExperimentalSettingsComponent = React.createClass(<any> {
+let CustomizePanelComponent = React.createClass(<any> {
+  componentDidMount: function() {
+    this.props.loadAllSettingsIfNeeded();
+  },
+
   render: function() {
-    var props = this.props;
+    let props = this.props;
+    if (!props.currentSettings)
+      return r.p({}, "Loading...");
+
+    return (
+      r.div({ className: 'esA_Ss s_A_Ss-LaF' },
+        r.ul({ className: 'esAdmin_settings_nav col-sm-2 nav nav-pills nav-stacked' },
+          NavLink({ to: AdminRoot + 'customize/basic', id: 'e_A_Ss-LaF_Basic' }, "Basic"),
+          NavLink({ to: AdminRoot + 'customize/html-css', id: 'e_A_Ss-LaF_HtmlCss' }, "HTML and CSS")),
+        r.div({ className: 'form-horizontal esAdmin_settings col-sm-10' },
+          React.cloneElement(this.props.children, this.props))));
+  }
+});
+
+
+
+let CustomizeBasicPanelComponent = React.createClass(<any> {
+  render: function() {
+    let props = this.props;
     return (
       r.div({},
-        Setting2(props, { type: 'checkbox', label: "Experimental",
-          help: "Enables some currently not-well-tested features " +
-          "like Wiki MindMaps and custom HTML pages.",
-          getter: (s: Settings) => s.showExperimental,
+        Setting2(props, { type: 'text', label: "Forum main view",
+          className: 'e_A_Ss_S-ForumMainViewTI',
+          help: "Set to 'categories' to show all categories on the homepage, instead " +
+              "of showing the latest topics (which is the default).",
+          getter: (s: Settings) => s.forumMainView,
           update: (newSettings: Settings, target) => {
-            newSettings.showExperimental = target.checked;
+            newSettings.forumMainView = target.value;
+          }
+        }),
+
+        /*
+        r.p({}, "Here you can ", r.i({}, "remove"), " features from your forum " +
+          "to make it simpler. Uncheck a checkbox to remove a feature."),
+          */
+
+        Setting2(props, { type: 'checkbox', label: "Use categories",
+          className: 'e_A_Ss_S-ShowCatsCB',
+          help: "Unckeck to disable categories and hide category related buttons and columns. " +
+          "Suitable for small forums where you don't need different categories.",
+          getter: (s: Settings) => s.showCategories,
+          update: (newSettings: Settings, target) => {
+            newSettings.showCategories = target.checked;
+          }
+        }),
+
+        Setting2(props, { type: 'checkbox', label: "Show topic filter button",
+          className: 'e_A_Ss_S-ShowTopicFilterCB',
+          help: r.span({}, "Uncheck to hide the ", r.i({}, "All Topics"), " / ",
+            r.i({}, "Only Waiting"), " topics filter button"),
+          getter: (s: Settings) => s.showTopicFilterButton,
+          update: (newSettings: Settings, target) => {
+            newSettings.showTopicFilterButton = target.checked;
+          }
+        }),
+
+        Setting2(props, { type: 'checkbox', label: "Show topic type icons",
+          className: 'e_A_Ss_S-ShowTopicTypesCB',
+          help: "Uncheck to hide topic type icons in the forum topic list",
+          getter: (s: Settings) => s.showTopicTypes,
+          update: (newSettings: Settings, target) => {
+            newSettings.showTopicTypes = target.checked;
+          }
+        }),
+
+        Setting2(props, { type: 'checkbox', label: "Choose topic type",
+          className: 'e_A_Ss_S-SelectTopicTypeCB',
+          help: "Uncheck to hide choose-and-change topic type buttons",
+          getter: (s: Settings) => s.selectTopicType,
+          update: (newSettings: Settings, target) => {
+            newSettings.selectTopicType = target.checked;
           }
         })));
   }
@@ -798,32 +810,15 @@ var ExperimentalSettingsComponent = React.createClass(<any> {
 
 
 
-var CustomizePanelComponent = React.createClass(<any> {
-  componentDidMount: function() {
-    this.props.loadAllSettingsIfNeeded();
-  },
-
+let CustomizeAdvancedPanelComponent = React.createClass(<any> {
   render: function() {
-    var props = this.props;
-    if (!props.currentSettings)
-      return r.p({}, 'Loading...');
-
+    let props = this.props;
     return (
       r.div({ className: 'form-horizontal esAdmin_customize' },
         Alert({ bsStyle: 'info' },
           r.p({}, r.b({}, "Ignore everything below,"), " especially if you don't know HTML and CSS."),
           r.p({}, "We'll try to build something for you that's easier to use, later.")),
 
-        /* People seem to not understand what this one does, so better reomve it.
-            Make it an in-the-forum setting instead?
-        Setting2(props, { type: 'checkbox', label: "Show Forum Categories",
-          help: "Shall a forum main page list " +
-            "all forum categories, instead of the latest topics?",
-          getter: (s: Settings) => s.showForumCategories,
-          update: (newSettings: Settings, target) => {
-            newSettings.showForumCategories = target.checked;
-          }
-        }), */
         /* A tester checked this without any idea about what it does.
           Remove for now, perhaps later show in some Advanced section?
         Setting({ setting: settings.horizontalComments, onSave: saveSetting,

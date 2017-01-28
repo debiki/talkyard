@@ -13,12 +13,12 @@
 @import com.debiki.core.ContentLicense
 
 @companyDomain = @{ tpi.companyDomain }
-@companyFullName = @{ tpi.companyFullName }
+@companyFullName = @{ tpi.companyFullName orIfEmpty "Unnamed Organization" }
 @companyAbbreviation = @{
   if (tpi.companyShortName.isEmpty) ""
   else s"""("${tpi.companyShortName}")"""
 }
-@companyShortName = @{ tpi.companyShortName orIfEmpty tpi.companyFullName }
+@companyShortName = @{ tpi.companyShortName orIfEmpty companyFullName }
 @privacyUrl = @{ controllers.routes.LegalController.viewPrivacyPolicyPage.url }
 @faqUrl = @{ "/-/there-is-not-yet-any-FAQ-page--sorry" }
 

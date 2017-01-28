@@ -110,7 +110,7 @@ object PageMeta {
       categoryId = categoryId,
       embeddingPageUrl = url,
       authorId = authorId,
-      layout = PageLayout.Default,
+      layout = TopicListLayout.Default,
       pinOrder = pinOrder,
       pinWhere = pinWhere,
       numLikes = 0,
@@ -180,7 +180,7 @@ case class PageMeta(
   embeddingPageUrl: Option[String],
   authorId: UserId,
   frequentPosterIds: Seq[UserId] = Seq.empty,
-  layout: PageLayout = new PageLayout(0),
+  layout: TopicListLayout = TopicListLayout.Default,
   pinOrder: Option[Int] = None,
   pinWhere: Option[PinPageWhere] = None,
   numLikes: Int = 0,
@@ -488,29 +488,35 @@ object PageRole {
 }
 
 
-/** The bitmask:
-  *
-  * Bits:
-  * 1..4: Topic list layout, for forums (decimal: 1..15)
-  * 5..32: Unused.
-  * 33..64: For plugins?
-  */
-class PageLayout(val bitmask: Int) extends AnyVal {
+sealed abstract class CategoriesLayout(val IntVal: Int) { def toInt = IntVal }
+object CategoriesLayout {
+  val Default = new CategoriesLayout(0) {}
 
+  def fromInt(value: Int): Option[CategoriesLayout] = Some(value match {
+    case Default.IntVal => Default
+    case _ => return None
+  })
 }
 
-object PageLayout {
 
-  val Default = new PageLayout(0)
+sealed abstract class TopicListLayout(val IntVal: Int) { def toInt = IntVal }
+object TopicListLayout {
+  object Default extends TopicListLayout(0)
+  object TitleOnly extends TopicListLayout(1)
+  object TitleExcerptSameLine extends TopicListLayout(2)
+  object ExcerptBelowTitle extends TopicListLayout(3)
+  object ThumbnailLeft extends TopicListLayout(4)
+  object ThumbnailsBelowTitle extends TopicListLayout(5)
 
-  object TopicList {
-    val TitleOnly = new PageLayout(1)
-    val TitleExcerptSameLine = new PageLayout(2)
-    val ExcerptBelowTitle = new PageLayout(3)
-    val ThumbnailLeft = new PageLayout(4)
-    val ThumbnailsBelowTitle = new PageLayout(5)
-  }
-
+  def fromInt(value: Int): Option[TopicListLayout] = Some(value match {
+    case Default.IntVal => Default
+    case TitleOnly.IntVal => TitleOnly
+    case TitleExcerptSameLine.IntVal => TitleExcerptSameLine
+    case ExcerptBelowTitle.IntVal => ExcerptBelowTitle
+    case ThumbnailLeft.IntVal => ThumbnailLeft
+    case ThumbnailsBelowTitle.IntVal => ThumbnailsBelowTitle
+    case _ => return None
+  })
 }
 
 

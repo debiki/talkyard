@@ -89,17 +89,37 @@ object ReactJson {
 
 
   def makeSettingsVisibleClientSideJson(settings: EffectiveSettings): JsObject = {
-    // Only include settings that differ from the default. Default settings: [8L4KWU02]
+    // Only include settings that differ from the default.
     var json = Json.obj()
-    if (settings.inviteOnly) json += "inviteOnly" -> JsTrue
-    if (!settings.allowSignup) json += "allowSignup" -> JsFalse
-    if (!settings.allowLocalSignup) json += "allowLocalSignup" -> JsFalse
-    if (settings.isGuestLoginAllowed) json += "allowGuestLogin" -> JsTrue
-    if (settings.showExperimental) json += "showExperimental" -> JsTrue
-    if (!settings.showCategories) json += "showCategories" -> JsFalse
-    if (!settings.showTopicFilterButton) json += "showTopicFilterButton" -> JsFalse
-    if (!settings.showTopicTypes) json += "showTopicTypes" -> JsFalse
-    if (!settings.selectTopicType) json += "selectTopicType" -> JsFalse
+    val D = AllSettings.Default
+    if (settings.inviteOnly != D.inviteOnly)
+      json += "inviteOnly" -> JsBoolean(settings.inviteOnly)
+    if (settings.allowSignup != D.allowSignup)
+      json += "allowSignup" -> JsBoolean(settings.allowSignup)
+    if (settings.allowLocalSignup != D.allowLocalSignup)
+      json += "allowLocalSignup" -> JsBoolean(settings.allowLocalSignup)
+    if (settings.isGuestLoginAllowed != D.allowGuestLogin)
+      json += "allowGuestLogin" -> JsBoolean(settings.isGuestLoginAllowed)
+    if (settings.showExperimental != D.showExperimental)
+      json += "showExperimental" -> JsBoolean(settings.showExperimental)
+    if (settings.forumMainView != D.forumMainView)
+      json += "forumMainView" -> JsString(settings.forumMainView)
+    if (settings.forumTopicsSortButtons != D.forumTopicsSortButtons)
+      json += "forumTopicsSortButtons" -> JsString(settings.forumTopicsSortButtons)
+    if (settings.forumCategoryLinks != D.forumCategoryLinks)
+      json += "forumCategoryLinks" -> JsString(settings.forumCategoryLinks)
+    if (settings.forumTopicsLayout != D.forumTopicsLayout)
+      json += "forumTopicsLayout" -> JsNumber(settings.forumTopicsLayout.toInt)
+    if (settings.forumCategoriesLayout != D.forumCategoriesLayout)
+      json += "forumCategoriesLayout" -> JsNumber(settings.forumCategoriesLayout.toInt)
+    if (settings.showCategories != D.showCategories)
+      json += "showCategories" -> JsBoolean(settings.showCategories)
+    if (settings.showTopicFilterButton != D.showTopicFilterButton)
+      json += "showTopicFilterButton" -> JsBoolean(settings.showTopicFilterButton)
+    if (settings.showTopicTypes != D.showTopicTypes)
+      json += "showTopicTypes" -> JsBoolean(settings.showTopicTypes)
+    if (settings.selectTopicType != D.selectTopicType)
+      json += "selectTopicType" -> JsBoolean(settings.selectTopicType)
     json
   }
 
@@ -252,9 +272,6 @@ object ReactJson {
     //val pageSettings = dao.loadSinglePageSettings(pageId)
     val horizontalLayout = page.role == PageRole.MindMap // || pageSettings.horizontalComments
     val is2dTreeDefault = false // pageSettings.horizontalComments
-    val showForumCategories =
-      if (page.role == PageRole.Forum) Some(siteSettings.showForumCategories)
-      else None
 
     val jsonObj = Json.obj(
       "appVersion" -> Globals.applicationVersion,
@@ -269,11 +286,10 @@ object ReactJson {
       "pageMemberIds" -> pageMemberIds,
       "categoryId" -> JsNumberOrNull(page.meta.categoryId),
       "forumId" -> JsStringOrNull(anyForumId),
-      "showForumCategories" -> JsBooleanOrNull(showForumCategories),
       "ancestorsRootFirst" -> ancestorsJsonRootFirst,
       "pageRole" -> JsNumber(page.role.toInt),
       "pagePath" -> JsPagePath(page.thePath),
-      "pageLayout" -> JsNumber(page.meta.layout.bitmask),
+      "pageLayout" -> JsNumber(page.meta.layout.toInt),
       "pageHtmlTagCssClasses" -> JsString(page.meta.htmlTagCssClasses),
       "pageHtmlHeadTitle" -> JsString(page.meta.htmlHeadTitle),
       "pageHtmlHeadDescription" -> JsString(page.meta.htmlHeadDescription),

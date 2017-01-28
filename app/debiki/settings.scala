@@ -36,6 +36,11 @@ trait AllSettings {
   def allowSignup: Boolean
   def allowLocalSignup: Boolean
   def allowGuestLogin: Boolean
+  def forumMainView: String
+  def forumTopicsSortButtons: String
+  def forumCategoryLinks: String
+  def forumTopicsLayout: TopicListLayout
+  def forumCategoriesLayout: CategoriesLayout
   def showCategories: Boolean
   def showTopicFilterButton: Boolean
   def showTopicTypes: Boolean
@@ -48,7 +53,6 @@ trait AllSettings {
   def endOfBodyHtml: String
   def headerHtml: String
   def footerHtml: String
-  def showForumCategories: Boolean
   def horizontalComments: Boolean
   def socialLinksHtml: String
   def logoUrlOrHtml: String
@@ -80,6 +84,11 @@ trait AllSettings {
     allowSignup = Some(self.allowSignup),
     allowLocalSignup = Some(self.allowLocalSignup),
     allowGuestLogin = Some(self.allowGuestLogin),
+    forumMainView = Some(self.forumMainView),
+    forumTopicsSortButtons = Some(self.forumTopicsSortButtons),
+    forumCategoryLinks = Some(self.forumCategoryLinks),
+    forumTopicsLayout = Some(self.forumTopicsLayout),
+    forumCategoriesLayout = Some(self.forumCategoriesLayout),
     showCategories = Some(self.showCategories),
     showTopicFilterButton = Some(self.showTopicFilterButton),
     showTopicTypes = Some(self.showTopicTypes),
@@ -92,7 +101,6 @@ trait AllSettings {
     endOfBodyHtml = Some(self.endOfBodyHtml),
     headerHtml = Some(self.headerHtml),
     footerHtml = Some(self.footerHtml),
-    showForumCategories = Some(self.showForumCategories),
     horizontalComments = Some(self.horizontalComments),
     socialLinksHtml = Some(self.socialLinksHtml),
     logoUrlOrHtml = Some(self.logoUrlOrHtml),
@@ -129,6 +137,11 @@ object AllSettings {
     val allowSignup = true
     val allowLocalSignup = true
     val allowGuestLogin = false
+    val forumMainView = "latest"
+    val forumTopicsSortButtons = "latest|top"
+    val forumCategoryLinks = "categories"
+    val forumTopicsLayout = TopicListLayout.Default
+    val forumCategoriesLayout = CategoriesLayout.Default
     val showCategories = true
     val showTopicFilterButton = true
     val showTopicTypes = true
@@ -145,7 +158,6 @@ object AllSettings {
         <a href="/-/terms-of-use" rel="nofollow">Terms of use</a>
         <a href="/-/privacy-policy" rel="nofollow">Privacy policy</a>
       </p></footer>"""
-    val showForumCategories = false
     val horizontalComments = false
     val socialLinksHtml = ""
     val logoUrlOrHtml = ""
@@ -188,6 +200,11 @@ case class EffectiveSettings(
   def allowSignup: Boolean = firstInChain(_.allowSignup) getOrElse default.allowSignup
   def allowLocalSignup: Boolean = firstInChain(_.allowLocalSignup) getOrElse default.allowLocalSignup
   def allowGuestLogin: Boolean = firstInChain(_.allowGuestLogin) getOrElse default.allowGuestLogin
+  def forumMainView: String = firstInChain(_.forumMainView) getOrElse default.forumMainView
+  def forumTopicsSortButtons: String = firstInChain(_.forumTopicsSortButtons) getOrElse default.forumTopicsSortButtons
+  def forumCategoryLinks: String = firstInChain(_.forumCategoryLinks) getOrElse default.forumCategoryLinks
+  def forumTopicsLayout: TopicListLayout = firstInChain(_.forumTopicsLayout) getOrElse default.forumTopicsLayout
+  def forumCategoriesLayout: CategoriesLayout = firstInChain(_.forumCategoriesLayout) getOrElse default.forumCategoriesLayout
   def showCategories: Boolean = firstInChain(_.showCategories) getOrElse default.showCategories
   def showTopicFilterButton: Boolean = firstInChain(_.showTopicFilterButton) getOrElse default.showTopicFilterButton
   def showTopicTypes: Boolean = firstInChain(_.showTopicTypes) getOrElse default.showTopicTypes
@@ -200,7 +217,6 @@ case class EffectiveSettings(
   def endOfBodyHtml: String = firstInChain(_.endOfBodyHtml) getOrElse default.endOfBodyHtml
   def headerHtml: String = firstInChain(_.headerHtml) getOrElse default.headerHtml
   def footerHtml: String = firstInChain(_.footerHtml) getOrElse default.footerHtml
-  def showForumCategories: Boolean = firstInChain(_.showForumCategories) getOrElse default.showForumCategories
   def horizontalComments: Boolean = firstInChain(_.horizontalComments) getOrElse default.horizontalComments
   def socialLinksHtml: String = firstInChain(_.socialLinksHtml) getOrElse default.socialLinksHtml
   def logoUrlOrHtml: String = firstInChain(_.logoUrlOrHtml) getOrElse default.logoUrlOrHtml
@@ -248,6 +264,11 @@ object Settings2 {
       "allowSignup" -> JsBooleanOrNull(s.allowSignup),
       "allowLocalSignup" -> JsBooleanOrNull(s.allowLocalSignup),
       "allowGuestLogin" -> JsBooleanOrNull(s.allowGuestLogin),
+      "forumMainView" -> JsStringOrNull(s.forumMainView),
+      "forumTopicsSortButtons" -> JsStringOrNull(s.forumTopicsSortButtons),
+      "forumCategoryLinks" -> JsStringOrNull(s.forumCategoryLinks),
+      "forumTopicsLayout" -> JsNumberOrNull(s.forumTopicsLayout.map(_.toInt)),
+      "forumCategoriesLayout" -> JsNumberOrNull(s.forumCategoriesLayout.map(_.toInt)),
       "showCategories" -> JsBooleanOrNull(s.showCategories),
       "showTopicFilterButton" -> JsBooleanOrNull(s.showTopicFilterButton),
       "showTopicTypes" -> JsBooleanOrNull(s.showTopicTypes),
@@ -260,7 +281,6 @@ object Settings2 {
       "endOfBodyHtml" -> JsStringOrNull(s.endOfBodyHtml),
       "headerHtml" -> JsStringOrNull(s.headerHtml),
       "footerHtml" -> JsStringOrNull(s.footerHtml),
-      "showForumCategories" -> JsBooleanOrNull(s.showForumCategories),
       "horizontalComments" -> JsBooleanOrNull(s.horizontalComments),
       "socialLinksHtml" -> JsStringOrNull(s.socialLinksHtml),
       "logoUrlOrHtml" -> JsStringOrNull(s.logoUrlOrHtml),
@@ -291,6 +311,11 @@ object Settings2 {
     allowSignup = anyBool(json, "allowSignup", d.allowSignup),
     allowLocalSignup = anyBool(json, "allowLocalSignup", d.allowLocalSignup),
     allowGuestLogin = anyBool(json, "allowGuestLogin", d.allowGuestLogin),
+    forumMainView = anyString(json, "forumMainView", d.forumMainView),
+    forumTopicsSortButtons = anyString(json, "forumTopicsSortButtons", d.forumTopicsSortButtons),
+    forumCategoryLinks = anyString(json, "forumCategoryLinks", d.forumCategoryLinks),
+    forumTopicsLayout = anyInt(json, "forumTopicsLayout", d.forumTopicsLayout.toInt).map(_.flatMap(TopicListLayout.fromInt)),
+    forumCategoriesLayout = anyInt(json, "forumCategoriesLayout", d.forumCategoriesLayout.toInt).map(_.flatMap(CategoriesLayout.fromInt)),
     showCategories = anyBool(json, "showCategories", d.showCategories),
     showTopicFilterButton = anyBool(json, "showTopicFilterButton", d.showTopicFilterButton),
     showTopicTypes = anyBool(json, "showTopicTypes", d.showTopicTypes),
@@ -303,7 +328,6 @@ object Settings2 {
     endOfBodyHtml = anyString(json, "endOfBodyHtml", d.endOfBodyHtml),
     headerHtml = anyString(json, "headerHtml", d.headerHtml),
     footerHtml = anyString(json, "footerHtml", d.footerHtml),
-    showForumCategories = anyBool(json, "showForumCategories", d.showForumCategories),
     horizontalComments = anyBool(json, "horizontalComments", d.horizontalComments),
     socialLinksHtml = anyString(json, "socialLinksHtml", d.socialLinksHtml),
     logoUrlOrHtml = anyString(json, "logoUrlOrHtml", d.logoUrlOrHtml),

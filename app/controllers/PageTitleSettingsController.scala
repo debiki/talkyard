@@ -48,7 +48,7 @@ object PageTitleSettingsController extends mvc.Controller {
     }
     val anySlug = (request.body \ "slug").asOptStringTrimmed
     val anyShowId = (request.body \ "showId").asOpt[Boolean]
-    val anyLayout = (request.body \ "pageLayout").asOpt[Int].map(new PageLayout(_))
+    val anyLayout = (request.body \ "pageLayout").asOpt[Int].flatMap(TopicListLayout.fromInt)
     val anyHtmlTagCssClasses = (request.body \ "htmlTagCssClasses").asOptStringTrimmed
     val anyHtmlHeadTitle = (request.body \ "htmlHeadTitle").asOptStringTrimmed
     val anyHtmlHeadDescription = (request.body \ "htmlHeadDescription").asOptStringTrimmed

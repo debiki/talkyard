@@ -353,7 +353,6 @@ interface Store {
   pageId: string;
   forumId?: string;
   categoryId?: number;
-  showForumCategories?: boolean;
   ancestorsRootFirst?: Ancestor[];
   hideForumIntro?: boolean;
   pageRole: PageRole;
@@ -420,6 +419,11 @@ interface SettingsVisibleClientSide {
   allowSignup?: boolean;                // default: true
   allowLocalSignup?: boolean;           // default: true
   allowGuestLogin?: boolean;            // default: false
+  forumMainView?: string;               // default: 'latest'
+  forumTopicsSortButtons?: string;      // default: 'latest|top'
+  forumCategoryLinks?: string;          // default: 'categories'
+  forumTopicsLayout?: TopicListLayout;  // default: title only
+  forumCategoriesLayout?: CategoriesLayout; // default: (there's only one as of Jan 2017)
   showExperimental?: boolean;           // default: false
   showCategories?: boolean;             // default: true
   showTopicFilterButton?: boolean;      // default: true
@@ -675,6 +679,13 @@ interface Settings {
   numFirstPostsToApprove: number;
   numFirstPostsToReview: number;
 
+  // Forum
+  forumMainView: string;
+  forumTopicsSortButtons: string;
+  forumCategoryLinks: string;
+  forumTopicsLayout: TopicListLayout
+  forumCategoriesLayout: CategoriesLayout
+
   // Simpify
   showCategories: boolean;
   showTopicFilterButton: boolean;
@@ -690,7 +701,6 @@ interface Settings {
   regularMemberFlagWeight: number;
   coreMemberFlagWeight: number;
 
-  showForumCategories: boolean;
   horizontalComments: boolean;
 
   headStylesHtml: string;

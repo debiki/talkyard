@@ -97,7 +97,7 @@ describe("new member, allow, approve:", () => {
   });
 
   it("... it needs to be approved by staff", () => {
-    // Would be better if the body wasn't hidden, so Maja could edit it. [27WKTU02]
+    // Would be better if the body wasn't hidden, so Maja could edit it. -- need update this test?
     majasBrowser.topic.assertPagePendingApprovalBodyHidden();
   });
 
