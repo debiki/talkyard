@@ -161,20 +161,15 @@ Tests
 
 #### End-to-end tests
 
-See the [End-to-end tests Readme](./docs/e2e-tests-readme.md)
+The end-to-end tests are written in TypeScript and uses Selenium and Webdriver.io.
+See the [end-to-end tests readme](./docs/e2e-tests-readme.md).
 And, if you want to test in a browser other than Chrome, see [Making *.localhost addresses work](./docs/wildcard-dot-localhost.md).
 
 
 #### Security tests
 
 The security tests are written in TypeScript and use Tape = test-anything-protocol for Node.js.
-You'll find them in `tests/security/**/*.ts`. Run them like so: (`d-gulp` runs Gulp in a Docker
-container)
-
-```
-sudo docker-compose up -d  # starts everything
-sudo s/d-gulp security-tests
-```
+See the [security tests readme](./docs/security-tests-readme.md).
 
 
 #### Unit tests

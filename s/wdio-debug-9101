@@ -1,0 +1,4 @@
+# If we --inspect on 9100, wdio apparently forks a child process listening on 9100 + 1 = 9101.
+# To which you can connect like so: `node debug 127.0.0.1:9101`
+
+node --debug --inspect=9100  s/wdio $@

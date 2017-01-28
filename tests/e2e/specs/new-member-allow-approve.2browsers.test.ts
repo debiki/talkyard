@@ -36,6 +36,8 @@ let topics = {
   oldTopicUrl: 'old_topic',
 };
 
+let appendedText = " - appended text";
+
 
 describe("new member, allow, approve:", () => {
 
@@ -97,8 +99,19 @@ describe("new member, allow, approve:", () => {
   });
 
   it("... it needs to be approved by staff", () => {
-    // Would be better if the body wasn't hidden, so Maja could edit it. -- need update this test?
-    majasBrowser.topic.assertPagePendingApprovalBodyHidden();
+    majasBrowser.topic.assertPagePendingApprovalBodyVisible();
+  });
+
+  it("... but she can edit the text, although not yet approved", () => {
+    // TESTS_MISSING
+  });
+
+  it("... and the title", () => {
+    // TESTS_MISSING
+  });
+
+  it("... changes visible after reload", () => {
+    // TESTS_MISSING
   });
 
   it("... she posts three replies to an old topic", () => {
@@ -114,6 +127,10 @@ describe("new member, allow, approve:", () => {
     majasBrowser.topic.assertPostNeedsApprovalBodyVisible(2);
     majasBrowser.topic.assertPostNeedsApprovalBodyVisible(3);
     majasBrowser.topic.assertPostNeedsApprovalBodyVisible(4);
+  });
+
+  it("... she can edit them (try the last one)", () => {
+    // TESTS_MISSING
   });
 
   it("But now she may not post more replies, until the ones posted already gets reviewed", () => {

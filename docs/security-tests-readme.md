@@ -1,6 +1,10 @@
 EffectiveDiscussions security tests
 ===================================
 
+The security tests are written in TypeScript and use Tape = test-anything-protocol for Node.js.
+They send requests to Nginx, so they can test the whole stack (which however wouldn't have been
+possible if they had been functional tests written in Scala for the app server only).
+
 
 Running
 ---------------

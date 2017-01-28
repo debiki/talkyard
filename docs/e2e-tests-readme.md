@@ -21,30 +21,30 @@ Run tests like so:
 1. In another shell, build a certain Fibers Node.js module, and start Selenium:
 
         yarn install  # builds Fibers, needed once only
-        node_modules/.bin/selenium-standalone install # should be needed once only
-        node_modules/.bin/selenium-standalone start
+        s/selenium-install # should be needed once only
+        s/selenium-start
 
     (Note: Whenever Yarn does something, you'll need to reinstall the Selenium files, because
     Yarn removes them. See https://github.com/yarnpkg/yarn/issues/1955
-    That is, you need to run `node_modules/.bin/selenium-standalone install` again.)
+    That is, you need to run `s/selenium-install` again.)
 
 1. In yet another shell, run the test code. Do one of these:
 
         # Runs one test: (with "links" in the test file name)
-        scripts/wdio target/e2e/wdio.conf.js --only links
+        s/wdio target/e2e/wdio.conf.js --only links
 
         # To run all tests:
-        scripts/run-e2e-tests.sh        # in Chrome only
-        scripts/run-e2e-tests.sh --all  # in all browsers
+        s/run-e2e-tests.sh        # in Chrome only
+        s/run-e2e-tests.sh --all  # in all browsers
 
         # If you have configured password for third party stuff, like
         # Google and Facebook OpenAuth test accounts:
-        scripts/wdio target/e2e/wdio.conf.js -3 --secretsPath /your/path/to/e2e-secrets.json
+        s/wdio target/e2e/wdio.conf.js -3 --secretsPath /your/path/to/e2e-secrets.json
 
     You can choose to run only files that match some pattern. The following runs
     all test files matching `*link*`, namely `client/test/e2e/specs/all-links.tests.ts`:
 
-        scripts/wdio target/e2e/wdio.conf.js --only 'links'
+        s/wdio target/e2e/wdio.conf.js --only 'links'
 
     If you get this error: "Cannot find module '.../target/e2e/wdio.conf.js'", then
     fix that by building the end-to-end test code:
@@ -53,13 +53,13 @@ Run tests like so:
 
 1. Some tests, e.g. `chat.2browsers.test.ts`, require two browsers. Then use the 2whatever config files, e.g.:
 
-        scripts/wdio target/e2e/wdio.2chrome.conf.js --only 'chat.2browsers'
-        scripts/wdio target/e2e/wdio.3chrome.conf.js --only 'categories.3browsers'
+        s/wdio target/e2e/wdio.2chrome.conf.js --only 'chat.2browsers'
+        s/wdio target/e2e/wdio.3chrome.conf.js --only 'categories.3browsers'
 
 1. To pause before, or after, the tests, and look at the resulting html pages, use the flag
     `--db` (debug before) and `--da` (debug afterwards). Example:
 
-        scripts/wdio target/e2e/wdio.2chrome.conf.js --only 'chat.2browsers' --da
+        s/wdio target/e2e/wdio.2chrome.conf.js --only 'chat.2browsers' --da
 
 
 ### Browsers other than Chrome
@@ -80,14 +80,14 @@ On Linux, do this: (other platforms? no idea)
 
     # Start Selenium, via Xvbf, so the browsers Selenium will spawn, will be invisible.
     # (Also, specify a not-super-small screen size, otherwise tests will fail.)
-    xvfb-run -s '-screen 0 1280x1024x8' node_modules/.bin/selenium-standalone start
+    xvfb-run -s '-screen 0 1280x1024x8' s/selenium-start
 
     # There's a script for that:
-    scripts/start-invisible-selenium.sh
+    s/selenium-start-invisible
 
     # Run some tests, e.g.:
-    scripts/wdio target/e2e/wdio.conf.js --only create-site-admin-guide
-    scripts/run-e2e-tests.sh --all  #  -3 --secretsPath /your/path/to/e2e-secrets.json
+    s/wdio target/e2e/wdio.conf.js --only create-site-admin-guide
+    s/run-e2e-tests.sh --all  #  -3 --secretsPath /your/path/to/e2e-secrets.json
 
 
 ### Typescript
@@ -102,6 +102,38 @@ transpile typescript manually, instead of via the container, then open yet anoth
 
 ### Debugging
 
+#### For Node.js 7.4:
+
+Don't install node-inspector; it doesn't work with Node 7.4 (compilation errors). Instead,
+use `s/wdio-debug-9101` instead of `s/wdio`, and add the `--db` (debug before) param,
+e.g.:
+
+```
+s/wdio-debug-9101 target/e2e/wdio.2chrome.conf.js --deleteOldSite --db \
+    --only new-member-allow-approve.2browsers
+```
+
+The `--db` flag tells wdio to make a child process it forks debug-listen,
+and it'll listen on port 9101. In another Bash shell, connect to this child process:
+
+```
+node debug 127.0.0.1:9101
+```
+
+And set breakpoints:  `setBreakpoint('filename.js', line-number);` — however, typing/copy-pasting
+the correct file name, and finding the Javascript line number (after transpilation from
+Typescript), takes rather long. So instead I just add `debugger;` statements in the Typescript
+source code files. (Don't forget to remove them before committing.)
+
+Unfortunately, currently Chromoe Dev Tools doesn't seem to work with Webdriver.io + Node 7.4.
+(If you connect Dev Tools (there's a message about how, when you run `wdio-debug-9101`), you'll
+connect to the wrong process: the main process, not the forked child process.)
+
+
+#### Old, for Node.js < version 7
+
+Don't use >= 6.4, because there's some Node.js/whatever bug that breaks node-inspector.
+
 To debug in node.js:
 
     npm install -g node-inspector  # do once only
@@ -110,7 +142,7 @@ To debug in node.js:
     node-inspector --debug-port 5859 --no-preload
 
     # Run the tests, but add --debug = -d, e.g.:
-    scripts/wdio target/e2e/wdio.3chrome.conf.js -d --only 'categories.3browsers'
+    s/wdio target/e2e/wdio.3chrome.conf.js -d --only 'categories.3browsers'
 
 
 ### Decisions

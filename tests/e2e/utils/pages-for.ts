@@ -6,9 +6,14 @@ import assert = require('assert');
 import logAndDie = require('./log-and-die');
 import settings = require('./settings');
 import c = require('../test-constants');
-var logUnusual = logAndDie.logUnusual, die = logAndDie.die, dieIf = logAndDie.dieIf;
-var logError = logAndDie.logError;
-var logMessage = logAndDie.logMessage;
+let logUnusual = logAndDie.logUnusual, die = logAndDie.die, dieIf = logAndDie.dieIf;
+let logError = logAndDie.logError;
+let logMessage = logAndDie.logMessage;
+
+// Brekpoint debug help counters, use like so:  if (++ca == 1) debugger;
+let ca = 0;
+let cb = 0;
+let cc = 0;
 
 
 function count(elems): number {
@@ -888,9 +893,16 @@ function pagesFor(browser) {
 
       assertPagePendingApprovalBodyHidden: function() {
         browser.waitForVisible('.dw-ar-t');
-        browser.assertPageTitleMatches(/pending approval/);
+        assert(api.topic._isTitlePendingApprovalVisible());
         assert(api.topic._isOrigPostPendingApprovalVisible());
         assert(!api.topic._isOrigPostBodyVisible());
+      },
+
+      assertPagePendingApprovalBodyVisible: function() {
+        browser.waitForVisible('.dw-ar-t');
+        assert(api.topic._isTitlePendingApprovalVisible());
+        assert(api.topic._isOrigPostPendingApprovalVisible());
+        assert(api.topic._isOrigPostBodyVisible());
       },
 
       assertPageNotPendingApproval: function() {
@@ -1071,6 +1083,10 @@ function pagesFor(browser) {
 
       _isOrigPostBodyVisible: function() {
         return !!browser.getText('#post-1 > .dw-p-bd');
+      },
+
+      _isTitlePendingApprovalVisible: function() {
+        return browser.isVisible('.dw-p-ttl .esPendingApproval');
       },
 
       _isOrigPostPendingApprovalVisible: function() {
