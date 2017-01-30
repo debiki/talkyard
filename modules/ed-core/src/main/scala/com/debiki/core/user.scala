@@ -868,3 +868,72 @@ case class BrowserIdData(ip: String, idCookie: String, fingerprint: Int) {
 object BrowserIdData {
   val NoFingerprint = 0
 }
+
+
+/**
+  *
+  * @param emailBounceSum Somewhat taking into account bounce rates of earlier addresses?
+  * @param firstSeenAt Is None if created by someone else, before visiting for the first time.
+  */
+case class UserStats(
+  userId: UserId,
+  lastSeenAt: Option[When],
+  lastPostedAt: Option[When],
+  lastEmailedAt: Option[When],
+  emailBounceSum: Float,
+  firstSeenAt: Option[When],
+  firstNewTopicAt: Option[When],
+  firstDiscourseReplyAt: Option[When],
+  firstChatMessageAt: Option[When],
+  topicsNewSince: When,
+  notfsNewSinceId: NotificationId,
+  numDaysVisited: Int,
+  numMinutesReading: Int,
+  numDiscourseRepliesRead: Int,
+  numDiscourseRepliesPosted: Int,
+  numDiscourseTopicsEntered: Int,
+  numDiscourseTopicsRepliedIn: Int,
+  numDiscourseTopicsCreated: Int,
+  numChatMessagesRead: Int,
+  numChatMessagesPosted: Int,
+  numChatTopicsEntered: Int,
+  numChatTopicsRepliedIn: Int,
+  numChatTopicsCreated: Int,
+  numLikesGiven: Int,
+  numLikesReceived: Int) {
+
+  require(
+    emailBounceSum >= 0 &&
+    notfsNewSinceId >= 0 &&
+    numDaysVisited >= 0 &&
+    numMinutesReading >= 0 &&
+    numDiscourseRepliesRead >= 0 &&
+    numDiscourseRepliesPosted >= 0 &&
+    numDiscourseTopicsEntered >= 0 &&
+    numDiscourseTopicsRepliedIn >= 0 &&
+    numDiscourseTopicsCreated >= 0 &&
+    numChatMessagesRead >= 0 &&
+    numChatMessagesPosted >= 0 &&
+    numChatTopicsEntered >= 0 &&
+    numChatTopicsRepliedIn >= 0 &&
+    numChatTopicsCreated >= 0 &&
+    numLikesGiven >= 0, "EdE4S0A7M")
+}
+
+
+case class MemberVisitStats(
+  userId: UserId,
+  visitDate: WhenDay,
+  numMinutesReading: Int,
+  numDiscourseRepliesRead: Int,
+  numDiscourseTopicsEntered: Int,
+  numChatMessagesRead: Int,
+  numChatTopicsEntered: Int) {
+
+  require(
+    numMinutesReading >= 0 &&
+    numDiscourseRepliesRead >= 0 &&
+    numDiscourseTopicsEntered >= 0 &&
+    numChatMessagesRead >= 0 &&
+    numChatTopicsEntered >= 0, "EdE5FKGA2R")
+}

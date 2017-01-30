@@ -20,6 +20,7 @@ package com.debiki
 import org.apache.commons.validator.routines.EmailValidator
 import org.scalactic.{Good, Bad, Or}
 import scala.collection.immutable
+import java.{ util => ju }
 
 
 package object core {
@@ -85,10 +86,14 @@ package object core {
   /** Change this to a Long before year 2038. /KajMagnus, Jan 2015 */
   type UnixTime = Int    // don't use, I always forget if it's seconds or millis
   type UnixMillis = Long // this is millis :-)
+  type UnixDays = Int
+
 
   /** I'll use this instead of whatever-date-time-stuff-there-is. */
   class When(val unixMillis: UnixMillis) extends AnyVal {
-    def toJavaDate = new java.util.Date(unixMillis)
+    def toJavaDate = new ju.Date(unixMillis)
+    def toDays = WhenDay.fromMillis(unixMillis)
+    def millis = unixMillis
     def toUnixMillis = unixMillis
     def daysSince(other: When) = (unixMillis - other.unixMillis) / OneMinuteInMillis / 60 / 24
     def daysBetween(other: When) = math.abs(daysSince(other))
@@ -105,12 +110,27 @@ package object core {
       */
     def toDouble = unixMillis.toDouble
     def numSeconds = unixMillis / 1000
+
+    def isAfter(other: When): Boolean = unixMillis > other.unixMillis
+    def isNotBefore(other: When): Boolean = unixMillis >= other.unixMillis
   }
 
   object When {
     def now() = new When(System.currentTimeMillis())
-    def fromDate(date: java.util.Date) = new When(date.getTime)
+    def fromDate(date: ju.Date) = new When(date.getTime)
     def fromMillis(millis: UnixMillis) = new When(millis)
+  }
+
+
+  class WhenDay(val unixDays: UnixDays) extends AnyVal {
+    def toJavaDate = new ju.Date(OneDayInMillis * unixDays)
+  }
+
+  object WhenDay {
+    def now(): WhenDay = fromMillis(System.currentTimeMillis())
+    def fromDate(date: ju.Date): WhenDay = fromMillis(date.getTime)
+    def fromDays(unixDays: Int) = new WhenDay(unixDays)
+    def fromMillis(unixMillis: Long) = new WhenDay((unixMillis / OneDayInMillis).toInt)
   }
 
 

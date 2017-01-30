@@ -154,6 +154,12 @@ trait SiteTransaction {
   def updatePostsReadStats(pageId: PageId, postNrsRead: Set[PostNr], readById: UserId,
         readFromIp: String)
 
+  def loadUserStats(userId: UserId): Option[UserStats]
+  def upsertUserStats(memberStats: UserStats)
+
+  def loadMemberVisitStats(userId: UserId): immutable.Seq[MemberVisitStats]
+  def upsertMemberVisitStats(visitStats: MemberVisitStats)
+
   def loadPostsReadStats(pageId: PageId, postNr: Option[PostNr]): PostsReadStats
   def loadPostsReadStats(pageId: PageId): PostsReadStats
   def movePostsReadStats(oldPageId: PageId, newPageId: PageId,
