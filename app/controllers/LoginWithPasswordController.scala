@@ -21,6 +21,8 @@ import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki._
 import ed.server.spam.SpamChecker
+import ed.server._
+import ed.server.security.createSessionIdAndXsrfToken
 import debiki.dao.SiteDao
 import debiki.DebikiHttp._
 import io.efdi.server.http._
@@ -72,8 +74,8 @@ object LoginWithPasswordController extends mvc.Controller {
     def deny() = throwForbidden("EsE403BPWD", "Bad username or password")
 
     // WOULD have `tryLogin` return a LoginResult and stop using exceptions!
-    val loginGrant: LoginGrant =
-      try dao.tryLogin(loginAttempt)
+    val loginGrant: MemberLoginGrant =
+      try dao.tryLoginAsMember(loginAttempt)
       catch {
         case DbDao.BadPasswordException => deny()
         case ex: DbDao.IdentityNotFoundException => deny()
@@ -83,7 +85,7 @@ object LoginWithPasswordController extends mvc.Controller {
             verification link; please click it.""")
       }
 
-    val (_, _, sidAndXsrfCookies) = Xsrf.newSidAndXsrf(request.siteId, loginGrant.user.id)
+    val (_, _, sidAndXsrfCookies) = createSessionIdAndXsrfToken(request.siteId, loginGrant.user.id)
     sidAndXsrfCookies
   }
 
@@ -221,7 +223,7 @@ object LoginWithPasswordController extends mvc.Controller {
     }
 
     // Log the user in.
-    val (_, _, sidAndXsrfCookies) = debiki.Xsrf.newSidAndXsrf(request.siteId, user.id)
+    val (_, _, sidAndXsrfCookies) = createSessionIdAndXsrfToken(request.siteId, user.id)
     val newSessionCookies = sidAndXsrfCookies
 
     val anyReturnToUrl: Option[String] = if (returnToUrl.nonEmpty) Some(returnToUrl) else None

@@ -162,6 +162,9 @@ declare namespace debiki2 {
   //  var NameLoginBtns;
   //}
 
+  // From oop-methods.ts:
+  function userStats_totalNumPosts(stats: UserStats): number;
+
 }
 
 // vim: et ts=2 sw=2 fo=r list

@@ -106,7 +106,7 @@ trait CreateSiteDao {
       }
 
       createSystemUser(transaction)
-      transaction.createUnknownUser(transaction.currentTime)
+      createUnknownUser(transaction)
 
       insertAuditLogEntry(AuditLogEntry(
         siteId = newSite.id,
@@ -136,6 +136,15 @@ trait CreateSiteDao {
       emailAddress = "",
       emailNotfPrefs = EmailNotfPrefs.DontReceive,
       emailVerifiedAt = None))
+    transaction.upsertUserStats(UserStats.forNewUser(
+      SystemUserId, firstSeenAt = transaction.now, emailedAt = None))
+  }
+
+
+  private def createUnknownUser(transaction: SiteTransaction) {
+    transaction.createUnknownUser(transaction.currentTime)
+    transaction.upsertUserStats(UserStats.forNewUser(
+      UnknownUserId, firstSeenAt = transaction.now, emailedAt = None))
   }
 
 }

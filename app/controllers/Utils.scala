@@ -22,6 +22,7 @@ import ed.server.liftweb
 import debiki._
 import debiki.DebikiHttp._
 import debiki.dao.SiteDao
+import ed.server.security.SidStatus
 import java.{lang => jl}
 import play.api._
 import play.api.libs.json.JsValue

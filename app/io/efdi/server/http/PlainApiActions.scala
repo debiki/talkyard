@@ -25,6 +25,7 @@ import debiki._
 import debiki.DebikiHttp._
 import debiki.RateLimits.NoRateLimits
 import ed.server._
+import ed.server.security._
 import java.{util => ju}
 import play.api._
 import play.{api => p}
@@ -84,7 +85,7 @@ private[http] object PlainApiActions {
       val site = DebikiHttp.lookupSiteOrThrow(request, Globals.systemDao)
 
       val (actualSidStatus, xsrfOk, newCookies) =
-        DebikiSecurity.checkSidAndXsrfToken(request, site.id, maySetCookies = true)
+        security.checkSidAndXsrfToken(request, site.id, maySetCookies = true)
 
       // Ignore and delete any broken session id cookie.
       val (mendedSidStatus, deleteSidCookie) =
@@ -111,7 +112,7 @@ private[http] object PlainApiActions {
               |
               |Details: A certain login id has become invalid. I just gave you a new id,
               |but you will probably need to login again.""")
-              .discardingCookies(DiscardingSecureCookie(Sid.CookieName)))
+              .discardingCookies(DiscardingSecureCookie(SessionIdCookieName)))
         }
 
       val resultOkSid =
@@ -125,7 +126,7 @@ private[http] object PlainApiActions {
               .withHeaders(SafeActions.MakeInternetExplorerSaveIframeCookiesHeader)
             if (deleteSidCookie) {
               resultWithCookies =
-                resultWithCookies.discardingCookies(DiscardingSecureCookie(Sid.CookieName))
+                resultWithCookies.discardingCookies(DiscardingSecureCookie(SessionIdCookieName))
             }
             resultWithCookies
           }

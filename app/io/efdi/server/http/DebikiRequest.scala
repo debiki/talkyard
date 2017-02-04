@@ -21,6 +21,7 @@ import com.debiki.core._
 import debiki.DebikiHttp._
 import debiki._
 import debiki.dao.SiteDao
+import ed.server.security.{SidStatus, XsrfOk}
 import java.{util => ju}
 import play.api.mvc
 import play.api.mvc.{Action => _, _}

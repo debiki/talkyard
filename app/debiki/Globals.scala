@@ -78,17 +78,22 @@ class Globals {
 
   /** Can be accessed also after the test is done and Play.maybeApplication is None.
     */
-  lazy val wasTest = Play.isTest
-  lazy val isProd = Play.isProd
+  lazy val wasTest: Boolean = Play.isTest
+  lazy val isProd: Boolean = Play.isProd
 
-  def testsDoneServerGone = Play.isTest && (!isInitialized || Play.maybeApplication.isEmpty)
+  def testsDoneServerGone: Boolean =
+    Play.isTest && (!isInitialized || Play.maybeApplication.isEmpty)
 
-  def isTestDisableScripts = state.isTestDisableScripts
-  def isTestDisableBackgroundJobs = state.isTestDisableBackgroundJobs
+  def isTestDisableScripts: Boolean = state.isTestDisableScripts
+  def isTestDisableBackgroundJobs: Boolean = state.isTestDisableBackgroundJobs
 
-  def isInitialized = _state ne null
+  def isInitialized: Boolean = _state ne null
 
-  @volatile private var _state: State Or Option[Exception] = null
+  def now: When = When.fromMillis(
+    System.currentTimeMillis() + (
+      if (_state ne null) _state.map(_.timeOffsetMillis).getOrElse(0) else 0))
+
+  @volatile private var _state: State Or Option[Exception] = _
 
   private def state: State = {
     if (_state eq null) {
@@ -424,6 +429,9 @@ class Globals {
     // """
     // (in that case, all tests went fine, but couldn't shutdown the test server quickly enough)
     val ShutdownTimeout = 10 seconds
+
+    @volatile
+    var timeOffsetMillis = 0
 
     val config = new Config(conf)
 

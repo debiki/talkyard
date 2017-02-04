@@ -20,6 +20,7 @@ package controllers
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki._
+import ed.server._
 import io.efdi.server.http._
 import javax.inject.Inject
 import play.api._
@@ -54,7 +55,7 @@ class AdminController @Inject() extends mvc.Controller {
       val adminPageBody = views.html.adminPage(siteTpi, appId = "dw-react-admin-app").body
       Ok(adminPageBody) as HTML withCookies (
         SecureCookie(
-          DebikiSecurity.XsrfCookieName, apiReq.xsrfToken.value))
+          security.XsrfCookieName, apiReq.xsrfToken.value))
     }
   }
 

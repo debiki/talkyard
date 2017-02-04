@@ -22,6 +22,8 @@ import com.debiki.core.Prelude._
 import debiki._
 import debiki.DebikiHttp._
 import ed.server.spam.SpamChecker
+import ed.server._
+import ed.server.security.createSessionIdAndXsrfToken
 import io.efdi.server.http._
 import java.{util => ju}
 import play.api._
@@ -63,7 +65,7 @@ object LoginAsGuestController extends mvc.Controller {
 
       val guestUser = request.dao.loginAsGuest(loginAttempt)
 
-      val (_, _, sidAndXsrfCookies) = Xsrf.newSidAndXsrf(request.siteId, guestUser.id)
+      val (_, _, sidAndXsrfCookies) = createSessionIdAndXsrfToken(request.siteId, guestUser.id)
 
       // Could include a <a href=last-page>Okay</a> link, see the
       // Logout dialog below. Only needed if javascript disabled though,

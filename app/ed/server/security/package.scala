@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2011-2013 Kaj Magnus Lindberg (born 1979)
+ * Copyright (C) 2011-2017 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -15,23 +15,20 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package debiki
+package ed.server
 
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki.DebikiHttp._
+import debiki.ReactRenderer
 import io.efdi.server.http.{JsonOrFormDataBody, realOrFakeIpOf}
-import java.{util => ju, io => jio}
-import play.{api => p}
+import java.{util => ju}
 import play.api.mvc.Cookie
-import play.api.{Play, Logger}
-import play.api.Play.current
+import play.api.Logger
 import scala.util.Try
-import scala.xml.{Text, Node, NodeSeq}
-import DebikiSecurity._
 
 
-object DebikiSecurity {
+package object security {
 
   /**
    * Finds the session id and any xsrf token in the specified request;
@@ -50,9 +47,9 @@ object DebikiSecurity {
         maySetCookies: Boolean)
         : (SidStatus, XsrfOk, List[Cookie]) = {
 
-    val sidCookieValOpt = urlDecodeCookie(Sid.CookieName, request)
+    val sidCookieValOpt = urlDecodeCookie(SessionIdCookieName, request)
     val sidStatus: SidStatus =
-      sidCookieValOpt.map(Sid.check(siteId, _)) getOrElse SidAbsent
+      sidCookieValOpt.map(checkSessionId(siteId, _)) getOrElse SidAbsent
 
     // On GET requests, simply accept the value of the xsrf cookie.
     // (On POST requests, however, we check the xsrf form input value)
@@ -75,7 +72,7 @@ object DebikiSecurity {
             (XsrfOk(""), Nil)
           }
           else {
-            val newXsrfOk = Xsrf.create()
+            val newXsrfOk = createXsrfToken()
             val cookie = urlEncodeCookie(XsrfCookieName, newXsrfOk.value)
             (newXsrfOk, List(cookie))
           }
@@ -110,7 +107,7 @@ object DebikiSecurity {
             throwForbidden("DwE0y321", "No XSRF token")
 
         val xsrfOk = {
-          val xsrfStatus = Xsrf.check(xsrfToken, xsrfCookieValOpt)
+          val xsrfStatus = checkXsrfToken(xsrfToken, xsrfCookieValOpt)
 
           if (!xsrfStatus.isOk) {
             // Create a new XSRF cookie so whatever-the-user-attempted
@@ -119,7 +116,7 @@ object DebikiSecurity {
             // in other browser tabs, and then check the new SID cookie and
             // refresh XSRF tokens in any <form>s.)
             val newXsrfCookie =
-              urlEncodeCookie(XsrfCookieName, Xsrf.create().value)
+              urlEncodeCookie(XsrfCookieName, createXsrfToken().value)
 
             // If this request is indeed part of one of Mallory's XSRF attacks,
             // the cookie still won't be sent to Mallory's web page, so creating
@@ -204,21 +201,19 @@ object DebikiSecurity {
     if (!isTest && prefix != DbDao.ScryptPrefix)
       throwIllegalArgument("EsE5YMP2", "Password type not allowed: " + prefix.dropRight(1))
   }
-}
 
 
-sealed abstract class XsrfStatus { def isOk = false }
-case object XsrfAbsent extends XsrfStatus
-case object XsrfNoSid extends XsrfStatus
-case object XsrfBad extends XsrfStatus
-case class XsrfOk(value: String) extends XsrfStatus {
-  override def isOk = true
-}
+
+  sealed abstract class XsrfStatus { def isOk = false }
+  case object XsrfAbsent extends XsrfStatus
+  case object XsrfNoSid extends XsrfStatus
+  case object XsrfBad extends XsrfStatus
+  case class XsrfOk(value: String) extends XsrfStatus {
+    override def isOk = true
+  }
 
 
-object Xsrf {
-
-  def check(xsrfToken: String, xsrfCookieValue: Option[String]): XsrfStatus = {
+  private def checkXsrfToken(xsrfToken: String, xsrfCookieValue: Option[String]): XsrfStatus = {
     // COULD check date, and hash, to find out if the token is too old.
     // (Perhaps shouldn't accept e.g. 1 year old tokens?)
     // However, if we don't care about the date, this is enough:
@@ -235,21 +230,20 @@ object Xsrf {
    * (The token is not based on the SID, because when a user loads his/her
    * very first page and logins for the first time, no SID is available.)
    */
-  def create(): XsrfOk =
+  private def createXsrfToken(): XsrfOk =
     XsrfOk(
       (new ju.Date).getTime +"."+ nextRandomString().take(10))
 
 
-  def newSidAndXsrf(siteId: SiteId, userId: UserId): (SidOk, XsrfOk, List[Cookie]) = {
-    // Note that the xsrf token is created using the non-base64 encoded
-    // cookie value.
-    val sidOk = Sid.create(siteId, userId)
-    val xsrfOk = create()
-    val sidCookie = urlEncodeCookie(Sid.CookieName, sidOk.value)
+  def createSessionIdAndXsrfToken(siteId: SiteId, userId: UserId): (SidOk, XsrfOk, List[Cookie]) = {
+    // Note that the xsrf token is created using the non-base64 encoded cookie value.
+    val sidOk = createSessionId(siteId, userId)
+    val xsrfOk = createXsrfToken()
+    val sidCookie = urlEncodeCookie(SessionIdCookieName, sidOk.value)
     val xsrfCookie = urlEncodeCookie(XsrfCookieName, xsrfOk.value)
     (sidOk, xsrfOk, sidCookie::xsrfCookie::Nil)
   }
-}
+
 
 
 sealed abstract class SidStatus {
@@ -277,24 +271,21 @@ case class SidOk(
 
 
 /**
- * Session ID stuff.
- *
  * A session id cookie is created on the first page view.
  * It is cleared on logout, and a new one generated on login.
  * Lift-Web's cookies and session state won't last across server
  * restarts and I want to be able to restart the app servers at
  * any time so I don't use Lift's stateful session stuff so very much.
  */
-object Sid {
-
-  val CookieName = "dwCoSid"
+  val SessionIdCookieName = "dwCoSid"
 
   private val sidHashLength = 14
   private def secretSalt = debiki.Globals.applicationSecret
   private val _sidMaxMillis = 2 * 31 * 24 * 3600 * 1000  // two months
   //private val _sidExpireAgeSecs = 5 * 365 * 24 * 3600  // five years
 
-  def check(siteId: SiteId, value: String): SidStatus = {
+
+  def checkSessionId(siteId: SiteId, value: String): SidStatus = {
     // Example value: 88-F7sAzB0yaaX.1312629782081.1c3n0fgykm  - no, obsolete
     if (value.length <= sidHashLength) return SidBadFormat
     val (hash, dotUseridDateRandom) = value splitAt sidHashLength
@@ -319,10 +310,8 @@ object Sid {
     }
   }
 
-  /**
-   * Creates and returns a new SID.
-   */
-  def create(siteId: SiteId, userId: UserId): SidOk = {
+
+  def createSessionId(siteId: SiteId, userId: UserId): SidOk = {
     // For now, create a SID value and *parse* it to get a SidOk.
     // This is stupid and inefficient.
     val uid = "" // for now
@@ -336,7 +325,7 @@ object Sid {
       s"$secretSalt.$siteId.$useridDateRandom") take sidHashLength
     val value = s"$saltedHash.$useridDateRandom"
 
-    check(siteId, value).asInstanceOf[SidOk]
+    checkSessionId(siteId, value).asInstanceOf[SidOk]
   }
 
 }

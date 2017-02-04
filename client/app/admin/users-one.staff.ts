@@ -53,10 +53,11 @@ export var AdminUserPageComponent = React.createClass(<any> {
   loadCompleteUser: function() {
     this.setState({ user: null });
     var params = this.props.params;
-    Server.loadCompleteUser(params.userId, (user: MemberInclDetails) => {
+    Server.loadCompleteUser(params.userId, (user: MemberInclDetails, stats: UserStats) => {
       if (!this.isMounted()) return;
       this.setState({
-        user: user
+        user: user,
+        stats: stats,
       });
     });
   },

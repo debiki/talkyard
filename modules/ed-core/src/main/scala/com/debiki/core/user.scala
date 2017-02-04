@@ -60,6 +60,9 @@ case class Invite(
 
   def canBeOrHasBeenAccepted = invalidatedAt.isEmpty && deletedAt.isEmpty
 
+  COULD; REFACTOR // createdAt to ... what? and createdWhen to createdAt. Or change datatype.
+  def createdWhen = When.fromDate(createdAt)
+
   /** Suggests a username based on the email address, namely the text before the '@'.
     * Padded with "_" if too short.
     */
@@ -657,7 +660,7 @@ object RolePageSettings {
 }
 
 
-sealed abstract class LoginAttempt {
+sealed abstract class MemberLoginAttempt {
   def ip: String
   def date: ju.Date
 }
@@ -683,28 +686,28 @@ case class PasswordLoginAttempt(
   ip: String,
   date: ju.Date,
   email: String,
-  password: String) extends LoginAttempt {
+  password: String) extends MemberLoginAttempt {
 }
 
 
 case class EmailLoginAttempt(
   ip: String,
   date: ju.Date,
-  emailId: String) extends LoginAttempt {
+  emailId: String) extends MemberLoginAttempt {
 }
 
 
 case class OpenIdLoginAttempt(
   ip: String,
   date: ju.Date,
-  openIdDetails: OpenIdDetails) extends LoginAttempt {
+  openIdDetails: OpenIdDetails) extends MemberLoginAttempt {
 }
 
 
 case class OpenAuthLoginAttempt(
   ip: String,
   date: ju.Date,
-  openAuthDetails: OpenAuthDetails) extends LoginAttempt {
+  openAuthDetails: OpenAuthDetails) extends MemberLoginAttempt {
 
   def profileProviderAndKey = openAuthDetails.providerIdAndKey
 }
@@ -798,15 +801,15 @@ case class OpenAuthDetails(
 case class OpenAuthProviderIdKey(providerId: String, providerKey: String)
 
 
-case class LoginGrant(
+case class MemberLoginGrant(
    identity: Option[Identity],
    user: Member,
    isNewIdentity: Boolean,
-   isNewRole: Boolean) {
+   isNewMember: Boolean) {
 
   require(!identity.exists(_.id.contains('?')), "EdE7KP4Y1")
   require(identity.forall(_.userId == user.id), "EdE2KVB04")
-  require(!isNewRole || isNewIdentity, "EdE6FK4R2")
+  require(!isNewMember || isNewIdentity, "EdE6FK4R2")
 }
 
 
@@ -873,34 +876,50 @@ object BrowserIdData {
 /**
   *
   * @param emailBounceSum Somewhat taking into account bounce rates of earlier addresses?
-  * @param firstSeenAt Is None if created by someone else, before visiting for the first time.
+  * @param numSolutionsProvided How many accepted answers/solutions this user has posted.
   */
 case class UserStats(
   userId: UserId,
-  lastSeenAt: Option[When],
-  lastPostedAt: Option[When],
-  lastEmailedAt: Option[When],
-  emailBounceSum: Float,
-  firstSeenAt: Option[When],
-  firstNewTopicAt: Option[When],
-  firstDiscourseReplyAt: Option[When],
-  firstChatMessageAt: Option[When],
-  topicsNewSince: When,
-  notfsNewSinceId: NotificationId,
-  numDaysVisited: Int,
-  numMinutesReading: Int,
-  numDiscourseRepliesRead: Int,
-  numDiscourseRepliesPosted: Int,
-  numDiscourseTopicsEntered: Int,
-  numDiscourseTopicsRepliedIn: Int,
-  numDiscourseTopicsCreated: Int,
-  numChatMessagesRead: Int,
-  numChatMessagesPosted: Int,
-  numChatTopicsEntered: Int,
-  numChatTopicsRepliedIn: Int,
-  numChatTopicsCreated: Int,
-  numLikesGiven: Int,
-  numLikesReceived: Int) {
+  // SHOULD update based on browser activity
+  lastSeenAt: When = When.fromMillis(0),
+  lastPostedAt: Option[When] = None,
+  lastEmailedAt: Option[When] = None,
+  emailBounceSum: Float = 0f,
+  firstSeenAt: When = When.fromMillis(0),
+  firstNewTopicAt: Option[When] = None,
+  firstDiscourseReplyAt: Option[When] = None,
+  firstChatMessageAt: Option[When] = None,
+  topicsNewSince: When = When.fromMillis(0),
+  notfsNewSinceId: NotificationId = 0,
+  numDaysVisited: Int = 0,
+  numMinutesReading: Int = 0,
+  numDiscourseRepliesRead: Int = 0,
+  numDiscourseRepliesPosted: Int = 0,
+  numDiscourseTopicsEntered: Int = 0,
+  numDiscourseTopicsRepliedIn: Int = 0,
+  numDiscourseTopicsCreated: Int = 0,
+  numChatMessagesRead: Int = 0,
+  numChatMessagesPosted: Int = 0,
+  numChatTopicsEntered: Int = 0,
+  numChatTopicsRepliedIn: Int = 0,
+  numChatTopicsCreated: Int = 0,
+  numLikesGiven: Int = 0,
+  numLikesReceived: Int = 0,
+  numSolutionsProvided: Int = 0) {
+
+  require(lastSeenAt.millis >= firstSeenAt.millis, "EdE6BMLA09")
+  lastPostedAt foreach { when => require(lastSeenAt.millis >= when.millis, "EdE6BMLA01") }
+  // Skip `lastEmailedAt` — it can be later than lastSeenAt.
+  firstNewTopicAt foreach { when => require(lastSeenAt.millis >= when.millis, "EdE6BMLA11") }
+  firstDiscourseReplyAt foreach { when => require(lastSeenAt.millis >= when.millis, "EdE6BMA13") }
+  firstChatMessageAt foreach { when => require(lastSeenAt.millis >= when.millis, "EdE6BMLA15") }
+  require(lastSeenAt.millis >= topicsNewSince.millis, "EdE6BMLA17")
+
+  lastPostedAt foreach { when => require(firstSeenAt.millis <= when.millis, "EdE6BMLA20") }
+  // Skip `lastEmailedAt` — it can be before firstSeenAt (if invite email sent before user created).
+  firstNewTopicAt foreach { when => require(firstSeenAt.millis <= when.millis, "EdE6BMLA24") }
+  firstDiscourseReplyAt foreach { when => require(firstSeenAt.millis <= when.millis, "EdE6LA26") }
+  firstChatMessageAt foreach { when => require(firstSeenAt.millis <= when.millis, "EdE6BMLA28") }
 
   require(
     emailBounceSum >= 0 &&
@@ -918,10 +937,82 @@ case class UserStats(
     numChatTopicsRepliedIn >= 0 &&
     numChatTopicsCreated >= 0 &&
     numLikesGiven >= 0, "EdE4S0A7M")
+
+
+  /** Ignores `UserStats.firstSeenAt` if == 0 millis == year 1970.
+    */
+  def addMoreStats(moreStats: UserStats): UserStats = {
+    require(userId == moreStats.userId, "EdE4WKB1W9")
+
+    def latestOf(whenA: When, whenB: When): When =
+      if (whenA.millis > whenB.millis) whenA else whenB
+
+    def anyLatestOf(whenA: Option[When], whenB: Option[When]): Option[When] = {
+      if (whenA.isDefined && whenB.isDefined) {
+        if (whenA.get.millis > whenB.get.millis) whenA
+        else whenB
+      }
+      else whenA orElse whenB
+    }
+
+    def earliestOf(whenA: When, whenB: When): When =
+      if (whenA.millis < whenB.millis && whenA.millis != 0) whenA else whenB
+
+    def anyEarliestOf(whenA: Option[When], whenB: Option[When]): Option[When] = {
+      if (whenA.isDefined && whenB.isDefined)
+        Some(earliestOf(whenA.get, whenB.get))
+      else
+        whenA orElse whenB
+    }
+
+    copy(
+      lastSeenAt = latestOf(lastSeenAt, moreStats.lastSeenAt),
+      lastPostedAt = anyLatestOf(lastPostedAt, moreStats.lastPostedAt),
+      lastEmailedAt = anyLatestOf(lastEmailedAt, moreStats.lastEmailedAt),
+      // Hmm, how should the bounce sum be updated? For now:
+      emailBounceSum = (moreStats.emailBounceSum >= 0) ? moreStats.emailBounceSum | emailBounceSum,
+      firstSeenAt = earliestOf(firstSeenAt, moreStats.firstSeenAt),
+      firstNewTopicAt = anyEarliestOf(firstNewTopicAt, moreStats.firstNewTopicAt),
+      firstDiscourseReplyAt = anyEarliestOf(firstDiscourseReplyAt, moreStats.firstDiscourseReplyAt),
+      firstChatMessageAt = anyEarliestOf(firstChatMessageAt, moreStats.firstChatMessageAt),
+      topicsNewSince = latestOf(moreStats.topicsNewSince, topicsNewSince),
+      notfsNewSinceId = (moreStats.notfsNewSinceId > notfsNewSinceId) ?
+        moreStats.notfsNewSinceId | notfsNewSinceId,
+      numDaysVisited = numDaysVisited + moreStats.numDaysVisited,
+      numMinutesReading = numMinutesReading + moreStats.numMinutesReading,
+      numDiscourseRepliesRead = numDiscourseRepliesRead + moreStats.numDiscourseRepliesRead,
+      numDiscourseRepliesPosted = numDiscourseRepliesPosted + moreStats.numDiscourseRepliesPosted,
+      numDiscourseTopicsEntered = numDiscourseTopicsEntered + moreStats.numDiscourseTopicsEntered,
+      numDiscourseTopicsRepliedIn =
+        numDiscourseTopicsRepliedIn + moreStats.numDiscourseTopicsRepliedIn,
+      numDiscourseTopicsCreated = numDiscourseTopicsCreated + moreStats.numDiscourseTopicsCreated,
+      numChatMessagesRead = numChatMessagesRead + moreStats.numChatMessagesRead,
+      numChatMessagesPosted = numChatMessagesPosted + moreStats.numChatMessagesPosted,
+      numChatTopicsEntered = numChatTopicsEntered + moreStats.numChatTopicsEntered,
+      numChatTopicsRepliedIn = numChatTopicsRepliedIn + moreStats.numChatTopicsRepliedIn,
+      numChatTopicsCreated = numChatTopicsCreated + moreStats.numChatTopicsCreated,
+      numLikesGiven = numLikesGiven + moreStats.numLikesGiven,
+      numLikesReceived = numLikesReceived + moreStats.numLikesReceived,
+      numSolutionsProvided = numSolutionsProvided + moreStats.numSolutionsProvided)
+    }
 }
 
 
-case class MemberVisitStats(
+
+case object UserStats {
+
+  def forNewUser(userId: UserId, firstSeenAt: When, emailedAt: Option[When]) = UserStats(
+    userId = userId,
+    firstSeenAt = firstSeenAt,
+    lastSeenAt = firstSeenAt,
+    topicsNewSince = firstSeenAt,
+    lastEmailedAt = emailedAt)
+
+}
+
+
+
+case class UserVisitStats(
   userId: UserId,
   visitDate: WhenDay,
   numMinutesReading: Int,

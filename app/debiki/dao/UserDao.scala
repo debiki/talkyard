@@ -18,8 +18,10 @@
 package debiki.dao
 
 import com.debiki.core._
-import debiki.DebikiHttp.throwForbidden
-import debiki.{BrowserId, SidStatus, DebikiSecurity}
+import debiki.DebikiHttp.{throwBadReq, throwForbidden}
+import debiki.BrowserId
+import ed.server._
+import ed.server.security.SidStatus
 import io.efdi.server.http.throwForbiddenIf
 import java.{util => ju}
 import play.api.libs.json.JsArray
@@ -31,6 +33,17 @@ import scala.collection.mutable.ArrayBuffer
 
 trait UserDao {
   self: SiteDao =>
+
+
+  def addUserStats(moreStats: UserStats)(transaction: SiteTransaction) {
+    val anyStats = transaction.loadUserStats(moreStats.userId)
+    val stats = anyStats.getOrDie("EdE2WKZ8A4", s"No stats for user $siteId:${moreStats.userId}")
+    val newStats = stats.addMoreStats(moreStats)
+    SHOULD // if moreStats replies to chat message or discourse topic, then update
+    // num-chat/discourse-topics-replied-in.
+    SHOULD // update num-topics-entered too
+    transaction.upsertUserStats(newStats)
+  }
 
 
   def insertInvite(invite: Invite) {
@@ -79,6 +92,8 @@ trait UserDao {
       transaction.insertMember(newUser)
       transaction.insertUsernameUsage(UsernameUsage(
         username = newUser.username, inUseFrom = transaction.now, userId = newUser.id))
+      transaction.upsertUserStats(UserStats.forNewUser(
+        newUser.id, firstSeenAt = transaction.now, emailedAt = Some(invite.createdWhen)))
       transaction.updateInvite(invite)
       (newUser, invite, false)
     }
@@ -304,7 +319,7 @@ trait UserDao {
   }
 
 
-  def createIdentityUserAndLogin(newUserData: NewUserData): LoginGrant = {
+  def createIdentityUserAndLogin(newUserData: NewUserData): MemberLoginGrant = {
     val loginGrant = readWriteTransaction { transaction =>
       val userId = transaction.nextMemberId
       val user = newUserData.makeUser(userId, transaction.currentTime)
@@ -314,8 +329,10 @@ trait UserDao {
       transaction.insertMember(user)
       transaction.insertUsernameUsage(UsernameUsage(
         username = user.username, inUseFrom = transaction.now, userId = user.id))
+      transaction.upsertUserStats(UserStats.forNewUser(
+        user.id, firstSeenAt = transaction.now, emailedAt = None))
       transaction.insertIdentity(identity)
-      LoginGrant(Some(identity), user.briefUser, isNewIdentity = true, isNewRole = true)
+      MemberLoginGrant(Some(identity), user.briefUser, isNewIdentity = true, isNewMember = true)
     }
     memCache.fireUserCreated(loginGrant.user)
     loginGrant
@@ -329,7 +346,7 @@ trait UserDao {
     * in the database.
     */
   def createIdentityConnectToUserAndLogin(user: Member, oauthDetails: OpenAuthDetails)
-        : LoginGrant = {
+        : MemberLoginGrant = {
     require(user.email.nonEmpty, "DwE3KEF7")
     require(user.emailVerifiedAt.nonEmpty, "DwE5KGE2")
     require(user.isAuthenticated, "DwE4KEF8")
@@ -337,13 +354,14 @@ trait UserDao {
       val identityId = transaction.nextIdentityId
       val identity = OpenAuthIdentity(id = identityId, userId = user.id, oauthDetails)
       transaction.insertIdentity(identity)
-      LoginGrant(Some(identity), user, isNewIdentity = true, isNewRole = false)
+      addUserStats(UserStats(user.id, lastSeenAt = transaction.now))(transaction)
+      MemberLoginGrant(Some(identity), user, isNewIdentity = true, isNewMember = false)
     }
   }
 
 
   def createPasswordUserCheckPasswordStrong(userData: NewPasswordUserData): Member = {
-    DebikiSecurity.throwErrorIfPasswordTooWeak(
+    security.throwErrorIfPasswordTooWeak(
       password = userData.password, username = userData.username,
       fullName = userData.name, email = userData.email)
     val user = readWriteTransaction { transaction =>
@@ -353,6 +371,8 @@ trait UserDao {
       transaction.insertMember(user)
       transaction.insertUsernameUsage(UsernameUsage(
         username = user.username, inUseFrom = transaction.now, userId = user.id))
+      transaction.upsertUserStats(UserStats.forNewUser(
+        user.id, firstSeenAt = transaction.now, emailedAt = None))
       user.briefUser
     }
     memCache.fireUserCreated(user)
@@ -364,7 +384,7 @@ trait UserDao {
     val newPasswordSaltHash = DbDao.saltAndHashPassword(newPassword)
     readWriteTransaction { transaction =>
       var user = transaction.loadTheMemberInclDetails(userId)
-      DebikiSecurity.throwErrorIfPasswordTooWeak(
+      security.throwErrorIfPasswordTooWeak(
         password = newPassword, username = user.username,
         fullName = user.fullName, email = user.emailAddress)
       user = user.copy(passwordHash = Some(newPasswordSaltHash))
@@ -375,7 +395,9 @@ trait UserDao {
 
   def loginAsGuest(loginAttempt: GuestLoginAttempt): Guest = {
     val user = readWriteTransaction { transaction =>
-      transaction.loginAsGuest(loginAttempt).guest
+      val guest = transaction.loginAsGuest(loginAttempt).guest
+      addUserStats(UserStats(guest.id, lastSeenAt = transaction.now))(transaction)
+      guest
     }
     memCache.put(
       key(user.id),
@@ -384,9 +406,10 @@ trait UserDao {
   }
 
 
-  def tryLogin(loginAttempt: LoginAttempt): LoginGrant = {
+  def tryLoginAsMember(loginAttempt: MemberLoginAttempt): MemberLoginGrant = {
     val loginGrant = readWriteTransaction { transaction =>
-      val loginGrant = transaction.tryLogin(loginAttempt)
+      val loginGrant = transaction.tryLoginAsMember(loginAttempt)
+      addUserStats(UserStats(loginGrant.user.id, lastSeenAt = transaction.now))(transaction)
       if (!loginGrant.user.isSuspendedAt(loginAttempt.date))
         return loginGrant
 

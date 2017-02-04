@@ -25,6 +25,7 @@ import debiki.DebikiHttp._
 import debiki.RateLimits.NoRateLimits
 import java.{util => ju}
 import debiki.dao.SiteDao
+import ed.server.security.{SidStatus, XsrfOk}
 import play.api._
 import play.api.libs.Files.TemporaryFile
 import play.api.libs.json.{JsLookupResult, JsValue}

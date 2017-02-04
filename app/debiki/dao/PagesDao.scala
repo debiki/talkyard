@@ -264,6 +264,15 @@ trait PagesDao {
       uniquePostId = Some(bodyPost.id),
       postNr = Some(bodyPost.nr))
 
+    val stats = UserStats(
+      authorId,
+      lastSeenAt = transaction.now,
+      lastPostedAt = Some(transaction.now),
+      firstNewTopicAt = Some(transaction.now),
+      numDiscourseTopicsCreated = pageRole.isChat ? 0 | 1,
+      numChatTopicsCreated = pageRole.isChat ? 1 | 0)
+
+    addUserStats(stats)(transaction)
     transaction.insertPageMetaMarkSectionPageStale(pageMeta)
     transaction.insertPagePath(pagePath)
     transaction.insertPost(titlePost)

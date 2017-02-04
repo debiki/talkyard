@@ -20,6 +20,11 @@
 /// <reference path="rules.ts" />
 /// <reference path="ServerApi.ts" />
 
+// Ought to include, but then `debiki2.createComponent` gets placed too late —> JS breaks:
+//xx <reference path="ReactActions.ts" />
+//xx <reference path="page-dialogs/server-error-dialog.ts" />
+// Not important to fix right now — everything works fine anyway.
+
 //------------------------------------------------------------------------------
    module debiki2.Server {
 //------------------------------------------------------------------------------
@@ -443,9 +448,9 @@ export function stopImpersonatingReloadPage() {
 
 
 export function loadCompleteUser(userIdOrUsername: UserId | string,
-      doneCallback: (user: MemberInclDetails) => void, error?: () => void) {
+      doneCallback: (user: MemberInclDetails, stats: UserStats) => void, error?: () => void) {
   get('/-/load-user-incl-details?who=' + userIdOrUsername, (response) => {
-    doneCallback(response.user);
+    doneCallback(response.user, response.stats);
   }, error);
 }
 

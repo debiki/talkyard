@@ -34,6 +34,7 @@ type IpAddress = String;
 type EmailId = String;
 type AuditLogEntryId = number;
 type TagLabel = string;
+type DateMs = number;
 
 type HttpRequest = XMLHttpRequest
 
@@ -541,6 +542,36 @@ interface MemberInclDetails {
   lockedTrustLevel?: TrustLevel;
   threatLevel: ThreatLevel;
   lockedThreatLevel?: ThreatLevel;
+}
+
+
+interface UserStats {
+  userId: UserId;
+  lastSeenAt: DateMs;
+  lastPostedAt?: DateMs;
+  lastEmailedAt?: DateMs;
+  emailBounceSum: number;
+  firstSeenAt: DateMs;
+  firstNewTopicAt?: DateMs;
+  firstDiscourseReplyAt?: DateMs;
+  firstChatMessageAt?: DateMs;
+  topicsNewSince: DateMs;
+  notfsNewSinceId: NotificationId;
+  numDaysVisited: number;
+  numMinutesReading: number;
+  numDiscourseRepliesRead: number;
+  numDiscourseRepliesPosted: number;
+  numDiscourseTopicsEntered: number;
+  numDiscourseTopicsRepliedIn: number;
+  numDiscourseTopicsCreated: number;
+  numChatMessagesRead: number;
+  numChatMessagesPosted: number;
+  numChatTopicsEntered: number;
+  numChatTopicsRepliedIn: number;
+  numChatTopicsCreated: number;
+  numLikesGiven: number;
+  numLikesReceived: number;
+  numSolutionsProvided: number;
 }
 
 

@@ -27,6 +27,8 @@ import com.mohiva.play.silhouette.impl.providers._
 import ed.server.spam.SpamChecker
 import debiki._
 import debiki.DebikiHttp._
+import ed.server._
+import ed.server.security.createSessionIdAndXsrfToken
 import io.efdi.server.http._
 import java.{util => ju}
 import org.scalactic.{Good, Bad}
@@ -247,7 +249,7 @@ object LoginWithOpenAuthController extends Controller {
     // COULD let tryLogin() return a LoginResult and use pattern matching, not exceptions.
     val result =
       try {
-        val loginGrant = dao.tryLogin(loginAttempt)
+        val loginGrant = dao.tryLoginAsMember(loginAttempt)
         createCookiesAndFinishLogin(request, dao.siteId, loginGrant.user)
       }
       catch {
@@ -344,7 +346,7 @@ object LoginWithOpenAuthController extends Controller {
 
   private def createCookiesAndFinishLogin(request: DebikiRequest[_], siteId: SiteId, user: User)
         : Result = {
-    val (_, _, sidAndXsrfCookies) = debiki.Xsrf.newSidAndXsrf(siteId, user.id)
+    val (_, _, sidAndXsrfCookies) = createSessionIdAndXsrfToken(siteId, user.id)
 
     val response =
       if (isAjax(request.underlying)) {

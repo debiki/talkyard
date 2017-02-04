@@ -248,6 +248,8 @@ object ReactRenderer extends com.debiki.core.CommonMarkRenderer {
         crackTimeDisplay = "unknown", score = (password.length >= 8) ? 999 | 0)
     }
 
+    CLEAN_UP // remove this server-side JS check of pwd strength — too complicated. Do sth
+    // simple in Scala code instead, in app/ed/server/security.scala.
     withJavascriptEngine(engine => {
       val resultAsAny = engine.invokeFunction(
         "checkPasswordStrength", password, username, fullName.getOrElse(""), email)

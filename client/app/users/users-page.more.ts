@@ -16,6 +16,7 @@
  */
 
 /// <reference path="../../typedefs/react/react.d.ts" />
+/// <reference path="../../typedefs/moment/moment.d.ts" />
 /// <reference path="../slim-bundle.d.ts" />
 /// <reference path="user-invites.more.ts" />
 /// <reference path="user-notifications.more.ts" />
@@ -133,7 +134,7 @@ var UserPageComponent = React.createClass(<any> {
   },
 
   componentWillUnmount: function() {
-    this.willUnmount = true;
+    this.isGone = true;
   },
 
   transitionTo: function(subPath) {
@@ -142,9 +143,9 @@ var UserPageComponent = React.createClass(<any> {
 
   loadCompleteUser: function(redirectToCorrectUsername) {
     var usernameOrId = this.props.params.usernameOrId;
-    Server.loadCompleteUser(usernameOrId, (user) => {
-      if (this.willUnmount) return;
-      this.setState({ user: user });
+    Server.loadCompleteUser(usernameOrId, (user, stats: UserStats) => {
+      if (this.isGone) return;
+      this.setState({ user: user, stats: stats });
       // 1) In case the user has changed his/her username, and userIdOrUsername is his/her *old*
       // name, user.username will be the current name — then show current name in the url [8KFU24R].
       // Also 2) if user id specified, and the user is a member (they have usernames) show
@@ -153,7 +154,7 @@ var UserPageComponent = React.createClass(<any> {
         this.context.router.replace('/-/users/' + user.username);
       }
     }, () => {
-      if (this.willUnmount) return;
+      if (this.isGone) return;
       // Error. We might not be allowed to see this user, so null it even if it was shown before.
       this.setState({ user: null });
     });
@@ -186,6 +187,7 @@ var UserPageComponent = React.createClass(<any> {
       store: store,
       me: me, // try to remove, incl already in `store`
       user: user,
+      stats: this.state.stats,
       reloadUser: this.loadCompleteUser,
       transitionTo: this.transitionTo
     };
@@ -194,8 +196,7 @@ var UserPageComponent = React.createClass(<any> {
 
     return (
       r.div({ className: 'container esUP' },
-        r.div({ className: 'dw-user-bar clearfix' },
-          AvatarAboutAndButtons(childProps)),
+        AvatarAboutAndButtons(childProps),
         Nav({ bsStyle: 'pills', activeKey: activeRouteName,
             onSelect: this.transitionTo, className: 'dw-sub-nav' },
           activityNavItem,
@@ -295,6 +296,7 @@ var AvatarAboutAndButtons = createComponent({
 
   render: function() {
     var user: MemberInclDetails = this.props.user;
+    var stats: UserStats = this.props.stats;
     var me: Myself = this.props.me;
     var suspendedInfo;
     if (user.suspendedAtEpoch) {
@@ -350,7 +352,7 @@ var AvatarAboutAndButtons = createComponent({
         PrimaryButton({ onClick: this.sendMessage, className: 's_UP_SendMsgB' },
           "Send Message");
 
-    return (
+    return r.div({ className: 'dw-user-bar clearfix' },
       // This + display: table-row makes the avatar image take less space,
       // and the name + about text get more space, if the avatar is narrow.
       r.div({ className: 's_UP_AvtrAboutBtns' },
@@ -364,7 +366,18 @@ var AvatarAboutAndButtons = createComponent({
           r.h1({ className: 'esUP_Un' }, user.username, thatIsYou),
           r.h2({ className: 'esUP_FN' }, user.fullName, isGuestInfo),
           r.div({ className: 's_UP_About' }, user.about),
-          suspendedInfo)));
+          suspendedInfo)),
+        r.div({ className: 's_UP_Stats' },
+          r.div({ className: 's_UP_Stats_Stat' },
+            "Joined: " + moment(stats.firstSeenAt).fromNow()),
+          r.div({ className: 's_UP_Stats_Stat' },
+            "Posts made: " + userStats_totalNumPosts(stats)),
+          !stats.lastPostedAt ? null : r.div({ className: 's_UP_Stats_Stat' },
+            "Last post: " + moment(stats.lastPostedAt).fromNow()),
+          r.div({ className: 's_UP_Stats_Stat' },
+            "Last seen: " + moment(stats.lastSeenAt).fromNow()),
+          r.div({ className: 's_UP_Stats_Stat' },
+            "Trust level: " + user.lockedTrustLevel || user.trustLevel)));
   }
 });
 

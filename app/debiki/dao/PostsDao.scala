@@ -179,6 +179,15 @@ trait PostsDao {
         postId = Some(newPost.id),
         postNr = Some(newPost.nr)))
 
+      val stats = UserStats(
+        authorId,
+        lastSeenAt = transaction.now,
+        lastPostedAt = Some(transaction.now),
+        firstDiscourseReplyAt = Some(transaction.now),
+        numDiscourseRepliesPosted = 1,
+        numDiscourseTopicsRepliedIn = 0) // SHOULD update properly
+
+      addUserStats(stats)(transaction)
       transaction.insertPost(newPost)
       transaction.indexPostsSoon(newPost)
       transaction.spamCheckPostsSoon(byWho, spamRelReqStuff, newPost)
@@ -339,6 +348,7 @@ trait PostsDao {
         post.createdById == authorId &&
           transaction.currentTime.getTime - post.createdAt.getTime < LastChatMessageRecentMs
       }
+
       val (post, notfs) = anyLastMessageSameUserRecently match {
         case Some(lastMessage) if !lastMessage.isDeleted =>
           appendToLastChatMessage(lastMessage, textAndHtml, byWho, spamRelReqStuff, transaction)
@@ -436,6 +446,14 @@ trait PostsDao {
       targetPostNr = None,
       targetUserId = None)
 
+    val userStats = UserStats(
+      authorId,
+      lastSeenAt = transaction.now,
+      lastPostedAt = Some(transaction.now),
+      firstChatMessageAt = Some(transaction.now),
+      numChatMessagesPosted = 1)
+
+    addUserStats(userStats)(transaction)
     transaction.insertPost(newPost)
     transaction.indexPostsSoon(newPost)
     transaction.spamCheckPostsSoon(who, spamRelReqStuff, newPost)
@@ -1276,12 +1294,16 @@ trait PostsDao {
 
   def deleteVote(pageId: PageId, postNr: PostNr, voteType: PostVoteType, voterId: UserId) {
     readWriteTransaction { transaction =>
-      throwIfMayNotSeePost(transaction.loadThePost(pageId, postNr),
-        Some(transaction.loadTheUser(voterId)))(transaction)
+      val post = transaction.loadThePost(pageId, postNr)
+      val voter = transaction.loadTheUser(voterId)
+      throwIfMayNotSeePost(post, Some(voter))(transaction)
 
       transaction.deleteVote(pageId, postNr, voteType, voterId = voterId)
       updateVoteCounts(pageId, postNr = postNr, transaction)
-      /* FRAUD SHOULD delete by cookie too, like I did before:
+      addUserStats(UserStats(post.createdById, numLikesReceived = -1))(transaction)
+      addUserStats(UserStats(voterId, numLikesGiven = -1))(transaction)
+
+      /* SECURITY vote-FRAUD SHOULD delete by cookie too, like I did before:
       var numRowsDeleted = 0
       if ((userIdData.anyGuestId.isDefined && userIdData.userId != UnknownUser.Id) ||
         userIdData.anyRoleId.isDefined) {
@@ -1348,8 +1370,9 @@ trait PostsDao {
 
       transaction.updatePostsReadStats(pageId, postsToMarkAsRead, readById = voterId,
         readFromIp = voterIp)
-
       updateVoteCounts(post, transaction)
+      addUserStats(UserStats(post.createdById, numLikesReceived = 1))(transaction)
+      addUserStats(UserStats(voterId, numLikesGiven = 1))(transaction)
     }
     refreshPageInMemCache(pageId)
   }

@@ -21,6 +21,7 @@ import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki._
 import debiki.DebikiHttp._
+import ed.server.security.createSessionIdAndXsrfToken
 import io.efdi.server.http._
 import java.{util => ju}
 import play.api._
@@ -143,7 +144,7 @@ object ResetPasswordController extends mvc.Controller {
     SECURITY // SHOULD mark reset password email as used, so cannot be used again
 
     // Log the user in and show password changed message.
-    val (_, _, sidAndXsrfCookies) = debiki.Xsrf.newSidAndXsrf(request.siteId, loginGrant.user.id)
+    val (_, _, sidAndXsrfCookies) = createSessionIdAndXsrfToken(request.siteId, loginGrant.user.id)
     val newSessionCookies = sidAndXsrfCookies
     Ok(views.html.resetpassword.passwordHasBeenChanged(SiteTpi(request)))
       .withCookies(newSessionCookies: _*)
@@ -151,12 +152,12 @@ object ResetPasswordController extends mvc.Controller {
 
 
   private def loginByEmailOrThrow(resetPasswordEmailId: String, request: ApiRequest[_])
-        : LoginGrant = {
+        : MemberLoginGrant = {
     val loginAttempt = EmailLoginAttempt(
       ip = request.ip, date = new ju.Date, emailId = resetPasswordEmailId)
     // TODO: Check email type !
     val loginGrant =
-      try request.dao.tryLogin(loginAttempt)
+      try request.dao.tryLoginAsMember(loginAttempt)
       catch {
         case ex: DbDao.EmailNotFoundException =>
           throwForbidden("DwE7PWE7", "Email not found")

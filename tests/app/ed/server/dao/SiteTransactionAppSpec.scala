@@ -39,7 +39,7 @@ class SiteTransactionAppSpec extends DaoAppSuite {
       other = createPasswordUser(s"txt_otr", dao)
     }
 
-    "load and save MemberStats" in {
+    "load and save UserStats" in {
       dao.readWriteTransaction { transaction =>
         transaction.upsertUserStats(stats(admin.id, 100))
         transaction.loadUserStats(admin.id).get mustBe stats(admin.id, 100)
@@ -85,39 +85,39 @@ class SiteTransactionAppSpec extends DaoAppSuite {
 
     "load and save MemberVisitStats" in {
       dao.readWriteTransaction { transaction =>
-        transaction.upsertMemberVisitStats(stats(admin.id, 10, 1000))
-        transaction.loadMemberVisitStats(admin.id) mustBe Seq(stats(admin.id, 10, 1000))
-        transaction.loadMemberVisitStats(other.id) mustBe Nil
+        transaction.upsertUserVisitStats(stats(admin.id, 10, 1000))
+        transaction.loadUserVisitStats(admin.id) mustBe Seq(stats(admin.id, 10, 1000))
+        transaction.loadUserVisitStats(other.id) mustBe Nil
 
-        transaction.upsertMemberVisitStats(stats(other.id, 20, 2000))
-        transaction.loadMemberVisitStats(admin.id) mustBe Seq(stats(admin.id, 10, 1000))
-        transaction.loadMemberVisitStats(other.id) mustBe Seq(stats(other.id, 20, 2000))
+        transaction.upsertUserVisitStats(stats(other.id, 20, 2000))
+        transaction.loadUserVisitStats(admin.id) mustBe Seq(stats(admin.id, 10, 1000))
+        transaction.loadUserVisitStats(other.id) mustBe Seq(stats(other.id, 20, 2000))
 
         // Overwrite, shouldn't overwrite the admin user.
-        transaction.upsertMemberVisitStats(stats(other.id, 20, 2100))
-        transaction.loadMemberVisitStats(admin.id) mustBe Seq(stats(admin.id, 10, 1000))
-        transaction.loadMemberVisitStats(other.id) mustBe Seq(stats(other.id, 20, 2100))
+        transaction.upsertUserVisitStats(stats(other.id, 20, 2100))
+        transaction.loadUserVisitStats(admin.id) mustBe Seq(stats(admin.id, 10, 1000))
+        transaction.loadUserVisitStats(other.id) mustBe Seq(stats(other.id, 20, 2100))
 
         // Add 40, so like: [40, 20]
-        transaction.upsertMemberVisitStats(stats(other.id, 40, 4000))
-        transaction.loadMemberVisitStats(admin.id) mustBe Seq(stats(admin.id, 10, 1000))
-        transaction.loadMemberVisitStats(other.id) mustBe Seq(
+        transaction.upsertUserVisitStats(stats(other.id, 40, 4000))
+        transaction.loadUserVisitStats(admin.id) mustBe Seq(stats(admin.id, 10, 1000))
+        transaction.loadUserVisitStats(other.id) mustBe Seq(
           stats(other.id, 40, 4000), stats(other.id, 20, 2100))
 
         // Add 30, so like: [40, 30, 20]
-        transaction.upsertMemberVisitStats(stats(other.id, 30, 3000))
-        transaction.loadMemberVisitStats(admin.id) mustBe Seq(stats(admin.id, 10, 1000))
-        transaction.loadMemberVisitStats(other.id) mustBe Seq(
+        transaction.upsertUserVisitStats(stats(other.id, 30, 3000))
+        transaction.loadUserVisitStats(admin.id) mustBe Seq(stats(admin.id, 10, 1000))
+        transaction.loadUserVisitStats(other.id) mustBe Seq(
           stats(other.id, 40, 4000), stats(other.id, 30, 3000), stats(other.id, 20, 2100))
 
         // Overwrite again, shouldn't overwrite 20 and 40.
-        transaction.upsertMemberVisitStats(stats(other.id, 30, 3333))
-        transaction.loadMemberVisitStats(admin.id) mustBe Seq(stats(admin.id, 10, 1000))
-        transaction.loadMemberVisitStats(other.id) mustBe Seq(
+        transaction.upsertUserVisitStats(stats(other.id, 30, 3333))
+        transaction.loadUserVisitStats(admin.id) mustBe Seq(stats(admin.id, 10, 1000))
+        transaction.loadUserVisitStats(other.id) mustBe Seq(
           stats(other.id, 40, 4000), stats(other.id, 30, 3333), stats(other.id, 20, 2100))
       }
 
-      def stats(userId: UserId, days: Int, number: Int) = MemberVisitStats(
+      def stats(userId: UserId, days: Int, number: Int) = UserVisitStats(
         userId = userId,
         visitDate = WhenDay.fromDays(days),
         numMinutesReading = number + 1,

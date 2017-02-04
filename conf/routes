@@ -154,12 +154,16 @@ POST  /-/add-users-to-page      controllers.PageController.addUsersToPage
 POST  /-/remove-users-from-page controllers.PageController.removeUsersFromPage
 POST  /-/join-page              controllers.PageController.joinPage
 POST  /-/leave-page             controllers.PageController.leavePage
+
 POST  /-/reply                  controllers.ReplyController.handleReply
 POST  /-/chat                   controllers.ReplyController.handleChatMessage
+
 POST  /-/submit-custom-form-as-json-reply controllers.CustomFormController.handleJsonReply
 POST  /-/submit-custom-form-as-new-topic  controllers.CustomFormController.handleNewTopic
+
 POST  /-/vote                   controllers.VoteController.handleVotes
 POST  /-/flag                   @controllers.Application.flag
+
 GET   /-/load-draft-and-guidelines controllers.EditController.loadDraftAndGuidelines(writingWhat, categoryId: Option[Int], pageRole)
 GET   /-/edit                   controllers.EditController.loadCurrentText(pageId, postNr: Int)
 POST  /-/edit                   controllers.EditController.edit
@@ -201,6 +205,7 @@ GET  /-/origin                  @controllers.DebugTestController.origin
 GET  /-/are-scripts-ready       @controllers.DebugTestController.areScriptsReady
 GET  /-/create-deadlock         @controllers.DebugTestController.createDeadlock
 GET  /-/last-e2e-test-email     @controllers.DebugTestController.showLastE2eTestEmailSent(siteId, sentTo)
+
 GET   /-/site/:siteId/*file     controllers.SiteAssetBundlesController.customAsset(siteId, file)
 GET   /-/site/*file             controllers.SiteAssetBundlesController.at(file)
 

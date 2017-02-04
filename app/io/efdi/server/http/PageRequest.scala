@@ -24,6 +24,7 @@ import controllers.Utils.ValidationImplicits._
 import debiki._
 import debiki.DebikiHttp._
 import debiki.dao.{PageDao, SiteDao}
+import ed.server.security.{SidStatus, XsrfOk}
 import java.{util => ju}
 import play.api.mvc.{Action => _, _}
 import play.api.Play

@@ -170,14 +170,14 @@ class Mailer(
     val address = emailToSend.toUserId.flatMap(tenantDao.getUser).map(_.email) getOrElse
       emailToSend.sentTo
 
-    val email = emailToSend.copy(sentTo = address, sentOn = now, providerEmailId = None)
-    val apacheCommonsEmail  = makeApacheCommonsEmail(email)
-    val emailSentOrFailed =
+    val emailWithAddress = emailToSend.copy(sentTo = address, sentOn = now, providerEmailId = None)
+    val apacheCommonsEmail  = makeApacheCommonsEmail(emailWithAddress)
+    val emailAfter =
       try {
         apacheCommonsEmail.send()
         // Nowadays not using Amazon's SES api, so no provider email id is available.
-        logger.trace("Email sent: "+ email)
-        email
+        logger.trace("Email sent [EdM72JHB4]: "+ emailWithAddress)
+        emailWithAddress
       }
       catch {
         case ex: acm.EmailException =>
@@ -185,12 +185,12 @@ class Mailer(
           if (ex.getCause ne null) {
             message += "\nCaused by: " + ex.getCause.getMessage
           }
-          val email = emailToSend.copy(sentOn = now, failureText = Some(message))
-          logger.warn("Error sending email: "+ email)
-          email
+          val badEmail = emailWithAddress.copy(failureText = Some(message))
+          logger.warn(s"Error sending email [EdESEME001]: $badEmail")
+          badEmail
       }
 
-    tenantDao.updateSentEmail(emailSentOrFailed)
+    tenantDao.updateSentEmail(emailAfter)
   }
 
 

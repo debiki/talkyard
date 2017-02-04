@@ -23,6 +23,8 @@ import debiki._
 import debiki.DebikiHttp.throwForbidden
 import debiki.ReactJson.{DateEpochOrNull, JsNumberOrNull, JsUser}
 import debiki.dao.SiteDao
+import ed.server._
+import ed.server.security.createSessionIdAndXsrfToken
 import io.efdi.server.http._
 import java.{util => ju}
 import play.api.mvc
@@ -89,7 +91,7 @@ object InviteController extends mvc.Controller {
 
   def acceptInvite(secretKey: String) = GetActionAllowAnyone { request =>
     val (newUser, invite, alreadyAccepted) = request.dao.acceptInviteCreateUser(secretKey)
-    val (_, _, sidAndXsrfCookies) = debiki.Xsrf.newSidAndXsrf(request.siteId, newUser.id)
+    val (_, _, sidAndXsrfCookies) = createSessionIdAndXsrfToken(request.siteId, newUser.id)
     val newSessionCookies = sidAndXsrfCookies
 
     if (!alreadyAccepted) {

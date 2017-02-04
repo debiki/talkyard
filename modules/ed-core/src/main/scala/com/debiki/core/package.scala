@@ -118,6 +118,7 @@ package object core {
   object When {
     def now() = new When(System.currentTimeMillis())
     def fromDate(date: ju.Date) = new When(date.getTime)
+    def fromOptDate(anyDate: Option[ju.Date]): Option[When] = anyDate.map(When.fromDate)
     def fromMillis(millis: UnixMillis) = new When(millis)
   }
 

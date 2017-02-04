@@ -22,6 +22,7 @@ import com.debiki.core._
 import debiki.DebikiHttp._
 import debiki.JsonUtils._
 import debiki._
+import ed.server._
 import io.efdi.server.http._
 import java.{util => ju}
 import org.scalactic._
@@ -197,6 +198,9 @@ object ImportExportController extends mvc.Controller {
 
       siteData.users foreach { user =>
         transaction.insertMember(user)
+        // [readlater] export & import UserStats. For now, create new "empty" here.
+        transaction.upsertUserStats(UserStats.forNewUser(user.id, firstSeenAt = transaction.now,
+          emailedAt = None))
         // [readlater] export & import username usages, later. For now, create new here.
         transaction.insertUsernameUsage(UsernameUsage(
           username = user.username, inUseFrom = transaction.now, userId = user.id))
@@ -272,7 +276,7 @@ object ImportExportController extends mvc.Controller {
 
     try {
       val passwordHash = readOptString(jsObj, "passwordHash")
-      passwordHash.foreach(DebikiSecurity.throwIfBadPassword(_, isE2eTest))
+      passwordHash.foreach(security.throwIfBadPassword(_, isE2eTest))
       Good(MemberInclDetails(
         id = id,
         username = username,

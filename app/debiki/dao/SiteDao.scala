@@ -310,8 +310,17 @@ class SiteDao(
   def saveUnsentEmailConnectToNotfs(email: Email, notfs: Seq[Notification]): Unit =
     readWriteTransaction(_.saveUnsentEmailConnectToNotfs(email, notfs))
 
-  def updateSentEmail(email: Email): Unit =
-    readWriteTransaction(_.updateSentEmail(email))
+  def updateSentEmail(email: Email) {
+    readWriteTransaction { transaction =>
+      transaction.updateSentEmail(email)
+      if (email.failureText.isEmpty) {
+        email.toUserId foreach { userId =>
+          addUserStats(UserStats(
+            userId, lastEmailedAt = When.fromOptDate(email.sentOn)))(transaction)
+        }
+      }
+    }
+  }
 
   def loadEmailById(emailId: String): Option[Email] =
     readOnlyTransaction(_.loadEmailById(emailId))

@@ -155,10 +155,10 @@ trait SiteTransaction {
         readFromIp: String)
 
   def loadUserStats(userId: UserId): Option[UserStats]
-  def upsertUserStats(memberStats: UserStats)
+  def upsertUserStats(userStats: UserStats)
 
-  def loadMemberVisitStats(userId: UserId): immutable.Seq[MemberVisitStats]
-  def upsertMemberVisitStats(visitStats: MemberVisitStats)
+  def loadUserVisitStats(userId: UserId): immutable.Seq[UserVisitStats]
+  def upsertUserVisitStats(visitStats: UserVisitStats)
 
   def loadPostsReadStats(pageId: PageId, postNr: Option[PostNr]): PostsReadStats
   def loadPostsReadStats(pageId: PageId): PostsReadStats
@@ -279,7 +279,7 @@ trait SiteTransaction {
   def nextMemberId: UserId
   def insertMember(user: MemberInclDetails)
 
-  def tryLogin(loginAttempt: LoginAttempt): LoginGrant
+  def tryLoginAsMember(loginAttempt: MemberLoginAttempt): MemberLoginGrant
   def loginAsGuest(loginAttempt: GuestLoginAttempt): GuestLoginResult
   def configIdtySimple(ctime: ju.Date, emailAddr: String, emailNotfPrefs: EmailNotfPrefs)
 

@@ -61,40 +61,43 @@ object UserController extends mvc.Controller {
 
 
   def loadUserInclDetails(who: String) = GetAction { request =>
-    val userJson = Try(who.toInt).toOption match {
-      case Some(userId) => loadUserInclDetailsById(userId, request)
-      case None => loadMemberInclDetailsByEmailOrUsername(who, request)
+    val (userJson, anyStatsJson) = Try(who.toInt).toOption match {
+      case Some(userId) => loadUserInclDetailsById(userId, includeStats = true, request)
+      case None => loadMemberInclDetailsByEmailOrUsername(who, includeStats = true, request)
     }
-    OkSafeJson(Json.toJson(Map("user" -> userJson)))
+    OkSafeJson(Json.toJson(Map("user" -> userJson, "stats" -> anyStatsJson)))
   }
 
 
   // A tiny bit dupl code [5YK02F4]
-  private def loadUserInclDetailsById(userIdInt: UserId, request: DebikiRequest[_]) = {
+  private def loadUserInclDetailsById(userId: UserId, includeStats: Boolean,
+        request: DebikiRequest[_]) = {
     val callerIsStaff = request.user.exists(_.isStaff)
     val callerIsAdmin = request.user.exists(_.isAdmin)
-    val callerIsUserHerself = request.user.map(_.id == userIdInt) == Some(true)
+    val callerIsUserHerself = request.user.map(_.id == userId) == Some(true)
+    val isStaffOrSelf = callerIsStaff || callerIsUserHerself
     request.dao.readOnlyTransaction { transaction =>
+      val stats = includeStats ? transaction.loadUserStats(userId) | None
       val usersJson =
-        if (User.isRoleId(userIdInt)) {
-          val user = transaction.loadTheMemberInclDetails(userIdInt)
+        if (User.isRoleId(userId)) {
+          val user = transaction.loadTheMemberInclDetails(userId)
           jsonForCompleteUser(user, Map.empty, callerIsAdmin = callerIsAdmin,
             callerIsStaff = callerIsStaff, callerIsUserHerself = callerIsUserHerself)
         }
         else {
-          val user = transaction.loadTheGuest(userIdInt)
+          val user = transaction.loadTheGuest(userId)
           jsonForGuest(user, Map.empty, callerIsStaff = callerIsStaff,
             callerIsAdmin = callerIsAdmin)
 
         }
-      usersJson
+      (usersJson, stats.map(makeUserStatsJson(_, isStaffOrSelf)).getOrElse(JsNull))
     }
   }
 
 
   // A tiny bit dupl code [5YK02F4]
   private def loadMemberInclDetailsByEmailOrUsername(emailOrUsername: String,
-        request: DebikiRequest[_]) = {
+        includeStats: Boolean, request: DebikiRequest[_]) = {
     val callerIsStaff = request.user.exists(_.isStaff)
     val callerIsAdmin = request.user.exists(_.isAdmin)
 
@@ -124,9 +127,12 @@ object UserController extends mvc.Controller {
           "EsE8PKU02", "User not found")
       }
 
+      val stats = includeStats ? transaction.loadUserStats(member.id) | None
       val callerIsUserHerself = request.user.exists(_.id == member.id)
-      jsonForCompleteUser(member, Map.empty, callerIsAdmin = callerIsAdmin,
+      val isStaffOrSelf = callerIsStaff || callerIsUserHerself
+      val userJson = jsonForCompleteUser(member, Map.empty, callerIsAdmin = callerIsAdmin,
           callerIsStaff = callerIsStaff, callerIsUserHerself = callerIsUserHerself)
+      (userJson, stats.map(makeUserStatsJson(_, isStaffOrSelf)).getOrElse(JsNull))
     }
   }
 
@@ -193,6 +199,40 @@ object UserController extends mvc.Controller {
       // += browserIdCookieSuspendedAt, ById, ByUsername, Reason
     }
     userJson
+  }
+
+
+  private def makeUserStatsJson(stats: UserStats, isStaffOrSelf: Boolean): JsObject = {
+    var result = Json.obj(
+      "userId" -> stats.userId,
+      "lastSeenAt" -> JsWhenMs(stats.lastSeenAt),
+      "lastPostedAt" -> JsWhenMsOrNull(stats.lastPostedAt),
+      "firstSeenAt" -> JsWhenMs(stats.firstSeenAt),
+      "firstNewTopicAt" -> JsWhenMsOrNull(stats.firstNewTopicAt),
+      "firstDiscourseReplyAt" -> JsWhenMsOrNull(stats.firstDiscourseReplyAt),
+      "firstChatMessageAt" -> JsWhenMsOrNull(stats.firstChatMessageAt),
+      "numDaysVisited" -> stats.numDaysVisited,
+      "numMinutesReading" -> stats.numMinutesReading,
+      "numDiscourseRepliesRead" -> stats.numDiscourseRepliesRead,
+      "numDiscourseRepliesPosted" -> stats.numDiscourseRepliesPosted,
+      "numDiscourseTopicsEntered" -> stats.numDiscourseTopicsEntered,
+      "numDiscourseTopicsRepliedIn" -> stats.numDiscourseTopicsRepliedIn,
+      "numDiscourseTopicsCreated" -> stats.numDiscourseTopicsCreated,
+      "numChatMessagesRead" -> stats.numChatMessagesRead,
+      "numChatMessagesPosted" -> stats.numChatMessagesPosted,
+      "numChatTopicsEntered" -> stats.numChatTopicsEntered,
+      "numChatTopicsRepliedIn" -> stats.numChatTopicsRepliedIn,
+      "numChatTopicsCreated" -> stats.numChatTopicsCreated,
+      "numLikesGiven" -> stats.numLikesGiven,
+      "numLikesReceived" -> stats.numLikesReceived,
+      "numSolutionsProvided" -> stats.numSolutionsProvided)
+    if (isStaffOrSelf) {
+      result += "lastEmailedAt" -> JsWhenMsOrNull(stats.lastEmailedAt)
+      result += "emailBounceSum" -> JsNumber(stats.emailBounceSum.toDouble)
+      result += "topicsNewSince" -> JsWhenMs(stats.topicsNewSince)
+      result += "notfsNewSinceId" -> JsNumber(stats.notfsNewSinceId)
+    }
+    result
   }
 
 

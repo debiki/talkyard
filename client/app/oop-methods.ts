@@ -132,6 +132,16 @@ export function store_isPageDeleted(store: Store): boolean {
 }
 
 
+
+// User stats
+//----------------------------------
+
+export function userStats_totalNumPosts(stats: UserStats): number {
+  return stats.numChatMessagesPosted + stats.numChatTopicsCreated +
+      stats.numDiscourseRepliesPosted + stats.numDiscourseTopicsCreated;
+}
+
+
 //------------------------------------------------------------------------------
    }
 //------------------------------------------------------------------------------

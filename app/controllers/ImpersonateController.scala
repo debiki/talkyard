@@ -21,7 +21,7 @@ import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki.DebikiHttp._
 import debiki.Globals
-import debiki.Xsrf
+import ed.server.security.createSessionIdAndXsrfToken
 import io.efdi.server.http._
 import play.api._
 import play.api.libs.json.JsString
@@ -92,7 +92,7 @@ object ImpersonateController extends mvc.Controller {
     if (siteId != request.siteId)
       throwForbidden("EsE8YKW3", s"Wrong site id: ${request.siteId}, should go to site $siteId")
 
-    val (_, _, sidAndXsrfCookies) = Xsrf.newSidAndXsrf(siteId, userId)
+    val (_, _, sidAndXsrfCookies) = createSessionIdAndXsrfToken(siteId, userId)
     Redirect("/").withCookies(sidAndXsrfCookies: _*)
   }
 
@@ -125,7 +125,7 @@ object ImpersonateController extends mvc.Controller {
     dieIf(anyUserId.isDefined && viewAsOnly, "EdE6WKT0S")
 
     val sidAndXsrfCookies = anyUserId.toList flatMap { userId =>
-      Xsrf.newSidAndXsrf(request.siteId, userId)._3
+      createSessionIdAndXsrfToken(request.siteId, userId)._3
     }
 
     val logoutCookie =
@@ -168,7 +168,7 @@ object ImpersonateController extends mvc.Controller {
         }
         else {
           // Restore the old user id.
-          val (_, _, sidAndXsrfCookies) = Xsrf.newSidAndXsrf(request.siteId, oldUserId)
+          val (_, _, sidAndXsrfCookies) = createSessionIdAndXsrfToken(request.siteId, oldUserId)
           Ok.withCookies(sidAndXsrfCookies: _*)
             .discardingCookies(mvc.DiscardingCookie(ImpersonationCookieName))
         }
