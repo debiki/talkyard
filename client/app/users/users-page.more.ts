@@ -22,6 +22,7 @@
 /// <reference path="user-notifications.more.ts" />
 /// <reference path="user-preferences.more.ts" />
 /// <reference path="user-activity.more.ts" />
+/// <reference path="user-summary.more.ts" />
 
 //------------------------------------------------------------------------------
    namespace debiki2.users {
@@ -56,6 +57,7 @@ export function routes() {
           //Route({ path: 'likes-given', component: LikesGivenComponent }),
           //Route({ path: 'likes-received', component: LikesReceivedComponent })
           ),
+        Route({ path: 'summary', component: UserSummaryComponent }),
         Route({ path: 'notifications', component: UserNotificationsComponent }),
         Route({ path: 'preferences', component: debiki2.users.UserPreferencesComponent }),
         Route({ path: 'invites', component: debiki2.users.UserInvitesComponent }))));
@@ -174,6 +176,9 @@ var UserPageComponent = React.createClass(<any> {
     let activityNavItem =
       NavItem({ eventKey: 'activity', className: 'e_UP_ActivityB' }, "Activity");
 
+    let summaryNavItem =
+      NavItem({ eventKey: 'summary', className: 'e_UP_SummaryB' }, "Summary");
+
     let notificationsNavItem = !showPrivateStuff ? null :
       NavItem({ eventKey: 'notifications', className: 'e_UP_NotfsB' }, "Notifications");
 
@@ -200,6 +205,7 @@ var UserPageComponent = React.createClass(<any> {
         Nav({ bsStyle: 'pills', activeKey: activeRouteName,
             onSelect: this.transitionTo, className: 'dw-sub-nav' },
           activityNavItem,
+          summaryNavItem,
           notificationsNavItem,
           invitesNavItem,
           preferencesNavItem),
@@ -352,7 +358,8 @@ var AvatarAboutAndButtons = createComponent({
         PrimaryButton({ onClick: this.sendMessage, className: 's_UP_SendMsgB' },
           "Send Message");
 
-    return r.div({ className: 'dw-user-bar clearfix' },
+    // COULD prefix everything inside with s_UP_Ab(out) instead of just s_UP.
+    return r.div({ className: 's_UP_Ab dw-user-bar clearfix' },
       // This + display: table-row makes the avatar image take less space,
       // and the name + about text get more space, if the avatar is narrow.
       r.div({ className: 's_UP_AvtrAboutBtns' },
@@ -367,17 +374,17 @@ var AvatarAboutAndButtons = createComponent({
           r.h2({ className: 'esUP_FN' }, user.fullName, isGuestInfo),
           r.div({ className: 's_UP_About' }, user.about),
           suspendedInfo)),
-        r.div({ className: 's_UP_Stats' },
-          r.div({ className: 's_UP_Stats_Stat' },
+        r.div({ className: 's_UP_Ab_Stats' },
+          r.div({ className: 's_UP_Ab_Stats_Stat' },
             "Joined: " + moment(stats.firstSeenAt).fromNow()),
-          r.div({ className: 's_UP_Stats_Stat' },
+          r.div({ className: 's_UP_Ab_Stats_Stat' },
             "Posts made: " + userStats_totalNumPosts(stats)),
-          !stats.lastPostedAt ? null : r.div({ className: 's_UP_Stats_Stat' },
+          !stats.lastPostedAt ? null : r.div({ className: 's_UP_Ab_Stats_Stat' },
             "Last post: " + moment(stats.lastPostedAt).fromNow()),
-          r.div({ className: 's_UP_Stats_Stat' },
+          r.div({ className: 's_UP_Ab_Stats_Stat' },
             "Last seen: " + moment(stats.lastSeenAt).fromNow()),
-          r.div({ className: 's_UP_Stats_Stat' },
-            "Trust level: " + user.lockedTrustLevel || user.trustLevel)));
+          r.div({ className: 's_UP_Ab_Stats_Stat' },
+            "Trust level: " + trustLevel_toString(user.effectiveTrustLevel))));
   }
 });
 

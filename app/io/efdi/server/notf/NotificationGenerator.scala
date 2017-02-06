@@ -124,7 +124,7 @@ case class NotificationGenerator(transaction: SiteTransaction) {
       // Always generate notifications, so they can be shown in the user's inbox.
       // (But later on we might or might not send any email about the notifications,
       // depending on the user's preferences.)
-      val settings: RolePageSettings = transaction.loadRolePageSettingsOrDefault(
+      val settings: UsersPageSettings = transaction.loadUsersPageSettingsOrDefault(
         toUser.id, newPost.pageId)
       if (settings.notfLevel == NotfLevel.Muted) {
         return

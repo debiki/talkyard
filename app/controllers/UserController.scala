@@ -152,7 +152,8 @@ object UserController extends mvc.Controller {
       "about" -> JsStringOrNull(user.about),
       "avatarUrl" -> JsUploadUrlOrNull(user.smallAvatar),
       "mediumAvatarUrl" -> JsUploadUrlOrNull(user.mediumAvatar),
-      "suspendedTillEpoch" -> DateEpochOrNull(user.suspendedTill))
+      "suspendedTillEpoch" -> DateEpochOrNull(user.suspendedTill),
+      "effectiveTrustLevel" -> user.effectiveTrustLevel.toInt)
 
     if (callerIsStaff || callerIsUserHerself) {
       val anyApprover = user.approvedById.flatMap(usersById.get)
@@ -437,8 +438,8 @@ object UserController extends mvc.Controller {
     val newNotfLevelInt = (body \ "pageNotfLevel").as[Int]
     val newNotfLevel = NotfLevel.fromInt(newNotfLevelInt) getOrElse throwBadRequest(
       "EsE6JP2SK", s"Bad page notf level: $newNotfLevelInt")
-    request.dao.saveRolePageSettings(roleId = request.theRoleId, pageId = pageId,
-      RolePageSettings(newNotfLevel))
+    request.dao.saveUsersPageSettings(userId = request.theRoleId, pageId = pageId,
+      UsersPageSettings(newNotfLevel))
     Ok
   }
 

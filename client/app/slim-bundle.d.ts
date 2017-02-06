@@ -95,7 +95,6 @@ declare namespace debiki2 {
   var store_canDeletePage;
   var store_canUndeletePage;
   function store_canPinPage(store: Store);
-  var trustLevel_toString;
   var siteStatusToString;
   var cloneRect;
 
@@ -164,6 +163,8 @@ declare namespace debiki2 {
 
   // From oop-methods.ts:
   function userStats_totalNumPosts(stats: UserStats): number;
+  function userStats_totalNumPostsRead(stats: UserStats): number;
+  function trustLevel_toString(trustLevel: TrustLevel): string;
 
 }
 

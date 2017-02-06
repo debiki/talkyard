@@ -133,12 +133,45 @@ export function store_isPageDeleted(store: Store): boolean {
 
 
 
+// Trust and threat levels
+//----------------------------------
+
+export function trustLevel_toString(trustLevel: TrustLevel): string {
+  switch (trustLevel) {
+    case TrustLevel.New: return "New";
+    case TrustLevel.Basic: return "Basic";
+    case TrustLevel.Member: return "Member";
+    case TrustLevel.Helper: return "Helper";
+    case TrustLevel.Regular: return "Regular";
+    case TrustLevel.CoreMember: return "Core";
+    default:
+      // Guests have no trust level.
+      return "Guest";
+  }
+}
+
+export function threatLevel_toString(threatLevel: ThreatLevel): string {
+  switch (threatLevel) {
+    case ThreatLevel.HopefullySafe: return "Allow";
+    case ThreatLevel.MildThreat: return "Review after";
+    case ThreatLevel.ModerateThreat: return "Review before";
+    case ThreatLevel.SevereThreat: return "Block completely";
+    default: debiki2.die('EsE5PYK25')
+  }
+}
+
+
 // User stats
 //----------------------------------
 
 export function userStats_totalNumPosts(stats: UserStats): number {
   return stats.numChatMessagesPosted + stats.numChatTopicsCreated +
       stats.numDiscourseRepliesPosted + stats.numDiscourseTopicsCreated;
+}
+
+export function userStats_totalNumPostsRead(stats: UserStats): number {
+  return stats.numChatMessagesRead + stats.numChatTopicsEntered +
+    stats.numDiscourseRepliesRead + stats.numDiscourseTopicsEntered;
 }
 
 

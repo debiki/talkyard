@@ -538,9 +538,11 @@ interface MemberInclDetails {
   suspendedById?: number;
   suspendedByUsername?: string;
   suspendedReason?: string;
-  trustLevel: TrustLevel;
+  effectiveTrustLevel: TrustLevel;
+  // Only included if caller is staff:
+  trustLevel?: TrustLevel;
   lockedTrustLevel?: TrustLevel;
-  threatLevel: ThreatLevel;
+  threatLevel?: ThreatLevel;
   lockedThreatLevel?: ThreatLevel;
 }
 

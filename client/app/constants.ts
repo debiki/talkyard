@@ -185,8 +185,9 @@ enum TrustLevel {
   New = 1,
   Basic = 2,
   Member = 3,
-  Regular = 4,
-  CoreMember = 5,
+  Helper = 4,
+  Regular = 5,
+  CoreMember = 6,
 }
 
 

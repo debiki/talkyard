@@ -21,18 +21,27 @@ package com.debiki.core
 
 sealed abstract class TrustLevel(val IntVal: Int) { def toInt = IntVal }
 
-/** The same as Discourse's trust levels. */
+/** The same as Discourse's trust levels, plus one more level: the helpful member,
+  *
+  * Discourse's trust levels:
+  * https://meta.discourse.org/t/what-do-user-trust-levels-do/4924/6
+  *
+  * About the additional trust level:
+  * https://meta.discourse.org/t/a-new-trust-level-the-helpful-member/56894
+  */
 object TrustLevel {
   case object New extends TrustLevel(1)
   case object Basic extends TrustLevel(2)
-  case object Member extends TrustLevel(3) // rename to Full/Normal/Complete/Common-Member? or NowAndThenMember? OccasionalMember? Or just Occasional.
-  case object Regular extends TrustLevel(4)
-  case object CoreMember extends TrustLevel(5)
+  case object Member extends TrustLevel(3)
+  case object Helper extends TrustLevel(4)
+  case object Regular extends TrustLevel(5)
+  case object CoreMember extends TrustLevel(6)
 
   def fromInt(value: Int): Option[TrustLevel] = Some(value match {
     case TrustLevel.New.IntVal => TrustLevel.New
     case TrustLevel.Basic.IntVal => TrustLevel.Basic
     case TrustLevel.Member.IntVal => TrustLevel.Member
+    case TrustLevel.Helper.IntVal => TrustLevel.Helper
     case TrustLevel.Regular.IntVal => TrustLevel.Regular
     case TrustLevel.CoreMember.IntVal => TrustLevel.CoreMember
     case _ => return None

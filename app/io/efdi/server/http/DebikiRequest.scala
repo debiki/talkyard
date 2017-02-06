@@ -79,7 +79,7 @@ abstract class DebikiRequest[A] {
     case g: Guest => throwForbidden("EsE5YKJ37", "Not authenticated")
   }
 
-  def anyRoleId = user.flatMap(_.anyRoleId)
+  def anyRoleId = user.flatMap(_.anyMemberId)
   def theRoleId = anyRoleId getOrElse throwForbidden("DwE86Wb7", "Not authenticated")
 
   def isGuest = user.exists(_.isGuest)

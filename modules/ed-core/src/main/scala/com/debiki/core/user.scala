@@ -385,7 +385,7 @@ sealed trait User {
 
   def isMember = User.isMember(id)
   def isGuest = User.isGuestId(id)
-  def anyRoleId: Option[RoleId] = if (isRoleId(id)) Some(id) else None
+  def anyMemberId: Option[RoleId] = if (isRoleId(id)) Some(id) else None
 
   def isSuspendedAt(when: ju.Date) = User.isSuspendedAt(when, suspendedTill = suspendedTill)
   def effectiveTrustLevel: TrustLevel
@@ -418,18 +418,18 @@ case class Member(
   isModerator: Boolean = false,
   isSuperAdmin: Boolean = false) extends User {
 
-  override def anyName = fullName
-  override def anyUsername = username
+  override def anyName: Option[String] = fullName
+  override def anyUsername: Option[String] = username
   def username: Option[String] = Some(theUsername)
-  def usernameOrGuestName = theUsername
+  def usernameOrGuestName: String = theUsername
 
   def usernameParensFullName: String = fullName match {
     case Some(name) => s"$theUsername ($name)"
     case None => theUsername
   }
 
-  def effectiveTrustLevel = lockedTrustLevel getOrElse trustLevel
-  def effectiveThreatLevel = lockedThreatLevel getOrElse threatLevel
+  def effectiveTrustLevel: TrustLevel = lockedTrustLevel getOrElse trustLevel
+  def effectiveThreatLevel: ThreatLevel = lockedThreatLevel getOrElse threatLevel
 
   require(!fullName.map(_.trim).contains(""), "DwE4GUK28")
   require(User.isOkayUserId(id), "DwE02k12R5")
@@ -525,13 +525,17 @@ case class MemberInclDetails(
   require(tinyAvatar.isDefined == smallAvatar.isDefined &&
     smallAvatar.isDefined == mediumAvatar.isDefined, "EdE8UMW2")
 
-  def isStaff = isAdmin || isModerator
-  def isApprovedOrStaff = approvedAt == Some(true) || isStaff
+  def isStaff: Boolean = isAdmin || isModerator
+  def isApprovedOrStaff: Boolean = approvedAt.isDefined || isStaff
 
-  def isGuest = User.isGuestId(id)
+  def isGuest: Boolean = User.isGuestId(id)
   def anyRoleId: Option[RoleId] = if (isRoleId(id)) Some(id) else None
 
-  def isSuspendedAt(when: ju.Date) = User.isSuspendedAt(when, suspendedTill = suspendedTill)
+  def isSuspendedAt(when: ju.Date): Boolean =
+    User.isSuspendedAt(when, suspendedTill = suspendedTill)
+
+  def effectiveTrustLevel: TrustLevel = lockedTrustLevel getOrElse trustLevel
+  def effectiveThreatLevel: ThreatLevel = lockedThreatLevel getOrElse threatLevel
 
   def preferences = MemberPreferences(
     userId = id,
@@ -543,7 +547,7 @@ case class MemberInclDetails(
     url = website,
     emailForEveryNewPost = emailForEveryNewPost)
 
-  def copyWithNewPreferences(preferences: MemberPreferences) = {
+  def copyWithNewPreferences(preferences: MemberPreferences): MemberInclDetails = {
     val newEmailAddress =
       if (isEmailLocalPartHidden(preferences.emailAddress)) this.emailAddress
       else preferences.emailAddress
@@ -556,7 +560,7 @@ case class MemberInclDetails(
       emailForEveryNewPost = preferences.emailForEveryNewPost)
   }
 
-  def copyWithMaxThreatLevel(newThreatLevel: ThreatLevel) =
+  def copyWithMaxThreatLevel(newThreatLevel: ThreatLevel): MemberInclDetails =
     if (this.threatLevel.toInt >= newThreatLevel.toInt) this
     else copy(threatLevel = newThreatLevel)
 
@@ -652,11 +656,11 @@ object EmailNotfPrefs extends Enumeration {
 }
 
 
-case class RolePageSettings(
+case class UsersPageSettings(
   notfLevel: NotfLevel)
 
-object RolePageSettings {
-  val Default = RolePageSettings(NotfLevel.Normal)
+object UsersPageSettings {
+  val Default = UsersPageSettings(NotfLevel.Normal)
 }
 
 
@@ -965,6 +969,7 @@ case class UserStats(
         whenA orElse whenB
     }
 
+    // Dupl code, also in SQL [7FKTU02], perhaps add param `addToOldstat: Boolean` to SQL fn?
     copy(
       lastSeenAt = latestOf(lastSeenAt, moreStats.lastSeenAt),
       lastPostedAt = anyLatestOf(lastPostedAt, moreStats.lastPostedAt),
