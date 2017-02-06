@@ -63,7 +63,7 @@ class RateLimiterSpec extends FreeSpec with MustMatchers with MockitoSugar
 
   def mockUser(roleId: RoleId): User = {
     val userMock = mock[User]
-    when(userMock.anyRoleId).thenReturn(Some(roleId))
+    when(userMock.anyMemberId).thenReturn(Some(roleId))
     userMock
   }
 

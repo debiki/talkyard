@@ -133,7 +133,7 @@ trait SiteTransaction {
 
   // Rename to insert/loadPageMemberIds? [rename]
   def insertMessageMember(pageId: PageId, userId: UserId, addedById: UserId): Boolean
-  def removePageMember(pageId: PageId, userId: UserId): Boolean
+  def removePageMember(pageId: PageId, userId: UserId, removedById: UserId): Boolean
   def loadMessageMembers(pageId: PageId): Set[UserId]
   // Returns recently active pages first.
   def loadPageIdsUserIsMemberOf(userId: UserId, onlyPageRoles: Set[PageRole]): immutable.Seq[PageId]
@@ -348,13 +348,13 @@ trait SiteTransaction {
     */
   def loadUserIdsWatchingPage(pageId: PageId): Seq[UserId]
 
-  def loadRolePageSettings(roleId: RoleId, pageId: PageId): Option[RolePageSettings]
-  def loadRolePageSettingsOrDefault(roleId: RoleId, pageId: PageId) =
-        loadRolePageSettings(roleId, pageId) getOrElse RolePageSettings.Default
+  def loadUsersPageSettings(userId: UserId, pageId: PageId): Option[UsersPageSettings]
+  def loadUsersPageSettingsOrDefault(userId: UserId, pageId: PageId): UsersPageSettings =
+    loadUsersPageSettings(userId, pageId) getOrElse UsersPageSettings.Default
+
+  def saveUsersPageSettings(userId: UserId, pageId: PageId, settings: UsersPageSettings)
 
   def listUsernames(pageId: PageId, prefix: String): Seq[NameAndUsername]
-
-  def saveRolePageSettings(roleId: RoleId, pageId: PageId, settings: RolePageSettings)
 
   def saveUnsentEmail(email: Email): Unit
   def saveUnsentEmailConnectToNotfs(email: Email, notfs: Seq[Notification])

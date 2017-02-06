@@ -65,8 +65,9 @@ Nrw             = narrow
 
 esUD            = About user dialog
 
-esUP            = A user's public profile page
-esUP_Un         = Username
+s_UP            = A user's public profile page
+s_UP_Ab         = The about part (the top of the profile page)
+esUP_Un         = Username  COULD rename t s_UP_Ab_UN
 esUP_FN         = Full name
 esUP_Prefs      = ... the preferences section
 UP_Notfs_None   = Notifications, none

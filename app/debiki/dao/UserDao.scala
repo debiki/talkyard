@@ -396,7 +396,10 @@ trait UserDao {
   def loginAsGuest(loginAttempt: GuestLoginAttempt): Guest = {
     val user = readWriteTransaction { transaction =>
       val guest = transaction.loginAsGuest(loginAttempt).guest
-      addUserStats(UserStats(guest.id, lastSeenAt = transaction.now))(transaction)
+      // We don't know if this guest user is being created now, or if it already exists
+      // — so upsert (rather than insert? or update?) stats about this guest user.
+      transaction.upsertUserStats(UserStats(
+        guest.id, firstSeenAt = transaction.now, lastSeenAt = transaction.now))
       guest
     }
     memCache.put(
@@ -659,17 +662,17 @@ trait UserDao {
     readOnlyTransaction(_.loadUserIdsWatchingPage(pageId))
 
 
-  def loadRolePageSettings(roleId: RoleId, pageId: PageId): RolePageSettings =
-    readOnlyTransaction(_.loadRolePageSettings(roleId = roleId, pageId = pageId)) getOrElse
-      RolePageSettings.Default
+  def loadUsersPageSettings(userId: RoleId, pageId: PageId): UsersPageSettings =
+    readOnlyTransaction(_.loadUsersPageSettings(userId, pageId = pageId)) getOrElse
+      UsersPageSettings.Default
 
 
-  def saveRolePageSettings(roleId: RoleId, pageId: PageId, settings: RolePageSettings) = {
+  def saveUsersPageSettings(userId: RoleId, pageId: PageId, settings: UsersPageSettings) = {
     throwForbiddenIf(settings.notfLevel == NotfLevel.WatchingFirst,
       "EsE6SRK02", s"${NotfLevel.WatchingFirst} not supported, for pages")
     throwForbiddenIf(settings.notfLevel == NotfLevel.Tracking,
       "EsE7DKS85", s"${NotfLevel.Tracking} not yet implemented")
-    readWriteTransaction(_.saveRolePageSettings(roleId = roleId, pageId = pageId, settings))
+    readWriteTransaction(_.saveUsersPageSettings(userId = userId, pageId = pageId, settings))
   }
 
 

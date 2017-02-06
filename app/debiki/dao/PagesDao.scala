@@ -579,7 +579,7 @@ trait PagesDao {
       }
       else {
         userIds foreach { id =>
-          transaction.removePageMember(pageId, userId = id)
+          transaction.removePageMember(pageId, userId = id, removedById = byWho.id)
         }
       }
 
