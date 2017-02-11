@@ -889,7 +889,7 @@ case class UserStats(
   lastPostedAt: Option[When] = None,
   lastEmailedAt: Option[When] = None,
   emailBounceSum: Float = 0f,
-  firstSeenAt: When = When.fromMillis(0),
+  firstSeenAtOr0: When = When.fromMillis(0),
   firstNewTopicAt: Option[When] = None,
   firstDiscourseReplyAt: Option[When] = None,
   firstChatMessageAt: Option[When] = None,
@@ -911,7 +911,7 @@ case class UserStats(
   numLikesReceived: Int = 0,
   numSolutionsProvided: Int = 0) {
 
-  require(lastSeenAt.millis >= firstSeenAt.millis, "EdE6BMLA09")
+  require(lastSeenAt.millis >= firstSeenAtOr0.millis, "EdE6BMLA09")
   lastPostedAt foreach { when => require(lastSeenAt.millis >= when.millis, "EdE6BMLA01") }
   // Skip `lastEmailedAt` — it can be later than lastSeenAt.
   firstNewTopicAt foreach { when => require(lastSeenAt.millis >= when.millis, "EdE6BMLA11") }
@@ -919,11 +919,11 @@ case class UserStats(
   firstChatMessageAt foreach { when => require(lastSeenAt.millis >= when.millis, "EdE6BMLA15") }
   require(lastSeenAt.millis >= topicsNewSince.millis, "EdE6BMLA17")
 
-  lastPostedAt foreach { when => require(firstSeenAt.millis <= when.millis, "EdE6BMLA20") }
+  lastPostedAt foreach { when => require(firstSeenAtOr0.millis <= when.millis, "EdE6BMLA20") }
   // Skip `lastEmailedAt` — it can be before firstSeenAt (if invite email sent before user created).
-  firstNewTopicAt foreach { when => require(firstSeenAt.millis <= when.millis, "EdE6BMLA24") }
-  firstDiscourseReplyAt foreach { when => require(firstSeenAt.millis <= when.millis, "EdE6LA26") }
-  firstChatMessageAt foreach { when => require(firstSeenAt.millis <= when.millis, "EdE6BMLA28") }
+  firstNewTopicAt foreach { when => require(firstSeenAtOr0.millis <= when.millis, "EdE6BMLA24") }
+  firstDiscourseReplyAt foreach { when => require(firstSeenAtOr0.millis <= when.millis, "EdE6LA26") }
+  firstChatMessageAt foreach { when => require(firstSeenAtOr0.millis <= when.millis, "EdE6BMLA28") }
 
   require(
     emailBounceSum >= 0 &&
@@ -943,31 +943,21 @@ case class UserStats(
     numLikesGiven >= 0, "EdE4S0A7M")
 
 
-  /** Ignores `UserStats.firstSeenAt` if == 0 millis == year 1970.
+  def firstSeenAtNot0: When =
+    if (firstSeenAtOr0.millis > 0) firstSeenAtOr0
+    else When.fromMillis(minOfMany(
+        lastSeenAt.millis,
+        firstNewTopicAt.map(_.millis).getOrElse(Long.MaxValue),
+        firstDiscourseReplyAt.map(_.millis).getOrElse(Long.MaxValue),
+        firstChatMessageAt.map(_.millis).getOrElse(Long.MaxValue)))
+
+
+  /** Ignores dates with 0 millis (= year 1970), considers that = no date.
     */
   def addMoreStats(moreStats: UserStats): UserStats = {
     require(userId == moreStats.userId, "EdE4WKB1W9")
 
-    def latestOf(whenA: When, whenB: When): When =
-      if (whenA.millis > whenB.millis) whenA else whenB
-
-    def anyLatestOf(whenA: Option[When], whenB: Option[When]): Option[When] = {
-      if (whenA.isDefined && whenB.isDefined) {
-        if (whenA.get.millis > whenB.get.millis) whenA
-        else whenB
-      }
-      else whenA orElse whenB
-    }
-
-    def earliestOf(whenA: When, whenB: When): When =
-      if (whenA.millis < whenB.millis && whenA.millis != 0) whenA else whenB
-
-    def anyEarliestOf(whenA: Option[When], whenB: Option[When]): Option[When] = {
-      if (whenA.isDefined && whenB.isDefined)
-        Some(earliestOf(whenA.get, whenB.get))
-      else
-        whenA orElse whenB
-    }
+    import When.{latestOf, anyLatestOf, earliestNot0, anyEarliestNot0}
 
     // Dupl code, also in SQL [7FKTU02], perhaps add param `addToOldstat: Boolean` to SQL fn?
     copy(
@@ -976,10 +966,10 @@ case class UserStats(
       lastEmailedAt = anyLatestOf(lastEmailedAt, moreStats.lastEmailedAt),
       // Hmm, how should the bounce sum be updated? For now:
       emailBounceSum = (moreStats.emailBounceSum >= 0) ? moreStats.emailBounceSum | emailBounceSum,
-      firstSeenAt = earliestOf(firstSeenAt, moreStats.firstSeenAt),
-      firstNewTopicAt = anyEarliestOf(firstNewTopicAt, moreStats.firstNewTopicAt),
-      firstDiscourseReplyAt = anyEarliestOf(firstDiscourseReplyAt, moreStats.firstDiscourseReplyAt),
-      firstChatMessageAt = anyEarliestOf(firstChatMessageAt, moreStats.firstChatMessageAt),
+      firstSeenAtOr0 = earliestNot0(firstSeenAtOr0, moreStats.firstSeenAtOr0),
+      firstNewTopicAt = anyEarliestNot0(firstNewTopicAt, moreStats.firstNewTopicAt),
+      firstDiscourseReplyAt = anyEarliestNot0(firstDiscourseReplyAt, moreStats.firstDiscourseReplyAt),
+      firstChatMessageAt = anyEarliestNot0(firstChatMessageAt, moreStats.firstChatMessageAt),
       topicsNewSince = latestOf(moreStats.topicsNewSince, topicsNewSince),
       notfsNewSinceId = (moreStats.notfsNewSinceId > notfsNewSinceId) ?
         moreStats.notfsNewSinceId | notfsNewSinceId,
@@ -1008,7 +998,7 @@ case object UserStats {
 
   def forNewUser(userId: UserId, firstSeenAt: When, emailedAt: Option[When]) = UserStats(
     userId = userId,
-    firstSeenAt = firstSeenAt,
+    firstSeenAtOr0 = firstSeenAt,
     lastSeenAt = firstSeenAt,
     topicsNewSince = firstSeenAt,
     lastEmailedAt = emailedAt)

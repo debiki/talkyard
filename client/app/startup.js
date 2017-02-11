@@ -251,8 +251,7 @@ function renderDiscussionPage() {
     // Plus add collapse-thread buttons, for tall threads.
     debiki2.page.Hacks.processPosts();
     debiki.scriptLoad.resolve();
-    // Disable for now, because it's a bit slow, and I don't save this server side anyway now.
-    //debiki2.sidebar.UnreadCommentsTracker.start();
+    debiki2.page.PostsReadTracker.start();
   });
 
   function runNextStep() {

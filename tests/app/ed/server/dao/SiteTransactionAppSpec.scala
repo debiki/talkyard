@@ -18,12 +18,17 @@
 package ed.server.dao
 
 import com.debiki.core._
+import com.debiki.core.Prelude._
 import debiki._
 import debiki.dao.{DaoAppSuite, SiteDao}
 
 
 class SiteTransactionAppSpec extends DaoAppSuite {
 
+  // Add this to some dates, because sometimes the SQL code does greatest(...) and won't
+  // update the data in the database, unless it's greater than the current tim.
+  // This date-time is Mon Mar 26 2068 17:53:21. (Will I be alive at that time :- ))
+  val FutureMs = 3100010001000L
 
   "SiteTransaction can handle member stats" - {
     lazy val dao: SiteDao = Globals.siteDao(Site.FirstSiteId)
@@ -33,55 +38,101 @@ class SiteTransactionAppSpec extends DaoAppSuite {
 
     var admin: User = null
     var other: User = null
+    var pageId: PageId = null
+    var otherPageId: PageId = null
+    var thirdPageId: PageId = null
 
     "prepare: create users" in {
       admin = createPasswordOwner(s"txt_adm", dao)
       other = createPasswordUser(s"txt_otr", dao)
     }
 
+    "prepare: create pages" in {
+      // Num topics created by admin is tested later, (5FKW02Y).
+      pageId = createPage(PageRole.Discussion, TextAndHtml.forTitle("Page Title XY 12 AB"),
+        TextAndHtml.forBodyOrComment("Page body."), authorId = admin.id, browserIdData,
+        dao, anyCategoryId = None)
+      otherPageId = createPage(PageRole.Discussion, TextAndHtml.forTitle("Other Page Title"),
+        TextAndHtml.forBodyOrComment("Other page body."), authorId = admin.id, browserIdData,
+        dao, anyCategoryId = None)
+      thirdPageId = createPage(PageRole.Discussion, TextAndHtml.forTitle("Third Page Title"),
+        TextAndHtml.forBodyOrComment("Third page body."), authorId = admin.id, browserIdData,
+        dao, anyCategoryId = None)
+    }
+
+
     "load and save UserStats" in {
       dao.readWriteTransaction { transaction =>
-        transaction.upsertUserStats(stats(admin.id, 100))
-        transaction.loadUserStats(admin.id).get mustBe stats(admin.id, 100)
-        transaction.loadUserStats(other.id) mustBe None
+        val autoCreatedStats = transaction.loadUserStats(admin.id) getOrDie "EdE5FKW026"
+        autoCreatedStats.lastSeenAt.millis must be > 0L
+        autoCreatedStats.lastPostedAt mustBe defined  // admin created a page above
+        autoCreatedStats.lastEmailedAt mustBe None
+        autoCreatedStats.emailBounceSum mustBe 0f
+        autoCreatedStats.firstSeenAtOr0.millis must be > 0L
+        autoCreatedStats.firstNewTopicAt mustBe defined
+        autoCreatedStats.firstDiscourseReplyAt mustBe None
+        autoCreatedStats.firstChatMessageAt mustBe None
+        autoCreatedStats.topicsNewSince.millis must be > 0L
+        autoCreatedStats.notfsNewSinceId mustBe 0
+        autoCreatedStats.numDaysVisited mustBe 0
+        autoCreatedStats.numMinutesReading mustBe 0
+        autoCreatedStats.numDaysVisited mustBe 0
+        autoCreatedStats.numMinutesReading mustBe 0
+        autoCreatedStats.numDiscourseRepliesRead mustBe 0
+        autoCreatedStats.numDiscourseRepliesPosted mustBe 0
+        autoCreatedStats.numDiscourseTopicsEntered mustBe 0
+        autoCreatedStats.numDiscourseTopicsRepliedIn mustBe 0
+        autoCreatedStats.numDiscourseTopicsCreated mustBe 3   // (5FKW02Y)
+        autoCreatedStats.numChatMessagesRead mustBe 0
+        autoCreatedStats.numChatMessagesPosted mustBe 0
+        autoCreatedStats.numChatTopicsEntered mustBe 0
+        autoCreatedStats.numChatTopicsRepliedIn mustBe 0
+        autoCreatedStats.numChatTopicsCreated mustBe 0
+        autoCreatedStats.numLikesGiven mustBe 0
+        autoCreatedStats.numLikesReceived mustBe 0
+        autoCreatedStats.numSolutionsProvided mustBe 0
 
-        transaction.upsertUserStats(stats(other.id, 200))
-        transaction.loadUserStats(admin.id).get mustBe stats(admin.id, 100)
-        transaction.loadUserStats(other.id).get mustBe stats(other.id, 200)
+        transaction.upsertUserStats(stats(admin.id, 100, 100))
+        transaction.loadUserStats(admin.id).get mustBe stats(admin.id, 100, 100)
+
+        transaction.upsertUserStats(stats(other.id, 200, 200))
+        transaction.loadUserStats(admin.id).get mustBe stats(admin.id, 100, 100)
+        transaction.loadUserStats(other.id).get mustBe stats(other.id, 200, 200)
 
         // Overwrite, shouldn't overwrite the admin user.
-        transaction.upsertUserStats(stats(other.id, 220))
-        transaction.loadUserStats(admin.id).get mustBe stats(admin.id, 100)
-        transaction.loadUserStats(other.id).get mustBe stats(other.id, 220)
+        transaction.upsertUserStats(stats(other.id, 180, 220))
+        transaction.loadUserStats(admin.id).get mustBe stats(admin.id, 100, 100)
+        transaction.loadUserStats(other.id).get mustBe stats(other.id, 180, 220)
       }
 
-      def stats(userId: UserId, number: Int) = UserStats(
+      def stats(userId: UserId, firstNumber: Int, lastNumber: Int) = UserStats(
         userId = userId,
-        lastSeenAt = Some(When.fromMillis(number + 1)),
-        lastPostedAt = Some(When.fromMillis(number + 2)),
-        lastEmailedAt = Some(When.fromMillis(number + 3)),
-        emailBounceSum = number + 4,
-        firstSeenAt = Some(When.fromMillis(number + 5)),
-        firstNewTopicAt = Some(When.fromMillis(number + 6)),
-        firstDiscourseReplyAt = Some(When.fromMillis(number + 7)),
-        firstChatMessageAt = Some(When.fromMillis(number + 8)),
-        topicsNewSince = When.fromMillis(number + 9),
-        notfsNewSinceId = 20,
-        numDaysVisited = 21,
-        numMinutesReading = 22,
-        numDiscourseRepliesRead = 23,
-        numDiscourseRepliesPosted = 24,
-        numDiscourseTopicsEntered = 25,
-        numDiscourseTopicsRepliedIn = 26,
-        numDiscourseTopicsCreated = 27,
-        numChatMessagesRead = 30,
-        numChatMessagesPosted = 31,
-        numChatTopicsEntered = 32,
-        numChatTopicsRepliedIn = 33,
-        numChatTopicsCreated = 34,
-        numLikesGiven = 40,
-        numLikesReceived = 41)
+        lastSeenAt = When.fromMillis(FutureMs + lastNumber + 18),
+        lastPostedAt = Some(When.fromMillis(FutureMs + lastNumber + 17)),
+        lastEmailedAt = Some(When.fromMillis(FutureMs + lastNumber + 19)),
+        emailBounceSum = lastNumber + 10,
+        firstSeenAtOr0 = When.fromMillis(firstNumber + 1),
+        firstNewTopicAt = Some(When.fromMillis(firstNumber + 2)),
+        firstDiscourseReplyAt = Some(When.fromMillis(firstNumber + 3)),
+        firstChatMessageAt = Some(When.fromMillis(firstNumber + 4)),
+        topicsNewSince = When.fromMillis(FutureMs + lastNumber + 11),
+        notfsNewSinceId = lastNumber + 20,
+        numDaysVisited = firstNumber + 21,
+        numMinutesReading = firstNumber + 22,
+        numDiscourseRepliesRead = firstNumber + 23,
+        numDiscourseRepliesPosted = firstNumber + 24,
+        numDiscourseTopicsEntered = firstNumber + 25,
+        numDiscourseTopicsRepliedIn = firstNumber + 26,
+        numDiscourseTopicsCreated = firstNumber + 27,
+        numChatMessagesRead = firstNumber + 30,
+        numChatMessagesPosted = firstNumber + 31,
+        numChatTopicsEntered = firstNumber + 32,
+        numChatTopicsRepliedIn = firstNumber + 33,
+        numChatTopicsCreated = firstNumber + 34,
+        numLikesGiven = firstNumber + 40,
+        numLikesReceived = firstNumber + 41)
     }
+
 
     "load and save MemberVisitStats" in {
       dao.readWriteTransaction { transaction =>
@@ -125,6 +176,76 @@ class SiteTransactionAppSpec extends DaoAppSuite {
         numDiscourseTopicsEntered = number + 5,
         numChatMessagesRead = number + 8,
         numChatTopicsEntered = number + 10)
+    }
+
+
+    "load and save ReadingProgress" - {
+
+      var progressLowNrs: ReadingProgress = null
+      var progressHighNrs: ReadingProgress = null
+
+      "empty ReadingProgress" in {
+        dao.readWriteTransaction { transaction =>
+          val progress = ReadingProgress(
+            firstVisitedAt = When.fromMinutes(1000),
+            lastVisitedAt = When.fromMinutes(1010),
+            lastReadAt = None,
+            lastPostNrsReadRecentFirst = Vector.empty,
+            lowPostNrsRead = Set.empty,
+            secondsReading = 0)
+          transaction.upsertReadProgress(admin.id, pageId, progress)
+
+          var loadedProgress = transaction.loadReadProgress(admin.id, "wrong_page_id")
+          loadedProgress mustBe None
+          loadedProgress = transaction.loadReadProgress(admin.id, pageId)
+          loadedProgress mustBe Some(progress)
+        }
+      }
+
+      "ReadingProgress with low post nrs only" in {
+        dao.readWriteTransaction { transaction =>
+          progressLowNrs = ReadingProgress(
+            firstVisitedAt = When.fromMinutes(2000),
+            lastVisitedAt = When.fromMinutes(2010),
+            lastReadAt = Some(When.fromMinutes(2002)),
+            lastPostNrsReadRecentFirst = Vector(2),
+            lowPostNrsRead = Set(1, 2, 3, 8),
+            secondsReading = 203)
+          transaction.upsertReadProgress(admin.id, otherPageId, progressLowNrs)
+          var loadedProgress = transaction.loadReadProgress(admin.id, otherPageId)
+          loadedProgress mustBe Some(progressLowNrs)
+        }
+      }
+
+      "ReadingProgress with high post nrs" in {
+        dao.readWriteTransaction { transaction =>
+          progressHighNrs = ReadingProgress(
+            firstVisitedAt = When.fromMinutes(3000),
+            lastVisitedAt = When.fromMinutes(3010),
+            lastReadAt = Some(When.fromMinutes(3002)),
+            lastPostNrsReadRecentFirst = Vector(3),
+            lowPostNrsRead = Set(1, 10, 100, 200, 300, 400, 500, 512),
+            secondsReading = 303)
+          transaction.upsertReadProgress(admin.id, thirdPageId, progressHighNrs)
+          val loadedProgress = transaction.loadReadProgress(admin.id, thirdPageId)
+          loadedProgress mustBe Some(progressHighNrs)
+        }
+      }
+
+      "overwrite ReadingProgress" in {
+        dao.readWriteTransaction { transaction =>
+          val progress = ReadingProgress(
+            firstVisitedAt = When.fromMinutes(4000),
+            lastVisitedAt = When.fromMinutes(4010),
+            lastReadAt = Some(When.fromMinutes(4010)),
+            lastPostNrsReadRecentFirst = Vector(4),
+            lowPostNrsRead = Set(1, 2, 3, 4, 5, 6, 7, 8),
+            secondsReading = 403)
+          transaction.upsertReadProgress(admin.id, thirdPageId, progress)
+          val loadedProgress = transaction.loadReadProgress(admin.id, thirdPageId)
+          loadedProgress mustBe Some(progress)
+        }
+      }
     }
   }
 

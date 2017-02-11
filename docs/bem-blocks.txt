@@ -82,6 +82,8 @@ esP_Z           = collapse thread button (Z = fold = collapse. Placed inside the
 esP_H           = post header (author, date, any chat message actions)
 esP_H_At        = at which time the post was posted
 esP_H_By        = author
+s_P_H_Bm        = bookmark
+s_P_H_Unr       = unread mark
 esP_B           = post body (the actual text)
 s_P-Hdn         = post, hidden
 

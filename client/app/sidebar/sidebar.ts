@@ -259,7 +259,7 @@ export var Sidebar = createComponent({  // RENAME to ContextBar
       // Do include comments that where auto-read right now — it'd be annoying
       // if they suddenly vanished from the sidebar just because the computer
       // suddenly automatically thought you've read them.
-      var autoReadLongAgo = store.user.postIdsAutoReadLongAgo.indexOf(postId) !== -1;
+      var autoReadLongAgo = store.user.postNrsAutoReadLongAgo.indexOf(postId) !== -1;
       // No do include comments auto-read just now. Otherwise it's impossible to
       // figure out how the Unread tab works and the 'Let computer determine' checkbox.
       autoReadLongAgo = autoReadLongAgo || store.user.postIdsAutoReadNow.indexOf(postId) !== -1;

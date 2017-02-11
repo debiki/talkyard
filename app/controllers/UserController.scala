@@ -19,16 +19,18 @@ package controllers
 
 import com.debiki.core._
 import com.debiki.core.Prelude._
-import com.debiki.core.User.{isGuestId, MinUsernameLength}
+import com.debiki.core.User.{MinUsernameLength, isGuestId}
 import debiki._
 import debiki.ReactJson._
 import io.efdi.server.http._
+import math.max
 import java.{util => ju}
 import play.api.mvc
 import play.api.libs.json._
-import play.api.mvc.{Action => _, _}
+import play.api.mvc.Action
 import scala.util.Try
 import DebikiHttp._
+import debiki.RateLimits.TrackReadingActivity
 
 
 /** Handles requests related to users.
@@ -208,7 +210,7 @@ object UserController extends mvc.Controller {
       "userId" -> stats.userId,
       "lastSeenAt" -> JsWhenMs(stats.lastSeenAt),
       "lastPostedAt" -> JsWhenMsOrNull(stats.lastPostedAt),
-      "firstSeenAt" -> JsWhenMs(stats.firstSeenAt),
+      "firstSeenAt" -> JsWhenMs(stats.firstSeenAtOr0),
       "firstNewTopicAt" -> JsWhenMsOrNull(stats.firstNewTopicAt),
       "firstDiscourseReplyAt" -> JsWhenMsOrNull(stats.firstDiscourseReplyAt),
       "firstChatMessageAt" -> JsWhenMsOrNull(stats.firstChatMessageAt),
@@ -393,7 +395,7 @@ object UserController extends mvc.Controller {
   }
 
 
-  def loadMyPageData(pageId: PageId) = GetAction { request =>
+  def loadMyPageData(pageId: PageId): Action[Unit] = GetAction { request =>
     SECURITY ; COULD // avoid revealing that a page exists: forPageThatExists below might throw
     // a unique NotFound for example.  [7C2KF24]
     val myPageData = PageRequest.forPageThatExists(request, pageId) match {
@@ -415,7 +417,82 @@ object UserController extends mvc.Controller {
   }
 
 
-  def loadNotifications(userId: String, upToWhenMs: String) =
+  def trackReadingProgress: Action[JsValue] = PostJsonAction(RateLimits.TrackReadingActivity,
+        maxBytes = 1000) { request =>
+    trackReadingProgressImpl(request, request.body)
+  }
+
+
+  /** In the browser, navigator.sendBeacon insists on sending plain text. So need this text handler.
+    */
+  def trackReadingProgressText: Action[String] = PostTextAction(RateLimits.TrackReadingActivity,
+        maxBytes = 1000) { request =>
+    val bodyXsrfTokenRemoved = request.body.dropWhile(_ != '\n') // [7GKW20TD]
+    val json = Json.parse(bodyXsrfTokenRemoved)
+    trackReadingProgressImpl(request, json)
+  }
+
+
+  private def trackReadingProgressImpl(request: DebikiRequest[_], body: JsValue): mvc.Result = {
+    SECURITY // how prevent an evil js client from saying "I've read everything everywhere",
+    // by calling this endpoint many times, and listing all pages + all post nrs.
+    // Could be used to speed up the trust level transition from New to Basic to Member.
+
+    import ed.server.{WhenFormat, OptWhenFormat}
+    val callerId = request.theUserId
+    val pageId = (body \ "pageId").as[PageId]
+    var visitStartedAt = (body \ "visitStartedAt").as[When]
+    var lastViewedPostNr = (body \ "lastViewedPostNr").as[PostNr]
+    var lastReadAt = (body \ "lastReadAt").as[Option[When]]
+    var secondsReading = (body \ "secondsReading").as[Int]
+    val postNrsRead = (body \ "postNrsRead").as[Vector[PostNr]]
+
+    val now = Globals.now
+    val lowPostNrsRead: Set[PostNr] = postNrsRead.filter(_ < ReadingProgress.MaxLowPostNr).toSet
+    val lastPostNrsReadRecentFirst =
+      postNrsRead.reverse.take(ReadingProgress.MaxLastPostsToRemember).distinct
+
+    if (visitStartedAt.isAfter(now)) {
+      // Bad browser date-time setting?
+      visitStartedAt = now
+      if (lastReadAt.isDefined) {
+        lastReadAt = Some(now)
+      }
+    }
+
+    if (secondsReading > TrackReadingActivity.IntervalSeconds) {
+      secondsReading = TrackReadingActivity.IntervalSeconds
+      SECURITY; COULD // prevent the same user from calling much more often than the interval.
+      // (But page reloads might --> a little bit more often.)
+    }
+
+    lastReadAt foreach { at =>
+      if (at.isAfter(now)) {
+        // Bad browser date-time setting?
+        lastReadAt = Some(now)
+      }
+    }
+
+    val readingProgress =
+      try ReadingProgress(
+        firstVisitedAt = visitStartedAt,
+        lastVisitedAt = now,
+        lastViewedPostNr = lastViewedPostNr,
+        lastReadAt = lastReadAt,
+        lastPostNrsReadRecentFirst = lastPostNrsReadRecentFirst,
+        lowPostNrsRead = lowPostNrsRead,
+        secondsReading = secondsReading)
+      catch {
+        case ex: Exception =>
+          throwBadRequest("EdE5FKW02", ex.toString)
+      }
+
+    request.dao.trackReadingProgress(callerId, pageId, readingProgress)
+    Ok
+  }
+
+
+  def loadNotifications(userId: String, upToWhenMs: String): Action[Unit] =
         GetActionRateLimited(RateLimits.ExpensiveGetRequest) { request =>
     val userIdInt = userId.toIntOrThrow("EsE5GYK2", "Bad userId")
     val upToWhenMsLong = upToWhenMs.toLongOrThrow("EsE2FUY7", "Bad upToWhenMs")

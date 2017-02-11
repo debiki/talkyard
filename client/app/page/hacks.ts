@@ -42,7 +42,7 @@ function hideShowCollapseButtons() {
 
       var threadElem = $thread[0];
       var rect = threadElem.getBoundingClientRect();  // ooops, FORCED_REFLOW caused by this line
-      if (rect.height > 110) {
+      if (rect.height > 150) {
          $this.addClass('esP_Z-Show');                // ... and this
       }
       else {

@@ -19,7 +19,7 @@ package ed
 
 import com.debiki.core._
 import debiki.DebikiHttp.throwBadArgument
-import java.{util => ju}
+import play.api.libs.json._
 
 
 package object server {
@@ -44,6 +44,25 @@ package object server {
   case class RenderedPage(
     html: String,
     unapprovedPostAuthorIds: Set[UserId])
+
+
+  implicit object WhenFormat extends Format[When] {
+    def reads(json: JsValue): JsResult[When] = JsSuccess(When.fromMillis(json.as[Long]))
+    def writes(when: When): JsValue = JsNumber(when.millis)
+  }
+
+
+  implicit object OptWhenFormat extends Format[Option[When]] {
+    def reads(json: JsValue): JsResult[Option[When]] =
+      if (json == JsNull) JsSuccess(None)
+      else JsSuccess(Some(When.fromMillis(json.as[Long])))
+
+    def writes(when: Option[When]): JsValue = when match {
+      case None => JsNull
+      case Some(w) => JsNumber(w.millis)
+    }
+  }
+
 
 }
 

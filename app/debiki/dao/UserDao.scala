@@ -400,7 +400,7 @@ trait UserDao {
       // — so upsert (rather than insert? or update?) stats about this guest user.
       // (Currently this upsert keeps the earliest/oldest first/latest dates, see [7FKTU02].)
       transaction.upsertUserStats(UserStats(
-        guest.id, firstSeenAt = transaction.now, lastSeenAt = transaction.now))
+        guest.id, firstSeenAtOr0 = transaction.now, lastSeenAt = transaction.now))
       guest
     }
     memCache.put(
@@ -538,6 +538,20 @@ trait UserDao {
     // — currently only when creating new website.
     readOnlyTransaction { transaction =>
       transaction.loadIdtyDetailsAndUser(userId)
+    }
+  }
+
+
+  def trackReadingProgress(userId: UserId, pageId: PageId, readingProgress: ReadingProgress) {
+    readWriteTransaction { transaction =>
+      val oldProgress = transaction.loadReadProgress(userId = userId, pageId = pageId)
+      val resultingProgress = oldProgress match {
+        case Some(old) => old.addMore(readingProgress)
+        case None => readingProgress
+      }
+      transaction.upsertReadProgress(userId = userId, pageId = pageId, resultingProgress)
+
+      SHOULD // also mark any notfs for the newly read posts, as read.
     }
   }
 

@@ -23,7 +23,6 @@ import controllers.{routes, LoginController}
 import debiki._
 import debiki.DebikiHttp._
 import debiki.RateLimits.NoRateLimits
-import java.{util => ju}
 import debiki.dao.SiteDao
 import ed.server.security.{SidStatus, XsrfOk}
 import play.api._
@@ -46,18 +45,18 @@ package object http {
 
 
   implicit class RichString2(value: String) {
-    def toIntOrThrow(errorCode: String, errorMessage: String) =
+    def toIntOrThrow(errorCode: String, errorMessage: String): Int =
       value.toIntOption getOrElse throwBadRequest(errorCode, errorMessage)
 
-    def toLongOrThrow(errorCode: String, errorMessage: String) =
+    def toLongOrThrow(errorCode: String, errorMessage: String): Long =
       Try(value.toLong).toOption getOrElse throwBadRequest(errorCode, errorMessage)
   }
 
 
   implicit class RichJsLookupResult(val underlying: JsLookupResult) {
-    def asOptStringTrimmed = underlying.asOpt[String].map(_.trim)
+    def asOptStringTrimmed: Option[String] = underlying.asOpt[String].map(_.trim)
 
-    def asOptStringNoneIfBlank = underlying.asOpt[String].map(_.trim) match {
+    def asOptStringNoneIfBlank: Option[String] = underlying.asOpt[String].map(_.trim) match {
       case Some("") => None
       case x => x
     }
@@ -104,61 +103,67 @@ package object http {
         : mvc.Action[Unit] =
     PlainApiAction(rateLimits).async(BodyParsers.parse.empty)(f)
 
-  def GetAction(f: GetRequest => Result) =
+  def GetAction(f: GetRequest => Result): Action[Unit] =
     PlainApiAction(NoRateLimits)(BodyParsers.parse.empty)(f)
 
-  def GetActionAllowAnyone(f: GetRequest => Result) =
+  def GetActionAllowAnyone(f: GetRequest => Result): Action[Unit] =
     PlainApiAction(NoRateLimits, allowAnyone = true)(BodyParsers.parse.empty)(f)
 
-  def GetActionIsLogin(f: GetRequest => Result) =
+  def GetActionIsLogin(f: GetRequest => Result): Action[Unit] =
     PlainApiAction(NoRateLimits, isLogin = true)(BodyParsers.parse.empty)(f)
 
   def GetActionRateLimited(rateLimits: RateLimits, allowAnyone: Boolean = false)(
-        f: GetRequest => Result) =
+        f: GetRequest => Result): Action[Unit] =
     PlainApiAction(rateLimits, allowAnyone = allowAnyone)(BodyParsers.parse.empty)(f)
 
-  def StaffGetAction(f: GetRequest => Result) =
+  def StaffGetAction(f: GetRequest => Result): Action[Unit] =
     PlainApiActionStaffOnly(BodyParsers.parse.empty)(f)
 
-  def AdminGetAction(f: GetRequest => Result) =
+  def AdminGetAction(f: GetRequest => Result): Action[Unit] =
     PlainApiActionAdminOnly(BodyParsers.parse.empty)(f)
 
-  def SuperAdminGetAction(f: GetRequest => Result) =
+  def SuperAdminGetAction(f: GetRequest => Result): Action[Unit] =
     PlainApiActionSuperAdminOnly(BodyParsers.parse.empty)(f)
 
 
   def JsonOrFormDataPostAction
         (rateLimits: RateLimits, maxBytes: Int, allowAnyone: Boolean = false,
          isLogin: Boolean = false)
-        (f: ApiRequest[JsonOrFormDataBody] => Result) =
+        (f: ApiRequest[JsonOrFormDataBody] => Result): Action[JsonOrFormDataBody] =
     PlainApiAction(rateLimits, allowAnyone = allowAnyone, isLogin = isLogin)(
       JsonOrFormDataBody.parser(maxBytes = maxBytes))(f)
 
   def AsyncPostJsonAction(rateLimits: RateLimits, maxBytes: Int, allowAnyone: Boolean = false)(
-        f: JsonPostRequest => Future[Result]) =
+        f: JsonPostRequest => Future[Result]): Action[JsValue] =
   PlainApiAction(rateLimits, allowAnyone = allowAnyone).async(
     BodyParsers.parse.json(maxLength = maxBytes))(f)
 
   def PostJsonAction(rateLimits: RateLimits, maxBytes: Int, allowAnyone: Boolean = false)(
-        f: JsonPostRequest => Result) =
+        f: JsonPostRequest => Result): Action[JsValue] =
     PlainApiAction(rateLimits, allowAnyone = allowAnyone)(
       BodyParsers.parse.json(maxLength = maxBytes))(f)
 
-  def StaffPostJsonAction(maxBytes: Int)(f: JsonPostRequest => Result) =
+  def PostTextAction(rateLimits: RateLimits, maxBytes: Int, allowAnyone: Boolean = false)(
+        f: ApiRequest[String] => Result): Action[String] =
+    PlainApiAction(rateLimits, allowAnyone = allowAnyone)(
+      BodyParsers.parse.text(maxLength = maxBytes))(f)
+
+  def StaffPostJsonAction(maxBytes: Int)(f: JsonPostRequest => Result): Action[JsValue] =
     PlainApiActionStaffOnly(
       BodyParsers.parse.json(maxLength = maxBytes))(f)
 
-  def AdminPostJsonAction(maxBytes: Int)(f: JsonPostRequest => Result) =
+  def AdminPostJsonAction(maxBytes: Int)(f: JsonPostRequest => Result): Action[JsValue] =
     PlainApiActionAdminOnly(
       BodyParsers.parse.json(maxLength = maxBytes))(f)
 
-  def SuperAdminPostJsonAction(maxBytes: Int)(f: JsonPostRequest => Result) =
+  def SuperAdminPostJsonAction(maxBytes: Int)(f: JsonPostRequest => Result): Action[JsValue] =
     PlainApiActionSuperAdminOnly(
       BodyParsers.parse.json(maxLength = maxBytes))(f)
 
 
   def PostFilesAction(rateLimits: RateLimits, maxBytes: Int, allowAnyone: Boolean = false)(
-        f: ApiRequest[Either[p.mvc.MaxSizeExceeded, MultipartFormData[TemporaryFile]]] => Result) = {
+        f: ApiRequest[Either[p.mvc.MaxSizeExceeded, MultipartFormData[TemporaryFile]]] => Result)
+        : Action[Either[MaxSizeExceeded, MultipartFormData[TemporaryFile]]] = {
     // BodyParsers.parse.maxLength wants a "Materializer", whatever is that?. Later, when
     // using dependency injection, seems needs to do this instead:
     //   class MyController @Inject() (implicit val mat: Materializer) {}
@@ -247,14 +252,15 @@ package object http {
   /** Use this if page not found, or the page is private and we don't want strangers
     * to find out that it exists. [7C2KF24]
     */
-  def throwIndistinguishableNotFound(devModeErrCode: String = "") = {
+  def throwIndistinguishableNotFound(devModeErrCode: String = ""): Nothing = {
     val suffix =
       if (!Play.isProd && devModeErrCode.nonEmpty) s"-$devModeErrCode"
       else ""
     throwNotFound("EsE404" + suffix, "Page not found")
   }
 
-  def throwForbidden2 = DebikiHttp.throwForbidden _
+  def throwForbidden2: (String, String) => Nothing =
+    DebikiHttp.throwForbidden
 
   def throwForbiddenIf(test: Boolean, errorCode: String, message: => String) {
     if (test) throwForbidden2(errorCode, message)
@@ -264,31 +270,31 @@ package object http {
     if (test) DebikiHttp.throwNotImplemented(errorCode, message)
   }
 
-  def throwLoginAsSuperAdmin(request: Request[_]) =
+  def throwLoginAsSuperAdmin(request: Request[_]): Nothing =
     if (DebikiHttp.isAjax(request)) throwForbidden2("EsE54YK2", "Not super admin")
     else throwLoginAsSuperAdminTo(request.uri)
 
-  def throwLoginAsSuperAdminTo(path: String) =
+  def throwLoginAsSuperAdminTo(path: String): Nothing =
     throwLoginAsTo(LoginController.AsSuperadmin, path)
 
 
-  def throwLoginAsAdmin(request: Request[_]) =
+  def throwLoginAsAdmin(request: Request[_]): Nothing =
     if (DebikiHttp.isAjax(request)) throwForbidden2("EsE6GP21", "Not admin")
     else throwLoginAsAdminTo(request.uri)
 
-  def throwLoginAsAdminTo(path: String) =
+  def throwLoginAsAdminTo(path: String): Nothing =
     throwLoginAsTo(LoginController.AsAdmin, path)
 
 
-  def throwLoginAsStaff(request: Request[_]) =
+  def throwLoginAsStaff(request: Request[_]): Nothing =
     if (DebikiHttp.isAjax(request)) throwForbidden2("EsE4GP6D", "Not staff")
     else throwLoginAsStaffTo(request.uri)
 
-  def throwLoginAsStaffTo(path: String) =
+  def throwLoginAsStaffTo(path: String): Nothing =
     throwLoginAsTo(LoginController.AsStaff, path)
 
 
-  private def throwLoginAsTo(as: String, to: String) =
+  private def throwLoginAsTo(as: String, to: String): Nothing =
     throwTemporaryRedirect(routes.LoginController.showLoginPage(as = Some(as), to = Some(to)).url)
 
 }

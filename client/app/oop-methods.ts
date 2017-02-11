@@ -94,6 +94,18 @@ export function post_shallRenderAsHidden(post: Post): boolean {
 }
 
 
+// Me
+//----------------------------------
+
+export function me_hasRead(me: Myself, post: Post) {
+  // If not logged in, we have no idea.
+  dieIf(!me.isLoggedIn, 'EdE2WKA0');
+  // Title likely already read, before clicking some link to the page.
+  if (post.nr === TitleNr) return true;
+  return me.postNrsAutoReadLongAgo.indexOf(post.nr) >= 0 ||
+      me.postNrsAutoReadNow.indexOf(post.nr) >= 0;
+}
+
 
 // Settings
 //----------------------------------

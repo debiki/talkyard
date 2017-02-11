@@ -56,10 +56,9 @@ interface RequestData {
 
 
 function postJson(urlPath: string, requestData: RequestData) {
-  var url = appendE2eAndForbiddenPassword(origin + urlPath);
-  var options = options || {};
+  let url = appendE2eAndForbiddenPassword(origin + urlPath);
   d.u.postJson({
-    showLoadingOverlay: options.showLoadingOverlay,
+    showLoadingOverlay: requestData.showLoadingOverlay,
     url: url,
     data: requestData.data,
     success: requestData.success,
@@ -1066,7 +1065,43 @@ export function search(rawQuery: string, success: (results: SearchResults) => vo
 }
 
 
-var longPollingState = {
+// COULD perhaps merge with sendLongPollingRequest() a bit below? So reading activity is
+// reported whenever a new long-polling-request is started?
+// Uses navigator.sendBeacon if the `success` isn't specified.
+export function trackReadingProgress(lastViewedPostNr: PostNr, secondsReading: number,
+      postNrsRead: PostNr[], success?: () => void) {
+  let nowMsUtc = Date.now(); // now() returns UTC
+  let data = {
+    pageId: d.i.pageId,
+    visitStartedAt: nowMsUtc,
+    lastViewedPostNr: lastViewedPostNr,
+    lastReadAt: secondsReading > 0 ? nowMsUtc : null,
+    secondsReading: secondsReading,
+    postNrsRead: postNrsRead,
+  };
+  let url = '/-/track-reading';
+  if (!success) {
+    // sendBeacon not supported in Safari and iOS as of Feb 2017.
+    let sendBeacon = navigator['sendBeacon'];
+    if (sendBeacon) {
+      // 1. Don't call variable `sendBeacon`, that results in an invalid-invokation error.
+      // 2. sendBeacon() apparently always posts text/plain;charset=UTF-8.
+      // 3. There's no way to add a xsrf header — so include a xsrf token in the request body.
+      let xsrfTokenLine = (<any> $).cookie('XSRF-TOKEN') + '\n';  // [7GKW20TD]
+      let json = JSON.stringify(data);
+      let wasQueued = (<any> navigator).sendBeacon(url + '-text', xsrfTokenLine + json);
+      // @ifdef DEBUG
+      console.debug(`Sent reading progress via sendBeacon: ${wasQueued}`);
+      // @endif
+    }
+  }
+  else {
+    postJsonSuccess(url, success, data, null, { showLoadingOverlay: false });
+  }
+}
+
+
+let longPollingState = {
   ongoingRequest: null,
   lastModified: null,
   lastEtag: null,

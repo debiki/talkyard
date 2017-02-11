@@ -473,6 +473,8 @@ html:not(.mouse) .dw-rr
 
 .dw-a-clps.esP_Z-Show
   display: inline-block;
+  position: relative;
+  top: -1px;
 
 .dw-a-clps.icon-left-open,
 .dw-a-clps.icon-right-open
@@ -782,20 +784,33 @@ html.touch .dw-p-mark-click
   -ms-user-select: none;
   user-select: none;
 
-.dw-p-unread .dw-p-mark
-  color: hsl(0, 0%, 33%);
-
+// rename to  s_P_H_Bm-Unr?  Bookmark-Unread
 .dw-p-mark-read .dw-p-mark
   color: hsl(0, 0%, 50%);
 
+// rename to  s_P_H_Bm-Rd?  Bookmark-Read
 .dw-p-mark-blue-star .dw-p-mark
   color: hsl($uiHue, 100%, 50%);
 
+// rename to  s_P_H_Bm-Act?  Bookmark-(take-some)-Action
 .dw-p-mark-yellow-star .dw-p-mark
   padding: 0 2px 0 1px;
   font-size: 11px;
   text-shadow: -1px -1px 1px red, 1px -1px 1px red, -1px 1px 1px red, 1px 1px 1px red;
   color: yellow;
+
+.s_P_H_Unr
+  font-size: 8px;
+  position: absolute;
+  color: hsl(207, 100%, 71%);
+  transition: opacity 1s;
+// Percent read –> fade away the unread mark. [8LKW204R]
+.s_P_H_Unr-10 { opacity: 0.8; }
+.s_P_H_Unr-30 { opacity: 0.6; }
+.s_P_H_Unr-50 { opacity: 0.4; }
+.s_P_H_Unr-70 { opacity: 0.2; }
+.s_P_H_Unr-90 { opacity: 0.0; }
+
 
 
 // Highlighted posts

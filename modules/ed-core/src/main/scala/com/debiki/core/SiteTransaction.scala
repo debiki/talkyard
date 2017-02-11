@@ -137,6 +137,8 @@ trait SiteTransaction {
   def loadMessageMembers(pageId: PageId): Set[UserId]
   // Returns recently active pages first.
   def loadPageIdsUserIsMemberOf(userId: UserId, onlyPageRoles: Set[PageRole]): immutable.Seq[PageId]
+  def loadReadProgress(userId: UserId, pageId: PageId): Option[ReadingProgress]
+  def upsertReadProgress(userId: UserId, pageId: PageId, pageTimings: ReadingProgress)
 
   def loadLastPostRevision(postId: PostId): Option[PostRevision]
   def loadPostRevision(postId: PostId, revisionNr: Int): Option[PostRevision]

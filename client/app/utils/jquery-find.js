@@ -32,8 +32,12 @@ d.i.findPost$ = function(postNr) {
 // Depreacted, use dwPostId() instead.
 $.fn.dwPostIdStr = function() {   // rename to dwPostNrStr   and try to remove
   var $post = this.is('.dw-t') ? this.children('.dw-p') : this;
+  var idString = $post.attr('id');
+  if (!idString) {
+    return undefined;
+  }
   // Drop initial "post-".
-  return $post.dwCheckIs('.dw-p').attr('id').substr(5, 999);
+  return idString.substr(5, 999);
 };
 
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014 Kaj Magnus Lindberg (born 1979)
+ * Copyright (C) 2014-2017 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -23,6 +23,8 @@
 /// <reference path="../typedefs/lodash/lodash.d.ts" />
 /// <reference path="../typedefs/eventemitter2/eventemitter2.d.ts" />
 
+// CLEAN_UP try to remove this dependency from here.
+/// <reference path="utils/scroll-into-view.ts" />
 
 /* This Flux store is perhaps a bit weird, not sure. I'll switch to Redux or
  * Flummox or Fluxxor or whatever later, and rewrite everything in a better way?
@@ -427,6 +429,22 @@ ReactStore.activateMyself = function(anyNewMe: Myself) {
     store.categories.sort((c:Category, c2:Category) => c.position - c2.position);
   }
 
+  let readingProgress = store.me.readingProgress;
+  if (readingProgress && readingProgress.lastViewedPostNr) {
+    if (ReactActions.anyAnchorPostNr()) {
+      // Then other code scrolls to the anchored post instead.
+    }
+    else {
+      utils.scrollIntoViewInPageColumn(
+        `#post-${readingProgress.lastViewedPostNr}`, {
+          marginTop: 150,
+          // For now, scroll so it appears at the top, because it was the topmost one
+          // in the viewport [8GKF204].
+          marginBottom: 999,
+        });
+    }
+  }
+
   debiki2.pubsub.subscribeToServerEvents();
   store.quickUpdate = false;
 };
@@ -634,7 +652,7 @@ function markPostAsRead(postId: number, manually: boolean) {
     store.me.marksByPostId[postId] = ManualReadMark;
   }
   else {
-    store.me.postIdsAutoReadNow.push(postId);
+    store.me.postNrsAutoReadNow.push(postId);
   }
   rememberPostsToQuickUpdate(postId);
 }
@@ -1167,8 +1185,8 @@ function makeStranger(): Myself {
     votes: {},
     unapprovedPosts: {},
     unapprovedPostAuthors: [],
-    postIdsAutoReadLongAgo: [],
-    postIdsAutoReadNow: [],
+    postNrsAutoReadLongAgo: [],
+    postNrsAutoReadNow: [],
     marksByPostId: {},
 
     closedHelpMessages: {},
@@ -1181,7 +1199,7 @@ function makeStranger(): Myself {
  * storing it client side only.
  */
 function addLocalStorageDataTo(me: Myself) {
-  me.postIdsAutoReadLongAgo = sidebar.UnreadCommentsTracker.getPostIdsAutoReadLongAgo();
+  me.postNrsAutoReadLongAgo = page.PostsReadTracker.getPostNrsAutoReadLongAgo();
   me.marksByPostId = {}; // not implemented: loadMarksFromLocalStorage();
   me.closedHelpMessages = getFromLocalStorage('closedHelpMessages') || {};
 

@@ -605,8 +605,8 @@ object ReactJson {
     "votes" -> JsObject(Nil),
     "unapprovedPosts" -> JsObject(Nil),
     "unapprovedPostAuthors" -> JsArray(),
-    "postIdsAutoReadLongAgo" -> JsArray(Nil),
-    "postIdsAutoReadNow" -> JsArray(Nil),
+    "postNrsAutoReadLongAgo" -> JsArray(Nil),  // should remove [5WKW219] + search for elsewhere
+    "postNrsAutoReadNow" -> JsArray(Nil),      // should remove
     "marksByPostId" -> JsObject(Nil),
     "closedHelpMessages" -> JsObject(Nil))
 
@@ -685,6 +685,9 @@ object ReactJson {
         ThreatLevel.HopefullySafe
     }
 
+    val anyReadingProgress = anyPageId.flatMap(transaction.loadReadProgress(user.id, _))
+    val anyReadingProgressJson = anyReadingProgress.map(makeReadingProgressJson).getOrElse(JsNull)
+
     Json.obj(
       "id" -> JsNumber(user.id),
       "userId" -> JsNumber(user.id), // try to remove, use 'id' instead
@@ -717,10 +720,10 @@ object ReactJson {
       // later: "flags" -> JsArray(...) [7KW20WY1]
       "unapprovedPosts" -> anyUnapprovedPosts,
       "unapprovedPostAuthors" -> anyUnapprovedAuthors,
-      "postIdsAutoReadLongAgo" -> JsArray(Nil),
-      "postIdsAutoReadNow" -> JsArray(Nil),
+      "postNrsAutoReadLongAgo" -> JsArray(Nil),
+      "postNrsAutoReadNow" -> JsArray(Nil),
       "marksByPostId" -> JsObject(Nil),
-
+      "readingProgress" -> anyReadingProgressJson,
       "closedHelpMessages" -> JsObject(Nil))
   }
 
@@ -919,6 +922,15 @@ object ReactJson {
     val authors = transaction.loadUsers(posts.map(_.createdById).toSet)
     val authorsJson = JsArray(authors map JsUser)
     (JsObject(postIdsAndJson), authorsJson)
+  }
+
+
+  def makeReadingProgressJson(readingProgress: ReadingProgress): JsValue = {
+    Json.obj(
+      "lastViewedPostNr" -> readingProgress.lastViewedPostNr,
+      // When including these, remove [5WKW219].
+      "lastPostNrsReadRecentFirstBase64" -> "",
+      "lowPostNrsReadBase64" -> "")
   }
 
 

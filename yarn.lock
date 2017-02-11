@@ -1334,6 +1334,14 @@ gulp-newer@^1.3.0:
     gulp-util "^3.0.7"
     kew "^0.7.0"
 
+gulp-preprocess@^2.0.0:
+  version "2.0.0"
+  resolved "https://registry.yarnpkg.com/gulp-preprocess/-/gulp-preprocess-2.0.0.tgz#067bf6a4e1b703d7b45ed2047ce7e87d5974d241"
+  dependencies:
+    lodash "3.10.x"
+    map-stream "0.1.x"
+    preprocess "^3.0.0"
+
 gulp-rename@^1.2.0:
   version "1.2.2"
   resolved "https://registry.yarnpkg.com/gulp-rename/-/gulp-rename-1.2.2.tgz#3ad4428763f05e2764dec1c67d868db275687817"
@@ -2286,6 +2294,10 @@ lodash.values@~2.4.1:
   dependencies:
     lodash.keys "~2.4.1"
 
+lodash@3.10.x:
+  version "3.10.1"
+  resolved "https://registry.yarnpkg.com/lodash/-/lodash-3.10.1.tgz#5bf45e8e49ba4189e17d482789dfd15bd140b7b6"
+
 lodash@4.16.4, lodash@^4.11.1, lodash@^4.13.1, lodash@^4.16.1, lodash@~4.16.4:
   version "4.16.4"
   resolved "https://registry.yarnpkg.com/lodash/-/lodash-4.16.4.tgz#01ce306b9bad1319f2a5528674f88297aeb70127"
@@ -2337,7 +2349,7 @@ map-obj@^1.0.0, map-obj@^1.0.1:
   version "1.0.1"
   resolved "https://registry.yarnpkg.com/map-obj/-/map-obj-1.0.1.tgz#d933ceb9205d82bdcf4886f6742bdc2b4dea146d"
 
-map-stream@^0.1.0, map-stream@~0.1.0:
+map-stream@0.1.x, map-stream@^0.1.0, map-stream@~0.1.0:
   version "0.1.0"
   resolved "https://registry.yarnpkg.com/map-stream/-/map-stream-0.1.0.tgz#e56aa94c4c8055a16404a0674b78f215f7c8e194"
 
@@ -2740,6 +2752,12 @@ plugin-log@^0.1.0:
   dependencies:
     chalk "^1.1.1"
     dateformat "^1.0.11"
+
+preprocess@^3.0.0:
+  version "3.1.0"
+  resolved "https://registry.yarnpkg.com/preprocess/-/preprocess-3.1.0.tgz#a44e5cdd5bbb5a54f0ad289aaeed80995d7d938a"
+  dependencies:
+    xregexp "3.1.0"
 
 preserve@^0.2.0:
   version "0.2.0"
@@ -3730,6 +3748,10 @@ wrappy@1:
 xmlhttprequest@~1.4.2:
   version "1.4.2"
   resolved "https://registry.yarnpkg.com/xmlhttprequest/-/xmlhttprequest-1.4.2.tgz#01453a1d9bed1e8f172f6495bbf4c8c426321500"
+
+xregexp@3.1.0:
+  version "3.1.0"
+  resolved "https://registry.yarnpkg.com/xregexp/-/xregexp-3.1.0.tgz#14d8461e0bdd38224bfee5039a0898fc42fcd336"
 
 "xtend@>=4.0.0 <4.1.0-0", xtend@^4.0.0, xtend@~4.0.0, xtend@~4.0.1:
   version "4.0.1"

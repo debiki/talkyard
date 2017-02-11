@@ -39,6 +39,7 @@ var gzip = require('gulp-gzip');
 var es = require('event-stream');
 var fs = require("fs");
 var path = require("path");
+var preprocess = require('gulp-preprocess');
 var exec = require('child_process').exec;
 
 var watchAndLiveForever = false;
@@ -248,7 +249,7 @@ var editorTypescriptProject = typeScript.createProject({
 });
 
 
-function compileFastTypescript() {
+function compileSlimTypescript() {
   var stream = gulp.src([
         'client/app/**/*.ts',
         '!client/app/**/*.more.ts',
@@ -267,7 +268,7 @@ function compileFastTypescript() {
   return stream.pipe(gulp.dest('target/client/'));
 }
 
-function compileMoreTypescript(what, typescriptProject) {
+function compileOtherTypescript(what, typescriptProject) {
   var stream = gulp.src([
     'client/app/**/*.d.ts',
     '!client/app/**/*.' + what + '.d.ts',
@@ -291,10 +292,10 @@ function compileMoreTypescript(what, typescriptProject) {
 gulp.task('compile-typescript', function () {
   return es.merge(
       compileServerTypescript(),
-      compileFastTypescript(),
-      compileMoreTypescript('more', moreTypescriptProject),
-      compileMoreTypescript('staff', staffTypescriptProject),
-      compileMoreTypescript('editor', editorTypescriptProject));
+      compileSlimTypescript(),
+      compileOtherTypescript('more', moreTypescriptProject),
+      compileOtherTypescript('staff', staffTypescriptProject),
+      compileOtherTypescript('editor', editorTypescriptProject));
 });
 
 
@@ -352,7 +353,7 @@ function makeConcatAllScriptsStream() {
 
 
 
-gulp.task('insert-prod-scripts', function() {
+gulp.task('enable-prod-stuff', function() {
   // This script isn't just a minified script — it contains lots of optimizations.
   // So we want to use react-with-addons.min.js, rather than minifying the .js ourselves.
   slimJsFiles[0] = 'node_modules/react/dist/react-with-addons.min.js';
@@ -362,6 +363,7 @@ gulp.task('insert-prod-scripts', function() {
 
 gulp.task('minify-scripts', ['concat-debiki-scripts'], function() {
   return gulp.src(['public/res/*.js', '!public/res/*.min.js'])
+      .pipe(preprocess({ context: { DEBUG: false } }))
       .pipe(uglify())
       .pipe(rename({ extname: '.min.js' }))
       .pipe(header(copyrightAndLicenseBanner))
@@ -443,7 +445,7 @@ gulp.task('default', ['compile-concat-scripts', 'compile-stylus', 'build-e2e', '
 });
 
 
-gulp.task('release', ['insert-prod-scripts', 'minify-scripts', 'compile-stylus'], function() {
+gulp.task('release', ['enable-prod-stuff', 'minify-scripts', 'compile-stylus'], function() {
 });
 
 

@@ -17,10 +17,12 @@
 
 package com.debiki
 
+import com.debiki.core.Prelude.dieIf
+import java.{util => ju}
 import org.apache.commons.validator.routines.EmailValidator
-import org.scalactic.{Good, Bad, Or}
+import org.scalactic.{Bad, Good, Or}
 import scala.collection.immutable
-import java.{ util => ju }
+import scala.collection.mutable.ArrayBuffer
 
 
 package object core {
@@ -86,15 +88,18 @@ package object core {
   /** Change this to a Long before year 2038. /KajMagnus, Jan 2015 */
   type UnixTime = Int    // don't use, I always forget if it's seconds or millis
   type UnixMillis = Long // this is millis :-)
+  type UnixMinutes = Int
   type UnixDays = Int
 
 
-  /** I'll use this instead of whatever-date-time-stuff-there-is. */
+  /** I'll use this instead of whatever-date-time-stuff-there-is.
+    */
   class When(val unixMillis: UnixMillis) extends AnyVal {
     def toJavaDate = new ju.Date(unixMillis)
-    def toDays = WhenDay.fromMillis(unixMillis)
-    def millis = unixMillis
-    def toUnixMillis = unixMillis
+    def toDays: WhenDay = WhenDay.fromMillis(unixMillis)
+    def millis: UnixMillis = unixMillis
+    def unixMinutes: Int = (unixMillis / 1000 / 60).toInt
+    def toUnixMillis: UnixMillis = unixMillis
     def daysSince(other: When) = (unixMillis - other.unixMillis) / OneMinuteInMillis / 60 / 24
     def daysBetween(other: When) = math.abs(daysSince(other))
     def hoursSince(other: When) = (unixMillis - other.unixMillis) / OneMinuteInMillis / 60
@@ -108,11 +113,14 @@ package object core {
       * 100 years * 365 * 24 * 3600 * 1000 = 3153600000000 = 13 digits, and doubles in Java
       * have more precision than that.
       */
-    def toDouble = unixMillis.toDouble
-    def numSeconds = unixMillis / 1000
+    def toDouble: Double = unixMillis.toDouble
+    def numSeconds: Long = unixMillis / 1000
 
     def isAfter(other: When): Boolean = unixMillis > other.unixMillis
+    def isBefore(other: When): Boolean = unixMillis < other.unixMillis
     def isNotBefore(other: When): Boolean = unixMillis >= other.unixMillis
+
+    override def toString: String = unixMillis.toString + "ms"
   }
 
   object When {
@@ -120,11 +128,45 @@ package object core {
     def fromDate(date: ju.Date) = new When(date.getTime)
     def fromOptDate(anyDate: Option[ju.Date]): Option[When] = anyDate.map(When.fromDate)
     def fromMillis(millis: UnixMillis) = new When(millis)
+    def fromMinutes(minutes: UnixMinutes) = new When(minutes * OneMinuteInMillis)
+    def fromOptMillis(millis: Option[UnixMillis]): Option[When] = millis.map(new When(_))
+
+    def latestOf(whenA: When, whenB: When): When =
+      if (whenA.millis > whenB.millis) whenA else whenB
+
+    def anyLatestOf(whenA: Option[When], whenB: Option[When]): Option[When] = {
+      if (whenA.isDefined && whenB.isDefined) {
+        if (whenA.get.millis > whenB.get.millis) whenA
+        else whenB
+      }
+      else whenA orElse whenB
+    }
+
+    def earliestOf(whenA: When, whenB: When): When =
+      if (whenA.millis < whenB.millis) whenA else whenB
+
+    def earliestNot0(whenA: When, whenB: When): When =
+      if (whenA.millis < whenB.millis && whenA.millis != 0) whenA else whenB
+
+    def anyEarliestOf(whenA: Option[When], whenB: Option[When]): Option[When] = {
+      if (whenA.isDefined && whenB.isDefined)
+        Some(earliestOf(whenA.get, whenB.get))
+      else
+        whenA orElse whenB
+    }
+
+    def anyEarliestNot0(whenA: Option[When], whenB: Option[When]): Option[When] = {
+      if (whenA.isDefined && whenB.isDefined)
+        Some(earliestNot0(whenA.get, whenB.get))
+      else
+        whenA orElse whenB
+    }
   }
 
 
   class WhenDay(val unixDays: UnixDays) extends AnyVal {
     def toJavaDate = new ju.Date(OneDayInMillis * unixDays)
+    override def toString: String = unixDays.toString + "days"
   }
 
   object WhenDay {
@@ -269,8 +311,143 @@ package object core {
   }
 
 
+  /**
+    * @param firstVisitedAt The first time the user visited the page, perhaps without reading.
+    * @param lastVisitedAt The last time the user visited the page, perhaps without reading.
+    * @param lastViewedPostNr Should be focused after page reload (regardless of if is read/unread).
+    * @param lastReadAt The last time the user apparently read something on the page.
+    * @param lastPostNrsReadRecentFirst Which posts were the last ones the user read. The most recently
+    *   read post nr is stored first, so .distinct keeps the most recently read occurrences
+    *   of each post nr (rather than some old duplicate).
+    *   Useful for remembering the most recently read comments in an endless stream of
+    *   comments — that is, in a chat topic.
+    * @param lowPostNrsRead Suitable for storing as a bit set in the database, e.g. 8*8 bytes
+    *   would remember which ones of post nrs 1 - 512 the user has read.
+    *   If any post nr is > MaxLowPostNr, an error is thrown.
+    *   Useful for remembering which posts have been read in a discussion that ends after a while,
+    *   i.e. all kinds of topics (questions, ideas, discussions, ...) except for never-ending-chats.
+    *   ("low" = post nrs 1 ... something, but not high post nrs like 3456 or 9999 — they
+    *   would be stored in lastPostNrsRead instead, and only like the 100 most recent.)
+    * @param secondsReading Also includes time the user spends re-reading old posts hen has
+    *   read already.
+    */
+  case class ReadingProgress(
+    firstVisitedAt: When,
+    lastVisitedAt: When,
+    lastViewedPostNr: PostNr,
+    lastReadAt: Option[When],
+    lastPostNrsReadRecentFirst: Vector[PostNr],
+    lowPostNrsRead: immutable.Set[PostNr],
+    secondsReading: Int) {
 
-  def ifThenSome[A](condition: Boolean, value: A) =
+    import ReadingProgress._
+
+    require(secondsReading >= 0, "EdE26SRY8")
+    require(lastViewedPostNr >= PageParts.BodyNr, "EdE38JHF9")
+    require(firstVisitedAt.millis <= lastVisitedAt.millis, "EdE3WKB4U0")
+    lastReadAt foreach { lastReadAt =>
+      require(firstVisitedAt.millis <= lastReadAt.millis, "EdE5JTK28")
+      require(lastReadAt.millis <= lastVisitedAt.millis, "EdE20UP6A")
+    }
+    require(lowPostNrsRead.isEmpty || lowPostNrsRead.max <= MaxLowPostNr,
+      s"Got max = ${lowPostNrsRead.max} [EdE2W4KA8]")
+    require(lowPostNrsRead.isEmpty || lowPostNrsRead.min >= 1, // title (nr 0) shouldn't be included
+      s"Got min = ${lowPostNrsRead.min} [EdE4GHSU2]")
+    require(lastPostNrsReadRecentFirst.size <= MaxLastPostsToRemember, "EdE24GKF0")
+
+    require((secondsReading > 0) == lastReadAt.isDefined, "EdE42HUP4V")
+    require((secondsReading > 0) || lastPostNrsReadRecentFirst.isEmpty, "EdE5KWP02")
+    require((secondsReading > 0) || lowPostNrsRead.isEmpty, "EdE8JSBWR42")
+
+    def addMore(moreProgress: ReadingProgress): ReadingProgress = {
+      copy(
+        firstVisitedAt = When.earliestOf(firstVisitedAt, moreProgress.firstVisitedAt),
+        lastVisitedAt = When.latestOf(lastVisitedAt, moreProgress.lastVisitedAt),
+        lastViewedPostNr =
+          if (lastVisitedAt.isAfter(moreProgress.lastVisitedAt)) lastViewedPostNr
+          else moreProgress.lastViewedPostNr,
+        lastReadAt = When.anyLatestOf(lastReadAt, moreProgress.lastReadAt),
+        lastPostNrsReadRecentFirst = (
+          // Note: most recently read is stored first, so .distinct keeps those.
+          if (moreProgress.lastReadAt.isEmpty) lastPostNrsReadRecentFirst
+          else if (lastReadAt.isEmpty) moreProgress.lastPostNrsReadRecentFirst
+          else if (moreProgress.lastReadAt.get isAfter lastReadAt.get)
+            moreProgress.lastPostNrsReadRecentFirst ++ lastPostNrsReadRecentFirst
+          else
+            lastPostNrsReadRecentFirst ++ moreProgress.lastPostNrsReadRecentFirst).distinct take MaxLastPostsToRemember)
+    }
+
+
+    /** Can be stored in a Postgres bytea, or sent as base64 to the browser.
+      * There's a unit test.
+      */
+    def lowPostNrsReadAsBitsetBytes: Array[Byte] = {
+      var bytes = Array[Byte]()
+      if (lowPostNrsRead.isEmpty)
+        return bytes
+
+      // Perhaps could be done in a more efficient way by accessing the underlying Long:s in
+      // the BitSet, but then need to cast to $BitSet1 or $BitSet2 or $BitSetN = complicated.
+      var byteIndex = 0
+
+      // -1 because the first bit is post nr 1, not 0, that is, bits 0..7 store is-read flags
+      // for posts 1..8 (not posts 0..7).
+      // The maxIndex becomes = 0 if only posts 1..8 included, and 63 if posts 504..512 included.
+      val maxIndex = (lowPostNrsRead.max - 1) / 8
+
+      while (byteIndex <= maxIndex) {
+        var currentByte: Int = 0 // "byte" because only using the lowest 8 bits
+        var bitIndex = 0
+        while (bitIndex < 8) {
+          // +1 because first post nr is 1 (orig post) not 0 (the title).
+          val postNr = byteIndex * 8 + bitIndex + 1
+          // (Could use lowPostNrsRead.iterator instead to skip all zero bits, but barely matters.)
+          if (lowPostNrsRead.contains(postNr)) {
+            val more: Int = 1 << bitIndex
+            dieIf(more > 255, "EdE4FKG82")
+            currentByte += more
+          }
+          bitIndex += 1
+        }
+        bytes :+= currentByte.toByte  // casts from 0..255 to -128..127
+        byteIndex += 1
+      }
+      bytes
+    }
+  }
+
+
+  object ReadingProgress {
+    val MaxLastPostsToRemember = 100
+    val MaxLowPostNr = 512  // 8 Longs = 8 * 8 bytes * 8 bits/byte = 512 bits = post nrs 1...512
+
+
+    /** There's a unit test.
+      */
+    def parseLowPostNrsReadBitsetBytes(bytes: Array[Byte]): Set[PostNr] = {
+      val postNrs = ArrayBuffer[PostNr]()
+      var byteIx = 0
+      while (byteIx < bytes.length) {
+        val byte = bytes(byteIx)
+        val base = byteIx * 8
+        var bitIx = 0
+        while (bitIx < 8) {
+          val bitmask = 1 << bitIx
+          val postNr = base + bitIx + 1  // + 1 because first bit, at index 0, = post nr 1 (not 0)
+          val isIncluded = (byte & bitmask) != 0
+          if (isIncluded) {
+            postNrs append postNr
+          }
+          bitIx += 1
+        }
+        byteIx += 1
+      }
+      immutable.Set[PostNr](postNrs: _*)
+    }
+  }
+
+
+  def ifThenSome[A](condition: Boolean, value: A): Option[A] =
     if (condition) Some(value) else None
 
 
@@ -287,6 +464,24 @@ package object core {
       case Good(value) => value
       case Bad(bad) => errorFixFn(bad)
     }
+  }
+
+
+  def minOfMany(first: Long, more: Long*): Long = {
+    var min = first
+    for (value <- more) {
+      if (value < min) min = value
+    }
+    min
+  }
+
+
+  def minOfMany(first: Int, more: Int*): Int = {
+    var min = first
+    for (value <- more) {
+      if (value < min) min = value
+    }
+    min
   }
 
 

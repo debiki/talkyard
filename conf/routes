@@ -101,6 +101,8 @@ POST  /-/complete-review-task   controllers.ModerationController.completeReviewT
 GET   /-/users/                 controllers.UserController.viewUserPage(whatever = "")
 GET   /-/users/*whatever        controllers.UserController.viewUserPage(whatever)
 GET   /-/load-my-page-data      controllers.UserController.loadMyPageData(pageId)
+POST  /-/track-reading          controllers.UserController.trackReadingProgress
+POST  /-/track-reading-text     controllers.UserController.trackReadingProgressText
 GET   /-/load-notifications     controllers.UserController.loadNotifications(userId, upToWhenMs)
 POST  /-/mark-notf-as-seen      controllers.UserController.markNotificationAsSeen
 POST  /-/set-page-notf-level    controllers.UserController.savePageNotfLevel
@@ -239,6 +241,7 @@ GET   /-/debiki-embedded-comments.css  controllers.Assets.at(path = "/public/res
 GET   /-/*file                  controllers.Assets.at(path = "/public", file)
 GET   /favicon.ico              controllers.Assets.at(path = "/public/img", file = "debiki-favicon.ico")
 
+# COULD remove? use only /-/track-reading-activity ?
 POST  /-/mark-as-seen           controllers.ViewPageController.markPageAsSeen(pageId)
 GET   /*path                    controllers.ViewPageController.viewPage(path)
 GET   /                         controllers.ViewPageController.viewPage(path = "")

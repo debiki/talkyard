@@ -1002,16 +1002,6 @@ export var Post = createComponent({
       case YellowStarMark: extraClasses += ' dw-p-mark-yellow-star'; break;
       case BlueStarMark: extraClasses += ' dw-p-mark-blue-star'; break;
       case ManualReadMark: extraClasses += ' dw-p-mark-read'; break;
-      default:
-        // Don't add the below class before user specific data has been activated, otherwise
-        // all posts would show a big black unread mark on page load, which looks weird.
-        if (this.props.userSpecificDataAdded) {
-          var autoRead = me.postIdsAutoReadLongAgo.indexOf(post.nr) !== -1;
-          autoRead = autoRead || me.postIdsAutoReadNow.indexOf(post.nr) !== -1;
-          if (!autoRead) {
-            extraClasses += ' dw-p-unread';
-          }
-        }
     }
 
     if (isWikiPost(post))
@@ -1114,8 +1104,9 @@ export var PostHeader = createComponent({
   },
 
   render: function() {
-    var store: Store = this.props;
-    var post: Post = this.props.post;
+    let store: Store = this.props;
+    let me: Myself = store.me;
+    let post: Post = this.props.post;
     let abbreviate = this.props.abbreviate;
     if (!post)
       return r.p({}, '(Post missing [DwE7IKW2])');
@@ -1155,61 +1146,56 @@ export var PostHeader = createComponent({
             editedAt);
     }
 
-    var anyPin;
+    let anyPin;
     if (post.pinnedPosition) {
       anyPin =
         r[linkFn]({ className: 'dw-p-pin icon-pin' });
     }
 
-    var postId;
-    var anyMark;
+    let postId;
     if (post.nr !== TitleNr && post.nr !== BodyNr) {
       if (debiki.debug) {
         postId = r.span({ className: 'dw-p-link' }, '#' + post.nr);
       }
-
-      /* COULD: Later on, move the star to the right? Or to the action list? And
-         to indicate that the computer has been read, paint a 3px border to the
-         left of the header. And to indicate that the human has marked it as read,
-         set the header's bg color to white.
-      var mark = user.marksByPostId[post.nr];
-      var starClass = ' icon-star';
-      if (mark === ManualReadMark) {
-        starClass = ' icon-star-empty';
-      }
-      // The outer -click makes the click area larger, because the marks are small.
-      anyMark =
-          r.span({ className: 'dw-p-mark-click', onClick: this.props.onMarkClick },
-            r.span({ className: 'dw-p-mark icon-star' + starClass }));
-      */
     }
 
-    var isPageBody = post.nr === BodyNr;
-    var by = isPageBody ? 'By ' : '';
-    var isBodyPostClass = isPageBody ? ' dw-ar-p-hd' : '';
+    let bookmark; /*
+    if (true) { // me.bookmarks[post.uniqueId]) {
+      let starClass = ' icon-bookmark-empty';
+      bookmark =
+        // The outer -click makes the click area larger, because the marks are small.
+        r.span({ className: 's_P_H_Bm dw-p-mark-click', onClick: this.props.onMarkClick },
+          r.span({ className: 'dw-p-mark icon-bookmark' + starClass }));
+    } */
 
-    var is2dColumn = this.props.horizontalLayout && this.props.depth === 1;
-    var collapseIcon = is2dColumn ? 'icon-left-open' : 'icon-up-open';
-    var isFlat = this.props.isFlat;
-    var toggleCollapsedButton =
+    let unreadMark = !me.isLoggedIn || me_hasRead(me, post) ? null :
+        r.span({ className: 's_P_H_Unr icon-circle' });
+
+    let isPageBody = post.nr === BodyNr;
+    let by = isPageBody ? 'By ' : '';
+    let isBodyPostClass = isPageBody ? ' dw-ar-p-hd' : '';
+
+    let is2dColumn = this.props.horizontalLayout && this.props.depth === 1;
+    let collapseIcon = is2dColumn ? 'icon-left-open' : 'icon-up-open';
+    let isFlat = this.props.isFlat;
+    let toggleCollapsedButton =
         is2dColumn || abbreviate || post.isTreeCollapsed || isPageBody || isFlat
           ? null
           : r.span({ className: 'dw-a-clps ' + collapseIcon, onClick: this.onCollapseClick });
 
     // For flat replies, show "In response to" here inside the header instead,
     // rather than above the header — that looks better.
-    var inReplyTo;
+    let inReplyTo;
     if (!abbreviate && isFlat && (post.parentNr || post.multireplyPostNrs.length)) {
       inReplyTo = ReplyReceivers({ store: store, post: post, comma: true });
     }
 
-    var timeClass = 'esP_H_At';
+    let timeClass = 'esP_H_At';
 
     return (
         r.div({ className: 'dw-p-hd' + isBodyPostClass },
           anyPin,
           postId,
-          anyMark,
           anySolutionIcon,
           anyAvatar,
           by,
@@ -1221,6 +1207,8 @@ export var PostHeader = createComponent({
           editInfo,
           inReplyTo,
           toggleCollapsedButton,
+          bookmark,
+          unreadMark,
           this.props.stuffToAppend));
   }
 });

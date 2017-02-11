@@ -100,6 +100,11 @@ package object security {
             val body = request.body.asInstanceOf[JsonOrFormDataBody]
             body.getFirst(debiki.HtmlUtils.XsrfTokenInputName)
           }
+          else if (request.body.isInstanceOf[String]) {
+            val xsrfToken = request.body.asInstanceOf[String].takeWhile(_ != '\n') // [7GKW20TD]
+            if (xsrfToken.nonEmpty) Some(xsrfToken)
+            else None
+          }
           else {
             None
           }
