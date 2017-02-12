@@ -32,13 +32,21 @@ class ReadingProgressTest extends FreeSpec with MustMatchers {
       def bitsFor(postNrs: Set[PostNr]): Array[Byte] = ReadingProgress(
         firstVisitedAt = When.fromMillis(0),
         lastVisitedAt = When.fromMillis(0),
+        lastViewedPostNr = 1,
         lastReadAt = if (postNrs.isEmpty) None else Some(When.fromMillis(0)),
-        lastPostNrsReadRecentFirst = postNrs.headOption.toVector,
+        lastPostNrsReadRecentFirst = Vector.empty,
         lowPostNrsRead = postNrs,
         secondsReading = 1234).lowPostNrsReadAsBitsetBytes
 
       "nothing read" in {
-        bitsFor(Set.empty) mustBe Array[Byte]()
+        ReadingProgress(
+          firstVisitedAt = When.fromMillis(0),
+          lastVisitedAt = When.fromMillis(0),
+          lastViewedPostNr = 1,
+          lastReadAt = None,
+          lastPostNrsReadRecentFirst = Vector.empty,
+          lowPostNrsRead = Set.empty,
+          secondsReading = 0).lowPostNrsReadAsBitsetBytes mustBe Array[Byte]()
       }
 
       // 0000 1000 =  8
@@ -107,6 +115,14 @@ class ReadingProgressTest extends FreeSpec with MustMatchers {
 
       "post no 1, 41 read" in {
         bitsFor(Set(1, 41)) mustBe Array[Byte](1, 0, 0, 0, 0, 1)
+      }
+
+      "post no 1, 17, 18, 512 read" in {
+        bitsFor(Set(1, 17, 18, 512)) mustBe Array[Byte](
+          1, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // 20
+          0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // *
+          0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // 3
+          0, 0, 0, -128)                                               // + 4 = 64 bytes
       }
     }
 

@@ -178,13 +178,13 @@ function trackReadingActivity() {
   let curScrollLeft = $pageColumn.scrollLeft();
   let curScrollTop = $pageColumn.scrollTop();
   if (lastScrollLeft != curScrollLeft || lastScrollTop != curScrollTop) {
+    // @ifdef DEBUG
+    !debug || console.debug(`Scroll detected, at ms: ${nowMs}`);
+    // @endif
     lastScrollLeft = curScrollLeft;
     lastScrollTop = curScrollTop;
     lastScrolledAtMs = nowMs;
     hasScrolled = true;
-    // @ifdef DEBUG
-    !debug || console.debug(`Scroll detected, at ms: ${lastScrolledAtMs}`);
-    // @endif
   }
 
   let millisSinceLastScroll = nowMs - lastScrolledAtMs;
@@ -331,13 +331,12 @@ function trackReadingActivity() {
       fadeUnreadMark(stats.postNr, fractionRead);
     }
     if (fractionRead >= 1) {
-      // Don't remove until next tick, so a fade-out animation gets time to run. [8LKW204R]
-      postNrsJustRead.push(stats.postNr);
-      unreportedPostNrsRead.push(stats.postNr);
-
       // @ifdef DEBUG
       !debug || console.debug(`Just read post nr ${stats.postNr}`);
       // @endif
+      // Don't remove until next tick, so a fade-out animation gets time to run. [8LKW204R]
+      postNrsJustRead.push(stats.postNr);
+      unreportedPostNrsRead.push(stats.postNr);
     }
   }
 }

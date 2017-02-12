@@ -1090,9 +1090,6 @@ export function trackReadingProgress(lastViewedPostNr: PostNr, secondsReading: n
       let xsrfTokenLine = (<any> $).cookie('XSRF-TOKEN') + '\n';  // [7GKW20TD]
       let json = JSON.stringify(data);
       let wasQueued = (<any> navigator).sendBeacon(url + '-text', xsrfTokenLine + json);
-      // @ifdef DEBUG
-      console.debug(`Sent reading progress via sendBeacon: ${wasQueued}`);
-      // @endif
     }
   }
   else {

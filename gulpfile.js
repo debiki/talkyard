@@ -40,7 +40,6 @@ var es = require('event-stream');
 var fs = require("fs");
 var path = require("path");
 var preprocess = require('gulp-preprocess');
-var exec = require('child_process').exec;
 
 var watchAndLiveForever = false;
 var currentDirectorySlash = __dirname + '/';
@@ -327,7 +326,7 @@ function makeConcatDebikiScriptsStream() {
       makeConcatStream('editor-bundle.js', editorJsFiles, 'DoCheckNewer'),
       makeConcatStream('embedded-comments.js', embeddedJsFiles),
       gulp.src('node_modules/zxcvbn/dist/zxcvbn.js').pipe(gulp.dest('public/res/')));
-};
+}
 
 
 
@@ -349,7 +348,7 @@ function makeConcatAllScriptsStream() {
   // I've removed some other scripts (CodeMirror) so now suddenly there's nothing to merge.
   return es.merge(
       makeConcatDebikiScriptsStream());
-};
+}
 
 
 
@@ -362,8 +361,12 @@ gulp.task('enable-prod-stuff', function() {
 
 
 gulp.task('minify-scripts', ['concat-debiki-scripts'], function() {
+  // preprocess() removes all @ifdef DEBUG — however (!) be sure to not place '// @endif'
+  // on the very last line in a {} block, because it would get removed, by... by what? the
+  // Typescript compiler? This results in an impossible-to-understand "Unbalanced delimiter
+  // found in string" error with a meaningless stacktrace, in preprocess().
   return gulp.src(['public/res/*.js', '!public/res/*.min.js'])
-      .pipe(preprocess({ context: { DEBUG: false } }))
+      .pipe(preprocess({ context: {} })) // see comment above
       .pipe(uglify())
       .pipe(rename({ extname: '.min.js' }))
       .pipe(header(copyrightAndLicenseBanner))
@@ -379,7 +382,7 @@ gulp.task('compile-stylus', function () {
     linenos: true,
     import: [
       currentDirectorySlash + 'client/app/mixins.styl',
-      currentDirectorySlash + 'client/app/variables.styl'],
+      currentDirectorySlash + 'client/app/variables.styl']
   };
 
   function makeStyleStream(destDir, destFile, sourceFiles) {
@@ -504,7 +507,7 @@ gulp.task('compile-security-tests', function() {
     'tests/security/**/*.ts'])
     .pipe(typeScript({
       declarationFiles: true,
-      module: 'commonjs',
+      module: 'commonjs'
     }));
   // stream.dts.pipe(gulp.dest('target/e2e/...')); — no, don't need d.ts files
   if (watchAndLiveForever) {

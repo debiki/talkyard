@@ -189,6 +189,7 @@ class SiteTransactionAppSpec extends DaoAppSuite {
           val progress = ReadingProgress(
             firstVisitedAt = When.fromMinutes(1000),
             lastVisitedAt = When.fromMinutes(1010),
+            lastViewedPostNr = 1020,
             lastReadAt = None,
             lastPostNrsReadRecentFirst = Vector.empty,
             lowPostNrsRead = Set.empty,
@@ -207,8 +208,9 @@ class SiteTransactionAppSpec extends DaoAppSuite {
           progressLowNrs = ReadingProgress(
             firstVisitedAt = When.fromMinutes(2000),
             lastVisitedAt = When.fromMinutes(2010),
+            lastViewedPostNr = 2020,
             lastReadAt = Some(When.fromMinutes(2002)),
-            lastPostNrsReadRecentFirst = Vector(2),
+            lastPostNrsReadRecentFirst = Vector.empty,
             lowPostNrsRead = Set(1, 2, 3, 8),
             secondsReading = 203)
           transaction.upsertReadProgress(admin.id, otherPageId, progressLowNrs)
@@ -217,13 +219,14 @@ class SiteTransactionAppSpec extends DaoAppSuite {
         }
       }
 
-      "ReadingProgress with high post nrs" in {
+      "ReadingProgress with high post nr" in {
         dao.readWriteTransaction { transaction =>
           progressHighNrs = ReadingProgress(
             firstVisitedAt = When.fromMinutes(3000),
             lastVisitedAt = When.fromMinutes(3010),
+            lastViewedPostNr = 3020,
             lastReadAt = Some(When.fromMinutes(3002)),
-            lastPostNrsReadRecentFirst = Vector(3),
+            lastPostNrsReadRecentFirst = Vector(3103),
             lowPostNrsRead = Set(1, 10, 100, 200, 300, 400, 500, 512),
             secondsReading = 303)
           transaction.upsertReadProgress(admin.id, thirdPageId, progressHighNrs)
@@ -236,9 +239,10 @@ class SiteTransactionAppSpec extends DaoAppSuite {
         dao.readWriteTransaction { transaction =>
           val progress = ReadingProgress(
             firstVisitedAt = When.fromMinutes(4000),
-            lastVisitedAt = When.fromMinutes(4010),
-            lastReadAt = Some(When.fromMinutes(4010)),
-            lastPostNrsReadRecentFirst = Vector(4),
+            lastVisitedAt = When.fromMinutes(4040),
+            lastViewedPostNr = 4020,
+            lastReadAt = Some(When.fromMinutes(4030)),
+            lastPostNrsReadRecentFirst = Vector(4104),
             lowPostNrsRead = Set(1, 2, 3, 4, 5, 6, 7, 8),
             secondsReading = 403)
           transaction.upsertReadProgress(admin.id, thirdPageId, progress)

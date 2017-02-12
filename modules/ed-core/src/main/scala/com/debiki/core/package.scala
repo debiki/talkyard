@@ -360,7 +360,7 @@ package object core {
     require(lastPostNrsReadRecentFirst.isEmpty || lastPostNrsReadRecentFirst.min > MaxLowPostNr,
       s"Got min = ${lastPostNrsReadRecentFirst.min} [EdE4GSWA1]")
 
-    require((secondsReading > 0) == lastReadAt.isDefined, "EdE42HUP4V")
+    require((secondsReading > 0) || lastReadAt.isEmpty, "EdE42HUP4X")
     require((secondsReading > 0) || lastPostNrsReadRecentFirst.isEmpty, "EdE5KWP02")
     require((secondsReading > 0) || lowPostNrsRead.isEmpty, "EdE8JSBWR42")
 

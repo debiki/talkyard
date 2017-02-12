@@ -176,11 +176,6 @@ case class NotificationGenerator(transaction: SiteTransaction) {
     generatedNotifications
   }
 
-  /*
-  private def generateForVote(likeVote: RawPostAction[PAP.Vote]) {
-    // Delete this notf if deleting the vote, see [953kGF21X].
-  } */
-
 
   def generateForTags(post: Post, tagsAdded: Set[TagLabel]): Notifications = {
     val userIdsWatching = transaction.listUsersWatchingTags(tagsAdded)

@@ -33,6 +33,8 @@ if [ $file_owner_id -ne 0 ] ; then
   # (/home/owner/.ivy2 and .sbt are mounted in docker-compose.yml)
   chown owner /home/owner/.ivy2
   chown owner /home/owner/.sbt
+  # Make saving-uploads work (this dir, mounted in docker-compose.yml, shouldn't be owned by root).
+  chown owner /opt/ed/uploads/
 
   set -x
   # Here, 'exec gosu owner $*' will:
