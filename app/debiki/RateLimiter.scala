@@ -21,7 +21,7 @@ import com.debiki.core._
 import com.debiki.core.Prelude._
 import com.github.benmanes.caffeine
 import debiki.DebikiHttp.throwTooManyRequests
-import io.efdi.server.http.DebikiRequest
+import ed.server.http.DebikiRequest
 import java.util.concurrent.atomic.AtomicReference
 import RateLimits._
 
@@ -59,7 +59,7 @@ object RateLimiter {
     if (rateLimits.isUnlimited(isNewUser = false))
       return
 
-    if (io.efdi.server.http.hasOkE2eTestPassword(request.underlying))
+    if (ed.server.http.hasOkE2eTestPassword(request.underlying))
       return
 
     if (rateLimits.noRequestsAllowed(isNewUser = false)) {

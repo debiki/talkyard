@@ -22,7 +22,7 @@ import com.debiki.core.Prelude._
 import com.debiki.core.User.{MinUsernameLength, isGuestId}
 import debiki._
 import debiki.ReactJson._
-import io.efdi.server.http._
+import ed.server.http._
 import math.max
 import java.{util => ju}
 import play.api.mvc

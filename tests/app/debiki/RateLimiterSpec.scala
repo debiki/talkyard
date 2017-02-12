@@ -19,7 +19,7 @@ package debiki
 
 import com.debiki.core._
 import com.debiki.core.Prelude._
-import io.efdi.server.http.DebikiRequest
+import ed.server.http.DebikiRequest
 import org.scalatest._
 import org.scalatest.mock.MockitoSugar
 import org.scalatestplus.play.OneAppPerSuite

@@ -22,7 +22,7 @@ import com.debiki.core.Prelude._
 import debiki.DebikiHttp._
 import debiki.Globals
 import ed.server.security.createSessionIdAndXsrfToken
-import io.efdi.server.http._
+import ed.server.http._
 import play.api._
 import play.api.libs.json.JsString
 import redis.RedisClient

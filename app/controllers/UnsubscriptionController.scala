@@ -21,7 +21,7 @@ import com.debiki.core.EmailNotfPrefs
 import com.debiki.core._
 import debiki._
 import debiki.DebikiHttp._
-import io.efdi.server.http._
+import ed.server.http._
 import java.{util => ju}
 import play.api._
 import play.api.mvc.{Action => _, _}

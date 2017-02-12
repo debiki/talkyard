@@ -20,7 +20,7 @@ package debiki.dao
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki._
-import io.efdi.server.http.throwForbidden2
+import ed.server.http.throwForbidden2
 
 
 /** Loads and saves settings for the whole website, a section of the website (e.g.

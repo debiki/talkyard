@@ -20,8 +20,8 @@ package debiki
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import controllers.{SiteAssetBundlesController, routes}
-import io.efdi.server.http.DebikiRequest
-import io.efdi.server.http.PageRequest
+import ed.server.http.DebikiRequest
+import ed.server.http.PageRequest
 import java.{util => ju}
 import play.{api => p}
 import play.api.Play.current

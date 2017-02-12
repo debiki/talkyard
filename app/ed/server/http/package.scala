@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package io.efdi.server
+package ed.server
 
 import com.debiki.core._
 import com.debiki.core.Prelude._
@@ -41,7 +41,7 @@ package object http {
     _root_.controllers.Utils.OkSafeJson(json)
 
 
-  import io.efdi.server.http.PlainApiActions._
+  import ed.server.http.PlainApiActions._
 
 
   implicit class RichString2(value: String) {

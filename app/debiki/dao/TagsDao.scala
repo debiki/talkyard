@@ -20,9 +20,9 @@ package debiki.dao
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki.ReactJson
-import io.efdi.server.http._
-import io.efdi.server.notf.NotificationGenerator
-import io.efdi.server.pubsub.StorePatchMessage
+import ed.server.http._
+import ed.server.notf.NotificationGenerator
+import ed.server.pubsub.StorePatchMessage
 import play.api.libs.json.JsValue
 import TagsDao._
 

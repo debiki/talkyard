@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package io.efdi.server.pubsub
+package ed.server.pubsub
 
 import akka.actor._
 import com.debiki.core.Prelude._

@@ -23,7 +23,7 @@ import debiki.DebikiHttp._
 import debiki.JsonUtils._
 import debiki._
 import ed.server._
-import io.efdi.server.http._
+import ed.server.http._
 import java.{util => ju}
 import org.scalactic._
 import play.api._

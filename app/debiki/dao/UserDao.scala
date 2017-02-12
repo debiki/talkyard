@@ -22,7 +22,7 @@ import debiki.DebikiHttp.{throwBadReq, throwForbidden}
 import debiki.BrowserId
 import ed.server._
 import ed.server.security.SidStatus
-import io.efdi.server.http.throwForbiddenIf
+import ed.server.http.throwForbiddenIf
 import java.{util => ju}
 import play.api.libs.json.JsArray
 import scala.collection.immutable

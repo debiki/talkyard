@@ -21,7 +21,7 @@ import com.debiki.core._
 import debiki.{RateLimits, SiteTpi}
 import debiki.ReactJson._
 import debiki.DebikiHttp.throwBadRequest
-import io.efdi.server.http._
+import ed.server.http._
 import play.{api => p}
 import play.api.libs.json.{JsObject, Json}
 

@@ -25,7 +25,7 @@ import debiki.ReactJson.{DateEpochOrNull, JsNumberOrNull, JsUser}
 import debiki.dao.SiteDao
 import ed.server._
 import ed.server.security.createSessionIdAndXsrfToken
-import io.efdi.server.http._
+import ed.server.http._
 import java.{util => ju}
 import play.api.mvc
 import play.api.libs.json._

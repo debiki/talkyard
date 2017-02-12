@@ -20,7 +20,7 @@ package debiki
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki.dao.SystemDao
-import io.efdi.server.http.{GetRequest, DebikiRequest}
+import ed.server.http.{GetRequest, DebikiRequest}
 import java.{net => jn}
 import play.api._
 import play.api.libs.iteratee.Iteratee

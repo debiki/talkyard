@@ -15,11 +15,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package io.efdi.server.notf
+package ed.server.notf
 
 import com.debiki.core.Prelude._
 import com.debiki.core._
-import io.efdi.server.notf.NotificationGenerator._
+import ed.server.notf.NotificationGenerator._
 import java.{util => ju}
 import scala.collection.{immutable, mutable}
 

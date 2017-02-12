@@ -21,7 +21,7 @@ import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki.TextAndHtml
 import debiki.DebikiHttp.throwForbidden
-import io.efdi.server.http.DebikiRequest
+import ed.server.http.DebikiRequest
 import java.{net => jn}
 import java.net.UnknownHostException
 import play.{api => p}

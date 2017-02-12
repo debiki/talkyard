@@ -21,7 +21,7 @@ import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki.DebikiHttp._
 import debiki.{Globals, RateLimits, SiteTpi}
-import io.efdi.server.http._
+import ed.server.http._
 import java.{util => ju}
 import play.api._
 import play.api.mvc._

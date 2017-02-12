@@ -23,7 +23,7 @@ import controllers.Utils._
 import debiki._
 import debiki.DebikiHttp._
 import debiki.ReactJson.JsLongOrNull
-import io.efdi.server.http._
+import ed.server.http._
 import java.{util => ju}
 import play.api._
 import play.api.libs.json.Json

@@ -24,7 +24,7 @@ import debiki.DebikiHttp._
 import ed.server.spam.SpamChecker
 import ed.server._
 import ed.server.security.createSessionIdAndXsrfToken
-import io.efdi.server.http._
+import ed.server.http._
 import java.{util => ju}
 import play.api._
 import play.api.mvc.{Action => _, _}

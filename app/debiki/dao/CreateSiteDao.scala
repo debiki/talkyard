@@ -21,7 +21,7 @@ import com.debiki.core.DbDao.TooManySitesCreatedInTotalException
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import controllers.CreateSiteController
-import io.efdi.server.http.throwForbidden2
+import ed.server.http.throwForbidden2
 
 
 

@@ -22,7 +22,7 @@ import com.debiki.core.Prelude._
 import controllers.ForumController
 import debiki._
 import debiki.DebikiHttp._
-import io.efdi.server.http.PageRequest
+import ed.server.http.PageRequest
 import play.{api => p}
 import play.api.Play.current
 import RenderedPageHtmlDao._

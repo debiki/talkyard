@@ -22,7 +22,7 @@ import com.debiki.core.Prelude._
 import debiki.DebikiHttp._
 import debiki._
 import ed.server.search.{PageAndHits, SearchHit, SearchEngine}
-import io.efdi.server.http._
+import ed.server.http._
 import org.{elasticsearch => es}
 import play.api.Play.current
 import redis.RedisClient

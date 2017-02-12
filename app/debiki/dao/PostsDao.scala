@@ -24,9 +24,9 @@ import com.debiki.core.PageParts.FirstReplyNr
 import controllers.EditController
 import debiki._
 import debiki.DebikiHttp._
-import io.efdi.server.notf.NotificationGenerator
-import io.efdi.server.pubsub.StorePatchMessage
-import io.efdi.server.http.throwForbiddenIf
+import ed.server.notf.NotificationGenerator
+import ed.server.pubsub.StorePatchMessage
+import ed.server.http.throwForbiddenIf
 import play.api.libs.json.JsValue
 import play.{api => p}
 import scala.collection.{mutable, immutable}

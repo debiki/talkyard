@@ -21,7 +21,7 @@ import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki._
 import debiki.DebikiHttp._
-import io.efdi.server.http._
+import ed.server.http._
 import play.api._
 import play.api.libs.json.{Json, JsString}
 import play.api.mvc.{Action => _, _}

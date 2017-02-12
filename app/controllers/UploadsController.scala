@@ -22,7 +22,7 @@ import com.debiki.core.Prelude._
 import debiki._
 import debiki.DebikiHttp._
 import debiki.dao.UploadsDao._
-import io.efdi.server.http._
+import ed.server.http._
 import java.{io => jio}
 import play.api._
 import play.api.libs.json.{Json, JsString}

@@ -20,7 +20,7 @@ package ed.server.auth
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki.DebikiHttp._
-import io.efdi.server.http._
+import ed.server.http._
 
 
 

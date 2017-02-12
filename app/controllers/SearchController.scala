@@ -21,7 +21,7 @@ import com.debiki.core._
 import debiki.{RateLimits, SiteTpi}
 import debiki.DebikiHttp.throwBadRequest
 import ed.server.search._
-import io.efdi.server.http._
+import ed.server.http._
 import play.api._
 import scala.collection.immutable.Seq
 import scala.concurrent.ExecutionContext.Implicits.global

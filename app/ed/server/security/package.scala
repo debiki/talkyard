@@ -21,7 +21,7 @@ import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki.DebikiHttp._
 import debiki.ReactRenderer
-import io.efdi.server.http.{JsonOrFormDataBody, realOrFakeIpOf}
+import ed.server.http.{JsonOrFormDataBody, realOrFakeIpOf}
 import java.{util => ju}
 import play.api.mvc.Cookie
 import play.api.Logger

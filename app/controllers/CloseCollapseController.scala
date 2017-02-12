@@ -21,7 +21,7 @@ import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki._
 import debiki.DebikiHttp._
-import io.efdi.server.http._
+import ed.server.http._
 import javax.inject.Inject
 import play.api._
 

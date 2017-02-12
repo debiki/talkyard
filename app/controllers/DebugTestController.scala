@@ -22,7 +22,7 @@ import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki.{ReactRenderer, RateLimits, Globals}
 import debiki.DebikiHttp._
-import io.efdi.server.http._
+import ed.server.http._
 import java.lang.management.ManagementFactory
 import java.{util => ju, io => jio}
 import javax.inject.Inject

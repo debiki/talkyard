@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package io.efdi.server.notf
+package ed.server.notf
 
 import akka.actor._
 import com.debiki.core.Prelude._
@@ -24,7 +24,7 @@ import debiki.DatabaseUtils.isConnectionClosedBecauseTestsDone
 import debiki.Globals
 import debiki.Globals.originOf
 import debiki.dao.{SiteDao, SiteDaoFactory, SystemDao}
-import io.efdi.server.notf.Notifier._
+import ed.server.notf.Notifier._
 import java.{util => ju}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._

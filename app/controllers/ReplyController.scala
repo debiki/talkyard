@@ -22,7 +22,7 @@ import com.debiki.core.Prelude._
 import debiki._
 import debiki.DebikiHttp._
 import ed.server.spam.SpamChecker
-import io.efdi.server.http._
+import ed.server.http._
 import play.api._
 import play.api.mvc.{Action => _, _}
 import scala.concurrent.ExecutionContext.Implicits.global

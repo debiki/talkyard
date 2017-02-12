@@ -23,7 +23,7 @@ import debiki._
 import debiki.DebikiHttp._
 import debiki.ReactJson.JsStringOrNull
 import debiki.onebox.Onebox
-import io.efdi.server.http._
+import ed.server.http._
 import play.api._
 import play.api.libs.json._
 import play.api.mvc.{Action => _, _}

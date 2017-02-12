@@ -19,7 +19,7 @@ package controllers
 
 import com.debiki.core._
 import debiki._
-import io.efdi.server.http._
+import ed.server.http._
 import javax.inject.Inject
 import play.api._
 import play.api.mvc.{Action => _, _}

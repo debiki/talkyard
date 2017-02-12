@@ -23,8 +23,8 @@ import com.debiki.core.PageParts.MaxTitleLength
 import com.debiki.core.User.SystemUserId
 import debiki._
 import debiki.DebikiHttp._
-import io.efdi.server.http.throwIndistinguishableNotFound
-import io.efdi.server.notf.NotificationGenerator
+import ed.server.http.throwIndistinguishableNotFound
+import ed.server.notf.NotificationGenerator
 import java.{util => ju}
 
 import scala.collection.{immutable, mutable}

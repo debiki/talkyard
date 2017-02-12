@@ -22,7 +22,7 @@ import com.debiki.core.Prelude._
 import debiki._
 import debiki.DebikiHttp._
 import ed.server.spam.SpamChecker.throwForbiddenIfSpam
-import io.efdi.server.http._
+import ed.server.http._
 import javax.inject.Inject
 import play.api.libs.json._
 import play.api.mvc.Controller

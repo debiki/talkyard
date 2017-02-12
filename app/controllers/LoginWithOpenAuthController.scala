@@ -29,7 +29,7 @@ import debiki._
 import debiki.DebikiHttp._
 import ed.server._
 import ed.server.security.createSessionIdAndXsrfToken
-import io.efdi.server.http._
+import ed.server.http._
 import java.{util => ju}
 import org.scalactic.{Good, Bad}
 import play.api.libs.json.Json

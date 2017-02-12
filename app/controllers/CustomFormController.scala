@@ -22,7 +22,7 @@ import com.debiki.core.Prelude._
 import debiki._
 import debiki.DebikiHttp._
 import ed.server._
-import io.efdi.server.http._
+import ed.server.http._
 import play.api.libs.json.{JsArray, Json}
 import play.api.mvc
 

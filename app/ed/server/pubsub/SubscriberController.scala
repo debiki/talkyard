@@ -15,13 +15,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package io.efdi.server.pubsub
+package ed.server.pubsub
 
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki.DebikiHttp._
 import debiki._
-import io.efdi.server.http._
+import ed.server.http._
 import play.api._
 import play.api.libs.json.{JsArray, JsString, Json}
 import scala.concurrent.ExecutionContext.Implicits.global

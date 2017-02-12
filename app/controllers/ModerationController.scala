@@ -22,7 +22,7 @@ import com.debiki.core.Prelude._
 import controllers.Utils._
 import debiki.DebikiHttp._
 import debiki.{ReactJson, ThingsToReview}
-import io.efdi.server.http._
+import ed.server.http._
 import java.{util => ju}
 import play.api._
 import play.api.libs.json._

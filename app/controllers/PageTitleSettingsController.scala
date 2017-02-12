@@ -23,7 +23,7 @@ import com.debiki.core.PageParts.MaxTitleLength
 import debiki._
 import debiki.DebikiHttp._
 import debiki.ReactJson.JsStringOrNull
-import io.efdi.server.http._
+import ed.server.http._
 import play.api._
 import play.api.libs.json._
 import play.api.mvc.{Action => _, _}

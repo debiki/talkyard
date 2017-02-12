@@ -21,7 +21,7 @@ import com.debiki.core._
 import com.debiki.core.Prelude._
 import controllers.ForumController
 import debiki.dao.{PageDao, PageStuff, ReviewStuff, SiteDao}
-import io.efdi.server.http._
+import ed.server.http._
 import java.{util => ju}
 import org.jsoup.Jsoup
 import play.api.libs.json._

@@ -19,7 +19,7 @@ package controllers
 
 import com.debiki.core._
 import debiki.{ReactJson, RateLimits, SiteTpi}
-import io.efdi.server.http._
+import ed.server.http._
 import play.{api => p}
 import play.api.libs.json._
 import debiki.DebikiHttp.throwBadRequest

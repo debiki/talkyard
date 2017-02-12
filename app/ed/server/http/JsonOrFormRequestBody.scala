@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package io.efdi.server.http
+package ed.server.http
 
 import com.debiki.core._
 import com.debiki.core.Prelude._

@@ -25,7 +25,7 @@ import ed.server._
 import ed.server.security.createSessionIdAndXsrfToken
 import debiki.dao.SiteDao
 import debiki.DebikiHttp._
-import io.efdi.server.http._
+import ed.server.http._
 import java.{util => ju}
 import org.scalactic.{Good, Bad}
 import play.api._

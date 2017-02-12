@@ -31,10 +31,10 @@ import ed.server.spam.{SpamCheckActor, SpamChecker}
 import debiki.dao._
 import debiki.dao.migrations.ScalaBasedMigrations
 import ed.server.search.SearchEngineIndexer
-import io.efdi.server.notf.Notifier
+import ed.server.notf.Notifier
 import java.{lang => jl, net => jn}
 import java.util.concurrent.TimeUnit
-import io.efdi.server.pubsub.{PubSub, PubSubApi, StrangerCounterApi}
+import ed.server.pubsub.{PubSub, PubSubApi, StrangerCounterApi}
 import org.{elasticsearch => es}
 import org.scalactic._
 import play.{api => p}

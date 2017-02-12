@@ -20,7 +20,7 @@ package debiki
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki.DebikiHttp.throwTooManyRequests
-import io.efdi.server.http.DebikiRequest
+import ed.server.http.DebikiRequest
 import net.sf.ehcache.{Element => EhcacheElement}
 import java.util.concurrent.atomic.AtomicReference
 import RateLimits._

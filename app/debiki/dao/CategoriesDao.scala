@@ -20,7 +20,7 @@ package debiki.dao
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki.DebikiHttp.throwNotFound
-import io.efdi.server.http.throwForbiddenIf
+import ed.server.http.throwForbiddenIf
 import debiki.TextAndHtml
 import java.{util => ju}
 import scala.collection.{immutable, mutable}

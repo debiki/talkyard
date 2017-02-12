@@ -19,8 +19,8 @@ package debiki.dao
 
 import com.debiki.core._
 import com.debiki.core.Prelude._
-import io.efdi.server.notf.NotificationGenerator
-import io.efdi.server.pubsub
+import ed.server.notf.NotificationGenerator
+import ed.server.pubsub
 import debiki.DebikiHttp.throwForbidden
 import debiki.TextAndHtml
 
