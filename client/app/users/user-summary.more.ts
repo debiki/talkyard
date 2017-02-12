@@ -35,7 +35,7 @@ export let UserSummaryComponent = React.createClass(<any> {
          r.li({ className: 's_UP_Stats_Stat' },
            stats.numDaysVisited + " days visited"),
          r.li({ className: 's_UP_Stats_Stat' },
-           moment.duration({ minutes: stats.numMinutesReading }).humanize() + " spent reading"),
+           moment.duration({ seconds: stats.numSecondsReading }).humanize() + " spent reading"),
          r.li({ className: 's_UP_Stats_Stat' },
            userStats_totalNumPostsRead(stats) + " posts read"),
          r.li({ className: 's_UP_Stats_Stat' },

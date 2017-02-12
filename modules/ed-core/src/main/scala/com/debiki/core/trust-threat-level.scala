@@ -32,7 +32,7 @@ sealed abstract class TrustLevel(val IntVal: Int) { def toInt = IntVal }
 object TrustLevel {
   case object New extends TrustLevel(1)
   case object Basic extends TrustLevel(2)
-  case object Member extends TrustLevel(3)
+  case object FullMember extends TrustLevel(3)
   case object Helper extends TrustLevel(4)
   case object Regular extends TrustLevel(5)
   case object CoreMember extends TrustLevel(6)
@@ -40,7 +40,7 @@ object TrustLevel {
   def fromInt(value: Int): Option[TrustLevel] = Some(value match {
     case TrustLevel.New.IntVal => TrustLevel.New
     case TrustLevel.Basic.IntVal => TrustLevel.Basic
-    case TrustLevel.Member.IntVal => TrustLevel.Member
+    case TrustLevel.FullMember.IntVal => TrustLevel.FullMember
     case TrustLevel.Helper.IntVal => TrustLevel.Helper
     case TrustLevel.Regular.IntVal => TrustLevel.Regular
     case TrustLevel.CoreMember.IntVal => TrustLevel.CoreMember

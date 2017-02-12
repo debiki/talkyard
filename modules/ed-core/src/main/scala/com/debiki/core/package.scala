@@ -316,11 +316,13 @@ package object core {
     * @param lastVisitedAt The last time the user visited the page, perhaps without reading.
     * @param lastViewedPostNr Should be focused after page reload (regardless of if is read/unread).
     * @param lastReadAt The last time the user apparently read something on the page.
-    * @param lastPostNrsReadRecentFirst Which posts were the last ones the user read. The most recently
-    *   read post nr is stored first, so .distinct keeps the most recently read occurrences
+    * @param lastPostNrsReadRecentFirst Which posts were the last ones the user read. The most
+    *   recently read post nr is stored first, so .distinct keeps the most recently read occurrences
     *   of each post nr (rather than some old duplicate).
     *   Useful for remembering the most recently read comments in an endless stream of
     *   comments — that is, in a chat topic.
+    *   Only post nrs > MaxLowPost nrs should be included (the ones <= MaxLowPost should instead
+    *   be inserted into lowPostNrsRead).
     * @param lowPostNrsRead Suitable for storing as a bit set in the database, e.g. 8*8 bytes
     *   would remember which ones of post nrs 1 - 512 the user has read.
     *   If any post nr is > MaxLowPostNr, an error is thrown.
@@ -353,14 +355,26 @@ package object core {
       s"Got max = ${lowPostNrsRead.max} [EdE2W4KA8]")
     require(lowPostNrsRead.isEmpty || lowPostNrsRead.min >= 1, // title (nr 0) shouldn't be included
       s"Got min = ${lowPostNrsRead.min} [EdE4GHSU2]")
+
     require(lastPostNrsReadRecentFirst.size <= MaxLastPostsToRemember, "EdE24GKF0")
+    require(lastPostNrsReadRecentFirst.isEmpty || lastPostNrsReadRecentFirst.min > MaxLowPostNr,
+      s"Got min = ${lastPostNrsReadRecentFirst.min} [EdE4GSWA1]")
 
     require((secondsReading > 0) == lastReadAt.isDefined, "EdE42HUP4V")
     require((secondsReading > 0) || lastPostNrsReadRecentFirst.isEmpty, "EdE5KWP02")
     require((secondsReading > 0) || lowPostNrsRead.isEmpty, "EdE8JSBWR42")
 
+
+    def numLowNrRepliesRead: Int =
+      lowPostNrsRead.size - (if (lowPostNrsRead.contains(PageParts.BodyNr)) 1 else 0)
+
+    def numPostsRead: Int =
+      lowPostNrsRead.size + lastPostNrsReadRecentFirst.size
+
+
     def addMore(moreProgress: ReadingProgress): ReadingProgress = {
       copy(
+        secondsReading = secondsReading + moreProgress.secondsReading,
         firstVisitedAt = When.earliestOf(firstVisitedAt, moreProgress.firstVisitedAt),
         lastVisitedAt = When.latestOf(lastVisitedAt, moreProgress.lastVisitedAt),
         lastViewedPostNr =

@@ -566,7 +566,7 @@ interface UserStats {
   topicsNewSince: DateMs;
   notfsNewSinceId: NotificationId;
   numDaysVisited: number;
-  numMinutesReading: number;
+  numSecondsReading: number;
   numDiscourseRepliesRead: number;
   numDiscourseRepliesPosted: number;
   numDiscourseTopicsEntered: number;

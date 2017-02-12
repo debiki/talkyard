@@ -19,7 +19,7 @@ package com.debiki.core
 
 import java.net.InetAddress
 import java.{net => jn, util => ju}
-import org.scalactic.{ErrorMessage, Every, Or}
+import org.scalactic.{ErrorMessage, Or}
 import scala.collection.mutable
 import EmailNotfPrefs.EmailNotfPrefs
 import Prelude._
@@ -58,10 +58,10 @@ case class Invite(
   require(deletedAt.isEmpty || deletedAt.get.getTime >= createdAt.getTime, "DwE6PK2")
   require(invalidatedAt.isEmpty || invalidatedAt.get.getTime >= createdAt.getTime, "DwE8UY0")
 
-  def canBeOrHasBeenAccepted = invalidatedAt.isEmpty && deletedAt.isEmpty
+  def canBeOrHasBeenAccepted: Boolean = invalidatedAt.isEmpty && deletedAt.isEmpty
 
   COULD; REFACTOR // createdAt to ... what? and createdWhen to createdAt. Or change datatype.
-  def createdWhen = When.fromDate(createdAt)
+  def createdWhen: When = When.fromDate(createdAt)
 
   /** Suggests a username based on the email address, namely the text before the '@'.
     * Padded with "_" if too short.
@@ -257,7 +257,7 @@ case object User {
   val SuperAdminId = 2
 
   /** A user that did something, e.g. voted on a comment, but was not logged in. */
-  val UnknownUserId = -3
+  val UnknownUserId: UserId = -3
   val UnknownUserName = "Unknown"
   val UnknownUserGuestCookie = "UU"
 
@@ -266,9 +266,9 @@ case object User {
   // val AnonymousUserId = -1
 
   /** Guests with custom name and email, but not guests with magic ids like the Unknown user. */
-  val MaxCustomGuestId = -10
+  val MaxCustomGuestId: UserId = -10
 
-  val MaxGuestId = -1
+  val MaxGuestId: UserId = -1
   //assert(MaxGuestId == AnonymousUserId)
   assert(UnknownUserId.toInt <= MaxGuestId)
 
@@ -281,16 +281,16 @@ case object User {
   val LowestNonGuestId = 1  // later: rename to LowestMemberId?
   assert(LowestNonGuestId == SystemUserId)
 
-  def isGuestId(userId: UserId) =
+  def isGuestId(userId: UserId): Boolean =
     userId <= MaxGuestId
 
-  def isRoleId(userId: UserId) =
+  def isRoleId(userId: UserId): Boolean =
     !isGuestId(userId)
 
-  def isMember(userId: UserId) = userId >= LowestMemberId
-  def isHumanMember(userId: UserId) = userId >= LowestHumanMemberId
+  def isMember(userId: UserId): Boolean = userId >= LowestMemberId
+  def isHumanMember(userId: UserId): Boolean = userId >= LowestHumanMemberId
 
-  def isOkayUserId(id: UserId) =
+  def isOkayUserId(id: UserId): Boolean =
     id >= LowestAuthenticatedUserId ||
       id == SystemUserId ||
       //id == SuperAdminId ||     later
@@ -298,7 +298,7 @@ case object User {
       id == UnknownUserId ||
       id <= MaxCustomGuestId
 
-  def isOkayGuestId(id: UserId) =
+  def isOkayGuestId(id: UserId): Boolean =
     id == UnknownUserId || id <= MaxCustomGuestId
 
   val MinUsernameLength = 3
@@ -349,14 +349,14 @@ case object User {
   }
 
 
-  def isOkayGuestCookie(anyValue: Option[String]) = anyValue match {
+  def isOkayGuestCookie(anyValue: Option[String]): Boolean = anyValue match {
     case None => false
     case Some(value) => value.nonEmpty && value.trim == value
   }
 
 
   def isSuspendedAt(now: ju.Date, suspendedTill: Option[ju.Date]): Boolean =
-    suspendedTill.map(now.getTime <= _.getTime) == Some(true)
+    suspendedTill.exists(now.getTime <= _.getTime)
 
 }
 
@@ -377,18 +377,22 @@ sealed trait User {
   def isModerator: Boolean
   def isSuperAdmin: Boolean
 
-  def isAuthenticated = isRoleId(id)
-  def isApprovedOrStaff = isApproved.contains(true) || isStaff
-  def isSystemUser = id == SystemUserId
-  def isStaff = isAdmin || isModerator || isSystemUser
-  def isHuman = id >= LowestHumanMemberId
+  def isAuthenticated: Boolean = isRoleId(id)
+  def isApprovedOrStaff: Boolean = isApproved.contains(true) || isStaff
+  def isSystemUser: Boolean = id == SystemUserId
+  def isStaff: Boolean = isAdmin || isModerator || isSystemUser
+  def isHuman: Boolean = id >= LowestHumanMemberId
 
-  def isMember = User.isMember(id)
-  def isGuest = User.isGuestId(id)
+  def isMember: Boolean = User.isMember(id)
+  def isGuest: Boolean = User.isGuestId(id)
   def anyMemberId: Option[RoleId] = if (isRoleId(id)) Some(id) else None
 
-  def isSuspendedAt(when: ju.Date) = User.isSuspendedAt(when, suspendedTill = suspendedTill)
+  def isSuspendedAt(when: ju.Date): Boolean =
+    User.isSuspendedAt(when, suspendedTill = suspendedTill)
+
   def effectiveTrustLevel: TrustLevel
+  def canPromoteToBasicMember: Boolean = false
+  def canPromoteToFullMember: Boolean = false
 
   def anyName: Option[String] = None
   def anyUsername: Option[String] = None
@@ -431,6 +435,14 @@ case class Member(
   def effectiveTrustLevel: TrustLevel = lockedTrustLevel getOrElse trustLevel
   def effectiveThreatLevel: ThreatLevel = lockedThreatLevel getOrElse threatLevel
 
+  override def canPromoteToBasicMember: Boolean =
+    // If trust level locked, promoting the this.trustLevel has no effect — but we'll still
+    // do it, so we know what it would have been, had it not been locked.
+    trustLevel == TrustLevel.New
+
+  override def canPromoteToFullMember: Boolean =
+    trustLevel == TrustLevel.Basic
+
   require(!fullName.map(_.trim).contains(""), "DwE4GUK28")
   require(User.isOkayUserId(id), "DwE02k12R5")
   require(theUsername.length >= 2, "EsE7YKW3")
@@ -448,7 +460,7 @@ case class Guest(
   country: Option[String] = None,  // COULD rename to Location
   lockedThreatLevel: Option[ThreatLevel] = None) extends User {
 
-  def theUsername = die("EsE7YKWP4")
+  def theUsername: Nothing = die("EsE7YKWP4")
   def username = None
   def emailVerifiedAt: Option[ju.Date] = None
   def passwordHash: Option[String] = None
@@ -463,7 +475,7 @@ case class Guest(
   def effectiveTrustLevel = TrustLevel.New
 
   override def anyName = Some(guestName)
-  def usernameOrGuestName = guestName
+  def usernameOrGuestName: String = guestName
 
   require(isOkayGuestId(id), "DwE4GYUK21")
   require(guestName == guestName.trim, "EsE5YGUK3")
@@ -598,7 +610,10 @@ case class MemberPreferences(
   require(!about.exists(_.trim.isEmpty), "EdE2WU4YG0")
   require(userId >= User.LowestNonGuestId, "DwE56KX2")
 
-  def changesStuffIncludedEverywhere(member: MemberInclDetails) = {
+  /** Tells if these new member preferences might force us to rerender all HTML,
+    * because the changes affect just about any page.
+    */
+  def changesStuffIncludedEverywhere(member: MemberInclDetails): Boolean = {
     // Email is shown to admins only, not cached anywhere. Url shown on profile page only.
     username != member.username || fullName != member.fullName
   }
@@ -713,7 +728,7 @@ case class OpenAuthLoginAttempt(
   date: ju.Date,
   openAuthDetails: OpenAuthDetails) extends MemberLoginAttempt {
 
-  def profileProviderAndKey = openAuthDetails.providerIdAndKey
+  def profileProviderAndKey: OpenAuthProviderIdKey = openAuthDetails.providerIdAndKey
 }
 
 
@@ -756,7 +771,7 @@ case class IdentityOpenId(
   override val userId: UserId,
   openIdDetails: OpenIdDetails) extends Identity {
 
-  def displayName = openIdDetails.firstName
+  def displayName: String = openIdDetails.firstName
 }
 
 
@@ -798,7 +813,7 @@ case class OpenAuthDetails(
   avatarUrl: Option[String] = None) {
 
   def providerIdAndKey = OpenAuthProviderIdKey(providerId, providerKey)
-  def displayName = firstName.orElse(fullName).getOrElse("(unknown name)")
+  def displayName: String = firstName.orElse(fullName).getOrElse("(unknown name)")
 }
 
 
@@ -868,7 +883,7 @@ case class BrowserIdData(ip: String, idCookie: String, fingerprint: Int) {
   require(ip.nonEmpty, "DwE6G9F0")
   require(idCookie.nonEmpty, "DwE3GJ79")
 
-  def inetAddress = com.google.common.net.InetAddresses.forString(ip)
+  def inetAddress: InetAddress = com.google.common.net.InetAddresses.forString(ip)
 
 }
 
@@ -896,7 +911,7 @@ case class UserStats(
   topicsNewSince: When = When.fromMillis(0),
   notfsNewSinceId: NotificationId = 0,
   numDaysVisited: Int = 0,
-  numMinutesReading: Int = 0,
+  numSecondsReading: Int = 0,
   numDiscourseRepliesRead: Int = 0,
   numDiscourseRepliesPosted: Int = 0,
   numDiscourseTopicsEntered: Int = 0,
@@ -929,7 +944,7 @@ case class UserStats(
     emailBounceSum >= 0 &&
     notfsNewSinceId >= 0 &&
     numDaysVisited >= 0 &&
-    numMinutesReading >= 0 &&
+    numSecondsReading >= 0 &&
     numDiscourseRepliesRead >= 0 &&
     numDiscourseRepliesPosted >= 0 &&
     numDiscourseTopicsEntered >= 0 &&
@@ -974,7 +989,7 @@ case class UserStats(
       notfsNewSinceId = (moreStats.notfsNewSinceId > notfsNewSinceId) ?
         moreStats.notfsNewSinceId | notfsNewSinceId,
       numDaysVisited = numDaysVisited + moreStats.numDaysVisited,
-      numMinutesReading = numMinutesReading + moreStats.numMinutesReading,
+      numSecondsReading = numSecondsReading + moreStats.numSecondsReading,
       numDiscourseRepliesRead = numDiscourseRepliesRead + moreStats.numDiscourseRepliesRead,
       numDiscourseRepliesPosted = numDiscourseRepliesPosted + moreStats.numDiscourseRepliesPosted,
       numDiscourseTopicsEntered = numDiscourseTopicsEntered + moreStats.numDiscourseTopicsEntered,
@@ -990,6 +1005,26 @@ case class UserStats(
       numLikesReceived = numLikesReceived + moreStats.numLikesReceived,
       numSolutionsProvided = numSolutionsProvided + moreStats.numSolutionsProvided)
     }
+
+
+  def meetsBasicMemberRequirements: Boolean = {
+    // For now. Later, add a site-settings param, and compare with its config values.
+    numDiscourseTopicsEntered >= 4 &&
+      numDiscourseRepliesRead >= 25 &&
+      numSecondsReading >= 8 * 60
+  }
+
+
+  def meetsFullMemberRequirements: Boolean = {
+    // Based on Discourse, https://meta.discourse.org/t/what-do-user-trust-levels-do/4924/5.
+    numDiscourseTopicsEntered >= 20 &&
+      numDiscourseRepliesRead >= 100 &&
+      numSecondsReading >= 3600 &&
+      numDiscourseTopicsRepliedIn >= 3 &&
+      numLikesReceived >= 1 &&
+      numLikesGiven >= 1 &&
+      numDaysVisited >= 15
+  }
 }
 
 
@@ -1010,14 +1045,14 @@ case object UserStats {
 case class UserVisitStats(
   userId: UserId,
   visitDate: WhenDay,
-  numMinutesReading: Int,
+  numSecondsReading: Int,
   numDiscourseRepliesRead: Int,
   numDiscourseTopicsEntered: Int,
   numChatMessagesRead: Int,
   numChatTopicsEntered: Int) {
 
   require(
-    numMinutesReading >= 0 &&
+    numSecondsReading >= 0 &&
     numDiscourseRepliesRead >= 0 &&
     numDiscourseTopicsEntered >= 0 &&
     numChatMessagesRead >= 0 &&

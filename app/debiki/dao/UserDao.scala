@@ -28,6 +28,7 @@ import play.api.libs.json.JsArray
 import scala.collection.immutable
 import Prelude._
 import EmailNotfPrefs.EmailNotfPrefs
+import debiki.ReactJson.NotfsAndCounts
 import scala.collection.mutable.ArrayBuffer
 
 
@@ -542,21 +543,80 @@ trait UserDao {
   }
 
 
-  def trackReadingProgress(userId: UserId, pageId: PageId, readingProgress: ReadingProgress) {
+  /** Promotes a new member to trust levels Basic and Normal member, if hen meets those
+    * requirements, after the additional time spent reading has been considered.
+    * (Won't promote to trust level Helper and above though.)
+    */
+  def trackReadingProgressPerhapsPromote(user: User, pageId: PageId, newProgress: ReadingProgress) {
+    // Tracking guests' reading progress would take a bit much disk space, makes disk-space DoS
+    // attacks too simple. [8PLKW46]
+    require(user.isMember, "EdE8KFUW2")
+
+    val pageMeta = getPageMeta(pageId) getOrDie "EdE5JKDYE"
     readWriteTransaction { transaction =>
-      val oldProgress = transaction.loadReadProgress(userId = userId, pageId = pageId)
-      val resultingProgress = oldProgress match {
-        case Some(old) => old.addMore(readingProgress)
-        case None => readingProgress
+      val oldProgress = transaction.loadReadProgress(userId = user.id, pageId = pageId)
+
+      val (numMorePostsRead, numMoreRepliesRead, numMoreTopicsEntered, resultingProgress) =
+        oldProgress match {
+          case None =>
+            (newProgress.numPostsRead, newProgress.numLowNrRepliesRead, 1, newProgress)
+          case Some(old) =>
+            ((newProgress.lastPostNrsReadRecentFirst.toSet -- old.lastPostNrsReadRecentFirst).size,
+             newProgress.numLowNrRepliesRead - old.numLowNrRepliesRead, 0, old.addMore(newProgress))
+        }
+
+      val (numDiscourseRepliesRead, numDiscourseTopicsEntered,
+          numChatMessagesRead, numChatTopicsEntered) =
+        if (pageMeta.pageRole.isChat)
+          (0, 0, numMorePostsRead, numMoreTopicsEntered)
+        else
+          (numMoreRepliesRead, numMoreTopicsEntered, 0, 0)
+
+      val statsBefore = transaction.loadUserStats(user.id) getOrDie "EdE2FPJR9"
+      val statsAfter = statsBefore.addMoreStats(UserStats(
+        userId = user.id,
+        numSecondsReading = newProgress.secondsReading,
+        numDiscourseTopicsEntered = numDiscourseTopicsEntered,
+        numDiscourseRepliesRead = numDiscourseRepliesRead,
+        numChatTopicsEntered = numChatTopicsEntered,
+        numChatMessagesRead = numChatMessagesRead))
+
+      COULD_OPTIMIZE // aggregate the reading progress in Redis instead. Save every 5? 10? minutes,
+      // so won't write to the db so very often.
+
+      transaction.upsertReadProgress(userId = user.id, pageId = pageId, resultingProgress)
+      transaction.upsertUserStats(statsAfter)
+
+      if (user.canPromoteToBasicMember) {
+        if (statsAfter.meetsBasicMemberRequirements) {
+          promoteUser(user.id, TrustLevel.Basic, transaction)
+        }
       }
-      transaction.upsertReadProgress(userId = userId, pageId = pageId, resultingProgress)
+      else if (user.canPromoteToFullMember) {
+        if (statsAfter.meetsFullMemberRequirements) {
+          promoteUser(user.id, TrustLevel.FullMember, transaction)
+        }
+      }
+      else {
+        // Higher trust levels require running expensive queries; don't do that here.
+        // Instead, will be done once a day in some background job.
+      }
 
       SHOULD // also mark any notfs for the newly read posts, as read.
     }
   }
 
 
-  def loadNotifications(userId: UserId, upToWhen: Option[When], me: Who) = {
+  def promoteUser(userId: UserId, newTrustLevel: TrustLevel, transaction: SiteTransaction) {
+    // If trust level locked, we'll promote the member anyway — but member.effectiveTrustLevel
+    // won't change, because it considers the locked trust level first.
+    val member = transaction.loadTheMemberInclDetails(userId)
+    val promoted = member.copy(trustLevel = newTrustLevel)
+    transaction.updateMemberInclDetails(promoted)
+  }
+
+
+  def loadNotifications(userId: UserId, upToWhen: Option[When], me: Who): NotfsAndCounts = {
     readOnlyTransaction { transaction =>
       if (me.id != userId) {
         if (!transaction.loadUser(me.id).exists(_.isStaff))

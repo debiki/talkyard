@@ -79,7 +79,10 @@ let maxConfusionSeconds = 1.2;
 let localStorageKey = 'debikiPostNrsReadByPageId';
 
 const TooFewSeconds = 3;
-const ReportToServerIntervalSeconds: number = 20; // dupl constant, in Scala too [6AK2WX0G]
+
+// Report more frequently, if the browser cannot send a beacon before the page gets closed.
+const ReportToServerIntervalSeconds: number =
+  navigator['sendBeacon'] ? 30 : 10; // dupl constant, in Scala too [6AK2WX0G]
 
 let storeChanged = true;
 
@@ -154,7 +157,8 @@ function trackReadingActivity() {
     lastUserId = me.id;
   }
 
-  if (!me.isLoggedIn)
+  // Don't track guests. [8PLKW46]
+  if (!user_isMember(me))
     return;
 
   // Don't remove posts read one tick ago until now, so they get time to fade away slowly.
@@ -252,7 +256,7 @@ function trackReadingActivity() {
         return;
 
       let $postBody = $(this);
-      let postNr = $postBody.closest('.dw-p').dwPostId();
+      let postNr = $postBody.closest('.dw-p, .esC_M').dwPostId();
       if (!postNr)
         return;
 

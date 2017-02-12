@@ -215,7 +215,7 @@ object UserController extends mvc.Controller {
       "firstDiscourseReplyAt" -> JsWhenMsOrNull(stats.firstDiscourseReplyAt),
       "firstChatMessageAt" -> JsWhenMsOrNull(stats.firstChatMessageAt),
       "numDaysVisited" -> stats.numDaysVisited,
-      "numMinutesReading" -> stats.numMinutesReading,
+      "numSecondsReading" -> stats.numSecondsReading,
       "numDiscourseRepliesRead" -> stats.numDiscourseRepliesRead,
       "numDiscourseRepliesPosted" -> stats.numDiscourseRepliesPosted,
       "numDiscourseTopicsEntered" -> stats.numDiscourseTopicsEntered,
@@ -439,7 +439,9 @@ object UserController extends mvc.Controller {
     // Could be used to speed up the trust level transition from New to Basic to Member.
 
     import ed.server.{WhenFormat, OptWhenFormat}
-    val callerId = request.theUserId
+    val user = request.theUser
+    throwForbiddenIf(user.isGuest, "EdE8LUHE2", "Not tracking guests' reading progress")
+
     val pageId = (body \ "pageId").as[PageId]
     var visitStartedAt = (body \ "visitStartedAt").as[When]
     var lastViewedPostNr = (body \ "lastViewedPostNr").as[PostNr]
@@ -448,9 +450,10 @@ object UserController extends mvc.Controller {
     val postNrsRead = (body \ "postNrsRead").as[Vector[PostNr]]
 
     val now = Globals.now
-    val lowPostNrsRead: Set[PostNr] = postNrsRead.filter(_ < ReadingProgress.MaxLowPostNr).toSet
+    val lowPostNrsRead: Set[PostNr] = postNrsRead.filter(_ <= ReadingProgress.MaxLowPostNr).toSet
     val lastPostNrsReadRecentFirst =
-      postNrsRead.reverse.take(ReadingProgress.MaxLastPostsToRemember).distinct
+      postNrsRead.filter(_ > ReadingProgress.MaxLowPostNr).reverse.take(
+        ReadingProgress.MaxLastPostsToRemember).distinct
 
     if (visitStartedAt.isAfter(now)) {
       // Bad browser date-time setting?
@@ -487,7 +490,7 @@ object UserController extends mvc.Controller {
           throwBadRequest("EdE5FKW02", ex.toString)
       }
 
-    request.dao.trackReadingProgress(callerId, pageId, readingProgress)
+    request.dao.trackReadingProgressPerhapsPromote(user, pageId, readingProgress)
     Ok
   }
 

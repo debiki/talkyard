@@ -75,9 +75,9 @@ class SiteTransactionAppSpec extends DaoAppSuite {
         autoCreatedStats.topicsNewSince.millis must be > 0L
         autoCreatedStats.notfsNewSinceId mustBe 0
         autoCreatedStats.numDaysVisited mustBe 0
-        autoCreatedStats.numMinutesReading mustBe 0
+        autoCreatedStats.numSecondsReading mustBe 0
         autoCreatedStats.numDaysVisited mustBe 0
-        autoCreatedStats.numMinutesReading mustBe 0
+        autoCreatedStats.numSecondsReading mustBe 0
         autoCreatedStats.numDiscourseRepliesRead mustBe 0
         autoCreatedStats.numDiscourseRepliesPosted mustBe 0
         autoCreatedStats.numDiscourseTopicsEntered mustBe 0
@@ -118,7 +118,7 @@ class SiteTransactionAppSpec extends DaoAppSuite {
         topicsNewSince = When.fromMillis(FutureMs + lastNumber + 11),
         notfsNewSinceId = lastNumber + 20,
         numDaysVisited = firstNumber + 21,
-        numMinutesReading = firstNumber + 22,
+        numSecondsReading = firstNumber + 22,
         numDiscourseRepliesRead = firstNumber + 23,
         numDiscourseRepliesPosted = firstNumber + 24,
         numDiscourseTopicsEntered = firstNumber + 25,
@@ -171,7 +171,7 @@ class SiteTransactionAppSpec extends DaoAppSuite {
       def stats(userId: UserId, days: Int, number: Int) = UserVisitStats(
         userId = userId,
         visitDate = WhenDay.fromDays(days),
-        numMinutesReading = number + 1,
+        numSecondsReading = number + 1,
         numDiscourseRepliesRead = number + 3,
         numDiscourseTopicsEntered = number + 5,
         numChatMessagesRead = number + 8,
