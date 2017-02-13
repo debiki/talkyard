@@ -24,6 +24,8 @@ trait SystemTransaction {
   def commit()
   def rollback()
 
+  def now: When
+
   /** If test mode, deletes and recreates the database, if there's a validation error.
     */
   def applyEvolutions()

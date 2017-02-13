@@ -125,7 +125,7 @@ trait PostsDao {
         parent = anyParent,
         multireplyPostNrs = (replyToPostNrs.size > 1) ? replyToPostNrs | Set.empty,
         postType = postType,
-        createdAt = transaction.currentTime,
+        createdAt = transaction.now.toJavaDate,
         createdById = authorId,
         source = textAndHtml.text,
         htmlSanitized = textAndHtml.safeHtml,
@@ -142,8 +142,8 @@ trait PostsDao {
 
       val oldMeta = page.meta
       val newMeta = oldMeta.copy(
-        bumpedAt = shallBumpPage ? Option(transaction.currentTime) | oldMeta.bumpedAt,
-        lastReplyAt = shallApprove ? Option(transaction.currentTime) | oldMeta.lastReplyAt,
+        bumpedAt = shallBumpPage ? Option(transaction.now.toJavaDate) | oldMeta.bumpedAt,
+        lastReplyAt = shallApprove ? Option(transaction.now.toJavaDate) | oldMeta.lastReplyAt,
         lastReplyById = shallApprove ? Option(authorId) | oldMeta.lastReplyById,
         frequentPosterIds = newFrequentPosterIds,
         numRepliesVisible = page.parts.numRepliesVisible + (shallApprove ? 1 | 0),
@@ -158,7 +158,7 @@ trait PostsDao {
         id = AuditLogEntry.UnassignedId,
         didWhat = AuditLogEntryType.NewReply,
         doerId = authorId,
-        doneAt = transaction.currentTime,
+        doneAt = transaction.now.toJavaDate,
         browserIdData = byWho.browserIdData,
         pageId = Some(pageId),
         uniquePostId = Some(newPost.id),
@@ -173,7 +173,7 @@ trait PostsDao {
         id = transaction.nextReviewTaskId(),
         reasons = reviewReasons.to[immutable.Seq],
         createdById = SystemUserId,
-        createdAt = transaction.currentTime,
+        createdAt = transaction.now.toJavaDate,
         createdAtRevNr = Some(newPost.currentRevisionNr),
         maybeBadUserId = authorId,
         postId = Some(newPost.id),
@@ -346,7 +346,7 @@ trait PostsDao {
       val anyLastMessage = page.parts.lastPostButNotOrigPost
       val anyLastMessageSameUserRecently = anyLastMessage filter { post =>
         post.createdById == authorId &&
-          transaction.currentTime.getTime - post.createdAt.getTime < LastChatMessageRecentMs
+          transaction.now.millis - post.createdAt.getTime < LastChatMessageRecentMs
       }
 
       val (post, notfs) = anyLastMessageSameUserRecently match {
@@ -362,7 +362,7 @@ trait PostsDao {
             id = transaction.nextReviewTaskId(),
             reasons = reviewReasons.to[immutable.Seq],
             createdById = SystemUserId,
-            createdAt = transaction.currentTime,
+            createdAt = transaction.now.toJavaDate,
             createdAtRevNr = Some(post.currentRevisionNr),
             maybeBadUserId = author.id,
             postId = Some(post.id),
@@ -404,7 +404,7 @@ trait PostsDao {
       parent = None,
       multireplyPostNrs = Set.empty,
       postType = PostType.ChatMessage,
-      createdAt = transaction.currentTime,
+      createdAt = transaction.now.toJavaDate,
       createdById = authorId,
       source = textAndHtml.text,
       htmlSanitized = textAndHtml.safeHtml,
@@ -417,12 +417,12 @@ trait PostsDao {
 
     val oldMeta = page.meta
     val newMeta = oldMeta.copy(
-      bumpedAt = page.isClosed ? oldMeta.bumpedAt | Some(transaction.currentTime),
+      bumpedAt = page.isClosed ? oldMeta.bumpedAt | Some(transaction.now.toJavaDate),
       // Chat messages are always visible, so increment all num-replies counters.
       numRepliesVisible = oldMeta.numRepliesVisible + 1,
       numRepliesTotal = oldMeta.numRepliesTotal + 1,
       //numOrigPostRepliesVisible <— leave as is — chat messages aren't orig post replies.
-      lastReplyAt = Some(transaction.currentTime),
+      lastReplyAt = Some(transaction.now.toJavaDate),
       lastReplyById = Some(authorId),
       frequentPosterIds = newFrequentPosterIds,
       version = oldMeta.version + 1)
@@ -437,7 +437,7 @@ trait PostsDao {
       id = AuditLogEntry.UnassignedId,
       didWhat = AuditLogEntryType.NewChatMessage,
       doerId = authorId,
-      doneAt = transaction.currentTime,
+      doneAt = transaction.now.toJavaDate,
       browserIdData = who.browserIdData,
       pageId = Some(page.id),
       uniquePostId = Some(newPost.id),
@@ -501,10 +501,10 @@ trait PostsDao {
     val editedPost = lastPost.copy(
       approvedSource = Some(newText),
       approvedHtmlSanitized = Some(newHtml),
-      approvedAt = Some(transaction.currentTime),
+      approvedAt = Some(transaction.now.toJavaDate),
       // Leave approvedById = SystemUserId and approvedRevisionNr = FirstRevisionNr unchanged.
-      currentRevLastEditedAt = Some(transaction.currentTime),
-      lastApprovedEditAt = Some(transaction.currentTime),
+      currentRevLastEditedAt = Some(transaction.now.toJavaDate),
+      lastApprovedEditAt = Some(transaction.now.toJavaDate),
       lastApprovedEditById = Some(authorId))
 
     transaction.updatePost(editedPost)
@@ -592,11 +592,11 @@ trait PostsDao {
       // if in fact we won't approve it.
       var editsApproved = true
       var newCurrentSourcePatch: Option[String] = None
-      var newLastApprovedEditAt = Option(transaction.currentTime)
+      var newLastApprovedEditAt = Option(transaction.now.toJavaDate)
       var newLastApprovedEditById = Option(editorId)
       var newApprovedSource = Option(newTextAndHtml.text)
       var newApprovedHtmlSanitized = Option(newTextAndHtml.safeHtml)
-      var newApprovedAt = Option(transaction.currentTime)
+      var newApprovedAt = Option(transaction.now.toJavaDate)
 
       val newApprovedById =
         if (postToEdit.tyype == PostType.ChatMessage) {
@@ -631,13 +631,13 @@ trait PostsDao {
       val isInNinjaEditWindow = {
         val ninjaWindowMs = ninjaEditWindowMsFor(page.role)
         val ninjaEditEndMs = postToEdit.currentRevStaredAt.getTime + ninjaWindowMs
-        transaction.currentTime.getTime < ninjaEditEndMs
+        transaction.now.millis < ninjaEditEndMs
       }
 
       val isNinjaEdit = {
         val sameAuthor = postToEdit.currentRevisionById == editorId
         val ninjaHardEndMs = postToEdit.currentRevStaredAt.getTime + HardMaxNinjaEditWindowMs
-        val isInHardWindow = transaction.currentTime.getTime < ninjaHardEndMs
+        val isInHardWindow = transaction.now.millis < ninjaHardEndMs
         sameAuthor && isInHardWindow && (isInNinjaEditWindow || oldRevisionSavedAndNothingHappened)
       }
 
@@ -648,7 +648,7 @@ trait PostsDao {
         }
         else {
           val revision = PostRevision.createFor(postToEdit, previousRevision = anyLastRevision)
-          (Some(revision), transaction.currentTime, postToEdit.currentRevisionNr + 1,
+          (Some(revision), transaction.now.toJavaDate, postToEdit.currentRevisionNr + 1,
             Some(postToEdit.currentRevisionNr))
         }
 
@@ -659,7 +659,7 @@ trait PostsDao {
 
       var editedPost = postToEdit.copy(
         currentRevStaredAt = newStartedAt,
-        currentRevLastEditedAt = Some(transaction.currentTime),
+        currentRevLastEditedAt = Some(transaction.now.toJavaDate),
         currentRevisionById = editorId,
         currentSourcePatch = newCurrentSourcePatch,
         currentRevisionNr = newRevisionNr,
@@ -696,7 +696,7 @@ trait PostsDao {
           Some(category.copy(description = Some(excerpt.text)))
         }
 
-      val postRecentlyCreated = transaction.currentTime.getTime - postToEdit.createdAt.getTime <=
+      val postRecentlyCreated = transaction.now.millis - postToEdit.createdAt.getTime <=
           AllSettings.PostRecentlyCreatedLimitMs
 
       val reviewTask: Option[ReviewTask] =
@@ -726,7 +726,7 @@ trait PostsDao {
         id = AuditLogEntry.UnassignedId,
         didWhat = AuditLogEntryType.EditPost,
         doerId = editorId,
-        doneAt = transaction.currentTime,
+        doneAt = transaction.now.toJavaDate,
         browserIdData = who.browserIdData,
         pageId = Some(pageId),
         uniquePostId = Some(postToEdit.id),
@@ -759,7 +759,7 @@ trait PostsDao {
       // (This is how Discourse works and people seems to like it. However,
       // COULD add a don't-bump option for minor edits.)
       if (postNr == PageParts.BodyNr && editedPost.isCurrentVersionApproved && !page.isClosed) {
-        newMeta = newMeta.copy(bumpedAt = Some(transaction.currentTime))
+        newMeta = newMeta.copy(bumpedAt = Some(transaction.now.toJavaDate))
         makesSectionPageHtmlStale = true
       }
       transaction.updatePageMeta(newMeta, oldMeta = oldMeta, makesSectionPageHtmlStale)
@@ -882,7 +882,7 @@ trait PostsDao {
         id = AuditLogEntry.UnassignedId,
         didWhat = AuditLogEntryType.ChangePostSettings,
         doerId = me.id,
-        doneAt = transaction.currentTime,
+        doneAt = transaction.now.toJavaDate,
         browserIdData = me.browserIdData,
         pageId = Some(postBefore.pageId),
         uniquePostId = Some(postBefore.id),
@@ -945,7 +945,7 @@ trait PostsDao {
         id = AuditLogEntry.UnassignedId,
         didWhat = AuditLogEntryType.ChangePostSettings,
         doerId = changerId,
-        doneAt = transaction.currentTime,
+        doneAt = transaction.now.toJavaDate,
         browserIdData = browserIdData,
         pageId = Some(pageId),
         uniquePostId = Some(postBefore.id),
@@ -1022,19 +1022,19 @@ trait PostsDao {
       // Update the directly affected post.
       val postAfter = action match {
         case PSA.HidePost =>
-          postBefore.copyWithNewStatus(transaction.currentTime, userId, bodyHidden = true)
+          postBefore.copyWithNewStatus(transaction.now.toJavaDate, userId, bodyHidden = true)
         case PSA.UnhidePost =>
-          postBefore.copyWithNewStatus(transaction.currentTime, userId, bodyUnhidden = true)
+          postBefore.copyWithNewStatus(transaction.now.toJavaDate, userId, bodyUnhidden = true)
         case PSA.CloseTree =>
-          postBefore.copyWithNewStatus(transaction.currentTime, userId, treeClosed = true)
+          postBefore.copyWithNewStatus(transaction.now.toJavaDate, userId, treeClosed = true)
         case PSA.CollapsePost =>
-          postBefore.copyWithNewStatus(transaction.currentTime, userId, postCollapsed = true)
+          postBefore.copyWithNewStatus(transaction.now.toJavaDate, userId, postCollapsed = true)
         case PSA.CollapseTree =>
-          postBefore.copyWithNewStatus(transaction.currentTime, userId, treeCollapsed = true)
+          postBefore.copyWithNewStatus(transaction.now.toJavaDate, userId, treeCollapsed = true)
         case PSA.DeletePost(clearFlags) =>
-          postBefore.copyWithNewStatus(transaction.currentTime, userId, postDeleted = true)
+          postBefore.copyWithNewStatus(transaction.now.toJavaDate, userId, postDeleted = true)
         case PSA.DeleteTree =>
-          postBefore.copyWithNewStatus(transaction.currentTime, userId, treeDeleted = true)
+          postBefore.copyWithNewStatus(transaction.now.toJavaDate, userId, treeDeleted = true)
       }
 
       updateNumVisible(postBefore, postAfter = postAfter)
@@ -1052,19 +1052,19 @@ trait PostsDao {
           case PSA.CloseTree =>
             if (successor.closedStatus.areAncestorsClosed) None
             else Some(successor.copyWithNewStatus(
-              transaction.currentTime, userId, ancestorsClosed = true))
+              transaction.now.toJavaDate, userId, ancestorsClosed = true))
           case PSA.CollapsePost =>
             None
           case PSA.CollapseTree =>
             if (successor.collapsedStatus.areAncestorsCollapsed) None
             else Some(successor.copyWithNewStatus(
-              transaction.currentTime, userId, ancestorsCollapsed = true))
+              transaction.now.toJavaDate, userId, ancestorsCollapsed = true))
           case PSA.DeletePost(clearFlags) =>
             None
           case PSA.DeleteTree =>
             if (successor.deletedStatus.areAncestorsDeleted) None
             else Some(successor.copyWithNewStatus(
-              transaction.currentTime, userId, ancestorsDeleted = true))
+              transaction.now.toJavaDate, userId, ancestorsDeleted = true))
           case x =>
             die("DwE8FMU3", "PostAction not implemented: " + x)
         }
@@ -1130,7 +1130,7 @@ trait PostsDao {
         safeRevisionNr =
           approver.isHuman ? Option(postBefore.currentRevisionNr) | postBefore.safeRevisionNr,
         approvedRevisionNr = Some(postBefore.currentRevisionNr),
-        approvedAt = Some(transaction.currentTime),
+        approvedAt = Some(transaction.now.toJavaDate),
         approvedById = Some(approverId),
         approvedSource = Some(postBefore.currentSource),
         approvedHtmlSanitized = Some(postBefore.currentHtmlSanitized(
@@ -1170,7 +1170,7 @@ trait PostsDao {
         val (numNewReplies, numNewOrigPostReplies, newLastReplyAt, newLastReplyById) =
           if (isApprovingNewPost && postAfter.isReply)
             (1, postAfter.isOrigPostReply ? 1 | 0,
-                                Some(transaction.currentTime), Some(postAfter.createdById))
+              Some(transaction.now.toJavaDate), Some(postAfter.createdById))
           else
             (0, 0, pageMeta.lastReplyAt, pageMeta.lastReplyById)
 
@@ -1180,7 +1180,7 @@ trait PostsDao {
           lastReplyAt = newLastReplyAt,
           lastReplyById = newLastReplyById,
           hiddenAt = newHiddenAt,
-          bumpedAt = pageMeta.isClosed ? pageMeta.bumpedAt | Some(transaction.currentTime))
+          bumpedAt = pageMeta.isClosed ? pageMeta.bumpedAt | Some(transaction.now.toJavaDate))
         makesSectionPageHtmlStale = true
       }
       transaction.updatePageMeta(newMeta, oldMeta = pageMeta, makesSectionPageHtmlStale)
@@ -1228,7 +1228,7 @@ trait PostsDao {
       // Don't set safeRevisionNr, because this approval hasn't been reviewed by a human.
       val postAfter = post.copy(
         approvedRevisionNr = Some(post.currentRevisionNr),
-        approvedAt = Some(transaction.currentTime),
+        approvedAt = Some(transaction.now.toJavaDate),
         approvedById = Some(SystemUserId),
         approvedSource = Some(post.currentSource),
         approvedHtmlSanitized = Some(post.currentHtmlSanitized(
@@ -1261,7 +1261,7 @@ trait PostsDao {
       }
       else {
         val newLastReply = Some(posts.maxBy(_.createdAt.getTime))
-        (Some(transaction.currentTime), newLastReply.map(_.createdById))
+        (Some(transaction.now.toJavaDate), newLastReply.map(_.createdById))
       }
 
     val newMeta = pageMeta.copy(
@@ -1269,7 +1269,7 @@ trait PostsDao {
       numOrigPostRepliesVisible = pageMeta.numOrigPostRepliesVisible + numNewVisibleOpReplies,
       lastReplyAt = newLastReplyAt,
       lastReplyById = newLastReplyById,
-      bumpedAt = pageMeta.isClosed ? pageMeta.bumpedAt | Some(transaction.currentTime),
+      bumpedAt = pageMeta.isClosed ? pageMeta.bumpedAt | Some(transaction.now.toJavaDate),
       hiddenAt = newHiddenAt,
       version = pageMeta.version + 1)
 
@@ -1419,7 +1419,7 @@ trait PostsDao {
         id = AuditLogEntry.UnassignedId,
         didWhat = AuditLogEntryType.MovePost,
         doerId = moverId,
-        doneAt = transaction.currentTime,
+        doneAt = transaction.now.toJavaDate,
         browserIdData = browserIdData,
         pageId = Some(postToMove.pageId),
         uniquePostId = Some(postToMove.id),
@@ -1470,7 +1470,7 @@ trait PostsDao {
               id = AuditLogEntry.UnassignedId,
               didWhat = AuditLogEntryType.MovePost,
               doerId = moverId,
-              doneAt = transaction.currentTime,
+              doneAt = transaction.now.toJavaDate,
               browserIdData = browserIdData,
               pageId = Some(descendant.pageId),
               uniquePostId = Some(descendant.id),
@@ -1701,7 +1701,7 @@ trait PostsDao {
       isHidingOrigPost ||= postBefore.isOrigPost
 
       val postAfter = postBefore.copy(
-        bodyHiddenAt = Some(transaction.currentTime),
+        bodyHiddenAt = Some(transaction.now.toJavaDate),
         bodyHiddenById = Some(SystemUserId),
         bodyHiddenReason = Some(reason))
 
@@ -1846,7 +1846,7 @@ object PostsDao {
       id = oldReviewTask.map(_.id).getOrElse(transaction.nextReviewTaskId()),
       reasons = reasons,
       createdById = createdById,
-      createdAt = transaction.currentTime,
+      createdAt = transaction.now.toJavaDate,
       createdAtRevNr = Some(post.currentRevisionNr),
       maybeBadUserId = post.createdById,
       postId = Some(post.id),

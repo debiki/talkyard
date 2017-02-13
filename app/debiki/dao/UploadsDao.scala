@@ -135,7 +135,7 @@ trait UploadsDao {
         id = AuditLogEntry.UnassignedId,
         didWhat = AuditLogEntryType.UploadFile,
         doerId = uploadedById,
-        doneAt = transaction.currentTime,
+        doneAt = transaction.now.toJavaDate,
         browserIdData = browserIdData,
         uploadHashPathSuffix = Some(hashPathSuffix),
         uploadFileName = Some(uploadedFileName),
@@ -189,7 +189,7 @@ trait UploadsDao {
       if (user.isAdmin)
         return
 
-      val nowMs = transaction.currentTime.getTime
+      val nowMs = transaction.now.millis
       val entries = transaction.loadAuditLogEntriesRecentFirst(userId = uploaderId,
         tyype = AuditLogEntryType.UploadFile, limit = MaxUploadsLastWeek)
 

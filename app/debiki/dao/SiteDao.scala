@@ -19,16 +19,14 @@ package debiki.dao
 
 import com.debiki.core._
 import com.debiki.core.Prelude._
-import debiki.DebikiHttp._
 import debiki._
-import ed.server.search.{PageAndHits, SearchHit, SearchEngine}
+import ed.server.search.SearchEngine
 import ed.server.http._
 import org.{elasticsearch => es}
-import play.api.Play.current
 import redis.RedisClient
 import scala.collection.mutable
-import scala.concurrent.Future
 import SiteDao._
+import ed.server.pubsub.{PubSubApi, StrangerCounterApi}
 
 
 
@@ -98,13 +96,13 @@ class SiteDao(
   protected lazy val searchEngine = new SearchEngine(siteId, elasticSearchClient)
 
 
-  def memCache_test = {
+  def memCache_test: MemCache = {
     require(Globals.wasTest, "EsE7YKP42B")
     memCache
   }
 
 
-  def dbDao2 = dbDaoFactory.newDbDao2()
+  private def dbDao2: DbDao2 = dbDaoFactory.newDbDao2()
 
   def commonmarkRenderer = ReactRenderer
 
@@ -233,13 +231,13 @@ class SiteDao(
     }
   }
 
-  def updateSite(changedSite: Site) = {
+  def updateSite(changedSite: Site) {
     readWriteTransaction(_.updateSite(changedSite))
     uncacheSite()
   }
 
   def listHostnames(): Seq[SiteHost] = {
-    readOnlyTransaction(_.listHostnames)
+    readOnlyTransaction(_.listHostnames())
   }
 
   def changeSiteHostname(newHostname: String) {
@@ -285,11 +283,12 @@ class SiteDao(
 
   // ----- Notifications
 
-  def pubSub = Globals.pubSub
-  def strangerCounter = Globals.strangerCounter
+  def pubSub: PubSubApi = Globals.pubSub
+  def strangerCounter: StrangerCounterApi = Globals.strangerCounter
 
-  def saveDeleteNotifications(notifications: Notifications) =
+  def saveDeleteNotifications(notifications: Notifications) {
     readWriteTransaction(_.saveDeleteNotifications(notifications))
+  }
 
   def loadNotificationsForRole(roleId: RoleId, limit: Int, unseenFirst: Boolean)
         : Seq[Notification] =

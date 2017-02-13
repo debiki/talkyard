@@ -847,9 +847,9 @@ case class Block(
   require(blockedTill.isEmpty || blockedTill.get.getTime >= blockedAt.getTime, "EdE2KWC8")
   require(!browserIdCookie.exists(_.trim.isEmpty), "EdE4FUK7")
 
-  def isActiveAt(time: UnixMillis): Boolean = blockedTill match {
+  def isActiveAt(when: When): Boolean = blockedTill match {
     case None => true
-    case Some(date) => time <= date.getTime
+    case Some(date) => when.millis <= date.getTime
   }
 
 }

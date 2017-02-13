@@ -89,10 +89,6 @@ class Globals {
 
   def isInitialized: Boolean = _state ne null
 
-  def now: When = When.fromMillis(
-    System.currentTimeMillis() + (
-      if (_state ne null) _state.map(_.timeOffsetMillis).getOrElse(0) else 0))
-
   @volatile private var _state: State Or Option[Exception] = _
 
   private def state: State = {
@@ -332,8 +328,9 @@ class Globals {
         p.Logger.info("Connecting to database... [EsM200CONNDB]")
         val readOnlyDataSource = Debiki.createPostgresHikariDataSource(readOnly = true)
         val readWriteDataSource = Debiki.createPostgresHikariDataSource(readOnly = false)
+        val rdb = new Rdb(readOnlyDataSource, readWriteDataSource)
         val dbDaoFactory = new RdbDaoFactory(
-          new Rdb(readOnlyDataSource, readWriteDataSource), ScalaBasedMigrations, Play.isTest)
+          rdb, ScalaBasedMigrations, getCurrentTime = now, Play.isTest)
 
         // Create any missing database tables before `new State`, otherwise State
         // creates background threads that might attempt to access the tables.
@@ -419,6 +416,33 @@ class Globals {
   }).build()
 
 
+  def now(): When = {
+    val millisNow =
+      if (isProd || (_state eq null) || _state.isBad) {
+        System.currentTimeMillis()
+      }
+      else {
+        val theState = _state.get
+        val millisStart = theState.timeStartMillis getOrElse System.currentTimeMillis()
+        millisStart + theState.timeOffsetMillis
+      }
+    When.fromMillis(millisNow)
+  }
+
+
+  object test {
+    def setTime(when: When) {
+      require(wasTest, "EdE7LJKF2")
+      state.timeStartMillis = Some(when.millis)
+    }
+
+    def fastForwardTimeMillis(millis: Long) {
+      require(wasTest, "EdE4PFB8R")
+      state.timeOffsetMillis += millis
+    }
+  }
+
+
   private class State(
     val dbDaoFactory: RdbDaoFactory,
     val cache: DaoMemCache) {
@@ -431,7 +455,10 @@ class Globals {
     val ShutdownTimeout = 10 seconds
 
     @volatile
-    var timeOffsetMillis = 0
+    var timeStartMillis: Option[Long] = None
+
+    @volatile
+    var timeOffsetMillis: Long = 0
 
     val config = new Config(conf)
 

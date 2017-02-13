@@ -20,7 +20,7 @@ package debiki.dao
 
 import com.debiki.core._
 import com.debiki.core.Prelude._
-import java.{util => ju}
+import debiki.Globals
 import play.api.Play.current
 import SystemDao._
 
@@ -29,7 +29,7 @@ import SystemDao._
  */
 class SystemDao(private val dbDaoFactory: DbDaoFactory, val cache: DaoMemCache) {
 
-  def dbDao2 = dbDaoFactory.newDbDao2()
+  private def dbDao2: DbDao2 = dbDaoFactory.newDbDao2()
 
   val memCache = new MemCache("?", cache)
 
@@ -47,7 +47,7 @@ class SystemDao(private val dbDaoFactory: DbDaoFactory, val cache: DaoMemCache) 
 
   // ----- Sites
 
-  def theSite(siteId: SiteId) = getSite(siteId) getOrDie "EsE2WUY5"
+  def theSite(siteId: SiteId): Site = getSite(siteId) getOrDie "EsE2WUY5"
 
   def getSite(siteId: SiteId): Option[Site] = {
     COULD_OPTIMIZE // move getSite() to SystemDao instead so won't need to create temp SiteDao obj.
@@ -148,7 +148,7 @@ class SystemDao(private val dbDaoFactory: DbDaoFactory, val cache: DaoMemCache) 
       }
 
       val postAfter = postBefore.copy(
-        bodyHiddenAt = Some(siteTransaction.currentTime),
+        bodyHiddenAt = Some(siteTransaction.now.toJavaDate),
         bodyHiddenById = Some(SystemUserId),
         bodyHiddenReason = Some(s"Spam because: $isSpamReason"))
 

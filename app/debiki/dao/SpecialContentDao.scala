@@ -112,14 +112,14 @@ trait SpecialContentDao {
   protected def createSpecialContentPage(pageId: PageId, authorId: UserId,
       source: String, htmlSanitized: String, transaction: SiteTransaction) {
     val pageMeta = PageMeta.forNewPage(pageId, PageRole.SpecialContent, authorId,
-      transaction.currentTime, categoryId = None, url = None, publishDirectly = true)
+      transaction.now.toJavaDate, categoryId = None, url = None, publishDirectly = true)
 
     val uniqueId = transaction.nextPostId()
 
     val bodyPost = Post.createBody(
       uniqueId = uniqueId,
       pageId = pageId,
-      createdAt = transaction.currentTime,
+      createdAt = transaction.now.toJavaDate,
       createdById = authorId,
       source = source,
       htmlSanitized = htmlSanitized,
@@ -148,15 +148,15 @@ trait SpecialContentDao {
     val forNowEditorId = oldPost.createdById // later, create revisions & use: editorId
 
     val editedPost = oldPost.copy(
-      currentRevLastEditedAt = Some(transaction.currentTime),
+      currentRevLastEditedAt = Some(transaction.now.toJavaDate),
       currentRevisionById = forNowEditorId,
       currentSourcePatch = None,
       currentRevisionNr = nextRevisionNr,
-      lastApprovedEditAt = Some(transaction.currentTime),
+      lastApprovedEditAt = Some(transaction.now.toJavaDate),
       lastApprovedEditById = Some(forNowEditorId),
       approvedSource = Some(newSource),
       approvedHtmlSanitized = Some(htmlSanitized),
-      approvedAt = Some(transaction.currentTime),
+      approvedAt = Some(transaction.now.toJavaDate),
       approvedById = Some(editorId),
       approvedRevisionNr = Some(nextRevisionNr))
 

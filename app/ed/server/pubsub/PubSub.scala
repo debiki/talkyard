@@ -164,12 +164,12 @@ class PubSubActor(val nginxHost: String, val redisClient: RedisClient) extends A
   private val DeleteAfterInactiveMillis = 10 * OneMinuteInMillis
 
 
-  def receive = {
+  def receive: PartialFunction[Any, Unit] = {
     case x => dontRestartIfException(x)
   }
 
 
-  def dontRestartIfException(message: Any) = try message match {
+  def dontRestartIfException(message: Any): Unit = try message match {
     case UserWatchesPages(siteId, userId, pageIds) =>
       updateWatchedPages(siteId, userId, pageIds)
     case UserSubscribed(siteId, user, browserIdData) =>
@@ -201,7 +201,7 @@ class PubSubActor(val nginxHost: String, val redisClient: RedisClient) extends A
     // Remove and reinsert, so inactive users will be the first ones found when iterating.
     val anyOld = userAndWhenMap.remove(user.id)
     userAndWhenMap.put(user.id, new UserWhenPages(
-      user, When.now(), anyOld.map(_.watchingPageIds) getOrElse Set.empty))
+      user, Globals.now(), anyOld.map(_.watchingPageIds) getOrElse Set.empty))
   }
 
 
@@ -318,7 +318,7 @@ class PubSubActor(val nginxHost: String, val redisClient: RedisClient) extends A
 
 
   private def deleteInactiveSubscriptions() {
-    val now = When.now()
+    val now = Globals.now()
     for ((siteId, userWhenPagesMap) <- subscribersBySite) {
       // LinkedHashMap sort order = perhaps-inactive first.
       userWhenPagesMap removeWhileValue { userWhenPages =>

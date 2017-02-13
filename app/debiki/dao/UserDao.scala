@@ -18,8 +18,8 @@
 package debiki.dao
 
 import com.debiki.core._
-import debiki.DebikiHttp.{throwBadReq, throwForbidden}
-import debiki.BrowserId
+import debiki.DebikiHttp.throwForbidden
+import debiki.{BrowserId, Globals}
 import ed.server._
 import ed.server.security.SidStatus
 import ed.server.http.throwForbiddenIf
@@ -78,16 +78,16 @@ trait UserDao {
              join-site invitation link does nothing. Thanks for clicking it anyway""")
 
       val userId = transaction.nextMemberId
-      var newUser = invite.makeUser(userId, transaction.currentTime)
+      var newUser = invite.makeUser(userId, transaction.now.toJavaDate)
       val inviter = transaction.loadUser(invite.createdById) getOrDie "DwE5FKG4"
       if (inviter.isStaff) {
         newUser = newUser.copy(
           isApproved = Some(true),
-          approvedAt = Some(transaction.currentTime),
+          approvedAt = Some(transaction.now.toJavaDate),
           approvedById = Some(invite.createdById))
       }
 
-      invite = invite.copy(acceptedAt = Some(transaction.currentTime), userId = Some(userId))
+      invite = invite.copy(acceptedAt = Some(transaction.now.toJavaDate), userId = Some(userId))
 
       // COULD loop and append 1, 2, 3, ... until there's no username clash.
       transaction.insertMember(newUser)
@@ -122,7 +122,7 @@ trait UserDao {
       var user = transaction.loadTheMemberInclDetails(userId)
       user = user.copy(
         isApproved = isapproved,
-        approvedAt = Some(transaction.currentTime),
+        approvedAt = Some(transaction.now.toJavaDate),
         approvedById = Some(approverId))
       transaction.updateMemberInclDetails(user)
     }
@@ -139,8 +139,8 @@ trait UserDao {
     readWriteTransaction { transaction =>
       var user = transaction.loadTheMemberInclDetails(userId)
 
-      if (user.isSuspendedAt(transaction.currentTime) && (
-          isAdmin == Some(true) || isModerator == Some(true)))
+      if (user.isSuspendedAt(transaction.now.toJavaDate) && (
+          isAdmin.contains(true) || isModerator.contains(true)))
         throwForbidden("DwE2KEP8", "User is suspended")
 
       user = user.copy(
@@ -186,9 +186,9 @@ trait UserDao {
       if (user.isAdmin)
         throwForbidden("DwE4KEF24", "Cannot suspend admins")
 
-      val suspendedTill = new ju.Date(transaction.currentTime.getTime + numDays * MillisPerDay)
+      val suspendedTill = new ju.Date(transaction.now.millis + numDays * MillisPerDay)
       user = user.copy(
-        suspendedAt = Some(transaction.currentTime),
+        suspendedAt = Some(transaction.now.toJavaDate),
         suspendedTill = Some(suspendedTill),
         suspendedById = Some(suspendedById),
         suspendedReason = Some(reason.trim))
@@ -231,10 +231,10 @@ trait UserDao {
       // to think about. Block the ip for a little bit shorter time, because might affect
       // "innocent" people.
       val ipBlockedTill =
-        Some(new ju.Date(transaction.currentTime.getTime + OneWeekInMillis * 2))
+        Some(new ju.Date(transaction.now.millis + OneWeekInMillis * 2))
 
       val cookieBlockedTill =
-        Some(new ju.Date(transaction.currentTime.getTime + OneWeekInMillis * 6))
+        Some(new ju.Date(transaction.now.millis + OneWeekInMillis * 6))
 
       val ipBlock = Block(
         threatLevel = threatLevel,
@@ -242,7 +242,7 @@ trait UserDao {
         // Hmm. Why cookie id too? The cookie is added below too (6PKU02Q), isn't that enough.
         browserIdCookie = Some(browserIdData.idCookie),
         blockedById = blockerId,
-        blockedAt = transaction.currentTime,
+        blockedAt = transaction.now.toJavaDate,
         blockedTill = ipBlockedTill)
 
       val browserIdCookieBlock = Block(
@@ -250,7 +250,7 @@ trait UserDao {
         ip = None,
         browserIdCookie = Some(browserIdData.idCookie),
         blockedById = blockerId,
-        blockedAt = transaction.currentTime,
+        blockedAt = transaction.now.toJavaDate,
         blockedTill = cookieBlockedTill)
 
       // COULD catch dupl key error when inserting IP block, and update it instead, if new
@@ -303,7 +303,7 @@ trait UserDao {
   }
 
 
-  def loadUserAndLevels(who: Who, transaction: SiteTransaction) = {
+  def loadUserAndLevels(who: Who, transaction: SiteTransaction): UserAndLevels = {
     val user = transaction.loadTheUser(who.id)
     val trustLevel = user.effectiveTrustLevel
     val threatLevel = user match {
@@ -323,7 +323,7 @@ trait UserDao {
   def createIdentityUserAndLogin(newUserData: NewUserData): MemberLoginGrant = {
     val loginGrant = readWriteTransaction { transaction =>
       val userId = transaction.nextMemberId
-      val user = newUserData.makeUser(userId, transaction.currentTime)
+      val user = newUserData.makeUser(userId, transaction.now.toJavaDate)
       val identityId = transaction.nextIdentityId
       val identity = newUserData.makeIdentity(userId = userId, identityId = identityId)
       ensureSiteActiveOrThrow(user, transaction)
@@ -367,7 +367,7 @@ trait UserDao {
       fullName = userData.name, email = userData.email)
     val user = readWriteTransaction { transaction =>
       val userId = transaction.nextMemberId
-      val user = userData.makeUser(userId, transaction.currentTime)
+      val user = userData.makeUser(userId, transaction.now.toJavaDate)
       ensureSiteActiveOrThrow(user, transaction)
       transaction.insertMember(user)
       transaction.insertUsernameUsage(UsernameUsage(
@@ -712,7 +712,7 @@ trait UserDao {
   }
 
 
-  def configIdtySimple(ctime: ju.Date, emailAddr: String, emailNotfPrefs: EmailNotfPrefs) = {
+  def configIdtySimple(ctime: ju.Date, emailAddr: String, emailNotfPrefs: EmailNotfPrefs) {
     readWriteTransaction { transaction =>
       transaction.configIdtySimple(ctime = ctime,
         emailAddr = emailAddr, emailNotfPrefs = emailNotfPrefs)
@@ -742,7 +742,7 @@ trait UserDao {
       UsersPageSettings.Default
 
 
-  def saveUsersPageSettings(userId: RoleId, pageId: PageId, settings: UsersPageSettings) = {
+  def saveUsersPageSettings(userId: RoleId, pageId: PageId, settings: UsersPageSettings) {
     throwForbiddenIf(settings.notfLevel == NotfLevel.WatchingFirst,
       "EsE6SRK02", s"${NotfLevel.WatchingFirst} not supported, for pages")
     throwForbiddenIf(settings.notfLevel == NotfLevel.Tracking,
@@ -751,7 +751,7 @@ trait UserDao {
   }
 
 
-  def saveMemberPreferences(preferences: MemberPreferences, byWho: Who) = {
+  def saveMemberPreferences(preferences: MemberPreferences, byWho: Who) {
     SECURITY // should create audit log entry. Should allow staff to change usernames.
     BUG // the lost update bug (if staff + user henself changes the user's prefs at the same time)
     readWriteTransaction { transaction =>
@@ -815,7 +815,7 @@ trait UserDao {
       val userAfter = user.copyWithNewPreferences(preferences)
       try transaction.updateMemberInclDetails(userAfter)
       catch {
-        case e: DuplicateUsernameException =>
+        case _: DuplicateUsernameException =>
           throwForbidden("EdE2WK8Y4_", "Username already in use")
       }
 
@@ -863,9 +863,8 @@ trait UserDao {
       // COULD pass None not ""?
       browserIdCookie = if (browserId.isNew) "-" else browserId.cookieValue)
 
-    val nowMillis = System.currentTimeMillis
     for (block <- blocks) {
-      if (block.isActiveAt(nowMillis) && block.threatLevel == ThreatLevel.SevereThreat)
+      if (block.isActiveAt(Globals.now()) && block.threatLevel == ThreatLevel.SevereThreat)
         throwForbidden("DwE403BK01", o"""Not allowed. Please sign up with a username
             and password, or login with Google or Facebook, for example.""")
     }

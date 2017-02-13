@@ -17,10 +17,8 @@
 
 package debiki.dao
 
-import com.debiki.core.DbDao.TooManySitesCreatedInTotalException
 import com.debiki.core._
 import com.debiki.core.Prelude._
-import controllers.CreateSiteController
 import ed.server.http.throwForbidden2
 
 
@@ -77,14 +75,14 @@ trait CreateSiteDao {
         embeddingSiteUrl, creatorIp = browserIdData.ip, creatorEmailAddress = creatorEmailAddress,
         quotaLimitMegabytes = config.createSite.quotaLimitMegabytes,
         maxSitesPerIp = maxSitesPerIp, maxSitesTotal = maxSitesTotal,
-        isTestSiteOkayToDelete = isTestSiteOkayToDelete, pricePlan = pricePlan)
+        isTestSiteOkayToDelete = isTestSiteOkayToDelete, pricePlan = pricePlan, transaction.now)
 
       insertAuditLogEntry(AuditLogEntry(
         siteId = this.siteId,
         id = AuditLogEntry.UnassignedId,
         didWhat = AuditLogEntryType.CreateSite,
         doerId = creatorId,
-        doneAt = transaction.currentTime,
+        doneAt = transaction.now.toJavaDate,
         emailAddress = Some(creatorEmailAddress),
         browserIdData = browserIdData,
         browserLocation = None,
@@ -113,7 +111,7 @@ trait CreateSiteDao {
         id = AuditLogEntry.UnassignedId,
         didWhat = AuditLogEntryType.ThisSiteCreated,
         doerId = SystemUserId, // no admin account yet created
-        doneAt = transaction.currentTime,
+        doneAt = transaction.now.toJavaDate,
         emailAddress = Some(creatorEmailAddress),
         browserIdData = browserIdData,
         browserLocation = None,
@@ -129,7 +127,7 @@ trait CreateSiteDao {
       id = SystemUserId,
       fullName = Some(SystemUserFullName),
       username = SystemUserUsername,
-      createdAt = transaction.currentTime,
+      createdAt = transaction.now.toJavaDate,
       isApproved = None,
       approvedAt = None,
       approvedById = None,
@@ -142,7 +140,7 @@ trait CreateSiteDao {
 
 
   private def createUnknownUser(transaction: SiteTransaction) {
-    transaction.createUnknownUser(transaction.currentTime)
+    transaction.createUnknownUser(transaction.now.toJavaDate)
     transaction.upsertUserStats(UserStats.forNewUser(
       UnknownUserId, firstSeenAt = transaction.now, emailedAt = None))
   }

@@ -50,18 +50,19 @@ class DaoAppSuite(
   def dummySpamRelReqStuff = SpamRelReqStuff(userAgent = None, referer = None, uri = "/dummy")
 
 
-  def createPasswordOwner(password: String, dao: SiteDao): User = {
+  def createPasswordOwner(password: String, dao: SiteDao): Member = {
     createPasswordAdminOrOwner(password: String, dao: SiteDao, isOwner = true)
   }
 
   /** Its name will be "Admin $password", username "admin_$password" and email
     * "admin-$password@x.co",
     */
-  def createPasswordAdmin(password: String, dao: SiteDao): User = {
+  def createPasswordAdmin(password: String, dao: SiteDao): Member = {
     createPasswordAdminOrOwner(password: String, dao: SiteDao, isOwner = false)
   }
 
-  private def createPasswordAdminOrOwner(password: String, dao: SiteDao, isOwner: Boolean): User = {
+  private def createPasswordAdminOrOwner(password: String, dao: SiteDao, isOwner: Boolean)
+      : Member = {
     dao.createPasswordUserCheckPasswordStrong(NewPasswordUserData.create(
       name = Some(s"Admin $password"), username = s"admin_$password",
       email = s"admin-$password@x.co", password = s"public-$password",
@@ -69,7 +70,7 @@ class DaoAppSuite(
   }
 
 
-  def createPasswordModerator(password: String, dao: SiteDao): User = {
+  def createPasswordModerator(password: String, dao: SiteDao): Member = {
     dao.createPasswordUserCheckPasswordStrong(NewPasswordUserData.create(
       name = Some(s"Mod $password"), username = s"mod_$password", email = s"mod-$password@x.co",
       password = s"public-$password", isAdmin = false, isModerator = true, isOwner = false).get)
@@ -95,6 +96,15 @@ class DaoAppSuite(
       anyFolder = Some("/"), anySlug = Some(""),
       titleTextAndHtml = titleTextAndHtml, bodyTextAndHtml = bodyTextAndHtml,
       showId = true, Who(authorId, browserIdData), dummySpamRelReqStuff).thePageId
+  }
+
+
+  def loadTheMemberAndStats(userId: UserId)(dao: SiteDao): (Member, UserStats) = {
+    dao.readOnlyTransaction { transaction =>
+      val member = transaction.loadTheMember(userId)
+      val stats = transaction.loadUserStats(userId) getOrDie "EdE2FK4GS"
+      (member, stats)
+    }
   }
 
 }

@@ -294,7 +294,7 @@ case class PageMeta(
       case PageRole.Problem | PageRole.Idea => plannedAt
       case PageRole.ToDo =>
         // To-Do:s are always either planned or done.
-        plannedAt orElse Some(When.now().toJavaDate)
+        plannedAt orElse Some(createdAt)
       case _ =>
         if (plannedAt.isDefined) {
           // Reopen it since changing type.

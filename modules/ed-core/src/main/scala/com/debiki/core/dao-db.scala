@@ -28,7 +28,7 @@ import Prelude._
 /** Constructs database DAO:s, implemented by service providers,
   * (currently only debiki-dao-rdb, for Postgres) and used by debiki-server.
   */
-abstract class DbDaoFactory {
+abstract class DbDaoFactory {  CLEAN_UP; // Delete this class? And rename DbDao2 to DbTransactionFactory?
 
   def migrations: ScalaBasedDatabaseMigrations
 
@@ -40,52 +40,7 @@ abstract class DbDaoFactory {
 
   protected[core] def newSystemTransaction(readOnly: Boolean): SystemTransaction
 
-  /** Helpful for search engine database tests. */
-  def debugDeleteRecreateSearchEngineIndexes() {}
-
-  /** Helpful when writing unit test: waits e.g. for ElasticSearch to enter yellow status. */
-  def debugWaitUntilSearchEngineStarted() {}
-
-  /** Helpful when writing unit test: waits until ElasticSearch is done indexing stuff. */
-  def debugRefreshSearchEngineIndexer() {}
-
 }
-
-
-
-/** Serializes write requests, per site: when one write request to site X is being served,
-  * any other write requests block, for site X. I'll change this later to use actors and
-  * asynchronous requests, so whole HTTP request handling threads won't be blocked.
-  *
-class SerializingSiteDbDao(private val _spi: SiteDbDao)
-  extends SiteDbDao {
-
-
-  // ----- Website (formerly "tenant")
-
-  def siteId: SiteId = _spi.siteId
-
-  private def serialize[R](block: =>R): R = {
-    import SerializingSiteDbDao._
-    var anyMutex = perSiteMutexes.get(siteId)
-    if (anyMutex eq null) {
-      perSiteMutexes.putIfAbsent(siteId, new java.lang.Object)
-      anyMutex = perSiteMutexes.get(siteId)
-    }
-    anyMutex.synchronized {
-      block
-    }
-  }
-
-}
-
-
-object SerializingSiteDbDao {
-
-  private val perSiteMutexes = new ju.concurrent.ConcurrentHashMap[SiteId, AnyRef]()
-
-}*/
-
 
 
 object DbDao {

@@ -87,8 +87,8 @@ trait ForumDao {
       unlisted = false,
       staffOnly = false,
       onlyStaffMayCreateTopics = false,
-      createdAt = transaction.currentTime,
-      updatedAt = transaction.currentTime))
+      createdAt = transaction.now.toJavaDate,
+      updatedAt = transaction.now.toJavaDate))
 
     // Create the default category.
     createCategoryImpl(CategoryToSave(

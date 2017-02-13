@@ -61,7 +61,7 @@ trait ReviewsDao {
       if (task.doneOrGone)
         throwForbidden("EsE2PUM4", o"""Review task already completed, or cannot be completed
             e.g. because the-thing-to-review was deleted""")
-      val completedTask = task.copy(completedAt = Some(transaction.currentTime),
+      val completedTask = task.copy(completedAt = Some(transaction.now.toJavaDate),
         completedById = Some(completedById), completedAtRevNr = anyRevNr,
         resolution = Some(ReviewTaskResolution.Fine)) // hmm, need some Rejected btn too (!)
       transaction.upsertReviewTask(completedTask)

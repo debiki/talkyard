@@ -449,7 +449,7 @@ object UserController extends mvc.Controller {
     var secondsReading = (body \ "secondsReading").as[Int]
     val postNrsRead = (body \ "postNrsRead").as[Vector[PostNr]]
 
-    val now = Globals.now
+    val now = Globals.now()
     val lowPostNrsRead: Set[PostNr] = postNrsRead.filter(_ <= ReadingProgress.MaxLowPostNr).toSet
     val lastPostNrsReadRecentFirst =
       postNrsRead.filter(_ > ReadingProgress.MaxLowPostNr).reverse.take(

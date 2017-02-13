@@ -147,7 +147,7 @@ object ImpersonateController extends mvc.Controller {
   private def makeImpersonationCookie(siteId: SiteId, viewAsGroupOnly: Boolean,
       currentUserId: UserId) = {
     val randomString = nextRandomString()
-    val unixSeconds = When.now().numSeconds
+    val unixSeconds = Globals.now().numSeconds
     val cookieValue = concatAndHash(currentUserId, viewAsGroupOnly = viewAsGroupOnly,
       unixSeconds, randomString)
     val impersonatingCookie = SecureCookie(name = ImpersonationCookieName,
@@ -204,7 +204,7 @@ object ImpersonateController extends mvc.Controller {
     if (value != correctCookieValue)
       throwForbidden("EsE6YKP2", s"Bad hash")
 
-    val ageSeconds = When.now().numSeconds - unixSeconds
+    val ageSeconds = Globals.now().numSeconds - unixSeconds
     (ageSeconds, oldUserId)
   }
 

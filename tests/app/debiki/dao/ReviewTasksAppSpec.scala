@@ -54,7 +54,7 @@ class ReviewTasksAppSpec extends DaoAppSuite {
           id = 1,
           reasons = urgentReasons,
           createdById = createdByUser.id,
-          createdAt = transaction.currentTime,
+          createdAt = transaction.now.toJavaDate,
           maybeBadUserId = maybeBadUser.id))
 
         info("count the urgent task")
@@ -67,7 +67,7 @@ class ReviewTasksAppSpec extends DaoAppSuite {
           id = 2,
           reasons = otherReasons,
           createdById = createdByUser2.id,
-          createdAt = transaction.currentTime,
+          createdAt = transaction.now.toJavaDate,
           maybeBadUserId = maybeBadUser.id))
 
         info("count the not urgent task")

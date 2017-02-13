@@ -326,7 +326,7 @@ trait CategoriesDao {
         unlisted = editCategoryData.unlisted,
         staffOnly = editCategoryData.staffOnly,
         onlyStaffMayCreateTopics = editCategoryData.onlyStaffMayCreateTopics,
-        updatedAt = transaction.currentTime)
+        updatedAt = transaction.now.toJavaDate)
 
       if (editCategoryData.shallBeDefaultCategory) {
         setDefaultCategory(editedCategory, transaction)
@@ -363,7 +363,7 @@ trait CategoriesDao {
         transaction: SiteTransaction): (Category, PagePath) = {
 
     val categoryId = transaction.nextCategoryId()
-    val category = newCategoryData.makeCategory(categoryId, transaction.currentTime)
+    val category = newCategoryData.makeCategory(categoryId, transaction.now.toJavaDate)
     transaction.insertCategoryMarkSectionPageStale(category)
 
     val (aboutPagePath, _) = createPageImpl(

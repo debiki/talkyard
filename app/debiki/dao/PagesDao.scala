@@ -213,7 +213,7 @@ trait PagesDao {
     val titlePost = Post.createTitle(
       uniqueId = titleUniqueId,
       pageId = pageId,
-      createdAt = transaction.currentTime,
+      createdAt = transaction.now.toJavaDate,
       createdById = authorId,
       source = titleSource,
       htmlSanitized = titleHtmlSanitized,
@@ -222,20 +222,20 @@ trait PagesDao {
     val bodyPost = Post.createBody(
       uniqueId = bodyUniqueId,
       pageId = pageId,
-      createdAt = transaction.currentTime,
+      createdAt = transaction.now.toJavaDate,
       createdById = authorId,
       source = bodySource,
       htmlSanitized = bodyHtmlSanitized,
       postType = bodyPostType,
       approvedById = approvedById)
       .copy(
-        bodyHiddenAt = ifThenSome(hidePageBody, transaction.currentTime),
+        bodyHiddenAt = ifThenSome(hidePageBody, transaction.now.toJavaDate),
         bodyHiddenById = ifThenSome(hidePageBody, authorId),
         bodyHiddenReason = None) // add `hiddenReason` function parameter?
 
     val uploadPaths = UploadsDao.findUploadRefsInPost(bodyPost)
 
-    val pageMeta = PageMeta.forNewPage(pageId, pageRole, authorId, transaction.currentTime,
+    val pageMeta = PageMeta.forNewPage(pageId, pageRole, authorId, transaction.now.toJavaDate,
       pinOrder = pinOrder, pinWhere = pinWhere,
       categoryId = anyCategoryId, url = None, publishDirectly = true,
       hidden = approvedById.isEmpty) // [7AWU2R0]
@@ -245,7 +245,7 @@ trait PagesDao {
       id = transaction.nextReviewTaskId(),
       reasons = reviewReasons.to[immutable.Seq],
       createdById = SystemUserId,
-      createdAt = transaction.currentTime,
+      createdAt = transaction.now.toJavaDate,
       createdAtRevNr = Some(bodyPost.currentRevisionNr),
       maybeBadUserId = authorId,
       pageId = Some(pageId),
@@ -257,7 +257,7 @@ trait PagesDao {
       id = AuditLogEntry.UnassignedId,
       didWhat = AuditLogEntryType.NewPage,
       doerId = authorId,
-      doneAt = transaction.currentTime,
+      doneAt = transaction.now.toJavaDate,
       browserIdData = byWho.browserIdData,
       pageId = Some(pageId),
       pageRole = Some(pageRole),
@@ -346,7 +346,7 @@ trait PagesDao {
       if (oldMeta.closedAt.isDefined)
         throwBadReq("DwE0PG26", "This question is closed, therefore no answer can be accepted")
 
-      val answeredAt = Some(transaction.currentTime)
+      val answeredAt = Some(transaction.now.toJavaDate)
       val newMeta = oldMeta.copy(
         answeredAt = answeredAt,
         answerPostUniqueId = Some(postUniqueId),
@@ -405,11 +405,11 @@ trait PagesDao {
       }
       else if (oldMeta.plannedAt.isDefined) {
         newPlannedAt = oldMeta.plannedAt
-        newDoneAt = Some(transaction.currentTime)
-        newClosedAt = Some(transaction.currentTime)
+        newDoneAt = Some(transaction.now.toJavaDate)
+        newClosedAt = Some(transaction.now.toJavaDate)
       }
       else {
-        newPlannedAt = Some(transaction.currentTime)
+        newPlannedAt = Some(transaction.now.toJavaDate)
       }
 
       val newMeta = oldMeta.copy(
@@ -440,7 +440,7 @@ trait PagesDao {
         throwForbidden("DwE5JPK7", "Only staff and the topic author can toggle it closed")
 
       val newClosedAt: Option[ju.Date] = oldMeta.closedAt match {
-        case None => Some(transaction.currentTime)
+        case None => Some(transaction.now.toJavaDate)
         case Some(_) => None
       }
       val newMeta = oldMeta.copy(closedAt = newClosedAt, version = oldMeta.version + 1)
@@ -478,7 +478,7 @@ trait PagesDao {
           id = AuditLogEntry.UnassignedId,
           didWhat = AuditLogEntryType.DeletePage,
           doerId = deleterId,
-          doneAt = transaction.currentTime,
+          doneAt = transaction.now.toJavaDate,
           browserIdData = browserIdData,
           pageId = Some(pageId),
           pageRole = Some(pageMeta.pageRole))
@@ -489,7 +489,7 @@ trait PagesDao {
               baseAuditEntry.copy(didWhat = AuditLogEntryType.UndeletePage))
           }
           else {
-            (pageMeta.copy(deletedAt = Some(transaction.currentTime),
+            (pageMeta.copy(deletedAt = Some(transaction.now.toJavaDate),
               version = pageMeta.version + 1), baseAuditEntry)
           }
 

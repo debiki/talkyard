@@ -20,10 +20,9 @@ package debiki.dao
 import akka.util.ByteString
 import com.debiki.core._
 import com.debiki.core.Prelude._
-import java.{util => ju}
+import debiki.Globals
 import redis.RedisClient
 import redis.api.Limit
-import scala.collection.mutable.ArrayBuffer
 import scala.concurrent._
 import scala.concurrent.duration._
 
@@ -62,7 +61,7 @@ class RedisCache(val siteId: SiteId, private val redis: RedisClient) {
 
   def markUserOnlineRemoveStranger(userId: UserId, browserIdData: BrowserIdData) {
     // Could do this in a transaction. Barely matters.
-    redis.zadd(usersOnlineKey(siteId), When.now().toDouble -> userId)
+    redis.zadd(usersOnlineKey(siteId), Globals.now().toDouble -> userId)
     redis.zrem(strangersOnlineByIpKey(siteId), browserIdData.ip)
   }
 
@@ -82,7 +81,7 @@ class RedisCache(val siteId: SiteId, private val redis: RedisClient) {
   def markStrangerOnline(browserIdData: BrowserIdData) {
     // Could consider browser id cookie too (instead of just ip), but then take care
     // to avoid DoS attacks if someone generates 9^99 unique ids and requests.
-    redis.zadd(strangersOnlineByIpKey(siteId), When.now().toDouble -> browserIdData.ip)
+    redis.zadd(strangersOnlineByIpKey(siteId), Globals.now().toDouble -> browserIdData.ip)
   }
 
 
@@ -106,7 +105,7 @@ class RedisCache(val siteId: SiteId, private val redis: RedisClient) {
 
   def removeNoLongerOnlineUserIds() {
     // Could make the time set:table, for tests. But for now:
-    val aWhileAgo = When.now().minusMinutes(10).toDouble
+    val aWhileAgo = Globals.now().minusMinutes(10).toDouble
     redis.zremrangebyscore(usersOnlineKey(siteId), Limit(0.0), Limit(aWhileAgo))
     redis.zremrangebyscore(strangersOnlineByIpKey(siteId), Limit(0.0), Limit(aWhileAgo))
   }

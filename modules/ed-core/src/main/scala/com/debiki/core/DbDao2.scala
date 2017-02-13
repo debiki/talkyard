@@ -79,7 +79,7 @@ class DbDao2(val dbDaoFactory: DbDaoFactory) {
   }
 
 
-  /** Unlike readWriteSystemTransaction, this one doesn't throw OverQuotaException.
+  /** Unlike readWriteSiteTransaction, this one doesn't throw OverQuotaException.
     */
   def readWriteSystemTransaction[R](fn: (SystemTransaction) => R): R = {
     val transaction = dbDaoFactory.newSystemTransaction(readOnly = false)

@@ -34,6 +34,8 @@ trait SiteTransaction {
   /** Continues using the same connection. */
   def asSystem: SystemTransaction
 
+  def now: When
+
   def deferConstraints()
 
   def countWebsites(createdFromIp: String, creatorEmailAddress: String, testSites: Boolean): Int
@@ -46,7 +48,7 @@ trait SiteTransaction {
   def createSite(name: String, status: SiteStatus, hostname: String,
     embeddingSiteUrl: Option[String], creatorIp: String, creatorEmailAddress: String,
     quotaLimitMegabytes: Option[Int], maxSitesPerIp: Int, maxSitesTotal: Int,
-    isTestSiteOkayToDelete: Boolean, pricePlan: PricePlan): Site
+    isTestSiteOkayToDelete: Boolean, pricePlan: PricePlan, createdAt: When): Site
 
   def loadSite(): Option[Site]
   def bumpSiteVersion()
@@ -237,12 +239,6 @@ trait SiteTransaction {
   def moveRenamePage(pageId: PageId,
     newFolder: Option[String] = None, showId: Option[Boolean] = None,
     newSlug: Option[String] = None): PagePath
-
-
-  @deprecated("now", "use this.now instead")
-  def currentTime: ju.Date
-
-  lazy val now: When = When.fromDate(currentTime)
 
 
   /** Remembers that a file has been uploaded and where it's located. */
