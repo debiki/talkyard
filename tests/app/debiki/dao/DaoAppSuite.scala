@@ -99,6 +99,13 @@ class DaoAppSuite(
   }
 
 
+  def loadUserStats(userId: UserId)(dao: SiteDao): UserStats = {
+    dao.readOnlyTransaction { transaction =>
+      transaction.loadUserStats(userId) getOrDie "EdE4GPW945"
+    }
+  }
+
+
   def loadTheMemberAndStats(userId: UserId)(dao: SiteDao): (Member, UserStats) = {
     dao.readOnlyTransaction { transaction =>
       val member = transaction.loadTheMember(userId)

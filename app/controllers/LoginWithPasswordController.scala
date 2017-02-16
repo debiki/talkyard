@@ -21,16 +21,14 @@ import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki._
 import ed.server.spam.SpamChecker
-import ed.server._
 import ed.server.security.createSessionIdAndXsrfToken
 import debiki.dao.SiteDao
 import debiki.DebikiHttp._
 import ed.server.http._
-import java.{util => ju}
-import org.scalactic.{Good, Bad}
+import org.scalactic.{Bad, Good}
 import play.api._
-import play.api.mvc.{Action => _, _}
-import play.api.libs.json.{Json, JsBoolean}
+import play.api.mvc._
+import play.api.libs.json.{JsBoolean, JsValue, Json}
 import scala.concurrent.ExecutionContext.Implicits.global
 
 
@@ -42,8 +40,8 @@ object LoginWithPasswordController extends mvc.Controller {
   private val MaxAddressVerificationEmailAgeInHours = 25
 
 
-  def login = JsonOrFormDataPostAction(RateLimits.Login, maxBytes = 1000,
-        isLogin = true) { request =>
+  def login: Action[JsonOrFormDataBody] = JsonOrFormDataPostAction(
+        RateLimits.Login, maxBytes = 1000, isLogin = true) { request =>
     val email = request.body.getOrThrowBadReq("email")
     val password = request.body.getOrThrowBadReq("password")
     val anyReturnToUrl = request.body.getFirst("returnToUrl")
@@ -78,7 +76,7 @@ object LoginWithPasswordController extends mvc.Controller {
       try dao.tryLoginAsMember(loginAttempt)
       catch {
         case DbDao.BadPasswordException => deny()
-        case ex: DbDao.IdentityNotFoundException => deny()
+        case DbDao.IdentityNotFoundException => deny()
         case DbDao.EmailNotVerifiedException =>
           throwForbidden("DwE4UBM2", o"""You have not yet confirmed your email address.
             Please check your email inbox — you should find an email from us with a
@@ -90,7 +88,8 @@ object LoginWithPasswordController extends mvc.Controller {
   }
 
 
-  def handleCreateUserDialog = AsyncPostJsonAction(RateLimits.CreateUser, maxBytes = 1000,
+  def handleCreateUserDialog: Action[JsValue] = AsyncPostJsonAction(
+        RateLimits.CreateUser, maxBytes = 1000,
         // COULD set isLogin (or isLoginOrSignup)= true but currently that'd mean people
         // could sign up for SiteStatus.HiddenUnlessStaff/Admin. So, not right now.
         // Perhaps later though, if staff can be invited directly via invite emails. [5PY8FD2]
@@ -164,6 +163,7 @@ object LoginWithPasswordController extends mvc.Controller {
     val email = Email.newWithId(
       emailId,
       EmailType.CreateAccount,
+      createdAt = Globals.now(),
       sendTo = user.email,
       toUserId = Some(user.id),
       subject = "Confirm your email address",
@@ -201,10 +201,11 @@ object LoginWithPasswordController extends mvc.Controller {
         dao: SiteDao, emailAddress: String, siteHostname: String, siteId: SiteId) {
     val email = Email(
       EmailType.Notification,
+      createdAt = Globals.now(),
       sendTo = emailAddress,
       toUserId = None,
       subject = "You already have an account at " + siteHostname,
-      bodyHtmlText = (emailId: String) => {
+      bodyHtmlText = (_: String) => {
         views.html.createaccount.accountAlreadyExistsEmail(
           emailAddress = emailAddress,
           siteAddress = siteHostname).body
@@ -214,7 +215,7 @@ object LoginWithPasswordController extends mvc.Controller {
   }
 
 
-  def confirmEmailAddressAndLogin(confirmationEmailId: String, returnToUrl: String) =
+  def confirmEmailAddressAndLogin(confirmationEmailId: String, returnToUrl: String): Action[Unit] =
         GetActionRateLimited(RateLimits.ConfirmEmailAddress, allowAnyone = true) { request =>
 
     val userId = finishEmailAddressVerification(confirmationEmailId, request)
@@ -247,7 +248,7 @@ object LoginWithPasswordController extends mvc.Controller {
         Logger.warn(o"""Got an address verification email ID, although email not yet sent,
             site: ${request.siteId}, email id: $emailId""")
         throwForbidden("DwE8Gfh32", "Address verification email not yet sent")
-      case Some(date) =>
+      case Some(_) =>
         /* COULD restrict email age:
         val emailAgeInMillis = new ju.Date().getTime - date.getTime
         val emailAgeInHours = emailAgeInMillis / 1000 / 3600

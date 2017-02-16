@@ -58,7 +58,7 @@ object LoginAsGuestController extends mvc.Controller {
 
       val loginAttempt = GuestLoginAttempt(
         ip = request.ip,
-        date = new ju.Date,
+        date = Globals.now().toJavaDate,
         name = name,
         email = email,
         guestCookie = request.theBrowserIdData.idCookie)

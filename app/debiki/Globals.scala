@@ -20,6 +20,7 @@ package debiki
 import akka.actor._
 import akka.pattern.gracefulStop
 import com.codahale.metrics
+import com.codahale.metrics.MetricRegistry
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import com.debiki.dao.rdb.{Rdb, RdbDaoFactory}
@@ -42,6 +43,7 @@ import play.api.libs.concurrent.Akka
 import play.api.Play
 import play.api.Play.current
 import redis.RedisClient
+import scala.collection.immutable
 import scala.concurrent.duration._
 import scala.concurrent.{Await, Future, TimeoutException}
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -123,14 +125,14 @@ class Globals {
     }
   })
 
-  def metricRegistry = state.metricRegistry
+  def metricRegistry: MetricRegistry = state.metricRegistry
 
   def mostMetrics: MostMetrics = state.mostMetrics
 
 
-  def applicationVersion = state.applicationVersion
+  def applicationVersion: String = state.applicationVersion
 
-  def applicationSecret = {
+  def applicationSecret: String = {
     throwForbiddenIfSecretNotChanged()
     state.applicationSecret
   }
@@ -167,7 +169,7 @@ class Globals {
     state.mailerActorRef ! (email, websiteId)
   }
 
-  def endToEndTestMailer = state.mailerActorRef
+  def endToEndTestMailer: ActorRef = state.mailerActorRef
 
   def renderPageContentInBackground(sitePageId: SitePageId) {
     if (!isTestDisableBackgroundJobs) {
@@ -177,7 +179,7 @@ class Globals {
 
   def spamChecker: SpamChecker = state.spamChecker
 
-  def securityComplaintsEmailAddress = state.securityComplaintsEmailAddress
+  def securityComplaintsEmailAddress: Option[String] = state.securityComplaintsEmailAddress
 
 
   /** Either exactly all sites uses HTTPS, or all of them use HTTP.
@@ -199,15 +201,15 @@ class Globals {
     * -->
     *  Either HTTP for all sites (assuming a trusted intranet), or HTTPS for all sites.
     */
-  def secure = state.secure
+  def secure: Boolean = state.secure
 
-  def scheme = state.scheme
-  def schemeColonSlashSlash = state.scheme + "://"
+  def scheme: String = state.scheme
+  def schemeColonSlashSlash: String = state.scheme + "://"
 
 
-  def port = state.port
+  def port: Int = state.port
 
-  def colonPort =
+  def colonPort: String =
     if (secure && port == 443) ""
     else if (!secure && port == 80) ""
     else s":$port"
@@ -227,19 +229,19 @@ class Globals {
   def originOf(request: p.mvc.Request[_]): String = s"$scheme://${request.host}"
 
 
-  def baseDomainWithPort = state.baseDomainWithPort
-  def baseDomainNoPort = state.baseDomainNoPort
+  def baseDomainWithPort: String = state.baseDomainWithPort
+  def baseDomainNoPort: String = state.baseDomainNoPort
 
 
-  def firstSiteHostname = state.firstSiteHostname
-  def becomeFirstSiteOwnerEmail = state.becomeFirstSiteOwnerEmail
+  def firstSiteHostname: Option[String] = state.firstSiteHostname
+  def becomeFirstSiteOwnerEmail: Option[String] = state.becomeFirstSiteOwnerEmail
 
   /** New sites may be created only from this hostname. */
-  def anyCreateSiteHostname = state.anyCreateSiteHostname
-  def anyCreateTestSiteHostname = state.anyCreateTestSiteHostname
+  def anyCreateSiteHostname: Option[String] = state.anyCreateSiteHostname
+  def anyCreateTestSiteHostname: Option[String] = state.anyCreateTestSiteHostname
 
   // Hmm, in this way there'll be just one conf field:
-  def config = state.config
+  def config: Config = state.config
 
   def poweredBy = s"https://www.effectivediscussions.org"
 
@@ -254,10 +256,10 @@ class Globals {
     s"$scheme://$SiteByIdHostnamePrefix$siteId.$baseDomainWithPort"
 
 
-  def maxUploadSizeBytes = state.maxUploadSizeBytes
-  def anyUploadsDir = state.anyUploadsDir
-  def anyPublicUploadsDir = state.anyPublicUploadsDir
-  val uploadsUrlPath = controllers.routes.UploadsController.servePublicFile("").url
+  def maxUploadSizeBytes: Int = state.maxUploadSizeBytes
+  def anyUploadsDir: Option[String] = state.anyUploadsDir
+  def anyPublicUploadsDir: Option[String] = state.anyPublicUploadsDir
+  val uploadsUrlPath: String = controllers.routes.UploadsController.servePublicFile("").url
 
   def pubSub: PubSubApi = state.pubSub
   def strangerCounter: StrangerCounterApi = state.strangerCounter
@@ -390,6 +392,8 @@ class Globals {
     state.dbDaoFactory.db.readOnlyDataSource.asInstanceOf[HikariDataSource].close()
     state.dbDaoFactory.db.readWriteDataSource.asInstanceOf[HikariDataSource].close()
     _state = null
+    test.timeStartMillis = None
+    test.timeOffsetMillis = 0
   }
 
 
@@ -418,13 +422,10 @@ class Globals {
 
   def now(): When = {
     val millisNow =
-      if (isProd || (_state eq null) || _state.isBad) {
-        System.currentTimeMillis()
-      }
+      if (isProd) System.currentTimeMillis()
       else {
-        val theState = _state.get
-        val millisStart = theState.timeStartMillis getOrElse System.currentTimeMillis()
-        millisStart + theState.timeOffsetMillis
+        val millisStart = test.timeStartMillis getOrElse System.currentTimeMillis()
+        millisStart + test.timeOffsetMillis
       }
     When.fromMillis(millisNow)
   }
@@ -433,13 +434,19 @@ class Globals {
   object test {
     def setTime(when: When) {
       require(wasTest, "EdE7LJKF2")
-      state.timeStartMillis = Some(when.millis)
+      timeStartMillis = Some(when.millis)
     }
 
     def fastForwardTimeMillis(millis: Long) {
       require(wasTest, "EdE4PFB8R")
-      state.timeOffsetMillis += millis
+      timeOffsetMillis += millis
     }
+
+    @volatile
+    var timeStartMillis: Option[Long] = None
+
+    @volatile
+    var timeOffsetMillis: Long = 0
   }
 
 
@@ -452,17 +459,11 @@ class Globals {
     // Futures timed out after [5 seconds]
     // """
     // (in that case, all tests went fine, but couldn't shutdown the test server quickly enough)
-    val ShutdownTimeout = 10 seconds
-
-    @volatile
-    var timeStartMillis: Option[Long] = None
-
-    @volatile
-    var timeOffsetMillis: Long = 0
+    val ShutdownTimeout: FiniteDuration = 10 seconds
 
     val config = new Config(conf)
 
-    val isTestDisableScripts = {
+    val isTestDisableScripts: Boolean = {
       val disable =
         Play.isTest && Play.configuration.getBoolean("isTestDisableScripts").getOrElse(false)
       if (disable) {
@@ -471,7 +472,7 @@ class Globals {
       disable
     }
 
-    val isTestDisableBackgroundJobs = {
+    val isTestDisableBackgroundJobs: Boolean = {
       val disable =
         Play.isTest && Play.configuration.getBoolean("isTestDisableBackgroundJobs").getOrElse(false)
       if (disable) {
@@ -485,10 +486,10 @@ class Globals {
 
     // Redis. (A Redis client pool makes sense if we haven't saturate the CPU on localhost, or
     // if there're many Redis servers and we want to round robin between them. Not needed, now.)
-    val redisHost =
+    val redisHost: ErrorMessage =
       conf.getString("ed.redis.host").orElse(
         conf.getString("debiki.redis.host")).noneIfBlank getOrElse "localhost"
-    val redisClient = RedisClient(host = redisHost)(Akka.system)
+    val redisClient: RedisClient = RedisClient(host = redisHost)(Akka.system)
 
     // Online user ids are cached in Redis so they'll be remembered accross server restarts,
     // and will be available to all app servers. But we cache them again with more details here
@@ -517,7 +518,8 @@ class Globals {
     //
     val elasticSearchHost = "search"
 
-    val elasticSearchClient = es.client.transport.TransportClient.builder().build()
+    val elasticSearchClient: es.client.transport.TransportClient =
+      es.client.transport.TransportClient.builder().build()
       .addTransportAddress(
         new es.common.transport.InetSocketTransportAddress(
           jn.InetAddress.getByName(elasticSearchHost), 9300))
@@ -525,28 +527,29 @@ class Globals {
     val siteDaoFactory = new SiteDaoFactory(
       dbDaoFactory, redisClient, cache, usersOnlineCache, elasticSearchClient, config)
 
-    val mailerActorRef = Mailer.startNewActor(Akka.system, siteDaoFactory)
+    val mailerActorRef: ActorRef = Mailer.startNewActor(Akka.system, siteDaoFactory)
 
-    val notifierActorRef = Notifier.startNewActor(Akka.system, systemDao, siteDaoFactory)
+    val notifierActorRef: ActorRef = Notifier.startNewActor(Akka.system, systemDao, siteDaoFactory)
 
-    def indexerBatchSize = conf.getInt("ed.search.indexer.batchSize") getOrElse 100
-    def indexerIntervalSeconds = conf.getInt("ed.search.indexer.intervalSeconds") getOrElse 5
+    def indexerBatchSize: Int = conf.getInt("ed.search.indexer.batchSize") getOrElse 100
+    def indexerIntervalSeconds: Int = conf.getInt("ed.search.indexer.intervalSeconds") getOrElse 5
 
-    val indexerActorRef = SearchEngineIndexer.startNewActor(
+    val indexerActorRef: ActorRef = SearchEngineIndexer.startNewActor(
       indexerBatchSize, indexerIntervalSeconds, elasticSearchClient, Akka.system, systemDao)
 
-    def spamCheckBatchSize = conf.getInt("ed.spamcheck.batchSize") getOrElse 20
-    def spamCheckIntervalSeconds = conf.getInt("ed.spamcheck.intervalSeconds") getOrElse 1
+    def spamCheckBatchSize: Int = conf.getInt("ed.spamcheck.batchSize") getOrElse 20
+    def spamCheckIntervalSeconds: Int = conf.getInt("ed.spamcheck.intervalSeconds") getOrElse 1
 
-    val spamCheckActorRef = SpamCheckActor.startNewActor(
+    val spamCheckActorRef: ActorRef = SpamCheckActor.startNewActor(
       spamCheckBatchSize, spamCheckIntervalSeconds, Akka.system, systemDao)
 
-    val nginxHost =
+    val nginxHost: String =
       conf.getString("ed.nginx.host").orElse(
         conf.getString("debiki.nginx.host")).noneIfBlank getOrElse "localhost"
     val (pubSub, strangerCounter) = PubSub.startNewActor(Akka.system, nginxHost, redisClient)
 
-    val renderContentActorRef = RenderContentService.startNewActor(Akka.system, siteDaoFactory)
+    val renderContentActorRef: ActorRef =
+      RenderContentService.startNewActor(Akka.system, siteDaoFactory)
 
     val spamChecker = new SpamChecker()
     spamChecker.start()
@@ -555,11 +558,11 @@ class Globals {
 
     val applicationVersion = "0.00.40"  // later, read from some build config file
 
-    val applicationSecret =
+    val applicationSecret: String =
       conf.getString("play.crypto.secret").noneIfBlank.getOrDie(
         "Config value 'play.crypto.secret' missing [DwE75FX0]")
 
-    val applicationSecretNotChanged = applicationSecret == "changeme"
+    val applicationSecretNotChanged: Boolean = applicationSecret == "changeme"
 
     val e2eTestPassword: Option[String] =
       conf.getString("ed.e2eTestPassword").noneIfBlank
@@ -567,14 +570,14 @@ class Globals {
     val forbiddenPassword: Option[String] =
       conf.getString("ed.forbiddenPassword").noneIfBlank
 
-    val secure =
+    val secure: Boolean =
       conf.getBoolean("ed.secure").orElse(
         conf.getBoolean("debiki.secure")) getOrElse {
       p.Logger.info("Config value 'ed.secure' missing; defaulting to true. [DwM3KEF2]")
       true
     }
 
-    def scheme = if (secure) "https" else "http"
+    def scheme: String = if (secure) "https" else "http"
 
     val port: Int = {
       if (Play.isTest) {
@@ -590,31 +593,32 @@ class Globals {
       }
     }
 
-    val baseDomainNoPort =
+    val baseDomainNoPort: String =
       if (Play.isTest) "localhost"
       else conf.getString("ed.baseDomain").orElse(
         conf.getString("debiki.baseDomain")).noneIfBlank getOrElse "localhost"
 
-    val baseDomainWithPort =
+    val baseDomainWithPort: String =
       if (secure && port == 443) baseDomainNoPort
       else if (!secure && port == 80) baseDomainNoPort
       else s"$baseDomainNoPort:$port"
 
 
     /** The hostname of the site created by default when setting up a new server. */
-    val firstSiteHostname = conf.getString(FirstSiteHostnameConfigValue).orElse(
+    val firstSiteHostname: Option[String] = conf.getString(FirstSiteHostnameConfigValue).orElse(
       conf.getString("debiki.hostname")).noneIfBlank
 
     if (firstSiteHostname.exists(_ contains ':'))
       p.Logger.error("Config value ed.hostname contains ':' [DwE4KUWF7]")
 
-    val becomeFirstSiteOwnerEmail = conf.getString(BecomeOwnerEmailConfigValue).orElse(
-      conf.getString("debiki.becomeOwnerEmailAddress")).noneIfBlank
+    val becomeFirstSiteOwnerEmail: Option[String] =
+      conf.getString(BecomeOwnerEmailConfigValue).orElse(
+        conf.getString("debiki.becomeOwnerEmailAddress")).noneIfBlank
 
-    val anyCreateSiteHostname =
+    val anyCreateSiteHostname: Option[String] =
       conf.getString("ed.createSiteHostname").orElse(
         conf.getString("debiki.createSiteHostname")).noneIfBlank
-    val anyCreateTestSiteHostname =
+    val anyCreateTestSiteHostname: Option[String] =
       conf.getString("ed.createTestSiteHostname").orElse(
         conf.getString("debiki.createTestSiteHostname")).noneIfBlank
 
@@ -625,11 +629,11 @@ class Globals {
     val siteByIdHostnameRegex: Regex =
       s"""^$SiteByIdHostnamePrefix(.*)\\.$baseDomainNoPort$$""".r
 
-    val maxUploadSizeBytes =
+    val maxUploadSizeBytes: Int =
       conf.getInt("ed.uploads.maxKiloBytes").orElse(
         conf.getInt("debiki.uploads.maxKiloBytes").map(_ * 1000)).getOrElse(3*1000*1000)
 
-    val anyUploadsDir = {
+    val anyUploadsDir: Option[String] = {
       import Globals.LocalhostUploadsDirConfigValueName
       val value = conf.getString(LocalhostUploadsDirConfigValueName).noneIfBlank
       val pathSlash = if (value.exists(_.endsWith("/"))) value else value.map(_ + "/")
@@ -651,9 +655,9 @@ class Globals {
       }
     }
 
-    val anyPublicUploadsDir = anyUploadsDir.map(_ + "public/")
+    val anyPublicUploadsDir: Option[String] = anyUploadsDir.map(_ + "public/")
 
-    val securityComplaintsEmailAddress =
+    val securityComplaintsEmailAddress: Option[String] =
       conf.getString("ed.securityComplaintsEmailAddress").orElse(
         conf.getString("debiki.securityComplaintsEmailAddress")).noneIfBlank
   }
@@ -671,33 +675,35 @@ object Config {
 
 class Config(conf: play.api.Configuration) {
 
-  val cnameTargetHost = conf.getString(Config.CnameTargetHostConfValName).noneIfBlank
+  val cnameTargetHost: Option[String] =
+    conf.getString(Config.CnameTargetHostConfValName).noneIfBlank
 
   object cdn {
-    val origin = conf.getString("ed.cdn.origin").noneIfBlank
-    def uploadsUrlPrefix = origin.map(_ + Globals.uploadsUrlPath)
+    val origin: Option[String] = conf.getString("ed.cdn.origin").noneIfBlank
+    def uploadsUrlPrefix: Option[String] = origin.map(_ + Globals.uploadsUrlPath)
   }
 
   object createSite {
     val path = Config.CreateSitePath
     REFACTOR; RENAME // to ...tooManyTryLaterUrl
-    val tooManyTryLaterPagePath = conf.getString(s"$path.tooManyTryLaterPagePath")
-    val maxSitesPerPerson = conf.getInt(s"$path.maxSitesPerIp") getOrElse 10
-    val maxSitesTotal = conf.getInt(s"$path.maxSitesTotal") getOrElse 1000
+    val tooManyTryLaterPagePath: Option[String] = conf.getString(s"$path.tooManyTryLaterPagePath")
+    val maxSitesPerPerson: Int = conf.getInt(s"$path.maxSitesPerIp") getOrElse 10
+    val maxSitesTotal: Int = conf.getInt(s"$path.maxSitesTotal") getOrElse 1000
     REFACTOR; RENAME // Later: rename to ed.createSite.newSiteQuotaMBs?
-    val quotaLimitMegabytes =
+    val quotaLimitMegabytes: Option[Int] =
       conf.getInt("ed.newSite.quotaLimitMegabytes").orElse(
         conf.getInt("debiki.newSite.quotaLimitMegabytes"))
   }
 
   object superAdmin {
     val path = Config.SuperAdminPath
-    val hostname = conf.getString(s"$path.hostname")
-    val siteId = conf.getString(s"$path.siteId")
-    val emailAddresses = conf.getString(Config.SuperAdminEmailAddressesPath) match {
-      case None => Nil
-      case Some(emails) => emails.split(',').map(_.trim).toVector
-    }
+    val hostname: Option[String] = conf.getString(s"$path.hostname")
+    val siteId: Option[String] = conf.getString(s"$path.siteId")
+    val emailAddresses: immutable.Seq[String] =
+      conf.getString(Config.SuperAdminEmailAddressesPath) match {
+        case None => Nil
+        case Some(emails) => emails.split(',').map(_.trim).toVector
+      }
   }
 }
 

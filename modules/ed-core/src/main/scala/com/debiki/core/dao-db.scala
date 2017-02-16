@@ -66,12 +66,11 @@ object DbDao {
   case object DuplicateUserEmail extends RuntimeException("Duplicate user email")
   case object DuplicateGuest extends RuntimeException("Duplicate guest")
 
-  case class IdentityNotFoundException(message: String)
-    extends RuntimeException(message)
-
-  case object BadPasswordException extends RuntimeException("Bad password")
-
-  case object EmailNotVerifiedException extends RuntimeException("Email not verified")
+  object IdentityNotFoundException extends QuickMessageException("Identity not found")
+  object NoMemberWithThatEmailException extends QuickMessageException("No user with that email")
+  object EmailNotVerifiedException extends QuickMessageException("Email not verified")
+  object MemberHasNoPasswordException extends QuickMessageException("User has no password")
+  object BadPasswordException extends QuickMessageException("Bad password")
 
   case object DuplicateVoteException extends RuntimeException("Duplicate vote")
 

@@ -269,7 +269,7 @@ object ViewPageController extends mvc.Controller {
       pageId = pageId,
       pageRole = pageRole,
       authorId = SystemUserId,
-      creationDati = new ju.Date,
+      creationDati = Globals.now().toJavaDate,
       categoryId = None,
       publishDirectly = true)
 

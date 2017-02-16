@@ -100,7 +100,7 @@ object UnsubscriptionController extends mvc.Controller {
     }
     else {
       dao.configIdtySimple(
-         ctime = new ju.Date(), emailAddr = email.sentTo,
+         ctime = Globals.now().toJavaDate, emailAddr = email.sentTo,
          emailNotfPrefs = emailNotfPrefs)
     }
 

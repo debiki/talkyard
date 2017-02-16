@@ -26,6 +26,7 @@ object Email {
   def newWithId(
     emailId: String,
     tyype: EmailType,
+    createdAt: When,
     sendTo: String,
     toUserId: Option[UserId],
     subject: String,
@@ -36,7 +37,7 @@ object Email {
       sentTo = sendTo,
       toUserId = toUserId,
       sentOn = None,
-      createdAt = new ju.Date(),
+      createdAt = createdAt.toJavaDate,
       subject = subject,
       bodyHtmlText = bodyHtmlText,
       providerEmailId = None,
@@ -45,6 +46,7 @@ object Email {
 
   def apply(
         tyype: EmailType,
+        createdAt: When,
         sendTo: String,
         toUserId: Option[UserId],
         subject: String,
@@ -53,6 +55,7 @@ object Email {
     newWithId(
       emailId,
       tyype,
+      createdAt,
       sendTo = sendTo,
       toUserId = toUserId,
       subject = subject,

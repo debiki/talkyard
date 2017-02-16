@@ -18,17 +18,11 @@
 package controllers
 
 import com.debiki.core._
-import com.debiki.core.Prelude._
-import controllers.Utils._
 import debiki.DebikiHttp._
-import debiki.{ReactJson, ThingsToReview}
+import debiki.{Globals, ReactJson}
 import ed.server.http._
-import java.{util => ju}
 import play.api._
 import play.api.libs.json._
-import play.api.libs.json.Json.toJson
-import play.api.mvc.{Action => _, _}
-import scala.collection.{mutable, immutable}
 
 
 /** Lists posts for the moderation page, and approves/rejects/deletes posts
@@ -46,8 +40,8 @@ object ModerationController extends mvc.Controller {
 
 
   def loadReviewTasks = StaffGetAction { request =>
-    val (reviewStuff, usersById) = request.dao.loadReviewStuff(olderOrEqualTo = new ju.Date,
-      limit = 100)
+    val (reviewStuff, usersById) = request.dao.loadReviewStuff(
+      olderOrEqualTo = Globals.now().toJavaDate, limit = 100)
     OkSafeJson(JsArray(reviewStuff.map(ReactJson.reviewStufToJson(_, usersById))))
   }
 

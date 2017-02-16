@@ -22,16 +22,16 @@ import com.debiki.core.Prelude._
 import ed.server.http.DebikiRequest
 import org.scalatest._
 import org.scalatest.mock.MockitoSugar
-import org.scalatestplus.play.OneAppPerSuite
+import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import org.mockito.Mockito._
-import play.api.http.Status.TOO_MANY_REQUEST
+import play.api.http.Status.TOO_MANY_REQUESTS
 import play.{api => p}
 import java.{util => ju}
 
 
 
 class RateLimiterSpec extends FreeSpec with MustMatchers with MockitoSugar
-    with OneAppPerSuite {
+    with GuiceOneAppPerSuite {
 
   import RateLimits.Unlimited
 
@@ -69,7 +69,7 @@ class RateLimiterSpec extends FreeSpec with MustMatchers with MockitoSugar
 
 
   def makeLimits(maxPerFifteenSeconds: Int = Unlimited, maxPerFifteenMinutes: Int = Unlimited,
-        maxPerDay: Int = Unlimited, maxPerDayNewUser: Int = Unlimited) = {
+        maxPerDay: Int = Unlimited, maxPerDayNewUser: Int = Unlimited): RateLimits = {
     val maxPerFifteenSeconds_ = maxPerFifteenSeconds
     val maxPerFifteenMinutes_ = maxPerFifteenMinutes
     val maxPerDay_ = maxPerDay
@@ -77,10 +77,10 @@ class RateLimiterSpec extends FreeSpec with MustMatchers with MockitoSugar
     new RateLimits {
       val key = "key"
       val what = "dummy"
-      def maxPerFifteenSeconds = maxPerFifteenSeconds_
-      def maxPerFifteenMinutes = maxPerFifteenMinutes_
-      def maxPerDay = maxPerDay_
-      def maxPerDayNewUser = maxPerDayNewUser_
+      def maxPerFifteenSeconds: Int = maxPerFifteenSeconds_
+      def maxPerFifteenMinutes: Int = maxPerFifteenMinutes_
+      def maxPerDay: Int = maxPerDay_
+      def maxPerDayNewUser: Int = maxPerDayNewUser_
     }
   }
 
@@ -92,7 +92,7 @@ class RateLimiterSpec extends FreeSpec with MustMatchers with MockitoSugar
     }
     catch {
       case exception: DebikiHttp.ResultException =>
-        exception.result.header.status mustBe TOO_MANY_REQUEST
+        exception.result.header.status mustBe TOO_MANY_REQUESTS
     }
   }
 

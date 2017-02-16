@@ -17,7 +17,7 @@
 
 package com.debiki
 
-import com.debiki.core.Prelude.dieIf
+import com.debiki.core.Prelude._
 import java.{util => ju}
 import org.apache.commons.validator.routines.EmailValidator
 import org.scalactic.{Bad, Good, Or}
@@ -115,10 +115,13 @@ package object core {
       */
     def toDouble: Double = unixMillis.toDouble
     def numSeconds: Long = unixMillis / 1000
+    def seconds: Long = unixMillis / 1000
 
     def isAfter(other: When): Boolean = unixMillis > other.unixMillis
     def isBefore(other: When): Boolean = unixMillis < other.unixMillis
     def isNotBefore(other: When): Boolean = unixMillis >= other.unixMillis
+
+    def plusMillis(moreMillis: Int) = new When(this.millis + moreMillis)
 
     override def toString: String = unixMillis.toString + "ms"
   }
@@ -363,11 +366,13 @@ package object core {
     require((secondsReading > 0) || lowPostNrsRead.isEmpty, "EdE8JSBWR42")
 
 
-    def numLowNrRepliesRead: Int =
-      lowPostNrsRead.size - (if (lowPostNrsRead.contains(PageParts.BodyNr)) 1 else 0)
+    def maxPostNr: PostNr =
+      math.max(lowPostNrsRead.isEmpty ? 0 | lowPostNrsRead.max,
+        lastPostNrsReadRecentFirst.isEmpty? 0 | lastPostNrsReadRecentFirst.max)
 
-    def numPostsRead: Int =
-      lowPostNrsRead.size + lastPostNrsReadRecentFirst.size
+    def numNonOrigPostsRead: Int =
+      lowPostNrsRead.size + lastPostNrsReadRecentFirst.size -
+         (if (lowPostNrsRead.contains(PageParts.BodyNr)) 1 else 0)
 
 
     def addMore(moreProgress: ReadingProgress): ReadingProgress = {
@@ -532,6 +537,7 @@ package object core {
   def DELETE_LATER = ()   // ... hmm. Rename to CLEANUP.
   def CLEAN_UP = ()       // Unused stuff that should be deleted after a grace period, or when
                           // the developers are less short of time.
+  def DISCUSSION_QUALITY = () // Stuff to do to improve the quality of the discussions
 
 }
 

@@ -164,7 +164,7 @@ object ReactRenderer extends com.debiki.core.CommonMarkRenderer {
     if (Globals.isTestDisableScripts)
       return Some("Scripts disabled [EsM6YKW2]")
     withJavascriptEngine(engine => {
-      val timeBefore = (new ju.Date).getTime
+      val timeBefore = System.currentTimeMillis()
 
       engine.invokeFunction("setInitialStateJson", initialStateJson)
       val pageHtml = engine.invokeFunction("renderReactServerSide").asInstanceOf[String]
@@ -173,7 +173,7 @@ object ReactRenderer extends com.debiki.core.CommonMarkRenderer {
         return None
       }
 
-      def timeElapsed = (new ju.Date).getTime - timeBefore
+      def timeElapsed = System.currentTimeMillis() - timeBefore
       def threadId = java.lang.Thread.currentThread.getId
       def threadName = java.lang.Thread.currentThread.getName
       logger.trace(s"Done rendering: $timeElapsed ms, thread $threadName  (id $threadId)")
@@ -305,7 +305,7 @@ object ReactRenderer extends com.debiki.core.CommonMarkRenderer {
 
 
   private def makeJavascriptEngine(): js.ScriptEngine = {
-    val timeBefore = (new ju.Date).getTime
+    val timeBefore = System.currentTimeMillis()
     def threadId = java.lang.Thread.currentThread.getId
     def threadName = java.lang.Thread.currentThread.getName
     logger.debug(s"Initializing Nashorn engine, thread id: $threadId, name: $threadName...")
@@ -389,7 +389,7 @@ object ReactRenderer extends com.debiki.core.CommonMarkRenderer {
 
     newEngine.eval(script)
 
-    def timeElapsed = (new ju.Date).getTime - timeBefore
+    def timeElapsed = System.currentTimeMillis() - timeBefore
     logger.debug(o"""... Done initializing Nashorn engine, took: $timeElapsed ms,
          thread id: $threadId, name: $threadName""")
 

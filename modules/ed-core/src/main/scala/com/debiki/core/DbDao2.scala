@@ -46,8 +46,8 @@ class DbDao2(val dbDaoFactory: DbDaoFactory) {
     val transaction = dbDaoFactory.newSiteTransaction(siteId, readOnly = false,
       mustBeSerializable = true)
     var committed = false
-    try {
-      val result = fn(transaction)
+
+    def checkQuotaAndCommit() {
       if (!allowOverQuota) {
         val resourceUsage = transaction.loadResourceUsage()
         resourceUsage.quotaLimitMegabytes foreach { limit =>
@@ -58,6 +58,18 @@ class DbDao2(val dbDaoFactory: DbDaoFactory) {
       }
       transaction.commit()
       committed = true
+    }
+
+    try {
+      val result =
+        try fn(transaction)
+        catch {
+          case controlThrowable: scala.runtime.NonLocalReturnControl[_] =>
+            // Is thrown by a 'return' in the middle of 'fn()', which is fine.
+            checkQuotaAndCommit()
+            throw controlThrowable
+        }
+      checkQuotaAndCommit()
       result
     }
     finally {

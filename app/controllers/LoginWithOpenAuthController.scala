@@ -239,7 +239,7 @@ object LoginWithOpenAuthController extends Controller {
       })
 
     val loginAttempt = OpenAuthLoginAttempt(
-      ip = request.ip, date = new ju.Date, oauthDetails)
+      ip = request.ip, date = Globals.now().toJavaDate, oauthDetails)
 
     val mayCreateNewUserCookie = request.cookies.get(MayCreateUserCookieName)
     val mayCreateNewUser = !mayCreateNewUserCookie.map(_.value).contains("false")
@@ -253,7 +253,7 @@ object LoginWithOpenAuthController extends Controller {
         createCookiesAndFinishLogin(request, dao.siteId, loginGrant.user)
       }
       catch {
-        case ex: DbDao.IdentityNotFoundException =>
+        case DbDao.IdentityNotFoundException =>
           // Let's check if the user already exists, and if so, create an OpenAuth identity
           // and connect it to the user.
           // Details: The user might exist, although no identity was found, if the user

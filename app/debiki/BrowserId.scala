@@ -50,7 +50,7 @@ object BrowserId {
 
 
   private def createNewCookie(): (BrowserId, List[Cookie]) = {
-    val unixTimeSeconds = (new ju.Date).getTime / 1000
+    val unixTimeSeconds = Globals.now().seconds
     // Let's separate the timestamp from the random stuff by adding an a-z letter.
     val randomString = nextRandomAzLetter() + nextRandomString() take 7
 

@@ -131,7 +131,7 @@ class Mailer(
    * database (because Mailer doesn't know exactly how to save it, e.g.
    * if any other tables should also be updated).
    */
-  def receive = {
+  def receive: PartialFunction[Any, Unit] = {
     case (email: Email, tenantId: String) =>
       sendEmail(email, tenantId)
     case ("GetEndToEndTestEmail", siteIdColonEmailAddress: String) =>
@@ -153,7 +153,7 @@ class Mailer(
   private def sendEmail(emailToSend: Email, tenantId: String) {
 
     val tenantDao = daoFactory.newSiteDao(tenantId)
-    val now = Some(new ju.Date)
+    val now = Some(Globals.now().toJavaDate)
 
     // I often use @example.com, or simply @ex.com, when posting test comments
     // — don't send those emails, to keep down the bounce rate.
@@ -221,7 +221,7 @@ class Mailer(
       |$email
       |————————————————————————————————————————————————————————————
       |""")
-    val emailSent = email.copy(sentOn = Some(new ju.Date))
+    val emailSent = email.copy(sentOn = Some(Globals.now().toJavaDate))
     siteDao.updateSentEmail(emailSent)
     if (Email.isE2eTestEmailAddress(email.sentTo)) {
       rememberE2eTestEmail(email, siteDao)

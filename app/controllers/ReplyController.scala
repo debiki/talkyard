@@ -50,6 +50,9 @@ object ReplyController extends mvc.Controller {
     throwBadRequestIf(text.isEmpty, "EdE85FK03", "Empty post")
     val textAndHtml = TextAndHtml(text, isTitle = false)
 
+    DISCUSSION_QUALITY; COULD // require that the user has spent a reasonable time reading
+    // the topic, in comparison to # posts in the topic, before allowing hen to post a reply.
+
     // Construct a request that concerns the specified page. Create the page
     // lazily if it's supposed to be a discussion embedded on a static HTML page.
     SECURITY ; COULD // avoid revealing that a page exists: forPageThatExists below might throw

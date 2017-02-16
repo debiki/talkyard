@@ -73,7 +73,7 @@ object InviteController extends mvc.Controller {
       secretKey = nextRandomString(),
       emailAddress = toEmailAddress,
       createdById = request.theUserId,
-      createdAt = new ju.Date)
+      createdAt = Globals.now().toJavaDate)
 
     val email = makeInvitationEmail(invite, request.theMember, request.host)
     debiki.Globals.sendEmail(email, request.siteId)
@@ -164,6 +164,7 @@ object InviteController extends mvc.Controller {
       siteHostname = siteHostname, secretKey = invite.secretKey).body
     Email(
       EmailType.Invite,
+      createdAt = Globals.now(),
       sendTo = invite.emailAddress,
       toUserId = None,
       subject = s"Invitation to $siteHostname",
@@ -174,6 +175,7 @@ object InviteController extends mvc.Controller {
   private def makeWelcomeSetPasswordEmail(newUser: MemberInclDetails, siteHostname: String) = {
     Email(
       EmailType.InvitePassword,
+      createdAt = Globals.now(),
       sendTo = newUser.emailAddress,
       toUserId = Some(newUser.id),
       subject = s"Welcome to $siteHostname, account created",
@@ -185,6 +187,7 @@ object InviteController extends mvc.Controller {
   def makeYourInviteWasAcceptedEmail(siteHostname: String, newUser: MemberInclDetails, inviter: User) = {
     Email(
       EmailType.InviteAccepted,
+      createdAt = Globals.now(),
       sendTo = inviter.email,
       toUserId = Some(inviter.id),
       subject = s"Your invitation for ${newUser.emailAddress} to join $siteHostname was accepted",

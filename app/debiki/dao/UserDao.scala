@@ -442,6 +442,14 @@ trait UserDao {
   }
 
 
+  def logout(userId: UserId) {
+    readWriteTransaction { transaction =>
+      addUserStats(UserStats(userId, lastSeenAt = transaction.now))(transaction)
+    }
+    memCache.remove(key(userId))
+  }
+
+
   def loadUsers(): immutable.Seq[User] = {
     readOnlyTransaction { transaction =>
       transaction.loadUsers()
@@ -553,33 +561,47 @@ trait UserDao {
     require(user.isMember, "EdE8KFUW2")
 
     val pageMeta = getPageMeta(pageId) getOrDie "EdE5JKDYE"
+    if (newProgress.maxPostNr - PageParts.FirstReplyNr >= pageMeta.numRepliesTotal)
+      throwForbidden("EdE7UKW25_", o"""Got post nr ${newProgress.maxPostNr} but there are only
+          ${pageMeta.numRepliesTotal} posts in the topic""")
+
     readWriteTransaction { transaction =>
       val oldProgress = transaction.loadReadProgress(userId = user.id, pageId = pageId)
 
-      val (numMorePostsRead, numMoreRepliesRead, numMoreTopicsEntered, resultingProgress) =
+      val (numMoreNonOrigPostsRead, numMoreTopicsEntered, resultingProgress) =
         oldProgress match {
           case None =>
-            (newProgress.numPostsRead, newProgress.numLowNrRepliesRead, 1, newProgress)
+            (newProgress.numNonOrigPostsRead, 1, newProgress)
           case Some(old) =>
-            ((newProgress.lastPostNrsReadRecentFirst.toSet -- old.lastPostNrsReadRecentFirst).size,
-             newProgress.numLowNrRepliesRead - old.numLowNrRepliesRead, 0, old.addMore(newProgress))
+            val numNewLowPosts =
+              (newProgress.lowPostNrsRead -- old.lowPostNrsRead - PageParts.BodyNr).size
+            // This might re-count a post that we re-reads...
+            var numNewHighPosts =
+              (newProgress.lastPostNrsReadRecentFirst.toSet -- old.lastPostNrsReadRecentFirst).size
+            // ... but here we cap at the total size of the topic.
+            val requestedNumNewPosts = numNewLowPosts + numNewHighPosts
+            val maxNumNewPosts =
+              math.max(0, pageMeta.numRepliesTotal - old.numNonOrigPostsRead) // [7FF02A3R]
+            val allowedNumNewPosts = math.min(maxNumNewPosts, requestedNumNewPosts)
+            (allowedNumNewPosts, 0, old.addMore(newProgress))
         }
 
-      val (numDiscourseRepliesRead, numDiscourseTopicsEntered,
-          numChatMessagesRead, numChatTopicsEntered) =
+      val (numMoreDiscourseRepliesRead, numMoreDiscourseTopicsEntered,
+          numMoreChatMessagesRead, numMoreChatTopicsEntered) =
         if (pageMeta.pageRole.isChat)
-          (0, 0, numMorePostsRead, numMoreTopicsEntered)
+          (0, 0, numMoreNonOrigPostsRead, numMoreTopicsEntered)
         else
-          (numMoreRepliesRead, numMoreTopicsEntered, 0, 0)
+          (numMoreNonOrigPostsRead, numMoreTopicsEntered, 0, 0)
 
       val statsBefore = transaction.loadUserStats(user.id) getOrDie "EdE2FPJR9"
       val statsAfter = statsBefore.addMoreStats(UserStats(
         userId = user.id,
+        lastSeenAt = newProgress.lastVisitedAt,
         numSecondsReading = newProgress.secondsReading,
-        numDiscourseTopicsEntered = numDiscourseTopicsEntered,
-        numDiscourseRepliesRead = numDiscourseRepliesRead,
-        numChatTopicsEntered = numChatTopicsEntered,
-        numChatMessagesRead = numChatMessagesRead))
+        numDiscourseTopicsEntered = numMoreDiscourseTopicsEntered,
+        numDiscourseRepliesRead = numMoreDiscourseRepliesRead,
+        numChatTopicsEntered = numMoreChatTopicsEntered,
+        numChatMessagesRead = numMoreChatMessagesRead))
 
       COULD_OPTIMIZE // aggregate the reading progress in Redis instead. Save every 5? 10? minutes,
       // so won't write to the db so very often.

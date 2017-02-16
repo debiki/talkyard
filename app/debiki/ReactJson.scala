@@ -136,7 +136,7 @@ object ReactJson {
 
     Json.obj(
       "appVersion" -> Globals.applicationVersion,
-      "now" -> JsNumber((new ju.Date).getTime),
+      "now" -> JsNumber(Globals.now().millis),
       "siteId" -> JsString(pageReq.siteId),
       "siteStatus" -> pageReq.dao.theSite().status.toInt,
       "isFirstSiteAdminEmailMissing" -> isFirstSiteAdminEmailMissing,

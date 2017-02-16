@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2017 Kaj Magnus Lindberg
+ * Copyright (C) 2017 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -18,30 +18,39 @@
 package debiki.dao
 
 import com.debiki.core._
-import com.debiki.core.Prelude._
 import debiki.{Globals, TextAndHtml}
 import java.{util => ju}
-import scala.collection.mutable
 
 
 class UserStatsAppSpec extends DaoAppSuite() {
   lazy val dao: SiteDao = Globals.siteDao(Site.FirstSiteId)
 
   lazy val categoryId: CategoryId =
-    dao.createForum("Forum", "/tag-test-forum/",
-      Who(owner.id, browserIdData)).uncategorizedCategoryId
+    dao.createForum("Forum", "/tag-test-forum/", ownerWho).uncategorizedCategoryId
 
-  lazy val owner: Member = createPasswordOwner("tag_adm", dao)
-  lazy val moderator: Member = createPasswordModerator("tag_mod", dao)
-  lazy val member1: Member = createPasswordUser("tag_mb1", dao)
-  lazy val wrongMember: Member = createPasswordUser("wr_tg_mbr", dao)
+  lazy val ownerWho = Who(owner.id, browserIdData)
+
+  lazy val owner: Member = createPasswordOwner("us_adm", dao)
+  lazy val moderator: Member = createPasswordModerator("us_mod", dao)
+  lazy val member1: Member = createPasswordUser("us_mb1", dao)
+  lazy val wrongMember: Member = createPasswordUser("us_wr_mb", dao)
 
   var noRepliesTopicId: PageId = _
   var withRepliesTopicId: PageId = _
-  var noMessagesChatTopicId: PageId = _
+
+  var twoMessagesChatTopicId: PageId = _
+  var addMessagesChatTopicId: PageId = _
   var withMessagesChatTopicId: PageId = _
 
-  val startTime: When = When.fromMillis(1000)
+  var currentStats: UserStats = _
+
+  val startTime: When = When.fromMillis(10 * 1000)
+  var currentTime: When = startTime
+
+  def playTime(millis: Int) {
+    Globals.test.fastForwardTimeMillis(millis)
+    currentTime = currentTime plusMillis millis
+  }
 
 
   def reply(memberId: UserId, pageId: PageId, text: String, parentNr: Option[PostNr] = None)
@@ -49,6 +58,20 @@ class UserStatsAppSpec extends DaoAppSuite() {
     dao.insertReply(TextAndHtml.testBody(text), pageId,
       replyToPostNrs = Set(parentNr getOrElse PageParts.BodyNr), PostType.Normal,
       Who(memberId, browserIdData), dummySpamRelReqStuff).post
+  }
+
+
+  def chat(memberId: UserId, pageId: PageId, text: String): Post = {
+    dao.insertChatMessage(TextAndHtml.testBody(text), pageId,
+      Who(memberId, browserIdData), dummySpamRelReqStuff).post
+  }
+
+
+  def pretendThereAreManyReplies(pageId: PageId) {
+    val oldMeta = dao.loadThePageMeta(pageId)
+    val newMeta = oldMeta.copy(numRepliesTotal = 9999, numRepliesVisible = 9999)
+    dao.readWriteTransaction(_.updatePageMeta(newMeta, oldMeta = oldMeta,
+      markSectionPageStale = false))
   }
 
 
@@ -61,52 +84,269 @@ class UserStatsAppSpec extends DaoAppSuite() {
       noRepliesTopicId = createPage(PageRole.Discussion,
         TextAndHtml.testTitle("noRepliesTopicId"), TextAndHtml.testBody("noRepliesTopicIde body"),
         owner.id, browserIdData, dao, Some(categoryId))
+      pretendThereAreManyReplies(noRepliesTopicId)
 
       withRepliesTopicId = createPage(PageRole.Discussion,
         TextAndHtml.testTitle("withRepliesTopicId"), TextAndHtml.testBody("withRepliesTopicId bd"),
         owner.id, browserIdData, dao, Some(categoryId))
-
       reply(moderator.id, withRepliesTopicId, s"Reply 1 (post nr 2)")
       reply(moderator.id, withRepliesTopicId, s"Reply 2 (post nr 3)")
       reply(moderator.id, withRepliesTopicId, s"Reply 3 (post nr 4)")
+      pretendThereAreManyReplies(withRepliesTopicId)
 
-      noMessagesChatTopicId = createPage(PageRole.OpenChat,
+      twoMessagesChatTopicId = createPage(PageRole.OpenChat,
+        TextAndHtml.testTitle("twoMessagesChatTopicId"), TextAndHtml.testBody("chat purpose 2953"),
+        owner.id, browserIdData, dao, Some(categoryId))
+      dao.addUsersToPage(Set(owner.id), twoMessagesChatTopicId, byWho = ownerWho)
+      dao.addUsersToPage(Set(moderator.id), twoMessagesChatTopicId, byWho = ownerWho)
+      chat(owner.id, twoMessagesChatTopicId, "chat message 1")
+      // Needs to be a different member, otherwise the prev chat message gets appended to, instead.
+      chat(moderator.id, twoMessagesChatTopicId, "chat message 2")
+
+      addMessagesChatTopicId = createPage(PageRole.OpenChat,
         TextAndHtml.testTitle("chatTopicId"), TextAndHtml.testBody("chatTopicId body"),
         owner.id, browserIdData, dao, Some(categoryId))
+      pretendThereAreManyReplies(addMessagesChatTopicId)
 
       withMessagesChatTopicId = createPage(PageRole.OpenChat,
         TextAndHtml.testTitle("withMessagesChatTopicId"),
         TextAndHtml.testBody("withMessagesChatTopicId purpose"),
         owner.id, browserIdData, dao, Some(categoryId))
-
       // dao.insertChatMessage(...)
       // ...
+      pretendThereAreManyReplies(withMessagesChatTopicId)
     }
+
+    lazy val initialStats =
+      UserStats.forNewUser(member1.id, firstSeenAt = startTime, emailedAt = None)
 
     "a member starts with blank stats" in {
       val (mem, stats) = loadTheMemberAndStats(member1.id)(dao)
-      stats mustBe UserStats.forNewUser(mem.id, firstSeenAt = startTime, emailedAt = None)
+      stats mustBe initialStats
+    }
+
+    "... logs out, last-seen stats get updated" in {
+      playTime(1000)
+      dao.logout(member1.id)
+      val stats = loadUserStats(member1.id)(dao)
+      stats mustBe initialStats.copy(lastSeenAt = currentTime)
     }
 
     "... logs in, stats get updated" in {
+      playTime(1000)
+      dao.verifyEmail(member1.id, Globals.now().toJavaDate)
+      val loginGrant = dao.tryLoginAsMember(PasswordLoginAttempt(
+        ip = "1.2.3.4", Globals.now().toJavaDate, member1.email, "public-us_mb1"))
+      val stats = loadUserStats(member1.id)(dao)
+      stats mustBe initialStats.copy(lastSeenAt = currentTime)
     }
 
     "... posts a topic, stats get updated" in {
+      playTime(1000)
+      createPage(PageRole.Discussion,
+        TextAndHtml.testTitle("topic"), TextAndHtml.testBody("topic text"),
+        member1.id, browserIdData, dao, Some(categoryId))
+      currentStats = loadUserStats(member1.id)(dao)
+      currentStats mustBe initialStats.copy(
+        lastSeenAt = currentTime,
+        lastPostedAt = Some(currentTime),
+        firstNewTopicAt = Some(currentTime),
+        numDiscourseTopicsCreated = 1)
     }
 
     "... posts a discourse reply, stats get updated" in {
+      playTime(1000)
+      reply(member1.id, noRepliesTopicId, s"A reply")
+      val correctStats = currentStats.copy(
+        lastSeenAt = currentTime,
+        lastPostedAt = Some(currentTime),
+        firstDiscourseReplyAt = Some(currentTime),
+        numDiscourseRepliesPosted = currentStats.numDiscourseRepliesPosted + 1)
+      currentStats = loadUserStats(member1.id)(dao)
+      currentStats mustBe correctStats
     }
 
     "... posts a chat message, stats get updated" in {
+      playTime(1000)
+      dao.addUsersToPage(Set(member1.id), addMessagesChatTopicId, byWho = ownerWho)
+      chat(member1.id, addMessagesChatTopicId, "Chat chat")
+      val correctStats = currentStats.copy(
+        lastSeenAt = currentTime,
+        lastPostedAt = Some(currentTime),
+        firstChatMessageAt = Some(currentTime),
+        numChatMessagesPosted = currentStats.numChatMessagesPosted + 1)
+      currentStats = loadUserStats(member1.id)(dao)
+      currentStats mustBe correctStats
     }
 
-    "...reads a discourse topic, but no replies, topics-viewed updated, but not replies-read" in {
+    "... gets an email, last-emailed-at gets updated" in {
+      playTime(1000)
+      val email = Email(EmailType.Notification, createdAt = Globals.now(),
+        sendTo = member1.email, toUserId = Some(member1.id),
+        subject = "Dummy email", bodyHtmlText = (emailId: String) => "Text text")
+      dao.saveUnsentEmail(email)
+      Globals.sendEmail(email, dao.siteId)
+      val startMs = System.currentTimeMillis()
+      var newStats = loadUserStats(member1.id)(dao)
+      newStats.lastEmailedAt mustBe empty
+      while (newStats.lastEmailedAt.isEmpty && System.currentTimeMillis() - startMs < 5000) {
+        newStats = loadUserStats(member1.id)(dao)
+      }
+      newStats.lastEmailedAt mustBe Some(currentTime)
+      currentStats = newStats
+    }
+
+    "... looks at a discourse topic, but doesn't read it" in {
+      playTime(1200)
+      dao.trackReadingProgressPerhapsPromote(member1, noRepliesTopicId, ReadingProgress(
+        firstVisitedAt = Globals.now(),
+        lastVisitedAt = Globals.now(),
+        lastViewedPostNr = PageParts.BodyNr,
+        lastReadAt = None,
+        lastPostNrsReadRecentFirst = Vector.empty,
+        lowPostNrsRead = Set.empty,
+        secondsReading = 0))
+      val correctStats = currentStats.copy(lastSeenAt = currentTime, numDiscourseTopicsEntered = 1)
+      currentStats = loadUserStats(member1.id)(dao)
+      currentStats mustBe correctStats
+    }
+
+    "... reads the orig post" in {
+      playTime(1000)
+      dao.trackReadingProgressPerhapsPromote(member1, noRepliesTopicId, ReadingProgress(
+        firstVisitedAt = Globals.now(),
+        lastVisitedAt = Globals.now(),
+        lastViewedPostNr = PageParts.BodyNr,
+        lastReadAt = Some(Globals.now()),
+        lastPostNrsReadRecentFirst = Vector.empty,
+        lowPostNrsRead = Set(PageParts.BodyNr),
+        secondsReading = 12))
+      val correctStats = currentStats.copy(
+        lastSeenAt = currentTime,
+        numSecondsReading = 12)
+
+      currentStats = loadUserStats(member1.id)(dao)
+      currentStats mustBe correctStats
+      currentStats.numDiscourseRepliesRead mustBe 0 // orig post doesn't count
     }
 
     "... reads a discourse topic, with replies, now replies-read gets updated" in {
+      playTime(1000)
+      dao.trackReadingProgressPerhapsPromote(member1, withRepliesTopicId, ReadingProgress(
+        firstVisitedAt = Globals.now() minusMillis 400,
+        lastVisitedAt = Globals.now() minusMillis 200,
+        lastViewedPostNr = 3,
+        lastReadAt = Some(Globals.now() minusMillis 300),
+        lastPostNrsReadRecentFirst = Vector.empty,
+        lowPostNrsRead = Set(3, 4, 17),
+        secondsReading = 111))
+      val correctStats = currentStats.copy(
+        lastSeenAt = currentTime minusMillis 200,
+        numSecondsReading = 123,  // 111 + 12
+        numDiscourseTopicsEntered = 2, // noRepliesTopicId and withRepliesTopicId
+        numDiscourseRepliesRead = 3)   // 3, 4, 17 above
+
+      currentStats = loadUserStats(member1.id)(dao)
+      currentStats mustBe correctStats
     }
 
-    "... views a chat topic, stats gets updated" in {
+    "... views even more replies" in {
+      playTime(1000)
+      dao.trackReadingProgressPerhapsPromote(member1, withRepliesTopicId, ReadingProgress(
+        firstVisitedAt = Globals.now() minusMillis 400,
+        lastVisitedAt = Globals.now(),
+        lastViewedPostNr = 33,
+        lastReadAt = Some(Globals.now()),
+        lastPostNrsReadRecentFirst = Vector.empty,
+        lowPostNrsRead = Set(PageParts.BodyNr, 24, 32, 33, 34),
+        secondsReading = 1111))
+      val correctStats = currentStats.copy(
+        lastSeenAt = currentTime,
+        numSecondsReading = 1234,  // 1111 + 111 + 12
+        numDiscourseRepliesRead = 3 + 4)   // 3, 4, 17, then 24, 32, 33, 34
+
+      currentStats = loadUserStats(member1.id)(dao)
+      currentStats mustBe correctStats
+    }
+
+    "... views a chat topic, low post nrs only, stats gets updated" in {
+      playTime(1000)
+      dao.trackReadingProgressPerhapsPromote(member1, withMessagesChatTopicId, ReadingProgress(
+        firstVisitedAt = Globals.now() minusMillis 500,
+        lastVisitedAt = Globals.now(),
+        lastViewedPostNr = 10,
+        lastReadAt = Some(Globals.now()),
+        lastPostNrsReadRecentFirst = Vector.empty,
+        lowPostNrsRead = Set(1 to 10: _*),
+        secondsReading = 4))
+      val correctStats = currentStats.copy(
+        lastSeenAt = currentTime,
+        numSecondsReading = 1238,  // 1234 + 4
+        numChatTopicsEntered = 1,
+        numChatMessagesRead = 9)
+
+      currentStats = loadUserStats(member1.id)(dao)
+      currentStats mustBe correctStats
+    }
+
+    "... reads a bit more in the same a chat topic, still low post nrs" in {
+      playTime(1000)
+      dao.trackReadingProgressPerhapsPromote(member1, withMessagesChatTopicId, ReadingProgress(
+        firstVisitedAt = Globals.now() minusMillis 500,
+        lastVisitedAt = Globals.now(),
+        lastViewedPostNr = 12055,
+        lastReadAt = Some(Globals.now()),
+        lastPostNrsReadRecentFirst = Vector.empty,
+        // Posts 5..10 already read, won't be counted again.
+        lowPostNrsRead = Set(5 to ReadingProgress.MaxLowPostNr: _*),
+        secondsReading = 1000))
+      val correctStats = currentStats.copy(
+        lastSeenAt = currentTime,
+        numSecondsReading = 2238,  // 1238 + 1000
+        // 1..10 had been read earlier.  -1 because orig-post isn't a chat message (it instead
+        // contains the purpose of the chat).
+        numChatMessagesRead = ReadingProgress.MaxLowPostNr - 1)
+
+      currentStats = loadUserStats(member1.id)(dao)
+      currentStats mustBe correctStats
+    }
+
+    "... views a chat topic with 2 messages, cannot read more than 2" in {
+      playTime(1000)
+      val exception = intercept[Exception] {
+        dao.trackReadingProgressPerhapsPromote(member1, twoMessagesChatTopicId, ReadingProgress(
+          firstVisitedAt = Globals.now(),
+          lastVisitedAt = Globals.now(),
+          lastViewedPostNr = 1,
+          lastReadAt = Some(Globals.now()),
+          lastPostNrsReadRecentFirst = Vector.empty,
+          lowPostNrsRead = Set(2, 3, 4),  // nr 4 doesn't exist
+          secondsReading = 1))
+      }
+      exception.getMessage must include("EdE7UKW25_")
+    }
+
+    "... but can read 2" in {
+      playTime(1000)
+      dao.trackReadingProgressPerhapsPromote(member1, twoMessagesChatTopicId, ReadingProgress(
+        firstVisitedAt = Globals.now() minusMillis 500,
+        lastVisitedAt = Globals.now(),
+        lastViewedPostNr = 1,
+        lastReadAt = Some(Globals.now()),
+        lastPostNrsReadRecentFirst = Vector.empty,
+        lowPostNrsRead = Set(1, 2, 3),  // nr 1 = the orig post, won't count, so +2 below (not +3)
+        secondsReading = 200))
+      val correctStats = currentStats.copy(
+        lastSeenAt = currentTime,
+        numSecondsReading = 2438,  // 2238 + 200
+        numChatTopicsEntered = 2,
+        numChatMessagesRead = ReadingProgress.MaxLowPostNr - 1 + 2)
+      currentStats = loadUserStats(member1.id)(dao)
+      currentStats mustBe correctStats
+    }
+
+    "... views a chat topic, high post nrs only, stats gets updated" in {
+      pending // [7GPKW205]
     }
 
     /*

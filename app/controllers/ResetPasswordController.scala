@@ -83,6 +83,7 @@ object ResetPasswordController extends mvc.Controller {
   private def sendResetPasswordEmailTo(user: Member, request: ApiRequest[_]) {
     val email = Email(
       EmailType.ResetPassword,
+      createdAt = Globals.now(),
       sendTo = user.email,
       toUserId = Some(user.id),
       subject = "Reset Password",
@@ -102,6 +103,7 @@ object ResetPasswordController extends mvc.Controller {
         user: Member, emailAddress: String, request: ApiRequest[_]) {
     val email = Email(
       EmailType.Notification,
+      createdAt = Globals.now(),
       sendTo = emailAddress,
       toUserId = Some(user.id),
       subject = "There is no password to reset",
@@ -154,7 +156,7 @@ object ResetPasswordController extends mvc.Controller {
   private def loginByEmailOrThrow(resetPasswordEmailId: String, request: ApiRequest[_])
         : MemberLoginGrant = {
     val loginAttempt = EmailLoginAttempt(
-      ip = request.ip, date = new ju.Date, emailId = resetPasswordEmailId)
+      ip = request.ip, date = Globals.now().toJavaDate, emailId = resetPasswordEmailId)
     // TODO: Check email type !
     val loginGrant =
       try request.dao.tryLoginAsMember(loginAttempt)

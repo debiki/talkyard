@@ -12,7 +12,11 @@ cd ..
 # container is here started with 'run' (not 'up') I would think, so it doesn't
 # get the correct network address ? )
 
+# Find amount-of-memory-to-use in docker-compose.yml:
+PLAY_HEAP_MEMORY_MB=`grep 'PLAY_HEAP_MEMORY_MB:' docker-compose.yml | egrep -o '[0-9]+'`
+
 docker-compose run --rm --service-ports app /opt/typesafe-activator/bin/activator \
+  -mem $PLAY_HEAP_MEMORY_MB \
   -jvm-debug 9999 \
   -Dcom.sun.management.jmxremote.port=3333 \
   -Dcom.sun.management.jmxremote.ssl=false \
@@ -21,3 +25,5 @@ docker-compose run --rm --service-ports app /opt/typesafe-activator/bin/activato
   -Dhttps.port=9443 \
   "$@"
 
+# -J-XX:+HeapDumpOnOutOfMemoryError \
+# -J-XX:HeapDumpPath=/opt/ed/app/ \

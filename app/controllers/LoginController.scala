@@ -18,15 +18,11 @@
 package controllers
 
 import com.debiki.core._
-import com.debiki.core.Prelude._
 import debiki.DebikiHttp._
 import debiki.{Globals, RateLimits, SiteTpi}
 import ed.server.http._
-import java.{util => ju}
 import play.api._
 import play.api.mvc._
-import play.api.mvc.BodyParsers.parse.empty
-import play.api.Play.current
 
 
 /** Logs in and out.
@@ -111,13 +107,14 @@ object LoginController extends mvc.Controller {
   def doLogout(request: GetRequest): Result = {
     request.user foreach { user =>
       request.dao.pubSub.unsubscribeUser(request.siteId, user, request.theBrowserIdData)
+      request.dao.logout(user.id)
     }
     // Keep the xsrf cookie, so login dialog works:
     Ok.discardingCookies(DiscardingSessionCookie)
   }
 
 
-  def sendSiteOwnerAddrVerifEmailAgain =
+  def sendSiteOwnerAddrVerifEmailAgain: Action[Unit] =
         GetActionRateLimited(RateLimits.Login, allowAnyone = true) { request =>
     val siteOwner = request.dao.loadSiteOwner() getOrElse {
       throwNotFound("EdE85FJKY0" , "No owner")

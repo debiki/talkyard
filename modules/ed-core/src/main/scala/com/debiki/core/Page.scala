@@ -93,7 +93,7 @@ object PageMeta {
         pageId: PageId,
         pageRole: PageRole,
         authorId: UserId,
-        creationDati: ju.Date = new ju.Date,
+        creationDati: ju.Date,
         pinOrder: Option[Int] = None,
         pinWhere: Option[PinPageWhere] = None,
         categoryId: Option[CategoryId] = None,
