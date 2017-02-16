@@ -24,7 +24,7 @@
     "jquery-resizable": "=1.0.3",
     "jquery.caret": "^0.3.1",
     "keymaster": "^1.6.2",
-    "markdown-it": "8.2.2",
+    "markdown-it": "8.3.0",
     "moment": "^2.15.0",
     "react": "^15.4.1",
     "react-bootstrap": "^0.30.7",
