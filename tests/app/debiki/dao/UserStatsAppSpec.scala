@@ -44,14 +44,6 @@ class UserStatsAppSpec extends DaoAppSuite() {
 
   var currentStats: UserStats = _
 
-  val startTime: When = When.fromMillis(10 * 1000)
-  var currentTime: When = startTime
-
-  def playTime(millis: Int) {
-    Globals.test.fastForwardTimeMillis(millis)
-    currentTime = currentTime plusMillis millis
-  }
-
 
   def reply(memberId: UserId, pageId: PageId, text: String, parentNr: Option[PostNr] = None)
         : Post = {
@@ -349,23 +341,28 @@ class UserStatsAppSpec extends DaoAppSuite() {
       pending // [7GPKW205]
     }
 
-    /*
-    "check permissions" in {
-      val post = reply(theMember.id, "Some text")
-
-      info("The wrong member may not tag")
-      intercept[Exception] {
-        addRemoveTags(post, TagsOneTwoThree, theWrongMember.id)
-      }
-
-      info("The author may add tags")
-      addRemoveTags(post, TagsOneTwoThree, theMember.id)
-
-      info("Moderators and admins may always edit tags")
-      addRemoveTags(post, TagsOneTwoThreeFour, theModerator.id)
-      addRemoveTags(post, TagsTwoFour, theOwner.id)
+    "... gets a solution accepted" in {
+      pending
     }
-    */
 
+    "... gives a like" in {
+      pending
+    }
+
+    "... gets a like" in {
+      pending
+    }
+
+    "... has visited for one day" in {
+      pending
+    }
+
+    "... visits for one more day" in {
+      pending
+    }
+
+    "... resets topics-new-since" in {
+      pending
+    }
   }
 }

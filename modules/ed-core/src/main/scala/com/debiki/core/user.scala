@@ -1009,6 +1009,7 @@ case class UserStats(
 
   def meetsBasicMemberRequirements: Boolean = {
     // For now. Later, add a site-settings param, and compare with its config values.
+    COULD // break out constants
     numDiscourseTopicsEntered >= 4 &&
       numDiscourseRepliesRead >= 25 &&
       numSecondsReading >= 8 * 60
@@ -1017,6 +1018,7 @@ case class UserStats(
 
   def meetsFullMemberRequirements: Boolean = {
     // Based on Discourse, https://meta.discourse.org/t/what-do-user-trust-levels-do/4924/5.
+    COULD // break out constants
     numDiscourseTopicsEntered >= 20 &&
       numDiscourseRepliesRead >= 100 &&
       numSecondsReading >= 3600 &&
