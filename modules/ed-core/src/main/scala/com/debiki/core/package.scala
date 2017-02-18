@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013 Kaj Magnus Lindberg (born 1979)
+ * Copyright (C) 2013-2017 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -37,7 +37,7 @@ package object core {
   val NoPostId = 0
 
   type PostNr = Int
-  val NoPostNr = -1
+  val NoPostNr: PostNr = -1
 
   type PageId = String
 
@@ -46,7 +46,8 @@ package object core {
   type CategoryId = Int
   val NoCategoryId = 0
 
-  type SiteId = String
+  type SiteId = Int
+  val NoSiteId = 0
 
   type SiteVersion = Int
 
@@ -60,9 +61,13 @@ package object core {
 
   type ReviewTaskId = Int
 
+  type PermissionId = Int
+  val NoPermissionId = 0
+
   type Tag = String
   type TagLabelId = Int
   type TagLabel = String
+  val NoTagId: TagLabelId = 0
 
   /** Email identities are strings, all others are numbers but converted to strings. */
   type IdentityId = String
@@ -100,11 +105,11 @@ package object core {
     def millis: UnixMillis = unixMillis
     def unixMinutes: Int = (unixMillis / 1000 / 60).toInt
     def toUnixMillis: UnixMillis = unixMillis
-    def daysSince(other: When) = (unixMillis - other.unixMillis) / OneMinuteInMillis / 60 / 24
-    def daysBetween(other: When) = math.abs(daysSince(other))
-    def hoursSince(other: When) = (unixMillis - other.unixMillis) / OneMinuteInMillis / 60
-    def minutesSince(other: When) = (unixMillis - other.unixMillis) / OneMinuteInMillis
-    def millisSince(other: When) = unixMillis - other.unixMillis
+    def daysSince(other: When): Long = (unixMillis - other.unixMillis) / OneMinuteInMillis / 60 / 24
+    def daysBetween(other: When): Long = math.abs(daysSince(other))
+    def hoursSince(other: When): Long = (unixMillis - other.unixMillis) / OneMinuteInMillis / 60
+    def minutesSince(other: When): Long = (unixMillis - other.unixMillis) / OneMinuteInMillis
+    def millisSince(other: When): Long = unixMillis - other.unixMillis
     def minusMinutes(minutes: Int) = new When(unixMillis - minutes * OneMinuteInMillis)
     def minusSeconds(seconds: Int) = new When(unixMillis - seconds * 1000)
     def minusMillis(millis: UnixMillis) = new When(unixMillis - millis)
@@ -181,13 +186,13 @@ package object core {
   case class Who(id: UserId, browserIdData: BrowserIdData) {
     def ip: String = browserIdData.ip
     def idCookie: String = browserIdData.idCookie
-    def browserFingerprint = browserIdData.fingerprint
-    def isGuest = User.isGuestId(id)
+    def browserFingerprint: Int = browserIdData.fingerprint
+    def isGuest: Boolean = User.isGuestId(id)
   }
 
   case class UserAndLevels(user: User, trustLevel: TrustLevel, threatLevel: ThreatLevel) {
-    def id = user.id
-    def isStaff = user.isStaff
+    def id: UserId = user.id
+    def isStaff: Boolean = user.isStaff
   }
 
 
@@ -207,9 +212,10 @@ package object core {
   val OneDayInMillis: Long = MillisPerDay
   val OneWeekInMillis: Long = 7 * MillisPerDay
 
-  val Megabyte = 1000 * 1000
+  val Megabyte: Int = 1000 * 1000
   val Megabytes = Megabyte
 
+  def MaxTestSiteId = Site.MaxTestSiteId
   def FirstSiteId = Site.FirstSiteId
   val NoUserId = 0
   def SystemUserId = User.SystemUserId
@@ -264,7 +270,7 @@ package object core {
     def tags(siteId: SiteId, postId: PostId): Set[TagLabel] =
       tagsBySitePostId.getOrElse(SitePostId(siteId, postId), Set.empty)
 
-    def isPageDeleted(siteId: SiteId, pageId: PageId) = {
+    def isPageDeleted(siteId: SiteId, pageId: PageId): Boolean = {
       val p = page(siteId, pageId)
       p.isEmpty || p.exists(_.isDeleted)
     }
@@ -503,12 +509,12 @@ package object core {
 
 
   implicit class RichBoolean(underlying: Boolean) {
-    def toZeroOne = if (underlying) 1 else 0
+    def toZeroOne: RoleId = if (underlying) 1 else 0
   }
 
 
   implicit class RichString3(underlying: String) {
-    def isTrimmedNonEmpty = underlying.trim == underlying && underlying.nonEmpty
+    def isTrimmedNonEmpty: Boolean = underlying.trim == underlying && underlying.nonEmpty
   }
 
 

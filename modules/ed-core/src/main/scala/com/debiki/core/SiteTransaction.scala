@@ -218,7 +218,7 @@ trait SiteTransaction {
 
   def insertPagePath(pagePath: PagePath): Unit
   def insertPagePath(pagePath: PagePathWithId): Unit =
-    insertPagePath(PagePath(tenantId = this.siteId, folder = pagePath.folder,
+    insertPagePath(PagePath(siteId = this.siteId, folder = pagePath.folder,
       pageId = Some(pagePath.pageId), showId = pagePath.showId, pageSlug = pagePath.slug))
 
   def loadPagePath(pageId: PageId): Option[PagePath]
@@ -376,6 +376,12 @@ trait SiteTransaction {
   def loadNotificationsForRole(roleId: RoleId, limit: Int, unseenFirst: Boolean,
     upToWhen: Option[ju.Date] = None): Seq[Notification]
   def listUsersNotifiedAboutPost(postId: PostId): Set[UserId]
+
+
+  /** If no id, assigns an id. Returns the perms, with id. */
+  def insertPermsOnPages(permsOnContent: PermsOnPages): PermsOnPages
+  def updatePermsOnPages(permsOnContent: PermsOnPages)
+  def loadPermsOnPages(): immutable.Seq[PermsOnPages]
 
 
   def startAuditLogBatch()

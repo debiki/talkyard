@@ -72,7 +72,7 @@ trait AssetBundleDao {
   private def getBundleAndDependencies(nameNoSuffix: String, suffix: String)
       : AssetBundleAndDependencies = {
     val bundleName = s"$nameNoSuffix.$suffix"
-    val bundleKey = makeBundleKey(bundleName, tenantId = siteId)
+    val bundleKey = makeBundleKey(bundleName)
     val cachedBundleAndDeps = memCache.lookup[AssetBundleAndDependencies](bundleKey)
     if (cachedBundleAndDeps.isDefined)
       return cachedBundleAndDeps.get
@@ -153,19 +153,17 @@ trait AssetBundleDao {
         makeSitePathDependencyKey(depSitePath))
     }
 
-    memCache.remove(
-      makeBundleKey(
-        bundleDeps.bundleName, tenantId = bundleDeps.siteId))
+    memCache.remove(makeBundleKey(bundleDeps.bundleName))
   }
 
 
-  private def makeBundleKey(bundleName: String, tenantId: String) =
+  private def makeBundleKey(bundleName: String) =
     MemCacheKey(siteId, s"$bundleName|AssetBundle")
 
   private def makeDependencyKey(sitePageId: SitePageId) =
     MemCacheKey(sitePageId.siteId, s"${sitePageId.pageId}|BundleSitePageIdDep")
 
-  private def makeSitePathDependencyKey(siteId: String, path: String): MemCacheKey =
+  private def makeSitePathDependencyKey(siteId: SiteId, path: String): MemCacheKey =
     MemCacheKey(siteId, s"$path|BundleSitePathDep")
 
   private def makeSitePathDependencyKey(sitePath: SitePath): MemCacheKey =
@@ -178,7 +176,7 @@ trait AssetBundleDao {
 object CachingAssetBundleDao {
 
   class BundleDependencyData(
-    val siteId: String,
+    val siteId: SiteId,
     val bundleName: String,
     val dependeePageIds: List[SitePageId],
     val missingOptAssetPaths: List[SitePath])
@@ -187,7 +185,7 @@ object CachingAssetBundleDao {
     def apply(
           bundleName: String,
           bundleAndDeps: AssetBundleAndDependencies,
-          siteId: String): BundleDependencyData = {
+          siteId: SiteId): BundleDependencyData = {
       new BundleDependencyData(
         siteId = siteId,
         bundleName = bundleName,

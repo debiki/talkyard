@@ -134,7 +134,7 @@ class PageRequest[A](
   val dao: SiteDao,
   val request: Request[A]) extends DebikiRequest[A] {
 
-  require(pagePath.tenantId == tenantId) //COULD remove tenantId from pagePath
+  require(pagePath.siteId == tenantId) //COULD remove tenantId from pagePath
   require(!pageExists || pagePath.pageId.isDefined)
   require(!pageExists || pageMeta.isDefined)
 

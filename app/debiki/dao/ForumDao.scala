@@ -27,7 +27,8 @@ import ForumDao._
 
 case class CreateForumResult(
   pagePath: PagePath,
-  uncategorizedCategoryId: CategoryId)
+  staffCategoryId: CategoryId,
+  defaultCategoryId: CategoryId)
 
 
 /** Creates forums.
@@ -56,7 +57,7 @@ trait ForumDao {
 
       val forumPageId = forumPagePath.pageId getOrDie "DwE5KPFW2"
 
-      val partialResult = createDefaultCategoriesAndTopics(
+      val partialResult: CreateForumResult = createDefaultCategoriesAndTopics(
         forumPageId, rootCategoryId, byWho, transaction)
 
       // COULD create audit log entries.
@@ -136,7 +137,8 @@ trait ForumDao {
       spamRelReqStuff = None,
       transaction)
 
-    CreateForumResult(null, defaultCategoryId)
+    CreateForumResult(null, defaultCategoryId = defaultCategoryId,
+      staffCategoryId = staffCategoryId)
   }
 
 

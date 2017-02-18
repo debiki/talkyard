@@ -34,7 +34,7 @@ package object dao {
     override def toString = s"$siteId|$rest"
   }
 
-  def MemCacheKeyAnySite(value: String) = MemCacheKey(siteId = "?", value)
+  def MemCacheKeyAnySite(value: String) = MemCacheKey(siteId = NoSiteId, value)
 
   def MemCacheValueIgnoreVersion[A](value: A) = MemCacheItem(value, MemCache.IgnoreSiteCacheVersion)
 

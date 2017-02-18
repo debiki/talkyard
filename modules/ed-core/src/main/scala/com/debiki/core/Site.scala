@@ -18,6 +18,7 @@
 package com.debiki.core
 
 import Prelude._
+import scala.util.matching.Regex
 
 
 object Site {
@@ -26,11 +27,13 @@ object Site {
     * so it'll be possible to access the first site before a domain name has been
     * connected.
     */
-  val FirstSiteId = "1"
+  val FirstSiteId: SiteId = 1
 
-  val TestIdPrefix = "test__"
+  val GenerateTestSiteMagicId: SiteId = -1
+  val MaxTestSiteId: SiteId = -2
 
-  val Ipv4AnyPortRegex = """(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})(:\d+)?""".r
+
+  val Ipv4AnyPortRegex: Regex = """(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})(:\d+)?""".r
 
 
   /** Must be a valid host name, not too long or too short (less than 6 chars),
@@ -147,7 +150,7 @@ case class Site(
   //require((0 /: hosts)(_ + (if (_.isCanonical) 1 else 0)) <= 1)
 
   def canonicalHost: Option[SiteHost] = hosts.find(_.role == SiteHost.RoleCanonical)
-  def theCanonicalHost = canonicalHost getOrDie "EsE7YKF2"
+  def theCanonicalHost: SiteHost = canonicalHost getOrDie "EsE7YKF2"
 
   def brief =
     SiteBrief(id, canonicalHost.getOrDie("EsE2GUY5").hostname, status)

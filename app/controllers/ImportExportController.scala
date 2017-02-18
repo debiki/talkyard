@@ -246,7 +246,7 @@ object ImportExportController extends mvc.Controller {
     val fullHostname = anyFullHostname.getOrElse(s"$theLocalHostname.${Globals.baseDomainNoPort}")
 
     Site(
-      id = "?",
+      id = NoSiteId,
       status = siteStatus,
       name = name,
       createdAt = When.fromMillis(createdAtMs),

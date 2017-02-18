@@ -45,7 +45,7 @@ trait SystemTransaction {
 
   def lookupCanonicalHost(hostname: String): Option[CanonicalHostLookup]
 
-  def insertSiteHost(tenantId: String, host: SiteHost)
+  def insertSiteHost(siteId: SiteId, host: SiteHost)
   def deleteAnyHostname(hostname: String): Boolean
   def deleteSiteByName(name: String): Boolean
 

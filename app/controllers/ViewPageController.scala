@@ -259,7 +259,7 @@ object ViewPageController extends mvc.Controller {
   def makeEmptyPageRequest(request: DebikiRequest[Unit], pageId: PageId, showId: Boolean,
         pageRole: PageRole): PageGetRequest = {
     val pagePath = PagePath(
-      tenantId = request.siteId,
+      siteId = request.siteId,
       folder = "/",
       pageId = Some(pageId),
       showId = showId,

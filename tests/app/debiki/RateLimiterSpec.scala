@@ -38,7 +38,7 @@ class RateLimiterSpec extends FreeSpec with MustMatchers with MockitoSugar
 
   var nextIp = 0
 
-  def mockRequest(now: UnixTime, ip: String = null, roleId: UserId = 0, siteId: SiteId = null)
+  def mockRequest(now: UnixTime, ip: String = null, roleId: UserId = 0, siteId: SiteId = NoSiteId)
         : DebikiRequest[Unit] = {
     val requestMock = mock[DebikiRequest[Unit]]
     // `now` might be small, close to 0, so add a few months.
@@ -50,7 +50,7 @@ class RateLimiterSpec extends FreeSpec with MustMatchers with MockitoSugar
     val anyUser =
       if (roleId == 0) None
       else Some(mockUser(roleId = roleId))
-    val theSiteId = if (siteId ne null) siteId else "site_id"
+    val theSiteId = if (siteId != NoSiteId) siteId else 1234567
     when(requestMock.ctime).thenReturn(new ju.Date(now * 1000 + fourMonthsSeconds*1000))
     when(requestMock.ip).thenReturn(theIp)
     when(requestMock.user).thenReturn(anyUser)
@@ -325,8 +325,8 @@ class RateLimiterSpec extends FreeSpec with MustMatchers with MockitoSugar
 
       "users with the same id but different sites don't share quota" in {
         val roleId = 11
-        val siteIdA = "siteA"
-        val siteIdB = "siteB"
+        val siteIdA = 2222
+        val siteIdB = 3333
         val limits = makeLimits(maxPerFifteenSeconds = 1)
 
         RateLimiter.rateLimit(limits, mockRequest(now = 1, roleId = roleId, siteId = siteIdA))

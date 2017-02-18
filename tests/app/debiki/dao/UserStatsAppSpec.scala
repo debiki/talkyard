@@ -26,7 +26,7 @@ class UserStatsAppSpec extends DaoAppSuite() {
   lazy val dao: SiteDao = Globals.siteDao(Site.FirstSiteId)
 
   lazy val categoryId: CategoryId =
-    dao.createForum("Forum", "/tag-test-forum/", ownerWho).uncategorizedCategoryId
+    dao.createForum("Forum", "/tag-test-forum/", ownerWho).defaultCategoryId
 
   lazy val ownerWho = Who(owner.id, browserIdData)
 
@@ -43,20 +43,6 @@ class UserStatsAppSpec extends DaoAppSuite() {
   var withMessagesChatTopicId: PageId = _
 
   var currentStats: UserStats = _
-
-
-  def reply(memberId: UserId, pageId: PageId, text: String, parentNr: Option[PostNr] = None)
-        : Post = {
-    dao.insertReply(TextAndHtml.testBody(text), pageId,
-      replyToPostNrs = Set(parentNr getOrElse PageParts.BodyNr), PostType.Normal,
-      Who(memberId, browserIdData), dummySpamRelReqStuff).post
-  }
-
-
-  def chat(memberId: UserId, pageId: PageId, text: String): Post = {
-    dao.insertChatMessage(TextAndHtml.testBody(text), pageId,
-      Who(memberId, browserIdData), dummySpamRelReqStuff).post
-  }
 
 
   def pretendThereAreManyReplies(pageId: PageId) {
@@ -81,9 +67,9 @@ class UserStatsAppSpec extends DaoAppSuite() {
       withRepliesTopicId = createPage(PageRole.Discussion,
         TextAndHtml.testTitle("withRepliesTopicId"), TextAndHtml.testBody("withRepliesTopicId bd"),
         owner.id, browserIdData, dao, Some(categoryId))
-      reply(moderator.id, withRepliesTopicId, s"Reply 1 (post nr 2)")
-      reply(moderator.id, withRepliesTopicId, s"Reply 2 (post nr 3)")
-      reply(moderator.id, withRepliesTopicId, s"Reply 3 (post nr 4)")
+      reply(moderator.id, withRepliesTopicId, s"Reply 1 (post nr 2)")(dao)
+      reply(moderator.id, withRepliesTopicId, s"Reply 2 (post nr 3)")(dao)
+      reply(moderator.id, withRepliesTopicId, s"Reply 3 (post nr 4)")(dao)
       pretendThereAreManyReplies(withRepliesTopicId)
 
       twoMessagesChatTopicId = createPage(PageRole.OpenChat,
@@ -91,9 +77,9 @@ class UserStatsAppSpec extends DaoAppSuite() {
         owner.id, browserIdData, dao, Some(categoryId))
       dao.addUsersToPage(Set(owner.id), twoMessagesChatTopicId, byWho = ownerWho)
       dao.addUsersToPage(Set(moderator.id), twoMessagesChatTopicId, byWho = ownerWho)
-      chat(owner.id, twoMessagesChatTopicId, "chat message 1")
+      chat(owner.id, twoMessagesChatTopicId, "chat message 1")(dao)
       // Needs to be a different member, otherwise the prev chat message gets appended to, instead.
-      chat(moderator.id, twoMessagesChatTopicId, "chat message 2")
+      chat(moderator.id, twoMessagesChatTopicId, "chat message 2")(dao)
 
       addMessagesChatTopicId = createPage(PageRole.OpenChat,
         TextAndHtml.testTitle("chatTopicId"), TextAndHtml.testBody("chatTopicId body"),
@@ -148,7 +134,7 @@ class UserStatsAppSpec extends DaoAppSuite() {
 
     "... posts a discourse reply, stats get updated" in {
       playTime(1000)
-      reply(member1.id, noRepliesTopicId, s"A reply")
+      reply(member1.id, noRepliesTopicId, s"A reply")(dao)
       val correctStats = currentStats.copy(
         lastSeenAt = currentTime,
         lastPostedAt = Some(currentTime),
@@ -161,7 +147,7 @@ class UserStatsAppSpec extends DaoAppSuite() {
     "... posts a chat message, stats get updated" in {
       playTime(1000)
       dao.addUsersToPage(Set(member1.id), addMessagesChatTopicId, byWho = ownerWho)
-      chat(member1.id, addMessagesChatTopicId, "Chat chat")
+      chat(member1.id, addMessagesChatTopicId, "Chat chat")(dao)
       val correctStats = currentStats.copy(
         lastSeenAt = currentTime,
         lastPostedAt = Some(currentTime),

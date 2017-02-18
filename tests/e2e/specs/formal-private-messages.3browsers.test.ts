@@ -230,6 +230,9 @@ describe("private chat", () => {
 
   it("not in the watchbar", () => {
     maria.watchbar.openIfNeeded();
+    // [E2EBUG] failed:
+    // FAIL: AssertionError: Selector '.esWB_T_Title' matches 2 elems, but there should be exactly 1
+    // ... but this didn't break the test suite :-/  could look into this later... seems harmless.
     maria.watchbar.asserExactlyNumTopics(1); // the forum, but no priv-message
   });
 

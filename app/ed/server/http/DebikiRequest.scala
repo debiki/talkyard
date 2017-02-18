@@ -44,16 +44,16 @@ abstract class DebikiRequest[A] {
   require(siteIdAndCanonicalHostname.id == dao.siteId, "EsE76YW2")
   require(user.map(_.id) == sid.userId, "EsE7PUUY2")
 
-  def tenantId = dao.siteId
-  def siteId = dao.siteId
-  def canonicalHostname = siteIdAndCanonicalHostname.hostname
-  def domain = request.domain
+  def tenantId: SiteId = dao.siteId
+  def siteId: SiteId = dao.siteId
+  def canonicalHostname: String = siteIdAndCanonicalHostname.hostname
+  def domain: String = request.domain
 
   def siteSettings: EffectiveSettings = dao.getWholeSiteSettings()
 
   def who = Who(theUserId, theBrowserIdData)
 
-  def whoOrUnknown = {
+  def whoOrUnknown: Who = {
     val id = user.map(_.id) getOrElse UnknownUserId
     Who(id, theBrowserIdData)
   }
@@ -61,33 +61,33 @@ abstract class DebikiRequest[A] {
   def theBrowserIdData = BrowserIdData(ip = ip, idCookie = browserId.cookieValue,
     fingerprint = 0) // skip for now
 
-  def browserIdIsNew = browserId.isNew
+  def browserIdIsNew: Boolean = browserId.isNew
 
   def spamRelatedStuff = SpamRelReqStuff(
     userAgent = headers.get("User-Agent"),
     referer = request.headers.get("referer"),
     uri = uri)
 
-  def theUser = user_!
-  def theUserId = theUser.id
+  def theUser: User = user_!
+  def theUserId: UserId = theUser.id
 
   def user_! : User =
     user getOrElse throwForbidden("DwE5PK2W0", "Not logged in")
 
-  def theMember = theUser match {
+  def theMember: Member = theUser match {
     case m: Member => m
     case g: Guest => throwForbidden("EsE5YKJ37", "Not authenticated")
   }
 
-  def anyRoleId = user.flatMap(_.anyMemberId)
-  def theRoleId = anyRoleId getOrElse throwForbidden("DwE86Wb7", "Not authenticated")
+  def anyRoleId: Option[UserId] = user.flatMap(_.anyMemberId)
+  def theRoleId: UserId = anyRoleId getOrElse throwForbidden("DwE86Wb7", "Not authenticated")
 
-  def isGuest = user.exists(_.isGuest)
-  def isStaff = user.exists(_.isStaff)
+  def isGuest: Boolean = user.exists(_.isGuest)
+  def isStaff: Boolean = user.exists(_.isStaff)
 
   def session: mvc.Session = request.session
 
-  def ip = realOrFakeIpOf(request)
+  def ip: IpAddress = realOrFakeIpOf(request)
 
   /**
    * Approximately when the server started serving this request.

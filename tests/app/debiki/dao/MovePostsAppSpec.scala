@@ -26,26 +26,19 @@ import java.{util => ju}
 
 
 class MovePostsAppSpec extends DaoAppSuite(disableScripts = true, disableBackgroundJobs = true) {
-  lazy val dao = Globals.siteDao(Site.FirstSiteId)
+  lazy val dao: SiteDao = Globals.siteDao(Site.FirstSiteId)
   lazy val theModerator: User = createPasswordModerator("move_mod", dao)
   lazy val theMember: User = createPasswordUser("move_mbr", dao)
-  var thePageId: PageId = _
-
-  def reply(memberId: UserId, text: String, parentNr: Option[PostNr] = None): Post = {
-    dao.insertReply(TextAndHtml.testBody(text), thePageId,
-      replyToPostNrs = Set(parentNr getOrElse PageParts.BodyNr), PostType.Normal,
-      Who(memberId, browserIdData), dummySpamRelReqStuff).post
-  }
 
   "The Dao can move posts" - {
     val now = new ju.Date()
 
     "move one posts, but must be staff" in {
-      thePageId = createPage(PageRole.Discussion, TextAndHtml.testTitle("Title"),
+      val thePageId = createPage(PageRole.Discussion, TextAndHtml.testTitle("Title"),
         TextAndHtml.testBody("body"), SystemUserId, browserIdData, dao)
-      val firstParent = reply(theModerator.id, "1st parent")
-      val secondParent = reply(theModerator.id, "2nd parent")
-      val postToMove = reply(theModerator.id, "to move", Some(firstParent.nr))
+      val firstParent = reply(theModerator.id, thePageId, "1st parent")(dao)
+      val secondParent = reply(theModerator.id, thePageId, "2nd parent")(dao)
+      val postToMove = reply(theModerator.id, thePageId, "to move", Some(firstParent.nr))(dao)
       val metaBefore = dao.readOnlyTransaction(_.loadThePageMeta(thePageId))
 
       info("non-staff may not move the post")
@@ -67,10 +60,10 @@ class MovePostsAppSpec extends DaoAppSuite(disableScripts = true, disableBackgro
     }
 
     "won't do bad things" in {
-      thePageId = createPage(PageRole.Discussion, TextAndHtml.testTitle("Title"),
+      val thePageId = createPage(PageRole.Discussion, TextAndHtml.testTitle("Title"),
         TextAndHtml.testBody("body"), SystemUserId, browserIdData, dao)
-      val firstReply = reply(theModerator.id, "1st reply")
-      val secondReply = reply(theModerator.id, "2nd reply")
+      val firstReply = reply(theModerator.id, thePageId, "1st reply")(dao)
+      val secondReply = reply(theModerator.id, thePageId, "2nd reply")(dao)
       val (titleId, bodyId) = dao.readOnlyTransaction { transaction =>
         (transaction.loadThePost(thePageId, TitleNr).id,
          transaction.loadThePost(thePageId, BodyNr).id)
@@ -110,13 +103,13 @@ class MovePostsAppSpec extends DaoAppSuite(disableScripts = true, disableBackgro
     }
 
     "won't create cycles" in {
-      thePageId = createPage(PageRole.Discussion, TextAndHtml.testTitle("Title"),
+      val thePageId = createPage(PageRole.Discussion, TextAndHtml.testTitle("Title"),
         TextAndHtml.testBody("body"), SystemUserId, browserIdData, dao)
-      val postA = reply(theModerator.id, "A")
-      val postB = reply(theModerator.id, "B", parentNr = Some(postA.nr))
-      val postC = reply(theModerator.id, "C", parentNr = Some(postB.nr))
-      val postC2 = reply(theModerator.id, "C2", parentNr = Some(postB.nr))
-      val postD = reply(theModerator.id, "D", parentNr = Some(postC.nr))
+      val postA = reply(theModerator.id, thePageId, "A")(dao)
+      val postB = reply(theModerator.id, thePageId, "B", parentNr = Some(postA.nr))(dao)
+      val postC = reply(theModerator.id, thePageId, "C", parentNr = Some(postB.nr))(dao)
+      val postC2 = reply(theModerator.id, thePageId, "C2", parentNr = Some(postB.nr))(dao)
+      val postD = reply(theModerator.id, thePageId, "D", parentNr = Some(postC.nr))(dao)
 
       info("won't create A —> B —> A")
       intercept[ResultException] {
@@ -145,14 +138,14 @@ class MovePostsAppSpec extends DaoAppSuite(disableScripts = true, disableBackgro
     }
 
     "move a post A... with many descendants to X –> Y —> A..." in {
-      thePageId = createPage(PageRole.Discussion, TextAndHtml.testTitle("Title"),
+      val thePageId = createPage(PageRole.Discussion, TextAndHtml.testTitle("Title"),
         TextAndHtml.testBody("body"), SystemUserId, browserIdData, dao)
-      val postA = reply(theModerator.id, "A")
-      val postB = reply(theModerator.id, "B", parentNr = Some(postA.nr))
-      val postC = reply(theModerator.id, "C", parentNr = Some(postB.nr))
-      val postC2 = reply(theModerator.id, "C2", parentNr = Some(postB.nr))
-      val postX = reply(theModerator.id, "X")
-      val postY = reply(theModerator.id, "Y", parentNr = Some(postX.nr))
+      val postA = reply(theModerator.id, thePageId, "A")(dao)
+      val postB = reply(theModerator.id, thePageId, "B", parentNr = Some(postA.nr))(dao)
+      val postC = reply(theModerator.id, thePageId, "C", parentNr = Some(postB.nr))(dao)
+      val postC2 = reply(theModerator.id, thePageId, "C2", parentNr = Some(postB.nr))(dao)
+      val postX = reply(theModerator.id, thePageId, "X")(dao)
+      val postY = reply(theModerator.id, thePageId, "Y", parentNr = Some(postX.nr))(dao)
 
       dao.movePostIfAuth(postA.pagePostId, postY.pagePostNr, theModerator.id, browserIdData)
 
@@ -167,7 +160,7 @@ class MovePostsAppSpec extends DaoAppSuite(disableScripts = true, disableBackgro
     }
 
     "move one post to another page" in {
-      thePageId = createPage(PageRole.Discussion, TextAndHtml.testTitle("Page One"),
+      val thePageId = createPage(PageRole.Discussion, TextAndHtml.testTitle("Page One"),
         TextAndHtml.testBody("Body one."), SystemUserId, browserIdData, dao)
 
       val pageTwoId = createPage(PageRole.Discussion, TextAndHtml.testTitle("Page Two"),
@@ -177,7 +170,7 @@ class MovePostsAppSpec extends DaoAppSuite(disableScripts = true, disableBackgro
         Who(SystemUserId, browserIdData = browserIdData), dummySpamRelReqStuff).post
 
       // Create after page 2 so becomes the most recent one.
-      val post = reply(theModerator.id, "A post.")
+      val post = reply(theModerator.id, thePageId, "A post.")(dao)
 
       val fromPageMetaBefore = dao.readOnlyTransaction(_.loadThePageMeta(thePageId))
       val toPageMetaBefore = dao.readOnlyTransaction(_.loadThePageMeta(pageTwoId))
@@ -222,14 +215,14 @@ class MovePostsAppSpec extends DaoAppSuite(disableScripts = true, disableBackgro
     }
 
     "move a tree to another page" in {
-      thePageId = createPage(PageRole.Discussion, TextAndHtml.testTitle("Page One"),
+      val thePageId = createPage(PageRole.Discussion, TextAndHtml.testTitle("Page One"),
         TextAndHtml.testBody("Body one."), SystemUserId, browserIdData, dao)
-      val postA = reply(theModerator.id, "A")
-      val postB = reply(theModerator.id, "B", parentNr = Some(postA.nr))
-      val postC = reply(theModerator.id, "C", parentNr = Some(postB.nr))
-      val postD = reply(theModerator.id, "D", parentNr = Some(postC.nr))
-      val postD2 = reply(theModerator.id, "D2", parentNr = Some(postC.nr))
-      val otherPost = reply(theModerator.id, "Other")
+      val postA = reply(theModerator.id, thePageId, "A")(dao)
+      val postB = reply(theModerator.id, thePageId, "B", parentNr = Some(postA.nr))(dao)
+      val postC = reply(theModerator.id, thePageId, "C", parentNr = Some(postB.nr))(dao)
+      val postD = reply(theModerator.id, thePageId, "D", parentNr = Some(postC.nr))(dao)
+      val postD2 = reply(theModerator.id, thePageId, "D2", parentNr = Some(postC.nr))(dao)
+      val otherPost = reply(theModerator.id, thePageId, "Other")(dao)
 
       val pageTwoId = createPage(PageRole.Discussion, TextAndHtml.testTitle("Page Two"),
         TextAndHtml.testBody("Body two."), SystemUserId, browserIdData, dao)
@@ -272,7 +265,7 @@ class MovePostsAppSpec extends DaoAppSuite(disableScripts = true, disableBackgro
       }
 
       info("can add replies to the original page")
-      val lastReplyOrigPage = reply(theModerator.id, "Last reply.")
+      val lastReplyOrigPage = reply(theModerator.id, thePageId, "Last reply.")(dao)
       lastReplyOrigPage.nr mustBe (otherPost.nr + 1)
 
       info("can add replies to the new page")
@@ -284,11 +277,11 @@ class MovePostsAppSpec extends DaoAppSuite(disableScripts = true, disableBackgro
 
     "moves post read stats to new page" in {
       val ip = "1.2.3.4"
-      thePageId = createPage(PageRole.Discussion, TextAndHtml.testTitle("Page One"),
+      val thePageId = createPage(PageRole.Discussion, TextAndHtml.testTitle("Page One"),
         TextAndHtml.testBody("Body one."), SystemUserId, browserIdData, dao)
-      val postUnread = reply(theModerator.id, "Not read, won't move")
-      val postRead = reply(theModerator.id, "Won't move this.")
-      val postToMove = reply(theModerator.id, "Will move this.")
+      val postUnread = reply(theModerator.id, thePageId, "Not read, won't move")(dao)
+      val postRead = reply(theModerator.id, thePageId, "Won't move this.")(dao)
+      val postToMove = reply(theModerator.id, thePageId, "Will move this.")(dao)
 
       val pageTwoId = createPage(PageRole.Discussion, TextAndHtml.testTitle("Page Two"),
         TextAndHtml.testBody("Body two."), SystemUserId, browserIdData, dao)

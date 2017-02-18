@@ -24,23 +24,17 @@ import java.{util => ju}
 
 
 class TagsAppSpec extends DaoAppSuite() {
-  lazy val dao = Globals.siteDao(Site.FirstSiteId)
+  lazy val dao: SiteDao = Globals.siteDao(Site.FirstSiteId)
 
   lazy val categoryId: CategoryId =
     dao.createForum("Forum", "/tag-test-forum/",
-      Who(theOwner.id, browserIdData)).uncategorizedCategoryId
+      Who(theOwner.id, browserIdData)).defaultCategoryId
 
   lazy val theOwner: User = createPasswordOwner("tag_adm", dao)
   lazy val theModerator: User = createPasswordModerator("tag_mod", dao)
   lazy val theMember: User = createPasswordUser("tag_mbr", dao)
   lazy val theWrongMember: User = createPasswordUser("wr_tg_mbr", dao)
   var thePageId: PageId = _
-
-  def reply(memberId: UserId, text: String, parentNr: Option[PostNr] = None): Post = {
-    dao.insertReply(TextAndHtml.testBody(text), thePageId,
-      replyToPostNrs = Set(parentNr getOrElse PageParts.BodyNr), PostType.Normal,
-      Who(memberId, browserIdData), dummySpamRelReqStuff).post
-  }
 
   def addRemoveTags(post: Post, tags: Set[TagLabel], memberId: UserId) {
     dao.addRemoveTagsIfAuth(post.pageId, post.id, tags, Who(memberId, browserIdData))
@@ -83,9 +77,9 @@ class TagsAppSpec extends DaoAppSuite() {
     "load, add, remove tags" in {
       thePageId = createPage(PageRole.Discussion, TextAndHtml.testTitle("Title"),
         TextAndHtml.testBody("body"), theOwner.id, browserIdData, dao, Some(categoryId))
-      val postNoTags = reply(theMember.id, "No tags")
-      val postWithTags = reply(theMember.id, "With tags")
-      val postWithTagsLater = reply(theMember.id, "With tags, later")
+      val postNoTags = reply(theMember.id, thePageId, "No tags")(dao)
+      val postWithTags = reply(theMember.id, thePageId, "With tags")(dao)
+      val postWithTagsLater = reply(theMember.id, thePageId, "With tags, later")(dao)
 
       info("load 0 tags")
       dao.loadAllTagsAsSet() mustBe empty
@@ -134,7 +128,7 @@ class TagsAppSpec extends DaoAppSuite() {
 
 
     "check permissions" in {
-      val post = reply(theMember.id, "Some text")
+      val post = reply(theMember.id, thePageId, "Some text")(dao)
 
       info("The wrong member may not tag")
       intercept[Exception] {
@@ -172,7 +166,7 @@ class TagsAppSpec extends DaoAppSuite() {
       countNotificationsToAbout(theMember.id, post.id) mustBe 1
 
       info("gets notified about tagged comments")
-      val comment = reply(theModerator.id, "A comment")
+      val comment = reply(theModerator.id, thePageId, "A comment")(dao)
       countNotificationsToAbout(theMember.id, comment.id) mustBe 0
       addRemoveTags(comment, Set(WatchedTag), theModerator.id)
       countNotificationsToAbout(theMember.id, comment.id) mustBe 1
@@ -185,7 +179,7 @@ class TagsAppSpec extends DaoAppSuite() {
       stopWatchingTag(theMember.id, WatchedTag)
 
       info("no longer gets notified about that tag")
-      val comment2 = reply(theModerator.id, "Comment 2")
+      val comment2 = reply(theModerator.id, thePageId, "Comment 2")(dao)
       addRemoveTags(comment2, Set(WatchedTag), theModerator.id)
       countNotificationsToAbout(theMember.id, comment2.id) mustBe 0
     }

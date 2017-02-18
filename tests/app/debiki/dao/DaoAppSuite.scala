@@ -108,6 +108,21 @@ class DaoAppSuite(
   }
 
 
+  def reply(memberId: UserId, pageId: PageId, text: String, parentNr: Option[PostNr] = None)(
+        dao: SiteDao): Post = {
+    dao.insertReply(TextAndHtml.testBody(text), pageId,
+      replyToPostNrs = Set(parentNr getOrElse PageParts.BodyNr), PostType.Normal,
+      Who(memberId, browserIdData), dummySpamRelReqStuff).post
+  }
+
+
+  def chat(memberId: UserId, pageId: PageId, text: String)(dao: SiteDao): Post = {
+    dao.insertChatMessage(TextAndHtml.testBody(text), pageId,
+      Who(memberId, browserIdData), dummySpamRelReqStuff).post
+  }
+
+
+
   def loadUserStats(userId: UserId)(dao: SiteDao): UserStats = {
     dao.readOnlyTransaction { transaction =>
       transaction.loadUserStats(userId) getOrDie "EdE4GPW945"

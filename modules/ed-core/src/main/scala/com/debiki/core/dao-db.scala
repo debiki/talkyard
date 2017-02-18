@@ -88,7 +88,7 @@ object DbDao {
     pagePath: PagePath,
     details: Option[String] = None)
     extends PageNotFoundException(
-      s"Found no page at: ${pagePath.value}, tenant id: ${pagePath.tenantId}" +
+      s"Found no page at ${pagePath.siteId}:${pagePath.value}" +
         prettyDetails(details))
 
   case class PathClashException(

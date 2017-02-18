@@ -192,7 +192,7 @@ class IndexingActor(
   }
 
 
-  private def indexPost(post: Post, siteId: String, stuffToIndex: StuffToIndex) {
+  private def indexPost(post: Post, siteId: SiteId, stuffToIndex: StuffToIndex) {
     val pageMeta = stuffToIndex.page(siteId, post.pageId) getOrElse {
       Logger.warn(s"Not indexing s:$siteId/p:${post.id} — page gone, was just deleted?")
       return
@@ -205,7 +205,7 @@ class IndexingActor(
         //.opType(es.action.index.IndexRequest.OpType.CREATE)
         //.version(...)
         .setSource(doc.toString)
-        .setRouting(siteId)  // we set this routing when searching too [4YK7CS2]
+        .setRouting(siteId.toString)  // we set this routing when searching too [4YK7CS2]
 
     requestBuilder.execute(new ActionListener[IndexResponse] {
       def onResponse(response: IndexResponse) {
@@ -254,7 +254,7 @@ class IndexingActor(
     val bulkRequestBuilder = client.prepareBulk()
     posts foreach { post =>
       val deleteRequestBuilder = client.prepareDelete(
-        IndexName, PostDocType, makeElasticSearchIdFor(siteId, post.id)).setRouting(siteId)
+        IndexName, PostDocType, makeElasticSearchIdFor(siteId, post.id)).setRouting(siteId.toString)
       bulkRequestBuilder.add(deleteRequestBuilder)
     }
 

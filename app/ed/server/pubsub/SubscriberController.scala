@@ -25,6 +25,7 @@ import ed.server.http._
 import play.api._
 import play.api.libs.json.{JsArray, JsString, Json}
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.util.Try
 
 
 /** Authorizes and subscribes a user to pubsub messages.
@@ -48,9 +49,22 @@ object SubscriberController extends mvc.Controller {
 
     // The channel contains the site id, so we won't accidentally send messages to browser
     // at the wrong site. [7YGK082]
-    val (siteId, dashUserId) = channelId.span(_ != '-')
+    var isTestSite: Boolean = false
+    val (siteIdString, dashUserId) = {
+      isTestSite = channelId.headOption.contains('-')
+      val c = if (isTestSite) channelId.drop(1) else channelId
+      c.span(_ != '-')
+    }
+
     if (dashUserId.isEmpty)
       throwForbidden("EsE5GU0W2", s"Bad channel id: $channelId")
+
+    var siteId = siteIdString.toIntOrThrow(
+      "EdE2WDSX7", s"Bad channel site id, not an integer: $siteIdString")
+    if (isTestSite) {
+      siteId = -siteId
+    }
+
     if (siteId != request.siteId)
       throwForbidden("EsE4FK20X", s"Bad site id: $siteId, should be: ${request.siteId}")
 

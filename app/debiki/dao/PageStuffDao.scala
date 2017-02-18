@@ -166,8 +166,8 @@ trait PageStuffDao {
   }
 
 
-  private def cacheKey(pageId: PageId, otherSiteId: SiteId = null): MemCacheKey = {
-    val theSiteId = if (otherSiteId ne null) otherSiteId else siteId
+  private def cacheKey(pageId: PageId, otherSiteId: SiteId = NoSiteId): MemCacheKey = {
+    val theSiteId = if (otherSiteId != NoSiteId) otherSiteId else siteId
     MemCacheKey(theSiteId, s"$pageId|PageStuff")
   }
 

@@ -86,7 +86,8 @@ object ImpersonateController extends mvc.Controller {
       throwForbidden("EsE8YKE23", s"Error deleting hash: deleted $delResult items, should be 1")
 
     dieIf(theGetResult.count(_ == FieldSeparator) != 1, "EsE7YKF22")
-    val Array(siteId, userIdString) = theGetResult.split(FieldSeparator)
+    val Array(siteIdString, userIdString) = theGetResult.split(FieldSeparator)
+    val siteId = siteIdString.toIntOrThrow("EdE4KW02", s"Bad site id, not an Int: $siteIdString")
     val userId = userIdString.toInt
 
     if (siteId != request.siteId)

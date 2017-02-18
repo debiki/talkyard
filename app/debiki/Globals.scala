@@ -49,6 +49,7 @@ import scala.concurrent.{Await, Future, TimeoutException}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util.matching.Regex
 import Globals._
+import com.github.benmanes.caffeine.cache.Cache
 
 
 object Globals extends Globals {
@@ -106,6 +107,7 @@ class Globals {
 
 
   @volatile var killed = false
+  @volatile var stopCreatingState = false
 
   /** For now (forever?), ignore platforms that don't send Linux signals.
     */
@@ -165,8 +167,8 @@ class Globals {
   def redisClient: RedisClient = state.redisClient
 
 
-  def sendEmail(email: Email, websiteId: String) {
-    state.mailerActorRef ! (email, websiteId)
+  def sendEmail(email: Email, siteId: SiteId) {
+    state.mailerActorRef ! (email, siteId)
   }
 
   def endToEndTestMailer: ActorRef = state.mailerActorRef
@@ -252,7 +254,7 @@ class Globals {
 
   def SiteByIdHostnamePrefix = "site-"
 
-  def siteByIdOrigin(siteId: String) =
+  def siteByIdOrigin(siteId: SiteId): String =
     s"$scheme://$SiteByIdHostnamePrefix$siteId.$baseDomainWithPort"
 
 
@@ -316,13 +318,15 @@ class Globals {
     _state = Bad(None)
     var firsAttempt = true
 
-    while (_state.isBad && !killed) {
+    while (_state.isBad && !killed && !stopCreatingState) {
       if (!firsAttempt) {
         // Don't attempt to connect to everything too quickly, because then 100 MB log data
         // with "Error connecting to database ..." are quickly generated.
         Thread.sleep(3000)
-        if (killed)
+        if (killed || stopCreatingState) {
+          p.Logger.info("Aborting create-state loop [EsMSTOPSTATE1]")
           return
+        }
       }
       firsAttempt = false
       val cache = makeCache
@@ -349,6 +353,7 @@ class Globals {
         }
 
         _state = Good(newState)
+        p.Logger.info("Done creating state [EsMSTATEOK]")
       }
       catch {
         case ex: com.zaxxer.hikari.pool.HikariPool.PoolInitializationException =>
@@ -359,8 +364,10 @@ class Globals {
       }
     }
 
-    if (killed)
+    if (killed || stopCreatingState) {
+      p.Logger.info("Aborting create-state loop [EsMSTOPSTATE2]")
       return
+    }
 
     // The render engines might be needed by some Java (Scala) evolutions.
     // Let's create them in this parallel thread rather than blocking the whole server.
@@ -371,6 +378,8 @@ class Globals {
       Akka.system.scheduler.scheduleOnce(
         5 seconds, state.renderContentActorRef, RenderContentService.RegenerateStaleHtml)
     }
+
+    p.Logger.info("Done creating rendering engines [EsMENGDONE]")
   }
 
 
@@ -379,21 +388,27 @@ class Globals {
     if (_state eq null)
       return
 
-    p.Logger.info("Shutting down... [EsM200BYE]")
-    // Shutdown the notifier before the mailer, so no notifications are lost
-    // because there was no mailer that could send them.
-    shutdownActorAndWait(state.notifierActorRef)
-    shutdownActorAndWait(state.mailerActorRef)
-    shutdownActorAndWait(state.renderContentActorRef)
-    shutdownActorAndWait(state.indexerActorRef)
-    shutdownActorAndWait(state.spamCheckActorRef)
-    state.elasticSearchClient.close()
-    state.redisClient.quit()
-    state.dbDaoFactory.db.readOnlyDataSource.asInstanceOf[HikariDataSource].close()
-    state.dbDaoFactory.db.readWriteDataSource.asInstanceOf[HikariDataSource].close()
+    p.Logger.info("Shutting down... [EsMBYESOON]")
+    if (_state.isBad) {
+      stopCreatingState = true
+    }
+    else {
+      // Shutdown the notifier before the mailer, so no notifications are lost
+      // because there was no mailer that could send them.
+      shutdownActorAndWait(state.notifierActorRef)
+      shutdownActorAndWait(state.mailerActorRef)
+      shutdownActorAndWait(state.renderContentActorRef)
+      shutdownActorAndWait(state.indexerActorRef)
+      shutdownActorAndWait(state.spamCheckActorRef)
+      state.elasticSearchClient.close()
+      state.redisClient.quit()
+      state.dbDaoFactory.db.readOnlyDataSource.asInstanceOf[HikariDataSource].close()
+      state.dbDaoFactory.db.readWriteDataSource.asInstanceOf[HikariDataSource].close()
+    }
     _state = null
     test.timeStartMillis = None
     test.timeOffsetMillis = 0
+    p.Logger.info("Done shutting down. [EsMBYE]")
   }
 
 
@@ -503,6 +518,7 @@ class Globals {
         .expireAfterWrite(3, TimeUnit.SECONDS)
         .maximumSize(Int.MaxValue)
         .build()
+        .asInstanceOf[UsersOnlineCache]
 
     // ElasticSearch clients are thread safe. Their lifecycle should be the application lifecycle.
     // (see https://discuss.elastic.co/t/is-nodeclient-thread-safe/4231/3 )
@@ -698,7 +714,7 @@ class Config(conf: play.api.Configuration) {
   object superAdmin {
     val path = Config.SuperAdminPath
     val hostname: Option[String] = conf.getString(s"$path.hostname")
-    val siteId: Option[String] = conf.getString(s"$path.siteId")
+    val siteIdString: Option[String] = conf.getString(s"$path.siteId")
     val emailAddresses: immutable.Seq[String] =
       conf.getString(Config.SuperAdminEmailAddressesPath) match {
         case None => Nil

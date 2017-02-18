@@ -54,7 +54,7 @@ case class Invite(
   require(emailAddress.split("@").head.nonEmpty, "DwE09FKI2")
   require(acceptedAt.isEmpty == userId.isEmpty, "DwE8KE94")
   require(deletedAt.isEmpty == deletedById.isEmpty, "DwE4KSP3")
-  require(invalidatedAt.toInt + deletedAt.toInt + acceptedAt.toInt <= 1, "DwE5WKJ2")
+  require(invalidatedAt.oneIfDefined + deletedAt.oneIfDefined + acceptedAt.oneIfDefined <= 1, "DwE5WKJ2")
   require(deletedAt.isEmpty || deletedAt.get.getTime >= createdAt.getTime, "DwE6PK2")
   require(invalidatedAt.isEmpty || invalidatedAt.get.getTime >= createdAt.getTime, "DwE8UY0")
 

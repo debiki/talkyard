@@ -17,7 +17,6 @@
 
 package com.debiki.core
 
-import _root_.java.{util => ju, io => jio}
 import Prelude._
 import PagePath._
 
@@ -51,21 +50,22 @@ case class PagePathNoId(  // better than PagePath? Has no site id, and never a p
  * ResolvedPath would be a class, PagePath and FolderPath case classes.
  * ((PathLookup could have a scheme and host name included?
  * But the ResolvedPath would have a tenant-id instead.
- * Or perhaps tenantId should not be part of the PagePath?
+ * Or perhaps siteId should not be part of the PagePath?
  * "Path" implies host name & tenant-id does not belong here?))
  */
 case class PagePath(  // COULD move to debate.scala.  Rename to RequestPath?
-  tenantId: String,  // COULD be a Dao(parameter) instead?
+  siteId: SiteId,  // COULD be a Dao(parameter) instead?
   // This is either the page's parent folder, or, if no page was specified,
   // the actual target of the path.
   folder: String,
   pageId: Option[String], // COULD break out PageLookup, so would never be None
   showId: Boolean,
-  pageSlug: String
-){
-  require(tenantId.nonEmpty, "DwE73BU8")
-  require(pageId != Some("?"), "DwE16Is3")
-  require(pageId != Some(""), "DwE0Bj35")
+  pageSlug: String) {
+
+  require(siteId != NoSiteId, "EdE73BJU8")
+  require(siteId != Site.GenerateTestSiteMagicId, "EdE8GD5L7")
+  require(!pageId.contains("?"), "EdE16ISL3")
+  require(!pageId.contains(""), "EdE0BJ3X5")
 
   if (!folder.startsWith("/"))
     throw PagePathException(
@@ -105,9 +105,7 @@ case class PagePath(  // COULD move to debate.scala.  Rename to RequestPath?
     throw PagePathException(
       "DwE37ZQU2", s"Page slug contains whitespace: `$pageSlug'")
 
-  def siteId = tenantId
-
-  def thePageId = pageId getOrDie "EsE6JMY3"
+  def thePageId: PageId = pageId getOrDie "EsE6JMY3"
 
   def value: String =
     if (showId) {
@@ -120,17 +118,17 @@ case class PagePath(  // COULD move to debate.scala.  Rename to RequestPath?
     }
 
 
-  def suffix: String = (pageSlug lastIndexOf '.') match {
+  def suffix: String = pageSlug.lastIndexOf('.') match {
     case -1 => ""
     case lastDot => pageSlug.substring(lastDot + 1)
   }
 
 
-  def slugOrIdOrQustnMark =
-    if (pageSlug nonEmpty) pageSlug else pageId.map("-"+ _) getOrElse "?"
+  def slugOrIdOrQustnMark: String =
+    if (pageSlug.nonEmpty) pageSlug else pageId.map("-"+ _) getOrElse "?"
 
 
-  def isScriptOrStyle = pageSlug.endsWith(".js") || pageSlug.endsWith(".css")
+  def isScriptOrStyle: Boolean = pageSlug.endsWith(".js") || pageSlug.endsWith(".css")
 
 
   /**
@@ -143,23 +141,23 @@ case class PagePath(  // COULD move to debate.scala.  Rename to RequestPath?
    * if the filesystem DbDao is placed in a Git repo. (And such files
    * shouldn't be served to the browser.)
    */
-  def isHiddenPage =
+  def isHiddenPage: Boolean =
     pageSlug.startsWith("_") ||
     folder.contains("/_")
 
 
   // COULD rename to isIndexPageOrFolder (it's never a "FolderPage")
-  /** True iff path ends with a `/'. Then this is a path to a  folder or
+  /** True iff path ends with a '/'. Then this is a path to a  folder or
    *  a folder's index page (which is a page with an empty slug and !showId).
    */
-  def isFolderOrIndexPage = pageSlug.isEmpty && !showId
+  def isFolderOrIndexPage: Boolean = pageSlug.isEmpty && !showId
 
 
   // Bad name: When asking for an index page, pageId is unknown and therefore
   // set to None, but this doesn't mean the PagePath is to a folder.
   // Solution?: Split PagePath in 2 classes: PathLookup and Path?
   // Whether or not Path is to a folder or a page would always be known.
-  def isFolder = isFolderOrIndexPage && pageId.isEmpty
+  def isFolder: Boolean = isFolderOrIndexPage && pageId.isEmpty
 
 
   def parentFolder: Option[PagePath] = {  // COULD rename: parentFolderPagePath
@@ -175,7 +173,7 @@ case class PagePath(  // COULD move to debate.scala.  Rename to RequestPath?
 
 
   def sitePageId: Option[SitePageId] =
-    pageId map (SitePageId(tenantId, _))
+    pageId map (SitePageId(siteId, _))
 
 }
 
@@ -188,8 +186,10 @@ case class PagePathException(errorCode: String,  message: String)
 
 object PagePath {
 
+  private val DummySiteId = 123456789
+
   private def _throw(errCode: String,  message: String) =
-    throw new PagePathException(errCode, message)
+    throw PagePathException(errCode, message)
 
 
   def isOkayFolder(folder: String): Boolean = {
@@ -199,7 +199,7 @@ object PagePath {
     if (!folder.endsWith("/") || folder.contains("/-"))
       return false
     try {
-      fromUrlPath("dummy", folder) match {
+      fromUrlPath(DummySiteId, folder) match {
         case Parsed.Good(_) => true
         case _ => false
       }
@@ -225,7 +225,7 @@ object PagePath {
       return false
     // Now this isn't needed: ? after I added the if:s above
     try {
-      fromUrlPath("dummy", "/" + slug) match {
+      fromUrlPath(DummySiteId, "/" + slug) match {
         case Parsed.Good(_) => true
         case _ => false
       }
@@ -240,12 +240,12 @@ object PagePath {
    * Throws IllegalArgumentException if the path is not okay, or
    * if it needs to be corrected.
    */
-  def checkPath(tenantId: String = "x", folder: String = "/",
+  def checkPath(siteId: SiteId = DummySiteId, folder: String = "/",
         pageId: Option[String] = None, pageSlug: String = "") {
     // Construct a PagePath, serialize it
     // and verify that the string can be parsed.
-    val path = PagePath(tenantId, folder, pageId, false, pageSlug)
-    fromUrlPath(path.tenantId, path.value) match {
+    val path = PagePath(siteId, folder, pageId, showId = false, pageSlug)
+    fromUrlPath(path.siteId, path.value) match {
       case Parsed.Good(_) => ()
       case Parsed.Corrected(_) => _throw("DwE091IJ5", "Bad page path")
       case Parsed.Bad(error) => _throw("DwE56Ih5", "Bad page path: "+ error)
@@ -267,7 +267,7 @@ object PagePath {
    * - (server)/fold/ers/-pageId/page-slug
    * - (server)/fold/ers/page-slug (here, the pageId is not shown in the path).
    */
-  def fromUrlPath(tenantId: String, path: String): PagePath.Parsed = {
+  def fromUrlPath(siteId: SiteId, path: String): PagePath.Parsed = {
     // For now, quick hack to match all forum paths. Later, compare with in-mem cached forum paths.
     var adjustedPath = path
     // If a forum is located at /:
@@ -281,12 +281,11 @@ object PagePath {
     else if (path.startsWith("/forum/") && !path.startsWith("/forum/-")) {
       adjustedPath = "/forum/"
     }
-    fromUrlPathImpl(tenantId, adjustedPath)
+    fromUrlPathImpl(siteId, adjustedPath)
   }
 
 
-  private def fromUrlPathImpl(tenantId: String, path: String): PagePath.Parsed = {
-
+  private def fromUrlPathImpl(siteId: SiteId, path: String): PagePath.Parsed = {
     if (path.isEmpty)
       return Parsed.Bad("URL path is empty")
 
@@ -324,13 +323,13 @@ object PagePath {
     }
 
     // Split any-id-and-slug into id and slug.
-    val (pageIdStr, pageSlug) = pageIdSlug match {
+    val (pageIdStr: String, pageSlug) = pageIdSlug match {
       case "" => ("", "")
       case _PageIdSlashSlugRegex(guid, name) => (guid, name)
       case _PageGuidRegex(guid) => (guid, "")  // can result in an empty guid
       case _PageSlugRegex(name) => ("", name)
       case _PageIdHyphenSlugRegex(id, slug) =>
-        return Parsed.Corrected(PagePath(tenantId, folder = folder, Some(id), true, slug).value)
+        return Parsed.Corrected(PagePath(siteId, folder = folder, Some(id), showId = true, slug).value)
       case idSlugSlash if idSlugSlash.endsWith("/") =>
         return Parsed.Corrected(s"$folder${idSlugSlash dropRight 1}")
       case _BadIdPerhapsOkSlug(id) => return Parsed.Bad("Bad page id: "+ id)
@@ -340,7 +339,7 @@ object PagePath {
 
     // Construct the PagePath.
     val (pageId, showId) =
-      if (pageIdStr isEmpty) (None, false)
+      if (pageIdStr.isEmpty) (None, false)
       else (Some(pageIdStr), true)
 
     // Needs to refactor this. I'm just duplicating the tests in the constructor.
@@ -356,7 +355,7 @@ object PagePath {
     if (folder.intersect(_BadPunctFolder).nonEmpty)
       return Parsed.Bad("Bad characters in page folder")
 
-    val pagePath = PagePath(tenantId = tenantId, folder = folder,
+    val pagePath = PagePath(siteId, folder = folder,
       pageId = pageId, showId = showId, pageSlug = pageSlug)
     Parsed.Good(pagePath)
   }
@@ -410,12 +409,12 @@ case class PathRanges(
   trees: Seq[String] = Nil,
   pageIds: Seq[String] = Nil) {
 
-  folders map (_checkIsFolder _)
-  trees map (_checkIsFolder _)
+  folders foreach _checkIsFolder
+  trees foreach _checkIsFolder
 
   private def _checkIsFolder(path: String) {
-    assErrIf(!path.startsWith("/"), "DwE83JGF7")
-    assErrIf(!path.endsWith("/"), "DwE90kX2")
+    dieIf(!path.startsWith("/"), "DwE83JGF7")
+    dieIf(!path.endsWith("/"), "DwE90kX2")
   }
 }
 

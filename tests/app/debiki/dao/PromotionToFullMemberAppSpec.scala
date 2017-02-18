@@ -28,7 +28,7 @@ class PromotionToFullMemberAppSpec extends DaoAppSuite() {
 
   lazy val categoryId: CategoryId =
     dao.createForum("Forum", "/tag-test-forum/",
-      Who(owner.id, browserIdData)).uncategorizedCategoryId
+      Who(owner.id, browserIdData)).defaultCategoryId
 
   lazy val owner: Member = createPasswordOwner("tag_adm", dao)
   lazy val moderator: Member = createPasswordModerator("tag_mod", dao)
@@ -39,11 +39,6 @@ class PromotionToFullMemberAppSpec extends DaoAppSuite() {
 
   val pageIds = new mutable.HashMap[Int, PageId]()
 
-  def reply(memberId: UserId, pageNr: Int, text: String, parentNr: Option[PostNr] = None): Post = {
-    dao.insertReply(TextAndHtml.testBody(text), pageIds(pageNr),
-      replyToPostNrs = Set(parentNr getOrElse PageParts.BodyNr), PostType.Normal,
-      Who(memberId, browserIdData), dummySpamRelReqStuff).post
-  }
 
   "The Dao can track user reading progress, and promote" - {
     val now = new ju.Date()
@@ -59,7 +54,7 @@ class PromotionToFullMemberAppSpec extends DaoAppSuite() {
     "someone else posts replies to the first 5 pages" in {
       for (pageNr <- 1 to 5) {
         for (replyNr <- 1 to 25) {
-          val postNoTags = reply(moderator.id, pageNr, s"Reply $replyNr, page nr $pageNr")
+          val postNoTags = reply(moderator.id, pageIds(pageNr), s"Reply $replyNr, page nr $pageNr")(dao)
         }
       }
     }

@@ -281,7 +281,7 @@ class PubSubActor(val nginxHost: String, val redisClient: RedisClient) extends A
 
   private def sendPublishRequest(siteId: SiteId, toUserIds: Iterable[UserId], tyype: String,
         json: JsValue) {
-    dieIf(siteId contains '.', "EsE7UWY0", "Site id looks like a hostname")
+    dieIf(siteId == NoSiteId, "EsE7UW7Y2", "Cannot send requests to NoSiteId")
     // Nchan supports publishing to at most 255 channels in one single request, so split in
     // groups of 255 channels. However, for now, split in groups of only 3 channels,
     // to find out if all this seems to work (255 channels -> would never be split, there

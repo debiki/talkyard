@@ -170,8 +170,8 @@ private[http] object PlainApiActions {
         throwLoginAsAdmin(request)
 
       if (superAdminOnly) {
-        Globals.config.superAdmin.siteId match {
-          case Some(site.id) =>
+        Globals.config.superAdmin.siteIdString match {
+          case Some(siteId) if site.id.toString == siteId =>
             // Fine: this (i.e. 'site') is the superadmin site, so we're allowed to access
             // the superadmin endpoints.
           case Some(Whatever) =>
@@ -179,8 +179,8 @@ private[http] object PlainApiActions {
               throwForbidden("EsE4KS2YR",
                 s"The superadmin site id may not be set to '$Whatever' in prod mode")
           case Some(_) =>
-            throwForbidden("EsE8Y0KR2", o"""This is site id ${site.id} but
-                that's not the superadmin site id""")
+            throwForbidden("EsE8Y0KR2", o"""This is not the superadmin site. This is site
+                id ${site.id}, but the superadmin site has another id""")
           case None =>
             throwForbidden("EsE17KFE2", "No superadmin site id configured")
         }

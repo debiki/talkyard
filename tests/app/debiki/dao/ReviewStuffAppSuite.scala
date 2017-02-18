@@ -35,7 +35,7 @@ class ReviewStuffAppSuite(randomString: String)
     lazy val dao: SiteDao = Globals.siteDao(Site.FirstSiteId)
     lazy val categoryId: CategoryId =
       dao.createForum("Forum", s"/forum-$nextNameNr-$r/",
-        Who(theAdmin.id, browserIdData)).uncategorizedCategoryId
+        Who(theAdmin.id, browserIdData)).defaultCategoryId
 
     def nextNameNr = { nameCounter += 1; nameCounter }
 

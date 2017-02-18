@@ -108,7 +108,7 @@ class SearchEngine(
       .setFrom(0)        // offset
       .setSize(60)       // num hits to return
       .setExplain(true)  // includes hit ranking
-      .setRouting(siteId)  // all data for this site is routed by siteId [4YK7CS2]
+      .setRouting(siteId.toString)  // all data for this site is routed by siteId [4YK7CS2]
 
     val promise = Promise[immutable.Seq[SearchHit]]()
 

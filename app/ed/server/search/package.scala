@@ -104,10 +104,10 @@ package object search {
   val PostDocType = "post"
 
 
-  def makeElasticSearchIdFor(siteId: String, post: Post): String =
+  def makeElasticSearchIdFor(siteId: SiteId, post: Post): String =
     makeElasticSearchIdFor(siteId, postId = post.id)
 
-  def makeElasticSearchIdFor(siteId: String, postId: PostId): String =
+  def makeElasticSearchIdFor(siteId: SiteId, postId: PostId): String =
     s"$siteId:$postId"
 
 

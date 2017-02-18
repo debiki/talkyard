@@ -894,8 +894,8 @@ trait UserDao {
 
 
   def loadUsersOnlineStuff(): UsersOnlineStuff = {
-    usersOnlineCache.get(siteId, new ju.function.Function[String, UsersOnlineStuff] {
-      override def apply(dummySiteId: String): UsersOnlineStuff = {
+    usersOnlineCache.get(siteId, new ju.function.Function[SiteId, UsersOnlineStuff] {
+      override def apply(dummySiteId: SiteId): UsersOnlineStuff = {
         val (userIds, numStrangers) = redisCache.loadOnlineUserIds()
         val users = readOnlyTransaction { transaction =>
           transaction.loadUsers(userIds)

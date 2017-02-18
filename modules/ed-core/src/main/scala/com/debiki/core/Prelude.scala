@@ -482,7 +482,7 @@ object Prelude {
   }
 
   implicit class OptionToInt(option: Option[_]) {
-    def toInt: Int = if (option.isDefined) 1 else 0
+    def oneIfDefined: Int = if (option.isDefined) 1 else 0
   }
 
   implicit class BlankStringToNone(underlying: Option[String]) {

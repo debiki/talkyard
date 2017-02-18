@@ -54,11 +54,11 @@ class CreateSiteDaoAppSpec extends DaoAppSuite(maxSitesTotal = Some(75)) {
 
       info("a real site")
       val realSite = createOneSite(dao, user, 20, 1)
-      realSite.id mustNot include(Site.TestIdPrefix)
+      realSite.id must be > 0
 
       info("a test site")
       val testSite = createOneSite(dao, user, 40, 1, isTestSite = true)
-      testSite.id must startWith(Site.TestIdPrefix)
+      testSite.id must be <= MaxTestSiteId
     }
 
 

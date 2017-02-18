@@ -25,7 +25,9 @@ import java.{util => ju}
 
 class PagePathTest extends FreeSpec with MustMatchers {
 
-  def parse(urlPath: String): PagePath = PagePath.fromUrlPath("tenantId", urlPath) match {
+  val TestSiteId = 2345
+
+  def parse(urlPath: String): PagePath = PagePath.fromUrlPath(TestSiteId, urlPath) match {
     case PagePath.Parsed.Bad(error) =>
       fail(s"Error parsing path: $urlPath, error: $error")
     case PagePath.Parsed.Corrected(correctedPath) =>
@@ -34,7 +36,7 @@ class PagePathTest extends FreeSpec with MustMatchers {
       pagePath
   }
 
-  def correct(urlPath: String): String = PagePath.fromUrlPath("tenantId", urlPath) match {
+  def correct(urlPath: String): String = PagePath.fromUrlPath(TestSiteId, urlPath) match {
     case PagePath.Parsed.Corrected(correctedPath) => correctedPath
     case x => fail(s"Path was not corrected, instead got: $x")
   }
@@ -146,7 +148,7 @@ class PagePathTest extends FreeSpec with MustMatchers {
     }
 
     "find its parent folder" in {
-      val rootFldr: PagePath = PagePath(tenantId = "tenantId", folder = "/",
+      val rootFldr: PagePath = PagePath(siteId = TestSiteId, folder = "/",
          pageSlug = "", pageId = None, showId = false)
       val indexPage = rootFldr.copy(pageId = Some("abcd"))
       val idPage = indexPage.copy(showId = true)
@@ -177,7 +179,7 @@ class PagePathTest extends FreeSpec with MustMatchers {
 
     s"reject bad slugs" - {
       def testRejectsBad(slug: String, errorMessagePrefix: String) {
-        val result = PagePath.fromUrlPath("siteId", slug)
+        val result = PagePath.fromUrlPath(TestSiteId, slug)
         result match {
           case PagePath.Parsed.Bad(message) =>
             message must startWith(errorMessagePrefix)

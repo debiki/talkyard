@@ -137,7 +137,7 @@ object ReactJson {
     Json.obj(
       "appVersion" -> Globals.applicationVersion,
       "now" -> JsNumber(Globals.now().millis),
-      "siteId" -> JsString(pageReq.siteId),
+      "siteId" -> JsNumber(pageReq.siteId),
       "siteStatus" -> pageReq.dao.theSite().status.toInt,
       "isFirstSiteAdminEmailMissing" -> isFirstSiteAdminEmailMissing,
       "userMustBeAuthenticated" -> JsBoolean(siteSettings.userMustBeAuthenticated),
@@ -276,7 +276,7 @@ object ReactJson {
     val jsonObj = Json.obj(
       "appVersion" -> Globals.applicationVersion,
       "pageVersion" -> page.meta.version,
-      "siteId" -> JsString(dao.siteId),
+      "siteId" -> JsNumber(dao.siteId),
       "siteStatus" -> dao.theSite().status.toInt,
       // Later: move these two userMustBe... to settings {} too.
       "userMustBeAuthenticated" -> JsBoolean(siteSettings.userMustBeAuthenticated),
@@ -341,7 +341,7 @@ object ReactJson {
     val siteSettings = dao.getWholeSiteSettings()
     var result = Json.obj(
       "appVersion" -> Globals.applicationVersion,
-      "siteId" -> JsString(dao.siteId),
+      "siteId" -> JsNumber(dao.siteId),
       "siteStatus" -> request.dao.theSite().status.toInt,
       "userMustBeAuthenticated" -> JsBoolean(siteSettings.userMustBeAuthenticated),
       "userMustBeApproved" -> JsBoolean(siteSettings.userMustBeApproved),

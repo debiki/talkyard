@@ -132,8 +132,8 @@ class Mailer(
    * if any other tables should also be updated).
    */
   def receive: PartialFunction[Any, Unit] = {
-    case (email: Email, tenantId: String) =>
-      sendEmail(email, tenantId)
+    case (email: Email, siteId: SiteId) =>
+      sendEmail(email, siteId)
     case ("GetEndToEndTestEmail", siteIdColonEmailAddress: String) =>
       e2eTestEmails.get(siteIdColonEmailAddress) match {
         case Some(promise) =>
@@ -150,9 +150,9 @@ class Mailer(
   }
 
 
-  private def sendEmail(emailToSend: Email, tenantId: String) {
+  private def sendEmail(emailToSend: Email, siteId: SiteId) {
 
-    val tenantDao = daoFactory.newSiteDao(tenantId)
+    val tenantDao = daoFactory.newSiteDao(siteId)
     val now = Some(Globals.now().toJavaDate)
 
     // I often use @example.com, or simply @ex.com, when posting test comments

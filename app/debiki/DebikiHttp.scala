@@ -20,12 +20,11 @@ package debiki
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki.dao.SystemDao
-import ed.server.http.{GetRequest, DebikiRequest}
+import ed.server.http._
 import java.{net => jn}
 import play.api._
-import play.api.libs.iteratee.Iteratee
 import play.{api => p}
-import play.api.mvc.{Action => _, _}
+import play.api.mvc._
 import play.api.Play.current
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
@@ -273,10 +272,11 @@ object DebikiHttp {
 
     // If the hostname is like "site-123.example.com" then we'll just lookup id 123.
     hostname match {
-      case debiki.Globals.siteByIdHostnameRegex(siteId) =>
+      case debiki.Globals.siteByIdHostnameRegex(siteIdString: String) =>
+        val siteId = siteIdString.toIntOrThrow("EdE5PJW2", s"Bad site id: $siteIdString")
         systemDao.getSite(siteId) match {
           case None =>
-            throwNotFound("DwE72SF6", s"No site with id `$siteId'")
+            throwNotFound("DwE72SF6", s"No site with id $siteId")
           case Some(site) =>
             COULD // link to canonical host if (site.hosts.exists(_.role == SiteHost.RoleCanonical))
             // Let the config file hostname have precedence over the database.

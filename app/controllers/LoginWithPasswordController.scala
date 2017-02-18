@@ -75,6 +75,7 @@ object LoginWithPasswordController extends mvc.Controller {
     val loginGrant: MemberLoginGrant =
       try dao.tryLoginAsMember(loginAttempt)
       catch {
+        case DbDao.NoMemberWithThatEmailException => deny()
         case DbDao.BadPasswordException => deny()
         case DbDao.IdentityNotFoundException => deny()
         case DbDao.EmailNotVerifiedException =>

@@ -22,7 +22,7 @@ services:
       CDN_PULL_KEY: "public"
 
   app:
-    mem_limit: 2600M
+    mem_limit: 3300M
     build: docker/app-dev/
     # image debiki/ed-app instead created and tagged by docker/build-app-prod.sh.
     stdin_open: true  # otherwise Play exits
@@ -41,7 +41,7 @@ services:
       - search
       - rdb
     environment:
-      PLAY_HEAP_MEMORY_MB: 1700
+      PLAY_HEAP_MEMORY_MB: 2500
       HOSTNAME: "localhost"
       CREATE_SITE_HOSTNAME: "localhost"
       BECOME_OWNER_EMAIL_ADDRESS: "admin@example.com"

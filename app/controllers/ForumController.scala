@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2013-2015 Kaj Magnus Lindberg
+ * Copyright (C) 2013-2017 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -27,7 +27,7 @@ import ed.server.http._
 import java.{util => ju}
 import play.api.mvc
 import play.api.libs.json._
-import play.api.mvc.{Action => _, _}
+import play.api.mvc._
 import scala.collection.mutable.ArrayBuffer
 import scala.util.Try
 import Utils.ValidationImplicits._
@@ -42,7 +42,7 @@ object ForumController extends mvc.Controller {
   val NumTopicsToList = 40
 
 
-  def createForum = StaffPostJsonAction(maxBytes = 200) { request =>
+  def createForum: Action[JsValue] = AdminPostJsonAction(maxBytes = 200) { request =>
     val title = (request.body \ "title").as[String]
     val folder = (request.body \ "folder").as[String]
     val pagePath = request.dao.createForum(title, folder = folder, request.who).pagePath
@@ -50,7 +50,7 @@ object ForumController extends mvc.Controller {
   }
 
 
-  def loadCategory(id: String) = StaffGetAction { request =>
+  def loadCategory(id: String): Action[Unit] = AdminGetAction { request =>
     val categoryId = Try(id.toInt) getOrElse throwBadRequest("DwE6PU1", "Invalid category id")
     val (category, isDefault) = request.dao.loadTheCategory(categoryId)
     val json = categoryToJson(category, isDefault, recentTopics = Nil, pageStuffById = Map.empty)
@@ -58,7 +58,7 @@ object ForumController extends mvc.Controller {
   }
 
 
-  def saveCategory = StaffPostJsonAction(maxBytes = 1000) { request =>
+  def saveCategory: Action[JsValue] = AdminPostJsonAction(maxBytes = 1000) { request =>
     val body = request.body
     val sectionPageId = (body \ "sectionPageId").as[PageId]
     val unlisted = (body \ "unlisted").asOpt[Boolean].getOrElse(false)
@@ -99,7 +99,7 @@ object ForumController extends mvc.Controller {
       throwBadRequest("EsE9MFU4", s"Too long category slug: '${categoryData.slug}'")
 
     val category = categoryData.anyId match {
-      case Some(categoryId) =>
+      case Some(_) =>
         request.dao.editCategory(categoryData, request.who)
       case None =>
         val (category, _) = request.dao.createCategory(categoryData, request.who)
@@ -114,12 +114,12 @@ object ForumController extends mvc.Controller {
   }
 
 
-  def deleteCategory = AdminPostJsonAction(maxBytes = 200) { request =>
+  def deleteCategory: Action[JsValue] = AdminPostJsonAction(maxBytes = 200) { request =>
     deleteUndeleteCategory(request, delete = true)
   }
 
 
-  def undeleteCategory = AdminPostJsonAction(maxBytes = 200) { request =>
+  def undeleteCategory: Action[JsValue] = AdminPostJsonAction(maxBytes = 200) { request =>
     deleteUndeleteCategory(request, delete = false)
   }
 

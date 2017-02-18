@@ -31,7 +31,7 @@ class SystemDao(private val dbDaoFactory: DbDaoFactory, val cache: DaoMemCache) 
 
   private def dbDao2: DbDao2 = dbDaoFactory.newDbDao2()
 
-  val memCache = new MemCache("?", cache)
+  val memCache = new MemCache(NoSiteId, cache)
 
   protected def readOnlyTransaction[R](fn: SystemTransaction => R): R =
     dbDao2.readOnlySystemTransaction(fn)
