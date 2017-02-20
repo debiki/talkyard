@@ -22,13 +22,10 @@ import com.debiki.core.Prelude._
 import debiki.RateLimits.NoRateLimits
 import debiki._
 import ed.server.http._
-import java.{util => ju}
 import play.api._
-import play.api.Play.current
 import play.api.libs.json._
 import play.api.mvc._
 import scala.concurrent.Future
-import scala.concurrent.ExecutionContext.Implicits.global
 import DebikiHttp._
 
 
@@ -130,7 +127,8 @@ object ViewPageController extends mvc.Controller {
   }
 
 
-  def markPageAsSeen(pageId: PageId) = PostJsonAction(NoRateLimits, maxBytes = 2) { request =>
+  def markPageAsSeen(pageId: PageId): Action[JsValue] = PostJsonAction(NoRateLimits, maxBytes = 2) {
+        request =>
     val watchbar = request.dao.getOrCreateWatchbar(request.theUserId)
     val newWatchbar = watchbar.markPageAsSeen(pageId)
     request.dao.saveWatchbar(request.theUserId, newWatchbar)

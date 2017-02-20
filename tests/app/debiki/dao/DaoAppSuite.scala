@@ -21,7 +21,7 @@ import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki.{Globals, TextAndHtml}
 import org.scalatest._
-import org.scalatestplus.play.OneAppPerSuite
+import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.test.FakeApplication
 
 
@@ -29,7 +29,7 @@ class DaoAppSuite(
   disableScripts: Boolean = true,
   disableBackgroundJobs: Boolean = true,
   maxSitesTotal: Option[Int] = None)
-  extends FreeSpec with MustMatchers with OneAppPerSuite {
+  extends FreeSpec with MustMatchers with GuiceOneAppPerSuite {
 
   private val extraConfig: Map[String, String] = {
     var config = Map[String, String](

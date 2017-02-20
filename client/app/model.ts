@@ -189,9 +189,10 @@ interface Myself {
   username?: string;
   fullName?: string;
   avatarUrl?: string;
-  rolePageSettings: any;
+  rolePageSettings: PageUserSettings;
   trustLevel: TrustLevel;
   threatLevel: ThreatLevel;
+  permissions: Permissions;
 
   numUrgentReviewTasks: number;
   numOtherReviewTasks: number;
@@ -219,6 +220,30 @@ interface Myself {
   closedHelpMessages: { [id: string]: number };  // id --> closed version of message   — id or nr?
 }
 
+
+interface Permissions {
+  onCategories: { [categoryId: number]: PermsOnPages };
+}
+
+
+interface PermsOnPages {
+  mayEditPage: boolean;
+  //mayEditComment: boolean;
+  //mayEditWiki: boolean;
+  //mayDeletePage: boolean;
+  //mayDeleteComment: boolean;
+  mayCreatePage: boolean;
+  mayPostComment: boolean;
+
+  // Skip:
+  // maySee: boolean;
+  // — instead don't include stuff the user may not see.
+}
+
+
+interface PageUserSettings {
+  notfLevel: NotfLevel;
+}
 
 interface Notification {
   id: number;
@@ -392,6 +417,7 @@ interface Store {
   topics: Topic[];
   user: Myself; // try to remove, use 'me' instead:
   me: Myself;
+  strangersPermissions: Permissions;
   userSpecificDataAdded?: boolean; // is always false, server side
   newUserAccountCreated?: boolean;
   isImpersonating?: boolean;

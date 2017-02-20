@@ -27,6 +27,8 @@ import Prelude._
 trait SiteTransaction {
   def commit()
   def rollback()
+  def hasBeenRolledBack: Boolean
+
   def siteId: SiteId
 
   def setSiteId(id: SiteId)

@@ -1,0 +1,28 @@
+<configuration>
+
+  <conversionRule conversionWord="coloredLevel" converterClass="play.api.libs.logback.ColoredLevel" />
+
+  <appender name="FILE" class="ch.qos.logback.core.FileAppender">
+     <file>${application.home}/logs/application.log</file>
+     <encoder>
+       <pattern>%date - [%level] - from %logger in %thread %n%message%n%xException%n</pattern>
+     </encoder>
+   </appender>
+
+  <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+    <encoder>
+      <pattern>%date %coloredLevel %logger{15}: %message%n%rootException{30}</pattern>
+    </encoder>
+  </appender>
+
+  <logger name="play" level="INFO" />
+  <logger name="application" level="TRACE" />
+  <logger name="app" level="TRACE" />
+  <logger name="org.elasticsearch" level="INFO" />
+
+  <root level="WARN">
+    <appender-ref ref="STDOUT" />
+    <appender-ref ref="FILE" />
+  </root>
+
+</configuration>

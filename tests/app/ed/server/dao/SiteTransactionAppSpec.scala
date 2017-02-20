@@ -437,6 +437,7 @@ class SiteTransactionAppSpec extends DaoAppSuite {
             onTagId = None,
             toEditPage = Some(true),
             toEditComment = Some(true),
+            toEditWiki = Some(true),
             toDeletePage = Some(true),
             toDeleteComment = Some(true),
             toCreatePage = Some(true),
@@ -462,6 +463,7 @@ class SiteTransactionAppSpec extends DaoAppSuite {
             onTagId = None,
             toEditPage = Some(true),
             toEditComment = None,
+            toEditWiki = None,
             toDeletePage = Some(true),
             toDeleteComment = None,
             toCreatePage = Some(true),
@@ -489,6 +491,7 @@ class SiteTransactionAppSpec extends DaoAppSuite {
             // Let's invert all perms, in comparison to the perms-on-category above.
             toEditPage = None,
             toEditComment = Some(true),
+            toEditWiki = Some(true),
             toDeletePage = None,
             toDeleteComment = Some(true),
             toCreatePage = None,
@@ -514,14 +517,14 @@ class SiteTransactionAppSpec extends DaoAppSuite {
             onPageId = None,
             onPostId = Some(pageAPost2.id),
             onTagId = None,
-            // Let's invert all perms, in comparison to the perms-on-category above.
-            toEditPage = None,
+            toEditPage = Some(true),
             toEditComment = Some(true),
-            toDeletePage = None,
-            toDeleteComment = Some(true),
+            toEditWiki = Some(true),
+            toDeletePage = Some(true),
+            toDeleteComment = None,
             toCreatePage = None,
-            toPostComment = Some(true),
-            toSee = None)
+            toPostComment = None,
+            toSee = Some(true))
 
           val permsOnPost = transaction.insertPermsOnPages(permsOnPostNoId)
           permsOnPostNoId.copy(id = permsOnPost.id) mustBe permsOnPost
@@ -536,7 +539,68 @@ class SiteTransactionAppSpec extends DaoAppSuite {
           // Perms on a tag: Later.
         }
       }
+
+      "won't save dupl perms" in {
+        val wholeSitePerms = PermsOnPages(
+          id = NoPermissionId,
+          forPeopleId = userA.id,
+          onWholeSite = Some(true),
+          onCategoryId = None,
+          onPageId = None,
+          onPostId = None,
+          onTagId = None,
+          toEditPage = Some(true),
+          toEditComment = Some(true),
+          toEditWiki = Some(true),
+          toDeletePage = Some(true),
+          toDeleteComment = Some(true),
+          toCreatePage = Some(true),
+          toPostComment = Some(true),
+          toSee = Some(true))
+
+        info("for whole site")
+        dao.readWriteTransaction { transaction =>
+          intercept[Exception] {
+            transaction.insertPermsOnPages(wholeSitePerms)
+          }
+          // Rollback, because intercept[] above caught the SQL exception so
+          // dao.readWriteTransaction() will otherwise attempt to commit.
+          transaction.rollback()
+        }
+
+        info("for category")
+        dao.readWriteTransaction { transaction =>
+          intercept[Exception] {
+            transaction.insertPermsOnPages(
+              wholeSitePerms.copy(onWholeSite = None,
+                onCategoryId = Some(createForumResult.defaultCategoryId)))
+          }
+          transaction.rollback()
+        }
+
+        info("for page")
+        dao.readWriteTransaction { transaction =>
+          intercept[Exception] {
+            transaction.insertPermsOnPages(
+              wholeSitePerms.copy(onWholeSite = None, onPageId = Some(pageAId)))
+          }
+          transaction.rollback()
+        }
+
+        info("for post")
+        dao.readWriteTransaction { transaction =>
+          intercept[Exception] {
+            transaction.insertPermsOnPages(
+              wholeSitePerms.copy(onWholeSite = None, onPostId = Some(pageAPost2.id)))
+          }
+          transaction.rollback()
+        }
+
+        // Later:
+        // info("for tag")
+      }
     }
+
   }
 
 }
