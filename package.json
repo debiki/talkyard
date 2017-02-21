@@ -17,7 +17,7 @@
     "blacklist": "^1.1.4",
     "bootstrap": "3.1.1",
     "classnames": "^2.2.5",
-    "eventemitter2": "^2.1.3",
+    "eventemitter2": "^3.0.1",
     "fibers": "^1.0.15",
     "fileapi": "^2.0.21",
     "jquery": "^2.2.4",
