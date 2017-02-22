@@ -19,15 +19,15 @@ package controllers
 
 import com.debiki.core._
 import com.debiki.core.Prelude._
-import controllers.Utils._
 import debiki._
 import debiki.DebikiHttp._
 import debiki.ReactJson.JsLongOrNull
+import ed.server.auth.Authz
 import ed.server.http._
 import java.{util => ju}
 import play.api._
-import play.api.libs.json.Json
-import scala.concurrent.ExecutionContext.Implicits.global
+import play.api.libs.json.{JsValue, Json}
+import play.api.mvc.Action
 
 
 /** Creates pages, toggles is-done, deletes them.
@@ -35,8 +35,9 @@ import scala.concurrent.ExecutionContext.Implicits.global
 object PageController extends mvc.Controller {
 
 
-  def createPage = PostJsonAction(RateLimits.CreateTopic, maxBytes = 20 * 1000) { request =>
-    import request.body
+  def createPage: Action[JsValue] = PostJsonAction(RateLimits.CreateTopic, maxBytes = 20 * 1000) {
+        request =>
+    import request.{body, dao}
 
     val anyCategoryId = (body \ "categoryId").asOpt[CategoryId]
     val pageRoleInt = (body \ "pageRole").as[Int]
@@ -61,14 +62,23 @@ object PageController extends mvc.Controller {
       throwForbidden("DwE8GKE4", "No category specified")
     }
 
-    val pagePath = request.dao.createPage(pageRole, pageStatus, anyCategoryId, anyFolder,
+    val categoriesRootLast = dao.loadCategoriesRootLast(anyCategoryId)
+
+    throwNoUnless(Authz.mayCreatePage(
+      request.theUserAndLevels, dao.getGroupIds(request.theUser),
+      pageRole, PostType.Normal, pinWhere = None, anySlug = anySlug, anyFolder = anyFolder,
+      inCategoriesRootLast = categoriesRootLast,
+      relevantPermissions = dao.getPermsOnPages(categories = categoriesRootLast)),
+      "EdE5KW20A")
+
+    val pagePath = dao.createPage(pageRole, pageStatus, anyCategoryId, anyFolder,
       anySlug, titleTextAndHtml, bodyTextAndHtml, showId, request.who, request.spamRelatedStuff)
 
     OkSafeJson(Json.obj("newPageId" -> pagePath.pageId.getOrDie("DwE8GIK9")))
   }
 
 
-  def pinPage = StaffPostJsonAction(maxBytes = 1000) { request =>
+  def pinPage: Action[JsValue] = StaffPostJsonAction(maxBytes = 1000) { request =>
     val pageId = (request.body \ "pageId").as[PageId]
     val pinWhereInt = (request.body \ "pinWhere").as[Int]
     val pinOrder = (request.body \ "pinOrder").as[Int]
@@ -85,14 +95,15 @@ object PageController extends mvc.Controller {
   }
 
 
-  def unpinPage = StaffPostJsonAction(maxBytes = 1000) { request =>
+  def unpinPage: Action[JsValue] = StaffPostJsonAction(maxBytes = 1000) { request =>
     val pageId = (request.body \ "pageId").as[PageId]
     request.dao.unpinPage(pageId)
     Ok
   }
 
 
-  def acceptAnswer = PostJsonAction(RateLimits.TogglePage, maxBytes = 100) { request =>
+  def acceptAnswer: Action[JsValue] = PostJsonAction(RateLimits.TogglePage, maxBytes = 100) {
+        request =>
     val pageId = (request.body \ "pageId").as[PageId]
     val postUniqueId = (request.body \ "postId").as[PostId]   // id not nr
     val acceptedAt: Option[ju.Date] = request.dao.ifAuthAcceptAnswer(
@@ -101,14 +112,16 @@ object PageController extends mvc.Controller {
   }
 
 
-  def unacceptAnswer = PostJsonAction(RateLimits.TogglePage, maxBytes = 100) { request =>
+  def unacceptAnswer: Action[JsValue] = PostJsonAction(RateLimits.TogglePage, maxBytes = 100) {
+        request =>
     val pageId = (request.body \ "pageId").as[PageId]
     request.dao.ifAuthUnacceptAnswer(pageId, userId = request.theUserId, request.theBrowserIdData)
     Ok
   }
 
 
-  def cyclePageDone = PostJsonAction(RateLimits.TogglePage, maxBytes = 100) { request =>
+  def cyclePageDone: Action[JsValue] = PostJsonAction(RateLimits.TogglePage, maxBytes = 100) {
+        request =>
     val pageId = (request.body \ "pageId").as[PageId]
     val newMeta = request.dao.cyclePageDoneIfAuth(pageId, userId = request.theUserId,
       request.theBrowserIdData)
@@ -119,21 +132,22 @@ object PageController extends mvc.Controller {
   }
 
 
-  def togglePageClosed = PostJsonAction(RateLimits.TogglePage, maxBytes = 100) { request =>
+  def togglePageClosed: Action[JsValue] = PostJsonAction(RateLimits.TogglePage, maxBytes = 100) {
+        request =>
     val pageId = (request.body \ "pageId").as[PageId]
     val closedAt: Option[ju.Date] = request.dao.ifAuthTogglePageClosed(
       pageId, userId = request.theUserId, request.theBrowserIdData)
     OkSafeJson(JsLongOrNull(closedAt.map(_.getTime)))
   }
 
-  def deletePages = StaffPostJsonAction(maxBytes = 1000) { request =>
+  def deletePages: Action[JsValue] = StaffPostJsonAction(maxBytes = 1000) { request =>
     val pageIds = (request.body \ "pageIds").as[Seq[PageId]]
     request.dao.deletePagesIfAuth(pageIds, deleterId = request.theUserId, request.theBrowserIdData,
       undelete = false)
     Ok
   }
 
-  def undeletePages = StaffPostJsonAction(maxBytes = 1000) { request =>
+  def undeletePages: Action[JsValue] = StaffPostJsonAction(maxBytes = 1000) { request =>
     val pageIds = (request.body \ "pageIds").as[Seq[PageId]]
     request.dao.deletePagesIfAuth(pageIds, deleterId = request.theUserId, request.theBrowserIdData,
       undelete = true)
@@ -141,7 +155,8 @@ object PageController extends mvc.Controller {
   }
 
 
-  def addUsersToPage = PostJsonAction(RateLimits.JoinSomething, maxBytes = 100) { request =>
+  def addUsersToPage: Action[JsValue] = PostJsonAction(RateLimits.JoinSomething, maxBytes = 100) {
+        request =>
     val pageId = (request.body \ "pageId").as[PageId]
     val userIds = (request.body \ "userIds").as[Set[UserId]]
     request.dao.addUsersToPage(userIds, pageId, request.who)
@@ -149,7 +164,8 @@ object PageController extends mvc.Controller {
   }
 
 
-  def removeUsersFromPage = PostJsonAction(RateLimits.JoinSomething, maxBytes = 100) { request =>
+  def removeUsersFromPage: Action[JsValue] = PostJsonAction(RateLimits.JoinSomething,
+        maxBytes = 100) { request =>
     val pageId = (request.body \ "pageId").as[PageId]
     val userIds = (request.body \ "userIds").as[Set[UserId]]
     request.dao.removeUsersFromPage(userIds, pageId, request.who)
@@ -157,12 +173,14 @@ object PageController extends mvc.Controller {
   }
 
 
-  def joinPage = PostJsonAction(RateLimits.JoinSomething, maxBytes = 100) { request =>
+  def joinPage: Action[JsValue] = PostJsonAction(RateLimits.JoinSomething, maxBytes = 100) {
+        request =>
     joinOrLeavePage(join = true, request)
   }
 
 
-  def leavePage = PostJsonAction(RateLimits.JoinSomething, maxBytes = 100) { request =>
+  def leavePage: Action[JsValue] = PostJsonAction(RateLimits.JoinSomething, maxBytes = 100) {
+        request =>
     joinOrLeavePage(join = false, request)
   }
 

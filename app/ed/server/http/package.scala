@@ -19,11 +19,12 @@ package ed.server
 
 import com.debiki.core._
 import com.debiki.core.Prelude._
-import controllers.{routes, LoginController}
+import controllers.{LoginController, routes}
 import debiki._
 import debiki.DebikiHttp._
 import debiki.RateLimits.NoRateLimits
 import debiki.dao.SiteDao
+import ed.server.auth.MayMaybe
 import ed.server.security.{SidStatus, XsrfOk}
 import play.api._
 import play.api.libs.Files.TemporaryFile
@@ -264,6 +265,19 @@ package object http {
 
   def throwForbiddenIf(test: Boolean, errorCode: String, message: => String) {
     if (test) throwForbidden2(errorCode, message)
+  }
+
+  def throwForbiddenUnless(test: Boolean, errorCode: String, message: => String) {
+    if (!test) throwForbidden2(errorCode, message)
+  }
+
+  def throwNoUnless(mayMaybe: MayMaybe, errorCode: String) {
+    import MayMaybe._
+    mayMaybe match {
+      case Yes => // fine
+      case NoNotFound(debugCode) => throwIndistinguishableNotFound(debugCode)
+      case NoMayNot(code2, reason) => throwForbidden(s"$errorCode-$code2", reason)
+    }
   }
 
   def throwNotImplementedIf(test: Boolean, errorCode: String, message: => String = "") {

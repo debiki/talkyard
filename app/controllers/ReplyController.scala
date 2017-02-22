@@ -18,15 +18,13 @@
 package controllers
 
 import com.debiki.core._
-import com.debiki.core.Prelude._
 import debiki._
 import debiki.DebikiHttp._
-import ed.server.spam.SpamChecker
+import ed.server.auth.Authz
 import ed.server.http._
 import play.api._
-import play.api.mvc.{Action => _, _}
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import play.api.libs.json.JsValue
+import play.api.mvc._
 
 
 /** Saves replies. Lazily creates pages for embedded discussions
@@ -35,65 +33,69 @@ import scala.concurrent.Future
 object ReplyController extends mvc.Controller {
 
 
-  def handleReply = PostJsonAction(RateLimits.PostReply, maxBytes = MaxPostSize) {
+  def handleReply: Action[JsValue] = PostJsonAction(RateLimits.PostReply, maxBytes = MaxPostSize) {
         request: JsonPostRequest =>
-    val body = request.body
+    import request.{body, dao}
     val pageId = (body \ "pageId").as[PageId]
-    val anyPageUrl = (body \ "pageUrl").asOpt[String]
+    //val anyPageUrl = (body \ "pageUrl").asOpt[String]
     val replyToPostNrs = (body \ "postNrs").as[Set[PostNr]]
     val text = (body \ "text").as[String].trim
-    val wherePerhapsEmpty = (body \ "where").asOpt[String]
-    val whereOpt = if (wherePerhapsEmpty == Some("")) None else wherePerhapsEmpty
     val postType = PostType.fromInt((body \ "postType").as[Int]) getOrElse throwBadReq(
       "DwE6KG4", "Bad post type")
 
     throwBadRequestIf(text.isEmpty, "EdE85FK03", "Empty post")
-    val textAndHtml = TextAndHtml(text, isTitle = false)
 
     DISCUSSION_QUALITY; COULD // require that the user has spent a reasonable time reading
     // the topic, in comparison to # posts in the topic, before allowing hen to post a reply.
 
-    // Construct a request that concerns the specified page. Create the page
-    // lazily if it's supposed to be a discussion embedded on a static HTML page.
-    SECURITY ; COULD // avoid revealing that a page exists: forPageThatExists below might throw
-    // a unique NotFound for example.  [7C2KF24]
-    val pageReq = PageRequest.forPageThatExists(request, pageId = pageId) match {
-      case Some(req) => req
-      case None =>
-        unimplemented("Creating embedded comments page [DwE5UYK4]") /*
-        val page = tryCreateEmbeddedCommentsPage(request, pageId, anyPageUrl)
-          .getOrElse(throwNotFound("Dw2XEG60", s"Page `$pageId' does not exist"))
-        PageRequest.forPageThatExists(request, pageId = page.id) getOrDie "DwE77PJE0"
-        */
-    }
+    val pageMeta = dao.getPageMeta(pageId) getOrElse
+      throwIndistinguishableNotFound("EdE5FKW20")
+      /* Old, from when embedded comments were still in use & working, will somehow add back later:
+      val page = tryCreateEmbeddedCommentsPage(request, pageId, anyPageUrl)
+        .getOrElse(throwNotFound("Dw2XEG60", s"Page `$pageId' does not exist"))
+      PageRequest.forPageThatExists(request, pageId = page.id) getOrDie "DwE77PJE0"  */
 
-    val result = pageReq.dao.insertReply(textAndHtml, pageId = pageId, replyToPostNrs,
-      postType, pageReq.who, pageReq.spamRelatedStuff)
+    val categoriesRootLast = dao.loadCategoriesRootLast(pageMeta.categoryId)
+
+    throwNoUnless(Authz.mayPostReply(
+      request.theUserAndLevels, dao.getGroupIds(request.theUser),
+      postType, pageMeta, dao.getAnyPrivateGroupTalkMembers(pageMeta),
+      inCategoriesRootLast = categoriesRootLast,
+      relevantPermissions = dao.getPermsOnPages(categoriesRootLast)),
+      "EdEZBXK3M2")
+
+    val textAndHtml = TextAndHtml(text, isTitle = false)
+    val result = dao.insertReply(textAndHtml, pageId = pageId, replyToPostNrs,
+      postType, request.who, request.spamRelatedStuff)
 
     OkSafeJson(result.storePatchJson)
   }
 
 
-  def handleChatMessage = PostJsonAction(RateLimits.PostReply, maxBytes = MaxPostSize) {
-        request =>
-    val body = request.body
+  def handleChatMessage: Action[JsValue] = PostJsonAction(RateLimits.PostReply,
+        maxBytes = MaxPostSize) { request =>
+    import request.{body, dao}
     val pageId = (body \ "pageId").as[PageId]
     val text = (body \ "text").as[String].trim
 
-    SECURITY ; COULD // avoid revealing that a page exists: forPageThatExists below might throw
-    // a unique NotFound for example.  [7C2KF24]
-    val pageReq = PageRequest.forPageThatExists(request, pageId = pageId) match {
-      case Some(req) => req
-      case None =>
-        throwNotImplemented("EsE2UYK7", "Creating embedded chat channel")
+    throwBadRequestIf(text.isEmpty, "EsE0WQCB", "Empty chat message")
+
+    val pageMeta = dao.getPageMeta(pageId) getOrElse {
+      throwIndistinguishableNotFound("EdE7JS2")
     }
 
-    if (text.isEmpty)
-      throwBadReq("EsE0WQCB", "Empty chat message")
+    val categoriesRootLast = dao.loadCategoriesRootLast(pageMeta.categoryId)
+
+    throwNoUnless(Authz.mayPostReply(
+      request.theUserAndLevels, dao.getGroupIds(request.theMember),
+      PostType.ChatMessage, pageMeta, dao.getAnyPrivateGroupTalkMembers(pageMeta),
+      inCategoriesRootLast = categoriesRootLast,
+      relevantPermissions = dao.getPermsOnPages(categoriesRootLast)),
+      "EdEHDETG4K5")
 
     val textAndHtml = TextAndHtml(text, isTitle = false)
-    val result = pageReq.dao.insertChatMessage(
-      textAndHtml, pageId = pageId, pageReq.who, pageReq.spamRelatedStuff)
+    val result = dao.insertChatMessage(
+      textAndHtml, pageId = pageId, request.who, request.spamRelatedStuff)
 
     OkSafeJson(result.storePatchJson)
   }

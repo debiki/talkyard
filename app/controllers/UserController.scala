@@ -23,7 +23,6 @@ import com.debiki.core.User.{MinUsernameLength, isGuestId}
 import debiki._
 import debiki.ReactJson._
 import ed.server.http._
-import math.max
 import java.{util => ju}
 import play.api.mvc
 import play.api.libs.json._
@@ -76,7 +75,7 @@ object UserController extends mvc.Controller {
         request: DebikiRequest[_]) = {
     val callerIsStaff = request.user.exists(_.isStaff)
     val callerIsAdmin = request.user.exists(_.isAdmin)
-    val callerIsUserHerself = request.user.map(_.id == userId) == Some(true)
+    val callerIsUserHerself = request.user.exists(_.id == userId)
     val isStaffOrSelf = callerIsStaff || callerIsUserHerself
     request.dao.readOnlyTransaction { transaction =>
       val stats = includeStats ? transaction.loadUserStats(userId) | None
@@ -239,7 +238,7 @@ object UserController extends mvc.Controller {
   }
 
 
-  def approveRejectUser = StaffPostJsonAction(maxBytes = 100) { request =>
+  def approveRejectUser: Action[JsValue] = StaffPostJsonAction(maxBytes = 100) { request =>
     val userId = (request.body \ "userId").as[UserId]
     val doWhat = (request.body \ "doWhat").as[String]
     doWhat match {
@@ -254,7 +253,7 @@ object UserController extends mvc.Controller {
   }
 
 
-  def setIsAdminOrModerator = AdminPostJsonAction(maxBytes = 100) { request =>
+  def setIsAdminOrModerator: Action[JsValue] = AdminPostJsonAction(maxBytes = 100) { request =>
     val userId = (request.body \ "userId").as[UserId]
     val doWhat = (request.body \ "doWhat").as[String]
     doWhat match {
@@ -273,7 +272,7 @@ object UserController extends mvc.Controller {
   }
 
 
-  def lockThreatLevel = StaffPostJsonAction(maxBytes = 100) { request =>
+  def lockThreatLevel: Action[JsValue] = StaffPostJsonAction(maxBytes = 100) { request =>
     val userId = (request.body \ "userId").as[UserId]
     val threatLevelInt = (request.body \ "threatLevel").as[Int]
     val threatLevel = ThreatLevel.fromInt(threatLevelInt) getOrElse throwBadRequest(
@@ -288,7 +287,7 @@ object UserController extends mvc.Controller {
   }
 
 
-  def unlockThreatLevel = StaffPostJsonAction(maxBytes = 100) { request =>
+  def unlockThreatLevel: Action[JsValue] = StaffPostJsonAction(maxBytes = 100) { request =>
     val userId = (request.body \ "userId").as[UserId]
     if (User.isMember(userId)) {
       request.dao.lockMemberThreatLevel(userId, None)
@@ -300,7 +299,7 @@ object UserController extends mvc.Controller {
   }
 
 
-  def suspendUser = StaffPostJsonAction(maxBytes = 300) { request =>
+  def suspendUser: Action[JsValue] = StaffPostJsonAction(maxBytes = 300) { request =>
     val userId = (request.body \ "userId").as[UserId]
     val numDays = (request.body \ "numDays").as[Int]
     val reason = (request.body \ "reason").as[String]
@@ -316,7 +315,7 @@ object UserController extends mvc.Controller {
   }
 
 
-  def unsuspendUser = StaffPostJsonAction(maxBytes = 100) { request =>
+  def unsuspendUser: Action[JsValue] = StaffPostJsonAction(maxBytes = 100) { request =>
     val userId = (request.body \ "userId").as[UserId]
     if (isGuestId(userId))
       throwBadReq("DwE7GPKU8", "Cannot unsuspend guest user ids")
@@ -325,7 +324,7 @@ object UserController extends mvc.Controller {
   }
 
 
-  def blockGuest = StaffPostJsonAction(maxBytes = 100) { request =>
+  def blockGuest: Action[JsValue] = StaffPostJsonAction(maxBytes = 100) { request =>
     val postId = (request.body \ "postId").as[PostId]
     val numDays = -1 // (request.body \ "numDays").as[Int] // currently no longer in use
     val threatLevel = ThreatLevel.fromInt((request.body \ "threatLevel").as[Int]).getOrElse(
@@ -335,7 +334,7 @@ object UserController extends mvc.Controller {
   }
 
 
-  def unblockGuest = StaffPostJsonAction(maxBytes = 100) { request =>
+  def unblockGuest: Action[JsValue] = StaffPostJsonAction(maxBytes = 100) { request =>
     val postId = (request.body \ "postId").as[PostId]
     request.dao.unblockGuest(postId, unblockerId = request.theUserId)
     Ok
@@ -396,24 +395,50 @@ object UserController extends mvc.Controller {
 
 
   def loadMyPageData(pageId: PageId): Action[Unit] = GetAction { request =>
-    SECURITY ; COULD // avoid revealing that a page exists: forPageThatExists below might throw
-    // a unique NotFound for example.  [7C2KF24]
-    val myPageData = PageRequest.forPageThatExists(request, pageId) match {
-      case None =>
-        // Might be an embedded comment page, not yet created because no comments posted.
-        // Or we might be in the signup-to-become-owner step, when creating a new site.
-        ReactJson.userNoPageToJson(request)
-      case Some(pageRequest) =>
-        if (pageRequest.user.isDefined) {
-          val renderedPage = request.dao.renderPageMaybeUseCache(pageRequest)
-          ReactJson.userDataJson(pageRequest, renderedPage.unapprovedPostAuthorIds).getOrDie(
-            "EdE4ZBXKG")
-        }
-        else {
-          ReactJson.NoUserSpecificData
-        }
+    val json = loadMyPageDataImpl(request, pageId)
+    OkSafeJson(json)
+  }
+
+
+  private def loadMyPageDataImpl(request: ApiRequest[_], pageId: PageId): JsValue = {
+    val pageMeta = request.dao.getPageMeta(pageId) getOrElse {
+      // Might be an embedded comment page, not yet created because no comments posted.
+      // Or we might be in the signup-to-become-owner step, when creating a new site.
+      return ReactJson.userNoPageToJson(request)
     }
-    OkSafeJson(myPageData)
+
+    val pagePath = request.dao.getPagePath(pageId) getOrElse {
+      // The page was apparently deleted some microseconds ago.
+      return ReactJson.userNoPageToJson(request)
+    }
+
+    val (maySee, _) = request.dao.maySeePageUseCache(pageMeta, request.user)
+    if (!maySee)
+      return ReactJson.userNoPageToJson(request)
+
+    val pageRequest = new PageRequest(
+      request.siteIdAndCanonicalHostname,
+      sid = request.sid,
+      xsrfToken = request.xsrfToken,
+      browserId = request.browserId,
+      user = request.user,
+      pageExists = true,
+      pagePath = pagePath,
+      pageMeta = Some(pageMeta),
+      dao = request.dao,
+      request = request.request)
+
+    val json =
+      if (pageRequest.user.isDefined) {
+        val renderedPage = request.dao.renderPageMaybeUseCache(pageRequest)
+        ReactJson.userDataJson(pageRequest, renderedPage.unapprovedPostAuthorIds).getOrDie(
+          "EdE4ZBXKG")
+      }
+      else {
+        ReactJson.NoUserSpecificData
+      }
+
+    json
   }
 
 
@@ -444,7 +469,7 @@ object UserController extends mvc.Controller {
 
     val pageId = (body \ "pageId").as[PageId]
     var visitStartedAt = (body \ "visitStartedAt").as[When]
-    var lastViewedPostNr = (body \ "lastViewedPostNr").as[PostNr]
+    val lastViewedPostNr = (body \ "lastViewedPostNr").as[PostNr]
     var lastReadAt = (body \ "lastReadAt").as[Option[When]]
     var secondsReading = (body \ "secondsReading").as[Int]
     val postNrsRead = (body \ "postNrsRead").as[Vector[PostNr]]
@@ -495,24 +520,23 @@ object UserController extends mvc.Controller {
   }
 
 
-  def loadNotifications(userId: String, upToWhenMs: String): Action[Unit] =
+  def loadNotifications(userId: UserId, upToWhenMs: Long): Action[Unit] =
         GetActionRateLimited(RateLimits.ExpensiveGetRequest) { request =>
-    val userIdInt = userId.toIntOrThrow("EsE5GYK2", "Bad userId")
-    val upToWhenMsLong = upToWhenMs.toLongOrThrow("EsE2FUY7", "Bad upToWhenMs")
-    val upToWhenDate = new ju.Date(upToWhenMsLong)
-    val notfsAndCounts = request.dao.loadNotifications(userIdInt, upToWhen = None, request.who)
+    val notfsAndCounts = request.dao.loadNotifications(userId, upToWhen = None, request.who)
     OkSafeJson(notfsAndCounts.notfsJson)
   }
 
 
-  def markNotificationAsSeen() = PostJsonAction(RateLimits.MarkNotfAsSeen, 200) { request =>
+  def markNotificationAsSeen(): Action[JsValue] = PostJsonAction(RateLimits.MarkNotfAsSeen, 200) {
+        request =>
     val notfId = (request.body \ "notfId").as[NotificationId]
     request.dao.markNotificationAsSeen(request.theUserId, notfId)
     Ok
   }
 
 
-  def savePageNotfLevel = PostJsonAction(RateLimits.ConfigUser, maxBytes = 500) { request =>
+  def savePageNotfLevel: Action[JsValue] = PostJsonAction(RateLimits.ConfigUser, maxBytes = 500) {
+        request =>
     val body = request.body
     val pageId = (body \ "pageId").as[PageId]
     val newNotfLevelInt = (body \ "pageNotfLevel").as[Int]
@@ -559,7 +583,8 @@ object UserController extends mvc.Controller {
   }
 
 
-  def saveUserPreferences = PostJsonAction(RateLimits.ConfigUser, maxBytes = 1000) { request =>
+  def saveUserPreferences: Action[JsValue] = PostJsonAction(RateLimits.ConfigUser,
+        maxBytes = 1000) { request =>
     val prefs = userPrefsFromJson(request.body)
     val staffOrSelf = request.theUser.isStaff || request.theUserId == prefs.userId
     if (!staffOrSelf)
@@ -569,7 +594,7 @@ object UserController extends mvc.Controller {
   }
 
 
-  def saveGuest = StaffPostJsonAction(maxBytes = 300) { request =>
+  def saveGuest: Action[JsValue] = StaffPostJsonAction(maxBytes = 300) { request =>
     val guestId = (request.body \ "guestId").as[UserId]
     val name = (request.body \ "name").as[String].trim
     if (name.isEmpty)
@@ -676,18 +701,6 @@ object UserController extends mvc.Controller {
   }
   */
 
-
-  private def userPrefsToJson(prefs: MemberPreferences, requester: User): JsObject = {
-    val adminOrOwn = requester.isAdmin || prefs.userId == requester.id
-    val safeEmail = adminOrOwn ? prefs.emailAddress | hideEmailLocalPart(prefs.emailAddress)
-    Json.obj(
-      "userId" -> prefs.userId,
-      "fullName" -> prefs.fullName,
-      "username" -> prefs.username,
-      "emailAddress" -> safeEmail,
-      "url" -> prefs.url,
-      "emailForEveryNewPost" -> prefs.emailForEveryNewPost)
-  }
 
 
   private def userPrefsFromJson(json: JsValue): MemberPreferences = {

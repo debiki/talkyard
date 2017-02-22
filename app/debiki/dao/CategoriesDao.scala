@@ -29,18 +29,8 @@ import scala.collection.mutable.ArrayBuffer
 
 
 
-/** @param sectionPageId
-  * @param parentId
-  * @param name
-  * @param slug
-  * @param position
-  * @param newTopicTypes
-  * @param shallBeDefaultCategory — if set, the root category's default category id will be
+/** @param shallBeDefaultCategory — if set, the root category's default category id will be
   *     updated to point to this category.
-  * @param unlisted
-  * @param staffOnly
-  * @param onlyStaffMayCreateTopics
-  * @param anyId
   */
 case class CategoryToSave(
   sectionPageId: PageId,
@@ -58,8 +48,8 @@ case class CategoryToSave(
   anyId: Option[CategoryId] = None, // Some() if editing
   isCreatingNewForum: Boolean = false) {
 
-  val aboutTopicTitle = TextAndHtml.forTitle(s"About the $name category")
-  val aboutTopicBody = TextAndHtml.forBodyOrComment(description)
+  val aboutTopicTitle: TextAndHtml = TextAndHtml.forTitle(s"About the $name category")
+  val aboutTopicBody: TextAndHtml = TextAndHtml.forBodyOrComment(description)
 
   def makeCategory(id: CategoryId, createdAt: ju.Date) = Category(
     id = id,
@@ -195,6 +185,14 @@ trait CategoriesDao {
   }
 
 
+  def loadCategoriesRootLast(anyCategoryId: Option[CategoryId]): immutable.Seq[Category] = {
+    val id = anyCategoryId getOrElse {
+      return Nil
+    }
+    loadCategoriesRootLast(id)
+  }
+
+
   def loadCategoriesRootLast(categoryId: CategoryId): immutable.Seq[Category] = {
     val categoriesById = loadBuildRememberCategoryMaps()._1
     val categories = ArrayBuffer[Category]()
@@ -251,7 +249,7 @@ trait CategoriesDao {
 
   private def loadRootCategory(pageId: PageId): Option[Category] = {
     val categoriesById = loadBuildRememberCategoryMaps()._1
-    for ((categoryId, category) <- categoriesById) {
+    for ((_, category) <- categoriesById) {
       if (category.sectionPageId == pageId && category.parentId.isEmpty)
         return Some(category)
     }
@@ -265,7 +263,7 @@ trait CategoriesDao {
       // COULD log cycle error
       return
     }
-    val (categoriesById, categoriesByParentId, defaultId) = loadBuildRememberCategoryMaps()
+    val (categoriesById, categoriesByParentId, _) = loadBuildRememberCategoryMaps()
     val startCategory = categoriesById.getOrElse(rootCategoryId, {
       return
     })
@@ -295,7 +293,7 @@ trait CategoriesDao {
     categoriesByParentId = mutable.HashMap[CategoryId, ArrayBuffer[Category]]()
     categoriesById = loadCategoryMap()
 
-    for ((categoryId, category) <- categoriesById; parentId <- category.parentId) {
+    for ((_, category) <- categoriesById; parentId <- category.parentId) {
       val siblings = categoriesByParentId.getOrElseUpdate(parentId, ArrayBuffer[Category]())
       siblings.append(category)
     }
@@ -306,7 +304,8 @@ trait CategoriesDao {
     (categoriesById, categoriesByParentId, defaultCategoryId)
   }
 
-  protected def loadCategoryMap() =
+  COULD_OPTIMIZE // cache
+  private def loadCategoryMap() =
     readOnlyTransaction(_.loadCategoryMap())
 
 

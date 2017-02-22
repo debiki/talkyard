@@ -25,11 +25,17 @@ import ed.server.security.SidStatus
 import ed.server.http.throwForbiddenIf
 import java.{util => ju}
 import play.api.libs.json.JsArray
+import play.{api => p}
 import scala.collection.immutable
 import Prelude._
 import EmailNotfPrefs.EmailNotfPrefs
 import debiki.ReactJson.NotfsAndCounts
 import scala.collection.mutable.ArrayBuffer
+
+
+case class LoginNotFoundException(siteId: SiteId, userId: UserId)
+  extends QuickMessageException(s"User $siteId:$userId not found")
+
 
 
 trait UserDao {
@@ -309,14 +315,27 @@ trait UserDao {
     val threatLevel = user match {
       case member: Member => member.effectiveThreatLevel
       case guest: Guest =>
+        // Somewhat dupl code [2WKPU08], see a bit below.
         val blocks = transaction.loadBlocks(ip = who.ip, browserIdCookie = who.idCookie)
         val baseThreatLevel = guest.lockedThreatLevel getOrElse ThreatLevel.HopefullySafe
         val levelInt = blocks.foldLeft(baseThreatLevel.toInt) { (maxSoFar, block) =>
           math.max(maxSoFar, block.threatLevel.toInt)
         }
-        ThreatLevel.fromInt(levelInt) getOrDie "EsE8GY25"
+        ThreatLevel.fromInt(levelInt) getOrDie "EsE8GY2511"
     }
     UserAndLevels(user, trustLevel, threatLevel)
+  }
+
+
+  def loadThreatLevelNoUser(browserIdData: BrowserIdData, transaction: SiteTransaction)
+        : ThreatLevel = {
+    // Somewhat dupl code [2WKPU08], see just above.
+    val blocks = transaction.loadBlocks(
+      ip = browserIdData.ip, browserIdCookie = browserIdData.idCookie)
+    val levelInt = blocks.foldLeft(ThreatLevel.HopefullySafe.toInt) { (maxSoFar, block) =>
+      math.max(maxSoFar, block.threatLevel.toInt)
+    }
+    ThreatLevel.fromInt(levelInt) getOrDie "EsE8GY2522"
   }
 
 
@@ -519,6 +538,36 @@ trait UserDao {
   }
 
 
+  /**
+    * Loads a user from the database.
+    * Verifies that the loaded id match the id encoded in the session identifier,
+    * and throws a LoginNotFoundException on mismatch (happens e.g. if
+    * I've connected the server to another backend, or access many backends
+    * via the same hostname but different ports).
+    */
+  def getUserBySessionId(sid: SidStatus): Option[User] = {
+    sid.userId map { sidUserId =>
+      val user = getUser(sidUserId) getOrElse {
+        // This might happen 1) if the server connected to a new database
+        // (e.g. a standby where the login entry hasn't yet been
+        // created), or 2) during testing, when I sometimes manually
+        // delete stuff from the database (including login entries).
+        p.Logger.warn(s"Didn't find user $siteId:$sidUserId [EdE01521U35]")
+        throw LoginNotFoundException(siteId, sidUserId)
+      }
+      if (user.id != sidUserId) {
+        // Sometimes I access different databases via different ports,
+        // but from the same host name. Browsers, however, usually ignore
+        // port numbers when sending cookies. So they sometimes send
+        // the wrong login-id and user-id to the server.
+        p.Logger.warn(s"DAO loaded the wrong user, session: $sid, user: $user [EdE0KDBL4]")
+        throw LoginNotFoundException(siteId, sidUserId)
+      }
+      user
+    }
+  }
+
+
   def loadMemberByEmailOrUsername(emailOrUsername: String): Option[Member] = {
     readOnlyTransaction { transaction =>
       // Don't need to cache this? Only called when logging in.
@@ -547,6 +596,18 @@ trait UserDao {
     // — currently only when creating new website.
     readOnlyTransaction { transaction =>
       transaction.loadIdtyDetailsAndUser(userId)
+    }
+  }
+
+
+  def getGroupIds(user: User): Vector[UserId] = {
+    COULD_OPTIMIZE // For now. Later, cache.
+    user match {
+      case _: Guest | UnknownUser => Vector.empty
+      case m: Member =>
+        readOnlyTransaction { transaction =>
+          transaction.loadGroupIds (user)
+        }
     }
   }
 

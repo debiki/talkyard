@@ -26,6 +26,7 @@ import org.{elasticsearch => es}
 import redis.RedisClient
 import scala.collection.mutable
 import SiteDao._
+import ed.server.auth.MayMaybe
 import ed.server.pubsub.{PubSubApi, StrangerCounterApi}
 
 
@@ -173,6 +174,23 @@ class SiteDao(
     memCache.remove(key)
   }
 
+
+  def dieOrDenyUnless(mayMaybe: MayMaybe, errorCode: String) {
+    COULD // avoid logging harmless internal error, see comment below,
+    // by checking Globals.now() - this-dao.createdAt and doing throwForbidden() not die().
+    // Later, check if current time minus request start time is small, then just
+    // throw 403 Forbidden (instead of die()) because then the permission error is probably
+    // becaues of a harmless race condition (namely an admin changed permissions just after
+    // a perm check at the start of a request was done, but before the perm check inside
+    // a transaction was done, resulting in first "you may, yes" and then "no you may not").
+    // But for now, always die:
+    import MayMaybe._
+    mayMaybe match {
+      case Yes => // fine
+      case NoNotFound(debugCode) => throwIndistinguishableNotFound(s"$errorCode-$debugCode")
+      case mayNot: NoMayNot => die(errorCode, s"${mayNot.reason} [${mayNot.code}]")
+    }
+  }
 
 
   // ----- Site

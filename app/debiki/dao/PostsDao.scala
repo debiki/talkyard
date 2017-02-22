@@ -29,9 +29,10 @@ import ed.server.pubsub.StorePatchMessage
 import ed.server.http.throwForbiddenIf
 import play.api.libs.json.JsValue
 import play.{api => p}
-import scala.collection.{mutable, immutable}
+import scala.collection.{immutable, mutable}
 import scala.collection.mutable.ArrayBuffer
 import PostsDao._
+import ed.server.auth.Authz
 
 
 case class InsertPostResult(storePatchJson: JsValue, post: Post, reviewTask: Option[ReviewTask])
@@ -48,7 +49,7 @@ trait PostsDao {
   self: SiteDao =>
 
   // 3 minutes
-  val LastChatMessageRecentMs = 3 * 60 * 1000
+  val LastChatMessageRecentMs: UnixMillis = 3 * 60 * 1000
 
 
   def insertReply(textAndHtml: TextAndHtml, pageId: PageId, replyToPostNrs: Set[PostNr],
@@ -76,7 +77,11 @@ trait PostsDao {
       val authorAndLevels = loadUserAndLevels(byWho, transaction)
       val author = authorAndLevels.user
       val page = PageDao(pageId, transaction)
-      throwIfMayNotPostTo(page, author)(transaction)
+
+      dieOrDenyUnless(Authz.mayPostReply(authorAndLevels, transaction.loadGroupIds(author),
+        postType, page.meta, transaction.loadAnyPrivateGroupTalkMembers(page.meta),
+        transaction.loadCategoryPathRootLast(page.meta.categoryId),
+        transaction.loadPermsOnPages()), "EdE2WP4W8")
 
       if (page.role.isChat)
         throwForbidden("EsE50WG4", s"Page '${page.id}' is a chat page; cannot post normal replies")
@@ -108,7 +113,7 @@ trait PostsDao {
           "The parent post has been deleted; cannot reply to a deleted post", "DwE5KDE7")
 
       val (reviewReasons: Seq[ReviewReason], shallApprove) =
-        throwOrFindReviewPostReasons(page, authorAndLevels, transaction)
+        throwOrFindReviewPostReasons(page.meta, authorAndLevels, transaction)
 
       val approverId =
         if (author.isStaff) {
@@ -216,13 +221,13 @@ trait PostsDao {
 
   /** Returns (review-reasons, shall-approve).
     */
-  def throwOrFindReviewPostReasons(page: PageDao, author: UserAndLevels,
+  def throwOrFindReviewPostReasons(pageMeta: PageMeta, author: UserAndLevels,
         transaction: SiteTransaction): (Seq[ReviewReason], Boolean) = {
-    throwOrFindReviewReasonsImpl(author, Some(page), newPageRole = None, transaction)
+    throwOrFindReviewReasonsImpl(author, Some(pageMeta), newPageRole = None, transaction)
   }
 
 
-  def throwOrFindReviewReasonsImpl(author: UserAndLevels, page: Option[PageDao],
+  def throwOrFindReviewReasonsImpl(author: UserAndLevels, pageMeta: Option[PageMeta],
         newPageRole: Option[PageRole], transaction: SiteTransaction)
         : (Seq[ReviewReason], Boolean) = {
     if (author.isStaff)
@@ -230,7 +235,7 @@ trait PostsDao {
 
     // Don't review direct messages — then all staff would see them. Instead, only non-threat
     // users with level >= Basic may post private messages to non-staff people.
-    if (page.map(_.role).contains(PageRole.FormalMessage))
+    if (pageMeta.map(_.pageRole).contains(PageRole.FormalMessage))
       return (Nil, true)
 
     val reviewReasons = mutable.ArrayBuffer[ReviewReason]()
@@ -249,6 +254,11 @@ trait PostsDao {
         // request (after the initial security checks).
         throwForbidden("EsE5Y80G2_", "Forbidden")
     }
+
+    // COULD add a users3 table status field instead, and update it on write, which says
+    // if the user has too many pending comments / edits. Then could thow that status
+    // client side, withouth having to run the below queries again and again.
+    // Also, would be simpler to move all this logic to ed.server.auth.Authz.
 
     // Don't review, but auto-approve, user-to-user messages. Staff aren't supposed to read
     // those, unless the receiver reports the message.
@@ -299,7 +309,7 @@ trait PostsDao {
       }
     }
 
-    if (page.exists(_.isClosed)) {
+    if (pageMeta.exists(_.isClosed)) {
       // The topic won't be bumped, so no one might see this post, so staff should review it.
       // Could skip this if the user is trusted.
       reviewReasons.append(ReviewReason.NoBumpPost)
@@ -323,15 +333,18 @@ trait PostsDao {
     quickCheckIfSpamThenThrow(byWho, textAndHtml, spamRelReqStuff)
 
     val (post, author, notifications) = readWriteTransaction { transaction =>
-      val author = transaction.loadUser(authorId) getOrElse
-        throwNotFound("DwE8YK32", "Author not found")
+      val authorAndLevels = loadUserAndLevels(byWho, transaction)
+      val author = authorAndLevels.user
 
       val page = PageDao(pageId, transaction)
-      throwIfMayNotPostTo(page, author)(transaction)
 
-      val authorAndLevels = loadUserAndLevels(byWho, transaction)
+      dieOrDenyUnless(Authz.mayPostReply(authorAndLevels, transaction.loadGroupIds(author),
+        PostType.ChatMessage, page.meta, transaction.loadAnyPrivateGroupTalkMembers(page.meta),
+        transaction.loadCategoryPathRootLast(page.meta.categoryId),
+        transaction.loadPermsOnPages()), "EdE2WP4W8")
+
       val (reviewReasons: Seq[ReviewReason], _) =
-        throwOrFindReviewPostReasons(page, authorAndLevels, transaction)
+        throwOrFindReviewPostReasons(page.meta, authorAndLevels, transaction)
 
       if (!page.role.isChat)
         throwForbidden("EsE5F0WJ2", s"Page $pageId is not a chat page; cannot insert chat message")

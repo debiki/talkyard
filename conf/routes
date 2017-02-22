@@ -103,7 +103,7 @@ GET   /-/users/*whatever        controllers.UserController.viewUserPage(whatever
 GET   /-/load-my-page-data      controllers.UserController.loadMyPageData(pageId)
 POST  /-/track-reading          controllers.UserController.trackReadingProgress
 POST  /-/track-reading-text     controllers.UserController.trackReadingProgressText
-GET   /-/load-notifications     controllers.UserController.loadNotifications(userId, upToWhenMs)
+GET   /-/load-notifications     controllers.UserController.loadNotifications(userId: Int, upToWhenMs: Long)
 POST  /-/mark-notf-as-seen      controllers.UserController.markNotificationAsSeen
 POST  /-/set-page-notf-level    controllers.UserController.savePageNotfLevel
 GET   /-/list-all-users         controllers.UserController.listAllUsers(usernamePrefix)

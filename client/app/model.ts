@@ -222,11 +222,15 @@ interface Myself {
 
 
 interface Permissions {
-  onCategories: { [categoryId: number]: PermsOnPages };
+  onCategories: { [categoryId: number]: PermsOnPage };
+  onPages?: { [pageId: number]: {
+    onPage: PermsOnPage;
+    onPosts: { [postId: number]: PermsOnPage };
+  }};
 }
 
 
-interface PermsOnPages {
+interface PermsOnPage {
   mayEditPage: boolean;
   //mayEditComment: boolean;
   //mayEditWiki: boolean;

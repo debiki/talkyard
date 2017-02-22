@@ -254,8 +254,6 @@ package object security {
 sealed abstract class SidStatus {
   def isOk = false
   def userId: Option[UserId] = None
-  def roleId: Option[UserId] = None
-  def displayName: Option[String] = None
 }
 
 case object SidAbsent extends SidStatus { override def isOk = true }
@@ -270,8 +268,6 @@ case class SidOk(
   override val userId: Option[UserId]) extends SidStatus {
 
   override def isOk = true
-
-  override def roleId: Option[UserId] = userId.filter(User.isRoleId)
 }
 
 

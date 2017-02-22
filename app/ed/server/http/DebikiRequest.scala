@@ -71,6 +71,23 @@ abstract class DebikiRequest[A] {
   def theUser: User = user_!
   def theUserId: UserId = theUser.id
 
+  def userAndLevels: AnyUserAndThreatLevel = {
+    val threatLevel = user match {
+      case Some(user) =>
+        COULD_OPTIMIZE // this loads the user again (2WKG06SU)
+        val userAndLevels = theUserAndLevels
+        userAndLevels.threatLevel
+      case None =>
+        dao.readOnlyTransaction(dao.loadThreatLevelNoUser(theBrowserIdData, _))
+    }
+    AnyUserAndThreatLevel(user, threatLevel)
+  }
+
+  def theUserAndLevels: UserAndLevels = {
+    COULD_OPTIMIZE // cache levels + user in dao (2WKG06SU), + don't load user again
+    dao.readOnlyTransaction(dao.loadUserAndLevels(who, _))
+  }
+
   def user_! : User =
     user getOrElse throwForbidden("DwE5PK2W0", "Not logged in")
 

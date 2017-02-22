@@ -17,7 +17,6 @@
 
 package com.debiki.core
 
-import com.debiki.core.Prelude._
 import java.{util => ju}
 import scala.collection.immutable
 
@@ -57,10 +56,10 @@ case class Category(
   require(!frozenAt.exists(_.getTime < createdAt.getTime), "EsE2KPU4c")
   require(!deletedAt.exists(_.getTime < createdAt.getTime), "EsE7GUM4")
 
-  def isRoot = parentId.isEmpty
-  def isLocked = lockedAt.isDefined
-  def isFrozen = frozenAt.isDefined
-  def isDeleted = deletedAt.isDefined
+  def isRoot: Boolean = parentId.isEmpty
+  def isLocked: Boolean = lockedAt.isDefined
+  def isFrozen: Boolean = frozenAt.isDefined
+  def isDeleted: Boolean = deletedAt.isDefined
 
 }
 

@@ -33,7 +33,7 @@ object TrustLevel {
   case object New extends TrustLevel(1)
   case object Basic extends TrustLevel(2)
   case object FullMember extends TrustLevel(3)
-  case object Helper extends TrustLevel(4)
+  case object Helper extends TrustLevel(4)   // or rename to Trusted?
   case object Regular extends TrustLevel(5)
   case object CoreMember extends TrustLevel(6)
 

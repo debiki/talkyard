@@ -130,8 +130,7 @@ object Prelude {
     throw new AssertionError(formatErrorMessage(errorCode, problem))
 
   private def formatErrorMessage(errorCode: String, details: String) =
-      (if ((details eq null) || details.isEmpty) "" else details +" ") +
-        "[error "+ errorCode +"]"
+      (if ((details eq null) || details.isEmpty) "" else details + " ") + s"[$errorCode]"
 
   // delete
   def assErrIf3(condition: Boolean, errorCode: String,

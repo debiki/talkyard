@@ -658,11 +658,41 @@ object UnknownUser extends User {
 }
 
 
+// case class Group(...) extends User
 
-/**
- * Used when searching for users.
- */
-case class UserQuery()
+object Group {
+
+  /** Includes not-logged-in people and guests. */
+  val EveryoneId = 10
+
+  /** All higher trust level members are members of this group too. (And so on:
+    * members >= Basic are all members of Basic, too.)
+    */
+  val NewMembersId = 11
+
+  val BasicMembersId = 12
+  val FullMembersId = 13
+  val TrustedId = 14
+  val RegularsId = 15
+  val CoreMembersId = 16
+
+  /** Includes all admins and all moderators. */
+  val StaffId = 17
+
+  COULD // add db constraint that verifies not both admin & mod.
+  /** A person is either an admin or a moderator, won't be in both groups. */
+  val ModeratorsId = 18
+
+  val AdminsId = 19
+
+  /* Might not be members of any group above, except for the groups new-members and everyone. */
+  val OwnersId = 20
+
+
+  dieUnless(NewMembersId == TrustLevel.New.toInt + 10, "EdE7LPKW20")
+  dieUnless(CoreMembersId == TrustLevel.CoreMember.toInt + 10, "EdE7LPKW21")
+}
+
 
 
 object EmailNotfPrefs extends Enumeration {

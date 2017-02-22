@@ -23,11 +23,11 @@ import com.debiki.core.PageParts.MaxTitleLength
 import com.debiki.core.User.SystemUserId
 import debiki._
 import debiki.DebikiHttp._
+import ed.server.auth.Authz
 import ed.server.http.throwIndistinguishableNotFound
 import ed.server.notf.NotificationGenerator
 import java.{util => ju}
-
-import scala.collection.{immutable, mutable}
+import scala.collection.immutable
 
 
 /** Loads and saves pages and page parts (e.g. posts and patches).
@@ -121,15 +121,14 @@ trait PagesDao {
 
     val authorId = byWho.id
     val authorAndLevels = loadUserAndLevels(byWho, transaction)
-    val author = transaction.loadUser(authorId) getOrElse throwForbidden(
-      "DwE9GK32", s"User not found, id: $authorId")
-    anyCategoryId match {
-      case None =>
-        if (pageRole != PageRole.FormalMessage && !author.isStaff)
-          throwForbidden("EsE8GY32", "Only staff may create pages outside any category")
-      case Some(categoryId) =>
-        throwIfMayNotCreatePageIn(categoryId, Some(author))(transaction)
-    }
+    val author = authorAndLevels.user
+    val categoryPath = transaction.loadCategoryPathRootLast(anyCategoryId)
+
+    dieOrDenyUnless(Authz.mayCreatePage(
+      authorAndLevels, transaction.loadGroupIds(author),
+      pageRole, bodyPostType, pinWhere, anySlug = anySlug, anyFolder = anyFolder,
+      inCategoriesRootLast = categoryPath,
+      relevantPermissions = transaction.loadPermsOnPages()), "EdE5JGK2W4")
 
     require(!anyFolder.exists(_.isEmpty), "EsE6JGKE3")
     // (Empty slug ok though, e.g. homepage.)
@@ -152,15 +151,11 @@ trait PagesDao {
       }
     }
 
-    val pageSlug = (anySlug match {
-      case Some(slug) =>
-        if (!author.isStaff && slug.nonEmpty)
-          throwForbidden("DwE4KFW87", "Only staff may specify page slug")
-        slug
-      case None =>
+    val pageSlug = anySlug.getOrElse({
         commonmarkRenderer.slugifyTitle(titleSource)
     }).take(PagePath.MaxSlugLength).dropRightWhile(_ == '-').dropWhile(_ == '-')
 
+    COULD // try to move this authz + review-reason check to ed.server.auth.Authz?
     val (reviewReasons: Seq[ReviewReason], shallApprove) =
       throwOrFindReviewNewPageReasons(authorAndLevels, pageRole, transaction)
 
@@ -171,9 +166,6 @@ trait PagesDao {
       }
       else if (shallApprove) Some(SystemUserId)
       else None
-
-    if (!author.isStaff && pageRole.staffOnly)
-      throwForbidden("DwE5KEPY2", s"Forbidden page type: $pageRole")
 
     if (pageRole.isSection) {
       // A forum page is created before its root category — verify that the root category
@@ -298,7 +290,7 @@ trait PagesDao {
 
   def throwOrFindReviewNewPageReasons(author: UserAndLevels, pageRole: PageRole,
         transaction: SiteTransaction): (Seq[ReviewReason], Boolean) = {
-    throwOrFindReviewReasonsImpl(author, page = None, newPageRole = Some(pageRole), transaction)
+    throwOrFindReviewReasonsImpl(author, pageMeta = None, newPageRole = Some(pageRole), transaction)
   }
 
 

@@ -55,7 +55,10 @@ package object core {
 
   type UserId = Int // when removing/renaming-to-UserId, search for UserId2 everywhere
 
+  // rename to MemberId? Or remove, use UserId instead.
   type RoleId = UserId
+
+  type GroupId = UserId
 
   type NotificationId = Int
 
@@ -194,6 +197,8 @@ package object core {
     def id: UserId = user.id
     def isStaff: Boolean = user.isStaff
   }
+
+  case class AnyUserAndThreatLevel(user: Option[User], threatLevel: ThreatLevel)
 
 
   sealed trait OrderBy { def isDescending: Boolean = false }

@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2016 Kaj Magnus Lindberg
+ * Copyright (C) 2016-2017 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -18,16 +18,19 @@
 package ed.server.auth
 
 import com.debiki.core._
-import com.debiki.core.Prelude._
-import debiki.DebikiHttp._
+import debiki.dao.SiteDao
 import ed.server.http._
+import scala.collection.immutable
 
 
 
 
 trait AuthzSiteDaoMixin {
+  /*
   self: debiki.dao.CategoriesDao with debiki.dao.MessagesDao with
     debiki.dao.PagePathMetaDao with debiki.dao.PostsDao =>
+    */
+  self: SiteDao =>
 
 
   /** Returns true/false, + iff false, a why-forbidden debug reason code.
@@ -64,51 +67,25 @@ trait AuthzSiteDaoMixin {
     if (user.exists(_.isAdmin))
       return (true, "")
 
-    if (!user.exists(_.isStaff)) {
-      pageMeta.categoryId match {
-        case Some(categoryId) =>
-          val categories = anyTransaction.map(_.loadCategoryPathRootLast(categoryId)) getOrElse
-              loadCategoriesRootLast(categoryId)
-          if (categories.exists(_.staffOnly))
-            return (false, "EsE8YGK25-Staff-Only-Cat")
-          if (categories.exists(_.isDeleted))
-            return (false, "EdE5PK2WS-Cat-Deleted")
-          if (!maySeeUnlisted && categories.exists(_.unlisted))
-            return (false, "EdE6WKQ0-Unlisted")
-        case None =>
-        // Fine, as of now, let everyone view pages not placed in any category, by default.
+    // Here we load some stuff that might not be needed, e.g. we don't need to load all page
+    // members, if we may not see the page anyway because of in which category it's placed.
+    // But almost always we need both, anyway, so that's okay, performance wise. And
+    // loading everything first, makes it possible to implement AuthzmaySeePage() as
+    // a pure function, easy to test.
+
+    val categories: Seq[Category] =
+      pageMeta.categoryId map { categoryId =>
+        anyTransaction.map(_.loadCategoryPathRootLast(categoryId)) getOrElse {
+          loadCategoriesRootLast(categoryId)
+        }
+      } getOrElse Nil
+
+    val memberIds: Set[UserId] =
+      anyTransaction.map(_.loadAnyPrivateGroupTalkMembers(pageMeta)) getOrElse {
+        getAnyPrivateGroupTalkMembers(pageMeta)
       }
 
-      pageMeta.pageRole match {
-        case PageRole.SpecialContent | PageRole.Code =>
-          return (false, "EsE4YK02R-Code")
-        case _ =>
-        // Fine.
-      }
-
-      val onlyForAuthor = pageMeta.isDeleted // later: or if !isPublished
-      if (onlyForAuthor && !user.exists(_.id == pageMeta.authorId))
-        return (false, "EsE5GK702-Page-Deleted")
-    }
-
-    if (pageMeta.pageRole.isPrivateGroupTalk) {
-      val theUser = user getOrElse {
-        return (false, "EsE4YK032-No-User")
-      }
-
-      if (!theUser.isMember)
-        return (false, "EsE2GYF04-Is-Guest")
-
-      val memberIds = loadMessageMembers(pageMeta.pageId)
-      if (!memberIds.contains(theUser.id))
-        return (false, "EsE5K8W27-Not-Page-Member")
-    }
-    else {
-      // Later:
-      // return (false, "EdE0YK25-No-Category")? Merge with `pageRole match ...` above.
-    }
-
-    (true, "")
+    Authz.maySeePage(pageMeta, user, categories, memberIds, maySeeUnlisted)
   }
 
 
@@ -141,6 +118,8 @@ trait AuthzSiteDaoMixin {
         maySeeUnlistedPages: Boolean = true, anyTransaction: Option[SiteTransaction])
         : (Boolean, String) = {
 
+    SECURITY; SHOULD // run these tests from Authz.mayPostReply, so cannot reply to sth one mustn't see.
+
     require(anyPageMeta.isDefined ^ (pageId ne null), "EdE25KWU24")
     require(anyPost.isDefined ^ (postNr >= 0), "EdE3DJ8A0")
 
@@ -172,30 +151,11 @@ trait AuthzSiteDaoMixin {
   }
 
 
-  def throwIfMayNotCreatePageIn(categoryId: CategoryId, user: Option[User])(
-        transaction: SiteTransaction) {
-    if (user.exists(_.isStaff))
-      return
-
-    val categories = transaction.loadCategoryPathRootLast(categoryId)
-    if (categories.exists(_.staffOnly))
-      throwIndistinguishableNotFound("EsE5PWX29")
-    if (categories.exists(_.onlyStaffMayCreateTopics))
-      throwForbidden2("EsE8YK3W2", "You may not start new topics in this category")
-  }
-
-  def throwIfMayNotPostTo(page: Page, postAuthor: User)(transaction: SiteTransaction) {
-    throwIfMayNotSeePage(page, Some(postAuthor))(transaction)
-    if (!page.role.canHaveReplies)
-      throwForbidden2("EsE8YGK42", s"Cannot post to page type ${page.role}")
-
-    // Mind maps can easily get messed up by people posting comments. So, for now, only
-    // allow the page author + staff to add stuff to a mind map. [7KUE20]
-    if (page.role == PageRole.MindMap) {
-      if (postAuthor.id != page.meta.authorId && !postAuthor.isStaff)
-        throwForbidden("EsE6JK4I0", s"Only the page author and staff may edit this mind map")
+  def getPermsOnPages(categories: immutable.Seq[Category]): immutable.Seq[PermsOnPages] = {
+    COULD_OPTIMIZE // For now
+    readOnlyTransaction { transaction =>
+      transaction.loadPermsOnPages()
     }
-
   }
 
 }

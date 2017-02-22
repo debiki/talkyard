@@ -19,14 +19,11 @@ package controllers
 
 import com.debiki.core._
 import ed.server.liftweb
-import debiki._
 import debiki.DebikiHttp._
-import debiki.dao.SiteDao
-import ed.server.security.SidStatus
 import java.{lang => jl}
 import play.api._
 import play.api.libs.json.JsValue
-import play.api.mvc.{Action => _, _}
+import play.api.mvc._
 
 
 object Utils extends Results with http.ContentTypes {
@@ -36,7 +33,7 @@ object Utils extends Results with http.ContentTypes {
    * Prefixes `<!DOCTYPE html>` to the reply, otherwise Internet Explorer
    * enters the terrible Quirks mode. Also sets the Content-Type header.
    */
-  def OkHtml(htmlNode: xml.NodeSeq) =
+  def OkHtml(htmlNode: xml.NodeSeq): Result =
     Ok(serializeHtml(htmlNode)) as HTML
 
   /**
@@ -80,58 +77,15 @@ object Utils extends Results with http.ContentTypes {
    * Debiki's Javascript, and AngularJS, strips the ")]}'," prefix before
    * parsing the JSON.
    */
-  def OkSafeJson(json: JsValue) =
+  def OkSafeJson(json: JsValue): Result =
     Ok(safeJsonPrefix + json.toString) as JSON
 
 
   /**
    * Prefixes `<?xml version=...>` to the post data.
    */
-  def OkXml(xmlNode: xml.NodeSeq, contentType: String = "text/xml") =
+  def OkXml(xmlNode: xml.NodeSeq, contentType: String = "text/xml"): Result =
     Ok("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"+ xmlNode) as contentType
-
-
-  /**
-   * Loads a user from the database.
-   * Verifies that the loaded id match the id encoded in the session identifier,
-   * and throws a LoginNotFoundException on mismatch (happens e.g. if
-   * I've connected the server to another backend, or access many backends
-   * via the same hostname but different ports).
-   */
-  def loadUserOrThrow(sid: SidStatus, dao: SiteDao): Option[User] = {
-    val user = sid.userId match {
-      case None => None
-      case Some(userId) =>
-        dao.getUser(userId) match {
-          case Some(user) =>
-            if (Some(user.id) == sid.userId) {
-              // Fine.
-              Some(user)
-            }
-            else {
-              // Sometimes I access different databases via different ports,
-              // but from the same host name. Browsers, however, usually ignore
-              // port numbers when sending cookies. So they sometimes send
-              // the wrong login-id and user-id to the server.
-              Logger.warn(
-                s"DAO loaded wrong user, session: $sid, role: $user [error DwE9kD4]")
-              throw LoginNotFoundException(dao.siteId, userId)
-            }
-          case None =>
-            // This might happen 1) if the server connected to a new database
-            // (e.g. a standby where the login entry hasn't yet been
-            // created), or 2) during testing, when I sometimes manually
-            // delete stuff from the database (including login entries).
-            Logger.warn("DAO did not load user [error DwE01521ku35]")
-            throw LoginNotFoundException(dao.siteId, userId)
-        }
-    }
-    user
-  }
-
-
-  case class LoginNotFoundException(tenantId: SiteId, userId: UserId)
-     extends Exception("No user with id: "+ userId +", site id: "+ tenantId)
 
 
   def parseIntOrThrowBadReq(text: String, errorCode: String = "DwE50BK7"): Int = {
@@ -149,13 +103,13 @@ object Utils extends Results with http.ContentTypes {
   object ValidationImplicits {
 
     implicit def queryStringToValueGetter(
-        queryString: Map[String, Seq[String]]) =
+        queryString: Map[String, Seq[String]]): FormInpReader =
       new FormInpReader(queryString)
 
-    implicit def seqToSeqChecker[A](seq: Seq[A]) =
+    implicit def seqToSeqChecker[A](seq: Seq[A]): SeqChecker[A] =
       new SeqChecker[A](seq)
 
-    implicit def textToTextChecker(text: String) =
+    implicit def textToTextChecker(text: String): TextChecker =
       new TextChecker(text)
 
     /**
@@ -187,7 +141,7 @@ object Utils extends Results with http.ContentTypes {
         getFirst(param) map { value =>
           try { value.toLong }
           catch {
-            case ex: jl.NumberFormatException =>
+            case _: jl.NumberFormatException =>
               throwBadReq("DwE4XK71", s"Param `$param' is not an Long, it is: `$value'")
           }
         }
@@ -196,7 +150,7 @@ object Utils extends Results with http.ContentTypes {
         getFirst(param) map { value =>
           try { value.toInt }
           catch {
-            case ex: jl.NumberFormatException =>
+            case _: jl.NumberFormatException =>
               throwBadReq("DwE4XK71", s"Param `$param' is not an Int, it is: `$value'")
           }
         }

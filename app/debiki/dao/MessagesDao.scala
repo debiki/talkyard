@@ -113,8 +113,11 @@ trait MessagesDao {
   }
 
 
-  def loadMessageMembers(pageId: PageId): Set[UserId] = {
-    readOnlyTransaction(_.loadMessageMembers(pageId))
+  def getAnyPrivateGroupTalkMembers(pageMeta: PageMeta): Set[UserId] = {
+    if (!pageMeta.pageRole.isPrivateGroupTalk)
+      return Set.empty
+    COULD_OPTIMIZE // could cache page members.
+    readOnlyTransaction(_.loadMessageMembers(pageMeta.pageId))
   }
 
 }

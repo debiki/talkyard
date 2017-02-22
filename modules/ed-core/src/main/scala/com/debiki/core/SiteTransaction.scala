@@ -74,7 +74,10 @@ trait SiteTransaction {
 
   def loadCategory(categoryId: CategoryId): Option[Category]
   def loadCategoryMap(): Map[CategoryId, Category]
-  def loadCategoryPathRootLast(categoryId: CategoryId): Seq[Category]
+  def loadCategoryPathRootLast(anyCategoryId: Option[CategoryId]): immutable.Seq[Category] = {
+    loadCategoryPathRootLast(anyCategoryId.getOrElse({ return Nil }))
+  }
+  def loadCategoryPathRootLast(categoryId: CategoryId): immutable.Seq[Category]
   def nextCategoryId(): Int
   def insertCategoryMarkSectionPageStale(category: Category)
   def updateCategoryMarkSectionPageStale(category: Category)
@@ -138,7 +141,16 @@ trait SiteTransaction {
   // Rename to insert/loadPageMemberIds? [rename]
   def insertMessageMember(pageId: PageId, userId: UserId, addedById: UserId): Boolean
   def removePageMember(pageId: PageId, userId: UserId, removedById: UserId): Boolean
+
   def loadMessageMembers(pageId: PageId): Set[UserId]
+
+  def loadAnyPrivateGroupTalkMembers(pageMeta: PageMeta): Set[UserId] = {
+    if (pageMeta.pageRole.isPrivateGroupTalk)
+      loadMessageMembers(pageMeta.pageId)
+    else
+      Set.empty
+  }
+
   // Returns recently active pages first.
   def loadPageIdsUserIsMemberOf(userId: UserId, onlyPageRoles: Set[PageRole]): immutable.Seq[PageId]
   def loadReadProgress(userId: UserId, pageId: PageId): Option[ReadingProgress]
@@ -342,6 +354,45 @@ trait SiteTransaction {
     onlyPendingApproval: Boolean = false): immutable.Seq[MemberInclDetails]
 
   def loadOwner(): Option[MemberInclDetails]
+
+
+  def loadGroupIds(user: User): Vector[UserId] = {
+    val member = user match {
+      case _: Guest | UnknownUser => return Vector.empty
+      case m: Member => m
+      // later: case g: Group => g // groups are members
+    }
+
+    // For now. Later, also do db request and add custom groups.
+    val G = Group
+
+    if (member.isAdmin)
+      return Vector(member.id, G.AdminsId, G.StaffId, G.CoreMembersId, G.RegularsId,
+        G.TrustedId, G.FullMembersId, G.BasicMembersId, G.NewMembersId, G.EveryoneId)
+
+    if (member.isModerator)
+      return Vector(member.id, G.ModeratorsId, G.StaffId, G.CoreMembersId, G.RegularsId,
+        G.TrustedId, G.FullMembersId, G.BasicMembersId, G.NewMembersId, G.EveryoneId)
+
+    member.effectiveTrustLevel match {
+      case TrustLevel.New =>
+        Vector(member.id, G.NewMembersId, G.EveryoneId)
+      case TrustLevel.Basic =>
+        Vector(member.id, G.BasicMembersId, G.NewMembersId, G.EveryoneId)
+      case TrustLevel.FullMember =>
+        Vector(member.id, G.FullMembersId, G.BasicMembersId, G.NewMembersId, G.EveryoneId)
+      case TrustLevel.Helper =>
+        Vector(member.id, G.TrustedId,
+          G.FullMembersId, G.BasicMembersId, G.NewMembersId, G.EveryoneId)
+      case TrustLevel.Regular =>
+        Vector(member.id, G.RegularsId, G.TrustedId,
+          G.FullMembersId, G.BasicMembersId, G.NewMembersId, G.EveryoneId)
+      case TrustLevel.CoreMember =>
+        Vector(member.id, G.CoreMembersId, G.RegularsId, G.TrustedId,
+          G.FullMembersId, G.BasicMembersId, G.NewMembersId, G.EveryoneId)
+    }
+  }
+
 
   /** Loads users watching the specified page, any parent categories or forums,
     * and people watching everything on the whole site.

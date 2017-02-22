@@ -20,14 +20,13 @@ package ed.server.http
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import controllers.LoginController
-import controllers.Utils
 import debiki._
 import debiki.DebikiHttp._
 import debiki.RateLimits.NoRateLimits
+import debiki.dao.LoginNotFoundException
 import ed.server._
 import ed.server.security._
 import java.{util => ju}
-import play.api._
 import play.{api => p}
 import play.api.mvc._
 import scala.concurrent.Future
@@ -70,17 +69,18 @@ private[http] object PlainApiActions {
         isLogin: Boolean = false, superAdminOnly: Boolean = false) =
       new ActionBuilder[ApiRequest] {
 
-    def numOnly = adminOnly.toZeroOne + superAdminOnly.toZeroOne + staffOnly.toZeroOne
+    def numOnly: Int = adminOnly.toZeroOne + superAdminOnly.toZeroOne + staffOnly.toZeroOne
     require(numOnly <= 1, "EsE4KYF02")
     require(!allowAnyone || numOnly == 0, "EsE8KU24K")
 
-    override def composeAction[A](action: Action[A]) = {
+    override def composeAction[A](action: Action[A]): Action[A] = {
       ExceptionAction.async(action.parser) { request: Request[A] =>
         action(request)
       }
     }
 
-    override def invokeBlock[A](request: Request[A], block: ApiRequest[A] => Future[Result]) = {
+    override def invokeBlock[A](request: Request[A], block: ApiRequest[A] => Future[Result])
+        : Future[Result] = {
 
       val site = DebikiHttp.lookupSiteOrThrow(request, Globals.systemDao)
 
@@ -103,7 +103,7 @@ private[http] object PlainApiActions {
           runBlockIfAuthOk(request, site, mendedSidStatus, xsrfOk, browserId, block)
         }
         catch {
-          case e: Utils.LoginNotFoundException =>
+          case _: LoginNotFoundException =>
             // This might happen if I manually deleted stuff from the
             // database during development, or if the server has fallbacked
             // to a standby database.
@@ -122,7 +122,7 @@ private[http] object PlainApiActions {
         else {
           resultOldCookies map { result =>
             var resultWithCookies = result
-              .withCookies((newCookies ::: moreNewCookies): _*)
+              .withCookies(newCookies ::: moreNewCookies: _*)
               .withHeaders(SafeActions.MakeInternetExplorerSaveIframeCookiesHeader)
             if (deleteSidCookie) {
               resultWithCookies =
@@ -137,11 +137,13 @@ private[http] object PlainApiActions {
 
 
     def runBlockIfAuthOk[A](request: Request[A], site: SiteBrief, sidStatus: SidStatus,
-          xsrfOk: XsrfOk, browserId: BrowserId, block: ApiRequest[A] => Future[Result]) = {
+          xsrfOk: XsrfOk, browserId: BrowserId, block: ApiRequest[A] => Future[Result])
+          : Future[Result] = {
+
       val dao = Globals.siteDao(site.id)
       dao.perhapsBlockGuest(request, sidStatus, browserId)
 
-      var anyUser = Utils.loadUserOrThrow(sidStatus, dao)
+      var anyUser = dao.getUserBySessionId(sidStatus)
       var logoutBecauseSuspended = false
       if (anyUser.exists(_.isSuspendedAt(new ju.Date))) {
         anyUser = None
@@ -160,7 +162,7 @@ private[http] object PlainApiActions {
           if (!anyUser.exists(_.isAdmin) && !isLogin)
             throwLoginAsAdmin(request)
         case SiteStatus.Deleted | SiteStatus.Purged =>
-          throwForbidden("DwE8Y0F2", "This site has been deleted.")
+          throwForbidden("EdESITEGONE", "This site has been deleted.")
       }
 
       if (staffOnly && !anyUser.exists(_.isStaff) && !isLogin)

@@ -22,6 +22,7 @@ import com.debiki.core.Prelude._
 import debiki._
 import debiki.DebikiHttp._
 import ed.server._
+import ed.server.auth.Authz
 import ed.server.http._
 import play.api.libs.json.{JsArray, Json}
 import play.api.mvc
@@ -39,6 +40,21 @@ object CustomFormController extends mvc.Controller {
     val textAndHtml = TextAndHtml.withCompletedFormData(formInputs) getOrIfBad { errorMessage =>
       throwBadRequest("EsE7YK4W0", s"Bad form inputs JSON: $errorMessage")
     }
+
+    val dao = request.dao
+    val pageMeta = dao.getPageMeta(pageId) getOrElse
+      throwIndistinguishableNotFound("EdE2WK0F")
+
+    val categoriesRootLast = dao.loadCategoriesRootLast(pageMeta.categoryId)
+
+    // (A bit weird, here we authz with Authz.maySubmitCustomForm(), but later in
+    // PostsDao.insertReply via Authz.mayPostReply() — but works okay.)
+    throwNoUnless(Authz.maySubmitCustomForm(
+      request.userAndLevels, request.user.map(dao.getGroupIds).getOrElse(Nil),
+      pageMeta, inCategoriesRootLast = categoriesRootLast,
+      relevantPermissions = dao.getPermsOnPages(categoriesRootLast)),
+      "EdE2TE4A0")
+
     request.dao.insertReply(textAndHtml, pageId, Set.empty, PostType.CompletedForm,
         request.whoOrUnknown, request.spamRelatedStuff)
     Ok
