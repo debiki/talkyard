@@ -22,8 +22,10 @@ import debiki._
 import ed.server.http._
 import javax.inject.Inject
 import play.api._
-import play.api.mvc.{Action => _, _}
+import play.api.mvc._
 import DebikiHttp._
+import ed.server.auth.Authz
+import play.api.libs.json.JsValue
 
 
 
@@ -32,18 +34,13 @@ import DebikiHttp._
 class Application @Inject() extends mvc.Controller {
 
 
-  def methodNotAllowed = ExceptionAction { request =>
-    MethodNotAllowedResult
-  }
-
-
-  def flag = PostJsonAction(RateLimits.FlagPost, maxBytes = 2000) { request =>
-    val body = request.body
-    val dao = request.dao
+  def flag: Action[JsValue] = PostJsonAction(RateLimits.FlagPost, maxBytes = 2000) { request =>
+    import request.{body, dao}
+    SHOULD // change from page-id + post-nr to post-id.
     val pageId = (body \ "pageId").as[PageId]
     val postNr = (body \ "postNr").as[PostNr]
     val typeStr = (body \ "type").as[String]
-    val reason = (body \ "reason").as[String]
+    //val reason = (body \ "reason").as[String]
 
     val flagType = typeStr match {
       case "Spam" => PostFlagType.Spam
@@ -54,7 +51,15 @@ class Application @Inject() extends mvc.Controller {
 
     // COULD save `reason` somewhere, but where? Where does Discourse save it?
 
-    dao.throwIfMayNotSeePageUseCache(pageId, request.user)
+    val pageMeta = dao.getPageMeta(pageId) getOrElse throwIndistinguishableNotFound("EdE3FJB8W2")
+    val post = dao.loadPost(pageId, postNr) getOrElse throwIndistinguishableNotFound("EdE5PJB2R8")
+    val categoriesRootLast = dao.loadCategoriesRootLast(pageMeta.categoryId)
+
+    throwNoUnless(Authz.mayFlagPost(
+      request.theMember, dao.getGroupIds(request.theUser),
+      post, pageMeta, dao.getAnyPrivateGroupTalkMembers(pageMeta),
+      inCategoriesRootLast = categoriesRootLast,
+      relevantPermissions = dao.getPermsOnPages(categoriesRootLast)), "EdEZBXKSM2")
 
     val postsHidden = try {
       dao.flagPost(pageId = pageId, postNr = postNr, flagType,

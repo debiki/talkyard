@@ -815,6 +815,8 @@ trait PostsDao {
       val post = transaction.loadThePost(postId)
       val page = PageDao(post.pageId, transaction)
       val user = userId.flatMap(transaction.loadUser)
+
+      SECURITY // should be may-see-post
       throwIfMayNotSeePage(page, user)(transaction)
 
       loadSomeRevisionsWithSourceImpl(postId, revisionNr, revisionsRecentFirst,
@@ -1549,14 +1551,17 @@ trait PostsDao {
   private def doFlagPost(pageId: PageId, postNr: PostNr, flagType: PostFlagType,
         flaggerId: UserId): (Post, Boolean) = {
     readWriteTransaction { transaction =>
-      val postBefore = transaction.loadThePost(pageId, postNr)
       val flagger = transaction.loadTheMember(flaggerId)
-      throwIfMayNotSeePost(postBefore, Some(flagger))(transaction)
-      /* later, like Discourse?:
-      throwForbiddenIf(flagger.effectiveTrustLevel == TrustLevel.New, "EdE7KW1Y4",
-          "New users may not flag posts")
-      SECURITY COULD: small forums: everyone may flag. Medium/large: new users may not flag. */
+      val postBefore = transaction.loadThePost(pageId, postNr)
+      val pageMeta = transaction.loadThePageMeta(pageId)
+      val categories = transaction.loadCategoryPathRootLast(pageMeta.categoryId)
       val settings = loadWholeSiteSettings(transaction)
+
+      dieOrDenyUnless(Authz.mayFlagPost(
+        flagger, transaction.loadGroupIds(flagger),
+        postBefore, pageMeta, transaction.loadAnyPrivateGroupTalkMembers(pageMeta),
+        inCategoriesRootLast = categories,
+        relevantPermissions = transaction.loadPermsOnPages()), "EdEZBXKSM2")
 
       val newNumFlags = postBefore.numPendingFlags + 1
       var postAfter = postBefore.copy(numPendingFlags = newNumFlags)

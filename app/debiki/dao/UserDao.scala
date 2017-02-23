@@ -600,6 +600,11 @@ trait UserDao {
   }
 
 
+  def getGroupIds(user: Option[User]): Vector[UserId] = {
+    user.map(getGroupIds) getOrElse Vector.empty
+  }
+
+
   def getGroupIds(user: User): Vector[UserId] = {
     COULD_OPTIMIZE // For now. Later, cache.
     user match {

@@ -48,8 +48,7 @@ object ReplyController extends mvc.Controller {
     DISCUSSION_QUALITY; COULD // require that the user has spent a reasonable time reading
     // the topic, in comparison to # posts in the topic, before allowing hen to post a reply.
 
-    val pageMeta = dao.getPageMeta(pageId) getOrElse
-      throwIndistinguishableNotFound("EdE5FKW20")
+    val pageMeta = dao.getPageMeta(pageId) getOrElse throwIndistinguishableNotFound("EdE5FKW20")
       /* Old, from when embedded comments were still in use & working, will somehow add back later:
       val page = tryCreateEmbeddedCommentsPage(request, pageId, anyPageUrl)
         .getOrElse(throwNotFound("Dw2XEG60", s"Page `$pageId' does not exist"))

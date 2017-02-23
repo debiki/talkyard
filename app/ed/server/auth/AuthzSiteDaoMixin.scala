@@ -19,6 +19,7 @@ package ed.server.auth
 
 import com.debiki.core._
 import debiki.dao.SiteDao
+import ed.server.auth.MayMaybe.{NoMayNot, NoNotFound, Yes}
 import ed.server.http._
 import scala.collection.immutable
 
@@ -41,14 +42,7 @@ trait AuthzSiteDaoMixin {
   }
 
 
-  def throwIfMayNotSeePageUseCache(pageId: PageId, user: Option[User]) {
-    val pageMeta = getThePageMeta(pageId)
-    val (may, debugCode) = maySeePageUseCache(pageMeta, user)
-    if (!may)
-      throwIndistinguishableNotFound(s"EdE2WA7GF4-$debugCode")
-  }
-
-
+  @deprecated("now", "use Authz instead and dieOrDenyIf")
   def throwIfMayNotSeePage(page: Page, user: Option[User])(transaction: SiteTransaction) {
     throwIfMayNotSeePage(page.meta, user)(transaction)
   }
@@ -73,7 +67,7 @@ trait AuthzSiteDaoMixin {
     // loading everything first, makes it possible to implement AuthzmaySeePage() as
     // a pure function, easy to test.
 
-    val categories: Seq[Category] =
+    val categories: immutable.Seq[Category] =
       pageMeta.categoryId map { categoryId =>
         anyTransaction.map(_.loadCategoryPathRootLast(categoryId)) getOrElse {
           loadCategoriesRootLast(categoryId)
@@ -85,7 +79,22 @@ trait AuthzSiteDaoMixin {
         getAnyPrivateGroupTalkMembers(pageMeta)
       }
 
-    Authz.maySeePage(pageMeta, user, categories, memberIds, maySeeUnlisted)
+    val groupIds: immutable.Seq[UserId] = user.map { theUser =>
+      anyTransaction.map(_.loadGroupIds(theUser)) getOrElse {
+        getGroupIds(theUser)
+      }
+    } getOrElse Nil
+
+    val permissions = anyTransaction.map(_.loadPermsOnPages()) getOrElse {
+      getPermsOnPages(categories)
+    }
+
+    Authz.maySeePage(pageMeta, user, groupIds, memberIds, categories, permissions,
+        maySeeUnlisted) match {
+      case Yes => (true, "")
+      case mayNot: NoMayNot => (false, mayNot.code)
+      case mayNot: NoNotFound => (false, mayNot.debugCode)
+    }
   }
 
 

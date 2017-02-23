@@ -30,6 +30,7 @@ import play.api.mvc.Action
 import scala.util.Try
 import DebikiHttp._
 import debiki.RateLimits.TrackReadingActivity
+import ed.server.auth.Authz
 
 
 /** Handles requests related to users.
@@ -569,9 +570,18 @@ object UserController extends mvc.Controller {
     * — however, listing all usernames for the whole site, isn't always okay. [8FKU2A4]
     */
   def listUsernames(pageId: PageId, prefix: String) = GetAction { request =>
-    request.dao.throwIfMayNotSeePageUseCache(pageId, request.user)
+    import request.dao
 
-    val names = request.dao.listUsernames(pageId = pageId, prefix = prefix)
+    val pageMeta = dao.getPageMeta(pageId) getOrElse throwIndistinguishableNotFound("EdE3FJB8W2")
+    val categoriesRootLast = dao.loadCategoriesRootLast(pageMeta.categoryId)
+
+    SECURITY // Later: shouldn't list authors of hidden / deleted / whisper posts.
+    throwNoUnless(Authz.maySeePage(
+      pageMeta, request.user, dao.getGroupIds(request.user),
+      dao.getAnyPrivateGroupTalkMembers(pageMeta), categoriesRootLast,
+      relevantPermissions = dao.getPermsOnPages(categoriesRootLast)), "EdEZBXKSM2")
+
+    val names = dao.listUsernames(pageId = pageId, prefix = prefix)
     val json = JsArray(
       names map { nameAndUsername =>
         Json.obj(
