@@ -1163,10 +1163,12 @@ function watchbar_copyUnreadStatusFromTo(old: Watchbar, newWatchbar: Watchbar) {
 
 function makeStranger(): Myself {
   return {
-    rolePageSettings: {},
-
-    trustLevel: TrustLevel.New,
+    rolePageSettings: { notfLevel: NotfLevel.Normal },
+    trustLevel: TrustLevel.Stranger,
     threatLevel: ThreatLevel.HopefullySafe,
+    permissions: {
+      onCategories: {}
+    },
 
     numUrgentReviewTasks: 0,
     numOtherReviewTasks: 0,

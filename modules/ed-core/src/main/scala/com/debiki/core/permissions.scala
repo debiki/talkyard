@@ -20,6 +20,53 @@ package com.debiki.core
 import com.debiki.core.Prelude._
 
 
+case class MayWhat(
+  mayEditPage: Boolean = false,
+  mayEditComment: Boolean = false,
+  mayEditWiki: Boolean = false,
+  mayDeletePage: Boolean = false,
+  mayDeleteComment: Boolean = false,
+  mayCreatePage: Boolean = false,
+  mayPostComment: Boolean = false,
+  maySee: Boolean = false,
+  debugCode: String = "") {
+
+  require(maySee || (
+    !mayEditPage && !mayEditComment && !mayEditWiki && !mayDeletePage &&
+    !mayDeleteComment && !mayCreatePage && !mayPostComment), "EdE2WKB5FD")
+
+  def addRemovePermissions(permissions: PermsOnPages, debugCode: String) = MayWhat(
+    mayEditPage = permissions.mayEditPage.getOrElse(mayEditPage),
+    mayEditComment = permissions.mayEditComment.getOrElse(mayEditComment),
+    mayEditWiki = permissions.mayEditWiki.getOrElse(mayEditWiki),
+    mayDeletePage = permissions.mayDeletePage.getOrElse(mayDeletePage),
+    mayDeleteComment = permissions.mayDeleteComment.getOrElse(mayDeleteComment),
+    mayCreatePage = permissions.mayCreatePage.getOrElse(mayCreatePage),
+    mayPostComment = permissions.mayPostComment.getOrElse(mayPostComment),
+    maySee = permissions.maySee.getOrElse(maySee),
+    debugCode)
+
+  def copyAsDeleted: MayWhat = copy(
+    mayEditPage = false,
+    mayEditComment = false,
+    mayEditWiki = false,
+    mayDeletePage = false,
+    mayDeleteComment = false,
+    mayCreatePage = false,
+    mayPostComment = false)
+}
+
+
+object MayWhat {
+
+  def mayNotSee(debugCode: String) = MayWhat(
+    mayEditPage = false, mayEditComment = false, mayEditWiki = false,
+    mayDeletePage = false, mayDeleteComment = false, mayCreatePage = false,
+    mayPostComment = false, maySee = false, debugCode)
+
+}
+
+
 case class PermsOnPages(
   id: PermissionId,
   forPeopleId: UserId,
@@ -28,14 +75,14 @@ case class PermsOnPages(
   onPageId: Option[PageId],
   onPostId: Option[PostId],
   onTagId: Option[TagLabelId],
-  toEditPage: Option[Boolean],
-  toEditComment: Option[Boolean],
-  toEditWiki: Option[Boolean],
-  toDeletePage: Option[Boolean],
-  toDeleteComment: Option[Boolean],
-  toCreatePage: Option[Boolean],
-  toPostComment: Option[Boolean],
-  toSee: Option[Boolean]) {
+  mayEditPage: Option[Boolean],
+  mayEditComment: Option[Boolean],
+  mayEditWiki: Option[Boolean],
+  mayDeletePage: Option[Boolean],
+  mayDeleteComment: Option[Boolean],
+  mayCreatePage: Option[Boolean],
+  mayPostComment: Option[Boolean],
+  maySee: Option[Boolean]) {
 
   // Later, perhaps:
   // pin/unpin
@@ -57,9 +104,9 @@ case class PermsOnPages(
     onPostId.oneIfDefined + onTagId.oneIfDefined, "EdE7LFK2R5")
 
   // This permission grants some right(s), it's not just everything-undefined.
-  require(1 <= toEditPage.oneIfDefined + toEditComment.oneIfDefined + toEditWiki.oneIfDefined +
-    toDeletePage.oneIfDefined + toDeleteComment.oneIfDefined + toCreatePage.oneIfDefined +
-    toPostComment.oneIfDefined + toSee.oneIfDefined, "EdE7PUK2W3")
+  require(1 <= mayEditPage.oneIfDefined + mayEditComment.oneIfDefined + mayEditWiki.oneIfDefined +
+    mayDeletePage.oneIfDefined + mayDeleteComment.oneIfDefined + mayCreatePage.oneIfDefined +
+    mayPostComment.oneIfDefined + maySee.oneIfDefined, "EdE7PUK2W3")
 }
 
 

@@ -32,7 +32,7 @@ case class Category(
   description: Option[String],
   // [refactor] [5YKW294] [rename] Should no longer be a list. Change db too, from "nnn,nnn,nnn" to single int.
   newTopicTypes: immutable.Seq[PageRole],
-  unlisted: Boolean,
+  unlisted: Boolean,  // rename to isUnlisted
   staffOnly: Boolean,
   onlyStaffMayCreateTopics: Boolean,
   createdAt: ju.Date,

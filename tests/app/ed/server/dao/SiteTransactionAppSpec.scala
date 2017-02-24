@@ -435,14 +435,14 @@ class SiteTransactionAppSpec extends DaoAppSuite {
             onPageId = None,
             onPostId = None,
             onTagId = None,
-            toEditPage = Some(true),
-            toEditComment = Some(true),
-            toEditWiki = Some(true),
-            toDeletePage = Some(true),
-            toDeleteComment = Some(true),
-            toCreatePage = Some(true),
-            toPostComment = Some(true),
-            toSee = Some(true))
+            mayEditPage = Some(true),
+            mayEditComment = Some(true),
+            mayEditWiki = Some(true),
+            mayDeletePage = Some(true),
+            mayDeleteComment = Some(true),
+            mayCreatePage = Some(true),
+            mayPostComment = Some(true),
+            maySee = Some(true))
 
           val allPermsWholeSite = transaction.insertPermsOnPages(allPermsWholeSiteNoId)
           allPermsWholeSiteNoId.copy(id = allPermsWholeSite.id) mustBe allPermsWholeSite
@@ -461,14 +461,14 @@ class SiteTransactionAppSpec extends DaoAppSuite {
             onPageId = None,
             onPostId = None,
             onTagId = None,
-            toEditPage = Some(true),
-            toEditComment = None,
-            toEditWiki = None,
-            toDeletePage = Some(true),
-            toDeleteComment = None,
-            toCreatePage = Some(true),
-            toPostComment = None,
-            toSee = Some(true))
+            mayEditPage = Some(true),
+            mayEditComment = None,
+            mayEditWiki = None,
+            mayDeletePage = Some(true),
+            mayDeleteComment = None,
+            mayCreatePage = Some(true),
+            mayPostComment = None,
+            maySee = Some(true))
 
           val permsOnCat = transaction.insertPermsOnPages(permsOnCatNoId)
           permsOnCatNoId.copy(id = permsOnCat.id) mustBe permsOnCat
@@ -489,14 +489,14 @@ class SiteTransactionAppSpec extends DaoAppSuite {
             onPostId = None,
             onTagId = None,
             // Let's invert all perms, in comparison to the perms-on-category above.
-            toEditPage = None,
-            toEditComment = Some(true),
-            toEditWiki = Some(true),
-            toDeletePage = None,
-            toDeleteComment = Some(true),
-            toCreatePage = None,
-            toPostComment = Some(true),
-            toSee = None)
+            mayEditPage = None,
+            mayEditComment = Some(true),
+            mayEditWiki = Some(true),
+            mayDeletePage = None,
+            mayDeleteComment = Some(true),
+            mayCreatePage = None,
+            mayPostComment = Some(true),
+            maySee = None)
 
           val permsOnPage = transaction.insertPermsOnPages(permsOnPageNoId)
           permsOnPageNoId.copy(id = permsOnPage.id) mustBe permsOnPage
@@ -517,14 +517,14 @@ class SiteTransactionAppSpec extends DaoAppSuite {
             onPageId = None,
             onPostId = Some(pageAPost2.id),
             onTagId = None,
-            toEditPage = Some(true),
-            toEditComment = Some(true),
-            toEditWiki = Some(true),
-            toDeletePage = Some(true),
-            toDeleteComment = None,
-            toCreatePage = None,
-            toPostComment = None,
-            toSee = Some(true))
+            mayEditPage = Some(true),
+            mayEditComment = Some(true),
+            mayEditWiki = Some(true),
+            mayDeletePage = Some(true),
+            mayDeleteComment = None,
+            mayCreatePage = None,
+            mayPostComment = None,
+            maySee = Some(true))
 
           val permsOnPost = transaction.insertPermsOnPages(permsOnPostNoId)
           permsOnPostNoId.copy(id = permsOnPost.id) mustBe permsOnPost
@@ -549,14 +549,14 @@ class SiteTransactionAppSpec extends DaoAppSuite {
           onPageId = None,
           onPostId = None,
           onTagId = None,
-          toEditPage = Some(true),
-          toEditComment = Some(true),
-          toEditWiki = Some(true),
-          toDeletePage = Some(true),
-          toDeleteComment = Some(true),
-          toCreatePage = Some(true),
-          toPostComment = Some(true),
-          toSee = Some(true))
+          mayEditPage = Some(true),
+          mayEditComment = Some(true),
+          mayEditWiki = Some(true),
+          mayDeletePage = Some(true),
+          mayDeleteComment = Some(true),
+          mayCreatePage = Some(true),
+          mayPostComment = Some(true),
+          maySee = Some(true))
 
         info("for whole site")
         dao.readWriteTransaction { transaction =>

@@ -182,6 +182,7 @@ enum WatchbarSection {
 
 
 enum TrustLevel {
+  Stranger = 0,
   New = 1,
   Basic = 2,
   Member = 3,
