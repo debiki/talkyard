@@ -56,14 +56,16 @@ interface RequestData {
 
 function postJson(urlPath: string, requestData: RequestData) {
   let url = appendE2eAndForbiddenPassword(origin + urlPath);
-  d.u.postJson({
-    showLoadingOverlay: requestData.showLoadingOverlay,
+  if (requestData.showLoadingOverlay !== false) {
+    showLoadingOverlay();
+  }
+  postJsonImpl({
     url: url,
     data: requestData.data,
     success: requestData.success,
     error: (jqXhr: any, textStatus: string, errorThrown: string) => {
       if (requestData.error) {
-        var perhapsIgnoreError = requestData.error(jqXhr, textStatus, errorThrown);
+        const perhapsIgnoreError = requestData.error(jqXhr, textStatus, errorThrown);
         if (perhapsIgnoreError === IgnoreThisError)
           return;
       }
@@ -74,12 +76,69 @@ function postJson(urlPath: string, requestData: RequestData) {
 }
 
 
+function postJsonImpl(options) {
+  let timeoutHandle = setTimeout(function() {
+    showServerJustStartedMessage();
+    timeoutHandle = setTimeout(showErrorIfNotComplete, 23 * 1000);
+  }, 7 * 1000);
+
+  // Interpret the response using the data type specified by the server. Don't
+  // specify 'json' because then jQuery complains if the server sends back nothing
+  // (an empty string isn't ok JSON).
+  return $.ajax({
+    url: options.url,
+    type: 'POST',
+    data: JSON.stringify(options.data),
+    contentType: 'application/json; charset=utf-8',
+    headers: { 'X-XSRF-TOKEN': getSetCookie('XSRF-TOKEN') },
+    error: options.error,
+    success: options.success,
+    complete: function() {
+      clearTimeout(timeoutHandle);
+      if (options.showLoadingOverlay !== false) {
+        removeLoadingOverlay();
+      }
+    }
+  });
+}
+
+
+function showLoadingOverlay() {
+  $('body').append(
+    $.parseHTML('<div id="theLoadingOverlay"><div class="icon-loading"></div></div>'));
+}
+
+
+function showServerJustStartedMessage() {
+  const messageText = "Sorry that this takes long. Perhaps the server was " +
+    "just started, and is slow right now.";
+  const messageElem = $($.parseHTML('<div id="theServerJustStarted"></div>')).text(messageText);
+  $('#theLoadingOverlay').addClass('esLoadingSlow').append(messageElem);
+}
+
+
+function removeLoadingOverlay() {
+  $('#theLoadingOverlay').remove();
+}
+
+
+function showErrorIfNotComplete() {
+  const complete = !$('#theLoadingOverlay').length;
+  if (!complete) {
+    // Remove the spinner before showing the dialog.
+    $('#theLoadingOverlay .icon-loading').remove();
+    alert("Error: Server too slow [EsE5YK0W24]");
+    removeLoadingOverlay();
+  }
+}
+
+
 /** Return Server.IgnoreThisError from error(..) to suppress a log message and error dialog. */
 function postJsonSuccess(urlPath, success: (response: any) => void, data: any, error?,
         options?: { showLoadingOverlay?: boolean }) {
   // Make postJsonSuccess(..., error, data) work:
   if (!data || _.isFunction(data)) {
-    var tmp = data;
+    const tmp = data;
     data = error;
     error = tmp;
   }
@@ -95,8 +154,8 @@ function postJsonSuccess(urlPath, success: (response: any) => void, data: any, e
 
 function get(uri: string, options, success?: (response, xhr?: JQueryXHR) => void,
       error?: () => void): OngoingRequest {
-  var dataType;
-  var headers;
+  let dataType;
+  let headers;
   if (_.isFunction(options)) {
     error = <any> success;
     success = <any> options;
@@ -108,24 +167,28 @@ function get(uri: string, options, success?: (response, xhr?: JQueryXHR) => void
     headers = options.headers;
   }
 
-  var xhr = $.ajax({
-    url: origin + uri,
-    type: 'GET',
-    dataType: dataType,
+  const xhr = Bliss.fetch(origin + uri, {
+    method: 'GET',
     headers: headers,
-    success: function(response, dummy, xhr) {
-      success(response, xhr);
-    },
-    error: function(jqXhr: any, textStatus: string, errorThrown: string) {
-      if (options.suppressErrorDialog) {
-        console.log('As expected, error when calling ' + uri + ': ' + JSON.stringify(jqXhr));
-      }
-      else {
-        console.error('Error calling ' + uri + ': ' + JSON.stringify(jqXhr));
-        pagedialogs.getServerErrorDialog().open(jqXhr);
-      }
-      !error || error();
-    },
+  }).then(xhr => {
+    let response = xhr.response;
+    if (dataType !== 'html') {
+      // Then it's json, what else could it be? Remove any AngularJS safe json prefix. [5LKW02D4]
+      response = xhr.response.replace(/^\)]}',\n/, '');
+      response = JSON.parse(response);
+    }
+    success(response, xhr);
+  }).catch(errorObj => {
+    const errorAsJson = JSON.stringify(errorObj);
+    const text = errorObj.xhr ? errorObj.xhr.responseText : undefined;
+    if (options.suppressErrorDialog) {
+      console.log(`As expected, error calling ${uri}: ${errorAsJson}, xhr.responseText: ${text}`);
+    }
+    else {
+      console.error(`Error calling ${uri}: ${errorAsJson}, xhr.responseText: ${text}`);
+      pagedialogs.getServerErrorDialog().open(errorObj.xhr);
+    }
+    error && error();
   });
 
   return {
@@ -147,9 +210,9 @@ function appendE2eAndForbiddenPassword(url: string) {
 }
 
 
-var loadEditorScriptsStatus;
-var slowBundleStatus;
-var staffBundleStatus;
+let editorScriptsPromise: Promise<any>;
+let moreScriptsPromise: Promise<any>;
+let staffScriptsPromise: Promise<any>;
 
 
 // Won't call callback() until a bit later — so if you call React's setState(..), the
@@ -157,56 +220,58 @@ var staffBundleStatus;
 //
 export function loadEditorAndMoreBundles(callback?) {
   setTimeout(function() {
-    loadEditorAndMoreBundlesGetDeferred().done(callback || _.noop)
+    loadEditorAndMoreBundlesGetDeferred().then(callback || _.noop)
   }, 0);
 }
 
 
 export function loadMoreScriptsBundle(callback) {
-  if (slowBundleStatus) {
+  if (moreScriptsPromise) {
     // Never call callback() immediately, because it's easier to write caller source code,
     // if one knows that callback() will never be invoked immediately.
-    setTimeout(() => slowBundleStatus.done(callback), 0);
+    setTimeout(() => moreScriptsPromise.then(callback), 0);
     return;
   }
-  slowBundleStatus = $.Deferred();
-  window['yepnope']({
-    both: [d.i.assetUrlPrefix + 'more-bundle.' + d.i.minMaxJs],
-    complete: () => {
-      slowBundleStatus.resolve();
-      setTimeout(callback, 0);
-    }
+  moreScriptsPromise = new Promise(function(resolve, reject) {
+    window['yepnope']({
+      both: [d.i.assetUrlPrefix + 'more-bundle.' + d.i.minMaxJs],
+      complete: () => {
+        resolve();
+        setTimeout(callback, 0);
+      }
+    });
   });
-  return slowBundleStatus;
+  return moreScriptsPromise;
 }
 
 
 export function loadStaffScriptsBundle(callback) {
-  if (staffBundleStatus) {
+  if (staffScriptsPromise) {
     // Never call callback() immediately, because it's easier to write caller source code,
     // if one knows that callback() will never be invoked immediately.
-    setTimeout(() => staffBundleStatus.done(callback), 0);
+    setTimeout(() => staffScriptsPromise.then(callback), 0);
     return;
   }
-  staffBundleStatus = $.Deferred();
-  // The staff scripts bundle requires both more-bundle.js and editor-bundle.js (to render
-  // previews of CommonMark comments [7PKEW24]). This'll load them both.
-  loadEditorAndMoreBundles(() => {
-    window['yepnope']({
-      both: [d.i.assetUrlPrefix + 'staff-bundle.' + d.i.minMaxJs],
-      complete: () => {
-        staffBundleStatus.resolve();
-        callback();  // setTimeout(..., 0) not needed — done by loadMoreScriptsBundle() already
-      }
+  staffScriptsPromise = new Promise(function(resolve, reject) {
+    // The staff scripts bundle requires both more-bundle.js and editor-bundle.js (to render
+    // previews of CommonMark comments [7PKEW24]). This'll load them both.
+    loadEditorAndMoreBundles(() => {
+      window['yepnope']({
+        both: [d.i.assetUrlPrefix + 'staff-bundle.' + d.i.minMaxJs],
+        complete: () => {
+          resolve();
+          callback();  // setTimeout(..., 0) not needed — done by loadMoreScriptsBundle() already
+        }
+      });
     });
   });
-  return staffBundleStatus;
+  return staffScriptsPromise;
 }
 
 
-export function loadEditorAndMoreBundlesGetDeferred() {
-  if (loadEditorScriptsStatus)
-    return loadEditorScriptsStatus;
+export function loadEditorAndMoreBundlesGetDeferred(): Promise<void> {
+  if (editorScriptsPromise)
+    return editorScriptsPromise;
 
   // Now we'll load FileAPI, and according to the docs it needs to know where it
   // can find its implementation details files (Flash and Html5 stuff depending on
@@ -216,17 +281,18 @@ export function loadEditorAndMoreBundlesGetDeferred() {
     debug: debiki.isDev,
   };
 
-  loadEditorScriptsStatus = $.Deferred();
-  // The editor scripts bundle requires more-bundle.js.
-  loadMoreScriptsBundle(() => {
-    window['yepnope']({
-      both: [d.i.assetUrlPrefix + 'editor-bundle.' + d.i.minMaxJs],
-      complete: () => {
-        loadEditorScriptsStatus.resolve();
-      }
+  editorScriptsPromise = new Promise(function(resolve, reject) {
+    // The editor scripts bundle requires more-bundle.js.
+    loadMoreScriptsBundle(() => {
+      window['yepnope']({
+        both: [d.i.assetUrlPrefix + 'editor-bundle.' + d.i.minMaxJs],
+        complete: () => {
+          resolve();
+        }
+      });
     });
   });
-  return loadEditorScriptsStatus;
+  return editorScriptsPromise;
 }
 
 
@@ -321,61 +387,6 @@ export function completeReviewTask(id: number, revisionNr: number, action: Revie
     action: action,
   });
 }
-
-  /*
-export function loadRecentPosts(doneCallback: (posts: PostToModerate[]) => void) {
-  $.get(origin + '/-/list-recent-posts')
-    .done(response => {
-      doneCallback(response.actions);
-    })
-    .fail((x, y, z) => {
-      console.error('Error loading recent posts: ' + JSON.stringify([x, y, z]));
-      doneCallback(null);
-    });
-} */
-
-
-// ---- Currently not in use, but perhaps soon again ----------------------
-
-export function approvePost(post: PostToModerate, doneCallback: () => void) {
-  doSomethingWithPost(post, '/-/approve', doneCallback);
-}
-
-export function hideNewPostSendPm(post: PostToModerate, doneCallback: () => void) {
-  doSomethingWithPost(post, '/-/hide-new-send-pm', doneCallback);
-}
-
-export function hideFlaggedPostSendPm(post: PostToModerate, doneCallback: () => void) {
-  doSomethingWithPost(post, '/-/hide-flagged-send-pm', doneCallback);
-}
-
-// This is for moderators. Could merge with /-/delete-post, open to anyone?
-export function deletePost(post: PostToModerate, doneCallback: () => void) {
-  doSomethingWithPost(post, '/-/delete', doneCallback);
-}
-
-export function deleteFlaggedPost(post: PostToModerate, doneCallback: () => void) {
-  doSomethingWithPost(post, '/-/delete-flagged', doneCallback);
-}
-
-export function clearFlags(post: PostToModerate, doneCallback: () => void) {
-  doSomethingWithPost(post, '/-/clear-flags', doneCallback);
-}
-
-export function rejectEdits(post: PostToModerate, doneCallback: () => void) {
-  doSomethingWithPost(post, '/-/reject-edits', doneCallback);
-}
-
-
-function doSomethingWithPost(post: PostToModerate, actionUrl: string, success: () => void) {
-  die('EdE7KWWU0');
-  postJsonSuccess(actionUrl, success, {
-    pageId: post.pageId,
-    postId: post.id,
-  });
-}
-
-// ---- /END currently not in use, but perhaps soon again ----------------------
 
 
 export function createOauthUser(data, success: (response) => void,
@@ -473,15 +484,10 @@ export function loadUserAnyDetails(userIdOrUsername: UserId | string,
 }
 
 
-export function listCompleteUsers(whichUsers,
-        doneCallback: (users: MemberInclDetails[]) => void) {
-  $.get(origin + '/-/list-complete-users?whichUsers=' + whichUsers)
-    .done(response => {
-      doneCallback(response.users);
-    })
-    .fail((x, y, z) => {
-      console.error('Error loading users: ' + JSON.stringify([x, y, z]));
-    });
+export function listCompleteUsers(whichUsers, success: (users: MemberInclDetails[]) => void) {
+  get('/-/list-complete-users?whichUsers=' + whichUsers, response => {
+    success(response.users);
+  });
 }
 
 
@@ -642,14 +648,8 @@ export function unblockGuest(postId: number, success: () => void) {
 }
 
 
-export function loadAuthorBlockedInfo(postId: number, whenDone: (response: Blocks) => void) {
-  $.get(origin + '/-/load-author-blocks?postId=' + postId)
-    .done((response: any) => {
-      whenDone(response);
-    })
-    .fail((x, y, z) => {
-      console.error('Error loading is-blocked info: ' + JSON.stringify([x, y, z]));
-    });
+export function loadAuthorBlockedInfo(postId: number, success: (response: Blocks) => void) {
+  get('/-/load-author-blocks?postId=' + postId, success);
 }
 
 
@@ -732,25 +732,22 @@ export function loadCurrentPostText(postNr: PostNr,
 }
 
 
-var cachedOneboxHtml = {};
+const cachedOneboxHtml = {};
 
 export function loadOneboxSafeHtml(url: string, success: (safeHtml: string) => void) {
-  var cachedHtml = cachedOneboxHtml[url];
+  const cachedHtml = cachedOneboxHtml[url];
   if (cachedHtml) {
     setTimeout(() => success(cachedHtml), 0);
     return;
   }
-  var encodedUrl = encodeURIComponent(url);
-  $.get(origin + '/-/onebox?url=' + encodedUrl, { dataType: 'html' })
-    .done((response: string) => {
-      cachedOneboxHtml[url] = response;
-      success(response);
-    })
-    .fail((x, y, z) => {
-      console.debug('Error loading onebox: ' + JSON.stringify([x, y, z]));
-      // Pass null to tell the editor to show no onebox (it should show the link instead).
-      success(null);
-    });
+  const encodedUrl = encodeURIComponent(url);
+  get('/-/onebox?url=' + encodedUrl, { dataType: 'html' }, (response: string) => {
+    cachedOneboxHtml[url] = response;
+    success(response);
+  }, function() {
+    // Pass null to tell the editor to show no onebox (it should show the link instead).
+    success(null);
+  });
 }
 
 
@@ -774,18 +771,15 @@ export function saveEdits(postNr: number, text: string, doneCallback: () => void
 }
 
 
-export function savePageTitleAndSettings(newTitle: string, settings: any, success: (response: any) => void,
+export function savePageTitleAndSettings(newTitle: string, settings, success: (response: any) => void,
         error: () => void) {
-  var data = $.extend(settings, {
-    pageId: d.i.pageId,
-    newTitle: newTitle
-  });
+  const data = { ...settings, pageId: d.i.pageId, newTitle: newTitle };
   postJson('/-/edit-title-save-settings', {
     data: data,
     success: (response) => {
       success(response);
       if (response.newUrlPath && window.history.replaceState) {
-        var newPath = response.newUrlPath + location.search + location.hash;
+        const newPath = response.newUrlPath + location.search + location.hash;
         window.history.replaceState({}, null, newPath);
       }
     },

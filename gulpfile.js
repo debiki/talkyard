@@ -130,7 +130,6 @@ var slimJsFiles = [
       'target/client/app/utils/util-browser.js',
       'target/client/app/utterscroll/utterscroll-init-tips.js',//
       'client/app/utterscroll/utterscroll.js',//
-      'target/client/app/utils/post-json.js',
       'target/client/slim-typescript.js',
       'target/client/app/startup.js'];
 
