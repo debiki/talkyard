@@ -241,6 +241,10 @@ blacklist@^1.1.4:
   version "1.1.4"
   resolved "https://registry.yarnpkg.com/blacklist/-/blacklist-1.1.4.tgz#b2dd09d6177625b2caa69835a37b28995fa9a2f2"
 
+blissfuljs@^1.0.3:
+  version "1.0.3"
+  resolved "https://registry.yarnpkg.com/blissfuljs/-/blissfuljs-1.0.3.tgz#9dc6ff15905a91d9c63cc5e9a5304d17ac3aadd8"
+
 bluebird@^3.1.1:
   version "3.4.7"
   resolved "https://registry.yarnpkg.com/bluebird/-/bluebird-3.4.7.tgz#f72d760be09b7f76d08ed8fae98b289a8d05fab3"

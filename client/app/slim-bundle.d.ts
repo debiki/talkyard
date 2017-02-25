@@ -7,6 +7,7 @@ declare const ReactCSSTransitionGroup: any;
 declare const Router: any;
 declare function reactCreateFactory(x);
 declare function doNextFrameOrNow(x);
+declare function getSetCookie(cookieName: string, value?: string, options?: any): string;
 
 declare const ReactStartedClass;
 

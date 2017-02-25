@@ -162,7 +162,7 @@ var LoginDialog = createClassAndFactory({
         anyReturnToUrl: anyReturnToUrl,
         preventClose: preventClose || loginReason === 'LoginToAuthenticate' ||
             loginReason === 'LoginToAdministrate',
-        isLoggedIn: !!$['cookie']('dwCoSid'),
+        isLoggedIn: !!getSetCookie('dwCoSid'),
       });
     }
   },
@@ -175,14 +175,14 @@ var LoginDialog = createClassAndFactory({
    * Clears login related cookies so e.g. any lingering return-to-url won't cause troubles.
    */
   clearLoginRelatedCookies: function() {
-    $['cookie']('dwCoReturnToUrl', null);
-    $['cookie']('dwCoReturnToSite', null);
-    $['cookie']('dwCoReturnToSiteXsrfToken', null);
-    $['cookie']('dwCoIsInLoginWindow', null);
-    $['cookie']('dwCoIsInLoginPopup', null);
-    $['cookie']('dwCoMayCreateUser', null);
-    $['cookie']('dwCoOAuth2State', null);
-    $['cookie']('esCoImp', null);
+    getSetCookie('dwCoReturnToUrl', null);
+    getSetCookie('dwCoReturnToSite', null);
+    getSetCookie('dwCoReturnToSiteXsrfToken', null);
+    getSetCookie('dwCoIsInLoginWindow', null);
+    getSetCookie('dwCoIsInLoginPopup', null);
+    getSetCookie('dwCoMayCreateUser', null);
+    getSetCookie('dwCoOAuth2State', null);
+    getSetCookie('esCoImp', null);
   },
 
   close: function() {
@@ -412,7 +412,7 @@ var OpenAuthButton = createClassAndFactory({
       // complete HTML pages to show in the popup window.
       // (Use a cookie not an URL param because the cookie will be present later whe we're
       // being redirected back to the server from the OpenAuth provider.)
-      $['cookie']('dwCoIsInLoginWindow', 'true');
+      getSetCookie('dwCoIsInLoginWindow', 'true');
       window.location.assign(url);
     }
     else {

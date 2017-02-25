@@ -50,7 +50,7 @@ function fireLoginOrLogout() {
 
 function handleLoginInOtherBrowserTab() {
   var currentUser = debiki2.ReactStore.getMe();
-  var sessionId = $.cookie('dwCoSid');
+  var sessionId = getSetCookie('dwCoSid');
   if (currentUser.isLoggedIn) {
     if (sessionId) {
       // Session id example: (parts: hash, user id, name, login time, random value)
@@ -150,7 +150,7 @@ function tellJQueryAjaxToStripSafeJsonPrefix() {
 
 
 d.i.refreshFormXsrfTokens = function() {
-  var token = $.cookie('XSRF-TOKEN');
+  var token = getSetCookie('XSRF-TOKEN');
   $('input.dw-fi-xsrf').attr('value', token);
 };
 

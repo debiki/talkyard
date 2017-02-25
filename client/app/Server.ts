@@ -1146,7 +1146,7 @@ export function trackReadingProgress(lastViewedPostNr: PostNr, secondsReading: n
       // 1. Don't call variable `sendBeacon`, that results in an invalid-invokation error.
       // 2. sendBeacon() apparently always posts text/plain;charset=UTF-8.
       // 3. There's no way to add a xsrf header — so include a xsrf token in the request body.
-      let xsrfTokenLine = (<any> $).cookie('XSRF-TOKEN') + '\n';  // [7GKW20TD]
+      let xsrfTokenLine = getSetCookie('XSRF-TOKEN') + '\n';  // [7GKW20TD]
       let json = JSON.stringify(data);
       let wasQueued = (<any> navigator).sendBeacon(url + '-text', xsrfTokenLine + json);
     }

@@ -98,6 +98,8 @@ var slimJsFiles = [
       'modules/yepnope.js/yepnope.1.5.4-min.js',
       'node_modules/jquery/dist/jquery.js',
       'client/third-party/abbreviate-jquery.js',
+      'client/third-party/smoothscroll-tiny.js',
+      'node_modules/blissfuljs/bliss.shy.js',
       'client/third-party/stupid-lightbox.js',
       'node_modules/keymaster/keymaster.js',
       // keymaster.js declares window.key, rename it to window.keymaster instead,
@@ -108,13 +110,13 @@ var slimJsFiles = [
       'node_modules/react-router/umd/ReactRouter.js',
       'node_modules/jquery-resizable/resizable.js',
       'client/third-party/gifffer/gifffer.js',
-      'client/third-party/jquery-cookie.js',
+      'client/third-party/get-set-cookie.js',
       'client/third-party/jquery-scrollable.js', //
       'client/third-party/jquery.browser.js', //
       'target/client/app/actions/edit/edit.js',
       'target/client/app/actions/vote.js',
       'target/client/app/actions/reply.js',
-      'target/client/app/iframe.js',
+      //'target/client/app/iframe.js',
       'target/client/app/utils/jquery-find.js',
       'target/client/app/page/layout-threads.js',
       'target/client/app/page/resize-threads.js',
@@ -154,7 +156,7 @@ var editorJsFiles = [
       'node_modules/jquery.caret/dist/jquery.caret.min.js', // needed by jquery.atwho (next line)
       'node_modules/at.js/dist/js/jquery.atwho.js',
       'node_modules/blacklist/dist/blacklist.js',  // needed by what?
-      'node_modules/fileapi/dist/FileAPI.js',
+      'node_modules/fileapi/dist/FileAPI.html5.js', // don't use the Flash version (w/o '.html5')
       'client/third-party/diff_match_patch.js',
       'client/third-party/non-angular-slugify.js',
       'target/client/editor-typescript.js'];

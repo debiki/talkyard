@@ -36,7 +36,7 @@ d.u.postJson = function(options) {
     type: 'POST',
     data: JSON.stringify(options.data),
     contentType: 'application/json; charset=utf-8',
-    headers: { 'X-XSRF-TOKEN': $.cookie('XSRF-TOKEN') },
+    headers: { 'X-XSRF-TOKEN': getSetCookie('XSRF-TOKEN') },
     error: options.error,
     success: options.success,
     complete: function() {

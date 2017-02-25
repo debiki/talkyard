@@ -201,7 +201,7 @@ export var Editor = createComponent({
     dieIf(files.length != 1, 'EsE5GPY82');
     FileAPI.upload({   // a bit dupl code [2UK503]
       url: '/-/upload-public-file',
-      headers: { 'X-XSRF-TOKEN': window['$'].cookie('XSRF-TOKEN') },
+      headers: { 'X-XSRF-TOKEN': getSetCookie('XSRF-TOKEN') },
       files: { file: files },
       // This is per file.
       fileprogress: (event, file, xhr, options) => {
