@@ -40,7 +40,8 @@ function addAnySidebarWidth(options) {
 }
 
 
-debiki.internal.showAndHighlightPost = function($post, options) {
+debiki.internal.showAndHighlightPost = function(postElem, options) {
+  var $post = $(postElem);
   options = addAnySidebarWidth(options);
   // Add space for position-fixed stuff at the top: Forw/Back btns and open-sidebar btn.
   options.marginTop = options.marginTop || 60;
@@ -83,7 +84,7 @@ $(document).on('mouseenter mouseleave', '.dw-rr, .dw-solved-by', function(event)
 // When clicking a in-reply-to link, scroll the post that was replied to into view.
 $(document).on('click', '.dw-rr, .dw-solved-by', function(event) {
   var referencedPost = getLinkedPost(this);
-  d.i.showAndHighlightPost(referencedPost);
+  d.i.showAndHighlightPost(referencedPost[0]);
   var currentPostId = $(this).closest('.dw-t').dwPostId();
   var nextPostId = referencedPost.dwPostId();
   debiki2.page.addVisitedPosts(currentPostId, nextPostId);
@@ -147,7 +148,7 @@ $(document).on('click', '.dw-arw-vt-handle', function(event) {
   // UX: Always highlight the post, even if it's on screen already, because otherwise
   // some people who test-click the arrows after having watched the click-arrows demo video,
   // think the arrows are broken.
-  d.i.showAndHighlightPost(parentPost);
+  d.i.showAndHighlightPost(parentPost[0]);
 });
 
 

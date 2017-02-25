@@ -511,23 +511,23 @@ var MoreDropdownModal = createComponent({
   },
 
   toggleBranchSideways: function(event) {
-    var post: Post = this.state.post;
+    const post: Post = this.state.post;
     Server.editPostSettings(post.uniqueId, {
       branchSideways: post.branchSideways ? 0 : 100,
-    }, () => {});
+    });
     this.close();
   },
 
   makeButtons: function() {
-    var store: Store = this.state.store;
-    var isFlat = store['isFlat']; // hmm shouldn't place in the store object, oh well
-    var me: Myself = store.me;
-    var post: Post = this.state.post;
-    var isPageBody = post.nr === BodyNr;
+    const store: Store = this.state.store;
+    const isFlat = store['isFlat']; // hmm shouldn't place in the store object, oh well
+    const me: Myself = store.me;
+    const post: Post = this.state.post;
+    const isPageBody = post.nr === BodyNr;
 
-    var moreLinks = [];
-    var isOwnPost = post.authorId === me.id;
-    var isMindMap = store.pageRole === PageRole.MindMap;
+    const moreLinks = [];
+    const isOwnPost = post.authorId === me.id;
+    const isMindMap = store.pageRole === PageRole.MindMap;
 
     // ----- Report
 

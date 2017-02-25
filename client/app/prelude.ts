@@ -212,31 +212,56 @@ export function deleteById(itemsWithId: any[], idToDelete) {
 }
 
 
-export const $h = {
-  id: function(elemId) {
-    return document.getElementById(elemId);
-  },
+export function $byId(elemId: string): HTMLElement {
+  // @ifdef DEBUG
+  dieIf(/#\., /.test(elemId), 'EdE2KWWE45');
+  // @endif
+  return document.getElementById(elemId);
+}
 
-  byTag1: function(tagName: string): Element {
-    return document.getElementsByTagName(tagName)[0];
-  },
+
+export function $$byClass(className: string): HTMLCollectionOf<Element> {
+  // @ifdef DEBUG
+  // getElementsByClassName() works with one single class only.
+  dieIf(/#\., /.test(className), 'EdE5JLKS02');
+  // @endif
+  return document.getElementsByClassName(className);
+}
+
+
+export const $h = {
 
   // classesString should be a space and/or comma separated class name string.
   addClasses: function(elem: Element, classesString: string) {
+    // @ifdef DEBUG
+    dieIf(/#\./.test(classesString), 'EdE6EF2T47');
+    // @endif
     const classes = classesString.replace(/ *, */g, ',').replace(/ +/g, ',').split(',');
     elem.classList.add(...classes);
   },
 
+
   removeClasses: function(elem: Element, classesString: string) {
-    const classes = classesString.replace(' ', '').split(',');
+    // @ifdef DEBUG
+    dieIf(/#\./.test(classesString), 'EdEKEW20P7');
+    // @endif
+    const classes = classesString.replace(/ *, */g, ',').replace(/ +/g, ',').split(',');
     elem.classList.remove(...classes);
   },
 
-  wrapParseHtml: function(htmlText: string): Element {
+
+
+  parseHtml: function(htmlText: string): HTMLCollection {
     const doc = document.implementation.createHTMLDocument(''); // empty dummy title
-    doc.body.innerHTML = '<div>' + htmlText + '</div>';
-    return doc.body.children[0];
+    doc.body.innerHTML = htmlText;
+    return doc.body.children;
+  },
+
+
+  wrapParseHtml: function(htmlText: string): Element {
+    return $h.parseHtml('<div>' + htmlText + '</div>')[0];
   }
+
 };
 
 
