@@ -212,6 +212,11 @@ export function deleteById(itemsWithId: any[], idToDelete) {
 }
 
 
+export function $bySelector(selector: string): NodeListOf<Element> {
+  return document.querySelectorAll(selector);
+}
+
+
 export function $byId(elemId: string): HTMLElement {
   // @ifdef DEBUG
   dieIf(/#\., /.test(elemId), 'EdE2KWWE45');

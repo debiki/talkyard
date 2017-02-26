@@ -311,7 +311,7 @@ var ForumButtons = createComponent({
   },
 
   onWindowZoomOrResize: function() {
-    var newCompact = $(window).width() < 801;
+    var newCompact = window.innerWidth < 801;
     if (this.state.compact !== newCompact) {
       this.setState({ compact: newCompact });
     }
@@ -743,7 +743,7 @@ const LoadAndListTopicsComponent = React.createClass(<any> {
       return;
     }
 
-    var isNewView =
+    const isNewView =
       this.props.location.pathname !== nextProps.location.pathname ||
       this.props.location.search !== nextProps.location.search ||
       this.props.topPeriod !== nextProps.topPeriod;
@@ -756,11 +756,11 @@ const LoadAndListTopicsComponent = React.createClass(<any> {
     if (!isNewView && !loadMore && (this.state.topics || this.isLoading))
       return;
 
-    var orderOffset: OrderOffset = this.getOrderOffset(nextProps);
+    const orderOffset: OrderOffset = this.getOrderOffset(nextProps);
     orderOffset.topicFilter = nextProps.location.query.filter;
     if (isNewView) {
       this.setState({
-        minHeight: $(ReactDOM.findDOMNode(this)).height(),
+        minHeight: ReactDOM.findDOMNode(this).clientHeight,
         topics: null,
         showLoadMoreButton: false
       });
@@ -768,7 +768,7 @@ const LoadAndListTopicsComponent = React.createClass(<any> {
       delete orderOffset.bumpedAt;
       delete orderOffset.score;
     }
-    var categoryId = nextProps.activeCategory.id;
+    const categoryId = nextProps.activeCategory.id;
     // Don't use this.state.isLoading, because the state change doesn't happen instantly,
     // so componentWillReceiveProps() would get called first, and it would call loadTopics again
     // while this.state.isLoading was still false, resulting in an unneeded server request.
@@ -777,7 +777,7 @@ const LoadAndListTopicsComponent = React.createClass(<any> {
       if (!this.isMounted())
         return;
 
-      var topics: any = isNewView ? [] : (this.state.topics || []);
+      let topics: any = isNewView ? [] : (this.state.topics || []);
       topics = topics.concat(newlyLoadedTopics);
       // `topics` includes at least the last old topic twice.
       topics = _.uniqBy(topics, 'pageId');

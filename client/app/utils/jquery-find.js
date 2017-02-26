@@ -47,7 +47,7 @@ $.fn.dwPostId = function() {   // rename to dwPostNr   and try to remove
 
 
 $.fn.dwIsArticlePost = function() {
-  return this.dwCheckIs('.dw-p').is('.dw-ar-p');
+  return this.is('.dw-ar-p');
 };
 
 
