@@ -362,6 +362,11 @@ trait CategoriesDao {
         transaction: SiteTransaction): (Category, PagePath) = {
 
     val categoryId = transaction.nextCategoryId()
+
+    // Discourse currently has 28 categories so 65 is a lot.
+    // Can remove this later, when I think I won't want to add more cat perms via db migrations.
+    throwForbiddenIf(categoryId > 65, "EdE7LKG2", "Too many categories, > 65") // see [B0GKWU52]
+
     val category = newCategoryData.makeCategory(categoryId, transaction.now.toJavaDate)
     transaction.insertCategoryMarkSectionPageStale(category)
 

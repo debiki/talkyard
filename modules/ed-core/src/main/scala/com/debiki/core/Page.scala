@@ -275,6 +275,7 @@ case class PageMeta(
 
   def idVersion = PageIdVersion(pageId, version = version)
 
+
   def copyWithNewVersion = copy(version = version + 1)
 
 

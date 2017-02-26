@@ -57,9 +57,9 @@ sealed abstract class ThreatLevel(val IntVal: Int) {
 
 object ThreatLevel {
 
-  //case object SuperSafe extends ThreatLevel(1)
+  case object SuperSafe extends ThreatLevel(1)
 
-  //case object SeemsSafe extends ThreatLevel(2)
+  case object SeemsSafe extends ThreatLevel(2)
 
   /** The default. */
   case object HopefullySafe extends ThreatLevel(3)

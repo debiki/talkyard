@@ -97,6 +97,7 @@ let unreportedSecondsReading: number;
 let unreportedPostNrsRead: PostNr[];
 let maxSecondsSinceLastScroll: number;
 let talksWithSererAlready: boolean;
+let isOldPageWithRandomPostNrs: boolean;
 
 function reset() {
   lastScrolledAtMs = Date.now();
@@ -159,6 +160,16 @@ function trackReadingActivity() {
 
   // Don't track guests. [8PLKW46]
   if (!user_isMember(me))
+    return;
+
+  // Back compat with old pages with random post nrs. Don't track readnig stats, because
+  // post nrs are a lot larger than # posts —> the server says 'error'.
+  if (_.isUndefined(isOldPageWithRandomPostNrs)) {
+    // Large nrs = most likely random nrs, and 6 digits = large nrs.
+    const apparentlyRandomNrs = _.keysIn(store.postsByNr).filter(nr => nr.length >= 6);
+    isOldPageWithRandomPostNrs = !!apparentlyRandomNrs.length && _(store.postsByNr).size() < 10000;
+  }
+  if (isOldPageWithRandomPostNrs)
     return;
 
   // Don't remove posts read one tick ago until now, so they get time to fade away slowly.

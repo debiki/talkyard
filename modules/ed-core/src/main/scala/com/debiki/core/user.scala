@@ -685,9 +685,6 @@ object Group {
 
   val AdminsId = 19
 
-  /* Might not be members of any group above, except for the groups new-members and everyone. */
-  val OwnersId = 20
-
 
   dieUnless(NewMembersId == TrustLevel.New.toInt + 10, "EdE7LPKW20")
   dieUnless(CoreMembersId == TrustLevel.CoreMember.toInt + 10, "EdE7LPKW21")

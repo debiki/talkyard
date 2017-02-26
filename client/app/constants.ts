@@ -193,6 +193,8 @@ enum TrustLevel {
 
 
 enum ThreatLevel {
+  SuperSafe = 1,
+  SeemsSafe = 2,
   HopefullySafe = 3,
   MildThreat = 4,
   ModerateThreat = 5,
