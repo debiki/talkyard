@@ -68,10 +68,14 @@ object ForumController extends mvc.Controller {
     val defaultTopicType = PageRole.fromInt(defaultTopicTypeInt) getOrElse throwBadReq(
         "DwE7KUP3", s"Bad new topic type int: $defaultTopicTypeInt")
 
-    val shallBeDefaultCategory = (body \ "isDefault").as[Boolean]
+    val shallBeDefaultCategory = (body \ "isDefaultCategory").as[Boolean]
+    val anyId = (body \ "id").as[Int] match {
+      case NoCategoryId => None
+      case x => Some(x)
+    }
 
     val categoryData = CategoryToSave(
-      anyId = (body \ "categoryId").asOpt[CategoryId],
+      anyId = anyId,
       sectionPageId = sectionPageId,
       parentId = (body \ "parentCategoryId").as[CategoryId],
       name = (body \ "name").as[String],

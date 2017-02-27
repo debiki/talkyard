@@ -421,6 +421,7 @@ var ForumButtons = createComponent({
     morebundle.getEditCategoryDialog(dialog => {
       if (this.isMounted()) {
         dialog.open(this.props.activeCategory.id);
+        // BUG needs to call this.setCategory(edited-category.slug), if slug changed. [7AFDW01]
       }
     });
   },
@@ -476,8 +477,11 @@ var ForumButtons = createComponent({
       // (However, if user-specific-data hasn't yet been activated, the "problem" is probably
       // just that we're going to show a restricted category, which isn't available before
       // user specific data added. (6KEWM02). )
+      // Or hen renamed the slug of an existing category. [7AFDW01]
       return !store.userSpecificDataAdded ? null : r.p({},
-        "Category not found. Did you just create it? Then reload the page please. [EsE04PK27]");
+          "Category not found. Did you just create it? Or renamed it? [EsE04PK27]",
+          r.br(), r.br(),
+          PrimaryLinkButton({ href: '/' }, "Go to the homepage."));
     }
 
     var showsCategoryTree = this.props.routes[SortOrderRouteIndex].path === RoutePathCategories;

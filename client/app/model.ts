@@ -286,7 +286,7 @@ interface Category {
   name: string;
   slug: string;
   defaultTopicType: PageRole,
-  newTopicTypes: PageRole[];  // [refactor] [5YKW294] delete, use defaultTopicType instead
+  newTopicTypes?: PageRole[];  // [refactor] [5YKW294] delete, use defaultTopicType instead
   position?: number;
   description: string;
   recentTopics?: Topic[];
