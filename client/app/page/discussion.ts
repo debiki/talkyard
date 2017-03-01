@@ -23,7 +23,6 @@
 /// <reference path="../help/help.ts" />
 /// <reference path="../topbar/topbar.ts" />
 /// <reference path="../help/help.ts" />
-/// <reference path="../model.ts" />
 /// <reference path="../rules.ts" />
 /// <reference path="../widgets.ts" />
 /// <reference path="post-actions.ts" />

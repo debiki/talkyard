@@ -20,7 +20,6 @@
 /// <reference path="../ReactStore.ts" />
 /// <reference path="../utils/utils.ts" />
 /// <reference path="../utils/react-utils.ts" />
-/// <reference path="../model.ts" />
 /// <reference path="../rules.ts" />
 /// <reference path="../widgets.ts" />
 /// <reference path="../more-bundle-not-yet-loaded.ts" />

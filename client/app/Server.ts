@@ -17,7 +17,6 @@
 
 /// <reference path="../typedefs/jquery/jquery.d.ts" />
 /// <reference path="model.ts" />
-/// <reference path="rules.ts" />
 /// <reference path="ServerApi.ts" />
 
 // Ought to include, but then `debiki2.createComponent` gets placed too late —> JS breaks:

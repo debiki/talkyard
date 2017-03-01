@@ -19,7 +19,6 @@
 /// <reference path="../../typedefs/keymaster/keymaster.d.ts" />
 /// <reference path="../plain-old-javascript.d.ts" />
 /// <reference path="../prelude.ts" />
-/// <reference path="../model.ts" />
 /// <reference path="../rules.ts" />
 /// <reference path="../widgets.ts" />
 /// <reference path="../utils/react-utils.ts" />

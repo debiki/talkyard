@@ -17,7 +17,6 @@
 
 /// <reference path="../../typedefs/react/react.d.ts" />
 /// <reference path="../slim-bundle.d.ts" />
-/// <reference path="../model.ts" />
 /// <reference path="../widgets.more.ts" />
 /// <reference path="../react-bootstrap-old/Input.more.ts" />
 /// <reference path="../util/stupid-dialog.more.ts" />
@@ -405,11 +404,11 @@ function PermissionItemWithKey(allPerms: PermsOnPage[], thisPerm: PermsOnPage, f
       }}, "Remove");
 
   return r.li({ className: 's_PoP', key: thisPerm.id },
-    r.div({ className: 's_PoP_Expl' }, "Permission for: "),
+    r.div({ className: 's_PoP_Expl' }, "These people: "),
     r.div({ className: 's_PoP_Un' }, selectGroupDropdown),
     deleteButton,
     r.br(),
-    r.div({ className: 's_PoP_Expl s_PoP_Expl-What' }, "To do what: "),
+    r.div({ className: 's_PoP_Expl s_PoP_Expl-What' }, "may do this: "),
     r.div({ className: 's_PoP_Ps' },
       Checkbox("Edit other people's topics",
           thisPerm.mayEditPage, (p: PermsOnPage, c: boolean) => p.mayEditPage = c),

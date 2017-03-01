@@ -27,7 +27,6 @@
 /// <reference path="../topbar/topbar.ts" />
 /// <reference path="../page-methods.ts" />
 /// <reference path="../help/help.ts" />
-/// <reference path="../model.ts" />
 /// <reference path="../rules.ts" />
 /// <reference path="../Server.ts" />
 /// <reference path="chat.ts" />

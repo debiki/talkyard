@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-//xx <reference path="model.ts" />
+/// <reference path="model.ts" />
 
 const ReactStartedClass = 'dw-react-started';
 
@@ -48,7 +48,7 @@ const LastStarMark = 3;
 // Sync with Scala, and an input error checker [6KG2W57]
 const MaxNumFirstPosts = 10;
 
-const IgnoreThisError: number = -112233;  // import model.ts and change to : ErrorPolicy
+const IgnoreThisError: ErrorPolicy = -112233;
 
 
 const SiteStatusStrings = [

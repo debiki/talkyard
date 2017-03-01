@@ -187,7 +187,9 @@ gulp.task('wrap-javascript', function () {
 
 var serverTypescriptProject = typeScript.createProject({
     target: 'ES5',
-    outFile: 'server-bundle.js'
+    outFile: 'server-bundle.js',
+    types: [
+      'core-js']
 });
 
 
@@ -229,33 +231,41 @@ function compileServerTypescript() {
 
 var slimTypescriptProject = typeScript.createProject({
   target: 'ES5',
-  outFile: 'slim-typescript.js'
+  outFile: 'slim-typescript.js',
+  types: [
+    'core-js']
 });
 
 var moreTypescriptProject = typeScript.createProject({
   target: 'ES5',
-  outFile: 'more-typescript.js'
+  outFile: 'more-typescript.js',
+  types: [
+    'core-js']
 });
 
 var staffTypescriptProject = typeScript.createProject({
   target: 'ES5',
-  outFile: 'staff-typescript.js'
+  outFile: 'staff-typescript.js',
+  types: [
+    'core-js']
 });
 
 var editorTypescriptProject = typeScript.createProject({
   target: 'ES5',
-  outFile: 'editor-typescript.js'
+  outFile: 'editor-typescript.js',
+  types: [
+    'core-js']
 });
 
 
 function compileSlimTypescript() {
   var stream = gulp.src([
+        'client/shared/plain-old-javascript.d.ts',
         'client/app/**/*.ts',
         '!client/app/**/*.more.ts',
         '!client/app/**/*.editor.ts',
         '!client/app/**/*.staff.ts',
         '!client/app/slim-bundle.d.ts',
-        'client/shared/plain-old-javascript.d.ts',
         'client/typedefs/**/*.ts'])
     .pipe(wrap(nextFileTemplate))
     .pipe(slimTypescriptProject());
@@ -272,9 +282,9 @@ function compileOtherTypescript(what, typescriptProject) {
     'client/app/**/*.d.ts',
     '!client/app/**/*.' + what + '.d.ts',
     '!client/app/**/' + what + '-bundle-already-loaded.d.ts',
-    'client/app/model.ts',       // for now
-    'client/app/**/*.' + what + '.ts',
     'client/shared/plain-old-javascript.d.ts',
+    'client/app/model.ts',
+    'client/app/**/*.' + what + '.ts',
     'client/typedefs/**/*.ts'])
     .pipe(wrap(nextFileTemplate))
     .pipe(typescriptProject());
@@ -470,7 +480,8 @@ gulp.task('compile-e2e-scripts', function() {
       .pipe(typeScript({
         declarationFiles: true,
         module: 'commonjs',
-        //typescript: lib,  ? what
+        types: [
+          'core-js']
       }));
   // stream.dts.pipe(gulp.dest('target/e2e/...')); — no, don't need d.ts files
   if (watchAndLiveForever) {

@@ -16,7 +16,8 @@
  */
 
 /// <reference path="../typedefs/react/react.d.ts" />
-/// <reference path="plain-old-javascript.d.ts" />
+/// <reference path="../typedefs/lodash/lodash.d.ts" />
+/// <reference path="model.ts" />
 /// <reference path="constants.ts" />
 
 var React = window['React'];
