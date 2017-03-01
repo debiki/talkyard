@@ -396,7 +396,6 @@ sealed trait User {
 
   def anyName: Option[String] = None
   def anyUsername: Option[String] = None
-  def theUsername: String
   def usernameOrGuestName: String
 }
 
@@ -524,14 +523,15 @@ case class MemberInclDetails(
   require(country == country.map(_.trim), "EdEZ8KP02")
   require(!website.exists(_.contains(isBlank _)), "EdE4AB6GD")
   require(approvedAt.isDefined == approvedById.isDefined, "DwE0KEI4")
-  require(approvedById.map(_ >= LowestNonGuestId) != Some(false), "DwE55UKH4")
+  require(!approvedById.exists(_ < LowestNonGuestId), "DwE55UKH4")
   require(isApproved.isEmpty || (approvedById.isDefined && approvedAt.isDefined), "DwE4DKQ1")
   require(suspendedAt.isDefined == suspendedById.isDefined, "DwE64kfe2")
   require(suspendedTill.isEmpty || suspendedAt.isDefined, "DwEJKP75")
   require(suspendedReason.isDefined == suspendedAt.isDefined, "DwE5JK26")
-  require(suspendedReason.map(_.trim.length) != Some(0), "DwE2KFER0")
-  require(suspendedReason.map(r => r.trim.length < r.length) != Some(true), "DwE4KPF8")
-  require(suspendedById.map(_ >= LowestNonGuestId) != Some(false), "DwE7K2WF5")
+  require(!suspendedReason.exists(_.trim.length == 0), "DwE2KFER0")
+  require(!suspendedReason.exists(r => r.trim.length < r.length), "DwE4KPF8")
+  require(!suspendedById.exists(_ < LowestNonGuestId), "DwE7K2WF5")
+  require(!isAdmin || !isOwner, "EdE7JLRV2")
   require(!isGuest, "DwE0GUEST223")
   require(!isEmailLocalPartHidden(emailAddress), "DwE2WFE1")
   require(tinyAvatar.isDefined == smallAvatar.isDefined &&
@@ -653,20 +653,51 @@ object UnknownUser extends User {
   override def isModerator: Boolean = false
   override def isSuperAdmin: Boolean = false
   override def effectiveTrustLevel: TrustLevel = TrustLevel.New
-  override def theUsername: String = die("EdE4KFU02")
   override def usernameOrGuestName: String = UnknownUserName
 }
 
 
-// case class Group(...) extends User
+/** Groups have a username but no trust level. Members have username and trust level. [8KPG2W5]
+  * A group can, however, auto-grant trust level 'grantsTrustLevel' to all its members.
+  */
+case class Group(
+  id: UserId,
+  theUsername: String,
+  name: String,
+  tinyAvatar: Option[UploadRef] = None,
+  smallAvatar: Option[UploadRef] = None,
+  grantsTrustLevel: Option[TrustLevel] = None) extends User {
+
+  def email: String = ""
+  def passwordHash = None
+  def emailVerifiedAt = None
+  def emailNotfPrefs = EmailNotfPrefs.DontReceive
+
+  def isModerator: Boolean = id == Group.ModeratorsId
+  def isAdmin: Boolean = id == Group.AdminsId
+  def isOwner: Boolean = false
+  def isSuperAdmin: Boolean = false
+  def isApproved: Option[Boolean] = Some(true)
+  def suspendedTill: Option[ju.Date] = None
+
+  override def effectiveTrustLevel: TrustLevel = grantsTrustLevel getOrElse TrustLevel.New
+
+  override def usernameOrGuestName: String = theUsername
+
+  override def anyName: Option[String] = Some(name)
+  override def anyUsername: Option[String] = Some(theUsername)
+
+}
+
 
 object Group {
 
   /** Includes not-logged-in people and guests. */
   val EveryoneId = 10
 
-  /** All higher trust level members are members of this group too. (And so on:
-    * members >= Basic are all members of Basic, too.)
+  /** All higher trust level members are members of this group too. And so on:
+    * members >= Basic are all members of Basic, too. So this group includes all
+    * people who have created an account at the website.
     */
   val NewMembersId = 11
 

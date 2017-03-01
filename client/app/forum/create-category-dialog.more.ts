@@ -17,9 +17,13 @@
 
 /// <reference path="../../typedefs/react/react.d.ts" />
 /// <reference path="../slim-bundle.d.ts" />
+/// <reference path="../model.ts" />
 /// <reference path="../widgets.more.ts" />
 /// <reference path="../react-bootstrap-old/Input.more.ts" />
 /// <reference path="../util/stupid-dialog.more.ts" />
+/// <reference path="../editor/PageRoleDropdown.more.ts" />
+/// <reference path="../../typedefs/lodash/lodash.d.ts" />
+
 
 //------------------------------------------------------------------------------
    namespace debiki2.forum {
@@ -32,6 +36,8 @@ const ModalFooter = rb.ModalFooter;
 const ModalHeader = rb.ModalHeader;
 const ModalTitle = rb.ModalTitle;
 const PageRoleDropdown = editor.PageRoleDropdown;
+const DropdownModal = utils.DropdownModal;
+const ExplainingListItem = util.ExplainingListItem;
 
 const DefaultPosition = 50; // also in Scala [7KBYW2]
 
@@ -70,22 +76,16 @@ const EditCategoryDialog = createClassAndFactory({
       isEditing: !!categoryId,
     });
     if (categoryId) {
-      Server.loadCategory(categoryId, (category: Category) => {
+      Server.loadCategory(categoryId, (category: Category, permissions: PermsOnPage[],
+          groups: Group[]) => {
         this.setState({
           isLoading: false,
           isCreatingNewCategory: false,
           originalSlug: category.slug,
           category: category,
-          //name: category.name,
-          //slug: category.slug,
-          //defaultTopicType: category.defaultTopicType,
+          permissions: permissions,
+          groups: groups,
           canChangeDefault: !category.isDefaultCategory || false,
-          //isDefault: category.isDefaultCategory || false,
-          //position: category.position,
-          //unlisted: category.unlisted,
-          //staffOnly: category.staffOnly,
-          //onlyStaffMayCreateTopics: category.onlyStaffMayCreateTopics,
-          //isDeleted: category.isDeleted,
         });
       });
     }
@@ -120,23 +120,14 @@ const EditCategoryDialog = createClassAndFactory({
     this.setState({ isSaving: true });
     const category = {
       ...this.state.category,
-      //categoryId: this.state.categoryId,
       parentCategoryId: ReactStore.getCategoryId(),
       sectionPageId: debiki.internal.pageId,
-      //name: this.state.name,
-      //slug: this.state.slug,
-      //isDefault: this.state.isDefault,
-      //position: this.state.position || DefaultPosition,
-      //defaultTopicType: this.state.defaultTopicType,
-      //unlisted: this.state.unlisted,
-      //staffOnly: this.state.staffOnly,
-      //onlyStaffMayCreateTopics: this.state.onlyStaffMayCreateTopics,
     };
-    const isChangingSlug = this.state.originalSlug !== category.slug;
-    ReactActions.saveCategory(category, this.close, () => {
+    //const isChangingSlug = this.state.originalSlug !== category.slug;
+    ReactActions.saveCategory(category, this.state.permissions, this.close, () => {
       this.setState({ isSaving: false });
-      // BUG needs to update the URL slug, otherwise there'll be an error when rendering the
-      // category topic list, with the old slug. [7AFDW01]
+      // BUG if isChangingSlug, needs to update the URL slug, otherwise there'll be an error
+      // when rendering the category topic list, with the old slug. [7AFDW01]
     });
   },
 
@@ -166,12 +157,19 @@ const EditCategoryDialog = createClassAndFactory({
     });
   },
 
+  updatePermissions: function(newPermissions: PermsOnPage[]) {
+    this.setState({ permissions: newPermissions });
+  },
+
   render: function() {
     const body = this.state.isLoading
       ? r.div({}, "Loading...")
-      : r.div({},
-        CategorySettings({ ...this.state, updateCategory: this.updateCategory,
-            deleteCategory: this.deleteCategory, undeleteCategory: this.undeleteCategory }));
+      : rb.Tabs({ defaultActiveKey: 1, id: 't_CD_Tabs' },
+          rb.Tab({ eventKey: 1, title: "Settings", className: 's_CD_Tabs_Stn' },
+            CategorySettings({ ...this.state, updateCategory: this.updateCategory,
+                deleteCategory: this.deleteCategory, undeleteCategory: this.undeleteCategory })),
+          rb.Tab({ eventKey: 2, title: "Security", className: 's_CD_Tabs_Sec' },
+            CategorySecurity({ ...this.state, updatePermissions: this.updatePermissions })));
 
     const saveButtonTitle = this.state.isCreating ? "Create Category" : "Save Edits";
     const dialogTitle = this.state.isCreating ? saveButtonTitle : "Edit Category";
@@ -183,7 +181,7 @@ const EditCategoryDialog = createClassAndFactory({
         Button({ onClick: this.close, id: 'e2eCancelCatB' }, "Cancel"));
 
     return (
-      Modal({ show: this.state.isOpen, onHide: this.close, dialogClassName: 'esCatDlg' },
+      Modal({ show: this.state.isOpen, onHide: this.close, dialogClassName: 'esCatDlg s_CD' },
         ModalHeader({}, ModalTitle({}, dialogTitle)),
         ModalBody({}, body),
         ModalFooter({}, saveCancel)));
@@ -193,6 +191,8 @@ const EditCategoryDialog = createClassAndFactory({
 
 
 const CategorySettings = createClassAndFactory({
+  displayName: 'CategorySettings',
+
   onNameChanged: function(event) {
     const editedName = event.target.value;
     this.props.updateCategory({ name: editedName });
@@ -243,15 +243,6 @@ const CategorySettings = createClassAndFactory({
             "Edit description ", r.span({ className: 'icon-link-ext' }))),
         r.span({ className: 'help-block' },
           "Opens the category description page. Edit the first paragraph on that page."));
-
-    const topicTypes = [   // [i18n]
-        { value: PageRole.Question, label: 'Question' },
-        { value: PageRole.Problem, label: 'Problem' },
-        { value: PageRole.Idea, label: 'Idea' },
-        { value: PageRole.Discussion, label: 'Discussion' }];
-    if (debiki.siteId === '85') {
-      topicTypes.push({ value: PageRole.Critique, label: 'Critique' }); // [plugin]
-    }
 
     const defaultTopicTypeInput =
       r.div({ className: 'form-group' },
@@ -348,6 +339,171 @@ const CategorySettings = createClassAndFactory({
             anyDeleteButton);
   }
 });
+
+
+
+const CategorySecurity = createClassAndFactory({
+  displayName: 'CategorySecurity',
+
+  addPermission: function() {
+    const category: Category = this.props.category;
+    const permissions: PermsOnPage[] = this.props.permissions;
+    let newPermId = -1;  // negative = server will choose a "real" id, > 0  [9P1U6E5]
+    _.each(permissions, p => {
+      if (p.id <= newPermId) {
+        newPermId = p.id - 1;
+      }
+    });
+    const newPerm: PermsOnPage = {
+      id: newPermId,
+      forPeopleId: NoUserId,
+      onCategoryId: category.id,
+      mayEditPage: false,
+      mayEditComment: false,
+      mayEditWiki: false,
+      mayDeletePage: false,
+      mayDeleteComment: false,
+      mayCreatePage: false,
+      mayPostComment: false,
+      maySee: false,
+    };
+    this.props.updatePermissions(permissions.concat(newPerm));
+  },
+
+  render: function() {
+    const permissions: PermsOnPage[] = this.props.permissions;
+    const groups: Group[] = this.props.groups;
+    const permissionItems = permissions.map((perm: PermsOnPage) => {
+      const forGroup = _.find(groups, (g: Group) => g.id === perm.forPeopleId);
+      return PermissionItemWithKey(
+          permissions, perm, forGroup, groups, this.props.updatePermissions);
+    });
+    return r.div({},
+      r.ul({ className: 's_CD_Sec_PoPs' }, permissionItems),
+      Button({ className: 's_CD_Sec_AddB', onClick: this.addPermission },
+        "Add more ..."));
+  }
+});
+
+
+
+function PermissionItemWithKey(allPerms: PermsOnPage[], thisPerm: PermsOnPage, forGroup: Group,
+      allGroups: Group[], updatePermissions) {
+
+  const selectGroupDropdown = SelectGroupDropdown({ groups: allGroups, selectedGroup: forGroup,
+      onSelect: (peopleId: PeopleId) => {
+        const allPerms2: PermsOnPage[] = allPerms.slice(); // clones
+        const thisPerm2: PermsOnPage = { ...thisPerm, forPeopleId: peopleId };
+        replaceById(allPerms2, thisPerm2);
+        updatePermissions(allPerms2);
+      }});
+
+  const deleteButton = Button({ className: 's_PoP_Dl', onClick: () => {
+        const allPerms2: PermsOnPage[] = allPerms.slice(); // clones
+        deleteById(allPerms2, thisPerm.id);
+        updatePermissions(allPerms2);
+      }}, "Remove");
+
+  return r.li({ className: 's_PoP', key: thisPerm.id },
+    r.div({ className: 's_PoP_Expl' }, "Permission for: "),
+    r.div({ className: 's_PoP_Un' }, selectGroupDropdown),
+    deleteButton,
+    r.br(),
+    r.div({ className: 's_PoP_Expl s_PoP_Expl-What' }, "To do what: "),
+    r.div({ className: 's_PoP_Ps' },
+      Checkbox("Edit other people's topics",
+          thisPerm.mayEditPage, (p: PermsOnPage, c: boolean) => p.mayEditPage = c),
+      Checkbox("Edit others' comments",
+          thisPerm.mayEditComment, (p: PermsOnPage, c: boolean) => p.mayEditComment = c),
+      Checkbox("Edit wiki posts",
+          thisPerm.mayEditWiki, (p: PermsOnPage, c: boolean) => p.mayEditWiki = c),
+      Checkbox("Delete others' topics",
+          thisPerm.mayDeletePage, (p: PermsOnPage, c: boolean) => p.mayDeletePage = c),
+      Checkbox("Delete others' comments",
+          thisPerm.mayDeleteComment, (p: PermsOnPage, c: boolean) => p.mayDeleteComment = c),
+      Checkbox("Create pages",
+          thisPerm.mayCreatePage, (p: PermsOnPage, c: boolean) => p.mayCreatePage = c),
+      Checkbox("Post comments",
+          thisPerm.mayPostComment, (p: PermsOnPage, c: boolean) => p.mayPostComment = c),
+      Checkbox("See other people's topics",
+          thisPerm.maySee, (p: PermsOnPage, c: boolean) => p.maySee = c)));
+
+  function Checkbox(label: string, checked: boolean, set: (p: PermsOnPage, b: boolean) => void ) {
+    const onChange = function(event) {
+      const allPerms2: PermsOnPage[] = allPerms.slice(); // clones
+      const thisPerm2: PermsOnPage = { ...thisPerm };  // clones
+      set(thisPerm2, event.target.checked);
+      replaceById(allPerms2, thisPerm2);
+      updatePermissions(allPerms2);
+    };
+    return Input({ type: 'checkbox', label: label, checked: checked, onChange: onChange });
+  }
+}
+
+
+const SelectGroupDropdown = createClassAndFactory({
+  displayName: 'SelectGroupDropdown',
+
+  getInitialState: function() {
+    return { open: false };
+  },
+
+  open: function() {
+    this.setState({
+      open: true,
+      windowWidth: window.innerWidth,
+      buttonRect: reactGetRefRect(this.refs.btn),
+    });
+  },
+
+  close: function() {
+    this.setState({ open: false });
+  },
+
+  onSelect: function(listItem) {
+    this.props.onSelect(listItem.eventKey);
+    this.close();
+  },
+
+  render: function() {
+    const props = this.props;
+    const state = this.state;
+    const groups: Group[] = props.groups;
+    const selectedGroup: Group = props.selectedGroup;
+
+    // The 'selectedGroup' should be in 'groups'.
+    // @ifdef DEBUG
+    dieIf(selectedGroup && !_.find(groups, g => g.id === selectedGroup.id), 'EdE2WCPA40');
+    // @endif
+
+    const title = selectedGroup ? selectedGroup.fullName : "Select group ...";
+
+    const dropdownButton =
+      Button({ onClick: this.open, ref: 'btn' }, title + ' ', r.span({ className: 'caret' }));
+
+    const listItems = groups.map((group: Group) => {
+      return ExplainingListItem({ onSelect: this.onSelect,
+        activeEventKey: selectedGroup ? selectedGroup.id : NoId, eventKey: group.id, key: group.id,
+        title: group.fullName });
+    });
+
+    listItems.unshift(ExplainingListItem({ onSelect: this.onSelect,
+        activeEventKey: selectedGroup ? selectedGroup.id : NoId, eventKey: NoId, key: NoId,
+        title: "Select group ..." }));
+
+    const dropdownModal =
+      DropdownModal({ show: state.open, onHide: this.close, showCloseButton: true,
+          atRect: this.state.buttonRect, windowWidth: this.state.windowWidth },
+        r.ul({},
+          listItems));
+
+    return (
+      r.div({ style: { display: 'inline-block' } },
+        dropdownButton,
+        dropdownModal));
+  }
+});
+
 
 
 //------------------------------------------------------------------------------

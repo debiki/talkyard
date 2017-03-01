@@ -24,6 +24,8 @@ s_APAs          = After-page-actions
 s_APAs_OPRB     = After-page orig-post-reply-button
 
   C             = category
+s_CD            = category dialog: create/edit categories
+s_CD_Sec_PoPs   = category dialog, security tab, list of perms-on-pages
 
 esCB            = context bar (the right sidebar)
 
@@ -89,6 +91,10 @@ s_P-Hdn         = post, hidden
 
 esPA            = post actions (actually located outside the post (esP) there fore esPA not esP_A)
 
+s_PoP_Un        = perms-on-pages, username
+s_PoP_Ps        = perms-on-pages, permissions
+s_PoP_Ps_P      = perms-on-pages, single permission
+
 -RRs            = reply receivers
 -RRs_RR         = one reply receiver in the list
 -RRs_RR_Aw      = arrow after the reply receiver's name, pointing upwarts towards the parent post
@@ -101,8 +107,8 @@ SD              = stupid dialog
 
 SED             = server error dialog
 
-SERP            = search engine result page -- no, instead, use SRP (not SERP)
-SRP             = search result page -- no, instead, use SP
+(SERP)          = search engine result page -- no, instead, use SRP (not SERP)
+(SRP)           = search result page -- no, instead, use SP
 SP              = search page
 SP_SRs          = search page, search results
 

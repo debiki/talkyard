@@ -272,7 +272,6 @@ function compileOtherTypescript(what, typescriptProject) {
     'client/app/**/*.d.ts',
     '!client/app/**/*.' + what + '.d.ts',
     '!client/app/**/' + what + '-bundle-already-loaded.d.ts',
-    'client/app/constants.ts',   // for now COULD_OPTIMIZE, don't need to incl all vars here too
     'client/app/model.ts',       // for now
     'client/app/**/*.' + what + '.ts',
     'client/shared/plain-old-javascript.d.ts',

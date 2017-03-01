@@ -994,7 +994,12 @@ export function movePost(postId: PostId, newHost: SiteId, newPageId: PageId,
 }
 
 
-export function saveCategory(data, success: (response: any) => void, error?: () => void) {
+export function saveCategory(category: Category, permissions: PermsOnPage[],
+      success: (response: any) => void, error?: () => void) {
+  const data = {
+    category: category,
+    permissions: permissions,
+  };
   postJsonSuccess('/-/save-category', success, data, error);
 }
 
@@ -1011,8 +1016,11 @@ export function undeleteCategory(categoryId: number, success: (StorePatch: any) 
 }
 
 
-export function loadCategory(id: number, success: (response: any) => void) {
-  get('/-/load-category?id=' + id, success);
+export function loadCategory(id: number,
+      success: (category: Category, permissions: PermsOnPage[], groups: Group[]) => void) {
+  get('/-/load-category?id=' + id, response => {
+    success(response.category, response.permissions, response.groups);
+  });
 }
 
 

@@ -1,12 +1,71 @@
 
+/// <reference path="model.ts" />
 
-declare var React: any;
-declare var ReactDOM: any;
-declare var ReactCSSTransitionGroup: any;
-declare var Router: any;
+// In constants.ts:
+
+declare const React: any;
+declare const ReactDOM: any;
+declare const ReactCSSTransitionGroup: any;
+declare const Router: any;
 declare function reactCreateFactory(x);
 declare function doNextFrameOrNow(x);
 
+declare const ReactStartedClass;
+
+declare const EmptyPageId;
+declare const FirstSiteId;
+
+declare const NoId;
+declare const NoCategoryId;
+declare const NoPermissionId;
+
+declare const NoPostId;
+declare const TitleNr;
+declare const BodyNr;
+declare const FirstReplyNr;
+
+declare let NoUserId;
+declare const SystemUserId;
+declare const MinMemberId;
+
+declare const MaxGuestId;
+declare const UnknownUserId;
+
+
+declare const ManualReadMark;
+declare const YellowStarMark;
+declare const FirstStarMark;
+declare const BlueStarMark;
+declare const LastStarMark;
+
+declare const MaxNumFirstPosts;
+
+declare const IgnoreThisError: number;
+
+
+declare const SiteStatusStrings: string[];
+
+
+declare const ApiUrlPathPrefix;
+
+
+declare const RoutePathLatest;
+declare const RoutePathTop;
+declare const RoutePathCategories;
+
+
+declare const ImpersonationCookieName;
+
+
+declare const UseWideForumLayoutMinWidth;
+declare const UseWidePageLayoutMinWidth;
+declare const WatchbarWidth;
+declare const ContextbarMinWidth;
+
+declare const ServerSideWindowWidth;
+
+
+// In other files:
 
 declare namespace debiki2 {
 
@@ -20,6 +79,9 @@ declare namespace debiki2 {
   var NavLink: any;
   var createComponent: any;
   var createClassAndFactory: any;
+
+  function replaceById(itemsWithId: any[], replacement);
+  function deleteById(itemsWithId: any[], id);
 
   namespace utils {
     var scrollIntoViewInPageColumn;

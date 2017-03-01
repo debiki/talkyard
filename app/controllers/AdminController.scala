@@ -17,14 +17,11 @@
 
 package controllers
 
-import com.debiki.core._
-import com.debiki.core.Prelude._
 import debiki._
 import ed.server._
 import ed.server.http._
 import javax.inject.Inject
 import play.api._
-import play.api.mvc.{Action => _, _}
 import DebikiHttp._
 
 
@@ -34,7 +31,7 @@ import DebikiHttp._
 class AdminController @Inject() extends mvc.Controller {
 
 
-  def redirectToAdminPage() = GetAction { request =>
+  def redirectToAdminPage() = GetAction { _ =>
     Redirect(routes.AdminController.viewAdminPage("").url)
   }
 
@@ -53,9 +50,8 @@ class AdminController @Inject() extends mvc.Controller {
     else {
       val siteTpi = SiteTpi(apiReq)
       val adminPageBody = views.html.adminPage(siteTpi, appId = "dw-react-admin-app").body
-      Ok(adminPageBody) as HTML withCookies (
-        SecureCookie(
-          security.XsrfCookieName, apiReq.xsrfToken.value))
+      Ok(adminPageBody) as HTML withCookies SecureCookie(
+        security.XsrfCookieName, apiReq.xsrfToken.value)
     }
   }
 

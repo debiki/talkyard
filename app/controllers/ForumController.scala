@@ -51,25 +51,38 @@ object ForumController extends mvc.Controller {
 
 
   def loadCategory(id: String): Action[Unit] = AdminGetAction { request =>
+    import request.dao
     val categoryId = Try(id.toInt) getOrElse throwBadRequest("DwE6PU1", "Invalid category id")
-    val (category, isDefault) = request.dao.loadTheCategory(categoryId)
-    val json = categoryToJson(category, isDefault, recentTopics = Nil, pageStuffById = Map.empty)
-    OkSafeJson(json)
+    val (category, isDefault) = dao.loadTheCategory(categoryId)
+    val catJson = categoryToJson(category, isDefault, recentTopics = Nil, pageStuffById = Map.empty)
+    val (allPerms, groups) = dao.readOnlyTransaction { tx =>
+      (tx.loadPermsOnPages(), tx.loadGroupsAsSeq())
+    }
+    val catPerms = allPerms.filter(_.onCategoryId.contains(categoryId))
+    OkSafeJson(Json.obj(
+      "category" -> catJson,
+      "permissions" -> catPerms.map(permissionToJson),
+      "groups" -> groups.map(groupToJson)))
   }
 
 
   def saveCategory: Action[JsValue] = AdminPostJsonAction(maxBytes = 1000) { request =>
+    BUG // fairly harmless in this case: The lost update bug.
     val body = request.body
-    val sectionPageId = (body \ "sectionPageId").as[PageId]
-    val unlisted = (body \ "unlisted").asOpt[Boolean].getOrElse(false)
-    val staffOnly = (body \ "staffOnly").asOpt[Boolean].getOrElse(false)
-    val onlyStaffMayCreateTopics = (body \ "onlyStaffMayCreateTopics").asOpt[Boolean].getOrElse(false)
-    val defaultTopicTypeInt = (body \ "defaultTopicType").as[Int]
+    val categoryJson = (body \ "category").as[JsObject]
+    val permissionsJson = (body \ "permissions").as[JsArray]
+    val sectionPageId = (categoryJson \ "sectionPageId").as[PageId]
+    val unlisted = (categoryJson \ "unlisted").asOpt[Boolean].getOrElse(false)
+    // --delete: ----
+    val staffOnly = (categoryJson \ "staffOnly").asOpt[Boolean].getOrElse(false)
+    val onlyStaffMayCreateTopics = (categoryJson \ "onlyStaffMayCreateTopics").asOpt[Boolean].getOrElse(false)
+    // --/delete------
+    val defaultTopicTypeInt = (categoryJson \ "defaultTopicType").as[Int]
     val defaultTopicType = PageRole.fromInt(defaultTopicTypeInt) getOrElse throwBadReq(
         "DwE7KUP3", s"Bad new topic type int: $defaultTopicTypeInt")
 
-    val shallBeDefaultCategory = (body \ "isDefaultCategory").as[Boolean]
-    val anyId = (body \ "id").as[Int] match {
+    val shallBeDefaultCategory = (categoryJson \ "isDefaultCategory").as[Boolean]
+    val anyId = (categoryJson \ "id").as[Int] match {
       case NoCategoryId => None
       case x => Some(x)
     }
@@ -77,11 +90,11 @@ object ForumController extends mvc.Controller {
     val categoryData = CategoryToSave(
       anyId = anyId,
       sectionPageId = sectionPageId,
-      parentId = (body \ "parentCategoryId").as[CategoryId],
-      name = (body \ "name").as[String],
-      slug = (body \ "slug").as[String],
+      parentId = (categoryJson \ "parentCategoryId").as[CategoryId],
+      name = (categoryJson \ "name").as[String],
+      slug = (categoryJson \ "slug").as[String],
       description = CategoriesDao.CategoryDescriptionSource,
-      position = (body \ "position").as[Int],
+      position = (categoryJson \ "position").as[Int],
       newTopicTypes = List(defaultTopicType),
       shallBeDefaultCategory = shallBeDefaultCategory,
       unlisted = unlisted,
@@ -109,6 +122,8 @@ object ForumController extends mvc.Controller {
         val (category, _) = request.dao.createCategory(categoryData, request.who)
         category
     }
+
+    // ... save permissions ...  and alloc new id if perm id < 0 [9P1U6E5].
 
     OkSafeJson(Json.obj(
       "allCategories" -> ReactJson.makeCategoriesJson(
@@ -354,6 +369,40 @@ object ForumController extends mvc.Controller {
       "frozenAtMs" -> dateOrNull(topic.meta.frozenAt),
       "hiddenAtMs" -> JsWhenMsOrNull(topic.meta.hiddenAt),
       "deletedAtMs" -> JsDateMsOrNull(topic.meta.deletedAt))
+  }
+
+
+  def permissionToJson(permsOnPages: PermsOnPages): JsObject = {
+    Json.obj(
+      "id" -> permsOnPages.id,
+      "forPeopleId" -> permsOnPages.forPeopleId,
+      "onWholeSite" -> JsBooleanOrNull(permsOnPages.onWholeSite),
+      "onCategoryId" -> JsNumberOrNull(permsOnPages.onCategoryId),
+      "onPageId" -> JsStringOrNull(permsOnPages.onPageId),
+      "onPostId" -> JsNumberOrNull(permsOnPages.onPostId),
+      // later: "onTagId" -> JsNumberOrNull(permsOnPages.onTagId),
+      "mayEditPage" -> JsBooleanOrNull(permsOnPages.mayEditPage),
+      "mayEditComment" -> JsBooleanOrNull(permsOnPages.mayEditComment),
+      "mayEditWiki" -> JsBooleanOrNull(permsOnPages.mayEditWiki),
+      "mayDeletePage" -> JsBooleanOrNull(permsOnPages.mayDeletePage),
+      "mayDeleteComment" -> JsBooleanOrNull(permsOnPages.mayDeleteComment),
+      "mayCreatePage" -> JsBooleanOrNull(permsOnPages.mayCreatePage),
+      "mayPostComment" -> JsBooleanOrNull(permsOnPages.mayPostComment),
+      "maySee" -> JsBooleanOrNull(permsOnPages.maySee))
+  }
+
+
+  // Move to ... GroupsController? later when has been created.
+  def groupToJson(group: Group): JsObject = {
+    var json = Json.obj(
+      "id" -> group.id,
+      "username" -> group.theUsername,
+      "fullName" -> group.name)
+      // "grantsTrustLevel" -> group.grantsTrustLevel)
+    group.tinyAvatar foreach { uploadRef =>
+      json += "avatarUrl" -> JsString(uploadRef.url)
+    }
+    json
   }
 
 }

@@ -18,7 +18,6 @@
 /// <reference path="../../typedefs/react/react.d.ts" />
 /// <reference path="../../typedefs/lodash/lodash.d.ts" />
 /// <reference path="../prelude.ts" />
-/// <reference path="../constants.ts" />
 /// <reference path="../utils/react-utils.ts" />
 /// <reference path="../utils/utils.ts" />
 /// <reference path="../utils/window-zoom-resize-mixin.ts" />

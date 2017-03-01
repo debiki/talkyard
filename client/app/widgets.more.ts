@@ -13,6 +13,8 @@ namespace rb {
   export var NavItem = reactCreateFactory(ReactBootstrap.NavItem);
   export var TabbedArea = reactCreateFactory(ReactBootstrap.TabbedArea);
   export var TabPane = reactCreateFactory(ReactBootstrap.TabPane);
+  export var Tabs = reactCreateFactory(ReactBootstrap.Tabs);
+  export var Tab = reactCreateFactory(ReactBootstrap.Tab);
   export var Alert = reactCreateFactory(ReactBootstrap.Alert);
 
   export var FormGroup = reactCreateFactory(ReactBootstrap.FormGroup);

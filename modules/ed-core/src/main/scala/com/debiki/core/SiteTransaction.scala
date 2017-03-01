@@ -355,6 +355,7 @@ trait SiteTransaction {
 
   def loadOwner(): Option[MemberInclDetails]
 
+  def loadGroupsAsSeq(): immutable.Seq[Group]
 
   def loadGroupIds(user: User): Vector[UserId] = {
     val member = user match {

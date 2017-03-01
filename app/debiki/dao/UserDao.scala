@@ -149,6 +149,11 @@ trait UserDao {
           isAdmin.contains(true) || isModerator.contains(true)))
         throwForbidden("DwE2KEP8", "User is suspended")
 
+      if (isAdmin.contains(true) && user.isModerator ||
+          isModerator.contains(true) && user.isAdmin ||
+          isAdmin.contains(true) && isModerator.contains(true))
+        throwForbidden("EdE4PJ8SY0", "Cannot be both admin and moderator at the same time")
+
       user = user.copy(
         isAdmin = isAdmin.getOrElse(user.isAdmin),
         isModerator = isModerator.getOrElse(user.isModerator))

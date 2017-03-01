@@ -22,22 +22,15 @@
    module debiki2.tags {
 //------------------------------------------------------------------------------
 
-var r = React.DOM;
-var reactCreateFactory = React['createFactory'];
+const r = React.DOM;
+const reactCreateFactory = React['createFactory'];
 
-var ReactBootstrap: any = window['ReactBootstrap'];
-var Nav = reactCreateFactory(ReactBootstrap.Nav);
-var NavItem = reactCreateFactory(ReactBootstrap.NavItem);
-var TabbedArea = reactCreateFactory(ReactBootstrap.TabbedArea);
-var TabPane = reactCreateFactory(ReactBootstrap.TabPane);
-var Alert = reactCreateFactory(ReactBootstrap.Alert);
-
-var ReactRouter = window['ReactRouter'];
-var Route = reactCreateFactory(ReactRouter.Route);
-var Redirect = reactCreateFactory(ReactRouter.Redirect);
+const ReactRouter = window['ReactRouter'];
+const Route = reactCreateFactory(ReactRouter.Route);
+const Redirect = reactCreateFactory(ReactRouter.Redirect);
 
 
-var TagsRoot = '/-/tags/';
+const TagsRoot = '/-/tags/';
 
 export function routes() {
   return [
@@ -48,7 +41,7 @@ export function routes() {
 
 
 
-var TagsAppComponent = React.createClass(<any> {
+const TagsAppComponent = React.createClass(<any> {
   mixins: [debiki2.StoreListenerMixin],
 
   contextTypes: {

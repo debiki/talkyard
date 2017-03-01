@@ -119,8 +119,9 @@ export function logoutClientSideOnly() {
 }
 
 
-export function saveCategory(category, success: () => void, error: () => void) {
-  Server.saveCategory(category, (response) => {
+export function saveCategory(category: Category, permissions: PermsOnPage[],
+      success: () => void, error: () => void) {
+  Server.saveCategory(category, permissions, (response) => {
     ReactDispatcher.handleViewAction({
       actionType: actionTypes.CreateEditForumCategory,
       allCategories: response.allCategories,

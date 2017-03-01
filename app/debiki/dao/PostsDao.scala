@@ -701,8 +701,8 @@ trait PostsDao {
           None
         }
         else {
-          // COULD reuse the same transaction, when loading the category. Barely matters.
-          val (category, isDefault) = loadTheCategory(page.meta.categoryId getOrDie "DwE2PKF0")
+          val category = transaction.loadCategory(page.meta.categoryId getOrDie "DwE2PKF0")
+                .getOrDie("EdE8ULK4E")
           val excerpt = ReactJson.htmlToExcerpt(
             newTextAndHtml.safeHtml, Category.DescriptionExcerptLength,
             firstParagraphOnly = true)
