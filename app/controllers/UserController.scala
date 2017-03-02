@@ -549,6 +549,14 @@ object UserController extends mvc.Controller {
   }
 
 
+  def loadGroups = AdminGetAction { request =>
+    val groups = request.dao.readOnlyTransaction { tx =>
+      tx.loadGroupsAsSeq()
+    }
+    OkSafeJson(JsArray(groups map ForumController.groupToJson))
+  }
+
+
   SECURITY // don't allow if user listing disabled, & isn't staff [8FKU2A4]
   def listAllUsers(usernamePrefix: String) = GetAction { request =>
     // Authorization check: Is a member? Add MemberGetAction?

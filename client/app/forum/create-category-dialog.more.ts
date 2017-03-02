@@ -88,22 +88,26 @@ const EditCategoryDialog = createClassAndFactory({
       });
     }
     else {
-      const newCategory: Category = {
-        id: NoCategoryId,
-        name: '',
-        slug: '',
-        defaultTopicType: PageRole.Discussion,
-        isDefaultCategory: false,
-        position: DefaultPosition,
-        description: '',
-        unlisted: false,
-        staffOnly: false,
-        onlyStaffMayCreateTopics: false,
-      };
-      this.setState({
-        isCreatingNewCategory: true,
-        canChangeDefault: true,
-        category: newCategory,
+      Server.loadGroups((groups: Group[]) => {
+        const newCategory: Category = {
+          id: NoCategoryId,
+          name: '',
+          slug: '',
+          defaultTopicType: PageRole.Discussion,
+          isDefaultCategory: false,
+          position: DefaultPosition,
+          description: '',
+          unlisted: false,
+          staffOnly: false,
+          onlyStaffMayCreateTopics: false,
+        };
+        this.setState({
+          isCreatingNewCategory: true,
+          canChangeDefault: true,
+          category: newCategory,
+          groups: groups,
+          permissions: [],  // TODO default cat permissions here
+        });
       });
     }
   },
@@ -193,13 +197,13 @@ const CategorySettings = createClassAndFactory({
 
   onNameChanged: function(event) {
     const editedName = event.target.value;
-    this.props.updateCategory({ name: editedName });
+    const editedFields: any = { name: editedName };
     // If this is a new category, it's okay to change the slug. Otherwise, avoid changing it,
     // because it'd break external links to the category.
     if (this.props.isCreating) {
-      const slugMatchingName = window['debikiSlugify'](editedName);
-      this.props.updateCategory({ slug: slugMatchingName });
+      editedFields.slug = window['debikiSlugify'](editedName);
     }
+    this.props.updateCategory(editedFields);
   },
 
   onSlugChanged: function(event) {
@@ -227,6 +231,8 @@ const CategorySettings = createClassAndFactory({
   render: function () {
     const store: Store = this.props.store;
     const category: Category = this.props.category;
+    if (!category)
+      return null;
 
     const nameInput =
         Input({ type: 'text', label: "Name", ref: 'nameInput', id: 'e2eCatNameI',
@@ -370,6 +376,9 @@ const CategorySecurity = createClassAndFactory({
 
   render: function() {
     const permissions: PermsOnPage[] = this.props.permissions;
+    if (!permissions)
+      return null;
+
     const groups: Group[] = this.props.groups;
     const permissionItems = permissions.map((perm: PermsOnPage) => {
       const forGroup = _.find(groups, (g: Group) => g.id === perm.forPeopleId);

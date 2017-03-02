@@ -245,22 +245,25 @@ object Authz {
     var mayWhat = MayNothing
     val isUsersPage = user.exists(u => pageMeta.exists(_.authorId == u.id))
     var isDeleted = pageMeta.exists(_.isDeleted)
+    val isForum = pageMeta.exists(_.pageRole == PageRole.Forum)
 
     // Later: return may-not-see also if !published?
     if (isDeleted && !isUsersPage && !isStaff)
       return MayWhat.mayNotSee("EdEPAGEDELD")
 
-    // [BACKW_COMPAT_PERMS] Remove this after I've inserted groups & permissions into the db.
-    if (isStaff) {
-      mayWhat = MayEverything
-    }
-    else {
-      mayWhat = MayWhat(maySee = true, mayPostComment = true, mayCreatePage = true,
-        debugCode = "EdM2KW0Y5")
-    }
+    // For now, hardcode may-see the forum page, otherwise only admins would see it.
+    if (isForum)
+      mayWhat = mayWhat.copy(maySee = true, debugCode = "EdMSEEFORUM")
 
-    if (categoriesRootLast.nonEmpty) for (category <- categoriesRootLast.init.reverse) {
-      for (p <- relevantPermissions; if p.onCategoryId.contains(category.id)) {
+    for (p <- relevantPermissions; if p.onWholeSite.is(true))
+      mayWhat = mayWhat.addRemovePermissions(p, "EdMSITEPERM")
+
+    if (!mayWhat.maySee)
+      return mayWhat
+
+    // Drop 1 = skip the root category, currently cannot set permissions on it.
+    if (categoriesRootLast.nonEmpty) for (category <- categoriesRootLast.reverseIterator.drop(1)) {
+      for (p <- relevantPermissions; if p.onCategoryId.is(category.id)) {
         mayWhat = mayWhat.addRemovePermissions(p, "EdMCATLOOP")
       }
 

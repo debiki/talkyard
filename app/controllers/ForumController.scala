@@ -182,7 +182,7 @@ object ForumController extends mvc.Controller {
   /** Later, I'll add about user pages? About tag? So category-id is optional, might
     * be user-id or tag-id instead.
     */
-  def redirectToAboutPage(categoryId: Option[CategoryId]) = StaffGetAction { request =>
+  def redirectToAboutPage(categoryId: Option[CategoryId]) = AdminGetAction { request =>
     val pageId =
       categoryId map { id =>
         request.dao.loadAboutCategoryPageId(id) getOrElse {
@@ -201,7 +201,7 @@ object ForumController extends mvc.Controller {
       "Only staff can list deleted pages")
     val topics = listTopicsInclPinned(categoryId, pageQuery, request.dao,
       includeDescendantCategories = true, isStaff = request.isStaff, restrictedOnly = false)
-    makeTopicsReply(topics, request.dao)
+    makeTopicsResponse(topics, request.dao)
   }
 
 
@@ -213,11 +213,11 @@ object ForumController extends mvc.Controller {
     val topics = topicsInclForbidden filter { page: PagePathAndMeta =>
       request.dao.maySeePageUseCache(page.meta, caller, maySeeUnlisted = isStaffOrSelf)._1
     }
-    makeTopicsReply(topics, request.dao)
+    makeTopicsResponse(topics, request.dao)
   }
 
 
-  def makeTopicsReply(topics: Seq[PagePathAndMeta], dao: SiteDao): Result = {
+  private def makeTopicsResponse(topics: Seq[PagePathAndMeta], dao: SiteDao): Result = {
     val pageStuffById = dao.getPageStuffById(topics.map(_.pageId))
     val users = dao.getUsersAsSeq(pageStuffById.values.flatMap(_.userIds))
     val topicsJson: Seq[JsObject] = topics.map(topicToJson(_, pageStuffById))
@@ -419,7 +419,7 @@ object ForumController extends mvc.Controller {
   }
 
 
-  // Move to ... GroupsController? later when has been created.
+  REFACTOR // Move to ... JsonMaker? later when has been created.
   def groupToJson(group: Group): JsObject = {
     var json = Json.obj(
       "id" -> group.id,

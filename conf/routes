@@ -106,6 +106,7 @@ POST  /-/track-reading-text     controllers.UserController.trackReadingProgressT
 GET   /-/load-notifications     controllers.UserController.loadNotifications(userId: Int, upToWhenMs: Long)
 POST  /-/mark-notf-as-seen      controllers.UserController.markNotificationAsSeen
 POST  /-/set-page-notf-level    controllers.UserController.savePageNotfLevel
+GET   /-/load-groups            controllers.UserController.loadGroups()
 GET   /-/list-all-users         controllers.UserController.listAllUsers(usernamePrefix)
 GET   /-/list-usernames         controllers.UserController.listUsernames(pageId, prefix)
 POST  /-/save-user-preferences  controllers.UserController.saveUserPreferences
