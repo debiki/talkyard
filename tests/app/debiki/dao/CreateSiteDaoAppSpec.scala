@@ -49,7 +49,9 @@ class CreateSiteDaoAppSpec extends DaoAppSuite(maxSitesTotal = Some(75)) {
   "CreateSiteDao can" - {
 
     "create sites" in {
+      Globals.systemDao.getOrCreateFirstSite()
       val dao = Globals.siteDao(Site.FirstSiteId)
+      createPasswordOwner("555uuyyWW", dao)
       val user = createPasswordUser("qq33yy55ee", dao)
 
       info("a real site")

@@ -20,7 +20,6 @@
 /// <reference path="oop-methods.ts" />
 /// <reference path="prelude.ts" />
 /// <reference path="utils/utils.ts" />
-/// <reference path="../typedefs/lodash/lodash.d.ts" />
 /// <reference path="../typedefs/eventemitter2/eventemitter2.d.ts" />
 
 // CLEAN_UP try to remove this dependency from here.

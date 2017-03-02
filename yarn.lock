@@ -6,6 +6,10 @@
   version "0.9.35"
   resolved "https://registry.yarnpkg.com/@types/core-js/-/core-js-0.9.35.tgz#444064e63711cdcc62ea844d27642f6efc2285f2"
 
+"@types/lodash@^4.14.53":
+  version "4.14.53"
+  resolved "https://registry.yarnpkg.com/@types/lodash/-/lodash-4.14.53.tgz#c81ee7f2a551f92fb8692a2f6766d0430ccce9eb"
+
 "@types/node@*", "@types/node@^7.0.0":
   version "7.0.0"
   resolved "https://registry.yarnpkg.com/@types/node/-/node-7.0.0.tgz#c081147b109da5f9c57af70571771be97ce9c0ba"

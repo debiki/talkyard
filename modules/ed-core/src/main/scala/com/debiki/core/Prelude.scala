@@ -480,8 +480,10 @@ object Prelude {
       }
   }
 
-  implicit class OptionToInt(option: Option[_]) {
-    def oneIfDefined: Int = if (option.isDefined) 1 else 0
+  implicit class RichOption[T](underlying: Option[T]) {
+    def oneIfDefined: Int = if (underlying.isDefined) 1 else 0
+    def is(value: T): Boolean = underlying.contains(value)
+    def isNot(value: T): Boolean = underlying.isEmpty || !underlying.contains(value)
   }
 
   implicit class BlankStringToNone(underlying: Option[String]) {

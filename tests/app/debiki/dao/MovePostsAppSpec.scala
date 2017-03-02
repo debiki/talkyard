@@ -26,7 +26,11 @@ import java.{util => ju}
 
 
 class MovePostsAppSpec extends DaoAppSuite(disableScripts = true, disableBackgroundJobs = true) {
-  lazy val dao: SiteDao = Globals.siteDao(Site.FirstSiteId)
+  lazy val dao: SiteDao = {
+    Globals.systemDao.getOrCreateFirstSite()
+    Globals.siteDao(Site.FirstSiteId)
+  }
+
   lazy val theModerator: User = createPasswordModerator("move_mod", dao)
   lazy val theMember: User = createPasswordUser("move_mbr", dao)
 
@@ -34,6 +38,7 @@ class MovePostsAppSpec extends DaoAppSuite(disableScripts = true, disableBackgro
     val now = new ju.Date()
 
     "move one posts, but must be staff" in {
+      createPasswordOwner("mv_ownr", dao)
       val thePageId = createPage(PageRole.Discussion, TextAndHtml.testTitle("Title"),
         TextAndHtml.testBody("body"), SystemUserId, browserIdData, dao)
       val firstParent = reply(theModerator.id, thePageId, "1st parent")(dao)

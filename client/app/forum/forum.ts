@@ -16,7 +16,6 @@
  */
 
 /// <reference path="../../typedefs/react/react.d.ts" />
-/// <reference path="../../typedefs/lodash/lodash.d.ts" />
 /// <reference path="../prelude.ts" />
 /// <reference path="../utils/react-utils.ts" />
 /// <reference path="../utils/utils.ts" />

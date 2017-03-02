@@ -366,11 +366,8 @@ sealed trait User {
   def id: UserId
   def email: String  // COULD rename to emailAddr
   def emailNotfPrefs: EmailNotfPrefs
-  def emailVerifiedAt: Option[ju.Date]
-  def passwordHash: Option[String]
   def tinyAvatar: Option[UploadRef]
   def smallAvatar: Option[UploadRef]
-  def isApproved: Option[Boolean]
   def suspendedTill: Option[ju.Date]
   def isAdmin: Boolean
   def isOwner: Boolean
@@ -378,7 +375,7 @@ sealed trait User {
   def isSuperAdmin: Boolean
 
   def isAuthenticated: Boolean = isRoleId(id)
-  def isApprovedOrStaff: Boolean = isApproved.contains(true) || isStaff
+  def isApprovedOrStaff: Boolean = false
   def isSystemUser: Boolean = id == SystemUserId
   def isStaff: Boolean = isAdmin || isModerator || isSystemUser
   def isHuman: Boolean = id >= LowestHumanMemberId
@@ -433,6 +430,8 @@ case class Member(
 
   def effectiveTrustLevel: TrustLevel = lockedTrustLevel getOrElse trustLevel
   def effectiveThreatLevel: ThreatLevel = lockedThreatLevel getOrElse threatLevel
+
+  override def isApprovedOrStaff: Boolean = isApproved.contains(true) || isStaff
 
   override def canPromoteToBasicMember: Boolean =
     // If trust level locked, promoting the this.trustLevel has no effect — but we'll still
@@ -531,7 +530,7 @@ case class MemberInclDetails(
   require(!suspendedReason.exists(_.trim.length == 0), "DwE2KFER0")
   require(!suspendedReason.exists(r => r.trim.length < r.length), "DwE4KPF8")
   require(!suspendedById.exists(_ < LowestNonGuestId), "DwE7K2WF5")
-  require(!isAdmin || !isOwner, "EdE7JLRV2")
+  require(!isAdmin || !isModerator, s"User $id is both admin and moderator [EdE7JLRV2]")
   require(!isGuest, "DwE0GUEST223")
   require(!isEmailLocalPartHidden(emailAddress), "DwE2WFE1")
   require(tinyAvatar.isDefined == smallAvatar.isDefined &&
@@ -541,7 +540,6 @@ case class MemberInclDetails(
   def isApprovedOrStaff: Boolean = approvedAt.isDefined || isStaff
 
   def isGuest: Boolean = User.isGuestId(id)
-  def anyRoleId: Option[RoleId] = if (isRoleId(id)) Some(id) else None
 
   def isSuspendedAt(when: ju.Date): Boolean =
     User.isSuspendedAt(when, suspendedTill = suspendedTill)
@@ -642,11 +640,8 @@ object UnknownUser extends User {
   override def id: UserId = UnknownUserId
   override def email: String = ""
   override def emailNotfPrefs: EmailNotfPrefs = EmailNotfPrefs.DontReceive
-  override def emailVerifiedAt: Option[Date] = None
-  override def passwordHash: Option[String] = None
   override def tinyAvatar: Option[UploadRef] = None
   override def smallAvatar: Option[UploadRef] = None
-  override def isApproved: Option[Boolean] = None
   override def suspendedTill: Option[Date] = None
   override def isAdmin: Boolean = false
   override def isOwner: Boolean = false

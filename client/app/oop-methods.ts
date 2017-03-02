@@ -18,7 +18,6 @@
 /// <reference path="prelude.ts" />
 /// <reference path="utils/utils.ts" />
 /// <reference path="store-getters.ts" />
-/// <reference path="../typedefs/lodash/lodash.d.ts" />
 
 
 /* Object Oriented Programming methods, like so: className_methodName(instance, args...),

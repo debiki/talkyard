@@ -31,7 +31,10 @@ class SiteTransactionAppSpec extends DaoAppSuite {
   val FutureMs = 3100010001000L
 
   "SiteTransaction can handle member stats" - {
-    lazy val dao: SiteDao = Globals.siteDao(Site.FirstSiteId)
+    lazy val dao: SiteDao = {
+      Globals.systemDao.getOrCreateFirstSite()
+      Globals.siteDao(Site.FirstSiteId)
+    }
 
     lazy val forumId = dao.createForum(title = "Forum to delete", folder = "/",
       Who(SystemUserId, browserIdData)).pagePath.thePageId
@@ -251,9 +254,10 @@ class SiteTransactionAppSpec extends DaoAppSuite {
         }
       }
     }
+  }
 
 
-    "SiteTransaction can handle posts read stats" - {
+  "SiteTransaction can handle posts read stats" - {
       lazy val dao: SiteDao = Globals.siteDao(Site.FirstSiteId)
 
       lazy val forumId = dao.createForum(title = "Forum to delete", folder = "/",
@@ -379,228 +383,6 @@ class SiteTransactionAppSpec extends DaoAppSuite {
           pageAStats3.readCountFor(5) mustBe 1
         }
       }
-    }
-
-
-    "SiteTransaction can handle PermsOnPages" - {
-      var dao: SiteDao = null
-      var admin: User = null
-      var userA: User = null
-      var userB: User = null
-      var guest: User = null
-      var pageAId: PageId = null
-      var pageBId: PageId = null
-      var pageAPost2: Post = null
-      var createForumResult: CreateForumResult = null
-
-      "prepare: create stuff" in {
-        dao = Globals.siteDao(Site.FirstSiteId)
-
-        admin = createPasswordOwner(s"poc_adm", dao)
-        userA = createPasswordUser(s"poc_u_a", dao)
-        userB = createPasswordUser(s"poc_u_b", dao)
-        guest = dao.loginAsGuest(GuestLoginAttempt(ip = "2.2.2.2", Globals.now().toJavaDate,
-          name = "Guestellina", guestCookie = "guestellinacookie"))
-
-        createForumResult = dao.createForum(title = "PermsOnPages Forum", folder = "/",
-          Who(admin.id, browserIdData))
-
-        pageAId = createPage(PageRole.Discussion, TextAndHtml.forTitle("Page Title XY 12 AB"),
-          TextAndHtml.forBodyOrComment("Page body."), authorId = admin.id, browserIdData,
-          dao, anyCategoryId = None)
-        pageAPost2 = reply(admin.id, pageAId, s"Post 2")(dao)
-        reply(admin.id, pageAId, s"Post 3")(dao)
-        reply(admin.id, pageAId, s"Post 4")(dao)
-
-        pageBId = createPage(PageRole.Discussion, TextAndHtml.forTitle("Other Page Title"),
-          TextAndHtml.forBodyOrComment("Other page body."), authorId = admin.id, browserIdData,
-          dao, anyCategoryId = None)
-        reply(admin.id, pageBId, s"Post 2")(dao)
-      }
-
-      "load and save PermsOnPages" in {
-        dao.readWriteTransaction { transaction =>
-
-          info("find no perms when there are none")
-          var permsLoaded = transaction.loadPermsOnPages()
-          permsLoaded.length mustBe 0
-
-          info("save and load whole site perms")
-
-          val allPermsWholeSiteNoId = PermsOnPages(
-            id = NoPermissionId,
-            forPeopleId = userA.id,
-            onWholeSite = Some(true),
-            onCategoryId = None,
-            onPageId = None,
-            onPostId = None,
-            onTagId = None,
-            mayEditPage = Some(true),
-            mayEditComment = Some(true),
-            mayEditWiki = Some(true),
-            mayDeletePage = Some(true),
-            mayDeleteComment = Some(true),
-            mayCreatePage = Some(true),
-            mayPostComment = Some(true),
-            maySee = Some(true))
-
-          val allPermsWholeSite = transaction.insertPermsOnPages(allPermsWholeSiteNoId)
-          allPermsWholeSiteNoId.copy(id = allPermsWholeSite.id) mustBe allPermsWholeSite
-
-          permsLoaded = transaction.loadPermsOnPages()
-          permsLoaded must contain(allPermsWholeSite)
-          permsLoaded.length mustBe 1
-
-          info("save and load category perms")
-
-          val permsOnCatNoId = PermsOnPages(
-            id = NoPermissionId,
-            forPeopleId = userA.id,
-            onWholeSite = None,
-            onCategoryId = Some(createForumResult.defaultCategoryId),
-            onPageId = None,
-            onPostId = None,
-            onTagId = None,
-            mayEditPage = Some(true),
-            mayEditComment = None,
-            mayEditWiki = None,
-            mayDeletePage = Some(true),
-            mayDeleteComment = None,
-            mayCreatePage = Some(true),
-            mayPostComment = None,
-            maySee = Some(true))
-
-          val permsOnCat = transaction.insertPermsOnPages(permsOnCatNoId)
-          permsOnCatNoId.copy(id = permsOnCat.id) mustBe permsOnCat
-
-          permsLoaded = transaction.loadPermsOnPages()
-          permsLoaded must contain(allPermsWholeSite)
-          permsLoaded must contain(permsOnCat)
-          permsLoaded.length mustBe 2
-
-          info("save and load page perms")
-
-          val permsOnPageNoId = PermsOnPages(
-            id = NoPermissionId,
-            forPeopleId = userA.id,
-            onWholeSite = None,
-            onCategoryId = None,
-            onPageId = Some(pageAId),
-            onPostId = None,
-            onTagId = None,
-            // Let's invert all perms, in comparison to the perms-on-category above.
-            mayEditPage = None,
-            mayEditComment = Some(true),
-            mayEditWiki = Some(true),
-            mayDeletePage = None,
-            mayDeleteComment = Some(true),
-            mayCreatePage = None,
-            mayPostComment = Some(true),
-            maySee = None)
-
-          val permsOnPage = transaction.insertPermsOnPages(permsOnPageNoId)
-          permsOnPageNoId.copy(id = permsOnPage.id) mustBe permsOnPage
-
-          permsLoaded = transaction.loadPermsOnPages()
-          permsLoaded must contain(allPermsWholeSite)
-          permsLoaded must contain(permsOnCat)
-          permsLoaded must contain(permsOnPage)
-          permsLoaded.length mustBe 3
-
-          info("save and load post perms")
-
-          val permsOnPostNoId = PermsOnPages(
-            id = NoPermissionId,
-            forPeopleId = userA.id,
-            onWholeSite = None,
-            onCategoryId = None,
-            onPageId = None,
-            onPostId = Some(pageAPost2.id),
-            onTagId = None,
-            mayEditPage = Some(true),
-            mayEditComment = Some(true),
-            mayEditWiki = Some(true),
-            mayDeletePage = Some(true),
-            mayDeleteComment = None,
-            mayCreatePage = None,
-            mayPostComment = None,
-            maySee = Some(true))
-
-          val permsOnPost = transaction.insertPermsOnPages(permsOnPostNoId)
-          permsOnPostNoId.copy(id = permsOnPost.id) mustBe permsOnPost
-
-          permsLoaded = transaction.loadPermsOnPages()
-          permsLoaded must contain(allPermsWholeSite)
-          permsLoaded must contain(permsOnCat)
-          permsLoaded must contain(permsOnPage)
-          permsLoaded must contain(permsOnPost)
-          permsLoaded.length mustBe 4
-
-          // Perms on a tag: Later.
-        }
-      }
-
-      "won't save dupl perms" in {
-        val wholeSitePerms = PermsOnPages(
-          id = NoPermissionId,
-          forPeopleId = userA.id,
-          onWholeSite = Some(true),
-          onCategoryId = None,
-          onPageId = None,
-          onPostId = None,
-          onTagId = None,
-          mayEditPage = Some(true),
-          mayEditComment = Some(true),
-          mayEditWiki = Some(true),
-          mayDeletePage = Some(true),
-          mayDeleteComment = Some(true),
-          mayCreatePage = Some(true),
-          mayPostComment = Some(true),
-          maySee = Some(true))
-
-        info("for whole site")
-        dao.readWriteTransaction { transaction =>
-          intercept[Exception] {
-            transaction.insertPermsOnPages(wholeSitePerms)
-          }
-          // Rollback, because intercept[] above caught the SQL exception so
-          // dao.readWriteTransaction() will otherwise attempt to commit.
-          transaction.rollback()
-        }
-
-        info("for category")
-        dao.readWriteTransaction { transaction =>
-          intercept[Exception] {
-            transaction.insertPermsOnPages(
-              wholeSitePerms.copy(onWholeSite = None,
-                onCategoryId = Some(createForumResult.defaultCategoryId)))
-          }
-          transaction.rollback()
-        }
-
-        info("for page")
-        dao.readWriteTransaction { transaction =>
-          intercept[Exception] {
-            transaction.insertPermsOnPages(
-              wholeSitePerms.copy(onWholeSite = None, onPageId = Some(pageAId)))
-          }
-          transaction.rollback()
-        }
-
-        info("for post")
-        dao.readWriteTransaction { transaction =>
-          intercept[Exception] {
-            transaction.insertPermsOnPages(
-              wholeSitePerms.copy(onWholeSite = None, onPostId = Some(pageAPost2.id)))
-          }
-          transaction.rollback()
-        }
-
-        // Later:
-        // info("for tag")
-      }
-    }
-
   }
 
 }

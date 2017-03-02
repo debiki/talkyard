@@ -189,7 +189,7 @@ var serverTypescriptProject = typeScript.createProject({
     target: 'ES5',
     outFile: 'server-bundle.js',
     types: [
-      'core-js']
+      'lodash', 'core-js']
 });
 
 
@@ -233,28 +233,28 @@ var slimTypescriptProject = typeScript.createProject({
   target: 'ES5',
   outFile: 'slim-typescript.js',
   types: [
-    'core-js']
+    'lodash', 'core-js']
 });
 
 var moreTypescriptProject = typeScript.createProject({
   target: 'ES5',
   outFile: 'more-typescript.js',
   types: [
-    'core-js']
+    'lodash', 'core-js']
 });
 
 var staffTypescriptProject = typeScript.createProject({
   target: 'ES5',
   outFile: 'staff-typescript.js',
   types: [
-    'core-js']
+    'lodash', 'core-js']
 });
 
 var editorTypescriptProject = typeScript.createProject({
   target: 'ES5',
   outFile: 'editor-typescript.js',
   types: [
-    'core-js']
+    'lodash', 'core-js']
 });
 
 
@@ -481,7 +481,7 @@ gulp.task('compile-e2e-scripts', function() {
         declarationFiles: true,
         module: 'commonjs',
         types: [
-          'core-js']
+          'lodash', 'core-js']
       }));
   // stream.dts.pipe(gulp.dest('target/e2e/...')); — no, don't need d.ts files
   if (watchAndLiveForever) {

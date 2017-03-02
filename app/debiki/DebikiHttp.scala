@@ -262,10 +262,13 @@ object DebikiHttp {
     // Play supports one HTTP and one HTTPS port only, so it makes little sense
     // to include any port number when looking up a site.
     val hostname = if (host contains ':') host.span(_ != ':')._1 else host
-    def firstSiteIdAndHostname =
-      SiteBrief(Site.FirstSiteId, hostname = Globals.firstSiteHostname getOrElse {
-        throwForbidden("EsE5UYK2", "No first site hostname configured (debiki.hostname)")
-      }, systemDao.theSite(FirstSiteId).status)
+    def firstSiteIdAndHostname = {
+      val hostname = Globals.firstSiteHostname getOrElse throwForbidden(
+        "EsE5UYK2", o"""No first site hostname configured (config value:
+            ${Globals.FirstSiteHostnameConfigValue})""")
+      val firstSite = systemDao.getOrCreateFirstSite()
+      SiteBrief(Site.FirstSiteId, hostname, firstSite.status)
+    }
 
     if (Globals.firstSiteHostname.contains(hostname))
       return firstSiteIdAndHostname

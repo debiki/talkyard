@@ -20,6 +20,7 @@ package debiki.dao
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import ed.server.http.throwForbidden2
+import CreateSiteDao._
 
 
 
@@ -28,18 +29,6 @@ import ed.server.http.throwForbidden2
   */
 trait CreateSiteDao {
   self: SiteDao =>
-
-
-  class NumSites(val byYou: Int, val total: Int)
-
-  def countSites(testSites: Boolean, browserIdData: BrowserIdData): NumSites = {
-    readOnlyTransaction { transaction =>
-      new NumSites(
-        byYou = transaction.countWebsites(createdFromIp = browserIdData.ip,
-          creatorEmailAddress = "dummy_ignore", testSites),
-        total = transaction.countWebsitesTotal(testSites))
-    }
-  }
 
 
   def createSite(name: String, status: SiteStatus, hostname: String,
@@ -71,7 +60,7 @@ trait CreateSiteDao {
         debiki.Globals.systemDao.forgetHostname(hostname)
       }
 
-      val newSite = transaction.createSite(name = name, status, hostname = hostname,
+      val newSite = transaction.asSystem.createSite(id = None, name = name, status,
         embeddingSiteUrl, creatorIp = browserIdData.ip, creatorEmailAddress = creatorEmailAddress,
         quotaLimitMegabytes = config.createSite.quotaLimitMegabytes,
         maxSitesPerIp = maxSitesPerIp, maxSitesTotal = maxSitesTotal,
@@ -105,6 +94,7 @@ trait CreateSiteDao {
 
       createSystemUser(transaction)
       createUnknownUser(transaction)
+      createDefaultGroupsAndPermissions(transaction)
 
       insertAuditLogEntry(AuditLogEntry(
         siteId = newSite.id,
@@ -120,10 +110,13 @@ trait CreateSiteDao {
       newSite.copy(hosts = List(newSiteHost))
     }
   }
+}
 
 
-  private def createSystemUser(transaction: SiteTransaction) {
-    transaction.insertMember(MemberInclDetails(
+object CreateSiteDao {
+
+  def createSystemUser(transaction: SiteTransaction) {
+    val systemUser = MemberInclDetails(
       id = SystemUserId,
       fullName = Some(SystemUserFullName),
       username = SystemUserUsername,
@@ -133,16 +126,62 @@ trait CreateSiteDao {
       approvedById = None,
       emailAddress = "",
       emailNotfPrefs = EmailNotfPrefs.DontReceive,
-      emailVerifiedAt = None))
+      emailVerifiedAt = None)
+    transaction.insertMember(systemUser)
     transaction.upsertUserStats(UserStats.forNewUser(
       SystemUserId, firstSeenAt = transaction.now, emailedAt = None))
+    transaction.insertUsernameUsage(UsernameUsage(
+      username = systemUser.username, inUseFrom = transaction.now, userId = systemUser.id))
   }
 
 
-  private def createUnknownUser(transaction: SiteTransaction) {
-    transaction.createUnknownUser(transaction.now.toJavaDate)
+  def createUnknownUser(transaction: SiteTransaction) {
+    transaction.createUnknownUser()
     transaction.upsertUserStats(UserStats.forNewUser(
       UnknownUserId, firstSeenAt = transaction.now, emailedAt = None))
+  }
+
+
+  def createDefaultGroupsAndPermissions(tx: SiteTransaction) {
+    import Group._
+
+    val Everyone = Group(
+      EveryoneId, "everyone", "Everyone", grantsTrustLevel = None)
+    val New = Group(
+      NewMembersId, "new_members", "New Members", grantsTrustLevel = Some(TrustLevel.New))
+    val Basic = Group(
+      BasicMembersId, "basic_members", "Basic Members", grantsTrustLevel = Some(TrustLevel.Basic))
+    val Full = Group(
+      FullMembersId, "full_members", "Full Members", grantsTrustLevel = Some(TrustLevel.FullMember))
+    val Trusted = Group(
+      TrustedId, "trusted_members", "Trusted Members", grantsTrustLevel = Some(TrustLevel.Helper))
+    val Regular = Group(
+      RegularsId, "regular_members", "Regular Members", grantsTrustLevel = Some(TrustLevel.Regular))
+    val Core = Group(
+      CoreMembersId, "core_members", "Core Members", grantsTrustLevel = Some(TrustLevel.CoreMember))
+    val Staff = Group(
+      StaffId, "staff", "Staff", grantsTrustLevel = None)
+    val Moderators = Group(
+      ModeratorsId, "moderators", "Moderators", grantsTrustLevel = None)
+    val Admins = Group(
+      AdminsId, "admins", "Admins", grantsTrustLevel = None)
+
+    insertGroupAndUsernameUsage(Everyone, tx)
+    insertGroupAndUsernameUsage(New, tx)
+    insertGroupAndUsernameUsage(Basic, tx)
+    insertGroupAndUsernameUsage(Full, tx)
+    insertGroupAndUsernameUsage(Trusted, tx)
+    insertGroupAndUsernameUsage(Regular, tx)
+    insertGroupAndUsernameUsage(Core, tx)
+    insertGroupAndUsernameUsage(Staff, tx)
+    insertGroupAndUsernameUsage(Moderators, tx)
+    insertGroupAndUsernameUsage(Admins, tx)
+  }
+
+
+  private def insertGroupAndUsernameUsage(group: Group, tx: SiteTransaction) {
+    tx.insertGroup(group)
+    tx.insertUsernameUsage(UsernameUsage(username = group.theUsername, tx.now, userId = group.id))
   }
 
 }

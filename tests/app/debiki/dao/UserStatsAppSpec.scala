@@ -23,7 +23,10 @@ import java.{util => ju}
 
 
 class UserStatsAppSpec extends DaoAppSuite() {
-  lazy val dao: SiteDao = Globals.siteDao(Site.FirstSiteId)
+  lazy val dao: SiteDao = {
+    Globals.systemDao.getOrCreateFirstSite()
+    Globals.siteDao(Site.FirstSiteId)
+  }
 
   lazy val categoryId: CategoryId =
     dao.createForum("Forum", "/tag-test-forum/", ownerWho).defaultCategoryId
@@ -55,6 +58,11 @@ class UserStatsAppSpec extends DaoAppSuite() {
 
   "The Dao can gather user statistics" - {
     val now = new ju.Date()
+
+    "prepare" in {
+      dao
+      owner
+    }
 
     "staff creates stuff" in {
       Globals.test.setTime(startTime)

@@ -23,9 +23,7 @@ import debiki._
 import debiki.DebikiHttp._
 import ed.server.security.createSessionIdAndXsrfToken
 import ed.server.http._
-import java.{util => ju}
 import play.api._
-import play.api.mvc.{Action => _, _}
 
 
 /** Resets the password of a PasswordIdentity, in case the user forgot it.

@@ -52,7 +52,7 @@ class CreateSiteController @Inject() extends Controller {
     val isTestBool = Try(isTest.toBoolean).toOption getOrElse throwBadArgument("EsE5JUM2", "isTest")
     throwIfMayNotCreateSite(request, isTestBool)
 
-    val numSites = request.dao.countSites(isTestBool, request.theBrowserIdData)
+    val numSites = Globals.systemDao.countSites(isTestBool, request.theBrowserIdData)
     if (numSites.byYou >= Globals.config.createSite.maxSitesPerPerson)
       throwForbidden("EsE7KU20W", "You have created too many forums already, sorry.")
 

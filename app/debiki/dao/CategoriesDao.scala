@@ -309,7 +309,8 @@ trait CategoriesDao {
     readOnlyTransaction(_.loadCategoryMap())
 
 
-  def editCategory(editCategoryData: CategoryToSave, who: Who): Category = {
+  def editCategory(editCategoryData: CategoryToSave, permissions: immutable.Seq[PermsOnPages],
+        who: Who): Category = {
     val (oldCategory, editedCategory) = readWriteTransaction { transaction =>
       val categoryId = editCategoryData.anyId getOrDie "DwE7KPE0"
       val oldCategory = transaction.loadCategory(categoryId).getOrElse(throwNotFound(
@@ -332,6 +333,8 @@ trait CategoriesDao {
       }
 
       transaction.updateCategoryMarkSectionPageStale(editedCategory)
+
+      addRemovePermsOnCategory(categoryId, permissions)(transaction)
       (oldCategory, editedCategory)
       // COULD create audit log entry
     }
@@ -351,15 +354,16 @@ trait CategoriesDao {
   }
 
 
-  def createCategory(newCategoryData: CategoryToSave, byWho: Who): (Category, PagePath) = {
+  def createCategory(newCategoryData: CategoryToSave, permissions: immutable.Seq[PermsOnPages],
+        byWho: Who): (Category, PagePath) = {
     readWriteTransaction { transaction =>
-      createCategoryImpl(newCategoryData, byWho)(transaction)
+      createCategoryImpl(newCategoryData, permissions, byWho)(transaction)
     }
   }
 
 
-  def createCategoryImpl(newCategoryData: CategoryToSave, byWho: Who)(
-        transaction: SiteTransaction): (Category, PagePath) = {
+  def createCategoryImpl(newCategoryData: CategoryToSave, permissions: immutable.Seq[PermsOnPages],
+        byWho: Who)(transaction: SiteTransaction): (Category, PagePath) = {
 
     val categoryId = transaction.nextCategoryId()
 
@@ -384,6 +388,10 @@ trait CategoriesDao {
     if (newCategoryData.shallBeDefaultCategory) {
       setDefaultCategory(category, transaction)
     }
+
+    // (COULD debug-test-&-die if any permission has the wrong onCategoryId)
+    val permsWithCatId = permissions.map(_.copy(onCategoryId = Some(categoryId)))
+    addRemovePermsOnCategory(categoryId, permsWithCatId)(transaction)
 
     // COULD create audit log entry
 
@@ -420,6 +428,28 @@ trait CategoriesDao {
     transaction.updateCategoryMarkSectionPageStale(rootWithNewDefault)
   }
 
+
+  private def addRemovePermsOnCategory(categoryId: CategoryId,
+        permissions: immutable.Seq[PermsOnPages])(transaction: SiteTransaction): Unit = {
+    dieIf(permissions.exists(_.onCategoryId.isNot(categoryId)), "EdE2FK0YU5")
+    val oldPermissionsById: mutable.Map[PermissionId, PermsOnPages] =
+      transaction.loadPermsOnCategory(categoryId).map(p => (p.id, p))(collection.breakOut)
+    permissions foreach { permission =>
+      var alreadyExists = false
+      if (permission.id >= PermissionAlreadyExistsMinId) {
+        oldPermissionsById.remove(permission.id) foreach { oldPerm =>
+          alreadyExists = true
+          if (oldPerm != permission) {
+            transaction.updatePermsOnPages(permission)
+          }
+        }
+      }
+      if (!alreadyExists) {
+        transaction.insertPermsOnPages(permission)
+      }
+    }
+    transaction.deletePermsOnPages(oldPermissionsById.keys)
+  }
 }
 
 

@@ -18,7 +18,6 @@
 package controllers
 
 import debiki.dao.{CategoriesDao, CategoryToSave, PageStuff, SiteDao}
-import collection.mutable
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki._
@@ -28,6 +27,7 @@ import java.{util => ju}
 import play.api.mvc
 import play.api.libs.json._
 import play.api.mvc._
+import scala.collection.{immutable, mutable}
 import scala.collection.mutable.ArrayBuffer
 import scala.util.Try
 import Utils.ValidationImplicits._
@@ -71,6 +71,7 @@ object ForumController extends mvc.Controller {
     val body = request.body
     val categoryJson = (body \ "category").as[JsObject]
     val permissionsJson = (body \ "permissions").as[JsArray]
+
     val sectionPageId = (categoryJson \ "sectionPageId").as[PageId]
     val unlisted = (categoryJson \ "unlisted").asOpt[Boolean].getOrElse(false)
     // --delete: ----
@@ -115,12 +116,38 @@ object ForumController extends mvc.Controller {
     if (categoryData.slug.length > MaxSlugLength)
       throwBadRequest("EsE9MFU4", s"Too long category slug: '${categoryData.slug}'")
 
+    val permissions = ArrayBuffer[PermsOnPages]()
+    permissionsJson.value foreach { permsJsValue: JsValue =>
+      val permsJsObj: JsObject = permsJsValue match {
+        case obj: JsObject => obj
+        case bad => throwBadRequest("EdE2W4UY0", s"Bad permission list entry: ${classNameOf(bad)}")
+      }
+      val onCategoryId: Option[CategoryId] = (permsJsObj \ "onCategoryId").asOpt[Int]
+      throwForbiddenIf(onCategoryId.isEmpty, "EdE6PJ0S2", "No onCategoryId specified")
+      val newPerm = PermsOnPages(
+        id = (permsJsObj \ "id").as[PermissionId],
+        forPeopleId = (permsJsObj \ "forPeopleId").as[UserId],
+        onWholeSite = None,
+        onCategoryId = onCategoryId,
+        onPageId = None,
+        onPostId = None,
+        onTagId = None,
+        mayEditPage = (permsJsObj \ "mayEditPage").asOpt[Boolean],
+        mayEditComment = (permsJsObj \ "mayEditComment").asOpt[Boolean],
+        mayEditWiki = (permsJsObj \ "mayEditWiki").asOpt[Boolean],
+        mayDeletePage = (permsJsObj \ "mayDeletePage").asOpt[Boolean],
+        mayDeleteComment = (permsJsObj \ "mayDeleteComment").asOpt[Boolean],
+        mayCreatePage = (permsJsObj \ "mayCreatePage").asOpt[Boolean],
+        mayPostComment = (permsJsObj \ "mayPostComment").asOpt[Boolean],
+        maySee = (permsJsObj \ "maySee").asOpt[Boolean])
+      permissions.append(newPerm)
+    }
+
     val category = categoryData.anyId match {
       case Some(_) =>
-        request.dao.editCategory(categoryData, request.who)
+        request.dao.editCategory(categoryData, permissions.to[immutable.Seq], request.who)
       case None =>
-        val (category, _) = request.dao.createCategory(categoryData, request.who)
-        category
+        request.dao.createCategory(categoryData, permissions.to[immutable.Seq], request.who)._1
     }
 
     // ... save permissions ...  and alloc new id if perm id < 0 [9P1U6E5].

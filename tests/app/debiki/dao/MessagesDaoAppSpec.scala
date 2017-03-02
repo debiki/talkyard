@@ -28,6 +28,7 @@ class MessagesDaoAppSpec extends DaoAppSuite(disableScripts = true, disableBackg
   "MessagesDao can" - {
 
     "send a message" in {
+      Globals.systemDao.getOrCreateFirstSite()
       val dao = Globals.siteDao(Site.FirstSiteId)
       createPasswordOwner("5kwu8f40", dao)
       val userOne = createPasswordUser("zzxxffgg", dao, trustLevel = TrustLevel.Basic)

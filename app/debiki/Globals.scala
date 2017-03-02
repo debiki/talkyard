@@ -432,7 +432,7 @@ class Globals {
       //   --> http://openjdk.java.net/projects/code-tools/jol/
       1
     }
-  }).build()
+  }).build().asInstanceOf[DaoMemCache]
 
 
   def now(): When = {

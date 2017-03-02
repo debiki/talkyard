@@ -164,14 +164,18 @@ object ViewPageController extends mvc.Controller {
       }
 
       if (siteSettings.userMustBeApproved && !user.exists(_.isApprovedOrStaff)) {
-        val message = request.theUser.isApproved match {
-          case None =>
-            o"""Your account has not yet been approved. Please wait until
-              someone in our staff has approved it."""
-          case Some(false) =>
-            "You may not access this site, sorry. There is no point in trying again."
-          case Some(true) =>
-            die("DwE7KEWK2", "Both not approved and approved")
+        val message = request.theUser match {
+          case _: Guest => "Guest login not allowed"
+          case member: Member =>
+            member.isApproved match {
+              case None =>
+                o"""Your account has not yet been approved. Please wait until
+                  someone in our staff has approved it."""
+              case Some(false) =>
+                "You may not access this site, sorry. There is no point in trying again."
+              case Some(true) =>
+                die("DwE7KEWK2", "Both not approved and approved")
+            }
         }
         throwForbidden("DwE403KGW0", message)
       }

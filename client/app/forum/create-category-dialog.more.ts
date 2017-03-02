@@ -21,7 +21,6 @@
 /// <reference path="../react-bootstrap-old/Input.more.ts" />
 /// <reference path="../util/stupid-dialog.more.ts" />
 /// <reference path="../editor/PageRoleDropdown.more.ts" />
-/// <reference path="../../typedefs/lodash/lodash.d.ts" />
 
 
 //------------------------------------------------------------------------------

@@ -25,6 +25,9 @@ import play.api.Play.current
 import SystemDao._
 
 
+class NumSites(val byYou: Int, val total: Int)
+
+
 /** Database and cache queries that take all sites in mind.
  */
 class SystemDao(private val dbDaoFactory: DbDaoFactory, val cache: DaoMemCache) {
@@ -49,6 +52,8 @@ class SystemDao(private val dbDaoFactory: DbDaoFactory, val cache: DaoMemCache) 
 
   def theSite(siteId: SiteId): Site = getSite(siteId) getOrDie "EsE2WUY5"
 
+  def getOrCreateFirstSite(): Site = getSite(FirstSiteId) getOrElse createFirstSite()
+
   def getSite(siteId: SiteId): Option[Site] = {
     COULD_OPTIMIZE // move getSite() to SystemDao instead so won't need to create temp SiteDao obj.
     debiki.Globals.siteDao(siteId).getSite()
@@ -67,6 +72,39 @@ class SystemDao(private val dbDaoFactory: DbDaoFactory, val cache: DaoMemCache) 
     readWriteTransaction(_.updateSites(sites))
     for ((siteId, _) <- sites) {
       debiki.Globals.siteDao(siteId).emptyCache()
+    }
+  }
+
+  private def createFirstSite(): Site = {
+    readWriteTransaction { sysTx =>
+      val firstSite = sysTx.createSite(Some(FirstSiteId), name = "Main Site", SiteStatus.NoAdmin,
+        embeddingSiteUrl = None, creatorIp = "0.0.0.0", creatorEmailAddress = "unknown@example.com",
+        quotaLimitMegabytes = None, maxSitesPerIp = 9999, maxSitesTotal = 9999,
+        isTestSiteOkayToDelete = false, pricePlan = "-", createdAt = sysTx.now)
+
+      dieIf(firstSite.id != FirstSiteId, "EdE2AE6U0")
+      val siteTx = sysTx.siteTransaction(FirstSiteId)
+
+      siteTx.upsertSiteSettings(SettingsToSave(
+        orgFullName = Some(Some("Unnamed Organization"))))
+
+      // Don't insert any site host — instead, we use the ed.hostname config value.
+
+      CreateSiteDao.createSystemUser(siteTx)
+      CreateSiteDao.createUnknownUser(siteTx)
+      CreateSiteDao.createDefaultGroupsAndPermissions(siteTx)
+
+      firstSite
+    }
+  }
+
+
+  def countSites(testSites: Boolean, browserIdData: BrowserIdData): NumSites = {
+    readOnlyTransaction { transaction =>
+      new NumSites(
+        byYou = transaction.countWebsites(createdFromIp = browserIdData.ip,
+          creatorEmailAddress = "dummy_ignore", testSites),
+        total = transaction.countWebsitesTotal(testSites))
     }
   }
 
