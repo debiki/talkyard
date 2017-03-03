@@ -517,7 +517,9 @@ gulp.task('compile-security-tests', function() {
     'tests/security/**/*.ts'])
     .pipe(typeScript({
       declarationFiles: true,
-      module: 'commonjs'
+      module: 'commonjs',
+      types: [
+        'lodash', 'core-js']
     }));
   // stream.dts.pipe(gulp.dest('target/e2e/...')); — no, don't need d.ts files
   if (watchAndLiveForever) {

@@ -106,5 +106,6 @@ case class AuditLogEntry(
 
 object AuditLogEntry {
   val UnassignedId = 0
+  val FirstId = 1
 }
 

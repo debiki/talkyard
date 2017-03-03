@@ -311,11 +311,12 @@ class UploadsDaoAppSpec extends DaoAppSuite(disableScripts = false) {
         password = magic, isAdmin = true, isOwner = false).get)
 
       info("create site 2")
-      val site2 = dao.createSite("site-two-name", status = SiteStatus.Active, hostname = "site-two",
+      val site2 = Globals.systemDao.createSite(
+        "site-two-name", status = SiteStatus.Active, hostname = "site-two",
         embeddingSiteUrl = None, organizationName = "Test Org Name",
         creatorEmailAddress = "t@x.c", creatorId = user.id, browserIdData: BrowserIdData,
         isTestSiteOkayToDelete = false, skipMaxSitesCheck = true,
-        deleteOldSite = false, pricePlan = "Unknown")
+        deleteOldSite = false, pricePlan = "Unknown", createdFromSiteId = None)
 
       info("create user (owner), site 2")
       val dao2 = Globals.siteDao(site2.id)

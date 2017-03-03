@@ -1,10 +1,12 @@
+/// <reference path="../e2e/test-types.ts"/>
+
 import * as tape from 'tape';
-let asyncTest = tape;
+const asyncTest = tape;
 import syncTest = require('./sync-tape');
 import * as syncRequest from 'sync-request';
 import * as cheerio from 'cheerio';
 import settings = require('./settings');
-
+import { logUnusual, die, dieIf } from '../e2e/utils/log-and-die';
 
 
 asyncTest('timing test', (test) => {
@@ -41,4 +43,19 @@ syncTest('200 ok with title', (test) => {
   //console.log("bd: " + response.body);
   test.equal($('body h1').text(), 'broken_test');
 });
+
+
+
+// --- import site test
+
+import server = require('../e2e/utils/server');
+import pagesFor = require('../e2e/utils/pages-for');
+import buildSite = require('../e2e/utils/site-builder');
+
+const forum = buildSite().addLargeForum({ title: 'Tape Test Forum' });
+const idAddress = server.importSiteData(forum.siteData);
+
+// server.initOrDie();
+
+console.log('ZZWWQQ idAddress: ' + JSON.stringify(idAddress));
 

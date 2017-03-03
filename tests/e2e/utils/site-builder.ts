@@ -1,6 +1,5 @@
 /// <reference path="../test-types.ts"/>
-/// <reference path="../../../modules/definitely-typed/lodash/lodash.d.ts"/>
-/// <reference path="../../../modules/definitely-typed/node/node.d.ts"/>
+
 import log = require('./log-and-die');
 import make = require('./make');
 declare function require(...whatever): any;

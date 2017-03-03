@@ -312,7 +312,7 @@ object DebikiHttp {
           // to it and when we still don't know its ip, just after installation.
           return firstSiteIdAndHostname
         }
-        throwNotFound("DwE0NSS0", "There is no site with that hostname")
+        throwNotFound("DwE0NSS0", s"There is no site with hostname '$hostname'")
     }
     val site = systemDao.getSite(lookupResult.siteId) getOrDie "EsE2KU503"
     site.brief

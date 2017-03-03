@@ -24,7 +24,7 @@ import debiki.Globals
 
 class CreateSiteDaoAppSpec extends DaoAppSuite(maxSitesTotal = Some(75)) {
 
-  private def createOneSite(dao: SiteDao, user: Member, prefix: Int, number: Int,
+  private def createOneSite(user: Member, prefix: Int, number: Int,
         ip: String = null, browserIdCookie: String = null,
         browserFingerprint: Int = -1, email: Option[String] = None,
         localHostname: Option[String] = None, hostname: Option[String] = None,
@@ -37,12 +37,12 @@ class CreateSiteDaoAppSpec extends DaoAppSuite(maxSitesTotal = Some(75)) {
     val theEmail = email getOrElse s"$thePrefix@example.com"
     val theIdCookie = if (browserIdCookie eq null) s"$thePrefix-cookie" else browserIdCookie
     val theIp = if (ip eq null) s"$prefix.0.0.$number" else ip
-    dao.createSite(name = theLocalHostname, status = SiteStatus.Active, hostname = theHostname,
+    Globals.systemDao.createSite(name = theLocalHostname, status = SiteStatus.Active, hostname = theHostname,
       embeddingSiteUrl = None, organizationName = s"Org Name $thePrefix",
       creatorEmailAddress = theEmail, creatorId = user.id,
       BrowserIdData(ip = theIp, idCookie = theIdCookie, fingerprint = theFingerprint),
       isTestSiteOkayToDelete = isTestSite, skipMaxSitesCheck = false,
-      deleteOldSite = false, pricePlan = "Unknown")
+      deleteOldSite = false, pricePlan = "Unknown", createdFromSiteId = Some(FirstSiteId))
   }
 
 
@@ -55,11 +55,11 @@ class CreateSiteDaoAppSpec extends DaoAppSuite(maxSitesTotal = Some(75)) {
       val user = createPasswordUser("qq33yy55ee", dao)
 
       info("a real site")
-      val realSite = createOneSite(dao, user, 20, 1)
+      val realSite = createOneSite(user, 20, 1)
       realSite.id must be > 0
 
       info("a test site")
-      val testSite = createOneSite(dao, user, 40, 1, isTestSite = true)
+      val testSite = createOneSite(user, 40, 1, isTestSite = true)
       testSite.id must be <= MaxTestSiteId
     }
 
@@ -70,7 +70,7 @@ class CreateSiteDaoAppSpec extends DaoAppSuite(maxSitesTotal = Some(75)) {
 
       info("Weird local hostname")
       intercept[Exception] {
-        createOneSite(dao, user, 0, 123, localHostname = Some("weird Hostname"))
+        createOneSite(user, 0, 123, localHostname = Some("weird Hostname"))
       }.getMessage must include("EsE7UZF2_")
 
       info("Weird complete hostname")
@@ -92,7 +92,7 @@ class CreateSiteDaoAppSpec extends DaoAppSuite(maxSitesTotal = Some(75)) {
       var numCreated = 0
       intercept[TooManySitesCreatedByYouException] {
         while (numCreated < 99) {
-          createOneSite(dao, user, 120, numCreated, ip = "223.224.225.226")
+          createOneSite(user, 120, numCreated, ip = "223.224.225.226")
           numCreated += 1
         }
       }
@@ -104,7 +104,7 @@ class CreateSiteDaoAppSpec extends DaoAppSuite(maxSitesTotal = Some(75)) {
       numCreated = 0
       intercept[TooManySitesCreatedByYouException] {
         while (numCreated < 99) {
-          createOneSite(dao, user, 140, numCreated, browserIdCookie = "the_same_cookie")
+          createOneSite(user, 140, numCreated, browserIdCookie = "the_same_cookie")
           numCreated += 1
         }
       }
@@ -114,7 +114,7 @@ class CreateSiteDaoAppSpec extends DaoAppSuite(maxSitesTotal = Some(75)) {
       numCreated = 0
       intercept[TooManySitesCreatedByYouException] {
         while (numCreated < 99) {
-          createOneSite(dao, user, 160, numCreated, browserFingerprint = 224455)
+          createOneSite(user, 160, numCreated, browserFingerprint = 224455)
           numCreated += 1
         }
       }
@@ -129,7 +129,7 @@ class CreateSiteDaoAppSpec extends DaoAppSuite(maxSitesTotal = Some(75)) {
       var numCreated = 0
       intercept[Exception] {
         while (numCreated < 99) {
-          createOneSite(dao, user, 220, numCreated)
+          createOneSite(user, 220, numCreated)
           numCreated += 1
         }
       } match {

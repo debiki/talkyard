@@ -18,102 +18,12 @@
 package debiki.dao
 
 import com.debiki.core._
-import com.debiki.core.Prelude._
-import ed.server.http.throwForbidden2
-import CreateSiteDao._
 
 
 
-/** Creates new sites, via this site. That is, a user accesses server-adress/-/create-site
-  * on this site, and creates another site.
+/** Create-new-site helper methods.
   */
-trait CreateSiteDao {
-  self: SiteDao =>
-
-
-  def createSite(name: String, status: SiteStatus, hostname: String,
-        embeddingSiteUrl: Option[String], organizationName: String,
-        creatorEmailAddress: String, creatorId: UserId, browserIdData: BrowserIdData,
-        isTestSiteOkayToDelete: Boolean, skipMaxSitesCheck: Boolean,
-        deleteOldSite: Boolean, pricePlan: PricePlan)
-        : Site = {
-
-    if (!Site.isOkayName(name))
-      throwForbidden2("EsE7UZF2_", s"Bad site name: '$name'")
-
-    dieIf(hostname contains ":", "DwE3KWFE7")
-    val maxSitesPerIp = skipMaxSitesCheck ? 999999 | config.createSite.maxSitesPerPerson
-    val maxSitesTotal = skipMaxSitesCheck ? 999999 | {
-      // Allow a little bit more than maxSitesTotal sites, in case Alice starts creating
-      // a site, then Bo and Bob finish creating theirs so that the total limit is reached
-      // — then it'd be annoying if Alice gets an error message.
-      config.createSite.maxSitesTotal + 5
-    }
-
-    readWriteTransaction { transaction =>
-      if (deleteOldSite) {
-        dieUnless(hostname.startsWith(SiteHost.E2eTestPrefix), "EdE7PK5W8")
-        dieUnless(name.startsWith(SiteHost.E2eTestPrefix), "EdE50K5W4")
-        transaction.asSystem.deleteAnyHostname(hostname)
-        transaction.asSystem.deleteSiteByName(name)
-        // Should add this CreateSiteDao to SystemDao instead? This is a bit weird:
-        debiki.Globals.systemDao.forgetHostname(hostname)
-      }
-
-      val newSite = transaction.asSystem.createSite(id = None, name = name, status,
-        embeddingSiteUrl, creatorIp = browserIdData.ip, creatorEmailAddress = creatorEmailAddress,
-        quotaLimitMegabytes = config.createSite.quotaLimitMegabytes,
-        maxSitesPerIp = maxSitesPerIp, maxSitesTotal = maxSitesTotal,
-        isTestSiteOkayToDelete = isTestSiteOkayToDelete, pricePlan = pricePlan, transaction.now)
-
-      insertAuditLogEntry(AuditLogEntry(
-        siteId = this.siteId,
-        id = AuditLogEntry.UnassignedId,
-        didWhat = AuditLogEntryType.CreateSite,
-        doerId = creatorId,
-        doneAt = transaction.now.toJavaDate,
-        emailAddress = Some(creatorEmailAddress),
-        browserIdData = browserIdData,
-        browserLocation = None,
-        targetSiteId = Some(newSite.id)), transaction)
-
-      transaction.setSiteId(newSite.id)
-      transaction.startAuditLogBatch()
-
-      transaction.upsertSiteSettings(SettingsToSave(
-        orgFullName = Some(Some(organizationName))))
-
-      val newSiteHost = SiteHost(hostname, SiteHost.RoleCanonical)
-      try transaction.insertSiteHost(newSiteHost)
-      catch {
-        case _: DuplicateHostnameException =>
-          throwForbidden2(
-            "EdE7FKW20", o"""There's already a site with hostname '${newSiteHost.hostname}'. Add
-            the URL param deleteOldSite=true to delete it (works for e2e tests only)""")
-      }
-
-      createSystemUser(transaction)
-      createUnknownUser(transaction)
-      createDefaultGroupsAndPermissions(transaction)
-
-      insertAuditLogEntry(AuditLogEntry(
-        siteId = newSite.id,
-        id = AuditLogEntry.UnassignedId,
-        didWhat = AuditLogEntryType.ThisSiteCreated,
-        doerId = SystemUserId, // no admin account yet created
-        doneAt = transaction.now.toJavaDate,
-        emailAddress = Some(creatorEmailAddress),
-        browserIdData = browserIdData,
-        browserLocation = None,
-        targetSiteId = Some(this.siteId)), transaction)
-
-      newSite.copy(hosts = List(newSiteHost))
-    }
-  }
-}
-
-
-object CreateSiteDao {
+object CreateSiteDao {  RENAME // but to what. & move, but to where?
 
   def createSystemUser(transaction: SiteTransaction) {
     val systemUser = MemberInclDetails(

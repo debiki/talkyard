@@ -20,7 +20,7 @@ package debiki.dao
 
 import com.debiki.core._
 import com.debiki.core.Prelude._
-import debiki.Globals
+import ed.server.http.throwForbidden2
 import play.api.Play.current
 import SystemDao._
 
@@ -95,6 +95,99 @@ class SystemDao(private val dbDaoFactory: DbDaoFactory, val cache: DaoMemCache) 
       CreateSiteDao.createDefaultGroupsAndPermissions(siteTx)
 
       firstSite
+    }
+  }
+
+
+  def createSite(
+    name: String,
+    status: SiteStatus,
+    hostname: String,
+    embeddingSiteUrl: Option[String],
+    organizationName: String,
+    creatorEmailAddress: String,
+    creatorId: UserId,
+    browserIdData: BrowserIdData,
+    isTestSiteOkayToDelete: Boolean,
+    skipMaxSitesCheck: Boolean,
+    deleteOldSite: Boolean,
+    pricePlan: PricePlan,
+    createdFromSiteId: Option[SiteId]): Site = {
+
+    if (!Site.isOkayName(name))
+      throwForbidden2("EsE7UZF2_", s"Bad site name: '$name'")
+
+    dieIf(hostname contains ":", "DwE3KWFE7")
+
+    val config = debiki.Globals.config
+    val maxSitesPerIp = skipMaxSitesCheck ? 999999 | config.createSite.maxSitesPerPerson
+    val maxSitesTotal = skipMaxSitesCheck ? 999999 | {
+      // Allow a little bit more than maxSitesTotal sites, in case Alice starts creating
+      // a site, then Bo and Bob finish creating theirs so that the total limit is reached
+      // — then it'd be annoying if Alice gets an error message.
+      config.createSite.maxSitesTotal + 5
+    }
+
+    readWriteTransaction { sysTx =>
+      if (deleteOldSite) {
+        dieUnless(hostname.startsWith(SiteHost.E2eTestPrefix), "EdE7PK5W8")
+        dieUnless(name.startsWith(SiteHost.E2eTestPrefix), "EdE50K5W4")
+        sysTx.deleteAnyHostname(hostname)
+        sysTx.deleteSiteByName(name)
+        forgetHostname(hostname)
+      }
+
+      val newSite = sysTx.createSite(id = None, name = name, status,
+        embeddingSiteUrl, creatorIp = browserIdData.ip, creatorEmailAddress = creatorEmailAddress,
+        quotaLimitMegabytes = config.createSite.quotaLimitMegabytes,
+        maxSitesPerIp = maxSitesPerIp, maxSitesTotal = maxSitesTotal,
+        isTestSiteOkayToDelete = isTestSiteOkayToDelete, pricePlan = pricePlan, sysTx.now)
+
+      createdFromSiteId foreach { oldSiteId =>
+        val oldSiteTx = sysTx.siteTransaction(oldSiteId)
+        AuditDao.insertAuditLogEntry(AuditLogEntry(
+          siteId = oldSiteId,
+          id = AuditLogEntry.UnassignedId,
+          didWhat = AuditLogEntryType.CreateSite,
+          doerId = creatorId,
+          doneAt = oldSiteTx.now.toJavaDate,
+          emailAddress = Some(creatorEmailAddress),
+          browserIdData = browserIdData,
+          browserLocation = None,
+          targetSiteId = Some(newSite.id)), oldSiteTx)
+      }
+
+      val newSiteTx = sysTx.siteTransaction(newSite.id)
+      newSiteTx.startAuditLogBatch()
+
+      newSiteTx.upsertSiteSettings(SettingsToSave(
+        orgFullName = Some(Some(organizationName))))
+
+      val newSiteHost = SiteHost(hostname, SiteHost.RoleCanonical)
+      try newSiteTx.insertSiteHost(newSiteHost)
+      catch {
+        case _: DuplicateHostnameException =>
+          throwForbidden2(
+            "EdE7FKW20", o"""There's already a site with hostname '${newSiteHost.hostname}'. Add
+            the URL param deleteOldSite=true to delete it (works for e2e tests only)""")
+      }
+
+      CreateSiteDao.createSystemUser(newSiteTx)
+      CreateSiteDao.createUnknownUser(newSiteTx)
+      CreateSiteDao.createDefaultGroupsAndPermissions(newSiteTx)
+
+      newSiteTx.insertAuditLogEntry(AuditLogEntry(
+        siteId = newSite.id,
+        id = AuditLogEntry.FirstId,
+        didWhat = AuditLogEntryType.ThisSiteCreated,
+        doerId = SystemUserId, // no admin account yet created
+        doneAt = newSiteTx.now.toJavaDate,
+        emailAddress = Some(creatorEmailAddress),
+        browserIdData = browserIdData,
+        browserLocation = None,
+        targetSiteId = createdFromSiteId))
+
+      newSite.copy(hosts = List(newSiteHost))
     }
   }
 

@@ -89,8 +89,7 @@ class SiteDao(
   with MessagesDao
   with WatchbarDao
   with ReviewsDao
-  with AuditDao
-  with CreateSiteDao {
+  with AuditDao {
 
   protected lazy val memCache = new MemCache(siteId, cache)
   protected lazy val redisCache = new RedisCache(siteId, redisClient)

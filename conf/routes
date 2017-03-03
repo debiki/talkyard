@@ -196,6 +196,7 @@ POST  /-/close-tree             @controllers.CloseCollapseController.closeTree
 #POST  /-/reopen-tree            controllers.CloseCollapseController.reopenTree
 
 POST  /-/import-site            controllers.ImportExportController.importSiteJson(deleteOldSite: Option[Boolean])
+POST  /-/import-test-site       controllers.ImportExportController.importTestSite
 
 POST /-/log-browser-errors      @controllers.DebugTestController.logBrowserErrors
 GET  /-/metrics                 @controllers.DebugTestController.showMetrics

@@ -28,8 +28,17 @@ import java.{util => ju}
 trait AuditDao {
   self: SiteDao =>
 
-
   protected def insertAuditLogEntry(entry: AuditLogEntry, transaction: SiteTransaction) {
+    AuditDao.insertAuditLogEntry(entry, transaction)
+  }
+
+}
+
+
+
+object AuditDao {
+
+  def insertAuditLogEntry(entry: AuditLogEntry, transaction: SiteTransaction) {
     require(entry.siteId == transaction.siteId, "EsE5GMKW2")
     val (entryId, batchId) = transaction.nextAuditLogEntryId()
     val entryWithId = entry.copy(id = entryId, batchId = batchId)
@@ -37,4 +46,3 @@ trait AuditDao {
   }
 
 }
-
