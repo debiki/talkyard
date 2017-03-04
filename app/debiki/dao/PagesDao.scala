@@ -128,7 +128,7 @@ trait PagesDao {
       authorAndLevels, transaction.loadGroupIds(author),
       pageRole, bodyPostType, pinWhere, anySlug = anySlug, anyFolder = anyFolder,
       inCategoriesRootLast = categoryPath,
-      relevantPermissions = transaction.loadPermsOnPages()), "EdE5JGK2W4")
+      permissions = transaction.loadPermsOnPages()), "EdE5JGK2W4")
 
     require(!anyFolder.exists(_.isEmpty), "EsE6JGKE3")
     // (Empty slug ok though, e.g. homepage.)

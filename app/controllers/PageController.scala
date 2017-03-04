@@ -68,7 +68,7 @@ object PageController extends mvc.Controller {
       request.theUserAndLevels, dao.getGroupIds(request.theUser),
       pageRole, PostType.Normal, pinWhere = None, anySlug = anySlug, anyFolder = anyFolder,
       inCategoriesRootLast = categoriesRootLast,
-      relevantPermissions = dao.getPermsOnPages(categories = categoriesRootLast)),
+      permissions = dao.getPermsOnPages(categories = categoriesRootLast)),
       "EdE5KW20A")
 
     val pagePath = dao.createPage(pageRole, pageStatus, anyCategoryId, anyFolder,

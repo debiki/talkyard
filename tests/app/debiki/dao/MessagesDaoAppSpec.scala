@@ -24,12 +24,17 @@ import org.scalatest._
 
 
 class MessagesDaoAppSpec extends DaoAppSuite(disableScripts = true, disableBackgroundJobs = true) {
+  var dao: SiteDao = _
 
   "MessagesDao can" - {
 
-    "send a message" in {
+    "prepare" in {
       Globals.systemDao.getOrCreateFirstSite()
-      val dao = Globals.siteDao(Site.FirstSiteId)
+      dao = Globals.siteDao(Site.FirstSiteId)
+      letEveryoneTalkAndStaffModerate(dao)
+    }
+
+    "send a message" in {
       createPasswordOwner("5kwu8f40", dao)
       val userOne = createPasswordUser("zzxxffgg", dao, trustLevel = TrustLevel.Basic)
       val userTwo = createPasswordUser("qqwwffpp", dao, trustLevel = TrustLevel.Basic)
@@ -71,7 +76,6 @@ class MessagesDaoAppSpec extends DaoAppSuite(disableScripts = true, disableBackg
 
 
     "only send message to staff if is moderate threat" in {
-      val dao = Globals.siteDao(Site.FirstSiteId)
       val admin = createPasswordOwner("9403dfpw", dao)
       val badUser = createPasswordUser("btk3rr40", dao, trustLevel = TrustLevel.Basic)
       val otherUser = createPasswordUser("r90t4gdf", dao, trustLevel = TrustLevel.Basic)
@@ -89,9 +93,7 @@ class MessagesDaoAppSpec extends DaoAppSuite(disableScripts = true, disableBackg
 
 
     "only send message to staff if is TrustLevel.New" in {
-      val dao = Globals.siteDao(Site.FirstSiteId)
       val admin = createPasswordOwner("33BT02uf", dao)
-
       val newUser = createPasswordUser("zz39ys40rf", dao, trustLevel = TrustLevel.New)
       val otherUser = createPasswordUser("z39gi4ck", dao, trustLevel = TrustLevel.New)
 

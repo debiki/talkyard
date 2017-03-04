@@ -59,7 +59,7 @@ class Application @Inject() extends mvc.Controller {
       request.theMember, dao.getGroupIds(request.theUser),
       post, pageMeta, dao.getAnyPrivateGroupTalkMembers(pageMeta),
       inCategoriesRootLast = categoriesRootLast,
-      relevantPermissions = dao.getPermsOnPages(categoriesRootLast)), "EdEZBXKSM2")
+      permissions = dao.getPermsOnPages(categoriesRootLast)), "EdEZBXKSM2")
 
     val postsHidden = try {
       dao.flagPost(pageId = pageId, postNr = postNr, flagType,

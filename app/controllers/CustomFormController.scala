@@ -52,7 +52,7 @@ object CustomFormController extends mvc.Controller {
     throwNoUnless(Authz.maySubmitCustomForm(
       request.userAndLevels, request.user.map(dao.getGroupIds).getOrElse(Nil),
       pageMeta, inCategoriesRootLast = categoriesRootLast,
-      relevantPermissions = dao.getPermsOnPages(categoriesRootLast)),
+      permissions = dao.getPermsOnPages(categoriesRootLast)),
       "EdE2TE4A0")
 
     request.dao.insertReply(textAndHtml, pageId, Set.empty, PostType.CompletedForm,

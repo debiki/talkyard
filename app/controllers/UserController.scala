@@ -587,7 +587,7 @@ object UserController extends mvc.Controller {
     throwNoUnless(Authz.maySeePage(
       pageMeta, request.user, dao.getGroupIds(request.user),
       dao.getAnyPrivateGroupTalkMembers(pageMeta), categoriesRootLast,
-      relevantPermissions = dao.getPermsOnPages(categoriesRootLast)), "EdEZBXKSM2")
+      permissions = dao.getPermsOnPages(categoriesRootLast)), "EdEZBXKSM2")
 
     val names = dao.listUsernames(pageId = pageId, prefix = prefix)
     val json = JsArray(

@@ -98,6 +98,32 @@ class DaoAppSuite(
   }
 
 
+  def letEveryoneTalkAndStaffModerate(dao: SiteDao) {
+    dao.readWriteTransaction { tx =>
+      tx.insertPermsOnPages(PermsOnPages(
+        id = NoPermissionId,
+        forPeopleId = Group.EveryoneId,
+        onWholeSite = Some(true),
+        mayCreatePage = Some(true),
+        mayPostComment = Some(true),
+        maySee = Some(true)))
+
+      tx.insertPermsOnPages(PermsOnPages(
+        id = NoPermissionId,
+        forPeopleId = Group.StaffId,
+        onWholeSite = Some(true),
+        mayEditPage = Some(true),
+        mayEditComment = Some(true),
+        mayEditWiki = Some(true),
+        mayDeletePage = Some(true),
+        mayDeleteComment = Some(true),
+        mayCreatePage = Some(true),
+        mayPostComment = Some(true),
+        maySee = Some(true)))
+    }
+  }
+
+
   def createPage(pageRole: PageRole, titleTextAndHtml: TextAndHtml,
         bodyTextAndHtml: TextAndHtml, authorId: UserId, browserIdData: BrowserIdData,
         dao: SiteDao, anyCategoryId: Option[CategoryId] = None): PageId = {

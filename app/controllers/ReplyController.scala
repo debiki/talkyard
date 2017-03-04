@@ -60,7 +60,7 @@ object ReplyController extends mvc.Controller {
       request.theUserAndLevels, dao.getGroupIds(request.theUser),
       postType, pageMeta, dao.getAnyPrivateGroupTalkMembers(pageMeta),
       inCategoriesRootLast = categoriesRootLast,
-      relevantPermissions = dao.getPermsOnPages(categoriesRootLast)),
+      permissions = dao.getPermsOnPages(categoriesRootLast)),
       "EdEZBXK3M2")
 
     val textAndHtml = TextAndHtml(text, isTitle = false)
@@ -89,7 +89,7 @@ object ReplyController extends mvc.Controller {
       request.theUserAndLevels, dao.getGroupIds(request.theMember),
       PostType.ChatMessage, pageMeta, dao.getAnyPrivateGroupTalkMembers(pageMeta),
       inCategoriesRootLast = categoriesRootLast,
-      relevantPermissions = dao.getPermsOnPages(categoriesRootLast)),
+      permissions = dao.getPermsOnPages(categoriesRootLast)),
       "EdEHDETG4K5")
 
     val textAndHtml = TextAndHtml(text, isTitle = false)

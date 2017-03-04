@@ -350,14 +350,15 @@ trait SiteTransaction {
   def loadGroupsAsSeq(): immutable.Seq[Group]
 
   def loadGroupIds(user: User): Vector[UserId] = {
+    val G = Group
+
     val member = user match {
-      case _: Guest | UnknownUser => return Vector.empty
+      case _: Guest | UnknownUser => return Vector(G.EveryoneId)
       case m: Member => m
       // later: case g: Group => g // groups are members
     }
 
     // For now. Later, also do db request and add custom groups.
-    val G = Group
 
     if (member.isAdmin)
       return Vector(member.id, G.AdminsId, G.StaffId, G.CoreMembersId, G.RegularsId,

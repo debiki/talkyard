@@ -81,7 +81,7 @@ trait PostsDao {
       dieOrDenyUnless(Authz.mayPostReply(authorAndLevels, transaction.loadGroupIds(author),
         postType, page.meta, transaction.loadAnyPrivateGroupTalkMembers(page.meta),
         transaction.loadCategoryPathRootLast(page.meta.categoryId),
-        transaction.loadPermsOnPages()), "EdE2WP4W8")
+        transaction.loadPermsOnPages()), "EdEMAY0RE")
 
       if (page.role.isChat)
         throwForbidden("EsE50WG4", s"Page '${page.id}' is a chat page; cannot post normal replies")
@@ -341,7 +341,7 @@ trait PostsDao {
       dieOrDenyUnless(Authz.mayPostReply(authorAndLevels, transaction.loadGroupIds(author),
         PostType.ChatMessage, page.meta, transaction.loadAnyPrivateGroupTalkMembers(page.meta),
         transaction.loadCategoryPathRootLast(page.meta.categoryId),
-        transaction.loadPermsOnPages()), "EdE2WP4W8")
+        transaction.loadPermsOnPages()), "EdEMAY0CHAT")
 
       val (reviewReasons: Seq[ReviewReason], _) =
         throwOrFindReviewPostReasons(page.meta, authorAndLevels, transaction)
@@ -1561,7 +1561,7 @@ trait PostsDao {
         flagger, transaction.loadGroupIds(flagger),
         postBefore, pageMeta, transaction.loadAnyPrivateGroupTalkMembers(pageMeta),
         inCategoriesRootLast = categories,
-        relevantPermissions = transaction.loadPermsOnPages()), "EdEZBXKSM2")
+        permissions = transaction.loadPermsOnPages()), "EdEZBXKSM2")
 
       val newNumFlags = postBefore.numPendingFlags + 1
       var postAfter = postBefore.copy(numPendingFlags = newNumFlags)

@@ -23,20 +23,17 @@ import java.{util => ju}
 
 
 class UserStatsAppSpec extends DaoAppSuite() {
-  lazy val dao: SiteDao = {
-    Globals.systemDao.getOrCreateFirstSite()
-    Globals.siteDao(Site.FirstSiteId)
-  }
+  var dao: SiteDao = _
 
-  lazy val categoryId: CategoryId =
-    dao.createForum("Forum", "/tag-test-forum/", ownerWho).defaultCategoryId
+  var owner: Member = _
+  var ownerWho: Who = _
 
-  lazy val ownerWho = Who(owner.id, browserIdData)
+  var createForumResult: CreateForumResult = _
+  var categoryId: CategoryId = _
 
-  lazy val owner: Member = createPasswordOwner("us_adm", dao)
-  lazy val moderator: Member = createPasswordModerator("us_mod", dao)
-  lazy val member1: Member = createPasswordUser("us_mb1", dao)
-  lazy val wrongMember: Member = createPasswordUser("us_wr_mb", dao)
+  var moderator: Member = _
+  var member1: Member = _
+  var wrongMember: Member = _
 
   var noRepliesTopicId: PageId = _
   var withRepliesTopicId: PageId = _
@@ -60,13 +57,19 @@ class UserStatsAppSpec extends DaoAppSuite() {
     val now = new ju.Date()
 
     "prepare" in {
-      dao
-      owner
+      Globals.test.setTime(startTime)
+      Globals.systemDao.getOrCreateFirstSite()
+      dao = Globals.siteDao(Site.FirstSiteId)
+      owner = createPasswordOwner("us_adm", dao)
+      ownerWho = Who(owner.id, browserIdData)
+      createForumResult = dao.createForum("Forum", "/tag-test-forum/", ownerWho)
+      categoryId = createForumResult.defaultCategoryId
+      moderator = createPasswordModerator("us_mod", dao)
+      member1 = createPasswordUser("us_mb1", dao)
+      wrongMember = createPasswordUser("us_wr_mb", dao)
     }
 
     "staff creates stuff" in {
-      Globals.test.setTime(startTime)
-
       noRepliesTopicId = createPage(PageRole.Discussion,
         TextAndHtml.testTitle("noRepliesTopicId"), TextAndHtml.testBody("noRepliesTopicIde body"),
         owner.id, browserIdData, dao, Some(categoryId))

@@ -20,69 +20,23 @@ package com.debiki.core
 import com.debiki.core.Prelude._
 
 
-case class MayWhat(
-  mayEditPage: Boolean = false,
-  mayEditComment: Boolean = false,
-  mayEditWiki: Boolean = false,
-  mayDeletePage: Boolean = false,
-  mayDeleteComment: Boolean = false,
-  mayCreatePage: Boolean = false,
-  mayPostComment: Boolean = false,
-  maySee: Boolean = false,
-  debugCode: String = "") {
-
-  require(maySee || (
-    !mayEditPage && !mayEditComment && !mayEditWiki && !mayDeletePage &&
-    !mayDeleteComment && !mayCreatePage && !mayPostComment), "EdE2WKB5FD")
-
-  def addRemovePermissions(permissions: PermsOnPages, debugCode: String) = MayWhat(
-    mayEditPage = permissions.mayEditPage.getOrElse(mayEditPage),
-    mayEditComment = permissions.mayEditComment.getOrElse(mayEditComment),
-    mayEditWiki = permissions.mayEditWiki.getOrElse(mayEditWiki),
-    mayDeletePage = permissions.mayDeletePage.getOrElse(mayDeletePage),
-    mayDeleteComment = permissions.mayDeleteComment.getOrElse(mayDeleteComment),
-    mayCreatePage = permissions.mayCreatePage.getOrElse(mayCreatePage),
-    mayPostComment = permissions.mayPostComment.getOrElse(mayPostComment),
-    maySee = permissions.maySee.getOrElse(maySee),
-    debugCode)
-
-  def copyAsDeleted: MayWhat = copy(
-    mayEditPage = false,
-    mayEditComment = false,
-    mayEditWiki = false,
-    mayDeletePage = false,
-    mayDeleteComment = false,
-    mayCreatePage = false,
-    mayPostComment = false)
-}
-
-
-object MayWhat {
-
-  def mayNotSee(debugCode: String) = MayWhat(
-    mayEditPage = false, mayEditComment = false, mayEditWiki = false,
-    mayDeletePage = false, mayDeleteComment = false, mayCreatePage = false,
-    mayPostComment = false, maySee = false, debugCode)
-
-}
-
 
 case class PermsOnPages(
   id: PermissionId,
   forPeopleId: UserId,
-  onWholeSite: Option[Boolean],
-  onCategoryId: Option[Int],
-  onPageId: Option[PageId],
-  onPostId: Option[PostId],
-  onTagId: Option[TagLabelId],
-  mayEditPage: Option[Boolean],
-  mayEditComment: Option[Boolean],
-  mayEditWiki: Option[Boolean],
-  mayDeletePage: Option[Boolean],
-  mayDeleteComment: Option[Boolean],
-  mayCreatePage: Option[Boolean],
-  mayPostComment: Option[Boolean],
-  maySee: Option[Boolean]) {
+  onWholeSite: Option[Boolean] = None,
+  onCategoryId: Option[Int] = None,
+  onPageId: Option[PageId] = None,
+  onPostId: Option[PostId] = None,
+  onTagId: Option[TagLabelId] = None,
+  mayEditPage: Option[Boolean] = None,
+  mayEditComment: Option[Boolean] = None,
+  mayEditWiki: Option[Boolean] = None,
+  mayDeletePage: Option[Boolean] = None,
+  mayDeleteComment: Option[Boolean] = None,
+  mayCreatePage: Option[Boolean] = None,
+  mayPostComment: Option[Boolean] = None,
+  maySee: Option[Boolean] = None) {
 
   // Later, perhaps:
   // pin/unpin

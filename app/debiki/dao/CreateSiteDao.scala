@@ -36,7 +36,8 @@ object CreateSiteDao {  RENAME // but to what. & move, but to where?
       approvedById = None,
       emailAddress = "",
       emailNotfPrefs = EmailNotfPrefs.DontReceive,
-      emailVerifiedAt = None)
+      emailVerifiedAt = None,
+      isAdmin = true)
     transaction.insertMember(systemUser)
     transaction.upsertUserStats(UserStats.forNewUser(
       SystemUserId, firstSeenAt = transaction.now, emailedAt = None))
