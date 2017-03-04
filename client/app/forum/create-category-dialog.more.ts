@@ -90,7 +90,7 @@ const EditCategoryDialog = createClassAndFactory({
     else {
       Server.loadGroups((groups: Group[]) => {
         const newCategory: Category = {
-          id: NoCategoryId,
+          id: -1,  // then the server will give it a >= 1 id
           name: '',
           slug: '',
           defaultTopicType: PageRole.Discussion,
@@ -367,9 +367,10 @@ const CategorySecurity = createClassAndFactory({
       mayEditWiki: false,
       mayDeletePage: false,
       mayDeleteComment: false,
-      mayCreatePage: false,
-      mayPostComment: false,
-      maySee: false,
+      // This is usually what one wants to allow:
+      mayCreatePage: true,
+      mayPostComment: true,
+      maySee: true,
     };
     this.props.updatePermissions(permissions.concat(newPerm));
   },

@@ -55,20 +55,20 @@ object Authz {
       inCategoriesRootLast, permissions)
 
     if (mayWhat.maySee isNot true)
-      return NoNotFound(s"EdE4FDW2-${mayWhat.debugCode}")
+      return NoNotFound(s"EdEM0CR0SEE-${mayWhat.debugCode}")
 
     if (!mayWhat.mayCreatePage)
-      return NoMayNot(s"EdEMNOTCRPG-${mayWhat.debugCode}", "May not create a page in this category")
+      return NoMayNot(s"EdEMN0CR-${mayWhat.debugCode}", "May not create a page in this category")
 
     if (!user.isStaff) {
       if (inCategoriesRootLast.isEmpty && pageRole != PageRole.FormalMessage)
-        return NoMayNot("EsE8GY32", "Only staff may create pages outside any category")
+        return NoMayNot("EsEM0CRNOCAT", "Only staff may create pages outside any category")
 
       if (anySlug.exists(_.nonEmpty))
-        return NoMayNot("DwE4KFW87", "Only staff may specify page slug")
+        return NoMayNot("EdEM0CR0SLG", "Only staff may specify page slug")
 
       if (pageRole.staffOnly)
-        return NoMayNot("DwE5KEPY2", s"Forbidden page type: $pageRole")
+        return NoMayNot("EdEM0CRPAGETY", s"Forbidden page type: $pageRole")
     }
 
     Yes
@@ -88,7 +88,7 @@ object Authz {
       categoriesRootLast, permissions, maySeeUnlisted = maySeeUnlisted)
 
     if (mayWhat.maySee isNot true)
-      return NoNotFound(s"EdE4KW0HD5-${mayWhat.debugCode}")
+      return NoNotFound(s"EdEM0SEE-${mayWhat.debugCode}")
 
     Yes
   }
@@ -110,20 +110,20 @@ object Authz {
       Some(privateGroupTalkMemberIds), inCategoriesRootLast, permissions)
 
     if (mayWhat.maySee isNot true)
-      return NoNotFound(s"EdENORESEE-${mayWhat.debugCode}")
+      return NoNotFound(s"EdEM0RE0SEE-${mayWhat.debugCode}")
 
     if (!mayWhat.mayPostComment)
-      return NoMayNot("EdENORERE", "You don't have permissions to post a reply on this page")
+      return NoMayNot("EdEM0RE0RE", "You don't have permissions to post a reply on this page")
 
     // Mind maps can easily get messed up by people posting comments. So, for now, only
     // allow the page author + staff to add stuff to a mind map. [7KUE20]
     if (pageMeta.pageRole == PageRole.MindMap) {
       if (user.id != pageMeta.authorId && !user.isStaff)
-        return NoMayNot("EsENOREMINDM", "Only the page author and staff may edit this mind map")
+        return NoMayNot("EsEMAY0REMINDM", "Only the page author and staff may edit this mind map")
     }
 
     if (!pageMeta.pageRole.canHaveReplies)
-      return NoMayNot("EsENOREPAGET", s"Cannot post to page type ${pageMeta.pageRole}")
+      return NoMayNot("EsEM0REPAGETY", s"Cannot post to page type ${pageMeta.pageRole}")
 
     Yes
   }
@@ -144,14 +144,14 @@ object Authz {
     }
 
     if (member.threatLevel.isSevereOrWorse)
-      return NoMayNot(s"EdE2FK49T", "You may not flag stuff, sorry")
+      return NoMayNot(s"EdEM0FLGISTHRT", "You may not flag stuff, sorry")
 
     SHOULD // be maySeePost pageid, postnr, not just page
     val mayWhat = checkPermsOnPages(Some(member), groupIds, Some(pageMeta),
       Some(privateGroupTalkMemberIds), inCategoriesRootLast, permissions)
 
     if (mayWhat.maySee isNot true)
-      return NoNotFound("EdE2GKF8Y4")
+      return NoNotFound("EdEM0FLG0SEE")
 
     Yes
   }
@@ -170,13 +170,13 @@ object Authz {
       permissions)
 
     if (mayWhat.maySee isNot true)
-      return NoNotFound("EdE1KBTSW04")
+      return NoNotFound("EdEM0FRM0SEE")
 
     if (!mayWhat.mayPostComment)
-      return NoMayNot("EdE5KFL02", "You don't have permissions to submit this form")
+      return NoMayNot("EdEM0FRM0RE", "You don't have permissions to submit this form")
 
     if (pageMeta.pageRole != PageRole.WebPage && pageMeta.pageRole != PageRole.Form) {
-      return NoMayNot("EsE4PBRN2F", s"Cannot submit custom forms to page type ${pageMeta.pageRole}")
+      return NoMayNot("EsEM0FRMPT", s"Cannot submit custom forms to page type ${pageMeta.pageRole}")
     }
 
     dieUnless(pageMeta.pageRole.canHaveReplies, "EdE5PJWK20")

@@ -349,6 +349,10 @@ trait SiteTransaction {
   def insertGroup(group: Group)
   def loadGroupsAsSeq(): immutable.Seq[Group]
 
+  def loadGroupIds(anyUser: Option[User]): Vector[UserId] = {
+    anyUser.map(loadGroupIds) getOrElse Vector(Group.EveryoneId)
+  }
+
   def loadGroupIds(user: User): Vector[UserId] = {
     val G = Group
 

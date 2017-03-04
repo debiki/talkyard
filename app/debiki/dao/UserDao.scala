@@ -606,14 +606,14 @@ trait UserDao {
 
 
   def getGroupIds(user: Option[User]): Vector[UserId] = {
-    user.map(getGroupIds) getOrElse Vector.empty
+    user.map(getGroupIds) getOrElse Vector(Group.EveryoneId)
   }
 
 
   def getGroupIds(user: User): Vector[UserId] = {
     COULD_OPTIMIZE // For now. Later, cache.
     user match {
-      case _: Guest | UnknownUser => Vector.empty
+      case _: Guest | UnknownUser => Vector(Group.EveryoneId)
       case m: Member =>
         readOnlyTransaction { transaction =>
           transaction.loadGroupIds (user)

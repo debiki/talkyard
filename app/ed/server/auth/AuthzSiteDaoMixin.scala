@@ -79,11 +79,10 @@ trait AuthzSiteDaoMixin {
         getAnyPrivateGroupTalkMembers(pageMeta)
       }
 
-    val groupIds: immutable.Seq[UserId] = user.map { theUser =>
-      anyTransaction.map(_.loadGroupIds(theUser)) getOrElse {
-        getGroupIds(theUser)
+    val groupIds: immutable.Seq[UserId] =
+      anyTransaction.map(_.loadGroupIds(user)) getOrElse {
+        getGroupIds(user)
       }
-    } getOrElse Nil
 
     val permissions = anyTransaction.map(_.loadPermsOnPages()) getOrElse {
       getPermsOnPages(categories)

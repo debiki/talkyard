@@ -45,8 +45,11 @@ case class CategoryToSave(
   staffOnly: Boolean,
   onlyStaffMayCreateTopics: Boolean,
   description: String,
-  anyId: Option[CategoryId] = None, // Some() if editing
+  anyId: Option[CategoryId] = None, // Some() if editing, < 0 if creating COULD change from Option[CategoryId] to CategoryId
   isCreatingNewForum: Boolean = false) {
+
+  require(anyId isNot NoCategoryId, "EdE5LKAW0")
+  def isNewCategory: Boolean = anyId.exists(_ < 0)
 
   val aboutTopicTitle: TextAndHtml = TextAndHtml.forTitle(s"About the $name category")
   val aboutTopicBody: TextAndHtml = TextAndHtml.forBodyOrComment(description)
@@ -389,7 +392,9 @@ trait CategoriesDao {
       setDefaultCategory(category, transaction)
     }
 
-    // (COULD debug-test-&-die if any permission has the wrong onCategoryId)
+    permissions foreach { p =>
+      dieIf(p.onCategoryId != newCategoryData.anyId, "EdE7UKW02")
+    }
     val permsWithCatId = permissions.map(_.copy(onCategoryId = Some(categoryId)))
     addRemovePermsOnCategory(categoryId, permsWithCatId)(transaction)
 

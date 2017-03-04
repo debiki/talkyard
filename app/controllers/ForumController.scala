@@ -83,13 +83,12 @@ object ForumController extends mvc.Controller {
         "DwE7KUP3", s"Bad new topic type int: $defaultTopicTypeInt")
 
     val shallBeDefaultCategory = (categoryJson \ "isDefaultCategory").as[Boolean]
-    val anyId = (categoryJson \ "id").as[Int] match {
-      case NoCategoryId => None
-      case x => Some(x)
-    }
+    val categoryId = (categoryJson \ "id").as[Int]
+    if (categoryId == NoCategoryId)
+      throwBadRequest("EdE5PJB2L", s"Bad category id: $NoCategoryId")
 
     val categoryData = CategoryToSave(
-      anyId = anyId,
+      anyId = Some(categoryId),
       sectionPageId = sectionPageId,
       parentId = (categoryJson \ "parentCategoryId").as[CategoryId],
       name = (categoryJson \ "name").as[String],
@@ -122,7 +121,12 @@ object ForumController extends mvc.Controller {
         case obj: JsObject => obj
         case bad => throwBadRequest("EdE2W4UY0", s"Bad permission list entry: ${classNameOf(bad)}")
       }
+
       val onCategoryId: Option[CategoryId] = (permsJsObj \ "onCategoryId").asOpt[Int]
+      if (onCategoryId isNot categoryId)
+        throwBadRequest("EdE6UWK02", o"""A permission's onCategoryId = $onCategoryId is different
+          from the category's id = $categoryId""")
+
       throwForbiddenIf(onCategoryId.isEmpty, "EdE6PJ0S2", "No onCategoryId specified")
       val newPerm = PermsOnPages(
         id = (permsJsObj \ "id").as[PermissionId],
@@ -143,12 +147,13 @@ object ForumController extends mvc.Controller {
       permissions.append(newPerm)
     }
 
-    val category = categoryData.anyId match {
-      case Some(_) =>
-        request.dao.editCategory(categoryData, permissions.to[immutable.Seq], request.who)
-      case None =>
+    val category =
+      if (categoryData.isNewCategory) {
         request.dao.createCategory(categoryData, permissions.to[immutable.Seq], request.who)._1
-    }
+      }
+      else {
+        request.dao.editCategory(categoryData, permissions.to[immutable.Seq], request.who)
+      }
 
     // ... save permissions ...  and alloc new id if perm id < 0 [9P1U6E5].
 
