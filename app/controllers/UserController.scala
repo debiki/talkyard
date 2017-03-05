@@ -581,7 +581,7 @@ object UserController extends mvc.Controller {
     import request.dao
 
     val pageMeta = dao.getPageMeta(pageId) getOrElse throwIndistinguishableNotFound("EdE3FJB8W2")
-    val categoriesRootLast = dao.loadCategoriesRootLast(pageMeta.categoryId)
+    val categoriesRootLast = dao.loadAncestorCategoriesRootLast(pageMeta.categoryId)
 
     SECURITY // Later: shouldn't list authors of hidden / deleted / whisper posts.
     throwNoUnless(Authz.maySeePage(

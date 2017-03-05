@@ -102,16 +102,19 @@ object ImportExportController extends mvc.Controller {
     pages: Seq[PageMeta],
     pagePaths: Seq[PagePathWithId],
     categories: Seq[Category],
-    posts: Seq[Post])
+    posts: Seq[Post],
+    permsOnPages: Seq[PermsOnPages])
 
 
   private def parseSiteJson(bodyJson: JsValue, isE2eTest: Boolean): ImportSiteData = {
 
-    val (siteMetaJson, settingsJson, membersJson, pagesJson, pathsJson, categoriesJson, postsJson) =
+    val (siteMetaJson, settingsJson, membersJson, permsOnPagesJson, pagesJson, pathsJson,
+        categoriesJson, postsJson) =
       try {
         (readJsObject(bodyJson, "meta"),
           readJsObject(bodyJson, "settings"),
           readJsArray(bodyJson, "members"),
+          readJsArray(bodyJson, "permsOnPages"),
           readJsArray(bodyJson, "pages"),
           readJsArray(bodyJson, "pagePaths"),
           readJsArray(bodyJson, "categories"),
@@ -166,7 +169,15 @@ object ImportExportController extends mvc.Controller {
               json: $json"""))
     }
 
-    ImportSiteData(siteToSave, settings, users, pages, paths, categories, posts)
+    val permsOnPages: Seq[PermsOnPages] = permsOnPagesJson.value.zipWithIndex map {
+          case (json, index) =>
+      readPermsOnPageOrBad(json, isE2eTest).getOrIfBad(error =>
+        throwBadReq(
+          "EsE5JGLRK01", o"""Invalid PermsOnPage json at index $index in the 'permsOnPage' list:
+              $error, json: $json"""))
+    }
+
+    ImportSiteData(siteToSave, settings, users, pages, paths, categories, posts, permsOnPages)
   }
 
 
@@ -239,6 +250,9 @@ object ImportExportController extends mvc.Controller {
       siteData.posts foreach { post =>
         //val newId = transaction.nextPostId()
         transaction.insertPost(post)
+      }
+      siteData.permsOnPages foreach { permission =>
+        transaction.insertPermsOnPages(permission)
       }
     }
 
@@ -537,6 +551,38 @@ object ImportExportController extends mvc.Controller {
     catch {
       case ex: IllegalArgumentException =>
         Bad(s"Bad json for post id '$id': ${ex.getMessage}")
+    }
+  }
+
+
+  def readPermsOnPageOrBad(jsValue: JsValue, isE2eTest: Boolean): PermsOnPages Or ErrorMessage = {
+    val jsObj = jsValue match {
+      case x: JsObject => x
+      case bad =>
+        return Bad(s"Not a json object, but a: " + classNameOf(bad))
+    }
+
+    try {
+      Good(PermsOnPages(
+        id = readInt(jsObj, "id"),
+        forPeopleId = readInt(jsObj, "forPeopleId"),
+        onWholeSite = readOptBool(jsObj, "onWholeSite"),
+        onCategoryId = readOptInt(jsObj, "onCategoryId"),
+        onPageId = readOptString(jsObj, "onPageId"),
+        onPostId = readOptInt(jsObj, "onPostId"),
+        onTagId = readOptInt(jsObj, "onTagId"),
+        mayEditPage = readOptBool(jsObj, "mayEditPage"),
+        mayEditComment = readOptBool(jsObj, "mayEditComment"),
+        mayEditWiki = readOptBool(jsObj, "mayEditWiki"),
+        mayDeletePage = readOptBool(jsObj, "mayDeletePage"),
+        mayDeleteComment = readOptBool(jsObj, "mayDeleteComment"),
+        mayCreatePage = readOptBool(jsObj, "mayCreatePage"),
+        mayPostComment = readOptBool(jsObj, "mayPostComment"),
+        maySee = readOptBool(jsObj, "maySee")))
+    }
+    catch {
+      case ex: IllegalArgumentException =>
+        Bad(s"Bad page path json: ${ex.getMessage}")
     }
   }
 

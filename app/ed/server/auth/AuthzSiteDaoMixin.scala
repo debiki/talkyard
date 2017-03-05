@@ -34,6 +34,13 @@ trait AuthzSiteDaoMixin {
   self: SiteDao =>
 
 
+  def getForumAuthzContext(user: Option[User]): ForumAuthzContext = {
+    val groupIds = getGroupIds(user)
+    val permissions = getPermissionsForPeople(groupIds)
+    ForumAuthzContext(user, groupIds, permissions)
+  }
+
+
   /** Returns true/false, + iff false, a why-forbidden debug reason code.
     */
   def maySeePageUseCache(pageMeta: PageMeta, user: Option[User], maySeeUnlisted: Boolean = true)
@@ -70,7 +77,7 @@ trait AuthzSiteDaoMixin {
     val categories: immutable.Seq[Category] =
       pageMeta.categoryId map { categoryId =>
         anyTransaction.map(_.loadCategoryPathRootLast(categoryId)) getOrElse {
-          loadCategoriesRootLast(categoryId)
+          loadAncestorCategoriesRootLast(categoryId)
         }
       } getOrElse Nil
 
@@ -159,11 +166,21 @@ trait AuthzSiteDaoMixin {
   }
 
 
+  @deprecated("now", "use getPermissionsForPeople instead?")
   def getPermsOnPages(categories: immutable.Seq[Category]): immutable.Seq[PermsOnPages] = {
     COULD_OPTIMIZE // For now
     readOnlyTransaction { transaction =>
       transaction.loadPermsOnPages()
     }
+  }
+
+
+  def getPermissionsForPeople(userIds: Iterable[UserId]): immutable.Seq[PermsOnPages] = {
+    COULD_OPTIMIZE // For now
+    val perms = readOnlyTransaction { transaction =>
+      transaction.loadPermsOnPages()
+    }
+    perms.filter(p => userIds.exists(_ == p.forPeopleId))
   }
 
 }

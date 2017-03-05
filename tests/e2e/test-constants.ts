@@ -40,5 +40,7 @@ export = {
   TitleNr: 0,
   BodyNr: 1,
   FirstReplyNr: 2,  // [5FKF0F2]
+  EveryoneId: 10,
+  StaffId: 17,
 };
 

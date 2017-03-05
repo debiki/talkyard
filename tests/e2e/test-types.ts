@@ -51,6 +51,7 @@ interface SiteData {
   members: Member[];
   identities: any;
   guests: TestGuest[];
+  permsOnPages: PermsOnPage[];
   blocks: any;
   invites: any;
   categories: TestCategory[];

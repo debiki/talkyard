@@ -62,7 +62,7 @@ object PageController extends mvc.Controller {
       throwForbidden("DwE8GKE4", "No category specified")
     }
 
-    val categoriesRootLast = dao.loadCategoriesRootLast(anyCategoryId)
+    val categoriesRootLast = dao.loadAncestorCategoriesRootLast(anyCategoryId)
 
     throwNoUnless(Authz.mayCreatePage(
       request.theUserAndLevels, dao.getGroupIds(request.theUser),

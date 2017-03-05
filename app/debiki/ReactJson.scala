@@ -21,6 +21,7 @@ import com.debiki.core._
 import com.debiki.core.Prelude._
 import controllers.ForumController
 import debiki.dao.{PageDao, PageStuff, ReviewStuff, SiteDao}
+import ed.server.auth.ForumAuthzContext
 import ed.server.http._
 import java.{util => ju}
 import org.jsoup.Jsoup
@@ -71,11 +72,12 @@ object ReactJson {
     * because the "Click to show..." text would then make the summarized post as large
     * as the non-summarized version.
     */
-  val SummarizePostLengthLimit =
+  val SummarizePostLengthLimit: Int =
     PostSummaryLength + 80 // one line is roughly 80 chars
 
 
-  /** Returns (json, page-version, page-title, ids-of-authors-of-not-yet-approved-posts).
+  /** Returns (json, page-version, page-title, ids-of-authors-of-not-yet-approved-posts)
+    * only with contents everyone may see.
     */
   def pageToJson(
         pageId: PageId,
@@ -173,7 +175,8 @@ object ReactJson {
         : (String, CachedPageVersion, Option[String], Set[UserId]) = {
 
     // The json constructed here will be cached & sent to "everyone", so in this function
-    // we always specify !isStaff and !restrictedOnly.
+    // we always specify !isStaff and !restrictedOnly, and the requester must be a stranger:
+    val authzCtx = dao.getForumAuthzContext(None)
 
     val socialLinksHtml = dao.getWholeSiteSettings().socialLinksHtml
     val page = PageDao(pageId, transaction)
@@ -217,7 +220,8 @@ object ReactJson {
       else if (!post.isOrigPost && !post.isTitle)
         numPostsRepliesSection += 1
       val tags = tagsByPostId(post.id)
-      post.nr.toString -> postToJsonImpl(post, page, tags)
+      post.nr.toString -> postToJsonImpl(post, page, tags, includeUnapproved = false,
+        showHidden = false)
     }
 
     // Topic members (e.g. chat channel members) join/leave infrequently, so better cache them
@@ -243,7 +247,7 @@ object ReactJson {
     val (anyForumId: Option[PageId], ancestorsJsonRootFirst: Seq[JsObject]) =
       makeForumIdAndAncestorsJson(page.meta, dao)
 
-    val categories = makeCategoriesJson(isStaff = false, restrictedOnly = false, dao)
+    val categories = makeCategoriesJson(authzCtx, restrictedOnly = false, dao)
 
     val anyLatestTopics: Seq[JsObject] =
       if (page.role == PageRole.Forum) {
@@ -251,9 +255,10 @@ object ReactJson {
           "DwE7KYP2", s"Forum page '${page.id}', site '${transaction.siteId}', has no category id")
         val orderOffset = anyPageQuery.getOrElse(
           PageQuery(PageOrderOffset.ByBumpTime(None), PageFilter.ShowAll))
-        val topics = ForumController.listTopicsInclPinned(rootCategoryId, orderOffset, dao,
+        val authzCtx = dao.getForumAuthzContext(user = None)
+        val topics = ForumController.listMaySeeTopicsInclPinned(rootCategoryId, orderOffset, dao,
           includeDescendantCategories = true,
-          isStaff = false, restrictedOnly = false,
+          authzCtx, restrictedOnly = false,
           limit = ForumController.NumTopicsToList)
         val pageStuffById = dao.getPageStuffById(topics.map(_.pageId))
         topics.foreach(_.meta.addUserIdsTo(userIdsToLoad))
@@ -338,6 +343,7 @@ object ReactJson {
 
   def makeSpecialPageJson(request: DebikiRequest[_], inclCategoriesJson: Boolean): JsObject = {
     val dao = request.dao
+    val requester = request.requester
     val siteSettings = dao.getWholeSiteSettings()
     var result = Json.obj(
       "appVersion" -> Globals.applicationVersion,
@@ -353,8 +359,8 @@ object ReactJson {
       "siteSections" -> makeSiteSectionsJson(dao))
 
     if (inclCategoriesJson) {
-      result += "categories" -> makeCategoriesJson(
-          isStaff = request.isStaff, restrictedOnly = false, dao)
+      val authzCtx = dao.getForumAuthzContext(requester)
+      result += "categories" -> makeCategoriesJson(authzCtx, restrictedOnly = false, dao)
     }
 
     result
@@ -368,7 +374,7 @@ object ReactJson {
     val categoryId = pageMeta.categoryId getOrElse {
       return (None, Nil)
     }
-    val categoriesRootFirst = dao.loadCategoriesRootLast(categoryId).reverse
+    val categoriesRootFirst = dao.loadAncestorCategoriesRootLast(categoryId).reverse
     if (categoriesRootFirst.isEmpty) {
       return (None, Nil)
     }
@@ -450,7 +456,7 @@ object ReactJson {
   /** Private, so it cannot be called outside a transaction.
     */
   private def postToJsonImpl(post: Post, page: Page, tags: Set[TagLabel],
-        includeUnapproved: Boolean = false, showHidden: Boolean = false): JsObject = {
+        includeUnapproved: Boolean, showHidden: Boolean): JsObject = {
 
     val depth = page.parts.depthOf(post.nr)
 
@@ -592,13 +598,13 @@ object ReactJson {
 
 
   /** Creates a dummy root post, needed when rendering React elements. */
-  def embeddedCommentsDummyRootPost(topLevelComments: immutable.Seq[Post]) = Json.obj(
+  def embeddedCommentsDummyRootPost(topLevelComments: immutable.Seq[Post]): JsObject = Json.obj(
     "nr" -> JsNumber(PageParts.BodyNr),
     "childIdsSorted" ->
       JsArray(Post.sortPostsBestFirst(topLevelComments).map(reply => JsNumber(reply.nr))))
 
 
-  val NoUserSpecificData = Json.obj(
+  val NoUserSpecificData: JsObject = Json.obj(
     "rolePageSettings" -> JsObject(Nil),
     "notifications" -> JsArray(),
     "watchbar" -> EmptyWatchbar,
@@ -679,7 +685,7 @@ object ReactJson {
 
     val threatLevel = user match {
       case member: Member => member.threatLevel
-      case guest: Guest =>
+      case _: Guest =>
         COULD // load or get-from-cache IP bans ("blocks") for this guest and derive the
         // correct threat level. However, for now, since this is for the brower only, this'll do:
         ThreatLevel.HopefullySafe
@@ -737,14 +743,18 @@ object ReactJson {
   COULD ; REFACTOR // move to CategoriesDao? and change from param PageRequest to
   // user + pageMeta?
   def listRestrictedCategoriesAndTopics(request: PageRequest[_]): (JsArray, Seq[JsValue]) = {
+    import request.{dao, requester}
+
     // Currently there're only 2 types of "personal" topics: unlisted, & staff-only.
     if (!request.isStaff)
       return (JsArray(), Nil)
 
+    val authzCtx = request.dao.getForumAuthzContext(requester)
+
     // SHOULD avoid starting a new transaction, so can remove workaround [7YKG25P].
     // (request.dao might start a new transaction)
     val (categories, defaultCategoryId) =
-      request.dao.listAllCategories(isStaff = true, restrictedOnly = true)
+      request.dao.listAllMaySeeCategories(authzCtx, restrictedOnly = true)
 
     // A tiny bit dupl code [5YK03W5]
     val categoriesJson = JsArray(categories.filterNot(_.isRoot) map { category =>
@@ -764,11 +774,11 @@ object ReactJson {
       else {
         val orderOffset = PageQuery(PageOrderOffset.ByBumpTime(None), PageFilter.ShowAll)
         // SHOULD avoid starting a new transaction, so can remove workaround [7YKG25P].
-        // (We're passing request.dao to ForumController below.)
-        val topics = ForumController.listTopicsInclPinned(
-          categoryId, orderOffset, request.dao,
+        // (We're passing dao to ForumController below.)
+        val topics = ForumController.listMaySeeTopicsInclPinned(
+          categoryId, orderOffset, dao,
           includeDescendantCategories = true,
-          isStaff = true,
+          authzCtx,
           restrictedOnly = true,
           limit = ForumController.NumTopicsToList)
         val pageStuffById = request.dao.getPageStuffById(topics.map(_.pageId))
@@ -868,12 +878,12 @@ object ReactJson {
     // COULD load flags too, at least if user is staff [7KW20WY1]
     val votes = actions.filter(_.isInstanceOf[PostVote]).asInstanceOf[immutable.Seq[PostVote]]
     val userVotesMap = UserPostVotes.makeMap(votes)
-    val votesByPostId = userVotesMap map { case (postNr, votes) =>
+    val votesByPostId = userVotesMap map { case (postNr, postVotes) =>
       var voteStrs = Vector[String]()
-      if (votes.votedLike) voteStrs = voteStrs :+ "VoteLike"
-      if (votes.votedWrong) voteStrs = voteStrs :+ "VoteWrong"
-      if (votes.votedBury) voteStrs = voteStrs :+ "VoteBury"
-      if (votes.votedUnwanted) voteStrs = voteStrs :+ "VoteUnwanted"
+      if (postVotes.votedLike) voteStrs = voteStrs :+ "VoteLike"
+      if (postVotes.votedWrong) voteStrs = voteStrs :+ "VoteWrong"
+      if (postVotes.votedBury) voteStrs = voteStrs :+ "VoteBury"
+      if (postVotes.votedUnwanted) voteStrs = voteStrs :+ "VoteUnwanted"
       postNr.toString -> Json.toJson(voteStrs)
     }
     JsObject(votesByPostId.toSeq)
@@ -934,17 +944,18 @@ object ReactJson {
   }
 
 
-  def makeCategoriesStorePatch(isStaff: Boolean, restrictedOnly: Boolean, dao: SiteDao): JsValue = {
-    val categoriesJson = makeCategoriesJson(isStaff = isStaff, restrictedOnly = restrictedOnly, dao)
+  def makeCategoriesStorePatch(authzCtx: ForumAuthzContext, restrictedOnly: Boolean, dao: SiteDao)
+        : JsValue = {
+    val categoriesJson = makeCategoriesJson(authzCtx, restrictedOnly = restrictedOnly, dao)
     Json.obj(
       "appVersion" -> Globals.applicationVersion,
       "categories" -> categoriesJson)
   }
 
 
-  def makeCategoriesJson(isStaff: Boolean, restrictedOnly: Boolean, dao: SiteDao)
+  def makeCategoriesJson(authzCtx: ForumAuthzContext, restrictedOnly: Boolean, dao: SiteDao)
         : JsArray = {
-    val (categories, defaultCategoryId) = dao.listAllCategories(isStaff = isStaff,
+    val (categories, defaultCategoryId) = dao.listAllMaySeeCategories(authzCtx,
       restrictedOnly = restrictedOnly)
     // A tiny bit dupl code [5YK03W5]
     val categoriesJson = JsArray(categories.filterNot(_.isRoot) map { category =>
@@ -955,7 +966,7 @@ object ReactJson {
 
 
   def makeCategoryJson(category: Category, isDefaultCategory: Boolean,
-        recentTopicsJson: Seq[JsObject] = null) = {
+        recentTopicsJson: Seq[JsObject] = null): JsObject = {
     var json = Json.obj(
       "id" -> category.id,
       "name" -> category.name,
@@ -1156,7 +1167,7 @@ object ReactJson {
   }
 
 
-  def EmptyWatchbar = Json.obj(
+  def EmptyWatchbar: JsObject = Json.obj(
     WatchbarSection.RecentTopics.toInt.toString -> JsArray(Nil),
     WatchbarSection.Notifications.toInt.toString -> JsArray(Nil),
     WatchbarSection.ChatChannels.toInt.toString -> JsArray(Nil),
@@ -1247,7 +1258,7 @@ object ReactJson {
       postsByPageId.toSeq.map(pageIdPosts => {
         val pageId = pageIdPosts._1
         val posts = pageIdPosts._2
-        val page = new PageDao(pageId, transaction)
+        val page = PageDao(pageId, transaction)
         val postsJson = posts map { p =>
           postToJsonImpl(p, page, tagsByPostId.getOrElse(p.id, Set.empty),
             includeUnapproved = false, showHidden = false)
@@ -1312,19 +1323,19 @@ object ReactJson {
   def JsUploadUrlOrNull(uploadRef: Option[UploadRef]): JsValue =
     uploadRef.map(ref => JsString(ref.url)) getOrElse JsNull
 
-  def JsStringOrNull(value: Option[String]) =
+  def JsStringOrNull(value: Option[String]): JsValue =
     value.map(JsString).getOrElse(JsNull)
 
-  def JsBooleanOrNull(value: Option[Boolean]) =
+  def JsBooleanOrNull(value: Option[Boolean]): JsValue =
     value.map(JsBoolean).getOrElse(JsNull)
 
-  def JsNumberOrNull(value: Option[Int]) =
+  def JsNumberOrNull(value: Option[Int]): JsValue =
     value.map(JsNumber(_)).getOrElse(JsNull)
 
-  def JsLongOrNull(value: Option[Long]) =
+  def JsLongOrNull(value: Option[Long]): JsValue =
     value.map(JsNumber(_)).getOrElse(JsNull)
 
-  def JsFloatOrNull(value: Option[Float]) =
+  def JsFloatOrNull(value: Option[Float]): JsValue =
     value.map(v => JsNumber(BigDecimal(v))).getOrElse(JsNull)
 
   def JsWhenMs(when: When) =
@@ -1333,19 +1344,19 @@ object ReactJson {
   def JsDateMs(value: ju.Date) =
     JsNumber(value.getTime)
 
-  def JsWhenMsOrNull(value: Option[When]) =
+  def JsWhenMsOrNull(value: Option[When]): JsValue =
     value.map(when => JsNumber(when.unixMillis)).getOrElse(JsNull)
 
-  def JsDateMsOrNull(value: Option[ju.Date]) =
+  def JsDateMsOrNull(value: Option[ju.Date]): JsValue =
     value.map(JsDateMs).getOrElse(JsNull)
 
-  def DateEpochOrNull(value: Option[ju.Date]) =
+  def DateEpochOrNull(value: Option[ju.Date]): JsValue =
     value.map(date => JsNumber(date.getTime)).getOrElse(JsNull)
 
   def date(value: ju.Date) =
     JsString(toIso8601NoSecondsNoT(value))
 
-  def dateOrNull(value: Option[ju.Date]) = value match {
+  def dateOrNull(value: Option[ju.Date]): JsValue = value match {
     case Some(v) => date(v)
     case None => JsNull
   }

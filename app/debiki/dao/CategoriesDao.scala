@@ -22,6 +22,7 @@ import com.debiki.core.Prelude._
 import debiki.DebikiHttp.throwNotFound
 import ed.server.http.throwForbiddenIf
 import debiki.TextAndHtml
+import ed.server.auth.{Authz, ForumAuthzContext, MayMaybe}
 import java.{util => ju}
 import scala.collection.{immutable, mutable}
 import scala.collection.mutable.ArrayBuffer
@@ -90,12 +91,12 @@ trait CategoriesDao {
     * Sorts by Category.position (which doesn't make much sense if there are sub categories).
     * Returns (categories, default-category-id).
     */
-  def listSectionCategories(pageId: PageId, isStaff: Boolean, restrictedOnly: Boolean)
+  def listMaySeeSectionCategories(pageId: PageId, authzCtx: ForumAuthzContext, restrictedOnly: Boolean)
         : (Seq[Category], CategoryId) = {
     loadRootCategory(pageId) match {
       case Some(rootCategory) =>
-        val categories = listCategoriesInTree(rootCategory.id, includeRoot = false,
-          isStaff = isStaff, restrictedOnly = restrictedOnly).sortBy(_.position)
+        val categories = listDescendantMaySeeCategories(rootCategory.id, includeRoot = false,
+          authzCtx, restrictedOnly = restrictedOnly).sortBy(_.position)
         (categories, rootCategory.defaultCategoryId getOrDie "EsE4GK02")
       case None =>
         (Nil, NoCategoryId)
@@ -109,7 +110,7 @@ trait CategoriesDao {
     *
     * Returns (categories, default-category-id).  (Currently there can be only 1 default category)
     */
-  def listAllCategories(isStaff: Boolean, restrictedOnly: Boolean)
+  def listAllMaySeeCategories(authzCtx: ForumAuthzContext, restrictedOnly: Boolean)
         : (Seq[Category], Option[CategoryId]) = {
     if (rootCategories eq null) {
       loadBuildRememberCategoryMaps()
@@ -120,55 +121,37 @@ trait CategoriesDao {
       return (Nil, None)
 
     val rootCategory = rootCategories.head
-    val categories = listCategoriesInTree(rootCategory.id, includeRoot = false,
-      isStaff = isStaff, restrictedOnly = restrictedOnly).sortBy(_.position)
+    val categories = listDescendantMaySeeCategories(rootCategory.id, includeRoot = false,
+      authzCtx, restrictedOnly = restrictedOnly).sortBy(_.position)
     (categories, Some(rootCategory.defaultCategoryId getOrDie "EsE4GK02"))
-  }
-
-
-  /** List categories with categoryId as their immediate parent.
-    */
-  def listChildCategories(categoryId: CategoryId, includeUnlisted: Boolean)
-        : immutable.Seq[Category] = {
-    val categoriesByParentId = loadBuildRememberCategoryMaps()._2
-    val children = categoriesByParentId.getOrElse(categoryId, {
-      return Nil
-    })
-    unimplementedIf(!includeUnlisted, "excluding unlisted [EsE4KPKM2]")
-    children.to[immutable.Seq]
   }
 
 
   /** List all categories in the sub tree with categoryId as root.
     */
-  def listCategoriesInTree(categoryId: CategoryId, includeRoot: Boolean,
-        isStaff: Boolean, restrictedOnly: Boolean): Seq[Category] = {
+  private def listDescendantMaySeeCategories(categoryId: CategoryId, includeRoot: Boolean,
+        authzCtx: ForumAuthzContext, restrictedOnly: Boolean): Seq[Category] = {
     val categories = ArrayBuffer[Category]()
-    appendCategoriesInTree(categoryId, includeRoot, isStaff = isStaff,
+    appendMaySeeCategoriesInTree(categoryId, includeRoot, authzCtx,
       restrictedOnly = restrictedOnly, categories)
     categories.to[immutable.Seq]
   }
 
 
-  def loadPagesByUser(userId: UserId, isStaffOrSelf: Boolean, limit: Int): Seq[PagePathAndMeta] = {
-    readOnlyTransaction(_.loadPagesByUser(userId, isStaffOrSelf = isStaffOrSelf, limit))
-  }
-
-
   /** Lists pages placed directly in one of categoryIds.
     */
-  private def loadPagesInCategories(categoryIds: Seq[CategoryId], pageQuery: PageQuery, limit: Int)
-        : Seq[PagePathAndMeta] = {
+  private def loadPagesDirectlyInCategories(categoryIds: Seq[CategoryId], pageQuery: PageQuery,
+        limit: Int): Seq[PagePathAndMeta] = {
     readOnlyTransaction(_.loadPagesInCategories(categoryIds, pageQuery, limit))
   }
 
 
   /** Lists pages placed in categoryId, optionally including its descendant categories.
     */
-  def loadPagesInCategory(categoryId: CategoryId, includeDescendants: Boolean,
-        isStaff: Boolean, restrictedOnly: Boolean, pageQuery: PageQuery, limit: Int)
+  def loadMaySeePagesInCategory(categoryId: CategoryId, includeDescendants: Boolean,
+        authzCtx: ForumAuthzContext, restrictedOnly: Boolean, pageQuery: PageQuery, limit: Int)
         : Seq[PagePathAndMeta] = {
-    val categoryIds =
+    val maySeeCategoryIds =
       if (includeDescendants) {
         // (Include the start ("root") category because it might not be the root of the
         // whole section (e.g. the whole forum) but only the root of a sub section (e.g.
@@ -177,26 +160,46 @@ trait CategoriesDao {
         // (If `restrictedOnly` is true, then most hidden topics won't be included, because
         // they might not be placed inside restricted categories. Everything works fine
         // anyway currently, though, see [7RIQ29]. )
-        listCategoriesInTree(categoryId, includeRoot = true,
-          isStaff = isStaff, restrictedOnly = restrictedOnly).map(_.id)
+        listDescendantMaySeeCategories(categoryId, includeRoot = true, authzCtx,
+          restrictedOnly = restrictedOnly).map(_.id)
       }
       else {
-        unimplementedIf(!isStaff, "!incl hidden in forum [EsE2PGJ4]")
+        unimplementedIf(!authzCtx.isStaff, "!incl hidden in forum [EsE2PGJ4]")
         Seq(categoryId)
       }
-    loadPagesInCategories(categoryIds, pageQuery, limit)
+
+    // Although we may see these categories, we might not be allowed to see all pages therein.
+    // So, both per-category and per-page authz checks.
+    val pagesInclForbidden = loadPagesDirectlyInCategories(maySeeCategoryIds, pageQuery, limit)
+
+    // For now. COULD do some of filtering in the db query instead, so won't find 0 pages
+    // just because all most-recent-pages are e.g. hidden.
+    val filteredPages = pagesInclForbidden filter { page =>
+      val categories = loadAncestorCategoriesRootLast(page.categoryId)
+      val may = ed.server.auth.Authz.maySeePage(
+        page.meta,
+        user = authzCtx.requester,
+        groupIds = authzCtx.groupIds,
+        pageMembers = getAnyPrivateGroupTalkMembers(page.meta),
+        categoriesRootLast = categories,
+        permissions = authzCtx.permissions,
+        maySeeUnlisted = false) // pageQuery.pageFilter.includesUnlisted
+      may == MayMaybe.Yes
+    }
+
+    filteredPages
   }
 
 
-  def loadCategoriesRootLast(anyCategoryId: Option[CategoryId]): immutable.Seq[Category] = {
+  def loadAncestorCategoriesRootLast(anyCategoryId: Option[CategoryId]): immutable.Seq[Category] = {
     val id = anyCategoryId getOrElse {
       return Nil
     }
-    loadCategoriesRootLast(id)
+    loadAncestorCategoriesRootLast(id)
   }
 
 
-  def loadCategoriesRootLast(categoryId: CategoryId): immutable.Seq[Category] = {
+  def loadAncestorCategoriesRootLast(categoryId: CategoryId): immutable.Seq[Category] = {
     val categoriesById = loadBuildRememberCategoryMaps()._1
     val categories = ArrayBuffer[Category]()
     var current = categoriesById.get(categoryId)
@@ -229,7 +232,7 @@ trait CategoriesDao {
 
 
   def loadRootCategory(categoryId: CategoryId): Option[Category] =
-    loadCategoriesRootLast(categoryId).lastOption
+    loadAncestorCategoriesRootLast(categoryId).lastOption
 
 
   def loadSectionPageId(categoryId: CategoryId): Option[PageId] =
@@ -260,30 +263,43 @@ trait CategoriesDao {
   }
 
 
-  private def appendCategoriesInTree(rootCategoryId: CategoryId, includeRoot: Boolean,
-      isStaff: Boolean, restrictedOnly: Boolean, categoryList: ArrayBuffer[Category]) {
+  private def appendMaySeeCategoriesInTree(rootCategoryId: CategoryId, includeRoot: Boolean,
+      authzCtx: ForumAuthzContext, restrictedOnly: Boolean, categoryList: ArrayBuffer[Category]) {
+
     if (categoryList.exists(_.id == rootCategoryId)) {
       // COULD log cycle error
       return
     }
+
     val (categoriesById, categoriesByParentId, _) = loadBuildRememberCategoryMaps()
     val startCategory = categoriesById.getOrElse(rootCategoryId, {
       return
     })
-    // Do include even if startCategory.onlyStaffMayCreate — because category still visible.
-    // COULD rename restrictedOnly to ... visibleOnly? Or add a real permissions system.
-    val isRestricted = startCategory.unlisted || startCategory.staffOnly || startCategory.isDeleted
-    if (isRestricted && !isStaff)
-      return
-    if (includeRoot && (!restrictedOnly || isRestricted)) {
-      categoryList.append(startCategory)
+
+    val categories = loadAncestorCategoriesRootLast(rootCategoryId)
+
+    // (Skip the root category in this check; cannot set permissions on it. [0YWKG21])
+    if (!categories.head.isRoot) {
+      val may = Authz.maySeeCategory(authzCtx, categories)
+      if (may.maySee isNot true)
+        return
     }
+
+    // --- Deprecated. Remove later.
+    val isRestricted = startCategory.unlisted || startCategory.staffOnly || startCategory.isDeleted
+    if (isRestricted && !authzCtx.isStaff)
+      return
+    // ----
+
+    if (includeRoot) //&& (!restrictedOnly || isRestricted)) { CLEAN_UP remove restrictedOnly param?
+      categoryList.append(startCategory)
+
     val childCategories = categoriesByParentId.getOrElse(rootCategoryId, {
       return
     })
     for (childCategory <- childCategories) {
-      appendCategoriesInTree(childCategory.id, includeRoot = true,
-        isStaff = isStaff, restrictedOnly = restrictedOnly, categoryList)
+      appendMaySeeCategoriesInTree(childCategory.id, includeRoot = true,
+        authzCtx, restrictedOnly = restrictedOnly, categoryList)
     }
   }
 

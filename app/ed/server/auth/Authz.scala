@@ -32,6 +32,48 @@ object MayMaybe {
 }
 
 
+
+sealed abstract class AuthzContext {
+  def requester: Option[User]
+  def groupIds: immutable.Seq[GroupId]
+  def permissions: immutable.Seq[PermsOnPages]
+  def isStaff: Boolean = requester.exists(_.isStaff)
+  def isAdmin: Boolean = requester.exists(_.isAdmin)
+
+  // For now: If is stranger, then requester = None, and only allowed group id = Everyone.
+  if (requester.isEmpty) {
+    permissions foreach { permission =>
+      require(permission.forPeopleId == Group.EveryoneId,
+        s"Bad permission, not for Everyone: $permission [EdE2QSRB7]")
+    }
+  }
+}
+
+case class ForumAuthzContext(
+  requester: Option[User],
+  groupIds: immutable.Seq[GroupId],
+  permissions: immutable.Seq[PermsOnPages]) extends AuthzContext
+
+/*
+case class CategoryAuthzContext(
+  requester: Option[User],
+  permissions: immutable.Seq[PermsOnPages],
+  categoriesRootLast: immutable.Seq[Category]) extends AuthzContext
+
+case class PageAuthzContext(
+  requester: Option[User],
+  permissions: immutable.Seq[PermsOnPages],
+  categoriesRootLast: immutable.Seq[Category],
+  pageMeta: PageMeta,
+  pageMembers: Option[Set[UserId]]) extends AuthzContext {
+
+  require(!pageMeta.pageRole.isPrivateGroupTalk || pageMembers.isDefined, "EdE6LPK2A0")
+  require(pageMeta.categoryId.isDefined == categoriesRootLast.nonEmpty, "EdE0WYK15")
+  require(!pageMeta.categoryId.exists(_ != categoriesRootLast.head.id), "EdE3GPJU0")
+} */
+
+
+
 /** Checks if a member may e.g. create pages, post replies, wikify, ... and so on.
   * And, if not, tells you why not: all functions returns a why-may-not reason.
   */
@@ -91,6 +133,14 @@ object Authz {
       return NoNotFound(s"EdEM0SEE-${mayWhat.debugCode}")
 
     Yes
+  }
+
+
+  def maySeeCategory(authzCtx: AuthzContext, categoriesRootLast: immutable.Seq[Category])
+        : MayWhat = {
+    checkPermsOnPages(authzCtx.requester, authzCtx.groupIds,
+      pageMeta = None, pageMembers = None, categoriesRootLast, authzCtx.permissions,
+      maySeeUnlisted = false)
   }
 
 
@@ -210,6 +260,7 @@ object Authz {
       return MayEverything
 
     val isStaff = user.exists(_.isStaff)
+    val isAuthor = user.isDefined && pageMeta.exists(_.pageId == user.get.id)
 
     // For now, don't let people see pages outside any category. Hmm...?
     // (<= 1 not 0: don't count the root category, no pages should be placed directly in them.)
@@ -226,6 +277,9 @@ object Authz {
       // These page types are for admins only.
       if (meta.pageRole == PageRole.SpecialContent || meta.pageRole == PageRole.Code)
         return MayWhat.mayNotSee("EsE4YK02R-Code")
+
+      if (meta.isHidden && !isStaff && !isAuthor)
+        return MayWhat.mayNotSee("EsE7LFKW0-Hidden")
 
       // Only page participants may see things like private chats or private formal messages.
       if (meta.pageRole.isPrivateGroupTalk) {
@@ -250,15 +304,15 @@ object Authz {
     // down to the category in which the page is placed, and add/remove permissions along the way.
     var mayWhat = MayPerhapsSee
     val isUsersPage = user.exists(u => pageMeta.exists(_.authorId == u.id))
+    val isForumPage = pageMeta.exists(_.pageRole == PageRole.Forum)
     var isDeleted = pageMeta.exists(_.isDeleted)
-    val isForum = pageMeta.exists(_.pageRole == PageRole.Forum)
 
     // Later: return may-not-see also if !published?
     if (isDeleted && !isUsersPage && !isStaff)
       return MayWhat.mayNotSee("EdEPAGEDELD")
 
     // For now, hardcode may-see the forum page, otherwise only admins would see it.
-    if (isForum)
+    if (isForumPage)
       mayWhat = mayWhat.copy(maySee = Some(true), debugCode = "EdMSEEFORUM")
 
     for (p <- relevantPermissions; if p.onWholeSite.is(true))
@@ -269,7 +323,8 @@ object Authz {
     if (mayWhat.maySee is false)
       return mayWhat
 
-    if (categoriesRootLast.nonEmpty) for (category <- categoriesRootLast.reverseIterator) {
+    // Skip the root category, cannot set permissions on it. [0YWKG21]
+    if (categoriesRootLast.nonEmpty) for (category <- categoriesRootLast.reverseIterator.drop(1)) {
       for (p <- relevantPermissions; if p.onCategoryId.is(category.id)) {
         mayWhat = mayWhat.addRemovePermissions(p, "EdMCATLOOP")
       }
@@ -292,8 +347,8 @@ object Authz {
       if (!isStaff && category.onlyStaffMayCreateTopics)
         mayWhat = mayWhat.copy(mayCreatePage = false)
 
-      // Abort if we may not see this category, because then we may not see any child cats either.
-      if (mayWhat.maySee is false)
+      // Abort if we may not see this category, or if we don't know.
+      if (mayWhat.maySee isNot true)
         return mayWhat
     }
 
@@ -309,7 +364,7 @@ object Authz {
 
 
 
-private case class MayWhat(
+case class MayWhat(
   mayEditPage: Boolean = false,
   mayEditComment: Boolean = false,
   mayEditWiki: Boolean = false,
@@ -347,13 +402,13 @@ private case class MayWhat(
 }
 
 
-private object MayWhat {
+object MayWhat {
 
-  val MayPerhapsSee: MayWhat = MayWhat.mayNotSee("EdMMAY0").copy(maySee = None)
+  val MayPerhapsSee: MayWhat = MayWhat.mayNotSee("EdMMBYSEE").copy(maySee = None)
 
   val MayEverything: MayWhat = MayWhat(mayEditPage = true, mayEditComment = true,
     mayEditWiki = true, mayDeletePage = true, mayDeleteComment = true, mayCreatePage = true,
-    mayPostComment = true, maySee = Some(true), "EdMEVRYTNG")
+    mayPostComment = true, maySee = Some(true), "EdMMALL")
 
   def mayNotSee(debugCode: String) = MayWhat(
     mayEditPage = false, mayEditComment = false, mayEditWiki = false,

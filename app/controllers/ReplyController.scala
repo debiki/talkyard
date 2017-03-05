@@ -54,7 +54,7 @@ object ReplyController extends mvc.Controller {
         .getOrElse(throwNotFound("Dw2XEG60", s"Page `$pageId' does not exist"))
       PageRequest.forPageThatExists(request, pageId = page.id) getOrDie "DwE77PJE0"  */
 
-    val categoriesRootLast = dao.loadCategoriesRootLast(pageMeta.categoryId)
+    val categoriesRootLast = dao.loadAncestorCategoriesRootLast(pageMeta.categoryId)
 
     throwNoUnless(Authz.mayPostReply(
       request.theUserAndLevels, dao.getGroupIds(request.theUser),
@@ -62,6 +62,10 @@ object ReplyController extends mvc.Controller {
       inCategoriesRootLast = categoriesRootLast,
       permissions = dao.getPermsOnPages(categoriesRootLast)),
       "EdEZBXK3M2")
+
+    REFACTOR; COULD // intsetad: [5FLK02]
+    // val authzContext = dao.getPageAuthzContext(requester, pageMeta)
+    // throwNoUnless(Authz.mayPostReply(authzContext, postType, "EdEZBXK3M2")
 
     val textAndHtml = TextAndHtml(text, isTitle = false)
     val result = dao.insertReply(textAndHtml, pageId = pageId, replyToPostNrs,
@@ -83,7 +87,7 @@ object ReplyController extends mvc.Controller {
       throwIndistinguishableNotFound("EdE7JS2")
     }
 
-    val categoriesRootLast = dao.loadCategoriesRootLast(pageMeta.categoryId)
+    val categoriesRootLast = dao.loadAncestorCategoriesRootLast(pageMeta.categoryId)
 
     throwNoUnless(Authz.mayPostReply(
       request.theUserAndLevels, dao.getGroupIds(request.theMember),
