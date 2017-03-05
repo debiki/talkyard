@@ -96,21 +96,37 @@ object Authz {
     val mayWhat = checkPermsOnPages(Some(user), groupIds, pageMeta = None, pageMembers = None,
       inCategoriesRootLast, permissions)
 
-    if (mayWhat.maySee isNot true)
-      return NoNotFound(s"EdEM0CR0SEE-${mayWhat.debugCode}")
+    def isPrivate = pageRole.isPrivateGroupTalk && groupIds.nonEmpty &&
+      inCategoriesRootLast.isEmpty
 
-    if (!mayWhat.mayCreatePage)
+    if (mayWhat.maySee.isEmpty && isPrivate) {
+      // Ok, may see.
+    }
+    else if (mayWhat.maySee isNot true) {
+      return NoNotFound(s"EdEM0CR0SEE-${mayWhat.debugCode}")
+    }
+
+    if (!mayWhat.mayCreatePage && !isPrivate)
       return NoMayNot(s"EdEMN0CR-${mayWhat.debugCode}", "May not create a page in this category")
 
     if (!user.isStaff) {
-      if (inCategoriesRootLast.isEmpty && pageRole != PageRole.FormalMessage)
+      if (inCategoriesRootLast.isEmpty && !isPrivate)
         return NoMayNot("EsEM0CRNOCAT", "Only staff may create pages outside any category")
+
+      if (anyFolder.exists(_.nonEmpty))
+        return NoMayNot("EdEM0CRFLDR", "Only staff may specify page folder")
 
       if (anySlug.exists(_.nonEmpty))
         return NoMayNot("EdEM0CR0SLG", "Only staff may specify page slug")
 
       if (pageRole.staffOnly)
         return NoMayNot("EdEM0CRPAGETY", s"Forbidden page type: $pageRole")
+
+      if (bodyPostType != PostType.Normal)
+        return NoMayNot("EdEM0CRPOSTTY", s"Forbidden post type: $bodyPostType")
+
+      if (pinWhere.isDefined)
+        return NoMayNot("EdEM0CRPIN", "Only staff may pin pages")
     }
 
     Yes
@@ -269,6 +285,8 @@ object Authz {
       return MayWhat.mayNotSee("EdMNOCATS")
     */
 
+    var mayWhat = MayPerhapsSee
+
     pageMeta foreach { meta =>
       categoriesRootLast.headOption foreach { parentCategory =>
         dieIf(!meta.categoryId.contains(parentCategory.id), "EdE5PBSW2")
@@ -293,6 +311,8 @@ object Authz {
 
         if (!thePageMembers.contains(theUser.id))
           return MayWhat.mayNotSee("EsE5K8W27-Not-Page-Member")
+
+        mayWhat = mayWhat.copyWithMaySeeAndReply(debugCode = "EdMMMEMBR")
       }
     }
 
@@ -302,21 +322,23 @@ object Authz {
 
     // We'll start with no permissions, at the top category, and loop through all categories
     // down to the category in which the page is placed, and add/remove permissions along the way.
-    var mayWhat = MayPerhapsSee
     val isUsersPage = user.exists(u => pageMeta.exists(_.authorId == u.id))
     val isForumPage = pageMeta.exists(_.pageRole == PageRole.Forum)
     var isDeleted = pageMeta.exists(_.isDeleted)
 
     // Later: return may-not-see also if !published?
-    if (isDeleted && !isUsersPage && !isStaff)
+    if (isDeleted && !isStaff)
       return MayWhat.mayNotSee("EdEPAGEDELD")
+
+    if (isUsersPage)
+      mayWhat = mayWhat.copyWithMaySeeAndReply(debugCode = "EdMMOWN")
 
     // For now, hardcode may-see the forum page, otherwise only admins would see it.
     if (isForumPage)
-      mayWhat = mayWhat.copy(maySee = Some(true), debugCode = "EdMSEEFORUM")
+      mayWhat = mayWhat.copy(maySee = Some(true), debugCode = "EdMMSEEFORUM")
 
     for (p <- relevantPermissions; if p.onWholeSite.is(true))
-      mayWhat = mayWhat.addRemovePermissions(p, "EdMSITEPERM")
+      mayWhat = mayWhat.addRemovePermissions(p, "EdMMSITEPERM")
 
     // Hmm. !maySee here? Could happen if maySee is set to false for Everyone, but true for
     // trust-level >= 1. That'd mean only people who have signed up already, may see this website.
@@ -388,6 +410,11 @@ case class MayWhat(
     mayPostComment = permissions.mayPostComment.getOrElse(mayPostComment),
     maySee = permissions.maySee.orElse(maySee),
     debugCode)
+
+  def copyWithMaySeeAndReply(debugCode: String): MayWhat = copy(
+    mayPostComment = true,
+    maySee = Some(true),
+    debugCode = debugCode)
 
   /** Copies this MayWhat to permissions = those for a deleted page (mostly may-do-nothing).
     **/
