@@ -88,9 +88,10 @@ const EditCategoryDialog = createClassAndFactory({
       });
     }
     else {
+      const categoryId = -1; // then the server will give it a >= 1 id
       Server.loadGroups((groups: Group[]) => {
         const newCategory: Category = {
-          id: -1,  // then the server will give it a >= 1 id
+          id: categoryId,
           name: '',
           slug: '',
           defaultTopicType: PageRole.Discussion,
@@ -106,7 +107,9 @@ const EditCategoryDialog = createClassAndFactory({
           canChangeDefault: true,
           category: newCategory,
           groups: groups,
-          permissions: [],  // TODO default cat permissions here
+          permissions: [
+            defaultPermsOnPages(-11, Groups.EveryoneId, categoryId, false),
+            defaultPermsOnPages(-12, Groups.StaffId, categoryId, true)],
         });
       });
     }
@@ -125,8 +128,23 @@ const EditCategoryDialog = createClassAndFactory({
       parentCategoryId: ReactStore.getCategoryId(),
       sectionPageId: debiki.internal.pageId,
     };
+    function falseToUndef(permissions: PermsOnPage[]) {
+      const ps = _.clone(permissions);
+      _.each(ps, (p: PermsOnPage) => {
+        // Currently only True and Undef supported, but False = not impl. [2LG5F04W]
+        if (p.mayEditPage === false) delete p.mayEditPage;
+        if (p.mayEditComment === false) delete p.mayEditComment;
+        if (p.mayEditWiki === false) delete p.mayEditWiki;
+        if (p.mayDeletePage === false) delete p.mayDeletePage;
+        if (p.mayDeleteComment === false) delete p.mayDeleteComment;
+        if (p.mayCreatePage === false) delete p.mayCreatePage;
+        if (p.mayPostComment === false) delete p.mayPostComment;
+        if (p.maySee === false) delete p.maySee;
+      });
+      return ps;
+    }
     //const isChangingSlug = this.state.originalSlug !== category.slug;
-    ReactActions.saveCategory(category, this.state.permissions, this.close, () => {
+    ReactActions.saveCategory(category, falseToUndef(this.state.permissions), this.close, () => {
       this.setState({ isSaving: false });
       // BUG if isChangingSlug, needs to update the URL slug, otherwise there'll be an error
       // when rendering the category topic list, with the old slug. [7AFDW01]
@@ -346,6 +364,26 @@ const CategorySettings = createClassAndFactory({
 
 
 
+function defaultPermsOnPages(newPermId: PermissionId, forWhoId: PeopleId,
+        categoryId: CategoryId, isStaff: boolean): PermsOnPage {
+  return {
+    id: newPermId,
+    forPeopleId: forWhoId,
+    onCategoryId: categoryId,
+    // Setting these to false is not currently supported. [2LG5F04W]
+    mayEditPage: isStaff || undefined,
+    mayEditComment: isStaff || undefined,
+    mayEditWiki: isStaff || undefined,
+    mayDeletePage: isStaff || undefined,
+    mayDeleteComment: isStaff || undefined,
+    mayCreatePage: true,
+    mayPostComment: true,
+    maySee: true,
+  };
+}
+
+
+
 const CategorySecurity = createClassAndFactory({
   displayName: 'CategorySecurity',
 
@@ -358,20 +396,7 @@ const CategorySecurity = createClassAndFactory({
         newPermId = p.id - 1;
       }
     });
-    const newPerm: PermsOnPage = {
-      id: newPermId,
-      forPeopleId: NoUserId,
-      onCategoryId: category.id,
-      mayEditPage: false,
-      mayEditComment: false,
-      mayEditWiki: false,
-      mayDeletePage: false,
-      mayDeleteComment: false,
-      // This is usually what one wants to allow:
-      mayCreatePage: true,
-      mayPostComment: true,
-      maySee: true,
-    };
+    const newPerm = defaultPermsOnPages(newPermId, Groups.NoUserId, category.id, false);
     this.props.updatePermissions(permissions.concat(newPerm));
   },
 
@@ -412,31 +437,34 @@ function PermissionItemWithKey(allPerms: PermsOnPage[], thisPerm: PermsOnPage, f
         updatePermissions(allPerms2);
       }}, "Remove");
 
-  return r.li({ className: 's_PoP', key: thisPerm.id },
+  const peopleClass = forGroup ? 's_PoP-Grp-' + forGroup.id : '';
+
+  return r.li({ className: 's_PoP ' + peopleClass, key: thisPerm.id },
     r.div({ className: 's_PoP_Expl' }, "These people: "),
     r.div({ className: 's_PoP_Un' }, selectGroupDropdown),
     deleteButton,
     r.br(),
     r.div({ className: 's_PoP_Expl s_PoP_Expl-What' }, "may do this: "),
     r.div({ className: 's_PoP_Ps' },
-      Checkbox("Edit other people's topics",
+      Checkbox('s_PoP_Ps_P_EdPg', "Edit other people's topics",
           thisPerm.mayEditPage, (p: PermsOnPage, c: boolean) => p.mayEditPage = c),
-      Checkbox("Edit others' comments",
+      Checkbox('s_PoP_Ps_P_EdCm', "Edit others' comments",
           thisPerm.mayEditComment, (p: PermsOnPage, c: boolean) => p.mayEditComment = c),
-      Checkbox("Edit wiki posts",
+      Checkbox('s_PoP_Ps_P_EdWk', "Edit wiki posts",
           thisPerm.mayEditWiki, (p: PermsOnPage, c: boolean) => p.mayEditWiki = c),
-      Checkbox("Delete others' topics",
+      Checkbox('s_PoP_Ps_P_DlPg', "Delete others' topics",
           thisPerm.mayDeletePage, (p: PermsOnPage, c: boolean) => p.mayDeletePage = c),
-      Checkbox("Delete others' comments",
+      Checkbox('s_PoP_Ps_P_DlCm', "Delete others' comments",
           thisPerm.mayDeleteComment, (p: PermsOnPage, c: boolean) => p.mayDeleteComment = c),
-      Checkbox("Create pages",
+      Checkbox('s_PoP_Ps_P_CrPg', "Create pages",
           thisPerm.mayCreatePage, (p: PermsOnPage, c: boolean) => p.mayCreatePage = c),
-      Checkbox("Post comments",
+      Checkbox('s_PoP_Ps_P_Re', "Post comments",
           thisPerm.mayPostComment, (p: PermsOnPage, c: boolean) => p.mayPostComment = c),
-      Checkbox("See other people's topics",
+      Checkbox('s_PoP_Ps_P_See', "See other people's topics",
           thisPerm.maySee, (p: PermsOnPage, c: boolean) => p.maySee = c)));
 
-  function Checkbox(label: string, checked: boolean, set: (p: PermsOnPage, b: boolean) => void ) {
+  function Checkbox(className: string, label: string, checked: boolean,
+          set: (p: PermsOnPage, b: boolean) => void ) {
     const onChange = function(event) {
       const allPerms2: PermsOnPage[] = allPerms.slice(); // clones
       const thisPerm2: PermsOnPage = { ...thisPerm };  // clones
@@ -444,7 +472,8 @@ function PermissionItemWithKey(allPerms: PermsOnPage[], thisPerm: PermsOnPage, f
       replaceById(allPerms2, thisPerm2);
       updatePermissions(allPerms2);
     };
-    return Input({ type: 'checkbox', label: label, checked: checked, onChange: onChange });
+    return Input({ className: className, type: 'checkbox', label: label, checked: checked,
+        onChange: onChange });
   }
 }
 

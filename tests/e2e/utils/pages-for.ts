@@ -787,6 +787,18 @@ function pagesFor(browser) {
         browser.waitUntilModalGone();
         browser.waitUntilLoadingOverlayGone();
       },
+
+      openSecurityTab: function() {
+        browser.waitAndClick('#t_CD_Tabs-tab-2');
+        browser.waitForVisible('.s_CD_Sec_AddB');
+      },
+
+      securityTab: {
+        setMayCreate: function(groupId: UserId, may: boolean) {
+          // For now, just click once
+          browser.waitAndClick(`.s_PoP-Grp-${groupId} .s_PoP_Ps_P_CrPg input`);
+        }
+      }
     },
 
 

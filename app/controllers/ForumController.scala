@@ -74,7 +74,7 @@ object ForumController extends mvc.Controller {
     val permissionsJson = (body \ "permissions").as[JsArray]
 
     val sectionPageId = (categoryJson \ "sectionPageId").as[PageId]
-    val unlisted = (categoryJson \ "unlisted").asOpt[Boolean].getOrElse(false)
+    val unlisted = (categoryJson \ "unlisted").asOpt[Boolean] is true
     // --delete: ----
     val staffOnly = (categoryJson \ "staffOnly").asOpt[Boolean].getOrElse(false)
     val onlyStaffMayCreateTopics = (categoryJson \ "onlyStaffMayCreateTopics").asOpt[Boolean].getOrElse(false)
@@ -83,7 +83,7 @@ object ForumController extends mvc.Controller {
     val defaultTopicType = PageRole.fromInt(defaultTopicTypeInt) getOrElse throwBadReq(
         "DwE7KUP3", s"Bad new topic type int: $defaultTopicTypeInt")
 
-    val shallBeDefaultCategory = (categoryJson \ "isDefaultCategory").as[Boolean]
+    val shallBeDefaultCategory = (categoryJson \ "isDefaultCategory").asOpt[Boolean] is true
     val categoryId = (categoryJson \ "id").as[Int]
     if (categoryId == NoCategoryId)
       throwBadRequest("EdE5PJB2L", s"Bad category id: $NoCategoryId")

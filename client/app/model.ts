@@ -254,14 +254,14 @@ interface PermsOnPage {
   onPageId?: PageId;
   onPostId?: PostId;
   // later: onTagId?: TagId;
-  mayEditPage: boolean;
-  mayEditComment: boolean;
-  mayEditWiki: boolean;
-  mayDeletePage: boolean;
-  mayDeleteComment: boolean;
-  mayCreatePage: boolean;
-  mayPostComment: boolean;
-  maySee: boolean;
+  mayEditPage?: boolean;
+  mayEditComment?: boolean;
+  mayEditWiki?: boolean;
+  mayDeletePage?: boolean;
+  mayDeleteComment?: boolean;
+  mayCreatePage?: boolean;
+  mayPostComment?: boolean;
+  maySee?: boolean;
 }
 
 
@@ -727,6 +727,21 @@ interface Group {
   fullName: string;
   // "grantsTrustLevel" — later
   avatarUrl?: string;
+}
+
+
+enum Groups {
+  NoUserId = 0,
+  EveryoneId = 10,
+  NewMembersId = 11,
+  BasicMembersId = 12,
+  FullMembersId = 13,
+  TrustedId = 14,
+  RegularsId = 15,
+  CoreMembersId = 16,
+  StaffId = 17,
+  ModeratorsId = 18,
+  AdminsId = 19,
 }
 
 

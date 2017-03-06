@@ -347,6 +347,8 @@ object Authz {
 
     // Skip the root category, cannot set permissions on it. [0YWKG21]
     if (categoriesRootLast.nonEmpty) for (category <- categoriesRootLast.reverseIterator.drop(1)) {
+      // What if one permission says Some(yes) and another says Some(no), then, may or may not?
+      // Currently there's either Some(yes) or None, only, though. Some(no) = not impl [2LG5F04W]
       for (p <- relevantPermissions; if p.onCategoryId.is(category.id)) {
         mayWhat = mayWhat.addRemovePermissions(p, "EdMCATLOOP")
       }

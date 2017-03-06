@@ -10,6 +10,7 @@ import settings = require('../utils/settings');
 import make = require('../utils/make');
 import assert = require('assert');
 import logAndDie = require('../utils/log-and-die');
+import c = require('../test-constants');
 
 declare var browser: any;
 declare var browserA: any;
@@ -137,8 +138,8 @@ describe("categories", function() {
     owen.categoryDialog.fillInFields({ name: "Wasteland Only Staff Create" });
     owen.waitAndClick('#e2eShowUnlistedCB');
     owen.waitAndClick('#e2eUnlistedCB');
-    owen.waitAndClick('#e2eShowOnlyStaffCreateCB');
-    owen.waitAndClick('#e2eOnlyStaffCreateCB');
+    owen.categoryDialog.openSecurityTab();
+    owen.categoryDialog.securityTab.setMayCreate(c.EveryoneId, false);
     owen.categoryDialog.submit();
     owen.assertNthTextMatches('.e2eF_T', 1, /Wasteland Only Staff Create/);
     owen.assertNthTextMatches('.e2eF_T', 2, /Wasteland Only Staff Create/);
