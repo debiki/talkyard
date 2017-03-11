@@ -113,7 +113,7 @@ object Authz {
       if (inCategoriesRootLast.isEmpty && !isPrivate)
         return NoMayNot("EsEM0CRNOCAT", "Only staff may create pages outside any category")
 
-      if (anyFolder.exists(_.nonEmpty))
+      if (anyFolder.exists(f => f.nonEmpty && f != "/"))
         return NoMayNot("EdEM0CRFLDR", "Only staff may specify page folder")
 
       if (anySlug.exists(_.nonEmpty))
@@ -276,7 +276,7 @@ object Authz {
       return MayEverything
 
     val isStaff = user.exists(_.isStaff)
-    val isAuthor = user.isDefined && pageMeta.exists(_.pageId == user.get.id)
+    val isAuthor = user.isDefined && pageMeta.exists(_.authorId == user.get.id)
 
     // For now, don't let people see pages outside any category. Hmm...?
     // (<= 1 not 0: don't count the root category, no pages should be placed directly in them.)
@@ -294,23 +294,23 @@ object Authz {
 
       // These page types are for admins only.
       if (meta.pageRole == PageRole.SpecialContent || meta.pageRole == PageRole.Code)
-        return MayWhat.mayNotSee("EsE4YK02R-Code")
+        return MayWhat.mayNotSee("EdE0SEEISCODE")
 
       if (meta.isHidden && !isStaff && !isAuthor)
-        return MayWhat.mayNotSee("EsE7LFKW0-Hidden")
+        return MayWhat.mayNotSee("EdE0SEEPAGEHIDDEN_")
 
       // Only page participants may see things like private chats or private formal messages.
       if (meta.pageRole.isPrivateGroupTalk) {
         val thePageMembers = pageMembers getOrDie "EdE2SUH5G"
         val theUser = user getOrElse {
-          return MayWhat.mayNotSee("EsE4YK032-No-User")
+          return MayWhat.mayNotSee("EdE0SEE0USER")
         }
 
         if (!theUser.isMember)
-          return MayWhat.mayNotSee("EsE2GYF04-Is-Guest")
+          return MayWhat.mayNotSee("EdE0SEE0MBR")
 
         if (!thePageMembers.contains(theUser.id))
-          return MayWhat.mayNotSee("EsE5K8W27-Not-Page-Member")
+          return MayWhat.mayNotSee("EdE0SEE0PAGEMBR")
 
         mayWhat = mayWhat.copyWithMaySeeAndReply(debugCode = "EdMMMEMBR")
       }

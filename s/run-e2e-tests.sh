@@ -22,6 +22,7 @@ function runEndToEndTest {
     # to reproduce, so I'll be able to fix it :-)
     echo
     echo "*** Test failed. Trying once more... [EdM2WK8GB] ***"
+    echo
     $cmd
     if [ $? -ne 0 ]; then
       echo

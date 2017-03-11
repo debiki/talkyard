@@ -72,7 +72,7 @@ describe("new member, allow, approve:", () => {
       id: topics.oldTopicUrl,
       role: c.TestPageRole.Discussion,
       authorId: maja.id,
-      categoryId: 1,
+      categoryId: 2,
     });
     site.pages.push(page);
     site.pagePaths.push(make.pagePath(page.id, '/', false, 'old-topic'));
@@ -166,9 +166,10 @@ describe("new member, allow, approve:", () => {
     strangersBrowser.topic.assertPostNeedsApprovalBodyHidden(4);
   });
 
-  it("... and, when accessed directly, Maja' page is pending approval", () => {
+  it("... and, when accessed directly, Maja' pending-approval page is hidden", () => {
     strangersBrowser.go(topics.majasTopicUrl);
-    strangersBrowser.topic.assertPagePendingApprovalBodyHidden();
+    // strangersBrowser.topic.assertPagePendingApprovalBodyHidden();
+    strangersBrowser.assertWholePageHidden();
   });
 
 
@@ -187,9 +188,10 @@ describe("new member, allow, approve:", () => {
     michaelsBrowser.forumTopicList.assertTopicVisible(topics.oldTopicTitle);
   });
 
-  it("... and when accessed directly, Maja' page is pending approval", () => {
+  it("... and when accessed directly, Maja' pending-approval page is hidden", () => {
     michaelsBrowser.go(topics.majasTopicUrl);
-    michaelsBrowser.topic.assertPagePendingApprovalBodyHidden();
+    // michaelsBrowser.topic.assertPagePendingApprovalBodyHidden();
+    michaelsBrowser.assertWholePageHidden();
   });
 
   it("... and he doesn't see Maja's not-yet-approved replies", () => {

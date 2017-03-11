@@ -169,6 +169,14 @@ function pagesFor(browser) {
       });
     },
 
+    // Also see browser.pageTitle.assertPageHidden().
+    assertWholePageHidden: function() {
+      let resultsByBrowser = byBrowser(browser.getSource());
+      _.forOwn(resultsByBrowser, (text, browserName) => {
+        assert(/EdE0SEEPAGEHIDDEN_/.test(text), browserNamePrefix(browserName) + "Page not hidden");
+      });
+    },
+
     assertUrlIs: function(expectedUrl) {
       let url = browser.url().value;
       assert(url === expectedUrl);
@@ -678,6 +686,7 @@ function pagesFor(browser) {
         browser.assertPageTitleMatches(regex);
       },
 
+      // Also see browser.assertWholePageHidden().
       assertPageHidden: function() {
         api.pageTitle.waitForVisible();
         assert(browser.isVisible('.dw-p-ttl .icon-eye-off'));

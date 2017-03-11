@@ -76,7 +76,7 @@ describe("spam test, no external services:", () => {
       id: 'oldpage',
       role: c.TestPageRole.Discussion,
       authorId: maja.id,
-      categoryId: 1,
+      categoryId: 2,
     });
     site.pages.push(oldPage);
     site.pagePaths.push(make.pagePath(oldPage.id, '/', false, 'old-topic'));
@@ -87,7 +87,7 @@ describe("spam test, no external services:", () => {
       id: 'unrelpage',
       role: c.TestPageRole.Discussion,
       authorId: maja.id,
-      categoryId: 1,
+      categoryId: 2,
     });
     site.pages.push(unrelatedPage);
     site.pagePaths.push(make.pagePath(unrelatedPage.id, '/', false, 'unrelated-topic'));
@@ -180,8 +180,11 @@ describe("spam test, no external services:", () => {
 
   it("And hens topic also get hidden", () =>  {
     michaelsBrowser.go(topics.birdsNoRepliesUrl);
-    michaelsBrowser.pageTitle.assertPageHidden();
-    michaelsBrowser.topic.assertPostHidden(1);
+    // Before groups and new auth:
+    //michaelsBrowser.pageTitle.assertPageHidden();
+    //michaelsBrowser.topic.assertPostHidden(1);
+    // Now after:
+    michaelsBrowser.assertWholePageHidden();
   });
 
   it("... and the hidden pages aren't listed in the forum topic list", () =>  {
