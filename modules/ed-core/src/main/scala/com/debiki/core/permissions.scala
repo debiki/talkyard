@@ -53,14 +53,21 @@ case class PermsOnPages(
   require(!onPostId.contains(NoPostId), "EdE8UGF0W4")
   require(!onTagId.contains(NoTagId), "EdE8UGF0W5")
 
+  CLEAN_UP // change to a Bool not Opt[Bool]? then this requirement can be removed.
+  require(onWholeSite isNot false, "EdE5GVR0Y1")
+
   // This permission grants rights on exactly one thing.
   require(1 == onWholeSite.oneIfDefined + onCategoryId.oneIfDefined + onPageId.oneIfDefined +
     onPostId.oneIfDefined + onTagId.oneIfDefined, "EdE7LFK2R5")
 
-  // This permission grants some right(s), it's not just everything-undefined.
-  require(1 <= mayEditPage.oneIfDefined + mayEditComment.oneIfDefined + mayEditWiki.oneIfDefined +
-    mayDeletePage.oneIfDefined + mayDeleteComment.oneIfDefined + mayCreatePage.oneIfDefined +
-    mayPostComment.oneIfDefined + maySee.oneIfDefined, "EdE7PUK2W3")
+  /** Tells if this permission neither grants nor revokes any rights — if it doesn't, it might
+    * as well be deleted.
+    */
+  def isEverythingUndefined: Boolean =
+    mayEditPage.isEmpty && mayEditComment.isEmpty && mayEditWiki.isEmpty &&
+    mayDeletePage.isEmpty && mayDeleteComment.isEmpty && mayCreatePage.isEmpty &&
+    mayPostComment.isEmpty && maySee.isEmpty
+
 }
 
 

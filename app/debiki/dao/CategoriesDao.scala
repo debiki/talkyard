@@ -74,6 +74,11 @@ case class CategoryToSave(
 }
 
 
+case class CreateCategoryResult(
+  category: Category,
+  pagePath: PagePath,
+  permissionsWithIds: immutable.Seq[PermsOnPages])
+
 
 /** Loads and saves categories.
   */
@@ -374,7 +379,7 @@ trait CategoriesDao {
 
 
   def createCategory(newCategoryData: CategoryToSave, permissions: immutable.Seq[PermsOnPages],
-        byWho: Who): (Category, PagePath) = {
+        byWho: Who): CreateCategoryResult = {
     readWriteTransaction { transaction =>
       createCategoryImpl(newCategoryData, permissions, byWho)(transaction)
     }
@@ -382,7 +387,7 @@ trait CategoriesDao {
 
 
   def createCategoryImpl(newCategoryData: CategoryToSave, permissions: immutable.Seq[PermsOnPages],
-        byWho: Who)(transaction: SiteTransaction): (Category, PagePath) = {
+        byWho: Who)(transaction: SiteTransaction): CreateCategoryResult = {
 
     val categoryId = transaction.nextCategoryId()
 
@@ -412,7 +417,7 @@ trait CategoriesDao {
       dieIf(p.onCategoryId != newCategoryData.anyId, "EdE7UKW02")
     }
     val permsWithCatId = permissions.map(_.copy(onCategoryId = Some(categoryId)))
-    addRemovePermsOnCategory(categoryId, permsWithCatId)(transaction)
+    val permsWithId = addRemovePermsOnCategory(categoryId, permsWithCatId)(transaction)
 
     // COULD create audit log entry
 
@@ -422,7 +427,7 @@ trait CategoriesDao {
       refreshPageInMemCache(category.sectionPageId)
     }
 
-    (category, aboutPagePath)
+    CreateCategoryResult(category, aboutPagePath, permsWithId)
   }
 
 
@@ -451,8 +456,10 @@ trait CategoriesDao {
 
 
   private def addRemovePermsOnCategory(categoryId: CategoryId,
-        permissions: immutable.Seq[PermsOnPages])(transaction: SiteTransaction): Unit = {
+        permissions: immutable.Seq[PermsOnPages])(transaction: SiteTransaction)
+        : immutable.Seq[PermsOnPages] = {
     dieIf(permissions.exists(_.onCategoryId.isNot(categoryId)), "EdE2FK0YU5")
+    val permsWithIds = ArrayBuffer[PermsOnPages]()
     val oldPermissionsById: mutable.Map[PermissionId, PermsOnPages] =
       transaction.loadPermsOnCategory(categoryId).map(p => (p.id, p))(collection.breakOut)
     permissions foreach { permission =>
@@ -461,15 +468,25 @@ trait CategoriesDao {
         oldPermissionsById.remove(permission.id) foreach { oldPerm =>
           alreadyExists = true
           if (oldPerm != permission) {
-            transaction.updatePermsOnPages(permission)
+            if (permission.isEverythingUndefined) {
+              // latent BUG: not incl info about this deleted perm in the fn result [0YKAG25L]
+              transaction.deletePermsOnPages(Seq(permission.id))
+            }
+            else {
+              transaction.updatePermsOnPages(permission)
+              permsWithIds.append(permission)
+            }
           }
         }
       }
       if (!alreadyExists) {
-        transaction.insertPermsOnPages(permission)
+        val permWithId = transaction.insertPermsOnPages(permission)
+        permsWithIds.append(permWithId)
       }
     }
+    // latent BUG: not incl info about these deleted perms in the fn result [0YKAG25L]
     transaction.deletePermsOnPages(oldPermissionsById.keys)
+    permsWithIds.toVector
   }
 }
 

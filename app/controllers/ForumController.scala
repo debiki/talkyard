@@ -62,7 +62,7 @@ object ForumController extends mvc.Controller {
     val catPerms = allPerms.filter(_.onCategoryId.contains(categoryId))
     OkSafeJson(Json.obj(
       "category" -> catJson,
-      "permissions" -> catPerms.map(permissionToJson),
+      "permissions" -> catPerms.map(ReactJson.permissionToJson),
       "groups" -> groups.map(groupToJson)))
   }
 
@@ -148,19 +148,25 @@ object ForumController extends mvc.Controller {
       permissions.append(newPerm)
     }
 
-    val category =
+    val (category, permsWithIds) =
       if (categoryData.isNewCategory) {
-        request.dao.createCategory(categoryData, permissions.to[immutable.Seq], request.who)._1
+        val result = request.dao.createCategory(
+          categoryData, permissions.to[immutable.Seq], request.who)
+        (result.category, result.permissionsWithIds)
       }
       else {
-        request.dao.editCategory(categoryData, permissions.to[immutable.Seq], request.who)
+        val editedCategory = request.dao.editCategory(
+          categoryData, permissions.to[immutable.Seq], request.who)
+        (editedCategory, permissions)
       }
 
-    // ... save permissions ...  and alloc new id if perm id < 0 [9P1U6E5].
+    val callersGroupIds = request.authzContext.groupIds
+    val callersNewPerms = permsWithIds.filter(callersGroupIds contains _.forPeopleId)
 
     OkSafeJson(Json.obj(
       "allCategories" -> ReactJson.makeCategoriesJson(
         dao.getForumAuthzContext(requester), restrictedOnly = false, request.dao),
+      "myNewPermissions" -> JsArray(callersNewPerms map permissionToJson),
       "newCategoryId" -> category.id,
       "newCategorySlug" -> category.slug))
   }

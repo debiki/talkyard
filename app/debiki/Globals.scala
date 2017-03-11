@@ -81,14 +81,14 @@ class Globals {
 
   /** Can be accessed also after the test is done and Play.maybeApplication is None.
     */
-  lazy val wasTest: Boolean = Play.isTest
+  lazy val isOrWasTest: Boolean = Play.isTest
   lazy val isProd: Boolean = Play.isProd
 
   def testsDoneServerGone: Boolean =
-    Play.isTest && (!isInitialized || Play.maybeApplication.isEmpty)
+    isOrWasTest && (!isInitialized || Play.maybeApplication.isEmpty)
 
-  def isTestDisableScripts: Boolean = state.isTestDisableScripts
-  def isTestDisableBackgroundJobs: Boolean = state.isTestDisableBackgroundJobs
+  def isOrWasTestDisableScripts: Boolean = isOrWasTest && state.isTestDisableScripts
+  def isOrWasTestDisableBackgroundJobs: Boolean = isOrWasTest && state.isTestDisableBackgroundJobs
 
   def isInitialized: Boolean = _state ne null
 
@@ -174,7 +174,7 @@ class Globals {
   def endToEndTestMailer: ActorRef = state.mailerActorRef
 
   def renderPageContentInBackground(sitePageId: SitePageId) {
-    if (!isTestDisableBackgroundJobs) {
+    if (!isOrWasTestDisableBackgroundJobs) {
       state.renderContentActorRef ! sitePageId
     }
   }
@@ -269,7 +269,7 @@ class Globals {
 
   def onServerStartup(app: p.Application) {
     p.Logger.info("Starting... [EsM200HELLO]")
-    wasTest // initialise it now
+    isOrWasTest // initialise it now
     if (_state ne null)
       throw new jl.IllegalStateException(o"""Server already running, was it not properly
         shut down last time? Please hit CTRL+C to kill it. [DwE83KJ9]""")
@@ -372,9 +372,12 @@ class Globals {
     // The render engines might be needed by some Java (Scala) evolutions.
     // Let's create them in this parallel thread rather than blocking the whole server.
     // (Takes 2? 5? seconds.)
-    debiki.ReactRenderer.startCreatingRenderEngines()
+    debiki.ReactRenderer.startCreatingRenderEngines(
+      secure = state.secure,
+      cdnUploadsUrlPrefix = Globals.config.cdn.uploadsUrlPrefix,
+      isTestSoDisableScripts = isOrWasTestDisableScripts)
 
-    if (!isTestDisableBackgroundJobs) {
+    if (!isOrWasTestDisableBackgroundJobs) {
       Akka.system.scheduler.scheduleOnce(
         5 seconds, state.renderContentActorRef, RenderContentService.RegenerateStaleHtml)
     }
@@ -448,12 +451,12 @@ class Globals {
 
   object test {
     def setTime(when: When) {
-      require(wasTest, "EdE7LJKF2")
+      require(isOrWasTest, "EdE7LJKF2")
       timeStartMillis = Some(when.millis)
     }
 
     def fastForwardTimeMillis(millis: Long) {
-      require(wasTest, "EdE4PFB8R")
+      require(isOrWasTest, "EdE4PFB8R")
       timeOffsetMillis += millis
     }
 
@@ -479,8 +482,7 @@ class Globals {
     val config = new Config(conf)
 
     val isTestDisableScripts: Boolean = {
-      val disable =
-        Play.isTest && Play.configuration.getBoolean("isTestDisableScripts").getOrElse(false)
+      val disable = Play.configuration.getBoolean("isTestDisableScripts").getOrElse(false)
       if (disable) {
         p.Logger.info("Is test with scripts disabled. [EsM4GY82]")
       }
@@ -488,8 +490,7 @@ class Globals {
     }
 
     val isTestDisableBackgroundJobs: Boolean = {
-      val disable =
-        Play.isTest && Play.configuration.getBoolean("isTestDisableBackgroundJobs").getOrElse(false)
+      val disable = Play.configuration.getBoolean("isTestDisableBackgroundJobs").getOrElse(false)
       if (disable) {
         p.Logger.info("Is test with background jobs disabled. [EsM6JY0K2]")
       }

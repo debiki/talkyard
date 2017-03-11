@@ -19,9 +19,7 @@ package debiki
 
 import com.debiki.core._
 import com.debiki.core.Prelude._
-import debiki._
-import debiki.DebikiHttp.throwInternalError
-import java.{util => ju, io => jio}
+import java.{io => jio}
 import javax.{script => js}
 import debiki.onebox.InstantOneboxRendererForNashorn
 import org.apache.lucene.util.IOUtils
@@ -29,7 +27,7 @@ import play.api.Play
 import play.api.Play.current
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.util.{Try, Success, Failure}
+import scala.util.Try
 
 
 // COULD move elsewhere. Placed here only because the pwd strength function is
@@ -83,7 +81,12 @@ object ReactRenderer extends com.debiki.core.CommonMarkRenderer {
 
   @volatile private var firstCreateEngineError: Option[Throwable] = None
 
+  private var secure = true
+  private var cdnUploadsUrlPrefix = ""
+  private var isTestSoDisableScripts = false
 
+
+  CLEAN_UP // remove server side pwd strength check.
   // Evaluating zxcvbn.min.js (a Javascript password strength check library) takes almost
   // a minute in dev mode. So enable server side password strength checks in prod mode only.
   // COULD run auto test suite on prod build too so server side pwd strength checks gets tested.
@@ -102,8 +105,12 @@ object ReactRenderer extends com.debiki.core.CommonMarkRenderer {
     * the Scala code called from my Nashorn JS, perhaps I need to somehow use a custom
     * classloader here?
     */
-  def startCreatingRenderEngines() {
-    if (Globals.isTestDisableScripts)
+  def startCreatingRenderEngines(secure: Boolean, cdnUploadsUrlPrefix: Option[String],
+        isTestSoDisableScripts: Boolean) {
+    this.secure = secure
+    this.cdnUploadsUrlPrefix = cdnUploadsUrlPrefix getOrElse ""
+    this.isTestSoDisableScripts = isTestSoDisableScripts
+    if (isTestSoDisableScripts)
       return
     if (!javascriptEngines.isEmpty) {
       dieIf(!Play.isTest, "DwE50KFE2")
@@ -125,7 +132,7 @@ object ReactRenderer extends com.debiki.core.CommonMarkRenderer {
   }
 
 
-  def numEnginesCreated = javascriptEngines.size()
+  def numEnginesCreated: RoleId = javascriptEngines.size()
 
 
   private def createOneMoreJavascriptEngine(isVeryFirstEngine: Boolean = false) {
@@ -135,7 +142,7 @@ object ReactRenderer extends com.debiki.core.CommonMarkRenderer {
     catch {
       case throwable: Throwable =>
         if (Play.maybeApplication.isEmpty || throwable.isInstanceOf[Globals.NoStateError]) {
-          if (Globals.wasTest) {
+          if (Globals.isOrWasTest) {
             logger.debug("Server gone, tests done? Cancelling script engine creation. [EsM6MK4]")
           }
           else {
@@ -161,7 +168,7 @@ object ReactRenderer extends com.debiki.core.CommonMarkRenderer {
 
 
   def renderPage(initialStateJson: String): Option[String] = {
-    if (Globals.isTestDisableScripts)
+    if (isTestSoDisableScripts)
       return Some("Scripts disabled [EsM6YKW2]")
     withJavascriptEngine(engine => {
       val timeBefore = System.currentTimeMillis()
@@ -185,7 +192,7 @@ object ReactRenderer extends com.debiki.core.CommonMarkRenderer {
 
   override def renderAndSanitizeCommonMark(commonMarkSource: String,
         allowClassIdDataAttrs: Boolean, followLinks: Boolean): String = {
-    if (Globals.isTestDisableScripts)
+    if (isTestSoDisableScripts)
       return "Scripts disabled [EsM5GY52]"
     val oneboxRenderer = new InstantOneboxRendererForNashorn
     val resultNoOneboxes = withJavascriptEngine(engine => {
@@ -196,7 +203,7 @@ object ReactRenderer extends com.debiki.core.CommonMarkRenderer {
           // SECURITY SHOULD use another sanitizer and whitelist/blacklist classes, and IDs? [7FPKE02]
           true.asInstanceOf[Object], // allowClassIdDataAttrs.asInstanceOf[Object],
           followLinks.asInstanceOf[Object],
-          oneboxRenderer, Globals.config.cdn.uploadsUrlPrefix getOrElse "")
+          oneboxRenderer, cdnUploadsUrlPrefix)
       oneboxRenderer.javascriptEngine = None
       safeHtml.asInstanceOf[String]
     })
@@ -213,7 +220,7 @@ object ReactRenderer extends com.debiki.core.CommonMarkRenderer {
 
 
   def sanitizeHtmlReuseEngine(text: String, javascriptEngine: Option[js.Invocable]): String = {
-    if (Globals.isTestDisableScripts)
+    if (isTestSoDisableScripts)
       return "Scripts disabled [EsM44GY0]"
     def sanitizeWith(engine: js.Invocable): String = {
       val safeHtml = engine.invokeFunction("sanitizeHtmlServerSide", text)
@@ -231,7 +238,7 @@ object ReactRenderer extends com.debiki.core.CommonMarkRenderer {
 
 
   override def slugifyTitle(title: String): String = {
-    if (Globals.isTestDisableScripts)
+    if (isTestSoDisableScripts)
       return "scripts-disabled-EsM28WXP45"
     withJavascriptEngine(engine => {
       val slug = engine.invokeFunction("debikiSlugify", title)
@@ -267,7 +274,7 @@ object ReactRenderer extends com.debiki.core.CommonMarkRenderer {
 
 
   private def withJavascriptEngine[R](fn: (js.Invocable) => R): R = {
-    dieIf(Globals.isTestDisableScripts, "EsE4YUGw")
+    dieIf(isTestSoDisableScripts, "EsE4YUGw")
 
     def threadId = Thread.currentThread.getId
     def threadName = Thread.currentThread.getName
@@ -498,7 +505,7 @@ object ReactRenderer extends com.debiki.core.CommonMarkRenderer {
     |  store: {},
     |  v0: { util: {} },
     |  internal: {},
-    |  secure: ${Globals.secure}
+    |  secure: $secure
     |};
     |"""
 

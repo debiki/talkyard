@@ -97,7 +97,7 @@ class SiteDao(
 
 
   def memCache_test: MemCache = {
-    require(Globals.wasTest, "EsE7YKP42B")
+    require(Globals.isOrWasTest, "EsE7YKP42B")
     memCache
   }
 

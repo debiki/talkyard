@@ -225,6 +225,58 @@ let buildSite = function(site?: SiteData) {
         deletedAtMs: forumPage.createdAtMs + 1000 * 3600 * 24,
       });
 
+      // ---- Permissions on categories
+
+      function addDefaultCatPerms(categoryId: CategoryId, startPermissionId: PermissionId) {
+        site.permsOnPages.push({
+          id: startPermissionId,
+          forPeopleId: c.EveryoneId,
+          onCategoryId: categoryId,
+          mayEditPage: false,
+          mayEditComment: false,
+          mayEditWiki: false,
+          mayDeletePage: false,
+          mayDeleteComment: false,
+          mayCreatePage: true,
+          mayPostComment: true,
+          maySee: true,
+        });
+
+        site.permsOnPages.push({
+          id: startPermissionId + 1,
+          forPeopleId: c.StaffId,
+          onCategoryId: categoryId,
+          mayEditPage: true,
+          mayEditComment: true,
+          mayEditWiki: true,
+          mayDeletePage: true,
+          mayDeleteComment: true,
+          mayCreatePage: true,
+          mayPostComment: true,
+          maySee: true,
+        });
+      }
+
+      addDefaultCatPerms(forum.categories.categoryA.id, 1);
+      addDefaultCatPerms(forum.categories.categoryB.id, 3);
+      addDefaultCatPerms(forum.categories.unlistedCategory.id, 5);
+      addDefaultCatPerms(forum.categories.deletedCategory.id, 7);
+
+      // Staff only:
+      site.permsOnPages.push({
+        id: 9,
+        forPeopleId: c.StaffId,
+        onCategoryId: forum.categories.staffOnlyCategory.id,
+        mayEditPage: true,
+        mayEditComment: true,
+        mayEditWiki: true,
+        mayDeletePage: true,
+        mayDeleteComment: true,
+        mayCreatePage: true,
+        mayPostComment: true,
+        maySee: true,
+      });
+
       // ---- Pages
 
       forum.topics.aboutCategoryA = { title: 'About category CategoryA' };

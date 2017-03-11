@@ -436,7 +436,8 @@ object UserController extends mvc.Controller {
           "EdE4ZBXKG")
       }
       else {
-        ReactJson.NoUserSpecificData
+        val everyonesPerms = request.dao.getPermsForEveryone()
+        ReactJson.noUserSpecificData(everyonesPerms)
       }
 
     json

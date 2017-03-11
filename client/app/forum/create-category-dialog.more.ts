@@ -371,6 +371,7 @@ function defaultPermsOnPages(newPermId: PermissionId, forWhoId: PeopleId,
     forPeopleId: forWhoId,
     onCategoryId: categoryId,
     // Setting these to false is not currently supported. [2LG5F04W]
+    // Sync these default perms with Scala code. [7KFWY025]
     mayEditPage: isStaff || undefined,
     mayEditComment: isStaff || undefined,
     mayEditWiki: isStaff || undefined,

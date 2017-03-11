@@ -131,6 +131,36 @@ function pagesFor(browser) {
     },
 
 
+    waitAndClickLinkToNewPage: function(selector: string, refreshBetweenTests?: boolean) {
+      // Keep the debug stuff, for now — once, the click failed, although visible already, weird.
+      let delay = 30;
+      //let count = 0;
+      //console.log(`waitAndClickLinkToNewPage ${selector} ...`);
+      browser.waitUntilLoadingOverlayGone();
+      while (true) {
+        browser.waitForMyDataAdded();
+        browser.pause(delay);
+        //console.log(`waitAndClickLinkToNewPage ${selector} testing:`);
+        if (browser.isVisible(selector) && browser.isEnabled(selector)) {
+          //console.log(`waitAndClickLinkToNewPage ${selector} —> FOUND and ENABLED`);
+          // count += 1;
+          // if (count >= 6)
+          break;
+        }
+        else {
+          //console.log(`waitAndClickLinkToNewPage ${selector} —> NOT found...`);
+          if (refreshBetweenTests) browser.refresh();
+          delay *= 1.67;
+        }
+      }
+      browser.rememberCurrentUrl();
+      //console.log(`waitAndClickLinkToNewPage ${selector} ... CLICKING`);
+      browser.click(selector);
+      browser.waitForNewUrl();
+      //console.log(`waitAndClickLinkToNewPage ${selector} ... New url here now.`);
+    },
+
+
     assertPageHtmlSourceDoesNotMatch: function(toMatch) {
       let resultsByBrowser = byBrowser(browser.getSource());
       let regex = _.isString(toMatch) ? new RegExp(toMatch) : toMatch;
@@ -788,6 +818,12 @@ function pagesFor(browser) {
         browser.waitUntilLoadingOverlayGone();
       },
 
+      setUnlisted: function(unlisted: boolean) {
+        // for now, ignore 'unlisted == true/false'
+        browser.waitAndClick('#e2eShowUnlistedCB');
+        browser.waitAndClick('#e2eUnlistedCB');
+      },
+
       openSecurityTab: function() {
         browser.waitAndClick('#t_CD_Tabs-tab-2');
         browser.waitForVisible('.s_CD_Sec_AddB');
@@ -797,7 +833,17 @@ function pagesFor(browser) {
         setMayCreate: function(groupId: UserId, may: boolean) {
           // For now, just click once
           browser.waitAndClick(`.s_PoP-Grp-${groupId} .s_PoP_Ps_P_CrPg input`);
-        }
+        },
+
+        setMayReply: function(groupId: UserId, may: boolean) {
+          // For now, just click once
+          browser.waitAndClick(`.s_PoP-Grp-${groupId} .s_PoP_Ps_P_Re input`);
+        },
+
+        setMaySee: function(groupId: UserId, may: boolean) {
+          // For now, just click once
+          browser.waitAndClick(`.s_PoP-Grp-${groupId} .s_PoP_Ps_P_See input`);
+        },
       }
     },
 

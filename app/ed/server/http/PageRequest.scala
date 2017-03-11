@@ -30,6 +30,7 @@ import play.api.mvc.{Action => _, _}
 import play.api.Play
 import play.api.Play.current
 import DbDao.PathClashException
+import ed.server.auth.ForumAuthzContext
 
 
 

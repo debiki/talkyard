@@ -135,6 +135,7 @@ object ReactJson {
     val siteSettings = pageReq.dao.getWholeSiteSettings()
     val isFirstSiteAdminEmailMissing = site.status == SiteStatus.NoAdmin &&
       site.id == FirstSiteId && Globals.becomeFirstSiteOwnerEmail.isEmpty
+    val everyonesPerms = pageReq.dao.getPermsForEveryone()
 
     Json.obj(
       "appVersion" -> Globals.applicationVersion,
@@ -155,7 +156,7 @@ object ReactJson {
       "isInEmbeddedCommentsIframe" -> JsBoolean(false),
       "categories" -> JsArray(),
       "topics" -> JsArray(),
-      "me" -> NoUserSpecificData,
+      "me" -> noUserSpecificData(everyonesPerms),
       "rootPostId" -> JsNumber(PageParts.BodyNr),
       "usersByIdBrief" -> JsObject(Nil),
       "postsByNr" -> JsObject(Nil),
@@ -317,7 +318,7 @@ object ReactJson {
       "isInEmbeddedCommentsIframe" -> JsBoolean(page.role == PageRole.EmbeddedComments),
       "categories" -> categories,
       "topics" -> JsArray(anyLatestTopics),
-      "me" -> NoUserSpecificData,
+      "me" -> noUserSpecificData(authzCtx.permissions),
       "rootPostId" -> JsNumber(BigDecimal(anyPageRoot getOrElse PageParts.BodyNr)),
       "usersByIdBrief" -> usersByIdJson,
       "postsByNr" -> JsObject(allPostsJson),
@@ -604,20 +605,24 @@ object ReactJson {
       JsArray(Post.sortPostsBestFirst(topLevelComments).map(reply => JsNumber(reply.nr))))
 
 
-  val NoUserSpecificData: JsObject = Json.obj(
-    "rolePageSettings" -> JsObject(Nil),
-    "notifications" -> JsArray(),
-    "watchbar" -> EmptyWatchbar,
-    "votes" -> JsObject(Nil),
-    "unapprovedPosts" -> JsObject(Nil),
-    "unapprovedPostAuthors" -> JsArray(),
-    "postNrsAutoReadLongAgo" -> JsArray(Nil),  // should remove [5WKW219] + search for elsewhere
-    "postNrsAutoReadNow" -> JsArray(Nil),      // should remove
-    "marksByPostId" -> JsObject(Nil),
-    "closedHelpMessages" -> JsObject(Nil))
+  def noUserSpecificData(everyonesPerms: Seq[PermsOnPages]): JsObject = {
+    require(everyonesPerms.forall(_.forPeopleId == Group.EveryoneId), "EdE2WBG08")
+    Json.obj(
+      "rolePageSettings" -> JsObject(Nil),
+      "notifications" -> JsArray(),
+      "watchbar" -> EmptyWatchbar,
+      "votes" -> JsObject(Nil),
+      "unapprovedPosts" -> JsObject(Nil),
+      "unapprovedPostAuthors" -> JsArray(),
+      "postNrsAutoReadLongAgo" -> JsArray(Nil),  // should remove [5WKW219] + search for elsewhere
+      "postNrsAutoReadNow" -> JsArray(Nil),      // should remove
+      "marksByPostId" -> JsObject(Nil),
+      "closedHelpMessages" -> JsObject(Nil),
+      "permsOnPages" -> permsOnPagesToJson(everyonesPerms, excludeEveryone = false))
+  }
 
 
-  // Ought to rename this function (i.e. userDataJson) because it really should come as a
+  RENAME // this function (i.e. userDataJson) so it won't come as a
   // surprise that it updates the watchbar! But to what? Or reanme the class too? Or break out?
   def userDataJson(pageRequest: PageRequest[_], unapprovedPostAuthorIds: Set[UserId])
         : Option[JsObject] = {
@@ -626,6 +631,8 @@ object ReactJson {
     }
 
     val dao = pageRequest.dao
+    val permissions = pageRequest.authzContext.permissions
+
     var watchbar: BareWatchbar = dao.getOrCreateWatchbar(user.id)
     if (pageRequest.pageExists) {
       // (See comment above about ought-to-rename this whole function / stuff.)
@@ -642,7 +649,7 @@ object ReactJson {
     val (restrictedCategories, restrictedTopics) = listRestrictedCategoriesAndTopics(pageRequest)
     dao.readOnlyTransaction { transaction =>
       Some(userDataJsonImpl(user, pageRequest.pageId, watchbarWithTitles, restrictedCategories,
-        restrictedTopics, unapprovedPostAuthorIds, transaction))
+        restrictedTopics, permissions, unapprovedPostAuthorIds, transaction))
     }
   }
 
@@ -651,18 +658,19 @@ object ReactJson {
     val user = request.user getOrElse {
       return JsNull
     }
+    val permissions = request.authzContext.permissions
     val watchbar = request.dao.getOrCreateWatchbar(user.id)
     val watchbarWithTitles = request.dao.fillInWatchbarTitlesEtc(watchbar)
     request.dao.readOnlyTransaction(userDataJsonImpl(user, anyPageId = None, watchbarWithTitles,
-      restrictedCategories = JsArray(), restrictedTopics = Nil,
+      restrictedCategories = JsArray(), restrictedTopics = Nil, permissions,
       unapprovedPostAuthorIds = Set.empty, _))
   }
 
 
   private def userDataJsonImpl(user: User, anyPageId: Option[PageId],
         watchbar: WatchbarWithTitles, restrictedCategories: JsArray,
-        restrictedTopics: Seq[JsValue], unapprovedPostAuthorIds: Set[UserId],
-        transaction: SiteTransaction): JsObject = {
+        restrictedTopics: Seq[JsValue], permissions: Seq[PermsOnPages],
+        unapprovedPostAuthorIds: Set[UserId], transaction: SiteTransaction): JsObject = {
 
     val reviewTasksAndCounts =
       if (user.isStaff) transaction.loadReviewTaskCounts(user.isAdmin)
@@ -720,6 +728,10 @@ object ReactJson {
 
       "watchbar" -> watchbar.toJsonWithTitles,
 
+      // The Everyone group's permissions are included in the generic no-user json already;
+      // don't include it here again. [8JUYW4B]
+      "permsOnPages" -> permsOnPagesToJson(permissions, excludeEveryone = true),
+
       "restrictedTopics" -> restrictedTopics,
       "restrictedCategories" -> restrictedCategories,
       "votes" -> anyVotes,
@@ -734,6 +746,61 @@ object ReactJson {
   }
 
 
+  def permsOnPagesToJson(permsOnPages: Seq[PermsOnPages], excludeEveryone: Boolean): JsArray = {
+    val perms =
+      if (excludeEveryone) permsOnPages.filter(_.forPeopleId != Group.EveryoneId)
+      else permsOnPages
+    JsArray(perms.map(permissionToJson))
+  }
+
+
+  def permissionToJson(permsOnPages: PermsOnPages): JsObject = {
+    var json = Json.obj(
+      "id" -> permsOnPages.id,
+      "forPeopleId" -> permsOnPages.forPeopleId)
+
+    if (permsOnPages.onWholeSite.isDefined)
+      json += "onWholeSite" -> JsBooleanOrNull(permsOnPages.onWholeSite)
+
+    if (permsOnPages.onCategoryId.isDefined)
+      json += "onCategoryId" -> JsNumberOrNull(permsOnPages.onCategoryId)
+
+    if (permsOnPages.onPageId.isDefined)
+      json += "onPageId" -> JsStringOrNull(permsOnPages.onPageId)
+
+    if (permsOnPages.onPostId.isDefined)
+      json += "onPostId" -> JsNumberOrNull(permsOnPages.onPostId)
+
+    // later: "onTagId" -> JsNumberOrNull(permsOnPages.onTagId),
+
+    if (permsOnPages.mayEditPage.isDefined)
+      json += "mayEditPage" -> JsBooleanOrNull(permsOnPages.mayEditPage)
+
+    if (permsOnPages.mayEditComment.isDefined)
+      json += "mayEditComment" -> JsBooleanOrNull(permsOnPages.mayEditComment)
+
+    if (permsOnPages.mayEditWiki.isDefined)
+      json += "mayEditWiki" -> JsBooleanOrNull(permsOnPages.mayEditWiki)
+
+    if (permsOnPages.mayDeletePage.isDefined)
+      json += "mayDeletePage" -> JsBooleanOrNull(permsOnPages.mayDeletePage)
+
+    if (permsOnPages.mayDeleteComment.isDefined)
+      json += "mayDeleteComment" -> JsBooleanOrNull(permsOnPages.mayDeleteComment)
+
+    if (permsOnPages.mayCreatePage.isDefined)
+      json += "mayCreatePage" -> JsBooleanOrNull(permsOnPages.mayCreatePage)
+
+    if (permsOnPages.mayPostComment.isDefined)
+      json += "mayPostComment" -> JsBooleanOrNull(permsOnPages.mayPostComment)
+
+    if (permsOnPages.maySee.isDefined)
+      json += "maySee" -> JsBooleanOrNull(permsOnPages.maySee)
+
+    json
+  }
+
+
   private def rolePageSettingsToJson(settings: UsersPageSettings): JsObject = {
     Json.obj(
       "notfLevel" -> JsNumber(settings.notfLevel.toInt))
@@ -743,13 +810,13 @@ object ReactJson {
   COULD ; REFACTOR // move to CategoriesDao? and change from param PageRequest to
   // user + pageMeta?
   def listRestrictedCategoriesAndTopics(request: PageRequest[_]): (JsArray, Seq[JsValue]) = {
-    import request.{dao, requester}
+    import request.dao
 
     // Currently there're only 2 types of "personal" topics: unlisted, & staff-only.
     if (!request.isStaff)
       return (JsArray(), Nil)
 
-    val authzCtx = request.dao.getForumAuthzContext(requester)
+    val authzCtx = request.authzContext
 
     // SHOULD avoid starting a new transaction, so can remove workaround [7YKG25P].
     // (request.dao might start a new transaction)

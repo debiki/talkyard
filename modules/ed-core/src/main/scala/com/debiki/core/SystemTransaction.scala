@@ -59,7 +59,9 @@ trait SystemTransaction {
 
   def insertSiteHost(siteId: SiteId, host: SiteHost)
   def deleteAnyHostname(hostname: String): Boolean
-  def deleteSiteByName(name: String): Boolean
+
+  /** Returns Some(the-deleted-site) if it existed. */
+  def deleteSiteByName(name: String): Option[Site]
 
   //def deleteSite(siteId: SiteId)
 

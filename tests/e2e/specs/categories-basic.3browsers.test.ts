@@ -61,7 +61,7 @@ describe("categories", function() {
 
   it("Maria logs in, sees the new category", function() {
     maria.go(idAddress.origin + '/categories');
-    maria.clickLinkToNewPage(WastelandCategorySelector);
+    maria.waitAndClickLinkToNewPage(WastelandCategorySelector, true);
     maria.topbar.clickLogin();
     maria.loginDialog.loginWithPassword(maria);
     maria.assertTextMatches('.e2eF_T', /About/, /Wasteland/);
@@ -84,15 +84,15 @@ describe("categories", function() {
 
   it("Owen sees Marias' topic", function() {
     owen.refresh();
-    owen.clickLinkToNewPage(WastelandCategorySelector);
+    owen.waitAndClickLinkToNewPage(WastelandCategorySelector, true);
     owen.forumTopicList.assertTopicNrVisible(2, mariasFirstTopicTitle);
   });
 
   it("Owen renames and unlists the category", function() {
+    //owen.debug();
     owen.forumButtons.clickEditCategory();
     owen.categoryDialog.fillInFields({ name: "Wasteland Unlisted" });
-    owen.waitAndClick('#e2eShowUnlistedCB');
-    owen.waitAndClick('#e2eUnlistedCB');
+    owen.categoryDialog.setUnlisted(true);
     owen.categoryDialog.submit();
     owen.assertNthTextMatches('.e2eF_T', 1, /Wasteland Unlisted/);
     owen.assertNthTextMatches('.e2eF_T', 2, /Wasteland Unlisted/);
@@ -115,18 +115,20 @@ describe("categories", function() {
   var urlToMonsPage3;
 
   it("Mons can create a Wasteland topic", function() {
-    mons.clickLinkToNewPage(WastelandCategorySelector);
+    mons.waitAndClickLinkToNewPage(WastelandCategorySelector, true);
     mons.complex.createAndSaveTopic({ title: "Mons Topic", body: "Mons text text text." });
     urlToMonsPage = mons.url().value;
   });
 
-  it("Maria no longer sees it, but can access pages in the category", function() {
+  it("Maria no longer sees Wasteland, but can access pages in the category", function() {
     maria.go(idAddress.origin + '/categories');
     maria.waitForVisible(DefaultCategorySelector);
+    maria.waitForMyDataAdded();
     assert(!maria.isVisible(WastelandCategorySelector));
   });
 
   it("Maria can access pages in the category via direct links though", function() {
+    maria.pause(3000);
     maria.go(urlToMonsPage);
     maria.assertPageTitleMatches(/Mons Topic/);
     maria.assertPageBodyMatches(/Mons text text text/);
@@ -136,8 +138,7 @@ describe("categories", function() {
     owen.go(idAddress.origin + '/latest/wasteland');
     owen.forumButtons.clickEditCategory();
     owen.categoryDialog.fillInFields({ name: "Wasteland Only Staff Create" });
-    owen.waitAndClick('#e2eShowUnlistedCB');
-    owen.waitAndClick('#e2eUnlistedCB');
+    owen.categoryDialog.setUnlisted(false);
     owen.categoryDialog.openSecurityTab();
     owen.categoryDialog.securityTab.setMayCreate(c.EveryoneId, false);
     owen.categoryDialog.submit();
@@ -177,8 +178,9 @@ describe("categories", function() {
     owen.go(idAddress.origin + '/latest/wasteland');
     owen.forumButtons.clickEditCategory();
     owen.categoryDialog.fillInFields({ name: "Wasteland Staff Only" });
-    owen.waitAndClick('#e2eShowStaffOnlyCB');
-    owen.waitAndClick('#e2eStaffOnlyCB');
+    owen.categoryDialog.openSecurityTab();
+    owen.categoryDialog.securityTab.setMayReply(c.EveryoneId, false);
+    owen.categoryDialog.securityTab.setMaySee(c.EveryoneId, false);
     owen.categoryDialog.submit();
     owen.assertNthTextMatches('.e2eF_T', 1, /Wasteland Staff Only/);
     owen.assertNthTextMatches('.e2eF_T', 2, /Wasteland Staff Only/);
@@ -187,7 +189,7 @@ describe("categories", function() {
 
   it("Mons sees it and can create a 2nd topic", function() {
     mons.go(idAddress.origin + '/categories');
-    mons.clickLinkToNewPage(WastelandCategorySelector);
+    mons.waitAndClickLinkToNewPage(WastelandCategorySelector, true);
     mons.complex.createAndSaveTopic({ title: "Mons Topic", body: "Mons text text text." });
     urlToMonsPage3 = mons.url().value;
   });

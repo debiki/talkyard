@@ -128,7 +128,7 @@ object DebikiHttp {
     // ScalaTest prints the stack trace but not the exception message. However this is
     // a QuickException — it has no stack trace. Let's create a helpful fake stack trace
     // that shows the exception message, so one knows what happened.
-    if (Globals.wasTest) {
+    if (Globals.isOrWasTest) {
       val message = s"ResultException, status $statusCode [EsMRESEX]:\n$bodyToString"
       setStackTrace(Array(new StackTraceElement(message, "", "", 0)))
     }

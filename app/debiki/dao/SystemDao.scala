@@ -133,8 +133,11 @@ class SystemDao(private val dbDaoFactory: DbDaoFactory, val cache: DaoMemCache) 
         dieUnless(hostname.startsWith(SiteHost.E2eTestPrefix), "EdE7PK5W8")
         dieUnless(name.startsWith(SiteHost.E2eTestPrefix), "EdE50K5W4")
         sysTx.deleteAnyHostname(hostname)
-        sysTx.deleteSiteByName(name)
+        val anyDeletedSite = sysTx.deleteSiteByName(name)
         forgetHostname(hostname)
+        anyDeletedSite foreach { site =>
+          memCache.clearSingleSite(site.id)
+        }
       }
 
       val newSite = sysTx.createSite(id = None, name = name, status,

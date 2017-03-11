@@ -208,7 +208,7 @@ interface Myself {
   rolePageSettings: PageUserSettings;
   trustLevel: TrustLevel;
   threatLevel: ThreatLevel;
-  permissions: Permissions;
+  permsOnPages: PermsOnPage[];
 
   numUrgentReviewTasks: number;
   numOtherReviewTasks: number;
@@ -234,15 +234,6 @@ interface Myself {
   readingProgress?: ReadingProgress;
   pageHelpMessage?: HelpMessage;
   closedHelpMessages: { [id: string]: number };  // id --> closed version of message   — id or nr?
-}
-
-
-interface Permissions {
-  onCategories: { [categoryId: number]: PermsOnPage };
-  onPages?: { [pageId: number]: {
-    onPage: PermsOnPage;
-    onPosts: { [postId: number]: PermsOnPage };
-  }};
 }
 
 
@@ -322,7 +313,8 @@ interface HelpMessage {
 
 
 interface Category {
-  id: number;
+  id: CategoryId;
+  parentId?: CategoryId;
   name: string;
   slug: string;
   defaultTopicType: PageRole,
@@ -488,7 +480,6 @@ interface Store {
   topics: Topic[];
   user: Myself; // try to remove, use 'me' instead:
   me: Myself;
-  strangersPermissions: Permissions;
   userSpecificDataAdded?: boolean; // is always false, server side
   newUserAccountCreated?: boolean;
   isImpersonating?: boolean;

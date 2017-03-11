@@ -143,6 +143,55 @@ export function store_isPageDeleted(store: Store): boolean {
 }
 
 
+export function store_mayICreateTopics(store: Store, category: Category): boolean {
+  let may;
+  let currentCategory = category;
+  const me = store.me;
+
+  me.permsOnPages.forEach((p: PermsOnPage) => {
+    if (p.onWholeSite) {
+      if (isDefined2(p.mayCreatePage)) {
+        may = p.mayCreatePage;
+      }
+    }
+  });
+
+  if (category.isForumItself) {
+    // May we create topics in *any* category in the whole forum?
+    may = !!store_findCatsWhereIMayCreateTopics(store).length;
+  }
+  else {
+    // May we create topics in this specific category?
+    while (currentCategory) {
+      me.permsOnPages.forEach((p: PermsOnPage) => {
+        if (p.onCategoryId === currentCategory.id) {
+          if (isDefined2(p.mayCreatePage)) {
+            may = p.mayCreatePage;
+          }
+        }
+      });
+      // Latent BUG: should check cats starting at root, but here we start with the "childmost" cat.
+      // Fix, before enabling child cats. [0GMK2WAL]
+      currentCategory = _.find(store.categories, c => c.id === currentCategory.parentId);
+    }
+  }
+
+  // Deprecated, remove [6UWKT02]
+  if (category.onlyStaffMayCreateTopics && !isStaff(me))
+    may = false;
+
+  // But not if undefined = unspecified.
+  return may === true;
+}
+
+
+export function store_findCatsWhereIMayCreateTopics(store: Store): Category[] {
+  return _.filter(store.categories, (c: Category) => {
+    if (c.isForumItself) return false;
+    return store_mayICreateTopics(store, c);
+  });
+}
+
 
 // Trust and threat levels
 //----------------------------------

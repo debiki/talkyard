@@ -125,6 +125,7 @@ export function saveCategory(category: Category, permissions: PermsOnPage[],
     ReactDispatcher.handleViewAction({
       actionType: actionTypes.CreateEditForumCategory,
       allCategories: response.allCategories,
+      myNewPermissions: response.myNewPermissions,
       newCategoryId: response.newCategoryId,
       newCategorySlug: response.newCategorySlug,
     });

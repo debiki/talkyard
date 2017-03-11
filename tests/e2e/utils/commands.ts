@@ -359,11 +359,17 @@ function addCommandsToBrowser(browser) {
   });
 
 
+  /*
   browser.addCommand('clickLinkToNewPage', function(selector) {
     browser.rememberCurrentUrl();
+    // No idea why, but this seems to sometimes attempts to click immediately, resulting in
+    // errors like:
+    //  FAIL: AssertionError: Bad num elems to click: 0, should be 1. Elems matches
+    //    selector: a*=Wasteland [EsE5JKP82]
+    // Instead, use waitAndClickLinkToNewPage().
     browser.waitAndClick(selector);
     browser.waitForNewUrl();
-  });
+  }); */
 
 
   browser.addCommand('assertNotFoundError', function() {

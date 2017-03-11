@@ -633,24 +633,24 @@ var ForumButtons = createComponent({
               // ElasticSearch disabled server side, and is:* not supported anyway.
               disabled: true, title: "Not completely implemented" }));
     */
-    var sortOrderRoutePath = this.props.routes[SortOrderRouteIndex].path;
+    const sortOrderRoutePath = this.props.routes[SortOrderRouteIndex].path;
 
-    var createTopicBtn;
-    if (sortOrderRoutePath !== RoutePathCategories && !(
-          activeCategory.onlyStaffMayCreateTopics && !isStaff(me))) {
+    let createTopicBtn;
+    const mayCreateTopics = store_mayICreateTopics(store, activeCategory);
+    if (sortOrderRoutePath !== RoutePathCategories && mayCreateTopics) {
      if (this.props.numWaitingForCritique < MaxWaitingForCritique)  // for now only [plugin]
       createTopicBtn = PrimaryButton({ onClick: this.createTopic, id: 'e2eCreateSth',
           className: 'esF_BB_CreateBtn'},
         createTopicBtnTitle(activeCategory));
     }
 
-    var createCategoryBtn;
+    let createCategoryBtn;
     if (sortOrderRoutePath === RoutePathCategories && me.isAdmin) {
       createCategoryBtn = PrimaryButton({ onClick: this.createCategory, id: 'e2eCreateCategoryB' },
         "Create Category");
     }
 
-    var editCategoryBtn;
+    let editCategoryBtn;
     if (!activeCategory.isForumItself && me.isAdmin) {
       editCategoryBtn = Button({ onClick: this.editCategory, className: 'esF_BB_EditCat' },
         "Edit Category");

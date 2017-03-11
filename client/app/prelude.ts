@@ -152,13 +152,13 @@ export function isDefined2(x): boolean {
 }
 
 
-// Ooops bad name, shouldn't include null
+// Ooops bad name, shouldn't include null  CLEAN_UP rename to isPresent/isSomething/isSth/hasValue?
 export function isDefined(x): boolean {  // rename to isNotNullOrUndefined(x)
   return !isNullOrUndefined(x);
 }
 
 
-export function isNullOrUndefined(x): boolean {
+export function isNullOrUndefined(x): boolean {   // RENAME to isNullOrUndef/isAbsent/lacksValue?
   return _.isNull(x) || _.isUndefined(x);
 }
 

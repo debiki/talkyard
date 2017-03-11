@@ -65,6 +65,8 @@ abstract class DebikiRequest[A] {
     Who(id, theBrowserIdData)
   }
 
+  lazy val authzContext: ForumAuthzContext = dao.getForumAuthzContext(requester)
+
   def theBrowserIdData = BrowserIdData(ip = ip, idCookie = browserId.cookieValue,
     fingerprint = 0) // skip for now
 

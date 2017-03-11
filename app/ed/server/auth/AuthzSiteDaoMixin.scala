@@ -36,7 +36,7 @@ trait AuthzSiteDaoMixin {
 
   def getForumAuthzContext(user: Option[User]): ForumAuthzContext = {
     val groupIds = getGroupIds(user)
-    val permissions = getPermissionsForPeople(groupIds)
+    val permissions = getPermsForPeople(groupIds)
     ForumAuthzContext(user, groupIds, permissions)
   }
 
@@ -166,7 +166,7 @@ trait AuthzSiteDaoMixin {
   }
 
 
-  @deprecated("now", "use getPermissionsForPeople instead?")
+  @deprecated("now", "use getPermsForPeople instead?")
   def getPermsOnPages(categories: immutable.Seq[Category]): immutable.Seq[PermsOnPages] = {
     COULD_OPTIMIZE // For now
     readOnlyTransaction { transaction =>
@@ -175,7 +175,12 @@ trait AuthzSiteDaoMixin {
   }
 
 
-  def getPermissionsForPeople(userIds: Iterable[UserId]): immutable.Seq[PermsOnPages] = {
+  def getPermsForEveryone(): immutable.Seq[PermsOnPages] = {
+    getPermsForPeople(Vector(Group.EveryoneId))
+  }
+
+
+  def getPermsForPeople(userIds: Iterable[UserId]): immutable.Seq[PermsOnPages] = {
     COULD_OPTIMIZE // For now
     val perms = readOnlyTransaction { transaction =>
       transaction.loadPermsOnPages()
