@@ -422,7 +422,13 @@ object PageRole {
   case object ToDo extends PageRole(13, staffOnly = false)  // remove [4YK0F24]
 
   /** Mind maps use 2D layout, even if the site is configured to use 1D layout. */
-  case object MindMap extends PageRole(11, staffOnly = false)
+  case object MindMap extends PageRole(11, staffOnly = false) {
+    // May-edit permissions work differently for mind maps; don't let people change type to/from
+    // mind map, because that could result in on-that-page permission escalation. [0JUK2WA5]
+    BUG // harmless, but should hide page type mind-map in the js edit-title-category-&-type form,
+    // so cannot accidentally attempt to change.
+    override def mayChangeRole = false
+  }
 
   /** For discussions (non-questions) or announcements or blog posts, for example.  */
   case object Discussion extends PageRole(12, staffOnly = false)

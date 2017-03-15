@@ -36,9 +36,10 @@ export function linkToPostNr(pageId: PageId, postNr: PostNr): string {
 }
 
 
-export function linkToAdminPage(hostname?: string): string {
-  const origin = hostname ? '//' + hostname : '';
-  return origin + '/-/admin/';
+export function linkToAdminPage(me: Myself): string {
+  // By default, redirects to path not available to non-admins. So send non-admins to reviews section.
+  const morePath = me.isAdmin ? '' : 'review/all';
+  return '/-/admin/' + morePath;
 }
 
 export function linkToAdminPageAdvancedSettings(hostname?: string): string {

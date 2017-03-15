@@ -196,6 +196,47 @@ object Authz {
   }
 
 
+  def mayEditPost(
+    userAndLevels: UserAndLevels,
+    groupIds: immutable.Seq[GroupId],
+    post: Post,
+    pageMeta: PageMeta,
+    privateGroupTalkMemberIds: Set[UserId],
+    inCategoriesRootLast: immutable.Seq[Category],
+    permissions: immutable.Seq[PermsOnPages]): MayMaybe = {
+
+    if (post.isDeleted)
+      return NoNotFound("EdEM0EDPOSTDELD")
+
+    val user = userAndLevels.user
+    val isOwnPost = user.id == post.createdById  // [8UAB3WG2]
+
+    val mayWhat = checkPermsOnPages(Some(user), groupIds, Some(pageMeta),
+      Some(privateGroupTalkMemberIds), inCategoriesRootLast, permissions)
+
+    if (mayWhat.maySee isNot true)
+      return NoNotFound(s"EdEM0RE0SEE-${mayWhat.debugCode}")
+
+    if (isOwnPost) {
+      // Fine, may edit.
+    }
+    else if (pageMeta.pageRole == PageRole.MindMap) {  // [0JUK2WA5]
+      if (!mayWhat.mayEditPage)
+        return NoMayNot("EdEM0ED0YOURMINDM", "You may not edit other people's mind maps")
+    }
+    else if (post.isOrigPost || post.isTitle) {
+      if (!mayWhat.mayEditPage)
+        return NoMayNot("EdEM0ED0YOURORIGP", "You may not edit other people's pages")
+    }
+    else {
+      if (!mayWhat.mayEditComment)
+        return NoMayNot("EdEM0ED0YOURPOST", "You may not edit other people's posts")
+    }
+
+    Yes
+  }
+
+
   def mayFlagPost(
     member: Member,
     groupIds: immutable.Seq[GroupId],
@@ -287,6 +328,7 @@ object Authz {
     */
 
     var mayWhat = MayPerhapsSee
+
     // var isWiki = .... but this is per post. Hmm. The post is not available here. [05PWPZ24]
 
     pageMeta foreach { meta =>
@@ -300,6 +342,10 @@ object Authz {
 
       if (meta.isHidden && !isStaff && !isAuthor)
         return MayWhat.mayNotSee("EdE0SEEPAGEHIDDEN_")
+
+      // In one's own mind map, one may edit all nodes, even if posted by others. [0JUK2WA5]
+      if (meta.pageRole == PageRole.MindMap && (isAuthor || isStaff))
+        mayWhat = mayWhat.copy(mayEditPage = true, debugCode = "EdMEDOWNMINDM")
 
       // Only page participants may see things like private chats or private formal messages.
       if (meta.pageRole.isPrivateGroupTalk) {
