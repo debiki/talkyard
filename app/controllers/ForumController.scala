@@ -165,7 +165,7 @@ object ForumController extends mvc.Controller {
 
     OkSafeJson(Json.obj(
       "allCategories" -> ReactJson.makeCategoriesJson(
-        dao.getForumAuthzContext(requester), restrictedOnly = false, request.dao),
+        dao.getForumAuthzContext(requester), request.dao),
       "myNewPermissions" -> JsArray(callersNewPerms map permissionToJson),
       "newCategoryId" -> category.id,
       "newCategorySlug" -> category.slug))
@@ -187,7 +187,7 @@ object ForumController extends mvc.Controller {
     val categoryId = (request.body \ "categoryId").as[CategoryId]
     request.dao.deleteUndeleteCategory(categoryId, delete = delete, request.who)
     val patch = ReactJson.makeCategoriesStorePatch(
-      dao.getForumAuthzContext(requester), restrictedOnly = false, request.dao)
+      dao.getForumAuthzContext(requester), request.dao)
     OkSafeJson(patch)
   }
 
@@ -216,7 +216,7 @@ object ForumController extends mvc.Controller {
     throwForbiddenIf(pageQuery.pageFilter.includesDeleted && !request.isStaff, "EdE5FKZX2",
       "Only staff can list deleted pages")
     val topics = listMaySeeTopicsInclPinned(categoryId, pageQuery, dao,
-      includeDescendantCategories = true, authzCtx, restrictedOnly = false)
+      includeDescendantCategories = true, authzCtx)
     makeTopicsResponse(topics, dao)
   }
 
@@ -250,7 +250,7 @@ object ForumController extends mvc.Controller {
     import request.{dao, requester}
     val authzCtx = dao.getForumAuthzContext(requester)
     val (categories, defaultCategoryId) = request.dao.listMaySeeSectionCategories(forumId,
-      authzCtx, restrictedOnly = false)
+      authzCtx)
     val json = JsArray(categories.map({ category =>
       categoryToJson(category, category.id == defaultCategoryId, recentTopics = Nil,
           pageStuffById = Map.empty)
@@ -265,7 +265,7 @@ object ForumController extends mvc.Controller {
     val authzCtx = dao.getForumAuthzContext(requester)
 
     val (categories, defaultCategoryId) = dao.listMaySeeSectionCategories(forumId,
-      authzCtx, restrictedOnly = false)
+      authzCtx)
 
     val recentTopicsByCategoryId =
       mutable.Map[CategoryId, Seq[PagePathAndMeta]]()
@@ -275,7 +275,7 @@ object ForumController extends mvc.Controller {
 
     for (category <- categories) {
       val recentTopics = listMaySeeTopicsInclPinned(category.id, pageQuery, dao,
-        includeDescendantCategories = true, authzCtx, restrictedOnly = false, limit = 6)
+        includeDescendantCategories = true, authzCtx, limit = 6)
       recentTopicsByCategoryId(category.id) = recentTopics
       pageIds.append(recentTopics.map(_.pageId): _*)
     }
@@ -293,20 +293,20 @@ object ForumController extends mvc.Controller {
 
 
   def listMaySeeTopicsInclPinned(categoryId: CategoryId, pageQuery: PageQuery, dao: debiki.dao.SiteDao,
-        includeDescendantCategories: Boolean, authzCtx: ForumAuthzContext, restrictedOnly: Boolean,
+        includeDescendantCategories: Boolean, authzCtx: ForumAuthzContext,
         limit: Int = NumTopicsToList)
         : Seq[PagePathAndMeta] = {
     SECURITY; TESTS_MISSING  // securified
 
     val topics: Seq[PagePathAndMeta] = dao.loadMaySeePagesInCategory(
-      categoryId, includeDescendantCategories, authzCtx, restrictedOnly = restrictedOnly,
+      categoryId, includeDescendantCategories, authzCtx,
       pageQuery, limit)
 
     // If sorting by bump time, sort pinned topics first. Otherwise, don't.
     val topicsInclPinned = pageQuery.orderOffset match {
       case orderOffset: PageOrderOffset.ByBumpTime if orderOffset.offset.isEmpty =>
         val pinnedTopics = dao.loadMaySeePagesInCategory(
-          categoryId, includeDescendantCategories, authzCtx, restrictedOnly = restrictedOnly,
+          categoryId, includeDescendantCategories, authzCtx,
           pageQuery.copy(orderOffset = PageOrderOffset.ByPinOrderLoadOnlyPinned), limit)
         val notPinned = topics.filterNot(topic => pinnedTopics.exists(_.id == topic.id))
         val topicsSorted = (pinnedTopics ++ notPinned) sortBy { topic =>

@@ -176,7 +176,7 @@ object ReactJson {
         : (String, CachedPageVersion, Option[String], Set[UserId]) = {
 
     // The json constructed here will be cached & sent to "everyone", so in this function
-    // we always specify !isStaff and !restrictedOnly, and the requester must be a stranger:
+    // we always specify !isStaff and the requester must be a stranger (user = None):
     val authzCtx = dao.getForumAuthzContext(None)
 
     val socialLinksHtml = dao.getWholeSiteSettings().socialLinksHtml
@@ -248,7 +248,7 @@ object ReactJson {
     val (anyForumId: Option[PageId], ancestorsJsonRootFirst: Seq[JsObject]) =
       makeForumIdAndAncestorsJson(page.meta, dao)
 
-    val categories = makeCategoriesJson(authzCtx, restrictedOnly = false, dao)
+    val categories = makeCategoriesJson(authzCtx, dao)
 
     val anyLatestTopics: Seq[JsObject] =
       if (page.role == PageRole.Forum) {
@@ -259,7 +259,7 @@ object ReactJson {
         val authzCtx = dao.getForumAuthzContext(user = None)
         val topics = ForumController.listMaySeeTopicsInclPinned(rootCategoryId, orderOffset, dao,
           includeDescendantCategories = true,
-          authzCtx, restrictedOnly = false,
+          authzCtx,
           limit = ForumController.NumTopicsToList)
         val pageStuffById = dao.getPageStuffById(topics.map(_.pageId))
         topics.foreach(_.meta.addUserIdsTo(userIdsToLoad))
@@ -361,7 +361,7 @@ object ReactJson {
 
     if (inclCategoriesJson) {
       val authzCtx = dao.getForumAuthzContext(requester)
-      result += "categories" -> makeCategoriesJson(authzCtx, restrictedOnly = false, dao)
+      result += "categories" -> makeCategoriesJson(authzCtx, dao)
     }
 
     result
@@ -812,16 +812,16 @@ object ReactJson {
   def listRestrictedCategoriesAndTopics(request: PageRequest[_]): (JsArray, Seq[JsValue]) = {
     import request.dao
 
-    // Currently there're only 2 types of "personal" topics: unlisted, & staff-only.
-    if (!request.isStaff)
-      return (JsArray(), Nil)
+    // OLD: Currently there're only 2 types of "personal" topics: unlisted, & staff-only.
+    // DON'T: if (!request.isStaff)
+      //return (JsArray(), Nil)
 
     val authzCtx = request.authzContext
 
     // SHOULD avoid starting a new transaction, so can remove workaround [7YKG25P].
     // (request.dao might start a new transaction)
     val (categories, defaultCategoryId) =
-      request.dao.listAllMaySeeCategories(authzCtx, restrictedOnly = true)
+      request.dao.listAllMaySeeCategories(authzCtx)
 
     // A tiny bit dupl code [5YK03W5]
     val categoriesJson = JsArray(categories.filterNot(_.isRoot) map { category =>
@@ -846,7 +846,6 @@ object ReactJson {
           categoryId, orderOffset, dao,
           includeDescendantCategories = true,
           authzCtx,
-          restrictedOnly = true,
           limit = ForumController.NumTopicsToList)
         val pageStuffById = request.dao.getPageStuffById(topics.map(_.pageId))
         (topics, pageStuffById)
@@ -1011,19 +1010,18 @@ object ReactJson {
   }
 
 
-  def makeCategoriesStorePatch(authzCtx: ForumAuthzContext, restrictedOnly: Boolean, dao: SiteDao)
+  def makeCategoriesStorePatch(authzCtx: ForumAuthzContext, dao: SiteDao)
         : JsValue = {
-    val categoriesJson = makeCategoriesJson(authzCtx, restrictedOnly = restrictedOnly, dao)
+    val categoriesJson = makeCategoriesJson(authzCtx, dao)
     Json.obj(
       "appVersion" -> Globals.applicationVersion,
       "categories" -> categoriesJson)
   }
 
 
-  def makeCategoriesJson(authzCtx: ForumAuthzContext, restrictedOnly: Boolean, dao: SiteDao)
+  def makeCategoriesJson(authzCtx: ForumAuthzContext, dao: SiteDao)
         : JsArray = {
-    val (categories, defaultCategoryId) = dao.listAllMaySeeCategories(authzCtx,
-      restrictedOnly = restrictedOnly)
+    val (categories, defaultCategoryId) = dao.listAllMaySeeCategories(authzCtx)
     // A tiny bit dupl code [5YK03W5]
     val categoriesJson = JsArray(categories.filterNot(_.isRoot) map { category =>
       makeCategoryJson(category, defaultCategoryId.contains(category.id))

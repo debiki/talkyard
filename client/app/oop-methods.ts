@@ -87,6 +87,9 @@ export function notfLevel_title(notfLevel: NotfLevel): string {
   }
 }
 
+export function post_isDeletedOrCollapsed(post: Post): boolean {
+  return post.isPostDeleted || post.isTreeDeleted || post.isPostCollapsed || post.isTreeCollapsed;
+}
 
 export function post_shallRenderAsHidden(post: Post): boolean {
   return post.isBodyHidden && _.isEmpty(post.sanitizedHtml);
@@ -144,7 +147,7 @@ export function store_isPageDeleted(store: Store): boolean {
 
 
 export function store_mayICreateTopics(store: Store, category: Category): boolean {
-  let may;
+  let may: boolean;
   let currentCategory = category;
   const me = store.me;
 
@@ -180,8 +183,102 @@ export function store_mayICreateTopics(store: Store, category: Category): boolea
   if (category.onlyStaffMayCreateTopics && !isStaff(me))
     may = false;
 
-  // But not if undefined = unspecified.
-  return may === true;
+  return may;
+}
+
+
+// Some dupl code! (8FUZWY02Q60)
+export function store_mayIReply(store: Store, post: Post): boolean {
+  // Mind map posts are considered part of the page/article itself, so one needs to be
+  // allowed to edit the page itself, to add (= reply) mind-map-posts. [7KUE20]
+  if (store.pageRole === PageRole.MindMap)
+    return store_mayIEditPage(store, post);
+
+  let may: boolean;
+  const ancestorCategories: Ancestor[] = store.ancestorsRootFirst;
+  const me = store.me;
+
+  // Later: [8PA2WFM] Perhaps let staff reply, although not approved. So staff can say
+  // "If you please remove <sth that violates the site guidelines>, I'll approve the comment".
+  // Or "I won't approve this comment. It's off-topic because ...".
+  if (post_isDeletedOrCollapsed(post) || !post.isApproved)
+    return false;
+
+  me.permsOnPages.forEach((p: PermsOnPage) => {
+    if (p.onWholeSite) {
+      if (isDefined2(p.mayPostComment)) {
+        may = p.mayPostComment;
+      }
+    }
+  });
+
+  // Here we loop through the cats in the correct order though, [0GMK2WAL].
+  for (let i = 0; i < ancestorCategories.length; ++i) {
+    const ancestor = ancestorCategories[i];
+    me.permsOnPages.forEach((p: PermsOnPage) => {
+      if (p.onCategoryId === ancestor.categoryId) {
+        if (isDefined2(p.mayPostComment)) {
+          may = p.mayPostComment;
+        }
+      }
+    });
+  }
+
+  return may;
+}
+
+
+export function store_mayIEditPage(store: Store, post: Post): boolean {
+  return store_mayIEditImpl(store, post, true);
+}
+
+
+export function store_mayIEditPost(store: Store, post: Post): boolean {
+  return store_mayIEditImpl(store, post, false);
+}
+
+
+// Some dupl code! (8FUZWY02Q60)
+function store_mayIEditImpl(store: Store, post: Post, isEditPage: boolean): boolean {
+  if (post_isDeletedOrCollapsed(post))
+    return false;
+
+  const me = store.me;
+  const isStaffOrOwnPage = isStaff(me) || store_thisIsMyPage(store);
+  const isStaffOrOwnPostOrWiki =
+      isStaff(me) ||
+      post.authorId === me.id ||
+      (me.isAuthenticated && post.postType === PostType.CommunityWiki); // [05PWPZ24]
+
+  let may = isEditPage ? isStaffOrOwnPage : isStaffOrOwnPostOrWiki;
+
+  if (!post.isApproved && !may)
+    return false;
+
+  me.permsOnPages.forEach((p: PermsOnPage) => {
+    if (p.onWholeSite) {
+      if (isDefined2(p.mayEditPage)) {
+        may = p.mayEditPage;
+      }
+    }
+  });
+
+  // Here we loop through the cats in the correct order though, [0GMK2WAL].
+  const ancestorCategories: Ancestor[] = store.ancestorsRootFirst;
+  for (let i = 0; i < ancestorCategories.length; ++i) {
+    const ancestor = ancestorCategories[i];
+    me.permsOnPages.forEach((p: PermsOnPage) => {
+      if (p.onCategoryId === ancestor.categoryId) {
+        if (isDefined2(p.mayEditPage)) {
+          may = p.mayEditPage;
+        }
+      }
+    });
+  }
+
+  // COULD check threat level here? May-not if is-severe-threat.
+
+  return may;
 }
 
 

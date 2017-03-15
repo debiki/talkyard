@@ -9,13 +9,20 @@ import assert = require('assert');
 import c = require('../test-constants');
 
 
-let buildSite = function(site?: SiteData) {
+function makeSiteOwnedByOwenBuilder() {
+  return buildSite();
+}
+
+
+function buildSite(site?: SiteData) {
 
   if (!site) {
     site = make.emptySiteOwnedByOwen();
   }
 
   let api = {
+    theSite: site,
+
     getSite: function(): SiteData {
       return site;
     },
@@ -87,7 +94,7 @@ let buildSite = function(site?: SiteData) {
       let optsWithDescr: any = _.assign({ description: opts.aboutPageText }, opts);
       let category = api.addCategoryNoAboutPage(forumPage, optsWithDescr);
       api.addPage({
-        id: `about_cat_${opts.slug}`,
+        id: `about_cat_${opts.slug}`.substr(0, 32),
         folder: '/',
         showId: false,
         slug: `about-cat-${opts.slug}`,
@@ -373,7 +380,9 @@ let buildSite = function(site?: SiteData) {
   };
 
   return api;
-};
+}
 
+const fns = { buildSite, makeSiteOwnedByOwenBuilder };
 
-export = buildSite;
+export = fns;
+

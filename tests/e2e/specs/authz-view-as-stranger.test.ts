@@ -5,7 +5,7 @@
 import * as _ from 'lodash';
 import server = require('../utils/server');
 import pagesFor = require('../utils/pages-for');
-import buildSite = require('../utils/site-builder');
+import { buildSite } from '../utils/site-builder';
 import assert = require('assert');
 
 declare let browser: any;

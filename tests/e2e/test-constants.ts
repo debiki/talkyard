@@ -3,7 +3,7 @@
 // Need to include here, for now, ? because client/app/ doesn't use any modules system,
 // doesn't export any constants ?
 // Name it 'TestPageRole' so name won't clash with enum 'PageRole' :-(
-var TestPageRole = {  // dupl in client/app/constants.ts [5F8KW0P2]
+const TestPageRole = {  // dupl in client/app/constants.ts [5F8KW0P2]
   CustomHtmlPage: <PageRole> 1,
   WebPage: <PageRole> 2,  // rename to Info?
   Code: <PageRole> 3,
@@ -26,12 +26,13 @@ var TestPageRole = {  // dupl in client/app/constants.ts [5F8KW0P2]
   Critique: <PageRole> 16, // [plugin]
 };
 
-var TestTrustLevel = {
+const TestTrustLevel = {
   New: <TrustLevel> 1,
   Basic: <TrustLevel> 2,
   Member: <TrustLevel> 3,
-  Regular: <TrustLevel> 4,
-  CoreMember: <TrustLevel> 5,
+  Trusted: <TrustLevel> 4,
+  Regular: <TrustLevel> 5,
+  CoreMember: <TrustLevel> 6,
 };
 
 export = {
@@ -41,6 +42,14 @@ export = {
   BodyNr: 1,
   FirstReplyNr: 2,  // [5FKF0F2]
   EveryoneId: 10,
+  NewMembersId: 11,
+  BasicMembersId: 12,
+  FullMembersId: 13,
+  TrustedMembersId: 14,
+  RegularMembersId: 15,
+  CoreMembersId: 16,
   StaffId: 17,
+  ModeratorsId: 18,
+  AdminsId: 19,
 };
 

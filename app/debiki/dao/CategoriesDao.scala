@@ -96,12 +96,12 @@ trait CategoriesDao {
     * Sorts by Category.position (which doesn't make much sense if there are sub categories).
     * Returns (categories, default-category-id).
     */
-  def listMaySeeSectionCategories(pageId: PageId, authzCtx: ForumAuthzContext, restrictedOnly: Boolean)
+  def listMaySeeSectionCategories(pageId: PageId, authzCtx: ForumAuthzContext)
         : (Seq[Category], CategoryId) = {
     loadRootCategory(pageId) match {
       case Some(rootCategory) =>
         val categories = listDescendantMaySeeCategories(rootCategory.id, includeRoot = false,
-          authzCtx, restrictedOnly = restrictedOnly).sortBy(_.position)
+          authzCtx).sortBy(_.position)
         (categories, rootCategory.defaultCategoryId getOrDie "EsE4GK02")
       case None =>
         (Nil, NoCategoryId)
@@ -110,12 +110,12 @@ trait CategoriesDao {
 
 
   /** Sometimes the section page id is undefined — for example, when talking with someone
-    * in a personal chat. That chat topic isn't placed in any blog or forum. Then we want
-    * to list all categories, not just all categories in some (undefined) section.
+    * in a personal chat. That chat topic isn't placed in any section (e.g. blog or forum).
+    * Then we want to list all categories, not just all categories in some (undefined) section.
     *
     * Returns (categories, default-category-id).  (Currently there can be only 1 default category)
     */
-  def listAllMaySeeCategories(authzCtx: ForumAuthzContext, restrictedOnly: Boolean)
+  def listAllMaySeeCategories(authzCtx: ForumAuthzContext)
         : (Seq[Category], Option[CategoryId]) = {
     if (rootCategories eq null) {
       loadBuildRememberCategoryMaps()
@@ -127,7 +127,7 @@ trait CategoriesDao {
 
     val rootCategory = rootCategories.head
     val categories = listDescendantMaySeeCategories(rootCategory.id, includeRoot = false,
-      authzCtx, restrictedOnly = restrictedOnly).sortBy(_.position)
+      authzCtx).sortBy(_.position)
     (categories, Some(rootCategory.defaultCategoryId getOrDie "EsE4GK02"))
   }
 
@@ -135,10 +135,9 @@ trait CategoriesDao {
   /** List all categories in the sub tree with categoryId as root.
     */
   private def listDescendantMaySeeCategories(categoryId: CategoryId, includeRoot: Boolean,
-        authzCtx: ForumAuthzContext, restrictedOnly: Boolean): Seq[Category] = {
+        authzCtx: ForumAuthzContext): Seq[Category] = {
     val categories = ArrayBuffer[Category]()
-    appendMaySeeCategoriesInTree(categoryId, includeRoot, authzCtx,
-      restrictedOnly = restrictedOnly, categories)
+    appendMaySeeCategoriesInTree(categoryId, includeRoot, authzCtx, categories)
     categories.to[immutable.Seq]
   }
 
@@ -154,7 +153,7 @@ trait CategoriesDao {
   /** Lists pages placed in categoryId, optionally including its descendant categories.
     */
   def loadMaySeePagesInCategory(categoryId: CategoryId, includeDescendants: Boolean,
-        authzCtx: ForumAuthzContext, restrictedOnly: Boolean, pageQuery: PageQuery, limit: Int)
+        authzCtx: ForumAuthzContext, pageQuery: PageQuery, limit: Int)
         : Seq[PagePathAndMeta] = {
     val maySeeCategoryIds =
       if (includeDescendants) {
@@ -162,11 +161,11 @@ trait CategoriesDao {
         // whole section (e.g. the whole forum) but only the root of a sub section (e.g.
         // a category in the forum). The top root shouldn't contain any pages, but subtree roots
         // usually contain pages. )
+        CLEAN_UP // investigate & remove this old comment:
         // (If `restrictedOnly` is true, then most hidden topics won't be included, because
         // they might not be placed inside restricted categories. Everything works fine
         // anyway currently, though, see [7RIQ29]. )
-        listDescendantMaySeeCategories(categoryId, includeRoot = true, authzCtx,
-          restrictedOnly = restrictedOnly).map(_.id)
+        listDescendantMaySeeCategories(categoryId, includeRoot = true, authzCtx).map(_.id)
       }
       else {
         unimplementedIf(!authzCtx.isStaff, "!incl hidden in forum [EsE2PGJ4]")
@@ -269,7 +268,7 @@ trait CategoriesDao {
 
 
   private def appendMaySeeCategoriesInTree(rootCategoryId: CategoryId, includeRoot: Boolean,
-      authzCtx: ForumAuthzContext, restrictedOnly: Boolean, categoryList: ArrayBuffer[Category]) {
+      authzCtx: ForumAuthzContext, categoryList: ArrayBuffer[Category]) {
 
     if (categoryList.exists(_.id == rootCategoryId)) {
       // COULD log cycle error
@@ -290,13 +289,13 @@ trait CategoriesDao {
         return
     }
 
-    // --- Deprecated. Remove later.
+    CLEAN_UP // --- Deprecated. Remove later.
     val isRestricted = startCategory.unlisted || startCategory.staffOnly || startCategory.isDeleted
     if (isRestricted && !authzCtx.isStaff)
       return
     // ----
 
-    if (includeRoot) //&& (!restrictedOnly || isRestricted)) { CLEAN_UP remove restrictedOnly param?
+    if (includeRoot)
       categoryList.append(startCategory)
 
     val childCategories = categoriesByParentId.getOrElse(rootCategoryId, {
@@ -304,7 +303,7 @@ trait CategoriesDao {
     })
     for (childCategory <- childCategories) {
       appendMaySeeCategoriesInTree(childCategory.id, includeRoot = true,
-        authzCtx, restrictedOnly = restrictedOnly, categoryList)
+        authzCtx, categoryList)
     }
   }
 

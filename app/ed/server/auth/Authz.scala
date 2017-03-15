@@ -178,14 +178,15 @@ object Authz {
     if (mayWhat.maySee isNot true)
       return NoNotFound(s"EdEM0RE0SEE-${mayWhat.debugCode}")
 
-    if (!mayWhat.mayPostComment)
-      return NoMayNot("EdEM0RE0RE", "You don't have permissions to post a reply on this page")
-
-    // Mind maps can easily get messed up by people posting comments. So, for now, only
-    // allow the page author + staff to add stuff to a mind map. [7KUE20]
     if (pageMeta.pageRole == PageRole.MindMap) {
-      if (user.id != pageMeta.authorId && !user.isStaff)
-        return NoMayNot("EsEMAY0REMINDM", "Only the page author and staff may edit this mind map")
+      // Mind maps could easily get messed up by people posting new stuff to the mind map, so,
+      // only allow people with edit-*page* permission to add stuff to a mind map. [7KUE20]
+      if (!mayWhat.mayEditPage) // before: user.id != pageMeta.authorId && !user.isStaff)
+        return NoMayNot("EsEMAY0REMINDM", "Not allowed to add more items to this mind map")
+    }
+    else {
+      if (!mayWhat.mayPostComment)
+        return NoMayNot("EdEM0RE0RE", "You don't have permissions to post a reply on this page")
     }
 
     if (!pageMeta.pageRole.canHaveReplies)
@@ -286,6 +287,7 @@ object Authz {
     */
 
     var mayWhat = MayPerhapsSee
+    // var isWiki = .... but this is per post. Hmm. The post is not available here. [05PWPZ24]
 
     pageMeta foreach { meta =>
       categoriesRootLast.headOption foreach { parentCategory =>
@@ -331,7 +333,7 @@ object Authz {
       return MayWhat.mayNotSee("EdEPAGEDELD")
 
     if (isUsersPage)
-      mayWhat = mayWhat.copyWithMaySeeAndReply(debugCode = "EdMMOWN")
+      mayWhat = mayWhat.copyWithMaySeeReplyEdit(debugCode = "EdMMOWN")
 
     // For now, hardcode may-see the forum page, otherwise only admins would see it.
     if (isForumPage)
@@ -414,6 +416,12 @@ case class MayWhat(
     debugCode)
 
   def copyWithMaySeeAndReply(debugCode: String): MayWhat = copy(
+    mayPostComment = true,
+    maySee = Some(true),
+    debugCode = debugCode)
+
+  def copyWithMaySeeReplyEdit(debugCode: String): MayWhat = copy(
+    mayEditPage = true,
     mayPostComment = true,
     maySee = Some(true),
     debugCode = debugCode)

@@ -175,11 +175,53 @@ const make = {
     };
   },
 
+  memberTrillian: function(): Member {
+    return {
+      id: getAndBumpNextUserId(),
+      username: "trillian",
+      fullName: "Trillian Trusted Member",
+      createdAtMs: DefaultCreatedAtMs,
+      emailAddress: "e2e-test--trillian@example.com",
+      emailVerifiedAtMs: DefaultCreatedAtMs,
+      passwordHash: "cleartext:publicTrillian123",
+      password: "publicTrillian123",
+      trustLevel: c.TestTrustLevel.Trusted,
+    };
+  },
+
+  memberRegina: function(): Member {
+    return {
+      id: getAndBumpNextUserId(),
+      username: "regina",
+      fullName: "Regina Regular Member",
+      createdAtMs: DefaultCreatedAtMs,
+      emailAddress: "e2e-test--regina@example.com",
+      emailVerifiedAtMs: DefaultCreatedAtMs,
+      passwordHash: "cleartext:publicRegina123",
+      password: "publicRegina123",
+      trustLevel: c.TestTrustLevel.Regular,
+    };
+  },
+
+  memberConny: function(): Member {
+    return {
+      id: getAndBumpNextUserId(),
+      username: "conny",
+      fullName: "Conny Core Member",
+      createdAtMs: DefaultCreatedAtMs,
+      emailAddress: "e2e-test--conny@example.com",
+      emailVerifiedAtMs: DefaultCreatedAtMs,
+      passwordHash: "cleartext:publicConny123",
+      password: "publicConny123",
+      trustLevel: c.TestTrustLevel.CoreMember,
+    };
+  },
+
   memberMallory: function(): Member {
     return {
       id: getAndBumpNextUserId(),
       username: "mallory",
-      fullName: "Mallory",
+      fullName: "Malicious Mallory",
       createdAtMs: DefaultCreatedAtMs,
       emailAddress: "mallory@ex.com",
       emailVerifiedAtMs: DefaultCreatedAtMs,

@@ -50,7 +50,7 @@ syncTest('200 ok with title', (test) => {
 
 import server = require('../e2e/utils/server');
 import pagesFor = require('../e2e/utils/pages-for');
-import buildSite = require('../e2e/utils/site-builder');
+import { buildSite } from '../utils/site-builder';
 
 const forum = buildSite().addLargeForum({ title: 'Tape Test Forum' });
 const idAddress = server.importSiteData(forum.siteData);

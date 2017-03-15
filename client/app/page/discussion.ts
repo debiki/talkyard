@@ -642,12 +642,17 @@ var RootPostAndComments = createComponent({
               " Add chat comment")));
     } */
 
-    var flatRepliesClass = repliesAreFlat ? ' dw-chat' : ''; // rename dw-chat... to dw-flat?
+    const flatRepliesClass = repliesAreFlat ? ' dw-chat' : ''; // rename dw-chat... to dw-flat?
 
     let postActions = post_shallRenderAsHidden(rootPost) ? null :
          PostActions({ store: this.props, post: rootPost });
 
-    let origPostReplyButton = _.every(threadedChildren, c => _.isEmpty(c)) ? null :
+    const mayReplyToOrigPost = store_mayIReply(store, rootPost);
+    const origPostReplyButton =
+        // If mind map: Don't give people a large easily clickable button that keeps appending nodes.
+        // People are supposed to think before adding new nodes, e.g. think about where to place them.
+        store.pageRole === PageRole.MindMap ||
+          !mayReplyToOrigPost || _.every(threadedChildren, c => _.isEmpty(c)) ? null :
       r.div({ className: 's_APAs'},
         r.a({ className: 's_APAs_OPRB dw-a dw-a-reply icon-reply',
             onClick: this.onOrigPostReplyClick },
