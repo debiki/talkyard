@@ -43,8 +43,6 @@ case class CategoryToSave(
   newTopicTypes: immutable.Seq[PageRole],
   shallBeDefaultCategory: Boolean,
   unlisted: Boolean,
-  staffOnly: Boolean,
-  onlyStaffMayCreateTopics: Boolean,
   description: String,
   anyId: Option[CategoryId] = None, // Some() if editing, < 0 if creating COULD change from Option[CategoryId] to CategoryId
   isCreatingNewForum: Boolean = false) {
@@ -66,8 +64,6 @@ case class CategoryToSave(
     description = None,
     newTopicTypes = newTopicTypes,
     unlisted = unlisted,
-    staffOnly = staffOnly,
-    onlyStaffMayCreateTopics = onlyStaffMayCreateTopics,
     createdAt = createdAt,
     updatedAt = createdAt)
 
@@ -289,11 +285,10 @@ trait CategoriesDao {
         return
     }
 
-    CLEAN_UP // --- Deprecated. Remove later.
-    val isRestricted = startCategory.unlisted || startCategory.staffOnly || startCategory.isDeleted
-    if (isRestricted && !authzCtx.isStaff)
+    COULD // add a seeUnlisted permission? If in a cat, a certain group should see unlisted topics.
+    val onlyForStaff = startCategory.unlisted || startCategory.isDeleted
+    if (onlyForStaff && !authzCtx.isStaff)
       return
-    // ----
 
     if (includeRoot)
       categoryList.append(startCategory)
@@ -347,8 +342,6 @@ trait CategoriesDao {
         position = editCategoryData.position,
         newTopicTypes = editCategoryData.newTopicTypes,
         unlisted = editCategoryData.unlisted,
-        staffOnly = editCategoryData.staffOnly,
-        onlyStaffMayCreateTopics = editCategoryData.onlyStaffMayCreateTopics,
         updatedAt = transaction.now.toJavaDate)
 
       if (editCategoryData.shallBeDefaultCategory) {
@@ -440,6 +433,9 @@ trait CategoriesDao {
         deletedAt = if (delete) Some(transaction.now.toJavaDate) else None)
       transaction.updateCategoryMarkSectionPageStale(categoryAfter)
     }
+    // All pages in the category now needs to be rerendered.
+    COULD_OPTIMIZE // only remove-from-cache / mark-as-dirty pages inside the category.
+    emptyCache()
   }
 
 

@@ -85,8 +85,6 @@ trait ForumDao {
       description = None,
       newTopicTypes = Nil,
       unlisted = false,
-      staffOnly = false,
-      onlyStaffMayCreateTopics = false,
       createdAt = transaction.now.toJavaDate,
       updatedAt = transaction.now.toJavaDate))
 
@@ -103,8 +101,6 @@ trait ForumDao {
         description = "New topics get placed here, unless another category is selected.",
         newTopicTypes = immutable.Seq(PageRole.Discussion),
         unlisted = false,
-        staffOnly = false,
-        onlyStaffMayCreateTopics = false,
         isCreatingNewForum = true),
       immutable.Seq[PermsOnPages](
         makeEveryonesDefaultCategoryPerms(defaultCategoryId),
@@ -124,8 +120,6 @@ trait ForumDao {
         description = "Private category for staff discussions",
         newTopicTypes = immutable.Seq(PageRole.Discussion),
         unlisted = false,
-        staffOnly = true,
-        onlyStaffMayCreateTopics = false,
         isCreatingNewForum = true),
       immutable.Seq[PermsOnPages](
         makeStaffCategoryPerms(staffCategoryId)),

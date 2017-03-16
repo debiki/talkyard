@@ -132,7 +132,7 @@ trait PagesDao {
     val permissions = transaction.loadPermsOnPages()
     val authzCtx = ForumAuthzContext(Some(author), groupIds, permissions)
 
-    dieOrDenyUnless(Authz.mayCreatePage(  // REFACTOR COULD pass a pageAuthzCtx instead [5FLK02]
+    dieOrThrowNoUnless(Authz.mayCreatePage(  // REFACTOR COULD pass a pageAuthzCtx instead [5FLK02]
       authorAndLevels, groupIds,
       pageRole, bodyPostType, pinWhere, anySlug = anySlug, anyFolder = anyFolder,
       inCategoriesRootLast = categoryPath,

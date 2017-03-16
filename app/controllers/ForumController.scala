@@ -75,10 +75,6 @@ object ForumController extends mvc.Controller {
 
     val sectionPageId = (categoryJson \ "sectionPageId").as[PageId]
     val unlisted = (categoryJson \ "unlisted").asOpt[Boolean] is true
-    // --delete: ----
-    val staffOnly = (categoryJson \ "staffOnly").asOpt[Boolean].getOrElse(false)
-    val onlyStaffMayCreateTopics = (categoryJson \ "onlyStaffMayCreateTopics").asOpt[Boolean].getOrElse(false)
-    // --/delete------
     val defaultTopicTypeInt = (categoryJson \ "defaultTopicType").as[Int]
     val defaultTopicType = PageRole.fromInt(defaultTopicTypeInt) getOrElse throwBadReq(
         "DwE7KUP3", s"Bad new topic type int: $defaultTopicTypeInt")
@@ -98,9 +94,7 @@ object ForumController extends mvc.Controller {
       position = (categoryJson \ "position").as[Int],
       newTopicTypes = List(defaultTopicType),
       shallBeDefaultCategory = shallBeDefaultCategory,
-      unlisted = unlisted,
-      staffOnly = staffOnly,
-      onlyStaffMayCreateTopics = onlyStaffMayCreateTopics)
+      unlisted = unlisted)
 
     import Category._
 

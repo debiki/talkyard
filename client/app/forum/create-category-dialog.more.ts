@@ -99,8 +99,6 @@ const EditCategoryDialog = createClassAndFactory({
           position: DefaultPosition,
           description: '',
           unlisted: false,
-          staffOnly: false,
-          onlyStaffMayCreateTopics: false,
         };
         this.setState({
           isCreatingNewCategory: true,
@@ -123,7 +121,7 @@ const EditCategoryDialog = createClassAndFactory({
 
   save: function() {
     this.setState({ isSaving: true });
-    const category = {
+    const category: Category = {
       ...this.state.category,
       parentCategoryId: ReactStore.getCategoryId(),
       sectionPageId: debiki.internal.pageId,
@@ -153,7 +151,8 @@ const EditCategoryDialog = createClassAndFactory({
 
   deleteCategory: function() {
     ReactActions.deleteCategory(this.state.categoryId, () => {
-      this.setState({ isDeleted: true });
+      const deletedCategory = { ...this.state.category, isDeleted: true  };
+      this.setState({ category: deletedCategory });
       util.openDefaultStupidDialog({
         body: "Category deleted. You can undo, by clicking Undelete.",
         small: true,
@@ -163,7 +162,8 @@ const EditCategoryDialog = createClassAndFactory({
 
   undeleteCategory: function() {
     ReactActions.undeleteCategory(this.state.categoryId, () => {
-      this.setState({ isDeleted: false });
+      const restoredCategory = { ...this.state.category, isDeleted: false };
+      this.setState({ category: restoredCategory });
       util.openDefaultStupidDialog({
         body: "Done, category undeleted. It is back again.",
         small: true,
@@ -313,22 +313,6 @@ const CategorySettings = createClassAndFactory({
                   "will be visible. This is useful for pages like a homepage or about-this-" +
                   "website page, which people shouldn't see in the forum topic list." }));
 
-    const staffOnlyTitle = "Staff only (" + (category.staffOnly ?  "yes)" : "no)");
-    const staffOnlyInput =
-      utils.FadeInOnClick({ clickToShowText: staffOnlyTitle, clickToShowId: 'e2eShowStaffOnlyCB' },
-        Input({ type: 'checkbox', label: "Staff only", id: 'e2eStaffOnlyCB',
-          checked: category.staffOnly, onChange: this.toggleStaffOnly,
-          help: "Shall topics in this category be accessible only to admins and moderators?" }));
-
-    const onlyStaffMayCreateTopicsTitle = "Only staff may create topics (" +
-          (category.onlyStaffMayCreateTopics ?  "yes)" : "no)");
-    const onlyStaffMayCreateTopicsInput =
-      utils.FadeInOnClick({ clickToShowText: onlyStaffMayCreateTopicsTitle,
-          clickToShowId: 'e2eShowOnlyStaffCreateCB' },
-        Input({ type: 'checkbox', label: "Only staff may create topics", id: 'e2eOnlyStaffCreateCB',
-          checked: category.onlyStaffMayCreateTopics, onChange: this.toggleOnlyStaffMayCreateTopics,
-          help: "May only admins and moderators create topics in this category?" }));
-
     let anyUndeleteInfoAndButton;
     let anyDeleteButton;
     if (this.props.isCreatingNewCategory) {
@@ -356,8 +340,6 @@ const CategorySettings = createClassAndFactory({
             slugInput,
             positionInput,
             unlistedInput,
-            staffOnlyInput,
-            onlyStaffMayCreateTopicsInput,
             anyDeleteButton);
   }
 });

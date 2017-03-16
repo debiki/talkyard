@@ -64,7 +64,6 @@ function buildSite(site?: SiteData) {
       slug: string,
       description: string,
       unlisted?: boolean,
-      staffOnly?: boolean,
       deletedAtMs?: number,
     }) {
       assert(!opts.deletedAtMs || opts.deletedAtMs >= forumPage.createdAtMs);
@@ -74,7 +73,6 @@ function buildSite(site?: SiteData) {
       category.slug = opts.slug;
       category.description = opts.description;
       category.unlisted = opts.unlisted;
-      category.staffOnly = opts.staffOnly;
       category.deletedAtMs = opts.deletedAtMs;
       site.categories.push(category);
       return category;
@@ -87,7 +85,6 @@ function buildSite(site?: SiteData) {
       name: string,
       slug: string,
       unlisted?: boolean,
-      staffOnly?: boolean,
       deletedAtMs?: number,
       aboutPageText: string,
     }) {
@@ -211,7 +208,6 @@ function buildSite(site?: SiteData) {
         name: "Staff Only",
         slug: 'staff-only',
         aboutPageText: "Staff only category description.",
-        staffOnly: true,
       });
 
       forum.categories.unlistedCategory = api.addCategoryWithAboutPage(forumPage, {

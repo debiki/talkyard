@@ -174,7 +174,7 @@ class SiteDao(
   }
 
 
-  def dieOrDenyUnless(mayMaybe: MayMaybe, errorCode: String) {
+  def dieOrThrowNoUnless(mayMaybe: MayMaybe, errorCode: String) {
     COULD // avoid logging harmless internal error, see comment below,
     // by checking Globals.now() - this-dao.createdAt and doing throwForbidden() not die().
     // Later, check if current time minus request start time is small, then just

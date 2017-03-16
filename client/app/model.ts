@@ -323,8 +323,6 @@ interface Category {
   description: string;
   recentTopics?: Topic[];
   unlisted?: boolean;
-  staffOnly?: boolean;
-  onlyStaffMayCreateTopics?: boolean;
   isDefaultCategory?: boolean;
   isForumItself?: boolean;
   isDeleted?: boolean;
@@ -571,8 +569,6 @@ interface Ancestor {  // server side: [6FK02QFV]
   title: string;
   path: string;
   unlisted?: boolean;
-  staffOnly?: boolean;
-  onlyStaffMayCreateTopics?: boolean;
   isDeleted?: boolean;
 }
 

@@ -411,14 +411,6 @@ object Authz {
       if (!isStaff && !maySeeUnlisted && category.unlisted)
         return MayWhat.mayNotSee("EdE6WKQ0-Unlisted")
 
-      CLEAN_UP // deprecated, try to remove [5FKQWU02]
-      if (!isStaff && category.staffOnly)
-        return MayWhat.mayNotSee("EdE8YGK25-Staff-Only-Cat")
-
-      CLEAN_UP // Deprecated
-      if (!isStaff && category.onlyStaffMayCreateTopics)
-        mayWhat = mayWhat.copy(mayCreatePage = false)
-
       // Abort if we may not see this category, or if we don't know.
       if (mayWhat.maySee isNot true)
         return mayWhat

@@ -119,7 +119,6 @@ interface TestCategory {  // try to merge with Category in model.ts?
   frozenAtMs?: number;
   deletedAtMs?: number;
   unlisted?: boolean;
-  staffOnly?: boolean;
 }
 
 

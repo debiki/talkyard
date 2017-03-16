@@ -77,7 +77,7 @@ trait PostsDao {
       val author = authorAndLevels.user
       val page = PageDao(pageId, transaction)
 
-      dieOrDenyUnless(Authz.mayPostReply(authorAndLevels, transaction.loadGroupIds(author),
+      dieOrThrowNoUnless(Authz.mayPostReply(authorAndLevels, transaction.loadGroupIds(author),
         postType, page.meta, transaction.loadAnyPrivateGroupTalkMembers(page.meta),
         transaction.loadCategoryPathRootLast(page.meta.categoryId),
         transaction.loadPermsOnPages()), "EdEMAY0RE")
@@ -337,7 +337,7 @@ trait PostsDao {
 
       val page = PageDao(pageId, transaction)
 
-      dieOrDenyUnless(Authz.mayPostReply(authorAndLevels, transaction.loadGroupIds(author),
+      dieOrThrowNoUnless(Authz.mayPostReply(authorAndLevels, transaction.loadGroupIds(author),
         PostType.ChatMessage, page.meta, transaction.loadAnyPrivateGroupTalkMembers(page.meta),
         transaction.loadCategoryPathRootLast(page.meta.categoryId),
         transaction.loadPermsOnPages()), "EdEMAY0CHAT")
@@ -569,7 +569,7 @@ trait PostsDao {
       if (postToEdit.currentSource == newTextAndHtml.text)
         return
 
-      dieOrDenyUnless(Authz.mayEditPost(
+      dieOrThrowNoUnless(Authz.mayEditPost(
         editorAndLevels, transaction.loadGroupIds(editor),
         postToEdit, page.meta, transaction.loadAnyPrivateGroupTalkMembers(page.meta),
         inCategoriesRootLast = transaction.loadCategoryPathRootLast(page.meta.categoryId),
@@ -1554,7 +1554,7 @@ trait PostsDao {
       val categories = transaction.loadCategoryPathRootLast(pageMeta.categoryId)
       val settings = loadWholeSiteSettings(transaction)
 
-      dieOrDenyUnless(Authz.mayFlagPost(
+      dieOrThrowNoUnless(Authz.mayFlagPost(
         flagger, transaction.loadGroupIds(flagger),
         postBefore, pageMeta, transaction.loadAnyPrivateGroupTalkMembers(pageMeta),
         inCategoriesRootLast = categories,

@@ -419,9 +419,7 @@ object ReactJson {
       "categoryId" -> category.id,
       "title" -> name,
       "path" -> path,
-      "unlisted" -> category.unlisted,
-      "staffOnly" -> category.staffOnly,
-      "onlyStaffMayCreateTopics" -> category.onlyStaffMayCreateTopics)
+      "unlisted" -> category.unlisted)
     if (category.isDeleted) {
       result += "isDeleted" -> JsTrue
     }
@@ -1042,8 +1040,6 @@ object ReactJson {
       // [refactor] [5YKW294] delete this later:
       "newTopicTypes" -> JsArray(category.newTopicTypes.map(t => JsNumber(t.toInt))),
       "unlisted" -> JsBoolean(category.unlisted),
-      "staffOnly" -> JsBoolean(category.staffOnly),
-      "onlyStaffMayCreateTopics" -> JsBoolean(category.onlyStaffMayCreateTopics),
       "position" -> category.position,
       "description" -> JsStringOrNull(category.description))
     if (recentTopicsJson ne null) {

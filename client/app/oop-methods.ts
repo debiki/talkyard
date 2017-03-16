@@ -179,10 +179,6 @@ export function store_mayICreateTopics(store: Store, category: Category): boolea
     }
   }
 
-  // Deprecated, remove [6UWKT02]
-  if (category.onlyStaffMayCreateTopics && !isStaff(me))
-    may = false;
-
   return may;
 }
 
