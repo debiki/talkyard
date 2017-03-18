@@ -25,13 +25,14 @@ function runEndToEndTest {
     echo
     $cmd
     if [ $? -ne 0 ]; then
+      cmd_with_debug=$(echo $@ | sed 's/wdio /wdio-debug-9101 /')
       echo
       echo "*** ERROR [EsE5KPY02] ***"
       echo
       echo "This end-to-end test failed: (The whole next line. You can copy-paste it and run it.)"
       # Later: use --localHostname=e2e-test-manual or just e2e-test, instead of -20, so won't overwrite test site nr 20.
       # (But first add a cname entry for -manual.)
-      echo "  $@ --deleteOldSite --localHostname=e2e-test-20"
+      echo "  $cmd_with_debug --deleteOldSite --localHostname=e2e-test-20 --nt -d"
       echo
       exit 1
     else
@@ -69,7 +70,8 @@ function runAllEndToEndTests {
   runEndToEndTest s/wdio target/e2e/wdio.conf.js            --browser $browser --only user-profile-access $args
   runEndToEndTest s/wdio target/e2e/wdio.conf.js            --browser $browser --only user-profile-change-username $args
   ## [E2EBUG] runEndToEndTest s/wdio target/e2e/wdio.3chrome.conf.js    --browser $browser --only custom-forms.3browsers $args
-  runEndToEndTest s/wdio target/e2e/wdio.conf.js            --browser $browser --only view-as-stranger $args
+  runEndToEndTest s/wdio target/e2e/wdio.conf.js            --browser $browser --only authz-view-as-stranger $args
+  runEndToEndTest s/wdio target/e2e/wdio.conf.js            --browser $browser --only authz-basic-see-reply-create $args
   runEndToEndTest s/wdio target/e2e/wdio.2chrome.conf.js    --browser $browser --only impersonate.2browsers $args
   runEndToEndTest s/wdio target/e2e/wdio.2chrome.conf.js    --browser $browser --only unsubscribe.2browsers $args
   runEndToEndTest s/wdio target/e2e/wdio.2chrome.conf.js    --browser $browser --only new-user-review-ok.2browsers $args

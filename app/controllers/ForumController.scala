@@ -134,11 +134,13 @@ object ForumController extends mvc.Controller {
         mayEditPage = (permsJsObj \ "mayEditPage").asOpt[Boolean],
         mayEditComment = (permsJsObj \ "mayEditComment").asOpt[Boolean],
         mayEditWiki = (permsJsObj \ "mayEditWiki").asOpt[Boolean],
+        mayEditOwn = (permsJsObj \ "mayEditOwn").asOpt[Boolean],
         mayDeletePage = (permsJsObj \ "mayDeletePage").asOpt[Boolean],
         mayDeleteComment = (permsJsObj \ "mayDeleteComment").asOpt[Boolean],
         mayCreatePage = (permsJsObj \ "mayCreatePage").asOpt[Boolean],
         mayPostComment = (permsJsObj \ "mayPostComment").asOpt[Boolean],
-        maySee = (permsJsObj \ "maySee").asOpt[Boolean])
+        maySee = (permsJsObj \ "maySee").asOpt[Boolean],
+        maySeeOwn = (permsJsObj \ "maySeeOwn").asOpt[Boolean])
       permissions.append(newPerm)
     }
 
@@ -423,11 +425,13 @@ object ForumController extends mvc.Controller {
       "mayEditPage" -> JsBooleanOrNull(permsOnPages.mayEditPage),
       "mayEditComment" -> JsBooleanOrNull(permsOnPages.mayEditComment),
       "mayEditWiki" -> JsBooleanOrNull(permsOnPages.mayEditWiki),
+      "mayEditOwn" -> JsBooleanOrNull(permsOnPages.mayEditOwn),
       "mayDeletePage" -> JsBooleanOrNull(permsOnPages.mayDeletePage),
       "mayDeleteComment" -> JsBooleanOrNull(permsOnPages.mayDeleteComment),
       "mayCreatePage" -> JsBooleanOrNull(permsOnPages.mayCreatePage),
       "mayPostComment" -> JsBooleanOrNull(permsOnPages.mayPostComment),
-      "maySee" -> JsBooleanOrNull(permsOnPages.maySee))
+      "maySee" -> JsBooleanOrNull(permsOnPages.maySee),
+      "maySeeOwn" -> JsBooleanOrNull(permsOnPages.maySeeOwn))
   }
 
 

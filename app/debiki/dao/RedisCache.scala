@@ -111,6 +111,15 @@ class RedisCache(val siteId: SiteId, private val redis: RedisClient) {
   }
 
 
+  def clearThisSite() {
+    // Read more here: http://stackoverflow.com/questions/4006324/how-to-atomically-delete-keys-matching-a-pattern-using-redis
+    // Latent BUG: This won't work if there're many Redis nodes — the keys should instead be sent as
+    // arguments to 'del', so Redis can forward the delete requests to the correct nodes. [0GLKW24]
+    redis.eval("return redis.call('del', unpack(redis.call('keys', ARGV[1])))", keys = Nil,
+        args = Seq(s"$siteId-*"))
+  }
+
+
   // Key names
   //-------------
 

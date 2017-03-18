@@ -20,7 +20,8 @@ package com.debiki.core
 import com.debiki.core.Prelude._
 
 
-
+/** If maySeeOwn is true, then one may see one's own stuff, even if maySee is false.
+  */
 case class PermsOnPages(
   id: PermissionId,
   forPeopleId: UserId,
@@ -32,11 +33,13 @@ case class PermsOnPages(
   mayEditPage: Option[Boolean] = None,
   mayEditComment: Option[Boolean] = None,
   mayEditWiki: Option[Boolean] = None,
+  mayEditOwn: Option[Boolean] = None,
   mayDeletePage: Option[Boolean] = None,
   mayDeleteComment: Option[Boolean] = None,
   mayCreatePage: Option[Boolean] = None,
   mayPostComment: Option[Boolean] = None,
-  maySee: Option[Boolean] = None) {
+  maySee: Option[Boolean] = None,
+  maySeeOwn: Option[Boolean] = None) {
 
   // Later, perhaps:
   // pin/unpin
@@ -52,6 +55,9 @@ case class PermsOnPages(
   require(!onPageId.exists(_.isEmpty), "EdE8UGF0W3")
   require(!onPostId.contains(NoPostId), "EdE8UGF0W4")
   require(!onTagId.contains(NoTagId), "EdE8UGF0W5")
+  require(!(maySee.is(true) && maySeeOwn.is(false)), "EdE6LKWU02")
+  require(!((mayEditComment.is(true) || mayEditPage.is(true) || mayEditWiki.is(true)) &&
+    mayEditOwn.is(false)), "EdE2WJB0Y4")
 
   CLEAN_UP // change to a Bool not Opt[Bool]? then this requirement can be removed.
   require(onWholeSite isNot false, "EdE5GVR0Y1")
@@ -64,9 +70,9 @@ case class PermsOnPages(
     * as well be deleted.
     */
   def isEverythingUndefined: Boolean =
-    mayEditPage.isEmpty && mayEditComment.isEmpty && mayEditWiki.isEmpty &&
+    mayEditPage.isEmpty && mayEditComment.isEmpty && mayEditWiki.isEmpty && mayEditOwn.isEmpty &&
     mayDeletePage.isEmpty && mayDeleteComment.isEmpty && mayCreatePage.isEmpty &&
-    mayPostComment.isEmpty && maySee.isEmpty
+    mayPostComment.isEmpty && maySee.isEmpty && maySeeOwn.isEmpty
 
 }
 

@@ -136,7 +136,12 @@ class SystemDao(private val dbDaoFactory: DbDaoFactory, val cache: DaoMemCache) 
         val anyDeletedSite = sysTx.deleteSiteByName(name)
         forgetHostname(hostname)
         anyDeletedSite foreach { site =>
-          memCache.clearSingleSite(site.id)
+          dieIf(site.id > MaxTestSiteId, "EdE20PUJ6", "Trying to delete a *real* site")
+          // + also redisCache.clearThisSite() doesn't work if there are many Redis nodes [0GLKW24].
+          // This won't clear the watchbar cache: memCache.clearSingleSite(site.id)
+          // so instead:
+          memCache.clearAllSites()
+          // Redis cache cleared below. (2PKF05Y)
         }
       }
 
@@ -145,6 +150,14 @@ class SystemDao(private val dbDaoFactory: DbDaoFactory, val cache: DaoMemCache) 
         quotaLimitMegabytes = config.createSite.quotaLimitMegabytes,
         maxSitesPerIp = maxSitesPerIp, maxSitesTotal = maxSitesTotal,
         isTestSiteOkayToDelete = isTestSiteOkayToDelete, pricePlan = pricePlan, sysTx.now)
+
+      if (deleteOldSite) {
+        // Delete Redis stuff even if no site found (2PKF05Y), because sometimes, when developing,
+        // I've imported a SQL dump, resulting in most sites disappearing from the database, but
+        // not from the Redis cache. So even if 'anyDeletedSite' is None, might still need to:
+        val redisCache = new RedisCache(newSite.id, debiki.Globals.redisClient)
+        redisCache.clearThisSite()
+      }
 
       createdFromSiteId foreach { oldSiteId =>
         val oldSiteTx = sysTx.siteTransaction(oldSiteId)

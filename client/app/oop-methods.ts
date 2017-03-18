@@ -185,8 +185,8 @@ export function store_mayICreateTopics(store: Store, category: Category): boolea
 
 // Some dupl code! (8FUZWY02Q60)
 export function store_mayIReply(store: Store, post: Post): boolean {
-  // Mind map posts are considered part of the page/article itself, so one needs to be
-  // allowed to edit the page itself, to add (= reply) mind-map-posts. [7KUE20]
+  // Each reply on a mind map page is a mind map node. Thus, by replying, one modifies the mind map
+  // itself. So, one needs to be allowed to edit the *page*, to add (= reply) mind-map-posts. [7KUE20]
   if (store.pageRole === PageRole.MindMap)
     return store_mayIEditPage(store, post);
 
@@ -199,6 +199,9 @@ export function store_mayIReply(store: Store, post: Post): boolean {
   // Or "I won't approve this comment. It's off-topic because ...".
   if (post_isDeletedOrCollapsed(post) || !post.isApproved)
     return false;
+
+  if (store.pageMemberIds.indexOf(me.id) >= 0)
+    may = true;
 
   me.permsOnPages.forEach((p: PermsOnPage) => {
     if (p.onWholeSite) {
@@ -246,18 +249,23 @@ function store_mayIEditImpl(store: Store, post: Post, isEditPage: boolean): bool
       post.authorId === me.id ||
       (me.isAuthenticated && post.postType === PostType.CommunityWiki); // [05PWPZ24]
 
-  let may = isEditPage ? isOwnPage :
+  let isOwn = isEditPage ? isOwnPage :
       isOnPostOrWikiPost ||
         // In one's own mind map, one may edit all nodes, even if posted by others. [0JUK2WA5]
         post.isApproved && isMindMap && isOwnPage;
 
-  if (!post.isApproved && !may)
-    return false;
+  // Not present in server side checks. And not needed?
+  //if (!post.isApproved && !may)
+  //  return false;
 
+  let may: boolean;
   me.permsOnPages.forEach((p: PermsOnPage) => {
     if (p.onWholeSite) {
       if (isDefined2(p.mayEditPage)) {
         may = p.mayEditPage;
+      }
+      if (isDefined2(p.mayEditOwn) && isOwn) {
+        may = p.mayEditOwn;
       }
     }
   });
@@ -270,6 +278,9 @@ function store_mayIEditImpl(store: Store, post: Post, isEditPage: boolean): bool
       if (p.onCategoryId === ancestor.categoryId) {
         if (isDefined2(p.mayEditPage)) {
           may = p.mayEditPage;
+        }
+        if (isDefined2(p.mayEditOwn) && isOwn) {
+          may = p.mayEditOwn;
         }
       }
     });

@@ -572,11 +572,13 @@ object ImportExportController extends mvc.Controller {
         mayEditPage = readOptBool(jsObj, "mayEditPage"),
         mayEditComment = readOptBool(jsObj, "mayEditComment"),
         mayEditWiki = readOptBool(jsObj, "mayEditWiki"),
+        mayEditOwn = readOptBool(jsObj, "mayEditOwn"),
         mayDeletePage = readOptBool(jsObj, "mayDeletePage"),
         mayDeleteComment = readOptBool(jsObj, "mayDeleteComment"),
         mayCreatePage = readOptBool(jsObj, "mayCreatePage"),
         mayPostComment = readOptBool(jsObj, "mayPostComment"),
-        maySee = readOptBool(jsObj, "maySee")))
+        maySee = readOptBool(jsObj, "maySee"),
+        maySeeOwn = readOptBool(jsObj, "maySeeOwn")))
     }
     catch {
       case ex: IllegalArgumentException =>

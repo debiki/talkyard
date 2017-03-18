@@ -133,11 +133,13 @@ const EditCategoryDialog = createClassAndFactory({
         if (p.mayEditPage === false) delete p.mayEditPage;
         if (p.mayEditComment === false) delete p.mayEditComment;
         if (p.mayEditWiki === false) delete p.mayEditWiki;
+        if (p.mayEditOwn === false) delete p.mayEditOwn;
         if (p.mayDeletePage === false) delete p.mayDeletePage;
         if (p.mayDeleteComment === false) delete p.mayDeleteComment;
         if (p.mayCreatePage === false) delete p.mayCreatePage;
         if (p.mayPostComment === false) delete p.mayPostComment;
         if (p.maySee === false) delete p.maySee;
+        if (p.maySeeOwn === false) delete p.maySeeOwn;
       });
       return ps;
     }
@@ -357,11 +359,19 @@ function defaultPermsOnPages(newPermId: PermissionId, forWhoId: PeopleId,
     mayEditPage: isStaff || undefined,
     mayEditComment: isStaff || undefined,
     mayEditWiki: isStaff || undefined,
+    // If someone sees hen's own post, hen would probably get angry if hen couldn't edit it?
+    // And staff probably expects everyone to be allowed to edit their own posts, by default?
+    // So, 'true' by default.
+    mayEditOwn: true,
     mayDeletePage: isStaff || undefined,
     mayDeleteComment: isStaff || undefined,
     mayCreatePage: true,
     mayPostComment: true,
     maySee: true,
+    // Don't set maySeeOwn to true, because if an admin moves a topic from a public category to
+    // a staff-only category, I think hen wouldn't expect the topic author to *still* be able
+    // to view the topic (now when it's in the staff-only category).
+    maySeeOwn: undefined,
   };
 }
 
@@ -430,11 +440,29 @@ function PermissionItemWithKey(allPerms: PermsOnPage[], thisPerm: PermsOnPage, f
     r.div({ className: 's_PoP_Expl s_PoP_Expl-What' }, "may do this: "),
     r.div({ className: 's_PoP_Ps' },
       Checkbox('s_PoP_Ps_P_EdPg', "Edit other people's topics",
-          thisPerm.mayEditPage, (p: PermsOnPage, c: boolean) => p.mayEditPage = c),
+          thisPerm.mayEditPage, (p: PermsOnPage, c: boolean) => {
+        p.mayEditPage = c;
+        if (c) p.mayEditOwn = true;
+      }),
       Checkbox('s_PoP_Ps_P_EdCm', "Edit others' comments",
-          thisPerm.mayEditComment, (p: PermsOnPage, c: boolean) => p.mayEditComment = c),
+          thisPerm.mayEditComment, (p: PermsOnPage, c: boolean) => {
+        p.mayEditComment = c;
+        if (c) p.mayEditOwn = true;
+      }),
       Checkbox('s_PoP_Ps_P_EdWk', "Edit wiki posts",
-          thisPerm.mayEditWiki, (p: PermsOnPage, c: boolean) => p.mayEditWiki = c),
+          thisPerm.mayEditWiki, (p: PermsOnPage, c: boolean) => {
+        p.mayEditWiki = c;
+        if (c) p.mayEditOwn = true;
+      }),
+      Checkbox('s_PoP_Ps_P_EdOwn', "Edit one's own posts",
+          thisPerm.mayEditOwn, (p: PermsOnPage, c: boolean) => {
+        p.mayEditOwn = c;
+        if (c === false) {  // but not if undefined
+          p.mayEditPage = false;
+          p.mayEditComment = false;
+          p.mayEditWiki = false;
+        }
+      }),
       Checkbox('s_PoP_Ps_P_DlPg', "Delete others' topics",
           thisPerm.mayDeletePage, (p: PermsOnPage, c: boolean) => p.mayDeletePage = c),
       Checkbox('s_PoP_Ps_P_DlCm', "Delete others' comments",
@@ -444,7 +472,17 @@ function PermissionItemWithKey(allPerms: PermsOnPage[], thisPerm: PermsOnPage, f
       Checkbox('s_PoP_Ps_P_Re', "Post comments",
           thisPerm.mayPostComment, (p: PermsOnPage, c: boolean) => p.mayPostComment = c),
       Checkbox('s_PoP_Ps_P_See', "See other people's topics",
-          thisPerm.maySee, (p: PermsOnPage, c: boolean) => p.maySee = c)));
+          thisPerm.maySee, (p: PermsOnPage, c: boolean) => {
+        p.maySee = c;
+        if (c) p.maySeeOwn = true;
+      }),
+      Checkbox('s_PoP_Ps_P_SeeOwn', "See one's own topics",
+          thisPerm.maySeeOwn, (p: PermsOnPage, c: boolean) => {
+        p.maySeeOwn = c;
+        if (c === false) { // but not if undefined
+          p.maySee = false;
+        }
+      })));
 
   function Checkbox(className: string, label: string, checked: boolean,
           set: (p: PermsOnPage, b: boolean) => void ) {

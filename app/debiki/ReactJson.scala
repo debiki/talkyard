@@ -780,6 +780,9 @@ object ReactJson {
     if (permsOnPages.mayEditWiki.isDefined)
       json += "mayEditWiki" -> JsBooleanOrNull(permsOnPages.mayEditWiki)
 
+    if (permsOnPages.mayEditOwn.isDefined)
+      json += "mayEditOwn" -> JsBooleanOrNull(permsOnPages.mayEditOwn)
+
     if (permsOnPages.mayDeletePage.isDefined)
       json += "mayDeletePage" -> JsBooleanOrNull(permsOnPages.mayDeletePage)
 
@@ -794,6 +797,9 @@ object ReactJson {
 
     if (permsOnPages.maySee.isDefined)
       json += "maySee" -> JsBooleanOrNull(permsOnPages.maySee)
+
+    if (permsOnPages.maySeeOwn.isDefined)
+      json += "maySeeOwn" -> JsBooleanOrNull(permsOnPages.maySeeOwn)
 
     json
   }

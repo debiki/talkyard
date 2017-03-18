@@ -209,14 +209,13 @@ object Authz {
       return NoNotFound("EdEM0EDPOSTDELD")
 
     val user = userAndLevels.user
-    val isOwnPost = user.id == post.createdById  // [8UAB3WG2]
-
     val mayWhat = checkPermsOnPages(Some(user), groupIds, Some(pageMeta),
       Some(privateGroupTalkMemberIds), inCategoriesRootLast, permissions)
 
     if (mayWhat.maySee isNot true)
       return NoNotFound(s"EdEM0RE0SEE-${mayWhat.debugCode}")
 
+    val isOwnPost = user.id == post.createdById  // [8UAB3WG2]
     if (isOwnPost) {
       // Fine, may edit.
     }
@@ -318,7 +317,7 @@ object Authz {
       return MayEverything
 
     val isStaff = user.exists(_.isStaff)
-    val isAuthor = user.isDefined && pageMeta.exists(_.authorId == user.get.id)
+    val isOwnPage = user.exists(u => pageMeta.exists(_.authorId == u.id))
 
     // For now, don't let people see pages outside any category. Hmm...?
     // (<= 1 not 0: don't count the root category, no pages should be placed directly in them.)
@@ -340,11 +339,11 @@ object Authz {
       if (meta.pageRole == PageRole.SpecialContent || meta.pageRole == PageRole.Code)
         return MayWhat.mayNotSee("EdE0SEEISCODE")
 
-      if (meta.isHidden && !isStaff && !isAuthor)
+      if (meta.isHidden && !isStaff && !isOwnPage)
         return MayWhat.mayNotSee("EdE0SEEPAGEHIDDEN_")
 
       // In one's own mind map, one may edit all nodes, even if posted by others. [0JUK2WA5]
-      if (meta.pageRole == PageRole.MindMap && (isAuthor || isStaff))
+      if (meta.pageRole == PageRole.MindMap && (isOwnPage || isStaff))
         mayWhat = mayWhat.copy(mayEditPage = true, debugCode = "EdMEDOWNMINDM")
 
       // Only page participants may see things like private chats or private formal messages.
@@ -370,16 +369,12 @@ object Authz {
 
     // We'll start with no permissions, at the top category, and loop through all categories
     // down to the category in which the page is placed, and add/remove permissions along the way.
-    val isUsersPage = user.exists(u => pageMeta.exists(_.authorId == u.id))
     val isForumPage = pageMeta.exists(_.pageRole == PageRole.Forum)
     var isDeleted = pageMeta.exists(_.isDeleted)
 
     // Later: return may-not-see also if !published?
     if (isDeleted && !isStaff)
       return MayWhat.mayNotSee("EdEPAGEDELD")
-
-    if (isUsersPage)
-      mayWhat = mayWhat.copyWithMaySeeReplyEdit(debugCode = "EdMMOWN")
 
     // For now, hardcode may-see the forum page, otherwise only admins would see it.
     if (isForumPage)
@@ -390,8 +385,11 @@ object Authz {
 
     // Hmm. !maySee here? Could happen if maySee is set to false for Everyone, but true for
     // trust-level >= 1. That'd mean only people who have signed up already, may see this website.
-    if (mayWhat.maySee is false)
-      return mayWhat
+    if (mayWhat.maySee is false) {
+      // But maySeeOwn=true has precedence over maySee=false.
+      if (!isOwnPage || !mayWhat.maySeeOwn)
+        return mayWhat
+    }
 
     // Skip the root category, cannot set permissions on it. [0YWKG21]
     if (categoriesRootLast.nonEmpty) for (category <- categoriesRootLast.reverseIterator.drop(1)) {
@@ -412,8 +410,11 @@ object Authz {
         return MayWhat.mayNotSee("EdE6WKQ0-Unlisted")
 
       // Abort if we may not see this category, or if we don't know.
-      if (mayWhat.maySee isNot true)
-        return mayWhat
+      if (mayWhat.maySee isNot true) {
+        // But maySeeOwn=true has precedence over maySee=false.
+        if (!isOwnPage || !mayWhat.maySeeOwn)
+          return mayWhat
+      }
     }
 
     // Do this first here, so the is-deleted changes won't get overwritten in later loop laps above.
@@ -427,16 +428,20 @@ object Authz {
 }
 
 
-
+/**
+  * If maySeeOwn=true, then one may see one's own stuff, even if maySee=false.
+  */
 case class MayWhat(
   mayEditPage: Boolean = false,
   mayEditComment: Boolean = false,
   mayEditWiki: Boolean = false,
+  mayEditOwn: Boolean = false,
   mayDeletePage: Boolean = false,
   mayDeleteComment: Boolean = false,
   mayCreatePage: Boolean = false,
   mayPostComment: Boolean = false,
   maySee: Option[Boolean] = None,
+  maySeeOwn: Boolean = false,
   debugCode: String = "") {
 
   require(maySee.isNot(false) || (!mayEditPage && !mayEditComment && !mayEditWiki &&
@@ -446,11 +451,13 @@ case class MayWhat(
     mayEditPage = permissions.mayEditPage.getOrElse(mayEditPage),
     mayEditComment = permissions.mayEditComment.getOrElse(mayEditComment),
     mayEditWiki = permissions.mayEditWiki.getOrElse(mayEditWiki),
+    mayEditOwn = permissions.mayEditOwn.getOrElse(mayEditOwn),
     mayDeletePage = permissions.mayDeletePage.getOrElse(mayDeletePage),
     mayDeleteComment = permissions.mayDeleteComment.getOrElse(mayDeleteComment),
     mayCreatePage = permissions.mayCreatePage.getOrElse(mayCreatePage),
     mayPostComment = permissions.mayPostComment.getOrElse(mayPostComment),
     maySee = permissions.maySee.orElse(maySee),
+    maySeeOwn = permissions.maySeeOwn.getOrElse(maySeeOwn),
     debugCode)
 
   def copyWithMaySeeAndReply(debugCode: String): MayWhat = copy(
@@ -482,12 +489,13 @@ object MayWhat {
   val MayPerhapsSee: MayWhat = MayWhat.mayNotSee("EdMMBYSEE").copy(maySee = None)
 
   val MayEverything: MayWhat = MayWhat(mayEditPage = true, mayEditComment = true,
-    mayEditWiki = true, mayDeletePage = true, mayDeleteComment = true, mayCreatePage = true,
-    mayPostComment = true, maySee = Some(true), "EdMMALL")
+    mayEditWiki = true, mayEditOwn = true,
+    mayDeletePage = true, mayDeleteComment = true, mayCreatePage = true,
+    mayPostComment = true, maySee = Some(true), maySeeOwn = true, "EdMMALL")
 
   def mayNotSee(debugCode: String) = MayWhat(
-    mayEditPage = false, mayEditComment = false, mayEditWiki = false,
+    mayEditPage = false, mayEditComment = false, mayEditWiki = false, mayEditOwn = false,
     mayDeletePage = false, mayDeleteComment = false, mayCreatePage = false,
-    mayPostComment = false, maySee = Some(false), debugCode)
+    mayPostComment = false, maySee = Some(false), maySeeOwn = false, debugCode)
 
 }

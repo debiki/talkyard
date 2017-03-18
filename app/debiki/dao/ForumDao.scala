@@ -190,6 +190,7 @@ object ForumDao {
     id = NoPermissionId,
     forPeopleId = Group.EveryoneId,
     onCategoryId = Some(categoryId),
+    mayEditOwn = Some(true),
     mayCreatePage = Some(true),
     mayPostComment = Some(true),
     maySee = Some(true))
@@ -203,6 +204,7 @@ object ForumDao {
     mayEditPage = Some(true),
     mayEditComment = Some(true),
     mayEditWiki = Some(true),
+    mayEditOwn = Some(true),
     mayDeletePage = Some(true),
     mayDeleteComment = Some(true),
     mayCreatePage = Some(true),

@@ -248,11 +248,13 @@ interface PermsOnPage {
   mayEditPage?: boolean;
   mayEditComment?: boolean;
   mayEditWiki?: boolean;
+  mayEditOwn?: boolean;
   mayDeletePage?: boolean;
   mayDeleteComment?: boolean;
   mayCreatePage?: boolean;
   mayPostComment?: boolean;
   maySee?: boolean;
+  maySeeOwn?: boolean;
 }
 
 
