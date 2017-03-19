@@ -67,11 +67,12 @@ export var SelectCategoryDropdown = createClassAndFactory({
     var selectedCategory: Category =
       _.find(store.categories, c => c.id === props.selectedCategoryId);
 
-    dieIf(!selectedCategory, "Selected category missing [EsE5YFK24]");
+    dieIf(!selectedCategory && props.selectedCategoryId, "Selected category missing [EdE5YFK24]");
+    const categoryName = selectedCategory ? selectedCategory.name : "Select category...";
 
     var dropdownButton =
       Button({ onClick: this.open, className: 'zzz', ref: 'dropdownButton' },
-        selectedCategory.name + ' ', r.span({ className: 'caret' }));
+        categoryName + ' ', r.span({ className: 'caret' }));
 
     var categoryListItems = store.categories.map((category: Category) => {
       return ExplainingListItem({ onSelect: this.onCategorySelected,
