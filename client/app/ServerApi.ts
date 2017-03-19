@@ -15,8 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/// <reference path="model.ts" />
-/// <reference path="rules.ts" />
+/// <reference path="prelude.ts" />
 
 
 /* This file is available in both server and client side JS.

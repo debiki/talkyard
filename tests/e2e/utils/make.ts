@@ -1,6 +1,5 @@
 /// <reference path="../test-types.ts"/>
-/// <reference path="../../../modules/definitely-typed/lodash/lodash.d.ts"/>
-/// <reference path="../../../modules/definitely-typed/node/node.d.ts"/>
+
 import settings = require('./settings');
 import log = require('./log-and-die');
 declare function require(...whatever): any;
@@ -9,16 +8,16 @@ import _ = require('lodash');
 import assert = require('assert');
 import c = require('../test-constants');
 
-var DefaultCreatedAtMs = 1449198824000;
-var SystemUserId = 1; // [commonjs]
+const DefaultCreatedAtMs = 1449198824000;
+const SystemUserId = 1; // [commonjs]
 
-var nextPostId = 101;
+let nextPostId = 101;
 function getAndBumpNextPostId() {
   nextPostId += 1;
   return nextPostId - 1;
 }
 
-var nextUserId = 101;
+let nextUserId = 101;
 function getAndBumpNextUserId() {
   nextUserId += 1;
   return nextUserId - 1;
@@ -42,6 +41,7 @@ let emptySite: SiteData = {
   members: [],
   identities: [],
   guests: [],
+  permsOnPages: [],
   blocks: [],
   invites: [],
   categories: [],
@@ -56,10 +56,10 @@ let emptySite: SiteData = {
 };
 
 
-var make = {
+const make = {
   emptySiteOwnedByOwen: function(): SiteData {
-    var site = _.cloneDeep(emptySite);
-    var owner = make.memberOwenOwner();
+    const site = _.cloneDeep(emptySite);
+    const owner = make.memberOwenOwner();
     site.members.push(owner);
     site.meta.creatorEmailAddress = owner.emailAddress;
     return site;
@@ -175,11 +175,53 @@ var make = {
     };
   },
 
+  memberTrillian: function(): Member {
+    return {
+      id: getAndBumpNextUserId(),
+      username: "trillian",
+      fullName: "Trillian Trusted Member",
+      createdAtMs: DefaultCreatedAtMs,
+      emailAddress: "e2e-test--trillian@example.com",
+      emailVerifiedAtMs: DefaultCreatedAtMs,
+      passwordHash: "cleartext:publicTrillian123",
+      password: "publicTrillian123",
+      trustLevel: c.TestTrustLevel.Trusted,
+    };
+  },
+
+  memberRegina: function(): Member {
+    return {
+      id: getAndBumpNextUserId(),
+      username: "regina",
+      fullName: "Regina Regular Member",
+      createdAtMs: DefaultCreatedAtMs,
+      emailAddress: "e2e-test--regina@example.com",
+      emailVerifiedAtMs: DefaultCreatedAtMs,
+      passwordHash: "cleartext:publicRegina123",
+      password: "publicRegina123",
+      trustLevel: c.TestTrustLevel.Regular,
+    };
+  },
+
+  memberConny: function(): Member {
+    return {
+      id: getAndBumpNextUserId(),
+      username: "conny",
+      fullName: "Conny Core Member",
+      createdAtMs: DefaultCreatedAtMs,
+      emailAddress: "e2e-test--conny@example.com",
+      emailVerifiedAtMs: DefaultCreatedAtMs,
+      passwordHash: "cleartext:publicConny123",
+      password: "publicConny123",
+      trustLevel: c.TestTrustLevel.CoreMember,
+    };
+  },
+
   memberMallory: function(): Member {
     return {
       id: getAndBumpNextUserId(),
       username: "mallory",
-      fullName: "Mallory",
+      fullName: "Malicious Mallory",
       createdAtMs: DefaultCreatedAtMs,
       emailAddress: "mallory@ex.com",
       emailVerifiedAtMs: DefaultCreatedAtMs,
@@ -243,7 +285,7 @@ var make = {
   },
 
   rootCategoryWithIdFor: function(id: CategoryId, forumPage: Page): TestCategory {
-    var category = make.categoryWithIdFor(id, forumPage);
+    const category = make.categoryWithIdFor(id, forumPage);
     category.name = "(Root Category)";  // in Scala too [7UKPX5]
     category.slug = "(root-category)";  //
     return category;
@@ -278,7 +320,7 @@ var make = {
   }, */
 
   post: function(values: NewTestPost): TestPost {
-    var approvedHtmlSanitized = values.approvedHtmlSanitized;
+    let approvedHtmlSanitized = values.approvedHtmlSanitized;
     if (!approvedHtmlSanitized) {
       // Unless it's the title, wrap in <p>.
       approvedHtmlSanitized = values.nr === 0 ?
@@ -341,9 +383,9 @@ var make = {
     options = options || {};
 
     // Dupl test code below [6FKR4D0]
-    var rootCategoryId = 1;
+    const rootCategoryId = 1;
 
-    var forumPage = make.page({
+    const forumPage = make.page({
       id: 'fmp',
       role: c.TestPageRole.Forum,
       categoryId: rootCategoryId,
@@ -367,16 +409,43 @@ var make = {
       approvedHtmlSanitized: "<p>Forum intro text.</p>",
     }));
 
-    var rootCategory = make.rootCategoryWithIdFor(rootCategoryId, forumPage);
+    const rootCategory = make.rootCategoryWithIdFor(rootCategoryId, forumPage);
     rootCategory.defaultCategoryId = 2;
     site.categories.push(rootCategory);
 
-    var uncategorizedCategory = make.categoryWithIdFor(2, forumPage);
+    const uncategorizedCategory = make.categoryWithIdFor(2, forumPage);
     uncategorizedCategory.parentId = rootCategory.id;
     uncategorizedCategory.name = "Uncategorized";
     uncategorizedCategory.slug = "uncategorized";
     uncategorizedCategory.description = "The default category.";
     site.categories.push(uncategorizedCategory);
+
+    site.permsOnPages.push({
+      id: 1,
+      forPeopleId: c.EveryoneId,
+      onCategoryId: uncategorizedCategory.id,
+      mayEditOwn: true,
+      mayCreatePage: true,
+      mayPostComment: true,
+      maySee: true,
+      maySeeOwn: true,
+    });
+
+    site.permsOnPages.push({
+      id: 2,
+      forPeopleId: c.StaffId,
+      onCategoryId: uncategorizedCategory.id,
+      mayEditPage: true,
+      mayEditComment: true,
+      mayEditWiki: true,
+      mayEditOwn: true,
+      mayDeletePage: true,
+      mayDeleteComment: true,
+      mayCreatePage: true,
+      mayPostComment: true,
+      maySee: true,
+      maySeeOwn: true,
+    });
 
     return site;
   },

@@ -24,12 +24,11 @@ import java.{util => ju}
 
 
 class LoginAppSpec extends DaoAppSuite() {
-  lazy val dao: SiteDao = Globals.siteDao(Site.FirstSiteId)
+  var dao: SiteDao = _
 
   val Member1PasswordEnd = "lg_mb1"
   val Member1Password: String = "public-" + Member1PasswordEnd
 
-  lazy val owner: Member = createPasswordOwner("lg_adm", dao)
   lazy val moderator: Member = createPasswordModerator("lg_mod", dao)
   lazy val member1: Member = createPasswordUser(Member1PasswordEnd, dao)
   lazy val wrongMember: Member = createPasswordUser("lg_wr_mb", dao)
@@ -37,6 +36,12 @@ class LoginAppSpec extends DaoAppSuite() {
 
   "Members can login with password" - {
     val now = new ju.Date()
+
+    "prepare" in {
+      Globals.systemDao.getOrCreateFirstSite()
+      dao = Globals.siteDao(Site.FirstSiteId)
+      createPasswordOwner("lg_adm", dao)
+    }
 
     "non-existing members cannot login" in {
       intercept[DbDao.NoMemberWithThatEmailException.type] {

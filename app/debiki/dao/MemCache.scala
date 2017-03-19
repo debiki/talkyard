@@ -209,6 +209,11 @@ class MemCache(val siteId: SiteId, val cache: DaoMemCache) {
   }
 
 
+  def clearAllSites() {
+    cache.invalidateAll()
+  }
+
+
   def clearSingleSite(siteId: SiteId) {
     val siteCacheVersion = siteCacheVersionNow(siteId)
     val nextVersion = siteCacheVersion + 1  // BUG Race condition.

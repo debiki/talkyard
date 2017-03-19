@@ -24,7 +24,10 @@ import java.{util => ju}
 
 
 class TagsAppSpec extends DaoAppSuite() {
-  lazy val dao: SiteDao = Globals.siteDao(Site.FirstSiteId)
+  lazy val dao: SiteDao = {
+    Globals.systemDao.getOrCreateFirstSite()
+    Globals.siteDao(Site.FirstSiteId)
+  }
 
   lazy val categoryId: CategoryId =
     dao.createForum("Forum", "/tag-test-forum/",
@@ -73,6 +76,11 @@ class TagsAppSpec extends DaoAppSuite() {
 
   "The Dao can tag pages and posts" - {
     val now = new ju.Date()
+
+    "prepare" in {
+      dao
+      theOwner
+    }
 
     "load, add, remove tags" in {
       thePageId = createPage(PageRole.Discussion, TextAndHtml.testTitle("Title"),

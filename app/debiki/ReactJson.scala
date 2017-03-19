@@ -21,6 +21,7 @@ import com.debiki.core._
 import com.debiki.core.Prelude._
 import controllers.ForumController
 import debiki.dao.{PageDao, PageStuff, ReviewStuff, SiteDao}
+import ed.server.auth.ForumAuthzContext
 import ed.server.http._
 import java.{util => ju}
 import org.jsoup.Jsoup
@@ -71,11 +72,12 @@ object ReactJson {
     * because the "Click to show..." text would then make the summarized post as large
     * as the non-summarized version.
     */
-  val SummarizePostLengthLimit =
+  val SummarizePostLengthLimit: Int =
     PostSummaryLength + 80 // one line is roughly 80 chars
 
 
-  /** Returns (json, page-version, page-title, ids-of-authors-of-not-yet-approved-posts).
+  /** Returns (json, page-version, page-title, ids-of-authors-of-not-yet-approved-posts)
+    * only with contents everyone may see.
     */
   def pageToJson(
         pageId: PageId,
@@ -133,6 +135,7 @@ object ReactJson {
     val siteSettings = pageReq.dao.getWholeSiteSettings()
     val isFirstSiteAdminEmailMissing = site.status == SiteStatus.NoAdmin &&
       site.id == FirstSiteId && Globals.becomeFirstSiteOwnerEmail.isEmpty
+    val everyonesPerms = pageReq.dao.getPermsForEveryone()
 
     Json.obj(
       "appVersion" -> Globals.applicationVersion,
@@ -153,7 +156,7 @@ object ReactJson {
       "isInEmbeddedCommentsIframe" -> JsBoolean(false),
       "categories" -> JsArray(),
       "topics" -> JsArray(),
-      "me" -> NoUserSpecificData,
+      "me" -> noUserSpecificData(everyonesPerms),
       "rootPostId" -> JsNumber(PageParts.BodyNr),
       "usersByIdBrief" -> JsObject(Nil),
       "postsByNr" -> JsObject(Nil),
@@ -173,7 +176,8 @@ object ReactJson {
         : (String, CachedPageVersion, Option[String], Set[UserId]) = {
 
     // The json constructed here will be cached & sent to "everyone", so in this function
-    // we always specify !isStaff and !restrictedOnly.
+    // we always specify !isStaff and the requester must be a stranger (user = None):
+    val authzCtx = dao.getForumAuthzContext(None)
 
     val socialLinksHtml = dao.getWholeSiteSettings().socialLinksHtml
     val page = PageDao(pageId, transaction)
@@ -217,7 +221,8 @@ object ReactJson {
       else if (!post.isOrigPost && !post.isTitle)
         numPostsRepliesSection += 1
       val tags = tagsByPostId(post.id)
-      post.nr.toString -> postToJsonImpl(post, page, tags)
+      post.nr.toString -> postToJsonImpl(post, page, tags, includeUnapproved = false,
+        showHidden = false)
     }
 
     // Topic members (e.g. chat channel members) join/leave infrequently, so better cache them
@@ -243,7 +248,7 @@ object ReactJson {
     val (anyForumId: Option[PageId], ancestorsJsonRootFirst: Seq[JsObject]) =
       makeForumIdAndAncestorsJson(page.meta, dao)
 
-    val categories = makeCategoriesJson(isStaff = false, restrictedOnly = false, dao)
+    val categories = makeCategoriesJson(authzCtx, dao)
 
     val anyLatestTopics: Seq[JsObject] =
       if (page.role == PageRole.Forum) {
@@ -251,9 +256,10 @@ object ReactJson {
           "DwE7KYP2", s"Forum page '${page.id}', site '${transaction.siteId}', has no category id")
         val orderOffset = anyPageQuery.getOrElse(
           PageQuery(PageOrderOffset.ByBumpTime(None), PageFilter.ShowAll))
-        val topics = ForumController.listTopicsInclPinned(rootCategoryId, orderOffset, dao,
+        val authzCtx = dao.getForumAuthzContext(user = None)
+        val topics = ForumController.listMaySeeTopicsInclPinned(rootCategoryId, orderOffset, dao,
           includeDescendantCategories = true,
-          isStaff = false, restrictedOnly = false,
+          authzCtx,
           limit = ForumController.NumTopicsToList)
         val pageStuffById = dao.getPageStuffById(topics.map(_.pageId))
         topics.foreach(_.meta.addUserIdsTo(userIdsToLoad))
@@ -312,7 +318,7 @@ object ReactJson {
       "isInEmbeddedCommentsIframe" -> JsBoolean(page.role == PageRole.EmbeddedComments),
       "categories" -> categories,
       "topics" -> JsArray(anyLatestTopics),
-      "me" -> NoUserSpecificData,
+      "me" -> noUserSpecificData(authzCtx.permissions),
       "rootPostId" -> JsNumber(BigDecimal(anyPageRoot getOrElse PageParts.BodyNr)),
       "usersByIdBrief" -> usersByIdJson,
       "postsByNr" -> JsObject(allPostsJson),
@@ -338,6 +344,7 @@ object ReactJson {
 
   def makeSpecialPageJson(request: DebikiRequest[_], inclCategoriesJson: Boolean): JsObject = {
     val dao = request.dao
+    val requester = request.requester
     val siteSettings = dao.getWholeSiteSettings()
     var result = Json.obj(
       "appVersion" -> Globals.applicationVersion,
@@ -353,8 +360,8 @@ object ReactJson {
       "siteSections" -> makeSiteSectionsJson(dao))
 
     if (inclCategoriesJson) {
-      result += "categories" -> makeCategoriesJson(
-          isStaff = request.isStaff, restrictedOnly = false, dao)
+      val authzCtx = dao.getForumAuthzContext(requester)
+      result += "categories" -> makeCategoriesJson(authzCtx, dao)
     }
 
     result
@@ -368,7 +375,7 @@ object ReactJson {
     val categoryId = pageMeta.categoryId getOrElse {
       return (None, Nil)
     }
-    val categoriesRootFirst = dao.loadCategoriesRootLast(categoryId).reverse
+    val categoriesRootFirst = dao.loadAncestorCategoriesRootLast(categoryId).reverse
     if (categoriesRootFirst.isEmpty) {
       return (None, Nil)
     }
@@ -412,9 +419,7 @@ object ReactJson {
       "categoryId" -> category.id,
       "title" -> name,
       "path" -> path,
-      "unlisted" -> category.unlisted,
-      "staffOnly" -> category.staffOnly,
-      "onlyStaffMayCreateTopics" -> category.onlyStaffMayCreateTopics)
+      "unlisted" -> category.unlisted)
     if (category.isDeleted) {
       result += "isDeleted" -> JsTrue
     }
@@ -450,7 +455,7 @@ object ReactJson {
   /** Private, so it cannot be called outside a transaction.
     */
   private def postToJsonImpl(post: Post, page: Page, tags: Set[TagLabel],
-        includeUnapproved: Boolean = false, showHidden: Boolean = false): JsObject = {
+        includeUnapproved: Boolean, showHidden: Boolean): JsObject = {
 
     val depth = page.parts.depthOf(post.nr)
 
@@ -592,26 +597,30 @@ object ReactJson {
 
 
   /** Creates a dummy root post, needed when rendering React elements. */
-  def embeddedCommentsDummyRootPost(topLevelComments: immutable.Seq[Post]) = Json.obj(
+  def embeddedCommentsDummyRootPost(topLevelComments: immutable.Seq[Post]): JsObject = Json.obj(
     "nr" -> JsNumber(PageParts.BodyNr),
     "childIdsSorted" ->
       JsArray(Post.sortPostsBestFirst(topLevelComments).map(reply => JsNumber(reply.nr))))
 
 
-  val NoUserSpecificData = Json.obj(
-    "rolePageSettings" -> JsObject(Nil),
-    "notifications" -> JsArray(),
-    "watchbar" -> EmptyWatchbar,
-    "votes" -> JsObject(Nil),
-    "unapprovedPosts" -> JsObject(Nil),
-    "unapprovedPostAuthors" -> JsArray(),
-    "postNrsAutoReadLongAgo" -> JsArray(Nil),  // should remove [5WKW219] + search for elsewhere
-    "postNrsAutoReadNow" -> JsArray(Nil),      // should remove
-    "marksByPostId" -> JsObject(Nil),
-    "closedHelpMessages" -> JsObject(Nil))
+  def noUserSpecificData(everyonesPerms: Seq[PermsOnPages]): JsObject = {
+    require(everyonesPerms.forall(_.forPeopleId == Group.EveryoneId), "EdE2WBG08")
+    Json.obj(
+      "rolePageSettings" -> JsObject(Nil),
+      "notifications" -> JsArray(),
+      "watchbar" -> EmptyWatchbar,
+      "votes" -> JsObject(Nil),
+      "unapprovedPosts" -> JsObject(Nil),
+      "unapprovedPostAuthors" -> JsArray(),
+      "postNrsAutoReadLongAgo" -> JsArray(Nil),  // should remove [5WKW219] + search for elsewhere
+      "postNrsAutoReadNow" -> JsArray(Nil),      // should remove
+      "marksByPostId" -> JsObject(Nil),
+      "closedHelpMessages" -> JsObject(Nil),
+      "permsOnPages" -> permsOnPagesToJson(everyonesPerms, excludeEveryone = false))
+  }
 
 
-  // Ought to rename this function (i.e. userDataJson) because it really should come as a
+  RENAME // this function (i.e. userDataJson) so it won't come as a
   // surprise that it updates the watchbar! But to what? Or reanme the class too? Or break out?
   def userDataJson(pageRequest: PageRequest[_], unapprovedPostAuthorIds: Set[UserId])
         : Option[JsObject] = {
@@ -620,6 +629,8 @@ object ReactJson {
     }
 
     val dao = pageRequest.dao
+    val permissions = pageRequest.authzContext.permissions
+
     var watchbar: BareWatchbar = dao.getOrCreateWatchbar(user.id)
     if (pageRequest.pageExists) {
       // (See comment above about ought-to-rename this whole function / stuff.)
@@ -636,7 +647,7 @@ object ReactJson {
     val (restrictedCategories, restrictedTopics) = listRestrictedCategoriesAndTopics(pageRequest)
     dao.readOnlyTransaction { transaction =>
       Some(userDataJsonImpl(user, pageRequest.pageId, watchbarWithTitles, restrictedCategories,
-        restrictedTopics, unapprovedPostAuthorIds, transaction))
+        restrictedTopics, permissions, unapprovedPostAuthorIds, transaction))
     }
   }
 
@@ -645,18 +656,19 @@ object ReactJson {
     val user = request.user getOrElse {
       return JsNull
     }
+    val permissions = request.authzContext.permissions
     val watchbar = request.dao.getOrCreateWatchbar(user.id)
     val watchbarWithTitles = request.dao.fillInWatchbarTitlesEtc(watchbar)
     request.dao.readOnlyTransaction(userDataJsonImpl(user, anyPageId = None, watchbarWithTitles,
-      restrictedCategories = JsArray(), restrictedTopics = Nil,
+      restrictedCategories = JsArray(), restrictedTopics = Nil, permissions,
       unapprovedPostAuthorIds = Set.empty, _))
   }
 
 
   private def userDataJsonImpl(user: User, anyPageId: Option[PageId],
         watchbar: WatchbarWithTitles, restrictedCategories: JsArray,
-        restrictedTopics: Seq[JsValue], unapprovedPostAuthorIds: Set[UserId],
-        transaction: SiteTransaction): JsObject = {
+        restrictedTopics: Seq[JsValue], permissions: Seq[PermsOnPages],
+        unapprovedPostAuthorIds: Set[UserId], transaction: SiteTransaction): JsObject = {
 
     val reviewTasksAndCounts =
       if (user.isStaff) transaction.loadReviewTaskCounts(user.isAdmin)
@@ -679,7 +691,7 @@ object ReactJson {
 
     val threatLevel = user match {
       case member: Member => member.threatLevel
-      case guest: Guest =>
+      case _: Guest =>
         COULD // load or get-from-cache IP bans ("blocks") for this guest and derive the
         // correct threat level. However, for now, since this is for the brower only, this'll do:
         ThreatLevel.HopefullySafe
@@ -714,6 +726,10 @@ object ReactJson {
 
       "watchbar" -> watchbar.toJsonWithTitles,
 
+      // The Everyone group's permissions are included in the generic no-user json already;
+      // don't include it here again. [8JUYW4B]
+      "permsOnPages" -> permsOnPagesToJson(permissions, excludeEveryone = true),
+
       "restrictedTopics" -> restrictedTopics,
       "restrictedCategories" -> restrictedCategories,
       "votes" -> anyVotes,
@@ -728,6 +744,67 @@ object ReactJson {
   }
 
 
+  def permsOnPagesToJson(permsOnPages: Seq[PermsOnPages], excludeEveryone: Boolean): JsArray = {
+    val perms =
+      if (excludeEveryone) permsOnPages.filter(_.forPeopleId != Group.EveryoneId)
+      else permsOnPages
+    JsArray(perms.map(permissionToJson))
+  }
+
+
+  def permissionToJson(permsOnPages: PermsOnPages): JsObject = {
+    var json = Json.obj(
+      "id" -> permsOnPages.id,
+      "forPeopleId" -> permsOnPages.forPeopleId)
+
+    if (permsOnPages.onWholeSite.isDefined)
+      json += "onWholeSite" -> JsBooleanOrNull(permsOnPages.onWholeSite)
+
+    if (permsOnPages.onCategoryId.isDefined)
+      json += "onCategoryId" -> JsNumberOrNull(permsOnPages.onCategoryId)
+
+    if (permsOnPages.onPageId.isDefined)
+      json += "onPageId" -> JsStringOrNull(permsOnPages.onPageId)
+
+    if (permsOnPages.onPostId.isDefined)
+      json += "onPostId" -> JsNumberOrNull(permsOnPages.onPostId)
+
+    // later: "onTagId" -> JsNumberOrNull(permsOnPages.onTagId),
+
+    if (permsOnPages.mayEditPage.isDefined)
+      json += "mayEditPage" -> JsBooleanOrNull(permsOnPages.mayEditPage)
+
+    if (permsOnPages.mayEditComment.isDefined)
+      json += "mayEditComment" -> JsBooleanOrNull(permsOnPages.mayEditComment)
+
+    if (permsOnPages.mayEditWiki.isDefined)
+      json += "mayEditWiki" -> JsBooleanOrNull(permsOnPages.mayEditWiki)
+
+    if (permsOnPages.mayEditOwn.isDefined)
+      json += "mayEditOwn" -> JsBooleanOrNull(permsOnPages.mayEditOwn)
+
+    if (permsOnPages.mayDeletePage.isDefined)
+      json += "mayDeletePage" -> JsBooleanOrNull(permsOnPages.mayDeletePage)
+
+    if (permsOnPages.mayDeleteComment.isDefined)
+      json += "mayDeleteComment" -> JsBooleanOrNull(permsOnPages.mayDeleteComment)
+
+    if (permsOnPages.mayCreatePage.isDefined)
+      json += "mayCreatePage" -> JsBooleanOrNull(permsOnPages.mayCreatePage)
+
+    if (permsOnPages.mayPostComment.isDefined)
+      json += "mayPostComment" -> JsBooleanOrNull(permsOnPages.mayPostComment)
+
+    if (permsOnPages.maySee.isDefined)
+      json += "maySee" -> JsBooleanOrNull(permsOnPages.maySee)
+
+    if (permsOnPages.maySeeOwn.isDefined)
+      json += "maySeeOwn" -> JsBooleanOrNull(permsOnPages.maySeeOwn)
+
+    json
+  }
+
+
   private def rolePageSettingsToJson(settings: UsersPageSettings): JsObject = {
     Json.obj(
       "notfLevel" -> JsNumber(settings.notfLevel.toInt))
@@ -737,14 +814,18 @@ object ReactJson {
   COULD ; REFACTOR // move to CategoriesDao? and change from param PageRequest to
   // user + pageMeta?
   def listRestrictedCategoriesAndTopics(request: PageRequest[_]): (JsArray, Seq[JsValue]) = {
-    // Currently there're only 2 types of "personal" topics: unlisted, & staff-only.
-    if (!request.isStaff)
-      return (JsArray(), Nil)
+    import request.dao
+
+    // OLD: Currently there're only 2 types of "personal" topics: unlisted, & staff-only.
+    // DON'T: if (!request.isStaff)
+      //return (JsArray(), Nil)
+
+    val authzCtx = request.authzContext
 
     // SHOULD avoid starting a new transaction, so can remove workaround [7YKG25P].
     // (request.dao might start a new transaction)
     val (categories, defaultCategoryId) =
-      request.dao.listAllCategories(isStaff = true, restrictedOnly = true)
+      request.dao.listAllMaySeeCategories(authzCtx)
 
     // A tiny bit dupl code [5YK03W5]
     val categoriesJson = JsArray(categories.filterNot(_.isRoot) map { category =>
@@ -764,12 +845,11 @@ object ReactJson {
       else {
         val orderOffset = PageQuery(PageOrderOffset.ByBumpTime(None), PageFilter.ShowAll)
         // SHOULD avoid starting a new transaction, so can remove workaround [7YKG25P].
-        // (We're passing request.dao to ForumController below.)
-        val topics = ForumController.listTopicsInclPinned(
-          categoryId, orderOffset, request.dao,
+        // (We're passing dao to ForumController below.)
+        val topics = ForumController.listMaySeeTopicsInclPinned(
+          categoryId, orderOffset, dao,
           includeDescendantCategories = true,
-          isStaff = true,
-          restrictedOnly = true,
+          authzCtx,
           limit = ForumController.NumTopicsToList)
         val pageStuffById = request.dao.getPageStuffById(topics.map(_.pageId))
         (topics, pageStuffById)
@@ -868,12 +948,12 @@ object ReactJson {
     // COULD load flags too, at least if user is staff [7KW20WY1]
     val votes = actions.filter(_.isInstanceOf[PostVote]).asInstanceOf[immutable.Seq[PostVote]]
     val userVotesMap = UserPostVotes.makeMap(votes)
-    val votesByPostId = userVotesMap map { case (postNr, votes) =>
+    val votesByPostId = userVotesMap map { case (postNr, postVotes) =>
       var voteStrs = Vector[String]()
-      if (votes.votedLike) voteStrs = voteStrs :+ "VoteLike"
-      if (votes.votedWrong) voteStrs = voteStrs :+ "VoteWrong"
-      if (votes.votedBury) voteStrs = voteStrs :+ "VoteBury"
-      if (votes.votedUnwanted) voteStrs = voteStrs :+ "VoteUnwanted"
+      if (postVotes.votedLike) voteStrs = voteStrs :+ "VoteLike"
+      if (postVotes.votedWrong) voteStrs = voteStrs :+ "VoteWrong"
+      if (postVotes.votedBury) voteStrs = voteStrs :+ "VoteBury"
+      if (postVotes.votedUnwanted) voteStrs = voteStrs :+ "VoteUnwanted"
       postNr.toString -> Json.toJson(voteStrs)
     }
     JsObject(votesByPostId.toSeq)
@@ -934,18 +1014,18 @@ object ReactJson {
   }
 
 
-  def makeCategoriesStorePatch(isStaff: Boolean, restrictedOnly: Boolean, dao: SiteDao): JsValue = {
-    val categoriesJson = makeCategoriesJson(isStaff = isStaff, restrictedOnly = restrictedOnly, dao)
+  def makeCategoriesStorePatch(authzCtx: ForumAuthzContext, dao: SiteDao)
+        : JsValue = {
+    val categoriesJson = makeCategoriesJson(authzCtx, dao)
     Json.obj(
       "appVersion" -> Globals.applicationVersion,
       "categories" -> categoriesJson)
   }
 
 
-  def makeCategoriesJson(isStaff: Boolean, restrictedOnly: Boolean, dao: SiteDao)
+  def makeCategoriesJson(authzCtx: ForumAuthzContext, dao: SiteDao)
         : JsArray = {
-    val (categories, defaultCategoryId) = dao.listAllCategories(isStaff = isStaff,
-      restrictedOnly = restrictedOnly)
+    val (categories, defaultCategoryId) = dao.listAllMaySeeCategories(authzCtx)
     // A tiny bit dupl code [5YK03W5]
     val categoriesJson = JsArray(categories.filterNot(_.isRoot) map { category =>
       makeCategoryJson(category, defaultCategoryId.contains(category.id))
@@ -955,7 +1035,7 @@ object ReactJson {
 
 
   def makeCategoryJson(category: Category, isDefaultCategory: Boolean,
-        recentTopicsJson: Seq[JsObject] = null) = {
+        recentTopicsJson: Seq[JsObject] = null): JsObject = {
     var json = Json.obj(
       "id" -> category.id,
       "name" -> category.name,
@@ -966,8 +1046,6 @@ object ReactJson {
       // [refactor] [5YKW294] delete this later:
       "newTopicTypes" -> JsArray(category.newTopicTypes.map(t => JsNumber(t.toInt))),
       "unlisted" -> JsBoolean(category.unlisted),
-      "staffOnly" -> JsBoolean(category.staffOnly),
-      "onlyStaffMayCreateTopics" -> JsBoolean(category.onlyStaffMayCreateTopics),
       "position" -> category.position,
       "description" -> JsStringOrNull(category.description))
     if (recentTopicsJson ne null) {
@@ -1156,7 +1234,7 @@ object ReactJson {
   }
 
 
-  def EmptyWatchbar = Json.obj(
+  def EmptyWatchbar: JsObject = Json.obj(
     WatchbarSection.RecentTopics.toInt.toString -> JsArray(Nil),
     WatchbarSection.Notifications.toInt.toString -> JsArray(Nil),
     WatchbarSection.ChatChannels.toInt.toString -> JsArray(Nil),
@@ -1247,7 +1325,7 @@ object ReactJson {
       postsByPageId.toSeq.map(pageIdPosts => {
         val pageId = pageIdPosts._1
         val posts = pageIdPosts._2
-        val page = new PageDao(pageId, transaction)
+        val page = PageDao(pageId, transaction)
         val postsJson = posts map { p =>
           postToJsonImpl(p, page, tagsByPostId.getOrElse(p.id, Set.empty),
             includeUnapproved = false, showHidden = false)
@@ -1312,19 +1390,19 @@ object ReactJson {
   def JsUploadUrlOrNull(uploadRef: Option[UploadRef]): JsValue =
     uploadRef.map(ref => JsString(ref.url)) getOrElse JsNull
 
-  def JsStringOrNull(value: Option[String]) =
+  def JsStringOrNull(value: Option[String]): JsValue =
     value.map(JsString).getOrElse(JsNull)
 
-  def JsBooleanOrNull(value: Option[Boolean]) =
+  def JsBooleanOrNull(value: Option[Boolean]): JsValue =
     value.map(JsBoolean).getOrElse(JsNull)
 
-  def JsNumberOrNull(value: Option[Int]) =
+  def JsNumberOrNull(value: Option[Int]): JsValue =
     value.map(JsNumber(_)).getOrElse(JsNull)
 
-  def JsLongOrNull(value: Option[Long]) =
+  def JsLongOrNull(value: Option[Long]): JsValue =
     value.map(JsNumber(_)).getOrElse(JsNull)
 
-  def JsFloatOrNull(value: Option[Float]) =
+  def JsFloatOrNull(value: Option[Float]): JsValue =
     value.map(v => JsNumber(BigDecimal(v))).getOrElse(JsNull)
 
   def JsWhenMs(when: When) =
@@ -1333,19 +1411,19 @@ object ReactJson {
   def JsDateMs(value: ju.Date) =
     JsNumber(value.getTime)
 
-  def JsWhenMsOrNull(value: Option[When]) =
+  def JsWhenMsOrNull(value: Option[When]): JsValue =
     value.map(when => JsNumber(when.unixMillis)).getOrElse(JsNull)
 
-  def JsDateMsOrNull(value: Option[ju.Date]) =
+  def JsDateMsOrNull(value: Option[ju.Date]): JsValue =
     value.map(JsDateMs).getOrElse(JsNull)
 
-  def DateEpochOrNull(value: Option[ju.Date]) =
+  def DateEpochOrNull(value: Option[ju.Date]): JsValue =
     value.map(date => JsNumber(date.getTime)).getOrElse(JsNull)
 
   def date(value: ju.Date) =
     JsString(toIso8601NoSecondsNoT(value))
 
-  def dateOrNull(value: Option[ju.Date]) = value match {
+  def dateOrNull(value: Option[ju.Date]): JsValue = value match {
     case Some(v) => date(v)
     case None => JsNull
   }

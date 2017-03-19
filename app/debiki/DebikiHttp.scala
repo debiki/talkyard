@@ -110,22 +110,26 @@ object DebikiHttp {
    */
   case class ResultException(result: Result) extends QuickException {
     override def toString = s"Status ${result.header.status}: $bodyToString"
-    override def getMessage = toString
+    override def getMessage: String = toString
 
-    def statusCode = result.header.status
+    def statusCode: Int = result.header.status
 
     def bodyToString: String = {
-      implicit val materializer = play.api.Play.materializer  // what is that [6KFW02G]
-      val futureByteString = result.body.consumeData(materializer)
-      val byteString = Await.result(futureByteString, Duration.fromNanos(1000*1000*1000))
-      byteString.utf8String
+      play.api.Play.maybeApplication match {
+        case None => "(Play app gone [EdM2WKG07])"
+        case Some(app) =>
+          implicit val materializer = play.api.Play.materializer(app)  // what is that [6KFW02G]
+          val futureByteString = result.body.consumeData(materializer)
+          val byteString = Await.result(futureByteString, Duration.fromNanos(1000*1000*1000))
+          byteString.utf8String
+      }
     }
 
     // ScalaTest prints the stack trace but not the exception message. However this is
     // a QuickException — it has no stack trace. Let's create a helpful fake stack trace
     // that shows the exception message, so one knows what happened.
-    if (Play.isTest) {
-      val message = s"ResultException, status $statusCode [EsM0FST0]:\n$bodyToString"
+    if (Globals.isOrWasTest) {
+      val message = s"ResultException, status $statusCode [EsMRESEX]:\n$bodyToString"
       setStackTrace(Array(new StackTraceElement(message, "", "", 0)))
     }
   }
@@ -262,10 +266,13 @@ object DebikiHttp {
     // Play supports one HTTP and one HTTPS port only, so it makes little sense
     // to include any port number when looking up a site.
     val hostname = if (host contains ':') host.span(_ != ':')._1 else host
-    def firstSiteIdAndHostname =
-      SiteBrief(Site.FirstSiteId, hostname = Globals.firstSiteHostname getOrElse {
-        throwForbidden("EsE5UYK2", "No first site hostname configured (debiki.hostname)")
-      }, systemDao.theSite(FirstSiteId).status)
+    def firstSiteIdAndHostname = {
+      val hostname = Globals.firstSiteHostname getOrElse throwForbidden(
+        "EsE5UYK2", o"""No first site hostname configured (config value:
+            ${Globals.FirstSiteHostnameConfigValue})""")
+      val firstSite = systemDao.getOrCreateFirstSite()
+      SiteBrief(Site.FirstSiteId, hostname, firstSite.status)
+    }
 
     if (Globals.firstSiteHostname.contains(hostname))
       return firstSiteIdAndHostname
@@ -309,7 +316,7 @@ object DebikiHttp {
           // to it and when we still don't know its ip, just after installation.
           return firstSiteIdAndHostname
         }
-        throwNotFound("DwE0NSS0", "There is no site with that hostname")
+        throwNotFound("DwE0NSS0", s"There is no site with hostname '$hostname'")
     }
     val site = systemDao.getSite(lookupResult.siteId) getOrDie "EsE2KU503"
     site.brief

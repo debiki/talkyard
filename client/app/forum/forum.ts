@@ -16,9 +16,7 @@
  */
 
 /// <reference path="../../typedefs/react/react.d.ts" />
-/// <reference path="../../typedefs/lodash/lodash.d.ts" />
 /// <reference path="../prelude.ts" />
-/// <reference path="../constants.ts" />
 /// <reference path="../utils/react-utils.ts" />
 /// <reference path="../utils/utils.ts" />
 /// <reference path="../utils/window-zoom-resize-mixin.ts" />
@@ -421,6 +419,7 @@ var ForumButtons = createComponent({
     morebundle.getEditCategoryDialog(dialog => {
       if (this.isMounted()) {
         dialog.open(this.props.activeCategory.id);
+        // BUG needs to call this.setCategory(edited-category.slug), if slug changed. [7AFDW01]
       }
     });
   },
@@ -476,8 +475,14 @@ var ForumButtons = createComponent({
       // (However, if user-specific-data hasn't yet been activated, the "problem" is probably
       // just that we're going to show a restricted category, which isn't available before
       // user specific data added. (6KEWM02). )
+      // Or hen renamed the slug of an existing category. [7AFDW01]
+      // Or hen is not allowed to access the category.
       return !store.userSpecificDataAdded ? null : r.p({},
-        "Category not found. Did you just create it? Then reload the page please. [EsE04PK27]");
+          r.br(),
+          "Category not found. Did you just create it? Or renamed it? Or you're not allowed " +
+          "to access it? Or perhaps it doesn't exist? [EdE0CAT]",
+          r.br(), r.br(),
+          PrimaryLinkButton({ href: '/' }, "Go to the homepage."));
     }
 
     var showsCategoryTree = this.props.routes[SortOrderRouteIndex].path === RoutePathCategories;
@@ -631,24 +636,24 @@ var ForumButtons = createComponent({
               // ElasticSearch disabled server side, and is:* not supported anyway.
               disabled: true, title: "Not completely implemented" }));
     */
-    var sortOrderRoutePath = this.props.routes[SortOrderRouteIndex].path;
+    const sortOrderRoutePath = this.props.routes[SortOrderRouteIndex].path;
 
-    var createTopicBtn;
-    if (sortOrderRoutePath !== RoutePathCategories && !(
-          activeCategory.onlyStaffMayCreateTopics && !isStaff(me))) {
+    let createTopicBtn;
+    const mayCreateTopics = store_mayICreateTopics(store, activeCategory);
+    if (sortOrderRoutePath !== RoutePathCategories && mayCreateTopics) {
      if (this.props.numWaitingForCritique < MaxWaitingForCritique)  // for now only [plugin]
       createTopicBtn = PrimaryButton({ onClick: this.createTopic, id: 'e2eCreateSth',
           className: 'esF_BB_CreateBtn'},
         createTopicBtnTitle(activeCategory));
     }
 
-    var createCategoryBtn;
+    let createCategoryBtn;
     if (sortOrderRoutePath === RoutePathCategories && me.isAdmin) {
       createCategoryBtn = PrimaryButton({ onClick: this.createCategory, id: 'e2eCreateCategoryB' },
         "Create Category");
     }
 
-    var editCategoryBtn;
+    let editCategoryBtn;
     if (!activeCategory.isForumItself && me.isAdmin) {
       editCategoryBtn = Button({ onClick: this.editCategory, className: 'esF_BB_EditCat' },
         "Edit Category");

@@ -18,7 +18,6 @@
 package controllers
 
 import debiki.dao.{CategoriesDao, CategoryToSave, PageStuff, SiteDao}
-import collection.mutable
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki._
@@ -28,10 +27,12 @@ import java.{util => ju}
 import play.api.mvc
 import play.api.libs.json._
 import play.api.mvc._
+import scala.collection.{immutable, mutable}
 import scala.collection.mutable.ArrayBuffer
 import scala.util.Try
 import Utils.ValidationImplicits._
 import DebikiHttp.{throwBadReq, throwBadRequest, throwNotFound}
+import ed.server.auth.ForumAuthzContext
 
 
 /** Handles requests related to forums and forum categories.
@@ -51,38 +52,49 @@ object ForumController extends mvc.Controller {
 
 
   def loadCategory(id: String): Action[Unit] = AdminGetAction { request =>
+    import request.dao
     val categoryId = Try(id.toInt) getOrElse throwBadRequest("DwE6PU1", "Invalid category id")
-    val (category, isDefault) = request.dao.loadTheCategory(categoryId)
-    val json = categoryToJson(category, isDefault, recentTopics = Nil, pageStuffById = Map.empty)
-    OkSafeJson(json)
+    val (category, isDefault) = dao.loadTheCategory(categoryId)
+    val catJson = categoryToJson(category, isDefault, recentTopics = Nil, pageStuffById = Map.empty)
+    val (allPerms, groups) = dao.readOnlyTransaction { tx =>
+      (tx.loadPermsOnPages(), tx.loadGroupsAsSeq())
+    }
+    val catPerms = allPerms.filter(_.onCategoryId.contains(categoryId))
+    OkSafeJson(Json.obj(
+      "category" -> catJson,
+      "permissions" -> catPerms.map(ReactJson.permissionToJson),
+      "groups" -> groups.map(groupToJson)))
   }
 
 
   def saveCategory: Action[JsValue] = AdminPostJsonAction(maxBytes = 1000) { request =>
-    val body = request.body
-    val sectionPageId = (body \ "sectionPageId").as[PageId]
-    val unlisted = (body \ "unlisted").asOpt[Boolean].getOrElse(false)
-    val staffOnly = (body \ "staffOnly").asOpt[Boolean].getOrElse(false)
-    val onlyStaffMayCreateTopics = (body \ "onlyStaffMayCreateTopics").asOpt[Boolean].getOrElse(false)
-    val defaultTopicTypeInt = (body \ "defaultTopicType").as[Int]
+    BUG // fairly harmless in this case: The lost update bug.
+    import request.{dao, body, requester}
+    val categoryJson = (body \ "category").as[JsObject]
+    val permissionsJson = (body \ "permissions").as[JsArray]
+
+    val sectionPageId = (categoryJson \ "sectionPageId").as[PageId]
+    val unlisted = (categoryJson \ "unlisted").asOpt[Boolean] is true
+    val defaultTopicTypeInt = (categoryJson \ "defaultTopicType").as[Int]
     val defaultTopicType = PageRole.fromInt(defaultTopicTypeInt) getOrElse throwBadReq(
         "DwE7KUP3", s"Bad new topic type int: $defaultTopicTypeInt")
 
-    val shallBeDefaultCategory = (body \ "isDefault").as[Boolean]
+    val shallBeDefaultCategory = (categoryJson \ "isDefaultCategory").asOpt[Boolean] is true
+    val categoryId = (categoryJson \ "id").as[Int]
+    if (categoryId == NoCategoryId)
+      throwBadRequest("EdE5PJB2L", s"Bad category id: $NoCategoryId")
 
     val categoryData = CategoryToSave(
-      anyId = (body \ "categoryId").asOpt[CategoryId],
+      anyId = Some(categoryId),
       sectionPageId = sectionPageId,
-      parentId = (body \ "parentCategoryId").as[CategoryId],
-      name = (body \ "name").as[String],
-      slug = (body \ "slug").as[String],
+      parentId = (categoryJson \ "parentCategoryId").as[CategoryId],
+      name = (categoryJson \ "name").as[String],
+      slug = (categoryJson \ "slug").as[String],
       description = CategoriesDao.CategoryDescriptionSource,
-      position = (body \ "position").as[Int],
+      position = (categoryJson \ "position").as[Int],
       newTopicTypes = List(defaultTopicType),
       shallBeDefaultCategory = shallBeDefaultCategory,
-      unlisted = unlisted,
-      staffOnly = staffOnly,
-      onlyStaffMayCreateTopics = onlyStaffMayCreateTopics)
+      unlisted = unlisted)
 
     import Category._
 
@@ -98,17 +110,59 @@ object ForumController extends mvc.Controller {
     if (categoryData.slug.length > MaxSlugLength)
       throwBadRequest("EsE9MFU4", s"Too long category slug: '${categoryData.slug}'")
 
-    val category = categoryData.anyId match {
-      case Some(_) =>
-        request.dao.editCategory(categoryData, request.who)
-      case None =>
-        val (category, _) = request.dao.createCategory(categoryData, request.who)
-        category
+    val permissions = ArrayBuffer[PermsOnPages]()
+    permissionsJson.value foreach { permsJsValue: JsValue =>
+      val permsJsObj: JsObject = permsJsValue match {
+        case obj: JsObject => obj
+        case bad => throwBadRequest("EdE2W4UY0", s"Bad permission list entry: ${classNameOf(bad)}")
+      }
+
+      val onCategoryId: Option[CategoryId] = (permsJsObj \ "onCategoryId").asOpt[Int]
+      if (onCategoryId isNot categoryId)
+        throwBadRequest("EdE6UWK02", o"""A permission's onCategoryId = $onCategoryId is different
+          from the category's id = $categoryId""")
+
+      throwForbiddenIf(onCategoryId.isEmpty, "EdE6PJ0S2", "No onCategoryId specified")
+      val newPerm = PermsOnPages(
+        id = (permsJsObj \ "id").as[PermissionId],
+        forPeopleId = (permsJsObj \ "forPeopleId").as[UserId],
+        onWholeSite = None,
+        onCategoryId = onCategoryId,
+        onPageId = None,
+        onPostId = None,
+        onTagId = None,
+        mayEditPage = (permsJsObj \ "mayEditPage").asOpt[Boolean],
+        mayEditComment = (permsJsObj \ "mayEditComment").asOpt[Boolean],
+        mayEditWiki = (permsJsObj \ "mayEditWiki").asOpt[Boolean],
+        mayEditOwn = (permsJsObj \ "mayEditOwn").asOpt[Boolean],
+        mayDeletePage = (permsJsObj \ "mayDeletePage").asOpt[Boolean],
+        mayDeleteComment = (permsJsObj \ "mayDeleteComment").asOpt[Boolean],
+        mayCreatePage = (permsJsObj \ "mayCreatePage").asOpt[Boolean],
+        mayPostComment = (permsJsObj \ "mayPostComment").asOpt[Boolean],
+        maySee = (permsJsObj \ "maySee").asOpt[Boolean],
+        maySeeOwn = (permsJsObj \ "maySeeOwn").asOpt[Boolean])
+      permissions.append(newPerm)
     }
+
+    val (category, permsWithIds) =
+      if (categoryData.isNewCategory) {
+        val result = request.dao.createCategory(
+          categoryData, permissions.to[immutable.Seq], request.who)
+        (result.category, result.permissionsWithIds)
+      }
+      else {
+        val editedCategory = request.dao.editCategory(
+          categoryData, permissions.to[immutable.Seq], request.who)
+        (editedCategory, permissions)
+      }
+
+    val callersGroupIds = request.authzContext.groupIds
+    val callersNewPerms = permsWithIds.filter(callersGroupIds contains _.forPeopleId)
 
     OkSafeJson(Json.obj(
       "allCategories" -> ReactJson.makeCategoriesJson(
-        isStaff = true, restrictedOnly = false, request.dao),
+        dao.getForumAuthzContext(requester), request.dao),
+      "myNewPermissions" -> JsArray(callersNewPerms map permissionToJson),
       "newCategoryId" -> category.id,
       "newCategorySlug" -> category.slug))
   }
@@ -125,10 +179,11 @@ object ForumController extends mvc.Controller {
 
 
   private def deleteUndeleteCategory(request: JsonPostRequest, delete: Boolean): Result = {
+    import request.{dao, requester}
     val categoryId = (request.body \ "categoryId").as[CategoryId]
     request.dao.deleteUndeleteCategory(categoryId, delete = delete, request.who)
     val patch = ReactJson.makeCategoriesStorePatch(
-      isStaff = true, restrictedOnly = false, request.dao)
+      dao.getForumAuthzContext(requester), request.dao)
     OkSafeJson(patch)
   }
 
@@ -136,7 +191,7 @@ object ForumController extends mvc.Controller {
   /** Later, I'll add about user pages? About tag? So category-id is optional, might
     * be user-id or tag-id instead.
     */
-  def redirectToAboutPage(categoryId: Option[CategoryId]) = StaffGetAction { request =>
+  def redirectToAboutPage(categoryId: Option[CategoryId]) = AdminGetAction { request =>
     val pageId =
       categoryId map { id =>
         request.dao.loadAboutCategoryPageId(id) getOrElse {
@@ -150,28 +205,31 @@ object ForumController extends mvc.Controller {
 
 
   def listTopics(categoryId: Int) = GetAction { request =>
+    SECURITY; TESTS_MISSING  // securified
+    import request.{dao, requester}
+    val authzCtx = dao.getForumAuthzContext(requester)
     val pageQuery: PageQuery = parseThePageQuery(request)
     throwForbiddenIf(pageQuery.pageFilter.includesDeleted && !request.isStaff, "EdE5FKZX2",
       "Only staff can list deleted pages")
-    val topics = listTopicsInclPinned(categoryId, pageQuery, request.dao,
-      includeDescendantCategories = true, isStaff = request.isStaff, restrictedOnly = false)
-    makeTopicsReply(topics, request.dao)
+    val topics = listMaySeeTopicsInclPinned(categoryId, pageQuery, dao,
+      includeDescendantCategories = true, authzCtx)
+    makeTopicsResponse(topics, dao)
   }
 
 
   def listTopicsByUser(userId: UserId) = GetAction { request =>
-    val caller = request.user
-    val isStaffOrSelf = caller.exists(_.isStaff) || caller.exists(_.id == userId)
-    val topicsInclForbidden = request.dao.loadPagesByUser(
+    import request.{dao, requester}
+    val isStaffOrSelf = requester.exists(_.isStaff) || requester.exists(_.id == userId)
+    val topicsInclForbidden = dao.loadPagesByUser(
       userId, isStaffOrSelf = isStaffOrSelf, limit = 200)
     val topics = topicsInclForbidden filter { page: PagePathAndMeta =>
-      request.dao.maySeePageUseCache(page.meta, caller, maySeeUnlisted = isStaffOrSelf)._1
+      dao.maySeePageUseCache(page.meta, requester, maySeeUnlisted = isStaffOrSelf)._1
     }
-    makeTopicsReply(topics, request.dao)
+    makeTopicsResponse(topics, dao)
   }
 
 
-  def makeTopicsReply(topics: Seq[PagePathAndMeta], dao: SiteDao): Result = {
+  private def makeTopicsResponse(topics: Seq[PagePathAndMeta], dao: SiteDao): Result = {
     val pageStuffById = dao.getPageStuffById(topics.map(_.pageId))
     val users = dao.getUsersAsSeq(pageStuffById.values.flatMap(_.userIds))
     val topicsJson: Seq[JsObject] = topics.map(topicToJson(_, pageStuffById))
@@ -184,8 +242,11 @@ object ForumController extends mvc.Controller {
 
   def listCategories(forumId: PageId) = GetAction { request =>
     unused("EsE4KFC02")
-    val (categories, defaultCategoryId) = request.dao.listSectionCategories(forumId,
-      isStaff = request.isStaff, restrictedOnly = false)
+    SECURITY; TESTS_MISSING  // securified
+    import request.{dao, requester}
+    val authzCtx = dao.getForumAuthzContext(requester)
+    val (categories, defaultCategoryId) = request.dao.listMaySeeSectionCategories(forumId,
+      authzCtx)
     val json = JsArray(categories.map({ category =>
       categoryToJson(category, category.id == defaultCategoryId, recentTopics = Nil,
           pageStuffById = Map.empty)
@@ -195,8 +256,12 @@ object ForumController extends mvc.Controller {
 
 
   def listCategoriesAndTopics(forumId: PageId) = GetAction { request =>
-    val (categories, defaultCategoryId) = request.dao.listSectionCategories(forumId,
-      isStaff = request.isStaff, restrictedOnly = false)
+    SECURITY; TESTS_MISSING // securified
+    import request.{dao, requester}
+    val authzCtx = dao.getForumAuthzContext(requester)
+
+    val (categories, defaultCategoryId) = dao.listMaySeeSectionCategories(forumId,
+      authzCtx)
 
     val recentTopicsByCategoryId =
       mutable.Map[CategoryId, Seq[PagePathAndMeta]]()
@@ -205,15 +270,14 @@ object ForumController extends mvc.Controller {
     val pageQuery = PageQuery(PageOrderOffset.ByBumpTime(None), parsePageFilter(request))
 
     for (category <- categories) {
-      val recentTopics = listTopicsInclPinned(category.id, pageQuery, request.dao,
-        includeDescendantCategories = true, isStaff = request.isStaff, restrictedOnly = false,
-        limit = 6)
+      val recentTopics = listMaySeeTopicsInclPinned(category.id, pageQuery, dao,
+        includeDescendantCategories = true, authzCtx, limit = 6)
       recentTopicsByCategoryId(category.id) = recentTopics
       pageIds.append(recentTopics.map(_.pageId): _*)
     }
 
     val pageStuffById: Map[PageId, debiki.dao.PageStuff] =
-      request.dao.getPageStuffById(pageIds)
+      dao.getPageStuffById(pageIds)
 
     val json = JsArray(categories.map({ category =>
       categoryToJson(category, category.id == defaultCategoryId,
@@ -224,25 +288,21 @@ object ForumController extends mvc.Controller {
   }
 
 
-  def listTopicsInclPinned(categoryId: CategoryId, pageQuery: PageQuery, dao: debiki.dao.SiteDao,
-        includeDescendantCategories: Boolean, isStaff: Boolean, restrictedOnly: Boolean,
+  def listMaySeeTopicsInclPinned(categoryId: CategoryId, pageQuery: PageQuery, dao: debiki.dao.SiteDao,
+        includeDescendantCategories: Boolean, authzCtx: ForumAuthzContext,
         limit: Int = NumTopicsToList)
         : Seq[PagePathAndMeta] = {
-    var topics: Seq[PagePathAndMeta] = dao.loadPagesInCategory(
-      categoryId, includeDescendantCategories, isStaff = isStaff, restrictedOnly = restrictedOnly,
-      pageQuery, limit)
+    SECURITY; TESTS_MISSING  // securified
 
-    // For now. COULD do the filtering in the db query instead, so won't find 0 pages just because
-    // all most-recent-pages are hidden.
-    if (!isStaff) {
-      topics = topics.filter(!_.meta.isHidden)
-    }
+    val topics: Seq[PagePathAndMeta] = dao.loadMaySeePagesInCategory(
+      categoryId, includeDescendantCategories, authzCtx,
+      pageQuery, limit)
 
     // If sorting by bump time, sort pinned topics first. Otherwise, don't.
     val topicsInclPinned = pageQuery.orderOffset match {
       case orderOffset: PageOrderOffset.ByBumpTime if orderOffset.offset.isEmpty =>
-        val pinnedTopics = dao.loadPagesInCategory(
-          categoryId, includeDescendantCategories, isStaff = isStaff, restrictedOnly = restrictedOnly,
+        val pinnedTopics = dao.loadMaySeePagesInCategory(
+          categoryId, includeDescendantCategories, authzCtx,
           pageQuery.copy(orderOffset = PageOrderOffset.ByPinOrderLoadOnlyPinned), limit)
         val notPinned = topics.filterNot(topic => pinnedTopics.exists(_.id == topic.id))
         val topicsSorted = (pinnedTopics ++ notPinned) sortBy { topic =>
@@ -350,6 +410,42 @@ object ForumController extends mvc.Controller {
       "frozenAtMs" -> dateOrNull(topic.meta.frozenAt),
       "hiddenAtMs" -> JsWhenMsOrNull(topic.meta.hiddenAt),
       "deletedAtMs" -> JsDateMsOrNull(topic.meta.deletedAt))
+  }
+
+
+  def permissionToJson(permsOnPages: PermsOnPages): JsObject = {
+    Json.obj(
+      "id" -> permsOnPages.id,
+      "forPeopleId" -> permsOnPages.forPeopleId,
+      "onWholeSite" -> JsBooleanOrNull(permsOnPages.onWholeSite),
+      "onCategoryId" -> JsNumberOrNull(permsOnPages.onCategoryId),
+      "onPageId" -> JsStringOrNull(permsOnPages.onPageId),
+      "onPostId" -> JsNumberOrNull(permsOnPages.onPostId),
+      // later: "onTagId" -> JsNumberOrNull(permsOnPages.onTagId),
+      "mayEditPage" -> JsBooleanOrNull(permsOnPages.mayEditPage),
+      "mayEditComment" -> JsBooleanOrNull(permsOnPages.mayEditComment),
+      "mayEditWiki" -> JsBooleanOrNull(permsOnPages.mayEditWiki),
+      "mayEditOwn" -> JsBooleanOrNull(permsOnPages.mayEditOwn),
+      "mayDeletePage" -> JsBooleanOrNull(permsOnPages.mayDeletePage),
+      "mayDeleteComment" -> JsBooleanOrNull(permsOnPages.mayDeleteComment),
+      "mayCreatePage" -> JsBooleanOrNull(permsOnPages.mayCreatePage),
+      "mayPostComment" -> JsBooleanOrNull(permsOnPages.mayPostComment),
+      "maySee" -> JsBooleanOrNull(permsOnPages.maySee),
+      "maySeeOwn" -> JsBooleanOrNull(permsOnPages.maySeeOwn))
+  }
+
+
+  REFACTOR // Move to ... JsonMaker? later when has been created.
+  def groupToJson(group: Group): JsObject = {
+    var json = Json.obj(
+      "id" -> group.id,
+      "username" -> group.theUsername,
+      "fullName" -> group.name)
+      // "grantsTrustLevel" -> group.grantsTrustLevel)
+    group.tinyAvatar foreach { uploadRef =>
+      json += "avatarUrl" -> JsString(uploadRef.url)
+    }
+    json
   }
 
 }

@@ -18,7 +18,6 @@
 /// <reference path="prelude.ts" />
 /// <reference path="utils/utils.ts" />
 /// <reference path="store-getters.ts" />
-/// <reference path="../typedefs/lodash/lodash.d.ts" />
 
 
 /* Object Oriented Programming methods, like so: className_methodName(instance, args...),
@@ -88,6 +87,9 @@ export function notfLevel_title(notfLevel: NotfLevel): string {
   }
 }
 
+export function post_isDeletedOrCollapsed(post: Post): boolean {
+  return post.isPostDeleted || post.isTreeDeleted || post.isPostCollapsed || post.isTreeCollapsed;
+}
 
 export function post_shallRenderAsHidden(post: Post): boolean {
   return post.isBodyHidden && _.isEmpty(post.sanitizedHtml);
@@ -143,6 +145,159 @@ export function store_isPageDeleted(store: Store): boolean {
   return !!store.pageDeletedAtMs || _.some(store.ancestorsRootFirst, a => a.isDeleted);
 }
 
+
+export function store_mayICreateTopics(store: Store, category: Category): boolean {
+  let may: boolean;
+  let currentCategory = category;
+  const me = store.me;
+
+  me.permsOnPages.forEach((p: PermsOnPage) => {
+    if (p.onWholeSite) {
+      if (isDefined2(p.mayCreatePage)) {
+        may = p.mayCreatePage;
+      }
+    }
+  });
+
+  if (category.isForumItself) {
+    // May we create topics in *any* category in the whole forum?
+    may = !!store_findCatsWhereIMayCreateTopics(store).length;
+  }
+  else {
+    // May we create topics in this specific category?
+    while (currentCategory) {
+      me.permsOnPages.forEach((p: PermsOnPage) => {
+        if (p.onCategoryId === currentCategory.id) {
+          if (isDefined2(p.mayCreatePage)) {
+            may = p.mayCreatePage;
+          }
+        }
+      });
+      // Latent BUG: should check cats starting at root, but here we start with the "childmost" cat.
+      // Fix, before enabling child cats. [0GMK2WAL]
+      currentCategory = _.find(store.categories, c => c.id === currentCategory.parentId);
+    }
+  }
+
+  return may;
+}
+
+
+// Some dupl code! (8FUZWY02Q60)
+export function store_mayIReply(store: Store, post: Post): boolean {
+  // Each reply on a mind map page is a mind map node. Thus, by replying, one modifies the mind map
+  // itself. So, one needs to be allowed to edit the *page*, to add (= reply) mind-map-posts. [7KUE20]
+  if (store.pageRole === PageRole.MindMap)
+    return store_mayIEditPage(store, post);
+
+  let may: boolean;
+  const ancestorCategories: Ancestor[] = store.ancestorsRootFirst;
+  const me = store.me;
+
+  // Later: [8PA2WFM] Perhaps let staff reply, although not approved. So staff can say
+  // "If you please remove <sth that violates the site guidelines>, I'll approve the comment".
+  // Or "I won't approve this comment. It's off-topic because ...".
+  if (post_isDeletedOrCollapsed(post) || !post.isApproved)
+    return false;
+
+  if (store.pageMemberIds.indexOf(me.id) >= 0)
+    may = true;
+
+  me.permsOnPages.forEach((p: PermsOnPage) => {
+    if (p.onWholeSite) {
+      if (isDefined2(p.mayPostComment)) {
+        may = p.mayPostComment;
+      }
+    }
+  });
+
+  // Here we loop through the cats in the correct order though, [0GMK2WAL].
+  for (let i = 0; i < ancestorCategories.length; ++i) {
+    const ancestor = ancestorCategories[i];
+    me.permsOnPages.forEach((p: PermsOnPage) => {
+      if (p.onCategoryId === ancestor.categoryId) {
+        if (isDefined2(p.mayPostComment)) {
+          may = p.mayPostComment;
+        }
+      }
+    });
+  }
+
+  return may;
+}
+
+
+export function store_mayIEditPage(store: Store, post: Post): boolean {
+  return store_mayIEditImpl(store, post, true);
+}
+
+
+export function store_mayIEditPost(store: Store, post: Post): boolean {
+  return store_mayIEditImpl(store, post, false);
+}
+
+
+// Some dupl code! (8FUZWY02Q60)
+function store_mayIEditImpl(store: Store, post: Post, isEditPage: boolean): boolean {
+  if (post_isDeletedOrCollapsed(post))
+    return false;
+
+  const me = store.me;
+  const isMindMap = store.pageRole === PageRole.MindMap;
+  const isOwnPage = store_thisIsMyPage(store);
+  const isOnPostOrWikiPost =
+      post.authorId === me.id ||
+      (me.isAuthenticated && post.postType === PostType.CommunityWiki); // [05PWPZ24]
+
+  let isOwn = isEditPage ? isOwnPage :
+      isOnPostOrWikiPost ||
+        // In one's own mind map, one may edit all nodes, even if posted by others. [0JUK2WA5]
+        post.isApproved && isMindMap && isOwnPage;
+
+  // Not present in server side checks. And not needed?
+  //if (!post.isApproved && !may)
+  //  return false;
+
+  let may: boolean;
+  me.permsOnPages.forEach((p: PermsOnPage) => {
+    if (p.onWholeSite) {
+      if (isDefined2(p.mayEditPage)) {
+        may = p.mayEditPage;
+      }
+      if (isDefined2(p.mayEditOwn) && isOwn) {
+        may = p.mayEditOwn;
+      }
+    }
+  });
+
+  // Here we loop through the cats in the correct order though, [0GMK2WAL].
+  const ancestorCategories: Ancestor[] = store.ancestorsRootFirst;
+  for (let i = 0; i < ancestorCategories.length; ++i) {
+    const ancestor = ancestorCategories[i];
+    me.permsOnPages.forEach((p: PermsOnPage) => {
+      if (p.onCategoryId === ancestor.categoryId) {
+        if (isDefined2(p.mayEditPage)) {
+          may = p.mayEditPage;
+        }
+        if (isDefined2(p.mayEditOwn) && isOwn) {
+          may = p.mayEditOwn;
+        }
+      }
+    });
+  }
+
+  // COULD check threat level here? May-not if is-severe-threat.
+
+  return may;
+}
+
+
+export function store_findCatsWhereIMayCreateTopics(store: Store): Category[] {
+  return _.filter(store.categories, (c: Category) => {
+    if (c.isForumItself) return false;
+    return store_mayICreateTopics(store, c);
+  });
+}
 
 
 // Trust and threat levels

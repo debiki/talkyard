@@ -92,7 +92,7 @@ describe("spam test, no external services:", () => {
       id: topics.oldTopicUrl,
       role: c.TestPageRole.Discussion,
       authorId: maja.id,
-      categoryId: 1,
+      categoryId: 2,
     });
     site.pages.push(page);
     site.pagePaths.push(make.pagePath(page.id, '/', false, 'old-topic'));
@@ -276,7 +276,9 @@ describe("spam test, no external services:", () => {
 
   it("And his other pages also get hidden", () =>  {
     michaelsBrowser.go(topics.bunniesNoRepliesUrl);
-    michaelsBrowser.pageTitle.assertPageHidden();
+    // Previously: michaelsBrowser.pageTitle.assertPageHidden();
+    // Now, with groups & different authz:
+    michaelsBrowser.assertWholePageHidden();
   });
 
   it("... unless it includes someone else's not-hidden post", () =>  {

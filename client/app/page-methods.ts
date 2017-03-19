@@ -17,7 +17,6 @@
 
 /// <reference path="prelude.ts" />
 /// <reference path="utils/utils.ts" />
-/// <reference path="../typedefs/lodash/lodash.d.ts" />
 
 
 /* This Flux store is perhaps a bit weird, not sure. I'll switch to Redux or

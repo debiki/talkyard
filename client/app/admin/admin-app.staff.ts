@@ -28,21 +28,19 @@
    module debiki2.admin {
 //------------------------------------------------------------------------------
 
-var r = React.DOM;
-var ReactBootstrap: any = window['ReactBootstrap'];
-var Nav = reactCreateFactory(ReactBootstrap.Nav);
-var NavItem = reactCreateFactory(ReactBootstrap.NavItem);
-var TabbedArea = reactCreateFactory(ReactBootstrap.TabbedArea);
-var TabPane = reactCreateFactory(ReactBootstrap.TabPane);
-var Alert = reactCreateFactory(ReactBootstrap.Alert);
+const r = React.DOM;
+const ReactBootstrap: any = window['ReactBootstrap'];
+const Nav = reactCreateFactory(ReactBootstrap.Nav);
+const NavItem = reactCreateFactory(ReactBootstrap.NavItem);
+const Alert = reactCreateFactory(ReactBootstrap.Alert);
 
-var ReactRouter = window['ReactRouter'];
-var Route = reactCreateFactory(ReactRouter.Route);
-var Redirect = reactCreateFactory(ReactRouter.Redirect);
-var PageUnloadAlerter = utils.PageUnloadAlerter;
+const ReactRouter = window['ReactRouter'];
+const Route = reactCreateFactory(ReactRouter.Route);
+const Redirect = reactCreateFactory(ReactRouter.Redirect);
+const PageUnloadAlerter = utils.PageUnloadAlerter;
 
 
-var AdminRoot = '/-/admin/';
+const AdminRoot = '/-/admin/';
 
 // Make the components async? So works also if more-bundle.js hasn't yet been loaded? [4WP7GU5]
 export function routes() {

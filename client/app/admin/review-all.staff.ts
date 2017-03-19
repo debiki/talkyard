@@ -25,6 +25,26 @@
 var r = React.DOM;
 
 
+/** The review reasons are a 64 bit bitflag. See this Scala file for their meanings:
+ *   modules/debiki-core/src/main/scala/com/debiki/core/ReviewReason.scala
+ */
+const ReviewReasons = {
+  isByThreatUser: (reviewTask: ReviewTask) => reviewTask.reasonsLong & (1 << 0),
+  isByNewUser: (reviewTask: ReviewTask) => reviewTask.reasonsLong & (1 << 1),
+  newPost: (reviewTask: ReviewTask) => reviewTask.reasonsLong & (1 << 4),
+  noBumpPost: (reviewTask: ReviewTask) => reviewTask.reasonsLong & (1 << 5),
+  edit: (reviewTask: ReviewTask) => reviewTask.reasonsLong & (1 << 6),
+  lateEdit: (reviewTask: ReviewTask) => reviewTask.reasonsLong & (1 << 7),
+  postFlagged: (reviewTask: ReviewTask) => reviewTask.reasonsLong & (1 << 8),
+  postUnpopular: (reviewTask: ReviewTask) => reviewTask.reasonsLong & (1 << 9),
+  postIsSpam: (reviewTask: ReviewTask) => reviewTask.reasonsLong & (1 << 10),
+  userCreated: (reviewTask: ReviewTask) => reviewTask.reasonsLong & (1 << 20),
+  userNewAvatar: (reviewTask: ReviewTask) => reviewTask.reasonsLong & (1 << 21),
+  userNameEdited: (reviewTask: ReviewTask) => reviewTask.reasonsLong & (1 << 22),
+  userAboutTextEdited: (reviewTask: ReviewTask) => reviewTask.reasonsLong & (1 << 23),
+};
+
+
 export var ReviewAllPanelComponent = React.createClass(<any> {
   componentDidMount: function() {
     let deferred = Server.loadEditorAndMoreBundlesGetDeferred();

@@ -62,13 +62,13 @@ object PageController extends mvc.Controller {
       throwForbidden("DwE8GKE4", "No category specified")
     }
 
-    val categoriesRootLast = dao.loadCategoriesRootLast(anyCategoryId)
+    val categoriesRootLast = dao.loadAncestorCategoriesRootLast(anyCategoryId)
 
     throwNoUnless(Authz.mayCreatePage(
       request.theUserAndLevels, dao.getGroupIds(request.theUser),
       pageRole, PostType.Normal, pinWhere = None, anySlug = anySlug, anyFolder = anyFolder,
       inCategoriesRootLast = categoriesRootLast,
-      relevantPermissions = dao.getPermsOnPages(categories = categoriesRootLast)),
+      permissions = dao.getPermsOnPages(categories = categoriesRootLast)),
       "EdE5KW20A")
 
     val pagePath = dao.createPage(pageRole, pageStatus, anyCategoryId, anyFolder,

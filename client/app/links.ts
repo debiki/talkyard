@@ -18,6 +18,7 @@
 // In this file: Constructs links, e.g. to a user's profile page.
 // Usage: MenuItemLink({ href: linkToCurrentUserProfilePage(store) }, "View your profile")
 
+/// <reference path="prelude.ts"/>
 /// <reference path="utils/utils.ts"/>
 
 //------------------------------------------------------------------------------
@@ -35,13 +36,14 @@ export function linkToPostNr(pageId: PageId, postNr: PostNr): string {
 }
 
 
-export function linkToAdminPage(hostname?: string): string {
-  var origin = hostname ? '//' + hostname : '';
-  return origin + '/-/admin/';
+export function linkToAdminPage(me: Myself): string {
+  // By default, redirects to path not available to non-admins. So send non-admins to reviews section.
+  const morePath = me.isAdmin ? '' : 'review/all';
+  return '/-/admin/' + morePath;
 }
 
 export function linkToAdminPageAdvancedSettings(hostname?: string): string {
-  var origin = hostname ? '//' + hostname : '';
+  const origin = hostname ? '//' + hostname : '';
   return origin + '/-/admin/settings/advanced';
 }
 
@@ -98,7 +100,7 @@ export function linkToAboutPage(): string {
 export function goBackToSite() {
   // Hmm, could inline this instead. Was more complicated in the past, when using
   // an URL param instead of sessionStorage.
-  var previousUrl = getFromSessionStorage('returnToSiteUrl') || '/';
+  const previousUrl = getFromSessionStorage('returnToSiteUrl') || '/';
   window.location.replace(previousUrl);
 }
 

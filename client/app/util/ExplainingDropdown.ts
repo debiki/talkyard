@@ -42,9 +42,11 @@ export interface ExplainingTitleText {
   iconUrl?: string;
   title: string;
   text: any;
+  key?: any;
 }
 
 
+// COULD change to pure fn
 export var ExplainingListItem = createComponent({
   onClick: function(event) {
     event.preventDefault();

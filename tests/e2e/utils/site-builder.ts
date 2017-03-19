@@ -1,6 +1,5 @@
 /// <reference path="../test-types.ts"/>
-/// <reference path="../../../modules/definitely-typed/lodash/lodash.d.ts"/>
-/// <reference path="../../../modules/definitely-typed/node/node.d.ts"/>
+
 import log = require('./log-and-die');
 import make = require('./make');
 declare function require(...whatever): any;
@@ -10,13 +9,20 @@ import assert = require('assert');
 import c = require('../test-constants');
 
 
-let buildSite = function(site?: SiteData) {
+function makeSiteOwnedByOwenBuilder() {
+  return buildSite();
+}
+
+
+function buildSite(site?: SiteData) {
 
   if (!site) {
     site = make.emptySiteOwnedByOwen();
   }
 
   let api = {
+    theSite: site,
+
     getSite: function(): SiteData {
       return site;
     },
@@ -58,7 +64,6 @@ let buildSite = function(site?: SiteData) {
       slug: string,
       description: string,
       unlisted?: boolean,
-      staffOnly?: boolean,
       deletedAtMs?: number,
     }) {
       assert(!opts.deletedAtMs || opts.deletedAtMs >= forumPage.createdAtMs);
@@ -68,7 +73,6 @@ let buildSite = function(site?: SiteData) {
       category.slug = opts.slug;
       category.description = opts.description;
       category.unlisted = opts.unlisted;
-      category.staffOnly = opts.staffOnly;
       category.deletedAtMs = opts.deletedAtMs;
       site.categories.push(category);
       return category;
@@ -81,14 +85,13 @@ let buildSite = function(site?: SiteData) {
       name: string,
       slug: string,
       unlisted?: boolean,
-      staffOnly?: boolean,
       deletedAtMs?: number,
       aboutPageText: string,
     }) {
       let optsWithDescr: any = _.assign({ description: opts.aboutPageText }, opts);
       let category = api.addCategoryNoAboutPage(forumPage, optsWithDescr);
       api.addPage({
-        id: `about_cat_${opts.slug}`,
+        id: `about_cat_${opts.slug}`.substr(0, 32),
         folder: '/',
         showId: false,
         slug: `about-cat-${opts.slug}`,
@@ -205,7 +208,6 @@ let buildSite = function(site?: SiteData) {
         name: "Staff Only",
         slug: 'staff-only',
         aboutPageText: "Staff only category description.",
-        staffOnly: true,
       });
 
       forum.categories.unlistedCategory = api.addCategoryWithAboutPage(forumPage, {
@@ -224,6 +226,59 @@ let buildSite = function(site?: SiteData) {
         slug: 'deleted-category',
         aboutPageText: "Deleted category description.",
         deletedAtMs: forumPage.createdAtMs + 1000 * 3600 * 24,
+      });
+
+      // ---- Permissions on categories
+
+      function addDefaultCatPerms(categoryId: CategoryId, startPermissionId: PermissionId) {
+        site.permsOnPages.push({
+          id: startPermissionId,
+          forPeopleId: c.EveryoneId,
+          onCategoryId: categoryId,
+          mayEditOwn: true,
+          mayCreatePage: true,
+          mayPostComment: true,
+          maySee: true,
+          maySeeOwn: true,
+        });
+
+        site.permsOnPages.push({
+          id: startPermissionId + 1,
+          forPeopleId: c.StaffId,
+          onCategoryId: categoryId,
+          mayEditPage: true,
+          mayEditComment: true,
+          mayEditWiki: true,
+          mayEditOwn: true,
+          mayDeletePage: true,
+          mayDeleteComment: true,
+          mayCreatePage: true,
+          mayPostComment: true,
+          maySee: true,
+          maySeeOwn: true,
+        });
+      }
+
+      addDefaultCatPerms(forum.categories.categoryA.id, 1);
+      addDefaultCatPerms(forum.categories.categoryB.id, 3);
+      addDefaultCatPerms(forum.categories.unlistedCategory.id, 5);
+      addDefaultCatPerms(forum.categories.deletedCategory.id, 7);
+
+      // Staff only:
+      site.permsOnPages.push({
+        id: 9,
+        forPeopleId: c.StaffId,
+        onCategoryId: forum.categories.staffOnlyCategory.id,
+        mayEditPage: true,
+        mayEditComment: true,
+        mayEditWiki: true,
+        mayEditOwn: true,
+        mayDeletePage: true,
+        mayDeleteComment: true,
+        mayCreatePage: true,
+        mayPostComment: true,
+        maySee: true,
+        maySeeOwn: true,
       });
 
       // ---- Pages
@@ -322,7 +377,9 @@ let buildSite = function(site?: SiteData) {
   };
 
   return api;
-};
+}
 
+const fns = { buildSite, makeSiteOwnedByOwenBuilder };
 
-export = buildSite;
+export = fns;
+

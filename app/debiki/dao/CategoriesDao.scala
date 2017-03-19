@@ -22,6 +22,7 @@ import com.debiki.core.Prelude._
 import debiki.DebikiHttp.throwNotFound
 import ed.server.http.throwForbiddenIf
 import debiki.TextAndHtml
+import ed.server.auth.{Authz, ForumAuthzContext, MayMaybe}
 import java.{util => ju}
 import scala.collection.{immutable, mutable}
 import scala.collection.mutable.ArrayBuffer
@@ -42,11 +43,12 @@ case class CategoryToSave(
   newTopicTypes: immutable.Seq[PageRole],
   shallBeDefaultCategory: Boolean,
   unlisted: Boolean,
-  staffOnly: Boolean,
-  onlyStaffMayCreateTopics: Boolean,
   description: String,
-  anyId: Option[CategoryId] = None, // Some() if editing
+  anyId: Option[CategoryId] = None, // Some() if editing, < 0 if creating COULD change from Option[CategoryId] to CategoryId
   isCreatingNewForum: Boolean = false) {
+
+  require(anyId isNot NoCategoryId, "EdE5LKAW0")
+  def isNewCategory: Boolean = anyId.exists(_ < 0)
 
   val aboutTopicTitle: TextAndHtml = TextAndHtml.forTitle(s"About the $name category")
   val aboutTopicBody: TextAndHtml = TextAndHtml.forBodyOrComment(description)
@@ -62,13 +64,16 @@ case class CategoryToSave(
     description = None,
     newTopicTypes = newTopicTypes,
     unlisted = unlisted,
-    staffOnly = staffOnly,
-    onlyStaffMayCreateTopics = onlyStaffMayCreateTopics,
     createdAt = createdAt,
     updatedAt = createdAt)
 
 }
 
+
+case class CreateCategoryResult(
+  category: Category,
+  pagePath: PagePath,
+  permissionsWithIds: immutable.Seq[PermsOnPages])
 
 
 /** Loads and saves categories.
@@ -87,12 +92,12 @@ trait CategoriesDao {
     * Sorts by Category.position (which doesn't make much sense if there are sub categories).
     * Returns (categories, default-category-id).
     */
-  def listSectionCategories(pageId: PageId, isStaff: Boolean, restrictedOnly: Boolean)
+  def listMaySeeSectionCategories(pageId: PageId, authzCtx: ForumAuthzContext)
         : (Seq[Category], CategoryId) = {
     loadRootCategory(pageId) match {
       case Some(rootCategory) =>
-        val categories = listCategoriesInTree(rootCategory.id, includeRoot = false,
-          isStaff = isStaff, restrictedOnly = restrictedOnly).sortBy(_.position)
+        val categories = listDescendantMaySeeCategories(rootCategory.id, includeRoot = false,
+          authzCtx).sortBy(_.position)
         (categories, rootCategory.defaultCategoryId getOrDie "EsE4GK02")
       case None =>
         (Nil, NoCategoryId)
@@ -101,12 +106,12 @@ trait CategoriesDao {
 
 
   /** Sometimes the section page id is undefined — for example, when talking with someone
-    * in a personal chat. That chat topic isn't placed in any blog or forum. Then we want
-    * to list all categories, not just all categories in some (undefined) section.
+    * in a personal chat. That chat topic isn't placed in any section (e.g. blog or forum).
+    * Then we want to list all categories, not just all categories in some (undefined) section.
     *
     * Returns (categories, default-category-id).  (Currently there can be only 1 default category)
     */
-  def listAllCategories(isStaff: Boolean, restrictedOnly: Boolean)
+  def listAllMaySeeCategories(authzCtx: ForumAuthzContext)
         : (Seq[Category], Option[CategoryId]) = {
     if (rootCategories eq null) {
       loadBuildRememberCategoryMaps()
@@ -117,83 +122,84 @@ trait CategoriesDao {
       return (Nil, None)
 
     val rootCategory = rootCategories.head
-    val categories = listCategoriesInTree(rootCategory.id, includeRoot = false,
-      isStaff = isStaff, restrictedOnly = restrictedOnly).sortBy(_.position)
+    val categories = listDescendantMaySeeCategories(rootCategory.id, includeRoot = false,
+      authzCtx).sortBy(_.position)
     (categories, Some(rootCategory.defaultCategoryId getOrDie "EsE4GK02"))
-  }
-
-
-  /** List categories with categoryId as their immediate parent.
-    */
-  def listChildCategories(categoryId: CategoryId, includeUnlisted: Boolean)
-        : immutable.Seq[Category] = {
-    val categoriesByParentId = loadBuildRememberCategoryMaps()._2
-    val children = categoriesByParentId.getOrElse(categoryId, {
-      return Nil
-    })
-    unimplementedIf(!includeUnlisted, "excluding unlisted [EsE4KPKM2]")
-    children.to[immutable.Seq]
   }
 
 
   /** List all categories in the sub tree with categoryId as root.
     */
-  def listCategoriesInTree(categoryId: CategoryId, includeRoot: Boolean,
-        isStaff: Boolean, restrictedOnly: Boolean): Seq[Category] = {
+  private def listDescendantMaySeeCategories(categoryId: CategoryId, includeRoot: Boolean,
+        authzCtx: ForumAuthzContext): Seq[Category] = {
     val categories = ArrayBuffer[Category]()
-    appendCategoriesInTree(categoryId, includeRoot, isStaff = isStaff,
-      restrictedOnly = restrictedOnly, categories)
+    appendMaySeeCategoriesInTree(categoryId, includeRoot, authzCtx, categories)
     categories.to[immutable.Seq]
-  }
-
-
-  def loadPagesByUser(userId: UserId, isStaffOrSelf: Boolean, limit: Int): Seq[PagePathAndMeta] = {
-    readOnlyTransaction(_.loadPagesByUser(userId, isStaffOrSelf = isStaffOrSelf, limit))
   }
 
 
   /** Lists pages placed directly in one of categoryIds.
     */
-  private def loadPagesInCategories(categoryIds: Seq[CategoryId], pageQuery: PageQuery, limit: Int)
-        : Seq[PagePathAndMeta] = {
+  private def loadPagesDirectlyInCategories(categoryIds: Seq[CategoryId], pageQuery: PageQuery,
+        limit: Int): Seq[PagePathAndMeta] = {
     readOnlyTransaction(_.loadPagesInCategories(categoryIds, pageQuery, limit))
   }
 
 
   /** Lists pages placed in categoryId, optionally including its descendant categories.
     */
-  def loadPagesInCategory(categoryId: CategoryId, includeDescendants: Boolean,
-        isStaff: Boolean, restrictedOnly: Boolean, pageQuery: PageQuery, limit: Int)
+  def loadMaySeePagesInCategory(categoryId: CategoryId, includeDescendants: Boolean,
+        authzCtx: ForumAuthzContext, pageQuery: PageQuery, limit: Int)
         : Seq[PagePathAndMeta] = {
-    val categoryIds =
+    val maySeeCategoryIds =
       if (includeDescendants) {
         // (Include the start ("root") category because it might not be the root of the
         // whole section (e.g. the whole forum) but only the root of a sub section (e.g.
         // a category in the forum). The top root shouldn't contain any pages, but subtree roots
         // usually contain pages. )
+        CLEAN_UP // investigate & remove this old comment:
         // (If `restrictedOnly` is true, then most hidden topics won't be included, because
         // they might not be placed inside restricted categories. Everything works fine
         // anyway currently, though, see [7RIQ29]. )
-        listCategoriesInTree(categoryId, includeRoot = true,
-          isStaff = isStaff, restrictedOnly = restrictedOnly).map(_.id)
+        listDescendantMaySeeCategories(categoryId, includeRoot = true, authzCtx).map(_.id)
       }
       else {
-        unimplementedIf(!isStaff, "!incl hidden in forum [EsE2PGJ4]")
+        unimplementedIf(!authzCtx.isStaff, "!incl hidden in forum [EsE2PGJ4]")
         Seq(categoryId)
       }
-    loadPagesInCategories(categoryIds, pageQuery, limit)
+
+    // Although we may see these categories, we might not be allowed to see all pages therein.
+    // So, both per-category and per-page authz checks.
+    val pagesInclForbidden = loadPagesDirectlyInCategories(maySeeCategoryIds, pageQuery, limit)
+
+    // For now. COULD do some of filtering in the db query instead, so won't find 0 pages
+    // just because all most-recent-pages are e.g. hidden.
+    val filteredPages = pagesInclForbidden filter { page =>
+      val categories = loadAncestorCategoriesRootLast(page.categoryId)
+      val may = ed.server.auth.Authz.maySeePage(
+        page.meta,
+        user = authzCtx.requester,
+        groupIds = authzCtx.groupIds,
+        pageMembers = getAnyPrivateGroupTalkMembers(page.meta),
+        categoriesRootLast = categories,
+        permissions = authzCtx.permissions,
+        maySeeUnlisted = false) // pageQuery.pageFilter.includesUnlisted
+      may == MayMaybe.Yes
+    }
+
+    filteredPages
   }
 
 
-  def loadCategoriesRootLast(anyCategoryId: Option[CategoryId]): immutable.Seq[Category] = {
+  def loadAncestorCategoriesRootLast(anyCategoryId: Option[CategoryId]): immutable.Seq[Category] = {
     val id = anyCategoryId getOrElse {
       return Nil
     }
-    loadCategoriesRootLast(id)
+    loadAncestorCategoriesRootLast(id)
   }
 
 
-  def loadCategoriesRootLast(categoryId: CategoryId): immutable.Seq[Category] = {
+  def loadAncestorCategoriesRootLast(categoryId: CategoryId): immutable.Seq[Category] = {
     val categoriesById = loadBuildRememberCategoryMaps()._1
     val categories = ArrayBuffer[Category]()
     var current = categoriesById.get(categoryId)
@@ -226,7 +232,7 @@ trait CategoriesDao {
 
 
   def loadRootCategory(categoryId: CategoryId): Option[Category] =
-    loadCategoriesRootLast(categoryId).lastOption
+    loadAncestorCategoriesRootLast(categoryId).lastOption
 
 
   def loadSectionPageId(categoryId: CategoryId): Option[PageId] =
@@ -257,30 +263,42 @@ trait CategoriesDao {
   }
 
 
-  private def appendCategoriesInTree(rootCategoryId: CategoryId, includeRoot: Boolean,
-      isStaff: Boolean, restrictedOnly: Boolean, categoryList: ArrayBuffer[Category]) {
+  private def appendMaySeeCategoriesInTree(rootCategoryId: CategoryId, includeRoot: Boolean,
+      authzCtx: ForumAuthzContext, categoryList: ArrayBuffer[Category]) {
+
     if (categoryList.exists(_.id == rootCategoryId)) {
       // COULD log cycle error
       return
     }
+
     val (categoriesById, categoriesByParentId, _) = loadBuildRememberCategoryMaps()
     val startCategory = categoriesById.getOrElse(rootCategoryId, {
       return
     })
-    // Do include even if startCategory.onlyStaffMayCreate — because category still visible.
-    // COULD rename restrictedOnly to ... visibleOnly? Or add a real permissions system.
-    val isRestricted = startCategory.unlisted || startCategory.staffOnly || startCategory.isDeleted
-    if (isRestricted && !isStaff)
-      return
-    if (includeRoot && (!restrictedOnly || isRestricted)) {
-      categoryList.append(startCategory)
+
+    val categories = loadAncestorCategoriesRootLast(rootCategoryId)
+
+    // (Skip the root category in this check; cannot set permissions on it. [0YWKG21])
+    if (!categories.head.isRoot) {
+      val may = Authz.maySeeCategory(authzCtx, categories)
+      if (may.maySee isNot true)
+        return
     }
+
+    COULD // add a seeUnlisted permission? If in a cat, a certain group should see unlisted topics.
+    val onlyForStaff = startCategory.unlisted || startCategory.isDeleted
+    if (onlyForStaff && !authzCtx.isStaff)
+      return
+
+    if (includeRoot)
+      categoryList.append(startCategory)
+
     val childCategories = categoriesByParentId.getOrElse(rootCategoryId, {
       return
     })
     for (childCategory <- childCategories) {
-      appendCategoriesInTree(childCategory.id, includeRoot = true,
-        isStaff = isStaff, restrictedOnly = restrictedOnly, categoryList)
+      appendMaySeeCategoriesInTree(childCategory.id, includeRoot = true,
+        authzCtx, categoryList)
     }
   }
 
@@ -309,7 +327,8 @@ trait CategoriesDao {
     readOnlyTransaction(_.loadCategoryMap())
 
 
-  def editCategory(editCategoryData: CategoryToSave, who: Who): Category = {
+  def editCategory(editCategoryData: CategoryToSave, permissions: immutable.Seq[PermsOnPages],
+        who: Who): Category = {
     val (oldCategory, editedCategory) = readWriteTransaction { transaction =>
       val categoryId = editCategoryData.anyId getOrDie "DwE7KPE0"
       val oldCategory = transaction.loadCategory(categoryId).getOrElse(throwNotFound(
@@ -323,8 +342,6 @@ trait CategoriesDao {
         position = editCategoryData.position,
         newTopicTypes = editCategoryData.newTopicTypes,
         unlisted = editCategoryData.unlisted,
-        staffOnly = editCategoryData.staffOnly,
-        onlyStaffMayCreateTopics = editCategoryData.onlyStaffMayCreateTopics,
         updatedAt = transaction.now.toJavaDate)
 
       if (editCategoryData.shallBeDefaultCategory) {
@@ -332,6 +349,8 @@ trait CategoriesDao {
       }
 
       transaction.updateCategoryMarkSectionPageStale(editedCategory)
+
+      addRemovePermsOnCategory(categoryId, permissions)(transaction)
       (oldCategory, editedCategory)
       // COULD create audit log entry
     }
@@ -351,15 +370,16 @@ trait CategoriesDao {
   }
 
 
-  def createCategory(newCategoryData: CategoryToSave, byWho: Who): (Category, PagePath) = {
+  def createCategory(newCategoryData: CategoryToSave, permissions: immutable.Seq[PermsOnPages],
+        byWho: Who): CreateCategoryResult = {
     readWriteTransaction { transaction =>
-      createCategoryImpl(newCategoryData, byWho)(transaction)
+      createCategoryImpl(newCategoryData, permissions, byWho)(transaction)
     }
   }
 
 
-  def createCategoryImpl(newCategoryData: CategoryToSave, byWho: Who)(
-        transaction: SiteTransaction): (Category, PagePath) = {
+  def createCategoryImpl(newCategoryData: CategoryToSave, permissions: immutable.Seq[PermsOnPages],
+        byWho: Who)(transaction: SiteTransaction): CreateCategoryResult = {
 
     val categoryId = transaction.nextCategoryId()
 
@@ -385,6 +405,12 @@ trait CategoriesDao {
       setDefaultCategory(category, transaction)
     }
 
+    permissions foreach { p =>
+      dieIf(p.onCategoryId != newCategoryData.anyId, "EdE7UKW02")
+    }
+    val permsWithCatId = permissions.map(_.copy(onCategoryId = Some(categoryId)))
+    val permsWithId = addRemovePermsOnCategory(categoryId, permsWithCatId)(transaction)
+
     // COULD create audit log entry
 
     // The forum needs to be refreshed because it has cached the category list
@@ -393,7 +419,7 @@ trait CategoriesDao {
       refreshPageInMemCache(category.sectionPageId)
     }
 
-    (category, aboutPagePath)
+    CreateCategoryResult(category, aboutPagePath, permsWithId)
   }
 
 
@@ -407,6 +433,9 @@ trait CategoriesDao {
         deletedAt = if (delete) Some(transaction.now.toJavaDate) else None)
       transaction.updateCategoryMarkSectionPageStale(categoryAfter)
     }
+    // All pages in the category now needs to be rerendered.
+    COULD_OPTIMIZE // only remove-from-cache / mark-as-dirty pages inside the category.
+    emptyCache()
   }
 
 
@@ -420,6 +449,40 @@ trait CategoriesDao {
     transaction.updateCategoryMarkSectionPageStale(rootWithNewDefault)
   }
 
+
+  private def addRemovePermsOnCategory(categoryId: CategoryId,
+        permissions: immutable.Seq[PermsOnPages])(transaction: SiteTransaction)
+        : immutable.Seq[PermsOnPages] = {
+    dieIf(permissions.exists(_.onCategoryId.isNot(categoryId)), "EdE2FK0YU5")
+    val permsWithIds = ArrayBuffer[PermsOnPages]()
+    val oldPermissionsById: mutable.Map[PermissionId, PermsOnPages] =
+      transaction.loadPermsOnCategory(categoryId).map(p => (p.id, p))(collection.breakOut)
+    permissions foreach { permission =>
+      var alreadyExists = false
+      if (permission.id >= PermissionAlreadyExistsMinId) {
+        oldPermissionsById.remove(permission.id) foreach { oldPerm =>
+          alreadyExists = true
+          if (oldPerm != permission) {
+            if (permission.isEverythingUndefined) {
+              // latent BUG: not incl info about this deleted perm in the fn result [0YKAG25L]
+              transaction.deletePermsOnPages(Seq(permission.id))
+            }
+            else {
+              transaction.updatePermsOnPages(permission)
+              permsWithIds.append(permission)
+            }
+          }
+        }
+      }
+      if (!alreadyExists) {
+        val permWithId = transaction.insertPermsOnPages(permission)
+        permsWithIds.append(permWithId)
+      }
+    }
+    // latent BUG: not incl info about these deleted perms in the fn result [0YKAG25L]
+    transaction.deletePermsOnPages(oldPermissionsById.keys)
+    permsWithIds.toVector
+  }
 }
 
 

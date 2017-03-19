@@ -20,69 +20,26 @@ package com.debiki.core
 import com.debiki.core.Prelude._
 
 
-case class MayWhat(
-  mayEditPage: Boolean = false,
-  mayEditComment: Boolean = false,
-  mayEditWiki: Boolean = false,
-  mayDeletePage: Boolean = false,
-  mayDeleteComment: Boolean = false,
-  mayCreatePage: Boolean = false,
-  mayPostComment: Boolean = false,
-  maySee: Boolean = false,
-  debugCode: String = "") {
-
-  require(maySee || (
-    !mayEditPage && !mayEditComment && !mayEditWiki && !mayDeletePage &&
-    !mayDeleteComment && !mayCreatePage && !mayPostComment), "EdE2WKB5FD")
-
-  def addRemovePermissions(permissions: PermsOnPages, debugCode: String) = MayWhat(
-    mayEditPage = permissions.mayEditPage.getOrElse(mayEditPage),
-    mayEditComment = permissions.mayEditComment.getOrElse(mayEditComment),
-    mayEditWiki = permissions.mayEditWiki.getOrElse(mayEditWiki),
-    mayDeletePage = permissions.mayDeletePage.getOrElse(mayDeletePage),
-    mayDeleteComment = permissions.mayDeleteComment.getOrElse(mayDeleteComment),
-    mayCreatePage = permissions.mayCreatePage.getOrElse(mayCreatePage),
-    mayPostComment = permissions.mayPostComment.getOrElse(mayPostComment),
-    maySee = permissions.maySee.getOrElse(maySee),
-    debugCode)
-
-  def copyAsDeleted: MayWhat = copy(
-    mayEditPage = false,
-    mayEditComment = false,
-    mayEditWiki = false,
-    mayDeletePage = false,
-    mayDeleteComment = false,
-    mayCreatePage = false,
-    mayPostComment = false)
-}
-
-
-object MayWhat {
-
-  def mayNotSee(debugCode: String) = MayWhat(
-    mayEditPage = false, mayEditComment = false, mayEditWiki = false,
-    mayDeletePage = false, mayDeleteComment = false, mayCreatePage = false,
-    mayPostComment = false, maySee = false, debugCode)
-
-}
-
-
+/** If maySeeOwn is true, then one may see one's own stuff, even if maySee is false.
+  */
 case class PermsOnPages(
   id: PermissionId,
   forPeopleId: UserId,
-  onWholeSite: Option[Boolean],
-  onCategoryId: Option[Int],
-  onPageId: Option[PageId],
-  onPostId: Option[PostId],
-  onTagId: Option[TagLabelId],
-  mayEditPage: Option[Boolean],
-  mayEditComment: Option[Boolean],
-  mayEditWiki: Option[Boolean],
-  mayDeletePage: Option[Boolean],
-  mayDeleteComment: Option[Boolean],
-  mayCreatePage: Option[Boolean],
-  mayPostComment: Option[Boolean],
-  maySee: Option[Boolean]) {
+  onWholeSite: Option[Boolean] = None,
+  onCategoryId: Option[Int] = None,
+  onPageId: Option[PageId] = None,
+  onPostId: Option[PostId] = None,
+  onTagId: Option[TagLabelId] = None,
+  mayEditPage: Option[Boolean] = None,
+  mayEditComment: Option[Boolean] = None,
+  mayEditWiki: Option[Boolean] = None,
+  mayEditOwn: Option[Boolean] = None,
+  mayDeletePage: Option[Boolean] = None,
+  mayDeleteComment: Option[Boolean] = None,
+  mayCreatePage: Option[Boolean] = None,
+  mayPostComment: Option[Boolean] = None,
+  maySee: Option[Boolean] = None,
+  maySeeOwn: Option[Boolean] = None) {
 
   // Later, perhaps:
   // pin/unpin
@@ -98,15 +55,25 @@ case class PermsOnPages(
   require(!onPageId.exists(_.isEmpty), "EdE8UGF0W3")
   require(!onPostId.contains(NoPostId), "EdE8UGF0W4")
   require(!onTagId.contains(NoTagId), "EdE8UGF0W5")
+  require(!(maySee.is(true) && maySeeOwn.is(false)), "EdE6LKWU02")
+  require(!((mayEditComment.is(true) || mayEditPage.is(true) || mayEditWiki.is(true)) &&
+    mayEditOwn.is(false)), "EdE2WJB0Y4")
+
+  CLEAN_UP // change to a Bool not Opt[Bool]? then this requirement can be removed.
+  require(onWholeSite isNot false, "EdE5GVR0Y1")
 
   // This permission grants rights on exactly one thing.
   require(1 == onWholeSite.oneIfDefined + onCategoryId.oneIfDefined + onPageId.oneIfDefined +
     onPostId.oneIfDefined + onTagId.oneIfDefined, "EdE7LFK2R5")
 
-  // This permission grants some right(s), it's not just everything-undefined.
-  require(1 <= mayEditPage.oneIfDefined + mayEditComment.oneIfDefined + mayEditWiki.oneIfDefined +
-    mayDeletePage.oneIfDefined + mayDeleteComment.oneIfDefined + mayCreatePage.oneIfDefined +
-    mayPostComment.oneIfDefined + maySee.oneIfDefined, "EdE7PUK2W3")
+  /** Tells if this permission neither grants nor revokes any rights — if it doesn't, it might
+    * as well be deleted.
+    */
+  def isEverythingUndefined: Boolean =
+    mayEditPage.isEmpty && mayEditComment.isEmpty && mayEditWiki.isEmpty && mayEditOwn.isEmpty &&
+    mayDeletePage.isEmpty && mayDeleteComment.isEmpty && mayCreatePage.isEmpty &&
+    mayPostComment.isEmpty && maySee.isEmpty && maySeeOwn.isEmpty
+
 }
 
 

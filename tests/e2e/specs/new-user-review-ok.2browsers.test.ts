@@ -65,7 +65,7 @@ describe("new user, review, ok:", () => {
       id: topics.oldTopicUrl,
       role: c.TestPageRole.Discussion,
       authorId: maja.id,
-      categoryId: 1,
+      categoryId: 2,
     });
     site.pages.push(page);
     site.pagePaths.push(make.pagePath(page.id, '/', false, 'old-topic'));

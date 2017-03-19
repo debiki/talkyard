@@ -97,6 +97,7 @@ class UploadsDaoAppSpec extends DaoAppSuite(disableScripts = false) {
   "The app and UploadsDao can" - {
 
     "use no quota" in {
+      Globals.systemDao.getOrCreateFirstSite()
       val dao = Globals.siteDao(Site.FirstSiteId)
 
       var resourceUsage = dao.loadResourceUsage()
@@ -119,11 +120,11 @@ class UploadsDaoAppSpec extends DaoAppSuite(disableScripts = false) {
       val dao = Globals.siteDao(Site.FirstSiteId)
       var resourceUsage: ResourceUse = null
 
-      info("create user")
+      info("create owner")
       val magic = "55JMU2456"
       val user = dao.createPasswordUserCheckPasswordStrong(NewPasswordUserData.create(
         name = Some(s"User $magic"), username = s"user_$magic", email = s"user-$magic@x.c",
-        password = magic, isAdmin = false, isOwner = false).get)
+        password = magic, isAdmin = true, isOwner = true).get)
 
       info("upload avatar images, no quota used")
       dao.addUploadedFile(tinyAvatar.name, tinyAvatar.file, user.id, browserIdData)
@@ -310,11 +311,12 @@ class UploadsDaoAppSpec extends DaoAppSuite(disableScripts = false) {
         password = magic, isAdmin = true, isOwner = false).get)
 
       info("create site 2")
-      val site2 = dao.createSite("site-two-name", status = SiteStatus.Active, hostname = "site-two",
+      val site2 = Globals.systemDao.createSite(
+        "site-two-name", status = SiteStatus.Active, hostname = "site-two",
         embeddingSiteUrl = None, organizationName = "Test Org Name",
         creatorEmailAddress = "t@x.c", creatorId = user.id, browserIdData: BrowserIdData,
         isTestSiteOkayToDelete = false, skipMaxSitesCheck = true,
-        deleteOldSite = false, pricePlan = "Unknown")
+        deleteOldSite = false, pricePlan = "Unknown", createdFromSiteId = None)
 
       info("create user (owner), site 2")
       val dao2 = Globals.siteDao(site2.id)

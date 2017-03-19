@@ -32,6 +32,18 @@ trait SystemTransaction {
 
   // ----- Sites
 
+  def countWebsites(createdFromIp: String, creatorEmailAddress: String, testSites: Boolean): Int
+  def countWebsitesTotal(testSites: Boolean): Int
+
+  /** Throws SiteAlreadyExistsException if the site already exists.
+    * Throws TooManySitesCreatedException if you've created too many websites already
+    * (from the same IP or email address).
+    */
+  def createSite(id: Option[SiteId], name: String, status: SiteStatus,
+    embeddingSiteUrl: Option[String], creatorIp: String, creatorEmailAddress: String,
+    quotaLimitMegabytes: Option[Int], maxSitesPerIp: Int, maxSitesTotal: Int,
+    isTestSiteOkayToDelete: Boolean, pricePlan: PricePlan, createdAt: When): Site
+
   def siteTransaction(siteId: SiteId): SiteTransaction
 
   def loadSites(): immutable.Seq[Site]
@@ -47,7 +59,9 @@ trait SystemTransaction {
 
   def insertSiteHost(siteId: SiteId, host: SiteHost)
   def deleteAnyHostname(hostname: String): Boolean
-  def deleteSiteByName(name: String): Boolean
+
+  /** Returns Some(the-deleted-site) if it existed. */
+  def deleteSiteByName(name: String): Option[Site]
 
   //def deleteSite(siteId: SiteId)
 

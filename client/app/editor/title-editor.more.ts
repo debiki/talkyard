@@ -239,7 +239,7 @@ export var TitleEditor = createComponent({
     if (isForumOrAboutOrMessage) {
       // About-category pages cannot be moved to other categories.
     }
-    else if (this.props.forumId && settings_showCategories(settings, me)) {
+    else if (settings_showCategories(settings, me)) {
       selectCategoryInput =
         Input({ type: 'custom', label: "Category", labelClassName: 'col-xs-2',
             wrapperClassName: 'col-xs-10' },

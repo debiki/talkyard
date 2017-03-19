@@ -24,7 +24,10 @@ import scala.collection.mutable
 
 
 class PromotionToFullMemberAppSpec extends DaoAppSuite() {
-  lazy val dao: SiteDao = Globals.siteDao(Site.FirstSiteId)
+  lazy val dao: SiteDao = {
+    Globals.systemDao.getOrCreateFirstSite()
+    Globals.siteDao(Site.FirstSiteId)
+  }
 
   lazy val categoryId: CategoryId =
     dao.createForum("Forum", "/tag-test-forum/",
@@ -42,6 +45,11 @@ class PromotionToFullMemberAppSpec extends DaoAppSuite() {
 
   "The Dao can track user reading progress, and promote" - {
     val now = new ju.Date()
+
+    "prepare" in {
+      dao
+      owner
+    }
 
     "someone creates a few pages" in {
       for (pageNr <- 1 to 22) {

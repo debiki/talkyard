@@ -148,6 +148,7 @@ object PostType {
   /** A chat message in a chat room. */
   case object ChatMessage extends PostType(3)
 
+  CLEAN_UP // remove StaffWiki, use the permission system instead.
   /** Any staff member can edit this post. No author name shown. */
   case object StaffWiki extends PostType(11) {
     override def isWiki = true

@@ -21,6 +21,7 @@ import com.debiki.core._
 import debiki.DebikiHttp._
 import debiki._
 import debiki.dao.SiteDao
+import ed.server.auth.ForumAuthzContext
 import ed.server.security.{SidStatus, XsrfOk}
 import java.{util => ju}
 import play.api.mvc
@@ -35,7 +36,8 @@ abstract class DebikiRequest[A] {
   def sid: SidStatus
   def xsrfToken: XsrfOk
   def browserId: BrowserId
-  def user: Option[User]
+  def user: Option[User] // REFACTOR RENAME to 'requester' (and remove 'def requester' below)
+                        // COULD? add a 'Stranger extends User' and use instead of None ?
   def dao: SiteDao
   def request: Request[A]
 
@@ -43,6 +45,11 @@ abstract class DebikiRequest[A] {
 
   require(siteIdAndCanonicalHostname.id == dao.siteId, "EsE76YW2")
   require(user.map(_.id) == sid.userId, "EsE7PUUY2")
+
+  // Use instead of 'user', because 'user' is confusing when the requester asks for info
+  // about another user — then, does 'user' refer to the requester or that other user?
+  // Instead, use 'requester' always, to refer to the requester.
+  def requester: Option[User] = user
 
   def tenantId: SiteId = dao.siteId
   def siteId: SiteId = dao.siteId
@@ -57,6 +64,8 @@ abstract class DebikiRequest[A] {
     val id = user.map(_.id) getOrElse UnknownUserId
     Who(id, theBrowserIdData)
   }
+
+  lazy val authzContext: ForumAuthzContext = dao.getForumAuthzContext(requester)
 
   def theBrowserIdData = BrowserIdData(ip = ip, idCookie = browserId.cookieValue,
     fingerprint = 0) // skip for now

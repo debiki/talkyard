@@ -21,7 +21,6 @@
  */
 
 /// <reference path="../../typedefs/react/react.d.ts" />
-/// <reference path="../../typedefs/lodash/lodash.d.ts" />
 /// <reference path="../utils/page-scroll-mixin.ts" />
 
 //------------------------------------------------------------------------------

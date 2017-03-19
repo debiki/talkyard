@@ -17,11 +17,11 @@
 
 /// <reference path="../../typedefs/react/react.d.ts" />
 /// <reference path="../plain-old-javascript.d.ts" />
+/// <reference path="../prelude.ts" />
 /// <reference path="../utils/utils.ts" />
 /// <reference path="../utils/react-utils.ts" />
 /// <reference path="../utils/DropdownModal.ts" />
 /// <reference path="../util/ExplainingDropdown.ts" />
-/// <reference path="../model.ts" />
 /// <reference path="../rules.ts" />
 /// <reference path="../Server.ts" />
 /// <reference path="../widgets.ts" />
@@ -67,11 +67,12 @@ export var SelectCategoryDropdown = createClassAndFactory({
     var selectedCategory: Category =
       _.find(store.categories, c => c.id === props.selectedCategoryId);
 
-    dieIf(!selectedCategory, "Selected category missing [EsE5YFK24]");
+    dieIf(!selectedCategory && props.selectedCategoryId, "Selected category missing [EdE5YFK24]");
+    const categoryName = selectedCategory ? selectedCategory.name : "Select category...";
 
     var dropdownButton =
       Button({ onClick: this.open, className: 'zzz', ref: 'dropdownButton' },
-        selectedCategory.name + ' ', r.span({ className: 'caret' }));
+        categoryName + ' ', r.span({ className: 'caret' }));
 
     var categoryListItems = store.categories.map((category: Category) => {
       return ExplainingListItem({ onSelect: this.onCategorySelected,

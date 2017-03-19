@@ -40,17 +40,6 @@ trait SiteTransaction {
 
   def deferConstraints()
 
-  def countWebsites(createdFromIp: String, creatorEmailAddress: String, testSites: Boolean): Int
-  def countWebsitesTotal(testSites: Boolean): Int
-
-  /** Throws SiteAlreadyExistsException if the site already exists.
-    * Throws TooManySitesCreatedException if you've created too many websites already
-    * (from the same IP or email address).
-    */
-  def createSite(name: String, status: SiteStatus, hostname: String,
-    embeddingSiteUrl: Option[String], creatorIp: String, creatorEmailAddress: String,
-    quotaLimitMegabytes: Option[Int], maxSitesPerIp: Int, maxSitesTotal: Int,
-    isTestSiteOkayToDelete: Boolean, pricePlan: PricePlan, createdAt: When): Site
 
   def loadSite(): Option[Site]
   def bumpSiteVersion()
@@ -58,7 +47,7 @@ trait SiteTransaction {
 
 
   // Try to remove, use sth more generic like insertUser()? or insertGuest() instead?
-  def createUnknownUser(date: ju.Date)
+  def createUnknownUser()
 
   def loadSiteVersion(): Int
 
@@ -311,7 +300,9 @@ trait SiteTransaction {
   def loadUsernameUsages(username: String): Seq[UsernameUsage]
 
   def loadUser(userId: UserId): Option[User]
-  def loadTheUser(userId: UserId) = loadUser(userId).getOrElse(throw UserNotFoundException(userId))
+  def loadTheUser(userId: UserId): User =
+    loadUser(userId).getOrElse(throw UserNotFoundException(userId))
+
   def loadGuest(userId: UserId): Option[Guest] = {
     dieIf(userId > User.MaxGuestId, "EsE8FY032")
     loadUser(userId).map(_.asInstanceOf[Guest])
@@ -355,16 +346,23 @@ trait SiteTransaction {
 
   def loadOwner(): Option[MemberInclDetails]
 
+  def insertGroup(group: Group)
+  def loadGroupsAsSeq(): immutable.Seq[Group]
+
+  def loadGroupIds(anyUser: Option[User]): Vector[UserId] = {
+    anyUser.map(loadGroupIds) getOrElse Vector(Group.EveryoneId)
+  }
 
   def loadGroupIds(user: User): Vector[UserId] = {
+    val G = Group
+
     val member = user match {
-      case _: Guest | UnknownUser => return Vector.empty
+      case _: Guest | UnknownUser => return Vector(G.EveryoneId)
       case m: Member => m
       // later: case g: Group => g // groups are members
     }
 
     // For now. Later, also do db request and add custom groups.
-    val G = Group
 
     if (member.isAdmin)
       return Vector(member.id, G.AdminsId, G.StaffId, G.CoreMembersId, G.RegularsId,
@@ -434,7 +432,12 @@ trait SiteTransaction {
   /** If no id, assigns an id. Returns the perms, with id. */
   def insertPermsOnPages(permsOnContent: PermsOnPages): PermsOnPages
   def updatePermsOnPages(permsOnContent: PermsOnPages)
+  def deletePermsOnPages(ids: Iterable[PermissionId])
   def loadPermsOnPages(): immutable.Seq[PermsOnPages]
+  def loadPermsOnCategory(categoryId: CategoryId): immutable.Seq[PermsOnPages] = {
+    COULD_OPTIMIZE // could filter in db query instead
+    loadPermsOnPages().filter(_.onCategoryId.is(categoryId))
+  }
 
 
   def startAuditLogBatch()

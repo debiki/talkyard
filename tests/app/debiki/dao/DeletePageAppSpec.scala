@@ -25,7 +25,8 @@ import debiki._
 class DeletePageAppSpec extends DaoAppSuite(disableScripts = true, disableBackgroundJobs = true) {
 
   "PagesDao can delete pages" - {
-    lazy val dao: SiteDao = Globals.siteDao(Site.FirstSiteId)
+    var dao: SiteDao = null
+    var admin: User = null
 
     lazy val forumId = dao.createForum(title = "Forum to delete", folder = "/",
       Who(SystemUserId, browserIdData)).pagePath.thePageId
@@ -39,9 +40,13 @@ class DeletePageAppSpec extends DaoAppSuite(disableScripts = true, disableBackgr
     lazy val otherPageId = createPage(PageRole.Discussion, TextAndHtml.testTitle("Title"),
       TextAndHtml.testBody("Body text"), authorId = SystemUserId, browserIdData, dao)
 
-    "admin can delete and undelete pages of all types" in {
-      val admin = createPasswordOwner(s"dltr_admn", dao)
+    "prepare" in {
+      Globals.systemDao.getOrCreateFirstSite()
+      dao = Globals.siteDao(Site.FirstSiteId)
+      admin = createPasswordOwner(s"dltr_admn", dao)
+    }
 
+    "admin can delete and undelete pages of all types" in {
       dao.getPageMeta(discussionId).get.deletedAt mustBe None
       dao.getPageMeta(forumId).get.deletedAt mustBe None
       dao.getPageMeta(htmlPageId).get.deletedAt mustBe None

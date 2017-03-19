@@ -26,7 +26,6 @@ import debiki._
 import debiki.DebikiHttp._
 import ed.server.notf.NotificationGenerator
 import ed.server.pubsub.StorePatchMessage
-import ed.server.http.throwForbiddenIf
 import play.api.libs.json.JsValue
 import play.{api => p}
 import scala.collection.{immutable, mutable}
@@ -78,10 +77,10 @@ trait PostsDao {
       val author = authorAndLevels.user
       val page = PageDao(pageId, transaction)
 
-      dieOrDenyUnless(Authz.mayPostReply(authorAndLevels, transaction.loadGroupIds(author),
+      dieOrThrowNoUnless(Authz.mayPostReply(authorAndLevels, transaction.loadGroupIds(author),
         postType, page.meta, transaction.loadAnyPrivateGroupTalkMembers(page.meta),
         transaction.loadCategoryPathRootLast(page.meta.categoryId),
-        transaction.loadPermsOnPages()), "EdE2WP4W8")
+        transaction.loadPermsOnPages()), "EdEMAY0RE")
 
       if (page.role.isChat)
         throwForbidden("EsE50WG4", s"Page '${page.id}' is a chat page; cannot post normal replies")
@@ -338,10 +337,10 @@ trait PostsDao {
 
       val page = PageDao(pageId, transaction)
 
-      dieOrDenyUnless(Authz.mayPostReply(authorAndLevels, transaction.loadGroupIds(author),
+      dieOrThrowNoUnless(Authz.mayPostReply(authorAndLevels, transaction.loadGroupIds(author),
         PostType.ChatMessage, page.meta, transaction.loadAnyPrivateGroupTalkMembers(page.meta),
         transaction.loadCategoryPathRootLast(page.meta.categoryId),
-        transaction.loadPermsOnPages()), "EdE2WP4W8")
+        transaction.loadPermsOnPages()), "EdEMAY0CHAT")
 
       val (reviewReasons: Seq[ReviewReason], _) =
         throwOrFindReviewPostReasons(page.meta, authorAndLevels, transaction)
@@ -558,25 +557,23 @@ trait PostsDao {
     quickCheckIfSpamThenThrow(who, newTextAndHtml, spamRelReqStuff)
 
     readWriteTransaction { transaction =>
-      val editor = transaction.loadUser(editorId).getOrElse(
-        throwNotFound("DwE30HY21", s"User not found, id: '$editorId'"))
+      val editorAndLevels = loadUserAndLevels(who, transaction)
+      val editor = editorAndLevels.user
       val page = PageDao(pageId, transaction)
-      throwIfMayNotSeePage(page, Some(editor))(transaction)
 
       val postToEdit = page.parts.postByNr(postNr) getOrElse {
         page.meta // this throws page-not-fount if the page doesn't exist
         throwNotFound("DwE404GKF2", s"Post not found, id: '$postNr'")
       }
 
-      if (postToEdit.isDeleted)
-        throwForbidden("DwE6PK2", "The post has been deleted")
-
       if (postToEdit.currentSource == newTextAndHtml.text)
         return
 
-      // For now: (add back edit suggestions later. And should perhaps use PermsOnPage.)
-      if (!userMayEdit(editor, postToEdit))
-        throwForbidden("DwE8KF32", "You may not edit that post")
+      dieOrThrowNoUnless(Authz.mayEditPost(
+        editorAndLevels, transaction.loadGroupIds(editor),
+        postToEdit, page.meta, transaction.loadAnyPrivateGroupTalkMembers(page.meta),
+        inCategoriesRootLast = transaction.loadCategoryPathRootLast(page.meta.categoryId),
+        permissions = transaction.loadPermsOnPages()), "EdE6JLKW2R")
 
       // COULD don't allow sbd else to edit until 3 mins after last edit by sbd else?
       // so won't create too many revs quickly because 2 edits.
@@ -701,8 +698,8 @@ trait PostsDao {
           None
         }
         else {
-          // COULD reuse the same transaction, when loading the category. Barely matters.
-          val (category, isDefault) = loadTheCategory(page.meta.categoryId getOrDie "DwE2PKF0")
+          val category = transaction.loadCategory(page.meta.categoryId getOrDie "DwE2PKF0")
+                .getOrDie("EdE8ULK4E")
           val excerpt = ReactJson.htmlToExcerpt(
             newTextAndHtml.safeHtml, Category.DescriptionExcerptLength,
             firstParagraphOnly = true)
@@ -1557,11 +1554,11 @@ trait PostsDao {
       val categories = transaction.loadCategoryPathRootLast(pageMeta.categoryId)
       val settings = loadWholeSiteSettings(transaction)
 
-      dieOrDenyUnless(Authz.mayFlagPost(
+      dieOrThrowNoUnless(Authz.mayFlagPost(
         flagger, transaction.loadGroupIds(flagger),
         postBefore, pageMeta, transaction.loadAnyPrivateGroupTalkMembers(pageMeta),
         inCategoriesRootLast = categories,
-        relevantPermissions = transaction.loadPermsOnPages()), "EdEZBXKSM2")
+        permissions = transaction.loadPermsOnPages()), "EdEZBXKSM2")
 
       val newNumFlags = postBefore.numPendingFlags + 1
       var postAfter = postBefore.copy(numPendingFlags = newNumFlags)
@@ -1847,12 +1844,6 @@ object PostsDao {
     case PageRole.Blog => OneHourMs
     case PageRole.Forum => OneHourMs
     case _ => SixMinutesMs
-  }
-
-  def userMayEdit(user: User, post: Post): Boolean = {
-    val editsOwnPost = user.id == post.createdById
-    val mayEditWiki = user.isAuthenticated && post.tyype == PostType.CommunityWiki
-    editsOwnPost || user.isStaff || mayEditWiki
   }
 
 

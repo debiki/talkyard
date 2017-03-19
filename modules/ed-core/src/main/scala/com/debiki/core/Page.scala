@@ -162,9 +162,9 @@ object PageMeta {
   * @param closedAt When the topic was closed, e.g. if a question was off-topic or idea rejected.
   * @param lockedAt When locked so no new replies can be added.
   * @param frozenAt When frozen, so cannot be changed in any way at all (not even edits).
+  * @param hiddenAt E.g. all posts flagged & hidden, so nothing to see. Or page not yet approved.
   * @param htmlHeadTitle Text for the html <title>...</title> tag.
   * @param htmlHeadDescription Text for the html <description content"..."> tag.
-  * @param numChildPages
   */
 case class PageMeta(
   pageId: String,
@@ -207,7 +207,7 @@ case class PageMeta(
   htmlTagCssClasses: String = "",  // try to move to EditedSettings, so will be inherited
   htmlHeadTitle: String = "",
   htmlHeadDescription: String = "",
-  numChildPages: Int = 0) { // <-- DoLater: remove, replace with category table
+  numChildPages: Int = 0) { // <-- CLEAN_UP remove, replace with category table
 
   require(lastReplyAt.isDefined == lastReplyById.isDefined, "DwE5JGY1")
   // If there are no replies, then there are no frequent posters.
@@ -422,7 +422,13 @@ object PageRole {
   case object ToDo extends PageRole(13, staffOnly = false)  // remove [4YK0F24]
 
   /** Mind maps use 2D layout, even if the site is configured to use 1D layout. */
-  case object MindMap extends PageRole(11, staffOnly = false)
+  case object MindMap extends PageRole(11, staffOnly = false) {
+    // May-edit permissions work differently for mind maps; don't let people change type to/from
+    // mind map, because that could result in on-that-page permission escalation. [0JUK2WA5]
+    BUG // harmless, but should hide page type mind-map in the js edit-title-category-&-type form,
+    // so cannot accidentally attempt to change.
+    override def mayChangeRole = false
+  }
 
   /** For discussions (non-questions) or announcements or blog posts, for example.  */
   case object Discussion extends PageRole(12, staffOnly = false)

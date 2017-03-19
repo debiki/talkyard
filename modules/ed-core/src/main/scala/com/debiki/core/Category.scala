@@ -24,6 +24,8 @@ import scala.collection.immutable
 case class Category(
   id: CategoryId,
   sectionPageId: PageId,
+  // Later when adding child categories, see all: [0GMK2WAL] (currently parentId is just for the
+  // root category).
   parentId: Option[CategoryId],
   defaultCategoryId: Option[CategoryId],
   name: String,
@@ -33,8 +35,6 @@ case class Category(
   // [refactor] [5YKW294] [rename] Should no longer be a list. Change db too, from "nnn,nnn,nnn" to single int.
   newTopicTypes: immutable.Seq[PageRole],
   unlisted: Boolean,  // rename to isUnlisted
-  staffOnly: Boolean,
-  onlyStaffMayCreateTopics: Boolean,
   createdAt: ju.Date,
   updatedAt: ju.Date,
   lockedAt: Option[ju.Date] = None,

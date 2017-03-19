@@ -28,7 +28,7 @@ import java.{util => ju}
 import org.scalactic._
 import play.api._
 import play.api.libs.json._
-import play.api.mvc.{Action => _}
+import play.api.mvc.Action
 
 
 /** Imports and exports dumps of websites.
@@ -42,16 +42,37 @@ import play.api.mvc.{Action => _}
   */
 object ImportExportController extends mvc.Controller {
 
+  val MaxBytes = 1001000
 
-  def importSiteJson(deleteOldSite: Option[Boolean]) =
-        PostJsonAction(RateLimits.CreateSite, maxBytes = 1001000) { request =>
+  def importSiteJson(deleteOldSite: Option[Boolean]): Action[JsValue] =
+        PostJsonAction(RateLimits.CreateSite, maxBytes = MaxBytes) { _ =>
+    //val deleteOld = deleteOldSite.contains(true)
+    //val createdFromSiteId = Some(request.siteId)
+    //val response = importSiteImpl(request, request.theBrowserIdData, deleteOld, isTest = false)
+    unimplemented("EdE2KWUP0") // check what kind of permission?
+  }
 
-    val okE2ePassword = hasOkE2eTestPassword(request.request)
+
+  def importTestSite: Action[JsValue] = ExceptionAction(parse.json(maxLength = MaxBytes)) {
+        request =>
+    val (browserId, moreNewCookies) = BrowserId.checkBrowserId(request)
+    val browserIdData = BrowserIdData(ip = request.remoteAddress, idCookie = browserId.cookieValue,
+      fingerprint = 0)
+    val response = importSiteImpl(request, browserIdData, deleteOld = true, isTest = true)
+    response.withCookies(moreNewCookies: _*)
+  }
+
+
+  private def importSiteImpl(request: mvc.Request[JsValue], browserIdData: BrowserIdData,
+        deleteOld: Boolean, isTest: Boolean): mvc.Result = {
+    dieIf(deleteOld && !isTest, "EdE5FKWU02")
+
+    val okE2ePassword = hasOkE2eTestPassword(request)
     if (!okE2ePassword)
       throwForbidden("EsE5JKU2", "Importing sites is only allowed for e2e testing right now")
 
     val siteData =
-      try parseSiteJson(request, isE2eTest = okE2ePassword)
+      try parseSiteJson(request.body, isE2eTest = okE2ePassword)
       catch {
         case ex: JsonUtils.BadJsonException =>
           throwBadRequest("EsE4GYM8", "Bad json structure: " + ex.getMessage)
@@ -61,12 +82,11 @@ object ImportExportController extends mvc.Controller {
               invalid value combinations: ${ex.getMessage}""")
       }
 
-    val deleteOld = deleteOldSite.contains(true)
     throwForbiddenIf(
       deleteOld && siteData.site.hosts.exists(!_.hostname.startsWith(SiteHost.E2eTestPrefix)),
       "EdE7GPK4F0", s"Can only overwrite hostnames that start with ${SiteHost.E2eTestPrefix}")
 
-    val newSite = doImportSite(siteData, request, deleteOldSite = deleteOld)
+    val newSite = doImportSite(siteData, browserIdData, deleteOldSite = deleteOld)
 
     Ok(Json.obj(
       "id" -> newSite.id,
@@ -82,17 +102,19 @@ object ImportExportController extends mvc.Controller {
     pages: Seq[PageMeta],
     pagePaths: Seq[PagePathWithId],
     categories: Seq[Category],
-    posts: Seq[Post])
+    posts: Seq[Post],
+    permsOnPages: Seq[PermsOnPages])
 
 
-  private def parseSiteJson(request: JsonPostRequest, isE2eTest: Boolean): ImportSiteData = {
-    val bodyJson = request.body
+  private def parseSiteJson(bodyJson: JsValue, isE2eTest: Boolean): ImportSiteData = {
 
-    val (siteMetaJson, settingsJson, membersJson, pagesJson, pathsJson, categoriesJson, postsJson) =
+    val (siteMetaJson, settingsJson, membersJson, permsOnPagesJson, pagesJson, pathsJson,
+        categoriesJson, postsJson) =
       try {
         (readJsObject(bodyJson, "meta"),
           readJsObject(bodyJson, "settings"),
           readJsArray(bodyJson, "members"),
+          readJsArray(bodyJson, "permsOnPages"),
           readJsArray(bodyJson, "pages"),
           readJsArray(bodyJson, "pagePaths"),
           readJsArray(bodyJson, "categories"),
@@ -147,11 +169,19 @@ object ImportExportController extends mvc.Controller {
               json: $json"""))
     }
 
-    ImportSiteData(siteToSave, settings, users, pages, paths, categories, posts)
+    val permsOnPages: Seq[PermsOnPages] = permsOnPagesJson.value.zipWithIndex map {
+          case (json, index) =>
+      readPermsOnPageOrBad(json, isE2eTest).getOrIfBad(error =>
+        throwBadReq(
+          "EsE5JGLRK01", o"""Invalid PermsOnPage json at index $index in the 'permsOnPage' list:
+              $error, json: $json"""))
+    }
+
+    ImportSiteData(siteToSave, settings, users, pages, paths, categories, posts, permsOnPages)
   }
 
 
-  def doImportSite(siteData: ImportSiteData, request: JsonPostRequest, deleteOldSite: Boolean)
+  def doImportSite(siteData: ImportSiteData, browserIdData: BrowserIdData, deleteOldSite: Boolean)
         : Site = {
     for (page <- siteData.pages) {
       val path = siteData.pagePaths.find(_.pageId == page.pageId)
@@ -172,7 +202,7 @@ object ImportExportController extends mvc.Controller {
     // COULD do this in the same transaction as the one below — then, would need a function
     // `transaction.continueWithSiteId(zzz)`?
     val siteToSave = siteData.site
-    val site = request.dao.createSite(
+    val site = Globals.systemDao.createSite(
       siteToSave.name,
       siteToSave.status,
       siteToSave.canonicalHost.getOrDie("EsE2FUPFY7").hostname,
@@ -180,11 +210,12 @@ object ImportExportController extends mvc.Controller {
       organizationName = "Dummy organization name [EsM8YKWP3]",  // fix later
       creatorEmailAddress = siteToSave.creatorEmailAddress,
       creatorId = SystemUserId,
-      browserIdData = request.theBrowserIdData,
+      browserIdData = browserIdData,
       isTestSiteOkayToDelete = true,
       skipMaxSitesCheck = true,
       deleteOldSite = deleteOldSite,
-      pricePlan = "Unknown")  // [4GKU024S]
+      pricePlan = "Unknown",  // [4GKU024S]
+      createdFromSiteId = None)
 
     val newDao = Globals.siteDao(site.id)
     newDao.readWriteTransaction { transaction =>
@@ -219,6 +250,9 @@ object ImportExportController extends mvc.Controller {
       siteData.posts foreach { post =>
         //val newId = transaction.nextPostId()
         transaction.insertPost(post)
+      }
+      siteData.permsOnPages foreach { permission =>
+        transaction.insertPermsOnPages(permission)
       }
     }
 
@@ -423,8 +457,6 @@ object ImportExportController extends mvc.Controller {
         description = readOptString(jsObj, "description"),
         newTopicTypes = Nil, // fix later
         unlisted = readOptBool(jsObj, "unlisted").getOrElse(false),
-        staffOnly = readOptBool(jsObj, "staffOnly").getOrElse(false),
-        onlyStaffMayCreateTopics = readOptBool(jsObj, "onlyStaffMayCreateTopics").getOrElse(false),
         createdAt = readDateMs(jsObj, "createdAtMs"),
         updatedAt = readDateMs(jsObj, "updatedAtMs"),
         lockedAt = readOptDateMs(jsObj, "lockedAtMs"),
@@ -517,6 +549,40 @@ object ImportExportController extends mvc.Controller {
     catch {
       case ex: IllegalArgumentException =>
         Bad(s"Bad json for post id '$id': ${ex.getMessage}")
+    }
+  }
+
+
+  def readPermsOnPageOrBad(jsValue: JsValue, isE2eTest: Boolean): PermsOnPages Or ErrorMessage = {
+    val jsObj = jsValue match {
+      case x: JsObject => x
+      case bad =>
+        return Bad(s"Not a json object, but a: " + classNameOf(bad))
+    }
+
+    try {
+      Good(PermsOnPages(
+        id = readInt(jsObj, "id"),
+        forPeopleId = readInt(jsObj, "forPeopleId"),
+        onWholeSite = readOptBool(jsObj, "onWholeSite"),
+        onCategoryId = readOptInt(jsObj, "onCategoryId"),
+        onPageId = readOptString(jsObj, "onPageId"),
+        onPostId = readOptInt(jsObj, "onPostId"),
+        onTagId = readOptInt(jsObj, "onTagId"),
+        mayEditPage = readOptBool(jsObj, "mayEditPage"),
+        mayEditComment = readOptBool(jsObj, "mayEditComment"),
+        mayEditWiki = readOptBool(jsObj, "mayEditWiki"),
+        mayEditOwn = readOptBool(jsObj, "mayEditOwn"),
+        mayDeletePage = readOptBool(jsObj, "mayDeletePage"),
+        mayDeleteComment = readOptBool(jsObj, "mayDeleteComment"),
+        mayCreatePage = readOptBool(jsObj, "mayCreatePage"),
+        mayPostComment = readOptBool(jsObj, "mayPostComment"),
+        maySee = readOptBool(jsObj, "maySee"),
+        maySeeOwn = readOptBool(jsObj, "maySeeOwn")))
+    }
+    catch {
+      case ex: IllegalArgumentException =>
+        Bad(s"Bad page path json: ${ex.getMessage}")
     }
   }
 

@@ -1,9 +1,6 @@
 /// <reference path="../test-types.ts"/>
-/// <reference path="../../../modules/definitely-typed/lodash/lodash.d.ts"/>
 /// <reference path="../../../modules/definitely-typed/mocha/mocha.d.ts"/>
 
-import * as _ from 'lodash';
-//import _ = require('lodash');
 import server = require('../utils/server');
 import utils = require('../utils/utils');
 import pages = require('../utils/pages');

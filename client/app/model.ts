@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 Kaj Magnus Lindberg
+ * Copyright (C) 2015-2017 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -15,8 +15,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/// <reference path="constants.ts" />
-
 type PageId = string;
 type PostId = number;
 type PostNr = number;
@@ -26,7 +24,8 @@ type SiteId = String;
 type SiteVersion = number;
 type LoginId = String;
 type UserId = number;
-type RoleId = UserId;
+type PeopleId = UserId;
+type PermissionId = number;
 type NotificationId = number;
 type ReviewTaskId = number;
 type IdentityId = String;
@@ -42,7 +41,6 @@ type HttpRequest = XMLHttpRequest
 // continue with its default error handling — it'll ignore the error.
 // Send back undefined or anything else to the caller, and the error will be considered.
 type ErrorPolicy = number | void;
-var IgnoreThisError: ErrorPolicy = -112233;
 
 
 
@@ -156,6 +154,24 @@ interface Post {
 }
 
 
+enum PostType {
+  Normal = 1,
+  Flat = 2,
+  StaffWiki = 11,
+  CommunityWiki = 12,
+  CompletedForm = 21,
+}
+
+
+// Determines which write-post guidelines will be shown in the editor.
+enum WritingWhat {
+  NewPage = 1,
+  ReplyToOriginalPost = 2,
+  ReplyToNotOriginalPost = 3,
+  ChatComment = 4,
+}
+
+
 interface PostWithPage extends Post {
   pageId: PageId;
   pageTitle: string;
@@ -192,7 +208,7 @@ interface Myself {
   rolePageSettings: PageUserSettings;
   trustLevel: TrustLevel;
   threatLevel: ThreatLevel;
-  permissions: Permissions;
+  permsOnPages: PermsOnPage[];
 
   numUrgentReviewTasks: number;
   numOtherReviewTasks: number;
@@ -221,33 +237,40 @@ interface Myself {
 }
 
 
-interface Permissions {
-  onCategories: { [categoryId: number]: PermsOnPage };
-  onPages?: { [pageId: number]: {
-    onPage: PermsOnPage;
-    onPosts: { [postId: number]: PermsOnPage };
-  }};
-}
-
-
 interface PermsOnPage {
-  mayEditPage: boolean;
-  //mayEditComment: boolean;
-  //mayEditWiki: boolean;
-  //mayDeletePage: boolean;
-  //mayDeleteComment: boolean;
-  mayCreatePage: boolean;
-  mayPostComment: boolean;
-
-  // Skip:
-  // maySee: boolean;
-  // — instead don't include stuff the user may not see.
+  id: PermissionId;
+  forPeopleId: UserId;
+  onWholeSite?: boolean;
+  onCategoryId?: CategoryId;
+  onPageId?: PageId;
+  onPostId?: PostId;
+  // later: onTagId?: TagId;
+  mayEditPage?: boolean;
+  mayEditComment?: boolean;
+  mayEditWiki?: boolean;
+  mayEditOwn?: boolean;
+  mayDeletePage?: boolean;
+  mayDeleteComment?: boolean;
+  mayCreatePage?: boolean;
+  mayPostComment?: boolean;
+  maySee?: boolean;
+  maySeeOwn?: boolean;
 }
 
 
 interface PageUserSettings {
   notfLevel: NotfLevel;
 }
+
+
+enum NotfLevel {
+  WatchingAll = 1,
+  WatchingFirst = 2,
+  Tracking = 3,
+  Normal = 4,
+  Muted = 5,
+}
+
 
 interface Notification {
   id: number;
@@ -258,6 +281,16 @@ interface Notification {
   pageId?: string;
   pageTitle?: string;
   postNr?: number;
+}
+
+
+enum NotificationType {
+  DirectReply = 1,
+  Mention = 2,
+  // Quote = 3,
+  Message = 4,
+  NewPost = 5,
+  PostTagged = 6,
 }
 
 
@@ -282,21 +315,36 @@ interface HelpMessage {
 
 
 interface Category {
-  id: number;
+  id: CategoryId;
+  parentId?: CategoryId;
   name: string;
   slug: string;
   defaultTopicType: PageRole,
-  newTopicTypes: PageRole[];  // [refactor] [5YKW294] delete, use defaultTopicType instead
+  newTopicTypes?: PageRole[];  // [refactor] [5YKW294] delete, use defaultTopicType instead
   position?: number;
   description: string;
   recentTopics?: Topic[];
   unlisted?: boolean;
-  staffOnly?: boolean;
-  onlyStaffMayCreateTopics?: boolean;
   isDefaultCategory?: boolean;
   isForumItself?: boolean;
   isDeleted?: boolean;
 }
+
+
+enum TopicListLayout {
+  Default = 0,
+  TitleOnly = 1,
+  TitleExcerptSameLine = 2,
+  ExcerptBelowTitle = 3,
+  ThumbnailLeft = 4,
+  ThumbnailsBelowTitle = 5,
+}
+
+
+enum CategoriesLayout {
+  Default = 0,
+}
+
 
 
 interface Topic {
@@ -333,7 +381,10 @@ interface Topic {
 }
 
 
-enum TopicSortOrder { BumpTime = 1, LikesAndBumpTime };
+enum TopicSortOrder {
+  BumpTime = 1,
+  LikesAndBumpTime
+}
 
 
 interface OrderOffset {  // COULD rename to TopicQuery? (because includes filter too now)
@@ -350,6 +401,14 @@ interface Watchbar {
   2: WatchbarTopic[]; // WatchbarSection.Notifications
   3: WatchbarTopic[]; // WatchbarSection.ChatChannels
   4: WatchbarTopic[]; // WatchbarSection.DirectMessages
+}
+
+
+enum WatchbarSection {
+  RecentTopics = 1,
+  Notifications = 2,
+  ChatChannels = 3,
+  DirectMessages = 4,
 }
 
 
@@ -421,7 +480,6 @@ interface Store {
   topics: Topic[];
   user: Myself; // try to remove, use 'me' instead:
   me: Myself;
-  strangersPermissions: Permissions;
   userSpecificDataAdded?: boolean; // is always false, server side
   newUserAccountCreated?: boolean;
   isImpersonating?: boolean;
@@ -477,13 +535,42 @@ interface PagePath {
 }
 
 
+enum PageRole { // dupl in client/e2e/test-types.ts [5F8KW0P2]
+  CustomHtmlPage = 1,
+  WebPage = 2,  // rename to Info?
+  Code = 3,
+  SpecialContent = 4,
+  EmbeddedComments = 5,
+  Blog = 6,
+  Forum = 7,
+  About = 9,
+  Question = 10,
+  Problem = 14,
+  Idea = 15,
+  ToDo = 13,  // remove? [4YK0F24]
+  MindMap = 11,
+  Discussion = 12,
+  FormalMessage = 17,
+  OpenChat = 18,
+  PrivateChat = 19,
+    // DirectMessage = 20,
+  Form = 20,  // try to remove?
+  Critique = 16, // [plugin]
+  UsabilityTesting = 21, // [plugin]
+}
+
+
+enum PinPageWhere {
+  InCategory = 1,
+  Globally = 3,
+}
+
+
 interface Ancestor {  // server side: [6FK02QFV]
   categoryId: number;
   title: string;
   path: string;
   unlisted?: boolean;
-  staffOnly?: boolean;
-  onlyStaffMayCreateTopics?: boolean;
   isDeleted?: boolean;
 }
 
@@ -496,19 +583,23 @@ interface SiteSection {
 }
 
 
+enum SiteStatus {
+  NoAdmin = 1,
+  Active = 2,
+  ReadAndCleanOnly = 3,
+  HiddenUnlessStaff = 4,
+  HiddenUnlessAdmin = 5,
+  Deleted = 6,
+  Purged = 7,
+}
+
+
 interface TagAndStats {
   label: string;
   numTotal: number;
   numPages: number;
   numSubscribers?: number;
   numMuted?: number;
-}
-
-
-interface SettingFromServer<T> {
-  name: string;
-  defaultValue: T;
-  anyAssignedValue?: T;
 }
 
 
@@ -580,6 +671,66 @@ interface MemberInclDetails {
   lockedTrustLevel?: TrustLevel;
   threatLevel?: ThreatLevel;
   lockedThreatLevel?: ThreatLevel;
+}
+
+
+enum TrustLevel {
+  Stranger = 0,
+  New = 1,
+  Basic = 2,
+  Member = 3,
+  Helper = 4,
+  Regular = 5,
+  CoreMember = 6,
+}
+
+
+enum ThreatLevel {
+  SuperSafe = 1,
+  SeemsSafe = 2,
+  HopefullySafe = 3,
+  MildThreat = 4,
+  ModerateThreat = 5,
+  SevereThreat = 6,
+}
+
+
+
+enum LoginReason {
+  SignUp = 13,
+  LoginToChat = 10,
+  LoginToLike = 11,
+  BecomeAdmin = 12,
+}
+
+
+enum Presence {
+  Active = 1,
+  Away = 2,
+}
+
+
+interface Group {
+  id: UserId;
+  username: string;
+  fullName: string;
+  // "grantsTrustLevel" — later
+  avatarUrl?: string;
+}
+
+
+enum Groups {
+  NoUserId = 0,
+  EveryoneId = 10,
+  NewMembersId = 11,
+  BasicMembersId = 12,
+  FullMembersId = 13,
+  TrustedId = 14,
+  RegularsId = 15,
+  CoreMembersId = 16,
+  StaffId = 17,
+  ModeratorsId = 18,
+  AdminsId = 19,
 }
 
 
@@ -803,6 +954,21 @@ interface TagsStuff {
 interface Host {
   hostname: string;
   role: HostRole;
+}
+
+
+enum HostRole {
+  Canonical = 1,
+  Redirect = 2,
+  Link = 3,
+  Duplicate = 4,
+}
+
+
+enum PricePlan {  // [4GKU024S]
+  Unknown = 0,
+  NonCommercial = 1,
+  Business = 2,
 }
 
 

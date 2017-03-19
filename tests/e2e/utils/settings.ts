@@ -1,5 +1,4 @@
 /// <reference path="../../../modules/definitely-typed/lodash/lodash.d.ts"/>
-/// <reference path="../../../modules/definitely-typed/node/node.d.ts"/>
 /// <reference path="../../../modules/definitely-typed/minimist/minimist.d.ts"/>
 
 import _ = require('lodash');

@@ -13,6 +13,8 @@
     "node": "~0.6.10 || 0.8 || 0.9"
   },
   "dependencies": {
+    "@types/core-js": "^0.9.35",
+    "@types/lodash": "^4.14.53",
     "at.js": "^1.5.1",
     "blacklist": "^1.1.4",
     "bootstrap": "3.1.1",

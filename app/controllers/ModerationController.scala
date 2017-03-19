@@ -23,6 +23,7 @@ import debiki.{Globals, ReactJson}
 import ed.server.http._
 import play.api._
 import play.api.libs.json._
+import play.api.mvc.Action
 
 
 /** Lists posts for the moderation page, and approves/rejects/deletes posts
@@ -46,7 +47,7 @@ object ModerationController extends mvc.Controller {
   }
 
 
-  def completeReviewTask = StaffPostJsonAction(maxBytes = 100) { request =>
+  def completeReviewTask: Action[JsValue] = StaffPostJsonAction(maxBytes = 100) { request =>
     val taskId = (request.body \ "taskId").as[ReviewTaskId]
     val anyRevNr = (request.body \ "revisionNr").asOpt[Int]
     val actionInt = (request.body \ "action").as[Int]

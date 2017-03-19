@@ -19,9 +19,8 @@ package debiki.dao
 
 import com.debiki.core._
 import com.debiki.core.Prelude._
-import java.{util => ju}
 import debiki.ReactRenderer
-import scala.collection.{immutable, mutable}
+import scala.collection.immutable
 import ForumDao._
 
 
@@ -86,42 +85,45 @@ trait ForumDao {
       description = None,
       newTopicTypes = Nil,
       unlisted = false,
-      staffOnly = false,
-      onlyStaffMayCreateTopics = false,
       createdAt = transaction.now.toJavaDate,
       updatedAt = transaction.now.toJavaDate))
 
     // Create the default category.
-    createCategoryImpl(CategoryToSave(
-      anyId = Some(defaultCategoryId),
-      sectionPageId = forumPageId,
-      parentId = rootCategoryId,
-      shallBeDefaultCategory = true,
-      name = DefaultCategoryName,
-      slug = DefaultCategorySlug,
-      position = DefaultCategoryPosition,
-      description = "New topics get placed here, unless another category is selected.",
-      newTopicTypes = immutable.Seq(PageRole.Discussion),
-      unlisted = false,
-      staffOnly = false,
-      onlyStaffMayCreateTopics = false,
-      isCreatingNewForum = true), bySystem)(transaction)
+    createCategoryImpl(
+      CategoryToSave(
+        anyId = Some(defaultCategoryId),
+        sectionPageId = forumPageId,
+        parentId = rootCategoryId,
+        shallBeDefaultCategory = true,
+        name = DefaultCategoryName,
+        slug = DefaultCategorySlug,
+        position = DefaultCategoryPosition,
+        description = "New topics get placed here, unless another category is selected.",
+        newTopicTypes = immutable.Seq(PageRole.Discussion),
+        unlisted = false,
+        isCreatingNewForum = true),
+      immutable.Seq[PermsOnPages](
+        makeEveryonesDefaultCategoryPerms(defaultCategoryId),
+        makeStaffCategoryPerms(defaultCategoryId)),
+      bySystem)(transaction)
 
     // Create the Staff category.
-    createCategoryImpl(CategoryToSave(
-      anyId = Some(staffCategoryId),
-      sectionPageId = forumPageId,
-      parentId = rootCategoryId,
-      shallBeDefaultCategory = false,
-      name = "Staff",
-      slug = "staff",
-      position = Category.DefaultPosition + 10,
-      description = "Private category for staff discussions",
-      newTopicTypes = immutable.Seq(PageRole.Discussion),
-      unlisted = false,
-      staffOnly = true,
-      onlyStaffMayCreateTopics = false,
-      isCreatingNewForum = true), bySystem)(transaction)
+    createCategoryImpl(
+      CategoryToSave(
+        anyId = Some(staffCategoryId),
+        sectionPageId = forumPageId,
+        parentId = rootCategoryId,
+        shallBeDefaultCategory = false,
+        name = "Staff",
+        slug = "staff",
+        position = Category.DefaultPosition + 10,
+        description = "Private category for staff discussions",
+        newTopicTypes = immutable.Seq(PageRole.Discussion),
+        unlisted = false,
+        isCreatingNewForum = true),
+      immutable.Seq[PermsOnPages](
+        makeStaffCategoryPerms(staffCategoryId)),
+      bySystem)(transaction)
 
     // Create forum welcome topic.
     createPageImpl(
@@ -158,14 +160,14 @@ object ForumDao {
   val AboutCategoryTopicPinOrder = 10
 
 
-  lazy val ForumIntroText = renderCommonMark(i"""
+  lazy val ForumIntroText: CommonMarkSourceAndHtml = renderCommonMark(i"""
     |Edit this to tell people what this community is about. You can link back to your main website, if any.
     """)
 
 
   val WelcomeTopicTitle = "Welcome to this community"
 
-  lazy val welcomeTopic = renderCommonMark(i"""
+  lazy val welcomeTopic: CommonMarkSourceAndHtml = renderCommonMark(i"""
     |Edit this to clarify what this community is about. This first paragraph
     |is shown to everyone, on the forum homepage.
     |
@@ -178,7 +180,37 @@ object ForumDao {
     |""")
 
 
-  def renderCommonMark(source: String) = ReactRenderer.renderSanitizeCommonMarkReturnSource(
-    source, allowClassIdDataAttrs = true, followLinks = true)
+  def renderCommonMark(source: String): CommonMarkSourceAndHtml =
+    ReactRenderer.renderSanitizeCommonMarkReturnSource(
+      source, allowClassIdDataAttrs = true, followLinks = true)
+
+
+  // Sync with dupl code in Typescript. [7KFWY025]
+  def makeEveryonesDefaultCategoryPerms(categoryId: CategoryId) = PermsOnPages(
+    id = NoPermissionId,
+    forPeopleId = Group.EveryoneId,
+    onCategoryId = Some(categoryId),
+    mayEditOwn = Some(true),
+    mayCreatePage = Some(true),
+    mayPostComment = Some(true),
+    maySee = Some(true),
+    maySeeOwn = Some(true))
+
+
+  // Sync with dupl code in Typescript. [7KFWY025]
+  def makeStaffCategoryPerms(categoryId: CategoryId) = PermsOnPages(
+    id = NoPermissionId,
+    forPeopleId = Group.StaffId,
+    onCategoryId = Some(categoryId),
+    mayEditPage = Some(true),
+    mayEditComment = Some(true),
+    mayEditWiki = Some(true),
+    mayEditOwn = Some(true),
+    mayDeletePage = Some(true),
+    mayDeleteComment = Some(true),
+    mayCreatePage = Some(true),
+    mayPostComment = Some(true),
+    maySee = Some(true),
+    maySeeOwn = Some(true))
 
 }

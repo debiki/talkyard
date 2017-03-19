@@ -21,6 +21,7 @@ import com.debiki.core._
 import com.debiki.core.Prelude._
 import scala.collection.immutable
 import MayMaybe._
+import MayWhat._
 
 
 sealed abstract class MayMaybe(private val may: Boolean) { def mayNot: Boolean = !may }
@@ -31,16 +32,52 @@ object MayMaybe {
 }
 
 
+
+sealed abstract class AuthzContext {
+  def requester: Option[User]
+  def groupIds: immutable.Seq[GroupId]
+  def permissions: immutable.Seq[PermsOnPages]
+  def isStaff: Boolean = requester.exists(_.isStaff)
+  def isAdmin: Boolean = requester.exists(_.isAdmin)
+
+  // For now: If is stranger, then requester = None, and only allowed group id = Everyone.
+  if (requester.isEmpty) {
+    permissions foreach { permission =>
+      require(permission.forPeopleId == Group.EveryoneId,
+        s"Bad permission, not for Everyone: $permission [EdE2QSRB7]")
+    }
+  }
+}
+
+case class ForumAuthzContext(
+  requester: Option[User],
+  groupIds: immutable.Seq[GroupId],
+  permissions: immutable.Seq[PermsOnPages]) extends AuthzContext
+
+/*
+case class CategoryAuthzContext(
+  requester: Option[User],
+  permissions: immutable.Seq[PermsOnPages],
+  categoriesRootLast: immutable.Seq[Category]) extends AuthzContext
+
+case class PageAuthzContext(
+  requester: Option[User],
+  permissions: immutable.Seq[PermsOnPages],
+  categoriesRootLast: immutable.Seq[Category],
+  pageMeta: PageMeta,
+  pageMembers: Option[Set[UserId]]) extends AuthzContext {
+
+  require(!pageMeta.pageRole.isPrivateGroupTalk || pageMembers.isDefined, "EdE6LPK2A0")
+  require(pageMeta.categoryId.isDefined == categoriesRootLast.nonEmpty, "EdE0WYK15")
+  require(!pageMeta.categoryId.exists(_ != categoriesRootLast.head.id), "EdE3GPJU0")
+} */
+
+
+
 /** Checks if a member may e.g. create pages, post replies, wikify, ... and so on.
   * And, if not, tells you why not: all functions returns a why-may-not reason.
   */
 object Authz {
-
-  private val MayNothing: MayWhat = MayWhat.mayNotSee("EdMMAY0")
-
-  private val MayEverything: MayWhat = MayWhat(mayEditPage = true, mayEditComment = true,
-    mayEditWiki = true, mayDeletePage = true, mayDeleteComment = true, mayCreatePage = true,
-    mayPostComment = true, maySee = true, "EdMEVRYTNG")
 
 
   def mayCreatePage(
@@ -52,28 +89,44 @@ object Authz {
     anySlug: Option[String],
     anyFolder: Option[String],
     inCategoriesRootLast: immutable.Seq[Category],
-    relevantPermissions: immutable.Seq[PermsOnPages]): MayMaybe = {
+    permissions: immutable.Seq[PermsOnPages]): MayMaybe = {
 
     val user = userAndLevels.user
 
     val mayWhat = checkPermsOnPages(Some(user), groupIds, pageMeta = None, pageMembers = None,
-      inCategoriesRootLast, relevantPermissions)
+      inCategoriesRootLast, permissions)
 
-    if (!mayWhat.maySee)
-      return NoNotFound(s"EdE4FDW2-${mayWhat.debugCode}")
+    def isPrivate = pageRole.isPrivateGroupTalk && groupIds.nonEmpty &&
+      inCategoriesRootLast.isEmpty
 
-    if (!mayWhat.mayCreatePage)
-      return NoMayNot(s"EdEMNOTCRPG-${mayWhat.debugCode}", "May not create a page in this category")
+    if (mayWhat.maySee.isEmpty && isPrivate) {
+      // Ok, may see.
+    }
+    else if (mayWhat.maySee isNot true) {
+      return NoNotFound(s"EdEM0CR0SEE-${mayWhat.debugCode}")
+    }
+
+    if (!mayWhat.mayCreatePage && !isPrivate)
+      return NoMayNot(s"EdEMN0CR-${mayWhat.debugCode}", "May not create a page in this category")
 
     if (!user.isStaff) {
-      if (inCategoriesRootLast.isEmpty && pageRole != PageRole.FormalMessage)
-        return NoMayNot("EsE8GY32", "Only staff may create pages outside any category")
+      if (inCategoriesRootLast.isEmpty && !isPrivate)
+        return NoMayNot("EsEM0CRNOCAT", "Only staff may create pages outside any category")
+
+      if (anyFolder.exists(f => f.nonEmpty && f != "/"))
+        return NoMayNot("EdEM0CRFLDR", "Only staff may specify page folder")
 
       if (anySlug.exists(_.nonEmpty))
-        return NoMayNot("DwE4KFW87", "Only staff may specify page slug")
+        return NoMayNot("EdEM0CR0SLG", "Only staff may specify page slug")
 
       if (pageRole.staffOnly)
-        return NoMayNot("DwE5KEPY2", s"Forbidden page type: $pageRole")
+        return NoMayNot("EdEM0CRPAGETY", s"Forbidden page type: $pageRole")
+
+      if (bodyPostType != PostType.Normal)
+        return NoMayNot("EdEM0CRPOSTTY", s"Forbidden post type: $bodyPostType")
+
+      if (pinWhere.isDefined)
+        return NoMayNot("EdEM0CRPIN", "Only staff may pin pages")
     }
 
     Yes
@@ -86,16 +139,24 @@ object Authz {
     groupIds: immutable.Seq[GroupId],
     pageMembers: Set[UserId],
     categoriesRootLast: immutable.Seq[Category],
-    relevantPermissions: immutable.Seq[PermsOnPages],
+    permissions: immutable.Seq[PermsOnPages],
     maySeeUnlisted: Boolean = true): MayMaybe = {
 
     val mayWhat = checkPermsOnPages(user, groupIds, Some(pageMeta), Some(pageMembers),
-      categoriesRootLast, relevantPermissions, maySeeUnlisted = maySeeUnlisted)
+      categoriesRootLast, permissions, maySeeUnlisted = maySeeUnlisted)
 
-    if (!mayWhat.maySee)
-      return NoNotFound(s"EdE4KW0HD5-${mayWhat.debugCode}")
+    if (mayWhat.maySee isNot true)
+      return NoNotFound(s"EdEM0SEE-${mayWhat.debugCode}")
 
     Yes
+  }
+
+
+  def maySeeCategory(authzCtx: AuthzContext, categoriesRootLast: immutable.Seq[Category])
+        : MayWhat = {
+    checkPermsOnPages(authzCtx.requester, authzCtx.groupIds,
+      pageMeta = None, pageMembers = None, categoriesRootLast, authzCtx.permissions,
+      maySeeUnlisted = false)
   }
 
 
@@ -106,29 +167,70 @@ object Authz {
     pageMeta: PageMeta,
     privateGroupTalkMemberIds: Set[UserId],
     inCategoriesRootLast: immutable.Seq[Category],
-    relevantPermissions: immutable.Seq[PermsOnPages]): MayMaybe = {
+    permissions: immutable.Seq[PermsOnPages]): MayMaybe = {
 
     val user = userAndLevels.user
 
     SHOULD // be check-perms-on pageid + postnr, not just page
     val mayWhat = checkPermsOnPages(Some(user), groupIds, Some(pageMeta),
-      Some(privateGroupTalkMemberIds), inCategoriesRootLast, relevantPermissions)
+      Some(privateGroupTalkMemberIds), inCategoriesRootLast, permissions)
 
-    if (!mayWhat.maySee)
-      return NoNotFound(s"EdE5LKW0R-${mayWhat.debugCode}")
+    if (mayWhat.maySee isNot true)
+      return NoNotFound(s"EdEM0RE0SEE-${mayWhat.debugCode}")
 
-    if (!mayWhat.mayPostComment)
-      return NoMayNot("EdE2WRKD5", "You don't have permissions to post a reply on this page")
-
-    // Mind maps can easily get messed up by people posting comments. So, for now, only
-    // allow the page author + staff to add stuff to a mind map. [7KUE20]
     if (pageMeta.pageRole == PageRole.MindMap) {
-      if (user.id != pageMeta.authorId && !user.isStaff)
-        return NoMayNot("EsE6JK4I0", "Only the page author and staff may edit this mind map")
+      // Mind maps could easily get messed up by people posting new stuff to the mind map, so,
+      // only allow people with edit-*page* permission to add stuff to a mind map. [7KUE20]
+      if (!mayWhat.mayEditPage) // before: user.id != pageMeta.authorId && !user.isStaff)
+        return NoMayNot("EsEMAY0REMINDM", "Not allowed to add more items to this mind map")
+    }
+    else {
+      if (!mayWhat.mayPostComment)
+        return NoMayNot("EdEM0RE0RE", "You don't have permissions to post a reply on this page")
     }
 
     if (!pageMeta.pageRole.canHaveReplies)
-      return NoMayNot("EsE8YGK42", s"Cannot post to page type ${pageMeta.pageRole}")
+      return NoMayNot("EsEM0REPAGETY", s"Cannot post to page type ${pageMeta.pageRole}")
+
+    Yes
+  }
+
+
+  def mayEditPost(
+    userAndLevels: UserAndLevels,
+    groupIds: immutable.Seq[GroupId],
+    post: Post,
+    pageMeta: PageMeta,
+    privateGroupTalkMemberIds: Set[UserId],
+    inCategoriesRootLast: immutable.Seq[Category],
+    permissions: immutable.Seq[PermsOnPages]): MayMaybe = {
+
+    if (post.isDeleted)
+      return NoNotFound("EdEM0EDPOSTDELD")
+
+    val user = userAndLevels.user
+    val mayWhat = checkPermsOnPages(Some(user), groupIds, Some(pageMeta),
+      Some(privateGroupTalkMemberIds), inCategoriesRootLast, permissions)
+
+    if (mayWhat.maySee isNot true)
+      return NoNotFound(s"EdEM0RE0SEE-${mayWhat.debugCode}")
+
+    val isOwnPost = user.id == post.createdById  // [8UAB3WG2]
+    if (isOwnPost) {
+      // Fine, may edit.
+    }
+    else if (pageMeta.pageRole == PageRole.MindMap) {  // [0JUK2WA5]
+      if (!mayWhat.mayEditPage)
+        return NoMayNot("EdEM0ED0YOURMINDM", "You may not edit other people's mind maps")
+    }
+    else if (post.isOrigPost || post.isTitle) {
+      if (!mayWhat.mayEditPage)
+        return NoMayNot("EdEM0ED0YOURORIGP", "You may not edit other people's pages")
+    }
+    else {
+      if (!mayWhat.mayEditComment)
+        return NoMayNot("EdEM0ED0YOURPOST", "You may not edit other people's posts")
+    }
 
     Yes
   }
@@ -141,7 +243,7 @@ object Authz {
     pageMeta: PageMeta,
     privateGroupTalkMemberIds: Set[UserId],
     inCategoriesRootLast: immutable.Seq[Category],
-    relevantPermissions: immutable.Seq[PermsOnPages]): MayMaybe = {
+    permissions: immutable.Seq[PermsOnPages]): MayMaybe = {
 
     if (member.effectiveTrustLevel == TrustLevel.New) {
       COULD // Later: Check site settings to find out if members may flag stuff.
@@ -149,14 +251,14 @@ object Authz {
     }
 
     if (member.threatLevel.isSevereOrWorse)
-      return NoMayNot(s"EdE2FK49T", "You may not flag stuff, sorry")
+      return NoMayNot(s"EdEM0FLGISTHRT", "You may not flag stuff, sorry")
 
     SHOULD // be maySeePost pageid, postnr, not just page
     val mayWhat = checkPermsOnPages(Some(member), groupIds, Some(pageMeta),
-      Some(privateGroupTalkMemberIds), inCategoriesRootLast, relevantPermissions)
+      Some(privateGroupTalkMemberIds), inCategoriesRootLast, permissions)
 
-    if (!mayWhat.maySee)
-      return NoNotFound("EdE2GKF8Y4")
+    if (mayWhat.maySee isNot true)
+      return NoNotFound("EdEM0FLG0SEE")
 
     Yes
   }
@@ -167,21 +269,21 @@ object Authz {
     groupIds: immutable.Seq[GroupId],
     pageMeta: PageMeta,
     inCategoriesRootLast: immutable.Seq[Category],
-    relevantPermissions: immutable.Seq[PermsOnPages]): MayMaybe = {
+    permissions: immutable.Seq[PermsOnPages]): MayMaybe = {
 
     val user = userAndLevels.user
 
     val mayWhat = checkPermsOnPages(user, groupIds, Some(pageMeta), None, inCategoriesRootLast,
-      relevantPermissions)
+      permissions)
 
-    if (!mayWhat.maySee)
-      return NoNotFound("EdE1KBTSW04")
+    if (mayWhat.maySee isNot true)
+      return NoNotFound("EdEM0FRM0SEE")
 
     if (!mayWhat.mayPostComment)
-      return NoMayNot("EdE5KFL02", "You don't have permissions to submit this form")
+      return NoMayNot("EdEM0FRM0RE", "You don't have permissions to submit this form")
 
     if (pageMeta.pageRole != PageRole.WebPage && pageMeta.pageRole != PageRole.Form) {
-      return NoMayNot("EsE4PBRN2F", s"Cannot submit custom forms to page type ${pageMeta.pageRole}")
+      return NoMayNot("EsEM0FRMPT", s"Cannot submit custom forms to page type ${pageMeta.pageRole}")
     }
 
     dieUnless(pageMeta.pageRole.canHaveReplies, "EdE5PJWK20")
@@ -190,6 +292,18 @@ object Authz {
   }
 
 
+  /** Calculates what a user may do. All permissions starts as false, except for maySee which
+    * starts as None = unknown. Then we we check all categories and permissions, and update
+    * the permissions to true, perhaps back to false, as we proceed.
+    *
+    * 'maySee' however, is special: if, for a category, it becomes Some(false),
+    * we abort, because if one may not see a category, then one may not see anything inside it.
+    * If maySee becomes Some(true), that might later be changed to Some(false), when
+    * any sub category is considered (if we're doing something in a sub category).
+    *
+    * When all calculations are ready, if maySee is still None, the callers handle that
+    * as Some(false), so don't-know-if-may-see = may-Not-see.
+    */
   private def checkPermsOnPages(
     user: Option[User],
     groupIds: immutable.Seq[GroupId],
@@ -203,7 +317,7 @@ object Authz {
       return MayEverything
 
     val isStaff = user.exists(_.isStaff)
-    val pageRole = pageMeta.map(_.pageRole)
+    val isOwnPage = user.exists(u => pageMeta.exists(_.authorId == u.id))
 
     // For now, don't let people see pages outside any category. Hmm...?
     // (<= 1 not 0: don't count the root category, no pages should be placed directly in them.)
@@ -212,6 +326,10 @@ object Authz {
       return MayWhat.mayNotSee("EdMNOCATS")
     */
 
+    var mayWhat = MayPerhapsSee
+
+    // var isWiki = .... but this is per post. Hmm. The post is not available here. [05PWPZ24]
+
     pageMeta foreach { meta =>
       categoriesRootLast.headOption foreach { parentCategory =>
         dieIf(!meta.categoryId.contains(parentCategory.id), "EdE5PBSW2")
@@ -219,20 +337,29 @@ object Authz {
 
       // These page types are for admins only.
       if (meta.pageRole == PageRole.SpecialContent || meta.pageRole == PageRole.Code)
-        return MayWhat.mayNotSee("EsE4YK02R-Code")
+        return MayWhat.mayNotSee("EdE0SEEISCODE")
+
+      if (meta.isHidden && !isStaff && !isOwnPage)
+        return MayWhat.mayNotSee("EdE0SEEPAGEHIDDEN_")
+
+      // In one's own mind map, one may edit all nodes, even if posted by others. [0JUK2WA5]
+      if (meta.pageRole == PageRole.MindMap && (isOwnPage || isStaff))
+        mayWhat = mayWhat.copy(mayEditPage = true, debugCode = "EdMEDOWNMINDM")
 
       // Only page participants may see things like private chats or private formal messages.
       if (meta.pageRole.isPrivateGroupTalk) {
         val thePageMembers = pageMembers getOrDie "EdE2SUH5G"
         val theUser = user getOrElse {
-          return MayWhat.mayNotSee("EsE4YK032-No-User")
+          return MayWhat.mayNotSee("EdE0SEE0USER")
         }
 
         if (!theUser.isMember)
-          return MayWhat.mayNotSee("EsE2GYF04-Is-Guest")
+          return MayWhat.mayNotSee("EdE0SEE0MBR")
 
         if (!thePageMembers.contains(theUser.id))
-          return MayWhat.mayNotSee("EsE5K8W27-Not-Page-Member")
+          return MayWhat.mayNotSee("EdE0SEE0PAGEMBR")
+
+        mayWhat = mayWhat.copyWithMaySeeAndReply(debugCode = "EdMMMEMBR")
       }
     }
 
@@ -242,25 +369,33 @@ object Authz {
 
     // We'll start with no permissions, at the top category, and loop through all categories
     // down to the category in which the page is placed, and add/remove permissions along the way.
-    var mayWhat = MayNothing
-    val isUsersPage = user.exists(u => pageMeta.exists(_.authorId == u.id))
+    val isForumPage = pageMeta.exists(_.pageRole == PageRole.Forum)
     var isDeleted = pageMeta.exists(_.isDeleted)
 
     // Later: return may-not-see also if !published?
-    if (isDeleted && !isUsersPage && !isStaff)
+    if (isDeleted && !isStaff)
       return MayWhat.mayNotSee("EdEPAGEDELD")
 
-    // [BACKW_COMPAT_PERMS] Remove this after I've inserted groups & permissions into the db.
-    if (isStaff) {
-      mayWhat = MayEverything
-    }
-    else {
-      mayWhat = MayWhat(maySee = true, mayPostComment = true, mayCreatePage = true,
-        debugCode = "EdM2KW0Y5")
+    // For now, hardcode may-see the forum page, otherwise only admins would see it.
+    if (isForumPage)
+      mayWhat = mayWhat.copy(maySee = Some(true), debugCode = "EdMMSEEFORUM")
+
+    for (p <- relevantPermissions; if p.onWholeSite.is(true))
+      mayWhat = mayWhat.addRemovePermissions(p, "EdMMSITEPERM")
+
+    // Hmm. !maySee here? Could happen if maySee is set to false for Everyone, but true for
+    // trust-level >= 1. That'd mean only people who have signed up already, may see this website.
+    if (mayWhat.maySee is false) {
+      // But maySeeOwn=true has precedence over maySee=false.
+      if (!isOwnPage || !mayWhat.maySeeOwn)
+        return mayWhat
     }
 
-    if (categoriesRootLast.nonEmpty) for (category <- categoriesRootLast.init.reverse) {
-      for (p <- relevantPermissions; if p.onCategoryId.contains(category.id)) {
+    // Skip the root category, cannot set permissions on it. [0YWKG21]
+    if (categoriesRootLast.nonEmpty) for (category <- categoriesRootLast.reverseIterator.drop(1)) {
+      // What if one permission says Some(yes) and another says Some(no), then, may or may not?
+      // Currently there's either Some(yes) or None, only, though. Some(no) = not impl [2LG5F04W]
+      for (p <- relevantPermissions; if p.onCategoryId.is(category.id)) {
         mayWhat = mayWhat.addRemovePermissions(p, "EdMCATLOOP")
       }
 
@@ -274,17 +409,12 @@ object Authz {
       if (!isStaff && !maySeeUnlisted && category.unlisted)
         return MayWhat.mayNotSee("EdE6WKQ0-Unlisted")
 
-      CLEAN_UP // deprecated, try to remove [5FKQWU02]
-      if (!isStaff && category.staffOnly)
-        return MayWhat.mayNotSee("EdE8YGK25-Staff-Only-Cat")
-
-      CLEAN_UP // Deprecated
-      if (!isStaff && category.onlyStaffMayCreateTopics)
-        mayWhat = mayWhat.copy(mayCreatePage = false)
-
-      // Abort if we may not see this category, because then we may not see any child cats either.
-      if (!mayWhat.maySee)
-        return mayWhat
+      // Abort if we may not see this category, or if we don't know.
+      if (mayWhat.maySee isNot true) {
+        // But maySeeOwn=true has precedence over maySee=false.
+        if (!isOwnPage || !mayWhat.maySeeOwn)
+          return mayWhat
+      }
     }
 
     // Do this first here, so the is-deleted changes won't get overwritten in later loop laps above.
@@ -294,5 +424,78 @@ object Authz {
 
     mayWhat
   }
+
+}
+
+
+/**
+  * If maySeeOwn=true, then one may see one's own stuff, even if maySee=false.
+  */
+case class MayWhat(
+  mayEditPage: Boolean = false,
+  mayEditComment: Boolean = false,
+  mayEditWiki: Boolean = false,
+  mayEditOwn: Boolean = false,
+  mayDeletePage: Boolean = false,
+  mayDeleteComment: Boolean = false,
+  mayCreatePage: Boolean = false,
+  mayPostComment: Boolean = false,
+  maySee: Option[Boolean] = None,
+  maySeeOwn: Boolean = false,
+  debugCode: String = "") {
+
+  require(maySee.isNot(false) || (!mayEditPage && !mayEditComment && !mayEditWiki &&
+      !mayDeletePage && !mayDeleteComment && !mayCreatePage && !mayPostComment), "EdE2WKB5FD")
+
+  def addRemovePermissions(permissions: PermsOnPages, debugCode: String) = MayWhat(
+    mayEditPage = permissions.mayEditPage.getOrElse(mayEditPage),
+    mayEditComment = permissions.mayEditComment.getOrElse(mayEditComment),
+    mayEditWiki = permissions.mayEditWiki.getOrElse(mayEditWiki),
+    mayEditOwn = permissions.mayEditOwn.getOrElse(mayEditOwn),
+    mayDeletePage = permissions.mayDeletePage.getOrElse(mayDeletePage),
+    mayDeleteComment = permissions.mayDeleteComment.getOrElse(mayDeleteComment),
+    mayCreatePage = permissions.mayCreatePage.getOrElse(mayCreatePage),
+    mayPostComment = permissions.mayPostComment.getOrElse(mayPostComment),
+    maySee = permissions.maySee.orElse(maySee),
+    maySeeOwn = permissions.maySeeOwn.getOrElse(maySeeOwn),
+    debugCode)
+
+  def copyWithMaySeeAndReply(debugCode: String): MayWhat = copy(
+    mayPostComment = true,
+    maySee = Some(true),
+    debugCode = debugCode)
+
+  def copyWithMaySeeReplyEdit(debugCode: String): MayWhat = copy(
+    mayEditPage = true,
+    mayPostComment = true,
+    maySee = Some(true),
+    debugCode = debugCode)
+
+  /** Copies this MayWhat to permissions = those for a deleted page (mostly may-do-nothing).
+    **/
+  def copyAsDeleted: MayWhat = copy(
+    mayEditPage = false,
+    mayEditComment = false,
+    mayEditWiki = false,
+    mayDeletePage = false,
+    mayDeleteComment = false,
+    mayCreatePage = false,
+    mayPostComment = false)
+}
+
+
+object MayWhat {
+
+  val MayPerhapsSee: MayWhat = MayWhat.mayNotSee("EdMMBYSEE").copy(maySee = None)
+
+  val MayEverything: MayWhat = MayWhat(mayEditPage = true, mayEditComment = true,
+    mayEditWiki = true, mayEditOwn = true,
+    mayDeletePage = true, mayDeleteComment = true, mayCreatePage = true,
+    mayPostComment = true, maySee = Some(true), maySeeOwn = true, "EdMMALL")
+
+  def mayNotSee(debugCode: String) = MayWhat(
+    mayEditPage = false, mayEditComment = false, mayEditWiki = false, mayEditOwn = false,
+    mayDeletePage = false, mayDeleteComment = false, mayCreatePage = false,
+    mayPostComment = false, maySee = Some(false), maySeeOwn = false, debugCode)
 
 }

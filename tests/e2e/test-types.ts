@@ -51,6 +51,7 @@ interface SiteData {
   members: Member[];
   identities: any;
   guests: TestGuest[];
+  permsOnPages: PermsOnPage[];
   blocks: any;
   invites: any;
   categories: TestCategory[];
@@ -118,7 +119,6 @@ interface TestCategory {  // try to merge with Category in model.ts?
   frozenAtMs?: number;
   deletedAtMs?: number;
   unlisted?: boolean;
-  staffOnly?: boolean;
 }
 
 

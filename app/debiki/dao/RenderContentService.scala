@@ -21,7 +21,7 @@ import akka.actor.{Actor, Props, ActorRef, ActorSystem}
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki.{DatabaseUtils, Globals, ReactJson, ReactRenderer}
-import debiki.Globals.{testsDoneServerGone, wasTest}
+import debiki.Globals.{testsDoneServerGone, isOrWasTest}
 import play.{api => p}
 import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -78,7 +78,7 @@ class RenderContentActor(val daoFactory: SiteDaoFactory) extends Actor {
         case ex: java.sql.SQLException if DatabaseUtils.isConnectionClosed(ex) =>
           p.Logger.warn("Cannot render out-of-date page, database connection closed [DwE8GK7W]")
         case throwable: Throwable =>
-          if (!wasTest)
+          if (!isOrWasTest)
             p.Logger.error("Error rendering one out-of-date page [DwE6GUK02]", throwable)
       }
       finally {

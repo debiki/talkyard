@@ -17,7 +17,6 @@
 
 /// <reference path="../typedefs/jquery/jquery.d.ts" />
 /// <reference path="model.ts" />
-/// <reference path="rules.ts" />
 /// <reference path="ServerApi.ts" />
 
 // Ought to include, but then `debiki2.createComponent` gets placed too late —> JS breaks:
@@ -421,7 +420,7 @@ export function logout(success: () => void) {
 
 export function makeImpersionateUserAtOtherSiteUrl(siteId: SiteId, userId: UserId,
       success: (url: string) => void) {
-  var url = '/-/make-impersonate-other-site-url?siteId=' + siteId + '&userId=' + userId;
+  const url = '/-/make-impersonate-other-site-url?siteId=' + siteId + '&userId=' + userId;
   postJsonSuccess(url, success, null);
 }
 
@@ -443,6 +442,13 @@ export function stopImpersonatingReloadPage() {
   postJsonSuccess('/-/stop-impersonating', () => {
     location.reload();
   }, null);
+}
+
+
+export function loadGroups(success: (_: Group[]) => void) {
+  get('/-/load-groups', response => {
+    success(response);
+  });
 }
 
 
@@ -994,7 +1000,12 @@ export function movePost(postId: PostId, newHost: SiteId, newPageId: PageId,
 }
 
 
-export function saveCategory(data, success: (response: any) => void, error?: () => void) {
+export function saveCategory(category: Category, permissions: PermsOnPage[],
+      success: (response: any) => void, error?: () => void) {
+  const data = {
+    category: category,
+    permissions: permissions,
+  };
   postJsonSuccess('/-/save-category', success, data, error);
 }
 
@@ -1011,8 +1022,11 @@ export function undeleteCategory(categoryId: number, success: (StorePatch: any) 
 }
 
 
-export function loadCategory(id: number, success: (response: any) => void) {
-  get('/-/load-category?id=' + id, success);
+export function loadCategory(id: number,
+      success: (category: Category, permissions: PermsOnPage[], groups: Group[]) => void) {
+  get('/-/load-category?id=' + id, response => {
+    success(response.category, response.permissions, response.groups);
+  });
 }
 
 

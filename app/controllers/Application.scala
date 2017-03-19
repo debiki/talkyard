@@ -53,13 +53,13 @@ class Application @Inject() extends mvc.Controller {
 
     val pageMeta = dao.getPageMeta(pageId) getOrElse throwIndistinguishableNotFound("EdE3FJB8W2")
     val post = dao.loadPost(pageId, postNr) getOrElse throwIndistinguishableNotFound("EdE5PJB2R8")
-    val categoriesRootLast = dao.loadCategoriesRootLast(pageMeta.categoryId)
+    val categoriesRootLast = dao.loadAncestorCategoriesRootLast(pageMeta.categoryId)
 
     throwNoUnless(Authz.mayFlagPost(
       request.theMember, dao.getGroupIds(request.theUser),
       post, pageMeta, dao.getAnyPrivateGroupTalkMembers(pageMeta),
       inCategoriesRootLast = categoriesRootLast,
-      relevantPermissions = dao.getPermsOnPages(categoriesRootLast)), "EdEZBXKSM2")
+      permissions = dao.getPermsOnPages(categoriesRootLast)), "EdEZBXKSM2")
 
     val postsHidden = try {
       dao.flagPost(pageId = pageId, postNr = postNr, flagType,

@@ -20,9 +20,12 @@ package debiki.dao
 
 import com.debiki.core._
 import com.debiki.core.Prelude._
-import debiki.Globals
+import ed.server.http.throwForbidden2
 import play.api.Play.current
 import SystemDao._
+
+
+class NumSites(val byYou: Int, val total: Int)
 
 
 /** Database and cache queries that take all sites in mind.
@@ -49,6 +52,8 @@ class SystemDao(private val dbDaoFactory: DbDaoFactory, val cache: DaoMemCache) 
 
   def theSite(siteId: SiteId): Site = getSite(siteId) getOrDie "EsE2WUY5"
 
+  def getOrCreateFirstSite(): Site = getSite(FirstSiteId) getOrElse createFirstSite()
+
   def getSite(siteId: SiteId): Option[Site] = {
     COULD_OPTIMIZE // move getSite() to SystemDao instead so won't need to create temp SiteDao obj.
     debiki.Globals.siteDao(siteId).getSite()
@@ -67,6 +72,148 @@ class SystemDao(private val dbDaoFactory: DbDaoFactory, val cache: DaoMemCache) 
     readWriteTransaction(_.updateSites(sites))
     for ((siteId, _) <- sites) {
       debiki.Globals.siteDao(siteId).emptyCache()
+    }
+  }
+
+  private def createFirstSite(): Site = {
+    readWriteTransaction { sysTx =>
+      val firstSite = sysTx.createSite(Some(FirstSiteId), name = "Main Site", SiteStatus.NoAdmin,
+        embeddingSiteUrl = None, creatorIp = "0.0.0.0", creatorEmailAddress = "unknown@example.com",
+        quotaLimitMegabytes = None, maxSitesPerIp = 9999, maxSitesTotal = 9999,
+        isTestSiteOkayToDelete = false, pricePlan = "-", createdAt = sysTx.now)
+
+      dieIf(firstSite.id != FirstSiteId, "EdE2AE6U0")
+      val siteTx = sysTx.siteTransaction(FirstSiteId)
+
+      siteTx.upsertSiteSettings(SettingsToSave(
+        orgFullName = Some(Some("Unnamed Organization"))))
+
+      // Don't insert any site host — instead, we use the ed.hostname config value.
+
+      CreateSiteDao.createSystemUser(siteTx)
+      CreateSiteDao.createUnknownUser(siteTx)
+      CreateSiteDao.createDefaultGroupsAndPermissions(siteTx)
+
+      firstSite
+    }
+  }
+
+
+  def createSite(
+    name: String,
+    status: SiteStatus,
+    hostname: String,
+    embeddingSiteUrl: Option[String],
+    organizationName: String,
+    creatorEmailAddress: String,
+    creatorId: UserId,
+    browserIdData: BrowserIdData,
+    isTestSiteOkayToDelete: Boolean,
+    skipMaxSitesCheck: Boolean,
+    deleteOldSite: Boolean,
+    pricePlan: PricePlan,
+    createdFromSiteId: Option[SiteId]): Site = {
+
+    if (!Site.isOkayName(name))
+      throwForbidden2("EsE7UZF2_", s"Bad site name: '$name'")
+
+    dieIf(hostname contains ":", "DwE3KWFE7")
+
+    val config = debiki.Globals.config
+    val maxSitesPerIp = skipMaxSitesCheck ? 999999 | config.createSite.maxSitesPerPerson
+    val maxSitesTotal = skipMaxSitesCheck ? 999999 | {
+      // Allow a little bit more than maxSitesTotal sites, in case Alice starts creating
+      // a site, then Bo and Bob finish creating theirs so that the total limit is reached
+      // — then it'd be annoying if Alice gets an error message.
+      config.createSite.maxSitesTotal + 5
+    }
+
+    readWriteTransaction { sysTx =>
+      if (deleteOldSite) {
+        dieUnless(hostname.startsWith(SiteHost.E2eTestPrefix), "EdE7PK5W8")
+        dieUnless(name.startsWith(SiteHost.E2eTestPrefix), "EdE50K5W4")
+        sysTx.deleteAnyHostname(hostname)
+        val anyDeletedSite = sysTx.deleteSiteByName(name)
+        forgetHostname(hostname)
+        anyDeletedSite foreach { site =>
+          dieIf(site.id > MaxTestSiteId, "EdE20PUJ6", "Trying to delete a *real* site")
+          // + also redisCache.clearThisSite() doesn't work if there are many Redis nodes [0GLKW24].
+          // This won't clear the watchbar cache: memCache.clearSingleSite(site.id)
+          // so instead:
+          memCache.clearAllSites()
+          // Redis cache cleared below. (2PKF05Y)
+        }
+      }
+
+      val newSite = sysTx.createSite(id = None, name = name, status,
+        embeddingSiteUrl, creatorIp = browserIdData.ip, creatorEmailAddress = creatorEmailAddress,
+        quotaLimitMegabytes = config.createSite.quotaLimitMegabytes,
+        maxSitesPerIp = maxSitesPerIp, maxSitesTotal = maxSitesTotal,
+        isTestSiteOkayToDelete = isTestSiteOkayToDelete, pricePlan = pricePlan, sysTx.now)
+
+      if (deleteOldSite) {
+        // Delete Redis stuff even if no site found (2PKF05Y), because sometimes, when developing,
+        // I've imported a SQL dump, resulting in most sites disappearing from the database, but
+        // not from the Redis cache. So even if 'anyDeletedSite' is None, might still need to:
+        val redisCache = new RedisCache(newSite.id, debiki.Globals.redisClient)
+        redisCache.clearThisSite()
+      }
+
+      createdFromSiteId foreach { oldSiteId =>
+        val oldSiteTx = sysTx.siteTransaction(oldSiteId)
+        AuditDao.insertAuditLogEntry(AuditLogEntry(
+          siteId = oldSiteId,
+          id = AuditLogEntry.UnassignedId,
+          didWhat = AuditLogEntryType.CreateSite,
+          doerId = creatorId,
+          doneAt = oldSiteTx.now.toJavaDate,
+          emailAddress = Some(creatorEmailAddress),
+          browserIdData = browserIdData,
+          browserLocation = None,
+          targetSiteId = Some(newSite.id)), oldSiteTx)
+      }
+
+      val newSiteTx = sysTx.siteTransaction(newSite.id)
+      newSiteTx.startAuditLogBatch()
+
+      newSiteTx.upsertSiteSettings(SettingsToSave(
+        orgFullName = Some(Some(organizationName))))
+
+      val newSiteHost = SiteHost(hostname, SiteHost.RoleCanonical)
+      try newSiteTx.insertSiteHost(newSiteHost)
+      catch {
+        case _: DuplicateHostnameException =>
+          throwForbidden2(
+            "EdE7FKW20", o"""There's already a site with hostname '${newSiteHost.hostname}'. Add
+            the URL param deleteOldSite=true to delete it (works for e2e tests only)""")
+      }
+
+      CreateSiteDao.createSystemUser(newSiteTx)
+      CreateSiteDao.createUnknownUser(newSiteTx)
+      CreateSiteDao.createDefaultGroupsAndPermissions(newSiteTx)
+
+      newSiteTx.insertAuditLogEntry(AuditLogEntry(
+        siteId = newSite.id,
+        id = AuditLogEntry.FirstId,
+        didWhat = AuditLogEntryType.ThisSiteCreated,
+        doerId = SystemUserId, // no admin account yet created
+        doneAt = newSiteTx.now.toJavaDate,
+        emailAddress = Some(creatorEmailAddress),
+        browserIdData = browserIdData,
+        browserLocation = None,
+        targetSiteId = createdFromSiteId))
+
+      newSite.copy(hosts = List(newSiteHost))
+    }
+  }
+
+
+  def countSites(testSites: Boolean, browserIdData: BrowserIdData): NumSites = {
+    readOnlyTransaction { transaction =>
+      new NumSites(
+        byYou = transaction.countWebsites(createdFromIp = browserIdData.ip,
+          creatorEmailAddress = "dummy_ignore", testSites),
+        total = transaction.countWebsitesTotal(testSites))
     }
   }
 

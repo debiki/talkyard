@@ -23,7 +23,7 @@ import com.debiki.core.PageParts.MaxTitleLength
 import com.debiki.core.User.SystemUserId
 import debiki._
 import debiki.DebikiHttp._
-import ed.server.auth.Authz
+import ed.server.auth.{Authz, ForumAuthzContext}
 import ed.server.http.throwIndistinguishableNotFound
 import ed.server.notf.NotificationGenerator
 import java.{util => ju}
@@ -41,6 +41,11 @@ import scala.collection.immutable
   */
 trait PagesDao {
   self: SiteDao =>
+
+
+  def loadPagesByUser(userId: UserId, isStaffOrSelf: Boolean, limit: Int): Seq[PagePathAndMeta] = {
+    readOnlyTransaction(_.loadPagesByUser(userId, isStaffOrSelf = isStaffOrSelf, limit))
+  }
 
 
   def createPage(pageRole: PageRole, pageStatus: PageStatus, anyCategoryId: Option[CategoryId],
@@ -123,12 +128,15 @@ trait PagesDao {
     val authorAndLevels = loadUserAndLevels(byWho, transaction)
     val author = authorAndLevels.user
     val categoryPath = transaction.loadCategoryPathRootLast(anyCategoryId)
+    val groupIds = transaction.loadGroupIds(author)
+    val permissions = transaction.loadPermsOnPages()
+    val authzCtx = ForumAuthzContext(Some(author), groupIds, permissions)
 
-    dieOrDenyUnless(Authz.mayCreatePage(
-      authorAndLevels, transaction.loadGroupIds(author),
+    dieOrThrowNoUnless(Authz.mayCreatePage(  // REFACTOR COULD pass a pageAuthzCtx instead [5FLK02]
+      authorAndLevels, groupIds,
       pageRole, bodyPostType, pinWhere, anySlug = anySlug, anyFolder = anyFolder,
       inCategoriesRootLast = categoryPath,
-      relevantPermissions = transaction.loadPermsOnPages()), "EdE5JGK2W4")
+      permissions), "EdE5JGK2W4")
 
     require(!anyFolder.exists(_.isEmpty), "EsE6JGKE3")
     // (Empty slug ok though, e.g. homepage.)
@@ -140,8 +148,8 @@ trait PagesDao {
     // For now, don't restrict PageRole.UsabilityTesting — I'll "just" sort by oldest-first instead?
     if (pageRole == PageRole.Critique) { // [plugin] [85SKW32]
       anyCategoryId foreach { categoryId =>
-        val pages = loadPagesInCategory(categoryId, includeDescendants = true,
-          isStaff = false, restrictedOnly = false,
+        val pages = loadMaySeePagesInCategory(categoryId, includeDescendants = true,
+          authzCtx,
           PageQuery(PageOrderOffset.Any, PageFilter.ShowWaiting), limit = 20)
         // Client side, the limit is 10. Let's allow a few more topics in case people start
         // writing before the limit is reached but submit afterwards.

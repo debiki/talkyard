@@ -436,7 +436,8 @@ object UserController extends mvc.Controller {
           "EdE4ZBXKG")
       }
       else {
-        ReactJson.NoUserSpecificData
+        val everyonesPerms = request.dao.getPermsForEveryone()
+        ReactJson.noUserSpecificData(everyonesPerms)
       }
 
     json
@@ -549,6 +550,14 @@ object UserController extends mvc.Controller {
   }
 
 
+  def loadGroups = AdminGetAction { request =>
+    val groups = request.dao.readOnlyTransaction { tx =>
+      tx.loadGroupsAsSeq()
+    }
+    OkSafeJson(JsArray(groups map ForumController.groupToJson))
+  }
+
+
   SECURITY // don't allow if user listing disabled, & isn't staff [8FKU2A4]
   def listAllUsers(usernamePrefix: String) = GetAction { request =>
     // Authorization check: Is a member? Add MemberGetAction?
@@ -573,13 +582,13 @@ object UserController extends mvc.Controller {
     import request.dao
 
     val pageMeta = dao.getPageMeta(pageId) getOrElse throwIndistinguishableNotFound("EdE3FJB8W2")
-    val categoriesRootLast = dao.loadCategoriesRootLast(pageMeta.categoryId)
+    val categoriesRootLast = dao.loadAncestorCategoriesRootLast(pageMeta.categoryId)
 
     SECURITY // Later: shouldn't list authors of hidden / deleted / whisper posts.
     throwNoUnless(Authz.maySeePage(
       pageMeta, request.user, dao.getGroupIds(request.user),
       dao.getAnyPrivateGroupTalkMembers(pageMeta), categoriesRootLast,
-      relevantPermissions = dao.getPermsOnPages(categoriesRootLast)), "EdEZBXKSM2")
+      permissions = dao.getPermsOnPages(categoriesRootLast)), "EdEZBXKSM2")
 
     val names = dao.listUsernames(pageId = pageId, prefix = prefix)
     val json = JsArray(

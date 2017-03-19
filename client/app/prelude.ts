@@ -16,7 +16,8 @@
  */
 
 /// <reference path="../typedefs/react/react.d.ts" />
-/// <reference path="plain-old-javascript.d.ts" />
+/// <reference path="model.ts" />
+/// <reference path="constants.ts" />
 
 var React = window['React'];
 var ReactDOM = window['ReactDOM'];
@@ -151,13 +152,13 @@ export function isDefined2(x): boolean {
 }
 
 
-// Ooops bad name, shouldn't include null
+// Ooops bad name, shouldn't include null  CLEAN_UP rename to isPresent/isSomething/isSth/hasValue?
 export function isDefined(x): boolean {  // rename to isNotNullOrUndefined(x)
   return !isNullOrUndefined(x);
 }
 
 
-export function isNullOrUndefined(x): boolean {
+export function isNullOrUndefined(x): boolean {   // RENAME to isNullOrUndef/isAbsent/lacksValue?
   return _.isNull(x) || _.isUndefined(x);
 }
 
@@ -165,6 +166,43 @@ export function isNullOrUndefined(x): boolean {
 export function firstDefinedOf(x, y, z?) {
   return !_.isUndefined(x) ? x : (!_.isUndefined(y) ? y : z);
 }
+
+
+// Finds and replaces (in-place) the first item with item.id = replacement.id.
+// Dies, if there's not matching item.
+export function replaceById(itemsWithId: any[], replacement) {
+  // @ifdef DEBUG
+  dieIf(isNullOrUndefined(replacement.id), 'EdE4GJTH02');
+  // @endif
+
+  for (let i = 0; i < itemsWithId.length; ++i) {
+    const item = itemsWithId[i];
+    // @ifdef DEBUG
+    dieIf(isNullOrUndefined(item.id), 'EdE2FJ0U7');
+    // @endif
+
+    if (item.id === replacement.id) {
+      itemsWithId[i] = replacement;
+      break;
+    }
+    dieIf(i === itemsWithId.length - 1, 'EdE8KA0N2');
+  }
+}
+
+
+export function deleteById(itemsWithId: any[], idToDelete) {
+  for (let i = 0; i < itemsWithId.length; ++i) {
+    const item = itemsWithId[i];
+    // @ifdef DEBUG
+    dieIf(isNullOrUndefined(item.id), 'EdE6JHW0U2');
+    // @endif
+    if (item.id === idToDelete) {
+      itemsWithId.splice(i, 1);
+      break;
+    }
+  }
+}
+
 
 //------------------------------------------------------------------------------
 }

@@ -25,7 +25,7 @@ import ed.server.spam.SpamChecker.throwForbiddenIfSpam
 import ed.server.http._
 import javax.inject.Inject
 import play.api.libs.json._
-import play.api.mvc.Controller
+import play.api.mvc.{Action, Controller}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util.Try
 
@@ -36,8 +36,6 @@ import scala.util.Try
   * logs in with that email address, s/he becomes admin for the site.
   */
 class CreateSiteController @Inject() extends Controller {
-
-  private val log = play.api.Logger
 
   // Let people use hostnames that start with 'test-' — good to know which sites are
   // in fact just people's test sites.
@@ -52,7 +50,7 @@ class CreateSiteController @Inject() extends Controller {
     val isTestBool = Try(isTest.toBoolean).toOption getOrElse throwBadArgument("EsE5JUM2", "isTest")
     throwIfMayNotCreateSite(request, isTestBool)
 
-    val numSites = request.dao.countSites(isTestBool, request.theBrowserIdData)
+    val numSites = Globals.systemDao.countSites(isTestBool, request.theBrowserIdData)
     if (numSites.byYou >= Globals.config.createSite.maxSitesPerPerson)
       throwForbidden("EsE7KU20W", "You have created too many forums already, sorry.")
 
@@ -69,7 +67,8 @@ class CreateSiteController @Inject() extends Controller {
   }
 
 
-  def createSite = AsyncPostJsonAction(RateLimits.CreateSite, maxBytes = 500) { request =>
+  def createSite: Action[JsValue] = AsyncPostJsonAction(RateLimits.CreateSite, maxBytes = 500) {
+        request =>
     val isTestSiteOkayToDelete = (request.body \ "testSiteOkDelete").asOpt[Boolean].contains(true)
     throwIfMayNotCreateSite(request, isTestSiteOkayToDelete)
 
@@ -110,7 +109,7 @@ class CreateSiteController @Inject() extends Controller {
       case 0 => "Unknown"
       case 1 => "NonCommercial"
       case 2 => "Business"
-      case x => throwBadArgument("EsE7YKW28", "pricePlan", "not 0, 1 or 2")
+      case _ => throwBadArgument("EsE7YKW28", "pricePlan", "not 0, 1 or 2")
     }
 
     Globals.spamChecker.detectRegistrationSpam(request, name = localHostname,
@@ -122,13 +121,14 @@ class CreateSiteController @Inject() extends Controller {
 
       val goToUrl: String =
         try {
-          request.dao.createSite(
+          debiki.Globals.systemDao.createSite(
             name = localHostname, SiteStatus.NoAdmin, hostname = hostname,
             embeddingSiteUrl = anyEmbeddingSiteAddress, creatorEmailAddress = emailAddress,
             creatorId = request.user.map(_.id) getOrElse UnknownUserId,
             browserIdData = request.theBrowserIdData, organizationName = organizationName,
             isTestSiteOkayToDelete = isTestSiteOkayToDelete, skipMaxSitesCheck = okE2ePassword,
-            deleteOldSite = deleteOldSite, pricePlan = pricePlan)
+            deleteOldSite = deleteOldSite, pricePlan = pricePlan,
+            createdFromSiteId = Some(request.siteId))
           Globals.originOf(hostname)
         }
         catch {

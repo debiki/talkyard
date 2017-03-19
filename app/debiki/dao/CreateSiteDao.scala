@@ -18,112 +18,15 @@
 package debiki.dao
 
 import com.debiki.core._
-import com.debiki.core.Prelude._
-import ed.server.http.throwForbidden2
 
 
 
-/** Creates new sites, via this site. That is, a user accesses server-adress/-/create-site
-  * on this site, and creates another site.
+/** Create-new-site helper methods.
   */
-trait CreateSiteDao {
-  self: SiteDao =>
+object CreateSiteDao {  RENAME // but to what. & move, but to where?
 
-
-  class NumSites(val byYou: Int, val total: Int)
-
-  def countSites(testSites: Boolean, browserIdData: BrowserIdData): NumSites = {
-    readOnlyTransaction { transaction =>
-      new NumSites(
-        byYou = transaction.countWebsites(createdFromIp = browserIdData.ip,
-          creatorEmailAddress = "dummy_ignore", testSites),
-        total = transaction.countWebsitesTotal(testSites))
-    }
-  }
-
-
-  def createSite(name: String, status: SiteStatus, hostname: String,
-        embeddingSiteUrl: Option[String], organizationName: String,
-        creatorEmailAddress: String, creatorId: UserId, browserIdData: BrowserIdData,
-        isTestSiteOkayToDelete: Boolean, skipMaxSitesCheck: Boolean,
-        deleteOldSite: Boolean, pricePlan: PricePlan)
-        : Site = {
-
-    if (!Site.isOkayName(name))
-      throwForbidden2("EsE7UZF2_", s"Bad site name: '$name'")
-
-    dieIf(hostname contains ":", "DwE3KWFE7")
-    val maxSitesPerIp = skipMaxSitesCheck ? 999999 | config.createSite.maxSitesPerPerson
-    val maxSitesTotal = skipMaxSitesCheck ? 999999 | {
-      // Allow a little bit more than maxSitesTotal sites, in case Alice starts creating
-      // a site, then Bo and Bob finish creating theirs so that the total limit is reached
-      // — then it'd be annoying if Alice gets an error message.
-      config.createSite.maxSitesTotal + 5
-    }
-
-    readWriteTransaction { transaction =>
-      if (deleteOldSite) {
-        dieUnless(hostname.startsWith(SiteHost.E2eTestPrefix), "EdE7PK5W8")
-        dieUnless(name.startsWith(SiteHost.E2eTestPrefix), "EdE50K5W4")
-        transaction.asSystem.deleteAnyHostname(hostname)
-        transaction.asSystem.deleteSiteByName(name)
-        // Should add this CreateSiteDao to SystemDao instead? This is a bit weird:
-        debiki.Globals.systemDao.forgetHostname(hostname)
-      }
-
-      val newSite = transaction.createSite(name = name, status, hostname = hostname,
-        embeddingSiteUrl, creatorIp = browserIdData.ip, creatorEmailAddress = creatorEmailAddress,
-        quotaLimitMegabytes = config.createSite.quotaLimitMegabytes,
-        maxSitesPerIp = maxSitesPerIp, maxSitesTotal = maxSitesTotal,
-        isTestSiteOkayToDelete = isTestSiteOkayToDelete, pricePlan = pricePlan, transaction.now)
-
-      insertAuditLogEntry(AuditLogEntry(
-        siteId = this.siteId,
-        id = AuditLogEntry.UnassignedId,
-        didWhat = AuditLogEntryType.CreateSite,
-        doerId = creatorId,
-        doneAt = transaction.now.toJavaDate,
-        emailAddress = Some(creatorEmailAddress),
-        browserIdData = browserIdData,
-        browserLocation = None,
-        targetSiteId = Some(newSite.id)), transaction)
-
-      transaction.setSiteId(newSite.id)
-      transaction.startAuditLogBatch()
-
-      transaction.upsertSiteSettings(SettingsToSave(
-        orgFullName = Some(Some(organizationName))))
-
-      val newSiteHost = SiteHost(hostname, SiteHost.RoleCanonical)
-      try transaction.insertSiteHost(newSiteHost)
-      catch {
-        case _: DuplicateHostnameException =>
-          throwForbidden2(
-            "EdE7FKW20", o"""There's already a site with hostname '${newSiteHost.hostname}'. Add
-            the URL param deleteOldSite=true to delete it (works for e2e tests only)""")
-      }
-
-      createSystemUser(transaction)
-      createUnknownUser(transaction)
-
-      insertAuditLogEntry(AuditLogEntry(
-        siteId = newSite.id,
-        id = AuditLogEntry.UnassignedId,
-        didWhat = AuditLogEntryType.ThisSiteCreated,
-        doerId = SystemUserId, // no admin account yet created
-        doneAt = transaction.now.toJavaDate,
-        emailAddress = Some(creatorEmailAddress),
-        browserIdData = browserIdData,
-        browserLocation = None,
-        targetSiteId = Some(this.siteId)), transaction)
-
-      newSite.copy(hosts = List(newSiteHost))
-    }
-  }
-
-
-  private def createSystemUser(transaction: SiteTransaction) {
-    transaction.insertMember(MemberInclDetails(
+  def createSystemUser(transaction: SiteTransaction) {
+    val systemUser = MemberInclDetails(
       id = SystemUserId,
       fullName = Some(SystemUserFullName),
       username = SystemUserUsername,
@@ -133,16 +36,63 @@ trait CreateSiteDao {
       approvedById = None,
       emailAddress = "",
       emailNotfPrefs = EmailNotfPrefs.DontReceive,
-      emailVerifiedAt = None))
+      emailVerifiedAt = None,
+      isAdmin = true)
+    transaction.insertMember(systemUser)
     transaction.upsertUserStats(UserStats.forNewUser(
       SystemUserId, firstSeenAt = transaction.now, emailedAt = None))
+    transaction.insertUsernameUsage(UsernameUsage(
+      username = systemUser.username, inUseFrom = transaction.now, userId = systemUser.id))
   }
 
 
-  private def createUnknownUser(transaction: SiteTransaction) {
-    transaction.createUnknownUser(transaction.now.toJavaDate)
+  def createUnknownUser(transaction: SiteTransaction) {
+    transaction.createUnknownUser()
     transaction.upsertUserStats(UserStats.forNewUser(
       UnknownUserId, firstSeenAt = transaction.now, emailedAt = None))
+  }
+
+
+  def createDefaultGroupsAndPermissions(tx: SiteTransaction) {
+    import Group._
+
+    val Everyone = Group(
+      EveryoneId, "everyone", "Everyone", grantsTrustLevel = None)
+    val New = Group(
+      NewMembersId, "new_members", "New Members", grantsTrustLevel = Some(TrustLevel.New))
+    val Basic = Group(
+      BasicMembersId, "basic_members", "Basic Members", grantsTrustLevel = Some(TrustLevel.Basic))
+    val Full = Group(
+      FullMembersId, "full_members", "Full Members", grantsTrustLevel = Some(TrustLevel.FullMember))
+    val Trusted = Group(
+      TrustedId, "trusted_members", "Trusted Members", grantsTrustLevel = Some(TrustLevel.Helper))
+    val Regular = Group(
+      RegularsId, "regular_members", "Regular Members", grantsTrustLevel = Some(TrustLevel.Regular))
+    val Core = Group(
+      CoreMembersId, "core_members", "Core Members", grantsTrustLevel = Some(TrustLevel.CoreMember))
+    val Staff = Group(
+      StaffId, "staff", "Staff", grantsTrustLevel = None)
+    val Moderators = Group(
+      ModeratorsId, "moderators", "Moderators", grantsTrustLevel = None)
+    val Admins = Group(
+      AdminsId, "admins", "Admins", grantsTrustLevel = None)
+
+    insertGroupAndUsernameUsage(Everyone, tx)
+    insertGroupAndUsernameUsage(New, tx)
+    insertGroupAndUsernameUsage(Basic, tx)
+    insertGroupAndUsernameUsage(Full, tx)
+    insertGroupAndUsernameUsage(Trusted, tx)
+    insertGroupAndUsernameUsage(Regular, tx)
+    insertGroupAndUsernameUsage(Core, tx)
+    insertGroupAndUsernameUsage(Staff, tx)
+    insertGroupAndUsernameUsage(Moderators, tx)
+    insertGroupAndUsernameUsage(Admins, tx)
+  }
+
+
+  private def insertGroupAndUsernameUsage(group: Group, tx: SiteTransaction) {
+    tx.insertGroup(group)
+    tx.insertUsernameUsage(UsernameUsage(username = group.theUsername, tx.now, userId = group.id))
   }
 
 }

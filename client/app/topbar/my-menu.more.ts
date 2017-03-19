@@ -85,7 +85,7 @@ var MyMenuDropdownModal = createComponent({
       var urgentReviewTasks = makeNotfIcon('reviewUrgent', me.numUrgentReviewTasks);
       var otherReviewTasks = makeNotfIcon('reviewOther', me.numOtherReviewTasks);
       var adminMenuItem = !isStaff(me) ? null :
-        MenuItemLink({ href: linkToAdminPage(), className: 'esMyMenu_admin' },
+        MenuItemLink({ href: linkToAdminPage(me), className: 'esMyMenu_admin' },
           r.span({ className: 'icon-settings' }, "Admin"));
       var reviewMenuItem = !urgentReviewTasks && !otherReviewTasks ? null :
         MenuItemLink({ href: linkToReviewPage(), id: 'e2eMM_Review' },

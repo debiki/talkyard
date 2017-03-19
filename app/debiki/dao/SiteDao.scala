@@ -89,8 +89,7 @@ class SiteDao(
   with MessagesDao
   with WatchbarDao
   with ReviewsDao
-  with AuditDao
-  with CreateSiteDao {
+  with AuditDao {
 
   protected lazy val memCache = new MemCache(siteId, cache)
   protected lazy val redisCache = new RedisCache(siteId, redisClient)
@@ -98,7 +97,7 @@ class SiteDao(
 
 
   def memCache_test: MemCache = {
-    require(Globals.wasTest, "EsE7YKP42B")
+    require(Globals.isOrWasTest, "EsE7YKP42B")
     memCache
   }
 
@@ -175,7 +174,7 @@ class SiteDao(
   }
 
 
-  def dieOrDenyUnless(mayMaybe: MayMaybe, errorCode: String) {
+  def dieOrThrowNoUnless(mayMaybe: MayMaybe, errorCode: String) {
     COULD // avoid logging harmless internal error, see comment below,
     // by checking Globals.now() - this-dao.createdAt and doing throwForbidden() not die().
     // Later, check if current time minus request start time is small, then just

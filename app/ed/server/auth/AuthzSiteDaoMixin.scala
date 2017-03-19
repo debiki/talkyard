@@ -34,6 +34,13 @@ trait AuthzSiteDaoMixin {
   self: SiteDao =>
 
 
+  def getForumAuthzContext(user: Option[User]): ForumAuthzContext = {
+    val groupIds = getGroupIds(user)
+    val permissions = getPermsForPeople(groupIds)
+    ForumAuthzContext(user, groupIds, permissions)
+  }
+
+
   /** Returns true/false, + iff false, a why-forbidden debug reason code.
     */
   def maySeePageUseCache(pageMeta: PageMeta, user: Option[User], maySeeUnlisted: Boolean = true)
@@ -70,7 +77,7 @@ trait AuthzSiteDaoMixin {
     val categories: immutable.Seq[Category] =
       pageMeta.categoryId map { categoryId =>
         anyTransaction.map(_.loadCategoryPathRootLast(categoryId)) getOrElse {
-          loadCategoriesRootLast(categoryId)
+          loadAncestorCategoriesRootLast(categoryId)
         }
       } getOrElse Nil
 
@@ -79,11 +86,10 @@ trait AuthzSiteDaoMixin {
         getAnyPrivateGroupTalkMembers(pageMeta)
       }
 
-    val groupIds: immutable.Seq[UserId] = user.map { theUser =>
-      anyTransaction.map(_.loadGroupIds(theUser)) getOrElse {
-        getGroupIds(theUser)
+    val groupIds: immutable.Seq[UserId] =
+      anyTransaction.map(_.loadGroupIds(user)) getOrElse {
+        getGroupIds(user)
       }
-    } getOrElse Nil
 
     val permissions = anyTransaction.map(_.loadPermsOnPages()) getOrElse {
       getPermsOnPages(categories)
@@ -160,11 +166,26 @@ trait AuthzSiteDaoMixin {
   }
 
 
+  @deprecated("now", "use getPermsForPeople instead?")
   def getPermsOnPages(categories: immutable.Seq[Category]): immutable.Seq[PermsOnPages] = {
     COULD_OPTIMIZE // For now
     readOnlyTransaction { transaction =>
       transaction.loadPermsOnPages()
     }
+  }
+
+
+  def getPermsForEveryone(): immutable.Seq[PermsOnPages] = {
+    getPermsForPeople(Vector(Group.EveryoneId))
+  }
+
+
+  def getPermsForPeople(userIds: Iterable[UserId]): immutable.Seq[PermsOnPages] = {
+    COULD_OPTIMIZE // For now
+    val perms = readOnlyTransaction { transaction =>
+      transaction.loadPermsOnPages()
+    }
+    perms.filter(p => userIds.exists(_ == p.forPeopleId))
   }
 
 }

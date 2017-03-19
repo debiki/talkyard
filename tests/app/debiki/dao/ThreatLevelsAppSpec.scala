@@ -37,6 +37,7 @@ class ThreatLevelsAppSpec extends ReviewStuffAppSuite("6GP4") {
 
       "create page" in {
         newAdminAndPage()
+        letEveryoneTalkAndStaffModerate(dao)
       }
 
       "members, mild and moderate threat level: comments are added to the moderation queue" in {

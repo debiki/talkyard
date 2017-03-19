@@ -20,7 +20,6 @@
 /// <reference path="oop-methods.ts" />
 /// <reference path="prelude.ts" />
 /// <reference path="utils/utils.ts" />
-/// <reference path="../typedefs/lodash/lodash.d.ts" />
 /// <reference path="../typedefs/eventemitter2/eventemitter2.d.ts" />
 
 // CLEAN_UP try to remove this dependency from here.
@@ -99,6 +98,8 @@ ReactDispatcher.register(function(payload) {
 
     case ReactActions.actionTypes.CreateEditForumCategory:
       store.categories = action.allCategories;
+      // COULD sort perms somehow, how? And remove dupls? [4JKT2W1]
+      store.me.permsOnPages = store.me.permsOnPages.concat(action.myNewPermissions);
       // (If editing, only the slug might have been changed, not the id.)
       store.newCategoryId = action.newCategoryId;
       store.newCategorySlug = action.newCategorySlug;
@@ -353,12 +354,12 @@ function findAnyAcceptedAnswerPostNr() {
 }
 
 
-var volatileDataActivated = false;
+let volatileDataActivated = false;
 
 ReactStore.activateVolatileData = function() {
   dieIf(volatileDataActivated, 'EsE4PFY03');
   volatileDataActivated = true;
-  var data: VolatileDataFromServer = debiki.volatileDataFromServer;
+  const data: VolatileDataFromServer = debiki.volatileDataFromServer;
   theStore_setOnlineUsers(data.numStrangersOnline, data.usersOnline);
   ReactStore.activateMyself(data.me);
   store.quickUpdate = false;
@@ -367,6 +368,8 @@ ReactStore.activateVolatileData = function() {
 
 
 ReactStore.activateMyself = function(anyNewMe: Myself) {
+  // [redux] Modifying state in-place, shouldn't do? But works fine.
+
   store.userSpecificDataAdded = true;
   store.now = new Date().getTime();
 
@@ -374,7 +377,7 @@ ReactStore.activateMyself = function(anyNewMe: Myself) {
     $html.addClass('e2eMyDataAdded');
   }, 1);
 
-  var newMe = anyNewMe;
+  const newMe = anyNewMe;
   if (!newMe) {
     // For now only. Later on, this data should be kept server side instead?
     addLocalStorageDataTo(store.me);
@@ -392,6 +395,14 @@ ReactStore.activateMyself = function(anyNewMe: Myself) {
   if (newMe.isAuthenticated) {
     $html.addClass('dw-is-authenticated');
   }
+
+  // Add Everyone's permissions to newMe's permissions (Everyone's permissions aren't included
+  // in the per-user data). [8JUYW4B]
+  // COULD sort perms somehow, how? [4JKT2W1]
+  const oldMe: Myself = store.me;
+  const everyonesPerms =
+      _.filter(oldMe.permsOnPages, (p: PermsOnPage) => p.forPeopleId = Groups.EveryoneId);
+  newMe.permsOnPages = everyonesPerms.concat(newMe.permsOnPages);
 
   store.user = newMe; // try to remove
   store.me = newMe;
@@ -429,7 +440,7 @@ ReactStore.activateMyself = function(anyNewMe: Myself) {
     store.categories.sort((c:Category, c2:Category) => c.position - c2.position);
   }
 
-  let readingProgress = store.me.readingProgress;
+  const readingProgress = store.me.readingProgress;
   if (readingProgress && readingProgress.lastViewedPostNr) {
     if (ReactActions.anyAnchorPostNr()) {
       // Then other code scrolls to the anchored post instead.
@@ -1166,9 +1177,7 @@ function makeStranger(): Myself {
     rolePageSettings: { notfLevel: NotfLevel.Normal },
     trustLevel: TrustLevel.Stranger,
     threatLevel: ThreatLevel.HopefullySafe,
-    permissions: {
-      onCategories: {}
-    },
+    permsOnPages: [],
 
     numUrgentReviewTasks: 0,
     numOtherReviewTasks: 0,

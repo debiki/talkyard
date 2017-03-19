@@ -27,7 +27,6 @@
 /// <reference path="../topbar/topbar.ts" />
 /// <reference path="../page-methods.ts" />
 /// <reference path="../help/help.ts" />
-/// <reference path="../model.ts" />
 /// <reference path="../rules.ts" />
 /// <reference path="../Server.ts" />
 /// <reference path="chat.ts" />
@@ -94,6 +93,7 @@ export function makeReplyBtnTitle(store: Store, post: Post, isAppendReplyButton:
 
   switch (store.pageRole) {
     case PageRole.Critique: return "Give Critique"; // [plugin]
+    case PageRole.MindMap: return "Add Mind Map node";
     default:
       return isAppendReplyButton ? "Reply to the Original Post" : "Reply";
   }
@@ -156,8 +156,7 @@ export var PostActions = createComponent({
     var votes = me.votes[post.nr] || [];
     var isStaffOrOwnPage: boolean = isStaff(me) || isOwnPage;
 
-    var deletedOrCollapsed =
-      post.isPostDeleted || post.isTreeDeleted || post.isPostCollapsed || post.isTreeCollapsed;
+    const deletedOrCollapsed = post_isDeletedOrCollapsed(post);
 
     // For now. Later, add e.g. Undelete or View Deleted actions.
     // (Do return a <div> so there'll be some whitespace below for arrows to any replies.)
@@ -183,20 +182,9 @@ export var PostActions = createComponent({
         "Solution");
     }
 
-    var replyButton = null;
-    if (store.pageRole === PageRole.MindMap && !isStaffOrOwnPage) {
-      // Currently only staff & the mind map page author may edit a mind map. [7KUE20]
-    }
-    else if (deletedOrCollapsed || !post.isApproved) {
-      // Cannot reply to these posts.
-      // Later, could perhaps let staff reply to unapproved posts, [8PA2WFM] if they aren't
-      // going to approve them, and want to clarify why? E.g. "This is off-topic because ..."
-    }
-    else {
-      replyButton =
+    const replyButton = !store_mayIReply(store, post) ? null :
           r.a({ className: 'dw-a dw-a-reply icon-reply', onClick: this.onReplyClick },
             makeReplyBtnTitle(store, post, false));
-    }
 
     // Show a close button for unanswered questions and pending to-dos, and a reopen
     // button if the topic has been closed unanswered / unfixed. (But if it's been
@@ -279,8 +267,7 @@ export var PostActions = createComponent({
     }
 
 
-    var mayEdit = !deletedOrCollapsed && (isStaff(me) || isOwnPost || (
-          me.isAuthenticated && post.postType === PostType.CommunityWiki));
+    const mayEdit = store_mayIEditPost(store, post);
     var editButton = !mayEdit ? null :
         r.a({ className: 'dw-a dw-a-edit icon-edit', title: "Edit",
               onClick: this.onEditClick });

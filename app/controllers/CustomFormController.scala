@@ -45,14 +45,14 @@ object CustomFormController extends mvc.Controller {
     val pageMeta = dao.getPageMeta(pageId) getOrElse
       throwIndistinguishableNotFound("EdE2WK0F")
 
-    val categoriesRootLast = dao.loadCategoriesRootLast(pageMeta.categoryId)
+    val categoriesRootLast = dao.loadAncestorCategoriesRootLast(pageMeta.categoryId)
 
     // (A bit weird, here we authz with Authz.maySubmitCustomForm(), but later in
     // PostsDao.insertReply via Authz.mayPostReply() — but works okay.)
     throwNoUnless(Authz.maySubmitCustomForm(
       request.userAndLevels, request.user.map(dao.getGroupIds).getOrElse(Nil),
       pageMeta, inCategoriesRootLast = categoriesRootLast,
-      relevantPermissions = dao.getPermsOnPages(categoriesRootLast)),
+      permissions = dao.getPermsOnPages(categoriesRootLast)),
       "EdE2TE4A0")
 
     request.dao.insertReply(textAndHtml, pageId, Set.empty, PostType.CompletedForm,

@@ -28,7 +28,8 @@ import play.api._
 import play.api.libs.json._
 import play.api.mvc.{Action => _, _}
 import scala.concurrent.ExecutionContext.Implicits.global
-import Utils.{parseIntOrThrowBadReq}
+import Utils.parseIntOrThrowBadReq
+import ed.server.auth.Authz
 
 
 /** Edits pages and posts.
@@ -76,11 +77,17 @@ object EditController extends mvc.Controller {
     * SHOULD change to pageId + postId (not postNr)  [idnotnr]
     */
   def loadCurrentText(pageId: String, postNr: Int) = GetAction { request =>
-    val post = request.dao.loadPost(pageId, postNr) getOrElse
-      throwNotFound("DwE7SKE3", "Post not found")
+    import request.dao
 
-    if (!debiki.dao.PostsDao.userMayEdit(request.theUser, post))
-      throwForbidden("DwE8FKY0", "Not your post")
+    val pageMeta = dao.getPageMeta(pageId) getOrElse throwIndistinguishableNotFound("EdE4JBR01")
+    val post = dao.loadPost(pageId, postNr) getOrElse throwIndistinguishableNotFound("EdE0DK9WY3")
+    val categoriesRootLast = dao.loadAncestorCategoriesRootLast(pageMeta.categoryId)
+
+    throwNoUnless(Authz.mayEditPost(
+      request.theUserAndLevels, dao.getGroupIds(request.theUser),
+      post, pageMeta, dao.getAnyPrivateGroupTalkMembers(pageMeta),
+      inCategoriesRootLast = categoriesRootLast,
+      permissions = dao.getPermsOnPages(categoriesRootLast)), "EdEZBXKSM2")
 
     OkSafeJson(Json.obj(
       "postUid" -> post.id,
@@ -93,6 +100,7 @@ object EditController extends mvc.Controller {
     */
   def edit = PostJsonAction(RateLimits.EditPost, maxBytes = MaxPostSize) {
         request: JsonPostRequest =>
+    import request.dao
     val pageId = (request.body \ "pageId").as[PageId]
     val postNr = (request.body \ "postNr").as[PostNr] ; SHOULD // change to id, in case moved to other page [idnotnr]
     val newText = (request.body \ "text").as[String]
@@ -104,6 +112,16 @@ object EditController extends mvc.Controller {
       throwBadReq("DwE6KEFW8", EmptyPostErrorMessage)
 
     _throwIfTooMuchData(newText, request)
+
+    val pageMeta = dao.getPageMeta(pageId) getOrElse throwIndistinguishableNotFound("EdEZWBR81")
+    val post = dao.loadPost(pageId, postNr) getOrElse throwIndistinguishableNotFound("EdEBKWRWY9")
+    val categoriesRootLast = dao.loadAncestorCategoriesRootLast(pageMeta.categoryId)
+
+    throwNoUnless(Authz.mayEditPost(
+      request.theUserAndLevels, dao.getGroupIds(request.theUser),
+      post, pageMeta, dao.getAnyPrivateGroupTalkMembers(pageMeta),
+      inCategoriesRootLast = categoriesRootLast,
+      permissions = dao.getPermsOnPages(categoriesRootLast)), "EdE4JBTYE8")
 
     val newTextAndHtml = TextAndHtml(newText, isTitle = false,
       allowClassIdDataAttrs = postNr == PageParts.BodyNr)
