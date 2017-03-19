@@ -71,7 +71,9 @@ sudo docker-compose build
 
 # Optimize assets, run unit & integration tests and build the Play Framework image
 # (We'll run e2e tests later, against the modules/ed-prod-one-tests containers.)
-gulp release
+# gulp release
+sudo s/d run gulp gulp release
+
 # Delete unminified files, so Docker diffs a few MB smaller.
 find public/res/ -type f -name '*\.js' -not -name '*\.min\.js' -not -name 'zxcvbn\.js' | xargs rm
 find public/res/ -type f -name '*\.css' -not -name '*\.min\.css' | xargs rm
@@ -103,9 +105,9 @@ fi
 xvfb-run -s '-screen 0 1280x1024x8' \
   node_modules/selenium-standalone/bin/selenium-standalone start &
 
-gulp build-e2e
+sudo s/d run gulp gulp build-e2e
 
-scripts/run-e2e-tests.sh $@
+s/run-e2e-tests.sh $@
 
 if [ $? -ne 0 ]; then
   die_if_in_script
@@ -147,7 +149,7 @@ git push origin master
 popd
 
 git tag $version_tag
-scripts/bump-versions.sh
+s/bump-versions.sh
 
 # no: Custom Git log message
 # todo: bump patch number in version.txt, add -SNAPSHOT

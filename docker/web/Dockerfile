@@ -229,8 +229,10 @@ COPY server-ssl.conf      /etc/nginx/
 COPY http-limits.conf     /etc/nginx/
 COPY server-limits.conf   /etc/nginx/
 # old, remove once I've edited edm & edc
-COPY server.conf          /etc/nginx/vhost.conf
-COPY server.conf          /etc/nginx/
+COPY server-locations.conf /etc/nginx/vhost.conf
+# old, too
+COPY server-locations.conf /etc/nginx/server.conf
+COPY server-locations.conf /etc/nginx/
 COPY nginx.conf           /etc/nginx/
 
 # Frequently edited, so do last.
