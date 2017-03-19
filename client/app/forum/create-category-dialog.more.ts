@@ -368,10 +368,7 @@ function defaultPermsOnPages(newPermId: PermissionId, forWhoId: PeopleId,
     mayCreatePage: true,
     mayPostComment: true,
     maySee: true,
-    // Don't set maySeeOwn to true, because if an admin moves a topic from a public category to
-    // a staff-only category, I think hen wouldn't expect the topic author to *still* be able
-    // to view the topic (now when it's in the staff-only category).
-    maySeeOwn: undefined,
+    maySeeOwn: true,
   };
 }
 

@@ -239,6 +239,7 @@ function buildSite(site?: SiteData) {
           mayCreatePage: true,
           mayPostComment: true,
           maySee: true,
+          maySeeOwn: true,
         });
 
         site.permsOnPages.push({
@@ -254,6 +255,7 @@ function buildSite(site?: SiteData) {
           mayCreatePage: true,
           mayPostComment: true,
           maySee: true,
+          maySeeOwn: true,
         });
       }
 
@@ -276,6 +278,7 @@ function buildSite(site?: SiteData) {
         mayCreatePage: true,
         mayPostComment: true,
         maySee: true,
+        maySeeOwn: true,
       });
 
       // ---- Pages

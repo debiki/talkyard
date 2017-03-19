@@ -428,6 +428,7 @@ const make = {
       mayCreatePage: true,
       mayPostComment: true,
       maySee: true,
+      maySeeOwn: true,
     });
 
     site.permsOnPages.push({
@@ -443,6 +444,7 @@ const make = {
       mayCreatePage: true,
       mayPostComment: true,
       maySee: true,
+      maySeeOwn: true,
     });
 
     return site;

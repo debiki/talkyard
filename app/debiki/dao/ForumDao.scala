@@ -193,7 +193,8 @@ object ForumDao {
     mayEditOwn = Some(true),
     mayCreatePage = Some(true),
     mayPostComment = Some(true),
-    maySee = Some(true))
+    maySee = Some(true),
+    maySeeOwn = Some(true))
 
 
   // Sync with dupl code in Typescript. [7KFWY025]
@@ -209,6 +210,7 @@ object ForumDao {
     mayDeleteComment = Some(true),
     mayCreatePage = Some(true),
     mayPostComment = Some(true),
-    maySee = Some(true))
+    maySee = Some(true),
+    maySeeOwn = Some(true))
 
 }

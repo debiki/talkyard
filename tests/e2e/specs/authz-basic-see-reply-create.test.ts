@@ -142,6 +142,7 @@ describe("authz basic see reply create:", () => {
       onCategoryId: newSeeBasicReplyFullCreateCatId,
       mayEditOwn: true,
       maySee: true,
+      maySeeOwn: true,
     });
     siteBuilder.theSite.permsOnPages.push({
       id: 3,
@@ -150,6 +151,7 @@ describe("authz basic see reply create:", () => {
       mayEditOwn: true,
       mayPostComment: true,
       maySee: true,
+      maySeeOwn: true,
     });
     siteBuilder.theSite.permsOnPages.push({
       id: 4,
@@ -160,6 +162,7 @@ describe("authz basic see reply create:", () => {
       mayCreatePage: true,
       mayPostComment: true,
       maySee: true,
+      maySeeOwn: true,
     });
     siteBuilder.theSite.permsOnPages.push({
       id: 5,
@@ -171,6 +174,7 @@ describe("authz basic see reply create:", () => {
       mayCreatePage: true,
       mayPostComment: true,
       maySee: true,
+      maySeeOwn: true,
     });
     siteBuilder.theSite.permsOnPages.push({
       id: 6,
@@ -182,6 +186,7 @@ describe("authz basic see reply create:", () => {
       mayCreatePage: true,
       mayPostComment: true,
       maySee: true,
+      maySeeOwn: true,
     });
     siteBuilder.theSite.permsOnPages.push({
       id: 7,
@@ -194,6 +199,7 @@ describe("authz basic see reply create:", () => {
       mayCreatePage: true,
       mayPostComment: true,
       maySee: true,
+      maySeeOwn: true,
     });
     // Maria + staff & core members may edit this mind map; only >= core members have edit-page perms.
     forum.topics.mariasMindMapPage = siteBuilder.addPage({
@@ -228,6 +234,7 @@ describe("authz basic see reply create:", () => {
       mayCreatePage: true,
       mayPostComment: true,
       maySee: true,
+      maySeeOwn: true,
     });
 
     forum.categories.onlyAdminsSeeCat = siteBuilder.addCategoryWithAboutPage(forumPage, {
@@ -250,6 +257,7 @@ describe("authz basic see reply create:", () => {
       mayCreatePage: true,
       mayPostComment: true,
       maySee: true,
+      maySeeOwn: true,
     });
 
     idAddress = server.importSiteData(siteBuilder.theSite);
