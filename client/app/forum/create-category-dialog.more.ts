@@ -272,7 +272,8 @@ const CategorySettings = createClassAndFactory({
       r.div({ className: 'form-group' },
         r.label({ className: 'control-label', style: { display: 'block' }}, "Default topic type"),
         PageRoleDropdown({ store: store, pageRole: category.defaultTopicType,
-          complicated: false, hideMore: true, onSelect: this.setDefaultTopicType,
+          complicated: store.settings.showExperimental, hideMore: true,
+          onSelect: this.setDefaultTopicType,
           title: 'Topic type', className: 'esEdtr_titleEtc_pageRole', pullLeft: true }),
         r.span({ className: 'help-block' },
           "New topics in this category will be of this type, by default."));
@@ -403,8 +404,7 @@ const CategorySecurity = createClassAndFactory({
     });
     return r.div({},
       r.ul({ className: 's_CD_Sec_PoPs' }, permissionItems),
-      Button({ className: 's_CD_Sec_AddB', onClick: this.addPermission },
-        "Add more ..."));
+      Button({ className: 's_CD_Sec_AddB', onClick: this.addPermission }, "Add ..."));
   }
 });
 
@@ -451,7 +451,7 @@ function PermissionItemWithKey(allPerms: PermsOnPage[], thisPerm: PermsOnPage, f
         p.mayEditWiki = c;
         if (c) p.mayEditOwn = true;
       }),
-      Checkbox('s_PoP_Ps_P_EdOwn', "Edit one's own posts",
+      Checkbox('s_PoP_Ps_P_EdOwn', "Edit one's own stuff",
           thisPerm.mayEditOwn, (p: PermsOnPage, c: boolean) => {
         p.mayEditOwn = c;
         if (c === false) {  // but not if undefined
