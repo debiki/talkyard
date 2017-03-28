@@ -412,6 +412,8 @@ class Globals {
     test.timeStartMillis = None
     test.timeOffsetMillis = 0
     p.Logger.info("Done shutting down. [EsMBYE]")
+
+    shutdownLogging()
   }
 
 
@@ -419,6 +421,20 @@ class Globals {
     val future = gracefulStop(actorRef, state.ShutdownTimeout)
     val stopped = Await.result(future, state.ShutdownTimeout)
     stopped
+  }
+
+
+  def shutdownLogging() {
+    // Flush any async log messages, just in case, so they won't get lost.
+    // See: https://logback.qos.ch/manual/configuration.html#stopContext
+    // and: https://github.com/logstash/logstash-logback-encoder/tree/logstash-logback-encoder-4.9
+    // this: """In order to guarantee that logged messages have had a chance to be processed by
+    // the TCP appender, you'll need to cleanly shut down logback when your application exits."""
+    import org.slf4j.LoggerFactory
+    import ch.qos.logback.classic.LoggerContext
+    // assume SLF4J is bound to logback-classic in the current environment
+    val loggerContext = LoggerFactory.getILoggerFactory.asInstanceOf[LoggerContext]
+    loggerContext.stop()
   }
 
 

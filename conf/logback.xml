@@ -2,16 +2,16 @@
 
   <conversionRule conversionWord="coloredLevel" converterClass="play.api.libs.logback.ColoredLevel" />
 
-  <appender name="FILE" class="ch.qos.logback.core.FileAppender">
-     <file>${application.home}/logs/application.log</file>
-     <encoder>
-       <pattern>%date - [%level] - from %logger in %thread %n%message%n%xException%n</pattern>
-     </encoder>
-   </appender>
-
   <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
-    <encoder>
-      <pattern>%date %coloredLevel %logger{15}: %message%n%rootException{30}</pattern>
+    <encoder class="ch.qos.logback.core.encoder.LayoutWrappingEncoder">
+      <layout class="ed.stackdriver.StackdriverLayout" />
+    </encoder>
+  </appender>
+
+  <appender name="FILE" class="ch.qos.logback.core.FileAppender">
+    <file>/var/log/ed/ed-app.log</file>
+    <encoder class="ch.qos.logback.core.encoder.LayoutWrappingEncoder">
+      <layout class="ed.stackdriver.StackdriverLayout" />
     </encoder>
   </appender>
 

@@ -209,6 +209,7 @@ GET  /-/origin                  @controllers.DebugTestController.origin
 GET  /-/are-scripts-ready       @controllers.DebugTestController.areScriptsReady
 GET  /-/create-deadlock         @controllers.DebugTestController.createDeadlock
 GET  /-/last-e2e-test-email     @controllers.DebugTestController.showLastE2eTestEmailSent(siteId: Int, sentTo)
+GET  /-/log-funny-messages      @controllers.DebugTestController.logFunnyLogMessages()
 
 GET   /-/site/:siteId/*file     controllers.SiteAssetBundlesController.customAsset(siteId: Int, file)
 GET   /-/site/*file             controllers.SiteAssetBundlesController.at(file)

@@ -72,9 +72,9 @@ elseif used_total_bw > 500e9 then
     forbiddenMessage = "People have downloaded too much data from this server. [EsE5FKU20]"
 end
 
-ngx.log(ngx.DEBUG, "ip: " .. ip .. ", ip bw: " .. used_ip_bw ..
-        ", server bw: " .. used_server_bw .. ", total bw: " .. used_total_bw ..
-        " –> limit_rate: " .. (speed / 1e3) .. " kB/s")
+-- ngx.log(ngx.DEBUG, "ip: " .. ip .. ", ip bw: " .. used_ip_bw ..
+--         ", server bw: " .. used_server_bw .. ", total bw: " .. used_total_bw ..
+--         " –> limit_rate: " .. (speed / 1e3) .. " kB/s")
 
 ngx.var.limit_rate = speed
 

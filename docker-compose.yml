@@ -29,6 +29,7 @@ services:
     volumes:
       - ./:/opt/ed/app/
       - ./docker/data/uploads/:/opt/ed/uploads/
+      - ./docker/data/app-logs/:/var/log/ed/
       # Without this it takes forever to start because sbt would always download all dependencies.
       - ~/.ivy2/:/home/owner/.ivy2/
       - ~/.sbt/:/home/owner/.sbt/

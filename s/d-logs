@@ -1,0 +1,4 @@
+#!/bin/bash
+
+docker-compose logs $@ | s/impl/unjson.sh
+

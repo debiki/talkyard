@@ -20,12 +20,13 @@ package controllers
 import akka.pattern.ask
 import com.debiki.core._
 import com.debiki.core.Prelude._
-import debiki.{ReactRenderer, RateLimits, Globals}
+import debiki.{Globals, RateLimits, ReactRenderer}
 import debiki.DebikiHttp._
 import ed.server.http._
 import java.lang.management.ManagementFactory
-import java.{util => ju, io => jio}
+import java.{io => jio, util => ju}
 import javax.inject.Inject
+import org.slf4j.Marker
 import play.api._
 import play.api.libs.json._
 import play.{api => p}
@@ -246,5 +247,46 @@ class DebugTestController @Inject() extends mvc.Controller {
     result
   }
 
+
+  def logFunnyLogMessages = AdminGetAction { request =>
+    import org.slf4j.Logger
+    import org.slf4j.LoggerFactory
+    val logger: Logger = LoggerFactory.getLogger("application")
+    import net.logstash.logback.argument.StructuredArguments._
+    import net.logstash.logback.marker.Markers.append
+    logger.info("Funny log message 1 {}", kv("name1", "value1"))
+    logger.warn("Funny log message 2 {} {}", kv("name2", "value2"))
+    logger.warn("Funny log message 3 {}", keyValue("name3", "value3"), keyValue("n3", "v3"): Any)
+    logger.warn(append("zzz", "wwqqq"), "Funny message with append marker")
+    logger.warn(append("zzz2", "wwqqq2"), "REALLY FUNNY MESSAGE WITH APPEND MARKER")
+    logger.error(append("markerA", "valueA").and(append("markerB", "valueB")).asInstanceOf[Marker],
+      "DANGEROUSLY (!) FUNNY MESSAGE WITH TWO APPEND MARKERS")
+    logger.warn("Funny log message value {}", value("thekey", "thevalue"))
+
+    val myMap = new ju.HashMap[String, String]()
+    myMap.put("hashmap-name1", "hashmap-value1")
+    myMap.put("hashmap-name2", "hashmap-value2")
+    logger.warn("Funny map log message {}", entries(myMap))
+
+    try die("DIEHARD error")
+    catch {
+      case ex: Throwable =>
+        logger.error("DieHard as error", ex)
+    }
+
+    try die("DIEHARD warning")
+    catch {
+      case ex: Throwable =>
+        logger.warn("DieHard as warning", ex)
+    }
+
+    try die("DIEHARD debug")
+    catch {
+      case ex: Throwable =>
+        logger.debug("DieHard as debug", ex)
+    }
+
+    Ok
+  }
 }
 

@@ -54,3 +54,5 @@ else
 fi
 echo "$new_version" > version.txt
 
+
+# COULD bump version in ed-stackdriver module too. [0AMJQ2]

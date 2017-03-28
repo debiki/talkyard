@@ -12,9 +12,9 @@ local new_used_ip_bw = used_ip_bw + bytes_sent
 local new_used_server_bw = used_server_bw + bytes_sent
 local new_used_total_bw = used_total_bw + bytes_sent
 
-ngx.log(ngx.DEBUG, "Log phase, ip: " .. ip .. ", server: " .. server_name ..
-        ", bytes: " .. bytes_sent .. ", ip bw: " .. new_used_ip_bw ..
-        ", server bw: " .. new_used_server_bw)
+-- ngx.log(ngx.DEBUG, "Log phase, ip: " .. ip .. ", server: " .. server_name ..
+--         ", bytes: " .. bytes_sent .. ", ip bw: " .. new_used_ip_bw ..
+--         ", server bw: " .. new_used_server_bw)
 
 util.set_used_bw(ngx.shared.bw_by_ip, ip, new_used_ip_bw)
 util.set_used_bw(ngx.shared.bw_by_server, server_name, new_used_server_bw)

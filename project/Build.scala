@@ -27,12 +27,11 @@ object ApplicationBuild extends Build {
     finally source.close()
   }
 
-  val appName = "EffectiveDiscussions"
+  val appName = "ed-server"
   val appVersion = {
     // Change from WIP (work-in-progress) to SNAPSHOT, suitable for the Java/Scala world.
     versionFileContents.replaceAllLiterally("WIP", "SNAPSHOT")
   }
-
 
   // Stuff shared between <repo-root>/app/ and <repo-root>/modules/ed-dao-rdb.
   lazy val edCore =
@@ -42,6 +41,12 @@ object ApplicationBuild extends Build {
   lazy val edDaoRdb =
     (Project("ed-dao-rdb", file("modules/ed-dao-rdb"))
     dependsOn edCore)
+
+  // In dev mode, dynamically compiled classes are not available when Logback starts,  [7SBMAQ2P]
+  // unless they're compiled first, in a separate step in another project. So place the Logback
+  // stuff (custom Logback layout) in this separate project — and you need to do publish-local in it.
+  lazy val edLogging =
+    (Project("ed-logging", file("modules/ed-logging")))
 
 
   val appDependencies = Seq(
@@ -66,6 +71,15 @@ object ApplicationBuild extends Build {
     "org.apache.commons" % "commons-email" % "1.4",
     "com.google.guava" % "guava" % "19.0",
     "org.jsoup" % "jsoup" % "1.9.2",
+    // Fluentd better understands json logs.
+    // https://mvnrepository.com/artifact/ch.qos.logback/logback-classic
+    "ch.qos.logback" % "logback-classic" % "1.2.2",
+    // https://mvnrepository.com/artifact/ch.qos.logback/logback-core
+    "ch.qos.logback" % "logback-core" % "1.2.2",
+    // Docs: https://github.com/logstash/logstash-logback-encoder/tree/logstash-logback-encoder-4.9
+    "net.logstash.logback" % "logstash-logback-encoder" % "4.9",
+    //"org.kurochan" %% "logback-stackdriver-logging" % "0.0.1",
+    "community.ed" %% "ed-logging" % "0.0.2",
     // java.nio.file.Files.probeContentType doesn't work in Alpine Linux + JRE 8, so use
     // Tika instead. It'll be useful anyway later if indexing PDF or MS Word docs.
     "org.apache.tika" % "tika-core" % "1.13",
@@ -87,8 +101,12 @@ object ApplicationBuild extends Build {
 
   val main = Project(appName, file(".")).enablePlugins(play.sbt.Play, BuildInfoPlugin)
     .settings(mainSettings: _*)
-    .dependsOn(edCore % "test->test;compile->compile", edDaoRdb)
-    .aggregate(edCore) // skip debikiDaoRdb for now, because old broken should-delete-them tests
+    .dependsOn(
+      edCore % "test->test;compile->compile",
+      edDaoRdb)
+    .aggregate(
+      edLogging,
+      edCore)
 
 
   def mainSettings = List(
