@@ -31,7 +31,7 @@ FROM alpine:3.4
 
 # MAINTAINER NGINX Docker Maintainers "docker-maint@nginx.com"
 
-ENV NGINX_VERSION 1.11.4
+ENV NGINX_VERSION 1.11.10
 
 # Do this first, because we need 'make' early, and also it's boring to wait for Nginx
 # to download.
