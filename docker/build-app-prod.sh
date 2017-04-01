@@ -10,9 +10,9 @@ version="`cat version.txt | sed s/WIP/SNAPSHOT/`"
 rm -fr target/docker-app-prod
 cp -a docker/app-prod target/docker-app-prod
 cd target/docker-app-prod
-cp ../universal/effectivediscussions-$version.zip ./
-unzip -q effectivediscussions-$version.zip
-mv effectivediscussions-$version app
+cp ../universal/ed-server-$version.zip ./
+unzip -q ed-server-$version.zip
+mv ed-server-$version app
 
 # ( &> redirects both stderr and stdout.)
 mkdir build-info
@@ -32,7 +32,7 @@ set -e
 # usually have to be pushed (and pulled by others).
 mkdir app-lib-debiki
 mv app/lib/*debiki* app-lib-debiki/
-mv app/lib/*effectivediscussions* app-lib-debiki/
+mv app/lib/*ed-server* app-lib-debiki/
 mv app/bin app-bin
 mv app/conf app-conf
 

@@ -79,14 +79,27 @@ find public/res/ -type f -name '*\.js' -not -name '*\.min\.js' -not -name 'zxcvb
 find public/res/ -type f -name '*\.css' -not -name '*\.min\.css' | xargs rm
 # COULD add tests that verifies the wrong css & js haven't been deleted?
 # One at a time, or out-of-memory:
-s/d-cli clean compile
-s/d-cli test dist
+
+# for now, until split 'gulp' container in build + test.
+sudo s/d kill app
+sudo s/d down
+
+sudo s/d-cli clean compile
+sudo s/d-cli test dist
+
+sudo s/d kill app
 sudo docker-compose down
 docker/build-app-prod.sh
 
 
 # Test the images
 # ----------------------
+
+sudo s/d run gulp gulp build-e2e
+
+# For now.
+sudo s/d kill app
+sudo docker-compose down
 
 # Run the 'latest' tag — it's for the images we just built above.
 # '-p edt' = EffectiveDiscussions Test project.
@@ -105,7 +118,6 @@ fi
 xvfb-run -s '-screen 0 1280x1024x8' \
   node_modules/selenium-standalone/bin/selenium-standalone start &
 
-sudo s/d run gulp gulp build-e2e
 
 s/run-e2e-tests.sh $@
 

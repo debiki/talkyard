@@ -26,7 +26,7 @@ ENV CONFIG_FILE /opt/ed/app-conf/localhost.conf
 WORKDIR /opt/ed/app
 
 # this —> "Bad root server path: /opt/ed/app/-jvm-debug 9999", no idea why...
-CMD ["/opt/ed/app/bin/effectivediscussions", \
+CMD ["/opt/ed/app/bin/ed-server", \
   "-jvm-debug 9999", \
   "-Dcom.sun.management.jmxremote.port=3333", \
   "-Dcom.sun.management.jmxremote.ssl=false", \
@@ -37,7 +37,7 @@ CMD ["/opt/ed/app/bin/effectivediscussions", \
 
 # ...but this identical command works fine:
 # the PID file might not get deleted if we shutdown during startup, see Globals.scala [65YKFU02]
-CMD rm -f /opt/ed/app/RUNNING_PID && exec /opt/ed/app/bin/effectivediscussions \
+CMD rm -f /opt/ed/app/RUNNING_PID && exec /opt/ed/app/bin/ed-server \
   -J-Xms${PLAY_HEAP_MEMORY_MB}m \
   -J-Xmx${PLAY_HEAP_MEMORY_MB}m \
   -jvm-debug 9999 \
