@@ -68,5 +68,5 @@ EXPOSE 9229
 
 WORKDIR /opt/debiki/server/
 
-CMD ["yarn install && gulp watch"]
+CMD ["echo 'Specify a command in docker-compose.yml or on the command line instead' && exit 0"]
 

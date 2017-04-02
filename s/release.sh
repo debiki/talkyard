@@ -71,18 +71,13 @@ sudo docker-compose build
 
 # Optimize assets, run unit & integration tests and build the Play Framework image
 # (We'll run e2e tests later, against the modules/ed-prod-one-tests containers.)
-# gulp release
-sudo s/d run gulp gulp release
+sudo s/d-gulp release
 
 # Delete unminified files, so Docker diffs a few MB smaller.
 find public/res/ -type f -name '*\.js' -not -name '*\.min\.js' -not -name 'zxcvbn\.js' | xargs rm
 find public/res/ -type f -name '*\.css' -not -name '*\.min\.css' | xargs rm
 # COULD add tests that verifies the wrong css & js haven't been deleted?
 # One at a time, or out-of-memory:
-
-# for now, until split 'gulp' container in build + test.
-sudo s/d kill app
-sudo s/d down
 
 sudo s/d-cli clean compile
 sudo s/d-cli test dist
@@ -95,11 +90,7 @@ docker/build-app-prod.sh
 # Test the images
 # ----------------------
 
-sudo s/d run gulp gulp build-e2e
-
-# For now.
-sudo s/d kill app
-sudo docker-compose down
+sudo s/d-gulp build-e2e
 
 # Run the 'latest' tag — it's for the images we just built above.
 # '-p edt' = EffectiveDiscussions Test project.

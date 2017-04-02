@@ -49,7 +49,7 @@ Run tests like so:
     If you get this error: "Cannot find module '.../target/e2e/wdio.conf.js'", then
     fix that by building the end-to-end test code:
 
-        gulp build-e2e
+        s/d-gulp build-e2e
 
 1. Some tests, e.g. `chat.2browsers.test.ts`, require two browsers. Then use the 2whatever config files, e.g.:
 

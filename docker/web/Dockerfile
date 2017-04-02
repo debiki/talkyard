@@ -227,6 +227,7 @@ COPY server-listen.conf   /etc/nginx/
 COPY server-ssl.conf      /etc/nginx/ssl-hardening.conf
 COPY server-ssl.conf      /etc/nginx/
 COPY http-limits.conf     /etc/nginx/
+COPY http-redirect-to-https.conf /etc/nginx/
 COPY server-limits.conf   /etc/nginx/
 # old, remove once I've edited edm & edc
 COPY server-locations.conf /etc/nginx/vhost.conf

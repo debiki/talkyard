@@ -4,6 +4,7 @@
 
 interface TestSettings {
   debug: boolean;
+  prod: boolean;
   secure: boolean;
   host: string;
   scheme: string;

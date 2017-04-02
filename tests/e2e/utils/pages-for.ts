@@ -173,8 +173,12 @@ function pagesFor(browser) {
     assertWholePageHidden: function() {
       let resultsByBrowser = byBrowser(browser.getSource());
       _.forOwn(resultsByBrowser, (text, browserName) => {
-        assert(/404/.test(text), browserNamePrefix(browserName) + "Page not hidden (no '404')");
-        //assert(/EdE0SEEPAGEHIDDEN_/.test(text), browserNamePrefix(browserName) + "Page not hidden");
+        if (settings.prod) {
+          assert(/404/.test(text), browserNamePrefix(browserName) + "Page not hidden (no '404')");
+        }
+        else {
+          assert(/EdE0SEEPAGEHIDDEN_/.test(text), browserNamePrefix(browserName) + "Page not hidden");
+        }
       });
     },
 
