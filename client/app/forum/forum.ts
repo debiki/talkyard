@@ -860,7 +860,7 @@ export var ListTopicsComponent = createComponent({
       // COULD make minHeight work when switching to the Categories view too? But should
       // then probably scroll the top of the categories list into view.
       // COULD use store.topics, used when rendering server side, but for now:
-      return r.p({ style: { minHeight: this.props.minHeight } }, 'Loading...');
+      return r.p({ style: { minHeight: this.props.minHeight } }, "Loading...");
     }
 
     if (!topics.length)
@@ -1269,7 +1269,7 @@ var LoadAndListCategoriesComponent = React.createClass(<any> {
 
   render: function() {
     if (!this.state.categories)
-      return r.p({}, 'Loading...');
+      return r.p({}, "Loading...");
 
     var categoryRows = this.state.categories.map((category: Category) => {
       return CategoryRow({ store: this.props.store, location: this.props.location,
@@ -1292,9 +1292,9 @@ var LoadAndListCategoriesComponent = React.createClass(<any> {
       r.table({ className: 'forum-table table' },
         r.thead({},
           r.tr({},
-            r.th({}, 'Category'),
+            r.th({}, "Category"),
             r.th({}, recentTopicsColumnTitle))),
-        r.tbody({},
+        r.tbody({ className: 's_F_Cs' },
           categoryRows)));
     }
 });

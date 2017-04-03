@@ -123,7 +123,7 @@ interface TestCategory {  // try to merge with Category in model.ts?
 }
 
 
-interface NewPage {
+interface PageToMake {
   id: PageId;
   role: PageRole;
   categoryId?: CategoryId;
@@ -144,6 +144,40 @@ interface NewPage {
   numOpUnwantedVotes?: number;
   numOpRepliesVisible?: number;
   version?: number;
+}
+
+
+interface CategoryJustAdded {
+  id: number,
+  parentId: number,
+  name: string,
+  slug: string,
+  unlisted?: boolean,
+  deletedAtMs?: number,
+  aboutPageText?: string,
+  aboutPage?: PageJustAdded;
+}
+
+
+interface PageJustAdded {
+  id: string;
+  folder: string;
+  showId: boolean;
+  slug: string;
+  role: number;
+  title: string;
+  body: string;
+  categoryId: number;
+  authorId: number,
+  createdAtMs: number;
+  updatedAtMs: number;
+}
+
+
+interface PageIdWhen {
+  id: string;
+  createdAtMs: number;
+  updatedAtMs: number;
 }
 
 

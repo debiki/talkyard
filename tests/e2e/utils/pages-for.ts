@@ -169,7 +169,7 @@ function pagesFor(browser) {
       });
     },
 
-    // Also see browser.pageTitle.assertPageHidden().
+    // Also see browser.pageTitle.assertPageHidden().  Dupl code [05PKWQ2A]
     assertWholePageHidden: function() {
       let resultsByBrowser = byBrowser(browser.getSource());
       _.forOwn(resultsByBrowser, (text, browserName) => {
@@ -178,6 +178,19 @@ function pagesFor(browser) {
         }
         else {
           assert(/EdE0SEEPAGEHIDDEN_/.test(text), browserNamePrefix(browserName) + "Page not hidden");
+        }
+      });
+    },
+
+    // Also see browser.pageTitle.assertPageHidden().  Dupl code [05PKWQ2A]
+    assertMayNotSeePage: function() {
+      let resultsByBrowser = byBrowser(browser.getSource());
+      _.forOwn(resultsByBrowser, (text, browserName) => {
+        if (settings.prod) {
+          assert(/404/.test(text), browserNamePrefix(browserName) + "Page not hidden (no '404')");
+        }
+        else {
+          assert(/EdEM0SEE/.test(text), browserNamePrefix(browserName) + "May see page?");
         }
       });
     },
@@ -801,6 +814,18 @@ function pagesFor(browser) {
     forumCategoryList: {
       categoryNameSelector: '.esForum_cats_cat .forum-title',
 
+      waitForCategories: function() {
+        browser.waitForVisible('.s_F_Cs');
+      },
+
+      numCategoriesVisible: function(): number {
+        return count(browser.elements(api.forumCategoryList.categoryNameSelector));
+      },
+
+      isCategoryVisible: function(categoryName: string): boolean {
+        return browser.isVisible(api.forumCategoryList.categoryNameSelector, categoryName);
+      },
+
       openCategory: function(categoryName: string) {
         browser.rememberCurrentUrl();
         browser.waitForThenClickText(api.forumCategoryList.categoryNameSelector, categoryName);
@@ -808,6 +833,10 @@ function pagesFor(browser) {
         browser.waitForVisible('.esForum_catsDrop');
         browser.assertTextMatches('.esForum_catsDrop', categoryName);
       },
+
+      assertCategoryNotFoundOrMayNotAccess: function() {
+        browser.assertAnyTextMatches('.dw-forum', 'EdE0CAT');
+      }
     },
 
 
@@ -954,10 +983,6 @@ function pagesFor(browser) {
 
 
     topic: {
-      clickEditOrigPost: function() {
-        api.waitAndClick('.dw-ar-t > .dw-p-as .dw-a-edit');
-      },
-
       clickHomeNavLink: function() {
         browser.click("a=Home");
       },
@@ -1034,6 +1059,32 @@ function pagesFor(browser) {
       clickReplyToPostNr: function(postNr: PostNr) {
         api.topic.clickPostActionButton(`#post-${postNr} + .esPA .dw-a-reply`);
       },
+
+      canEditSomething: function(): boolean {
+        return browser.isVisible('.dw-a-edit');
+      },
+
+      canReplyToSomething: function(): boolean {
+        return browser.isVisible('.dw-a-reply');
+      },
+
+      canEditOrigPost: function(): boolean {
+        return api.topic.canEditPostNr(c.BodyNr);
+      },
+
+      canEditPostNr: function(postNr: number): boolean {
+        const selector = `#post-${postNr} + .esPA .dw-a-edit`;
+        return browser.isVisible(selector) && browser.isEnabled(selector);
+      },
+
+      clickEditOrigPost: function() {
+        api.waitAndClick('.dw-ar-t > .dw-p-as .dw-a-edit');
+      },
+
+      clickEditoPostNr: function(postNr: PostNr) {
+        api.topic.clickPostActionButton(`#post-${postNr} + .esPA .dw-a-edit`);
+      },
+
 
       clickMoreForPostNr: function(postNr: PostNr) {
         api.topic.clickPostActionButton(`#post-${postNr} + .esPA .dw-a-more`);
@@ -1655,6 +1706,14 @@ function pagesFor(browser) {
         api.editor.editText(newText);
         api.editor.save();
         browser.assertPageBodyMatches(newText);
+      },
+
+      editPostNr: function(postNr: PostNr, newText: string) {
+        api.topic.clickEditoPostNr(postNr);
+        api.editor.editText(newText);
+        api.editor.editText(newText);
+        api.editor.save();
+        browser.topic.assertPostTextMatches(postNr, newText);
       },
 
       replyToOrigPost: function(text: string) {

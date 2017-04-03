@@ -36,7 +36,7 @@ function buildSite(site?: SiteData) {
       authorId?: number,
       title?: string,
       introText?: string,
-    }): Page {
+    }): PageJustAdded {
       let forumPage = api.addPage({
         id: opts.id,
         folder: opts.folder || '/',
@@ -57,7 +57,7 @@ function buildSite(site?: SiteData) {
     },
 
 
-    addCategoryNoAboutPage: function(forumPage: Page, opts: {
+    addCategoryNoAboutPage: function(forumPage: PageJustAdded, opts: {
       id: number,
       parentCategoryId?: number,
       name: string,
@@ -65,9 +65,9 @@ function buildSite(site?: SiteData) {
       description: string,
       unlisted?: boolean,
       deletedAtMs?: number,
-    }) {
+    }): CategoryJustAdded {
       assert(!opts.deletedAtMs || opts.deletedAtMs >= forumPage.createdAtMs);
-      var category = make.categoryWithIdFor(opts.id, forumPage);
+      const category = make.categoryWithIdFor(opts.id, forumPage);
       category.parentId = opts.parentCategoryId;
       category.name = opts.name;
       category.slug = opts.slug;
@@ -75,11 +75,11 @@ function buildSite(site?: SiteData) {
       category.unlisted = opts.unlisted;
       category.deletedAtMs = opts.deletedAtMs;
       site.categories.push(category);
-      return category;
+      return <CategoryJustAdded> category;
     },
 
 
-    addCategoryWithAboutPage: function(forumPage: Page, opts: {
+    addCategoryWithAboutPage: function(forumPage: PageJustAdded, opts: {
       id: number,
       parentCategoryId: number,
       name: string,
@@ -87,10 +87,10 @@ function buildSite(site?: SiteData) {
       unlisted?: boolean,
       deletedAtMs?: number,
       aboutPageText: string,
-    }) {
-      let optsWithDescr: any = _.assign({ description: opts.aboutPageText }, opts);
-      let category = api.addCategoryNoAboutPage(forumPage, optsWithDescr);
-      api.addPage({
+    }): CategoryJustAdded {
+      const optsWithDescr: any = _.assign({ description: opts.aboutPageText }, opts);
+      const category = api.addCategoryNoAboutPage(forumPage, optsWithDescr);
+      const page = api.addPage({
         id: `about_cat_${opts.slug}`.substr(0, 32),
         folder: '/',
         showId: false,
@@ -101,7 +101,8 @@ function buildSite(site?: SiteData) {
         categoryId: category.id,
         authorId: 1,
       });
-      return category;
+      category.aboutPage = page;
+      return <CategoryJustAdded> category;
     },
 
 
@@ -115,7 +116,7 @@ function buildSite(site?: SiteData) {
       body: string,
       categoryId?: CategoryId,
       authorId: UserId,
-    }) {
+    }): PageJustAdded {
       let page = make.page(opts);
       let path = make.pagePath(opts.id, opts.folder, opts.showId, opts.slug);
       site.pages.push(page);
@@ -137,7 +138,7 @@ function buildSite(site?: SiteData) {
         approvedHtmlSanitized: `<p>${opts.body}</p>`,
       }));
 
-      return _.assign({}, opts, page, path);
+      return <PageJustAdded> _.assign({}, opts, page, path);
     },
 
 
@@ -169,14 +170,14 @@ function buildSite(site?: SiteData) {
 
       _.each(site.members, (m: Member) => m.trustLevel = c.TestTrustLevel.Basic);
 
-      let rootCategoryId = 1;
-      let defaultCategoryId = 2;
-      let categoryBId = 3;
-      let staffOnlyCategoryId = 4;
-      let unlistedCategoryId = 5;
-      let deletedCategoryId = 6;
+      const rootCategoryId = 1;
+      const defaultCategoryId = 2;
+      const categoryBId = 3;
+      const staffOnlyCategoryId = 4;
+      const unlistedCategoryId = 5;
+      const deletedCategoryId = 6;
 
-      let forumPage = forum.forumPage = api.addForumPageAndRootCategory({
+      const forumPage = forum.forumPage = api.addForumPageAndRootCategory({
         id: 'fmp',
         rootCategoryId: rootCategoryId,
         defaultCategoryId: defaultCategoryId,

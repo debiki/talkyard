@@ -29,12 +29,35 @@ let michael;
 let michaelsBrowser;
 let maja;
 let majasBrowser;
+let corax;
+let coraxBrowser;
 let guest;
 let guestsBrowser;
 let strangersBrowser;
 
 let idAddress: IdAddress;
 let forumTitle = "Authz Basic Test Forum";
+const guestsPostNr = c.FirstReplyNr; // (46WUKT0)
+const guestsReplyText = "Guest's reply to Orig Post";
+const guestsEditedText = "Guest's reply to Orig Post, edited";
+const guestTopicTitle = "Guest topic title";
+const guestTopicBody = "Guest topic body";
+let guestsTopicUrl: string;
+const guestsReplyToOwnTopicText = "Guest's reply to own topic";
+const guestsReplyToOwnTopicNr = c.FirstReplyNr;
+
+const majasGuestTopicReplyText = "Majas guest topic reply";
+const majasGuestTopicReplyTextEdited = "Majas guest topic reply, edited";
+const majasGuestTopicReplyNr = guestsReplyToOwnTopicNr + 1;
+
+const mariasAboutCatReplyText = "Maria's about cat reply";
+const mariasAboutCatReplyTextEdited = "Maria's about cat reply, edited";
+const mariasAboutCatReplyNr = c.FirstReplyNr;
+
+const michaelsTopicTitle = "Michaels topic title";
+const michaelsTopicBody = "Michaels topic body";
+const michaelsTopicBodyEdited = "Michaels topic body, edited";
+let michaelsTopicUrl: string;
 
 
 describe("authz basic see reply create:", () => {
@@ -44,6 +67,7 @@ describe("authz basic see reply create:", () => {
 
     // Later: break out 'PermTestForum' ...? if needed.
     siteBuilder = makeSiteOwnedByOwenBuilder();
+    siteBuilder.theSite.settings.allowGuestLogin = true;
     forum = {
       siteData: siteBuilder.theSite,
       forumPage: null,
@@ -56,7 +80,7 @@ describe("authz basic see reply create:", () => {
         michael: make.memberMichael(),
         trillian: make.memberTrillian(),
         regina: make.memberRegina(),
-        conny: make.memberConny(),
+        corax: make.memberCorax(),
       },
       guests: {
         gunnar: make.guestGunnar(),
@@ -71,7 +95,7 @@ describe("authz basic see reply create:", () => {
     forum.members.maja.trustLevel = c.TestTrustLevel.New;
     forum.members.maria.trustLevel = c.TestTrustLevel.Basic;
     forum.members.michael.trustLevel = c.TestTrustLevel.Member;
-    // Trillian, Regina, Conny = already trusted, regular, core-member, respectively, by default.
+    // Trillian, Regina, Corax = already trusted, regular, core-member, respectively, by default.
 
     // Owen has been added already.
     siteBuilder.theSite.members.push(forum.members.mons);
@@ -81,7 +105,7 @@ describe("authz basic see reply create:", () => {
     siteBuilder.theSite.members.push(forum.members.michael);
     siteBuilder.theSite.members.push(forum.members.trillian);
     siteBuilder.theSite.members.push(forum.members.regina);
-    siteBuilder.theSite.members.push(forum.members.conny);
+    siteBuilder.theSite.members.push(forum.members.corax);
     siteBuilder.theSite.guests.push(forum.guests.gunnar);
 
     let rootCategoryId = 1;
@@ -118,12 +142,8 @@ describe("authz basic see reply create:", () => {
       id: 1,
       forPeopleId: c.EveryoneId,
       onCategoryId: allSeeReplyCreateCatId,
-      mayEditPage: true,
-      mayEditComment: true,
       mayEditWiki: true,
       mayEditOwn: true,
-      mayDeletePage: true,
-      mayDeleteComment: true,
       mayCreatePage: true,
       mayPostComment: true,
       maySee: true,
@@ -171,6 +191,7 @@ describe("authz basic see reply create:", () => {
       mayEditComment: true,
       mayEditWiki: true,
       mayEditOwn: true,
+      mayDeleteComment: true,
       mayCreatePage: true,
       mayPostComment: true,
       maySee: true,
@@ -183,6 +204,7 @@ describe("authz basic see reply create:", () => {
       mayEditComment: true,
       mayEditWiki: true,
       mayEditOwn: true,
+      mayDeleteComment: true,
       mayCreatePage: true,
       mayPostComment: true,
       maySee: true,
@@ -196,6 +218,8 @@ describe("authz basic see reply create:", () => {
       mayEditComment: true,
       mayEditWiki: true,
       mayEditOwn: true,
+      mayDeletePage: true,
+      mayDeleteComment: true,
       mayCreatePage: true,
       mayPostComment: true,
       maySee: true,
@@ -278,102 +302,263 @@ describe("authz basic see reply create:", () => {
     michaelsBrowser = browser;
     maja = forum.members.maja;
     majasBrowser = browser;
+    corax = forum.members.corax;
+    coraxBrowser = browser;
     guest = forum.guests.gunnar;
     guestsBrowser = browser;
     strangersBrowser = browser;
   });
 
+  function goToAllEverythingCat(browser) {
+    browser.go(`${idAddress.origin}/latest/${forum.categories.allSeeReplyCreateCat.slug}`);
+  }
+
+  function goToNewSeeBasicReplyFullCreateCat(browser) {
+    browser.go(`${idAddress.origin}/latest/${forum.categories.newSeeBasicReplyFullCreateCat.slug}`);
+  }
+
+  function goToNewSeeBasicReplyFullCreateCatAboutPage(browser) {
+    browser.go(
+      `${idAddress.origin}/about-cat-${forum.categories.newSeeBasicReplyFullCreateCat.slug}`);
+  }
+
+  function assertSeesBothCategories(browser) {
+    browser.forumCategoryList.waitForCategories();
+    assert(browser.forumCategoryList.numCategoriesVisible() === 2);
+    assert(browser.forumCategoryList.isCategoryVisible(
+      forum.categories.allSeeReplyCreateCat.name));
+    assert(browser.forumCategoryList.isCategoryVisible(
+      forum.categories.newSeeBasicReplyFullCreateCat.name));
+  }
+
 
   // ------- Stranger
 
   it("A stranger arrives", () => {
+    strangersBrowser.go(idAddress.origin);
+  });
+
+  it("Sees only about-all-see-reply-create topic", () => {
+    strangersBrowser.forumTopicList.waitForTopics();
+    strangersBrowser.forumTopicList.assertNumVisible(1);
+    strangersBrowser.forumTopicList.assertTopicVisible(
+        'About category ' + forum.categories.allSeeReplyCreateCat.name); // COULD break out fn?
   });
 
   it("Sees only 'allSeeReplyCreateCat'", () => {
+    strangersBrowser.go(idAddress.origin + '/categories');
+    strangersBrowser.forumCategoryList.waitForCategories();
+    assert(strangersBrowser.forumCategoryList.numCategoriesVisible() === 1);
+    assert(strangersBrowser.forumCategoryList.isCategoryVisible(
+        forum.categories.allSeeReplyCreateCat.name));
   });
 
   it("Cannot access 'newSeeBasicReplyFullCreateCat'", () => {
+    goToNewSeeBasicReplyFullCreateCat(strangersBrowser);
+    strangersBrowser.forumCategoryList.assertCategoryNotFoundOrMayNotAccess();
   });
 
   it("... or the 'newSeeBasicReplyFullCreateCat' about page", () => {
+    goToNewSeeBasicReplyFullCreateCatAboutPage(strangersBrowser);
+    strangersBrowser.assertMayNotSeePage();
   });
 
   it("Can access the 'allSeeReplyCreateCat' about page", () => {
+    strangersBrowser.go(idAddress.origin);
+    strangersBrowser.forumTopicList.goToTopic(forum.categories.allSeeReplyCreateCat.aboutPage.title);
   });
 
   it("... can post reply", () => {
+    strangersBrowser.complex.loginAsGuestViaTopbar("Gunnar Guest");
+    strangersBrowser.complex.replyToOrigPost(guestsReplyText);
   });
 
   it("... can edit the reply", () => {
+    strangersBrowser.complex.editPostNr(guestsPostNr, guestsEditedText);
   });
 
   it("... cannot edit orig post", () => {
+    assert(!strangersBrowser.topic.canEditOrigPost());
   });
 
   it("... cannot edit someone else's reply", () => {
+    // TODO TESTS_MISSING add someone elses reply + add +1 above (46WUKT0)
   });
 
-  it("Returns to category", () => {
+  it("Returns to all-everything category", () => {
+    goToAllEverythingCat(strangersBrowser);
   });
 
   it("... and can create topic 'Guest Topic'", () => {
+    strangersBrowser.complex.createAndSaveTopic({ title: guestTopicTitle, body: guestTopicBody });
+    guestsTopicUrl = strangersBrowser.url().value;
+  });
+
+  it("... and post a reply", () => {
+    strangersBrowser.complex.replyToOrigPost(guestsReplyToOwnTopicText);
   });
 
 
   // ------- Maja (trust level = NewMember)
 
   it("Maja logs in", () => {
-    majasBrowser.go(idAddress.origin);
+    strangersBrowser.topbar.clickLogout();
+    majasBrowser.go(idAddress.origin + '/categories');
     majasBrowser.complex.loginWithPasswordViaTopbar(maja);
   });
 
   it("Sees both 'allSeeReplyCreateCat' and 'newSeeBasicReplyFullCreateCat'", () => {
-  });
-
-  it("Can crete topic in 'allSeeReplyCreateCat'", () => {
+    assertSeesBothCategories(majasBrowser);
   });
 
   it("Can access the 'Guest Topic'", () => {
+    majasBrowser.go(guestsTopicUrl);
+    majasBrowser.assertPageTitleMatches(guestTopicTitle);
   });
 
   it("... can post reply", () => {
+    majasBrowser.complex.replyToOrigPost(majasGuestTopicReplyText);
   });
 
   it("... can edit the reply", () => {
+    majasBrowser.complex.editPostNr(majasGuestTopicReplyNr, majasGuestTopicReplyTextEdited);
   });
 
   it("... cannot edit orig post", () => {
+    assert(!majasBrowser.topic.canEditOrigPost());
   });
 
   it("... cannot edit the guest's reply", () => {
+    assert(!majasBrowser.topic.canEditPostNr(guestsReplyToOwnTopicNr));
   });
 
   it("Goes to 'newSeeBasicReplyFullCreateCat'", () => {
+    goToNewSeeBasicReplyFullCreateCat(majasBrowser);
   });
 
   it("... cannot create topic; there's no Create Topic button", () => {
+    majasBrowser.forumButtons.assertNoCreateTopicButton();
   });
 
   it("Opens the 'newSeeBasicReplyFullCreateCat' About page", () => {
+    goToNewSeeBasicReplyFullCreateCatAboutPage(majasBrowser);
   });
 
   it("... cannot reply or edit anything", () => {
+    assert(!majasBrowser.topic.canEditSomething());
+    assert(!majasBrowser.topic.canReplyToSomething());
   });
 
 
   // ------- Maria (trust level = BasicMember)
 
-  // ...
+  it("Maria logs in", () => {
+    majasBrowser.go(idAddress.origin + '/categories');
+    majasBrowser.topbar.clickLogout();
+    mariasBrowser.complex.loginWithPasswordViaTopbar(maria);
+  });
+
+  it("Sees both 'allSeeReplyCreateCat' and 'newSeeBasicReplyFullCreateCat'", () => {
+    assertSeesBothCategories(mariasBrowser);
+  });
+
+  it("Opens the 'newSeeBasicReplyFullCreateCat' About page", () => {
+    goToNewSeeBasicReplyFullCreateCatAboutPage(majasBrowser);
+  });
+
+  it("... can post reply", () => {
+    mariasBrowser.complex.replyToOrigPost(mariasAboutCatReplyText);
+  });
+
+  it("... can edit the reply", () => {
+    mariasBrowser.complex.editPostNr(mariasAboutCatReplyNr, mariasAboutCatReplyTextEdited);
+  });
+
+  it("... cannot edit orig post", () => {
+    assert(!mariasBrowser.topic.canEditOrigPost());
+  });
+
+  it("Goes to the 'newSeeBasicReplyFullCreateCat' topic list", () => {
+    goToNewSeeBasicReplyFullCreateCat(mariasBrowser);
+  });
+
+  it("... cannot create topic; there's no Create Topic button", () => {
+    mariasBrowser.forumButtons.assertNoCreateTopicButton();
+  });
 
 
   // ------- Michael (trust level = FullMember)
 
-  // ...
+  it("Michael logs in", () => {
+    mariasBrowser.go(idAddress.origin + '/categories');
+    mariasBrowser.topbar.clickLogout();
+    michaelsBrowser.complex.loginWithPasswordViaTopbar(michael);
+  });
+
+  it("Sees both 'allSeeReplyCreateCat' and 'newSeeBasicReplyFullCreateCat'", () => {
+    assertSeesBothCategories(michaelsBrowser);
+  });
+
+  it("Opens the 'newSeeBasicReplyFullCreateCat' About page", () => {
+    goToNewSeeBasicReplyFullCreateCatAboutPage(michaelsBrowser);
+  });
+
+  it("... cannot edit page or Maria's reply", () => {
+    assert(!michaelsBrowser.topic.canEditSomething());
+  });
+
+  it("Goes to the 'newSeeBasicReplyFullCreateCat' topic list", () => {
+    goToNewSeeBasicReplyFullCreateCat(michaelsBrowser);
+  });
+
+  it("... can create topic", () => {
+    michaelsBrowser.complex.createAndSaveTopic(
+        { title: michaelsTopicTitle, body: michaelsTopicBody });
+    michaelsTopicUrl = michaelsBrowser.url().value;
+  });
+
+  it("... can edit the topic afterwards", () => {
+    michaelsBrowser.complex.editPageBody(michaelsTopicBodyEdited);
+  });
 
 
-  // ------- Conny (trust level = CoreMember)
+  // ------- Trillian (trusted member)
 
-  // ... can edit orig post + mind map
+  // May delete comments but not pages.
+
+
+  // ------- Corax (trust level = CoreMember)
+
+  it("Corax logs in", () => {
+    michaelsBrowser.go(idAddress.origin + '/categories');
+    michaelsBrowser.topbar.clickLogout();
+    coraxBrowser.complex.loginWithPasswordViaTopbar(corax);
+  });
+
+  it("Goes to category about page", () => {
+    goToNewSeeBasicReplyFullCreateCatAboutPage(coraxBrowser);
+  });
+
+  it("... can edit page", () => {
+    coraxBrowser.debug();
+    coraxBrowser.complex.editPageBody("I am Corax.")
+  });
+
+  it("... and others' replies", () => {
+    coraxBrowser.debug();
+    coraxBrowser.complex.editPostNr(mariasAboutCatReplyNr, "Corax was here.")
+  });
+
+  it("Goes to guest topic page", () => {
+    coraxBrowser.debug();
+    coraxBrowser.go(guestsTopicUrl);
+  });
+
+  it("... can delete posts", () => {
+    // coraxBrowser.topic.deletePostNr(majasGuestTopicReplyNr);
+  });
+
+  // + can delete whole pages
 
 
   // ------- Mons (trust level = New, but is moderator)

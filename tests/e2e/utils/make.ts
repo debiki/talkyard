@@ -203,16 +203,16 @@ const make = {
     };
   },
 
-  memberConny: function(): Member {
+  memberCorax: function(): Member {
     return {
       id: getAndBumpNextUserId(),
-      username: "conny",
-      fullName: "Conny Core Member",
+      username: "Corax",
+      fullName: "Corax Core Member",
       createdAtMs: DefaultCreatedAtMs,
-      emailAddress: "e2e-test--conny@example.com",
+      emailAddress: "e2e-test--corax@example.com",
       emailVerifiedAtMs: DefaultCreatedAtMs,
-      passwordHash: "cleartext:publicConny123",
-      password: "publicConny123",
+      passwordHash: "cleartext:publicCorax123",
+      password: "publicCorax123",
       trustLevel: c.TestTrustLevel.CoreMember,
     };
   },
@@ -250,7 +250,7 @@ const make = {
     };
   },
 
-  page: function(values: NewPage): Page {
+  page: function(values: PageToMake): Page {
     return {
       id: values.id,
       role: values.role,
@@ -284,14 +284,14 @@ const make = {
     };
   },
 
-  rootCategoryWithIdFor: function(id: CategoryId, forumPage: Page): TestCategory {
+  rootCategoryWithIdFor: function(id: CategoryId, forumPage: PageIdWhen): TestCategory {
     const category = make.categoryWithIdFor(id, forumPage);
     category.name = "(Root Category)";  // in Scala too [7UKPX5]
     category.slug = "(root-category)";  //
     return category;
   },
 
-  categoryWithIdFor: function(id: CategoryId, forumPage: Page): TestCategory {
+  categoryWithIdFor: function(id: CategoryId, forumPage: PageIdWhen): TestCategory {
     return {
       id: id,
       sectionPageId: forumPage.id,

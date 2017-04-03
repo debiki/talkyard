@@ -2,7 +2,6 @@ conf/prod-password.conf
 scratch.txt
 scratch.json
 scratch/
-logs
 project/project
 project/target
 project/boot

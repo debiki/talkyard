@@ -98,7 +98,9 @@ class Notifier(val systemDao: SystemDao, val siteDaoFactory: SiteDaoFactory)
     val delay = sys.props.get("ed.notifier.delayInMinutes").map(_.toInt) getOrElse 0
     val notfsBySiteId: Map[SiteId, Seq[Notification]] =
       systemDao.loadNotificationsToMailOut(delayInMinutes = delay, numToLoad = 11)
-    logger.trace(s"Found notifications for ${notfsBySiteId.size} sites.")
+    if (notfsBySiteId.nonEmpty) {
+      logger.trace(s"Found notifications for ${notfsBySiteId.size} sites.")
+    }
     trySendEmailNotfs(notfsBySiteId)
   }
 
