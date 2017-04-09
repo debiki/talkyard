@@ -1,0 +1,14 @@
+version: '2'
+services:
+  web:
+    environment:
+      # Set Nginx limits to high values, useful e.g. when testing performance.
+      ED_NGX_LIMIT_CONN_PER_IP: 999
+      ED_NGX_LIMIT_CONN_PER_SERVER: 10000
+      ED_NGX_LIMIT_REQ_PER_IP: 999920
+      ED_NGX_LIMIT_REQ_PER_IP_BURST: 9999200
+      ED_NGX_LIMIT_REQ_PER_SERVER: 9999200
+      ED_NGX_LIMIT_REQ_PER_SERVER_BURST: 99992000
+      ED_NGX_LIMIT_RATE: 999950k
+      ED_NGX_LIMIT_RATE_AFTER: 99995m
+

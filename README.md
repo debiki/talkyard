@@ -179,10 +179,26 @@ Stop everything: `sudo docker-compose down` and then: `s/cli` then type `test` +
 
 #### Performance tests
 
+Install Scala SBT, see http://www.scala-sbt.org/download.html. On Linux:
+
+```
+echo "deb https://dl.bintray.com/sbt/debian /" | sudo tee -a /etc/apt/sources.list.d/sbt.list
+sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv 2EE0EA64E40A89B84B2DF73499E82A75642AC823
+sudo apt-get update
+sudo apt-get install sbt
+```
+
 Append to `/etc/security/limits.conf` ... hmm but now with Docker-Compose, which container?
 
     your_login_name hard nofile 65535
     your_login_name soft nofile 65535
+
+Configure very high max-requests-per-ip-per-second etc Nginx limits — otherwise during the performance
+test Nginx will start to rate limit stuff and reply 503 Service Not Available:
+
+```
+sudo docker-compose  -f docker-compose.yml  -f docker-compose-no-limits.yml  up -d
+```
 
 
 Technology

@@ -18,7 +18,7 @@ if cdn_pull_header then
     if cdn_pull_header ~= globals.cdn_pull_key then
         ngx.status = 403
         ngx.header.content_type = 'text/plain'
-        ngx.say("403 Forbidden\n\nIncorrect X-Pull header value. [EsE7PK4WS2]")
+        ngx.say("403 Forbidden\n\nIncorrect X-Pull header value. [EdEBADXPULL]")
         return ngx.exit(ngx.HTTP_OK)
     end
 
@@ -48,9 +48,9 @@ elseif used_ip_bw > 60e6 then -- or 30e6?
     slow_down(slow_speed)
 elseif used_ip_bw > 100e6 then  -- or 50e6?
     ngx.log(ngx.WARN, "Per ip bandwidth exceeded, replying Forbidden, ip: " ..
-            ip .. ", server: " .. server_name .. " [EsE5GUK20]")
+            ip .. ", server: " .. server_name .. " [EdE5GUK20]")
     forbiddenMessage = "You, or someone at your Internet address, " ..
-            "have downloaded too much data from this server. [EsE8YKW24]"
+            "have downloaded too much data from this server. [EdsEBWXIP]"
 end
 
 if used_server_bw > 500e6 then
@@ -59,8 +59,8 @@ elseif used_server_bw > 3e9 then
     slow_down(slow_speed)
 elseif used_server_bw > 5e9 then
     ngx.log(ngx.WARN, "Per server bandwidth exceeded, replying Forbidden, server: " ..
-            server_name .. " [EsE2GK47R]")
-    forbiddenMessage = "People have downloaded too much data from " .. server_name .. " [EsE4LY7Z]"
+            server_name .. " [EdE2GK47R]")
+    forbiddenMessage = "People have downloaded too much data from " .. server_name .. " [EdEBWXSRV]"
 end
 
 if used_total_bw > 100e9 then
@@ -68,8 +68,8 @@ if used_total_bw > 100e9 then
 elseif used_total_bw > 300e9 then
     slow_down(slow_speed)
 elseif used_total_bw > 500e9 then
-    ngx.log(ngx.ERR, "Total bandwidth exceeded, replying Forbidden [EsE5TBW5]")
-    forbiddenMessage = "People have downloaded too much data from this server. [EsE5FKU20]"
+    ngx.log(ngx.ERR, "Total bandwidth exceeded, replying Forbidden [EdE5TBW5]")
+    forbiddenMessage = "People have downloaded too much data from this server. [EdEBWXALL]"
 end
 
 -- ngx.log(ngx.DEBUG, "ip: " .. ip .. ", ip bw: " .. used_ip_bw ..

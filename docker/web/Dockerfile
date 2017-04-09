@@ -226,15 +226,28 @@ COPY server-listen.conf   /etc/nginx/
 # old, remove once I've edited edm & edc
 COPY server-ssl.conf      /etc/nginx/ssl-hardening.conf
 COPY server-ssl.conf      /etc/nginx/
-COPY http-limits.conf     /etc/nginx/
+COPY http-limits.conf     /etc/nginx/http-limits.conf.template
 COPY http-redirect-to-https.conf /etc/nginx/
-COPY server-limits.conf   /etc/nginx/
+COPY server-limits.conf   /etc/nginx/server-limits.conf.template
 # old, remove once I've edited edm & edc
 COPY server-locations.conf /etc/nginx/vhost.conf
 # old, too
 COPY server-locations.conf /etc/nginx/server.conf
-COPY server-locations.conf /etc/nginx/
-COPY nginx.conf           /etc/nginx/
+COPY server-locations.conf /etc/nginx/server-locations.conf.template
+COPY nginx.conf           /etc/nginx/nginx.conf.template
+
+COPY run-envsubst.sh  /etc/nginx/run-envsubst.sh
+RUN  chmod ugo+x      /etc/nginx/run-envsubst.sh
+# Sync this with the variable list in run-envsubst.sh: [0KW2UY3]
+ENV \
+    ED_NGX_LIMIT_CONN_PER_IP=40 \
+    ED_NGX_LIMIT_CONN_PER_SERVER=10000 \
+    ED_NGX_LIMIT_REQ_PER_IP=20 \
+    ED_NGX_LIMIT_REQ_PER_IP_BURST=200 \
+    ED_NGX_LIMIT_REQ_PER_SERVER=200 \
+    ED_NGX_LIMIT_REQ_PER_SERVER_BURST=2000 \
+    ED_NGX_LIMIT_RATE=50k \
+    ED_NGX_LIMIT_RATE_AFTER=5m
 
 # Frequently edited, so do last.
 COPY ed-lua /opt/ed/lua/
@@ -245,5 +258,5 @@ COPY ed-lua /opt/ed/lua/
 # can publish events.
 EXPOSE 80 443
 
-CMD ["nginx", "-g", "daemon off;"]
+CMD /etc/nginx/run-envsubst.sh && nginx
 

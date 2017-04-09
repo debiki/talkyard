@@ -4,7 +4,6 @@ services:
     mem_limit: 200M
     build: docker/web/
     image: debiki/ed-web
-    command: nginx
     volumes:
       - ./docker/data/uploads/:/opt/ed/uploads/:ro
       - ./docker/data/letsencrypt/:/etc/letsencrypt/:ro

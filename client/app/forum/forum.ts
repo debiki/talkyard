@@ -659,8 +659,10 @@ var ForumButtons = createComponent({
         "Edit Category");
     }
 
+    const whatClass = showsCategoryTree ? 's_F_BB-Cats' : 's_F_BB-Topics';
+
     return (
-        r.div({ className: 'dw-forum-actionbar clearfix' },
+        r.div({ className: 'dw-forum-actionbar clearfix ' + whatClass },
           r.div({ className: 'esForum_catsNav' },
             anyPageTitle,
             categoriesDropdownButton,

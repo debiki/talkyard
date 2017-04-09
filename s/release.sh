@@ -94,7 +94,8 @@ sudo s/d-gulp build-e2e
 
 # Run the 'latest' tag — it's for the images we just built above.
 # '-p edt' = EffectiveDiscussions Test project.
-test_containers="VERSION_TAG=latest docker-compose -p edt -f modules/ed-prod-one-test/docker-compose.yml -f modules/ed-prod-one-test/debug.yml -f modules/ed-prod-one-test-override.yml"
+# Use the -no-limits.yml file, because we'll run performance tests.
+test_containers="VERSION_TAG=latest docker-compose -p edt -f modules/ed-prod-one-test/docker-compose.yml -f modules/ed-prod-one-test/debug.yml -f modules/ed-prod-one-test-override.yml -f docker-compose-no-limits.yml"
 sudo $test_containers down
 sudo rm -fr modules/ed-prod-one-test/data
 sudo $test_containers up -d
@@ -119,6 +120,34 @@ fi
 # This nills xvfb-run only:  kill $selenium_pid
 # Instead:
 kill %1
+
+
+# Test performance
+# -----------------
+
+# (The perf test repo is currenty private)
+
+pushd .
+cd ../ed-perf-test/
+./test-performance.sh
+perf_test_result=$?
+
+popd
+
+if [ $perf_test_result -ne 0 ]; then
+  die_if_in_script
+fi
+
+
+# Test rate & bandwidth limits
+# ----------------------
+
+# Start the containers, but *with* rate limits this time.
+sudo $test_containers down
+
+# Run tests ... ensure gets 503 Service Unavailable ...
+# To do ...
+
 
 sudo $test_containers down
 

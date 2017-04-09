@@ -346,7 +346,8 @@ var AvatarAboutAndButtons = createComponent({
           PrimaryButton({ id: 'e2eChooseAvatarInput', className: 'esMedAvtr_uplBtn',
               onClick: this.selectAndUploadAvatar }, uploadAvatarBtnText),
           r.input({ name: 'files', type: 'file', multiple: false, // dupl code [2UK503]
-             ref: 'chooseAvatarInput', style: { width: 0, height: 0 }}))
+              ref: 'chooseAvatarInput',
+              style: { width: 0, height: 0, position: 'absolute', left: -999 }}))
       : null;
 
 
