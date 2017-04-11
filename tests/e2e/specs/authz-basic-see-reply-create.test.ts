@@ -540,17 +540,14 @@ describe("authz basic see reply create:", () => {
   });
 
   it("... can edit page", () => {
-    coraxBrowser.debug();
     coraxBrowser.complex.editPageBody("I am Corax.")
   });
 
   it("... and others' replies", () => {
-    coraxBrowser.debug();
     coraxBrowser.complex.editPostNr(mariasAboutCatReplyNr, "Corax was here.")
   });
 
   it("Goes to guest topic page", () => {
-    coraxBrowser.debug();
     coraxBrowser.go(guestsTopicUrl);
   });
 

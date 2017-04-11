@@ -31,7 +31,9 @@ var ModalBody = reactCreateFactory(ReactBootstrap.ModalBody);
 var ModalFooter = reactCreateFactory(ReactBootstrap.ModalFooter);
 
 
-export var AdminUserPageComponent = React.createClass(<any> {
+export const AdminUserPageComponent = React.createClass(<any> {
+  displayName: 'AdminUserPageComponent',
+
   contextTypes: {
     router: React.PropTypes.object.isRequired
   },
@@ -143,9 +145,12 @@ export var AdminUserPageComponent = React.createClass(<any> {
         : r.p({}, 'Moderator: ' + user.isModerator, ' ', toggleModeratorButton);
 
     var trustLevelText = user.lockedTrustLevel
-        ? "Locked at: " + trustLevel_toString(user.lockedTrustLevel) + " member, " +
-            "would otherwise have been: " + trustLevel_toString(user.trustLevel) + " member"
-        : '' + trustLevel_toString(user.trustLevel) + " member";
+        ? "Locked at: " + trustLevel_toString(user.lockedTrustLevel) + ", " +
+            "would otherwise have been: " + trustLevel_toString(user.trustLevel)
+        : trustLevel_toString(user.trustLevel);
+
+    var trustButton = Button({ onClick: () => openTrustLevelDialog(user, this.reloadUser) },
+      "Change");
 
     var threatLevelText = user.lockedThreatLevel
         ? "Locked at: " + threatLevel_toString(user.lockedThreatLevel) +
@@ -168,7 +173,7 @@ export var AdminUserPageComponent = React.createClass(<any> {
         r.p({}, 'Admin: ' + user.isAdmin, ' ', toggleAdminButton),
         moderatorInfo,
         r.p({}, 'Suspended: ' + suspendedText, ' ', suspendButton),
-        r.p({}, 'Trust level: ' + trustLevelText),
+        r.p({}, 'Trust level: ' + trustLevelText, ' ', trustButton),
         r.p({}, 'Threat level: ' + threatLevelText, ' ', threatButton),
         impersonateButton));
   }
@@ -185,7 +190,9 @@ function openSuspendUserDialog(user: BriefUser, refreshCallback) {
 }
 
 
-var SuspendDialog = createComponent({
+const SuspendDialog = createComponent({
+  displayName: 'SuspendDialog',
+
   getInitialState: function() {
     return { isOpen: false };
   },
@@ -237,6 +244,85 @@ var SuspendDialog = createComponent({
 
 
 
+let trustLevelDialog;
+
+function openTrustLevelDialog(user: MemberInclDetails, refreshCallback) {
+  if (!trustLevelDialog) {
+    trustLevelDialog = ReactDOM.render(MemberTrustLevelDialog(), utils.makeMountNode());
+  }
+  trustLevelDialog.open(user, refreshCallback);
+}
+
+
+const MemberTrustLevelDialog = createComponent({
+  displayName: 'MemberTrustLevelDialog',
+
+  getInitialState: function() {
+    return { isOpen: false };
+  },
+
+  open: function(user: MemberInclDetails, refreshCallback) {
+    this.setState({ isOpen: true, user: user, refreshCallback: refreshCallback });
+  },
+
+  close: function() {
+    this.setState({ isOpen: false, user: null, refreshCallback: null });
+  },
+
+  lockTrustLevelAt: function(trustLevel: TrustLevel) {
+    Server.lockTrustLevel(this.state.user.id, trustLevel, () => {
+      this.state.refreshCallback(trustLevel);
+      this.close();
+    })
+  },
+
+  render: function() {
+    if (!this.state.isOpen)
+      return null;
+
+    const user: MemberInclDetails = this.state.user;
+
+    const trustLevelText = user.lockedTrustLevel
+      ? "Trust level locked at: " + trustLevel_toString(user.lockedTrustLevel) +
+          ", would otherwise have been: " + trustLevel_toString(user.trustLevel)
+      : "Current trust level: " + trustLevel_toString(user.trustLevel);
+
+    const actionContent = user.lockedTrustLevel
+      ? Button({ onClick: () => this.lockTrustLevelAt(null),
+          help: "Clears the manually assigned trust level." }, "Unlock")
+      : r.ol({},
+          r.li({},
+            Button({ onClick: () => this.lockTrustLevelAt(TrustLevel.New) },
+              "New member")),
+          r.li({},
+            Button({ onClick: () => this.lockTrustLevelAt(TrustLevel.Basic) },
+              "Basic member")),
+          r.li({},
+            Button({ onClick: () => this.lockTrustLevelAt(TrustLevel.Member) },
+              "Full member")),
+          r.li({},
+            Button({ onClick: () => this.lockTrustLevelAt(TrustLevel.Helper) },
+              "Trusted member")),
+          r.li({},
+            Button({ onClick: () => this.lockTrustLevelAt(TrustLevel.Regular) },
+              "Regular member")),
+          r.li({},
+            Button({ onClick: () => this.lockTrustLevelAt(TrustLevel.CoreMember), },
+              "Core member")));
+
+    return (
+      Modal({ show: this.state.isOpen, onHide: this.close },
+        ModalTitle({}, "Change trust level"),
+        ModalBody({},
+          r.div({}, trustLevelText),
+          actionContent),
+        ModalFooter({},
+          Button({ onClick: this.close }, "Cancel"))));
+  }
+});
+
+
+
 var threatLevelDialog;
 
 function openThreatLevelDialog(user: MemberInclDetails, refreshCallback) {
@@ -247,7 +333,9 @@ function openThreatLevelDialog(user: MemberInclDetails, refreshCallback) {
 }
 
 
-var MemberThreatLevelDialog = createComponent({
+const MemberThreatLevelDialog = createComponent({
+  displayName: 'MemberThreatLevelDialog',
+
   getInitialState: function() {
     return { isOpen: false };
   },
@@ -276,7 +364,7 @@ var MemberThreatLevelDialog = createComponent({
     var threatLevelText = user.lockedThreatLevel
       ? "Threat level locked at: " + threatLevel_toString(user.lockedThreatLevel) +
           ", would otherwise have been: " + threatLevel_toString(user.threatLevel)
-      : "Threat level: " + threatLevel_toString(user.threatLevel);
+      : "Current threat level: " + threatLevel_toString(user.threatLevel);
 
     var actionContent = user.lockedThreatLevel
         ? Button({ onClick: () => this.lockThreatLevelAt(null),

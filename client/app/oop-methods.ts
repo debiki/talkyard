@@ -259,6 +259,12 @@ function store_mayIEditImpl(store: Store, post: Post, isEditPage: boolean): bool
   //  return false;
 
   let may: boolean;
+
+  // Direct messages aren't placed in any category and thus aren't affected by permissions.
+  // Need this extra 'if':
+  if (store.pageMemberIds.indexOf(me.id) >= 0 && isOwn)
+    may = true;
+
   me.permsOnPages.forEach((p: PermsOnPage) => {
     if (p.onWholeSite) {
       if (isDefined2(p.mayEditPage)) {
@@ -304,17 +310,19 @@ export function store_findCatsWhereIMayCreateTopics(store: Store): Category[] {
 //----------------------------------
 
 export function trustLevel_toString(trustLevel: TrustLevel): string {
+  let level;
   switch (trustLevel) {
-    case TrustLevel.New: return "New";
-    case TrustLevel.Basic: return "Basic";
-    case TrustLevel.Member: return "Member";
-    case TrustLevel.Helper: return "Helper";
-    case TrustLevel.Regular: return "Regular";
-    case TrustLevel.CoreMember: return "Core";
+    case TrustLevel.New: level = "New"; break;
+    case TrustLevel.Basic: level = "Basic"; break;
+    case TrustLevel.Member: level = "Full"; break;
+    case TrustLevel.Helper: level = "Trusted"; break;
+    case TrustLevel.Regular: level = "Regular"; break;
+    case TrustLevel.CoreMember: level = "Core"; break;
     default:
       // Guests have no trust level.
       return "Guest";
   }
+  return level + " member";
 }
 
 export function threatLevel_toString(threatLevel: ThreatLevel): string {

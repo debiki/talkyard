@@ -170,6 +170,7 @@ trait UserDao {
       val memberAfter = member.copy(lockedTrustLevel = newTrustLevel)
       transaction.updateMemberInclDetails(memberAfter)
     }
+    removeUserFromMemCache(memberId)
   }
 
 
@@ -179,6 +180,7 @@ trait UserDao {
       val memberAfter = member.copy(lockedThreatLevel = newThreatLevel)
       transaction.updateMemberInclDetails(memberAfter)
     }
+    removeUserFromMemCache(memberId)
   }
 
 
@@ -187,6 +189,7 @@ trait UserDao {
       val guest = transaction.loadTheGuest(guestId)
       ??? // lock both ips and guest cookie
     }
+    removeUserFromMemCache(guestId)
   }
 
 
@@ -327,6 +330,8 @@ trait UserDao {
           math.max(maxSoFar, block.threatLevel.toInt)
         }
         ThreatLevel.fromInt(levelInt) getOrDie "EsE8GY2511"
+      case group: Group =>
+        unimplemented("loading group and levels", "EdE2WKP05")
     }
     UserAndLevels(user, trustLevel, threatLevel)
   }
@@ -618,6 +623,8 @@ trait UserDao {
         readOnlyTransaction { transaction =>
           transaction.loadGroupIds (user)
         }
+      case group: Group =>
+        unimplemented("getting group ids for a group", "EdE5JGA10")
     }
   }
 

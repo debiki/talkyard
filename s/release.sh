@@ -46,6 +46,7 @@ version_tag="$version-`git rev-parse --short HEAD`"  # also in Build.scala [8GKB
 # Check everything is OK
 # ----------------------
 
+sudo docker-compose kill app
 sudo docker-compose down
 
 if [ -n "`sudo docker ps -q`" ]; then
@@ -111,7 +112,7 @@ xvfb-run -s '-screen 0 1280x1024x8' \
   node_modules/selenium-standalone/bin/selenium-standalone start &
 
 
-s/run-e2e-tests.sh $@
+s/run-e2e-tests.sh --prod $@
 
 if [ $? -ne 0 ]; then
   die_if_in_script

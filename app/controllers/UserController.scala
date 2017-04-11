@@ -273,6 +273,23 @@ object UserController extends mvc.Controller {
   }
 
 
+  def lockTrustLevel: Action[JsValue] = StaffPostJsonAction(maxBytes = 100) { request =>
+    val userId = (request.body \ "userId").as[UserId]
+    val trustLevelInt = (request.body \ "trustLevel").as[Int]
+    val trustLevel = TrustLevel.fromInt(trustLevelInt) getOrElse throwBadRequest(
+      "EsE4JYW0", s"Bad trust level: $trustLevelInt")
+    request.dao.lockMemberTrustLevel(userId, Some(trustLevel))
+    Ok
+  }
+
+
+  def unlockTrustLevel: Action[JsValue] = StaffPostJsonAction(maxBytes = 100) { request =>
+    val userId = (request.body \ "userId").as[UserId]
+    request.dao.lockMemberTrustLevel(userId, None)
+    Ok
+  }
+
+
   def lockThreatLevel: Action[JsValue] = StaffPostJsonAction(maxBytes = 100) { request =>
     val userId = (request.body \ "userId").as[UserId]
     val threatLevelInt = (request.body \ "threatLevel").as[Int]

@@ -527,6 +527,22 @@ export function unsuspendUser(userId: UserId, success: () => void) {
 }
 
 
+export function lockTrustLevel(userId: UserId, trustLevel: TrustLevel, success: () => void) {
+  if (trustLevel) {
+    postJsonSuccess('/-/lock-trust-level', () => {
+      // ReactActions.patchTheStore();
+      success();
+    }, {
+      userId: userId,
+      trustLevel: trustLevel,
+    });
+  }
+  else {
+    postJsonSuccess('/-/unlock-trust-level', success, { userId: userId, });
+  }
+}
+
+
 export function lockThreatLevel(userId: UserId, threatLevel: ThreatLevel, success: () => void) {
   if (threatLevel) {
     postJsonSuccess('/-/lock-threat-level', () => {
