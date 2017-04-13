@@ -23,7 +23,7 @@
     "fibers": "^1.0.15",
     "fileapi": "^2.0.21",
     "jquery": "^2.2.4",
-    "jquery-resizable": "=1.0.3",
+    "jquery-resizable": "1.0.4",
     "jquery.caret": "^0.3.1",
     "keymaster": "^1.6.2",
     "markdown-it": "8.2.2",
