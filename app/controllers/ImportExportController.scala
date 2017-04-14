@@ -234,7 +234,7 @@ object ImportExportController extends mvc.Controller {
           emailedAt = None))
         // [readlater] export & import username usages, later. For now, create new here.
         transaction.insertUsernameUsage(UsernameUsage(
-          username = user.username, inUseFrom = transaction.now, userId = user.id))
+          usernameLowercase = user.usernameLowercase, inUseFrom = transaction.now, userId = user.id))
       }
       siteData.pages foreach { pageMeta =>
         //val newId = transaction.nextPageId()

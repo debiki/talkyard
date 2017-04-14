@@ -23,6 +23,7 @@ import debiki.dao.PageStuff
 import org.elasticsearch.search.highlight.HighlightField
 import org.{elasticsearch => es}
 import debiki.ReactJson._
+import org.scalactic.{Or, Good, Bad, ErrorMessage}
 import play.api.libs.json._
 import scala.collection.immutable
 
@@ -122,15 +123,15 @@ package object search {
     unapprovedSource: Option[String])(
     private val underlying: es.search.SearchHit) {
 
-    def score = underlying.score
+    def score: Float = underlying.score
   }
 
 
   case class PageAndHits(
     pageStuff: PageStuff,
     hitsByScoreDesc: immutable.Seq[SearchHit]) {
-    def pageId = pageStuff.pageId
-    def pageTitle = pageStuff.title
+    def pageId: PageId = pageStuff.pageId
+    def pageTitle: String = pageStuff.title
   }
 
 
@@ -160,7 +161,7 @@ package object search {
   }
 
 
-  def parseElasticSearchJsonDoc(hit: es.search.SearchHit) = {
+  def parseElasticSearchJsonDoc(hit: es.search.SearchHit): SearchHit Or ErrorMessage = {
     val Fields = PostDocFields
     val jsonString = hit.getSourceAsString
     val json = play.api.libs.json.Json.parse(jsonString)
@@ -177,7 +178,7 @@ package object search {
           fragments.map(_.toString)
       }
     }
-    SearchHit(
+    try Good(SearchHit(
       siteId = (json \ Fields.SiteId).as[SiteId],
       pageId = (json \ Fields.PageId).as[PageId],
       postId = (json \ Fields.PostId).as[PostId],
@@ -186,7 +187,11 @@ package object search {
       approvedTextWithHighligtsHtml = approvedTextWithHighligtsHtml,
       currentRevisionNr = (json \ Fields.CurrentRevisionNr).as[Int],
       unapprovedSource = (json \ Fields.UnapprovedSource).asOpt[String])(
-      underlying = hit)
+      underlying = hit))
+    catch {
+      case ex: Exception =>
+        Bad(s"Error parsing search hit JSON: ${ex.toString}, search hit json: " + json)
+    }
   }
 
 

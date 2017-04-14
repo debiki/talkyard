@@ -144,7 +144,7 @@ var UserPageComponent = React.createClass(<any> {
   },
 
   loadCompleteUser: function(redirectToCorrectUsername) {
-    var usernameOrId = this.props.params.usernameOrId;
+    let usernameOrId: string | number = this.props.params.usernameOrId;
     Server.loadCompleteUser(usernameOrId, (user, stats: UserStats) => {
       if (this.isGone) return;
       this.setState({ user: user, stats: stats });
@@ -152,8 +152,10 @@ var UserPageComponent = React.createClass(<any> {
       // name, user.username will be the current name — then show current name in the url [8KFU24R].
       // Also 2) if user id specified, and the user is a member (they have usernames) show
       // username instead,
-      if (user.username && user.username !== usernameOrId && redirectToCorrectUsername !== false) {
-        this.context.router.replace('/-/users/' + user.username);
+      const isNotLowercase = _.isString(usernameOrId) && usernameOrId !== usernameOrId.toLowerCase();
+      if (user.username && (user.username.toLowerCase() !== usernameOrId || isNotLowercase) &&
+          redirectToCorrectUsername !== false) {
+        this.context.router.replace('/-/users/' + user.username.toLowerCase());
       }
     }, () => {
       if (this.isGone) return;

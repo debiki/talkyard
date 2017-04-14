@@ -98,7 +98,7 @@ trait UserDao {
       // COULD loop and append 1, 2, 3, ... until there's no username clash.
       transaction.insertMember(newUser)
       transaction.insertUsernameUsage(UsernameUsage(
-        username = newUser.username, inUseFrom = transaction.now, userId = newUser.id))
+        newUser.usernameLowercase, inUseFrom = transaction.now, userId = newUser.id))
       transaction.upsertUserStats(UserStats.forNewUser(
         newUser.id, firstSeenAt = transaction.now, emailedAt = Some(invite.createdWhen)))
       transaction.updateInvite(invite)
@@ -358,7 +358,7 @@ trait UserDao {
       ensureSiteActiveOrThrow(user, transaction)
       transaction.insertMember(user)
       transaction.insertUsernameUsage(UsernameUsage(
-        username = user.username, inUseFrom = transaction.now, userId = user.id))
+        usernameLowercase = user.usernameLowercase, inUseFrom = transaction.now, userId = user.id))
       transaction.upsertUserStats(UserStats.forNewUser(
         user.id, firstSeenAt = transaction.now, emailedAt = None))
       transaction.insertIdentity(identity)
@@ -400,7 +400,7 @@ trait UserDao {
       ensureSiteActiveOrThrow(user, transaction)
       transaction.insertMember(user)
       transaction.insertUsernameUsage(UsernameUsage(
-        username = user.username, inUseFrom = transaction.now, userId = user.id))
+        usernameLowercase = user.usernameLowercase, inUseFrom = transaction.now, userId = user.id))
       transaction.upsertUserStats(UserStats.forNewUser(
         user.id, firstSeenAt = transaction.now, emailedAt = None))
       user.briefUser
@@ -886,8 +886,8 @@ trait UserDao {
           throwForbidden("DwE5FKW02",
             "You have changed your username too many times the past year")
 
-        val recentDistinct = recentUsernames.map(_.username).toSet
-        def yetAnotherNewName = !recentDistinct.contains(preferences.username)
+        val recentDistinct = recentUsernames.map(_.usernameLowercase).toSet
+        def yetAnotherNewName = !recentDistinct.contains(preferences.username.toLowerCase)
         if (recentDistinct.size >= maxPerYearDistinct && yetAnotherNewName)
           throwForbidden("EdE7KP4ZZ_",
             "You have changed to different usernames too many times the past year")
@@ -899,7 +899,7 @@ trait UserDao {
         }
 
         transaction.insertUsernameUsage(UsernameUsage(
-          username = preferences.username,
+          usernameLowercase = preferences.username.toLowerCase,
           inUseFrom = transaction.now,
           inUseTo = None,
           userId = user.id,

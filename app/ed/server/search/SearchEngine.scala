@@ -27,6 +27,7 @@ import org.elasticsearch.index.query.QueryBuilders
 import org.elasticsearch.search.highlight.HighlightBuilder
 import org.elasticsearch.action.ActionListener
 import org.{elasticsearch => es}
+import org.scalactic.{Good, Bad}
 import play.{api => p}
 import scala.collection.immutable
 import scala.concurrent.{Future, Promise}
@@ -116,15 +117,20 @@ class SearchEngine(
       def onResponse(response: SearchResponse) {
         // (This isn't the actor's thread. This is some thread controlled by ElasticSearch.)
         import collection.JavaConverters._
-        val hits = response.getHits.asScala.map((hit: es.search.SearchHit) => {
-          parseElasticSearchJsonDoc(hit)
+        val hits = response.getHits.asScala.flatMap((elasticSearchHit: es.search.SearchHit) => {
+          parseElasticSearchJsonDoc(elasticSearchHit) match {
+            case Good(hit) => Some(hit)
+            case Bad(errorMessage) =>
+              p.Logger.error(o"""Error when parsing search query result, query: $searchQuery
+                   result: $errorMessage""")
+              None
+          }
         })
         promise.success(hits.toVector)
       }
 
       def onFailure(throwable: Throwable) {
-        p.Logger.error(o"""Error when searching for: $boolQuery,
-             search source: ${requestBuilder.toString}""", throwable)
+        p.Logger.error(o"""Error when searching, source: ${requestBuilder.toString}""", throwable)
         promise.failure(throwable)
       }
     })

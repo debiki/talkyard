@@ -1,8 +1,7 @@
 #!/bin/bash
 
-# Makes json log messages human readable.
-# Not currently in use. Will start using later, when all logs are being redirected to stdout,
-# in json.
+# Makes json log messages human readable, by parsing the json and pretty-printing
+# the app specific interesting fields.
 
 
 if [ -z `which jq` ]; then

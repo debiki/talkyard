@@ -547,6 +547,8 @@ case class MemberInclDetails(
   def effectiveTrustLevel: TrustLevel = lockedTrustLevel getOrElse trustLevel
   def effectiveThreatLevel: ThreatLevel = lockedThreatLevel getOrElse threatLevel
 
+  def usernameLowercase: String = username.toLowerCase
+
   def preferences = MemberPreferences(
     userId = id,
     fullName = fullName,
@@ -621,12 +623,13 @@ case class MemberPreferences(
 
 
 case class UsernameUsage(
-  username: String,
+  usernameLowercase: String,
   inUseFrom: When,
   inUseTo: Option[When] = None,
   userId: UserId,
   firstMentionAt: Option[When] = None) {
 
+  require(usernameLowercase == usernameLowercase.toLowerCase, "EdE6LKW28")
   require(!inUseTo.exists(_.unixMillis <= inUseFrom.unixMillis), "EdE7WKL42")
   require(!firstMentionAt.exists(_.unixMillis < inUseFrom.unixMillis), "EdE2WKZ0A")
   inUseTo foreach { toWhen =>
