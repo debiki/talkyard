@@ -178,16 +178,22 @@ package object search {
           fragments.map(_.toString)
       }
     }
-    try Good(SearchHit(
-      siteId = (json \ Fields.SiteId).as[SiteId],
-      pageId = (json \ Fields.PageId).as[PageId],
-      postId = (json \ Fields.PostId).as[PostId],
-      postNr = (json \ Fields.PostNr).as[PostNr],
-      approvedRevisionNr = (json \ Fields.ApprovedRevisionNr).as[Int],
-      approvedTextWithHighligtsHtml = approvedTextWithHighligtsHtml,
-      currentRevisionNr = (json \ Fields.CurrentRevisionNr).as[Int],
-      unapprovedSource = (json \ Fields.UnapprovedSource).asOpt[String])(
-      underlying = hit))
+    try {
+      val siteId = json \ Fields.SiteId match {
+        case x: JsString => x.value.toInt  // <— CLEAN_UP remove once I've reindexed edm & edc.
+        case x: JsNumber => x.value.toInt
+      }
+      Good(SearchHit(
+        siteId = siteId,
+        pageId = (json \ Fields.PageId).as[PageId],
+        postId = (json \ Fields.PostId).as[PostId],
+        postNr = (json \ Fields.PostNr).as[PostNr],
+        approvedRevisionNr = (json \ Fields.ApprovedRevisionNr).as[Int],
+        approvedTextWithHighligtsHtml = approvedTextWithHighligtsHtml,
+        currentRevisionNr = (json \ Fields.CurrentRevisionNr).as[Int],
+        unapprovedSource = (json \ Fields.UnapprovedSource).asOpt[String])(
+        underlying = hit))
+    }
     catch {
       case ex: Exception =>
         Bad(s"Error parsing search hit JSON: ${ex.toString}, search hit json: " + json)
