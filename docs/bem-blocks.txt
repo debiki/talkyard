@@ -91,6 +91,8 @@ s_P-Hdn         = post, hidden
 
 esPA            = post actions (actually located outside the post (esP) there fore esPA not esP_A)
 
+s_PT-NN         = page type NN
+
 s_PoP_Un        = perms-on-pages, username
 s_PoP_Ps        = perms-on-pages, permissions
 s_PoP_Ps_P      = perms-on-pages, single permission

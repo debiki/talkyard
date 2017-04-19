@@ -253,13 +253,14 @@ export var TitleBodyComments = createComponent({
       anySocialLinks = SocialLinks({ socialLinksHtml: store.socialLinksHtml });
     }
 
-    var embeddedClass = store.isInEmbeddedCommentsIframe ? ' dw-embedded' : '';
+    let embeddedClass = store.isInEmbeddedCommentsIframe ? ' dw-embedded' : '';
+    let pageTypeClass = ' s_PT-' + pageRole;
 
     return (
       r.div({ className: anyAboutCategoryClass },
         anyHelpMessage,
         anyAboutCategoryTitle,
-        r.div({ className: 'debiki dw-page' + embeddedClass },
+        r.div({ className: 'debiki dw-page' + embeddedClass + pageTypeClass },
           anyTitle,
           anyPostHeader,
           anySocialLinks,
@@ -982,7 +983,8 @@ export var Post = createComponent({
       }
       var headerProps = _.clone(this.props);
       headerProps.onMarkClick = this.onMarkClick;
-      headerElem = PostHeader(headerProps);
+      // For mind maps, each node is part of the article/page (rather than a comment) so skip author.
+      headerElem = store.pageRole === PageRole.MindMap ? null : PostHeader(headerProps);
       bodyElem = PostBody(this.props);
 
       if (post.isTreeCollapsed === 'Truncated' && !this.props.abbreviate) {
