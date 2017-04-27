@@ -356,7 +356,7 @@ export var LoginDialogContent = createClassAndFactory({
           OpenAuthButton(makeOauthProps('icon-google-plus', 'Google')),
           OpenAuthButton(makeOauthProps('icon-facebook', 'Facebook')),
           OpenAuthButton(makeOauthProps('icon-twitter', 'Twitter')),
-          OpenAuthButton(makeOauthProps('icon-github', 'GitHub')),
+          OpenAuthButton(makeOauthProps('icon-github-circled', 'GitHub')),
           // OpenID doesn't work right now, skip for now:  icon-yahoo Yahoo!
           loginAsGuestButton),
 

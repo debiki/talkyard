@@ -62,6 +62,7 @@ object Globals extends Globals {
   class DatabasePoolInitializationException(cause: Exception) extends RuntimeException(cause)
 
   val LocalhostUploadsDirConfigValueName = "ed.uploads.localhostDir"
+  val DefaultLocalhostUploadsDir = "/opt/ed/uploads/"
 
   val FirstSiteHostnameConfigValue = "ed.hostname"
   val BecomeOwnerEmailConfigValue = "ed.becomeOwnerEmailAddress"
@@ -672,9 +673,7 @@ class Globals {
       val pathSlash = if (value.exists(_.endsWith("/"))) value else value.map(_ + "/")
       pathSlash match {
         case None =>
-          p.Logger.warn(o"""Config value $LocalhostUploadsDirConfigValueName missing;
-              file uploads disabled. [DwE74W2]""")
-          None
+          Some(DefaultLocalhostUploadsDir)
         case Some(path) =>
           // SECURITY COULD test more dangerous dirs. Or whitelist instead?
           if (path == "/" || path.startsWith("/etc/") || path.startsWith("/bin/")) {

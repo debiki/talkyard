@@ -162,7 +162,7 @@ class SpamChecker {
     val Tweet = "tweet" // twitter messages
   }
 
-  val GoogleApiKeyName = "ed.security.googleApiKey"
+  val GoogleApiKeyName = "ed.googleApiKey"
   val anyGoogleApiKey = p.Play.configuration.getString(GoogleApiKeyName)
 
 

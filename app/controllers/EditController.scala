@@ -161,7 +161,7 @@ object EditController extends mvc.Controller {
   }
 
 
-  def changePostType = PostJsonAction(RateLimits.EditPost, maxBytes = 100) { request =>
+  def changePostType = PostJsonAction(RateLimits.EditPost, maxBytes = 300) { request =>
     val pageId = (request.body \ "pageId").as[PageId]
     val postNr = (request.body \ "postNr").as[PostNr]
     val newTypeInt = (request.body \ "newType").as[Int]
@@ -174,7 +174,7 @@ object EditController extends mvc.Controller {
 
 
   // Staff only, *for now*.
-  def editPostSettings = StaffPostJsonAction(maxBytes = 100) { request =>
+  def editPostSettings = StaffPostJsonAction(maxBytes = 300) { request =>
     val postId = (request.body \ "postId").as[PostId]
     val branchSideways = (request.body \ "branchSideways").asOpt[Byte]
     val patch = request.dao.editPostSettings(postId, branchSideways, request.who)
@@ -198,7 +198,7 @@ object EditController extends mvc.Controller {
   }
 
 
-  def movePost = StaffPostJsonAction(maxBytes = 100) { request =>
+  def movePost = StaffPostJsonAction(maxBytes = 300) { request =>
     val pageId = (request.body \ "pageId").as[PageId]   // apparently not used
     val postId = (request.body \ "postId").as[PostId]   // id not nr
     val newHost = (request.body \ "newHost").as[SiteId] // ignore for now though
