@@ -901,13 +901,14 @@ export var Editor = createComponent({
       }
     }
 
-    let editingPostId = this.state.editingPostId;
-    let replyToPostNrs = this.state.replyToPostNrs;
-    let isOrigPostReply = _.isEqual([BodyNr], replyToPostNrs);
-    let isChatComment = replyToPostNrs.length === 1 && replyToPostNrs[0] === NoPostId;
-    let isChatReply = replyToPostNrs.indexOf(NoPostId) !== -1 && !isChatComment;
+    const editingPostId = this.state.editingPostId;
+    const replyToPostNrs = this.state.replyToPostNrs;
+    const isOrigPostReply = _.isEqual([BodyNr], replyToPostNrs);
+    const isChatComment = replyToPostNrs.length === 1 && replyToPostNrs[0] === NoPostId;
+    const isChatReply = replyToPostNrs.indexOf(NoPostId) !== -1 && !isChatComment;
+    const isMindMapNode = replyToPostNrs.length === 1 && store.pageRole === PageRole.MindMap;
 
-    var doingWhatInfo;
+    let doingWhatInfo;
     if (_.isNumber(editingPostId)) {
       doingWhatInfo =
         r.span({},
@@ -920,7 +921,7 @@ export var Editor = createComponent({
       doingWhatInfo = "Your message:";
     }
     else if (this.state.newPageRole) {
-      var what = "Create new topic";
+      let what = "Create new topic";
       switch (this.state.newPageRole) {
         case PageRole.CustomHtmlPage: what = "Create a custom HTML page (add your own <h1> title)"; break;
         case PageRole.WebPage: what = "Create an info page"; break;
@@ -956,13 +957,16 @@ export var Editor = createComponent({
     else if (isOrigPostReply && page_isUsabilityTesting(store.pageRole)) { // [plugin]
       doingWhatInfo = "Your usability testing video link + description:";
     }
+    else if (isMindMapNode) {
+      doingWhatInfo = "Add mind map node:";
+    }
     else if (replyToPostNrs.length > 0) {
       doingWhatInfo =
         r.span({},
           isChatReply ? 'Chat reply to ' : 'Reply to ',
           _.filter(replyToPostNrs, (id) => id !== NoPostId).map((postNr, index) => {
-            var anyAnd = index > 0 ? ' and ' : '';
-            var whichPost = postNr === 1 ? 'the Original Post' : 'post ' + postNr;
+            const anyAnd = index > 0 ? ' and ' : '';
+            const whichPost = postNr === 1 ? 'the Original Post' : 'post ' + postNr;
             return (
               r.span({ key: postNr },
                 anyAnd,
@@ -976,14 +980,17 @@ export var Editor = createComponent({
       return r.span({}, brief, r.span({ className: 'esE_SaveB_Verbose' }, extra));
     }
 
-    var saveButtonTitle = "Save";
-    var cancelButtonTitle = "Cancel";
+    let saveButtonTitle = "Save";
+    let cancelButtonTitle = "Cancel";
     if (_.isNumber(this.state.editingPostId)) {
       saveButtonTitle = makeSaveTitle("Save", " edits");
     }
     else if (replyToPostNrs.length) {
       if (isChatComment) {
         saveButtonTitle = makeSaveTitle("Post", " comment");
+      }
+      else if (isMindMapNode) {
+        saveButtonTitle = makeSaveTitle("Add", " node");
       }
       else {
         saveButtonTitle = "Post reply";

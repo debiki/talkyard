@@ -1496,6 +1496,9 @@ function createTopicBtnTitle(category: Category) {
   else if (_.isEqual([PageRole.Problem], category.newTopicTypes)) {
     title = "Report a Problem";
   }
+  else if (_.isEqual([PageRole.MindMap], category.newTopicTypes)) {
+    title = "Create Mind Map";
+  }
   else if (_.isEqual([PageRole.Critique], category.newTopicTypes)) {
     title = "Ask for Critique"; // [plugin]
   }

@@ -87,9 +87,18 @@ export var NoCommentsPageActions = createComponent({
 });
 
 
+export function makeReplyBtnIcon(store: Store) {
+  return store.pageRole === PageRole.MindMap ? 'icon-plus' : 'icon-reply';
+}
+
+
 export function makeReplyBtnTitle(store: Store, post: Post, isAppendReplyButton: boolean) {
-  if (post.nr !== BodyNr)
-    return "Reply";
+  if (post.nr !== BodyNr) {
+    if (store.pageRole === PageRole.MindMap)
+      return "Add node";
+    else
+      return "Reply";
+  }
 
   switch (store.pageRole) {
     case PageRole.Critique: return "Give Critique"; // [plugin]
@@ -183,7 +192,8 @@ export var PostActions = createComponent({
     }
 
     const replyButton = !store_mayIReply(store, post) ? null :
-          r.a({ className: 'dw-a dw-a-reply icon-reply', onClick: this.onReplyClick },
+          r.a({ className: 'dw-a dw-a-reply ' + makeReplyBtnIcon(store),
+              onClick: this.onReplyClick },
             makeReplyBtnTitle(store, post, false));
 
     // Show a close button for unanswered questions and pending to-dos, and a reopen
@@ -612,8 +622,8 @@ var MoreDropdownModal = createComponent({
 
     // ----- Mind map branch sideways
 
-    if (!isPageBody && isMindMap && isStaff(me)) {
-      var sidewaysTitle = post.branchSideways ? "Don't branch sideways" : "→ Branch sideways";
+    if (!isPageBody && isMindMap && (isStaff(me) || isOwnPost)) {
+      let sidewaysTitle = post.branchSideways ? "Don't branch sideways" : "→ Branch sideways";
       moreLinks.push(
         r.a({ className: 'dw-a', onClick: this.toggleBranchSideways, key: 'bs' },
           sidewaysTitle));

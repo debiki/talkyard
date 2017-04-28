@@ -88,7 +88,10 @@ var HostnameEditorDialog = createComponent({
           notRegex: /\s/, notMessage: "No spaces please",
           notRegexTwo: /^https?:/, notMessageTwo: "Don't include http://",
           notRegexThree: /[@\/\?\#]/, notMessageThree: "No chars like: @ / ? #",
-          notRegexFour: /^[^\.]+(\.[^\.]+)?$/, notMessageFour: "Bare domains not allowed",
+          // SECURITY COULD disallow bare domains, or require the user to read a bit about
+          // the problems with bare domains, before letting hen use a bare domain, +
+          // typing a 3 letter "password" included in that info, to show that hen has really read it?
+          //notRegexFour: /^[^\.]+(\.[^\.]+)?$/, notMessageFour: "Bare domains not allowed",
           lastRegex: /^.+\.[^\.]+\.[^\.]+$/, lastMessage: "Should look like: forum.example.com",
           error: this.state.error, onChangeValueOk: this.onHostnameChanged }));
 

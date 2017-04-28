@@ -655,7 +655,7 @@ var RootPostAndComments = createComponent({
         store.pageRole === PageRole.MindMap ||
           !mayReplyToOrigPost || _.every(threadedChildren, c => _.isEmpty(c)) ? null :
       r.div({ className: 's_APAs'},
-        r.a({ className: 's_APAs_OPRB dw-a dw-a-reply icon-reply',
+        r.a({ className: 's_APAs_OPRB dw-a dw-a-reply ' + makeReplyBtnIcon(store),
             onClick: this.onOrigPostReplyClick },
           makeReplyBtnTitle(store, rootPost, true)));
 

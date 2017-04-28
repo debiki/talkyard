@@ -55,9 +55,16 @@ object EditController extends mvc.Controller {
       case WriteWhat.ChatComment =>
         Some(ChatCommentGuidelines)
       case WriteWhat.Reply =>
-        Some(ReplyGuidelines)
+        if (thePageRole == PageRole.MindMap) {
+          // Then we're adding a mind map node — we aren't really replying to anyone.
+          None
+        }
+        else {
+          Some(ReplyGuidelines)
+        }
       case WriteWhat.ReplyToOriginalPost =>
-        if (thePageRole == PageRole.Critique) Some(GiveCritiqueGuidelines) // [plugin]
+        if (thePageRole == PageRole.MindMap) None // see just above
+        else if (thePageRole == PageRole.Critique) Some(GiveCritiqueGuidelines) // [plugin]
         else if (thePageRole == PageRole.UsabilityTesting) Some(UsabilityTestingVideoGuidelines) // [plugin]
         else Some(ReplyGuidelines)
       case WriteWhat.OriginalPost =>
@@ -201,7 +208,8 @@ object EditController extends mvc.Controller {
   def movePost = StaffPostJsonAction(maxBytes = 300) { request =>
     val pageId = (request.body \ "pageId").as[PageId]   // apparently not used
     val postId = (request.body \ "postId").as[PostId]   // id not nr
-    val newHost = (request.body \ "newHost").as[SiteId] // ignore for now though
+    val newHost = (request.body \ "newHost").asOpt[String] // ignore for now though
+    val newSiteId = (request.body \ "newSiteId").asOpt[SiteId] // ignore for now though
     val newPageId = (request.body \ "newPageId").as[PageId]
     val newParentNr = (request.body \ "newParentNr").as[PostNr]
 
