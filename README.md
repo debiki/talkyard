@@ -156,6 +156,12 @@ how to use docker-compose already.
    confirmation link from the `<a href=...>` and paste it in the browser's address bar.
 
 
+Troubleshooting
+-----------------------------
+
+See [tips.mnd](./docs/tips.md).
+
+
 Tests
 -----------------------------
 

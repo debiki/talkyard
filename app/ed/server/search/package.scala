@@ -179,7 +179,7 @@ package object search {
       }
     }
     try {
-      val siteId = json \ Fields.SiteId match {
+      val siteId = (json \ Fields.SiteId).get match {
         case x: JsString => x.value.toInt  // <— CLEAN_UP remove once I've reindexed edm & edc.
         case x: JsNumber => x.value.toInt
       }
