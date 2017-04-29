@@ -22,6 +22,9 @@ export var Input = createComponent({
   },
 
   getChecked: function() {
+    // @ifdef DEBUG
+    dieIf(this.props.type === 'radio', "getChecked doesn't work with radio buttons [EdE7WKP02]");
+    // @endif
     return ReactDOM.findDOMNode(this.refs.theInput)['checked'];
   },
 

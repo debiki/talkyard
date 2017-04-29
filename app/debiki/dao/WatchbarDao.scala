@@ -31,6 +31,16 @@ trait WatchbarDao {
   self: SiteDao with PageStuffDao =>
 
 
+  def getStrangersWatchbar(): BareWatchbar = {
+    readOnlyTransaction { tx =>
+      val globalChatsInclForbidden = tx.loadOpenChatsPinnedGlobally()
+      val globalChats = globalChatsInclForbidden; SECURITY; MUST // filter { chatPageMeta =>
+      val globalChatIds = globalChats.map(_.pageId)
+      BareWatchbar.withChatChannelAndDirectMessageIds(globalChatIds, Nil)
+    }
+  }
+
+
   def getOrCreateWatchbar(userId: UserId): BareWatchbar = {
     // Hmm, double caching? Mem + Redis. This doesn't make sense? Let's keep it like this for
     // a while and see what'll happen. At least it's fast. And lasts across Play app restarts.

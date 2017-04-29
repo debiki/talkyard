@@ -492,6 +492,7 @@ interface Store {
   isContextbarOpen: boolean;
   shallSidebarsOverlayPage?: boolean;
   siteSections: SiteSection[];
+  strangersWatchbar: Watchbar;
   horizontalLayout: boolean;
   is2dTreeDefault: boolean;
   socialLinksHtml: string;

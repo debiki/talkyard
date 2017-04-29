@@ -200,6 +200,8 @@ trait SiteTransaction {
   /** Loads meta for all forums, blog and wiki main pages. */
   //def loadPageMetaForAllSections(): Seq[PageMeta]
 
+  def loadOpenChatsPinnedGlobally(): immutable.Seq[PageMeta]
+
   def loadPageMetas(pageIds: Iterable[PageId]): immutable.Seq[PageMeta]
   def insertPageMetaMarkSectionPageStale(newMeta: PageMeta)
 

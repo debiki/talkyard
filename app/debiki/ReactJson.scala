@@ -274,6 +274,12 @@ object ReactJson {
       idAndUser._1.toString -> JsUser(idAndUser._2)
     })
 
+    val strangersWatchbarJson = {
+      val watchbar = dao.getStrangersWatchbar()
+      val watchbarWithTitles = dao.fillInWatchbarTitlesEtc(watchbar)
+      watchbarWithTitles.toJsonWithTitles
+    }
+
     val siteSettings = dao.getWholeSiteSettings()
     //val pageSettings = dao.loadSinglePageSettings(pageId)
     val horizontalLayout = page.role == PageRole.MindMap // || pageSettings.horizontalComments
@@ -324,6 +330,7 @@ object ReactJson {
       "postsByNr" -> JsObject(allPostsJson),
       "topLevelCommentIdsSorted" -> JsArray(topLevelCommentIdsSorted),
       "siteSections" -> makeSiteSectionsJson(dao),
+      "strangersWatchbar" -> strangersWatchbarJson,
       "horizontalLayout" -> JsBoolean(horizontalLayout),
       "is2dTreeDefault" -> JsBoolean(is2dTreeDefault),
       "socialLinksHtml" -> JsString(socialLinksHtml))

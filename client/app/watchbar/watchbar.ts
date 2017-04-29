@@ -23,6 +23,7 @@
 /// <reference path="../store-getters.ts" />
 /// <reference path="../utils/DropdownModal.ts" />
 /// <reference path="../sidebar/sidebar.ts" />
+/// <reference path="../more-bundle-not-yet-loaded.ts" />
 /// <reference path="../editor-bundle-not-yet-loaded.ts" />
 
 //------------------------------------------------------------------------------
@@ -86,14 +87,16 @@ export var Watchbar = createComponent({
 });
 
 
-var RecentTopicsAndNotfs = createComponent({
+const RecentTopicsAndNotfs = createComponent({
   render: function() {
-    var store: Store = this.props.store;
-    var watchbar: Watchbar = store.me.watchbar;
-    var recentTopics: WatchbarTopic[] = watchbar[WatchbarSection.RecentTopics];
-    var chatChannels: WatchbarTopic[] = watchbar[WatchbarSection.ChatChannels];
-    var directMessages: WatchbarTopic[] = watchbar[WatchbarSection.DirectMessages];
-    var topicElems = [];
+    const store: Store = this.props.store;
+    const watchbar: Watchbar = store.me.watchbar;
+    // For strangers, there might be some globally pinned chats in strangersWatchbar.
+    const strangersWatchbar = store.me.isLoggedIn ? null : store.strangersWatchbar;
+    const recentTopics: WatchbarTopic[] = watchbar[WatchbarSection.RecentTopics];
+    const chatChannels: WatchbarTopic[] = (strangersWatchbar || watchbar)[WatchbarSection.ChatChannels];
+    const directMessages: WatchbarTopic[] = watchbar[WatchbarSection.DirectMessages];
+    const topicElems = [];
     _.each(recentTopics, (topic: WatchbarTopic) => {
       // If the topic is listed in the Chat Channels or Direct Messages section, skip it
       // here in the recent-topics list.
@@ -113,7 +116,7 @@ var RecentTopicsAndNotfs = createComponent({
 });
 
 
-var ChatChannels = createComponent({
+const ChatChannels = createComponent({
   componentWillUnmount: function() {
     this.isUnmounted = true;
   },
@@ -123,19 +126,20 @@ var ChatChannels = createComponent({
   },
 
   createChatChannel: function() {
-    login.loginIfNeeded(LoginReason.LoginToChat, location.toString(), () => {
+    morebundle.loginIfNeeded(LoginReason.LoginToChat, location.toString(), () => {
       if (this.isUnmounted) return;
-      var store: Store = this.props.store;
-      var category = store_getCurrOrDefaultCat(store);
+      const store: Store = this.props.store;
+      const category = store_getCurrOrDefaultCat(store);
       dieIf(!category, 'EsE4KPE02');
       editor.editNewForumPage(category.id, PageRole.OpenChat);
     });
   },
 
   render: function() {
-    var store: Store = this.props.store;
-    var topics: WatchbarTopic[] = store.me.watchbar[WatchbarSection.ChatChannels];
-    var topicElems;
+    const store: Store = this.props.store;
+    const watchbar = store.me.isLoggedIn ? store.me.watchbar : store.strangersWatchbar;
+    const topics: WatchbarTopic[] = watchbar[WatchbarSection.ChatChannels];
+    let topicElems;
     if (_.isEmpty(topics)) {
       topicElems = NoTopics();
     }
@@ -144,11 +148,12 @@ var ChatChannels = createComponent({
           SingleTopic({ key: topic.pageId, store: store, topic: topic, flavor: 'chat',
               isCurrent: topic.pageId === store.pageId }));
     }
+    const title = store.me.isLoggedIn ? "Joined Chats" : "Chats";
     return (
       r.div({ className: 'esWB_Ts' },
         r.button({ className: 'esWB_CreateB', id: 'e2eCreateChatB',
             onClick: this.createChatChannel, title: "Create chat channel" }, '+'),
-        r.h3({}, "Joined Chats"),
+        r.h3({}, title),
         r.ul({},
           topicElems)));
   }

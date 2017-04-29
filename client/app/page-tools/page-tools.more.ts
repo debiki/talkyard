@@ -121,31 +121,37 @@ var PageToolsDialog = createComponent({
 });
 
 
-var DefaultPinOrder = 5;
+const DefaultPinOrder = 5;
 
 
-var PinPageDialog = createComponent({
+const PinPageDialog = createComponent({
   getInitialState: function() {
     return { isOpen: false };
   },
 
   open: function() {
-    this.setState({ isOpen: true });
+    const store: Store = this.props.store;
+    this.setState({
+      isOpen: true,
+      pinWhere: store.pinWhere,
+    });
   },
 
   close: function() {
     this.setState({ isOpen: false });
   },
 
+  setPinWhere: function(pinWhere: PinPageWhere) {
+    this.setState({ pinWhere });
+  },
+
   doPin: function() {
-    var pinWhere = this.refs.pinGloballyInput.getChecked() ?
-        PinPageWhere.Globally : PinPageWhere.InCategory;
-    var pinOrder = parseInt(this.refs.pinOrderInput.getValue());
+    const pinOrder = parseInt(this.refs.pinOrderInput.getValue());
     if (isNaN(pinOrder) || pinOrder < 1 || pinOrder > 100) {
       alert("Please enter a number between 1 and 100");
       return;
     }
-    ReactActions.pinPage(pinOrder, pinWhere, () => {
+    ReactActions.pinPage(pinOrder, this.state.pinWhere, () => {
       this.close();
       this.props.closeAllDialogs();
       help.openHelpDialogUnlessHidden({
@@ -158,9 +164,8 @@ var PinPageDialog = createComponent({
   },
 
   render: function() {
-    var store = this.props.store;
-    var pinInThisCategoryChecked = !store.pinWhere || store.pinWhere === PinPageWhere.InCategory;
-    var pinGloballyChecked = store.pinWhere === PinPageWhere.Globally;
+    const pinGlobally = this.state.pinWhere === PinPageWhere.Globally;
+    const store = this.props.store;
     return (
       Modal({ show: this.state.isOpen, onHide: this.close },
         ModalHeader({}, ModalTitle({}, "Pin Page")),
@@ -169,9 +174,9 @@ var PinPageDialog = createComponent({
           r.p({}, r.b({}, "Pin where?")),
           r.form({},
             Input({ type: 'radio', name: 'pinWhere', label: "In this category only",
-                ref: 'pinInCategoryInput', defaultChecked: pinInThisCategoryChecked }),
+                checked: !pinGlobally, onChange: () => this.setPinWhere(PinPageWhere.InCategory) }),
             Input({ type: 'radio', name: 'pinWhere', label: "The wole forum, all categories",
-                ref: 'pinGloballyInput', defaultChecked: pinGloballyChecked })),
+                checked: pinGlobally, onChange: () => this.setPinWhere(PinPageWhere.Globally) })),
           r.br(),
           Input({ type: 'number', label: "Pin order (you can ignore this)", ref: 'pinOrderInput',
               help: "Sort order if many topics are pinned, 1 is first.",
