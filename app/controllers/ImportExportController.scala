@@ -229,12 +229,13 @@ object ImportExportController extends mvc.Controller {
 
       siteData.users foreach { user =>
         transaction.insertMember(user)
-        // [readlater] export & import UserStats. For now, create new "empty" here.
-        transaction.upsertUserStats(UserStats.forNewUser(user.id, firstSeenAt = transaction.now,
-          emailedAt = None))
         // [readlater] export & import username usages, later. For now, create new here.
         transaction.insertUsernameUsage(UsernameUsage(
           usernameLowercase = user.usernameLowercase, inUseFrom = transaction.now, userId = user.id))
+        // [readlater] export & import UserStats. For now, create new "empty" here.
+        transaction.upsertUserStats(UserStats.forNewUser(user.id, firstSeenAt = transaction.now,
+          emailedAt = None))
+        newDao.joinGloballyPinnedChats(user.briefUser, transaction)
       }
       siteData.pages foreach { pageMeta =>
         //val newId = transaction.nextPageId()

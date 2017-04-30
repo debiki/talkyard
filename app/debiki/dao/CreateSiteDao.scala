@@ -39,10 +39,10 @@ object CreateSiteDao {  RENAME // but to what. & move, but to where?
       emailVerifiedAt = None,
       isAdmin = true)
     transaction.insertMember(systemUser)
-    transaction.upsertUserStats(UserStats.forNewUser(
-      SystemUserId, firstSeenAt = transaction.now, emailedAt = None))
     transaction.insertUsernameUsage(UsernameUsage(
       systemUser.usernameLowercase, inUseFrom = transaction.now, userId = systemUser.id))
+    transaction.upsertUserStats(UserStats.forNewUser(
+      SystemUserId, firstSeenAt = transaction.now, emailedAt = None))
   }
 
 

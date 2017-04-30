@@ -945,6 +945,7 @@ case class BrowserIdData(ip: String, idCookie: String, fingerprint: Int) {
 
 object BrowserIdData {
   val NoFingerprint = 0
+  val System = BrowserIdData("127.0.0.1", "_system_", NoFingerprint)
 }
 
 

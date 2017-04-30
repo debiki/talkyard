@@ -23,10 +23,11 @@ import debiki.{BrowserId, Globals}
 import ed.server._
 import ed.server.security.SidStatus
 import ed.server.http.throwForbiddenIf
+import ed.server.http.throwIndistinguishableNotFound
 import java.{util => ju}
 import play.api.libs.json.JsArray
 import play.{api => p}
-import scala.collection.immutable
+import scala.collection.{immutable, mutable}
 import Prelude._
 import EmailNotfPrefs.EmailNotfPrefs
 import debiki.ReactJson.NotfsAndCounts
@@ -101,6 +102,7 @@ trait UserDao {
         newUser.usernameLowercase, inUseFrom = transaction.now, userId = newUser.id))
       transaction.upsertUserStats(UserStats.forNewUser(
         newUser.id, firstSeenAt = transaction.now, emailedAt = Some(invite.createdWhen)))
+      joinGloballyPinnedChats(newUser.briefUser, transaction)
       transaction.updateInvite(invite)
       (newUser, invite, false)
     }
@@ -362,6 +364,7 @@ trait UserDao {
       transaction.upsertUserStats(UserStats.forNewUser(
         user.id, firstSeenAt = transaction.now, emailedAt = None))
       transaction.insertIdentity(identity)
+      joinGloballyPinnedChats(user.briefUser, transaction)
       MemberLoginGrant(Some(identity), user.briefUser, isNewIdentity = true, isNewMember = true)
     }
     memCache.fireUserCreated(loginGrant.user)
@@ -403,6 +406,7 @@ trait UserDao {
         usernameLowercase = user.usernameLowercase, inUseFrom = transaction.now, userId = user.id))
       transaction.upsertUserStats(UserStats.forNewUser(
         user.id, firstSeenAt = transaction.now, emailedAt = None))
+      joinGloballyPinnedChats(user.briefUser, transaction)
       user.briefUser
     }
     memCache.fireUserCreated(user)
@@ -629,6 +633,185 @@ trait UserDao {
   }
 
 
+  def joinOrLeavePageIfAuth(pageId: PageId, join: Boolean, who: Who): Option[BareWatchbar] = {
+    if (User.isGuestId(who.id))
+      throwForbidden("EsE3GBS5", "Guest users cannot join/leave pages")
+
+    val watchbarsByUserId = joinLeavePageUpdateWatchbar(Set(who.id), pageId, add = join, who)
+    val anyNewWatchbar = watchbarsByUserId.get(who.id)
+    anyNewWatchbar
+  }
+
+
+  /** When a member joins the site, hen automatically joins chat channels that are pinned
+    * globally. Also, when hen transitions to a higher trust level, then more globally-pinned-chats
+    * might become visible to hen (e.g. visible only to Trusted users) — and then hen auto-joins
+    * those too.
+    */
+  def joinGloballyPinnedChats(user: User, tx: SiteTransaction) {
+    val chatsInclForbidden = tx.loadOpenChatsPinnedGlobally()
+    BUG // Don't join a chat again, if has left it. Needn't fix now, barely matters.
+    val joinedChats = ArrayBuffer[PageMeta]()
+    chatsInclForbidden foreach { chatPageMeta =>
+      val (maySee, debugCode) = maySeePageUseCache(chatPageMeta, Some(user))
+      if (maySee) {
+        val couldntAdd = mutable.Set[UserId]()
+        joinLeavePageImpl(Set(user.id), chatPageMeta.pageId, add = true, byWho = Who.System,
+            couldntAdd, tx)
+        if (!couldntAdd.contains(user.id)) {
+          joinedChats += chatPageMeta
+        }
+      }
+    }
+    addRemovePagesToWatchbar(joinedChats, user.id, add = true)
+  }
+
+
+  def addUsersToPage(userIds: Set[UserId], pageId: PageId, byWho: Who) {
+    joinLeavePageUpdateWatchbar(userIds, pageId, add = true, byWho)
+  }
+
+
+  def removeUsersFromPage(userIds: Set[UserId], pageId: PageId, byWho: Who) {
+    joinLeavePageUpdateWatchbar(userIds, pageId, add = false, byWho)
+  }
+
+
+  private def joinLeavePageUpdateWatchbar(userIds: Set[UserId], pageId: PageId, add: Boolean,
+      byWho: Who): Map[UserId, BareWatchbar] = {
+
+    if (byWho.isGuest)
+      throwForbidden("EsE2GK7S", "Guests cannot add/remove people to pages")
+
+    if (userIds.size > 50)
+      throwForbidden("EsE5DKTW02", "Cannot add/remove more than 50 people at a time")
+
+    if (userIds.exists(User.isGuestId) && add)
+      throwForbidden("EsE5PKW1", "Cannot add guests to a page")
+
+    val couldntAdd = mutable.Set[UserId]()
+
+    val pageMeta = readWriteTransaction { tx =>
+      joinLeavePageImpl(userIds, pageId, add, byWho, couldntAdd, tx)
+    }
+
+    SHOULD // push new member notf to browsers, so that this gets updated: [5FKE0WY2]
+    // - new members' watchbars
+    // - everyone's context bar (the users list)
+    // - the Join Chat button (disappears/appears)
+
+    // The page JSON includes a list of all page members, so:
+    refreshPageInMemCache(pageId)
+
+    var watchbarsByUserId = Map[UserId, BareWatchbar]()
+    userIds foreach { userId =>
+      if (couldntAdd.contains(userId)) {
+        // Need not update the watchbar.
+      }
+      else {
+        addRemovePagesToWatchbar(Some(pageMeta), userId, add) foreach { newWatchbar =>
+          watchbarsByUserId += userId -> newWatchbar
+        }
+      }
+    }
+    watchbarsByUserId
+  }
+
+
+  private def joinLeavePageImpl(userIds: Set[UserId], pageId: PageId, add: Boolean,
+    byWho: Who, couldntAdd: mutable.Set[UserId], transaction: SiteTransaction): PageMeta = {
+    val pageMeta = transaction.loadPageMeta(pageId) getOrElse
+      throwIndistinguishableNotFound("42PKD0")
+
+    val usersById = transaction.loadMembersAsMap(userIds + byWho.id)
+    val me = usersById.getOrElse(byWho.id, throwForbidden(
+      "EsE6KFE0X", s"Your user cannot be found, id: ${byWho.id}"))
+
+    lazy val numMembersAlready = transaction.loadMessageMembers(pageId).size
+    if (add && numMembersAlready + userIds.size > 200) {
+      // I guess something, not sure what?, would break if too many people join
+      // the same page.
+      throwForbidden("EsE4FK0Y2", o"""Sorry but currently more than 200 page members
+            isn't allowed. There are $numMembersAlready page members already""")
+    }
+
+    throwIfMayNotSeePage(pageMeta, Some(me))(transaction)
+
+    val addingRemovingMyselfOnly = userIds.size == 1 && userIds.head == me.id
+
+    if (!me.isStaff && me.id != pageMeta.authorId && !addingRemovingMyselfOnly)
+      throwForbidden(
+        "EsE28PDW9", "Only staff and the page author may add/remove people to/from the page")
+
+    if (add) {
+      if (!pageMeta.pageRole.isGroupTalk)
+        throwForbidden("EsE8TBP0", s"Cannot add people to pages of type ${pageMeta.pageRole}")
+
+      userIds.find(!usersById.contains(_)) foreach { missingUserId =>
+        throwForbidden("EsE5PKS40", s"User not found, id: $missingUserId, cannot add to page")
+      }
+
+      userIds foreach { id =>
+        COULD_OPTIMIZE // batch insert all users at once (would slightly speed up imports)
+        val wasAdded = transaction.insertMessageMember(pageId, userId = id, addedById = me.id)
+        if (!wasAdded) {
+          // Someone else has added that user already. Could happen e.g. if someone adds you
+          // to a chat channel, and you attempt to join it yourself at the same time.
+          couldntAdd += id
+        }
+      }
+    }
+    else {
+      userIds foreach { id =>
+        transaction.removePageMember(pageId, userId = id, removedById = byWho.id)
+      }
+    }
+
+    // Bump the page version, so the cached page json will be regenerated, now including
+    // this new page member.
+    // COULD add a numMembers field, and show # members, instead of # comments,
+    // for chat topics, in the forum topic list? (because # comments in a chat channel is
+    // rather pointless, instead, # new comments per time unit matters more, but then it's
+    // simpler to instead show # users?)
+    transaction.updatePageMeta(pageMeta, oldMeta = pageMeta, markSectionPageStale = false)
+    pageMeta
+  }
+
+
+  private def addRemovePagesToWatchbar(pages: Iterable[PageMeta], userId: UserId, add: Boolean)
+        : Option[BareWatchbar] = {
+    BUG; RACE // when loading & saving the watchbar. E.g. if a user joins a page herself, and
+    // another member adds her to the page, or another page, at the same time.
+
+    val oldWatchbar = getOrCreateWatchbar(userId)
+    var newWatchbar = oldWatchbar
+    for (pageMeta <- pages) {
+      if (add) {
+        newWatchbar = newWatchbar.addPage(pageMeta, hasSeenIt = true)
+      }
+      else {
+        newWatchbar = newWatchbar.removePageTryKeepInRecent(pageMeta)
+      }
+    }
+
+    if (oldWatchbar == newWatchbar) {
+      // This happens if we're adding a user whose in-memory watchbar got created in
+      // `loadWatchbar` above — then the watchbar will likely be up-to-date already, here.
+      return None
+    }
+
+    saveWatchbar(userId, newWatchbar)
+
+    // If pages were added to the watchbar, we should start watching them. If we left
+    // a private page, it'll disappear from the watchbar — then we should stop watching it.
+    if (oldWatchbar.watchedPageIds != newWatchbar.watchedPageIds) {
+      pubSub.userWatchesPages(siteId, userId, newWatchbar.watchedPageIds)
+    }
+
+    Some(newWatchbar)
+  }
+
+
   /** Promotes a new member to trust levels Basic and Normal member, if hen meets those
     * requirements, after the additional time spent reading has been considered.
     * (Won't promote to trust level Helper and above though.)
@@ -713,6 +896,8 @@ trait UserDao {
     val member = transaction.loadTheMemberInclDetails(userId)
     val promoted = member.copy(trustLevel = newTrustLevel)
     transaction.updateMemberInclDetails(promoted)
+    TESTS_MISSING // Perhaps now new chat channels are available to the member.
+    joinGloballyPinnedChats(member.briefUser, transaction)
   }
 
 

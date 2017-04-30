@@ -70,11 +70,12 @@ export var Watchbar = createComponent({
   },
 
   render: function() {
-    var store: Store = this.state.store;
+    const store: Store = this.state.store;
+    const me = store.me;
 
-    var recentTopicsAndNotfs = RecentTopicsAndNotfs({ store: store });
-    var chatChannels = ChatChannels({ store: store });
-    var directMessages = DirectMessages({ store: store });
+    const recentTopicsAndNotfs = RecentTopicsAndNotfs({ store: store });
+    const chatChannels = ChatChannels({ store: store });
+    const directMessages = me.isLoggedIn ? DirectMessages({ store: store }) : null;
 
     return (
         r.div({ className: 'esWB', ref: 'watchbar' },
@@ -148,7 +149,7 @@ const ChatChannels = createComponent({
           SingleTopic({ key: topic.pageId, store: store, topic: topic, flavor: 'chat',
               isCurrent: topic.pageId === store.pageId }));
     }
-    const title = store.me.isLoggedIn ? "Joined Chats" : "Chats";
+    const title = store.me.isLoggedIn ? "Joined Chats" : "Chat Channels";
     return (
       r.div({ className: 'esWB_Ts' },
         r.button({ className: 'esWB_CreateB', id: 'e2eCreateChatB',

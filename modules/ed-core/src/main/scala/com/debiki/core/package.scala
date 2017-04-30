@@ -194,6 +194,10 @@ package object core {
     def isGuest: Boolean = User.isGuestId(id)
   }
 
+  object Who {
+    val System = Who(SystemUserId, BrowserIdData.System)
+  }
+
   case class UserAndLevels(user: User, trustLevel: TrustLevel, threatLevel: ThreatLevel) {
     def id: UserId = user.id
     def isStaff: Boolean = user.isStaff
