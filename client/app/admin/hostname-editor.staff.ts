@@ -40,7 +40,7 @@ export function openHostnameEditor() {
 }
 
 
-var HostnameEditorDialog = createComponent({
+const HostnameEditorDialog = createComponent({
   getInitialState: function() {
     return { isOpen: false, maySubmit: false };
   },
@@ -58,7 +58,7 @@ var HostnameEditorDialog = createComponent({
   },
 
   submitHostname: function() {
-    var hostname = this.refs.hostnameInput.getValue();
+    const hostname = this.refs.hostnameInput.getValue();
     Server.changeHostname(hostname, () => {
       util.openDefaultStupidDialog({
         small: true,
@@ -73,7 +73,7 @@ var HostnameEditorDialog = createComponent({
   },
 
   render: function() {
-    var content =
+    const content =
       r.div({},
         // see https://meta.discourse.org/t/change-the-domain-name-or-rename-my-discourse/16098
         r.p({}, "If you choose a domain that ends with anything else than ed.community: " +
@@ -92,7 +92,7 @@ var HostnameEditorDialog = createComponent({
           // the problems with bare domains, before letting hen use a bare domain, +
           // typing a 3 letter "password" included in that info, to show that hen has really read it?
           //notRegexFour: /^[^\.]+(\.[^\.]+)?$/, notMessageFour: "Bare domains not allowed",
-          lastRegex: /^.+\.[^\.]+\.[^\.]+$/, lastMessage: "Should look like: forum.example.com",
+          lastRegex: /^(.+\.)?[^\.]+\.[^\.]+$/, lastMessage: "Should look like: forum.example.com",
           error: this.state.error, onChangeValueOk: this.onHostnameChanged }));
 
     return (
