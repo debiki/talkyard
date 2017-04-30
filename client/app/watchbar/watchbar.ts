@@ -92,10 +92,8 @@ const RecentTopicsAndNotfs = createComponent({
   render: function() {
     const store: Store = this.props.store;
     const watchbar: Watchbar = store.me.watchbar;
-    // For strangers, there might be some globally pinned chats in strangersWatchbar.
-    const strangersWatchbar = store.me.isLoggedIn ? null : store.strangersWatchbar;
     const recentTopics: WatchbarTopic[] = watchbar[WatchbarSection.RecentTopics];
-    const chatChannels: WatchbarTopic[] = (strangersWatchbar || watchbar)[WatchbarSection.ChatChannels];
+    const chatChannels: WatchbarTopic[] = watchbar[WatchbarSection.ChatChannels];
     const directMessages: WatchbarTopic[] = watchbar[WatchbarSection.DirectMessages];
     const topicElems = [];
     _.each(recentTopics, (topic: WatchbarTopic) => {
@@ -138,8 +136,7 @@ const ChatChannels = createComponent({
 
   render: function() {
     const store: Store = this.props.store;
-    const watchbar = store.me.isLoggedIn ? store.me.watchbar : store.strangersWatchbar;
-    const topics: WatchbarTopic[] = watchbar[WatchbarSection.ChatChannels];
+    const topics: WatchbarTopic[] = store.me.watchbar[WatchbarSection.ChatChannels];
     let topicElems;
     if (_.isEmpty(topics)) {
       topicElems = NoTopics();

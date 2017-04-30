@@ -58,7 +58,7 @@ store.postsToUpdate = {};
 
 if (store.user && !store.me) store.me = store.user; // try to remove
 if (!store.me) {
-  store.me = makeStranger();
+  store.me = makeStranger(store);
 }
 store.user = store.me; // try to remove
 
@@ -87,7 +87,7 @@ ReactDispatcher.register(function(payload) {
 
       if (store.userIdsOnline) delete store.userIdsOnline[store.me.id];
       store.numOnlineStrangers += 1;
-      store.me = makeStranger();
+      store.me = makeStranger(store);
       store.user = store.me; // try to remove
       debiki2.pubsub.subscribeToServerEvents();
       break;
@@ -1172,8 +1172,8 @@ function watchbar_copyUnreadStatusFromTo(old: Watchbar, newWatchbar: Watchbar) {
 }
 
 
-function makeStranger(): Myself {
-  return {
+function makeStranger(store: Store): Myself {
+  const stranger = {
     rolePageSettings: { notfLevel: NotfLevel.Normal },
     trustLevel: TrustLevel.Stranger,
     threatLevel: ThreatLevel.HopefullySafe,
@@ -1202,6 +1202,11 @@ function makeStranger(): Myself {
 
     closedHelpMessages: {},
   };
+  // There might be some globally pinned chats, which we also want to show in the watchbar.
+  if (store.strangersWatchbar) {
+    stranger.watchbar[3] = store.strangersWatchbar[3];
+  }
+  return stranger;
 }
 
 

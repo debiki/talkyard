@@ -274,12 +274,6 @@ object ReactJson {
       idAndUser._1.toString -> JsUser(idAndUser._2)
     })
 
-    val strangersWatchbarJson = {
-      val watchbar = dao.getStrangersWatchbar()
-      val watchbarWithTitles = dao.fillInWatchbarTitlesEtc(watchbar)
-      watchbarWithTitles.toJsonWithTitles
-    }
-
     val siteSettings = dao.getWholeSiteSettings()
     //val pageSettings = dao.loadSinglePageSettings(pageId)
     val horizontalLayout = page.role == PageRole.MindMap // || pageSettings.horizontalComments
@@ -330,7 +324,7 @@ object ReactJson {
       "postsByNr" -> JsObject(allPostsJson),
       "topLevelCommentIdsSorted" -> JsArray(topLevelCommentIdsSorted),
       "siteSections" -> makeSiteSectionsJson(dao),
-      "strangersWatchbar" -> strangersWatchbarJson,
+      "strangersWatchbar" -> makeStrangersWatcbarJson(dao),
       "horizontalLayout" -> JsBoolean(horizontalLayout),
       "is2dTreeDefault" -> JsBoolean(is2dTreeDefault),
       "socialLinksHtml" -> JsString(socialLinksHtml))
@@ -349,6 +343,13 @@ object ReactJson {
   }
 
 
+  def makeStrangersWatcbarJson(dao: SiteDao): JsValue = {
+    val watchbar = dao.getStrangersWatchbar()
+    val watchbarWithTitles = dao.fillInWatchbarTitlesEtc(watchbar)
+    watchbarWithTitles.toJsonWithTitles
+  }
+
+
   def makeSpecialPageJson(request: DebikiRequest[_], inclCategoriesJson: Boolean): JsObject = {
     val dao = request.dao
     val requester = request.requester
@@ -364,7 +365,8 @@ object ReactJson {
       // a bit surprising.) CLEAN_UP
       "me" -> userNoPageToJson(request),
       "maxUploadSizeBytes" -> Globals.maxUploadSizeBytes,
-      "siteSections" -> makeSiteSectionsJson(dao))
+      "siteSections" -> makeSiteSectionsJson(dao),
+      "strangersWatchbar" -> makeStrangersWatcbarJson(dao))
 
     if (inclCategoriesJson) {
       val authzCtx = dao.getForumAuthzContext(requester)
