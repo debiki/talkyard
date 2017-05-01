@@ -164,11 +164,18 @@ object PageTitleSettingsController extends mvc.Controller {
       }
     }
 
-    // Refresh cache, plus any forum page if this page is a forum topic.
-    // (Forum pages cache category JSON and a latest topics list, includes titles.)
-    val newSectionPageId = newMeta.categoryId map request.dao.loadTheSectionPageId
-    val idsToRefresh = (pageId :: oldSectionPageId.toList ::: newSectionPageId.toList).distinct
-    idsToRefresh.foreach(request.dao.refreshPageInMemCache)
+    if (newMeta.isChatPinnedGlobally != oldMeta.isChatPinnedGlobally) {
+      // If is pinned globally, and we changed topic type to/from chat, then this page will/no-longer
+      // be pinned in the watchbar. Then need to rerender the watchbar, affects all pages. [0GPHSR4]
+      request.dao.emptyCache()
+    }
+    else {
+      // Refresh cache, plus any forum page if this page is a forum topic.
+      // (Forum pages cache category JSON and a latest topics list, includes titles.)
+      val newSectionPageId = newMeta.categoryId map request.dao.loadTheSectionPageId
+      val idsToRefresh = (pageId :: oldSectionPageId.toList ::: newSectionPageId.toList).distinct
+      idsToRefresh.foreach(request.dao.refreshPageInMemCache)
+    }
 
     val (_, newAncestorsJson) = ReactJson.makeForumIdAndAncestorsJson(newMeta, request.dao)
 

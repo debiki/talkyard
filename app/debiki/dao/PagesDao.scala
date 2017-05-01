@@ -302,25 +302,32 @@ trait PagesDao {
 
 
   def unpinPage(pageId: PageId) {
-    readWriteTransaction { transaction =>
-      val oldMeta = transaction.loadThePageMeta(pageId)
-      val newMeta = oldMeta.copy(pinWhere = None, pinOrder = None, version = oldMeta.version + 1)
-      transaction.updatePageMeta(newMeta, oldMeta = oldMeta, markSectionPageStale = true)
-      // (COULD update audit log)
-    }
-    refreshPageInMemCache(pageId)
+    pinOrUnpin(pageId, pinWhere = None, pinOrder = None)
   }
 
 
-  def pinPage(pageId: PageId, pinWhere: PinPageWhere, pinOrder: Int) {
-    readWriteTransaction { transaction =>
+  def pinPage(pageId: PageId, pinWhere: PinPageWhere, pinOrder: Int): Unit = {
+    pinOrUnpin(pageId, Some(pinWhere), Some(pinOrder))
+  }
+
+
+  private def pinOrUnpin(pageId: PageId, pinWhere: Option[PinPageWhere], pinOrder: Option[Int]) {
+    require(pinWhere.isDefined == pinOrder.isDefined, "EdE2WRT5")
+    val (oldMeta, newMeta) = readWriteTransaction { transaction =>
       val oldMeta = transaction.loadThePageMeta(pageId)
-      val newMeta = oldMeta.copy(pinWhere = Some(pinWhere), pinOrder = Some(pinOrder),
+      val newMeta = oldMeta.copy(pinWhere = pinWhere, pinOrder = pinOrder,
         version = oldMeta.version + 1)
       transaction.updatePageMeta(newMeta, oldMeta = oldMeta, markSectionPageStale = true)
+      (oldMeta, newMeta)
       // (COULD update audit log)
     }
-    refreshPageInMemCache(pageId)
+    if (newMeta.isChatPinnedGlobally != oldMeta.isChatPinnedGlobally) {
+      // When a chat gets un/pinned globally, need rerender watchbar, affects all pages. [0GPHSR4]
+      emptyCache()
+    }
+    else {
+      refreshPageInMemCache(pageId)
+    }
   }
 
 

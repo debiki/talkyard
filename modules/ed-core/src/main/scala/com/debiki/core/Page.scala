@@ -261,6 +261,9 @@ case class PageMeta(
   def isGroupTalk = pageRole.isGroupTalk
   def isPrivateGroupTalk = pageRole.isPrivateGroupTalk
 
+  def isChatPinnedGlobally: Boolean =
+    pageRole == PageRole.OpenChat && pinWhere.contains(PinPageWhere.Globally)
+
   def status: PageStatus =
     if (publishedAt.isDefined) PageStatus.Published
     else PageStatus.Draft

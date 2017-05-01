@@ -1188,7 +1188,7 @@ function makeStranger(store: Store): Myself {
     thereAreMoreUnseenNotfs: false,
     notifications: [],
 
-    watchbar: loadWatchbarFromSessionStorage(),
+    watchbar: { 1: loadRecentWatchbarTopicsFromSessionStorage(), 2: [], 3: [], 4: [] },
 
     restrictedTopics: [],
     restrictedCategories: [],
@@ -1221,25 +1221,29 @@ function addLocalStorageDataTo(me: Myself) {
 
   // The watchbar: Recent topics.
   if (me_isStranger(me)) {
-    me.watchbar = loadWatchbarFromSessionStorage();
-    var recentTopics = me.watchbar[WatchbarSection.RecentTopics];
+    const recentTopics = loadRecentWatchbarTopicsFromSessionStorage();
     if (shallAddCurrentPageToSessionStorageWatchbar(recentTopics)) {
       recentTopics.unshift({
         pageId: store.pageId,
         url: location.pathname,
         title: ReactStore.getPageTitle(),
       });
-      putInSessionStorage('watchbar', me.watchbar);
+      putInSessionStorage('recentWatchbarTopics', recentTopics);
     }
+    me.watchbar[WatchbarSection.RecentTopics] = recentTopics;
   }
 }
 
 
-function loadWatchbarFromSessionStorage(): Watchbar {
+function loadRecentWatchbarTopicsFromSessionStorage(): WatchbarTopic[] {
   // For privacy reasons, don't use localStorage?
-  var watchbar = getFromSessionStorage('watchbar') || { 1: [], 2: [], 3: [], 4: [], };
-  watchbar_markAsRead(watchbar, store.pageId);
-  return watchbar;
+  const topics = <WatchbarTopic[]> getFromSessionStorage('recentWatchbarTopics') || [];
+  _.each(topics, topic => {
+    if (topic.pageId === store.pageId) {
+      topic.unread = false;
+    }
+  });
+  return topics;
 }
 
 

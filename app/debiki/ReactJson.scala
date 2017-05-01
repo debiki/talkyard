@@ -156,7 +156,7 @@ object ReactJson {
       "isInEmbeddedCommentsIframe" -> JsBoolean(false),
       "categories" -> JsArray(),
       "topics" -> JsArray(),
-      "me" -> noUserSpecificData(everyonesPerms),
+      "me" -> noUserSpecificData(pageReq.dao, everyonesPerms),
       "rootPostId" -> JsNumber(PageParts.BodyNr),
       "usersByIdBrief" -> JsObject(Nil),
       "postsByNr" -> JsObject(Nil),
@@ -318,13 +318,12 @@ object ReactJson {
       "isInEmbeddedCommentsIframe" -> JsBoolean(page.role == PageRole.EmbeddedComments),
       "categories" -> categories,
       "topics" -> JsArray(anyLatestTopics),
-      "me" -> noUserSpecificData(authzCtx.permissions),
+      "me" -> noUserSpecificData(dao, authzCtx.permissions),
       "rootPostId" -> JsNumber(BigDecimal(anyPageRoot getOrElse PageParts.BodyNr)),
       "usersByIdBrief" -> usersByIdJson,
       "postsByNr" -> JsObject(allPostsJson),
       "topLevelCommentIdsSorted" -> JsArray(topLevelCommentIdsSorted),
       "siteSections" -> makeSiteSectionsJson(dao),
-      "strangersWatchbar" -> makeStrangersWatcbarJson(dao),
       "horizontalLayout" -> JsBoolean(horizontalLayout),
       "is2dTreeDefault" -> JsBoolean(is2dTreeDefault),
       "socialLinksHtml" -> JsString(socialLinksHtml))
@@ -612,12 +611,12 @@ object ReactJson {
       JsArray(Post.sortPostsBestFirst(topLevelComments).map(reply => JsNumber(reply.nr))))
 
 
-  def noUserSpecificData(everyonesPerms: Seq[PermsOnPages]): JsObject = {
+  def noUserSpecificData(dao: SiteDao, everyonesPerms: Seq[PermsOnPages]): JsObject = {
     require(everyonesPerms.forall(_.forPeopleId == Group.EveryoneId), "EdE2WBG08")
     Json.obj(
       "rolePageSettings" -> JsObject(Nil),
       "notifications" -> JsArray(),
-      "watchbar" -> EmptyWatchbar,
+      "watchbar" -> makeStrangersWatcbarJson(dao),
       "votes" -> JsObject(Nil),
       "unapprovedPosts" -> JsObject(Nil),
       "unapprovedPostAuthors" -> JsArray(),
@@ -1241,13 +1240,6 @@ object ReactJson {
     }
     imageUrls
   }
-
-
-  def EmptyWatchbar: JsObject = Json.obj(
-    WatchbarSection.RecentTopics.toInt.toString -> JsArray(Nil),
-    WatchbarSection.Notifications.toInt.toString -> JsArray(Nil),
-    WatchbarSection.ChatChannels.toInt.toString -> JsArray(Nil),
-    WatchbarSection.DirectMessages.toInt.toString -> JsArray(Nil))
 
 
   def makeStorePatchForPostNr(pageId: PageId, postNr: PostNr, dao: SiteDao, showHidden: Boolean)
