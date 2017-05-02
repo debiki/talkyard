@@ -17,7 +17,17 @@
 .dw-login-modal
   max-width: 520px; // else like 600, too wide
 
+// On small screens like iPhone 5, make the dialog full-screen.
+@media (max-width: $veryNarrowLimit)
+  .dw-login-modal
+    margin: 0;
+    .modal-content
+      border: none;
+      border-radius: 0;
+
 .esLD
+  padding-top: 4px;
+
   .btn-group-vertical
     margin: 0 auto;
     display: block;
@@ -32,6 +42,36 @@
   form
     max-width: $width;
     margin: 0 auto;
+
+  input
+    width: 300px !important;
+  .esCreateUser input#e2eUsername
+    width: 262px !important;  // because of the [@] in front [7RFWUQ2]
+  .input-group-addon
+    background: hsl(0, 0%, 98.3%); // [7RFWUQ2]
+
+  .icon-google-plus
+    background: hsl(230, 91%, 66%);
+  .icon-facebook
+    background: #3b5998;
+  .icon-twitter
+    background: #00bced;
+  .icon-github-circled
+    background: #6d6d6d;
+
+  .icon-google-plus,
+  .icon-facebook,
+  .icon-twitter,
+  .icon-github-circled
+    color: white;
+    font-weight: bold;
+    border: none;
+    padding: 10px 13px 10px 12px;
+    margin-bottom: 4px;
+    &:not(:last-child)
+      margin-right: 3px;
+    &:hover
+      opacity: 0.85; // would be better if could make them darker on hover, instead of brighter
 
 .esLD_Switch_L
   font-weight: bold;

@@ -124,19 +124,23 @@ var TitleAndLastChatMessages = createComponent({
         ChatMessage({ key: post.uniqueId, store: store, post: post }));
     });
 
-    var thisIsTheWhat =
+    if (!messages.length) {
+      canScrollUpToFetchOlder = false;
+    }
+
+    const thisIsTheWhat =
         r.p({},
           "This is the " + ReactStore.getPageTitle() + " chat channel, created by ",
           avatar.AvatarAndName({ user: origPostAuthor, hideAvatar: true }),
           ", ", timeExact(originalPost.createdAtMs));
 
-    var perhapsHidden;
+    let perhapsHidden;
     if (!this.state.hasScrolledDown) {
       // Avoid flash of earlier messages before scrolling to end.
       perhapsHidden = { display: 'none' };
     }
 
-    var scrollUpTips = !canScrollUpToFetchOlder ? false :
+    const scrollUpTips = !canScrollUpToFetchOlder ? null :
       r.div({ className: 'esChat_scrollUpTips' },
         "Scroll up to view older comments", r.br(), "(Not implemented though. So don't)");
 

@@ -161,7 +161,7 @@ export var CreateUserDialogContent = createClassAndFactory({
   },
 
   doCreateUser: function() {
-    var data: any = this.state.userData;
+    const data: any = this.state.userData;
     data.returnToUrl = this.props.anyReturnToUrl;
     if (this.props.authDataCacheKey) {
       data.authDataCacheKey = this.props.authDataCacheKey;
@@ -184,7 +184,7 @@ export var CreateUserDialogContent = createClassAndFactory({
     }
     else if (this.props.anyReturnToUrl && !debiki.internal.isInLoginPopup &&
         this.props.anyReturnToUrl.search('_RedirFromVerifEmailOnly_') === -1) {
-      var url = this.props.anyReturnToUrl.replace(/__dwHash__/, '#');
+      const url = this.props.anyReturnToUrl.replace(/__dwHash__/, '#');
       window.location.assign(url);
       // In case the location didn't change, reload the page, otherwise user specific things
       // won't appear.
@@ -197,7 +197,7 @@ export var CreateUserDialogContent = createClassAndFactory({
       window.location.assign('/');
     }
     else {
-      var isPage = $('.dw-page');
+      const isPage = $('.dw-page');
       if (!isPage) console.log('should reload ... /? [DwE2KWF1]');
       continueOnMainPageAfterHavingCreatedUser();
     }
@@ -206,7 +206,7 @@ export var CreateUserDialogContent = createClassAndFactory({
   handleErrorResponse: function(failedRequest: HttpRequest) {
     if (hasErrorCode(failedRequest, '_EsE403WEA_')) {
       this.setState({ theWrongEmailAddress: this.state.userData.email });
-      var where = debiki.siteId === FirstSiteId ? "in the config file" : "on the Create Site page";
+      const where = debiki.siteId === FirstSiteId ? "in the config file" : "on the Create Site page";
       util.openDefaultStupidDialog({
         body: "Wrong email address. Please use the email address you specified " + where + '.',
       });
@@ -215,14 +215,14 @@ export var CreateUserDialogContent = createClassAndFactory({
   },
 
   render: function() {
-    var props = this.props;
-    var state = this.state;
-    var hasEmailAddressAlready = props.email && props.email.length;
+    const props = this.props;
+    const state = this.state;
+    const hasEmailAddressAlready = props.email && props.email.length;
 
-    var emailHelp = props.providerId && hasEmailAddressAlready ?
+    const emailHelp = props.providerId && hasEmailAddressAlready ?
         "Your email has been verified by " + props.providerId + "." : null;
 
-    var emailInput =
+    const emailInput =
         EmailInput({ label: "Email: (will be kept private)", ref: 'email', id: 'e2eEmail',
           onChangeValueOk: (value, isOk) => this.setEmailOk(value, isOk), tabIndex: 1,
           // If email already provided by e.g. Google, don't let the user change it.
@@ -233,29 +233,30 @@ export var CreateUserDialogContent = createClassAndFactory({
                             "in the config file." : "on the Create Site page.") });
 
   // SHOULD reuse UsernameInput.more.ts [76KWU02]
-    var usernameInput =
-        PatternInput({ label: "Username:", ref: 'username', id: 'e2eUsername', tabIndex: 2,
-          addonBefore: '@',
+    const usernameInput =
+        PatternInput({ label: "Username: (unique and short)", ref: 'username', id: 'e2eUsername',
+          tabIndex: 2,
+          addonBefore: '@', // [7RFWUQ2]
           minLength: 3, maxLength: 20,
           notRegex: / /, notMessage: "No spaces please",
           notRegexTwo: /-/, notMessageTwo: "No hypens (-) please",
           notRegexThree: /@/, notMessageThree: "Don't include the @",
           notRegexFour: /[^a-zA-Z0-9_]/,
           notMessageFour: "Only letters a-z A-Z and 0-9 and _",
-          onChange: (value, isOk) => this.updateValueOk('username', value, isOk),
-          help: r.span({}, "Your ", r.code({}, "@username"), ", unique and short") });
+          onChange: (value, isOk) => this.updateValueOk('username', value, isOk)
+        });
 
-    var passwordInput = props.createPasswordUser
+    const passwordInput = props.createPasswordUser
         ? NewPasswordInput({ newPasswordData: state.userData, ref: 'password', tabIndex: 2,
               setPasswordOk: (isOk) => this.updateValueOk('password', 'dummy', isOk) })
         : null;
 
-    var fullNameInput =
+    const fullNameInput =
       FullNameInput({ label: "Full name: (optional)", ref: 'fullName',
         id: 'e2eFullName', defaultValue: props.name, tabIndex: 2,
         onChangeValueOk: (value, isOk) => this.updateValueOk('fullName', value, isOk) });
 
-    var disableSubmit = _.includes(_.values(this.state.okayStatuses), false);
+    const disableSubmit = _.includes(_.values(this.state.okayStatuses), false);
 
     return (
       r.form({ className: 'esCreateUser' },

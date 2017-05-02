@@ -25,6 +25,12 @@
   .modal-footer
     border-top: none;
 
+@media (max-width: $veryNarrowLimit)
+  .fade.in.modal
+    padding-left: 0;  // instead of 15px
+
+  .modal-body
+    padding: 10px;
 
 
 // React-select

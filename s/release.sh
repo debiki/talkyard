@@ -46,7 +46,7 @@ version_tag="$version-`git rev-parse --short HEAD`"  # also in Build.scala [8GKB
 # Check everything is OK
 # ----------------------
 
-sudo docker-compose kill app
+sudo docker-compose kill web app
 sudo docker-compose down
 
 if [ -n "`sudo docker ps -q`" ]; then
@@ -83,7 +83,7 @@ find public/res/ -type f -name '*\.css' -not -name '*\.min\.css' | xargs rm
 sudo s/d-cli clean compile
 sudo s/d-cli test dist
 
-sudo s/d kill app
+sudo s/d kill web app
 sudo docker-compose down
 docker/build-app-prod.sh
 
@@ -144,6 +144,7 @@ fi
 # ----------------------
 
 # Start the containers, but *with* rate limits this time.
+sudo $test_containers kill web
 sudo $test_containers down
 
 # Run tests ... ensure gets 503 Service Unavailable ...

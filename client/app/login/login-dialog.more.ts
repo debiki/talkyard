@@ -189,40 +189,41 @@ var LoginDialog = createClassAndFactory({
   },
 
   render: function () {
-    var state = this.state;
-    var fade = state.childDialog ? ' dw-modal-fade' : '';
+    const state = this.state;
+    const fade = state.childDialog ? ' dw-modal-fade' : '';
 
-    var title;
+    let title;
     switch (state.loginReason) {
       case 'LoginToAuthenticate':
         title = "Authentication required to access this site";
         break;
       case LoginReason.LoginToLike:
-        title = "Login to Like this post";
+        title = "Log in to Like this post";
         break;
       default:
         title = this.state.isSignUp ? "Create account" : "Log in";
     }
 
-    var content = LoginDialogContent({ isSignUp: state.isSignUp, loginReason: state.loginReason,
+    const content = LoginDialogContent({ isSignUp: state.isSignUp, loginReason: state.loginReason,
         anyReturnToUrl: state.anyReturnToUrl, setChildDialog: this.setChildDialog,
         childDialog: state.childDialog, close: this.close, isLoggedIn: state.isLoggedIn,
         switchBetweenLoginAndSignUp: this.switchBetweenLoginAndSignUp,
         store: state.store });
 
+    /* UX SHOULD show this close [x] in 'content' instead, so can be closed easily.
     var modalHeader = state.loginReason === LoginReason.BecomeAdmin
       ? null // then there's an instruction text, that's enough
       : ModalHeader({ closeButton: !state.preventClose },
           ModalTitle({ id: 'e2eLoginDialogTitle' }, title));
+    */
 
-    var modalFooter = state.preventClose ? ModalFooter({}) :
+    const modalFooter = state.preventClose ? ModalFooter({}) :
         ModalFooter({}, Button({ onClick: this.close, id: 'e2eLD_Cancel' }, "Cancel"));
 
     return (
       Modal({ show: state.isOpen, onHide: this.close, dialogClassName: 'dw-login-modal' + fade,
           keyboard: !state.childDialog && !state.preventClose,
           backdrop: state.preventClose ? 'static' : true },
-        modalHeader,
         ModalBody({}, content),
         modalFooter));
   }
@@ -267,11 +268,12 @@ export var LoginDialogContent = createClassAndFactory({
     };
 
     var createUserDialog = createChildDialog(null, CreateUserDialogContent, 'esCreateUserDlg');
-    var passwordLoginDialog = createChildDialog("Login with Password", PasswordLoginDialogContent);
-    var guestLoginDialog = createChildDialog("Login as Guest", GuestLoginDialogContent);
+    var passwordLoginDialog = createChildDialog("Log in with Password", PasswordLoginDialogContent);
+    var guestLoginDialog = createChildDialog("Log in as Guest", GuestLoginDialogContent);
 
-    var makeOauthProps = (iconClass: string, provider: string) => {
+    var makeOauthProps = (iconClass: string, provider: string, includeWith?: boolean) => {
       return {
+        inclWith: includeWith,
         id: 'e2eLogin' + provider,
         iconClass: iconClass,
         provider: provider,
@@ -305,7 +307,7 @@ export var LoginDialogContent = createClassAndFactory({
         debiki2.ReactStore.isGuestLoginAllowed()) {
       loginAsGuestButton =
           Button({ onClick: openChildDialog(GuestLoginDialogContent),
-              className: 'esLoginDlg_guestBtn' }, "Login as Guest");
+              className: 'esLoginDlg_guestBtn' }, "Log in as Guest");
     }
 
     var termsAndPrivacy = loginReason === LoginReason.BecomeAdmin
@@ -351,9 +353,9 @@ export var LoginDialogContent = createClassAndFactory({
         becomeAdminInstructions,
         termsAndPrivacy,
         r.p({ id: 'dw-lgi-or-login-using' },
-          isSignUp ? "Create account with:" : "Login with:"),
+          isSignUp ? "Sign in ..." : "Log in ..."),
         r.div({ id: 'dw-lgi-other-sites' },
-          OpenAuthButton(makeOauthProps('icon-google-plus', 'Google')),
+          OpenAuthButton(makeOauthProps('icon-google-plus', 'Google', true)),
           OpenAuthButton(makeOauthProps('icon-facebook', 'Facebook')),
           OpenAuthButton(makeOauthProps('icon-twitter', 'Twitter')),
           OpenAuthButton(makeOauthProps('icon-github-circled', 'GitHub')),
@@ -362,7 +364,7 @@ export var LoginDialogContent = createClassAndFactory({
 
         r.p({ id: 'dw-lgi-or-login-using' },
           isSignUp
-              ? "Or create an account here:"
+              ? "Or create account here:"
               : "Or fill in:"),
 
         switchToOtherDialogInstead,
@@ -401,7 +403,7 @@ var OpenAuthButton = createClassAndFactory({
   render: function() {
     return (
       Button({ id: this.props.id, className: this.props.iconClass, onClick: this.onClick },
-        this.props.provider ));
+        (this.props.inclWith ? "with " : "") + this.props.provider ));
   }
 });
 
@@ -519,7 +521,7 @@ var PasswordLoginDialogContent = createClassAndFactory({
 
 
 /**
- * Text to append to the login button so it reads e.g. "Login to write a comment".
+ * Text to append to the login button so it reads e.g. "Log in to write a comment".
  */
 function inOrderTo(loginReason: string): string {
   switch (loginReason) {
