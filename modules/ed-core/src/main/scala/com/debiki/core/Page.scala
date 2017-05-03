@@ -609,6 +609,7 @@ object PageOrderOffset {
   case object ByPublTime extends PageOrderOffset
   case object ByPinOrderLoadOnlyPinned extends PageOrderOffset
   case class ByBumpTime(offset: Option[ju.Date]) extends PageOrderOffset
+  case class ByCreatedAt(offset: Option[ju.Date]) extends PageOrderOffset
   case class ByLikesAndBumpTime(offset: Option[(Int, ju.Date)]) extends PageOrderOffset
 }
 

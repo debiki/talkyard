@@ -412,7 +412,10 @@ object Authz {
       // Abort if we may not see this category, or if we don't know.
       if (mayWhat.maySee isNot true) {
         // But maySeeOwn=true has precedence over maySee=false.
-        if (!isOwnPage || !mayWhat.maySeeOwn)
+        if (isOwnPage && mayWhat.maySeeOwn) {
+          // Fine, continue.
+        }
+        else
           return mayWhat
       }
     }

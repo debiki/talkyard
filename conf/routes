@@ -166,6 +166,10 @@ POST  /-/chat                   controllers.ReplyController.handleChatMessage
 POST  /-/submit-custom-form-as-json-reply controllers.CustomFormController.handleJsonReply
 POST  /-/submit-custom-form-as-new-topic  controllers.CustomFormController.handleNewTopic
 
+# UsabilityTestingExchangeController = [plugin]
+POST  /-/submit-usability-testing-form    ed.plugins.utx.UsabilityTestingExchangeController.handleUsabilityTestingForm
+GET   /-/utx-pick-a-task        ed.plugins.utx.UsabilityTestingExchangeController.pickTask(categorySlug)
+
 POST  /-/vote                   controllers.VoteController.handleVotes
 POST  /-/flag                   @controllers.Application.flag
 

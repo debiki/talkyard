@@ -45,6 +45,9 @@ export function activateAnyCustomForm() {
         else if (doWhat.value === 'SignUp') {
           morebundle.loginIfNeeded(LoginReason.SignUp);
         }
+        else if (doWhat.value === 'AskForUsabilityTesting') {  // [plugin]
+          Server.submitUsabilityTestingRequest(namesAndValues);
+        }
         else {
           die(`Unknown input name=doWhat value: '${doWhat.value}' [EdE8402F4]`);
         }

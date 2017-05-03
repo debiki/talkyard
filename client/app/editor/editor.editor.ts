@@ -955,7 +955,8 @@ export var Editor = createComponent({
       doingWhatInfo = "Your critique:";
     }
     else if (isOrigPostReply && page_isUsabilityTesting(store.pageRole)) { // [plugin]
-      doingWhatInfo = "Your usability testing video link + description:";
+      //doingWhatInfo = "Your usability testing video link + description:";
+      doingWhatInfo = "Your feedback and answers to questions:";
     }
     else if (isMindMapNode) {
       doingWhatInfo = "Add mind map node:";
@@ -998,7 +999,8 @@ export var Editor = createComponent({
           saveButtonTitle = makeSaveTitle("Submit", " critique");
         }
         if (isOrigPostReply && page_isUsabilityTesting(store.pageRole)) { // [plugin]
-          saveButtonTitle = makeSaveTitle("Submit", " video");
+          //saveButtonTitle = makeSaveTitle("Submit", " video");
+          saveButtonTitle = makeSaveTitle("Submit", " feedback");
         }
       }
     }

@@ -164,7 +164,9 @@ trait CategoriesDao {
         listDescendantMaySeeCategories(categoryId, includeRoot = true, authzCtx).map(_.id)
       }
       else {
-        unimplementedIf(!authzCtx.isStaff, "!incl hidden in forum [EsE2PGJ4]")
+        SECURITY // double-think-through this:
+        // No this is fine, we're nowadays testing below, with Authz.maySeePage(..).
+        // unimplementedIf(!authzCtx.isStaff, "!incl hidden in forum [EsE2PGJ4]")
         Seq(categoryId)
       }
 

@@ -891,29 +891,44 @@ export function submitCustomFormAsJsonReply(formInputNameValues, success?: () =>
 }
 
 
-export function submitCustomFormAsNewTopic(formInputNameValues) {
-  function getOrDie(inpName: string): string {
-    let concatenatedValues = null;
-    _.each(formInputNameValues, (nameValue: any) => {
-      if (nameValue.name === inpName) {
-        let value = nameValue.value.trim();
-        value = value.replace(/\\n/g, '\n');
-        concatenatedValues = (concatenatedValues || '') + value;
-      }
-    });
-    dieIf(concatenatedValues === null, `Input missing: ${inpName} [EdE4WKFE02]`);
-    return concatenatedValues.trim();
-  }
+function getInputValueOrDie(inpName: string, formInputNameValues): string {
+  let concatenatedValues = null;
+  _.each(formInputNameValues, (nameValue: any) => {
+    if (nameValue.name === inpName) {
+      let value = nameValue.value.trim();
+      value = value.replace(/\\n/g, '\n');
+      concatenatedValues = (concatenatedValues || '') + value;
+    }
+  });
+  dieIf(concatenatedValues === null, `Input missing: ${inpName} [EdE4WKFE02]`);
+  return concatenatedValues.trim();
+}
 
+
+export function submitCustomFormAsNewTopic(formInputNameValues) {
   function goToNewPage(response) {
     location.assign(linkToPageId(response.newPageId));
   }
-
   postJsonSuccess('/-/submit-custom-form-as-new-topic', goToNewPage, {
-    newTopicTitle: getOrDie('title'),
-    newTopicBody: getOrDie('body'),
-    pageTypeId: getOrDie('pageTypeId'),
-    categorySlug: getOrDie('categorySlug'),
+    newTopicTitle: getInputValueOrDie('title', formInputNameValues),
+    newTopicBody: getInputValueOrDie('body', formInputNameValues),
+    pageTypeId: getInputValueOrDie('pageTypeId', formInputNameValues),
+    categorySlug: getInputValueOrDie('categorySlug', formInputNameValues),
+  });
+}
+
+
+export function submitUsabilityTestingRequest(formInputNameValues) {  // [plugin]
+  const nextUrl = getInputValueOrDie('nextUrl', formInputNameValues);
+  const categorySlug = getInputValueOrDie('categorySlug', formInputNameValues);
+  function goToNewPage(response) {
+    location.assign(nextUrl);
+  }
+  postJsonSuccess('/-/submit-usability-testing-form', goToNewPage, {
+    websiteAddress: getInputValueOrDie('websiteAddress', formInputNameValues),
+    instructionsToTester: getInputValueOrDie('instructionsToTester', formInputNameValues),
+    pageTypeId: getInputValueOrDie('pageTypeId', formInputNameValues),
+    categorySlug: categorySlug,
   });
 }
 

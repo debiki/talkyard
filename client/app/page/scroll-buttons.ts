@@ -214,18 +214,23 @@ export var ScrollButtons = createClassAndFactory({
 
   goBack: function() {
     if (!this.canGoBack()) return;
-    var backPost = this.state.visitedPosts[this.state.currentVisitedPostIndex - 1];
-    var nextIndex = this.state.currentVisitedPostIndex - 1;
+    const backPost = this.state.visitedPosts[this.state.currentVisitedPostIndex - 1];
+    const nextIndex = this.state.currentVisitedPostIndex - 1;
     this.setState({
       currentVisitedPostIndex: nextIndex,
     });
-    var pageColumn = $('#esPageColumn');
-    if (_.isNumber(backPost.windowLeft) && (
-        backPost.windowLeft !== pageColumn.scrollLeft() ||
-        backPost.windowTop !== pageColumn.scrollTop())) {
+    const pageColumn = $('#esPageColumn');
+    if (_.isNumber(backPost.windowLeft)) {
+      if (backPost.windowLeft === pageColumn.scrollLeft() &&
+          backPost.windowTop === pageColumn.scrollTop()) {
+        // Apparently the user has already scrolled back to the previous location, manually,
+        // and then clicked Back. A bit weird. Could perhaps scroll to the next 'visitedPosts'
+        // instead, but simpler to just:
+        return;
+      }
       // Restore the original window top and left coordinates, so the Back button
       // really moves back to the original position.
-      var htmlBody = pageColumn.animate({
+      const htmlBody = pageColumn.animate({
         'scrollTop': backPost.windowTop,
         'scrollLeft': backPost.windowLeft
       }, 'slow', 'swing');

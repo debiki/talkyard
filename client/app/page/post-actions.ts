@@ -102,6 +102,7 @@ export function makeReplyBtnTitle(store: Store, post: Post, isAppendReplyButton:
 
   switch (store.pageRole) {
     case PageRole.Critique: return "Give Critique"; // [plugin]
+    case PageRole.UsabilityTesting: return "Give Feedback"; // [plugin]
     case PageRole.MindMap: return "Add Mind Map node";
     default:
       return isAppendReplyButton ? "Reply to the Original Post" : "Reply";

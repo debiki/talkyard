@@ -107,6 +107,8 @@ trait SiteTransaction {
   def loadPopularPostsByPage(pageIds: Iterable[PageId], limitPerPage: Int)
         : Map[PageId, immutable.Seq[Post]]
 
+  def loadApprovedOrigPostAndRepliesByPage(pageIds: Iterable[PageId]): Map[PageId, immutable.Seq[Post]]
+
   def loadPostsToReview(): immutable.Seq[Post]
   def loadPostsByAuthorSkipTitles(userId: UserId, limit: Int, orderBy: OrderBy): immutable.Seq[Post]
 

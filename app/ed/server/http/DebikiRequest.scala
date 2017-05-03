@@ -18,6 +18,7 @@
 package ed.server.http
 
 import com.debiki.core._
+import com.debiki.core.Prelude._
 import debiki.DebikiHttp._
 import debiki._
 import debiki.dao.SiteDao
@@ -50,6 +51,7 @@ abstract class DebikiRequest[A] {
   // about another user — then, does 'user' refer to the requester or that other user?
   // Instead, use 'requester' always, to refer to the requester.
   def requester: Option[User] = user
+  def theRequester: User = requester getOrDie "EdE2WS76P"
 
   def tenantId: SiteId = dao.siteId
   def siteId: SiteId = dao.siteId

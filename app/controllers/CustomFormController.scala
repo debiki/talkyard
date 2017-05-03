@@ -24,8 +24,9 @@ import debiki.DebikiHttp._
 import ed.server._
 import ed.server.auth.Authz
 import ed.server.http._
-import play.api.libs.json.{JsArray, Json}
+import play.api.libs.json.{JsArray, JsValue, Json}
 import play.api.mvc
+import play.api.mvc.Action
 
 
 /** Saves a {{{<form>}}} as either 1) a new reply, in JSON (for the db) + Yaml (for presentation),
@@ -34,7 +35,9 @@ import play.api.mvc
 object CustomFormController extends mvc.Controller {
 
 
-  def handleJsonReply = PostJsonAction(RateLimits.PostReply, maxBytes = MaxPostSize) { request =>
+  def handleJsonReply: Action[JsValue] = PostJsonAction(
+        RateLimits.PostReply, maxBytes = MaxPostSize) { request =>
+
     val pageId = (request.body \ "pageId").as[PageId]
     val formInputs = (request.body \ "formInputs").as[JsArray]
     val textAndHtml = TextAndHtml.withCompletedFormData(formInputs) getOrIfBad { errorMessage =>
@@ -61,7 +64,9 @@ object CustomFormController extends mvc.Controller {
   }
 
 
-  def handleNewTopic = PostJsonAction(RateLimits.PostReply, maxBytes = MaxPostSize) { request =>
+  def handleNewTopic: Action[JsValue] = PostJsonAction(
+        RateLimits.PostReply, maxBytes = MaxPostSize) { request =>
+
     val pageTypeIdString = (request.body \ "pageTypeId").as[String]
     val pageTypeId = pageTypeIdString.toIntOption.getOrThrowBadArgument("EsE6JFU02", "pageTypeId")
     val pageType = PageRole.fromInt(pageTypeId).getOrThrowBadArgument("EsE39PK01", "pageTypeId")
@@ -81,4 +86,50 @@ object CustomFormController extends mvc.Controller {
     OkSafeJson(Json.obj("newPageId" -> pagePath.pageId.getOrDie("DwE8GIK9")))
   }
 
+
+  def handleUsabilityTestingForm: Action[JsValue] = PostJsonAction(
+        RateLimits.PostReply, maxBytes = MaxPostSize) { request =>  // [plugin]
+
+    val pageTypeIdString = (request.body \ "pageTypeId").as[String]
+    val pageTypeId = pageTypeIdString.toIntOption.getOrThrowBadArgument("EsE6JFU02", "pageTypeId")
+    val pageType = PageRole.fromInt(pageTypeId).getOrThrowBadArgument("EsE39PK01", "pageTypeId")
+
+    val addressOfWebsiteToTest: String = {
+      val address = (request.body \ "websiteAddress").as[String]
+      if (address.matches("https?://")) address else s"http://$address"
+    }
+    if (addressOfWebsiteToTest.count(_ == ':') > 1)
+      throwBadRequest("EdE7FKWU0", "Too many protocols (':') in website address")
+    if (addressOfWebsiteToTest.exists("<>[](){}'\"\n\t\\ " contains _))
+      throwBadRequest("EdE2WXBP6", "Weird character(s) in website address")
+
+    val titleText = addressOfWebsiteToTest.replaceFirst("https?://", "")
+
+    // This'll be sanitized.
+    val instructions = (request.body \ "instructionsToTester").as[String]
+    val bodyText = i"""
+       |**Go here:** [$titleText]($addressOfWebsiteToTest)
+       |
+       |**Then answer these qestions and follow the instructions below:**
+       |
+       |$instructions
+       """
+
+    val titleTextAndHtml = TextAndHtml.forTitle(titleText)
+    val bodyTextAndHtml = TextAndHtml.forBodyOrCommentAsPlainTextWithLinks(bodyText)
+
+    val categorySlug = (request.body \ "categorySlug").as[String]
+    val category = request.dao.loadCategoryBySlug(categorySlug).getOrThrowBadArgument(
+      "EsE0FYK42", s"No category with slug: $categorySlug")
+
+    val pagePath = request.dao.createPage(pageType, PageStatus.Published, Some(category.id),
+      anyFolder = None, anySlug = None, titleTextAndHtml, bodyTextAndHtml,
+      showId = true, request.who, request.spamRelatedStuff)
+
+    Ok /*
+    if (request.isAjax)
+      OkSafeJson(Json.obj("nextUrl" -> nextUrl)) // pagePath.pageId.getOrDie("DwE8GIK9")))
+    else
+      TemporaryRedirect(nextUrl) */
+  }
 }

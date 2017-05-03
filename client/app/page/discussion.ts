@@ -180,24 +180,60 @@ export var TitleBodyComments = createComponent({
         if (isPageAuthor) {
           if (store.numPostsRepliesSection) {
             return { id: 'EdH5P0WF2', version: 1, content: r.span({},
-              "There's a reply to you below — is it a usability testing video link?") };
+              "There's a reply to you below — is it feedback to you?") };
           }
           else {
             return { id: 'EdH5PK2W', version: 1, alwaysShow: true, className: 's_UtxHelp_HaveAsked',
               content: r.div({},
                 r.h1({ className: 's_UtxHelp_HaveAsked_Title' },
-                  "Now you have asked for usability testing."),
+                  "This usability testing task was created by you."),
                 r.p({}, "You'll be notified via email, " +
-                  "when someone has recorded a video for you."),
-                r.p({},
-                  "Proofread your text below, to make sure it asks for " +
-                  "the right things and is easy to understand. To edit it, " +
+                  "when someone posts feedback to you. ", r.br(),
+                  "To edit the text," +
+                  //"Proofread your text below, to make sure it asks for " +
+                  //"the right things and is easy to understand. To edit it, " +
                   "click the edit icon (", r.span({ className: 'icon-edit' }), ") ",
                   // People only see the edit icon for the title — try to fix this, by making
                   // 'below' bold so they'll look below instead.
-                  r.b({}, "below"), " your post. — Thereafter, click Continue."),
-                r.a({ className: 's_UtxHelp_HaveAsked_ContinueB btn btn-primary',
-                    href: '/record-a-video' }, "Continue")) };
+                  r.b({}, "below"), " your post.")) };
+          }
+        }
+        else {
+          function pickAnotherTask() {
+            return (
+              r.a({ className: 's_UtxHelp_HaveAsked_ContinueB btn btn-primary',
+                  href: '/give-me-a-task' }, "Pick another task"));
+          }
+          if (store.numPostsRepliesSection) {
+            let feedbacks =
+                _.filter(_.values(store.postsByNr), (post: Post) => post.parentNr = BodyNr);
+            const itsFeedbackByMe =
+                _.some(feedbacks, (feedback: Post) => feedback.authorId == me.id);
+            if (itsFeedbackByMe) {
+              return {
+                id: 'EdH5P0WF2', version: 1, content: r.div({},
+                  r.p({},
+                    "You have posted feedback here. Want to pick another task?"),
+                  pickAnotherTask()) };
+            }
+            else {
+              return {
+                id: 'EdH5P0WF2', version: 1, content: r.div({},
+                  r.p({},
+                    "People have posted feedback here already. You're welcome to add even more " +
+                    "feedback — follow the instructions below and click 'Give Feedback'. " +
+                    "Or pick another task?"),
+                  pickAnotherTask()) };
+            }
+          }
+          else {
+            return { id: 'EdH5PK2W', version: 1, alwaysShow: true, className: 's_UtxHelp_HaveAsked',
+              content: r.div({},
+                r.h1({ className: 's_UtxHelp_HaveAsked_Title' },
+                  "This task is for you"),
+                r.p({}, "Follow the instructions below. Click 'Give Feedback' to type your " +
+                  "answers to the questions, plus any other thoughts and feedback " +
+                  "you might have.")) };
           }
         }
       }

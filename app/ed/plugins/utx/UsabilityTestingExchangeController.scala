@@ -1,0 +1,214 @@
+/**
+ * Copyright (C) 2017 Kaj Magnus Lindberg
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+package ed.plugins.utx
+
+import com.debiki.core._
+import com.debiki.core.Prelude._
+import debiki._
+import debiki.DebikiHttp._
+import ed.server._
+import ed.server.http._
+import play.api.libs.json.JsValue
+import play.api.mvc
+import play.api.mvc.{Action, Result}
+import scala.collection.mutable
+
+
+/** Saves Usability Testing Exchange tasks, and picks the next task to do.
+  */
+object UsabilityTestingExchangeController extends mvc.Controller {  // [plugin]
+
+
+  def handleUsabilityTestingForm: Action[JsValue] = PostJsonAction(
+        RateLimits.PostReply, maxBytes = MaxPostSize) { request =>
+
+    val pageTypeIdString = (request.body \ "pageTypeId").as[String]
+    val pageTypeId = pageTypeIdString.toIntOption.getOrThrowBadArgument("EsE6JFU02", "pageTypeId")
+    val pageType = PageRole.fromInt(pageTypeId).getOrThrowBadArgument("EsE39PK01", "pageTypeId")
+
+    val addressOfWebsiteToTest: String = {
+      val address = (request.body \ "websiteAddress").as[String]
+      if (address.matches("https?://")) address else s"http://$address"
+    }
+    if (addressOfWebsiteToTest.count(_ == ':') > 1)
+      throwBadRequest("EdE7FKWU0", "Too many protocols (':') in website address")
+    if (addressOfWebsiteToTest.exists("<>[](){}'\"\n\t\\ " contains _))
+      throwBadRequest("EdE2WXBP6", "Weird character(s) in website address")
+
+    val titleText = addressOfWebsiteToTest.replaceFirst("https?://", "")
+
+    // This'll be sanitized.
+    val instructions = (request.body \ "instructionsToTester").as[String]
+    val bodyText = i"""
+       |**Go here:** [$titleText]($addressOfWebsiteToTest)
+       |
+       |**Then answer these qestions and follow the instructions below:**
+       |
+       |$instructions
+       """
+
+    val titleTextAndHtml = TextAndHtml.forTitle(titleText)
+    val bodyTextAndHtml = TextAndHtml.forBodyOrCommentAsPlainTextWithLinks(bodyText)
+
+    val categorySlug = (request.body \ "categorySlug").as[String]
+    val category = request.dao.loadCategoryBySlug(categorySlug).getOrThrowBadArgument(
+      "EsE0FYK42", s"No category with slug: $categorySlug")
+
+    val pagePath = request.dao.createPage(pageType, PageStatus.Published, Some(category.id),
+      anyFolder = None, anySlug = None, titleTextAndHtml, bodyTextAndHtml,
+      showId = true, request.who, request.spamRelatedStuff)
+
+    Ok
+  }
+
+
+  /**
+    * This is an a bit expensive query? Full-text-search is, too, so let's use its rate limits.
+    */
+  def pickTask(categorySlug: String): Action[Unit] =
+        GetActionRateLimited(RateLimits.FullTextSearch) { request =>
+    doPickTask(categorySlug, request)
+  }
+
+
+  /** Finds the user with the highest get-feedback-credits, and then
+    * picks hens open topic with the least number of feedbacks received.
+    *
+    * Later: more accurate algorithm:
+    *
+    * for all open tofics in text-exchange category,
+    * find authors,
+    * calculate credits, dynamically:
+    *
+    * for each author A
+    *
+    *   load all topics created by A + where A has made a top-level-reply.
+    *
+    * 	loop:
+    * 	  if not-unwanted top level reply, to other than A:
+    * 			credits +=
+    * 				num chars in reply, excl quotes
+    * 			 — no, tiny bug! Should loop through posts in created-at order, not *topic*-created-at
+    *
+    *     if A's topic:
+    * 		  find all not-unwanted top level replies, by other than A
+    * 			credits -=
+	  *			num chars in those replies, excl quotes
+    *
+    *    if (credits < 0)
+	  *		  credits = 0
+    *
+    */
+  private def doPickTask(categorySlug: String, request: http.GetRequest): Result = {
+    import request.{dao, theRequester}
+    val category = dao.loadCategoryBySlug(categorySlug).getOrThrowBadArgument(
+      "EsE0FYK42", s"No category with slug: $categorySlug")
+
+    val authzCtx = dao.getForumAuthzContext(Some(theRequester))
+    // (Don't include deleted topics, to mitigate the below DoS attack. Ban people who post stuff
+    // that the staff then deletes.)
+    val pageQuery = PageQuery(PageOrderOffset.ByCreatedAt(None), PageFilter.ShowAll)
+    val topicsWithAboutPage = dao.loadMaySeePagesInCategory(
+      category.id, includeDescendants = false, authzCtx,
+      pageQuery, limit = 1000) ;SECURITY // UTX DoS attack, fairly harmless. If topics created too fast.
+
+    // Filter away the About Category page.
+    val usabilityTestingTopics =
+      topicsWithAboutPage.filter(_.pageRole == PageRole.UsabilityTesting)
+
+    val feedbackByPageId = dao.readOnlyTransaction { tx =>
+      tx.loadApprovedOrigPostAndRepliesByPage(usabilityTestingTopics.map(_.pageId))
+    }
+
+    val creditsByUserId = mutable.Map[UserId, Float]()
+
+    val topicsOldestFirst = usabilityTestingTopics.sortBy(_.meta.createdAt.getTime)
+    for (topic <- topicsOldestFirst) {
+      val authorId = topic.meta.authorId
+      val authorCredits: Float = creditsByUserId.getOrElse(authorId, 0f)
+      val feedbacks: Seq[Post] = feedbackByPageId.getOrElse(topic.pageId, Nil).filter(_.isOrigPostReply)
+      var creditsConsumedByAuthor = 0f
+      var numFeedbackPostsToAuthor = 0 // nice to see if debugging
+      // Tiny bug: here we have in effect sorted the feedback posts by when the *topic* was created
+      // rather than when the feedback was given. Barely matters, perhaps better to never "fix".
+      for (feedback: Post <- feedbacks) {
+        val feedbackLength = feedback.approvedSource.map(_.length) getOrElse 0
+        // Credits should be proportional to log(x * feedback-length),
+        // but not directly proportional to the feedback length, because
+        // a short piece of feedback probably contains the most interesting & important
+        // stuff, whereas a longer piece of feedback contains that, + also other stuff that is
+        // useful, but slightly less important.
+        // This looks fine:   Plot[1000 * Log[x/1000 + 0.999], {x, 0, 5000}]
+        // (where x = feedback length, in characters)
+        // Here you can look at the graph:
+        //   http://www.wolframalpha.com/input/?source=nav&i=logarithms
+        // That formula results in this:
+        // 100 chars —> 94 credits
+        // 500 chars —> 400 credits
+        // 1000 chars —> 700 credits
+        // 2000 chars —> 1100 credits
+        // 5000 chars —> 1800 credits
+        // 10000 chars —> 2400 credits
+        // — this makes it better to give feedback-of-length-2000 to three different people,
+        // rather than writing a 10 000 chars essay to one single person.
+        val credits = 1000f * math.max(0f, math.log(feedbackLength / 1000f + 0.999f).toFloat)
+        creditsConsumedByAuthor += credits
+        numFeedbackPostsToAuthor += 1
+        val testersCredits: Float = creditsByUserId.getOrElse(feedback.createdById, 0f)
+        creditsByUserId(feedback.createdById) = testersCredits + credits
+      }
+      val newAuthorCredits = math.max(0, authorCredits - creditsConsumedByAuthor)
+      creditsByUserId(authorId) = newAuthorCredits
+    }
+
+    val allFeedback = feedbackByPageId.values.flatten.filter(_.isOrigPostReply)
+
+    val userIdsSortedByCreditsDesc = creditsByUserId.toVector.sortBy(-_._2).map(_._1)
+    for (userId <- userIdsSortedByCreditsDesc ; if userId != theRequester.id) {
+      val topicsByUser = usabilityTestingTopics.filter(_.meta.authorId == userId)
+      val openTopics = topicsByUser.filter(_.meta.closedAt.isEmpty)
+      val openTopicIds = openTopics.map(_.pageId)
+      val numRepliesByTopicId = mutable.Map[PageId, Int](openTopicIds.map(_ -> 0): _*)
+      for (feedback: Post <- allFeedback) {
+        if (openTopicIds.contains(feedback.pageId)) {
+          val numFeedbacks = numRepliesByTopicId(feedback.pageId)
+          numRepliesByTopicId(feedback.pageId) = numFeedbacks + 1
+        }
+      }
+      val topicIdsSortedNumRepliesAsc = numRepliesByTopicId.toVector.sortBy(_._2)
+      val topicIdWithFewestFeedbacks = topicIdsSortedNumRepliesAsc.headOption.map(_._1)
+      topicIdWithFewestFeedbacks match {
+        case None =>
+          // This user has *given* feedback only, not asked for any UX testing help henself.
+          // Pick the next user instead.
+        case Some(topicId) =>
+          // This is the topic with the least feedbacks given, created by the user
+          // with the most unused credits.
+          val feedbackThisTopic: Seq[Post] = feedbackByPageId.getOrElse(topicId, Nil)
+          val alreadyGivenFeedback = feedbackThisTopic.exists(_.createdById == theRequester.id)
+          if (!alreadyGivenFeedback) {
+            val topic = usabilityTestingTopics.find(_.pageId == topicId) getOrDie "EdE8GKC1"
+            return TemporaryRedirect(topic.path.value)
+          }
+      }
+    }
+
+    TemporaryRedirect(s"/nothing-more-to-do")
+  }
+
+}
