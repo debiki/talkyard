@@ -776,14 +776,23 @@ function collapseTree(post: Post) {
 
 
 function showPostNr(postNr: PostNr, showChildrenToo?: boolean) {
-  var post: Post = store.postsByNr[postNr];
+  let post: Post = store.postsByNr[postNr];
   if (showChildrenToo) {
     uncollapsePostAndChildren(post);
   }
-  // Uncollapse ancestors, to make postId visible.
+  // Uncollapse ancestors, to make postId visible. Don't loop forever if there's any weird
+  // cycle — that crashes Chrome (as of May 3 2017).
+  const postNrsSeen = {};
   while (post) {
     uncollapseOne(post);
     post = store.postsByNr[post.parentNr];
+    if (postNrsSeen[post.nr]) {  // title & OP sometimes has parent = OP -> cycle, why? [OPCYCLE]
+      // @ifdef DEBUG
+      console.warn(`Post cycle, inludes nr ${post.nr} [EdE2WKVY0]`);
+      // @endif
+      break;
+    }
+    postNrsSeen[post.nr] = true;
   }
   setTimeout(() => {
     debiki.internal.showAndHighlightPost($('#post-' + postNr));
@@ -1289,6 +1298,8 @@ function rememberPostsToQuickUpdate(startPostId: number) {
   // Need to update all ancestors, otherwise when rendering the React root we won't reach
   // `post` at all.
   while (post) {
+    if (store.postsToUpdate[post.nr]) // title & OP sometimes has parent = OP -> cycle, why? [OPCYCLE]
+      break;
     store.postsToUpdate[post.nr] = true;
     post = store.postsByNr[post.parentNr];
   }
