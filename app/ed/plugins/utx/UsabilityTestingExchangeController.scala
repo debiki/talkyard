@@ -25,7 +25,7 @@ import ed.server._
 import ed.server.http._
 import play.api.libs.json.JsValue
 import play.api.mvc
-import play.api.mvc.{Action, Result}
+import play.api.mvc.{Action, DiscardingCookie, Result}
 import scala.collection.mutable
 
 
@@ -119,6 +119,13 @@ object UsabilityTestingExchangeController extends mvc.Controller {  // [plugin]
     val category = dao.loadCategoryBySlug(categorySlug).getOrThrowBadArgument(
       "EsE0FYK42", s"No category with slug: $categorySlug")
 
+    val topicIdsToSkip: Set[PageId] = urlDecodeCookie("edCoUtxSkip", request.underlying) match {
+      case None => Set.empty
+      case Some(pageIdCommaList) =>
+        val pageIds = pageIdCommaList.split(",")  // split() excludes trailing empty strings
+        Set(pageIds: _*)
+    }
+
     val authzCtx = dao.getForumAuthzContext(Some(theRequester))
     // (Don't include deleted topics, to mitigate the below DoS attack. Ban people who post stuff
     // that the staff then deletes.)
@@ -191,24 +198,25 @@ object UsabilityTestingExchangeController extends mvc.Controller {  // [plugin]
         }
       }
       val topicIdsSortedNumRepliesAsc = numRepliesByTopicId.toVector.sortBy(_._2)
-      val topicIdWithFewestFeedbacks = topicIdsSortedNumRepliesAsc.headOption.map(_._1)
-      topicIdWithFewestFeedbacks match {
-        case None =>
-          // This user has *given* feedback only, not asked for any UX testing help henself.
-          // Pick the next user instead.
-        case Some(topicId) =>
-          // This is the topic with the least feedbacks given, created by the user
-          // with the most unused credits.
-          val feedbackThisTopic: Seq[Post] = feedbackByPageId.getOrElse(topicId, Nil)
-          val alreadyGivenFeedback = feedbackThisTopic.exists(_.createdById == theRequester.id)
-          if (!alreadyGivenFeedback) {
-            val topic = usabilityTestingTopics.find(_.pageId == topicId) getOrDie "EdE8GKC1"
-            return TemporaryRedirect(topic.path.value)
-          }
+      for (topicIdAndNumReplies <- topicIdsSortedNumRepliesAsc) {
+        val topicId: PageId = topicIdAndNumReplies._1
+        // This is the topic with the least feedbacks given, created by the user with the most
+        // unused credits, which the requester hasn't skipped or given feedback too already.
+        val shallSkipThisTopic = topicIdsToSkip contains topicId
+        val feedbackThisTopic: Seq[Post] = feedbackByPageId.getOrElse(topicId, Nil)
+        val alreadyGivenFeedback = feedbackThisTopic.exists(_.createdById == theRequester.id)
+        if (!shallSkipThisTopic && !alreadyGivenFeedback) {
+          val topic = usabilityTestingTopics.find(_.pageId == topicId) getOrDie "EdE8GKC1"
+          return TemporaryRedirect(topic.path.value)
+        }
       }
+      // Either the requester wants to skip all tasks by this user, or the user has *given*
+      // feedback only, not asked for any UX testing help henself. Pick a task from
+      // the next user instead ... by looping another lap.
     }
 
     TemporaryRedirect(s"/nothing-more-to-do")
+        .discardingCookies(DiscardingCookie("edCoUtxSkip"))
   }
 
 }

@@ -26,7 +26,7 @@ import ed.server.auth.ForumAuthzContext
 import ed.server.security.{SidStatus, XsrfOk}
 import java.{util => ju}
 import play.api.mvc
-import play.api.mvc.{Action => _, _}
+import play.api.mvc._
 
 
 /**
@@ -51,7 +51,7 @@ abstract class DebikiRequest[A] {
   // about another user — then, does 'user' refer to the requester or that other user?
   // Instead, use 'requester' always, to refer to the requester.
   def requester: Option[User] = user
-  def theRequester: User = requester getOrDie "EdE2WS76P"
+  def theRequester: User = theUser
 
   def tenantId: SiteId = dao.siteId
   def siteId: SiteId = dao.siteId

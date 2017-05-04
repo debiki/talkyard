@@ -179,8 +179,10 @@ export var TitleBodyComments = createComponent({
         var isPageAuthor = bodyPost.authorId === me.id;
         if (isPageAuthor) {
           if (store.numPostsRepliesSection) {
-            return { id: 'EdH5P0WF2', version: 1, content: r.span({},
-              "There's a reply to you below — is it feedback to you?") };
+            return { id: 'EdH5P0WF2', version: 1, content: r.div({},
+              r.h1({ className: 's_UtxHelp_HaveAsked_Title' },
+                "There's feedbak for you"),
+              r.p({}, "Look below — someone has posted feedback to you.")) };
           }
           else {
             return { id: 'EdH5PK2W', version: 1, alwaysShow: true, className: 's_UtxHelp_HaveAsked',
@@ -199,10 +201,17 @@ export var TitleBodyComments = createComponent({
           }
         }
         else {
-          function pickAnotherTask() {
+          function pickAnotherTask(isSkip?: boolean) {
+            const skip = isSkip ? '-skip' : '';
+            const title = isSkip ? "Skip this task" : "Pick another task";
             return (
-              r.a({ className: 's_UtxHelp_HaveAsked_ContinueB btn btn-primary',
-                  href: '/give-me-a-task' }, "Pick another task"));
+              PrimaryButton({ className: 's_UtxHelp_HaveAsked_ContinueB' + skip,
+                  onClick: () => {
+                    let tasksToSkip = (<any> $).cookie('edCoUtxSkip');
+                    tasksToSkip = (tasksToSkip || '') + store.pageId + ',';
+                    (<any> $).cookie('edCoUtxSkip', tasksToSkip);
+                    location.assign('/give-me-a-task');
+                  }}, title));
           }
           if (store.numPostsRepliesSection) {
             let feedbacks =
@@ -211,19 +220,26 @@ export var TitleBodyComments = createComponent({
                 _.some(feedbacks, (feedback: Post) => feedback.authorId == me.id);
             if (itsFeedbackByMe) {
               return {
-                id: 'EdH5P0WF2', version: 1, content: r.div({},
+                id: 'EdH5P0WF2', version: 1, alwaysShow: true, content: r.div({},
+                  r.h1({ className: 's_UtxHelp_HaveAsked_Title' },
+                    "Done"),
                   r.p({},
-                    "You have posted feedback here. Want to pick another task?"),
+                    "You have posted feedback here. Continue with another task?"),
                   pickAnotherTask()) };
             }
             else {
               return {
-                id: 'EdH5P0WF2', version: 1, content: r.div({},
+                id: 'EdH5P0WF2', version: 1, alwaysShow: true, content: r.div({},
+                  r.h1({ className: 's_UtxHelp_HaveAsked_Title' },
+                    "This task is for you"),
+                  r.p({}, "Follow the instructions below. Click 'Give Feedback' to type your " +
+                    "answers to the questions, plus any other thoughts and feedback " +
+                    "you might have."),
                   r.p({},
-                    "People have posted feedback here already. You're welcome to add even more " +
-                    "feedback — follow the instructions below and click 'Give Feedback'. " +
-                    "Or pick another task?"),
-                  pickAnotherTask()) };
+                    "Some other people have posted feedback here already. Try not to read what " +
+                    "they have written, before you compose your own feedback. Afterwards, though, " +
+                    "you can read their feedback, and add comments, if you want to."),
+                  pickAnotherTask(true)) };
             }
           }
           else {
@@ -233,7 +249,8 @@ export var TitleBodyComments = createComponent({
                   "This task is for you"),
                 r.p({}, "Follow the instructions below. Click 'Give Feedback' to type your " +
                   "answers to the questions, plus any other thoughts and feedback " +
-                  "you might have.")) };
+                  "you might have."),
+                pickAnotherTask(true)) };
           }
         }
       }
