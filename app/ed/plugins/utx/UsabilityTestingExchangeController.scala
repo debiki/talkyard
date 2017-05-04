@@ -43,7 +43,7 @@ object UsabilityTestingExchangeController extends mvc.Controller {  // [plugin]
 
     val addressOfWebsiteToTest: String = {
       val address = (request.body \ "websiteAddress").as[String]
-      if (address.matches("https?://")) address else s"http://$address"
+      if (address.matches("^https?://.*")) address else s"http://$address"
     }
     if (addressOfWebsiteToTest.count(_ == ':') > 1)
       throwBadRequest("EdE7FKWU0", "Too many protocols (':') in website address")
