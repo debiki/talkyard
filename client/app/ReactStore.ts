@@ -784,8 +784,6 @@ function showPostNr(postNr: PostNr, showChildrenToo?: boolean) {
   // cycle — that crashes Chrome (as of May 3 2017).
   const postNrsSeen = {};
   while (post) {
-    uncollapseOne(post);
-    post = store.postsByNr[post.parentNr];
     if (postNrsSeen[post.nr]) {  // title & OP sometimes has parent = OP -> cycle, why? [OPCYCLE]
       // @ifdef DEBUG
       console.warn(`Post cycle, inludes nr ${post.nr} [EdE2WKVY0]`);
@@ -793,6 +791,8 @@ function showPostNr(postNr: PostNr, showChildrenToo?: boolean) {
       break;
     }
     postNrsSeen[post.nr] = true;
+    uncollapseOne(post);
+    post = store.postsByNr[post.parentNr];
   }
   setTimeout(() => {
     debiki.internal.showAndHighlightPost($('#post-' + postNr));

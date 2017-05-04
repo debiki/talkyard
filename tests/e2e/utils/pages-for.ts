@@ -462,8 +462,7 @@ function pagesFor(browser) {
           // Give the page enough time to load:
           lap += 1;
           browser.pause(200 * Math.pow(1.5, lap));
-          dialogShown = browser.isVisible('.dw-login-modal') &&
-            browser.isVisible('#e2eLoginDialogTitle');
+          dialogShown = browser.isVisible('.dw-login-modal') && browser.isVisible('.esLD');
           if (dialogShown)
             break;
         }
@@ -473,7 +472,7 @@ function pagesFor(browser) {
 
       waitAssertFullScreen: function() {
         browser.waitForVisible('.dw-login-modal');
-        browser.waitForText('#e2eLoginDialogTitle');
+        browser.waitForVisible('.esLD');
         // Forum not shown.
         assert(!browser.isVisible('.dw-forum'));
         assert(!browser.isVisible('.dw-forum-actionbar'));
