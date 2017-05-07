@@ -117,7 +117,7 @@ object PageTitleSettingsController extends mvc.Controller {
     // but the page will still be in an okay state afterwards.
 
     // Update page title.
-    val newTextAndHtml = TextAndHtml(newTitle, isTitle = true)
+    val newTextAndHtml = TextAndHtml.forTitle(newTitle)
 
     request.dao.editPostIfAuth(pageId = pageId, postNr = PageParts.TitleNr,
       request.who, request.spamRelatedStuff, newTextAndHtml)

@@ -130,10 +130,14 @@ object EditController extends mvc.Controller {
       inCategoriesRootLast = categoriesRootLast,
       permissions = dao.getPermsOnPages(categoriesRootLast)), "EdE4JBTYE8")
 
-    val newTextAndHtml = TextAndHtml(newText, isTitle = false,
-      allowClassIdDataAttrs = postNr == PageParts.BodyNr)
+    val newTextAndHtml = TextAndHtml.forBodyOrComment(
+      newText,
+      allowClassIdDataAttrs = postNr == PageParts.BodyNr,
       // When follow links? Previously:
       // followLinks = postToEdit.createdByUser(page.parts).isStaff && editor.isStaff
+      // But that won't work for wikis (staff might accidentally change a non-staff user's link
+      // to rel=follow). For now, instead:
+      followLinks = postNr == PageParts.BodyNr && pageMeta.pageRole.shallFollowLinks)
 
     request.dao.editPostIfAuth(pageId = pageId, postNr = postNr, request.who,
       request.spamRelatedStuff, newTextAndHtml)

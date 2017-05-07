@@ -50,10 +50,10 @@ object PageController extends mvc.Controller {
     val bodyText = (body \ "pageBody").as[String]
     val showId = (body \ "showId").asOpt[Boolean].getOrElse(true)
 
-    val bodyTextAndHtml = TextAndHtml(bodyText, isTitle = false,
-      allowClassIdDataAttrs = true, followLinks = !pageRole.isWidelyEditable)
+    val bodyTextAndHtml = TextAndHtml.forBodyOrComment(bodyText,
+      allowClassIdDataAttrs = true, followLinks = pageRole.shallFollowLinks)
 
-    val titleTextAndHtml = TextAndHtml(titleText, isTitle = true)
+    val titleTextAndHtml = TextAndHtml.forTitle(titleText)
 
     // COULD make the Dao transaction like, and run this inside the transaction. [transaction]
     // Non-staff users shouldn't be able to create anything outside the forum section(s)

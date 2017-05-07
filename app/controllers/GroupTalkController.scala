@@ -62,9 +62,11 @@ object GroupTalkController extends mvc.Controller {
     throwForbiddenIf(sender.id == SystemUserId, "EsE4GK8F4",
       "The System user cannot send private messages")
 
-    val bodyTextAndHtml = TextAndHtml(text, isTitle = false,
+    // Don't follow links inside a chat; chats don't work well with search engines anyway, and
+    // higher risk people say/write/link-to weird things, because chats = chatty = less moderated.
+    val bodyTextAndHtml = TextAndHtml.forBodyOrComment(text,
       allowClassIdDataAttrs = true, followLinks = false)
-    val titleTextAndHtml = TextAndHtml(title, isTitle = true)
+    val titleTextAndHtml = TextAndHtml.forTitle(title)
 
     val pagePath = request.dao.startGroupTalk(
       titleTextAndHtml, bodyTextAndHtml, pageRole, toUserIds, sentByWho = request.who,

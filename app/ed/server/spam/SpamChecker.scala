@@ -261,7 +261,7 @@ class SpamChecker {
       return Future.successful(None)
     }
 
-    val textAndHtml = TextAndHtml(post.currentSource, isTitle = false)
+    val textAndHtml = TextAndHtml.forBodyOrComment(post.currentSource)
 
     val spamTestFutures =
       if (textAndHtml.text contains EdSpamMagicText) {

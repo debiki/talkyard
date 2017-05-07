@@ -37,7 +37,7 @@ trait ForumDao {
 
 
   def createForum(title: String, folder: String, byWho: Who): CreateForumResult = {
-    val titleHtmlSanitized = commonmarkRenderer.sanitizeHtml(title)
+    val titleHtmlSanitized = commonmarkRenderer.sanitizeHtml(title, followLinks = false)
     readWriteTransaction { transaction =>
 
       // The forum page points to the root category, which points back.
@@ -180,9 +180,9 @@ object ForumDao {
     |""")
 
 
-  def renderCommonMark(source: String): CommonMarkSourceAndHtml =
+  private def renderCommonMark(source: String): CommonMarkSourceAndHtml =
     ReactRenderer.renderSanitizeCommonMarkReturnSource(
-      source, allowClassIdDataAttrs = true, followLinks = true)
+      source, allowClassIdDataAttrs = true, followLinks = false)
 
 
   // Sync with dupl code in Typescript. [7KFWY025]

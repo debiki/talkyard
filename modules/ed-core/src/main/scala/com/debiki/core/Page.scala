@@ -347,8 +347,8 @@ sealed abstract class PageRole(protected val IntValue: Int, val staffOnly: Boole
     */
   def isGroupTalk = isChat || isPrivateGroupTalk
 
-  /** Should use nofollow links if many people can edit a page. */
-  def isWidelyEditable: Boolean = true
+  // Also see [WHENFOLLOW].
+  def shallFollowLinks: Boolean = false
 
   def canClose = !isSection
 
@@ -369,12 +369,14 @@ object PageRole {
   def InfoPageMaxId = WebPage.toInt
 
   case object CustomHtmlPage extends PageRole(1) {
-    override def isWidelyEditable = false
+    // Only staff can create these — so ok to follow links.
+    override def shallFollowLinks = true
     override def canHaveReplies = false
   }
 
   case object WebPage extends PageRole(2) {
-    override def isWidelyEditable = false
+    // Only staff can create these — so ok to follow links.
+    override def shallFollowLinks = true
   }
 
   case object Code extends PageRole(3) {

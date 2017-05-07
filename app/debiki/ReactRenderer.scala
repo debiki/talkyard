@@ -214,16 +214,18 @@ object ReactRenderer extends com.debiki.core.CommonMarkRenderer {
   }
 
 
-  override def sanitizeHtml(text: String): String = {
-    sanitizeHtmlReuseEngine(text, None)
+  override def sanitizeHtml(text: String, followLinks: Boolean): String = {
+    sanitizeHtmlReuseEngine(text, followLinks, None)
   }
 
 
-  def sanitizeHtmlReuseEngine(text: String, javascriptEngine: Option[js.Invocable]): String = {
+  def sanitizeHtmlReuseEngine(text: String, followLinks: Boolean,
+        javascriptEngine: Option[js.Invocable]): String = {
     if (isTestSoDisableScripts)
       return "Scripts disabled [EsM44GY0]"
     def sanitizeWith(engine: js.Invocable): String = {
-      val safeHtml = engine.invokeFunction("sanitizeHtmlServerSide", text)
+      val safeHtml = engine.invokeFunction(
+          "sanitizeHtmlServerSide", text, followLinks.asInstanceOf[Object])
       safeHtml.asInstanceOf[String]
     }
     javascriptEngine match {
@@ -428,10 +430,7 @@ object ReactRenderer extends com.debiki.core.CommonMarkRenderer {
     |    var unsafeHtml = md.render(source);
     |    var allowClassAndIdAttr = allowClassIdDataAttrs;
     |    var allowDataAttr = allowClassIdDataAttrs;
-    |    if (!followLinks) {
-    |      unsafeHtml = unsafeHtml.replace(/<a /, "<a rel='nofollow' ")
-    |    }
-    |    return googleCajaSanitizeHtml(unsafeHtml, allowClassAndIdAttr, allowDataAttr);
+    |    return googleCajaSanitizeHtml(unsafeHtml, allowClassAndIdAttr, allowDataAttr, followLinks);
     |  }
     |  catch (e) {
     |    printStackTrace(e);
@@ -441,11 +440,10 @@ object ReactRenderer extends com.debiki.core.CommonMarkRenderer {
     |
     |// (Don't name this function 'sanitizeHtml' because it'd then get overwritten by
     |// a function with that same name from a certain sanitize-html npm module.)
-    |function sanitizeHtmlServerSide(source) {
+    |function sanitizeHtmlServerSide(source, followLinks) {
     |  try {
-    |    source = source.replace(/<a /, "<a rel='nofollow' ")
-    |    // This function calls both Google Caja and the sanitize-html npm module. RENAME.
-    |    return googleCajaSanitizeHtml(source, false, false);
+    |    // This function calls both Google Caja and the sanitize-html npm module. CLEAN_UP RENAME.
+    |    return googleCajaSanitizeHtml(source, false, false, followLinks);
     |  }
     |  catch (e) {
     |    printStackTrace(e);

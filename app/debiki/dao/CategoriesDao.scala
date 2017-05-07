@@ -51,7 +51,7 @@ case class CategoryToSave(
   def isNewCategory: Boolean = anyId.exists(_ < 0)
 
   val aboutTopicTitle: TextAndHtml = TextAndHtml.forTitle(s"About the $name category")
-  val aboutTopicBody: TextAndHtml = TextAndHtml.forBodyOrComment(description)
+  val aboutTopicBody: TextAndHtml = TextAndHtml.forBodyOrComment(description) // COULD follow links? Only staff can create categories [WHENFOLLOW]
 
   def makeCategory(id: CategoryId, createdAt: ju.Date) = Category(
     id = id,

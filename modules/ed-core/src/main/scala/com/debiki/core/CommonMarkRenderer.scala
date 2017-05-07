@@ -23,7 +23,7 @@ trait CommonMarkRenderer {
   def renderAndSanitizeCommonMark(commonMarkSource: String,
         allowClassIdDataAttrs: Boolean, followLinks: Boolean): String
 
-  def sanitizeHtml(text: String): String
+  def sanitizeHtml(text: String, followLinks: Boolean): String
 
   def slugifyTitle(title: String): String
 

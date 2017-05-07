@@ -67,7 +67,8 @@ object ReplyController extends mvc.Controller {
     // val authzContext = dao.getPageAuthzContext(requester, pageMeta)
     // throwNoUnless(Authz.mayPostReply(authzContext, postType, "EdEZBXK3M2")
 
-    val textAndHtml = TextAndHtml(text, isTitle = false)
+    // For now, don't follow links in replies. COULD rel=follow if all authors + editors = trusted.
+    val textAndHtml = TextAndHtml.forBodyOrComment(text, followLinks = false)
     val result = dao.insertReply(textAndHtml, pageId = pageId, replyToPostNrs,
       postType, request.who, request.spamRelatedStuff)
 
@@ -96,7 +97,8 @@ object ReplyController extends mvc.Controller {
       permissions = dao.getPermsOnPages(categoriesRootLast)),
       "EdEHDETG4K5")
 
-    val textAndHtml = TextAndHtml(text, isTitle = false)
+    // Don't follow links in chat mesages — chats don't work with search engines anyway.
+    val textAndHtml = TextAndHtml.forBodyOrComment(text, followLinks = false)
     val result = dao.insertChatMessage(
       textAndHtml, pageId = pageId, request.who, request.spamRelatedStuff)
 

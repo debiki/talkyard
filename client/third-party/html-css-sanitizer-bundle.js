@@ -3195,6 +3195,7 @@ html4.ATTRIBS = {
   'a::name': 7,
   'a::onblur': 2,
   'a::onfocus': 2,
+  'a::rel': 0,
   'a::shape': 0,
   'a::target': 10,
   'a::type': 0,
@@ -4840,7 +4841,7 @@ if (typeof window !== 'undefined') {
  * in use though. CLEAN_UP move to some .ts file instead /KajMagnus
  */
 function googleCajaSanitizeHtml(htmlTextUnsafe, allowClassAndIdAttr,
-    allowDataAttr) {
+    allowDataAttr, followLinks) {
   // Configure the sanitizer.
   // 1. html-sanitizer.js's function sanitizeAttribs by default allows
   // only the http/https/mailto URI schemes, and relative URLs
@@ -4889,7 +4890,7 @@ function googleCajaSanitizeHtml(htmlTextUnsafe, allowClassAndIdAttr,
   // although this function is named googleCaja....  CLEAN_UP: create another function that
   // calls first sanitizeHtml, then Caja
   //
-  var sanitized = sanitizeHtml(htmlTextUnsafe, {
+  var sanitizeHtmlConfig = {
     allowedTags: [
       // Allowed by default
       'h3', 'h4', 'h5', 'h6', 'blockquote', 'p', 'a', 'ul', 'ol',
@@ -4907,7 +4908,7 @@ function googleCajaSanitizeHtml(htmlTextUnsafe, allowClassAndIdAttr,
       // Custom forms
       'form', 'label', 'input', 'textarea', 'button', 'datalist', 'option'],
     allowedAttributes: {
-      a: [ 'href', 'name', 'target' ],
+      a: ['href', 'name', 'target', 'rel'],
       img: ['width', 'height', 'src'],
       video: ['width', 'height', 'src', 'controls', 'autoplay', 'loop'],
       source: ['src', 'type'],
@@ -4924,8 +4925,13 @@ function googleCajaSanitizeHtml(htmlTextUnsafe, allowClassAndIdAttr,
       // Caja allows position:absolute so clickjacking would still be a little bit possbible.)
     }
     // allowedClasses: { elem: [...classes...] }
-  });
-
+  };
+  if (!followLinks) {
+    sanitizeHtmlConfig.transformTags = {
+      'a': sanitizeHtml.simpleTransform('a', { 'rel': 'nofollow' })
+    };
+  }
+  var sanitized = sanitizeHtml(htmlTextUnsafe, sanitizeHtmlConfig);
   var superSanitized = html_sanitize(sanitized, uriPolicy, classAndIdPolicy, dataPolicy);
   return superSanitized;
 }

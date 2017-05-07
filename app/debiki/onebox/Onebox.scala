@@ -81,7 +81,10 @@ abstract class OneboxEngine {
     def sanitizeAndWrap(html: String): String = {
       var safeHtml =
         if (alreadySanitized) html
-        else ReactRenderer.sanitizeHtmlReuseEngine(html, javascriptEngine)
+        else {
+          // COULD pass info to here so can follow links sometimes? [WHENFOLLOW]
+          ReactRenderer.sanitizeHtmlReuseEngine(html, followLinks = false, javascriptEngine)
+        }
       // Don't link to any HTTP resources from safe HTTPS pages, e.g. don't link
       // to <img src="http://...">, change to https instead even if the image then breaks.
       // COULD leave <a href=...> HTTP links as is so they won't break. And also leave

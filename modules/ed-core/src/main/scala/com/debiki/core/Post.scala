@@ -348,10 +348,13 @@ case class Post(
 
   def currentHtmlSanitized(commonMarkRenderer: CommonMarkRenderer, pageRole: PageRole): String = {
     if (isCurrentVersionApproved && approvedHtmlSanitized.isDefined) {
-      approvedHtmlSanitized.get
+      return approvedHtmlSanitized.get
     }
-    else if (nr == PageParts.TitleNr) {
-      commonMarkRenderer.sanitizeHtml(currentSource)
+
+    val isBody = nr == PageParts.BodyNr
+    val followLinks = isBody && pageRole.shallFollowLinks
+    if (nr == PageParts.TitleNr) {
+      commonMarkRenderer.sanitizeHtml(currentSource, followLinks)
     }
     else if (tyype == PostType.CompletedForm) {
       CompletedFormRenderer.renderJsonToSafeHtml(currentSource) getMakeGood { errorMessage =>
@@ -360,8 +363,6 @@ case class Post(
       }
     }
     else {
-      val isBody = nr == PageParts.BodyNr
-      val followLinks = isBody && !pageRole.isWidelyEditable
       commonMarkRenderer.renderAndSanitizeCommonMark(currentSource,
         allowClassIdDataAttrs = isBody, followLinks = followLinks)
     }

@@ -20,9 +20,10 @@ package debiki
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import com.debiki.core.CommonMarkRenderer
-import org.scalactic.{Bad, Or, ErrorMessage}
+import org.scalactic.{ErrorMessage, Or}
 import play.api.libs.json.JsArray
 import scala.collection.immutable
+import scala.util.matching.Regex
 
 
 
@@ -96,7 +97,7 @@ object TextAndHtml {
   }
 
   val DefaultCommonMarkRenderer: CommonMarkRenderer = ReactRenderer
-  val Ipv4AddressRegex = """[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+""".r
+  val Ipv4AddressRegex: Regex = """[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+""".r
 
 
   def withCompletedFormData(formInputs: String): TextAndHtml Or ErrorMessage = {
@@ -115,29 +116,30 @@ object TextAndHtml {
   }
 
 
-  def forTitle(title: String) = apply(title, isTitle = true)
+  def forTitle(title: String): TextAndHtml =
+    apply(title, isTitle = true, followLinks = false, allowClassIdDataAttrs = false)
 
 
   def forBodyOrComment(text: String, followLinks: Boolean = false,
-        allowClassIdDataAttrs: Boolean = false) =
+        allowClassIdDataAttrs: Boolean = false): TextAndHtml =
     apply(text, isTitle = false, followLinks = followLinks,
       allowClassIdDataAttrs = allowClassIdDataAttrs)
 
   // COULD escape all CommonMark so becomes real plain text
-  def forBodyOrCommentAsPlainTextWithLinks(text: String) =
+  def forBodyOrCommentAsPlainTextWithLinks(text: String): TextAndHtml =
     apply(text, isTitle = false, followLinks = false, allowClassIdDataAttrs = false)
 
-  def apply(
+  private def apply(
     text: String,
     isTitle: Boolean,
-    followLinks: Boolean = false,
-    allowClassIdDataAttrs: Boolean = false)(
+    followLinks: Boolean,
+    allowClassIdDataAttrs: Boolean)(
     implicit
     commonMarkRenderer: CommonMarkRenderer = DefaultCommonMarkRenderer): TextAndHtml = {
 
     TESTS_MISSING
     if (isTitle) {
-      val safeHtml = commonMarkRenderer.sanitizeHtml(text)
+      val safeHtml = commonMarkRenderer.sanitizeHtml(text, followLinks = false)
       new TextAndHtmlImpl(text, safeHtml, links = Nil, linkDomains = Set.empty,
         linkAddresses = Nil, isTitle = true, followLinks = followLinks,
         allowClassIdDataAttrs = allowClassIdDataAttrs)
@@ -170,18 +172,18 @@ object TextAndHtml {
           }
         }
         catch {
-          case ex: Exception =>
+          case _: Exception =>
             // ignore, the href isn't a valid link, it seems
         }
       }
       new TextAndHtmlImpl(text, safeHtml, links = links, linkDomains = linkDomains,
-        linkAddresses = linkAddresses, isTitle = true, followLinks = followLinks,
+        linkAddresses = linkAddresses, isTitle = false, followLinks = followLinks,
         allowClassIdDataAttrs = allowClassIdDataAttrs)
     }
   }
 
 
-  /** Creates an instance with both the source and the rendered html set to {@code text}.
+  /** Creates an instance with both the source and the rendered html set to `text`.
     * This is useful in test suites, because they'll run a lot faster when they won't
     * have to wait for the commonmark renderer to be created.
     */
@@ -192,8 +194,8 @@ object TextAndHtml {
       allowClassIdDataAttrs = false)
   }
 
-  def testTitle(text: String) = test(text, isTitle = true)
-  def testBody(text: String) = test(text, isTitle = false)
+  def testTitle(text: String): TextAndHtml = test(text, isTitle = true)
+  def testBody(text: String): TextAndHtml = test(text, isTitle = false)
 
 
   def findLinks(html: String): immutable.Seq[String] = {

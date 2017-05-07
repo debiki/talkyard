@@ -217,8 +217,8 @@ class UploadsDaoAppSpec extends DaoAppSuite(disableScripts = false) {
       resourceUsage.numUploadBytes mustBe 0
 
       info("create page, link first file, now some quota used")
-      val titleTextAndHtml = TextAndHtml("Planets", isTitle = true)
-      val bodyTextAndHtml = TextAndHtml(s"[The sun](${sunImage.ref.url})", isTitle = false)
+      val titleTextAndHtml = TextAndHtml.forTitle("Planets")
+      val bodyTextAndHtml = TextAndHtml.forBodyOrComment(s"[The sun](${sunImage.ref.url})")
       val pagePath = dao.createPage(PageRole.Discussion, PageStatus.Published,
         anyCategoryId = None, anyFolder = None, anySlug = None,
         titleTextAndHtml = titleTextAndHtml, bodyTextAndHtml = bodyTextAndHtml,
@@ -247,7 +247,7 @@ class UploadsDaoAppSpec extends DaoAppSuite(disableScripts = false) {
 
       info("edit page: remove the first file, remaining quota freed")
       dao.editPostIfAuth(pagePath.thePageId, PageParts.BodyNr, Who(user.id, browserIdData),
-        dummySpamRelReqStuff, TextAndHtml("empty", isTitle = false))
+        dummySpamRelReqStuff, TextAndHtml.forBodyOrComment("empty"))
 
       resourceUsage = dao.loadResourceUsage()
       resourceUsage.numUploads mustBe 0
@@ -267,8 +267,8 @@ class UploadsDaoAppSpec extends DaoAppSuite(disableScripts = false) {
         password = magic, isAdmin = true, isOwner = false).get)
 
       info("create page, link missing file, no quota used")
-      val titleTextAndHtml = TextAndHtml("The Sun", isTitle = true)
-      val bodyTextAndHtml = TextAndHtml(s"[The sun](${sunImage.ref.url})", isTitle = false)
+      val titleTextAndHtml = TextAndHtml.forTitle("The Sun")
+      val bodyTextAndHtml = TextAndHtml.forBodyOrComment(s"[The sun](${sunImage.ref.url})")
       val pagePath = dao.createPage(PageRole.Discussion, PageStatus.Published,
         anyCategoryId = None, anyFolder = None, anySlug = None,
         titleTextAndHtml = titleTextAndHtml, bodyTextAndHtml = bodyTextAndHtml,
@@ -286,7 +286,7 @@ class UploadsDaoAppSpec extends DaoAppSuite(disableScripts = false) {
 
       info("edit page: remove link, quota freed")
       dao.editPostIfAuth(pagePath.thePageId, PageParts.BodyNr, Who(user.id, browserIdData),
-        dummySpamRelReqStuff, TextAndHtml("empty", isTitle = false))
+        dummySpamRelReqStuff, TextAndHtml.forBodyOrComment("empty"))
 
       resourceUsage = dao.loadResourceUsage()
       resourceUsage.numUploads mustBe 0
@@ -342,11 +342,11 @@ class UploadsDaoAppSpec extends DaoAppSuite(disableScripts = false) {
 
       // COULD speed up by writing html, not commonmark, and passing a noop CommonmarRenderer
       // to TextAndHtml (see its function signature).
-      val titleTextAndHtml = TextAndHtml("Planets", isTitle = true)
-      val bodyTextAndHtmlSite1 = TextAndHtml(
-        s"[Shared](${sharedFile.ref.url}), [site-one](${site1File.ref.url})", isTitle = false)
-      val bodyTextAndHtmlSite2 = TextAndHtml(
-        s"[Shared](${sharedFile.ref.url}), [site-two](${site2File.ref.url})", isTitle = false)
+      val titleTextAndHtml = TextAndHtml.forTitle("Planets")
+      val bodyTextAndHtmlSite1 = TextAndHtml.forBodyOrComment(
+        s"[Shared](${sharedFile.ref.url}), [site-one](${site1File.ref.url})")
+      val bodyTextAndHtmlSite2 = TextAndHtml.forBodyOrComment(
+        s"[Shared](${sharedFile.ref.url}), [site-two](${site2File.ref.url})")
 
       val pagePath1 = dao.createPage(PageRole.Discussion, PageStatus.Published,
         anyCategoryId = None, anyFolder = None, anySlug = None,
@@ -369,7 +369,7 @@ class UploadsDaoAppSpec extends DaoAppSuite(disableScripts = false) {
       info("edit site 1 page: remove links, remaining quota freed, site 1 only")
 
       dao.editPostIfAuth(pagePath1.thePageId, PageParts.BodyNr, Who(user.id, browserIdData),
-        dummySpamRelReqStuff, TextAndHtml("empty", isTitle = false))
+        dummySpamRelReqStuff, TextAndHtml.forBodyOrComment("empty"))
 
       resourceUsage = dao2.loadResourceUsage()
       resourceUsage.numUploads mustBe 2
