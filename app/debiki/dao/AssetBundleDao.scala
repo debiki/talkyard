@@ -35,8 +35,11 @@ trait AssetBundleDao {
   self: SiteDao =>
 
 
-  def getAssetBundleVersion(bundleNameNoSuffix: String, bundleSuffix: String): String =
-    getBundleAndDependencies(bundleNameNoSuffix, bundleSuffix).version
+  def getAssetBundleVersion(bundleNameNoSuffix: String, bundleSuffix: String): Option[String] = {
+    val bundleAndDeps = getBundleAndDependencies(bundleNameNoSuffix, bundleSuffix)
+    if (bundleAndDeps.assetBundleText.trim.isEmpty) None
+    else Some(bundleAndDeps.version)
+  }
 
 
   def getAssetBundle(nameNoSuffix: String, suffix: String): AssetBundle = {
@@ -115,7 +118,7 @@ trait AssetBundleDao {
    * assets the bundle depends on, so the bundle can be regenerated if any
    * of those assets is created later on.
    */
-  private def cacheDependencies(
+  private def cacheDependencies(  // CLEAN_UP remove this craziness
         bundleName: String, bundleAndDeps: AssetBundleAndDependencies, siteCacheVersion: Long) {
     val bundleDeps = BundleDependencyData(bundleName, bundleAndDeps, siteId = siteId)
     for (sitePageId <- bundleDeps.dependeePageIds) {
@@ -175,7 +178,7 @@ trait AssetBundleDao {
 
 object CachingAssetBundleDao {
 
-  class BundleDependencyData(
+  class BundleDependencyData(  // CLEAN_UP remove this complicated craziness
     val siteId: SiteId,
     val bundleName: String,
     val dependeePageIds: List[SitePageId],

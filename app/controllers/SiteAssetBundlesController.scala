@@ -21,9 +21,8 @@ import com.debiki.core._
 import debiki._
 import debiki.DebikiHttp._
 import ed.server.http._
-import java.{util => ju}
 import play.api._
-import Prelude._
+import scala.util.matching.Regex
 
 
 /**
@@ -60,7 +59,7 @@ object SiteAssetBundlesController extends mvc.Controller {
     val dao = Globals.siteDao(siteId)
     // `fileName` is like: bundle-name.<version>.css.
     fileName match {
-      case AssetBundleFileNameRegex(nameNoSuffix, version, suffix) =>
+      case AssetBundleFileNameRegex(nameNoSuffix, _, suffix) =>
         // Ignore `version` for now. It's only used for asset versioning —
         // but we always serve the most recent version of the bundle.
         val bundle = try {
@@ -75,7 +74,7 @@ object SiteAssetBundlesController extends mvc.Controller {
         }
 
         val etag = bundle.version
-        val isEtagOk = request.headers.get(IF_NONE_MATCH) == Some(etag)
+        val isEtagOk = request.headers.get(IF_NONE_MATCH).contains(etag)
         if (isEtagOk) {
           NotModified
         }
@@ -100,14 +99,14 @@ object SiteAssetBundlesController extends mvc.Controller {
   /**
    * <bundle-name-no-suffix>.<suffix>.
    */
-  val AssetBundleNameRegex = """([a-z-]+)\.(css)""".r
+  val StylesheetAssetBundleNameRegex: Regex = """([a-z-]+)\.(css)""".r
 
 
   /**
    * <bundle-name-no-suffix>-<version>.<suffix>.
    * The version is a URL safe base64 hash, and used for asset versioning.
    */
-  val AssetBundleFileNameRegex = """([a-z-]+)\.([a-zA-Z0-9_-]+)\.(css)""".r
+  val AssetBundleFileNameRegex: Regex = """([a-z-]+)\.([a-zA-Z0-9_-]+)\.(css|js)""".r
 
 
   def assetBundleFileName(nameNoSuffix: String, version: String, suffix: String) =

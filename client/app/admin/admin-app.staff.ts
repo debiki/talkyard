@@ -67,7 +67,8 @@ export function routes() {
         Route({ path: 'id/:userId', component: AdminUserPageComponent })),
       Route({ path: 'customize', component: CustomizePanelComponent },
         Route({ path: 'basic', component: CustomizeBasicPanelComponent }),
-        Route({ path: 'html-css', component: CustomizeAdvancedPanelComponent })),
+        Route({ path: 'html', component: CustomizeHtmlPanelComponent }),
+        Route({ path: 'css-js', component: CustomizeCssJsPanelComponent })),
       Route({ path: 'review', component: ReviewPanelComponent },
         Route({ path: 'all', component: ReviewAllPanelComponent })))];
 }
@@ -738,7 +739,8 @@ let CustomizePanelComponent = React.createClass(<any> {
       r.div({ className: 'esA_Ss s_A_Ss-LaF' },
         r.ul({ className: 'esAdmin_settings_nav col-sm-2 nav nav-pills nav-stacked' },
           NavLink({ to: AdminRoot + 'customize/basic', id: 'e_A_Ss-LaF_Basic' }, "Basic"),
-          NavLink({ to: AdminRoot + 'customize/html-css', id: 'e_A_Ss-LaF_HtmlCss' }, "HTML and CSS")),
+          NavLink({ to: AdminRoot + 'customize/html', id: 'e_A_Ss-LaF_Html' }, "HTML"),
+          NavLink({ to: AdminRoot + 'customize/css-js', id: 'e_A_Ss-LaF_CssJs' }, "CSS and JS")),
         r.div({ className: 'form-horizontal esAdmin_settings col-sm-10' },
           React.cloneElement(this.props.children, this.props))));
   }
@@ -808,13 +810,13 @@ let CustomizeBasicPanelComponent = React.createClass(<any> {
 
 
 
-let CustomizeAdvancedPanelComponent = React.createClass(<any> {
+const CustomizeHtmlPanelComponent = React.createClass(<any> {
   render: function() {
-    let props = this.props;
+    const props = this.props;
     return (
       r.div({ className: 'form-horizontal esAdmin_customize' },
         Alert({ bsStyle: 'info' },
-          r.p({}, r.b({}, "Ignore everything below,"), " especially if you don't know HTML and CSS."),
+          r.p({}, r.b({}, "Ignore everything below,"), " especially if you don't know HTML."),
           r.p({}, "We'll try to build something for you that's easier to use, later.")),
 
         /* A tester checked this without any idea about what it does.
@@ -883,15 +885,32 @@ let CustomizeAdvancedPanelComponent = React.createClass(<any> {
           update: (newSettings: Settings, target) => {
             newSettings.socialLinksHtml= target.value;
           }
-        }),
-
-        SpecialContent({ contentId: '_stylesheet', label: 'Stylesheet',
-            help: "CSS for this site. CSS means Cascading Style Sheets and " +
-                "you use it to describe the look and formatting of this site.",
-            placeholder: ".selector { color: something }" })));
+        })));
   }
 });
 
+
+
+const CustomizeCssJsPanelComponent = React.createClass(<any> {
+  render: function() {
+    return (
+      r.div({ className: 'form-horizontal esAdmin_customize' },
+        Alert({ bsStyle: 'info' },
+          r.p({}, r.b({}, "Ignore everything below,"), " especially if you don't know CSS and JS."),
+          r.p({}, "We'll give you a simpler way to choose colors, later.")),
+
+        SpecialContent({ contentId: '_stylesheet', label: 'Stylesheet',
+          help: "CSS for this site. CSS means Cascading Style Sheets and " +
+            "you use it to describe the look and formatting of this site.",
+          placeholder: ".selector { color: something }" }),
+
+        // SECURITY hide with display: none? Or if Experimental not enabled?
+        SpecialContent({ contentId: '_javascript', label: 'Javascript',
+          help: "Javascript for this site. Be careful because with Javascript you can break " +
+            "everything and add security bugs.",
+          placeholder: "alert('hello world');" })));
+  }
+});
 
 
 function Setting2(panelProps, props, anyChildren?) {

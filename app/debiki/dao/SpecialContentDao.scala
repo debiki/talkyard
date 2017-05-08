@@ -65,8 +65,8 @@ trait SpecialContentDao {
   def saveSpecialContent(rootPageId: PageId, contentId: PageId, anyNewSource: Option[String],
         resetToDefaultContent: Boolean, editorId: UserId) {
 
-    // Check that the content id is valid.
-    if (SpecialContentPages.lookup(contentId).isEmpty)
+    if (contentId != SpecialContentPages.StylesheetId &&
+        contentId != SpecialContentPages.JavascriptId)
       throwBadReq("DwE44RF8", s"Bad special content page id: `$contentId'")
 
     if (anyNewSource.isDefined && resetToDefaultContent)

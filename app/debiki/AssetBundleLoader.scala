@@ -43,6 +43,7 @@ case class AssetBundleAndDependencies(
 case class AssetBundleLoader(bundleNameNoSuffix: String,  bundleSuffix: String, dao: SiteDao) {
 
   val SiteCssPageId = "_stylesheet"
+  val SiteJsPageId = "_javascript"
 
   val bundleName = s"$bundleNameNoSuffix.$bundleSuffix"
 
@@ -66,7 +67,11 @@ case class AssetBundleLoader(bundleNameNoSuffix: String,  bundleSuffix: String, 
 
   private def loadBundleFromDatabase(): DatabaseBundleData = {
 
-    val assetsPost = dao.loadPost(SiteCssPageId, PageParts.BodyNr) getOrElse {
+    val specialContentPageId =
+      if (bundleNameNoSuffix == "styles") SiteCssPageId
+      else if (bundleNameNoSuffix == "scripts") SiteJsPageId
+      else die("EdE2WTXY05")
+    val assetsPost = dao.loadPost(specialContentPageId, PageParts.BodyNr) getOrElse {
       return DatabaseBundleData("", Nil, Nil, Nil)
     }
 
@@ -77,7 +82,7 @@ case class AssetBundleLoader(bundleNameNoSuffix: String,  bundleSuffix: String, 
     //   (If any of these pages is modified, we'll rebuild the bundle.)
     // Nowadays only one single CSS page is supported: SiteCssPageId. Much simpler.
 
-    DatabaseBundleData(bundleText, List(SitePageId(dao.siteId, SiteCssPageId)),
+    DatabaseBundleData(bundleText, List(SitePageId(dao.siteId, specialContentPageId)),
       configPageIds = Nil, missingOptAssetPaths = Nil)
   }
 

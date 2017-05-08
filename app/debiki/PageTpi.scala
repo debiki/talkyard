@@ -22,10 +22,9 @@ import com.debiki.core.Prelude._
 import controllers.{SiteAssetBundlesController, routes}
 import ed.server.http.DebikiRequest
 import ed.server.http.PageRequest
-import java.{util => ju}
 import play.{api => p}
 import play.api.Play.current
-import SiteAssetBundlesController.{AssetBundleNameRegex, assetBundleFileName}
+import SiteAssetBundlesController.{StylesheetAssetBundleNameRegex, assetBundleFileName}
 
 
 object PageTpi {
@@ -145,7 +144,7 @@ class SiteTpi protected (
   def stylesheetBundle(bundleName: String): xml.NodeSeq = {
 
     val (nameNoSuffix, suffix) = bundleName match {
-      case AssetBundleNameRegex(nameNoSuffix, suffix) =>
+      case StylesheetAssetBundleNameRegex(nameNoSuffix, suffix) =>
         (nameNoSuffix, suffix)
       case _ =>
         throw DebikiException(
@@ -154,11 +153,13 @@ class SiteTpi protected (
     }
 
     try {
-      val version = debikiRequest.dao.getAssetBundleVersion(nameNoSuffix, suffix)
+      val version = debikiRequest.dao.getAssetBundleVersion(nameNoSuffix, suffix) getOrElse {
+        return <link/>
+      }
       val fileName = assetBundleFileName(nameNoSuffix, version, suffix)
-        <link rel="stylesheet" href={
-          cdnOrServerOrigin + routes.SiteAssetBundlesController.customAsset(siteId, fileName).url
-        }/>
+      <link rel="stylesheet" href={
+        cdnOrServerOrigin + routes.SiteAssetBundlesController.customAsset(siteId, fileName).url
+      }/>
     }
     catch {
       case ex: DebikiException =>
@@ -174,6 +175,15 @@ class SiteTpi protected (
     }
   }
 
+  def anyScriptsBundle(): xml.NodeSeq = {
+    val version = debikiRequest.dao.getAssetBundleVersion("scripts", "js") getOrElse {
+      return <span></span>
+    }
+    val fileName = assetBundleFileName("scripts", version, "js")
+    <script src={
+      cdnOrServerOrigin + routes.SiteAssetBundlesController.customAsset(siteId, fileName).url
+    }></script>
+  }
 
   /** The initial data in the React-Flux model, a.k.a. store. */
   def reactStoreSafeJsonString: String =
