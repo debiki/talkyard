@@ -22,6 +22,7 @@
 /// <reference path="../util/FullNameInput.more.ts" />
 /// <reference path="../util/EmailInput.more.ts" />
 /// <reference path="../util/stupid-dialog.more.ts" />
+/// <reference path="./new-password-input.more.ts" />
 
 //------------------------------------------------------------------------------
    module debiki2.login {
@@ -105,6 +106,7 @@ var CreateUserDialog = createClassAndFactory({
       isOpen: true,
       userData: userData,
       anyReturnToUrl: anyReturnToUrl,
+      store: ReactStore.allData(),
     });
   },
   close: function() {
@@ -113,6 +115,7 @@ var CreateUserDialog = createClassAndFactory({
   render: function () {
     var childProps = _.clone(this.state.userData);
     childProps.anyReturnToUrl = this.state.anyReturnToUrl;
+    childProps.store = this.state.store;
     childProps.closeDialog = this.close;
     childProps.ref = 'content';
     return (
@@ -177,18 +180,30 @@ export var CreateUserDialogContent = createClassAndFactory({
   },
 
   handleCreateUserResponse: function(response) {
-    this.props.closeDialog('CloseAllLoginDialogs');
-    if (!response.emailVerifiedAndLoggedIn) {
+    if (!response.userCreatedAndLoggedIn) {
+      dieIf(response.emailVerifiedAndLoggedIn, 'EdE2TSBZ2');
       ReactActions.newUserAccountCreated();
-      getAddressVerificationEmailSentDialog().open();
+      getAddressVerificationEmailSentDialog().sayVerifEmailSent();
     }
     else if (this.props.anyReturnToUrl && !debiki.internal.isInLoginPopup &&
         this.props.anyReturnToUrl.search('_RedirFromVerifEmailOnly_') === -1) {
-      const url = this.props.anyReturnToUrl.replace(/__dwHash__/, '#');
-      window.location.assign(url);
-      // In case the location didn't change, reload the page, otherwise user specific things
-      // won't appear.
-      window.location.reload();
+      const returnToUrl = this.props.anyReturnToUrl.replace(/__dwHash__/, '#');
+      const currentUrl = window.location.toString();
+      if (returnToUrl === currentUrl) {
+        const afterLoginCallback = this.props.afterLoginCallback; // gets nulled when dialogs closed
+        debiki2.ReactActions.loadMyself(() => {
+          if (afterLoginCallback) {
+            afterLoginCallback();
+          }
+          getAddressVerificationEmailSentDialog().sayWelcomeLoggedIn();
+        });
+      }
+      else {
+        window.location.assign(returnToUrl);
+        // In case the location didn't change, reload the page, otherwise user specific things
+        // won't appear.  [redux] This reload() won't be needed later?
+        window.location.reload();
+      }
     }
     else if (!window['debiki2']) {
       // COULD remove — this cannot hapen any longer, loading the same script bundle
@@ -201,6 +216,7 @@ export var CreateUserDialogContent = createClassAndFactory({
       if (!isPage) console.log('should reload ... /? [DwE2KWF1]');
       continueOnMainPageAfterHavingCreatedUser();
     }
+    this.props.closeDialog('CloseAllLoginDialogs');
   },
 
   handleErrorResponse: function(failedRequest: HttpRequest) {
@@ -216,17 +232,20 @@ export var CreateUserDialogContent = createClassAndFactory({
 
   render: function() {
     const props = this.props;
+    const store: Store = props.store;
     const state = this.state;
     const hasEmailAddressAlready = props.email && props.email.length;
 
     const emailHelp = props.providerId && hasEmailAddressAlready ?
         "Your email has been verified by " + props.providerId + "." : null;
 
+    const emailOptional = store.settings.requireVerifiedEmail ? '' : "optional, ";
     const emailInput =
-        EmailInput({ label: "Email: (will be kept private)", ref: 'email', id: 'e2eEmail',
+        EmailInput({ label: `Email: (${emailOptional}will be kept private)`, id: 'e2eEmail',
           onChangeValueOk: (value, isOk) => this.setEmailOk(value, isOk), tabIndex: 1,
           // If email already provided by e.g. Google, don't let the user change it.
           disabled: hasEmailAddressAlready, defaultValue: props.email, help: emailHelp,
+          required: !emailOptional,
           error: this.state.userData.email !== this.state.theWrongEmailAddress ?
               null : "Use the email address you specified " +
                         (debiki.siteId === FirstSiteId ?
@@ -302,31 +321,38 @@ function continueOnMainPageAfterHavingCreatedUser() {
   login.continueAfterLogin();
 
   if (d.i.isInLoginPopup) {
-    close();
+    close();  // closes the popup window
   }
 }
 
 
+// CLEAN_UP RENAME to CreateUserResultDialog ?
 var AddressVerificationEmailSentDialog = createComponent({
   getInitialState: function () {
     return { isOpen: false };
   },
-  open: function() {
+  sayVerifEmailSent: function() {
     this.setState({ isOpen: true });
+  },
+  sayWelcomeLoggedIn: function() {
+    this.setState({ isOpen: true, isLoggedIn: true });
   },
   close: function() {
     this.setState({ isOpen: false });
   },
   render: function () {
+    const id = this.state.isLoggedIn ? 'te_WelcomeLoggedIn' : 'e2eNeedVerifyEmailDialog';
+    const text = this.state.isLoggedIn
+      ? "Account created. You have been logged in."  // COULD say if verif email sent too?
+      : "Almost done! You just need to confirm your email address. We have " +
+        "sent an email to you. Please click the link in the email to activate " +
+        "your account. You can close this page.";
     return (
-      Modal({ show: this.state.isOpen, onHide: this.close, id: 'e2eNeedVerifyEmailDialog' },
+      Modal({ show: this.state.isOpen, onHide: this.close, id },
         ModalHeader({}, ModalTitle({}, "Welcome")),
-        ModalBody({},
-          r.p({}, "Almost done! You just need to confirm your email address. We have " +
-              "sent an email to you. Please click the link in the email to activate " +
-              "your account. You can close this page.")),
+        ModalBody({}, r.p({}, text)),
         ModalFooter({},
-          Button({ onClick: this.close }, "Okay"))));
+          PrimaryButton({ onClick: this.close }, "Okay"))));
   }
 });
 

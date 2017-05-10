@@ -36,6 +36,24 @@ trait AllSettings {
   def allowSignup: Boolean
   def allowLocalSignup: Boolean
   def allowGuestLogin: Boolean
+  def requireVerifiedEmail: Boolean
+  def mayComposeBeforeSignup: Boolean
+  def mayPostBeforeEmailVerified: Boolean
+
+  /** When signing up and specifying an email address, one needs to type it twice, so we can
+    * check for typos. Not yet implemented (currently never need to double type).
+    */
+  def doubleTypeEmailAddress: Boolean
+
+  /** See 'doubleTypeEmailAddress' above. Also not yet implemented. */
+  def doubleTypePassword: Boolean
+
+  /** When someone signs up, if hen doesn't specify an email address, tell hen that then we
+    * cannot send hen notifications about new replies. And show buttons:
+    *  [Specify email address] [No, skip]
+    */
+  def begForEmailAddress: Boolean
+
   def forumMainView: String
   def forumTopicsSortButtons: String
   def forumCategoryLinks: String
@@ -75,7 +93,7 @@ trait AllSettings {
   def regularMemberFlagWeight: Float
   def coreMemberFlagWeight: Float
 
-  def toJson = Settings2.settingsToJson(toEditedSettings)
+  def toJson: JsObject = Settings2.settingsToJson(toEditedSettings)
 
   def toEditedSettings = EditedSettings(
     userMustBeAuthenticated = Some(self.userMustBeAuthenticated),
@@ -84,6 +102,12 @@ trait AllSettings {
     allowSignup = Some(self.allowSignup),
     allowLocalSignup = Some(self.allowLocalSignup),
     allowGuestLogin = Some(self.allowGuestLogin),
+    requireVerifiedEmail = Some(self.requireVerifiedEmail),
+    mayComposeBeforeSignup = Some(self.mayComposeBeforeSignup),
+    mayPostBeforeEmailVerified = Some(self.mayPostBeforeEmailVerified),
+    doubleTypeEmailAddress = Some(self.doubleTypeEmailAddress),
+    doubleTypePassword = Some(self.doubleTypePassword),
+    begForEmailAddress = Some(self.begForEmailAddress),
     forumMainView = Some(self.forumMainView),
     forumTopicsSortButtons = Some(self.forumTopicsSortButtons),
     forumCategoryLinks = Some(self.forumCategoryLinks),
@@ -128,7 +152,7 @@ object AllSettings {
     * after they've been created. So 5 hours will result in very few edits to review
     * — and hopefully catch all/most malicious edits.
     */
-  val PostRecentlyCreatedLimitMs = 5 * 3600 * 1000
+  val PostRecentlyCreatedLimitMs: Int = 5 * 3600 * 1000
 
   val Default = new AllSettings {  // [8L4KWU02]
     val userMustBeAuthenticated = false
@@ -137,6 +161,12 @@ object AllSettings {
     val allowSignup = true
     val allowLocalSignup = true
     val allowGuestLogin = false
+    val requireVerifiedEmail = true
+    val mayComposeBeforeSignup = false
+    val mayPostBeforeEmailVerified = false
+    val doubleTypeEmailAddress = false
+    val doubleTypePassword = false
+    val begForEmailAddress = false
     val forumMainView = "latest"
     val forumTopicsSortButtons = "latest|top"
     val forumCategoryLinks = "categories"
@@ -200,6 +230,12 @@ case class EffectiveSettings(
   def allowSignup: Boolean = firstInChain(_.allowSignup) getOrElse default.allowSignup
   def allowLocalSignup: Boolean = firstInChain(_.allowLocalSignup) getOrElse default.allowLocalSignup
   def allowGuestLogin: Boolean = firstInChain(_.allowGuestLogin) getOrElse default.allowGuestLogin
+  def requireVerifiedEmail: Boolean = firstInChain(_.requireVerifiedEmail) getOrElse default.requireVerifiedEmail
+  def mayComposeBeforeSignup: Boolean = firstInChain(_.mayComposeBeforeSignup) getOrElse default.mayComposeBeforeSignup
+  def mayPostBeforeEmailVerified: Boolean = firstInChain(_.mayPostBeforeEmailVerified) getOrElse default.mayPostBeforeEmailVerified
+  def doubleTypeEmailAddress: Boolean = firstInChain(_.doubleTypeEmailAddress) getOrElse default.doubleTypeEmailAddress
+  def doubleTypePassword: Boolean = firstInChain(_.doubleTypePassword) getOrElse default.doubleTypePassword
+  def begForEmailAddress: Boolean = firstInChain(_.begForEmailAddress) getOrElse default.begForEmailAddress
   def forumMainView: String = firstInChain(_.forumMainView) getOrElse default.forumMainView
   def forumTopicsSortButtons: String = firstInChain(_.forumTopicsSortButtons) getOrElse default.forumTopicsSortButtons
   def forumCategoryLinks: String = firstInChain(_.forumCategoryLinks) getOrElse default.forumCategoryLinks
@@ -255,7 +291,7 @@ case class EffectiveSettings(
 
 object Settings2 {
 
-  def settingsToJson(editedSettings2: EditedSettings) = {
+  def settingsToJson(editedSettings2: EditedSettings): JsObject = {
     val s = editedSettings2
     Json.obj(
       "userMustBeAuthenticated" -> JsBooleanOrNull(s.userMustBeAuthenticated),
@@ -264,6 +300,12 @@ object Settings2 {
       "allowSignup" -> JsBooleanOrNull(s.allowSignup),
       "allowLocalSignup" -> JsBooleanOrNull(s.allowLocalSignup),
       "allowGuestLogin" -> JsBooleanOrNull(s.allowGuestLogin),
+      "requireVerifiedEmail" -> JsBooleanOrNull(s.requireVerifiedEmail),
+      "mayComposeBeforeSignup" -> JsBooleanOrNull(s.mayComposeBeforeSignup),
+      "mayPostBeforeEmailVerified" -> JsBooleanOrNull(s.mayPostBeforeEmailVerified),
+      "doubleTypeEmailAddress" -> JsBooleanOrNull(s.doubleTypeEmailAddress),
+      "doubleTypePassword" -> JsBooleanOrNull(s.doubleTypePassword),
+      "begForEmailAddress" -> JsBooleanOrNull(s.begForEmailAddress),
       "forumMainView" -> JsStringOrNull(s.forumMainView),
       "forumTopicsSortButtons" -> JsStringOrNull(s.forumTopicsSortButtons),
       "forumCategoryLinks" -> JsStringOrNull(s.forumCategoryLinks),
@@ -311,6 +353,12 @@ object Settings2 {
     allowSignup = anyBool(json, "allowSignup", d.allowSignup),
     allowLocalSignup = anyBool(json, "allowLocalSignup", d.allowLocalSignup),
     allowGuestLogin = anyBool(json, "allowGuestLogin", d.allowGuestLogin),
+    requireVerifiedEmail = anyBool(json, "requireVerifiedEmail", d.requireVerifiedEmail),
+    mayComposeBeforeSignup = anyBool(json, "mayComposeBeforeSignup", d.mayComposeBeforeSignup),
+    mayPostBeforeEmailVerified = anyBool(json, "mayPostBeforeEmailVerified", d.mayPostBeforeEmailVerified),
+    doubleTypeEmailAddress = anyBool(json, "doubleTypeEmailAddress", d.doubleTypeEmailAddress),
+    doubleTypePassword = anyBool(json, "doubleTypePassword", d.doubleTypePassword),
+    begForEmailAddress = anyBool(json, "begForEmailAddress", d.begForEmailAddress),
     forumMainView = anyString(json, "forumMainView", d.forumMainView),
     forumTopicsSortButtons = anyString(json, "forumTopicsSortButtons", d.forumTopicsSortButtons),
     forumCategoryLinks = anyString(json, "forumCategoryLinks", d.forumCategoryLinks),

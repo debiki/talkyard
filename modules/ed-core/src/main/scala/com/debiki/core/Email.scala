@@ -84,6 +84,8 @@ case class Email(
   providerEmailId: Option[String],
   failureText: Option[String] = None) {
 
+  dieIf(sentTo.isEmpty, "EdENOEMLADR")
+  dieIf(!sentTo.contains("@"), "EdEBADEMLADR")
   if (tyype == EmailType.CreateAccount || tyype == EmailType.ResetPassword ||
       tyype == EmailType.InvitePassword || tyype == EmailType.InviteAccepted) {
     dieIf(toUserId.isEmpty, "DwE44BPK6", s"Email '$id' lacks toUserId")

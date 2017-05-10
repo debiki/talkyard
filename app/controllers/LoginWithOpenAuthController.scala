@@ -31,8 +31,8 @@ import ed.server._
 import ed.server.security.createSessionIdAndXsrfToken
 import ed.server.http._
 import java.{util => ju}
-import org.scalactic.{Good, Bad}
-import play.api.libs.json.Json
+import org.scalactic.{Bad, Good}
+import play.api.libs.json.{JsBoolean, Json}
 import play.{api => p}
 import play.api.mvc._
 import play.api.mvc.BodyParsers.parse.empty
@@ -344,16 +344,18 @@ object LoginWithOpenAuthController extends Controller {
   }
 
 
-  private def createCookiesAndFinishLogin(request: DebikiRequest[_], siteId: SiteId, user: User)
+  private def createCookiesAndFinishLogin(request: DebikiRequest[_], siteId: SiteId, member: Member)
         : Result = {
-    val (_, _, sidAndXsrfCookies) = createSessionIdAndXsrfToken(siteId, user.id)
+    val (_, _, sidAndXsrfCookies) = createSessionIdAndXsrfToken(siteId, member.id)
 
     val response =
       if (isAjax(request.underlying)) {
         // We've shown but closed an OAuth provider login popup, and now we're
         // handling a create-user Ajax request from a certain showCreateUserDialog()
         // Javascript dialog. It already knows about any pending redirects.
-        OkSafeJson(Json.obj("emailVerifiedAndLoggedIn" -> JsTrue))
+        OkSafeJson(Json.obj(
+          "userCreatedAndLoggedIn" -> JsTrue,
+          "emailVerifiedAndLoggedIn" -> JsBoolean(member.emailVerifiedAt.isDefined)))
       }
       else {
         val isInLoginPopup = request.cookies.get(IsInLoginPopupCookieName).nonEmpty
@@ -431,7 +433,7 @@ object LoginWithOpenAuthController extends Controller {
     val body = request.body
 
     val fullName = (body \ "fullName").asOptStringNoneIfBlank
-    val email = (body \ "email").as[String].trim
+    val emailAddress = (body \ "email").as[String].trim
     val username = (body \ "username").as[String].trim
     val anyReturnToUrl = (body \ "returnToUrl").asOpt[String]
 
@@ -449,7 +451,7 @@ object LoginWithOpenAuthController extends Controller {
     }
 
     val emailVerifiedAt = oauthDetails.email match {
-      case Some(e) if e != email =>
+      case Some(e) if e != emailAddress =>
         throwForbidden("DwE523FU2", "Cannot change email from ones' OAuth provider email")
       case Some(e) =>
         // Twitter and GitHub provide no email, or I don't know if any email has been verified.
@@ -465,15 +467,27 @@ object LoginWithOpenAuthController extends Controller {
         None
     }
 
-    Globals.spamChecker.detectRegistrationSpam(request, name = username, email = email) map {
+    val dao = request.dao
+    val siteSettings = dao.getWholeSiteSettings()
+
+    // Some dupl code. [2FKD05]
+    if (!siteSettings.requireVerifiedEmail && emailAddress.isEmpty) {
+      // Fine.
+    }
+    else if (emailAddress.isEmpty) {
+      throwUnprocessableEntity("EdE8JUK02", "Email address missing")
+    }
+    else if (!isValidNonLocalEmailAddress(emailAddress))
+      throwUnprocessableEntity("EdE7MNH0R1", "Bad email address")
+
+    Globals.spamChecker.detectRegistrationSpam(request, name = username, email = emailAddress) map {
         isSpamReason =>
       SpamChecker.throwForbiddenIfSpam(isSpamReason, "EdE2KP89")
 
-      val becomeOwner = LoginController.shallBecomeOwner(request, email)
+      val becomeOwner = LoginController.shallBecomeOwner(request, emailAddress)
 
-      val dao = request.dao
       val userData =
-        NewOauthUserData.create(name = fullName, username = username, email = email,
+        NewOauthUserData.create(name = fullName, username = username, email = emailAddress,
             emailVerifiedAt = emailVerifiedAt, identityData = oauthDetails,
             isAdmin = becomeOwner, isOwner = becomeOwner) match {
           case Good(data) => data
@@ -483,13 +497,20 @@ object LoginWithOpenAuthController extends Controller {
 
       val result = try {
         val loginGrant = dao.createIdentityUserAndLogin(userData)
-        if (emailVerifiedAt.isDefined) {
+        val newMember = loginGrant.user
+        dieIf(newMember.emailVerifiedAt != emailVerifiedAt, "EdE2WEP03")
+        if (emailAddress.nonEmpty && emailVerifiedAt.isEmpty) {
+          TESTS_MISSING // no e2e tests for this
+          LoginWithPasswordController.sendEmailAddressVerificationEmail(
+              newMember, anyReturnToUrl, request.host, request.dao)
+        }
+        if (emailVerifiedAt.isDefined || siteSettings.mayPostBeforeEmailVerified) {
           createCookiesAndFinishLogin(request, request.siteId, loginGrant.user)
         }
         else {
-          LoginWithPasswordController.sendEmailAddressVerificationEmail(
-            loginGrant.user, anyReturnToUrl, request.host, request.dao)
-          OkSafeJson(Json.obj("emailVerifiedAndLoggedIn" -> JsFalse))
+          OkSafeJson(Json.obj(
+            "userCreatedAndLoggedIn" -> JsFalse,
+            "emailVerifiedAndLoggedIn" -> JsFalse))
         }
       }
       catch {
@@ -497,6 +518,7 @@ object LoginWithOpenAuthController extends Controller {
           throwForbidden(
               "DwE6D3G8", "Username already taken, please try again with another username")
         case DbDao.DuplicateUserEmail =>
+          // BUG SHOULD support many users per email address, if mayPostBeforeEmailVerified.
           if (emailVerifiedAt.isDefined) {
             // The user has been authenticated, so it's okay to tell him/her about the email address.
             throwForbidden(
@@ -504,8 +526,10 @@ object LoginWithOpenAuthController extends Controller {
           }
           // Don't indicate that there is already an account with this email.
           LoginWithPasswordController.sendYouAlreadyHaveAnAccountWithThatAddressEmail(
-            request.dao, email, siteHostname = request.host, siteId = request.siteId)
-          OkSafeJson(Json.obj("emailVerifiedAndLoggedIn" -> JsFalse))
+            request.dao, emailAddress, siteHostname = request.host, siteId = request.siteId)
+          OkSafeJson(Json.obj(
+            "userCreatedAndLoggedIn" -> JsFalse,
+            "emailVerifiedAndLoggedIn" -> JsFalse))
       }
       result.discardingCookies(CookiesToDiscardAfterLogin: _*)
     }

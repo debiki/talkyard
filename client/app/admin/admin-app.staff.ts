@@ -53,7 +53,7 @@ export function routes() {
       Redirect({ from: 'customize', to: AdminRoot + 'customize/basic' }),
       Route({ path: 'settings', component: SettingsPanelComponent },
         Route({ path: 'legal', component: LegalSettingsComponent }),
-        Route({ path: 'login', component: LoginSettingsComponent }),
+        Route({ path: 'login', component: LoginAndSignupSettingsComponent }),
         Route({ path: 'moderation', component: ModerationSettingsComponent }),
         Route({ path: 'spam-flags', component: SpamFlagsSettingsComponent }),
         Route({ path: 'advanced', component: AdvancedSettingsComponent })),
@@ -231,7 +231,7 @@ var SettingsPanelComponent = React.createClass(<any> {
       r.div({ className: 'esA_Ss' },
         r.ul({ className: 'esAdmin_settings_nav col-sm-2 nav nav-pills nav-stacked' },
           NavLink({ to: AdminRoot + 'settings/legal', id: 'e2eAA_Ss_LegalL' }, "Legal"),
-          NavLink({ to: AdminRoot + 'settings/login', id: 'e2eAA_Ss_LoginL' }, "Login"),
+          NavLink({ to: AdminRoot + 'settings/login', id: 'e2eAA_Ss_LoginL' }, "Signup and Login"),
           NavLink({ to: AdminRoot + 'settings/moderation', id: 'e2eAA_Ss_ModL'  }, "Moderation"),
           NavLink({ to: AdminRoot + 'settings/spam-flags', id: 'e2eAA_Ss_SpamFlagsL'  }, "Spam & flags"),
           NavLink({ to: AdminRoot + 'settings/advanced', id: 'e2eAA_Ss_AdvancedL' }, "Advanced")),
@@ -242,18 +242,21 @@ var SettingsPanelComponent = React.createClass(<any> {
 
 
 
-var LoginSettingsComponent = React.createClass(<any> {
+const LoginAndSignupSettingsComponent = React.createClass(<any> {
   render: function() {
-    var props = this.props;
-    var currentSettings: Settings = props.currentSettings;
-    var editedSettings: Settings = props.editedSettings;
+    const props = this.props;
+    const currentSettings: Settings = props.currentSettings;
+    const editedSettings: Settings = props.editedSettings;
 
-    var valueOf = (getter: (s: Settings) => any) =>
+    const valueOf = (getter: (s: Settings) => any) =>
       firstDefinedOf(getter(editedSettings), getter(currentSettings));
 
-    var canEnableGuestLogin =
+    const requireVerifiedEmail = valueOf(s => s.requireVerifiedEmail);
+    const mayComposeBeforeSignup = valueOf(s => s.mayComposeBeforeSignup);
+
+    const canEnableGuestLogin =
       !valueOf(s => s.userMustBeApproved) && !valueOf(s => s.userMustBeAuthenticated) &&
-        valueOf(s => s.allowSignup);  // && !invite-only (6KWU20)
+        valueOf(s => s.allowSignup) && !requireVerifiedEmail;  // && !invite-only (6KWU20)
 
     return (
       r.div({},
@@ -267,13 +270,15 @@ var LoginSettingsComponent = React.createClass(<any> {
             newSettings.userMustBeAuthenticated = target.checked;
             if (target.checked && valueOf(s => s.allowGuestLogin)) {
               newSettings.allowGuestLogin = false;
+              // Don't set 'requireVerifiedEmail' to true though, because one might authenticate
+              // via Twitter or Facebook, which doesn't always make any email address available.
             }
           }
         }),
 
         Setting2(props, { type: 'checkbox', label: "Approve users", id: 'e2eApproveUsersCB',
           className: 'e_A_Ss_S-ApproveUsersCB',
-          help: "New user need to be approved by staff before they can access the site.",
+          help: "New users need to be approved by staff before they can access the site.",
           getter: (s: Settings) => s.userMustBeApproved,
           update: (newSettings: Settings, target) => {
             newSettings.userMustBeApproved = target.checked;
@@ -283,7 +288,63 @@ var LoginSettingsComponent = React.createClass(<any> {
           }
         }),
 
+        Setting2(props, { type: 'checkbox', label: "Require verified email",
+          className: 'e_A_Ss_S-RequireVerifiedEmailCB',
+          help: "New users must specify an email address, and click an email " +
+              "verification link (unless signing up via Gmail or Facebook). Good, because " +
+              "you'll have a way to contact everyone.",
+          getter: (s: Settings) => s.requireVerifiedEmail,
+          update: (newSettings: Settings, target) => {
+            newSettings.requireVerifiedEmail = target.checked;
+            if (target.checked) {
+              // Compose-before-signup *and* requiring-verified-email-addresses, would require
+              // us to upload the post, save it server side, and not showing it, until the user
+              // has verified hen's email. Not implemented. So, for now:  [SIGNUPDRAFT]
+              newSettings.mayComposeBeforeSignup = false;
+              // This is always incompatible with 'requireVerifiedEmail':
+              newSettings.mayPostBeforeEmailVerified = false;
+              newSettings.allowGuestLogin = false;
+            }
+          }
+        }),
+
+        Setting2(props, { type: 'checkbox', label: "May compose before sign up",
+          className: 'e_A_Ss_S-MayComposeBeforeSignup',
+          help: "People may start writing posts before they have signed up. When they try to " +
+              "submit their post, they are asked to sign up. Good, because might result in more " +
+              "people signing up — because once they've written something already, " +
+              "they'll want to signup so they can submit it.",
+          disabled: requireVerifiedEmail, // see [SIGNUPDRAFT] above
+          getter: (s: Settings) => s.mayComposeBeforeSignup,
+          update: (newSettings: Settings, target) => {
+            newSettings.mayComposeBeforeSignup = target.checked;
+            if (target.checked) {
+              // Verifying email after composing & clicking Submit = not implemented. [SIGNUPDRAFT]
+              // So need to log the new user in, before email verified: (so can POST & publish post)
+              newSettings.mayPostBeforeEmailVerified = true;
+            }
+          }
+        }),
+
+        Setting2(props, { type: 'checkbox', label: "May post before email verified",
+          className: 'e_A_Ss_S-MayPostBeforeEmailVerifiedCB',
+          help: "New users may login and post messages, before they have clicked an email " +
+              "verification link. Good, because then people won't need to check their " +
+              "email, during the signup process. Bad, because we won't know for sure " +
+              "if people's email addresses work. Also means there can be many user accounts " +
+              "with the same email address.",
+          disabled: requireVerifiedEmail || mayComposeBeforeSignup, // see  [SIGNUPDRAFT] above
+          getter: (s: Settings) => s.mayPostBeforeEmailVerified,
+          update: (newSettings: Settings, target) => {
+            newSettings.mayPostBeforeEmailVerified = target.checked;
+          }
+        }),
+
         /* Not yet implemented: (saved to db but won't have any effect)
+
+        doubleTypeEmailAddress: Option[Boolean]
+        doubleTypePassword: Option[Boolean]
+        begForEmailAddress
 
         Setting2(props, { type: 'checkbox', label: "Invite only",
          className: 'e_A_Ss_S-InviteOnlyCB',

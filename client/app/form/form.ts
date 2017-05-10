@@ -21,6 +21,7 @@
 /// <reference path="../prelude.ts" />
 /// <reference path="../rules.ts" />
 /// <reference path="../page-methods.ts" />
+/// <reference path="../more-bundle-not-yet-loaded.ts" />
 
 //------------------------------------------------------------------------------
    module debiki2.form {
@@ -45,8 +46,10 @@ export function activateAnyCustomForm() {
         else if (doWhat.value === 'SignUp') {
           morebundle.loginIfNeeded(LoginReason.SignUp);
         }
-        else if (doWhat.value === 'AskForUsabilityTesting') {  // [plugin]
-          Server.submitUsabilityTestingRequest(namesAndValues);
+        else if (doWhat.value === 'SignUpSubmitUtx') {  // [plugin]
+          morebundle.loginIfNeeded(LoginReason.SignUp, null, function() {
+            Server.submitUsabilityTestingRequest(namesAndValues);
+          });
         }
         else {
           die(`Unknown input name=doWhat value: '${doWhat.value}' [EdE8402F4]`);

@@ -354,7 +354,7 @@ trait UserDao {
   def createIdentityUserAndLogin(newUserData: NewUserData): MemberLoginGrant = {
     val loginGrant = readWriteTransaction { transaction =>
       val userId = transaction.nextMemberId
-      val user = newUserData.makeUser(userId, transaction.now.toJavaDate)
+      val user: MemberInclDetails = newUserData.makeUser(userId, transaction.now.toJavaDate)
       val identityId = transaction.nextIdentityId
       val identity = newUserData.makeIdentity(userId = userId, identityId = identityId)
       ensureSiteActiveOrThrow(user, transaction)

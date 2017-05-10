@@ -103,8 +103,19 @@ object LoginWithPasswordController extends mvc.Controller {
       throwBadReq("DwE85FX1", "Password missing")
     val anyReturnToUrl = (body \ "returnToUrl").asOpt[String]
 
-    if (!isValidNonLocalEmailAddress(emailAddress))
-      throwUnprocessableEntity("DwE80KFP2", "Bad email address")
+    val dao = daoFor(request.request)
+    val siteSettings = dao.getWholeSiteSettings()
+
+    // Some dupl code. [2FKD05]
+    if (!siteSettings.requireVerifiedEmail && emailAddress.isEmpty) {
+      // Fine. If needn't verify email, then people can specify non-existing addresses,
+      // so then we might as well accept no-email-at-all.
+    }
+    else if (emailAddress.isEmpty) {
+      throwUnprocessableEntity("EdE1GUR0", "Email address missing")
+    }
+    else if (!isValidNonLocalEmailAddress(emailAddress))
+      throwUnprocessableEntity("EdE80KFP2", "Bad email address")
 
     Globals.spamChecker.detectRegistrationSpam(request, name = username, email = emailAddress) map {
         isSpamReason =>
@@ -122,10 +133,17 @@ object LoginWithPasswordController extends mvc.Controller {
             throwUnprocessableEntity("DwE805T4", s"$errorMessage, please try again.")
         }
 
-      val dao = daoFor(request.request)
-      try {
+      val loginCookies: List[Cookie] = try {
         val newMember = dao.createPasswordUserCheckPasswordStrong(userData)
-        sendEmailAddressVerificationEmail(newMember, anyReturnToUrl, request.host, request.dao)
+        if (newMember.email.nonEmpty) {
+          sendEmailAddressVerificationEmail(newMember, anyReturnToUrl, request.host, request.dao)
+        }
+        if (!siteSettings.mayPostBeforeEmailVerified) Nil
+        else {
+          TESTS_MISSING // no e2e tests for this
+          val (_, _, sidAndXsrfCookies) = createSessionIdAndXsrfToken(dao.siteId, newMember.id)
+          sidAndXsrfCookies
+        }
       }
       catch {
         case DbDao.DuplicateUsername =>
@@ -136,9 +154,13 @@ object LoginWithPasswordController extends mvc.Controller {
           // so no email addresses are leaked.
           sendYouAlreadyHaveAnAccountWithThatAddressEmail(
             dao, emailAddress, siteHostname = request.host, siteId = request.siteId)
+          Nil
       }
 
-      OkSafeJson(Json.obj("emailVerifiedAndLoggedIn" -> JsBoolean(false)))
+      OkSafeJson(Json.obj(
+        "userCreatedAndLoggedIn" -> JsBoolean(loginCookies.nonEmpty),
+        "emailVerifiedAndLoggedIn" -> JsBoolean(false)))
+          .withCookies(loginCookies: _*)
     }
   }
 

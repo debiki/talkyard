@@ -148,6 +148,7 @@ var LoginDialog = createClassAndFactory({
         isOpen: true,
         isSignUp: isSignUp,
         loginReason: loginReason,
+        afterLoginCallback: callback,
         anyReturnToUrl: anyReturnToUrl,
         preventClose: preventClose || loginReason === 'LoginToAuthenticate' ||
             loginReason === 'LoginToAdministrate',
@@ -179,6 +180,7 @@ var LoginDialog = createClassAndFactory({
     this.setState({
       isOpen: false,
       loginReason: null,
+      afterLoginCallback: null,
       anyReturnToUrl: null,
       isLoggedIn: null,
     });
@@ -205,7 +207,8 @@ var LoginDialog = createClassAndFactory({
     }
 
     const content = LoginDialogContent({ isSignUp: state.isSignUp, loginReason: state.loginReason,
-        anyReturnToUrl: state.anyReturnToUrl, setChildDialog: this.setChildDialog,
+        anyReturnToUrl: state.anyReturnToUrl, afterLoginCallback: state.afterLoginCallback,
+        setChildDialog: this.setChildDialog,
         childDialog: state.childDialog, close: this.close, isLoggedIn: state.isLoggedIn,
         switchBetweenLoginAndSignUp: this.switchBetweenLoginAndSignUp,
         store: state.store });
@@ -269,7 +272,7 @@ export var LoginDialogContent = createClassAndFactory({
 
     var createUserDialog = createChildDialog(null, CreateUserDialogContent, 'esCreateUserDlg');
     var passwordLoginDialog = createChildDialog("Log in with Password", PasswordLoginDialogContent);
-    var guestLoginDialog = createChildDialog("Log in as Guest", GuestLoginDialogContent);
+    var guestLoginDialog; // No. createChildDialog("Log in as Guest", GuestLoginDialogContent);
 
     var makeOauthProps = (iconClass: string, provider: string, includeWith?: boolean) => {
       return {
@@ -300,7 +303,7 @@ export var LoginDialogContent = createClassAndFactory({
     var createUserForm = !isSignUp ? null :
         CreateUserDialogContent(childDialogProps);
 
-    var loginAsGuestButton;
+    var loginAsGuestButton; /* CLEAN_UP, + more login-as-guest dialogs & stuff?
     if (loginReason !== LoginReason.BecomeAdmin && loginReason !== 'LoginAsAdmin' &&
         loginReason !== 'LoginToAdministrate' && loginReason !== 'LoginToAuthenticate' &&
         loginReason !== LoginReason.LoginToChat && !isSignUp &&
@@ -308,7 +311,7 @@ export var LoginDialogContent = createClassAndFactory({
       loginAsGuestButton =
           Button({ onClick: openChildDialog(GuestLoginDialogContent),
               className: 'esLoginDlg_guestBtn' }, "Log in as Guest");
-    }
+    } */
 
     var termsAndPrivacy = loginReason === LoginReason.BecomeAdmin
       ? null // the owner doesn't need to agree to his/her own terms of use
@@ -323,7 +326,7 @@ export var LoginDialogContent = createClassAndFactory({
         r.div({ className: 'form-group esLD_Switch' },
           "(", r.i({}, "Already have an account? ",
             r.a({ className: 'esLD_Switch_L', onClick: this.props.switchBetweenLoginAndSignUp },
-              "Login"),
+              "Log in"),
             " instead"), " )");
     }
     else if (store.siteStatus > SiteStatus.Active) {
@@ -340,7 +343,7 @@ export var LoginDialogContent = createClassAndFactory({
         r.div({ className: 'form-group esLD_Switch' },
           "(", r.i({}, "New user? ",
           r.a({ className: 'esLD_Switch_L', onClick: this.props.switchBetweenLoginAndSignUp },
-            "Create account"),
+            "Sign up"),
           " instead"), " )");
     }
 
@@ -348,7 +351,6 @@ export var LoginDialogContent = createClassAndFactory({
       r.div({ className: 'esLD' },
         createUserDialog,
         passwordLoginDialog,
-        guestLoginDialog,
         loggedInAlreadyInfo,
         becomeAdminInstructions,
         termsAndPrivacy,
@@ -461,7 +463,7 @@ var GuestLoginDialogContent = createClassAndFactory({
             help: "If you want to be notified about replies to your comments.", id: 'e2eLD_G_Email',
             onChangeValueOk: (value, isOk) => this.updateValueOk('email', value, isOk) }),
         Button({ onClick: this.doLogin, disabled: disableSubmit, id: 'e2eLD_G_Submit' },
-          "Login" + inOrderTo(this.props.loginReason)),
+          "Log in" + inOrderTo(this.props.loginReason)),
         Button({ onClick: this.props.closeDialog, className: 'e_LD_G_Cancel' }, "Cancel")));
   }
 });
@@ -505,7 +507,7 @@ var PasswordLoginDialogContent = createClassAndFactory({
             onChange: this.clearError, id: 'e2ePassword' }),
         badPasswordMessage,
         PrimaryButton({ onClick: this.doLogin, id: 'e2eSubmit' },
-          "Login" + inOrderTo(this.props.loginReason)),
+          "Log in" + inOrderTo(this.props.loginReason)),
         r.br(),
         r.a({ href: debiki.internal.serverOrigin + '/-/reset-password/specify-email',
             // Once the password has been reset, the user will be logged in automatically. Then

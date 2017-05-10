@@ -515,6 +515,10 @@ interface SettingsVisibleClientSide {
   allowSignup?: boolean;                // default: true
   allowLocalSignup?: boolean;           // default: true
   allowGuestLogin?: boolean;            // default: false
+  requireVerifiedEmail?: boolean;       // default: true
+  mayComposeBeforeSignup?: boolean;     // default: false
+  doubleTypeEmailAddress?: boolean;     // default: false
+  doubleTypePassword?: boolean;         // default: false
   forumMainView?: string;               // default: 'latest'
   forumTopicsSortButtons?: string;      // default: 'latest|top'
   forumCategoryLinks?: string;          // default: 'categories'
@@ -887,13 +891,19 @@ enum ContentLicense {
 }
 
 interface Settings {
-  // Login
+  // Signup and Login
   userMustBeAuthenticated: boolean;
   userMustBeApproved: boolean;
   inviteOnly: boolean;
   allowSignup: boolean;
   allowLocalSignup: boolean;
   allowGuestLogin: boolean;
+  requireVerifiedEmail: boolean;
+  mayComposeBeforeSignup: boolean;
+  mayPostBeforeEmailVerified: boolean;
+  doubleTypeEmailAddress: boolean;
+  doubleTypePassword: boolean;
+  begForEmailAddress: boolean;
 
   // Moderation
   numFirstPostsToAllow: number;

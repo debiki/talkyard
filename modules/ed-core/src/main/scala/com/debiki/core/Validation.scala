@@ -40,7 +40,7 @@ object Validation {
 
 
   def checkEmail(email: String): String Or ErrorMessage = {
-    if (EmailOkCharsRegex.unapplySeq(email).isEmpty)
+    if (!email.isEmpty && EmailOkCharsRegex.unapplySeq(email).isEmpty)
       return Bad("Invalid email address")
 
     Good(email)
