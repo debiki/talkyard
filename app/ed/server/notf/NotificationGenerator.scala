@@ -62,8 +62,17 @@ case class NotificationGenerator(transaction: SiteTransaction) {
 
     // Mentions
     if (!skipMentions) {
-      val mentionedUsernames: Seq[String] = findMentions(newPost.approvedSource getOrDie "DwE82FK4")
-      val mentionedUsers = mentionedUsernames.flatMap(transaction.loadMemberByEmailOrUsername)
+      val mentionedUsernames = findMentions(newPost.approvedSource getOrDie "DwE82FK4").toSet
+      var mentionedUsers = mentionedUsernames.flatMap(transaction.loadMemberByEmailOrUsername)
+      val allMentioned = mentionsAllInChannel(mentionedUsernames)
+      if (allMentioned) {
+        val author = transaction.loadTheMember(newPost.createdById)
+        if (mayMentionAll(author)) {
+          val pageMemberIds: Set[UserId] = transaction.loadMessageMembers(newPost.pageId)
+          val moreToAdd: Set[UserId] = pageMemberIds -- mentionedUsers.map(_.id)
+          mentionedUsers ++= transaction.loadMembersAsMap(moreToAdd).values.toSet
+        }
+      }
       for {
         user <- mentionedUsers
         // Right now ignore self-mentions. Later, allow? Could work like a personal to-do item?
@@ -143,19 +152,50 @@ case class NotificationGenerator(transaction: SiteTransaction) {
   }
 
 
-  /** Creates and deletes mentions, if the edits creates or deletes mentions.
+  /** Creates and deletes mentions, if '@username's are added/removed by this edit.
     */
   def generateForEdits(oldPost: Post, newPost: Post): Notifications = {
     require(oldPost.pagePostNr == newPost.pagePostNr)
 
-    val oldMentions = findMentions(oldPost.approvedSource getOrDie "DwE0YKW3").toSet
-    val newMentions = findMentions(newPost.approvedSource getOrDie "DwE2BF81").toSet
+    val oldMentions: Set[String] = findMentions(oldPost.approvedSource getOrDie "DwE0YKW3").toSet
+    val newMentions: Set[String] = findMentions(newPost.approvedSource getOrDie "DwE2BF81").toSet
 
     val deletedMentions = oldMentions -- newMentions
     val createdMentions = newMentions -- oldMentions
 
-    val mentionsDeletedForUsers = deletedMentions.flatMap(transaction.loadMemberByEmailOrUsername)
-    val mentionsCreatedForUsers = createdMentions.flatMap(transaction.loadMemberByEmailOrUsername)
+    var mentionsDeletedForUsers = deletedMentions.flatMap(transaction.loadMemberByEmailOrUsername)
+    var mentionsCreatedForUsers = createdMentions.flatMap(transaction.loadMemberByEmailOrUsername)
+
+    val newMentionsIncludesAll = mentionsAllInChannel(newMentions)
+    val oldMentionsIncludesAll = mentionsAllInChannel(oldMentions)
+
+    lazy val mayAddAll = {
+      val author = transaction.loadTheMember(newPost.createdById)
+      mayMentionAll(author)
+    }
+
+    val mentionsForAllCreated = newMentionsIncludesAll && !oldMentionsIncludesAll && mayAddAll
+    val mentionsForAllDeleted = oldMentionsIncludesAll && !newMentionsIncludesAll
+    dieIf(mentionsForAllCreated && mentionsForAllDeleted, "EdE2WK4Q0")
+
+    lazy val previouslyMentionedUserIds: Set[UserId] =
+      transaction.loadMentionsOfPeopleInPost(newPost.id).map(_.toUserId).toSet
+
+    if (mentionsForAllDeleted) {
+      // CLEAN_UP COULD simplify this whole function — needn't load mentionsDeletedForUsers above.
+      var usersMentionedAfter = newMentions.flatMap(transaction.loadMemberByEmailOrUsername)
+      val toDelete: Set[UserId] = previouslyMentionedUserIds -- usersMentionedAfter.map(_.id)
+      // (COULD_OPTIMIZE: needn't load anything here — we have the user ids already.)
+      mentionsDeletedForUsers = transaction.loadMembersAsMap(toDelete).values.toSet
+    }
+
+    if (mentionsForAllCreated) {
+      val pageMemberIds: Set[UserId] = transaction.loadMessageMembers(newPost.pageId)
+      mentionsDeletedForUsers = mentionsDeletedForUsers.filterNot(u => pageMemberIds.contains(u.id))
+      val moreToAdd: Set[UserId] =
+        pageMemberIds -- previouslyMentionedUserIds -- mentionsCreatedForUsers.map(_.id)
+      mentionsCreatedForUsers ++= transaction.loadMembersAsMap(moreToAdd).values.toSet
+    }
 
     // Delete mentions.
     for (user <- mentionsDeletedForUsers) {
@@ -206,6 +246,15 @@ case class NotificationGenerator(transaction: SiteTransaction) {
 
 
 object NotificationGenerator {
+
+  def mentionsAllInChannel(mentions: Set[String]): Boolean =
+    mentions.contains("all") || mentions.contains("channel")
+
+
+  def mayMentionAll(member: Member): Boolean = {
+    member.trustLevel.toInt >= TrustLevel.FullMember.toInt || member.isStaff  //THTLVL
+  }
+
 
   def findMentions(text: String): Seq[String] = {
     // For now, ignore CommonMark and HTML markup.

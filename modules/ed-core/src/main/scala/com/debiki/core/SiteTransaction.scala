@@ -430,6 +430,7 @@ trait SiteTransaction {
   def markNotfAsSeenSkipEmail(userId: UserId, notfId: NotificationId)
   def loadNotificationsForRole(roleId: RoleId, limit: Int, unseenFirst: Boolean,
     upToWhen: Option[ju.Date] = None): Seq[Notification]
+  def loadMentionsOfPeopleInPost(postId: PostId): Seq[Notification]
   def listUsersNotifiedAboutPost(postId: PostId): Set[UserId]
 
 
