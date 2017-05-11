@@ -117,6 +117,9 @@ object LoginWithPasswordController extends mvc.Controller {
     else if (!isValidNonLocalEmailAddress(emailAddress))
       throwUnprocessableEntity("EdE80KFP2", "Bad email address")
 
+    if (ed.server.security.ReservedNames.isUsernameReserved(username))
+      throwForbidden("EdE5PKW01", s"Username is reserved: '$username'; choose another username")
+
     Globals.spamChecker.detectRegistrationSpam(request, name = username, email = emailAddress) map {
         isSpamReason =>
       SpamChecker.throwForbiddenIfSpam(isSpamReason, "EdE7KVF2_")

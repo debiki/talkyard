@@ -90,6 +90,9 @@ class CreateSiteController @Inject() extends Controller {
       // This "cannot" happen — JS makes this impossible. So need not be a user friendly message.
       throwForbidden("DwE2JYK8", "The local hostname should be at least six chars")
 
+    if (ed.server.security.ReservedNames.isSubdomainReserved(localHostname))
+      throwForbidden("EdE5PKW01", s"Subdomain is reserved: '$localHostname'; choose another please")
+
     if (!isValidNonLocalEmailAddress(emailAddress))
       throwForbidden("DwE8FKJ4", "Bad email address")
 

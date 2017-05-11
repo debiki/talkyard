@@ -480,6 +480,9 @@ object LoginWithOpenAuthController extends Controller {
     else if (!isValidNonLocalEmailAddress(emailAddress))
       throwUnprocessableEntity("EdE7MNH0R1", "Bad email address")
 
+    if (ed.server.security.ReservedNames.isUsernameReserved(username))
+      throwForbidden("EdE4SWWB9", s"Username is reserved: '$username'; choose another username")
+
     Globals.spamChecker.detectRegistrationSpam(request, name = username, email = emailAddress) map {
         isSpamReason =>
       SpamChecker.throwForbiddenIfSpam(isSpamReason, "EdE2KP89")
