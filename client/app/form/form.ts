@@ -27,42 +27,44 @@
    module debiki2.form {
 //------------------------------------------------------------------------------
 
-var d = { i: debiki.internal, u: debiki.v0.util };
-var $: any = d.i.$;  // type JQuery –> Typescript won't find parseHTML :- (
+const d = { i: debiki.internal, u: debiki.v0.util };
+const $: any = d.i.$;  // type JQuery –> Typescript won't find parseHTML :- (
 
 
 export function activateAnyCustomForm() {
    let $forms = $('.dw-p-bd form');
    $forms.on('submit', function (event) {
-      event.preventDefault();
-      event.stopPropagation();
       let $form = $(this);
       let namesAndValues = $form.serializeArray();
       let doWhat = _.find(namesAndValues, (nv: any) => nv.name === 'doWhat');
-      if (doWhat) {
-        if (doWhat.value === 'CreateTopic') {
-          Server.submitCustomFormAsNewTopic(namesAndValues);
-        }
-        else if (doWhat.value === 'SignUp') {
-          morebundle.loginIfNeeded(LoginReason.SignUp);
-        }
-        else if (doWhat.value === 'SignUpSubmitUtx') {  // [plugin]
-          morebundle.loginIfNeeded(LoginReason.SignUp, null, function() {
-            Server.submitUsabilityTestingRequest(namesAndValues);
-          });
-        }
-        else {
-          die(`Unknown input name=doWhat value: '${doWhat.value}' [EdE8402F4]`);
-        }
+      if (!doWhat)
+        return;
+
+      event.preventDefault();
+      event.stopPropagation();
+
+      if (doWhat.value === 'CreateTopic') {
+        Server.submitCustomFormAsNewTopic(namesAndValues);
       }
-      else {
+      else if (doWhat.value === 'SignUp') {
+        morebundle.loginIfNeeded(LoginReason.SignUp);
+      }
+      else if (doWhat.value === 'SignUpSubmitUtx') {  // [plugin]
+        morebundle.loginIfNeeded(LoginReason.SignUp, null, function() {
+          Server.submitUsabilityTestingRequest(namesAndValues);
+        });
+      }
+      else if (doWhat.value === 'SubmitToThisPage') {
         Server.submitCustomFormAsJsonReply(namesAndValues, function() {
-           // This messes with stuff rendered by React, but works fine nevertheless.
-           var thanks = $form.find('.FormThanks');
-           $form.replaceWith(
-               thanks.length ? thanks : $.parseHTML('<p class="esFormThanks">Thank you.</p>'));
+          // This messes with stuff rendered by React, but works fine nevertheless.
+          const thanks = $form.find('.FormThanks');
+          $form.replaceWith(
+            thanks.length ? thanks : $.parseHTML('<p class="esFormThanks">Thank you.</p>'));
         });
         $form.find('button[type=submit]').text("Submitting ...").attr('disabled', 'disabled');
+      }
+      else {
+        die(`Unknown input name=doWhat value: '${doWhat.value}' [EdE8402F4]`);
       }
    });
 }
