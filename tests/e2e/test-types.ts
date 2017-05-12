@@ -41,6 +41,7 @@ interface SiteData {
     allowSignup?: boolean;
     // allowLocalSignup?: boolean;
     allowGuestLogin?: boolean,
+    requireVerifiedEmail?: boolean;
     numFirstPostsToReview?: number,
     numFirstPostsToApprove?: number,
     numFirstPostsToAllow?: number,

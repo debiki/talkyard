@@ -239,7 +239,9 @@ export var CreateUserDialogContent = createClassAndFactory({
     const emailHelp = props.providerId && hasEmailAddressAlready ?
         "Your email has been verified by " + props.providerId + "." : null;
 
-    const emailOptional = store.settings.requireVerifiedEmail ? '' : "optional, ";
+    // Undefined —> use the default, which is True.
+    const emailOptional = store.settings.requireVerifiedEmail === false ? "optional, " : '';
+
     const emailInput =
         EmailInput({ label: `Email: (${emailOptional}will be kept private)`, id: 'e2eEmail',
           onChangeValueOk: (value, isOk) => this.setEmailOk(value, isOk), tabIndex: 1,

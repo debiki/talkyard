@@ -369,6 +369,7 @@ object ReactJson {
       "appVersion" -> Globals.applicationVersion,
       "siteId" -> JsNumber(dao.siteId),
       "siteStatus" -> request.dao.theSite().status.toInt,
+      // CLEAN_UP remove these two; they're already included in settings: {...}.
       "userMustBeAuthenticated" -> JsBoolean(siteSettings.userMustBeAuthenticated),
       "userMustBeApproved" -> JsBoolean(siteSettings.userMustBeApproved),
       "settings" -> makeSettingsVisibleClientSideJson(siteSettings),
@@ -410,6 +411,8 @@ object ReactJson {
 
 
   def makeSiteSectionsJson(dao: SiteDao): JsValue = {
+    SECURITY; SHOULD // not show any hidden/private site sections. Currently harmless though:
+    // there can be only 1 section and it always has the same id. (unless adds more manually via SQL)
     val sectionPageIds = dao.loadSectionPageIdsAsSeq()
     val jsonObjs = for {
       pageId <- sectionPageIds

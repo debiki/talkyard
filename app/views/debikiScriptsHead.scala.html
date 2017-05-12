@@ -56,37 +56,37 @@ var isIos = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
 if (isIos)
   docElem.className += ' ios';
 
-  @* See https://stackoverflow.com/a/1912522/694469. The <div> isn't added to the document
-   so no <script> would be executed. — But yes it would indeed?
-   Test this in Dev Tools:
-     document.createElement('div').innerHTML =
-        '<img src=http://broken.example.com onerror=alert(1337)>';
-   the image will be requested, that fails, so the script runs.
-   (See http://stackoverflow.com/a/430240/694469)
-   However, we have already escaped the HTML, so any < are already escaped and will be
-   converted back to text only. Search for "Encode.forHtmlContent" above.
-   *@
-  function unencodeHtmlContent(escapedHtml) {
-    var elem = document.createElement('div');
-    elem.innerHTML = escapedHtml;
-    var result = '';
-    @* Chrome splits innerHTML into many child nodes, each one at most 65536. Whereas
-    FF creates just one single huge child node. *@
-    for (var i = 0; i < elem.childNodes.length; ++i) {
-      result = result + elem.childNodes[i].nodeValue;
-    }
-    return result;
+@* See https://stackoverflow.com/a/1912522/694469. The <div> isn't added to the document
+ so no <script> would be executed. — But yes it would indeed?
+ Test this in Dev Tools:
+   document.createElement('div').innerHTML =
+      '<img src=http://broken.example.com onerror=alert(1337)>';
+ the image will be requested, that fails, so the script runs.
+ (See http://stackoverflow.com/a/430240/694469)
+ However, we have already escaped the HTML, so any < are already escaped and will be
+ converted back to text only. Search for "Encode.forHtmlContent" above.
+ *@
+function unencodeHtmlContent(escapedHtml) {
+  var elem = document.createElement('div');
+  elem.innerHTML = escapedHtml;
+  var result = '';
+  @* Chrome splits innerHTML into many child nodes, each one at most 65536. Whereas
+  FF creates just one single huge child node. *@
+  for (var i = 0; i < elem.childNodes.length; ++i) {
+    result = result + elem.childNodes[i].nodeValue;
   }
+  return result;
+}
 
 var __reactStore = JSON.parse(unencodeHtmlContent(document.getElementById('thePageJson').text));
 var _volatileData = JSON.parse(unencodeHtmlContent(document.getElementById('theVolatileJson').text));
 var _me = _volatileData.me || __reactStore.me || {};
 
-  var hideIntro = localStorage.getItem('hideForumIntro');
-  __reactStore.hideForumIntro = hideIntro && hideIntro !== 'false';
-  if (__reactStore.hideForumIntro) {
-    docElem.className += ' dw-hide-forum-intro';
-  }
+var hideIntro = localStorage.getItem('hideForumIntro');
+__reactStore.hideForumIntro = hideIntro && hideIntro !== 'false';
+if (__reactStore.hideForumIntro) {
+  docElem.className += ' dw-hide-forum-intro';
+}
 
 var _narrow = window.innerWidth < 780 || isIos; @{/* dupl constant, see ReactStore.ts [5YKT42] */}
 if (_narrow) {
@@ -117,31 +117,31 @@ if (_showAdmGuide || (!_narrow && __cbOpen === 'true' &&
   __reactStore.isContextbarOpen = true;
 }
 
-  var debiki = {
-    siteId: '@siteId',
-    currentVersion: '@tpi.currentVersionString',
-    cachedVersion: '@tpi.cachedVersionString',
-    secure: @{debiki.Globals.secure},
-    pageDataFromServer: __reactStore,
-    volatileDataFromServer: _volatileData,
-    getPageId: function() { return @Html(pageIdQuotedOrUndefined); },
-    isDev: @{ if (play.api.Play.isDev) "true" else "false" },
-    v0: { util: {} },
-    internal: {
-      minMaxJs: '@minMaxJs',
-      isInIframe: self !== top,
-      serverOrigin: '//@tpi.serverAddress',
-      pageUri: '//@tpi.serverAddress@pageUriPath',
-      pageId: @Html(pageIdQuotedOrUndefined),
-      pageRole: @{ anyPageRole.map(_.toInt) getOrElse "undefined" },
-      isInEmbeddedCommentsIframe: @{
-        if (anyPageRole.contains(com.debiki.core.PageRole.EmbeddedComments)) "true" else "false"
-      },
-      pagePath: '@{ anyPagePath.map(_.value) getOrElse "" }',
-      assetUrlPrefix: '@tpi.assetUrlPrefix'
+var debiki = {
+  siteId: '@siteId',
+  currentVersion: '@tpi.currentVersionString',
+  cachedVersion: '@tpi.cachedVersionString',
+  secure: @{debiki.Globals.secure},
+  pageDataFromServer: __reactStore,
+  volatileDataFromServer: _volatileData,
+  getPageId: function() { return @Html(pageIdQuotedOrUndefined); },
+  isDev: @{ if (play.api.Play.isDev) "true" else "false" },
+  v0: { util: {} },
+  internal: {
+    minMaxJs: '@minMaxJs',
+    isInIframe: self !== top,
+    serverOrigin: '//@tpi.serverAddress',
+    pageUri: '//@tpi.serverAddress@pageUriPath',
+    pageId: @Html(pageIdQuotedOrUndefined),
+    pageRole: @{ anyPageRole.map(_.toInt) getOrElse "undefined" },
+    isInEmbeddedCommentsIframe: @{
+      if (anyPageRole.contains(com.debiki.core.PageRole.EmbeddedComments)) "true" else "false"
     },
-    uploadsUrlPrefix: '@tpi.uploadsUrlPrefix'
-  };
+    pagePath: '@{ anyPagePath.map(_.value) getOrElse "" }',
+    assetUrlPrefix: '@tpi.assetUrlPrefix'
+  },
+  uploadsUrlPrefix: '@tpi.uploadsUrlPrefix'
+};
 
 </script>
 

@@ -141,9 +141,14 @@ object LoginWithPasswordController extends mvc.Controller {
         if (newMember.email.nonEmpty) {
           sendEmailAddressVerificationEmail(newMember, anyReturnToUrl, request.host, request.dao)
         }
-        if (!siteSettings.mayPostBeforeEmailVerified) Nil
-        else {
+        if (newMember.email.nonEmpty && !siteSettings.mayPostBeforeEmailVerified) {
           TESTS_MISSING // no e2e tests for this
+          // Apparently the staff wants to know that all email addresses actually work.
+          // (But if no address specifeid — then, just below, we'll log the user in directly.)
+          Nil
+        }
+        else {
+          dieIf(newMember.email.isEmpty && siteSettings.requireVerifiedEmail, "EdE2GKF06")
           val (_, _, sidAndXsrfCookies) = createSessionIdAndXsrfToken(dao.siteId, newMember.id)
           sidAndXsrfCookies
         }
