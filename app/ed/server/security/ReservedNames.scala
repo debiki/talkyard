@@ -728,8 +728,9 @@ sindhi
 #------------------------------------------------------------------------------
 
 # https://zimbatm.github.io/hostnames-and-usernames-to-reserve
-# License: some open source license apparently.
-# I asked here: https://github.com/zimbatm/hostnames-and-usernames-to-reserve/issues/3
+# License: CC0:
+# "Copyright and related rights waived via https://creativecommons.org/publicdomain/zero/1.0/[CC0]"
+# (https://github.com/zimbatm/hostnames-and-usernames-to-reserve/blob/master/README.adoc)
 
 ## This is a list of names to reserve when building a PaaS
 #
@@ -871,8 +872,15 @@ isatap
 
 git
 gist
-everyone anyone someone anonymous anon noone identity group role who whom
-he she it is hen
+everyone everybody
+anyone anybody
+someone somebody
+noone nobody
+anonymous anon
+identity
+role roles
+type types
+he she it is hen who whom whos whose which that
 rubot
 robot
 

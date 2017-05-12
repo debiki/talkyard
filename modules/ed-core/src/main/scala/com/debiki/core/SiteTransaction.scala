@@ -432,6 +432,8 @@ trait SiteTransaction {
     upToWhen: Option[ju.Date] = None): Seq[Notification]
   def loadMentionsOfPeopleInPost(postId: PostId): Seq[Notification]
   def listUsersNotifiedAboutPost(postId: PostId): Set[UserId]
+  /** Useful when writing tests. */
+  def countNotificationsPerUser(): Map[UserId, Int]
 
 
   /** If no id, assigns an id. Returns the perms, with id. */

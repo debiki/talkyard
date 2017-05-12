@@ -148,6 +148,12 @@ class DaoAppSuite(
   }
 
 
+  def edit(post: Post, editorId: UserId, newText: String)(dao: SiteDao) {
+    dao.editPostIfAuth(post.pageId, post.nr, Who(editorId, browserIdData), dummySpamRelReqStuff,
+        TextAndHtml.testBody(newText))
+  }
+
+
 
   def loadUserStats(userId: UserId)(dao: SiteDao): UserStats = {
     dao.readOnlyTransaction { transaction =>
