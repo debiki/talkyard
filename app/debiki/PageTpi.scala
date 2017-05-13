@@ -25,6 +25,7 @@ import ed.server.http.PageRequest
 import play.{api => p}
 import play.api.Play.current
 import SiteAssetBundlesController.{StylesheetAssetBundleNameRegex, assetBundleFileName}
+import scala.xml.Unparsed
 
 
 object PageTpi {
@@ -65,19 +66,19 @@ class SiteTpi protected (
   pageTitle: Option[String] = None,
   isSearchPage: Boolean = false) {
 
-  def request = debikiRequest // rename to request, later
+  def request: DebikiRequest[_] = debikiRequest // rename to request, later
 
-  def siteId  = debikiRequest.siteId
-  def siteSettings = debikiRequest.siteSettings
+  def siteId: SiteId = debikiRequest.siteId
+  def siteSettings: EffectiveSettings = debikiRequest.siteSettings
 
-  def isLoggedIn = debikiRequest.user isDefined
-  def isOwner = debikiRequest.user.map(_.isOwner) == Some(true)
-  def isAdmin = debikiRequest.user.map(_.isAdmin) == Some(true)
-  def isAuthenticated = debikiRequest.user.map(_.isAuthenticated) == Some(true)
+  def isLoggedIn: Boolean = debikiRequest.user isDefined
+  def isOwner: Boolean = debikiRequest.user.exists(_.isOwner)
+  def isAdmin: Boolean = debikiRequest.user.exists(_.isAdmin)
+  def isAuthenticated: Boolean = debikiRequest.user.exists(_.isAuthenticated)
 
-  def debikiMeta = {
+  def debikiMeta =
     xml.Unparsed(views.html.debikiMeta(anyCurrentPageMeta, pageTitle).body)
-  }
+
 
   def anyCurrentPageId: Option[PageId] = None
   def anyCurrentPageRole: Option[PageRole] = None
@@ -88,7 +89,7 @@ class SiteTpi protected (
   def cachedVersionString = ""
 
 
-  def debikiHtmlTagClasses = {
+  def debikiHtmlTagClasses: String = {
     val chatClass = if (anyCurrentPageRole.exists(_.isChat)) "es-chat " else ""
     val forumClass = if (anyCurrentPageRole.contains(PageRole.Forum)) "es-forum " else ""
     val customClass = anyCurrentPageMeta.map(_.htmlTagCssClasses + " ") getOrElse ""
@@ -100,7 +101,7 @@ class SiteTpi protected (
 
   def debikiStyles = xml.Unparsed(views.html.debikiStyles(this).body)
 
-  def debikiScriptsInHead = xml.Unparsed(
+  def debikiScriptsInHead(isInLoginWindow: Boolean = false) = xml.Unparsed(
     views.html.debikiScriptsHead(
       this, // Could remove all params below, use 'this' instead in the template.
       siteId = siteId,
@@ -109,10 +110,11 @@ class SiteTpi protected (
       anyPageRole = anyCurrentPageRole,
       anyPagePath = anyCurrentPagePath,
       reactStoreSafeJsonString = reactStoreSafeJsonString,
+      isInLoginWindow = isInLoginWindow,
       minMaxJs = minMaxJs,
       minMaxCss = minMaxCss).body)
 
-  def debikiScriptsEndOfBody =
+  def debikiScriptsEndOfBody: Unparsed =
     debikiScriptsEndOfBodyCustomStartupCode("debiki.internal.startDiscussionPage();")
 
   def debikiScriptsEndOfBodyCustomStartupCode(startupCode: String,
@@ -121,25 +123,25 @@ class SiteTpi protected (
       this, startupCode = startupCode, loadStaffBundle = loadStaffBundle).body)
 
 
-  def hostname = debikiRequest.host
+  def hostname: String = debikiRequest.host
 
-  def companyDomain = {
+  def companyDomain: String = {
     debikiRequest.canonicalHostname
     // was: debikiRequest.siteSettings.companyDomain
     // — but why did I make it configurable? No idea. Remove that setting? [3PU85J7]
   }
-  def companyFullName = debikiRequest.siteSettings.orgFullName
-  def companyShortName = debikiRequest.siteSettings.orgShortName
+  def companyFullName: String = debikiRequest.siteSettings.orgFullName
+  def companyShortName: String = debikiRequest.siteSettings.orgShortName
 
 
-  def anyGoogleUniversalAnalyticsScript = {
+  def anyGoogleUniversalAnalyticsScript: String = {
     val trackingId = debikiRequest.siteSettings.googleUniversalAnalyticsTrackingId
     if (trackingId.nonEmpty) views.html.googleAnalytics(trackingId).body
     else ""
   }
 
-  def minMaxCss = PageTpi.minMaxCss
-  def minMaxJs = PageTpi.minMaxJs
+  def minMaxCss: String = PageTpi.minMaxCss
+  def minMaxJs: String = PageTpi.minMaxJs
 
   def stylesheetBundle(bundleName: String): xml.NodeSeq = {
 
@@ -191,21 +193,21 @@ class SiteTpi protected (
         debikiRequest, inclCategoriesJson = isSearchPage).toString()
 
 
-  def assetUrl(fileName: String) = assetUrlPrefix + fileName
+  def assetUrl(fileName: String): String = assetUrlPrefix + fileName
 
-  def assetUrlPrefix =
+  def assetUrlPrefix: String =
     cdnOrServerOrigin + routes.Assets.at(path = "/public/res", "")
 
-  def uploadsUrlPrefix =
+  def uploadsUrlPrefix: String =
     cdnOrServerOrigin + routes.UploadsController.servePublicFile("")
 
   /** Even if there's no CDN, we use the full server address so works also in
     * embedded comments iframes.
     */
-  def cdnOrServerOrigin =
+  def cdnOrServerOrigin: String =
     Globals.config.cdn.origin.getOrElse(Globals.schemeColonSlashSlash + serverAddress)
 
-  def serverAddress = debikiRequest.request.host
+  def serverAddress: String = debikiRequest.request.host
 
 }
 
@@ -224,16 +226,16 @@ class PageTpi(
   override def anyCurrentPageId = Some(pageReq.thePageId)
   override def anyCurrentPageRole = Some(pageReq.thePageRole)
   override def anyCurrentPagePath = Some(pageReq.pagePath)
-  override def anyCurrentPageMeta = pageReq.pageMeta
+  override def anyCurrentPageMeta: Option[PageMeta] = pageReq.pageMeta
 
-  override def currentVersionString = jsonVersion.computerString
-  override def cachedVersionString = cachedVersion.computerString
+  override def currentVersionString: String = jsonVersion.computerString
+  override def cachedVersionString: String = cachedVersion.computerString
 
   private val horizontalComments =
     pageReq.thePageRole == PageRole.MindMap || pageReq.thePageSettings.horizontalComments
 
 
-  override def debikiHtmlTagClasses =
+  override def debikiHtmlTagClasses: String =
     super.debikiHtmlTagClasses + (if (horizontalComments) "dw-hz " else "dw-vt ")
 
 

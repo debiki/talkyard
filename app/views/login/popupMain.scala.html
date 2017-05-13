@@ -28,7 +28,7 @@
   <meta charset="utf-8"/>
   <link rel="stylesheet" href="@asset("fontello/css/fontello-embedded.css")"/>
   <link rel="stylesheet" href="@asset(s"styles-bundle.${tpi.minMaxCss}")"/>
-  @tpi.debikiScriptsInHead
+  @tpi.debikiScriptsInHead(isInLoginWindow = true)
   @* CLEAN_UP remove this comment, just check the 2 x "apparently" below.
   SHOULD include React store data here. Needed if site deactivated,  [4PKF02T]
   so we'll know if we should show any "Create account" link or not. * @

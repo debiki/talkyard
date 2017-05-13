@@ -445,8 +445,10 @@ trait UserDao {
 
 
   def tryLoginAsMember(loginAttempt: MemberLoginAttempt): MemberLoginGrant = {
+    val settings = getWholeSiteSettings()
     val loginGrant = readWriteTransaction { transaction =>
-      val loginGrant = transaction.tryLoginAsMember(loginAttempt)
+      val loginGrant = transaction.tryLoginAsMember(
+          loginAttempt, requireVerifiedEmail = settings.requireVerifiedEmail)
       addUserStats(UserStats(loginGrant.user.id, lastSeenAt = transaction.now))(transaction)
       if (!loginGrant.user.isSuspendedAt(loginAttempt.date))
         return loginGrant

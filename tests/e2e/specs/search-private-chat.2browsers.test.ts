@@ -67,6 +67,7 @@ describe("priv chat", () => {
   it("import a site", () => {
     let site: SiteData = make.forumOwnedByOwen('search-priv-chat', { title: forumTitle });
     site.settings.allowGuestLogin = true;
+    site.settings.requireVerifiedEmail = false;
     site.members.push(alice);
     site.members.push(mallory);
     site.members.push(michael);
@@ -154,7 +155,7 @@ describe("priv chat", () => {
   it("A guest logs in", () => {
     assert(guestsBrowser === strangersBrowser);
     guestsBrowser.go(idAddress.origin);
-    guestsBrowser.complex.loginAsGuestViaTopbar(guest);
+    guestsBrowser.complex.signUpAsGuestViaTopbar(guest);
   });
 
   it("... and won't see the topic in the topic list", () => {

@@ -272,7 +272,7 @@ export var LoginDialogContent = createClassAndFactory({
 
     var createUserDialog = createChildDialog(null, CreateUserDialogContent, 'esCreateUserDlg');
     var passwordLoginDialog = createChildDialog("Log in with Password", PasswordLoginDialogContent);
-    var guestLoginDialog; // No. createChildDialog("Log in as Guest", GuestLoginDialogContent);
+    var guestLoginDialog; // no. CLEAN_UP, remove: createChildDialog("Log in as Guest", GuestLoginDialogContent);
 
     var makeOauthProps = (iconClass: string, provider: string, includeWith?: boolean) => {
       return {
@@ -410,7 +410,7 @@ var OpenAuthButton = createClassAndFactory({
 });
 
 
-// Later, create some OpenId button too? Old LiveScript code:
+// Later, create some OpenId button too? Old LiveScript code:  CLEAN_UP REMOVE
 /**
  * Logs in at Yahoo by submitting an OpenID login form in a popup.
  * /
@@ -428,7 +428,7 @@ function submitOpenIdLoginForm(openidIdentifier)
   form.submit()
   false */
 
-
+/*  CLEAN_UP REMOVE
 var GuestLoginDialogContent = createClassAndFactory({
   displayName: 'GuestLoginDialogContent',
   getInitialState: function() {
@@ -466,7 +466,7 @@ var GuestLoginDialogContent = createClassAndFactory({
           "Log in" + inOrderTo(this.props.loginReason)),
         Button({ onClick: this.props.closeDialog, className: 'e_LD_G_Cancel' }, "Cancel")));
   }
-});
+}); */
 
 
 var PasswordLoginDialogContent = createClassAndFactory({

@@ -55,6 +55,7 @@ describe("new user, review, ok:", () => {
   it("import a site", () => {
     let site: SiteData = make.forumOwnedByOwen('basicflags', { title: forumTitle });
     site.settings.allowGuestLogin = true;
+    site.settings.requireVerifiedEmail = false;
     // This means a new member can post any number of posts (subjected to new user rate
     // limits), and they'll be shown directly — but the first 2 will be enqueued for review
     // by staff.
@@ -220,7 +221,7 @@ describe("new user, review, ok:", () => {
 
   it("A guest arrives", () => {
     assert(strangersBrowser === guestsBrowser);
-    guestsBrowser.complex.loginAsGuestViaTopbar("I-The-Guest");
+    guestsBrowser.complex.signUpAsGuestViaTopbar("I-The-Guest");
     guestsBrowser.complex.replyToOrigPost("I'm a guest, becomes post nr 6.");
     guestsBrowser.complex.replyToOrigPost("I'm a guest, my 2nd reply, post nr 7.");
     guestsBrowser.complex.replyToOrigPost("I'm a guest, my 3rd reply, post nr 8.");

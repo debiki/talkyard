@@ -95,6 +95,7 @@ describe("private chat", function() {
   it("import a site", function() {
     var site: SiteData = make.forumOwnedByOwen('custom-forms', { title: forumTitle });
     site.settings.allowGuestLogin = true;
+    site.settings.requireVerifiedEmail = false;
     site.members.push(make.memberModeratorMons());
     site.members.push(make.memberMaria());
     idAddress = server.importSiteData(site);
@@ -235,7 +236,7 @@ describe("private chat", function() {
   it("A guest logs in (in Maria's browser)", function() {
     assert(guest === maria);
     maria.topbar.clickLogout();
-    guest.complex.loginAsGuestViaTopbar("Guesila")
+    guest.complex.signUpAsGuestViaTopbar("Guesila")
   });
 
   it("... and sees no submissions", function() {

@@ -57,6 +57,7 @@ describe("editor onebox:", () => {
   it("import a site", () => {
     let site: SiteData = make.forumOwnedByOwen('editor-onebox', { title: forumTitle });
     site.settings.allowGuestLogin = true;
+    site.settings.requireVerifiedEmail = false;
     site.members.push(maria);
     idAddress = server.importSiteData(site);
   });

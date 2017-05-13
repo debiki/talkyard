@@ -284,7 +284,8 @@ trait SiteTransaction {
   def nextMemberId: UserId
   def insertMember(user: MemberInclDetails)
 
-  def tryLoginAsMember(loginAttempt: MemberLoginAttempt): MemberLoginGrant
+  def tryLoginAsMember(loginAttempt: MemberLoginAttempt, requireVerifiedEmail: Boolean)
+        : MemberLoginGrant
   def loginAsGuest(loginAttempt: GuestLoginAttempt): GuestLoginResult
   def configIdtySimple(ctime: ju.Date, emailAddr: String, emailNotfPrefs: EmailNotfPrefs)
 

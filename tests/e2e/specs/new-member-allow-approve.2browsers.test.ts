@@ -59,6 +59,7 @@ describe("new member, allow, approve:", () => {
   it("import a site", () => {
     let site: SiteData = make.forumOwnedByOwen('basicflags', { title: forumTitle });
     site.settings.allowGuestLogin = true;
+    site.settings.requireVerifiedEmail = false;
     // This means a new member can post 5 posts, but after that, hen needs to wait until
     // some of those posts have been approved. And when two of them have been approved,
     // the last approval "cascades" and auto-approves all 5 posts. Thereafter the new memeber

@@ -81,6 +81,7 @@ describe("spam test, no external services:", () => {
   it("import a site", () => {
     let site: SiteData = make.forumOwnedByOwen('basicflags', { title: forumTitle });
     site.settings.allowGuestLogin = true;
+    site.settings.requireVerifiedEmail = false;
     site.settings.numFlagsToHidePost = 2;
     //site.members.push(mons);
     site.members.push(maja);

@@ -2,12 +2,13 @@ import assert = require('assert');
 import settings = require('./settings');
 import { dieIf } from './log-and-die'
 
-function regexEscapeSlashes(origin: string): string {
-  return origin.replace(/\//g, '\\/');
-}
 
 
 const utils = {
+
+  regexEscapeSlashes: function(origin: string): string {
+    return origin.replace(/\//g, '\\/');
+  },
 
   generateTestId: function(): string {
     return Date.now().toString().slice(3, 10);
@@ -29,10 +30,19 @@ const utils = {
   },
 
   findFirstLinkToUrlIn: function(url: string, text: string): string {
-    const regexString = regexEscapeSlashes(url) + '[^"]*';
+    return utils._findFirstLinkToUrlImpl(url, text, true);
+  },
+
+  findAnyFirstLinkToUrlIn: function(url: string, text: string): string {
+    return utils._findFirstLinkToUrlImpl(url, text, false);
+  },
+
+  _findFirstLinkToUrlImpl: function(url: string, text: string, mustMatch: boolean): string {
+    const regexString = utils.regexEscapeSlashes(url) + '[^"]*';
     const matches = text.match(new RegExp(regexString));
-    dieIf(!matches, `No link matching /${regexString}/ found in email [EsE5GPYK2], text: ${text}`);
-    return matches[0];
+    dieIf(mustMatch && !matches,
+        `No link matching /${regexString}/ found in email [EsE5GPYK2], text: ${text}`);
+    return matches ? matches[0] : undefined;
   }
 };
 

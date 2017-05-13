@@ -224,10 +224,12 @@ class DebugTestController @Inject() extends mvc.Controller {
             "EdE5KSA0", "Timeout waiting for an email to get sent to that address"))))
 
         firstCompletedOf(Seq(futureEmail, futureTimeout)).map({
-          case email: Email =>
-            Ok(Json.obj(
-              "subject" -> email.subject,
-              "bodyHtmlText" -> email.bodyHtmlText)) as JSON
+          case emails: Vector[Email] =>
+            Ok(JsArray(emails.map(email => {
+              Json.obj(
+                "subject" -> JsString(email.subject),
+                "bodyHtmlText" -> JsString(email.bodyHtmlText))
+            }))) as JSON
           case x =>
             InternalErrorResult("DwE7UGY4", "Mailer sent the wrong class: " + classNameOf(x))
         }).recover({

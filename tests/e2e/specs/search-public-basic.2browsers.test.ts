@@ -54,6 +54,7 @@ describe("basic publ search:", () => {
   it("import a site", () => {
     let site: SiteData = make.forumOwnedByOwen('impersonate', { title: forumTitle });
     site.settings.allowGuestLogin = true;
+    site.settings.requireVerifiedEmail = false;
     site.members.push(make.memberMaria());
     idAddress = server.importSiteData(site);
   });
@@ -199,7 +200,7 @@ describe("basic publ search:", () => {
   it(`A guest logs in`, () => {
     assert(guest === stranger);
     stranger.go(idAddress.origin);
-    guest.complex.loginAsGuestViaTopbar("Gunnar Guest");
+    guest.complex.signUpAsGuestViaTopbar("Gunnar Guest");
   });
 
   it(`The guest searches for '${wordQwertyBody}', finds both pages`, () => {

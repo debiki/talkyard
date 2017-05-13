@@ -123,7 +123,7 @@ class Mailer(
 
   val logger = play.api.Logger("app.mailer")
 
-  private val e2eTestEmails = mutable.HashMap[String, Promise[Email]]()
+  private val e2eTestEmails = mutable.HashMap[String, Promise[Vector[Email]]]()
 
   /**
    * Accepts an (Email, tenant-id), and then sends that email on behalf of
@@ -140,7 +140,8 @@ class Mailer(
           sender() ! promise.future
         case None =>
           SECURITY // DoS attack: don't add infinitely many promises in prod mode
-          val newPromise = Promise[Email]()
+          CLEAN_UP // could stop using promises — let the e2e tests poll the server instead? (7KUDQY00)
+          val newPromise = Promise[Vector[Email]]()
           e2eTestEmails.put(siteIdColonEmailAddress, newPromise)
           sender() ! newPromise.future
       }
@@ -232,17 +233,22 @@ class Mailer(
   def rememberE2eTestEmail(email: Email, siteDao: SiteDao) {
     val siteIdColonEmailAddress = s"${siteDao.siteId}:${email.sentTo}"
     e2eTestEmails.get(siteIdColonEmailAddress) match {
-      case Some(promise: Promise[Email]) =>
+      case Some(promise) =>
         if (promise.isCompleted) {
-          p.Logger.debug("Promise already completed, why? [DwM2PK3] Any email: " +
-            promise.future.value.get.toOption)
+          p.Logger.debug(
+              s"Appending e2e test email to: ${email.sentTo}, subject: ${email.subject} [DwM2PK3]")
+          val oldEmails = promise.future.value.get.toOption getOrDie "EdE4FSBBK2"
+          val moreEmails = oldEmails :+ email
+          val lastTen = moreEmails.takeRight(10)
+          e2eTestEmails.put(siteIdColonEmailAddress, Promise.successful(lastTen))
         }
         else {
-          promise.success(email)
+          promise.success(Vector(email))
         }
       case None =>
         SECURITY // DoS attack: don't remember infinitely many addresses in prod mode
-        e2eTestEmails.put(siteIdColonEmailAddress, Promise.successful(email))
+        // Solution:  (7KUDQY00) ?
+        e2eTestEmails.put(siteIdColonEmailAddress, Promise.successful(Vector(email)))
     }
   }
 

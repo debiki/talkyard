@@ -369,7 +369,7 @@ object ReactJson {
       "appVersion" -> Globals.applicationVersion,
       "siteId" -> JsNumber(dao.siteId),
       "siteStatus" -> request.dao.theSite().status.toInt,
-      // CLEAN_UP remove these two; they're already included in settings: {...}.
+      // CLEAN_UP remove these two; they should-instead-be/are-already included in settings: {...}.
       "userMustBeAuthenticated" -> JsBoolean(siteSettings.userMustBeAuthenticated),
       "userMustBeApproved" -> JsBoolean(siteSettings.userMustBeApproved),
       "settings" -> makeSettingsVisibleClientSideJson(siteSettings),
@@ -378,6 +378,7 @@ object ReactJson {
       "me" -> userNoPageToJson(request),
       "maxUploadSizeBytes" -> Globals.maxUploadSizeBytes,
       "siteSections" -> makeSiteSectionsJson(dao),
+      "usersByIdBrief" -> Json.obj(),
       "strangersWatchbar" -> makeStrangersWatcbarJson(dao))
 
     if (inclCategoriesJson) {

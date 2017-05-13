@@ -18,6 +18,7 @@
 @(tpi: debiki.SiteTpi, siteId: Int, anyPageId: Option[String],
   pageUriPath: String,
   anyPageRole: Option[com.debiki.core.PageRole], anyPagePath: Option[com.debiki.core.PagePath],
+  isInLoginWindow: Boolean,
   reactStoreSafeJsonString: String, minMaxJs: String, minMaxCss: String)
 
 @import play.api.Play.current
@@ -25,6 +26,10 @@
 
 @pageIdQuotedOrUndefined = @{
   anyPageId.map(id => s"'$id'") getOrElse "undefined"
+}
+
+@isInLoginWindowBoolStr = @{
+  if (isInLoginWindow) "true" else "false"
 }
 
 <script id="theVolatileJson" type="application/json">
@@ -126,14 +131,16 @@ var debiki = {
   volatileDataFromServer: _volatileData,
   getPageId: function() { return @Html(pageIdQuotedOrUndefined); },
   isDev: @{ if (play.api.Play.isDev) "true" else "false" },
-  v0: { util: {} },
+  v0: { util: {} },@{/* CLEAN_UP remove v0.util */}
   internal: {
     minMaxJs: '@minMaxJs',
-    isInIframe: self !== top,
     serverOrigin: '//@tpi.serverAddress',
     pageUri: '//@tpi.serverAddress@pageUriPath',
     pageId: @Html(pageIdQuotedOrUndefined),
     pageRole: @{ anyPageRole.map(_.toInt) getOrElse "undefined" },
+    isInLoginWindow: @isInLoginWindowBoolStr,
+    isInLoginPopup: @isInLoginWindowBoolStr && window.opener && window.opener.debiki,
+    isInIframe: self !== top,
     isInEmbeddedCommentsIframe: @{
       if (anyPageRole.contains(com.debiki.core.PageRole.EmbeddedComments)) "true" else "false"
     },

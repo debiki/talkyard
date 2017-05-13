@@ -44,6 +44,7 @@ describe("private chat", function() {
   it("import a site", function() {
     var site: SiteData = make.forumOwnedByOwen('priv-chat', { title: forumTitle });
     site.settings.allowGuestLogin = true;
+    site.settings.requireVerifiedEmail = false;
     site.members.push(make.memberMichael());
     site.members.push(make.memberMaria());
     idAddress = server.importSiteData(site);
@@ -169,7 +170,7 @@ describe("private chat", function() {
   it("A guest logs in (in Maria's browser)", function() {
     assert(guest === maria, 'EsE4FKG6FY0');
     guest.go(idAddress.origin);
-    guest.complex.loginAsGuestViaTopbar("Gunnar Guest");
+    guest.complex.signUpAsGuestViaTopbar("Gunnar Guest");
   });
 
   it("... the guest cannot access it via a direct link", function() {

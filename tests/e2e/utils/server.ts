@@ -6,7 +6,7 @@ import _ = require('lodash');
 import assert = require('assert');
 import settings = require('./settings');
 import utils = require('./utils');
-import { logMessage, dieIf } from './log-and-die';
+import { logMessage, die, dieIf } from './log-and-die';
 
 // Didn't find any Typescript defs.
 declare function require(path: string): any;
@@ -124,7 +124,8 @@ function importSiteData(siteData: SiteData): IdAddress {
 function getLastEmailSenTo(siteId: SiteId, email: string): EmailSubjectBody {
   const response = getOrDie(settings.mainSiteOrigin + '/-/last-e2e-test-email?sentTo=' + email +
     '&siteId=' + siteId);
-  return JSON.parse(response.body);
+  const lastEmails = JSON.parse(response.body);
+  return lastEmails[lastEmails.length - 1];
 }
 
 
@@ -134,9 +135,44 @@ function getLastVerifyEmailAddressLinkEmailedTo(siteId: SiteId, emailAddress: st
 }
 
 
+const unsubUrlRegexString = 'https?://.*/-/unsubscribe';
+
 function getLastUnsubscriptionLinkEmailedTo(siteId: SiteId, emailAddress: string): string {
   const email = getLastEmailSenTo(siteId, emailAddress);
-  return utils.findFirstLinkToUrlIn('https?://.*/-/unsubscribe', email.bodyHtmlText);
+  return utils.findFirstLinkToUrlIn(unsubUrlRegexString, email.bodyHtmlText);
+}
+
+
+function getAnyUnsubscriptionLinkEmailedTo(siteId: SiteId, emailAddress: string): string {
+  const email = getLastEmailSenTo(siteId, emailAddress);
+  return utils.findAnyFirstLinkToUrlIn(unsubUrlRegexString, email.bodyHtmlText);
+}
+
+
+function waitForUnsubscriptionLinkEmailedTo(siteId: SiteId, emailAddress: string, browser): string {
+  for (let attemptNr = 1; attemptNr <= settings.waitforTimeout / 500; ++attemptNr) {
+    const email = getLastEmailSenTo(siteId, emailAddress);
+    const link = utils.findAnyFirstLinkToUrlIn(unsubUrlRegexString, email.bodyHtmlText);
+    if (!link)
+      browser.pause(500 - 100); // 100 ms for a request, perhaps?
+    else
+      return link;
+  }
+}
+
+
+function waitUntilLastEmailMatches(siteId: SiteId, emailAddress: string,
+        textToMatch: string, browser) {
+  const regex = new RegExp(utils.regexEscapeSlashes(textToMatch));
+  for (let attemptNr = 1; attemptNr <= settings.waitforTimeout / 500; ++attemptNr) {
+    const email = getLastEmailSenTo(siteId, emailAddress);
+    const matches = email.bodyHtmlText.match(regex);
+    if (!matches)
+      browser.pause(500 - 100);
+    else
+      return matches;
+  }
+  die(`Never got any email to ${emailAddress} matching /${textToMatch}/ [EdE2WKTSUG0]`);
 }
 
 
@@ -146,5 +182,8 @@ export = {
   getLastEmailSenTo: getLastEmailSenTo,
   getLastVerifyEmailAddressLinkEmailedTo: getLastVerifyEmailAddressLinkEmailedTo,
   getLastUnsubscriptionLinkEmailedTo: getLastUnsubscriptionLinkEmailedTo,
+  getAnyUnsubscriptionLinkEmailedTo: getAnyUnsubscriptionLinkEmailedTo,
+  waitForUnsubscriptionLinkEmailedTo: waitForUnsubscriptionLinkEmailedTo,
+  waitUntilLastEmailMatches: waitUntilLastEmailMatches,
 };
 

@@ -519,6 +519,12 @@ function pagesFor(browser) {
         browser.waitForVisible('#e2eNeedVerifyEmailDialog');
       },
 
+      waitForAndCloseWelcomeLoggedInDialog: function() {
+        browser.waitForVisible('#te_WelcomeLoggedIn');
+        browser.waitAndClick('#te_WelcomeLoggedIn button');
+        browser.waitUntilModalGone();
+      },
+
       fillInPassword: function(password) {
         browser.waitAndSetValue('#e2ePassword', password);
       },
@@ -543,16 +549,46 @@ function pagesFor(browser) {
         api.loginDialog.clickSubmit();
       },
 
-      loginAsGuest: function(name: string, email?: string) {
+      signUpAsGuest: function(name: string, email?: string) {
+        /* Old, with the separate guest dialog:   CLEAN_UP remove this comment
         api.loginDialog.clickLoginAsGuest();
         api.loginDialog.fillInGuestName(name);
         if (email) {
           api.loginDialog.fillInGuestEmail(email);
         }
         api.loginDialog.submitGuestLogin();
-        browser.waitUntilModalGone();
-        var nameInHtml = browser.waitAndGetVisibleText('.esTopbar .esAvtrName_name');
-        assert(nameInHtml === name);
+        */
+        console.log('createPasswordAccount with no email: fillInFullName...');
+        api.loginDialog.fillInFullName(name);
+        console.log('fillInUsername...');
+        const username = name.replace(/[ '-]+/g, '_').substr(0, 20);  // dupl code (7GKRW10)
+        api.loginDialog.fillInUsername(username);
+        if (email) {
+          console.log('fillInEmail...');
+          api.loginDialog.fillInEmail(email);
+        }
+        console.log('fillInPassword...');
+        api.loginDialog.fillInPassword("public1234");
+        console.log('clickSubmit...');
+        api.loginDialog.clickSubmit();
+        console.log('waitForWelcomeLoggedInDialog...');
+        api.loginDialog.waitForAndCloseWelcomeLoggedInDialog();
+        console.log('createPasswordAccount with no email: done');
+        const nameInHtml = browser.waitAndGetVisibleText('.esTopbar .esAvtrName_name');
+        assert(nameInHtml === username);
+      },
+
+      logInAsGuest: function(name: string, email_noLongerNeeded?: string) { // CLEAN_UP repl email w pwd?
+        const username = name.replace(/[ '-]+/g, '_').substr(0, 20);  // dupl code (7GKRW10)
+        console.log('logInAsGuest: fillInFullName...');
+        api.loginDialog.fillInUsername(name);
+        console.log('fillInPassword...');
+        api.loginDialog.fillInPassword("public1234");
+        console.log('clickSubmit...');
+        api.loginDialog.clickSubmit();
+        console.log('logInAsGuest with no email: done');
+        const nameInHtml = browser.waitAndGetVisibleText('.esTopbar .esAvtrName_name');
+        dieIf(nameInHtml !== username, `Wrong username in topbar: ${nameInHtml} [EdE2WKG04]`);
       },
 
       clickLoginAsGuest: function() {
@@ -567,7 +603,7 @@ function pagesFor(browser) {
         browser.waitAndSetValue('#e2eLD_G_Email', email);
       },
 
-      submitGuestLogin: function() {
+      submitGuestLogin: function() {  // CLEAN_UP remove all this guest login stuff?
         api.waitAndClick('#e2eLD_G_Submit');
       },
 
@@ -1660,7 +1696,18 @@ function pagesFor(browser) {
         api.loginDialog.loginWithPassword(credentials);
       },
 
-      loginAsGuestViaTopbar: function(nameOrObj, email?: string) {
+      signUpAsGuestViaTopbar: function(nameOrObj, email?: string) {
+        api.topbar.clickSignUp();
+        let name = nameOrObj;
+        if (_.isObject(nameOrObj)) {
+          assert(!email);
+          name = nameOrObj.fullName;
+          email = nameOrObj.emailAddress;
+        }
+        api.loginDialog.signUpAsGuest(name, email);
+      },
+
+      logInAsGuestViaTopbar: function(nameOrObj, email?: string) {
         api.topbar.clickLogin();
         let name = nameOrObj;
         if (_.isObject(nameOrObj)) {
@@ -1668,7 +1715,7 @@ function pagesFor(browser) {
           name = nameOrObj.fullName;
           email = nameOrObj.emailAddress;
         }
-        api.loginDialog.loginAsGuest(name, email);
+        api.loginDialog.logInAsGuest(name, email);
       },
 
       closeSidebars: function() {

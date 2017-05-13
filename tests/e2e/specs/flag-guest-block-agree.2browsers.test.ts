@@ -66,6 +66,8 @@ describe("spam test, no external services:", () => {
   it("import a site", () => {
     let site: SiteData = make.forumOwnedByOwen('basicflags', { title: forumTitle });
     site.settings.allowGuestLogin = true;
+    site.settings.requireVerifiedEmail = false;
+    site.settings.mayPostBeforeEmailVerified = true;
     site.settings.numFlagsToHidePost = 2;
     site.settings.numFlagsToBlockNewUser = 3;
     site.settings.numFlaggersToBlockNewUser = 2;
@@ -103,7 +105,7 @@ describe("spam test, no external services:", () => {
   it("A guest logs in", () => {
     guestsBrowser.go(idAddress.origin);
     guestsBrowser.disableRateLimits();
-    guestsBrowser.complex.loginAsGuestViaTopbar(guest);
+    guestsBrowser.complex.signUpAsGuestViaTopbar(guest);
   });
 
   it("... posts three replies to an old topic", () => {

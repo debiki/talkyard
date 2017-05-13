@@ -68,6 +68,7 @@ describe("authz basic see reply create:", () => {
     // Later: break out 'PermTestForum' ...? if needed.
     siteBuilder = makeSiteOwnedByOwenBuilder();
     siteBuilder.theSite.settings.allowGuestLogin = true;
+    siteBuilder.theSite.settings.requireVerifiedEmail = false;
     forum = {
       siteData: siteBuilder.theSite,
       forumPage: null,
@@ -369,7 +370,7 @@ describe("authz basic see reply create:", () => {
   });
 
   it("... can post reply", () => {
-    strangersBrowser.complex.loginAsGuestViaTopbar("Gunnar Guest");
+    strangersBrowser.complex.signUpAsGuestViaTopbar("Gunnar Guest");
     strangersBrowser.complex.replyToOrigPost(guestsReplyText);
   });
 

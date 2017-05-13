@@ -51,6 +51,7 @@ describe("private chat", () => {
   it("import a site", () => {
     let site: SiteData = make.forumOwnedByOwen('formal-priv-msg', { title: forumTitle });
     site.settings.allowGuestLogin = true;
+    site.settings.requireVerifiedEmail = false;
     memberAlice = make.memberAdminAlice();
     site.members.push(memberAlice);
     site.members.push(make.memberMichael());

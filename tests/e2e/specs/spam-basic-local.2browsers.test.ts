@@ -58,6 +58,7 @@ describe("spam test, no external services:", () => {
   it("import a site", () => {
     let site: SiteData = make.forumOwnedByOwen('basicspam', { title: forumTitle });
     site.settings.allowGuestLogin = true;
+    site.settings.requireVerifiedEmail = false;
     site.members.push(mons);
     site.members.push(maria);
     site.members.push(mallory);
@@ -145,20 +146,6 @@ describe("spam test, no external services:", () => {
     mallorysBrowser.serverErrorDialog.waitAndAssertTextMatches(/spam.*EdE7KVF2_/);
     mallorysBrowser.serverErrorDialog.clickClose();
     strangersBrowser.loginDialog.clickCancel();
-  });
-
-  it("The stranger attempts to sign up as guest + a spammer's email", () => {
-    strangersBrowser.topbar.clickLogin();
-    strangersBrowser.loginDialog.clickLoginAsGuest();
-    strangersBrowser.loginDialog.fillInGuestName("Spammy Guest");
-    strangersBrowser.loginDialog.fillInGuestEmail('__ed_spam' + '_test_123__@ex2.co');
-    strangersBrowser.loginDialog.submitGuestLogin();
-  });
-
-  it("... but is rejected again", () => {
-    mallorysBrowser.serverErrorDialog.waitAndAssertTextMatches(/spam.*EdE5KJU3_/);
-    mallorysBrowser.serverErrorDialog.clickClose();
-    strangersBrowser.loginDialog.clickCancelGuestLogin();
   });
 
   it("Done", () => {

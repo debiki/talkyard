@@ -290,9 +290,9 @@ const LoginAndSignupSettingsComponent = React.createClass(<any> {
 
         Setting2(props, { type: 'checkbox', label: "Require verified email",
           className: 'e_A_Ss_S-RequireVerifiedEmailCB',
-          help: "New users must specify an email address, and click an email " +
-              "verification link (unless signing up via Gmail or Facebook). Good, because " +
-              "you'll have a way to contact everyone.",
+          help: "New users must specify an email address, and click an email verification link " +
+              "(unless verified already via e.g. Gmail or Facebook). Recommended, because you'll " +
+              "have a way to contact everyone. And we can send password reset emails.",
           getter: (s: Settings) => s.requireVerifiedEmail,
           update: (newSettings: Settings, target) => {
             newSettings.requireVerifiedEmail = target.checked;
