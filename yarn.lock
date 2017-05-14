@@ -225,6 +225,13 @@ aws4@^1.2.1:
   version "1.5.0"
   resolved "https://registry.yarnpkg.com/aws4/-/aws4-1.5.0.tgz#0a29ffb79c31c9e712eeb087e8e7a64b4a56d755"
 
+babel-runtime@6.23.0, babel-runtime@^6.23.0, babel-runtime@~6.23.0:
+  version "6.23.0"
+  resolved "https://registry.yarnpkg.com/babel-runtime/-/babel-runtime-6.23.0.tgz#0a9489f144de70efb3ce4300accdb329e2fc543b"
+  dependencies:
+    core-js "^2.4.0"
+    regenerator-runtime "^0.10.0"
+
 babel-runtime@^5.8.25:
   version "5.8.38"
   resolved "https://registry.yarnpkg.com/babel-runtime/-/babel-runtime-5.8.38.tgz#1c0b02eb63312f5f087ff20450827b425c9d4c19"
@@ -237,13 +244,6 @@ babel-runtime@^6.11.6:
   dependencies:
     core-js "^2.4.0"
     regenerator-runtime "^0.9.5"
-
-babel-runtime@~6.23.0:
-  version "6.23.0"
-  resolved "https://registry.yarnpkg.com/babel-runtime/-/babel-runtime-6.23.0.tgz#0a9489f144de70efb3ce4300accdb329e2fc543b"
-  dependencies:
-    core-js "^2.4.0"
-    regenerator-runtime "^0.10.0"
 
 balanced-match@^0.4.1:
   version "0.4.2"
@@ -610,17 +610,17 @@ dateformat@^1.0.11, dateformat@^1.0.7-1.2.3:
     get-stdin "^4.0.1"
     meow "^3.3.0"
 
-debug@*, debug@2.2.0:
-  version "2.2.0"
-  resolved "https://registry.yarnpkg.com/debug/-/debug-2.2.0.tgz#f87057e995b1a1f6ae6a4960664137bc56f039da"
-  dependencies:
-    ms "0.7.1"
-
-debug@^2.6.3:
+debug@*, debug@^2.6.3:
   version "2.6.6"
   resolved "https://registry.yarnpkg.com/debug/-/debug-2.6.6.tgz#a9fa6fbe9ca43cf1e79f73b75c0189cbb7d6db5a"
   dependencies:
     ms "0.7.3"
+
+debug@2.6.0:
+  version "2.6.0"
+  resolved "https://registry.yarnpkg.com/debug/-/debug-2.6.0.tgz#bc596bcabe7617f11d9fa15361eded5608b8499b"
+  dependencies:
+    ms "0.7.2"
 
 decamelize@^1.0.0, decamelize@^1.1.2:
   version "1.2.0"
@@ -677,9 +677,9 @@ detect-file@^0.1.0:
   dependencies:
     fs-exists-sync "^0.1.0"
 
-diff@1.4.0:
-  version "1.4.0"
-  resolved "https://registry.yarnpkg.com/diff/-/diff-1.4.0.tgz#7f28d2eb9ee7b15a97efd89ce63dcfdaa3ccbabf"
+diff@3.2.0:
+  version "3.2.0"
+  resolved "https://registry.yarnpkg.com/diff/-/diff-3.2.0.tgz#c9ce393a4b7cbd0b058a725c93df299027868ff9"
 
 dom-helpers@^2.4.0:
   version "2.4.0"
@@ -913,7 +913,7 @@ fd-slicer@~1.0.1:
   dependencies:
     pend "~1.2.0"
 
-fibers, fibers@^1.0.9:
+fibers, fibers@~1.0.15:
   version "1.0.15"
   resolved "https://registry.yarnpkg.com/fibers/-/fibers-1.0.15.tgz#22f039c8f18b856190fbbe4decf056154c1eae9c"
 
@@ -1155,9 +1155,9 @@ glob@7.0.3, glob@7.0.x:
     once "^1.3.0"
     path-is-absolute "^1.0.0"
 
-glob@7.0.5:
-  version "7.0.5"
-  resolved "https://registry.yarnpkg.com/glob/-/glob-7.0.5.tgz#b4202a69099bbb4d292a7c1b95b6682b67ebdc95"
+glob@7.1.0, glob@^7.0.3:
+  version "7.1.0"
+  resolved "https://registry.yarnpkg.com/glob/-/glob-7.1.0.tgz#36add856d746d0d99e4cc2797bba1ae2c67272fd"
   dependencies:
     fs.realpath "^1.0.0"
     inflight "^1.0.4"
@@ -1166,9 +1166,9 @@ glob@7.0.5:
     once "^1.3.0"
     path-is-absolute "^1.0.0"
 
-glob@7.1.0, glob@^7.0.3:
-  version "7.1.0"
-  resolved "https://registry.yarnpkg.com/glob/-/glob-7.1.0.tgz#36add856d746d0d99e4cc2797bba1ae2c67272fd"
+glob@7.1.1, glob@^7.0.0, glob@^7.0.5, glob@~7.1.1:
+  version "7.1.1"
+  resolved "https://registry.yarnpkg.com/glob/-/glob-7.1.1.tgz#805211df04faaf1c63a3600306cdf5ade50b2ec8"
   dependencies:
     fs.realpath "^1.0.0"
     inflight "^1.0.4"
@@ -1193,17 +1193,6 @@ glob@^5.0.3:
     inflight "^1.0.4"
     inherits "2"
     minimatch "2 || 3"
-    once "^1.3.0"
-    path-is-absolute "^1.0.0"
-
-glob@^7.0.0, glob@^7.0.5, glob@~7.1.1:
-  version "7.1.1"
-  resolved "https://registry.yarnpkg.com/glob/-/glob-7.1.1.tgz#805211df04faaf1c63a3600306cdf5ade50b2ec8"
-  dependencies:
-    fs.realpath "^1.0.0"
-    inflight "^1.0.4"
-    inherits "2"
-    minimatch "^3.0.2"
     once "^1.3.0"
     path-is-absolute "^1.0.0"
 
@@ -2326,11 +2315,11 @@ lodash@3.10.x:
   version "3.10.1"
   resolved "https://registry.yarnpkg.com/lodash/-/lodash-3.10.1.tgz#5bf45e8e49ba4189e17d482789dfd15bd140b7b6"
 
-lodash@4.16.4, lodash@^4.11.1, lodash@^4.12.0, lodash@^4.13.1, lodash@^4.14.0, lodash@^4.16.1, lodash@^4.3.0, lodash@^4.8.0, lodash@~4.16.4:
+lodash@4.16.4, lodash@^4.11.1, lodash@^4.13.1, lodash@^4.16.1, lodash@~4.16.4:
   version "4.16.4"
   resolved "https://registry.yarnpkg.com/lodash/-/lodash-4.16.4.tgz#01ce306b9bad1319f2a5528674f88297aeb70127"
 
-lodash@^4.17.4:
+lodash@^4.12.0, lodash@^4.14.0, lodash@^4.17.4, lodash@^4.3.0, lodash@^4.8.0:
   version "4.17.4"
   resolved "https://registry.yarnpkg.com/lodash/-/lodash-4.17.4.tgz#78203a4d1c328ae1d86dca6460e369b57f4055ae"
 
@@ -2489,16 +2478,16 @@ mkdirp@^0.3.5:
   version "0.3.5"
   resolved "https://registry.yarnpkg.com/mkdirp/-/mkdirp-0.3.5.tgz#de3e5f8961c88c787ee1368df849ac4413eca8d7"
 
-mocha@^3.1.2:
-  version "3.2.0"
-  resolved "https://registry.yarnpkg.com/mocha/-/mocha-3.2.0.tgz#7dc4f45e5088075171a68896814e6ae9eb7a85e3"
+mocha@^3.2.0:
+  version "3.3.0"
+  resolved "https://registry.yarnpkg.com/mocha/-/mocha-3.3.0.tgz#d29b7428d3f52c82e2e65df1ecb7064e1aabbfb5"
   dependencies:
     browser-stdout "1.3.0"
     commander "2.9.0"
-    debug "2.2.0"
-    diff "1.4.0"
+    debug "2.6.0"
+    diff "3.2.0"
     escape-string-regexp "1.0.5"
-    glob "7.0.5"
+    glob "7.1.1"
     growl "1.9.2"
     json3 "3.3.2"
     lodash.create "3.1.1"
@@ -2509,9 +2498,9 @@ moment@^2.15.0:
   version "2.15.1"
   resolved "https://registry.yarnpkg.com/moment/-/moment-2.15.1.tgz#e979c2a29e22888e60f396f2220a6118f85cd94c"
 
-ms@0.7.1:
-  version "0.7.1"
-  resolved "https://registry.yarnpkg.com/ms/-/ms-0.7.1.tgz#9cd13c03adbff25b65effde7ce864ee952017098"
+ms@0.7.2:
+  version "0.7.2"
+  resolved "https://registry.yarnpkg.com/ms/-/ms-0.7.2.tgz#ae25cf2512b3885a1d95d7f037868d8431124765"
 
 ms@0.7.3:
   version "0.7.3"
@@ -2821,13 +2810,13 @@ q@~1.5.0:
   version "1.5.0"
   resolved "https://registry.yarnpkg.com/q/-/q-1.5.0.tgz#dd01bac9d06d30e6f219aecb8253ee9ebdc308f1"
 
-qs@^6.1.0, qs@~6.2.0:
-  version "6.2.1"
-  resolved "https://registry.yarnpkg.com/qs/-/qs-6.2.1.tgz#ce03c5ff0935bc1d9d69a9f14cbd18e568d67625"
-
-qs@~6.3.0:
+qs@^6.1.0, qs@~6.3.0:
   version "6.3.0"
   resolved "https://registry.yarnpkg.com/qs/-/qs-6.3.0.tgz#f403b264f23bc01228c74131b407f18d5ea5d442"
+
+qs@~6.2.0:
+  version "6.2.1"
+  resolved "https://registry.yarnpkg.com/qs/-/qs-6.2.1.tgz#ce03c5ff0935bc1d9d69a9f14cbd18e568d67625"
 
 qs@~6.4.0:
   version "6.4.0"
@@ -3019,7 +3008,7 @@ replace-ext@0.0.1:
   version "0.0.1"
   resolved "https://registry.yarnpkg.com/replace-ext/-/replace-ext-0.0.1.tgz#29bbd92078a739f0bcce2b4ee41e837953522924"
 
-request@2.79.0:
+request@2.79.0, request@2.x:
   version "2.79.0"
   resolved "https://registry.yarnpkg.com/request/-/request-2.79.0.tgz#4dfe5bf6be8b8cdc37fcf93e04b65577722710de"
   dependencies:
@@ -3042,33 +3031,6 @@ request@2.79.0:
     stringstream "~0.0.4"
     tough-cookie "~2.3.0"
     tunnel-agent "~0.4.1"
-    uuid "^3.0.0"
-
-request@2.x, request@~2.81.0:
-  version "2.81.0"
-  resolved "https://registry.yarnpkg.com/request/-/request-2.81.0.tgz#c6928946a0e06c5f8d6f8a9333469ffda46298a0"
-  dependencies:
-    aws-sign2 "~0.6.0"
-    aws4 "^1.2.1"
-    caseless "~0.12.0"
-    combined-stream "~1.0.5"
-    extend "~3.0.0"
-    forever-agent "~0.6.1"
-    form-data "~2.1.1"
-    har-validator "~4.2.1"
-    hawk "~3.1.3"
-    http-signature "~1.1.0"
-    is-typedarray "~1.0.0"
-    isstream "~0.1.2"
-    json-stringify-safe "~5.0.1"
-    mime-types "~2.1.7"
-    oauth-sign "~0.8.1"
-    performance-now "^0.2.0"
-    qs "~6.4.0"
-    safe-buffer "^5.0.1"
-    stringstream "~0.0.4"
-    tough-cookie "~2.3.0"
-    tunnel-agent "^0.6.0"
     uuid "^3.0.0"
 
 request@^2.64.0:
@@ -3096,6 +3058,33 @@ request@^2.64.0:
     stringstream "~0.0.4"
     tough-cookie "~2.3.0"
     tunnel-agent "~0.4.1"
+
+request@~2.81.0:
+  version "2.81.0"
+  resolved "https://registry.yarnpkg.com/request/-/request-2.81.0.tgz#c6928946a0e06c5f8d6f8a9333469ffda46298a0"
+  dependencies:
+    aws-sign2 "~0.6.0"
+    aws4 "^1.2.1"
+    caseless "~0.12.0"
+    combined-stream "~1.0.5"
+    extend "~3.0.0"
+    forever-agent "~0.6.1"
+    form-data "~2.1.1"
+    har-validator "~4.2.1"
+    hawk "~3.1.3"
+    http-signature "~1.1.0"
+    is-typedarray "~1.0.0"
+    isstream "~0.1.2"
+    json-stringify-safe "~5.0.1"
+    mime-types "~2.1.7"
+    oauth-sign "~0.8.1"
+    performance-now "^0.2.0"
+    qs "~6.4.0"
+    safe-buffer "^5.0.1"
+    stringstream "~0.0.4"
+    tough-cookie "~2.3.0"
+    tunnel-agent "^0.6.0"
+    uuid "^3.0.0"
 
 resolve-dir@^0.1.0:
   version "0.1.1"
@@ -3743,7 +3732,7 @@ warning@^3.0.0:
   dependencies:
     loose-envify "^1.0.0"
 
-wdio-dot-reporter:
+wdio-dot-reporter@^0.0.6:
   version "0.0.6"
   resolved "https://registry.yarnpkg.com/wdio-dot-reporter/-/wdio-dot-reporter-0.0.6.tgz#153b3e1c5d76777190d893480ffa6f37833740f1"
   dependencies:
@@ -3753,24 +3742,25 @@ wdio-dot-reporter@~0.0.8:
   version "0.0.8"
   resolved "https://registry.yarnpkg.com/wdio-dot-reporter/-/wdio-dot-reporter-0.0.8.tgz#36195576da0d998210c71948cbb65f5bf11bfc65"
 
-wdio-mocha-framework@^0.5.8:
-  version "0.5.8"
-  resolved "https://registry.yarnpkg.com/wdio-mocha-framework/-/wdio-mocha-framework-0.5.8.tgz#cb9dd90eee3ccc2a94b96362a4a4ffce774d19b7"
+wdio-mocha-framework@^0.5.10:
+  version "0.5.10"
+  resolved "https://registry.yarnpkg.com/wdio-mocha-framework/-/wdio-mocha-framework-0.5.10.tgz#d1f6b5b1129a845f273672d9b2ad0c4b4f37cba1"
   dependencies:
-    babel-runtime "^5.8.25"
-    mocha "^3.1.2"
-    wdio-sync "0.6.10"
+    babel-runtime "^6.23.0"
+    mocha "^3.2.0"
+    wdio-sync "0.6.14"
 
-wdio-sync@0.6.10, wdio-sync@^0.6.10:
-  version "0.6.10"
-  resolved "https://registry.yarnpkg.com/wdio-sync/-/wdio-sync-0.6.10.tgz#e67ec663b0dca733bf2b676c7561f23876378387"
+wdio-sync@0.6.14, wdio-sync@^0.6.14:
+  version "0.6.14"
+  resolved "https://registry.yarnpkg.com/wdio-sync/-/wdio-sync-0.6.14.tgz#a1dcd5907ba1d04154aae6176c622d910c3ca9b3"
   dependencies:
-    fibers "^1.0.9"
+    babel-runtime "6.23.0"
+    fibers "~1.0.15"
     object.assign "^4.0.3"
 
-webdriverio@4.7.1:
-  version "4.7.1"
-  resolved "https://registry.yarnpkg.com/webdriverio/-/webdriverio-4.7.1.tgz#2248d1c6a2e05a89c840d4d62e9e550997a43854"
+webdriverio@^4.8.0:
+  version "4.8.0"
+  resolved "https://registry.yarnpkg.com/webdriverio/-/webdriverio-4.8.0.tgz#d52929b749080f89967f6e1614051cbc8172d132"
   dependencies:
     archiver "~1.3.0"
     babel-runtime "~6.23.0"

@@ -872,6 +872,7 @@ isatap
 
 git
 gist
+every
 everyone everybody
 anyone anybody
 someone somebody
@@ -952,6 +953,13 @@ many
 multiple
 title
 list
+
+# private, public already above.
+protected
+with
+for
+while
+done
 
 effective
 discussion

@@ -34,6 +34,7 @@
     "react-input-autosize": "=1.1.0",
     "react-router": "3.0.0",
     "react-select": "=1.0.0-rc.1",
+    "wdio-dot-reporter": "^0.0.6",
     "zxcvbn": "^4.4.1"
   },
   "devDependencies": {
@@ -66,9 +67,9 @@
     "tape": "^4.6.3",
     "typescript": "^2.1.4",
     "wdio-dot-reporter": "^0.0.6",
-    "wdio-mocha-framework": "^0.5.8",
-    "wdio-sync": "^0.6.10",
-    "webdriverio": "4.7.1"
+    "wdio-mocha-framework": "^0.5.10",
+    "wdio-sync": "^0.6.14",
+    "webdriverio": "^4.8.0"
   },
   "greenkeeper": {
     "ignore": [

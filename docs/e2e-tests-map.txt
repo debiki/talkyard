@@ -18,6 +18,7 @@ create site & forum -
   create:  create-site-all-logins
   not too many per ip / email:
   not too many in total:
+  reserved subdomain:
 
 create account -
   password:  create-site-all-logins
@@ -27,6 +28,7 @@ create account -
   twitter:
   email aready in use:
   username aready in use:
+  reserved username:
 
 login -
   guest:
