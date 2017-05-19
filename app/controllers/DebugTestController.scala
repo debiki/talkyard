@@ -22,7 +22,9 @@ import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki.{Globals, RateLimits, ReactRenderer}
 import debiki.DebikiHttp._
+import debiki.dao.PagePartsDao
 import ed.server.http._
+import ed.server.pop.PagePopularityCalculator
 import java.lang.management.ManagementFactory
 import java.{io => jio, util => ju}
 import javax.inject.Inject
@@ -247,6 +249,33 @@ class DebugTestController @Inject() extends mvc.Controller {
     })
 
     result
+  }
+
+
+  def showPagePopularityStats(pageId: PageId) = AdminGetAction { request =>
+    val (scoreInDb, scoreNow, statsNow) = request.dao.readOnlyTransaction { tx =>
+      val scoreInDb = tx.loadPagePopularityScore(pageId)
+      val pageParts = PagePartsDao(pageId, tx)
+      val actions = tx.loadActionsOnPage(pageParts.pageId)
+      val visits = tx.loadPageVisitTrusts(pageParts.pageId)
+      val statsNow = PagePopularityCalculator.calcPopStatsNowAndThen(
+        Globals.now(), pageParts, actions, visits)
+      val scoreNow = PagePopularityCalculator.calcPopularityScores(statsNow)
+      (scoreInDb, scoreNow, statsNow)
+    }
+    Ok(i"""
+      |Score in db
+      |==================================
+      |${scoreInDb.map(_.toPrettyString) getOrElse "Absent"}
+      |
+      |Score now
+      |==================================
+      |${scoreNow.toPrettyString}
+      |
+      |Stats now
+      |==================================
+      |${statsNow.toPrettyString}
+      """) as TEXT
   }
 
 

@@ -37,6 +37,12 @@ object TrustLevel {
   case object Regular extends TrustLevel(5)
   case object CoreMember extends TrustLevel(6)
 
+  // Not real trust levels, but sometimes simpler to remember just one digit, say 7,
+  // instead of 3 things: level + isMod + isAdm.
+  val StrangerDummyLevel = 0
+  val ModeratorDummyLevel = 7
+  val AdminDummyLevel = 8
+
   def fromInt(value: Int): Option[TrustLevel] = Some(value match {
     case TrustLevel.New.IntVal => TrustLevel.New
     case TrustLevel.Basic.IntVal => TrustLevel.Basic

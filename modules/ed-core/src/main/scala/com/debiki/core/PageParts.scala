@@ -63,6 +63,10 @@ object PageParts {
 }
 
 
+class PreLoadedPageParts(
+  val pageId: PageId,
+  val allPosts: immutable.Seq[Post]) extends PageParts
+
 
 /** The parts of a page are 1) posts: any title post, any body post, and any comments,
   * and 2) people, namely those who have authored or edited the posts.
@@ -114,7 +118,7 @@ abstract class PageParts {
       PageParts.isArticleOrConfigPostNr(post.nr)
     }
 
-  def allPosts: Seq[Post]
+  def allPosts: immutable.Seq[Post]
 
   def postByNr(postNr: PostNr): Option[Post] = postsByNr.get(postNr)
   def postByNr(postNr: Option[PostNr]): Option[Post] = postNr.flatMap(postsByNr.get)

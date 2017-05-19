@@ -984,9 +984,22 @@ livefyre
 wordpress
 
 google
-apple
+googlemail
 gmail
+apple
+microsoft
 outlook
+yahoo
+
+fatal
+critical
+alert
+# error, notify, notification already above.
+notice
+warn
+warning
+debug
+debugging
 
 """
 

@@ -49,6 +49,9 @@ package object http {
     def toIntOrThrow(errorCode: String, errorMessage: String): Int =
       value.toIntOption getOrElse throwBadRequest(errorCode, errorMessage)
 
+    def toFloatOrThrow(errorCode: String, errorMessage: String): Float =
+      value.toFloatOption getOrElse throwBadRequest(errorCode, errorMessage)
+
     def toLongOrThrow(errorCode: String, errorMessage: String): Long =
       Try(value.toLong).toOption getOrElse throwBadRequest(errorCode, errorMessage)
   }

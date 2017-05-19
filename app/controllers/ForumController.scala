@@ -328,13 +328,20 @@ object ForumController extends mvc.Controller {
 
   def parsePageQuery(request: DebikiRequest[_]): Option[PageQuery] = {
     val sortOrderStr = request.queryString.getFirst("sortOrder") getOrElse { return None }
-    def anyDateOffset = request.queryString.getLong("epoch") map (new ju.Date(_))
-    def anyNumOffset = request.queryString.getInt("num")
+    def anyDateOffset = request.queryString.getLong("epoch").orElse(
+      request.queryString.getLong("whenMs")) map (new ju.Date(_))
 
     val orderOffset: PageOrderOffset = sortOrderStr match {
       case "ByBumpTime" =>
         PageOrderOffset.ByBumpTime(anyDateOffset)
+      case "ByScoreAndBumpTime" =>
+        val scoreStr = request.queryString.getFirst("maxScore")
+        val periodStr = request.queryString.getFirst("period")
+        val period = periodStr.flatMap(TopTopicsPeriod.fromIntString) getOrElse TopTopicsPeriod.Month
+        val score = scoreStr.map(_.toFloatOrThrow("EdE28FKSD3", "Score is not a number"))
+        PageOrderOffset.ByScoreAndBumpTime(offset = score, period)
       case "ByLikesAndBumpTime" =>
+        def anyNumOffset = request.queryString.getInt("num") // CLEAN_UP rename 'num' to 'maxLikes'
         (anyNumOffset, anyDateOffset) match {
           case (Some(num), Some(date)) =>
             PageOrderOffset.ByLikesAndBumpTime(Some(num, date))

@@ -613,6 +613,8 @@ object PageOrderOffset {
   case class ByBumpTime(offset: Option[ju.Date]) extends PageOrderOffset
   case class ByCreatedAt(offset: Option[ju.Date]) extends PageOrderOffset
   case class ByLikesAndBumpTime(offset: Option[(Int, ju.Date)]) extends PageOrderOffset
+  case class ByScoreAndBumpTime(offset: Option[Float], period: TopTopicsPeriod)
+    extends PageOrderOffset
 }
 
 sealed abstract class PageFilter { def includesDeleted = false }

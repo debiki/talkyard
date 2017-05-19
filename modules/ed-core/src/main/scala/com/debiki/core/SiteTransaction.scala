@@ -147,11 +147,17 @@ trait SiteTransaction {
   def loadReadProgress(userId: UserId, pageId: PageId): Option[ReadingProgress]
   def upsertReadProgress(userId: UserId, pageId: PageId, pageTimings: ReadingProgress)
 
+  def loadPageVisitTrusts(pageId: PageId): Map[UserId, VisitTrust]
+
+  def loadPagePopularityScore(pageId: PageId): Option[PagePopularityScores]
+  def upsertPagePopularityScore(scores: PagePopularityScores)
+
   def loadLastPostRevision(postId: PostId): Option[PostRevision]
   def loadPostRevision(postId: PostId, revisionNr: Int): Option[PostRevision]
   def insertPostRevision(revision: PostRevision)
   def updatePostRevision(revision: PostRevision)
 
+  def loadActionsOnPage(pageId: PageId): immutable.Seq[PostAction]
   def loadActionsByUserOnPage(userId: UserId, pageId: PageId): immutable.Seq[PostAction]
   def loadActionsDoneToPost(pageId: PageId, postNr: PostNr): immutable.Seq[PostAction]
 

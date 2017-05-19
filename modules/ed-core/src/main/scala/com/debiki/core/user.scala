@@ -1117,3 +1117,12 @@ case class UserVisitStats(
     numChatMessagesRead >= 0 &&
     numChatTopicsEntered >= 0, "EdE5FKGA2R")
 }
+
+
+case class VisitTrust(
+  visitMinute: Int,
+  trustLevelInt: Int)
+
+object VisitTrust {
+  val UnknownMember = VisitTrust(0, TrustLevel.New.toInt)
+}

@@ -528,6 +528,9 @@ object Prelude {
     def toIntOption: Option[Int] =
       Try(underlying.toInt).toOption
 
+    def toFloatOption: Option[Float] =
+      Try(underlying.toFloat).toOption
+
     def orIfEmpty[A >: String](other: => A): A = {
       if (underlying nonEmpty) underlying
       else other

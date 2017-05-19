@@ -22,13 +22,13 @@ import collection.{immutable => imm, mutable => mut}
 import Prelude._
 
 
-abstract class PostActionType
+sealed abstract class PostActionType
 
 
 sealed abstract class PostVoteType extends PostActionType
 object PostVoteType {
   case object Like extends PostVoteType
-  case object Wrong extends PostVoteType
+  case object Wrong extends PostVoteType // RENAME to Disagree
   case object Bury extends PostVoteType
   case object Unwanted extends PostVoteType
 }
@@ -59,19 +59,19 @@ abstract class PostAction {
   def pageId: PageId
   def postNr: PostNr
   def doerId: UserId
+  def doneAt: When
   def actionType: PostActionType
 }
 
 
 object PostAction {
   def apply(uniqueId: PostId, pageId: PageId, postNr: PostNr, doerId: UserId,
-        doneAt: ju.Date, actionType: PostActionType)
+        doneAt: When, actionType: PostActionType)
         : PostAction = actionType match {
     case voteType: PostVoteType =>
-      PostVote(uniqueId, pageId, postNr, voterId = doerId, voteType = voteType)
+      PostVote(uniqueId, pageId, postNr, doneAt, voterId = doerId, voteType = voteType)
     case flagType: PostFlagType =>
-      PostFlag(uniqueId, pageId, postNr, flaggedAt = doneAt, flaggerId = doerId,
-        flagType = flagType)
+      PostFlag(uniqueId, pageId, postNr, doneAt, flaggerId = doerId, flagType = flagType)
     case x =>
       die("DwE7GPK2", s"Bad action type: '$actionType'")
   }
@@ -82,10 +82,12 @@ case class PostVote(
   uniqueId: PostId,
   pageId: PageId,
   postNr: PostNr,
+  doneAt: When,
   voterId: UserId,
   voteType: PostVoteType) extends PostAction {
-  def actionType = voteType
-  def doerId = voterId
+
+  def actionType: PostVoteType = voteType
+  def doerId: UserId = voterId
 }
 
 
@@ -93,10 +95,12 @@ case class PostFlag(
   uniqueId: PostId,
   pageId: PageId,
   postNr: PostNr,
-  flaggedAt: ju.Date,
+  doneAt: When,
   flaggerId: UserId,
   flagType: PostFlagType) extends PostAction {
-  def actionType = flagType
-  def doerId = flaggerId
+
+  def actionType: PostFlagType = flagType
+  def doerId: UserId = flaggerId
+  def flaggedAt: When = doneAt
 }
 

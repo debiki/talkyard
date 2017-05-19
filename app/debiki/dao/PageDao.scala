@@ -82,7 +82,7 @@ case class PagePartsDao(override val pageId: PageId, transaction: SiteTransactio
     }
   }
 
-  override def allPosts: Seq[Post] = {
+  override def allPosts: immutable.Seq[Post] = {
     if (_allPosts eq null) {
       loadAllPosts()
     }

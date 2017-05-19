@@ -216,6 +216,7 @@ GET  /-/are-scripts-ready       @controllers.DebugTestController.areScriptsReady
 GET  /-/create-deadlock         @controllers.DebugTestController.createDeadlock
 GET  /-/last-e2e-test-email     @controllers.DebugTestController.showLastE2eTestEmailSent(siteId: Int, sentTo)
 GET  /-/log-funny-messages      @controllers.DebugTestController.logFunnyLogMessages()
+GET  /-/page-top-score          @controllers.DebugTestController.showPagePopularityStats(pageId)
 
 GET   /-/site/:siteId/*file     controllers.SiteAssetBundlesController.customAsset(siteId: Int, file)
 GET   /-/site/*file             controllers.SiteAssetBundlesController.at(file)
@@ -243,7 +244,7 @@ GET   /-/list-posts             controllers.ViewPageController.listPosts(authorI
 
 # Don't change the URL on the next line. The /-/assets/<version-number>/ is
 # updated by the deployment script (asset fingerprinting).
-GET   /-/assets/188/*file       controllers.Assets.at(path = "/public/res", file)
+GET   /-/assets/190/*file       controllers.Assets.at(path = "/public/res", file)
 GET   /robots.txt               controllers.Assets.at(path = "/public", file = "robots.txt")
 GET   /-/debiki-embedded-comments.js   controllers.Assets.at(path = "/public/res", file = "embedded-comments.js")
 GET   /-/debiki-embedded-comments.css  controllers.Assets.at(path = "/public/res", file = "debiki-embedded-comments.css")

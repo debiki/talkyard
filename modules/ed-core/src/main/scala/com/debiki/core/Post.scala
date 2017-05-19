@@ -325,9 +325,11 @@ case class Post(
 
   def pagePostId = PagePostId(pageId, id)
   def pagePostNr = PagePostNr(pageId, nr)
-  def hasAnId = nr >= PageParts.LowestPostNr
+  def hasAnId: Boolean = nr >= PageParts.LowestPostNr
 
-  def createdAtUnixSeconds = createdAt.getTime / 1000
+  def createdAtUnixSeconds: UnixMillis = createdAt.getTime / 1000
+  def createdAtMillis: UnixMillis = createdAt.getTime
+  def createdWhen: When = When.fromMillis(createdAt.getTime)
 
   def newChildCollapsedStatus = new CollapsedStatus(
     if ((collapsedStatus.underlying & (SuccessorsBit | AncestorsBit)) != 0) AncestorsBit else 0)
@@ -399,7 +401,7 @@ case class Post(
   def parent(pageParts: PageParts): Option[Post] =
     parentNr.flatMap(pageParts.postByNr)
 
-  def children(pageParts: PageParts): Seq[Post] =
+  def children(pageParts: PageParts): immutable.Seq[Post] =
     pageParts.childrenBestFirstOf(nr)
 
 

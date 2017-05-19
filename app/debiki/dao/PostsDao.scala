@@ -592,7 +592,7 @@ trait PostsDao {
           // which revision of postToEdit they concern.
           val currentRevStartMs = postToEdit.currentRevStaredAt.getTime
           val flags = transaction.loadFlagsFor(immutable.Seq(PagePostNr(pageId, postNr)))
-          val anyNewFlag = flags.exists(_.flaggedAt.getTime > currentRevStartMs)
+          val anyNewFlag = flags.exists(_.flaggedAt.millis > currentRevStartMs)
           val successors = page.parts.descendantsOf(postNr)
           val anyNewComment = successors.exists(_.createdAt.getTime > currentRevStartMs)
         !anyNewComment && !anyNewFlag
@@ -1314,6 +1314,7 @@ trait PostsDao {
       updateVoteCounts(pageId, postNr = postNr, transaction)
       addUserStats(UserStats(post.createdById, numLikesReceived = -1))(transaction)
       addUserStats(UserStats(voterId, numLikesGiven = -1))(transaction)
+      updatePagePopularity(PagePartsDao(pageId, transaction), transaction)
 
       /* SECURITY vote-FRAUD SHOULD delete by cookie too, like I did before:
       var numRowsDeleted = 0
@@ -1385,6 +1386,7 @@ trait PostsDao {
       updateVoteCounts(post, transaction)
       addUserStats(UserStats(post.createdById, numLikesReceived = 1))(transaction)
       addUserStats(UserStats(voterId, numLikesGiven = 1))(transaction)
+      updatePagePopularity(page.parts, transaction)
     }
     refreshPageInMemCache(pageId)
   }

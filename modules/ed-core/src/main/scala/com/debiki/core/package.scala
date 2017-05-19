@@ -117,6 +117,8 @@ package object core {
     def minusMinutes(minutes: Int) = new When(unixMillis - minutes * OneMinuteInMillis)
     def minusSeconds(seconds: Int) = new When(unixMillis - seconds * 1000)
     def minusMillis(millis: UnixMillis) = new When(unixMillis - millis)
+    def minusHours(hours: Int) = new When(unixMillis - hours * OneHourInMillis)
+    def minusDays(days: Int) = new When(unixMillis - days * OneDayInMillis)
 
     /** Unix millis can safely be cast to a Double: (but perhaps not back again?)
       * 100 years * 365 * 24 * 3600 * 1000 = 3153600000000 = 13 digits, and doubles in Java
@@ -129,6 +131,7 @@ package object core {
     def isAfter(other: When): Boolean = unixMillis > other.unixMillis
     def isBefore(other: When): Boolean = unixMillis < other.unixMillis
     def isNotBefore(other: When): Boolean = unixMillis >= other.unixMillis
+    def isBetween(start: When, end: When): Boolean = millis >= start.millis && millis <= end.millis
 
     def plusMillis(moreMillis: Int) = new When(this.millis + moreMillis)
 
@@ -136,6 +139,7 @@ package object core {
   }
 
   object When {
+    val Genesis = new When(0)
     def fromDate(date: ju.Date) = new When(date.getTime)
     def fromOptDate(anyDate: Option[ju.Date]): Option[When] = anyDate.map(When.fromDate)
     def fromMillis(millis: UnixMillis) = new When(millis)

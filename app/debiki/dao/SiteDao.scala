@@ -27,6 +27,7 @@ import redis.RedisClient
 import scala.collection.mutable
 import SiteDao._
 import ed.server.auth.MayMaybe
+import ed.server.pop.PagePopularityDao
 import ed.server.pubsub.{PubSubApi, StrangerCounterApi}
 
 
@@ -79,6 +80,7 @@ class SiteDao(
   with PagesDao
   with PagePathMetaDao
   with PageStuffDao
+  with PagePopularityDao
   with RenderedPageHtmlDao
   with PostsDao
   with TagsDao
