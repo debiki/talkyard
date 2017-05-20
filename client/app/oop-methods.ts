@@ -306,6 +306,24 @@ export function store_findCatsWhereIMayCreateTopics(store: Store): Category[] {
 }
 
 
+
+// Forum buttons
+//----------------------------------
+
+export function topPeriod_toString(period: TopTopicsPeriod): string {
+  switch (period) {
+    case TopTopicsPeriod.Day: return "Past Day";
+    case TopTopicsPeriod.Week: return "Past Week";
+    case TopTopicsPeriod.Month: return "Past Month";
+    case TopTopicsPeriod.Quarter: return "Past Quarter";
+    case TopTopicsPeriod.Year: return "Past Year";
+    case TopTopicsPeriod.All: return "All Time";
+    default: return '' + period;
+  }
+}
+
+
+
 // Trust and threat levels
 //----------------------------------
 

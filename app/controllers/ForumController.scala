@@ -292,6 +292,8 @@ object ForumController extends mvc.Controller {
         includeDescendantCategories: Boolean, authzCtx: ForumAuthzContext,
         limit: Int = NumTopicsToList)
         : Seq[PagePathAndMeta] = {
+          // COULD instead of PagePathAndMeta use some "ListedPage" class that also includes  [7IKA2V]
+          // the popularity score, + doesn't include stuff not needed to render forum topics etc.
     SECURITY; TESTS_MISSING  // securified
 
     val topics: Seq[PagePathAndMeta] = dao.loadMaySeePagesInCategory(
@@ -328,19 +330,18 @@ object ForumController extends mvc.Controller {
 
   def parsePageQuery(request: DebikiRequest[_]): Option[PageQuery] = {
     val sortOrderStr = request.queryString.getFirst("sortOrder") getOrElse { return None }
-    def anyDateOffset = request.queryString.getLong("epoch").orElse(
-      request.queryString.getLong("whenMs")) map (new ju.Date(_))
+    def anyDateOffset = request.queryString.getLong("bumpedAt") map (new ju.Date(_))
 
     val orderOffset: PageOrderOffset = sortOrderStr match {
       case "ByBumpTime" =>
         PageOrderOffset.ByBumpTime(anyDateOffset)
-      case "ByScoreAndBumpTime" =>
+      case "ByScore" =>
         val scoreStr = request.queryString.getFirst("maxScore")
         val periodStr = request.queryString.getFirst("period")
         val period = periodStr.flatMap(TopTopicsPeriod.fromIntString) getOrElse TopTopicsPeriod.Month
         val score = scoreStr.map(_.toFloatOrThrow("EdE28FKSD3", "Score is not a number"))
         PageOrderOffset.ByScoreAndBumpTime(offset = score, period)
-      case "ByLikesAndBumpTime" =>
+      case "ByLikes" =>
         def anyNumOffset = request.queryString.getInt("num") // CLEAN_UP rename 'num' to 'maxLikes'
         (anyNumOffset, anyDateOffset) match {
           case (Some(num), Some(date)) =>
@@ -348,7 +349,7 @@ object ForumController extends mvc.Controller {
           case (None, None) =>
             PageOrderOffset.ByLikesAndBumpTime(None)
           case _ =>
-            throwBadReq("DwE4KEW21", "Please specify both 'num' and 'epoch' or none at all")
+            throwBadReq("DwE4KEW21", "Please specify both 'num' and 'bumpedAt' or none at all")
         }
       case x => throwBadReq("DwE05YE2", s"Bad sort order: `$x'")
     }

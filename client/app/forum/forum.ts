@@ -34,31 +34,35 @@
    namespace debiki2.forum {
 //------------------------------------------------------------------------------
 
-var r = React.DOM;
-var DropdownModal = utils.DropdownModal;
-var ExplainingListItem = util.ExplainingListItem;
+const r = React.DOM;
+const DropdownModal = utils.DropdownModal;
+const ModalDropdownButton = utils.ModalDropdownButton;
+const ExplainingListItem = util.ExplainingListItem;
 type ExplainingTitleText = util.ExplainingTitleText;
-var HelpMessageBox = debiki2.help.HelpMessageBox;
+const HelpMessageBox = debiki2.help.HelpMessageBox;
 
-var MaxWaitingForCritique = 10; // for now only [plugin]
+const MaxWaitingForCritique = 10; // for now only [plugin]
 
 /** Keep in sync with app/controllers/ForumController.NumTopicsToList. */
-var NumNewTopicsPerRequest = 40;
+const NumNewTopicsPerRequest = 40;
 
 // The route with path 'latest' or 'top' or 'categories'. It determines the sort order
 // (latest first, or best first).
-var SortOrderRouteIndex = 1;
+const SortOrderRouteIndex = 1;
 
-var FilterShowAll = 'ShowAll';
-var FilterShowWaiting = 'ShowWaiting';
-var FilterShowDeleted = 'ShowDeleted';
+const FilterShowAll = 'ShowAll';
+const FilterShowWaiting = 'ShowWaiting';
+const FilterShowDeleted = 'ShowDeleted';
 
 
 export function buildForumRoutes() {
-  var store: Store = ReactStore.allData();
-  var rootSlash = store.pagePath.value;
-  var rootNoSlash = rootSlash.substr(0, rootSlash.length - 1);
-  var defaultPath = rootSlash + (store.settings.forumMainView || RoutePathLatest);
+  const store: Store = ReactStore.allData();
+  const rootSlash = store.pagePath.value;
+  const rootNoSlash = rootSlash.substr(0, rootSlash.length - 1);
+  const defaultPath = rootSlash + (store.settings.forumMainView || RoutePathLatest);
+
+  // later, COULD incl top period in URL, perhaps: top/ —> top-past-day/
+  // Or  /top/bugs/past-day/ ?
 
   return [
     Redirect({ key: 'redirA', from: rootSlash, to: defaultPath }),
@@ -77,7 +81,7 @@ export function buildForumRoutes() {
 }
 
 
-export var ForumScrollBehavior = {
+export const ForumScrollBehavior = {
   updateScrollPosition: function(position, actionType) {
     // Never change scroll position when switching between last/top/categories
     // in the forum. Later on I might find this behavior useful:
@@ -90,15 +94,16 @@ export var ForumScrollBehavior = {
 };
 
 
-var ForumComponent = React.createClass(<any> {
+const ForumComponent = React.createClass(<any> {
   mixins: [debiki2.StoreListenerMixin],
 
   getInitialState: function() {
-    var store: Store = debiki2.ReactStore.allData();
+    const store: Store = debiki2.ReactStore.allData();
     return {
       store: store,
       topicsInStoreMightBeOld: false,
       useWideLayout: this.isPageWide(store),
+      topPeriod: TopTopicsPeriod.Month,
     }
   },
 
@@ -131,6 +136,10 @@ var ForumComponent = React.createClass(<any> {
 
   isPageWide: function(store?: Store) {
     return store_getApproxPageWidth(store || this.state.store) > UseWideForumLayoutMinWidth;
+  },
+
+  setTopPeriod: function(period: TopTopicsPeriod) {
+    this.setState({ topPeriod: period });
   },
 
   getActiveCategory: function() {
@@ -204,6 +213,8 @@ var ForumComponent = React.createClass(<any> {
       route: this.props.route,
       location: this.props.location,
       activeCategory: activeCategory,
+      topPeriod: this.state.topPeriod,
+      setTopPeriod: this.setTopPeriod,
       numWaitingForCritique: this.state.numWaitingForCritique,  // for now only [plugin]
       setNumWaitingForCritique: (numWaiting) => {               // for now only [plugin]
         if (this.state.numWaitingForCritique !== numWaiting)
@@ -681,17 +692,17 @@ var ForumButtons = createComponent({
 
 
 
-var LoadAndListTopicsComponent = React.createClass(<any> {
+const LoadAndListTopicsComponent = React.createClass(<any> {
   getInitialState: function(): any {
     // The server has included in the Flux store a list of the most recent topics, and we
     // can use that lis when rendering the topic list server side, or for the first time
     // in the browser (but not after that, because then new topics might have appeared).
-    let store: Store = this.props.store;
+    const store: Store = this.props.store;
     // If we're authenticated, the topic list depends a lot on our permissions & groups.
     // Then, send a request, to get the correct topic list (otherwise,
     // as of 2016-12, hidden topics won't be included even if they should be [7RIQ29]).
-    let me: Myself = (debiki.volatileDataFromServer || {}).me;
-    let canUseTopicsInScriptTag = !me || !me.isAuthenticated;
+    const me: Myself = (debiki.volatileDataFromServer || {}).me;
+    const canUseTopicsInScriptTag = !me || !me.isAuthenticated;
     if (!this.props.topicsInStoreMightBeOld && this.isAllLatestTopicsView() &&
         canUseTopicsInScriptTag) {
       return {
@@ -735,7 +746,8 @@ var LoadAndListTopicsComponent = React.createClass(<any> {
 
     var isNewView =
       this.props.location.pathname !== nextProps.location.pathname ||
-      this.props.location.search !== nextProps.location.search;
+      this.props.location.search !== nextProps.location.search ||
+      this.props.topPeriod !== nextProps.topPeriod;
 
     this.countTopicsWaitingForCritique(); // for now only
 
@@ -754,8 +766,8 @@ var LoadAndListTopicsComponent = React.createClass(<any> {
         showLoadMoreButton: false
       });
       // Load from the start, no offset. Keep any topic filter though.
-      delete orderOffset.whenMs;
-      delete orderOffset.numLikes;
+      delete orderOffset.bumpedAt;
+      delete orderOffset.score;
     }
     var categoryId = nextProps.activeCategory.id;
     // Don't use this.state.isLoading, because the state change doesn't happen instantly,
@@ -794,24 +806,26 @@ var LoadAndListTopicsComponent = React.createClass(<any> {
   },
 
   getOrderOffset: function(nextProps?) {
-    var props = nextProps || this.props;
-    var anyTimeOffset: number;
-    var anyLikesOffset: number;
-    var anyLastTopic: any = _.last(this.state.topics);
-    if (anyLastTopic) {
+    const props = nextProps || this.props;
+    let lastBumpedAt: number;
+    let lastScore: number;
+    const lastTopic: any = _.last(this.state.topics);
+    if (lastTopic) {
       // If we're loading more topics, we should continue with this offset.
-      anyTimeOffset = anyLastTopic.bumpedAtMs || anyLastTopic.createdAtMs;
-      anyLikesOffset = anyLastTopic.numLikes;
+      lastBumpedAt = lastTopic.bumpedAtMs || lastTopic.createdAtMs;
+      lastScore = lastTopic.popularityScore;  // always absent, currently [7IKA2V]
     }
-    var orderOffset: OrderOffset = { sortOrder: -1 };
+
+    const orderOffset: OrderOffset = { sortOrder: -1 };
     if (props.routes[SortOrderRouteIndex].path === RoutePathTop) {
-      orderOffset.sortOrder = TopicSortOrder.LikesAndBumpTime;
-      orderOffset.whenMs = anyTimeOffset;
-      orderOffset.numLikes = anyLikesOffset;
+      orderOffset.sortOrder = TopicSortOrder.ScoreAndBumpTime;
+      orderOffset.bumpedAt = lastBumpedAt;
+      orderOffset.score = lastScore;
+      orderOffset.period = props.topPeriod;
     }
     else {
       orderOffset.sortOrder = TopicSortOrder.BumpTime;
-      orderOffset.whenMs = anyTimeOffset;
+      orderOffset.bumpedAt = lastBumpedAt;
     }
     return orderOffset;
   },
@@ -825,6 +839,8 @@ var LoadAndListTopicsComponent = React.createClass(<any> {
       showLoadMoreButton: this.state.showLoadMoreButton,
       activeCategory: this.props.activeCategory,
       orderOffset: this.getOrderOffset(),
+      topPeriod: this.props.topPeriod,
+      setTopPeriod: this.props.setTopPeriod,
       // `routes` and `location` needed because category clickable. [7FKR0QA]
       // COULD try to find some other way to link categories to URL paths, that works
       // also in the user-activity.more.ts topic list. [7FKR0QA]
@@ -893,7 +909,7 @@ export var ListTopicsComponent = createComponent({
         // Too few topics, then right now no one cares about the icons?
         (topics.length < numFewTopics && !this.state.helpOpened);
         */
-    var iconsHelpStuff = iconsHelpClosed || help.isHelpMessageClosed(store, IconHelpMessage)
+    const iconsHelpStuff = iconsHelpClosed || help.isHelpMessageClosed(store, IconHelpMessage)
         ? r.a({ className: 'esForum_topics_openIconsHelp icon-info-circled',
               onClick: this.openIconsHelp }, "Explain icons...")
         : HelpMessageBox({ message: IconHelpMessage, showUnhideTips: false });
@@ -903,30 +919,49 @@ export var ListTopicsComponent = createComponent({
         : r.li({ key: 'ExplIcns', className: 'esF_TsL_T clearfix' }, iconsHelpStuff)); // (update BJJ CSS before changin this (!))
 
     let loadMoreTopicsBtn;
-    let orderOffset = this.props.orderOffset;
+    const orderOffset = this.props.orderOffset;
     if (this.props.showLoadMoreButton) {
-      var queryString = '?' + debiki2.ServerApi.makeForumTopicsQueryParams(orderOffset);
+      const queryString = '?' + debiki2.ServerApi.makeForumTopicsQueryParams(orderOffset);
       loadMoreTopicsBtn =
         r.div({},
           r.a({ className: 'load-more', onClick: this.onLoadMoreTopicsClick,
               href: queryString }, 'Load more ...'));
     }
 
-    let sortingHowTips;
-    if (orderOffset.sortOrder === TopicSortOrder.LikesAndBumpTime) {
-      sortingHowTips =
-          r.p({ className: 'esForum_sortInfo e_F_SI_Top' }, "Topics with the most Like votes:");
+    let topTopicsPeriodButton;
+    if (orderOffset.sortOrder === TopicSortOrder.ScoreAndBumpTime) {
+      const makeTopPeriodListItem = (period: TopTopicsPeriod, text?: string) => {
+        return ExplainingListItem({ onSelect: () => this.props.setTopPeriod(period),
+          activeEventKey: this.props.topPeriod, eventKey: period,
+          title: topPeriod_toString(period),
+          text: text });
+      };
+
+      topTopicsPeriodButton = r.div({},
+          r.span({ className: 'esForum_sortInfo' }, "Popular topics, "),
+          ModalDropdownButton({ className: 'esForum_sortInfo s_F_SI_TopB', pullLeft: true,
+              title: r.span({},
+                topPeriod_toString(this.props.topPeriod) + ' ', r.span({ className: 'caret' })) },
+            r.ul({ className: 'dropdown-menu' },
+              makeTopPeriodListItem(TopTopicsPeriod.All,
+                "Shows the most popular topics first, all time."),
+              makeTopPeriodListItem(TopTopicsPeriod.Day,
+                "Shows topics popular during the past day."),
+              makeTopPeriodListItem(TopTopicsPeriod.Week),
+              makeTopPeriodListItem(TopTopicsPeriod.Month),
+              makeTopPeriodListItem(TopTopicsPeriod.Quarter),
+              makeTopPeriodListItem(TopTopicsPeriod.Year))));
     }
 
-    let deletedClass = !activeCategory.isDeleted ? '' : ' s_F_Ts-CatDd';
-    let categoryDeletedInfo = !activeCategory.isDeleted ? null :
+    const deletedClass = !activeCategory.isDeleted ? '' : ' s_F_Ts-CatDd';
+    const categoryDeletedInfo = !activeCategory.isDeleted ? null :
       r.p({ className: 'icon-trash s_F_CatDdInfo' },
         "This category has been deleted");
 
-    let categoryHeader = !settings_showCategories(store.settings, me) ? null :
+    const categoryHeader = !settings_showCategories(store.settings, me) ? null :
         r.th({ className: 's_F_Ts_T_CN' }, "Category");
 
-    var topicsTable = !useTable ? null :
+    const topicsTable = !useTable ? null :
         r.table({ className: 'esF_TsT s_F_Ts-Wide dw-topic-list' + deletedClass },
           r.thead({},
             r.tr({},
@@ -939,14 +974,14 @@ export var ListTopicsComponent = createComponent({
           r.tbody({},
             topicElems));
 
-    var topicRows = useTable ? null :
+    const topicRows = useTable ? null :
         r.ol({ className: 'esF_TsL s_F_Ts-Nrw' + deletedClass },
           topicElems);
 
     return (
       r.div({},
         categoryDeletedInfo,
-        sortingHowTips,
+        topTopicsPeriodButton,
         topicsTable || topicRows,
         loadMoreTopicsBtn));
   }

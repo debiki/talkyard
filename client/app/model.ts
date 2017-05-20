@@ -361,6 +361,7 @@ interface Topic {
   excerpt?: string;
   firstImageUrls?: string[];
   popularRepliesImageUrls?: string[];
+  popularityScore?: number;
   numPosts: number;
   numLikes: number;
   numWrongs: number;
@@ -383,14 +384,34 @@ interface Topic {
 
 enum TopicSortOrder {
   BumpTime = 1,
-  LikesAndBumpTime
+  ScoreAndBumpTime,
+  // LikesAndBumpTime, — perhaps add back later?
+}
+
+
+enum TopTopicsPeriod {
+  Day = 1,
+  Week = 2,
+  Month = 3,
+  Quarter = 4,
+  Year = 5,
+  All = 6
 }
 
 
 interface OrderOffset {  // COULD rename to TopicQuery? (because includes filter too now)
   sortOrder: TopicSortOrder;
-  whenMs?: number;
+
+  // Latest first offset:
+  bumpedAt?: number;
+
+  // For sort-by-top-score offset & period:
+  score?: number;
+  period?: TopTopicsPeriod;
+
+  // Most liked first offset:
   numLikes?: number;
+
   topicFilter?: string;
 }
 

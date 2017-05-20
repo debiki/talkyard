@@ -807,12 +807,12 @@ function pagesFor(browser) {
 
       clickViewLatest: function() {
         api.waitAndClick('#e2eSortLatestB');
-        browser.waitUntilGone('.e_F_SI_Top');
+        browser.waitUntilGone('.s_F_SI_TopB');
       },
 
       clickViewTop: function() {
         api.waitAndClick('#e2eSortTopB');
-        browser.waitForVisible('.e_F_SI_Top');
+        browser.waitForVisible('.s_F_SI_TopB');
       },
 
       goToTopic: function(title: string) {

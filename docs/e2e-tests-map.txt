@@ -101,9 +101,17 @@ forum -
   edit title:  (7UC2)
   change intro text:  (5KC2)
   list categories, show all/waiting:
-  latest, top, show all/waiting -
+  latest topics -
     all categories:
-    one category:
+    only one category:
+    show waiting:
+    show deleted:
+  popular topics -
+    all categories:
+    only one category:
+    past day/week/month/quarter/year/all time:
+    show waiting:
+    show deleted:
   live updates:  (4FE2)
 
 forum intro text -  (5KC2)

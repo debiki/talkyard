@@ -110,7 +110,7 @@ object CustomFormController extends mvc.Controller {
     val bodyText = i"""
        |**Go here:** [$titleText]($addressOfWebsiteToTest)
        |
-       |**Then answer these qestions and follow the instructions below:**
+       |**Then answer these questions, and follow the instructions:**
        |
        |$instructions
        """
