@@ -18,16 +18,14 @@
 package ed.server.pop
 
 import com.debiki.core._
-import com.debiki.core.Prelude._
 import debiki._
-import debiki.DebikiHttp._
-import debiki.dao.{PageDao, PagePartsDao, SiteDao}
 
 
 
 trait PagePopularityDao {
 
-  def updatePagePopularity(pageParts: PagePartsDao, tx: SiteTransaction) {
+  def updatePagePopularity(pageParts: PageParts, tx: SiteTransaction) {
+    SHOULD_OPTIMIZE // if is chat, only load the last 1000 'things'? because topic might be too long.
     val actions = tx.loadActionsOnPage(pageParts.pageId)
     COULD_OPTIMIZE // only load total num visits per period & trust level — don't load each row.
     val visits = tx.loadPageVisitTrusts(pageParts.pageId)

@@ -276,6 +276,9 @@ trait PagesDao {
     transaction.insertPagePath(pagePath)
     transaction.insertPost(titlePost)
     transaction.insertPost(bodyPost)
+    if (approvedById.isDefined) {
+      updatePagePopularity(PreLoadedPageParts(pageId, Vector(titlePost, bodyPost)), transaction)
+    }
     uploadPaths foreach { hashPathSuffix =>
       transaction.insertUploadedFileReference(bodyPost.id, hashPathSuffix, authorId)
     }
@@ -502,6 +505,7 @@ trait PagesDao {
         transaction.updatePageMeta(newMeta, oldMeta = pageMeta, markSectionPageStale = true)
         transaction.insertAuditLogEntry(auditLogEntry)
         transaction.indexAllPostsOnPage(pageId)
+        // (Keep in top-topics table, so staff can list popular-but-deleted topics.)
       }
 
     pageIds foreach refreshPageInMemCache

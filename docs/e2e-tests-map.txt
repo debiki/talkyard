@@ -112,6 +112,7 @@ forum -
     past day/week/month/quarter/year/all time:
     show waiting:
     show deleted:
+    background thread deletes spam comment —> popularity recalculated:  (not yet impl)
   live updates:  (4FE2)
 
 forum intro text -  (5KC2)

@@ -22,6 +22,7 @@ import com.debiki.core._
 import debiki.DebikiHttp._
 import debiki.JsonUtils._
 import debiki._
+import debiki.dao.PagePartsDao
 import ed.server._
 import ed.server.http._
 import java.{util => ju}
@@ -225,8 +226,6 @@ object ImportExportController extends mvc.Controller {
 
       transaction.upsertSiteSettings(siteData.settings)
 
-      // ... insert old usernames too ...
-
       siteData.users foreach { user =>
         transaction.insertMember(user)
         // [readlater] export & import username usages, later. For now, create new here.
@@ -254,6 +253,11 @@ object ImportExportController extends mvc.Controller {
       }
       siteData.permsOnPages foreach { permission =>
         transaction.insertPermsOnPages(permission)
+      }
+      // Or will this be a bit slow? Kind of loads everything we just imported.
+      siteData.pages foreach { pageMeta =>
+        // [readlater] export & import page views too, otherwise page popularity here will be wrong.
+        newDao.updatePagePopularity(PagePartsDao(pageMeta.pageId, transaction), transaction)
       }
     }
 

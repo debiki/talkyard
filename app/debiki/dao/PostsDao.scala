@@ -196,6 +196,9 @@ trait PostsDao {
       transaction.indexPostsSoon(newPost)
       transaction.spamCheckPostsSoon(byWho, spamRelReqStuff, newPost)
       transaction.updatePageMeta(newMeta, oldMeta = oldMeta, markSectionPageStale = shallApprove)
+      if (shallApprove) {
+        updatePagePopularity(page.parts, transaction)
+      }
       uploadRefs foreach { uploadRef =>
         transaction.insertUploadedFileReference(newPost.id, uploadRef, authorId)
       }
@@ -335,6 +338,7 @@ trait PostsDao {
       val authorAndLevels = loadUserAndLevels(byWho, transaction)
       val author = authorAndLevels.user
 
+      SHOULD_OPTIMIZE // don't load all posts [2GKF0S6], because this is a chat, could be too many.
       val page = PageDao(pageId, transaction)
 
       dieOrThrowNoUnless(Authz.mayPostReply(authorAndLevels, transaction.loadGroupIds(author),
@@ -470,6 +474,7 @@ trait PostsDao {
     transaction.indexPostsSoon(newPost)
     transaction.spamCheckPostsSoon(who, spamRelReqStuff, newPost)
     transaction.updatePageMeta(newMeta, oldMeta = oldMeta, markSectionPageStale = true)
+    updatePagePopularity(page.parts, transaction)
     uploadRefs foreach { uploadRef =>
       transaction.insertUploadedFileReference(newPost.id, uploadRef, authorId)
     }
@@ -1031,86 +1036,88 @@ trait PostsDao {
       }
     }
 
-      // Update the directly affected post.
-      val postAfter = action match {
-        case PSA.HidePost =>
-          postBefore.copyWithNewStatus(transaction.now.toJavaDate, userId, bodyHidden = true)
-        case PSA.UnhidePost =>
-          postBefore.copyWithNewStatus(transaction.now.toJavaDate, userId, bodyUnhidden = true)
+    // Update the directly affected post.
+    val postAfter = action match {
+      case PSA.HidePost =>
+        postBefore.copyWithNewStatus(transaction.now.toJavaDate, userId, bodyHidden = true)
+      case PSA.UnhidePost =>
+        postBefore.copyWithNewStatus(transaction.now.toJavaDate, userId, bodyUnhidden = true)
+      case PSA.CloseTree =>
+        postBefore.copyWithNewStatus(transaction.now.toJavaDate, userId, treeClosed = true)
+      case PSA.CollapsePost =>
+        postBefore.copyWithNewStatus(transaction.now.toJavaDate, userId, postCollapsed = true)
+      case PSA.CollapseTree =>
+        postBefore.copyWithNewStatus(transaction.now.toJavaDate, userId, treeCollapsed = true)
+      case PSA.DeletePost(clearFlags) =>
+        postBefore.copyWithNewStatus(transaction.now.toJavaDate, userId, postDeleted = true)
+      case PSA.DeleteTree =>
+        postBefore.copyWithNewStatus(transaction.now.toJavaDate, userId, treeDeleted = true)
+    }
+
+    updateNumVisible(postBefore, postAfter = postAfter)
+    SHOULD // delete any review tasks.
+
+    transaction.updatePost(postAfter)
+    if (postBefore.isDeleted != postAfter.isDeleted) {
+      transaction.indexPostsSoon(postAfter)
+    }
+
+    // Update any indirectly affected posts, e.g. subsequent comments in the same
+    // thread that are being deleted recursively.
+    for (successor <- page.parts.descendantsOf(postNr)) {
+      val anyUpdatedSuccessor: Option[Post] = action match {
         case PSA.CloseTree =>
-          postBefore.copyWithNewStatus(transaction.now.toJavaDate, userId, treeClosed = true)
+          if (successor.closedStatus.areAncestorsClosed) None
+          else Some(successor.copyWithNewStatus(
+            transaction.now.toJavaDate, userId, ancestorsClosed = true))
         case PSA.CollapsePost =>
-          postBefore.copyWithNewStatus(transaction.now.toJavaDate, userId, postCollapsed = true)
+          None
         case PSA.CollapseTree =>
-          postBefore.copyWithNewStatus(transaction.now.toJavaDate, userId, treeCollapsed = true)
+          if (successor.collapsedStatus.areAncestorsCollapsed) None
+          else Some(successor.copyWithNewStatus(
+            transaction.now.toJavaDate, userId, ancestorsCollapsed = true))
         case PSA.DeletePost(clearFlags) =>
-          postBefore.copyWithNewStatus(transaction.now.toJavaDate, userId, postDeleted = true)
+          None
         case PSA.DeleteTree =>
-          postBefore.copyWithNewStatus(transaction.now.toJavaDate, userId, treeDeleted = true)
+          if (successor.deletedStatus.areAncestorsDeleted) None
+          else Some(successor.copyWithNewStatus(
+            transaction.now.toJavaDate, userId, ancestorsDeleted = true))
+        case x =>
+          die("DwE8FMU3", "PostAction not implemented: " + x)
       }
 
-      updateNumVisible(postBefore, postAfter = postAfter)
-      SHOULD // delete any review tasks.
-
-      transaction.updatePost(postAfter)
-      if (postBefore.isDeleted != postAfter.isDeleted) {
-        transaction.indexPostsSoon(postAfter)
-      }
-
-      // Update any indirectly affected posts, e.g. subsequent comments in the same
-      // thread that are being deleted recursively.
-      for (successor <- page.parts.descendantsOf(postNr)) {
-        val anyUpdatedSuccessor: Option[Post] = action match {
-          case PSA.CloseTree =>
-            if (successor.closedStatus.areAncestorsClosed) None
-            else Some(successor.copyWithNewStatus(
-              transaction.now.toJavaDate, userId, ancestorsClosed = true))
-          case PSA.CollapsePost =>
-            None
-          case PSA.CollapseTree =>
-            if (successor.collapsedStatus.areAncestorsCollapsed) None
-            else Some(successor.copyWithNewStatus(
-              transaction.now.toJavaDate, userId, ancestorsCollapsed = true))
-          case PSA.DeletePost(clearFlags) =>
-            None
-          case PSA.DeleteTree =>
-            if (successor.deletedStatus.areAncestorsDeleted) None
-            else Some(successor.copyWithNewStatus(
-              transaction.now.toJavaDate, userId, ancestorsDeleted = true))
-          case x =>
-            die("DwE8FMU3", "PostAction not implemented: " + x)
+      var postsToReindex = Vector[Post]()
+      anyUpdatedSuccessor foreach { updatedSuccessor =>
+        updateNumVisible(postBefore = successor, postAfter = updatedSuccessor)
+        transaction.updatePost(updatedSuccessor)
+        if (successor.isDeleted != updatedSuccessor.isDeleted) {
+          postsToReindex :+= updatedSuccessor
         }
-
-        var postsToReindex = Vector[Post]()
-        anyUpdatedSuccessor foreach { updatedSuccessor =>
-          updateNumVisible(postBefore = successor, postAfter = updatedSuccessor)
-          transaction.updatePost(updatedSuccessor)
-          if (successor.isDeleted != updatedSuccessor.isDeleted) {
-            postsToReindex :+= updatedSuccessor
-          }
-        }
-        transaction.indexPostsSoon(postsToReindex: _*)
       }
+      transaction.indexPostsSoon(postsToReindex: _*)
+    }
 
-      val oldMeta = page.meta
-      var newMeta = oldMeta.copy(version = oldMeta.version + 1)
-      var markSectionPageStale = false
-      // COULD update database to fix this. (Previously, chat pages didn't count num-chat-messages.)
-      val isChatWithWrongReplyCount =
-        page.role.isChat && oldMeta.numRepliesVisible == 0 && numVisibleRepliesGone > 0
-      val numVisibleRepliesChanged = numVisibleRepliesGone > 0 || numVisibleRepliesBack > 0
+    val oldMeta = page.meta
+    var newMeta = oldMeta.copy(version = oldMeta.version + 1)
+    var markSectionPageStale = false
+    // COULD update database to fix this. (Previously, chat pages didn't count num-chat-messages.)
+    val isChatWithWrongReplyCount =
+      page.role.isChat && oldMeta.numRepliesVisible == 0 && numVisibleRepliesGone > 0
+    val numVisibleRepliesChanged = numVisibleRepliesGone > 0 || numVisibleRepliesBack > 0
 
-      if (numVisibleRepliesChanged && !isChatWithWrongReplyCount) {
-        newMeta = newMeta.copy(
-          numRepliesVisible =
-              oldMeta.numRepliesVisible + numVisibleRepliesBack - numVisibleRepliesGone,
-          numOrigPostRepliesVisible =
-            // For now: use max() because the db field was just added so some counts are off.
-            math.max(0, oldMeta.numOrigPostRepliesVisible +
-                numOrigPostVisibleRepliesBack - numOrigPostVisibleRepliesGone))
-        markSectionPageStale = true
-      }
-      transaction.updatePageMeta(newMeta, oldMeta = oldMeta, markSectionPageStale)
+    if (numVisibleRepliesChanged && !isChatWithWrongReplyCount) {
+      newMeta = newMeta.copy(
+        numRepliesVisible =
+            oldMeta.numRepliesVisible + numVisibleRepliesBack - numVisibleRepliesGone,
+        numOrigPostRepliesVisible =
+          // For now: use max() because the db field was just added so some counts are off.
+          math.max(0, oldMeta.numOrigPostRepliesVisible +
+              numOrigPostVisibleRepliesBack - numOrigPostVisibleRepliesGone))
+      markSectionPageStale = true
+      updatePagePopularity(page.parts, transaction)
+    }
+
+    transaction.updatePageMeta(newMeta, oldMeta = oldMeta, markSectionPageStale)
 
       // In the future: if is a forum topic, and we're restoring the OP, then bump the topic.
 
@@ -1122,95 +1129,96 @@ trait PostsDao {
   def approvePostImpl(pageId: PageId, postNr: PostNr, approverId: UserId,
         transaction: SiteTransaction) {
 
-      val page = PageDao(pageId, transaction)
-      val pageMeta = page.meta
-      val postBefore = page.parts.thePostByNr(postNr)
-      if (postBefore.isCurrentVersionApproved)
-        throwForbidden("DwE4GYUR2", s"Post nr ${postBefore.nr} already approved")
+    val page = PageDao(pageId, transaction)
+    val pageMeta = page.meta
+    val postBefore = page.parts.thePostByNr(postNr)
+    if (postBefore.isCurrentVersionApproved)
+      throwForbidden("DwE4GYUR2", s"Post nr ${postBefore.nr} already approved")
 
-      val approver = transaction.loadTheUser(approverId)
+    val approver = transaction.loadTheUser(approverId)
 
-      // For now. Later, let core members approve posts too.
-      if (!approver.isStaff)
-        throwForbidden("EsE5GYK02", "You're not staff so you cannot approve posts")
+    // For now. Later, let core members approve posts too.
+    if (!approver.isStaff)
+      throwForbidden("EsE5GYK02", "You're not staff so you cannot approve posts")
 
-      // ------ The post
+    // ------ The post
 
-      // Later: update lastApprovedEditAt, lastApprovedEditById and numDistinctEditors too,
-      // or remove them.
-      val postAfter = postBefore.copy(
-        safeRevisionNr =
-          approver.isHuman ? Option(postBefore.currentRevisionNr) | postBefore.safeRevisionNr,
-        approvedRevisionNr = Some(postBefore.currentRevisionNr),
-        approvedAt = Some(transaction.now.toJavaDate),
-        approvedById = Some(approverId),
-        approvedSource = Some(postBefore.currentSource),
-        approvedHtmlSanitized = Some(postBefore.currentHtmlSanitized(
-          commonmarkRenderer, pageMeta.pageRole)),
-        currentSourcePatch = None,
-        // SPAM RACE COULD unhide only if rev nr that got hidden <= rev that was reviewed. [6GKC3U]
-        bodyHiddenAt = None,
-        bodyHiddenById = None,
-        bodyHiddenReason = None)
-      transaction.updatePost(postAfter)
-      transaction.indexPostsSoon(postAfter)
+    // Later: update lastApprovedEditAt, lastApprovedEditById and numDistinctEditors too,
+    // or remove them.
+    val postAfter = postBefore.copy(
+      safeRevisionNr =
+        approver.isHuman ? Option(postBefore.currentRevisionNr) | postBefore.safeRevisionNr,
+      approvedRevisionNr = Some(postBefore.currentRevisionNr),
+      approvedAt = Some(transaction.now.toJavaDate),
+      approvedById = Some(approverId),
+      approvedSource = Some(postBefore.currentSource),
+      approvedHtmlSanitized = Some(postBefore.currentHtmlSanitized(
+        commonmarkRenderer, pageMeta.pageRole)),
+      currentSourcePatch = None,
+      // SPAM RACE COULD unhide only if rev nr that got hidden <= rev that was reviewed. [6GKC3U]
+      bodyHiddenAt = None,
+      bodyHiddenById = None,
+      bodyHiddenReason = None)
+    transaction.updatePost(postAfter)
+    transaction.indexPostsSoon(postAfter)
 
-      SHOULD // delete any review tasks.
+    SHOULD // delete any review tasks.
 
-      // ------ The page
+    // ------ The page
 
-      val isApprovingPageTitle = postNr == PageParts.TitleNr
-      val isApprovingPageBody = postNr == PageParts.BodyNr
-      val isApprovingNewPost = postBefore.approvedRevisionNr.isEmpty
+    val isApprovingPageTitle = postNr == PageParts.TitleNr
+    val isApprovingPageBody = postNr == PageParts.BodyNr
+    val isApprovingNewPost = postBefore.approvedRevisionNr.isEmpty
 
-      var newMeta = pageMeta.copy(version = pageMeta.version + 1)
+    var newMeta = pageMeta.copy(version = pageMeta.version + 1)
 
-      // If we're approving the page, unhide it.
-      BUG // rather harmless: If page hidden because of flags, then if new reply approved,
-      // the page should be shown, because now there's a visible reply. But it'll remain hidden.
-      val newHiddenAt =
-        if (isApprovingPageBody && isApprovingNewPost) {
-          UNTESTED
-          None
-        }
-        else newMeta.hiddenAt
-
-      // Bump page and update reply counts if a new post was approved and became visible,
-      // or if the original post was edited.
-      var makesSectionPageHtmlStale = false
-      if (isApprovingNewPost || isApprovingPageBody) {
-        val (numNewReplies, numNewOrigPostReplies, newLastReplyAt, newLastReplyById) =
-          if (isApprovingNewPost && postAfter.isReply)
-            (1, postAfter.isOrigPostReply ? 1 | 0,
-              Some(transaction.now.toJavaDate), Some(postAfter.createdById))
-          else
-            (0, 0, pageMeta.lastReplyAt, pageMeta.lastReplyById)
-
-        newMeta = newMeta.copy(
-          numRepliesVisible = pageMeta.numRepliesVisible + numNewReplies,
-          numOrigPostRepliesVisible = pageMeta.numOrigPostRepliesVisible + numNewOrigPostReplies,
-          lastReplyAt = newLastReplyAt,
-          lastReplyById = newLastReplyById,
-          hiddenAt = newHiddenAt,
-          bumpedAt = pageMeta.isClosed ? pageMeta.bumpedAt | Some(transaction.now.toJavaDate))
-        makesSectionPageHtmlStale = true
+    // If we're approving the page, unhide it.
+    BUG // rather harmless: If page hidden because of flags, then if new reply approved,
+    // the page should be shown, because now there's a visible reply. But it'll remain hidden.
+    val newHiddenAt =
+      if (isApprovingPageBody && isApprovingNewPost) {
+        UNTESTED
+        None
       }
-      transaction.updatePageMeta(newMeta, oldMeta = pageMeta, makesSectionPageHtmlStale)
+      else newMeta.hiddenAt
 
-      // ------ Notifications
+    // Bump page and update reply counts if a new post was approved and became visible,
+    // or if the original post was edited.
+    var makesSectionPageHtmlStale = false
+    if (isApprovingNewPost || isApprovingPageBody) {
+      val (numNewReplies, numNewOrigPostReplies, newLastReplyAt, newLastReplyById) =
+        if (isApprovingNewPost && postAfter.isReply)
+          (1, postAfter.isOrigPostReply ? 1 | 0,
+            Some(transaction.now.toJavaDate), Some(postAfter.createdById))
+        else
+          (0, 0, pageMeta.lastReplyAt, pageMeta.lastReplyById)
 
-      val notifications =
-        if (isApprovingPageTitle && isApprovingNewPost) {
-          // Notifications will be generated for the page body, that should be enough?
-          Notifications.None
-        }
-        else if (isApprovingNewPost) {
-          NotificationGenerator(transaction).generateForNewPost(page, postAfter)
-        }
-        else {
-          NotificationGenerator(transaction).generateForEdits(postBefore, postAfter)
-        }
-      transaction.saveDeleteNotifications(notifications)
+      newMeta = newMeta.copy(
+        numRepliesVisible = pageMeta.numRepliesVisible + numNewReplies,
+        numOrigPostRepliesVisible = pageMeta.numOrigPostRepliesVisible + numNewOrigPostReplies,
+        lastReplyAt = newLastReplyAt,
+        lastReplyById = newLastReplyById,
+        hiddenAt = newHiddenAt,
+        bumpedAt = pageMeta.isClosed ? pageMeta.bumpedAt | Some(transaction.now.toJavaDate))
+      makesSectionPageHtmlStale = true
+    }
+    transaction.updatePageMeta(newMeta, oldMeta = pageMeta, makesSectionPageHtmlStale)
+    updatePagePopularity(page.parts, transaction)
+
+    // ------ Notifications
+
+    val notifications =
+      if (isApprovingPageTitle && isApprovingNewPost) {
+        // Notifications will be generated for the page body, that should be enough?
+        Notifications.None
+      }
+      else if (isApprovingNewPost) {
+        NotificationGenerator(transaction).generateForNewPost(page, postAfter)
+      }
+      else {
+        NotificationGenerator(transaction).generateForEdits(postBefore, postAfter)
+      }
+    transaction.saveDeleteNotifications(notifications)
 
     refreshPagesInAnyCache(Set[PageId](pageId))
   }
@@ -1286,6 +1294,7 @@ trait PostsDao {
       version = pageMeta.version + 1)
 
     transaction.updatePageMeta(newMeta, oldMeta = pageMeta, markSectionPageStale = true)
+    updatePagePopularity(page.parts, transaction)
   }
 
 
@@ -1306,15 +1315,14 @@ trait PostsDao {
 
   def deleteVote(pageId: PageId, postNr: PostNr, voteType: PostVoteType, voterId: UserId) {
     readWriteTransaction { transaction =>
-      val post = transaction.loadThePost(pageId, postNr)
+      val post = transaction.loadThePost(pageId, postNr = postNr)
       val voter = transaction.loadTheUser(voterId)
       throwIfMayNotSeePost(post, Some(voter))(transaction)
 
-      transaction.deleteVote(pageId, postNr, voteType, voterId = voterId)
-      updateVoteCounts(pageId, postNr = postNr, transaction)
+      transaction.deleteVote(pageId, postNr = postNr, voteType, voterId = voterId)
+      updateVoteCounts(PagePartsDao(pageId, transaction), post, transaction)
       addUserStats(UserStats(post.createdById, numLikesReceived = -1))(transaction)
       addUserStats(UserStats(voterId, numLikesGiven = -1))(transaction)
-      updatePagePopularity(PagePartsDao(pageId, transaction), transaction)
 
       /* SECURITY vote-FRAUD SHOULD delete by cookie too, like I did before:
       var numRowsDeleted = 0
@@ -1383,10 +1391,9 @@ trait PostsDao {
 
       transaction.updatePostsReadStats(pageId, postsToMarkAsRead, readById = voterId,
         readFromIp = voterIp)
-      updateVoteCounts(post, transaction)
+      updateVoteCounts(page.parts, post, transaction)
       addUserStats(UserStats(post.createdById, numLikesReceived = 1))(transaction)
       addUserStats(UserStats(voterId, numLikesGiven = 1))(transaction)
-      updatePagePopularity(page.parts, transaction)
     }
     refreshPageInMemCache(pageId)
   }
@@ -1749,6 +1756,7 @@ trait PostsDao {
       transaction.updatePageMeta(pageMetaAfter, oldMeta = pageMetaBefore,
         // The page might be hidden now, or num-replies has changed, so refresh forum topic list.
         markSectionPageStale = true)
+      updatePagePopularity(PagePartsDao(pageId, transaction), transaction)
     }
   }
 
@@ -1780,13 +1788,7 @@ trait PostsDao {
     readOnlyTransaction(_.loadPost(pageId, postNr))
 
 
-  private def updateVoteCounts(pageId: PageId, postNr: PostNr, transaction: SiteTransaction) {
-    val post = transaction.loadThePost(pageId, postNr = postNr)
-    updateVoteCounts(post, transaction)
-  }
-
-
-  private def updateVoteCounts(post: Post, transaction: SiteTransaction) {
+  private def updateVoteCounts(pageParts: PageParts, post: Post, transaction: SiteTransaction) {
     val actions = transaction.loadActionsDoneToPost(post.pageId, postNr = post.nr)
     val readStats = transaction.loadPostsReadStats(post.pageId, Some(post.nr))
     val postAfter = post.copyWithUpdatedVoteAndReadCounts(actions, readStats)
@@ -1818,8 +1820,8 @@ trait PostsDao {
 
     // (Don't reindex)
     transaction.updatePost(postAfter)
-    transaction.updatePageMeta(pageMetaAfter, oldMeta = pageMetaBefore,
-      markSectionPageStale = true)
+    transaction.updatePageMeta(pageMetaAfter, oldMeta = pageMetaBefore, markSectionPageStale = true)
+    updatePagePopularity(pageParts, transaction)
 
     // COULD split e.g. num_like_votes into ..._total and ..._unique? And update here.
   }

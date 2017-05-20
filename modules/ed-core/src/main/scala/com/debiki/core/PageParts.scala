@@ -63,9 +63,9 @@ object PageParts {
 }
 
 
-class PreLoadedPageParts(
-  val pageId: PageId,
-  val allPosts: immutable.Seq[Post]) extends PageParts
+case class PreLoadedPageParts(
+  pageId: PageId,
+  allPosts: immutable.Seq[Post]) extends PageParts
 
 
 /** The parts of a page are 1) posts: any title post, any body post, and any comments,

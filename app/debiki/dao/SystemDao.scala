@@ -321,6 +321,12 @@ class SystemDao(private val dbDaoFactory: DbDaoFactory, val cache: DaoMemCache) 
 
         siteTransaction.updatePageMeta(newMeta, oldMeta = oldMeta,
           markSectionPageStale = false) // (4KWEBPF89)
+        BUG; SHOULD // updatePagePopularity(PagePartsDao(pageId, transaction), transaction)
+        // but tricky to do right now. Also, I should perhaps, instead of updating the page
+        // popularity instantly, have a background job queue for pages that need to be updated?
+        // Like the job queue for pages to reindex? Then, if many many pages need to have their
+        // popularity updated "at once", the server won't go crazy and spike the CPU. Instead,
+        // it'll look at the pages one at a time, when it has some CPU to spare.
 
         Some(SitePageId(spamCheckTask.siteId, postAfter.pageId))
       }

@@ -549,6 +549,7 @@ package object core {
   def REFACTOR = ()       // The code can be refactored. Also search for "[refactor]".
   def RENAME = ()         // Something ought to be renamed.
   def OPTIMIZE = ()
+  def SHOULD_OPTIMIZE = ()
   def COULD_OPTIMIZE = ()
   def FORCED_REFLOW = ()  // Browser side only. Makes it slow.
   def UX = ()             // Usability can be improved.
