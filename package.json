@@ -55,7 +55,7 @@
     "gulp-rename": "^1.2.0",
     "gulp-stylus": "^2.0.6",
     "gulp-typescript": "^3.1.4",
-    "gulp-uglify": "^2.0.0",
+    "gulp-uglify": "^3.0.0",
     "gulp-watch": "^0.5.3",
     "gulp-wrap": "^0.13.0",
     "lodash": "^4.16.1",
