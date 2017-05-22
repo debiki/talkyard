@@ -32,9 +32,14 @@ import play.api.mvc.Action
 object SubscriberController extends mvc.Controller {
 
 
-  /** This request is sent to the server's ip address so we don't yet know which site
-    * it concerns (because the normal functionality that looks at the hostname doesn't work).
-    * However we get the hostname (an user id) in the url.
+  /** This request is sent by Nchan to the app server's ip address so we don't know which site
+    * it concerns (because the normal functionality that looks at the hostname doesn't work,
+    * since Nchan sends to the ip address, not the correct hostname).
+    * However we get the site id (and user id) in the channel id url param.   ... But ...
+    *
+    * ... But, Nchan *does* apparently include headers and cookies from the original request.
+    * So, below, we compare the 'siteId-userId' in the specified Nchan channel,
+    * with the site id and user id in the host header & sessiond id hash.
     */
   def authorizeSubscriber(channelId: String) = GetAction { request =>
     SECURITY ; COULD // include a xsrf token? They're normally used for post requests only,
@@ -42,9 +47,9 @@ object SubscriberController extends mvc.Controller {
     // to events? Not sure what harm that could do, but ... add xsrf token just in case?
 
     // If the user has logged in, we've verified the session cookie & user id therein already.
-    // Only need to verify that it matches the user id specified in the url.
+    // Only need to verify that it matches the user id specified in the channelId url param.
     // (nchan will subscribe the browser to all events the server sends to a channel
-    // with id = userId)
+    // with id = 'siteId-userId')
 
     // The channel contains the site id, so we won't accidentally send messages to browser
     // at the wrong site. [7YGK082]
@@ -76,22 +81,18 @@ object SubscriberController extends mvc.Controller {
       throwForbidden("EsE7UMJ2", s"Wrong user id, cookie: ${request.theUserId} != url: $userId")
 
     /*
-    if (request.sidStatus == SidAbsent)
-      throwForbidden("EsE4ZYUG0", "Not logged in")
-
     // For now, guests may not subscribe. Perhaps later somehow, or in some different ways.
     // Perhaps per topic channels? Instead of per user. For guests, only?
     val sessionCookieUserId = request.sidStatus.roleId getOrElse throwForbidden(
       "EsE5UJGKF2", "Not logged in as a site member")
-
-    // (This'd be suspect. Perhaps log something in some suspicious ip addresses log?)
-    if (sessionCookieUserId != userIdInt)
-      throwForbidden("EsE7UMJ2", s"Wrong user id. Cookie: $sessionCookieUserId != url: $userIdInt")
       */
 
-    SECURITY ; SHOULD // include the site id in the session id hash / thing somehow so the
-    // browser cannot specify the wrong host url param and in that way subscribe with the same
-    // user id but at a different site.
+    SECURITY; COULD // secret-salt hash the 'siteId-userId' and include-append in the channel id,
+    // to make it extra impossible to listen to someone else's 'siteId-userId' events. Not really
+    // needed though, because site & user id already secure-salt hashed in the session id [4WKRQ1A]
+    SECURITY; TESTS_MISSING // test that cannot specify the wrong host HTTP param or the wrong
+    // 'siteId-userId' channel id, and in that way subscribe e.g. as someone else at the same site,
+    // or someone with the same user id, at a different site.
 
     RACE // fairly harmless though. If the user updates the watchbar vi another browser tab right now.
     val watchbar: BareWatchbar = request.dao.getOrCreateWatchbar(request.theUser.id)

@@ -35,7 +35,7 @@ package object security {
    * throws an error if this is not a GET request and the xsrf token is bad.
    * @return The current SID and xsrf token. Or new ones if needed (with no
    * no user, no display name), and a new SID and xsrf cookie.
-   * @throws DebikiHttp.ResultException, for non-GET requests,
+   * @throws ResultException, for non-GET requests,
    * if the SID or the XSRF token is bad.
    *
    * However, for GET request where `maySetCookies` is false, and there
@@ -47,9 +47,9 @@ package object security {
         maySetCookies: Boolean)
         : (SidStatus, XsrfOk, List[Cookie]) = {
 
-    val sidCookieValOpt = urlDecodeCookie(SessionIdCookieName, request)
-    val sidStatus: SidStatus =
-      sidCookieValOpt.map(checkSessionId(siteId, _)) getOrElse SidAbsent
+    val anySessionIdCookieValue = urlDecodeCookie(SessionIdCookieName, request)
+    val sessionIdStatus: SidStatus =
+      anySessionIdCookieValue.map(checkSessionId(siteId, _)) getOrElse SidAbsent
 
     // On GET requests, simply accept the value of the xsrf cookie.
     // (On POST requests, however, we check the xsrf form input value)
@@ -59,8 +59,8 @@ package object security {
       if (request.method == "GET") {
         // Accept this request, and create new XSRF token if needed.
 
-        if (!sidStatus.isOk)
-          Logger.warn(s"Bad SID: $sidStatus, from IP: ${realOrFakeIpOf(request)}")
+        if (!sessionIdStatus.isOk)
+          Logger.warn(s"Bad SID: $sessionIdStatus, from IP: ${realOrFakeIpOf(request)}")
 
         val (xsrfOk: XsrfOk, anyNewXsrfCookie: List[Cookie]) =
           if (xsrfCookieValOpt.isDefined) {
@@ -77,7 +77,7 @@ package object security {
             (newXsrfOk, List(cookie))
           }
 
-        (sidStatus, xsrfOk, anyNewXsrfCookie)
+        (sessionIdStatus, xsrfOk, anyNewXsrfCookie)
       }
       else {
         // Reject this request if the XSRF token is invalid,
@@ -153,7 +153,7 @@ package object security {
           xsrfStatus.asInstanceOf[XsrfOk]
         }
 
-        (sidStatus) match {
+        sessionIdStatus match {
           case sidOk: SidOk => (sidOk, xsrfOk, Nil)
           case SidAbsent => (SidAbsent, xsrfOk, Nil)
           case _ => throwForbidden("DwE530Rstx90", "Bad SID")
@@ -320,7 +320,7 @@ case class SidOk(
          userId +"."+
          (new ju.Date).getTime +"."+
          (nextRandomString() take 10)
-    // If the site id wasn't included in the hash, then an admin from site A would
+    // If the site id wasn't included in the hash, then an admin from site A would   [4WKRQ1A]
     // be able to login as admin at site B (if they have the same user id and username).
     val saltedHash = hashSha1Base64UrlSafe(
       s"$secretSalt.$siteId.$useridDateRandom") take sidHashLength

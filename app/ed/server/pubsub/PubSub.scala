@@ -332,7 +332,7 @@ class PubSubActor(val nginxHost: String, val redisClient: RedisClient) extends A
     // to find out if all this seems to work (255 channels -> would never be split, there
     // aren't that many concurrent users right now).
     // (Docs: https://nchan.slact.net/#channel-multiplexing )
-    toUserIds.grouped(3 /* later: 255 */) foreach { userIds =>
+    toUserIds.grouped(5 /* later: 255 */) foreach { userIds =>
       // All channels are in the same namespace (regardless of in which Nginx server {..} block
       // the subscription endpoints were declared), therefore we pefix them with the site id,
       // so we won't send any messages to browsers connected to the wrong site. [7YGK082]
