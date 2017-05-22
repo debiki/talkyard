@@ -250,7 +250,7 @@ private[http] object PlainApiActions {
 
       // COULD use markers instead for site id and ip, and perhaps uri too? Dupl code [5KWC28]
       val requestUriAndIp = s"site $site, ip ${apiRequest.ip}: ${apiRequest.uri}"
-      p.Logger.debug(s"API request started [DwM6L8], " + requestUriAndIp)
+      //p.Logger.debug(s"API request started [DwM6L8], " + requestUriAndIp)
 
       val timer = Globals.metricRegistry.timer(request.path)
       val timerContext = timer.time()
@@ -273,8 +273,8 @@ private[http] object PlainApiActions {
 
       result onComplete {
         case Success(r) =>
-          p.Logger.debug(
-            s"API request ended, status ${r.header.status} [DwM9Z2], $requestUriAndIp")
+          //p.Logger.debug(
+            //s"API request ended, status ${r.header.status} [DwM9Z2], $requestUriAndIp")
         case Failure(exception) =>
           p.Logger.debug(
             s"API request exception: ${classNameOf(exception)} [DwE4P7], $requestUriAndIp")

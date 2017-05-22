@@ -23,9 +23,8 @@ import debiki.DebikiHttp._
 import debiki._
 import ed.server.http._
 import play.api._
-import play.api.libs.json.{JsArray, JsString, Json}
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.util.Try
+import play.api.libs.json.Json
+import play.api.mvc.Action
 
 
 /** Authorizes and subscribes a user to pubsub messages.
@@ -94,12 +93,15 @@ object SubscriberController extends mvc.Controller {
     // browser cannot specify the wrong host url param and in that way subscribe with the same
     // user id but at a different site.
 
-    Globals.pubSub.userSubscribed(request.siteId, request.theUser, request.theBrowserIdData)
+    RACE // fairly harmless though. If the user updates the watchbar vi another browser tab right now.
+    val watchbar: BareWatchbar = request.dao.getOrCreateWatchbar(request.theUser.id)
+    Globals.pubSub.userSubscribed(request.siteId, request.theUser, request.theBrowserIdData,
+      watchbar.watchedPageIds)
     Ok
   }
 
 
-  def loadOnlineUsers() = GetActionRateLimited(RateLimits.ExpensiveGetRequest) {
+  def loadOnlineUsers(): Action[Unit] = GetActionRateLimited(RateLimits.ExpensiveGetRequest) {
         request =>
     val stuff = request.dao.loadUsersOnlineStuff()
     OkSafeJson(

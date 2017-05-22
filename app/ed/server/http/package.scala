@@ -123,6 +123,9 @@ package object http {
   def StaffGetAction(f: GetRequest => Result): Action[Unit] =
     PlainApiActionStaffOnly(BodyParsers.parse.empty)(f)
 
+  def AsyncAdminGetAction(f: GetRequest => Future[Result]): Action[Unit] =
+    PlainApiActionAdminOnly.async(BodyParsers.parse.empty)(f)
+
   def AdminGetAction(f: GetRequest => Result): Action[Unit] =
     PlainApiActionAdminOnly(BodyParsers.parse.empty)(f)
 

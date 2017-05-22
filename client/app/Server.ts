@@ -1156,7 +1156,8 @@ let longPollingState = {
 export function sendLongPollingRequest(userId: UserId, success: (event: any) => void,
       error: () => void) {
   dieIf(longPollingState.ongoingRequest, "Already long-polling the server [EsE7KYUX2]");
-  var options: any = {
+  console.debug(`Sending long polling request, ${debiki.siteId}:${userId} [EdDPS_BRWSRPOLL]`);
+  const options: any = {
     dataType: 'json',
     // Firefox always calls the error callback if a long polling request is ongoing when
     // navigating away / closing the tab. So the dialog would be visible for 0.1 confusing seconds.
@@ -1171,17 +1172,33 @@ export function sendLongPollingRequest(userId: UserId, success: (event: any) => 
   // This is an easy-to-guess channel id, but in order to subscribe, the session cookie
   // must also be included in the request. So this should be safe.
   // The site id is included, because users at different sites can have the same id. [7YGK082]
-  var channelId = debiki.siteId + '-' + userId;
+  const channelId = debiki.siteId + '-' + userId;
+  let abortedBecauseNoData = false;
   longPollingState.ongoingRequest =
       get('/-/pubsub/subscribe/' + channelId, options, (response, xhr) => {
+        console.debug(`Got long polling response [EdDPS_BRWSRRESP]: ${ JSON.stringify(response) }`);
         longPollingState.ongoingRequest = null;
         longPollingState.lastModified = xhr.getResponseHeader('Last-Modified');
         longPollingState.lastEtag = xhr.getResponseHeader('Etag');
         success(response);
       }, () => {
         longPollingState.ongoingRequest = null;
-        error();
+        if (abortedBecauseNoData) {
+          // Don't update last-modified and etag.
+          success(null);
+        }
+        else {
+          console.debug(`Got long polling error response [EdDPS_BRWSRERR]`);
+          error();
+        }
       });
+
+  // Cancel and restart the request after half a minute.
+  const currentRequest = longPollingState.ongoingRequest;
+  setTimeout(function () {
+    abortedBecauseNoData = true;
+    currentRequest.abort();
+  }, 30 * 1000);
 }
 
 

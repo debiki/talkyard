@@ -279,6 +279,21 @@ class DebugTestController @Inject() extends mvc.Controller {
   }
 
 
+  def showPubSubSubscribers(siteId: Option[SiteId]) = AsyncAdminGetAction { request =>
+    Globals.pubSub.debugGetSubscribers(siteId getOrElse request.siteId) map { pubSubState =>
+      Ok(i"""
+        |Subscribers by site and user id
+        |==================================
+        |${pubSubState.subscribersBySite}
+        |
+        |Watchers by site and page id
+        |==================================
+        |${pubSubState.watcherIdsByPageSiteId}
+        """)
+    }
+  }
+
+
   def logFunnyLogMessages = AdminGetAction { request =>
     import org.slf4j.Logger
     import org.slf4j.LoggerFactory
