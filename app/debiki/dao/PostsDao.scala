@@ -818,8 +818,7 @@ trait PostsDao {
       val page = PageDao(post.pageId, transaction)
       val user = userId.flatMap(transaction.loadUser)
 
-      SECURITY // should be may-see-post
-      throwIfMayNotSeePage(page, user)(transaction)
+      throwIfMayNotSeePost(post, user)(transaction)
 
       loadSomeRevisionsWithSourceImpl(postId, revisionNr, revisionsRecentFirst,
         atLeast, transaction)

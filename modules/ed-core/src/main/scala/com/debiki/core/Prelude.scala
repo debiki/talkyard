@@ -412,7 +412,7 @@ object Prelude {
   def saltAndHashEmail = saltAndHash(hashLengthEmail) _
   def saltAndHashIp = saltAndHash(hashLengthIp) _
 
-  SECURITY ; // TODO use SHA-256 instead.
+  SECURITY; COULD // use SHA-256 instead.
   private def mdSha1 = js.MessageDigest.getInstance("SHA-1") // not thread safe
 
   def hashSha1Base64UrlSafe(text: String): String =

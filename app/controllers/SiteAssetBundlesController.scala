@@ -63,6 +63,7 @@ object SiteAssetBundlesController extends mvc.Controller {
         // Ignore `version` for now. It's only used for asset versioning —
         // but we always serve the most recent version of the bundle.
         val bundle = try {
+          CLEAN_UP // this is no longer possible?: (because I simplified th assets system)
           // SECURITY don't load foreign tenant stuff from any private
           // other-site/_hidden-underscore-folder/, or if read access restricted
           // in some other manner. (Fix later, in AssetBundleLoader?)

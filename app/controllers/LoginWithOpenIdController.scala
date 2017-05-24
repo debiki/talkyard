@@ -170,7 +170,7 @@ object LoginWithOpenIdController extends mvc.Controller {
 
     val emailOpt = getAttr("email")
     //nickNameOpt = getAttr(Nickname)
-    val firstNameOpt = getAttr("firstname") // SECURITY sanitize, e.g. `|'
+    val firstNameOpt = getAttr("firstname")    SECU RITY sanitize, e.g. `|'
     val timeZoneOpt = getAttr("timezone")
     val countryOpt = getAttr("country")
 

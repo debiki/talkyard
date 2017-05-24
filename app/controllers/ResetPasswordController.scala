@@ -24,6 +24,7 @@ import debiki.DebikiHttp._
 import ed.server.security.createSessionIdAndXsrfToken
 import ed.server.http._
 import play.api._
+import play.api.mvc.Action
 
 
 /** Resets the password of a PasswordIdentity, in case the user forgot it.
@@ -33,8 +34,8 @@ object ResetPasswordController extends mvc.Controller {
   val MaxResetPasswordEmailAgeInHours = 24
 
 
-  def start = mvc.Action { request =>
-    Redirect(routes.ResetPasswordController.showResetPasswordPage.url)
+  def start = mvc.Action { _ =>
+    Redirect(routes.ResetPasswordController.showResetPasswordPage().url)
   }
 
 
@@ -44,7 +45,8 @@ object ResetPasswordController extends mvc.Controller {
   }
 
 
-  def handleResetPasswordForm = JsonOrFormDataPostAction(RateLimits.ResetPassword,
+  def handleResetPasswordForm: Action[JsonOrFormDataBody] =
+        JsonOrFormDataPostAction(RateLimits.ResetPassword,
         maxBytes = 200, allowAnyone = true) { request =>
     val emailOrUsername = request.body.getOrThrowBadReq("email") // WOULD rename 'email' param
     val anyUser = request.dao.loadMemberByEmailOrUsername(emailOrUsername)
@@ -105,7 +107,7 @@ object ResetPasswordController extends mvc.Controller {
       sendTo = emailAddress,
       toUserId = Some(user.id),
       subject = "There is no password to reset",
-      bodyHtmlText = (emailId: String) => {
+      bodyHtmlText = (_) => {
         views.html.resetpassword.noPasswordToResetEmail(
           userName = user.theUsername,
           emailAddress = emailAddress,
@@ -116,14 +118,14 @@ object ResetPasswordController extends mvc.Controller {
   }
 
 
-  def showEmailSentPage(isEmailAddress: String) = GetActionAllowAnyone { request =>
+  def showEmailSentPage(isEmailAddress: String): Action[Unit] = GetActionAllowAnyone { request =>
     Ok(views.html.resetpassword.emailSent(SiteTpi(request), isEmailAddress == "true"))
   }
 
 
-  def showChooseNewPasswordPage(resetPasswordEmailId: String) = GetActionAllowAnyone {
-        request =>
-    SECURITY // COULD check email type: ResetPassword or InvitePassword. SHOULD rate limit.
+  def showChooseNewPasswordPage(resetPasswordEmailId: String): Action[Unit] =
+        GetActionAllowAnyoneRateLimited(RateLimits.NewPasswordPage) { request =>
+    SECURITY; COULD // check email type: ResetPassword or InvitePassword.
     val loginGrant = loginByEmailOrThrow(resetPasswordEmailId, request)
     Ok(views.html.resetpassword.chooseNewPassword(
       SiteTpi(request),
@@ -132,7 +134,7 @@ object ResetPasswordController extends mvc.Controller {
   }
 
 
-  def handleNewPasswordForm(anyResetPasswordEmailId: String) =
+  def handleNewPasswordForm(anyResetPasswordEmailId: String): Action[JsonOrFormDataBody] =
         JsonOrFormDataPostAction(RateLimits.ChangePassword, maxBytes = 200,
           allowAnyone = true) { request =>
     val newPassword = request.body.getOrThrowBadReq("newPassword")
@@ -159,7 +161,7 @@ object ResetPasswordController extends mvc.Controller {
     val loginGrant =
       try request.dao.tryLoginAsMember(loginAttempt)
       catch {
-        case ex: DbDao.EmailNotFoundException =>
+        case _: DbDao.EmailNotFoundException =>
           throwForbidden("DwE7PWE7", "Email not found")
       }
     loginGrant

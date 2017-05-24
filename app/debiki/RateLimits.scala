@@ -191,6 +191,17 @@ object RateLimits {
   }
 
 
+  /** Not sure what limits to use. */
+  object NewPasswordPage extends RateLimits {
+    val key = "NPwP"
+    val what = "specified new password too frequently"
+    def maxPerFifteenSeconds = 5
+    def maxPerFifteenMinutes = 10
+    def maxPerDay = 50
+    def maxPerDayNewUser = Unlimited
+  }
+
+
   /** Discourse defaults to max 10 invites per day, let's just copy that. */
   object SendInvite extends RateLimits {
     val key = "SeIn"

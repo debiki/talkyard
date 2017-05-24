@@ -113,6 +113,9 @@ package object http {
   def GetActionAllowAnyone(f: GetRequest => Result): Action[Unit] =
     PlainApiAction(NoRateLimits, allowAnyone = true)(BodyParsers.parse.empty)(f)
 
+  def GetActionAllowAnyoneRateLimited(rateLimits: RateLimits)(f: GetRequest => Result): Action[Unit] =
+    PlainApiAction(rateLimits, allowAnyone = true)(BodyParsers.parse.empty)(f)
+
   def GetActionIsLogin(f: GetRequest => Result): Action[Unit] =
     PlainApiAction(NoRateLimits, isLogin = true)(BodyParsers.parse.empty)(f)
 
