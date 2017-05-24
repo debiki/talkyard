@@ -200,7 +200,6 @@ object ReactRenderer extends com.debiki.core.CommonMarkRenderer {
       // and we'll reuse `engine` so we won't have to create any additional engine.
       oneboxRenderer.javascriptEngine = Some(engine)
       val safeHtml = engine.invokeFunction("renderAndSanitizeCommonMark", commonMarkSource,
-          // SECURITY SHOULD use another sanitizer and whitelist/blacklist classes, and IDs? [7FPKE02]
           true.asInstanceOf[Object], // allowClassIdDataAttrs.asInstanceOf[Object],
           followLinks.asInstanceOf[Object],
           oneboxRenderer, cdnUploadsUrlPrefix)

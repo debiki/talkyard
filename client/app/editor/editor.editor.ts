@@ -600,9 +600,7 @@ export var Editor = createComponent({
     // (COULD verify still edits same post/thing, or not needed?)
     var isEditingBody = this.state.editingPostId === d.i.BodyNr;
     var sanitizerOpts = {
-      allowClassAndIdAttr: true, // isEditingBody, SECURITY SHOULD use another sanitizer [7FPKE02]
-      // and whitelist CSS classes and ids? Right now it'll be a little bit possible to
-      // make the post look annoyingly weird by adding the wrong CSS classes?
+      allowClassAndIdAttr: true, // or only if isEditingBody?
       allowDataAttr: isEditingBody
     };
     var htmlText = markdownToSafeHtml(this.state.text, window.location.host, sanitizerOpts);

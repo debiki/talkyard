@@ -22,7 +22,7 @@
 
 GET   /-/login                  controllers.LoginController.showLoginPage(as: Option[String], to: Option[String])
 GET   /-/login-popup            controllers.LoginController.showLoginPopup(mode, returnToUrl)
-POST  /-/logout                 controllers.LoginController.logout
+POST  /-/logout                 controllers.LoginController.logout(currentUrlPath: Option[String])
 POST  /-/send-addr-verif-email-again  controllers.LoginController.sendSiteOwnerAddrVerifEmailAgain
 
 POST  /-/login-guest            controllers.LoginAsGuestController.loginGuest
@@ -44,9 +44,6 @@ GET   /-/impersonate-with-key   controllers.ImpersonateController.impersonateWit
 POST  /-/impersonate            controllers.ImpersonateController.impersonate(userId: Int)
 POST  /-/view-as-other          controllers.ImpersonateController.viewAsOther(userId: Int)
 POST  /-/stop-impersonating     controllers.ImpersonateController.stopImpersonating
-
-GET   /-/api/logout             controllers.LoginController.logout
-POST  /-/api/logout             controllers.LoginController.logout
 
 GET   /-/pubsub/authorize-subscriber/:channelId  ed.server.pubsub.SubscriberController.authorizeSubscriber(channelId)
 GET   /-/load-online-users                       ed.server.pubsub.SubscriberController.loadOnlineUsers

@@ -49,6 +49,35 @@ trait AuthzSiteDaoMixin {
   }
 
 
+  /** Note: If may *probably* see the page. Returns true also for /-/user/... although perhaps
+    * in the future in some cases strangers may not see all users.
+    */
+  def mayStrangerProbablySeeUrlPathUseCache(urlPath: String): Boolean = {
+    if (urlPath.startsWith("/-/admin"))
+      return false
+
+    // Probably /-/user/some-username, which one may normally access.
+    if (urlPath.startsWith("/-/"))
+      return true
+
+    val specifiedPath = PagePath.fromUrlPath(siteId, urlPath) match {
+      case PagePath.Parsed.Good(path) => path
+      case _ => return false
+    }
+
+    val validPagePath = checkPagePath(specifiedPath) getOrElse {
+      return false
+    }
+
+    val pageMeta = getPageMeta(validPagePath.thePageId) getOrElse {
+      return false
+    }
+
+    val (maySee, debugCode) = maySeePageUseCache(pageMeta, user = None, maySeeUnlisted = true)
+    maySee
+  }
+
+
   @deprecated("now", "use Authz instead and dieOrDenyIf")
   def throwIfMayNotSeePage(page: Page, user: Option[User])(transaction: SiteTransaction) {
     throwIfMayNotSeePage(page.meta, user)(transaction)

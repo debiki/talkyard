@@ -33,7 +33,7 @@ object Prelude {
   // in production mode. [Code Complete p. 206: Use Offensive Programming]
   // The caller should fail gracefully (e.g. use a reasonable fallback
   // instead of the corrupted database data).
-  // SHOULD move to some DebikiLogger class and check if we're in debug
+  // CLEAN_UP COULD move to some DebikiLogger class and check if we're in debug
   // or release mode.
 
   // Should get rid of this version:

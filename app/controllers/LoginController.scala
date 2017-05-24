@@ -22,6 +22,7 @@ import debiki.DebikiHttp._
 import debiki.{Globals, RateLimits, SiteTpi}
 import ed.server.http._
 import play.api._
+import play.api.libs.json.{JsNull, JsString, Json}
 import play.api.mvc._
 
 
@@ -99,18 +100,31 @@ object LoginController extends mvc.Controller {
   /** Clears login related cookies and OpenID and OpenAuth stuff, unsubscribes
     * from any event channel.
     */
-  def logout = GetActionAllowAnyone { request =>
-    doLogout(request)
+  def logout(currentUrlPath: Option[String]) = GetActionAllowAnyone { request =>
+    doLogout(request, redirectIfMayNotSeeUrlPath = currentUrlPath)
   }
 
 
-  def doLogout(request: GetRequest): Result = {
-    request.user foreach { user =>
-      request.dao.pubSub.unsubscribeUser(request.siteId, user, request.theBrowserIdData)
-      request.dao.logout(user.id)
+  def doLogout(request: GetRequest, redirectIfMayNotSeeUrlPath: Option[String]): Result = {
+    import request.{dao, requester}
+
+    requester foreach { theRequester =>
+      request.dao.pubSub.unsubscribeUser(request.siteId, theRequester, request.theBrowserIdData)
+      request.dao.logout(theRequester.id)
     }
+
+    val stayOnSamePage = redirectIfMayNotSeeUrlPath match {
+      case None =>
+        true
+      case Some(urlPath) =>
+        dao.mayStrangerProbablySeeUrlPathUseCache(urlPath)
+    }
+
+    def homepagePath = JsString("/")
+
     // Keep the xsrf cookie, so login dialog works:
-    Ok.discardingCookies(DiscardingSessionCookie)
+    OkSafeJson(Json.obj("goToUrl" -> (if (stayOnSamePage) JsNull else homepagePath)))
+      .discardingCookies(DiscardingSessionCookie)
   }
 
 

@@ -414,7 +414,18 @@ export function loginAsGuest(name: string, email: string, success?: () => void) 
 
 
 export function logout(success: () => void) {
-  postJsonSuccess('/-/logout', success, null);
+  const currentUrlPath = location.pathname.toString();
+  postJsonSuccess(`/-/logout?currentUrlPath=${currentUrlPath}`, (response) => {
+    if (response.goToUrl && response.goToUrl !== currentUrlPath) {
+      location.assign(response.goToUrl);  // [9UMD24]
+      // Stop here, otherwise success() below might do location.reload(), which apparently
+      // cancels location.assign(..).
+      return;
+    }
+    if (success) {
+      success();
+    }
+  }, null);
 }
 
 

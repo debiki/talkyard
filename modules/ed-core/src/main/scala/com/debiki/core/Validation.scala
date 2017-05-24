@@ -78,10 +78,13 @@ object Validation {
     if (password.length < 8)
       return Bad("The password is too short")
 
-    if (password.length > 50)
-      return Bad("The password is too long")
+    // If it's too long, then it's not a password? It's some other weird thing, perhaps bad?
+    if (password.length > 80)
+      return Bad("The password is too long (80 chars max)")
 
-    // SHOULD check that the password is strong, use https://github.com/dropbox/zxcvbn?
+    // SHO-ULD check that the password is strong, use https://github.com/dropbox/zxcvbn?
+    // CLEAN_UP remove the server side password strength check instead? The JS is far too slow.
+    // (Then, do client side only).
     Good(password)
   }
 

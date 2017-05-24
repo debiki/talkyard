@@ -160,12 +160,12 @@ object ImpersonateController extends mvc.Controller {
   def stopImpersonating = GetAction { request =>
     urlDecodeCookie(ImpersonationCookieName, request.underlying) match {
       case None =>
-        LoginController.doLogout(request)
+        LoginController.doLogout(request, redirectIfMayNotSeeUrlPath = None)
       case Some(cookieValue) =>
         val (secondsAgo, oldUserId) = throwIfBadHashElseGetAgeAndUserId(cookieValue)
         // Ignore old impersonation cookies, in case they're leaked somehow.
         if (secondsAgo > MaxBecomeOldUserSeconds || oldUserId == NoUserId) {
-          LoginController.doLogout(request)
+          LoginController.doLogout(request, redirectIfMayNotSeeUrlPath = None)
         }
         else {
           // Restore the old user id.

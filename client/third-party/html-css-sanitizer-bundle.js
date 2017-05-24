@@ -4931,6 +4931,10 @@ function googleCajaSanitizeHtml(htmlTextUnsafe, allowClassAndIdAttr,
       'a': sanitizeHtml.simpleTransform('a', { 'rel': 'nofollow' })
     };
   }
+  // SECURITY SHOULD remove classes & ids like 's_...' and 't_...' — that's internal stuff, and
+  // could be used to make the post look weird. (Fairly harmless though.)
+  // See: https://github.com/punkave/sanitize-html#transformations
+
   var sanitized = sanitizeHtml(htmlTextUnsafe, sanitizeHtmlConfig);
   var superSanitized = html_sanitize(sanitized, uriPolicy, classAndIdPolicy, dataPolicy);
   return superSanitized;

@@ -253,7 +253,7 @@ export var CreateUserDialogContent = createClassAndFactory({
                         (debiki.siteId === FirstSiteId ?
                             "in the config file." : "on the Create Site page.") });
 
-  // SHOULD reuse UsernameInput.more.ts [76KWU02]
+  // CLEAN_UP SHOULD reuse UsernameInput.more.ts [76KWU02]
     const usernameInput =
         PatternInput({ label: "Username: (unique and short)", ref: 'username', id: 'e2eUsername',
           tabIndex: 2,

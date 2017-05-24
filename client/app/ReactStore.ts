@@ -74,10 +74,11 @@ ReactDispatcher.register(function(payload) {
       break;
 
     case ReactActions.actionTypes.Logout:
+      // (Perhaps the server should instead include a 'reloadPage' param in the /-/logout response?)
       if (store.userMustBeAuthenticated !== false || store.userMustBeApproved !== false)
         location.reload();
 
-      // SECURITY SHOULD go to / if in staff-only category, too.
+      // (No longer needed — now we redirect in Server.ts instead [9UMD24]. Remove this 'if' then?)
       if (store.pageRole === PageRole.FormalMessage) {
         // We may not see it any longer.
         location.assign('/');
