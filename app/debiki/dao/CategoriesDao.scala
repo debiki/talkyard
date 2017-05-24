@@ -331,7 +331,7 @@ trait CategoriesDao {
 
   def editCategory(editCategoryData: CategoryToSave, permissions: immutable.Seq[PermsOnPages],
         who: Who): Category = {
-    val (oldCategory, editedCategory) = readWriteTransaction { transaction =>
+    val (oldCategory, editedCategory, permissionsChanged) = readWriteTransaction { transaction =>
       val categoryId = editCategoryData.anyId getOrDie "DwE7KPE0"
       val oldCategory = transaction.loadCategory(categoryId).getOrElse(throwNotFound(
         "DwE5FRA2", s"Category not found, id: $categoryId"))
@@ -352,14 +352,15 @@ trait CategoriesDao {
 
       transaction.updateCategoryMarkSectionPageStale(editedCategory)
 
-      addRemovePermsOnCategory(categoryId, permissions)(transaction)
-      (oldCategory, editedCategory)
+      val permissionsChanged = addRemovePermsOnCategory(categoryId, permissions)(transaction)._2
+      (oldCategory, editedCategory, permissionsChanged)
       // COULD create audit log entry
     }
 
-    if (oldCategory.name != editedCategory.name) {
+    if (oldCategory.name != editedCategory.name || permissionsChanged) {
       // All pages in this category need to be regenerated, because the category name is
-      // included on the pages.
+      // included on the pages. Or if permissions edited: hard to know which pages are affected,
+      // so just empty the whole cache.
       emptyCache()
     }
 
@@ -411,7 +412,7 @@ trait CategoriesDao {
       dieIf(p.onCategoryId != newCategoryData.anyId, "EdE7UKW02")
     }
     val permsWithCatId = permissions.map(_.copy(onCategoryId = Some(categoryId)))
-    val permsWithId = addRemovePermsOnCategory(categoryId, permsWithCatId)(transaction)
+    val permsWithId = addRemovePermsOnCategory(categoryId, permsWithCatId)(transaction)._1
 
     // COULD create audit log entry
 
@@ -454,17 +455,19 @@ trait CategoriesDao {
 
   private def addRemovePermsOnCategory(categoryId: CategoryId,
         permissions: immutable.Seq[PermsOnPages])(transaction: SiteTransaction)
-        : immutable.Seq[PermsOnPages] = {
+        : (immutable.Seq[PermsOnPages], Boolean) = {
     dieIf(permissions.exists(_.onCategoryId.isNot(categoryId)), "EdE2FK0YU5")
     val permsWithIds = ArrayBuffer[PermsOnPages]()
     val oldPermissionsById: mutable.Map[PermissionId, PermsOnPages] =
       transaction.loadPermsOnCategory(categoryId).map(p => (p.id, p))(collection.breakOut)
+    var wasChangesMade = false
     permissions foreach { permission =>
       var alreadyExists = false
       if (permission.id >= PermissionAlreadyExistsMinId) {
         oldPermissionsById.remove(permission.id) foreach { oldPerm =>
           alreadyExists = true
           if (oldPerm != permission) {
+            wasChangesMade = true
             if (permission.isEverythingUndefined) {
               // latent BUG: not incl info about this deleted perm in the fn result [0YKAG25L]
               transaction.deletePermsOnPages(Seq(permission.id))
@@ -477,13 +480,16 @@ trait CategoriesDao {
         }
       }
       if (!alreadyExists) {
+        wasChangesMade = true
         val permWithId = transaction.insertPermsOnPages(permission)
         permsWithIds.append(permWithId)
       }
     }
     // latent BUG: not incl info about these deleted perms in the fn result [0YKAG25L]
     transaction.deletePermsOnPages(oldPermissionsById.keys)
-    permsWithIds.toVector
+    wasChangesMade ||= oldPermissionsById.nonEmpty
+
+    (permsWithIds.toVector, wasChangesMade)
   }
 }
 

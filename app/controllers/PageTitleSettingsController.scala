@@ -167,6 +167,7 @@ object PageTitleSettingsController extends mvc.Controller {
     if (newMeta.isChatPinnedGlobally != oldMeta.isChatPinnedGlobally) {
       // If is pinned globally, and we changed topic type to/from chat, then this page will/no-longer
       // be pinned in the watchbar. Then need to rerender the watchbar, affects all pages. [0GPHSR4]
+      // Also: [ZBK2F4E]
       request.dao.emptyCache()
     }
     else {

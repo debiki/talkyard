@@ -30,14 +30,28 @@ import com.debiki.core.Prelude._
 trait WatchbarDao {
   self: SiteDao with PageStuffDao =>
 
+  val StrangersWatchbarKey = MemCacheKey(siteId, "StrangersWatchbar")
+
+  memCache.onPageSaved { sitePageId =>
+    // Perhaps globally pinned chat title edited? Then needs to rerender watchbar. Also: [ZBK2F4E]
+    memCache.remove(StrangersWatchbarKey)
+  }
+
 
   def getStrangersWatchbar(): BareWatchbar = {
-    readOnlyTransaction { tx =>
-      val globalChatsInclForbidden = tx.loadOpenChatsPinnedGlobally()
-      val globalChats = globalChatsInclForbidden; SECURITY; MUST // filter { chatPageMeta =>
-      val globalChatIds = globalChats.map(_.pageId)
-      BareWatchbar.withChatChannelAndDirectMessageIds(globalChatIds, Nil)
-    }
+    memCache.lookup[BareWatchbar](
+      StrangersWatchbarKey,
+      orCacheAndReturn = {
+        readOnlyTransaction { tx =>
+          val globalChatsInclForbidden = tx.loadOpenChatsPinnedGlobally()
+          val globalChatsMaySee = globalChatsInclForbidden filter { chatPageMeta =>
+            val (maySee, debugCode) = maySeePageUseCache(chatPageMeta, user = None)
+            maySee
+          }
+          val globalChatIds = globalChatsMaySee.map(_.pageId)
+          Some(BareWatchbar.withChatChannelAndDirectMessageIds(globalChatIds, Nil))
+        }
+      }) getOrDie "EsE2GBR7W5"
   }
 
 

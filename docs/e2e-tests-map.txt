@@ -132,6 +132,13 @@ categories -
     topics hidden unless staff:
     topics not found when searching:
     can undelete:
+  permissions: see (1QRY7)
+
+permissions -
+  category -
+    change to staff-only —> globally pinned chat dissappears from stranger's watchbar  (6KWQ2)
+    change back —> globally pinned chat reappears in watchbar  (6KWQ2)
+    ... much more ...
 
 topics -
   go back to forum:
@@ -210,6 +217,7 @@ chat -
   join/leave channel:       ==
   private chat:             ==
   shows last 50 messages:
+  pin globally —> appears in watchbar:  (6KWQ2)
 
 uploads -  (7KFC2)
   upload profile pic:  (8PK2)
