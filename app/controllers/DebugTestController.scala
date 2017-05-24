@@ -33,9 +33,11 @@ import play.api._
 import play.api.libs.json._
 import play.{api => p}
 import play.api.Play.current
+import play.api.mvc.Action
 import play.api.mvc.BodyParsers.parse.empty
+import redis.RedisClient
 import scala.concurrent.duration._
-import scala.concurrent.Future
+import scala.concurrent.{Await, Future}
 import scala.concurrent.Future._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util.Try
@@ -49,7 +51,8 @@ class DebugTestController @Inject() extends mvc.Controller {
   /** If a JS error happens in the browser, it'll post the error message to this
     * endpoint, which logs it, so we'll get to know about client side errors.
     */
-  def logBrowserErrors = PostJsonAction(RateLimits.BrowserError, maxBytes = 10000) { request =>
+  def logBrowserErrors: Action[JsValue] = PostJsonAction(RateLimits.BrowserError, maxBytes = 10000) {
+        request =>
     val allErrorMessages = request.body.as[Seq[String]]
     // If there are super many errors, perhaps all of them is the same error. Don't log too many.
     val firstErrors = allErrorMessages take 20
@@ -65,8 +68,8 @@ class DebugTestController @Inject() extends mvc.Controller {
   }
 
 
-  // SECURITY SHOULD allow only if a Ops team password header? is included?
-  def showMetrics = AdminGetAction { request =>
+  SECURITY; COULD // allow only if a Ops team password header? is included? For now, superadmins only.
+  def showMetrics = SuperAdminGetAction { _ =>
     val osMXBean = ManagementFactory.getOperatingSystemMXBean
     val systemLoad = osMXBean.getSystemLoadAverage
     val runtime = Runtime.getRuntime
@@ -103,7 +106,7 @@ class DebugTestController @Inject() extends mvc.Controller {
 
 
   SECURITY; COULD // make this accessible only for admins + if ok forbidden-password specified.
-  def showBuildInfo = GetAction { request =>
+  def showBuildInfo = GetAction { _ =>
     import generatedcode.BuildInfo
     val infoTextBuilder = StringBuilder.newBuilder
       .append("Build info:")
@@ -124,29 +127,32 @@ class DebugTestController @Inject() extends mvc.Controller {
 
 
   /** For performance tests. */
-  def pingExceptionAction = ExceptionAction(empty) { request =>
+  def pingExceptionAction: Action[Unit] = ExceptionAction(empty) { _ =>
     Ok("exception-action-pong")
   }
 
 
   /** For performance tests. */
-  def pingApiAction = GetAction { request =>
+  def pingApiAction = GetAction { _ =>
     Ok("session-action-pong")
   }
 
 
   /** For performance tests. */
-  def pingCache = GetAction { request =>
-    ??? // Redis get whatever sth ...
+  def pingCache = GetAction { _ =>
+    val redis: RedisClient = Globals.redisClient
+    val futureGetResult = redis.get("missing_value")
+    Await.result(futureGetResult, 5 seconds)
     Ok("pong, from Play and Redis")
   }
 
 
   /** For load balancers (and performance tests too) */
   def pingDatabaseAndCache = GetAction { request =>
+    throwForbidden("EdE2wKFUG8", "Not impl")
     request.dao.readOnlyTransaction { transaction =>
-      ??? // transaction.pingDatabase()
-      ??? // ping Redis too
+      // transaction.pingDatabase()
+      // ping Redis too
     }
     Ok("pong, from Play, Postgres and Redis")
   }
@@ -154,7 +160,7 @@ class DebugTestController @Inject() extends mvc.Controller {
 
   def origin = GetAction { request =>
     val canonicalHost = request.dao.theSite().canonicalHost
-    val isFirstSite = Some(request.hostname) == Globals.firstSiteHostname
+    val isFirstSite = Globals.firstSiteHostname.contains(request.hostname)
     val response =
       s"""Globals.secure: ${Globals.secure}
          |Globals.scheme: ${Globals.scheme}
@@ -177,7 +183,7 @@ class DebugTestController @Inject() extends mvc.Controller {
   }
 
 
-  def areScriptsReady = ExceptionAction(empty) { request =>
+  def areScriptsReady: Action[Unit] = ExceptionAction(empty) { _ =>
     val numEnginesCreated = ReactRenderer.numEnginesCreated
     val numMissing = ReactRenderer.MinNumEngines - numEnginesCreated
     if (numMissing > 0)
@@ -187,7 +193,7 @@ class DebugTestController @Inject() extends mvc.Controller {
   }
 
 
-  def createDeadlock = ExceptionAction(empty) { request =>
+  def createDeadlock: Action[Unit] = ExceptionAction(empty) { _ =>
     if (Play.isProd)
       debiki.DebikiHttp.throwForbidden("DwE5K7G4", "You didn't say the magic word")
 
@@ -196,8 +202,8 @@ class DebugTestController @Inject() extends mvc.Controller {
   }
 
 
-  def showLastE2eTestEmailSent(siteId: SiteId, sentTo: String) = ExceptionAction.async(empty) {
-        request =>
+  def showLastE2eTestEmailSent(siteId: SiteId, sentTo: String): Action[Unit] =
+        ExceptionAction.async(empty) { request =>
     SECURITY // COULD add and check an e2e password. Or rate limits.
 
     if (!Email.isE2eTestEmailAddress(sentTo))
@@ -294,7 +300,7 @@ class DebugTestController @Inject() extends mvc.Controller {
   }
 
 
-  def logFunnyLogMessages = AdminGetAction { request =>
+  def logFunnyLogMessages = AdminGetAction { _ =>
     import org.slf4j.Logger
     import org.slf4j.LoggerFactory
     val logger: Logger = LoggerFactory.getLogger("application")

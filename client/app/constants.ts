@@ -32,7 +32,7 @@ const BodyNr = 1;
 const FirstReplyNr = 2;
 
 let NoUserId = 0;
-const SystemUserId = -1;
+const SystemUserId = 1;
 const MinMemberId = SystemUserId;
 
 const MaxGuestId = -2;
