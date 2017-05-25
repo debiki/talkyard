@@ -189,20 +189,17 @@ class PubSubActor(val nginxHost: String, val redisClient: RedisClient) extends A
 
   def dontRestartIfException(message: Any): Unit = try message match {
     case UserWatchesPages(siteId, userId, pageIds) =>
-      updateSubscriber(siteId, userId, pageIds)
-      updateWatcherIdsByPageId(siteId, userId, pageIds)
+      updateWatchedPages(siteId, userId, pageIds)
     case UserSubscribed(siteId, user, browserIdData, watchedPageIds) =>
       // Mark as online even if this has been done already, to bump it's timestamp.
       RedisCache.forSite(siteId, redisClient).markUserOnlineRemoveStranger(user.id, browserIdData)
       publishUserPresence(siteId, Some(user), Presence.Active)
-      // Update watcher ids (users-per-page) first, before pages-per-user gets updated,
-      // because the old watchedPageIds is compared to the new watchedPageIds.
-      updateWatcherIdsByPageId(siteId, user.id, watchedPageIds)
-      addOrUpdateSubscriber(siteId, user, watchedPageIds)
+      val oldPageIds = addOrUpdateSubscriber(siteId, user, watchedPageIds)
+      updateWatcherIdsByPageId(siteId, user.id, oldPageIds = oldPageIds, watchedPageIds)
     case UnsubscribeUser(siteId, user, browserIdData) =>
       RedisCache.forSite(siteId, redisClient).markUserOffline(user.id)
-      removeSubscriber(siteId, user)
-      updateWatcherIdsByPageId(siteId, user.id, Set.empty)
+      val oldPageIds = removeSubscriber(siteId, user)
+      updateWatcherIdsByPageId(siteId, user.id, oldPageIds = oldPageIds, Set.empty)
       publishUserPresence(siteId, Some(user), Presence.Away)
     case PublishMessage(message: Message, byId: UserId) =>
       publishStorePatchAndNotfs(message, byId)
@@ -222,7 +219,7 @@ class PubSubActor(val nginxHost: String, val redisClient: RedisClient) extends A
   }
 
 
-  private def updateSubscriber(siteId: SiteId, userId: UserId, pageIds: Set[PageId]) {
+  private def updateWatchedPages(siteId: SiteId, userId: UserId, newPageIds: Set[PageId]) {
     val subscribersById = subscribersByIdForSite(siteId)
     val oldEntry: UserWhenPages = subscribersById.getOrElse(userId, {
       // Not yet subscribed. Do nothing, right now. Soon the browser js should subscribe to
@@ -230,21 +227,25 @@ class PubSubActor(val nginxHost: String, val redisClient: RedisClient) extends A
       // send events, before has subscribed.)
       return
     })
-    subscribersById.put(userId, oldEntry.copy(watchingPageIds = pageIds))
+    subscribersById.put(userId, oldEntry.copy(watchingPageIds = newPageIds))
+    updateWatcherIdsByPageId(siteId, userId, oldPageIds = oldEntry.watchingPageIds, newPageIds)
   }
 
 
-  private def addOrUpdateSubscriber(siteId: SiteId, user: User, watchedPageIds: Set[PageId]) {
+  private def addOrUpdateSubscriber(siteId: SiteId, user: User, watchedPageIds: Set[PageId])
+        : Set[PageId] = {
     val subscribersById = subscribersByIdForSite(siteId)
     // Remove and reinsert, so inactive users will be the first ones found when iterating.
-    subscribersById.remove(user.id)
+    val oldEntry = subscribersById.remove(user.id)
     subscribersById.put(user.id, UserWhenPages(user, Globals.now(), watchedPageIds))
+    oldEntry.map(_.watchingPageIds) getOrElse Set.empty
   }
 
 
-  private def removeSubscriber(siteId: SiteId, user: User) {
+  private def removeSubscriber(siteId: SiteId, user: User): Set[PageId] = {
     // COULD tell Nchan about this too
-    subscribersByIdForSite(siteId).remove(user.id)
+    val oldEntry = subscribersByIdForSite(siteId).remove(user.id)
+    oldEntry.map(_.watchingPageIds) getOrElse Set.empty
   }
 
 
@@ -297,12 +298,11 @@ class PubSubActor(val nginxHost: String, val redisClient: RedisClient) extends A
   }
 
 
-  private def updateWatcherIdsByPageId(siteId: SiteId, userId: UserId, pageIds: Set[PageId]) {
+  private def updateWatcherIdsByPageId(siteId: SiteId, userId: UserId, oldPageIds: Set[PageId],
+        newPageIds: Set[PageId]) {
     val watcherIdsByPageId = perSiteWatchers(siteId)
-    val oldPageIds =
-      subscribersByIdForSite(siteId).get(userId).map(_.watchingPageIds) getOrElse Set.empty
-    val pageIdsAdded = pageIds -- oldPageIds
-    val pageIdsRemoved = oldPageIds -- pageIds
+    val pageIdsAdded = newPageIds -- oldPageIds
+    val pageIdsRemoved = oldPageIds -- newPageIds
     pageIdsRemoved foreach { pageId =>
       val watcherIds = watcherIdsByPageId.getOrElse(pageId, mutable.Set.empty)
       watcherIds.remove(userId)
@@ -362,6 +362,9 @@ class PubSubActor(val nginxHost: String, val redisClient: RedisClient) extends A
     subscribersByIdForSite(siteId).contains(userId)
 
 
+  /** BUG when user comes back and resubscribes, there might be some/many posts that hen didn't
+    * get, whils being un-subscribed for inactivity.
+    */
   private def deleteInactiveSubscriptions() {
     val now = Globals.now()
     for ((siteId, subscribersById) <- subscribersBySiteUserId) {
@@ -372,7 +375,8 @@ class PubSubActor(val nginxHost: String, val redisClient: RedisClient) extends A
         else {
           val user = userWhenPages.user
           unsubscribedUsers.append(user)
-          updateWatcherIdsByPageId(siteId, user.id, Set.empty)
+          updateWatcherIdsByPageId(
+              siteId, user.id, oldPageIds = userWhenPages.watchingPageIds, newPageIds = Set.empty)
           p.Logger.trace(o"""Unsubscribing inactive user
                @${user.anyUsername getOrElse ""}=$siteId:${user.id} [EdDPS_UNSUBINACTV]""")
           true
