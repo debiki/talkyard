@@ -236,11 +236,6 @@ function addCommandsToBrowser(browser) {
 
   browser.addCommand('waitForNewUrl', function() {
     assert(!!currentUrl, "Please call browser.rememberCurrentUrl() first [EsE7JYK24]");
-    /* This doesn't work, results in "TypeError: promise.then is not a function":
-     browser.waitUntil(function() {
-     return currentUrl !== browser.url();
-     });
-     instead, for now: */
     while (currentUrl === browser.url().value) {
       browser.pause(250);
     }

@@ -93,11 +93,19 @@ describe("user profile access:", () => {
 
   // ----- Michael replies
 
-  it("Michael logs in", () => {
+  it("Strangers may not see the topic", () => {
+    // When not logged in, we may not see the private topic, so we get redirected to the homepage.
+    const privateMessageUrl = mariasBrowser.url().value;
     mariasBrowser.topbar.clickLogout({ waitForLoginButton: false });
-    michaelsBrowser.assertNotFoundError();
-    michaelsBrowser.go('/' + forum.topics.byMichaelCategoryA.slug);
-    michaelsBrowser.complex.loginWithPasswordViaTopbar(michael);
+    strangersBrowser.waitUntilIsOnHomepage();
+    strangersBrowser.go(privateMessageUrl);
+    strangersBrowser.assertNotFoundError();
+
+  });
+
+  it("Michael logs in", () => {
+    strangersBrowser.go('/' + forum.topics.byMichaelCategoryA.slug);
+    strangersBrowser.complex.loginWithPasswordViaTopbar(michael);
   });
 
   it("... and replies to Maria's public reply", () => {

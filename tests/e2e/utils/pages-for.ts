@@ -161,6 +161,19 @@ function pagesFor(browser) {
     },
 
 
+    waitUntilIsOnHomepage: function() {
+      let delay = 20;
+      while (true) {
+        const url = browser.url().value;
+        if (/https?:\/\/[^/?#]+(\/latest|\/top|\/)?(#.*)?$/.test(url)) {
+          break;
+        }
+        delay *= 1.67;
+        browser.pause(delay);
+      }
+    },
+
+
     assertPageHtmlSourceDoesNotMatch: function(toMatch) {
       let resultsByBrowser = byBrowser(browser.getSource());
       let regex = _.isString(toMatch) ? new RegExp(toMatch) : toMatch;
