@@ -32,6 +32,7 @@ import scala.collection.{immutable, mutable}
 import scala.collection.mutable.ArrayBuffer
 import PostsDao._
 import ed.server.auth.Authz
+import org.scalactic.{Bad, Good, One, Or}
 
 
 case class InsertPostResult(storePatchJson: JsValue, post: Post, reviewTask: Option[ReviewTask])
@@ -76,9 +77,12 @@ trait PostsDao {
       val authorAndLevels = loadUserAndLevels(byWho, transaction)
       val author = authorAndLevels.user
       val page = PageDao(pageId, transaction)
+      val replyToPosts = page.parts.getPostsAllOrError(replyToPostNrs) getOrIfBad  { missingPostNr =>
+        throwNotFound(s"Post nr $missingPostNr not found", "EdE4JK2RJ")
+      }
 
       dieOrThrowNoUnless(Authz.mayPostReply(authorAndLevels, transaction.loadGroupIds(author),
-        postType, page.meta, transaction.loadAnyPrivateGroupTalkMembers(page.meta),
+        postType, page.meta, replyToPosts, transaction.loadAnyPrivateGroupTalkMembers(page.meta),
         transaction.loadCategoryPathRootLast(page.meta.categoryId),
         transaction.loadPermsOnPages()), "EdEMAY0RE")
 
@@ -197,7 +201,8 @@ trait PostsDao {
       transaction.spamCheckPostsSoon(byWho, spamRelReqStuff, newPost)
       transaction.updatePageMeta(newMeta, oldMeta = oldMeta, markSectionPageStale = shallApprove)
       if (shallApprove) {
-        updatePagePopularity(page.parts, transaction)
+        val pagePartsInclNewPost = PreLoadedPageParts(pageId, page.parts.allPosts :+ newPost)
+        updatePagePopularity(pagePartsInclNewPost, transaction)
       }
       uploadRefs foreach { uploadRef =>
         transaction.insertUploadedFileReference(newPost.id, uploadRef, authorId)
@@ -340,9 +345,10 @@ trait PostsDao {
 
       SHOULD_OPTIMIZE // don't load all posts [2GKF0S6], because this is a chat, could be too many.
       val page = PageDao(pageId, transaction)
+      val replyToPosts = Nil // currently cannot reply to specific posts, in the chat. [7YKDW3]
 
       dieOrThrowNoUnless(Authz.mayPostReply(authorAndLevels, transaction.loadGroupIds(author),
-        PostType.ChatMessage, page.meta, transaction.loadAnyPrivateGroupTalkMembers(page.meta),
+        PostType.ChatMessage, page.meta, Nil, transaction.loadAnyPrivateGroupTalkMembers(page.meta),
         transaction.loadCategoryPathRootLast(page.meta.categoryId),
         transaction.loadPermsOnPages()), "EdEMAY0CHAT")
 
@@ -1785,6 +1791,20 @@ trait PostsDao {
 
   def loadPost(pageId: PageId, postNr: PostNr): Option[Post] =
     readOnlyTransaction(_.loadPost(pageId, postNr))
+
+
+  /** Finds all of postNrs. If any single one (or more) is missing, returns Error. */
+  def loadPostsAllOrError(pageId: PageId, postNrs: Iterable[PostNr])
+        : immutable.Seq[Post] Or One[PostNr] =
+    readOnlyTransaction { tx =>
+      val posts = tx.loadPosts(postNrs.map(PagePostNr(pageId, _)))
+      dieIf(posts.length > postNrs.size, "EdE2WBR57")
+      if (posts.length < postNrs.size) {
+        val firstMissing = postNrs.find(nr => !posts.exists(_.nr == nr)) getOrDie "EdE7UKYWJ2"
+        return Bad(One(firstMissing))
+      }
+      Good(posts)
+    }
 
 
   private def updateVoteCounts(pageParts: PageParts, post: Post, transaction: SiteTransaction) {

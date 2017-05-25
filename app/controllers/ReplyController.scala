@@ -49,16 +49,18 @@ object ReplyController extends mvc.Controller {
     // the topic, in comparison to # posts in the topic, before allowing hen to post a reply.
 
     val pageMeta = dao.getPageMeta(pageId) getOrElse throwIndistinguishableNotFound("EdE5FKW20")
+    val replyToPosts = dao.loadPostsAllOrError(pageId, replyToPostNrs) getOrIfBad { missingPostNr =>
+      throwNotFound(s"Post nr $missingPostNr not found", "EdEW3HPY08")
+    }
+    val categoriesRootLast = dao.loadAncestorCategoriesRootLast(pageMeta.categoryId)
       /* Old, from when embedded comments were still in use & working, will somehow add back later:
       val page = tryCreateEmbeddedCommentsPage(request, pageId, anyPageUrl)
         .getOrElse(throwNotFound("Dw2XEG60", s"Page `$pageId' does not exist"))
       PageRequest.forPageThatExists(request, pageId = page.id) getOrDie "DwE77PJE0"  */
 
-    val categoriesRootLast = dao.loadAncestorCategoriesRootLast(pageMeta.categoryId)
-
     throwNoUnless(Authz.mayPostReply(
       request.theUserAndLevels, dao.getGroupIds(request.theUser),
-      postType, pageMeta, dao.getAnyPrivateGroupTalkMembers(pageMeta),
+      postType, pageMeta, replyToPosts, dao.getAnyPrivateGroupTalkMembers(pageMeta),
       inCategoriesRootLast = categoriesRootLast,
       permissions = dao.getPermsOnPages(categoriesRootLast)),
       "EdEZBXK3M2")
@@ -87,12 +89,12 @@ object ReplyController extends mvc.Controller {
     val pageMeta = dao.getPageMeta(pageId) getOrElse {
       throwIndistinguishableNotFound("EdE7JS2")
     }
-
+    val replyToPosts = Nil  // currently cannot reply to specific posts, in the chat [7YKDW3]
     val categoriesRootLast = dao.loadAncestorCategoriesRootLast(pageMeta.categoryId)
 
     throwNoUnless(Authz.mayPostReply(
       request.theUserAndLevels, dao.getGroupIds(request.theMember),
-      PostType.ChatMessage, pageMeta, dao.getAnyPrivateGroupTalkMembers(pageMeta),
+      PostType.ChatMessage, pageMeta, replyToPosts, dao.getAnyPrivateGroupTalkMembers(pageMeta),
       inCategoriesRootLast = categoriesRootLast,
       permissions = dao.getPermsOnPages(categoriesRootLast)),
       "EdEHDETG4K5")

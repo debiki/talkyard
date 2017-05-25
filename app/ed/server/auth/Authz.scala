@@ -165,6 +165,7 @@ object Authz {
     groupIds: immutable.Seq[GroupId],
     postType: PostType,
     pageMeta: PageMeta,
+    replyToPosts: immutable.Seq[Post],
     privateGroupTalkMemberIds: Set[UserId],
     inCategoriesRootLast: immutable.Seq[Category],
     permissions: immutable.Seq[PermsOnPages]): MayMaybe = {
@@ -191,6 +192,19 @@ object Authz {
 
     if (!pageMeta.pageRole.canHaveReplies)
       return NoMayNot("EsEM0REPAGETY", s"Cannot post to page type ${pageMeta.pageRole}")
+
+    // Dupl code, a bit repeated in AuthzSiteDaoMixin. [8KUWC1]
+    replyToPosts foreach { post =>
+      if (post.isDeleted && !user.isStaff)
+        return NoMayNot("EsEM0REPSTDLD", s"Cannot reply to post nr ${post.nr}: it has been deleted")
+
+      // Later?:  COULD let staff/mods meta-discuss things [METADISC] e.g. if a comment should be
+      // allowed or not. Then could use post nrs < 0, and not loade them by default when rendering the
+      // page. Only loaded for staff, if they click some small "View meta discussion" button.
+      // def isStaffOrAuthor = user.isStaff || user.id == post.createdById
+      // if (post is staff-only visible && !isStaffOrAuthor)
+      //   return NoMayNot("EsEM0REPSTDLD", s"Cannot reply to post nr ${post.nr}: it's been deleted")
+    }
 
     Yes
   }
@@ -227,6 +241,7 @@ object Authz {
       if (!mayWhat.mayEditPage)
         return NoMayNot("EdEM0ED0YOURORIGP", "You may not edit other people's pages")
     }
+    // Later: else if is meta discussion ... [METADISC]
     else {
       if (!mayWhat.mayEditComment)
         return NoMayNot("EdEM0ED0YOURPOST", "You may not edit other people's posts")

@@ -17,11 +17,11 @@
 
 package com.debiki.core
 
-import java.{util => ju}
 import scala.collection.mutable.ArrayBuffer
 import scala.collection.{immutable, mutable}
 import Prelude._
 import PageParts._
+import org.scalactic.{Bad, Good, One, Or}
 
 
 object PageParts {
@@ -35,15 +35,15 @@ object PageParts {
   val LowestPostNr = TitleNr
   assert(LowestPostNr == 0)
 
-  val NoNr = -1
+  val NoNr: Int = -1
 
   val MaxTitleLength = 150
 
-  def isArticleOrConfigPostNr(nr: PostNr) =
+  def isArticleOrConfigPostNr(nr: PostNr): Boolean =
     nr == PageParts.BodyNr || nr == PageParts.TitleNr
 
 
-  def isReply(postNr: PostNr) = postNr >= FirstReplyNr
+  def isReply(postNr: PostNr): Boolean = postNr >= FirstReplyNr
 
 
   /** Finds the 0 to 3 most frequent posters.
@@ -128,17 +128,25 @@ abstract class PageParts {
     postsByNr.values.find(_.id == postId)
   }
   def thePostById(postId: PostId): Post = postById(postId) getOrDie "EsE6YKG72"
-  def theBody = thePostByNr(BodyNr)
-  def theTitle = thePostByNr(TitleNr)
+  def theBody: Post = thePostByNr(BodyNr)
+  def theTitle: Post = thePostByNr(TitleNr)
 
+  /** Finds all of postNrs. If any single one (or more) is missing, returns Error. */
+  def getPostsAllOrError(postNrs: Set[PostNr]): immutable.Seq[Post] Or One[PostNr] = {
+    Good(postNrs.toVector map { nr =>
+      postsByNr.getOrElse(nr, {
+        return Bad(One(nr))
+      })
+    })
+  }
 
-  def numRepliesTotal = allPosts.count(_.isReply)
+  def numRepliesTotal: Int = allPosts.count(_.isReply)
 
-  lazy val numRepliesVisible = allPosts count { post =>
+  lazy val numRepliesVisible: Int = allPosts count { post =>
     post.isReply && post.isVisible
   }
 
-  lazy val numOrigPostRepliesVisible = allPosts count { post =>
+  lazy val numOrigPostRepliesVisible: Int = allPosts count { post =>
     post.isOrigPostReply && post.isVisible
   }
 
@@ -165,7 +173,7 @@ abstract class PageParts {
   }
 
 
-  def frequentPosterIds = {
+  def frequentPosterIds: Seq[UserId] = {
     // Ignore the page creator and the last replyer, because they have their own first-&-last
     // entries in the Users column in the forum topic list. [7UKPF26]
     PageParts.findFrequentPosters(this.allPosts,

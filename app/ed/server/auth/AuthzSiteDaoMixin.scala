@@ -162,8 +162,6 @@ trait AuthzSiteDaoMixin {
         maySeeUnlistedPages: Boolean = true, anyTransaction: Option[SiteTransaction])
         : (Boolean, String) = {
 
-    SECURITY; SHOULD // run these tests from Authz.mayPostReply, so cannot reply to sth one mustn't see.
-
     require(anyPageMeta.isDefined ^ (pageId ne null), "EdE25KWU24")
     require(anyPost.isDefined ^ (postNr >= 0), "EdE3DJ8A0")
 
@@ -179,6 +177,8 @@ trait AuthzSiteDaoMixin {
     if (!maySeePage)
       return (false, s"$debugCode-ABX94WN")
 
+    CLEAN_UP // Dupl code, this stuff repeated in Authz.mayPostReply. [8KUWC1]
+
     def thePageId = anyPageMeta.map(_.pageId) getOrElse pageId
 
     val post = anyPost orElse loadPost(thePageId, postNr) getOrElse {
@@ -190,6 +190,8 @@ trait AuthzSiteDaoMixin {
 
     if (post.isDeleted && !isStaffOrAuthor)
       return (false, "6PKJ2RU-Post-Deleted")
+
+    // Later: else if is meta discussion ... [METADISC]
 
     (true, "")
   }
