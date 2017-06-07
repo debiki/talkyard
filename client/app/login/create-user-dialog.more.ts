@@ -239,15 +239,15 @@ export var CreateUserDialogContent = createClassAndFactory({
     const emailHelp = props.providerId && hasEmailAddressAlready ?
         "Your email has been verified by " + props.providerId + "." : null;
 
-    // Undefined —> use the default, which is True.
-    const emailOptional = store.settings.requireVerifiedEmail === false ? "optional, " : '';
+    // Undefined —> use the default, which is True.  ... but for now, always require email [0KPS2J]
+    const emailOptional = ''; // store.settings.requireVerifiedEmail === false ? "optional, " : '';
 
     const emailInput =
         EmailInput({ label: `Email: (${emailOptional}will be kept private)`, id: 'e2eEmail',
           onChangeValueOk: (value, isOk) => this.setEmailOk(value, isOk), tabIndex: 1,
           // If email already provided by e.g. Google, don't let the user change it.
           disabled: hasEmailAddressAlready, defaultValue: props.email, help: emailHelp,
-          required: !emailOptional,
+          required: true, // [0KPS2J] store.settings.requireVerifiedEmail !== false,
           error: this.state.userData.email !== this.state.theWrongEmailAddress ?
               null : "Use the email address you specified " +
                         (debiki.siteId === FirstSiteId ?

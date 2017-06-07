@@ -55,6 +55,7 @@ describe("basic publ search:", () => {
     let site: SiteData = make.forumOwnedByOwen('impersonate', { title: forumTitle });
     site.settings.allowGuestLogin = true;
     site.settings.requireVerifiedEmail = false;
+    site.settings.mayPostBeforeEmailVerified = true; // remove later, if email not required [0KPS2J]
     site.members.push(make.memberMaria());
     idAddress = server.importSiteData(site);
   });

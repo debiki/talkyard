@@ -215,7 +215,7 @@ export var TitleBodyComments = createComponent({
           }
           if (store.numPostsRepliesSection) {
             let feedbacks =
-                _.filter(_.values(store.postsByNr), (post: Post) => post.parentNr = BodyNr);
+                _.filter(_.values(store.postsByNr), (post: Post) => post.parentNr === BodyNr);
             const itsFeedbackByMe =
                 _.some(feedbacks, (feedback: Post) => feedback.authorId == me.id);
             if (itsFeedbackByMe) {

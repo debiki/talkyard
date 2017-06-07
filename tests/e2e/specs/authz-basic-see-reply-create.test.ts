@@ -69,6 +69,7 @@ describe("authz basic see reply create:", () => {
     siteBuilder = makeSiteOwnedByOwenBuilder();
     siteBuilder.theSite.settings.allowGuestLogin = true;
     siteBuilder.theSite.settings.requireVerifiedEmail = false;
+    siteBuilder.theSite.settings.mayPostBeforeEmailVerified = true; // remove later, if email not required [0KPS2J]
     forum = {
       siteData: siteBuilder.theSite,
       forumPage: null,

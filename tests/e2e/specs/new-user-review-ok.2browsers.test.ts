@@ -56,6 +56,7 @@ describe("new user, review, ok:", () => {
     let site: SiteData = make.forumOwnedByOwen('basicflags', { title: forumTitle });
     site.settings.allowGuestLogin = true;
     site.settings.requireVerifiedEmail = false;
+    site.settings.mayPostBeforeEmailVerified = true; // remove later, if email not required [0KPS2J]
     // This means a new member can post any number of posts (subjected to new user rate
     // limits), and they'll be shown directly — but the first 2 will be enqueued for review
     // by staff.

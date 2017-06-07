@@ -45,6 +45,7 @@ describe("private chat", function() {
     var site: SiteData = make.forumOwnedByOwen('priv-chat', { title: forumTitle });
     site.settings.allowGuestLogin = true;
     site.settings.requireVerifiedEmail = false;
+    site.settings.mayPostBeforeEmailVerified = true; // remove later, if email not required [0KPS2J]
     site.members.push(make.memberMichael());
     site.members.push(make.memberMaria());
     idAddress = server.importSiteData(site);

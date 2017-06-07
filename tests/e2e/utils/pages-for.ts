@@ -580,6 +580,10 @@ function pagesFor(browser) {
           console.log('fillInEmail...');
           api.loginDialog.fillInEmail(email);
         }
+        else {
+          console.log('fillInEmail anyway, because for now, always require email [0KPS2J]');
+          api.loginDialog.fillInEmail(`whatever-${Date.now()}@example.com`);
+        }
         console.log('fillInPassword...');
         api.loginDialog.fillInPassword("public1234");
         console.log('clickSubmit...');
