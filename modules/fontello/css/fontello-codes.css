@@ -89,11 +89,12 @@
 .icon-drizzle:before { content: '\e851'; } /* '' */
 .icon-cloud-flash:before { content: '\e852'; } /* '' */
 .icon-facebook:before { content: '\f09a'; } /* '' */
-.icon-google-plus:before { content: '\f0d5'; } /* '' */
 .icon-linkedin:before { content: '\f0e1'; } /* '' */
+.icon-doc-text:before { content: '\f0f6'; } /* '' */
+.icon-building:before { content: '\f0f7'; } /* '' */
 .icon-ellipsis:before { content: '\f141'; } /* '' */
 .icon-ellipsis-vert:before { content: '\f142'; } /* '' */
-.icon-building-filled:before { content: '\f1ad'; } /* '' */
+.icon-google:before { content: '\f1a0'; } /* '' */
 .icon-child:before { content: '\f1ae'; } /* '' */
 .icon-twitter:before { content: '\f309'; } /* '' */
 .icon-collapse:before { content: '📤'; } /* '\1f4e4' */

@@ -385,12 +385,6 @@
       "src": "fontawesome"
     },
     {
-      "uid": "b8d0c7d76e87b94882329a88e8e43d3d",
-      "css": "google-plus",
-      "code": 61653,
-      "src": "fontawesome"
-    },
-    {
       "uid": "e9107949dd6c9e8ab2b29ae07156e38c",
       "css": "linkedin",
       "code": 61665,
@@ -577,9 +571,21 @@
       "src": "fontawesome"
     },
     {
-      "uid": "ede2ea0a583f662b79fbb181b428c20d",
-      "css": "building-filled",
-      "code": 61869,
+      "uid": "5408be43f7c42bccee419c6be53fdef5",
+      "css": "doc-text",
+      "code": 61686,
+      "src": "fontawesome"
+    },
+    {
+      "uid": "3d1e04316a48ace4e2b81be58343a41c",
+      "css": "building",
+      "code": 61687,
+      "src": "fontawesome"
+    },
+    {
+      "uid": "f06fe7ff18d1c591bc1183cb3ab105e9",
+      "css": "google",
+      "code": 61856,
       "src": "fontawesome"
     }
   ]

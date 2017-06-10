@@ -357,7 +357,7 @@ export var LoginDialogContent = createClassAndFactory({
         r.p({ id: 'dw-lgi-or-login-using' },
           isSignUp ? "Sign in ..." : "Log in ..."),
         r.div({ id: 'dw-lgi-other-sites' },
-          OpenAuthButton(makeOauthProps('icon-google-plus', 'Google', true)),
+          OpenAuthButton(makeOauthProps('icon-google', 'Google', true)),
           OpenAuthButton(makeOauthProps('icon-facebook', 'Facebook')),
           OpenAuthButton(makeOauthProps('icon-twitter', 'Twitter')),
           OpenAuthButton(makeOauthProps('icon-github-circled', 'GitHub')),

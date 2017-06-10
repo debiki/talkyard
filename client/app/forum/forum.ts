@@ -1494,6 +1494,12 @@ function makeTitle(topic: Topic, className: string, settings: SettingsVisibleCli
     tooltip = "A private message";
     title = r.span({}, r.span({ className: 'icon-mail' }), title);
   }
+  else if (topic.pageRole === PageRole.WebPage || topic.pageRole === PageRole.CustomHtmlPage) {
+    // These are special & "rare" pages (e.g. the site's About page), usually editable by staff only.
+    // Make them easier to find/recognize, by always showing icons.
+    tooltip = "This is an info page";
+    title = r.span({}, r.span({ className: 'icon-doc-text' }), title);
+  }
   else {
     if (showIcons) {
       title = r.span({}, r.span({className: 'icon-comment-empty'}), title);
