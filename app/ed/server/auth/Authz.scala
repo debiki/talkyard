@@ -260,7 +260,7 @@ object Authz {
     inCategoriesRootLast: immutable.Seq[Category],
     permissions: immutable.Seq[PermsOnPages]): MayMaybe = {
 
-    if (member.effectiveTrustLevel == TrustLevel.New) {
+    if (member.effectiveTrustLevel == TrustLevel.NewMember) {
       COULD // Later: Check site settings to find out if members may flag stuff.
       // Small forums: everyone may flag. Medium/large: new users may not flag?
     }

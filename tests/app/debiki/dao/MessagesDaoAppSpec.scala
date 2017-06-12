@@ -36,8 +36,8 @@ class MessagesDaoAppSpec extends DaoAppSuite(disableScripts = true, disableBackg
 
     "send a message" in {
       createPasswordOwner("5kwu8f40", dao)
-      val userOne = createPasswordUser("zzxxffgg", dao, trustLevel = TrustLevel.Basic)
-      val userTwo = createPasswordUser("qqwwffpp", dao, trustLevel = TrustLevel.Basic)
+      val userOne = createPasswordUser("zzxxffgg", dao, trustLevel = TrustLevel.BasicMember)
+      val userTwo = createPasswordUser("qqwwffpp", dao, trustLevel = TrustLevel.BasicMember)
       val pagePath = dao.startGroupTalk(title = TextAndHtml.testTitle("title_558206"),
         body = TextAndHtml.testBody("message_2749"), PageRole.FormalMessage,
         toUserIds = Set(userTwo.id), sentByWho = Who(userOne.id, browserIdData),
@@ -77,8 +77,8 @@ class MessagesDaoAppSpec extends DaoAppSuite(disableScripts = true, disableBackg
 
     "only send message to staff if is moderate threat" in {
       val admin = createPasswordOwner("9403dfpw", dao)
-      val badUser = createPasswordUser("btk3rr40", dao, trustLevel = TrustLevel.Basic)
-      val otherUser = createPasswordUser("r90t4gdf", dao, trustLevel = TrustLevel.Basic)
+      val badUser = createPasswordUser("btk3rr40", dao, trustLevel = TrustLevel.BasicMember)
+      val otherUser = createPasswordUser("r90t4gdf", dao, trustLevel = TrustLevel.BasicMember)
 
       dao.lockMemberThreatLevel(badUser.id, Some(ThreatLevel.ModerateThreat))
       testMayNotMessage(dao, admin, sender = badUser, otherUser = otherUser)
@@ -94,13 +94,13 @@ class MessagesDaoAppSpec extends DaoAppSuite(disableScripts = true, disableBackg
 
     "only send message to staff if is TrustLevel.New" in {
       val admin = createPasswordOwner("33BT02uf", dao)
-      val newUser = createPasswordUser("zz39ys40rf", dao, trustLevel = TrustLevel.New)
-      val otherUser = createPasswordUser("z39gi4ck", dao, trustLevel = TrustLevel.New)
+      val newUser = createPasswordUser("zz39ys40rf", dao, trustLevel = TrustLevel.NewMember)
+      val otherUser = createPasswordUser("z39gi4ck", dao, trustLevel = TrustLevel.NewMember)
 
       testMayNotMessage(dao, admin, sender = newUser, otherUser = otherUser)
 
       info("but a Basic user may message non-staff users"); {
-        dao.lockMemberTrustLevel(newUser.id, Some(TrustLevel.Basic))
+        dao.lockMemberTrustLevel(newUser.id, Some(TrustLevel.BasicMember))
         val pagePath = sendMessageTo(Set(otherUser.id), fromUserId = newUser.id, dao)
         val pageMeta = dao.readOnlyTransaction(_.loadThePageMeta(pagePath.thePageId))
         pageMeta.pageRole mustBe PageRole.FormalMessage

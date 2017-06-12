@@ -339,7 +339,7 @@ object ImportExportController extends mvc.Controller {
         isAdmin = readOptBool(jsObj, "isAdmin") getOrElse false,
         isModerator = readOptBool(jsObj, "isModerator") getOrElse false,
         trustLevel = readOptInt(jsObj, "trustLevel").flatMap(TrustLevel.fromInt)
-                      .getOrElse(TrustLevel.New),
+                      .getOrElse(TrustLevel.NewMember),
         lockedTrustLevel = readOptInt(jsObj, "lockedTrustLevel").flatMap(TrustLevel.fromInt),
         threatLevel = readOptInt(jsObj, "threatLevel").flatMap(ThreatLevel.fromInt)
                         .getOrElse(ThreatLevel.HopefullySafe),

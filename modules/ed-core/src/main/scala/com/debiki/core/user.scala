@@ -145,7 +145,7 @@ case class NewPasswordUserData(
   isAdmin: Boolean,
   isOwner: Boolean,
   isModerator: Boolean = false,
-  trustLevel: TrustLevel = TrustLevel.New,
+  trustLevel: TrustLevel = TrustLevel.NewMember,
   threatLevel: ThreatLevel = ThreatLevel.HopefullySafe) {
 
   val passwordHash: String =
@@ -179,7 +179,7 @@ case class NewPasswordUserData(
 object NewPasswordUserData {
   def create(name: Option[String], username: String, email: String, password: String,
         isAdmin: Boolean, isOwner: Boolean, isModerator: Boolean = false,
-        trustLevel: TrustLevel = TrustLevel.New,
+        trustLevel: TrustLevel = TrustLevel.NewMember,
         threatLevel: ThreatLevel = ThreatLevel.HopefullySafe)
         : NewPasswordUserData Or ErrorMessage = {
     for {
@@ -206,7 +206,7 @@ case class NewOauthUserData(
   identityData: OpenAuthDetails,
   isAdmin: Boolean,
   isOwner: Boolean,
-  trustLevel: TrustLevel = TrustLevel.New,
+  trustLevel: TrustLevel = TrustLevel.NewMember,
   threatLevel: ThreatLevel = ThreatLevel.HopefullySafe) extends NewUserData {
 
   def makeIdentity(userId: UserId, identityId: IdentityId): Identity =
@@ -217,7 +217,7 @@ case class NewOauthUserData(
 object NewOauthUserData {
   def create(name: Option[String], email: String, emailVerifiedAt: Option[ju.Date], username: String,
         identityData: OpenAuthDetails, isAdmin: Boolean, isOwner: Boolean,
-        trustLevel: TrustLevel = TrustLevel.New,
+        trustLevel: TrustLevel = TrustLevel.NewMember,
         threatLevel: ThreatLevel = ThreatLevel.HopefullySafe)
         : NewOauthUserData Or ErrorMessage = {
     for {
@@ -409,7 +409,7 @@ case class Member(
   smallAvatar: Option[UploadRef] = None,
   isApproved: Option[Boolean],
   suspendedTill: Option[ju.Date],
-  trustLevel: TrustLevel = TrustLevel.New,
+  trustLevel: TrustLevel = TrustLevel.NewMember,
   lockedTrustLevel: Option[TrustLevel] = None,
   threatLevel: ThreatLevel = ThreatLevel.HopefullySafe,
   lockedThreatLevel: Option[ThreatLevel] = None,
@@ -436,10 +436,10 @@ case class Member(
   override def canPromoteToBasicMember: Boolean =
     // If trust level locked, promoting the this.trustLevel has no effect — but we'll still
     // do it, so we know what it would have been, had it not been locked.
-    trustLevel == TrustLevel.New
+    trustLevel == TrustLevel.NewMember
 
   override def canPromoteToFullMember: Boolean =
-    trustLevel == TrustLevel.Basic
+    trustLevel == TrustLevel.BasicMember
 
   require(!fullName.map(_.trim).contains(""), "DwE4GUK28")
   require(User.isOkayUserId(id), "DwE02k12R5")
@@ -470,7 +470,7 @@ case class Guest(
   def isModerator: Boolean = false
   def isSuperAdmin: Boolean = false
   def suspendedTill: Option[ju.Date] = None
-  def effectiveTrustLevel = TrustLevel.New
+  def effectiveTrustLevel = TrustLevel.NewMember
 
   override def anyName = Some(guestName)
   def usernameOrGuestName: String = guestName
@@ -509,7 +509,7 @@ case class MemberInclDetails(
   suspendedTill: Option[ju.Date] = None,
   suspendedById: Option[UserId] = None,
   suspendedReason: Option[String] = None,
-  trustLevel: TrustLevel = TrustLevel.New,
+  trustLevel: TrustLevel = TrustLevel.NewMember,
   lockedTrustLevel: Option[TrustLevel] = None,
   threatLevel: ThreatLevel = ThreatLevel.HopefullySafe,
   lockedThreatLevel: Option[ThreatLevel] = None) {
@@ -650,7 +650,7 @@ object UnknownUser extends User {
   override def isOwner: Boolean = false
   override def isModerator: Boolean = false
   override def isSuperAdmin: Boolean = false
-  override def effectiveTrustLevel: TrustLevel = TrustLevel.New
+  override def effectiveTrustLevel: TrustLevel = TrustLevel.NewMember
   override def usernameOrGuestName: String = UnknownUserName
 }
 
@@ -678,7 +678,7 @@ case class Group(
   def isApproved: Option[Boolean] = Some(true)
   def suspendedTill: Option[ju.Date] = None
 
-  override def effectiveTrustLevel: TrustLevel = grantsTrustLevel getOrElse TrustLevel.New
+  override def effectiveTrustLevel: TrustLevel = grantsTrustLevel getOrElse TrustLevel.NewMember
 
   override def usernameOrGuestName: String = theUsername
 
@@ -701,8 +701,8 @@ object Group {
 
   val BasicMembersId = 12
   val FullMembersId = 13
-  val TrustedId = 14
-  val RegularsId = 15
+  val TrustedMembersId = 14
+  val RegularMembersId = 15
   val CoreMembersId = 16
 
   /** Includes all admins and all moderators. */
@@ -715,7 +715,7 @@ object Group {
   val AdminsId = 19
 
 
-  dieUnless(NewMembersId == TrustLevel.New.toInt + 10, "EdE7LPKW20")
+  dieUnless(NewMembersId == TrustLevel.NewMember.toInt + 10, "EdE7LPKW20")
   dieUnless(CoreMembersId == TrustLevel.CoreMember.toInt + 10, "EdE7LPKW21")
 }
 
@@ -1124,5 +1124,5 @@ case class VisitTrust(
   trustLevelInt: Int)
 
 object VisitTrust {
-  val UnknownMember = VisitTrust(0, TrustLevel.New.toInt)
+  val UnknownMember = VisitTrust(0, TrustLevel.NewMember.toInt)
 }

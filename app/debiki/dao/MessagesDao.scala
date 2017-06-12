@@ -63,7 +63,7 @@ trait MessagesDao {
       // 2) TrustLevle.New members haven't spent much time at the site, and it's a bit risky to
       // let them start sending PMs directly.
       if ((sender.threatLevel.toInt >= ThreatLevel.ModerateThreat.toInt ||
-          sender.trustLevel == TrustLevel.New) && !sender.isStaff) {
+          sender.trustLevel == TrustLevel.NewMember) && !sender.isStaff) {
         val toUsers = transaction.loadUsers(toUserIds)
         if (toUsers.exists(!_.isStaff))
           throwForbidden("EsE8GY2F4_", "You may send direct messages to staff only")

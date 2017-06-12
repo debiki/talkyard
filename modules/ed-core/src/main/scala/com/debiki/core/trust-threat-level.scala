@@ -30,11 +30,11 @@ sealed abstract class TrustLevel(val IntVal: Int) { def toInt = IntVal }
   * https://meta.discourse.org/t/a-new-trust-level-the-helpful-member/56894
   */
 object TrustLevel {
-  case object New extends TrustLevel(1)
-  case object Basic extends TrustLevel(2)
+  case object NewMember extends TrustLevel(1)
+  case object BasicMember extends TrustLevel(2)
   case object FullMember extends TrustLevel(3)
-  case object Helper extends TrustLevel(4)   // or rename to Trusted?
-  case object Regular extends TrustLevel(5)
+  case object TrustedMember extends TrustLevel(4)   // or rename to Trusted?
+  case object RegularMember extends TrustLevel(5)
   case object CoreMember extends TrustLevel(6)
 
   // Not real trust levels, but sometimes simpler to remember just one digit, say 7,
@@ -44,11 +44,11 @@ object TrustLevel {
   val AdminDummyLevel = 8
 
   def fromInt(value: Int): Option[TrustLevel] = Some(value match {
-    case TrustLevel.New.IntVal => TrustLevel.New
-    case TrustLevel.Basic.IntVal => TrustLevel.Basic
+    case TrustLevel.NewMember.IntVal => TrustLevel.NewMember
+    case TrustLevel.BasicMember.IntVal => TrustLevel.BasicMember
     case TrustLevel.FullMember.IntVal => TrustLevel.FullMember
-    case TrustLevel.Helper.IntVal => TrustLevel.Helper
-    case TrustLevel.Regular.IntVal => TrustLevel.Regular
+    case TrustLevel.TrustedMember.IntVal => TrustLevel.TrustedMember
+    case TrustLevel.RegularMember.IntVal => TrustLevel.RegularMember
     case TrustLevel.CoreMember.IntVal => TrustLevel.CoreMember
     case _ => return None
   })

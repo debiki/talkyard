@@ -874,7 +874,7 @@ trait UserDao {
 
       if (user.canPromoteToBasicMember) {
         if (statsAfter.meetsBasicMemberRequirements) {
-          promoteUser(user.id, TrustLevel.Basic, transaction)
+          promoteUser(user.id, TrustLevel.BasicMember, transaction)
         }
       }
       else if (user.canPromoteToFullMember) {

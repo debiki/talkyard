@@ -376,28 +376,28 @@ trait SiteTransaction {
     // For now. Later, also do db request and add custom groups.
 
     if (member.isAdmin)
-      return Vector(member.id, G.AdminsId, G.StaffId, G.CoreMembersId, G.RegularsId,
-        G.TrustedId, G.FullMembersId, G.BasicMembersId, G.NewMembersId, G.EveryoneId)
+      return Vector(member.id, G.AdminsId, G.StaffId, G.CoreMembersId, G.RegularMembersId,
+        G.TrustedMembersId, G.FullMembersId, G.BasicMembersId, G.NewMembersId, G.EveryoneId)
 
     if (member.isModerator)
-      return Vector(member.id, G.ModeratorsId, G.StaffId, G.CoreMembersId, G.RegularsId,
-        G.TrustedId, G.FullMembersId, G.BasicMembersId, G.NewMembersId, G.EveryoneId)
+      return Vector(member.id, G.ModeratorsId, G.StaffId, G.CoreMembersId, G.RegularMembersId,
+        G.TrustedMembersId, G.FullMembersId, G.BasicMembersId, G.NewMembersId, G.EveryoneId)
 
     member.effectiveTrustLevel match {
-      case TrustLevel.New =>
+      case TrustLevel.NewMember =>
         Vector(member.id, G.NewMembersId, G.EveryoneId)
-      case TrustLevel.Basic =>
+      case TrustLevel.BasicMember =>
         Vector(member.id, G.BasicMembersId, G.NewMembersId, G.EveryoneId)
       case TrustLevel.FullMember =>
         Vector(member.id, G.FullMembersId, G.BasicMembersId, G.NewMembersId, G.EveryoneId)
-      case TrustLevel.Helper =>
-        Vector(member.id, G.TrustedId,
+      case TrustLevel.TrustedMember =>
+        Vector(member.id, G.TrustedMembersId,
           G.FullMembersId, G.BasicMembersId, G.NewMembersId, G.EveryoneId)
-      case TrustLevel.Regular =>
-        Vector(member.id, G.RegularsId, G.TrustedId,
+      case TrustLevel.RegularMember =>
+        Vector(member.id, G.RegularMembersId, G.TrustedMembersId,
           G.FullMembersId, G.BasicMembersId, G.NewMembersId, G.EveryoneId)
       case TrustLevel.CoreMember =>
-        Vector(member.id, G.CoreMembersId, G.RegularsId, G.TrustedId,
+        Vector(member.id, G.CoreMembersId, G.RegularMembersId, G.TrustedMembersId,
           G.FullMembersId, G.BasicMembersId, G.NewMembersId, G.EveryoneId)
     }
   }

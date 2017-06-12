@@ -211,7 +211,7 @@ object PagePopularityCalculator {
       if visitedAt.isBetween(from, to)
     } {
       numViewsByMembers += 1
-      if (visit.trustLevelInt >= TrustLevel.Helper.toInt) {
+      if (visit.trustLevelInt >= TrustLevel.TrustedMember.toInt) {
         numViewsByTrusted += 1
       }
       if (visit.trustLevelInt >= TrustLevel.CoreMember.toInt) {
@@ -228,7 +228,7 @@ object PagePopularityCalculator {
       // COULD load those users explicitly.
       val visit = visitsByUserId.getOrElse(action.doerId, VisitTrust.UnknownMember)
       val isOrigPost = action.postNr == PageParts.BodyNr
-      val isByTrusted = visit.trustLevelInt >= TrustLevel.Helper.toInt
+      val isByTrusted = visit.trustLevelInt >= TrustLevel.TrustedMember.toInt
       val isByCore = visit.trustLevelInt >= TrustLevel.CoreMember.toInt
       val topmostFraction = topmostFractionByPostNr.getOrElse(action.postNr, 0f)
       val isTopmost = topmostFraction > 0.01f

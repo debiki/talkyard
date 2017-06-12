@@ -68,8 +68,8 @@ class PromotionToFullMemberAppSpec extends DaoAppSuite() {
     }
 
     "a member starts at trust level New" in {
-      member1.effectiveTrustLevel mustBe TrustLevel.New
-      member1.trustLevel mustBe TrustLevel.New
+      member1.effectiveTrustLevel mustBe TrustLevel.NewMember
+      member1.trustLevel mustBe TrustLevel.NewMember
       member1.lockedThreatLevel mustBe None
     }
 
@@ -85,8 +85,8 @@ class PromotionToFullMemberAppSpec extends DaoAppSuite() {
 
       // Didn't get promoted
       val (member1After, stats) = loadTheMemberAndStats(member1.id)(dao)
-      member1After.effectiveTrustLevel mustBe TrustLevel.New
-      member1After.trustLevel mustBe TrustLevel.New
+      member1After.effectiveTrustLevel mustBe TrustLevel.NewMember
+      member1After.trustLevel mustBe TrustLevel.NewMember
       member1After.lockedThreatLevel mustBe None
     }
 
@@ -113,8 +113,8 @@ class PromotionToFullMemberAppSpec extends DaoAppSuite() {
 
       // Didn't get promoted now either.
       val (member1After, stats) = loadTheMemberAndStats(member1.id)(dao)
-      member1After.effectiveTrustLevel mustBe TrustLevel.New
-      member1After.trustLevel mustBe TrustLevel.New
+      member1After.effectiveTrustLevel mustBe TrustLevel.NewMember
+      member1After.trustLevel mustBe TrustLevel.NewMember
       member1After.lockedThreatLevel mustBe None
       stats.numSecondsReading mustBe (8*60 - 1)
       stats.numDiscourseTopicsEntered mustBe 3
@@ -134,8 +134,8 @@ class PromotionToFullMemberAppSpec extends DaoAppSuite() {
 
       // Did get promoted.
       val (member1After, stats) = loadTheMemberAndStats(member1.id)(dao)
-      member1After.effectiveTrustLevel mustBe TrustLevel.Basic
-      member1After.trustLevel mustBe TrustLevel.Basic
+      member1After.effectiveTrustLevel mustBe TrustLevel.BasicMember
+      member1After.trustLevel mustBe TrustLevel.BasicMember
       member1After.lockedThreatLevel mustBe None
       stats.numSecondsReading mustBe (8*60)
       stats.numDiscourseTopicsEntered mustBe 4

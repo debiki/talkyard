@@ -1603,7 +1603,7 @@ trait PostsDao {
     val pageIdsToRefresh = mutable.Set[PageId]()
     val postsHidden = readWriteTransaction { transaction =>
       val user = transaction.loadUser(userId) getOrDie "EdE6FKW02"
-      if (user.effectiveTrustLevel != TrustLevel.New)
+      if (user.effectiveTrustLevel != TrustLevel.NewMember)
         return Nil
 
       // Keep small, there's an O(n^2) loop below (6WKUT02).
