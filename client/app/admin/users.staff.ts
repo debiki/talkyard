@@ -83,7 +83,7 @@ export var InvitedUsersPanelComponent = React.createClass({
     });
   },
 
-  componentDidUnmount: function() {
+  componentWillUnmount: function() {
     this.isGOne = true;
   },
 

@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2014-2015 Kaj Magnus Lindberg
+ * Copyright (C) 2014-2017 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -18,6 +18,7 @@
 /// <reference path="../../typedefs/react/react.d.ts" />
 /// <reference path="../slim-bundle.d.ts" />
 /// <reference path="../util/UsernameInput.more.ts" />
+/// <reference path="./ActivitySummaryEmailsInterval.more.ts" />
 
 //------------------------------------------------------------------------------
    namespace debiki2.users {
@@ -112,10 +113,13 @@ var MemberPreferences = createComponent({
     return {
       fullName: user.fullName,
       username: user.username,
+      sendSummaryEmails: user.summaryEmailIntervalMins !== DisableSummaryEmails,
+      summaryEmailIntervalMins: user.summaryEmailIntervalMins,
+      summaryEmailIfActive: user.summaryEmailIfActive,
     };
   },
 
-  componentDidUnmount: function() {
+  componentWillUnmount: function() {
     this.isGone = true;
   },
 
@@ -142,18 +146,33 @@ var MemberPreferences = createComponent({
       this.setState({ showUsernameInput: true });
   },
 
+  enableSummaryEmails: function(event) {
+    const shallSend = event.target.checked;
+    const summaryEmailIntervalMins =
+        shallSend && this.state.summaryEmailIntervalMins === DisableSummaryEmails ?
+          7 * 24 * 60 : this.state.summaryEmailIntervalMins; // default to one week
+    this.setState({
+      sendSummaryEmails: shallSend,
+      summaryEmailIntervalMins: summaryEmailIntervalMins,
+    });
+  },
+
   badPrefs: function() {
     return this.state.isUsernameBad || this.state.isFullNameBad;
   },
 
   savePrefs: function(event) {
     event.preventDefault();
-    var form = $(event.target);
-    var prefs = {
+    var form = $(event.target);  // :- (
+    const summaryEmailIntervalMins = this.state.sendSummaryEmails ?
+        this.state.summaryEmailIntervalMins : DisableSummaryEmails;
+    const prefs = {
       userId: this.props.user.id,
       fullName: this.state.fullName,
       username: this.state.username,
       emailAddress: form.find('#emailAddress').val(),
+      summaryEmailIntervalMins: summaryEmailIntervalMins,
+      summaryEmailIfActive: this.state.summaryEmailIfActive,
       about: form.find('#t_UP_Prefs_AboutMeTA').val(),
       url: form.find('#url').val(),
       emailForEveryNewPost: form.find('#emailForEveryNewPost').is(':checked')
@@ -173,11 +192,11 @@ var MemberPreferences = createComponent({
   },
 
   render: function() {
-    var me: Myself = this.props.me;
-    var user: MemberInclDetails = this.props.user;
-    var username = user.username || '(not specified)';
+    const me: Myself = this.props.me;
+    const user: MemberInclDetails = this.props.user;
+    const username = user.username || '(not specified)';
 
-    var savingInfo = null;
+    let savingInfo = null;
     if (this.state.savingStatus === 'Saving') {
       savingInfo = r.i({}, ' Saving...');
     }
@@ -203,6 +222,8 @@ var MemberPreferences = createComponent({
               "You may change it only a few times.") });
     }
 
+    const sendSummaryEmails = this.state.sendSummaryEmails;
+
     return (
       r.form({ role: 'form', onSubmit: this.savePrefs },
 
@@ -215,10 +236,28 @@ var MemberPreferences = createComponent({
         // Disable the email input — I've not implemented confirmation-emails-to-new-address
         // or any double-check-password-before-changing-email.
         r.div({ className: 'form-group' },
-          r.label({ htmlFor: 'emailAddress' }, 'Email address'),
+          r.label({ htmlFor: 'emailAddress' }, "Email address"),
           r.input({ type: 'email', className: 'form-control', id: 'emailAddress',
               defaultValue: user.email, disabled: true }),
-          r.p({ className: 'help-block' }, 'Not shown publicly.')),
+          r.p({ className: 'help-block' }, "Not shown publicly.")),
+
+        r.div({ className: 'form-group', style: { margin: '22px 0 25px' } },
+          r.label({}, "Activity summary emails"),  // more like a mini title
+          r.div({ className: 'checkbox' },  // [7PK4WY1]
+            r.label({},
+              r.input({ type: 'checkbox', id: 'sendSummaryEmails',
+                checked: this.state.sendSummaryEmails, onChange: this.enableSummaryEmails }),
+              "When I don't visit here, email me summaries of popular topics and other stuff")),
+          r.div({ className: 'checkbox' },
+            r.label({},
+              r.input({ type: 'checkbox', id: 'summaryEmailIfActive',
+                checked: this.state.summaryEmailIfActive, disabled: !sendSummaryEmails,
+                onChange: (event) => this.setState({ summaryEmailIfActive: event.target.checked })}),
+              "Email me also if I visit here regularly")),
+          r.p({ style: { marginBottom: 5 } }, "How often do you want these emails?"),
+          ActivitySummaryEmailsIntervalDropdown({ onSelect: (frequencyMins) => {
+            this.setState({ summaryEmailIntervalMins: frequencyMins });
+          }, intervalMins: this.state.summaryEmailIntervalMins, disabled: !sendSummaryEmails })),
 
         r.div({ className: 'form-group' },
           r.label({ htmlFor: 't_UP_AboutMe' }, "About you"),

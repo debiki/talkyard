@@ -165,6 +165,8 @@ object UserController extends mvc.Controller {
 
       userJson += "email" -> JsString(safeEmail)
       userJson += "emailForEveryNewPost" -> JsBoolean(user.emailForEveryNewPost)
+      userJson += "summaryEmailIntervalMins" -> JsNumberOrNull(user.summaryEmailIntervalMins)
+      userJson += "summaryEmailIfActive" -> JsBooleanOrNull(user.summaryEmailIfActive)
       userJson += "isApproved" -> JsBooleanOrNull(user.isApproved)
       userJson += "approvedAtEpoch" -> DateEpochOrNull(user.approvedAt)
       userJson += "approvedById" -> JsNumberOrNull(user.approvedById)
@@ -749,6 +751,8 @@ object UserController extends mvc.Controller {
       fullName = (json \ "fullName").asOptStringNoneIfBlank,
       username = username,
       emailAddress = (json \ "emailAddress").as[String],
+      summaryEmailIntervalMins = (json \ "summaryEmailIntervalMins").asOpt[Int],
+      summaryEmailIfActive = (json \ "summaryEmailIfActive").asOpt[Boolean],
       about = (json \ "about").asOpt[String].trimNoneIfBlank,
       location = (json \ "location").asOpt[String].trimNoneIfBlank,
       url = (json \ "url").asOpt[String].trimNoneIfBlank,

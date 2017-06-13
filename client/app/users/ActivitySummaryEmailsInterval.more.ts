@@ -1,0 +1,123 @@
+/*
+ * Copyright (c) 2017 Kaj Magnus Lindberg
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+/// <reference path="../../typedefs/react/react.d.ts" />
+/// <reference path="../slim-bundle.d.ts" />
+
+//------------------------------------------------------------------------------
+   namespace debiki2 {
+//------------------------------------------------------------------------------
+
+const r = React.DOM;
+const DropdownModal = utils.DropdownModal;
+const ExplainingListItem = util.ExplainingListItem;
+
+export const DisableSummaryEmails = -1;
+
+
+export const ActivitySummaryEmailsIntervalDropdown = createComponent({
+  displayName: 'ActivitySummaryEmailsIntervalDropdown',
+
+  getInitialState: function() {
+    return {
+      open: false,
+      buttonX: -1,
+      buttonY: -1,
+    };
+  },
+
+  open: function() {
+    this.setState({
+      open: true,
+      windowWidth: window.innerWidth,
+      buttonRect: reactGetRefRect(this.refs.dropdownButton),
+    });
+  },
+
+  close: function() {
+    this.setState({ open: false });
+  },
+
+  onSelect: function(listItem) {
+    if (this.props.onSelect) {
+      this.props.onSelect(listItem.eventKey);
+    }
+    this.close();
+  },
+
+  render: function() {
+    const props = this.props;
+
+    const thirtyMinutesMins = 30;
+    const hourlyMins = 60;
+    const dailyMins = 60 * 24;
+    const twicePerWeekMins = 60 * 24 * 7 / 2;
+    const weeklyMins = 60 * 24 * 7;
+    const everySecondWeekMins = 60 * 24 * 7 * 2;
+    const monthlyMins = 60 * 24 * 30;
+
+    const defaultIntervalMins = weeklyMins;
+    const activeIntervalMins = props.intervalMins || defaultIntervalMins;
+
+    function intervalToText(intervalMins: number): string {
+      switch (intervalMins) {
+        case thirtyMinutesMins: return "Every 30 minutes";
+        case hourlyMins: return "Hourly";
+        case dailyMins: return "Daily";
+        case twicePerWeekMins: return "Twice per week";
+        case weeklyMins: return "Weekly";
+        case everySecondWeekMins: return "Every second week";
+        case monthlyMins: return "Monthly";
+        case DisableSummaryEmails: return "Never";
+      }
+    }
+
+    const dropdownButton =
+      Button({ onClick: this.open, ref: 'dropdownButton', className: 'esTopicType_dropdown',
+          disabled: this.props.disabled },
+        intervalToText(activeIntervalMins), ' ', r.span({ className: 'caret' }));
+
+    const makeItem = (intervalMins) => {
+      return ExplainingListItem({ onSelect: this.onSelect,
+        activeEventKey: activeIntervalMins, eventKey: intervalMins,
+        title: intervalToText(intervalMins) });
+    };
+
+    const dropdownModal =
+      DropdownModal({ show: this.state.open, onHide: this.close, showCloseButton: true,
+          atRect: this.state.buttonRect, windowWidth: this.state.windowWidth },
+        r.ul({},
+          makeItem(thirtyMinutesMins),
+          makeItem(hourlyMins),
+          makeItem(dailyMins),
+          makeItem(twicePerWeekMins),
+          makeItem(weeklyMins),
+          makeItem(everySecondWeekMins),
+          makeItem(monthlyMins)));
+          // Don't include Never — that's a checkbox instead. [7PK4WY1]
+
+    return (
+      r.div({},
+        dropdownButton,
+        dropdownModal));
+  }
+});
+
+//------------------------------------------------------------------------------
+   }
+//------------------------------------------------------------------------------
+

@@ -328,6 +328,8 @@ object ImportExportController extends mvc.Controller {
         emailNotfPrefs = EmailNotfPrefs.Receive, // [readlater]
         emailVerifiedAt = readOptDateMs(jsObj, "emailVerifiedAtMs"),
         emailForEveryNewPost = readOptBool(jsObj, "emailForEveryNewPost") getOrElse false,
+        summaryEmailIntervalMins = readOptInt(jsObj, "summaryEmailIntervalMins"),
+        summaryEmailIfActive = readOptBool(jsObj, "summaryEmailIfActive"),
         passwordHash = passwordHash,
         country = readOptString(jsObj, "country"),
         website = readOptString(jsObj, "website"),

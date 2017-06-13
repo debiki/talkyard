@@ -495,6 +495,8 @@ case class MemberInclDetails(
   emailNotfPrefs: EmailNotfPrefs,
   emailVerifiedAt: Option[ju.Date] = None,
   emailForEveryNewPost: Boolean = false,
+  summaryEmailIntervalMins: Option[Int] = None,
+  summaryEmailIfActive: Option[Boolean] = None,
   passwordHash: Option[String] = None,
   country: Option[String] = None,
   website: Option[String] = None,
@@ -554,6 +556,8 @@ case class MemberInclDetails(
     fullName = fullName,
     username = username,
     emailAddress = emailAddress,
+    summaryEmailIntervalMins = summaryEmailIntervalMins,
+    summaryEmailIfActive = summaryEmailIfActive,
     about = about,
     location = country,
     url = website,
@@ -567,6 +571,8 @@ case class MemberInclDetails(
       fullName = preferences.fullName,
       username = preferences.username,
       emailAddress = newEmailAddress,
+      summaryEmailIntervalMins = preferences.summaryEmailIntervalMins,
+      summaryEmailIfActive = preferences.summaryEmailIfActive,
       about = preferences.about,
       website = preferences.url,
       emailForEveryNewPost = preferences.emailForEveryNewPost)
@@ -601,6 +607,8 @@ case class MemberPreferences(
   fullName: Option[String],
   username: String,
   emailAddress: String,
+  summaryEmailIntervalMins: Option[Int],
+  summaryEmailIfActive: Option[Boolean],
   about: Option[String],
   location: Option[String],
   url: Option[String],
@@ -724,6 +732,10 @@ object Group {
 object EmailNotfPrefs extends Enumeration {
   type EmailNotfPrefs = Value
   val Receive, DontReceive, ForbiddenForever, Unspecified = Value
+}
+
+object SummaryEmails {
+  val DoNotSend = -1
 }
 
 

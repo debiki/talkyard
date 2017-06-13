@@ -37,6 +37,7 @@ object CreateSiteDao {  RENAME // but to what. & move, but to where?
       emailAddress = "",
       emailNotfPrefs = EmailNotfPrefs.DontReceive,
       emailVerifiedAt = None,
+      summaryEmailIntervalMins = Some(SummaryEmails.DoNotSend),
       isAdmin = true)
     transaction.insertMember(systemUser)
     transaction.insertUsernameUsage(UsernameUsage(

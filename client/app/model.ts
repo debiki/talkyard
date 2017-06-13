@@ -674,6 +674,8 @@ interface MemberInclDetails {
   fullName: string;
   email: string;
   emailForEveryNewPost: boolean;
+  summaryEmailIntervalMins?: number;
+  summaryEmailIfActive?: boolean;
   about?: string;
   country: string;
   url: string;
