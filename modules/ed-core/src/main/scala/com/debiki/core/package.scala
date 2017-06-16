@@ -134,6 +134,8 @@ package object core {
     def isBetween(start: When, end: When): Boolean = millis >= start.millis && millis <= end.millis
 
     def plusMillis(moreMillis: Int) = new When(this.millis + moreMillis)
+    def plusSeconds(moreSeconds: Int) = new When(this.millis + moreSeconds * 1000)
+    def plusMinutes(moreMinutes: Int) = new When(this.millis + moreMinutes * 60 * 1000)
 
     override def toString: String = unixMillis.toString + "ms"
   }
@@ -546,6 +548,7 @@ package object core {
   def SHOULD = ()         // Fix before release, unless short of time, or it's too boring.
   def COULD = ()          // Could do this, but not important right now, can wait a year or two.
   def ANNOYING = ()       // Something annoying that would be good to fix, not important though
+  def SHOULD_LOG_STH = () // If an info/debug message ought to be logged here.
   def REFACTOR = ()       // The code can be refactored. Also search for "[refactor]".
   def RENAME = ()         // Something ought to be renamed.
   def OPTIMIZE = ()

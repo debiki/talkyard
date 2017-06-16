@@ -233,6 +233,8 @@ object UserController extends mvc.Controller {
       "numSolutionsProvided" -> stats.numSolutionsProvided)
     if (isStaffOrSelf) {
       result += "lastEmailedAt" -> JsWhenMsOrNull(stats.lastEmailedAt)
+      result += "lastSummaryEmailAt" -> JsWhenMsOrNull(stats.lastSummaryEmailAt)
+      result += "nextSummaryEmailAt" -> JsWhenMsOrNull(stats.nextSummaryEmailAt)
       result += "emailBounceSum" -> JsNumber(stats.emailBounceSum.toDouble)
       result += "topicsNewSince" -> JsWhenMs(stats.topicsNewSince)
       result += "notfsNewSinceId" -> JsNumber(stats.notfsNewSinceId)

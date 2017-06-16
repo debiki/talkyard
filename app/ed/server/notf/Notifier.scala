@@ -25,7 +25,8 @@ import debiki.Globals
 import debiki.Globals.originOf
 import debiki.dao.{SiteDao, SiteDaoFactory, SystemDao}
 import ed.server.notf.Notifier._
-import java.{util => ju}
+import play.{api => p}
+import scala.collection.immutable
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 
@@ -52,6 +53,7 @@ object Notifier {
     // get sent. SHOULD wait at least for the ninja edit interval before sending any notf email.
     // But how make that work, with tests?
     actorSystem.scheduler.schedule(8 seconds, 2 seconds, actorRef, "SendNotfs")  // [5KF0WU2T4]
+    actorSystem.scheduler.schedule(8 seconds, 2 seconds, actorRef, "SendSummaries")
     testInstanceCounter += 1
     actorRef
   }
@@ -80,18 +82,41 @@ class Notifier(val systemDao: SystemDao, val siteDaoFactory: SiteDaoFactory)
   val logger = play.api.Logger("app.notifier")
 
 
-  def receive = {
-    case "SendNotfs" if Globals.isInitialized =>
-      try loadAndSend()
+  def receive: PartialFunction[Any, Unit] = {
+    case whatever: String if Globals.isInitialized =>
+      try {
+        whatever match {
+          case "SendNotfs" =>
+            loadAndSendNotifications()
+          case "SendSummaries" =>
+            createAndSendSummaryEmails()
+        }
+      }
       catch {
         case ex: java.sql.SQLException =>
-          if (!isConnectionClosedBecauseTestsDone(ex))
+          if (!isConnectionClosedBecauseTestsDone(ex)) {
+            p.Logger.error("SQL error when sending notfs or summaries [EdE2WPFR1]", ex)
             throw ex
+          }
+        case throwable: Throwable =>
+          p.Logger.error("Error when sending notfs or summaries [EdE2WPFR2]", throwable)
+          throw throwable
       }
   }
 
 
-  private def loadAndSend() {
+  private def createAndSendSummaryEmails() {
+    val now = Globals.now()
+    val siteIdsAndStats: Map[SiteId, immutable.Seq[UserStats]] =
+      systemDao.loadStatsForUsersToMaybeEmailSummariesTo(now, limit = 100)
+    for ((siteId, userStats) <- siteIdsAndStats) {
+      val siteDao = siteDaoFactory.newSiteDao(siteId)
+      siteDao.sendSummaryEmailsTo(userStats, now)
+    }
+  }
+
+
+  private def loadAndSendNotifications() {
     // COULD use ninjaEdit ninja edit timeout/delay setting here instead (that is, num minutes
     // one is allowed to edit a post directly after having posted it, without the edits appearing
     // in the version history. Usually a few minutes. Google for "Discourse ninja edit")

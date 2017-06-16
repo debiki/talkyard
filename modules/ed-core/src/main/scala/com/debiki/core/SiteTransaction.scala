@@ -145,7 +145,10 @@ trait SiteTransaction {
   // Returns recently active pages first.
   def loadPageIdsUserIsMemberOf(userId: UserId, onlyPageRoles: Set[PageRole]): immutable.Seq[PageId]
   def loadReadProgress(userId: UserId, pageId: PageId): Option[ReadingProgress]
+  def loadReadProgressAndIfHasSummaryEmailed(userId: UserId, pageId: PageId)
+        : (Option[ReadingProgress], Boolean)
   def upsertReadProgress(userId: UserId, pageId: PageId, pageTimings: ReadingProgress)
+  def rememberHasIncludedInSummaryEmail(userId: UserId, pageId: PageId, now: When)
 
   def loadPageVisitTrusts(pageId: PageId): Map[UserId, VisitTrust]
 
@@ -171,6 +174,9 @@ trait SiteTransaction {
 
   def loadUserStats(userId: UserId): Option[UserStats]
   def upsertUserStats(userStats: UserStats)
+  /** Also updates the user stats, but avoids races about writing to unrelated fields. */
+  def bumpNextSummaryEmailDate(memberId: UserId, nextEmailAt: Option[When])
+  def bumpNextAndLastSummaryEmailDate(memberId: UserId, lastAt: When, nextAt: Option[When])
 
   def loadUserVisitStats(userId: UserId): immutable.Seq[UserVisitStats]
   def upsertUserVisitStats(visitStats: UserVisitStats)
@@ -355,10 +361,13 @@ trait SiteTransaction {
     onlyApproved: Boolean = false,
     onlyPendingApproval: Boolean = false): immutable.Seq[MemberInclDetails]
 
+  def loadMembersInclDetailsById(userIds: Iterable[UserId]): immutable.Seq[MemberInclDetails]
+
   def loadOwner(): Option[MemberInclDetails]
 
   def insertGroup(group: Group)
   def loadGroupsAsSeq(): immutable.Seq[Group]
+  def loadGroupsAsMap(): Map[UserId, Group] = loadGroupsAsSeq().map(g => g.id -> g).toMap
 
   def loadGroupIds(anyUser: Option[User]): Vector[UserId] = {
     anyUser.map(loadGroupIds) getOrElse Vector(Group.EveryoneId)

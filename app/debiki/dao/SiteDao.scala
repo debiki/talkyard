@@ -29,6 +29,7 @@ import SiteDao._
 import ed.server.auth.MayMaybe
 import ed.server.pop.PagePopularityDao
 import ed.server.pubsub.{PubSubApi, StrangerCounterApi}
+import ed.server.summaryemails.SummaryEmailsDao
 
 
 
@@ -91,6 +92,7 @@ class SiteDao(
   with MessagesDao
   with WatchbarDao
   with ReviewsDao
+  with SummaryEmailsDao
   with AuditDao {
 
   protected lazy val memCache = new MemCache(siteId, cache)

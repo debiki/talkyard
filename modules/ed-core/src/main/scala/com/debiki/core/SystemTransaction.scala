@@ -69,10 +69,13 @@ trait SystemTransaction {
 
   def loadUser(siteId: SiteId, userId: UserId): Option[User]
 
-  // ----- Notifications
+  // ----- Summary emails, and notifications
+
+  def loadStatsForUsersToMaybeEmailSummariesTo(now: When, limit: Int)
+        : Map[SiteId, immutable.Seq[UserStats]]
 
   def loadNotificationsToMailOut(delayInMinutes: Int, numToLoad: Int)
-  : Map[SiteId, Seq[Notification]]
+        : Map[SiteId, Seq[Notification]]
 
   // ----- Pages
 

@@ -94,14 +94,27 @@ case class Email(
 }
 
 
-sealed abstract class EmailType
+sealed abstract class EmailType(val IntVal: Int) { def toInt = IntVal }
 object EmailType {
-  case object Invite extends EmailType
-  case object InviteAccepted extends EmailType
-  case object InvitePassword extends EmailType
-  case object Notification extends EmailType
-  case object CreateAccount extends EmailType  // COULD rename to VerifyEmailAddress
-  case object ResetPassword extends EmailType
+  case object Notification extends EmailType(1)
+  case object ActivitySummary extends EmailType(2)
+  case object Invite extends EmailType(11)
+  case object InviteAccepted extends EmailType(12)
+  case object InvitePassword extends EmailType(13)
+  case object CreateAccount extends EmailType(21)  // COULD rename to VerifyEmailAddress
+  case object ResetPassword extends EmailType(22)
+
+  def fromInt(value: Int): Option[EmailType] = Some(value match {
+    case Notification.IntVal      => Notification
+    case ActivitySummary.IntVal   => ActivitySummary
+    case Invite.IntVal            => Invite
+    case InviteAccepted.IntVal    => InviteAccepted
+    case InvitePassword.IntVal    => InvitePassword
+    case CreateAccount.IntVal     => CreateAccount
+    case ResetPassword.IntVal     => ResetPassword
+    case _ =>
+      return None
+  })
 }
 
 

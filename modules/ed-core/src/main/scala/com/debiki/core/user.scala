@@ -20,7 +20,7 @@ package com.debiki.core
 import java.net.InetAddress
 import java.{net => jn, util => ju}
 import org.scalactic.{ErrorMessage, Or}
-import scala.collection.mutable
+import scala.collection.{immutable, mutable}
 import EmailNotfPrefs.EmailNotfPrefs
 import Prelude._
 import User._
@@ -551,6 +551,31 @@ case class MemberInclDetails(
 
   def usernameLowercase: String = username.toLowerCase
 
+  def createdWhen: When = When.fromDate(createdAt)
+
+
+  def whenTimeForNexSummaryEmail(stats: UserStats, myGroups: immutable.Seq[Group])
+        : Option[When] = {
+    require(stats.userId == id, "EdE2GPKW01")
+    val anyIntervalMins = summaryEmailIntervalMins orElse {
+      myGroups.find(_.summaryEmailIntervalMins.isDefined).flatMap(_.summaryEmailIntervalMins)
+    }
+    val intervalMins = anyIntervalMins getOrElse {
+      return None
+    }
+    val baseTime =
+      if (summaryEmailIfActive is true) {
+        // Email summaries regularly, regardless of other activity.
+        stats.lastSummaryEmailAt.getOrElse(createdWhen)
+      }
+      else {
+        // Don't send summaries, until user has been inactive for a while + gotten no other emails.
+        stats.lastSeenOrEmailedAt
+      }
+    Some(baseTime plusMinutes intervalMins)
+  }
+
+
   def preferences = MemberPreferences(
     userId = id,
     fullName = fullName,
@@ -562,6 +587,7 @@ case class MemberInclDetails(
     location = country,
     url = website,
     emailForEveryNewPost = emailForEveryNewPost)
+
 
   def copyWithNewPreferences(preferences: MemberPreferences): MemberInclDetails = {
     val newEmailAddress =
@@ -578,9 +604,11 @@ case class MemberInclDetails(
       emailForEveryNewPost = preferences.emailForEveryNewPost)
   }
 
+
   def copyWithMaxThreatLevel(newThreatLevel: ThreatLevel): MemberInclDetails =
     if (this.threatLevel.toInt >= newThreatLevel.toInt) this
     else copy(threatLevel = newThreatLevel)
+
 
   def briefUser = Member(
     id = id,
@@ -672,6 +700,8 @@ case class Group(
   name: String,
   tinyAvatar: Option[UploadRef] = None,
   smallAvatar: Option[UploadRef] = None,
+  summaryEmailIntervalMins: Option[Int] = None,
+  summaryEmailIfActive: Option[Boolean] = None,
   grantsTrustLevel: Option[TrustLevel] = None) extends User {
 
   def email: String = ""
@@ -972,6 +1002,8 @@ case class UserStats(
   lastSeenAt: When = When.fromMillis(0),
   lastPostedAt: Option[When] = None,
   lastEmailedAt: Option[When] = None,
+  lastSummaryEmailAt: Option[When] = None,
+  nextSummaryEmailAt: Option[When] = None,
   emailBounceSum: Float = 0f,
   firstSeenAtOr0: When = When.fromMillis(0),
   firstNewTopicAt: Option[When] = None,
@@ -1035,6 +1067,9 @@ case class UserStats(
         firstDiscourseReplyAt.map(_.millis).getOrElse(Long.MaxValue),
         firstChatMessageAt.map(_.millis).getOrElse(Long.MaxValue)))
 
+  def lastSeenOrEmailedAt: When =
+    When.latestOf(lastSeenAt, lastEmailedAt.getOrElse(When.Genesis))
+
 
   /** Ignores dates with 0 millis (= year 1970), considers that = no date.
     */
@@ -1048,6 +1083,8 @@ case class UserStats(
       lastSeenAt = latestOf(lastSeenAt, moreStats.lastSeenAt),
       lastPostedAt = anyLatestOf(lastPostedAt, moreStats.lastPostedAt),
       lastEmailedAt = anyLatestOf(lastEmailedAt, moreStats.lastEmailedAt),
+      lastSummaryEmailAt = anyLatestOf(lastSummaryEmailAt, moreStats.lastSummaryEmailAt),
+      nextSummaryEmailAt = anyEarliestNot0(nextSummaryEmailAt, moreStats.nextSummaryEmailAt),
       // Hmm, how should the bounce sum be updated? For now:
       emailBounceSum = (moreStats.emailBounceSum >= 0) ? moreStats.emailBounceSum | emailBounceSum,
       firstSeenAtOr0 = earliestNot0(firstSeenAtOr0, moreStats.firstSeenAtOr0),

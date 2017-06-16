@@ -22,6 +22,7 @@ import com.debiki.core._
 import com.debiki.core.Prelude._
 import ed.server.http.throwForbidden2
 import play.api.Play.current
+import scala.collection.immutable
 import SystemDao._
 
 
@@ -223,6 +224,18 @@ class SystemDao(private val dbDaoFactory: DbDaoFactory, val cache: DaoMemCache) 
   def refreshPageInMemCache(sitePageId: SitePageId) {
     memCache.firePageSaved(sitePageId)
   }
+
+
+  // ----- Summary emails
+
+  /** Groups by site id, so can be batch processed and popular topics for one site can
+    * be loaded just once, for many users.
+    */
+  def loadStatsForUsersToMaybeEmailSummariesTo(now: When, limit: Int)
+        : Map[SiteId, immutable.Seq[UserStats]] =
+    readOnlyTransaction { transaction =>
+      transaction.loadStatsForUsersToMaybeEmailSummariesTo(now, limit)
+    }
 
 
   // ----- Notifications

@@ -531,6 +531,11 @@ trait UserDao {
   }
 
 
+  def loadMembersInclDetailsById(userIds: Iterable[UserId]): immutable.Seq[MemberInclDetails] = {
+    readOnlyTransaction(_.loadMembersInclDetailsById(userIds))
+  }
+
+
   def loadMembersWithPrefix(prefix: String): immutable.Seq[Member] = {
     readOnlyTransaction(_.loadMembersWithPrefix(prefix))
   }
@@ -627,7 +632,7 @@ trait UserDao {
       case _: Guest | UnknownUser => Vector(Group.EveryoneId)
       case m: Member =>
         readOnlyTransaction { transaction =>
-          transaction.loadGroupIds (user)
+          transaction.loadGroupIds(user)
         }
       case group: Group =>
         unimplemented("getting group ids for a group", "EdE5JGA10")

@@ -101,8 +101,11 @@ export const ActivitySummaryEmailsIntervalDropdown = createComponent({
       DropdownModal({ show: this.state.open, onHide: this.close, showCloseButton: true,
           atRect: this.state.buttonRect, windowWidth: this.state.windowWidth },
         r.ul({},
-          makeItem(thirtyMinutesMins),
-          makeItem(hourlyMins),
+          // We don't currently keep track of popular topics per hour. Only per day/week/longer.
+          // So disable these two, for now: (although presumably they make sense — because
+          // they're supported by Discourse. Not sure about the use case :-P )
+          // makeItem(thirtyMinutesMins),
+          // makeItem(hourlyMins),
           makeItem(dailyMins),
           makeItem(twicePerWeekMins),
           makeItem(weeklyMins),
