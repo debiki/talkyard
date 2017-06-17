@@ -42,6 +42,8 @@ trait SummaryEmailsDao {
       member <- members
       if member.emailAddress.nonEmpty
       if member.emailNotfPrefs == EmailNotfPrefs.Receive
+      // For now, when testing, send to me only
+      if member.emailAddress.contains("kajmagnus")  // SHOULD delete ... when done testing [4WKCYD07]
     } {
       val stats = userStats.find(_.userId == member.id) getOrDie "EdE2KWG05"
       val nextEmailAt: Option[When] = member.whenTimeForNexSummaryEmail(stats, groups)
@@ -160,7 +162,7 @@ trait SummaryEmailsDao {
         </ul>
         {
           ed.server.util.email.makeFooter(regardsFromName = siteName, regardsFromUrl = origin,
-              unsubUrl = "???") // MUST be possible to unsub
+              unsubUrl = "???") // SHOULD be possible to unsub, but currently testing only [4WKCYD07]
         }
       </div>
     }
