@@ -91,6 +91,7 @@ object InviteController extends mvc.Controller {
 
   def acceptInvite(secretKey: String) = GetActionAllowAnyone { request =>
     val (newUser, invite, alreadyAccepted) = request.dao.acceptInviteCreateUser(secretKey)
+    request.dao.pubSub.userIsActive(request.siteId, newUser.briefUser, request.theBrowserIdData)
     val (_, _, sidAndXsrfCookies) = createSessionIdAndXsrfToken(request.siteId, newUser.id)
     val newSessionCookies = sidAndXsrfCookies
 

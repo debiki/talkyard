@@ -30,7 +30,6 @@ import play.api.libs.ws.{WS, WSResponse}
 import play.api.Play.current
 import redis.RedisClient
 import scala.collection.mutable
-import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.concurrent.duration._
@@ -110,6 +109,10 @@ class PubSubApi(private val actorRef: ActorRef) {
     actorRef ! UserWatchesPages(siteId, userId, pageIds)
   }
 
+  def userIsActive(siteId: SiteId, user: User, browserIdData: BrowserIdData) {
+    actorRef ! UserIsActive(siteId, user, browserIdData)
+  }
+
   /** Assumes user byId knows about this already; won't publish to him/her. */
   def publish(message: Message, byId: UserId) {
     actorRef ! PublishMessage(message, byId)
@@ -135,10 +138,14 @@ class StrangerCounterApi(private val actorRef: ActorRef) {
 
 
 private case class PublishMessage(message: Message, byId: UserId)
-private case class UserWatchesPages(siteId: SiteId, userId: UserId, pageIds: Set[PageId])
-private case class UserSubscribed(siteId: SiteId, user: User, browserIdData: BrowserIdData,
-  watchedPageIds: Set[PageId])
-private case class UnsubscribeUser(siteId: SiteId, user: User, browserIdData: BrowserIdData)
+private case class UserWatchesPages(
+  siteId: SiteId, userId: UserId, pageIds: Set[PageId])
+private case class UserIsActive(
+  siteId: SiteId, user: User, browserIdData: BrowserIdData)
+private case class UserSubscribed(
+  siteId: SiteId, user: User, browserIdData: BrowserIdData, watchedPageIds: Set[PageId])
+private case class UnsubscribeUser(
+  siteId: SiteId, user: User, browserIdData: BrowserIdData)
 private case object DeleteInactiveSubscriptions
 private case class DebugGetSubscribers(siteId: SiteId)
 
@@ -189,22 +196,33 @@ class PubSubActor(val nginxHost: String, val redisClient: RedisClient) extends A
 
   def dontRestartIfException(message: Any): Unit = try message match {
     case UserWatchesPages(siteId, userId, pageIds) =>
+      val user = Globals.siteDao(siteId).getUser(userId) getOrElse { return }
       updateWatchedPages(siteId, userId, pageIds)
-    case UserSubscribed(siteId, user, browserIdData, watchedPageIds) =>
-      // Mark as online even if this has been done already, to bump it's timestamp.
+      publishPresenceIfChanged(siteId, Some(user), Presence.Active)
+      RedisCache.forSite(siteId, redisClient).markUserOnline(user.id)
+    case UserIsActive(siteId, user, browserIdData) =>
+      publishPresenceIfChanged(siteId, Some(user), Presence.Active)
       RedisCache.forSite(siteId, redisClient).markUserOnlineRemoveStranger(user.id, browserIdData)
-      publishUserPresence(siteId, Some(user), Presence.Active)
-      val oldPageIds = addOrUpdateSubscriber(siteId, user, watchedPageIds)
-      updateWatcherIdsByPageId(siteId, user.id, oldPageIds = oldPageIds, watchedPageIds)
+    case UserSubscribed(siteId, user, browserIdData, watchedPageIds) =>
+      // Mark as subscribed, even if this has been done already, to bump it's timestamp.
+      val anyOldPageIds = addOrUpdateSubscriber(siteId, user, watchedPageIds)
+      updateWatcherIdsByPageId(siteId, user.id,
+        oldPageIds = anyOldPageIds.getOrElse(Set.empty), watchedPageIds)
+      // Don't mark user as online in Redis, and don't publish presence — because these
+      // subscription requests are automatic. And, after app server restart, the app server's
+      // caches are empty, so it'll seem as if the user just connected (even though hen might
+      // have been connected but inactive, for long).
     case UnsubscribeUser(siteId, user, browserIdData) =>
-      RedisCache.forSite(siteId, redisClient).markUserOffline(user.id)
       val oldPageIds = removeSubscriber(siteId, user)
       updateWatcherIdsByPageId(siteId, user.id, oldPageIds = oldPageIds, Set.empty)
-      publishUserPresence(siteId, Some(user), Presence.Away)
+      // This, though, (in comparison to UserSubscribed) means the user logged out. So publ presence.
+      RedisCache.forSite(siteId, redisClient).markUserOffline(user.id)
+      publishPresenceAlways(siteId, Some(user), Presence.Away)
     case PublishMessage(message: Message, byId: UserId) =>
       publishStorePatchAndNotfs(message, byId)
     case DeleteInactiveSubscriptions =>
       deleteInactiveSubscriptions()
+      removeInactiveUserFromRedisPublishAwayPresence()
     case DebugGetSubscribers(siteId) =>
       val state: PubSubState = debugMakeState(siteId)
       sender ! state
@@ -233,12 +251,12 @@ class PubSubActor(val nginxHost: String, val redisClient: RedisClient) extends A
 
 
   private def addOrUpdateSubscriber(siteId: SiteId, user: User, watchedPageIds: Set[PageId])
-        : Set[PageId] = {
+        : Option[Set[PageId]] = {
     val subscribersById = subscribersByIdForSite(siteId)
     // Remove and reinsert, so inactive users will be the first ones found when iterating.
     val oldEntry = subscribersById.remove(user.id)
     subscribersById.put(user.id, UserWhenPages(user, Globals.now(), watchedPageIds))
-    oldEntry.map(_.watchingPageIds) getOrElse Set.empty
+    oldEntry.map(_.watchingPageIds)
   }
 
 
@@ -249,21 +267,31 @@ class PubSubActor(val nginxHost: String, val redisClient: RedisClient) extends A
   }
 
 
-  private def publishUserPresence(siteId: SiteId, users: Iterable[User], presence: Presence) {
-    COULD_OPTIMIZE // send just 1 request, list many users.
+  private def publishPresenceIfChanged(siteId: SiteId, users: Iterable[User], newPresence: Presence) {
+    COULD_OPTIMIZE // send just 1 request, list many users. (5JKWQU01)
     users foreach { user =>
-      publishUserPresenceImpl(siteId, user, presence)
+      val isActive = RedisCache.forSite(siteId, redisClient).isUserActive(user.id)
+      if (isActive && newPresence != Presence.Active || !isActive && newPresence != Presence.Away) {
+        publishPresenceImpl(siteId, user, newPresence)
+      }
     }
   }
 
 
-  private def publishUserPresenceImpl(siteId: SiteId, user: User, presence: Presence) {
-    val userAndWhenById = subscribersByIdForSite(siteId)
-    if (userAndWhenById.contains(user.id))
-      return
+  private def publishPresenceAlways(siteId: SiteId, users: Iterable[User], newPresence: Presence) {
+    COULD_OPTIMIZE // send just 1 request, list many users. (5JKWQU01)
+    users foreach { user =>
+      publishPresenceImpl(siteId, user, newPresence)
+    }
+  }
 
+
+  private def publishPresenceImpl(siteId: SiteId, user: User, presence: Presence) {
     // Don't send num-online-strangers. Instead, let it be a little bit inexact so that
     // other people won't know if a user that logged out, stays online or not.
+    // No. *Do* send num-strangers-online. Otherwise I get confused and think here's some bug :-/.
+    // Do later...
+    val userAndWhenById = subscribersByIdForSite(siteId)
     val toUserIds = userAndWhenById.values.map(_.user.id).toSet - user.id
     sendPublishRequest(siteId, toUserIds, "presence", Json.obj(
       "user" -> JsUser(user),
@@ -368,13 +396,11 @@ class PubSubActor(val nginxHost: String, val redisClient: RedisClient) extends A
   private def deleteInactiveSubscriptions() {
     val now = Globals.now()
     for ((siteId, subscribersById) <- subscribersBySiteUserId) {
-      val unsubscribedUsers = ArrayBuffer[User]()
       // LinkedHashMap sort order = perhaps-inactive first.
       subscribersById removeWhileValue { userWhenPages =>
         if (now.millisSince(userWhenPages.when) < DeleteAfterInactiveMillis) false
         else {
           val user = userWhenPages.user
-          unsubscribedUsers.append(user)
           updateWatcherIdsByPageId(
               siteId, user.id, oldPageIds = userWhenPages.watchingPageIds, newPageIds = Set.empty)
           p.Logger.trace(o"""Unsubscribing inactive user
@@ -382,7 +408,19 @@ class PubSubActor(val nginxHost: String, val redisClient: RedisClient) extends A
           true
         }
       }
-      publishUserPresence(siteId, unsubscribedUsers, Presence.Away)
+    }
+  }
+
+
+  /** Marks the user as inactive. However the user might still be connected via WebSocket or
+    * Long Polling. It's just that apparently hen is doing something else right now.
+    */
+  private def removeInactiveUserFromRedisPublishAwayPresence() {
+    val inactiveUserIdsBySite = RedisCache.forAllSites(redisClient).removeNoLongerOnlineUserIds()
+    for ((siteId, userIds) <- inactiveUserIdsBySite ; if userIds.nonEmpty) {
+      val users = Globals.siteDao(siteId).getUsersAsSeq(userIds)
+      // Not publishPresenceIfChanged(_), because we know it was just changed.
+      publishPresenceAlways(siteId, users, Presence.Away)
     }
   }
 

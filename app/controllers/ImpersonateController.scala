@@ -93,6 +93,7 @@ object ImpersonateController extends mvc.Controller {
     if (siteId != request.siteId)
       throwForbidden("EsE8YKW3", s"Wrong site id: ${request.siteId}, should go to site $siteId")
 
+    // ? mark as online ?
     val (_, _, sidAndXsrfCookies) = createSessionIdAndXsrfToken(siteId, userId)
     Redirect("/").withCookies(sidAndXsrfCookies: _*)
   }

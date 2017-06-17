@@ -346,6 +346,7 @@ object LoginWithOpenAuthController extends Controller {
 
   private def createCookiesAndFinishLogin(request: DebikiRequest[_], siteId: SiteId, member: Member)
         : Result = {
+    request.dao.pubSub.userIsActive(request.siteId, member, request.theBrowserIdData)
     val (_, _, sidAndXsrfCookies) = createSessionIdAndXsrfToken(siteId, member.id)
 
     val response =

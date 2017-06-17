@@ -233,28 +233,28 @@ object ViewPageController extends mvc.Controller {
 
 
   private def doRenderPage(request: PageGetRequest): Future[Result] = {
-    val renderedPage = request.dao.renderPageMaybeUseCache(request)
+    import request.{dao, requester}
+    val renderedPage = dao.renderPageMaybeUseCache(request)
     var pageHtml = renderedPage.html
 
-    {
-      val usersOnlineStuff = request.dao.loadUsersOnlineStuff() // could do asynchronously later
-      val anyUserSpecificDataJson =
-        ReactJson.userDataJson(request, renderedPage.unapprovedPostAuthorIds)
-      val volatileJson = Json.obj(
-        "usersOnline" -> usersOnlineStuff.usersJson,
-        "numStrangersOnline" -> usersOnlineStuff.numStrangers,
-        "me" -> anyUserSpecificDataJson.getOrElse(JsNull).asInstanceOf[JsValue])
+    val usersOnlineStuff = dao.loadUsersOnlineStuff() // could do asynchronously later
+    val anyUserSpecificDataJson =
+      ReactJson.userDataJson(request, renderedPage.unapprovedPostAuthorIds)
+    val volatileJson = Json.obj(
+      "usersOnline" -> usersOnlineStuff.usersJson,
+      "numStrangersOnline" -> usersOnlineStuff.numStrangers,
+      "me" -> anyUserSpecificDataJson.getOrElse(JsNull).asInstanceOf[JsValue])
 
-      // Insert volatile and user specific data into the HTML.
-      // The Scala templates take care to place the <script type="application/json">
-      // tag with the magic-string-that-we'll-replace-with-user-specific-data before
-      // user editable HTML for comments and the page title and body.
-      val htmlEncodedJson = org.owasp.encoder.Encode.forHtmlContent(volatileJson.toString)
-      pageHtml = org.apache.commons.lang3.StringUtils.replaceOnce(
-          pageHtml, HtmlEncodedVolatileJsonMagicString, htmlEncodedJson)
+    // Insert volatile and user specific data into the HTML.
+    // The Scala templates take care to place the <script type="application/json">
+    // tag with the magic-string-that-we'll-replace-with-user-specific-data before
+    // user editable HTML for comments and the page title and body.
+    val htmlEncodedJson = org.owasp.encoder.Encode.forHtmlContent(volatileJson.toString)
+    pageHtml = org.apache.commons.lang3.StringUtils.replaceOnce(
+        pageHtml, HtmlEncodedVolatileJsonMagicString, htmlEncodedJson)
 
-      Future.successful(Ok(pageHtml) as HTML)
-    }
+    requester.foreach(dao.pubSub.userIsActive(request.siteId, _, request.theBrowserIdData))
+    Future.successful(Ok(pageHtml) as HTML)
   }
 
 

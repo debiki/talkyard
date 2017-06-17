@@ -539,6 +539,7 @@ object UserController extends mvc.Controller {
       }
 
     request.dao.trackReadingProgressPerhapsPromote(user, pageId, readingProgress)
+    request.dao.pubSub.userIsActive(request.siteId, user, request.theBrowserIdData)
     Ok
   }
 

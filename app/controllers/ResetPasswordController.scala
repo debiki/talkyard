@@ -146,6 +146,7 @@ object ResetPasswordController extends mvc.Controller {
     SECURITY // SHOULD mark reset password email as used, so cannot be used again
 
     // Log the user in and show password changed message.
+    request.dao.pubSub.userIsActive(request.siteId, loginGrant.user, request.theBrowserIdData)
     val (_, _, sidAndXsrfCookies) = createSessionIdAndXsrfToken(request.siteId, loginGrant.user.id)
     val newSessionCookies = sidAndXsrfCookies
     Ok(views.html.resetpassword.passwordHasBeenChanged(SiteTpi(request)))

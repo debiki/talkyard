@@ -84,6 +84,7 @@ object LoginWithPasswordController extends mvc.Controller {
             verification link; please click it.""")
       }
 
+    dao.pubSub.userIsActive(request.siteId, loginGrant.user, request.theBrowserIdData)
     val (_, _, sidAndXsrfCookies) = createSessionIdAndXsrfToken(request.siteId, loginGrant.user.id)
     sidAndXsrfCookies
   }
@@ -149,6 +150,7 @@ object LoginWithPasswordController extends mvc.Controller {
         }
         else {
           dieIf(newMember.email.isEmpty && siteSettings.requireVerifiedEmail, "EdE2GKF06")
+          dao.pubSub.userIsActive(request.siteId, newMember, request.theBrowserIdData)
           val (_, _, sidAndXsrfCookies) = createSessionIdAndXsrfToken(dao.siteId, newMember.id)
           sidAndXsrfCookies
         }
@@ -248,13 +250,15 @@ object LoginWithPasswordController extends mvc.Controller {
 
   def confirmEmailAddressAndLogin(confirmationEmailId: String, returnToUrl: String): Action[Unit] =
         GetActionRateLimited(RateLimits.ConfirmEmailAddress, allowAnyone = true) { request =>
+    import request.dao
 
     val userId = finishEmailAddressVerification(confirmationEmailId, request)
-    val user = request.dao.getUser(userId) getOrElse {
+    val user = dao.getUser(userId) getOrElse {
       throwInternalError("DwE7GJ0", "I've deleted the account")
     }
 
     // Log the user in.
+    dao.pubSub.userIsActive(request.siteId, user, request.theBrowserIdData)
     val (_, _, sidAndXsrfCookies) = createSessionIdAndXsrfToken(request.siteId, user.id)
     val newSessionCookies = sidAndXsrfCookies
 

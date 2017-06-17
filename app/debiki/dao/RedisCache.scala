@@ -25,22 +25,24 @@ import redis.RedisClient
 import redis.api.Limit
 import scala.concurrent._
 import scala.concurrent.duration._
+import RedisCache._
 
 
 object RedisCache {
-  def forSite( siteId: SiteId, redisClient: RedisClient) = new RedisCache(siteId, redisClient)
+  def forSite(siteId: SiteId, redisClient: RedisClient) = new RedisCache(siteId, redisClient)
+  def forAllSites(redisClient: RedisClient) = new RedisCacheAllSites(redisClient)
+
+  // Is 3 times faster than String.toInt, according to the parseInt() docs.
+  val parseInt: (ByteString) => Int = _root_.redis.protocol.ParseNumber.parseInt _
+
+  // Sometimes the request takes long, perhaps because of a Java GC pause? Or because of
+  // some page being swapped to disk?
+  val DefaultTimeout: FiniteDuration = 10 seconds
 }
 
 
 
 class RedisCache(val siteId: SiteId, private val redis: RedisClient) {
-
-  // Is 3 times faster than String.toInt, according to the parseInt() docs.
-  import _root_.redis.protocol.ParseNumber.parseInt
-
-  // Sometimes the request takes long, perhaps because of a Java GC pause? Or because of
-  // some page being swapped to disk?
-  val DefaultTimeout = 10 seconds
 
 
   def loadWatchbar(userId: UserId): Option[BareWatchbar] = {
@@ -66,6 +68,11 @@ class RedisCache(val siteId: SiteId, private val redis: RedisClient) {
   }
 
 
+  def markUserOnline(userId: UserId) {
+    redis.zadd(usersOnlineKey(siteId), Globals.now().toDouble -> userId)
+  }
+
+
   def markUserOffline(userId: UserId) {
     redis.zrem(usersOnlineKey(siteId), userId)
     // As of now we don't know if the user left, or if s/he is still online.
@@ -78,6 +85,14 @@ class RedisCache(val siteId: SiteId, private val redis: RedisClient) {
   }
 
 
+  def isUserActive(userId: UserId): Boolean = {
+    // There's no z-is-member, so use zscore, it's O(1).
+    val anyScoreFuture: Future[Option[Double]] = redis.zscore(usersOnlineKey(siteId), userId)
+    val anyScore = Await.result(anyScoreFuture, DefaultTimeout)
+    anyScore.isDefined
+  }
+
+
   def markStrangerOnline(browserIdData: BrowserIdData) {
     // Could consider browser id cookie too (instead of just ip), but then take care
     // to avoid DoS attacks if someone generates 9^99 unique ids and requests.
@@ -86,7 +101,6 @@ class RedisCache(val siteId: SiteId, private val redis: RedisClient) {
 
 
   def loadOnlineUserIds(): (Seq[UserId], Int) = {
-    removeNoLongerOnlineUserIds()
     val idStringsFuture: Future[Seq[ByteString]] = redis.zrange(usersOnlineKey(siteId), 0, -1)
     val idStrings: Seq[ByteString] =
       try Await.result(idStringsFuture, DefaultTimeout)
@@ -103,11 +117,19 @@ class RedisCache(val siteId: SiteId, private val redis: RedisClient) {
   }
 
 
-  def removeNoLongerOnlineUserIds() {
+  def removeNoLongerOnlineUserIds(): collection.Set[UserId] = {
     // Could make the time set:table, for tests. But for now:
     val aWhileAgo = Globals.now().minusMinutes(10).toDouble
+    val nowInactiveUserIdsFuture = redis.zrangebyscore(
+      usersOnlineKey(siteId), Limit(0.0), Limit(aWhileAgo))
+    val nowInactiveUserIds: Seq[UserId] =
+      try Await.result(nowInactiveUserIdsFuture, DefaultTimeout).map(parseInt)
+      catch {
+        case _: TimeoutException => die("EdE1LJKP05", "Redis timeout")
+      }
     redis.zremrangebyscore(usersOnlineKey(siteId), Limit(0.0), Limit(aWhileAgo))
     redis.zremrangebyscore(strangersOnlineByIpKey(siteId), Limit(0.0), Limit(aWhileAgo))
+    nowInactiveUserIds.toSet
   }
 
 
@@ -137,3 +159,28 @@ class RedisCache(val siteId: SiteId, private val redis: RedisClient) {
 
 }
 
+
+class RedisCacheAllSites(redisClient: RedisClient) {
+
+  def removeNoLongerOnlineUserIds(): collection.Map[SiteId, collection.Set[UserId]] = {
+    COULD_OPTIMIZE // Redis.keys can be slow — but according to the docs, on a laptop,
+    // it handles 1 million keys in 40ms. So a lot faster than fast-enough, for us.
+    val siteIdsFuture: Future[Seq[String]] = redisClient.keys("*-uo")
+    val siteIds: Seq[SiteId] =
+      try {
+        // Use flatMap and toIntOption, because previously site ids were strings.
+        // LATER remove on Jan 1 2018.
+        Await.result(siteIdsFuture, DefaultTimeout)
+            .flatMap(_.replaceAllLiterally("-uo", "").toIntOption)
+      }
+      catch {
+        case _: TimeoutException => die("EdEWQ0XU4", "Redis timeout")
+      }
+    val siteAndUserIds = siteIds map { id =>
+      id -> RedisCache.forSite(id, redisClient).removeNoLongerOnlineUserIds()
+    }
+    siteAndUserIds.toMap
+  }
+
+
+}
