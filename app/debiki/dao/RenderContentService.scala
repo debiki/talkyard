@@ -121,15 +121,15 @@ class RenderContentActor(val daoFactory: SiteDaoFactory) extends Actor {
     // COULD add Metrics that times this.
     p.Logger.debug(s"Background rendering ${sitePageId.toPrettyString} [DwM7KGE2]")
     val dao = daoFactory.newSiteDao(sitePageId.siteId)
-    val (json, pageVersion, _, _) = ReactJson.pageToJson(sitePageId.pageId, dao)
-    val html = ReactRenderer.renderPage(json) getOrElse {
+    val toJsonResult = ReactJson.pageToJson(sitePageId.pageId, dao)
+    val html = ReactRenderer.renderPage(toJsonResult.jsonString) getOrElse {
       p.Logger.error(s"Error rendering ${sitePageId.toPrettyString} [DwE5KJG2]")
       return
     }
 
     val wasSaved = dao.readWriteTransaction { transaction =>
       transaction.saveCachedPageContentHtmlPerhapsBreakTransaction(
-        sitePageId.pageId, pageVersion, html)
+        sitePageId.pageId, toJsonResult.version, html)
     }
 
     var message = s"...Done background rendering ${sitePageId.toPrettyString}. [DwM2YGH9]"

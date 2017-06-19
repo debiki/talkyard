@@ -80,6 +80,7 @@ class SiteTpi protected (
     xml.Unparsed(views.html.debikiMeta(anyCurrentPageMeta, pageTitle).body)
 
 
+  def anySafeMetaTags: Option[String] = None
   def anyCurrentPageId: Option[PageId] = None
   def anyCurrentPageRole: Option[PageRole] = None
   def anyCurrentPagePath: Option[PagePath] = None
@@ -220,9 +221,11 @@ class PageTpi(
   private val jsonVersion: CachedPageVersion,
   private val cachedPageHtml: String,
   private val cachedVersion: CachedPageVersion,
-  private val pageTitle: Option[String])
+  private val pageTitle: Option[String],
+  private val safeMetaTags: String)
   extends SiteTpi(pageReq, json = None, pageTitle = pageTitle) {
 
+  override def anySafeMetaTags = Some(safeMetaTags)
   override def anyCurrentPageId = Some(pageReq.thePageId)
   override def anyCurrentPageRole = Some(pageReq.thePageRole)
   override def anyCurrentPagePath = Some(pageReq.pagePath)

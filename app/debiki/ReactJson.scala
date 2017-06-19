@@ -23,7 +23,7 @@ import controllers.ForumController
 import debiki.dao.{PageDao, PageStuff, ReviewStuff, SiteDao}
 import ed.server.auth.ForumAuthzContext
 import ed.server.http._
-import java.{util => ju}
+import java.{util => ju, lang => jl}
 import org.jsoup.Jsoup
 import play.api.libs.json._
 import scala.collection.{immutable, mutable}
@@ -40,6 +40,13 @@ class HowRenderPostInPage(
   val squash: Boolean,
   val childrenSorted: immutable.Seq[Post])
 
+
+case class PageToJsonResult(
+  jsonString: String,
+  version: CachedPageVersion,
+  pageTitle: Option[String],
+  safeMetaTags: String,
+  unapprovedPostAuthorIds: Set[UserId])
 
 
 // CLEAN_UP COULD rename it to JsonMaker? JsonBuilder? Jsonifier?
@@ -83,8 +90,7 @@ object ReactJson {
         pageId: PageId,
         dao: SiteDao,
         anyPageRoot: Option[PostNr] = None,
-        anyPageQuery: Option[PageQuery] = None)
-        : (String, CachedPageVersion, Option[String], Set[UserId]) = {
+        anyPageQuery: Option[PageQuery] = None): PageToJsonResult = {
     dao.readOnlyTransaction(
       pageToJsonImpl(pageId, dao, _, anyPageRoot, anyPageQuery))
   }
@@ -184,8 +190,7 @@ object ReactJson {
         dao: SiteDao,
         transaction: SiteTransaction,
         anyPageRoot: Option[PostNr],
-        anyPageQuery: Option[PageQuery])
-        : (String, CachedPageVersion, Option[String], Set[UserId]) = {
+        anyPageQuery: Option[PageQuery]): PageToJsonResult = {
 
     // The json constructed here will be cached & sent to "everyone", so in this function
     // we always specify !isStaff and the requester must be a stranger (user = None):
@@ -209,6 +214,31 @@ object ReactJson {
       }
 
     val pageTitle = posts.find(_.isTitle).flatMap(_.approvedHtmlSanitized)
+
+    // Meta tags allowed for custom HTML pages only, right now. Usually the homepage.
+    // Only staff can edit custom html pages, currently, so reasonably safe, [2GKW0M]
+    // + we remove weird attrs, below.
+    val safeMetaTags =
+      if (page.role != PageRole.CustomHtmlPage) ""
+      else posts.find(_.isOrigPost) match {
+        case None => ""
+        case Some(origPost) =>
+          val doc = Jsoup.parse(origPost.approvedSource getOrElse "")
+          val head = doc.head()
+          import scala.collection.JavaConversions._
+          val metaTags: ju.ArrayList[org.jsoup.nodes.Element] = head.getElementsByTag("meta")
+          for (metaTag: org.jsoup.nodes.Element <- metaTags) {
+            // Remove all attrs except for name, content, and proptype (used by Facebook Open Graph).
+            val attributes: jl.Iterable[org.jsoup.nodes.Attribute] = metaTag.attributes()
+            for (attribute: org.jsoup.nodes.Attribute <- attributes) {
+              attribute.getKey match {
+                case "name" | "property" | "content" => // fine
+                case notAllowedAttr => metaTag.removeAttr(notAllowedAttr)
+              }
+            }
+          }
+          metaTags.toString
+      }
 
     var numPosts = 0
     var numPostsRepliesSection = 0
@@ -350,7 +380,7 @@ object ReactJson {
     val unapprovedPosts = posts.filter(!_.isSomeVersionApproved)
     val unapprovedPostAuthorIds = unapprovedPosts.map(_.createdById).toSet
 
-    (jsonString, version, pageTitle, unapprovedPostAuthorIds)
+    PageToJsonResult(jsonString, version, pageTitle, safeMetaTags, unapprovedPostAuthorIds)
   }
 
 

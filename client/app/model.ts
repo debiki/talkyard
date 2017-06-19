@@ -729,6 +729,7 @@ enum LoginReason {
   LoginToChat = 10,
   LoginToLike = 11,
   BecomeAdmin = 12,
+  TryToAccessNotFoundPage = 14,
 }
 
 

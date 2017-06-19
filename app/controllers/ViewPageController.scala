@@ -26,6 +26,7 @@ import play.api._
 import play.api.libs.json._
 import play.api.mvc._
 import scala.concurrent.Future
+import scala.concurrent.ExecutionContext.Implicits.global
 import DebikiHttp._
 
 
@@ -123,7 +124,27 @@ object ViewPageController extends mvc.Controller {
 
 
   def viewPage(path: String) = AsyncGetActionAllowAnyone { request =>
-    viewPageImpl(request)
+    // If page not found, or access not allowed, show the same login dialog, so the user
+    // won't know if the page exists or not.
+    def makeLoginDialog(): Result = {
+      NotFound(views.html.login.loginPopup(
+        SiteTpi(request),
+        mode = "LoginBecauseNotFound",
+        // error =  result.body
+        serverAddress = s"//${request.host}",
+        returnToUrl = request.uri)) as HTML
+    }
+
+    try {
+      viewPageImpl(request) recover {
+        case DebikiHttp.ResultException(result) if result.header.status == NOT_FOUND =>
+          makeLoginDialog()
+      }
+    }
+    catch {
+      case DebikiHttp.ResultException(result) if result.header.status == NOT_FOUND =>
+        Future.successful(makeLoginDialog())
+    }
   }
 
 

@@ -292,10 +292,16 @@ export var LoginDialogContent = createClassAndFactory({
             "Use the email address you specified previously."))
       : null;
 
-    var loggedInAlreadyInfo = this.props.isLoggedIn
-        ? r.p({}, "You are logged in already, but you don't have access " +
-            "to this part of the site. Please login below, as someone with access.")
-        : null;
+    const notFound = loginReason === 'LoginBecauseNotFound';
+    const notFoundInstructions = !notFound ? null :
+        r.div({ className: 'esLoginDlg_becomeAdminInstr' },
+          r.h1({ className: 's_LD_NotFound_Title' }, "Page not found, or Access Denied"),
+          r.p({ className: 's_LD_NotFound_Details' },
+            "If you think the page exists, log in as someone who may access it. " +
+            (this.props.isLoggedIn ?
+                "(You are logged in already, but perhaps it's the wrong account?) " : '') +
+            "Otherwise, you can ", r.a({ className: 's_LD_NotFound_HomeL', href: '/' },
+              "go to the homepage.")));
 
     var typePasswordForm = isSignUp ? null :
         PasswordLoginDialogContent(childDialogProps);
@@ -313,8 +319,9 @@ export var LoginDialogContent = createClassAndFactory({
               className: 'esLoginDlg_guestBtn' }, "Log in as Guest");
     } */
 
-    var termsAndPrivacy = loginReason === LoginReason.BecomeAdmin
-      ? null // the owner doesn't need to agree to his/her own terms of use
+    const termsAndPrivacy = loginReason === LoginReason.BecomeAdmin || !isSignUp
+      ? null // The owner doesn't need to agree to his/her own terms of use.
+             // And if we've signed up already, need not agree to the terms again?
       : r.p({ id: 'dw-lgi-tos' },
           (isSignUp ? "By proceeding" : "By logging in") +
           ", you agree to our ", r.a({ href: "/-/terms-of-use" }, "Terms of Use"),
@@ -351,7 +358,7 @@ export var LoginDialogContent = createClassAndFactory({
       r.div({ className: 'esLD' },
         createUserDialog,
         passwordLoginDialog,
-        loggedInAlreadyInfo,
+        notFoundInstructions,
         becomeAdminInstructions,
         termsAndPrivacy,
         r.p({ id: 'dw-lgi-or-login-using' },

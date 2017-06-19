@@ -68,21 +68,20 @@ trait RenderedPageHtmlDao {
       val anyPageQuery = controllers.ForumController.parsePageQuery(pageRequest)
       val anyPageRoot = pageRequest.pageRoot
 
-      val (currentJson, currentVersion, pageTitle, unapprovedPostAuthorIds) = ReactJson.pageToJson(
-        pageRequest.thePageId, this, anyPageRoot, anyPageQuery)
+      val renderResult = ReactJson.pageToJson(pageRequest.thePageId, this, anyPageRoot, anyPageQuery)
 
       val (cachedHtml, cachedVersion) =
-        renderContent(pageRequest.thePageId, currentVersion, currentJson)
+        renderContent(pageRequest.thePageId, renderResult.version, renderResult.jsonString)
 
-      val tpi = new PageTpi(pageRequest, currentJson, currentVersion,
-        cachedHtml, cachedVersion, pageTitle)
+      val tpi = new PageTpi(pageRequest, renderResult.jsonString, renderResult.version,
+        cachedHtml, cachedVersion, renderResult.pageTitle, renderResult.safeMetaTags)
       val pageHtml: String = pageRequest.thePageRole match {
         case PageRole.EmbeddedComments =>
           views.html.templates.embeddedComments(tpi).body
         case _ =>
           views.html.templates.page(tpi).body
       }
-      RenderedPage(pageHtml, unapprovedPostAuthorIds)
+      RenderedPage(pageHtml, renderResult.unapprovedPostAuthorIds)
     }
   }
 

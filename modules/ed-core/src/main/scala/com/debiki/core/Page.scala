@@ -330,7 +330,9 @@ case class PageMeta(
 
 
 
-sealed abstract class PageRole(protected val IntValue: Int, val staffOnly: Boolean = true) {
+sealed abstract class PageRole(
+  protected val IntValue: Int,
+  val staffOnly: Boolean = true /*[2GKW0M]*/) {
 
   /** True if this page is e.g. a blog or a forum — they can have child pages
     * (namely blog posts, forum topics).

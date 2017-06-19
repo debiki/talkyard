@@ -1,5 +1,5 @@
 @**
- * Copyright (C) 2013-2015 Kaj Magnus Lindberg
+ * Copyright (C) 2013-2017 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -20,14 +20,13 @@
 <!DOCTYPE html>
 <html class="@tpi.debikiHtmlTagClasses">
 <head>
-  @tpi.debikiMeta
-  @tpi.debikiStyles
-
-  @tpi.stylesheetBundle("styles.css")
-  @Html(tpi.siteSettings.headStylesHtml)
-
-  @tpi.debikiScriptsInHead()
-  @Html(tpi.anyGoogleUniversalAnalyticsScript)
+@tpi.debikiMeta
+@Html(tpi.anySafeMetaTags.getOrElse(""))
+@tpi.debikiStyles
+@tpi.stylesheetBundle("styles.css")
+@Html(tpi.siteSettings.headStylesHtml)
+@tpi.debikiScriptsInHead()
+@Html(tpi.anyGoogleUniversalAnalyticsScript)
 </head>
 <body>
 <!-- wrapper.scala.html -->
