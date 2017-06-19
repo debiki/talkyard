@@ -38,7 +38,7 @@
     "zxcvbn": "^4.4.1"
   },
   "devDependencies": {
-    "@types/node": "^7.0.0",
+    "@types/node": "^8.0.0",
     "@types/tape": "^4.2.28",
     "chalk": "^1.1.1",
     "cheerio": "^0.22.0",
