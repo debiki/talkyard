@@ -204,6 +204,11 @@ declare namespace debiki2 {
   }
   namespace pagedialogs {
     var getServerErrorDialog;
+    var openSharePopup;
+    const Facebook;
+    const Twitter;
+    const Google;
+    const Email;
   }
 
   var SelectCategoryDropdown: any;

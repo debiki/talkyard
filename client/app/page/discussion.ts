@@ -176,13 +176,26 @@ export var TitleBodyComments = createComponent({
         return null;
       }
       else {
-        var isPageAuthor = bodyPost.authorId === me.id;
+        const isPageAuthor = bodyPost.authorId === me.id;
+        const makeShareButton = (where: string) => {  // dupl code [2WUGVSF0]
+          return (
+            r.a({ className: 'p_ShareIcon icon-' + where,
+              onClick: () =>
+                pagedialogs.openSharePopup("https://usability.testing.exchange", where) }));
+        };
         if (isPageAuthor) {
           if (store.numPostsRepliesSection) {
-            return { id: 'EdH5P0WF2', version: 1, content: r.div({},
+            return { id: 'EdH5P0WF2', version: 1, alwaysShow: true, content: r.div({},
               r.h1({ className: 's_UtxHelp_HaveAsked_Title' },
                 "There's feedbak for you"),
-              r.p({}, "Look below — someone has posted feedback to you.")) };
+              r.p({}, "Look below — someone has posted feedback to you."),
+
+              r.p({ style: { display: 'inline-block', paddingRight: 13 }},
+                "Share Usability Testing Exchange with your friends? And help us grow this site:"),
+              r.span({ className: 's_ShareD_Social' },
+                makeShareButton('facebook'),
+                makeShareButton('twitter'),
+                makeShareButton('google'))) };
           }
           else {
             return { id: 'EdH5PK2W', version: 1, alwaysShow: true, className: 's_UtxHelp_HaveAsked',

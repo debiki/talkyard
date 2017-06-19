@@ -4873,10 +4873,11 @@ function googleCajaSanitizeHtml(htmlTextUnsafe, allowClassAndIdAttr,
     // These are for ED's own classes and ids.
     if (/^dw-/.test(token)) return '';  // old
     if (/^ed-/.test(token)) return '';   // old
-    if (/^es[A-Z]/.test(token)) return '';   // current naming scheme is esWhatever
-    if (/^the[A-Z]/.test(token)) return '';  // ... or theWhatever, for id attrs
-    if (/^[a-z]?-/.test(token)) return '';   // in the future?: d-... or t-... or just -Whatever?...
-    if (/^[a-z]?_/.test(token)) return '';   // ... ok, s_, t_, and e_ will be the magic prefix.
+    if (/^es[A-Z]/.test(token)) return '';   // old
+    if (/^the[A-Z]/.test(token)) return '';  // old (for ids)
+    if (/^[a-z]?-/.test(token)) return '';   // old
+    if (/^[a-oq-z]?_/.test(token)) return ''; // current: s_, t_, and e_ will be the magic prefix.
+                                              // but allow p_, for "Public API".
     return token;
   }
   function dataPolicy(attrName, value) {

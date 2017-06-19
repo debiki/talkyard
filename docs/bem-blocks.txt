@@ -3,6 +3,13 @@ BEM = Block-Element-Modifier (web-search it, if you don't know what it is).
 These short names are (for me at least) more readable than long not-abbreviated names.
 You just need to get used to the abbreviations :-) And not forget them. Hence this file.
 
+s_ = some_Whatever (for classes)
+t_ = the_Whatever (for ids)
+e_ = end-to-end-test_Whatever (classes only, for stuff to click in End-to-End tests)
+p_ = public api (classes only, not ids)
+
+esWhatever = old
+
 [refactor] rename esForum_ to esF_ and esForum_Nav to esF_BB
 esForum_cats_cat     to s_F_Cs_C?
 esForum_topics_topic to esF_Ts_T?
@@ -143,6 +150,9 @@ s_VAD_Sbd       = Somebody to view as
 
 esWB            = watchbar (the left sidebar)
 esWB_T          = watchbar topic
+
+p_ShareD        = share dialog, e.g. Twitter, Google etc.
+p_ShareIcon     = Twitter/FB/Google/etc icon to click & share
 
 
 ...WhateverB    = B means Button

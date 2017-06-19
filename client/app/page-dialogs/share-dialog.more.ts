@@ -22,11 +22,11 @@
    namespace debiki2.pagedialogs {
 //------------------------------------------------------------------------------
 
-var r = React.DOM;
-var DropdownModal = utils.DropdownModal;
+const r = React.DOM;
+const DropdownModal = utils.DropdownModal;
 
 
-var shareDialog;
+let shareDialog;
 
 export function openShareDialog(post: Post, button) {
   if (!shareDialog) {
@@ -36,13 +36,8 @@ export function openShareDialog(post: Post, button) {
 }
 
 
-var Facebook = 'facebook';
-var Twitter = 'twitter';
-var Google = 'google-plus';
-var Email = 'mail';
-
 // some dupl code [6KUW24]
-var ShareDialog = createComponent({
+const ShareDialog = createComponent({
   displayName: 'ShareDialog',
 
   getInitialState: function () {
@@ -54,7 +49,7 @@ var ShareDialog = createComponent({
 
   // dupl code [6KUW24]
   openForAt: function(post: Post, at) {
-    var rect = at.getBoundingClientRect();
+    const rect = at.getBoundingClientRect();
     this.setState({
       isOpen: true,
       atX: rect.left - 140,
@@ -73,54 +68,24 @@ var ShareDialog = createComponent({
     }
   },
 
-  share: function(url, where) {
-    var encodedUrl = encodeURIComponent(url);
-    var urlToOpen;
-    var windowSize;
-    // These FB, Twitter, G+ share links works as of May 29, 2016.
-    switch (where) {
-      case Facebook:
-        // There's also: &t=<title>
-        urlToOpen = 'https://www.facebook.com/sharer/sharer.php?u=' + encodedUrl;
-        windowSize = "width=600,height=400";
-        break;
-      case Twitter:
-        // There's also: &via=<twitter-handle>&text=<title>
-        urlToOpen = 'https://www.twitter.com/intent/tweet?url=' + encodedUrl;
-        windowSize = "width=600,height=500";
-        break;
-      case Google:
-        urlToOpen = 'https://plus.google.com/share?url=' + encodedUrl;
-        windowSize = "width=550,height=550";
-        break;
-      case Email:
-        window.open('mailto:?body=' +  encodedUrl);
-        return;
-      default:
-        die('EsE6YKF32');
-    }
-    window.open(urlToOpen, '',
-      'resizable=yes,scrollbars=yes,location=yes,menubar=no,toolbar=no,status=no,' + windowSize);
-  },
-
   render: function() {
-    var state = this.state;
-    var content;
+    const state = this.state;
+    let content;
     if (state.isOpen) {
-      var post: Post = state.post;
-      var origin = location.protocol + '//' + location.host;
-      var url = origin + '/-' + debiki.getPageId() + '#post-' + post.nr;
-      var makeShareButton = (where: string) => {
+      const post: Post = state.post;
+      const origin = location.protocol + '//' + location.host;
+      const url = origin + '/-' + debiki.getPageId() + '#post-' + post.nr;
+      const makeShareButton = (where: string) => {  // dupl code [2WUGVSF0]
         return (
-          r.a({ className: 'esShare_social_icon icon-' + where,
-              onClick: () => this.share(url, where) }));
+          r.a({ className: 'p_ShareIcon icon-' + where,
+              onClick: () => openSharePopup(url, where) }));
       };
       content =
-        r.div({ className: 'esShare' },
-          r.div({ className: 'esShare_title' },
+        r.div({ className: 's_ShareD' },
+          r.div({ className: 's_ShareD_Title' },
             "Copy a link to this post, or click a share button:"),
-          r.input({ className: 'esShare_link', value: url, ref: 'linkInput', readOnly: true }),
-          r.div({ className: 'esShare_social' },
+          r.input({ className: 's_ShareD_Link', value: url, ref: 'linkInput', readOnly: true }),
+          r.div({ className: 's_ShareD_Social' },
             makeShareButton(Facebook),
             makeShareButton(Twitter),
             makeShareButton(Google),
