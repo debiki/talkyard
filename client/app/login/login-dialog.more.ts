@@ -132,6 +132,19 @@ var LoginDialog = createClassAndFactory({
 
   open: function(isSignUp: boolean, loginReason: LoginReason | string,
         anyReturnToUrl?: string, callback?: () => void, preventClose?: boolean) {
+
+    // Don't allow logging in as someone else, when impersonating someone, because it's unclear
+    // what should then happen: does one stop impersonating? or not?
+    if ($['cookie']('esCoImp')) {
+      util.openDefaultStupidDialog({
+        preventClose: true,
+        body: r.div({},
+          r.p({}, "Page not found, or Access Denied."),
+          r.p({}, "You're impersonating someone, who might not have access to all parts " +
+            "of this website.")) });
+      return;
+    }
+
     this.clearLoginRelatedCookies();
     if (!anyReturnToUrl) {
       anyReturnToUrl = window.location.toString();

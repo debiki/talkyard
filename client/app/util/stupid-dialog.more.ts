@@ -36,6 +36,7 @@ export interface StupidDialogStuff {
   closeButtonTitle?: any;
   small?: boolean,
   onCloseOk?: () => void,
+  preventClose?: boolean,
 }
 
 
@@ -80,19 +81,20 @@ export var StupidDialog = createComponent({
   },
 
   render: function () {
-    var stuff: StupidDialogStuff = this.state.stuff || {};
-    var body = stuff.body;
+    const stuff: StupidDialogStuff = this.state.stuff || {};
+    const preventClose = stuff.preventClose;
+    let body = stuff.body;
     //if (_.isString(body)) {  -- why this if?
       body = ModalBody({ className: 'clearfix' },
         r.div({ style: { marginBottom: '2em' }}, body),
-        PrimaryButton({ onClick: this.close, className: 'e_SD_CloseB' },
+        preventClose ? null : PrimaryButton({ onClick: this.close, className: 'e_SD_CloseB' },
           stuff.closeButtonTitle || "Okay"));
     /*}
     else if (body) {
       die("Non-string content not implemented [EsE7KYKW2]");
     }*/
     return (
-      Modal({ show: this.state.isOpen, onHide: this.close,
+      Modal({ show: this.state.isOpen, onHide: preventClose ? null : this.close,
           dialogClassName: 'esStupidDlg ' + (stuff.small ? ' esStupidDlg-Small' : '') +
               (stuff.dialogClassName || '') },
         //stuff.header,

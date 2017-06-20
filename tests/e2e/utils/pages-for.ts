@@ -182,12 +182,15 @@ function pagesFor(browser) {
       });
     },
 
+    pageNotFoundOrAccessDenied: /Page not found, or Access Denied/,
+
     // Also see browser.pageTitle.assertPageHidden().  Dupl code [05PKWQ2A]
     assertWholePageHidden: function() {
       let resultsByBrowser = byBrowser(browser.getSource());
       _.forOwn(resultsByBrowser, (text, browserName) => {
         if (settings.prod) {
-          assert(/404/.test(text), browserNamePrefix(browserName) + "Page not hidden (no '404')");
+          assert(api.pageNotFoundOrAccessDenied.test(text),
+              browserNamePrefix(browserName) + "Page not hidden (no not-found or access-denied)");
         }
         else {
           assert(/EdE0SEEPAGEHIDDEN_/.test(text), browserNamePrefix(browserName) + "Page not hidden");
@@ -200,7 +203,8 @@ function pagesFor(browser) {
       let resultsByBrowser = byBrowser(browser.getSource());
       _.forOwn(resultsByBrowser, (text, browserName) => {
         if (settings.prod) {
-          assert(/404/.test(text), browserNamePrefix(browserName) + "Page not hidden (no '404')");
+          assert(api.pageNotFoundOrAccessDenied.test(text),
+              browserNamePrefix(browserName) + "Page not hidden (no not-found or access-denied)");
         }
         else {
           assert(/EdEM0SEE/.test(text), browserNamePrefix(browserName) + "May see page?");

@@ -370,14 +370,11 @@ function addCommandsToBrowser(browser) {
   browser.addCommand('assertNotFoundError', function() {
     for (let i = 0; i < 20; ++i) {
       let source = browser.getSource();
-      let is404 = /404 Not Found[\s\S]+EsE404/.test(source);
+      let is404 = /404 Not Found[\s\S]+EsE404[\s\S].*/.test(source);
       if (!is404) {
         browser.pause(250);
         continue;
       }
-      // If the page is larger than this, it's probably the wrong page. (There're some
-      // <html><head><body><pre> tags too, otherwise 500 wold have been too much.)
-      assert(source.length < 500);
       return;
     }
     die('EdE5FKW2', "404 Not Found never appears");

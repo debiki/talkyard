@@ -126,24 +126,25 @@ object ViewPageController extends mvc.Controller {
   def viewPage(path: String) = AsyncGetActionAllowAnyone { request =>
     // If page not found, or access not allowed, show the same login dialog, so the user
     // won't know if the page exists or not.
-    def makeLoginDialog(): Result = {
+    def makeLoginDialog(exception: ResultException): Result = {
       NotFound(views.html.login.loginPopup(
         SiteTpi(request),
         mode = "LoginBecauseNotFound",
         // error =  result.body
         serverAddress = s"//${request.host}",
-        returnToUrl = request.uri)) as HTML
+        returnToUrl = request.uri,
+        debugMessage = exception.bodyToString)) as HTML
     }
 
     try {
       viewPageImpl(request) recover {
-        case DebikiHttp.ResultException(result) if result.header.status == NOT_FOUND =>
-          makeLoginDialog()
+        case ex: DebikiHttp.ResultException if ex.statusCode == NOT_FOUND =>
+          makeLoginDialog(ex)
       }
     }
     catch {
-      case DebikiHttp.ResultException(result) if result.header.status == NOT_FOUND =>
-        Future.successful(makeLoginDialog())
+      case ex: DebikiHttp.ResultException if ex.statusCode == NOT_FOUND =>
+        Future.successful(makeLoginDialog(ex))
     }
   }
 

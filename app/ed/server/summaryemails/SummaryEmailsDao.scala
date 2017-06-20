@@ -32,6 +32,7 @@ trait SummaryEmailsDao {
 
 
   def sendSummaryEmailsTo(userStats: immutable.Seq[UserStats], now: When): Unit = {
+    TESTS_MISSING
     // Quick hack, for now, until there's a groups table and real custom groups:  [7FKQCUW0-todonow]
     // (Everyone is a member of the NewUsers group.)
     val allGroups = readOnlyTransaction(_.loadGroupsAsMap())
@@ -134,6 +135,7 @@ trait SummaryEmailsDao {
 
   private def createActivitySummaryEmail(member: MemberInclDetails, now: When,
         unreadTopTopics: Iterable[PagePathAndMeta], authzCtx: ForumAuthzContext): Email = {
+    TESTS_MISSING
 
     val site = theSite()
     val anyPrettyHostname = site.canonicalHost.map(_.hostname)
