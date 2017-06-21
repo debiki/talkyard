@@ -166,7 +166,7 @@ declare namespace debiki2 {
   var linkToAdminPageAdvancedSettings;
   var linkToRedirToAboutCategoryPage;
   var linkToUserInAdminArea;
-  var linkToUserProfilePage;
+  function linkToUserProfilePage(idOrUsername: UserId | string);
   function linkToAdminPage(me: Myself): string;
   var linkToReviewPage;
   var externalLinkToAdminHelp;

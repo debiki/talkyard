@@ -25,6 +25,7 @@
 /// <reference path="../help/help.ts" />
 /// <reference path="../rules.ts" />
 /// <reference path="../widgets.ts" />
+/// <reference path="../page-dialogs/open-share-popup.ts" />
 /// <reference path="post-actions.ts" />
 /// <reference path="chat.ts" />
 /// <reference path="../more-bundle-not-yet-loaded.ts" />
@@ -33,37 +34,53 @@
    namespace debiki2.page {
 //------------------------------------------------------------------------------
 
-var React = window['React']; // TypeScript file doesn't work
-var r = React.DOM;
-var $: JQueryStatic = debiki.internal.$;
+const React = window['React']; // TypeScript file doesn't work
+const r = React.DOM;
+const $: JQueryStatic = debiki.internal.$;
 
-var closedIcon = r.span({ className: 'icon-block' });
-var questionIcon = r.span({ className: 'icon-help-circled' });
-var problemIcon = r.span({ className: 'icon-attention-circled' });
-var solvedIcon = r.span({ className: 'icon-ok-circled' });
-var todoIcon = r.span({ className: 'icon-check-empty' });
-var ideaIcon = r.span({ className: 'icon-idea' });
-var plannedIcon = r.span({ className: 'icon-check-empty' });
-var doneIcon = r.span({ className: 'icon-check' });
+const closedIcon = r.span({ className: 'icon-block' });
+const questionIcon = r.span({ className: 'icon-help-circled' });
+const problemIcon = r.span({ className: 'icon-attention-circled' });
+const solvedIcon = r.span({ className: 'icon-ok-circled' });
+const todoIcon = r.span({ className: 'icon-check-empty' });
+const ideaIcon = r.span({ className: 'icon-idea' });
+const plannedIcon = r.span({ className: 'icon-check-empty' });
+const doneIcon = r.span({ className: 'icon-check' });
 
 
-export var TitleBodyComments = createComponent({
+export const TitleBodyComments = createComponent({
   makeHelpMessage: function(): HelpMessage {
-    var store: Store = this.props.store;
-    var me: Myself = store.me;
-    var bodyPost = store.postsByNr[BodyNr];
+    const store: Store = this.props.store;
+    const me: Myself = store.me;
+    const bodyPost = store.postsByNr[BodyNr];
 
     if (store.pageRole === PageRole.Form && store.pageClosedAtMs)
       return { id: 'EsH4PK04', version: 1, content: r.div({},
         "This form has been ", closedIcon, "closed; you can no longer fill it in and post it.") };
+
+    const makeShareButton = (where: string) => {  // dupl code [2WUGVSF0]
+      return (
+        r.a({ className: 'p_ShareIcon icon-' + where,
+          onClick: () =>
+            pagedialogs.openSharePopup("https://usability.testing.exchange", where) }));
+    };
+    const shareWithFriends =
+      r.div({},
+        r.p({ style: { display: 'inline-block', paddingRight: 13 }},
+            "Share Usability Testing Exchange with your friends?"),
+          r.span({ className: 's_ShareD_Social' },
+            makeShareButton('facebook'),
+            makeShareButton('twitter'),
+            makeShareButton('google')));
 
     // If this page was closed prematurely, show "... has been closed ..." instead of
     // e.g. "... is waiting for an answer..."
     if (store.pageClosedAtMs && !store.pageDoneAtMs && !store.pageAnsweredAtMs) {
       if (store.pageRole === PageRole.UsabilityTesting)  // [plugin]
         return { id: 'Ed2PRK06', version: 1, content: r.div({},
-          "This topic has been ", closedIcon, "closed, no more feedback needed. " +
-          "(But you can leave more feedback anyway.)") };
+          r.p({}, "This topic has been ", closedIcon, "closed, no more feedback needed. " +
+          "(But you can leave more feedback, if you want to.)"),
+          shareWithFriends) };
       return { id: 'EdH7UMPW', version: 1, content: r.div({},
           "This topic has been ", closedIcon, "closed. You can still post comments, " +
           "but that won't make this topic bump to the top of the latest-topics list.") };
@@ -183,25 +200,13 @@ export var TitleBodyComments = createComponent({
       }
       else {
         const isPageAuthor = bodyPost.authorId === me.id;
-        const makeShareButton = (where: string) => {  // dupl code [2WUGVSF0]
-          return (
-            r.a({ className: 'p_ShareIcon icon-' + where,
-              onClick: () =>
-                pagedialogs.openSharePopup("https://usability.testing.exchange", where) }));
-        };
         if (isPageAuthor) {
           if (store.numPostsRepliesSection) {
             return { id: 'EdH5P0WF2', version: 1, alwaysShow: true, content: r.div({},
               r.h1({ className: 's_UtxHelp_HaveAsked_Title' },
                 "There's feedbak for you"),
               r.p({}, "Look below — someone has posted feedback to you."),
-
-              r.p({ style: { display: 'inline-block', paddingRight: 13 }},
-                "Share Usability Testing Exchange with your friends? And help us grow this site:"),
-              r.span({ className: 's_ShareD_Social' },
-                makeShareButton('facebook'),
-                makeShareButton('twitter'),
-                makeShareButton('google'))) };
+              shareWithFriends) };
           }
           else {
             return { id: 'EdH5PK2W', version: 1, alwaysShow: true, className: 's_UtxHelp_HaveAsked',

@@ -34,6 +34,7 @@ function die_if_in_script {
 
 version="`cat version.txt`"
 version_tag="$version-`git rev-parse --short HEAD`"  # also in Build.scala [8GKB4W2]
+echo "Building and releasing $version_tag"
 
 # COULD: verify version nr changed since last time
 # COULD: verify version nr matches vX.YY.ZZ

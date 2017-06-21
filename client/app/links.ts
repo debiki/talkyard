@@ -56,8 +56,8 @@ export function linkToReviewPage(): string {
 }
 
 
-export function linkToUserProfilePage(userId: UserId): string {
-  return '/-/users/' + userId;
+export function linkToUserProfilePage(userIdOrUsername: UserId | string): string {
+  return '/-/users/' + userIdOrUsername;
 }
 
 export function linkToInvitesFromUser(userId: UserId): string {

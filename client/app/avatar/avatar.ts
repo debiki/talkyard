@@ -27,12 +27,12 @@
   module debiki2.avatar {
 //------------------------------------------------------------------------------
 
-var SystemUserId = -1; // also ... elsewhere?
+const SystemUserId = -1; // also ... elsewhere?
 
-var NumAvatarColors = 10;
-var AvatarColorHueDistance = 360 / NumAvatarColors;
-var textAvatarsTaken = {}; // for now [95MFU2]
-var textAvatarsByUserId = {}; // for now [95MFU2]
+const NumAvatarColors = 10;
+const AvatarColorHueDistance = 360 / NumAvatarColors;
+let textAvatarsTaken = {}; // for now [95MFU2]
+let textAvatarsByUserId = {}; // for now [95MFU2]
 
 
 export function resetAvatars() {
@@ -41,32 +41,33 @@ export function resetAvatars() {
 }
 
 
-export var Avatar = createComponent({
+export const Avatar = createComponent({
   onClick: function(event) {
     if (this.props.ignoreClicks)
       return;
 
-    event.stopPropagation();
-    event.preventDefault();
     if (this.props.clickOpensUserProfilePage) {
-      ReactActions.openUserProfile(this.props.user.id);
+      // there's an <a href> that fixes this.
     }
     else {
+      event.stopPropagation();
+      event.preventDefault();
       morebundle.openAboutUserDialog(this.props.user.id);
     }
   },
 
   makeTextAvatar: function() {
-    var user: BriefUser = this.props.user;
-    let hidden: boolean = this.props.hidden;
-    var result = textAvatarsByUserId[user.id];
+    const user: BriefUser = this.props.user;
+    const hidden: boolean = this.props.hidden;
+    let result = textAvatarsByUserId[user.id];
     if (result)
       return result;
 
-    var color;
-    var firstLetterInName;
-    var isGuestClass = '';
-    var manyLettersClass = '';
+    let color;
+    let colorIndex;
+    let firstLetterInName;
+    let isGuestClass = '';
+    let manyLettersClass = '';
 
     if (user.username) {
       firstLetterInName = user.username[0].toUpperCase();
@@ -84,10 +85,10 @@ export var Avatar = createComponent({
     }
     else if (user.id > 0) {
       // Always use the same color for the same user (unless the color palette gets changed).
-      var colorIndex = user.id % NumAvatarColors;
-      var hue = AvatarColorHueDistance * colorIndex;
-      var saturation = 58;
-      var lightness = 76;
+      colorIndex = user.id % NumAvatarColors;
+      const hue = AvatarColorHueDistance * colorIndex;
+      let saturation = 58;
+      let lightness = 76;
       if (this.props.tiny) {
         // Use a darker color, because otherwise hard to see these small avatars.
         // Reduce saturation too, or the color becomes too strong (since darker = more color here).
@@ -116,11 +117,11 @@ export var Avatar = createComponent({
 
     // Append a number to make the letters unique on this page.
     // Possibly different numbers on different pages, for the same user.
-    var isUnknownOrHidden = user.id === UnknownUserId || hidden;
-    var number = 1;
-    var text = isUnknownOrHidden ? '?' : firstLetterInName;
-    var textAndColor = text + colorIndex;
-    var alreadyInUse = !isUnknownOrHidden && textAvatarsTaken[textAndColor];
+    const isUnknownOrHidden = user.id === UnknownUserId || hidden;
+    let number = 1;
+    let text = isUnknownOrHidden ? '?' : firstLetterInName;
+    let textAndColor = text + colorIndex;
+    let alreadyInUse = !isUnknownOrHidden && textAvatarsTaken[textAndColor];
     while (alreadyInUse) {
       number += 1;
       if (number >= 10) {
@@ -150,11 +151,11 @@ export var Avatar = createComponent({
   },
 
   render: function() {
-    var user: BriefUser = this.props.user;
-    var extraClasses = this.props.tiny ? ' esAvtr-tny' : '';
+    const user: BriefUser = this.props.user;
+    let extraClasses = this.props.tiny ? ' esAvtr-tny' : '';
     extraClasses += this.props.ignoreClicks ? ' esAv-IgnoreClicks' : '';
-    var content;
-    var styles;
+    let content;
+    let styles;
     if (this.props.large && user['mediumAvatarUrl']) {
       content = r.img({ src: user['mediumAvatarUrl'] });
     }
@@ -162,21 +163,24 @@ export var Avatar = createComponent({
       content = r.img({ src: user.avatarUrl });
     }
     else {
-      var lettersClassesColor = this.makeTextAvatar();
+      const lettersClassesColor = this.makeTextAvatar();
       extraClasses += lettersClassesColor.classes;
       content = lettersClassesColor.text;
       if (lettersClassesColor.color) {
         styles = { backgroundColor: lettersClassesColor.color };
       }
     }
-    var title = user.username || user.fullName;
+    let title = user.username || user.fullName;
     if (this.props.title) {
       title += ' — ' + this.props.title;
     }
+
+    const elem = this.props.ignoreClicks ? 'span' : 'a';
+    const link = this.props.ignoreClicks ? null : linkToUserProfilePage(user.username || user.id);
     return (
       // [rename] edAvtr to esAvtr
-      r.span({ className: 'esAvtr edAvtr' + extraClasses, style: styles, onClick: this.onClick,
-          title: title }, content));
+      r[elem]({ className: 'esAvtr edAvtr' + extraClasses, style: styles, onClick: this.onClick,
+          href: link, title: title }, content));
   }
 });
 

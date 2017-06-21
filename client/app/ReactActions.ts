@@ -604,27 +604,22 @@ export function openNotificationSource(notf: Notification) {
 }
 
 
-export function openPage(pageId: string) {
+export function openPage(pageId: string) {   // CLEAN_UP use LinkButton and href= instead
   window.location.assign(linkToPageId(pageId));
 }
 
 
-export function openPagePostNr(pageId: string, postNr: number) {
+export function openPagePostNr(pageId: string, postNr: number) { // CLEAN_UP use LinkButton and href
   window.location.assign(linkToPageId(pageId) + '#post-' + postNr);
 }
 
 
-export function openUserProfile(userId: UserId) {
-  window.location.assign(linkToUserProfilePage(userId));
-}
-
-
-export function goToUsersNotifications(userId: UserId) {
+export function goToUsersNotifications(userId: UserId) {  // CLEAN_UP use LinkButton and href= instead
   window.location.assign(linkToUserProfilePage(userId) + '/notifications');
 }
 
 
-export function writeMessage(userId: UserId) {
+export function writeMessage(userId: UserId) {  // CLEAN_UP use LinkButton and href= instead
   // For now, until I've enabled react-router everywhere and won't have to reload the page.
   location.assign(linkToUserProfilePage(userId) + '/activity/posts#writeMessage');
 }

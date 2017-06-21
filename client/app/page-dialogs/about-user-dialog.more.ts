@@ -111,10 +111,6 @@ var AboutUserDialog = createComponent({
     });
   },
 
-  viewUserProfile: function() {
-    ReactActions.openUserProfile(this.state.user.id);
-  },
-
   render: function () {
     var content;
 
@@ -125,7 +121,6 @@ var AboutUserDialog = createComponent({
         reload: this.reload,
         post: this.state.post,
         user: user,
-        viewUserProfile: this.viewUserProfile,
         blocks: this.state.blocks,
         close: this.close,
       }, this.props);
@@ -201,7 +196,7 @@ var AboutUser = createComponent({
       r.div({},
         r.div({ className: 'dw-about-user-actions' },
           sendMessageButton,
-          Button({ onClick: this.props.viewUserProfile, id: 'e2eUD_ProfileB' }, "View Profile"),
+          LinkButton({ href: linkToUserProfilePage(user.id), id: 'e2eUD_ProfileB' }, "View Profile"),
           removeFromPageButton),
         avatar.Avatar({ user: user, large: true, clickOpensUserProfilePage: true }),
         r.div({},
@@ -281,7 +276,7 @@ var AboutGuest = createComponent({
       r.div({ className: 'clearfix' },
         blockModal,
         r.div({ className: 'dw-about-user-actions' },
-          Button({ onClick: this.props.viewUserProfile }, 'View other comments'),
+          LinkButton({ onClick: linkToUserProfilePage(guest.id) }, "View other comments"),
           blockButton),
         r.p({},
           'Name: ' + guest.fullName, r.br(),
