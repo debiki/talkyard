@@ -222,9 +222,15 @@ class Notifier(val systemDao: SystemDao, val siteDaoFactory: SiteDaoFactory)
   private def constructEmail(dao: SiteDao, anyOrigin: Option[String], user: User,
         notfs: Seq[Notification]): Option[Email] = {
 
-    val subject: String =
-      if (notfs.size == 1) "You have a reply to one of your comments"
-      else "You have replies to comments of yours"
+    val site = dao.theSite()
+    val anyPrettyHostname = site.canonicalHost.map(_.hostname)
+    val anyPrettyOrigin = site.canonicalHost.map(Globals.schemeColonSlashSlash + _.hostname)
+    val siteNameOrHostname = anyPrettyHostname getOrElse site.name
+    val origin = anyPrettyOrigin getOrElse Globals.siteByIdOrigin(dao.siteId)
+
+    // Always use the same subject line, even if only 1 comment, so will end up in the same
+    // email thread. Include site name, so simpler for people to find the email.
+    val subject: String = s"[$siteNameOrHostname] You have replies to posts of yours"
 
     val email = Email(EmailType.Notification, createdAt = Globals.now(),
       sendTo = user.email, toUserId = Some(user.id),
@@ -233,12 +239,6 @@ class Notifier(val systemDao: SystemDao, val siteDaoFactory: SiteDaoFactory)
     val contents = NotfHtmlRenderer(dao, anyOrigin).render(notfs)
     if (contents isEmpty)
       return None
-
-    val site = dao.theSite()
-    val anyPrettyHostname = site.canonicalHost.map(_.hostname)
-    val anyPrettyOrigin = site.canonicalHost.map(Globals.schemeColonSlashSlash + _.hostname)
-    val name = anyPrettyHostname getOrElse site.name
-    val origin = anyPrettyOrigin getOrElse Globals.siteByIdOrigin(dao.siteId)
 
     // If this is an embedded discussion, there is no Debiki canonical host address to use.
     // So use the site-by-id origin, e.g. https://site-123.debiki.com, which always works.
@@ -257,7 +257,7 @@ class Notifier(val systemDao: SystemDao, val siteDaoFactory: SiteDaoFactory)
         {contents}
         <p>
           Kind regards,<br/>
-          { makeBoringLink(name, url = origin) }
+          { makeBoringLink(siteNameOrHostname, url = origin) }
         </p>
         <p style='font-size: 85%; opacity: 0.68; margin-top: 2em;'>
           { makeUnderlinedLink("Unsubscribe", url = unsubscriptionUrl) }

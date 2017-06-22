@@ -4907,7 +4907,10 @@ function googleCajaSanitizeHtml(htmlTextUnsafe, allowClassAndIdAttr,
       // Media
       'img', 'video', 'source', 'track',  // skip for now though: 'audio'
       // Custom forms
-      'form', 'label', 'input', 'textarea', 'button', 'datalist', 'option'],
+      'form', 'label', 'input', 'textarea', 'button', 'datalist', 'option',
+      // Allow <head>, just so that ... (4JDKTF20)
+      'head'],
+
     allowedAttributes: {
       a: ['href', 'name', 'target', 'rel'],
       img: ['width', 'height', 'src'],
@@ -4924,8 +4927,16 @@ function googleCajaSanitizeHtml(htmlTextUnsafe, allowClassAndIdAttr,
       '*': ['id', 'class'] // but not style=.., because of clickjacking. (Caja seems to remove
       // Javascript from inside CSS (e.g. url(javascript:...)) and position:fixed, however
       // Caja allows position:absolute so clickjacking would still be a little bit possbible.)
-    }
+    },
+
     // allowedClasses: { elem: [...classes...] }
+
+    // Remove everything in <head>, if present. Otherwise, for: <head><title>Whatever</..></..>,
+    // the tags are removed, but "Whatever" is kept.
+    exclusiveFilter: function(frame) {
+      // ... we can remove it completely here: (4JDKTF20)
+      return frame.tag === 'head'
+    }
   };
   if (!followLinks) {
     sanitizeHtmlConfig.transformTags = {

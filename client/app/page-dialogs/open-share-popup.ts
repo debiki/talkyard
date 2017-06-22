@@ -25,6 +25,9 @@
 export const Facebook = 'facebook';
 export const Twitter = 'twitter';
 export const Google = 'google';
+export const LinkedIn = 'linkedin';
+//export const Instagram = 'instagram';
+//export const Pinterest = 'pinterest';
 export const Email = 'mail';
 
 
@@ -33,14 +36,20 @@ export const Email = 'mail';
  * the browser will refuse to open the popup, because there would be some delay between the
  * share link click, ...downloading more-bundle... and opening the popup from code in more-bundle.
  */
-export function openSharePopup(url: string, where: string) {
+export function openSharePopup(url: string, where: string, options?: ShareOptions) {
+  options = options || {};
   const encodedUrl = encodeURIComponent(url);
+  const encodedTitle = options.title ? encodeURIComponent(options.title) : null;
+  const encodedDescription = options.description ? encodeURIComponent(options.description) : null;
+  const encodedSource = options.souce ? encodeURIComponent(options.souce) : null;
   let urlToOpen;
   let windowSize;
   // These FB, Twitter, Google share links works as of May 29, 2016. And June 18, 2017.
   switch (where) {
     case Facebook:
       // There's also: &t=<title>
+      // Be sure to add <meta property="og:whatever" content="..."> tags to the page, so Facebook
+      // knows which title, description & image to use.
       urlToOpen = 'https://www.facebook.com/sharer/sharer.php?u=' + encodedUrl;
       windowSize = "width=600,height=400";
       break;
@@ -52,6 +61,16 @@ export function openSharePopup(url: string, where: string) {
     case Google:
       urlToOpen = 'https://plus.google.com/share?url=' + encodedUrl;
       windowSize = "width=550,height=550";
+      break;
+    case LinkedIn:
+      // See https://developer.linkedin.com/docs/share-on-linkedin
+      const miniParam = '&mini=true'; // always required, must be true.
+      const titleParam = encodedTitle ? '&title=' + encodedTitle : '';
+      const summaryParam = encodedDescription ? '&summary=' + encodedDescription : '';
+      const sourceParam = encodedSource ? '&source=' + encodedSource : '';
+      urlToOpen = 'https://www.linkedin.com/shareArticle?url=' + encodedUrl +
+          miniParam + titleParam + summaryParam + sourceParam;
+      windowSize = "width=520,height=570";
       break;
     case Email:
       window.open('mailto:?body=' +  encodedUrl);

@@ -74,7 +74,7 @@ trait RenderedPageHtmlDao {
         renderContent(pageRequest.thePageId, renderResult.version, renderResult.jsonString)
 
       val tpi = new PageTpi(pageRequest, renderResult.jsonString, renderResult.version,
-        cachedHtml, cachedVersion, renderResult.pageTitle, renderResult.safeMetaTags)
+        cachedHtml, cachedVersion, renderResult.pageTitle, renderResult.customHeadTags)
       val pageHtml: String = pageRequest.thePageRole match {
         case PageRole.EmbeddedComments =>
           views.html.templates.embeddedComments(tpi).body

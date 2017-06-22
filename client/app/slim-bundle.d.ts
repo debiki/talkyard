@@ -208,6 +208,7 @@ declare namespace debiki2 {
     const Facebook;
     const Twitter;
     const Google;
+    const LinkedIn;
     const Email;
   }
 

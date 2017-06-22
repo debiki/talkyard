@@ -986,6 +986,13 @@ interface TagsStuff {
 }
 
 
+interface ShareOptions {
+  title?: string;
+  description?: string;
+  souce?: string;
+}
+
+
 interface Host {
   hostname: string;
   role: HostRole;

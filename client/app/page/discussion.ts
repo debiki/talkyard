@@ -69,9 +69,10 @@ export const TitleBodyComments = createComponent({
         r.p({ style: { display: 'inline-block', paddingRight: 13 }},
             "Share Usability Testing Exchange with your friends?"),
           r.span({ className: 's_ShareD_Social' },
-            makeShareButton('facebook'),
-            makeShareButton('twitter'),
-            makeShareButton('google')));
+            makeShareButton(pagedialogs.Facebook),
+            makeShareButton(pagedialogs.Twitter),
+            makeShareButton(pagedialogs.Google),
+            makeShareButton(pagedialogs.LinkedIn)));
 
     // If this page was closed prematurely, show "... has been closed ..." instead of
     // e.g. "... is waiting for an answer..."

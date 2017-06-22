@@ -45,8 +45,17 @@ case class PageToJsonResult(
   jsonString: String,
   version: CachedPageVersion,
   pageTitle: Option[String],
-  safeMetaTags: String,
+  customHeadTags: String,
+  adminOnlyHeadTags: String,
   unapprovedPostAuthorIds: Set[UserId])
+
+case class FindHeadTagsResult(
+  allTags: String,
+  adminOnlyTags: String)
+
+object FindHeadTagsResult {
+  val None = FindHeadTagsResult("", "")
+}
 
 
 // CLEAN_UP COULD rename it to JsonMaker? JsonBuilder? Jsonifier?
@@ -218,27 +227,18 @@ object ReactJson {
     // Meta tags allowed for custom HTML pages only, right now. Usually the homepage.
     // Only staff can edit custom html pages, currently, so reasonably safe, [2GKW0M]
     // + we remove weird attrs, below.
-    val safeMetaTags =
-      if (page.role != PageRole.CustomHtmlPage) ""
+    val headTags =
+      if (page.role != PageRole.CustomHtmlPage) FindHeadTagsResult.None
       else posts.find(_.isOrigPost) match {
-        case None => ""
+        case None => FindHeadTagsResult.None
         case Some(origPost) =>
-          val doc = Jsoup.parse(origPost.approvedSource getOrElse "")
-          val head = doc.head()
-          import scala.collection.JavaConversions._
-          val metaTags: ju.ArrayList[org.jsoup.nodes.Element] = head.getElementsByTag("meta")
-          for (metaTag: org.jsoup.nodes.Element <- metaTags) {
-            // Remove all attrs except for name, content, and proptype (used by Facebook Open Graph).
-            val attributes: jl.Iterable[org.jsoup.nodes.Attribute] = metaTag.attributes()
-            for (attribute: org.jsoup.nodes.Attribute <- attributes) {
-              attribute.getKey match {
-                case "name" | "property" | "content" => // fine
-                case notAllowedAttr => metaTag.removeAttr(notAllowedAttr)
-              }
-            }
-          }
-          metaTags.toString
+          findHeadTags(origPost.approvedSource getOrElse "")
       }
+
+    SECURITY; SHOULD // allow only admins to change this (not moderators). Not urgent though. [2GKW0M]
+    // Fix that, by hiding/collapsing <head>, if the editor isn't an admin?
+    // And, when saving a page, compare head tags before, with after, and if changed, throw Forbidden.
+    // And when creating, throw forbidden, unless is admin.
 
     var numPosts = 0
     var numPostsRepliesSection = 0
@@ -380,7 +380,85 @@ object ReactJson {
     val unapprovedPosts = posts.filter(!_.isSomeVersionApproved)
     val unapprovedPostAuthorIds = unapprovedPosts.map(_.createdById).toSet
 
-    PageToJsonResult(jsonString, version, pageTitle, safeMetaTags, unapprovedPostAuthorIds)
+    PageToJsonResult(jsonString, version, pageTitle, customHeadTags = headTags.allTags,
+        adminOnlyHeadTags = headTags.adminOnlyTags, unapprovedPostAuthorIds)
+  }
+
+
+  /** Returns (tags-result, source-without-tags).
+    */
+  def findHeadTags(postSource: String): FindHeadTagsResult = {
+    if (postSource.trim.isEmpty)
+      return FindHeadTagsResult.None
+
+    val doc = Jsoup.parse(postSource)
+    val head = doc.head()
+    val resultBuilder = StringBuilder.newBuilder
+
+    import scala.collection.JavaConversions._
+
+    val anyTitleTag: Option[org.jsoup.nodes.Element] = head.getElementsByTag("title").headOption
+    anyTitleTag foreach { titleTag =>
+      for (attribute: org.jsoup.nodes.Attribute <- titleTag.attributes()) {
+        titleTag.removeAttr(attribute.getKey)
+      }
+      resultBuilder append titleTag.toString append "\n"
+    }
+
+    // Could break out fn, these 3 blocks are similar:
+
+    val metaTags: ju.ArrayList[org.jsoup.nodes.Element] = head.getElementsByTag("meta")
+    for (metaTag: org.jsoup.nodes.Element <- metaTags) {
+      // Remove all attrs except for name, content, and proptype (used by Facebook Open Graph).
+      val attributes: jl.Iterable[org.jsoup.nodes.Attribute] = metaTag.attributes()
+      for (attribute: org.jsoup.nodes.Attribute <- attributes) {
+        attribute.getKey match {
+          case "name" | "property" | "content" => // fine
+          case notAllowedAttr => metaTag.removeAttr(notAllowedAttr)
+        }
+      }
+      resultBuilder append metaTag.toString append "\n"
+    }
+
+    val linkTags: ju.ArrayList[org.jsoup.nodes.Element] = head.getElementsByTag("link")
+    for (linkTag: org.jsoup.nodes.Element <- linkTags) {
+      val attributes: jl.Iterable[org.jsoup.nodes.Attribute] = linkTag.attributes()
+      for (attribute: org.jsoup.nodes.Attribute <- attributes) {
+        attribute.getKey match {
+          case "rel" | "href" => // fine
+          case notAllowedAttr => linkTag.removeAttr(notAllowedAttr)
+        }
+      }
+      resultBuilder append linkTag.toString append "\n"
+    }
+
+    // Only allow  type="application/ld+json"  which is some structured data description of the
+    // website.
+    val scriptTags: ju.ArrayList[org.jsoup.nodes.Element] = head.getElementsByTag("script")
+    for (scriptTag: org.jsoup.nodes.Element <- scriptTags) {
+      val attributes: jl.Iterable[org.jsoup.nodes.Attribute] = scriptTag.attributes()
+      var foundLdJson = false
+      var foundAnythingElse = false
+      for (attribute: org.jsoup.nodes.Attribute <- attributes) {
+        attribute.getKey match {
+          case "type" =>
+            if (attribute.getValue == "application/ld+json") foundLdJson = true
+            else foundAnythingElse = true
+          case _ =>
+            foundAnythingElse = true
+        }
+      }
+      if (foundLdJson && !foundAnythingElse) {
+        resultBuilder append scriptTag.toString append "\n"
+      }
+    }
+
+    val allHeadTags = resultBuilder.toString
+
+    // For now, allow no one but admins, to edit any head tags at all.
+    // Other staff members people may edit only Title and meta keywords?
+    val adminOnlyHeadTags = allHeadTags
+    FindHeadTagsResult(allHeadTags, adminOnlyHeadTags)
   }
 
 
