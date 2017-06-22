@@ -181,6 +181,8 @@ object LoginWithPasswordController extends mvc.Controller {
   def createEmailAddrVerifEmailLogDontSend(user: Member, anyReturnToUrl: Option[String],
         host: String, dao: SiteDao): Email = {
 
+    val (siteName, origin) = dao.theSiteNameAndOrigin()
+
     val returnToUrl = anyReturnToUrl match {
       case Some(url) => url.replaceAllLiterally(RedirectFromVerificationEmailOnly, "")
       case None => "/"
@@ -199,7 +201,7 @@ object LoginWithPasswordController extends mvc.Controller {
       createdAt = Globals.now(),
       sendTo = user.email,
       toUserId = Some(user.id),
-      subject = "Confirm your email address",
+      subject = s"[$siteName] Confirm your email address",
       bodyHtmlText =
         views.html.createaccount.createAccountLinkEmail(
           siteAddress = host,
@@ -237,7 +239,7 @@ object LoginWithPasswordController extends mvc.Controller {
       createdAt = Globals.now(),
       sendTo = emailAddress,
       toUserId = None,
-      subject = "You already have an account at " + siteHostname,
+      subject = s"[${dao.theSiteName()}] You already have an account at " + siteHostname,
       bodyHtmlText = (_: String) => {
         views.html.createaccount.accountAlreadyExistsEmail(
           emailAddress = emailAddress,

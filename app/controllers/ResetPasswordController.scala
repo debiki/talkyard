@@ -81,12 +81,14 @@ object ResetPasswordController extends mvc.Controller {
 
 
   private def sendResetPasswordEmailTo(user: Member, request: ApiRequest[_]) {
+    import request.dao
+
     val email = Email(
       EmailType.ResetPassword,
       createdAt = Globals.now(),
       sendTo = user.email,
       toUserId = Some(user.id),
-      subject = "Reset Password",
+      subject = s"[${dao.theSiteName()}] Reset Password",
       bodyHtmlText = (emailId: String) => {
         views.html.resetpassword.resetPasswordEmail(
           userName = user.theUsername,
@@ -94,27 +96,29 @@ object ResetPasswordController extends mvc.Controller {
           siteAddress = request.host,
           expirationTimeInHours = MaxResetPasswordEmailAgeInHours).body
       })
-    request.dao.saveUnsentEmail(email)
-    Globals.sendEmail(email, request.dao.siteId)
+    dao.saveUnsentEmail(email)
+    Globals.sendEmail(email, dao.siteId)
   }
 
 
   private def sendNoPasswordToResetEmail(
         user: Member, emailAddress: String, request: ApiRequest[_]) {
+    import request.dao
+
     val email = Email(
       EmailType.Notification,
       createdAt = Globals.now(),
       sendTo = emailAddress,
       toUserId = Some(user.id),
-      subject = "There is no password to reset",
+      subject = s"[${dao.theSiteName()}] There is no password to reset",
       bodyHtmlText = (_) => {
         views.html.resetpassword.noPasswordToResetEmail(
           userName = user.theUsername,
           emailAddress = emailAddress,
           siteAddress = request.host).body
       })
-    request.dao.saveUnsentEmail(email)
-    Globals.sendEmail(email, request.dao.siteId)
+    dao.saveUnsentEmail(email)
+    Globals.sendEmail(email, dao.siteId)
   }
 
 

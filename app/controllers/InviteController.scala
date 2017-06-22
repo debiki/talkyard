@@ -179,7 +179,7 @@ object InviteController extends mvc.Controller {
       createdAt = Globals.now(),
       sendTo = newUser.emailAddress,
       toUserId = Some(newUser.id),
-      subject = s"Welcome to $siteHostname, account created",
+      subject = s"[$siteHostname] Welcome! Account created",
       bodyHtmlText = (emailId) => views.html.invite.welcomeSetPasswordEmail(
       siteHostname = siteHostname, emailId = emailId).body)
   }
@@ -191,7 +191,7 @@ object InviteController extends mvc.Controller {
       createdAt = Globals.now(),
       sendTo = inviter.email,
       toUserId = Some(inviter.id),
-      subject = s"Your invitation for ${newUser.emailAddress} to join $siteHostname was accepted",
+      subject = s"[$siteHostname] Your invitation for ${newUser.emailAddress} to join was accepted",
       bodyHtmlText = (emailId) => views.html.invite.inviteAcceptedEmail(
         siteHostname = siteHostname, invitedEmailAddress = newUser.emailAddress).body)
   }

@@ -200,6 +200,19 @@ class SiteDao(
 
   def theSite(): Site = getSite().getOrDie("DwE5CB50", s"Site $siteId not found")
 
+  /** Uses the hostname, if no name available. Well currently always uses the hostname.
+    */
+  def theSiteName(): String = theSiteNameAndOrigin()._1
+
+  def theSiteNameAndOrigin(): (String, String) = {
+    val site = theSite()
+    val anyPrettyHostname = site.canonicalHost.map(_.hostname)
+    val anyPrettyOrigin = site.canonicalHost.map(Globals.schemeColonSlashSlash + _.hostname)
+    val siteNameOrHostname = anyPrettyHostname getOrElse site.name
+    val origin = anyPrettyOrigin getOrElse Globals.siteByIdOrigin(siteId)
+    (siteNameOrHostname, origin)
+  }
+
   def getSite(): Option[Site] = {
     memCache.lookup(
       thisSiteCacheKey,

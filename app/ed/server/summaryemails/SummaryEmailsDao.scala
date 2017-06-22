@@ -137,13 +137,9 @@ trait SummaryEmailsDao {
         unreadTopTopics: Iterable[PagePathAndMeta], authzCtx: ForumAuthzContext): Email = {
     TESTS_MISSING
 
-    val site = theSite()
-    val anyPrettyHostname = site.canonicalHost.map(_.hostname)
-    val anyPrettyOrigin = site.canonicalHost.map(Globals.schemeColonSlashSlash + _.hostname)
-    val siteName = anyPrettyHostname getOrElse site.name
-    val origin = anyPrettyOrigin getOrElse Globals.siteByIdOrigin(siteId)
+    val (siteName, origin) = theSiteNameAndOrigin()
 
-    val subject = s"New topics and stuff at $siteName"
+    val subject = s"[$siteName] New topics and other activity"
 
     val email = Email(EmailType.ActivitySummary, createdAt = Globals.now(),
       sendTo = member.emailAddress, toUserId = Some(member.id),
@@ -152,7 +148,7 @@ trait SummaryEmailsDao {
     val contents = {
       <div>
         <p>Dear {member.username},</p>
-        <p>Here're some new topics, and other things that has happened recently, at {siteName}:
+        <p>Here're some new topics, and other things that have happened recently, at {siteName}:
         </p>
         <h3>Some new topics:</h3>
         <ul>
