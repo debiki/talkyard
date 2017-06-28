@@ -309,6 +309,7 @@ interface HelpMessage {
   id: string;
   version: number;
   content: any;
+  type?: number;
   className?: string;
   alwaysShow?: boolean;
 }

@@ -242,7 +242,7 @@ GET   /-/list-posts             controllers.ViewPageController.listPosts(authorI
 
 # Don't change the URL on the next line. The /-/assets/<version-number>/ is
 # updated by the deployment script (asset fingerprinting).
-GET   /-/assets/194/*file       controllers.Assets.at(path = "/public/res", file)
+GET   /-/assets/195/*file       controllers.Assets.at(path = "/public/res", file)
 GET   /robots.txt               controllers.Assets.at(path = "/public", file = "robots.txt")
 GET   /-/debiki-embedded-comments.js   controllers.Assets.at(path = "/public/res", file = "embedded-comments.js")
 GET   /-/debiki-embedded-comments.css  controllers.Assets.at(path = "/public/res", file = "debiki-embedded-comments.css")

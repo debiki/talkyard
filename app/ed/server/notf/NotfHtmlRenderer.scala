@@ -143,8 +143,8 @@ case class NotfHtmlRenderer(siteDao: SiteDao, anyOrigin: Option[String]) {
     }
 
     <p>
-      { whatHappened }, <a href={url}>here</a>, on page <i>{pageTitle}</i>{dotOrComma}<br/>
-      { inPostWrittenBy } <i>{byUserName}</i>. On {date}, he or she wrote:
+      { whatHappened }, <a href={url}>here</a>, on page "<i>{pageTitle}</i>"{dotOrComma}
+      { inPostWrittenBy } <i>{byUserName}</i>, on {date}:
     </p>
     <blockquote>{html}</blockquote>
   }

@@ -47,6 +47,7 @@ const ideaIcon = r.span({ className: 'icon-idea' });
 const plannedIcon = r.span({ className: 'icon-check-empty' });
 const doneIcon = r.span({ className: 'icon-check' });
 
+const HelpTypePageClosed = 101;
 
 export const TitleBodyComments = createComponent({
   makeHelpMessage: function(): HelpMessage {
@@ -55,7 +56,7 @@ export const TitleBodyComments = createComponent({
     const bodyPost = store.postsByNr[BodyNr];
 
     if (store.pageRole === PageRole.Form && store.pageClosedAtMs)
-      return { id: 'EsH4PK04', version: 1, content: r.div({},
+      return { id: 'EsH4PK04', version: 1, type: HelpTypePageClosed, content: r.div({},
         "This form has been ", closedIcon, "closed; you can no longer fill it in and post it.") };
 
     const makeShareButton = (where: string) => {  // dupl code [2WUGVSF0]
@@ -77,13 +78,14 @@ export const TitleBodyComments = createComponent({
     // If this page was closed prematurely, show "... has been closed ..." instead of
     // e.g. "... is waiting for an answer..."
     if (store.pageClosedAtMs && !store.pageDoneAtMs && !store.pageAnsweredAtMs) {
+      const closed = r.b({}, closedIcon, "closed");
       if (store.pageRole === PageRole.UsabilityTesting)  // [plugin]
-        return { id: 'Ed2PRK06', version: 1, content: r.div({},
-          r.p({}, "This topic has been ", closedIcon, "closed, no more feedback needed. " +
+        return { id: 'Ed2PRK06', version: 1, type: HelpTypePageClosed, content: r.div({},
+          r.p({}, "This topic has been ", closed, ", no more feedback needed. " +
           "(But you can leave more feedback, if you want to.)"),
           shareWithFriends) };
-      return { id: 'EdH7UMPW', version: 1, content: r.div({},
-          "This topic has been ", closedIcon, "closed. You can still post comments, " +
+      return { id: 'EdH7UMPW', version: 1, type: HelpTypePageClosed, content: r.div({},
+          "This topic has been ", closed, ". You can still post comments, " +
           "but that won't make this topic bump to the top of the latest-topics list.") };
     }
 
@@ -153,7 +155,7 @@ export const TitleBodyComments = createComponent({
 
     if (store.pageRole === PageRole.Critique) {  // [plugin]. Dupl code, (39pKFU0) below
       if (store.pageClosedAtMs) {
-        return { id: 'EdH4KDPU2', version: 1, content: r.span({},
+        return { id: 'EdH4KDPU2', version: 1, type: HelpTypePageClosed, content: r.span({},
           "This topic has been ", closedIcon, "closed. People won't get any additional " +
           "credits for posting more critique here.") };
       }
@@ -163,7 +165,7 @@ export const TitleBodyComments = createComponent({
         return null;
       }
       else {
-        var isPageAuthor = bodyPost.authorId === me.id;
+        const isPageAuthor = bodyPost.authorId === me.id;
         if (isPageAuthor) {
           if (store.numPostsRepliesSection) {
             return { id: 'EdH5GUF2', version: 1, content: r.span({},
@@ -189,11 +191,6 @@ export const TitleBodyComments = createComponent({
     }
 
     if (store.pageRole === PageRole.UsabilityTesting) {  // [plugin]. Dupl code, (39pKFU0) above
-      if (store.pageClosedAtMs) {
-        return { id: 'EdH5KFEW3', version: 1, content: r.span({},
-          "This topic has been ", closedIcon, "closed. Find another topic, if you are going " +
-          "to do usability testing.") };
-      }
       if (!me.isAuthenticated) {
         // Could explain: here someone has asked for usability testing. X people have answered,
         // see the Replies section below.
@@ -285,23 +282,23 @@ export const TitleBodyComments = createComponent({
   },
 
   render: function() {
-    var store: Store = this.props.store;
+    const store: Store = this.props.store;
 
-    var anyHelpMessage = this.makeHelpMessage();
-    anyHelpMessage = anyHelpMessage
-        ? debiki2.help.HelpMessageBox({ message: anyHelpMessage })
+    const anyHelpMessageData = this.makeHelpMessage();
+    const anyHelpMessage = anyHelpMessageData
+        ? debiki2.help.HelpMessageBox({ message: anyHelpMessageData })
         : null;
 
-    var anyAboutCategoryClass;
-    var anyAboutCategoryTitle;
+    let anyAboutCategoryClass;
+    let anyAboutCategoryTitle;
     if (store.pageRole === PageRole.About) {
       anyAboutCategoryClass = 'dw-about-category';
       anyAboutCategoryTitle =
           r.h2({ className: 'dw-about-cat-ttl-prfx' }, "About category:")
     }
 
-    var anyTitle = null;
-    var pageRole: PageRole = store.pageRole;
+    let anyTitle = null;
+    let pageRole: PageRole = store.pageRole;
     if (pageRole === PageRole.CustomHtmlPage || pageRole === PageRole.EmbeddedComments ||
         store.rootPostId !== BodyNr) {
       // Show no title for the homepage — it should have its own custom HTML with
@@ -313,8 +310,8 @@ export const TitleBodyComments = createComponent({
       anyTitle = Title(store);
     }
 
-    var anyPostHeader = null;
-    var anySocialLinks = null;
+    let anyPostHeader = null;
+    //let anySocialLinks = null;
     if (pageRole === PageRole.CustomHtmlPage || pageRole === PageRole.Forum ||
         pageRole === PageRole.About || pageRole === PageRole.WebPage ||
         pageRole === PageRole.SpecialContent || pageRole === PageRole.Blog ||
@@ -324,30 +321,38 @@ export const TitleBodyComments = createComponent({
       // And show nothing if we're showing a comment not the article as the root post.
     }
     else {
-      var post = store.postsByNr[store.rootPostId];
-      var headerProps: any = _.clone(store);
+      const post = store.postsByNr[store.rootPostId];
+      const headerProps: any = _.clone(store);
       headerProps.post = post;
       anyPostHeader = PostHeader(headerProps);
-      anySocialLinks = SocialLinks({ socialLinksHtml: store.socialLinksHtml });
+      // anySocialLinks = SocialLinks({ socialLinksHtml: store.socialLinksHtml }); CLEAN_UP remove social links
     }
 
-    let embeddedClass = store.isInEmbeddedCommentsIframe ? ' dw-embedded' : '';
-    let pageTypeClass = ' s_PT-' + pageRole;
+    const embeddedClass = store.isInEmbeddedCommentsIframe ? ' dw-embedded' : '';
+    const pageTypeClass = ' s_PT-' + pageRole;
+
+    // If the help message is important, place it below the title, and use a different
+    // color (via CSS) [4JKYIXR2], so people will notice it. Page closed = important,
+    // because then, writing a reply, is likely a waste of one's time.
+    const helpMessageType = anyHelpMessageData ? anyHelpMessageData.type : undefined;
+    const helpMessageAboveTitle = helpMessageType === HelpTypePageClosed ? null : anyHelpMessage;
+    const helpMessageBelowTitle = helpMessageType === HelpTypePageClosed ? anyHelpMessage : null;
 
     return (
       r.div({ className: anyAboutCategoryClass },
-        anyHelpMessage,
+        helpMessageAboveTitle,
         anyAboutCategoryTitle,
         r.div({ className: 'debiki dw-page' + embeddedClass + pageTypeClass },
           anyTitle,
           anyPostHeader,
-          anySocialLinks,
+          helpMessageBelowTitle,
+          //anySocialLinks,
           RootPostAndComments(store))));
   },
 });
 
 
-export var Title = createComponent({
+export const Title = createComponent({
   getInitialState: function() {
     return { isEditing: false };
   },
@@ -370,29 +375,29 @@ export var Title = createComponent({
   },
 
   render: function() {
-    var store: Store = this.props;
-    var titlePost = store.postsByNr[TitleNr];
+    const store: Store = this.props;
+    const titlePost = store.postsByNr[TitleNr];
     if (!titlePost)
       return null;
 
-    var me: Myself = store.me;
-    var isMyPage = store_thisIsMyPage(store);
-    var isStaffOrMyPage: boolean = isStaff(me) || isMyPage;
+    const me: Myself = store.me;
+    const isMyPage = store_thisIsMyPage(store);
+    const isStaffOrMyPage: boolean = isStaff(me) || isMyPage;
 
-    var deletedOrUnapprovedInfo = titlePost.isApproved ? false :
+    const deletedOrUnapprovedInfo = titlePost.isApproved ? false :
         r.span({ className: 'esPendingApproval' },
           store.pageDeletedAtMs ? "(Page deleted)" : "(Title pending approval)");
 
-    var titleText = titlePost.sanitizedHtml;
+    let titleText = titlePost.sanitizedHtml;
 
     // Make forum titles link back to the forum default view.
     if (store.pageRole === PageRole.Forum) {
       titleText = r.a({ href: store.pagePath.value }, titleText);
     }
 
-    var anyShowForumInroBtn;
+    let anyShowForumInroBtn;
     if (!this.props.hideButtons && store.pageRole === PageRole.Forum && store.hideForumIntro) {
-      var introPost = store.postsByNr[BodyNr];
+      const introPost = store.postsByNr[BodyNr];
       if (introPost && !introPost.isBodyHidden) {
         // Don't show button too early — doing that would make server side and client side
         // React generated html differ.
@@ -404,32 +409,32 @@ export var Title = createComponent({
       }
     }
 
-    var anyEditTitleBtn;
+    let anyEditTitleBtn;
     if (!this.props.hideButtons && isStaffOrMyPage) {
       anyEditTitleBtn =
         r.a({ className: 'dw-a dw-a-edit icon-edit', id: 'e2eEditTitle', onClick: this.editTitle });
     }
 
-    var contents;
+    let contents;
     if (this.state.isEditing) {
-      var editorProps = _.clone(this.props);
+      const editorProps = _.clone(this.props);
       editorProps.closeEditor = this.closeEditor;
       contents = morebundle.TitleEditor(editorProps);
     }
     else {
-      var pinOrHiddenClass = this.props.pinWhere ? ' icon-pin' : '';
+      let pinOrHiddenClass = this.props.pinWhere ? ' icon-pin' : '';
       if (store.pageHiddenAtMs) {
         pinOrHiddenClass = ' icon-eye-off';
       }
-      var tooltip = '';
-      var icon;
+      let tooltip = '';
+      let icon;
       // (Some dupl code, see PostActions below and isDone() and isAnswered() in forum.ts [4KEPW2]
       if (store.pageClosedAtMs && !store.pageDoneAtMs && !store.pageAnsweredAtMs) {
         icon = r.span({ className: 'icon-block' });
         tooltip = makePageClosedTooltipText(store.pageRole) + '\n';
       }
       else if (store.pageRole === PageRole.Question) {
-        var icon = store.pageAnsweredAtMs
+        icon = store.pageAnsweredAtMs
             ? r.a({ className: 'icon-ok-circled dw-clickable', onClick: this.scrollToAnswer })
             : r.span({ className: 'icon-help-circled' });
         tooltip = makeQuestionTooltipText(store.pageAnsweredAtMs) + ".\n";
@@ -437,8 +442,8 @@ export var Title = createComponent({
       else if (store.pageRole === PageRole.Problem || store.pageRole === PageRole.Idea ||
                 store.pageRole === PageRole.ToDo) {
         // (Some dupl code, see [5KEFEW2] in forum.ts.
-        var iconClass;
-        var iconTooltip;
+        let iconClass;
+        let iconTooltip;
         if (store.pageRole === PageRole.Problem || store.pageRole === PageRole.Idea) {
           if (!store.pagePlannedAtMs) {
             tooltip = store.pageRole === PageRole.Problem
@@ -473,8 +478,8 @@ export var Title = createComponent({
               : "Click to mark as done";
         }
         if (!isStaffOrMyPage) iconTooltip = null;
-        var clickableClass = isStaffOrMyPage ? ' dw-clickable' : '';
-        var onClick = isStaffOrMyPage ? this.cycleIsDone : null;
+        const clickableClass = isStaffOrMyPage ? ' dw-clickable' : '';
+        const onClick = isStaffOrMyPage ? this.cycleIsDone : null;
         icon = r.span({ className: iconClass + clickableClass, onClick: onClick,
             title: iconTooltip });
       }
