@@ -86,13 +86,14 @@ var Page = createComponent({
   },
 
   render: function() {
-    var store: Store = this.props;
-    var content = page_isChatChannel(store.pageRole)
+    const store: Store = this.props;
+    const content = page_isChatChannel(store.pageRole)
         ? debiki2.page.ChatMessages({ store: store })
         : debiki2.page.TitleBodyComments({ store: store });
-    var compactClass = this.state.useWideLayout ? '' : ' esPage-Compact';
+    const compactClass = this.state.useWideLayout ? '' : ' esPage-Compact';
+    const pageTypeClass = ' s_PT-' + store.pageRole;
     return (
-      r.div({ className: 'esPage' + compactClass },
+      r.div({ className: 'esPage' + compactClass + pageTypeClass },
         page_isChatChannel(store.pageRole) ? null : debiki2.reactelements.TopBar({}),
         debiki2.page.ScrollButtons(),
         r.div({ className: 'container' },

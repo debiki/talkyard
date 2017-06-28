@@ -16,6 +16,10 @@
  */
 
 .edAvtr // avatar
+  &:hover,
+  &:active,
+  &:focus
+    text-decoration: none !important;
   &:hover:not(.esAv-IgnoreClicks)
     opacity: 0.6;
     cursor: pointer;
@@ -23,6 +27,9 @@
     border-radius: 50%;
     width: 48px;
     height: 48px;
+    max-width: none; // otherwise usually 100%, might make it too narrow.
+    max-height: none;
+    padding: 0 !important;
 
   float: left;
   position: absolute;
@@ -104,7 +111,7 @@
     color: hsl(0, 0%, 57%);
     font-weight: normal;
   .esAvtr-tny
-    margin: 0 0 0 4px;
+    margin: 1px 0 0 4px;
     vertical-align: middle;
     // Oh well
     display: inline-block;

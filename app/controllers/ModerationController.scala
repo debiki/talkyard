@@ -32,6 +32,10 @@ import play.api.mvc.Action
   * BUG race condition, the lost update bug: The admin might e.g. clear flags s/he hasn't seen,
   * namely flags created after s/he loaded the admin page. Fix things like this by sending
   * a post version number to the server and most-recent-seen-flag date?
+  *
+  * SECURITY (minor) SHOULD not log errors, but just reply 403 Forbidden, if calling these fns
+  * for guests, when not allowed. (Logging errors = letting people clutter the log files with
+  * crap.)
   */
 object ModerationController extends mvc.Controller {
 

@@ -329,7 +329,6 @@ export const TitleBodyComments = createComponent({
     }
 
     const embeddedClass = store.isInEmbeddedCommentsIframe ? ' dw-embedded' : '';
-    const pageTypeClass = ' s_PT-' + pageRole;
 
     // If the help message is important, place it below the title, and use a different
     // color (via CSS) [4JKYIXR2], so people will notice it. Page closed = important,
@@ -342,7 +341,7 @@ export const TitleBodyComments = createComponent({
       r.div({ className: anyAboutCategoryClass },
         helpMessageAboveTitle,
         anyAboutCategoryTitle,
-        r.div({ className: 'debiki dw-page' + embeddedClass + pageTypeClass },
+        r.div({ className: 'debiki dw-page' + embeddedClass },
           anyTitle,
           anyPostHeader,
           helpMessageBelowTitle,

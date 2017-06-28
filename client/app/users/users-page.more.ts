@@ -353,7 +353,7 @@ var AvatarAboutAndButtons = createComponent({
       : null;
 
 
-    var adminButton = !isStaff(me) ? null :
+    var adminButton = !isStaff(me) || isGuest(user) ? null :
         LinkButton({ href: linkToUserInAdminArea(user.id), className: 's_UP_AdminB' },
           "View in Admin Area");
 

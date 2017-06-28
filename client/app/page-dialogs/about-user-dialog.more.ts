@@ -53,6 +53,8 @@ var AboutUserDialog = createComponent({
     };
   },
 
+  // SECURITY (minor) SHOULD make openForPost and openForUser(IdOrUsername) work in the same
+  // way, so can block a guest regardless of how one clicks hen's name.  [5JKURQ0]
   openForPost: function(post: Post) {
     this.setState({ isOpen: true, user: null, post: post, blocks: {} });
     this.loadUser(post.authorId);
@@ -236,6 +238,8 @@ var AboutGuest = createComponent({
 
     var blockButton;
     var blockModal;
+    // SECURITY (minor) SHOULD show the below Block button also in the forum topic list. (Might need
+    // to lookup posts, to find ip number(s) to block?)  [5JKURQ0]
     if (isStaff(me) && postId) {
       if (blocks.isBlocked) {
         blockButton =
@@ -276,7 +280,7 @@ var AboutGuest = createComponent({
       r.div({ className: 'clearfix' },
         blockModal,
         r.div({ className: 'dw-about-user-actions' },
-          LinkButton({ onClick: linkToUserProfilePage(guest.id) }, "View other comments"),
+          LinkButton({ href: linkToUserProfilePage(guest.id) }, "View other comments"),
           blockButton),
         r.p({},
           'Name: ' + guest.fullName, r.br(),
