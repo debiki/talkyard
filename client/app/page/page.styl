@@ -50,11 +50,12 @@ html.esSidebarsOverlayPage
   // E.g.: http://stackoverflow.com/a/25480648/694469
   // or http://jscrollpane.kelvinluck.com/index.html
   // — but fixed now? I added -webkit-scrollbar-... styles a bit below.
-  //overflow-y: auto; — no, see below [2WQLBKYS]
+  overflow-y: auto;
   overflow-x: visible;
-  // Enables momentum based scrolling, on iPhone, which is otherwise only enabled for <body>.
-  // UX SHOULD auto-change to overflow-y: scroll; — but only for iPhone — for this to work.
-  overflow-y: scroll; // .. well, let's do that for now, even if not needed. [2WQLBKYS]
+
+// Enables momentum based scrolling, on iPhone, which is otherwise only enabled for <body>.
+html.ios #esPageColumn
+  overflow-y: scroll;
   -webkit-overflow-scrolling: touch;
 
 #esWatchbarColumn

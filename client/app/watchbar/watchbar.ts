@@ -78,9 +78,8 @@ export var Watchbar = createComponent({
     const directMessages = me.isLoggedIn ? DirectMessages({ store: store }) : null;
 
     return (
-        r.div({ className: 'esWB', ref: 'watchbar' },
-          r.button({ className: 'esWB_CloseB esCloseCross',
-              onClick: ReactActions.closeWatchbar }),
+      r.div({ className: 'esWB', ref: 'watchbar' },
+        r.button({ className: 'esWB_CloseB esCloseCross', onClick: ReactActions.closeWatchbar }),
         recentTopicsAndNotfs,
         chatChannels,
         directMessages));
