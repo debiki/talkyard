@@ -64,22 +64,38 @@ class DaoAppSuite(
   }
 
 
-  def createPasswordOwner(password: String, dao: SiteDao): Member = {
-    createPasswordAdminOrOwner(password: String, dao: SiteDao, isOwner = true)
+  def createSite(hostname: String): Site = {
+    val siteName = "site-" + hostname.replaceAllLiterally(".", "")
+    Globals.systemDao.createSite(
+      siteName, status = SiteStatus.Active, hostname = hostname,
+      embeddingSiteUrl = None, organizationName = s"Site $hostname Organization Name",
+      creatorEmailAddress = s"admin@$hostname.co", creatorId = UnknownUserId, browserIdData,
+      isTestSiteOkayToDelete = true, skipMaxSitesCheck = true,
+      deleteOldSite = false, pricePlan = "Unknown", createdFromSiteId = None)
+  }
+
+
+  def createPasswordOwner(password: String, dao: SiteDao,
+        createdAt: Option[When] = None, firstSeenAt: Option[When] = None): Member = {
+    createPasswordAdminOrOwner(password: String, dao: SiteDao, createdAt = createdAt,
+        firstSeenAt = firstSeenAt, isOwner = true)
   }
 
   /** Its name will be "Admin $password", username "admin_$password" and email
     * "admin-$password@x.co",
     */
-  def createPasswordAdmin(password: String, dao: SiteDao): Member = {
-    createPasswordAdminOrOwner(password: String, dao: SiteDao, isOwner = false)
+  def createPasswordAdmin(password: String, dao: SiteDao, createdAt: Option[When] = None,
+        firstSeenAt: Option[When] = None): Member = {
+    createPasswordAdminOrOwner(password: String, dao: SiteDao, createdAt = createdAt,
+      firstSeenAt = firstSeenAt, isOwner = false)
   }
 
-  private def createPasswordAdminOrOwner(password: String, dao: SiteDao, isOwner: Boolean)
-      : Member = {
+  private def createPasswordAdminOrOwner(password: String, dao: SiteDao, isOwner: Boolean,
+      createdAt: Option[When], firstSeenAt: Option[When] = None): Member = {
     dao.createPasswordUserCheckPasswordStrong(NewPasswordUserData.create(
       name = Some(s"Admin $password"), username = s"admin_$password",
       email = s"admin-$password@x.co", password = s"public-$password",
+      createdAt = createdAt.getOrElse(Globals.now()),
       isAdmin = true, isOwner = isOwner).get)
   }
 
@@ -87,7 +103,8 @@ class DaoAppSuite(
   def createPasswordModerator(password: String, dao: SiteDao): Member = {
     dao.createPasswordUserCheckPasswordStrong(NewPasswordUserData.create(
       name = Some(s"Mod $password"), username = s"mod_$password", email = s"mod-$password@x.co",
-      password = s"public-$password", isAdmin = false, isModerator = true, isOwner = false).get)
+      password = s"public-$password", createdAt = Globals.now(),
+      isAdmin = false, isModerator = true, isOwner = false).get)
   }
 
 
@@ -95,11 +112,12 @@ class DaoAppSuite(
     */
   def createPasswordUser(password: String, dao: SiteDao,
         trustLevel: TrustLevel = TrustLevel.NewMember,
-        threatLevel: ThreatLevel = ThreatLevel.HopefullySafe): Member = {
+        threatLevel: ThreatLevel = ThreatLevel.HopefullySafe,
+        createdAt: Option[When] = None): Member = {
     dao.createPasswordUserCheckPasswordStrong(NewPasswordUserData.create(
       name = Some(s"User $password"), username = s"user_$password", email = s"user-$password@x.c",
-      password = s"public-$password", isAdmin = false, isOwner = false,
-      trustLevel = trustLevel, threatLevel = threatLevel).get)
+      password = s"public-$password", createdAt = createdAt.getOrElse(Globals.now()),
+      isAdmin = false, isOwner = false, trustLevel = trustLevel, threatLevel = threatLevel).get)
   }
 
 

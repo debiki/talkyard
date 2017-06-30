@@ -24,6 +24,7 @@ import debiki._
 import debiki.dao._
 import ed.server.auth.ForumAuthzContext
 import scala.collection.immutable
+import scala.collection.mutable.ArrayBuffer
 
 
 
@@ -31,8 +32,9 @@ trait SummaryEmailsDao {
   this: SiteDao =>
 
 
-  def sendSummaryEmailsTo(userStats: immutable.Seq[UserStats], now: When): Unit = {
+  def createSummaryEmailsTo(userStats: immutable.Seq[UserStats], now: When): Vector[Email] = {
     TESTS_MISSING
+    val emails = ArrayBuffer[Email]()
     // Quick hack, for now, until there's a groups table and real custom groups:  [7FKQCUW0-todonow]
     // (Everyone is a member of the NewUsers group.)
     val allGroups = readOnlyTransaction(_.loadGroupsAsMap())
@@ -44,11 +46,11 @@ trait SummaryEmailsDao {
       if member.emailAddress.nonEmpty
       if member.emailNotfPrefs == EmailNotfPrefs.Receive
       // For now, when testing, send to me only
-      if member.emailAddress.contains("kajmagnus")  // SHOULD delete ... when done testing [4WKCYD07]
+      if Globals.isOrWasTest || member.emailAddress.contains("kajmagnus")  // SHOULD delete ... when done testing [4WKCYD07]
     } {
       val stats = userStats.find(_.userId == member.id) getOrDie "EdE2KWG05"
       val nextEmailAt: Option[When] = member.whenTimeForNexSummaryEmail(stats, groups)
-      if (true) { // nextEmailAt.exists(_ isBefore now)) {
+      if (nextEmailAt.exists(_ isBefore now)) {
         val millisSinceLastEmail =
           now.millis - stats.lastSummaryEmailAt.map(_.millis).getOrElse(member.createdAt.getTime)
         val categoryId = 1 ; CLEAN_UP; HACK // this should be the forum's root category. [8UWKQXN45]
@@ -104,7 +106,7 @@ trait SummaryEmailsDao {
                 nextAt = member.summaryEmailIntervalMins.map(now.plusMinutes))
           }
 
-          Globals.sendEmail(email, siteId)
+          emails.append(email)
         }
       }
       else if (nextEmailAt.exists(_ isBefore now.plusSeconds(30))) {
@@ -123,6 +125,7 @@ trait SummaryEmailsDao {
         // throw error here.
       }
     }
+    emails.toVector
   }
 
 

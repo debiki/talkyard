@@ -142,6 +142,8 @@ case class NewPasswordUserData(
   username: String,
   email: String,
   password: String,
+  createdAt: When,
+  firstSeenAt: Option[When],
   isAdmin: Boolean,
   isOwner: Boolean,
   isModerator: Boolean = false,
@@ -151,11 +153,11 @@ case class NewPasswordUserData(
   val passwordHash: String =
     DbDao.saltAndHashPassword(password)
 
-  def makeUser(userId: UserId, createdAt: ju.Date) = MemberInclDetails(
+  def makeUser(userId: UserId) = MemberInclDetails(
     id = userId,
     fullName = name,
     username = username,
-    createdAt = createdAt,
+    createdAt = createdAt.toJavaDate,
     isApproved = None,
     approvedAt = None,
     approvedById = None,
@@ -173,11 +175,14 @@ case class NewPasswordUserData(
   Validation.checkUsername(username)
   Validation.checkEmail(email)
   Validation.checkPassword(password)
+
+  require(!firstSeenAt.exists(_.isBefore(createdAt)), "EdE2WVKF063")
 }
 
 
 object NewPasswordUserData {
   def create(name: Option[String], username: String, email: String, password: String,
+        createdAt: When,
         isAdmin: Boolean, isOwner: Boolean, isModerator: Boolean = false,
         trustLevel: TrustLevel = TrustLevel.NewMember,
         threatLevel: ThreatLevel = ThreatLevel.HopefullySafe)
@@ -190,7 +195,9 @@ object NewPasswordUserData {
     }
     yield {
       NewPasswordUserData(name = okName, username = okUsername, email = okEmail,
-        password = okPassword, isAdmin = isAdmin, isOwner = isOwner, isModerator = isModerator,
+        password = okPassword, createdAt = createdAt,
+        firstSeenAt = Some(createdAt),  // for now
+        isAdmin = isAdmin, isOwner = isOwner, isModerator = isModerator,
         trustLevel, threatLevel)
     }
   }

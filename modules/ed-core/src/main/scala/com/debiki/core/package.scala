@@ -118,6 +118,7 @@ package object core {
     def minusSeconds(seconds: Int) = new When(unixMillis - seconds * 1000)
     def minusMillis(millis: UnixMillis) = new When(unixMillis - millis)
     def minusHours(hours: Int) = new When(unixMillis - hours * OneHourInMillis)
+    def plusHours(hours: Int) = new When(unixMillis + hours * OneHourInMillis)
     def minusDays(days: Int) = new When(unixMillis - days * OneDayInMillis)
 
     /** Unix millis can safely be cast to a Double: (but perhaps not back again?)

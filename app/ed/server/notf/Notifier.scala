@@ -52,8 +52,8 @@ object Notifier {
     // For now, check for emails more often, so e2e tests won't have to wait for them to
     // get sent. SHOULD wait at least for the ninja edit interval before sending any notf email.
     // But how make that work, with tests?
-    actorSystem.scheduler.schedule(8 seconds, 2 seconds, actorRef, "SendNotfs")  // [5KF0WU2T4]
-    actorSystem.scheduler.schedule(8 seconds, 2 seconds, actorRef, "SendSummaries")
+    actorSystem.scheduler.schedule(4 seconds, 2 seconds, actorRef, "SendNotfs")  // [5KF0WU2T4]
+    actorSystem.scheduler.schedule(3 seconds, 2 seconds, actorRef, "SendSummaries")
     testInstanceCounter += 1
     actorRef
   }
@@ -111,7 +111,10 @@ class Notifier(val systemDao: SystemDao, val siteDaoFactory: SiteDaoFactory)
       systemDao.loadStatsForUsersToMaybeEmailSummariesTo(now, limit = 100)
     for ((siteId, userStats) <- siteIdsAndStats) {
       val siteDao = siteDaoFactory.newSiteDao(siteId)
-      siteDao.sendSummaryEmailsTo(userStats, now)
+      val emails = siteDao.createSummaryEmailsTo(userStats, now)
+      emails foreach { email =>
+        Globals.sendEmail(email, siteId)
+      }
     }
   }
 

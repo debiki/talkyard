@@ -399,13 +399,13 @@ trait UserDao {
       fullName = userData.name, email = userData.email)
     val user = readWriteTransaction { transaction =>
       val userId = transaction.nextMemberId
-      val user = userData.makeUser(userId, transaction.now.toJavaDate)
+      val user = userData.makeUser(userId)
       ensureSiteActiveOrThrow(user, transaction)
       transaction.insertMember(user)
       transaction.insertUsernameUsage(UsernameUsage(
         usernameLowercase = user.usernameLowercase, inUseFrom = transaction.now, userId = user.id))
       transaction.upsertUserStats(UserStats.forNewUser(
-        user.id, firstSeenAt = transaction.now, emailedAt = None))
+        user.id, firstSeenAt = userData.firstSeenAt.getOrElse(transaction.now), emailedAt = None))
       joinGloballyPinnedChats(user.briefUser, transaction)
       user.briefUser
     }

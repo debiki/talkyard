@@ -131,7 +131,8 @@ object LoginWithPasswordController extends mvc.Controller {
 
       val userData =
         NewPasswordUserData.create(name = fullName, email = emailAddress, username = username,
-            password = password, isAdmin = becomeOwner, isOwner = becomeOwner) match {
+            password = password, createdAt = Globals.now(),
+            isAdmin = becomeOwner, isOwner = becomeOwner) match {
           case Good(data) => data
           case Bad(errorMessage) =>
             throwUnprocessableEntity("DwE805T4", s"$errorMessage, please try again.")

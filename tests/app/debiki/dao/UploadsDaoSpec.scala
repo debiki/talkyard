@@ -124,7 +124,7 @@ class UploadsDaoAppSpec extends DaoAppSuite(disableScripts = false) {
       val magic = "55JMU2456"
       val user = dao.createPasswordUserCheckPasswordStrong(NewPasswordUserData.create(
         name = Some(s"User $magic"), username = s"user_$magic", email = s"user-$magic@x.c",
-        password = magic, isAdmin = true, isOwner = true).get)
+        password = magic, createdAt = Globals.now(), isAdmin = true, isOwner = true).get)
 
       info("upload avatar images, no quota used")
       dao.addUploadedFile(tinyAvatar.name, tinyAvatar.file, user.id, browserIdData)
@@ -161,7 +161,7 @@ class UploadsDaoAppSpec extends DaoAppSuite(disableScripts = false) {
       val magic = "77PKW2PKW2"
       val user = dao.createPasswordUserCheckPasswordStrong(NewPasswordUserData.create(
         name = Some(s"User $magic"), username = s"user_$magic", email = s"user-$magic@x.c",
-        password = magic, isAdmin = false, isOwner = false).get)
+        password = magic, createdAt = Globals.now(), isAdmin = false, isOwner = false).get)
 
       info("set avatar")
       dao.setUserAvatar(user.id, tinyAvatar = Some(tinyAvatar.ref),
@@ -207,7 +207,7 @@ class UploadsDaoAppSpec extends DaoAppSuite(disableScripts = false) {
       val magic = "7GMYK253"
       val user = dao.createPasswordUserCheckPasswordStrong(NewPasswordUserData.create(
         name = Some(s"User $magic"), username = s"user_$magic", email = s"user-$magic@x.c",
-        password = magic, isAdmin = true, isOwner = false).get)
+        password = magic, createdAt = Globals.now(), isAdmin = true, isOwner = false).get)
 
       info("upload files, no quota used")
       dao.addUploadedFile(sunImage.name, sunImage.file, user.id, browserIdData)
@@ -264,7 +264,7 @@ class UploadsDaoAppSpec extends DaoAppSuite(disableScripts = false) {
       val magic = "6J35MK21"
       val user = dao.createPasswordUserCheckPasswordStrong(NewPasswordUserData.create(
         name = Some(s"User $magic"), username = s"user_$magic", email = s"user-$magic@x.c",
-        password = magic, isAdmin = true, isOwner = false).get)
+        password = magic, createdAt = Globals.now(), isAdmin = true, isOwner = false).get)
 
       info("create page, link missing file, no quota used")
       val titleTextAndHtml = TextAndHtml.forTitle("The Sun")
@@ -308,21 +308,21 @@ class UploadsDaoAppSpec extends DaoAppSuite(disableScripts = false) {
       val magic = "Site1_6KMF2"
       val user = dao.createPasswordUserCheckPasswordStrong(NewPasswordUserData.create(
         name = Some(s"User $magic"), username = s"user_$magic", email = s"user-$magic@x.c",
-        password = magic, isAdmin = true, isOwner = false).get)
+        password = magic, createdAt = Globals.now(), isAdmin = true, isOwner = false).get)
 
       info("create site 2")
       val site2 = Globals.systemDao.createSite(
         "site-two-name", status = SiteStatus.Active, hostname = "site-two",
         embeddingSiteUrl = None, organizationName = "Test Org Name",
-        creatorEmailAddress = "t@x.c", creatorId = user.id, browserIdData: BrowserIdData,
-        isTestSiteOkayToDelete = false, skipMaxSitesCheck = true,
+        creatorEmailAddress = "t@x.c", creatorId = user.id, browserIdData,
+        isTestSiteOkayToDelete = true, skipMaxSitesCheck = true,
         deleteOldSite = false, pricePlan = "Unknown", createdFromSiteId = None)
 
       info("create user (owner), site 2")
       val dao2 = Globals.siteDao(site2.id)
       val user2 = dao2.createPasswordUserCheckPasswordStrong(NewPasswordUserData.create(
         name = Some(s"User $magic"), username = s"user_$magic", email = s"user-$magic@x.c",
-        password = magic, isAdmin = true, isOwner = true).get)
+        password = magic, createdAt = Globals.now(), isAdmin = true, isOwner = true).get)
 
       info("upload files, no quota used")
 
@@ -394,7 +394,7 @@ class UploadsDaoAppSpec extends DaoAppSuite(disableScripts = false) {
       val magic = "7MPFKU23"
       val user = dao.createPasswordUserCheckPasswordStrong(NewPasswordUserData.create(
         name = Some(s"User $magic"), username = s"user_$magic", email = s"user-$magic@x.c",
-        password = magic, isAdmin = false, isOwner = false).get)
+        password = magic, createdAt = Globals.now(), isAdmin = false, isOwner = false).get)
 
       info("upload files, as long as haven't uploaded too much")
       dao.addUploadedFile(fileOne.name, fileOne.file, user.id, browserIdData)
