@@ -120,6 +120,7 @@ package object core {
     def minusHours(hours: Int) = new When(unixMillis - hours * OneHourInMillis)
     def plusHours(hours: Int) = new When(unixMillis + hours * OneHourInMillis)
     def minusDays(days: Int) = new When(unixMillis - days * OneDayInMillis)
+    def plusDays(days: Int) = new When(unixMillis + days * OneDayInMillis)
 
     /** Unix millis can safely be cast to a Double: (but perhaps not back again?)
       * 100 years * 365 * 24 * 3600 * 1000 = 3153600000000 = 13 digits, and doubles in Java
@@ -134,15 +135,20 @@ package object core {
     def isNotBefore(other: When): Boolean = unixMillis >= other.unixMillis
     def isBetween(start: When, end: When): Boolean = millis >= start.millis && millis <= end.millis
 
-    def plusMillis(moreMillis: Int) = new When(this.millis + moreMillis)
-    def plusSeconds(moreSeconds: Int) = new When(this.millis + moreSeconds * 1000)
-    def plusMinutes(moreMinutes: Int) = new When(this.millis + moreMinutes * 60 * 1000)
+    def plusMillis(moreMillis: Long) = new When(this.millis + moreMillis)
+    def plusSeconds(moreSeconds: Long) = new When(this.millis + moreSeconds * 1000)
+    def plusMinutes(moreMinutes: Long) = new When(this.millis + moreMinutes * 60 * 1000)
 
     override def toString: String = unixMillis.toString + "ms"
   }
 
   object When {
     val Genesis = new When(0)
+
+    /** Long.MaxValue is too large for PostgreSQL timestamps.
+      * This is Saturday, May 15, 2258 04:33:21. */
+    val Never = new When(9100010001000L)
+
     def fromDate(date: ju.Date) = new When(date.getTime)
     def fromOptDate(anyDate: Option[ju.Date]): Option[When] = anyDate.map(When.fromDate)
     def fromMillis(millis: UnixMillis) = new When(millis)
@@ -150,7 +156,11 @@ package object core {
     def fromOptMillis(millis: Option[UnixMillis]): Option[When] = millis.map(new When(_))
 
     def latestOf(whenA: When, whenB: When): When =
-      if (whenA.millis > whenB.millis) whenA else whenB
+      if (whenA.millis >= whenB.millis) whenA else whenB
+
+    def latestOf(whenA: When, whenB: Option[When]): When =
+      if (whenB.isEmpty) whenA
+      else if (whenA.millis >= whenB.get.millis) whenA else whenB.get
 
     def anyLatestOf(whenA: Option[When], whenB: Option[When]): Option[When] = {
       if (whenA.isDefined && whenB.isDefined) {
@@ -558,6 +568,8 @@ package object core {
   def FORCED_REFLOW = ()  // Browser side only. Makes it slow.
   def UX = ()             // Usability can be improved.
   def RESPONSIVE = ()     // Would look better with responsive layout. Browser side only.
+  def DB_CONFICT = ()     // When the same db rows might be updated by different transaction,
+                          // causing deadlocks / rollbacks / delays.
   def HACK = ()           // Quick crazy fix, probably should be redone later in a better way.
   def DELETE_LATER = ()   // ... hmm. Rename to CLEANUP.
   def CLEAN_UP = ()       // Unused stuff that should be deleted after a grace period, or when

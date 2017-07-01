@@ -27,14 +27,37 @@ import scala.collection.immutable
 import scala.collection.mutable.ArrayBuffer
 
 
+case class ActivitySummary(toMember: MemberInclDetails, topTopics: immutable.Seq[PagePathAndMeta]) {
+}
+
+
 
 trait SummaryEmailsDao {
   this: SiteDao =>
 
 
-  def createSummaryEmailsTo(userStats: immutable.Seq[UserStats], now: When): Vector[Email] = {
-    TESTS_MISSING
-    val emails = ArrayBuffer[Email]()
+  def makeActivitySummaryEmails(userStats: immutable.Seq[UserStats], now: When)
+        : Vector[(Email, ActivitySummary)] = {
+    val summaries = makeActivitySummaries(userStats, now)
+    // Do in many transactions, one per summary, to avoid locking lots of rows = risk for deadlocks.
+    summaries map { summary =>
+      val email = createActivitySummaryEmail(summary.toMember, now, summary.topTopics)
+      readWriteTransaction { tx =>
+        tx.saveUnsentEmail(email)
+        summary.topTopics foreach { topic =>
+          tx.rememberHasIncludedInSummaryEmail(summary.toMember.id, topic.pageId, now)
+        }
+        tx.bumpNextAndLastSummaryEmailDate(summary.toMember.id, lastAt = now,
+          nextAt = summary.toMember.summaryEmailIntervalMins.map(now plusMinutes _.toLong))
+      }
+      (email, summary)
+    }
+  }
+
+
+  def makeActivitySummaries(userStats: immutable.Seq[UserStats], now: When)
+        : Vector[ActivitySummary] = {
+    val activitySummaries = ArrayBuffer[ActivitySummary]()
     // Quick hack, for now, until there's a groups table and real custom groups:  [7FKQCUW0-todonow]
     // (Everyone is a member of the NewUsers group.)
     val allGroups = readOnlyTransaction(_.loadGroupsAsMap())
@@ -51,15 +74,15 @@ trait SummaryEmailsDao {
       val stats = userStats.find(_.userId == member.id) getOrDie "EdE2KWG05"
       val nextEmailAt: Option[When] = member.whenTimeForNexSummaryEmail(stats, groups)
       if (nextEmailAt.exists(_ isBefore now)) {
-        val millisSinceLastEmail =
+        val millisSinceLast =
           now.millis - stats.lastSummaryEmailAt.map(_.millis).getOrElse(member.createdAt.getTime)
         val categoryId = 1 ; CLEAN_UP; HACK // this should be the forum's root category. [8UWKQXN45]
         val period =
-          if (millisSinceLastEmail > OneWeekInMillis) TopTopicsPeriod.Month
-          else if (millisSinceLastEmail > OneDayInMillis) TopTopicsPeriod.Week
+          if (millisSinceLast > OneWeekInMillis) TopTopicsPeriod.Month
+          else if (millisSinceLast > OneDayInMillis) TopTopicsPeriod.Week
           else TopTopicsPeriod.Day
         val pageQuery = PageQuery(PageOrderOffset.ByScoreAndBumpTime(offset = None, period),
-          PageFilter.ShowAll)
+          PageFilter.ForActivitySummaryEmail)
 
         COULD_OPTIMIZE // load all groups only once. Batch load perms. Use same tx as a bit below.
         val authzCtx = readOnlyTransaction { tx =>
@@ -80,8 +103,10 @@ trait SummaryEmailsDao {
           }
         // Remove all topics the user has spent more than 10 seconds reading, or that have
         // been included in summary emails to that user already.
+        // Also remove topics the user created — hen might not have looked at them, after posting,
+        // so time spent reading might be 0.
         val unreadTopTopics = topTopics filterNot { topTopic =>
-          readingProgresses.exists(topicAndProgress => {
+          topTopic.meta.authorId == member.id || readingProgresses.exists(topicAndProgress => {
             val topic: PagePathAndMeta = topicAndProgress._1
             val (readingProgresses, hasSummaryEmailedBefore) = topicAndProgress._2
             topic.pageId == topTopic.pageId && (
@@ -91,22 +116,12 @@ trait SummaryEmailsDao {
 
         val topicsToListInEmail = unreadTopTopics take 7
         if (topicsToListInEmail.nonEmpty) {
-          val email = createActivitySummaryEmail(member, now, topicsToListInEmail, authzCtx)
+          val summary = ActivitySummary(member, topicsToListInEmail.toVector)
           SHOULD_LOG_STH
           topicsToListInEmail foreach { t =>
             System.out.println(s"site $siteId: Smry tpc: ${t.path.value} to: ${member.username}")
           }
-
-          readWriteTransaction { tx =>
-            tx.saveUnsentEmail(email)
-            topicsToListInEmail foreach { topic =>
-              tx.rememberHasIncludedInSummaryEmail(member.id, topic.pageId, now)
-            }
-            tx.bumpNextAndLastSummaryEmailDate(member.id, lastAt = now,
-                nextAt = member.summaryEmailIntervalMins.map(now.plusMinutes))
-          }
-
-          emails.append(email)
+          activitySummaries.append(summary)
         }
       }
       else if (nextEmailAt.exists(_ isBefore now.plusSeconds(30))) {
@@ -115,7 +130,10 @@ trait SummaryEmailsDao {
       else if (nextEmailAt != stats.nextSummaryEmailAt) {
         // The database next-email date is inaccurate. E.g. because the inherited default value
         // was changed, or the user was just created so there's no next-date. Update it.
-        bumpNextSummaryEmailDate(member.id, nextEmailAt)
+        // (Could refactor, move to caller?)
+        readWriteTransaction { tx =>
+          tx.bumpNextSummaryEmailDate(member.id, nextEmailAt orElse Some(When.Never))
+        }
       }
       else {
         // Weird. This stats shouldn't have been loaded.
@@ -125,26 +143,19 @@ trait SummaryEmailsDao {
         // throw error here.
       }
     }
-    emails.toVector
-  }
-
-
-  def bumpNextSummaryEmailDate(memberId: UserId, nextEmailWhen: Option[When]) {
-    readWriteTransaction { tx =>
-      tx.bumpNextSummaryEmailDate(memberId, nextEmailWhen)
-    }
+    activitySummaries.toVector
   }
 
 
   private def createActivitySummaryEmail(member: MemberInclDetails, now: When,
-        unreadTopTopics: Iterable[PagePathAndMeta], authzCtx: ForumAuthzContext): Email = {
+        unreadTopTopics: Iterable[PagePathAndMeta]): Email = {
     TESTS_MISSING
 
     val (siteName, origin) = theSiteNameAndOrigin()
 
     val subject = s"[$siteName] New topics and other activity"
 
-    val email = Email(EmailType.ActivitySummary, createdAt = Globals.now(),
+    val email = Email(EmailType.ActivitySummary, createdAt = now,
       sendTo = member.emailAddress, toUserId = Some(member.id),
       subject = subject, bodyHtmlText = (emailId: String) => "?")
 
@@ -157,7 +168,8 @@ trait SummaryEmailsDao {
         <ul>
         {
           for (topic <- unreadTopTopics) yield {
-            <li><a href={topic.path.value}>{topic.path.value}</a></li>
+            <li><a href={topic.path.value}>{topic.path.value}</a>
+            </li>
           }
         }
         </ul>

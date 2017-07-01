@@ -577,7 +577,7 @@ case class MemberInclDetails(
       }
       else {
         // Don't send summaries, until user has been inactive for a while + gotten no other emails.
-        stats.lastSeenOrEmailedAt
+        stats.lastSeenOrEmailedOrSummaryAt
       }
     Some(baseTime plusMinutes intervalMins)
   }
@@ -632,6 +632,7 @@ case class MemberInclDetails(
     threatLevel = threatLevel,
     lockedThreatLevel = lockedThreatLevel,
     isAdmin = isAdmin,
+    isModerator = isModerator,
     isOwner = isOwner)
 }
 
@@ -1009,8 +1010,8 @@ case class UserStats(
   lastSeenAt: When = When.fromMillis(0),
   lastPostedAt: Option[When] = None,
   lastEmailedAt: Option[When] = None,
-  lastSummaryEmailAt: Option[When] = None,
-  nextSummaryEmailAt: Option[When] = None,
+  lastSummaryEmailAt: Option[When] = None, // RENAME to lastSummaryAt, & db field too
+  nextSummaryEmailAt: Option[When] = None, // RENAME to nextSummaryMaybeAt,   & db field too
   emailBounceSum: Float = 0f,
   firstSeenAtOr0: When = When.fromMillis(0),
   firstNewTopicAt: Option[When] = None,
@@ -1074,8 +1075,11 @@ case class UserStats(
         firstDiscourseReplyAt.map(_.millis).getOrElse(Long.MaxValue),
         firstChatMessageAt.map(_.millis).getOrElse(Long.MaxValue)))
 
-  def lastSeenOrEmailedAt: When =
-    When.latestOf(lastSeenAt, lastEmailedAt.getOrElse(When.Genesis))
+  def lastSeenOrEmailedOrSummaryAt: When = {
+    // The summary might have been created and an email scheduled, but not yet sent
+    // — so checking only lastEmailedAt isn't enough.
+    When.latestOf(When.latestOf(lastSeenAt, lastEmailedAt), lastSummaryEmailAt)
+  }
 
 
   /** Ignores dates with 0 millis (= year 1970), considers that = no date.

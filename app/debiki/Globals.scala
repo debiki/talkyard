@@ -359,6 +359,9 @@ class Globals {
       catch {
         case ex: com.zaxxer.hikari.pool.HikariPool.PoolInitializationException =>
           _state = Bad(Some(new DatabasePoolInitializationException(ex)))
+        case ex @ StillConnectingException =>
+          p.Logger.error("Bug: StillConnectingException [EdE3PG7FY1]", ex)
+          _state = Bad(Some(ex))
         case ex: Exception =>
           p.Logger.error("Unknown state creation error [EsE4GY67]", ex)
           _state = Bad(Some(ex))
@@ -415,6 +418,12 @@ class Globals {
     p.Logger.info("Done shutting down. [EsMBYE]")
 
     shutdownLogging()
+  }
+
+
+  private def shutdownActorAndWait(anyActorRef: Option[ActorRef]): Boolean = anyActorRef match {
+    case None => true
+    case Some(ref) => shutdownActorAndWait(ref)
   }
 
 
@@ -563,19 +572,25 @@ class Globals {
 
     val mailerActorRef: ActorRef = Mailer.startNewActor(Akka.system, siteDaoFactory)
 
-    val notifierActorRef: ActorRef = Notifier.startNewActor(Akka.system, systemDao, siteDaoFactory)
+    val notifierActorRef: Option[ActorRef] =
+      if (isTestDisableBackgroundJobs) None
+      else Some(Notifier.startNewActor(Akka.system, systemDao, siteDaoFactory))
 
     def indexerBatchSize: Int = conf.getInt("ed.search.indexer.batchSize") getOrElse 100
     def indexerIntervalSeconds: Int = conf.getInt("ed.search.indexer.intervalSeconds") getOrElse 5
 
-    val indexerActorRef: ActorRef = SearchEngineIndexer.startNewActor(
-      indexerBatchSize, indexerIntervalSeconds, elasticSearchClient, Akka.system, systemDao)
+    val indexerActorRef: Option[ActorRef] =
+      if (isTestDisableBackgroundJobs) None
+      else Some(SearchEngineIndexer.startNewActor(
+        indexerBatchSize, indexerIntervalSeconds, elasticSearchClient, Akka.system, systemDao))
 
     def spamCheckBatchSize: Int = conf.getInt("ed.spamcheck.batchSize") getOrElse 20
     def spamCheckIntervalSeconds: Int = conf.getInt("ed.spamcheck.intervalSeconds") getOrElse 1
 
-    val spamCheckActorRef: ActorRef = SpamCheckActor.startNewActor(
-      spamCheckBatchSize, spamCheckIntervalSeconds, Akka.system, systemDao)
+    val spamCheckActorRef: Option[ActorRef] =
+      if (isTestDisableBackgroundJobs) None
+      else Some(SpamCheckActor.startNewActor(
+        spamCheckBatchSize, spamCheckIntervalSeconds, Akka.system, systemDao))
 
     val nginxHost: String =
       conf.getString("ed.nginx.host").orElse(

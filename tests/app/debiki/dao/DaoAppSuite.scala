@@ -58,7 +58,7 @@ class DaoAppSuite(
   def startTime: When = When.fromMillis(10 * 1000 + OneAndZeros1157DaysInMillis)
   var currentTime: When = startTime
 
-  def playTime(millis: Int) {
+  def playTime(millis: Long) {
     Globals.test.fastForwardTimeMillis(millis)
     currentTime = currentTime plusMillis millis
   }
@@ -100,10 +100,11 @@ class DaoAppSuite(
   }
 
 
-  def createPasswordModerator(password: String, dao: SiteDao): Member = {
+  def createPasswordModerator(password: String, dao: SiteDao, createdAt: Option[When] = None)
+        : Member = {
     dao.createPasswordUserCheckPasswordStrong(NewPasswordUserData.create(
       name = Some(s"Mod $password"), username = s"mod_$password", email = s"mod-$password@x.co",
-      password = s"public-$password", createdAt = Globals.now(),
+      password = s"public-$password", createdAt = createdAt.getOrElse(Globals.now()),
       isAdmin = false, isModerator = true, isOwner = false).get)
   }
 
@@ -119,6 +120,17 @@ class DaoAppSuite(
       password = s"public-$password", createdAt = createdAt.getOrElse(Globals.now()),
       isAdmin = false, isOwner = false, trustLevel = trustLevel, threatLevel = threatLevel).get)
   }
+
+
+  def updatePreferences(dao: SiteDao, memberId: UserId,
+        fn: Function1[MemberPreferences, MemberPreferences]) {
+    val memberDetails = dao.loadMembersInclDetailsById(Seq(memberId)).headOption getOrDie "EdE8ULQ21"
+    dao.saveMemberPreferences(fn(memberDetails.preferences), Who(memberId, browserIdData))
+  }
+
+
+  def loadTheUserStats(userId: UserId)(dao: SiteDao): UserStats =
+    dao.readOnlyTransaction(_.loadUserStats(userId)) getOrDie "EdE5JWGB10"
 
 
   def letEveryoneTalkAndStaffModerate(dao: SiteDao) {

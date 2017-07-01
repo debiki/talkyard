@@ -28,122 +28,120 @@ class LoadWhomToSendSummariesToAppSpec extends DaoAppSuite {
   val when: When = When.fromMillis(3100010001000L)
   val createdAt: When = when.minusMillis(10001000)
 
-  "SiteTransaction can handle member stats" - {
-    import Globals.systemDao
+  import Globals.systemDao
 
-    lazy val dao: SiteDao = {
-      Globals.systemDao.getOrCreateFirstSite()
-      Globals.siteDao(Site.FirstSiteId)
+  lazy val dao: SiteDao = {
+    Globals.systemDao.getOrCreateFirstSite()
+    Globals.siteDao(Site.FirstSiteId)
+  }
+
+  lazy val forumId = dao.createForum(title = "Forum to delete", folder = "/",
+    Who(SystemUserId, browserIdData)).pagePath.thePageId
+
+  lazy val site2 = createSite("site2")
+
+  lazy val daoSite2 = Globals.siteDao(site2.id)
+
+  lazy val forumSite2Id = daoSite2.createForum(title = "Forum site 2", folder = "/",
+    Who(SystemUserId, browserIdData)).pagePath.thePageId
+
+  var admin: User = null
+  var pageId: PageId = null
+  var otherPageId: PageId = null
+  var thirdPageId: PageId = null
+
+  var ownerSite2: User = null
+  var memberASite2: User = null
+  var memberBSite2: User = null
+  var memberCSite2: User = null
+  var memberDSite2: User = null
+  var memberESite2: User = null
+
+  var memberASite2Stats: UserStats = null
+  var memberBSite2Stats: UserStats = null
+  var memberCSite2Stats: UserStats = null
+  var memberDSite2Stats: UserStats = null
+
+  def makeAndUpsertStats(dao: SiteDao, userId: UserId, minutes: Int): UserStats = {
+    val stats = UserStats(
+      userId,
+      lastSeenAt = when,
+      firstSeenAtOr0 = when minusDays 10,
+      topicsNewSince = when,
+      nextSummaryEmailAt = Some(when plusMinutes minutes))
+    dao.readWriteTransaction(_.upsertUserStats(stats))
+    stats
+  }
+
+
+  "prepare: create site 1 and 2" in {
+    dao // creates site 1
+    daoSite2 // creates site 2, incl owner
+  }
+
+  "prepare: create forums" in {
+    forumId // creates forum, site 1
+    forumSite2Id  // creates forum, site 2
+  }
+
+  "prepare: create users" in {
+    admin = createPasswordOwner(s"txt_adm", dao, createdAt = Some(createdAt))
+    ownerSite2 = createPasswordOwner("site2_owner", daoSite2, createdAt = Some(createdAt))
+  }
+
+
+  "load UserStats to find users to send summary emails to" - {
+    "find stats for site owner, with limit = 1" in {
+      var savedOwnerStats = makeAndUpsertStats(daoSite2, ownerSite2.id, -60)
+      val stats = systemDao.loadStatsForUsersToMaybeEmailSummariesTo(when, limit = 1)
+      stats.size mustBe 1
+      val (siteWithStatsId, loadedOwnerStats) = stats.head
+      siteWithStatsId mustBe daoSite2.siteId
+      loadedOwnerStats.size mustBe 1
+      loadedOwnerStats.head mustBe savedOwnerStats
     }
 
-    lazy val forumId = dao.createForum(title = "Forum to delete", folder = "/",
-      Who(SystemUserId, browserIdData)).pagePath.thePageId
-
-    lazy val site2 = createSite("site2")
-
-    lazy val daoSite2 = Globals.siteDao(site2.id)
-
-    lazy val forumSite2Id = daoSite2.createForum(title = "Forum site 2", folder = "/",
-      Who(SystemUserId, browserIdData)).pagePath.thePageId
-
-    var admin: User = null
-    var pageId: PageId = null
-    var otherPageId: PageId = null
-    var thirdPageId: PageId = null
-
-    var ownerSite2: User = null
-    var memberASite2: User = null
-    var memberBSite2: User = null
-    var memberCSite2: User = null
-    var memberDSite2: User = null
-    var memberESite2: User = null
-
-    var memberASite2Stats: UserStats = null
-    var memberBSite2Stats: UserStats = null
-    var memberCSite2Stats: UserStats = null
-    var memberDSite2Stats: UserStats = null
-
-    def makeAndUpsertStats(dao: SiteDao, userId: UserId, minutes: Int): UserStats = {
-      val stats = UserStats(
-        userId,
-        lastSeenAt = when,
-        firstSeenAtOr0 = when minusDays 10,
-        topicsNewSince = when,
-        nextSummaryEmailAt = Some(when plusMinutes minutes))
-      dao.readWriteTransaction(_.upsertUserStats(stats))
-      stats
+    "change the next-summary date, so it's in the future — now, won't find that user" in {
+      makeAndUpsertStats(daoSite2, ownerSite2.id, +60)
+      // Now, the owner will be skipped, some other user will be found instead, at FirstSiteId.
+      val stats = systemDao.loadStatsForUsersToMaybeEmailSummariesTo(when, limit = 1)
+      stats.size mustBe 1
+      val (siteWithStatsId, userStats) = stats.head
+      siteWithStatsId mustBe dao.siteId
     }
 
+    "create more users" in {
+      memberASite2 = createPasswordUser(s"s2_ma", daoSite2, createdAt = Some(createdAt))
+      memberBSite2 = createPasswordUser(s"s2_mb", daoSite2, createdAt = Some(createdAt))
+      memberCSite2 = createPasswordUser(s"s2_mc", daoSite2, createdAt = Some(createdAt))
+      memberDSite2 = createPasswordUser(s"s2_md", daoSite2, createdAt = Some(createdAt))
+      memberESite2 = createPasswordUser(s"s2_me", daoSite2, createdAt = Some(createdAt))
 
-    "prepare: create site 1 and 2" in {
-      dao // creates site 1
-      daoSite2 // creates site 2, incl owner
+      memberASite2Stats = makeAndUpsertStats(daoSite2, memberASite2.id, -1)  // 3rd
+      memberBSite2Stats = makeAndUpsertStats(daoSite2, memberBSite2.id, -10) // loaded first
+      memberCSite2Stats = makeAndUpsertStats(daoSite2, memberCSite2.id, -5)  // 2nd
+      memberDSite2Stats = makeAndUpsertStats(daoSite2, memberDSite2.id, +10) // not loaded
+      // member E: next-summary-email-at = null, means unknown, so loaded
     }
 
-    "prepare: create forums" in {
-      forumId // creates forum, site 1
-      forumSite2Id  // creates forum, site 2
-    }
+    "check loads correct send-summaries-to stats" in {
+      val stats = systemDao.loadStatsForUsersToMaybeEmailSummariesTo(when, limit = 999)
+      stats.size mustBe 2
+      stats.keys must contain(dao.siteId)
+      stats.keys must contain(daoSite2.siteId)
+      val firstSiteStats = stats(dao.siteId)
+      firstSiteStats.size mustBe 1
+      firstSiteStats.head.userId mustBe admin.id
 
-    "prepare: create users" in {
-      admin = createPasswordOwner(s"txt_adm", dao, createdAt = Some(createdAt))
-      ownerSite2 = createPasswordOwner("site2_owner", daoSite2, createdAt = Some(createdAt))
-    }
-
-
-    "load UserStats to find users to send summary emails to" - {
-      "find stats for site owner, with limit = 1" in {
-        var savedOwnerStats = makeAndUpsertStats(daoSite2, ownerSite2.id, -60)
-        val stats = systemDao.loadStatsForUsersToMaybeEmailSummariesTo(when, limit = 1)
-        stats.size mustBe 1
-        val (siteWithStatsId, loadedOwnerStats) = stats.head
-        siteWithStatsId mustBe daoSite2.siteId
-        loadedOwnerStats.size mustBe 1
-        loadedOwnerStats.head mustBe savedOwnerStats
-      }
-
-      "change the next-summary date, so it's in the future — now, won't find that user" in {
-        makeAndUpsertStats(daoSite2, ownerSite2.id, +60)
-        // Now, the owner will be skipped, some other user will be found instead, at FirstSiteId.
-        val stats = systemDao.loadStatsForUsersToMaybeEmailSummariesTo(when, limit = 1)
-        stats.size mustBe 1
-        val (siteWithStatsId, userStats) = stats.head
-        siteWithStatsId mustBe dao.siteId
-      }
-
-      "create more users" in {
-        memberASite2 = createPasswordUser(s"s2_ma", daoSite2, createdAt = Some(createdAt))
-        memberBSite2 = createPasswordUser(s"s2_mb", daoSite2, createdAt = Some(createdAt))
-        memberCSite2 = createPasswordUser(s"s2_mc", daoSite2, createdAt = Some(createdAt))
-        memberDSite2 = createPasswordUser(s"s2_md", daoSite2, createdAt = Some(createdAt))
-        memberESite2 = createPasswordUser(s"s2_me", daoSite2, createdAt = Some(createdAt))
-
-        memberASite2Stats = makeAndUpsertStats(daoSite2, memberASite2.id, -1)  // 3rd
-        memberBSite2Stats = makeAndUpsertStats(daoSite2, memberBSite2.id, -10) // loaded first
-        memberCSite2Stats = makeAndUpsertStats(daoSite2, memberCSite2.id, -5)  // 2nd
-        memberDSite2Stats = makeAndUpsertStats(daoSite2, memberDSite2.id, +10) // not loaded
-        // member E: next-summary-email-at = null, means unknown, so loaded
-      }
-
-      "check loads correct send-summaries-to stats" in {
-        val stats = systemDao.loadStatsForUsersToMaybeEmailSummariesTo(when, limit = 999)
-        stats.size mustBe 2
-        stats.keys must contain(dao.siteId)
-        stats.keys must contain(daoSite2.siteId)
-        val firstSiteStats = stats(dao.siteId)
-        firstSiteStats.size mustBe 1
-        firstSiteStats.head.userId mustBe admin.id
-
-        val secondSiteStats = stats(daoSite2.siteId)
-        secondSiteStats.size mustBe 4
-        secondSiteStats(0) mustBe memberBSite2Stats // first: -10 is oldest
-        secondSiteStats(1) mustBe memberCSite2Stats // 2nd:   - 5
-        secondSiteStats(2) mustBe memberASite2Stats // 3rd:   - 1 is the most recent
-        // But D: +10 minutes from now = not yet time to send summary email.
-        // E: time-to-send = null = unknown —> sorted last
-        secondSiteStats(3).userId mustBe memberESite2.id
-        secondSiteStats(3).nextSummaryEmailAt mustBe None
-      }
+      val secondSiteStats = stats(daoSite2.siteId)
+      secondSiteStats.size mustBe 4
+      secondSiteStats(0) mustBe memberBSite2Stats // first: -10 is oldest
+      secondSiteStats(1) mustBe memberCSite2Stats // 2nd:   - 5
+      secondSiteStats(2) mustBe memberASite2Stats // 3rd:   - 1 is the most recent
+      // But D: +10 minutes from now = not yet time to send summary email.
+      // E: time-to-send = null = unknown —> sorted last
+      secondSiteStats(3).userId mustBe memberESite2.id
+      secondSiteStats(3).nextSummaryEmailAt mustBe None
     }
   }
 

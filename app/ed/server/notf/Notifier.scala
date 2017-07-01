@@ -111,8 +111,8 @@ class Notifier(val systemDao: SystemDao, val siteDaoFactory: SiteDaoFactory)
       systemDao.loadStatsForUsersToMaybeEmailSummariesTo(now, limit = 100)
     for ((siteId, userStats) <- siteIdsAndStats) {
       val siteDao = siteDaoFactory.newSiteDao(siteId)
-      val emails = siteDao.createSummaryEmailsTo(userStats, now)
-      emails foreach { email =>
+      val emails = siteDao.makeActivitySummaryEmails(userStats, now)
+      emails foreach { case (email, _) =>
         Globals.sendEmail(email, siteId)
       }
     }
