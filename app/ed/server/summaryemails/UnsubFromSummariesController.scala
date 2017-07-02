@@ -1,0 +1,102 @@
+/**
+ * Copyright (c) 2017 Kaj Magnus Lindberg
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+package ed.server.summaryemails
+
+import com.debiki.core._
+import debiki._
+import debiki.DebikiHttp._
+import ed.server.http._
+import play.api._
+import play.api.mvc.Action
+import play.api.mvc.BodyParsers.parse.empty
+
+
+/**
+ * Unsubscribes a user from email notifications.
+ *
+ * Note: Uses email id login, to authenticate the user.
+ * But! Don't save any login cookie. Email login is not safe, because
+ * emails are transmitted in the clear, and the email id is included
+ * in the url, and might end up in access logs or being sent to other
+ * web sites, in the Referer header. So only use each email id
+ * for one distinct non-repeatable task?
+ */
+object UnsubFromSummariesController extends mvc.Controller {
+
+  val EmailIdInpName = "emailId"
+  val WhatInpName = "what"
+
+  val InpValUnsub = "Unsub"
+  val InpValMonthly = "Monthly"
+  val InpVal2ndWeek = "2ndWeek"
+  val InpValWeekly = "Weekly"
+  val InpValDaily = "Daily"
+
+
+  def showUnsubForm(emailId: EmailId): Action[Unit] = ExceptionAction(empty) { request =>
+    val site = DebikiHttp.lookupSiteOrThrow(request, debiki.Globals.systemDao)
+    val dao = Globals.siteDao(site.id)
+    val email = dao.loadEmailById(emailId) getOrElse throwForbidden("EdE5JGKW0", "Bad email id")
+    Ok(views.html.summaryemails.unsubFromSummariesPage(emailId, emailAddress = email.sentTo))
+  }
+
+
+  def handleForm: Action[JsonOrFormDataBody] =
+        ExceptionAction(JsonOrFormDataBody.parser(maxBytes = 200)) { request =>
+
+    val emailId = request.body.getFirst(EmailIdInpName) getOrElse throwParamMissing(
+      "EdE2JC0BMX", EmailIdInpName)
+    val what = request.body.getFirst(WhatInpName) getOrElse throwParamMissing(
+      "EdE6BTU5Y9", WhatInpName)
+    val site = DebikiHttp.lookupSiteOrThrow(request, debiki.Globals.systemDao)
+
+    SECURITY; SHOULD // rate limit?
+
+    val dao = Globals.siteDao(site.id)
+    val email = dao.loadEmailById(emailId) getOrElse throwForbidden("EdE8YEM2Q", "Bad email id")
+
+    if (!email.toUserId.exists(User.isMember))
+      throwForbidden("EdEZ5JKW30", "Not a member")
+
+    if (email.tyype != EmailType.ActivitySummary)
+      throwForbidden("EdE5SRK2L1", s"Wrong email type: ${email.tyype}")
+
+    // Also in Javascript: [7GKW4E1]
+    val newIntervalMins = what match {
+      case InpValUnsub => SummaryEmails.DoNotSend
+      case InpValMonthly => 60 * 24 * 30
+      case InpVal2ndWeek => 60 * 24 * 7 * 2
+      case InpValWeekly => 60 * 24 * 7
+      case InpValDaily => 60 * 24
+      case _ =>
+        throwForbidden("EdE2GPRSM")
+    }
+
+    dao.configRole(userId = email.toUserId.get,
+      activitySummaryEmailsIntervalMins = Some(newIntervalMins))
+
+    SeeOther(routes.UnsubFromSummariesController.showHasBeenUnsubscribed().url)
+  }
+
+
+  def showHasBeenUnsubscribed(): Action[Unit] = ExceptionAction(empty) { _ =>
+    Ok(views.html.summaryemails.unsubFromSummariesDonePage())
+  }
+
+}
+

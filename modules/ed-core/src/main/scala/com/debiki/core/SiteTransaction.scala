@@ -178,6 +178,11 @@ trait SiteTransaction {
   def bumpNextSummaryEmailDate(memberId: UserId, nextEmailAt: Option[When])
   def bumpNextAndLastSummaryEmailDate(memberId: UserId, lastAt: When, nextAt: Option[When])
 
+  def laterMaybeSendSummaryTo(memberId: UserId) {
+    // When set to null, the user will be considered for summary emails and marked yes-get or no.
+    bumpNextSummaryEmailDate(memberId, nextEmailAt = None)
+  }
+
   def loadUserVisitStats(userId: UserId): immutable.Seq[UserVisitStats]
   def upsertUserVisitStats(visitStats: UserVisitStats)
 

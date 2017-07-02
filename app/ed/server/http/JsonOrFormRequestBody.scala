@@ -113,7 +113,7 @@ object JsonOrFormDataBody {
 
   import BodyParsers.parse
 
-  def parser(maxBytes: Int) = parse.using { requestHeader =>
+  def parser(maxBytes: Int): BodyParser[JsonOrFormDataBody] = parse.using { requestHeader =>
     requestHeader.contentType match {
       case Some("application/x-www-form-urlencoded") =>
         parse.urlFormEncoded(maxLength = maxBytes) map {

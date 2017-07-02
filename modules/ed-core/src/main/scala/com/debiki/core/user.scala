@@ -773,7 +773,7 @@ object EmailNotfPrefs extends Enumeration {
 }
 
 object SummaryEmails {
-  val DoNotSend = -1
+  val DoNotSend: Int = -1  // Also in Javascript [5WKIQU2]
 }
 
 

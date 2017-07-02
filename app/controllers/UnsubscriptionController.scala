@@ -22,12 +22,10 @@ import com.debiki.core._
 import debiki._
 import debiki.DebikiHttp._
 import ed.server.http._
-import java.{util => ju}
 import play.api._
-import play.api.mvc.{Action => _, _}
+import play.api.mvc.Action
 import play.api.mvc.BodyParsers.parse.empty
 import Prelude._
-import Utils.{OkHtml}
 
 
 /**
@@ -42,7 +40,9 @@ import Utils.{OkHtml}
  */
 object UnsubscriptionController extends mvc.Controller {
 
-  val OldEmailIdParam = "email-id" // <-- ok remove year 2016
+  SECURITY; SHOULD // (not urgent) not allow this type of email id to do anything else
+  // than unsubbing, and expire after ... one month?
+
   val EmailIdParam = "emailId"
   val DoWhatParam = "do"
 
@@ -52,37 +52,33 @@ object UnsubscriptionController extends mvc.Controller {
   val ResubPrevented = "resub-prevented"
 
 
-  // oh so complicated, do something else
   private def emailId(request: mvc.RequestHeader): String =
-    request.queryString.get(EmailIdParam).orElse(
-      request.queryString.get(OldEmailIdParam)).map(_.head).getOrElse(
+    request.queryString.get(EmailIdParam).map(_.head).getOrElse(
       throwBadReq("DwE03kI21", "No email id specified"))
 
-  // oh so complicated, do something else
   private def doWhat(request: mvc.RequestHeader): String =
      request.queryString.get(DoWhatParam).map(_.head).getOrElse(Unsub)
 
-  // oh so complicated, do something else
   private def nextPage(request: mvc.RequestHeader) =
     "/-/unsubscribe&emailId="+ emailId(request) +"&do="+ (doWhat(request) match {
       case Unsub => UnsubDone
       case UnsubDone => PreventResub
       case PreventResub => ResubPrevented
       case ResubPrevented => "unused-value"
-      case x => assErr("DwE3029541", "Bad &do: "+ x)
+      case x => die("DwE3029541", "Bad 'do' url param value: " + x)
     })
 
 
-  def showForm(emailId: EmailId) = ExceptionAction(empty) { request =>
+  def showForm(emailId: EmailId): Action[Unit] = ExceptionAction(empty) { request =>
     Ok(views.html.unsubscribePage(emailId, doWhat(request), nextPage(request)))
   }
 
 
-  def handleForm(emailId: EmailId) = ExceptionAction(parse.urlFormEncoded(maxLength = 200)) {
-        request =>
+  def handleForm(emailId: EmailId): Action[Map[String, Seq[String]]] =
+        ExceptionAction(parse.urlFormEncoded(maxLength = 200)) { request =>
     val site = DebikiHttp.lookupSiteOrThrow(request, debiki.Globals.systemDao)
 
-    SECURITY // SHOULD rate limit and check email type.
+    SECURITY; SHOULD // rate limit and check email type.
 
     val dao = Globals.siteDao(site.id)
     val email = dao.loadEmailById(emailId) getOrElse throwForbidden(
@@ -92,7 +88,7 @@ object UnsubscriptionController extends mvc.Controller {
     val emailNotfPrefs: EmailNotfPrefs.Value = doWhat(request) match {
       case Unsub => EmailNotfPrefs.DontReceive
       case PreventResub => EmailNotfPrefs.ForbiddenForever
-      case x => assErr("DwE82WM91")
+      case _ => die("DwE82WM91")
     }
 
     if (email.toUserId.exists(User.isMember)) {
@@ -108,7 +104,7 @@ object UnsubscriptionController extends mvc.Controller {
   }
 
 
-  def showHasBeenUnsubscribed() = ExceptionAction(empty) { request =>
+  def showHasBeenUnsubscribed(): Action[Unit] = ExceptionAction(empty) { _ =>
     Ok(views.html.unsubscribe.youHaveBeenUnsubscribed().body) as HTML
   }
 

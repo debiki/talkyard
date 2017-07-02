@@ -985,13 +985,17 @@ trait UserDao {
 
 
   def configRole(userId: RoleId,
-        emailNotfPrefs: Option[EmailNotfPrefs] = None, isAdmin: Option[Boolean] = None,
-        isOwner: Option[Boolean] = None) {
+        emailNotfPrefs: Option[EmailNotfPrefs] = None,
+        activitySummaryEmailsIntervalMins: Option[Int] = None,
+        isAdmin: Option[Boolean] = None, isOwner: Option[Boolean] = None) {
     // Don't specify emailVerifiedAt here — use verifyEmail() instead; it refreshes the cache.
     readWriteTransaction { transaction =>
       var user = transaction.loadTheMemberInclDetails(userId)
       emailNotfPrefs foreach { prefs =>
         user = user.copy(emailNotfPrefs = prefs)
+      }
+      activitySummaryEmailsIntervalMins foreach { mins =>
+        user = user.copy(summaryEmailIntervalMins = Some(mins))
       }
       isAdmin foreach { isAdmin =>
         user = user.copy(isAdmin = isAdmin)
@@ -1110,6 +1114,10 @@ trait UserDao {
       catch {
         case _: DuplicateUsernameException =>
           throwForbidden("EdE2WK8Y4_", "Username already in use")
+      }
+
+      if (userAfter.summaryEmailIntervalMins != user.summaryEmailIntervalMins) {
+        transaction.laterMaybeSendSummaryTo(user.id)  // related: [5KRDUQ0]
       }
 
       removeUserFromMemCache(preferences.userId)

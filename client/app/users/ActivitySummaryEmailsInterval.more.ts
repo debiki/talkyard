@@ -26,6 +26,7 @@ const r = React.DOM;
 const DropdownModal = utils.DropdownModal;
 const ExplainingListItem = util.ExplainingListItem;
 
+// Also in Scala [5WKIQU2]
 export const DisableSummaryEmails = -1;
 
 
@@ -62,6 +63,7 @@ export const ActivitySummaryEmailsIntervalDropdown = createComponent({
   render: function() {
     const props = this.props;
 
+    // Also in Scala: [7GKW4E1]
     const thirtyMinutesMins = 30;
     const hourlyMins = 60;
     const dailyMins = 60 * 24;

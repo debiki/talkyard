@@ -64,16 +64,18 @@ trait SummaryEmailsDao {
     val groups = allGroups.get(Group.NewMembersId).toVector
 
     val members = loadMembersInclDetailsById(userStats.map(_.userId))
-    for {
-      member <- members
-      if member.emailAddress.nonEmpty
-      if member.emailNotfPrefs == EmailNotfPrefs.Receive
-      // For now, when testing, send to me only
-      if Globals.isOrWasTest || member.emailAddress.contains("kajmagnus")  // SHOULD delete ... when done testing [4WKCYD07]
-    } {
+    for (member <- members) {
+      val wantsSummaries = member.emailAddress.nonEmpty &&
+          !member.summaryEmailIntervalMins.contains(SummaryEmails.DoNotSend)
       val stats = userStats.find(_.userId == member.id) getOrDie "EdE2KWG05"
       val nextEmailAt: Option[When] = member.whenTimeForNexSummaryEmail(stats, groups)
-      if (nextEmailAt.exists(_ isBefore now)) {
+      if (!wantsSummaries) {
+        // Avoid loading this user again and again. [5KRDUQ0]
+        readWriteTransaction { tx =>
+          tx.bumpNextSummaryEmailDate(member.id, Some(When.Never))
+        }
+      }
+      else if (nextEmailAt.exists(_ isBefore now)) {
         val millisSinceLast =
           now.millis - stats.lastSummaryEmailAt.map(_.millis).getOrElse(member.createdAt.getTime)
         val categoryId = 1 ; CLEAN_UP; HACK // this should be the forum's root category. [8UWKQXN45]
@@ -153,7 +155,7 @@ trait SummaryEmailsDao {
 
     val (siteName, origin) = theSiteNameAndOrigin()
 
-    val subject = s"[$siteName] New topics and other activity"
+    val subject = s"[$siteName] Recent activity summary"
 
     val email = Email(EmailType.ActivitySummary, createdAt = now,
       sendTo = member.emailAddress, toUserId = Some(member.id),
@@ -162,20 +164,22 @@ trait SummaryEmailsDao {
     val contents = {
       <div>
         <p>Dear {member.username},</p>
-        <p>Here're some new topics, and other things that have happened recently, at {siteName}:
-        </p>
+        <p>Recent activity at {siteName}:</p>
         <h3>Some new topics:</h3>
         <ul>
         {
           for (topic <- unreadTopTopics) yield {
-            <li><a href={topic.path.value}>{topic.path.value}</a>
+            <li><a href={origin + topic.path.value}>{topic.path.value}</a>
             </li>
           }
         }
         </ul>
+        <p>This email is sent if we haven't seen you in a while.</p>
         {
-          ed.server.util.email.makeFooter(regardsFromName = siteName, regardsFromUrl = origin,
-              unsubUrl = "???") // SHOULD be possible to unsub, but currently testing only [4WKCYD07]
+          ed.server.util.email.makeFooter(
+            regardsFromName = siteName,
+            regardsFromUrl = origin,
+            unsubUrl = origin + routes.UnsubFromSummariesController.showUnsubForm(email.id).url)
         }
       </div>
     }

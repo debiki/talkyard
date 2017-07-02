@@ -1,0 +1,75 @@
+@**
+ * Copyright (c) 2017 Kaj Magnus Lindberg
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *@
+
+@(emailId: String, emailAddress: String)
+
+@import ed.server.summaryemails.{UnsubFromSummariesController => UC}
+@import UC.EmailIdInpName
+@import UC.WhatInpName
+
+<!DOCTYPE html>
+<head>
+<style>
+h1 { font-size: 28px; }
+.s_UnsubSum_Inps {
+ margin: 3ex 0 2.4ex;
+}
+label {
+ display: inline-block;
+ margin: 0.4ex 0;
+ padding: 0.5ex 1ex 0.7ex;
+ cursor: pointer;
+}
+input[type="radio"] {
+ margin: 0 0.8ex 0 1ex;
+ position: relative;
+ top: 1px;
+ cursor: pointer;
+}
+.s_UnsubSum_SubmB {
+ font-size: 17px;
+ padding: 6px 16px;
+ background: hsl(0, 0%, 85%);
+ border: none;
+ cursor: pointer;
+}
+.s_UnsubSum_SubmB:hover {
+ color: black;
+ background: hsl(0, 0%, 93%);
+}
+</style>
+</head>
+<body>
+
+<h1>Unsubscribe from periodic activity summary emails?</h1>
+
+<p>Email address: <code>@emailAddress</code></p>
+
+<form accept-charset="UTF-8" method="post" class="s_UnsubSum">
+<input type="hidden" name="@EmailIdInpName" value="@emailId">
+<div class="s_UnsubSum_Inps">
+<label><input type="radio" name="@WhatInpName" value="@{UC.InpValUnsub}" checked="checked">Yes, unsubscribe</label><br>
+<label><input type="radio" name="@WhatInpName" value="@{UC.InpValMonthly}">Send summaries to me at most once per month</label><br>
+<label><input type="radio" name="@WhatInpName" value="@{UC.InpVal2ndWeek}">Send at most every second week</label><br>
+<label><input type="radio" name="@WhatInpName" value="@{UC.InpValWeekly}">Send at most once per week</label><br>
+<label><input type="radio" name="@WhatInpName" value="@{UC.InpValDaily}">Send at most once per day</label><br>
+</div>
+<input type="submit" value="Submit" class="s_UnsubSum_SubmB">
+</form>
+
+</body>
+
