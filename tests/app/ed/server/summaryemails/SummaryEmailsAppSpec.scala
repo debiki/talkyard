@@ -84,6 +84,8 @@ class SummaryEmailsAppSpec extends DaoAppSuite() {
   var page6IdByAdm: PageId = null
   var staffOnlyPageIdByAdm: PageId = null
   var everyonePageIdByAdm: PageId = null
+  var editedSettingsPageIdByAdm: PageId = null
+  var editedSettingsPage2IdByAdm: PageId = null
 
   var adm: User = null
   var mia: User = null
@@ -500,6 +502,76 @@ class SummaryEmailsAppSpec extends DaoAppSuite() {
 
 
   "one can change one's settings" - {
+    "Max no longer wants summaries, Mod inherits from group (won't get), Ign wants each month" in {
+      updatePreferences(dao, max.id, _.copy(
+        summaryEmailIntervalMins = Some(SummaryEmails.DoNotSend)))
+      updatePreferences(dao, mod.id, _.copy(
+        summaryEmailIntervalMins = None))
+      updatePreferences(dao, ign.id, _.copy(
+        summaryEmailIntervalMins = Some(60 * 24 * 7)))
+    }
+
+    "Ign gets a summary of lots of old topics" in {
+      val summary = makeSummary(ign.id).get
+      summary.topTopics.size mustBe >=(7)
+      // Only Adm and Mia have created pages
+      summary.topTopics.map(_.meta.authorId).toSet mustBe Set(adm.id, mia.id)
+      val pageIds = summary.topTopics.map(_.meta.pageId).toSet
+      pageIds.size mustBe >=(7)
+    }
+
+    "Adm creates a topic" in {
+      editedSettingsPageIdByAdm = createPage(PageRole.Discussion, TextAndHtml.forTitle("New Stngs"),
+        TextAndHtml.forBodyOrComment("Page body."), authorId = adm.id, browserIdData,
+        dao, anyCategoryId = Some(forum.defaultCategoryId))
+    }
+
+    "after a week, Mia & Ign get a summary" in {
+      playTime(7 * OneDayInMillis + OneHourInMillis)
+      val summaries = makeSummaries(immutable.Seq(mia.id, ign.id))
+      summaries foreach { summary =>
+        summary.topTopics.size mustBe 1
+        summary.topTopics.head.meta.authorId mustBe adm.id
+        summary.topTopics.head.meta.pageId mustBe editedSettingsPageIdByAdm
+      }
+    }
+
+    "but not Mod and Max" in {
+      makeSummary(mod.id) mustBe empty
+      makeSummary(max.id) mustBe empty
+    }
+
+    "Max wants summaries again, Ign doesn't" in {
+      updatePreferences(dao, max.id, _.copy(summaryEmailIntervalMins = Some(60 * 24)))
+      updatePreferences(dao, ign.id, _.copy(summaryEmailIntervalMins = Some(SummaryEmails.DoNotSend)))
+    }
+
+    "Adm creates yet another topic" in {
+      editedSettingsPage2IdByAdm = createPage(PageRole.Discussion, TextAndHtml.forTitle("Nw Stngs 2"),
+        TextAndHtml.forBodyOrComment("Page body."), authorId = adm.id, browserIdData,
+        dao, anyCategoryId = Some(forum.defaultCategoryId))
+    }
+
+    "after a week, Max gets a summary, with the new topic, plus the old he didn't get before" in {
+      playTime(7 * OneDayInMillis + OneHourInMillis)
+      val summary = makeSummary(max.id).get
+      summary.topTopics.size mustBe 2
+      summary.topTopics.map(_.meta.authorId).toSet mustBe Set(adm.id)
+      summary.topTopics.map(_.meta.pageId).toSet mustBe Set(
+          editedSettingsPageIdByAdm, editedSettingsPage2IdByAdm)
+    }
+
+    "Mia gets the new topic only" in {
+      val summary = makeSummary(mia.id).get
+      summary.topTopics.size mustBe 1
+      summary.topTopics.head.meta.authorId mustBe adm.id
+      summary.topTopics.head.meta.pageId mustBe editedSettingsPage2IdByAdm
+    }
+
+    "but Mod and Ign get no summaries" in {
+      makeSummary(mod.id) mustBe empty
+      makeSummary(ign.id) mustBe empty
+    }
   }
 
 

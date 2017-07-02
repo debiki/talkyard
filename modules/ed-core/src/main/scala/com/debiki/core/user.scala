@@ -564,12 +564,16 @@ case class MemberInclDetails(
   def whenTimeForNexSummaryEmail(stats: UserStats, myGroups: immutable.Seq[Group])
         : Option[When] = {
     require(stats.userId == id, "EdE2GPKW01")
+    if (emailAddress.isEmpty)
+      return None
     val anyIntervalMins = summaryEmailIntervalMins orElse {
       myGroups.find(_.summaryEmailIntervalMins.isDefined).flatMap(_.summaryEmailIntervalMins)
     }
     val intervalMins = anyIntervalMins getOrElse {
       return None
     }
+    if (intervalMins == SummaryEmails.DoNotSend)
+      return None
     val baseTime =
       if (summaryEmailIfActive is true) {
         // Email summaries regularly, regardless of other activity.

@@ -58,18 +58,23 @@ trait SummaryEmailsDao {
   def makeActivitySummaries(userStats: immutable.Seq[UserStats], now: When)
         : Vector[ActivitySummary] = {
     val activitySummaries = ArrayBuffer[ActivitySummary]()
-    // Quick hack, for now, until there's a groups table and real custom groups:  [7FKQCUW0-todonow]
-    // (Everyone is a member of the NewUsers group.)
     val allGroups = readOnlyTransaction(_.loadGroupsAsMap())
-    val groups = allGroups.get(Group.NewMembersId).toVector
 
     val members = loadMembersInclDetailsById(userStats.map(_.userId))
     for (member <- members) {
-      val wantsSummaries = member.emailAddress.nonEmpty &&
-          !member.summaryEmailIntervalMins.contains(SummaryEmails.DoNotSend)
       val stats = userStats.find(_.userId == member.id) getOrDie "EdE2KWG05"
+
+      COULD_OPTIMIZE // load all groups only once. Batch load perms. Use same tx as a bit below.
+      val (authzCtx, groups) = readOnlyTransaction { tx =>
+        val groupIds = tx.loadGroupIds(member.briefUser)
+        val permissions = tx.loadPermsOnPages()
+        val authCtx = ForumAuthzContext(Some(member.briefUser), groupIds, permissions)
+        val groups = groupIds.flatMap(allGroups.get)
+        (authCtx, groups)
+      }
+
       val nextEmailAt: Option[When] = member.whenTimeForNexSummaryEmail(stats, groups)
-      if (!wantsSummaries) {
+      if (nextEmailAt.isEmpty) {
         // Avoid loading this user again and again. [5KRDUQ0]
         readWriteTransaction { tx =>
           tx.bumpNextSummaryEmailDate(member.id, Some(When.Never))
@@ -85,13 +90,6 @@ trait SummaryEmailsDao {
           else TopTopicsPeriod.Day
         val pageQuery = PageQuery(PageOrderOffset.ByScoreAndBumpTime(offset = None, period),
           PageFilter.ForActivitySummaryEmail)
-
-        COULD_OPTIMIZE // load all groups only once. Batch load perms. Use same tx as a bit below.
-        val authzCtx = readOnlyTransaction { tx =>
-          val groupIds = tx.loadGroupIds(member.briefUser)
-          val permissions = tx.loadPermsOnPages()
-          ForumAuthzContext(Some(member.briefUser), groupIds, permissions)
-        }
 
         val topTopics =
           ForumController.listMaySeeTopicsInclPinned(categoryId, pageQuery, this,
