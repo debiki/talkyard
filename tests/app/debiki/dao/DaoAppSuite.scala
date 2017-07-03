@@ -49,6 +49,7 @@ class DaoAppSuite(
 
   def dummySpamRelReqStuff = SpamRelReqStuff(userAgent = None, referer = None, uri = "/dummy")
 
+
   /** If the test start time is less than a year after 1970, the popularity stats will
     * subtract a year and create a negative Unix-millis-time —> an assertion fails. So start
     * at least a year after 1970 — let's say 1157 days, to get a nice looking number: 100...000.
@@ -56,11 +57,19 @@ class DaoAppSuite(
   val OneAndZeros1157DaysInMillis = 100000000000L // divide by (24*3600*1000) —> 1157.4 days
 
   def startTime: When = When.fromMillis(10 * 1000 + OneAndZeros1157DaysInMillis)
-  var currentTime: When = startTime
+
+  private var _currentTime: When = _
+  def currentTime: When = _currentTime
+
+  def setTime(when: When) {
+    _currentTime = when
+    Globals.test.setTime(when)
+  }
+  setTime(startTime)
 
   def playTime(millis: Long) {
-    Globals.test.fastForwardTimeMillis(millis)
-    currentTime = currentTime plusMillis millis
+    _currentTime = _currentTime plusMillis millis
+    Globals.test.setTime(_currentTime)
   }
 
 

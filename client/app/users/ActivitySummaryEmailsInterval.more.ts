@@ -70,7 +70,7 @@ export const ActivitySummaryEmailsIntervalDropdown = createComponent({
     const twicePerWeekMins = 60 * 24 * 7 / 2;
     const weeklyMins = 60 * 24 * 7;
     const everySecondWeekMins = 60 * 24 * 7 * 2;
-    const monthlyMins = 60 * 24 * 30;
+    const monthlyMins = 60 * 24 * 365 / 12;
 
     const defaultIntervalMins = weeklyMins;
     const activeIntervalMins = props.intervalMins || defaultIntervalMins;

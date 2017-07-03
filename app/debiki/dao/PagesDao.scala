@@ -114,7 +114,8 @@ trait PagesDao {
       byWho, spamRelReqStuff, transaction = transaction)
 
 
-  def createPageImpl(pageRole: PageRole, pageStatus: PageStatus, anyCategoryId: Option[CategoryId],
+  def createPageImpl(pageRole: PageRole, pageStatus: PageStatus,
+      anyCategoryId: Option[CategoryId],
       anyFolder: Option[String], anySlug: Option[String], showId: Boolean,
       titleSource: String, titleHtmlSanitized: String,
       bodySource: String, bodyHtmlSanitized: String,
@@ -123,6 +124,7 @@ trait PagesDao {
       transaction: SiteTransaction, hidePageBody: Boolean = false,
       bodyPostType: PostType = PostType.Normal): (PagePath, Post) = {
 
+    val now = Globals.now()
     val authorId = byWho.id
     val authorAndLevels = loadUserAndLevels(byWho, transaction)
     val author = authorAndLevels.user
@@ -212,7 +214,7 @@ trait PagesDao {
     val titlePost = Post.createTitle(
       uniqueId = titleUniqueId,
       pageId = pageId,
-      createdAt = transaction.now.toJavaDate,
+      createdAt = now.toJavaDate,
       createdById = authorId,
       source = titleSource,
       htmlSanitized = titleHtmlSanitized,
@@ -221,20 +223,20 @@ trait PagesDao {
     val bodyPost = Post.createBody(
       uniqueId = bodyUniqueId,
       pageId = pageId,
-      createdAt = transaction.now.toJavaDate,
+      createdAt = now.toJavaDate,
       createdById = authorId,
       source = bodySource,
       htmlSanitized = bodyHtmlSanitized,
       postType = bodyPostType,
       approvedById = approvedById)
       .copy(
-        bodyHiddenAt = ifThenSome(hidePageBody, transaction.now.toJavaDate),
+        bodyHiddenAt = ifThenSome(hidePageBody, now.toJavaDate),
         bodyHiddenById = ifThenSome(hidePageBody, authorId),
         bodyHiddenReason = None) // add `hiddenReason` function parameter?
 
     val uploadPaths = UploadsDao.findUploadRefsInPost(bodyPost)
 
-    val pageMeta = PageMeta.forNewPage(pageId, pageRole, authorId, transaction.now.toJavaDate,
+    val pageMeta = PageMeta.forNewPage(pageId, pageRole, authorId, now.toJavaDate,
       pinOrder = pinOrder, pinWhere = pinWhere,
       categoryId = anyCategoryId, url = None, publishDirectly = true,
       hidden = approvedById.isEmpty) // [7AWU2R0]
@@ -244,7 +246,7 @@ trait PagesDao {
       id = transaction.nextReviewTaskId(),
       reasons = reviewReasons.to[immutable.Seq],
       createdById = SystemUserId,
-      createdAt = transaction.now.toJavaDate,
+      createdAt = now.toJavaDate,
       createdAtRevNr = Some(bodyPost.currentRevisionNr),
       maybeBadUserId = authorId,
       pageId = Some(pageId),
@@ -256,7 +258,7 @@ trait PagesDao {
       id = AuditLogEntry.UnassignedId,
       didWhat = AuditLogEntryType.NewPage,
       doerId = authorId,
-      doneAt = transaction.now.toJavaDate,
+      doneAt = now.toJavaDate,
       browserIdData = byWho.browserIdData,
       pageId = Some(pageId),
       pageRole = Some(pageRole),
@@ -265,9 +267,9 @@ trait PagesDao {
 
     val stats = UserStats(
       authorId,
-      lastSeenAt = transaction.now,
-      lastPostedAt = Some(transaction.now),
-      firstNewTopicAt = Some(transaction.now),
+      lastSeenAt = now,
+      lastPostedAt = Some(now),
+      firstNewTopicAt = Some(now),
       numDiscourseTopicsCreated = pageRole.isChat ? 0 | 1,
       numChatTopicsCreated = pageRole.isChat ? 1 | 0)
 

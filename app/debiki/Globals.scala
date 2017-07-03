@@ -477,8 +477,8 @@ class Globals {
 
   object test {
     def setTime(when: When) {
-      require(isOrWasTest, "EdE7LJKF2")
       timeStartMillis = Some(when.millis)
+      timeOffsetMillis = 0
     }
 
     def fastForwardTimeMillis(millis: Long) {

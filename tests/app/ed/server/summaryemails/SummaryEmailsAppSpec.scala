@@ -21,7 +21,6 @@ import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki.dao._
 import debiki.{Globals, TextAndHtml}
-import java.{util => ju}
 import scala.collection.immutable
 
 
@@ -65,8 +64,7 @@ import scala.collection.immutable
   */
 class SummaryEmailsAppSpec extends DaoAppSuite() {
 
-  override val startTime: When = When.fromMillis(3100010001000L)
-  currentTime = startTime
+  override def startTime: When = When.fromMillis(3100010001000L)
 
   val createdAt: When = startTime minusMillis 10001000L
   val summaryEmailIntervalMins = 60
@@ -84,6 +82,7 @@ class SummaryEmailsAppSpec extends DaoAppSuite() {
   var page6IdByAdm: PageId = null
   var staffOnlyPageIdByAdm: PageId = null
   var everyonePageIdByAdm: PageId = null
+  var newPageAfterIdleId: PageId = null
   var editedSettingsPageIdByAdm: PageId = null
   var editedSettingsPage2IdByAdm: PageId = null
 
@@ -501,6 +500,92 @@ class SummaryEmailsAppSpec extends DaoAppSuite() {
   }
 
 
+  "summaries aren't sent immediately when new topic created [3RGKW8O1]" - {
+    "lots of time elapses, so now time for everyone to get a summary" in {
+      playTime(2 * OneMonthInMillis)
+    }
+
+    "Adm creates a topic" in {
+      newPageAfterIdleId = createPage(PageRole.Discussion, TextAndHtml.forTitle("New After Idle"),
+        TextAndHtml.forBodyOrComment("Page body."), authorId = adm.id, browserIdData,
+        dao, anyCategoryId = Some(forum.defaultCategoryId))
+    }
+
+    "the others will *not* immediately get a summary with this page" in {
+      makeSummary(mia.id) mustBe empty
+      makeSummary(mod.id) mustBe empty
+      makeSummary(max.id) mustBe empty
+      makeSummary(ign.id) mustBe empty
+    }
+
+    o"""not until after their individual summary-interval / divisor
+          (divisor = ${SummaryEmailsDao.MinTopicAgeDivisor})""" - {
+
+      val dayDivDivisor = (24 / SummaryEmailsDao.MinTopicAgeDivisor - 1) * OneHourInMillis
+      val twoHours = 2 * OneHourInMillis
+
+      "almost a day / divisor elapses, no summaries sent" in {
+        playTime(dayDivDivisor)
+        makeSummary(mia.id) mustBe empty
+        makeSummary(mod.id) mustBe empty
+        makeSummary(max.id) mustBe empty
+        makeSummary(ign.id) mustBe empty
+      }
+
+      "one hour more than day/divisor elapses" in {
+        playTime(twoHours)
+      }
+
+      "now Mia gets a summary email (her summary interval = one day)" in {
+        val summary = makeSummary(mia.id).get
+        summary.topTopics.size mustBe 1
+        summary.topTopics.head.meta.authorId mustBe adm.id
+        summary.topTopics.head.meta.pageId mustBe newPageAfterIdleId
+      }
+
+      "but not the others" in {
+        makeSummary(mod.id) mustBe empty
+        makeSummary(max.id) mustBe empty
+        makeSummary(ign.id) mustBe empty
+      }
+
+      "almost a week/divisor elapses" in {
+        playTime(OneWeekInMillis / SummaryEmailsDao.MinTopicAgeDivisor
+            - dayDivDivisor - twoHours - OneHourInMillis)
+      }
+
+      "no summaries sent" in {
+        makeSummary(mia.id) mustBe empty
+        makeSummary(mod.id) mustBe empty
+        makeSummary(max.id) mustBe empty
+        makeSummary(ign.id) mustBe empty
+      }
+
+      "some hours time than week/divisor elapses" in {
+        playTime(2 * OneHourInMillis)
+      }
+
+      "now Mod & Max get a summary email (their summary interval = one week)" in {
+        val summaries = makeSummaries(immutable.Seq(mod.id, max.id))
+        summaries foreach { summary =>
+          summary.topTopics.size mustBe 1
+          summary.topTopics.head.meta.authorId mustBe adm.id
+          summary.topTopics.head.meta.pageId mustBe newPageAfterIdleId
+        }
+      }
+
+      "lots of time elapses, no summaries sent" in {
+        playTime(OneMonthInMillis)
+        makeSummary(adm.id) mustBe empty
+        makeSummary(mia.id) mustBe empty
+        makeSummary(mod.id) mustBe empty
+        makeSummary(max.id) mustBe empty
+        makeSummary(ign.id) mustBe empty
+      }
+    }
+  }
+
+
   "one can change one's settings" - {
     "Max no longer wants summaries, Mod inherits from group (won't get), Ign wants each month" in {
       updatePreferences(dao, max.id, _.copy(
@@ -513,11 +598,19 @@ class SummaryEmailsAppSpec extends DaoAppSuite() {
 
     "Ign gets a summary of lots of old topics" in {
       val summary = makeSummary(ign.id).get
-      summary.topTopics.size mustBe >=(7)
+      summary.topTopics.size mustBe SummaryEmailsDao.MaxTopTopics
       // Only Adm and Mia have created pages
       summary.topTopics.map(_.meta.authorId).toSet mustBe Set(adm.id, mia.id)
       val pageIds = summary.topTopics.map(_.meta.pageId).toSet
-      pageIds.size mustBe >=(7)
+      pageIds.size mustBe SummaryEmailsDao.MaxTopTopics
+    }
+
+    "Topics that didn't fit in the summary, won't be sent later (we don't want stale summaries)" in {
+      makeSummary(ign.id) mustBe empty
+      playTime(OneWeekInMillis + OneDayInMillis)
+      makeSummary(ign.id) mustBe empty
+      playTime(OneMonthInMillis)
+      makeSummary(ign.id) mustBe empty
     }
 
     "Adm creates a topic" in {

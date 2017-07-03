@@ -20,16 +20,23 @@ package ed.server.summaryemails
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import controllers.ForumController
-import debiki._
 import debiki.dao._
 import ed.server.auth.ForumAuthzContext
 import scala.collection.immutable
 import scala.collection.mutable.ArrayBuffer
+import SummaryEmailsDao._
 
 
 case class ActivitySummary(toMember: MemberInclDetails, topTopics: immutable.Seq[PagePathAndMeta]) {
 }
 
+
+object SummaryEmailsDao {
+
+  val MinTopicAgeDivisor = 4
+  val MaxTopTopics = 7
+
+}
 
 
 trait SummaryEmailsDao {
@@ -81,6 +88,7 @@ trait SummaryEmailsDao {
         }
       }
       else if (nextEmailAt.exists(_ isBefore now)) {
+        val theSummaryEmailIntervalMins = member.summaryEmailIntervalMins.getOrDie("EdE4PKES0")
         val millisSinceLast =
           now.millis - stats.lastSummaryEmailAt.map(_.millis).getOrElse(member.createdAt.getTime)
         val categoryId = 1 ; CLEAN_UP; HACK // this should be the forum's root category. [8UWKQXN45]
@@ -91,9 +99,16 @@ trait SummaryEmailsDao {
         val pageQuery = PageQuery(PageOrderOffset.ByScoreAndBumpTime(offset = None, period),
           PageFilter.ForActivitySummaryEmail)
 
-        val topTopics =
+        val topTopicsInclTooOld =
           ForumController.listMaySeeTopicsInclPinned(categoryId, pageQuery, this,
             includeDescendantCategories = true, authzCtx = authzCtx)
+
+        // Don't include in this summary email, topics that would have been included in the
+        // *last* summary email (if we didn't have the max-topics-per-email limit).
+        val topTopics = topTopicsInclTooOld filterNot { topic =>
+          stats.lastSummaryEmailAt.exists(_.millis > topic.meta.createdAt.getTime)
+        }
+
         val readingProgresses: Seq[(PagePathAndMeta, (Option[ReadingProgress], Boolean))] =
           readOnlyTransaction { tx =>
             COULD_OPTIMIZE // batch load all at once, not one at a time
@@ -114,14 +129,37 @@ trait SummaryEmailsDao {
           })
         }
 
-        val topicsToListInEmail = unreadTopTopics take 7
-        if (topicsToListInEmail.nonEmpty) {
-          val summary = ActivitySummary(member, topicsToListInEmail.toVector)
-          SHOULD_LOG_STH
-          topicsToListInEmail foreach { t =>
-            System.out.println(s"site $siteId: Smry tpc: ${t.path.value} to: ${member.username}")
+        // If all unread topics were just created, don't send a summary immediately. [3RGKW8O1]
+        // Better wait for a little while, so other members get time to click Like and reply.
+        // That should make the summary more interesting.
+        // If one wants summaries at most once per week or month, then one likely doesn't
+        // care about being notified immediately, if there's a new topic. Instead, the point
+        // is to get a summary with interesting stuff.
+        // So, if all topics are very new, wait for summary-interval / divisor, so there's
+        // some time for others to interact with the topics and make them more interesting.
+        val minOldestAgeMins = theSummaryEmailIntervalMins / MinTopicAgeDivisor
+        val minsToWait =
+          if (unreadTopTopics.isEmpty) minOldestAgeMins
+          else {
+            val oldestUnread = unreadTopTopics.minBy(_.meta.createdAt.getTime)
+            val oldestAgeMs = now.minusMillis(oldestUnread.meta.createdAt.getTime).millis
+            val oldestAgeMins = oldestAgeMs / 1000L / 60L
+            minOldestAgeMins - oldestAgeMins
           }
-          activitySummaries.append(summary)
+
+        if (minsToWait > 0) {
+          val waitUntil = now plusMinutes minsToWait
+          readWriteTransaction { tx =>
+            tx.bumpNextSummaryEmailDate(member.id, Some(waitUntil))
+          }
+        }
+        else {
+          val topicsToListInEmail = unreadTopTopics take MaxTopTopics
+          if (topicsToListInEmail.nonEmpty) {
+            val summary = ActivitySummary(member, topicsToListInEmail.toVector)
+            SHOULD_LOG_STH
+            activitySummaries.append(summary)
+          }
         }
       }
       else if (nextEmailAt.exists(_ isBefore now.plusSeconds(30))) {

@@ -79,7 +79,7 @@ object UnsubFromSummariesController extends mvc.Controller {
     // Also in Javascript: [7GKW4E1]
     val newIntervalMins = what match {
       case InpValUnsub => SummaryEmails.DoNotSend
-      case InpValMonthly => 60 * 24 * 30
+      case InpValMonthly => 60 * 24 * 365 / 12
       case InpVal2ndWeek => 60 * 24 * 7 * 2
       case InpValWeekly => 60 * 24 * 7
       case InpValDaily => 60 * 24
