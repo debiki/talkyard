@@ -38,7 +38,7 @@ import ed.server.auth.Authz
 object UserController extends mvc.Controller {
 
 
-  def listCompleteUsers(whichUsers: String) = StaffGetAction { request =>
+  def listCompleteUsers(whichUsers: String): Action[Unit] = StaffGetAction { request =>
     var onlyApproved = false
     var onlyPendingApproval = false
     whichUsers match {
@@ -55,25 +55,28 @@ object UserController extends mvc.Controller {
       val suspenderIds = usersPendingApproval.flatMap(_.suspendedById)
       val usersById = transaction.loadMembersAsMap(approverIds ++ suspenderIds)
       val usersJson = JsArray(usersPendingApproval.map(
-        jsonForCompleteUser(_, usersById, callerIsAdmin = request.theUser.isAdmin,
+        jsonForMemberInclDetails(_, usersById, callerIsAdmin = request.theUser.isAdmin,
           callerIsStaff = true)))
       OkSafeJson(Json.toJson(Map("users" -> usersJson)))
     }
   }
 
 
-  def loadUserInclDetails(who: String) = GetAction { request =>
+  /** Loads a member or group, incl details, or a guest (then there are no details).
+    */
+  def loadUserAnyDetails(who: String): Action[Unit] = GetAction { request =>
     val (userJson, anyStatsJson) = Try(who.toInt).toOption match {
-      case Some(userId) => loadUserInclDetailsById(userId, includeStats = true, request)
-      case None => loadMemberInclDetailsByEmailOrUsername(who, includeStats = true, request)
+      case Some(userId) => loadUserJsonAnyDetailsById(userId, includeStats = true, request)
+      case None => loadMemberOrGroupJsonInclDetailsByEmailOrUsername(
+        who, includeStats = true, request)
     }
     OkSafeJson(Json.toJson(Map("user" -> userJson, "stats" -> anyStatsJson)))
   }
 
 
   // A tiny bit dupl code [5YK02F4]
-  private def loadUserInclDetailsById(userId: UserId, includeStats: Boolean,
-        request: DebikiRequest[_]) = {
+  private def loadUserJsonAnyDetailsById(userId: UserId, includeStats: Boolean,
+        request: DebikiRequest[_]): (JsObject, JsValue) = {
     val callerIsStaff = request.user.exists(_.isStaff)
     val callerIsAdmin = request.user.exists(_.isAdmin)
     val callerIsUserHerself = request.user.exists(_.id == userId)
@@ -82,9 +85,14 @@ object UserController extends mvc.Controller {
       val stats = includeStats ? transaction.loadUserStats(userId) | None
       val usersJson =
         if (User.isRoleId(userId)) {
-          val user = transaction.loadTheMemberInclDetails(userId)
-          jsonForCompleteUser(user, Map.empty, callerIsAdmin = callerIsAdmin,
-            callerIsStaff = callerIsStaff, callerIsUserHerself = callerIsUserHerself)
+          transaction.loadTheMemberOrGroupInclDetails(userId) match {
+            case m: MemberInclDetails =>
+              jsonForMemberInclDetails(m, Map.empty, callerIsAdmin = callerIsAdmin,
+                callerIsStaff = callerIsStaff, callerIsUserHerself = callerIsUserHerself)
+            case g: Group =>
+              jsonForGroupInclDetails(g, callerIsAdmin = callerIsAdmin,
+                callerIsStaff = callerIsStaff)
+          }
         }
         else {
           val user = transaction.loadTheGuest(userId)
@@ -98,7 +106,7 @@ object UserController extends mvc.Controller {
 
 
   // A tiny bit dupl code [5YK02F4]
-  private def loadMemberInclDetailsByEmailOrUsername(emailOrUsername: String,
+  private def loadMemberOrGroupJsonInclDetailsByEmailOrUsername(emailOrUsername: String,
         includeStats: Boolean, request: DebikiRequest[_]) = {
     val callerIsStaff = request.user.exists(_.isStaff)
     val callerIsAdmin = request.user.exists(_.isAdmin)
@@ -112,7 +120,7 @@ object UserController extends mvc.Controller {
       throwNotImplemented("EsE5KY02", "Lookup by email not implemented")
 
     request.dao.readOnlyTransaction { transaction =>
-      val member = transaction.loadMemberInclDetailsByUsername(emailOrUsername) getOrElse {
+      val people = transaction.loadMemberOrGroupInclDetailsByUsername(emailOrUsername) getOrElse {
         if (isEmail)
           throwNotFound("EsE4PYW20", "User not found")
 
@@ -125,21 +133,28 @@ object UserController extends mvc.Controller {
           throwNotFound("EsE4AK7B", "Many users with this username, weird")
 
         val userId = possibleUserIds.head
-        transaction.loadMemberInclDetails(userId) getOrElse throwNotFound(
+        transaction.loadMemberOrGroupInclDetails(userId) getOrElse throwNotFound(
           "EsE8PKU02", "User not found")
       }
 
-      val stats = includeStats ? transaction.loadUserStats(member.id) | None
-      val callerIsUserHerself = request.user.exists(_.id == member.id)
-      val isStaffOrSelf = callerIsStaff || callerIsUserHerself
-      val userJson = jsonForCompleteUser(member, Map.empty, callerIsAdmin = callerIsAdmin,
-          callerIsStaff = callerIsStaff, callerIsUserHerself = callerIsUserHerself)
-      (userJson, stats.map(makeUserStatsJson(_, isStaffOrSelf)).getOrElse(JsNull))
+      people match {
+        case member: MemberInclDetails =>
+          val stats = includeStats ? transaction.loadUserStats(member.id) | None
+          val callerIsUserHerself = request.user.exists(_.id == member.id)
+          val isStaffOrSelf = callerIsStaff || callerIsUserHerself
+          val userJson = jsonForMemberInclDetails(member, Map.empty, callerIsAdmin = callerIsAdmin,
+            callerIsStaff = callerIsStaff, callerIsUserHerself = callerIsUserHerself)
+          (userJson, stats.map(makeUserStatsJson(_, isStaffOrSelf)).getOrElse(JsNull))
+        case group: Group =>
+          val groupJson = jsonForGroupInclDetails(
+            group, callerIsAdmin = callerIsAdmin, callerIsStaff = callerIsStaff)
+          (groupJson, JsNull)
+      }
     }
   }
 
 
-  private def jsonForCompleteUser(user: MemberInclDetails, usersById: Map[UserId, Member],
+  private def jsonForMemberInclDetails(user: MemberInclDetails, usersById: Map[UserId, Member],
       callerIsAdmin: Boolean, callerIsStaff: Boolean = false, callerIsUserHerself: Boolean = false)
         : JsObject = {
     var userJson = Json.obj(
@@ -186,6 +201,22 @@ object UserController extends mvc.Controller {
       userJson += "lockedThreatLevel" -> JsNumberOrNull(user.lockedThreatLevel.map(_.toInt))
     }
     userJson
+  }
+
+
+  private def jsonForGroupInclDetails(group: Group, callerIsAdmin: Boolean,
+      callerIsStaff: Boolean = false): JsObject = {
+    var json = Json.obj(
+      "id" -> group.id,
+      "isGroup" -> JsTrue,
+      //"createdAtEpoch" -> JsWhen(group.createdAt),
+      "username" -> group.theUsername,
+      "fullName" -> group.name)
+    if (callerIsStaff) {
+      json += "summaryEmailIntervalMins" -> JsNumberOrNull(group.summaryEmailIntervalMins)
+      json += "summaryEmailIfActive" -> JsBooleanOrNull(group.summaryEmailIfActive)
+    }
+    json
   }
 
 
@@ -486,9 +517,11 @@ object UserController extends mvc.Controller {
     // by calling this endpoint many times, and listing all pages + all post nrs.
     // Could be used to speed up the trust level transition from New to Basic to Member.
 
+    import request.{theRequester => requester}
     import ed.server.{WhenFormat, OptWhenFormat}
-    val user = request.theUser
-    throwForbiddenIf(user.isGuest, "EdE8LUHE2", "Not tracking guests' reading progress")
+
+    throwForbiddenIf(requester.isGuest, "EdE8LUHE2", "Not tracking guests' reading progress")
+    throwForbiddenIf(requester.isGroup, "EdE5QFVB5", "Not tracking groups' reading progress")
 
     val pageId = (body \ "pageId").as[PageId]
     var visitStartedAt = (body \ "visitStartedAt").as[When]
@@ -538,8 +571,8 @@ object UserController extends mvc.Controller {
           throwBadRequest("EdE5FKW02", ex.toString)
       }
 
-    request.dao.trackReadingProgressPerhapsPromote(user, pageId, readingProgress)
-    request.dao.pubSub.userIsActive(request.siteId, user, request.theBrowserIdData)
+    request.dao.trackReadingProgressPerhapsPromote(requester, pageId, readingProgress)
+    request.dao.pubSub.userIsActive(request.siteId, requester, request.theBrowserIdData)
     Ok
   }
 

@@ -198,6 +198,7 @@ interface PostRevision {
 
 interface Myself {
   id?: UserId;
+  isGroup?: boolean; // currently always undefined (i.e. false)
   isLoggedIn?: boolean;
   isAdmin?: boolean;
   isModerator?: boolean;
@@ -645,9 +646,12 @@ interface SpecialContent {
   anyCustomText?: string;
 }
 
-
-interface Guest {
+interface User {
   id: UserId;
+}
+
+
+interface Guest extends User, UserAnyDetails {
   fullName: string;
   email: string;
   country: string;
@@ -655,8 +659,7 @@ interface Guest {
 }
 
 
-interface BriefUser {
-  id: UserId;
+interface BriefUser extends User {
   fullName: string;
   username?: string;
   isAdmin?: boolean;
@@ -668,15 +671,33 @@ interface BriefUser {
 }
 
 
-interface MemberInclDetails {
+/** A member or group, including details. Or a guest; then, there are no details. */
+interface UserAnyDetails {
   id: UserId;
-  createdAtEpoch: number;  // change to millis
+  isGroup?: boolean;  // or move to User?
+}
+
+
+interface MemberOrGroupInclDetails extends UserAnyDetails {
   username: string;
+  // Only if requester is staff:
+  summaryEmailIntervalMins?: number;
+  summaryEmailIfActive?: boolean;
+}
+
+
+interface GroupInclDetails extends MemberOrGroupInclDetails {
+  isGroup: boolean; // always true
+  //"createdAtEpoch" -> JsWhen(group.createdAt),
+  fullName: string;
+}
+
+
+interface MemberInclDetails extends MemberOrGroupInclDetails {
+  createdAtEpoch: number;  // change to millis
   fullName: string;
   email: string;
   emailForEveryNewPost: boolean;
-  summaryEmailIntervalMins?: number;
-  summaryEmailIfActive?: boolean;
   about?: string;
   country: string;
   url: string;

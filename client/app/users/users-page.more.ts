@@ -121,17 +121,17 @@ var UserPageComponent = React.createClass(<any> {
     });
     if (myOldId !== store.me.id) {
       // Now we might have access to more/less data about the user, so refresh.
-      this.loadCompleteUser();
+      this.loadUserAnyDetails();
     }
   },
 
   componentDidMount: function() {
-    this.loadCompleteUser();
+    this.loadUserAnyDetails();
   },
 
   componentDidUpdate: function(prevProps) {
     if (this.props.location.pathname !== prevProps.location.pathname) {
-      this.loadCompleteUser();
+      this.loadUserAnyDetails();
     }
   },
 
@@ -143,9 +143,9 @@ var UserPageComponent = React.createClass(<any> {
     this.context.router.push('/-/users/' + this.props.params.usernameOrId + '/' + subPath);
   },
 
-  loadCompleteUser: function(redirectToCorrectUsername) {
-    let usernameOrId: string | number = this.props.params.usernameOrId;
-    Server.loadCompleteUser(usernameOrId, (user, stats: UserStats) => {
+  loadUserAnyDetails: function(redirectToCorrectUsername) {
+    const usernameOrId: string | number = this.props.params.usernameOrId;
+    Server.loadUserAnyDetails(usernameOrId, (user, stats: UserStats) => {
       if (this.isGone) return;
       this.setState({ user: user, stats: stats });
       // 1) In case the user has changed his/her username, and userIdOrUsername is his/her *old*
@@ -165,37 +165,37 @@ var UserPageComponent = React.createClass(<any> {
   },
 
   render: function() {
-    let store: Store = this.state.store;
-    let me: Myself = store.me;
-    let user: MemberInclDetails = this.state.user;
+    const store: Store = this.state.store;
+    const me: Myself = store.me;
+    const user: UserAnyDetails = this.state.user;
     if (!user || !me)
       return r.p({}, 'Loading...');
 
     dieIf(!this.props.routes || !this.props.routes[2] || !this.props.routes[2].path, 'EsE5GKUW2');
 
-    let showPrivateStuff = isStaff(me) || (me.isAuthenticated && me.id === user.id);
+    const showPrivateStuff = isStaff(me) || (me.isAuthenticated && me.id === user.id);
 
-    let activityNavItem =
+    const activityNavItem = user.isGroup ? null :
       NavItem({ eventKey: 'activity', className: 'e_UP_ActivityB' }, "Activity");
 
-    let summaryNavItem =
+    const summaryNavItem = user.isGroup ? null :
       NavItem({ eventKey: 'summary', className: 'e_UP_SummaryB' }, "Summary");
 
-    let notificationsNavItem = !showPrivateStuff ? null :
+    const notificationsNavItem = !showPrivateStuff || user.isGroup ? null :
       NavItem({ eventKey: 'notifications', className: 'e_UP_NotfsB' }, "Notifications");
 
-    let preferencesNavItem = !showPrivateStuff ? null :
+    const preferencesNavItem = !showPrivateStuff ? null :
       NavItem({ eventKey: 'preferences', id: 'e2eUP_PrefsB' }, "Preferences");
 
-    let invitesNavItem = !showPrivateStuff || !maySendInvites(user).value ? null :
+    const invitesNavItem = !showPrivateStuff || !maySendInvites(user).value ? null :
       NavItem({ eventKey: 'invites', id: 'e2eUP_InvitesB' }, "Invites");
 
-    var childProps = {
+    const childProps = {
       store: store,
       me: me, // try to remove, incl already in `store`
       user: user,
       stats: this.state.stats,
-      reloadUser: this.loadCompleteUser,
+      reloadUser: this.loadUserAnyDetails,
       transitionTo: this.transitionTo
     };
 
@@ -377,10 +377,10 @@ var AvatarAboutAndButtons = createComponent({
           r.h2({ className: 'esUP_FN' }, user.fullName, isGuestInfo),
           r.div({ className: 's_UP_About' }, user.about),
           suspendedInfo)),
-        r.div({ className: 's_UP_Ab_Stats' },
+        !stats ? null : r.div({ className: 's_UP_Ab_Stats' },
           r.div({ className: 's_UP_Ab_Stats_Stat' },
             "Joined: " + moment(stats.firstSeenAt).fromNow()),
-          r.div({ className: 's_UP_Ab_Stats_Stat' },
+          r.div({ className: 's_UP_Ab_Stats_Stat' },user.isGroup ? null :
             "Posts made: " + userStats_totalNumPosts(stats)),
           !stats.lastPostedAt ? null : r.div({ className: 's_UP_Ab_Stats_Stat' },
             "Last post: " + moment(stats.lastPostedAt).fromNow()),

@@ -73,7 +73,7 @@ trait UserDao {
         // For now: If the invitation is < 1 day old, allow the user to log in
         // again via the invitation link. In Discourse, this timeout is configurable.
         if (millisAgo < 24 * 3600 * 1000) {
-          val user = loadCompleteUser(invite.userId getOrDie "DwE6FKEW2") getOrDie "DwE8KES2"
+          val user = loadMemberInclDetailsById(invite.userId getOrDie "DwE6FKEW2") getOrDie "DwE8KES2"
           return (user, invite, true)
         }
 
@@ -333,7 +333,7 @@ trait UserDao {
         }
         ThreatLevel.fromInt(levelInt) getOrDie "EsE8GY2511"
       case group: Group =>
-        unimplemented("loading group and levels", "EdE2WKP05")
+        ThreatLevel.HopefullySafe // for now
     }
     UserAndLevels(user, trustLevel, threatLevel)
   }
@@ -525,7 +525,7 @@ trait UserDao {
   }
 
 
-  def loadCompleteUser(userId: UserId): Option[MemberInclDetails] = {
+  def loadMemberInclDetailsById(userId: UserId): Option[MemberInclDetails] = {
     readOnlyTransaction { transaction =>
       transaction.loadMemberInclDetails(userId)
     }
@@ -631,12 +631,10 @@ trait UserDao {
     COULD_OPTIMIZE // For now. Later, cache.
     user match {
       case _: Guest | UnknownUser => Vector(Group.EveryoneId)
-      case m: Member =>
+      case _: Member | _: Group =>
         readOnlyTransaction { transaction =>
           transaction.loadGroupIds(user)
         }
-      case group: Group =>
-        unimplemented("getting group ids for a group", "EdE5JGA10")
     }
   }
 

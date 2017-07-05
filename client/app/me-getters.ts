@@ -64,6 +64,9 @@ export function me_maySendDirectMessageTo(me: Myself, user: MemberInclDetails): 
   if (me.id === user.id)
     return false;
 
+  if (user.isGroup) // group messages not yet impl
+    return false;
+
   if (isStaff(me) || isStaff(user))
     return true;
 

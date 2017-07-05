@@ -57,6 +57,7 @@ trait PostsDao {
         : InsertPostResult = {
 
     val authorId = byWho.id
+    val now = Globals.now()
 
     // Note: Fairly similar to createNewChatMessage() just below. [4UYKF21]
 
@@ -133,7 +134,7 @@ trait PostsDao {
         parent = anyParent,
         multireplyPostNrs = (replyToPostNrs.size > 1) ? replyToPostNrs | Set.empty,
         postType = postType,
-        createdAt = transaction.now.toJavaDate,
+        createdAt = now.toJavaDate,
         createdById = authorId,
         source = textAndHtml.text,
         htmlSanitized = textAndHtml.safeHtml,
@@ -150,8 +151,8 @@ trait PostsDao {
 
       val oldMeta = page.meta
       val newMeta = oldMeta.copy(
-        bumpedAt = shallBumpPage ? Option(transaction.now.toJavaDate) | oldMeta.bumpedAt,
-        lastReplyAt = shallApprove ? Option(transaction.now.toJavaDate) | oldMeta.lastReplyAt,
+        bumpedAt = shallBumpPage ? Option(now.toJavaDate) | oldMeta.bumpedAt,
+        lastReplyAt = shallApprove ? Option(now.toJavaDate) | oldMeta.lastReplyAt,
         lastReplyById = shallApprove ? Option(authorId) | oldMeta.lastReplyById,
         frequentPosterIds = newFrequentPosterIds,
         numRepliesVisible = page.parts.numRepliesVisible + (shallApprove ? 1 | 0),
@@ -166,7 +167,7 @@ trait PostsDao {
         id = AuditLogEntry.UnassignedId,
         didWhat = AuditLogEntryType.NewReply,
         doerId = authorId,
-        doneAt = transaction.now.toJavaDate,
+        doneAt = now.toJavaDate,
         browserIdData = byWho.browserIdData,
         pageId = Some(pageId),
         uniquePostId = Some(newPost.id),
@@ -181,7 +182,7 @@ trait PostsDao {
         id = transaction.nextReviewTaskId(),
         reasons = reviewReasons.to[immutable.Seq],
         createdById = SystemUserId,
-        createdAt = transaction.now.toJavaDate,
+        createdAt = now.toJavaDate,
         createdAtRevNr = Some(newPost.currentRevisionNr),
         maybeBadUserId = authorId,
         postId = Some(newPost.id),
@@ -189,9 +190,9 @@ trait PostsDao {
 
       val stats = UserStats(
         authorId,
-        lastSeenAt = transaction.now,
-        lastPostedAt = Some(transaction.now),
-        firstDiscourseReplyAt = Some(transaction.now),
+        lastSeenAt = now,
+        lastPostedAt = Some(now),
+        firstDiscourseReplyAt = Some(now),
         numDiscourseRepliesPosted = 1,
         numDiscourseTopicsRepliedIn = 0) // SHOULD update properly
 
@@ -1410,6 +1411,8 @@ trait PostsDao {
     if (newParent.postNr == PageParts.TitleNr)
       throwForbidden("EsE4YKJ8_", "Cannot place a post below the title")
 
+    val now = Globals.now()
+
     val (postAfter, storePatch) = readWriteTransaction { transaction =>
       val mover = transaction.loadTheMember(moverId)
       if (!mover.isStaff)
@@ -1445,7 +1448,7 @@ trait PostsDao {
         id = AuditLogEntry.UnassignedId,
         didWhat = AuditLogEntryType.MovePost,
         doerId = moverId,
-        doneAt = transaction.now.toJavaDate,
+        doneAt = now.toJavaDate,
         browserIdData = browserIdData,
         pageId = Some(postToMove.pageId),
         uniquePostId = Some(postToMove.id),
@@ -1496,7 +1499,7 @@ trait PostsDao {
               id = AuditLogEntry.UnassignedId,
               didWhat = AuditLogEntryType.MovePost,
               doerId = moverId,
-              doneAt = transaction.now.toJavaDate,
+              doneAt = now.toJavaDate,
               browserIdData = browserIdData,
               pageId = Some(descendant.pageId),
               uniquePostId = Some(descendant.id),

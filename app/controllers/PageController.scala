@@ -37,7 +37,9 @@ object PageController extends mvc.Controller {
 
   def createPage: Action[JsValue] = PostJsonAction(RateLimits.CreateTopic, maxBytes = 20 * 1000) {
         request =>
-    import request.{body, dao}
+    import request.{body, dao, theRequester => requester}
+
+    throwForbiddenIf(requester.isGroup, "EdE3FDK7M6", "Groups may not create pages")
 
     val anyCategoryId = (body \ "categoryId").asOpt[CategoryId]
     val pageRoleInt = (body \ "pageRole").as[Int]

@@ -80,7 +80,7 @@ var AboutUserDialog = createComponent({
   },
 
   loadUser: function(idOrUsername: number | string) {
-    Server.loadCompleteUser(idOrUsername, (user: MemberInclDetails) => {
+    Server.loadUserAnyDetails(idOrUsername, (user: MemberInclDetails) => {
       if (!this.isMounted()) return;
       if (!this.state.post) {
         this.setState({ user: user });

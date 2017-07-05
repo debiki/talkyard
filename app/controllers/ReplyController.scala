@@ -35,7 +35,7 @@ object ReplyController extends mvc.Controller {
 
   def handleReply: Action[JsValue] = PostJsonAction(RateLimits.PostReply, maxBytes = MaxPostSize) {
         request: JsonPostRequest =>
-    import request.{body, dao}
+    import request.{body, dao, theRequester => requester}
     val pageId = (body \ "pageId").as[PageId]
     //val anyPageUrl = (body \ "pageUrl").asOpt[String]
     val replyToPostNrs = (body \ "postNrs").as[Set[PostNr]]
@@ -44,6 +44,7 @@ object ReplyController extends mvc.Controller {
       "DwE6KG4", "Bad post type")
 
     throwBadRequestIf(text.isEmpty, "EdE85FK03", "Empty post")
+    throwForbiddenIf(requester.isGroup, "EdE4GKRSR1", "Groups may not reply")
 
     DISCUSSION_QUALITY; COULD // require that the user has spent a reasonable time reading
     // the topic, in comparison to # posts in the topic, before allowing hen to post a reply.

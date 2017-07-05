@@ -23,12 +23,12 @@
    module debiki2.admin {
 //------------------------------------------------------------------------------
 
-var r = React.DOM;
-var ReactBootstrap: any = window['ReactBootstrap'];
-var Modal = reactCreateFactory(ReactBootstrap.Modal);
-var ModalTitle = reactCreateFactory(ReactBootstrap.ModalTitle);
-var ModalBody = reactCreateFactory(ReactBootstrap.ModalBody);
-var ModalFooter = reactCreateFactory(ReactBootstrap.ModalFooter);
+const r = React.DOM;
+const ReactBootstrap: any = window['ReactBootstrap'];
+const Modal = reactCreateFactory(ReactBootstrap.Modal);
+const ModalTitle = reactCreateFactory(ReactBootstrap.ModalTitle);
+const ModalBody = reactCreateFactory(ReactBootstrap.ModalBody);
+const ModalFooter = reactCreateFactory(ReactBootstrap.ModalFooter);
 
 
 export const AdminUserPageComponent = React.createClass(<any> {
@@ -54,8 +54,8 @@ export const AdminUserPageComponent = React.createClass(<any> {
 
   loadCompleteUser: function() {
     this.setState({ user: null });
-    var params = this.props.params;
-    Server.loadCompleteUser(params.userId, (user: MemberInclDetails, stats: UserStats) => {
+    const params = this.props.params;
+    Server.loadUserAnyDetails(params.userId, (user: MemberInclDetails, stats: UserStats) => {
       if (!this.isMounted()) return;
       this.setState({
         user: user,
@@ -69,14 +69,14 @@ export const AdminUserPageComponent = React.createClass(<any> {
   },
 
   toggleIsAdmin: function() {
-    var doWhat = this.state.user.isAdmin ? 'RevokeAdmin' : 'GrantAdmin';
+    const doWhat = this.state.user.isAdmin ? 'RevokeAdmin' : 'GrantAdmin';
     Server.setIsAdminOrModerator(this.state.user.id, doWhat, () => {
       this.loadCompleteUser();
     });
   },
 
   toggleIsModerator: function() {
-    var doWhat = this.state.user.isModerator ? 'RevokeModerator' : 'GrantModerator';
+    const doWhat = this.state.user.isModerator ? 'RevokeModerator' : 'GrantModerator';
     Server.setIsAdminOrModerator(this.state.user.id, doWhat, () => {
       this.loadCompleteUser();
     });
@@ -94,30 +94,30 @@ export const AdminUserPageComponent = React.createClass(<any> {
 
   render: function() {
     let store: Store = this.props.store;
-    var user: MemberInclDetails = this.state.user;
-    var me: Myself = store.me;
+    const user: MemberInclDetails = this.state.user;
+    const me: Myself = store.me;
     if (!user)
       return r.p({}, 'Loading...');
 
-    var showPublProfileButton =
+    const showPublProfileButton =
         LinkButton({ href: this.publicProfileLink(), id: 'e2eA_Us_U_ShowPublProfB' },
           "Show Public Profile");
 
-    var usernameAndFullName = user.username;
+    let usernameAndFullName = user.username;
     if (user.fullName) {
       usernameAndFullName += ' (' + user.fullName + ')';
     }
 
-    var thatIsYou = user.id === me.id ? " — that's you" : null;
+    const thatIsYou = user.id === me.id ? " — that's you" : null;
 
-    var suspendedText = user.suspendedTillEpoch
+    const suspendedText = user.suspendedTillEpoch
         ? 'from ' + moment(user.suspendedAtEpoch).format('YYYY-MM-DD') +
             ' to ' + moment(user.suspendedTillEpoch).format('YYYY-MM-DD HH:mm') +
             ', reason: ' + user.suspendedReason
         : 'no';
 
-    var suspendButton;
-    var userSuspendedNow = user.suspendedTillEpoch && Date.now() <= user.suspendedTillEpoch;
+    let suspendButton;
+    let userSuspendedNow = user.suspendedTillEpoch && Date.now() <= user.suspendedTillEpoch;
     if (user.isAdmin || thatIsYou) {
       // Cannot suspend admins or oneself.
     }
@@ -131,36 +131,36 @@ export const AdminUserPageComponent = React.createClass(<any> {
             "Suspend");
     }
 
-    var toggleAdminButton;
-    var toggleModeratorButton;
-    if (me.isAdmin && !thatIsYou && !userSuspendedNow) {
+    let toggleAdminButton;
+    let toggleModeratorButton;
+    if (me.isAdmin && !thatIsYou && !userSuspendedNow && !user.isGroup) {
       toggleAdminButton = Button({ onClick: this.toggleIsAdmin },
           user.isAdmin ? 'Revoke Admin' : 'Grant Admin');
       toggleModeratorButton = Button({ onClick: this.toggleIsModerator },
           user.isModerator ? 'Revoke Moderator' : 'Grant Moderator');
     }
 
-    var moderatorInfo = user.isAdmin
+    const moderatorInfo = user.isAdmin || user.isGroup
         ? null  // then moderator settings have no effect
         : r.p({}, 'Moderator: ' + user.isModerator, ' ', toggleModeratorButton);
 
-    var trustLevelText = user.lockedTrustLevel
+    const trustLevelText = user.isGroup ? null : (user.lockedTrustLevel
         ? "Locked at: " + trustLevel_toString(user.lockedTrustLevel) + ", " +
             "would otherwise have been: " + trustLevel_toString(user.trustLevel)
-        : trustLevel_toString(user.trustLevel);
+        : trustLevel_toString(user.trustLevel));
 
-    var trustButton = Button({ onClick: () => openTrustLevelDialog(user, this.reloadUser) },
-      "Change");
+    const trustButton = user.isGroup ? null :
+        Button({ onClick: () => openTrustLevelDialog(user, this.reloadUser) }, "Change");
 
-    var threatLevelText = user.lockedThreatLevel
+    const threatLevelText = user.isGroup ? null : (user.lockedThreatLevel
         ? "Locked at: " + threatLevel_toString(user.lockedThreatLevel) +
             ", would otherwise have been: " + threatLevel_toString(user.threatLevel)
-        : threatLevel_toString(user.threatLevel);
+        : threatLevel_toString(user.threatLevel));
 
-    var threatButton = Button({ onClick: () => openThreatLevelDialog(user, this.reloadUser) },
-      "Change");
+    const threatButton = user.isGroup ? null :
+        Button({ onClick: () => openThreatLevelDialog(user, this.reloadUser) }, "Change");
 
-    var impersonateButton = !me.isAdmin ? null :
+    const impersonateButton = !me.isAdmin ? null :
         Button({ onClick: () => Server.impersonateGoToHomepage(user.id),
             id: 'e2eA_Us_U_ImpersonateB' }, "Impersonate");
 
@@ -169,18 +169,19 @@ export const AdminUserPageComponent = React.createClass(<any> {
         r.div({ className: 'pull-right' },
           showPublProfileButton),
 
-        r.p({}, 'Username: ' + usernameAndFullName, thatIsYou),
-        r.p({}, 'Admin: ' + user.isAdmin, ' ', toggleAdminButton),
+        r.p({}, "Username: " + usernameAndFullName, thatIsYou),
+        user.isGroup ? r.p({}, "Is a group.") : null,
+        user.isGroup ? null : r.p({}, "Admin: " + user.isAdmin, ' ', toggleAdminButton),
         moderatorInfo,
-        r.p({}, 'Suspended: ' + suspendedText, ' ', suspendButton),
-        r.p({}, 'Trust level: ' + trustLevelText, ' ', trustButton),
-        r.p({}, 'Threat level: ' + threatLevelText, ' ', threatButton),
+        user.isGroup ? null : r.p({}, "Suspended: " + suspendedText, ' ', suspendButton),
+        user.isGroup ? null : r.p({}, "Trust level: " + trustLevelText, ' ', trustButton),
+        user.isGroup ? null : r.p({}, "Threat level: " + threatLevelText, ' ', threatButton),
         impersonateButton));
   }
 });
 
 
-var suspendUserDialog;
+let suspendUserDialog;
 
 function openSuspendUserDialog(user: BriefUser, refreshCallback) {
   if (!suspendUserDialog) {
@@ -206,12 +207,12 @@ const SuspendDialog = createComponent({
   },
 
   doSuspend: function() {
-    var numDays = parseInt(this.refs.daysInput.getValue());
+    const numDays = parseInt(this.refs.daysInput.getValue());
     if (isNaN(numDays)) {
       alert('Please enter a number');
       return;
     }
-    var reason = this.refs.reasonInput.getValue();
+    const reason = this.refs.reasonInput.getValue();
     if (!reason) {
       alert("Please clarify why you're suspending this user");
       return;
@@ -323,7 +324,7 @@ const MemberTrustLevelDialog = createComponent({
 
 
 
-var threatLevelDialog;
+let threatLevelDialog;
 
 function openThreatLevelDialog(user: MemberInclDetails, refreshCallback) {
   if (!threatLevelDialog) {
@@ -359,14 +360,14 @@ const MemberThreatLevelDialog = createComponent({
     if (!this.state.isOpen)
       return null;
 
-    var user: MemberInclDetails = this.state.user;
+    const user: MemberInclDetails = this.state.user;
 
-    var threatLevelText = user.lockedThreatLevel
+    const threatLevelText = user.lockedThreatLevel
       ? "Threat level locked at: " + threatLevel_toString(user.lockedThreatLevel) +
           ", would otherwise have been: " + threatLevel_toString(user.threatLevel)
       : "Current threat level: " + threatLevel_toString(user.threatLevel);
 
-    var actionContent = user.lockedThreatLevel
+    const actionContent = user.lockedThreatLevel
         ? Button({ onClick: () => this.lockThreatLevelAt(null),
               help: "Clears the manually assigned threat level." }, "Unlock")
         : r.div({},

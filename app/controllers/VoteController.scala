@@ -25,6 +25,7 @@ import debiki.DebikiHttp._
 import ed.server.http._
 import play.api._
 import play.api.libs.json._
+import play.api.mvc.Action
 
 
 /** Handles votes, e.g. "I like this comment" or "this comment is faulty" votes.
@@ -39,8 +40,9 @@ object VoteController extends mvc.Controller {
     *   action: "CreateVote"  # or "DeleteVote"
     *   postIdsRead: [1, 9, 53, 82]
     */
-  def handleVotes = PostJsonAction(RateLimits.RatePost, maxBytes = 500) { request: JsonPostRequest =>
-    val body = request.body
+  def handleVotes: Action[JsValue] = PostJsonAction(RateLimits.RatePost, maxBytes = 500) {
+        request: JsonPostRequest =>
+    import request.{body, dao, theRequester => requester}
     val pageId = (body \ "pageId").as[PageId]
     val postNr = (body \ "postNr").as[PostNr] ; SHOULD // change to id, not nr? [idnotnr]
     val voteStr = (body \ "vote").as[String]
@@ -55,13 +57,15 @@ object VoteController extends mvc.Controller {
       case _ => throwBadReq("DwE42GPJ0", s"Bad action: $actionStr")
     }
 
+    throwForbiddenIf(requester.isGroup, "EdE5PZWC2", "Groups may not vote")
+
     // Check for bad requests
     if (delete) {
       if (postNrsReadSeq.isDefined)
         throwBadReq("DwE30Df5", "postIdsReadSeq specified when deleting a vote")
     }
     else {
-      if (postNrsReadSeq.map(_.length) != Some(postNrsRead.size))
+      if (postNrsReadSeq.map(_.length) isNot postNrsRead.size)
         throwBadReq("DwE942F0", "Duplicate nrs in postNrsRead")
       if (!postNrsRead.contains(postNr))
         throwBadReq("DwE46F82", "postNr not part of postNrsRead")
@@ -76,10 +80,10 @@ object VoteController extends mvc.Controller {
     }
 
     if (delete) {
-      request.dao.deleteVote(pageId, postNr, voteType, voterId = request.theUser.id)
+      dao.deleteVote(pageId, postNr, voteType, voterId = request.theUser.id)
     }
     else {
-      request.dao.ifAuthAddVote(pageId, postNr, voteType,
+      dao.ifAuthAddVote(pageId, postNr, voteType,
         voterId = request.theUser.id, voterIp = request.ip, postNrsRead)
     }
 

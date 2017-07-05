@@ -463,9 +463,11 @@ export function loadGroups(success: (_: Group[]) => void) {
 }
 
 
-export function loadCompleteUser(userIdOrUsername: UserId | string,
+// BUG might get a Guest or Group, not always a MemberInclDetails. SHOULD find for usages & fix.
+// (Some callers, but not all, can deal with Group or Guest.)
+export function loadUserAnyDetails(userIdOrUsername: UserId | string,
       doneCallback: (user: MemberInclDetails, stats: UserStats) => void, error?: () => void) {
-  get('/-/load-user-incl-details?who=' + userIdOrUsername, (response) => {
+  get('/-/load-user-any-details?who=' + userIdOrUsername, (response) => {
     doneCallback(response.user, response.stats);
   }, error);
 }

@@ -389,6 +389,7 @@ sealed trait User {
 
   def isMember: Boolean = User.isMember(id)
   def isGuest: Boolean = User.isGuestId(id)
+  def isGroup: Boolean = false
   def anyMemberId: Option[RoleId] = if (isRoleId(id)) Some(id) else None
 
   def isSuspendedAt(when: ju.Date): Boolean =
@@ -401,6 +402,15 @@ sealed trait User {
   def anyName: Option[String] = None
   def anyUsername: Option[String] = None
   def usernameOrGuestName: String
+
+  def toMemberOrThrow: Member = {
+    this match {
+      case m: Member => m
+      case g: Guest => throw GotAGuestException(g.id)
+      case g: Group => throw GotAGroupException(g.id)
+      case UnknownUser => throw GotUnknownUserException
+    }
+  }
 }
 
 
@@ -490,6 +500,8 @@ case class Guest(
 }
 
 
+sealed trait MemberOrGroupInclDetails
+
 case class MemberInclDetails(
   id: UserId,
   fullName: Option[String],
@@ -521,7 +533,7 @@ case class MemberInclDetails(
   trustLevel: TrustLevel = TrustLevel.NewMember,
   lockedTrustLevel: Option[TrustLevel] = None,
   threatLevel: ThreatLevel = ThreatLevel.HopefullySafe,
-  lockedThreatLevel: Option[ThreatLevel] = None) {
+  lockedThreatLevel: Option[ThreatLevel] = None) extends MemberOrGroupInclDetails {
 
   require(User.isOkayUserId(id), "DwE077KF2")
   require(username.length >= 2, "DwE6KYU9")
@@ -714,7 +726,8 @@ case class Group(
   smallAvatar: Option[UploadRef] = None,
   summaryEmailIntervalMins: Option[Int] = None,
   summaryEmailIfActive: Option[Boolean] = None,
-  grantsTrustLevel: Option[TrustLevel] = None) extends User {
+  grantsTrustLevel: Option[TrustLevel] = None)
+  extends User with MemberOrGroupInclDetails {  // COULD split into two? One without, one with details
 
   def email: String = ""
   def passwordHash = None
@@ -728,6 +741,7 @@ case class Group(
   def isApproved: Option[Boolean] = Some(true)
   def suspendedTill: Option[ju.Date] = None
 
+  override def isGroup = true
   override def effectiveTrustLevel: TrustLevel = grantsTrustLevel getOrElse TrustLevel.NewMember
 
   override def usernameOrGuestName: String = theUsername

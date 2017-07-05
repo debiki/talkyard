@@ -24,31 +24,33 @@
    namespace debiki2.users {
 //------------------------------------------------------------------------------
 
-var d = { i: debiki.internal, u: debiki.v0.util };
-var $: JQueryStatic = d.i.$;
-var r = React.DOM;
+const d = { i: debiki.internal, u: debiki.v0.util };
+const $: JQueryStatic = d.i.$;
+const r = React.DOM;
 
 
-export var UserPreferencesComponent = React.createClass({
+export const UserPreferencesComponent = React.createClass({
   render: function() {
-    var me: Myself = this.props.me;
-    var user: MemberInclDetails = this.props.user;
+    const me: Myself = this.props.me;
+    const user: MemberInclDetails = this.props.user;
 
-    var mayViewPrefs = isStaff(me) || (me.isAuthenticated && me.id === user.id);
+    const mayViewPrefs = isStaff(me) || (me.isAuthenticated && me.id === user.id);
 
     if (!mayViewPrefs)
       return r.p({}, "Forbidden");
 
-    var anyNotYourPrefsInfo = null;
+    let anyNotYourPrefsInfo;
     if (me.id !== user.id) {
       anyNotYourPrefsInfo =
         r.p({}, "You are editing ", r.b({}, 'another '),
           "user's preferences. You can do that, because you're an administrator.");
     }
 
-    var preferences = isGuest(user)
+    const preferences = isGuest(user)
         ? GuestPreferences({ guest: user })
-        : MemberPreferences({ user: user, me: me, reloadUser: this.props.reloadUser });
+        : (user.isGroup
+            ? r.p({}, "GROUP")
+            : MemberPreferences({ user: user, me: me, reloadUser: this.props.reloadUser }));
 
     return (
       r.div({ className: 's_UP_Prefs' },

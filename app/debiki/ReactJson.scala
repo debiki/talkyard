@@ -823,7 +823,7 @@ object ReactJson {
 
     val threatLevel = user match {
       case member: Member => member.threatLevel
-      case _: Guest =>
+      case _ =>
         COULD // load or get-from-cache IP bans ("blocks") for this guest and derive the
         // correct threat level. However, for now, since this is for the brower only, this'll do:
         ThreatLevel.HopefullySafe

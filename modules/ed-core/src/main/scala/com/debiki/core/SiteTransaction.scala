@@ -306,11 +306,20 @@ trait SiteTransaction {
   def loginAsGuest(loginAttempt: GuestLoginAttempt): GuestLoginResult
   def configIdtySimple(ctime: ju.Date, emailAddr: String, emailNotfPrefs: EmailNotfPrefs)
 
-  def loadMemberInclDetails(userId: UserId): Option[MemberInclDetails]
-  def loadMemberInclDetailsByUsername(username: String): Option[MemberInclDetails]
+  def loadMemberInclDetails(userId: UserId): Option[MemberInclDetails] =
+    loadMemberOrGroupInclDetails(userId) map {
+      case member: MemberInclDetails => member
+      case group: Group => throw GotAGroupException(group.id)
+    }
+
+  def loadMemberOrGroupInclDetails(userId: UserId): Option[MemberOrGroupInclDetails]
+  def loadMemberOrGroupInclDetailsByUsername(username: String): Option[MemberOrGroupInclDetails]
 
   def loadTheMemberInclDetails(userId: UserId): MemberInclDetails =
     loadMemberInclDetails(userId).getOrElse(throw UserNotFoundException(userId))
+
+  def loadTheMemberOrGroupInclDetails(userId: UserId): MemberOrGroupInclDetails =
+    loadMemberOrGroupInclDetails(userId).getOrElse(throw UserNotFoundException(userId))
 
   // def updateMember(user: Member): Boolean — could add, [6DCU0WYX2]
   def updateMemberInclDetails(user: MemberInclDetails): Boolean
@@ -366,7 +375,14 @@ trait SiteTransaction {
     onlyApproved: Boolean = false,
     onlyPendingApproval: Boolean = false): immutable.Seq[MemberInclDetails]
 
-  def loadMembersInclDetailsById(userIds: Iterable[UserId]): immutable.Seq[MemberInclDetails]
+  def loadMembersInclDetailsById(userIds: Iterable[UserId]): immutable.Seq[MemberInclDetails] =
+    loadMembersAndGroupsInclDetailsById(userIds) map {
+      case member: MemberInclDetails => member
+      case group: Group => throw GotAGroupException(group.id)
+    }
+
+  def loadMembersAndGroupsInclDetailsById(userIds: Iterable[UserId])
+        : immutable.Seq[MemberOrGroupInclDetails]
 
   def loadOwner(): Option[MemberInclDetails]
 
@@ -384,10 +400,10 @@ trait SiteTransaction {
     val member = user match {
       case _: Guest | UnknownUser => return Vector(G.EveryoneId)
       case m: Member => m
-      // later: case g: Group => g // groups are members
+      case g: Group => return makeGroupIdsForGroup(g)
     }
 
-    // For now. Later, also do db request and add custom groups.
+    // For now. Later, also do db request and add custom groups.  [7JKC1104]
 
     if (member.isAdmin)
       return Vector(member.id, G.AdminsId, G.StaffId, G.CoreMembersId, G.RegularMembersId,
@@ -413,6 +429,39 @@ trait SiteTransaction {
       case TrustLevel.CoreMember =>
         Vector(member.id, G.CoreMembersId, G.RegularMembersId, G.TrustedMembersId,
           G.FullMembersId, G.BasicMembersId, G.NewMembersId, G.EveryoneId)
+    }
+  }
+
+
+  private def makeGroupIdsForGroup(group: Group): Vector[UserId] = {
+    // For now. Later, also do db request and add custom groups.  [7JKC1104]
+    val G = Group
+    group.id match {
+      case G.NewMembersId =>
+        Vector(G.NewMembersId, G.EveryoneId)
+      case G.BasicMembersId =>
+        Vector(G.BasicMembersId, G.NewMembersId, G.EveryoneId)
+      case G.FullMembersId =>
+        Vector(G.FullMembersId, G.BasicMembersId, G.NewMembersId, G.EveryoneId)
+      case G.TrustedMembersId =>
+        Vector(G.TrustedMembersId, G.FullMembersId, G.BasicMembersId, G.NewMembersId, G.EveryoneId)
+      case G.RegularMembersId =>
+        Vector(G.RegularMembersId, G.TrustedMembersId,
+          G.FullMembersId, G.BasicMembersId, G.NewMembersId, G.EveryoneId)
+      case G.CoreMembersId =>
+        Vector(G.CoreMembersId, G.RegularMembersId, G.TrustedMembersId,
+          G.FullMembersId, G.BasicMembersId, G.NewMembersId, G.EveryoneId)
+      case G.StaffId =>
+        Vector(G.StaffId, G.CoreMembersId, G.RegularMembersId,
+          G.TrustedMembersId, G.FullMembersId, G.BasicMembersId, G.NewMembersId, G.EveryoneId)
+      case G.ModeratorsId =>
+        Vector(G.ModeratorsId, G.StaffId, G.CoreMembersId, G.RegularMembersId,
+          G.TrustedMembersId, G.FullMembersId, G.BasicMembersId, G.NewMembersId, G.EveryoneId)
+      case G.AdminsId =>
+        Vector(G.AdminsId, G.StaffId, G.CoreMembersId, G.RegularMembersId,
+          G.TrustedMembersId, G.FullMembersId, G.BasicMembersId, G.NewMembersId, G.EveryoneId)
+      case _ =>
+        Vector(G.EveryoneId)
     }
   }
 
@@ -484,6 +533,15 @@ trait SiteTransaction {
   def unblockBrowser(browserIdCookie: String)
 }
 
+
+/** Include stack trace, so can find bugs. (So don't use QuickMessageException). */
+case class GotAGroupException(groupId: UserId) extends Exception(
+  s"Got a group when trying to load member $groupId [EdE2SBA4J7]")
+
+case class GotAGuestException(groupId: UserId) extends Exception(
+  s"Got a guest when trying to load member $groupId [EdE4GAR0W1]")
+
+case object GotUnknownUserException extends Exception
 
 case class UserNotFoundException(userId: UserId) extends QuickMessageException(
   s"User found by id: $userId")

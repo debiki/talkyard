@@ -108,7 +108,7 @@ export function userGetWatchbarTopicIds(user: Myself): PageId[] {
 
 export function maySendInvites(user: Myself | MemberInclDetails): MayMayNot {
   // Currently only admins may send invites.
-  if (!user.isAdmin) return mayMayNot(false, "is not admin");
+  if (!user.isAdmin || user.isGroup) return mayMayNot(false, "is not admin");
   return mayIndeed();
 }
 

@@ -38,7 +38,7 @@ object TrustLevel {
   case object CoreMember extends TrustLevel(6)
 
   // Not real trust levels, but sometimes simpler to remember just one digit, say 7,
-  // instead of 3 things: level + isMod + isAdm.
+  // instead of 3 things: level + isStaff + isModerator.
   val StrangerDummyLevel = 0
   val ModeratorDummyLevel = 7
   val AdminDummyLevel = 8
