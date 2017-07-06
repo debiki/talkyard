@@ -282,7 +282,7 @@ case object User {
   /** Ids 1 .. 99 are reserved in case in the future I want to combine users and groups,
     * and then there'll be a few groups with hardcoded ids in the range 1..99.
     */
-  val LowestAuthenticatedUserId = 100
+  val LowestAuthenticatedUserId = 100   // also in js  [8PWK1Q2W]
 
   val LowestMemberId = SystemUserId // -1    No, change to -2  [4KYFU02]
   val LowestNonGuestId = 1  // later: rename to LowestMemberId?

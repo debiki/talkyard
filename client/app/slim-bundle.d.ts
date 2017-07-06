@@ -27,6 +27,7 @@ declare const FirstReplyNr;
 declare let NoUserId;
 declare const SystemUserId;
 declare const MinMemberId;
+declare const LowestAuthenticatedUserId;
 
 declare const MaxGuestId;
 declare const UnknownUserId;

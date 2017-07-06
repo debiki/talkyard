@@ -28,16 +28,15 @@
    namespace debiki2.users {
 //------------------------------------------------------------------------------
 
-var r = React.DOM;
-var Nav = rb.Nav;
-var NavItem = rb.NavItem;
+const r = React.DOM;
+const Nav = rb.Nav;
+const NavItem = rb.NavItem;
 
-var UsersRoot = '/-/users/';
-var ReactRouter = window['ReactRouter'];
-var Route = reactCreateFactory(ReactRouter.Route);
-var IndexRoute = reactCreateFactory(ReactRouter.IndexRoute);
-var Redirect = reactCreateFactory(ReactRouter.Redirect);
-var DefaultRoute = reactCreateFactory(ReactRouter.DefaultRoute);
+const UsersRoot = '/-/users/';
+const ReactRouter = window['ReactRouter'];
+const Route = reactCreateFactory(ReactRouter.Route);
+const IndexRoute = reactCreateFactory(ReactRouter.IndexRoute);
+const Redirect = reactCreateFactory(ReactRouter.Redirect);
 
 
 // Make the components async? So works also if more-bundle.js not yet loaded? [4WP7GU5]
@@ -65,13 +64,13 @@ export function routes() {
 
 
 
-var UsersHomeComponent = React.createClass(<any> {
+const UsersHomeComponent = React.createClass(<any> {
   componentDidMount: function() {
     if (window.location.hash.indexOf('#writeMessage') !== -1) {
-      var usernameOrId = this.props.params.usernameOrId;
+      const usernameOrId = this.props.params.usernameOrId;
       dieIf(/[^0-9]/.test(usernameOrId), 'Not a user id [EsE5YK0P2]');
-      var toUserId = parseInt(usernameOrId);
-      var myUserId = ReactStore.getMe().id;
+      const toUserId = parseInt(usernameOrId);
+      const myUserId = ReactStore.getMe().id;
       dieIf(toUserId === myUserId, 'EsE7UMKW2');
       dieIf(userId_isGuest(toUserId), 'EsE6JKY20');
       editor.openToWriteMessage(toUserId);
@@ -89,7 +88,7 @@ var UsersHomeComponent = React.createClass(<any> {
 
 
 
-var DefaultComponent = React.createClass(<any> {
+const DefaultComponent = React.createClass(<any> {
   render: function() {
     return r.div({}, 'Unexpected URL [DwE7E1W31]');
   }
@@ -97,7 +96,7 @@ var DefaultComponent = React.createClass(<any> {
 
 
 
-var UserPageComponent = React.createClass(<any> {
+const UserPageComponent = React.createClass(<any> {
   mixins: [debiki2.StoreListenerMixin],
 
   contextTypes: {
@@ -217,7 +216,7 @@ var UserPageComponent = React.createClass(<any> {
 
 
 
-var AvatarAboutAndButtons = createComponent({
+const AvatarAboutAndButtons = createComponent({
   getInitialState: function() {
     return {
       isUploadingProfilePic: false,
@@ -236,17 +235,17 @@ var AvatarAboutAndButtons = createComponent({
     if (!this.refs.chooseAvatarInput)
       return;
 
-    var inputElem = this.refs.chooseAvatarInput;
-    var FileAPI = window['FileAPI'];
+    const inputElem = this.refs.chooseAvatarInput;
+    const FileAPI = window['FileAPI'];
     FileAPI.event.on(inputElem, 'change', (evt) => {
-      var files = FileAPI.getFiles(evt);
+      const files = FileAPI.getFiles(evt);
       if (!files.length)
         return; // file dialog cancelled?
 
       // Perhaps there's some better way to test if the file is ok than using filter(). Oh well.
       FileAPI.filterFiles(files, (file, info) => {
         if( /^image/.test(file.type) ){
-          var largeEnough = info.width >= 100 && info.height >= 100;
+          const largeEnough = info.width >= 100 && info.height >= 100;
           dieIf(!largeEnough, "Image too small: should be at least 100 x 100 [EsE8PYM21]");
         }
         else {
@@ -275,7 +274,7 @@ var AvatarAboutAndButtons = createComponent({
               });
             }
             else {
-              var percent = event.loaded / event.total * 100;
+              const percent = event.loaded / event.total * 100;
               pagedialogs.getProgressBarDialog().setDonePercent(percent);
             }
           },
@@ -303,12 +302,12 @@ var AvatarAboutAndButtons = createComponent({
   },
 
   render: function() {
-    var user: MemberInclDetails = this.props.user;
-    var stats: UserStats = this.props.stats;
-    var me: Myself = this.props.me;
-    var suspendedInfo;
+    const user: MemberInclDetails = this.props.user;
+    const stats: UserStats = this.props.stats;
+    const me: Myself = this.props.me;
+    let suspendedInfo;
     if (user.suspendedAtEpoch) {
-      var whatAndUntilWhen = (<number | string> user.suspendedTillEpoch) === 'Forever'
+      const whatAndUntilWhen = (<number | string> user.suspendedTillEpoch) === 'Forever'
           ? 'banned'
           : 'suspended until ' + moment(user.suspendedTillEpoch).format('YYYY-MM-DD HH:mm') + ' UTC';
       suspendedInfo = r.div({},
@@ -316,32 +315,38 @@ var AvatarAboutAndButtons = createComponent({
           'Reason: ' + user.suspendedReason);
     }
 
-    var isMe = me.id === user.id;
-    var isGuestInfo = null;
+    const isMe = me.id === user.id;
+
+    let isAGroup;
+    if (user.isGroup) {
+      isAGroup = " (a group)";
+    }
+
+    let isWhatInfo = null;
     if (isGuest(user)) {
-      isGuestInfo = ' — a guest user, could be anyone';
+      isWhatInfo = ' — a guest user, could be anyone';
     }
     if (user.isModerator) {
-      isGuestInfo = ' – moderator';
+      isWhatInfo = ' – moderator';
     }
     if (user.isAdmin) {
-      isGuestInfo = ' – administrator';
+      isWhatInfo = ' – administrator';
     }
-    if (isGuestInfo) {
-      isGuestInfo = r.span({ className: 'dw-is-what' }, isGuestInfo);
+    if (isWhatInfo) {
+      isWhatInfo = r.span({ className: 'dw-is-what' }, isWhatInfo);
     }
 
-    var thatIsYou = !isMe ? null :
+    const thatIsYou = !isMe ? null :
       r.span({ className: 'esProfile_isYou' }, "(you)");
 
-    var avatar = user.mediumAvatarUrl
+    const avatar = user.mediumAvatarUrl
         ? r.img({ src: user.mediumAvatarUrl })
         : debiki2.avatar.Avatar({ user: user, large: true, ignoreClicks: true });
 
-    var uploadAvatarBtnText = user.mediumAvatarUrl ? "Change photo" : "Upload photo";
-    var avatarMissingClass = user.mediumAvatarUrl ? '' : ' esMedAvtr-missing';
+    const uploadAvatarBtnText = user.mediumAvatarUrl ? "Change photo" : "Upload photo";
+    const avatarMissingClass = user.mediumAvatarUrl ? '' : ' esMedAvtr-missing';
 
-    var anyUploadPhotoBtn = (isMe || isStaff(me)) && !isGuest(user)
+    const anyUploadPhotoBtn = (isMe || isStaff(me)) && !isGuest(user)
       ? r.div({},
           // File inputs are ugly, so we hide the file input (size 0 x 0) and activate
           // it by clicking a beautiful button instead:
@@ -353,11 +358,11 @@ var AvatarAboutAndButtons = createComponent({
       : null;
 
 
-    var adminButton = !isStaff(me) || isGuest(user) ? null :
+    const adminButton = !isStaff(me) || isGuest(user) ? null :
         LinkButton({ href: linkToUserInAdminArea(user.id), className: 's_UP_AdminB' },
           "View in Admin Area");
 
-    var sendMessageButton = !me_maySendDirectMessageTo(me, user) ? null :
+    const sendMessageButton = !me_maySendDirectMessageTo(me, user) ? null :
         PrimaryButton({ onClick: this.sendMessage, className: 's_UP_SendMsgB' },
           "Send Message");
 
@@ -373,8 +378,8 @@ var AvatarAboutAndButtons = createComponent({
         r.div({ className: 's_UP_AboutBtns' },
           sendMessageButton,
           adminButton,
-          r.h1({ className: 'esUP_Un' }, user.username, thatIsYou),
-          r.h2({ className: 'esUP_FN' }, user.fullName, isGuestInfo),
+          r.h1({ className: 'esUP_Un' }, user.username, thatIsYou, isAGroup),
+          r.h2({ className: 'esUP_FN' }, user.fullName, isWhatInfo),
           r.div({ className: 's_UP_About' }, user.about),
           suspendedInfo)),
         !stats ? null : r.div({ className: 's_UP_Ab_Stats' },

@@ -41,16 +41,15 @@ export const UserPreferencesComponent = React.createClass({
 
     let anyNotYourPrefsInfo;
     if (me.id !== user.id) {
-      anyNotYourPrefsInfo =
-        r.p({}, "You are editing ", r.b({}, 'another '),
-          "user's preferences. You can do that, because you're an administrator.");
+      const prefsAndCanBecause = " preferences. You can do that, because you're an administrator.";
+      anyNotYourPrefsInfo = user.isGroup
+        ? r.p({}, "You are editing a ", r.b({}, "group's"), prefsAndCanBecause)
+        : r.p({}, "You are editing ", r.b({}, "another"), " user's" + prefsAndCanBecause);
     }
 
     const preferences = isGuest(user)
         ? GuestPreferences({ guest: user })
-        : (user.isGroup
-            ? r.p({}, "GROUP")
-            : MemberPreferences({ user: user, me: me, reloadUser: this.props.reloadUser }));
+        : MemberPreferences({ user: user, me: me, reloadUser: this.props.reloadUser });
 
     return (
       r.div({ className: 's_UP_Prefs' },
@@ -198,6 +197,9 @@ var MemberPreferences = createComponent({
     const user: MemberInclDetails = this.props.user;
     const username = user.username || '(not specified)';
 
+    // These ids = hardcoded users & groups, e.g. System and Everyone.
+    const isBuiltInUser = user.id < LowestAuthenticatedUserId;
+
     let savingInfo = null;
     if (this.state.savingStatus === 'Saving') {
       savingInfo = r.i({}, ' Saving...');
@@ -213,7 +215,7 @@ var MemberPreferences = createComponent({
           r.label({}, 'Username'),
           r.div({},
             r.samp({}, username),
-            r.button({ className: 'btn btn-default s_UP_Prefs_ChangeUNB',
+            isBuiltInUser ? null : r.button({ className: 'btn btn-default s_UP_Prefs_ChangeUNB',
               onClick: this.tryChangeUsername }, "Change ...")));
     }
     else {
@@ -226,48 +228,61 @@ var MemberPreferences = createComponent({
 
     const sendSummaryEmails = this.state.sendSummaryEmails;
 
+    const summariesText = " summaries of popular topics and other stuff.";
+    const activitySummaryDescr = user.isGroup
+        ? "When members of this group don't visit here, then, by default, email them" + summariesText
+        : "When I don't visit here, email me" + summariesText;
+
+    const emailIfVisitRegularly = (user.isGroup ? "Email me also if I" : "Email them also if they") +
+        " visit here regularly.";
+
+    const howOftenSend = user.isGroup ? "How often shall we send" : "How often do you want";
+    const activitySummaryStuff =
+      r.div({ className: 'form-group', style: { margin: '22px 0 25px' } },
+        r.label({}, "Activity summary emails"),  // more like a mini title
+        r.div({ className: 'checkbox' },  // [7PK4WY1]
+          r.label({},
+            r.input({ type: 'checkbox', id: 'sendSummaryEmails',
+              checked: this.state.sendSummaryEmails, onChange: this.enableSummaryEmails }),
+            activitySummaryDescr)),
+        r.div({ className: 'checkbox' },
+          r.label({},
+            r.input({ type: 'checkbox', id: 'summaryEmailIfActive',
+              checked: this.state.summaryEmailIfActive, disabled: !sendSummaryEmails,
+              onChange: (event) => this.setState({ summaryEmailIfActive: event.target.checked })}),
+            emailIfVisitRegularly)),
+        r.p({ style: { marginBottom: 5 } }, howOftenSend + " these emails?"),
+        ActivitySummaryEmailsIntervalDropdown({ onSelect: (frequencyMins) => {
+          this.setState({ summaryEmailIntervalMins: frequencyMins });
+        }, intervalMins: this.state.summaryEmailIntervalMins, disabled: !sendSummaryEmails }));
+
+
     return (
       r.form({ role: 'form', onSubmit: this.savePrefs },
 
         util.FullNameInput({ label: "Name (optional)", defaultValue: user.fullName,
-            className: 'e_UP_Prefs_FN',
+            className: 'e_UP_Prefs_FN', disabled: isBuiltInUser,
             onChangeValueOk: (newName, isOk) => this.updateFullNameOk(newName, isOk) }),
 
         usernameStuff,
 
         // Disable the email input — I've not implemented confirmation-emails-to-new-address
         // or any double-check-password-before-changing-email.
-        r.div({ className: 'form-group' },
+        isBuiltInUser ? null : r.div({ className: 'form-group' },
           r.label({ htmlFor: 'emailAddress' }, "Email address"),
           r.input({ type: 'email', className: 'form-control', id: 'emailAddress',
               defaultValue: user.email, disabled: true }),
           r.p({ className: 'help-block' }, "Not shown publicly.")),
 
-        r.div({ className: 'form-group', style: { margin: '22px 0 25px' } },
-          r.label({}, "Activity summary emails"),  // more like a mini title
-          r.div({ className: 'checkbox' },  // [7PK4WY1]
-            r.label({},
-              r.input({ type: 'checkbox', id: 'sendSummaryEmails',
-                checked: this.state.sendSummaryEmails, onChange: this.enableSummaryEmails }),
-              "When I don't visit here, email me summaries of popular topics and other stuff")),
-          r.div({ className: 'checkbox' },
-            r.label({},
-              r.input({ type: 'checkbox', id: 'summaryEmailIfActive',
-                checked: this.state.summaryEmailIfActive, disabled: !sendSummaryEmails,
-                onChange: (event) => this.setState({ summaryEmailIfActive: event.target.checked })}),
-              "Email me also if I visit here regularly")),
-          r.p({ style: { marginBottom: 5 } }, "How often do you want these emails?"),
-          ActivitySummaryEmailsIntervalDropdown({ onSelect: (frequencyMins) => {
-            this.setState({ summaryEmailIntervalMins: frequencyMins });
-          }, intervalMins: this.state.summaryEmailIntervalMins, disabled: !sendSummaryEmails })),
+        activitySummaryStuff,
 
-        r.div({ className: 'form-group' },
+        isBuiltInUser ? null : r.div({ className: 'form-group' },
           r.label({ htmlFor: 't_UP_AboutMe' }, "About you"),
           r.textarea({ className: 'form-control', id: 't_UP_Prefs_AboutMeTA',
               defaultValue: user.about || '' })),
 
         // Later: Verify is really an URL
-        r.div({ className: 'form-group' },
+        isBuiltInUser ? null : r.div({ className: 'form-group' },
           r.label({ htmlFor: 'url' }, 'URL'),
           r.input({ className: 'form-control', id: 'url',
               defaultValue: user.url }),
@@ -275,7 +290,7 @@ var MemberPreferences = createComponent({
 
         // Later: + Location
 
-        (!isStaff(me) ? null :  // currently for staff only [EsE7YKF24]
+        (isBuiltInUser || !isStaff(me) ? null :  // currently for staff only [EsE7YKF24]
         r.div({ className: 'form-group' },
           r.div({ className: 'checkbox' },
             r.label({},

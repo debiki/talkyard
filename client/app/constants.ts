@@ -34,6 +34,7 @@ const FirstReplyNr = 2;
 let NoUserId = 0;
 const SystemUserId = 1;
 const MinMemberId = SystemUserId;
+const LowestAuthenticatedUserId = 100;   // also in scala  [8PWK1Q2W]
 
 const MaxGuestId = -2;
 const UnknownUserId = -3;
