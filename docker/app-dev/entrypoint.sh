@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# *** Dupl code *** see dev-gulp/entrypoint.sh too [7GY8F2]
+# *** Dupl code *** see gulp/entrypoint.sh too [7GY8F2]
 # (Cannot fix, Docker doesn't support symlinks in build dirs.)
 
 cd /opt/ed/app
