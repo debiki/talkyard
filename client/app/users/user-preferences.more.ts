@@ -233,7 +233,7 @@ var MemberPreferences = createComponent({
         ? "When members of this group don't visit here, then, by default, email them" + summariesText
         : "When I don't visit here, email me" + summariesText;
 
-    const emailIfVisitRegularly = (user.isGroup ? "Email me also if I" : "Email them also if they") +
+    const emailIfVisitRegularly = (user.isGroup ? "Email them also if they" : "Email me also if I") +
         " visit here regularly.";
 
     const howOftenSend = user.isGroup ? "How often shall we send" : "How often do you want";

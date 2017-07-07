@@ -532,6 +532,15 @@ trait UserDao {
   }
 
 
+  def loadTheMemberInclDetailsById(memberId: UserId): MemberInclDetails =
+    readOnlyTransaction(_.loadTheMemberInclDetails(memberId))
+
+
+  def loadTheGroupInclDetailsById(groupId: UserId): Group =
+    readOnlyTransaction(_.loadGroupInclDetails(groupId)).getOrDie(
+      "EdE2WKBG0", s"Group $groupId@$siteId not found")
+
+
   def loadMembersInclDetailsById(userIds: Iterable[UserId]): immutable.Seq[MemberInclDetails] = {
     readOnlyTransaction(_.loadMembersInclDetailsById(userIds))
   }
@@ -1047,8 +1056,10 @@ trait UserDao {
 
 
   def saveMemberPreferences(preferences: MemberPreferences, byWho: Who) {
+    // Similar to saveGroupPreferences below. (0QE15TW93)
     SECURITY // should create audit log entry. Should allow staff to change usernames.
     BUG // the lost update bug (if staff + user henself changes the user's prefs at the same time)
+
     readWriteTransaction { transaction =>
       val user = transaction.loadTheMemberInclDetails(preferences.userId)
       val me = transaction.loadTheMember(byWho.id)
@@ -1114,17 +1125,50 @@ trait UserDao {
           throwForbidden("EdE2WK8Y4_", "Username already in use")
       }
 
-      if (userAfter.summaryEmailIntervalMins != user.summaryEmailIntervalMins) {
-        transaction.laterMaybeSendSummaryTo(user.id)  // related: [5KRDUQ0]
+      if (userAfter.summaryEmailIntervalMins != user.summaryEmailIntervalMins ||
+          userAfter.summaryEmailIfActive != user.summaryEmailIfActive) {
+        transaction.reconsiderSendingSummaryEmailsTo(user.id)  // related: [5KRDUQ0]
       }
 
       removeUserFromMemCache(preferences.userId)
-      // Clear the page cache (by clearing all caches), if we changed the user's name.
+      // Clear the page cache (by clearing all caches), if we changed the user's name.  [2WBU0R1]
       // COULD have above markPagesWithUserAvatarAsStale() return a page id list and
       // uncache only those pages.
       if (preferences.changesStuffIncludedEverywhere(user)) {
         emptyCacheImpl(transaction)
       }
+    }
+  }
+
+
+  def saveGroupPreferences(preferences: GroupPreferences, byWho: Who): Unit = {
+    // Similar to saveMemberPreferences above. (0QE15TW93)
+    SECURITY // should create audit log entry. Should allow staff to change usernames.
+    BUG // the lost update bug (if staff + user henself changes the user's prefs at the same time)
+
+    readWriteTransaction { transaction =>
+      val group = transaction.loadTheGroupInclDetails(preferences.groupId)
+      val me = transaction.loadTheMember(byWho.id)
+      require(me.isStaff, "EdE5LKWV0")
+
+      val groupAfter = group.copyWithNewPreferences(preferences)
+      try transaction.updateGroup(groupAfter)
+      catch {
+        case _: DuplicateUsernameException =>
+          throwForbidden("EdE2WK8Y4_", "Username already in use")
+      }
+
+      // If summary-email-settings were changed, hard to know which people were affected.
+      // So let the summary-emails module reconsider all members at this site.
+      if (groupAfter.summaryEmailIntervalMins != group.summaryEmailIntervalMins ||
+          groupAfter.summaryEmailIfActive != group.summaryEmailIfActive) {
+        transaction.reconsiderSendingSummaryEmailsToEveryone()  // related: [5KRDUQ0] [8YQKSD10]
+      }
+
+      removeUserFromMemCache(group.id)
+
+      // Group names aren't shown everywhere. So need not empty cache (as is however
+      // done here [2WBU0R1]).
     }
   }
 

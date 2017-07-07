@@ -648,6 +648,7 @@ interface SpecialContent {
 
 interface User {
   id: UserId;
+  isGroup?: boolean;
 }
 
 
@@ -674,7 +675,7 @@ interface BriefUser extends User {
 /** A member or group, including details. Or a guest; then, there are no details. */
 interface UserAnyDetails {
   id: UserId;
-  isGroup?: boolean;  // or move to User?
+  isGroup?: boolean;
 }
 
 
