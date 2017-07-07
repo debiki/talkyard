@@ -171,6 +171,7 @@ function get(uri: string, options, success?: (response, xhr?: JQueryXHR) => void
   const xhr = Bliss.fetch(origin + uri, {
     method: 'GET',
     headers: headers,
+    timeout: options.timeout,
   }).then(xhr => {
     let response = xhr.response;
     if (dataType !== 'html') {

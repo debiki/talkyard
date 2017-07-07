@@ -99,7 +99,7 @@ var slimJsFiles = [
       'node_modules/jquery/dist/jquery.js',
       'client/third-party/abbreviate-jquery.js',
       'client/third-party/smoothscroll-tiny.js',
-      'node_modules/blissfuljs/bliss.shy.js',
+      'client/third-party/bliss.shy.js',
       'client/third-party/stupid-lightbox.js',
       'node_modules/keymaster/keymaster.js',
       // keymaster.js declares window.key, rename it to window.keymaster instead,

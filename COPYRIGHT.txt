@@ -35,6 +35,12 @@ Javascript and CSS:
     Copyright © 2013 Paul Smith <paulsmith@pobox.com>
     MIT license
 
+  - Bliss
+    ./lient/third-party/bliss.shy.js
+    Copyright (c) 2015 Lea Verou
+    The MIT License (MIT)
+    https://github.com/LeaVerou/bliss
+
   - Bootstrap
     ./modules/twitter-bootstrap/
     Copyright 2012 Twitter, Inc.
