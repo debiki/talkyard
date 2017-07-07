@@ -168,11 +168,12 @@ function get(uri: string, options, success?: (response, xhr?: JQueryXHR) => void
     headers = options.headers;
   }
 
-  const xhr = Bliss.fetch(origin + uri, {
+  const promiseWithXhr = <any> Bliss.fetch(origin + uri, {  // hack [7FKRPQ2T0]
     method: 'GET',
     headers: headers,
     timeout: options.timeout,
-  }).then(xhr => {
+  });
+  promiseWithXhr.then(xhr => {
     let response = xhr.response;
     if (dataType !== 'html') {
       // Then it's json, what else could it be? Remove any AngularJS safe json prefix. [5LKW02D4]
@@ -200,7 +201,9 @@ function get(uri: string, options, success?: (response, xhr?: JQueryXHR) => void
   });
 
   return {
-    abort: function() { xhr.abort(); }
+    abort: function() {
+      promiseWithXhr.xhr.abort();
+    }
   }
 }
 

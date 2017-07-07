@@ -10,6 +10,7 @@
 // Parts Copyright (c) 2017 Kaj Magnus Lindberg. I'll make Bliss.fetch return the xhr,
 // and might remove some stuff. Could have forked the repo and added a submodule instead
 // of just copying this single file, but that would take time & be ... boring.
+// Changes here marked with ED (for EffectiveDiscussions), so search for "ED".
 
 (function() {
 "use strict";
@@ -384,7 +385,7 @@ extend($, {
 			env.xhr.setRequestHeader(header, env.headers[header]);
 		}
 
-		return new Promise(function(resolve, reject) {
+		var promise = new Promise(function(resolve, reject) {
 			env.xhr.onload = function() {
 				document.body.removeAttribute("data-loading");
 
@@ -414,6 +415,8 @@ extend($, {
 
 			env.xhr.send(env.method === "GET"? null : env.data);
 		});
+		promise.xhr = env.xhr;  // ED hack [7FKRPQ2T0]
+		return promise;
 	},
 
 	value: function(obj) {
