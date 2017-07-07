@@ -144,7 +144,12 @@ ENV LUAJIT_INC /opt/luajit/include/luajit-2.1
 
 RUN \
 	export GNUPGHOME="$(mktemp -d)" \
-	&& gpg --keyserver ha.pool.sks-keyservers.net --recv-keys "$GPG_KEYS" \
+	# This address results in an error "keyserver receive failed: Address not available",
+	# apparently some firewall problem, see:
+	#   https://github.com/tianon/gosu/issues/17#issuecomment-203074866
+	#&& gpg --keyserver ha.pool.sks-keyservers.net --recv-keys "$GPG_KEYS" \
+	# Use port 80 instead:
+	&& gpg --keyserver hkp://p80.pool.sks-keyservers.net:80 --recv-keys "$GPG_KEYS" \
 	&& gpg --batch --verify nginx.tar.gz.asc nginx.tar.gz \
 	&& rm -r "$GNUPGHOME" nginx.tar.gz.asc \
 	&& mkdir -p /usr/src \

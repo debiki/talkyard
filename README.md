@@ -98,6 +98,17 @@ how to use docker-compose already.
 
         sudo sysctl --system
 
+1. Compile and SBT `publish-local` a logging library.
+
+        sudo s/d-cli
+        project ed-logging
+        publish-local
+        # then CTRL+D to exit
+        
+        # Let Play Framework write log files
+        sudo chmod ugo+rw docker/data/app-logs/
+
+
 1. Build and start all Docker containers: (this will take a while: some Docker images will be downloaded and built)
 
         sudo docker-compose up -d
