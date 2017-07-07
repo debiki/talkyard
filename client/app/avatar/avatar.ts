@@ -143,6 +143,10 @@ export const Avatar = createComponent({
       color: color,
     };
 
+    if (user.isGroup) {
+      result.classes = ' icon-users' + result.classes;
+    }
+
     if (!hidden) {
       textAvatarsTaken[textAndColor] = true;
       textAvatarsByUserId[user.id] = result;

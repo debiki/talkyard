@@ -32,6 +32,7 @@ import scala.collection.immutable
   * Adm & Mia: daily summaries, unless active,
   * Mod & Max: weekly summaries, also if active.
   * Ign doesn't want summaries.
+  * Def = inherits default.
   *
   * Adm & Mia creates one page, each.
   * Adm & Mia & Mod & Max then gets summaries:
@@ -60,6 +61,8 @@ import scala.collection.immutable
   * Mod creates a topic —>
   *   summary sent to Adm and Ign, not to Mia.
   *
+  * Change Everyone so default = get summary. Then, user Defa gets summary.
+  *
   * Fast-forward time 2 months, 2 times —> nothing
   */
 class SummaryEmailsAppSpec extends DaoAppSuite() {
@@ -85,12 +88,15 @@ class SummaryEmailsAppSpec extends DaoAppSuite() {
   var newPageAfterIdleId: PageId = null
   var editedSettingsPageIdByAdm: PageId = null
   var editedSettingsPage2IdByAdm: PageId = null
+  var everyoneTestPageIdByAdm: PageId = null
+  var everyoneTestPageId2ByAdm: PageId = null
 
   var adm: User = null
   var mia: User = null
   var mod: User = null
   var max: User = null
   var ign: User = null
+  var defa: User = null
 
   def makeStats(userId: UserId, now: When,
         nextSummaryEmailAt: Option[When]): UserStats = {
@@ -146,8 +152,11 @@ class SummaryEmailsAppSpec extends DaoAppSuite() {
       summaryEmailIfActive = Some(true),
       summaryEmailIntervalMins = Some(60 * 24 * 7)))
 
-    ign = createPasswordUser(s"ign", dao, createdAt = Some(startTime))
+    ign = createPasswordUser("ign", dao, createdAt = Some(startTime))
     // Ign = ignore, doesn't want summary emails.
+
+    defa = createPasswordUser("defa", dao, createdAt = Some(startTime))
+    // Inherits settings from Everyone. Doesn't want, by default.
   }
 
 
@@ -667,6 +676,73 @@ class SummaryEmailsAppSpec extends DaoAppSuite() {
     }
   }
 
+
+  "one inherits the Everyone group's settings" - {
+    "Defa has never gotten any summary" in {
+      makeSummary(defa.id) mustBe empty
+    }
+
+    "change everyone's default setting to summaries-every-day" in {
+      updatePreferences(dao, Group.EveryoneId, _.copy(summaryEmailIntervalMins = Some(60 * 24)))
+    }
+
+    "Adm creates a topic" in {
+      everyoneTestPageIdByAdm = createPage(PageRole.Discussion, TextAndHtml.forTitle("Everyone Test"),
+        TextAndHtml.forBodyOrComment("Page body."), authorId = adm.id, browserIdData,
+        dao, anyCategoryId = Some(forum.defaultCategoryId))
+    }
+
+    "after a day, Mod and Defa get a summary, because default setting changed" in {
+      val summary = makeSummary(mod.id).get
+      summary.topTopics.size mustBe 1
+      summary.topTopics.head.meta.authorId mustBe adm.id
+      summary.topTopics.head.meta.pageId mustBe everyoneTestPageIdByAdm
+    }
+
+    "after a week, Max and Mia too" in {
+      playTime(7 * OneDayInMillis + OneHourInMillis)
+      val summaries = makeSummaries(immutable.Seq(max.id, mia.id))
+      summaries foreach { summary =>
+        summary.topTopics.size mustBe 1
+        summary.topTopics.head.meta.authorId mustBe adm.id
+        summary.topTopics.head.meta.pageId mustBe everyoneTestPageIdByAdm
+      }
+    }
+
+    "but not Ign" in {
+      makeSummary(ign.id) mustBe empty
+    }
+
+    "change everyone's default setting back to no-summaries" in {
+      updatePreferences(dao, Group.EveryoneId,
+          _.copy(summaryEmailIntervalMins = Some(SummaryEmails.DoNotSend)))
+    }
+
+    "Adm creates a topic" in {
+      everyoneTestPageId2ByAdm = createPage(PageRole.Discussion, TextAndHtml.forTitle("Everyone Test 2"),
+        TextAndHtml.forBodyOrComment("Page body."), authorId = adm.id, browserIdData,
+        dao, anyCategoryId = Some(forum.defaultCategoryId))
+    }
+
+    "a week elapses" in {
+      playTime(7 * OneDayInMillis + OneHourInMillis)
+    }
+
+    "but now Mod and Defa get no summaries, and Ign also doesn't" in {
+      makeSummary(mod.id) mustBe empty
+      makeSummary(defa.id) mustBe empty
+      makeSummary(ign.id) mustBe empty
+    }
+
+    "Max and Mia gets summaries as usual" in {
+      val summaries = makeSummaries(immutable.Seq(max.id, mia.id))
+      summaries foreach { summary =>
+        summary.topTopics.size mustBe 1
+        summary.topTopics.head.meta.authorId mustBe adm.id
+        summary.topTopics.head.meta.pageId mustBe everyoneTestPageId2ByAdm
+      }
+    }
+  }
 
   "nothing more happens" - {
     "nothing" in {
