@@ -386,6 +386,12 @@ trait SiteTransaction {
 
   def loadOwner(): Option[MemberInclDetails]
 
+  def loadGroupInclDetailsById(groupId: UserId): Option[Group] =
+    loadMembersAndGroupsInclDetailsById(Seq(groupId)).headOption map {
+      case m: MemberInclDetails => throw GotANotGroupException(m.id)
+      case g: Group => g
+    }
+
   def insertGroup(group: Group)
   def loadGroupsAsSeq(): immutable.Seq[Group]
   def loadGroupsAsMap(): Map[UserId, Group] = loadGroupsAsSeq().map(g => g.id -> g).toMap
@@ -537,6 +543,9 @@ trait SiteTransaction {
 /** Include stack trace, so can find bugs. (So don't use QuickMessageException). */
 case class GotAGroupException(groupId: UserId) extends Exception(
   s"Got a group when trying to load member $groupId [EdE2SBA4J7]")
+
+case class GotANotGroupException(groupId: UserId) extends Exception(
+  s"Got a not-group when trying to load group $groupId [EdE4GW1WA9]")
 
 case class GotAGuestException(groupId: UserId) extends Exception(
   s"Got a guest when trying to load member $groupId [EdE4GAR0W1]")

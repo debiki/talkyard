@@ -532,6 +532,16 @@ trait UserDao {
   }
 
 
+  def loadTheMemberInclDetailsById(memberId: UserId): MemberInclDetails =
+    readOnlyTransaction(_.loadTheMemberInclDetails(memberId))
+
+
+  def loadTheGroupInclDetailsById(groupId: UserId): Group =
+    readOnlyTransaction(_.loadMembersAndGroupsInclDetailsById(groupId).headOption match {
+      case None =>
+    })
+
+
   def loadMembersInclDetailsById(userIds: Iterable[UserId]): immutable.Seq[MemberInclDetails] = {
     readOnlyTransaction(_.loadMembersInclDetailsById(userIds))
   }

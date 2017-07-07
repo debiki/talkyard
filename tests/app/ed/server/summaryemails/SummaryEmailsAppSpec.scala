@@ -693,6 +693,7 @@ class SummaryEmailsAppSpec extends DaoAppSuite() {
     }
 
     "after a day, Mod and Defa get a summary, because default setting changed" in {
+      playTime(OneDayInMillis + OneHourInMillis)
       val summary = makeSummary(mod.id).get
       summary.topTopics.size mustBe 1
       summary.topTopics.head.meta.authorId mustBe adm.id
@@ -700,7 +701,7 @@ class SummaryEmailsAppSpec extends DaoAppSuite() {
     }
 
     "after a week, Max and Mia too" in {
-      playTime(7 * OneDayInMillis + OneHourInMillis)
+      playTime((7 - 1) * OneDayInMillis)
       val summaries = makeSummaries(immutable.Seq(max.id, mia.id))
       summaries foreach { summary =>
         summary.topTopics.size mustBe 1
@@ -718,7 +719,7 @@ class SummaryEmailsAppSpec extends DaoAppSuite() {
           _.copy(summaryEmailIntervalMins = Some(SummaryEmails.DoNotSend)))
     }
 
-    "Adm creates a topic" in {
+    "Adm creates another topic" in {
       everyoneTestPageId2ByAdm = createPage(PageRole.Discussion, TextAndHtml.forTitle("Everyone Test 2"),
         TextAndHtml.forBodyOrComment("Page body."), authorId = adm.id, browserIdData,
         dao, anyCategoryId = Some(forum.defaultCategoryId))
@@ -728,9 +729,12 @@ class SummaryEmailsAppSpec extends DaoAppSuite() {
       playTime(7 * OneDayInMillis + OneHourInMillis)
     }
 
-    "but now Mod and Defa get no summaries, and Ign also doesn't" in {
+    "but now Mod and Defa get no summaries" in {
       makeSummary(mod.id) mustBe empty
       makeSummary(defa.id) mustBe empty
+    }
+
+    "Ign also doesn't get one" in {
       makeSummary(ign.id) mustBe empty
     }
 
