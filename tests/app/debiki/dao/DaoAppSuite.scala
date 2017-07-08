@@ -138,10 +138,10 @@ class DaoAppSuite(
   }
 
 
-  def updateGroupPreferences(dao: SiteDao, groupId: UserId,
+  def updateGroupPreferences(dao: SiteDao, groupId: UserId, byWho: Who,
         fn: Function1[GroupPreferences, GroupPreferences]) {
-    val group = dao.loadGroupInclDetailsById(groupId) getOrDie "EdE1FWVKA0"
-    dao.saveGroupPreferences(fn(group.preferences), Who(groupId, browserIdData))
+    val group = dao.loadTheGroupInclDetailsById(groupId)
+    dao.saveGroupPreferences(fn(group.preferences), byWho)
   }
 
 

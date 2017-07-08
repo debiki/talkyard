@@ -88,7 +88,8 @@ trait SummaryEmailsDao {
         }
       }
       else if (nextEmailAt.exists(_ isBefore now)) {
-        val theSummaryEmailIntervalMins = member.summaryEmailIntervalMins.getOrDie("EdE4PKES0")
+        val theSummaryEmailIntervalMins =
+          member.effectiveSummaryEmailIntervalMins(groups).getOrDie("EdE4PKES0")
         val millisSinceLast =
           now.millis - stats.lastSummaryEmailAt.map(_.millis).getOrElse(member.createdAt.getTime)
         val categoryId = 1 ; CLEAN_UP; HACK // this should be the forum's root category. [8UWKQXN45]

@@ -578,9 +578,7 @@ case class MemberInclDetails(
     require(stats.userId == id, "EdE2GPKW01")
     if (emailAddress.isEmpty)
       return None
-    val anyIntervalMins = summaryEmailIntervalMins orElse {
-      myGroups.find(_.summaryEmailIntervalMins.isDefined).flatMap(_.summaryEmailIntervalMins)
-    }
+    val anyIntervalMins = effectiveSummaryEmailIntervalMins(myGroups)
     val intervalMins = anyIntervalMins getOrElse {
       return None
     }
@@ -596,6 +594,13 @@ case class MemberInclDetails(
         stats.lastSeenOrEmailedOrSummaryAt
       }
     Some(baseTime plusMinutes intervalMins)
+  }
+
+
+  def effectiveSummaryEmailIntervalMins(groups: immutable.Seq[Group]): Option[Int] = {
+    summaryEmailIntervalMins orElse {
+      groups.find(_.summaryEmailIntervalMins.isDefined).flatMap(_.summaryEmailIntervalMins)
+    }
   }
 
 
@@ -682,6 +687,20 @@ case class MemberPreferences(
 
 
 
+case class GroupPreferences(
+  groupId: UserId,
+  fullName: Option[String],
+  username: String,
+  summaryEmailIntervalMins: Option[Int],
+  summaryEmailIfActive: Option[Boolean]) {
+
+  require(!fullName.exists(_.trim.isEmpty), "EdE05KFB521")
+  require(groupId >= User.LowestNonGuestId, "DwE56KX2")
+
+}
+
+
+
 case class UsernameUsage(
   usernameLowercase: String,
   inUseFrom: When,
@@ -746,8 +765,23 @@ case class Group(
 
   override def usernameOrGuestName: String = theUsername
 
-  override def anyName: Option[String] = Some(name)
+  override def anyName: Option[String] = Some(name)  // [50UKQV1]
   override def anyUsername: Option[String] = Some(theUsername)
+
+  def preferences: GroupPreferences =
+    GroupPreferences(
+      groupId = id,
+      fullName = anyName,
+      username = theUsername,
+      summaryEmailIntervalMins = summaryEmailIntervalMins,
+      summaryEmailIfActive = summaryEmailIfActive)
+
+  def copyWithNewPreferences(preferences: GroupPreferences): Group =
+    copy(
+      name = preferences.fullName getOrDie "EdE46KWFTAR1", // currently always Some, see [50UKQV1]
+      theUsername = preferences.username,
+      summaryEmailIntervalMins = preferences.summaryEmailIntervalMins,
+      summaryEmailIfActive = preferences.summaryEmailIfActive)
 
 }
 

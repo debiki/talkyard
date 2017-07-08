@@ -137,18 +137,18 @@ class SummaryEmailsAppSpec extends DaoAppSuite() {
 
   "prepare: create users" in {
     adm = createPasswordOwner("adm", dao, createdAt = Some(startTime))
-    updatePreferences(dao, adm.id, _.copy(summaryEmailIntervalMins = Some(60 * 24)))
+    updateMemberPreferences(dao, adm.id, _.copy(summaryEmailIntervalMins = Some(60 * 24)))
 
     mia = createPasswordUser("mia", dao, createdAt = Some(startTime))
-    updatePreferences(dao, mia.id, _.copy(summaryEmailIntervalMins = Some(60 * 24)))
+    updateMemberPreferences(dao, mia.id, _.copy(summaryEmailIntervalMins = Some(60 * 24)))
 
     mod = createPasswordModerator("mod", dao, createdAt = Some(startTime))
-    updatePreferences(dao, mod.id, _.copy(
+    updateMemberPreferences(dao, mod.id, _.copy(
       summaryEmailIfActive = Some(true),
       summaryEmailIntervalMins = Some(60 * 24 * 7)))
 
     max = createPasswordUser("max", dao, createdAt = Some(startTime))
-    updatePreferences(dao, max.id, _.copy(
+    updateMemberPreferences(dao, max.id, _.copy(
       summaryEmailIfActive = Some(true),
       summaryEmailIntervalMins = Some(60 * 24 * 7)))
 
@@ -595,14 +595,15 @@ class SummaryEmailsAppSpec extends DaoAppSuite() {
   }
 
 
-  "one can change one's settings" - {
+  "one can change one's settings" - {   // (5FKWDW01)
     "Max no longer wants summaries, Mod inherits from group (won't get), Ign wants each month" in {
-      updatePreferences(dao, max.id, _.copy(
+      updateMemberPreferences(dao, max.id, _.copy(
         summaryEmailIntervalMins = Some(SummaryEmails.DoNotSend)))
-      updatePreferences(dao, mod.id, _.copy(
+      updateMemberPreferences(dao, mod.id, _.copy(
         summaryEmailIntervalMins = None))
-      updatePreferences(dao, ign.id, _.copy(
+      updateMemberPreferences(dao, ign.id, _.copy(
         summaryEmailIntervalMins = Some(60 * 24 * 7)))
+      TESTS_MISSING // the find-to-email should now find these users
     }
 
     "Ign gets a summary of lots of old topics" in {
@@ -644,8 +645,10 @@ class SummaryEmailsAppSpec extends DaoAppSuite() {
     }
 
     "Max wants summaries again, Ign doesn't" in {
-      updatePreferences(dao, max.id, _.copy(summaryEmailIntervalMins = Some(60 * 24)))
-      updatePreferences(dao, ign.id, _.copy(summaryEmailIntervalMins = Some(SummaryEmails.DoNotSend)))
+      updateMemberPreferences(dao, max.id, _.copy(
+        summaryEmailIntervalMins = Some(60 * 24)))
+      updateMemberPreferences(dao, ign.id, _.copy(
+        summaryEmailIntervalMins = Some(SummaryEmails.DoNotSend)))
     }
 
     "Adm creates yet another topic" in {
@@ -683,7 +686,19 @@ class SummaryEmailsAppSpec extends DaoAppSuite() {
     }
 
     "change everyone's default setting to summaries-every-day" in {
-      updatePreferences(dao, Group.EveryoneId, _.copy(summaryEmailIntervalMins = Some(60 * 24)))
+      updateGroupPreferences(dao, Group.EveryoneId, Who(adm.id, browserIdData),
+        _.copy(summaryEmailIntervalMins = Some(60 * 24)))
+      TESTS_MISSING // the find-to-email should now find everyone
+    }
+
+    "Defa now gets a summary with MaxTopTopics topics, because default setting = send summaries" in {
+      val summary = makeSummary(defa.id).get
+      summary.topTopics.size mustBe SummaryEmailsDao.MaxTopTopics
+    }
+
+    "Mod gets 2 unseen topics" in {
+      val summary = makeSummary(mod.id).get
+      summary.topTopics.size mustBe 2  // sent in (5FKWDW01) a bit above
     }
 
     "Adm creates a topic" in {
@@ -692,12 +707,20 @@ class SummaryEmailsAppSpec extends DaoAppSuite() {
         dao, anyCategoryId = Some(forum.defaultCategoryId))
     }
 
-    "after a day, Mod and Defa get a summary, because default setting changed" in {
-      playTime(OneDayInMillis + OneHourInMillis)
-      val summary = makeSummary(mod.id).get
-      summary.topTopics.size mustBe 1
-      summary.topTopics.head.meta.authorId mustBe adm.id
-      summary.topTopics.head.meta.pageId mustBe everyoneTestPageIdByAdm
+    "almost a day elapses, nothing happens" in {
+      playTime(23 * OneHourInMillis)
+      makeSummary(mod.id) mustBe empty
+      makeSummary(defa.id) mustBe empty
+    }
+
+    "after a day, Mod and Defa get a summary, because default settings = send summaries" in {
+      playTime(2 * OneHourInMillis)
+      val summaries = makeSummaries(immutable.Seq(mod.id, defa.id))
+      summaries foreach { summary =>
+        summary.topTopics.size mustBe 1
+        summary.topTopics.head.meta.authorId mustBe adm.id
+        summary.topTopics.head.meta.pageId mustBe everyoneTestPageIdByAdm
+      }
     }
 
     "after a week, Max and Mia too" in {
@@ -715,8 +738,9 @@ class SummaryEmailsAppSpec extends DaoAppSuite() {
     }
 
     "change everyone's default setting back to no-summaries" in {
-      updatePreferences(dao, Group.EveryoneId,
+      updateGroupPreferences(dao, Group.EveryoneId, Who(adm.id, browserIdData),
           _.copy(summaryEmailIntervalMins = Some(SummaryEmails.DoNotSend)))
+      TESTS_MISSING // the find-to-email should now find everyone
     }
 
     "Adm creates another topic" in {
@@ -729,16 +753,16 @@ class SummaryEmailsAppSpec extends DaoAppSuite() {
       playTime(7 * OneDayInMillis + OneHourInMillis)
     }
 
-    "but now Mod and Defa get no summaries" in {
+    "but now Mod and Defa got no summaries" in {
       makeSummary(mod.id) mustBe empty
       makeSummary(defa.id) mustBe empty
     }
 
-    "Ign also doesn't get one" in {
+    "Ign also didn't get one" in {
       makeSummary(ign.id) mustBe empty
     }
 
-    "Max and Mia gets summaries as usual" in {
+    "Max and Mia get summaries as usual" in {
       val summaries = makeSummaries(immutable.Seq(max.id, mia.id))
       summaries foreach { summary =>
         summary.topTopics.size mustBe 1

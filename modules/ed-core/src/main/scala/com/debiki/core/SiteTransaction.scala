@@ -172,16 +172,24 @@ trait SiteTransaction {
   def updatePostsReadStats(pageId: PageId, postNrsRead: Set[PostNr], readById: UserId,
         readFromIp: String)
 
+
   def loadUserStats(userId: UserId): Option[UserStats]
   def upsertUserStats(userStats: UserStats)
+
   /** Also updates the user stats, but avoids races about writing to unrelated fields. */
   def bumpNextSummaryEmailDate(memberId: UserId, nextEmailAt: Option[When])
   def bumpNextAndLastSummaryEmailDate(memberId: UserId, lastAt: When, nextAt: Option[When])
 
-  def laterMaybeSendSummaryTo(memberId: UserId) {
+  def reconsiderSendingSummaryEmailsTo(memberId: UserId) {
     // When set to null, the user will be considered for summary emails and marked yes-get or no.
     bumpNextSummaryEmailDate(memberId, nextEmailAt = None)
   }
+
+  /** This will make the server have a look at everyone, and see if it's time to send them
+    * summary emails (e.g. because the Everyone group's settings were changed).
+    */
+  def reconsiderSendingSummaryEmailsToEveryone()
+
 
   def loadUserVisitStats(userId: UserId): immutable.Seq[UserVisitStats]
   def upsertUserVisitStats(visitStats: UserVisitStats)
@@ -312,11 +320,20 @@ trait SiteTransaction {
       case group: Group => throw GotAGroupException(group.id)
     }
 
+  def loadGroupInclDetails(groupId: UserId): Option[Group] =
+    loadMembersAndGroupsInclDetailsById(Seq(groupId)).headOption map {
+      case m: MemberInclDetails => throw GotANotGroupException(m.id)
+      case g: Group => g
+    }
+
   def loadMemberOrGroupInclDetails(userId: UserId): Option[MemberOrGroupInclDetails]
   def loadMemberOrGroupInclDetailsByUsername(username: String): Option[MemberOrGroupInclDetails]
 
   def loadTheMemberInclDetails(userId: UserId): MemberInclDetails =
     loadMemberInclDetails(userId).getOrElse(throw UserNotFoundException(userId))
+
+  def loadTheGroupInclDetails(userId: UserId): Group =
+    loadGroupInclDetails(userId).getOrElse(throw UserNotFoundException(userId))
 
   def loadTheMemberOrGroupInclDetails(userId: UserId): MemberOrGroupInclDetails =
     loadMemberOrGroupInclDetails(userId).getOrElse(throw UserNotFoundException(userId))
@@ -344,7 +361,7 @@ trait SiteTransaction {
   }
   def loadMember(userId: UserId): Option[Member] = {
     dieIf(userId <= User.MaxGuestId, "EsE6YKWU2")
-    loadUser(userId).map(_.asInstanceOf[Member])
+    loadUser(userId).map(_.toMemberOrThrow)
   }
   def loadTheMember(userId: UserId): Member = loadMember(userId).getOrDie(
     "EsEFK320FG", s"Member $userId missing")
@@ -386,13 +403,8 @@ trait SiteTransaction {
 
   def loadOwner(): Option[MemberInclDetails]
 
-  def loadGroupInclDetailsById(groupId: UserId): Option[Group] =
-    loadMembersAndGroupsInclDetailsById(Seq(groupId)).headOption map {
-      case m: MemberInclDetails => throw GotANotGroupException(m.id)
-      case g: Group => g
-    }
-
   def insertGroup(group: Group)
+  def updateGroup(group: Group)
   def loadGroupsAsSeq(): immutable.Seq[Group]
   def loadGroupsAsMap(): Map[UserId, Group] = loadGroupsAsSeq().map(g => g.id -> g).toMap
 
