@@ -18,15 +18,17 @@ Run tests like so:
 
         docker-compose start
 
-1. In another shell, build a certain Fibers Node.js module, and start Selenium:
+1. In another shell, build a certain Fibers Node.js module, and start Selenium: (on the host,
+   not in any Docker container)
 
+        # sudo yarn global add node-gyp  # needed for Fibers to build? not sure.
         yarn install  # builds Fibers, needed once only
         s/selenium-install # should be needed once only
         s/selenium-start
 
-    (Note: Whenever Yarn does something, you'll need to reinstall the Selenium files, because
+    Note: Whenever Yarn does something, you'll need to reinstall the Selenium files, because
     Yarn removes them. See https://github.com/yarnpkg/yarn/issues/1955
-    That is, you need to run `s/selenium-install` again.)
+    That is, you need to run `s/selenium-install` again.
 
 1. In yet another shell, run the test code. Do one of these:
 

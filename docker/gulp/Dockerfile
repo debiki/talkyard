@@ -78,7 +78,7 @@ CMD [ "node" ]
 
 # for now. COULD use node:7.4-alpine instead, and:  apk add --no-cache, at the top of this file
 RUN apt-get update
-RUN apt-get install net-tools tree
+RUN apt-get install -y net-tools tree
 
 RUN yarn global add gulp
 
