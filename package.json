@@ -31,7 +31,7 @@
     "react": "^15.4.1",
     "react-bootstrap": "^0.30.7",
     "react-dom": "15.4.1",
-    "react-input-autosize": "=1.1.0",
+    "react-input-autosize": "1.1.2",
     "react-router": "3.0.0",
     "react-select": "=1.0.0-rc.1",
     "wdio-dot-reporter": "^0.0.6",
