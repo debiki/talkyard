@@ -957,7 +957,7 @@ object ReactJson {
     // SHOULD avoid starting a new transaction, so can remove workaround [7YKG25P].
     // (request.dao might start a new transaction)
     val (categories, defaultCategoryId) =
-      request.dao.listAllMaySeeCategories(authzCtx)
+      request.dao.listAllMaySeeCategories(authzCtx)  // oops, also includes publ cats [4KQSEF08]
 
     // A tiny bit dupl code [5YK03W5]
     val categoriesJson = JsArray(categories.filterNot(_.isRoot) map { category =>

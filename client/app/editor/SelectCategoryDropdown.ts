@@ -36,6 +36,8 @@ var ExplainingListItem = util.ExplainingListItem;
 
 
 export var SelectCategoryDropdown = createClassAndFactory({
+  displayName: 'SelectCategoryDropdown',
+
   getInitialState: function() {
     return {
       open: false,
@@ -70,7 +72,7 @@ export var SelectCategoryDropdown = createClassAndFactory({
     const categoryName = selectedCategory ? selectedCategory.name : "Select category...";
 
     var dropdownButton =
-      Button({ onClick: this.open, className: 'zzz', ref: 'dropdownButton' },
+      Button({ onClick: this.open, ref: 'dropdownButton' },
         categoryName + ' ', r.span({ className: 'caret' }));
 
     var categoryListItems = store.categories.map((category: Category) => {

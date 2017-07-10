@@ -242,21 +242,21 @@ var moreTypescriptProject = typeScript.createProject({
   target: 'ES5',
   outFile: 'more-typescript.js',
   lib: ['es5', 'es2015', 'dom'],
-  types: [/*'react', 'react-dom', */ 'lodash', 'core-js']
+  types: ['react', 'react-dom', 'lodash', 'core-js']
 });
 
 var staffTypescriptProject = typeScript.createProject({
   target: 'ES5',
   outFile: 'staff-typescript.js',
   lib: ['es5', 'es2015', 'dom'],
-  types: [/*'react', 'react-dom', */ 'lodash', 'core-js']
+  types: ['react', 'react-dom', 'lodash', 'core-js']
 });
 
 var editorTypescriptProject = typeScript.createProject({
   target: 'ES5',
   outFile: 'editor-typescript.js',
   lib: ['es5', 'es2015', 'dom'],
-  types: [/*'react', 'react-dom', */ 'lodash', 'core-js']
+  types: ['react', 'react-dom', 'lodash', 'core-js']
 });
 
 

@@ -434,7 +434,14 @@ ReactStore.activateMyself = function(anyNewMe: Myself) {
   // Absent on about-user pages.
   if (store.categories) {
     _.each(store.me.restrictedCategories, (category:Category) => {
-      store.categories.push(category);
+      // Avoid adding cats twice. Currently, me.restrictedCategories might incl publ cats. [4KQSEF08]
+      const index = _.findIndex(store.categories, { id: category.id });
+      if (index >= 0) {
+        store.categories.splice(index, 1, category);
+      }
+      else {
+        store.categories.push(category);
+      }
     });
     store.categories.sort((c:Category, c2:Category) => c.position - c2.position);
   }

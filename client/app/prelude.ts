@@ -18,7 +18,6 @@
 /// <reference path="model.ts" />
 /// <reference path="constants.ts" />
 
-var React = window['React'];
 var ReactDOM = window['ReactDOM'];
 var ReactDOMServer = window['ReactDOMServer'];
 var ReactCSSTransitionGroup = isServerSide() ? null :

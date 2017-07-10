@@ -47,6 +47,8 @@ export interface ExplainingTitleText {
 
 // COULD change to pure fn
 export var ExplainingListItem = createComponent({
+  displayName: 'ExplainingListItem',
+
   onClick: function(event) {
     event.preventDefault();
     if (this.props.onClick) {

@@ -20,15 +20,18 @@ Run tests like so:
 
 1. In another shell, build a certain Fibers Node.js module, and start Selenium: (on the host,
    not in any Docker container)
+   
+   Problems! Whenver Yarn gets the chance, it deletes all Selenium binaries, and
+   any Fibers module you've compiled. So whenever you've done any Yarn stuff, like
+   adding a new lib, you need to build Fibers again. But Yarn will try to build the
+   wrong version! To trick Yarn into building the correct version of Fibers,
+   instead build wdio-sync (that's the thing that needs Fibers).
+   Also run `s/selenium-install` to reinstall Selenium after Yarn has deleted it, see below.
 
         # sudo yarn global add node-gyp  # needed for Fibers to build? not sure.
-        yarn install  # builds Fibers, needed once only
-
-        # ... or, might need to:
-        yarn remove wdio-sync
         yarn add --dev wdio-sync  # to build the correct version of Fibers
         
-        s/selenium-install # should be needed once only
+        s/selenium-install # do this whenever Yarn has deleted everything
         s/selenium-start
 
     Note: Whenever Yarn does something, you'll need to reinstall the Selenium files, because
