@@ -1,5 +1,3 @@
-/// <reference path="../../../modules/definitely-typed/lodash/lodash.d.ts"/>
-
 import * as _ from 'lodash';
 import assert = require('assert');
 import logMessageModule = require('./log-and-die');

@@ -132,7 +132,7 @@ d.i.calcScrollIntoViewCoords = function(elem, options) {
 };
 
 
-jQuery.fn.dwScrollIntoView = function(options) {
+(<any> jQuery.fn).dwScrollIntoView = function(options) {
   if (!this.length)
     return this;
 

@@ -20,7 +20,6 @@
  * If you click and drag in the minimap, you'll scroll the viewport.
  */
 
-/// <reference path="../../typedefs/react/react.d.ts" />
 /// <reference path="../utils/page-scroll-mixin.ts" />
 
 //------------------------------------------------------------------------------

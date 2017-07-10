@@ -1,4 +1,3 @@
-/// <reference path="../typedefs/react/react.d.ts" />
 
 namespace rb {
   export var ReactBootstrap: any = window['ReactBootstrap'];

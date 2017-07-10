@@ -20,7 +20,7 @@
 /// <reference path="oop-methods.ts" />
 /// <reference path="prelude.ts" />
 /// <reference path="utils/utils.ts" />
-/// <reference path="../typedefs/eventemitter2/eventemitter2.d.ts" />
+
 
 // CLEAN_UP try to remove this dependency from here.
 /// <reference path="utils/scroll-into-view.ts" />
@@ -35,13 +35,11 @@
    namespace debiki2 {
 //------------------------------------------------------------------------------
 
-// DefinitelyTyped has defined EventEmitter2 in the wrong module? Unusable when
-// not using AMD/CommonJS, see https://github.com/borisyankov/DefinitelyTyped/issues/3075.
+const ChangeEvent = 'ChangeEvent';
+const $html = $('html');
 
-var ChangeEvent = 'ChangeEvent';
-var $html = $('html');
-
-export var ReactStore: any = new EventEmitter2();
+declare const EventEmitter2; // don't know why, but the TypeScript defs doesn't work.
+export const ReactStore: any = new EventEmitter2();
 
 // Avoid a harmless "possible EventEmitter memory leak detected" warning.
 ReactStore.setMaxListeners(20);

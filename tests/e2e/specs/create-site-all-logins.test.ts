@@ -1,6 +1,4 @@
-/// <reference path="../../../modules/definitely-typed/lodash/lodash.d.ts"/>
-/// <reference path="../../../modules/definitely-typed/node/node.d.ts"/>
-/// <reference path="../../../modules/definitely-typed/mocha/mocha.d.ts"/>
+/// <reference path="../test-types.ts"/>
 
 import _ = require('lodash');
 import assert = require('assert');

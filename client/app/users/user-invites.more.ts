@@ -15,8 +15,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/// <reference path="../../typedefs/react/react.d.ts" />
-/// <reference path="../../typedefs/moment/moment.d.ts" />
+//xx <reference path="../../typedefs/moment/moment.d.ts" /> — disappeared
+declare var moment: any;
 /// <reference path="../slim-bundle.d.ts" />
 /// <reference path="../util/EmailInput.more.ts" />
 /// <reference path="../page-dialogs/about-user-dialog.more.ts" />

@@ -1,1 +1,1 @@
-../../../modules/definitely-typed/keymaster/keymaster.d.ts
+../../../modules/definitely-typed/types/keymaster/index.d.ts

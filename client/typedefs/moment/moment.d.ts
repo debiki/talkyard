@@ -1,1 +1,0 @@
-../../../modules/definitely-typed/moment/moment.d.ts

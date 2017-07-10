@@ -28,7 +28,6 @@
  * replies "too much".
  */
 
-/// <reference path="../../typedefs/react/react.d.ts" />
 
 //------------------------------------------------------------------------------
   module debiki2.renderer {

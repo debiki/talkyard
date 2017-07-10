@@ -1,5 +1,3 @@
-/// <reference path="../../../modules/definitely-typed/lodash/lodash.d.ts"/>
-
 import _ = require('lodash');
 import assert = require('assert');
 import logAndDie = require('./log-and-die');

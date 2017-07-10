@@ -129,7 +129,7 @@ function get(uri: string, options, success?: (response, xhr?: JQueryXHR) => void
   });
 
   return {
-    abort: function(message?: string) { xhr.abort(message); }
+    abort: function() { xhr.abort(); }
   }
 }
 

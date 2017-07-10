@@ -1,12 +1,12 @@
 /// <reference path="../test-types.ts"/>
 
 import * as _ from 'lodash';
+import assert = require('assert');
 import server = require('../utils/server');
 import utils = require('../utils/utils');
 import pagesFor = require('../utils/pages-for');
 import settings = require('../utils/settings');
 import { buildSite } from '../utils/site-builder';
-import assert = require('assert');
 import logAndDie = require('../utils/log-and-die');
 import c = require('../test-constants');
 

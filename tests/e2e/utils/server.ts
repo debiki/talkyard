@@ -3,7 +3,6 @@
 /// <reference path="../test-types.ts"/>
 
 import _ = require('lodash');
-import assert = require('assert');
 import settings = require('./settings');
 import utils = require('./utils');
 import { logMessage, die, dieIf } from './log-and-die';

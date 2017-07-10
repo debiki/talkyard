@@ -1,4 +1,4 @@
-/// <reference path="../../modules/definitely-typed/lodash/lodash.d.ts"/>
+declare const global: any;
 
 import _ = require('lodash');
 import progressReporter = require('./wdio-progress-reporter');

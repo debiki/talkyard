@@ -23,6 +23,11 @@ Run tests like so:
 
         # sudo yarn global add node-gyp  # needed for Fibers to build? not sure.
         yarn install  # builds Fibers, needed once only
+
+        # ... or, might need to:
+        yarn remove wdio-sync
+        yarn add --dev wdio-sync  # to build the correct version of Fibers
+        
         s/selenium-install # should be needed once only
         s/selenium-start
 

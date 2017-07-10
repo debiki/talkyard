@@ -1,11 +1,11 @@
 /// <reference path="../test-types.ts"/>
 
+import assert = require('assert');
 import log = require('./log-and-die');
 import make = require('./make');
 declare function require(...whatever): any;
 
 import _ = require('lodash');
-import assert = require('assert');
 import c = require('../test-constants');
 
 

@@ -1,4 +1,3 @@
-/// <reference path="../../typedefs/react/react.d.ts" />
 /// <reference path="../slim-bundle.d.ts" />
 
 //------------------------------------------------------------------------------

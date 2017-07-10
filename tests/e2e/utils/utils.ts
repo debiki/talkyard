@@ -1,4 +1,3 @@
-import assert = require('assert');
 import settings = require('./settings');
 import { dieIf } from './log-and-die'
 

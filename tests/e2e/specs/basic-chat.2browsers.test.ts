@@ -1,8 +1,7 @@
 /// <reference path="../test-types.ts"/>
-/// <reference path="../../../modules/definitely-typed/lodash/lodash.d.ts"/>
-/// <reference path="../../../modules/definitely-typed/mocha/mocha.d.ts"/>
 
 import * as _ from 'lodash';
+import assert = require('assert');
 import server = require('../utils/server');
 import utils = require('../utils/utils');
 import pagesFor = require('../utils/pages-for');

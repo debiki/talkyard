@@ -186,10 +186,10 @@ gulp.task('wrap-javascript', function () {
 
 
 var serverTypescriptProject = typeScript.createProject({
-    target: 'ES5',
-    outFile: 'server-bundle.js',
-    types: [
-      'lodash', 'core-js']
+  target: 'ES5',
+  outFile: 'server-bundle.js',
+  lib: ['es5', 'es2015', 'dom'],
+  types: ['react', 'lodash', 'core-js'],
 });
 
 
@@ -232,29 +232,31 @@ function compileServerTypescript() {
 var slimTypescriptProject = typeScript.createProject({
   target: 'ES5',
   outFile: 'slim-typescript.js',
-  types: [
-    'lodash', 'core-js']
+  lib: ['es5', 'es2015', 'dom'],
+  types: ['react', 'react-dom', 'lodash', 'core-js'],
+  sourceMap: true,     // ??
+  inlineSources: true  // include source code in mapping file
 });
 
 var moreTypescriptProject = typeScript.createProject({
   target: 'ES5',
   outFile: 'more-typescript.js',
-  types: [
-    'lodash', 'core-js']
+  lib: ['es5', 'es2015', 'dom'],
+  types: [/*'react', 'react-dom', */ 'lodash', 'core-js']
 });
 
 var staffTypescriptProject = typeScript.createProject({
   target: 'ES5',
   outFile: 'staff-typescript.js',
-  types: [
-    'lodash', 'core-js']
+  lib: ['es5', 'es2015', 'dom'],
+  types: [/*'react', 'react-dom', */ 'lodash', 'core-js']
 });
 
 var editorTypescriptProject = typeScript.createProject({
   target: 'ES5',
   outFile: 'editor-typescript.js',
-  types: [
-    'lodash', 'core-js']
+  lib: ['es5', 'es2015', 'dom'],
+  types: [/*'react', 'react-dom', */ 'lodash', 'core-js']
 });
 
 
@@ -480,8 +482,8 @@ gulp.task('compile-e2e-scripts', function() {
       .pipe(typeScript({
         declarationFiles: true,
         module: 'commonjs',
-        types: [
-          'lodash', 'core-js']
+        lib: ['es5', 'es2015', 'dom'],
+        types: ['lodash', 'core-js', 'assert', 'node']
       }));
   // stream.dts.pipe(gulp.dest('target/e2e/...')); — no, don't need d.ts files
   if (watchAndLiveForever) {
@@ -518,8 +520,8 @@ gulp.task('compile-security-tests', function() {
     .pipe(typeScript({
       declarationFiles: true,
       module: 'commonjs',
-      types: [
-        'lodash', 'core-js']
+      lib: ['es5', 'es2015', 'dom'],
+      types: ['lodash', 'core-js', 'assert', 'node']
     }));
   // stream.dts.pipe(gulp.dest('target/e2e/...')); — no, don't need d.ts files
   if (watchAndLiveForever) {

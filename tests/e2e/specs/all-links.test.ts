@@ -1,7 +1,7 @@
 /// <reference path="../test-types.ts"/>
-/// <reference path="../../../modules/definitely-typed/mocha/mocha.d.ts"/>
 
 import server = require('../utils/server');
+import assert = require('assert');
 import utils = require('../utils/utils');
 import pages = require('../utils/pages');
 import settings = require('../utils/settings');

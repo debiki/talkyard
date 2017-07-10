@@ -1,4 +1,4 @@
-/// <reference path="../../../modules/definitely-typed/chalk/chalk.d.ts"/>
+/// <reference path="../../../client/typedefs/chalk/index.d.ts"/>
 
 import chalk = require('chalk');
 

@@ -15,7 +15,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/// <reference path="../../typedefs/react/react.d.ts" />
 /// <reference path="react-utils.ts" />
 
 //------------------------------------------------------------------------------

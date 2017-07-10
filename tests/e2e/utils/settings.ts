@@ -1,5 +1,4 @@
-/// <reference path="../../../modules/definitely-typed/lodash/lodash.d.ts"/>
-/// <reference path="../../../modules/definitely-typed/minimist/minimist.d.ts"/>
+/// <reference path="../test-types.ts"/>
 
 import _ = require('lodash');
 import minimist = require('minimist');

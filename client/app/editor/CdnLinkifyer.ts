@@ -16,7 +16,6 @@
  */
 
 /// <reference path="../plain-old-javascript.d.ts" />
-/// <reference path="../../typedefs/react/react.d.ts" />
 
 //------------------------------------------------------------------------------
    module ed.editor.CdnLinkifyer {

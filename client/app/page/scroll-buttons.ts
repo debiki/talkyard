@@ -15,7 +15,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/// <reference path="../../typedefs/react/react.d.ts" />
 /// <reference path="../../typedefs/keymaster/keymaster.d.ts" />
 /// <reference path="../utils/react-utils.ts" />
 /// <reference path="../widgets.ts" />
