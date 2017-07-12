@@ -24,18 +24,15 @@
    module debiki2.pagedialogs {
 //------------------------------------------------------------------------------
 
-var d = { i: debiki.internal, u: debiki.v0.util };
-var r = React.DOM;
-var reactCreateFactory = React['createFactory'];
-var ReactBootstrap: any = window['ReactBootstrap'];
-var Modal = reactCreateFactory(ReactBootstrap.Modal);
-var ModalHeader = reactCreateFactory(ReactBootstrap.ModalHeader);
-var ModalTitle = reactCreateFactory(ReactBootstrap.ModalTitle);
-var ModalBody = reactCreateFactory(ReactBootstrap.ModalBody);
-var ModalFooter = reactCreateFactory(ReactBootstrap.ModalFooter);
-var PatternInput = utils.PatternInput;
+const r = React.DOM;
+const Modal = rb.Modal;
+const ModalHeader = rb.ModalHeader;
+const ModalTitle = rb.ModalTitle;
+const ModalBody = rb.ModalBody;
+const ModalFooter = rb.ModalFooter;
+const PatternInput = utils.PatternInput;
 
-var movePostsDialog;
+let movePostsDialog;
 
 
 export function openMovePostsDialog(store: Store, post: Post, closeCaller) {

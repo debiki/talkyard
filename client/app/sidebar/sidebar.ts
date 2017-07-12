@@ -564,7 +564,7 @@ export var Sidebar = createComponent({  // RENAME to ContextBar
           helpMessageBoxTwo,
           helpMessageBoxTree,
           helpMessageBoxFour,
-          r.div({ style: dimCommentsStyle },
+          (<any> r.div)({ style: dimCommentsStyle },  // [TYPEERROR] weird, no style:  in React 15.6?
             r.div({ ref: 'commentsScrollable' },
               r.h3({ className: 'esCtxbar_list_title' }, title),
               tipsGuideOrExtraConfig,

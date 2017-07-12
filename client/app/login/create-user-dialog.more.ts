@@ -29,13 +29,11 @@
 
 var d = { i: debiki.internal, u: debiki.v0.util };
 var r = React.DOM;
-var reactCreateFactory = React['createFactory'];
-var ReactBootstrap: any = window['ReactBootstrap'];
-var Modal = reactCreateFactory(ReactBootstrap.Modal);
-var ModalBody = reactCreateFactory(ReactBootstrap.ModalBody);
-var ModalFooter = reactCreateFactory(ReactBootstrap.ModalFooter);
-var ModalHeader = reactCreateFactory(ReactBootstrap.ModalHeader);
-var ModalTitle = reactCreateFactory(ReactBootstrap.ModalTitle);
+var Modal = rb.Modal;
+var ModalBody = rb.ModalBody;
+var ModalFooter = rb.ModalFooter;
+var ModalHeader = rb.ModalHeader;
+var ModalTitle = rb.ModalTitle;
 var PatternInput = utils.PatternInput;
 var FullNameInput = util.FullNameInput;
 var EmailInput = util.EmailInput;

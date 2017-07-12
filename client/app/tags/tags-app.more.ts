@@ -22,14 +22,9 @@
 //------------------------------------------------------------------------------
 
 const r = React.DOM;
-const reactCreateFactory = React['createFactory'];
-
-const ReactRouter = window['ReactRouter'];
-const Route = reactCreateFactory(ReactRouter.Route);
-const Redirect = reactCreateFactory(ReactRouter.Redirect);
-
 
 const TagsRoot = '/-/tags/';
+
 
 export function routes() {
   return [

@@ -21,6 +21,7 @@
     "blacklist": "^1.1.4",
     "bootstrap": "3.1.1",
     "classnames": "^2.2.5",
+    "create-react-class": "^15.6.0",
     "eventemitter2": "^4.1.0",
     "fibers": "^2.0.0",
     "fileapi": "^2.0.21",
@@ -36,6 +37,7 @@
     "react-input-autosize": "=1.1.0",
     "react-router": "3.0.0",
     "react-select": "=1.0.0-rc.1",
+    "react-transition-group": "1.x",
     "wdio-dot-reporter": "^0.0.6",
     "zxcvbn": "^4.4.1"
   },

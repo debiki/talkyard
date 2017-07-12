@@ -18,12 +18,15 @@
 /// <reference path="model.ts" />
 /// <reference path="constants.ts" />
 
-var ReactDOM = window['ReactDOM'];
-var ReactDOMServer = window['ReactDOMServer'];
-var ReactCSSTransitionGroup = isServerSide() ? null :
-  reactCreateFactory(React.addons.CSSTransitionGroup);
-var ReactRouter = window['ReactRouter'];
-var Router = reactCreateFactory(ReactRouter.Router);
+declare const ReactDOMServer: any;
+declare const ReactRouter: any;
+declare const createReactClass: any;
+
+// node_modules/@types/react-addons-css-transition-group doesn't work, so use ':any' instead.
+var ReactCSSTransitionGroup: any = isServerSide() ? null :
+  reactCreateFactory(window['ReactTransitionGroup'].CSSTransitionGroup);
+
+var Router: any = reactCreateFactory(ReactRouter.Router);
 
 // backw compat, later, do once per file instead (don't want a global 'r').
 var r = React.DOM;
@@ -63,7 +66,7 @@ function doNextFrameOrNow(something: () => void) {
 //declare var React;
 // declare var ReactRouter;
 
-export var Link = reactCreateFactory(ReactRouter.Link);
+export var Link: any = reactCreateFactory(ReactRouter.Link);
 
 
 export function die(errorMessage: string) {

@@ -26,7 +26,7 @@
 export var Link = reactCreateFactory(ReactRouter.Link);
 
 
-export function createComponent(componentDefinition) { // oops should obviously be named createFactory
+export function createComponent(componentDefinition): any { // oops should obviously be named createFactory
   if (isServerSide()) {
     // The mere presence of these functions cause an unknown error when rendering
     // React-Router server side. So remove them; they're never called server side anyway.
@@ -34,7 +34,7 @@ export function createComponent(componentDefinition) { // oops should obviously 
     delete componentDefinition.componentWillUpdate;
     delete componentDefinition.componentWillReceiveProps;
   }
-  return reactCreateFactory(React.createClass(componentDefinition));
+  return reactCreateFactory(createReactClass(componentDefinition));
 }
 
 

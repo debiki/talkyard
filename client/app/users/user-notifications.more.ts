@@ -25,7 +25,7 @@
 var r = React.DOM;
 
 
-export var UserNotificationsComponent = React.createClass({
+export var UserNotificationsComponent = React.createClass<any, any>({
   getInitialState: function() {
     return { notfs: null, error: false };
   },

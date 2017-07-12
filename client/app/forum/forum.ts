@@ -1394,7 +1394,7 @@ var CategoryRow = createComponent({
 
 function makeTitle(topic: Topic, className: string, settings: SettingsVisibleClientSide,
       me: Myself) {
-  let title = topic.title;
+  let title: any = topic.title;
   let iconClass = '';
   let tooltip;
   let showIcons = settings_showTopicTypes(settings, me);

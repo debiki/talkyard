@@ -249,7 +249,7 @@ var SearchPageContentComponent = React.createClass(<any> {
         r.form({},
           r.div({},
             "Search: ",
-            r.input({ type: 'text', tabIndex: '1', placeholder: "Text to search for",
+            (<any> r.input)({ type: 'text', tabIndex: '1', placeholder: "Text to search for",   // [TYPEERROR]
                 value: query.rawQuery,
                 className: 's_SP_QueryTI', onChange: this.onQueryTextEdited }),
             PrimaryButton({ value: "Search", className: 's_SP_SearchB',

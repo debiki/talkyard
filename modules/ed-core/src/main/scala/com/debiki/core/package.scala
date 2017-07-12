@@ -566,6 +566,7 @@ package object core {
   def OPTIMIZE = ()
   def SHOULD_OPTIMIZE = ()
   def COULD_OPTIMIZE = ()
+  def SMALLER_BUNDLE = ()
   def FORCED_REFLOW = ()  // Browser side only. Makes it slow.
   def UX = ()             // Usability can be improved.
   def RESPONSIVE = ()     // Would look better with responsive layout. Browser side only.

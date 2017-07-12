@@ -77,9 +77,13 @@ var thisIsAConcatenationMessage =
 // - Plus I read in comments in some blog that some countries actually sometimes
 //   block Google's CDN.
 var slimJsFiles = [
-      // Place React first so we can replace it at index 0 & 1 with the optimized min.js versions.
-      'node_modules/react/dist/react-with-addons.js',
+      // Place React first so we can replace it at index 0,1,2,3 with the optimized min.js versions.
+      'node_modules/react/dist/react.js',
       'node_modules/react-dom/dist/react-dom.js',
+      'node_modules/create-react-class/create-react-class.js',
+      // Includes Rea.ReactCSSTransitionGroup:
+      // COULD_OPTIMIZE SMALLER_BUNDLE or perhaps even remove? add pure CSS anims instead?
+      'node_modules/react-transition-group/dist/react-transition-group.js',  // try to move to more-bundle
       // About Modernizr:
       // Concerning when/how to use a CDN for Modernizr, see:
       // http://www.modernizr.com/news/modernizr-and-cdns
@@ -189,7 +193,8 @@ var serverTypescriptProject = typeScript.createProject({
   target: 'ES5',
   outFile: 'server-bundle.js',
   lib: ['es5', 'es2015', 'dom'],
-  types: ['react', 'lodash', 'core-js'],
+  // react-dom needed to compile, but isn't actually used, server side.
+  types: ['react', 'react-dom', 'lodash', 'core-js'],
 });
 
 
@@ -212,9 +217,10 @@ function compileServerTypescript() {
         // Needs to be first. There's some missing ';' at the start of the script bug?
         'modules/sanitize-html/dist/sanitize-html.min.js',
         'client/third-party/html-css-sanitizer-bundle.js',
-        // Don't need any React addons server side (e.g. CSS transitions or performance measurements).
         'node_modules/react/dist/react.min.js',
         'node_modules/react-dom/dist/react-dom-server.min.js',
+        'node_modules/create-react-class/create-react-class.min.js',
+        // Don't need React CSS transitions server side.
         'node_modules/react-router/umd/ReactRouter.js',
         'node_modules/markdown-it/dist/markdown-it.min.js',
         'client/third-party/lodash-custom.js',
@@ -366,8 +372,10 @@ function makeConcatAllScriptsStream() {
 gulp.task('enable-prod-stuff', function() {
   // This script isn't just a minified script — it contains lots of optimizations.
   // So we want to use react-with-addons.min.js, rather than minifying the .js ourselves.
-  slimJsFiles[0] = 'node_modules/react/dist/react-with-addons.min.js';
+  slimJsFiles[0] = 'node_modules/react/dist/react.min.js';
   slimJsFiles[1] = 'node_modules/react-dom/dist/react-dom.min.js';
+  slimJsFiles[2] = 'node_modules/create-react-class/create-react-class.min.js';
+  slimJsFiles[3] = 'node_modules/react-transition-group/dist/react-transition-group.min.js';
 });
 
 

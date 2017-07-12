@@ -15,6 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+/// <reference path="widgets.ts" />
 /// <reference path="sidebar/sidebar.ts" />
 /// <reference path="watchbar/watchbar.ts" />
 /// <reference path="page/metabar.ts" />
@@ -25,9 +26,6 @@
 //------------------------------------------------------------------------------
    module debiki2 {
 //------------------------------------------------------------------------------
-
-var ReactRouter = window['ReactRouter'];
-var Router = reactCreateFactory(ReactRouter.Router);
 
 
 export function startRemainingReactRoots() {
@@ -94,7 +92,7 @@ export function createSidebar() {
 
 
 export function removeSidebar() {
-  React.unmountComponentAtNode(document.getElementById('dw-any-sidebar'));
+  ReactDOM.unmountComponentAtNode(document.getElementById('dw-any-sidebar'));
 }
 
 

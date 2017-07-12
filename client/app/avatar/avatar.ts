@@ -178,11 +178,12 @@ export const Avatar = createComponent({
       title += ' — ' + this.props.title;
     }
 
-    const elem = this.props.ignoreClicks ? 'span' : 'a';
+    const elemName = this.props.ignoreClicks ? 'span' : 'a';
+    const elemFn = <any> r[elemName];
     const link = this.props.ignoreClicks ? null : linkToUserProfilePage(user.username || user.id);
     return (
       // [rename] edAvtr to esAvtr
-      r[elem]({ className: 'esAvtr edAvtr' + extraClasses, style: styles, onClick: this.onClick,
+      elemFn({ className: 'esAvtr edAvtr' + extraClasses, style: styles, onClick: this.onClick,
           href: link, title: title }, content));
   }
 });

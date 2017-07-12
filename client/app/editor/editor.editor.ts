@@ -29,7 +29,7 @@ var d = { i: debiki.internal, u: debiki.v0.util };
 var r = React.DOM;
 var reactCreateFactory = React['createFactory'];
 var ReactBootstrap: any = window['ReactBootstrap'];
-var Modal = reactCreateFactory(ReactBootstrap.Modal);
+var Modal: any = reactCreateFactory(ReactBootstrap.Modal);
 var ModalBody = reactCreateFactory(ReactBootstrap.ModalBody);
 var ModalFooter = reactCreateFactory(ReactBootstrap.ModalFooter);
 var ModalHeader = reactCreateFactory(ReactBootstrap.ModalHeader);
@@ -905,7 +905,7 @@ export var Editor = createComponent({
     const isChatReply = replyToPostNrs.indexOf(NoPostId) !== -1 && !isChatComment;
     const isMindMapNode = replyToPostNrs.length === 1 && store.pageRole === PageRole.MindMap;
 
-    let doingWhatInfo;
+    let doingWhatInfo: any;
     if (_.isNumber(editingPostId)) {
       doingWhatInfo =
         r.span({},
@@ -966,7 +966,7 @@ export var Editor = createComponent({
             const anyAnd = index > 0 ? ' and ' : '';
             const whichPost = postNr === 1 ? 'the Original Post' : 'post ' + postNr;
             return (
-              r.span({ key: postNr },
+              (<any> r.span)({ key: postNr },   // span has no .key, weird [TYPEERROR]
                 anyAnd,
                 r.a({ onClick: () => this.scrollPostIntoView(postNr) }, whichPost)));
           }),

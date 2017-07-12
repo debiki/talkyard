@@ -32,7 +32,7 @@ var ModalFooter = rb.ModalFooter;
 var EmailInput = util.EmailInput;
 
 
-export var UserInvitesComponent = React.createClass({
+export var UserInvitesComponent = React.createClass<any, any>({
   getInitialState: function() {
     return { intives: null };
   },
@@ -86,14 +86,14 @@ export var UserInvitesComponent = React.createClass({
       return r.p({}, this.state.errorMessage);
 
     if (!this.state.invites)
-      return r.p({}, 'Loading...');
+      return r.p({}, "Loading...");
 
     var inviteButton;
     var mayInvite = maySendInvites(user);
-    var introText = r.p({}, 'Here you can invite people to join this site. ' + (
+    var introText: any = r.p({}, "Here you can invite people to join this site. " + (
         this.state.invites.length
-            ? 'Invites that you have already sent are listed below.'
-            : 'You have not invited anyone yet.'));
+            ? "Invites that you have already sent are listed below."
+            : "You have not invited anyone yet."));
     if (user.id === me.id && mayInvite.yes) {
       inviteButton =
           Button({ onClick: () => openInviteSomeoneDialog(this.addInvite) }, "Send an Invite");
@@ -241,14 +241,14 @@ var InviteDialog = createComponent({  // COULD break out to debiki2.invite modul
 
   render: function() {
     var props = _.assign({}, this.props);
-    props.title = 'Send an Invite';
+    props.title = "Send an Invite";
     return (
       Modal({ show: this.state.isOpen, onHide: this.close, dialogClassName: 'esUsrDlg' },
         ModalBody({},
           r.p({}, "We'll send your friend a brief email, and he or she then clicks a link " +
               "to join immediately, no login required. " +
               "He or she will become a normal member, not a moderator or admin."),
-          EmailInput({ label: 'Email Address', placeholder: 'Enter email',
+          EmailInput({ label: "Email Address", placeholder: "Enter email",
               ref: 'emailInput', error: this.state.error, onChangeValueOk: this.onEmailChanged })),
         ModalFooter({},
           PrimaryButton({ onClick: this.sendInvite, disabled: !this.state.maySubmit },

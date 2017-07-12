@@ -448,7 +448,7 @@ var SearchForm = createComponent({
     return (
         r.form({ className: 'esTB_SearchD', ref: 'form',
             method: 'get', acceptCharset: 'UTF-8', action: searchEndpoint },
-          r.input({ type: 'text', tabIndex: '1', placeholder: "Text to search for",
+          (<any> r.input)({ type: 'text', tabIndex: '1', placeholder: "Text to search for",  // [TYPEERROR]
               ref: 'input', name: 'q',
               value: this.state.queryInputText, onChange: this.onQueryChange }),
           PrimaryLinkButton({ href: searchUrl, className: 'e_SearchB' }, "Search"),

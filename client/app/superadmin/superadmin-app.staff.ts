@@ -23,11 +23,11 @@
 //------------------------------------------------------------------------------
 
 const r = React.DOM;
-const reactCreateFactory = React['createFactory'];
+const reactCreateFactory = React.createFactory;
 
 const ReactRouter = window['ReactRouter'];
-const Route = reactCreateFactory(ReactRouter.Route);
-const Redirect = reactCreateFactory(ReactRouter.Redirect);
+const Route: any = reactCreateFactory(ReactRouter.Route);
+const Redirect: any = reactCreateFactory(ReactRouter.Redirect);
 
 
 const SuperAdminRoot = '/-/superadmin/';

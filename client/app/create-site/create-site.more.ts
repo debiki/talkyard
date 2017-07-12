@@ -30,11 +30,6 @@ var reactCreateFactory = React['createFactory'];
 var EmailInput = util.EmailInput;
 var PatternInput = utils.PatternInput;
 
-var ReactRouter = window['ReactRouter'];
-var Route = reactCreateFactory(ReactRouter.Route);
-var IndexRoute = reactCreateFactory(ReactRouter.IndexRoute);
-var Redirect = reactCreateFactory(ReactRouter.Redirect);
-
 
 
 export function routes() {

@@ -3,7 +3,6 @@
 
 // In constants.ts:
 
-declare const ReactDOM: any;
 declare const ReactCSSTransitionGroup: any;
 declare const Router: any;
 declare function reactCreateFactory(x);

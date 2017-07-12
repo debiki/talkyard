@@ -21,19 +21,19 @@
    namespace debiki2 {
 //------------------------------------------------------------------------------
 
-var r = React.DOM;
+const r = React.DOM;
 
-var ReactRouter = window['ReactRouter'];
-export var Route = reactCreateFactory(ReactRouter.Route);
-export var IndexRoute = reactCreateFactory(ReactRouter.IndexRoute);
-export var Redirect = reactCreateFactory(ReactRouter.Redirect);
-export var DefaultRoute = reactCreateFactory(ReactRouter.DefaultRoute);
+declare const ReactRouter: any;
+export const Route: any = reactCreateFactory(ReactRouter.Route);
+export const IndexRoute: any = reactCreateFactory(ReactRouter.IndexRoute);
+export const Redirect: any = reactCreateFactory(ReactRouter.Redirect);
+export const DefaultRoute: any = reactCreateFactory(ReactRouter.DefaultRoute);
 
-export var PrimaryButton: any = makeWidget(r.button, ' btn btn-primary');
-export var Button: any = makeWidget(r.button, ' btn btn-default');
-export var PrimaryLinkButton: any = makeWidget(r.a, ' btn btn-primary');
-export var LinkButton: any = makeWidget(r.a, ' btn btn-default');  // not blue [2GKR5L0]
-export var InputTypeSubmit: any = makeWidget(r.input, ' btn btn-primary', { type: 'submit' });
+export const PrimaryButton: any = makeWidget(r.button, ' btn btn-primary');
+export const Button: any = makeWidget(r.button, ' btn btn-default');
+export const PrimaryLinkButton: any = makeWidget(r.a, ' btn btn-primary');
+export const LinkButton: any = makeWidget(r.a, ' btn btn-default');  // not blue [2GKR5L0]
+export const InputTypeSubmit: any = makeWidget(r.input, ' btn btn-primary', { type: 'submit' });
 
 
 function makeWidget(what, spaceWidgetClasses: string, extraProps?) {
@@ -43,15 +43,17 @@ function makeWidget(what, spaceWidgetClasses: string, extraProps?) {
 
     // Prevent automatic submission of Button when placed in a <form>.
     // And, if primary button, add Bootstrap's primary button color class.
-    if (what === r.button || what === r.input && r.type === 'submit') {
+    if (what === r.button || what === r.input && extraProps.type === 'submit') {
       newProps.onClick = function(event) {
-        event.preventDefault();
         if (origProps.disabled) {
+          event.preventDefault();
           event.stopPropagation();
         }
         if (origProps.onClick) {
+          event.preventDefault();
           origProps.onClick(event);
         }
+        // else: Don't prevent-default; instead, submit form.
       };
 
       if (origProps.primary) {
@@ -104,14 +106,14 @@ export function UserName(props: { user: BriefUser, makeLink?: boolean, onClick?:
   let user = props.user;
   var guestClass = user_isGuest(user) ? ' esP_By_F-G' : '';
   var guestMark = user_isGuest(user) ? '? ' : '';
-  var fullName = !user.fullName ? undefined :
+  var fullName: any = !user.fullName ? undefined :
     r.span({ className: 'esP_By_F' + guestClass }, user.fullName + ' ' + guestMark);
   var username = !user.username ? null :
     r.span({ className: 'esP_By_U' },
       r.span({ className: 'esP_By_U_at' }, '@'), user.username);
 
   if (!fullName && !username) {
-    fullName = '(Unknown author)';
+    fullName = "(Unknown author)";
   }
 
 

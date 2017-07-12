@@ -22,7 +22,6 @@
 //------------------------------------------------------------------------------
 
 var r = React.DOM;
-var ReactCSSTransitionGroup = reactCreateFactory(React.addons.CSSTransitionGroup);
 
 
 /**
