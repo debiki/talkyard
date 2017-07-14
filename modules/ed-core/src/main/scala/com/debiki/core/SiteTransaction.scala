@@ -266,6 +266,7 @@ trait SiteTransaction {
   def loadPagesInCategories(categoryIds: Seq[CategoryId], pageQuery: PageQuery, limit: Int)
         : Seq[PagePathAndMeta]
 
+  /** Orders by most recent first. */
   def loadPagesByUser(userId: UserId, isStaffOrSelf: Boolean, limit: Int): Seq[PagePathAndMeta]
 
   def moveRenamePage(pageId: PageId,

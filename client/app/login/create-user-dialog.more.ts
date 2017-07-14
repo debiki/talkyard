@@ -186,7 +186,13 @@ export var CreateUserDialogContent = createClassAndFactory({
         this.props.anyReturnToUrl.search('_RedirFromVerifEmailOnly_') === -1) {
       const returnToUrl = this.props.anyReturnToUrl.replace(/__dwHash__/, '#');
       const currentUrl = window.location.toString();
-      if (returnToUrl === currentUrl) {
+      // Previously, only:
+      //   if (returnToUrl === currentUrl) ...
+      // but was never used?
+      // Now, instead, for Usability Testing Exchange [plugin]: (and perhaps better, always?)
+      // (afterLoginCallback = always called after signup if logged in, and the return-to-url
+      // is included in the continue-link via the email.)
+      if (returnToUrl === currentUrl || this.props.afterLoginCallback) {
         const afterLoginCallback = this.props.afterLoginCallback; // gets nulled when dialogs closed
         debiki2.ReactActions.loadMyself(() => {
           if (afterLoginCallback) {

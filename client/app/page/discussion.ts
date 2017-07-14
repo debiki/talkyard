@@ -209,7 +209,7 @@ export const TitleBodyComments = createComponent({
             return { id: 'EdH5PK2W', version: 1, alwaysShow: true, className: 's_UtxHelp_HaveAsked',
               content: r.div({},
                 r.h1({ className: 's_UtxHelp_HaveAsked_Title' },
-                  "This usability testing task was created by you."),
+                  "This task was created by you."),
                 r.p({}, "You'll be notified via email, " +
                   "when someone posts feedback to you. ", r.br(),
                   "To edit the text," +
@@ -218,7 +218,10 @@ export const TitleBodyComments = createComponent({
                   "click the edit icon (", r.span({ className: 'icon-edit' }), ") ",
                   // People only see the edit icon for the title — try to fix this, by making
                   // 'below' bold so they'll look below instead.
-                  r.b({}, "below"), " your post.")) };
+                  r.b({}, "below"), " your post."),
+                r.p({}, "Next step:",
+                  r.a({ href: '/give-me-a-task', className: 'utxGiveMeATaskL' }, "Help others"),
+                  "— then you'll get more feedback, yourself.")) };
           }
         }
         else {
@@ -254,12 +257,10 @@ export const TitleBodyComments = createComponent({
                   r.h1({ className: 's_UtxHelp_HaveAsked_Title' },
                     "This task is for you"),
                   r.p({}, "Follow the instructions below. Click 'Give Feedback' to type your " +
-                    "answers to the questions, plus any other thoughts and feedback " +
-                    "you might have."),
+                    "answers to the questions."),
                   r.p({},
                     "Some other people have posted feedback here already. Try not to read what " +
-                    "they have written, before you compose your own feedback. Afterwards, though, " +
-                    "you can read their feedback, and add comments, if you want to."),
+                    "they have written, before you compose your own feedback."),
                   pickAnotherTask(true)) };
             }
           }
@@ -269,8 +270,7 @@ export const TitleBodyComments = createComponent({
                 r.h1({ className: 's_UtxHelp_HaveAsked_Title' },
                   "This task is for you"),
                 r.p({}, "Follow the instructions below. Click 'Give Feedback' to type your " +
-                  "answers to the questions, plus any other thoughts and feedback " +
-                  "you might have."),
+                  "answers to the questions."),
                 pickAnotherTask(true)) };
           }
         }

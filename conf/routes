@@ -121,6 +121,7 @@ POST  /-/unsuspend-user         controllers.UserController.unsuspendUser
 POST  /-/block-guest            controllers.UserController.blockGuest
 POST  /-/unblock-guest          controllers.UserController.unblockGuest
 GET   /-/load-author-blocks     controllers.UserController.loadAuthorBlocks(postId: Int)
+GET   /-/redir-to-my-last-topic controllers.UserController.redirectToMyLastTopic
 
 GET   /-/unsubscribe            controllers.UnsubscriptionController.showForm(emailId)
 POST  /-/unsubscribe            controllers.UnsubscriptionController.handleForm(emailId)

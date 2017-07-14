@@ -49,7 +49,7 @@ export function activateAnyCustomForm() {
         morebundle.loginIfNeeded(LoginReason.SignUp);
       }
       else if (doWhat.value === 'SignUpSubmitUtx') {  // [plugin]
-        morebundle.loginIfNeeded(LoginReason.SignUp, null, function() {
+        morebundle.loginIfNeeded(LoginReason.SignUp, '/-/redir-to-my-last-topic', function() {
           Server.submitUsabilityTestingRequest(namesAndValues);
         });
       }

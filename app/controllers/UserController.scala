@@ -441,6 +441,18 @@ object UserController extends mvc.Controller {
   }
 
 
+  def redirectToMyLastTopic: Action[Unit] = GetAction { request =>
+    import request.{dao, theRequester => requester}
+    // Load a few topics, in case some were deleted.
+    val topicsInclForbidden = dao.loadPagesByUser(requester.id, isStaffOrSelf = true, limit = 5)
+    val latestTopic = topicsInclForbidden find { page: PagePathAndMeta =>
+      !page.meta.isDeleted && dao.maySeePageUseCache(page.meta, Some(requester))._1
+    }
+    val redirectToUrl = latestTopic.map(_.path.value) getOrElse "/"
+    TemporaryRedirect(redirectToUrl)
+  }
+
+
   def viewUserPage(whatever: String) = GetAction { request =>
     val htmlStr = views.html.templates.users(SiteTpi(request)).body
     Ok(htmlStr) as HTML
