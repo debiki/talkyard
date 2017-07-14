@@ -181,7 +181,7 @@ var nextFileTemplate =
     '<%= contents %>\n';
 
 
-gulp.task('wrap-javascript', function () {
+gulp.task('wrapJavascript', function () {
   // Prevent Javascript variables from polluting the global scope.
   return gulp.src('client/**/*.js')
     .pipe(wrap('(function() {\n<%= contents %>\n}).call(this);'))
@@ -198,11 +198,13 @@ var serverTypescriptProject = typeScript.createProject({
 });
 
 
+var serverTypescriptSrc = [
+    'client/server/**/*.ts',
+    'client/shared/plain-old-javascript.d.ts',
+    'client/typedefs/**/*.ts'];
+
 function compileServerTypescript() {
-  var typescriptStream = gulp.src([
-        'client/server/**/*.ts',
-        'client/shared/plain-old-javascript.d.ts',
-        'client/typedefs/**/*.ts'])
+  var typescriptStream = gulp.src(serverTypescriptSrc)
     .pipe(wrap(nextFileTemplate))
     .pipe(serverTypescriptProject());
 
@@ -266,15 +268,17 @@ var editorTypescriptProject = typeScript.createProject({
 });
 
 
+var slimTypescriptSrc = [
+    'client/shared/plain-old-javascript.d.ts',
+    'client/app/**/*.ts',
+    '!client/app/**/*.more.ts',
+    '!client/app/**/*.editor.ts',
+    '!client/app/**/*.staff.ts',
+    '!client/app/slim-bundle.d.ts',
+    'client/typedefs/**/*.ts'];
+
 function compileSlimTypescript() {
-  var stream = gulp.src([
-        'client/shared/plain-old-javascript.d.ts',
-        'client/app/**/*.ts',
-        '!client/app/**/*.more.ts',
-        '!client/app/**/*.editor.ts',
-        '!client/app/**/*.staff.ts',
-        '!client/app/slim-bundle.d.ts',
-        'client/typedefs/**/*.ts'])
+  var stream = gulp.src(slimTypescriptSrc)
     .pipe(wrap(nextFileTemplate))
     .pipe(slimTypescriptProject());
   if (watchAndLiveForever) {
@@ -285,15 +289,20 @@ function compileSlimTypescript() {
   return stream.pipe(gulp.dest('target/client/'));
 }
 
-function compileOtherTypescript(what, typescriptProject) {
-  var stream = gulp.src([
+
+function makeOtherTypescriptSrc(what) {
+  return [
     'client/app/**/*.d.ts',
     '!client/app/**/*.' + what + '.d.ts',
     '!client/app/**/' + what + '-bundle-already-loaded.d.ts',
     'client/shared/plain-old-javascript.d.ts',
     'client/app/model.ts',
     'client/app/**/*.' + what + '.ts',
-    'client/typedefs/**/*.ts'])
+    'client/typedefs/**/*.ts'];
+}
+
+function compileOtherTypescript(what, typescriptProject) {
+  var stream = gulp.src(makeOtherTypescriptSrc(what))
     .pipe(wrap(nextFileTemplate))
     .pipe(typescriptProject());
   if (watchAndLiveForever) {
@@ -304,8 +313,27 @@ function compileOtherTypescript(what, typescriptProject) {
   return stream.pipe(gulp.dest('target/client/'));
 }
 
+gulp.task('compileServerTypescript', function () {
+  return compileServerTypescript();
+});
 
-gulp.task('compile-typescript', function () {
+gulp.task('compileSlimTypescript', function () {
+  return compileSlimTypescript();
+});
+
+gulp.task('compileMoreTypescript', function () {
+  return compileOtherTypescript('more', moreTypescriptProject);
+});
+
+gulp.task('compileStaffTypescript', function () {
+  return compileOtherTypescript('staff', staffTypescriptProject);
+});
+
+gulp.task('compileEditorTypescript', function () {
+  return compileOtherTypescript('editor', editorTypescriptProject);
+});
+
+gulp.task('compileAllTypescript', function () {
   return es.merge(
       compileServerTypescript(),
       compileSlimTypescript(),
@@ -315,14 +343,28 @@ gulp.task('compile-typescript', function () {
 });
 
 
+var compileTsTaskNames = [
+  'compileServerTypescript',
+  'compileSlimTypescript',
+  'compileMoreTypescript',
+  'compileStaffTypescript',
+  'compileEditorTypescript'];
+for (var i = 0; i < 4; ++i) {
+  var compileTaskName = compileTsTaskNames[i];
+  gulp.task(compileTaskName + '-concatScripts', [compileTaskName], function() {
+    return makeConcatAllScriptsStream();
+  });
+}
 
-gulp.task('concat-debiki-scripts', ['wrap-javascript', 'compile-typescript'], function() {
-  return makeConcatDebikiScriptsStream();
+
+
+gulp.task('compileConcatAllScripts', ['wrapJavascript', 'compileAllTypescript'], function() {
+  return makeConcatAllScriptsStream();
 });
 
 
 
-function makeConcatDebikiScriptsStream() {
+function makeConcatAllScriptsStream() {
   function makeConcatStream(outputFileName, filesToConcat, checkIfNewer) {
     var stream = gulp.src(filesToConcat);
     if (checkIfNewer) {
@@ -347,25 +389,9 @@ function makeConcatDebikiScriptsStream() {
 
 
 
-gulp.task('wrap-javascript-concat-scripts', ['wrap-javascript'], function () {
+gulp.task('wrap-javascript-concat-scripts', ['wrapJavascript'], function () {
   return makeConcatAllScriptsStream();
 });
-
-gulp.task('compile-typescript-concat-scripts', ['compile-typescript'], function () {
-  return makeConcatDebikiScriptsStream();
-});
-
-gulp.task('compile-concat-scripts',
-    ['wrap-javascript', 'compile-typescript'],
-    function () {
-  return makeConcatAllScriptsStream();
-});
-
-function makeConcatAllScriptsStream() {
-  // I've removed some other scripts (CodeMirror) so now suddenly there's nothing to merge.
-  return es.merge(
-      makeConcatDebikiScriptsStream());
-}
 
 
 
@@ -379,7 +405,7 @@ gulp.task('enable-prod-stuff', function() {
 });
 
 
-gulp.task('minify-scripts', ['concat-debiki-scripts'], function() {
+gulp.task('minifyScripts', ['compileConcatAllScripts'], function() {
   // preprocess() removes all @ifdef DEBUG — however (!) be sure to not place '// @endif'
   // on the very last line in a {} block, because it would get removed, by... by what? the
   // Typescript compiler? This results in an impossible-to-understand "Unbalanced delimiter
@@ -456,18 +482,23 @@ function logChangeFn(fileType) {
 
 gulp.task('watch', ['default'], function() {
   watchAndLiveForever = true;
-  gulp.watch(['client/**/*.ts', '!client/test/**/*.ts'] ,['compile-typescript-concat-scripts']).on('change', logChangeFn('TypeScript'));
+  gulp.watch(serverTypescriptSrc, ['compileServerTypescript-concatScripts']).on('change', logChangeFn('Server TypeScript'));
+  gulp.watch(slimTypescriptSrc, ['compileSlimTypescript-concatScripts']).on('change', logChangeFn('Slim TypeScript'));
+  gulp.watch(makeOtherTypescriptSrc('more'), ['compileMoreTypescript-concatScripts']).on('change', logChangeFn('More TypeScript'));
+  gulp.watch(makeOtherTypescriptSrc('staff'), ['compileStaffTypescript-concatScripts']).on('change', logChangeFn('Staff TypeScript'));
+  gulp.watch(makeOtherTypescriptSrc('editor'), ['compileEditorTypescript-concatScripts']).on('change', logChangeFn('Editor TypeScript'));
+
   gulp.watch('client/**/*.js', ['wrap-javascript-concat-scripts']).on('change', logChangeFn('Javascript'));
   gulp.watch('client/**/*.styl', ['compile-stylus']).on('change', logChangeFn('Stylus'));
   gulp.watch('tests/e2e/**/*.ts', ['build-e2e']).on('change', logChangeFn('end-to-end test files'));
   gulp.watch('tests/security/**/*.ts', ['build-security-tests']).on('change', logChangeFn('security test files'));
 });
 
-gulp.task('default', ['compile-concat-scripts', 'compile-stylus', 'build-e2e', 'build-security-tests'], function () {
+gulp.task('default', ['compileConcatAllScripts', 'compile-stylus', 'build-e2e', 'build-security-tests'], function () {
 });
 
 
-gulp.task('release', ['enable-prod-stuff', 'minify-scripts', 'compile-stylus'], function() {
+gulp.task('release', ['enable-prod-stuff', 'minifyScripts', 'compile-stylus'], function() {
 });
 
 

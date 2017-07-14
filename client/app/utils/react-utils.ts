@@ -23,9 +23,6 @@
 //------------------------------------------------------------------------------
 
 
-export var Link = reactCreateFactory(ReactRouter.Link);
-
-
 export function createComponent(componentDefinition): any { // oops should obviously be named createFactory
   if (isServerSide()) {
     // The mere presence of these functions cause an unknown error when rendering

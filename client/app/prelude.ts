@@ -62,9 +62,6 @@ function doNextFrameOrNow(something: () => void) {
    module debiki2 {
 //------------------------------------------------------------------------------
 
-// E2e tests won't compile without this. Why not, React.js already included above? Oh well.
-//declare var React;
-// declare var ReactRouter;
 
 export var Link: any = reactCreateFactory(ReactRouter.Link);
 
