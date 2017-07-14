@@ -152,7 +152,7 @@ var MemberPreferences = createComponent({
     const newIntervalMins = shallEnable && (
         !this.state.summaryEmailIntervalMins ||
         this.state.summaryEmailIntervalMins === DisableSummaryEmails) ?
-          7 * 24 * 60 : this.state.summaryEmailIntervalMins; // default to one week [5JUKWQ01]
+          DefaultSummaryIntervalMins : this.state.summaryEmailIntervalMins;
     this.setState({
       sendSummaryEmails: shallEnable,
       summaryEmailIntervalMins: newIntervalMins,
@@ -174,6 +174,8 @@ var MemberPreferences = createComponent({
       fullName: this.state.fullName,
       username: this.state.username,
       emailAddress: form.find('#emailAddress').val(),
+      // BUG SHOULD not save these, if the user didn't change them and they're still the
+      // default values.
       summaryEmailIntervalMins: summaryEmailIntervalMins,
       summaryEmailIfActive: this.state.summaryEmailIfActive,
       about: form.find('#t_UP_Prefs_AboutMeTA').val(),
@@ -230,6 +232,16 @@ var MemberPreferences = createComponent({
 
     const sendSummaryEmails = this.state.sendSummaryEmails;
 
+    // Only show setting-is-inherited-from-some-group info for admins, for now, so people
+    // won't wonder what "inherited" means.
+    const inherited = " (inherited)";
+    const summaryIntervalInherited =
+        me.isAdmin && user.summaryEmailIntervalMins !== user.summaryEmailIntervalMinsOwn ?
+          inherited : '';
+    const summaryIfActiveInherited =
+        me.isAdmin && user.summaryEmailIfActive !== user.summaryEmailIfActiveOwn ?
+          inherited : '';
+
     const summariesText = " summaries of popular topics and other stuff.";
     const activitySummaryDescr = user.isGroup
         ? "When members of this group don't visit here, then, by default, email them" + summariesText
@@ -246,13 +258,13 @@ var MemberPreferences = createComponent({
           r.label({},
             r.input({ type: 'checkbox', id: 'sendSummaryEmails',
               checked: this.state.sendSummaryEmails, onChange: this.enableSummaryEmails }),
-            activitySummaryDescr)),
+            activitySummaryDescr + summaryIntervalInherited)),
         r.div({ className: 'checkbox' },
           r.label({},
             r.input({ type: 'checkbox', id: 'summaryEmailIfActive',
               checked: this.state.summaryEmailIfActive, disabled: !sendSummaryEmails,
               onChange: (event) => this.setState({ summaryEmailIfActive: event.target.checked })}),
-            emailIfVisitRegularly)),
+            emailIfVisitRegularly + summaryIfActiveInherited)),
         r.p({ style: { marginBottom: 5 } }, howOftenSend + " these emails?"),
         ActivitySummaryEmailsIntervalDropdown({ onSelect: (frequencyMins) => {
           this.setState({ summaryEmailIntervalMins: frequencyMins });

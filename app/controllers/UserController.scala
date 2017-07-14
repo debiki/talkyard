@@ -28,6 +28,7 @@ import play.api.mvc
 import play.api.libs.json._
 import play.api.mvc.Action
 import scala.util.Try
+import scala.collection.immutable
 import DebikiHttp._
 import debiki.RateLimits.TrackReadingActivity
 import ed.server.auth.Authz
@@ -54,8 +55,9 @@ object UserController extends mvc.Controller {
       val approverIds = usersPendingApproval.flatMap(_.approvedById)
       val suspenderIds = usersPendingApproval.flatMap(_.suspendedById)
       val usersById = transaction.loadMembersAsMap(approverIds ++ suspenderIds)
+      COULD // later load all groups too, for each user. Not needed now though. [2WHK7PU0]
       val usersJson = JsArray(usersPendingApproval.map(
-        jsonForMemberInclDetails(_, usersById, callerIsAdmin = request.theUser.isAdmin,
+        jsonForMemberInclDetails(_, usersById, groups = Nil, callerIsAdmin = request.theUser.isAdmin,
           callerIsStaff = true)))
       OkSafeJson(Json.toJson(Map("users" -> usersJson)))
     }
@@ -85,9 +87,11 @@ object UserController extends mvc.Controller {
       val stats = includeStats ? transaction.loadUserStats(userId) | None
       val usersJson =
         if (User.isRoleId(userId)) {
-          transaction.loadTheMemberOrGroupInclDetails(userId) match {
+          val memberOrGroup = transaction.loadTheMemberOrGroupInclDetails(userId)
+          val groups = transaction.loadGroups(memberOrGroup)
+          memberOrGroup match {
             case m: MemberInclDetails =>
-              jsonForMemberInclDetails(m, Map.empty, callerIsAdmin = callerIsAdmin,
+              jsonForMemberInclDetails(m, Map.empty, groups, callerIsAdmin = callerIsAdmin,
                 callerIsStaff = callerIsStaff, callerIsUserHerself = callerIsUserHerself)
             case g: Group =>
               jsonForGroupInclDetails(g, callerIsAdmin = callerIsAdmin,
@@ -120,7 +124,8 @@ object UserController extends mvc.Controller {
       throwNotImplemented("EsE5KY02", "Lookup by email not implemented")
 
     request.dao.readOnlyTransaction { transaction =>
-      val people = transaction.loadMemberOrGroupInclDetailsByUsername(emailOrUsername) getOrElse {
+      val memberOrGroup =
+            transaction.loadMemberOrGroupInclDetailsByUsername(emailOrUsername) getOrElse {
         if (isEmail)
           throwNotFound("EsE4PYW20", "User not found")
 
@@ -137,12 +142,15 @@ object UserController extends mvc.Controller {
           "EsE8PKU02", "User not found")
       }
 
-      people match {
+      val groups = transaction.loadGroups(memberOrGroup)
+
+      memberOrGroup match {
         case member: MemberInclDetails =>
           val stats = includeStats ? transaction.loadUserStats(member.id) | None
           val callerIsUserHerself = request.user.exists(_.id == member.id)
           val isStaffOrSelf = callerIsStaff || callerIsUserHerself
-          val userJson = jsonForMemberInclDetails(member, Map.empty, callerIsAdmin = callerIsAdmin,
+          val userJson = jsonForMemberInclDetails(
+            member, Map.empty, groups, callerIsAdmin = callerIsAdmin,
             callerIsStaff = callerIsStaff, callerIsUserHerself = callerIsUserHerself)
           (userJson, stats.map(makeUserStatsJson(_, isStaffOrSelf)).getOrElse(JsNull))
         case group: Group =>
@@ -155,6 +163,7 @@ object UserController extends mvc.Controller {
 
 
   private def jsonForMemberInclDetails(user: MemberInclDetails, usersById: Map[UserId, Member],
+      groups: immutable.Seq[Group],
       callerIsAdmin: Boolean, callerIsStaff: Boolean = false, callerIsUserHerself: Boolean = false)
         : JsObject = {
     var userJson = Json.obj(
@@ -180,8 +189,12 @@ object UserController extends mvc.Controller {
 
       userJson += "email" -> JsString(safeEmail)
       userJson += "emailForEveryNewPost" -> JsBoolean(user.emailForEveryNewPost)
-      userJson += "summaryEmailIntervalMins" -> JsNumberOrNull(user.summaryEmailIntervalMins)
-      userJson += "summaryEmailIfActive" -> JsBooleanOrNull(user.summaryEmailIfActive)
+      userJson += "summaryEmailIntervalMinsOwn" -> JsNumberOrNull(user.summaryEmailIntervalMins)
+      userJson += "summaryEmailIntervalMins" ->
+          JsNumberOrNull(user.effectiveSummaryEmailIntervalMins(groups))
+      userJson += "summaryEmailIfActiveOwn" -> JsBooleanOrNull(user.summaryEmailIfActive)
+      userJson += "summaryEmailIfActive" ->
+          JsBooleanOrNull(user.effectiveSummaryEmailIfActive(groups))
       userJson += "isApproved" -> JsBooleanOrNull(user.isApproved)
       userJson += "approvedAtEpoch" -> DateEpochOrNull(user.approvedAt)
       userJson += "approvedById" -> JsNumberOrNull(user.approvedById)

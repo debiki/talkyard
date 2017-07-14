@@ -28,6 +28,9 @@ const ExplainingListItem = util.ExplainingListItem;
 // Also in Scala [5WKIQU2]. And there's also the default interval: [5JUKWQ01].
 export const DisableSummaryEmails = -1;
 
+const OneWeekInMinutes = 7 * 24 * 60;
+export const DefaultSummaryIntervalMins = OneWeekInMinutes;
+
 
 export const ActivitySummaryEmailsIntervalDropdown = createComponent({
   displayName: 'ActivitySummaryEmailsIntervalDropdown',
@@ -66,13 +69,12 @@ export const ActivitySummaryEmailsIntervalDropdown = createComponent({
     const thirtyMinutesMins = 30;
     const hourlyMins = 60;
     const dailyMins = 60 * 24;
-    const twicePerWeekMins = 60 * 24 * 7 / 2;
-    const weeklyMins = 60 * 24 * 7;
-    const everySecondWeekMins = 60 * 24 * 7 * 2;
+    const twicePerWeekMins = OneWeekInMinutes / 2;
+    const weeklyMins = OneWeekInMinutes;
+    const everySecondWeekMins = OneWeekInMinutes * 2;
     const monthlyMins = 60 * 24 * 365 / 12;
 
-    const defaultIntervalMins = weeklyMins;
-    const activeIntervalMins = props.intervalMins || defaultIntervalMins;
+    const activeIntervalMins = props.intervalMins || DefaultSummaryIntervalMins;
 
     function intervalToText(intervalMins: number): string {
       switch (intervalMins) {
@@ -84,6 +86,7 @@ export const ActivitySummaryEmailsIntervalDropdown = createComponent({
         case everySecondWeekMins: return "Every second week";
         case monthlyMins: return "Monthly";
         case DisableSummaryEmails: return "Never";
+        default: return `Every ${intervalMins} minutes`;
       }
     }
 

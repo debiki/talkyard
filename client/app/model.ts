@@ -683,7 +683,9 @@ interface MemberOrGroupInclDetails extends UserAnyDetails {
   username: string;
   // Only if requester is staff:
   summaryEmailIntervalMins?: number;
+  summaryEmailIntervalMinsOwn?: number;
   summaryEmailIfActive?: boolean;
+  summaryEmailIfActiveOwn?: boolean;
 }
 
 

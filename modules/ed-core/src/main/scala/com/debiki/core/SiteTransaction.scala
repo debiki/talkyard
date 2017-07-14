@@ -339,6 +339,12 @@ trait SiteTransaction {
   def loadTheMemberOrGroupInclDetails(userId: UserId): MemberOrGroupInclDetails =
     loadMemberOrGroupInclDetails(userId).getOrElse(throw UserNotFoundException(userId))
 
+  def loadGroups(memberOrGroup: MemberOrGroupInclDetails): immutable.Seq[Group] = {
+    val allGroups = loadGroupsAsMap()
+    val groupIds = loadGroupIds(memberOrGroup)
+    groupIds.flatMap(allGroups.get)
+  }
+
   // def updateMember(user: Member): Boolean — could add, [6DCU0WYX2]
   def updateMemberInclDetails(user: MemberInclDetails): Boolean
   def updateGuest(guest: Guest): Boolean
@@ -411,6 +417,14 @@ trait SiteTransaction {
 
   def loadGroupIds(anyUser: Option[User]): Vector[UserId] = {
     anyUser.map(loadGroupIds) getOrElse Vector(Group.EveryoneId)
+  }
+
+  def loadGroupIds(memberOrGroupInclDetails: MemberOrGroupInclDetails): Vector[UserId] = {
+    val user = memberOrGroupInclDetails match {
+      case m: MemberInclDetails => m.briefUser
+      case g: Group => g
+    }
+    loadGroupIds(user)
   }
 
   def loadGroupIds(user: User): Vector[UserId] = {
