@@ -669,13 +669,26 @@ object UserController extends mvc.Controller {
   }
 
 
-  def saveUserPreferences: Action[JsValue] = PostJsonAction(RateLimits.ConfigUser,
-        maxBytes = 1000) { request =>
+  /** maxBytes = 3000 because the about text might be fairly long.
+    */
+  def saveMemberPreferences: Action[JsValue] = PostJsonAction(RateLimits.ConfigUser,
+        maxBytes = 3000) { request =>
     val prefs = userPrefsFromJson(request.body)
     val staffOrSelf = request.theUser.isStaff || request.theUserId == prefs.userId
     if (!staffOrSelf)
       throwForbidden("DwE15KFE5", "Not your preferences")
     request.dao.saveMemberPreferences(prefs, request.who)
+    Ok
+  }
+
+
+  def saveGroupPreferences: Action[JsValue] = PostJsonAction(RateLimits.ConfigUser,
+        maxBytes = 3000) { request =>
+    import request.{dao, theRequester => requester}
+    val prefs = groupPrefsFromJson(request.body)
+    if (!requester.isAdmin)
+      throwForbidden("EdE5PYKW0", "Only admins may change group prefs, right now")
+    dao.saveGroupPreferences(prefs, request.who)
     Ok
   }
 
@@ -805,6 +818,20 @@ object UserController extends mvc.Controller {
       location = (json \ "location").asOpt[String].trimNoneIfBlank,
       url = (json \ "url").asOpt[String].trimNoneIfBlank,
       emailForEveryNewPost = (json \ "emailForEveryNewPost").as[Boolean])
+  }
+
+
+  private def groupPrefsFromJson(json: JsValue): GroupPreferences = {
+    val username = (json \ "username").as[String]
+    if (username.length < MinUsernameLength)
+      throwBadReq("EdE2QDP04", "Username too short")
+
+    GroupPreferences(
+      groupId = (json \ "userId").as[UserId],
+      fullName = (json \ "fullName").asOptStringNoneIfBlank,
+      username = username,
+      summaryEmailIntervalMins = (json \ "summaryEmailIntervalMins").asOpt[Int],
+      summaryEmailIfActive = (json \ "summaryEmailIfActive").asOpt[Boolean])
   }
 
 }

@@ -616,8 +616,9 @@ export function setTagNotfLevel(tagLabel: TagLabel, newNotfLevel: NotfLevel) {
 }
 
 
-export function saveUserPreferences(prefs, success: () => void) {
-  postJsonSuccess('/-/save-user-preferences', success, prefs);
+export function saveUserPreferences(prefs, isGroup: boolean, success: () => void) {
+  const what = isGroup ? 'group' : 'member';
+  postJsonSuccess(`/-/save-${what}-preferences`, success, prefs);
 }
 
 

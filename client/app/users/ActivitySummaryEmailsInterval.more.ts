@@ -25,7 +25,7 @@ const r = React.DOM;
 const DropdownModal = utils.DropdownModal;
 const ExplainingListItem = util.ExplainingListItem;
 
-// Also in Scala [5WKIQU2]
+// Also in Scala [5WKIQU2]. And there's also the default interval: [5JUKWQ01].
 export const DisableSummaryEmails = -1;
 
 

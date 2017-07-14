@@ -113,7 +113,8 @@ var MemberPreferences = createComponent({
     return {
       fullName: user.fullName,
       username: user.username,
-      sendSummaryEmails: user.summaryEmailIntervalMins !== DisableSummaryEmails,
+      sendSummaryEmails:
+          !!user.summaryEmailIntervalMins && user.summaryEmailIntervalMins !== DisableSummaryEmails,
       summaryEmailIntervalMins: user.summaryEmailIntervalMins,
       summaryEmailIfActive: user.summaryEmailIfActive,
     };
@@ -147,13 +148,14 @@ var MemberPreferences = createComponent({
   },
 
   enableSummaryEmails: function(event) {
-    const shallSend = event.target.checked;
-    const summaryEmailIntervalMins =
-        shallSend && this.state.summaryEmailIntervalMins === DisableSummaryEmails ?
-          7 * 24 * 60 : this.state.summaryEmailIntervalMins; // default to one week
+    const shallEnable = event.target.checked;
+    const newIntervalMins = shallEnable && (
+        !this.state.summaryEmailIntervalMins ||
+        this.state.summaryEmailIntervalMins === DisableSummaryEmails) ?
+          7 * 24 * 60 : this.state.summaryEmailIntervalMins; // default to one week [5JUKWQ01]
     this.setState({
-      sendSummaryEmails: shallSend,
-      summaryEmailIntervalMins: summaryEmailIntervalMins,
+      sendSummaryEmails: shallEnable,
+      summaryEmailIntervalMins: newIntervalMins,
     });
   },
 
@@ -166,8 +168,9 @@ var MemberPreferences = createComponent({
     var form = $(event.target);  // :- (
     const summaryEmailIntervalMins = this.state.sendSummaryEmails ?
         this.state.summaryEmailIntervalMins : DisableSummaryEmails;
+    const user: BriefUser = this.props.user;
     const prefs = {
-      userId: this.props.user.id,
+      userId: user.id,
       fullName: this.state.fullName,
       username: this.state.username,
       emailAddress: form.find('#emailAddress').val(),
@@ -180,7 +183,7 @@ var MemberPreferences = createComponent({
     // This won't update the name in the name-login-button component. But will
     // be automatically fixed when I've ported everything to React and use
     // some global React state instead of cookies to remember the user name.
-    Server.saveUserPreferences(prefs, () => {
+    Server.saveUserPreferences(prefs, user.isGroup, () => {
       if (this.isGone) return;
       this.setState({
         savingStatus: 'Saved',

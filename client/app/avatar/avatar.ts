@@ -142,7 +142,9 @@ export const Avatar = createComponent({
       color: color,
     };
 
+    // Show a many-people icon, instead of a character, for groups.
     if (user.isGroup) {
+      result.text = '';
       result.classes = ' icon-users' + result.classes;
     }
 
