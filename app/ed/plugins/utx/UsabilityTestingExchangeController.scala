@@ -57,7 +57,7 @@ object UsabilityTestingExchangeController extends mvc.Controller {  // [plugin]
     val bodyText = i"""
        |**Go here:** <a href="$addressOfWebsiteToTest" target="_blank" rel="nofollow">$titleText</a>
        |
-       |**Then answer these questions and follow the instructions below:**
+       |**Then answer these questions:**
        |
        |$instructions
        """

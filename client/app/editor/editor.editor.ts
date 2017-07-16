@@ -334,7 +334,7 @@ export var Editor = createComponent({
     this.setState({
       anyPostType: postType,
       replyToPostNrs: postIds,
-      text: this.state.text || this.state.draft || '',
+      text: this.state.text || this.state.draft || makeDefaultReplyText(this.state.store, postIds),
     });
     if (!postIds.length) {
       this.closeEditor();
@@ -1208,6 +1208,32 @@ function wrapSelectedText(textarea, content: string, wrap: string, wrapAfter?: s
   if (!newlines) newlines = '';
 
   return textBefore + newlines + wrap + content + (wrapAfter || '') + newlines + textAfter;
+}
+
+
+function makeDefaultReplyText(store: Store, postIds: PostId[]): string {
+  let result = '';
+  // For UTX replies, include the instructions, in bold-italic lines,  [2JFKD0Y3]
+  // so people can write their replies in between.
+  if (store.pageRole === PageRole.UsabilityTesting &&  // [plugin]
+      postIds.length === 1 && postIds[0] === BodyNr) {
+    const origPost: Post = store.postsByNr[BodyNr];
+    if (!origPost) return '';
+    const elemsInclText: HTMLElement[] = $.parseHTML(origPost.sanitizedHtml);
+    // Remove top level text elems (only whitespace and newlines?).
+    const elems = _.filter(elemsInclText, (elem: HTMLElement) => {
+      return elem.nodeType !== 3;
+    });
+    // Remove "Go to: ... And answer the questions", which should be the first 2 paragraphs:
+    elems.splice(0, 2);
+    _.each(elems, (elem: HTMLElement) => {
+      // UTX specific CSS makes these H5 titles look nice, a bit like quotes.
+      // Add ##### both before each paragraph, and also before each line in the paragraphs,
+      // in case there's just one paragraph with newline ('\n' = <br>) separated instructions.
+      result += '##### ' + elem.innerText.replace('#', '\\#').replace(/\n+/g, '\n\n##### ') + '\n\n';
+    });
+  }
+  return result;
 }
 
 

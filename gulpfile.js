@@ -349,7 +349,7 @@ var compileTsTaskNames = [
   'compileMoreTypescript',
   'compileStaffTypescript',
   'compileEditorTypescript'];
-for (var i = 0; i < 4; ++i) {
+for (var i = 0; i <= 4; ++i) {
   var compileTaskName = compileTsTaskNames[i];
   gulp.task(compileTaskName + '-concatScripts', [compileTaskName], function() {
     return makeConcatAllScriptsStream();
