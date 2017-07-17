@@ -7,13 +7,13 @@ organization := "community.ed"
 
 version := "0.0.2"
 
-scalaVersion := "2.11.8"
+scalaVersion := "2.12.2"
 
 resolvers += "Scala-Tools Maven2 Repository" at "http://scala-tools.org/repo-releases"
 
 libraryDependencies ++= Seq(
   "org.apache.commons" % "commons-lang3" % "3.5",
-  "com.typesafe.play" %% "play-json" % "2.5.9",
+  "com.typesafe.play" %% "play-json" % "2.6.2",
   // https://mvnrepository.com/artifact/ch.qos.logback/logback-classic
   "ch.qos.logback" % "logback-classic" % "1.2.2",
   // https://mvnrepository.com/artifact/ch.qos.logback/logback-core
