@@ -1220,10 +1220,17 @@ function makeDefaultReplyText(store: Store, postIds: PostId[]): string {
     const origPost: Post = store.postsByNr[BodyNr];
     if (!origPost) return '';
     const elemsInclText: HTMLElement[] = $.parseHTML(origPost.sanitizedHtml);
-    // Remove top level text elems (only whitespace and newlines?).
+    // Remove top level text elems (only whitespace and newlines?), and anything after any <hr>
+    // — so it's possible to add background info, without including it in the actual instructions.
+    let afterHr = false;
     const elems = _.filter(elemsInclText, (elem: HTMLElement) => {
-      return elem.nodeType !== 3;
+      if (elem.nodeType === 3)  // text elem
+        return false;
+      if (elem.nodeType === 1 && elem.nodeName === 'HR')
+        afterHr = true;
+      return !afterHr;
     });
+
     // Remove "Go to: ... And answer the questions", which should be the first 2 paragraphs:
     elems.splice(0, 2);
     _.each(elems, (elem: HTMLElement) => {
@@ -1232,6 +1239,9 @@ function makeDefaultReplyText(store: Store, postIds: PostId[]): string {
       // in case there's just one paragraph with newline ('\n' = <br>) separated instructions.
       result += '##### ' + elem.innerText.replace('#', '\\#').replace(/\n+/g, '\n\n##### ') + '\n\n';
     });
+    // Remove "[...", e.g. "[Edit: ...]", lines. They've been prefixed with '#####'.
+    result = result.replace(/\n+##### \[[^\n]*/g, '');
+    result = result.trim() + '\n';
   }
   return result;
 }
