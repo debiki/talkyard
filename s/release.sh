@@ -3,21 +3,14 @@
 # finish writing:
 #   /home/kajmagnus/Dropbox/debiki/docs/deploy-docker-todo-and-blog-post.txt
 
-# This'll make us call `exit 1` if there's an error. Don't run this if testing this script manually.
-is_in_script=true
-
 # Abort on any error
 set -e
 
-echo "Not so very tested. Do manually instead. Bye"
-exit 1
+my_username=$(whoami)
 
 
-# Check preconditions
-# ----------------------
-
-# COULD: Check is in project root, & is git repository, & no outstanding changes.
-# COULD: Check all required ports open: 80, 443, 900, 9443, 9999, 3333
+# This'll make us call `exit 1` if there's an error, and we're running all this via a script.
+is_in_script=true
 
 # Won't exit if we're doing stuff manually on the command line (because it's annoying
 # if the terminal suddenly disappears).
@@ -27,6 +20,43 @@ function die_if_in_script {
     exit 1
   fi
 }
+
+
+# Check preconditions
+# ----------------------
+
+# COULD: Check is in project root, & is git repository, & no outstanding changes.
+# COULD: Check all required ports open: 80, 443, 900, 9443, 9999, 3333
+
+if [ -n "`jobs`" ]; then
+  echo 'Other jobs running:'
+  jobs
+  echo 'Please stop them.'
+  die_if_in_script
+fi
+
+
+
+# Start Selenium server
+# ----------------------
+
+if [ -z "`which xvfb-run`" ]; then
+  echo
+  echo 'Note:'
+  echo 'xvfb not installed, cannot run tests headlessly. To install it:'
+  echo 'run:  sudo apt-get install xvfb'
+  echo '(works on Linux only, perhaps Mac)'
+  echo
+fi
+
+echo 'Do in another shell:
+
+  s/selenium-start-invisible
+
+Press Enter to continue
+'
+
+read -s -p ''
 
 
 # Derive version number
@@ -44,125 +74,34 @@ echo "Building and releasing $version_tag"
 # COULD ask confirm if version nr less than previous nr
 
 
-# Check everything is OK
+# Build and run tests
 # ----------------------
 
-sudo docker-compose kill web app
-sudo docker-compose down
+current_dir=`pwd`
 
-if [ -n "`sudo docker ps -q`" ]; then
-  echo "Docker containers are running, please stop them."
-  die_if_in_script
-fi
+sudo -i bash << EOF_SUDO
 
+cd $current_dir
+./s/impl/release-as-root.sh $my_username $version_tag $@
+echo $? > ./target/build-exit-code
 
-if [ -z "`which xvfb-run`" ]; then
+EOF_SUDO
+
+build_exit_code=`cat ./target/build-exit-code`
+
+if [ "$build_exit_code" != '0' ]; then
   echo
-  echo 'Note:'
-  echo 'xvfb not installed, cannot run tests headlessly. To install it:'
-  echo 'run:  sudo apt-get install xvfb'
-  echo '(works on Linux only, perhaps Mac)'
+  echo Build failed. Aborting.
   echo
-fi
-
-
-# Build Docker images
-# ----------------------
-
-sudo docker-compose build
-
-# Optimize assets, run unit & integration tests and build the Play Framework image
-# (We'll run e2e tests later, against the modules/ed-prod-one-tests containers.)
-sudo s/d-gulp release
-
-# Delete unminified files, so Docker diffs a few MB smaller.
-find public/res/ -type f -name '*\.js' -not -name '*\.min\.js' -not -name 'zxcvbn\.js' | xargs rm
-find public/res/ -type f -name '*\.css' -not -name '*\.min\.css' | xargs rm
-# COULD add tests that verifies the wrong css & js haven't been deleted?
-# One at a time, or out-of-memory:
-
-sudo s/d-cli clean compile
-sudo s/d-cli test dist
-
-sudo s/d kill web app
-sudo docker-compose down
-docker/build-app-prod.sh
-
-
-# Test the images
-# ----------------------
-
-sudo s/d-gulp build-e2e
-
-# Run the 'latest' tag — it's for the images we just built above.
-# '-p edt' = EffectiveDiscussions Test project.
-# Use the -no-limits.yml file, because we'll run performance tests.
-test_containers="VERSION_TAG=latest docker-compose -p edt -f modules/ed-prod-one-test/docker-compose.yml -f modules/ed-prod-one-test/debug.yml -f modules/ed-prod-one-test-override.yml -f docker-compose-no-limits.yml"
-sudo $test_containers down
-sudo rm -fr modules/ed-prod-one-test/data
-sudo $test_containers up -d
-
-if [ -n "`jobs`" ]; then
-  echo 'Other jobs running:'
-  jobs
-  echo 'Please stop them.'
-  die_if_in_script
-fi
-
-xvfb-run -s '-screen 0 1280x1024x8' \
-  node_modules/selenium-standalone/bin/selenium-standalone start &
-
-
-s/run-e2e-tests.sh --prod $@
-
-if [ $? -ne 0 ]; then
-  die_if_in_script
-fi
-
-# This nills xvfb-run only:  kill $selenium_pid
-# Instead:
-kill %1
-
-
-# Test performance
-# -----------------
-
-# (The perf test repo is currenty private)
-
-pushd .
-cd ../ed-perf-test/
-./test-performance.sh
-perf_test_result=$?
-
-popd
-
-if [ $perf_test_result -ne 0 ]; then
   die_if_in_script
 fi
 
 
-# Test rate & bandwidth limits
+
+# Publish images to Docker repo
 # ----------------------
 
-# Start the containers, but *with* rate limits this time.
-sudo $test_containers kill web
-sudo $test_containers down
-
-# Run tests ... ensure gets 503 Service Unavailable ...
-# To do ...
-
-
-sudo $test_containers down
-
-sudo docker ps # if anything is running, something is amiss?
-
-
-# All fine, so publish images and new version number.
-# ----------------------
-
-# todo: don't do this if WIP version
-
-set -x
+echo "Publishing to debiki/ed-*:$version_tag..."
 
 sudo docker tag debiki/ed-app debiki/ed-app:$version_tag
 sudo docker tag debiki/ed-web debiki/ed-web:$version_tag
@@ -172,7 +111,9 @@ sudo docker push debiki/ed-app:$version_tag
 sudo docker push debiki/ed-web:$version_tag
 sudo docker push debiki/ed-rdb:$version_tag
 
-set +x
+
+# Bump version number
+# ----------------------
 
 echo $version_tag >> modules/ed-versions/version-tags.log
 pushd .

@@ -1,5 +1,10 @@
 #!/bin/bash
 
+if [ `id -u` -eq 0 ]; then
+  echo "You are root. Don't run the E2E tests as root please."
+  exit 1
+fi
+
 # If we start running the tests too early, they will need to wait for Nashorn, and might then timeout and fail.
 echo "Waiting for Nashorn to compile Javascript code..."
 until $(curl --output /dev/null --silent --head --fail http://localhost/-/are-scripts-ready); do
@@ -29,7 +34,7 @@ function runEndToEndTest {
       echo
       echo "*** ERROR [EsE5KPY02] ***"
       echo
-      echo "This end-to-end test failed: (The whole next line. You can copy-paste it and run it.)"
+      echo "This end-to-end test failed twice: (The next line. You can copy-paste it and run it.)"
       # Later: use --localHostname=e2e-test-manual or just e2e-test, instead of -20, so won't overwrite test site nr 20.
       # (But first add a cname entry for -manual.)
       echo "  $cmd_with_debug --deleteOldSite --localHostname=e2e-test-20 --nt -d"
