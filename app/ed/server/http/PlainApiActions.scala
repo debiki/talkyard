@@ -29,7 +29,7 @@ import ed.server.security._
 import java.{util => ju}
 import play.{api => p}
 import play.api.mvc._
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util.{Failure, Success}
 
@@ -68,6 +68,8 @@ private[http] object PlainApiActions {
         allowAnyone: Boolean = false,  // try to delete 'allowAnyone'? REFACTOR
         isLogin: Boolean = false, superAdminOnly: Boolean = false) =
       new ActionBuilder[ApiRequest] {
+    override protected def executionContext: ExecutionContext =
+      scala.concurrent.ExecutionContext.Implicits.global
 
     def numOnly: Int = adminOnly.toZeroOne + superAdminOnly.toZeroOne + staffOnly.toZeroOne
     require(numOnly <= 1, "EsE4KYF02")

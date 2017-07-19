@@ -28,7 +28,7 @@ import DebikiHttp._
 
 /** Loads the admin app page.
   */
-class AdminController @Inject() extends mvc.Controller {
+class AdminController @Inject() extends mvc.InjectedController {
 
 
   def redirectToAdminPage() = GetAction { _ =>

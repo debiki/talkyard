@@ -199,7 +199,7 @@ package object http {
       return request.remoteAddress
     }
 
-    if (Play.isProd) {
+    if (Globals.isProd) {
       def where = fakeIpQueryParam.isDefined ? "in query param" | "in cookie"
       val password = getE2eTestPassword(request) getOrElse {
         throwForbidden(
@@ -264,7 +264,7 @@ package object http {
     */
   def throwIndistinguishableNotFound(devModeErrCode: String = ""): Nothing = {
     val suffix =
-      if (!Play.isProd && devModeErrCode.nonEmpty) s"-$devModeErrCode"
+      if (!Globals.isProd && devModeErrCode.nonEmpty) s"-$devModeErrCode"
       else ""
     throwNotFound("EsE404" + suffix, "Page not found")
   }

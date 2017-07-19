@@ -29,7 +29,7 @@ import play.{api => p}
 import play.api.Play.current
 import play.api.mvc._
 import play.api.{Logger, Play}
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.ExecutionContext.Implicits.global
 
 
@@ -57,12 +57,12 @@ object SafeActions {
     * that makes IE9 happy. Write it as a single word, so IE doesn't think that e.g.
     * "is" or "not" actually means something.
     */
-  def MakeInternetExplorerSaveIframeCookiesHeader =  // should move to PlainApiActions
+  def MakeInternetExplorerSaveIframeCookiesHeader: (PageId, PageId) =  // move to PlainApiActions?
     "P3P" -> """CP="This_is_not_a_privacy_policy""""
 
 
-  val allowFakeIp = {
-    val allow = !Play.isProd || Play.configuration.getBoolean("ed.allowFakeIp").getOrElse(false)
+  val allowFakeIp: Boolean = {
+    val allow = !Globals.isProd || Play.current.configuration.getBoolean("ed.allowFakeIp").getOrElse(false)
     if (allow) {
       Logger.info("Enabling fake IPs [DwM0Fk258]")
     }
@@ -75,7 +75,12 @@ object SafeActions {
    * e.g. 403 Forbidden and a user friendly message,
    * instead of 500 Internal Server Error and a stack trace or Ooops message.
    */
-  object ExceptionAction extends ActionBuilder[Request] {
+  object ExceptionAction extends ActionBuilder[Request, AnyContent] {
+
+    val parser: BodyParser[AnyContent] = BodyParsers.parse.anyContent  // [play26ask]
+
+    override protected def executionContext: ExecutionContext =
+      scala.concurrent.ExecutionContext.global
 
     def invokeBlock[A](request: Request[A], block: Request[A] => Future[Result]): Future[Result] = {
       var futureResult = try {
@@ -228,7 +233,7 @@ object SafeActions {
       }
     p.Logger.error(s"Replying database-not-reachable error to: $url [$errorCode]", throwable)
     val (hasItStoppedPerhaps, fixProblemTips) =
-      if (!Play.isDev) ("", "")
+      if (Globals.isProd) ("", "")
       else if (roleMissing || badPassword) (
         "", i"""If you use Docker-Compose: You can create the database user like so:
         |  'docker/drop-database-create-empty.sh'

@@ -78,12 +78,12 @@ object Globals extends Globals {
   */
 class Globals {
 
-  private def conf = Play.configuration
+  private def conf = Play.current.configuration
 
   /** Can be accessed also after the test is done and Play.maybeApplication is None.
     */
-  lazy val isOrWasTest: Boolean = Play.isTest
-  lazy val isProd: Boolean = Play.isProd
+  lazy val isOrWasTest: Boolean = Play.current.mode == play.api.Mode.Test
+  lazy val isProd: Boolean = Play.current.mode == play.api.Mode.Prod
 
   def testsDoneServerGone: Boolean =
     isOrWasTest && (!isInitialized || Play.maybeApplication.isEmpty)
@@ -141,7 +141,7 @@ class Globals {
   }
 
   def throwForbiddenIfSecretNotChanged() {
-    if (state.applicationSecretNotChanged && Play.isProd)
+    if (state.applicationSecretNotChanged && isProd)
       throwForbidden("EsE4UK20F", o"""Please edit the 'play.crypto.secret' config value,
           its still set to 'changeme'""")
   }
@@ -287,7 +287,7 @@ class Globals {
     }
 
     try {
-      Await.ready(createStateFuture, (Play.isTest ? 99 | 5) seconds)
+      Await.ready(createStateFuture, (isOrWasTest ? 99 | 5) seconds)
       if (killed) {
         p.Logger.info("Killed. Bye. [EsM200KILLED]")
         // Play.stop() has no effect, not from here directly, nor from within a Future {},
@@ -338,7 +338,7 @@ class Globals {
         val readWriteDataSource = Debiki.createPostgresHikariDataSource(readOnly = false)
         val rdb = new Rdb(readOnlyDataSource, readWriteDataSource)
         val dbDaoFactory = new RdbDaoFactory(
-          rdb, ScalaBasedMigrations, getCurrentTime = now, Play.isTest)
+          rdb, ScalaBasedMigrations, getCurrentTime = now, isOrWasTest)
 
         // Create any missing database tables before `new State`, otherwise State
         // creates background threads that might attempt to access the tables.
@@ -348,8 +348,8 @@ class Globals {
         p.Logger.info("Done migrating database. Connecting to other services... [EsM200CONNOTR]")
         val newState = new State(dbDaoFactory, cache)
 
-        if (Play.isTest &&
-            Play.configuration.getBoolean("isTestShallEmptyDatabase").contains(true)) {
+        if (isOrWasTest &&
+            Play.current.configuration.getBoolean("isTestShallEmptyDatabase").contains(true)) {
           p.Logger.info("Emptying database... [EsM200EMPTYDB]")
           newState.systemDao.emptyDatabase()
         }
@@ -508,7 +508,7 @@ class Globals {
     val config = new Config(conf)
 
     val isTestDisableScripts: Boolean = {
-      val disable = Play.configuration.getBoolean("isTestDisableScripts").getOrElse(false)
+      val disable = Play.current.configuration.getBoolean("isTestDisableScripts").getOrElse(false)
       if (disable) {
         p.Logger.info("Is test with scripts disabled. [EsM4GY82]")
       }
@@ -516,7 +516,7 @@ class Globals {
     }
 
     val isTestDisableBackgroundJobs: Boolean = {
-      val disable = Play.configuration.getBoolean("isTestDisableBackgroundJobs").getOrElse(false)
+      val disable = Play.current.configuration.getBoolean("isTestDisableBackgroundJobs").getOrElse(false)
       if (disable) {
         p.Logger.info("Is test with background jobs disabled. [EsM6JY0K2]")
       }
@@ -633,7 +633,7 @@ class Globals {
     def scheme: String = if (secure) "https" else "http"
 
     val port: Int = {
-      if (Play.isTest) {
+      if (isOrWasTest) {
         // Not on classpath: play.api.test.Helpers.testServerPort
         // Instead, duplicate its implementation here:
         sys.props.get("testserver.port").map(_.toInt) getOrElse 19001
@@ -647,7 +647,7 @@ class Globals {
     }
 
     val baseDomainNoPort: String =
-      if (Play.isTest) "localhost"
+      if (isOrWasTest) "localhost"
       else conf.getString("ed.baseDomain").orElse(
         conf.getString("debiki.baseDomain")).noneIfBlank getOrElse "localhost"
 
