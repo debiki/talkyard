@@ -10,7 +10,9 @@ To run the e2e tests, you currently need Java 8 and Node.js, not just Docker-Com
     npm -v    #  3.5.2 works for me, and more recent versions too I would think
 
 And you need Yarn: https://yarnpkg.com/en/docs/install
+And a compiler so you can build Fibers:
 
+    sudo apt-get install g++ build-essential  # do once only
 
 Run tests like so:
 

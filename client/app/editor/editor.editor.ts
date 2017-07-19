@@ -25,7 +25,7 @@
 //------------------------------------------------------------------------------
 
 import scrollIntoViewInPageColumn = debiki2.utils.scrollIntoViewInPageColumn;
-var d = { i: debiki.internal, u: debiki.v0.util };
+var d = { i: debiki.internal };
 var r = React.DOM;
 var reactCreateFactory = React['createFactory'];
 var ReactBootstrap: any = window['ReactBootstrap'];
@@ -1219,7 +1219,7 @@ function makeDefaultReplyText(store: Store, postIds: PostId[]): string {
       postIds.length === 1 && postIds[0] === BodyNr) {
     const origPost: Post = store.postsByNr[BodyNr];
     if (!origPost) return '';
-    const elemsInclText: HTMLElement[] = $.parseHTML(origPost.sanitizedHtml);
+    const elemsInclText: HTMLCollection = $h.parseHtml(origPost.sanitizedHtml);
     // Remove top level text elems (only whitespace and newlines?), and anything after any <hr>
     // — so it's possible to add background info, without including it in the actual instructions.
     let afterHr = false;

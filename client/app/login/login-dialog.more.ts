@@ -132,7 +132,7 @@ var LoginDialog = createClassAndFactory({
 
     // Don't allow logging in as someone else, when impersonating someone, because it's unclear
     // what should then happen: does one stop impersonating? or not?
-    if ($['cookie']('esCoImp')) {
+    if (getSetCookie('esCoImp')) {
       util.openDefaultStupidDialog({
         preventClose: true,
         body: r.div({},

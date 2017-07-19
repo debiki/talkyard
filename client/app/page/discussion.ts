@@ -235,9 +235,9 @@ export const TitleBodyComments = createComponent({
             return (
               PrimaryButton({ className: 's_UtxHelp_HaveAsked_ContinueB' + skip,
                   onClick: () => {
-                    let tasksToSkip = (<any> $).cookie('edCoUtxSkip');
+                    let tasksToSkip = getSetCookie('edCoUtxSkip');
                     tasksToSkip = (tasksToSkip || '') + store.pageId + ',';
-                    (<any> $).cookie('edCoUtxSkip', tasksToSkip);
+                    getSetCookie('edCoUtxSkip', tasksToSkip);
                     location.assign('/give-me-a-task');
                   }}, title));
           }
