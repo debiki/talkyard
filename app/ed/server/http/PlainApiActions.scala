@@ -39,18 +39,20 @@ import scala.util.{Failure, Success}
 private[http] object PlainApiActions {
 
 
-  def PlainApiAction(rateLimits: RateLimits, allowAnyone: Boolean = false, isLogin: Boolean = false) =
-    PlainApiActionImpl(rateLimits, adminOnly = false, staffOnly = false,
+  def PlainApiAction[B](parser: BodyParser[B],
+        rateLimits: RateLimits, allowAnyone: Boolean = false, isLogin: Boolean = false) =
+    PlainApiActionImpl(parser, rateLimits, adminOnly = false, staffOnly = false,
         allowAnyone = allowAnyone, isLogin = isLogin)
 
-  def PlainApiActionStaffOnly =
-    PlainApiActionImpl(NoRateLimits, adminOnly = false, staffOnly = true)
+  def PlainApiActionStaffOnly[B](parser: BodyParser[B]) =
+    PlainApiActionImpl(parser, NoRateLimits, adminOnly = false, staffOnly = true)
 
-  val PlainApiActionAdminOnly =
-    PlainApiActionImpl(NoRateLimits, adminOnly = true, staffOnly = false)
+  def PlainApiActionAdminOnly[B](parser: BodyParser[B]) =
+    PlainApiActionImpl(parser, NoRateLimits, adminOnly = true, staffOnly = false)
 
-  val PlainApiActionSuperAdminOnly =
-    PlainApiActionImpl(NoRateLimits, adminOnly = false, staffOnly = false, superAdminOnly = true)
+  def PlainApiActionSuperAdminOnly[B](parser: BodyParser[B]) =
+    PlainApiActionImpl(parser, NoRateLimits, adminOnly = false, staffOnly = false,
+        superAdminOnly = true)
 
 
 
@@ -63,11 +65,13 @@ private[http] object PlainApiActions {
     * doesn't map to any login entry.
     * The SidStatusRequest.sidStatus passed to the action is either SidAbsent or a SidOk.
     */
-  def PlainApiActionImpl(rateLimits: RateLimits, adminOnly: Boolean,
-        staffOnly: Boolean,
+  def PlainApiActionImpl[B](parser: BodyParser[B],
+        rateLimits: RateLimits, adminOnly: Boolean, staffOnly: Boolean,
         allowAnyone: Boolean = false,  // try to delete 'allowAnyone'? REFACTOR
         isLogin: Boolean = false, superAdminOnly: Boolean = false) =
-      new ActionBuilder[ApiRequest] {
+      new ActionBuilder[ApiRequest, B] {
+
+    override def parser: BodyParser[B] = parser
     override protected def executionContext: ExecutionContext =
       scala.concurrent.ExecutionContext.Implicits.global
 

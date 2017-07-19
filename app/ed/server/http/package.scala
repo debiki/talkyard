@@ -91,43 +91,43 @@ package object http {
   type JsonPostRequest = ApiRequest[JsValue]
 
 
-  val ExceptionAction = SafeActions.ExceptionAction
+  val ExceptionAction = SafeActions.ExceptionAction _
 
 
   def AsyncGetAction(f: GetRequest => Future[Result]): mvc.Action[Unit] =
-    PlainApiAction(NoRateLimits).async(BodyParsers.parse.empty)(f)
+    PlainApiAction(BodyParsers.parse.empty, NoRateLimits).async(f)
 
   def AsyncGetActionAllowAnyone(f: GetRequest => Future[Result]): mvc.Action[Unit] =
-    PlainApiAction(NoRateLimits, allowAnyone = true).async(BodyParsers.parse.empty)(f)
+    PlainApiAction(BodyParsers.parse.empty, NoRateLimits, allowAnyone = true).async(f)
 
   def AsyncGetActionIsLogin(f: GetRequest => Future[Result]): mvc.Action[Unit] =
-    PlainApiAction(NoRateLimits, isLogin = true).async(BodyParsers.parse.empty)(f)
+    PlainApiAction(BodyParsers.parse.empty, NoRateLimits, isLogin = true).async(f)
 
   def AsyncGetActionRateLimited(rateLimits: RateLimits)(f: GetRequest => Future[Result])
         : mvc.Action[Unit] =
-    PlainApiAction(rateLimits).async(BodyParsers.parse.empty)(f)
+    PlainApiAction(BodyParsers.parse.empty, rateLimits).async(f)
 
   def GetAction(f: GetRequest => Result): Action[Unit] =
-    PlainApiAction(NoRateLimits)(BodyParsers.parse.empty)(f)
+    PlainApiAction(BodyParsers.parse.empty, NoRateLimits)(f)
 
   def GetActionAllowAnyone(f: GetRequest => Result): Action[Unit] =
-    PlainApiAction(NoRateLimits, allowAnyone = true)(BodyParsers.parse.empty)(f)
+    PlainApiAction(BodyParsers.parse.empty, NoRateLimits, allowAnyone = true)(f)
 
   def GetActionAllowAnyoneRateLimited(rateLimits: RateLimits)(f: GetRequest => Result): Action[Unit] =
-    PlainApiAction(rateLimits, allowAnyone = true)(BodyParsers.parse.empty)(f)
+    PlainApiAction(BodyParsers.parse.empty, rateLimits, allowAnyone = true)(f)
 
   def GetActionIsLogin(f: GetRequest => Result): Action[Unit] =
-    PlainApiAction(NoRateLimits, isLogin = true)(BodyParsers.parse.empty)(f)
+    PlainApiAction(BodyParsers.parse.empty, NoRateLimits, isLogin = true)(f)
 
   def GetActionRateLimited(rateLimits: RateLimits, allowAnyone: Boolean = false)(
         f: GetRequest => Result): Action[Unit] =
-    PlainApiAction(rateLimits, allowAnyone = allowAnyone)(BodyParsers.parse.empty)(f)
+    PlainApiAction(BodyParsers.parse.empty, rateLimits, allowAnyone = allowAnyone)(f)
 
   def StaffGetAction(f: GetRequest => Result): Action[Unit] =
     PlainApiActionStaffOnly(BodyParsers.parse.empty)(f)
 
   def AsyncAdminGetAction(f: GetRequest => Future[Result]): Action[Unit] =
-    PlainApiActionAdminOnly.async(BodyParsers.parse.empty)(f)
+    PlainApiActionAdminOnly(BodyParsers.parse.empty).async(f)
 
   def AdminGetAction(f: GetRequest => Result): Action[Unit] =
     PlainApiActionAdminOnly(BodyParsers.parse.empty)(f)
@@ -140,23 +140,23 @@ package object http {
         (rateLimits: RateLimits, maxBytes: Int, allowAnyone: Boolean = false,
          isLogin: Boolean = false)
         (f: ApiRequest[JsonOrFormDataBody] => Result): Action[JsonOrFormDataBody] =
-    PlainApiAction(rateLimits, allowAnyone = allowAnyone, isLogin = isLogin)(
-      JsonOrFormDataBody.parser(maxBytes = maxBytes))(f)
+    PlainApiAction(JsonOrFormDataBody.parser(maxBytes = maxBytes),
+      rateLimits, allowAnyone = allowAnyone, isLogin = isLogin)(f)
 
   def AsyncPostJsonAction(rateLimits: RateLimits, maxBytes: Int, allowAnyone: Boolean = false)(
         f: JsonPostRequest => Future[Result]): Action[JsValue] =
-  PlainApiAction(rateLimits, allowAnyone = allowAnyone).async(
-    BodyParsers.parse.json(maxLength = maxBytes))(f)
+  PlainApiAction(BodyParsers.parse.json(maxLength = maxBytes),
+    rateLimits, allowAnyone = allowAnyone).async(f)
 
   def PostJsonAction(rateLimits: RateLimits, maxBytes: Int, allowAnyone: Boolean = false)(
         f: JsonPostRequest => Result): Action[JsValue] =
-    PlainApiAction(rateLimits, allowAnyone = allowAnyone)(
-      BodyParsers.parse.json(maxLength = maxBytes))(f)
+    PlainApiAction(BodyParsers.parse.json(maxLength = maxBytes),
+      rateLimits, allowAnyone = allowAnyone)(f)
 
   def PostTextAction(rateLimits: RateLimits, maxBytes: Int, allowAnyone: Boolean = false)(
         f: ApiRequest[String] => Result): Action[String] =
-    PlainApiAction(rateLimits, allowAnyone = allowAnyone)(
-      BodyParsers.parse.text(maxLength = maxBytes))(f)
+    PlainApiAction(BodyParsers.parse.text(maxLength = maxBytes),
+      rateLimits, allowAnyone = allowAnyone)(f)
 
   def StaffPostJsonAction(maxBytes: Int)(f: JsonPostRequest => Result): Action[JsValue] =
     PlainApiActionStaffOnly(
@@ -180,8 +180,8 @@ package object http {
     // read more here:
     //   http://stackoverflow.com/questions/36004414/play-2-5-migration-error-custom-action-with-bodyparser-could-not-find-implicit
     implicit val materializer = play.api.Play.materializer  // [6KFW02G]
-    PlainApiAction(rateLimits, allowAnyone = allowAnyone)(
-        BodyParsers.parse.maxLength(maxBytes, BodyParsers.parse.multipartFormData))(f)
+    PlainApiAction(BodyParsers.parse.maxLength(maxBytes, BodyParsers.parse.multipartFormData),
+      rateLimits, allowAnyone = allowAnyone)(f)
   }
 
 

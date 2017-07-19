@@ -74,7 +74,7 @@ object UploadsController extends mvc.Controller {
       file.filename, file.ref.file, request.theUserId, request.theBrowserIdData)
 
     // Delete the temporary file.
-    file.ref.clean()
+    file.ref.delete() ; UNTESTED // will this delete it? Was  .clean() previously
 
     // Don't use OkSafeJson here because Dropzone doesn't understand the safe-JSON prefix.
     Ok(JsString(uploadRef.url)) as JSON
@@ -156,9 +156,9 @@ object UploadsController extends mvc.Controller {
       mediumFile.filename, mediumFile.ref.file, request.theUserId, request.theBrowserIdData)
 
     // Delete the temporary files.
-    tinyFile.ref.clean()
-    smallFile.ref.clean()
-    mediumFile.ref.clean()
+    tinyFile.ref.delete()   ; UNTESTED // will this delete it? Was  .clean() previously
+    smallFile.ref.delete()  ; UNTESTED
+    mediumFile.ref.delete() ; UNTESTED
 
     // Now the images are in place in the uploads dir, and we've created metadata entries.
     // We just need to link the user to the images:
