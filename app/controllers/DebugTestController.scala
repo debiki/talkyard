@@ -193,10 +193,18 @@ class DebugTestController @Inject() extends mvc.Controller {
   }
 
 
-  def createDeadlock: Action[Unit] = ExceptionAction(empty) { _ =>
-    if (Play.isProd)
-      debiki.DebikiHttp.throwForbidden("DwE5K7G4", "You didn't say the magic word")
+  /** Fast-forwards the server's current time, for End-to-End tests.
+    */
+  def playTime: Action[JsValue] = PostJsonAction(RateLimits.BrowserError, maxBytes = 100) { request =>
+    throwForbiddenIf(Play.isProd, "DwE7GKWYQ1", "To fast-forward time, you need a wizard's wand")
+    val seconds = (request.body \ "seconds").as[Int]
+    Globals.test.fastForwardTimeMillis(seconds * 1000)
+    Ok
+  }
 
+
+  def createDeadlock: Action[Unit] = ExceptionAction(empty) { _ =>
+    throwForbiddenIf(Play.isProd, "DwE5K7G4", "You didn't say the magic word")
     debiki.DeadlockDetector.createDebugTestDeadlock()
     Ok("Deadlock created, current time: " + toIso8601(new ju.Date)) as TEXT
   }

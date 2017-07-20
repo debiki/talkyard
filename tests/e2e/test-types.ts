@@ -57,7 +57,7 @@ interface SiteData {
     numFlagsToBlockNewUser?: number,
     numFlaggersToBlockNewUser?: number,
   };
-  groups: any;
+  groups: GroupInclDetails[];
   members: Member[];
   identities: any;
   guests: TestGuest[];
@@ -73,6 +73,13 @@ interface SiteData {
   uploads: any;
   auditLog: any;
   reviewTasks: any;
+}
+
+
+interface GroupInclDetails {
+  id: UserId;
+  summaryEmailIntervalMins?: number;
+  summaryEmailIfActive?: boolean;
 }
 
 

@@ -576,7 +576,7 @@ case class MemberInclDetails(
   def whenTimeForNexSummaryEmail(stats: UserStats, myGroups: immutable.Seq[Group])
         : Option[When] = {
     require(stats.userId == id, "EdE2GPKW01")
-    if (emailAddress.isEmpty)
+    if (emailAddress.isEmpty || emailVerifiedAt.isEmpty)
       return None
     val anyIntervalMins = effectiveSummaryEmailIntervalMins(myGroups)
     val intervalMins = anyIntervalMins getOrElse {

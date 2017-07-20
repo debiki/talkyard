@@ -208,6 +208,7 @@ POST  /-/close-tree             @controllers.CloseCollapseController.closeTree
 POST  /-/import-site            controllers.ImportExportController.importSiteJson(deleteOldSite: Option[Boolean])
 POST  /-/import-test-site       controllers.ImportExportController.importTestSite
 
+POST /-/play-time               @controllers.DebugTestController.playTime
 POST /-/log-browser-errors      @controllers.DebugTestController.logBrowserErrors
 GET  /-/metrics                 @controllers.DebugTestController.showMetrics
 GET  /-/build-info              @controllers.DebugTestController.showBuildInfo

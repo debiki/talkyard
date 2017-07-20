@@ -933,6 +933,8 @@ trait UserDao {
       var user = transaction.loadTheMemberInclDetails(userId)
       user = user.copy(emailVerifiedAt = Some(verifiedAt))
       transaction.updateMemberInclDetails(user)
+      // Now, when email verified, perhaps time to start sending summary emails.
+      transaction.reconsiderSendingSummaryEmailsTo(user.id)
     }
     removeUserFromMemCache(userId)
   }

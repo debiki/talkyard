@@ -482,7 +482,7 @@ class Globals {
     }
 
     def fastForwardTimeMillis(millis: Long) {
-      require(isOrWasTest, "EdE4PFB8R")
+      require(!isProd, "EdE4PFB8R")
       timeOffsetMillis += millis
     }
 

@@ -1386,6 +1386,10 @@ function pagesFor(browser) {
         browser.go((origin || '') + `/-/users/${who}/notifications`);
       },
 
+      openPreferencesFor: function(who: string, origin?: string) {
+        browser.go((origin || '') + `/-/users/${who}/preferences`);
+      },
+
       goToPreferences: function() {
         api.userProfilePage.clickGoToPreferences();
       },
@@ -1532,6 +1536,10 @@ function pagesFor(browser) {
           browser.waitAndSetValue('.s_UP_Prefs_UN input', username);
         },
 
+        setSummaryEmailsEnabled: function(enabled: boolean) {
+          setCheckbox('#sendSummaryEmails', enabled);
+        },
+
         save: function() {
           api.userProfilePage.preferences.clickSave();
           browser.waitUntilModalGone();
@@ -1636,34 +1644,7 @@ function pagesFor(browser) {
 
         login: {
           setLoginRequired: function(isRequired: boolean) {
-            // Sometimes, clicking this checkbox has no effect. Perhaps a sidebar appeared, which
-            // caused the checkbox to move? so the click missed? Therefore, try many times.
-            browser.waitForVisible('#e2eLoginRequiredCB');
-            console.log('#e2eLoginRequiredCB is visible, should be checked: ' + isRequired);
-            for (let i = 0; i < 99; ++i) {
-              let isChecked = browser.isSelected('#e2eLoginRequiredCB');
-              console.log('#e2eLoginRequiredCB is checked: ' + isChecked);
-              if (isChecked === isRequired)
-                break;
-              api.waitAndClick('#e2eLoginRequiredCB');
-              console.log('#e2eLoginRequiredCB **click**');
-            }
-            // Somehow once this function exited with isChecked !== isRequired. Race condition?
-            // Let's find out:
-            let isChecked = browser.isSelected('#e2eLoginRequiredCB');
-            console.log('#e2eLoginRequiredCB is checked: ' + isChecked);
-            browser.pause(100);
-            isChecked = browser.isSelected('#e2eLoginRequiredCB');
-            console.log('#e2eLoginRequiredCB is checked: ' + isChecked);
-            browser.pause(200);
-            isChecked = browser.isSelected('#e2eLoginRequiredCB');
-            console.log('#e2eLoginRequiredCB is checked: ' + isChecked);
-            browser.pause(400);
-            isChecked = browser.isSelected('#e2eLoginRequiredCB');
-            console.log('#e2eLoginRequiredCB is checked: ' + isChecked);
-            browser.pause(800);
-            isChecked = browser.isSelected('#e2eLoginRequiredCB');
-            console.log('#e2eLoginRequiredCB is checked: ' + isChecked);
+            setCheckbox('#e2eLoginRequiredCB', isRequired);
           },
 
           clickAllowGuestLogin: function() {
@@ -1713,6 +1694,14 @@ function pagesFor(browser) {
         var credentials = _.isObject(username) ?  // already { username, password } object
             username : { username: username, password: password };
         api.loginDialog.loginWithPassword(credentials);
+      },
+
+      signUpAsMemberViaTopbar: function(member: Member) {
+        api.topbar.clickSignUp();
+        api.loginDialog.fillInEmail(member.emailAddress);
+        api.loginDialog.fillInUsername(member.username);
+        api.loginDialog.fillInPassword(member.password);
+        api.loginDialog.clickSubmit();
       },
 
       signUpAsGuestViaTopbar: function(nameOrObj, email?: string) {
@@ -1842,7 +1831,38 @@ function pagesFor(browser) {
     }
   };
 
-// backw compat, for now
+  function setCheckbox(selector: string, checked: boolean) {
+    // Sometimes, clicking this checkbox has no effect. Perhaps a sidebar appeared, which
+    // caused the checkbox to move? so the click missed? Therefore, try many times.
+    browser.waitForVisible(selector);
+    console.log(selector + ' is visible, should be checked: ' + checked);
+    for (let i = 0; i < 99; ++i) {
+      let isChecked = browser.isSelected(selector);
+      console.log(selector + ' is checked: ' + isChecked);
+      if (isChecked === checked)
+        break;
+      api.waitAndClick(selector);
+      console.log(selector + ' **click**');
+    }
+    // Somehow once this function exited with isChecked !== isRequired. Race condition?
+    // Let's find out:
+    let isChecked = browser.isSelected(selector);
+    console.log(selector + ' is checked: ' + isChecked);
+    browser.pause(100);
+    isChecked = browser.isSelected(selector);
+    console.log(selector + ' is checked: ' + isChecked);
+    browser.pause(200);
+    isChecked = browser.isSelected(selector);
+    console.log(selector + ' is checked: ' + isChecked);
+    browser.pause(400);
+    isChecked = browser.isSelected(selector);
+    console.log(selector + ' is checked: ' + isChecked);
+    browser.pause(800);
+    isChecked = browser.isSelected(selector);
+    console.log(selector + ' is checked: ' + isChecked);
+  }
+
+  // backw compat, for now
   api['replies'] = api.topic;
 
   return api;

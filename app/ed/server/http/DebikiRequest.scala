@@ -120,7 +120,7 @@ abstract class DebikiRequest[A] {
   /**
    * Approximately when the server started serving this request.
    */
-  lazy val ctime: ju.Date = new ju.Date
+  lazy val ctime: ju.Date = Globals.now().toJavaDate
 
   /** The scheme, host and port specified in the request. */
   def origin: String = s"$scheme://$host"

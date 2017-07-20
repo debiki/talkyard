@@ -120,6 +120,17 @@ function importSiteData(siteData: SiteData): IdAddress {
 }
 
 
+function playTimeSeconds(seconds: number) {
+  const url = settings.mainSiteOrigin + '/-/play-time';
+  postOrDie(url, { seconds: seconds });
+}
+
+
+function playTimeMinutes(minutes: number) { playTimeSeconds(minutes * 60); }
+function playTimeHours(hours: number) { playTimeSeconds(hours * 3600); }
+function playTimeDays(days: number) { playTimeSeconds(days * 3600 * 24); }
+
+
 function getLastEmailSenTo(siteId: SiteId, email: string): EmailSubjectBody {
   const response = getOrDie(settings.mainSiteOrigin + '/-/last-e2e-test-email?sentTo=' + email +
     '&siteId=' + siteId);
@@ -161,23 +172,41 @@ function waitForUnsubscriptionLinkEmailedTo(siteId: SiteId, emailAddress: string
 
 
 function waitUntilLastEmailMatches(siteId: SiteId, emailAddress: string,
-        textToMatch: string, browser) {
-  const regex = new RegExp(utils.regexEscapeSlashes(textToMatch));
+        textOrTextsToMatch: string | string[], browser): string | string[] {
+  const textsToMatch: string[] =
+      _.isString(textOrTextsToMatch) ? [textOrTextsToMatch] : textOrTextsToMatch;
+  const regexs = textsToMatch.map(text => new RegExp(utils.regexEscapeSlashes(text)));
+  let failures: string[];
   for (let attemptNr = 1; attemptNr <= settings.waitforTimeout / 500; ++attemptNr) {
     const email = getLastEmailSenTo(siteId, emailAddress);
-    const matches = email.bodyHtmlText.match(regex);
-    if (!matches)
-      browser.pause(500 - 100);
-    else
-      return matches;
+    failures = [];
+    let matchingStrings: string[] = [];
+    for (let i = 0; i < regexs.length; ++i) {
+      const regex = regexs[i];
+      const matches = email.bodyHtmlText.match(regex);
+      if (matches) {
+        matchingStrings.push(matches[0]);
+      }
+      else {
+        failures.push(textsToMatch[i]);
+      }
+    }
+    if (!failures.length)
+      return _.isString(textOrTextsToMatch) ? matchingStrings[0] : matchingStrings;
+    browser.pause(500 - 100);
   }
-  die(`Never got any email to ${emailAddress} matching /${textToMatch}/ [EdE2WKTSUG0]`);
+  const failuresString = failures.join(', ');
+  die(`Never got any email to ${emailAddress} matching ${failuresString} [EdE5JGK2Q1]`);
 }
 
 
 export = {
   initOrDie: initOrDie,
   importSiteData: importSiteData,
+  playTimeSeconds: playTimeSeconds,
+  playTimeMinutes: playTimeMinutes,
+  playTimeHours: playTimeHours,
+  playTimeDays: playTimeDays,
   getLastEmailSenTo: getLastEmailSenTo,
   getLastVerifyEmailAddressLinkEmailedTo: getLastVerifyEmailAddressLinkEmailedTo,
   getLastUnsubscriptionLinkEmailedTo: getLastUnsubscriptionLinkEmailedTo,

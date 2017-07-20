@@ -39,6 +39,6 @@ mv app/conf app-conf
 # This readme is for the development repo. Create another one, if any, for prod.
 rm app/README.md
 
-sudo docker build --tag=debiki/ed-app:latest .
+docker build --tag=debiki/ed-app:latest .
 
 echo "Image tag: debiki/ed-app:latest"

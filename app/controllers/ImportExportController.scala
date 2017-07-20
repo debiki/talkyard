@@ -99,6 +99,8 @@ object ImportExportController extends mvc.Controller {
   private case class ImportSiteData(
     site: Site,
     settings: SettingsToSave,
+    summaryEmailIntervalMins: Int, // for now [7FKB4Q1]
+    summaryEmailIfActive: Boolean, // for now [7FKB4Q1]
     users: Seq[MemberInclDetails],
     pages: Seq[PageMeta],
     pagePaths: Seq[PagePathWithId],
@@ -109,11 +111,12 @@ object ImportExportController extends mvc.Controller {
 
   private def parseSiteJson(bodyJson: JsValue, isE2eTest: Boolean): ImportSiteData = {
 
-    val (siteMetaJson, settingsJson, membersJson, permsOnPagesJson, pagesJson, pathsJson,
+    val (siteMetaJson, settingsJson, groupsJson, membersJson, permsOnPagesJson, pagesJson, pathsJson,
         categoriesJson, postsJson) =
       try {
         (readJsObject(bodyJson, "meta"),
           readJsObject(bodyJson, "settings"),
+          readJsArray(bodyJson, "groups"),
           readJsArray(bodyJson, "members"),
           readJsArray(bodyJson, "permsOnPages"),
           readJsArray(bodyJson, "pages"),
@@ -134,6 +137,16 @@ object ImportExportController extends mvc.Controller {
       }
 
     val settings = Settings2.settingsToSaveFromJson(settingsJson)
+
+    HACK // just loading Everyone's summary email interval. [7FKB4Q1]
+    var summaryEmailIntervalMins = SummaryEmails.DoNotSend
+    var summaryEmailIfActive = false
+    groupsJson.value.zipWithIndex foreach { case (json, index) =>
+      val groupId = (json \ "id").as[UserId]
+      require(groupId == Group.EveryoneId, "EdE1QK04S")
+      summaryEmailIntervalMins = (json \ "summaryEmailIntervalMins").as[Int]
+      summaryEmailIfActive = (json \ "summaryEmailIfActive").as[Boolean]
+    }
 
     val users: Seq[MemberInclDetails] = membersJson.value.zipWithIndex map { case (json, index) =>
       readMemberOrBad(json, isE2eTest).getOrIfBad(errorMessage =>
@@ -178,7 +191,10 @@ object ImportExportController extends mvc.Controller {
               $error, json: $json"""))
     }
 
-    ImportSiteData(siteToSave, settings, users, pages, paths, categories, posts, permsOnPages)
+    ImportSiteData(siteToSave, settings,
+      summaryEmailIntervalMins = summaryEmailIntervalMins,
+      summaryEmailIfActive = summaryEmailIfActive,
+      users, pages, paths, categories, posts, permsOnPages)
   }
 
 
@@ -219,6 +235,16 @@ object ImportExportController extends mvc.Controller {
       createdFromSiteId = None)
 
     val newDao = Globals.siteDao(site.id)
+
+    HACK // not inserting groups, only updating summary email interval. [7FKB4Q1]
+    // And in the wrong transaction :-/
+    newDao.saveGroupPreferences(GroupPreferences(
+      groupId = Group.EveryoneId,
+      fullName = Some("Everyone"),
+      username = "everyone",
+      summaryEmailIntervalMins = Some(siteData.summaryEmailIntervalMins),
+      summaryEmailIfActive = Some(siteData.summaryEmailIfActive)), Who.System)
+
     newDao.readWriteTransaction { transaction =>
       // We might import a forum or a forum category, and then the categories reference the
       // forum page, and the forum page references to the root category.
