@@ -89,7 +89,7 @@ export function pageRole_iconClass(pageRole: PageRole): string {
     case PageRole.PrivateChat: return 'icon-lock';
     case PageRole.Form: return 'icon-th-list';
     case PageRole.Critique: return '';  // [plugin]
-    case PageRole.UsabilityTesting: return '';  // [plugin]
+    case PageRole.UsabilityTesting: return 'icon-check-empty';  // [plugin]
     default: die(`Bad page role: ${pageRole} [EdE2KW4A0]`);
   }
 }

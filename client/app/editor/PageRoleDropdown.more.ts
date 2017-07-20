@@ -216,7 +216,7 @@ function pageRole_toIconString(pageRole: PageRole) {
     case PageRole.PrivateChat: return PageRole_PrivateChat_IconString;
     case PageRole.Form: return PageRole_Form_IconString;
     case PageRole.Critique: return "Critique";  // [plugin]
-    case PageRole.UsabilityTesting: return "Usability Testing";  // [plugin]
+    case PageRole.UsabilityTesting: return PageRole_UsabilityTesting_IconString;  // [plugin]
     default: die(`Bad page role: ${pageRole} [EsE4GUK75Z]`);
   }
 }
@@ -235,6 +235,10 @@ var PageRole_OpenChat_IconString = r.span({ className: iconFor(PageRole.OpenChat
 var PageRole_PrivateChat_IconString = r.span({ className: iconFor(PageRole.PrivateChat) }, "Private Chat");
 
 var PageRole_Form_IconString = r.span({ className: iconFor(PageRole.Form) }, "Form");
+
+// Use the same icon as ToDo.
+var PageRole_UsabilityTesting_IconString = r.span({ className: iconFor(PageRole.ToDo) }, // [plugin]
+    "Usability Testing");
 
 
 //------------------------------------------------------------------------------

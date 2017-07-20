@@ -76,12 +76,16 @@ export const TitleBodyComments = createComponent({
 
     // If this page was closed prematurely, show "... has been closed ..." instead of
     // e.g. "... is waiting for an answer..."
-    if (store.pageClosedAtMs && !store.pageDoneAtMs && !store.pageAnsweredAtMs) {
+    const isClosedUnfinished = store.pageClosedAtMs && !store.pageDoneAtMs && !store.pageAnsweredAtMs;
+    const isClosedUsabilityTesting =
+        store.pageClosedAtMs && store.pageRole === PageRole.UsabilityTesting;  // [plugin]
+    if (isClosedUnfinished || isClosedUsabilityTesting) {
       const closed = r.b({}, closedIcon, "closed");
+      const done = r.b({}, doneIcon, "done");
       if (store.pageRole === PageRole.UsabilityTesting)  // [plugin]
         return { id: 'Ed2PRK06', version: 1, type: HelpTypePageClosed, content: r.div({},
-          r.p({}, "This topic has been ", closed, ", no more feedback needed. " +
-          "(But you can leave more feedback, if you want to.)"),
+          r.p({}, "This topic has been ", store.pageDoneAtMs ? done : closed, ", no more feedback " +
+          "needed. (But you can leave more feedback, if you want to.)"),
           shareWithFriends) };
       return { id: 'EdH7UMPW', version: 1, type: HelpTypePageClosed, content: r.div({},
           "This topic has been ", closed, ". You can still post comments, " +
@@ -438,7 +442,7 @@ export const Title = createComponent({
         tooltip = makeQuestionTooltipText(store.pageAnsweredAtMs) + ".\n";
       }
       else if (store.pageRole === PageRole.Problem || store.pageRole === PageRole.Idea ||
-                store.pageRole === PageRole.ToDo) {
+                store.pageRole === PageRole.ToDo || store.pageRole === PageRole.UsabilityTesting) {
         // (Some dupl code, see [5KEFEW2] in forum.ts.
         let iconClass;
         let iconTooltip;
@@ -465,6 +469,15 @@ export const Title = createComponent({
             iconClass = 'icon-check';
             iconTooltip = "Click to change status to new";
           }
+        }
+        else if (store.pageRole === PageRole.UsabilityTesting) {   // [plugin]
+          tooltip = store.pageDoneAtMs
+              ? "This has been done. Feedback has been given.\n"
+              : "Waiting for feedback.\n";
+          iconClass = store.pageDoneAtMs ? 'icon-check' : 'icon-check-empty';
+          iconTooltip = store.pageDoneAtMs
+              ? "Click to change status to waiting-for-feedback"
+              : "Click to mark as done";
         }
         else {
           tooltip = store.pageDoneAtMs

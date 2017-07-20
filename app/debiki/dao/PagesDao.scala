@@ -394,6 +394,7 @@ trait PagesDao {
     */
   def cyclePageDoneIfAuth(pageId: PageId, userId: UserId, browserIdData: BrowserIdData)
         : PageMeta = {
+    val now = Globals.now()
     val newMeta = readWriteTransaction { transaction =>
       val user = transaction.loadTheUser(userId)
       val oldMeta = transaction.loadThePageMeta(pageId)
@@ -401,7 +402,8 @@ trait PagesDao {
         throwForbidden("EsE4YK0W2", "Only the page author and staff may change the page status")
 
       val pageRole = oldMeta.pageRole
-      if (pageRole != PageRole.Problem && pageRole != PageRole.Idea && pageRole != PageRole.ToDo)
+      if (pageRole != PageRole.Problem && pageRole != PageRole.Idea && pageRole != PageRole.ToDo &&
+          pageRole != PageRole.UsabilityTesting)
         throwBadReq("DwE6KEW2", "This page cannot be marked as planned or done")
 
       var newPlannedAt: Option[ju.Date] = None
@@ -410,17 +412,23 @@ trait PagesDao {
 
       if (oldMeta.doneAt.isDefined) {
         // Keep all None, except for todos because they cannot be not-planned.
-        if (pageRole == PageRole.ToDo) {
+        if (pageRole == PageRole.ToDo || pageRole == PageRole.UsabilityTesting) {
           newPlannedAt = oldMeta.plannedAt
         }
       }
       else if (oldMeta.plannedAt.isDefined) {
         newPlannedAt = oldMeta.plannedAt
-        newDoneAt = Some(transaction.now.toJavaDate)
-        newClosedAt = Some(transaction.now.toJavaDate)
+        newDoneAt = Some(now.toJavaDate)
+        newClosedAt = Some(now.toJavaDate)
+      }
+      else if (pageRole == PageRole.ToDo || pageRole == PageRole.UsabilityTesting) {
+        // These are always planned.
+        newPlannedAt = Some(oldMeta.createdAt)
+        newDoneAt = Some(now.toJavaDate)
+        newClosedAt = Some(now.toJavaDate)
       }
       else {
-        newPlannedAt = Some(transaction.now.toJavaDate)
+        newPlannedAt = Some(now.toJavaDate)
       }
 
       val newMeta = oldMeta.copy(
@@ -439,6 +447,7 @@ trait PagesDao {
 
   def ifAuthTogglePageClosed(pageId: PageId, userId: UserId, browserIdData: BrowserIdData)
         : Option[ju.Date] = {
+    val now = Globals.now()
     val newClosedAt = readWriteTransaction { transaction =>
       val user = transaction.loadTheUser(userId)
       val oldMeta = transaction.loadThePageMeta(pageId)
@@ -451,7 +460,7 @@ trait PagesDao {
         throwForbidden("DwE5JPK7", "Only staff and the topic author can toggle it closed")
 
       val newClosedAt: Option[ju.Date] = oldMeta.closedAt match {
-        case None => Some(transaction.now.toJavaDate)
+        case None => Some(now.toJavaDate)
         case Some(_) => None
       }
       val newMeta = oldMeta.copy(closedAt = newClosedAt, version = oldMeta.version + 1)

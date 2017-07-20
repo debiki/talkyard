@@ -1460,14 +1460,17 @@ function makeTitle(topic: Topic, className: string, settings: SettingsVisibleCli
       title = r.span({}, r.span({ className: iconClass }, title));
     }
   }
-  else if (topic.pageRole === PageRole.ToDo) {
+  else if (topic.pageRole === PageRole.ToDo ||
+          topic.pageRole === PageRole.UsabilityTesting) {  // [plugin]
     if (topic.doneAtMs) {
       iconClass = 'icon-check';
-      tooltip = "This has been done or fixed";
+      tooltip = topic.pageRole === PageRole.UsabilityTesting ? // [plugin]
+          "Testing and feedback done." : "This has been done or fixed";
     }
     else if (showIcons) {
       iconClass = 'icon-check-empty';
-      tooltip = "This is something to do or to fix";
+      tooltip = topic.pageRole === PageRole.UsabilityTesting ? // [plugin]
+          "Waiting for feedback" : "This is something to do or to fix";
     }
     if (iconClass) {
       title = r.span({}, r.span({ className: iconClass }, title));
@@ -1559,7 +1562,8 @@ function createTopicBtnTitle(category: Category) {
 // Some dupl code, see  [4KEPW2].
 function isDone(topic: Topic): boolean {
   return topic.doneAtMs && (topic.pageRole === PageRole.Problem ||
-      topic.pageRole === PageRole.Idea || topic.pageRole === PageRole.ToDo);
+      topic.pageRole === PageRole.Idea || topic.pageRole === PageRole.ToDo ||
+        topic.pageRole === PageRole.UsabilityTesting);  // [plugin]
 }
 
 

@@ -237,12 +237,12 @@ case class PageMeta(
   require(numRepliesTotal >= numRepliesVisible,
     s"Fail: $numRepliesTotal >= $numRepliesVisible [DwE4REQ2]")
   //require(numChildPages >= 0, "DwE8KPEF0") -- oops fails, not so very important, for now instead:
-  require(answeredAt.isEmpty || createdAt.getTime < answeredAt.get.getTime, "DwE4KG22")
-  require(plannedAt.isEmpty || createdAt.getTime < plannedAt.get.getTime, "DwE0FUY2")
-  require(doneAt.isEmpty || createdAt.getTime < doneAt.get.getTime, "DwE4PUG2")
-  require(closedAt.isEmpty || createdAt.getTime < closedAt.get.getTime, "DwE7KPE8")
-  require(lockedAt.isEmpty || createdAt.getTime < lockedAt.get.getTime, "DwE3KWV6")
-  require(frozenAt.isEmpty || createdAt.getTime < frozenAt.get.getTime, "DwE4YUF8")
+  require(answeredAt.isEmpty || createdAt.getTime <= answeredAt.get.getTime, "DwE4KG22")
+  require(plannedAt.isEmpty || createdAt.getTime <= plannedAt.get.getTime, "DwE0FUY2")
+  require(doneAt.isEmpty || createdAt.getTime <= doneAt.get.getTime, "DwE4PUG2")
+  require(closedAt.isEmpty || createdAt.getTime <= closedAt.get.getTime, "DwE7KPE8")
+  require(lockedAt.isEmpty || createdAt.getTime <= lockedAt.get.getTime, "DwE3KWV6")
+  require(frozenAt.isEmpty || createdAt.getTime <= frozenAt.get.getTime, "DwE4YUF8")
   require(doneAt.isEmpty || plannedAt.isDefined, "DwE59KEW2")
   require(doneAt.isEmpty || plannedAt.get.getTime <= doneAt.get.getTime, "DwE6K8PY2")
   // A topic that has been fixed or solved, should be in the closed state.

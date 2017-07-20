@@ -156,7 +156,8 @@ export var PostActions = createComponent({
     // (Some dupl code, see Title above and isDone() and isAnswered() in forum.ts [4KEPW2]
     var isAnswered = isQuestion && store.pageAnsweredAtMs;
     var isDone = store.pageDoneAtMs && (store.pageRole === PageRole.Problem ||
-      store.pageRole === PageRole.Idea || store.pageRole === PageRole.ToDo);
+      store.pageRole === PageRole.Idea || store.pageRole === PageRole.ToDo ||
+      store.pageRole === PageRole.UsabilityTesting);  // [plugin]
 
     var me: Myself = store.me;
     var isOwnPost = me.id === post.authorId;
