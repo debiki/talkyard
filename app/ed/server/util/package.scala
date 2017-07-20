@@ -27,7 +27,7 @@ package object util {
 
   object email {
     def makeBoringLink(title: String, url: String): Elem =
-      <a href={url} style="text-decoration: none !important; color: #333 !important;">{title}</a>
+      <a href={url} style="color: #333 !important;">{title}</a>
 
     def makeUnderlinedLink(title: String, url: String): Elem =
       <a href={url} style="color: #333 !important;">{title}</a>
@@ -43,7 +43,7 @@ package object util {
         </p>
         <p style='font-size: 85%; opacity: 0.68;'>
           Powered by {
-            makeBoringLink("EffectiveDiscussions", url = "https://www.effectivediscussions.org") }
+            makeUnderlinedLink("EffectiveDiscussions", url = "https://www.effectivediscussions.org") }
         </p>
       </div>
   }
