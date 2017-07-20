@@ -37,7 +37,7 @@
     "react-input-autosize": "=1.1.0",
     "react-router": "3.0.0",
     "react-select": "1.0.0-rc.3",
-    "react-transition-group": "1.x",
+    "react-transition-group": "^2.1.0",
     "wdio-dot-reporter": "^0.0.6",
     "zxcvbn": "^4.4.1"
   },
