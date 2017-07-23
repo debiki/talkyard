@@ -23,8 +23,6 @@ echo With username: $my_username
 echo And HOME: $HOME
 echo Other args: "$@"
 
-exit
-
 
 # This'll make us call `exit 1` if there's an error, and we're running all this via a script.
 is_in_script=true
@@ -46,7 +44,9 @@ s/d kill web app
 s/d down
 
 if [ -n "`docker ps -q`" ]; then
-  echo "Docker containers are running, please stop them."
+  echo "Docker containers are running, please stop them. Look:"
+  docker ps
+  echo
   die_if_in_script
 fi
 
@@ -99,6 +99,7 @@ if [ -n "`jobs`" ]; then
 fi
 
 
+# Run e2e tests, but not as root.
 # To stop these e2e tests, you need to 'sudo -i' in another shell, then 'ps aux | grep e2e'
 # and then kill the right stuff.
 su $my_username -c "s/run-e2e-tests.sh --prod $@ ; echo $? > ./target/e2e-tests-exit-code"
@@ -161,6 +162,7 @@ fi
 echo
 echo "Done building and testing $version_tag."
 echo
+exit 0
 
 
 # vim: et ts=2 sw=2 tw=0 list

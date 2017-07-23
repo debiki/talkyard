@@ -138,6 +138,7 @@ class SiteDao(
     SECURITY // this makes a DoS attack possible? By posting comments all the time, one can make
     // all threads block, waiting for the per-site lock. There's rate limiting stuff though
     // so doing this takes some effort.
+    DB_CONFICT // ? there're other ways to create per-site Dao:s too: by starting with a SystemDao.
     synchronizeOnSiteId(siteId) {
       dbDao2.readWriteSiteTransaction(siteId, allowOverQuota) {
         fn(_)
