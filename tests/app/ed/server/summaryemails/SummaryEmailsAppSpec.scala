@@ -57,6 +57,11 @@ import scala.collection.immutable
   * Fast-forward time 8 days —>
   *   summaries get sent to Mod, not Mia.
   *
+  * Adm creates a page in a no-summaries category.
+  * No summaries sent, not to anyone.
+  *
+  * Summaries aren't sent immediately when new topic created.
+  *
   * Mia and Ign changes their settings: Mia no longer wants, but Ign wants, summaries.
   * Mod creates a topic —>
   *   summary sent to Adm and Ign, not to Mia.
@@ -76,6 +81,8 @@ class SummaryEmailsAppSpec extends DaoAppSuite() {
 
   lazy val forum = dao.createForum(title = "Forum to delete", folder = "/",
     Who(SystemUserId, browserIdData))
+
+  var categoryNoSummaries: CreateCategoryResult = _
 
   var page1IdByAdm: PageId = null
   var page2IdByMia: PageId = null
@@ -137,27 +144,50 @@ class SummaryEmailsAppSpec extends DaoAppSuite() {
   }
 
 
+  "prepare: create no-summaries and staff-only categories" in {
+    val noSummariesCategoryId = dao.readWriteTransaction { tx =>
+      tx.nextCategoryId()
+    }
+    categoryNoSummaries = dao.createCategory(
+      CategoryToSave(
+        anyId = Some(noSummariesCategoryId),
+        sectionPageId = forum.pagePath.pageId.get,
+        parentId = forum.staffCategoryId,
+        name = "NoSummariesCat",
+        slug = "nosummariescat",
+        description = CategoriesDao.CategoryDescriptionSource,
+        position = 11,
+        newTopicTypes = List(PageRole.Discussion),
+        shallBeDefaultCategory = false,
+        unlisted = false,
+        includeInSummaries = IncludeInSummaries.NoExclude),
+      immutable.Seq(ForumDao.makeEveryonesDefaultCategoryPerms(noSummariesCategoryId)),
+      Who.System)
+  }
+
+
   "prepare: create users" in {
-    adm = createPasswordOwner("adm", dao, createdAt = Some(startTime))
+    adm = createPasswordOwner("adm", dao, createdAt = Some(startTime), emailVerified = true)
     updateMemberPreferences(dao, adm.id, _.copy(summaryEmailIntervalMins = Some(60 * 24)))
 
-    mia = createPasswordUser("mia", dao, createdAt = Some(startTime))
+    mia = createPasswordUser("mia", dao, createdAt = Some(startTime), emailVerified = true)
     updateMemberPreferences(dao, mia.id, _.copy(summaryEmailIntervalMins = Some(60 * 24)))
 
-    mod = createPasswordModerator("mod", dao, createdAt = Some(startTime))
+    mod = createPasswordModerator("mod", dao, createdAt = Some(startTime), emailVerified = true)
     updateMemberPreferences(dao, mod.id, _.copy(
       summaryEmailIfActive = Some(true),
       summaryEmailIntervalMins = Some(60 * 24 * 7)))
 
+    // Email not verified, for Max.
     max = createPasswordUser("max", dao, createdAt = Some(startTime))
     updateMemberPreferences(dao, max.id, _.copy(
       summaryEmailIfActive = Some(true),
       summaryEmailIntervalMins = Some(60 * 24 * 7)))
 
-    ign = createPasswordUser("ign", dao, createdAt = Some(startTime))
+    ign = createPasswordUser("ign", dao, createdAt = Some(startTime), emailVerified = true)
     // Ign = ignore, doesn't want summary emails.
 
-    defa = createPasswordUser("defa", dao, createdAt = Some(startTime))
+    defa = createPasswordUser("defa", dao, createdAt = Some(startTime), emailVerified = true)
     // Inherits settings from Everyone. Doesn't want, by default.
   }
 
@@ -168,7 +198,7 @@ class SummaryEmailsAppSpec extends DaoAppSuite() {
   }
 
 
-  "Adm and Mia create one page, each, and summary emails are sent" - {
+  "Adm and Mia create one page, each, and summary emails are sent, to users with verified email" - {
     "they create the pages" in {
       page1IdByAdm = createPage(PageRole.Discussion, TextAndHtml.forTitle("Page By Adm"),
         TextAndHtml.forBodyOrComment("Page body."), authorId = adm.id, browserIdData,
@@ -229,43 +259,59 @@ class SummaryEmailsAppSpec extends DaoAppSuite() {
         makeSummary(max.id) mustBe empty
         makeSummary(ign.id) mustBe empty
       }
+    }
 
-      "After 6 days, still no summary to Mod & Max" in {
-        playTime(5 * OneDayInMillis)  // 25 hours + 5 days < 7 days
-        makeSummary(mod.id) mustBe empty
+    "After 6 days, still no summary to Mod & Max" in {
+      playTime(5 * OneDayInMillis)  // 25 hours + 5 days < 7 days
+      makeSummary(mod.id) mustBe empty
+      makeSummary(max.id) mustBe empty
+    }
+
+    "After 7 days, Mod get summaries: both Adm's and Mia's pages" in {
+      playTime(1 * OneDayInMillis)  // 25 hours + 5 + 1 > 7 days
+      val summary = makeSummary(mod.id).get
+      summary.topTopics.size mustBe 2
+      val metas = summary.topTopics.map(_.meta)
+      metas.map(_.authorId).toSet mustBe Set(adm.id, mia.id)
+      metas.map(_.pageId).toSet mustBe Set(page1IdByAdm, page2IdByMia)
+    }
+
+    "summaries not sent until email address verified" - {
+      "Max hasn't gotten any summary, because email not yet verified" in {
         makeSummary(max.id) mustBe empty
       }
 
-      "After 7 days, Mod & Max get summaries: both Adm's and Mia's pages" in {
-        playTime(1 * OneDayInMillis)  // 25 hours + 5 + 1 > 7 days
-        val summaries = makeSummaries(immutable.Seq(mod.id, max.id))
-        summaries foreach { summary =>
-          summary.topTopics.size mustBe 2
-          val metas = summary.topTopics.map(_.meta)
-          metas.map(_.authorId).toSet mustBe Set(adm.id, mia.id)
-          metas.map(_.pageId).toSet mustBe Set(page1IdByAdm, page2IdByMia)
-        }
+      "Max verifies his email address" in {
+        dao.verifyEmail(max.id, Globals.now().toJavaDate)
       }
 
-      "Mod & Max gets no more summaries" in {
-        makeSummary(mod.id) mustBe empty
-        makeSummary(max.id) mustBe empty
+      "now he gets a summary email: both Adm's and Mia's pages" in {
+        val summary = makeSummary(max.id).get
+        summary.topTopics.size mustBe 2
+        val metas = summary.topTopics.map(_.meta)
+        metas.map(_.authorId).toSet mustBe Set(adm.id, mia.id)
+        metas.map(_.pageId).toSet mustBe Set(page1IdByAdm, page2IdByMia)
       }
+    }
 
-      "and the others also don't" in {
-        makeSummary(adm.id) mustBe empty
-        makeSummary(mia.id) mustBe empty
-        makeSummary(ign.id) mustBe empty
-      }
+    "Mod & Max gets no more summaries" in {
+      makeSummary(mod.id) mustBe empty
+      makeSummary(max.id) mustBe empty
+    }
 
-      "not even after one month" in {
-        playTime(32 * OneDayInMillis)
-        makeSummary(adm.id) mustBe empty
-        makeSummary(mia.id) mustBe empty
-        makeSummary(mod.id) mustBe empty
-        makeSummary(max.id) mustBe empty
-        makeSummary(ign.id) mustBe empty
-      }
+    "and the others also don't" in {
+      makeSummary(adm.id) mustBe empty
+      makeSummary(mia.id) mustBe empty
+      makeSummary(ign.id) mustBe empty
+    }
+
+    "not even after one month" in {
+      playTime(32 * OneDayInMillis)
+      makeSummary(adm.id) mustBe empty
+      makeSummary(mia.id) mustBe empty
+      makeSummary(mod.id) mustBe empty
+      makeSummary(max.id) mustBe empty
+      makeSummary(ign.id) mustBe empty
     }
   }
 
@@ -507,6 +553,26 @@ class SummaryEmailsAppSpec extends DaoAppSuite() {
         summary.topTopics.head.meta.authorId mustBe adm.id
         summary.topTopics.head.meta.pageId mustBe everyonePageIdByAdm
       }
+    }
+  }
+
+
+  "no summaries creted for pages in a don't-create-summaries category" - {
+    "Adm creates a page in a no-summaries category" in {
+      staffOnlyPageIdByAdm = createPage(PageRole.Discussion, TextAndHtml.forTitle("No Summaries"),
+        TextAndHtml.forBodyOrComment("Page body."), authorId = adm.id, browserIdData,
+        dao, anyCategoryId = Some(categoryNoSummaries.category.id))
+    }
+
+    "a month elapses" in {
+      playTime(31 * OneDayInMillis + OneHourInMillis)
+    }
+
+    "No one gets any summary" in {
+      makeSummary(mia.id) mustBe empty
+      makeSummary(mod.id) mustBe empty
+      makeSummary(max.id) mustBe empty
+      makeSummary(ign.id) mustBe empty
     }
   }
 

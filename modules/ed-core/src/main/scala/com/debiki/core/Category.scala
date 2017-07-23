@@ -21,6 +21,22 @@ import java.{util => ju}
 import scala.collection.immutable
 
 
+sealed abstract class IncludeInSummaries(val IntVal: Int) { def toInt = IntVal }
+object IncludeInSummaries {
+  case object Default extends IncludeInSummaries(0)
+  // Later. To feature a specific page, or Announcements category.
+  //case object YesFeatured extends IncludeInSummaries(1)
+  case object NoExclude extends IncludeInSummaries(3)
+
+  def fromInt(value: Int): Option[IncludeInSummaries] = Some(value match {
+    case Default.IntVal => Default
+    //case YesFeatured.IntVal => YesFeatured
+    case NoExclude.IntVal => NoExclude
+    case _ => return None
+  })
+}
+
+
 case class Category(
   id: CategoryId,
   sectionPageId: PageId,
@@ -35,6 +51,7 @@ case class Category(
   // [refactor] [5YKW294] [rename] Should no longer be a list. Change db too, from "nnn,nnn,nnn" to single int.
   newTopicTypes: immutable.Seq[PageRole],
   unlisted: Boolean,  // rename to isUnlisted
+  includeInSummaries: IncludeInSummaries = IncludeInSummaries.Default,
   createdAt: ju.Date,
   updatedAt: ju.Date,
   lockedAt: Option[ju.Date] = None,

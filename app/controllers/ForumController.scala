@@ -75,6 +75,9 @@ object ForumController extends mvc.Controller {
 
     val sectionPageId = (categoryJson \ "sectionPageId").as[PageId]
     val unlisted = (categoryJson \ "unlisted").asOpt[Boolean] is true
+    val includeInSummariesInt = (categoryJson \ "includeInSummaries").asOpt[Int]
+    val includeInSummaries = includeInSummariesInt.flatMap(IncludeInSummaries.fromInt)
+        .getOrElse(IncludeInSummaries.Default)
     val defaultTopicTypeInt = (categoryJson \ "defaultTopicType").as[Int]
     val defaultTopicType = PageRole.fromInt(defaultTopicTypeInt) getOrElse throwBadReq(
         "DwE7KUP3", s"Bad new topic type int: $defaultTopicTypeInt")
@@ -94,7 +97,8 @@ object ForumController extends mvc.Controller {
       position = (categoryJson \ "position").as[Int],
       newTopicTypes = List(defaultTopicType),
       shallBeDefaultCategory = shallBeDefaultCategory,
-      unlisted = unlisted)
+      unlisted = unlisted,
+      includeInSummaries = includeInSummaries)
 
     import Category._
 

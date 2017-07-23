@@ -327,9 +327,17 @@ interface Category {
   description: string;
   recentTopics?: Topic[];
   unlisted?: boolean;
+  includeInSummaries?: IncludeInSummaries;
   isDefaultCategory?: boolean;
   isForumItself?: boolean;
   isDeleted?: boolean;
+}
+
+
+enum IncludeInSummaries {
+  Default = 0,
+  YesFeatured = 1,
+  NoExclude = 3
 }
 
 

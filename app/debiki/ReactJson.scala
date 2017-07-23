@@ -1178,6 +1178,7 @@ object ReactJson {
       // [refactor] [5YKW294] delete this later:
       "newTopicTypes" -> JsArray(category.newTopicTypes.map(t => JsNumber(t.toInt))),
       "unlisted" -> JsBoolean(category.unlisted),
+      "includeInSummaries" -> JsNumber(category.includeInSummaries.toInt),
       "position" -> category.position,
       "description" -> JsStringOrNull(category.description))
     if (recentTopicsJson ne null) {

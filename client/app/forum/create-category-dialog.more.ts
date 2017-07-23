@@ -98,6 +98,7 @@ const EditCategoryDialog = createClassAndFactory({
           position: DefaultPosition,
           description: '',
           unlisted: false,
+          includeInSummaries: IncludeInSummaries.Default,
         };
         this.setState({
           isCreatingNewCategory: true,
@@ -247,6 +248,13 @@ const CategorySettings = createClassAndFactory({
     this.props.updateCategory({ unlisted: !category.unlisted });
   },
 
+  toggleExclFromSummaries: function() {
+    const category: Category = this.props.category;
+    const newInclInSummaries = category.includeInSummaries === IncludeInSummaries.NoExclude ?
+        IncludeInSummaries.Default : IncludeInSummaries.NoExclude;
+    this.props.updateCategory({ includeInSummaries: newInclInSummaries });
+  },
+
   render: function () {
     const store: Store = this.props.store;
     const category: Category = this.props.category;
@@ -315,6 +323,16 @@ const CategorySettings = createClassAndFactory({
                   "will be visible. This is useful for pages like a homepage or about-this-" +
                   "website page, which people shouldn't see in the forum topic list." }));
 
+    const shallExclude = category.includeInSummaries === IncludeInSummaries.NoExclude;
+    const excludeFromSummariesTitle =
+        "Exclude from summary emails (" + (shallExclude ?  "yes, exclude)" : "no)");
+    const excludeFromSummariesInput =
+      utils.FadeInOnClick({ clickToShowText: excludeFromSummariesTitle, clickToShowId: 'e_ShowExclCB' },
+        Input({ type: 'checkbox', label: "Exclude from summary emails", id: 'e_ExclCB',
+          checked: shallExclude, onChange: this.toggleExclFromSummaries,
+          help: "Prevents topics from this category from being included in activity summary " +
+              "emails." }));
+
     let anyUndeleteInfoAndButton;
     let anyDeleteButton;
     if (this.props.isCreatingNewCategory) {
@@ -342,6 +360,7 @@ const CategorySettings = createClassAndFactory({
             slugInput,
             positionInput,
             unlistedInput,
+            excludeFromSummariesInput,
             anyDeleteButton);
   }
 });

@@ -479,6 +479,11 @@ object ImportExportController extends mvc.Controller {
     }
 
     try {
+      val includeInSummariesInt = readOptInt(jsObj, "includeInSummaries")
+          .getOrElse(IncludeInSummaries.Default.IntVal)
+      val includeInSummaries = IncludeInSummaries.fromInt(includeInSummariesInt) getOrElse {
+        return Bad(s"Invalid includeInSummaries: $includeInSummariesInt")
+      }
       Good(Category(
         id = id,
         sectionPageId = readString(jsObj, "sectionPageId"),
@@ -490,6 +495,7 @@ object ImportExportController extends mvc.Controller {
         description = readOptString(jsObj, "description"),
         newTopicTypes = Nil, // fix later
         unlisted = readOptBool(jsObj, "unlisted").getOrElse(false),
+        includeInSummaries = includeInSummaries,
         createdAt = readDateMs(jsObj, "createdAtMs"),
         updatedAt = readDateMs(jsObj, "updatedAtMs"),
         lockedAt = readOptDateMs(jsObj, "lockedAtMs"),

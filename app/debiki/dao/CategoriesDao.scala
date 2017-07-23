@@ -43,6 +43,7 @@ case class CategoryToSave(
   newTopicTypes: immutable.Seq[PageRole],
   shallBeDefaultCategory: Boolean,
   unlisted: Boolean,
+  includeInSummaries: IncludeInSummaries,
   description: String,
   anyId: Option[CategoryId] = None, // Some() if editing, < 0 if creating COULD change from Option[CategoryId] to CategoryId
   isCreatingNewForum: Boolean = false) {
@@ -64,6 +65,7 @@ case class CategoryToSave(
     description = None,
     newTopicTypes = newTopicTypes,
     unlisted = unlisted,
+    includeInSummaries = includeInSummaries,
     createdAt = createdAt,
     updatedAt = createdAt)
 
@@ -170,9 +172,18 @@ trait CategoriesDao {
         Seq(categoryId)
       }
 
+    val okCategoryIds =
+      if (pageQuery.pageFilter != PageFilter.ForActivitySummaryEmail)
+        maySeeCategoryIds
+      else
+        maySeeCategoryIds filter { id =>
+          val category = categoriesById.get(id)
+          category.map(_.includeInSummaries) isNot IncludeInSummaries.NoExclude
+        }
+
     // Although we may see these categories, we might not be allowed to see all pages therein.
     // So, both per-category and per-page authz checks.
-    val pagesInclForbidden = loadPagesDirectlyInCategories(maySeeCategoryIds, pageQuery, limit)
+    val pagesInclForbidden = loadPagesDirectlyInCategories(okCategoryIds, pageQuery, limit)
 
     // For now. COULD do some of filtering in the db query instead, so won't find 0 pages
     // just because all most-recent-pages are e.g. hidden.
@@ -344,6 +355,7 @@ trait CategoriesDao {
         position = editCategoryData.position,
         newTopicTypes = editCategoryData.newTopicTypes,
         unlisted = editCategoryData.unlisted,
+        includeInSummaries = editCategoryData.includeInSummaries,
         updatedAt = transaction.now.toJavaDate)
 
       if (editCategoryData.shallBeDefaultCategory) {
