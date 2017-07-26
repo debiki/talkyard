@@ -146,6 +146,22 @@ trait PagePathMetaDao {
   }
 
 
+  def getThePageMetaForPostId(postId: PostId): PageMeta = {
+    getPageMetaForPostId(postId) getOrElse throwNoSuchElem("EdE2WKG4", s"Post $siteId:$postId not found")
+  }
+
+
+  def getPageMetaForPostId(postId: PostId): Option[PageMeta] = {
+    // Currently not cached.
+    COULD_OPTIMIZE // write query that directly loads page meta by post id, one single request.
+    readOnlyTransaction { tx =>
+      val post = tx.loadPost(postId) getOrElse {
+        return None
+      }
+      tx.loadPageMeta(post.pageId)
+    }
+  }
+
 
   private def _removeCachedPathsTo(pageId: PageId) {
     // Remove cache entries from id to path,

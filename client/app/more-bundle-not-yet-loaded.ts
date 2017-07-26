@@ -61,6 +61,13 @@ export function openDeletePostDialog(post: Post) {
 }
 
 
+export function openLikesDialog(post: Post, voteType: PostVoteType, at) {
+ Server.loadMoreScriptsBundle(() => {
+   debiki2.pagedialogs.openLikesDialog(post, voteType, at);
+ });
+}
+
+
 export function openEditHistoryDialog(postId: number) {
   Server.loadMoreScriptsBundle(() => {
     debiki2.edithistory.getEditHistoryDialog().open(postId);

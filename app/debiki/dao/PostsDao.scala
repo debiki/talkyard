@@ -1354,6 +1354,7 @@ trait PostsDao {
     readWriteTransaction { transaction =>
       val page = PageDao(pageId, transaction)
       val voter = transaction.loadTheUser(voterId)
+      SECURITY // minor. Should be if-may-not-see-*post*. And should do a pre-check in VoteController.
       throwIfMayNotSeePage(page, Some(voter))(transaction)
 
       val post = page.parts.thePostByNr(postNr)

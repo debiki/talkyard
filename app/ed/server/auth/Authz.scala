@@ -133,6 +133,7 @@ object Authz {
   }
 
 
+  SECURITY // not important for the moment, but should be a maySeePost also?
   def maySeePage(
     pageMeta: PageMeta,
     user: Option[User],

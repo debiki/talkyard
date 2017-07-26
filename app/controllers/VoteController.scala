@@ -21,7 +21,9 @@ import com.debiki.core._
 import com.debiki.core.Prelude._
 import collection.immutable
 import debiki._
+import debiki.ReactJson.JsUser
 import debiki.DebikiHttp._
+import ed.server.auth.Authz
 import ed.server.http._
 import play.api._
 import play.api.libs.json._
@@ -92,5 +94,30 @@ object VoteController extends mvc.Controller {
     OkSafeJson(json)
   }
 
+
+  def loadVoters(postId: PostId, voteType: Int): Action[Unit] = GetAction { request =>
+    import request.{dao, requester}
+
+    val pageMeta: PageMeta = dao.getThePageMetaForPostId(postId)
+    val categoriesRootLast = dao.loadAncestorCategoriesRootLast(pageMeta.categoryId)
+
+    throwNoUnless(Authz.maySeePage(
+      pageMeta, requester,
+      dao.getGroupIds(request.theUser),
+      dao.getAnyPrivateGroupTalkMembers(pageMeta),
+      categoriesRootLast,
+      permissions = dao.getPermsOnPages(categoriesRootLast)),
+      "EdE2QVBF06")
+
+    val theVoteType = PostVoteType.fromInt(voteType) getOrElse throwBadArgument("EdE2QTKB40", "voteType")
+    val voters = dao.readOnlyTransaction { tx =>
+      val ids = tx.loadVoterIds(postId, theVoteType)
+      tx.loadUsers(ids)
+    }
+    val json = Json.obj(
+      "numVoters" -> voters.size, // currently all voters always loaded [1WVKPW02]
+      "someVoters" -> JsArray(voters map JsUser))
+    OkSafeJson(json)
+  }
 }
 
