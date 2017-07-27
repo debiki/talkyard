@@ -115,9 +115,9 @@ function $showInlineActionMenu(event) {
     // Find out where to place the relevant form.
     // This must be done when the -bd has been split into -bd-blks.
     var elem = $focusNonText.closest('.dw-p-bd-blk')
-          .dwBugIfEmpty('error DwE6u5962rf3')
+          .dwBu gIfEmpty('error DwE6u5962rf3')
           .next('.dw-i-ts')
-          .dwBugIfEmpty('error DwE17923xstq');
+          .dwBu gIfEmpty('error DwE17923xstq');
 
     if (isTextNode) {
       // Insert a magic token where the mouse was clicked.

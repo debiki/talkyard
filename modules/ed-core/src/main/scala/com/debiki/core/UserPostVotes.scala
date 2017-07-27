@@ -39,7 +39,7 @@ object UserPostVotes {
     for (vote <- votes) {
       require(vote.voterId == theFirstVote.voterId, "DwE0PKF3")
       require(vote.pageId == theFirstVote.pageId, "DwE6PUB4")
-      val bits = vote.voteType match {
+      val bits = vote.voteType match {  // [8FEX1Q4]
         case PostVoteType.Like => 1
         case PostVoteType.Wrong => 2
         case PostVoteType.Bury => 4

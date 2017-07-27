@@ -69,7 +69,7 @@ var MovePostsDialog = createComponent({
         // Within the same page, then scroll to the new location.
         // COULD add Back entry, which navigates back to the former parent or any
         // sibling just above.
-        debiki.internal.showAndHighlightPost($('#post-' + postAfter.nr));
+        debiki.internal.showAndHighlightPost($byId('post-' + postAfter.nr));
       }
       else {
         // Let the user decide him/herself if s/he wants to open a new page.

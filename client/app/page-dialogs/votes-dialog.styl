@@ -1,0 +1,17 @@
+
+.s_VotesD .esCloseCross
+  // Otherwise might overlap the rightmost voter's avatar.
+  padding-bottom: 12px !important;
+
+.s_VotesD_Title
+  // A large margin-right, so some space for the close-dialog X.
+  margin: 4px 50px 13px 10px;
+
+.s_VotesD_Voters
+  clearfix();
+  margin: 0 15px 5px 8px;
+  max-width: 750px;
+  .edAvtr
+    position: static;  // COULD instead remove default position: absolute;
+    margin: 3px;
+

@@ -16,7 +16,6 @@
  */
 
 var d = { i: debiki.internal, u: debiki.v0.util };
-var $ = d.i.$;
 
 
 // ------- Dummy log functions
@@ -73,9 +72,8 @@ d.u.zoomListeners = [];
   var lastWidth = 0;
   var lastHeight = 0;
   function pollZoomFireEvent() {
-    var $window = $(window);
-    var widthNow = $window.width();
-    var heightNow = $window.height();
+    var widthNow = window.innerWidth;
+    var heightNow = window.innerHeight;
     if (lastWidth === widthNow && lastHeight === heightNow)
       return;
 
@@ -85,26 +83,10 @@ d.u.zoomListeners = [];
     for (var i = d.u.zoomListeners.length - 1; i >= 0; --i) {
       d.u.zoomListeners[i]({ type: 'zoomOrResize' });
     }
-  };
+  }
   d.u.zoomListenerHandle_dbg = setInterval(pollZoomFireEvent, 100);
 }());
 
-
-// ------- Bug functions
-
-
-$.fn.dwCheckIs = function(selector, errorCode) {
-  var $ok = this.filter(selector);
-  d.u.die2If(this.length !== $ok.length, errorCode || 'DwE093k2', $ok.length +
-      ' of '+ this.length +' elems is: '+ selector);
-  return this;
-};
-
-
-$.fn.dwBugIfEmpty = function(errorGuid) {
-  d.u.bugIf(!this.length, errorGuid);
-  return this;
-};
 
 
 // vim: fdm=marker et ts=2 sw=2 tw=80 fo=tcqwn list

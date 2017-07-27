@@ -26,8 +26,6 @@
   module debiki2.avatar {
 //------------------------------------------------------------------------------
 
-const SystemUserId = -1; // also ... elsewhere?
-
 const NumAvatarColors = 10;
 const AvatarColorHueDistance = 360 / NumAvatarColors;
 let textAvatarsTaken = {}; // for now [95MFU2]

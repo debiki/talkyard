@@ -229,41 +229,45 @@ export var PostActions = createComponent({
           onClick: this.onCloseClick, title: closeReopenTooltip }, closeReopenTitle);
     }
 
-    var numLikesText;
+    let numLikesText;
     if (post.numLikeVotes) {
-      numLikesText = r.a({ className: 'dw-a dw-vote-count' },
+      numLikesText = r.a({ className: 'dw-a dw-vote-count',
+            onClick: (event) => morebundle.openLikesDialog(post, PostVoteType.Like, event.target) },
           post.numLikeVotes === 1 ? "1 Like" : post.numLikeVotes + " Likes");
     }
 
-    var numWrongsText;
+    let numWrongsText;
     if (post.numWrongVotes) {
-      numWrongsText = r.a({ className: 'dw-a dw-vote-count' },
+      numWrongsText = r.a({ className: 'dw-a dw-vote-count',
+          onClick: (event) => morebundle.openLikesDialog(post, PostVoteType.Disagree, event.target) },
           post.numWrongVotes + " Disagree");
           //post.numWrongVotes === 1 ? "1 Wrong" : post.numWrongVotes + " Wrongs");
     }
 
     // Bury votes aren't downvotes or bad in any way, so don't show them, except for
     // staff, so they can detect misuse.
-    var numBurysText;
+    let numBurysText;
     if (isStaff(me) && post.numBuryVotes) {
-      numBurysText = r.a({ className: 'dw-a dw-vote-count' },
+      numBurysText = r.a({ className: 'dw-a dw-vote-count',
+          onClick: (event) => morebundle.openLikesDialog(post, PostVoteType.Bury, event.target) },
           post.numBuryVotes === 1 ? "1 Bury" : post.numBuryVotes + " Burys");
     }
 
-    var numUnwantedsText;
+    let numUnwantedsText;
     if (post.numUnwantedVotes) {
-      numUnwantedsText = r.a({ className: 'dw-a dw-vote-count' },
+      numUnwantedsText = r.a({ className: 'dw-a dw-vote-count',
+          onClick: (event) => morebundle.openLikesDialog(post, PostVoteType.Unwanted, event.target) },
           post.numUnwantedVotes === 1 ? "1 Unwanted" : post.numUnwantedVotes + " Unwanteds");
     }
 
-    var downvotesDropdown;
-    var likeVoteButton;
+    let downvotesDropdown;
+    let likeVoteButton;
     if (!deletedOrCollapsed && post.isApproved && !isOwnPost) {
-      var myLikeVote = votes.indexOf('VoteLike') !== -1 ? ' dw-my-vote' : '';
-      var myWrongVote = votes.indexOf('VoteWrong') !== -1 ? ' dw-my-vote' : '';
-      var myBuryVote = votes.indexOf('VoteBury') !== -1 ? ' dw-my-vote' : '';
-      var myUnwantedVote = votes.indexOf('VoteUnwanted') !== -1 ? ' dw-my-vote' : '';
-      var myOtherVotes = myWrongVote || myBuryVote || myUnwantedVote ? ' dw-my-vote' : '';
+      const myLikeVote = votes.indexOf('VoteLike') !== -1 ? ' dw-my-vote' : '';
+      const myWrongVote = votes.indexOf('VoteWrong') !== -1 ? ' dw-my-vote' : '';
+      const myBuryVote = votes.indexOf('VoteBury') !== -1 ? ' dw-my-vote' : '';
+      const myUnwantedVote = votes.indexOf('VoteUnwanted') !== -1 ? ' dw-my-vote' : '';
+      const myOtherVotes = myWrongVote || myBuryVote || myUnwantedVote ? ' dw-my-vote' : '';
 
       // Always hide the downvotes inside this dropdown, so one has to click one
       // extra time (to open the dropdown), before one can downvote.
@@ -279,18 +283,18 @@ export var PostActions = createComponent({
 
 
     const mayEdit = store_mayIEditPost(store, post);
-    var editButton = !mayEdit ? null :
+    const editButton = !mayEdit ? null :
         r.a({ className: 'dw-a dw-a-edit icon-edit', title: "Edit",
               onClick: this.onEditClick });
 
-    var link = deletedOrCollapsed ? null :
+    const link = deletedOrCollapsed ? null :
         r.a({ className: 'dw-a dw-a-link icon-link', title: "Link to this post",
               onClick: this.onLinkClick });
 
     // Build a More... dropdown, but if it would have only one single menu item, inline
     // that menu item instead.
-    var flagBtn;
-    var moreDropdown;
+    let flagBtn;
+    let moreDropdown;
     if (me.isLoggedIn) {
       moreDropdown =
         r.span({className: 'dropdown navbar-right', onClick: this.openMoreDropdown},
@@ -302,9 +306,9 @@ export var PostActions = createComponent({
           title: "Report this post" });
     }
 
-    var tagList;
+    let tagList;
     if (post.tags && post.tags.length) {
-      var tags = post.tags.map((label) => {
+      const tags = post.tags.map((label) => {
         return r.li({ key: label }, r.a({ className: 'esTg' }, label));
       });
       tagList = r.ul({ className: 'esPA_Ts' }, tags);
@@ -331,7 +335,7 @@ export var PostActions = createComponent({
 
 
 // some dupl code [6KUW24]
-var MoreVotesDropdownModal = createComponent({
+const MoreVotesDropdownModal = createComponent({
   displayName: 'MoreVotesDropdownModal',
 
   mixins: [StoreListenerMixin],
@@ -511,23 +515,23 @@ var MoreDropdownModal = createComponent({
   },
 
   toggleBranchSideways: function(event) {
-    var post: Post = this.state.post;
+    const post: Post = this.state.post;
     Server.editPostSettings(post.uniqueId, {
       branchSideways: post.branchSideways ? 0 : 100,
-    }, () => {});
+    });
     this.close();
   },
 
   makeButtons: function() {
-    var store: Store = this.state.store;
-    var isFlat = store['isFlat']; // hmm shouldn't place in the store object, oh well
-    var me: Myself = store.me;
-    var post: Post = this.state.post;
-    var isPageBody = post.nr === BodyNr;
+    const store: Store = this.state.store;
+    const isFlat = store['isFlat']; // hmm shouldn't place in the store object, oh well
+    const me: Myself = store.me;
+    const post: Post = this.state.post;
+    const isPageBody = post.nr === BodyNr;
 
-    var moreLinks = [];
-    var isOwnPost = post.authorId === me.id;
-    var isMindMap = store.pageRole === PageRole.MindMap;
+    const moreLinks = [];
+    const isOwnPost = post.authorId === me.id;
+    const isMindMap = store.pageRole === PageRole.MindMap;
 
     // ----- Report
 

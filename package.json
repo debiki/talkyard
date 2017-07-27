@@ -1,7 +1,7 @@
 {
   "author": "Kaj Magnus Lindberg",
   "name": "ed-client",
-  "description": "Javascripts and styles for EffectiveDiscussions",
+  "description": "Javascript and styles for EffectiveDiscussions",
   "version": "0.0.1",
   "homepage": "https://www.effectivediscussions.org",
   "license": "AGPL-3.0",
@@ -23,14 +23,13 @@
     "classnames": "^2.2.5",
     "create-react-class": "^15.6.0",
     "eventemitter2": "^4.1.0",
-    "fibers": "^2.0.0",
     "fileapi": "^2.0.21",
     "jquery": "^2.2.4",
-    "jquery-resizable": "=1.0.3",
+    "jquery-resizable": "=1.0.6",
     "jquery.caret": "^0.3.1",
     "keymaster": "^1.6.2",
-    "markdown-it": "8.2.2",
-    "moment": "^2.15.0",
+    "markdown-it": "8.3.1",
+    "moment": "^2.18.1",
     "react": "^15.6.1",
     "react-bootstrap": "^0.31.0",
     "react-dom": "^15.6.1",
@@ -38,8 +37,7 @@
     "react-router": "3.0.0",
     "react-select": "1.0.0-rc.3",
     "react-transition-group": "1.x",
-    "wdio-dot-reporter": "^0.0.6",
-    "zxcvbn": "^4.4.1"
+    "zxcvbn": "^4.4.2"
   },
   "devDependencies": {
     "@types/assert": "^0.0.31",
@@ -71,7 +69,7 @@
     "sync-request": "^4.0.1",
     "tape": "^4.6.3",
     "typescript": "^2.4.1",
-    "wdio-dot-reporter": "^0.0.6",
+    "wdio-dot-reporter": "^0.0.8",
     "wdio-mocha-framework": "^0.5.10",
     "wdio-sync": "^0.6.14",
     "webdriverio": "^4.8.0"

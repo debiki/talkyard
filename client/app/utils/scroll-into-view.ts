@@ -137,7 +137,7 @@ d.i.calcScrollIntoViewCoords = function(elem, options) {
     return this;
 
   if (!options) options = {};
-  var duration = options.duration || 'slow';
+  const duration = options.duration || 600;
 
   if (options.parent && !_.isNumber(options.parent.length)) {
     options.parent = $(options.parent);
@@ -146,29 +146,10 @@ d.i.calcScrollIntoViewCoords = function(elem, options) {
     options.parent = $('#esPageColumn');
   }
 
-  var coords = d.i.calcScrollIntoViewCoords(this, options);
+  const coords = d.i.calcScrollIntoViewCoords(this, options);
   if (coords.needsToScroll) {
-    options.parent.animate({
-      'scrollTop': coords.desiredParentTop,
-      'scrollLeft': coords.desiredParentLeft
-    }, duration, 'swing').queue(function(next) {
-      // On my Android phone, `animate` sometimes won't scroll
-      // all the way to the desired offset, therefore:
-      if (Modernizr.touchevents && !debiki2.utils.isMouseDetected) {
-        helpMobileScroll(coords.desiredParentLeft, coords.desiredParentTop);
-      }
-      next();
-    });
-  }
-
-  function helpMobileScroll(left, top) {
-    // On my Android phone, calling scrollTop and scrollLeft at the
-    // same time *sometimes* does not work (scrollLeft has no effect).
-    // So call them again after a while — and call scrollLeft first.
-    $('html, body').scrollTop(top).scrollLeft(left);
-    setTimeout(function() {
-      $('html, body').scrollLeft(left).scrollTop(top);
-    }, 250);
+    const elem = options.parent[0];
+    smoothScroll(elem, coords.desiredParentLeft, coords.desiredParentTop);
   }
 
   return this;

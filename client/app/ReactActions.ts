@@ -433,17 +433,17 @@ export function loadAndShowPost(postNr: PostNr, showChildrenToo?: boolean, callb
  * and including X have been loaded. Then scrolls to X.
  */
 export function loadAndScrollToAnyUrlAnchorPost() {
-  var anchorPostNr = anyAnchorPostNr();
+  const anchorPostNr = anyAnchorPostNr();
   if (!anchorPostNr) {
     // No #post-X in the URL.
     return;
   }
-  var $post = debiki.internal.findPost$(anchorPostNr);
-  if (!$post.length) {
+  const postElem = $byId('post-' + anchorPostNr);
+  if (!postElem) {
     loadAndShowPost(anchorPostNr, undefined, () => markAnyNotificationAsSeen(anchorPostNr));
   }
   else {
-    debiki.internal.showAndHighlightPost($post);
+    debiki.internal.showAndHighlightPost(postElem);
     markAnyNotificationAsSeen(anchorPostNr);
   }
 }
@@ -453,8 +453,8 @@ export function anyAnchorPostNr(): number {
   // AngularJS (I think it is) somehow inserts a '/' at the start of the hash. I'd
   // guess it's Angular's router that messes with the hash. I don't want the '/' but
   // don't know how to get rid of it, so simply ignore it.
-  var hashIsPostId = /#post-\d+/.test(location.hash);
-  var hashIsSlashPostId = /#\/post-\d+/.test(location.hash);
+  const hashIsPostId = /#post-\d+/.test(location.hash);
+  const hashIsSlashPostId = /#\/post-\d+/.test(location.hash);
   if (hashIsPostId) return parseInt(location.hash.substr(6, 999));
   if (hashIsSlashPostId) return parseInt(location.hash.substr(7, 999));
   return undefined;
@@ -465,7 +465,8 @@ export function openPagebar() { setPagebarOpen(true); }
 export function closePagebar() { setPagebarOpen(false); }
 
 export function togglePagebarOpen() {
-  setPagebarOpen(!$('html').is('.es-pagebar-open'));
+  const isOpen = Bliss('html').matches('.es-pagebar-open');
+  setPagebarOpen(!isOpen);
 }
 
 export function setPagebarOpen(open: boolean) {
@@ -480,7 +481,8 @@ export function openWatchbar() { setWatchbarOpen(true); }
 export function closeWatchbar() { setWatchbarOpen(false); }
 
 export function toggleWatchbarOpen() {
-  setWatchbarOpen(!$('html').is('.es-watchbar-open'));
+  const isOpen = Bliss('html').matches('.es-watchbar-open');
+  setWatchbarOpen(!isOpen);
 }
 
 export function setWatchbarOpen(open: boolean) {

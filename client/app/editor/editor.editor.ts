@@ -25,7 +25,7 @@
 //------------------------------------------------------------------------------
 
 import scrollIntoViewInPageColumn = debiki2.utils.scrollIntoViewInPageColumn;
-var d = { i: debiki.internal, u: debiki.v0.util };
+var d = { i: debiki.internal };
 var r = React.DOM;
 var reactCreateFactory = React['createFactory'];
 var ReactBootstrap: any = window['ReactBootstrap'];
@@ -201,7 +201,7 @@ export var Editor = createComponent({
     dieIf(files.length != 1, 'EsE5GPY82');
     FileAPI.upload({   // a bit dupl code [2UK503]
       url: '/-/upload-public-file',
-      headers: { 'X-XSRF-TOKEN': window['$'].cookie('XSRF-TOKEN') },
+      headers: { 'X-XSRF-TOKEN': getSetCookie('XSRF-TOKEN') },
       files: { file: files },
       // This is per file.
       fileprogress: (event, file, xhr, options) => {
@@ -440,7 +440,7 @@ export var Editor = createComponent({
   },
 
   scrollPostIntoView: function(postNr) {
-    debiki.internal.showAndHighlightPost($('#post-' + postNr), {
+    debiki.internal.showAndHighlightPost($byId('post-' + postNr), {
       marginTop: reactelements.getTopbarHeightInclShadow(),
       // Add + X so one sees the Reply button and a bit below the post.
       marginBottom: this.refs.editor.clientHeight + 90,
@@ -1219,7 +1219,7 @@ function makeDefaultReplyText(store: Store, postIds: PostId[]): string {
       postIds.length === 1 && postIds[0] === BodyNr) {
     const origPost: Post = store.postsByNr[BodyNr];
     if (!origPost) return '';
-    const elemsInclText: HTMLElement[] = $.parseHTML(origPost.sanitizedHtml);
+    const elemsInclText: HTMLCollection = $h.parseHtml(origPost.sanitizedHtml);
     // Remove top level text elems (only whitespace and newlines?), and anything after any <hr>
     // — so it's possible to add background info, without including it in the actual instructions.
     let afterHr = false;

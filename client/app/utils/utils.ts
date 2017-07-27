@@ -80,7 +80,7 @@ export function removeFromLocalStorage(key) {
 // From here: http://stackoverflow.com/a/7616484/694469
 // which copied it from this blog post:
 //   http://werxltd.com/wp/2010/05/13/javascript-implementation-of-javas-string-hashcode-method/
-// Copyright? License? Seems the author didn't think about that, and want people to use it.
+// License: MIT apparently, see COPYING.txt.
 export function hashStringToNumber(string: string): number {  // [4KFBW2]
   var hash = 0, i, chr, len;
   if (string.length == 0) return hash;

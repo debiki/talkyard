@@ -88,7 +88,7 @@ var PageToolsDialog = createComponent({
     var pinPageButton;
     var pinPageDialog;
     if (store_canPinPage(store)) {
-      pinPageDialog = PinPageDialog($.extend({ ref: 'pinPageDialog' }, childProps));
+      pinPageDialog = PinPageDialog(_.assign({ ref: 'pinPageDialog' }, childProps));
       pinPageButton =
           Button({ onClick: () => this.refs.pinPageDialog.open() },
             store.pinWhere ? "Edit Pin" : "Pin Topic");

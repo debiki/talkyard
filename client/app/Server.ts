@@ -25,21 +25,15 @@
 // Not important to fix right now — everything works fine anyway.
 
 //------------------------------------------------------------------------------
-   module debiki2.Server {
+   namespace debiki2.Server {
 //------------------------------------------------------------------------------
 
-var d: any = { i: debiki.internal, u: debiki.v0.util };
-var $: JQueryStatic = d.i.$;
+const d: any = { i: debiki.internal, u: debiki.v0.util };
 
 // In embedded comments <iframes>, we cannot use relative paths.
-var origin = d.i.serverOrigin;
+const origin = d.i.serverOrigin;
 
-enum HttpStatusCode {
-  Forbidden = 403,
-}
-
-var BadNameOrPasswordErrorCode = 'EsE403BPWD';
-declare var theStore: Store; // for assertions only
+const BadNameOrPasswordErrorCode = 'EsE403BPWD';
 
 
 interface OngoingRequest {
@@ -49,28 +43,94 @@ interface OngoingRequest {
 interface RequestData {
   data: any;
   success: (response: any) => void;
-  error?: (jqXhr: any, textStatus?: string, errorThrown?: string) => any;
+  error?: (xhr: XMLHttpRequest) => any;
   showLoadingOverlay?: boolean;
 }
 
 
 function postJson(urlPath: string, requestData: RequestData) {
   let url = appendE2eAndForbiddenPassword(origin + urlPath);
-  d.u.postJson({
-    showLoadingOverlay: requestData.showLoadingOverlay,
-    url: url,
-    data: requestData.data,
-    success: requestData.success,
-    error: (jqXhr: any, textStatus: string, errorThrown: string) => {
-      if (requestData.error) {
-        var perhapsIgnoreError = requestData.error(jqXhr, textStatus, errorThrown);
-        if (perhapsIgnoreError === IgnoreThisError)
-          return;
-      }
-      console.error('Error calling ' + urlPath + ': ' + JSON.stringify(jqXhr));
-      pagedialogs.getServerErrorDialog().open(jqXhr);
+  if (requestData.showLoadingOverlay !== false) {
+    showLoadingOverlay();
+  }
+
+  let timeoutHandle = setTimeout(function() {
+    showServerJustStartedMessage();
+    timeoutHandle = setTimeout(showErrorIfNotComplete, 23 * 1000);
+  }, 7 * 1000);
+
+  function removeTimeoutAndOverlay() {
+    clearTimeout(timeoutHandle);
+    if (requestData.showLoadingOverlay !== false) {
+      removeLoadingOverlay();
+    }
+  }
+
+  Bliss.fetch(url, {
+    method: 'POST',
+    data: JSON.stringify(requestData.data),
+    headers: {
+      'Content-Type': 'application/json; charset=utf-8',
+      'X-XSRF-TOKEN': getSetCookie('XSRF-TOKEN'),
+    }
+  }).then(xhr => {
+    removeTimeoutAndOverlay();
+    // Remove any AngularJS safe json prefix. [5LKW02D4]
+    let response = xhr.response.replace(/^\)]}',\n/, '');
+    response = response ? JSON.parse(response) : null;
+    requestData.success(response);
+  }).catch(errorObj => {
+    removeTimeoutAndOverlay();
+    const errorAsJson = JSON.stringify(errorObj);
+    const details = errorObj.xhr ? errorObj.xhr.responseText : errorObj.stack;
+    // error: (jqXhr: any, textStatus: string, errorThrown: string) => {
+    if (requestData.error) {
+      const perhapsIgnoreError = requestData.error(errorObj.xhr);
+      if (perhapsIgnoreError === IgnoreThisError)
+        return;
+    }
+    console.error(`Error calling ${urlPath}: ${errorAsJson}, details: ${details}`);
+    if (errorObj.xhr) {
+      pagedialogs.getServerErrorDialog().open(errorObj.xhr);
+    }
+    else {
+      pagedialogs.getServerErrorDialog().openForBrowserError(
+          errorObj.stack || 'Unknown error [EdEUNK1]');
     }
   });
+}
+
+
+function showLoadingOverlay() {
+  document.body.appendChild(
+      $h.parseHtml('<div id="theLoadingOverlay"><div class="icon-loading"></div></div>')[0]);
+}
+
+
+function showServerJustStartedMessage() {
+  const overlayElem = $byId('theLoadingOverlay');
+  if (!overlayElem) return;
+  const messageElem = $h.parseHtml('<div id="theServerJustStarted"></div>')[0];
+  messageElem.textContent = "Sorry that this takes long. Perhaps the server was " +
+      "just started, and is slow right now.";
+  $h.addClasses(overlayElem, 'esLoadingSlow');
+  overlayElem.appendChild(messageElem);
+}
+
+
+function removeLoadingOverlay() {
+  $byId('theLoadingOverlay').remove();
+}
+
+
+function showErrorIfNotComplete() {
+  const stillLoading = !!$byId('theLoadingOverlay');
+  if (stillLoading) {
+    // Remove the spinner before showing the dialog.
+    Bliss('#theLoadingOverlay .icon-loading').remove();
+    alert("Error: Server too slow [EsE5YK0W24]");
+    removeLoadingOverlay();
+  }
 }
 
 
@@ -79,7 +139,7 @@ function postJsonSuccess(urlPath, success: (response: any) => void, data: any, e
         options?: { showLoadingOverlay?: boolean }) {
   // Make postJsonSuccess(..., error, data) work:
   if (!data || _.isFunction(data)) {
-    var tmp = data;
+    const tmp = data;
     data = error;
     error = tmp;
   }
@@ -95,8 +155,8 @@ function postJsonSuccess(urlPath, success: (response: any) => void, data: any, e
 
 function get(uri: string, options, success?: (response, xhr?: JQueryXHR) => void,
       error?: () => void): OngoingRequest {
-  var dataType;
-  var headers;
+  let dataType;
+  let headers;
   if (_.isFunction(options)) {
     error = <any> success;
     success = <any> options;
@@ -108,36 +168,50 @@ function get(uri: string, options, success?: (response, xhr?: JQueryXHR) => void
     headers = options.headers;
   }
 
-  var xhr = $.ajax({
-    url: origin + uri,
-    type: 'GET',
-    dataType: dataType,
+  const promiseWithXhr = <any> Bliss.fetch(origin + uri, {  // hack [7FKRPQ2T0]
+    method: 'GET',
     headers: headers,
-    success: function(response, dummy, xhr) {
-      success(response, xhr);
-    },
-    error: function(jqXhr: any, textStatus: string, errorThrown: string) {
-      if (options.suppressErrorDialog) {
-        console.log('As expected, error when calling ' + uri + ': ' + JSON.stringify(jqXhr));
+    timeout: options.timeout,
+  });
+  promiseWithXhr.then(xhr => {
+    let response = xhr.response;
+    if (dataType !== 'html') {
+      // Then it's json, what else could it be? Remove any AngularJS safe json prefix. [5LKW02D4]
+      response = xhr.response.replace(/^\)]}',\n/, '');
+      response = JSON.parse(response);
+    }
+    success(response, xhr);
+  }).catch(errorObj => {
+    const errorAsJson = JSON.stringify(errorObj);
+    const details = errorObj.xhr ? errorObj.xhr.responseText : errorObj.stack;
+    if (options.suppressErrorDialog) {
+      console.log(`As expected, error calling ${uri}: ${errorAsJson}, details: ${details}`);
+    }
+    else {
+      console.error(`Error calling ${uri}: ${errorAsJson}, details: ${details}`);
+      if (errorObj.xhr) {
+        pagedialogs.getServerErrorDialog().open(errorObj.xhr);
       }
       else {
-        console.error('Error calling ' + uri + ': ' + JSON.stringify(jqXhr));
-        pagedialogs.getServerErrorDialog().open(jqXhr);
+        pagedialogs.getServerErrorDialog().openForBrowserError(
+          errorObj.stack || 'Unknown error [EdEUNK2]');
       }
-      !error || error();
-    },
+    }
+    error && error();
   });
 
   return {
-    abort: function() { xhr.abort(); }
+    abort: function() {
+      promiseWithXhr.xhr.abort();
+    }
   }
 }
 
 
 function appendE2eAndForbiddenPassword(url: string) {
-  var newUrl = url;
-  var e2eTestPassword = anyE2eTestPassword();
-  var forbiddenPassword = anyForbiddenPassword();
+  let newUrl = url;
+  const e2eTestPassword = anyE2eTestPassword();
+  const forbiddenPassword = anyForbiddenPassword();
   if (e2eTestPassword || forbiddenPassword) {
     if (newUrl.indexOf('?') === -1) newUrl += '?';
     if (e2eTestPassword) newUrl += '&e2eTestPassword=' + e2eTestPassword;
@@ -147,9 +221,9 @@ function appendE2eAndForbiddenPassword(url: string) {
 }
 
 
-var loadEditorScriptsStatus;
-var slowBundleStatus;
-var staffBundleStatus;
+let editorScriptsPromise: Promise<any>;
+let moreScriptsPromise: Promise<any>;
+let staffScriptsPromise: Promise<any>;
 
 
 // Won't call callback() until a bit later — so if you call React's setState(..), the
@@ -157,56 +231,58 @@ var staffBundleStatus;
 //
 export function loadEditorAndMoreBundles(callback?) {
   setTimeout(function() {
-    loadEditorAndMoreBundlesGetDeferred().done(callback || _.noop)
+    loadEditorAndMoreBundlesGetDeferred().then(callback || _.noop)
   }, 0);
 }
 
 
 export function loadMoreScriptsBundle(callback) {
-  if (slowBundleStatus) {
+  if (moreScriptsPromise) {
     // Never call callback() immediately, because it's easier to write caller source code,
     // if one knows that callback() will never be invoked immediately.
-    setTimeout(() => slowBundleStatus.done(callback), 0);
+    setTimeout(() => moreScriptsPromise.then(callback), 0);
     return;
   }
-  slowBundleStatus = $.Deferred();
-  window['yepnope']({
-    both: [d.i.assetUrlPrefix + 'more-bundle.' + d.i.minMaxJs],
-    complete: () => {
-      slowBundleStatus.resolve();
-      setTimeout(callback, 0);
-    }
+  moreScriptsPromise = new Promise(function(resolve) {
+    window['yepnope']({
+      both: [d.i.assetUrlPrefix + 'more-bundle.' + d.i.minMaxJs],
+      complete: () => {
+        resolve();
+        setTimeout(callback, 0);
+      }
+    });
   });
-  return slowBundleStatus;
+  return moreScriptsPromise;
 }
 
 
 export function loadStaffScriptsBundle(callback) {
-  if (staffBundleStatus) {
+  if (staffScriptsPromise) {
     // Never call callback() immediately, because it's easier to write caller source code,
     // if one knows that callback() will never be invoked immediately.
-    setTimeout(() => staffBundleStatus.done(callback), 0);
+    setTimeout(() => staffScriptsPromise.then(callback), 0);
     return;
   }
-  staffBundleStatus = $.Deferred();
-  // The staff scripts bundle requires both more-bundle.js and editor-bundle.js (to render
-  // previews of CommonMark comments [7PKEW24]). This'll load them both.
-  loadEditorAndMoreBundles(() => {
-    window['yepnope']({
-      both: [d.i.assetUrlPrefix + 'staff-bundle.' + d.i.minMaxJs],
-      complete: () => {
-        staffBundleStatus.resolve();
-        callback();  // setTimeout(..., 0) not needed — done by loadMoreScriptsBundle() already
-      }
+  staffScriptsPromise = new Promise(function(resolve) {
+    // The staff scripts bundle requires both more-bundle.js and editor-bundle.js (to render
+    // previews of CommonMark comments [7PKEW24]). This'll load them both.
+    loadEditorAndMoreBundles(() => {
+      window['yepnope']({
+        both: [d.i.assetUrlPrefix + 'staff-bundle.' + d.i.minMaxJs],
+        complete: () => {
+          resolve();
+          callback();  // setTimeout(..., 0) not needed — done by loadMoreScriptsBundle() already
+        }
+      });
     });
   });
-  return staffBundleStatus;
+  return staffScriptsPromise;
 }
 
 
-export function loadEditorAndMoreBundlesGetDeferred() {
-  if (loadEditorScriptsStatus)
-    return loadEditorScriptsStatus;
+export function loadEditorAndMoreBundlesGetDeferred(): Promise<void> {
+  if (editorScriptsPromise)
+    return editorScriptsPromise;
 
   // Now we'll load FileAPI, and according to the docs it needs to know where it
   // can find its implementation details files (Flash and Html5 stuff depending on
@@ -216,27 +292,27 @@ export function loadEditorAndMoreBundlesGetDeferred() {
     debug: debiki.isDev,
   };
 
-  loadEditorScriptsStatus = $.Deferred();
-  // The editor scripts bundle requires more-bundle.js.
-  loadMoreScriptsBundle(() => {
-    window['yepnope']({
-      both: [d.i.assetUrlPrefix + 'editor-bundle.' + d.i.minMaxJs],
-      complete: () => {
-        loadEditorScriptsStatus.resolve();
-      }
+  editorScriptsPromise = new Promise(function(resolve) {
+    // The editor scripts bundle requires more-bundle.js.
+    loadMoreScriptsBundle(() => {
+      window['yepnope']({
+        both: [d.i.assetUrlPrefix + 'editor-bundle.' + d.i.minMaxJs],
+        complete: () => {
+          resolve();
+        }
+      });
     });
   });
-  return loadEditorScriptsStatus;
+  return editorScriptsPromise;
 }
 
 
 export function createSite(emailAddress: string, localHostname: string,
     anyEmbeddingSiteAddress: string, organizationName: string,
     pricePlan: PricePlan, doneCallback: (string) => void) {
-  var url = '/-/create-site';
-  var isTestSite = window.location.search.indexOf('testSiteOkDelete=true') !== -1 ||
+  const isTestSite = window.location.search.indexOf('testSiteOkDelete=true') !== -1 ||
     window.location.pathname === '/-/create-test-site';
-  postJson(url, {
+  postJson('/-/create-site', {
     data: {
       acceptTermsAndPrivacy: true,
       emailAddress: emailAddress,
@@ -296,7 +372,7 @@ export function loadSpecialContent(rootPageId: string, contentId: string,
 
 
 export function saveSpecialContent(specialContent: SpecialContent, success: () => void) {
-  var data: any = {
+  const data: any = {
     rootPageId: specialContent.rootPageId,
     contentId: specialContent.contentId,
     useDefaultText: specialContent.anyCustomText === specialContent.defaultText
@@ -322,61 +398,6 @@ export function completeReviewTask(id: number, revisionNr: number, action: Revie
   });
 }
 
-  /*
-export function loadRecentPosts(doneCallback: (posts: PostToModerate[]) => void) {
-  $.get(origin + '/-/list-recent-posts')
-    .done(response => {
-      doneCallback(response.actions);
-    })
-    .fail((x, y, z) => {
-      console.error('Error loading recent posts: ' + JSON.stringify([x, y, z]));
-      doneCallback(null);
-    });
-} */
-
-
-// ---- Currently not in use, but perhaps soon again ----------------------
-
-export function approvePost(post: PostToModerate, doneCallback: () => void) {
-  doSomethingWithPost(post, '/-/approve', doneCallback);
-}
-
-export function hideNewPostSendPm(post: PostToModerate, doneCallback: () => void) {
-  doSomethingWithPost(post, '/-/hide-new-send-pm', doneCallback);
-}
-
-export function hideFlaggedPostSendPm(post: PostToModerate, doneCallback: () => void) {
-  doSomethingWithPost(post, '/-/hide-flagged-send-pm', doneCallback);
-}
-
-// This is for moderators. Could merge with /-/delete-post, open to anyone?
-export function deletePost(post: PostToModerate, doneCallback: () => void) {
-  doSomethingWithPost(post, '/-/delete', doneCallback);
-}
-
-export function deleteFlaggedPost(post: PostToModerate, doneCallback: () => void) {
-  doSomethingWithPost(post, '/-/delete-flagged', doneCallback);
-}
-
-export function clearFlags(post: PostToModerate, doneCallback: () => void) {
-  doSomethingWithPost(post, '/-/clear-flags', doneCallback);
-}
-
-export function rejectEdits(post: PostToModerate, doneCallback: () => void) {
-  doSomethingWithPost(post, '/-/reject-edits', doneCallback);
-}
-
-
-function doSomethingWithPost(post: PostToModerate, actionUrl: string, success: () => void) {
-  die('EdE7KWWU0');
-  postJsonSuccess(actionUrl, success, {
-    pageId: post.pageId,
-    postId: post.id,
-  });
-}
-
-// ---- /END currently not in use, but perhaps soon again ----------------------
-
 
 export function createOauthUser(data, success: (response) => void,
       error: (failedRequest: HttpRequest) => ErrorPolicy) {
@@ -392,8 +413,8 @@ export function createPasswordUser(data, success: (response) => void,
 
 export function loginWithPassword(emailOrUsername: string, password: string, success: () => void,
     denied: () => void) {
-  function onError(jqXhr: any, textStatus?: string, errorThrown?: string) {
-    if (jqXhr.responseText.indexOf(BadNameOrPasswordErrorCode) !== -1) {
+  function onError(xhr?: XMLHttpRequest) {
+    if (xhr && xhr.responseText.indexOf(BadNameOrPasswordErrorCode) >= 0) {
       denied();
       return IgnoreThisError;
     }
@@ -473,15 +494,10 @@ export function loadUserAnyDetails(userIdOrUsername: UserId | string,
 }
 
 
-export function listCompleteUsers(whichUsers,
-        doneCallback: (users: MemberInclDetails[]) => void) {
-  $.get(origin + '/-/list-complete-users?whichUsers=' + whichUsers)
-    .done(response => {
-      doneCallback(response.users);
-    })
-    .fail((x, y, z) => {
-      console.error('Error loading users: ' + JSON.stringify([x, y, z]));
-    });
+export function listCompleteUsers(whichUsers, success: (users: MemberInclDetails[]) => void) {
+  get('/-/list-complete-users?whichUsers=' + whichUsers, response => {
+    success(response.users);
+  });
 }
 
 
@@ -574,7 +590,7 @@ export function lockThreatLevel(userId: UserId, threatLevel: ThreatLevel, succes
 
 export function savePageNoftLevel(newNotfLevel) {
   postJsonSuccess('/-/set-page-notf-level', () => {
-    var me: Myself = ReactStore.allData().me;
+    const me: Myself = ReactStore.allData().me;
     me.rolePageSettings = { notfLevel: newNotfLevel };  // [redux] modifying state in place
     ReactActions.patchTheStore({ me: me });
   }, {
@@ -591,7 +607,7 @@ export function loadMyself(callback: (user: any) => void) {
 
 export function loadNotifications(userId: UserId, upToWhenMs: number,
       success: (notfs: Notification[]) => void, error: () => void) {
-  var query = '?userId=' + userId + '&upToWhenMs=' + upToWhenMs;
+  const query = '?userId=' + userId + '&upToWhenMs=' + upToWhenMs;
   get('/-/load-notifications' + query, success, error);
 }
 
@@ -603,8 +619,8 @@ export function markNotificationAsSeen(notfId: number, success?: () => void, err
 
 export function setTagNotfLevel(tagLabel: TagLabel, newNotfLevel: NotfLevel) {
   postJsonSuccess('/-/set-tag-notf-level', () => {
-    var store: Store = ReactStore.allData();
-    var newLevels = _.clone(store.tagsStuff.myTagNotfLevels);
+    const store: Store = ReactStore.allData();
+    const newLevels = _.clone(store.tagsStuff.myTagNotfLevels);
     newLevels[tagLabel] = newNotfLevel;
     ReactActions.patchTheStore({
       tagsStuff: { myTagNotfLevels: newLevels }
@@ -642,14 +658,8 @@ export function unblockGuest(postId: number, success: () => void) {
 }
 
 
-export function loadAuthorBlockedInfo(postId: number, whenDone: (response: Blocks) => void) {
-  $.get(origin + '/-/load-author-blocks?postId=' + postId)
-    .done((response: any) => {
-      whenDone(response);
-    })
-    .fail((x, y, z) => {
-      console.error('Error loading is-blocked info: ' + JSON.stringify([x, y, z]));
-    });
+export function loadAuthorBlockedInfo(postId: number, success: (response: Blocks) => void) {
+  get('/-/load-author-blocks?postId=' + postId, success);
 }
 
 
@@ -663,7 +673,7 @@ export function createForum(title: string, folder: string, success: (urlPath: st
 
 export function loadForumCategoriesTopics(forumPageId: string, topicFilter: string,
       success: (categories: Category[]) => void) {
-  var url = '/-/list-categories-topics?forumId=' + forumPageId;
+  let url = '/-/list-categories-topics?forumId=' + forumPageId;
   if (topicFilter) {
     url += '&filter=' + topicFilter;
   }
@@ -673,7 +683,7 @@ export function loadForumCategoriesTopics(forumPageId: string, topicFilter: stri
 
 export function loadForumTopics(categoryId: string, orderOffset: OrderOffset,
       doneCallback: (topics: Topic[]) => void) {
-  var url = '/-/list-topics?categoryId=' + categoryId + '&' +
+  const url = '/-/list-topics?categoryId=' + categoryId + '&' +
       ServerApi.makeForumTopicsQueryParams(orderOffset);
   get(url, (response: any) => {
     ReactActions.patchTheStore({ usersBrief: response.users });
@@ -684,7 +694,7 @@ export function loadForumTopics(categoryId: string, orderOffset: OrderOffset,
 
 export function loadTopicsByUser(userId: UserId,
         doneCallback: (topics: Topic[]) => void) {
-  var url = `/-/list-topics-by-user?userId=${userId}`;
+  const url = `/-/list-topics-by-user?userId=${userId}`;
   get(url, (response: any) => {
     ReactActions.patchTheStore({ usersBrief: response.users });
     doneCallback(response.topics);
@@ -693,7 +703,7 @@ export function loadTopicsByUser(userId: UserId,
 
 
 export function listAllUsernames(prefix: string, doneCallback: (usernames: BriefUser) => void) {
-  var url = '/-/list-all-users?usernamePrefix='+ prefix;
+  const url = '/-/list-all-users?usernamePrefix='+ prefix;
   get(url, doneCallback);
 }
 
@@ -715,7 +725,7 @@ export function loadDraftAndGuidelines(writingWhat: WritingWhat, categoryId: num
     success(null);
     return;
   }
-  var categoryParam = categoryId ? '&categoryId=' + categoryId : '';
+  const categoryParam = categoryId ? '&categoryId=' + categoryId : '';
   get('/-/load-draft-and-guidelines?writingWhat=' + writingWhat + categoryParam +
        '&pageRole=' + pageRole, (response) => {
     success(response.guidelinesSafeHtml);
@@ -732,30 +742,35 @@ export function loadCurrentPostText(postNr: PostNr,
 }
 
 
-var cachedOneboxHtml = {};
+const cachedOneboxHtml = {};
 
 export function loadOneboxSafeHtml(url: string, success: (safeHtml: string) => void) {
-  var cachedHtml = cachedOneboxHtml[url];
+  const cachedHtml = cachedOneboxHtml[url];
   if (cachedHtml) {
     setTimeout(() => success(cachedHtml), 0);
     return;
   }
-  var encodedUrl = encodeURIComponent(url);
-  $.get(origin + '/-/onebox?url=' + encodedUrl, { dataType: 'html' })
-    .done((response: string) => {
-      cachedOneboxHtml[url] = response;
-      success(response);
-    })
-    .fail((x, y, z) => {
-      console.debug('Error loading onebox: ' + JSON.stringify([x, y, z]));
-      // Pass null to tell the editor to show no onebox (it should show the link instead).
-      success(null);
-    });
+  const encodedUrl = encodeURIComponent(url);
+  get('/-/onebox?url=' + encodedUrl, { dataType: 'html' }, (response: string) => {
+    cachedOneboxHtml[url] = response;
+    success(response);
+  }, function() {
+    // Pass null to tell the editor to show no onebox (it should show the link instead).
+    success(null);
+  });
 }
 
 
 export function saveVote(data, success: (updatedPost) => void) {
   postJsonSuccess('/-/vote', success, data);
+}
+
+
+export function loadVoters(postId: PostId,
+      doneCallback: (numVoters: number, someVoters: BriefUser[]) => void) {
+ get('/-/load-voters?postId='+ postId + '&voteType=' + PostVoteType.Like, (response: any) => {
+   doneCallback(response.numVoters, response.someVoters);
+ });
 }
 
 
@@ -774,18 +789,15 @@ export function saveEdits(postNr: number, text: string, doneCallback: () => void
 }
 
 
-export function savePageTitleAndSettings(newTitle: string, settings: any, success: (response: any) => void,
+export function savePageTitleAndSettings(newTitle: string, settings, success: (response: any) => void,
         error: () => void) {
-  var data = $.extend(settings, {
-    pageId: d.i.pageId,
-    newTitle: newTitle
-  });
+  const data = { ...settings, pageId: d.i.pageId, newTitle: newTitle };
   postJson('/-/edit-title-save-settings', {
     data: data,
     success: (response) => {
       success(response);
       if (response.newUrlPath && window.history.replaceState) {
-        var newPath = response.newUrlPath + location.search + location.hash;
+        const newPath = response.newUrlPath + location.search + location.hash;
         window.history.replaceState({}, null, newPath);
       }
     },
@@ -897,52 +909,53 @@ export function startPrivateGroupTalk(title: string, text: string, pageRole: Pag
 }
 
 
-export function submitCustomFormAsJsonReply(formInputNameValues, success?: () => void) {
+export function submitCustomFormAsJsonReply(formData: FormData, success?: () => void) {
+  die('unimpl [EdE2WKUGAA]'); /*
   postJsonSuccess('/-/submit-custom-form-as-json-reply', success, {
     pageId: d.i.pageId,
     formInputs: formInputNameValues,
-  });
+  }); */
 }
 
 
-function getInputValueOrDie(inpName: string, formInputNameValues): string {
+function getInputValueOrDie(inpName: string, formData: FormData): string {
   let concatenatedValues = null;
-  _.each(formInputNameValues, (nameValue: any) => {
-    if (nameValue.name === inpName) {
-      let value = nameValue.value.trim();
-      value = value.replace(/\\n/g, '\n');
-      concatenatedValues = (concatenatedValues || '') + value;
-    }
-  });
+  const values: FormDataEntryValue[] = formData.getAll(inpName);
+  for (let i = 0; i < values.length; ++i) {
+    const valueUntrimmed = values[i];
+    let value = valueUntrimmed.toString().trim();
+    value = value.replace(/\\n/g, '\n');
+    concatenatedValues = (concatenatedValues || '') + value;
+  }
   dieIf(concatenatedValues === null, `Input missing: ${inpName} [EdE4WKFE02]`);
   return concatenatedValues.trim();
 }
 
 
-export function submitCustomFormAsNewTopic(formInputNameValues) {
+export function submitCustomFormAsNewTopic(formData: FormData) {
+  die('untested [EdE2WKP05YU10]');
   function goToNewPage(response) {
     location.assign(linkToPageId(response.newPageId));
   }
   postJsonSuccess('/-/submit-custom-form-as-new-topic', goToNewPage, {
-    newTopicTitle: getInputValueOrDie('title', formInputNameValues),
-    newTopicBody: getInputValueOrDie('body', formInputNameValues),
-    pageTypeId: getInputValueOrDie('pageTypeId', formInputNameValues),
-    categorySlug: getInputValueOrDie('categorySlug', formInputNameValues),
+    newTopicTitle: getInputValueOrDie('title', formData),
+    newTopicBody: getInputValueOrDie('body', formData),
+    pageTypeId: getInputValueOrDie('pageTypeId', formData),
+    categorySlug: getInputValueOrDie('categorySlug', formData),
   });
 }
 
 
-export function submitUsabilityTestingRequest(formInputNameValues) {  // [plugin]
-  const nextUrl = getInputValueOrDie('nextUrl', formInputNameValues);
-  const categorySlug = getInputValueOrDie('categorySlug', formInputNameValues);
+export function submitUsabilityTestingRequest(formData: FormData) {  // [plugin]
+  const nextUrl = getInputValueOrDie('nextUrl', formData);
   function goToNewPage(response) {
     location.assign(nextUrl);
   }
   postJsonSuccess('/-/submit-usability-testing-form', goToNewPage, {
-    websiteAddress: getInputValueOrDie('websiteAddress', formInputNameValues),
-    instructionsToTester: getInputValueOrDie('instructionsToTester', formInputNameValues),
-    pageTypeId: getInputValueOrDie('pageTypeId', formInputNameValues),
-    categorySlug: categorySlug,
+    websiteAddress: getInputValueOrDie('websiteAddress', formData),
+    instructionsToTester: getInputValueOrDie('instructionsToTester', formData),
+    pageTypeId: getInputValueOrDie('pageTypeId', formData),
+    categorySlug: getInputValueOrDie('categorySlug', formData),
   });
 }
 
@@ -952,8 +965,7 @@ export function loadPostByNr(pageId: PageId, postNr: PostNr, success: (patch: St
 }
 
 
-export function loadPostsByAuthor(authorId: UserId, success: (response) => void,
-    error?: () => void) {
+export function loadPostsByAuthor(authorId: UserId, success: (response) => void) {
   get(`/-/list-posts?authorId=${authorId}`, success);
 }
 
@@ -986,8 +998,8 @@ export function deletePostInPage(postNr: number, repliesToo: boolean,
 }
 
 
-export function editPostSettings(postId: PostId, settings: PostSettings, success: () => void) {
-  var data = _.assign({ postId: postId }, settings);
+export function editPostSettings(postId: PostId, settings: PostSettings) {
+  const data = _.assign({ postId: postId }, settings);
   postJsonSuccess('/-/edit-post-settings', ReactActions.patchTheStore, data);
 }
 
@@ -1032,7 +1044,7 @@ export function movePost(postId: PostId, newHost: SiteId, newPageId: PageId,
       newParentNr: PostNr, success: (post: Post) => void) {
   postJsonSuccess('/-/move-post', (patch: StorePatch) => {
     ReactActions.patchTheStore(patch);
-    var post = _.values(patch.postsByPageId)[0][0];
+    const post = _.values(patch.postsByPageId)[0][0];
     dieIf(!post, 'EsE7YKGW2');
     success(post);
   }, {
@@ -1146,9 +1158,9 @@ export function trackReadingProgress(lastViewedPostNr: PostNr, secondsReading: n
       // 1. Don't call variable `sendBeacon`, that results in an invalid-invokation error.
       // 2. sendBeacon() apparently always posts text/plain;charset=UTF-8.
       // 3. There's no way to add a xsrf header — so include a xsrf token in the request body.
-      let xsrfTokenLine = (<any> $).cookie('XSRF-TOKEN') + '\n';  // [7GKW20TD]
+      let xsrfTokenLine = getSetCookie('XSRF-TOKEN') + '\n';  // [7GKW20TD]
       let json = JSON.stringify(data);
-      let wasQueued = (<any> navigator).sendBeacon(url + '-text', xsrfTokenLine + json);
+      (<any> navigator).sendBeacon(url + '-text', xsrfTokenLine + json);
     }
   }
   else {
@@ -1250,7 +1262,7 @@ export function updateSites(sites: SASite[]) {
 }
 
 
-var pendingErrors = [];
+let pendingErrors = [];
 
 export function logError(errorMessage: string) {
   pendingErrors.push(errorMessage);
@@ -1258,7 +1270,7 @@ export function logError(errorMessage: string) {
 }
 
 
-var postPendingErrorsThrottled = _.throttle(function() {
+const postPendingErrorsThrottled = _.throttle(function() {
   if (!pendingErrors.length)
     return;
   postJsonSuccess('/-/log-browser-errors', () => {}, pendingErrors, null, { showLoadingOverlay: false });

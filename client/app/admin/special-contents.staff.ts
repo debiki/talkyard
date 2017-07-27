@@ -37,7 +37,7 @@ export var SpecialContent = createComponent({
   },
 
   saveEdits: function() {
-    var content = $.extend({}, this.state.content, { anyCustomText: this.state.editedText });
+    let content = { ...this.state.content, anyCustomText: this.state.editedText };
     Server.saveSpecialContent(content, () => {
       this.setState({ content: content });
       this.cancelForgotToSaveWarning();

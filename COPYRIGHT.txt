@@ -24,25 +24,22 @@ General Public License, e.g. Apache 2 and MIT. See the respective
 components, including:
 
 
-Misceallaneous:
-
-  - Discourse
-    Some text messages have been copied from Discourse, e.g. in the admin
-      section. You should find them by searching for "copyright Discourse".
-    Copyright 2014 - 2015 Civilized Discourse Construction Kit, Inc
-    GNU General Public License Version 2.0 (or later)
-    https://github.com/discourse/discourse
-
 Javascript and CSS:
 
-  (This list might be incomplete. See bower.json for a complete list of
-  client side modules, and run `bower install` to download licenses and
-  copyrights to `bower_components/`.)
+  (This list might be incomplete. See package.json for a complete list of
+  client side modules, and run `yarn install` to download licenses and
+  copyrights to `node_modules/`.)
 
   - angular-slugify (but all Angular stuff removed)
     ./client/third-party/non-angular-slugify.js
     Copyright © 2013 Paul Smith <paulsmith@pobox.com>
     MIT license
+
+  - Bliss
+    ./lient/third-party/bliss.shy.js
+    Copyright (c) 2015 Lea Verou
+    The MIT License (MIT)
+    https://github.com/LeaVerou/bliss
 
   - Bootstrap
     ./modules/twitter-bootstrap/
@@ -109,7 +106,7 @@ Javascript and CSS:
     https://github.com/gabceb/jquery-browser-plugin
 
   - jQuery Cookie plugin
-    ./client/vendor/jquery-cookie.js
+    ./client/third-party/get-set-cookie.js
     Copyright (c) 2006 Klaus Hartl (stilbuero.de)
     MIT license
 
@@ -179,6 +176,12 @@ Javascript and CSS:
     MIT license
     https://github.com/JedWatson/react-select
 
+  - smoothscroll
+    ./client/third-party/smoothscroll-tiny.js
+    Copyright (C) 2013 Dustan Kasten
+    MIT license
+    https://github.com/iamdustan/smoothscroll
+
   - YepNope
     ./bower_components/yepnope/
     Tri-licensed: WTFPL | MIT | BSD
@@ -193,11 +196,16 @@ Javascript and Java:
 Unknown licenses, seemingly okay to use:
 
   - function hashStringToNumber  // [4KFBW2]
-    from here: http://stackoverflow.com/a/7616484/694469
-    which copied it from here:
+    Copyright (C) Wes Widner (I think)
+    I (KajMagnus) found it here: http://stackoverflow.com/a/7616484/694469
+    which is a copy of this:
       http://werxltd.com/wp/2010/05/13/javascript-implementation-of-javas-string-hashcode-method/
     (that's a blog post that essentially asks the whole Internet to use the short string has function)
-    I emailed and asked: info@werxltd.com
+    License: I emailed and asked: info@werxltd.com, Wes Widner replied:
+    """Thanks for the email! I'm really happy to hear that you've found that code snippet
+    to be useful. Yes, the MIT license looks like it would be a great fit for that code.
+    All I ask is for attribution."""
+    (Ok, attribution link above :-))
 
 
 

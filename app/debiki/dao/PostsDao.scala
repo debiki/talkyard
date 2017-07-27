@@ -1320,15 +1320,15 @@ trait PostsDao {
 
 
   def deleteVote(pageId: PageId, postNr: PostNr, voteType: PostVoteType, voterId: UserId) {
-    readWriteTransaction { transaction =>
-      val post = transaction.loadThePost(pageId, postNr = postNr)
-      val voter = transaction.loadTheUser(voterId)
-      throwIfMayNotSeePost(post, Some(voter))(transaction)
+    readWriteTransaction { tx =>
+      val post = tx.loadThePost(pageId, postNr = postNr)
+      val voter = tx.loadTheUser(voterId)
+      throwIfMayNotSeePost(post, Some(voter))(tx)
 
-      transaction.deleteVote(pageId, postNr = postNr, voteType, voterId = voterId)
-      updateVoteCounts(PagePartsDao(pageId, transaction), post, transaction)
-      addUserStats(UserStats(post.createdById, numLikesReceived = -1))(transaction)
-      addUserStats(UserStats(voterId, numLikesGiven = -1))(transaction)
+      tx.deleteVote(pageId, postNr = postNr, voteType, voterId = voterId)
+      updateVoteCounts(PagePartsDao(pageId, tx), post, tx)
+      addUserStats(UserStats(post.createdById, numLikesReceived = -1, mayBeNegative = true))(tx)
+      addUserStats(UserStats(voterId, numLikesGiven = -1, mayBeNegative = true))(tx)
 
       /* SECURITY vote-FRAUD SHOULD delete by cookie too, like I did before:
       var numRowsDeleted = 0
@@ -1354,6 +1354,7 @@ trait PostsDao {
     readWriteTransaction { transaction =>
       val page = PageDao(pageId, transaction)
       val voter = transaction.loadTheUser(voterId)
+      SECURITY // minor. Should be if-may-not-see-*post*. And should do a pre-check in VoteController.
       throwIfMayNotSeePage(page, Some(voter))(transaction)
 
       val post = page.parts.thePostByNr(postNr)

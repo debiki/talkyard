@@ -250,7 +250,7 @@ function $showInlineReply() {
   if ($thread.is('.dw-zd')) {
     $thread.children('.dw-z').click();
   }
-  d.i.showAndHighlightPost($post);
+  d.i.showAndHig hlightPost($post);
   return false;
 };
 

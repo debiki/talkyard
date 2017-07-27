@@ -27,14 +27,14 @@ var r = React.DOM;
 
 
 export function renderNewPasswordPage(secretKey: string) {
-  var data = window['newPasswordData'];
-  data.xsrfToken = $['cookie']('XSRF-TOKEN');
+  const data = window['newPasswordData'];
+  data.xsrfToken = getSetCookie('XSRF-TOKEN');
   ReactDOM.render(NewPasswordPage(data),
       document.getElementById('dw-react-new-password'));
 }
 
 
-var NewPasswordPage = createClassAndFactory({
+const NewPasswordPage = createClassAndFactory({
   getInitialState: function() {
     return { passwordOk: false };
   },
@@ -44,7 +44,7 @@ var NewPasswordPage = createClassAndFactory({
   },
 
   render: function () {
-    var oldPasswordInput;
+    let oldPasswordInput;
     if (!this.props.secretKey) {
       oldPasswordInput = r.p({}, '__ old pwd here, unimplemented [DwE4KGE30] __');
       // label for="oldPassword">Enter your current password:</label>

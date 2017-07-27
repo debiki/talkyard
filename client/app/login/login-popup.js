@@ -17,7 +17,6 @@
 
 
 var d = { i: debiki.internal, u: debiki.v0.util };
-var $ = d.i.$;
 
 
 d.i.createLoginPopup = function(anyUrl) {

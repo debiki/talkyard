@@ -51,7 +51,7 @@ object Utils extends Results with http.ContentTypes {
 
   /** Gatling doesn't understand this prefix */
   private val safeJsonPrefix = {
-    val safePrefix = ")]}',\n"
+    val safePrefix = ")]}',\n"  // [5LKW02D4]
     Play.maybeApplication match {
       case Some(app) =>
         if (app.configuration.getBoolean("ed.addSafeJsonPrefix")

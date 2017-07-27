@@ -25,12 +25,21 @@ import Prelude._
 sealed abstract class PostActionType
 
 
-sealed abstract class PostVoteType extends PostActionType
+sealed abstract class PostVoteType(val IntVal: Int) extends PostActionType { def toInt = IntVal }
 object PostVoteType {
-  case object Like extends PostVoteType
-  case object Wrong extends PostVoteType // RENAME to Disagree
-  case object Bury extends PostVoteType
-  case object Unwanted extends PostVoteType
+  // dupl numbers [2PKWQUT0] perhaps use 1,2,4,8 instead? [8FEX1Q4]
+  case object Like extends PostVoteType(41)
+  case object Wrong extends PostVoteType(42) // RENAME to Disagree
+  case object Bury extends PostVoteType(43)
+  case object Unwanted extends PostVoteType(44)
+
+  def fromInt(value: Int): Option[PostVoteType] = Some(value match {
+    case Like.IntVal => Like
+    case Wrong.IntVal => Wrong
+    case Bury.IntVal => Bury
+    case Unwanted.IntVal => Unwanted
+    case _ => return None
+  })
 }
 
 

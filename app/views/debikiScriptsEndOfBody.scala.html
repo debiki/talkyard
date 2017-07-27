@@ -19,6 +19,7 @@
 @(tpi: debiki.SiteTpi, startupCode: String, loadStaffBundle: Boolean)
 
 
+<script src="https://cdn.polyfill.io/v2/polyfill.@{tpi.minMaxJs}"></script>
 <script src="@tpi.assetUrl(s"slim-bundle.${tpi.minMaxJs}")"></script>
 @* If in a forum, or the admin area or about user section, then load more scripts directly, [5WKE24]
 for now. Later, use the Server.ts loadSlowScriptBundle etc functions. But that requires

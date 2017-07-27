@@ -44,22 +44,27 @@ const ReviewReasons = {
 };
 
 
-export var ReviewAllPanelComponent = React.createClass(<any> {
+export const ReviewAllPanelComponent = React.createClass(<any> {
   componentDidMount: function() {
-    let deferred = Server.loadEditorAndMoreBundlesGetDeferred();
+    let promise: Promise<void> = Server.loadEditorAndMoreBundlesGetDeferred();
     Server.loadReviewTasks(reviewTasks => {
-      deferred.done(() => {
+      promise.then(() => {
+        if (this.isGone) return;
         this.setState({ reviewTasks: reviewTasks });
       });
     });
+  },
+
+  componentDidUnmount: function() {
+    this.isGone = true;
   },
 
   render: function() {
     if (!this.state)
       return r.p({}, 'Loading...');
 
-    var now = Date.now();
-    var elems = this.state.reviewTasks.map((reviewTask: ReviewTask) => {
+    const now = Date.now();
+    const elems = this.state.reviewTasks.map((reviewTask: ReviewTask) => {
       return ReviewTask({ reviewTask: reviewTask, now: now, key: reviewTask.id });
     });
 

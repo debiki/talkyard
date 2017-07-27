@@ -115,7 +115,7 @@ var AboutUserDialog = createComponent({
 
     if (this.state.isOpen) {
       var user: MemberInclDetails = this.state.user;
-      var childProps = $.extend({
+      var childProps = _.assign({
         store: this.state.store,
         reload: this.reload,
         post: this.state.post,

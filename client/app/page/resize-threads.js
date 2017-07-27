@@ -24,7 +24,7 @@ var $ = d.i.$;
 
 
 d.i.makeThreadResizableForPost = function(post) {
-  var $thread = $(post).dwCheckIs('.dw-p').closest('.dw-t');
+  var $thread = $(post).closest('.dw-t');
 
   // Make replies to the root thread resizable horizontally. (Takes
   // perhaps 100 ms on my 6 core 2.8 GHz AMD, 24 depth-1 reply columns.)

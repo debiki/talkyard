@@ -8,6 +8,8 @@
  *
  */
 
+// No longer depends on jQuery.  /KajMagnus
+
 /**
  * Create a cookie with the given name and value and other optional parameters.
  *
@@ -42,18 +44,18 @@
 /**
  * Get the value of a cookie with the given name.
  *
- * @example $.cookie('the_cookie');
+ * @example getSetCookie('the_cookie');
  * @desc Get the value of a cookie.
  *
  * @param String name The name of the cookie.
  * @return The value of the cookie.
  * @type String
  *
- * @name $.cookie
+ * @name $.cookie --- no, I renamed it to getSetCookie /KajMagnus
  * @cat Plugins/Cookie
  * @author Klaus Hartl/klaus.hartl@stilbuero.de
  */
-jQuery.cookie = function(name, value, options) {
+window.getSetCookie = function(name, value, options) {
     if (typeof value != 'undefined') { // name and value given, set cookie
         options = options || {};
         if (value === null) {
@@ -84,7 +86,7 @@ jQuery.cookie = function(name, value, options) {
         if (document.cookie && document.cookie != '') {
             var cookies = document.cookie.split(';');
             for (var i = 0; i < cookies.length; i++) {
-                var cookie = jQuery.trim(cookies[i]);
+                var cookie = cookies[i].trim();
                 // Does this cookie string begin with the name we want?
                 if (cookie.substring(0, name.length + 1) == (name + '=')) {
                     // [kajmagnus79@debiki] Debiki's cookie values are URI

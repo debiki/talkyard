@@ -28,8 +28,18 @@ var ReactCSSTransitionGroup: any = isServerSide() ? null :
 
 var Router: any = reactCreateFactory(ReactRouter.Router);
 
+// Don't <reference>, causes lots of TS errors.
+declare const Bliss: any;
+declare function $$(selector: string): Element[];
+
+// Defined in client/third-party/smoothscroll-tiny.js.
+declare function smoothScroll(elem: Element, x: number, y: number);
+
+// Defined in client/third-party/get-set-cookie.js.
+declare function getSetCookie(cookieName: string, value?: string, options?: any): string;
+
 // backw compat, later, do once per file instead (don't want a global 'r').
-var r = React.DOM;
+const r = React.DOM;
 
 // Let this be a function, not a variable, so it can be used directly.
 // (Otherwise there's a server side reactCreateFactory-not-yet-inited error)
@@ -59,7 +69,7 @@ function doNextFrameOrNow(something: () => void) {
  * Basic stuff needed by essentially all modules / files.
  */
 //------------------------------------------------------------------------------
-   module debiki2 {
+   namespace debiki2 {
 //------------------------------------------------------------------------------
 
 
@@ -67,7 +77,7 @@ export var Link: any = reactCreateFactory(ReactRouter.Link);
 
 
 export function die(errorMessage: string) {
-  var dialogs: any = debiki2['pagedialogs'];
+  const dialogs: any = debiki2['pagedialogs'];
   // I don't remember why I added setTimeout() but there was a good reason.
   setTimeout(() => {
     debiki2['Server'].logError(errorMessage);
@@ -118,7 +128,7 @@ export function anyForbiddenPassword() {
 }
 
 
-export var findDOMNode = isServerSide() ? null : window['ReactDOM'].findDOMNode;
+export const findDOMNode = isServerSide() ? null : window['ReactDOM'].findDOMNode;
 dieIf(!isServerSide() && !findDOMNode, 'EsE6UMGY2');
 
 
@@ -129,7 +139,7 @@ export function hasErrorCode(request: HttpRequest, statusCode: string) {
 
 export function toId(x: number | { id: number } | { uniqueId: number }): number {
   if (_.isNumber(x)) return <number> x;
-  var nr = x['id'];
+  const nr = x['id'];
   if (_.isNumber(nr)) return <number> nr;
   return x['uniqueId'];
 }
@@ -202,7 +212,65 @@ export function deleteById(itemsWithId: any[], idToDelete) {
 }
 
 
-//------------------------------------------------------------------------------
+export function $bySelector(selector: string): NodeListOf<Element> {
+  return document.querySelectorAll(selector);
 }
+
+
+export function $byId(elemId: string): HTMLElement {
+  // @ifdef DEBUG
+  dieIf(/#\., /.test(elemId), 'EdE2KWWE45');
+  // @endif
+  return document.getElementById(elemId);
+}
+
+
+export function $$byClass(className: string): HTMLCollectionOf<Element> {
+  // @ifdef DEBUG
+  // getElementsByClassName() works with one single class only.
+  dieIf(/#\., /.test(className), 'EdE5JLKS02');
+  // @endif
+  return document.getElementsByClassName(className);
+}
+
+
+export const $h = {
+
+  // classesString should be a space and/or comma separated class name string.
+  addClasses: function(elem: Element, classesString: string) {
+    // @ifdef DEBUG
+    dieIf(/#\./.test(classesString), 'EdE6EF2T47');
+    // @endif
+    const classes = classesString.replace(/ *, */g, ',').replace(/ +/g, ',').split(',');
+    elem.classList.add(...classes);
+  },
+
+
+  removeClasses: function(elem: Element, classesString: string) {
+    // @ifdef DEBUG
+    dieIf(/#\./.test(classesString), 'EdEKEW20P7');
+    // @endif
+    const classes = classesString.replace(/ *, */g, ',').replace(/ +/g, ',').split(',');
+    elem.classList.remove(...classes);
+  },
+
+
+
+  parseHtml: function(htmlText: string): HTMLCollection {
+    const doc = document.implementation.createHTMLDocument(''); // empty dummy title
+    doc.body.innerHTML = htmlText;
+    return doc.body.children;
+  },
+
+
+  wrapParseHtml: function(htmlText: string): Element {
+    return $h.parseHtml('<div>' + htmlText + '</div>')[0];
+  }
+
+};
+
+
+//------------------------------------------------------------------------------
+   }
 //------------------------------------------------------------------------------
 // vim: fdm=marker et ts=2 sw=2 tw=0 fo=r list

@@ -7,6 +7,7 @@ declare const ReactCSSTransitionGroup: any;
 declare const Router: any;
 declare function reactCreateFactory(x);
 declare function doNextFrameOrNow(x);
+declare function getSetCookie(cookieName: string, value?: string, options?: any): string;
 
 declare const ReactStartedClass;
 
@@ -67,6 +68,10 @@ declare const ServerSideWindowWidth;
 // In other files:
 
 declare namespace debiki2 {
+
+  function $byId(elemId: string): HTMLElement;
+  function $$byClass(className: string): HTMLCollectionOf<Element>;
+  const $h: any;
 
   // ReactRouter:
   var Route;
