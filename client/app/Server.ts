@@ -909,52 +909,53 @@ export function startPrivateGroupTalk(title: string, text: string, pageRole: Pag
 }
 
 
-export function submitCustomFormAsJsonReply(formInputNameValues, success?: () => void) {
+export function submitCustomFormAsJsonReply(formData: FormData, success?: () => void) {
+  die('unimpl [EdE2WKUGAA]'); /*
   postJsonSuccess('/-/submit-custom-form-as-json-reply', success, {
     pageId: d.i.pageId,
     formInputs: formInputNameValues,
-  });
+  }); */
 }
 
 
-function getInputValueOrDie(inpName: string, formInputNameValues): string {
+function getInputValueOrDie(inpName: string, formData: FormData): string {
   let concatenatedValues = null;
-  _.each(formInputNameValues, (nameValue: any) => {
-    if (nameValue.name === inpName) {
-      let value = nameValue.value.trim();
-      value = value.replace(/\\n/g, '\n');
-      concatenatedValues = (concatenatedValues || '') + value;
-    }
-  });
+  const values: FormDataEntryValue[] = formData.getAll(inpName);
+  for (let i = 0; i < values.length; ++i) {
+    const valueUntrimmed = values[i];
+    let value = valueUntrimmed.toString().trim();
+    value = value.replace(/\\n/g, '\n');
+    concatenatedValues = (concatenatedValues || '') + value;
+  }
   dieIf(concatenatedValues === null, `Input missing: ${inpName} [EdE4WKFE02]`);
   return concatenatedValues.trim();
 }
 
 
-export function submitCustomFormAsNewTopic(formInputNameValues) {
+export function submitCustomFormAsNewTopic(formData: FormData) {
+  die('untested [EdE2WKP05YU10]');
   function goToNewPage(response) {
     location.assign(linkToPageId(response.newPageId));
   }
   postJsonSuccess('/-/submit-custom-form-as-new-topic', goToNewPage, {
-    newTopicTitle: getInputValueOrDie('title', formInputNameValues),
-    newTopicBody: getInputValueOrDie('body', formInputNameValues),
-    pageTypeId: getInputValueOrDie('pageTypeId', formInputNameValues),
-    categorySlug: getInputValueOrDie('categorySlug', formInputNameValues),
+    newTopicTitle: getInputValueOrDie('title', formData),
+    newTopicBody: getInputValueOrDie('body', formData),
+    pageTypeId: getInputValueOrDie('pageTypeId', formData),
+    categorySlug: getInputValueOrDie('categorySlug', formData),
   });
 }
 
 
-export function submitUsabilityTestingRequest(formInputNameValues) {  // [plugin]
-  const nextUrl = getInputValueOrDie('nextUrl', formInputNameValues);
-  const categorySlug = getInputValueOrDie('categorySlug', formInputNameValues);
+export function submitUsabilityTestingRequest(formData: FormData) {  // [plugin]
+  const nextUrl = getInputValueOrDie('nextUrl', formData);
   function goToNewPage(response) {
     location.assign(nextUrl);
   }
   postJsonSuccess('/-/submit-usability-testing-form', goToNewPage, {
-    websiteAddress: getInputValueOrDie('websiteAddress', formInputNameValues),
-    instructionsToTester: getInputValueOrDie('instructionsToTester', formInputNameValues),
-    pageTypeId: getInputValueOrDie('pageTypeId', formInputNameValues),
-    categorySlug: categorySlug,
+    websiteAddress: getInputValueOrDie('websiteAddress', formData),
+    instructionsToTester: getInputValueOrDie('instructionsToTester', formData),
+    pageTypeId: getInputValueOrDie('pageTypeId', formData),
+    categorySlug: getInputValueOrDie('categorySlug', formData),
   });
 }
 

@@ -36,8 +36,6 @@ export function activateAnyCustomForm() {
       event.preventDefault();
       event.stopPropagation();
 
-      // let namesAndValues = $form.serializeArray();
-
       const formData = new FormData(form);
 
       const doWhat = <HTMLInputElement> form.querySelector('input[name="doWhat"]');
@@ -45,22 +43,14 @@ export function activateAnyCustomForm() {
         return;
 
       if (doWhat.value === 'CreateTopic') {
-        die('unimpl [EdE2WKP05YU]');
-        // Server.submitCustomFormAsNewTopic(namesAndValues);
-        // Instead: change submitCustomFormAsNewTopic() signature to: {
-        //  newTopicTitle: string,
-        //  newTopicBody: string,
-        //  pageTypeId: string,
-        //  categorySlug: string,
-        // }  and use querySelector...value to get the values.
+        Server.submitCustomFormAsNewTopic(formData);
       }
       else if (doWhat.value === 'SignUp') {
         morebundle.loginIfNeeded(LoginReason.SignUp);
       }
       else if (doWhat.value === 'SignUpSubmitUtx') {  // [plugin]
         morebundle.loginIfNeeded(LoginReason.SignUp, '/-/redir-to-my-last-topic', function() {
-          die('unimpl [EdE4KWPU0YG22]');  // MUST fix now or UTX broken
-          // Server.submitUsabilityTestingRequest(namesAndValues);   ???  unimpl now w/o jQuery
+          Server.submitUsabilityTestingRequest(formData);
         });
       }
       else if (doWhat.value === 'SubmitToThisPage') {
