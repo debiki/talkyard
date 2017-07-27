@@ -80,7 +80,9 @@ export var ModalDropdownButton = createComponent({
       dropdownModal =
           DropdownModal({ show: state.isOpen, pullLeft: props.pullLeft,
             onHide: this.closeDropdown, atX: state.buttonX, atY: state.buttonY,
-            className: props.dialogClassName, id: props.dialogId,
+            dialogClassName2: props.dialogClassName2, // <— should be this? CLEAN_UP: remove '2'
+            className: props.dialogClassName,  // <— CLEAN_UP REMOVE/RENAME to dialogContentClassName?
+            id: props.dialogId,
             allowFullWidth: props.allowFullWidth, ref: 'dropdownModal',
             showCloseButton: props.showCloseButton,
             onContentClick: props.closeOnClick === false ? null : this.closeDropdown },
@@ -196,11 +198,13 @@ export var DropdownModal = createComponent({
     var backdropStyle: any = { opacity: 0.08 };
     if (this.state.hideBackdrop) backdropStyle.display = 'none';
 
+    const dialogClassName = this.props.dialogClassName2 ? ' ' + this.props.dialogClassName2 : '';
     var notTooWideClass = this.props.allowFullWidth ? '' : ' esDropModal-NotTooWide';
     return (
       Modal({ show: this.props.show, onHide: this.props.onHide,
           onShow: () => this.setState({ hideBackdrop: false }),
-          dialogClassName: 'esDropModal' + notTooWideClass, backdropStyle: backdropStyle },
+          dialogClassName: 'esDropModal' + notTooWideClass + dialogClassName,
+          backdropStyle: backdropStyle },
         content));
   }
 });

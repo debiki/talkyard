@@ -166,6 +166,8 @@ trait SiteTransaction {
 
   def deleteVote(pageId: PageId, postNr: PostNr, voteType: PostVoteType, voterId: UserId): Boolean
   def insertVote(uniquePostId: PostId, pageId: PageId, postNr: PostNr, voteType: PostVoteType, voterId: UserId)
+  /** Loads the first X voter ids, sorted by ... what? Currently loads all. [1WVKPW02] */
+  def loadVoterIds(postId: PostId, voteType: PostVoteType): Seq[UserId]
 
   /** Remembers that the specified posts have been read by a certain user.
     */

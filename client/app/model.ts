@@ -163,6 +163,14 @@ enum PostType {
 }
 
 
+enum PostVoteType {
+  Like = 41,
+  Disagree = 42,
+  Bury = 43,
+  Unwanted = 44,
+}
+
+
 // Determines which write-post guidelines will be shown in the editor.
 enum WritingWhat {
   NewPage = 1,

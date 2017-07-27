@@ -1092,7 +1092,8 @@ case class UserStats(
   numChatTopicsCreated: Int = 0,
   numLikesGiven: Int = 0,
   numLikesReceived: Int = 0,
-  numSolutionsProvided: Int = 0) {
+  numSolutionsProvided: Int = 0,
+  mayBeNegative: Boolean = false) {
 
   require(lastSeenAt.millis >= firstSeenAtOr0.millis, "EdE6BMLA09")
   lastPostedAt foreach { when => require(lastSeenAt.millis >= when.millis, "EdE6BMLA01") }
@@ -1108,22 +1109,23 @@ case class UserStats(
   firstDiscourseReplyAt foreach { when => require(firstSeenAtOr0.millis <= when.millis, "EdE6LA26") }
   firstChatMessageAt foreach { when => require(firstSeenAtOr0.millis <= when.millis, "EdE6BMLA28") }
 
-  require(
-    emailBounceSum >= 0 &&
-    notfsNewSinceId >= 0 &&
-    numDaysVisited >= 0 &&
-    numSecondsReading >= 0 &&
-    numDiscourseRepliesRead >= 0 &&
-    numDiscourseRepliesPosted >= 0 &&
-    numDiscourseTopicsEntered >= 0 &&
-    numDiscourseTopicsRepliedIn >= 0 &&
-    numDiscourseTopicsCreated >= 0 &&
-    numChatMessagesRead >= 0 &&
-    numChatMessagesPosted >= 0 &&
-    numChatTopicsEntered >= 0 &&
-    numChatTopicsRepliedIn >= 0 &&
-    numChatTopicsCreated >= 0 &&
-    numLikesGiven >= 0, "EdE4S0A7M")
+  if (!mayBeNegative) {
+    require(emailBounceSum >= 0, "EdE4GKWL01")
+    require(notfsNewSinceId >= 0, "EdE4GKWL02")
+    require(numDaysVisited >= 0, "EdE4GKWL03")
+    require(numSecondsReading >= 0, "EdE4GKWL04")
+    require(numDiscourseRepliesRead >= 0, "EdE4GKWL05")
+    require(numDiscourseRepliesPosted >= 0, "EdE4GKWL06")
+    require(numDiscourseTopicsEntered >= 0, "EdE4GKWL07")
+    require(numDiscourseTopicsRepliedIn >= 0, "EdE4GKWL08")
+    require(numDiscourseTopicsCreated >= 0, "EdE4GKWL09")
+    require(numChatMessagesRead >= 0, "EdE4GKWL010")
+    require(numChatMessagesPosted >= 0, "EdE4GKWL011")
+    require(numChatTopicsEntered >= 0, "EdE4GKWL012")
+    require(numChatTopicsRepliedIn >= 0, "EdE4GKWL013")
+    require(numChatTopicsCreated >= 0, "EdE4GKWL014")
+    require(numLikesGiven >= 0, "EdE4GKWL015")
+  }
 
 
   def firstSeenAtNot0: When =

@@ -175,6 +175,7 @@ POST  /-/submit-usability-testing-form    ed.plugins.utx.UsabilityTestingExchang
 GET   /-/utx-pick-a-task        ed.plugins.utx.UsabilityTestingExchangeController.pickTask(categorySlug)
 
 POST  /-/vote                   controllers.VoteController.handleVotes
+GET   /-/load-voters            controllers.VoteController.loadVoters(postId: Int, voteType: Int)
 POST  /-/flag                   @controllers.Application.flag
 
 GET   /-/load-draft-and-guidelines controllers.EditController.loadDraftAndGuidelines(writingWhat, categoryId: Option[Int], pageRole)
