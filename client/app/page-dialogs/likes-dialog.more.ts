@@ -97,15 +97,14 @@ const VotesDialog = createComponent({
         case PostVoteType.Unwanted: didWhat = "unwanted"; break;
       }
       content = r.div({},
-          // Margin, so some space for the close-dialog X.
-          r.p({ style: { marginRight: 50 }}, numVoters + people + didWhat + " this post:"),
+          r.p({ className: 's_VotesD_Title' }, numVoters + people + didWhat + " this post:"),
           r.div({ className: 's_VotesD_Voters' },
             voters.map(voter => avatar.Avatar({ user: voter }))));
     }
 
     return (
       DropdownModal({ show: state.isOpen, onHide: this.close, atX: state.atX, atY: state.atY,
-          pullLeft: true, showCloseButton: true },
+          pullLeft: true, showCloseButton: true, dialogClassName2: 's_VotesD' },
         content));
   }
 });
