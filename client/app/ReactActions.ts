@@ -70,17 +70,6 @@ export var actionTypes = {
 
 
 export function loadMyself(afterwardsCallback?) {
-  // The server has set new XSRF (and SID) cookie, and we need to
-  // ensure old legacy <form> XSRF <input>:s are synced with the new cookie. But 1) the
-  // $.ajaxSetup complete() handler that does tnis (in debiki.js) won't
-  // have been triggered, if we're loggin in with OpenID — since such
-  // a login happens in another browser tab. And 2) some e2e tests
-  // cheat-login via direct calls to the database
-  // and to `fireLogin` (e.g. so the tests don't take long to run).
-  // And those tests assume we refresh XSRF tokens here.
-  // So sync hidden form XSRF <input>s:
-  debiki.internal.refreshFormXsrfTokens();
-
   // (Don't delete temp login cookies here, because this fn gets called if login is
   // detected in another tab — and perhaps yet another login has been started in that other
   // tab, and we don't want to break it by deleting cookies. Instead login temp cookies are

@@ -41,13 +41,6 @@ keymaster.filter = function(event) {
 };
 
 
-function fireLoginOrLogout() {
-  if (debiki2.ReactStore.getMe().isLoggedIn) {
-    d.i.refreshFormXsrfTokens();
-  }
-};
-
-
 function handleLoginInOtherBrowserTab() {
   var currentUser = debiki2.ReactStore.getMe();
   var sessionId = getSetCookie('dwCoSid');
@@ -75,8 +68,6 @@ function handleLoginInOtherBrowserTab() {
 
 
 function registerEventHandlersFireLoginOut() {
-  fireLoginOrLogout();
-
   // If the user switches browser tab, s/he might logout and login
   // in another tab. That'd invalidate all xsrf tokens on this page,
   // and user specific permissions and ratings info (for this tab).
@@ -109,49 +100,6 @@ function registerEventHandlersFireLoginOut() {
   //    document.title = 'not focused';
   //});
   //}}}
-};
-
-
-/**
- * XSRF token refresh, and JSON vulnerability protection
- * ((Details: Strips a certain reply prefix. This prevents the JSON
- * from being parsed as Javascript from a <script> tag. This'd otherwise
- * allow third party websites to turn your JSON resource URL into JSONP
- * request under some conditions, see:
- *   http://docs.angularjs.org/api/ng.$http, the "JSON Vulnerability
- * Protection" section, and:
- *   http://haacked.com/archive/2008/11/20/anatomy-of-a-subtle-json-vulnerability.aspx/ ))
- */
-function tellJQueryAjaxToStripSafeJsonPrefix() {
-  $.ajaxSetup({
-    // There're questions at StackOverflow asking why `cache: false`
-    // doesn't work with IE8. Does it not? I've not yet tested.
-    cache: false,
-    dataFilter: function (response, type) {
-      // Don't know why, but `type` is alwyas undefined, so won't work:
-      // if (type !== 'json') return response;
-      // Sometimes, in FF (at least) and when the server replies 200 OK
-      // with no body it seems, `response` is the `document` itself,
-      // oddly enough, not a string.
-      if (typeof response === 'string')
-        response = response.replace(/^\)\]}',\n/, '');
-      return response;
-    },
-    complete: function() {
-      // Refresh <form> xsrf tokens, in case the server set a new cookie.
-      // (That happens if the user logs in, or if I change certain server
-      // side XSRF code, or perhaps I'll some day decide that XSRF tokens
-      /// will be valid for one month only.)
-      d.i.refreshFormXsrfTokens();
-    }
-  });
-};
-
-
-
-d.i.refreshFormXsrfTokens = function() {
-  var token = getSetCookie('XSRF-TOKEN');
-  $('input.dw-fi-xsrf').attr('value', token);
 };
 
 
@@ -278,7 +226,6 @@ d.i.renderEmptyPage = function() {
   debiki2.ReactStore.initialize();
   debiki2.startRemainingReactRoots();
   debiki2.ReactStore.activateVolatileData();
-  fireLoginOrLogout();
   $('html').addClass(ReactStartedClass);
   debiki2.utils.startDetectingMouse();
 };
@@ -307,8 +254,6 @@ if (location.pathname.search(ApiUrlPathPrefix) !== 0) {
 
 // Later, when there's a single router for everything, bind this to router events instead:
 debiki2.utils.highlightActiveLinkInHeader();
-
-tellJQueryAjaxToStripSafeJsonPrefix();
 
 // Replace gifs with static images that won't play until clicked.
 Gifffer();

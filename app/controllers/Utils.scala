@@ -74,8 +74,8 @@ object Utils extends Results with http.ContentTypes {
    *   and:
    *     http://haacked.com/archive/2008/11/20/
    *        anatomy-of-a-subtle-json-vulnerability.aspx
-   * Debiki's Javascript, and AngularJS, strips the ")]}'," prefix before
-   * parsing the JSON.
+   * Debiki's Javascript strips the ")]}'," prefix  [5LKW02D4]
+   * before parsing the JSON.
    */
   def OkSafeJson(json: JsValue): Result =
     Ok(safeJsonPrefix + json.toString) as JSON

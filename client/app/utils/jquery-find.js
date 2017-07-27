@@ -46,11 +46,6 @@ $.fn.dwPostId = function() {   // rename to dwPostNr   and try to remove
 };
 
 
-$.fn.dwIsArticlePost = function() {
-  return this.is('.dw-ar-p');
-};
-
-
 })();
 
 // vim: fdm=marker et ts=2 sw=2 tw=80 fo=tcqwn list

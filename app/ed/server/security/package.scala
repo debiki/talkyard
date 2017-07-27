@@ -30,6 +30,8 @@ import scala.util.Try
 
 package object security {
 
+  private val XsrfTokenInputName = "dw-fi-xsrf"
+
   /**
    * Finds the session id and any xsrf token in the specified request;
    * throws an error if this is not a GET request and the xsrf token is bad.
@@ -92,21 +94,17 @@ package object security {
         // input in any POST:ed form data. Check the header first, in case
         // this is a JSON request (then there is no form data).
         var xsrfToken = request.headers.get(AngularJsXsrfHeaderName) orElse {
-          if (request.body.isInstanceOf[Map[String, Seq[String]]]) {
-            val params = request.body.asInstanceOf[Map[String, Seq[String]]]
-            params.get(debiki.HtmlUtils.XsrfTokenInputName).map(_.head)
-          }
-          else if (request.body.isInstanceOf[JsonOrFormDataBody]) {
-            val body = request.body.asInstanceOf[JsonOrFormDataBody]
-            body.getFirst(debiki.HtmlUtils.XsrfTokenInputName)
-          }
-          else if (request.body.isInstanceOf[String]) {
-            val xsrfToken = request.body.asInstanceOf[String].takeWhile(_ != '\n') // [7GKW20TD]
-            if (xsrfToken.nonEmpty) Some(xsrfToken)
-            else None
-          }
-          else {
-            None
+          request.body match {
+            case params: Map[String, Seq[String]] =>
+              params.get(XsrfTokenInputName).map(_.head)
+            case body: JsonOrFormDataBody =>
+              body.getFirst(XsrfTokenInputName)
+            case str: String =>
+              val xsrfToken = str.takeWhile(_ != '\n') // [7GKW20TD]
+              if (xsrfToken.nonEmpty) Some(xsrfToken)
+              else None
+            case _ =>
+              None
           }
         } getOrElse
             throwForbidden("DwE0y321", "No XSRF token")
