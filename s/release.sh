@@ -1,8 +1,5 @@
 # ideas about what to do:  https://github.com/sbt/sbt-release
 
-# finish writing:
-#   /home/kajmagnus/Dropbox/debiki/docs/deploy-docker-todo-and-blog-post.txt
-
 # Abort on any error
 set -e
 

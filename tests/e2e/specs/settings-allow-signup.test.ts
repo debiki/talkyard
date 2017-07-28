@@ -48,6 +48,7 @@ describe("(dis)allow signup:", () => {
   });
 
   it("... but she cannot send invites, because signups disabled", () => {
+    // TESTS_MISSING and not included in run-e2e-test.sh
   });
 
   it("... Maria leaves", () => {

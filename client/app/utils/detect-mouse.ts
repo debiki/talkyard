@@ -22,15 +22,9 @@
    module debiki2.utils {
 //------------------------------------------------------------------------------
 
-var d: any = { i: debiki.internal, u: debiki.v0.util };
-var $: JQueryStatic = d.i.$;
+const pendingCallbacks: (() => void)[] = [];
 
-var pendingCallbacks: (() => void)[] = [];
-var touchEvents = 'touchstart, touchend, touchmove';
-var mouseMoveEvent = 'mousemove';
-
-
-export var isMouseDetected: boolean = undefined;
+export let isMouseDetected: boolean = undefined;
 
 
 /**
@@ -46,14 +40,16 @@ export var isMouseDetected: boolean = undefined;
  * anyway.
  */
 export function startDetectingMouse() {
-  $(document).on(touchEvents, onFirstTouch);
-  $(document).on(mouseMoveEvent, onFirstMouseMove);
-}
-
-
-function stopDetectingMouse() {
-  $(document).off(touchEvents, onFirstTouch);
-  $(document).off(mouseMoveEvent, onFirstMouseMove);
+  Bliss.once(document, {
+    'touchstart touchend touchmove mousemove': function(event) {
+      if (event.type === 'mousemove') {
+        onFirstMouseMove();
+      }
+      else {
+        onFirstTouch();
+      }
+    }
+  });
 }
 
 
@@ -72,20 +68,17 @@ export function onMouseDetected(callback: () => void) {
 
 function onFirstTouch() {
   console.log('Touch screen in use, assuming no mouse.');
-  stopDetectingMouse();
   isMouseDetected = false;
 }
 
 
 function onFirstMouseMove() {
   console.log('Mouse detected. [DwM4KGEW0]');
-  stopDetectingMouse();
   isMouseDetected = true;
-  $('html').addClass('mouse');
-  for (var i = 0; i < pendingCallbacks.length; ++i) {
+  document.documentElement.className += ' mouse';
+  for (let i = 0; i < pendingCallbacks.length; ++i) {
     pendingCallbacks[i]();
   }
-  return false;
 }
 
 
