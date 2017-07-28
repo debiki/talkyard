@@ -71,20 +71,26 @@ function postJson(urlPath: string, requestData: RequestData) {
     data: JSON.stringify(requestData.data),
     headers: {
       'Content-Type': 'application/json; charset=utf-8',
+      'X-Requested-With': 'XMLHttpRequest',
       'X-XSRF-TOKEN': getSetCookie('XSRF-TOKEN'),
     }
   }).then(xhr => {
     removeTimeoutAndOverlay();
-    // Remove any AngularJS safe json prefix. [5LKW02D4]
-    let response = xhr.response.replace(/^\)]}',\n/, '');
-    response = response ? JSON.parse(response) : null;
-    requestData.success(response);
+    if (requestData.success) {
+      // Remove any AngularJS safe json prefix. [5LKW02D4]
+      let response = xhr.response.replace(/^\)]}',\n/, '');
+      response = response ? JSON.parse(response) : null;
+      requestData.success(response);
+    }
   }).catch(errorObj => {
     removeTimeoutAndOverlay();
     const errorAsJson = JSON.stringify(errorObj);
-    const details = errorObj.xhr ? errorObj.xhr.responseText : errorObj.stack;
+    const details = errorObj.xhr && errorObj.xhr.responseText ?
+        errorObj.xhr.responseText : errorObj.stack;
     // error: (jqXhr: any, textStatus: string, errorThrown: string) => {
-    if (requestData.error) {
+    // COULD ensure all callers survive xhr == null, and call them also if !xhr,
+    // but currently an unknown caller dies on null, so:
+    if (requestData.error && errorObj.xhr) {
       const perhapsIgnoreError = requestData.error(errorObj.xhr);
       if (perhapsIgnoreError === IgnoreThisError)
         return;
@@ -119,7 +125,8 @@ function showServerJustStartedMessage() {
 
 
 function removeLoadingOverlay() {
-  $byId('theLoadingOverlay').remove();
+  const overlay = $byId('theLoadingOverlay');
+  if (overlay) overlay.remove();
 }
 
 
@@ -156,7 +163,7 @@ function postJsonSuccess(urlPath, success: (response: any) => void, data: any, e
 function get(uri: string, options, success?: (response, xhr?: JQueryXHR) => void,
       error?: () => void): OngoingRequest {
   let dataType;
-  let headers;
+  let headers = {};
   if (_.isFunction(options)) {
     error = <any> success;
     success = <any> options;
@@ -165,8 +172,9 @@ function get(uri: string, options, success?: (response, xhr?: JQueryXHR) => void
   else {
     if (!options) options = {};
     dataType = options.dataType;
-    headers = options.headers;
+    headers = options.headers || {};
   }
+  headers['X-Requested-With'] = 'XMLHttpRequest';
 
   const promiseWithXhr = <any> Bliss.fetch(origin + uri, {  // hack [7FKRPQ2T0]
     method: 'GET',

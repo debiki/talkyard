@@ -123,7 +123,7 @@ object ReactRenderer extends com.debiki.core.CommonMarkRenderer {
     // In Dev and Test, doesn't matter though, and better wait, because the engines are sometimes
     // not needed at all (e.g. in some test cases).
     val numCreateDirectly = if (Globals.isProd) MinNumEngines else 0
-    for (i <- 1 to numCreateDirectly) {
+    if (numCreateDirectly > 0) {
       val startMs = System.currentTimeMillis()
       logger.info(s"Creating $numCreateDirectly Javascript engines directly... [EdMJSENGDIRCT]")
       for (i <- 1 to numCreateDirectly) {
@@ -135,14 +135,13 @@ object ReactRenderer extends com.debiki.core.CommonMarkRenderer {
     }
 
     Future {
-      val numEngines =
-        -numCreateDirectly + (
+      val numEngines = - numCreateDirectly + (
         if (Globals.isProd) math.max(MinNumEngines, Runtime.getRuntime.availableProcessors)
         else MinNumEngines)
       val startMs = System.currentTimeMillis()
       logger.info(s"Creating $numEngines Javascript engines, async... [EdMJSENGSTART]")
       for (i <- 1 to numEngines) {
-        createOneMoreJavascriptEngine(isVeryFirstEngine = i == 1)
+        createOneMoreJavascriptEngine(isVeryFirstEngine = numCreateDirectly == 0 && i == 1)
       }
       val durationMs = System.currentTimeMillis() - startMs
       logger.info(o"""... Done creating $numEngines Javascript engines, async,
