@@ -18,10 +18,12 @@ fi
 # $my_username's Ivy and Maven cache dirs, so change $HOME from /root/ to:
 export HOME=/home/$my_username
 
-echo Building: $version_tag
-echo With username: $my_username
-echo And HOME: $HOME
-echo Other args: "$@"
+echo "
+Building: $version_tag
+With username: $my_username
+And HOME: $HOME
+Other args: $@
+"
 
 
 # This'll make us call `exit 1` if there's an error, and we're running all this via a script.
@@ -102,7 +104,7 @@ fi
 # Run e2e tests, but not as root.
 # To stop these e2e tests, you need to 'sudo -i' in another shell, then 'ps aux | grep e2e'
 # and then kill the right stuff.
-su $my_username -c "s/run-e2e-tests.sh --prod $@ ; echo $? > ./target/e2e-tests-exit-code"
+su $my_username -c "s/run-e2e-tests.sh --prod $@ ; echo \$? > ./target/e2e-tests-exit-code"
 
 e2e_tests_exit_code=`cat ./target/e2e-tests-exit-code`
 
