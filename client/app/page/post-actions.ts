@@ -109,7 +109,7 @@ export function makeReplyBtnTitle(store: Store, post: Post, isAppendReplyButton:
 }
 
 
-export var PostActions = createComponent({
+export const PostActions = createComponent({
   displayName: 'PostActions',
 
   onAcceptAnswerClick: function() {
@@ -118,11 +118,31 @@ export var PostActions = createComponent({
   onUnacceptAnswerClick: function() {
     debiki2.ReactActions.unacceptAnswer();
   },
-  onReplyClick: function(event) {
-    // (Don't check this.props...isFlat here — use postType instead.)
-    var newPostType = this.props.post.postType === PostType.Flat ? PostType.Flat : PostType.Normal;
-    debiki.internal.$showReplyForm.call(event.target, event, newPostType);
+
+  componentWillUnmount: function() {
+    this.isGone = true;
   },
+
+  onReplyClick: function(event) {
+    event.preventDefault();
+    const eventTarget = event.target; // React.js will clear the field
+    // (Don't check this.props...isFlat here — use postType instead.)
+    const post: Post = this.props.post;
+    const newPostType = post.postType === PostType.Flat ? PostType.Flat : PostType.Normal;
+    // Dupl code [69KFUW20]
+    debiki2.morebundle.loginIfNeededReturnToPost('LoginToComment', post.nr, function() {
+      if (this.isGone) return;
+      // Toggle highlighting first, because it'll be cleared later if the
+      // editor is closed, and then we don't want to toggle it afterwards.
+      $h.toggleClass(eventTarget, 'dw-replying');
+      /*if (d.i.isInEmbeddedCommentsIframe) { [todo-emb-cmts]
+        console.warn("anyPostType ignored [DwE4KEPF0]");
+        sendWriteReplyMessageToEmbeddedEditor(postNr, anyPostType);
+      } else { */
+      debiki2.editor.toggleWriteReplyToPost(post.nr, newPostType);
+    });
+  },
+
   onCloseClick: function() {
     debiki2.ReactActions.togglePageClosed();
   },
@@ -134,6 +154,7 @@ export var PostActions = createComponent({
   },
   onLikeClick: function(event) {
     loginIfNeededThen(LoginReason.LoginToLike, this.props.post.postNr, () => {
+      if (this.isGone) return;
       let post: Post = this.props.post;
       var toggleOn = !me_hasVoted(this.props.store.me, post.nr, 'VoteLike');
       debiki.internal.toggleVote(post.nr, 'VoteLike', toggleOn);

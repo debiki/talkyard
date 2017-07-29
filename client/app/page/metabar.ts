@@ -73,7 +73,7 @@ export var Metabar = createComponent({
   },
 
   onReplyClick: function() {
-    d.i.showReplyFormEmbeddedComments();
+    die('unimpl [EdE2QKT0]');  // was: d.i.showReplyFormEmbeddedComments(); [todo-emb-cmts]
   },
 
   onToggleDetailsClick: function() {

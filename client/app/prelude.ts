@@ -255,6 +255,15 @@ export const $h = {
   },
 
 
+  toggleClass: function(elem: Element, clazz: string) {
+    // @ifdef DEBUG
+    dieIf(/#\. /.test(clazz), 'EdE5JFB8W2');
+    // @endif
+    const classes = elem.classList;
+    if (classes.contains(clazz)) classes.remove(clazz);
+    else classes.add(clazz);
+  },
+
 
   parseHtml: function(htmlText: string): HTMLCollection {
     const doc = document.implementation.createHTMLDocument(''); // empty dummy title
