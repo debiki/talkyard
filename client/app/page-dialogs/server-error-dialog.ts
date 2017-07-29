@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 Kaj Magnus Lindberg
+ * Copyright (C) 2015-2017 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -20,9 +20,9 @@
    namespace debiki2.pagedialogs {
 //------------------------------------------------------------------------------
 
-var r = React.DOM;
+const r = React.DOM;
 
-var serverErrorDialog;
+let serverErrorDialog;
 
 export function getServerErrorDialog() {
   if (!serverErrorDialog) {
@@ -42,7 +42,7 @@ export function showAndThrowClientSideError(errorMessage: string) {
 }
 
 
-var ServerErrorDialog = createComponent({
+const ServerErrorDialog = createComponent({
   getInitialState: function () {
     return {
       isOpen: false,
@@ -82,8 +82,8 @@ var ServerErrorDialog = createComponent({
     if (!this.state.isOpen)
       return null;
 
-    var title: string;
-    var message: string;
+    let title: string;
+    let message: string;
 
     if (this.state.clientErrorMessage) {
       title = "Error";
@@ -95,20 +95,28 @@ var ServerErrorDialog = createComponent({
       }
     }
     else {
-      // Server side error.
-      var error = this.state.error;
+      // The server says something went wrong.
+      const error = this.state.error;
 
       // Is the status message included on the first line? If so, remove it, because we'll
       // shown it in the dialog title.
       message = error.responseText;
-      var matches = message ? message.match(/\d\d\d [a-zA-Z ]+\n+((.|[\r\n])*)/) : null;
+      const matches = message ? message.match(/\d\d\d [a-zA-Z ]+\n+((.|[\r\n])*)/) : null;
       if (matches && matches.length >= 2) {
         message = matches[1];
       }
       else if (/^\s*<!DOCTYPE html>/.test(message)) {
         // Play Framework sent back a HTML page
-        message = $(message).filter('#detail').text().trim() +
-            '\n\nSee server logs for stack trace. [DwE4KWE85]';
+        try {
+          const parser = new DOMParser(); // >= IE 10
+          const doc = parser.parseFromString(message, "text/html");
+          const detailsElem = doc.getElementById('detail');
+          const detailsText = detailsElem ? detailsElem.innerText.trim() : "No error details";
+          message = detailsText + '\n\nSee server logs for stack trace. [EdEGOTHTML]';
+        }
+        catch (unused) {
+          message = "The server sent back an HTML error page [EdEGOTHTMLB]";
+        }
       }
 
       title = 'Error ' + error.status + ' ' + error.statusText;

@@ -141,6 +141,8 @@ function showErrorIfNotComplete() {
 }
 
 
+export const testPost = postJsonSuccess;
+
 /** Return Server.IgnoreThisError from error(..) to suppress a log message and error dialog. */
 function postJsonSuccess(urlPath, success: (response: any) => void, data: any, error?,
         options?: { showLoadingOverlay?: boolean }) {
@@ -159,6 +161,8 @@ function postJsonSuccess(urlPath, success: (response: any) => void, data: any, e
   });
 }
 
+
+export const testGet = get;
 
 function get(uri: string, options, success?: (response, xhr?: JQueryXHR) => void,
       error?: () => void): OngoingRequest {
