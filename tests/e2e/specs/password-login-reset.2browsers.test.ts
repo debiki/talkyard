@@ -64,14 +64,17 @@ describe("private chat", function() {
   });
 
   it("... and cannot login with the wrong username", function() {
-    everyone.loginDialog.reopenToClearAnyError();
+    // Don't: everyone.loginDialog.reopenToClearAnyError();  because [4JBKF20]
+    owen.loginDialog.reopenToClearAnyError();
     owen.loginDialog.loginButBadPassword('not_owen', owen.password);
+    michael.loginDialog.reopenToClearAnyError();
     michael.loginDialog.loginButBadPassword('not_michael', michael.password);
   });
 
   it("... and cannot login with each other's passwords", function() {
-    everyone.loginDialog.reopenToClearAnyError();
+    owen.loginDialog.reopenToClearAnyError();
     owen.loginDialog.loginButBadPassword(owen.username, michael.password);
+    michael.loginDialog.reopenToClearAnyError();
     michael.loginDialog.loginButBadPassword(michael.username, owen.password);
   });
 

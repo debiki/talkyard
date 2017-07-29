@@ -64,6 +64,7 @@ function runAllEndToEndTests {
   runEndToEndTest s/wdio target/e2e/wdio.conf.js            --browser $browser --only all-links $args
   runEndToEndTest s/wdio target/e2e/wdio.conf.js            --browser $browser --only create-site-all-logins $args
   runEndToEndTest s/wdio target/e2e/wdio.2chrome.conf.js    --browser $browser --only create-site-admin-guide.2browsers $args
+  runEndToEndTest s/wdio target/e2e/wdio.conf.js            --browser $browser --only oauth-signup-login $args
   runEndToEndTest s/wdio target/e2e/wdio.conf.js            --browser $browser --only editor-onebox $args
   runEndToEndTest s/wdio target/e2e/wdio.3chrome.conf.js    --browser $browser --only formal-private-messages.3browsers $args
   runEndToEndTest s/wdio target/e2e/wdio.2chrome.conf.js    --browser $browser --only basic-chat.2browsers $args

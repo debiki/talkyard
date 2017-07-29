@@ -642,27 +642,99 @@ function pagesFor(browser) {
         api.loginDialog.loginWithGmail(data);
         // This should be the first time we login with Gmail at this site, so we'll be asked
         // to choose a username.
-        browser.waitAndSetValue('#e2eUsername', data.username);
+        // Not just #e2eUsername, then might try to fill in the username in the create-password-
+        // user fields which are still visible for a short moment. Dupl code (2QPKW02)
+        browser.waitAndSetValue('.esCreateUserDlg #e2eUsername', data.username);
         api.loginDialog.clickSubmit();
+        api.loginDialog.waitAndClickOkInWelcomeDialog();
         browser.waitUntilModalGone();
       },
 
       loginWithGmail: function(data) {
         // Pause or sometimes the click misses the button. Is the browser doing some re-layout?
-        browser.pause(100);
+        browser.pause(150);
         api.waitAndClick('#e2eLoginGoogle');
 
         // In Google's login popup window:
+        browser.pause(500);
         browser.swithToOtherTabOrWindow();
-        browser.waitAndSetValue('#Email', data.email);
-        if (browser.isExisting('#next')) {
-          browser.click('#next');
+
+        const emailInputSelector = 'input[type="email"]';
+        const emailNext = '#identifierNext';
+        const passwordInputSelector = 'input[type="password"]';
+        const passwordNext = '#passwordNext';
+
+        // We'll get logged in immediately, if we're already logged in to one
+        // (and only one) Gmail account in the current browser. Wait for a short while
+        // to find out what'll happen.
+        while (true) {
+          if (api.loginDialog.loginPopupClosedBecauseAlreadyLoggedIn()) {
+            browser.switchBackToFirstTabOrWindow();
+            return;
+          }
+          try {
+            if (browser.isExisting(emailInputSelector))
+              break;
+          }
+          catch (dummy) {
+            console.log(`didn't find ${emailInputSelector}, ` +
+                "tab closed? already logged in? [EdM5PKWT0B]");
+          }
+          browser.pause(500);
         }
-        browser.waitAndSetValue('#Passwd', data.password);
+
+        // Google does something weird here, need to wait. Why? Waiting until visible and
+        // enabled = not enough.
+        while (true) {
+          try {
+            browser.pause(250);
+            console.log("typing Gmail email...");
+            browser.waitAndSetValue(emailInputSelector, data.email);
+            break;
+          }
+          catch (dummy) {
+            // See the weird issue below: (7FUKBAQ2)
+            console.log("... Error. Trying again.");
+          }
+        }
+
+        browser.pause(500);
+        if (browser.isExisting(emailNext)) {
+          console.log(`clicking ${emailNext}...`);
+          browser.waitAndClick(emailNext);
+        }
+
+        // Google does something weird here too, hmm.
+        browser.waitForVisible(passwordInputSelector, data.password);
+        while (true) {
+          try {
+            browser.pause(250);
+            console.log("typing Gmail password...");
+            browser.waitAndSetValue(passwordInputSelector, data.password);
+            break;
+          }
+          catch (dummy) {
+            // As of July 29 2017, there's often this error:  (7FUKBAQ2)
+            // """org.openqa.selenium.InvalidElementStateException: invalid element state:
+            //  Element is not currently interactable and may not be manipulated"""
+            // No idea why, because we do wait until visible & endabled.
+            // Whatever. Just keep trying.
+            console.log("... Error. Trying again.");
+          }
+        }
+
+        browser.pause(500);
+        if (browser.isExisting(passwordNext)) {
+          console.log(`clicking ${passwordNext}...`);
+          browser.waitAndClick(passwordNext);
+        }
+
+        /*
         browser.click('#signIn');
         browser.waitForEnabled('#submit_approve_access');
-        browser.click('#submit_approve_access');
+        browser.click('#submit_approve_access'); */
 
+        console.log("switching back to first tab...");
         browser.switchBackToFirstTabOrWindow();
       },
 
@@ -670,8 +742,12 @@ function pagesFor(browser) {
         api.loginDialog.loginWithFacebook(data);
         // This should be the first time we login with Facebook at this site, so we'll be asked
         // to choose a username.
-        browser.waitAndSetValue('#e2eUsername', data.username);
+        // Not just #e2eUsername, then might try to fill in the username in the create-password-
+        // user fields which are still visible for a short moment. Dupl code (2QPKW02)
+        console.log("typing Facebook user's new username...");
+        browser.waitAndSetValue('.esCreateUserDlg #e2eUsername', data.username);
         api.loginDialog.clickSubmit();
+        api.loginDialog.waitAndClickOkInWelcomeDialog();
         browser.waitUntilModalGone();
       },
 
@@ -681,11 +757,35 @@ function pagesFor(browser) {
         api.waitAndClick('#e2eLoginFacebook');
 
         // In Facebook's login popup window:
+        browser.pause(500);
         browser.swithToOtherTabOrWindow();
+
+        // We'll get logged in immediately, if we're already logged in to Facebook. Wait for
+        // a short while to find out what'll happen.
+        while (true) {
+          if (api.loginDialog.loginPopupClosedBecauseAlreadyLoggedIn()) {
+            browser.switchBackToFirstTabOrWindow();
+            return;
+          }
+          try {
+            if (browser.isExisting('#email'))
+              break;
+          }
+          catch (dummy) {
+            console.log("didn't find #email, tab closed? already logged in? [EdM5PKWT0]");
+          }
+          browser.pause(300);
+        }
+
+        console.log("typing Facebook user's email and password...");
+        browser.pause(340); // so less risk Facebook think this is a computer?
         browser.waitAndSetValue('#email', data.email);
+        browser.pause(380);
         browser.waitAndSetValue('#pass', data.password);
+        browser.pause(280);
 
         // Facebook recently changed from <input> to <button>. So just find anything with type=submit.
+        console.log("submitting Facebook login dialog...");
         api.waitAndClick('[type=submit]');
 
         // Facebook somehow auto accepts the confirmation dialog, perhaps because
@@ -693,7 +793,30 @@ function pagesFor(browser) {
         //b.waitForVisible('[name=__CONFIRM__]');
         //b.click('[name=__CONFIRM__]');
 
+        console.log("switching back to first tab...");
         browser.switchBackToFirstTabOrWindow();
+      },
+
+      loginPopupClosedBecauseAlreadyLoggedIn: () => {
+        try {
+          console.log("checking if we got logged in instantly... [EdM2PG44Y0]");
+          const yes = browser.getTabIds().length === 1;// ||  // login tab was auto closed
+              //browser.isExisting('.e_AlreadyLoggedIn');    // server shows logged-in-already page
+              //  ^--- sometimes blocks forever, how is that possible?
+          console.log(yes ? "yes seems so" : "no don't think so");
+          return yes;
+        }
+        catch (dummy) {
+          // This is usually/always (?) a """org.openqa.selenium.NoSuchWindowException:
+          // no such window: target window already closed""" exception, which means we're
+          // logged in already and the OAuth provider (Google/Facebook/etc) closed the login tab.
+          console.log("apparently we got logged in directly [EdM2GJGQ03]");
+          return true;
+        }
+      },
+
+      waitAndClickOkInWelcomeDialog: function() {
+        api.waitAndClick('#te_WelcomeLoggedIn .btn');
       },
 
       clickResetPasswordCloseDialogSwitchTab: function() {
@@ -709,7 +832,7 @@ function pagesFor(browser) {
       },
 
       clickCancel: function() {
-        browser.click('#e2eLD_Cancel');
+        browser.waitAndClick('#e2eLD_Cancel');
         browser.waitUntilModalGone();
       },
 

@@ -358,6 +358,7 @@ interface LargeTestForum {
     byMariaDeletedCat: any;
     byMichaelCategoryA: any;
   },
+  posts: TestPost[];
   categories: any;
 }
 

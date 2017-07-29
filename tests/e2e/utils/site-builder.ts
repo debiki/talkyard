@@ -158,6 +158,7 @@ function buildSite(site?: SiteData) {
           gunnar: make.guestGunnar(),
         },
         topics: <any> {},
+        posts: <TestPost[]> [],
         categories: <any> {},
       };
 

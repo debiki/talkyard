@@ -58,12 +58,16 @@ function addCommandsToBrowser(browser) {
   browser.addCommand('waitUntilModalGone', function() {
     browser.waitUntil(function () {
       // Check for the modal backdrop (it makes the stuff not in the dialog darker).
-      var resultsByBrowser = browser.isVisible('.modal-backdrop');
-      var values = allBrowserValues(resultsByBrowser);
-      var anyVisible = _.some(values, x => x);
+      let resultsByBrowser = browser.isVisible('.modal-backdrop');
+      let values = allBrowserValues(resultsByBrowser);
+      let anyVisible = _.some(values, x => x);
       if (anyVisible)
         return false;
       // Check for the block containing the modal itself.
+      // This sometimes fails, if waitUntilModalGone() is done in 'everyonesBrowser'.  [4JBKF20]
+      // I suppose in one browser, the modal is present, but in another, it's gone... somehow
+      // resulting in Selenium failing with a """ERROR: stale element reference: element
+      // is not attached to the page document""" error.
       resultsByBrowser = browser.isVisible('.fade.modal');
       values = allBrowserValues(resultsByBrowser);
       anyVisible = _.some(values, x => x);
@@ -200,26 +204,37 @@ function addCommandsToBrowser(browser) {
 
 
   browser.addCommand('swithToOtherTabOrWindow', function(url) {
-    var ids = browser.getTabIds();
-    var currentId = browser.getCurrentTabId();
-    for (var i = 0; i < ids.length; ++i) {
-      var id = ids[i];
+    const ids = browser.getTabIds();
+    const currentId = browser.getCurrentTabId();
+    for (let i = 0; i < ids.length; ++i) {
+      const id = ids[i];
       if (id !== currentId) {
         browser.switchTab(id);
         return;
       }
     }
+    // Might be a login popup that got auto closed? [3GRQU5]
+    logMessage("Didn't find any other window to switch to. [EdM2WPDL0]");
   });
 
 
   browser.addCommand('switchBackToFirstTabOrWindow', function(url) {
-    var ids = browser.getTabIds();
+    const ids = browser.getTabIds();
     if (ids.length > 1) {
       // So far all other tabs have been closed when we run this function. So > 1 tab = not tested,
       // so warn about that:
-      logWarning("Which tab is the first one? Switching to [0]. All tab ids: " + JSON.stringify(ids));
+      logMessage("Which tab is the first one? Switching to [0]. All tab ids: " + JSON.stringify(ids));
     }
-    browser.switchTab(ids[0]);
+    try {
+      browser.switchTab(ids[0]);
+    }
+    catch (dummy) {
+      // Probably a tab just got closed? Google and Facebook auto closes login popup tabs, [3GRQU5]
+      // if one is logged in already at their websites. Try again.
+      logMessage(`Error switching to tab [0]: ${dummy.toString()}.\nTrying again... [EdM1WKY5F]`);
+      const idsAgain = browser.getTabIds();
+      browser.switchTab(idsAgain[0]);
+    }
   });
 
 

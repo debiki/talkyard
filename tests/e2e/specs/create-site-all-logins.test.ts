@@ -8,17 +8,17 @@ import pages = require('../utils/pages');
 import pagesFor = require('../utils/pages-for');
 import settings = require('../utils/settings');
 import logAndDie = require('../utils/log-and-die');
-var logUnusual = logAndDie.logUnusual, die = logAndDie.die, dieIf = logAndDie.dieIf;
-var logMessage = logAndDie.logMessage;
+const logUnusual = logAndDie.logUnusual, die = logAndDie.die, dieIf = logAndDie.dieIf;
+const logMessage = logAndDie.logMessage;
 
-declare var browser: any;
+declare let browser: any;
 
 
-describe('/-/create-site  @createsite', function() {
+describe('/-/create-site  @createsite', () => {
 
   function createPasswordTestData() {
-    var testId = utils.generateTestId();
-    var localHostname = settings.localHostname ||
+    const testId = utils.generateTestId();
+    const localHostname = settings.localHostname ||
                         settings.testLocalHostnamePrefix + 'create-site-' + testId;
     return {
       testId: testId,
@@ -33,13 +33,13 @@ describe('/-/create-site  @createsite', function() {
     }
   }
 
-  it('can create a new site as a Password user  @login @password', function() {
+  it('can create a new site as a Password user  @login @password', () => {
     // Something timed out in here, twice. [E2EBUG]
     // Break up into smaller steps then? To find out what.
 
     browser = _.assign(browser, pagesFor(browser));
     browser.perhapsDebugBefore();
-    var data = createPasswordTestData();
+    const data = createPasswordTestData();
     browser.go(utils.makeCreateSiteWithFakeIpUrl());
     browser.disableRateLimits();
     pages.createSite.fillInFieldsAndSubmit(data);
@@ -47,24 +47,27 @@ describe('/-/create-site  @createsite', function() {
     browser.disableRateLimits();
     browser.click('#e2eLogin');
     pages.loginDialog.createPasswordAccount(data);
-    var siteId = pages.getSiteId();
-    var email = server.getLastEmailSenTo(siteId, data.email);
-    var link = utils.findFirstLinkToUrlIn(
+    const siteId = pages.getSiteId();
+    const email = server.getLastEmailSenTo(siteId, data.email);
+    const link = utils.findFirstLinkToUrlIn(
         data.origin + '/-/login-password-confirm-email', email.bodyHtmlText);
     browser.go(link);
     browser.waitAndClick('#e2eContinue');
     pages.createSomething.createForum("Password Forum Title");
+  });
 
-    // Done with create site stuff. But let's test a little bit more, so we know the forum can
-    // actually be used, once it's been created: Edit forum title and post a topic.
+  // Done with create site stuff. But let's test a little bit more, so we know the forum can
+  // actually be used, once it's been created: Edit forum title and post a topic.
 
+  it("the forum works: can edit forum title", () => {
     // --- Edit title
     pages.pageTitle.clickEdit();
     pages.pageTitle.editTitle("Pwd Frm Edtd");
     pages.pageTitle.save();
     browser.assertPageTitleMatches(/Pwd Frm Edtd/);
+  });
 
-    // --- Post a topic.  (Later: break out this as a page object)
+  it("the forum works: can post a topic", () => {
     browser.click('#e2eCreateSth');
     browser.waitAndSetValue('.esEdtr_titleEtc_title', "New tpc ttl");
     browser.setValue('textarea', "New tpc txt");
@@ -73,14 +76,32 @@ describe('/-/create-site  @createsite', function() {
     browser.waitForNewUrl();
     browser.assertTextMatches('h1', /New tpc ttl/);
     browser.assertTextMatches('#post-1', /New tpc txt/);
-    browser.perhapsDebug();
+
+    // Logout, to delete cookies, so subsequent create-site-at-same-URL tests won't fail
+    // because of them.  (6HRWJ3)
+    pages.topbar.clickLogout();
   });
 
   if (!settings.include3rdPartyDependentTests)
     return;
 
-  it('can create a new site as a Gmail user  @login @gmail @google', function() {
-    var data = createPasswordTestData();
+  it('can create a new site as a Gmail user, when not logged in to Gmail  @login @gmail @google', () => {
+    makeForumWithGmailAdminAccount();
+  });
+
+  it('can actually use the Gmail admin account to create stuff @gmail @google', () => {
+    pages.complex.createAndSaveTopic({ title: "Gmail topic title", body: "Body" });
+    pages.topbar.clickLogout(); // (6HRWJ3)
+  });
+
+  it('can create a new site as a Gmail user, when already logged in to Gmail  @login @gmail @google', () => {
+    // Now we're logged in already, so the Gmail login flow is / might-be slightly different.
+    makeForumWithGmailAdminAccount();
+    pages.topbar.clickLogout(); // (6HRWJ3)
+  });
+
+  function makeForumWithGmailAdminAccount() {
+    const data = createPasswordTestData();
     data.email = settings.gmailEmail;
     data.password = settings.gmailPassword;
     browser.go(utils.makeCreateSiteWithFakeIpUrl());
@@ -89,11 +110,25 @@ describe('/-/create-site  @createsite', function() {
     browser.click('#e2eLogin');
     pages.loginDialog.createGmailAccount(data);
     pages.createSomething.createForum("Gmail Forum Title");
-    browser.perhapsDebug();
+  }
+
+  it('can create a new site as a Facebook user, when not logged in to FB  @login @facebook', () => {
+    makeForumWithFacebookAdminAccount();
   });
 
-  it('can create a new site as a Facebook user  @login @facebook', function() {
-    var data = createPasswordTestData();
+  it('can actually use the FB admin account to create stuff @facebook', () => {
+    pages.complex.createAndSaveTopic({ title: "Facebook topic title", body: "Body" });
+    pages.topbar.clickLogout(); // (6HRWJ3)
+  });
+
+  it('can create a new site as Facebook user, when already logged in to FB  @login @facebook', () => {
+    // Now we're logged in already, so the Facebook login flow is / might-be slightly different.
+    makeForumWithFacebookAdminAccount();
+    pages.topbar.clickLogout(); // (6HRWJ3)
+  });
+
+  function makeForumWithFacebookAdminAccount() {
+    const data = createPasswordTestData();
     data.email = settings.facebookAdminEmail;
     data.password = settings.facebookAdminPassword;
     browser.go(utils.makeCreateSiteWithFakeIpUrl());
@@ -102,22 +137,11 @@ describe('/-/create-site  @createsite', function() {
     browser.click('#e2eLogin');
     pages.loginDialog.createFacebookAccount(data);
     pages.createSomething.createForum("Facebook Forum Title");
+  }
+
+  it("Done.", () => {
     browser.perhapsDebug();
   });
-
-  /*
-  it('can create a new site as a Gmail user  @login @gmail', function() {
-    var data = createTestData();
-    browser.url(utils.makeCreateSiteWithFakeIpUrl());
-    pages.createSite.fillInFieldsAndSubmit(data);
-  });
-
-  it('can create a new site as a Facebook user  @login @facebook', function() {
-    var data = createTestData();
-    browser.url(utils.makeCreateSiteWithFakeIpUrl());
-    pages.createSite.fillInFieldsAndSubmit(data);
-  });
-  */
 
 });
 
