@@ -19,13 +19,19 @@
 
 var d = { i: debiki.internal, u: debiki.v0.util };
 
-debiki.window = $(window);
-debiki.scriptLoad = $.Deferred();
+const scriptLoadDoneCallbacks = [];
+debiki.scriptLoad = {  // RENAME to ed.whenStarted(...) ?
+  done: function(callback) {
+    scriptLoadDoneCallbacks.push(callback);
+  }
+};
+
 debiki.FirstSiteId = '1';
 debiki.debug = window.location.search.indexOf('debug=true') >= 0;
 d.i.TitleNr = 0;
 d.i.BodyNr = 1;
 
+const allPostsNotTitleSelector = '.debiki .dw-p:not(.dw-p-ttl)';
 
 // Debiki convention: Dialog elem tabindexes should vary from 101 to 109.
 // HTML generation code assumes this, too. See Debiki for Developers, #7bZG31.
@@ -73,33 +79,7 @@ function registerEventHandlersFireLoginOut() {
   // and user specific permissions and ratings info (for this tab).
   // Therefore, when the user switches back to this tab, check
   // if a new session has been started.
-  $(window).on('focus', handleLoginInOtherBrowserTab);
-
-  //{{{ What will work w/ IE?
-  // See http://stackoverflow.com/a/5556858/694469
-  // But: "This script breaks down in IE(8) when you have a textarea on the
-  // page.  When you click on the textarea, the document and window both
-  // lose focus"
-  //// IE EVENTS
-  //$(document).bind('focusin', function(){
-  //    alert('document focusin');
-  //});
-  //if (/*@cc_on!@*/false) { // check for Internet Explorer
-  //  document.onfocusin = onFocus;
-  //  document.onfocusout = onBlur;
-  //} else {
-  //  window.onfocus = onFocus;
-  //  window.onblur = onBlur;
-  //}
-  //
-  // http://stackoverflow.com/a/6184276/694469
-  //window.addEventListener('focus', function() {
-  //  document.title = 'focused';
-  //});
-  //window.addEventListener('blur', function() {
-  //    document.title = 'not focused';
-  //});
-  //}}}
+  Bliss.events(window, { 'focus': handleLoginInOtherBrowserTab });
 };
 
 
@@ -109,18 +89,15 @@ function registerEventHandlersFireLoginOut() {
  * first step is done, the user should conceive the page as mostly loaded.)
  */
 function renderDiscussionPage() {
-  var $posts = $('.debiki .dw-p:not(.dw-p-ttl)');
-
-  (d.u.workAroundAndroidZoomBug || function() {})($);
-
   // Do this before rendering the page.
   d.i.layout = d.i.chooseLayout();
   d.i.layoutThreads();
 
   // Make it possible to test React.js performance in the browser.
   if (location.search.indexOf('breakReactChecksums=true') !== -1) {
-    $('[data-react-checksum]').attr('data-react-checksum', 'wrong-checksum-DwM4FKW21');
-    console.log("I've altered the React.js checksums, everything will be rerendered. [DwM4KPW2]");
+    var reactRoots = debiki2.$bySelector('[data-react-checksum]');
+    _.each(reactRoots, r => r.setAttribute('data-react-checksum', 'wrong-checksum-EdMRERNDR1'));
+    console.log("I've altered the React.js checksums, everything will be rerendered. [EdMRERNDR2]");
   }
 
   var Perf = location.search.indexOf('reactPerf=true') !== -1 ? React.addons.Perf : null;
@@ -141,9 +118,11 @@ function renderDiscussionPage() {
     console.log('You could also:  Perf.printDOM()');
   }
 
+  var posts = debiki2.$bySelector(allPostsNotTitleSelector);
+  var numPosts = posts.length;
   var timeBeforeTimeAgo = performance.now();
   // Only process the header right now if there are many posts.
-  debiki2.processTimeAgo($posts.length > 20 ? '.dw-ar-p-hd' : '');
+  debiki2.processTimeAgo(numPosts > 20 ? '.dw-ar-p-hd' : '');
   var timeAfterTimeAgo = performance.now();
 
   debiki2.ReactStore.initialize();
@@ -164,7 +143,7 @@ function renderDiscussionPage() {
         "'checksum was invalid' warning above (in dev builds) [DwM5KJG4]");
   }
 
-  $('html').addClass(ReactStartedClass);
+  document.documentElement.classList.add(ReactStartedClass);
   setTimeout(runNextStep, 60);
 
 
@@ -179,8 +158,8 @@ function renderDiscussionPage() {
   });
 
   steps.push(function() {
-    $posts.each(function() {
-      d.i.makeThreadResizableForPost(this);
+    _.each(posts, function(post) {
+      d.i.makeThreadResizableForPost(post);
     });
     debiki2.ReactActions.loadAndScrollToAnyUrlAnchorPost();
     debiki2.form.activateAnyCustomForm();
@@ -198,7 +177,7 @@ function renderDiscussionPage() {
     // Process any remaining time-ago:s, in case we didn't do all at once earlier.
     // Plus add collapse-thread buttons, for tall threads.
     debiki2.page.Hacks.processPosts();
-    debiki.scriptLoad.resolve();
+    _.each(scriptLoadDoneCallbacks, function(c) { c(); });
     debiki2.page.PostsReadTracker.start();
   });
 
@@ -209,7 +188,7 @@ function renderDiscussionPage() {
     if (steps.length > 0)
       setTimeout(runNextStep, 70);
   }
-};
+}
 
 
 /**
@@ -226,13 +205,13 @@ d.i.renderEmptyPage = function() {
   debiki2.ReactStore.initialize();
   debiki2.startRemainingReactRoots();
   debiki2.ReactStore.activateVolatileData();
-  $('html').addClass(ReactStartedClass);
+  document.documentElement.classList.add(ReactStartedClass);
   debiki2.utils.startDetectingMouse();
 };
 
 
 d.i.startDiscussionPage = function() {
-  $(function() {
+  Bliss.ready().then(function() {
     if (debiki.getPageId()) {
       renderDiscussionPage();
     }
@@ -264,11 +243,10 @@ StupidLightbox.start('.dw-p-bd', ':not(.giffferated, .no-lightbox)');
 
 // Open about-user dialog if one clicks a @username mention (instead of navigating away to
 // the about-user page).
-$(document).on('click', 'a.esMention', function(event) {
+Bliss.delegate(document, 'click', 'a.esMention', function(event) {
   event.preventDefault();
-  var $this = $(this);
-  var url = $this.attr('href');
-  var username = url.replace('/-/users/', '');
+  var href = event.target.href;
+  var username = href.replace(/^.*\/-\/users\//, '');
   debiki2.morebundle.openAboutUserDialog(username);
 });
 

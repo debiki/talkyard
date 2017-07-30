@@ -4873,6 +4873,7 @@ function googleCajaSanitizeHtml(htmlTextUnsafe, allowClassAndIdAttr,
     // These are for ED's own classes and ids.
     if (/^dw-/.test(token)) return '';  // old
     if (/^ed-/.test(token)) return '';   // old
+    if ('esMention' === token) return token; // mentions = ok
     if (/^es[A-Z]/.test(token)) return '';   // old
     if (/^the[A-Z]/.test(token)) return '';  // old (for ids)
     if (/^[a-z]?-/.test(token)) return '';   // old

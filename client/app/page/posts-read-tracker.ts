@@ -373,8 +373,8 @@ function isInViewport(postBody){
   let bounds = postBody.getBoundingClientRect();
   // 100 px is 3-4 rows text. If that much is visible, feels OK to mark the post as read.
   let aBitDown = Math.min(bounds.bottom, bounds.top + 100);
-  let windowHeight = debiki.window.height();
-  let windowWidth = debiki.window.width();
+  let windowHeight = window.innerHeight;
+  let windowWidth = window.innerWidth;
   let inViewportY = bounds.top >= 0 && aBitDown <= windowHeight;
   let inViewportX = bounds.left >= 0 && bounds.right <= windowWidth;
   let spansViewportY = bounds.top <= 0 && bounds.bottom >= windowHeight;

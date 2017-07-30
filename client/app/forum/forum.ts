@@ -310,6 +310,10 @@ var ForumButtons = createComponent({
     };
   },
 
+  componentWillUnmount: function() {
+    this.isGone = true;
+  },
+
   onWindowZoomOrResize: function() {
     var newCompact = window.innerWidth < 801;
     if (this.state.compact !== newCompact) {
@@ -320,7 +324,7 @@ var ForumButtons = createComponent({
   openCategoryDropdown: function() {
     var rect = ReactDOM.findDOMNode(this.refs.selectCategoryButton).getBoundingClientRect();
     this.setState({ isCategoryDropdownOpen: true, categoryDropdownX: rect.left,
-      categoryDropdownY: rect.bottom });
+        categoryDropdownY: rect.bottom });
   },
 
   closeCategoryDropdown: function() {
@@ -343,14 +347,14 @@ var ForumButtons = createComponent({
   findTheDefaultCategory: function() {
     var store: Store = this.props.store;
     return _.find(store.categories, (category: Category) => {
-        return category.isDefaultCategory;
+      return category.isDefaultCategory;
     });
   },
 
   openSortOrderDropdown: function() {
     var rect = ReactDOM.findDOMNode(this.refs.sortOrderButton).getBoundingClientRect();
     this.setState({ isSortOrderDropdownOpen: true, sortOrderDropdownX: rect.left,
-      sortOrderDropdownY: rect.bottom });
+        sortOrderDropdownY: rect.bottom });
   },
 
   closeSortOrderDropdown: function() {
@@ -427,24 +431,23 @@ var ForumButtons = createComponent({
 
   editCategory: function() {
     morebundle.getEditCategoryDialog(dialog => {
-      if (this.isMounted()) {
-        dialog.open(this.props.activeCategory.id);
-        // BUG needs to call this.setCategory(edited-category.slug), if slug changed. [7AFDW01]
-      }
+      if (this.isGone) return;
+      dialog.open(this.props.activeCategory.id);
+      // BUG needs to call this.setCategory(edited-category.slug), if slug changed. [7AFDW01]
     });
   },
 
   createCategory: function() {
     morebundle.getEditCategoryDialog(dialog => {
-      if (this.isMounted()) {
-        dialog.open();
-      }
+      if (this.isGone) return;
+      dialog.open();
     });
   },
 
   createTopic: function() {
     var anyReturnToUrl = window.location.toString().replace(/#/, '__dwHash__');
     morebundle.loginIfNeeded('LoginToCreateTopic', anyReturnToUrl, () => {
+      if (this.isGone) return;
       var category: Category = this.props.activeCategory;
       if (category.isForumItself) {
         category = this.findTheDefaultCategory();
@@ -731,6 +734,10 @@ const LoadAndListTopicsComponent = React.createClass(<any> {
     this.loadTopics(nextProps, false);
   },
 
+  componentWillUnmount: function() {
+    this.isGone = true;
+  },
+
   onLoadMoreTopicsClick: function(event) {
     this.loadTopics(this.props, true);
     event.preventDefault();
@@ -774,9 +781,7 @@ const LoadAndListTopicsComponent = React.createClass(<any> {
     // while this.state.isLoading was still false, resulting in an unneeded server request.
     this.isLoading = true;
     debiki2.Server.loadForumTopics(categoryId, orderOffset, (newlyLoadedTopics: Topic[]) => {
-      if (!this.isMounted())
-        return;
-
+      if (this.isGone) return;
       let topics: any = isNewView ? [] : (this.state.topics || []);
       topics = topics.concat(newlyLoadedTopics);
       // `topics` includes at least the last old topic twice.
@@ -1283,7 +1288,7 @@ var LoadAndListCategoriesComponent = React.createClass(<any> {
   },
 
   componentWillUnmount: function(nextProps) {
-    this.ignoreServerResponse = true;
+    this.isGone = true;
   },
 
   componentWillReceiveProps: function(nextProps) {
@@ -1298,7 +1303,7 @@ var LoadAndListCategoriesComponent = React.createClass(<any> {
     var store: Store = props.store;
     debiki2.Server.loadForumCategoriesTopics(store.pageId, props.location.query.filter,
         (categories: Category[]) => {
-      if (this.ignoreServerResponse) return;
+      if (this.isGone) return;
       this.setState({ categories: categories });
     });
   },
