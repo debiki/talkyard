@@ -416,19 +416,22 @@ const MoreVotesDropdownModal = createComponent({
   },
 
   makeVoteButtons: function() {
-    var store = this.state.store;
-    var isFlat = store.isFlat; // hmm shouldn't place in the store object, oh well
-    var me: Myself = store.me;
-    var post: Post = this.state.post;
-    var votes = me.votes[post.nr] || [];
-    var isOwnPage = store_thisIsMyPage(store);
-    var isStaffOrOwnPage: boolean = isStaff(me) || isOwnPage;
+    const store = this.state.store;
+    const isFlat = store.isFlat; // hmm shouldn't place in the store object, oh well
+    const me: Myself = store.me;
+    const post: Post = this.state.post;
+    const votes = me.votes[post.nr] || [];
+    const isOwnPage = store_thisIsMyPage(store);
+    const isStaffFullMemberOrOwnPage: boolean =
+      isStaff(me) || me.trustLevel >= TrustLevel.Member || isOwnPage;
+    const isStaffOrCoreMember: boolean =
+        isStaff(me) || me.trustLevel >= TrustLevel.CoreMember;
 
-    var myWrongVote = votes.indexOf('VoteWrong') !== -1 ? ' dw-my-vote' : '';
-    var myBuryVote = votes.indexOf('VoteBury') !== -1 ? ' dw-my-vote' : '';
-    var myUnwantedVote = votes.indexOf('VoteUnwanted') !== -1 ? ' dw-my-vote' : '';
+    const myWrongVote = votes.indexOf('VoteWrong') !== -1 ? ' dw-my-vote' : '';
+    const myBuryVote = votes.indexOf('VoteBury') !== -1 ? ' dw-my-vote' : '';
+    const myUnwantedVote = votes.indexOf('VoteUnwanted') !== -1 ? ' dw-my-vote' : '';
 
-    var wrongVoteButton =
+    const wrongVoteButton =
       ExplainingListItem({
         title: r.span({ className: 'dw-a-wrong icon-warning' + myWrongVote }, "Disagree"),
         text: r.span({}, "Click here to disagree with this post, " +
@@ -436,7 +439,8 @@ const MoreVotesDropdownModal = createComponent({
         onClick: this.onWrongClick, key: 'w' });
 
     // Skip if flat, because then cannot change sort order or collapse, so Bury would be pointless.
-    var buryVoteButton = isFlat ? null :
+    // Also, should be full member, otherwise probably doesn't know what Bury is?
+    const buryVoteButton = isFlat || !isStaffFullMemberOrOwnPage ? null :  // [7UKDR10]
       ExplainingListItem({
         title: r.span({ className: 'dw-a-bury icon-bury' + myBuryVote }, "Bury"),
         text: r.span({}, "Click to sort other posts before this post. " +
@@ -444,7 +448,7 @@ const MoreVotesDropdownModal = createComponent({
             // "If the post is correct, but not interesting to read."
         onClick: this.onBuryClick, key: 'b' });
 
-    var unwantedVoteButton = isGuest(me) || !isStaffOrOwnPage ? null :
+    const unwantedVoteButton = !isStaffOrCoreMember ? null :  // [4DKWV9J2]
       ExplainingListItem({
         title: r.span({ className: 'dw-a-unwanted icon-cancel' + myUnwantedVote }, "Unwanted"),
         text: "If you do not want this post on this website. This would reduce the trust I have " +
@@ -455,8 +459,8 @@ const MoreVotesDropdownModal = createComponent({
   },
 
   render: function() {
-    var state = this.state;
-    var content = state.isOpen ? this.makeVoteButtons() : null;
+    const state = this.state;
+    const content = state.isOpen ? this.makeVoteButtons() : null;
     return (
       DropdownModal({ show: state.isOpen, onHide: this.close,
           atRect: state.buttonRect, windowWidth: state.windowWidth,

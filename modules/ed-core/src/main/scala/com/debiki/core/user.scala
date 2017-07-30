@@ -387,6 +387,15 @@ sealed trait User {
   def isStaff: Boolean = isAdmin || isModerator || isSystemUser
   def isHuman: Boolean = id >= LowestHumanMemberId
 
+  def isStaffOrCoreMember: Boolean =
+    isStaff || effectiveTrustLevel.toInt >= TrustLevel.CoreMember.toInt
+
+  def isStaffOrTrusted: Boolean =
+    isStaff || effectiveTrustLevel.toInt >= TrustLevel.TrustedMember.toInt
+
+  def isStaffOrFullMember: Boolean =
+    isStaff || effectiveTrustLevel.toInt >= TrustLevel.FullMember.toInt
+
   def isMember: Boolean = User.isMember(id)
   def isGuest: Boolean = User.isGuestId(id)
   def isGroup: Boolean = false

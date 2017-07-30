@@ -17,6 +17,7 @@
 
 package ed.server.security
 
+import com.debiki.core.Prelude._
 
 
 object ReservedNames {
@@ -32,8 +33,30 @@ object ReservedNames {
 
   def isUsernameReserved(username: String): Boolean = isWhateverReserved(username)
 
+  /** Don't allow '@' because perhaps I'll let  @thename_@1234  or  @thename_@1234.sha256p
+    * mean the Someone with [a public key prefix = 1234 and known by the forum]
+    * that also chose username @thename.
+    * Then people with the same username, could join the same forum, but still be different
+    * identities and could be mentioned individually. There'd be a global decentralized
+    * "database" of usernames = ed25519 public keys (Scuttlebutt identities).
+    */
   private def isWhateverReserved(whatever: String): Boolean =
-    allNames.contains(whatever)
+    allNames.contains(whatever) || EndsWithUnderscoreNumberRegex.matches(whatever) ||
+      StartsWithNumberRegex.matches(whatever) || whatever.contains("@")
+
+  /** I'm reserving all usernames like "whatever_123" for usage with global identities
+    * where 123 is a public key in base 10 or 16.
+    * For example, if there're two identities on planet Earth with public key 23456785384306...
+    * and 2309284833237..., they can have the same username, and will get the suffixes 234 and 230,
+    * respectively. So, their usernames would be: @same_username_234 and @same_username_230
+    * (The public key number could be Scuttlebutt public keys, that is, the public part of
+    * an ed25519 key pair.)
+    *
+    * '_' isn't allowed in domain names currently anyway.
+    */
+  private val EndsWithUnderscoreNumberRegex = ".+_[0-9a-f]*$".r
+
+  private val StartsWithNumberRegex = "^[0-9].*".r
 
 
   private val allNames: Set[String] =
@@ -878,6 +901,7 @@ anyone anybody
 someone somebody
 noone nobody
 anonymous anon
+whoever whatever whichever
 identity
 role roles
 type types
@@ -908,6 +932,8 @@ building
 
 god
 satan
+troll
+bully
 
 fuck
 fucker

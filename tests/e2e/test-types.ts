@@ -253,7 +253,7 @@ interface PagePathWithId {
 interface NewTestPost {
   id?: number;
   // Not just page id, because needs author, creation date, etc.
-  page: Page;
+  page: Page | PageJustAdded;
   nr: number;
   parentNr?: number;
   approvedSource: string;
@@ -344,6 +344,8 @@ interface LargeTestForum {
     owen: any;
     mons: any;
     modya: any;
+    corax: any;
+    regina: any;
     maria: any;
     michael: any;
     mallory: any;
@@ -352,13 +354,12 @@ interface LargeTestForum {
     gunnar: any;
   },
   topics: {
-    byMariaCategoryA: any;
-    byMariaStaffOnlyCat: any;
-    byMariaUnlistedCat: any;
-    byMariaDeletedCat: any;
-    byMichaelCategoryA: any;
+    byMariaCategoryA: PageJustAdded;
+    byMariaStaffOnlyCat: PageJustAdded;
+    byMariaUnlistedCat: PageJustAdded;
+    byMariaDeletedCat: PageJustAdded;
+    byMichaelCategoryA: PageJustAdded;
   },
-  posts: TestPost[];
   categories: any;
 }
 

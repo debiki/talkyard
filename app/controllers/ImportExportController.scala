@@ -283,7 +283,12 @@ object ImportExportController extends mvc.Controller {
       // Or will this be a bit slow? Kind of loads everything we just imported.
       siteData.pages foreach { pageMeta =>
         // [readlater] export & import page views too, otherwise page popularity here will be wrong.
-        newDao.updatePagePopularity(PagePartsDao(pageMeta.pageId, transaction), transaction)
+        val pagePartsDao = PagePartsDao(pageMeta.pageId, transaction)
+        newDao.updatePagePopularity(pagePartsDao, transaction)
+        // For now: (e2e tests: page metas imported before posts, and page meta reply counts = wrong)
+        val numReplies = pagePartsDao.allPosts.count(_.isReply)
+        val correctMeta = pageMeta.copy(numRepliesTotal = numReplies, numRepliesVisible = numReplies)
+        transaction.updatePageMeta(correctMeta, oldMeta = pageMeta, markSectionPageStale = true)
       }
     }
 

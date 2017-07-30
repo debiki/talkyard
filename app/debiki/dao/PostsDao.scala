@@ -1359,11 +1359,12 @@ trait PostsDao {
 
       val post = page.parts.thePostByNr(postNr)
 
-      if (voteType == PostVoteType.Bury && !voter.isStaff)
-        throwForbidden("DwE2WU74", "Only staff and regular members may Bury-vote")
+      if (voteType == PostVoteType.Bury && !voter.isStaffOrFullMember &&  // [7UKDR10]
+          page.meta.authorId != voterId)
+        throwForbidden("DwE2WU74", "Only staff, full members and the page author may Bury-vote")
 
-      if (voteType == PostVoteType.Unwanted && !voter.isStaff && page.meta.authorId != voterId)
-        throwForbidden("DwE5JUK0", "Only staff and the page author may Unwanted-vote")
+      if (voteType == PostVoteType.Unwanted && !voter.isStaffOrCoreMember)  // [4DKWV9J2]
+        throwForbidden("DwE5JUK0", "Only staff and core members may Unwanted-vote")
 
       if (voteType == PostVoteType.Like) {
         if (post.createdById == voterId)

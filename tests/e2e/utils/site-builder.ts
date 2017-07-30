@@ -150,6 +150,8 @@ function buildSite(site?: SiteData) {
           owen: site.members[0],
           mons: make.memberModeratorMons(),
           modya: make.memberModeratorModya(),
+          regina: make.memberRegina(),
+          corax: make.memberCorax(),
           maria: make.memberMaria(),
           michael: make.memberMichael(),
           mallory: make.memberMallory(),
@@ -158,18 +160,21 @@ function buildSite(site?: SiteData) {
           gunnar: make.guestGunnar(),
         },
         topics: <any> {},
-        posts: <TestPost[]> [],
         categories: <any> {},
       };
 
       site.members.push(forum.members.mons);
       site.members.push(forum.members.modya);
+      site.members.push(forum.members.corax);
+      site.members.push(forum.members.regina);
       site.members.push(forum.members.maria);
       site.members.push(forum.members.michael);
       site.members.push(forum.members.mallory);
       site.guests.push(forum.guests.gunnar);
 
       _.each(site.members, (m: Member) => m.trustLevel = c.TestTrustLevel.Basic);
+      forum.members.corax.trustLevel = c.TestTrustLevel.CoreMember;
+      forum.members.regina.trustLevel = c.TestTrustLevel.Regular;
 
       const rootCategoryId = 1;
       const defaultCategoryId = 2;

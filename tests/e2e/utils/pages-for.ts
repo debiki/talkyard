@@ -1262,9 +1262,59 @@ function pagesFor(browser) {
         api.topic.clickPostActionButton(`#post-${postNr} + .esPA .dw-a-edit`);
       },
 
-
       clickMoreForPostNr: function(postNr: PostNr) {
         api.topic.clickPostActionButton(`#post-${postNr} + .esPA .dw-a-more`);
+      },
+
+      clickMoreVotesForPostNr: function(postNr: PostNr) {
+        api.topic.clickPostActionButton(`#post-${postNr} + .esPA .dw-a-votes`);
+      },
+
+      toggleLikeVote: function(postNr: PostNr) {
+        const likeVoteSelector = `#post-${postNr} + .esPA .dw-a-like`;  // dupl (4GKWSG02)
+        const isLikedBefore = browser.isVisible(likeVoteSelector + '.dw-my-vote');
+        api.topic.clickPostActionButton(likeVoteSelector);
+        let delay = 133;
+        while (true) {
+          // Wait for the server to reply and the page to get updated.
+          browser.pause(delay);
+          delay *= 1.5;
+          const isLikedAfter = browser.isVisible(likeVoteSelector + '.dw-my-vote');
+          if (isLikedBefore !== isLikedAfter)
+            break;
+        }
+      },
+
+      isPostLikedByMe: function(postNr: PostNr) {
+        const likeVoteSelector = `#post-${postNr} + .esPA .dw-a-like`;  // dupl (4GKWSG02)
+        return browser.isVisible(likeVoteSelector + '.dw-my-vote');
+      },
+
+      toggleDisagreeVote: function(postNr: PostNr) {
+        api.topic._toggleMoreVote(postNr, '.dw-a-wrong');
+      },
+
+      toggleBuryVote: function(postNr: PostNr) {
+        api.topic._toggleMoreVote(postNr, '.dw-a-bury');
+      },
+
+      toggleUnwantedVote: function(postNr: PostNr) {
+        api.topic._toggleMoreVote(postNr, '.dw-a-unwanted');
+      },
+
+      _toggleMoreVote: function(postNr: PostNr, selector: string) {
+        api.topic.clickMoreVotesForPostNr(postNr);
+        // The vote button appears in a modal dropdown.
+        browser.waitAndClick('.esDropModal_content ' + selector);
+        browser.waitUntilModalGone();
+      },
+
+      canVoteUnwanted: function(postNr: PostNr) {
+        api.topic.clickMoreVotesForPostNr(postNr);
+        browser.waitForVisible('.esDropModal_content .dw-a-like');
+        const canVote = browser.isVisible('.esDropModal_content .dw-a-unwanted');
+        assert(false); // how close modal? to do... later when needed
+        return canVote;
       },
 
       clickFlagPost: function(postNr: PostNr) {

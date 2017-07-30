@@ -747,7 +747,7 @@ enum TrustLevel {
   Stranger = 0,
   New = 1,
   Basic = 2,
-  Member = 3,
+  Member = 3,   // RENAME to FullMember
   Helper = 4,
   Regular = 5,
   CoreMember = 6,
