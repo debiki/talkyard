@@ -89,7 +89,7 @@ function runAllEndToEndTests {
   runEndToEndTest s/wdio target/e2e/wdio.2chrome.conf.js    --browser $browser --only flag-member-block-agree.2browsers $args
   runEndToEndTest s/wdio target/e2e/wdio.2chrome.conf.js    --browser $browser --only flag-guest-block-agree.2browsers $args
   runEndToEndTest s/wdio target/e2e/wdio.2chrome.conf.js    --browser $browser --only search-public-basic.2browsers $args
-  #runEndToEndTest s/wdio target/e2e/wdio.2chrome.conf.js    --browser $browser --only search-private-chat.2browsers $args
+  runEndToEndTest s/wdio target/e2e/wdio.2chrome.conf.js    --browser $browser --only search-private-chat.2browsers $args
   runEndToEndTest s/wdio target/e2e/wdio.2chrome.conf.js    --browser $browser --only summary-emails.2browsers $args
 
   # wip:
