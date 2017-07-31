@@ -31,6 +31,16 @@ export var Input = createComponent({
     return ReactDOM.findDOMNode(this.refs.theInput);
   },
 
+  // @ifdef DEBUG
+  focus: function() {
+    // Previously:
+    // $ (ReactDOM.findDOMNode(this)).find('input').focus();
+    // Now, untested:
+    // Bliss('input', ReactDOM.findDOMNode(this)).focus();
+    die('untested [EdE3KDPYWW9]');
+  },
+  // @endif
+
   render: function() {
     var props = this.props;
     var childProps = _.clone(props);

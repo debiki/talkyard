@@ -212,7 +212,8 @@ export function deleteById(itemsWithId: any[], idToDelete) {
 }
 
 
-export function $bySelector(selector: string): NodeListOf<Element> {
+export const $$bySelector = $bySelector;  // returns many, so should be named $$... not just $...
+export function $bySelector(selector: string): NodeListOf<Element> {   // RENAME
   return document.querySelectorAll(selector);
 }
 
@@ -225,12 +226,12 @@ export function $byId(elemId: string): HTMLElement {
 }
 
 
-export function $$byClass(className: string): HTMLCollectionOf<Element> {
+export function $$byClass(className: string, context?): HTMLCollectionOf<Element> {
   // @ifdef DEBUG
   // getElementsByClassName() works with one single class only.
   dieIf(/#\., /.test(className), 'EdE5JLKS02');
   // @endif
-  return document.getElementsByClassName(className);
+  return (context || document).getElementsByClassName(className);
 }
 
 

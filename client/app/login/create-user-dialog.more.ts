@@ -215,7 +215,7 @@ export var CreateUserDialogContent = createClassAndFactory({
       window.location.assign('/');
     }
     else {
-      const isPage = $('.dw-page');
+      const isPage = $$byClass('dw-page').length;
       if (!isPage) console.log('should reload ... /? [DwE2KWF1]');
       continueOnMainPageAfterHavingCreatedUser();
     }

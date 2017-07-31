@@ -201,8 +201,7 @@ var CreateWebsiteComponent = React.createClass(<any> {
               onChangeValueOk: (value, isOk) => this.reportOkay('orgName', isOk) }),
 
           r.div({ style: { display: state.showRemaining ? 'block' : 'none' }},
-            AcceptTerms({ reportOkay: (isOk) => this.reportOkay('terms', isOk),
-                ref: 'acceptTerms' }),
+            AcceptTerms({ reportOkay: (isOk) => this.reportOkay('terms', isOk) }),
 
             InputTypeSubmit({ value: 'Create Site', disabled: disableSubmit })))));
   }
@@ -310,18 +309,13 @@ export var EmbeddingAddressInput = createClassAndFactory({
 
 
 
-var AcceptTerms = createClassAndFactory({
+const AcceptTerms = createClassAndFactory({
   onChange: function(e) {
     this.props.reportOkay(this.refs.checkbox.getChecked());
   },
 
-  focus: function() {
-    // Apparently Input has no focus() method, so:
-    $(ReactDOM.findDOMNode(this)).find('input').focus();
-  },
-
   render: function() {
-    var label =
+    const label =
       r.span({},
           'I accept the ',
           r.a({ href: '/-/terms-of-use', target: '_blank'}, 'Terms of Use'),
