@@ -80,6 +80,7 @@ function runAllEndToEndTests {
   runEndToEndTest s/wdio target/e2e/wdio.conf.js            --browser $browser --only authz-view-as-stranger $args
   runEndToEndTest s/wdio target/e2e/wdio.conf.js            --browser $browser --only authz-basic-see-reply-create $args
   runEndToEndTest s/wdio target/e2e/wdio.2chrome.conf.js    --browser $browser --only impersonate.2browsers $args
+  runEndToEndTest s/wdio target/e2e/wdio.conf.js            --browser $browser --only email-notfs-discussion $args
   runEndToEndTest s/wdio target/e2e/wdio.2chrome.conf.js    --browser $browser --only unsubscribe.2browsers $args
   runEndToEndTest s/wdio target/e2e/wdio.2chrome.conf.js    --browser $browser --only new-user-review-ok.2browsers $args
   #runEndToEndTest s/wdio target/e2e/wdio.2chrome.conf.js    --browser $browser --only new-user-review-bad.2browsers $args

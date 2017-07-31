@@ -131,30 +131,46 @@ function playTimeHours(hours: number) { playTimeSeconds(hours * 3600); }
 function playTimeDays(days: number) { playTimeSeconds(days * 3600 * 24); }
 
 
-function getLastEmailSenTo(siteId: SiteId, email: string): EmailSubjectBody {
-  const response = getOrDie(settings.mainSiteOrigin + '/-/last-e2e-test-email?sentTo=' + email +
-    '&siteId=' + siteId);
-  const lastEmails = JSON.parse(response.body);
-  return lastEmails[lastEmails.length - 1];
+function getLastEmailSenTo(siteId: SiteId, email: string, browser?): EmailSubjectBody {
+  while (true) {
+    const response = getOrDie(settings.mainSiteOrigin + '/-/last-e2e-test-email?sentTo=' + email +
+      '&siteId=' + siteId);
+    const lastEmails = JSON.parse(response.body);
+    if (lastEmails.length)
+      return lastEmails[lastEmails.length - 1];
+    if (browser)
+      browser.pause(500 - 100); // 100 ms for a request, perhaps?
+  }
 }
 
 
-function getLastVerifyEmailAddressLinkEmailedTo(siteId: SiteId, emailAddress: string): string {
-  const email = getLastEmailSenTo(siteId, emailAddress);
+/** Doesn't count all emails, only the last 10? so after many emails sent, becomes useless.
+ */
+function countLastEmailsSentTo(siteId: SiteId, email: string): number {
+  const response = getOrDie(settings.mainSiteOrigin + '/-/last-e2e-test-email?sentTo=' + email +
+    '&siteId=' + siteId + '&timeoutMs=1000');
+  const lastEmails = JSON.parse(response.body);
+  return lastEmails.length;
+}
+
+
+function getLastVerifyEmailAddressLinkEmailedTo(siteId: SiteId, emailAddress: string,
+      browser?): string {
+  const email = getLastEmailSenTo(siteId, emailAddress, browser);
   return utils.findFirstLinkToUrlIn('https?://.*/-/login-password-confirm-email', email.bodyHtmlText);
 }
 
 
 const unsubUrlRegexString = 'https?://.*/-/unsubscribe';
 
-function getLastUnsubscriptionLinkEmailedTo(siteId: SiteId, emailAddress: string): string {
-  const email = getLastEmailSenTo(siteId, emailAddress);
+function getLastUnsubscriptionLinkEmailedTo(siteId: SiteId, emailAddress: string, browser?): string {
+  const email = getLastEmailSenTo(siteId, emailAddress, browser);
   return utils.findFirstLinkToUrlIn(unsubUrlRegexString, email.bodyHtmlText);
 }
 
 
-function getAnyUnsubscriptionLinkEmailedTo(siteId: SiteId, emailAddress: string): string {
-  const email = getLastEmailSenTo(siteId, emailAddress);
+function getAnyUnsubscriptionLinkEmailedTo(siteId: SiteId, emailAddress: string, browser?): string {
+  const email = getLastEmailSenTo(siteId, emailAddress, browser);
   return utils.findAnyFirstLinkToUrlIn(unsubUrlRegexString, email.bodyHtmlText);
 }
 
@@ -208,6 +224,7 @@ export = {
   playTimeHours: playTimeHours,
   playTimeDays: playTimeDays,
   getLastEmailSenTo: getLastEmailSenTo,
+  countLastEmailsSentTo: countLastEmailsSentTo,
   getLastVerifyEmailAddressLinkEmailedTo: getLastVerifyEmailAddressLinkEmailedTo,
   getLastUnsubscriptionLinkEmailedTo: getLastUnsubscriptionLinkEmailedTo,
   getAnyUnsubscriptionLinkEmailedTo: getAnyUnsubscriptionLinkEmailedTo,

@@ -140,8 +140,9 @@ class Mailer(
           sender() ! promise.future
         case None =>
           SECURITY // DoS attack: don't add infinitely many promises in prod mode
-          CLEAN_UP // could stop using promises — let the e2e tests poll the server instead? (7KUDQY00)
+          CLEAN_UP // could stop using promises — let the e2e tests poll the server instead? (7KUDQY00) DONE now, on the next line. So dooo clean up.
           val newPromise = Promise[Vector[Email]]()
+          newPromise.success(Vector.empty)
           e2eTestEmails.put(siteIdColonEmailAddress, newPromise)
           sender() ! newPromise.future
       }
