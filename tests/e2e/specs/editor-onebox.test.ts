@@ -75,11 +75,14 @@ describe("editor onebox:", () => {
     owensBrowser.editor.editText(imageJpgUrl);
   });
 
-  it("The image url gets converted to an onebox <img> tag", () => {
-    // Something in here timed out once.
-    // Do this in two steps, so, if breaks, will be simpler to find out what's broken.
-    owensBrowser.waitForVisible('#debiki-editor-controller .preview ' + dotOneboxClass);
-    owensBrowser.waitForVisible('#debiki-editor-controller .preview ' + imageJpgOnebox);
+  it("The image url gets converted to a .onebox tag", () => {
+    // Something in here timed out once. So do in two steps, simpler to troubleshoot. First: ...
+    owensBrowser.waitForExist('#debiki-editor-controller .preview ' + dotOneboxClass);
+  });
+
+  it("... with an a[href=...] and img[src=...]", () => {
+    // ...Then:
+    owensBrowser.waitForExist('#debiki-editor-controller .preview ' + imageJpgOnebox);
   });
 
   it("Owen saves the page", () => {
@@ -90,8 +93,8 @@ describe("editor onebox:", () => {
   });
 
   it("... and sees the onebox <img> tag", () => {
-    owensBrowser.waitForVisible('.esOrigPost ' + dotOneboxClass);
-    owensBrowser.waitForVisible('.esOrigPost ' + imageJpgOnebox);
+    owensBrowser.waitForExist('.esOrigPost ' + dotOneboxClass);
+    owensBrowser.waitForExist('.esOrigPost ' + imageJpgOnebox);
   });
 
   it("Owen edits the page, adds a video url", () => {
@@ -100,13 +103,13 @@ describe("editor onebox:", () => {
   });
 
   it("It appears as a onebox <video> tag in the preview", () => {
-    owensBrowser.waitForVisible('#debiki-editor-controller .preview ' + dotOneboxClass);
-    owensBrowser.waitForVisible('#debiki-editor-controller .preview ' + videoMp4Onebox);
+    owensBrowser.waitForExist('#debiki-editor-controller .preview ' + dotOneboxClass);
+    owensBrowser.waitForExist('#debiki-editor-controller .preview ' + videoMp4Onebox);
   });
 
   it("Owen saves the edits, sees both the onebox <img> and the <video> tags", () => {
     owensBrowser.editor.save();
-    owensBrowser.waitForVisible('.esOrigPost ' + videoMp4Onebox);
+    owensBrowser.waitForExist('.esOrigPost ' + videoMp4Onebox);
   });
 
   // Let's do the remaining tests as a non-staff member.

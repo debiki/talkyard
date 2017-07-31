@@ -28,7 +28,8 @@ describe('/-/create-site  @createsite', () => {
       orgName: "E2E Org Name",
       fullName: 'E2E Test ' + testId,
       email: settings.testEmailAddressPrefix + testId + '@example.com',
-      username: 'e2e_test__' + testId,
+      // Prefix the number with 'z' because '..._<number>' is reserved. [7FLA3G0L]
+      username: 'e2e_test__z' + testId,
       password: 'pub5KFV2FY8C',
     }
   }

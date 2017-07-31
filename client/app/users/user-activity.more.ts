@@ -45,17 +45,19 @@ export let UsersActivityComponent = React.createClass(<any> {
     let activeRouteName = this.props.routes[3].path;
 
     return (
-     r.div({ style: { display: 'table', width: '100%' }},
-       r.div({ style: { display: 'table-row' }},
-         r.div({ className: 's_UP_Act_Nav' },
-           Nav({ bsStyle: 'pills', activeKey: activeRouteName,
-               onSelect: this.transitionTo, className: 'dw-sub-nav nav-stacked' },
-             NavItem({ eventKey: 'posts', className: 's_UP_Act_Nav_PostsB' }, "Posts"),
-             NavItem({ eventKey: 'topics', className: 's_UP_Act_Nav_TopicsB' }, "Topics"))),
-             //NavItem({ eventKey: 'likes-given' }, "Likes Given"),
-             //NavItem({ eventKey: 'likes-received' }, "Likes Received"))),
-         r.div({ className: 's_UP_Act_List' },
-           React.cloneElement(this.props.children, childProps)))));
+      // Without table-layout: fixed, the table can become 5000 px wide, because otherwise the
+      // default layout is width = as wide as the widest cell wants to be.
+      r.div({ style: { display: 'table', width: '100%', tableLayout: 'fixed' }},
+        r.div({ style: { display: 'table-row' }},
+          r.div({ className: 's_UP_Act_Nav' },
+            Nav({ bsStyle: 'pills', activeKey: activeRouteName,
+                onSelect: this.transitionTo, className: 'dw-sub-nav nav-stacked' },
+              NavItem({ eventKey: 'posts', className: 's_UP_Act_Nav_PostsB' }, "Posts"),
+              NavItem({ eventKey: 'topics', className: 's_UP_Act_Nav_TopicsB' }, "Topics"))),
+              //NavItem({ eventKey: 'likes-given' }, "Likes Given"),
+              //NavItem({ eventKey: 'likes-received' }, "Likes Received"))),
+          r.div({ className: 's_UP_Act_List' },
+            React.cloneElement(this.props.children, childProps)))));
   }
 });
 

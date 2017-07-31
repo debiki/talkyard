@@ -1329,10 +1329,9 @@ function abbreviateSanitizedHtml(html) {
 }
 
 // UX COULD update length, if screen rotated/zoomed.
- let abbrContentLength = Math.min(screen.width, screen.height) < 500 ? 90 : 120;
- if (screen.height < 300) {  // or min(width, height)?
-   abbrContentLength = 60;
- }
+const abbrContentLength = isServerSide() ? 60 : (
+    screen.height < 300 ? 60 :  // or min(width, height)?
+        (Math.min(screen.width, screen.height) < 500 ? 90 : 120));
 
 
 export const PostBody = createComponent({

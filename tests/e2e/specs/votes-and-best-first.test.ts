@@ -293,7 +293,6 @@ describe("votes and best first", () => {
     coraxBrowser.refresh();
     const els = $$('.dw-depth-1 .dw-p');
     consoleLogPostSortOrder(els);
-    coraxBrowser.debug();
     assert(els[0].getAttribute('id') === `post-${postNrAA}`);
     assert(els[1].getAttribute('id') === `post-${postNrCC}`); // a Like, a Disagree, and a Bury
     assert(els[2].getAttribute('id') === `post-${postNrXX}`);
@@ -310,7 +309,6 @@ describe("votes and best first", () => {
     coraxBrowser.refresh();
     const els = $$('.dw-depth-1 .dw-p');
     consoleLogPostSortOrder(els);
-    coraxBrowser.debug();
     assert(els[0].getAttribute('id') === `post-${postNrBB}`); // Unwanted (by core member, bad bad)
     assert(els[1].getAttribute('id') === `post-${postNrAA}`);
     assert(els[2].getAttribute('id') === `post-${postNrCC}`); // a Like, a Disagree, and a Bury

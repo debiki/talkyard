@@ -1189,6 +1189,10 @@ function pagesFor(browser) {
       },
 
       postNrContains: function(postNr: PostNr, selector: string) {
+        return browser.isExisting(`#post-${postNr} .dw-p-bd ${selector}`);
+      },
+
+      postNrContainsVisible: function(postNr: PostNr, selector: string) {
         return browser.isVisible(`#post-${postNr} .dw-p-bd ${selector}`);
       },
 
@@ -1937,7 +1941,6 @@ function pagesFor(browser) {
 
       editPostNr: function(postNr: PostNr, newText: string) {
         api.topic.clickEditoPostNr(postNr);
-        api.editor.editText(newText);
         api.editor.editText(newText);
         api.editor.save();
         browser.topic.assertPostTextMatches(postNr, newText);
