@@ -19,15 +19,9 @@
 
 var d = { i: debiki.internal };
 
-/*
-function sendWriteReplyMessageToEmbeddedEditor(postId) {
-  window.parent.postMessage(
-      JSON.stringify(['editorToggleReply', postId]), '*');
-}; */
-
 
 d.i.clearIsReplyingMarks = function() {
-  var replyBtns = $$byClass('dw-replying');
+  var replyBtns = debiki2.$$byClass('dw-replying');
   for (var i = 0; i < replyBtns.length; ++i) {
     var buttonElem = replyBtns[i];
     buttonElem.classList.remove('dw-replying');

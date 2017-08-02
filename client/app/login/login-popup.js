@@ -1,5 +1,5 @@
-/* Shows OpenID login dialog.
- * Copyright (C) 2010-2012 Kaj Magnus Lindberg (born 1979)
+/* Shows some OAuth login dialog.
+ * Copyright (c) 2010-2012, 2017 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -19,7 +19,7 @@
 var d = { i: debiki.internal, u: debiki.v0.util };
 
 
-d.i.createLoginPopup = function(anyUrl) {
+d.i.createLoginPopup = function(url) {
   // Based on popupManager.createPopupOpener, from popuplib.js.
 
   var width = 450;
@@ -28,12 +28,13 @@ d.i.createLoginPopup = function(anyUrl) {
   var windowName = 'LoginPopup';
 
   // For now. Fixes # in return-to-url.
-  var anyUrl = anyUrl.replace(/#/, '__dwHash__');
+  var url = url.replace(/#/, '__dwHash__');
+  var anyProtocol = d.i.isInIframe ? 'http:' : '';  // or https
 
   // Here is described how to configure the popup window:
   // http://svn.openid.net/repos/specifications/user_interface/1.0/trunk
   //    /openid-user-interface-extension-1_0.html
-  var popupWindow = window.open(anyUrl || '', windowName,
+  var popupWindow = window.open(anyProtocol + url, windowName,
       'width='+ width +',height='+ height +
       ',status=1,location=1,resizable=yes'+
       ',left='+ coordinates[0] +',top='+ coordinates[1]);

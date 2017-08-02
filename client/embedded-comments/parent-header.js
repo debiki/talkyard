@@ -44,7 +44,7 @@ debiki.internal.debikiServerOrigin = (function() {
 
 debiki.internal.runDebikisCode = function() {
 
-debiki.internal.$ = jQuery;
+// debiki.internal.$ = jQuery;
 
 
 // vim: et sw=2 ts=2 tw=0 list

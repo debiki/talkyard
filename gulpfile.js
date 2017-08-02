@@ -117,7 +117,7 @@ var slimJsFiles = [
       'target/client/app/actions/edit/edit.js',
       'target/client/app/actions/vote.js',
       'target/client/app/actions/reply.js',
-      //'target/client/app/iframe.js',
+      'client/app/if-in-iframe.js',
       'target/client/app/utils/jquery-find.js',
       'target/client/app/page/layout-threads.js',
       'target/client/app/page/resize-threads.js',
@@ -167,10 +167,11 @@ var editorJsFiles = [
 // see client/embedded-comments/readme.txt.)
 var embeddedJsFiles = [
       'client/embedded-comments/parent-header.js',  // not ^target/client/...
-      'client/third-party/jquery-scrollable.js',
-      'client/third-party/jquery.browser.js',
-      'target/client/embedded-comments/debiki-utterscroll-iframe-parent.js',
-      'target/client/app/utterscroll/utterscroll-init-tips.js',
+      'client/third-party/bliss.shy.js',
+      //'client/third-party/jquery-scrollable.js',
+      //'client/third-party/jquery.browser.js',
+      //'target/client/embedded-comments/debiki-utterscroll-iframe-parent.js',
+      //'target/client/app/utterscroll/utterscroll-init-tips.js',
       'target/client/embedded-comments/iframe-parent.js',
       'client/embedded-comments/parent-footer.js'];  // not ^target/client/...
 

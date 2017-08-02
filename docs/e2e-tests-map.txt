@@ -198,14 +198,17 @@ discussion -
 
 post -
   votes -
-    cast all types:
-    like –> sort order:
+    cast all types:      votes-and-best-first.test.ts
+    like –> sort order:  votes-and-best-first.test.ts
     wrong –> warning:
-    bury –> sort order:
+    bury –> sort order:  votes-and-best-first.test.ts
     unwanted –> karma:
+    see who voted:
   delete:
   flag:   — also see (6JS3)
   view author -
+    click opens dialog:
+    mentions click opens dialog:
     profile shown:
     ban guest:
     send message:

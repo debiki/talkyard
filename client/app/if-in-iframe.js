@@ -1,5 +1,5 @@
 /* Makes Debiki's <iframe> behave like seamless=seamless iframes.
- * Copyright (C) 2013 Kaj Magnus Lindberg (born 1979)
+ * Copyright (c) 2013, 2017 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -15,12 +15,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-var d = { i: debiki.internal, u: debiki.v0.util };
-var $ = d.i.$;
+var d = { i: debiki.internal };
 
-
-if (!d.i.isInEmbeddedCommentsIframe && !d.i.isInEmbeddedEditor)
-  return;
+if (d.i.isInEmbeddedCommentsIframe || d.i.isInEmbeddedEditor) {
 
 
 addEventListener('message', onMessage, false);
@@ -56,7 +53,7 @@ function onMessage(event) {
       // This message is sent from an embedded comments page to the embedded editor.
       // It opens the editor to write a reply to `postId`.
       var postId = eventData;
-      d.i.openEditorToWriteReply(postId);
+      debiki2.editor.toggleWriteReplyToPost(postId, PostType.Normal);
       break;
     case 'handleReplyResult':
       // This message is sent from the embedded editor <iframe> to the comments
@@ -83,8 +80,9 @@ function onMessage(event) {
 
 
 function addBaseElem(address) {
-  var baseElem = $('<base href="' + address + '" target="_parent">');
-  $('head').append(baseElem);
+  // Insert at the top of <head>.
+  var baseElem = debiki2.$h.parseHtml('<base href="' + address + '" target="_parent">')[0];
+  Bliss.start(baseElem, Bliss('head'));
 };
 
 
@@ -98,14 +96,13 @@ function syncDocSizeWithIframeSize() {
   setInterval(pollAndSyncSize, 100);
 
   function pollAndSyncSize() {
-    var currentWidth = $(document).width();
-    var currentHeight = $(document).height();
+    // Don't use window.innerHeight — that'd be the size of the parent window, outside the iframe.
+    // Don't use document.body.clientHeight — it might be too small, before iframe resized.
+    var discussion = debiki2.$byId('dwPosts');
+    var currentWidth = discussion.clientWidth;
+    var currentHeight = discussion.clientHeight;
     if (lastWidth === currentWidth && lastHeight === currentHeight)
       return;
-
-    // Add some margin.
-    currentWidth += 80;
-    currentHeight += 80;
 
     lastWidth = currentWidth;
     lastHeight = currentHeight;
@@ -122,4 +119,5 @@ function syncDocSizeWithIframeSize() {
 };
 
 
+}
 // vim: fdm=marker et ts=2 sw=2 list

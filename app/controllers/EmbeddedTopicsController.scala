@@ -100,8 +100,8 @@ object EmbeddedTopicsController extends mvc.Controller {
 
 
   def showEmbeddedEditor = GetAction { request =>
-    val pageRequest = makePageRequest(request)
-    val tpi = SiteTpi(pageRequest)
+    // val pageRequest = makePageRequest(request)
+    val tpi = SiteTpi(request)
     Ok(views.html.embeddedEditor(tpi).body) as HTML
   }
 

@@ -129,6 +129,13 @@ if (_showAdmGuide || (!_narrow && _cbOpen === 'true' &&
   _store.isContextbarOpen = true;
 }
 
+var _isInIframe;
+try { _isInIframe = window.self !== window.top; }
+catch (e) { _isInIframe = true; }
+
+if (_isInIframe)
+  _doc.className += ' s_InIframe';
+
 var debiki = {
   siteId: '@siteId',
   currentVersion: '@tpi.currentVersionString',
@@ -146,11 +153,9 @@ var debiki = {
     pageId: @Html(pageIdQuotedOrUndefined),
     pageRole: @{ anyPageRole.map(_.toInt) getOrElse "undefined" },
     isInLoginWindow: @isInLoginWindowBoolStr,
-    isInLoginPopup: @isInLoginWindowBoolStr && window.opener && window.opener.debiki,
-    isInIframe: self !== top,
-    isInEmbeddedCommentsIframe: @{
-      if (anyPageRole.contains(com.debiki.core.PageRole.EmbeddedComments)) "true" else "false"
-    },
+    isInLoginPopup: @isInLoginWindowBoolStr && _isInIframe, // window.opener && window.opener.debiki,
+    isInIframe: _isInIframe,
+    isInEmbeddedCommentsIframe: _isInIframe && @{ if (anyPageRole.isDefined) "true" else "false" },
     pagePath: '@{ anyPagePath.map(_.value) getOrElse "" }',
     assetUrlPrefix: '@tpi.assetUrlPrefix'
   },

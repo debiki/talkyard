@@ -21,77 +21,100 @@ var d = { i: debiki.internal };
 
 addEventListener('message', onMessage, false);
 
+var theIframe;
 
 // Create <iframe>s for embedded comments and an embedded editor.
 // Show a "Loading comments..." message until comments loaded.
 // For now, choose the first .debiki-emdbedded-comments only, because
 // the embedded editor will be bound to one topic only, and two editors
 // seems complicated.
-$('.debiki-embedded-comments').first().each(function() {
-  var wrapper = $(this);
-  var topicId = wrapper.attr('data-topic-id');
-  var topicUrl = wrapper.attr('data-topic-url');
+var embeddedCommentsElems = document.getElementsByClassName('debiki-embedded-comments');
+if (embeddedCommentsElems.length) {
+  var embElem = embeddedCommentsElems[0];
+  //var wrapper = $(this);  // !
+  var topicId = embElem.getAttribute('data-topic-id');
+  var topicUrl = embElem.getAttribute('data-topic-url');
   if (!topicUrl) {
     // Don't include the hash fragment.
     topicUrl = window.location.origin + window.location.pathname + window.location.search;
   }
   var topicIdUrlParam = topicId ? 'topicId=' + topicId : 'topicUrl=' + topicUrl;
-
-  var commentsIframe = $('<iframe id="dw-embedded-comments"></iframe>');
-  var commentsIframeUrl = d.i.debikiServerOrigin + '/-/embedded-comments?' + topicIdUrlParam;
+  var commentsIframeUrl = d.i.debikiServerOrigin +  //   + '/-/embedded-comments?' + topicIdUrlParam;
+      '/-29/testing-nested-comment-is-it-working-or-not';
 
   // Don't `hide()` the iframe, then FireFox acts as if it doesn't exist: FireFox receives
   // no messages at all from it.
-  commentsIframe
-    .height(0) // don't `hide()`
-    .width($(window).width())
-    .css('border', 'none')
-    .attr('seamless', 'seamless')
-    .attr('src', commentsIframeUrl);
+  theIframe = Bliss.create('iframe', {
+    id: 'ed-embedded-comments',
+    height: 0, // don't `hide()` (see comment just above)
+    style: {
+      border: 'none',
+      width: '100%'
+    },
+    seamless: 'seamless',
+    src: commentsIframeUrl
+  });
+
+  Bliss.start(theIframe, embElem);
+  /*
 
   wrapper.append(commentsIframe);
   wrapper.append($('<p>Loading comments...</p>'));
+  */
 
-  var editorWrapper = $('<div id="dw-editor-wrapper"></div>');
-  editorWrapper
-      .height(350)
-      .css('width', '100%')
-      .css('left', 0)
-      .css('position', 'fixed')
-      .css('bottom', 0)
-      .css('border-top', '8px solid #888')
-      .css('cursor', 'ns-resize')
-      .css('background', 'white');
-  editorWrapper.hide();
-  $(document.body).append(editorWrapper);
+  var editorWrapper = Bliss.create('div', {
+    id: 'ed-editor-wrapper',
+    style: {
+      border: 'none',
+      width: '100%',
+      height: 350,
+      left: 0,
+      position: 'fixed',
+      bottom: 0,
+      'border-top': '8px solid #888',
+      cursor: 'ns-resize',
+      background: 'white',
+      display: 'none'
+    }
+  });
 
-  var editorIframe = $('<iframe id="dw-embedded-editor"></iframe>');
+  Bliss.inside(editorWrapper, document.body);
+
   var editorIframeUrl = d.i.debikiServerOrigin + '/-/embedded-editor?' + topicIdUrlParam;
-  editorIframe
-      .css('width', '100%')
-      .css('height', '100%')
-      .css('border', 'none')
-      .attr('seamless', 'seamless')
-      .attr('src', editorIframeUrl);
-  editorWrapper.append(editorIframe);
+  var editorIframe = Bliss.create('iframe', {
+    id: 'ed-embedded-editor',
+    style: {
+      border: 'none',
+      width: '100%',
+      height: '100%',
+      border: 'none'
+    },
+    seamless: 'seamless',
+    src: editorIframeUrl
+  });
+
+  Bliss.inside(editorIframe, editorWrapper);
 
   // Editor placeholder, so the <iframe> won't occlude the lower parts of the page.
-  var editorPlaceholder = $('<div id="dw-editor-placeholder"></div>');
-  $(document.body).append(editorPlaceholder);
-  editorPlaceholder.hide();
+  var editorPlaceholder = Bliss.create('div', {
+    id: 'ed-editor-placeholder',
+    display: 'none'
+  });
+  Bliss.inside(editorPlaceholder, document.body);
 
   makeEditorResizable();
-});
+}
 
 
-// Enable Utterscroll in parent window.
+/* Enable Utterscroll in parent window.
 // Once the iframe has been loaded, Utterscroll will run in the iframe too,
 // and the two Utterscroll instances will cooperate via `window.postMessage`.
-jQuery(function($) {
+jQuery(function($) {   // xx
   if (!Modernizr.touch) { // if not a smartphone
     d.i.initUtterscrollAndTips();
   }
-});
+}); */
+
 
 
 function onMessage(event) {
@@ -115,11 +138,12 @@ function onMessage(event) {
       setIframeBaseAddress(findIframeThatSent(event));
       break;
     case 'setIframeSize':
-      var iframe = $(findIframeThatSent(event));
+      var iframe = findIframeThatSent(event);
       setIframeSize(iframe, eventData);
       // Remove "loading comments" message.
-      iframe.parent().children(':not(iframe)').remove();
+      //iframe.parent().children(':not(iframe)').remove();
       break;
+      /*
     case 'startUtterscrolling':
       debiki.Utterscroll.startScrolling(eventData);
       break;
@@ -130,6 +154,7 @@ function onMessage(event) {
     case 'stopUtterscrolling':
       debiki.Utterscroll.stopScrolling(eventData);
       break;
+      */
     case 'showEditor':
       showEditor(true);
       break;
@@ -152,63 +177,73 @@ function onMessage(event) {
       sendToComments(event.data);
       break;
   }
-};
+}
 
 
 function setIframeBaseAddress(iframe) {
   iframe.contentWindow.postMessage(
       JSON.stringify(['setBaseAddress', window.location.href]), '*');
-};
+}
 
 
 function setIframeSize(iframe, dimensions) {
-  $(iframe).width(dimensions.width);
-  $(iframe).height(dimensions.height);
-};
+  // Add 50px margin, otherwise for some reason there'll be scrollbars-y.
+  // Previously: iframe.style.width = dimensions.width + 'px'; — but now 2d scrolling disabled.
+  iframe.style.height = (dimensions.height + 50) + 'px';
+}
 
 
 function findIframeThatSent(event) {
   // See http://stackoverflow.com/a/18267415/694469
-  var iframes = $('.debiki-embedded-comments iframe, #dw-embedded-editor');
-  for (var i = 0; i < iframes.length; ++i) {
-    var iframe = iframes[i];
-    if (iframe.contentWindow === event.source)
-      return iframe;
-  }
-};
+
+  var commentsIframe = document.getElementById('ed-embedded-comments');
+  if (commentsIframe.contentWindow === event.source)
+    return commentsIframe;
+
+  var editorIframe = document.getElementById('ed-embedded-editor');
+  if (editorIframe.contentWindow === event.source)
+    return editorIframe;
+}
 
 
 function sendToComments(message) {
-  var commentsWindow = document.getElementById("dw-embedded-comments").contentWindow;
+  var commentsWindow = document.getElementById("ed-embedded-comments").contentWindow;
   commentsWindow.postMessage(message, '*');
 };
 
 
 function sendToEditor(message) {
-  var editorWindow = document.getElementById("dw-embedded-editor").contentWindow;
+  var editorWindow = document.getElementById("ed-embedded-editor").contentWindow;
   editorWindow.postMessage(message, '*');
 };
 
 
 function showEditor(show) {
-  var placeholder = $('#dw-editor-placeholder');
-  var editorWrapper = $('#dw-editor-wrapper');
+  var placeholder = document.getElementById('ed-editor-placeholder');
+  var editorWrapper = document.getElementById('ed-editor-wrapper');
   if (show) {
-    editorWrapper.show();
-    placeholder.show();
-    placeholder.height(editorWrapper.height());
+    //var displayBlock = { style: { display: 'block' }};
+    //Bliss.set(editorWrapper, displayBlock);
+    //Bliss.set(placeholder, displayBlock);
+    editorWrapper.style.display = 'block';
+    placeholder.style.display = 'block';
+    placeholder.style.height = editorWrapper.clientHeight + 'px';
   }
   else {
-    editorWrapper.hide();
-    placeholder.hide();
+    editorWrapper.style.display = 'none';
+    placeholder.style.display = 'none';
+    //var displayNone = { style: { display: 'none' }};
+    //Bliss.set(editorWrapper, displayNone);
+    //Bliss.set(placeholder, displayNone);
     sendToComments('["clearIsReplyingMarks", {}]');
   }
 }
 
 
 function makeEditorResizable() {
-  var editorWrapper = $('#dw-editor-wrapper');
-  editorWrapper.on('mousedown', startDrag);
+  var editorPlaceholder = document.getElementById('ed-editor-placeholder');
+  var editorWrapper = document.getElementById('ed-editor-wrapper');
+  editorWrapper.addEventListener('mousedown', startDrag);
 
   var startY = 0;
   var startHeight = 0;
@@ -216,15 +251,15 @@ function makeEditorResizable() {
   function startDrag(event) {
     coverIframesSoWontStealMouseEvents(true);
     startY = event.clientY;
-    startHeight = editorWrapper.height();
+    startHeight = editorWrapper.clientHeight;
     document.documentElement.addEventListener('mousemove', doDrag, false);
     document.documentElement.addEventListener('mouseup', stopDrag, false);
   }
 
   function doDrag(event) {
     var newHeight = startHeight - event.clientY + startY;
-    $('#dw-editor-placeholder').height(newHeight);
-    editorWrapper.height(newHeight);
+    editorPlaceholder.style.height = newHeight + 'px';
+    editorWrapper.style.height = newHeight + 'px';
   }
 
   function stopDrag(event) {
@@ -236,14 +271,11 @@ function makeEditorResizable() {
 
 
 function coverIframesSoWontStealMouseEvents(cover) {
-  if (cover) {
-    $('#dw-embedded-comments').css('visibility', 'hidden');
-    $('#dw-embedded-editor').css('visibility', 'hidden');
-  }
-  else {
-    $('#dw-embedded-comments').css('visibility', 'visible');
-    $('#dw-embedded-editor').css('visibility', 'visible');
-  }
+  var newVisibilityStyle = { style: { visibility: cover ? 'hidden' : 'visible' }};
+  var comments = document.getElementById('ed-embedded-comments');
+  var editor = document.getElementById('ed-embedded-editor');
+  Bliss.set(comments, newVisibilityStyle);
+  Bliss.set(editor, newVisibilityStyle);
 }
 
 
