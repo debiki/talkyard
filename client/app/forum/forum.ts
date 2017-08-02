@@ -144,7 +144,7 @@ const ForumComponent = React.createClass(<any> {
   getActiveCategory: function() {
     var store: Store = this.state.store;
     var activeCategory: any;
-    var activeCategorySlug = this.props.params.categorySlug;
+    var activeCategorySlug = store.newCategorySlug || this.props.params.categorySlug;
     if (activeCategorySlug) {
       activeCategory = _.find(store.categories, (category: Category) => {
         return category.slug === activeCategorySlug;

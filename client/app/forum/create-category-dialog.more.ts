@@ -227,7 +227,7 @@ const CategorySettings = createClassAndFactory({
   },
 
   onSlugChanged: function(event) {
-    this.props.updateCategory({ slug: event.target.value });
+    this.props.updateCategory({ slug: event.target.value.toLowerCase() });
   },
 
   setDefaultTopicType: function(topicType: PageRole) {

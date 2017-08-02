@@ -92,7 +92,7 @@ object ForumController extends mvc.Controller {
       sectionPageId = sectionPageId,
       parentId = (categoryJson \ "parentCategoryId").as[CategoryId],
       name = (categoryJson \ "name").as[String],
-      slug = (categoryJson \ "slug").as[String],
+      slug = (categoryJson \ "slug").as[String].toLowerCase,
       description = CategoriesDao.CategoryDescriptionSource,
       position = (categoryJson \ "position").as[Int],
       newTopicTypes = List(defaultTopicType),
