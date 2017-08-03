@@ -27,9 +27,9 @@ function sendWriteReplyMessageToEmbeddedEditor(postId) {
 
 
 d.i.clearIsReplyingMarks = function() {
-  const replyBtns = $$byClass('dw-replying');
+  var replyBtns = $$byClass('dw-replying');
   for (var i = 0; i < replyBtns.length; ++i) {
-    const buttonElem = replyBtns[i];
+    var buttonElem = replyBtns[i];
     buttonElem.classList.remove('dw-replying');
   }
 };

@@ -19,7 +19,7 @@
 
 var d = { i: debiki.internal, u: debiki.v0.util };
 
-const scriptLoadDoneCallbacks = [];
+var scriptLoadDoneCallbacks = [];
 debiki.scriptLoad = {  // RENAME to ed.whenStarted(...) ?
   done: function(callback) {
     scriptLoadDoneCallbacks.push(callback);
@@ -31,7 +31,7 @@ debiki.debug = window.location.search.indexOf('debug=true') >= 0;
 d.i.TitleNr = 0;
 d.i.BodyNr = 1;
 
-const allPostsNotTitleSelector = '.debiki .dw-p:not(.dw-p-ttl)';
+var allPostsNotTitleSelector = '.debiki .dw-p:not(.dw-p-ttl)';
 
 // Debiki convention: Dialog elem tabindexes should vary from 101 to 109.
 // HTML generation code assumes this, too. See Debiki for Developers, #7bZG31.
@@ -96,7 +96,9 @@ function renderDiscussionPage() {
   // Make it possible to test React.js performance in the browser.
   if (location.search.indexOf('breakReactChecksums=true') !== -1) {
     var reactRoots = debiki2.$bySelector('[data-react-checksum]');
-    _.each(reactRoots, r => r.setAttribute('data-react-checksum', 'wrong-checksum-EdMRERNDR1'));
+    _.each(reactRoots, function(root) {
+      root.setAttribute('data-react-checksum', 'wrong-checksum-EdMRERNDR1');
+    });
     console.log("I've altered the React.js checksums, everything will be rerendered. [EdMRERNDR2]");
   }
 

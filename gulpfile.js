@@ -36,6 +36,7 @@ var header = require('gulp-header');
 var wrap = require('gulp-wrap');
 var uglify = require('gulp-uglify');
 var gzip = require('gulp-gzip');
+var gulpUtil = require('gulp-util');
 var es = require('event-stream');
 var fs = require("fs");
 var path = require("path");
@@ -413,7 +414,10 @@ gulp.task('minifyScripts', ['compileConcatAllScripts'], function() {
   // found in string" error with a meaningless stacktrace, in preprocess().
   return gulp.src(['public/res/*.js', '!public/res/*.min.js'])
       .pipe(preprocess({ context: {} })) // see comment above
-      .pipe(uglify())
+      .pipe(uglify().on('error', function(err) {
+        gulpUtil.log(gulpUtil.colors.red("*** Error ***"), err.toString());
+        this.emit('end');
+      }))
       .pipe(rename({ extname: '.min.js' }))
       .pipe(header(copyrightAndLicenseBanner))
       .pipe(gulp.dest('public/res/'))
