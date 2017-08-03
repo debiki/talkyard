@@ -1018,6 +1018,7 @@ interface Settings {
   googleUniversalAnalyticsTrackingId: string;
 
   showExperimental: boolean;
+  allowEmbeddingFrom: string;
 }
 
 

@@ -131,6 +131,8 @@ var slimJsFiles = [
       'target/client/app/utils/util-browser.js',
       'target/client/app/utterscroll/utterscroll-init-tips.js',//
       'client/app/utterscroll/utterscroll.js',//
+      'client/third-party/popuplib.js',
+      'target/client/app/login/login-popup.js',
       'target/client/slim-typescript.js',
       'target/client/app/startup.js'];
 
@@ -140,8 +142,6 @@ var moreJsFiles = [
       'node_modules/react-input-autosize/dist/react-input-autosize.js', // needed by react-select
       'node_modules/react-select/dist/react-select.js',                 // <– react-select
       'node_modules/moment/min/moment.min.js',
-      'client/third-party/popuplib.js',
-      'target/client/app/login/login-popup.js',
       'target/client/more-typescript.js'];
 
 var staffJsFiles = [

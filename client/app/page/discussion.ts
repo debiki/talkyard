@@ -25,6 +25,7 @@
 /// <reference path="../rules.ts" />
 /// <reference path="../widgets.ts" />
 /// <reference path="../page-dialogs/open-share-popup.ts" />
+/// <reference path="../login/login-if-needed.ts" />
 /// <reference path="post-actions.ts" />
 /// <reference path="chat.ts" />
 /// <reference path="../more-bundle-not-yet-loaded.ts" />
@@ -562,10 +563,20 @@ var RootPostAndComments = createComponent({
     ReactActions.loadAndShowPost(store.rootPostId);
   },
 
-  onOrigPostReplyClick: function() {
-    // Dupl code [69KFUW20]
-    debiki2.morebundle.loginIfNeededReturnToPost('LoginToComment', BodyNr, function() {
-      editor.toggleWriteReplyToPost(BodyNr, PostType.Normal);
+  onOrigPostReplyClick: function(event) {
+    // Some dupl code [69KFUW20]
+    event.preventDefault();
+    const eventTarget = event.target; // React.js will clear the field
+    login.loginIfNeededReturnToPost('LoginToComment', BodyNr, function() {
+      // Toggle highlighting first, because it'll be cleared later if the
+      // editor is closed, and then we don't want to toggle it afterwards.
+      $h.toggleClass(eventTarget, 'dw-replying');
+      if (debiki.internal.isInEmbeddedCommentsIframe) {
+        window.parent.postMessage(JSON.stringify(['editorToggleReply', BodyNr]), '*');
+      }
+      else {
+        editor.toggleWriteReplyToPost(BodyNr, PostType.Normal);
+      }
     });
   },
 
@@ -582,31 +593,31 @@ var RootPostAndComments = createComponent({
   }, */
 
   render: function() {
-    var store: Store = this.props;
-    var postsByNr: { [postNr: number]: Post; } = this.props.postsByNr;
-    var me = store.me;
-    var rootPost: Post = postsByNr[this.props.rootPostId];
+    const store: Store = this.props;
+    const postsByNr: { [postNr: number]: Post; } = this.props.postsByNr;
+    const me = store.me;
+    const rootPost: Post = postsByNr[this.props.rootPostId];
     if (!rootPost)
       return r.p({}, '(Root post missing, id: ' + this.props.rootPostId +
           ', these are present: ' + _.keys(postsByNr) + ' [DwE8WVP4])');
-    var isBody = this.props.rootPostId === BodyNr;
-    var pageRole: PageRole = this.props.pageRole;
-    var threadClass = 'dw-t dw-depth-0' + horizontalCss(this.props.horizontalLayout);
-    var postIdAttr = 'post-' + rootPost.nr;
-    var postClass = 'dw-p';
+    const isBody = this.props.rootPostId === BodyNr;
+    const pageRole: PageRole = this.props.pageRole;
+    let threadClass = 'dw-t dw-depth-0' + horizontalCss(this.props.horizontalLayout);
+    const postIdAttr = 'post-' + rootPost.nr;
+    let postClass = 'dw-p';
     if (post_shallRenderAsHidden(rootPost)) postClass += ' s_P-Hdn';
-    var postBodyClass = 'dw-p-bd';
+    let postBodyClass = 'dw-p-bd';
     if (isBody) {
       threadClass += ' dw-ar-t';
       postClass += ' dw-ar-p';
       postBodyClass += ' dw-ar-p-bd';
     }
 
-    var deletedOrUnapprovedMessage = rootPost.isApproved ? false :
+    const deletedOrUnapprovedMessage = rootPost.isApproved ? false :
         r.div({ className: 'esPendingApproval' },
           store.pageDeletedAtMs ? "(Page deleted)" : "(Text pending approval)");
 
-    var body = null;
+    let body = null;
     if (pageRole !== PageRole.EmbeddedComments) {
       let bodyContent;
       if (post_shallRenderAsHidden(rootPost)) {

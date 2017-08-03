@@ -8,6 +8,7 @@ Date: Mar 6, 2009
 Currently, only a few popuplib.js helper functions are in use — Lift-Web
 generates a <form> and I use jQuery to submit it, so popuplib.js's most
 interesting function (?), popupManager.createPopupOpener, is not in use.
+— Now I commented it out. /kajmagnus
 
 Example on how to use popupManager: http://www.puffypoodles.com/popup
 JSP example: http://code.google.com/p/step2/source/browse/code/java/trunk/example-consumer/src/main/webapp/WEB-INF/popup.jsp?r=434

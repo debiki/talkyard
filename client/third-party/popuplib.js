@@ -35,7 +35,7 @@
 var popupManager = {};
 
 // Library constants
-
+// COULD_OPTIMIZE SMALLER_BUNDLE  remove more unneeded stuff /kajmagnus
 popupManager.constants = {
   'darkCover' : 'popupManager_darkCover_div',
   'darkCoverStyle' : ['position:absolute;',
@@ -50,11 +50,11 @@ popupManager.constants = {
                       'z-index:10000;',
                       'width:100%;',
                       'height:100%;'
-                      ].join(''),
-  'openidSpec' : {
+                      ].join('')/*,
+  'openidSpec' : {   // not in use, commented out /kajmagnus
      'identifier_select' : 'http%3A%2F%2Fspecs.openid.net%2Fauth%2F2.0%2Fidentifier_select',
      'namespace2' : 'http%3A%2F%2Fspecs.openid.net%2Fauth%2F2.0'
-  } };
+  }*/ };
 
 // Computes the size of the window contents. Returns a pair of
 // coordinates [width, height] which can be [0, 0] if it was not possible
@@ -172,6 +172,7 @@ popupManager.darkenScreen = function() {
 //    ... // other extension parameters
 //    'openid.ui.language' : 'fr_CH',
 //    ... };
+/* not in use, comment out to save bandwidth. /kajmagnus
 popupManager.createPopupOpener = (function(openidParams) {
   var interval_ = null;
   var popupWindow_ = null;
@@ -277,3 +278,4 @@ popupManager.createPopupOpener = (function(openidParams) {
     }
   };
 });
+*/

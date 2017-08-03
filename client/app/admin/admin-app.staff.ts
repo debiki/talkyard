@@ -669,6 +669,14 @@ var AdvancedSettingsComponent = React.createClass(<any> {
           }
         }),
 
+        Setting2(props, { type: 'text', label: "Allow embedding from",
+          help: r.span({}, "Allow another website to show embedded contents from this site."),
+          getter: (s: Settings) => s.allowEmbeddingFrom,
+          update: (newSettings: Settings, target) => {
+            newSettings.allowEmbeddingFrom = target.value;
+          }
+        }),
+
         Setting2(props, {
           type: 'checkbox', label: "Experimental",
           help: "Enables some currently not-well-tested features " +

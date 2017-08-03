@@ -118,6 +118,15 @@ declare namespace debiki2 {
     function openToWriteMessage(userId: UserId);
   }
 
+  namespace login {
+    var anyContinueAfterLoginCallback;
+    function continueAfterLogin(anyReturnToUrl?: string);
+    function loginIfNeededReturnToAnchor(
+        loginReason: LoginReason | string, anchor: string, success: () => void);
+    function loginIfNeededReturnToPost(
+        loginReason: LoginReason | string, postNr: PostNr, success: () => void);
+  }
+
   function reactGetRefRect(ref): Rect;
   var Server: any;
   var StoreListenerMixin: any;

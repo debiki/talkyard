@@ -28,6 +28,7 @@
 /// <reference path="../help/help.ts" />
 /// <reference path="../rules.ts" />
 /// <reference path="../Server.ts" />
+/// <reference path="../login/login-if-needed.ts" />
 /// <reference path="chat.ts" />
 /// <reference path="../more-bundle-not-yet-loaded.ts" />
 
@@ -124,19 +125,18 @@ export const PostActions = createComponent({
   },
 
   onReplyClick: function(event) {
+    // Some dupl code [69KFUW20]
     event.preventDefault();
     const eventTarget = event.target; // React.js will clear the field
     // (Don't check this.props...isFlat here — use postType instead.)
     const post: Post = this.props.post;
     const newPostType = post.postType === PostType.Flat ? PostType.Flat : PostType.Normal;
-    // Dupl code [69KFUW20]
-    debiki2.morebundle.loginIfNeededReturnToPost('LoginToComment', post.nr, function() {
+    login.loginIfNeededReturnToPost('LoginToComment', post.nr, function() {
       if (this.isGone) return;
       // Toggle highlighting first, because it'll be cleared later if the
       // editor is closed, and then we don't want to toggle it afterwards.
       $h.toggleClass(eventTarget, 'dw-replying');
-      if (debiki.internal.isInEmbeddedCommentsIframe) { // [todo-emb-cmts]
-        console.warn("anyPostType ignored [DwE4KEPF0]");
+      if (debiki.internal.isInEmbeddedCommentsIframe) {
         window.parent.postMessage(JSON.stringify(['editorToggleReply', post.nr]), '*');
       }
       else {
@@ -683,7 +683,7 @@ function flagPost(post: Post) {
 
 
 function loginIfNeededThen(loginToWhat, postNr: PostNr, success: () => void) {
-  morebundle.loginIfNeededReturnToPost(loginToWhat, postNr, success);
+  login.loginIfNeededReturnToPost(loginToWhat, postNr, success);
 }
 
 //------------------------------------------------------------------------------

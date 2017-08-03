@@ -60,25 +60,6 @@ function getAddressVerificationEmailSentDialog() {
 }
 
 
-// move to login-dialog.more.ts?
-export function makeReturnToPageHashForVerifEmail(hash) {
-  // The magic '__Redir...' string tells the server to use the return-to-URL only if it
-  // needs to send an email address verification email (it'd include the return
-  // to URL on a welcome page show via a link in the email).
-  // '__dwHash__' is an encoded hash that won't be lost when included in a GET URL.
-  // The server replaces it with '#' later on.
-  // `d.i.iframeBaseUrl` is for embedded comments in an <iframe>: it's the URL of
-  // the embedding parent page.
-  var pageUrl = d.i.iframeBaseUrl ? d.i.iframeBaseUrl : window.location.toString();
-  var returnToUrl = '_RedirFromVerifEmailOnly_' + pageUrl.replace(/#.*/, '');
-  if (hash) {
-    hash = hash.replace(/^#/, '');
-    returnToUrl += '__dwHash__' + hash;
-  }
-  return returnToUrl;
-};
-
-
 // Backwards compatibility, for now:
 /**
  * Prefix `RedirFromVerifEmailOnly` to the return-to-url, to indicate that

@@ -18,6 +18,7 @@
 /// <reference path="plain-old-javascript.d.ts" />
 /// <reference path="ReactDispatcher.ts" />
 /// <reference path="Server.ts" />
+/// <reference path="login/login-if-needed.ts" />
 
 //------------------------------------------------------------------------------
    module debiki2.ReactActions {
@@ -268,7 +269,7 @@ export function showForumIntro(visible: boolean) {
 
 
 export function editPostWithNr(postNr: number) {
-  morebundle.loginIfNeededReturnToPost('LoginToEdit', postNr, () => {
+  login.loginIfNeededReturnToPost('LoginToEdit', postNr, () => {
     if (d.i.isInEmbeddedCommentsIframe) {
       sendToEditorIframe(['editorEditPost', postNr]);
     }
