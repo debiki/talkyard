@@ -1,5 +1,5 @@
 /* Makes Debiki work in a child iframe.
- * Copyright (C) 2013-2014 Kaj Magnus Lindberg (born 1979)
+ * Copyright (c) 2013-2014, 2017 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -26,21 +26,20 @@ var theIframe;
 // Create <iframe>s for embedded comments and an embedded editor.
 // Show a "Loading comments..." message until comments loaded.
 // For now, choose the first .debiki-emdbedded-comments only, because
-// the embedded editor will be bound to one topic only, and two editors
+// the embedded editor will be bound to one page only, and two editors
 // seems complicated.
 var embeddedCommentsElems = document.getElementsByClassName('debiki-embedded-comments');
 if (embeddedCommentsElems.length) {
   var embElem = embeddedCommentsElems[0];
-  //var wrapper = $(this);  // !
-  var topicId = embElem.getAttribute('data-topic-id');
-  var topicUrl = embElem.getAttribute('data-topic-url');
-  if (!topicUrl) {
+  var pageId = embElem.getAttribute('data-page-id');
+  var pageUrl = embElem.getAttribute('data-page-url');
+  if (!pageUrl) {
     // Don't include the hash fragment.
-    topicUrl = window.location.origin + window.location.pathname + window.location.search;
+    pageUrl = window.location.origin + window.location.pathname + window.location.search;
   }
-  var topicIdUrlParam = topicId ? 'topicId=' + topicId : 'topicUrl=' + topicUrl;
-  var commentsIframeUrl = d.i.debikiServerOrigin +  //   + '/-/embedded-comments?' + topicIdUrlParam;
-      '/-29/testing-nested-comment-is-it-working-or-not';
+  var pageIdUrlParam = pageId ? 'pageId=' + pageId : 'pageUrl=' + pageUrl;
+  var commentsIframeUrl = d.i.debikiServerOrigin +  //   + '/-/embedded-comments?' + pageIdUrlParam;
+      '/-' + pageId; // '/-29/testing-nested-comment-is-it-working-or-not';  // /-/pageId
 
   // Don't `hide()` the iframe, then FireFox acts as if it doesn't exist: FireFox receives
   // no messages at all from it.
@@ -80,14 +79,13 @@ if (embeddedCommentsElems.length) {
 
   Bliss.inside(editorWrapper, document.body);
 
-  var editorIframeUrl = d.i.debikiServerOrigin + '/-/embedded-editor?' + topicIdUrlParam;
+  var editorIframeUrl = d.i.debikiServerOrigin + '/-/embedded-editor?' + pageIdUrlParam;
   var editorIframe = Bliss.create('iframe', {
     id: 'ed-embedded-editor',
     style: {
       border: 'none',
       width: '100%',
-      height: '100%',
-      border: 'none'
+      height: '100%'
     },
     seamless: 'seamless',
     src: editorIframeUrl
@@ -187,9 +185,8 @@ function setIframeBaseAddress(iframe) {
 
 
 function setIframeSize(iframe, dimensions) {
-  // Add 50px margin, otherwise for some reason there'll be scrollbars-y.
   // Previously: iframe.style.width = dimensions.width + 'px'; — but now 2d scrolling disabled.
-  iframe.style.height = (dimensions.height + 50) + 'px';
+  iframe.style.height = dimensions.height + 'px';
 }
 
 
@@ -222,9 +219,6 @@ function showEditor(show) {
   var placeholder = document.getElementById('ed-editor-placeholder');
   var editorWrapper = document.getElementById('ed-editor-wrapper');
   if (show) {
-    //var displayBlock = { style: { display: 'block' }};
-    //Bliss.set(editorWrapper, displayBlock);
-    //Bliss.set(placeholder, displayBlock);
     editorWrapper.style.display = 'block';
     placeholder.style.display = 'block';
     placeholder.style.height = editorWrapper.clientHeight + 'px';
@@ -232,9 +226,6 @@ function showEditor(show) {
   else {
     editorWrapper.style.display = 'none';
     placeholder.style.display = 'none';
-    //var displayNone = { style: { display: 'none' }};
-    //Bliss.set(editorWrapper, displayNone);
-    //Bliss.set(placeholder, displayNone);
     sendToComments('["clearIsReplyingMarks", {}]');
   }
 }

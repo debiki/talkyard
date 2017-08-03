@@ -225,11 +225,6 @@ d.i.startDiscussionPage = function() {
 };
 
 
-d.i.startEmbeddedEditor = function() {
- // debiki2.editor.getOrCreateEditor(function(editor) {
-//  });
-};
-
 if (location.pathname.search(ApiUrlPathPrefix) !== 0) {
   debiki2.putInSessionStorage('returnToSiteUrl', window.location.toString());
 }

@@ -20,8 +20,7 @@ package debiki
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import controllers.{SiteAssetBundlesController, routes}
-import ed.server.http.DebikiRequest
-import ed.server.http.PageRequest
+import ed.server.http.{DebikiRequest, GetRequest, PageRequest}
 import play.{api => p}
 import play.api.Play.current
 import SiteAssetBundlesController.{StylesheetAssetBundleNameRegex, assetBundleFileName}
@@ -118,6 +117,9 @@ class SiteTpi protected (
   def debikiScriptsEndOfBody: Unparsed =
     debikiScriptsEndOfBodyCustomStartupCode("debiki.internal.startDiscussionPage();")
 
+  def debikiScriptsEndOfBodyNoStartupCode =
+    debikiScriptsEndOfBodyCustomStartupCode("")
+
   def debikiScriptsEndOfBodyCustomStartupCode(startupCode: String,
         loadStaffBundle: Boolean = false) = xml.Unparsed(
     views.html.debikiScriptsEndOfBody(
@@ -210,6 +212,13 @@ class SiteTpi protected (
 
   def serverAddress: String = debikiRequest.request.host
 
+}
+
+
+class EditPageTpi(request: GetRequest, val pageMeta: PageMeta) extends SiteTpi(request) {
+  override def anyCurrentPageId = Some(pageMeta.pageId)
+  override def anyCurrentPageRole = Some(pageMeta.pageRole)
+  override def anyCurrentPageMeta: Option[PageMeta] = Some(pageMeta)
 }
 
 

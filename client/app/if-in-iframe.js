@@ -73,7 +73,7 @@ function onMessage(event) {
       break;
     case 'handleEditResult':
       // This is sent from the embedded editor back to an embedded comments page.
-      ReactActions.handleEditResult(eventData);
+      debiki2.ReactActions.handleEditResult(eventData);
       break;
   }
 };

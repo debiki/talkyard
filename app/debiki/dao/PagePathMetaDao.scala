@@ -86,7 +86,7 @@ trait PagePathMetaDao {
     readOnlyTransaction(_.lookupPagePathAndRedirects(pageId))
 
 
-  def loadThePageMeta(pageId: PageId) =
+  def loadThePageMeta(pageId: PageId): PageMeta =
     readOnlyTransaction(_.loadThePageMeta(pageId))
 
 

@@ -49,7 +49,7 @@ GET   /-/pubsub/authorize-subscriber/:channelId  ed.server.pubsub.SubscriberCont
 GET   /-/load-online-users                       ed.server.pubsub.SubscriberController.loadOnlineUsers
 
 GET   /-/embedded-comments      controllers.EmbeddedTopicsController.showTopic
-GET   /-/embedded-editor        controllers.EmbeddedTopicsController.showEmbeddedEditor
+GET   /-/embedded-editor        controllers.EmbeddedTopicsController.showEmbeddedEditor(pageId)
 GET   /-/embedded-comments-help controllers.EmbeddedTopicsController.showSetupInstructions
 
 GET   /-/search                 controllers.SearchController.showSearchPage(q: Option[String])
