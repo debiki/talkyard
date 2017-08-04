@@ -56,10 +56,11 @@ occurrence of the magic string with volatile + user specific data. *@
 var _doc = document.documentElement;
 _doc.className += ' js';
 
-@* So that we can avoid iOS CSS bugs. *@
+@* So that we can avoid iOS CSS bugs, and the-iPhone-keyboard-covers-half-the-screen problems. *@
 var _ios = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-if (_ios)
-  _doc.className += ' ios';
+var _iphone = _ios && /iPhone|iPod/.test(navigator.userAgent);
+if (_ios) _doc.className += ' ios';@* RENAME to s_ios so can grep & find, & for naming consistency. *@
+if (_iphone) _doc.className += ' s_iphone';
 
 @* See https://stackoverflow.com/a/1912522/694469. The <div> isn't added to the document
  so no <script> would be executed. — But yes it would indeed?

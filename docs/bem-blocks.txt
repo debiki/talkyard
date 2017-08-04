@@ -8,7 +8,7 @@ t_ = the_Whatever (for ids)
 e_ = end-to-end-test_Whatever (classes only, for stuff to click in End-to-End tests)
 p_ = public api (classes only, not ids)
 
-esWhatever = old
+esWhatever = old (s_Whatever = new & better)
 
 [refactor] rename esForum_ to esF_ and esForum_Nav to esF_BB
 esForum_cats_cat     to s_F_Cs_C?
@@ -36,7 +36,12 @@ s_CD_Sec_PoPs   = category dialog, security tab, list of perms-on-pages
 
 esCB            = context bar (the right sidebar)
 
-esE             = The editor
+esE             = The editor, no, esE = old, now s_E:
+s_E             = The editor
+s_E_E           = The editor, in edit mode
+s_E_Prv         = The editor, in preview mode
+s_E_Max         = The editor, maximized
+s_E_Min         = The editor, minimized
 
 esEID           = Edit intro dialog
 

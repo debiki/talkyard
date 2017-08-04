@@ -85,7 +85,7 @@ $spacyYMinHeight = 400px;
     box-shadow: 0 0 23px 6px rgba(0,0,0,0.6);
     border-top: 1px solid hsl(0, 0%, 94%);
 
-  &.editor-maximized
+  &.s_E-Max
     // --- dupl [5KETW02]
     height: 100% !important;
     #editor-after-borders
@@ -97,7 +97,7 @@ $spacyYMinHeight = 400px;
   // --- /dupl
 
   @media (min-width: $showPreviewMinWidth + 1)
-    &.editor-split-hz
+    &.s_E-SplitHz
       .editor-area
         width: 100%;
         bottom: calc(65% + 10px);
@@ -123,7 +123,7 @@ $spacyYMinHeight = 400px;
     .esEdtr_cycleMaxHzBtn
       display: none;
 
-    &.editor-minimized
+    &.s_E-Min
       top: initial;
       height: 47px !important;
 
@@ -308,6 +308,47 @@ $spacyYMinHeight = 400px;
   @media (min-width: $spacyButtonsMinWidth)
     display: inline;
 
+.s_E_iPhoneKbd
+  display: none;
 
+// iPhone is problematic, needs these special fixes.
+html.s_iphone
+  .s_E-E
+    // Leave lots of space for the keyboard. The iPhone keyboard doesn't trigger any resize event,
+    // when appearing — it just covers the lower parts of the window, sometimes also the lower
+    // parts of a <textarea>, making the lower parts impossible to edit (without canceling
+    // the keyboard, scrolling down and opening it again).
+    #editor-after-borders
+      height: 73%;
+
+    .s_E_iPhoneKbd
+      display: block;
+      position: absolute;
+      bottom: 25px;
+      left: 30px;
+      font-size: 14px;
+      color: gray;
+
+  // Prevent iPhone from zooming in on input fields — which it does if the font size is <= 16 px.
+  // Based on:
+  //   https://stackoverflow.com/questions/2989263/
+  //      disable-auto-zoom-in-input-text-tag-safari-on-iphone#comment25424617_6394497
+  input[type="text"],
+  input[type="password"],
+  input[type="datetime"],
+  input[type="datetime-local"],
+  input[type="date"],
+  input[type="month"],
+  input[type="time"],
+  input[type="week"],
+  input[type="number"],
+  input[type="email"],
+  input[type="url"],
+  input[type="search"],
+  input[type="tel"],
+  input[type="color"],
+  select:focus,
+  textarea
+    font-size: 16px !important;
 
 // vim: fdm=marker et ts=2 sw=2 tw=0 fo=r list

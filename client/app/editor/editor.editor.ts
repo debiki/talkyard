@@ -1090,9 +1090,10 @@ export var Editor = createComponent({
 
     // (The $.resizable plugin needs class 'resizable' here. [7UGM27])
     var editorClasses = d.i.isInEmbeddedEditor ? '' : 'editor-box-shadow resizable';
-    editorClasses += this.state.showMinimized ? ' editor-minimized' : '';
-    editorClasses += this.state.showMaximized ? ' editor-maximized' : '';
-    editorClasses += this.state.splitHorizontally ? ' editor-split-hz' : '';
+    editorClasses += this.state.showMaximized ? ' s_E-Max' : '';
+    editorClasses += this.state.splitHorizontally ? ' s_E-SplitHz' : '';
+    editorClasses += this.state.showMinimized ? ' s_E-Min' : (
+        this.state.showOnlyPreview ? ' s_E-Prv' : ' s_E-E');
 
     var editorStyles = this.state.showOnlyPreview ? { display: 'none' } : null;
     var previewStyles = this.state.showOnlyPreview ? { display: 'block' } : null;
@@ -1126,7 +1127,7 @@ export var Editor = createComponent({
                 textareaButtons,
                 textarea)),
             r.div({ className: 'preview-area', style: previewStyles },
-              r.div({}, titleInput ? 'Preview: (title excluded)' : 'Preview:'),
+              r.div({}, titleInput ? "Preview: (title excluded)" : "Preview:"),
               previewHelp,
               r.div({ className: 'preview', ref: 'preview',
                   dangerouslySetInnerHTML: { __html: this.state.safePreviewHtml }})),
@@ -1141,10 +1142,12 @@ export var Editor = createComponent({
               // because float right.
               Button({ onClick: this.toggleMinimized, id: 'esMinimizeBtn',
                   primary: this.state.showMinimized, tabIndex: 3 },
-                this.state.showMinimized ? 'Show editor again' : 'Minimize'),
+                this.state.showMinimized ? "Show editor again" : "Minimize"),
               Button({ onClick: this.togglePreview, id: 'esPreviewBtn', tabIndex: 2 },
-                this.state.showOnlyPreview ? 'Edit' : 'Preview'),
-              anyViewHistoryButton)))));
+                this.state.showOnlyPreview ? "Editor" : "Preview"),
+              anyViewHistoryButton)),
+            r.div({ className: 's_E_iPhoneKbd' },
+              "(This gray space is reserved", r.br(), "for the iPhone keyboard.)"))));
   }
 });
 
