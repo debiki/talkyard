@@ -46,6 +46,15 @@ if [ -z "`which xvfb-run`" ]; then
   echo
 fi
 
+chromedrivers="$(ls -1 node_modules/selenium-standalone/.selenium/chromedriver/)"
+if [ -z "$chromedrivers" ]; then
+  echo 'You need to install browser drivers for End-to-End tests. Do in another shell:
+
+  s/selenium-install
+'
+  die_if_in_script
+fi
+
 echo 'Do in another shell:
 
   s/selenium-start-invisible
@@ -122,6 +131,7 @@ git push origin master
 popd
 
 git tag $version_tag
+git push origin $version_tag
 s/bump-versions.sh
 
 # no: Custom Git log message
