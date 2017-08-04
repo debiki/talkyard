@@ -60,6 +60,9 @@ case class NotificationGenerator(transaction: SiteTransaction) {
       makeNewPostNotf(NotificationType.DirectReply, newPost, parentUser)
     }
 
+    def notfCreatedAlreadyTo(userId: UserId) =
+      generatedNotifications.toCreate.map(_.toUserId).contains(userId)
+
     // Mentions
     if (!skipMentions) {
       val mentionedUsernames = findMentions(newPost.approvedSource getOrDie "DwE82FK4").toSet
@@ -79,6 +82,7 @@ case class NotificationGenerator(transaction: SiteTransaction) {
         // Then would have to remove a db constraint. Could do later. Right now feels best
         // to keep it so it'll catch bugs.
         if user.id != newPost.createdById  // poster mentions him/herself?
+        if !notfCreatedAlreadyTo(user.id)
       } {
         makeNewPostNotf(NotificationType.Mention, newPost, user)
       }
@@ -88,6 +92,7 @@ case class NotificationGenerator(transaction: SiteTransaction) {
     for {
       userId <- transaction.loadUserIdsWatchingPage(page.id)
       if userId != newPost.createdById
+      if !notfCreatedAlreadyTo(userId)
       user <- transaction.loadUser(userId)
     } {
       makeNewPostNotf(NotificationType.NewPost, newPost, user)
@@ -133,7 +138,7 @@ case class NotificationGenerator(transaction: SiteTransaction) {
       // Always generate notifications, so they can be shown in the user's inbox.
       // (But later on we might or might not send any email about the notifications,
       // depending on the user's preferences.)
-      val settings: UsersPageSettings = transaction.loadUsersPageSettingsOrDefault(
+      val settings: UserPageSettings = transaction.loadUserPageSettingsOrDefault(
         toUser.id, newPost.pageId)
       if (settings.notfLevel == NotfLevel.Muted) {
         return

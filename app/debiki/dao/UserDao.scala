@@ -1043,17 +1043,17 @@ trait UserDao {
     readOnlyTransaction(_.loadUserIdsWatchingPage(pageId))
 
 
-  def loadUsersPageSettings(userId: RoleId, pageId: PageId): UsersPageSettings =
-    readOnlyTransaction(_.loadUsersPageSettings(userId, pageId = pageId)) getOrElse
-      UsersPageSettings.Default
+  def loadUserPageSettings(userId: RoleId, pageId: PageId): UserPageSettings =
+    readOnlyTransaction(_.loadUserPageSettings(userId, pageId = pageId)) getOrElse
+      UserPageSettings.Default
 
 
-  def saveUsersPageSettings(userId: RoleId, pageId: PageId, settings: UsersPageSettings) {
+  def saveUserPageSettings(userId: RoleId, pageId: PageId, settings: UserPageSettings) {
     throwForbiddenIf(settings.notfLevel == NotfLevel.WatchingFirst,
       "EsE6SRK02", s"${NotfLevel.WatchingFirst} not supported, for pages")
     throwForbiddenIf(settings.notfLevel == NotfLevel.Tracking,
       "EsE7DKS85", s"${NotfLevel.Tracking} not yet implemented")
-    readWriteTransaction(_.saveUsersPageSettings(userId = userId, pageId = pageId, settings))
+    readWriteTransaction(_.saveUserPageSettings(userId = userId, pageId = pageId, settings))
   }
 
 

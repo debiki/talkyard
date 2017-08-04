@@ -900,12 +900,14 @@ everyone everybody
 anyone anybody
 someone somebody
 noone nobody
-anonymous anon
+anonymous anon anonym
 whoever whatever whichever
+something nothing
 identity
 role roles
 type types
-he she it is hen who whom whos whose which that
+class classes
+he she it is hen hens who whom whos whose which that
 rubot
 robot
 

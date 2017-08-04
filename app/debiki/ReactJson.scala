@@ -811,8 +811,8 @@ object ReactJson {
     val (rolePageSettings, anyVotes, anyUnapprovedPosts, anyUnapprovedAuthors) =
       anyPageId map { pageId =>
         val rolePageSettings = user.anyMemberId.map({ userId =>
-          val anySettings = transaction.loadUsersPageSettings(userId, pageId = pageId)
-          rolePageSettingsToJson(anySettings getOrElse UsersPageSettings.Default)
+          val anySettings = transaction.loadUserPageSettings(userId, pageId = pageId)
+          rolePageSettingsToJson(anySettings getOrElse UserPageSettings.Default)
         }) getOrElse JsNull
         val votes = votesJson(user.id, pageId, transaction)
         // + flags, interesting for staff, & so people won't attempt to flag twice [7KW20WY1]
@@ -937,7 +937,7 @@ object ReactJson {
   }
 
 
-  private def rolePageSettingsToJson(settings: UsersPageSettings): JsObject = {
+  private def rolePageSettingsToJson(settings: UserPageSettings): JsObject = {
     Json.obj(
       "notfLevel" -> JsNumber(settings.notfLevel.toInt))
   }

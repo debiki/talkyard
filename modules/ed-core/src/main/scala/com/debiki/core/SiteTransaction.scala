@@ -506,11 +506,11 @@ trait SiteTransaction {
     */
   def loadUserIdsWatchingPage(pageId: PageId): Seq[UserId]
 
-  def loadUsersPageSettings(userId: UserId, pageId: PageId): Option[UsersPageSettings]
-  def loadUsersPageSettingsOrDefault(userId: UserId, pageId: PageId): UsersPageSettings =
-    loadUsersPageSettings(userId, pageId) getOrElse UsersPageSettings.Default
+  def loadUserPageSettings(userId: UserId, pageId: PageId): Option[UserPageSettings]
+  def loadUserPageSettingsOrDefault(userId: UserId, pageId: PageId): UserPageSettings =
+    loadUserPageSettings(userId, pageId) getOrElse UserPageSettings.Default
 
-  def saveUsersPageSettings(userId: UserId, pageId: PageId, settings: UsersPageSettings)
+  def saveUserPageSettings(userId: UserId, pageId: PageId, settings: UserPageSettings)
 
   def listUsernames(pageId: PageId, prefix: String): Seq[NameAndUsername]
 

@@ -845,11 +845,11 @@ object SummaryEmails {
 }
 
 
-case class UsersPageSettings(
+case class UserPageSettings(
   notfLevel: NotfLevel)
 
-object UsersPageSettings {
-  val Default = UsersPageSettings(NotfLevel.Normal)
+object UserPageSettings {
+  val Default = UserPageSettings(NotfLevel.Normal)
 }
 
 

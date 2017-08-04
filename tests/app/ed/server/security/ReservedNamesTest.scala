@@ -43,6 +43,7 @@ class ReservedNamesTest extends FreeSpec with MustMatchers {
       ReservedNames.isUsernameReserved("anybody") mustBe true
       ReservedNames.isUsernameReserved("someone") mustBe true
       ReservedNames.isUsernameReserved("somebody") mustBe true
+      ReservedNames.isUsernameReserved("whatever") mustBe true
       // Two on the same line:
       ReservedNames.isUsernameReserved("he") mustBe true
       ReservedNames.isUsernameReserved("she") mustBe true
@@ -57,7 +58,7 @@ class ReservedNamesTest extends FreeSpec with MustMatchers {
     }
 
     "disallow whatever_123 names" in {
-      ReservedNames.isUsernameReserved("whatever") mustBe false
+      ReservedNames.isUsernameReserved("fine123") mustBe false
       ReservedNames.isUsernameReserved("whatever_xzy") mustBe false
       ReservedNames.isUsernameReserved("whatever_123_xzy") mustBe false
       ReservedNames.isUsernameReserved("whatever_") mustBe true

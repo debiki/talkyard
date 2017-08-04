@@ -624,8 +624,8 @@ object UserController extends mvc.Controller {
     val newNotfLevelInt = (body \ "pageNotfLevel").as[Int]
     val newNotfLevel = NotfLevel.fromInt(newNotfLevelInt) getOrElse throwBadRequest(
       "EsE6JP2SK", s"Bad page notf level: $newNotfLevelInt")
-    request.dao.saveUsersPageSettings(userId = request.theRoleId, pageId = pageId,
-      UsersPageSettings(newNotfLevel))
+    request.dao.saveUserPageSettings(userId = request.theRoleId, pageId = pageId,
+      UserPageSettings(newNotfLevel))
     Ok
   }
 
