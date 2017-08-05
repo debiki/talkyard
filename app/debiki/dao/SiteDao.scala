@@ -271,16 +271,18 @@ class SiteDao(
     uncacheSite()
   }
 
-  def listHostnames(): Seq[SiteHost] = {
-    readOnlyTransaction(_.listHostnames())
+  def listHostnames(): Seq[SiteHostInclDetails] = {
+    readOnlyTransaction(_.loadHostsInclDetails())
   }
 
   def changeSiteHostname(newHostname: String) {
     readWriteTransaction { transaction =>
-      val site = transaction.loadSite() getOrDie "EsE2PK4Y8X"
-      if (site.hosts.sortBy(_.hostname).length > MaxOldHostnames) {
-        // COULD check last week? month? only, and show a warning before forbidding.
-        throwForbidden2("EsE3KYP2", "You've changed hostname too many times")
+      val hostsNewestFirst = transaction.loadHostsInclDetails().sortBy(-_.addedAt.millis)
+      if (hostsNewestFirst.length > SoftMaxOldHostnames) {
+        val hostNr2 = hostsNewestFirst(1)
+        if (Globals.now().daysSince(hostNr2.addedAt) < WaitUntilAnotherHostnameInterval) {
+          throwForbidden2("EdE3KYP2", "You've changed hostname too many times and too often")
+        }
       }
       transaction.changeCanonicalHostRoleToExtra()
       try transaction.insertSiteHost(SiteHost(newHostname, SiteHost.RoleCanonical))
@@ -365,7 +367,8 @@ class SiteDao(
 
 object SiteDao {
 
-  private val MaxOldHostnames = 5  // dupl in JS [7GK8W2Z]
+  private val SoftMaxOldHostnames = 5
+  private val WaitUntilAnotherHostnameInterval = 60
 
   private val locksBySiteId = mutable.HashMap[SiteId, Object]()
 

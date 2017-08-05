@@ -54,7 +54,7 @@ trait SiteTransaction {
   def loadSiteSettings(): Option[EditedSettings]
   def upsertSiteSettings(settings: SettingsToSave)
 
-  def listHostnames(): Seq[SiteHost]
+  def loadHostsInclDetails(): Seq[SiteHostInclDetails]
   def insertSiteHost(host: SiteHost)
   def changeCanonicalHostRoleToExtra()
   def changeExtraHostsRole(newRole: SiteHost.Role)

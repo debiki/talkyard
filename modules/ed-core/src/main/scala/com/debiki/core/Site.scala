@@ -178,6 +178,12 @@ case class SiteHost(
   role: SiteHost.Role)
 
 
+case class SiteHostInclDetails(
+  hostname: String,
+  role: SiteHost.Role,
+  addedAt: When)
+
+
 /** The result of looking up a site by hostname.
   */
 case class CanonicalHostLookup(

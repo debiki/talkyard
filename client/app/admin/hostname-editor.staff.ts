@@ -81,7 +81,7 @@ const HostnameEditorDialog = createComponent({
           ". 2) Don't delete the old CNAME — leave it as is. Later, you can click a certain ",
           r.b({}, "Redirect old hostnames"),  // dupl button name [5KFU2R0]
           " button to redirect visitors from the old address to the new."),
-        r.p({}, "You can change hostname at most 5 times."), // dupl in Scala [7GK8W2Z]
+        r.p({}, "You cannot change hostname too many times or too often."),
         PatternInput({ label: "Hostname", ref: 'hostnameInput',
           placeholder: 'forum.example.com',
           notRegex: /\s/, notMessage: "No spaces please",
