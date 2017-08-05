@@ -17,18 +17,17 @@
 
 
 var d = { i: debiki.internal };
-
+var theIframe;
 
 addEventListener('message', onMessage, false);
 
-var theIframe;
 
 // Create <iframe>s for embedded comments and an embedded editor.
 // Show a "Loading comments..." message until comments loaded.
 // For now, choose the first .debiki-emdbedded-comments only, because
 // the embedded editor will be bound to one page only, and two editors
 // seems complicated.
-var embeddedCommentsElems = document.getElementsByClassName('debiki-embedded-comments');
+var embeddedCommentsElems = document.getElementsByClassName('ed-embedded-comments');
 if (embeddedCommentsElems.length) {
   var embElem = embeddedCommentsElems[0];
   var pageId = embElem.getAttribute('data-page-id');
@@ -55,11 +54,13 @@ if (embeddedCommentsElems.length) {
   });
 
   Bliss.start(theIframe, embElem);
-  /*
 
-  wrapper.append(commentsIframe);
-  wrapper.append($('<p>Loading comments...</p>'));
-  */
+  var loadingCommentsElem = Bliss.create('p', {
+    id: 'ed-loading-comments',
+    text: "Loading comments ..."
+  });
+
+  Bliss.start(loadingCommentsElem, embElem);
 
   var editorWrapper = Bliss.create('div', {
     id: 'ed-editor-wrapper',
@@ -138,10 +139,12 @@ function onMessage(event) {
     case 'setIframeSize':
       var iframe = findIframeThatSent(event);
       setIframeSize(iframe, eventData);
-      // Remove "loading comments" message.
-      //iframe.parent().children(':not(iframe)').remove();
+      // Remove the "loading comments" info text.
+      var loadingText = document.getElementById('ed-loading-comments');
+      if (loadingText)
+        loadingText.parentNode.removeChild(loadingText);
       break;
-      /*
+      /* CLEAN_UP remove this
     case 'startUtterscrolling':
       debiki.Utterscroll.startScrolling(eventData);
       break;
@@ -194,11 +197,11 @@ function findIframeThatSent(event) {
   // See http://stackoverflow.com/a/18267415/694469
 
   var commentsIframe = document.getElementById('ed-embedded-comments');
-  if (commentsIframe.contentWindow === event.source)
+  if (commentsIframe && commentsIframe.contentWindow === event.source)
     return commentsIframe;
 
   var editorIframe = document.getElementById('ed-embedded-editor');
-  if (editorIframe.contentWindow === event.source)
+  if (editorIframe && editorIframe.contentWindow === event.source)
     return editorIframe;
 }
 
