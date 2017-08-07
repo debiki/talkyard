@@ -58,7 +58,7 @@ abstract class DebikiRequest[A] {
   def canonicalHostname: String = siteIdAndCanonicalHostname.hostname
   def domain: String = request.domain
 
-  def siteSettings: EffectiveSettings = dao.getWholeSiteSettings()
+  lazy val siteSettings: EffectiveSettings = dao.getWholeSiteSettings()
 
   def who = Who(theUserId, theBrowserIdData)
 

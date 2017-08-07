@@ -276,7 +276,16 @@ object ViewPageController extends mvc.Controller {
         pageHtml, HtmlEncodedVolatileJsonMagicString, htmlEncodedJson)
 
     requester.foreach(dao.pubSub.userIsActive(request.siteId, _, request.theBrowserIdData))
-    Future.successful(Ok(pageHtml) as HTML)
+
+    var response = Ok(pageHtml)
+    if (request.siteSettings.allowEmbeddingFrom.isEmpty) {
+      response = response.withHeaders("X-Frame-Options" -> "DENY")  // [7ACKRQ20]
+    }
+    else {
+      // Later: add X-Frame-Options: 'ALLOW-FROM origin' and also 'Content-Security-Policy: origin'
+      // for Chrome. For now, allow from anywhere though.
+    }
+    Future.successful(response as HTML)
   }
 
 
