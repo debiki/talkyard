@@ -40,6 +40,7 @@ package object core {
   val NoPostNr: PostNr = -1
 
   type PageId = String
+  type AltPageId = String
 
   type PageVersion = Int
 
