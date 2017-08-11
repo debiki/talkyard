@@ -46,7 +46,8 @@ function onMessage(event) {
 
   switch (eventName) {
     case 'setBaseAddress':
-      d.i.iframeBaseUrl = eventData;
+      d.i.iframeBaseUrl = eventData.embeddingUrl;
+      d.i.altPageId = eventData.altPageId;
       addBaseElem(eventData);
       break;
     case 'editorToggleReply':

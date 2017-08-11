@@ -15,8 +15,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+var serverOrigin = 'http://site-3.localhost';
 
-var d = { i: debiki.internal };
+// Escape any hash fragment.
+var embeddingUrl = window.location.origin + window.location.pathname + window.location.search;
+
 var theIframe;
 
 addEventListener('message', onMessage, false);
@@ -30,15 +33,18 @@ addEventListener('message', onMessage, false);
 var embeddedCommentsElems = document.getElementsByClassName('ed-embedded-comments');
 if (embeddedCommentsElems.length) {
   var embElem = embeddedCommentsElems[0];
-  var pageId = embElem.getAttribute('data-page-id');
-  var pageUrl = embElem.getAttribute('data-page-url');
-  if (!pageUrl) {
-    // Don't include the hash fragment.
-    pageUrl = window.location.origin + window.location.pathname + window.location.search;
-  }
-  var pageIdUrlParam = pageId ? 'pageId=' + pageId : 'pageUrl=' + pageUrl;
-  var commentsIframeUrl = d.i.debikiServerOrigin +  //   + '/-/embedded-comments?' + pageIdUrlParam;
-      '/-' + pageId; // '/-29/testing-nested-comment-is-it-working-or-not';  // /-/pageId
+
+  var embeddingUrlParam = 'embeddingUrl=' + embeddingUrl;
+
+  var discussionId = embElem.getAttribute('data-discussion-id');
+  var discussionIdParam = discussionId ? '&discussionId=' + discussionId : '';
+
+  var edPageId = embElem.getAttribute('data-ed-page-id');
+  var edPageIdParam = edPageId ? '&edPageId=' + edPageId : '';
+
+  var allUrlParams = embeddingUrlParam + discussionIdParam + edPageIdParam;
+  var commentsIframeUrl = serverOrigin + '/-/embedded-comments?' + allUrlParams;
+      // '/-' + pageId; // '/-29/testing-nested-comment-is-it-working-or-not';  // /-/pageId
 
   // Don't `hide()` the iframe, then FireFox acts as if it doesn't exist: FireFox receives
   // no messages at all from it.
@@ -80,7 +86,7 @@ if (embeddedCommentsElems.length) {
 
   Bliss.inside(editorWrapper, document.body);
 
-  var editorIframeUrl = d.i.debikiServerOrigin + '/-/embedded-editor?' + pageIdUrlParam;
+  var editorIframeUrl = serverOrigin + '/-/embedded-editor?' + edPageIdParam;
   var editorIframe = Bliss.create('iframe', {
     id: 'ed-embedded-editor',
     style: {
@@ -183,7 +189,10 @@ function onMessage(event) {
 
 function setIframeBaseAddress(iframe) {
   iframe.contentWindow.postMessage(
-      JSON.stringify(['setBaseAddress', window.location.href]), '*');
+      JSON.stringify(['setBaseAddress', {
+        altPageId: null,
+        embeddingUrl: window.location.href
+      }]), '*');
 }
 
 

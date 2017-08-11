@@ -21,15 +21,24 @@
 <html class="@tpi.debikiHtmlTagClasses">
 <head>
   @tpi.debikiMeta
+  @Html(tpi.anySafeMetaTags.getOrElse(""))
   @tpi.debikiStyles
   @tpi.stylesheetBundle("styles.css")
+  @Html(tpi.siteSettings.headStylesHtml)
   @tpi.debikiScriptsInHead()
+  @Html(tpi.anyGoogleUniversalAnalyticsScript)
 </head>
 <body>
-
 <!-- embeddedComments.scala.html -->
+<div id="esPageColumn">
+<div id="esPageScrollable">
+<div id="thePageTop"></div>
+
 <div id="dwPosts">@tpi.renderedPage</div>
 
+<div id="thePageBottom"></div>
+</div>
+</div>
 @tpi.debikiScriptsEndOfBody
 </body>
 </html>

@@ -36,6 +36,8 @@
    namespace debiki2.page {
 //------------------------------------------------------------------------------
 
+const d = { i: debiki.internal };
+
 var React = window['React']; // TypeScript file doesn't work
 var r = React.DOM;
 var DropdownModal = utils.DropdownModal;
@@ -337,9 +339,14 @@ export const PostActions = createComponent({
       tagList = r.ul({ className: 'esPA_Ts' }, tags);
     }
 
+    const adminLink = !me.isAdmin || !d.i.isInEmbeddedCommentsIframe ? null :
+      r.a({ className: 'dw-a dw-a-reply', href: d.i.serverOrigin + '/-/admin/#/moderation',
+        target: '_blank' }, 'Administrate');
+
     return (
       r.div({ className: 'dw-p-as dw-as esPA', onClick: this.props.onClick },
         replyButton,
+        adminLink,
         closeReopenButton,
         flagBtn,
         moreDropdown,

@@ -156,7 +156,7 @@ export var Metabar = createComponent({
     // ----- Put everything together
 
     var result;
-    if (store.isInEmbeddedCommentsIframe) {
+    /* if (store.isInEmbeddedCommentsIframe) {  — no, place in post-action.ts instead?
       // There's not root post with a reply button, so add a reply button.
       // And an admin button, if is admin.
       var adminLink;
@@ -177,14 +177,14 @@ export var Metabar = createComponent({
             detailsElem,
             anyExtraMeta));
     }
-    else {
+    else { */
       result =
         r.div({ className: 'dw-cmts-tlbr esMetabar', id: 'dw-cmts-tlbr' },
           summaryElem,
           detailsElem,
           anyExtraMeta,
           summarizeStuff);
-    }
+    //}
 
     return result;
   }

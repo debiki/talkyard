@@ -32,8 +32,12 @@ export var NameLoginBtns = createComponent({
     return { store: debiki2.ReactStore.allData() };
   },
 
+  componentWillUnmount: function() {
+    this.isGone = true;
+  },
+
   onChange: function() {
-    if (!this.isMounted()) {
+    if (this.isGone) {
       // Don't know how this can happen, but it does inside the NonExistingPage component.
       return;
     }

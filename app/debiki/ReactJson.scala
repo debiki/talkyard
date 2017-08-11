@@ -20,10 +20,10 @@ package debiki
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import controllers.ForumController
-import debiki.dao.{PageDao, PageStuff, ReviewStuff, SiteDao}
+import debiki.dao._
 import ed.server.auth.ForumAuthzContext
 import ed.server.http._
-import java.{util => ju, lang => jl}
+import java.{lang => jl, util => ju}
 import org.jsoup.Jsoup
 import play.api.libs.json._
 import scala.collection.{immutable, mutable}
@@ -101,7 +101,7 @@ object ReactJson {
         anyPageRoot: Option[PostNr] = None,
         anyPageQuery: Option[PageQuery] = None): PageToJsonResult = {
     dao.readOnlyTransaction(
-      pageToJsonImpl(pageId, dao, _, anyPageRoot, anyPageQuery))
+      pageThatExistsToJsonImpl(pageId, dao, _, anyPageRoot, anyPageQuery))
   }
 
 
@@ -194,9 +194,38 @@ object ReactJson {
   }
 
 
+  private def pageThatExistsToJsonImpl(
+    pageId: PageId,
+    dao: SiteDao,
+    transaction: SiteTransaction,
+    anyPageRoot: Option[PostNr],
+    anyPageQuery: Option[PageQuery]): PageToJsonResult = {
+
+    val page = PageDao(pageId, transaction)
+    pageToJsonImpl(pageId, dao, page, transaction, anyPageRoot, anyPageQuery)
+  }
+
+
+  /** Useful when rendering embedded comments, and no comment has been posted yet so the
+    * embedded comments page has not yet been created. Or if constructing a wiki, and
+    * navigating to a wiki page that has not yet been created.
+    */
+  def pageThatDoesNotExistsToJson(
+    dao: SiteDao,
+    pageRole: PageRole,
+    anyCategoryId: Option[CategoryId]): PageToJsonResult = {
+
+    dao.readOnlyTransaction { tx =>
+      val page = NonExistingPage(dao.siteId, pageRole, anyCategoryId)
+      pageToJsonImpl(EmptyPageId, dao, page, tx, anyPageRoot = None, anyPageQuery = None)
+    }
+  }
+
+
   private def pageToJsonImpl(
         pageId: PageId,
         dao: SiteDao,
+        page: Page,
         transaction: SiteTransaction,
         anyPageRoot: Option[PostNr],
         anyPageQuery: Option[PageQuery]): PageToJsonResult = {
@@ -206,7 +235,6 @@ object ReactJson {
     val authzCtx = dao.getForumAuthzContext(None)
 
     val socialLinksHtml = dao.getWholeSiteSettings().socialLinksHtml
-    val page = PageDao(pageId, transaction)
     val pageParts = page.parts
     val posts =
       if (page.role.isChat) {
@@ -218,8 +246,7 @@ object ReactJson {
         transaction.loadTitleAndOrigPost(page.id)
       }
       else {
-        pageParts.loadAllPosts()
-        pageParts.allPosts
+        pageParts.allPosts // loads all posts, if needed
       }
 
     val pageTitle = posts.find(_.isTitle).flatMap(_.approvedHtmlSanitized)
@@ -731,6 +758,9 @@ object ReactJson {
   /** Creates a dummy root post, needed when rendering React elements. */
   def embeddedCommentsDummyRootPost(topLevelComments: immutable.Seq[Post]): JsObject = Json.obj(
     "nr" -> JsNumber(PageParts.BodyNr),
+    "isApproved" -> JsTrue,
+    // COULD link to embedding article, change text to: "Discussion of the text at https://...."
+    "sanitizedHtml" -> JsString("(Embedded comments dummy root post [EdM2PWKV06]"),
     "childIdsSorted" ->
       JsArray(Post.sortPostsBestFirst(topLevelComments).map(reply => JsNumber(reply.nr))))
 

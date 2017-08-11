@@ -303,7 +303,8 @@ export const TitleBodyComments = createComponent({
 
     let anyTitle = null;
     let pageRole: PageRole = store.pageRole;
-    if (pageRole === PageRole.CustomHtmlPage || pageRole === PageRole.EmbeddedComments ||
+    if (pageRole === PageRole.CustomHtmlPage ||
+        pageRole === PageRole.EmbeddedComments ||  // maybe hide via css instead? [7SFAUM2]
         store.rootPostId !== BodyNr) {
       // Show no title for the homepage — it should have its own custom HTML with
       // a title and other things.
@@ -319,7 +320,7 @@ export const TitleBodyComments = createComponent({
     if (pageRole === PageRole.CustomHtmlPage || pageRole === PageRole.Forum ||
         pageRole === PageRole.About || pageRole === PageRole.WebPage ||
         pageRole === PageRole.SpecialContent || pageRole === PageRole.Blog ||
-        pageRole === PageRole.EmbeddedComments ||
+        pageRole === PageRole.EmbeddedComments ||  // maybe hide via css instead [7SFAUM2]
         store.rootPostId !== BodyNr) {
       // Show no author name or social links for these generic pages.
       // And show nothing if we're showing a comment not the article as the root post.
@@ -332,7 +333,7 @@ export const TitleBodyComments = createComponent({
       // anySocialLinks = SocialLinks({ socialLinksHtml: store.socialLinksHtml }); CLEAN_UP remove social links
     }
 
-    const embeddedClass = store.isInEmbeddedCommentsIframe ? ' dw-embedded' : '';
+    // const embeddedClass = store.isInEmbeddedCommentsIframe ? ' dw-embedded' : ''; TODO remove styles
 
     // If the help message is important, place it below the title, and use a different
     // color (via CSS) [4JKYIXR2], so people will notice it. Page closed = important,
@@ -345,7 +346,7 @@ export const TitleBodyComments = createComponent({
       r.div({ className: anyAboutCategoryClass },
         helpMessageAboveTitle,
         anyAboutCategoryTitle,
-        r.div({ className: 'debiki dw-page' + embeddedClass },
+        r.div({ className: 'debiki dw-page' },
           anyTitle,
           anyPostHeader,
           helpMessageBelowTitle,
@@ -618,7 +619,7 @@ var RootPostAndComments = createComponent({
           store.pageDeletedAtMs ? "(Page deleted)" : "(Text pending approval)");
 
     let body = null;
-    if (pageRole !== PageRole.EmbeddedComments) {
+    if (pageRole !== PageRole.EmbeddedComments) {  // maybed hide via CSS instead? [7SFAUM2]
       let bodyContent;
       if (post_shallRenderAsHidden(rootPost)) {
         bodyContent = (

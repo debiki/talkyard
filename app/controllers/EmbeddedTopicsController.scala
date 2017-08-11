@@ -21,6 +21,7 @@ import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki._
 import debiki.DebikiHttp._
+import ed.server.RenderedPage
 import ed.server.http._
 import java.{util => ju}
 import play.api._
@@ -30,17 +31,6 @@ import play.api.mvc.{Action => _, _}
 /** Shows embedded comments.
   */
 object EmbeddedTopicsController extends mvc.Controller {
-
-
-  def isUrlFromEmbeddingUrl(pageUrl: String, anyEmbeddingUrl: Option[String]): Boolean = {
-    SECURITY ; COULD /* compare pageURL with embedding site URL...
-    val embeddingUrl: String = anyEmbeddingUrl getOrElse {
-      return false
-    }
-    pageUrl.startsWith(embeddingUrl)
-    */
-    return true
-  }
 
 
   /** Derives the discussion id based on the url of the embedding site.
@@ -91,17 +81,63 @@ object EmbeddedTopicsController extends mvc.Controller {
   }
 
 
-  def showTopic = GetAction { request =>
-    val pageRequest = makePageRequest(request)
-    ???
-    // Cannod do this any more because I moved the auth stuff to higher up in the call stack:
-    // ViewPageController.ifAuthDoRenderPage(pageRequest)
+  def showTopic(embeddingUrl: String, discussionId: Option[AltPageId], edPageId: Option[PageId]) =
+        AsyncGetAction { request =>
+    import request.dao
+    val anyAltPageId = discussionId
+    val anyPageId = edPageId
+
+    // Lookup the page by real id, if specified, otherwise alt id, or embedding url.
+    val anyRealPageId = anyPageId orElse {
+      val altId = anyAltPageId.getOrElse(embeddingUrl)
+      dao.getRealPageId(altId)
+    }
+
+    val (renderedPage, pageRequest) = anyRealPageId match {
+      case None =>
+        // Embedded comments page not yet created. Return a dummy page; we'll create a real one,
+        // later when the first reply gets posted.
+        val pageRequest = ViewPageController.makeEmptyPageRequest(request, EmptyPageId, showId = true,
+            PageRole.EmbeddedComments)
+        val jsonStuff = ReactJson.pageThatDoesNotExistsToJson(
+          dao, PageRole.EmbeddedComments, Some(DefaultCategoryId))
+        // Don't render server side, render client side only. Search engines shouldn't see it anyway,
+        // because it doesn't exist.
+        // So skip: ReactRenderer.renderPage(jsonStuff.jsonString)
+        val tpi = new PageTpi(pageRequest, jsonStuff.jsonString, jsonStuff.version,
+          "Dummy cached html [EdM2GRVUF05]", WrongCachedPageVersion,
+          jsonStuff.pageTitle, jsonStuff.customHeadTags)
+        val htmlString = views.html.templates.embeddedComments(tpi).body
+        (RenderedPage(htmlString, unapprovedPostAuthorIds = Set.empty), pageRequest)
+      case Some(realId) =>
+        val pageMeta = dao.getThePageMeta(realId)
+        val pagePath = PagePath(siteId = request.siteId, folder = "/", pageId = Some(realId),
+          showId = true, pageSlug = "")
+        SECURITY; COULD // do the standard auth stuff here, but not needed right now since we
+        // proceed only if is embedded comments page. So, right now all such pages are public.
+        if (pageMeta.pageRole != PageRole.EmbeddedComments)
+          throwForbidden2("EdE2F6UHY3", "Not an embedded comments page")
+        val pageRequest = new PageRequest[Unit](
+          request.siteIdAndCanonicalHostname,
+          sid = request.sid,
+          xsrfToken = request.xsrfToken,
+          browserId = request.browserId,
+          user = request.user,
+          pageExists = true,
+          pagePath = pagePath,
+          pageMeta = Some(pageMeta),
+          dao = dao,
+          request = request.request)
+        (request.dao.renderPageMaybeUseCache(pageRequest), pageRequest)
+    }
+
+    ViewPageController.addVolatileJson(renderedPage, pageRequest)
   }
 
 
-  def showEmbeddedEditor(pageId: PageId) = GetAction { request =>
+  def showEmbeddedEditor(edPageId: PageId) = GetAction { request =>
     // val pageRequest = makePageRequest(request)  //  xx rm
-    val pageMeta = request.dao.getThePageMeta(pageId)
+    val pageMeta = request.dao.getThePageMeta(edPageId)
     val tpi = new EditPageTpi(request, pageMeta)
     Ok(views.html.embeddedEditor(tpi).body) as HTML
   }
