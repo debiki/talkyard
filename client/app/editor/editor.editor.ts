@@ -125,6 +125,10 @@ export var Editor = createComponent({
     this.perhapsShowGuidelineModal();
   },
 
+  componentWillUnmount: function() {
+    this.isGone = true;
+  },
+
   focusInputFields: function() {
     var elemToFocus = findDOMNode(this.refs.titleInput);
     if (!elemToFocus) {
@@ -176,6 +180,7 @@ export var Editor = createComponent({
 
     FileAPI.event.on(document, 'drop', (event: Event) => {
       event.preventDefault();
+      if (this.isGone) return;
       if (!this.state.visible) return;
       FileAPI.getDropFiles(event, (files: File[]) => {
         if (files.length > 1) {
@@ -205,6 +210,7 @@ export var Editor = createComponent({
       files: { file: files },
       // This is per file.
       fileprogress: (event, file, xhr, options) => {
+        if (this.isGone) return;
         if (!this.state.isUploadingFile) {
           this.setState({ isUploadingFile: true });
           pagedialogs.getProgressBarDialog().open("Uploading...", () => {
@@ -220,7 +226,7 @@ export var Editor = createComponent({
       // This is when all files have been uploaded — but we're uploading just one.
       complete: (error, xhr) => {
         pagedialogs.getProgressBarDialog().close();
-        this.setState({
+        if (!this.isGone) this.setState({
           isUploadingFile: false,
           uploadCancelled: false
         });
@@ -230,6 +236,7 @@ export var Editor = createComponent({
           }
           return;
         }
+        if (this.isGone) return;
         var fileUrlPath = JSON.parse(xhr.response);
         dieIf(!_.isString(fileUrlPath), 'DwE06MF22');
         dieIf(!_.isString(this.state.text), 'EsE5FYZ2');
@@ -349,6 +356,7 @@ export var Editor = createComponent({
     if (this.alertBadState())
       return;
     Server.loadCurrentPostText(postId, (text: string, postUid: number, revisionNr: number) => {
+      if (this.isGone) return;
       this.showEditor();
       this.setState({
         anyPostType: null,
@@ -385,6 +393,7 @@ export var Editor = createComponent({
     if (this.alertBadState())
       return;
     Server.loadCurrentPostText(BodyNr, (text: string, postUid: number, revisionNr: number) => {
+      if (this.isGone) return;
       this.showEditor();
       // TODO edit title too
       this.setState({
@@ -428,7 +437,7 @@ export var Editor = createComponent({
     // Later: Start using util.FadingBackdrop instead. [4KEF0YUU2]
     this.setState({ backdropOpacity: 0.83 });
     var fadeBackdrop = () => {
-      if (!this.isMounted()) return;
+      if (this.isGone) return;
       var opacity = this.state.backdropOpacity;
       var nextOpacity = opacity < 0.01 ? 0 : opacity - 0.009;
       this.setState({ backdropOpacity: nextOpacity });
@@ -593,8 +602,7 @@ export var Editor = createComponent({
   },
 
   updatePreview: function(anyCallback?) {
-    if (!this.isMounted())
-      return;
+    if (this.isGone) return;
 
     // (COULD verify still edits same post/thing, or not needed?)
     var isEditingBody = this.state.editingPostId === d.i.BodyNr;
@@ -750,10 +758,9 @@ export var Editor = createComponent({
     }
     // After rerender, focus the input fields:
     setTimeout(() => {
-      if (this.isMounted()) {
-        this.focusInputFields();
-        this.updatePreview();
-      }
+      if (this.isGone) return;
+      this.focusInputFields();
+      this.updatePreview();
     }, 1);
   },
 

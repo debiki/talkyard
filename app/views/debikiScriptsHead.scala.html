@@ -1,5 +1,5 @@
 @**
- * Copyright (c) 2013-2016 Kaj Magnus Lindberg
+ * Copyright (c) 2013-2017 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -16,16 +16,25 @@
  *@
 
 @(tpi: debiki.SiteTpi, siteId: Int, anyPageId: Option[String],
-  pageUriPath: String,
   anyPageRole: Option[com.debiki.core.PageRole], anyPagePath: Option[com.debiki.core.PagePath],
   isInLoginWindow: Boolean,
   reactStoreSafeJsonString: String, minMaxJs: String, minMaxCss: String)
 
 @import play.api.Play.current
 @import com.debiki.core.PageRole.InfoPageMaxId
+@import org.owasp.encoder.Encode
 
 @pageIdQuotedOrUndefined = @{
+  // This id is generated server side, it's safe, need not encode. Later: will be a number only.
   anyPageId.map(id => s"'$id'") getOrElse "undefined"
+}
+
+@altPageIdOrUndefined = @{
+  tpi.anyAltPageId.map(id => s"'${ Encode.forHtmlContent(id) }'") getOrElse "undefined"
+}
+
+@embeddingUrlOrUndefined = @{
+  tpi.anyEmbeddingUrl.map(url => s"'${ Encode.forHtmlContent(url) }'") getOrElse "undefined"
 }
 
 @isInLoginWindowBoolStr = @{
@@ -42,7 +51,7 @@ occurrence of the magic string with volatile + user specific data. *@
 
 <script id="thePageJson" type="application/json">
 @* Play Framework escapes too much (it escapes '"'), so use @Html and OWASP instead. *@
-@Html(org.owasp.encoder.Encode.forHtmlContent(reactStoreSafeJsonString))
+@Html(Encode.forHtmlContent(reactStoreSafeJsonString))
 </script>
 
 @* All Debiki's stuff is placed somewhere inside `debiki`.
@@ -145,17 +154,18 @@ var debiki = {
   volatileDataFromServer: _volatileData,
   getPageId: function() { return @Html(pageIdQuotedOrUndefined); },
   isDev: @{ if (play.api.Play.isDev) "true" else "false" },
-  v0: { util: {} },@{/* CLEAN_UP remove v0.util */}
+  v0: { util: {} },@* CLEAN_UP remove v0.util *@
   internal: {
     minMaxJs: '@minMaxJs',
     serverOrigin: '//@tpi.serverAddress',
-    pageUri: '//@tpi.serverAddress@pageUriPath',
     pageId: @Html(pageIdQuotedOrUndefined),
+    altPageId: @Html(altPageIdOrUndefined),
     pageRole: @{ anyPageRole.map(_.toInt) getOrElse "undefined" },
     isInLoginWindow: @isInLoginWindowBoolStr,
     isInLoginPopup: @isInLoginWindowBoolStr && _isInIframe, // window.opener && window.opener.debiki,
     isInIframe: _isInIframe,
     isInEmbeddedCommentsIframe: _isInIframe && @{ if (anyPageRole.isDefined) "true" else "false" },
+    embeddingUrl: @Html(embeddingUrlOrUndefined),
     pagePath: '@{ anyPagePath.map(_.value) getOrElse "" }',
     assetUrlPrefix: '@tpi.assetUrlPrefix'
   },

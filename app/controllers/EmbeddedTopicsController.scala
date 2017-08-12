@@ -21,6 +21,7 @@ import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki._
 import debiki.DebikiHttp._
+import debiki.dao.SiteDao
 import ed.server.RenderedPage
 import ed.server.http._
 import java.{util => ju}
@@ -84,15 +85,8 @@ object EmbeddedTopicsController extends mvc.Controller {
   def showTopic(embeddingUrl: String, discussionId: Option[AltPageId], edPageId: Option[PageId]) =
         AsyncGetAction { request =>
     import request.dao
-    val anyAltPageId = discussionId
-    val anyPageId = edPageId
 
-    // Lookup the page by real id, if specified, otherwise alt id, or embedding url.
-    val anyRealPageId = anyPageId orElse {
-      val altId = anyAltPageId.getOrElse(embeddingUrl)
-      dao.getRealPageId(altId)
-    }
-
+    val anyRealPageId = getAnyRealPageId(edPageId, discussionId, embeddingUrl, dao)
     val (renderedPage, pageRequest) = anyRealPageId match {
       case None =>
         // Embedded comments page not yet created. Return a dummy page; we'll create a real one,
@@ -135,15 +129,26 @@ object EmbeddedTopicsController extends mvc.Controller {
   }
 
 
-  def showEmbeddedEditor(edPageId: PageId) = GetAction { request =>
-    // val pageRequest = makePageRequest(request)  //  xx rm
-    val pageMeta = request.dao.getThePageMeta(edPageId)
-    val tpi = new EditPageTpi(request, pageMeta)
+  def showEmbeddedEditor(embeddingUrl: String, discussionId: Option[AltPageId],
+        edPageId: Option[PageId]) = GetAction { request =>
+    val anyRealPageId = getAnyRealPageId(edPageId, discussionId, embeddingUrl, request.dao)
+    val tpi = new EditPageTpi(request, PageRole.EmbeddedComments, anyCurrentPageId = anyRealPageId,
+      anyAltPageId = discussionId, anyEmbeddingUrl = Some(embeddingUrl))
     Ok(views.html.embeddedEditor(tpi).body) as HTML
   }
 
 
-  private def makePageRequest(request: GetRequest): PageGetRequest = {
+  private def getAnyRealPageId(edPageId: Option[PageId], discussionId: Option[String],
+        embeddingUrl: String, dao: SiteDao): Option[PageId] = {
+    // Lookup the page by real id, if specified, otherwise alt id, or embedding url.
+    edPageId orElse {
+      val altId = discussionId.getOrElse(embeddingUrl)
+      dao.getRealPageId(altId)
+    }
+  }
+
+
+  private def makePageRequest(request: GetRequest): PageGetRequest = {  // xx rm
     ??? /*
     import controllers.Utils.ValidationImplicits._
     val topicId = request.queryString.getNoneAsEmpty("topicId")

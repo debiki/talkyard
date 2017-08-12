@@ -19,8 +19,9 @@ var serverOrigin = 'http://site-3.localhost';
 
 // Escape any hash fragment.
 var embeddingUrl = window.location.origin + window.location.pathname + window.location.search;
+var discussionId;
 
-var theIframe;
+var theCommentsIframe;
 
 addEventListener('message', onMessage, false);
 
@@ -36,7 +37,7 @@ if (embeddedCommentsElems.length) {
 
   var embeddingUrlParam = 'embeddingUrl=' + embeddingUrl;
 
-  var discussionId = embElem.getAttribute('data-discussion-id');
+  discussionId = embElem.getAttribute('data-discussion-id');
   var discussionIdParam = discussionId ? '&discussionId=' + discussionId : '';
 
   var edPageId = embElem.getAttribute('data-ed-page-id');
@@ -44,11 +45,11 @@ if (embeddedCommentsElems.length) {
 
   var allUrlParams = embeddingUrlParam + discussionIdParam + edPageIdParam;
   var commentsIframeUrl = serverOrigin + '/-/embedded-comments?' + allUrlParams;
-      // '/-' + pageId; // '/-29/testing-nested-comment-is-it-working-or-not';  // /-/pageId
+  // '/-' + pageId; // '/-29/testing-nested-comment-is-it-working-or-not';  // /-/pageId
 
   // Don't `hide()` the iframe, then FireFox acts as if it doesn't exist: FireFox receives
   // no messages at all from it.
-  theIframe = Bliss.create('iframe', {
+  theCommentsIframe = Bliss.create('iframe', {
     id: 'ed-embedded-comments',
     height: 0, // don't `hide()` (see comment just above)
     style: {
@@ -59,7 +60,7 @@ if (embeddedCommentsElems.length) {
     src: commentsIframeUrl
   });
 
-  Bliss.start(theIframe, embElem);
+  Bliss.start(theCommentsIframe, embElem);
 
   var loadingCommentsElem = Bliss.create('p', {
     id: 'ed-loading-comments',
@@ -86,7 +87,7 @@ if (embeddedCommentsElems.length) {
 
   Bliss.inside(editorWrapper, document.body);
 
-  var editorIframeUrl = serverOrigin + '/-/embedded-editor?' + edPageIdParam;
+  var editorIframeUrl = serverOrigin + '/-/embedded-editor?' + allUrlParams;
   var editorIframe = Bliss.create('iframe', {
     id: 'ed-embedded-editor',
     style: {
@@ -123,9 +124,8 @@ jQuery(function($) {   // xx
 
 
 function onMessage(event) {
-
   // The message is a "[eventName, eventData]" string because IE <= 9 doesn't support
-  // sending objects.
+  // sending objects. CLEAN_UP COULD send a real obj nowadays, because we don't support IE 9 any more.
   var eventName;
   var eventData;
   try {
@@ -140,7 +140,12 @@ function onMessage(event) {
 
   switch (eventName) {
     case 'iframeInited':
-      setIframeBaseAddress(findIframeThatSent(event));
+      var iframe = findIframeThatSent(event);
+      setIframeBaseAddress(iframe);
+      /*if (iframe === theCommentsIframe) {
+        var edPageId = eventData.edPageId;
+        createEditorInIframe(edPageId);
+      } */
       break;
     case 'setIframeSize':
       var iframe = findIframeThatSent(event);
@@ -190,8 +195,8 @@ function onMessage(event) {
 function setIframeBaseAddress(iframe) {
   iframe.contentWindow.postMessage(
       JSON.stringify(['setBaseAddress', {
-        altPageId: null,
-        embeddingUrl: window.location.href
+        embeddingUrl: window.location.href,
+        discussionId: discussionId
       }]), '*');
 }
 
@@ -199,6 +204,8 @@ function setIframeBaseAddress(iframe) {
 function setIframeSize(iframe, dimensions) {
   // Previously: iframe.style.width = dimensions.width + 'px'; — but now 2d scrolling disabled.
   iframe.style.height = dimensions.height + 'px';
+  // Without min height, an annoying scrollbar might appear if opening the More menu.
+  iframe.style.minHeight = 220;
 }
 
 
@@ -275,6 +282,17 @@ function makeEditorResizable() {
 
 function coverIframesSoWontStealMouseEvents(cover) {
   var newVisibilityStyle = { style: { visibility: cover ? 'hidden' : 'visible' }};
+  /*  This won't work, still steals mouse clicks/drags and starts selecting text "randomly".
+  var newValue = cover ? 'none' : 'auto';
+  var newVisibilityStyle = { style: {
+    'pointer-events' : newValue,
+    '-webkit-touch-callout': newValue, // iOS Safari
+    '-webkit-user-select': newValue, // Safari
+    '-khtml-user-select': newValue, // Konqueror HTML
+    '-moz-user-select': newValue, // Firefox
+    '-ms-user-select': newValue, // Internet Explorer/Edge
+    'user-select': newValue
+  }}; */
   var comments = document.getElementById('ed-embedded-comments');
   var editor = document.getElementById('ed-embedded-editor');
   Bliss.set(comments, newVisibilityStyle);

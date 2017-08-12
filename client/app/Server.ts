@@ -852,7 +852,7 @@ export function saveReply(postNrs: PostNr[], text: string, anyPostType: number,
     data: {
       pageId: d.i.pageId,
       altPageId: d.i.altPageId || undefined,
-      embeddingUrl: d.i.iframeBaseUrl || undefined,
+      embeddingUrl: d.i.embeddingUrl || undefined,
       postNrs: postNrs,
       postType: anyPostType || PostType.Normal,
       text: text

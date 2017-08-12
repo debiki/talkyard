@@ -46,8 +46,9 @@ function onMessage(event) {
 
   switch (eventName) {
     case 'setBaseAddress':
-      d.i.iframeBaseUrl = eventData.embeddingUrl;
-      d.i.altPageId = eventData.altPageId;
+      d.i.iframeBaseUrl = eventData.embeddingUrl;  // COULD remove? only d.i.embeddingUrl is enough?
+      d.i.embeddingUrl = eventData.embeddingUrl;
+      d.i.altPageId = eventData.discussionId;
       addBaseElem(eventData);
       break;
     case 'editorToggleReply':
