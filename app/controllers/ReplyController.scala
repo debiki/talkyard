@@ -145,7 +145,7 @@ object ReplyController extends mvc.Controller {
       anyCategoryId = Some(categoryId), anyFolder = slug, anySlug = folder,
       titleTextAndHtml = TextAndHtml.forTitle("Embedded comments"),
       bodyTextAndHtml = TextAndHtml.forBodyOrComment(s"Comments for: $embeddingUrl"), showId = true,
-      Who.System, request.spamRelatedStuff)
+      Who.System, request.spamRelatedStuff, altPageId = altPageId, embeddingUrl = Some(embeddingUrl))
   }
 
 }

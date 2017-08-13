@@ -27,6 +27,7 @@
 /// <reference path="../page-methods.ts" />
 /// <reference path="../help/help.ts" />
 /// <reference path="../rules.ts" />
+/// <reference path="../links.ts" />
 /// <reference path="../Server.ts" />
 /// <reference path="../login/login-if-needed.ts" />
 /// <reference path="chat.ts" />
@@ -339,9 +340,9 @@ export const PostActions = createComponent({
       tagList = r.ul({ className: 'esPA_Ts' }, tags);
     }
 
-    const adminLink = !me.isAdmin || !d.i.isInEmbeddedCommentsIframe ? null :
-      r.a({ className: 'dw-a dw-a-reply', href: d.i.serverOrigin + '/-/admin/#/moderation',
-        target: '_blank' }, 'Administrate');
+    const adminLink = !me.isAdmin || !d.i.isInEmbeddedCommentsIframe || !isPageBody ? null :
+      r.a({ className: 'dw-a dw-a-admin icon-link-ext', href: d.i.serverOrigin + linkToReviewPage(),
+        target: '_blank' }, "Admin");
 
     return (
       r.div({ className: 'dw-p-as dw-as esPA', onClick: this.props.onClick },
