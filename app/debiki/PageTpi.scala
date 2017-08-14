@@ -89,7 +89,7 @@ class SiteTpi protected (
         case _ => pageTitle.getOrElse("")
       }
     val theDescription = anyCurrentPageMeta.map(_.htmlHeadDescription) getOrElse ""
-    xml.Unparsed(views.html.debikiMeta(thePageTitle, theDescription).body)
+    xml.Unparsed(views.html.debikiMeta(thePageTitle, description = theDescription).body)
   }
 
 

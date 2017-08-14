@@ -50,10 +50,9 @@ object ReplyController extends mvc.Controller {
     DISCUSSION_QUALITY; COULD // require that the user has spent a reasonable time reading
     // the topic, in comparison to # posts in the topic, before allowing hen to post a reply.
 
-    // Dupl code [5UFKWQ0]
     var newPagePath: PagePath = null
     val pageId = anyPageId.orElse({
-      anyAltPageId.flatMap(request.dao.getRealPageId)
+      (anyAltPageId orElse anyEmbeddingUrl).flatMap(request.dao.getRealPageId)
     }) getOrElse {
       // No page id. Maybe create a new embedded discussion?
       val embeddingUrl = anyEmbeddingUrl getOrElse {
@@ -129,13 +128,13 @@ object ReplyController extends mvc.Controller {
 
     val siteSettings = request.dao.getWholeSiteSettings()
     if (siteSettings.allowEmbeddingFrom.isEmpty) {
-      // Later, check that the allowEmbeddingFrom origin matches... the referer? [4GUYQC0].
+      SECURITY; SHOULD // Later, check that allowEmbeddingFrom origin matches... the referer? [4GUYQC0].
       throwForbidden2("EdE2WTKG8", "Embedded comments allow-from origin not configured")
     }
 
     val slug = None
     val folder = None
-    val categoryId = DefaultCategoryId // for now, should lookup instead, based on url?
+    val categoryId = DefaultCategoryId // for now, should lookup instead, based on embedding site origin?
     val categoriesRootLast = dao.loadAncestorCategoriesRootLast(categoryId)
     val pageRole = PageRole.EmbeddedComments
 
@@ -148,7 +147,7 @@ object ReplyController extends mvc.Controller {
 
     dao.createPage(pageRole, PageStatus.Published,
       anyCategoryId = Some(categoryId), anyFolder = slug, anySlug = folder,
-      titleTextAndHtml = TextAndHtml.forTitle("Embedded comments"),
+      titleTextAndHtml = TextAndHtml.forTitle(s"Embedded comments for $embeddingUrl"),
       bodyTextAndHtml = TextAndHtml.forBodyOrComment(s"Comments for: $embeddingUrl"), showId = true,
       Who.System, request.spamRelatedStuff, altPageId = altPageId, embeddingUrl = Some(embeddingUrl))
   }

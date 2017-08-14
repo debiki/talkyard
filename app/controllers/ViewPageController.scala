@@ -292,8 +292,9 @@ object ViewPageController extends mvc.Controller {
       response = response.withHeaders("X-Frame-Options" -> "DENY")  // [7ACKRQ20]
     }
     else {
-      // Later: add X-Frame-Options: 'ALLOW-FROM origin' and also 'Content-Security-Policy: origin'
-      // for Chrome. For now, allow from anywhere though.  Also update: [4GUYQC0]
+      SECURITY; SHOULD // Later: add X-Frame-Options: 'ALLOW-FROM origin' and also
+      // 'Content-Security-Policy: origin' for Chrome. For now, allow from anywhere though.
+      // Also update: [4GUYQC0]
     }
     Future.successful(response as HTML)
   }
@@ -322,7 +323,7 @@ object ViewPageController extends mvc.Controller {
       xsrfToken = request.xsrfToken,
       browserId = request.browserId,
       user = request.user,
-      pageExists = false,
+      pageExists = false,  // CLEAN_UP REMOVE? use pageId == EmptyPageId instead?
       pagePath = pagePath,
       pageMeta = newTopicMeta,
       dao = request.dao,

@@ -52,7 +52,7 @@ trait RenderedPageHtmlDao {
 
   private def loadPageFromDatabaseAndRender(pageRequest: PageRequest[_]): RenderedPage = {
     if (!pageRequest.pageExists)
-      throwNotFound("DwE00404", "Page not found")
+      throwNotFound("EdE00404", "Page not found")
 
     Globals.mostMetrics.getRenderPageTimer(pageRequest.pageRole).time {
       val anyPageQuery = controllers.ForumController.parsePageQuery(pageRequest)
