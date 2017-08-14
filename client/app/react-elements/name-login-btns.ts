@@ -22,18 +22,22 @@
    namespace debiki2.reactelements {
 //------------------------------------------------------------------------------
 
-var r = React.DOM;
 
+export const NameLoginBtns = createComponent({
+  displayName: 'NameLoginBtns',
 
-export var NameLoginBtns = createComponent({
   mixins: [debiki2.StoreListenerMixin],
 
   getInitialState: function() {
     return { store: debiki2.ReactStore.allData() };
   },
 
+  componentWillUnmount: function() {
+    this.isGone = true;
+  },
+
   onChange: function() {
-    if (!this.isMounted()) {
+    if (this.isGone) {
       // Don't know how this can happen, but it does inside the NonExistingPage component.
       return;
     }
@@ -48,49 +52,43 @@ export var NameLoginBtns = createComponent({
     debiki2.ReactActions.logout();
   },
 
-  goToUserPage: function() {
-    let store: Store = this.state.store;
-    goToUserPage(store.me.id);
-  },
-
   render: function() {
-    let store: Store = this.state.store;
-    let user: Myself = store.me;
-    var userNameElem = null;
-    if (user.isLoggedIn) {
+    const store: Store = this.state.store;
+    const me: Myself = store.me;
+
+    let userNameElem = null;
+    let logoutBtnElem = null;
+    if (me.isLoggedIn) {
       userNameElem =
           r.span({ className: 'dw-u-info' },
-              r.a({ className: 'dw-u-name', onClick: this.goToUserPage }, user.fullName));
-    }
-
-    var disabled = this.props.disabled ? 'disabled' : '';
-
-    var loginBtnElem = null;
-    if (!user.isLoggedIn) {
-      loginBtnElem =
-          r.span({ className: 'dw-a-login btn btn-primary ' + disabled,
-            onClick: disabled ? null : this.onLoginClick, id: this.props.id },
-              this.props.title || 'Login');
-    }
-
-    var logoutBtnElem = null;
-    if (user.isLoggedIn) {
+            "Logged in as ",
+            r.a({ className: 's_MB_Name', href: linkToUserProfilePage(me.username) },
+              r.span({ className: 'esP_By_F' }, me.fullName ? me.fullName + ' ' : ''),
+              r.span({ className: 'esP_By_U' }, '@' + me.username)));
       logoutBtnElem =
           r.span({ className: 'dw-a-logout', onClick: this.onLogoutClick, id: this.props.id },
-              'Logout');
+            "Log out");
     }
 
-    var elems =
+    let loginBtnElem = null;
+    if (!me.isLoggedIn) {
+      const disabled = this.props.disabled ? 'disabled' : '';
+      loginBtnElem =
+          r.span({ className: 'dw-a-login btn btn-primary ' + disabled,
+              onClick: disabled ? null : this.onLoginClick, id: this.props.id },
+            this.props.title || 'Login');
+    }
+
+    return (
       r.span({ className: 'dw-u-lgi-lgo' },
         userNameElem,
         loginBtnElem,
-        logoutBtnElem);
-
-    return elems;
+        logoutBtnElem));
   }
 });
 
 
+/* CLEAN_UP delete this old stuff? The comment is out-of-date?
 function goToUserPage(userId: UserId) {
   // If using an <a> link, then, if already in the /-/users/ SPA, no rerendering
   // of React elements will be triggered (not sure why) so the contents of the
@@ -98,8 +96,7 @@ function goToUserPage(userId: UserId) {
   // for another (namely the currently logged in user). Workaround: update
   // window.location — this rerenders the React components.
   window.location.assign('/-/users/' + userId);
-}
-
+} */
 
 //------------------------------------------------------------------------------
    }

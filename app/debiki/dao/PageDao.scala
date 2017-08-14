@@ -71,6 +71,31 @@ case class PageDao(override val id: PageId, transaction: SiteTransaction) extend
 }
 
 
+case class NonExistingPage(
+  override val siteId: SiteId,
+  pageRole: PageRole,
+  anyCategoryId: Option[CategoryId]) extends Page {
+
+  override def id: PageId = EmptyPageId
+
+  override def meta: PageMeta = PageMeta.forNewPage(
+    pageId = EmptyPageId,
+    pageRole,
+    authorId = SystemUserId,
+    creationDati = debiki.Globals.now().toJavaDate,
+    categoryId = anyCategoryId,
+    publishDirectly = true)
+
+  override def thePath: PagePath = PagePath(siteId, "/", Some(EmptyPageId), showId = true, pageSlug = "")
+
+  override def path: Option[PagePath] = Some(thePath)
+
+  override def parts: PageParts = PreLoadedPageParts(EmptyPageId, allPosts = Nil)
+
+  override def version: PageVersion = 1
+}
+
+
 case class PagePartsDao(override val pageId: PageId, transaction: SiteTransaction)
   extends PageParts {
 

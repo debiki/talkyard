@@ -51,18 +51,8 @@ trait RenderedPageHtmlDao {
 
 
   private def loadPageFromDatabaseAndRender(pageRequest: PageRequest[_]): RenderedPage = {
-    if (!pageRequest.pageExists) {
-      if (pageRequest.pageRole.contains(PageRole.EmbeddedComments))
-        throwNotImplemented("DwE5KFW2", "Embedded comments disabled right now")
-
-      if (pageRequest.pagePath.value != HomepageUrlPath)
-        throwNotFound("DwE00404", "Page not found")
-
-      val json = ReactJson.emptySiteJson(pageRequest).toString()
-      val html = views.html.specialpages.createSomethingHerePage(
-        SiteTpi(pageRequest, Some(json))).body
-      return RenderedPage(html, unapprovedPostAuthorIds = Set.empty)
-    }
+    if (!pageRequest.pageExists)
+      throwNotFound("DwE00404", "Page not found")
 
     Globals.mostMetrics.getRenderPageTimer(pageRequest.pageRole).time {
       val anyPageQuery = controllers.ForumController.parsePageQuery(pageRequest)
@@ -75,12 +65,9 @@ trait RenderedPageHtmlDao {
 
       val tpi = new PageTpi(pageRequest, renderResult.jsonString, renderResult.version,
         cachedHtml, cachedVersion, renderResult.pageTitle, renderResult.customHeadTags)
-      val pageHtml: String = pageRequest.thePageRole match {
-        case PageRole.EmbeddedComments =>
-          views.html.templates.embeddedComments(tpi).body
-        case _ =>
-          views.html.templates.page(tpi).body
-      }
+
+      val pageHtml: String = views.html.templates.page(tpi).body
+
       RenderedPage(pageHtml, renderResult.unapprovedPostAuthorIds)
     }
   }

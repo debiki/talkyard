@@ -176,23 +176,6 @@ export function loginIfNeeded(loginReason: LoginReason | string,
 }
 
 
-/**
- * Logs in and calls success(). Or, if verification email needed, afterwards returns to this page
- * + the anchor (URL hash), and the user should then click the button (or whatever) again.
- */
-export function loginIfNeededReturnToAnchor(loginReason: LoginReason | string,
-      anchor: string, success: () => void) {
-  Server.loadMoreScriptsBundle(() => {
-    debiki2.login.loginIfNeededReturnToAnchor(loginReason, anchor, success);
-  });
-}
-
-
-export function loginIfNeededReturnToPost(loginReason: LoginReason | string, postNr: PostNr,
-      success: () => void) {
-  loginIfNeededReturnToAnchor('LoginToEdit', '#post-' + postNr, success);
-}
-
 
 // Lazy loaded menus
 //========================

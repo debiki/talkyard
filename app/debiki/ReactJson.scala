@@ -20,10 +20,10 @@ package debiki
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import controllers.ForumController
-import debiki.dao.{PageDao, PageStuff, ReviewStuff, SiteDao}
+import debiki.dao._
 import ed.server.auth.ForumAuthzContext
 import ed.server.http._
-import java.{util => ju, lang => jl}
+import java.{lang => jl, util => ju}
 import org.jsoup.Jsoup
 import play.api.libs.json._
 import scala.collection.{immutable, mutable}
@@ -101,7 +101,7 @@ object ReactJson {
         anyPageRoot: Option[PostNr] = None,
         anyPageQuery: Option[PageQuery] = None): PageToJsonResult = {
     dao.readOnlyTransaction(
-      pageToJsonImpl(pageId, dao, _, anyPageRoot, anyPageQuery))
+      pageThatExistsToJsonImpl(pageId, dao, _, anyPageRoot, anyPageQuery))
   }
 
 
@@ -194,9 +194,38 @@ object ReactJson {
   }
 
 
+  private def pageThatExistsToJsonImpl(
+    pageId: PageId,
+    dao: SiteDao,
+    transaction: SiteTransaction,
+    anyPageRoot: Option[PostNr],
+    anyPageQuery: Option[PageQuery]): PageToJsonResult = {
+
+    val page = PageDao(pageId, transaction)
+    pageToJsonImpl(pageId, dao, page, transaction, anyPageRoot, anyPageQuery)
+  }
+
+
+  /** Useful when rendering embedded comments, and no comment has been posted yet so the
+    * embedded comments page has not yet been created. Or if constructing a wiki, and
+    * navigating to a wiki page that has not yet been created.
+    */
+  def pageThatDoesNotExistsToJson(
+    dao: SiteDao,
+    pageRole: PageRole,
+    anyCategoryId: Option[CategoryId]): PageToJsonResult = {
+
+    dao.readOnlyTransaction { tx =>
+      val page = NonExistingPage(dao.siteId, pageRole, anyCategoryId)
+      pageToJsonImpl(EmptyPageId, dao, page, tx, anyPageRoot = None, anyPageQuery = None)
+    }
+  }
+
+
   private def pageToJsonImpl(
         pageId: PageId,
         dao: SiteDao,
+        page: Page,
         transaction: SiteTransaction,
         anyPageRoot: Option[PostNr],
         anyPageQuery: Option[PageQuery]): PageToJsonResult = {
@@ -206,7 +235,6 @@ object ReactJson {
     val authzCtx = dao.getForumAuthzContext(None)
 
     val socialLinksHtml = dao.getWholeSiteSettings().socialLinksHtml
-    val page = PageDao(pageId, transaction)
     val pageParts = page.parts
     val posts =
       if (page.role.isChat) {
@@ -218,8 +246,7 @@ object ReactJson {
         transaction.loadTitleAndOrigPost(page.id)
       }
       else {
-        pageParts.loadAllPosts()
-        pageParts.allPosts
+        pageParts.allPosts // loads all posts, if needed
       }
 
     val pageTitle = posts.find(_.isTitle).flatMap(_.approvedHtmlSanitized)
@@ -731,6 +758,9 @@ object ReactJson {
   /** Creates a dummy root post, needed when rendering React elements. */
   def embeddedCommentsDummyRootPost(topLevelComments: immutable.Seq[Post]): JsObject = Json.obj(
     "nr" -> JsNumber(PageParts.BodyNr),
+    "isApproved" -> JsTrue,
+    // COULD link to embedding article, change text to: "Discussion of the text at https://...."
+    "sanitizedHtml" -> JsString("(Embedded comments dummy root post [EdM2PWKV06]"),
     "childIdsSorted" ->
       JsArray(Post.sortPostsBestFirst(topLevelComments).map(reply => JsNumber(reply.nr))))
 
@@ -808,18 +838,18 @@ object ReactJson {
 
     val notfsAndCounts = loadNotifications(user.id, transaction, unseenFirst = true, limit = 30)
 
-    val (rolePageSettings, anyVotes, anyUnapprovedPosts, anyUnapprovedAuthors) =
+    val (rolePageSettings, votes, unapprovedPosts, unapprovedAuthors) =
       anyPageId map { pageId =>
         val rolePageSettings = user.anyMemberId.map({ userId =>
           val anySettings = transaction.loadUserPageSettings(userId, pageId = pageId)
           rolePageSettingsToJson(anySettings getOrElse UserPageSettings.Default)
-        }) getOrElse JsNull
+        }) getOrElse JsEmptyObj
         val votes = votesJson(user.id, pageId, transaction)
         // + flags, interesting for staff, & so people won't attempt to flag twice [7KW20WY1]
         val (postsJson, postAuthorsJson) =
           unapprovedPostsAndAuthorsJson(user, pageId, unapprovedPostAuthorIds, transaction)
         (rolePageSettings, votes, postsJson, postAuthorsJson)
-      } getOrElse (JsNull, JsNull, JsNull, JsNull)
+      } getOrElse (JsEmptyObj, JsEmptyObj, JsEmptyObj, JsArray())
 
     val threatLevel = user match {
       case member: Member => member.threatLevel
@@ -864,10 +894,10 @@ object ReactJson {
 
       "restrictedTopics" -> restrictedTopics,
       "restrictedCategories" -> restrictedCategories,
-      "votes" -> anyVotes,
+      "votes" -> votes,
       // later: "flags" -> JsArray(...) [7KW20WY1]
-      "unapprovedPosts" -> anyUnapprovedPosts,
-      "unapprovedPostAuthors" -> anyUnapprovedAuthors,
+      "unapprovedPosts" -> unapprovedPosts,
+      "unapprovedPostAuthors" -> unapprovedAuthors,
       "postNrsAutoReadLongAgo" -> JsArray(Nil),
       "postNrsAutoReadNow" -> JsArray(Nil),
       "marksByPostId" -> JsObject(Nil),
@@ -1400,7 +1430,7 @@ object ReactJson {
   }
 
 
-  def makeStorePatch(post: Post, author: User, dao: SiteDao, showHidden: Boolean): JsValue = {
+  def makeStorePatch(post: Post, author: User, dao: SiteDao, showHidden: Boolean): JsObject = {
     // Warning: some similar code below [89fKF2]
     require(post.createdById == author.id, "EsE5PKY2")
     val (postJson, pageVersion) = ReactJson.postToJson(
@@ -1429,7 +1459,7 @@ object ReactJson {
 
 
   def makeStorePatch(pageIdVersion: PageIdVersion, posts: Seq[JsObject] = Nil,
-        users: Seq[JsObject] = Nil): JsValue = {
+        users: Seq[JsObject] = Nil): JsObject = {
     require(posts.isEmpty || users.nonEmpty, "Posts but no authors [EsE4YK7W2]")
     Json.obj(
       "appVersion" -> Globals.applicationVersion,
@@ -1505,6 +1535,8 @@ object ReactJson {
     }
     json
   }
+
+  val JsEmptyObj = JsObject(Nil)
 
   def JsPagePath(pagePath: PagePath): JsValue =
     Json.obj(

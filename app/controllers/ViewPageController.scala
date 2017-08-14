@@ -28,6 +28,7 @@ import play.api.mvc._
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
 import DebikiHttp._
+import ed.server.RenderedPage
 
 
 
@@ -208,10 +209,14 @@ object ViewPageController extends mvc.Controller {
       if (specifiedPagePath.value != HomepageUrlPath) {
         throwIndistinguishableNotFound()
       }
+
       // Show a create-something-here page (see TemplateRenderer).
-      return doRenderPage(
-        makeEmptyPageRequest(
-          request, pageId = EmptyPageId, showId = false, pageRole = PageRole.WebPage))
+      val pageRequest = makeEmptyPageRequest(
+          request, pageId = EmptyPageId, showId = false, pageRole = PageRole.WebPage)
+      val json = ReactJson.emptySiteJson(pageRequest).toString()
+      val html = views.html.specialpages.createSomethingHerePage(SiteTpi(pageRequest, Some(json))).body
+      val renderedPage = RenderedPage(html, unapprovedPostAuthorIds = Set.empty)
+      return addVolatileJson(renderedPage, pageRequest)
     }
 
     val pageMeta = correctPagePath.pageId.flatMap(dao.getPageMeta) getOrElse {
@@ -255,8 +260,13 @@ object ViewPageController extends mvc.Controller {
 
 
   private def doRenderPage(request: PageGetRequest): Future[Result] = {
+    val renderedPage = request.dao.renderPageMaybeUseCache(request)
+    addVolatileJson(renderedPage, request)
+  }
+
+
+  def addVolatileJson(renderedPage: RenderedPage, request: PageRequest[_]): Future[Result] = {
     import request.{dao, requester}
-    val renderedPage = dao.renderPageMaybeUseCache(request)
     var pageHtml = renderedPage.html
 
     val usersOnlineStuff = dao.loadUsersOnlineStuff() // could do asynchronously later
@@ -276,7 +286,16 @@ object ViewPageController extends mvc.Controller {
         pageHtml, HtmlEncodedVolatileJsonMagicString, htmlEncodedJson)
 
     requester.foreach(dao.pubSub.userIsActive(request.siteId, _, request.theBrowserIdData))
-    Future.successful(Ok(pageHtml) as HTML)
+
+    var response = Ok(pageHtml)
+    if (request.siteSettings.allowEmbeddingFrom.isEmpty) {
+      response = response.withHeaders("X-Frame-Options" -> "DENY")  // [7ACKRQ20]
+    }
+    else {
+      // Later: add X-Frame-Options: 'ALLOW-FROM origin' and also 'Content-Security-Policy: origin'
+      // for Chrome. For now, allow from anywhere though.  Also update: [4GUYQC0]
+    }
+    Future.successful(response as HTML)
   }
 
 

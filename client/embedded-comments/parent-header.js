@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2014 Kaj Magnus Lindberg (born 1979)
+ * Copyright (c) 2014 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -44,7 +44,7 @@ debiki.internal.debikiServerOrigin = (function() {
 
 debiki.internal.runDebikisCode = function() {
 
-debiki.internal.$ = jQuery;
+// debiki.internal.$ = jQuery;
 
 
 // vim: et sw=2 ts=2 tw=0 list

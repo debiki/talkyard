@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2012 Kaj Magnus Lindberg (born 1979)
+ * Copyright (c) 2012, 2017 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -20,8 +20,7 @@ package debiki
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import controllers.{SiteAssetBundlesController, routes}
-import ed.server.http.DebikiRequest
-import ed.server.http.PageRequest
+import ed.server.http.{DebikiRequest, GetRequest, PageRequest}
 import play.{api => p}
 import play.api.Play.current
 import SiteAssetBundlesController.{StylesheetAssetBundleNameRegex, assetBundleFileName}
@@ -76,8 +75,22 @@ class SiteTpi protected (
   def isAdmin: Boolean = debikiRequest.user.exists(_.isAdmin)
   def isAuthenticated: Boolean = debikiRequest.user.exists(_.isAuthenticated)
 
-  def debikiMeta =
-    xml.Unparsed(views.html.debikiMeta(anyCurrentPageMeta, pageTitle).body)
+
+  def debikiMeta: xml.Unparsed = {
+    // At UTX, the page title is the website being tested — which is confusing. Instead, always
+    // show the UTX website title.
+    val pageRole = anyCurrentPageRole orElse anyCurrentPageMeta.map(_.pageRole)
+    val thePageTitle =
+      if (pageRole is PageRole.UsabilityTesting) { // [plugin]
+        "Usability Testing Exchange"
+      }
+      else anyCurrentPageMeta.map(_.htmlHeadTitle) match {
+        case Some(title) if title.length > 0 => title
+        case _ => pageTitle.getOrElse("")
+      }
+    val theDescription = anyCurrentPageMeta.map(_.htmlHeadDescription) getOrElse ""
+    xml.Unparsed(views.html.debikiMeta(thePageTitle, theDescription).body)
+  }
 
 
   def anySafeMetaTags: Option[String] = None
@@ -85,6 +98,9 @@ class SiteTpi protected (
   def anyCurrentPageRole: Option[PageRole] = None
   def anyCurrentPagePath: Option[PagePath] = None
   def anyCurrentPageMeta: Option[PageMeta] = None
+
+  def anyAltPageId: Option[AltPageId] = None
+  def anyEmbeddingUrl: Option[String] = None
 
   def currentVersionString = ""
   def cachedVersionString = ""
@@ -107,7 +123,6 @@ class SiteTpi protected (
       this, // Could remove all params below, use 'this' instead in the template.
       siteId = siteId,
       anyPageId = anyCurrentPageId,
-      pageUriPath = debikiRequest.request.path,
       anyPageRole = anyCurrentPageRole,
       anyPagePath = anyCurrentPagePath,
       reactStoreSafeJsonString = reactStoreSafeJsonString,
@@ -117,6 +132,9 @@ class SiteTpi protected (
 
   def debikiScriptsEndOfBody: Unparsed =
     debikiScriptsEndOfBodyCustomStartupCode("debiki.internal.startDiscussionPage();")
+
+  def debikiScriptsEndOfBodyNoStartupCode =
+    debikiScriptsEndOfBodyCustomStartupCode("")
 
   def debikiScriptsEndOfBodyCustomStartupCode(startupCode: String,
         loadStaffBundle: Boolean = false) = xml.Unparsed(
@@ -213,6 +231,17 @@ class SiteTpi protected (
 }
 
 
+class EditPageTpi(
+  request: GetRequest,
+  val pageRole: PageRole,
+  override val anyCurrentPageId: Option[PageId],
+  override val anyAltPageId: Option[AltPageId],
+  override val anyEmbeddingUrl: Option[String]) extends SiteTpi(request) {
+
+  override def anyCurrentPageRole = Some(pageRole)
+}
+
+
 /** Page Template Programming Interface, used by Scala templates that render pages.
   */
 class PageTpi(
@@ -222,7 +251,9 @@ class PageTpi(
   private val cachedPageHtml: String,
   private val cachedVersion: CachedPageVersion,
   private val pageTitle: Option[String],
-  private val safeMetaTags: String)
+  private val safeMetaTags: String,
+  override val anyAltPageId: Option[AltPageId] = None,
+  override val anyEmbeddingUrl: Option[String] = None)
   extends SiteTpi(pageReq, json = None, pageTitle = pageTitle) {
 
   override def anySafeMetaTags = Some(safeMetaTags)

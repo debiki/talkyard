@@ -23,7 +23,7 @@ import debiki.DebikiHttp._
 import ed.server.auth.Authz
 import ed.server.http._
 import play.api._
-import play.api.libs.json.JsValue
+import play.api.libs.json.{JsObject, JsString, JsValue}
 import play.api.mvc._
 
 
@@ -36,8 +36,9 @@ object ReplyController extends mvc.Controller {
   def handleReply: Action[JsValue] = PostJsonAction(RateLimits.PostReply, maxBytes = MaxPostSize) {
         request: JsonPostRequest =>
     import request.{body, dao, theRequester => requester}
-    val pageId = (body \ "pageId").as[PageId]
-    //val anyPageUrl = (body \ "pageUrl").asOpt[String]
+    val anyPageId = (body \ "pageId").asOpt[PageId]
+    val anyAltPageId = (body \ "altPageId").asOpt[AltPageId]
+    val anyEmbeddingUrl = (body \ "embeddingUrl").asOpt[String]
     val replyToPostNrs = (body \ "postNrs").as[Set[PostNr]]
     val text = (body \ "text").as[String].trim
     val postType = PostType.fromInt((body \ "postType").as[Int]) getOrElse throwBadReq(
@@ -49,15 +50,24 @@ object ReplyController extends mvc.Controller {
     DISCUSSION_QUALITY; COULD // require that the user has spent a reasonable time reading
     // the topic, in comparison to # posts in the topic, before allowing hen to post a reply.
 
+    // Dupl code [5UFKWQ0]
+    var newPagePath: PagePath = null
+    val pageId = anyPageId.orElse({
+      anyAltPageId.flatMap(request.dao.getRealPageId)
+    }) getOrElse {
+      // No page id. Maybe create a new embedded discussion?
+      val embeddingUrl = anyEmbeddingUrl getOrElse {
+        throwNotFound("EdE404NOEMBURL", "Page not found and no embedding url specified")
+      }
+      newPagePath = tryCreateEmbeddedCommentsPage(request, embeddingUrl, anyAltPageId)
+      newPagePath.thePageId
+    }
+
     val pageMeta = dao.getPageMeta(pageId) getOrElse throwIndistinguishableNotFound("EdE5FKW20")
     val replyToPosts = dao.loadPostsAllOrError(pageId, replyToPostNrs) getOrIfBad { missingPostNr =>
       throwNotFound(s"Post nr $missingPostNr not found", "EdEW3HPY08")
     }
     val categoriesRootLast = dao.loadAncestorCategoriesRootLast(pageMeta.categoryId)
-      /* Old, from when embedded comments were still in use & working, will somehow add back later:
-      val page = tryCreateEmbeddedCommentsPage(request, pageId, anyPageUrl)
-        .getOrElse(throwNotFound("Dw2XEG60", s"Page `$pageId' does not exist"))
-      PageRequest.forPageThatExists(request, pageId = page.id) getOrDie "DwE77PJE0"  */
 
     throwNoUnless(Authz.mayPostReply(
       request.theUserAndLevels, dao.getGroupIds(request.theUser),
@@ -66,7 +76,7 @@ object ReplyController extends mvc.Controller {
       permissions = dao.getPermsOnPages(categoriesRootLast)),
       "EdEZBXK3M2")
 
-    REFACTOR; COULD // intsetad: [5FLK02]
+    REFACTOR; COULD // intstead: [5FLK02]
     // val authzContext = dao.getPageAuthzContext(requester, pageMeta)
     // throwNoUnless(Authz.mayPostReply(authzContext, postType, "EdEZBXK3M2")
 
@@ -75,7 +85,11 @@ object ReplyController extends mvc.Controller {
     val result = dao.insertReply(textAndHtml, pageId = pageId, replyToPostNrs,
       postType, request.who, request.spamRelatedStuff)
 
-    OkSafeJson(result.storePatchJson)
+    var patchWithNewPageId: JsObject = result.storePatchJson
+    if (newPagePath ne null) {
+      patchWithNewPageId = patchWithNewPageId + ("newlyCreatedPageId" -> JsString(pageId))
+    }
+    OkSafeJson(patchWithNewPageId)
   }
 
 
@@ -109,38 +123,34 @@ object ReplyController extends mvc.Controller {
   }
 
 
-  /*
-  private def tryCreateEmbeddedCommentsPage(  -- embedded comments disabled [5EU0232]
-        request: DebikiRequest[_], pageId: PageId, anyPageUrl: Option[String]): Option[Page] = {
+  private def tryCreateEmbeddedCommentsPage(request: DebikiRequest[_], embeddingUrl: String,
+        altPageId: Option[String]): PagePath = {
+    import request.{dao, requester}
 
-    if (anyPageUrl.isEmpty)
-      throwBadReq("Cannot create embedded page: embedding page URL unknown")
+    val siteSettings = request.dao.getWholeSiteSettings()
+    if (siteSettings.allowEmbeddingFrom.isEmpty) {
+      // Later, check that the allowEmbeddingFrom origin matches... the referer? [4GUYQC0].
+      throwForbidden2("EdE2WTKG8", "Embedded comments allow-from origin not configured")
+    }
 
-    val site = request.dao.loadSite()
-    val shallCreateEmbeddedTopic = EmbeddedTopicsController.isUrlFromEmbeddingUrl(
-      anyPageUrl.get, site.embeddingSiteUrl)
+    val slug = None
+    val folder = None
+    val categoryId = DefaultCategoryId // for now, should lookup instead, based on url?
+    val categoriesRootLast = dao.loadAncestorCategoriesRootLast(categoryId)
+    val pageRole = PageRole.EmbeddedComments
 
-    if (!shallCreateEmbeddedTopic)
-      return None
+    throwNoUnless(Authz.mayCreatePage(
+      request.theUserAndLevels, dao.getGroupIds(requester),
+      pageRole, PostType.Normal, pinWhere = None, anySlug = slug, anyFolder = folder,
+      inCategoriesRootLast = categoriesRootLast,
+      permissions = dao.getPermsOnPages(categories = categoriesRootLast)),
+      "EdE7USC2R8")
 
-    val topicPagePath = PagePath(
-      request.siteId,
-      folder = "/",
-      pageId = Some(pageId),
-      showId = true,
-      pageSlug = "")
-
-    val pageToCreate = Page.newPage(
-      PageRole.EmbeddedComments,
-      topicPagePath,
-      PageParts(pageId),
-      publishDirectly = true,
-      author = SystemUser.User,
-      url = anyPageUrl)
-
-    val newPage = request.dao.createPage(pageToCreate)
-    Some(newPage)
+    dao.createPage(pageRole, PageStatus.Published,
+      anyCategoryId = Some(categoryId), anyFolder = slug, anySlug = folder,
+      titleTextAndHtml = TextAndHtml.forTitle("Embedded comments"),
+      bodyTextAndHtml = TextAndHtml.forBodyOrComment(s"Comments for: $embeddingUrl"), showId = true,
+      Who.System, request.spamRelatedStuff, altPageId = altPageId, embeddingUrl = Some(embeddingUrl))
   }
-    */
 
 }

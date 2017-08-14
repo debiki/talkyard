@@ -81,6 +81,7 @@ trait AllSettings {
   def contentLicense: ContentLicense
   def googleUniversalAnalyticsTrackingId: String
   def showExperimental: Boolean
+  def allowEmbeddingFrom: String
   def htmlTagCssClasses: String
 
   def numFlagsToHidePost: Int
@@ -135,6 +136,7 @@ trait AllSettings {
     contentLicense = Some(self.contentLicense),
     googleUniversalAnalyticsTrackingId = Some(self.googleUniversalAnalyticsTrackingId),
     showExperimental = Some(self.showExperimental),
+    allowEmbeddingFrom = Some(self.allowEmbeddingFrom),
     htmlTagCssClasses = Some(self.htmlTagCssClasses),
     numFlagsToHidePost = Some(self.numFlagsToHidePost),
     cooldownMinutesAfterFlaggedHidden = Some(self.cooldownMinutesAfterFlaggedHidden),
@@ -198,6 +200,7 @@ object AllSettings {
     var contentLicense = ContentLicense.CcBySa4
     val googleUniversalAnalyticsTrackingId = ""
     val showExperimental = false
+    val allowEmbeddingFrom = ""
     val htmlTagCssClasses = ""
     def numFlagsToHidePost = 3
     def cooldownMinutesAfterFlaggedHidden = 10
@@ -263,6 +266,7 @@ case class EffectiveSettings(
   def contentLicense: ContentLicense = firstInChain(_.contentLicense) getOrElse default.contentLicense
   def googleUniversalAnalyticsTrackingId: String = firstInChain(_.googleUniversalAnalyticsTrackingId) getOrElse default.googleUniversalAnalyticsTrackingId
   def showExperimental: Boolean = firstInChain(_.showExperimental) getOrElse default.showExperimental
+  def allowEmbeddingFrom: String = firstInChain(_.allowEmbeddingFrom) getOrElse default.allowEmbeddingFrom
   def htmlTagCssClasses: String = firstInChain(_.htmlTagCssClasses) getOrElse default.htmlTagCssClasses
 
   def numFlagsToHidePost: Int = firstInChain(_.numFlagsToHidePost) getOrElse default.numFlagsToHidePost
@@ -333,6 +337,7 @@ object Settings2 {
       "contentLicense" -> JsNumberOrNull(s.contentLicense.map(_.toInt)),
       "googleUniversalAnalyticsTrackingId" -> JsStringOrNull(s.googleUniversalAnalyticsTrackingId),
       "showExperimental" -> JsBooleanOrNull(s.showExperimental),
+      "allowEmbeddingFrom" -> JsStringOrNull(s.allowEmbeddingFrom),
       "htmlTagCssClasses" -> JsStringOrNull(s.htmlTagCssClasses),
       "numFlagsToHidePost" -> JsNumberOrNull(s.numFlagsToHidePost),
       "cooldownMinutesAfterFlaggedHidden" -> JsNumberOrNull(s.cooldownMinutesAfterFlaggedHidden),
@@ -390,6 +395,7 @@ object Settings2 {
     googleUniversalAnalyticsTrackingId =
       anyString(json, "googleUniversalAnalyticsTrackingId", d.googleUniversalAnalyticsTrackingId),
     showExperimental = anyBool(json, "showExperimental", d.showExperimental),
+    allowEmbeddingFrom = anyString(json, "allowEmbeddingFrom", d.allowEmbeddingFrom),
     htmlTagCssClasses = anyString(json, "htmlTagCssClasses", d.htmlTagCssClasses),
     numFlagsToHidePost = anyInt(json, "numFlagsToHidePost", d.numFlagsToHidePost),
     cooldownMinutesAfterFlaggedHidden = anyInt(json, "cooldownMinutesAfterFlaggedHidden", d.cooldownMinutesAfterFlaggedHidden  ),

@@ -23,18 +23,18 @@
 /// <reference path="create-user-dialog.more.ts" />
 
 //------------------------------------------------------------------------------
-   module debiki2.login {
+   namespace debiki2.login {
 //------------------------------------------------------------------------------
 
-var d = { i: debiki.internal, u: debiki.v0.util };
-var r = React.DOM;
-var Modal = rb.Modal;
-var ModalBody = rb.ModalBody;
-var ModalFooter = rb.ModalFooter;
-var ModalHeader = rb.ModalHeader;
-var ModalTitle = rb.ModalTitle;
-var FullNameInput = util.FullNameInput;
-var EmailInput = util.EmailInput;
+const d = { i: debiki.internal, u: debiki.v0.util };
+const r = React.DOM;
+const Modal = rb.Modal;
+const ModalBody = rb.ModalBody;
+const ModalFooter = rb.ModalFooter;
+const ModalHeader = rb.ModalHeader;
+const ModalTitle = rb.ModalTitle;
+const FullNameInput = util.FullNameInput;
+const EmailInput = util.EmailInput;
 
 /* All login reasons? — no, there're more now, right.
   'LoginBecomeAdmin'
@@ -46,17 +46,7 @@ var EmailInput = util.EmailInput;
   'LoginToCreateTopic'
 */
 
-var loginDialog;
-
-// From before React.js.
-var anyContinueAfterLoginCallback = null;
-
-
-export function loginIfNeededReturnToAnchor(loginReason: LoginReason | string,
-    anchor: string, success: () => void) {
-  var returnToUrl = makeReturnToPageHashForVerifEmail(anchor);
-  loginIfNeeded(loginReason, returnToUrl, success);
-}
+let loginDialog;
 
 
 export function loginIfNeeded(loginReason: LoginReason | string, anyReturnToUrl?: string,
@@ -73,11 +63,6 @@ export function loginIfNeeded(loginReason: LoginReason | string, anyReturnToUrl?
       getLoginDialog().openToLogIn(loginReason, anyReturnToUrl, success);
     }
   }
-}
-
-
-export function continueAfterLogin() {
-  continueAfterLoginImpl();
 }
 
 
@@ -109,7 +94,7 @@ var LoginDialog = createClassAndFactory({
     if (loggedInUser) {
       // Might have just logged in in another tab. Then cancel any login happening in this tab.
       // Or, if we logged in in this tab, just close the dialog.
-      anyContinueAfterLoginCallback = null;
+      login.anyContinueAfterLoginCallback = null;
       this.setState({
         isOpen: false,
         childDialog: null
@@ -130,6 +115,8 @@ var LoginDialog = createClassAndFactory({
   open: function(isSignUp: boolean, loginReason: LoginReason | string,
         anyReturnToUrl?: string, callback?: () => void, preventClose?: boolean) {
 
+    dieIf(d.i.isInIframe, 'Login dialog in iframe [EdE5KER2]');
+
     // Don't allow logging in as someone else, when impersonating someone, because it's unclear
     // what should then happen: does one stop impersonating? or not?
     if (getSetCookie('esCoImp')) {
@@ -146,15 +133,9 @@ var LoginDialog = createClassAndFactory({
     if (!anyReturnToUrl) {
       anyReturnToUrl = window.location.toString();
     }
-    if (d.i.isInIframe) {
-      // UNTESTED after port to React
-      var url = d.i.serverOrigin + '/-/login-popup?mode=' + loginReason +
-          '&isInLoginPopup&returnToUrl=' + anyReturnToUrl;
-      d.i.createLoginPopup(url)
-    }
-    else {
-      anyContinueAfterLoginCallback = callback;
-      this.setState({
+
+    login.anyContinueAfterLoginCallback = callback;
+    this.setState({
         isOpen: true,
         isSignUp: isSignUp,
         loginReason: loginReason,
@@ -164,7 +145,6 @@ var LoginDialog = createClassAndFactory({
             loginReason === 'LoginToAdministrate',
         isLoggedIn: !!getSetCookie('dwCoSid'),
       });
-    }
   },
 
   switchBetweenLoginAndSignUp: function() {
@@ -186,7 +166,7 @@ var LoginDialog = createClassAndFactory({
   },
 
   close: function() {
-    anyContinueAfterLoginCallback = null;
+    login.anyContinueAfterLoginCallback = null;
     this.setState({
       isOpen: false,
       loginReason: null,
@@ -497,7 +477,7 @@ var PasswordLoginDialogContent = createClassAndFactory({
     var emailOrUsername = this.refs.whoInput.getValue();
     var password = this.refs.passwordInput.getValue();
     Server.loginWithPassword(emailOrUsername, password, () => {
-      continueAfterLoginImpl(this.props.anyReturnToUrl);
+      login.continueAfterLogin(this.props.anyReturnToUrl);
     }, () => {
       this.setState({ badPassword: true, hideBadPasswordMessage: false });
       this.refs.passwordInput.getInputDOMNode().focus();
@@ -548,27 +528,6 @@ function inOrderTo(loginReason: string): string {
     case 'LoginToComment': return " to write a comment";
     case 'LoginToCreateTopic': return " to create topic";
     default: return "";
-  }
-}
-
-
-function continueAfterLoginImpl(anyReturnToUrl?: string) {
-  if (debiki.internal.isInLoginWindow) {
-    // We're in an admin section login page, or an embedded comments page login popup window.
-    if (anyReturnToUrl && anyReturnToUrl.indexOf('_RedirFromVerifEmailOnly_') === -1) {
-      window.location.assign(anyReturnToUrl);
-    }
-    else {
-      // (Also see LoginWithOpenIdController, search for [509KEF31].)
-      window.opener['debiki'].internal.handleLoginResponse({ status: 'LoginOk' });
-      // This should be a login popup. Close the whole popup window.
-      close();
-    }
-  }
-  else {
-    // We're on a normal page (but not in a login popup window for an embedded comments page).
-    // (The login dialogs close themselves when the login event gets fired.)
-    debiki2.ReactActions.loadMyself(anyContinueAfterLoginCallback);
   }
 }
 

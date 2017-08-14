@@ -262,12 +262,12 @@ var FixedAtBottom = createComponent({
 
 var JoinChatButton = createComponent({
   componentWillUnmount: function() {
-    this.isUnmounted = true;
+    this.isGone = true;
   },
 
   joinChannel: function() {
-    morebundle.loginIfNeededReturnToAnchor(LoginReason.LoginToChat, '#theJoinChatB', () => {
-      if (this.isUnmounted) {
+    login.loginIfNeededReturnToAnchor(LoginReason.LoginToChat, '#theJoinChatB', () => {
+      if (this.isGone) {
         // Now after having logged in, this join chat button got removed (unmounted) — that's
         // because we've joined the chat already (some time long ago). So, need do nothing, now.
         return;
@@ -298,13 +298,13 @@ var ChatMessageEditor = createComponent({
 
   componentDidMount: function() {
     Server.loadEditorAndMoreBundles(() => {
-      if (this.isUnmounted) return;
+      if (this.isGone) return;
       editor.startMentionsParser(this.refs.textarea, this.onTextEdited);
     });
   },
 
   componentWillUnmount: function() {
-    this.isUnmounted = true;
+    this.isGone = true;
   },
 
   onTextEdited: function(event) {
@@ -325,7 +325,7 @@ var ChatMessageEditor = createComponent({
       // In case the advanced editor is currently shown, use setTimeout() so we'll
       // refresh after the current render phase.
       setTimeout(() => {
-        if (!this.isMounted()) return;
+        if (this.isGone) return;
         this.props.refreshFixedAtBottom();
       }, 0);
     }
@@ -355,7 +355,7 @@ var ChatMessageEditor = createComponent({
   saveChatMessage: function() {
     this.setState({ isSaving: true });
     Server.insertChatMessage(this.state.text, () => {
-      if (!this.isMounted()) return;
+      if (this.isGone) return;
       this.setState({ text: '', isSaving: false, rows: DefaultEditorRows });
       this.refs.textarea.focus();
       this.props.scrollDownToViewNewMessage();

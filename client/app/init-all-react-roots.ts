@@ -29,6 +29,8 @@
 
 
 export function startRemainingReactRoots() {
+  const isEmbeddedComments: boolean = debiki.internal.isInEmbeddedCommentsIframe;
+
   var adminAppElem = document.getElementById('dw-react-admin-app');
   if (adminAppElem)
     ReactDOM.render(
@@ -50,17 +52,14 @@ export function startRemainingReactRoots() {
         nopage.NonExistingPage({}), nonExistingPageElem);
 
   var topbarElem = document.getElementById('theTopbar');
-  if (topbarElem)
+  if (topbarElem && !isEmbeddedComments)
     ReactDOM.render(
         reactelements.TopBar({}), topbarElem);
 
-  createSidebar();
-  watchbar.createWatchbar();
-
-  var metabarElem = document.getElementById('dw-comments-toolbar');
-  if (metabarElem)
-    ReactDOM.render(
-        page.Metabar({}), metabarElem);
+  if (!isEmbeddedComments) {
+    createSidebar();
+    watchbar.createWatchbar();
+  }
 
   var userPageElem = document.getElementById('dw-react-user-page');
   if (userPageElem) {

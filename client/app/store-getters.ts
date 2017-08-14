@@ -32,7 +32,7 @@
 
 
 export function store_thisIsMyPage(store: Store): boolean {
-  if (!store.postsByNr) return false;
+  if (!store.postsByNr || !store.me.id) return false;
   var bodyOrTitle = store.postsByNr[BodyNr] || store.postsByNr[TitleNr];
   dieIf(!bodyOrTitle, 'EsE5YKF2');
   return store.me.id === bodyOrTitle.authorId;

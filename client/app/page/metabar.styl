@@ -74,10 +74,22 @@ $paddingLeft = 10px;
       .dw-u-lgi-lgo
         display: inline // not block, which the topbar often sets
 
-      .dw-u-name,
-      .dw-a-login,
-      .dw-a-logout
+      .dw-a-login
         color: hsl(0, 0%, 43%)
+
+      // Make the logout button look like a button
+      .dw-a-logout
+        background: white;
+        color: hsl(0, 0%, 20%) !important;
+        padding: 3px 11px;
+        border: 1px solid hsl(0, 0%, 90%);
+
+      .s_MB_Name,
+      .dw-a-logout
+        &:hover
+          background: hsl($uiHue, 100%, 96%);
+          color: hsl($uiHue, 100%, 25%);
+          border-color: hsl($uiHue, 100%, 80%);
 
       .dw-page-notf-level
         cursor: pointer

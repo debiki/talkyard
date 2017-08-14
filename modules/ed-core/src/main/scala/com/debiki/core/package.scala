@@ -40,11 +40,13 @@ package object core {
   val NoPostNr: PostNr = -1
 
   type PageId = String
+  type AltPageId = String
 
   type PageVersion = Int
 
   type CategoryId = Int
   val NoCategoryId = 0
+  val DefaultCategoryId = 2 // hack, for now. COULD lookup in database instead
 
   type SiteId = Int
   val NoSiteId = 0
@@ -303,6 +305,10 @@ package object core {
       p.isEmpty || p.exists(_.isDeleted)
     }
   }
+
+
+  val WrongCachedPageVersion = CachedPageVersion(siteVersion = -1, pageVersion = -1,
+    appVersion = "wrong", dataHash = "wrong")
 
 
   case class TagAndStats(

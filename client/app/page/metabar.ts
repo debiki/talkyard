@@ -102,8 +102,9 @@ export var Metabar = createComponent({
         r.button({ className: 'dw-cmts-tlbr-open', onClick: this.onToggleDetailsClick },
           r.span({ className: (ui.showDetails ? 'icon-up-open' : 'icon-down-open') }))
 
-    var nameLoginBtns = store.isInEmbeddedCommentsIframe ?
-        r.li({}, reactelements.NameLoginBtns({})) : null;
+    // Login is via a "Login to Reply" button above the metabar instead.
+    var nameLoginBtns = !me.isLoggedIn || !store.isInEmbeddedCommentsIframe ? null :
+        r.li({}, reactelements.NameLoginBtns({}));
 
     var summaryElem =
       r.div({ className: 'dw-cmts-tlbr-head' },
@@ -156,7 +157,7 @@ export var Metabar = createComponent({
     // ----- Put everything together
 
     var result;
-    if (store.isInEmbeddedCommentsIframe) {
+    /* if (store.isInEmbeddedCommentsIframe) {  — no, place in post-action.ts instead?
       // There's not root post with a reply button, so add a reply button.
       // And an admin button, if is admin.
       var adminLink;
@@ -177,14 +178,14 @@ export var Metabar = createComponent({
             detailsElem,
             anyExtraMeta));
     }
-    else {
+    else { */
       result =
         r.div({ className: 'dw-cmts-tlbr esMetabar', id: 'dw-cmts-tlbr' },
           summaryElem,
           detailsElem,
           anyExtraMeta,
           summarizeStuff);
-    }
+    //}
 
     return result;
   }

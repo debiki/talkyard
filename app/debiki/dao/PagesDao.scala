@@ -50,7 +50,8 @@ trait PagesDao {
   def createPage(pageRole: PageRole, pageStatus: PageStatus, anyCategoryId: Option[CategoryId],
         anyFolder: Option[String], anySlug: Option[String], titleTextAndHtml: TextAndHtml,
         bodyTextAndHtml: TextAndHtml, showId: Boolean, byWho: Who,
-        spamRelReqStuff: SpamRelReqStuff): PagePath = {
+        spamRelReqStuff: SpamRelReqStuff,
+        altPageId: Option[AltPageId] = None, embeddingUrl: Option[String] = None): PagePath = {
 
     if (pageRole.isSection) {
       // Should use e.g. ForumController.createForum() instead.
@@ -82,7 +83,8 @@ trait PagesDao {
         anyFolder = anyFolder, anySlug = anySlug, showId = showId,
         titleSource = titleTextAndHtml.text, titleHtmlSanitized = titleTextAndHtml.safeHtml,
         bodySource = bodyTextAndHtml.text, bodyHtmlSanitized = bodyTextAndHtml.safeHtml,
-        pinOrder = None, pinWhere = None, byWho, Some(spamRelReqStuff), transaction)
+        pinOrder = None, pinWhere = None, byWho, Some(spamRelReqStuff),
+        transaction, altPageId = altPageId, embeddingUrl = embeddingUrl)
 
       val notifications = NotificationGenerator(transaction)
         .generateForNewPost(PageDao(pagePath.pageId getOrDie "DwE5KWI2", transaction), bodyPost)
@@ -122,7 +124,8 @@ trait PagesDao {
       pinOrder: Option[Int], pinWhere: Option[PinPageWhere],
       byWho: Who, spamRelReqStuff: Option[SpamRelReqStuff],
       transaction: SiteTransaction, hidePageBody: Boolean = false,
-      bodyPostType: PostType = PostType.Normal): (PagePath, Post) = {
+      bodyPostType: PostType = PostType.Normal,
+      altPageId: Option[AltPageId] = None, embeddingUrl: Option[String] = None): (PagePath, Post) = {
 
     val now = Globals.now()
     val authorId = byWho.id
@@ -287,6 +290,14 @@ trait PagesDao {
     uploadPaths foreach { hashPathSuffix =>
       transaction.insertUploadedFileReference(bodyPost.id, hashPathSuffix, authorId)
     }
+
+    altPageId.foreach(transaction.insertAltPageId(_, realPageId = pageId))
+    if (altPageId != embeddingUrl) {
+      // If the url already points to another embedded discussion, keep it pointing to the old one.
+      // Then, seems like lower risk for some hijack-a-discussion-by-forging-the-url security issue.
+      embeddingUrl.foreach(transaction.insertAltPageIdIfFree(_, realPageId = pageId))
+    }
+
     reviewTask.foreach(transaction.upsertReviewTask)
     insertAuditLogEntry(auditLogEntry, transaction)
 

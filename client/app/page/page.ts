@@ -85,6 +85,7 @@ var Page = createComponent({
   },
 
   render: function() {
+    const isEmbeddedComments: boolean = debiki.internal.isInEmbeddedCommentsIframe;
     const store: Store = this.props;
     const content = page_isChatChannel(store.pageRole)
         ? debiki2.page.ChatMessages({ store: store })
@@ -94,7 +95,7 @@ var Page = createComponent({
     return (
       r.div({ className: 'esPage' + compactClass + pageTypeClass },
         page_isChatChannel(store.pageRole) ? null : debiki2.reactelements.TopBar({}),
-        debiki2.page.ScrollButtons(),
+        isEmbeddedComments ? null : debiki2.page.ScrollButtons(),
         r.div({ className: 'container' },
           r.article({},
             content))));

@@ -250,6 +250,11 @@ trait SiteTransaction {
     pageId: PageId, version: CachedPageVersion, html: String): Boolean
 
 
+  def insertAltPageId(altPageId: AltPageId, realPageId: PageId)
+  def insertAltPageIdIfFree(altPageId: AltPageId, realPageId: PageId)
+  def listAltPageIds(realPageId: PageId): Set[AltPageId]
+  def loadRealPageId(altPageId: AltPageId): Option[PageId]
+
   def insertPagePath(pagePath: PagePath): Unit
   def insertPagePath(pagePath: PagePathWithId): Unit =
     insertPagePath(PagePath(siteId = this.siteId, folder = pagePath.folder,

@@ -27,13 +27,17 @@
 /// <reference path="../page-methods.ts" />
 /// <reference path="../help/help.ts" />
 /// <reference path="../rules.ts" />
+/// <reference path="../links.ts" />
 /// <reference path="../Server.ts" />
+/// <reference path="../login/login-if-needed.ts" />
 /// <reference path="chat.ts" />
 /// <reference path="../more-bundle-not-yet-loaded.ts" />
 
 //------------------------------------------------------------------------------
    namespace debiki2.page {
 //------------------------------------------------------------------------------
+
+const d = { i: debiki.internal };
 
 var React = window['React']; // TypeScript file doesn't work
 var r = React.DOM;
@@ -124,22 +128,23 @@ export const PostActions = createComponent({
   },
 
   onReplyClick: function(event) {
+    // Some dupl code [69KFUW20]
     event.preventDefault();
     const eventTarget = event.target; // React.js will clear the field
     // (Don't check this.props...isFlat here — use postType instead.)
     const post: Post = this.props.post;
     const newPostType = post.postType === PostType.Flat ? PostType.Flat : PostType.Normal;
-    // Dupl code [69KFUW20]
-    debiki2.morebundle.loginIfNeededReturnToPost('LoginToComment', post.nr, function() {
+    login.loginIfNeededReturnToPost('LoginToComment', post.nr, function() {
       if (this.isGone) return;
       // Toggle highlighting first, because it'll be cleared later if the
       // editor is closed, and then we don't want to toggle it afterwards.
       $h.toggleClass(eventTarget, 'dw-replying');
-      /*if (d.i.isInEmbeddedCommentsIframe) { [todo-emb-cmts]
-        console.warn("anyPostType ignored [DwE4KEPF0]");
-        sendWriteReplyMessageToEmbeddedEditor(postNr, anyPostType);
-      } else { */
-      debiki2.editor.toggleWriteReplyToPost(post.nr, newPostType);
+      if (debiki.internal.isInEmbeddedCommentsIframe) {
+        window.parent.postMessage(JSON.stringify(['editorToggleReply', post.nr]), '*');
+      }
+      else {
+        debiki2.editor.toggleWriteReplyToPost(post.nr, newPostType);
+      }
     });
   },
 
@@ -335,9 +340,14 @@ export const PostActions = createComponent({
       tagList = r.ul({ className: 'esPA_Ts' }, tags);
     }
 
+    const adminLink = !me.isAdmin || !d.i.isInEmbeddedCommentsIframe || !isPageBody ? null :
+      r.a({ className: 'dw-a dw-a-admin icon-link-ext', href: d.i.serverOrigin + linkToReviewPage(),
+        target: '_blank' }, "Admin");
+
     return (
       r.div({ className: 'dw-p-as dw-as esPA', onClick: this.props.onClick },
         replyButton,
+        adminLink,
         closeReopenButton,
         flagBtn,
         moreDropdown,
@@ -681,7 +691,7 @@ function flagPost(post: Post) {
 
 
 function loginIfNeededThen(loginToWhat, postNr: PostNr, success: () => void) {
-  morebundle.loginIfNeededReturnToPost(loginToWhat, postNr, success);
+  login.loginIfNeededReturnToPost(loginToWhat, postNr, success);
 }
 
 //------------------------------------------------------------------------------

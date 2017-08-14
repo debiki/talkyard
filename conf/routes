@@ -48,8 +48,8 @@ POST  /-/stop-impersonating     controllers.ImpersonateController.stopImpersonat
 GET   /-/pubsub/authorize-subscriber/:channelId  ed.server.pubsub.SubscriberController.authorizeSubscriber(channelId)
 GET   /-/load-online-users                       ed.server.pubsub.SubscriberController.loadOnlineUsers
 
-GET   /-/embedded-comments      controllers.EmbeddedTopicsController.showTopic
-GET   /-/embedded-editor        controllers.EmbeddedTopicsController.showEmbeddedEditor
+GET   /-/embedded-comments      controllers.EmbeddedTopicsController.showTopic(embeddingUrl, discussionId: Option[String], edPageId: Option[String])
+GET   /-/embedded-editor        controllers.EmbeddedTopicsController.showEmbeddedEditor(embeddingUrl, discussionId: Option[String], edPageId: Option[String])
 GET   /-/embedded-comments-help controllers.EmbeddedTopicsController.showSetupInstructions
 
 GET   /-/search                 controllers.SearchController.showSearchPage(q: Option[String])

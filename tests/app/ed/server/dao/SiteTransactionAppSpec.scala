@@ -64,6 +64,42 @@ class SiteTransactionAppSpec extends DaoAppSuite {
     }
 
 
+    "load and save alt page ids" - {
+      "save alt page ids" in {
+        dao.readWriteTransaction { tx =>
+          tx.insertAltPageId("aabbccdd", pageId)
+          tx.insertAltPageId("http://www.example.com/some/path", otherPageId)
+          tx.insertAltPageId("http://www.example.com/another/path", otherPageId)
+          tx.insertAltPageId("other-kind-of-id-With-UPPercase", otherPageId)
+        }
+      }
+
+      "load alt page ids" in {
+        dao.readOnlyTransaction { tx =>
+          tx.loadRealPageId("aabbccdd") mustBe Some(pageId)
+          tx.loadRealPageId("http://www.example.com/some/path") mustBe Some(otherPageId)
+          tx.loadRealPageId("http://www.example.com/another/path") mustBe Some(otherPageId)
+          tx.loadRealPageId("other-kind-of-id-With-UPPercase") mustBe Some(otherPageId)
+          tx.loadRealPageId("non_existing_id") mustBe None
+          tx.loadRealPageId("") mustBe None
+        }
+      }
+
+      "list alt page ids" in {
+        dao.readOnlyTransaction { tx =>
+          tx.listAltPageIds("0") mustBe Set.empty // no such id
+          tx.listAltPageIds("99999") mustBe Set.empty // no such id
+          tx.listAltPageIds(pageId) mustBe Set("aabbccdd")
+          tx.listAltPageIds(otherPageId) mustBe Set(
+            "http://www.example.com/some/path",
+            "http://www.example.com/another/path",
+            "other-kind-of-id-With-UPPercase")
+          tx.listAltPageIds(thirdPageId) mustBe Set.empty
+        }
+      }
+    }
+
+
     "load and save UserStats" in {
       dao.readWriteTransaction { transaction =>
         val autoCreatedStats = transaction.loadUserStats(admin.id) getOrDie "EdE5FKW026"

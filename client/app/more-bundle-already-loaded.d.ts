@@ -82,10 +82,6 @@ declare namespace debiki2.login {
   function loginIfNeeded(
       loginReason: LoginReason | string, anyReturnToUrl?: string, success?: () => void);
 
-  export function loginIfNeededReturnToAnchor(loginReason: LoginReason | string,
-      anchor: string, success: () => void);
-
-  function continueAfterLogin();
   function getLoginDialog();
 
 }

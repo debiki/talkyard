@@ -851,7 +851,8 @@ export function saveReply(postNrs: PostNr[], text: string, anyPostType: number,
   postJson('/-/reply', {
     data: {
       pageId: d.i.pageId,
-      pageUrl: d.i.iframeBaseUrl || undefined,
+      altPageId: d.i.altPageId || undefined,
+      embeddingUrl: d.i.embeddingUrl || undefined,
       postNrs: postNrs,
       postType: anyPostType || PostType.Normal,
       text: text

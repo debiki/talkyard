@@ -225,10 +225,6 @@ d.i.startDiscussionPage = function() {
 };
 
 
-d.i.startEmbeddedEditor = function() {
-  console.warn("The editor is lazily created nowadays [DwE4KGF0]");
-};
-
 if (location.pathname.search(ApiUrlPathPrefix) !== 0) {
   debiki2.putInSessionStorage('returnToSiteUrl', window.location.toString());
 }

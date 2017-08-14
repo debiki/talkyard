@@ -201,9 +201,18 @@
   margin-bottom: 3px;
 
 .dw-ar-t > .dw-p-as
+  .dw-a-admin:before,
   .dw-a-reply:before,
   .dw-a-close:before
     opacity: 1 !important;
+
+.dw-ar-t > .dw-p-as .dw-a-admin
+  margin: 0 3px 0 8px !important;
+  &.icon-link-ext:before
+    top: 1px;
+    left: -1px;
+    position: relative;
+
 
 .esDropModal .dw-a,
 .DW .dw-ar-t > .dw-p-as .dw-a
@@ -293,10 +302,10 @@ html:not(.mouse) .dw-t > .dw-p-as .dw-a
   background: hsl($uiHue, 52%, 45%) !important
   outline: 3px solid white; // whitespace between background and any post outline
 
-.dw-embedded .dw-depth-0.dw-t
+.s_PT-5 .dw-depth-0.dw-t  // 5 = PageRole.EmbeddedComments
   float: none;
 
-.dw-embedded .dw-ar-t > .dw-p-as
+.s_PT-5 .dw-ar-t > .dw-p-as  // 5 = PageRole.EmbeddedComments
   & > .dw-a-reply
     top: 5px;
     padding: 8px 11px 8px 8px !important;
