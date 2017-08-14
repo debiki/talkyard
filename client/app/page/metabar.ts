@@ -156,38 +156,12 @@ export var Metabar = createComponent({
 
     // ----- Put everything together
 
-    var result;
-    /* if (store.isInEmbeddedCommentsIframe) {  — no, place in post-action.ts instead?
-      // There's not root post with a reply button, so add a reply button.
-      // And an admin button, if is admin.
-      var adminLink;
-      if (me.isAdmin) {
-        adminLink =
-          r.a({ className: 'dw-a dw-a-reply', href: d.i.serverOrigin + '/-/admin/#/moderation',
-              target: '_blank' }, 'Administrate');
-      }
-      result =
-        r.div({},
-          r.div({ className: 'dw-t dw-depth-0 dw-ar-t' },
-            r.div({ className: 'dw-p-as dw-as' },
-              r.a({ className: 'dw-a dw-a-reply icon-reply', onClick: this.onReplyClick },
-                'Reply'),
-              adminLink)),
-          r.div({ className: 'dw-cmts-tlbr esMetabar' },
-            summaryElem,
-            detailsElem,
-            anyExtraMeta));
-    }
-    else { */
-      result =
+    return (
         r.div({ className: 'dw-cmts-tlbr esMetabar', id: 'dw-cmts-tlbr' },
           summaryElem,
           detailsElem,
           anyExtraMeta,
-          summarizeStuff);
-    //}
-
-    return result;
+          summarizeStuff));
   }
 });
 

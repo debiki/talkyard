@@ -51,7 +51,7 @@ public/res/staff-bundle.*
 public/res/editor-bundle.*
 public/res/styles-bundle.*
 public/res/server-bundle.*
-public/res/embedded-comments.*
+public/res/ed-comments.*
 public/res/zxcvbn.*
 
 # When running Chrome browser tests, ChromeDriver generates this file and it

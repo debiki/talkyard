@@ -44,7 +44,7 @@ if (embeddedCommentsElems.length) {
   var edPageIdParam = edPageId ? '&edPageId=' + edPageId : '';
 
   var allUrlParams = embeddingUrlParam + discussionIdParam + edPageIdParam;
-  var commentsIframeUrl = serverOrigin + '/-/embedded-comments?' + allUrlParams;
+  var commentsIframeUrl = debiki.internal.debikiServerOrigin + '/-/embedded-comments?' + allUrlParams;
   // '/-' + pageId; // '/-29/testing-nested-comment-is-it-working-or-not';  // /-/pageId
 
   // Don't `hide()` the iframe, then FireFox acts as if it doesn't exist: FireFox receives

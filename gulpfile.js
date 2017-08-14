@@ -386,7 +386,7 @@ function makeConcatAllScriptsStream() {
       makeConcatStream('more-bundle.js', moreJsFiles, 'DoCheckNewer'),
       makeConcatStream('staff-bundle.js', staffJsFiles, 'DoCheckNewer'),
       makeConcatStream('editor-bundle.js', editorJsFiles, 'DoCheckNewer'),
-      makeConcatStream('embedded-comments.js', embeddedJsFiles),
+      makeConcatStream('ed-comments.js', embeddedJsFiles),
       gulp.src('node_modules/zxcvbn/dist/zxcvbn.js').pipe(gulp.dest('public/res/')));
 }
 
@@ -472,10 +472,7 @@ gulp.task('compile-stylus', function () {
         'client/app/page/posts.styl',
         'client/app/page/arrows.styl',
         'client/app/page/action-links.styl',
-        'client/app/**/*.styl']),
-
-    makeStyleStream('public/res/', 'debiki-embedded-comments.css', [
-        'client/app/tips.styl']));
+        'client/app/**/*.styl']));
 });
 
 

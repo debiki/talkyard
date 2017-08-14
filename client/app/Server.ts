@@ -1154,6 +1154,9 @@ export function search(rawQuery: string, success: (results: SearchResults) => vo
 // Uses navigator.sendBeacon if the `success` isn't specified.
 export function trackReadingProgress(lastViewedPostNr: PostNr, secondsReading: number,
       postNrsRead: PostNr[], success?: () => void) {
+  if (d.i.pageId === EmptyPageId)
+    return;
+
   let nowMsUtc = Date.now(); // now() returns UTC
   let data = {
     pageId: d.i.pageId,

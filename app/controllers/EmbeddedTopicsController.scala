@@ -53,7 +53,7 @@ object EmbeddedTopicsController extends mvc.Controller {
         val tpi = new PageTpi(pageRequest, jsonStuff.jsonString, jsonStuff.version,
           "Dummy cached html [EdM2GRVUF05]", WrongCachedPageVersion,
           jsonStuff.pageTitle, jsonStuff.customHeadTags)
-        val htmlString = views.html.templates.embeddedComments(tpi).body
+        val htmlString = views.html.templates.page(tpi).body
         (RenderedPage(htmlString, unapprovedPostAuthorIds = Set.empty), pageRequest)
       case Some(realId) =>
         val pageMeta = dao.getThePageMeta(realId)

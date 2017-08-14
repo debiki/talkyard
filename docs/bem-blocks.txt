@@ -68,7 +68,7 @@ esH             = help
 esLD            = login/signup dialog
 esLD_G          = guest login
 
-esMB            = topic metabar (just below the Orig Post, before all replies)
+s_MB            = topic metabar (just below the Orig Post, before all replies)
 
 s_MMB-IsImp     = my menu button, is-impersonating
 s_MM            = my menu (one's avatar + username, in the topbar)

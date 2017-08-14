@@ -101,7 +101,7 @@ var _isInIframe;
 try { _isInIframe = window.self !== window.top; }
 catch (e) { _isInIframe = true; }
 if (_isInIframe) _doc.className += ' s_InIframe';
-var _embCmts = _isInIframe && @{ if (anyPageRole.isDefined) "true" else "false" };
+var _embCmts = @{ if (anyPageRole.isDefined) "_isInIframe" else "false" };
 
 var _hideIntro = localStorage.getItem('hideForumIntro');
 _store.hideForumIntro = _hideIntro && _hideIntro !== 'false';

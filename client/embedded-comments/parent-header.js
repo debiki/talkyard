@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2014 Kaj Magnus Lindberg
+ * Copyright (c) 2014, 2017 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -29,22 +29,20 @@ debiki.internal.debikiServerOrigin = (function() {
   for (var i = 0; i < scripts.length; ++i) {
     script = scripts[i];
     var srcAttr = script.src;
-    var isEmbeddedCommentsScript = srcAttr.search(/\/-\/debiki-embedded-comments.js/) !== -1;
+    var isEmbeddedCommentsScript = srcAttr.search(/\/-\/ed-comments.(min\.)?js/) !== -1;
     if (isEmbeddedCommentsScript) {
       origin = srcAttr.match(/^[^/]*\/\/[^/]+/)[0];
     }
   }
   if (!origin && console.error) {
-    console.error(
-      'Error extracting Debiki server origin, is there no "/-/debiki-embedded-comments.js" script?');
+    console.error("Error extracting Effective Discussions embedded comments server origin, " +
+      "is there no '/-/ed-comments.min.js' script?");
   }
   return origin;
 })();
 
 
 debiki.internal.runDebikisCode = function() {
-
-// debiki.internal.$ = jQuery;
 
 
 // vim: et sw=2 ts=2 tw=0 list

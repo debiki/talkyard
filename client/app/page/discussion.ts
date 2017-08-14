@@ -333,8 +333,6 @@ export const TitleBodyComments = createComponent({
       // anySocialLinks = SocialLinks({ socialLinksHtml: store.socialLinksHtml }); CLEAN_UP remove social links
     }
 
-    // const embeddedClass = store.isInEmbeddedCommentsIframe ? ' dw-embedded' : ''; TODO remove styles
-
     // If the help message is important, place it below the title, and use a different
     // color (via CSS) [4JKYIXR2], so people will notice it. Page closed = important,
     // because then, writing a reply, is likely a waste of one's time.
