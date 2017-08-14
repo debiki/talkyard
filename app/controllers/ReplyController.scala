@@ -23,7 +23,7 @@ import debiki.DebikiHttp._
 import ed.server.auth.Authz
 import ed.server.http._
 import play.api._
-import play.api.libs.json.JsValue
+import play.api.libs.json.{JsObject, JsString, JsValue}
 import play.api.mvc._
 
 
@@ -51,6 +51,7 @@ object ReplyController extends mvc.Controller {
     // the topic, in comparison to # posts in the topic, before allowing hen to post a reply.
 
     // Dupl code [5UFKWQ0]
+    var newPagePath: PagePath = null
     val pageId = anyPageId.orElse({
       anyAltPageId.flatMap(request.dao.getRealPageId)
     }) getOrElse {
@@ -58,7 +59,7 @@ object ReplyController extends mvc.Controller {
       val embeddingUrl = anyEmbeddingUrl getOrElse {
         throwNotFound("EdE404NOEMBURL", "Page not found and no embedding url specified")
       }
-      val newPagePath = tryCreateEmbeddedCommentsPage(request, embeddingUrl, anyAltPageId)
+      newPagePath = tryCreateEmbeddedCommentsPage(request, embeddingUrl, anyAltPageId)
       newPagePath.thePageId
     }
 
@@ -84,7 +85,11 @@ object ReplyController extends mvc.Controller {
     val result = dao.insertReply(textAndHtml, pageId = pageId, replyToPostNrs,
       postType, request.who, request.spamRelatedStuff)
 
-    OkSafeJson(result.storePatchJson)
+    var patchWithNewPageId: JsObject = result.storePatchJson
+    if (newPagePath ne null) {
+      patchWithNewPageId = patchWithNewPageId + ("newlyCreatedPageId" -> JsString(pageId))
+    }
+    OkSafeJson(patchWithNewPageId)
   }
 
 

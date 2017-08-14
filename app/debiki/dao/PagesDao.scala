@@ -293,7 +293,9 @@ trait PagesDao {
 
     altPageId.foreach(transaction.insertAltPageId(_, realPageId = pageId))
     if (altPageId != embeddingUrl) {
-      embeddingUrl.foreach(transaction.insertAltPageId(_, realPageId = pageId))
+      // If the url already points to another embedded discussion, keep it pointing to the old one.
+      // Then, seems like lower risk for some hijack-a-discussion-by-forging-the-url security issue.
+      embeddingUrl.foreach(transaction.insertAltPageIdIfFree(_, realPageId = pageId))
     }
 
     reviewTask.foreach(transaction.upsertReviewTask)

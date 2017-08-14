@@ -938,6 +938,11 @@ interface StorePatch {
   superadmin?: SuperAdminStuff;
   me?: Myself;
   tagsStuff?: TagsStuff;
+
+  // If doing something resulted in a new page being created, and we should continue on that page.
+  // E.g. if posting the first reply, in an embedded-comments discussion (then a page for the
+  // discussion gets created, lazily).
+  newlyCreatedPageId?: PageId;
 }
 
 

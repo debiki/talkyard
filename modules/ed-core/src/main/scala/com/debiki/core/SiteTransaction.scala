@@ -251,6 +251,7 @@ trait SiteTransaction {
 
 
   def insertAltPageId(altPageId: AltPageId, realPageId: PageId)
+  def insertAltPageIdIfFree(altPageId: AltPageId, realPageId: PageId)
   def listAltPageIds(realPageId: PageId): Set[AltPageId]
   def loadRealPageId(altPageId: AltPageId): Option[PageId]
 

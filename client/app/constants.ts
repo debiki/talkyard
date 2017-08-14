@@ -20,6 +20,7 @@
 const ReactStartedClass = 'dw-react-started';
 
 const EmptyPageId = '0';
+const NumEmptyPageDummyPosts = 2; // orig post dummy title and body
 const FirstSiteId = '1';
 
 const NoId = 0;

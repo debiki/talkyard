@@ -102,8 +102,9 @@ export var Metabar = createComponent({
         r.button({ className: 'dw-cmts-tlbr-open', onClick: this.onToggleDetailsClick },
           r.span({ className: (ui.showDetails ? 'icon-up-open' : 'icon-down-open') }))
 
-    var nameLoginBtns = store.isInEmbeddedCommentsIframe ?
-        r.li({}, reactelements.NameLoginBtns({})) : null;
+    // Login is via a "Login to Reply" button above the metabar instead.
+    var nameLoginBtns = !me.isLoggedIn || !store.isInEmbeddedCommentsIframe ? null :
+        r.li({}, reactelements.NameLoginBtns({}));
 
     var summaryElem =
       r.div({ className: 'dw-cmts-tlbr-head' },

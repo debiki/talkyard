@@ -838,18 +838,18 @@ object ReactJson {
 
     val notfsAndCounts = loadNotifications(user.id, transaction, unseenFirst = true, limit = 30)
 
-    val (rolePageSettings, anyVotes, anyUnapprovedPosts, anyUnapprovedAuthors) =
+    val (rolePageSettings, votes, unapprovedPosts, unapprovedAuthors) =
       anyPageId map { pageId =>
         val rolePageSettings = user.anyMemberId.map({ userId =>
           val anySettings = transaction.loadUserPageSettings(userId, pageId = pageId)
           rolePageSettingsToJson(anySettings getOrElse UserPageSettings.Default)
-        }) getOrElse JsNull
+        }) getOrElse JsEmptyObj
         val votes = votesJson(user.id, pageId, transaction)
         // + flags, interesting for staff, & so people won't attempt to flag twice [7KW20WY1]
         val (postsJson, postAuthorsJson) =
           unapprovedPostsAndAuthorsJson(user, pageId, unapprovedPostAuthorIds, transaction)
         (rolePageSettings, votes, postsJson, postAuthorsJson)
-      } getOrElse (JsNull, JsNull, JsNull, JsNull)
+      } getOrElse (JsEmptyObj, JsEmptyObj, JsEmptyObj, JsArray())
 
     val threatLevel = user match {
       case member: Member => member.threatLevel
@@ -894,10 +894,10 @@ object ReactJson {
 
       "restrictedTopics" -> restrictedTopics,
       "restrictedCategories" -> restrictedCategories,
-      "votes" -> anyVotes,
+      "votes" -> votes,
       // later: "flags" -> JsArray(...) [7KW20WY1]
-      "unapprovedPosts" -> anyUnapprovedPosts,
-      "unapprovedPostAuthors" -> anyUnapprovedAuthors,
+      "unapprovedPosts" -> unapprovedPosts,
+      "unapprovedPostAuthors" -> unapprovedAuthors,
       "postNrsAutoReadLongAgo" -> JsArray(Nil),
       "postNrsAutoReadNow" -> JsArray(Nil),
       "marksByPostId" -> JsObject(Nil),
@@ -1430,7 +1430,7 @@ object ReactJson {
   }
 
 
-  def makeStorePatch(post: Post, author: User, dao: SiteDao, showHidden: Boolean): JsValue = {
+  def makeStorePatch(post: Post, author: User, dao: SiteDao, showHidden: Boolean): JsObject = {
     // Warning: some similar code below [89fKF2]
     require(post.createdById == author.id, "EsE5PKY2")
     val (postJson, pageVersion) = ReactJson.postToJson(
@@ -1459,7 +1459,7 @@ object ReactJson {
 
 
   def makeStorePatch(pageIdVersion: PageIdVersion, posts: Seq[JsObject] = Nil,
-        users: Seq[JsObject] = Nil): JsValue = {
+        users: Seq[JsObject] = Nil): JsObject = {
     require(posts.isEmpty || users.nonEmpty, "Posts but no authors [EsE4YK7W2]")
     Json.obj(
       "appVersion" -> Globals.applicationVersion,
@@ -1535,6 +1535,8 @@ object ReactJson {
     }
     json
   }
+
+  val JsEmptyObj = JsObject(Nil)
 
   def JsPagePath(pagePath: PagePath): JsValue =
     Json.obj(

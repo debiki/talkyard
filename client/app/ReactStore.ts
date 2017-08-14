@@ -1043,6 +1043,15 @@ function patchTheStore(storePatch: StorePatch) {
     store.usersByIdBrief[user.id] = user;
   });
 
+  // If we just posted the very first reply on an embedded discussion, a page for the discussion
+  // will have been created now, lazily. Then need to update the store page id.
+  if (storePatch.newlyCreatedPageId) {
+    dieIf(_.size(store.postsByNr) > NumEmptyPageDummyPosts, 'EdE2PB604');
+    store.pageId  = storePatch.newlyCreatedPageId;
+    // Later: Add this new page to the watchbar? Currently not needed, because pages created
+    // lazily only for embedded comments, and then there's no watchbar.
+  }
+
   // Highligt pages with new posts, in the watchbar.
   // And find out if some post was moved to elsewhere.
   _.each(storePatch.postsByPageId, (posts: Post[], pageId: PageId) => {

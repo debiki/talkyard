@@ -26,7 +26,7 @@ import debiki._
 import debiki.DebikiHttp._
 import ed.server.notf.NotificationGenerator
 import ed.server.pubsub.StorePatchMessage
-import play.api.libs.json.JsValue
+import play.api.libs.json.{JsObject, JsValue}
 import play.{api => p}
 import scala.collection.{immutable, mutable}
 import scala.collection.mutable.ArrayBuffer
@@ -35,7 +35,7 @@ import ed.server.auth.Authz
 import org.scalactic.{Bad, Good, One, Or}
 
 
-case class InsertPostResult(storePatchJson: JsValue, post: Post, reviewTask: Option[ReviewTask])
+case class InsertPostResult(storePatchJson: JsObject, post: Post, reviewTask: Option[ReviewTask])
 
 
 /** Loads and saves pages and page parts (e.g. posts and patches).
