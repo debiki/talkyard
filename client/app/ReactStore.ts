@@ -1318,11 +1318,14 @@ function rememberPostsToQuickUpdate(startPostId: number) {
 
   // Need to update all ancestors, otherwise when rendering the React root we won't reach
   // `post` at all.
+  let visitedNrs = {};
   while (post) {
-    if (store.postsToUpdate[post.nr]) // title & OP sometimes has parent = OP -> cycle, why? [OPCYCLE]
-      break;
     store.postsToUpdate[post.nr] = true;
+    visitedNrs[post.nr] = true;
     post = store.postsByNr[post.parentNr];
+    // The title & OP sometimes has parent = OP -> cycle, why? [OPCYCLE]
+    if (post && visitedNrs[post.nr])
+      break;
   }
 }
 
