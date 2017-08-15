@@ -1,5 +1,5 @@
 /* Scrolls something into view, with some margin.
- * Copyright (c) 2010-2015 Kaj Magnus Lindberg
+ * Copyright (c) 2010-2015, 2017 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -25,36 +25,33 @@ var $ = d.i.$;
 
 export function calcScrollIntoViewCoordsInPageColumn(what, options?) {
   // Warning: dupl code, see [5GUKF24] below.
-  if (!_.isNumber(what.length) || _.isString(what)) {
-    what = $(what);
+  if (what && _.isString(what)) {
+    what = $first(what);
   }
-  if (!what.length)
+  if (!what)
     return { needsToScroll: false };
-
   if (!options) {
     options = {};
   }
   debiki2.dieIf(options.parent, 'EsE77KF28');
-  options.parent = $('#esPageColumn');
-
+  options.parent = $byId('esPageColumn');
   return d.i.calcScrollIntoViewCoords(what, options);
 }
 
 
 export function scrollIntoViewInPageColumn(what, options?) {
   // Warning: dupl code, see [5GUKF24] above.
-  if (!_.isNumber(what.length) || _.isString(what)) {
-    what = $(what);
+  if (what && _.isString(what)) {
+    what = $first(what);
   }
-  if (!what.length)
+  if (!what)
     return;
-
   if (!options) {
     options = {};
   }
   debiki2.dieIf(options.parent, 'EsE5GKF23');
-  options.parent = $('#esPageColumn');
-  what.dwScrollIntoView(options);
+  options.parent = $byId('esPageColumn');
+  scrollIntoView(what, options);
 }
 
 
@@ -64,7 +61,7 @@ d.i.elemIsVisible = function(elem) {
     marginBottom: 0,
     marginLeft: 0,
     marginRight: 0 ,
-    parent: $('#esPageColumn'), // (could make configurable, probably not needed though)
+    parent: $byId('esPageColumn'), // (could make configurable, probably not needed though)
   });
   return !coords.needsToScroll;
 };
@@ -78,10 +75,10 @@ d.i.calcScrollIntoViewCoords = function(elem, options) {
   var marginLeft = options.marginLeft || 15;
   var marginRight = options.marginRight || 15;
 
-  var winHeight = $(window).height();
-  var winWidth = $(window).width();
+  var winHeight = window.innerHeight;
+  var winWidth = window.innerWidth;
 
-  var elemRect = elem[0].getBoundingClientRect();
+  var elemRect = elem.getBoundingClientRect();
   var marginRect = {
     top: elemRect.top - marginTop,
     bottom: elemRect.bottom + marginBottom,
@@ -94,7 +91,7 @@ d.i.calcScrollIntoViewCoords = function(elem, options) {
     marginRect.bottom = marginRect.top + options.height + marginBottom;
   }
 
-  var parentScrollTop = options.parent.scrollTop();
+  var parentScrollTop = options.parent.scrollTop;
   var desiredParentTop = parentScrollTop;
   if (marginRect.top < 0) {
     desiredParentTop = parentScrollTop + marginRect.top;
@@ -108,7 +105,7 @@ d.i.calcScrollIntoViewCoords = function(elem, options) {
     }
   }
 
-  var parentScrollLeft = options.parent.scrollLeft();
+  var parentScrollLeft = options.parent.scrollLeft;
   var desiredParentLeft = parentScrollLeft;
   if (marginRect.left < 0) {
     desiredParentLeft = parentScrollLeft + marginRect.left;
@@ -132,28 +129,25 @@ d.i.calcScrollIntoViewCoords = function(elem, options) {
 };
 
 
-(<any> jQuery.fn).dwScrollIntoView = function(options) {
-  if (!this.length)
-    return this;
-
+export function scrollIntoView(elem, options, onDone?: () => void) {
   if (!options) options = {};
-  const duration = options.duration || 600;
+  var duration = options.duration || 600;
 
-  if (options.parent && !_.isNumber(options.parent.length)) {
-    options.parent = $(options.parent);
-  }
   if (!options.parent) {
-    options.parent = $('#esPageColumn');
+    options.parent = $byId('esPageColumn');
   }
 
-  const coords = d.i.calcScrollIntoViewCoords(this, options);
+  var coords = d.i.calcScrollIntoViewCoords(elem, options);
   if (coords.needsToScroll) {
-    const elem = options.parent[0];
-    smoothScroll(elem, coords.desiredParentLeft, coords.desiredParentTop);
+    smoothScroll(options.parent, coords.desiredParentLeft, coords.desiredParentTop);
   }
+  // For now, call immediately. Did before, works ok, currently.
+  if (onDone) {
+    onDone();
+  }
+}
 
-  return this;
-};
+d.i.scrollIntoView = scrollIntoView;
 
 
 //------------------------------------------------------------------------------

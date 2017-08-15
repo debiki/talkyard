@@ -217,6 +217,10 @@ export function $bySelector(selector: string): NodeListOf<Element> {   // RENAME
   return document.querySelectorAll(selector);
 }
 
+export function $first(selector: string): Element {
+  const elems = document.querySelectorAll(selector);
+  return elems.length ? elems[0] : null;
+}
 
 export function $byId(elemId: string): HTMLElement {
   // @ifdef DEBUG

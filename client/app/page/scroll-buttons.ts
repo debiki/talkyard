@@ -41,7 +41,7 @@ function scrollToTop(addBackStep?) {
   if (addBackStep !== false) {
     addVisitedPosition(WhereTop);
   }
-  utils.scrollIntoViewInPageColumn($('#thePageTop'));
+  utils.scrollIntoViewInPageColumn('#thePageTop');
 }
 
 function scrollToReplies(addBackStep?) {
@@ -50,7 +50,7 @@ function scrollToReplies(addBackStep?) {
   }
   utils.scrollIntoViewInPageColumn(
     // dupl code [5UKP20]
-    $('.dw-depth-0 > .dw-p-as'), { marginTop: 65, marginBottom: 9999 });
+    '.dw-depth-0 > .dw-p-as', { marginTop: 65, marginBottom: 9999 });
 }
 
 function scrollToBottom(addBackStep?) {
@@ -58,7 +58,7 @@ function scrollToBottom(addBackStep?) {
     addVisitedPosition(WhereBottom);
   }
   // dupl code [5UKP20]
-  utils.scrollIntoViewInPageColumn($('#thePageBottom'));
+  utils.scrollIntoViewInPageColumn('#thePageBottom');
 }
 
 
@@ -152,21 +152,21 @@ export var ScrollButtons = createClassAndFactory({
           break;
         case WhereBottom:
           // DUPL CODE, fix  [5UKP20]
-          lastPosTop = calcScrollIntoViewCoordsInPageColumn($('#thePageBottom')).desiredParentTop;
+          lastPosTop = calcScrollIntoViewCoordsInPageColumn('#thePageBottom').desiredParentTop;
           break;
         case WhereReplies:
           // DUPL CODE, fix  [5UKP20]
           lastPosTop =
             calcScrollIntoViewCoordsInPageColumn(
-                $('.dw-depth-0 > .dw-p-as'), { marginTop: 65, marginBottom: 9999 }).desiredParentTop;
+                '.dw-depth-0 > .dw-p-as', { marginTop: 65, marginBottom: 9999 }).desiredParentTop;
           break;
         default: die('EsE2YWK4X8');
       }
     }
     if (isNullOrUndefined(currentPostId) && lastPost && _.isNumber(lastPost.postNr) &&
         !_.isNumber(lastPosTop)) {
-      var $post = $('#post-' + lastPost.postNr);
-      var scrollCoords = calcScrollIntoViewCoordsInPageColumn($post);
+      var post = $byId('post-' + lastPost.postNr);
+      var scrollCoords = calcScrollIntoViewCoordsInPageColumn(post);
       lastPosTop = scrollCoords.desiredParentTop;
       lastPosLeft = scrollCoords.desiredParentLeft;
     }
@@ -318,7 +318,7 @@ var ScrollButtonsDropdownModal = createComponent({
   openAt: function(at) {
     var rect = at.getBoundingClientRect();
     var calcCoords = calcScrollIntoViewCoordsInPageColumn;
-    var bottomCoords = calcCoords($('#thePageBottom'), {
+    var bottomCoords = calcCoords('#thePageBottom', {
       marginTop: SmallDistancePx,
       marginBottom: -SmallDistancePx,
     });
@@ -329,7 +329,7 @@ var ScrollButtonsDropdownModal = createComponent({
       enableGotoTopBtn: $('#esPageColumn').scrollTop() > SmallDistancePx,
       enableGotoEndBtn: bottomCoords.needsToScroll,
       enableGotoRepliesBtn:
-        calcCoords($('.dw-depth-0 > .dw-p-as'), { marginTop: 65, marginBottom: 200 }).needsToScroll,
+        calcCoords('.dw-depth-0 > .dw-p-as', { marginTop: 65, marginBottom: 200 }).needsToScroll,
     });
   },
 

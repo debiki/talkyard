@@ -125,8 +125,8 @@ export var TopBar = createComponent({
       // We cannot scroll above the title anyway, so as long as the upper .dw-page is visible,
       // disable the go-to-page-top button. Also, the upper parts of the page is just whitespace,
       // so ignore it, set marginTop -X.
-      enableGotoTopBtn: calcCoords($('.dw-page'), { marginTop: -10, height: 0 }).needsToScroll,
-      enableGotoEndBtn: calcCoords($('#dw-the-end')).needsToScroll,
+      enableGotoTopBtn: calcCoords('.dw-page', { marginTop: -10, height: 0 }).needsToScroll,
+      enableGotoEndBtn: calcCoords('#dw-the-end').needsToScroll,
     });
   },
 

@@ -46,9 +46,8 @@ debiki.internal.showAndHighlightPost = function(postElem, options) {
   // Add space for position-fixed stuff at the top: Forw/Back btns and open-sidebar btn.
   options.marginTop = options.marginTop || 60;
   options.marginBottom = options.marginBottom || 300;
-  $post.dwScrollIntoView(options).queue(function(next) {
+  d.i.scrollIntoView(postElem, options, function() {
     highlightPostBriefly($post);
-    next();
   });
 };
 
@@ -105,7 +104,7 @@ $(document).on('mouseenter mouseleave', '.dw-arw-vt-handle', function(event) {
   var allArrowHandles = $(this).closest('.dw-res').find('> .dw-t > .dw-arw-vt-handle');
   var parentPost = $(this).closest('.dw-res').closest('.dw-t').children('.dw-p');
   if (event.type === 'mouseenter' || event.type === 'mouseover') {
-    if (!d.i.elemIsVisible(parentPost)) {
+    if (!d.i.elemIsVisible(parentPost[0])) {
       allArrowHandles.addClass('dw-highlight');
       allArrowHandles.css('cursor', 'pointer');
     }
@@ -141,7 +140,7 @@ $(document).on('click', '.dw-arw-vt-handle', function(event) {
   }
   var parentPost = $(this).closest('.dw-t').parent().closest('.dw-t').children('.dw-p');
   var parentPostId = parentPost.dwPostId();
-  if (!d.i.elemIsVisible(parentPost)) {
+  if (!d.i.elemIsVisible(parentPost[0])) {
     debiki2.page.addVisitedPositionAndPost(parentPostId);
   }
 

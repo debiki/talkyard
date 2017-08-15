@@ -24,7 +24,6 @@
    namespace debiki2.editor {
 //------------------------------------------------------------------------------
 
-import scrollIntoViewInPageColumn = debiki2.utils.scrollIntoViewInPageColumn;
 var d = { i: debiki.internal };
 var r = React.DOM;
 var reactCreateFactory = React['createFactory'];
