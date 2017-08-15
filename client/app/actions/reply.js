@@ -32,6 +32,10 @@ d.i.clearIsReplyingMarks = function() {
 // Try to remove. Rename to handlePagePatch?
 d.i.handleReplyResult = function(data) {
   if (d.i.isInEmbeddedEditor) {
+    if (data.newlyCreatedPageId) {
+      // COULD update the page id in the React store too. Currently only needed here though: [7UWKBA1]
+      d.i.pageId = data.newlyCreatedPageId;
+    }
     // Send a message to the embedding page, which will forward it to
     // the comments iframe, which will show the new comment.
     window.parent.postMessage(

@@ -789,7 +789,7 @@ export function loadVoters(postId: PostId,
 export function saveEdits(postNr: number, text: string, doneCallback: () => void) {
   postJson('/-/edit', {
     data: {
-      pageId: d.i.pageId,
+      pageId: d.i.pageId, // [7UWKBA1]
       postNr: postNr,
       text: text
     },
@@ -803,7 +803,11 @@ export function saveEdits(postNr: number, text: string, doneCallback: () => void
 
 export function savePageTitleAndSettings(newTitle: string, settings, success: (response: any) => void,
         error: () => void) {
-  const data = { ...settings, pageId: d.i.pageId, newTitle: newTitle };
+  const data = {
+    ...settings,
+    pageId: d.i.pageId,
+    newTitle: newTitle,
+  };
   postJson('/-/edit-title-save-settings', {
     data: data,
     success: (response) => {
@@ -850,7 +854,7 @@ export function saveReply(postNrs: PostNr[], text: string, anyPostType: number,
     success: () => void) {
   postJson('/-/reply', {
     data: {
-      pageId: d.i.pageId,
+      pageId: d.i.pageId || undefined,
       altPageId: d.i.altPageId || undefined,
       embeddingUrl: d.i.embeddingUrl || undefined,
       postNrs: postNrs,
