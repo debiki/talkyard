@@ -15,7 +15,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-var serverOrigin = 'http://site-3.localhost';
+var d = { i: debiki.internal };
+var serverOrigin = d.i.commentsServerOrigin;
 
 // Escape any hash fragment.
 var embeddingUrl = window.location.origin + window.location.pathname + window.location.search;
@@ -31,20 +32,20 @@ addEventListener('message', onMessage, false);
 // For now, choose the first .debiki-emdbedded-comments only, because
 // the embedded editor will be bound to one page only, and two editors
 // seems complicated.
-var embeddedCommentsElems = document.getElementsByClassName('ed-embedded-comments');
-if (embeddedCommentsElems.length) {
-  var embElem = embeddedCommentsElems[0];
+var commentsElems = document.getElementsByClassName('ed-comments');
+if (commentsElems.length) {
+  var commentsElem = commentsElems[0];
 
   var embeddingUrlParam = 'embeddingUrl=' + embeddingUrl;
 
-  discussionId = embElem.getAttribute('data-discussion-id');
+  discussionId = commentsElem.getAttribute('data-discussion-id');
   var discussionIdParam = discussionId ? '&discussionId=' + discussionId : '';
 
-  var edPageId = embElem.getAttribute('data-ed-page-id');
+  var edPageId = commentsElem.getAttribute('data-ed-page-id');
   var edPageIdParam = edPageId ? '&edPageId=' + edPageId : '';
 
   var allUrlParams = embeddingUrlParam + discussionIdParam + edPageIdParam;
-  var commentsIframeUrl = debiki.internal.debikiServerOrigin + '/-/embedded-comments?' + allUrlParams;
+  var commentsIframeUrl = serverOrigin + '/-/embedded-comments?' + allUrlParams;
   // '/-' + pageId; // '/-29/testing-nested-comment-is-it-working-or-not';  // /-/pageId
 
   // Don't `hide()` the iframe, then FireFox acts as if it doesn't exist: FireFox receives
@@ -53,35 +54,41 @@ if (embeddedCommentsElems.length) {
     id: 'ed-embedded-comments',
     height: 0, // don't `hide()` (see comment just above)
     style: {
-      border: 'none',
-      width: '100%'
+      padding: 0,
+      margin: 0,
+      width: '100%',
+      border: 'none'
     },
     seamless: 'seamless',
     src: commentsIframeUrl
   });
 
-  Bliss.start(theCommentsIframe, embElem);
+  Bliss.start(theCommentsIframe, commentsElem);
 
   var loadingCommentsElem = Bliss.create('p', {
     id: 'ed-loading-comments',
     text: "Loading comments ..."
   });
 
-  Bliss.start(loadingCommentsElem, embElem);
+  Bliss.start(loadingCommentsElem, commentsElem);
 
   var editorWrapper = Bliss.create('div', {
     id: 'ed-editor-wrapper',
     style: {
-      border: 'none',
+      display: 'none',
       width: '100%',
-      height: 350,
+      // height will be set once opened.
       left: 0,
       position: 'fixed',
       bottom: 0,
-      'border-top': '8px solid #888',
+      'box-sizing': 'content-box',
       cursor: 'ns-resize',
-      background: 'white',
-      display: 'none'
+      boxShadow: 'rgba(0, 0, 0, 0.4) 0 0 32px 10px',
+      background: 'hsl(0, 0%, 53%)',
+      border: 'none',
+      borderTop: '1px solid hsl(0, 0%, 78%)',
+      padding: '8px 0 0 0',
+      margin: 0
     }
   });
 
@@ -91,9 +98,12 @@ if (embeddedCommentsElems.length) {
   var editorIframe = Bliss.create('iframe', {
     id: 'ed-embedded-editor',
     style: {
-      border: 'none',
+      display: 'block', // otherwise 'inline' —> some blank space below, because of descender spacing?
+      padding: 0,
+      margin: 0,
       width: '100%',
-      height: '100%'
+      height: '100%',
+      border: 'none'
     },
     seamless: 'seamless',
     src: editorIframeUrl
@@ -155,6 +165,11 @@ function onMessage(event) {
       if (loadingText)
         loadingText.parentNode.removeChild(loadingText);
       break;
+    case 'scrollComments':
+      var rectToScrollIntoView = eventData[0];
+      var options = eventData[1];
+      scrollComments(rectToScrollIntoView, options);
+      break;
       /* CLEAN_UP remove this
     case 'startUtterscrolling':
       debiki.Utterscroll.startScrolling(eventData);
@@ -172,6 +187,9 @@ function onMessage(event) {
       break;
     case 'hideEditor':
       showEditor(false);
+      break;
+    case 'maximizeEditor':
+      setEditorMaximized(eventData);
       break;
     case 'editorToggleReply':
       sendToEditor(event.data);
@@ -223,22 +241,47 @@ function findIframeThatSent(event) {
 
 
 function sendToComments(message) {
-  var commentsWindow = document.getElementById("ed-embedded-comments").contentWindow;
+  var commentsWindow = document.getElementById('ed-embedded-comments').contentWindow;
   commentsWindow.postMessage(message, '*');
-};
+}
 
 
 function sendToEditor(message) {
-  var editorWindow = document.getElementById("ed-embedded-editor").contentWindow;
+  var editorWindow = document.getElementById('ed-embedded-editor').contentWindow;
   editorWindow.postMessage(message, '*');
-};
+}
 
+
+function scrollComments(rectToScrollIntoView, options) {
+  options.parent = document.body;
+  var commentsIframe = document.getElementById('ed-embedded-comments');
+  var iframeRect = commentsIframe.getBoundingClientRect();
+  var rectWithOffset = {
+    top: rectToScrollIntoView.top + iframeRect.top,
+    bottom: rectToScrollIntoView.bottom + iframeRect.top,
+    left: rectToScrollIntoView.left + iframeRect.left,
+    right: rectToScrollIntoView.right + iframeRect.left
+  };
+  var coords = d.i.calcScrollRectIntoViewCoords(rectWithOffset, options);
+  if (coords.needsToScroll) {
+    smoothScroll(document.body, coords.desiredParentLeft, coords.desiredParentTop);
+  }
+}
+
+
+var hasInitedEditorHeight = false;
 
 function showEditor(show) {
   var placeholder = document.getElementById('ed-editor-placeholder');
   var editorWrapper = document.getElementById('ed-editor-wrapper');
   if (show) {
     editorWrapper.style.display = 'block';
+    if (!hasInitedEditorHeight) {
+      hasInitedEditorHeight = true;
+      // Apparently this needs be done after display = 'block'.
+      var initialHeight = Math.max(Math.min(300, window.innerHeight), window.innerHeight / 2.8);
+      editorWrapper.style.height = initialHeight + 'px';
+    }
     placeholder.style.display = 'block';
     placeholder.style.height = editorWrapper.clientHeight + 'px';
   }
@@ -246,6 +289,30 @@ function showEditor(show) {
     editorWrapper.style.display = 'none';
     placeholder.style.display = 'none';
     sendToComments('["clearIsReplyingMarks", {}]');
+  }
+}
+
+
+var oldHeight;
+var oldBorderTop;
+var oldPaddingTop;
+
+function setEditorMaximized(maximized) {
+  var editorWrapper = document.getElementById('ed-editor-wrapper');
+  if (maximized) {
+    oldHeight = editorWrapper.style.height;
+    oldBorderTop = editorWrapper.style.borderTop;
+    oldPaddingTop = editorWrapper.style.paddingTop;
+    editorWrapper.style.top = 0; // bottom is 0 already
+    editorWrapper.style.height = 'auto';
+    editorWrapper.style.borderTop = 'none';
+    editorWrapper.style.paddingTop = 'none';
+  }
+  else {
+    editorWrapper.style.top = 'auto';
+    editorWrapper.style.height = oldHeight;
+    editorWrapper.style.borderTop = oldBorderTop;
+    editorWrapper.style.paddingTop = oldPaddingTop;
   }
 }
 

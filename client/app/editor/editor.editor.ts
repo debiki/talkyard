@@ -726,6 +726,10 @@ export var Editor = createComponent({
   cycleMaxHorizBack: function() {
     // Cycle from 1) normal to 2) maximized & tiled vertically, to 3) maximized & tiled horizontally
     // and then back to normal.
+    const newShowMaximized = !this.state.showMaximized || !this.state.splitHorizontally;
+    if (d.i.isInEmbeddedEditor && newShowMaximized !== this.state.showMaximized) {
+      window.parent.postMessage(JSON.stringify(['maximizeEditor', newShowMaximized]), '*');
+    }
     this.setState({
       showMaximized: !this.state.showMaximized || !this.state.splitHorizontally,
       splitHorizontally: this.state.showMaximized && !this.state.splitHorizontally,

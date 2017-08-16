@@ -16,11 +16,10 @@
  */
 
 //------------------------------------------------------------------------------
-   module debiki2.utils {
+   namespace debiki2.utils {
 //------------------------------------------------------------------------------
 
-var d = { i: debiki.internal, u: debiki.v0.util };
-var $ = d.i.$;
+const d = { i: debiki.internal };
 
 
 export function calcScrollIntoViewCoordsInPageColumn(what, options?) {
@@ -56,7 +55,7 @@ export function scrollIntoViewInPageColumn(what, options?) {
 
 
 d.i.elemIsVisible = function(elem) {
-  var coords = d.i.calcScrollIntoViewCoords(elem, {
+  const coords = d.i.calcScrollIntoViewCoords(elem, {
     marginTop: 0,
     marginBottom: 0,
     marginLeft: 0,
@@ -68,78 +67,28 @@ d.i.elemIsVisible = function(elem) {
 
 
 d.i.calcScrollIntoViewCoords = function(elem, options) {
-  debiki2.dieIf(!options, 'EsE2PUJK5');
-
-  var marginTop = options.marginTop || 15;
-  var marginBottom = options.marginBottom || 15;
-  var marginLeft = options.marginLeft || 15;
-  var marginRight = options.marginRight || 15;
-
-  var winHeight = window.innerHeight;
-  var winWidth = window.innerWidth;
-
-  var elemRect = elem.getBoundingClientRect();
-  var marginRect = {
-    top: elemRect.top - marginTop,
-    bottom: elemRect.bottom + marginBottom,
-    left: elemRect.left - marginLeft,
-    right: elemRect.right + marginRight,
-  };
-
-  // One can override the height, in case cares about showing only the upper part of the thing.
-  if (_.isNumber(options.height)) {
-    marginRect.bottom = marginRect.top + options.height + marginBottom;
-  }
-
-  var parentScrollTop = options.parent.scrollTop;
-  var desiredParentTop = parentScrollTop;
-  if (marginRect.top < 0) {
-    desiredParentTop = parentScrollTop + marginRect.top;
-  }
-  else if (marginRect.bottom > winHeight) {
-    var distToScroll = marginRect.bottom - winHeight;
-    desiredParentTop = parentScrollTop + distToScroll;
-    // If viewport is small, prefer to show the top not the bottom.
-    if (marginRect.top - distToScroll < 0) {
-      desiredParentTop = parentScrollTop + marginRect.top;
-    }
-  }
-
-  var parentScrollLeft = options.parent.scrollLeft;
-  var desiredParentLeft = parentScrollLeft;
-  if (marginRect.left < 0) {
-    desiredParentLeft = parentScrollLeft + marginRect.left;
-  }
-  else if (marginRect.right > winWidth) {
-    var distToScroll = marginRect.right - winWidth;
-    desiredParentLeft = parentScrollLeft + distToScroll;
-    // If viewport is small, prefer to show the left side rather than the right.
-    if (marginRect.left - distToScroll < 0) {
-      desiredParentLeft = parentScrollLeft + marginRect.left;
-    }
-  }
-
-  return {
-    actualWinTop: parentScrollTop,
-    actualWinLeft: parentScrollLeft,
-    desiredParentTop: desiredParentTop,
-    desiredParentLeft: desiredParentLeft,
-    needsToScroll: parentScrollTop !== desiredParentTop || parentScrollLeft !== desiredParentLeft,
-  };
+  const rect = elem.getBoundingClientRect();
+  return d.i.calcScrollRectIntoViewCoords(rect, options);
 };
 
 
 export function scrollIntoView(elem, options, onDone?: () => void) {
-  if (!options) options = {};
-  var duration = options.duration || 600;
+  options = options ? _.clone(options) : {};
+  const duration = options.duration || 600;
 
-  if (!options.parent) {
-    options.parent = $byId('esPageColumn');
+  if (d.i.isInEmbeddedCommentsIframe) {
+    delete options.parent;
+    const rect = cloneRect(elem.getBoundingClientRect());
+    window.parent.postMessage(JSON.stringify(['scrollComments', [rect, options]]), '*');
   }
-
-  var coords = d.i.calcScrollIntoViewCoords(elem, options);
-  if (coords.needsToScroll) {
-    smoothScroll(options.parent, coords.desiredParentLeft, coords.desiredParentTop);
+  else {
+    if (!options.parent) {
+      options.parent = $byId('esPageColumn');
+    }
+    const coords = d.i.calcScrollIntoViewCoords(elem, options);
+    if (coords.needsToScroll) {
+      smoothScroll(options.parent, coords.desiredParentLeft, coords.desiredParentTop);
+    }
   }
   // For now, call immediately. Did before, works ok, currently.
   if (onDone) {

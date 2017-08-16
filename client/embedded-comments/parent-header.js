@@ -23,7 +23,7 @@ window.debiki = { internal: {}, v0: { util: {} } };
 
 // Finds Debiki server origin, by extracting origin of the debiki-embedded-comments.js script.
 // We need it when loading CSS, and when loading the <iframe> with embedded comments.
-debiki.internal.debikiServerOrigin = (function() {
+debiki.internal.commentsServerOrigin = (function() {
   var origin;
   var scripts = document.getElementsByTagName('script');
   for (var i = 0; i < scripts.length; ++i) {

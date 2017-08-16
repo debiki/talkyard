@@ -97,8 +97,9 @@ var slimJsFiles = [
       // build with only what's needed.
       'client/third-party/modernizr-custom.min.js',
       'modules/yepnope.js/yepnope.1.5.4-min.js',
-      'node_modules/jquery/dist/jquery.js',
-      'client/third-party/abbreviate-jquery.js',
+      'node_modules/jquery/dist/jquery.js',//
+      'client/third-party/abbreviate-jquery.js',//
+      'target/client/app/utils/calcScrollRectIntoViewCoords.js',
       'client/third-party/smoothscroll-tiny.js',
       'client/third-party/bliss.shy.js',
       'client/third-party/stupid-lightbox.js',
@@ -117,7 +118,7 @@ var slimJsFiles = [
       'target/client/app/actions/edit/edit.js',
       'target/client/app/actions/vote.js',
       'target/client/app/actions/reply.js',
-      'client/app/if-in-iframe.js',
+      'target/client/app/if-in-iframe.js',
       'target/client/app/utils/jquery-find.js',
       'target/client/app/page/layout-threads.js',
       'target/client/app/page/resize-threads.js',
@@ -166,12 +167,16 @@ var editorJsFiles = [
 // (parten-header.js and parent-footer.js wraps and lazy loads the files inbetween,
 // see client/embedded-comments/readme.txt.)
 var embeddedJsFiles = [
+      // Don't use target/client/... for the parent-header.js and -footer.js, because if processed
+      // individually, they contain unbalanced {} braces.
       'client/embedded-comments/parent-header.js',  // not ^target/client/...
       'client/third-party/bliss.shy.js',
+      'client/third-party/smoothscroll-tiny.js',
       //'client/third-party/jquery-scrollable.js',
       //'client/third-party/jquery.browser.js',
       //'target/client/embedded-comments/debiki-utterscroll-iframe-parent.js',
       //'target/client/app/utterscroll/utterscroll-init-tips.js',
+      'target/client/app/utils/calcScrollRectIntoViewCoords.js',
       'target/client/embedded-comments/iframe-parent.js',
       'client/embedded-comments/parent-footer.js'];  // not ^target/client/...
 
