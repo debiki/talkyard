@@ -196,7 +196,8 @@ class DebugTestController @Inject() extends mvc.Controller {
   /** Fast-forwards the server's current time, for End-to-End tests.
     */
   def playTime: Action[JsValue] = PostJsonAction(RateLimits.BrowserError, maxBytes = 100) { request =>
-    throwForbiddenIf(Play.isProd, "DwE7GKWYQ1", "To fast-forward time, you need a wizard's wand")
+    throwForbiddenIf(!Globals.mayFastForwardTime,
+        "EdE5AKWYQ1", "To fast-forward time, you need a wizard's wand")
     val seconds = (request.body \ "seconds").as[Int]
     Globals.test.fastForwardTimeMillis(seconds * 1000)
     Ok

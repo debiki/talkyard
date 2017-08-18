@@ -157,6 +157,7 @@ class Globals {
     */
   def forbiddenPassword: Option[String] = state.forbiddenPassword
 
+  def mayFastForwardTime: Boolean = state.mayFastForwardTime
 
   def systemDao: SystemDao = state.systemDao  // [rename] to newSystemDao()?
 
@@ -482,7 +483,6 @@ class Globals {
     }
 
     def fastForwardTimeMillis(millis: Long) {
-      require(!isProd, "EdE4PFB8R")
       timeOffsetMillis += millis
     }
 
@@ -618,6 +618,10 @@ class Globals {
 
     val forbiddenPassword: Option[String] =
       conf.getString("ed.forbiddenPassword").noneIfBlank
+
+    val mayFastForwardTime: Boolean =
+      if (!isProd) true
+      else conf.getBoolean("ed.mayFastForwardTime") getOrElse false
 
     val secure: Boolean =
       conf.getBoolean("ed.secure").orElse(

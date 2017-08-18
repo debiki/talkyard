@@ -15,6 +15,7 @@ services:
       FORBIDDEN_PASSWORD: 'public'
       CRYPTO_SECRET: 'public'
       POSTGRES_PASSWORD: 'public'
+      MAY_FAST_FORWARD_TIME: 'true'
 
   cache:
     mem_limit: 30M
