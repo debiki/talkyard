@@ -1,13 +1,13 @@
 # Configures a server that uses about 1.5G RAM, and to which you can connect a debugger,
 # and some passwords.
 
-version: '2'
+version: '3.1'
 services:
   web:
-    mem_limit: 140M
+    #mem_limit: 140M
 
   app:
-    mem_limit: 700M
+    #mem_limit: 700M
     environment:
       PLAY_HEAP_MEMORY_MB: 500
       CREATE_SITE_HOSTNAME: 'localhost'
@@ -18,15 +18,15 @@ services:
       MAY_FAST_FORWARD_TIME: 'true'
 
   cache:
-    mem_limit: 30M
+    #mem_limit: 30M
 
   search:
-    mem_limit: 380M
+    #mem_limit: 380M
     environment:
       ES_JAVA_OPTS: '-Xms260m -Xmx260m'
 
   rdb:
-    mem_limit: 140M
+    #mem_limit: 140M
     environment:
       POSTGRES_PASSWORD: 'public'
 
