@@ -191,6 +191,9 @@ function onMessage(event) {
     case 'maximizeEditor':
       setEditorMaximized(eventData);
       break;
+    case 'minimizeEditor':
+      setEditorMinimized(eventData);
+      break;
     case 'editorToggleReply':
       sendToEditor(event.data);
       break;
@@ -310,6 +313,23 @@ function setEditorMaximized(maximized) {
   }
   else {
     editorWrapper.style.top = 'auto';
+    editorWrapper.style.height = oldHeight;
+    editorWrapper.style.borderTop = oldBorderTop;
+    editorWrapper.style.paddingTop = oldPaddingTop;
+  }
+}
+
+function setEditorMinimized(minimized) {
+  var editorWrapper = document.getElementById('ed-editor-wrapper');
+  if (minimized) {
+    oldHeight = editorWrapper.style.height;
+    oldBorderTop = editorWrapper.style.borderTop;
+    oldPaddingTop = editorWrapper.style.paddingTop;
+    editorWrapper.style.height = 45 + 'px';  // works fine right now, August 2017
+    editorWrapper.style.borderTop = 'none';
+    editorWrapper.style.paddingTop = '0px';
+  }
+  else {
     editorWrapper.style.height = oldHeight;
     editorWrapper.style.borderTop = oldBorderTop;
     editorWrapper.style.paddingTop = oldPaddingTop;

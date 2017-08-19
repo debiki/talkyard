@@ -132,8 +132,15 @@ $spacyYMinHeight = 400px;
       button
         display: none !important;
 
+      .submit-cancel-btns
+        bottom: 6px !important;  // instead of only 3px (8KAQF24)
+
       #esMinimizeBtn
         display: block !important;
+        font-weight: bold;
+        border: none;
+        padding-left: 10px; // instead of 6px
+        padding-right: 10px;
 
   .btn-default
     border-color: hsl(0, 0%, 70%); // not 80% because background not white but light gray
@@ -271,7 +278,7 @@ $spacyYMinHeight = 400px;
     @media (max-width: $showPreviewMinWidth)
       width: 100%;
     position: absolute;
-    bottom: 3px;
+    bottom: 3px;  // (8KAQF24)
     @media (min-height: $spacyYMinHeight)
       bottom: 6px;
     button
@@ -279,6 +286,8 @@ $spacyYMinHeight = 400px;
       @media (min-width: $spacyButtonsMinWidth)
         margin-right: 5px;
     .esEdtr_cycleMaxHzBtn,
+    #esPreviewBtn
+      min-width: 65px;
     #esPreviewBtn,
     #esMinimizeBtn
       float: right;

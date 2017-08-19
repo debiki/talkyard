@@ -137,7 +137,7 @@ to see. But do show the Admin Getting Started Guide (it's in the sidebar [8YKFW3
 new admins. *@
 var _cbOpen = localStorage.getItem('isContextbarOpen');
 var _showAdmGuide = localStorage.getItem('showAdminGuide') !== 'false' && _me.isAdmin &&
-        _cbOpen !== 'false';
+      !_embCmts && _cbOpen !== 'false';
 if (_showAdmGuide || (!_narrow && _cbOpen === 'true' &&
     location.search.search('&hideContextbar') === -1)) {
   _doc.className += ' es-pagebar-open';

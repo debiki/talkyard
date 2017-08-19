@@ -744,7 +744,10 @@ export var Editor = createComponent({
   },
 
   toggleMinimized: function() {
-    var nextShowMini = !this.state.showMinimized;
+    const nextShowMini = !this.state.showMinimized;
+    if (d.i.isInEmbeddedEditor) {
+      window.parent.postMessage(JSON.stringify(['minimizeEditor', nextShowMini]), '*');
+    }
     this.setState({ showMinimized: nextShowMini });
     if (nextShowMini) {
       // Wait until after new size has taken effect.
@@ -1154,7 +1157,7 @@ export var Editor = createComponent({
                   primary: this.state.showMinimized, tabIndex: 3 },
                 this.state.showMinimized ? "Show editor again" : "Minimize"),
               Button({ onClick: this.togglePreview, id: 'esPreviewBtn', tabIndex: 2 },
-                this.state.showOnlyPreview ? "Editor" : "Preview"),
+                this.state.showOnlyPreview ? "Edit" : "Preview"),
               anyViewHistoryButton)),
             r.div({ className: 's_E_iPhoneKbd' },
               "(This gray space is reserved", r.br(), "for the iPhone keyboard.)"))));
