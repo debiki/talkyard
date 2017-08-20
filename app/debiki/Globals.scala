@@ -467,7 +467,7 @@ class Globals {
 
   def now(): When = {
     val millisNow =
-      if (isProd) System.currentTimeMillis()
+      if (isProd && !mayFastForwardTime) System.currentTimeMillis()
       else {
         val millisStart = test.timeStartMillis getOrElse System.currentTimeMillis()
         millisStart + test.timeOffsetMillis

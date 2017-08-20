@@ -14,7 +14,9 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-console.debug("iframe-parent: start");
+const console = window.console || { log: function() {}};
+console.log("iframe-parent: start");
+
 var d = { i: debiki.internal };
 var serverOrigin = d.i.commentsServerOrigin;
 
@@ -35,7 +37,7 @@ addEventListener('message', onMessage, false);
 var commentsElems = document.getElementsByClassName('ed-comments');
 if (commentsElems.length) {
   var commentsElem = commentsElems[0];
-  console.debug("iframe-parent: found commentsElem");
+  console.log("iframe-parent: found commentsElem");
 
   var embeddingUrlParam = 'embeddingUrl=' + embeddingUrl;
 
@@ -65,7 +67,7 @@ if (commentsElems.length) {
   });
 
   Bliss.start(theCommentsIframe, commentsElem);
-  console.debug("iframe-parent: inserted theCommentsIframe");
+  console.log("iframe-parent: inserted theCommentsIframe");
 
   var loadingCommentsElem = Bliss.create('p', {
     id: 'ed-loading-comments',
@@ -95,7 +97,7 @@ if (commentsElems.length) {
   });
 
   Bliss.inside(editorWrapper, document.body);
-  console.debug("iframe-parent: inserted editorWrapper");
+  console.log("iframe-parent: inserted editorWrapper");
 
   var editorIframeUrl = serverOrigin + '/-/embedded-editor?' + allUrlParams;
   var editorIframe = Bliss.create('iframe', {
@@ -113,7 +115,7 @@ if (commentsElems.length) {
   });
 
   Bliss.inside(editorIframe, editorWrapper);
-  console.debug("iframe-parent: inserted editorIframe");
+  console.log("iframe-parent: inserted editorIframe");
 
   // Editor placeholder, so the <iframe> won't occlude the lower parts of the page.
   var editorPlaceholder = Bliss.create('div', {
@@ -154,7 +156,7 @@ function onMessage(event) {
 
   switch (eventName) {
     case 'iframeInited':
-      console.debug("iframe-parent: got 'iframeInited' message");
+      console.log("iframe-parent: got 'iframeInited' message");
       var iframe = findIframeThatSent(event);
       setIframeBaseAddress(iframe);
       /*if (iframe === theCommentsIframe) {

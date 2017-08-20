@@ -132,7 +132,7 @@ function playTimeDays(days: number) { playTimeSeconds(days * 3600 * 24); }
 
 
 function getLastEmailSenTo(siteId: SiteId, email: string, browser?): EmailSubjectBody {
-  while (true) {
+  for (let attemptNr = 1; attemptNr <= settings.waitforTimeout / 500; ++attemptNr) {  // (5JKWDSR9)
     const response = getOrDie(settings.mainSiteOrigin + '/-/last-e2e-test-email?sentTo=' + email +
       '&siteId=' + siteId);
     const lastEmails = JSON.parse(response.body);
@@ -141,6 +141,7 @@ function getLastEmailSenTo(siteId: SiteId, email: string, browser?): EmailSubjec
     if (browser)
       browser.pause(500 - 100); // 100 ms for a request, perhaps?
   }
+  die(`Timeout in getLastEmailSenTo, address: ${email} [EdE5JSRWG0]`)
 }
 
 
@@ -176,6 +177,7 @@ function getAnyUnsubscriptionLinkEmailedTo(siteId: SiteId, emailAddress: string,
 
 
 function waitForUnsubscriptionLinkEmailedTo(siteId: SiteId, emailAddress: string, browser): string {
+  // COULD check wall clock time instead, so won't multiply with timeout in getLastEmailSenTo. (5JKWDSR9)
   for (let attemptNr = 1; attemptNr <= settings.waitforTimeout / 500; ++attemptNr) {
     const email = getLastEmailSenTo(siteId, emailAddress);
     const link = utils.findAnyFirstLinkToUrlIn(unsubUrlRegexString, email.bodyHtmlText);
@@ -193,6 +195,7 @@ function waitUntilLastEmailMatches(siteId: SiteId, emailAddress: string,
       _.isString(textOrTextsToMatch) ? [textOrTextsToMatch] : textOrTextsToMatch;
   const regexs = textsToMatch.map(text => new RegExp(utils.regexEscapeSlashes(text)));
   let failures: string[];
+  // COULD check wall clock time instead, so won't multiply with timeout in getLastEmailSenTo. (5JKWDSR9)
   for (let attemptNr = 1; attemptNr <= settings.waitforTimeout / 500; ++attemptNr) {
     const email = getLastEmailSenTo(siteId, emailAddress);
     failures = [];
