@@ -14,7 +14,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-const console = window.console || { log: function() {}};
+var console = window.console || { log: function() {}};
 console.log("iframe-parent: start");
 
 var d = { i: debiki.internal };

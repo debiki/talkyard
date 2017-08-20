@@ -91,7 +91,7 @@ class Globals {
   def isOrWasTestDisableScripts: Boolean = isOrWasTest && state.isTestDisableScripts
   def isOrWasTestDisableBackgroundJobs: Boolean = isOrWasTest && state.isTestDisableBackgroundJobs
 
-  def isInitialized: Boolean = _state ne null
+  def isInitialized: Boolean = (_state ne null) && _state.isGood
 
   @volatile private var _state: State Or Option[Exception] = _
 
@@ -467,7 +467,7 @@ class Globals {
 
   def now(): When = {
     val millisNow =
-      if (isProd && !mayFastForwardTime) System.currentTimeMillis()
+      if (!isInitialized || !mayFastForwardTime) System.currentTimeMillis()
       else {
         val millisStart = test.timeStartMillis getOrElse System.currentTimeMillis()
         millisStart + test.timeOffsetMillis
