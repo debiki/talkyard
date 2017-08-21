@@ -29,17 +29,17 @@ export let anyContinueAfterLoginCallback = null;
 
 
 export function loginIfNeededReturnToPost(
-      loginReason: LoginReason | string, postNr: PostNr, success: () => void) {
-  loginIfNeededReturnToAnchor('LoginToEdit', '#post-' + postNr, success);
+      loginReason: LoginReason | string, postNr: PostNr, success: () => void, willCompose?: boolean) {
+  loginIfNeededReturnToAnchor('LoginToEdit', '#post-' + postNr, success, willCompose);
 }
 
 
 export function loginIfNeededReturnToAnchor(
-      loginReason: LoginReason | string, anchor: string, success: () => void) {
+      loginReason: LoginReason | string, anchor: string, success: () => void, willCompose?: boolean) {
   const returnToUrl = makeReturnToPageHashForVerifEmail(anchor);
   const d = { i: debiki.internal };
   success = success || function() {};
-  if (ReactStore.getMe().isLoggedIn) {
+  if (ReactStore.getMe().isLoggedIn || (willCompose && ReactStore.mayComposeBeforeSignup())) {
     success();
   }
   else if (d.i.isInIframe) {

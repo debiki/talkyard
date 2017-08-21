@@ -77,13 +77,22 @@ export function loadMyself(afterwardsCallback?) {
   // deleted by the server.)
 
   Server.loadMyself((user) => {
-    ReactDispatcher.handleViewAction({
-      actionType: actionTypes.NewMyself,
-      user: user
-    });
+    if (d.i.isInIframe) {
+      // Tell the embedded-comments or embedded-editor iframe that we just logged in.
+      window.parent.postMessage(JSON.stringify(['justLoggedIn', user]), '*');
+    }
+    setNewMe(user);
     if (afterwardsCallback) {
       afterwardsCallback();
     }
+  });
+}
+
+
+export function setNewMe(user) {
+  ReactDispatcher.handleViewAction({
+    actionType: actionTypes.NewMyself,
+    user: user
   });
 }
 
@@ -104,6 +113,10 @@ export function logoutClientSideOnly() {
   ReactDispatcher.handleViewAction({
     actionType: actionTypes.Logout
   });
+  if (d.i.isInEmbeddedCommentsIframe) {
+    // Tell the editor iframe that we've logged out.
+    window.parent.postMessage(JSON.stringify(['logoutClientSideOnly', null]), '*');
+  }
   // Quick fix that reloads the admin page (if one views it) so the login dialog appears:
   location.reload();
 }

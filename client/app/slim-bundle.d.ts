@@ -122,9 +122,9 @@ declare namespace debiki2 {
     var anyContinueAfterLoginCallback;
     function continueAfterLogin(anyReturnToUrl?: string);
     function loginIfNeededReturnToAnchor(
-        loginReason: LoginReason | string, anchor: string, success: () => void);
+        loginReason: LoginReason | string, anchor: string, success: () => void, willCompose?: boolean);
     function loginIfNeededReturnToPost(
-        loginReason: LoginReason | string, postNr: PostNr, success: () => void);
+        loginReason: LoginReason | string, postNr: PostNr, success: () => void, willCompose?: boolean);
   }
 
   function reactGetRefRect(ref): Rect;

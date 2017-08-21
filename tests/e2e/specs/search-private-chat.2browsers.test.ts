@@ -66,7 +66,6 @@ describe("priv chat", () => {
     let site: SiteData = make.forumOwnedByOwen('search-priv-chat', { title: forumTitle });
     site.settings.allowGuestLogin = true;
     site.settings.requireVerifiedEmail = false;
-    site.settings.mayComposeBeforeSignup = true;
     site.settings.mayPostBeforeEmailVerified = true;
     site.members.push(alice);
     site.members.push(mallory);

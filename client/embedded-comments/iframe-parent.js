@@ -25,6 +25,7 @@ var embeddingUrl = window.location.origin + window.location.pathname + window.lo
 var discussionId;
 
 var theCommentsIframe;
+var theEditorIframe;
 
 addEventListener('message', onMessage, false);
 
@@ -100,7 +101,7 @@ if (commentsElems.length) {
   console.log("iframe-parent: inserted editorWrapper");
 
   var editorIframeUrl = serverOrigin + '/-/embedded-editor?' + allUrlParams;
-  var editorIframe = Bliss.create('iframe', {
+  theEditorIframe = Bliss.create('iframe', {
     id: 'ed-embedded-editor',
     style: {
       display: 'block', // otherwise 'inline' —> some blank space below, because of descender spacing?
@@ -114,7 +115,7 @@ if (commentsElems.length) {
     src: editorIframeUrl
   });
 
-  Bliss.inside(editorIframe, editorWrapper);
+  Bliss.inside(theEditorIframe, editorWrapper);
   console.log("iframe-parent: inserted editorIframe");
 
   // Editor placeholder, so the <iframe> won't occlude the lower parts of the page.
@@ -189,6 +190,25 @@ function onMessage(event) {
       debiki.Utterscroll.stopScrolling(eventData);
       break;
       */
+    case 'justLoggedIn':
+      var iframe = findIframeThatSent(event);
+      if (iframe === theCommentsIframe) {
+        sendToEditor(event.data);
+      }
+      else {
+        sendToComments(event.data);
+      }
+      break;
+    case 'logoutClientSideOnly':
+      var iframe = findIframeThatSent(event);
+      if (iframe === theCommentsIframe) {
+        sendToEditor(event.data);
+        showEditor(false);
+      }
+      else {
+        sendToComments(event.data);
+      }
+      break;
     case 'showEditor':
       showEditor(true);
       break;

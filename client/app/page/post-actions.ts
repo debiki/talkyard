@@ -145,7 +145,7 @@ export const PostActions = createComponent({
       else {
         debiki2.editor.toggleWriteReplyToPost(post.nr, newPostType);
       }
-    });
+    }, true);
   },
 
   onCloseClick: function() {

@@ -51,6 +51,13 @@ function onMessage(event) {
       d.i.altPageId = eventData.discussionId;
       addBaseElem(eventData);
       break;
+    case 'justLoggedIn':
+      debiki2.ReactActions.setNewMe(eventData);
+      break;
+    case 'logoutClientSideOnly':
+      // Sent from the comments iframe to the editor iframe, when one logs out in the comments iframe.
+      debiki2.ReactActions.logoutClientSideOnly();
+      break;
     case 'editorToggleReply':
       // This message is sent from an embedded comments page to the embedded editor.
       // It opens the editor to write a reply to `postId`.

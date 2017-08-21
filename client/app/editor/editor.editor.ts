@@ -640,22 +640,30 @@ export var Editor = createComponent({
   },
 
   saveStuff: function() {
-    if (page_isPrivateGroup(this.state.newPageRole)) {
-      this.startPrivateGroupTalk();
-    }
-    else if (this.state.newForumTopicCategoryId) {
-      this.saveNewForumPage();
-    }
-    else if (_.isNumber(this.state.editingPostId)) {
-      this.saveEdits();
-    }
-    else if (this.state.isWritingChatMessage) {
-      this.postChatMessage();
-    }
-    else {
-      // Probably replying to someone.
-      this.saveNewPost();
-    }
+    // Email verification shouldn't be needed immediately, checked by this constraint:
+    // settings3_compose_before_c. However, there's a RACE condition: a user clicks Reply,
+    // starts composing without having logged in, then an admin changes the settings
+    // to may-NOT-compose-before-logged-in, and then the user clicks Post Reply. Then,
+    // #dummy below might get used, but won't work.
+    debiki2.login.loginIfNeededReturnToAnchor(
+        LoginReason.SubmitEditorText, '#dummy-EdE2PBBYL0', () => {
+      if (page_isPrivateGroup(this.state.newPageRole)) {
+        this.startPrivateGroupTalk();
+      }
+      else if (this.state.newForumTopicCategoryId) {
+        this.saveNewForumPage();
+      }
+      else if (_.isNumber(this.state.editingPostId)) {
+        this.saveEdits();
+      }
+      else if (this.state.isWritingChatMessage) {
+        this.postChatMessage();
+      }
+      else {
+        // Probably replying to someone.
+        this.saveNewPost();
+      }
+    });
   },
 
   saveEdits: function() {

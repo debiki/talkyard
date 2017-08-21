@@ -524,6 +524,10 @@ ReactStore.isGuestLoginAllowed = function() {
   return store.settings.allowGuestLogin || false; // breaks in /-/login, need not fix now [5KUP02]
 };
 
+ReactStore.mayComposeBeforeSignup = function() {
+ return store.settings.mayComposeBeforeSignup;
+};
+
 ReactStore.getPageId = function() {
   return store.pageId;
 };

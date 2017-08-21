@@ -467,7 +467,7 @@ var ForumButtons = createComponent({
         // a collection to a defaultTopicType field; then this else {} can be deleted. [5YKW294]
         debiki2.editor.editNewForumPage(category.id, PageRole.Discussion);
       }
-    });
+    }, true);
   },
 
   slashCategorySlug: function() {

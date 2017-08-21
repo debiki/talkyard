@@ -169,9 +169,9 @@ export function openWikifyDialog(post: Post) {
 
 
 export function loginIfNeeded(loginReason: LoginReason | string,
-      anyReturnToUrl?: string, success?: () => void) {
+      anyReturnToUrl?: string, success?: () => void, willCompose?: boolean) {
   Server.loadMoreScriptsBundle(() => {
-    debiki2.login.loginIfNeeded(loginReason, anyReturnToUrl, success);
+    debiki2.login.loginIfNeeded(loginReason, anyReturnToUrl, success, willCompose);
   });
 }
 
