@@ -1,24 +1,31 @@
 EffectiveDiscussions
 =============================
 
-EffectiveDiscussions (ED) is a combined forum, chat and question-answers platform,
-inspired by Discourse, Slack and StackOverflow.
+EffectiveDiscussions (ED) is discussion forum software, with chat and question-answers features.
+And embedded comments for static websites / blogs.
+Inspired by Discourse, Slack, StackOverflow, Reddit and Hacker News.
 
 Screenshots below.<br>
 See it live: https://www.effectivediscussions.org/forum/latest<br>
 Read about it: https://www.effectivediscussions.org/
 
 Organizations often create a forum (e.g. Discourse) and a chat (Slack/Gitter/Discord),
-and use StackOverflow — then they split their community.
+and use StackOverflow, and maybe Disqus for embedded comments — then they split their community.
 With EffectiveDiscussions, you can gather your community in one place.<br>
-(You can use ED for your website too, if you know HTML & CSS well and have lots of patience.)
 
 ED gives you both traditional "flat-chat" comments (in chat topics),
-and Hacker News / Reddit style threaded comments, with some improvements.
+and Hacker News / Reddit style threaded comments, with improvements: you can quickly
+find the parent comment (even if it's far away), read it, and jump back and continue reading.
+And you can quickly find out which new comments were posted in a long threaded discussion,
+while you were away for lunch
+(you won't need to scan the whole page, top to bottom, to find them).
 
-Simple installation, if you know a bit about Docker. Automatic upgrades coming soon.
+Simple installation, if you know a bit about Docker. Automatic upgrades.
 One installation can host many sites.
 There's a hosted solution too, if you don't want to install it yourself. See the 'read about it' link above.
+
+Be prepared to report some problems and maybe missing features — this is beta software; there might be bugs.
+
 
 ### Screenshots
 
@@ -42,13 +49,6 @@ for you, if you create a forum:
 Users online:
 
 ![ed-online-users](https://cloud.githubusercontent.com/assets/7477359/19680424/f0353f86-9aa5-11e6-84d9-94d46f228b93.jpg)
-
-
-### Not totally ready
-
-Development stage: Between Alpha and Beta. Which means there might be security bugs —
-so don't use ED for anything top secret right now, at least not on a server accessible
-via the public internet.
 
 
 ### How install?
@@ -357,6 +357,10 @@ because in the past I did some mistakes, so it feels better to start over again
 from commit number 1. The old commit history is available here:
 https://github.com/debiki/debiki-server-old
 
+Think about that for a short while. 4300 old commits, + 1250 commits in this repo,
+and 33 GitHub stars. That likely means this repository currently (2017-08-22) has
+the lowest num-start / num-commits ratio ever seen here at GitHub? Also I
+ususally squash small commits.
 
 Credits
 -----------------------------
@@ -372,7 +376,7 @@ License
 Currently AGPL — please let me know if you want me to change to GPL, contact info here: https://www.effectivediscussions.org/contact
 
 
-    Copyright (c) 2010-2016  Kaj Magnus Lindberg
+    Copyright (c) 2010-2017  Kaj Magnus Lindberg
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU Affero General Public License as
