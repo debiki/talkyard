@@ -102,10 +102,17 @@ if [ "$build_exit_code" != '0' ]; then
   die_if_in_script
 fi
 
+echo 'Buid completed.'
+
 
 
 # Publish images to Docker repo
 # ----------------------
+
+echo 'Tag and publish to Docker? Press Enter to continue'
+
+read -s -p ''
+
 
 echo "Publishing to debiki/ed-*:$version_tag..."
 
