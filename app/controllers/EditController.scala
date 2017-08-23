@@ -20,27 +20,26 @@ package controllers
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki._
-import debiki.DebikiHttp._
+import debiki.EdHttp._
 import debiki.ReactJson.JsStringOrNull
 import debiki.onebox.Onebox
 import ed.server.http._
-import play.api._
-import play.api.libs.json._
-import play.api.mvc.{Action => _, _}
-import scala.concurrent.ExecutionContext.Implicits.global
-import Utils.parseIntOrThrowBadReq
+import ed.server.{EdContext, EdController}
 import ed.server.auth.Authz
+import javax.inject.Inject
+import play.api.mvc.ControllerComponents
+import play.api.libs.json._
+import EditController._
+import scala.concurrent.ExecutionContext
 
 
 /** Edits pages and posts.
   */
-object EditController extends mvc.Controller {
+class EditController @Inject()(cc: ControllerComponents, edContext: EdContext)
+  extends EdController(cc, edContext) {
 
-  val EmptyPostErrorMessage =
-    o"""Cannot save empty posts. If you want to delete this post, please click
-        More just below the post, and then Delete. However only the post author
-        and staff members can do this."""
-
+  import context.security.{throwNoUnless, throwIndistinguishableNotFound}
+  def execCtx: ExecutionContext = context.executionContext
 
   def loadDraftAndGuidelines(writingWhat: String, categoryId: Option[Int], pageRole: String) =
         GetAction { request =>
@@ -153,7 +152,7 @@ object EditController extends mvc.Controller {
   def onebox(url: String) = AsyncGetActionRateLimited(RateLimits.LoadOnebox) { request =>
     Onebox.loadRenderSanitize(url, javascriptEngine = None).transform(
       html => Ok(html),
-      throwable => ResultException(BadReqResult("DwE4PKE2", "Cannot onebox that link")))
+      throwable => ResultException(BadReqResult("DwE4PKE2", "Cannot onebox that link")))(execCtx)
   }
 
 
@@ -240,7 +239,15 @@ object EditController extends mvc.Controller {
         throwEntityTooLarge("DwE413IJ1", "Please do not upload that much text")
     }
   }
+}
 
+
+object EditController {
+
+  val EmptyPostErrorMessage =
+    o"""Cannot save empty posts. If you want to delete this post, please click
+        More just below the post, and then Delete. However only the post author
+        and staff members can do this."""
 
   val ReplyGuidelines = i"""
     |<p>Be kind to the others.

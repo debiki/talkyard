@@ -22,7 +22,7 @@ import com.debiki.core.Prelude._
 import play.api.libs.json._
 import scala.collection.immutable
 import ReactJson._
-import debiki.DebikiHttp.throwBadRequest
+import debiki.EdHttp.throwBadRequest
 
 
 

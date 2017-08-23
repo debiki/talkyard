@@ -20,7 +20,6 @@ package debiki.dao
 import akka.util.ByteString
 import com.debiki.core._
 import com.debiki.core.Prelude._
-import debiki.Globals
 import redis.RedisClient
 import redis.api.Limit
 import scala.concurrent._
@@ -29,11 +28,13 @@ import RedisCache._
 
 
 object RedisCache {
-  def forSite(siteId: SiteId, redisClient: RedisClient) = new RedisCache(siteId, redisClient)
-  def forAllSites(redisClient: RedisClient) = new RedisCacheAllSites(redisClient)
+  def forSite(siteId: SiteId, redisClient: RedisClient, now: () => When) =
+    new RedisCache(siteId, redisClient, now)
+
+  def forAllSites(redisClient: RedisClient, now: () => When) = new RedisCacheAllSites(redisClient, now)
 
   // Is 3 times faster than String.toInt, according to the parseInt() docs.
-  val parseInt: (ByteString) => Int = _root_.redis.protocol.ParseNumber.parseInt _
+  val parseInt: (ByteString) => Int = _root_.redis.protocol.ParseNumber.parseInt
 
   // Sometimes the request takes long, perhaps because of a Java GC pause? Or because of
   // some page being swapped to disk?
@@ -42,7 +43,7 @@ object RedisCache {
 
 
 
-class RedisCache(val siteId: SiteId, private val redis: RedisClient) {
+class RedisCache(val siteId: SiteId, private val redis: RedisClient, private val now: () => When) {
 
 
   def loadWatchbar(userId: UserId): Option[BareWatchbar] = {
@@ -63,13 +64,13 @@ class RedisCache(val siteId: SiteId, private val redis: RedisClient) {
 
   def markUserOnlineRemoveStranger(userId: UserId, browserIdData: BrowserIdData) {
     // Could do this in a transaction. Barely matters.
-    redis.zadd(usersOnlineKey(siteId), Globals.now().toDouble -> userId)
+    redis.zadd(usersOnlineKey(siteId), now().toDouble -> userId)
     redis.zrem(strangersOnlineByIpKey(siteId), browserIdData.ip)
   }
 
 
   def markUserOnline(userId: UserId) {
-    redis.zadd(usersOnlineKey(siteId), Globals.now().toDouble -> userId)
+    redis.zadd(usersOnlineKey(siteId), now().toDouble -> userId)
   }
 
 
@@ -96,7 +97,7 @@ class RedisCache(val siteId: SiteId, private val redis: RedisClient) {
   def markStrangerOnline(browserIdData: BrowserIdData) {
     // Could consider browser id cookie too (instead of just ip), but then take care
     // to avoid DoS attacks if someone generates 9^99 unique ids and requests.
-    redis.zadd(strangersOnlineByIpKey(siteId), Globals.now().toDouble -> browserIdData.ip)
+    redis.zadd(strangersOnlineByIpKey(siteId), now().toDouble -> browserIdData.ip)
   }
 
 
@@ -119,7 +120,7 @@ class RedisCache(val siteId: SiteId, private val redis: RedisClient) {
 
   def removeNoLongerOnlineUserIds(): collection.Set[UserId] = {
     // Could make the time set:table, for tests. But for now:
-    val aWhileAgo = Globals.now().minusMinutes(10).toDouble
+    val aWhileAgo = now().minusMinutes(10).toDouble
     val nowInactiveUserIdsFuture = redis.zrangebyscore(
       usersOnlineKey(siteId), Limit(0.0), Limit(aWhileAgo))
     val nowInactiveUserIds: Seq[UserId] =
@@ -160,7 +161,7 @@ class RedisCache(val siteId: SiteId, private val redis: RedisClient) {
 }
 
 
-class RedisCacheAllSites(redisClient: RedisClient) {
+class RedisCacheAllSites(redisClient: RedisClient, now: () => When) {
 
   def removeNoLongerOnlineUserIds(): collection.Map[SiteId, collection.Set[UserId]] = {
     COULD_OPTIMIZE // Redis.keys can be slow — but according to the docs, on a laptop,
@@ -177,7 +178,7 @@ class RedisCacheAllSites(redisClient: RedisClient) {
         case _: TimeoutException => die("EdEWQ0XU4", "Redis timeout")
       }
     val siteAndUserIds = siteIds map { id =>
-      id -> RedisCache.forSite(id, redisClient).removeNoLongerOnlineUserIds()
+      id -> RedisCache.forSite(id, redisClient, now).removeNoLongerOnlineUserIds()
     }
     siteAndUserIds.toMap
   }

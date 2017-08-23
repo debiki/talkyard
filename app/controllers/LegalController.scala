@@ -17,18 +17,17 @@
 
 package controllers
 
-import com.debiki.core._
-import com.debiki.core.Prelude._
 import debiki._
-import ed.server.http._
-import play.api.mvc
-import DebikiHttp._
+import ed.server.{EdContext, EdController}
+import javax.inject.Inject
+import play.api.mvc.ControllerComponents
 
 
 
 /** Handles per website terms-of-use and privacy-policy pages.
   */
-object LegalController extends mvc.Controller {
+class LegalController @Inject()(cc: ControllerComponents, edContext: EdContext)
+  extends EdController(cc, edContext) {
 
 
   def viewTermsOfUsePage() = GetAction { apiReq =>

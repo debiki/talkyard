@@ -18,11 +18,13 @@
 package controllers
 
 import com.debiki.core._
-import debiki._
-import debiki.DebikiHttp._
+import debiki.EdHttp._
+import ed.server.{EdContext, EdController}
 import ed.server.http._
-import play.api._
+import javax.inject.Inject
+import play.api.mvc.ControllerComponents
 import scala.util.matching.Regex
+import SiteAssetBundlesController._
 
 
 /**
@@ -33,8 +35,10 @@ import scala.util.matching.Regex
  * (So whenever the bundle contents changes, the URL also changes — and
  * we can ask the browser to cache forever. This is asset versioning.)
  */
-object SiteAssetBundlesController extends mvc.Controller {
+class SiteAssetBundlesController @Inject()(cc: ControllerComponents, edContext: EdContext)
+  extends EdController(cc, edContext) {
 
+  import context.globals
 
   /**
    * Serves asset bundles.
@@ -56,7 +60,7 @@ object SiteAssetBundlesController extends mvc.Controller {
 
 
   private def customAssetImpl(siteId: SiteId, fileName: String, request: DebikiRequest[_]) = {
-    val dao = Globals.siteDao(siteId)
+    val dao = globals.siteDao(siteId)
     // `fileName` is like: bundle-name.<version>.css.
     fileName match {
       case AssetBundleFileNameRegex(nameNoSuffix, _, suffix) =>
@@ -95,7 +99,10 @@ object SiteAssetBundlesController extends mvc.Controller {
         NotFoundResult("DwE93BY1", s"Not found: $fileName")
     }
   }
+}
 
+
+object SiteAssetBundlesController {
 
   /**
    * <bundle-name-no-suffix>.<suffix>.

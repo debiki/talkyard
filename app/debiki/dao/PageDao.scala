@@ -18,14 +18,14 @@
 package debiki.dao
 
 import com.debiki.core._
-import debiki.DebikiHttp._
-import java.{util => ju}
+import debiki.EdHttp.throwNotFound
 import scala.collection.immutable
 import Prelude._
 
 
 @deprecated("use SiteTransaction directly instead?", "now")
-case class PageDao(override val id: PageId, transaction: SiteTransaction) extends Page {
+case class PageDao(override val id: PageId, transaction: SiteTransaction)
+  extends Page {
 
   def sitePageId = SitePageId(transaction.siteId, id)
 
@@ -74,7 +74,8 @@ case class PageDao(override val id: PageId, transaction: SiteTransaction) extend
 case class NonExistingPage(
   override val siteId: SiteId,
   pageRole: PageRole,
-  anyCategoryId: Option[CategoryId]) extends Page {
+  anyCategoryId: Option[CategoryId],
+  now: When) extends Page {
 
   override def id: PageId = EmptyPageId
 
@@ -82,7 +83,7 @@ case class NonExistingPage(
     pageId = EmptyPageId,
     pageRole,
     authorId = SystemUserId,
-    creationDati = debiki.Globals.now().toJavaDate,
+    creationDati = now.toJavaDate,
     categoryId = anyCategoryId,
     publishDirectly = true)
 

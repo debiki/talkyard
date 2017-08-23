@@ -20,12 +20,13 @@ package controllers
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki._
-import debiki.DebikiHttp._
+import debiki.EdHttp._
+import ed.server.{EdContext, EdController}
 import ed.server.spam.SpamChecker.throwForbiddenIfSpam
 import ed.server.http._
 import javax.inject.Inject
 import play.api.libs.json._
-import play.api.mvc.{Action, Controller}
+import play.api.mvc.{Action, ControllerComponents}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util.Try
 
@@ -35,7 +36,11 @@ import scala.util.Try
   * Each new empty site remembers an admin email address. When the site creator later
   * logs in with that email address, s/he becomes admin for the site.
   */
-class CreateSiteController @Inject() extends Controller {
+class CreateSiteController @Inject()(cc: ControllerComponents, edContext: EdContext)
+  extends EdController(cc, edContext) {
+
+  import context.security._
+  import context.globals
 
   // Let people use hostnames that start with 'test-' — good to know which sites are
   // in fact just people's test sites.
@@ -50,12 +55,12 @@ class CreateSiteController @Inject() extends Controller {
     val isTestBool = Try(isTest.toBoolean).toOption getOrElse throwBadArgument("EsE5JUM2", "isTest")
     throwIfMayNotCreateSite(request, isTestBool)
 
-    val numSites = Globals.systemDao.countSites(isTestBool, request.theBrowserIdData)
-    if (numSites.byYou >= Globals.config.createSite.maxSitesPerPerson)
+    val numSites = globals.systemDao.countSites(isTestBool, request.theBrowserIdData)
+    if (numSites.byYou >= globals.config.createSite.maxSitesPerPerson)
       throwForbidden("EsE7KU20W", "You have created too many forums already, sorry.")
 
-    if (numSites.total >= Globals.config.createSite.maxSitesTotal) {
-      Globals.config.createSite.tooManyTryLaterPagePath match {
+    if (numSites.total >= globals.config.createSite.maxSitesTotal) {
+      globals.config.createSite.tooManyTryLaterPagePath match {
         case None =>
           throwForbidden("EsE8VK2F4", "People have created too many forums already, sorry.")
         case Some(path) =>
@@ -115,16 +120,16 @@ class CreateSiteController @Inject() extends Controller {
       case _ => throwBadArgument("EsE7YKW28", "pricePlan", "not 0, 1 or 2")
     }
 
-    Globals.spamChecker.detectRegistrationSpam(request, name = localHostname,
+    globals.spamChecker.detectRegistrationSpam(request, name = localHostname,
         email = emailAddress) map { isSpamReason =>
       throwForbiddenIfSpam(isSpamReason, "EdE4KG28")
 
-      val hostname = s"$localHostname.${Globals.baseDomainNoPort}"
+      val hostname = s"$localHostname.${globals.baseDomainNoPort}"
       val deleteOldSite = isTestSiteOkayToDelete && hostname.startsWith(SiteHost.E2eTestPrefix)
 
       val goToUrl: String =
         try {
-          debiki.Globals.systemDao.createSite(
+          globals.systemDao.createSite(
             name = localHostname, SiteStatus.NoAdmin, hostname = hostname,
             embeddingSiteUrl = anyEmbeddingSiteAddress, creatorEmailAddress = emailAddress,
             creatorId = request.user.map(_.id) getOrElse UnknownUserId,
@@ -132,7 +137,7 @@ class CreateSiteController @Inject() extends Controller {
             isTestSiteOkayToDelete = isTestSiteOkayToDelete, skipMaxSitesCheck = okE2ePassword,
             deleteOldSite = deleteOldSite, pricePlan = pricePlan,
             createdFromSiteId = Some(request.siteId))
-          Globals.originOf(hostname)
+          globals.originOf(hostname)
         }
         catch {
           case _: DbDao.SiteAlreadyExistsException =>
@@ -140,7 +145,7 @@ class CreateSiteController @Inject() extends Controller {
           case _: DbDao.TooManySitesCreatedByYouException =>
             throwForbidden("DwE7IJ08", "You have created too many sites already, sorry.")
           case DbDao.TooManySitesCreatedInTotalException =>
-            Globals.config.createSite.tooManyTryLaterPagePath match {
+            globals.config.createSite.tooManyTryLaterPagePath match {
               case None =>
                 throwForbidden("EsE3YK5U8", "People have created too many forums already, sorry.")
               case Some(path) =>
@@ -157,12 +162,12 @@ class CreateSiteController @Inject() extends Controller {
   private def throwIfMayNotCreateSite(request: DebikiRequest[_], isTest: Boolean) {
     import ed.server.Whatever
     if (isTest && (
-        Globals.anyCreateTestSiteHostname.contains(Whatever) ||
-        Globals.anyCreateTestSiteHostname.contains(request.hostname))) {
+        globals.anyCreateTestSiteHostname.contains(Whatever) ||
+        globals.anyCreateTestSiteHostname.contains(request.hostname))) {
       // We're creating a test site with a test address, fine.
       return
     }
-    Globals.anyCreateSiteHostname match {
+    globals.anyCreateSiteHostname match {
       case None =>
         throwForbidden("DwE4KEGG0", "This server is not configured to allow creation of new sites")
       case Some(createSiteHostname) =>

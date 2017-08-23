@@ -19,7 +19,7 @@ import play.api._
 
 
 /** Delegates to debiki.Globals.
-  */
+
 object Global extends GlobalSettings {
 
   override def onStart(app: Application) {
@@ -33,4 +33,4 @@ object Global extends GlobalSettings {
 
 }
 
-
+  */

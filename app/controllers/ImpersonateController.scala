@@ -19,12 +19,13 @@ package controllers
 
 import com.debiki.core._
 import com.debiki.core.Prelude._
-import debiki.DebikiHttp._
-import debiki.Globals
-import ed.server.security.createSessionIdAndXsrfToken
+import debiki.EdHttp._
+import ed.server.{EdContext, EdController}
 import ed.server.http._
+import javax.inject.Inject
 import play.api._
 import play.api.libs.json.JsString
+import play.api.mvc.ControllerComponents
 import redis.RedisClient
 import scala.concurrent.Await
 import scala.concurrent.duration._
@@ -36,7 +37,12 @@ import scala.concurrent.duration._
   * And 2) lets staff view the site, in read-only mode, as strangers, guests, normal members,
   * or member of some group. Only partly implemented (2017-01).
   */
-object ImpersonateController extends mvc.Controller {
+class ImpersonateController @Inject()(cc: ControllerComponents, edContext: EdContext,
+    LoginController: LoginController)
+  extends EdController(cc, edContext) {
+
+  import context.globals
+  import context.security._
 
   val MaxBecomeOldUserSeconds = 3600
   val MaxKeyAgeSeconds = 3600
@@ -47,7 +53,7 @@ object ImpersonateController extends mvc.Controller {
   private val ViewAsGroupOnly = "VAO"
   private val ImpersonateRealUser = "IRU"
 
-  private def redis: RedisClient = Globals.redisClient
+  private def redis: RedisClient = globals.redisClient
   val RedisTimeout = 5 seconds
 
 
@@ -55,7 +61,7 @@ object ImpersonateController extends mvc.Controller {
     val secretKey = nextRandomString()
     val value = s"$siteId$FieldSeparator$userId"
     Await.ready(redis.set(secretKey, value, exSeconds = Some(MaxKeyAgeSeconds)), RedisTimeout)
-    val origin = Globals.siteByIdOrigin(siteId)
+    val origin = globals.siteByIdOrigin(siteId)
     val pathAndQuery = routes.ImpersonateController.impersonateWithKey(secretKey).url
     OkSafeJson(JsString(origin + pathAndQuery))
   }
@@ -131,7 +137,7 @@ object ImpersonateController extends mvc.Controller {
     }
 
     val logoutCookie =
-      if (anyUserId.isEmpty) Seq(LoginController.DiscardingSessionCookie)
+      if (anyUserId.isEmpty) Seq(DiscardingSessionCookie)
       else Nil
 
     val impCookie = makeImpersonationCookie(request.siteId, viewAsOnly, request.theUserId)
@@ -149,7 +155,7 @@ object ImpersonateController extends mvc.Controller {
   private def makeImpersonationCookie(siteId: SiteId, viewAsGroupOnly: Boolean,
       currentUserId: UserId) = {
     val randomString = nextRandomString()
-    val unixSeconds = Globals.now().numSeconds
+    val unixSeconds = globals.now().numSeconds
     val cookieValue = concatAndHash(currentUserId, viewAsGroupOnly = viewAsGroupOnly,
       unixSeconds, randomString)
     val impersonatingCookie = SecureCookie(name = ImpersonationCookieName,
@@ -183,7 +189,7 @@ object ImpersonateController extends mvc.Controller {
     val CFS = FieldSeparator
     val viewOnlyString = viewAsGroupOnly ? ViewAsGroupOnly | ImpersonateRealUser
     val toHash = s"$userId$CFS$viewOnlyString$CFS$unixSeconds$CFS$randomString"
-    val theHash = hashSha1Base64UrlSafe(toHash + CFS + Globals.applicationSecret)
+    val theHash = hashSha1Base64UrlSafe(toHash + CFS + globals.applicationSecret)
     s"$toHash$CFS$theHash"
   }
 
@@ -206,7 +212,7 @@ object ImpersonateController extends mvc.Controller {
     if (value != correctCookieValue)
       throwForbidden("EsE6YKP2", s"Bad hash")
 
-    val ageSeconds = Globals.now().numSeconds - unixSeconds
+    val ageSeconds = globals.now().numSeconds - unixSeconds
     (ageSeconds, oldUserId)
   }
 

@@ -19,12 +19,11 @@ package debiki
 
 import com.debiki.core._
 import com.debiki.core.Prelude._
-import debiki.DebikiHttp._
+import debiki.EdHttp.throwBadRequest
 import java.awt.image.BufferedImage
 import java.{io => jio}
 import javax.imageio.{IIOImage, ImageWriteParam, ImageWriter, ImageIO}
 import javax.imageio.stream.FileImageOutputStream
-import play.{api => p}
 
 
 /** COULD instead compress client side. And only verify server side that compression level > X

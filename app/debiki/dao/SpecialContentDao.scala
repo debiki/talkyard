@@ -20,7 +20,7 @@ package debiki.dao
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki._
-import debiki.DebikiHttp._
+import debiki.EdHttp._
 import SpecialContentPages._
 
 
@@ -33,6 +33,8 @@ import SpecialContentPages._
   */
 trait SpecialContentDao {
   self: SiteDao =>
+
+
 
   memCache.onPageSaved { sitePageId =>
     // if page id == some special content page id, uncache it.

@@ -19,9 +19,9 @@ package debiki.dao
 
 import com.debiki.core._
 import com.debiki.core.Prelude._
+import debiki.EdHttp.throwForbidden
 import ed.server.notf.NotificationGenerator
 import ed.server.pubsub
-import debiki.DebikiHttp.throwForbidden
 import debiki.TextAndHtml
 
 

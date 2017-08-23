@@ -20,7 +20,7 @@
   isInLoginWindow: Boolean,
   reactStoreSafeJsonString: String, minMaxJs: String, minMaxCss: String)
 
-@import play.api.Play.current
+@import tpi.globals
 @import com.debiki.core.PageRole.InfoPageMaxId
 @import org.owasp.encoder.Encode
 
@@ -148,11 +148,11 @@ var debiki = {
   siteId: '@siteId',
   currentVersion: '@tpi.currentVersionString',
   cachedVersion: '@tpi.cachedVersionString',
-  secure: @{debiki.Globals.secure},
+  secure: @{globals.secure},
   pageDataFromServer: _store,
   volatileDataFromServer: _volatileData,
   getPageId: function() { return @Html(pageIdQuotedOrUndefined); },
-  isDev: @{ if (play.api.Play.isDev) "true" else "false" },
+  isDev: @{ if (globals.isDev) "true" else "false" },
   v0: { util: {} },@* CLEAN_UP remove v0.util *@
   internal: {
     minMaxJs: '@minMaxJs',

@@ -18,22 +18,12 @@
 package ed
 
 import com.debiki.core._
-import debiki.DebikiHttp.throwBadArgument
 import play.api.libs.json._
 
 
 package object server {
 
   val Whatever = "*"
-
-  implicit class GetOrThrowBadArgument[A](val underlying: Option[A]) {
-    def getOrThrowBadArgument(errorCode: String, parameterName: String, message: => String = "")
-          : A = {
-      underlying getOrElse {
-        throwBadArgument(errorCode, parameterName, message)
-      }
-    }
-  }
 
 
   /** @param html Html for the whole page.

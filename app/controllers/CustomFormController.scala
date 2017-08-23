@@ -20,20 +20,22 @@ package controllers
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki._
-import debiki.DebikiHttp._
+import debiki.EdHttp._
 import ed.server._
 import ed.server.auth.Authz
 import ed.server.http._
+import javax.inject.Inject
 import play.api.libs.json.{JsArray, JsValue, Json}
-import play.api.mvc
-import play.api.mvc.Action
+import play.api.mvc._
 
 
 /** Saves a {{{<form>}}} as either 1) a new reply, in JSON (for the db) + Yaml (for presentation),
   * or as 2) a new topic — then in title + human friendly body.
   */
-object CustomFormController extends mvc.Controller {
+class CustomFormController @Inject()(cc: ControllerComponents, edContext: EdContext)
+  extends EdController(cc, edContext) {
 
+  import context.security.{throwIndistinguishableNotFound, throwNoUnless}
 
   def handleJsonReply: Action[JsValue] = PostJsonAction(
         RateLimits.PostReply, maxBytes = MaxPostSize) { request =>

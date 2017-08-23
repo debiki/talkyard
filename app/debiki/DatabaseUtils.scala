@@ -23,8 +23,8 @@ object DatabaseUtils {
   def isConnectionClosed(exception: java.sql.SQLException) =
     exception.getMessage.endsWith("has been closed.")
 
-  def isConnectionClosedBecauseTestsDone(exception: java.sql.SQLException) =
-    isConnectionClosed(exception) && Globals.testsDoneServerGone
+  def isConnectionClosedBecauseTestsDone(exception: java.sql.SQLException, globals: Globals) =
+    isConnectionClosed(exception) && globals.testsDoneServerGone
 
 }
 

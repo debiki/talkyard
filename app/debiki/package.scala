@@ -15,12 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-import play.api.libs.json.JsBoolean
-
 
 package object debiki {
-
-  val JsFalse = JsBoolean(value = false)
-  val JsTrue = JsBoolean(value = true)
 
 }

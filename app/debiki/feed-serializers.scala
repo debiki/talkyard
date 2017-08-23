@@ -22,7 +22,6 @@ import java.{util => ju, io => jio}
 import scala.collection.JavaConversions._
 import _root_.scala.xml.{NodeSeq, Node, Elem, Text, XML, Attribute}
 import Prelude._
-import DebikiHttp._
 
 /* Disabled. Uses old deleted PageParts.
 

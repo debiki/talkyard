@@ -20,16 +20,13 @@ package controllers
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki._
-import debiki.DebikiHttp.throwForbidden
+import debiki.EdHttp._
 import debiki.ReactJson.{DateEpochOrNull, JsNumberOrNull, JsUser}
 import debiki.dao.SiteDao
 import ed.server._
-import ed.server.security.createSessionIdAndXsrfToken
-import ed.server.http._
-import java.{util => ju}
-import play.api.mvc
+import javax.inject.Inject
 import play.api.libs.json._
-import play.api.mvc.{Action => _, _}
+import play.api.mvc._
 
 
 /** Invites new users to join the site.
@@ -42,10 +39,14 @@ import play.api.mvc.{Action => _, _}
   * before logging in the next time. And, if it's a Gmail address, that she can login
   * via Gmail (not yet implemented, not yet possible, though (May 2015)).
   */
-object InviteController extends mvc.Controller {
+class InviteController @Inject()(cc: ControllerComponents, edContext: EdContext)
+  extends EdController(cc, edContext) {
+
+  import context.globals
+  import context.security.createSessionIdAndXsrfToken
 
 
-  def sendInvite = PostJsonAction(RateLimits.SendInvite, maxBytes = 200) {
+  def sendInvite: Action[JsValue] = PostJsonAction(RateLimits.SendInvite, maxBytes = 200) {
         request =>
     val toEmailAddress = (request.body \ "toEmailAddress").as[String].trim
 
@@ -73,10 +74,10 @@ object InviteController extends mvc.Controller {
       secretKey = nextRandomString(),
       emailAddress = toEmailAddress,
       createdById = request.theUserId,
-      createdAt = Globals.now().toJavaDate)
+      createdAt = globals.now().toJavaDate)
 
     val email = makeInvitationEmail(invite, request.theMember, request.host)
-    debiki.Globals.sendEmail(email, request.siteId)
+    globals.sendEmail(email, request.siteId)
     try {
       request.dao.insertInvite(invite)
     }
@@ -99,11 +100,11 @@ object InviteController extends mvc.Controller {
       // Could try to ensure this happens also if the server crashes here? [retry-after-crash]
       val welcomeEmail = makeWelcomeSetPasswordEmail(newUser, request.host)
       request.dao.saveUnsentEmail(welcomeEmail) // COULD (should?) mark as sent, how?
-      debiki.Globals.sendEmail(welcomeEmail, request.siteId)
+      globals.sendEmail(welcomeEmail, request.siteId)
 
       val inviter = request.dao.getUser(invite.createdById) getOrDie "DwE4KDEP0"
       val inviteAcceptedEmail = makeYourInviteWasAcceptedEmail(request.host, newUser, inviter)
-      debiki.Globals.sendEmail(inviteAcceptedEmail, request.siteId)
+      globals.sendEmail(inviteAcceptedEmail, request.siteId)
       // COULD create a notification instead / too.
     }
 
@@ -162,10 +163,10 @@ object InviteController extends mvc.Controller {
   private def makeInvitationEmail(invite: Invite, inviter: Member, siteHostname: String): Email = {
     val emailBody = views.html.invite.inviteEmail(
       inviterName = inviter.usernameParensFullName,
-      siteHostname = siteHostname, secretKey = invite.secretKey).body
+      siteHostname = siteHostname, secretKey = invite.secretKey, globals).body
     Email(
       EmailType.Invite,
-      createdAt = Globals.now(),
+      createdAt = globals.now(),
       sendTo = invite.emailAddress,
       toUserId = None,
       subject = s"Invitation to $siteHostname",
@@ -176,19 +177,20 @@ object InviteController extends mvc.Controller {
   private def makeWelcomeSetPasswordEmail(newUser: MemberInclDetails, siteHostname: String) = {
     Email(
       EmailType.InvitePassword,
-      createdAt = Globals.now(),
+      createdAt = globals.now(),
       sendTo = newUser.emailAddress,
       toUserId = Some(newUser.id),
       subject = s"[$siteHostname] Welcome! Account created",
       bodyHtmlText = (emailId) => views.html.invite.welcomeSetPasswordEmail(
-      siteHostname = siteHostname, emailId = emailId).body)
+      siteHostname = siteHostname, emailId = emailId, globals).body)
   }
 
 
-  def makeYourInviteWasAcceptedEmail(siteHostname: String, newUser: MemberInclDetails, inviter: User) = {
+  def makeYourInviteWasAcceptedEmail(siteHostname: String, newUser: MemberInclDetails, inviter: User)
+        : Email = {
     Email(
       EmailType.InviteAccepted,
-      createdAt = Globals.now(),
+      createdAt = globals.now(),
       sendTo = inviter.email,
       toUserId = Some(inviter.id),
       subject = s"[$siteHostname] Your invitation for ${newUser.emailAddress} to join was accepted",

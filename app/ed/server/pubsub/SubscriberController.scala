@@ -19,18 +19,21 @@ package ed.server.pubsub
 
 import com.debiki.core._
 import com.debiki.core.Prelude._
-import debiki.DebikiHttp._
+import debiki.EdHttp._
 import debiki._
+import ed.server.{EdContext, EdController}
 import ed.server.http._
-import play.api._
+import javax.inject.Inject
 import play.api.libs.json.Json
-import play.api.mvc.Action
+import play.api.mvc.{Action, ControllerComponents}
 
 
 /** Authorizes and subscribes a user to pubsub messages.
   */
-object SubscriberController extends mvc.Controller {
+class SubscriberController @Inject()(cc: ControllerComponents, edContext: EdContext)
+  extends EdController(cc, edContext) {
 
+  import context.globals
 
   /** This request is sent by Nchan to the app server's ip address so we don't know which site
     * it concerns (because the normal functionality that looks at the hostname doesn't work,
@@ -96,7 +99,7 @@ object SubscriberController extends mvc.Controller {
 
     RACE // fairly harmless though. If the user updates the watchbar vi another browser tab right now.
     val watchbar: BareWatchbar = request.dao.getOrCreateWatchbar(request.theUser.id)
-    Globals.pubSub.userSubscribed(request.siteId, request.theUser, request.theBrowserIdData,
+    globals.pubSub.userSubscribed(request.siteId, request.theUser, request.theBrowserIdData,
       watchbar.watchedPageIds)
     Ok
   }
@@ -114,7 +117,7 @@ object SubscriberController extends mvc.Controller {
 
   private def lookupSiteId(host: String): SiteId = {
     COULD // use a cache. hostname --> site id won't change
-    val siteId = Globals.systemDao.lookupCanonicalHost(host) match {
+    val siteId = globals.systemDao.lookupCanonicalHost(host) match {
       case Some(result) =>
         if (result.thisHost == result.canonicalHost)
           result.siteId

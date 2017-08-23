@@ -33,7 +33,7 @@ import scala.collection.mutable
   */
 object DeadlockDetector {
 
-  private val IntervalSeconds = if (Play.isProd) 60 else 10
+  private val IntervalSeconds = 60 // if (Play.isProd) 60 else 10
 
   private val threadMxBean = ManagementFactory.getThreadMXBean
 

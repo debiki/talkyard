@@ -19,18 +19,19 @@ package debiki.dao
 
 import com.debiki.core._
 import com.debiki.core.Prelude._
+import debiki.EdHttp.{throwForbidden, throwForbiddenIf}
 import debiki.ReactJson
-import ed.server.http._
 import ed.server.notf.NotificationGenerator
 import ed.server.pubsub.StorePatchMessage
 import play.api.libs.json.JsValue
 import TagsDao._
+import scala.util.matching.Regex
 
 
 object TagsDao {
   val MaxNumTags = 200
   val MaxTagLength = 100
-  val OkLabelRegex = """^[^\s,;|'"<>]+$""".r  // sync with SQL [7JES4R3]
+  val OkLabelRegex: Regex = """^[^\s,;|'"<>]+$""".r  // sync with SQL [7JES4R3]
 }
 
 
@@ -58,13 +59,13 @@ trait TagsDao {
         : JsValue = {
 
     if (tags.size > MaxNumTags) {
-      throwForbidden2("EsE5KG0F3", s"Too many tags: ${tags.size}, max is $MaxNumTags")
+      throwForbidden("EsE5KG0F3", s"Too many tags: ${tags.size}, max is $MaxNumTags")
     }
     tags.find(_.length > MaxTagLength) foreach { tooLongTag =>
-      throwForbidden2("EsE7KPU4R2", s"Tag label too long: '$tooLongTag'")
+      throwForbidden("EsE7KPU4R2", s"Tag label too long: '$tooLongTag'")
     }
     tags.find(tag => !tag.matches(OkLabelRegex)) foreach { badLabel =>
-      throwForbidden2("EsE4GE8I2", s"Bad tag label: '$badLabel'")
+      throwForbidden("EsE4GE8I2", s"Bad tag label: '$badLabel'")
     }
 
     val (post, notifications, postAuthor) = readWriteTransaction { transaction =>
@@ -118,7 +119,7 @@ trait TagsDao {
     readWriteTransaction { transaction =>
       val me = transaction.loadTheMember(byWho.id)
       if (me.id != userId && !me.isStaff)
-        throwForbidden2("EsE4GK9F7", "You may not change someone else's notification settings")
+        throwForbidden("EsE4GK9F7", "You may not change someone else's notification settings")
 
       transaction.setTagNotfLevel(userId, tagLabel, notfLevel)
     }
@@ -129,7 +130,7 @@ trait TagsDao {
     readOnlyTransaction { transaction =>
       val me = transaction.loadTheMember(byWho.id)
       if (me.id != userId && !me.isStaff)
-        throwForbidden2("EsE8YHKP03", "You may not see someone else's notification settings")
+        throwForbidden("EsE8YHKP03", "You may not see someone else's notification settings")
 
       transaction.loadTagNotfLevels(userId)
     }

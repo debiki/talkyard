@@ -20,8 +20,8 @@ package debiki.dao
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import com.google.{common => guava}
-import debiki.DebikiHttp._
 import debiki.Globals
+import debiki.EdHttp._
 import java.{io => jio, util => ju}
 import java.awt.image.BufferedImage
 import java.nio.{file => jf}
@@ -29,8 +29,8 @@ import java.nio.file.{attribute => jfa}
 import debiki.{ImageUtils, ReactRenderer}
 import org.jsoup.Jsoup
 import play.{api => p}
-import play.api.Play
 import UploadsDao._
+
 
 import scala.collection.mutable.ArrayBuffer
 
@@ -40,6 +40,8 @@ import scala.collection.mutable.ArrayBuffer
 trait UploadsDao {
   self: SiteDao =>
 
+  import context.globals
+  private def uploadsUrlPath = globals.config.uploadsUrlPath
 
   /** Returns the hash-path-suffix to the file after it has been copied into the uploads
     * directory, or CDN. E.g. returns "x/y/zwq...abc.jpg" where "xyzwq...abc" is the hash.
@@ -50,9 +52,10 @@ trait UploadsDao {
   def addUploadedFile(uploadedFileName: String, tempFile: jio.File, uploadedById: UserId,
         browserIdData: BrowserIdData): UploadRef = {
 
-    import Globals.{LocalhostUploadsDirConfigValueName, maxUploadSizeBytes, uploadsUrlPath}
+    import Globals.LocalhostUploadsDirConfigValueName
+    def maxUploadSizeBytes = globals.maxUploadSizeBytes
 
-    val publicUploadsDir = Globals.anyPublicUploadsDir getOrElse throwForbidden(
+    val publicUploadsDir = globals.anyPublicUploadsDir getOrElse throwForbidden(
       "DwE5KFY9", "File uploads disabled, config value missing: " +
         LocalhostUploadsDirConfigValueName)
 
@@ -177,6 +180,15 @@ trait UploadsDao {
       case ".jpeg" => ".jpg"
       case _ => dotSuffix
     }
+  }
+
+
+  def findUploadRefsInPost(post: Post): Set[UploadRef] = {
+    val approvedRefs = post.approvedHtmlSanitized.map(
+      h => findUploadRefsInText(h, uploadsUrlPath)) getOrElse Set.empty
+    val currentRefs = findUploadRefsInText(
+      post.currentHtmlSanitizedToFindLinks(ReactRenderer), uploadsUrlPath)
+    approvedRefs ++ currentRefs
   }
 
 
@@ -319,7 +331,7 @@ object UploadsDao {
   }
 
 
-  def findUploadRefsInText(html: String): Set[UploadRef] = {
+  private def findUploadRefsInText(html: String, uploadsUrlPath: String): Set[UploadRef] = {
     // COULD reuse TextAndHtml — it also finds links
     TESTS_MISSING
     val document = Jsoup.parse(html)
@@ -353,7 +365,7 @@ object UploadsDao {
               return
           }
         }
-      import Globals.uploadsUrlPath
+
       if (urlPath startsWith uploadsUrlPath) {
         val hashPathSuffix = urlPath drop uploadsUrlPath.length
         if (OldHashPathSuffixRegex.matches(hashPathSuffix) ||
@@ -374,13 +386,6 @@ object UploadsDao {
     }
 
     references.toSet
-  }
-
-
-  def findUploadRefsInPost(post: Post): Set[UploadRef] = {
-    val approvedRefs = post.approvedHtmlSanitized.map(findUploadRefsInText) getOrElse Set.empty
-    val currentRefs = findUploadRefsInText(post.currentHtmlSanitizedToFindLinks(ReactRenderer))
-    approvedRefs ++ currentRefs
   }
 
 

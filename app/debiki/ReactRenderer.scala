@@ -90,7 +90,7 @@ object ReactRenderer extends com.debiki.core.CommonMarkRenderer {
   // Evaluating zxcvbn.min.js (a Javascript password strength check library) takes almost
   // a minute in dev mode. So enable server side password strength checks in prod mode only.
   // COULD run auto test suite on prod build too so server side pwd strength checks gets tested.
-  private val passwordStrengthCheckEnabled = Play.isProd && false // disable for now, toooooo slow
+  private val passwordStrengthCheckEnabled = false // Globals.isProd — no, disable for now, toooooo slow
 
   /** Bug: Apparently this reloads the Javascript code, but won't reload Java/Scala code
     * called from inside the JS code. This results in weird impossible things like
@@ -113,8 +113,8 @@ object ReactRenderer extends com.debiki.core.CommonMarkRenderer {
     if (isTestSoDisableScripts)
       return
     if (!javascriptEngines.isEmpty) {
-      dieIf(!Play.isTest, "DwE50KFE2")
-      // We've restarted the server as part of the tests? but this object lingers? Fine.
+      dieIf(Globals.isProd, "DwE50KFE2")
+      // We've restarted the server as part of some tests? but this object lingers? Fine.
       return
     }
 
@@ -162,7 +162,7 @@ object ReactRenderer extends com.debiki.core.CommonMarkRenderer {
     catch {
       case throwable: Throwable =>
         if (Play.maybeApplication.isEmpty || throwable.isInstanceOf[Globals.NoStateError]) {
-          if (Globals.isOrWasTest) {
+          if (!Globals.isProd) {
             logger.debug("Server gone, tests done? Cancelling script engine creation. [EsM6MK4]")
           }
           else {
@@ -377,7 +377,7 @@ object ReactRenderer extends com.debiki.core.CommonMarkRenderer {
         |}
         |""")
 
-    val min = if (Play.isDev) "" else ".min"
+    val min = ".min"  // change to "" if need to debug
 
     var javascriptStream: jio.InputStream = null
     try {
@@ -414,7 +414,7 @@ object ReactRenderer extends com.debiki.core.CommonMarkRenderer {
 
     // Output the script so we can lookup line numbers if there's an error.
     val script = scriptBuilder.toString()
-    if (!Play.isProd) {
+    if (!Globals.isProd) {
       val where = "target/nashorn-ok-delete.js"
       logger.debug(o"""... Here's the server side Javascript: $where""")
       new jio.PrintWriter(where) {

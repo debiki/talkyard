@@ -17,8 +17,7 @@
 
 import com.debiki.core.QuickMessageException
 import com.debiki.core.Prelude._
-import play.api.Play
-import play.api.Play.current
+import debiki.Globals
 import play.api.libs.json.JsValue
 
 
@@ -35,7 +34,7 @@ package object controllers {
     * "invisible" 404 script-not-found errors in the dev console.
     */
   def dieIfAssetsMissingIfDevTest() {
-    if (Play.isProd) return
+    if (Globals.isProd) return
 
     val serverJavascriptPath = "/public/res/server-bundle.js"
     val clientJavascriptPath = "/public/res/slim-bundle.js"

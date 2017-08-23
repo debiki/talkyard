@@ -26,8 +26,8 @@ import com.debiki.core.Prelude._
 import com.debiki.dao.rdb.{Rdb, RdbDaoFactory}
 import com.github.benmanes.caffeine
 import com.zaxxer.hikari.HikariDataSource
-import debiki.DebikiHttp.throwForbidden
 import debiki.Globals.NoStateError
+import debiki.EdHttp._
 import ed.server.spam.{SpamCheckActor, SpamChecker}
 import debiki.dao._
 import debiki.dao.migrations.ScalaBasedMigrations
@@ -39,20 +39,20 @@ import ed.server.pubsub.{PubSub, PubSubApi, StrangerCounterApi}
 import org.{elasticsearch => es}
 import org.scalactic._
 import play.{api => p}
-import play.api.libs.concurrent.Akka
 import play.api.Play
-import play.api.Play.current
 import redis.RedisClient
 import scala.collection.immutable
 import scala.concurrent.duration._
 import scala.concurrent.{Await, Future, TimeoutException}
-import scala.concurrent.ExecutionContext.Implicits.global
+// import scala.concurrent.ExecutionContext.Implicits.global  CLEAN_UP remove all these everywhere
 import scala.util.matching.Regex
 import Globals._
-import com.github.benmanes.caffeine.cache.Cache
+import ed.server.EdContext
+import ed.server.http.GetRequest
+import play.api.mvc.RequestHeader
 
 
-object Globals extends Globals {
+object Globals {
 
   class NoStateError extends AssertionError(
     "No Globals.State created, please call onServerStartup() [DwE5NOS0]")
@@ -67,6 +67,19 @@ object Globals extends Globals {
   val FirstSiteHostnameConfigValue = "ed.hostname"
   val BecomeOwnerEmailConfigValue = "ed.becomeOwnerEmailAddress"
 
+  def isProd: Boolean = _isProd
+
+  /** One never changes from Prod to Dev or Test, or from Dev or Test to Prod, so we can safely
+    * remember isProd, forever. (However, is-Dev and is-Test might change, depending on which
+    * commands one types in the cli.)
+    */
+  def setIsProdForever(isIt: Boolean) {
+    dieIf(hasSet && isIt != _isProd, "EdE2PWVU07")
+    _isProd = isIt
+  }
+
+  private var _isProd = true
+  private var hasSet = false
 }
 
 
@@ -76,14 +89,28 @@ object Globals extends Globals {
   *
   * It's a class, so it can be tweaked during unit testing.
   */
-class Globals {
+class Globals(
+  private val appLoaderContext: p.ApplicationLoader.Context,
+  implicit val executionContext: scala.concurrent.ExecutionContext,
+  val actorSystem: ActorSystem) {
 
-  private def conf = Play.current.configuration
+  def outer: Globals = this
+
+  def setEdContext(edContext: EdContext) {
+    dieIf(edContext ne null, "EdE7UBR10")
+    this.edContext = edContext
+  }
+
+  var edContext: EdContext = _
+
+  val conf: p.Configuration = appLoaderContext.initialConfiguration
+  def rawConf: p.Configuration = conf
 
   /** Can be accessed also after the test is done and Play.maybeApplication is None.
     */
-  lazy val isOrWasTest: Boolean = Play.current.mode == play.api.Mode.Test
-  lazy val isProd: Boolean = Play.current.mode == play.api.Mode.Prod
+  lazy val isDev: Boolean = appLoaderContext.environment.mode == play.api.Mode.Dev
+  lazy val isOrWasTest: Boolean = appLoaderContext.environment.mode == play.api.Mode.Test
+  lazy val isProd: Boolean = Globals.isProd
 
   def testsDoneServerGone: Boolean =
     isOrWasTest && (!isInitialized || Play.maybeApplication.isEmpty)
@@ -232,6 +259,9 @@ class Globals {
   }
   def originOf(request: p.mvc.Request[_]): String = s"$scheme://${request.host}"
 
+  def originOf(request: GetRequest): String =
+    originOf(request.underlying)
+
 
   def baseDomainWithPort: String = state.baseDomainWithPort
   def baseDomainNoPort: String = state.baseDomainNoPort
@@ -263,13 +293,95 @@ class Globals {
   def maxUploadSizeBytes: Int = state.maxUploadSizeBytes
   def anyUploadsDir: Option[String] = state.anyUploadsDir
   def anyPublicUploadsDir: Option[String] = state.anyPublicUploadsDir
-  val uploadsUrlPath: String = controllers.routes.UploadsController.servePublicFile("").url
 
   def pubSub: PubSubApi = state.pubSub
   def strangerCounter: StrangerCounterApi = state.strangerCounter
 
 
-  def onServerStartup(app: p.Application) {
+  /** Looks up a site by hostname, or directly by id.
+    *
+    * By id: If a HTTP request specifies a hostname like "site-<id>.<baseDomain>",
+    * for example:  site-123.debiki.com,
+    * then the site is looked up directly by id. This is useful for embedded
+    * comment sites, since their address isn't important, and if we always access
+    * them via site id, we don't need to ask the side admin to come up with any
+    * site address.
+    */
+  def lookupSiteOrThrow(request: RequestHeader): SiteBrief = {
+    lookupSiteOrThrow(request.secure, request.host, request.uri)
+  }
+
+  def lookupSiteOrThrow(url: String): SiteBrief = {
+    val (scheme, separatorHostPathQuery) = url.span(_ != ':')
+    val secure = scheme == "https"
+    val (host, pathAndQuery) =
+      separatorHostPathQuery.drop(3).span(_ != '/') // drop(3) drops "://"
+    lookupSiteOrThrow(secure, host = host, pathAndQuery)
+  }
+
+  def lookupSiteOrThrow(secure: Boolean, host: String, pathAndQuery: String): SiteBrief = {
+
+    // Play supports one HTTP and one HTTPS port only, so it makes little sense
+    // to include any port number when looking up a site.
+    val hostname = if (host contains ':') host.span(_ != ':')._1 else host
+    def firstSiteIdAndHostname = {
+      val hostname = firstSiteHostname getOrElse throwForbidden(
+        "EsE5UYK2", o"""No first site hostname configured (config value:
+            ${Globals.FirstSiteHostnameConfigValue})""")
+      val firstSite = systemDao.getOrCreateFirstSite()
+      SiteBrief(Site.FirstSiteId, hostname, firstSite.status)
+    }
+
+    if (firstSiteHostname.contains(hostname))
+      return firstSiteIdAndHostname
+
+    // If the hostname is like "site-123.example.com" then we'll just lookup id 123.
+    val SiteByIdRegex = siteByIdHostnameRegex // uppercase, otherwise Scala won't "de-structure".
+    hostname match {
+      case SiteByIdRegex(siteIdString: String) =>
+        val siteId = siteIdString.toIntOrThrow("EdE5PJW2", s"Bad site id: $siteIdString")
+        systemDao.getSite(siteId) match {
+          case None =>
+            throwNotFound("DwE72SF6", s"No site with id $siteId")
+          case Some(site) =>
+            COULD // link to canonical host if (site.hosts.exists(_.role == SiteHost.RoleCanonical))
+            // Let the config file hostname have precedence over the database.
+            if (site.id == FirstSiteId && firstSiteHostname.isDefined)
+              return site.brief.copy(hostname = firstSiteHostname.get)
+            else
+              return site.brief
+        }
+      case _ =>
+    }
+
+    // Id unknown so we'll lookup the hostname instead.
+    val lookupResult = systemDao.lookupCanonicalHost(hostname) match {
+      case Some(result) =>
+        if (result.thisHost == result.canonicalHost)
+          result
+        else result.thisHost.role match {
+          case SiteHost.RoleDuplicate =>
+            result
+          case SiteHost.RoleRedirect =>
+            throwPermanentRedirect(originOf(result.canonicalHost.hostname) + pathAndQuery)
+          case SiteHost.RoleLink =>
+            die("DwE2KFW7", "Not implemented: <link rel='canonical'>")
+          case _ =>
+            die("DwE20SE4")
+        }
+      case None =>
+        if (Site.Ipv4AnyPortRegex.matches(hostname)) {
+          // Make it possible to access the server before any domain has been connected
+          // to it and when we still don't know its ip, just after installation.
+          return firstSiteIdAndHostname
+        }
+        throwNotFound("DwE0NSS0", s"There is no site with hostname '$hostname'")
+    }
+    val site = systemDao.getSite(lookupResult.siteId) getOrDie "EsE2KU503"
+    site.brief
+  }
+
+  def startStuff() {
     p.Logger.info("Starting... [EsM200HELLO]")
     isOrWasTest // initialise it now
     if (_state ne null)
@@ -334,8 +446,8 @@ class Globals {
       val cache = makeCache
       try {
         p.Logger.info("Connecting to database... [EsM200CONNDB]")
-        val readOnlyDataSource = Debiki.createPostgresHikariDataSource(readOnly = true)
-        val readWriteDataSource = Debiki.createPostgresHikariDataSource(readOnly = false)
+        val readOnlyDataSource = Debiki.createPostgresHikariDataSource(readOnly = true, conf, isOrWasTest)
+        val readWriteDataSource = Debiki.createPostgresHikariDataSource(readOnly = false, conf, isOrWasTest)
         val rdb = new Rdb(readOnlyDataSource, readWriteDataSource)
         val dbDaoFactory = new RdbDaoFactory(
           rdb, ScalaBasedMigrations, getCurrentTime = now, isOrWasTest)
@@ -343,7 +455,7 @@ class Globals {
         // Create any missing database tables before `new State`, otherwise State
         // creates background threads that might attempt to access the tables.
         p.Logger.info("Running database migrations... [EsM200MIGRDB]")
-        new SystemDao(dbDaoFactory, cache).applyEvolutions()
+        new SystemDao(dbDaoFactory, cache, this).applyEvolutions()
 
         p.Logger.info("Done migrating database. Connecting to other services... [EsM200CONNOTR]")
         val newState = new State(dbDaoFactory, cache)
@@ -379,11 +491,11 @@ class Globals {
     // (Takes 2? 5? seconds.)
     debiki.ReactRenderer.startCreatingRenderEngines(
       secure = state.secure,
-      cdnUploadsUrlPrefix = Globals.config.cdn.uploadsUrlPrefix,
+      cdnUploadsUrlPrefix = config.cdn.uploadsUrlPrefix,
       isTestSoDisableScripts = isOrWasTestDisableScripts)
 
     if (!isOrWasTestDisableBackgroundJobs) {
-      Akka.system.scheduler.scheduleOnce(
+      actorSystem.scheduler.scheduleOnce(
         5 seconds, state.renderContentActorRef, RenderContentService.RegenerateStaleHtml)
     }
 
@@ -531,7 +643,7 @@ class Globals {
     val redisHost: ErrorMessage =
       conf.getString("ed.redis.host").orElse(
         conf.getString("debiki.redis.host")).noneIfBlank getOrElse "localhost"
-    val redisClient: RedisClient = RedisClient(host = redisHost)(Akka.system)
+    val redisClient: RedisClient = RedisClient(host = redisHost)(actorSystem)
 
     // Online user ids are cached in Redis so they'll be remembered accross server restarts,
     // and will be available to all app servers. But we cache them again with more details here
@@ -568,13 +680,13 @@ class Globals {
           jn.InetAddress.getByName(elasticSearchHost), 9300))
 
     val siteDaoFactory = new SiteDaoFactory(
-      dbDaoFactory, redisClient, cache, usersOnlineCache, elasticSearchClient, config)
+      edContext, dbDaoFactory, redisClient, cache, usersOnlineCache, elasticSearchClient, config)
 
-    val mailerActorRef: ActorRef = Mailer.startNewActor(Akka.system, siteDaoFactory)
+    val mailerActorRef: ActorRef = Mailer.startNewActor(actorSystem, siteDaoFactory, conf, now)
 
     val notifierActorRef: Option[ActorRef] =
       if (isTestDisableBackgroundJobs) None
-      else Some(Notifier.startNewActor(Akka.system, systemDao, siteDaoFactory))
+      else Some(Notifier.startNewActor(actorSystem, systemDao, siteDaoFactory))
 
     def indexerBatchSize: Int = conf.getInt("ed.search.indexer.batchSize") getOrElse 100
     def indexerIntervalSeconds: Int = conf.getInt("ed.search.indexer.intervalSeconds") getOrElse 5
@@ -582,7 +694,7 @@ class Globals {
     val indexerActorRef: Option[ActorRef] =
       if (isTestDisableBackgroundJobs) None
       else Some(SearchEngineIndexer.startNewActor(
-        indexerBatchSize, indexerIntervalSeconds, elasticSearchClient, Akka.system, systemDao))
+        indexerBatchSize, indexerIntervalSeconds, elasticSearchClient, actorSystem, systemDao))
 
     def spamCheckBatchSize: Int = conf.getInt("ed.spamcheck.batchSize") getOrElse 20
     def spamCheckIntervalSeconds: Int = conf.getInt("ed.spamcheck.intervalSeconds") getOrElse 1
@@ -590,20 +702,20 @@ class Globals {
     val spamCheckActorRef: Option[ActorRef] =
       if (isTestDisableBackgroundJobs) None
       else Some(SpamCheckActor.startNewActor(
-        spamCheckBatchSize, spamCheckIntervalSeconds, Akka.system, systemDao))
+        spamCheckBatchSize, spamCheckIntervalSeconds, actorSystem, systemDao))
 
     val nginxHost: String =
       conf.getString("ed.nginx.host").orElse(
         conf.getString("debiki.nginx.host")).noneIfBlank getOrElse "localhost"
-    val (pubSub, strangerCounter) = PubSub.startNewActor(Akka.system, nginxHost, redisClient)
+    val (pubSub, strangerCounter) = PubSub.startNewActor(outer, nginxHost)
 
     val renderContentActorRef: ActorRef =
-      RenderContentService.startNewActor(Akka.system, siteDaoFactory)
+      RenderContentService.startNewActor(outer)
 
-    val spamChecker = new SpamChecker()
+    val spamChecker = new SpamChecker(appLoaderContext.initialConfiguration)
     spamChecker.start()
 
-    def systemDao: SystemDao = new SystemDao(dbDaoFactory, cache) // [rename] to newSystemDao()?
+    def systemDao: SystemDao = new SystemDao(dbDaoFactory, cache, outer) // [rename] to newSystemDao()?
 
     val applicationVersion = "0.00.40"  // later, read from some build config file
 
@@ -729,9 +841,11 @@ class Config(conf: play.api.Configuration) {
   val cnameTargetHost: Option[String] =
     conf.getString(Config.CnameTargetHostConfValName).noneIfBlank
 
+  val uploadsUrlPath: String = controllers.routes.UploadsController.servePublicFile("").url
+
   object cdn {
     val origin: Option[String] = conf.getString("ed.cdn.origin").noneIfBlank
-    def uploadsUrlPrefix: Option[String] = origin.map(_ + Globals.uploadsUrlPath)
+    def uploadsUrlPrefix: Option[String] = origin.map(_ + uploadsUrlPath)
   }
 
   object createSite {

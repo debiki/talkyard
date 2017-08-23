@@ -101,8 +101,9 @@ trait SummaryEmailsDao {
           PageFilter.ForActivitySummaryEmail)
 
         val topTopicsInclTooOld =
-          ForumController.listMaySeeTopicsInclPinned(categoryId, pageQuery, this,
-            includeDescendantCategories = true, authzCtx = authzCtx)
+          listMaySeeTopicsInclPinned(categoryId, pageQuery,
+            includeDescendantCategories = true, authzCtx = authzCtx,
+            limit = ForumController.NumTopicsToList)
 
         // Don't include in this summary email, topics that would have been included in the
         // *last* summary email (if we didn't have the max-topics-per-email limit).

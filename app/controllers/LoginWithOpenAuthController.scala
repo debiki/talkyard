@@ -26,17 +26,16 @@ import com.mohiva.play.silhouette.impl.providers.oauth2._
 import com.mohiva.play.silhouette.impl.providers._
 import ed.server.spam.SpamChecker
 import debiki._
-import debiki.DebikiHttp._
 import ed.server._
-import ed.server.security.createSessionIdAndXsrfToken
 import ed.server.http._
 import java.{util => ju}
+import javax.inject.Inject
 import org.scalactic.{Bad, Good}
 import play.api.libs.json.{JsBoolean, Json}
 import play.{api => p}
 import play.api.mvc._
 import play.api.mvc.BodyParsers.parse.empty
-import play.api.Play
+import play.api.{Configuration, Play}
 import play.api.Play.current
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -51,8 +50,11 @@ import scala.concurrent.Future
   * single domain is login.domain.com, and if you want to login at site X this class
   * redirects you to login.domain.com, then logs you in at the OAuth provider from
   * login.domain.com, and redirects you back to X with a session id and an XSRF token.
-  */
-object LoginWithOpenAuthController extends Controller {
+
+class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, globals: Globals)
+  extends EdController(cc, globals) {
+
+  import context.security.createSessionIdAndXsrfToken
 
   private val Separator = '|'
   private val ReturnToUrlCookieName = "dwCoReturnToUrl"
@@ -71,22 +73,22 @@ object LoginWithOpenAuthController extends Controller {
   private val LoginOriginConfValName = "ed.loginOrigin"
   private var configErrorMessage: Option[String] = None
 
-  def conf = Play.configuration
+  def conf: Configuration = globals.rawConf
 
-  lazy val anyLoginOrigin =
-    if (Play.isTest) {
+  lazy val anyLoginOrigin: Option[String] =
+    if (globals.isOrWasTest) {
       // The base domain should have been automatically configured with the test server's
       // listen port.
-      Some(s"${Globals.scheme}://${Globals.baseDomainWithPort}")
+      Some(s"${globals.scheme}://${globals.baseDomainWithPort}")
     }
     else {
       val anyOrigin = conf.getString(LoginOriginConfValName).orElse(conf.getString("debiki.loginOrigin")) orElse {
-        Globals.firstSiteHostname map { hostname =>
-          s"${Globals.scheme}://$hostname${Globals.colonPort}"
+        globals.firstSiteHostname map { hostname =>
+          s"${globals.scheme}://$hostname${globals.colonPort}"
         }
       }
       anyOrigin foreach { origin =>
-        if (Globals.secure && !origin.startsWith("https:")) {
+        if (globals.secure && !origin.startsWith("https:")) {
           configErrorMessage =
             Some(s"Config value '$LoginOriginConfValName' does not start with 'https:'")
           p.Logger.error(s"Disabling OAuth: ${configErrorMessage.get}. It is: '$origin' [DwE6KW5]")
@@ -102,7 +104,8 @@ object LoginWithOpenAuthController extends Controller {
   }
 
 
-  def startAuthenticationImpl(provider: String, returnToUrl: String, request: GetRequest) = {
+  def startAuthenticationImpl(provider: String, returnToUrl: String, request: GetRequest)
+        : Future[Result] = {
     configErrorMessage foreach { message =>
       throwInternalError("DwE5WKU3", message)
     }
@@ -204,6 +207,7 @@ object LoginWithOpenAuthController extends Controller {
 
     val result = anyReturnToSiteOrigin match {
       case Some(originalSiteOrigin) =>
+        ??? /*
         val xsrfToken = anyReturnToSiteXsrfToken getOrDie "DwE0F4C2"
         val oauthDetailsCacheKey = nextRandomString()
         SHOULD // use Redis instead, so logins won't fail because the app server was restarted.
@@ -216,6 +220,7 @@ object LoginWithOpenAuthController extends Controller {
             oauthDetailsCacheKey, xsrfToken)
         Redirect(continueAtOriginalSiteUrl)
           .discardingCookies(DiscardingSecureCookie(ReturnToSiteCookieName))
+          */
       case None =>
         login(request, anyOauthDetails = Some(oauthDetails))
     }
@@ -239,7 +244,7 @@ object LoginWithOpenAuthController extends Controller {
       })
 
     val loginAttempt = OpenAuthLoginAttempt(
-      ip = request.ip, date = Globals.now().toJavaDate, oauthDetails)
+      ip = request.ip, date = globals.now().toJavaDate, oauthDetails)
 
     val mayCreateNewUserCookie = request.cookies.get(MayCreateUserCookieName)
     val mayCreateNewUser = !mayCreateNewUserCookie.map(_.value).contains("false")
@@ -484,7 +489,7 @@ object LoginWithOpenAuthController extends Controller {
     if (ed.server.security.ReservedNames.isUsernameReserved(username))
       throwForbidden("EdE4SWWB9", s"Username is reserved: '$username'; choose another username")
 
-    Globals.spamChecker.detectRegistrationSpam(request, name = username, email = emailAddress) map {
+    globals.spamChecker.detectRegistrationSpam(request, name = username, email = emailAddress) map {
         isSpamReason =>
       SpamChecker.throwForbiddenIfSpam(isSpamReason, "EdE2KP89")
 
@@ -597,15 +602,15 @@ object LoginWithOpenAuthController extends Controller {
 
   private val CookieSigner = new silhouette.crypto.JcaCookieSigner(
     silhouette.crypto.JcaCookieSignerSettings(
-      key = Globals.applicationSecret, pepper = "sil-pepper-kfw93KPUF02wF"))
+      key = globals.applicationSecret, pepper = "sil-pepper-kfw93KPUF02wF"))
 
   private val Crypter = new silhouette.crypto.JcaCrypter(
-    silhouette.crypto.JcaCrypterSettings(key = Globals.applicationSecret))
+    silhouette.crypto.JcaCrypterSettings(key = globals.applicationSecret))
 
   private val Oauth2StateProvider =
     new silhouette.impl.providers.oauth2.state.CookieStateProvider(
       silhouette.impl.providers.oauth2.state.CookieStateSettings(
-        cookieName = OauthStateCookieName, secureCookie = Globals.secure),
+        cookieName = OauthStateCookieName, secureCookie = globals.secure),
       new silhouette.impl.util.SecureRandomIDGenerator(),
       CookieSigner,
       silhouette.api.util.Clock())
@@ -613,7 +618,7 @@ object LoginWithOpenAuthController extends Controller {
   private val OAuth1TokenSecretProvider =
     new silhouette.impl.providers.oauth1.secrets.CookieSecretProvider(
       silhouette.impl.providers.oauth1.secrets.CookieSecretSettings(
-        cookieName = "dwCoOAuth1TokenSecret", secureCookie = Globals.secure),
+        cookieName = "dwCoOAuth1TokenSecret", secureCookie = globals.secure),
       CookieSigner,
       Crypter,
       silhouette.api.util.Clock())
@@ -682,4 +687,4 @@ object LoginWithOpenAuthController extends Controller {
     originOf(request) + routes.LoginWithOpenAuthController.finishAuthentication(provider).url
   }
 
-}
+}  */

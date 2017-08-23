@@ -18,12 +18,27 @@
 package ed.server.summaryemails
 
 import com.debiki.core._
-import debiki._
-import debiki.DebikiHttp._
+import debiki.EdHttp._
+import ed.server.{EdContext, EdController}
 import ed.server.http._
-import play.api._
-import play.api.mvc.Action
+import javax.inject.Inject
+import play.api.mvc.{Action, ControllerComponents}
 import play.api.mvc.BodyParsers.parse.empty
+import UnsubFromSummariesController._
+
+
+object UnsubFromSummariesController {
+
+  val EmailIdInpName = "emailId"
+  val WhatInpName = "what"
+
+  val InpValUnsub = "Unsub"
+  val InpValMonthly = "Monthly"
+  val InpVal2ndWeek = "2ndWeek"
+  val InpValWeekly = "Weekly"
+  val InpValDaily = "Daily"
+
+}
 
 
 /**
@@ -36,21 +51,16 @@ import play.api.mvc.BodyParsers.parse.empty
  * web sites, in the Referer header. So only use each email id
  * for one distinct non-repeatable task?
  */
-object UnsubFromSummariesController extends mvc.Controller {
+class UnsubFromSummariesController @Inject()(cc: ControllerComponents, edContext: EdContext)
+  extends EdController(cc, edContext) {
 
-  val EmailIdInpName = "emailId"
-  val WhatInpName = "what"
-
-  val InpValUnsub = "Unsub"
-  val InpValMonthly = "Monthly"
-  val InpVal2ndWeek = "2ndWeek"
-  val InpValWeekly = "Weekly"
-  val InpValDaily = "Daily"
+  import context.safeActions.ExceptionAction
+  import context.globals
 
 
   def showUnsubForm(emailId: EmailId): Action[Unit] = ExceptionAction(empty) { request =>
-    val site = DebikiHttp.lookupSiteOrThrow(request, debiki.Globals.systemDao)
-    val dao = Globals.siteDao(site.id)
+    val site = globals.lookupSiteOrThrow(request)
+    val dao = globals.siteDao(site.id)
     val email = dao.loadEmailById(emailId) getOrElse throwForbidden("EdE5JGKW0", "Bad email id")
     Ok(views.html.summaryemails.unsubFromSummariesPage(emailId, emailAddress = email.sentTo))
   }
@@ -63,11 +73,11 @@ object UnsubFromSummariesController extends mvc.Controller {
       "EdE2JC0BMX", EmailIdInpName)
     val what = request.body.getFirst(WhatInpName) getOrElse throwParamMissing(
       "EdE6BTU5Y9", WhatInpName)
-    val site = DebikiHttp.lookupSiteOrThrow(request, debiki.Globals.systemDao)
+    val site = globals.lookupSiteOrThrow(request)
 
     SECURITY; SHOULD // rate limit?
 
-    val dao = Globals.siteDao(site.id)
+    val dao = globals.siteDao(site.id)
     val email = dao.loadEmailById(emailId) getOrElse throwForbidden("EdE8YEM2Q", "Bad email id")
 
     if (!email.toUserId.exists(User.isMember))

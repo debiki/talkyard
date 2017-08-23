@@ -18,9 +18,11 @@
 package controllers
 
 import com.debiki.core._
-import debiki.DebikiHttp._
 import debiki.{Globals, RateLimits, SiteTpi}
+import debiki.EdHttp._
+import ed.server.{EdContext, EdController}
 import ed.server.http._
+import javax.inject.Inject
 import play.api._
 import play.api.libs.json.{JsNull, JsString, Json}
 import play.api.mvc._
@@ -28,9 +30,11 @@ import play.api.mvc._
 
 /** Logs in and out.
   */
-object LoginController extends mvc.Controller {
+class LoginController(cc: ControllerComponents, edContext: EdContext)
+  extends EdController(cc, edContext) {
 
-  val DiscardingSessionCookie = DiscardingSecureCookie("dwCoSid")
+  import context.globals
+  import context.security.DiscardingSessionCookie
 
 
   val AsSuperadmin = "superadmin"
@@ -141,16 +145,20 @@ object LoginController extends mvc.Controller {
     // The verif link was written to the log files though (by ...LogDontSend(...) above),
     // in case needed for some reason.
     if (siteOwner.emailVerifiedAt.isEmpty) {
-      Globals.sendEmail(email, request.dao.siteId)
+      globals.sendEmail(email, request.dao.siteId)
     }
     Ok
   }
+}
 
+
+object LoginController {
 
   /** Tests if we're currently logging in as the very first user — s/he will
     * be made admin if s/he has the correct email address.
     */
-  def shallBecomeOwner(request: JsonPostRequest, emailAddress: String): Boolean = {
+  def shallBecomeOwner(request: JsonPostRequest, emailAddress: String,
+        globals: Globals): Boolean = {
     val site = request.dao.theSite()
     val ownerEmailInDatabase = site.status match {
       case SiteStatus.NoAdmin =>
@@ -162,7 +170,7 @@ object LoginController extends mvc.Controller {
 
     val ownerEmail =
       if (request.siteId == Site.FirstSiteId)
-        Globals.becomeFirstSiteOwnerEmail getOrElse {
+        globals.becomeFirstSiteOwnerEmail getOrElse {
           val errorCode = "DwE8PY25"
           val errorMessage = s"Config value '${Globals.BecomeOwnerEmailConfigValue}' missing"
           Logger.error(s"$errorMessage [$errorCode]")

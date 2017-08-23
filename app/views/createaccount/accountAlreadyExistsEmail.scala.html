@@ -1,6 +1,6 @@
-@(emailAddress: String, siteAddress: String)
+@(emailAddress: String, siteAddress: String, globals: debiki.Globals)
 
-@origin = @{ debiki.Globals.originOf(siteAddress) }
+@origin = @{ globals.originOf(siteAddress) }
 
 <div>
 <p>Hello,</p>

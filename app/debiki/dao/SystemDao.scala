@@ -20,10 +20,10 @@ package debiki.dao
 
 import com.debiki.core._
 import com.debiki.core.Prelude._
-import ed.server.http.throwForbidden2
-import play.api.Play.current
+import debiki.EdHttp.throwForbidden
 import scala.collection.immutable
 import SystemDao._
+import debiki.Globals
 
 
 class NumSites(val byYou: Int, val total: Int)
@@ -31,11 +31,14 @@ class NumSites(val byYou: Int, val total: Int)
 
 /** Database and cache queries that take all sites in mind.
  */
-class SystemDao(private val dbDaoFactory: DbDaoFactory, val cache: DaoMemCache) {
+class SystemDao(
+  private val dbDaoFactory: DbDaoFactory,
+  val cache: DaoMemCache,
+  val globals: Globals) {
 
   private def dbDao2: DbDao2 = dbDaoFactory.newDbDao2()
 
-  val memCache = new MemCache(NoSiteId, cache)
+  val memCache = new MemCache(NoSiteId, cache, globals.mostMetrics)
 
   protected def readOnlyTransaction[R](fn: SystemTransaction => R): R =
     dbDao2.readOnlySystemTransaction(fn)
@@ -57,7 +60,7 @@ class SystemDao(private val dbDaoFactory: DbDaoFactory, val cache: DaoMemCache) 
 
   def getSite(siteId: SiteId): Option[Site] = {
     COULD_OPTIMIZE // move getSite() to SystemDao instead so won't need to create temp SiteDao obj.
-    debiki.Globals.siteDao(siteId).getSite()
+    globals.siteDao(siteId).getSite()
   }
 
   def loadSites(): Seq[Site] =
@@ -72,7 +75,7 @@ class SystemDao(private val dbDaoFactory: DbDaoFactory, val cache: DaoMemCache) 
   def updateSites(sites: Seq[(SiteId, SiteStatus)]) {
     readWriteTransaction(_.updateSites(sites))
     for ((siteId, _) <- sites) {
-      debiki.Globals.siteDao(siteId).emptyCache()
+      globals.siteDao(siteId).emptyCache()
     }
   }
 
@@ -116,11 +119,11 @@ class SystemDao(private val dbDaoFactory: DbDaoFactory, val cache: DaoMemCache) 
     createdFromSiteId: Option[SiteId]): Site = {
 
     if (!Site.isOkayName(name))
-      throwForbidden2("EsE7UZF2_", s"Bad site name: '$name'")
+      throwForbidden("EsE7UZF2_", s"Bad site name: '$name'")
 
     dieIf(hostname contains ":", "DwE3KWFE7")
 
-    val config = debiki.Globals.config
+    val config = globals.config
     val maxSitesPerIp = skipMaxSitesCheck ? 999999 | config.createSite.maxSitesPerPerson
     val maxSitesTotal = skipMaxSitesCheck ? 999999 | {
       // Allow a little bit more than maxSitesTotal sites, in case Alice starts creating
@@ -156,7 +159,7 @@ class SystemDao(private val dbDaoFactory: DbDaoFactory, val cache: DaoMemCache) 
         // Delete Redis stuff even if no site found (2PKF05Y), because sometimes, when developing,
         // I've imported a SQL dump, resulting in most sites disappearing from the database, but
         // not from the Redis cache. So even if 'anyDeletedSite' is None, might still need to:
-        val redisCache = new RedisCache(newSite.id, debiki.Globals.redisClient)
+        val redisCache = new RedisCache(newSite.id, globals.redisClient, globals.now)
         redisCache.clearThisSite()
       }
 
@@ -184,7 +187,7 @@ class SystemDao(private val dbDaoFactory: DbDaoFactory, val cache: DaoMemCache) 
       try newSiteTx.insertSiteHost(newSiteHost)
       catch {
         case _: DuplicateHostnameException =>
-          throwForbidden2(
+          throwForbidden(
             "EdE7FKW20", o"""There's already a site with hostname '${newSiteHost.hostname}'. Add
             the URL param deleteOldSite=true to delete it (works for e2e tests only)""")
       }
@@ -354,7 +357,7 @@ class SystemDao(private val dbDaoFactory: DbDaoFactory, val cache: DaoMemCache) 
 
   def emptyDatabase() {
     readWriteTransaction { transaction =>
-      dieIf(!play.api.Play.isTest, "EsE500EDB0")
+      dieIf(!globals.isOrWasTest, "EsE500EDB0")
       transaction.emptyDatabase()
     }
   }

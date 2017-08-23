@@ -20,17 +20,21 @@ package controllers
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki._
-import debiki.DebikiHttp._
+import debiki.EdHttp._
+import ed.server.{EdContext, EdController}
 import ed.server.http._
-import play.api._
+import javax.inject.Inject
 import play.api.libs.json._
+import play.api.mvc.ControllerComponents
 
 
 /** Loads and saves settings, for the whole website, site sections,
   * and individual pages. In the future probably also for user roles.
   */
-object SettingsController extends mvc.Controller {
+class SettingsController @Inject()(cc: ControllerComponents, edContext: EdContext)
+  extends EdController(cc, edContext) {
 
+  import context.globals
 
   def loadSiteSettings = AdminGetAction { request: GetRequest =>
     loadSiteSettingsImpl(request)
@@ -45,8 +49,8 @@ object SettingsController extends mvc.Controller {
     OkSafeJson(Json.obj(
       "effectiveSettings" -> settings.toJson,
       "defaultSettings" -> settings.default.toJson,
-      "baseDomain" -> Globals.baseDomainNoPort,
-      "cnameTargetHost" -> JsString(Globals.config.cnameTargetHost.getOrElse(
+      "baseDomain" -> globals.baseDomainNoPort,
+      "cnameTargetHost" -> JsString(globals.config.cnameTargetHost.getOrElse(
           s"? (config value ${Config.CnameTargetHostConfValName} missing [EsM5KGCJ2]) ?")),
       "hosts" -> request.dao.listHostnames().sortBy(_.hostname).map(host => {
         Json.obj("hostname" -> host.hostname, "role" -> host.role.IntVal)

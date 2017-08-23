@@ -56,6 +56,7 @@ class SpamCheckActor(
 
   val spamTasksDone = new java.util.concurrent.ConcurrentLinkedQueue[SpamCheckTask]
   val checkingNow = mutable.HashSet[SitePostId]()
+  def globals: Globals = systemDao.globals
 
   def receive = {
     case CheckForSpam =>
@@ -90,7 +91,7 @@ class SpamCheckActor(
 
 
   private def checkForSpam(spamCheckTask: SpamCheckTask, stuffToSpamCheck: StuffToSpamCheck) {
-    Globals.spamChecker.detectPostSpam(spamCheckTask, stuffToSpamCheck) map { anyIsSpamReason =>
+    globals.spamChecker.detectPostSpam(spamCheckTask, stuffToSpamCheck) map { anyIsSpamReason =>
       anyIsSpamReason foreach { isSpamReason =>
         // We're not inside receive() any longer, so its try..catch is of no use now.
         try systemDao.dealWithSpam(spamCheckTask, isSpamReason)

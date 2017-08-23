@@ -18,17 +18,19 @@
 package controllers
 
 import com.debiki.core._
-import com.debiki.core.Prelude._
 import debiki._
-import debiki.DebikiHttp._
+import debiki.EdHttp.throwForbidden
 import ed.server.http._
+import ed.server.{EdContext, EdController}
 import javax.inject.Inject
 import play.api._
+import play.api.mvc.ControllerComponents
 
 
 /** Closes and collapses trees and posts.
   */
-class CloseCollapseController @Inject() extends mvc.Controller {
+class CloseCollapseController @Inject()(cc: ControllerComponents, edContext: EdContext)
+  extends EdController(cc, edContext) {
 
 
   def hidePost = PostJsonAction(RateLimits.CloseCollapsePost, maxBytes = 100) { apiReq =>

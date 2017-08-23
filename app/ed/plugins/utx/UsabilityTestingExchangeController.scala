@@ -20,18 +20,18 @@ package ed.plugins.utx
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki._
-import debiki.DebikiHttp._
+import debiki.EdHttp._
 import ed.server._
-import ed.server.http._
+import javax.inject.Inject
 import play.api.libs.json.JsValue
-import play.api.mvc
-import play.api.mvc.{Action, DiscardingCookie, Result}
+import play.api.mvc.{Action, ControllerComponents, DiscardingCookie, Result}
 import scala.collection.mutable
 
 
-/** Saves Usability Testing Exchange tasks, and picks the next task to do.
+/** Saves Usability Testing Exchange tasks, and picks the next task to do.  [plugin]
   */
-object UsabilityTestingExchangeController extends mvc.Controller {  // [plugin]
+class UsabilityTestingExchangeController @Inject()(cc: ControllerComponents, edContext: EdContext)
+  extends EdController(cc, edContext) {
 
 
   def handleUsabilityTestingForm: Action[JsValue] = PostJsonAction(

@@ -188,7 +188,7 @@ object TextAndHtml {
     * have to wait for the commonmark renderer to be created.
     */
   def test(text: String, isTitle: Boolean): TextAndHtml = {
-    dieIf(!Globals.isOrWasTest, "EsE7GPM2")
+    dieIf(Globals.isProd, "EsE7GPM2")
     new TextAndHtmlImpl(text, text, links = Nil, linkDomains = Set.empty,
       linkAddresses = Nil, isTitle = isTitle, followLinks = false,
       allowClassIdDataAttrs = false)

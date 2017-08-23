@@ -19,18 +19,12 @@ package ed.server.http
 
 import com.debiki.core._
 import com.debiki.core.Prelude._
-import controllers.Utils.parseIntOrThrowBadReq
 import controllers.Utils.ValidationImplicits._
 import debiki._
-import debiki.DebikiHttp._
-import debiki.dao.{PageDao, SiteDao}
-import ed.server.security.{SidStatus, XsrfOk}
-import java.{util => ju}
-import play.api.mvc.{Action => _, _}
-import play.api.Play
-import play.api.Play.current
-import DbDao.PathClashException
-import ed.server.auth.ForumAuthzContext
+import debiki.EdHttp._
+import debiki.dao.SiteDao
+import ed.server.security.{SidStatus, XsrfOk, BrowserId}
+import play.api.mvc.Request
 
 
 
@@ -132,7 +126,7 @@ class PageRequest[A](
     * to DoS attack the server. SECURITY COULD use a magic config file password instead.
     */
   def bypassCache: Boolean =
-    (!Play.isProd || user.exists(_.isStaff)) &&
+    (!Globals.isProd || user.exists(_.isStaff)) &&
       request.queryString.getEmptyAsNone("bypassCache") == Some("true")
 
 }

@@ -20,7 +20,7 @@ package ed.server.spam
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki.TextAndHtml
-import debiki.DebikiHttp.throwForbidden
+import debiki.EdHttp.throwForbidden
 import ed.server.http.DebikiRequest
 import java.{net => jn}
 import java.net.UnknownHostException
@@ -119,7 +119,7 @@ object NoApiKeyException extends QuickException
   *
   * Thread safe.
   */
-class SpamChecker {
+class SpamChecker(playConf: play.api.Configuration) {
 
   /*
   val request: dispatch.Req = dispatch.url("http://api.hostip.info/country.php").GET
@@ -138,7 +138,7 @@ class SpamChecker {
   // low traffic newly created sites? + 1 global for commercial low traffic sites?
   // (and one per site for high traffic sites)
   private val anyAkismetKey: Option[String] =
-    p.Play.configuration.getString("ed.akismetApiKey").noneIfBlank
+    playConf.getString("ed.akismetApiKey").noneIfBlank
 
   val AkismetAlwaysSpamName = "viagra-test-123"
 
@@ -163,7 +163,7 @@ class SpamChecker {
   }
 
   val GoogleApiKeyName = "ed.googleApiKey"
-  val anyGoogleApiKey = p.Play.configuration.getString(GoogleApiKeyName)
+  val anyGoogleApiKey = playConf.getString(GoogleApiKeyName)
 
 
   def start() {

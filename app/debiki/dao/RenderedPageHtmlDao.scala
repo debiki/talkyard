@@ -19,12 +19,10 @@ package debiki.dao
 
 import com.debiki.core._
 import com.debiki.core.Prelude._
-import controllers.ForumController
 import debiki._
-import debiki.DebikiHttp._
+import debiki.EdHttp.{throwNotFound, throwInternalError}
 import ed.server.http.PageRequest
 import play.{api => p}
-import play.api.Play.current
 import RenderedPageHtmlDao._
 import ed.server.RenderedPage
 
@@ -40,6 +38,9 @@ object RenderedPageHtmlDao {
 trait RenderedPageHtmlDao {
   self: SiteDao =>
 
+  import context.globals
+
+
   memCache.onPageCreated { page =>
     uncacheForums(this.siteId)
   }
@@ -54,8 +55,8 @@ trait RenderedPageHtmlDao {
     if (!pageRequest.pageExists)
       throwNotFound("EdE00404", "Page not found")
 
-    Globals.mostMetrics.getRenderPageTimer(pageRequest.pageRole).time {
-      val anyPageQuery = controllers.ForumController.parsePageQuery(pageRequest)
+    globals.mostMetrics.getRenderPageTimer(pageRequest.pageRole).time {
+      val anyPageQuery = pageRequest.parsePageQuery()
       val anyPageRoot = pageRequest.pageRoot
 
       val renderResult = ReactJson.pageToJson(pageRequest.thePageId, this, anyPageRoot, anyPageQuery)
@@ -81,23 +82,23 @@ trait RenderedPageHtmlDao {
     useMemCache &= pageReq.pageRoot.contains(PageParts.BodyNr)
     useMemCache &= !pageReq.debugStats
     useMemCache &= !pageReq.bypassCache
-    if (p.Play.isProd) {
+    if (globals.isProd) {
       // The request.host will be included in the generated html, and if it doesn't match
       // the correct hostname + port then don't cache the html, because if e.g. the port is
       // wrong, WebSocket or cookie domains will be wrong, thing's won't work, later
       // when loading the page via the correct hostname + port (because wrong host in cache).
       // (Reasons for "wrong" hostname & port include: testing on localhost, or calling the Play
       // app directly via its own port and cURL, rather than accessing via Nginx port 80/443.)
-      useMemCache &= pageReq.host == pageReq.canonicalHostname + Globals.colonPort
+      useMemCache &= pageReq.host == pageReq.canonicalHostname + globals.colonPort
     }
     else {
       // Caching different hostname is ok, but caching the wrong port is annoying because
       // then Nginx+Nchan work and I have to restart the Play server to empty the cache.
-      useMemCache &= pageReq.colonPort == Globals.colonPort
+      useMemCache &= pageReq.colonPort == globals.colonPort
     }
 
     // When paginating forum topics in a non-Javascript client, we cannot use the cache.
-    useMemCache &= ForumController.parsePageQuery(pageReq).isEmpty
+    useMemCache &= pageReq.parsePageQuery().isEmpty
 
     if (!useMemCache)
       return loadPageFromDatabaseAndRender(pageReq)
@@ -108,7 +109,7 @@ trait RenderedPageHtmlDao {
         rememberForum(pageReq.thePageId)
       }
       Some(loadPageFromDatabaseAndRender(pageReq))
-    }, metric = Globals.mostMetrics.renderPageCacheMetrics) getOrDie "DwE93IB7"
+    }, metric = globals.mostMetrics.renderPageCacheMetrics) getOrDie "DwE93IB7"
   }
 
 
@@ -130,7 +131,7 @@ trait RenderedPageHtmlDao {
                sending rerender-in-background message [DwE5KGF2]""")
           // COULD wait 150 ms for the background thread to finish rendering the page?
           // Then timeout and return the old cached page.
-          Globals.renderPageContentInBackground(SitePageId(siteId, pageId))
+          globals.renderPageContentInBackground(SitePageId(siteId, pageId))
         }
         return (cachedHtml, cachedVersion)
       }
@@ -181,7 +182,7 @@ trait RenderedPageHtmlDao {
     // So don't:
     //    removeFromCache(contentKey(sitePageId))
     // Instead:
-    Globals.renderPageContentInBackground(sitePageId)
+    globals.renderPageContentInBackground(sitePageId)
 
     // BUG race condition: What if anotoher thread started rendering a page
     // just before the invokation of this function, and is finished

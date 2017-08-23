@@ -33,6 +33,8 @@ trait AuthzSiteDaoMixin {
     */
   self: SiteDao =>
 
+  import context.security.throwIndistinguishableNotFound
+
 
   def getForumAuthzContext(user: Option[User]): ForumAuthzContext = {
     val groupIds = getGroupIds(user)

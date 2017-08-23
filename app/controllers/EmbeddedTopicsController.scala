@@ -18,21 +18,21 @@
 package controllers
 
 import com.debiki.core._
-import com.debiki.core.Prelude._
 import debiki._
-import debiki.DebikiHttp._
+import debiki.EdHttp._
 import debiki.dao.SiteDao
-import ed.server.RenderedPage
+import ed.server.{EdContext, EdController, RenderedPage}
 import ed.server.http._
-import java.{util => ju}
-import play.api._
-import play.api.mvc.{Action => _, _}
+import javax.inject.Inject
+import play.api.mvc.ControllerComponents
 
 
 /** Shows embedded comments.
   */
-object EmbeddedTopicsController extends mvc.Controller {
+class EmbeddedTopicsController @Inject()(cc: ControllerComponents, edContext: EdContext)
+  extends EdController(cc, edContext) {
 
+  import context.globals
 
   def showTopic(embeddingUrl: String, discussionId: Option[AltPageId], edPageId: Option[PageId]) =
         AsyncGetAction { request =>
@@ -44,7 +44,7 @@ object EmbeddedTopicsController extends mvc.Controller {
         // Embedded comments page not yet created. Return a dummy page; we'll create a real one,
         // later when the first reply gets posted.
         val pageRequest = ViewPageController.makeEmptyPageRequest(request, EmptyPageId, showId = true,
-            PageRole.EmbeddedComments)
+            PageRole.EmbeddedComments, globals.now())
         val jsonStuff = ReactJson.pageThatDoesNotExistsToJson(
           dao, PageRole.EmbeddedComments, Some(DefaultCategoryId))
         // Don't render server side, render client side only. Search engines shouldn't see it anyway,
@@ -62,7 +62,7 @@ object EmbeddedTopicsController extends mvc.Controller {
         SECURITY; COULD // do the standard auth stuff here, but not needed right now since we
         // proceed only if is embedded comments page. So, right now all such pages are public.
         if (pageMeta.pageRole != PageRole.EmbeddedComments)
-          throwForbidden2("EdE2F6UHY3", "Not an embedded comments page")
+          throwForbidden("EdE2F6UHY3", "Not an embedded comments page")
         val pageRequest = new PageRequest[Unit](
           request.siteIdAndCanonicalHostname,
           sid = request.sid,

@@ -19,16 +19,18 @@ package controllers
 
 import debiki._
 import ed.server._
-import ed.server.http._
+import ed.server.security.EdSecurity
 import javax.inject.Inject
-import play.api._
-import DebikiHttp._
+import play.api.mvc.ControllerComponents
 
 
 
 /** Loads the admin app page.
   */
-class AdminController @Inject() extends mvc.InjectedController {
+class AdminController @Inject()(cc: ControllerComponents, edContext: EdContext)
+  extends EdController(cc, edContext) {
+
+  import context.security.SecureCookie
 
 
   def redirectToAdminPage() = GetAction { _ =>
@@ -51,7 +53,7 @@ class AdminController @Inject() extends mvc.InjectedController {
       val siteTpi = SiteTpi(apiReq)
       val adminPageBody = views.html.adminPage(siteTpi, appId = "dw-react-admin-app").body
       Ok(adminPageBody) as HTML withCookies SecureCookie(
-        security.XsrfCookieName, apiReq.xsrfToken.value)
+        EdSecurity.XsrfCookieName, apiReq.xsrfToken.value)
     }
   }
 

@@ -1,12 +1,12 @@
-@(siteAddress: String, username: String, verificationUrl: String, expirationTimeInHours: Int)
+@(siteAddress: String, username: String, verificationUrl: String, expirationTimeInHours: Int, globals: debiki.Globals)
 
 @origin = @{
-  debiki.Globals.originOf(siteAddress)
+  globals.originOf(siteAddress)
 }
 
 @* For links you don't want people to click, unless they know what they're doing. *@
 @grayBoringLink(host: String) = {
-  <a href="@{debiki.Globals.scheme + "://" + host}" style="text-decoration: none !important; color: #555 !important;">@host</a>
+  <a href="@{globals.scheme + "://" + host}" style="text-decoration: none !important; color: #555 !important;">@host</a>
 }
 
 <div>

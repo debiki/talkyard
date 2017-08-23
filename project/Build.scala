@@ -50,13 +50,13 @@ object ApplicationBuild extends Build {
 
 
   val appDependencies = Seq(
-    //guice,
+    //ws,
     // Gzip filter.
     play.sbt.Play.autoImport.filters,
     "com.typesafe.play" %% "play-json" % "2.6.2",
     // OpenAuth and OpenID etc Authentication.
-    "com.mohiva" %% "play-silhouette" % "5.0.0-RC2",
-    "com.mohiva" %% "play-silhouette-crypto-jca" % "5.0.0-RC2",
+    "com.mohiva" %% "play-silhouette" % "5.0.0",
+    "com.mohiva" %% "play-silhouette-crypto-jca" % "5.0.0",
     // ? "com.mohiva" %% "play-silhouette-password-bcrypt" % "4.0.0",
     // PostgreSQL JDBC client driver
     // see: http://mvnrepository.com/artifact/org.postgresql/postgresql/
@@ -114,7 +114,7 @@ object ApplicationBuild extends Build {
   def mainSettings = List(
     version := appVersion,
     libraryDependencies ++= appDependencies,
-    scalaVersion := "2.12.2",
+    scalaVersion := "2.12.3",
 
     // Place tests in ./tests/app/ instead of ./test/, because there're other tests in
     // ./tests/, namely security/ and e2e/, and having both ./test/ and ./tests/ seems confusing.
@@ -131,8 +131,10 @@ object ApplicationBuild extends Build {
       ("Atlassian Releases" at "https://maven.atlassian.com/public/") +:
         Keys.resolvers.value,
 
-    play.sbt.routes.RoutesCompiler.autoImport.routesGenerator :=
-      play.routes.compiler.StaticRoutesGenerator,
+    // This is the default. But keep anyway, because if needed later, then won't have to try to
+    // find out in which packages the stuff is located.
+    //play.sbt.routes.RoutesCompiler.autoImport.routesGenerator :=
+    //  play.routes.compiler.InjectedRoutesGenerator,
 
     BuildInfoKeys.buildInfoPackage := "generatedcode",
     BuildInfoKeys.buildInfoOptions += BuildInfoOption.BuildTime,

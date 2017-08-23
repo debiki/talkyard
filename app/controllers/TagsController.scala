@@ -18,14 +18,18 @@
 package controllers
 
 import com.debiki.core._
-import debiki.{ReactJson, RateLimits, SiteTpi}
-import ed.server.http._
-import play.{api => p}
+import debiki.{RateLimits, ReactJson, SiteTpi}
+import debiki.EdHttp._
+import ed.server.{EdContext, EdController}
 import play.api.libs.json._
-import debiki.DebikiHttp.throwBadRequest
+import javax.inject.Inject
+import play.api.mvc.ControllerComponents
 
 
-object TagsController extends p.mvc.Controller {
+class TagsController @Inject()(cc: ControllerComponents, edContext: EdContext)
+  extends EdController(cc, edContext) {
+
+  import context.globals
 
   def redirect = GetAction { apiReq =>
     Redirect(routes.TagsController.tagsApp("").url)
@@ -58,7 +62,7 @@ object TagsController extends p.mvc.Controller {
           // Don't think everyone should know about this:
           "numSubscribers" -> (if (isStaff) tagAndStats.numSubscribers else JsNull),
           "numMuted" -> (if (isStaff) tagAndStats.numMuted else JsNull))
-      })))))
+      }))), globals.applicationVersion))
   }
 
 
@@ -67,7 +71,7 @@ object TagsController extends p.mvc.Controller {
     OkSafeJson(ReactJson.makeTagsStuffPatch(Json.obj(
       "myTagNotfLevels" -> JsObject(notfLevelsByTagLabel.toSeq.map({ labelAndLevel =>
         labelAndLevel._1 -> JsNumber(labelAndLevel._2.toInt)
-      })))))
+      }))), globals.applicationVersion))
   }
 
 

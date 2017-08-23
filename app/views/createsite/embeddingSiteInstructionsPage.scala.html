@@ -18,6 +18,8 @@
 
 @(tpi: debiki.SiteTpi, site: com.debiki.core.Site)
 
+@globals = @{ tpi.globals }
+
 @css = @{("""
   h1 {
     margin-bottom: 1em;
@@ -30,7 +32,7 @@
 @embeddingUrl = @{ site.embeddingSiteUrl.get }
 
 @embeddedCommentsScriptUrl = @{
-  val embeddedSiteOrigin = debiki.Globals.siteByIdOrigin(site.id)
+  val embeddedSiteOrigin = globals.siteByIdOrigin(site.id)
   s"$embeddedSiteOrigin/-/debiki-embedded-comments.js"
 }
 
@@ -47,7 +49,7 @@
 <pre>&lt;script src="@embeddedCommentsScriptUrl" async defer&gt;&lt;/script&gt;
 &lt;div class="debiki-embedded-comments" <span class="highlighted-topic-id">data-topic-id=""</span>&gt;
   &lt;noscript&gt;Please enable Javascript to view comments.&lt;/noscript&gt;
-  &lt;p class="powered-by-debiki"&gt;Comments powered by &lt;a href="@{debiki.Globals.poweredBy}"&gt;Debiki&lt;/a&gt;.&lt;/p&gt;
+  &lt;p class="powered-by-debiki"&gt;Comments powered by &lt;a href="@{globals.poweredBy}"&gt;Debiki&lt;/a&gt;.&lt;/p&gt;
 &lt;/div&gt;
 </pre>
 

@@ -21,8 +21,6 @@ import com.debiki.core._
 import com.debiki.core.Prelude._
 import controllers.{SiteAssetBundlesController, routes}
 import ed.server.http.{DebikiRequest, GetRequest, PageRequest}
-import play.{api => p}
-import play.api.Play.current
 import SiteAssetBundlesController.{StylesheetAssetBundleNameRegex, assetBundleFileName}
 import scala.xml.Unparsed
 
@@ -32,7 +30,7 @@ object PageTpi {
   val (minMax, minMaxJs, minMaxCss) = {
     // Using Play.isDev causes Could not initialize class
     // debiki.DeprecatedTemplateEngine$ error, when running unit tests. Instead:
-    val isDevOrTest = p.Play.maybeApplication.map(_.mode) != Some(p.Mode.Prod)
+    val isDevOrTest = !Globals.isProd
     if (isDevOrTest) ("", "js", "css") else ("min.", "min.js", "min.css")
   }
 
@@ -64,6 +62,8 @@ class SiteTpi protected (
   val json: Option[String] = None,
   pageTitle: Option[String] = None,
   isSearchPage: Boolean = false) {
+
+  def globals: Globals = debikiRequest.context.globals
 
   def request: DebikiRequest[_] = debikiRequest // rename to request, later
 
@@ -224,7 +224,7 @@ class SiteTpi protected (
     * embedded comments iframes.
     */
   def cdnOrServerOrigin: String =
-    Globals.config.cdn.origin.getOrElse(Globals.schemeColonSlashSlash + serverAddress)
+    globals.config.cdn.origin.getOrElse(globals.schemeColonSlashSlash + serverAddress)
 
   def serverAddress: String = debikiRequest.request.host
 

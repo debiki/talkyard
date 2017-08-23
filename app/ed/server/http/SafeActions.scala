@@ -20,13 +20,11 @@ package ed.server.http
 import com.debiki.core._
 import com.debiki.core.DbDao.EmailAddressChangedException
 import com.debiki.core.Prelude._
+import debiki.Globals.StillConnectingException
 import org.apache.commons.lang3.exception.ExceptionUtils.getStackTrace
-import controllers.Utils
 import debiki._
-import debiki.DebikiHttp._
-import java.{util => ju}
+import ed.server.security.EdSecurity
 import play.{api => p}
-import play.api.Play.current
 import play.api.mvc._
 import play.api.{Logger, Play}
 import scala.concurrent.{ExecutionContext, Future}
@@ -38,8 +36,9 @@ import scala.concurrent.ExecutionContext.Implicits.global
  * require a valid xsrf token for POST requests.
  * Also understand Debiki's internal throwBadReq etcetera functions.
  */
-object SafeActions {
+class SafeActions(val globals: Globals, val security: EdSecurity) {
 
+  import EdHttp._
 
   /** IE9 blocks cookies in iframes unless the site in the iframe clarifies its
     * in a P3P header (Platform for Privacy Preferences). (But Debiki's embedded comments
@@ -62,7 +61,7 @@ object SafeActions {
 
 
   val allowFakeIp: Boolean = {
-    val allow = !Globals.isProd || Play.current.configuration.getBoolean("ed.allowFakeIp").getOrElse(false)
+    val allow = !globals.isProd || Play.current.configuration.getBoolean("ed.allowFakeIp").getOrElse(false)
     if (allow) {
       Logger.info("Enabling fake IPs [DwM0Fk258]")
     }
@@ -87,7 +86,7 @@ object SafeActions {
         SECURITY ; COULD /* add back this extra check.
         // No longer works, even when HTTPS is used. Something happenend when upgrading
         // Play from 2.4.0 to 2.4.8?
-        if (Globals.secure && !request.secure) {
+        if (globals.secure && !request.secure) {
           // Reject this request, unless an 'insecure' param is set and we're on localhost.
           val insecureOk = request.queryString.get("insecure").nonEmpty &&
             request.host.matches("^localhost(:[0-9]+)?$".r)
@@ -122,11 +121,11 @@ object SafeActions {
         case ex: EmailAddressChangedException =>
           Future.successful(Results.Forbidden(
             "The email address related to this request has been changed. Access denied"))
-        case DebikiHttp.ResultException(result) =>
+        case ResultException(result) =>
           Future.successful(result)
         case ex: play.api.libs.json.JsResultException =>
           Future.successful(Results.BadRequest(s"Bad JSON: $ex [DwE70KX3]"))
-        case Globals.StillConnectingException =>
+        case StillConnectingException =>
           Future.successful(ImStartingError)
         case ex: Globals.DatabasePoolInitializationException =>
           Future.successful(databaseGoneError(request, ex, startingUp = true))
@@ -140,7 +139,7 @@ object SafeActions {
           Future.successful(internalError(request, ex, "DwE500ERR"))
       }
       futureResult = futureResult recover {
-        case DebikiHttp.ResultException(result) => result
+        case ResultException(result) => result
         case ex: play.api.libs.json.JsResultException =>
           Results.BadRequest(s"Bad JSON: $ex [error DwE6PK30]")
         case Globals.StillConnectingException =>
@@ -160,7 +159,7 @@ object SafeActions {
       val anyNewFakeIp = request.queryString.get("fakeIp").flatMap(_.headOption)
       anyNewFakeIp foreach { fakeIp =>
         futureResult = futureResult map { result =>
-          result.withCookies(SecureCookie("dwCoFakeIp", fakeIp))
+          result.withCookies(security.SecureCookie("dwCoFakeIp", fakeIp))
         }
       }
 
@@ -168,7 +167,7 @@ object SafeActions {
         val anyPassword = request.queryString.get(paramName).flatMap(_.headOption)
         anyPassword foreach { password =>
           futureResult = futureResult map { result =>
-            result.withCookies(SecureCookie(cookieName, password, maxAgeSeconds = Some(600)))
+            result.withCookies(security.SecureCookie(cookieName, password, maxAgeSeconds = Some(600)))
           }
         }
       }
@@ -233,7 +232,7 @@ object SafeActions {
       }
     p.Logger.error(s"Replying database-not-reachable error to: $url [$errorCode]", throwable)
     val (hasItStoppedPerhaps, fixProblemTips) =
-      if (Globals.isProd) ("", "")
+      if (globals.isProd) ("", "")
       else if (roleMissing || badPassword) (
         "", i"""If you use Docker-Compose: You can create the database user like so:
         |  'docker/drop-database-create-empty.sh'

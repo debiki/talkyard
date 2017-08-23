@@ -19,7 +19,7 @@ package debiki.dao
 
 import com.debiki.core._
 import com.debiki.core.Prelude._
-import debiki.{CacheMetric, Globals}
+import debiki.{CacheMetric, MostMetrics}
 import nl.grons.metrics.scala.Meter
 import java.{util => ju}
 import scala.reflect.ClassTag
@@ -34,7 +34,7 @@ object MemCache {
 
 
 
-class MemCache(val siteId: SiteId, val cache: DaoMemCache) {
+class MemCache(val siteId: SiteId, val cache: DaoMemCache, mostMetrics: MostMetrics) {
 
   // COULD delete & rewrite this listener stuff. It's error prone & complicated, bug just killed.
   // Something like this?
@@ -103,7 +103,7 @@ class MemCache(val siteId: SiteId, val cache: DaoMemCache) {
   private def time[A](anyCacheMetric: CacheMetric)(block: Function[Meter, A]): A = {
     val cacheMetric =
       if (anyCacheMetric ne null) anyCacheMetric
-      else Globals.mostMetrics.defaultSiteDaoCacheMetric
+      else mostMetrics.defaultSiteDaoCacheMetric
     cacheMetric.timer.time {
       block(cacheMetric.hitMeter)
     }
