@@ -40,6 +40,7 @@ import org.{elasticsearch => es}
 import org.scalactic._
 import play.{api => p}
 import play.api.Play
+import play.api.libs.ws.WSClient
 import redis.RedisClient
 import scala.collection.immutable
 import scala.concurrent.duration._
@@ -92,6 +93,7 @@ object Globals {
 class Globals(
   private val appLoaderContext: p.ApplicationLoader.Context,
   implicit val executionContext: scala.concurrent.ExecutionContext,
+  val wsClient: WSClient,
   val actorSystem: ActorSystem) {
 
   def outer: Globals = this
@@ -606,9 +608,13 @@ class Globals(
   }
 
 
+  /** Not needed any longer, after I ported to compile time dependency injection, with Play 2.6?
+    */
   private class State(
     val dbDaoFactory: RdbDaoFactory,
     val cache: DaoMemCache) {
+
+    val applicationVersion = "0.00.40"  // later, read from some build config file
 
     // 5 seconds sometimes in a test —> """
     // debiki.RateLimiterSpec *** ABORTED ***
@@ -712,12 +718,12 @@ class Globals(
     val renderContentActorRef: ActorRef =
       RenderContentService.startNewActor(outer)
 
-    val spamChecker = new SpamChecker(appLoaderContext.initialConfiguration)
+    val spamChecker = new SpamChecker(
+      appLoaderContext.initialConfiguration, wsClient, applicationVersion)
+
     spamChecker.start()
 
     def systemDao: SystemDao = new SystemDao(dbDaoFactory, cache, outer) // [rename] to newSystemDao()?
-
-    val applicationVersion = "0.00.40"  // later, read from some build config file
 
     val applicationSecret: String =
       conf.getString("play.crypto.secret").noneIfBlank.getOrDie(

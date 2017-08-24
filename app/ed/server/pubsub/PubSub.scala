@@ -26,7 +26,7 @@ import debiki.{Globals, ReactJson}
 import play.api.libs.json.{JsNull, JsValue}
 import play.{api => p}
 import play.api.libs.json.Json
-import play.api.libs.ws.{WS, WSResponse}
+import play.api.libs.ws.{WSClient, WSResponse}
 import play.api.Play.current
 import redis.RedisClient
 import scala.collection.mutable
@@ -168,6 +168,7 @@ case class UserWhenPages(user: User, when: When, watchingPageIds: Set[PageId]) {
   */
 class PubSubActor(val nginxHost: String, val globals: Globals) extends Actor {
 
+  def wsClient: WSClient = globals.wsClient
   def redisClient: RedisClient = globals.redisClient
 
   /** Tells when subscriber subscribed. Subscribers are sorted by perhaps-inactive first.
@@ -371,7 +372,7 @@ class PubSubActor(val nginxHost: String, val globals: Globals) extends Actor {
       // so we won't send any messages to browsers connected to the wrong site. [7YGK082]
       val channelIds = userIds.map(id => s"$siteId-$id")
       val channelsString = channelIds.mkString(",")
-      WS.url(s"http://$nginxHost:${PubSub.NchanPublishPort}/-/pubsub/publish/$channelsString")
+      wsClient.url(s"http://$nginxHost:${PubSub.NchanPublishPort}/-/pubsub/publish/$channelsString")
         .post(Json.obj("type" -> tyype, "data" -> json).toString)
         .map(handlePublishResponse)
         .recover({

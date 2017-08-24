@@ -50,7 +50,7 @@ object ApplicationBuild extends Build {
 
 
   val appDependencies = Seq(
-    //ws,
+    play.sbt.PlayImport.ws,
     // Gzip filter.
     play.sbt.Play.autoImport.filters,
     "com.typesafe.play" %% "play-json" % "2.6.2",

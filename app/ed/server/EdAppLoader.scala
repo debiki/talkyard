@@ -6,6 +6,8 @@ import ed.server.http.{PlainApiActions, SafeActions}
 import ed.server.security.EdSecurity
 import play.api._
 import play.api.http.FileMimeTypes
+import play.api.libs.ws.WSClient
+import play.api.libs.ws.ahc.AhcWSComponents
 import play.api.mvc.ControllerComponents
 import play.api.routing.Router
 import play.filters.HttpFiltersComponents
@@ -27,13 +29,15 @@ class EdAppLoader extends ApplicationLoader {
 
 }
 
+// !! Close the AhcWSComponents WSClient
 
 class EdAppComponents(appLoaderContext: ApplicationLoader.Context)
   extends BuiltInComponentsFromContext(appLoaderContext)
   with HttpFiltersComponents
+  with AhcWSComponents
   with _root_.controllers.AssetsComponents {
 
-  val globals = new Globals(appLoaderContext, executionContext, actorSystem)
+  val globals = new Globals(appLoaderContext, executionContext, wsClient, actorSystem)
   val security = new ed.server.security.EdSecurity(globals)
   val rateLimiter = new RateLimiter(globals, security)
   val safeActions = new SafeActions(globals, security)

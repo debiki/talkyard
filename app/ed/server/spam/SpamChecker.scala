@@ -119,7 +119,7 @@ object NoApiKeyException extends QuickException
   *
   * Thread safe.
   */
-class SpamChecker(playConf: play.api.Configuration) {
+class SpamChecker(playConf: play.api.Configuration, wsClient: WSClient, appVersion: String) {
 
   /*
   val request: dispatch.Req = dispatch.url("http://api.hostip.info/country.php").GET
@@ -183,7 +183,7 @@ class SpamChecker(playConf: play.api.Configuration) {
 
     // Without (some of) these headers, Akismet says the api key is invalid.
     val request: WSRequest =
-      WS.url("https://rest.akismet.com/1.1/verify-key").withHeaders(
+      wsClient.url("https://rest.akismet.com/1.1/verify-key").withHeaders(
         play.api.http.HeaderNames.CONTENT_TYPE -> ContentType,
         play.api.http.HeaderNames.USER_AGENT -> UserAgent,
         play.api.http.HeaderNames.CONTENT_LENGTH -> postData.length.toString)
@@ -335,7 +335,7 @@ class SpamChecker(playConf: play.api.Configuration) {
     // a few days ago. I'm still getting a cert error though. Works in Chrome, not Java,
     // I suppose Java's cert store is old and out of date somehow?
     // Use http for now:
-    WS.url(s"http://www.stopforumspam.com/api?email=$encodedEmail$anyIpParam&f=json").get()
+    wsClient.url(s"http://www.stopforumspam.com/api?email=$encodedEmail$anyIpParam&f=json").get()
       .map(handleStopForumSpamResponse)
       .recover({
         case ex: Exception =>
@@ -412,7 +412,7 @@ class SpamChecker(playConf: play.api.Configuration) {
     val SafeBrowsingApiEndpoint = "https://sb-ssl.google.com/safebrowsing/api/lookup"
     val clientName = "EffectiveDiscussions"
     val protocolVersion = "3.1"
-    val applicationVersion = debiki.Globals.applicationVersion // COULD use version in build.sbt?
+    val applicationVersion = appVersion
 
     val requestBody = validUrls.length + "\n" + validUrls.mkString("\n")
     val url = SafeBrowsingApiEndpoint +
@@ -426,7 +426,7 @@ class SpamChecker(playConf: play.api.Configuration) {
     val SafeUrlVerdict = "ok"
 
     val request: WSRequest =
-      WS.url(url).withHeaders(
+      wsClient.url(url).withHeaders(
         play.api.http.HeaderNames.CONTENT_LENGTH -> requestBody.length.toString)
 
     request.post(requestBody) map { response: WSResponse =>
@@ -589,7 +589,7 @@ class SpamChecker(playConf: play.api.Configuration) {
 
   private def sendCheckIsSpamRequest(apiKey: String, payload: String, promise: Promise[Boolean]) {
     val request: WSRequest =
-      WS.url(s"https://$apiKey.rest.akismet.com/1.1/comment-check").withHeaders(
+      wsClient.url(s"https://$apiKey.rest.akismet.com/1.1/comment-check").withHeaders(
         play.api.http.HeaderNames.CONTENT_TYPE -> ContentType,
         play.api.http.HeaderNames.USER_AGENT -> UserAgent,
         play.api.http.HeaderNames.CONTENT_LENGTH -> payload.length.toString)
