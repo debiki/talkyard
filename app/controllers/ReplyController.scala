@@ -84,7 +84,7 @@ class ReplyController @Inject()(cc: ControllerComponents, edContext: EdContext)
     // throwNoUnless(Authz.mayPostReply(authzContext, postType, "EdEZBXK3M2")
 
     // For now, don't follow links in replies. COULD rel=follow if all authors + editors = trusted.
-    val textAndHtml = TextAndHtml.forBodyOrComment(text, followLinks = false)
+    val textAndHtml = textAndHtmlMaker.forBodyOrComment(text, followLinks = false)
     val result = dao.insertReply(textAndHtml, pageId = pageId, replyToPostNrs,
       postType, request.who, request.spamRelatedStuff)
 
@@ -118,7 +118,7 @@ class ReplyController @Inject()(cc: ControllerComponents, edContext: EdContext)
       "EdEHDETG4K5")
 
     // Don't follow links in chat mesages — chats don't work with search engines anyway.
-    val textAndHtml = TextAndHtml.forBodyOrComment(text, followLinks = false)
+    val textAndHtml = textAndHtmlMaker.forBodyOrComment(text, followLinks = false)
     val result = dao.insertChatMessage(
       textAndHtml, pageId = pageId, request.who, request.spamRelatedStuff)
 
@@ -151,8 +151,8 @@ class ReplyController @Inject()(cc: ControllerComponents, edContext: EdContext)
 
     dao.createPage(pageRole, PageStatus.Published,
       anyCategoryId = Some(categoryId), anyFolder = slug, anySlug = folder,
-      titleTextAndHtml = TextAndHtml.forTitle(s"Embedded comments for $embeddingUrl"),
-      bodyTextAndHtml = TextAndHtml.forBodyOrComment(s"Comments for: $embeddingUrl"), showId = true,
+      titleTextAndHtml = textAndHtmlMaker.forTitle(s"Embedded comments for $embeddingUrl"),
+      bodyTextAndHtml = textAndHtmlMaker.forBodyOrComment(s"Comments for: $embeddingUrl"), showId = true,
       Who.System, request.spamRelatedStuff, altPageId = altPageId, embeddingUrl = Some(embeddingUrl))
   }
 

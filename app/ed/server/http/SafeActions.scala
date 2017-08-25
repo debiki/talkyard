@@ -28,7 +28,6 @@ import play.{api => p}
 import play.api.mvc._
 import play.api.{Logger, Play}
 import scala.concurrent.{ExecutionContext, Future}
-import scala.concurrent.ExecutionContext.Implicits.global
 
 
 /**
@@ -78,8 +77,8 @@ class SafeActions(val globals: Globals, val security: EdSecurity) {
 
     val parser: BodyParser[AnyContent] = BodyParsers.parse.anyContent  // [play26ask]
 
-    override protected def executionContext: ExecutionContext =
-      scala.concurrent.ExecutionContext.global
+    override implicit protected def executionContext: ExecutionContext =
+      globals.executionContext
 
     def invokeBlock[A](request: Request[A], block: Request[A] => Future[Result]): Future[Result] = {
       var futureResult = try {

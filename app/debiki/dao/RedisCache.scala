@@ -38,7 +38,7 @@ object RedisCache {
 
   // Sometimes the request takes long, perhaps because of a Java GC pause? Or because of
   // some page being swapped to disk?
-  val DefaultTimeout: FiniteDuration = 10 seconds
+  val DefaultTimeout: FiniteDuration = 20 seconds
 }
 
 
@@ -166,6 +166,7 @@ class RedisCacheAllSites(redisClient: RedisClient, now: () => When) {
   def removeNoLongerOnlineUserIds(): collection.Map[SiteId, collection.Set[UserId]] = {
     COULD_OPTIMIZE // Redis.keys can be slow — but according to the docs, on a laptop,
     // it handles 1 million keys in 40ms. So a lot faster than fast-enough, for us.
+    play.api.Logger.debug("""\nZZZZ redisClient.keys("*-uo")\n""")
     val siteIdsFuture: Future[Seq[String]] = redisClient.keys("*-uo")
     val siteIds: Seq[SiteId] =
       try {

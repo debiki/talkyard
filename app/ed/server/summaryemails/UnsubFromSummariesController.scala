@@ -67,7 +67,8 @@ class UnsubFromSummariesController @Inject()(cc: ControllerComponents, edContext
 
 
   def handleForm: Action[JsonOrFormDataBody] =
-        ExceptionAction(JsonOrFormDataBody.parser(maxBytes = 200)) { request =>
+        ExceptionAction(new JsonOrFormDataBodyParser(executionContext).parser(maxBytes = 200)) {
+          request =>
 
     val emailId = request.body.getFirst(EmailIdInpName) getOrElse throwParamMissing(
       "EdE2JC0BMX", EmailIdInpName)

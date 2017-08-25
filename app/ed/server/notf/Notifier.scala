@@ -25,7 +25,7 @@ import debiki.dao.{SiteDao, SiteDaoFactory, SystemDao}
 import ed.server.notf.Notifier._
 import play.{api => p}
 import scala.collection.immutable
-import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
 
 
@@ -42,8 +42,10 @@ object Notifier {
    * doesn't accidentally forget forever to send some notifications.
    * (Also se object Mailer.)
    */
-  def startNewActor(actorSystem: ActorSystem, systemDao: SystemDao, siteDaoFactory: SiteDaoFactory)
+  def startNewActor(executionContext: ExecutionContext, actorSystem: ActorSystem,
+        systemDao: SystemDao, siteDaoFactory: SiteDaoFactory)
         : ActorRef = {
+    implicit val execCtx = executionContext
     val actorRef = actorSystem.actorOf(Props(
       new Notifier(systemDao, siteDaoFactory)),
       name = s"NotifierActor-$testInstanceCounter")

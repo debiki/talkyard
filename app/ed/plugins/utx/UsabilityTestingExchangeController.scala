@@ -62,8 +62,8 @@ class UsabilityTestingExchangeController @Inject()(cc: ControllerComponents, edC
        |$instructions
        """
 
-    val titleTextAndHtml = TextAndHtml.forTitle(titleText)
-    val bodyTextAndHtml = TextAndHtml.forBodyOrCommentAsPlainTextWithLinks(bodyText)
+    val titleTextAndHtml = textAndHtmlMaker.forTitle(titleText)
+    val bodyTextAndHtml = textAndHtmlMaker.forBodyOrCommentAsPlainTextWithLinks(bodyText)
 
     val categorySlug = (request.body \ "categorySlug").as[String]
     val category = request.dao.loadCategoryBySlug(categorySlug).getOrThrowBadArgument(

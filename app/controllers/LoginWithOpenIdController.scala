@@ -31,7 +31,6 @@ import play.api.data.Forms._
 import play.api.libs.concurrent._
 import play.api.libs.{openid => oid}
 import scala.concurrent.Future
-import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util.{Success, Failure}
 import scala.util.control.NonFatal
 import Utils.ValidationImplicits._

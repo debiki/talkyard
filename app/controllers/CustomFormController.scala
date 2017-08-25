@@ -42,7 +42,7 @@ class CustomFormController @Inject()(cc: ControllerComponents, edContext: EdCont
 
     val pageId = (request.body \ "pageId").as[PageId]
     val formInputs = (request.body \ "formInputs").as[JsArray]
-    val textAndHtml = TextAndHtml.withCompletedFormData(formInputs) getOrIfBad { errorMessage =>
+    val textAndHtml = textAndHtmlMaker.withCompletedFormData(formInputs) getOrIfBad { errorMessage =>
       throwBadRequest("EsE7YK4W0", s"Bad form inputs JSON: $errorMessage")
     }
 
@@ -74,8 +74,8 @@ class CustomFormController @Inject()(cc: ControllerComponents, edContext: EdCont
     val pageType = PageRole.fromInt(pageTypeId).getOrThrowBadArgument("EsE39PK01", "pageTypeId")
     val titleText = (request.body \ "newTopicTitle").as[String]
     val bodyText = (request.body \ "newTopicBody").as[String]
-    val titleTextAndHtml = TextAndHtml.forTitle(titleText)
-    val bodyTextAndHtml = TextAndHtml.forBodyOrCommentAsPlainTextWithLinks(bodyText)
+    val titleTextAndHtml = textAndHtmlMaker.forTitle(titleText)
+    val bodyTextAndHtml = textAndHtmlMaker.forBodyOrCommentAsPlainTextWithLinks(bodyText)
 
     val categorySlug = (request.body \ "categorySlug").as[String]
     val category = request.dao.loadCategoryBySlug(categorySlug).getOrThrowBadArgument(

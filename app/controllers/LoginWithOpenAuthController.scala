@@ -37,7 +37,6 @@ import play.api.mvc._
 import play.api.mvc.BodyParsers.parse.empty
 import play.api.{Configuration, Play}
 import play.api.Play.current
-import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 

@@ -2,14 +2,13 @@ package ed.server
 
 import com.debiki.core._
 import debiki.onebox.Onebox
-import debiki.{Globals, RateLimiter, ReactRenderer}
+import debiki.{Globals, RateLimiter, ReactRenderer, TextAndHtmlMaker}
 import ed.server.http.{PlainApiActions, SafeActions}
 import ed.server.security.EdSecurity
 import play.api._
 import play.api.http.FileMimeTypes
-import play.api.libs.ws.WSClient
 import play.api.libs.ws.ahc.AhcWSComponents
-import play.api.mvc.ControllerComponents
+import play.api.mvc.{ControllerComponents, EssentialFilter}
 import play.api.routing.Router
 import play.filters.HttpFiltersComponents
 import scala.concurrent.ExecutionContext
@@ -34,9 +33,12 @@ class EdAppLoader extends ApplicationLoader {
 
 class EdAppComponents(appLoaderContext: ApplicationLoader.Context)
   extends BuiltInComponentsFromContext(appLoaderContext)
-  with HttpFiltersComponents
   with AhcWSComponents
   with _root_.controllers.AssetsComponents {
+
+  // Could instead extend HttpFiltersComponents, but it adds a weird localhost-only filter.
+  SECURITY // it adds some maybe-useful security related filters too, investigate if should use them.
+  override def httpFilters: Seq[EssentialFilter] = Nil
 
   val globals = new Globals(appLoaderContext, executionContext, wsClient, actorSystem)
   val security = new ed.server.security.EdSecurity(globals)
@@ -114,6 +116,8 @@ class EdContext(
   val akkaStreamMaterializer: akka.stream.Materializer,
   // Hide so fewer parts of the app get access to Play's internal stuff.
   private val controllerComponents: ControllerComponents) {
+
+  val textAndHtmlMaker = new TextAndHtmlMaker(nashorn)
 
   implicit def executionContext: ExecutionContext = controllerComponents.executionContext
   def mimeTypes: FileMimeTypes = controllerComponents.fileMimeTypes

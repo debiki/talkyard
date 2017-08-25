@@ -19,14 +19,13 @@ package debiki.onebox
 
 import com.debiki.core._
 import com.debiki.core.Prelude._
-import debiki.{ReactRenderer, Globals}
+import debiki.{Globals, ReactRenderer}
 import debiki.onebox.engines._
 import javax.{script => js}
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
-import scala.util.{Try, Success, Failure}
+import scala.concurrent.{ExecutionContext, Future}
+import scala.util.{Failure, Success, Try}
 
 
 
@@ -105,7 +104,7 @@ abstract class OneboxEngine(globals: Globals, val nashorn: ReactRenderer) {
       Future.fromTry(futureHtml.value.get.map(sanitizeAndWrap))
     }
     else {
-      futureHtml.map(sanitizeAndWrap)
+      futureHtml.map(sanitizeAndWrap)(globals.executionContext)
     }
   }
 
@@ -149,6 +148,8 @@ class Onebox(val globals: Globals, val nashorn: ReactRenderer) {
   private val failedUrls = mutable.HashSet[String]()
   private val PlaceholderPrefix = "onebox-"
   private val NoEngineException = new DebikiException("DwE3KEF7", "No matching onebox engine")
+
+  private implicit val executionContext = globals.executionContext
 
   private val engines = Seq[OneboxEngine](
     new ImageOnebox(globals, nashorn),

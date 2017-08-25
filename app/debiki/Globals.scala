@@ -20,7 +20,6 @@ package debiki
 import akka.actor._
 import akka.pattern.gracefulStop
 import com.codahale.metrics
-import com.codahale.metrics.MetricRegistry
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import com.debiki.dao.rdb.{Rdb, RdbDaoFactory}
@@ -45,7 +44,6 @@ import redis.RedisClient
 import scala.collection.immutable
 import scala.concurrent.duration._
 import scala.concurrent.{Await, Future, TimeoutException}
-// import scala.concurrent.ExecutionContext.Implicits.global  CLEAN_UP remove all these everywhere
 import scala.util.matching.Regex
 import Globals._
 import ed.server.EdContext
@@ -92,27 +90,29 @@ object Globals {
   */
 class Globals(
   private val appLoaderContext: p.ApplicationLoader.Context,
-  implicit val executionContext: scala.concurrent.ExecutionContext,
+  val executionContext: scala.concurrent.ExecutionContext,
   val wsClient: WSClient,
   val actorSystem: ActorSystem) {
 
   def outer: Globals = this
 
   def setEdContext(edContext: EdContext) {
-    dieIf(edContext ne null, "EdE7UBR10")
+    dieIf(this.edContext ne null, "EdE7UBR10")
     this.edContext = edContext
   }
 
   var edContext: EdContext = _
+
+  private implicit def execCtc = executionContext
 
   val conf: p.Configuration = appLoaderContext.initialConfiguration
   def rawConf: p.Configuration = conf
 
   /** Can be accessed also after the test is done and Play.maybeApplication is None.
     */
-  lazy val isDev: Boolean = appLoaderContext.environment.mode == play.api.Mode.Dev
-  lazy val isOrWasTest: Boolean = appLoaderContext.environment.mode == play.api.Mode.Test
-  lazy val isProd: Boolean = Globals.isProd
+  val isDev: Boolean = appLoaderContext.environment.mode == play.api.Mode.Dev
+  val isOrWasTest: Boolean = appLoaderContext.environment.mode == play.api.Mode.Test
+  val isProd: Boolean = Globals.isProd
 
   def testsDoneServerGone: Boolean =
     isOrWasTest && (!isInitialized || Play.maybeApplication.isEmpty)
@@ -157,9 +157,9 @@ class Globals(
     }
   })
 
-  def metricRegistry: MetricRegistry = state.metricRegistry
 
-  def mostMetrics: MostMetrics = state.mostMetrics
+  val metricRegistry = new metrics.MetricRegistry()
+  val mostMetrics = new MostMetrics(metricRegistry)
 
 
   def applicationVersion: String = state.applicationVersion
@@ -431,6 +431,7 @@ class Globals(
 
 
   private def tryCreateStateUntilKilled() {
+    p.Logger.info("Creating state.... [EdMCREATESTATE")
     _state = Bad(None)
     var firsAttempt = true
 
@@ -462,8 +463,7 @@ class Globals(
         p.Logger.info("Done migrating database. Connecting to other services... [EsM200CONNOTR]")
         val newState = new State(dbDaoFactory, cache)
 
-        if (isOrWasTest &&
-            Play.current.configuration.getBoolean("isTestShallEmptyDatabase").contains(true)) {
+        if (isOrWasTest && conf.getBoolean("isTestShallEmptyDatabase").contains(true)) {
           p.Logger.info("Emptying database... [EsM200EMPTYDB]")
           newState.systemDao.emptyDatabase()
         }
@@ -497,8 +497,8 @@ class Globals(
       isTestSoDisableScripts = isOrWasTestDisableScripts)
 
     if (!isOrWasTestDisableBackgroundJobs) {
-      actorSystem.scheduler.scheduleOnce(
-        5 seconds, state.renderContentActorRef, RenderContentService.RegenerateStaleHtml)
+      actorSystem.scheduler.scheduleOnce(5 seconds, state.renderContentActorRef,
+          RenderContentService.RegenerateStaleHtml)(executionContext)
     }
 
     p.Logger.info("Done creating rendering engines [EsMENGDONE]")
@@ -528,8 +528,8 @@ class Globals(
       state.dbDaoFactory.db.readWriteDataSource.asInstanceOf[HikariDataSource].close()
     }
     _state = null
-    test.timeStartMillis = None
-    test.timeOffsetMillis = 0
+    timeStartMillis = None
+    timeOffsetMillis = 0
     p.Logger.info("Done shutting down. [EsMBYE]")
 
     shutdownLogging()
@@ -583,29 +583,30 @@ class Globals(
     val millisNow =
       if (!isInitialized || !mayFastForwardTime) System.currentTimeMillis()
       else {
-        val millisStart = test.timeStartMillis getOrElse System.currentTimeMillis()
-        millisStart + test.timeOffsetMillis
+        val millisStart = timeStartMillis getOrElse System.currentTimeMillis()
+        millisStart + timeOffsetMillis
       }
     When.fromMillis(millisNow)
   }
 
 
-  object test {
-    def setTime(when: When) {
-      timeStartMillis = Some(when.millis)
-      timeOffsetMillis = 0
-    }
-
-    def fastForwardTimeMillis(millis: Long) {
-      timeOffsetMillis += millis
-    }
-
-    @volatile
-    var timeStartMillis: Option[Long] = None
-
-    @volatile
-    var timeOffsetMillis: Long = 0
+  /** When running tests only. */
+  def testSetTime(when: When) {
+    timeStartMillis = Some(when.millis)
+    timeOffsetMillis = 0
   }
+
+  /** When running tests only. */
+  def testFastForwardTimeMillis(millis: Long) {
+    timeOffsetMillis += millis
+  }
+
+  @volatile
+  private var timeStartMillis: Option[Long] = None
+
+  @volatile
+  private var timeOffsetMillis: Long = 0
+
 
 
   /** Not needed any longer, after I ported to compile time dependency injection, with Play 2.6?
@@ -626,7 +627,7 @@ class Globals(
     val config = new Config(conf)
 
     val isTestDisableScripts: Boolean = {
-      val disable = Play.current.configuration.getBoolean("isTestDisableScripts").getOrElse(false)
+      val disable = conf.getBoolean("isTestDisableScripts").getOrElse(false)
       if (disable) {
         p.Logger.info("Is test with scripts disabled. [EsM4GY82]")
       }
@@ -634,15 +635,12 @@ class Globals(
     }
 
     val isTestDisableBackgroundJobs: Boolean = {
-      val disable = Play.current.configuration.getBoolean("isTestDisableBackgroundJobs").getOrElse(false)
+      val disable = conf.getBoolean("isTestDisableBackgroundJobs").getOrElse(false)
       if (disable) {
         p.Logger.info("Is test with background jobs disabled. [EsM6JY0K2]")
       }
       disable
     }
-
-    val metricRegistry = new metrics.MetricRegistry()
-    val mostMetrics = new MostMetrics(metricRegistry)
 
     // Redis. (A Redis client pool makes sense if we haven't saturate the CPU on localhost, or
     // if there're many Redis servers and we want to round robin between them. Not needed, now.)
@@ -692,7 +690,7 @@ class Globals(
 
     val notifierActorRef: Option[ActorRef] =
       if (isTestDisableBackgroundJobs) None
-      else Some(Notifier.startNewActor(actorSystem, systemDao, siteDaoFactory))
+      else Some(Notifier.startNewActor(executionContext, actorSystem, systemDao, siteDaoFactory))
 
     def indexerBatchSize: Int = conf.getInt("ed.search.indexer.batchSize") getOrElse 100
     def indexerIntervalSeconds: Int = conf.getInt("ed.search.indexer.intervalSeconds") getOrElse 5
@@ -700,7 +698,8 @@ class Globals(
     val indexerActorRef: Option[ActorRef] =
       if (isTestDisableBackgroundJobs) None
       else Some(SearchEngineIndexer.startNewActor(
-        indexerBatchSize, indexerIntervalSeconds, elasticSearchClient, actorSystem, systemDao))
+          indexerBatchSize, indexerIntervalSeconds, executionContext,
+          elasticSearchClient, actorSystem, systemDao))
 
     def spamCheckBatchSize: Int = conf.getInt("ed.spamcheck.batchSize") getOrElse 20
     def spamCheckIntervalSeconds: Int = conf.getInt("ed.spamcheck.intervalSeconds") getOrElse 1
@@ -708,7 +707,7 @@ class Globals(
     val spamCheckActorRef: Option[ActorRef] =
       if (isTestDisableBackgroundJobs) None
       else Some(SpamCheckActor.startNewActor(
-        spamCheckBatchSize, spamCheckIntervalSeconds, actorSystem, systemDao))
+        spamCheckBatchSize, spamCheckIntervalSeconds, actorSystem, executionContext, systemDao))
 
     val nginxHost: String =
       conf.getString("ed.nginx.host").orElse(
@@ -719,7 +718,8 @@ class Globals(
       RenderContentService.startNewActor(outer, edContext.nashorn)
 
     val spamChecker = new SpamChecker(
-      appLoaderContext.initialConfiguration, wsClient, applicationVersion)
+      executionContext, appLoaderContext.initialConfiguration, wsClient,
+      applicationVersion, edContext.textAndHtmlMaker)
 
     spamChecker.start()
 

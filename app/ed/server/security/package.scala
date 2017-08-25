@@ -234,7 +234,7 @@ class EdSecurity(globals: Globals) {
 
   def throwErrorIfPasswordTooWeak(
         password: String, username: String, fullName: Option[String], email: String) {
-    ??? /* Server side pwd check disabled
+    /* Server side pwd check disabled
     val passwordStrength = ReactRenderer.calcPasswordStrength(
       password = password, username = username, fullName = fullName, email = email)
     if (!passwordStrength.isStrongEnough)

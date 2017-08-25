@@ -53,7 +53,7 @@ object ApplicationBuild extends Build {
     play.sbt.PlayImport.ws,
     // Gzip filter.
     play.sbt.Play.autoImport.filters,
-    "com.typesafe.play" %% "play-json" % "2.6.2",
+    "com.typesafe.play" %% "play-json" % "2.6.3",
     // OpenAuth and OpenID etc Authentication.
     "com.mohiva" %% "play-silhouette" % "5.0.0",
     "com.mohiva" %% "play-silhouette-crypto-jca" % "5.0.0",

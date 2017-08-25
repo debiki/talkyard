@@ -104,6 +104,7 @@ class SiteDao(
 
   def globals: debiki.Globals = context.globals
   def nashorn: ReactRenderer = context.nashorn
+  def textAndHtmlMaker: TextAndHtmlMaker = new TextAndHtmlMaker(nashorn)
   import context.security.throwIndistinguishableNotFound
 
   def memCache_test: MemCache = {

@@ -3,14 +3,14 @@ package ed.server
 import com.debiki.core.Prelude._
 import com.debiki.core._
 import debiki.RateLimits.NoRateLimits
-import debiki.RateLimits
+import debiki.{RateLimits, TextAndHtmlMaker}
 import ed.server.http._
 import play.api._
 import play.api.libs.Files.TemporaryFile
 import play.api.libs.json.JsValue
 import play.api.mvc._
 import play.{api => p}
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 
 
@@ -20,6 +20,8 @@ class EdController(cc: ControllerComponents, val context: EdContext)
   import context.globals
   import context.plainApiActions._
 
+  def textAndHtmlMaker: TextAndHtmlMaker = context.textAndHtmlMaker
+  implicit val executionContext: ExecutionContext = context.executionContext
 
   def AsyncGetAction(f: GetRequest => Future[Result]): mvc.Action[Unit] =
     PlainApiAction(BodyParsers.parse.empty, NoRateLimits).async(f)
@@ -66,7 +68,7 @@ class EdController(cc: ControllerComponents, val context: EdContext)
   def JsonOrFormDataPostAction(rateLimits: RateLimits, maxBytes: Int,
         allowAnyone: Boolean = false, isLogin: Boolean = false)
   (f: ApiRequest[JsonOrFormDataBody] => Result): Action[JsonOrFormDataBody] =
-    PlainApiAction(JsonOrFormDataBody.parser(maxBytes = maxBytes),
+    PlainApiAction(new JsonOrFormDataBodyParser(executionContext).parser(maxBytes = maxBytes),
       rateLimits, allowAnyone = allowAnyone, isLogin = isLogin)(f)
 
   def AsyncPostJsonAction(rateLimits: RateLimits, maxBytes: Int, allowAnyone: Boolean = false)(

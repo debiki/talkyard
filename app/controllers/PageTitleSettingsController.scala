@@ -118,7 +118,7 @@ class PageTitleSettingsController @Inject()(cc: ControllerComponents, edContext:
     // but the page will still be in an okay state afterwards.
 
     // Update page title.
-    val newTextAndHtml = TextAndHtml.forTitle(newTitle)
+    val newTextAndHtml = textAndHtmlMaker.forTitle(newTitle)
 
     request.dao.editPostIfAuth(pageId = pageId, postNr = PageParts.TitleNr,
       request.who, request.spamRelatedStuff, newTextAndHtml)

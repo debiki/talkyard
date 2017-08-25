@@ -129,7 +129,7 @@ class EditController @Inject()(cc: ControllerComponents, edContext: EdContext)
       inCategoriesRootLast = categoriesRootLast,
       permissions = dao.getPermsOnPages(categoriesRootLast)), "EdE4JBTYE8")
 
-    val newTextAndHtml = TextAndHtml.forBodyOrComment(
+    val newTextAndHtml = textAndHtmlMaker.forBodyOrComment(
       newText,
       allowClassIdDataAttrs = postNr == PageParts.BodyNr,
       // When follow links? Previously:

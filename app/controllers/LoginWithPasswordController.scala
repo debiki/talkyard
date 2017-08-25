@@ -30,7 +30,6 @@ import org.scalactic.{Bad, Good}
 import play.api._
 import play.api.mvc._
 import play.api.libs.json.{JsBoolean, JsValue, Json}
-import scala.concurrent.ExecutionContext.Implicits.global
 import LoginWithPasswordController._
 
 

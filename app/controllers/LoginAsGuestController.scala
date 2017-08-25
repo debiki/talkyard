@@ -35,7 +35,6 @@ class LoginAsGuestController @Inject()(cc: ControllerComponents, edContext: EdCo
 
   import context.globals
   import context.security.createSessionIdAndXsrfToken
-  import context.executionContext
 
 
   def loginGuest: Action[JsValue] = AsyncPostJsonAction(RateLimits.Login, maxBytes = 1000) { request =>

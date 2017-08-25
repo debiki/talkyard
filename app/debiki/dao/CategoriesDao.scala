@@ -20,7 +20,7 @@ package debiki.dao
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki.EdHttp._
-import debiki.TextAndHtml
+import debiki.{TextAndHtml, TextAndHtmlMaker}
 import ed.server.auth.{Authz, ForumAuthzContext, MayMaybe}
 import java.{util => ju}
 import scala.collection.{immutable, mutable}
@@ -50,8 +50,11 @@ case class CategoryToSave(
   require(anyId isNot NoCategoryId, "EdE5LKAW0")
   def isNewCategory: Boolean = anyId.exists(_ < 0)
 
-  val aboutTopicTitle: TextAndHtml = TextAndHtml.forTitle(s"About the $name category")
-  val aboutTopicBody: TextAndHtml = TextAndHtml.forBodyOrComment(description) // COULD follow links? Only staff can create categories [WHENFOLLOW]
+  def makeAboutTopicTitle(textAndHtmlMaker: TextAndHtmlMaker): TextAndHtml =
+    textAndHtmlMaker.forTitle(s"About the $name category")
+
+  def makeAboutTopicBody(textAndHtmlMaker: TextAndHtmlMaker): TextAndHtml =
+    textAndHtmlMaker.forBodyOrComment(description) // COULD follow links? Only staff can create categories [WHENFOLLOW]
 
   def makeCategory(id: CategoryId, createdAt: ju.Date) = Category(
     id = id,
@@ -439,13 +442,16 @@ trait CategoriesDao {
     val category = newCategoryData.makeCategory(categoryId, transaction.now.toJavaDate)
     transaction.insertCategoryMarkSectionPageStale(category)
 
+    val titleTextAndHtml = newCategoryData.makeAboutTopicTitle(textAndHtmlMaker)
+    val bodyTextAndHtml = newCategoryData.makeAboutTopicBody(textAndHtmlMaker)
+
     val (aboutPagePath, _) = createPageImpl(
         PageRole.AboutCategory, PageStatus.Published, anyCategoryId = Some(categoryId),
         anyFolder = None, anySlug = Some("about-" + newCategoryData.slug), showId = true,
-        titleSource = newCategoryData.aboutTopicTitle.text,
-        titleHtmlSanitized = newCategoryData.aboutTopicTitle.safeHtml,
-        bodySource = newCategoryData.aboutTopicBody.text,
-        bodyHtmlSanitized = newCategoryData.aboutTopicBody.safeHtml,
+        titleSource = titleTextAndHtml.text,
+        titleHtmlSanitized = titleTextAndHtml.safeHtml,
+        bodySource = bodyTextAndHtml.text,
+        bodyHtmlSanitized = bodyTextAndHtml.safeHtml,
         pinOrder = Some(ForumDao.AboutCategoryTopicPinOrder),
         pinWhere = Some(PinPageWhere.InCategory),
         byWho, spamRelReqStuff = None, transaction)

@@ -13,7 +13,7 @@ resolvers += "Scala-Tools Maven2 Repository" at "http://scala-tools.org/repo-rel
 
 libraryDependencies ++= Seq(
   "org.apache.commons" % "commons-lang3" % "3.5",
-  "com.typesafe.play" %% "play-json" % "2.6.2",
+  "com.typesafe.play" %% "play-json" % "2.6.3",
   // https://mvnrepository.com/artifact/ch.qos.logback/logback-classic
   "ch.qos.logback" % "logback-classic" % "1.2.2",
   // https://mvnrepository.com/artifact/ch.qos.logback/logback-core

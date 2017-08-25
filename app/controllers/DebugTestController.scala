@@ -37,7 +37,6 @@ import redis.RedisClient
 import scala.concurrent.duration._
 import scala.concurrent.{Await, Future}
 import scala.concurrent.Future._
-import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util.Try
 
 
@@ -201,7 +200,7 @@ class DebugTestController @Inject()(cc: ControllerComponents, edContext: EdConte
     throwForbiddenIf(!globals.mayFastForwardTime,
         "EdE5AKWYQ1", "To fast-forward time, you need a wizard's wand")
     val seconds = (request.body \ "seconds").as[Int]
-    globals.test.fastForwardTimeMillis(seconds * 1000)
+    globals.testFastForwardTimeMillis(seconds * 1000)
     Ok
   }
 

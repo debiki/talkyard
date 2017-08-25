@@ -19,19 +19,17 @@ package ed.server.spam
 
 import com.debiki.core._
 import com.debiki.core.Prelude._
-import debiki.TextAndHtml
+import debiki.{TextAndHtml, TextAndHtmlMaker}
 import debiki.EdHttp.throwForbidden
 import ed.server.http.DebikiRequest
 import java.{net => jn}
 import java.net.UnknownHostException
 import play.{api => p}
-import play.api.Play.current
 import play.api.libs.ws._
 import play.api.libs.json.Json
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.{Future, Promise}
+import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.concurrent.Future.successful
-import scala.util.{Success, Failure}
+import scala.util.Success
 
 
 
@@ -119,7 +117,14 @@ object NoApiKeyException extends QuickException
   *
   * Thread safe.
   */
-class SpamChecker(playConf: play.api.Configuration, wsClient: WSClient, appVersion: String) {
+class SpamChecker(
+  executionContext: ExecutionContext,
+  playConf: play.api.Configuration,
+  wsClient: WSClient,
+  appVersion: String,
+  textAndHtmlMaker: TextAndHtmlMaker) {
+
+  private implicit val execCtx = executionContext
 
   /*
   val request: dispatch.Req = dispatch.url("http://api.hostip.info/country.php").GET
@@ -261,7 +266,7 @@ class SpamChecker(playConf: play.api.Configuration, wsClient: WSClient, appVersi
       return Future.successful(None)
     }
 
-    val textAndHtml = TextAndHtml.forBodyOrComment(post.currentSource)
+    val textAndHtml = textAndHtmlMaker.forBodyOrComment(post.currentSource)
 
     val spamTestFutures =
       if (textAndHtml.text contains EdSpamMagicText) {

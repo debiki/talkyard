@@ -28,7 +28,6 @@ import java.{util => ju}
 import play.{api => p}
 import play.api.mvc._
 import scala.concurrent.{ExecutionContext, Future}
-import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util.{Failure, Success}
 
 
@@ -71,15 +70,17 @@ class PlainApiActions(
     * doesn't map to any login entry.
     * The SidStatusRequest.sidStatus passed to the action is either SidAbsent or a SidOk.
     */
-  def PlainApiActionImpl[B](parser: BodyParser[B],
+  def PlainApiActionImpl[B](aParser: BodyParser[B],
         rateLimits: RateLimits, adminOnly: Boolean, staffOnly: Boolean,
         allowAnyone: Boolean = false,  // try to delete 'allowAnyone'? REFACTOR
         isLogin: Boolean = false, superAdminOnly: Boolean = false) =
       new ActionBuilder[ApiRequest, B] {
 
-    override def parser: BodyParser[B] = parser
-    override protected def executionContext: ExecutionContext =
-      scala.concurrent.ExecutionContext.Implicits.global
+    override def parser: BodyParser[B] =
+      aParser
+
+    override implicit protected def executionContext: ExecutionContext =
+      globals.executionContext
 
     def numOnly: Int = adminOnly.toZeroOne + superAdminOnly.toZeroOne + staffOnly.toZeroOne
     require(numOnly <= 1, "EsE4KYF02")

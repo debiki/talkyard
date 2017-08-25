@@ -18,19 +18,17 @@
 package controllers
 
 import com.debiki.core._
-import debiki.{Globals, RateLimits, SiteTpi}
+import debiki.{RateLimits, SiteTpi}
 import ed.server.search._
 import ed.server.http._
-import play.api._
 import scala.collection.immutable.Seq
-import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import Prelude._
 import debiki.dao.SearchQuery
 import ed.server.{EdContext, EdController}
 import javax.inject.Inject
 import play.api.libs.json.JsValue
-import play.api.mvc.{AbstractController, Action, ControllerComponents}
+import play.api.mvc.{Action, ControllerComponents}
 
 
 /** Full text search, for a whole site, or for a site section, e.g. a single

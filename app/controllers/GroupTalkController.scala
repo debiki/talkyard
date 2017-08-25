@@ -65,9 +65,9 @@ class GroupTalkController @Inject()(cc: ControllerComponents, edContext: EdConte
 
     // Don't follow links inside a chat; chats don't work well with search engines anyway, and
     // higher risk people say/write/link-to weird things, because chats = chatty = less moderated.
-    val bodyTextAndHtml = TextAndHtml.forBodyOrComment(text,
+    val bodyTextAndHtml = textAndHtmlMaker.forBodyOrComment(text,
       allowClassIdDataAttrs = true, followLinks = false)
-    val titleTextAndHtml = TextAndHtml.forTitle(title)
+    val titleTextAndHtml = textAndHtmlMaker.forTitle(title)
 
     val pagePath = request.dao.startGroupTalk(
       titleTextAndHtml, bodyTextAndHtml, pageRole, toUserIds, sentByWho = request.who,

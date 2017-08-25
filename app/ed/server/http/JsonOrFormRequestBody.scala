@@ -19,13 +19,10 @@ package ed.server.http
 
 import com.debiki.core._
 import com.debiki.core.Prelude._
-import debiki._
 import debiki.EdHttp._
-import java.{util => ju}
-import play.api._
-import play.api.mvc.{Action => _, _}
+import play.api.mvc.{BodyParser, BodyParsers}
 import play.api.libs.json._
-import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.ExecutionContext
 
 
 /**
@@ -109,9 +106,10 @@ case class JsonOrFormDataBody(
 }
 
 
-object JsonOrFormDataBody {
+class JsonOrFormDataBodyParser(val executionContext: ExecutionContext) {
 
   import BodyParsers.parse
+  implicit val execCtc = executionContext
 
   def parser(maxBytes: Int): BodyParser[JsonOrFormDataBody] = parse.using { requestHeader =>
     requestHeader.contentType match {

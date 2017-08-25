@@ -30,7 +30,6 @@ import play.api.libs.ws.{WSClient, WSResponse}
 import play.api.Play.current
 import redis.RedisClient
 import scala.collection.mutable
-import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.concurrent.duration._
 import ReactJson.JsUser
@@ -81,6 +80,7 @@ object PubSub {
     */
   def startNewActor(globals: Globals, nginxHost: String)
         : (PubSubApi, StrangerCounterApi) = {
+    implicit val execCtx = globals.executionContext
     val actorRef = globals.actorSystem.actorOf(Props(
       new PubSubActor(nginxHost, globals)), name = s"PubSub-$testInstanceCounter")
     globals.actorSystem.scheduler.schedule(60 seconds, 10 seconds, actorRef, DeleteInactiveSubscriptions)
@@ -170,6 +170,8 @@ class PubSubActor(val nginxHost: String, val globals: Globals) extends Actor {
 
   def wsClient: WSClient = globals.wsClient
   def redisClient: RedisClient = globals.redisClient
+
+  private implicit val execCtx = globals.executionContext
 
   /** Tells when subscriber subscribed. Subscribers are sorted by perhaps-inactive first.
     * We'll push messages only to users who have subscribed (i.e. are online and have
