@@ -21,13 +21,12 @@ import com.debiki.core._
 import com.debiki.core.Prelude._
 import java.{io => jio}
 import javax.{script => js}
-import debiki.onebox.InstantOneboxRendererForNashorn
+import debiki.onebox.{InstantOneboxRendererForNashorn, Onebox}
 import org.apache.lucene.util.IOUtils
 import play.api.Play
-import play.api.Play.current
 import scala.concurrent.Future
-import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util.Try
+import ReactRenderer._
 
 
 // COULD move elsewhere. Placed here only because the pwd strength function is
@@ -58,7 +57,8 @@ case class PasswordStrength(
   * creates new threads, or has 50 - 100 'play-akka.actor.default-dispatcher-NN'
   * threads, and it doesn't make sense to create engines for that many threads.
   */
-object ReactRenderer extends com.debiki.core.CommonMarkRenderer {
+// RENAME to Nashorn? Because does lots of things, doesn't just render React stuff.
+class ReactRenderer(globals: Globals) extends com.debiki.core.CommonMarkRenderer {
 
   private val logger = play.api.Logger
 
@@ -73,17 +73,18 @@ object ReactRenderer extends com.debiki.core.CommonMarkRenderer {
     override def createBindings(): js.Bindings = null
   }
 
-  /** Initializing engines takes rather long, so create only two in dev mode:
-    * one for the RenderContentService background actor, and one for
-    * http request handler threads that need to render content directly.
-    */
-  val MinNumEngines = 2
-
   @volatile private var firstCreateEngineError: Option[Throwable] = None
 
   private var secure = true
   private var cdnUploadsUrlPrefix = ""
   private var isTestSoDisableScripts = false
+
+  private var oneboxes: Option[Onebox] = None
+
+  def setOneboxes(oneboxes: Onebox): Unit = {
+    dieIf(this.oneboxes.isDefined, "EdE2KQTG0")
+    this.oneboxes = Some(oneboxes)
+  }
 
 
   CLEAN_UP // remove server side pwd strength check.
@@ -146,7 +147,7 @@ object ReactRenderer extends com.debiki.core.CommonMarkRenderer {
       val durationMs = System.currentTimeMillis() - startMs
       logger.info(o"""... Done creating $numEngines Javascript engines, async,
           took $durationMs ms [EdMJSENGDONE]""")
-    }
+    }(globals.executionContext)
   }
 
 
@@ -219,7 +220,7 @@ object ReactRenderer extends com.debiki.core.CommonMarkRenderer {
         allowClassIdDataAttrs: Boolean, followLinks: Boolean): String = {
     if (isTestSoDisableScripts)
       return "Scripts disabled [EsM5GY52]"
-    val oneboxRenderer = new InstantOneboxRendererForNashorn
+    val oneboxRenderer = new InstantOneboxRendererForNashorn(oneboxes getOrDie "EdE2WUHP6")
     val resultNoOneboxes = withJavascriptEngine(engine => {
       // The onebox renderer needs a Javascript engine to sanitize html (via Caja JsHtmlSanitizer)
       // and we'll reuse `engine` so we won't have to create any additional engine.
@@ -273,6 +274,7 @@ object ReactRenderer extends com.debiki.core.CommonMarkRenderer {
   }
 
 
+  /*
   def calcPasswordStrength(password: String, username: String, fullName: Option[String],
         email: String)
         : PasswordStrength = {
@@ -296,7 +298,7 @@ object ReactRenderer extends com.debiki.core.CommonMarkRenderer {
         score = Try { parts(3).toInt } getOrElse die("DwE6KEF28"))
       result
     })
-  }
+  } */
 
 
   private def withJavascriptEngine[R](fn: (js.Invocable) => R): R = {
@@ -358,7 +360,7 @@ object ReactRenderer extends com.debiki.core.CommonMarkRenderer {
 
     scriptBuilder.append(i"""
         |$DummyConsoleLogFunctions
-        |$ServerSideDebikiModule
+        |${serverSideDebikiModule(secure)}
         |$ServerSideReactStore
         |
         |// React-Router calls setTimeout(), but it's not available in Nashorn.
@@ -447,6 +449,17 @@ object ReactRenderer extends com.debiki.core.CommonMarkRenderer {
     logger.info(o"""Done warming up Nashorn engine, took: $timeElapsed ms""")
   }
 
+}
+
+
+
+object ReactRenderer {
+
+  /** Initializing engines takes rather long, so create only two in dev mode:
+    * one for the RenderContentService background actor, and one for
+    * http request handler threads that need to render content directly.
+    */
+  val MinNumEngines = 2
 
   private val ErrorRenderingReact = "__error_rendering_react_5KGF25X8__"
 
@@ -540,7 +553,7 @@ object ReactRenderer extends com.debiki.core.CommonMarkRenderer {
     |"""
 
 
-  private def ServerSideDebikiModule = i"""
+  private def serverSideDebikiModule(secure: Boolean) = i"""
     |var debiki = {
     |  store: {},
     |  v0: { util: {} },

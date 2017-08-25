@@ -26,7 +26,7 @@ import java.{io => jio, util => ju}
 import java.awt.image.BufferedImage
 import java.nio.{file => jf}
 import java.nio.file.{attribute => jfa}
-import debiki.{ImageUtils, ReactRenderer}
+import debiki.ImageUtils
 import org.jsoup.Jsoup
 import play.{api => p}
 import UploadsDao._
@@ -187,7 +187,7 @@ trait UploadsDao {
     val approvedRefs = post.approvedHtmlSanitized.map(
       h => findUploadRefsInText(h, uploadsUrlPath)) getOrElse Set.empty
     val currentRefs = findUploadRefsInText(
-      post.currentHtmlSanitizedToFindLinks(ReactRenderer), uploadsUrlPath)
+      post.currentHtmlSanitizedToFindLinks(context.nashorn), uploadsUrlPath)
     approvedRefs ++ currentRefs
   }
 

@@ -26,12 +26,14 @@ import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki.onebox._
 import java.{net => jn, util => ju}
-import scala.util.{Try, Success, Failure}
+import scala.util.{Failure, Success, Try}
 import YouTubeOnebox._
+import debiki.{Globals, ReactRenderer}
 
 
 
-class YouTubeOnebox extends InstantOneboxEngine {
+class YouTubeOnebox(globals: Globals, nashorn: ReactRenderer)
+  extends InstantOneboxEngine(globals, nashorn) {
 
   val regex = """^https?:\/\/(?:www\.)?(?:m\.)?(?:youtube\.com|youtu\.be)\/.+$""".r
 
@@ -109,8 +111,7 @@ object YouTubeOnebox {
 
 
   private def findParams(javaUri: jn.URI): Option[String] = {
-    import scala.collection.JavaConversions._
-    var result = ""
+    var result = "" /*
     val params: ju.List[org.apache.http.NameValuePair] =
       try org.apache.http.client.utils.URLEncodedUtils.parse(javaUri, "UTF8")
       catch {
@@ -121,7 +122,7 @@ object YouTubeOnebox {
       val name = nameValue.getName
       val value = nameValue.getValue
       // ... fix later ...
-    }
+    } */
     Some(result)
   }
 }

@@ -34,9 +34,9 @@ object RenderContentService {
 
   /** PERFORMANCE COULD create one thread/actor per processor instead.
     */
-  def startNewActor(globals: Globals): ActorRef = {
+  def startNewActor(globals: Globals, nashorn: ReactRenderer): ActorRef = {
     globals.actorSystem.actorOf(
-      Props(new RenderContentActor(globals)),
+      Props(new RenderContentActor(globals, nashorn)),
       name = s"RenderContentActor")
   }
 
@@ -49,7 +49,9 @@ object RenderContentService {
   * for that page. Otherwise, it continuously keeps looking for any out-of-date cached
   * content html and makes them up-to-date.
   */
-class RenderContentActor(globals: Globals) extends Actor {
+class RenderContentActor(
+  val globals: Globals,
+  val nashorn: ReactRenderer) extends Actor {
 
   def execCtx: ExecutionContext = globals.executionContext
 
@@ -123,7 +125,7 @@ class RenderContentActor(globals: Globals) extends Actor {
     p.Logger.debug(s"Background rendering ${sitePageId.toPrettyString} [DwM7KGE2]")
     val dao = globals.siteDao(sitePageId.siteId)
     val toJsonResult = ReactJson.pageToJson(sitePageId.pageId, dao)
-    val html = ReactRenderer.renderPage(toJsonResult.jsonString) getOrElse {
+    val html = nashorn.renderPage(toJsonResult.jsonString) getOrElse {
       p.Logger.error(s"Error rendering ${sitePageId.toPrettyString} [DwE5KJG2]")
       return
     }

@@ -64,7 +64,7 @@ class CloseCollapseController @Inject()(cc: ControllerComponents, edContext: EdC
     apiReq.dao.changePostStatus(postNr, pageId = pageId, action, userId = apiReq.theUserId)
 
     OkSafeJson(ReactJson.postToJson2(postNr = postNr, pageId = pageId, // COULD stop including post in reply? It'd be annoying if other unrelated changes were loaded just because the post was toggled open?
-      apiReq.dao, includeUnapproved = true))
+      apiReq.dao, includeUnapproved = true, nashorn = context.nashorn))
   }
 
 }

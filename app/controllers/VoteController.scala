@@ -94,7 +94,7 @@ class VoteController @Inject()(cc: ControllerComponents, edContext: EdContext)
     }
 
     val json = ReactJson.postToJson2(postNr = postNr, pageId = pageId, request.dao,
-      includeUnapproved = false, showHidden = true)
+      includeUnapproved = false, showHidden = true, nashorn = context.nashorn)
     OkSafeJson(json)
   }
 

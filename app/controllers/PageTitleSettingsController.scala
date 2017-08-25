@@ -59,7 +59,7 @@ class PageTitleSettingsController @Inject()(cc: ControllerComponents, edContext:
     }
 
     val hasManuallyEditedSlug = anySlug.exists(slug =>
-      slug != ReactRenderer.slugifyTitle(newTitle))
+      slug != context.nashorn.slugifyTitle(newTitle))
 
     if (anyLayout.isDefined) {
       throwForbiddenIf(!request.theUser.isAdmin,
@@ -184,7 +184,7 @@ class PageTitleSettingsController @Inject()(cc: ControllerComponents, edContext:
     // The browser will update the title and the url path in the address bar.
     OkSafeJson(Json.obj(
       "newTitlePost" -> ReactJson.postToJson2(postNr = PageParts.TitleNr, pageId = pageId,
-          request.dao, includeUnapproved = true),
+          request.dao, includeUnapproved = true, nashorn = context.nashorn),
       "newAncestorsRootFirst" -> newAncestorsJson,
       "newUrlPath" -> JsStringOrNull(newPath.map(_.value))))
   }

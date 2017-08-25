@@ -925,7 +925,7 @@ trait PostsDao {
 
       COULD_OPTIMIZE // try not to load the whole page in makeStorePatch2
       (postAfter, ReactJson.makeStorePatch2(postId, postAfter.pageId,
-          appVersion = globals.applicationVersion, transaction))
+          appVersion = globals.applicationVersion, nashorn, transaction))
     }
     refreshPageInMemCache(post.pageId)
     patch
@@ -1530,7 +1530,7 @@ trait PostsDao {
       SHOULD // transaction.saveDeleteNotifications(notfs) — but would cause unique key errors
 
       val patch = ReactJson.makeStorePatch2(postAfter.id, toPage.id,
-        appVersion = globals.applicationVersion, transaction)
+        appVersion = globals.applicationVersion, nashorn, transaction)
       (postAfter, patch)
     }
 

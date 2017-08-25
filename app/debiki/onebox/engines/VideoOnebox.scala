@@ -24,12 +24,14 @@ package debiki.onebox.engines
 
 import com.debiki.core._
 import com.debiki.core.Prelude._
+import debiki.{Globals, ReactRenderer}
 import debiki.onebox._
 import scala.util.Success
 
 
 
-class VideoOnebox extends InstantOneboxEngine {
+class VideoOnebox(globals: Globals, nashorn: ReactRenderer)
+  extends InstantOneboxEngine(globals, nashorn) {
 
   val regex = """^(https?:)?\/\/.*\.(mov|mp4|m4v|webm|ogv)(\?.*)?$""".r
 

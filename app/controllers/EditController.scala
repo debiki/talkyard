@@ -27,7 +27,7 @@ import ed.server.http._
 import ed.server.{EdContext, EdController}
 import ed.server.auth.Authz
 import javax.inject.Inject
-import play.api.mvc.ControllerComponents
+import play.api.mvc.{Action, ControllerComponents}
 import play.api.libs.json._
 import EditController._
 import scala.concurrent.ExecutionContext
@@ -142,15 +142,15 @@ class EditController @Inject()(cc: ControllerComponents, edContext: EdContext)
       request.spamRelatedStuff, newTextAndHtml)
 
     OkSafeJson(ReactJson.postToJson2(postNr = postNr, pageId = pageId,
-      request.dao, includeUnapproved = true))
+      request.dao, includeUnapproved = true, nashorn = context.nashorn))
   }
 
 
   /** Downloads the linked resource via an external request to the URL (assuming it's
     * a trusted safe site) then creates and returns sanitized onebox html.
     */
-  def onebox(url: String) = AsyncGetActionRateLimited(RateLimits.LoadOnebox) { request =>
-    Onebox.loadRenderSanitize(url, javascriptEngine = None).transform(
+  def onebox(url: String): Action[Unit] = AsyncGetActionRateLimited(RateLimits.LoadOnebox) { request =>
+    context.oneboxes.loadRenderSanitize(url, javascriptEngine = None).transform(
       html => Ok(html),
       throwable => ResultException(BadReqResult("DwE4PKE2", "Cannot onebox that link")))(execCtx)
   }
@@ -204,7 +204,7 @@ class EditController @Inject()(cc: ControllerComponents, edContext: EdContext)
     request.dao.changePostStatus(postNr, pageId = pageId, action, userId = request.theUserId)
 
     OkSafeJson(ReactJson.postToJson2(postNr = postNr, pageId = pageId, // COULD: don't include post in reply? It'd be annoying if other unrelated changes were loaded just because the post was toggled open? [5GKU0234]
-      request.dao, includeUnapproved = request.theUser.isStaff))
+      request.dao, includeUnapproved = request.theUser.isStaff, nashorn = context.nashorn))
   }
 
 

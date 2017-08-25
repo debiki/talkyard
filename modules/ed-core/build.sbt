@@ -18,7 +18,7 @@ libraryDependencies ++= Seq(
   "com.typesafe.play" %% "play-json" % "2.6.2",
   "com.lambdaworks" % "scrypt" % "1.4.0", // COULD move to ed-server, see comments in src/main/scala/com/debiki/core/dao-db.scala
   "junit" % "junit" % "4.7" % "test",
-  // "org.specs2" %% "specs2" % "2.3.12" % "test",  -- not scala 2.12
+  "org.specs2" %% "specs2-core" % "3.9.4" % "test",
   "org.scalatest" %% "scalatest" % "3.0.1" % "test"
 )
 

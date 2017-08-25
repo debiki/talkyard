@@ -491,7 +491,7 @@ class Globals(
     // The render engines might be needed by some Java (Scala) evolutions.
     // Let's create them in this parallel thread rather than blocking the whole server.
     // (Takes 2? 5? seconds.)
-    debiki.ReactRenderer.startCreatingRenderEngines(
+    edContext.nashorn.startCreatingRenderEngines(
       secure = state.secure,
       cdnUploadsUrlPrefix = config.cdn.uploadsUrlPrefix,
       isTestSoDisableScripts = isOrWasTestDisableScripts)
@@ -716,7 +716,7 @@ class Globals(
     val (pubSub, strangerCounter) = PubSub.startNewActor(outer, nginxHost)
 
     val renderContentActorRef: ActorRef =
-      RenderContentService.startNewActor(outer)
+      RenderContentService.startNewActor(outer, edContext.nashorn)
 
     val spamChecker = new SpamChecker(
       appLoaderContext.initialConfiguration, wsClient, applicationVersion)

@@ -1,7 +1,8 @@
 package ed.server
 
 import com.debiki.core._
-import debiki.{Globals, RateLimiter}
+import debiki.onebox.Onebox
+import debiki.{Globals, RateLimiter, ReactRenderer}
 import ed.server.http.{PlainApiActions, SafeActions}
 import ed.server.security.EdSecurity
 import play.api._
@@ -29,7 +30,7 @@ class EdAppLoader extends ApplicationLoader {
 
 }
 
-// !! Close the AhcWSComponents WSClient
+// !! Close the AhcWSComponents WSClient. And Nashorn scripts.
 
 class EdAppComponents(appLoaderContext: ApplicationLoader.Context)
   extends BuiltInComponentsFromContext(appLoaderContext)
@@ -42,8 +43,14 @@ class EdAppComponents(appLoaderContext: ApplicationLoader.Context)
   val rateLimiter = new RateLimiter(globals, security)
   val safeActions = new SafeActions(globals, security)
   val plainApiActions = new PlainApiActions(safeActions, globals, security, rateLimiter)
+
+  val nashorn = new ReactRenderer(globals)
+  val oneboxes = new Onebox(globals, nashorn)
+  nashorn.setOneboxes(oneboxes)
+
   val context = new EdContext(
-    globals, security, safeActions, plainApiActions, materializer, controllerComponents)
+    globals, security, safeActions, plainApiActions, nashorn, oneboxes,
+    materializer, controllerComponents)
 
   globals.setEdContext(context)
   globals.startStuff()
@@ -102,6 +109,8 @@ class EdContext(
   val security: EdSecurity,
   val safeActions: SafeActions,
   val plainApiActions: PlainApiActions,
+  val nashorn: ReactRenderer,
+  val oneboxes: Onebox,
   val akkaStreamMaterializer: akka.stream.Materializer,
   // Hide so fewer parts of the app get access to Play's internal stuff.
   private val controllerComponents: ControllerComponents) {

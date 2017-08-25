@@ -103,6 +103,7 @@ class SiteDao(
   protected lazy val searchEngine = new SearchEngine(siteId, elasticSearchClient)
 
   def globals: debiki.Globals = context.globals
+  def nashorn: ReactRenderer = context.nashorn
   import context.security.throwIndistinguishableNotFound
 
   def memCache_test: MemCache = {
@@ -113,7 +114,7 @@ class SiteDao(
 
   private def dbDao2: DbDao2 = dbDaoFactory.newDbDao2()
 
-  def commonmarkRenderer = ReactRenderer
+  def commonmarkRenderer: ReactRenderer = context.nashorn
 
 
   memCache.onUserCreated { user =>

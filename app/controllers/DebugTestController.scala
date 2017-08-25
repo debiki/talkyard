@@ -186,7 +186,7 @@ class DebugTestController @Inject()(cc: ControllerComponents, edContext: EdConte
 
 
   def areScriptsReady: Action[Unit] = ExceptionAction(empty) { _ =>
-    val numEnginesCreated = ReactRenderer.numEnginesCreated
+    val numEnginesCreated = context.nashorn.numEnginesCreated
     val numMissing = ReactRenderer.MinNumEngines - numEnginesCreated
     if (numMissing > 0)
       throwServiceUnavailable("EsE7KJ0F", o"""Only $numEnginesCreated engines created thus far,

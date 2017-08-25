@@ -76,7 +76,7 @@ class ViewPageController @Inject()(cc: ControllerComponents, edContext: EdContex
       val pageMeta = pageMetaById.get(post.pageId) getOrDie "EdE2KW07E"
       val tags = tagsByPostId.getOrElse(post.id, Set.empty)
       var postJson = ReactJson.postToJsonOutsidePage(post, pageMeta.pageRole,
-        showHidden = true, includeUnapproved = callerIsStaffOrAuthor, tags)
+        showHidden = true, includeUnapproved = callerIsStaffOrAuthor, tags, nashorn = context.nashorn)
 
       pageStuffById.get(post.pageId) map { pageStuff =>
         postJson += "pageId" -> JsString(post.pageId)

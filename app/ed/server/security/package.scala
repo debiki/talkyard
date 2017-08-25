@@ -19,7 +19,7 @@ package ed.server.security
 
 import com.debiki.core._
 import com.debiki.core.Prelude._
-import debiki.{EdHttp, Globals, ReactRenderer}
+import debiki.{EdHttp, Globals}
 import ed.server.http.{DebikiRequest, JsonOrFormDataBody}
 import java.{util => ju}
 import play.api.mvc.{Cookie, DiscardingCookie, Request}
@@ -234,12 +234,14 @@ class EdSecurity(globals: Globals) {
 
   def throwErrorIfPasswordTooWeak(
         password: String, username: String, fullName: Option[String], email: String) {
+    ??? /* Server side pwd check disabled
     val passwordStrength = ReactRenderer.calcPasswordStrength(
       password = password, username = username, fullName = fullName, email = email)
     if (!passwordStrength.isStrongEnough)
       throwBadReq("DwE4KFEK8", o"""Password not strong enough. Please go back and try again.
           Estimated crack time: ${passwordStrength.crackTimeDisplay}, for someone with
           100 computers and access to the scrypt hash.""")
+          */
   }
 
 
