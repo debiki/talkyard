@@ -33,11 +33,11 @@ GET   /-/login-password-confirm-email controllers.LoginWithPasswordController.co
 #POST  /-/api/login-openid       controllers.LoginWithOpenIdController.loginPost
 #GET   /-/api/login-openid-clbk  controllers.LoginWithOpenIdController.loginCallback(returnToUrl)
 
-#GET   /-/login-openauth/:provider controllers.LoginWithOpenAuthController.startAuthentication(provider, returnToUrl)
-#GET   /-/login-auth-callback/:provider  controllers.LoginWithOpenAuthController.finishAuthentication(provider)
-#GET   /-/login-oauth-then-return/:provider controllers.LoginWithOpenAuthController.loginThenReturnToOriginalSite(provider, returnToOrigin, xsrfToken)
-#GET   /-/login-oauth-continue           controllers.LoginWithOpenAuthController.continueAtOriginalSite(oauthDetailsCacheKey, xsrfToken)
-#POST  /-/login-oauth-create-user  controllers.LoginWithOpenAuthController.handleCreateUserDialog
+GET   /-/login-openauth/:provider controllers.LoginWithOpenAuthController.startAuthentication(provider, returnToUrl)
+GET   /-/login-auth-callback/:provider  controllers.LoginWithOpenAuthController.finishAuthentication(provider)
+GET   /-/login-oauth-then-return/:provider controllers.LoginWithOpenAuthController.loginThenReturnToOriginalSite(provider, returnToOrigin, xsrfToken)
+GET   /-/login-oauth-continue           controllers.LoginWithOpenAuthController.continueAtOriginalSite(oauthDetailsCacheKey, xsrfToken)
+POST  /-/login-oauth-create-user  controllers.LoginWithOpenAuthController.handleCreateUserDialog
 
 POST  /-/make-impersonate-other-site-url controllers.ImpersonateController.makeImpersonateOtherSiteUrl(siteId: Int, userId: Int)
 GET   /-/make-impersonate-other-site-url controllers.ImpersonateController.makeImpersonateOtherSiteUrl(siteId: Int, userId: Int)

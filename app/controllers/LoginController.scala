@@ -157,8 +157,7 @@ object LoginController {
   /** Tests if we're currently logging in as the very first user — s/he will
     * be made admin if s/he has the correct email address.
     */
-  def shallBecomeOwner(request: JsonPostRequest, emailAddress: String,
-        globals: Globals): Boolean = {
+  def shallBecomeOwner(request: JsonPostRequest, emailAddress: String): Boolean = {
     val site = request.dao.theSite()
     val ownerEmailInDatabase = site.status match {
       case SiteStatus.NoAdmin =>
@@ -170,7 +169,7 @@ object LoginController {
 
     val ownerEmail =
       if (request.siteId == Site.FirstSiteId)
-        globals.becomeFirstSiteOwnerEmail getOrElse {
+        request.context.globals.becomeFirstSiteOwnerEmail getOrElse {
           val errorCode = "DwE8PY25"
           val errorMessage = s"Config value '${Globals.BecomeOwnerEmailConfigValue}' missing"
           Logger.error(s"$errorMessage [$errorCode]")
