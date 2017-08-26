@@ -52,6 +52,10 @@ class YouTubeOnebox(globals: Globals, nashorn: ReactRenderer)
       case Some(videoId) =>
         // We must sanitize here because alreadySanitized above is true, so that
         // the iframe below won't be removed.
+        // (Better sanitize, also if seems to be no werird chars in the id.)
+        if (videoId.exists(""":/?&=;,.()[]{}"'\""" contains _))
+          return Failure(com.debiki.core.DebikiException(
+            "EdE2URKT04", "Bad YouTube video ID, cannot create onebox"))
         val safeId = sanitizeUrl(videoId)
         val unsafeParams = findParams(javaUri) getOrElse {
           return Failure(com.debiki.core.DebikiException(

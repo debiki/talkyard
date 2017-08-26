@@ -152,7 +152,12 @@ class EditController @Inject()(cc: ControllerComponents, edContext: EdContext)
   def onebox(url: String): Action[Unit] = AsyncGetActionRateLimited(RateLimits.LoadOnebox) { request =>
     context.oneboxes.loadRenderSanitize(url, javascriptEngine = None).transform(
       html => Ok(html),
-      throwable => ResultException(BadReqResult("DwE4PKE2", "Cannot onebox that link")))(execCtx)
+      throwable => throwable match {
+        case ex: DebikiException =>
+          ResultException(BadReqResult("EdE4PKE0", s"Cannot onebox that link: ${ex.getMessage}"))
+        case _ =>
+          ResultException(BadReqResult("DwE4PKE2", "Cannot onebox that link"))
+      })(execCtx)
   }
 
 

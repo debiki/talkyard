@@ -19,6 +19,9 @@ import sbt._
 import Keys._
 import sbtbuildinfo._
 
+// COULD port to .sbt file instead. Build.scala = deprecated. Migration docs here:
+// http://www.scala-sbt.org/0.13/docs/Migrating-from-sbt-012x.html#Migrating+from+the+Build+trait
+
 object ApplicationBuild extends Build {
 
   val versionFileContents = {

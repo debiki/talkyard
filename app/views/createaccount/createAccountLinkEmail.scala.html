@@ -1,4 +1,4 @@
-@(siteAddress: String, username: String, verificationUrl: String, expirationTimeInHours: Int, globals: debiki.Globals)
+@(siteAddress: String, username: String, safeVerificationUrl: String, expirationTimeInHours: Int, globals: debiki.Globals)
 
 @origin = @{
   globals.originOf(siteAddress)
@@ -14,7 +14,8 @@
 
 <p>
 To finish the creation of your account with username @username at @grayBoringLink(siteAddress), please click
-<a href="@verificationUrl">this link</a>. It expires in @{expirationTimeInHours - 1} hours.
+<a href="@Html(safeVerificationUrl)">this link</a>.
+It expires in @{expirationTimeInHours - 1} hours.
 </p>
 
 <p>
