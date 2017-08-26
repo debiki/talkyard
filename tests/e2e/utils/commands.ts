@@ -204,11 +204,18 @@ function addCommandsToBrowser(browser) {
 
 
   browser.addCommand('swithToOtherTabOrWindow', function(url) {
+    for (let i = 0; i < 3; ++i) {
+      logMessage("Waiting for other window to open, to prevent weird Selenium errors...");
+      browser.pause(1500);
+      if (browser.getTabIds().length > 1)
+        break;
+    }
     const ids = browser.getTabIds();
     const currentId = browser.getCurrentTabId();
     for (let i = 0; i < ids.length; ++i) {
       const id = ids[i];
       if (id !== currentId) {
+        logMessage("Calling browser.switchTab(id), id = " + id);
         browser.switchTab(id);
         return;
       }
@@ -219,6 +226,11 @@ function addCommandsToBrowser(browser) {
 
 
   browser.addCommand('switchBackToFirstTabOrWindow', function(url) {
+    // If no id specified, will switch to the first tab.
+    // I've tested "everything else", nothing works.
+    logMessage("Waiting for any OAuth loging popup to auto close, to prevent weird " +
+        "invalid window ID errors");
+    browser.pause(2500);
     const ids = browser.getTabIds();
     if (ids.length > 1) {
       // So far all other tabs have been closed when we run this function. So > 1 tab = not tested,
@@ -226,12 +238,14 @@ function addCommandsToBrowser(browser) {
       logMessage("Which tab is the first one? Switching to [0]. All tab ids: " + JSON.stringify(ids));
     }
     try {
+      logMessage("Now switching to tab ids[0] = " + ids[0]);
       browser.switchTab(ids[0]);
     }
     catch (dummy) {
       // Probably a tab just got closed? Google and Facebook auto closes login popup tabs, [3GRQU5]
       // if one is logged in already at their websites. Try again.
       logMessage(`Error switching to tab [0]: ${dummy.toString()}.\nTrying again... [EdM1WKY5F]`);
+      browser.pause(2500);
       const idsAgain = browser.getTabIds();
       browser.switchTab(idsAgain[0]);
     }

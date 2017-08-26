@@ -656,7 +656,6 @@ function pagesFor(browser) {
         api.waitAndClick('#e2eLoginGoogle');
 
         // In Google's login popup window:
-        browser.pause(500);
         browser.swithToOtherTabOrWindow();
 
         const emailInputSelector = 'input[type="email"]';
@@ -757,7 +756,6 @@ function pagesFor(browser) {
         api.waitAndClick('#e2eLoginFacebook');
 
         // In Facebook's login popup window:
-        browser.pause(500);
         browser.swithToOtherTabOrWindow();
 
         // We'll get logged in immediately, if we're already logged in to Facebook. Wait for
