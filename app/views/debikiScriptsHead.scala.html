@@ -103,7 +103,20 @@ catch (e) { _isInIframe = true; }
 if (_isInIframe) _doc.className += ' s_InIframe';
 var _embCmts = @{ if (anyPageRole.isDefined) "_isInIframe" else "false" };
 
-var _hideIntro = localStorage.getItem('hideForumIntro');
+@* In FF, in an embedded comments iframe, this error might happen, when doing getItem(..):  [7IWD20ZQ1]
+  "SecurityError: The operation is insecure"
+This happens if the user has disabled cookies from third-party websites: the iframe isn't
+the website being visited, so cookies are blocked, and apparently FF then also blocks localStorage.
+See: https://bugzilla.mozilla.org/show_bug.cgi?id=1233964
+Just ignore localStorage then, not so important anyway. *@
+function _getLocal(what) {
+  var result;
+  try { result = localStorage.getItem(what); }
+  catch (ignored) {}
+  return result;
+}
+
+var _hideIntro = _getLocal('hideForumIntro');
 _store.hideForumIntro = _hideIntro && _hideIntro !== 'false';
 if (_store.hideForumIntro) {
   _doc.className += ' dw-hide-forum-intro';
@@ -125,7 +138,7 @@ recent topic list (which is very useful). Try to show it, always, if screen wide
 iPad pro = 1366 wide; then, always watchbar = OK *@
 var edAlwaysWatchbar = !_infoPage && window.innerWidth > 1350;
 
-var _wbOpen = localStorage.getItem('isWatchbarOpen');
+var _wbOpen = _getLocal('isWatchbarOpen');
 if (!_embCmts) if ((!_narrow && _wbOpen !== 'false' && location.search.search('&hideWatchbar') === -1 && (
     !_infoPage || _wbOpen === 'true')) || edAlwaysWatchbar) {
   _doc.className += ' es-watchbar-open';
@@ -135,8 +148,8 @@ if (!_embCmts) if ((!_narrow && _wbOpen !== 'false' && location.search.search('&
 @* Hide the contextbar  by default, or new users will be overwhelmed by everything there is
 to see. But do show the Admin Getting Started Guide (it's in the sidebar [8YKFW32]) for
 new admins. *@
-var _cbOpen = localStorage.getItem('isContextbarOpen');
-var _showAdmGuide = localStorage.getItem('showAdminGuide') !== 'false' && _me.isAdmin &&
+var _cbOpen = _getLocal('isContextbarOpen');
+var _showAdmGuide = _getLocal('showAdminGuide') !== 'false' && _me.isAdmin &&
       !_embCmts && _cbOpen !== 'false';
 if (_showAdmGuide || (!_narrow && _cbOpen === 'true' &&
     location.search.search('&hideContextbar') === -1)) {
