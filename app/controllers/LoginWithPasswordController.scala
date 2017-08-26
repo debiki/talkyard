@@ -130,7 +130,7 @@ class LoginWithPasswordController @Inject()(cc: ControllerComponents, edContext:
 
       // Password strength tested in createPasswordUserCheckPasswordStrong() below.
 
-      val becomeOwner = LoginController.shallBecomeOwner(request, emailAddress, globals)
+      val becomeOwner = LoginController.shallBecomeOwner(request, emailAddress)
 
       val userData =
         NewPasswordUserData.create(name = fullName, email = emailAddress, username = username,
@@ -183,25 +183,6 @@ class LoginWithPasswordController @Inject()(cc: ControllerComponents, edContext:
         host: String, dao: SiteDao) {
     val email = createEmailAddrVerifEmailLogDontSend(user, anyReturnToUrl, host, dao)
     globals.sendEmail(email, dao.siteId)
-  }
-
-
-  def sendYouAlreadyHaveAnAccountWithThatAddressEmail(
-        dao: SiteDao, emailAddress: String, siteHostname: String, siteId: SiteId) {
-    val email = Email(
-      EmailType.Notification,
-      createdAt = globals.now(),
-      sendTo = emailAddress,
-      toUserId = None,
-      subject = s"[${dao.theSiteName()}] You already have an account at " + siteHostname,
-      bodyHtmlText = (_: String) => {
-        views.html.createaccount.accountAlreadyExistsEmail(
-          emailAddress = emailAddress,
-          siteAddress = siteHostname,
-          globals).body
-      })
-    dao.saveUnsentEmail(email)
-    globals.sendEmail(email, siteId)
   }
 
 
@@ -314,5 +295,26 @@ object LoginWithPasswordController {
 
     email
   }
+
+
+  def sendYouAlreadyHaveAnAccountWithThatAddressEmail(
+        dao: SiteDao, emailAddress: String, siteHostname: String, siteId: SiteId) {
+    val globals = dao.globals
+    val email = Email(
+      EmailType.Notification,
+      createdAt = globals.now(),
+      sendTo = emailAddress,
+      toUserId = None,
+      subject = s"[${dao.theSiteName()}] You already have an account at " + siteHostname,
+      bodyHtmlText = (_: String) => {
+        views.html.createaccount.accountAlreadyExistsEmail(
+          emailAddress = emailAddress,
+          siteAddress = siteHostname,
+          globals).body
+      })
+    dao.saveUnsentEmail(email)
+    globals.sendEmail(email, siteId)
+  }
+
 
 }
