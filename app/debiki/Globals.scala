@@ -589,7 +589,6 @@ class Globals(
     When.fromMillis(millisNow)
   }
 
-
   /** When running tests only. */
   def testSetTime(when: When) {
     timeStartMillis = Some(when.millis)
@@ -599,6 +598,12 @@ class Globals(
   /** When running tests only. */
   def testFastForwardTimeMillis(millis: Long) {
     timeOffsetMillis += millis
+  }
+
+  /** When running tests only. */
+  def testResetTime() {
+    timeStartMillis = None
+    timeOffsetMillis = 0
   }
 
   @volatile

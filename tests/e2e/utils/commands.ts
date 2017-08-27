@@ -45,7 +45,8 @@ function allBrowserValues(result) {
 function isResponseOk(response): boolean {
   // Previously, .status === 0' worked, but now .status instead a function that seems to
   // return the object itself (weird). Use '._status' instead + check '.state' too  :-P
-  return response._status === 0 && response.state === "success";
+  // Now, Selenium 6.7, .state is undefined, remove it too.
+  return response._status === 0;
 }
 
 
@@ -282,19 +283,27 @@ function addCommandsToBrowser(browser) {
   });
 
 
-  browser.addCommand('assertAnyTextMatches', function(selector, regex, regex2) {
-    assertOneOrAnyTextMatches(true, selector, regex, regex2);
+  browser.addCommand('assertAnyTextMatches', function(selector, regex, regex2, fast) {
+    assertOneOrAnyTextMatches(true, selector, regex, regex2, fast);
   });
 
 
-  function assertOneOrAnyTextMatches(many, selector, regex, regex2) {
+  function assertOneOrAnyTextMatches(many, selector, regex, regex2, fast?) {
+    process.stdout.write('■');
+    if (fast === 'FAST') {
+      // This works with only one browser at a time, so only use if FAST, or tests will break.
+      assertAnyOrNoneMatches(selector, true, regex, regex2);
+      return;
+    }
+    // With Chrome 60, this is suddenly *super slow* and the authz-view-as-stranger   [CHROME_60_BUG]
+    // test takes 4 minutes and times out. Instead, use assertAnyOrNoneMatches (just above).
     if (_.isString(regex)) {
       regex = new RegExp(regex);
     }
     if (_.isString(regex2)) {
       regex2 = new RegExp(regex2);
     }
-    var textByBrowserName = byBrowser(browser.getText(selector));
+    var textByBrowserName = byBrowser(browser.getText(selector));  // SLOW !!
     _.forOwn(textByBrowserName, function(text, browserName) {
       var whichBrowser = isTheOnly(browserName) ? '' : ", browser: " + browserName;
       if (!many) {
@@ -338,34 +347,43 @@ function addCommandsToBrowser(browser) {
 
 
   browser.addCommand('assertNoTextMatches', function(selector, regex) {
-    assertAnyOrNoneMatches(selector, regex, false);
+    assertAnyOrNoneMatches(selector, false, regex);
   });
 
 
-  function assertAnyOrNoneMatches(selector: string, regex, shallMatch: boolean) {
+  function assertAnyOrNoneMatches(selector: string, shallMatch: boolean, regex, regex2?) {
     if (_.isString(regex)) {
       regex = new RegExp(regex);
     }
-    // Surprisingly, browser.elements(..) blocks forever, if `selector` is absent. So:
-    if (!browser.isVisible(selector)) {
-      if (!shallMatch)
-        return;
-      assert(false, "No visible elems matches " + selector);
+    if (_.isString(regex2)) {
+      assert(shallMatch, `two regexps only supported if shallMatch = true`);
+      regex2 = new RegExp(regex2);
     }
-    var elems = browser.elements(selector).value;
-    assert(!shallMatch || elems.length, "No elems found matching " + selector);
-    for (var i = 0; i < elems.length; ++i) {
-      var elem = elems[i];
-      var text = browser.elementIdText(elem.ELEMENT).value;
-      var matches = regex.test(text);
-      if (matches) {
-        if (shallMatch)
+    const elems = browser.elements(selector).value;
+    // If many browsers, we got back {browserName: ...., otherBrowserName: ...} instead.
+    assert(elems, `assertAnyOrNoneMatches with many browsers at a time not implemented [EdE4KHA2QU]`);
+    assert(!shallMatch || elems.length, `No elems found matching ` + selector);
+    for (let i = 0; i < elems.length; ++i) {
+      const elem = elems[i];
+      const isVisible = browser.elementIdDisplayed(elem.ELEMENT);
+      if (!isVisible)
+        continue;
+      const text = browser.elementIdText(elem.ELEMENT).value;
+      const matchesRegex1 = regex.test(text);
+      if (matchesRegex1) {
+        assert(shallMatch, `Elem found matching '${selector}' and regex: ${regex.toString()}`);
+        if (!regex2)
           return;
-        assert(false, "Elem found matching '" + selector + "' and regex: " + regex.toString());
+      }
+      if (regex2) {
+        assert(shallMatch, 'EdE2FKT0QRA');
+        const matchesRegex2 = regex2.test(text);
+        if (matchesRegex2 && matchesRegex1)
+          return;
       }
     }
-    assert(!shallMatch, "No elem selected by '" + selector + "' matches regex: " +
-        regex.toString());
+    assert(!shallMatch, `${elems.length} elems matches '${selector}', but none of them is visible and ` +
+        `matches regex: ` + regex.toString() + (!regex2 ? '' : ` and regex2: ` + regex2.toString()));
   }
 
 

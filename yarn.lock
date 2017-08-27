@@ -3084,9 +3084,9 @@ sax@0.5.x:
   version "0.5.8"
   resolved "https://registry.yarnpkg.com/sax/-/sax-0.5.8.tgz#d472db228eb331c2506b0e8c15524adb939d12c1"
 
-selenium-standalone@6.6.0:
-  version "6.6.0"
-  resolved "https://registry.yarnpkg.com/selenium-standalone/-/selenium-standalone-6.6.0.tgz#00973b979732a54fa2662afd8be3fb06cb6004f1"
+selenium-standalone@6.7:
+  version "6.7.0"
+  resolved "https://registry.yarnpkg.com/selenium-standalone/-/selenium-standalone-6.7.0.tgz#4039c7d2b4a108f962eee462186344372d762d30"
   dependencies:
     async "^2.1.4"
     commander "^2.9.0"

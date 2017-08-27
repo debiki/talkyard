@@ -5,6 +5,8 @@ import assert = require('assert');
 import server = require('../utils/server');
 import pagesFor = require('../utils/pages-for');
 import { buildSite } from '../utils/site-builder';
+import logMessageModule = require('../utils/log-and-die');
+var logMessage = logMessageModule.logMessage;
 
 declare let browser: any;
 
@@ -17,31 +19,43 @@ let owensBrowser;
 let idAddress: IdAddress;
 let forumTitle = "View as stranger forum";
 
+function logAndAssertVisible(browser, topicTitle: string, shallBeVisible: boolean = true) {
+  process.stdout.write('■');
+  //logMessage(`Testing if topic ${shallBeVisible ? 'visible' : 'absent'}: ${topicTitle}`);
+  if (shallBeVisible)
+    browser.forumTopicList.assertTopicVisible(topicTitle);
+  else
+    browser.forumTopicList.assertTopicNotVisible(topicTitle);
+}
+
 function assertPublicTopicsVisible(browser) {
-  browser.forumTopicList.assertTopicVisible("About category CategoryA");
-  browser.forumTopicList.assertTopicVisible("About category CategoryB");
-  browser.forumTopicList.assertTopicVisible(forum.topics.byMariaCategoryA.title);
-  browser.forumTopicList.assertTopicVisible(forum.topics.byMariaCategoryANr2.title);
-  browser.forumTopicList.assertTopicVisible(forum.topics.byMariaCategoryB.title);
-  browser.forumTopicList.assertTopicVisible(forum.topics.byMichaelCategoryA.title);
+  logAndAssertVisible(browser,"About category CategoryA");
+  logAndAssertVisible(browser,"About category CategoryB");
+  logAndAssertVisible(browser, forum.topics.byMariaCategoryA.title);
+  logAndAssertVisible(browser, forum.topics.byMariaCategoryANr2.title);
+  logAndAssertVisible(browser, forum.topics.byMariaCategoryB.title);
+  logAndAssertVisible(browser, forum.topics.byMichaelCategoryA.title);
+  process.stdout.write('\n');
 }
 
 function assertRestrictedTopicsVisible(browser) {
-  browser.forumTopicList.assertTopicVisible(forum.topics.byMariaUnlistedCat.title);
-  browser.forumTopicList.assertTopicVisible(forum.topics.byMariaStaffOnlyCat.title);
-  browser.forumTopicList.assertTopicVisible(forum.topics.byMariaDeletedCat.title);
-  browser.forumTopicList.assertTopicVisible(forum.topics.aboutUnlistedCategory.title);
-  browser.forumTopicList.assertTopicVisible(forum.topics.aboutStaffOnlyCategory.title);
-  browser.forumTopicList.assertTopicVisible(forum.topics.aboutDeletedCategory.title);
+  logAndAssertVisible(browser, forum.topics.byMariaUnlistedCat.title);
+  logAndAssertVisible(browser, forum.topics.byMariaStaffOnlyCat.title);
+  logAndAssertVisible(browser, forum.topics.byMariaDeletedCat.title);
+  logAndAssertVisible(browser, forum.topics.aboutUnlistedCategory.title);
+  logAndAssertVisible(browser, forum.topics.aboutStaffOnlyCategory.title);
+  logAndAssertVisible(browser, forum.topics.aboutDeletedCategory.title);
+  process.stdout.write('\n');
 }
 
 function assertRestrictedTopicsAbsent(browser) {
-  browser.forumTopicList.assertTopicNotVisible(forum.topics.byMariaUnlistedCat.title);
-  browser.forumTopicList.assertTopicNotVisible(forum.topics.byMariaStaffOnlyCat.title);
-  browser.forumTopicList.assertTopicNotVisible(forum.topics.byMariaDeletedCat.title);
-  browser.forumTopicList.assertTopicNotVisible(forum.topics.aboutUnlistedCategory.title);
-  browser.forumTopicList.assertTopicNotVisible(forum.topics.aboutStaffOnlyCategory.title);
-  browser.forumTopicList.assertTopicNotVisible(forum.topics.aboutDeletedCategory.title);
+  logAndAssertVisible(browser, forum.topics.byMariaUnlistedCat.title, false);
+  logAndAssertVisible(browser, forum.topics.byMariaStaffOnlyCat.title, false);
+  logAndAssertVisible(browser, forum.topics.byMariaDeletedCat.title, false);
+  logAndAssertVisible(browser, forum.topics.aboutUnlistedCategory.title, false);
+  logAndAssertVisible(browser, forum.topics.aboutStaffOnlyCategory.title, false);
+  logAndAssertVisible(browser, forum.topics.aboutDeletedCategory.title, false);
+  process.stdout.write('\n');
 }
 
 

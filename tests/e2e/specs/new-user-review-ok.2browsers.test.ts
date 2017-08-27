@@ -221,6 +221,9 @@ describe("new user, review, ok:", () => {
   it("A guest arrives", () => {
     assert(strangersBrowser === guestsBrowser);
     guestsBrowser.complex.signUpAsGuestViaTopbar("I-The-Guest");
+  });
+
+  it("... and posts three replies to the orig post", () => {
     guestsBrowser.complex.replyToOrigPost("I'm a guest, becomes post nr 6.");
     guestsBrowser.complex.replyToOrigPost("I'm a guest, my 2nd reply, post nr 7.");
     guestsBrowser.complex.replyToOrigPost("I'm a guest, my 3rd reply, post nr 8.");
