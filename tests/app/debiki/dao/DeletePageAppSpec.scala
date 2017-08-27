@@ -18,7 +18,7 @@
 package debiki.dao
 
 import com.debiki.core._
-import debiki.DebikiHttp.ResultException
+import debiki.EdHttp.ResultException
 import debiki._
 
 
@@ -31,18 +31,18 @@ class DeletePageAppSpec extends DaoAppSuite(disableScripts = true, disableBackgr
     lazy val forumId = dao.createForum(title = "Forum to delete", folder = "/",
       Who(SystemUserId, browserIdData)).pagePath.thePageId
 
-    lazy val discussionId = createPage(PageRole.Discussion, TextAndHtml.testTitle("Title"),
-      TextAndHtml.testBody("Body text"), authorId = SystemUserId, browserIdData, dao)
+    lazy val discussionId = createPage(PageRole.Discussion, textAndHtmlMaker.testTitle("Title"),
+      textAndHtmlMaker.testBody("Body text"), authorId = SystemUserId, browserIdData, dao)
 
-    lazy val htmlPageId = createPage(PageRole.CustomHtmlPage, TextAndHtml.testTitle("Title"),
-      TextAndHtml.testBody("Body text"), authorId = SystemUserId, browserIdData, dao)
+    lazy val htmlPageId = createPage(PageRole.CustomHtmlPage, textAndHtmlMaker.testTitle("Title"),
+      textAndHtmlMaker.testBody("Body text"), authorId = SystemUserId, browserIdData, dao)
 
-    lazy val otherPageId = createPage(PageRole.Discussion, TextAndHtml.testTitle("Title"),
-      TextAndHtml.testBody("Body text"), authorId = SystemUserId, browserIdData, dao)
+    lazy val otherPageId = createPage(PageRole.Discussion, textAndHtmlMaker.testTitle("Title"),
+      textAndHtmlMaker.testBody("Body text"), authorId = SystemUserId, browserIdData, dao)
 
     "prepare" in {
-      Globals.systemDao.getOrCreateFirstSite()
-      dao = Globals.siteDao(Site.FirstSiteId)
+      globals.systemDao.getOrCreateFirstSite()
+      dao = globals.siteDao(Site.FirstSiteId)
       admin = createPasswordOwner(s"dltr_admn", dao)
     }
 
@@ -96,8 +96,8 @@ class DeletePageAppSpec extends DaoAppSuite(disableScripts = true, disableBackgr
 
     "non-staff may not delete" in {
       val user = createPasswordUser(s"dltr_mbr", dao)
-      val discussionId = createPage(PageRole.Discussion, TextAndHtml.testTitle("Title"),
-        TextAndHtml.testBody("Body text"), authorId = SystemUserId, browserIdData, dao)
+      val discussionId = createPage(PageRole.Discussion, textAndHtmlMaker.testTitle("Title"),
+        textAndHtmlMaker.testBody("Body text"), authorId = SystemUserId, browserIdData, dao)
       intercept[ResultException] {
         dao.deletePagesIfAuth(Seq(discussionId), user.id, browserIdData, undelete = false)
       }.getMessage must include("EsE7YKP424_")

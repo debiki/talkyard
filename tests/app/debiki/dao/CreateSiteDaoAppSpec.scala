@@ -19,7 +19,6 @@ package debiki.dao
 
 import com.debiki.core.DbDao._
 import com.debiki.core._
-import debiki.Globals
 
 
 class CreateSiteDaoAppSpec extends DaoAppSuite(maxSitesTotal = Some(75)) {
@@ -37,7 +36,7 @@ class CreateSiteDaoAppSpec extends DaoAppSuite(maxSitesTotal = Some(75)) {
     val theEmail = email getOrElse s"$thePrefix@example.com"
     val theIdCookie = if (browserIdCookie eq null) s"$thePrefix-cookie" else browserIdCookie
     val theIp = if (ip eq null) s"$prefix.0.0.$number" else ip
-    Globals.systemDao.createSite(name = theLocalHostname, status = SiteStatus.Active, hostname = theHostname,
+    globals.systemDao.createSite(name = theLocalHostname, status = SiteStatus.Active, hostname = theHostname,
       embeddingSiteUrl = None, organizationName = s"Org Name $thePrefix",
       creatorEmailAddress = theEmail, creatorId = user.id,
       BrowserIdData(ip = theIp, idCookie = theIdCookie, fingerprint = theFingerprint),
@@ -49,8 +48,8 @@ class CreateSiteDaoAppSpec extends DaoAppSuite(maxSitesTotal = Some(75)) {
   "CreateSiteDao can" - {
 
     "create sites" in {
-      Globals.systemDao.getOrCreateFirstSite()
-      val dao = Globals.siteDao(Site.FirstSiteId)
+      globals.systemDao.getOrCreateFirstSite()
+      val dao = globals.siteDao(Site.FirstSiteId)
       createPasswordOwner("555uuyyWW", dao)
       val user = createPasswordUser("qq33yy55ee", dao)
 
@@ -65,7 +64,7 @@ class CreateSiteDaoAppSpec extends DaoAppSuite(maxSitesTotal = Some(75)) {
 
 
     "reject weird sites" in {
-      val dao = Globals.siteDao(Site.FirstSiteId)
+      val dao = globals.siteDao(Site.FirstSiteId)
       val user = createPasswordUser("gg99YY22cc", dao)
 
       info("Weird local hostname")
@@ -85,7 +84,7 @@ class CreateSiteDaoAppSpec extends DaoAppSuite(maxSitesTotal = Some(75)) {
 
 
     "not create too many sites per person" in {
-      val dao = Globals.siteDao(Site.FirstSiteId)
+      val dao = globals.siteDao(Site.FirstSiteId)
       val user = createPasswordUser("pp55WW99zz", dao)
 
       info("per ip")
@@ -96,7 +95,7 @@ class CreateSiteDaoAppSpec extends DaoAppSuite(maxSitesTotal = Some(75)) {
           numCreated += 1
         }
       }
-      numCreated mustBe Globals.config.createSite.maxSitesPerPerson
+      numCreated mustBe globals.config.createSite.maxSitesPerPerson
 
       SECURITY // restrict site creation per ip
       /*
@@ -108,7 +107,7 @@ class CreateSiteDaoAppSpec extends DaoAppSuite(maxSitesTotal = Some(75)) {
           numCreated += 1
         }
       }
-      numCreated mustBe Globals.config.createSite.maxSitesPerPerson
+      numCreated mustBe globals.config.createSite.maxSitesPerPerson
 
       info("per browser fingerprint")
       numCreated = 0
@@ -118,13 +117,13 @@ class CreateSiteDaoAppSpec extends DaoAppSuite(maxSitesTotal = Some(75)) {
           numCreated += 1
         }
       }
-      numCreated mustBe Globals.config.createSite.maxSitesPerPerson
+      numCreated mustBe globals.config.createSite.maxSitesPerPerson
       */
     }
 
 
     "not create too many sites in total" in {
-      val dao = Globals.siteDao(Site.FirstSiteId)
+      val dao = globals.siteDao(Site.FirstSiteId)
       val user = createPasswordUser("22FF44bbUU", dao)
       var numCreated = 0
       intercept[Exception] {

@@ -32,8 +32,8 @@ class SiteTransactionAppSpec extends DaoAppSuite {
 
   "SiteTransaction can handle member stats" - {
     lazy val dao: SiteDao = {
-      Globals.systemDao.getOrCreateFirstSite()
-      Globals.siteDao(Site.FirstSiteId)
+      globals.systemDao.getOrCreateFirstSite()
+      globals.siteDao(Site.FirstSiteId)
     }
 
     lazy val forumId = dao.createForum(title = "Forum to delete", folder = "/",
@@ -52,14 +52,14 @@ class SiteTransactionAppSpec extends DaoAppSuite {
 
     "prepare: create pages" in {
       // Num topics created by admin is tested later, (5FKW02Y).
-      pageId = createPage(PageRole.Discussion, TextAndHtml.forTitle("Page Title XY 12 AB"),
-        TextAndHtml.forBodyOrComment("Page body."), authorId = admin.id, browserIdData,
+      pageId = createPage(PageRole.Discussion, textAndHtmlMaker.forTitle("Page Title XY 12 AB"),
+        textAndHtmlMaker.forBodyOrComment("Page body."), authorId = admin.id, browserIdData,
         dao, anyCategoryId = None)
-      otherPageId = createPage(PageRole.Discussion, TextAndHtml.forTitle("Other Page Title"),
-        TextAndHtml.forBodyOrComment("Other page body."), authorId = admin.id, browserIdData,
+      otherPageId = createPage(PageRole.Discussion, textAndHtmlMaker.forTitle("Other Page Title"),
+        textAndHtmlMaker.forBodyOrComment("Other page body."), authorId = admin.id, browserIdData,
         dao, anyCategoryId = None)
-      thirdPageId = createPage(PageRole.Discussion, TextAndHtml.forTitle("Third Page Title"),
-        TextAndHtml.forBodyOrComment("Third page body."), authorId = admin.id, browserIdData,
+      thirdPageId = createPage(PageRole.Discussion, textAndHtmlMaker.forTitle("Third Page Title"),
+        textAndHtmlMaker.forBodyOrComment("Third page body."), authorId = admin.id, browserIdData,
         dao, anyCategoryId = None)
     }
 
@@ -294,7 +294,7 @@ class SiteTransactionAppSpec extends DaoAppSuite {
 
 
   "SiteTransaction can handle posts read stats" - {
-      lazy val dao: SiteDao = Globals.siteDao(Site.FirstSiteId)
+      lazy val dao: SiteDao = globals.siteDao(Site.FirstSiteId)
 
       lazy val forumId = dao.createForum(title = "Forum to delete", folder = "/",
         Who(SystemUserId, browserIdData)).pagePath.thePageId
@@ -311,15 +311,15 @@ class SiteTransactionAppSpec extends DaoAppSuite {
         admin = createPasswordOwner(s"prs_adm", dao)
         userA = createPasswordUser(s"prs_u_a", dao)
         userB = createPasswordUser(s"prs_u_b", dao)
-        guestA = dao.loginAsGuest(GuestLoginAttempt(ip = "2.2.2.2", Globals.now().toJavaDate,
+        guestA = dao.loginAsGuest(GuestLoginAttempt(ip = "2.2.2.2", globals.now().toJavaDate,
           name = "Guestellina", guestCookie = "guestellinacookie"))
-        guestB = dao.loginAsGuest(GuestLoginAttempt(ip = "3.3.3.3", Globals.now().toJavaDate,
+        guestB = dao.loginAsGuest(GuestLoginAttempt(ip = "3.3.3.3", globals.now().toJavaDate,
           name = "Gunnar", guestCookie = "gunnarcookie"))
       }
 
       "prepare: create pages" in {
-        pageAId = createPage(PageRole.Discussion, TextAndHtml.forTitle("Page Title XY 12 AB"),
-          TextAndHtml.forBodyOrComment("Page body."), authorId = admin.id, browserIdData,
+        pageAId = createPage(PageRole.Discussion, textAndHtmlMaker.forTitle("Page Title XY 12 AB"),
+          textAndHtmlMaker.forBodyOrComment("Page body."), authorId = admin.id, browserIdData,
           dao, anyCategoryId = None)
         reply(admin.id, pageAId, s"Post 2")(dao)
         reply(admin.id, pageAId, s"Post 3")(dao)
@@ -327,8 +327,8 @@ class SiteTransactionAppSpec extends DaoAppSuite {
         reply(admin.id, pageAId, s"Post 5")(dao)
         reply(admin.id, pageAId, s"Post 6")(dao)
 
-        pageBId = createPage(PageRole.Discussion, TextAndHtml.forTitle("Other Page Title"),
-          TextAndHtml.forBodyOrComment("Other page body."), authorId = admin.id, browserIdData,
+        pageBId = createPage(PageRole.Discussion, textAndHtmlMaker.forTitle("Other Page Title"),
+          textAndHtmlMaker.forBodyOrComment("Other page body."), authorId = admin.id, browserIdData,
           dao, anyCategoryId = None)
         reply(admin.id, pageBId, s"Post 2")(dao)
         reply(admin.id, pageBId, s"Post 3")(dao)

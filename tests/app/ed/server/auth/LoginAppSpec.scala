@@ -19,7 +19,6 @@ package ed.server.auth
 
 import com.debiki.core._
 import debiki.dao._
-import debiki.Globals
 import java.{util => ju}
 
 
@@ -38,39 +37,39 @@ class LoginAppSpec extends DaoAppSuite() {
     val now = new ju.Date()
 
     "prepare" in {
-      Globals.systemDao.getOrCreateFirstSite()
-      dao = Globals.siteDao(Site.FirstSiteId)
+      globals.systemDao.getOrCreateFirstSite()
+      dao = globals.siteDao(Site.FirstSiteId)
       createPasswordOwner("lg_adm", dao)
     }
 
     "non-existing members cannot login" in {
       intercept[DbDao.NoMemberWithThatEmailException.type] {
         dao.tryLoginAsMember(PasswordLoginAttempt(
-          ip = "1.2.3.4", Globals.now().toJavaDate, "the-wrong-email@x.co", "pwd"))
+          ip = "1.2.3.4", globals.now().toJavaDate, "the-wrong-email@x.co", "pwd"))
       }
     }
 
     "cannot login before email verified" in {
       intercept[DbDao.EmailNotVerifiedException.type] {
         dao.tryLoginAsMember(PasswordLoginAttempt(
-          ip = "1.2.3.4", Globals.now().toJavaDate, member1.email, Member1Password))
+          ip = "1.2.3.4", globals.now().toJavaDate, member1.email, Member1Password))
       }
     }
 
     "the email gets verified" in {
-      dao.verifyEmail(member1.id, Globals.now().toJavaDate)
+      dao.verifyEmail(member1.id, globals.now().toJavaDate)
     }
 
     "cannot login with the wrong password" in {
       intercept[DbDao.BadPasswordException.type] {
         dao.tryLoginAsMember(PasswordLoginAttempt(
-          ip = "1.2.3.4", Globals.now().toJavaDate, member1.email, "wrong_password"))
+          ip = "1.2.3.4", globals.now().toJavaDate, member1.email, "wrong_password"))
       }
     }
 
     "can login with the correct password" in {
       val loginGrant = dao.tryLoginAsMember(PasswordLoginAttempt(
-        ip = "1.2.3.4", Globals.now().toJavaDate, member1.email, Member1Password))
+        ip = "1.2.3.4", globals.now().toJavaDate, member1.email, Member1Password))
       loginGrant.user.id mustBe member1.id
     }
 

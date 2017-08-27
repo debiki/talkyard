@@ -22,7 +22,6 @@ import com.debiki.core.Prelude._
 import debiki._
 import debiki.EdHttp._
 import debiki.ReactJson.JsStringOrNull
-import debiki.onebox.Onebox
 import ed.server.http._
 import ed.server.{EdContext, EdController}
 import ed.server.auth.Authz

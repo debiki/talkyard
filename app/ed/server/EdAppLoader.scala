@@ -10,8 +10,7 @@ import play.api.http.FileMimeTypes
 import play.api.libs.ws.ahc.AhcWSComponents
 import play.api.mvc.{ControllerComponents, EssentialFilter}
 import play.api.routing.Router
-import play.filters.HttpFiltersComponents
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ExecutionContext, Future}
 
 
 class EdAppLoader extends ApplicationLoader {
@@ -28,8 +27,6 @@ class EdAppLoader extends ApplicationLoader {
   }
 
 }
-
-// !! Close the AhcWSComponents WSClient. And Nashorn scripts.
 
 class EdAppComponents(appLoaderContext: ApplicationLoader.Context)
   extends BuiltInComponentsFromContext(appLoaderContext)
@@ -56,6 +53,12 @@ class EdAppComponents(appLoaderContext: ApplicationLoader.Context)
 
   globals.setEdContext(context)
   globals.startStuff()
+
+  applicationLifecycle.addStopHook { () =>
+    Future.successful {
+      globals.onServerShutdown()
+    }
+  }
 
   // (Cannot:  import _root_.{controllers => c} because cannot incl _root_ in an import, apparently.)
 

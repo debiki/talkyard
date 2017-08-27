@@ -29,6 +29,7 @@ import ed.server.{EdContext, EdController}
 import javax.inject.Inject
 import play.api.libs.json.JsValue
 import play.api.mvc.{Action, ControllerComponents}
+import SearchController._
 
 
 /** Full text search, for a whole site, or for a site section, e.g. a single
@@ -75,6 +76,10 @@ class SearchController @Inject()(cc: ControllerComponents, edContext: EdContext)
     }
   }
 
+}
+
+
+object SearchController {
 
   SECURITY // can these regexes be DoS attacked?
   // Regex syntax: *? means * but non-greedy — but doesn't work, selects "ccc,ddd" in this:

@@ -28,11 +28,11 @@ class LoadWhomToSendSummariesToAppSpec extends DaoAppSuite {
   val when: When = When.fromMillis(3100010001000L)
   val createdAt: When = when.minusMillis(10001000)
 
-  import Globals.systemDao
+  import globals.systemDao
 
   lazy val dao: SiteDao = {
-    Globals.systemDao.getOrCreateFirstSite()
-    Globals.siteDao(Site.FirstSiteId)
+    globals.systemDao.getOrCreateFirstSite()
+    globals.siteDao(Site.FirstSiteId)
   }
 
   lazy val forumId = dao.createForum(title = "Forum to delete", folder = "/",
@@ -40,7 +40,7 @@ class LoadWhomToSendSummariesToAppSpec extends DaoAppSuite {
 
   lazy val site2 = createSite("site2")
 
-  lazy val daoSite2 = Globals.siteDao(site2.id)
+  lazy val daoSite2 = globals.siteDao(site2.id)
 
   lazy val forumSite2Id = daoSite2.createForum(title = "Forum site 2", folder = "/",
     Who(SystemUserId, browserIdData)).pagePath.thePageId

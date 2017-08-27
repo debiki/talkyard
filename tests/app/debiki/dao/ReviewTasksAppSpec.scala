@@ -18,7 +18,6 @@
 package debiki.dao
 
 import com.debiki.core._
-import debiki.Globals
 import java.{util => ju}
 import scala.collection.immutable
 
@@ -29,8 +28,8 @@ class ReviewTasksAppSpec extends DaoAppSuite {
     val now = new ju.Date()
 
     "find no tasks when there are none" in {
-      Globals.systemDao.getOrCreateFirstSite()
-      val dao = Globals.siteDao(Site.FirstSiteId)
+      globals.systemDao.getOrCreateFirstSite()
+      val dao = globals.siteDao(Site.FirstSiteId)
       val (stuff, usersById) = dao.loadReviewStuff(olderOrEqualTo = now, limit = 999)
       stuff.length mustBe 0
       usersById.size mustBe 0
@@ -41,7 +40,7 @@ class ReviewTasksAppSpec extends DaoAppSuite {
     }
 
     "create, find, count tasks" in {
-      val dao = Globals.siteDao(Site.FirstSiteId)
+      val dao = globals.siteDao(Site.FirstSiteId)
       createPasswordOwner("revwStOwnr", dao)
       val createdByUser = createPasswordUser("revwTaskMkr", dao)
       val createdByUser2 = createPasswordUser("revwTaskMkr2", dao)

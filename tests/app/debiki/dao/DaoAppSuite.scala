@@ -19,36 +19,19 @@ package debiki.dao
 
 import com.debiki.core._
 import com.debiki.core.Prelude._
-import debiki.{Globals, TextAndHtml}
+import debiki.{Globals, TextAndHtml, TextAndHtmlMaker}
+import ed.server.{EdAppComponents, EdContext}
 import org.scalatest._
-import org.scalatestplus.play.guice.GuiceOneAppPerSuite
-import play.api.test.FakeApplication
+import org.scalatestplus.play.{BaseOneAppPerSuite, BaseOneAppPerTest, FakeApplicationFactory}
+import DaoAppSuite._
+import java.io.File
+import play.api.inject.DefaultApplicationLifecycle
+import play.api._
+import play.core.DefaultWebCommands
 
 
-class DaoAppSuite(
-  disableScripts: Boolean = true,
-  disableBackgroundJobs: Boolean = true,
-  maxSitesTotal: Option[Int] = None)
-  extends FreeSpec with MustMatchers with GuiceOneAppPerSuite {
 
-  private val extraConfig: Map[String, String] = {
-    var config = Map[String, String](
-      "isTestShallEmptyDatabase" -> "true",
-      "isTestDisableScripts" -> (disableScripts ? "true" | "false"),
-      "isTestDisableBackgroundJobs" -> (disableBackgroundJobs ? "true" | "false"))
-    import debiki.Config._
-    maxSitesTotal foreach { max =>
-      config = config.updated(s"$CreateSitePath.maxSitesTotal", max.toString)
-    }
-    config
-  }
-
-  implicit override lazy val app = FakeApplication(additionalConfiguration = extraConfig)
-
-  def browserIdData = BrowserIdData("1.2.3.4", idCookie = "dummy_id_cookie", fingerprint = 334455)
-
-  def dummySpamRelReqStuff = SpamRelReqStuff(userAgent = None, referer = None, uri = "/dummy")
-
+object DaoAppSuite {
 
   /** If the test start time is less than a year after 1970, the popularity stats will
     * subtract a year and create a negative Unix-millis-time —> an assertion fails. So start
@@ -56,26 +39,82 @@ class DaoAppSuite(
     */
   val OneAndZeros1157DaysInMillis = 100000000000L // divide by (24*3600*1000) —> 1157.4 days
 
-  def startTime: When = When.fromMillis(10 * 1000 + OneAndZeros1157DaysInMillis)
+}
+
+
+class DaoAppSuite(
+  val disableScripts: Boolean = true,
+  val disableBackgroundJobs: Boolean = true,
+  val maxSitesTotal: Option[Int] = None,
+  val startTime: When = When.fromMillis(10 * 1000 + OneAndZeros1157DaysInMillis))
+  extends FreeSpec with MustMatchers with BaseOneAppPerSuite with FakeApplicationFactory {
+
+  Globals.setIsProdForever(false)
+
+  private var edAppComponents: EdAppComponents = _
+
+  lazy val context: EdContext = edAppComponents.context
+  lazy val globals: Globals = context.globals
+  lazy val textAndHtmlMaker: TextAndHtmlMaker = context.textAndHtmlMaker
+
+
+  override def fakeApplication: Application = {
+    val env = Environment.simple(new File("."))
+    val fileConfig = Configuration.load(env)
+    val totalConfig = fileConfig ++ testConfig
+    val appLoaderContext = ApplicationLoader.Context(
+      environment = env,
+      sourceMapper = None,
+      webCommands = new DefaultWebCommands(),
+      initialConfiguration = totalConfig,
+      lifecycle = new DefaultApplicationLifecycle()
+    )
+
+    LoggerConfigurator(env.classLoader).foreach {
+      _.configure(env, totalConfig, optionalProperties = Map.empty)
+    }
+
+    edAppComponents = new EdAppComponents(appLoaderContext)
+    setTime(startTime) // now 'globals' is available
+    edAppComponents.application
+  }
+
+
+  private def testConfig: Configuration = {
+    var configMap = Map[String, String](
+      "isTestShallEmptyDatabase" -> "true",
+      "isTestDisableScripts" -> (disableScripts ? "true" | "false"),
+      "isTestDisableBackgroundJobs" -> (disableBackgroundJobs ? "true" | "false"))
+    import debiki.Config.CreateSitePath
+    maxSitesTotal foreach { max =>
+      configMap = configMap.updated(s"$CreateSitePath.maxSitesTotal", max.toString)
+    }
+    Configuration.from(configMap)
+  }
+
+
+  def browserIdData = BrowserIdData("1.2.3.4", idCookie = "dummy_id_cookie", fingerprint = 334455)
+  def dummySpamRelReqStuff = SpamRelReqStuff(userAgent = None, referer = None, uri = "/dummy")
+
 
   private var _currentTime: When = _
+
   def currentTime: When = _currentTime
 
   def setTime(when: When) {
     _currentTime = when
-    Globals.test.setTime(when)
+    globals.testSetTime(when)
   }
-  setTime(startTime)
 
   def playTime(millis: Long) {
     _currentTime = _currentTime plusMillis millis
-    Globals.test.setTime(_currentTime)
+    globals.testSetTime(_currentTime)
   }
 
 
   def createSite(hostname: String): Site = {
     val siteName = "site-" + hostname.replaceAllLiterally(".", "")
-    Globals.systemDao.createSite(
+    globals.systemDao.createSite(
       siteName, status = SiteStatus.Active, hostname = hostname,
       embeddingSiteUrl = None, organizationName = s"Site $hostname Organization Name",
       creatorEmailAddress = s"admin@$hostname.co", creatorId = UnknownUserId, browserIdData,
@@ -103,7 +142,7 @@ class DaoAppSuite(
   private def createPasswordAdminOrOwner(password: String, dao: SiteDao, isOwner: Boolean,
       createdAt: Option[When], firstSeenAt: Option[When] = None, emailVerified: Boolean = false)
       : Member = {
-    val theCreatedAt = createdAt.getOrElse(Globals.now())
+    val theCreatedAt = createdAt.getOrElse(globals.now())
     val adm = dao.createPasswordUserCheckPasswordStrong(NewPasswordUserData.create(
       name = Some(s"Admin $password"), username = s"admin_$password",
       email = s"admin-$password@x.co", password = s"public-$password",
@@ -118,7 +157,7 @@ class DaoAppSuite(
 
   def createPasswordModerator(password: String, dao: SiteDao, createdAt: Option[When] = None,
         emailVerified: Boolean = false): Member = {
-    val theCreatedAt = createdAt.getOrElse(Globals.now())
+    val theCreatedAt = createdAt.getOrElse(globals.now())
     val mod = dao.createPasswordUserCheckPasswordStrong(NewPasswordUserData.create(
       name = Some(s"Mod $password"), username = s"mod_$password", email = s"mod-$password@x.co",
       password = s"public-$password", createdAt = theCreatedAt,
@@ -136,7 +175,7 @@ class DaoAppSuite(
         trustLevel: TrustLevel = TrustLevel.NewMember,
         threatLevel: ThreatLevel = ThreatLevel.HopefullySafe,
         createdAt: Option[When] = None, emailVerified: Boolean = false): Member = {
-    val theCreatedAt = createdAt.getOrElse(Globals.now())
+    val theCreatedAt = createdAt.getOrElse(globals.now())
     val member = dao.createPasswordUserCheckPasswordStrong(NewPasswordUserData.create(
       name = Some(s"User $password"), username = s"user_$password", email = s"user-$password@x.c",
       password = s"public-$password", createdAt = theCreatedAt,
@@ -204,21 +243,21 @@ class DaoAppSuite(
 
   def reply(memberId: UserId, pageId: PageId, text: String, parentNr: Option[PostNr] = None)(
         dao: SiteDao): Post = {
-    dao.insertReply(TextAndHtml.testBody(text), pageId,
+    dao.insertReply(textAndHtmlMaker.testBody(text), pageId,
       replyToPostNrs = Set(parentNr getOrElse PageParts.BodyNr), PostType.Normal,
       Who(memberId, browserIdData), dummySpamRelReqStuff).post
   }
 
 
   def chat(memberId: UserId, pageId: PageId, text: String)(dao: SiteDao): Post = {
-    dao.insertChatMessage(TextAndHtml.testBody(text), pageId,
+    dao.insertChatMessage(textAndHtmlMaker.testBody(text), pageId,
       Who(memberId, browserIdData), dummySpamRelReqStuff).post
   }
 
 
   def edit(post: Post, editorId: UserId, newText: String)(dao: SiteDao) {
     dao.editPostIfAuth(post.pageId, post.nr, Who(editorId, browserIdData), dummySpamRelReqStuff,
-        TextAndHtml.testBody(newText))
+        textAndHtmlMaker.testBody(newText))
   }
 
 

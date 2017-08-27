@@ -18,7 +18,6 @@
 package debiki.dao
 
 import com.debiki.core._
-import debiki.{Globals, TextAndHtml}
 import java.{util => ju}
 
 
@@ -57,9 +56,9 @@ class UserStatsAppSpec extends DaoAppSuite() {
     val now = new ju.Date()
 
     "prepare" in {
-      Globals.test.setTime(startTime)
-      Globals.systemDao.getOrCreateFirstSite()
-      dao = Globals.siteDao(Site.FirstSiteId)
+      globals.testSetTime(startTime)
+      globals.systemDao.getOrCreateFirstSite()
+      dao = globals.siteDao(Site.FirstSiteId)
       owner = createPasswordOwner("us_adm", dao)
       ownerWho = Who(owner.id, browserIdData)
       createForumResult = dao.createForum("Forum", "/tag-test-forum/", ownerWho)
@@ -71,12 +70,14 @@ class UserStatsAppSpec extends DaoAppSuite() {
 
     "staff creates stuff" in {
       noRepliesTopicId = createPage(PageRole.Discussion,
-        TextAndHtml.testTitle("noRepliesTopicId"), TextAndHtml.testBody("noRepliesTopicIde body"),
+        textAndHtmlMaker.testTitle("noRepliesTopicId"),
+        textAndHtmlMaker.testBody("noRepliesTopicIde body"),
         owner.id, browserIdData, dao, Some(categoryId))
       pretendThereAreManyReplies(noRepliesTopicId)
 
       withRepliesTopicId = createPage(PageRole.Discussion,
-        TextAndHtml.testTitle("withRepliesTopicId"), TextAndHtml.testBody("withRepliesTopicId bd"),
+        textAndHtmlMaker.testTitle("withRepliesTopicId"),
+        textAndHtmlMaker.testBody("withRepliesTopicId bd"),
         owner.id, browserIdData, dao, Some(categoryId))
       reply(moderator.id, withRepliesTopicId, s"Reply 1 (post nr 2)")(dao)
       reply(moderator.id, withRepliesTopicId, s"Reply 2 (post nr 3)")(dao)
@@ -84,7 +85,8 @@ class UserStatsAppSpec extends DaoAppSuite() {
       pretendThereAreManyReplies(withRepliesTopicId)
 
       twoMessagesChatTopicId = createPage(PageRole.OpenChat,
-        TextAndHtml.testTitle("twoMessagesChatTopicId"), TextAndHtml.testBody("chat purpose 2953"),
+        textAndHtmlMaker.testTitle("twoMessagesChatTopicId"),
+        textAndHtmlMaker.testBody("chat purpose 2953"),
         owner.id, browserIdData, dao, Some(categoryId))
       dao.addUsersToPage(Set(owner.id), twoMessagesChatTopicId, byWho = ownerWho)
       dao.addUsersToPage(Set(moderator.id), twoMessagesChatTopicId, byWho = ownerWho)
@@ -93,13 +95,14 @@ class UserStatsAppSpec extends DaoAppSuite() {
       chat(moderator.id, twoMessagesChatTopicId, "chat message 2")(dao)
 
       addMessagesChatTopicId = createPage(PageRole.OpenChat,
-        TextAndHtml.testTitle("chatTopicId"), TextAndHtml.testBody("chatTopicId body"),
+        textAndHtmlMaker.testTitle("chatTopicId"),
+        textAndHtmlMaker.testBody("chatTopicId body"),
         owner.id, browserIdData, dao, Some(categoryId))
       pretendThereAreManyReplies(addMessagesChatTopicId)
 
       withMessagesChatTopicId = createPage(PageRole.OpenChat,
-        TextAndHtml.testTitle("withMessagesChatTopicId"),
-        TextAndHtml.testBody("withMessagesChatTopicId purpose"),
+        textAndHtmlMaker.testTitle("withMessagesChatTopicId"),
+        textAndHtmlMaker.testBody("withMessagesChatTopicId purpose"),
         owner.id, browserIdData, dao, Some(categoryId))
       // dao.insertChatMessage(...)
       // ...
@@ -123,9 +126,9 @@ class UserStatsAppSpec extends DaoAppSuite() {
 
     "... logs in, stats get updated" in {
       playTime(1000)
-      dao.verifyEmail(member1.id, Globals.now().toJavaDate)
+      dao.verifyEmail(member1.id, globals.now().toJavaDate)
       val loginGrant = dao.tryLoginAsMember(PasswordLoginAttempt(
-        ip = "1.2.3.4", Globals.now().toJavaDate, member1.email, "public-us_mb1"))
+        ip = "1.2.3.4", globals.now().toJavaDate, member1.email, "public-us_mb1"))
       val stats = loadUserStats(member1.id)(dao)
       stats mustBe initialStats.copy(lastSeenAt = currentTime)
     }
@@ -133,7 +136,8 @@ class UserStatsAppSpec extends DaoAppSuite() {
     "... posts a topic, stats get updated" in {
       playTime(1000)
       createPage(PageRole.Discussion,
-        TextAndHtml.testTitle("topic"), TextAndHtml.testBody("topic text"),
+        textAndHtmlMaker.testTitle("topic"),
+        textAndHtmlMaker.testBody("topic text"),
         member1.id, browserIdData, dao, Some(categoryId))
       currentStats = loadUserStats(member1.id)(dao)
       currentStats mustBe initialStats.copy(
@@ -170,11 +174,11 @@ class UserStatsAppSpec extends DaoAppSuite() {
 
     "... gets an email, last-emailed-at gets updated" in {
       playTime(1000)
-      val email = Email(EmailType.Notification, createdAt = Globals.now(),
+      val email = Email(EmailType.Notification, createdAt = globals.now(),
         sendTo = member1.email, toUserId = Some(member1.id),
         subject = "Dummy email", bodyHtmlText = (emailId: String) => "Text text")
       dao.saveUnsentEmail(email)
-      Globals.sendEmail(email, dao.siteId)
+      globals.sendEmail(email, dao.siteId)
       val startMs = System.currentTimeMillis()
       var newStats = loadUserStats(member1.id)(dao)
       newStats.lastEmailedAt mustBe empty
@@ -188,8 +192,8 @@ class UserStatsAppSpec extends DaoAppSuite() {
     "... looks at a discourse topic, but doesn't read it" in {
       playTime(1200)
       dao.trackReadingProgressPerhapsPromote(member1, noRepliesTopicId, ReadingProgress(
-        firstVisitedAt = Globals.now(),
-        lastVisitedAt = Globals.now(),
+        firstVisitedAt = globals.now(),
+        lastVisitedAt = globals.now(),
         lastViewedPostNr = PageParts.BodyNr,
         lastReadAt = None,
         lastPostNrsReadRecentFirst = Vector.empty,
@@ -203,10 +207,10 @@ class UserStatsAppSpec extends DaoAppSuite() {
     "... reads the orig post" in {
       playTime(1000)
       dao.trackReadingProgressPerhapsPromote(member1, noRepliesTopicId, ReadingProgress(
-        firstVisitedAt = Globals.now(),
-        lastVisitedAt = Globals.now(),
+        firstVisitedAt = globals.now(),
+        lastVisitedAt = globals.now(),
         lastViewedPostNr = PageParts.BodyNr,
-        lastReadAt = Some(Globals.now()),
+        lastReadAt = Some(globals.now()),
         lastPostNrsReadRecentFirst = Vector.empty,
         lowPostNrsRead = Set(PageParts.BodyNr),
         secondsReading = 12))
@@ -222,10 +226,10 @@ class UserStatsAppSpec extends DaoAppSuite() {
     "... reads a discourse topic, with replies, now replies-read gets updated" in {
       playTime(1000)
       dao.trackReadingProgressPerhapsPromote(member1, withRepliesTopicId, ReadingProgress(
-        firstVisitedAt = Globals.now() minusMillis 400,
-        lastVisitedAt = Globals.now() minusMillis 200,
+        firstVisitedAt = globals.now() minusMillis 400,
+        lastVisitedAt = globals.now() minusMillis 200,
         lastViewedPostNr = 3,
-        lastReadAt = Some(Globals.now() minusMillis 300),
+        lastReadAt = Some(globals.now() minusMillis 300),
         lastPostNrsReadRecentFirst = Vector.empty,
         lowPostNrsRead = Set(3, 4, 17),
         secondsReading = 111))
@@ -242,10 +246,10 @@ class UserStatsAppSpec extends DaoAppSuite() {
     "... views even more replies" in {
       playTime(1000)
       dao.trackReadingProgressPerhapsPromote(member1, withRepliesTopicId, ReadingProgress(
-        firstVisitedAt = Globals.now() minusMillis 400,
-        lastVisitedAt = Globals.now(),
+        firstVisitedAt = globals.now() minusMillis 400,
+        lastVisitedAt = globals.now(),
         lastViewedPostNr = 33,
-        lastReadAt = Some(Globals.now()),
+        lastReadAt = Some(globals.now()),
         lastPostNrsReadRecentFirst = Vector.empty,
         lowPostNrsRead = Set(PageParts.BodyNr, 24, 32, 33, 34),
         secondsReading = 1111))
@@ -261,10 +265,10 @@ class UserStatsAppSpec extends DaoAppSuite() {
     "... views a chat topic, low post nrs only, stats gets updated" in {
       playTime(1000)
       dao.trackReadingProgressPerhapsPromote(member1, withMessagesChatTopicId, ReadingProgress(
-        firstVisitedAt = Globals.now() minusMillis 500,
-        lastVisitedAt = Globals.now(),
+        firstVisitedAt = globals.now() minusMillis 500,
+        lastVisitedAt = globals.now(),
         lastViewedPostNr = 10,
-        lastReadAt = Some(Globals.now()),
+        lastReadAt = Some(globals.now()),
         lastPostNrsReadRecentFirst = Vector.empty,
         lowPostNrsRead = Set(1 to 10: _*),
         secondsReading = 4))
@@ -281,10 +285,10 @@ class UserStatsAppSpec extends DaoAppSuite() {
     "... reads a bit more in the same a chat topic, still low post nrs" in {
       playTime(1000)
       dao.trackReadingProgressPerhapsPromote(member1, withMessagesChatTopicId, ReadingProgress(
-        firstVisitedAt = Globals.now() minusMillis 500,
-        lastVisitedAt = Globals.now(),
+        firstVisitedAt = globals.now() minusMillis 500,
+        lastVisitedAt = globals.now(),
         lastViewedPostNr = 12055,
-        lastReadAt = Some(Globals.now()),
+        lastReadAt = Some(globals.now()),
         lastPostNrsReadRecentFirst = Vector.empty,
         // Posts 5..10 already read, won't be counted again.
         lowPostNrsRead = Set(5 to ReadingProgress.MaxLowPostNr: _*),
@@ -304,10 +308,10 @@ class UserStatsAppSpec extends DaoAppSuite() {
       playTime(1000)
       val exception = intercept[Exception] {
         dao.trackReadingProgressPerhapsPromote(member1, twoMessagesChatTopicId, ReadingProgress(
-          firstVisitedAt = Globals.now(),
-          lastVisitedAt = Globals.now(),
+          firstVisitedAt = globals.now(),
+          lastVisitedAt = globals.now(),
           lastViewedPostNr = 1,
-          lastReadAt = Some(Globals.now()),
+          lastReadAt = Some(globals.now()),
           lastPostNrsReadRecentFirst = Vector.empty,
           lowPostNrsRead = Set(2, 3, 4),  // nr 4 doesn't exist
           secondsReading = 1))
@@ -318,10 +322,10 @@ class UserStatsAppSpec extends DaoAppSuite() {
     "... but can read 2" in {
       playTime(1000)
       dao.trackReadingProgressPerhapsPromote(member1, twoMessagesChatTopicId, ReadingProgress(
-        firstVisitedAt = Globals.now() minusMillis 500,
-        lastVisitedAt = Globals.now(),
+        firstVisitedAt = globals.now() minusMillis 500,
+        lastVisitedAt = globals.now(),
         lastViewedPostNr = 1,
-        lastReadAt = Some(Globals.now()),
+        lastReadAt = Some(globals.now()),
         lastPostNrsReadRecentFirst = Vector.empty,
         lowPostNrsRead = Set(1, 2, 3),  // nr 1 = the orig post, won't count, so +2 below (not +3)
         secondsReading = 200))

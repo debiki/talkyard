@@ -26,7 +26,7 @@ import debiki._
 import ed.server.security.EdSecurity
 import play.{api => p}
 import play.api.mvc._
-import play.api.{Logger, Play}
+import play.api.Logger
 import scala.concurrent.{ExecutionContext, Future}
 
 
@@ -60,7 +60,7 @@ class SafeActions(val globals: Globals, val security: EdSecurity) {
 
 
   val allowFakeIp: Boolean = {
-    val allow = !globals.isProd || Play.current.configuration.getBoolean("ed.allowFakeIp").getOrElse(false)
+    val allow = !globals.isProd || globals.conf.getBoolean("ed.allowFakeIp").getOrElse(false)
     if (allow) {
       Logger.info("Enabling fake IPs [DwM0Fk258]")
     }

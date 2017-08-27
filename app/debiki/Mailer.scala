@@ -18,17 +18,14 @@
 package debiki
 
 import akka.actor._
-import akka.actor.Actor._
 import org.apache.commons.{mail => acm}
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki.dao.SiteDao
 import debiki.dao.SiteDaoFactory
-import java.{util => ju}
 import play.{api => p}
-import play.api.Play.current
 import scala.collection.mutable
-import scala.concurrent.{Future, Promise}
+import scala.concurrent.Promise
 
 
 object Mailer {

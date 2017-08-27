@@ -18,8 +18,7 @@
 package debiki.dao
 
 import com.debiki.core._
-import debiki.DebikiHttp.ResultException
-import debiki.TextAndHtml
+import debiki.EdHttp.ResultException
 
 
 class FirstPostsAppSpec extends ReviewStuffAppSuite("4FY2") {
@@ -314,8 +313,8 @@ class FirstPostsAppSpec extends ReviewStuffAppSuite("4FY2") {
         "auto-approves chat messages, and doesn't let them interfere with discussion replies" in {
           pending
           newAdminAndPage()
-          val chatPageId = createPage(PageRole.OpenChat, TextAndHtml.testTitle("Chat Page 594284"),
-            TextAndHtml.testBody("Purpose: 594284"), theAdmin.id, browserIdData, dao,
+          val chatPageId = createPage(PageRole.OpenChat, textAndHtmlMaker.testTitle("Chat Page 594284"),
+            textAndHtmlMaker.testBody("Purpose: 594284"), theAdmin.id, browserIdData, dao,
             anyCategoryId = Some(categoryId))
 
           val member = createPasswordUser(s"mem_740331", dao)
@@ -323,7 +322,7 @@ class FirstPostsAppSpec extends ReviewStuffAppSuite("4FY2") {
           dao.joinOrLeavePageIfAuth(chatPageId, join = true, who)
 
           info("insert a chat messages, it gets auto-approved")
-          val firstChat = dao.insertChatMessage(TextAndHtml.testBody("chat_740331_a"), chatPageId,
+          val firstChat = dao.insertChatMessage(textAndHtmlMaker.testBody("chat_740331_a"), chatPageId,
             who, dummySpamRelReqStuff).post
           firstChat.approvedById mustBe Some(SystemUserId)
 
@@ -333,7 +332,7 @@ class FirstPostsAppSpec extends ReviewStuffAppSuite("4FY2") {
           checkReviewTaskGenerated(firstReplyResult.post, reviewReasons)
 
           info("another chat message")
-          val secondChat = dao.insertChatMessage(TextAndHtml.testBody("chat_740331_d"), chatPageId,
+          val secondChat = dao.insertChatMessage(textAndHtmlMaker.testBody("chat_740331_d"), chatPageId,
             who, dummySpamRelReqStuff).post
           secondChat.approvedById mustBe Some(SystemUserId)
 
@@ -343,7 +342,7 @@ class FirstPostsAppSpec extends ReviewStuffAppSuite("4FY2") {
           checkReviewTaskGenerated(secondReplyResult.post, reviewReasons)
 
           info("yet another chat message")
-          val thirdChat = dao.insertChatMessage(TextAndHtml.testBody("chat_740331_f"), chatPageId,
+          val thirdChat = dao.insertChatMessage(textAndHtmlMaker.testBody("chat_740331_f"), chatPageId,
             who, dummySpamRelReqStuff).post
           thirdChat.approvedById mustBe Some(SystemUserId)
 
@@ -380,18 +379,18 @@ class FirstPostsAppSpec extends ReviewStuffAppSuite("4FY2") {
           val member = createPasswordUser(s"mem_4ZM2", dao)
 
           info("create Allow = 2 pages, pending approval since Approve > 0")
-          val first = createPage(PageRole.Discussion, TextAndHtml.testTitle("Member Page 4ZM2"),
-            TextAndHtml.testBody("Page body 4ZM2."), member.id, browserIdData, dao,
+          val first = createPage(PageRole.Discussion, textAndHtmlMaker.testTitle("Member Page 4ZM2"),
+            textAndHtmlMaker.testBody("Page body 4ZM2."), member.id, browserIdData, dao,
             anyCategoryId = Some(categoryId))
 
-          val second = createPage(PageRole.Discussion, TextAndHtml.testTitle("Member Page 4ZM2 b"),
-            TextAndHtml.testBody("Page body 4ZM2 b."), member.id, browserIdData, dao,
+          val second = createPage(PageRole.Discussion, textAndHtmlMaker.testTitle("Member Page 4ZM2 b"),
+            textAndHtmlMaker.testBody("Page body 4ZM2 b."), member.id, browserIdData, dao,
             anyCategoryId = Some(categoryId))
 
           info("rejct page 3")
           intercept[ResultException] {
-            createPage(PageRole.Discussion, TextAndHtml.testTitle("Member Page 4ZM2 c"),
-                TextAndHtml.testBody("Page body 4ZM2 c."), member.id, browserIdData, dao,
+            createPage(PageRole.Discussion, textAndHtmlMaker.testTitle("Member Page 4ZM2 c"),
+                textAndHtmlMaker.testBody("Page body 4ZM2 c."), member.id, browserIdData, dao,
                 anyCategoryId = Some(categoryId))
           }.getMessage must include("_EsE6YKF2_")
         }

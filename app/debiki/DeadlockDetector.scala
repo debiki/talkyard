@@ -21,8 +21,6 @@ import java.lang.management.{ThreadInfo, ManagementFactory}
 import java.util.concurrent.Executors
 import java.{util => ju}
 import play.{api => p}
-import play.api.Play
-import play.api.Play.current
 import scala.collection.mutable
 
 

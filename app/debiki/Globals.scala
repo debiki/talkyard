@@ -505,7 +505,7 @@ class Globals(
   }
 
 
-  def onServerShutdown(app: p.Application) {
+  def onServerShutdown() {
     // Play.start() first calls Play.stop(), so:
     if (_state eq null)
       return
@@ -526,6 +526,7 @@ class Globals(
       state.redisClient.quit()
       state.dbDaoFactory.db.readOnlyDataSource.asInstanceOf[HikariDataSource].close()
       state.dbDaoFactory.db.readWriteDataSource.asInstanceOf[HikariDataSource].close()
+      wsClient.close()
     }
     _state = null
     timeStartMillis = None

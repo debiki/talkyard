@@ -19,28 +19,29 @@ package debiki
 
 import com.debiki.core._
 import com.debiki.core.Prelude._
+import debiki.dao.DaoAppSuite
 import ed.server.http.DebikiRequest
-import org.scalatest._
-import org.scalatest.mock.MockitoSugar
-import org.scalatestplus.play.guice.GuiceOneAppPerSuite
+import org.scalatest.mockito.MockitoSugar
 import org.mockito.Mockito._
 import play.api.http.Status.TOO_MANY_REQUESTS
 import play.{api => p}
 import java.{util => ju}
+import play.api.mvc.AnyContentAsEmpty
+import play.api.test.FakeHeaders
 
 
 
-class RateLimiterSpec extends FreeSpec with MustMatchers with MockitoSugar
-    with GuiceOneAppPerSuite {
+class RateLimiterSpec extends DaoAppSuite with MockitoSugar {
 
   import RateLimits.Unlimited
 
+  lazy val RateLimiter = new _root_.debiki.RateLimiter(globals, context.security)
 
   var nextIp = 0
 
   def mockRequest(now: UnixTime, ip: String = null, roleId: UserId = 0, siteId: SiteId = NoSiteId)
-        : DebikiRequest[Unit] = {
-    val requestMock = mock[DebikiRequest[Unit]]
+        : DebikiRequest[AnyContentAsEmpty.type] = {
+    val requestMock = mock[DebikiRequest[AnyContentAsEmpty.type]]
     // `now` might be small, close to 0, so add a few months.
     val fourMonthsSeconds = 10*1000*1000 // roughly four months
     val theIp = if (ip ne null) ip else {
@@ -55,8 +56,8 @@ class RateLimiterSpec extends FreeSpec with MustMatchers with MockitoSugar
     when(requestMock.ip).thenReturn(theIp)
     when(requestMock.user).thenReturn(anyUser)
     when(requestMock.siteId).thenReturn(theSiteId)
-    when(requestMock.underlying).thenReturn(new p.test.FakeRequest[Unit](
-        method = "GET", uri = "/dummy", headers = p.mvc.Headers(), (), remoteAddress = theIp))
+    when(requestMock.underlying).thenReturn(p.test.FakeRequest(method = "GET", uri = "/dummy",
+      headers = FakeHeaders(), body = AnyContentAsEmpty, remoteAddress = theIp))
     requestMock
   }
 
@@ -91,7 +92,7 @@ class RateLimiterSpec extends FreeSpec with MustMatchers with MockitoSugar
       fail("Was not rate limited")
     }
     catch {
-      case exception: DebikiHttp.ResultException =>
+      case exception: EdHttp.ResultException =>
         exception.result.header.status mustBe TOO_MANY_REQUESTS
     }
   }

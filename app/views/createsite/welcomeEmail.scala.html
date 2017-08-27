@@ -21,7 +21,6 @@
 
 @import controllers.CreateEmbeddedSiteController
 @import debiki.HtmlUtils.link
-@import play.api.Play.current
 
 @embeddingSiteUrl = @{ site.embeddingSiteUrl.get }
 @adminUrl = @{ CreateEmbeddedSiteController.adminUrlForEmbeddedSite(site.id) }

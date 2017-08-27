@@ -19,7 +19,6 @@ package ed.server.notf
 
 import com.debiki.core._
 import debiki.dao._
-import debiki.{Globals, TextAndHtml}
 import java.{util => ju}
 
 
@@ -64,9 +63,9 @@ class NotfsAppSpec extends DaoAppSuite() {
     val now = new ju.Date()
 
     "prepare" in {
-      Globals.test.setTime(startTime)
-      Globals.systemDao.getOrCreateFirstSite()
-      dao = Globals.siteDao(Site.FirstSiteId)
+      globals.testSetTime(startTime)
+      globals.systemDao.getOrCreateFirstSite()
+      dao = globals.siteDao(Site.FirstSiteId)
       owner = createPasswordOwner("ntf_ownr", dao)
       ownerWho = Who(owner.id, browserIdData)
       createForumResult = dao.createForum("Forum", "/notf-test-forum/", ownerWho)
@@ -84,7 +83,8 @@ class NotfsAppSpec extends DaoAppSuite() {
 
     "staff creates stuff" in {
       withRepliesTopicId = createPage(PageRole.Discussion,
-        TextAndHtml.testTitle("withRepliesTopicId"), TextAndHtml.testBody("withRepliesTopicId bd"),
+        textAndHtmlMaker.testTitle("withRepliesTopicId"),
+        textAndHtmlMaker.testBody("withRepliesTopicId bd"),
         owner.id, browserIdData, dao, Some(categoryId))
       reply(moderator.id, withRepliesTopicId, s"Reply 1 (post nr 2) by mod")(dao)
       expectedTotalNumNotfs += 1
@@ -94,7 +94,7 @@ class NotfsAppSpec extends DaoAppSuite() {
 
       // This stuff might be incorrectly matched & break the tests, if there're buggy SQL queries.
       oldChatTopicId = createPage(PageRole.OpenChat,
-        TextAndHtml.testTitle("oldChatTopicId"), TextAndHtml.testBody("chat purpose 2953"),
+        textAndHtmlMaker.testTitle("oldChatTopicId"), textAndHtmlMaker.testBody("chat purpose 2953"),
         owner.id, browserIdData, dao, Some(categoryId))
       dao.addUsersToPage(Set(owner.id), oldChatTopicId, byWho = ownerWho)
       dao.addUsersToPage(Set(moderator.id), oldChatTopicId, byWho = ownerWho)
@@ -104,19 +104,19 @@ class NotfsAppSpec extends DaoAppSuite() {
       chat(moderator.id, oldChatTopicId, "chat message 2")(dao)
 
       chatTopicOneId = createPage(PageRole.OpenChat,
-        TextAndHtml.testTitle("chatTopicId"), TextAndHtml.testBody("chatTopicId body"),
+        textAndHtmlMaker.testTitle("chatTopicId"), textAndHtmlMaker.testBody("chatTopicId body"),
         owner.id, browserIdData, dao, Some(categoryId))
       dao.saveUserPageSettings(owner.id, chatTopicOneId, UserPageSettings(NotfLevel.Normal))
 
       chatTopicTwoId = createPage(PageRole.OpenChat,
-        TextAndHtml.testTitle("chatTopicTwoId"),
-        TextAndHtml.testBody("chatTopicTwoId purpose"),
+        textAndHtmlMaker.testTitle("chatTopicTwoId"),
+        textAndHtmlMaker.testBody("chatTopicTwoId purpose"),
         owner.id, browserIdData, dao, Some(categoryId))
       dao.saveUserPageSettings(owner.id, chatTopicTwoId, UserPageSettings(NotfLevel.Normal))
 
       chatTopicManyJoinedId = createPage(PageRole.OpenChat,
-        TextAndHtml.testTitle("chatTopicManyJoinedId"),
-        TextAndHtml.testBody("chatTopicManyJoinedId purpose"),
+        textAndHtmlMaker.testTitle("chatTopicManyJoinedId"),
+        textAndHtmlMaker.testBody("chatTopicManyJoinedId purpose"),
         owner.id, browserIdData, dao, Some(categoryId))
       dao.saveUserPageSettings(owner.id, chatTopicManyJoinedId, UserPageSettings(NotfLevel.Normal))
       dao.addUsersToPage(Set(owner.id), chatTopicManyJoinedId, byWho = ownerWho)

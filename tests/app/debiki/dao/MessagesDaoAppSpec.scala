@@ -19,7 +19,6 @@ package debiki.dao
 
 import com.debiki.core._
 import com.debiki.core.Prelude._
-import debiki.{TextAndHtml, Globals}
 import org.scalatest._
 
 
@@ -29,8 +28,8 @@ class MessagesDaoAppSpec extends DaoAppSuite(disableScripts = true, disableBackg
   "MessagesDao can" - {
 
     "prepare" in {
-      Globals.systemDao.getOrCreateFirstSite()
-      dao = Globals.siteDao(Site.FirstSiteId)
+      globals.systemDao.getOrCreateFirstSite()
+      dao = globals.siteDao(Site.FirstSiteId)
       letEveryoneTalkAndStaffModerate(dao)
     }
 
@@ -38,8 +37,8 @@ class MessagesDaoAppSpec extends DaoAppSuite(disableScripts = true, disableBackg
       createPasswordOwner("5kwu8f40", dao)
       val userOne = createPasswordUser("zzxxffgg", dao, trustLevel = TrustLevel.BasicMember)
       val userTwo = createPasswordUser("qqwwffpp", dao, trustLevel = TrustLevel.BasicMember)
-      val pagePath = dao.startGroupTalk(title = TextAndHtml.testTitle("title_558206"),
-        body = TextAndHtml.testBody("message_2749"), PageRole.FormalMessage,
+      val pagePath = dao.startGroupTalk(title = textAndHtmlMaker.testTitle("title_558206"),
+        body = textAndHtmlMaker.testBody("message_2749"), PageRole.FormalMessage,
         toUserIds = Set(userTwo.id), sentByWho = Who(userOne.id, browserIdData),
         dummySpamRelReqStuff)
 
@@ -110,8 +109,8 @@ class MessagesDaoAppSpec extends DaoAppSuite(disableScripts = true, disableBackg
 
     def testMayNotMessage(dao: SiteDao, admin: User, sender: User, otherUser: User) {
       info("a moderate threat can message admin"); {
-        val pagePath = dao.startGroupTalk(title = TextAndHtml.testTitle("title_0482745"),
-          body = TextAndHtml.testBody("body_0482745"), PageRole.FormalMessage,
+        val pagePath = dao.startGroupTalk(title = textAndHtmlMaker.testTitle("title_0482745"),
+          body = textAndHtmlMaker.testBody("body_0482745"), PageRole.FormalMessage,
           toUserIds = Set(admin.id), sentByWho = Who(sender.id, browserIdData),
           dummySpamRelReqStuff)
 
@@ -132,8 +131,8 @@ class MessagesDaoAppSpec extends DaoAppSuite(disableScripts = true, disableBackg
 
 
     def sendMessageTo(toWhom: Set[UserId], fromUserId: UserId, dao: SiteDao): PagePath =
-      dao.startGroupTalk(title = TextAndHtml.testTitle("title_0482745"),
-        body = TextAndHtml.testBody("body_0482745"), PageRole.FormalMessage, toUserIds = toWhom,
+      dao.startGroupTalk(title = textAndHtmlMaker.testTitle("title_0482745"),
+        body = textAndHtmlMaker.testBody("body_0482745"), PageRole.FormalMessage, toUserIds = toWhom,
         sentByWho = Who(fromUserId, browserIdData), dummySpamRelReqStuff)
 
   }

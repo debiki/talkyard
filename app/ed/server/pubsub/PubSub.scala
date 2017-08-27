@@ -21,13 +21,12 @@ import akka.actor._
 import akka.pattern.ask
 import com.debiki.core.Prelude._
 import com.debiki.core._
-import debiki.dao.{RedisCache, RedisCacheAllSites}
+import debiki.dao.RedisCache
 import debiki.{Globals, ReactJson}
 import play.api.libs.json.{JsNull, JsValue}
 import play.{api => p}
 import play.api.libs.json.Json
 import play.api.libs.ws.{WSClient, WSResponse}
-import play.api.Play.current
 import redis.RedisClient
 import scala.collection.mutable
 import scala.concurrent.Future

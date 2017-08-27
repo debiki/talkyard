@@ -20,8 +20,6 @@ package debiki
 import com.debiki.core.Prelude._
 import com.zaxxer.hikari.{HikariDataSource, HikariConfig}
 import play.{api => p}
-import play.api.Play
-import play.api.Play.current
 
 
 // COULD rename / move, to what, where?

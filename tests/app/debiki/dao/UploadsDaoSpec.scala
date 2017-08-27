@@ -21,8 +21,7 @@ import java.io.RandomAccessFile
 
 import com.debiki.core._
 import com.debiki.core.Prelude._
-import debiki.DebikiHttp.ResultException
-import debiki.{TextAndHtml, Globals}
+import debiki.EdHttp.ResultException
 import org.scalatest._
 import java.{io => jio}
 
@@ -86,7 +85,7 @@ class UploadsDaoAppSpec extends DaoAppSuite(disableScripts = false) {
     val file = new jio.File(s"$tempFileDir/$fileName")
     val raf = new RandomAccessFile(file, "rw")
     raf.setLength(sizeBytes)
-    val ref = UploadRef(Globals.uploadsUrlPath, UploadsDao.makeHashPath(file, ".jpg"))
+    val ref = UploadRef(globals.config.uploadsUrlPath, UploadsDao.makeHashPath(file, ".jpg"))
     FileNameRef(fileName, file, ref)
   }
 
@@ -97,8 +96,8 @@ class UploadsDaoAppSpec extends DaoAppSuite(disableScripts = false) {
   "The app and UploadsDao can" - {
 
     "use no quota" in {
-      Globals.systemDao.getOrCreateFirstSite()
-      val dao = Globals.siteDao(Site.FirstSiteId)
+      globals.systemDao.getOrCreateFirstSite()
+      val dao = globals.siteDao(Site.FirstSiteId)
 
       var resourceUsage = dao.loadResourceUsage()
       resourceUsage.numUploads mustBe 0
@@ -117,14 +116,14 @@ class UploadsDaoAppSpec extends DaoAppSuite(disableScripts = false) {
       val tinyAvatar = makeRandomFile("tiny-avatar", ".jpg", 1021)
       val smallAvatar = makeRandomFile("small-avatar", ".jpg", 2031)
       val mediumAvatar = makeRandomFile("med-avatar", ".jpg", 3041)
-      val dao = Globals.siteDao(Site.FirstSiteId)
+      val dao = globals.siteDao(Site.FirstSiteId)
       var resourceUsage: ResourceUse = null
 
       info("create owner")
       val magic = "55JMU2456"
       val user = dao.createPasswordUserCheckPasswordStrong(NewPasswordUserData.create(
         name = Some(s"User $magic"), username = s"user_$magic", email = s"user-$magic@x.c",
-        password = magic, createdAt = Globals.now(), isAdmin = true, isOwner = true).get)
+        password = magic, createdAt = globals.now(), isAdmin = true, isOwner = true).get)
 
       info("upload avatar images, no quota used")
       dao.addUploadedFile(tinyAvatar.name, tinyAvatar.file, user.id, browserIdData)
@@ -154,14 +153,14 @@ class UploadsDaoAppSpec extends DaoAppSuite(disableScripts = false) {
       val tinyAvatar = makeRandomFile("tiny-avatar", ".jpg", 1020)
       val smallAvatar = makeRandomFile("small-avatar", ".jpg", 2030)
       val mediumAvatar = makeRandomFile("med-avatar", ".jpg", 3040)
-      val dao = Globals.siteDao(Site.FirstSiteId)
+      val dao = globals.siteDao(Site.FirstSiteId)
       var resourceUsage: ResourceUse = null
 
       info("create user")
       val magic = "77PKW2PKW2"
       val user = dao.createPasswordUserCheckPasswordStrong(NewPasswordUserData.create(
         name = Some(s"User $magic"), username = s"user_$magic", email = s"user-$magic@x.c",
-        password = magic, createdAt = Globals.now(), isAdmin = false, isOwner = false).get)
+        password = magic, createdAt = globals.now(), isAdmin = false, isOwner = false).get)
 
       info("set avatar")
       dao.setUserAvatar(user.id, tinyAvatar = Some(tinyAvatar.ref),
@@ -200,14 +199,14 @@ class UploadsDaoAppSpec extends DaoAppSuite(disableScripts = false) {
     "upload a file, include it in a new page, edit, unlink" in {
       val sunImage = makeRandomFile("the-sun", ".jpg", 1040)
       val moonImage = makeRandomFile("the-moon", ".jpg", 2050)
-      val dao = Globals.siteDao(Site.FirstSiteId)
+      val dao = globals.siteDao(Site.FirstSiteId)
       var resourceUsage: ResourceUse = null
 
       info("create user")
       val magic = "7GMYK253"
       val user = dao.createPasswordUserCheckPasswordStrong(NewPasswordUserData.create(
         name = Some(s"User $magic"), username = s"user_$magic", email = s"user-$magic@x.c",
-        password = magic, createdAt = Globals.now(), isAdmin = true, isOwner = false).get)
+        password = magic, createdAt = globals.now(), isAdmin = true, isOwner = false).get)
 
       info("upload files, no quota used")
       dao.addUploadedFile(sunImage.name, sunImage.file, user.id, browserIdData)
@@ -217,8 +216,8 @@ class UploadsDaoAppSpec extends DaoAppSuite(disableScripts = false) {
       resourceUsage.numUploadBytes mustBe 0
 
       info("create page, link first file, now some quota used")
-      val titleTextAndHtml = TextAndHtml.forTitle("Planets")
-      val bodyTextAndHtml = TextAndHtml.forBodyOrComment(s"[The sun](${sunImage.ref.url})")
+      val titleTextAndHtml = textAndHtmlMaker.forTitle("Planets")
+      val bodyTextAndHtml = textAndHtmlMaker.forBodyOrComment(s"[The sun](${sunImage.ref.url})")
       val pagePath = dao.createPage(PageRole.Discussion, PageStatus.Published,
         anyCategoryId = None, anyFolder = None, anySlug = None,
         titleTextAndHtml = titleTextAndHtml, bodyTextAndHtml = bodyTextAndHtml,
@@ -247,7 +246,7 @@ class UploadsDaoAppSpec extends DaoAppSuite(disableScripts = false) {
 
       info("edit page: remove the first file, remaining quota freed")
       dao.editPostIfAuth(pagePath.thePageId, PageParts.BodyNr, Who(user.id, browserIdData),
-        dummySpamRelReqStuff, TextAndHtml.forBodyOrComment("empty"))
+        dummySpamRelReqStuff, textAndHtmlMaker.forBodyOrComment("empty"))
 
       resourceUsage = dao.loadResourceUsage()
       resourceUsage.numUploads mustBe 0
@@ -257,18 +256,18 @@ class UploadsDaoAppSpec extends DaoAppSuite(disableScripts = false) {
 
     "link an upload from a post, then upload it, i.e. wrong order" in {
       val sunImage = makeRandomFile("the-sun", ".jpg", 1060)
-      val dao = Globals.siteDao(Site.FirstSiteId)
+      val dao = globals.siteDao(Site.FirstSiteId)
       var resourceUsage: ResourceUse = null
 
       info("create user")
       val magic = "6J35MK21"
       val user = dao.createPasswordUserCheckPasswordStrong(NewPasswordUserData.create(
         name = Some(s"User $magic"), username = s"user_$magic", email = s"user-$magic@x.c",
-        password = magic, createdAt = Globals.now(), isAdmin = true, isOwner = false).get)
+        password = magic, createdAt = globals.now(), isAdmin = true, isOwner = false).get)
 
       info("create page, link missing file, no quota used")
-      val titleTextAndHtml = TextAndHtml.forTitle("The Sun")
-      val bodyTextAndHtml = TextAndHtml.forBodyOrComment(s"[The sun](${sunImage.ref.url})")
+      val titleTextAndHtml = textAndHtmlMaker.forTitle("The Sun")
+      val bodyTextAndHtml = textAndHtmlMaker.forBodyOrComment(s"[The sun](${sunImage.ref.url})")
       val pagePath = dao.createPage(PageRole.Discussion, PageStatus.Published,
         anyCategoryId = None, anyFolder = None, anySlug = None,
         titleTextAndHtml = titleTextAndHtml, bodyTextAndHtml = bodyTextAndHtml,
@@ -286,7 +285,7 @@ class UploadsDaoAppSpec extends DaoAppSuite(disableScripts = false) {
 
       info("edit page: remove link, quota freed")
       dao.editPostIfAuth(pagePath.thePageId, PageParts.BodyNr, Who(user.id, browserIdData),
-        dummySpamRelReqStuff, TextAndHtml.forBodyOrComment("empty"))
+        dummySpamRelReqStuff, textAndHtmlMaker.forBodyOrComment("empty"))
 
       resourceUsage = dao.loadResourceUsage()
       resourceUsage.numUploads mustBe 0
@@ -301,17 +300,17 @@ class UploadsDaoAppSpec extends DaoAppSuite(disableScripts = false) {
       val sharedFile = makeRandomFile("shared", ".jpg", sharedFileSize)
       val site1File = makeRandomFile("site-1", ".jpg", site1FileSize)
       val site2File = makeRandomFile("site-2", ".jpg", site2FileSize)
-      val dao = Globals.siteDao(Site.FirstSiteId)
+      val dao = globals.siteDao(Site.FirstSiteId)
       var resourceUsage: ResourceUse = null
 
       info("create user, site 1")
       val magic = "Site1_6KMF2"
       val user = dao.createPasswordUserCheckPasswordStrong(NewPasswordUserData.create(
         name = Some(s"User $magic"), username = s"user_$magic", email = s"user-$magic@x.c",
-        password = magic, createdAt = Globals.now(), isAdmin = true, isOwner = false).get)
+        password = magic, createdAt = globals.now(), isAdmin = true, isOwner = false).get)
 
       info("create site 2")
-      val site2 = Globals.systemDao.createSite(
+      val site2 = globals.systemDao.createSite(
         "site-two-name", status = SiteStatus.Active, hostname = "site-two",
         embeddingSiteUrl = None, organizationName = "Test Org Name",
         creatorEmailAddress = "t@x.c", creatorId = user.id, browserIdData,
@@ -319,10 +318,10 @@ class UploadsDaoAppSpec extends DaoAppSuite(disableScripts = false) {
         deleteOldSite = false, pricePlan = "Unknown", createdFromSiteId = None)
 
       info("create user (owner), site 2")
-      val dao2 = Globals.siteDao(site2.id)
+      val dao2 = globals.siteDao(site2.id)
       val user2 = dao2.createPasswordUserCheckPasswordStrong(NewPasswordUserData.create(
         name = Some(s"User $magic"), username = s"user_$magic", email = s"user-$magic@x.c",
-        password = magic, createdAt = Globals.now(), isAdmin = true, isOwner = true).get)
+        password = magic, createdAt = globals.now(), isAdmin = true, isOwner = true).get)
 
       info("upload files, no quota used")
 
@@ -342,10 +341,10 @@ class UploadsDaoAppSpec extends DaoAppSuite(disableScripts = false) {
 
       // COULD speed up by writing html, not commonmark, and passing a noop CommonmarRenderer
       // to TextAndHtml (see its function signature).
-      val titleTextAndHtml = TextAndHtml.forTitle("Planets")
-      val bodyTextAndHtmlSite1 = TextAndHtml.forBodyOrComment(
+      val titleTextAndHtml = textAndHtmlMaker.forTitle("Planets")
+      val bodyTextAndHtmlSite1 = textAndHtmlMaker.forBodyOrComment(
         s"[Shared](${sharedFile.ref.url}), [site-one](${site1File.ref.url})")
-      val bodyTextAndHtmlSite2 = TextAndHtml.forBodyOrComment(
+      val bodyTextAndHtmlSite2 = textAndHtmlMaker.forBodyOrComment(
         s"[Shared](${sharedFile.ref.url}), [site-two](${site2File.ref.url})")
 
       val pagePath1 = dao.createPage(PageRole.Discussion, PageStatus.Published,
@@ -369,7 +368,7 @@ class UploadsDaoAppSpec extends DaoAppSuite(disableScripts = false) {
       info("edit site 1 page: remove links, remaining quota freed, site 1 only")
 
       dao.editPostIfAuth(pagePath1.thePageId, PageParts.BodyNr, Who(user.id, browserIdData),
-        dummySpamRelReqStuff, TextAndHtml.forBodyOrComment("empty"))
+        dummySpamRelReqStuff, textAndHtmlMaker.forBodyOrComment("empty"))
 
       resourceUsage = dao2.loadResourceUsage()
       resourceUsage.numUploads mustBe 2
@@ -387,14 +386,14 @@ class UploadsDaoAppSpec extends DaoAppSuite(disableScripts = false) {
       val fileThree = makeRandomFile("file-three", ".jpg", UploadsDao.MaxBytesPerDayMember / 2)
       val fileTiny = makeRandomFile("file-tiny", ".jpg", 130)
 
-      val dao = Globals.siteDao(Site.FirstSiteId)
+      val dao = globals.siteDao(Site.FirstSiteId)
       var resourceUsage: ResourceUse = null
 
       info("create user")
       val magic = "7MPFKU23"
       val user = dao.createPasswordUserCheckPasswordStrong(NewPasswordUserData.create(
         name = Some(s"User $magic"), username = s"user_$magic", email = s"user-$magic@x.c",
-        password = magic, createdAt = Globals.now(), isAdmin = false, isOwner = false).get)
+        password = magic, createdAt = globals.now(), isAdmin = false, isOwner = false).get)
 
       info("upload files, as long as haven't uploaded too much")
       dao.addUploadedFile(fileOne.name, fileOne.file, user.id, browserIdData)
