@@ -28,9 +28,12 @@
  * replies "too much".
  */
 
+/// <reference path="../prelude.ts" />
+/// <reference path="../utils/scroll-into-view.ts" />
+
 
 //------------------------------------------------------------------------------
-  module debiki2.renderer {
+  namespace debiki2.renderer {
 //------------------------------------------------------------------------------
 
 var React = window['React']; // TypeScript file doesn't work
@@ -104,7 +107,8 @@ export function drawArrowsFromParent(
     if (!horizontalLayout && depth === 1)
       return [];
 
-    return drawVerticalArrows(depth, index === 0, horizontalLayout, numRemainingWithArrows);
+    return drawVerticalArrows(depth, index === 0, horizontalLayout, numRemainingWithArrows,
+        parentPost);
   }
 
   return [];
@@ -138,7 +142,7 @@ function drawHorizontalArrows(isFirstChild: boolean, numRemainingWithArrows: num
 
 
 function drawVerticalArrows(depth: number, isFirstChild: boolean,
-    horizontalLayout: boolean, numRemainingWithArrows: number) {
+    horizontalLayout: boolean, numRemainingWithArrows: number, parentPost: Post) {
 
   var arrows = [];
 
@@ -244,11 +248,44 @@ function drawVerticalArrows(depth: number, isFirstChild: boolean,
 
     // Add a clickable handle that scrolls to the parent post and highlights it.
     arrows.push(
-        r.div({ className: 'dw-arw-vt-handle', key: 28 }));
+        r.div({ className: 'dw-arw-vt-handle', key: 28, onMouseDown: rememberMousedownCoords,
+              onClick: (event) => scrollToParent(event, parentPost) }));
   }
 
   return arrows;
 }
+
+
+let arrowHandleMousedownCoords = null;
+
+function rememberMousedownCoords(event) {
+  arrowHandleMousedownCoords = {
+    clientX: event.clientX,
+    clientY: event.clientY
+  };
+}
+
+function scrollToParent(event, parentPost: Post) {
+  if (arrowHandleMousedownCoords) {
+    const dragDistanceX = event.clientX - arrowHandleMousedownCoords.clientX;
+    const dragDistanceY = event.clientY - arrowHandleMousedownCoords.clientY;
+    const dragDistance2 = dragDistanceX * dragDistanceX + dragDistanceY * dragDistanceY;
+    if (dragDistance2 > 15) {
+      // This is click-and-drag, probably Utterscrolling, not a pure click.
+      return;
+    }
+  }
+  const parentPostElem = $byId('post-' + parentPost.nr);
+  if (!utils.elemIsVisible(parentPostElem)) {
+    debiki2.page.addVisitedPositionAndPost(parentPost.nr);
+  }
+
+  // (UX: Always highlight the post, even if it's on screen already, because otherwise
+  // some people who test-click the arrows after having watched the click-arrows demo video,
+  // think the arrows are broken. loadAndShowPost always highlights it.)
+  ReactActions.loadAndShowPost(parentPost.nr);
+}
+
 
 //------------------------------------------------------------------------------
   }

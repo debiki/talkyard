@@ -8,6 +8,9 @@ export function calcScrollIntoViewCoordsInPageColumn(...whatever): any {
 export function scrollIntoViewInPageColumn(...whatever) {
 }
 
+export function elemIsVisible(...whatever) {
+}
+
 export function makeShowPostFn(...whatever) {
 }
 

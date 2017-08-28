@@ -54,7 +54,7 @@ export function scrollIntoViewInPageColumn(what, options?) {
 }
 
 
-d.i.elemIsVisible = function(elem) {
+export function elemIsVisible(elem) {
   const coords = d.i.calcScrollIntoViewCoords(elem, {
     marginTop: 0,
     marginBottom: 0,
@@ -63,7 +63,9 @@ d.i.elemIsVisible = function(elem) {
     parent: $byId('esPageColumn'), // (could make configurable, probably not needed though)
   });
   return !coords.needsToScroll;
-};
+}
+
+d.i.elemIsVisible = elemIsVisible;
 
 
 d.i.calcScrollIntoViewCoords = function(elem, options) {
