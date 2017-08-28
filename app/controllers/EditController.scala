@@ -199,7 +199,7 @@ class EditController @Inject()(cc: ControllerComponents, edContext: EdContext)
   def deletePost = PostJsonAction(RateLimits.DeletePost, maxBytes = 5000) { request =>
     val pageId = (request.body \ "pageId").as[PageId]
     val postNr = (request.body \ "postNr").as[PostNr]
-    val repliesToo = (request.body \ "repliesToo").as[Boolean]
+    val repliesToo = (request.body \ "repliesToo").asOpt[Boolean] getOrElse false
 
     val action =
       if (repliesToo) PostStatusAction.DeleteTree

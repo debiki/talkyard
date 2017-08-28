@@ -763,7 +763,8 @@ export function loadOneboxSafeHtml(url: string, success: (safeHtml: string) => v
     return;
   }
   const encodedUrl = encodeURIComponent(url);
-  get('/-/onebox?url=' + encodedUrl, { dataType: 'html' }, (response: string) => {
+  get('/-/onebox?url=' + encodedUrl, { dataType: 'html', suppressErrorDialog: true },
+        (response: string) => {
     cachedOneboxHtml[url] = response;
     success(response);
   }, function() {

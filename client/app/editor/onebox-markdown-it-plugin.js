@@ -76,15 +76,22 @@ function renderOnebox(tokens, index, options, env, renderer) {
     debiki2.Server.loadOneboxSafeHtml(token.link, function(safeHtml) {
       var replacement;
       if (safeHtml) {
-        replacement = safeHtml;
+        replacement = debiki2.$h.parseHtml(safeHtml)[0];
       }
       else {
-        // The link couldn't be oneboxed.
-        replacement = $('<a>').attr('href', token.link).text(token.link);
+        // The link couldn't be oneboxed. Show a plain <a href=...> link instead.
+        replacement = Bliss.create('a', { href: token.link, text: token.link });
       }
-      $('#' + randomId).replaceWith(replacement);
+      var placeholder = debiki2.$byId(randomId);
+      // Sometimes the placeholder doesn't exist — I suppose one case is if one did more edits,
+      // while the loadOneboxSafeHtml() request above was still in progress. Then do nothing, now
+      // — a bit later, when one has stopped typing, this code will run agan and then it should work.
+      if (placeholder) {
+        Bliss.after(replacement, placeholder);
+        placeholder.remove();
+      }
     });
-    var safeLink = debiki2.editor.sanitizeHtml(token.link)
+    var safeLink = debiki2.editor.sanitizeHtml(token.link);
     // The sanitizer must allow the id and class, see [6Q8KEF2] in
     // client/third-party/html-css-sanitizer-bundle.js for the current quick hack.
     oneboxHtml  ='<div id="' + randomId + '" class="icon icon-loading"><a>' + safeLink + '</a></div>';

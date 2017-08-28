@@ -1,4 +1,14 @@
 
+### Docker:
+
+Login as root to a running container, without knowing the root password:
+
+    s/d exec -u 0 search bash    # user id 0 = root
+
+    # or with docker (not docker-compose):
+    docker exec -u 0 -it container_name bash
+
+
 ### ElasticSearch stuff:
 
 List indexes:  

@@ -58,8 +58,7 @@ var DeletePostDialog = createComponent({
   },
 
   doDelete: function() {
-    var repliesToo = $('#deleteRepliesTooInput').is(':checked');
-    ReactActions.deletePost(this.state.post.nr, repliesToo, this.close);
+    ReactActions.deletePost(this.state.post.nr, this._delRepls, this.close);
   },
 
   render: function () {
@@ -75,7 +74,7 @@ var DeletePostDialog = createComponent({
         r.div({ className: 'dw-delete-btns' },
           isStaff(me)
               ? Input({ type: 'checkbox', label: "Delete replies too",
-                    id: 'deleteRepliesTooInput' }) // cannot use 'ref:' because not in render()
+                    onChange: (event) => this._delRepls = event.target.checked })
               : null);
     }
     return (
