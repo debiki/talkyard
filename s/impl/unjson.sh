@@ -13,6 +13,8 @@ fi
 # pretty-print e.g. stacktraces with newlines.
 while read -r line
 do
+  # If color codes included in $line, can remove them like so:
+  # line=$( echo $line | sed -r "s/\x1B\[([0-9]{1,2}(;[0-9]{1,2})?)?[mGK]//g" )
 
   # Colors: (http://misc.flogisoft.com/bash/tip_colors_and_formatting)
   # \e[34m = blue
