@@ -99,6 +99,15 @@ export function scrollIntoView(elem, options, onDone?: () => void) {
 d.i.scrollIntoView = scrollIntoView;
 
 
+export function makeShowPostFn(currentPostNr: PostNr, postToShowNr: PostNr) {
+  return function(event) {
+    event.preventDefault();
+    event.stopPropagation();
+    debiki2.page.addVisitedPosts(currentPostNr, postToShowNr);
+    debiki2.ReactActions.loadAndShowPost(postToShowNr);
+  }
+}
+
 //------------------------------------------------------------------------------
    }
 //------------------------------------------------------------------------------

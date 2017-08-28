@@ -72,28 +72,17 @@ function highlightPostBriefly($post) {
 $(document).on('mouseenter mouseleave', '.dw-rr, .dw-solved-by', function(event) {
   var referencedPost = getLinkedPost(this);
   if (event.type === 'mouseenter') {
-    referencedPost.addClass('dw-highlighted-multireply-hover');
+    debiki2.$h.addClasses(referencedPost, 'dw-highlighted-multireply-hover');
   }
   else {
-    referencedPost.removeClass('dw-highlighted-multireply-hover');
+    debiki2.$h.removeClasses(referencedPost, 'dw-highlighted-multireply-hover');
   }
-});
-
-
-// When clicking a in-reply-to link, scroll the post that was replied to into view.
-$(document).on('click', '.dw-rr, .dw-solved-by', function(event) {
-  var referencedPost = getLinkedPost(this);
-  d.i.showAndHighlightPost(referencedPost[0]);
-  var currentPostId = $(this).closest('.dw-t').dwPostId();
-  var nextPostId = referencedPost.dwPostId();
-  debiki2.page.addVisitedPosts(currentPostId, nextPostId);
-  return false; // prevent browser's default action (jump-place post in upper left corner)
 });
 
 
 function getLinkedPost(elem) {
-  var multireplyPostLink = $(elem).attr('href');
-  return $(multireplyPostLink);
+  var multireplyPostLink = elem.getAttribute('href');
+  return debiki2.$first(multireplyPostLink);
 }
 
 

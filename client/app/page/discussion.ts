@@ -19,6 +19,7 @@
 /// <reference path="../prelude.ts" />
 /// <reference path="../utils/utils.ts" />
 /// <reference path="../utils/react-utils.ts" />
+/// <reference path="../utils/scroll-into-view.ts" />
 /// <reference path="../help/help.ts" />
 /// <reference path="../topbar/topbar.ts" />
 /// <reference path="../help/help.ts" />
@@ -359,11 +360,6 @@ export const Title = createComponent({
     return { isEditing: false };
   },
 
-  scrollToAnswer: function() {
-    debiki2.ReactActions.loadAndShowPost(this.props.pageAnswerPostNr);
-    debiki2['page'].addVisitedPosts(TitleNr, this.props.pageAnswerPostNr);
-  },
-
   editTitle: function(event) {
     this.setState({ isEditing: true });
   },
@@ -437,7 +433,8 @@ export const Title = createComponent({
       }
       else if (store.pageRole === PageRole.Question) {
         icon = store.pageAnsweredAtMs
-            ? r.a({ className: 'icon-ok-circled dw-clickable', onClick: this.scrollToAnswer })
+            ? r.a({ className: 'icon-ok-circled dw-clickable',
+                onClick: utils.makeShowPostFn(TitleNr, this.props.pageAnswerPostNr) })
             : r.span({ className: 'icon-help-circled' });
         tooltip = makeQuestionTooltipText(store.pageAnsweredAtMs) + ".\n";
       }
@@ -650,7 +647,8 @@ var RootPostAndComments = createComponent({
     if (store.pageRole === PageRole.Question && store.pageAnsweredAtMs) {
       // onClick:... handled in ../utils/show-and-highlight.js currently (scrolls to solution).
       solvedBy = r.a({ className: 'dw-solved-by icon-ok-circled',
-          href: '#post-' + store.pageAnswerPostNr },
+          href: '#post-' + store.pageAnswerPostNr,
+          onClick: utils.makeShowPostFn(BodyNr, store.pageAnswerPostNr) },
         "Solved in post #" + store.pageAnswerPostNr + ", click to view");
     }
 
@@ -1178,7 +1176,8 @@ var ReplyReceivers = createComponent({
       }
       var author = store_getAuthorOrMissing(store, post);
       var link =
-        r.a({ href: '#post-' + post.nr, className: 'dw-rr', key: post.nr },
+        r.a({ href: '#post-' + post.nr, className: 'dw-rr', key: post.nr,
+            onClick: utils.makeShowPostFn(thisPost.nr, post.nr) },
           author.username || author.fullName,
           // Append an up arrow to indicate that clicking the name will scroll up,
           // rather than opening an about-user dialog. ⬆ is Unicode upwards-black-arrow U+2B06.

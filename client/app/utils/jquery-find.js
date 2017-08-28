@@ -24,11 +24,6 @@ var $ = d.i.$;
 
 
 
-d.i.findPost$ = function(postNr) {
-  return $('#post-'+ postNr);
-}
-
-
 // Depreacted, use dwPostId() instead.
 $.fn.dwPostIdStr = function() {   // rename to dwPostNrStr   and try to remove
   var $post = this.is('.dw-t') ? this.children('.dw-p') : this;
