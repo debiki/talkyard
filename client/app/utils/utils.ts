@@ -59,8 +59,15 @@ export function getFromSessionStorage(key) {
 
 
 function getFromStorage(realStorage, stupidStorage, key) {
-  var value = realStorage.getItem(key);
-  value = value && JSON.parse(value);
+  // In FF, if third party cookies have been disabled, localStorage.getItem throws a security
+  // error, if this code runs in an iframe. More details: [7IWD20ZQ1]
+  let value = null;
+  try {
+    value = realStorage.getItem(key);
+    value = value && JSON.parse(value);
+  }
+  catch (ignored) {
+  }
   // It's null if missing (not undefined), at least in Chrome.
   if (value === null) {
     value = stupidStorage[key];
@@ -73,7 +80,8 @@ function getFromStorage(realStorage, stupidStorage, key) {
 
 // There's a server side version (in ../../server/) that throws a helpful error.
 export function removeFromLocalStorage(key) {
-  localStorage.removeItem(key);
+  try { localStorage.removeItem(key); }
+  catch (dumy) {}
   delete stupidLocalStorage[key];
 }
 

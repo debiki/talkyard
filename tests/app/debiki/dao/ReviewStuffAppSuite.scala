@@ -19,7 +19,6 @@ package debiki.dao
 
 import com.debiki.core._
 import com.debiki.core.Prelude._
-import debiki.{Globals, TextAndHtml}
 import org.scalatest._
 
 
@@ -33,8 +32,8 @@ class ReviewStuffAppSuite(randomString: String)
     var thePageId: PageId = _
     lazy val theAdmin: User =  createPasswordOwner(s"aaddmm_${nextNameNr}_$r", dao)
     lazy val dao: SiteDao = {
-      Globals.systemDao.getOrCreateFirstSite()
-      Globals.siteDao(Site.FirstSiteId)
+      globals.systemDao.getOrCreateFirstSite()
+      globals.siteDao(Site.FirstSiteId)
     }
     lazy val categoryId: CategoryId =
       dao.createForum("Forum", s"/forum-$nextNameNr-$r/",
@@ -45,14 +44,14 @@ class ReviewStuffAppSuite(randomString: String)
     def newAdminAndPage() = {
       thePageId = dao.createPage(PageRole.Discussion, PageStatus.Published,
         anyCategoryId = Some(categoryId), anyFolder = Some("/"), anySlug = Some(""),
-        titleTextAndHtml = TextAndHtml.testTitle("title_62952 $r"),
-        bodyTextAndHtml = TextAndHtml.testBody("discussion_230593 $r"),
+        titleTextAndHtml = textAndHtmlMaker.testTitle("title_62952 $r"),
+        bodyTextAndHtml = textAndHtmlMaker.testBody("discussion_230593 $r"),
         showId = true, Who(theAdmin.id, browserIdData), dummySpamRelReqStuff).thePageId
     }
 
     def testAdminsRepliesApproved(adminId: UserId, pageId: PageId) {
       for (i <- 1 to 10) {
-        val result = dao.insertReply(TextAndHtml.testBody(s"reply_9032372 $r, i = $i"), pageId,
+        val result = dao.insertReply(textAndHtmlMaker.testBody(s"reply_9032372 $r, i = $i"), pageId,
           replyToPostNrs = Set(PageParts.BodyNr), PostType.Normal,
           Who(adminId, browserIdData), dummySpamRelReqStuff)
         result.post.isCurrentVersionApproved mustBe true
@@ -61,7 +60,7 @@ class ReviewStuffAppSuite(randomString: String)
     }
 
     def reply(memberId: UserId, text: String): InsertPostResult = {
-      dao.insertReply(TextAndHtml.testBody(text), thePageId,
+      dao.insertReply(textAndHtmlMaker.testBody(text), thePageId,
         replyToPostNrs = Set(PageParts.BodyNr), PostType.Normal,
         Who(memberId, browserIdData), dummySpamRelReqStuff)
     }

@@ -20,14 +20,15 @@ package debiki
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import com.github.benmanes.caffeine
-import debiki.DebikiHttp.throwTooManyRequests
+import debiki.EdHttp.throwTooManyRequests
 import ed.server.http.DebikiRequest
 import java.util.concurrent.atomic.AtomicReference
 import RateLimits._
+import ed.server.security.EdSecurity
 
 
 
-object RateLimiter {
+class RateLimiter(globals: Globals, security: EdSecurity) {
 
   /** Don't place this cache in Redis because 1) the rate limiter should be really fast,
     * not do any calls to other processes. And 2) it's just fine if sometimes a bit too
@@ -59,7 +60,7 @@ object RateLimiter {
     if (rateLimits.isUnlimited(isNewUser = false))
       return
 
-    if (ed.server.http.hasOkE2eTestPassword(request.underlying))
+    if (security.hasOkE2eTestPassword(request.underlying))
       return
 
     if (rateLimits.noRequestsAllowed(isNewUser = false)) {
@@ -149,12 +150,12 @@ object RateLimiter {
       else
         return
 
-    if (Globals.securityComplaintsEmailAddress.isDefined)
+    if (globals.securityComplaintsEmailAddress.isDefined)
       errorMessage += "\n\n" + o"""
         If you feel this message is in error, you can email us and tell us what you
         attempted to do, and include the error message shown above.
         Then we can try to change the security settings so that they will work for you.""" +
-        s"\n\nEmail: ${Globals.securityComplaintsEmailAddress.get}"
+        s"\n\nEmail: ${globals.securityComplaintsEmailAddress.get}"
 
 
     play.api.Logger.debug(s"Rate limiting ${classNameOf(rateLimits)} for key: $key [DwM429RLMT]")

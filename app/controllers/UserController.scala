@@ -21,22 +21,28 @@ import com.debiki.core._
 import com.debiki.core.Prelude._
 import com.debiki.core.User.{MinUsernameLength, isGuestId}
 import debiki._
+import debiki.EdHttp._
 import debiki.ReactJson._
 import ed.server.http._
 import java.{util => ju}
 import play.api.mvc
 import play.api.libs.json._
-import play.api.mvc.Action
+import play.api.mvc.{AbstractController, Action, ControllerComponents}
 import scala.util.Try
 import scala.collection.immutable
-import DebikiHttp._
 import debiki.RateLimits.TrackReadingActivity
+import ed.server.{EdContext, EdController}
 import ed.server.auth.Authz
+import javax.inject.Inject
 
 
 /** Handles requests related to users.
  */
-object UserController extends mvc.Controller {
+class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
+  extends EdController(cc, edContext) {
+
+  import context.security.{throwNoUnless, throwIndistinguishableNotFound}
+  import context.globals
 
 
   def listCompleteUsers(whichUsers: String): Action[Unit] = StaffGetAction { request =>
@@ -555,7 +561,7 @@ object UserController extends mvc.Controller {
     var secondsReading = (body \ "secondsReading").as[Int]
     val postNrsRead = (body \ "postNrsRead").as[Vector[PostNr]]
 
-    val now = Globals.now()
+    val now = globals.now()
     val lowPostNrsRead: Set[PostNr] = postNrsRead.filter(_ <= ReadingProgress.MaxLowPostNr).toSet
     val lastPostNrsReadRecentFirst =
       postNrsRead.filter(_ > ReadingProgress.MaxLowPostNr).reverse.take(

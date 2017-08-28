@@ -20,7 +20,6 @@ package ed.server.summaryemails
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki.dao._
-import debiki.{Globals, TextAndHtml}
 import scala.collection.immutable
 
 
@@ -70,9 +69,9 @@ import scala.collection.immutable
   *
   * Fast-forward time 2 months, 2 times —> nothing
   */
-class SummaryEmailsAppSpec extends DaoAppSuite() {
+class SummaryEmailsAppSpec extends DaoAppSuite(
+  startTime = When.fromMillis(3100010001000L)) {
 
-  override def startTime: When = When.fromMillis(3100010001000L)
 
   val createdAt: When = startTime minusMillis 10001000L
   val summaryEmailIntervalMins = 60
@@ -138,8 +137,8 @@ class SummaryEmailsAppSpec extends DaoAppSuite() {
 
 
   "prepare: create site and forum and users" in {
-    Globals.systemDao.getOrCreateFirstSite()
-    dao = Globals.siteDao(Site.FirstSiteId)
+    globals.systemDao.getOrCreateFirstSite()
+    dao = globals.siteDao(Site.FirstSiteId)
     forum // creates the forum
   }
 
@@ -200,11 +199,11 @@ class SummaryEmailsAppSpec extends DaoAppSuite() {
 
   "Adm and Mia create one page, each, and summary emails are sent, to users with verified email" - {
     "they create the pages" in {
-      page1IdByAdm = createPage(PageRole.Discussion, TextAndHtml.forTitle("Page By Adm"),
-        TextAndHtml.forBodyOrComment("Page body."), authorId = adm.id, browserIdData,
+      page1IdByAdm = createPage(PageRole.Discussion, textAndHtmlMaker.forTitle("Page By Adm"),
+        textAndHtmlMaker.forBodyOrComment("Page body."), authorId = adm.id, browserIdData,
         dao, anyCategoryId = Some(forum.defaultCategoryId))
-      page2IdByMia = createPage(PageRole.Discussion, TextAndHtml.forTitle("Page By Mia"),
-        TextAndHtml.forBodyOrComment("Page body."), authorId = mia.id, browserIdData,
+      page2IdByMia = createPage(PageRole.Discussion, textAndHtmlMaker.forTitle("Page By Mia"),
+        textAndHtmlMaker.forBodyOrComment("Page body."), authorId = mia.id, browserIdData,
         dao, anyCategoryId = Some(forum.defaultCategoryId))
     }
 
@@ -282,7 +281,7 @@ class SummaryEmailsAppSpec extends DaoAppSuite() {
       }
 
       "Max verifies his email address" in {
-        dao.verifyEmail(max.id, Globals.now().toJavaDate)
+        dao.verifyEmail(max.id, globals.now().toJavaDate)
       }
 
       "now he gets a summary email: both Adm's and Mia's pages" in {
@@ -318,8 +317,8 @@ class SummaryEmailsAppSpec extends DaoAppSuite() {
 
   "summaries not sent, if has read topic already" - {
     "Mia creates a page" in {
-      page3IdByMia = createPage(PageRole.Discussion, TextAndHtml.forTitle("Page 3 By Mia"),
-        TextAndHtml.forBodyOrComment("Page body."), authorId = mia.id, browserIdData,
+      page3IdByMia = createPage(PageRole.Discussion, textAndHtmlMaker.forTitle("Page 3 By Mia"),
+        textAndHtmlMaker.forBodyOrComment("Page body."), authorId = mia.id, browserIdData,
         dao, anyCategoryId = Some(forum.defaultCategoryId))
     }
 
@@ -387,8 +386,8 @@ class SummaryEmailsAppSpec extends DaoAppSuite() {
 
   "summaries not sent, if has visited the website recently" - {
     "Adm creates a page" in {
-      page4IdByAdm = createPage(PageRole.Discussion, TextAndHtml.forTitle("Page 4 By Adm"),
-        TextAndHtml.forBodyOrComment("Page body."), authorId = adm.id, browserIdData,
+      page4IdByAdm = createPage(PageRole.Discussion, textAndHtmlMaker.forTitle("Page 4 By Adm"),
+        textAndHtmlMaker.forBodyOrComment("Page body."), authorId = adm.id, browserIdData,
         dao, anyCategoryId = Some(forum.defaultCategoryId))
     }
 
@@ -447,8 +446,8 @@ class SummaryEmailsAppSpec extends DaoAppSuite() {
 
   "summaries not sent, if the last summary was sent recently" - {
     "Adm creates a page" in {
-      page5IdByAdm = createPage(PageRole.Discussion, TextAndHtml.forTitle("Page 5 By Adm"),
-        TextAndHtml.forBodyOrComment("Page body."), authorId = adm.id, browserIdData,
+      page5IdByAdm = createPage(PageRole.Discussion, textAndHtmlMaker.forTitle("Page 5 By Adm"),
+        textAndHtmlMaker.forBodyOrComment("Page body."), authorId = adm.id, browserIdData,
         dao, anyCategoryId = Some(forum.defaultCategoryId))
     }
 
@@ -461,8 +460,8 @@ class SummaryEmailsAppSpec extends DaoAppSuite() {
     }
 
     "Adm creates another page" in {
-      page6IdByAdm = createPage(PageRole.Discussion, TextAndHtml.forTitle("Page 6 By Adm"),
-        TextAndHtml.forBodyOrComment("Page body."), authorId = adm.id, browserIdData,
+      page6IdByAdm = createPage(PageRole.Discussion, textAndHtmlMaker.forTitle("Page 6 By Adm"),
+        textAndHtmlMaker.forBodyOrComment("Page body."), authorId = adm.id, browserIdData,
         dao, anyCategoryId = Some(forum.defaultCategoryId))
     }
 
@@ -525,12 +524,12 @@ class SummaryEmailsAppSpec extends DaoAppSuite() {
 
   "pages one may not access aren't included in summary" - {
     "Adm creates a staff-only page, plus a page for everyone" in {
-      staffOnlyPageIdByAdm = createPage(PageRole.Discussion, TextAndHtml.forTitle("Staff Page"),
-        TextAndHtml.forBodyOrComment("Page body."), authorId = adm.id, browserIdData,
+      staffOnlyPageIdByAdm = createPage(PageRole.Discussion, textAndHtmlMaker.forTitle("Staff Page"),
+        textAndHtmlMaker.forBodyOrComment("Page body."), authorId = adm.id, browserIdData,
         dao, anyCategoryId = Some(forum.staffCategoryId))
 
-      everyonePageIdByAdm = createPage(PageRole.Discussion, TextAndHtml.forTitle("Everyone Page"),
-        TextAndHtml.forBodyOrComment("Page body."), authorId = adm.id, browserIdData,
+      everyonePageIdByAdm = createPage(PageRole.Discussion, textAndHtmlMaker.forTitle("Everyone Page"),
+        textAndHtmlMaker.forBodyOrComment("Page body."), authorId = adm.id, browserIdData,
         dao, anyCategoryId = Some(forum.defaultCategoryId))
     }
 
@@ -559,8 +558,8 @@ class SummaryEmailsAppSpec extends DaoAppSuite() {
 
   "no summaries creted for pages in a don't-create-summaries category" - {
     "Adm creates a page in a no-summaries category" in {
-      staffOnlyPageIdByAdm = createPage(PageRole.Discussion, TextAndHtml.forTitle("No Summaries"),
-        TextAndHtml.forBodyOrComment("Page body."), authorId = adm.id, browserIdData,
+      staffOnlyPageIdByAdm = createPage(PageRole.Discussion, textAndHtmlMaker.forTitle("No Summaries"),
+        textAndHtmlMaker.forBodyOrComment("Page body."), authorId = adm.id, browserIdData,
         dao, anyCategoryId = Some(categoryNoSummaries.category.id))
     }
 
@@ -583,8 +582,8 @@ class SummaryEmailsAppSpec extends DaoAppSuite() {
     }
 
     "Adm creates a topic" in {
-      newPageAfterIdleId = createPage(PageRole.Discussion, TextAndHtml.forTitle("New After Idle"),
-        TextAndHtml.forBodyOrComment("Page body."), authorId = adm.id, browserIdData,
+      newPageAfterIdleId = createPage(PageRole.Discussion, textAndHtmlMaker.forTitle("New After Idle"),
+        textAndHtmlMaker.forBodyOrComment("Page body."), authorId = adm.id, browserIdData,
         dao, anyCategoryId = Some(forum.defaultCategoryId))
     }
 
@@ -692,8 +691,8 @@ class SummaryEmailsAppSpec extends DaoAppSuite() {
     }
 
     "Adm creates a topic" in {
-      editedSettingsPageIdByAdm = createPage(PageRole.Discussion, TextAndHtml.forTitle("New Stngs"),
-        TextAndHtml.forBodyOrComment("Page body."), authorId = adm.id, browserIdData,
+      editedSettingsPageIdByAdm = createPage(PageRole.Discussion, textAndHtmlMaker.forTitle("New Stngs"),
+        textAndHtmlMaker.forBodyOrComment("Page body."), authorId = adm.id, browserIdData,
         dao, anyCategoryId = Some(forum.defaultCategoryId))
     }
 
@@ -720,8 +719,8 @@ class SummaryEmailsAppSpec extends DaoAppSuite() {
     }
 
     "Adm creates yet another topic" in {
-      editedSettingsPage2IdByAdm = createPage(PageRole.Discussion, TextAndHtml.forTitle("Nw Stngs 2"),
-        TextAndHtml.forBodyOrComment("Page body."), authorId = adm.id, browserIdData,
+      editedSettingsPage2IdByAdm = createPage(PageRole.Discussion, textAndHtmlMaker.forTitle("Nw Stngs 2"),
+        textAndHtmlMaker.forBodyOrComment("Page body."), authorId = adm.id, browserIdData,
         dao, anyCategoryId = Some(forum.defaultCategoryId))
     }
 
@@ -770,8 +769,8 @@ class SummaryEmailsAppSpec extends DaoAppSuite() {
     }
 
     "Adm creates a topic" in {
-      everyoneTestPageIdByAdm = createPage(PageRole.Discussion, TextAndHtml.forTitle("Everyone Test"),
-        TextAndHtml.forBodyOrComment("Page body."), authorId = adm.id, browserIdData,
+      everyoneTestPageIdByAdm = createPage(PageRole.Discussion, textAndHtmlMaker.forTitle("Everyone Test"),
+        textAndHtmlMaker.forBodyOrComment("Page body."), authorId = adm.id, browserIdData,
         dao, anyCategoryId = Some(forum.defaultCategoryId))
     }
 
@@ -807,8 +806,8 @@ class SummaryEmailsAppSpec extends DaoAppSuite() {
 
     "summary-if-active works, also for groups" - {
       "Adm creates a topic" in {
-        everyoneTestPageId2ByAdm = createPage(PageRole.Discussion, TextAndHtml.forTitle("Everyone 2"),
-          TextAndHtml.forBodyOrComment("Page body."), authorId = adm.id, browserIdData,
+        everyoneTestPageId2ByAdm = createPage(PageRole.Discussion, textAndHtmlMaker.forTitle("Everyone 2"),
+          textAndHtmlMaker.forBodyOrComment("Page body."), authorId = adm.id, browserIdData,
           dao, anyCategoryId = Some(forum.defaultCategoryId))
       }
 
@@ -863,8 +862,8 @@ class SummaryEmailsAppSpec extends DaoAppSuite() {
     }
 
     "Adm creates another topic" in {
-      everyoneTestPageId4ByAdm = createPage(PageRole.Discussion, TextAndHtml.forTitle("Everyone 4"),
-        TextAndHtml.forBodyOrComment("Page body."), authorId = adm.id, browserIdData,
+      everyoneTestPageId4ByAdm = createPage(PageRole.Discussion, textAndHtmlMaker.forTitle("Everyone 4"),
+        textAndHtmlMaker.forBodyOrComment("Page body."), authorId = adm.id, browserIdData,
         dao, anyCategoryId = Some(forum.defaultCategoryId))
     }
 

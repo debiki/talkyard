@@ -48,14 +48,14 @@ function browserNamePrefix(browserName): string { // dupl code [4GK0D8G2]
 // `browser` is an argument.
 //
 function pagesFor(browser) {
-  var api = {
+  const api = {
 
     getSiteId: function(): string {
-      var result = browser.execute(function() {
+      const result = browser.execute(function() {
         return window['debiki'].siteId;
       });
-      assert.ok(result.state === 'success',
-          "Error getting site id, result.state: " + result.state);
+      dieIf(!result || _.isNaN(parseInt(result.value)),
+          "Error getting site id, result: " + JSON.stringify(result));
       return result.value;
     },
 
@@ -593,7 +593,9 @@ function pagesFor(browser) {
         console.log('waitForWelcomeLoggedInDialog...');
         api.loginDialog.waitForAndCloseWelcomeLoggedInDialog();
         console.log('createPasswordAccount with no email: done');
-        const nameInHtml = browser.waitAndGetVisibleText('.esTopbar .esAvtrName_name');
+        // Took forever: waitAndGetVisibleText, [CHROME_60_BUG]?
+        browser.waitForVisible('.esTopbar .esAvtrName_name');
+        const nameInHtml = browser.getText('.esTopbar .esAvtrName_name');
         assert(nameInHtml === username);
       },
 
@@ -656,7 +658,6 @@ function pagesFor(browser) {
         api.waitAndClick('#e2eLoginGoogle');
 
         // In Google's login popup window:
-        browser.pause(500);
         browser.swithToOtherTabOrWindow();
 
         const emailInputSelector = 'input[type="email"]';
@@ -757,7 +758,6 @@ function pagesFor(browser) {
         api.waitAndClick('#e2eLoginFacebook');
 
         // In Facebook's login popup window:
-        browser.pause(500);
         browser.swithToOtherTabOrWindow();
 
         // We'll get logged in immediately, if we're already logged in to Facebook. Wait for
@@ -786,7 +786,7 @@ function pagesFor(browser) {
 
         // Facebook recently changed from <input> to <button>. So just find anything with type=submit.
         console.log("submitting Facebook login dialog...");
-        api.waitAndClick('[type=submit]');
+        api.waitAndClick('#loginbutton'); // or: [type=submit]');
 
         // Facebook somehow auto accepts the confirmation dialog, perhaps because
         // I'm using a Facebook API test user. So need not do this:
@@ -969,7 +969,7 @@ function pagesFor(browser) {
       },
 
       assertTopicVisible: function(title) {
-        browser.assertAnyTextMatches(api.forumTopicList.titleSelector, title);
+        browser.assertAnyTextMatches(api.forumTopicList.titleSelector, title, null, 'FAST');
         browser.assertNoTextMatches(api.forumTopicList.hiddenTopicTitleSelector, title);
       },
 
@@ -1647,7 +1647,7 @@ function pagesFor(browser) {
           assertPostTextVisible: function(postText: string) {
             let selector = api.userProfilePage.activity.posts.postSelector;
             browser.waitForVisible(selector);
-            browser.assertAnyTextMatches(selector, postText);
+            browser.assertAnyTextMatches(selector, postText, null, 'FAST');
           },
 
           assertPostTextAbsent: function(postText: string) {
@@ -1667,7 +1667,7 @@ function pagesFor(browser) {
           assertTopicTitleVisible: function(title: string) {
             let selector = api.userProfilePage.activity.topics.topicsSelector;
             browser.waitForVisible(selector);
-            browser.assertAnyTextMatches(selector, title);
+            browser.assertAnyTextMatches(selector, title, null, 'FAST');
           },
 
           assertTopicTitleAbsent: function(title: string) {

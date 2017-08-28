@@ -20,16 +20,21 @@ package controllers
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki._
-import debiki.DebikiHttp._
-import ed.server.security.createSessionIdAndXsrfToken
+import debiki.EdHttp._
+import ed.server.{EdContext, EdController}
 import ed.server.http._
+import javax.inject.Inject
 import play.api._
-import play.api.mvc.Action
+import play.api.mvc.{AbstractController, Action, ControllerComponents}
 
 
 /** Resets the password of a PasswordIdentity, in case the user forgot it.
   */
-object ResetPasswordController extends mvc.Controller {
+class ResetPasswordController @Inject()(cc: ControllerComponents, edContext: EdContext)
+  extends EdController(cc, edContext) {
+
+  import context.globals
+  import context.security.createSessionIdAndXsrfToken
 
   val MaxResetPasswordEmailAgeInHours = 24
 
@@ -85,7 +90,7 @@ object ResetPasswordController extends mvc.Controller {
 
     val email = Email(
       EmailType.ResetPassword,
-      createdAt = Globals.now(),
+      createdAt = globals.now(),
       sendTo = user.email,
       toUserId = Some(user.id),
       subject = s"[${dao.theSiteName()}] Reset Password",
@@ -94,10 +99,11 @@ object ResetPasswordController extends mvc.Controller {
           userName = user.theUsername,
           emailId = emailId,
           siteAddress = request.host,
-          expirationTimeInHours = MaxResetPasswordEmailAgeInHours).body
+          expirationTimeInHours = MaxResetPasswordEmailAgeInHours,
+          globals = globals).body
       })
     dao.saveUnsentEmail(email)
-    Globals.sendEmail(email, dao.siteId)
+    globals.sendEmail(email, dao.siteId)
   }
 
 
@@ -107,7 +113,7 @@ object ResetPasswordController extends mvc.Controller {
 
     val email = Email(
       EmailType.Notification,
-      createdAt = Globals.now(),
+      createdAt = globals.now(),
       sendTo = emailAddress,
       toUserId = Some(user.id),
       subject = s"[${dao.theSiteName()}] There is no password to reset",
@@ -115,10 +121,11 @@ object ResetPasswordController extends mvc.Controller {
         views.html.resetpassword.noPasswordToResetEmail(
           userName = user.theUsername,
           emailAddress = emailAddress,
-          siteAddress = request.host).body
+          siteAddress = request.host,
+          globals = globals).body
       })
     dao.saveUnsentEmail(email)
-    Globals.sendEmail(email, dao.siteId)
+    globals.sendEmail(email, dao.siteId)
   }
 
 
@@ -161,7 +168,7 @@ object ResetPasswordController extends mvc.Controller {
   private def loginByEmailOrThrow(resetPasswordEmailId: String, request: ApiRequest[_])
         : MemberLoginGrant = {
     val loginAttempt = EmailLoginAttempt(
-      ip = request.ip, date = Globals.now().toJavaDate, emailId = resetPasswordEmailId)
+      ip = request.ip, date = globals.now().toJavaDate, emailId = resetPasswordEmailId)
     // TODO: Check email type !
     val loginGrant =
       try request.dao.tryLoginAsMember(loginAttempt)

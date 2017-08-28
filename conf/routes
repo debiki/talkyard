@@ -32,6 +32,7 @@ GET   /-/login-password-confirm-email controllers.LoginWithPasswordController.co
 #GET   /-/api/login-openid       controllers.LoginWithOpenIdController.loginGet
 #POST  /-/api/login-openid       controllers.LoginWithOpenIdController.loginPost
 #GET   /-/api/login-openid-clbk  controllers.LoginWithOpenIdController.loginCallback(returnToUrl)
+
 GET   /-/login-openauth/:provider controllers.LoginWithOpenAuthController.startAuthentication(provider, returnToUrl)
 GET   /-/login-auth-callback/:provider  controllers.LoginWithOpenAuthController.finishAuthentication(provider)
 GET   /-/login-oauth-then-return/:provider controllers.LoginWithOpenAuthController.loginThenReturnToOriginalSite(provider, returnToOrigin, xsrfToken)
@@ -62,17 +63,17 @@ GET   /-/reset-password/email-sent       controllers.ResetPasswordController.sho
 GET   /-/reset-password/choose-password/:resetPasswordEmailId  controllers.ResetPasswordController.showChooseNewPasswordPage(resetPasswordEmailId)
 POST  /-/reset-password/choose-password/:resetPasswordEmailId  controllers.ResetPasswordController.handleNewPasswordForm(resetPasswordEmailId)
 
-GET   /-/create-site                        @controllers.CreateSiteController.showPage(isTest = "false")
-GET   /-/create-site/website                @controllers.CreateSiteController.showPage(isTest = "false")
-GET   /-/create-site/embedded-comments      @controllers.CreateSiteController.showPage(isTest = "false")
-GET   /-/create-test-site                   @controllers.CreateSiteController.showPage(isTest = "true")
-GET   /-/create-test-site/website           @controllers.CreateSiteController.showPage(isTest = "true")
-GET   /-/create-test-site/embedded-comments @controllers.CreateSiteController.showPage(isTest = "true")
-POST  /-/create-site                        @controllers.CreateSiteController.createSite
+GET   /-/create-site                        controllers.CreateSiteController.showPage(isTest = "false")
+GET   /-/create-site/website                controllers.CreateSiteController.showPage(isTest = "false")
+GET   /-/create-site/embedded-comments      controllers.CreateSiteController.showPage(isTest = "false")
+GET   /-/create-test-site                   controllers.CreateSiteController.showPage(isTest = "true")
+GET   /-/create-test-site/website           controllers.CreateSiteController.showPage(isTest = "true")
+GET   /-/create-test-site/embedded-comments controllers.CreateSiteController.showPage(isTest = "true")
+POST  /-/create-site                        controllers.CreateSiteController.createSite
 
-GET   /-/admin                  @controllers.AdminController.redirectToAdminPage
-GET   /-/admin/                 @controllers.AdminController.viewAdminPage(whatever = "")
-GET   /-/admin/*whatever        @controllers.AdminController.viewAdminPage(whatever)
+GET   /-/admin                  controllers.AdminController.redirectToAdminPage
+GET   /-/admin/                 controllers.AdminController.viewAdminPage(whatever = "")
+GET   /-/admin/*whatever        controllers.AdminController.viewAdminPage(whatever)
 
 GET   /-/load-site-settings     controllers.SettingsController.loadSiteSettings
 POST  /-/save-site-settings     controllers.SettingsController.saveSiteSettings
@@ -176,7 +177,7 @@ GET   /-/utx-pick-a-task        ed.plugins.utx.UsabilityTestingExchangeControlle
 
 POST  /-/vote                   controllers.VoteController.handleVotes
 GET   /-/load-voters            controllers.VoteController.loadVoters(postId: Int, voteType: Int)
-POST  /-/flag                   @controllers.Application.flag
+POST  /-/flag                   controllers.Application.flag
 
 GET   /-/load-draft-and-guidelines controllers.EditController.loadDraftAndGuidelines(writingWhat, categoryId: Option[Int], pageRole)
 GET   /-/edit                   controllers.EditController.loadCurrentText(pageId, postNr: Int)
@@ -200,30 +201,30 @@ GET   /-/uploads/public/*relativePath controllers.UploadsController.servePublicF
 
 # Merge with CloseCollapseController into PostController?
 # POST  /-/pin-at-position      controllers.PinController.pinAtPosition
-POST  /-/hide-post              @controllers.CloseCollapseController.hidePost
-POST  /-/collapse-post          @controllers.CloseCollapseController.collapsePost
-POST  /-/collapse-tree          @controllers.CloseCollapseController.collapseTree
-POST  /-/close-tree             @controllers.CloseCollapseController.closeTree
+POST  /-/hide-post              controllers.CloseCollapseController.hidePost
+POST  /-/collapse-post          controllers.CloseCollapseController.collapsePost
+POST  /-/collapse-tree          controllers.CloseCollapseController.collapseTree
+POST  /-/close-tree             controllers.CloseCollapseController.closeTree
 #POST  /-/reopen-tree            controllers.CloseCollapseController.reopenTree
 
 POST  /-/import-site            controllers.ImportExportController.importSiteJson(deleteOldSite: Option[Boolean])
 POST  /-/import-test-site       controllers.ImportExportController.importTestSite
 
-POST /-/play-time               @controllers.DebugTestController.playTime
-POST /-/log-browser-errors      @controllers.DebugTestController.logBrowserErrors
-GET  /-/metrics                 @controllers.DebugTestController.showMetrics
-GET  /-/build-info              @controllers.DebugTestController.showBuildInfo
-GET  /-/ping-exception-action   @controllers.DebugTestController.pingExceptionAction
-GET  /-/ping-session-action     @controllers.DebugTestController.pingApiAction
-GET  /-/ping-cache              @controllers.DebugTestController.pingCache
-GET  /-/ping-database-and-cache @controllers.DebugTestController.pingDatabaseAndCache
-GET  /-/origin                  @controllers.DebugTestController.origin
-GET  /-/are-scripts-ready       @controllers.DebugTestController.areScriptsReady
-GET  /-/create-deadlock         @controllers.DebugTestController.createDeadlock
-GET  /-/last-e2e-test-email     @controllers.DebugTestController.showLastE2eTestEmailSent(siteId: Int, sentTo)
-GET  /-/log-funny-messages      @controllers.DebugTestController.logFunnyLogMessages()
-GET  /-/page-top-score          @controllers.DebugTestController.showPagePopularityStats(pageId)
-GET  /-/pubsub-state            @controllers.DebugTestController.showPubSubSubscribers(siteId: Option[Int])
+POST /-/play-time               controllers.DebugTestController.playTime
+POST /-/log-browser-errors      controllers.DebugTestController.logBrowserErrors
+GET  /-/metrics                 controllers.DebugTestController.showMetrics
+GET  /-/build-info              controllers.DebugTestController.showBuildInfo
+GET  /-/ping-exception-action   controllers.DebugTestController.pingExceptionAction
+GET  /-/ping-session-action     controllers.DebugTestController.pingApiAction
+GET  /-/ping-cache              controllers.DebugTestController.pingCache
+GET  /-/ping-database-and-cache controllers.DebugTestController.pingDatabaseAndCache
+GET  /-/origin                  controllers.DebugTestController.origin
+GET  /-/are-scripts-ready       controllers.DebugTestController.areScriptsReady
+GET  /-/create-deadlock         controllers.DebugTestController.createDeadlock
+GET  /-/last-e2e-test-email     controllers.DebugTestController.showLastE2eTestEmailSent(siteId: Int, sentTo)
+GET  /-/log-funny-messages      controllers.DebugTestController.logFunnyLogMessages()
+GET  /-/page-top-score          controllers.DebugTestController.showPagePopularityStats(pageId)
+GET  /-/pubsub-state            controllers.DebugTestController.showPubSubSubscribers(siteId: Option[Int])
 
 GET   /-/site/:siteId/*file     controllers.SiteAssetBundlesController.customAsset(siteId: Int, file)
 GET   /-/site/*file             controllers.SiteAssetBundlesController.at(file)

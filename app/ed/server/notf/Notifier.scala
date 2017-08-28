@@ -21,13 +21,11 @@ import akka.actor._
 import com.debiki.core.Prelude._
 import com.debiki.core._
 import debiki.DatabaseUtils.isConnectionClosedBecauseTestsDone
-import debiki.Globals
-import debiki.Globals.originOf
 import debiki.dao.{SiteDao, SiteDaoFactory, SystemDao}
 import ed.server.notf.Notifier._
 import play.{api => p}
 import scala.collection.immutable
-import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
 
 
@@ -44,8 +42,10 @@ object Notifier {
    * doesn't accidentally forget forever to send some notifications.
    * (Also se object Mailer.)
    */
-  def startNewActor(actorSystem: ActorSystem, systemDao: SystemDao, siteDaoFactory: SiteDaoFactory)
+  def startNewActor(executionContext: ExecutionContext, actorSystem: ActorSystem,
+        systemDao: SystemDao, siteDaoFactory: SiteDaoFactory)
         : ActorRef = {
+    implicit val execCtx = executionContext
     val actorRef = actorSystem.actorOf(Props(
       new Notifier(systemDao, siteDaoFactory)),
       name = s"NotifierActor-$testInstanceCounter")
@@ -78,12 +78,13 @@ object Notifier {
 class Notifier(val systemDao: SystemDao, val siteDaoFactory: SiteDaoFactory)
   extends Actor {
 
+  import systemDao.globals
 
   val logger = play.api.Logger("app.notifier")
 
 
   def receive: PartialFunction[Any, Unit] = {
-    case whatever: String if Globals.isInitialized =>
+    case whatever: String if globals.isInitialized =>
       try {
         whatever match {
           case "SendNotfs" =>
@@ -94,7 +95,7 @@ class Notifier(val systemDao: SystemDao, val siteDaoFactory: SiteDaoFactory)
       }
       catch {
         case ex: java.sql.SQLException =>
-          if (!isConnectionClosedBecauseTestsDone(ex)) {
+          if (!isConnectionClosedBecauseTestsDone(ex, globals)) {
             p.Logger.error("SQL error when sending notfs or summaries [EdE2WPFR1]", ex)
             throw ex
           }
@@ -106,14 +107,14 @@ class Notifier(val systemDao: SystemDao, val siteDaoFactory: SiteDaoFactory)
 
 
   private def createAndSendSummaryEmails() {
-    val now = Globals.now()
+    val now = globals.now()
     val siteIdsAndStats: Map[SiteId, immutable.Seq[UserStats]] =
       systemDao.loadStatsForUsersToMaybeEmailSummariesTo(now, limit = 100)
     for ((siteId, userStats) <- siteIdsAndStats) {
       val siteDao = siteDaoFactory.newSiteDao(siteId)
       val emails = siteDao.makeActivitySummaryEmails(userStats, now)
       emails foreach { case (email, _) =>
-        Globals.sendEmail(email, siteId)
+        globals.sendEmail(email, siteId)
       }
     }
   }
@@ -208,7 +209,7 @@ class Notifier(val systemDao: SystemDao, val siteDaoFactory: SiteDaoFactory)
     // unsubscribe. (But if you first send it, then save it, the server
     // might crash inbetween and it wouldn't be possible to unsubscribe.)
 
-    val anyOrigin = originOf(site)
+    val anyOrigin = globals.originOf(site)
 
     val email = constructEmail(siteDao, anyOrigin, user, userNotfs) getOrElse {
       logger.debug(o"""Not sending any email to ${user.usernameOrGuestName} because the page
@@ -218,7 +219,7 @@ class Notifier(val systemDao: SystemDao, val siteDaoFactory: SiteDaoFactory)
     siteDao.saveUnsentEmailConnectToNotfs(email, userNotfs)
 
     logger.debug("About to send email to "+ email.sentTo)
-    Globals.sendEmail(email, siteDao.siteId)
+    globals.sendEmail(email, siteDao.siteId)
   }
 
 
@@ -231,7 +232,7 @@ class Notifier(val systemDao: SystemDao, val siteDaoFactory: SiteDaoFactory)
     // email thread. Include site name, so simpler for people to find the email.
     val subject: String = s"[$siteName] You have replies to posts of yours"
 
-    val email = Email(EmailType.Notification, createdAt = Globals.now(),
+    val email = Email(EmailType.Notification, createdAt = globals.now(),
       sendTo = user.email, toUserId = Some(user.id),
       subject = subject, bodyHtmlText = (emailId: String) => "?")
 

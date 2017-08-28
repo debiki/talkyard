@@ -20,26 +20,32 @@ package controllers
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki._
-import debiki.DebikiHttp._
+import debiki.EdHttp._
 import debiki.dao.UploadsDao._
-import ed.server.http._
+import ed.server.{EdContext, EdController}
 import java.{io => jio}
+import javax.inject.Inject
 import play.api._
-import play.api.libs.json.{Json, JsString}
+import play.api.libs.Files
+import play.api.libs.json.{JsString, Json}
+import play.api.mvc.{Action, ControllerComponents, MaxSizeExceeded, MultipartFormData}
 
 
 /** Uploads files and serves uploaded files.
   */
-object UploadsController extends mvc.Controller {
+class UploadsController @Inject()(cc: ControllerComponents, edContext: EdContext)
+  extends EdController(cc, edContext) {
 
-  import Globals.{maxUploadSizeBytes, anyPublicUploadsDir, LocalhostUploadsDirConfigValueName}
+  import context.safeActions.ExceptionAction
+  import context.globals.{maxUploadSizeBytes, anyPublicUploadsDir}
+  import Globals.LocalhostUploadsDirConfigValueName
 
-  val MaxAvatarUploadSizeBytes =
+  val MaxAvatarUploadSizeBytes: UnixDays =
     MaxAvatarTinySizeBytes + MaxAvatarSmallSizeBytes + MaxAvatarMediumSizeBytes
 
 
-  def uploadPublicFile = PostFilesAction(RateLimits.UploadFile, maxBytes = maxUploadSizeBytes) {
-        request =>
+  def uploadPublicFile: Action[Either[MaxSizeExceeded, MultipartFormData[Files.TemporaryFile]]] =
+        PostFilesAction(RateLimits.UploadFile, maxBytes = maxUploadSizeBytes) { request =>
 
     // COULD disable the file upload dialog for guests. And refuse to receive any data at
     // all (not create any temp file) if not authenticated.
@@ -74,7 +80,7 @@ object UploadsController extends mvc.Controller {
       file.filename, file.ref.file, request.theUserId, request.theBrowserIdData)
 
     // Delete the temporary file.
-    file.ref.clean()
+    file.ref.delete() ; UNTESTED // will this delete it? Was  .clean() previously
 
     // Don't use OkSafeJson here because Dropzone doesn't understand the safe-JSON prefix.
     Ok(JsString(uploadRef.url)) as JSON
@@ -156,9 +162,9 @@ object UploadsController extends mvc.Controller {
       mediumFile.filename, mediumFile.ref.file, request.theUserId, request.theBrowserIdData)
 
     // Delete the temporary files.
-    tinyFile.ref.clean()
-    smallFile.ref.clean()
-    mediumFile.ref.clean()
+    tinyFile.ref.delete()   ; UNTESTED // will this delete it? Was  .clean() previously
+    smallFile.ref.delete()  ; UNTESTED
+    mediumFile.ref.delete() ; UNTESTED
 
     // Now the images are in place in the uploads dir, and we've created metadata entries.
     // We just need to link the user to the images:
@@ -198,7 +204,7 @@ object UploadsController extends mvc.Controller {
     try {
       Ok.sendFile(
         content = new jio.File(s"$publicUploadsDir$relativePath"),
-        inline = true)
+        inline = true)(context.executionContext, context.mimeTypes)
     }
     catch {
       case _: jio.FileNotFoundException =>

@@ -19,12 +19,9 @@ package debiki.dao
 
 import com.debiki.core._
 import com.debiki.core.Prelude._
-import controllers.ViewPageController
-import debiki._
 import ed.server.search.{PageAndHits, SearchHit}
 import scala.collection.immutable.Seq
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 
 case class SearchQuery(
@@ -43,6 +40,8 @@ case class SearchQuery(
 
 trait SearchDao {
   this: SiteDao =>
+
+  implicit def executionContext: ExecutionContext = context.executionContext
 
 
   def fullTextSearch(searchQuery: SearchQuery, anyRootPageId: Option[PageId], user: Option[User])

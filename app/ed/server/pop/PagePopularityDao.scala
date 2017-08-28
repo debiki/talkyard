@@ -23,6 +23,7 @@ import debiki._
 
 
 trait PagePopularityDao {
+  this: { def globals: debiki.Globals } =>
 
   def updatePagePopularity(pageParts: PageParts, tx: SiteTransaction) {
     SHOULD_OPTIMIZE // if is chat, only load the last 1000 'things'? because topic might be too long.
@@ -30,7 +31,7 @@ trait PagePopularityDao {
     COULD_OPTIMIZE // only load total num visits per period & trust level — don't load each row.
     val visits = tx.loadPageVisitTrusts(pageParts.pageId)
     val popStats = PagePopularityCalculator.calcPopStatsNowAndThen(
-        Globals.now(), pageParts, actions, visits)
+        globals.now(), pageParts, actions, visits)
     val popScore = PagePopularityCalculator.calcPopularityScores(popStats)
     tx.upsertPagePopularityScore(popScore)
   }

@@ -20,7 +20,7 @@ package debiki.dao
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki._
-import ed.server.http.throwForbidden2
+import debiki.EdHttp.throwForbidden
 
 
 /** Loads and saves settings for the whole website, a section of the website (e.g.
@@ -28,6 +28,7 @@ import ed.server.http.throwForbidden2
   */
 trait SettingsDao {
   self: SiteDao =>
+
 
   def getWholeSiteSettings(): EffectiveSettings = {
     memCache.lookup(
@@ -53,7 +54,7 @@ trait SettingsDao {
       val newSettings = loadWholeSiteSettings(transaction)
       newSettings.findAnyError foreach { error =>
         // This'll rollback the transaction.
-        throwForbidden2("EsE40GY28", s"Bad settings: $error")
+        throwForbidden("EsE40GY28", s"Bad settings: $error")
       }
       memCache.clearSingleSite(siteId)
     }

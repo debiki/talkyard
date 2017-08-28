@@ -20,20 +20,19 @@ package debiki
 import com.debiki.core.Prelude._
 import com.zaxxer.hikari.{HikariDataSource, HikariConfig}
 import play.{api => p}
-import play.api.Play
-import play.api.Play.current
 
 
 // COULD rename / move, to what, where?
 object Debiki {
 
 
-  def createPostgresHikariDataSource(readOnly: Boolean): HikariDataSource = {
+  def createPostgresHikariDataSource(readOnly: Boolean, conf: p.Configuration, isTest: Boolean)
+        : HikariDataSource = {
 
     def configStr(path: String) =
-      Play.configuration.getString(path).orElse({
+      conf.getString(path).orElse({
         val oldPath = path.replaceFirst("ed\\.", "debiki.")
-        Play.configuration.getString(oldPath)
+        conf.getString(oldPath)
       }) getOrElse
         runErr("DwE93KI2", "Config value missing: "+ path)
 
@@ -42,19 +41,19 @@ object Debiki {
     // database. (You'll never name the prod schema "ed_test",
     // with "auto-deleted" as password?)
     def user =
-      if (Play.isTest) "ed_test"
+      if (isTest) "ed_test"
       else configStr("ed.postgresql.user")
 
     def password =
-      if (Play.isTest) "public"
+      if (isTest) "public"
       else sys.env.get("ED_POSTGRESQL_PASSWORD").orElse(sys.env.get("DEBIKI_POSTGRESQL_PASSWORD"))
           .getOrElse(configStr("ed.postgresql.password"))
 
     def database =
-      if (Play.isTest) "ed_test"
+      if (isTest) "ed_test"
       else configStr("ed.postgresql.database")
 
-    val server = Play.configuration.getString("ed.postgresql.host").getOrElse(
+    val server = conf.getString("ed.postgresql.host").getOrElse(
       configStr("ed.postgresql.server"))  // deprecated name
     val port = configStr("ed.postgresql.port").toInt
 

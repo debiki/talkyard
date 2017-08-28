@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2014-2015 Kaj Magnus Lindberg
+ * Copyright (c) 2014-2017 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -19,6 +19,7 @@ package controllers
 
 import com.debiki.core._
 import com.debiki.core.Prelude._
+import com.github.benmanes.caffeine
 import com.mohiva.play.silhouette
 import com.mohiva.play.silhouette.impl.providers.oauth1.services.PlayOAuth1Service
 import com.mohiva.play.silhouette.impl.providers.oauth1.TwitterProvider
@@ -26,20 +27,17 @@ import com.mohiva.play.silhouette.impl.providers.oauth2._
 import com.mohiva.play.silhouette.impl.providers._
 import ed.server.spam.SpamChecker
 import debiki._
-import debiki.DebikiHttp._
+import debiki.EdHttp._
 import ed.server._
-import ed.server.security.createSessionIdAndXsrfToken
 import ed.server.http._
-import java.{util => ju}
+import javax.inject.Inject
 import org.scalactic.{Bad, Good}
-import play.api.libs.json.{JsBoolean, Json}
+import play.api.libs.json._
 import play.{api => p}
 import play.api.mvc._
-import play.api.mvc.BodyParsers.parse.empty
-import play.api.Play
-import play.api.Play.current
-import scala.concurrent.ExecutionContext.Implicits.global
+import play.api.Configuration
 import scala.concurrent.Future
+import scala.concurrent.duration._
 
 
 
@@ -52,7 +50,11 @@ import scala.concurrent.Future
   * redirects you to login.domain.com, then logs you in at the OAuth provider from
   * login.domain.com, and redirects you back to X with a session id and an XSRF token.
   */
-object LoginWithOpenAuthController extends Controller {
+class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext: EdContext)
+  extends EdController(cc, edContext) {
+
+  import context.globals
+  import context.security._
 
   private val Separator = '|'
   private val ReturnToUrlCookieName = "dwCoReturnToUrl"
@@ -61,32 +63,37 @@ object LoginWithOpenAuthController extends Controller {
   private val IsInLoginWindowCookieName = "dwCoIsInLoginWindow"
   private val IsInLoginPopupCookieName = "dwCoIsInLoginPopup"
   private val MayCreateUserCookieName = "dwCoMayCreateUser"
-  private val OauthStateCookieName = "dwCoOAuth2State"
+  private val AuthStateCookieName = "dwCoOAuth2State"
 
   private val CookiesToDiscardAfterLogin: Seq[DiscardingCookie] = Seq(
     ReturnToUrlCookieName, ReturnToSiteCookieName, ReturnToSiteXsrfTokenCookieName,
     IsInLoginWindowCookieName, IsInLoginPopupCookieName, MayCreateUserCookieName,
-    OauthStateCookieName).map(DiscardingSecureCookie)
+    AuthStateCookieName).map(DiscardingSecureCookie)
 
   private val LoginOriginConfValName = "ed.loginOrigin"
   private var configErrorMessage: Option[String] = None
 
-  def conf = Play.configuration
+  def conf: Configuration = globals.rawConf
 
-  lazy val anyLoginOrigin =
-    if (Play.isTest) {
+  private val cache = caffeine.cache.Caffeine.newBuilder()
+    .maximumSize(10*1000)  // change to config value, e.g. 1e9 = 1GB mem cache. Default to 50M?
+    .expireAfterWrite(10, java.util.concurrent.TimeUnit.SECONDS)
+    .build().asInstanceOf[caffeine.cache.Cache[String, OpenAuthDetails]]
+
+  lazy val anyLoginOrigin: Option[String] =
+    if (globals.isOrWasTest) {
       // The base domain should have been automatically configured with the test server's
       // listen port.
-      Some(s"${Globals.scheme}://${Globals.baseDomainWithPort}")
+      Some(s"${globals.scheme}://${globals.baseDomainWithPort}")
     }
     else {
       val anyOrigin = conf.getString(LoginOriginConfValName).orElse(conf.getString("debiki.loginOrigin")) orElse {
-        Globals.firstSiteHostname map { hostname =>
-          s"${Globals.scheme}://$hostname${Globals.colonPort}"
+        globals.firstSiteHostname map { hostname =>
+          s"${globals.scheme}://$hostname${globals.colonPort}"
         }
       }
       anyOrigin foreach { origin =>
-        if (Globals.secure && !origin.startsWith("https:")) {
+        if (globals.secure && !origin.startsWith("https:")) {
           configErrorMessage =
             Some(s"Config value '$LoginOriginConfValName' does not start with 'https:'")
           p.Logger.error(s"Disabling OAuth: ${configErrorMessage.get}. It is: '$origin' [DwE6KW5]")
@@ -102,7 +109,8 @@ object LoginWithOpenAuthController extends Controller {
   }
 
 
-  def startAuthenticationImpl(provider: String, returnToUrl: String, request: GetRequest) = {
+  def startAuthenticationImpl(provider: String, returnToUrl: String, request: GetRequest)
+        : Future[Result] = {
     configErrorMessage foreach { message =>
       throwInternalError("DwE5WKU3", message)
     }
@@ -187,11 +195,23 @@ object LoginWithOpenAuthController extends Controller {
           (Some(originalSiteOrigin), Some(separatorAndXsrfToken.drop(1)))
       }
 
-    if (anyReturnToSiteOrigin.isDefined && request.cookies.get(ReturnToUrlCookieName).isDefined) {
+    val anyReturnToUrl = request.cookies.get(ReturnToUrlCookieName).map(_.value)
+
+    if (anyReturnToSiteOrigin.isDefined && anyReturnToUrl.isDefined) {
       // Someone has two browser tabs open? And in one tab s/he attempts to login at one site,
-      // and in another tab at the site at anyLoginDomain? Weird.
+      // and in another tab at the site at anyLoginDomain? Don't know which login attempt
+      // to continue with.
+      val errorMessage = i"""Parallel logins not supported. Cookies now cleared. Try again. [EdE07G32]
+        |
+        |Details: Both these were defined:
+        |anyReturnToSiteOrigin = $anyReturnToSiteOrigin
+        |anyReturnToUrl = $anyReturnToUrl"""
+      // Delete the cookies, so if the user tries again, there'll be only one cookie and things
+      // will work properly.
       return Future.successful(
-        Forbidden("Parallel logins not supported [DwE07G32]"))
+        Forbidden(errorMessage).discardingCookies(
+          DiscardingSecureCookie(ReturnToSiteCookieName),
+          DiscardingSecureCookie(ReturnToUrlCookieName)))
     }
 
     val oauthDetails = OpenAuthDetails(
@@ -207,10 +227,9 @@ object LoginWithOpenAuthController extends Controller {
         val xsrfToken = anyReturnToSiteXsrfToken getOrDie "DwE0F4C2"
         val oauthDetailsCacheKey = nextRandomString()
         SHOULD // use Redis instead, so logins won't fail because the app server was restarted.
-        COULD // search for any other usages of play.api.cache.Cache, change to Redis.
-        // Set a short expiration time, to prevent Mallory from stealing and using the key,
+        SHOULD // set a 10 seconds? expiration time, to prevent Mallory from stealing and using the key,
         // if it's leaked somehow, e.g. via log files that includes URLs.
-        play.api.cache.Cache.set(oauthDetailsCacheKey, oauthDetails, expiration = 10)
+        cache.put(oauthDetailsCacheKey, oauthDetails)
         val continueAtOriginalSiteUrl =
           originalSiteOrigin + routes.LoginWithOpenAuthController.continueAtOriginalSite(
             oauthDetailsCacheKey, xsrfToken)
@@ -229,17 +248,17 @@ object LoginWithOpenAuthController extends Controller {
 
     def cacheKey = oauthDetailsCacheKey.getOrDie("DwE90RW215")
     val oauthDetails: OpenAuthDetails =
-      anyOauthDetails.getOrElse(play.api.cache.Cache.get(cacheKey) match {
+      anyOauthDetails.getOrElse(Option(cache.getIfPresent(cacheKey)) match {
         case None => throwForbidden("DwE76fE50", "OAuth cache value not found")
         case Some(value) =>
           // Remove to prevent another login with the same key, in case it gets leaked,
           // e.g. via a log file.
-          play.api.cache.Cache.remove(cacheKey)
+          cache.invalidate(cacheKey)
           value.asInstanceOf[OpenAuthDetails]
       })
 
     val loginAttempt = OpenAuthLoginAttempt(
-      ip = request.ip, date = Globals.now().toJavaDate, oauthDetails)
+      ip = request.ip, date = globals.now().toJavaDate, oauthDetails)
 
     val mayCreateNewUserCookie = request.cookies.get(MayCreateUserCookieName)
     val mayCreateNewUser = !mayCreateNewUserCookie.map(_.value).contains("false")
@@ -390,7 +409,7 @@ object LoginWithOpenAuthController extends Controller {
 
   private def showCreateUserDialog(request: GetRequest, oauthDetails: OpenAuthDetails): Result = {
     val cacheKey = nextRandomString()
-    play.api.cache.Cache.set(cacheKey, oauthDetails)
+    cache.put(cacheKey, oauthDetails)
     val anyIsInLoginWindowCookieValue = request.cookies.get(IsInLoginWindowCookieName).map(_.value)
     val anyReturnToUrlCookieValue = request.cookies.get(ReturnToUrlCookieName).map(_.value)
 
@@ -427,7 +446,8 @@ object LoginWithOpenAuthController extends Controller {
   }
 
 
-  def handleCreateUserDialog = AsyncPostJsonAction(RateLimits.CreateUser, maxBytes = 1000,
+  def handleCreateUserDialog: Action[JsValue] = AsyncPostJsonAction(
+        RateLimits.CreateUser, maxBytes = 1000,
         // Could set isLogin = true instead, see handleCreateUserDialog(..) in
         // LoginWithPasswordController, + login-dialog.ts [5PY8FD2]
         allowAnyone = true) { request: JsonPostRequest =>
@@ -440,9 +460,9 @@ object LoginWithOpenAuthController extends Controller {
 
     val oauthDetailsCacheKey = (body \ "authDataCacheKey").asOpt[String] getOrElse
       throwBadReq("DwE08GM6", "Auth data cache key missing")
-    val oauthDetails = play.api.cache.Cache.get(oauthDetailsCacheKey) match {
+    val oauthDetails = Option(cache.getIfPresent(oauthDetailsCacheKey)) match {
       case Some(details: OpenAuthDetails) =>
-        play.api.cache.Cache.remove(oauthDetailsCacheKey)
+        cache.invalidate(oauthDetailsCacheKey)
         details
       case None =>
         throwForbidden("DwE50VC4", o"""Bad auth data cache key — was the server just restarted?
@@ -484,7 +504,7 @@ object LoginWithOpenAuthController extends Controller {
     if (ed.server.security.ReservedNames.isUsernameReserved(username))
       throwForbidden("EdE4SWWB9", s"Username is reserved: '$username'; choose another username")
 
-    Globals.spamChecker.detectRegistrationSpam(request, name = username, email = emailAddress) map {
+    globals.spamChecker.detectRegistrationSpam(request, name = username, email = emailAddress) map {
         isSpamReason =>
       SpamChecker.throwForbiddenIfSpam(isSpamReason, "EdE2KP89")
 
@@ -505,8 +525,9 @@ object LoginWithOpenAuthController extends Controller {
         dieIf(newMember.emailVerifiedAt != emailVerifiedAt, "EdE2WEP03")
         if (emailAddress.nonEmpty && emailVerifiedAt.isEmpty) {
           TESTS_MISSING // no e2e tests for this
-          LoginWithPasswordController.sendEmailAddressVerificationEmail(
+          val email = LoginWithPasswordController.createEmailAddrVerifEmailLogDontSend(
               newMember, anyReturnToUrl, request.host, request.dao)
+          globals.sendEmail(email, dao.siteId)
         }
         if (emailVerifiedAt.isDefined || siteSettings.mayPostBeforeEmailVerified) {
           createCookiesAndFinishLogin(request, request.siteId, loginGrant.user)
@@ -593,28 +614,31 @@ object LoginWithOpenAuthController extends Controller {
 
 
   private val HttpLayer =
-    new silhouette.api.util.PlayHTTPLayer(play.api.libs.ws.WS.client)
+    new silhouette.api.util.PlayHTTPLayer(globals.wsClient)
 
-  private val CookieSigner = new silhouette.crypto.JcaCookieSigner(
-    silhouette.crypto.JcaCookieSignerSettings(
-      key = Globals.applicationSecret, pepper = "sil-pepper-kfw93KPUF02wF"))
+  private val authStuffSigner = new silhouette.crypto.JcaSigner(
+    silhouette.crypto.JcaSignerSettings(
+      key = globals.applicationSecret, pepper = "sil-pepper-kfw93KPUF02wF"))
 
   private val Crypter = new silhouette.crypto.JcaCrypter(
-    silhouette.crypto.JcaCrypterSettings(key = Globals.applicationSecret))
+    silhouette.crypto.JcaCrypterSettings(key = globals.applicationSecret))
 
-  private val Oauth2StateProvider =
-    new silhouette.impl.providers.oauth2.state.CookieStateProvider(
-      silhouette.impl.providers.oauth2.state.CookieStateSettings(
-        cookieName = OauthStateCookieName, secureCookie = Globals.secure),
-      new silhouette.impl.util.SecureRandomIDGenerator(),
-      CookieSigner,
-      silhouette.api.util.Clock())
+  private def csrfStateItemHandler = new silhouette.impl.providers.state.CsrfStateItemHandler(
+    silhouette.impl.providers.state.CsrfStateSettings(
+      cookieName = AuthStateCookieName, cookiePath = "/", cookieDomain = None,
+      secureCookie = globals.secure, httpOnlyCookie = true, expirationTime = 5 minutes),
+    new silhouette.impl.util.SecureRandomIDGenerator(),
+    authStuffSigner)
+
+  private val socialStateHandler =
+    new silhouette.impl.providers.DefaultSocialStateHandler(
+      Set(csrfStateItemHandler), authStuffSigner)
 
   private val OAuth1TokenSecretProvider =
     new silhouette.impl.providers.oauth1.secrets.CookieSecretProvider(
       silhouette.impl.providers.oauth1.secrets.CookieSecretSettings(
-        cookieName = "dwCoOAuth1TokenSecret", secureCookie = Globals.secure),
-      CookieSigner,
+        cookieName = "dwCoOAuth1TokenSecret", secureCookie = globals.secure),
+      authStuffSigner,
       Crypter,
       silhouette.api.util.Clock())
 
@@ -622,26 +646,26 @@ object LoginWithOpenAuthController extends Controller {
   private def googleProvider(request: Request[Unit])
         : GoogleProvider with CommonSocialProfileBuilder = {
     def getGoogle(confValName: String) = getConfValOrThrowDisabled(confValName, "Google")
-    new GoogleProvider(HttpLayer, Oauth2StateProvider, OAuth2Settings(
-      authorizationURL = Play.configuration.getString("silhouette.google.authorizationURL"),
+    new GoogleProvider(HttpLayer, socialStateHandler, OAuth2Settings(
+      authorizationURL = globals.conf.getString("silhouette.google.authorizationURL"),
       accessTokenURL = getGoogle("silhouette.google.accessTokenURL"),
       redirectURL = buildRedirectUrl(request, "google"),
       clientID = getGoogle("silhouette.google.clientID"),
       clientSecret = getGoogle("silhouette.google.clientSecret"),
-      scope = Play.configuration.getString("silhouette.google.scope")))
+      scope = globals.conf.getString("silhouette.google.scope")))
   }
 
 
   private def facebookProvider(request: Request[Unit])
         : FacebookProvider with CommonSocialProfileBuilder = {
     def getFacebook(confValName: String) = getConfValOrThrowDisabled(confValName, "Facebook")
-    new FacebookProvider(HttpLayer, Oauth2StateProvider, OAuth2Settings(
-      authorizationURL = Play.configuration.getString("silhouette.facebook.authorizationURL"),
+    new FacebookProvider(HttpLayer, socialStateHandler, OAuth2Settings(
+      authorizationURL = globals.conf.getString("silhouette.facebook.authorizationURL"),
       accessTokenURL = getFacebook("silhouette.facebook.accessTokenURL"),
       redirectURL = buildRedirectUrl(request, "facebook"),
       clientID = getFacebook("silhouette.facebook.clientID"),
       clientSecret = getFacebook("silhouette.facebook.clientSecret"),
-      scope = Play.configuration.getString("silhouette.facebook.scope")))
+      scope = globals.conf.getString("silhouette.facebook.scope")))
   }
 
 
@@ -652,7 +676,7 @@ object LoginWithOpenAuthController extends Controller {
       requestTokenURL = getTwitter("silhouette.twitter.requestTokenURL"),
       accessTokenURL = getTwitter("silhouette.twitter.accessTokenURL"),
       authorizationURL = getTwitter("silhouette.twitter.authorizationURL"),
-      callbackURL = buildRedirectUrl(request, "twitter"),
+      callbackURL = buildRedirectUrl(request, "twitter").get,
       consumerKey = getTwitter("silhouette.twitter.consumerKey"),
       consumerSecret = getTwitter("silhouette.twitter.consumerSecret"))
     new TwitterProvider(
@@ -663,23 +687,24 @@ object LoginWithOpenAuthController extends Controller {
   private def githubProvider(request: Request[Unit])
         : GitHubProvider with CommonSocialProfileBuilder = {
     def getGitHub(confValName: String) = getConfValOrThrowDisabled(confValName, "GitHub")
-    new GitHubProvider(HttpLayer, Oauth2StateProvider, OAuth2Settings(
-      authorizationURL = Play.configuration.getString("silhouette.github.authorizationURL"),
+    new GitHubProvider(HttpLayer, socialStateHandler, OAuth2Settings(
+      authorizationURL = globals.conf.getString("silhouette.github.authorizationURL"),
       accessTokenURL = getGitHub("silhouette.github.accessTokenURL"),
       redirectURL = buildRedirectUrl(request, "github"),
       clientID = getGitHub("silhouette.github.clientID"),
       clientSecret = getGitHub("silhouette.github.clientSecret"),
-      scope = Play.configuration.getString("silhouette.github.scope")))
+      scope = globals.conf.getString("silhouette.github.scope")))
   }
 
 
   private def getConfValOrThrowDisabled(confValName: String, providerName: String): String = {
-    Play.configuration.getString(confValName) getOrElse throwForbidden(
+    globals.conf.getString(confValName) getOrElse throwForbidden(
       "EsE5YFK02", s"Login via $providerName not possible: Config value missing: $confValName")
   }
 
-  private def buildRedirectUrl(request: Request[_], provider: String) = {
-    originOf(request) + routes.LoginWithOpenAuthController.finishAuthentication(provider).url
+  private def buildRedirectUrl(request: Request[_], provider: String): Option[String] = {
+      Some(
+        originOf(request) + routes.LoginWithOpenAuthController.finishAuthentication(provider).url)
   }
 
 }

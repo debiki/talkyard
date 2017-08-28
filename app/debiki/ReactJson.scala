@@ -158,15 +158,16 @@ object ReactJson {
   def emptySiteJson(pageReq: PageRequest[_]): JsObject = {
     require(!pageReq.pageExists, "DwE7KEG2")
     require(pageReq.pagePath.value == HomepageUrlPath, "DwE8UPY4")
+    val globals = pageReq.context.globals
     val site = pageReq.dao.theSite()
     val siteSettings = pageReq.dao.getWholeSiteSettings()
     val isFirstSiteAdminEmailMissing = site.status == SiteStatus.NoAdmin &&
-      site.id == FirstSiteId && Globals.becomeFirstSiteOwnerEmail.isEmpty
+      site.id == FirstSiteId && globals.becomeFirstSiteOwnerEmail.isEmpty
     val everyonesPerms = pageReq.dao.getPermsForEveryone()
 
     Json.obj(
-      "appVersion" -> Globals.applicationVersion,
-      "now" -> JsNumber(Globals.now().millis),
+      "appVersion" -> globals.applicationVersion,
+      "now" -> JsNumber(globals.now().millis),
       "siteId" -> JsNumber(pageReq.siteId),
       "siteStatus" -> pageReq.dao.theSite().status.toInt,
       "isFirstSiteAdminEmailMissing" -> isFirstSiteAdminEmailMissing,
@@ -216,7 +217,7 @@ object ReactJson {
     anyCategoryId: Option[CategoryId]): PageToJsonResult = {
 
     dao.readOnlyTransaction { tx =>
-      val page = NonExistingPage(dao.siteId, pageRole, anyCategoryId)
+      val page = NonExistingPage(dao.siteId, pageRole, anyCategoryId, dao.context.globals.now())
       pageToJsonImpl(EmptyPageId, dao, page, tx, anyPageRoot = None, anyPageQuery = None)
     }
   }
@@ -233,6 +234,7 @@ object ReactJson {
     // The json constructed here will be cached & sent to "everyone", so in this function
     // we always specify !isStaff and the requester must be a stranger (user = None):
     val authzCtx = dao.getForumAuthzContext(None)
+    def globals = dao.globals
 
     val socialLinksHtml = dao.getWholeSiteSettings().socialLinksHtml
     val pageParts = page.parts
@@ -291,7 +293,7 @@ object ReactJson {
         numPostsRepliesSection += 1
       val tags = tagsByPostId(post.id)
       post.nr.toString -> postToJsonImpl(post, page, tags, includeUnapproved = false,
-        showHidden = false)
+        showHidden = false, dao.nashorn)
     }
 
     // Topic members (e.g. chat channel members) join/leave infrequently, so better cache them
@@ -326,7 +328,7 @@ object ReactJson {
         val orderOffset = anyPageQuery.getOrElse(
           PageQuery(PageOrderOffset.ByBumpTime(None), PageFilter.ShowAll))
         val authzCtx = dao.getForumAuthzContext(user = None)
-        val topics = ForumController.listMaySeeTopicsInclPinned(rootCategoryId, orderOffset, dao,
+        val topics = dao.listMaySeeTopicsInclPinned(rootCategoryId, orderOffset,
           includeDescendantCategories = true,
           authzCtx,
           limit = ForumController.NumTopicsToList)
@@ -349,7 +351,7 @@ object ReactJson {
     val is2dTreeDefault = false // pageSettings.horizontalComments
 
     val jsonObj = Json.obj(
-      "appVersion" -> Globals.applicationVersion,
+      "appVersion" -> globals.applicationVersion,
       "pageVersion" -> page.meta.version,
       "siteId" -> JsNumber(dao.siteId),
       "siteStatus" -> dao.theSite().status.toInt,
@@ -383,7 +385,7 @@ object ReactJson {
       "numPostsRepliesSection" -> numPostsRepliesSection,
       "numPostsChatSection" -> numPostsChatSection,
       "numPostsExclTitle" -> numPostsExclTitle,
-      "maxUploadSizeBytes" -> Globals.maxUploadSizeBytes,
+      "maxUploadSizeBytes" -> globals.maxUploadSizeBytes,
       "isInEmbeddedCommentsIframe" -> JsBoolean(page.role == PageRole.EmbeddedComments),
       "categories" -> categories,
       "topics" -> JsArray(anyLatestTopics),
@@ -401,7 +403,7 @@ object ReactJson {
     val version = CachedPageVersion(
       siteVersion = transaction.loadSiteVersion(),
       pageVersion = page.version,
-      appVersion = Globals.applicationVersion,
+      appVersion = globals.applicationVersion,
       dataHash = hashSha1Base64UrlSafe(jsonString))
 
     val unapprovedPosts = posts.filter(!_.isSomeVersionApproved)
@@ -498,10 +500,11 @@ object ReactJson {
 
   def makeSpecialPageJson(request: DebikiRequest[_], inclCategoriesJson: Boolean): JsObject = {
     val dao = request.dao
+    val globals = request.context.globals
     val requester = request.requester
     val siteSettings = dao.getWholeSiteSettings()
     var result = Json.obj(
-      "appVersion" -> Globals.applicationVersion,
+      "appVersion" -> globals.applicationVersion,
       "siteId" -> JsNumber(dao.siteId),
       "siteStatus" -> request.dao.theSite().status.toInt,
       // CLEAN_UP remove these two; they should-instead-be/are-already included in settings: {...}.
@@ -511,7 +514,7 @@ object ReactJson {
       // (WOULD move 'me' to the volatile json; suddenly having it here in the main json is
       // a bit surprising.) CLEAN_UP
       "me" -> userNoPageToJson(request),
-      "maxUploadSizeBytes" -> Globals.maxUploadSizeBytes,
+      "maxUploadSizeBytes" -> globals.maxUploadSizeBytes,
       "siteSections" -> makeSiteSectionsJson(dao),
       "usersByIdBrief" -> Json.obj(),
       "strangersWatchbar" -> makeStrangersWatcbarJson(dao))
@@ -587,20 +590,20 @@ object ReactJson {
 
 
   def postToJson2(postNr: PostNr, pageId: PageId, dao: SiteDao, includeUnapproved: Boolean = false,
-        showHidden: Boolean = false): JsObject =
+        showHidden: Boolean = false, nashorn: ReactRenderer): JsObject =
     postToJson(postNr, pageId, dao, includeUnapproved = includeUnapproved,
-      showHidden = showHidden)._1
+      showHidden = showHidden, nashorn)._1
 
 
   def postToJson(postNr: PostNr, pageId: PageId, dao: SiteDao, includeUnapproved: Boolean = false,
-        showHidden: Boolean = false): (JsObject, PageVersion) = {
+        showHidden: Boolean = false, nashorn: ReactRenderer): (JsObject, PageVersion) = {
     dao.readOnlyTransaction { transaction =>
       // COULD optimize: don't load the whole page, load only postNr and the author and last editor.
       val page = PageDao(pageId, transaction)
       val post = page.parts.thePostByNr(postNr)
       val tags = transaction.loadTagsForPost(post.id)
       val json = postToJsonImpl(post, page, tags,
-        includeUnapproved = includeUnapproved, showHidden = showHidden)
+        includeUnapproved = includeUnapproved, showHidden = showHidden, nashorn)
       (json, page.version)
     }
   }
@@ -614,7 +617,7 @@ object ReactJson {
   /** Private, so it cannot be called outside a transaction.
     */
   private def postToJsonImpl(post: Post, page: Page, tags: Set[TagLabel],
-        includeUnapproved: Boolean, showHidden: Boolean): JsObject = {
+        includeUnapproved: Boolean, showHidden: Boolean, nashorn: ReactRenderer): JsObject = {
 
     val depth = page.parts.depthOf(post.nr)
 
@@ -663,19 +666,20 @@ object ReactJson {
         squash = squash, childrenSorted = childrenSorted)
 
     postToJsonNoDbAccess(post, showHidden = showHidden, includeUnapproved = includeUnapproved,
-      pageRole = page.role, tags = tags, howRender)
+      pageRole = page.role, tags = tags, howRender, nashorn)
   }
 
 
   def postToJsonOutsidePage(post: Post, pageRole: PageRole, showHidden: Boolean, includeUnapproved: Boolean,
-        tags: Set[TagLabel]): JsObject = {
+        tags: Set[TagLabel], nashorn: ReactRenderer): JsObject = {
     postToJsonNoDbAccess(post, showHidden = showHidden, includeUnapproved = includeUnapproved,
-      pageRole, tags = tags, new HowRenderPostInPage(false, JsNull, false, Nil))
+      pageRole, tags = tags, new HowRenderPostInPage(false, JsNull, false, Nil), nashorn)
   }
 
 
   private def postToJsonNoDbAccess(post: Post, showHidden: Boolean, includeUnapproved: Boolean,
-        pageRole: PageRole, tags: Set[TagLabel], inPageInfo: HowRenderPostInPage): JsObject = {
+        pageRole: PageRole, tags: Set[TagLabel], inPageInfo: HowRenderPostInPage,
+        nashorn: ReactRenderer): JsObject = {
 
     import inPageInfo._
     val postType: Option[Int] = if (post.tyype == PostType.Normal) None else Some(post.tyype.toInt)
@@ -684,7 +688,7 @@ object ReactJson {
       if (post.isBodyHidden && !showHidden)
         (None, post.approvedAt.isDefined)
       else if (includeUnapproved)
-        (Some(post.currentHtmlSanitized(ReactRenderer, pageRole)),
+        (Some(post.currentHtmlSanitized(nashorn, pageRole)),
           post.isCurrentVersionApproved)
       else
         (post.approvedHtmlSanitized, post.approvedAt.isDefined)
@@ -809,7 +813,8 @@ object ReactJson {
     val (restrictedCategories, restrictedTopics) = listRestrictedCategoriesAndTopics(pageRequest)
     dao.readOnlyTransaction { transaction =>
       Some(userDataJsonImpl(user, pageRequest.pageId, watchbarWithTitles, restrictedCategories,
-        restrictedTopics, permissions, unapprovedPostAuthorIds, transaction))
+        restrictedTopics, permissions, unapprovedPostAuthorIds,
+        pageRequest.dao.nashorn, transaction))
     }
   }
 
@@ -823,14 +828,14 @@ object ReactJson {
     val watchbarWithTitles = request.dao.fillInWatchbarTitlesEtc(watchbar)
     request.dao.readOnlyTransaction(userDataJsonImpl(user, anyPageId = None, watchbarWithTitles,
       restrictedCategories = JsArray(), restrictedTopics = Nil, permissions,
-      unapprovedPostAuthorIds = Set.empty, _))
+      unapprovedPostAuthorIds = Set.empty, request.dao.nashorn, _))
   }
 
 
   private def userDataJsonImpl(user: User, anyPageId: Option[PageId],
         watchbar: WatchbarWithTitles, restrictedCategories: JsArray,
         restrictedTopics: Seq[JsValue], permissions: Seq[PermsOnPages],
-        unapprovedPostAuthorIds: Set[UserId], transaction: SiteTransaction): JsObject = {
+        unapprovedPostAuthorIds: Set[UserId], nashorn: ReactRenderer, transaction: SiteTransaction): JsObject = {
 
     val reviewTasksAndCounts =
       if (user.isStaff) transaction.loadReviewTaskCounts(user.isAdmin)
@@ -847,7 +852,7 @@ object ReactJson {
         val votes = votesJson(user.id, pageId, transaction)
         // + flags, interesting for staff, & so people won't attempt to flag twice [7KW20WY1]
         val (postsJson, postAuthorsJson) =
-          unapprovedPostsAndAuthorsJson(user, pageId, unapprovedPostAuthorIds, transaction)
+          unapprovedPostsAndAuthorsJson(user, pageId, unapprovedPostAuthorIds, nashorn, transaction)
         (rolePageSettings, votes, postsJson, postAuthorsJson)
       } getOrElse (JsEmptyObj, JsEmptyObj, JsEmptyObj, JsArray())
 
@@ -976,8 +981,6 @@ object ReactJson {
   COULD ; REFACTOR // move to CategoriesDao? and change from param PageRequest to
   // user + pageMeta?
   def listRestrictedCategoriesAndTopics(request: PageRequest[_]): (JsArray, Seq[JsValue]) = {
-    import request.dao
-
     // OLD: Currently there're only 2 types of "personal" topics: unlisted, & staff-only.
     // DON'T: if (!request.isStaff)
       //return (JsArray(), Nil)
@@ -1008,8 +1011,8 @@ object ReactJson {
         val orderOffset = PageQuery(PageOrderOffset.ByBumpTime(None), PageFilter.ShowAll)
         // SHOULD avoid starting a new transaction, so can remove workaround [7YKG25P].
         // (We're passing dao to ForumController below.)
-        val topics = ForumController.listMaySeeTopicsInclPinned(
-          categoryId, orderOffset, dao,
+        val topics = request.dao.listMaySeeTopicsInclPinned(
+          categoryId, orderOffset,
           includeDescendantCategories = true,
           authzCtx,
           limit = ForumController.NumTopicsToList)
@@ -1123,7 +1126,7 @@ object ReactJson {
 
 
   private def unapprovedPostsAndAuthorsJson(user: User, pageId: PageId,
-        unapprovedPostAuthorIds: Set[UserId], transaction: SiteTransaction): (
+        unapprovedPostAuthorIds: Set[UserId], nashorn: ReactRenderer, transaction: SiteTransaction): (
           JsObject /* why object? try to change to JsArray instead */, JsArray) = {
 
     var posts: Seq[Post] =
@@ -1158,7 +1161,7 @@ object ReactJson {
         postToJsonNoDbAccess(post, showHidden = true, includeUnapproved = true,
           pageMeta.pageRole, tags = tags, new HowRenderPostInPage(false, JsNull, false,
             // Cannot currently reply to unapproved posts, so no children. [8PA2WFM]
-            Nil))
+            Nil), nashorn)
     }
 
     val authors = transaction.loadUsers(posts.map(_.createdById).toSet)
@@ -1180,7 +1183,7 @@ object ReactJson {
         : JsValue = {
     val categoriesJson = makeCategoriesJson(authzCtx, dao)
     Json.obj(
-      "appVersion" -> Globals.applicationVersion,
+      "appVersion" -> dao.globals.applicationVersion,
       "categories" -> categoriesJson)
   }
 
@@ -1412,37 +1415,39 @@ object ReactJson {
 
   def makeStorePatchForPosts(postIds: Set[PostId], showHidden: Boolean, dao: SiteDao)
         : JsValue = {
-    dao.readOnlyTransaction { transaction =>
-      makeStorePatchForPosts(postIds, showHidden, transaction)
+    dao.readOnlyTransaction { tx =>
+      makeStorePatchForPosts(postIds, showHidden, dao.nashorn,
+        tx, appVersion = dao.globals.applicationVersion)
     }
   }
 
 
   def makeStorePatchForPosts(postIds: Set[PostId], showHidden: Boolean,
-        transaction: SiteTransaction): JsValue = {
+        nashorn: ReactRenderer, transaction: SiteTransaction, appVersion: String): JsValue = {
     val posts = transaction.loadPostsByUniqueId(postIds).values
     val tagsByPostId = transaction.loadTagsByPostId(postIds)
     val pageIds = posts.map(_.pageId).toSet
     val pageIdVersions = transaction.loadPageMetas(pageIds).map(_.idVersion)
     val authorIds = posts.map(_.createdById).toSet
     val authors = transaction.loadUsers(authorIds)
-    makeStorePatch3(pageIdVersions, posts, tagsByPostId, authors)(transaction)
+    makeStorePatch3(pageIdVersions, posts, tagsByPostId, authors, appVersion = appVersion)(
+      nashorn, transaction)
   }
 
 
   def makeStorePatch(post: Post, author: User, dao: SiteDao, showHidden: Boolean): JsObject = {
     // Warning: some similar code below [89fKF2]
     require(post.createdById == author.id, "EsE5PKY2")
-    val (postJson, pageVersion) = ReactJson.postToJson(
-      post.nr, pageId = post.pageId, dao, includeUnapproved = true, showHidden = showHidden)
-    makeStorePatch(PageIdVersion(post.pageId, pageVersion),
+    val (postJson, pageVersion) = postToJson(
+      post.nr, pageId = post.pageId, dao, includeUnapproved = true, showHidden = showHidden, dao.nashorn)
+    makeStorePatch(PageIdVersion(post.pageId, pageVersion), appVersion = dao.globals.applicationVersion,
       posts = Seq(postJson), users = Seq(JsUser(author)))
   }
 
 
   @deprecated("now", "use makeStorePatchForPosts instead")
-  def makeStorePatch2(postId: PostId, pageId: PageId, transaction: SiteTransaction)
-        : JsValue = {
+  def makeStorePatch2(postId: PostId, pageId: PageId, appVersion: String, nashorn: ReactRenderer,
+        transaction: SiteTransaction): JsValue = {
     // Warning: some similar code above [89fKF2]
     // Load the page so we'll get a version that includes postId, in case it was just added.
     val page = PageDao(pageId, transaction)
@@ -1452,17 +1457,17 @@ object ReactJson {
     val tags = transaction.loadTagsForPost(post.id)
     val author = transaction.loadTheUser(post.createdById)
     require(post.createdById == author.id, "EsE4JHKX1")
-    val postJson = postToJsonImpl(post, page, tags, includeUnapproved = true, showHidden = true)
-    makeStorePatch(PageIdVersion(post.pageId, page.version),
+    val postJson = postToJsonImpl(post, page, tags, includeUnapproved = true, showHidden = true, nashorn)
+    makeStorePatch(PageIdVersion(post.pageId, page.version), appVersion = appVersion,
       posts = Seq(postJson), users = Seq(JsUser(author)))
   }
 
 
-  def makeStorePatch(pageIdVersion: PageIdVersion, posts: Seq[JsObject] = Nil,
+  def makeStorePatch(pageIdVersion: PageIdVersion, appVersion: String, posts: Seq[JsObject] = Nil,
         users: Seq[JsObject] = Nil): JsObject = {
     require(posts.isEmpty || users.nonEmpty, "Posts but no authors [EsE4YK7W2]")
     Json.obj(
-      "appVersion" -> Globals.applicationVersion,
+      "appVersion" -> appVersion,
       "pageVersionsByPageId" -> Json.obj(pageIdVersion.pageId -> pageIdVersion.version),
       "usersBrief" -> users,
       "postsByPageId" -> Json.obj(pageIdVersion.pageId -> posts))
@@ -1471,8 +1476,8 @@ object ReactJson {
 
   ANNOYING // needs a transaction, because postToJsonImpl needs one. Try to remove
   private def makeStorePatch3(pageIdVersions: Iterable[PageIdVersion], posts: Iterable[Post],
-        tagsByPostId: Map[PostId, Set[String]], users: Iterable[User])(
-        transaction: SiteTransaction): JsValue = {
+        tagsByPostId: Map[PostId, Set[String]], users: Iterable[User], appVersion: String)(
+        nashorn: ReactRenderer, transaction: SiteTransaction): JsValue = {
     require(posts.isEmpty || users.nonEmpty, "Posts but no authors [EsE4YK7W2]")
     val pageVersionsByPageIdJson =
       JsObject(pageIdVersions.toSeq.map(p => p.pageId -> JsNumber(p.version)))
@@ -1484,25 +1489,25 @@ object ReactJson {
         val page = PageDao(pageId, transaction)
         val postsJson = posts map { p =>
           postToJsonImpl(p, page, tagsByPostId.getOrElse(p.id, Set.empty),
-            includeUnapproved = false, showHidden = false)
+            includeUnapproved = false, showHidden = false, nashorn)
         }
         pageId -> JsArray(postsJson.toSeq)
       }))
     Json.obj(
-      "appVersion" -> Globals.applicationVersion,
+      "appVersion" -> appVersion,
       "pageVersionsByPageId" -> pageVersionsByPageIdJson,
       "usersBrief" -> users.map(JsUser),
       "postsByPageId" -> postsByPageIdJson)
   }
 
 
-  def makeTagsStuffPatch(json: JsObject): JsValue = {
-    makeStorePatch(Json.obj("tagsStuff" -> json))
+  def makeTagsStuffPatch(json: JsObject, appVersion: String): JsValue = {
+    makeStorePatch(Json.obj("tagsStuff" -> json), appVersion = appVersion)
   }
 
 
-  def makeStorePatch(json: JsObject): JsValue = {
-    json + ("appVersion" -> JsString(Globals.applicationVersion))
+  def makeStorePatch(json: JsObject, appVersion: String): JsValue = {
+    json + ("appVersion" -> JsString(appVersion))
   }
 
 

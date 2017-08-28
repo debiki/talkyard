@@ -18,12 +18,8 @@
 package debiki.dao
 
 import com.debiki.core._
-import debiki.DebikiHttp.throwForbidden
-import debiki.{BrowserId, Globals}
-import ed.server._
-import ed.server.security.SidStatus
-import ed.server.http.throwForbiddenIf
-import ed.server.http.throwIndistinguishableNotFound
+import debiki.EdHttp.{throwForbidden, throwForbiddenIf}
+import ed.server.security.{SidStatus, BrowserId}
 import java.{util => ju}
 import play.api.libs.json.JsArray
 import play.{api => p}
@@ -42,6 +38,8 @@ case class LoginNotFoundException(siteId: SiteId, userId: UserId)
 trait UserDao {
   self: SiteDao =>
 
+  import self.context.globals
+  import self.context.security
 
   def addUserStats(moreStats: UserStats)(transaction: SiteTransaction) {
     val anyStats = transaction.loadUserStats(moreStats.userId)
@@ -736,7 +734,7 @@ trait UserDao {
   private def joinLeavePageImpl(userIds: Set[UserId], pageId: PageId, add: Boolean,
     byWho: Who, couldntAdd: mutable.Set[UserId], transaction: SiteTransaction): PageMeta = {
     val pageMeta = transaction.loadPageMeta(pageId) getOrElse
-      throwIndistinguishableNotFound("42PKD0")
+      security.throwIndistinguishableNotFound("42PKD0")
 
     val usersById = transaction.loadMembersAsMap(userIds + byWho.id)
     val me = usersById.getOrElse(byWho.id, throwForbidden(
@@ -1209,7 +1207,7 @@ trait UserDao {
       browserIdCookie = if (browserId.isNew) "-" else browserId.cookieValue)
 
     for (block <- blocks) {
-      if (block.isActiveAt(Globals.now()) && block.threatLevel == ThreatLevel.SevereThreat)
+      if (block.isActiveAt(globals.now()) && block.threatLevel == ThreatLevel.SevereThreat)
         throwForbidden("DwE403BK01", o"""Not allowed. Please sign up with a username
             and password, or login with Google or Facebook, for example.""")
     }

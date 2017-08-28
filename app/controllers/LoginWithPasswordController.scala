@@ -20,24 +20,28 @@ package controllers
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki._
+import debiki.EdHttp._
 import ed.server.spam.SpamChecker
-import ed.server.security.createSessionIdAndXsrfToken
 import debiki.dao.SiteDao
-import debiki.DebikiHttp._
+import ed.server.{EdContext, EdController}
 import ed.server.http._
+import javax.inject.Inject
 import org.scalactic.{Bad, Good}
 import play.api._
 import play.api.mvc._
 import play.api.libs.json.{JsBoolean, JsValue, Json}
-import scala.concurrent.ExecutionContext.Implicits.global
+import LoginWithPasswordController._
+import org.owasp.encoder.Encode
 
 
 
 /** Logs in users via username and password.
   */
-object LoginWithPasswordController extends mvc.Controller {
+class LoginWithPasswordController @Inject()(cc: ControllerComponents, edContext: EdContext)
+  extends EdController(cc, edContext) {
 
-  private val MaxAddressVerificationEmailAgeInHours = 25
+  import context.globals
+  import context.security.createSessionIdAndXsrfToken
 
 
   def login: Action[JsonOrFormDataBody] = JsonOrFormDataPostAction(
@@ -46,8 +50,8 @@ object LoginWithPasswordController extends mvc.Controller {
     val password = request.body.getOrThrowBadReq("password")
     val anyReturnToUrl = request.body.getFirst("returnToUrl")
 
-    val site = DebikiHttp.lookupSiteOrThrow(request.request, Globals.systemDao)
-    val dao = Globals.siteDao(site.id)
+    val site = globals.lookupSiteOrThrow(request.request)
+    val dao = globals.siteDao(site.id)
 
     val cookies = doLogin(request, dao, email, password)
 
@@ -121,7 +125,7 @@ object LoginWithPasswordController extends mvc.Controller {
     if (ed.server.security.ReservedNames.isUsernameReserved(username))
       throwForbidden("EdE5PKW01", s"Username is reserved: '$username'; choose another username")
 
-    Globals.spamChecker.detectRegistrationSpam(request, name = username, email = emailAddress) map {
+    globals.spamChecker.detectRegistrationSpam(request, name = username, email = emailAddress) map {
         isSpamReason =>
       SpamChecker.throwForbiddenIfSpam(isSpamReason, "EdE7KVF2_")
 
@@ -131,7 +135,7 @@ object LoginWithPasswordController extends mvc.Controller {
 
       val userData =
         NewPasswordUserData.create(name = fullName, email = emailAddress, username = username,
-            password = password, createdAt = Globals.now(),
+            password = password, createdAt = globals.now(),
             isAdmin = becomeOwner, isOwner = becomeOwner) match {
           case Good(data) => data
           case Bad(errorMessage) =>
@@ -176,78 +180,10 @@ object LoginWithPasswordController extends mvc.Controller {
   }
 
 
-  val RedirectFromVerificationEmailOnly = "_RedirFromVerifEmailOnly_"
-
-
-  def createEmailAddrVerifEmailLogDontSend(user: Member, anyReturnToUrl: Option[String],
-        host: String, dao: SiteDao): Email = {
-
-    val (siteName, origin) = dao.theSiteNameAndOrigin()
-
-    val returnToUrl = anyReturnToUrl match {
-      case Some(url) => url.replaceAllLiterally(RedirectFromVerificationEmailOnly, "")
-      case None => "/"
-    }
-    val returnToUrlEscapedHash = returnToUrl.replaceAllLiterally("#", "__dwHash__")
-    val emailId = Email.generateRandomId()
-
-    val emailAddrVerifUrl =
-      debiki.Globals.originOf(host) +
-        routes.LoginWithPasswordController.confirmEmailAddressAndLogin(
-          emailId, returnToUrlEscapedHash)
-
-    val email = Email.newWithId(
-      emailId,
-      EmailType.CreateAccount,
-      createdAt = Globals.now(),
-      sendTo = user.email,
-      toUserId = Some(user.id),
-      subject = s"[$siteName] Confirm your email address",
-      bodyHtmlText =
-        views.html.createaccount.createAccountLinkEmail(
-          siteAddress = host,
-          username = user.theUsername,
-          verificationUrl = emailAddrVerifUrl,
-          expirationTimeInHours = MaxAddressVerificationEmailAgeInHours).body)
-
-    dao.saveUnsentEmail(email)
-
-    if (user.isOwner) {
-      play.api.Logger.info(i"""
-        |
-        |————————————————————————————————————————————————————————————
-        |Copy this site-owner-email-address-verification-URL into your web browser: [EdM5KF0W2]
-        |  $emailAddrVerifUrl
-        |————————————————————————————————————————————————————————————
-        |""")
-    }
-
-    email
-  }
-
-
   def sendEmailAddressVerificationEmail(user: Member, anyReturnToUrl: Option[String],
         host: String, dao: SiteDao) {
     val email = createEmailAddrVerifEmailLogDontSend(user, anyReturnToUrl, host, dao)
-    Globals.sendEmail(email, dao.siteId)
-  }
-
-
-  def sendYouAlreadyHaveAnAccountWithThatAddressEmail(
-        dao: SiteDao, emailAddress: String, siteHostname: String, siteId: SiteId) {
-    val email = Email(
-      EmailType.Notification,
-      createdAt = Globals.now(),
-      sendTo = emailAddress,
-      toUserId = None,
-      subject = s"[${dao.theSiteName()}] You already have an account at " + siteHostname,
-      bodyHtmlText = (_: String) => {
-        views.html.createaccount.accountAlreadyExistsEmail(
-          emailAddress = emailAddress,
-          siteAddress = siteHostname).body
-      })
-    dao.saveUnsentEmail(email)
-    Globals.sendEmail(email, siteId)
+    globals.sendEmail(email, dao.siteId)
   }
 
 
@@ -302,5 +238,85 @@ object LoginWithPasswordController extends mvc.Controller {
     request.dao.verifyEmail(roleId, request.ctime)
     roleId
   }
+
+}
+
+
+object LoginWithPasswordController {
+
+  val RedirectFromVerificationEmailOnly = "_RedirFromVerifEmailOnly_"
+
+  private val MaxAddressVerificationEmailAgeInHours = 25
+
+
+  def createEmailAddrVerifEmailLogDontSend(user: Member, anyReturnToUrl: Option[String],
+    host: String, dao: SiteDao): Email = {
+
+    import dao.context.globals
+    val (siteName, origin) = dao.theSiteNameAndOrigin()
+
+    val returnToUrl = anyReturnToUrl match {
+      case Some(url) => url.replaceAllLiterally(RedirectFromVerificationEmailOnly, "")
+      case None => "/"
+    }
+    val returnToUrlEscapedHash = returnToUrl.replaceAllLiterally("#", "__dwHash__")
+    val emailId = Email.generateRandomId()
+
+    val safeEmailAddrVerifUrl =
+      globals.originOf(host) +
+        routes.LoginWithPasswordController.confirmEmailAddressAndLogin(
+          emailId, // safe, generated by the server
+          Encode.forHtmlAttribute(returnToUrlEscapedHash))
+
+    val email = Email.newWithId(
+      emailId,
+      EmailType.CreateAccount,
+      createdAt = globals.now(),
+      sendTo = user.email,
+      toUserId = Some(user.id),
+      subject = s"[$siteName] Confirm your email address",
+      bodyHtmlText =
+        views.html.createaccount.createAccountLinkEmail(
+          siteAddress = host,
+          username = user.theUsername,
+          safeVerificationUrl = safeEmailAddrVerifUrl,
+          expirationTimeInHours = MaxAddressVerificationEmailAgeInHours,
+          globals).body)
+
+    dao.saveUnsentEmail(email)
+
+    if (user.isOwner) {
+      play.api.Logger.info(i"""
+        |
+        |————————————————————————————————————————————————————————————
+        |Copy this site-owner-email-address-verification-URL into your web browser: [EdM5KF0W2]
+        |  $safeEmailAddrVerifUrl
+        |————————————————————————————————————————————————————————————
+        |""")
+    }
+
+    email
+  }
+
+
+  def sendYouAlreadyHaveAnAccountWithThatAddressEmail(
+        dao: SiteDao, emailAddress: String, siteHostname: String, siteId: SiteId) {
+    val globals = dao.globals
+    val email = Email(
+      EmailType.Notification,
+      createdAt = globals.now(),
+      sendTo = emailAddress,
+      toUserId = None,
+      subject = s"[${dao.theSiteName()}] You already have an account at " + siteHostname,
+      bodyHtmlText = (_: String) => {
+        views.html.createaccount.accountAlreadyExistsEmail(
+          emailAddress = emailAddress,
+          siteAddress = siteHostname,
+          globals).body
+      })
+    dao.saveUnsentEmail(email)
+    globals.sendEmail(email, siteId)
+  }
+
 
 }

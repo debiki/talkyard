@@ -19,19 +19,17 @@ package ed.server.spam
 
 import com.debiki.core._
 import com.debiki.core.Prelude._
-import debiki.TextAndHtml
-import debiki.DebikiHttp.throwForbidden
+import debiki.{TextAndHtml, TextAndHtmlMaker}
+import debiki.EdHttp.throwForbidden
 import ed.server.http.DebikiRequest
 import java.{net => jn}
 import java.net.UnknownHostException
 import play.{api => p}
-import play.api.Play.current
 import play.api.libs.ws._
 import play.api.libs.json.Json
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.{Future, Promise}
+import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.concurrent.Future.successful
-import scala.util.{Success, Failure}
+import scala.util.Success
 
 
 
@@ -119,7 +117,14 @@ object NoApiKeyException extends QuickException
   *
   * Thread safe.
   */
-class SpamChecker {
+class SpamChecker(
+  executionContext: ExecutionContext,
+  playConf: play.api.Configuration,
+  wsClient: WSClient,
+  appVersion: String,
+  textAndHtmlMaker: TextAndHtmlMaker) {
+
+  private implicit val execCtx = executionContext
 
   /*
   val request: dispatch.Req = dispatch.url("http://api.hostip.info/country.php").GET
@@ -138,7 +143,7 @@ class SpamChecker {
   // low traffic newly created sites? + 1 global for commercial low traffic sites?
   // (and one per site for high traffic sites)
   private val anyAkismetKey: Option[String] =
-    p.Play.configuration.getString("ed.akismetApiKey").noneIfBlank
+    playConf.getString("ed.akismetApiKey").noneIfBlank
 
   val AkismetAlwaysSpamName = "viagra-test-123"
 
@@ -163,7 +168,7 @@ class SpamChecker {
   }
 
   val GoogleApiKeyName = "ed.googleApiKey"
-  val anyGoogleApiKey = p.Play.configuration.getString(GoogleApiKeyName)
+  val anyGoogleApiKey = playConf.getString(GoogleApiKeyName)
 
 
   def start() {
@@ -183,7 +188,7 @@ class SpamChecker {
 
     // Without (some of) these headers, Akismet says the api key is invalid.
     val request: WSRequest =
-      WS.url("https://rest.akismet.com/1.1/verify-key").withHeaders(
+      wsClient.url("https://rest.akismet.com/1.1/verify-key").withHeaders(
         play.api.http.HeaderNames.CONTENT_TYPE -> ContentType,
         play.api.http.HeaderNames.USER_AGENT -> UserAgent,
         play.api.http.HeaderNames.CONTENT_LENGTH -> postData.length.toString)
@@ -261,7 +266,7 @@ class SpamChecker {
       return Future.successful(None)
     }
 
-    val textAndHtml = TextAndHtml.forBodyOrComment(post.currentSource)
+    val textAndHtml = textAndHtmlMaker.forBodyOrComment(post.currentSource)
 
     val spamTestFutures =
       if (textAndHtml.text contains EdSpamMagicText) {
@@ -335,7 +340,7 @@ class SpamChecker {
     // a few days ago. I'm still getting a cert error though. Works in Chrome, not Java,
     // I suppose Java's cert store is old and out of date somehow?
     // Use http for now:
-    WS.url(s"http://www.stopforumspam.com/api?email=$encodedEmail$anyIpParam&f=json").get()
+    wsClient.url(s"http://www.stopforumspam.com/api?email=$encodedEmail$anyIpParam&f=json").get()
       .map(handleStopForumSpamResponse)
       .recover({
         case ex: Exception =>
@@ -412,7 +417,7 @@ class SpamChecker {
     val SafeBrowsingApiEndpoint = "https://sb-ssl.google.com/safebrowsing/api/lookup"
     val clientName = "EffectiveDiscussions"
     val protocolVersion = "3.1"
-    val applicationVersion = debiki.Globals.applicationVersion // COULD use version in build.sbt?
+    val applicationVersion = appVersion
 
     val requestBody = validUrls.length + "\n" + validUrls.mkString("\n")
     val url = SafeBrowsingApiEndpoint +
@@ -426,7 +431,7 @@ class SpamChecker {
     val SafeUrlVerdict = "ok"
 
     val request: WSRequest =
-      WS.url(url).withHeaders(
+      wsClient.url(url).withHeaders(
         play.api.http.HeaderNames.CONTENT_LENGTH -> requestBody.length.toString)
 
     request.post(requestBody) map { response: WSResponse =>
@@ -589,7 +594,7 @@ class SpamChecker {
 
   private def sendCheckIsSpamRequest(apiKey: String, payload: String, promise: Promise[Boolean]) {
     val request: WSRequest =
-      WS.url(s"https://$apiKey.rest.akismet.com/1.1/comment-check").withHeaders(
+      wsClient.url(s"https://$apiKey.rest.akismet.com/1.1/comment-check").withHeaders(
         play.api.http.HeaderNames.CONTENT_TYPE -> ContentType,
         play.api.http.HeaderNames.USER_AGENT -> UserAgent,
         play.api.http.HeaderNames.CONTENT_LENGTH -> payload.length.toString)

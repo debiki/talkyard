@@ -1,9 +1,9 @@
-@(inviterName: String, siteHostname: String, secretKey: String)
+@(inviterName: String, siteHostname: String, secretKey: String, globals: debiki.Globals)
 
-@siteUrl = @{ debiki.Globals.originOf(siteHostname) }
+@siteUrl = @{ globals.originOf(siteHostname) }
 
 @acceptInviteUrl = @{
-  val origin = debiki.Globals.originOf(siteHostname)
+  val origin = globals.originOf(siteHostname)
   s"$origin${controllers.routes.InviteController.acceptInvite(secretKey)}"
 }
 

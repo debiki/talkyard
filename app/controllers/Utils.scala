@@ -18,8 +18,8 @@
 package controllers
 
 import com.debiki.core._
+import debiki.EdHttp._
 import ed.server.liftweb
-import debiki.DebikiHttp._
 import java.{lang => jl}
 import play.api._
 import play.api.libs.json.JsValue
@@ -86,17 +86,6 @@ object Utils extends Results with http.ContentTypes {
    */
   def OkXml(xmlNode: xml.NodeSeq, contentType: String = "text/xml"): Result =
     Ok("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"+ xmlNode) as contentType
-
-
-  def parseIntOrThrowBadReq(text: String, errorCode: String = "DwE50BK7"): Int = {
-    try {
-      text.toInt
-    }
-    catch {
-      case ex: NumberFormatException =>
-        throwBadReq(s"Not an integer: ``$text''", errorCode)
-    }
-  }
 
 
 

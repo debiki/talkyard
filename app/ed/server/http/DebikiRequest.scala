@@ -18,12 +18,15 @@
 package ed.server.http
 
 import com.debiki.core._
+import com.debiki.core.PageOrderOffset
 import com.debiki.core.Prelude._
-import debiki.DebikiHttp._
+import controllers.Utils.ValidationImplicits._
 import debiki._
 import debiki.dao.SiteDao
+import debiki.EdHttp._
+import ed.server.EdContext
 import ed.server.auth.ForumAuthzContext
-import ed.server.security.{SidStatus, XsrfOk}
+import ed.server.security.{BrowserId, SidStatus, XsrfOk}
 import java.{util => ju}
 import play.api.mvc
 import play.api.mvc._
@@ -32,6 +35,10 @@ import play.api.mvc._
 /**
  */
 abstract class DebikiRequest[A] {
+
+  def context: EdContext = dao.context
+  private def security = dao.context.security
+  private def globals = dao.context.globals
 
   def siteIdAndCanonicalHostname: SiteBrief
   def sid: SidStatus
@@ -115,12 +122,12 @@ abstract class DebikiRequest[A] {
 
   def session: mvc.Session = request.session
 
-  def ip: IpAddress = realOrFakeIpOf(request)
+  def ip: IpAddress = security.realOrFakeIpOf(request)
 
   /**
    * Approximately when the server started serving this request.
    */
-  lazy val ctime: ju.Date = Globals.now().toJavaDate
+  lazy val ctime: ju.Date = globals.now().toJavaDate
 
   /** The scheme, host and port specified in the request. */
   def origin: String = s"$scheme://$host"
@@ -144,11 +151,61 @@ abstract class DebikiRequest[A] {
 
   def cookies = request.cookies
 
-  def isAjax = DebikiHttp.isAjax(request)
+  def isAjax = EdHttp.isAjax(request)
 
   def isHttpPostRequest = request.method == "POST"
 
   def httpVersion = request.version
+
+
+  def parseThePageQuery(): PageQuery =
+    parsePageQuery() getOrElse throwBadRequest(
+      "DwE2KTES7", "No sort-order-offset specified")
+
+
+  def parsePageQuery(): Option[PageQuery] = {
+    val sortOrderStr = queryString.getFirst("sortOrder") getOrElse { return None }
+    def anyDateOffset = queryString.getLong("bumpedAt") map (new ju.Date(_))
+
+    val orderOffset: PageOrderOffset = sortOrderStr match {
+      case "ByBumpTime" =>
+        PageOrderOffset.ByBumpTime(anyDateOffset)
+      case "ByScore" =>
+        val scoreStr = queryString.getFirst("maxScore")
+        val periodStr = queryString.getFirst("period")
+        val period = periodStr.flatMap(TopTopicsPeriod.fromIntString) getOrElse TopTopicsPeriod.Month
+        val score = scoreStr.map(_.toFloatOrThrow("EdE28FKSD3", "Score is not a number"))
+        PageOrderOffset.ByScoreAndBumpTime(offset = score, period)
+      case "ByLikes" =>
+        def anyNumOffset = queryString.getInt("num") // CLEAN_UP rename 'num' to 'maxLikes'
+        (anyNumOffset, anyDateOffset) match {
+          case (Some(num), Some(date)) =>
+            PageOrderOffset.ByLikesAndBumpTime(Some(num, date))
+          case (None, None) =>
+            PageOrderOffset.ByLikesAndBumpTime(None)
+          case _ =>
+            throwBadReq("DwE4KEW21", "Please specify both 'num' and 'bumpedAt' or none at all")
+        }
+      case x => throwBadReq("DwE05YE2", s"Bad sort order: `$x'")
+    }
+
+    val filter = parsePageFilter()
+    Some(PageQuery(orderOffset, filter))
+  }
+
+
+  def parsePageFilter(): PageFilter =
+    queryString.getFirst("filter") match {
+      case None => PageFilter.ShowAll
+      case Some("ShowAll") => PageFilter.ShowAll
+      case Some("ShowWaiting") => PageFilter.ShowWaiting
+      case Some("ShowDeleted") =>
+        if (!isStaff)
+          throwForbidden("EsE5YKP3", "Only staff may list deleted topics")
+        PageFilter.ShowDeleted
+      case Some(x) => throwBadRequest("DwE5KGP8", s"Bad topic filter: $x")
+    }
+
 
 }
 

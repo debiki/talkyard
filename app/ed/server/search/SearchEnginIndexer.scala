@@ -27,10 +27,10 @@ import org.elasticsearch.action.index.{IndexRequestBuilder, IndexResponse}
 import org.{elasticsearch => es}
 import play.{api => p}
 import scala.concurrent.duration._
-import scala.concurrent.ExecutionContext.Implicits.global
 import Prelude._
 import org.postgresql.util.PSQLException
 import play.api.Logger
+import scala.concurrent.ExecutionContext
 
 
 
@@ -42,8 +42,10 @@ import play.api.Logger
 object SearchEngineIndexer {
 
   def startNewActor(indexerBatchSize: Int, intervalSeconds: Int,
+        executionContext: ExecutionContext,
         elasticSearchClient: es.client.Client, actorSystem: ActorSystem, systemDao: SystemDao)
         : ActorRef = {
+    implicit val execCtx = executionContext
     val actorRef = actorSystem.actorOf(Props(
       new IndexingActor(indexerBatchSize, elasticSearchClient, systemDao)), name = s"IndexingActor")
     actorSystem.scheduler.schedule(

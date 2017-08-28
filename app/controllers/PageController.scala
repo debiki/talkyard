@@ -20,20 +20,23 @@ package controllers
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki._
-import debiki.DebikiHttp._
+import debiki.EdHttp._
 import debiki.ReactJson.JsLongOrNull
+import ed.server.{EdContext, EdController}
 import ed.server.auth.Authz
 import ed.server.http._
 import java.{util => ju}
-import play.api._
+import javax.inject.Inject
 import play.api.libs.json.{JsValue, Json}
-import play.api.mvc.Action
+import play.api.mvc.{Action, ControllerComponents}
 
 
 /** Creates pages, toggles is-done, deletes them.
   */
-object PageController extends mvc.Controller {
+class PageController @Inject()(cc: ControllerComponents, edContext: EdContext)
+  extends EdController(cc, edContext) {
 
+  import context.security.throwNoUnless
 
   def createPage: Action[JsValue] = PostJsonAction(RateLimits.CreateTopic, maxBytes = 20 * 1000) {
         request =>
@@ -52,10 +55,10 @@ object PageController extends mvc.Controller {
     val bodyText = (body \ "pageBody").as[String]
     val showId = (body \ "showId").asOpt[Boolean].getOrElse(true)
 
-    val bodyTextAndHtml = TextAndHtml.forBodyOrComment(bodyText,
+    val bodyTextAndHtml = textAndHtmlMaker.forBodyOrComment(bodyText,
       allowClassIdDataAttrs = true, followLinks = pageRole.shallFollowLinks)
 
-    val titleTextAndHtml = TextAndHtml.forTitle(titleText)
+    val titleTextAndHtml = textAndHtmlMaker.forTitle(titleText)
 
     // COULD make the Dao transaction like, and run this inside the transaction. [transaction]
     // Non-staff users shouldn't be able to create anything outside the forum section(s)

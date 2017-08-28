@@ -64,8 +64,9 @@ sealed trait TextAndHtml {
 }
 
 
-
-object TextAndHtml {
+/** Thread safe.
+  */
+class TextAndHtmlMaker(nashorn: ReactRenderer) {
 
   private class TextAndHtmlImpl(
     val text: String,
@@ -78,7 +79,7 @@ object TextAndHtml {
     val allowClassIdDataAttrs: Boolean) extends TextAndHtml {
 
     def append(text: String): TextAndHtml = {
-      append(TextAndHtml(text, isTitle = isTitle, followLinks = followLinks,
+      append(new TextAndHtmlMaker(nashorn).apply(text, isTitle = isTitle, followLinks = followLinks,
         allowClassIdDataAttrs = allowClassIdDataAttrs))
     }
 
@@ -96,7 +97,6 @@ object TextAndHtml {
     }
   }
 
-  val DefaultCommonMarkRenderer: CommonMarkRenderer = ReactRenderer
   val Ipv4AddressRegex: Regex = """[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+""".r
 
 
@@ -135,7 +135,7 @@ object TextAndHtml {
     followLinks: Boolean,
     allowClassIdDataAttrs: Boolean)(
     implicit
-    commonMarkRenderer: CommonMarkRenderer = DefaultCommonMarkRenderer): TextAndHtml = {
+    commonMarkRenderer: CommonMarkRenderer = nashorn): TextAndHtml = {
 
     TESTS_MISSING
     if (isTitle) {
@@ -188,7 +188,7 @@ object TextAndHtml {
     * have to wait for the commonmark renderer to be created.
     */
   def test(text: String, isTitle: Boolean): TextAndHtml = {
-    dieIf(!Globals.isOrWasTest, "EsE7GPM2")
+    dieIf(Globals.isProd, "EsE7GPM2")
     new TextAndHtmlImpl(text, text, links = Nil, linkDomains = Set.empty,
       linkAddresses = Nil, isTitle = isTitle, followLinks = false,
       allowClassIdDataAttrs = false)

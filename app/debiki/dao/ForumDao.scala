@@ -19,7 +19,6 @@ package debiki.dao
 
 import com.debiki.core._
 import com.debiki.core.Prelude._
-import debiki.ReactRenderer
 import scala.collection.immutable
 import ForumDao._
 
@@ -37,7 +36,7 @@ trait ForumDao {
 
 
   def createForum(title: String, folder: String, byWho: Who): CreateForumResult = {
-    val titleHtmlSanitized = commonmarkRenderer.sanitizeHtml(title, followLinks = false)
+    val titleHtmlSanitized = context.nashorn.sanitizeHtml(title, followLinks = false)
     readWriteTransaction { transaction =>
 
       // The forum page points to the root category, which points back.
@@ -163,29 +162,42 @@ object ForumDao {
   val AboutCategoryTopicPinOrder = 10
 
 
-  lazy val ForumIntroText: CommonMarkSourceAndHtml = renderCommonMark(i"""
-    |Edit this to tell people what this community is about. You can link back to your main website, if any.
-    """)
+  val ForumIntroText: CommonMarkSourceAndHtml = {
+    val source = o"""Edit this to tell people what this community is about.
+        You can link back to your main website, if any."""
+    CommonMarkSourceAndHtml(source, html = s"<p>$source</p>")
+  }
 
 
   val WelcomeTopicTitle = "Welcome to this community"
 
-  lazy val welcomeTopic: CommonMarkSourceAndHtml = renderCommonMark(i"""
-    |Edit this to clarify what this community is about. This first paragraph
-    |is shown to everyone, on the forum homepage.
-    |
-    |Here, below the first paragraph, add details like:
-    |- Who is this community for?
-    |- What can they do or find here?
-    |- Link to additional info, for example, any FAQ, or main website of yours.
-    |
-    |To edit this, click the <b class="icon-edit"></b> icon below.
-    |""")
-
-
-  private def renderCommonMark(source: String): CommonMarkSourceAndHtml =
-    ReactRenderer.renderSanitizeCommonMarkReturnSource(
-      source, allowClassIdDataAttrs = true, followLinks = false)
+  val welcomeTopic: CommonMarkSourceAndHtml = {
+    val para1Line1 = "Edit this to clarify what this community is about. This first paragraph"
+    val para1Line2 = "is shown to everyone, on the forum homepage."
+    val para2Line1 = "Here, below the first paragraph, add details like:"
+    val listItem1 = "Who is this community for?"
+    val listItem2 = "What can they do or find here?"
+    val listItem3 = "Link to additional info, for example, any FAQ, or main website of yours."
+    val toEditText = """To edit this, click the <b class="icon-edit"></b> icon below."""
+    CommonMarkSourceAndHtml(
+      source = i"""
+        |$para1Line1
+        |$para1Line2
+        |
+        |$para2Line1
+        |- $listItem1
+        |- $listItem2
+        |- $listItem3
+        |
+        |$toEditText
+        |""",
+      html = i"""
+        |<p>$para1Line1 $para1Line2</p>
+        |<p>$para2Line1</p>
+        |<ol><li>$listItem1</li><li>$listItem2</li><li>$listItem3</li></ol>
+        |<p>$toEditText</p>
+        """)
+  }
 
 
   // Sync with dupl code in Typescript. [7KFWY025]

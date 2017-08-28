@@ -19,21 +19,21 @@ package debiki
 
 import com.debiki.core._
 import com.debiki.core.Prelude._
-import debiki.dao.SystemDao
-import ed.server.http._
+import ed.server.http.DebikiRequest
 import java.{net => jn}
-import play.api._
+import play.api.libs.json.JsLookupResult
 import play.{api => p}
 import play.api.mvc._
-import play.api.Play.current
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
+import scala.util.Try
+
 
 
 /**
  * HTTP utilities.
  */
-object DebikiHttp {
+object EdHttp {
 
 
   // ----- Limits
@@ -56,7 +56,6 @@ object DebikiHttp {
     case object Json extends ContentType
     case object Html extends ContentType
   }
-
 
   // ----- Error handling
 
@@ -128,7 +127,7 @@ object DebikiHttp {
     // ScalaTest prints the stack trace but not the exception message. However this is
     // a QuickException — it has no stack trace. Let's create a helpful fake stack trace
     // that shows the exception message, so one knows what happened.
-    if (Globals.isOrWasTest) {
+    if (!Globals.isProd) {
       val message = s"ResultException, status $statusCode [EsMRESEX]:\n$bodyToString"
       setStackTrace(Array(new StackTraceElement(message, "", "", 0)))
     }
@@ -177,6 +176,12 @@ object DebikiHttp {
   def throwForbidden(errCode: String, message: String = "") =
     throw ResultException(ForbiddenResult(errCode, message))
 
+  def throwForbiddenIf(test: Boolean, errorCode: String, message: => String): Unit =
+    if (test) throwForbidden(errorCode, message)
+
+  def throwForbiddenUnless(test: Boolean, errorCode: String, message: => String): Unit =
+    if (!test) throwForbidden(errorCode, message)
+
   def throwNotImplemented(errorCode: String, message: String = "") =
     throw ResultException(NotImplementedResult(errorCode, message))
 
@@ -223,140 +228,40 @@ object DebikiHttp {
     throw ResultException(InternalErrorResult(errCode, message))
 
 
-  // ----- Tenant ID lookup
 
+  def throwForbidden2: (String, String) => Nothing =
+    throwForbidden
 
-  def originOf(request: GetRequest) =
-    Globals.originOf(request.underlying)
-
-  def originOf(request: Request[_]) =
-    Globals.originOf(request)
-
-
-  def daoFor(request: Request[_]) = {
-    val site = lookupSiteOrThrow(originOf(request), debiki.Globals.systemDao)
-    debiki.Globals.siteDao(site.id)
+  def throwNotImplementedIf(test: Boolean, errorCode: String, message: => String = "") {
+    if (test) throwNotImplemented(errorCode, message)
   }
 
+  def throwLoginAsSuperAdmin(request: Request[_]): Nothing =
+    if (isAjax(request)) throwForbidden2("EsE54YK2", "Not super admin")
+    else throwLoginAsSuperAdminTo(request.uri)
 
-  /** Looks up a site by hostname, or directly by id.
-    *
-    * By id: If a HTTP request specifies a hostname like "site-<id>.<baseDomain>",
-    * for example:  site-123.debiki.com,
-    * then the site is looked up directly by id. This is useful for embedded
-    * comment sites, since their address isn't important, and if we always access
-    * them via site id, we don't need to ask the side admin to come up with any
-    * site address.
-    */
-  def lookupSiteOrThrow(request: RequestHeader, systemDao: SystemDao): SiteBrief = {
-    lookupSiteOrThrow(request.secure, request.host, request.uri, systemDao)
-  }
-
-  def lookupSiteOrThrow(url: String, systemDao: SystemDao): SiteBrief = {
-    val (scheme, separatorHostPathQuery) = url.span(_ != ':')
-    val secure = scheme == "https"
-    val (host, pathAndQuery) =
-      separatorHostPathQuery.drop(3).span(_ != '/') // drop(3) drops "://"
-    lookupSiteOrThrow(secure, host = host, pathAndQuery, systemDao)
-  }
-
-  def lookupSiteOrThrow(secure: Boolean, host: String, pathAndQuery: String,
-        systemDao: SystemDao): SiteBrief = {
-
-    // Play supports one HTTP and one HTTPS port only, so it makes little sense
-    // to include any port number when looking up a site.
-    val hostname = if (host contains ':') host.span(_ != ':')._1 else host
-    def firstSiteIdAndHostname = {
-      val hostname = Globals.firstSiteHostname getOrElse throwForbidden(
-        "EsE5UYK2", o"""No first site hostname configured (config value:
-            ${Globals.FirstSiteHostnameConfigValue})""")
-      val firstSite = systemDao.getOrCreateFirstSite()
-      SiteBrief(Site.FirstSiteId, hostname, firstSite.status)
-    }
-
-    if (Globals.firstSiteHostname.contains(hostname))
-      return firstSiteIdAndHostname
-
-    // If the hostname is like "site-123.example.com" then we'll just lookup id 123.
-    hostname match {
-      case debiki.Globals.siteByIdHostnameRegex(siteIdString: String) =>
-        val siteId = siteIdString.toIntOrThrow("EdE5PJW2", s"Bad site id: $siteIdString")
-        systemDao.getSite(siteId) match {
-          case None =>
-            throwNotFound("DwE72SF6", s"No site with id $siteId")
-          case Some(site) =>
-            COULD // link to canonical host if (site.hosts.exists(_.role == SiteHost.RoleCanonical))
-            // Let the config file hostname have precedence over the database.
-            if (site.id == FirstSiteId && Globals.firstSiteHostname.isDefined)
-              return site.brief.copy(hostname = Globals.firstSiteHostname.get)
-            else
-              return site.brief
-        }
-      case _ =>
-    }
-
-    // Id unknown so we'll lookup the hostname instead.
-    val lookupResult = systemDao.lookupCanonicalHost(hostname) match {
-      case Some(result) =>
-        if (result.thisHost == result.canonicalHost)
-          result
-        else result.thisHost.role match {
-          case SiteHost.RoleDuplicate =>
-            result
-          case SiteHost.RoleRedirect =>
-            throwPermanentRedirect(Globals.originOf(result.canonicalHost.hostname) + pathAndQuery)
-          case SiteHost.RoleLink =>
-            die("DwE2KFW7", "Not implemented: <link rel='canonical'>")
-          case _ =>
-            die("DwE20SE4")
-        }
-      case None =>
-        if (Site.Ipv4AnyPortRegex.matches(hostname)) {
-          // Make it possible to access the server before any domain has been connected
-          // to it and when we still don't know its ip, just after installation.
-          return firstSiteIdAndHostname
-        }
-        throwNotFound("DwE0NSS0", s"There is no site with hostname '$hostname'")
-    }
-    val site = systemDao.getSite(lookupResult.siteId) getOrDie "EsE2KU503"
-    site.brief
-  }
+  def throwLoginAsSuperAdminTo(path: String): Nothing =
+    ??? // throwLoginAsTo(LoginController.AsSuperadmin, path)
 
 
-  // ----- Cookies
+  def throwLoginAsAdmin(request: Request[_]): Nothing =
+    if (isAjax(request)) throwForbidden2("EsE6GP21", "Not admin")
+    else throwLoginAsAdminTo(request.uri)
 
-  def SecureCookie(name: String, value: String, maxAgeSeconds: Option[Int] = None,
-        httpOnly: Boolean = false) =
-    Cookie(name, value, maxAge = maxAgeSeconds, secure = Globals.secure, httpOnly = httpOnly)
+  def throwLoginAsAdminTo(path: String): Nothing =
+    ??? // throwLoginAsTo(LoginController.AsAdmin, path)
 
-  def DiscardingSecureCookie(name: String) =
-    DiscardingCookie(name, secure = Globals.secure)
 
-  // Two comments on the encoding of the cookie value:
-  // 1. If the cookie contains various special characters
-  // (whitespace, any of: "[]{]()=,"/\?@:;") it will be
-  // sent as a Version 1 cookie (by javax.servlet.http.Cookie),
-  // then it is surrounded with quotes.
-  // the jQuery cookie plugin however expects an urlencoded value:
-  // 2. urlEncode(value) results in these cookies being sent:
-  //    Set-Cookie: dwCoUserEmail="kajmagnus79%40gmail.com";Path=/
-  //    Set-Cookie: dwCoUserName="Kaj%20Magnus";Path=/
-  // No encoding results in these cookies:
-  //    Set-Cookie: dwCoUserEmail=kajmagnus79@gmail.com;Path=/
-  //    Set-Cookie: dwCoUserName="Kaj Magnus";Path=/
-  // So it seems a % encoded string is surrounded with double quotes, by
-  // javax.servlet.http.Cookie? Why? Not needed!, '%' is safe.
-  // So I've modified jquery-cookie.js to remove double quotes when
-  // reading cookie values.
-  def urlEncodeCookie(name: String, value: String, maxAgeSecs: Option[Int] = None) =
-    Cookie(
-      name = name,
-      value = urlEncode(convertEvil(value)),  // see comment above
-      maxAge = maxAgeSecs,
-      path = "/",
-      domain = None,
-      secure = Globals.secure,
-      httpOnly = false)
+  def throwLoginAsStaff(request: Request[_]): Nothing =
+    if (isAjax(request)) throwForbidden2("EsE4GP6D", "Not staff")
+    else throwLoginAsStaffTo(request.uri)
+
+  def throwLoginAsStaffTo(path: String): Nothing =
+    ??? // throwLoginAsTo(LoginController.AsStaff, path)
+
+
+  private def throwLoginAsTo(as: String, to: String): Nothing =
+    ??? // throwTemporaryRedirect(routes.LoginController.showLoginPage(as = Some(as), to = Some(to)).url)
 
   def urlDecodeCookie(name: String, request: Request[_]): Option[String] =
     request.cookies.get(name).map(cookie => urlDecode(cookie.value))
@@ -391,10 +296,57 @@ object DebikiHttp {
   // so email addresses are okay.
 
 
-  // ----- Miscellaneous
+
+  // ----- Request "getters" and payload parsing helpers
+
+
+  implicit class RichString2(value: String) {
+    def toIntOrThrow(errorCode: String, errorMessage: String): Int =
+      value.toIntOption getOrElse throwBadRequest(errorCode, errorMessage)
+
+    def toFloatOrThrow(errorCode: String, errorMessage: String): Float =
+      value.toFloatOption getOrElse throwBadRequest(errorCode, errorMessage)
+
+    def toLongOrThrow(errorCode: String, errorMessage: String): Long =
+      Try(value.toLong).toOption getOrElse throwBadRequest(errorCode, errorMessage)
+  }
+
+
+  implicit class RichJsLookupResult(val underlying: JsLookupResult) {
+    def asOptStringTrimmed: Option[String] = underlying.asOpt[String].map(_.trim)
+
+    def asOptStringNoneIfBlank: Option[String] = underlying.asOpt[String].map(_.trim) match {
+      case Some("") => None
+      case x => x
+    }
+  }
+
+
+  implicit class GetOrThrowBadArgument[A](val underlying: Option[A]) {
+    def getOrThrowBadArgument(errorCode: String, parameterName: String, message: => String = ""): A = {
+      underlying getOrElse {
+        throwBadArgument(errorCode, parameterName, message)
+      }
+    }
+  }
+
+
+  def parseIntOrThrowBadReq(text: String, errorCode: String = "DwE50BK7"): Int = {
+    try {
+      text.toInt
+    }
+    catch {
+      case ex: NumberFormatException =>
+        throwBadReq(s"Not an integer: ``$text''", errorCode)
+    }
+  }
+
+
 
   def isAjax(request: Request[_]) =
     request.headers.get("X-Requested-With") == Some("XMLHttpRequest")
+
+
 
 }
 

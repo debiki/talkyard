@@ -45,13 +45,13 @@ class SiteTxPermissionsAppSpec extends DaoAppSuite {
 
 
       "prepare: create site and users" in {
-        Globals.systemDao.getOrCreateFirstSite()
-        dao = Globals.siteDao(Site.FirstSiteId)
+        globals.systemDao.getOrCreateFirstSite()
+        dao = globals.siteDao(Site.FirstSiteId)
 
         admin = createPasswordOwner(s"poc_adm", dao)
         userA = createPasswordUser(s"poc_u_a", dao)
         userB = createPasswordUser(s"poc_u_b", dao)
-        guest = dao.loginAsGuest(GuestLoginAttempt(ip = "2.2.2.2", Globals.now().toJavaDate,
+        guest = dao.loginAsGuest(GuestLoginAttempt(ip = "2.2.2.2", globals.now().toJavaDate,
           name = "Guestellina", guestCookie = "guestellinacookie"))
       }
 
@@ -68,15 +68,15 @@ class SiteTxPermissionsAppSpec extends DaoAppSuite {
         createForumResult = dao.createForum(title = "PermsOnPages Forum", folder = "/",
           Who(admin.id, browserIdData))
 
-        pageAId = createPage(PageRole.Discussion, TextAndHtml.forTitle("Page Title XY 12 AB"),
-          TextAndHtml.forBodyOrComment("Page body."), authorId = admin.id, browserIdData,
+        pageAId = createPage(PageRole.Discussion, textAndHtmlMaker.forTitle("Page Title XY 12 AB"),
+          textAndHtmlMaker.forBodyOrComment("Page body."), authorId = admin.id, browserIdData,
           dao, anyCategoryId = None)
         pageAPost2 = reply(admin.id, pageAId, s"Post 2")(dao)
         reply(admin.id, pageAId, s"Post 3")(dao)
         reply(admin.id, pageAId, s"Post 4")(dao)
 
-        pageBId = createPage(PageRole.Discussion, TextAndHtml.forTitle("Other Page Title"),
-          TextAndHtml.forBodyOrComment("Other page body."), authorId = admin.id, browserIdData,
+        pageBId = createPage(PageRole.Discussion, textAndHtmlMaker.forTitle("Other Page Title"),
+          textAndHtmlMaker.forBodyOrComment("Other page body."), authorId = admin.id, browserIdData,
           dao, anyCategoryId = None)
         reply(admin.id, pageBId, s"Post 2")(dao)
       }

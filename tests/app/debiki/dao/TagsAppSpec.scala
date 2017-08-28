@@ -19,14 +19,13 @@ package debiki.dao
 
 import com.debiki.core._
 import com.debiki.core.Prelude._
-import debiki.{TextAndHtml, Globals}
 import java.{util => ju}
 
 
 class TagsAppSpec extends DaoAppSuite() {
   lazy val dao: SiteDao = {
-    Globals.systemDao.getOrCreateFirstSite()
-    Globals.siteDao(Site.FirstSiteId)
+    globals.systemDao.getOrCreateFirstSite()
+    globals.siteDao(Site.FirstSiteId)
   }
 
   lazy val categoryId: CategoryId =
@@ -83,8 +82,8 @@ class TagsAppSpec extends DaoAppSuite() {
     }
 
     "load, add, remove tags" in {
-      thePageId = createPage(PageRole.Discussion, TextAndHtml.testTitle("Title"),
-        TextAndHtml.testBody("body"), theOwner.id, browserIdData, dao, Some(categoryId))
+      thePageId = createPage(PageRole.Discussion, textAndHtmlMaker.testTitle("Title"),
+        textAndHtmlMaker.testBody("body"), theOwner.id, browserIdData, dao, Some(categoryId))
       val postNoTags = reply(theMember.id, thePageId, "No tags")(dao)
       val postWithTags = reply(theMember.id, thePageId, "With tags")(dao)
       val postWithTagsLater = reply(theMember.id, thePageId, "With tags, later")(dao)
@@ -158,8 +157,8 @@ class TagsAppSpec extends DaoAppSuite() {
       val moderatorWho = Who(theModerator.id, browserIdData)
 
       // No notfs will be sent to the system user.
-      thePageId = createPage(PageRole.Discussion, TextAndHtml.testTitle("Title2"),
-        TextAndHtml.testBody("body2"), SystemUserId, browserIdData, dao, Some(categoryId))
+      thePageId = createPage(PageRole.Discussion, textAndHtmlMaker.testTitle("Title2"),
+        textAndHtmlMaker.testBody("body2"), SystemUserId, browserIdData, dao, Some(categoryId))
 
       val post = dao.readOnlyTransaction(_.loadThePost(thePageId, PageParts.BodyNr))
 

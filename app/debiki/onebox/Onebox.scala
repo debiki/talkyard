@@ -19,14 +19,13 @@ package debiki.onebox
 
 import com.debiki.core._
 import com.debiki.core.Prelude._
-import debiki.{ReactRenderer, Globals}
+import debiki.{Globals, ReactRenderer}
 import debiki.onebox.engines._
 import javax.{script => js}
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
-import scala.util.{Try, Success, Failure}
+import scala.concurrent.{ExecutionContext, Future}
+import scala.util.{Failure, Success, Try}
 
 
 
@@ -51,8 +50,11 @@ object RenderOnboxResult {
 }
 
 
-
-abstract class OneboxEngine {
+/**
+  * @param globals
+  * @param nashorn Needed for sanitizing the resulting onebox (unless alreadySanitized = true).
+  */
+abstract class OneboxEngine(globals: Globals, val nashorn: ReactRenderer) {
 
   def regex: scala.util.matching.Regex
 
@@ -70,7 +72,7 @@ abstract class OneboxEngine {
     """=['"](?:(?:(?:https?:)?//[^/]+)?/-/(?:u|uploads/public)/)([a-zA-Z0-9/\._-]+)['"]""".r
 
   private def pointUrlsToCdn(safeHtml: String): String = {
-    val prefix = Globals.config.cdn.uploadsUrlPrefix getOrElse {
+    val prefix = globals.config.cdn.uploadsUrlPrefix getOrElse {
       return safeHtml
     }
     uploadsLinkRegex.replaceAllIn(safeHtml, s"""="$prefix$$1"""")
@@ -83,13 +85,13 @@ abstract class OneboxEngine {
         if (alreadySanitized) html
         else {
           // COULD pass info to here so can follow links sometimes? [WHENFOLLOW]
-          ReactRenderer.sanitizeHtmlReuseEngine(html, followLinks = false, javascriptEngine)
+          nashorn.sanitizeHtmlReuseEngine(html, followLinks = false, javascriptEngine)
         }
       // Don't link to any HTTP resources from safe HTTPS pages, e.g. don't link
       // to <img src="http://...">, change to https instead even if the image then breaks.
       // COULD leave <a href=...> HTTP links as is so they won't break. And also leave
       // plain text as is. But for now, this is safe and simple and stupid: (?)
-      if (Globals.secure) {
+      if (globals.secure) {
         safeHtml = safeHtml.replaceAllLiterally("http:", "https:")
       }
       safeHtml = pointUrlsToCdn(safeHtml)
@@ -102,7 +104,7 @@ abstract class OneboxEngine {
       Future.fromTry(futureHtml.value.get.map(sanitizeAndWrap))
     }
     else {
-      futureHtml.map(sanitizeAndWrap)
+      futureHtml.map(sanitizeAndWrap)(globals.executionContext)
     }
   }
 
@@ -113,9 +115,10 @@ abstract class OneboxEngine {
 }
 
 
-abstract class InstantOneboxEngine extends OneboxEngine {
+abstract class InstantOneboxEngine(globals: Globals, nashorn: ReactRenderer)
+  extends OneboxEngine(globals, nashorn) {
 
-  protected def loadAndRender(url: String) =
+  protected def loadAndRender(url: String): Future[String] =
     Future.fromTry(renderInstantly(url))
 
   protected def renderInstantly(url: String): Try[String]
@@ -137,7 +140,7 @@ abstract class InstantOneboxEngine extends OneboxEngine {
   * The name comes from Google's search result box in which they sometimes show a single
   * answer directly.
   */
-object Onebox {
+class Onebox(val globals: Globals, val nashorn: ReactRenderer) {
 
   private val logger = play.api.Logger
   private val pendingRequestsByUrl = mutable.HashMap[String, Future[String]]()
@@ -146,12 +149,13 @@ object Onebox {
   private val PlaceholderPrefix = "onebox-"
   private val NoEngineException = new DebikiException("DwE3KEF7", "No matching onebox engine")
 
-  private val engines = Seq[OneboxEngine](
-    new ImageOnebox,
-    new VideoOnebox,
-    new GiphyOnebox,
-    new YouTubeOnebox)
+  private implicit val executionContext = globals.executionContext
 
+  private val engines = Seq[OneboxEngine](
+    new ImageOnebox(globals, nashorn),
+    new VideoOnebox(globals, nashorn),
+    new GiphyOnebox(globals, nashorn),
+    new YouTubeOnebox(globals, nashorn))
 
   def loadRenderSanitize(url: String, javascriptEngine: Option[js.Invocable])
         : Future[String] = {
@@ -190,10 +194,11 @@ object Onebox {
 
 /** Used when rendering oneboxes from inside Javascript code run by Nashorn.
   */
-class InstantOneboxRendererForNashorn {
+class InstantOneboxRendererForNashorn(val oneboxes: Onebox) {
 
   private val pendingDownloads: ArrayBuffer[RenderOnboxResult.Loading] = ArrayBuffer()
   private val doneOneboxes: ArrayBuffer[RenderOnboxResult.Done] = ArrayBuffer()
+  private def globals = oneboxes.globals
 
   // Should be set to the Nashorn engine that calls this class, so that we can call
   // back out to the same engine, when sanitizing html, so we won't have to ask for
@@ -202,7 +207,7 @@ class InstantOneboxRendererForNashorn {
 
   def renderAndSanitizeOnebox(unsafeUrl: String): String = {
     lazy val safeUrl = org.owasp.encoder.Encode.forHtml(unsafeUrl)
-    if (!Globals.isInitialized) {
+    if (!globals.isInitialized) {
       // Also see the comment for ReactRenderer.startCreatingRenderEngines()
       return o"""<p style="color: red; outline: 2px solid orange; padding: 1px 5px;">
            Broken onebox for: <a>$safeUrl</a>. Nashorn called out to Scala code
@@ -213,7 +218,7 @@ class InstantOneboxRendererForNashorn {
            soft-restarts the server in development mode. [DwE4KEPF72]</p>"""
     }
 
-    Onebox.loadRenderSanitizeInstantly(unsafeUrl, javascriptEngine) match {
+    oneboxes.loadRenderSanitizeInstantly(unsafeUrl, javascriptEngine) match {
       case RenderOnboxResult.NoOnebox =>
         s"""<a href="$safeUrl">$safeUrl</a>"""
       case doneOnebox: RenderOnboxResult.Done =>

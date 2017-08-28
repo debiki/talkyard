@@ -18,15 +18,14 @@
 package debiki.dao
 
 import com.debiki.core._
-import debiki.{Globals, TextAndHtml}
 import java.{util => ju}
 import scala.collection.mutable
 
 
 class PromotionToFullMemberAppSpec extends DaoAppSuite() {
   lazy val dao: SiteDao = {
-    Globals.systemDao.getOrCreateFirstSite()
-    Globals.siteDao(Site.FirstSiteId)
+    globals.systemDao.getOrCreateFirstSite()
+    globals.siteDao(Site.FirstSiteId)
   }
 
   lazy val categoryId: CategoryId =
@@ -54,7 +53,7 @@ class PromotionToFullMemberAppSpec extends DaoAppSuite() {
     "someone creates a few pages" in {
       for (pageNr <- 1 to 22) {
         pageIds += pageNr -> createPage(PageRole.Discussion,
-          TextAndHtml.testTitle(s"Page nr $pageNr"), TextAndHtml.testBody(s"Page nr $pageNr body"),
+          textAndHtmlMaker.testTitle(s"Page nr $pageNr"), textAndHtmlMaker.testBody(s"Page nr $pageNr body"),
           owner.id, browserIdData, dao, Some(categoryId))
       }
     }

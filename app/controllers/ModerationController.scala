@@ -18,12 +18,14 @@
 package controllers
 
 import com.debiki.core._
-import debiki.DebikiHttp._
 import debiki.{Globals, ReactJson}
+import debiki.EdHttp._
+import ed.server.{EdContext, EdController}
 import ed.server.http._
+import javax.inject.Inject
 import play.api._
 import play.api.libs.json._
-import play.api.mvc.Action
+import play.api.mvc.{AbstractController, Action, ControllerComponents}
 
 
 /** Lists posts for the moderation page, and approves/rejects/deletes posts
@@ -37,8 +39,10 @@ import play.api.mvc.Action
   * for guests, when not allowed. (Logging errors = letting people clutter the log files with
   * crap.)
   */
-object ModerationController extends mvc.Controller {
+class ModerationController @Inject()(cc: ControllerComponents, edContext: EdContext)
+  extends EdController(cc, edContext) {
 
+  import context.globals
 
   val ActionCountLimit = 100
   val PostTextLengthLimit = 500
@@ -46,7 +50,7 @@ object ModerationController extends mvc.Controller {
 
   def loadReviewTasks = StaffGetAction { request =>
     val (reviewStuff, usersById) = request.dao.loadReviewStuff(
-      olderOrEqualTo = Globals.now().toJavaDate, limit = 100)
+      olderOrEqualTo = globals.now().toJavaDate, limit = 100)
     OkSafeJson(JsArray(reviewStuff.map(ReactJson.reviewStufToJson(_, usersById))))
   }
 

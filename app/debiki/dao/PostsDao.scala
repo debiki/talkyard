@@ -23,7 +23,7 @@ import com.debiki.core.Prelude._
 import com.debiki.core.PageParts.FirstReplyNr
 import controllers.EditController
 import debiki._
-import debiki.DebikiHttp._
+import debiki.EdHttp._
 import ed.server.notf.NotificationGenerator
 import ed.server.pubsub.StorePatchMessage
 import play.api.libs.json.{JsObject, JsValue}
@@ -48,6 +48,8 @@ case class InsertPostResult(storePatchJson: JsObject, post: Post, reviewTask: Op
 trait PostsDao {
   self: SiteDao =>
 
+  import context.globals
+
   // 3 minutes
   val LastChatMessageRecentMs: UnixMillis = 3 * 60 * 1000
 
@@ -57,7 +59,7 @@ trait PostsDao {
         : InsertPostResult = {
 
     val authorId = byWho.id
-    val now = Globals.now()
+    val now = globals.now()
 
     // Note: Fairly similar to createNewChatMessage() just below. [4UYKF21]
 
@@ -160,7 +162,7 @@ trait PostsDao {
         numOrigPostRepliesVisible = page.parts.numOrigPostRepliesVisible + numNewOpRepliesVisible,
         version = oldMeta.version + 1)
 
-      val uploadRefs = UploadsDao.findUploadRefsInPost(newPost)
+      val uploadRefs = findUploadRefsInPost(newPost)
 
       val auditLogEntry = AuditLogEntry(
         siteId = siteId,
@@ -450,7 +452,7 @@ trait PostsDao {
       frequentPosterIds = newFrequentPosterIds,
       version = oldMeta.version + 1)
 
-    val uploadRefs = UploadsDao.findUploadRefsInPost(newPost)
+    val uploadRefs = findUploadRefsInPost(newPost)
 
     SECURITY // COULD: if is new chat user, create review task to look at his/her first
     // chat messages, but only the first few.
@@ -797,7 +799,7 @@ trait PostsDao {
     // 1) approved version of the post, and 2) the current possibly unapproved version.
     // Because if any of the approved or the current version links to an uploaded file,
     // we should keep the file.
-    val currentUploadRefs = UploadsDao.findUploadRefsInPost(editedPost)
+    val currentUploadRefs = findUploadRefsInPost(editedPost)
     val oldUploadRefs = transaction.loadUploadedFileReferences(postToEdit.id)
     val uploadRefsAdded = currentUploadRefs -- oldUploadRefs
     val uploadRefsRemoved = oldUploadRefs -- currentUploadRefs
@@ -922,7 +924,8 @@ trait PostsDao {
       insertAuditLogEntry(auditLogEntry, transaction)
 
       COULD_OPTIMIZE // try not to load the whole page in makeStorePatch2
-      (postAfter, ReactJson.makeStorePatch2(postId, postAfter.pageId, transaction))
+      (postAfter, ReactJson.makeStorePatch2(postId, postAfter.pageId,
+          appVersion = globals.applicationVersion, nashorn, transaction))
     }
     refreshPageInMemCache(post.pageId)
     patch
@@ -1413,7 +1416,7 @@ trait PostsDao {
     if (newParent.postNr == PageParts.TitleNr)
       throwForbidden("EsE4YKJ8_", "Cannot place a post below the title")
 
-    val now = Globals.now()
+    val now = globals.now()
 
     val (postAfter, storePatch) = readWriteTransaction { transaction =>
       val mover = transaction.loadTheMember(moverId)
@@ -1526,7 +1529,8 @@ trait PostsDao {
         toPage, postAfter, skipMentions = true)
       SHOULD // transaction.saveDeleteNotifications(notfs) — but would cause unique key errors
 
-      val patch = ReactJson.makeStorePatch2(postAfter.id, toPage.id, transaction)
+      val patch = ReactJson.makeStorePatch2(postAfter.id, toPage.id,
+        appVersion = globals.applicationVersion, nashorn, transaction)
       (postAfter, patch)
     }
 

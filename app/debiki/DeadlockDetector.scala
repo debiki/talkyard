@@ -21,8 +21,6 @@ import java.lang.management.{ThreadInfo, ManagementFactory}
 import java.util.concurrent.Executors
 import java.{util => ju}
 import play.{api => p}
-import play.api.Play
-import play.api.Play.current
 import scala.collection.mutable
 
 
@@ -33,7 +31,7 @@ import scala.collection.mutable
   */
 object DeadlockDetector {
 
-  private val IntervalSeconds = if (Play.isProd) 60 else 10
+  private val IntervalSeconds = 60 // if (Play.isProd) 60 else 10
 
   private val threadMxBean = ManagementFactory.getThreadMXBean
 

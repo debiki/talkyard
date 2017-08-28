@@ -18,17 +18,14 @@
 package debiki
 
 import akka.actor._
-import akka.actor.Actor._
 import org.apache.commons.{mail => acm}
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki.dao.SiteDao
 import debiki.dao.SiteDaoFactory
-import java.{util => ju}
 import play.{api => p}
-import play.api.Play.current
 import scala.collection.mutable
-import scala.concurrent.{Future, Promise}
+import scala.concurrent.Promise
 
 
 object Mailer {
@@ -43,8 +40,8 @@ object Mailer {
     * doesn't accidentally forget forever to send some emails.
     * (Also se Notifier.scala)
     */
-  def startNewActor(actorSystem: ActorSystem, daoFactory: SiteDaoFactory): ActorRef = {
-    val config = p.Play.configuration
+  def startNewActor(actorSystem: ActorSystem, daoFactory: SiteDaoFactory, config: p.Configuration,
+        now: () => When): ActorRef = {
     val anySmtpServerName = config.getString("ed.smtp.host").orElse(
       config.getString("ed.smtp.server")).noneIfBlank // old deprecated name
     val anySmtpPort = config.getInt("ed.smtp.port")
@@ -65,6 +62,7 @@ object Mailer {
         actorSystem.actorOf(
           Props(new Mailer(
             daoFactory,
+            now,
             serverName = serverName,
             port = port,
             sslPort = sslPort,
@@ -85,7 +83,7 @@ object Mailer {
         p.Logger.info(message)
         actorSystem.actorOf(
           Props(new Mailer(
-            daoFactory, serverName = "", port = -1, sslPort = -1, useSslOrTls = false,
+            daoFactory, now, serverName = "", port = -1, sslPort = -1, useSslOrTls = false,
             userName = "", password = "", fromAddress = "", broken = true)),
           name = s"BrokenMailerActor-$testInstanceCounter")
     }
@@ -111,6 +109,7 @@ object Mailer {
   */
 class Mailer(
   val daoFactory: SiteDaoFactory,
+  val now: () => When,
   val serverName: String,
   val port: Int,
   val sslPort: Int,
@@ -155,7 +154,6 @@ class Mailer(
   private def sendEmail(emailToSend: Email, siteId: SiteId) {
 
     val tenantDao = daoFactory.newSiteDao(siteId)
-    val now = Some(Globals.now().toJavaDate)
 
     // I often use @example.com, or simply @ex.com, when posting test comments
     // — don't send those emails, to keep down the bounce rate.
@@ -172,7 +170,8 @@ class Mailer(
     val address = emailToSend.toUserId.flatMap(tenantDao.getUser).map(_.email) getOrElse
       emailToSend.sentTo
 
-    val emailWithAddress = emailToSend.copy(sentTo = address, sentOn = now, providerEmailId = None)
+    val emailWithAddress = emailToSend.copy(
+      sentTo = address, sentOn = Some(now().toJavaDate), providerEmailId = None)
     val apacheCommonsEmail  = makeApacheCommonsEmail(emailWithAddress)
     val emailAfter =
       try {
@@ -223,7 +222,7 @@ class Mailer(
       |$email
       |————————————————————————————————————————————————————————————
       |""")
-    val emailSent = email.copy(sentOn = Some(Globals.now().toJavaDate))
+    val emailSent = email.copy(sentOn = Some(now().toJavaDate))
     siteDao.updateSentEmail(emailSent)
     if (Email.isE2eTestEmailAddress(email.sentTo)) {
       rememberE2eTestEmail(email, siteDao)

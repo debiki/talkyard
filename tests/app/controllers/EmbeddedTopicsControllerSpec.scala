@@ -20,7 +20,6 @@ package controllers
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import org.scalatest._
-import EmbeddedTopicsController._
 
 
 @Ignore

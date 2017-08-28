@@ -21,7 +21,7 @@ import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki._
 import debiki.dao._
-import debiki.DebikiHttp.throwForbidden
+import debiki.EdHttp.throwForbidden
 import QuickSpamCheckDao._
 
 

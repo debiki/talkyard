@@ -20,12 +20,13 @@ package debiki.dao
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki._
+import debiki.EdHttp._
 import ed.server.search.SearchEngine
-import ed.server.http._
 import org.{elasticsearch => es}
 import redis.RedisClient
 import scala.collection.mutable
 import SiteDao._
+import ed.server.EdContext
 import ed.server.auth.MayMaybe
 import ed.server.pop.PagePopularityDao
 import ed.server.pubsub.{PubSubApi, StrangerCounterApi}
@@ -34,6 +35,7 @@ import ed.server.summaryemails.SummaryEmailsDao
 
 
 class SiteDaoFactory (
+  private val context: EdContext,
   private val _dbDaoFactory: DbDaoFactory,
   private val redisClient: RedisClient,
   private val cache: DaoMemCache,
@@ -42,8 +44,8 @@ class SiteDaoFactory (
   private val config: Config) {
 
   def newSiteDao(siteId: SiteId): SiteDao = {
-    new SiteDao(siteId, _dbDaoFactory, redisClient, cache, usersOnlineCache, elasticSearchClient,
-      config)
+    new SiteDao(siteId, context, _dbDaoFactory, redisClient, cache, usersOnlineCache,
+      elasticSearchClient, config)
   }
 
 }
@@ -65,6 +67,7 @@ class SiteDaoFactory (
   */
 class SiteDao(
   val siteId: SiteId,
+  val context: EdContext,
   private val dbDaoFactory: DbDaoFactory,
   private val redisClient: RedisClient,
   private val cache: DaoMemCache,
@@ -95,20 +98,24 @@ class SiteDao(
   with SummaryEmailsDao
   with AuditDao {
 
-  protected lazy val memCache = new MemCache(siteId, cache)
-  protected lazy val redisCache = new RedisCache(siteId, redisClient)
+  protected lazy val memCache = new MemCache(siteId, cache, globals.mostMetrics)
+  protected lazy val redisCache = new RedisCache(siteId, redisClient, context.globals.now)
   protected lazy val searchEngine = new SearchEngine(siteId, elasticSearchClient)
 
+  def globals: debiki.Globals = context.globals
+  def nashorn: ReactRenderer = context.nashorn
+  def textAndHtmlMaker: TextAndHtmlMaker = new TextAndHtmlMaker(nashorn)
+  import context.security.throwIndistinguishableNotFound
 
   def memCache_test: MemCache = {
-    require(Globals.isOrWasTest, "EsE7YKP42B")
+    require(globals.isOrWasTest, "EsE7YKP42B")
     memCache
   }
 
 
   private def dbDao2: DbDao2 = dbDaoFactory.newDbDao2()
 
-  def commonmarkRenderer = ReactRenderer
+  def commonmarkRenderer: ReactRenderer = context.nashorn
 
 
   memCache.onUserCreated { user =>
@@ -208,9 +215,9 @@ class SiteDao(
   def theSiteNameAndOrigin(): (String, String) = {
     val site = theSite()
     val anyPrettyHostname = site.canonicalHost.map(_.hostname)
-    val anyPrettyOrigin = site.canonicalHost.map(Globals.schemeColonSlashSlash + _.hostname)
+    val anyPrettyOrigin = site.canonicalHost.map(globals.schemeColonSlashSlash + _.hostname)
     val siteNameOrHostname = anyPrettyHostname getOrElse site.name
-    val origin = anyPrettyOrigin getOrElse Globals.siteByIdOrigin(siteId)
+    val origin = anyPrettyOrigin getOrElse globals.siteByIdOrigin(siteId)
     (siteNameOrHostname, origin)
   }
 
@@ -226,7 +233,7 @@ class SiteDao(
     }
     if (siteId == FirstSiteId && site.canonicalHost.isEmpty) {
       // No hostname specified in the database. Fallback to the config file.
-      val hostname = Globals.firstSiteHostname.getOrDie(
+      val hostname = globals.firstSiteHostname.getOrDie(
         "EsE5GKU2", s"No ${Globals.FirstSiteHostnameConfigValue} specified")
       val canonicalHost = SiteHost(hostname, SiteHost.RoleCanonical)
       site = site.copy(hosts = canonicalHost :: site.hosts)
@@ -254,15 +261,15 @@ class SiteDao(
         // Fine.
       case SiteStatus.ReadAndCleanOnly =>
         if (!newMember.isStaff)
-          throwForbidden2("EsE3KUG54", o"""Trying to create a non-staff user for
+          throwForbidden("EsE3KUG54", o"""Trying to create a non-staff user for
               a ${site.status} site""")
       case SiteStatus.HiddenUnlessAdmin =>
         if (!newMember.isAdmin)
-          throwForbidden2("EsE9YK24S", o"""Trying to create a non-admin user for
+          throwForbidden("EsE9YK24S", o"""Trying to create a non-admin user for
               a ${site.status} site""")
       case _ =>
         dieUnless(site.status.isDeleted, "EsE4FEI29")
-        throwForbidden2("EsE5KUFW2", "This site has been deleted. Cannot add new users.")
+        throwForbidden("EsE5KUFW2", "This site has been deleted. Cannot add new users.")
     }
   }
 
@@ -280,15 +287,15 @@ class SiteDao(
       val hostsNewestFirst = transaction.loadHostsInclDetails().sortBy(-_.addedAt.millis)
       if (hostsNewestFirst.length > SoftMaxOldHostnames) {
         val hostNr2 = hostsNewestFirst(1)
-        if (Globals.now().daysSince(hostNr2.addedAt) < WaitUntilAnotherHostnameInterval) {
-          throwForbidden2("EdE3KYP2", "You've changed hostname too many times and too often")
+        if (globals.now().daysSince(hostNr2.addedAt) < WaitUntilAnotherHostnameInterval) {
+          throwForbidden("EdE3KYP2", "You've changed hostname too many times and too often")
         }
       }
       transaction.changeCanonicalHostRoleToExtra()
       try transaction.insertSiteHost(SiteHost(newHostname, SiteHost.RoleCanonical))
       catch {
         case _: DuplicateHostnameException =>
-          throwForbidden2("EdE7FKW20", s"There's already a site with hostname '$newHostname'")
+          throwForbidden("EdE7FKW20", s"There's already a site with hostname '$newHostname'")
       }
       uncacheSite()
     }
@@ -320,8 +327,8 @@ class SiteDao(
 
   // ----- Notifications
 
-  def pubSub: PubSubApi = Globals.pubSub
-  def strangerCounter: StrangerCounterApi = Globals.strangerCounter
+  def pubSub: PubSubApi = globals.pubSub
+  def strangerCounter: StrangerCounterApi = globals.strangerCounter
 
   def saveDeleteNotifications(notifications: Notifications) {
     readWriteTransaction(_.saveDeleteNotifications(notifications))

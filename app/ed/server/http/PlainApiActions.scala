@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2012-2015 Kaj Magnus Lindberg
+ * Copyright (c) 2012-2017 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -19,9 +19,7 @@ package ed.server.http
 
 import com.debiki.core._
 import com.debiki.core.Prelude._
-import controllers.LoginController
 import debiki._
-import debiki.DebikiHttp._
 import debiki.RateLimits.NoRateLimits
 import debiki.dao.LoginNotFoundException
 import ed.server._
@@ -29,28 +27,37 @@ import ed.server.security._
 import java.{util => ju}
 import play.{api => p}
 import play.api.mvc._
-import scala.concurrent.Future
-import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
 
 
 /** Play Framework Actions for requests to Debiki's HTTP API.
   */
-private[http] object PlainApiActions {
+class PlainApiActions(
+  val safeActions: SafeActions,
+  val globals: Globals,
+  val security: EdSecurity,
+  val rateLimiter: RateLimiter) {
 
+  import EdHttp._
+  import security.DiscardingSecureCookie
+  import security.DiscardingSessionCookie
+  import safeActions.ExceptionAction
 
-  def PlainApiAction(rateLimits: RateLimits, allowAnyone: Boolean = false, isLogin: Boolean = false) =
-    PlainApiActionImpl(rateLimits, adminOnly = false, staffOnly = false,
+  def PlainApiAction[B](parser: BodyParser[B],
+        rateLimits: RateLimits, allowAnyone: Boolean = false, isLogin: Boolean = false) =
+    PlainApiActionImpl(parser, rateLimits, adminOnly = false, staffOnly = false,
         allowAnyone = allowAnyone, isLogin = isLogin)
 
-  def PlainApiActionStaffOnly =
-    PlainApiActionImpl(NoRateLimits, adminOnly = false, staffOnly = true)
+  def PlainApiActionStaffOnly[B](parser: BodyParser[B]) =
+    PlainApiActionImpl(parser, NoRateLimits, adminOnly = false, staffOnly = true)
 
-  val PlainApiActionAdminOnly =
-    PlainApiActionImpl(NoRateLimits, adminOnly = true, staffOnly = false)
+  def PlainApiActionAdminOnly[B](parser: BodyParser[B]) =
+    PlainApiActionImpl(parser, NoRateLimits, adminOnly = true, staffOnly = false)
 
-  val PlainApiActionSuperAdminOnly =
-    PlainApiActionImpl(NoRateLimits, adminOnly = false, staffOnly = false, superAdminOnly = true)
+  def PlainApiActionSuperAdminOnly[B](parser: BodyParser[B]) =
+    PlainApiActionImpl(parser, NoRateLimits, adminOnly = false, staffOnly = false,
+        superAdminOnly = true)
 
 
 
@@ -63,11 +70,17 @@ private[http] object PlainApiActions {
     * doesn't map to any login entry.
     * The SidStatusRequest.sidStatus passed to the action is either SidAbsent or a SidOk.
     */
-  def PlainApiActionImpl(rateLimits: RateLimits, adminOnly: Boolean,
-        staffOnly: Boolean,
+  def PlainApiActionImpl[B](aParser: BodyParser[B],
+        rateLimits: RateLimits, adminOnly: Boolean, staffOnly: Boolean,
         allowAnyone: Boolean = false,  // try to delete 'allowAnyone'? REFACTOR
         isLogin: Boolean = false, superAdminOnly: Boolean = false) =
-      new ActionBuilder[ApiRequest] {
+      new ActionBuilder[ApiRequest, B] {
+
+    override def parser: BodyParser[B] =
+      aParser
+
+    override implicit protected def executionContext: ExecutionContext =
+      globals.executionContext
 
     def numOnly: Int = adminOnly.toZeroOne + superAdminOnly.toZeroOne + staffOnly.toZeroOne
     require(numOnly <= 1, "EsE4KYF02")
@@ -82,7 +95,7 @@ private[http] object PlainApiActions {
     override def invokeBlock[A](request: Request[A], block: ApiRequest[A] => Future[Result])
         : Future[Result] = {
 
-      val site = DebikiHttp.lookupSiteOrThrow(request, Globals.systemDao)
+      val site = globals.lookupSiteOrThrow(request)
 
       val (actualSidStatus, xsrfOk, newCookies) =
         security.checkSidAndXsrfToken(request, site.id, maySetCookies = true)
@@ -92,7 +105,7 @@ private[http] object PlainApiActions {
         if (actualSidStatus.isOk) (actualSidStatus, false)
         else (SidAbsent, true)
 
-      val (browserId, moreNewCookies) = BrowserId.checkBrowserId(request)
+      val (browserId, moreNewCookies) = security.getBrowserIdCreateIfNeeded(request)
 
       // Parts of `block` might be executed asynchronously. However any LoginNotFoundException
       // should happen before the async parts, because access control should be done
@@ -112,7 +125,7 @@ private[http] object PlainApiActions {
               |
               |Details: A certain login id has become invalid. I just gave you a new id,
               |but you will probably need to login again.""")
-              .discardingCookies(DiscardingSecureCookie(SessionIdCookieName)))
+              .discardingCookies(DiscardingSecureCookie(EdSecurity.SessionIdCookieName)))
         }
 
       val resultOkSid =
@@ -123,10 +136,10 @@ private[http] object PlainApiActions {
           resultOldCookies map { result =>
             var resultWithCookies = result
               .withCookies(newCookies ::: moreNewCookies: _*)
-              .withHeaders(SafeActions.MakeInternetExplorerSaveIframeCookiesHeader)
+              .withHeaders(safeActions.MakeInternetExplorerSaveIframeCookiesHeader)
             if (deleteSidCookie) {
               resultWithCookies =
-                resultWithCookies.discardingCookies(DiscardingSecureCookie(SessionIdCookieName))
+                resultWithCookies.discardingCookies(DiscardingSecureCookie(EdSecurity.SessionIdCookieName))
             }
             resultWithCookies
           }
@@ -140,7 +153,7 @@ private[http] object PlainApiActions {
           xsrfOk: XsrfOk, browserId: BrowserId, block: ApiRequest[A] => Future[Result])
           : Future[Result] = {
 
-      val dao = Globals.siteDao(site.id)
+      val dao = globals.siteDao(site.id)
       dao.perhapsBlockGuest(request, sidStatus, browserId)
 
       var anyUser = dao.getUserBySessionId(sidStatus)
@@ -172,12 +185,12 @@ private[http] object PlainApiActions {
         throwLoginAsAdmin(request)
 
       if (superAdminOnly) {
-        Globals.config.superAdmin.siteIdString match {
+        globals.config.superAdmin.siteIdString match {
           case Some(siteId) if site.id.toString == siteId =>
             // Fine: this (i.e. 'site') is the superadmin site, so we're allowed to access
             // the superadmin endpoints.
           case Some(Whatever) =>
-            if (Globals.isProd)
+            if (globals.isProd)
               throwForbidden("EsE4KS2YR",
                 s"The superadmin site id may not be set to '$Whatever' in prod mode")
           case Some(_) =>
@@ -187,11 +200,11 @@ private[http] object PlainApiActions {
             throwForbidden("EsE17KFE2", "No superadmin site id configured")
         }
 
-        Globals.config.superAdmin.hostname match {
+        globals.config.superAdmin.hostname match {
           case Some(request.host) =>
             // Fine: we're accessing the superadmin endpoints via the correct hostname.
           case Some(Whatever) =>
-            if (Globals.isProd)
+            if (globals.isProd)
               throwForbidden("EsE5GKTS",
                 s"The superadmin hostname may not be set to '$Whatever' in prod mode")
           case Some(superAdminHostname) =>
@@ -207,7 +220,7 @@ private[http] object PlainApiActions {
            '${Config.SuperAdminEmailAddressesPath}' config value in the config file 'play.conf'."""
            */
 
-        if (Globals.config.superAdmin.emailAddresses.isEmpty) {
+        if (globals.config.superAdmin.emailAddresses.isEmpty) {
           throwForbidden("EsE5KU02Y", o"""To access the super admin area, you first need to add
               your email address to the '${Config.SuperAdminEmailAddressesPath}' config value
               in the config file 'play.conf'. Thereafter, sign up or login as a user
@@ -218,14 +231,14 @@ private[http] object PlainApiActions {
           case None =>
             throwLoginAsSuperAdmin(request)
           case Some(user) =>
-            if (!Globals.config.superAdmin.emailAddresses.contains(user.email))
+            if (!globals.config.superAdmin.emailAddresses.contains(user.email))
               throwLoginAsSuperAdmin(request)
         }
       }
 
       if (!allowAnyone && !isLogin) {
         // ViewPageController has allow-anyone = true.
-        val isXhr = DebikiHttp.isAjax(request)
+        val isXhr = isAjax(request)
         def goToHomepageOrIfXhrThen(block: => Unit) {
           if (isXhr) block
           else throwTemporaryRedirect("/")  ;COULD // throwLoginAsTo but undef error [5KUP02]
@@ -246,13 +259,13 @@ private[http] object PlainApiActions {
       val apiRequest = ApiRequest[A](
         site, sidStatus, xsrfOk, browserId, anyUser, dao, request)
 
-      RateLimiter.rateLimit(rateLimits, apiRequest)
+      rateLimiter.rateLimit(rateLimits, apiRequest)
 
       // COULD use markers instead for site id and ip, and perhaps uri too? Dupl code [5KWC28]
       val requestUriAndIp = s"site $site, ip ${apiRequest.ip}: ${apiRequest.uri}"
       //p.Logger.debug(s"API request started [DwM6L8], " + requestUriAndIp)
 
-      val timer = Globals.metricRegistry.timer(request.path)
+      val timer = globals.metricRegistry.timer(request.path)
       val timerContext = timer.time()
       var result = try {
         block(apiRequest)
@@ -272,7 +285,7 @@ private[http] object PlainApiActions {
       }
 
       result onComplete {
-        case Success(r) =>
+        case Success(_) =>
           //p.Logger.debug(
             //s"API request ended, status ${r.header.status} [DwM9Z2], $requestUriAndIp")
         case Failure(exception) =>
@@ -283,7 +296,7 @@ private[http] object PlainApiActions {
       if (logoutBecauseSuspended) {
         // We won't get here if e.g. a 403 Forbidden exception was thrown because 'user' was
         // set to None. How solve that?
-        result = result.map(_.discardingCookies(LoginController.DiscardingSessionCookie))
+        result = result.map(_.discardingCookies(DiscardingSessionCookie))
       }
       result
     }

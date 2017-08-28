@@ -20,32 +20,33 @@ package controllers
 import akka.pattern.ask
 import com.debiki.core._
 import com.debiki.core.Prelude._
-import debiki.{Globals, RateLimits, ReactRenderer}
-import debiki.DebikiHttp._
+import debiki.{RateLimits, ReactRenderer}
 import debiki.dao.PagePartsDao
-import ed.server.http._
+import debiki.EdHttp._
+import ed.server.{EdContext, EdController}
 import ed.server.pop.PagePopularityCalculator
 import java.lang.management.ManagementFactory
 import java.{io => jio, util => ju}
 import javax.inject.Inject
 import org.slf4j.Marker
-import play.api._
 import play.api.libs.json._
 import play.{api => p}
-import play.api.Play.current
-import play.api.mvc.Action
+import play.api.mvc.{Action, ControllerComponents}
 import play.api.mvc.BodyParsers.parse.empty
 import redis.RedisClient
 import scala.concurrent.duration._
 import scala.concurrent.{Await, Future}
 import scala.concurrent.Future._
-import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util.Try
 
 
 /** Intended for troubleshooting, via the browser, and helps running End-to-End tests.
   */
-class DebugTestController @Inject() extends mvc.Controller {
+class DebugTestController @Inject()(cc: ControllerComponents, edContext: EdContext)
+  extends EdController(cc, edContext) {
+
+  import context.globals
+  import context.safeActions.ExceptionAction
 
 
   /** If a JS error happens in the browser, it'll post the error message to this
@@ -90,7 +91,7 @@ class DebugTestController @Inject() extends mvc.Controller {
     val printStream = new jio.PrintStream(outputStream, false, "utf-8")
     val metricsText = try {
       val metricsReporter =
-        com.codahale.metrics.ConsoleReporter.forRegistry(Globals.metricRegistry)
+        com.codahale.metrics.ConsoleReporter.forRegistry(globals.metricRegistry)
           .convertRatesTo(ju.concurrent.TimeUnit.SECONDS)
           .convertDurationsTo(ju.concurrent.TimeUnit.MILLISECONDS)
           .outputTo(printStream)
@@ -140,7 +141,7 @@ class DebugTestController @Inject() extends mvc.Controller {
 
   /** For performance tests. */
   def pingCache = GetAction { _ =>
-    val redis: RedisClient = Globals.redisClient
+    val redis: RedisClient = globals.redisClient
     val futureGetResult = redis.get("missing_value")
     Await.result(futureGetResult, 5 seconds)
     Ok("pong, from Play and Redis")
@@ -160,31 +161,31 @@ class DebugTestController @Inject() extends mvc.Controller {
 
   def origin = GetAction { request =>
     val canonicalHost = request.dao.theSite().canonicalHost
-    val isFirstSite = Globals.firstSiteHostname.contains(request.hostname)
+    val isFirstSite = globals.firstSiteHostname.contains(request.hostname)
     val response =
-      s"""Globals.secure: ${Globals.secure}
-         |Globals.scheme: ${Globals.scheme}
-         |Globals.port: ${Globals.port}
-         |Globals.baseDomainWithPort: ${Globals.baseDomainWithPort}
-         |Globals.baseDomainNoPort: ${Globals.baseDomainNoPort}
+      s"""Globals.secure: ${globals.secure}
+         |Globals.scheme: ${globals.scheme}
+         |Globals.port: ${globals.port}
+         |Globals.baseDomainWithPort: ${globals.baseDomainWithPort}
+         |Globals.baseDomainNoPort: ${globals.baseDomainNoPort}
          |
          |Is first site: $isFirstSite
-         |First site hostnam: ${Globals.firstSiteHostname}
+         |First site hostnam: ${globals.firstSiteHostname}
          |
-         |OAuth login origin: ${LoginWithOpenAuthController.anyLoginOrigin}
+         |OAuth login origin: ??? ${"" /*LoginWithOpenAuthController.anyLoginOrigin */}
          |
          |Request host: ${request.host}
          |Request secure: ${request.request.secure}
          |
          |Site canonical hostname: ${canonicalHost.map(_.hostname)}
-         |Site canonical host origin: ${canonicalHost.map(Globals.originOf)}
+         |Site canonical host origin: ${canonicalHost.map(globals.originOf)}
        """.stripMargin
     Ok(response)
   }
 
 
   def areScriptsReady: Action[Unit] = ExceptionAction(empty) { _ =>
-    val numEnginesCreated = ReactRenderer.numEnginesCreated
+    val numEnginesCreated = context.nashorn.numEnginesCreated
     val numMissing = ReactRenderer.MinNumEngines - numEnginesCreated
     if (numMissing > 0)
       throwServiceUnavailable("EsE7KJ0F", o"""Only $numEnginesCreated engines created thus far,
@@ -196,16 +197,16 @@ class DebugTestController @Inject() extends mvc.Controller {
   /** Fast-forwards the server's current time, for End-to-End tests.
     */
   def playTime: Action[JsValue] = PostJsonAction(RateLimits.BrowserError, maxBytes = 100) { request =>
-    throwForbiddenIf(!Globals.mayFastForwardTime,
+    throwForbiddenIf(!globals.mayFastForwardTime,
         "EdE5AKWYQ1", "To fast-forward time, you need a wizard's wand")
     val seconds = (request.body \ "seconds").as[Int]
-    Globals.test.fastForwardTimeMillis(seconds * 1000)
+    globals.testFastForwardTimeMillis(seconds * 1000)
     Ok
   }
 
 
   def createDeadlock: Action[Unit] = ExceptionAction(empty) { _ =>
-    throwForbiddenIf(Play.isProd, "DwE5K7G4", "You didn't say the magic word")
+    throwForbiddenIf(globals.isProd, "DwE5K7G4", "You didn't say the magic word")
     debiki.DeadlockDetector.createDebugTestDeadlock()
     Ok("Deadlock created, current time: " + toIso8601(new ju.Date)) as TEXT
   }
@@ -230,12 +231,12 @@ class DebugTestController @Inject() extends mvc.Controller {
     }
 
     val futureReply: Future[Any] =
-      Globals.endToEndTestMailer.ask(
+      globals.endToEndTestMailer.ask(
           "GetEndToEndTestEmail", s"$siteId:$sentTo")(akka.util.Timeout(timeout))
 
     val result: Future[p.mvc.Result] = futureReply.flatMap({
       case futureEmail: Future[_] =>
-        val scheduler = p.libs.concurrent.Akka.system.scheduler
+        val scheduler = globals.actorSystem.scheduler
         val futureTimeout = akka.pattern.after(timeout, scheduler)(
           failed(ResultException(InternalErrorResult(
             "EdE5KSA0", "Timeout waiting for an email to get sent to that address"))))
@@ -274,7 +275,7 @@ class DebugTestController @Inject() extends mvc.Controller {
       val actions = tx.loadActionsOnPage(pageParts.pageId)
       val visits = tx.loadPageVisitTrusts(pageParts.pageId)
       val statsNow = PagePopularityCalculator.calcPopStatsNowAndThen(
-        Globals.now(), pageParts, actions, visits)
+        globals.now(), pageParts, actions, visits)
       val scoreNow = PagePopularityCalculator.calcPopularityScores(statsNow)
       (scoreInDb, scoreNow, statsNow)
     }
@@ -295,7 +296,7 @@ class DebugTestController @Inject() extends mvc.Controller {
 
 
   def showPubSubSubscribers(siteId: Option[SiteId]) = AsyncAdminGetAction { request =>
-    Globals.pubSub.debugGetSubscribers(siteId getOrElse request.siteId) map { pubSubState =>
+    globals.pubSub.debugGetSubscribers(siteId getOrElse request.siteId) map { pubSubState =>
       Ok(i"""
         |Subscribers by site and user id
         |==================================

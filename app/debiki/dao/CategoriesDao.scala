@@ -19,9 +19,8 @@ package debiki.dao
 
 import com.debiki.core._
 import com.debiki.core.Prelude._
-import debiki.DebikiHttp.throwNotFound
-import ed.server.http.throwForbiddenIf
-import debiki.TextAndHtml
+import debiki.EdHttp._
+import debiki.{TextAndHtml, TextAndHtmlMaker}
 import ed.server.auth.{Authz, ForumAuthzContext, MayMaybe}
 import java.{util => ju}
 import scala.collection.{immutable, mutable}
@@ -51,8 +50,11 @@ case class CategoryToSave(
   require(anyId isNot NoCategoryId, "EdE5LKAW0")
   def isNewCategory: Boolean = anyId.exists(_ < 0)
 
-  val aboutTopicTitle: TextAndHtml = TextAndHtml.forTitle(s"About the $name category")
-  val aboutTopicBody: TextAndHtml = TextAndHtml.forBodyOrComment(description) // COULD follow links? Only staff can create categories [WHENFOLLOW]
+  def makeAboutTopicTitle(textAndHtmlMaker: TextAndHtmlMaker): TextAndHtml =
+    textAndHtmlMaker.forTitle(s"About the $name category")
+
+  def makeAboutTopicBody(textAndHtmlMaker: TextAndHtmlMaker): TextAndHtml =
+    textAndHtmlMaker.forBodyOrComment(description) // COULD follow links? Only staff can create categories [WHENFOLLOW]
 
   def makeCategory(id: CategoryId, createdAt: ju.Date) = Category(
     id = id,
@@ -82,6 +84,7 @@ case class CreateCategoryResult(
   */
 trait CategoriesDao {
   self: SiteDao =>
+
 
   // The dao shouldn't live past the current HTTP request anyway.
   private var categoriesById: Map[CategoryId, Category] = _
@@ -201,6 +204,40 @@ trait CategoriesDao {
     }
 
     filteredPages
+  }
+
+
+  def listMaySeeTopicsInclPinned(categoryId: CategoryId, pageQuery: PageQuery,
+        includeDescendantCategories: Boolean, authzCtx: ForumAuthzContext, limit: Int)
+        : Seq[PagePathAndMeta] = {
+    // COULD instead of PagePathAndMeta use some "ListedPage" class that also includes  [7IKA2V]
+    // the popularity score, + doesn't include stuff not needed to render forum topics etc.
+    SECURITY; TESTS_MISSING  // securified
+
+    val topics: Seq[PagePathAndMeta] = loadMaySeePagesInCategory(
+      categoryId, includeDescendantCategories, authzCtx,
+      pageQuery, limit)
+
+    // If sorting by bump time, sort pinned topics first. Otherwise, don't.
+    val topicsInclPinned = pageQuery.orderOffset match {
+      case orderOffset: PageOrderOffset.ByBumpTime if orderOffset.offset.isEmpty =>
+        val pinnedTopics = loadMaySeePagesInCategory(
+          categoryId, includeDescendantCategories, authzCtx,
+          pageQuery.copy(orderOffset = PageOrderOffset.ByPinOrderLoadOnlyPinned), limit)
+        val notPinned = topics.filterNot(topic => pinnedTopics.exists(_.id == topic.id))
+        val topicsSorted = (pinnedTopics ++ notPinned) sortBy { topic =>
+          val meta = topic.meta
+          val pinnedGlobally = meta.pinWhere.contains(PinPageWhere.Globally)
+          val pinnedInThisCategory = meta.isPinned && meta.categoryId.contains(categoryId)
+          val isPinned = pinnedGlobally || pinnedInThisCategory
+          if (isPinned) topic.meta.pinOrder.get // 1..100
+          else Long.MaxValue - topic.meta.bumpedOrPublishedOrCreatedAt.getTime // much larger
+        }
+        topicsSorted
+      case _ => topics
+    }
+
+    topicsInclPinned
   }
 
 
@@ -405,13 +442,16 @@ trait CategoriesDao {
     val category = newCategoryData.makeCategory(categoryId, transaction.now.toJavaDate)
     transaction.insertCategoryMarkSectionPageStale(category)
 
+    val titleTextAndHtml = newCategoryData.makeAboutTopicTitle(textAndHtmlMaker)
+    val bodyTextAndHtml = newCategoryData.makeAboutTopicBody(textAndHtmlMaker)
+
     val (aboutPagePath, _) = createPageImpl(
         PageRole.AboutCategory, PageStatus.Published, anyCategoryId = Some(categoryId),
         anyFolder = None, anySlug = Some("about-" + newCategoryData.slug), showId = true,
-        titleSource = newCategoryData.aboutTopicTitle.text,
-        titleHtmlSanitized = newCategoryData.aboutTopicTitle.safeHtml,
-        bodySource = newCategoryData.aboutTopicBody.text,
-        bodyHtmlSanitized = newCategoryData.aboutTopicBody.safeHtml,
+        titleSource = titleTextAndHtml.text,
+        titleHtmlSanitized = titleTextAndHtml.safeHtml,
+        bodySource = bodyTextAndHtml.text,
+        bodyHtmlSanitized = bodyTextAndHtml.safeHtml,
         pinOrder = Some(ForumDao.AboutCategoryTopicPinOrder),
         pinWhere = Some(PinPageWhere.InCategory),
         byWho, spamRelReqStuff = None, transaction)

@@ -21,19 +21,20 @@ import com.debiki.core._
 import com.debiki.core.Prelude._
 import com.debiki.core.PageParts.MaxTitleLength
 import debiki._
-import debiki.DebikiHttp._
+import debiki.EdHttp._
 import debiki.ReactJson.JsStringOrNull
+import ed.server.{EdContext, EdController}
 import ed.server.http._
-import play.api._
+import javax.inject.Inject
 import play.api.libs.json._
-import play.api.mvc.{Action => _, _}
-import scala.concurrent.ExecutionContext.Implicits.global
+import play.api.mvc.ControllerComponents
 
 
 /** Edits the page title and changes settings like forum category, URL path,
   * which layout to use, <html><head><title> and description.
   */
-object PageTitleSettingsController extends mvc.Controller {
+class PageTitleSettingsController @Inject()(cc: ControllerComponents, edContext: EdContext)
+  extends EdController(cc, edContext) {
 
 
   def editTitleSaveSettings = PostJsonAction(RateLimits.EditPost, maxBytes = 2000) {
@@ -58,7 +59,7 @@ object PageTitleSettingsController extends mvc.Controller {
     }
 
     val hasManuallyEditedSlug = anySlug.exists(slug =>
-      slug != ReactRenderer.slugifyTitle(newTitle))
+      slug != context.nashorn.slugifyTitle(newTitle))
 
     if (anyLayout.isDefined) {
       throwForbiddenIf(!request.theUser.isAdmin,
@@ -117,7 +118,7 @@ object PageTitleSettingsController extends mvc.Controller {
     // but the page will still be in an okay state afterwards.
 
     // Update page title.
-    val newTextAndHtml = TextAndHtml.forTitle(newTitle)
+    val newTextAndHtml = textAndHtmlMaker.forTitle(newTitle)
 
     request.dao.editPostIfAuth(pageId = pageId, postNr = PageParts.TitleNr,
       request.who, request.spamRelatedStuff, newTextAndHtml)
@@ -183,7 +184,7 @@ object PageTitleSettingsController extends mvc.Controller {
     // The browser will update the title and the url path in the address bar.
     OkSafeJson(Json.obj(
       "newTitlePost" -> ReactJson.postToJson2(postNr = PageParts.TitleNr, pageId = pageId,
-          request.dao, includeUnapproved = true),
+          request.dao, includeUnapproved = true, nashorn = context.nashorn),
       "newAncestorsRootFirst" -> newAncestorsJson,
       "newUrlPath" -> JsStringOrNull(newPath.map(_.value))))
   }

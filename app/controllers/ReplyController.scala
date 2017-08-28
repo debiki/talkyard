@@ -19,9 +19,11 @@ package controllers
 
 import com.debiki.core._
 import debiki._
-import debiki.DebikiHttp._
+import debiki.EdHttp._
+import ed.server.{EdContext, EdController}
 import ed.server.auth.Authz
 import ed.server.http._
+import javax.inject.Inject
 import play.api._
 import play.api.libs.json.{JsObject, JsString, JsValue}
 import play.api.mvc._
@@ -30,8 +32,10 @@ import play.api.mvc._
 /** Saves replies. Lazily creates pages for embedded discussions
   * — such pages aren't created until the very first reply is posted.
   */
-object ReplyController extends mvc.Controller {
+class ReplyController @Inject()(cc: ControllerComponents, edContext: EdContext)
+  extends EdController(cc, edContext) {
 
+  import context.security.{throwNoUnless, throwIndistinguishableNotFound}
 
   def handleReply: Action[JsValue] = PostJsonAction(RateLimits.PostReply, maxBytes = MaxPostSize) {
         request: JsonPostRequest =>
@@ -80,7 +84,7 @@ object ReplyController extends mvc.Controller {
     // throwNoUnless(Authz.mayPostReply(authzContext, postType, "EdEZBXK3M2")
 
     // For now, don't follow links in replies. COULD rel=follow if all authors + editors = trusted.
-    val textAndHtml = TextAndHtml.forBodyOrComment(text, followLinks = false)
+    val textAndHtml = textAndHtmlMaker.forBodyOrComment(text, followLinks = false)
     val result = dao.insertReply(textAndHtml, pageId = pageId, replyToPostNrs,
       postType, request.who, request.spamRelatedStuff)
 
@@ -114,7 +118,7 @@ object ReplyController extends mvc.Controller {
       "EdEHDETG4K5")
 
     // Don't follow links in chat mesages — chats don't work with search engines anyway.
-    val textAndHtml = TextAndHtml.forBodyOrComment(text, followLinks = false)
+    val textAndHtml = textAndHtmlMaker.forBodyOrComment(text, followLinks = false)
     val result = dao.insertChatMessage(
       textAndHtml, pageId = pageId, request.who, request.spamRelatedStuff)
 
@@ -147,8 +151,8 @@ object ReplyController extends mvc.Controller {
 
     dao.createPage(pageRole, PageStatus.Published,
       anyCategoryId = Some(categoryId), anyFolder = slug, anySlug = folder,
-      titleTextAndHtml = TextAndHtml.forTitle(s"Embedded comments for $embeddingUrl"),
-      bodyTextAndHtml = TextAndHtml.forBodyOrComment(s"Comments for: $embeddingUrl"), showId = true,
+      titleTextAndHtml = textAndHtmlMaker.forTitle(s"Embedded comments for $embeddingUrl"),
+      bodyTextAndHtml = textAndHtmlMaker.forBodyOrComment(s"Comments for: $embeddingUrl"), showId = true,
       Who.System, request.spamRelatedStuff, altPageId = altPageId, embeddingUrl = Some(embeddingUrl))
   }
 

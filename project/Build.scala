@@ -19,6 +19,9 @@ import sbt._
 import Keys._
 import sbtbuildinfo._
 
+// COULD port to .sbt file instead. Build.scala = deprecated. Migration docs here:
+// http://www.scala-sbt.org/0.13/docs/Migrating-from-sbt-012x.html#Migrating+from+the+Build+trait
+
 object ApplicationBuild extends Build {
 
   val versionFileContents = {
@@ -50,11 +53,14 @@ object ApplicationBuild extends Build {
 
 
   val appDependencies = Seq(
+    play.sbt.PlayImport.ws,
+    play.sbt.PlayImport.ehcache, // CLEAN_UP replace with Caffeine instead (already included below)
     // Gzip filter.
     play.sbt.Play.autoImport.filters,
+    "com.typesafe.play" %% "play-json" % "2.6.3",
     // OpenAuth and OpenID etc Authentication.
-    "com.mohiva" %% "play-silhouette" % "4.0.0",
-    "com.mohiva" %% "play-silhouette-crypto-jca" % "4.0.0",
+    "com.mohiva" %% "play-silhouette" % "5.0.0",
+    "com.mohiva" %% "play-silhouette-crypto-jca" % "5.0.0",
     // ? "com.mohiva" %% "play-silhouette-password-bcrypt" % "4.0.0",
     // PostgreSQL JDBC client driver
     // see: http://mvnrepository.com/artifact/org.postgresql/postgresql/
@@ -63,7 +69,7 @@ object ApplicationBuild extends Build {
     "com.zaxxer" % "HikariCP" % "2.5.1",
     // We use both an in-the-JVM-memory cache, and Redis:
     "com.github.ben-manes.caffeine" % "caffeine" % "2.2.6",
-    "com.github.etaty" %% "rediscala" % "1.6.0",
+    "com.github.etaty" %% "rediscala" % "1.8.0",
     // Search engine, in https://mvnrepository.com.
     "org.elasticsearch" % "elasticsearch" % "5.0.0-alpha4",
     // ElasticSearch needs log4j
@@ -83,8 +89,8 @@ object ApplicationBuild extends Build {
     // java.nio.file.Files.probeContentType doesn't work in Alpine Linux + JRE 8, so use
     // Tika instead. It'll be useful anyway later if indexing PDF or MS Word docs.
     "org.apache.tika" % "tika-core" % "1.13",
-    "io.dropwizard.metrics" % "metrics-core" % "3.1.2",
-    "nl.grons" %% "metrics-scala" % "3.5.2_a2.3",
+    "io.dropwizard.metrics" % "metrics-core" % "3.2.2",
+    "nl.grons" %% "metrics-scala" % "3.5.9_a2.4",
     // JSR 305 is requried by Guava, at build time only (so specify "provided"
     // so it won't be included in the JAR), or there's this weird error: """
     //   class file '...guava-13.0.1.jar(.../LocalCache.class)' is broken
@@ -96,7 +102,7 @@ object ApplicationBuild extends Build {
     "com.google.code.findbugs" % "jsr305" % "1.3.9" % "provided",
     "org.mockito" % "mockito-all" % "1.9.0" % "test", // I use Mockito with Specs2...
     "org.scalatest" %% "scalatest" % "3.0.1" % "test", // but prefer ScalaTest
-    "org.scalatestplus.play" %% "scalatestplus-play" % "2.0.0-M1" % Test)
+    "org.scalatestplus.play" %% "scalatestplus-play" % "3.1.0" % Test)
 
 
   val main = Project(appName, file(".")).enablePlugins(play.sbt.Play, BuildInfoPlugin)
@@ -112,7 +118,7 @@ object ApplicationBuild extends Build {
   def mainSettings = List(
     version := appVersion,
     libraryDependencies ++= appDependencies,
-    scalaVersion := "2.11.8",
+    scalaVersion := "2.12.3",
 
     // Place tests in ./tests/app/ instead of ./test/, because there're other tests in
     // ./tests/, namely security/ and e2e/, and having both ./test/ and ./tests/ seems confusing.
@@ -129,8 +135,10 @@ object ApplicationBuild extends Build {
       ("Atlassian Releases" at "https://maven.atlassian.com/public/") +:
         Keys.resolvers.value,
 
-    play.sbt.routes.RoutesCompiler.autoImport.routesGenerator :=
-      play.routes.compiler.StaticRoutesGenerator,
+    // This is the default. But keep anyway, because if needed later, then won't have to try to
+    // find out in which packages the stuff is located.
+    //play.sbt.routes.RoutesCompiler.autoImport.routesGenerator :=
+    //  play.routes.compiler.InjectedRoutesGenerator,
 
     BuildInfoKeys.buildInfoPackage := "generatedcode",
     BuildInfoKeys.buildInfoOptions += BuildInfoOption.BuildTime,

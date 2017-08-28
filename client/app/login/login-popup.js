@@ -22,8 +22,8 @@ var d = { i: debiki.internal, u: debiki.v0.util };
 d.i.createLoginPopup = function(url) {
   // Based on popupManager.createPopupOpener, from popuplib.js.
 
-  var width = 450;
-  var height = 500;
+  var width = 550;
+  var height = 600;
   var coordinates = popupManager.getCenteredCoords(width, height);
   var windowName = 'LoginPopup';
 

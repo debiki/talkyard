@@ -23,10 +23,10 @@ import com.debiki.core.Prelude._
 import debiki.dao.SystemDao
 import play.{api => p}
 import scala.concurrent.duration._
-import scala.concurrent.ExecutionContext.Implicits.global
 import debiki.Globals
 import org.postgresql.util.PSQLException
 import scala.collection.mutable
+import scala.concurrent.ExecutionContext
 
 
 
@@ -35,7 +35,8 @@ import scala.collection.mutable
 object SpamCheckActor {
 
   def startNewActor(postBatchSize: Int, intervalSeconds: Int, actorSystem: ActorSystem,
-        systemDao: SystemDao): ActorRef = {
+        executionContext: ExecutionContext, systemDao: SystemDao): ActorRef = {
+    implicit val execCtx = executionContext
     val actorRef = actorSystem.actorOf(Props(
       new SpamCheckActor(postBatchSize, systemDao)), name = s"SpamCheckActor")
     actorSystem.scheduler.schedule(
@@ -56,8 +57,11 @@ class SpamCheckActor(
 
   val spamTasksDone = new java.util.concurrent.ConcurrentLinkedQueue[SpamCheckTask]
   val checkingNow = mutable.HashSet[SitePostId]()
+  def globals: Globals = systemDao.globals
 
-  def receive = {
+  private implicit val execCtx = globals.executionContext
+
+  def receive: PartialFunction[Any, Unit] = {
     case CheckForSpam =>
       try {
         deleteAlreadyCheckedPostsFromQueue()
@@ -90,7 +94,7 @@ class SpamCheckActor(
 
 
   private def checkForSpam(spamCheckTask: SpamCheckTask, stuffToSpamCheck: StuffToSpamCheck) {
-    Globals.spamChecker.detectPostSpam(spamCheckTask, stuffToSpamCheck) map { anyIsSpamReason =>
+    globals.spamChecker.detectPostSpam(spamCheckTask, stuffToSpamCheck) map { anyIsSpamReason =>
       anyIsSpamReason foreach { isSpamReason =>
         // We're not inside receive() any longer, so its try..catch is of no use now.
         try systemDao.dealWithSpam(spamCheckTask, isSpamReason)

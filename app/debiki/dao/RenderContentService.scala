@@ -17,15 +17,14 @@
 
 package debiki.dao
 
-import akka.actor.{Actor, Props, ActorRef, ActorSystem}
+import akka.actor.{Actor, ActorRef, Props}
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki.{DatabaseUtils, Globals, ReactJson, ReactRenderer}
-import debiki.Globals.{testsDoneServerGone, isOrWasTest}
 import play.{api => p}
 import scala.concurrent.duration._
-import scala.concurrent.ExecutionContext.Implicits.global
 import RenderContentService._
+import scala.concurrent.ExecutionContext
 
 
 /** Renders page contents using React.js and Nashorn. Is done in background threads
@@ -35,9 +34,9 @@ object RenderContentService {
 
   /** PERFORMANCE COULD create one thread/actor per processor instead.
     */
-  def startNewActor(actorSystem: ActorSystem, daoFactory: SiteDaoFactory): ActorRef = {
-    actorSystem.actorOf(
-      Props(new RenderContentActor(daoFactory)),
+  def startNewActor(globals: Globals, nashorn: ReactRenderer): ActorRef = {
+    globals.actorSystem.actorOf(
+      Props(new RenderContentActor(globals, nashorn)),
       name = s"RenderContentActor")
   }
 
@@ -50,7 +49,11 @@ object RenderContentService {
   * for that page. Otherwise, it continuously keeps looking for any out-of-date cached
   * content html and makes them up-to-date.
   */
-class RenderContentActor(val daoFactory: SiteDaoFactory) extends Actor {
+class RenderContentActor(
+  val globals: Globals,
+  val nashorn: ReactRenderer) extends Actor {
+
+  def execCtx: ExecutionContext = globals.executionContext
 
   override def receive: Receive = {
     case sitePageId: SitePageId =>
@@ -78,15 +81,15 @@ class RenderContentActor(val daoFactory: SiteDaoFactory) extends Actor {
         case ex: java.sql.SQLException if DatabaseUtils.isConnectionClosed(ex) =>
           p.Logger.warn("Cannot render out-of-date page, database connection closed [DwE8GK7W]")
         case throwable: Throwable =>
-          if (!isOrWasTest)
+          if (!globals.isOrWasTest)
             p.Logger.error("Error rendering one out-of-date page [DwE6GUK02]", throwable)
       }
       finally {
-        if (testsDoneServerGone) {
+        if (globals.testsDoneServerGone) {
           p.Logger.debug("Tests done, server gone. Stopping background rendering pages. [EsM5KG3]")
         }
         else {
-          context.system.scheduler.scheduleOnce(333 millis, self, RegenerateStaleHtml)
+          context.system.scheduler.scheduleOnce(333 millis, self, RegenerateStaleHtml)(execCtx)
         }
       }
   }
@@ -94,7 +97,7 @@ class RenderContentActor(val daoFactory: SiteDaoFactory) extends Actor {
 
   private def isStillOutOfDate(sitePageId: SitePageId): Boolean = {
     val (cachedVersion, currentVersion) =
-      Globals.systemDao.loadCachedPageVersion(sitePageId) getOrElse {
+      globals.systemDao.loadCachedPageVersion(sitePageId) getOrElse {
         return true
       }
     // We don't have any hash of any up-to-date data for this page, so we cannot use
@@ -102,7 +105,7 @@ class RenderContentActor(val daoFactory: SiteDaoFactory) extends Actor {
     // (We might re-render a little bit too often.)
     cachedVersion.siteVersion != currentVersion.siteVersion ||
       cachedVersion.pageVersion != currentVersion.pageVersion ||
-      cachedVersion.appVersion != Globals.applicationVersion
+      cachedVersion.appVersion != globals.applicationVersion
   }
 
 
@@ -120,9 +123,9 @@ class RenderContentActor(val daoFactory: SiteDaoFactory) extends Actor {
   private def doRerenderContentHtmlUpdateCache(sitePageId: SitePageId) {
     // COULD add Metrics that times this.
     p.Logger.debug(s"Background rendering ${sitePageId.toPrettyString} [DwM7KGE2]")
-    val dao = daoFactory.newSiteDao(sitePageId.siteId)
+    val dao = globals.siteDao(sitePageId.siteId)
     val toJsonResult = ReactJson.pageToJson(sitePageId.pageId, dao)
-    val html = ReactRenderer.renderPage(toJsonResult.jsonString) getOrElse {
+    val html = nashorn.renderPage(toJsonResult.jsonString) getOrElse {
       p.Logger.error(s"Error rendering ${sitePageId.toPrettyString} [DwE5KJG2]")
       return
     }
@@ -145,7 +148,7 @@ class RenderContentActor(val daoFactory: SiteDaoFactory) extends Actor {
 
 
   private def findAndUpdateOneOutOfDatePage() {
-    val pageIdsToRerender = Globals.systemDao.loadPageIdsToRerender(1)
+    val pageIdsToRerender = globals.systemDao.loadPageIdsToRerender(1)
     for (toRerender <- pageIdsToRerender) {
       rerenderContentHtmlUpdateCache(toRerender.sitePageId)
     }
