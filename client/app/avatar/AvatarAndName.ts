@@ -48,7 +48,7 @@ export var AvatarAndName = createComponent({
       namePart1 = r.span({ className: 'esAvtrName' }, '(Unknown author)');
     }
     var onClick = this.props.ignoreClicks ?
-        null : () => morebundle.openAboutUserDialog(user.id);
+        null : (event) => morebundle.openAboutUserDialog(user.id, event.target);
     return (
         r.span({ className: 'esAvtrName', onClick: onClick },
           avatar, namePart1, namePart2));

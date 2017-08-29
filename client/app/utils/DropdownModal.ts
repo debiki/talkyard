@@ -27,13 +27,14 @@
 //------------------------------------------------------------------------------
 
 var r = React.DOM;
-var $: JQueryStatic = debiki.internal.$;
 var keymaster: Keymaster = window['keymaster'];
 declare var ReactBootstrap: any;  // lazy loaded
 declare var Modal;                // lazy loaded
 
 
-export var ModalDropdownButton = createComponent({
+export const ModalDropdownButton = createComponent({
+  displayName: 'ModalDropdownButton',
+
   getInitialState: function () {
     return {
       isOpen: false,
@@ -45,7 +46,6 @@ export var ModalDropdownButton = createComponent({
 
   componentDidMount: function() {
     keymaster('escape', this.props.onClose);
-    $(this.refs.input).focus();
   },
 
   componentWillUnmount: function() {
@@ -102,7 +102,9 @@ export var ModalDropdownButton = createComponent({
  * current viewport. Dims everything outside the dropdown just a little bit.
  */
 // [refactor] Rename to ModalDropdownDialog
-export var DropdownModal = createComponent({
+export const DropdownModal = createComponent({
+  displayName: 'DropdownModal',
+
   getInitialState: function () {
     return {};
   },
@@ -116,42 +118,54 @@ export var DropdownModal = createComponent({
   },
 
   componentDidUpdate: function() {
-    if (!this.props.show || !this.refs.content)
-      return;
-    var rect = this.refs.content.getBoundingClientRect();
-    if (rect.bottom > $(window).height()) {
-      this.fitInWindowVertically();
-    }
-    if (rect.right > $(window).width()) {
-      this.moveLeftwardsSoFitsInWindow();
-    }
-    else if (rect.left < 0) {
-      $(this.refs.content).css('left', 0);
-    }
+    // Wait until all stuff inside has gotten its proper size. Apparently componentDidUpdate()
+    // fires before the browser has done that — because without setTimeout(_, 0), the dialog
+    // can become too small.
+    setTimeout(() => {
+      if (!this.props.show || !this.refs.content)
+        return;
+      const content = this.refs.content;
+      const rect = content.getBoundingClientRect();
+      if (rect.bottom > window.innerHeight) {
+        this.fitInWindowVertically();
+      }
+      if (rect.right > window.innerWidth) {
+        this.moveLeftwardsSoFitsInWindow();
+      }
+      else if (rect.left < 6) {
+        // max-width is 89% [4YK8ST2] so we have some pixels to spare, and looks better with
+        // to the left, so 6px not 0px here:
+        content.style.left = '6px';
+      }
+    }, 0);
   },
 
   fitInWindowVertically: function() {
-    var winHeight = $(window).height();
-    var $content = $(this.refs.content);
-    if ($content.outerHeight() > winHeight - 5) {
-      $content.css('top', 0).css('height', winHeight).css('overflow-y', 'auto');
+    const winHeight = window.innerHeight;
+    const content = this.refs.content;
+    const contentHeight = content.clientHeight;
+    if (contentHeight > winHeight - 5) {
+      // Full window height, + scrollbar.
+      Bliss.style(content, { top: 0, height: winHeight + 'px', 'overflow-y': 'auto' });
     }
     else {
-      $content.css('top', winHeight - $content.outerHeight() - 5);
+      // Place at the bottom of the window, a little bit up, so the box-shadow can be seen.
+      content.style.top = (winHeight - contentHeight - 5) + 'px';
     }
   },
 
   moveLeftwardsSoFitsInWindow: function() {
-    var winWidth = $(window).width();
-    var $content = $(this.refs.content);
-    if ($content.outerWidth() > winWidth) {
+    const winWidth = window.innerWidth;
+    const content = this.refs.content;
+    const contentWidth = content.clientWidth;
+    if (content.clientWidth > winWidth) {
       // Better show the left side, that's where any titles and texts start.
       // However, this should never happen, because max-width always leaves some
       // space outside to click to close. [4YK8ST2]
-      $content.css('left', 0);
+      content.style.left = '0px';
     }
     else {
-      $content.css('left', winWidth - $content.outerWidth());
+      content.style.left = (winWidth - contentWidth - 4) + 'px';
     }
   },
 

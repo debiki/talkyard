@@ -41,7 +41,7 @@ export var UserInvitesComponent = React.createClass<any, any>({
     this.loadInvites(this.props.user.id);
   },
 
-  componentWillReceiveProps: function(nextProps) {
+  componentWillReceiveProps: function(nextProps: any) {
     if (this.props.user.id === nextProps.user.id &&
         this.props.store.me.id === nextProps.store.me.id)
       return;
@@ -148,13 +148,13 @@ export var InviteRow = createComponent({
   onInvitedUserClick: function(event) {
     event.preventDefault();
     var invite: Invite = this.props.invite;
-    pagedialogs.getAboutUserDialog().openForUserIdOrUsername(invite.userId);
+    pagedialogs.getAboutUserDialog().openForUserIdOrUsername(invite.userId, event.target);
   },
 
   onInviterClick: function(event) {
     event.preventDefault();
     var invite: Invite = this.props.invite;
-    pagedialogs.getAboutUserDialog().openForUserIdOrUsername(invite.createdById);
+    pagedialogs.getAboutUserDialog().openForUserIdOrUsername(invite.createdById, event.target);
   },
 
   render: function() {

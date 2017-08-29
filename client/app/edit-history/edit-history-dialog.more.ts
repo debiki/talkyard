@@ -173,7 +173,7 @@ var diffHelpMessage = {
 // COULD move to some utils class? Some dupl code, see posts.ts [88MYU2]
 var UserNameLink = createComponent({
   onClick: function(event) {
-    pagedialogs.getAboutUserDialog().openForUser(this.props.user);
+    pagedialogs.getAboutUserDialog().openForUser(this.props.user, event.target);
     event.preventDefault();
     event.stopPropagation();
   },

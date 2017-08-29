@@ -49,7 +49,7 @@ export const Avatar = createComponent({
     else {
       event.stopPropagation();
       event.preventDefault();
-      morebundle.openAboutUserDialog(this.props.user.id);
+      morebundle.openAboutUserDialog(this.props.user.id, event.target);
     }
   },
 

@@ -22,6 +22,7 @@
 //------------------------------------------------------------------------------
 
 const r = React.DOM;
+const DropdownModal = utils.DropdownModal;
 const Modal = rb.Modal;
 const ModalHeader = rb.ModalHeader;
 const ModalTitle = rb.ModalTitle;
@@ -40,7 +41,9 @@ export function getAboutUserDialog() {
 }
 
 
-var AboutUserDialog = createComponent({
+const AboutUserDialog = createComponent({
+  displayName: 'AboutUserDialog',
+
   getInitialState: function () {
     return {
       isOpen: false,
@@ -50,25 +53,36 @@ var AboutUserDialog = createComponent({
     };
   },
 
-  // SECURITY (minor) SHOULD make openForPost and openForUser(IdOrUsername) work in the same
+  // SECURITY (minor) SHOULD make openForPostAt and openForUser(IdOrUsername) work in the same
   // way, so can block a guest regardless of how one clicks hen's name.  [5JKURQ0]
-  openForPost: function(post: Post) {
-    this.setState({ isOpen: true, user: null, post: post, blocks: {} });
-    this.loadUser(post.authorId);
+  openForPostAt: function(post: Post, at) {
+    this._openAndLoadUser({ user: null, post: post }, post.authorId, at);
   },
 
-  openForUserIdOrUsername: function(idOrUsername: number | string) {
-    this.setState({ isOpen: true, user: null, post: null, blocks: {} });
+  openForUserIdOrUsername: function(idOrUsername: number | string, at) {
+    this._openAndLoadUser({ user: null, post: null }, idOrUsername, at);
+  },
+
+  openForUser: function(user: BriefUser, at) {
+    // Some code below thinks this is a CompleteUser but a BriefUser is all that's needed.
+    this._openAndLoadUser({ user: user, post: null }, user.id, at);
+  },
+
+  _openAndLoadUser: function(newState, idOrUsername: number | string, at) {
+    const atRect = cloneRect(at.getBoundingClientRect());
+    atRect.left -= 90; // makes the dialog a bit more centered
+    this.setState({
+      isOpen: true,
+      blocks: {},
+      atRect: atRect,
+      windowWidth: window.innerWidth,
+      ...newState,
+    });
     this.loadUser(idOrUsername);
   },
 
-  openForUser: function(user: BriefUser) {
-    // Some code below thinks this is a CompleteUser but a BriefUser is all that's needed.
-    this.setState({ isOpen: true, user: user, post: null, blocks: {} });
-  },
-
   close: function() {
-    this.setState({ isOpen: false, user: null, post: null });
+    this.setState({ isOpen: false, user: null, post: null, atRect: null, });
   },
 
   reload: function() {
@@ -133,17 +147,22 @@ var AboutUserDialog = createComponent({
       else {
         content = AboutUser(childProps);
       }
+
+      content = r.div({}, ModalBody({}, content),
+        ModalFooter({}, Button({ onClick: this.close }, 'Close')));
     }
 
     return (
-      Modal({ show: this.state.isOpen, onHide: this.close, dialogClassName: 'esUsrDlg' },
-        ModalBody({}, content),
-        ModalFooter({}, Button({ onClick: this.close }, 'Close'))));
+      DropdownModal({ show: this.state.isOpen, onHide: this.close,
+        atRect: this.state.atRect, windowWidth: this.state.windowWidth,
+        className: 'esUsrDlg', showCloseButton: false }, content));
   }
 });
 
 
-var AboutUser = createComponent({
+const AboutUser = createComponent({
+  displayName: 'AboutUser',
+
   sendMessage: function() {
     ReactActions.writeMessage(this.props.user.id);
   },
@@ -207,6 +226,8 @@ var AboutUser = createComponent({
 
 
 var AboutGuest = createComponent({
+  displayName: 'AboutGuest',
+
   getInitialState: function() {
     return { isBlockGuestModalOpen: false };
   },
@@ -288,7 +309,9 @@ var AboutGuest = createComponent({
 });
 
 
-var BlockGuestDialog = createComponent({
+const BlockGuestDialog = createComponent({
+  displayName: 'BlockGuestDialog',
+
   setThreatLevel: function(threatLevel: ThreatLevel) {
     // Too many conf values = just bad.
     var numDays = 0; // hardcoded server side instead

@@ -1197,8 +1197,8 @@ var ReplyReceivers = createComponent({
 
 
 export var PostHeader = createComponent({
-  onUserClick: function(event) {
-    morebundle.openAboutUserDialogForAuthor(this.props.post);
+  onUserClick: function(event: Event) {
+    morebundle.openAboutUserDialogForAuthor(this.props.post, event.target);
     event.preventDefault();
     event.stopPropagation();
   },

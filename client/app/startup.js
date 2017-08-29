@@ -245,7 +245,7 @@ Bliss.delegate(document, 'click', 'a.esMention', function(event) {
   event.preventDefault();
   var href = event.target.href;
   var username = href.replace(/^.*\/-\/users\//, '');
-  debiki2.morebundle.openAboutUserDialog(username);
+  debiki2.morebundle.openAboutUserDialog(username, event.target);
 });
 
 
