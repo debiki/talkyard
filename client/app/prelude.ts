@@ -73,6 +73,10 @@ function doNextFrameOrNow(something: () => void) {
 //------------------------------------------------------------------------------
 
 
+// If in an embedded comments iframe.
+export let iframeOffsetWinSize: { top: number, height: number } | undefined;
+
+
 export var Link: any = reactCreateFactory(ReactRouter.Link);
 
 

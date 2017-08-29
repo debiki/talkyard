@@ -125,10 +125,20 @@ export const DropdownModal = createComponent({
       if (!this.props.show || !this.refs.content)
         return;
       const content = this.refs.content;
-      const rect = content.getBoundingClientRect();
-      if (rect.bottom > window.innerHeight) {
-        this.fitInWindowVertically();
+      const rect = cloneRect(content.getBoundingClientRect());
+
+      // top = distance from real win top to the top of the iframe, if in embedded comments iframe.
+      // height = real window height (not the iframe's height).
+      // (Skip any iframe left offset, for now — most websites don't have horizontal scrolling.)
+      let winOfsSize = debiki2.iframeOffsetWinSize || { top: 0, height: window.innerHeight };
+
+      rect.top -= winOfsSize.top;
+      rect.bottom -= winOfsSize.top;
+
+      if (rect.bottom > winOfsSize.height) {
+        this.fitInWindowVertically(winOfsSize);
       }
+      // (This right-&-left stuff works also in iframes.)
       if (rect.right > window.innerWidth) {
         this.moveLeftwardsSoFitsInWindow();
       }
@@ -140,17 +150,17 @@ export const DropdownModal = createComponent({
     }, 0);
   },
 
-  fitInWindowVertically: function() {
-    const winHeight = window.innerHeight;
+  fitInWindowVertically: function(winOfsSize: { top: number, height: number }) {
     const content = this.refs.content;
     const contentHeight = content.clientHeight;
-    if (contentHeight > winHeight - 5) {
+    if (contentHeight > winOfsSize.height - 5) {
       // Full window height, + scrollbar.
-      Bliss.style(content, { top: 0, height: winHeight + 'px', 'overflow-y': 'auto' });
+      Bliss.style(content, {
+          top: winOfsSize.top, height: winOfsSize.height + 'px', 'overflow-y': 'auto' });
     }
     else {
       // Place at the bottom of the window, a little bit up, so the box-shadow can be seen.
-      content.style.top = (winHeight - contentHeight - 5) + 'px';
+      content.style.top = (winOfsSize.top + winOfsSize.height - contentHeight - 5) + 'px';
     }
   },
 

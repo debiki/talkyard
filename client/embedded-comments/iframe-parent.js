@@ -27,6 +27,7 @@ var discussionId;
 var theCommentsIframe;
 var theEditorIframe;
 
+addEventListener('scroll', messageCommentsIframeNewWinTopSize);
 addEventListener('message', onMessage, false);
 
 
@@ -139,6 +140,12 @@ jQuery(function($) {   // xx
 }); */
 
 
+function messageCommentsIframeNewWinTopSize() {
+  var rect = theCommentsIframe.getBoundingClientRect();
+  sendToComments('["iframeOffsetWinSize", {' +
+      '"top":' + (-rect.top) + ', "height":' + window.innerHeight + '}]');
+}
+
 
 function onMessage(event) {
   // The message is a "[eventName, eventData]" string because IE <= 9 doesn't support
@@ -160,10 +167,9 @@ function onMessage(event) {
       console.log("iframe-parent: got 'iframeInited' message");
       var iframe = findIframeThatSent(event);
       setIframeBaseAddress(iframe);
-      /*if (iframe === theCommentsIframe) {
-        var edPageId = eventData.edPageId;
-        createEditorInIframe(edPageId);
-      } */
+      if (iframe === theCommentsIframe) {
+        messageCommentsIframeNewWinTopSize();
+      }
       break;
     case 'setIframeSize':
       var iframe = findIframeThatSent(event);
@@ -271,14 +277,16 @@ function findIframeThatSent(event) {
 
 
 function sendToComments(message) {
-  var commentsWindow = document.getElementById('ed-embedded-comments').contentWindow;
-  commentsWindow.postMessage(message, '*');
+  if (theCommentsIframe) {
+    theCommentsIframe.contentWindow.postMessage(message, '*');
+  }
 }
 
 
 function sendToEditor(message) {
-  var editorWindow = document.getElementById('ed-embedded-editor').contentWindow;
-  editorWindow.postMessage(message, '*');
+  if (theEditorIframe) {
+    theEditorIframe.contentWindow.postMessage(message, '*');
+  }
 }
 
 
