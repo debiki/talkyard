@@ -212,7 +212,7 @@ html.es-watchbar-open
   margin-left: 15px;
   position: relative;
   top: 4px;
-  font-size: 13px;
+  font-size: $postFontSize;
   padding: 6px 11px 6px 8px;
   &.icon-reply:before
     margin-right: 4px;
@@ -506,7 +506,7 @@ html.esSidebarsOverlayPage
   .esOpenWatchbarBtn_text,
   .esOpenCtxbarBtn_numOnline
     max-width: none; // otherwise a line wrap might make the topbar twice as tall
-    font-size: 13px;
+    font-size: $postFontSize;
     color: hsl(0, 0%, 30%);
 
   .esOpenWatchbarBtn_text,
@@ -538,10 +538,6 @@ html.esSidebarsOverlayPage
 
     .esTopbar_ancestors .btn
       font-size: 14px;
-      @media (max-width: 1000px)
-        font-size: 13.5px;
-      @media (max-width: 850px)
-        font-size: 13px;
 
     .dw-login
       margin-top: 0 !important;

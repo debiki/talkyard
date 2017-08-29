@@ -54,7 +54,7 @@
 
 .dw-depth-1 > .dw-p > .dw-p-bd
   padding-left: 1px;  // looks more aligned with .dw-p-hd for some reason
-  padding-top: 8px;
+  padding-top: 9px;
 
 // Place debug-reading-progress outline above the .dw-p.
 .dw-p-hd
@@ -371,7 +371,7 @@ html:not(.mouse) .dw-rr
   color: hsl($heartAndErrorHue, 60%, 52%);
   font-weight: bold;
   font-style: italic;
-  font-size: 13px;
+  font-size: $postFontSize;
   letter-spacing: 0.2px;
   word-spacing: 0.5px;
   &:before // the wrong/disagree icon
@@ -396,14 +396,15 @@ html:not(.mouse) .dw-rr
 // dw-lg-t-spl
 
 
-.esP_By,
+.esP_By
+  margin-right: 12px;
 .dw-p-hd .dw-ago,
 .esP_viewHist
-  margin-right: 7px;
+  margin-right: 10px;
 
 .esP_By_F,
 .esP_By_U
-  font-size: 13px;
+  font-size: $postFontSize;
 
 .esP_By_F
   font-weight: bold;
@@ -417,7 +418,7 @@ html:not(.mouse) .dw-rr
   font-weight: normal;
   color: hsl(0, 0%, 11%);
   &:not(:first-child)
-    margin-left: 4px;
+    margin-left: 5px;
 
 .esP_By_U_at
   padding-right: 1px;
@@ -512,7 +513,7 @@ html:not(.mouse) .dw-rr
   border: none
   background-color: transparent
   opacity: 0.78
-  font-size: 13px;
+  font-size: $postFontSize;
   margin: 6px 0 0;
 
 .dw-ar-p-hd:hover
@@ -777,7 +778,7 @@ html.touch .dw-p-mark-click
   margin: 0 8px 0 0;
   background: transparent;
   color: hsl(0, 0%, 72%);
-  font-size: 13px;
+  font-size: $postFontSize;
   -webkit-user-select: none;
   -moz-user-select: none;
   -khtml-user-select: none;

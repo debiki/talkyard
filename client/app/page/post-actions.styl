@@ -21,7 +21,7 @@
 
 
 .dw-as
-  margin: -9px 0 2px;
+  margin: -16px 0 34px;
   // Old comment: Use padding-top not margin-top here, or there'll be a tiny space between
   // the post and the .dw-as, which triggers a certain $thread.mouseleave() in
   // debiki.js which, for inline actions, hides the action menu — just before
@@ -33,7 +33,7 @@
   .dw-a:before,
   .dw-a:after
     // Dim icons; they are otherwise eye catching blubs of colors.
-    opacity: 0.4
+    opacity: 0.43
 
 .dw-depth-0 > .dw-p-as
   // Always show actions for the article / root post.
@@ -61,9 +61,11 @@
     margin-left: 10px;
 
 .DW.DW .dw-ar-t > .dw-p-as > .dw-a-reply
-  padding: 8px 17px 8px 13px !important;
+  padding: 7px 17px 7px 13px !important;
   color: white;
   background-color: hsl($uiHue, 80%, 54%);
+  position: relative;
+  top: 1px;  // v-align with Close/Reopen text
   &:hover
     color: white;
     background-color: hsl($uiHue, 80%, 62%);
@@ -71,7 +73,7 @@
 .dw-a
   text-decoration: none !important
   color: #3872ab
-  font-size: 13px
+  font-size: 14px
   float: right
 
 .dw-a-disabled
@@ -107,6 +109,7 @@
     color: hsl(0, 0%, 51%);
     &:before
       opacity: 0.47;
+      margin-right: 5px;
 
   &.dw-a-solve,
   &.dw-a-solved
@@ -148,7 +151,7 @@
   &.dw-a-votes
     padding-left: 0;
     padding-right: 1px;
-    padding-bottom: 0;
+    padding-bottom: 6px;
     &:after
       font-size: 24px;
       //border-left: 1px solid hsl(0, 0, 64%); — not needed? looks better without
@@ -162,13 +165,15 @@
       padding-top: 0;
 
   &.dw-a-link
-    padding: 8px 9px 8px 7px;
+    padding: 8px 9px 13px 7px;
     font-size: 14px;
 
+  &.dw-a-link:before
+    opacity: 0.8;
+  &.dw-a-edit:before
+    opacity: 0.7;
   &.dw-a-link,
   &.dw-a-edit
-    &:before
-      opacity: 0.7;
     &:hover:before
       opacity: 1;
 
@@ -194,10 +199,10 @@
 
   &.dw-my-vote:before,
   &.dw-my-vote:after
-    opacity: 0.84;
+    opacity: 0.85;
 
 .esDwnvts .esExplDrp_entry_title
-  font-size: 13px;
+  font-size: $postFontSize;
   margin-bottom: 3px;
 
 .dw-ar-t > .dw-p-as
@@ -216,7 +221,7 @@
 
 .esDropModal .dw-a,
 .DW .dw-ar-t > .dw-p-as .dw-a
-  color: hsl(0, 0%, 20%);
+  color: hsl(0, 0%, 47%);
 
 
 html:not(.mouse) .dw-t > .dw-p-as .dw-a
@@ -237,17 +242,17 @@ html:not(.mouse) .dw-t > .dw-p-as .dw-a
 .DW.DW .dw-p-as .dw-a-reply
   font-weight: bold;
   background: hsl(207, 0%, 95%);
-  color: hsl(0, 0%, 15%);
+  color: hsl(0, 0%, 18%);
   padding: 9px 12px 9px 8px;
   margin-left: 6px;
   &:before
-    opacity: 0.63; // or icon too not-opaque
+    opacity: 0.6; // or icon too not-opaque
 
 // Highlight the heart and other vote symbols if the user has voted Like or whatever.
 .dw-my-vote:before,
 .dw-my-vote:after
   color: hsl($heartAndErrorHue, 100%, 60%);
-  font-size: 110%;
+  font-size: 115%;
 
 .esDwnvts
   @media (min-width: 500px)
