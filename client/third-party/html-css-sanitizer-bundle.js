@@ -4650,6 +4650,9 @@ var html = (function(html4) {
       if (attribName === 'target' && value === '_blank') { // KajMagnus hack
         // Allow (don't clear value).
       }
+      else if (attribName.substr(0, 5) === 'data-') { // KajMagnus hack
+        // Allow data- attrs (don't clear). SECURITY SHOULD allow for custom html pages only? [5JMUKWA1]
+      }
       else if (atype !== null) {
         switch (atype) {
           case html4.atype['NONE']: break;
@@ -4870,6 +4873,11 @@ function googleCajaSanitizeHtml(htmlTextUnsafe, allowClassAndIdAttr,
       }
       return '';
     }
+
+    // Google's Like button class matches a forbidden pattern below (namely [a-z]?-).
+    if (token === 'g-plusone')
+      return token;
+
     // These are for ED's own classes and ids.
     if (/^dw-/.test(token)) return '';  // old
     if (/^ed-/.test(token)) return '';   // old
@@ -4877,7 +4885,7 @@ function googleCajaSanitizeHtml(htmlTextUnsafe, allowClassAndIdAttr,
     if (/^es[A-Z]/.test(token)) return '';   // old
     if (/^the[A-Z]/.test(token)) return '';  // old (for ids)
     if (/^[a-z]?-/.test(token)) return '';   // old
-    if (/^[a-oq-z]?_/.test(token)) return ''; // current: s_, t_, and e_ will be the magic prefix.
+    if (/^[a-oq-z]?_/.test(token)) return ''; // current: s_, t_, and e_ are magic prefixes. (2PUKRST0)
                                               // but allow p_, for "Public API".
     return token;
   }
@@ -4912,8 +4920,16 @@ function googleCajaSanitizeHtml(htmlTextUnsafe, allowClassAndIdAttr,
       // Allow <head>, just so that ... (4JDKTF20)
       'head'],
 
+    // Some Like-button data- attrs are hardcoded here, because currently allowing 'data-*'
+    // doesn't work, not supported by sanitize-html (https://github.com/punkave/sanitize-html/issues/4)
+    // Currently (Aug 30 2017) *all* data- attrs here are FB/Twitter/Google Like button stuff.
     allowedAttributes: {
-      a: ['href', 'name', 'target', 'rel'],
+      a: ['href', 'name', 'target', 'rel',
+        // Twitter Like button:
+        'data-show-count', 'data-size'],
+      // All these data- are for FB's like button. Google uses data-size too.
+      div: ['data-action', 'data-colorscheme', 'data-href', 'data-kid-directed-site',
+        'data-layout', 'data-ref', 'data-share', 'data-show-faces', 'data-size', 'data-width'],
       img: ['width', 'height', 'src'],
       video: ['width', 'height', 'src', 'controls', 'autoplay', 'loop'],
       source: ['src', 'type'],
@@ -4925,9 +4941,12 @@ function googleCajaSanitizeHtml(htmlTextUnsafe, allowClassAndIdAttr,
         // skip?: formtarget
       textarea: ['name'],
       button: ['type'],
-      '*': ['id', 'class'] // but not style=.., because of clickjacking. (Caja seems to remove
+      // All elems:
+      // Don't allow style=.., because of clickjacking. (Caja seems to remove
       // Javascript from inside CSS (e.g. url(javascript:...)) and position:fixed, however
       // Caja allows position:absolute so clickjacking would still be a little bit possbible.)
+      // SECURITY SHOULD maybe allow 'class' only on custom html pages, orig post? [5JMUKWA1]
+      '*': ['id', 'class']
     },
 
     // allowedClasses: { elem: [...classes...] }
@@ -4946,9 +4965,12 @@ function googleCajaSanitizeHtml(htmlTextUnsafe, allowClassAndIdAttr,
   }
   // SECURITY SHOULD remove classes & ids like 's_...' and 't_...' — that's internal stuff, and
   // could be used to make the post look weird. (Fairly harmless though.)
+  // What? But I remove that already (2PUKRST0)
   // See: https://github.com/punkave/sanitize-html#transformations
 
+  // Sanitize with https://github.com/punkave/sanitize-html:
   var sanitized = sanitizeHtml(htmlTextUnsafe, sanitizeHtmlConfig);
+  // Then with Google Caja:
   var superSanitized = html_sanitize(sanitized, uriPolicy, classAndIdPolicy, dataPolicy);
   return superSanitized;
 }

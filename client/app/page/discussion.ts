@@ -29,6 +29,7 @@
 /// <reference path="../login/login-if-needed.ts" />
 /// <reference path="post-actions.ts" />
 /// <reference path="chat.ts" />
+/// <reference path="like-buttons.ts" />
 /// <reference path="../more-bundle-not-yet-loaded.ts" />
 
 //------------------------------------------------------------------------------
@@ -747,6 +748,9 @@ var RootPostAndComments = createComponent({
 
     const flatRepliesClass = repliesAreFlat ? ' dw-chat' : ''; // rename dw-chat... to dw-flat?
 
+    const socialButtons = !store.settings.showSocialButtons ? null :
+        SocialButtons(store.settings);
+
     let postActions = post_shallRenderAsHidden(rootPost) ? null :
          PostActions({ store: this.props, post: rootPost });
 
@@ -766,7 +770,9 @@ var RootPostAndComments = createComponent({
         deletedOrUnapprovedMessage,
         body,
         solvedBy,
+        socialButtons,
         postActions,
+        r.div({ style: { clear: 'both' }}),
         debiki2.page.Metabar(),
         anyHorizontalArrowToChildren,
         // try to remove the dw-single-and-multireplies div + the dw-singlereplies class,

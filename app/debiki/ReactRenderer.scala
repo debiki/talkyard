@@ -379,7 +379,7 @@ class ReactRenderer(globals: Globals) extends com.debiki.core.CommonMarkRenderer
         |}
         |""")
 
-    val min = ".min"  // change to "" if need to debug
+    val min = Globals.isProd ? ".min" | ""
 
     var javascriptStream: jio.InputStream = null
     try {

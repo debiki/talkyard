@@ -568,6 +568,8 @@ interface SettingsVisibleClientSide {
   showTopicFilterButton?: boolean;      // default: true
   showTopicTypes?: boolean;             // default: true
   selectTopicType?: boolean;            // default: true
+  showSocialButtons?: boolean;          // default: undefined —> false
+  facebookAppId?: string;               // default: undefined —> no FB insight statistics
 }
 
 

@@ -1,0 +1,6 @@
+#!/bin/bash
+
+# Restart gulp too, because not until restarted will it notice if client/third-party/
+# Javascript has been modified.
+# And restart Nginx too (the 'web' container), so it'll notice if config changed.
+s/d kill web app gulp ; s/d start web app gulp ; s/d-logs -f --tail 0

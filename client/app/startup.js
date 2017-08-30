@@ -146,6 +146,9 @@ function renderDiscussionPage() {
   }
 
   document.documentElement.classList.add(ReactStartedClass);
+
+  debiki2.page.activateLikeButtons(debiki2.ReactStore.allData().settings);
+
   setTimeout(runNextStep, 60);
 
 
