@@ -279,7 +279,7 @@ describe("new member, allow, approve:", () => {
     majasBrowser.go(topics.oldTopicUrl);
     majasBrowser.complex.loginWithPasswordViaTopbar(maja);
     majasBrowser.complex.replyToOrigPost("My more replies");
-    majasBrowser.complex.replyToOrigPost("My even more replies");
+    majasBrowser.complex.replyToOrigPost("My even more replies", 'BottomButton');
     majasBrowser.topic.assertPostNotPendingApproval(5);
     majasBrowser.topic.assertPostNotPendingApproval(6);
   });

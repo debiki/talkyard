@@ -1233,8 +1233,10 @@ function pagesFor(browser) {
         return browser.getText('.dw-ar-p-hd .esP_By_U');
       },
 
-      clickReplyToOrigPost: function() {
-        api.topic.clickPostActionButton('.dw-ar-p + .esPA .dw-a-reply');
+      clickReplyToOrigPost: function(whichButton) {
+        const selector = whichButton === 'BottomButton' ?
+            '.s_APAs_OPRB' : '.dw-ar-p + .esPA .dw-a-reply';
+        api.topic.clickPostActionButton(selector);
       },
 
       clickReplyToPostNr: function(postNr: PostNr) {
@@ -1946,8 +1948,8 @@ function pagesFor(browser) {
         browser.topic.assertPostTextMatches(postNr, newText);
       },
 
-      replyToOrigPost: function(text: string) {
-        api.topic.clickReplyToOrigPost();
+      replyToOrigPost: function(text: string, whichButton?: string) {
+        api.topic.clickReplyToOrigPost(whichButton);
         api.editor.editText(text);
         api.editor.save();
       },

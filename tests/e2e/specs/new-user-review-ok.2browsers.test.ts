@@ -225,8 +225,8 @@ describe("new user, review, ok:", () => {
 
   it("... and posts three replies to the orig post", () => {
     guestsBrowser.complex.replyToOrigPost("I'm a guest, becomes post nr 6.");
-    guestsBrowser.complex.replyToOrigPost("I'm a guest, my 2nd reply, post nr 7.");
-    guestsBrowser.complex.replyToOrigPost("I'm a guest, my 3rd reply, post nr 8.");
+    guestsBrowser.complex.replyToOrigPost("I'm a guest, my 2nd reply, post nr 7.", 'BottomButton');
+    guestsBrowser.complex.replyToOrigPost("I'm a guest, my 3rd reply, post nr 8.", 'BottomButton');
     guestsBrowser.topic.assertPostNotPendingApproval(6);
     guestsBrowser.topic.assertPostNotPendingApproval(7);
     guestsBrowser.topic.assertPostNotPendingApproval(8);
