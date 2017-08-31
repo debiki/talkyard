@@ -95,11 +95,13 @@ describe("summary emails", () => {
 
   it("Michael signs up, inherits settings from the Everyone group", () => {
     michaelsBrowser.go(idAddress.origin);
+    michaelsBrowser.disableRateLimits();
     michaelsBrowser.complex.signUpAsMemberViaTopbar(michael);
   });
 
   it("Trillian logs in", () => {
     trilliansBrowser.go(idAddress.origin);
+    trilliansBrowser.disableRateLimits();
     trilliansBrowser.assertPageTitleMatches(forumTitle);
     trilliansBrowser.complex.loginWithPasswordViaTopbar(trillian);
   });

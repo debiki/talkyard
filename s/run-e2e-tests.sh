@@ -38,7 +38,9 @@ function runEndToEndTest {
       # Later: use --localHostname=e2e-test-manual or just e2e-test, instead of -20, so won't overwrite test site nr 20.
       # (But first add a cname entry for -manual.)
       cmd_with_debug="$cmd_with_debug --deleteOldSite --localHostname=e2e-test-20 --nt -d"
-      if [ "$EUID" -ne 0 ]; then
+      # We cannot use "$EUID" -ne 0 to find out if the user is originally root, because
+      # root first su:s to another user. Check the --is-root command line flag instead.
+      if [ -z "$is_root" ]; then
         echo "  $cmd_with_debug"
       else
         echo "  su $my_username -c '$cmd_with_debug'"
@@ -57,7 +59,12 @@ function runEndToEndTest {
   fi
 }
 
-if [ "$1" = "--all" ]; then
+if [ "$1" = '--is-root' ]; then
+  is_root=yes
+  shift
+fi
+
+if [ "$1" = '--all' ]; then
   run_all=yes
   shift
 fi

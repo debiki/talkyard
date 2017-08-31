@@ -104,7 +104,7 @@ fi
 # Run e2e tests, but not as root.
 # To stop these e2e tests, you need to 'sudo -i' in another shell, then 'ps aux | grep e2e'
 # and then kill the right stuff.
-su $my_username -c "s/run-e2e-tests.sh --prod $@ ; echo \$? > ./target/e2e-tests-exit-code"
+su $my_username -c "s/run-e2e-tests.sh --is-root --prod $@ ; echo \$? > ./target/e2e-tests-exit-code"
 
 e2e_tests_exit_code=`cat ./target/e2e-tests-exit-code`
 
