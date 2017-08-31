@@ -26,20 +26,17 @@ import javax.inject.Inject
 import play.api._
 import play.api.libs.json.{JsNull, JsString, Json}
 import play.api.mvc._
+import LoginController._
 
 
 /** Logs in and out.
   */
-class LoginController(cc: ControllerComponents, edContext: EdContext)
+class LoginController @Inject()(cc: ControllerComponents, edContext: EdContext)
   extends EdController(cc, edContext) {
 
   import context.globals
   import context.security.DiscardingSessionCookie
 
-
-  val AsSuperadmin = "superadmin"
-  val AsAdmin = "admin"
-  val AsStaff = "staff"
 
   def showLoginPage(as: Option[String], to: Option[String]) = GetActionIsLogin { apiReq =>
     // `thenGoTo` must be an URL relative the same origin.
@@ -153,6 +150,10 @@ class LoginController(cc: ControllerComponents, edContext: EdContext)
 
 
 object LoginController {
+
+  val AsSuperadmin = "superadmin"
+  val AsAdmin = "admin"
+  val AsStaff = "staff"
 
   /** Tests if we're currently logging in as the very first user — s/he will
     * be made admin if s/he has the correct email address.

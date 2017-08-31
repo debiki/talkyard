@@ -29,7 +29,7 @@
 /// <reference path="../login/login-if-needed.ts" />
 /// <reference path="post-actions.ts" />
 /// <reference path="chat.ts" />
-/// <reference path="like-buttons.ts" />
+/// <reference path="social-buttons.ts" />
 /// <reference path="../more-bundle-not-yet-loaded.ts" />
 
 //------------------------------------------------------------------------------

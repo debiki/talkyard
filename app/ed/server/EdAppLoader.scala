@@ -35,12 +35,12 @@ class EdAppComponents(appLoaderContext: ApplicationLoader.Context)
 
   // Could instead extend HttpFiltersComponents, but it adds a weird localhost-only filter.
   SECURITY // it adds some maybe-useful security related filters too, investigate if should use them.
-  override def httpFilters: Seq[EssentialFilter] = Nil
+  override def httpFilters: Seq[EssentialFilter] = Seq(EdFilters.makeGzipFilter(materializer))
 
   val globals = new Globals(appLoaderContext, executionContext, wsClient, actorSystem)
   val security = new ed.server.security.EdSecurity(globals)
   val rateLimiter = new RateLimiter(globals, security)
-  val safeActions = new SafeActions(globals, security)
+  val safeActions = new SafeActions(globals, security, controllerComponents.parsers)
   val plainApiActions = new PlainApiActions(safeActions, globals, security, rateLimiter)
 
   val nashorn = new ReactRenderer(globals)
@@ -56,7 +56,7 @@ class EdAppComponents(appLoaderContext: ApplicationLoader.Context)
 
   applicationLifecycle.addStopHook { () =>
     Future.successful {
-      globals.onServerShutdown()
+      globals.stopStuff()
     }
   }
 
@@ -65,13 +65,14 @@ class EdAppComponents(appLoaderContext: ApplicationLoader.Context)
   private def cc = controllerComponents
 
   val loginController = new _root_.controllers.LoginController(cc, context)
+  val loginWithOpenAuthController = new _root_.controllers.LoginWithOpenAuthController(cc, context)
 
   lazy val router: Router = new _root_.router.Routes(
     httpErrorHandler,
     loginController,
     new _root_.controllers.LoginAsGuestController(cc, context),
     new _root_.controllers.LoginWithPasswordController(cc, context),
-    new _root_.controllers.LoginWithOpenAuthController(cc, context),
+    loginWithOpenAuthController,
     new _root_.controllers.ImpersonateController(cc, context, loginController),
     new ed.server.pubsub.SubscriberController(cc, context),
     new _root_.controllers.EmbeddedTopicsController(cc, context),
@@ -100,7 +101,7 @@ class EdAppComponents(appLoaderContext: ApplicationLoader.Context)
     new _root_.controllers.UploadsController(cc, context),
     new _root_.controllers.CloseCollapseController(cc, context),
     new _root_.controllers.ImportExportController(cc, context),
-    new _root_.controllers.DebugTestController(cc, context),
+    new _root_.controllers.DebugTestController(cc, context, loginWithOpenAuthController),
     new _root_.controllers.SiteAssetBundlesController(cc, context),
     new _root_.controllers.TagsController(cc, context),
     new _root_.controllers.SuperAdminController(cc, context),

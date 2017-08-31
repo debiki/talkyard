@@ -249,9 +249,8 @@ class EditController @Inject()(cc: ControllerComponents, edContext: EdContext)
 object EditController {
 
   val EmptyPostErrorMessage =
-    o"""Cannot save empty posts. If you want to delete this post, please click
-        More just below the post, and then Delete. However only the post author
-        and staff members can do this."""
+    o"""Cannot save empty posts. If you want to delete this post, please use
+        the buttons below the post."""
 
   val ReplyGuidelines = i"""
     |<p>Be kind to the others.

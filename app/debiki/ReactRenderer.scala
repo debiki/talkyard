@@ -274,7 +274,7 @@ class ReactRenderer(globals: Globals) extends com.debiki.core.CommonMarkRenderer
   }
 
 
-  /*
+  CLEAN_UP /* delete all server side pwd strength stuff?
   def calcPasswordStrength(password: String, username: String, fullName: Option[String],
         email: String)
         : PasswordStrength = {
@@ -379,7 +379,9 @@ class ReactRenderer(globals: Globals) extends com.debiki.core.CommonMarkRenderer
         |}
         |""")
 
-    val min = Globals.isProd ? ".min" | ""
+    // Use .min when testing, because when running tests for a prod build, the non-.min files
+    // have been deleted already (to make the Docker image smaller).
+    val min = globals.isDev ? "" | ".min"
 
     var javascriptStream: jio.InputStream = null
     try {

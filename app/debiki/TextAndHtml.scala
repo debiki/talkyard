@@ -24,6 +24,7 @@ import org.scalactic.{ErrorMessage, Or}
 import play.api.libs.json.JsArray
 import scala.collection.immutable
 import scala.util.matching.Regex
+import TextAndHtmlMaker._
 
 
 
@@ -64,6 +65,13 @@ sealed trait TextAndHtml {
 }
 
 
+object TextAndHtmlMaker {
+
+  val Ipv4AddressRegex: Regex = """[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+""".r
+
+}
+
+
 /** Thread safe.
   */
 class TextAndHtmlMaker(nashorn: ReactRenderer) {
@@ -96,8 +104,6 @@ class TextAndHtmlMaker(nashorn: ReactRenderer) {
         allowClassIdDataAttrs = allowClassIdDataAttrs)
     }
   }
-
-  val Ipv4AddressRegex: Regex = """[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+""".r
 
 
   def withCompletedFormData(formInputs: String): TextAndHtml Or ErrorMessage = {
@@ -133,19 +139,17 @@ class TextAndHtmlMaker(nashorn: ReactRenderer) {
     text: String,
     isTitle: Boolean,
     followLinks: Boolean,
-    allowClassIdDataAttrs: Boolean)(
-    implicit
-    commonMarkRenderer: CommonMarkRenderer = nashorn): TextAndHtml = {
+    allowClassIdDataAttrs: Boolean): TextAndHtml = {
 
     TESTS_MISSING
     if (isTitle) {
-      val safeHtml = commonMarkRenderer.sanitizeHtml(text, followLinks = false)
+      val safeHtml = nashorn.sanitizeHtml(text, followLinks = false)
       new TextAndHtmlImpl(text, safeHtml, links = Nil, linkDomains = Set.empty,
         linkAddresses = Nil, isTitle = true, followLinks = followLinks,
         allowClassIdDataAttrs = allowClassIdDataAttrs)
     }
     else {
-      val safeHtml = commonMarkRenderer.renderAndSanitizeCommonMark(
+      val safeHtml = nashorn.renderAndSanitizeCommonMark(
         text, allowClassIdDataAttrs = allowClassIdDataAttrs, followLinks = followLinks)
       val links = findLinks(safeHtml)
       var linkDomains = Set[String]()

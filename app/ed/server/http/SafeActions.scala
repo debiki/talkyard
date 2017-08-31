@@ -35,7 +35,7 @@ import scala.concurrent.{ExecutionContext, Future}
  * require a valid xsrf token for POST requests.
  * Also understand Debiki's internal throwBadReq etcetera functions.
  */
-class SafeActions(val globals: Globals, val security: EdSecurity) {
+class SafeActions(val globals: Globals, val security: EdSecurity, parsers: PlayBodyParsers) {
 
   import EdHttp._
 
@@ -75,7 +75,7 @@ class SafeActions(val globals: Globals, val security: EdSecurity) {
    */
   object ExceptionAction extends ActionBuilder[Request, AnyContent] {
 
-    val parser: BodyParser[AnyContent] = BodyParsers.parse.anyContent  // [play26ask]
+    val parser: BodyParser[AnyContent] = parsers.anyContent  // [play26ask]
 
     override implicit protected def executionContext: ExecutionContext =
       globals.executionContext

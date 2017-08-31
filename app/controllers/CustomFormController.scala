@@ -23,7 +23,6 @@ import debiki._
 import debiki.EdHttp._
 import ed.server._
 import ed.server.auth.Authz
-import ed.server.http._
 import javax.inject.Inject
 import play.api.libs.json.{JsArray, JsValue, Json}
 import play.api.mvc._

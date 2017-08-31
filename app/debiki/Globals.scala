@@ -83,11 +83,6 @@ object Globals {
 
 
 
-/** App server startup and shutdown hooks, plus global stuff like
-  * the systemDao and tenantDao:s and an email actor.
-  *
-  * It's a class, so it can be tweaked during unit testing.
-  */
 class Globals(
   private val appLoaderContext: p.ApplicationLoader.Context,
   val executionContext: scala.concurrent.ExecutionContext,
@@ -313,6 +308,7 @@ class Globals(
     lookupSiteOrThrow(request.secure, request.host, request.uri)
   }
 
+
   def lookupSiteOrThrow(url: String): SiteBrief = {
     val (scheme, separatorHostPathQuery) = url.span(_ != ':')
     val secure = scheme == "https"
@@ -321,8 +317,8 @@ class Globals(
     lookupSiteOrThrow(secure, host = host, pathAndQuery)
   }
 
-  def lookupSiteOrThrow(secure: Boolean, host: String, pathAndQuery: String): SiteBrief = {
 
+  def lookupSiteOrThrow(secure: Boolean, host: String, pathAndQuery: String): SiteBrief = {
     // Play supports one HTTP and one HTTPS port only, so it makes little sense
     // to include any port number when looking up a site.
     val hostname = if (host contains ':') host.span(_ != ':')._1 else host
@@ -383,6 +379,7 @@ class Globals(
     site.brief
   }
 
+
   def startStuff() {
     p.Logger.info("Starting... [EsM200HELLO]")
     isOrWasTest // initialise it now
@@ -431,7 +428,7 @@ class Globals(
 
 
   private def tryCreateStateUntilKilled() {
-    p.Logger.info("Creating state.... [EdMCREATESTATE")
+    p.Logger.info("Creating state.... [EdMCREATESTATE]")
     _state = Bad(None)
     var firsAttempt = true
 
@@ -505,7 +502,7 @@ class Globals(
   }
 
 
-  def onServerShutdown() {
+  def stopStuff() {
     // Play.start() first calls Play.stop(), so:
     if (_state eq null)
       return

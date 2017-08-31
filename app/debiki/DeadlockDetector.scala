@@ -31,7 +31,7 @@ import scala.collection.mutable
   */
 object DeadlockDetector {
 
-  private val IntervalSeconds = 60 // if (Play.isProd) 60 else 10
+  private val IntervalSeconds = if (Globals.isProd) 60 else 10
 
   private val threadMxBean = ManagementFactory.getThreadMXBean
 
@@ -58,7 +58,7 @@ object DeadlockDetector {
   private def detectAndLogDeadlocks() {
     val threadIds: Array[Long] = threadMxBean.findDeadlockedThreads()
     if ((threadIds eq null) || threadIds.isEmpty) {
-      if (oldDeadlockedThreadIds.size > 0) {
+      if (oldDeadlockedThreadIds.nonEmpty) {
         p.Logger.info("All deadlocks gone [DwEDEADLOCK0]")
         oldDeadlockedThreadIds.clear()
       }

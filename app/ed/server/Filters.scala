@@ -19,18 +19,18 @@ package ed.server
 
 import akka.stream.Materializer
 import com.debiki.core._
-import javax.inject.Inject
-import play.api.http.DefaultHttpFilters
 import play.filters.gzip.{GzipFilter, GzipFilterConfig}
 
 
 
 /** Tells Play Framework to gzip responses, but not movies/images/music.
   *
-  * Docs: https://www.playframework.com/documentation/2.5.x/GzipEncoding
+  * Docs: https://www.playframework.com/documentation/2.6.x/GzipEncoding — but that
+  * doesn't work whith compile time dependency injection (with the config copied
+  * from the docs). Instead, seems I need to create my own filter, as done here. (?)
   */
-class Filters @Inject() (materializer: Materializer) extends DefaultHttpFilters(
-  new GzipFilter (
+object EdFilters {
+  def makeGzipFilter(materializer: Materializer) = new GzipFilter (
     new GzipFilterConfig(
       shouldGzip = (request, response) => {
         // Play Framework (v2.4 at least) won't call this function for responses that already
@@ -47,5 +47,5 @@ class Filters @Inject() (materializer: Materializer) extends DefaultHttpFilters(
         val isMusic = uri.endsWith(".mp3")
         COULD // check many more suffixes
         !isImage && !isMovie && !isMusic
-      }))(materializer))
-
+      }))(materializer)
+}

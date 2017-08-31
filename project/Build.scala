@@ -54,7 +54,6 @@ object ApplicationBuild extends Build {
 
   val appDependencies = Seq(
     play.sbt.PlayImport.ws,
-    play.sbt.PlayImport.ehcache, // CLEAN_UP replace with Caffeine instead (already included below)
     // Gzip filter.
     play.sbt.Play.autoImport.filters,
     "com.typesafe.play" %% "play-json" % "2.6.3",

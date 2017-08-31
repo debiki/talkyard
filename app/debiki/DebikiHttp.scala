@@ -19,6 +19,7 @@ package debiki
 
 import com.debiki.core._
 import com.debiki.core.Prelude._
+import controllers.{LoginController, routes}
 import ed.server.http.DebikiRequest
 import java.{net => jn}
 import play.api.libs.json.JsLookupResult
@@ -241,7 +242,7 @@ object EdHttp {
     else throwLoginAsSuperAdminTo(request.uri)
 
   def throwLoginAsSuperAdminTo(path: String): Nothing =
-    ??? // throwLoginAsTo(LoginController.AsSuperadmin, path)
+    throwLoginAsTo(LoginController.AsSuperadmin, path)
 
 
   def throwLoginAsAdmin(request: Request[_]): Nothing =
@@ -249,7 +250,7 @@ object EdHttp {
     else throwLoginAsAdminTo(request.uri)
 
   def throwLoginAsAdminTo(path: String): Nothing =
-    ??? // throwLoginAsTo(LoginController.AsAdmin, path)
+    throwLoginAsTo(LoginController.AsAdmin, path)
 
 
   def throwLoginAsStaff(request: Request[_]): Nothing =
@@ -257,11 +258,11 @@ object EdHttp {
     else throwLoginAsStaffTo(request.uri)
 
   def throwLoginAsStaffTo(path: String): Nothing =
-    ??? // throwLoginAsTo(LoginController.AsStaff, path)
+    throwLoginAsTo(LoginController.AsStaff, path)
 
 
   private def throwLoginAsTo(as: String, to: String): Nothing =
-    ??? // throwTemporaryRedirect(routes.LoginController.showLoginPage(as = Some(as), to = Some(to)).url)
+    throwTemporaryRedirect(routes.LoginController.showLoginPage(as = Some(as), to = Some(to)).url)
 
   def urlDecodeCookie(name: String, request: Request[_]): Option[String] =
     request.cookies.get(name).map(cookie => urlDecode(cookie.value))

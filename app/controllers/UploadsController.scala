@@ -79,8 +79,10 @@ class UploadsController @Inject()(cc: ControllerComponents, edContext: EdContext
     val uploadRef = request.dao.addUploadedFile(
       file.filename, file.ref.file, request.theUserId, request.theBrowserIdData)
 
-    // Delete the temporary file.
-    file.ref.delete() ; UNTESTED // will this delete it? Was  .clean() previously
+    // Delete the temporary file. (It will be gone already, if we couldn't optimize it,
+    // i.e. make it smaller, because then we've moved it to the uploads dir (rather than
+    // a smaller compressed copy). Deleting file ref although gone already, doesn't do anything.)
+    file.ref.delete()
 
     // Don't use OkSafeJson here because Dropzone doesn't understand the safe-JSON prefix.
     Ok(JsString(uploadRef.url)) as JSON
@@ -162,9 +164,9 @@ class UploadsController @Inject()(cc: ControllerComponents, edContext: EdContext
       mediumFile.filename, mediumFile.ref.file, request.theUserId, request.theBrowserIdData)
 
     // Delete the temporary files.
-    tinyFile.ref.delete()   ; UNTESTED // will this delete it? Was  .clean() previously
-    smallFile.ref.delete()  ; UNTESTED
-    mediumFile.ref.delete() ; UNTESTED
+    tinyFile.ref.delete()
+    smallFile.ref.delete()
+    mediumFile.ref.delete()
 
     // Now the images are in place in the uploads dir, and we've created metadata entries.
     // We just need to link the user to the images:
