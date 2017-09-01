@@ -729,11 +729,12 @@ class Globals(
 
     spamChecker.start()
 
-    def systemDao: SystemDao = new SystemDao(dbDaoFactory, cache, outer) // [rename] to newSystemDao()?
+    def systemDao: SystemDao = new SystemDao(dbDaoFactory, cache, outer) // RENAME to newSystemDao()?
 
     val applicationSecret: String =
-      conf.getString("play.crypto.secret").noneIfBlank.getOrDie(
-        "Config value 'play.crypto.secret' missing [DwE75FX0]")
+      conf.getString("play.http.secret.key").orElse(
+          conf.getString("play.crypto.secret")).noneIfBlank.getOrDie(
+        "Config value 'play.http.secret.key' missing [EdECHANGEME]")
 
     val applicationSecretNotChanged: Boolean = applicationSecret == "changeme"
 
