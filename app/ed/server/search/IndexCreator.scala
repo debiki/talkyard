@@ -19,7 +19,7 @@ package ed.server.search
 
 import com.debiki.core._
 import org.elasticsearch.action.admin.indices.create.CreateIndexResponse
-import org.elasticsearch.indices.IndexAlreadyExistsException
+import org.elasticsearch.common.xcontent.XContentType
 import org.{elasticsearch => es}
 import play.{api => p}
 import scala.util.control.NonFatal
@@ -47,8 +47,8 @@ class IndexCreator {
   def createIndexIfNeeded(indexSettings: IndexSettingsAndMappings, client: es.client.Client)
         : Boolean = {
     val createIndexRequest = es.client.Requests.createIndexRequest(IndexName)
-      .settings(indexSettings.indexSettingsString)
-      .mapping(PostDocType, indexSettings.postMappingString)
+      .source(indexSettings.indexSettingsJsonString, XContentType.JSON)
+      .mapping(PostDocType, indexSettings.postMappingJsonString, XContentType.JSON)
     def language = indexSettings.language
 
     // Attempt to create the index, synchronously, and see if there's any
@@ -67,7 +67,7 @@ class IndexCreator {
       true
     }
     catch {
-      case _: IndexAlreadyExistsException =>
+      case _: es.ResourceAlreadyExistsException =>
         if (!languagesLogged.contains(indexSettings.language)) {
           p.Logger.info(o"""Search index already created for '$language', fine [EsM2FG40]""")
         }

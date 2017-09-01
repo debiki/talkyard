@@ -48,6 +48,9 @@ import scala.util.matching.Regex
 import Globals._
 import ed.server.EdContext
 import ed.server.http.GetRequest
+import java.net.InetAddress
+import org.elasticsearch.common.settings.Settings
+import org.elasticsearch.common.transport.{InetSocketTransportAddress, TransportAddress}
 import play.api.mvc.RequestHeader
 
 
@@ -681,10 +684,10 @@ class Globals(
     val elasticSearchHost = "search"
 
     val elasticSearchClient: es.client.transport.TransportClient =
-      es.client.transport.TransportClient.builder().build()
-      .addTransportAddress(
-        new es.common.transport.InetSocketTransportAddress(
-          jn.InetAddress.getByName(elasticSearchHost), 9300))
+      new es.transport.client.PreBuiltTransportClient(es.common.settings.Settings.EMPTY)
+        .addTransportAddress(
+          new es.common.transport.InetSocketTransportAddress(
+            jn.InetAddress.getByName(elasticSearchHost), 9300))
 
     val siteDaoFactory = new SiteDaoFactory(
       edContext, dbDaoFactory, redisClient, cache, usersOnlineCache, elasticSearchClient, config)

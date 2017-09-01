@@ -24,10 +24,10 @@ import debiki.dao.SearchQuery
 import org.elasticsearch.action.search.{SearchRequestBuilder, SearchResponse}
 import org.elasticsearch.client.Client
 import org.elasticsearch.index.query.QueryBuilders
-import org.elasticsearch.search.highlight.HighlightBuilder
 import org.elasticsearch.action.ActionListener
+import org.elasticsearch.search.fetch.subphase.highlight.HighlightBuilder
 import org.{elasticsearch => es}
-import org.scalactic.{Good, Bad}
+import org.scalactic.{Bad, Good}
 import play.{api => p}
 import scala.collection.immutable
 import scala.concurrent.{Future, Promise}
@@ -129,9 +129,9 @@ class SearchEngine(
         promise.success(hits.toVector)
       }
 
-      def onFailure(throwable: Throwable) {
-        p.Logger.error(o"""Error when searching, source: ${requestBuilder.toString}""", throwable)
-        promise.failure(throwable)
+      def onFailure(ex: Exception) {
+        p.Logger.error(o"""Error when searching, source: ${requestBuilder.toString}""", ex)
+        promise.failure(ex)
       }
     })
 

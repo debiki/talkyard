@@ -26,3 +26,10 @@ discovery.zen.minimum_master_nodes: 1
 # https://www.elastic.co/guide/en/elasticsearch/guide/current/shared-index.html
 
 action.auto_create_index: false
+
+# X-Pack is included in the ES image. Disable it, otherwise some license needed.
+xpack.security.enabled: false
+xpack.watcher.enabled: false
+xpack.monitoring.enabled: false
+# Results in an exception about invalid config value:
+#xpack.reporting.enabled: false

@@ -220,8 +220,8 @@ class IndexingActor(
         postsRecentlyIndexed.add(SiteIdAndPost(siteId, post))
       }
 
-      def onFailure(throwable: Throwable) {
-        p.Logger.error(i"Error when indexing siteId:postId: $docId", throwable)
+      def onFailure(ex: Exception) {
+        p.Logger.error(i"Error when indexing siteId:postId: $docId", ex)
       }
     })
   }
@@ -277,8 +277,8 @@ class IndexingActor(
         }
       }
 
-      def onFailure(throwable: Throwable) {
-        p.Logger.error(s"Error when bulk unindexing ${posts.length} posts [EsE5YK02]", throwable)
+      def onFailure(ex: Exception) {
+        p.Logger.error(s"Error when bulk unindexing ${posts.length} posts [EsE5YK02]", ex)
       }
     })
   }

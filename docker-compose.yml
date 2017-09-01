@@ -1,14 +1,13 @@
 version: '3.1'
 services:
   web:
-    #mem_limit: 200M
     build: docker/web/
     image: debiki/ed-web
     volumes:
       - ./docker/data/uploads/:/opt/ed/uploads/:ro
       - ./docker/data/letsencrypt/:/etc/letsencrypt/:ro
       # Mount the Lua scripts, rather than relying on Docker's COPY, so Nginx can
-      # auto reload them after edits.
+      # auto reload them after edits. (We COPY them too, so will work in Prod.)
       - ./docker/web/ed-lua/:/opt/ed/lua/:ro
     ports:
       # Don't expose port 81 (for publishing WebSocket events)  — it should be reachable only
@@ -21,9 +20,8 @@ services:
       CDN_PULL_KEY: "public"
 
   app:
-    #mem_limit: 3300M
     build: docker/app-dev/
-    # image debiki/ed-app instead created and tagged by docker/build-app-prod.sh.
+    # image: debiki/ed-app — however, created by ./docker/build-app-prod.sh.
     stdin_open: true  # otherwise Play exits
     volumes:
       - ./:/opt/ed/app/
@@ -49,29 +47,29 @@ services:
       FORBIDDEN_PASSWORD: "public"
 
   cache:
-    #mem_limit: 50M
-    image: redis:3.0.7-alpine
+    build: docker/cache/
+    image: debiki/ed-cache
     volumes:
       - ./docker/data/cache/:/data/
     ports:
       - '6379:6379'
 
   search:
+    build: docker/search/
+    image: debiki/ed-search
     # If too low, the 'search' container will suddenly exit with code 137. No error message
     # will get logged — instead it just exits, suddenly. Why? OOM-killed? In Docker? Hmm.
     #mem_limit: 800M
-    image: elasticsearch:5.0.0-alpha4
     volumes:
-      - ./docker/search/config/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml
       - ./docker/data/search/:/usr/share/elasticsearch/data/
+      - ./docker/data/search-logs/:/usr/share/elasticsearch/logs/
     ports:
       - '9200:9200'
       - '9300:9300'
     environment:
-      ES_JAVA_OPTS: '-Xms500m -Xmx500m'
+      ES_JAVA_OPTS: '-Xms512m -Xmx512m'
 
   rdb:
-    #mem_limit: 200M
     build: docker/rdb/
     image: debiki/ed-rdb
     volumes:
@@ -100,7 +98,6 @@ services:
   #    PEER_PASSWORD: 'public'
 
   test:
-    #mem_limit: 700M
     build: docker/gulp/
     volumes:
       - ./:/opt/debiki/server/
@@ -122,7 +119,6 @@ services:
   # The same as the 'test' container, except that 'gulp' won't start the rest of the stack,
   # instead it just transpiles Typescript and Stylus.
   gulp:
-    #mem_limit: 700M
     build: docker/gulp/
     volumes:
       - ./:/opt/debiki/server/

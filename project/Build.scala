@@ -70,7 +70,8 @@ object ApplicationBuild extends Build {
     "com.github.ben-manes.caffeine" % "caffeine" % "2.2.6",
     "com.github.etaty" %% "rediscala" % "1.8.0",
     // Search engine, in https://mvnrepository.com.
-    "org.elasticsearch" % "elasticsearch" % "5.0.0-alpha4",
+    "org.elasticsearch" % "elasticsearch" % "5.5.2",
+    "org.elasticsearch.client" % "transport" % "5.5.2",
     // ElasticSearch needs log4j
     "log4j" % "log4j" % "1.2.17",
     "org.apache.commons" % "commons-email" % "1.4",
