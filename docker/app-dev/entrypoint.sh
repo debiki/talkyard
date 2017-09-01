@@ -35,8 +35,8 @@ if [ $file_owner_id -ne 0 ] ; then
   chown owner /home/owner/.sbt
   # Make saving-uploads work (this dir, mounted in docker-compose.yml, shouldn't be owned by root).
   chown owner /opt/ed/uploads/
+  chown owner /var/log/ed/
 
-  set -x
   # Here, 'exec gosu owner $*' will:
   # 1) run $* as user owner, which has the same user id as the file owner on the Docker host
   # 2) use our current process id, namely 1. Then the Scala app will receive any shutdown signal,
@@ -44,6 +44,7 @@ if [ $file_owner_id -ne 0 ] ; then
   # However! 'gosu' doesn't work with "cd ... &&", and we need to have 'owner' cd to /opt/ed/app/.
   # So instead use 'exec su -c ...'
   # exec gosu owner $*
+  set -x
   exec su -c "$*" owner
 else
   # We're root (user id 0), both on the Docker host and here in the container.

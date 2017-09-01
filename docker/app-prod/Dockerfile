@@ -1,5 +1,8 @@
 FROM openjdk:8u92-jre-alpine
 
+# SECURITY SHOULD not be root (in Docker container)
+#RUN groupadd -r play && useradd -r -g play play
+
 # Nice to have: (but why telnet not found?)
 RUN apk add --no-cache \
   curl tree less wget net-tools bash

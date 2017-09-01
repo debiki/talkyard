@@ -2,5 +2,5 @@
 # downloading and using that image, one automatically upgrades the Redis image,
 # whenever needed. (So won't need to configure Redis image version, separately, in Prod.)
 
-FROM redis:3.0.7-alpine
+FROM redis:4.0.1-alpine
 
