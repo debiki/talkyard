@@ -17,6 +17,8 @@
 
 package debiki
 
+import akka.actor.ActorSystem
+import akka.stream.ActorMaterializer
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import controllers.{LoginController, routes}
@@ -104,6 +106,9 @@ object EdHttp {
   def InternalErrorResult2(message: String): Result =
     R.InternalServerError("500 Internal Server Error\n"+ message)
 
+  private lazy val materializerActorSystem = ActorSystem("materializerActorSystem")
+  private lazy val theMaterializer = ActorMaterializer()(materializerActorSystem)
+
   /**
    * Thrown on error, caught in Global.onError, which returns the wrapped
    * result to the browser.
@@ -115,14 +120,9 @@ object EdHttp {
     def statusCode: Int = result.header.status
 
     def bodyToString: String = {
-      play.api.Play.maybeApplication match {
-        case None => "(Play app gone [EdM2WKG07])"
-        case Some(app) =>
-          implicit val materializer = play.api.Play.materializer(app)  // what is that [6KFW02G]
-          val futureByteString = result.body.consumeData(materializer)
-          val byteString = Await.result(futureByteString, Duration.fromNanos(1000*1000*1000))
-          byteString.utf8String
-      }
+      val futureByteString = result.body.consumeData(theMaterializer)
+      val byteString = Await.result(futureByteString, Duration.fromNanos(1000*1000*1000))
+      byteString.utf8String
     }
 
     // ScalaTest prints the stack trace but not the exception message. However this is

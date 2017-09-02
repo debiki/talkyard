@@ -13,7 +13,7 @@ services:
       CREATE_SITE_HOSTNAME: 'localhost'
       E2E_TEST_PASSWORD: 'public'
       FORBIDDEN_PASSWORD: 'public'
-      CRYPTO_SECRET: 'public'
+      PLAY_SECRET_KEY: 'public'
       POSTGRES_PASSWORD: 'public'
       MAY_FAST_FORWARD_TIME: 'true'
 

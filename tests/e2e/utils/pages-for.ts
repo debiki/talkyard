@@ -205,7 +205,8 @@ function pagesFor(browser) {
               browserNamePrefix(browserName) + "Page not hidden (no not-found or access-denied)");
         }
         else {
-          assert(/EdEM0SEE/.test(text), browserNamePrefix(browserName) + "May see page?");
+          assert(/EdEM0SEE/.test(text), browserNamePrefix(browserName) +
+              "User can see page. Or did you forget the --prod flag? (for Prod mode)");
         }
       });
     },

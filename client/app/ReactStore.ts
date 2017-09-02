@@ -952,16 +952,16 @@ function sortPostIdsInPlaceBestFirst(postNrs: PostNr[], postsByNr: { [nr: number
     if (postA.likeScore < postB.likeScore)
       return +1;
 
-    // Newest posts first. No, last
+    // Newest posts last.
     // In Scala, a certain sortWith function is used, but it wants a Bool from the comparison
     // function, not a +-1 or 0 number. True means "should be sorted before".
     // But return 0 instead here to indicate that sort order doesn't matter.
-    if (postA.createdAtMs < postB.createdAtMs)
+    if (postA.nr < postB.nr)
       return -1;
-    else if (postA.createdAtMs > postB.createdAtMs)
+    else if (postA.nr > postB.nr)
       return +1;
     else
-      return 0;
+      return 0; // cannot happen though
   });
 }
 

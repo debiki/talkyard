@@ -129,6 +129,8 @@ class Globals(
     _state match {
       case Good(state) => state
       case Bad(anyException) =>
+        p.Logger.error("State not yet created, still connecting to other stuff. Stack trace:")
+        new Exception().printStackTrace()
         throw anyException getOrElse StillConnectingException
     }
   }

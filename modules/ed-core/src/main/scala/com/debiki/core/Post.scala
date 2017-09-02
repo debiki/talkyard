@@ -683,7 +683,7 @@ object Post {
     posts.sortWith(sortPostsFn)
   }
 
-  /** NOTE: Keep in sync with `sortPostIdsInPlace()` in client/app/ReactStore.ts
+  /** NOTE: Keep in sync with `sortPostIdsInPlaceBestFirst()` in client/app/ReactStore.ts
     */
   private def sortPostsFn(postA: Post, postB: Post): Boolean = {
     /* From app/debiki/HtmlSerializer.scala:
@@ -768,8 +768,9 @@ object Post {
     if (postA.likeScore < postB.likeScore)
       return false
 
-    // Newest posts first. No, last
-    if (postA.createdAt.getTime < postB.createdAt.getTime)
+    // Newly added posts last. Use .nr, not createdAt, so a post that gets moved
+    // from another page to this page, gets placed last (although maybe created first).
+    if (postA.nr < postB.nr)
       true
     else
       false
