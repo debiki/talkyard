@@ -116,7 +116,7 @@ services:
       - web:test-site-2.web
       - web:test-site-3.web
     # Don't want this container to start at all by default.
-    command: "exit 0"
+    command: 'exit 0'
 
   # The same as the 'test' container, except that 'gulp' won't start the rest of the stack,
   # instead it just transpiles Typescript and Stylus.
@@ -124,6 +124,12 @@ services:
     build: docker/gulp/
     volumes:
       - ./:/opt/debiki/server/
-    command: ["yarn install && gulp watch"]
+    command: ['yarn install && gulp watch']
+
+  certgen:
+    build: docker/certgen/
+    image: debiki/ed-certgen
+    # Only want to build (but not run) this container, in dev/test mode.
+    command: 'echo'
 
 # vim: et ts=2 sw=2

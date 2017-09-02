@@ -121,12 +121,14 @@ sudo docker tag debiki/ed-web debiki/ed-web:$version_tag
 sudo docker tag debiki/ed-rdb debiki/ed-rdb:$version_tag
 sudo docker tag debiki/ed-cache debiki/ed-cache:$version_tag
 sudo docker tag debiki/ed-search debiki/ed-search:$version_tag
+sudo docker tag debiki/ed-certgen debiki/ed-certgen:$version_tag
 
 sudo docker push debiki/ed-app:$version_tag
 sudo docker push debiki/ed-web:$version_tag
 sudo docker push debiki/ed-rdb:$version_tag
 sudo docker push debiki/ed-cache:$version_tag
 sudo docker push debiki/ed-search:$version_tag
+sudo docker push debiki/ed-certgen:$version_tag
 
 
 # Bump version number
