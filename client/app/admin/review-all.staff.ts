@@ -16,6 +16,7 @@
  */
 
 /// <reference path="../slim-bundle.d.ts" />
+/// <reference path="../editor-bundle-already-loaded.d.ts" />
 
 //------------------------------------------------------------------------------
    namespace debiki2.admin {

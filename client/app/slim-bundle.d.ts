@@ -106,7 +106,6 @@ declare namespace debiki2 {
 
   // should be moved to inside the editor bundle
   namespace editor {
-    var markdownToSafeHtml: any;
     var SelectCategoryDropdown;
 
     // from editor-bundle-not-yet-loaded.ts:

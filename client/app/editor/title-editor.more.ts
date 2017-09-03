@@ -41,9 +41,13 @@ export var TitleEditor = createComponent({
 
   componentDidMount: function() {
     Server.loadEditorAndMoreBundles(() => {
-      if (!this.isMounted()) return;
+      if (this.isGone) return;
       this.setState({ editorScriptsLoaded: true });
     });
+  },
+
+  componentWillUnmount: function() {
+    this.isGone = true;
   },
 
   showLayoutAndSettings: function() {

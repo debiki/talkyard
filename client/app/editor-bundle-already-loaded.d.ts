@@ -8,6 +8,8 @@ declare namespace debiki2.editor {
 
   function startMentionsParserImpl(textarea, onTextEdited);
 
+  function markdownToSafeHtml(source: string): string;
+
 }
 
 // vim: fdm=marker et ts=2 sw=2 tw=0 fo=r list

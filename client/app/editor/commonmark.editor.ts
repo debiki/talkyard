@@ -18,16 +18,16 @@
 /// <reference path="CdnLinkifyer.ts" />
 
 //------------------------------------------------------------------------------
-   module debiki2.editor {
+   namespace debiki2.editor {
 //------------------------------------------------------------------------------
 
-var d = { i: debiki.internal, u: debiki.v0.util };
+const d = { i: debiki.internal, u: debiki.v0.util };
 
 
 // Converts markdown to sanitized html.
 export function markdownToSafeHtml(markdownSrc, hostAndPort?, sanitizerOptions?) {
-  var htmlTextUnsafe = markdownToUnsafeHtml(markdownSrc, hostAndPort);
-  var htmlTextSafe = sanitizeHtml(htmlTextUnsafe, sanitizerOptions);
+  const htmlTextUnsafe = markdownToUnsafeHtml(markdownSrc, hostAndPort);
+  const htmlTextSafe = sanitizeHtml(htmlTextUnsafe, sanitizerOptions);
   return htmlTextSafe;
 }
 
@@ -46,11 +46,11 @@ function markdownToUnsafeHtml(commonmarkSource, hostAndPort) {
   var htmlTextUnsafe = converter.makeHtml(markdownSrc, hostAndPort);
    */
 
-  var md = window['markdownit']({ html: true, linkify: true, breaks: true });
+  const md = window['markdownit']({ html: true, linkify: true, breaks: true });
   md.use(d.i.MentionsMarkdownItPlugin());
   md.use(d.i.oneboxMarkdownItPlugin);
   ed.editor.CdnLinkifyer.replaceLinks(md);
-  var htmlTextUnsafe = md.render(commonmarkSource);
+  const htmlTextUnsafe = md.render(commonmarkSource);
   return htmlTextUnsafe;
 }
 
@@ -63,7 +63,7 @@ function markdownToUnsafeHtml(commonmarkSource, hostAndPort) {
  */
 export function sanitizeHtml(htmlTextUnsafe, options) {
   options = options || {};
-  var htmlTextSafe = d.i.googleCajaSanitizeHtml(
+  const htmlTextSafe = d.i.googleCajaSanitizeHtml(
       htmlTextUnsafe, options.allowClassAndIdAttr, options.allowDataAttr);
   return htmlTextSafe;
 }

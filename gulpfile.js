@@ -111,8 +111,6 @@ var slimJsFiles = [
       'target/client/app/utils/jquery-find.js',
       'target/client/app/page/layout-threads.js',
       'target/client/app/page/resize-threads.js',
-      'target/client/app/editor/mentions-markdown-it-plugin.js',
-      'target/client/app/editor/onebox-markdown-it-plugin.js',
       //'target/client/app/posts/monitor-reading-progress-unused.js',
       'target/client/app/posts/resize.js',
       'target/client/app/utils/show-and-highlight.js',
@@ -149,6 +147,8 @@ var editorJsFiles = [
       'node_modules/fileapi/dist/FileAPI.html5.js', // don't use the Flash version (w/o '.html5')
       'client/third-party/diff_match_patch.js',
       'client/third-party/non-angular-slugify.js',
+      'target/client/app/editor/mentions-markdown-it-plugin.js',
+      'target/client/app/editor/onebox-markdown-it-plugin.js',
       'target/client/editor-typescript.js'];
 
 
