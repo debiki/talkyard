@@ -104,9 +104,6 @@ how to use docker-compose already.
         project ed-logging
         publish-local
         # then CTRL+D to exit
-        
-        # Let Play Framework write log files
-        sudo chmod ugo+rw docker/data/app-logs/
 
 
 1. Build and start all Docker containers: (this will take a while: some Docker images will be downloaded and built)
@@ -357,10 +354,6 @@ because in the past I did some mistakes, so it feels better to start over again
 from commit number 1. The old commit history is available here:
 https://github.com/debiki/debiki-server-old
 
-Think about that for a short while. 4300 old commits, + 1250 commits in this repo,
-and 33 GitHub stars. That likely means this repository currently (2017-08-22) has
-the lowest num-start / num-commits ratio ever seen here at GitHub? Also I
-ususally squash small commits.
 
 Credits
 -----------------------------

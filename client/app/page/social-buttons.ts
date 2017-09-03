@@ -54,10 +54,16 @@ Or, large buttons, against a dark background:
 
 
 export function activateLikeButtons(settings: SettingsVisibleClientSide) {
-  runFacebookJs(settings.facebookAppId);
-  runTwitterJs();
+  if ($first('.fb-like')) {
+    runFacebookJs(settings.facebookAppId);
+  }
+  if ($first('.twitter-share-button')) {
+    runTwitterJs();
+  }
   // Google:
-  window['yepnope']({ load: 'https://apis.google.com/js/platform.js' });
+  if ($first('.g-plusone')) {
+    window['yepnope']({load: 'https://apis.google.com/js/platform.js'});
+  }
 }
 
 
