@@ -16,7 +16,6 @@
  */
 
 var d = { i: debiki.internal, u: debiki.v0.util };
-var $ = d.i.$;
 
 
 /**
@@ -26,85 +25,51 @@ var $ = d.i.$;
  * Find the sidebar in client/app/sidebar/sidebar.ts.
  */
 function addAnySidebarWidth(options) {
-  var sidebar = $('#dw-sidebar');
-  if (!sidebar.find('.dw-comments').length) {
-    // Sidebar is closed.
-    return options || {};
-  }
-
   options = options || {};
+  var sidebar = debiki2.$byId('dw-sidebar');
+  if (!sidebar || !sidebar.querySelector('.dw-comments')) {
+    // Sidebar is closed.
+    return options;
+  }
   var marginRight = options.marginRight || 15;
-  marginRight += sidebar.outerWidth(true);
+  marginRight += sidebar.offsetWidth;
   options.marginRight = marginRight;
   return options;
 }
 
 
 debiki.internal.showAndHighlightPost = function(postElem, options) {
-  var $post = $(postElem);
   options = addAnySidebarWidth(options);
   // Add space for position-fixed stuff at the top: Forw/Back btns and open-sidebar btn.
   options.marginTop = options.marginTop || 60;
   options.marginBottom = options.marginBottom || 300;
   d.i.scrollIntoView(postElem, options, function() {
-    highlightPostBriefly($post);
+    highlightPostBriefly(postElem);
   });
 };
 
 
-function highlightPostBriefly($post) {
-  var $headBody = $post.children('.dw-p-hd, .dw-p-bd');
-  $headBody.addClass('dw-highlight-on');
+function highlightPostBriefly(postElem) {
+  const head = postElem.querySelector('.dw-p-hd');
+  const body = postElem.querySelector('.dw-p-bd');
+  const highlightOnClass = 'dw-highlight-on';
+  const highlightOffClass = 'dw-highlight-off';
+  const allClasses = highlightOnClass + ' ' + highlightOffClass;
+  const $h = debiki2.$h;
+  $h.addClasses(head, highlightOnClass);
+  $h.addClasses(body, highlightOnClass);
   setTimeout(function() {
-    $headBody.addClass('dw-highlight-off');
+    $h.addClasses(head, highlightOffClass);
+    $h.addClasses(body, highlightOffClass);
     // At least Chrome returns 'Xs', e.g. '1.5s', regardles of the units in the CSS file.
-    var durationSeconds = parseFloat($headBody.css('transition-duration'));
+    const durationSeconds = 4; // dupl constant, also in css [2DKQ7AM]
+                               // doesn't work: parseFloat(head.style.transitionDuration);  (it's "")
     setTimeout(function() {
-      $headBody.removeClass('dw-highlight-on dw-highlight-off');
+      $h.removeClasses(head, allClasses);
+      $h.removeClasses(body, allClasses);
     }, durationSeconds * 1000);
-  }, 500);
+  }, 700);
 }
-
-
-// When hovering a in-reply-to ("rr" = reply receiver) or solved-by link, outline
-// the linked post. Use a dedicated CSS class so we won't accidentally remove
-// any outline added because of other reasons, when removing this outline.
-$(document).on('mouseenter mouseleave', '.dw-rr, .dw-solved-by', function(event) {
-  var referencedPost = getLinkedPost(this);
-  if (event.type === 'mouseenter') {
-    debiki2.$h.addClasses(referencedPost, 'dw-highlighted-multireply-hover');
-  }
-  else {
-    debiki2.$h.removeClasses(referencedPost, 'dw-highlighted-multireply-hover');
-  }
-});
-
-
-function getLinkedPost(elem) {
-  var multireplyPostLink = elem.getAttribute('href');
-  return debiki2.$first(multireplyPostLink);
-}
-
-
-// Highlight an arrow on hover, if the parent post is not visible, because then
-// clicking the arrow scrolls the parent into view. (Otherwise don't highlight
-// though, because that'd be annoying.)
-$(document).on('mouseenter mouseleave', '.dw-arw-vt-handle', function(event) {
-  var allArrowHandles = $(this).closest('.dw-res').find('> .dw-t > .dw-arw-vt-handle');
-  var parentPost = $(this).closest('.dw-res').closest('.dw-t').children('.dw-p');
-  if (event.type === 'mouseenter' || event.type === 'mouseover') {
-    if (!d.i.elemIsVisible(parentPost[0])) {
-      allArrowHandles.addClass('dw-highlight');
-      allArrowHandles.css('cursor', 'pointer');
-    }
-    else {
-      allArrowHandles.css('cursor', 'default');
-    }
-  }
-  else {
-    allArrowHandles.removeClass('dw-highlight');
-  }
-});
 
 
 // vim: fdm=marker et ts=2 sw=2 fo=tcqwn list

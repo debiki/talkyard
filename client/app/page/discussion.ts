@@ -649,6 +649,8 @@ var RootPostAndComments = createComponent({
       // onClick:... handled in ../utils/show-and-highlight.js currently (scrolls to solution).
       solvedBy = r.a({ className: 'dw-solved-by icon-ok-circled',
           href: '#post-' + store.pageAnswerPostNr,
+          onMouseEnter: () => highlightPost(store.pageAnswerPostNr, true),
+          onMouseLeave: () => highlightPost(store.pageAnswerPostNr, false),
           onClick: utils.makeShowPostFn(BodyNr, store.pageAnswerPostNr) },
         "Solved in post #" + store.pageAnswerPostNr + ", click to view");
     }
@@ -1183,6 +1185,8 @@ var ReplyReceivers = createComponent({
       var author = store_getAuthorOrMissing(store, post);
       var link =
         r.a({ href: '#post-' + post.nr, className: 'dw-rr', key: post.nr,
+            onMouseEnter: () => highlightPost(post.nr, true),
+            onMouseLeave: () => highlightPost(post.nr, false),
             onClick: utils.makeShowPostFn(thisPost.nr, post.nr) },
           author.username || author.fullName,
           // Append an up arrow to indicate that clicking the name will scroll up,
@@ -1415,6 +1419,16 @@ export function makeQuestionTooltipText(isAnswered) {
   return isAnswered ? "This is a solved question" : "This is an unsolved question";
 }
 
+
+function highlightPost(postNr: PostNr, highlightOn: boolean) {
+  const postElem = $byId('post-' + postNr);
+  if (highlightOn) {
+    debiki2.$h.addClasses(postElem, 'dw-highlighted-multireply-hover');
+  }
+   else {
+    debiki2.$h.removeClasses(postElem, 'dw-highlighted-multireply-hover');
+  }
+}
 
 //------------------------------------------------------------------------------
    }

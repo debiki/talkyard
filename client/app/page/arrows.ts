@@ -249,7 +249,9 @@ function drawVerticalArrows(depth: number, isFirstChild: boolean,
     // Add a clickable handle that scrolls to the parent post and highlights it.
     arrows.push(
         r.div({ className: 'dw-arw-vt-handle', key: 28, onMouseDown: rememberMousedownCoords,
-              onClick: (event) => scrollToParent(event, parentPost) }));
+              onClick: (event) => scrollToParent(event, parentPost),
+              onMouseEnter: (event) => highlightArrowIfParentPostNotVisible(event, parentPost),
+              onMouseLeave: (event) => highlightArrowIfParentPostNotVisible(event, parentPost) }));
   }
 
   return arrows;
@@ -286,6 +288,33 @@ function scrollToParent(event, parentPost: Post) {
   ReactActions.loadAndShowPost(parentPost.nr);
 }
 
+
+// Highlighs an arrow on hover, if the parent post is not visible, because then
+// clicking the arrow scrolls the parent into view. (Otherwise don't highlight
+// though, because that'd be annoying.)
+function highlightArrowIfParentPostNotVisible(event, parentPost: Post) {
+  const arrowElem = event.target;
+  const parentPostElem = $byId('post-' + parentPost.nr);
+  const parentVisible = debiki.internal.elemIsVisible(parentPostElem);
+  const siblingRepliesRoot = arrowElem.parentNode.parentNode;
+  const siblingThreads = siblingRepliesRoot.children;
+  _.each(siblingThreads, function(threadElem) {
+    const arrowHandleElem = threadElem.querySelector('.dw-arw-vt-handle');
+    if (!arrowHandleElem || arrowHandleElem.parentNode != threadElem) return;
+    if (event.type === 'mouseenter' || event.type === 'mouseover') {
+      if (!parentVisible) {
+        $h.addClasses(arrowHandleElem, 'dw-highlight');
+        arrowHandleElem.style.cursor = 'pointer';
+      }
+      else {
+        arrowHandleElem.style.cursor = 'default';
+      }
+    }
+    else {
+      $h.removeClasses(arrowHandleElem, 'dw-highlight');
+    }
+  });
+}
 
 //------------------------------------------------------------------------------
   }
