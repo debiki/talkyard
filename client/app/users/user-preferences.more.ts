@@ -23,8 +23,6 @@
    namespace debiki2.users {
 //------------------------------------------------------------------------------
 
-const d = { i: debiki.internal, u: debiki.v0.util };
-const $: JQueryStatic = d.i.$;
 const r = React.DOM;
 
 
@@ -58,18 +56,21 @@ export const UserPreferencesComponent = React.createClass({
 });
 
 
-var GuestPreferences = createComponent({
+const GuestPreferences = createComponent({
+  displayName: 'GuestPreferences',
+
   getInitialState: function() {
     return {};
   },
 
   savePrefs: function(event) {
     event.preventDefault();
-    var form = $(event.target);
-    var prefs = {
-      guestId: this.props.guest.id,
-      name: form.find('#fullName').val(),
+    const guest: Guest = this.props.guest;
+    const prefs = {
+      guestId: guest.id,
+      name: firstDefinedOf(this._fullName, guest.fullName),
     };
+    if (!prefs.name) return;
     Server.saveGuest(prefs, () => {
       this.setState({ savingStatus: 'Saved' });
     });
@@ -77,9 +78,9 @@ var GuestPreferences = createComponent({
   },
 
   render: function() {
-    var guest: Guest = this.props.guest;
+    const guest: Guest = this.props.guest;
 
-    var savingInfo = null;
+    let savingInfo = null;
     if (this.state.savingStatus === 'Saving') {
       savingInfo = r.i({}, ' Saving...');
     }
@@ -92,8 +93,8 @@ var GuestPreferences = createComponent({
 
         r.div({ className: 'form-group' },
           r.label({ htmlFor: 'fullName' }, 'Name'),
-          r.input({ className: 'form-control', id: 'fullName',
-              defaultValue: guest.fullName })),
+          r.input({ className: 'form-control', id: 'fullName', defaultValue: guest.fullName,
+              onChange: (event) => { this._fullName = event.target.value }, required: true })),
 
         r.div({ className: 'form-group' },
           r.label({ htmlFor: 'emailAddress' }, 'Email address'),
@@ -107,7 +108,9 @@ var GuestPreferences = createComponent({
 });
 
 
-var MemberPreferences = createComponent({
+const MemberPreferences = createComponent({
+  displayName: 'MemberPreferences',
+
   getInitialState: function() {
     let user: MemberInclDetails = this.props.user;
     return {
@@ -165,22 +168,21 @@ var MemberPreferences = createComponent({
 
   savePrefs: function(event) {
     event.preventDefault();
-    var form = $(event.target);  // :- (
     const summaryEmailIntervalMins = this.state.sendSummaryEmails ?
         this.state.summaryEmailIntervalMins : DisableSummaryEmails;
-    const user: BriefUser = this.props.user;
+    const user: MemberInclDetails = this.props.user;
     const prefs = {
       userId: user.id,
       fullName: this.state.fullName,
       username: this.state.username,
-      emailAddress: form.find('#emailAddress').val(),
+      emailAddress: firstDefinedOf(this._email, user.email),
       // BUG SHOULD not save these, if the user didn't change them and they're still the
       // default values.
       summaryEmailIntervalMins: summaryEmailIntervalMins,
       summaryEmailIfActive: this.state.summaryEmailIfActive,
-      about: form.find('#t_UP_Prefs_AboutMeTA').val(),
-      url: form.find('#url').val(),
-      emailForEveryNewPost: form.find('#emailForEveryNewPost').is(':checked')
+      about: firstDefinedOf(this._about, user.about),
+      url: firstDefinedOf(this._url, user.url),
+      emailForEveryNewPost: firstDefinedOf(this._emailForEveryNewPost, user.emailForEveryNewPost),
     };
     // This won't update the name in the name-login-button component. But will
     // be automatically fixed when I've ported everything to React and use
@@ -285,6 +287,7 @@ var MemberPreferences = createComponent({
         isBuiltInUser ? null : r.div({ className: 'form-group' },
           r.label({ htmlFor: 'emailAddress' }, "Email address"),
           r.input({ type: 'email', className: 'form-control', id: 'emailAddress',
+              onChange: (event) => { this._email = event.target.value },
               defaultValue: user.email, disabled: true }),
           r.p({ className: 'help-block' }, "Not shown publicly.")),
 
@@ -293,12 +296,14 @@ var MemberPreferences = createComponent({
         isBuiltInUser ? null : r.div({ className: 'form-group' },
           r.label({ htmlFor: 't_UP_AboutMe' }, "About you"),
           r.textarea({ className: 'form-control', id: 't_UP_Prefs_AboutMeTA',
+              onChange: (event) => { this._about = event.target.value },
               defaultValue: user.about || '' })),
 
         // Later: Verify is really an URL
         isBuiltInUser ? null : r.div({ className: 'form-group' },
           r.label({ htmlFor: 'url' }, 'URL'),
           r.input({ className: 'form-control', id: 'url',
+              onChange: (event) => { this._url = event.target.value },
               defaultValue: user.url }),
           r.p({ className: 'help-block' }, 'Any website or page of yours.')),
 
@@ -309,6 +314,7 @@ var MemberPreferences = createComponent({
           r.div({ className: 'checkbox' },
             r.label({},
               r.input({ type: 'checkbox', id: 'emailForEveryNewPost',
+                onChange: (event) => { this._emailForEveryNewPost = event.target.checked },
                 defaultChecked: user.emailForEveryNewPost }),
               "Be notified about every new post (unless you mute the topic or category)")))),
 
