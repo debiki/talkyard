@@ -85,17 +85,6 @@ var slimJsFiles = [
       // Includes Rea.ReactCSSTransitionGroup:
       // COULD_OPTIMIZE SMALLER_BUNDLE or perhaps even remove? add pure CSS anims instead?
       'node_modules/react-transition-group/dist/react-transition-group.js',  // try to move to more-bundle
-      // About Modernizr:
-      // Concerning when/how to use a CDN for Modernizr, see:
-      // http://www.modernizr.com/news/modernizr-and-cdns
-      // And: "For best performance, you should have them follow after your
-      // stylesheet references", http://modernizr.com/docs/#installing
-      // But placing Modernizr in the <head> is important mostly for IE8, which we don't support.
-      // There might be a flash-of-unstyled-content now with Modnernizr here at the end
-      // of <body>? But I haven't noticed any FOUC so ignore for now.
-      // Evaluating all Modernizr tests takes long (~70ms on my core i7) so use a custom
-      // build with only what's needed.
-      'client/third-party/modernizr-custom.min.js',
       'modules/yepnope.js/yepnope.1.5.4-min.js',
       'node_modules/jquery/dist/jquery.js',//
       'client/third-party/abbreviate-jquery.js',//
@@ -108,7 +97,7 @@ var slimJsFiles = [
       // see comment in file for details.
       'client/third-party/rename-key-to-keymaster.js',
       'client/third-party/lodash-custom.js',
-      'node_modules/eventemitter2/lib/eventemitter2.js',
+      'node_modules/eventemitter2/lib/eventemitter2.js',  // COULD_OPTIMIZE takes 20ms to evaluate on my laptop. Is there no lightweight alternative?
       'node_modules/react-router/umd/ReactRouter.js',
       'node_modules/jquery-resizable/resizable.js',
       'client/third-party/gifffer/gifffer.js',

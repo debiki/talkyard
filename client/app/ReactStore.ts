@@ -452,11 +452,14 @@ ReactStore.activateMyself = function(anyNewMe: Myself) {
   }
 
   const readingProgress = store.me.readingProgress;
-  if (readingProgress && readingProgress.lastViewedPostNr) {
+  if (readingProgress && readingProgress.lastViewedPostNr &&
+      readingProgress.lastViewedPostNr >= FirstReplyNr) {
     if (ReactActions.anyAnchorPostNr()) {
       // Then other code scrolls to the anchored post instead.
     }
-    else {
+    else setTimeout(function() {
+      // Don't do this directly, because this (sometimes?/always?) forces a reflow during
+      // the initial rendering, making pages render 14ms slower on my laptop.
       utils.scrollIntoViewInPageColumn(
         `#post-${readingProgress.lastViewedPostNr}`, {
           marginTop: 150,
@@ -464,7 +467,7 @@ ReactStore.activateMyself = function(anyNewMe: Myself) {
           // in the viewport [8GKF204].
           marginBottom: 999,
         });
-    }
+    }, 0);
   }
 
   debiki2.pubsub.subscribeToServerEvents();

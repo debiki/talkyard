@@ -15,7 +15,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/// <reference path="../../typedefs/modernizr/modernizr.d.ts" />
 /// <reference path="../plain-old-javascript.d.ts" />
 /// <reference path="../slim-bundle.d.ts" />
 /// <reference path="../more-bundle-already-loaded.d.ts" />
@@ -1050,7 +1049,7 @@ export var Editor = createComponent({
       }
     }
 
-    var anyViewHistoryButton;
+    let anyViewHistoryButton;
     if (this.state.editingPostRevisionNr && this.state.editingPostRevisionNr !== 1) {
       anyViewHistoryButton =
           r.a({ onClick: this.showEditHistory, className: 'view-edit-history', tabIndex: 1 },
@@ -1059,17 +1058,11 @@ export var Editor = createComponent({
 
     // If not visible, don't remove the editor, just hide it, so we won't have
     // to unrigister the mentions parser (that would be boring).
-    var styles = {
+    const styles = {
       display: this.state.visible ? 'block' : 'none'
     };
 
-    // Make space for the soft keyboard on touch devices.
-    // Doesn't work well. Remove for now. CLEAN_UP
-    var maxHeightCss; /*= !Modernizr.touchevents || debiki2.utils.isMouseDetected ? undefined : {
-      maxHeight: screen.height / 2.5
-    }; */
-
-    var anyTextareaInstructions;
+    let anyTextareaInstructions;
     if (this.state.newPageRole === PageRole.Critique) {  // [plugin]
       anyTextareaInstructions =
           r.div({ className: 'editor-instructions' },
@@ -1077,7 +1070,7 @@ export var Editor = createComponent({
               "And tell people what you want feedback about:");
     }
 
-    var textareaButtons =
+    const textareaButtons =
       r.div({ className: 'esEdtr_txtBtns' },
         r.button({ onClick: this.selectAndUploadFile, title: "Upload a file or image",
             className: 'esEdtr_txtBtn' },
@@ -1095,8 +1088,8 @@ export var Editor = createComponent({
         r.button({ onClick: this.addHeading, title: "Heading",
             className: 'esEdtr_txtBtn' }, 'H'));
 
-    var textErrorClass = this.state.showTextErrors && !this.isTextOk() ? ' esError' : '';
-    var textarea =
+    const textErrorClass = this.state.showTextErrors && !this.isTextOk() ? ' esError' : '';
+    const textarea =
         r.textarea({ className: 'editor form-control esEdtr_textarea' +  textErrorClass,
             ref: 'textarea', value: this.state.text,
             onChange: this.onTextEdited, tabIndex: 1,
@@ -1105,21 +1098,21 @@ export var Editor = createComponent({
             placeholder: "Type here. You can use Markdown and HTML. " +
                 "Drag and drop to paste images." });
 
-    var previewHelp =
+    const previewHelp =
         r.div({ className: 'dw-preview-help' },
           help.HelpMessageBox({ message: previewHelpMessage }));
 
     // (The $.resizable plugin needs class 'resizable' here. [7UGM27])
-    var editorClasses = d.i.isInEmbeddedEditor ? '' : 'editor-box-shadow resizable';
+    let editorClasses = d.i.isInEmbeddedEditor ? '' : 'editor-box-shadow resizable';
     editorClasses += this.state.showMaximized ? ' s_E-Max' : '';
     editorClasses += this.state.splitHorizontally ? ' s_E-SplitHz' : '';
     editorClasses += this.state.showMinimized ? ' s_E-Min' : (
         this.state.showOnlyPreview ? ' s_E-Prv' : ' s_E-E');
 
-    var editorStyles = this.state.showOnlyPreview ? { display: 'none' } : null;
-    var previewStyles = this.state.showOnlyPreview ? { display: 'block' } : null;
+    const editorStyles = this.state.showOnlyPreview ? { display: 'none' } : null;
+    const previewStyles = this.state.showOnlyPreview ? { display: 'block' } : null;
 
-    var maximizeAndHorizSplitBtnTitle =
+    const maximizeAndHorizSplitBtnTitle =
         !this.state.showMaximized ? "Maximize" : (
           this.state.splitHorizontally ? "Back to normal" : "Tile horizontally");
 
@@ -1127,7 +1120,7 @@ export var Editor = createComponent({
       r.div({ style: styles },
         guidelinesModal,
         anyBackdrop,
-        r.div({ id: 'debiki-editor-controller', ref: 'editor', style: maxHeightCss,
+        r.div({ id: 'debiki-editor-controller', ref: 'editor',
             className: editorClasses },
           r.button({ className: 'esEdtr_close esCloseCross', onClick: this.onCancelClick }),
           guidelinesElem,

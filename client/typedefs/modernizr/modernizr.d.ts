@@ -1,1 +1,0 @@
-../../../modules/definitely-typed/types/modernizr/index.d.ts

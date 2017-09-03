@@ -229,7 +229,7 @@ var FixedAtBottom = createComponent({
 
   onScroll: function() {
     var pageBottom = getPageRect().bottom;
-    var scrollableBottom = $(window).height();
+    var scrollableBottom = window.innerHeight;
     var myNewBottom = pageBottom - scrollableBottom;
     this.setState({ bottom: myNewBottom });
     if (!this.state.fixed) {
