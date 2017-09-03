@@ -102,8 +102,6 @@ var slimJsFiles = [
       'node_modules/jquery-resizable/resizable.js',
       'client/third-party/gifffer/gifffer.js',
       'client/third-party/get-set-cookie.js',
-      'client/third-party/jquery-scrollable.js', //
-      'client/third-party/jquery.browser.js', //
       'target/client/app/actions/edit/edit.js',
       'target/client/app/actions/vote.js',
       'target/client/app/actions/reply.js',
@@ -117,8 +115,6 @@ var slimJsFiles = [
       //'target/client/app/posts/unread-unused.js',
       'target/client/app/utils/util.js',
       'target/client/app/utils/util-browser.js',
-      'target/client/app/utterscroll/utterscroll-init-tips.js',//
-      'client/app/utterscroll/utterscroll.js',//
       'client/third-party/popuplib.js',
       'target/client/app/login/login-popup.js',
       'target/client/slim-typescript.js',
@@ -131,6 +127,12 @@ var moreJsFiles = [
       'node_modules/react-select/dist/react-select.js',                 // <– react-select
       'node_modules/moment/min/moment.min.js',
       'target/client/more-typescript.js'];
+
+var twoDimJsFiles = [
+  'client/third-party/jquery-scrollable.js',
+  'client/third-party/jquery.browser.js',
+  'target/client/app/utterscroll/utterscroll-init-tips.js',
+  'client/app/utterscroll/utterscroll.js'];
 
 var staffJsFiles = [
       'target/client/staff-typescript.js'];
@@ -378,6 +380,7 @@ function makeConcatAllScriptsStream() {
   return es.merge(
       makeConcatStream('slim-bundle.js', slimJsFiles, 'DoCheckNewer'),
       makeConcatStream('more-bundle.js', moreJsFiles, 'DoCheckNewer'),
+      makeConcatStream('2d-bundle.js', twoDimJsFiles, 'DoCheckNewer'),
       makeConcatStream('staff-bundle.js', staffJsFiles, 'DoCheckNewer'),
       makeConcatStream('editor-bundle.js', editorJsFiles, 'DoCheckNewer'),
       makeConcatStream('ed-comments.js', embeddedJsFiles),

@@ -47,6 +47,7 @@ docker/data/
 # COULD place generated files in public/build/ instead? and ignore build/.
 public/res/slim-bundle.*
 public/res/more-bundle.*
+public/res/2d-bundle.*
 public/res/staff-bundle.*
 public/res/editor-bundle.*
 public/res/styles-bundle.*

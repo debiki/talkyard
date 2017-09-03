@@ -235,6 +235,7 @@ function appendE2eAndForbiddenPassword(url: string) {
 
 let editorScriptsPromise: Promise<any>;
 let moreScriptsPromise: Promise<any>;
+let hasStartedLoading2dScripts = false;
 let staffScriptsPromise: Promise<any>;
 
 
@@ -265,6 +266,21 @@ export function loadMoreScriptsBundle(callback) {
     });
   });
   return moreScriptsPromise;
+}
+
+
+export function load2dScriptsBundleStartUtterscroll() {
+  if (hasStartedLoading2dScripts) {
+    return;
+  }
+  hasStartedLoading2dScripts = true;
+  window['yepnope']({
+    both: [d.i.assetUrlPrefix + '2d-bundle.' + d.i.minMaxJs],
+    complete: function() {
+      // Wrap in function, because not available until funtion evaluated (because then script loaded).
+      debiki.internal.initUtterscrollAndTips();
+    }
+  });
 }
 
 

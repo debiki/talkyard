@@ -156,7 +156,7 @@ function renderDiscussionPage() {
 
   steps.push(function() {
     if (d.i.layout === 'TreeLayout') {
-      debiki2.utils.onMouseDetected(d.i.initUtterscrollAndTips);
+      debiki2.utils.onMouseDetected(debiki2.Server.load2dScriptsBundleStartUtterscroll);
     }
     registerEventHandlersFireLoginOut();
     debiki2.utils.startDetectingMouse();
@@ -206,7 +206,7 @@ d.i.renderEmptyPage = function() {
   // dashbar depends on login/logout events, and it's shown even if there's no
   // root post — e.g. on blog list pages, which list child pages only but no
   // main title or article.)
-  debiki2.utils.onMouseDetected(d.i.initUtterscrollAndTips);
+  debiki2.utils.onMouseDetected(debiki2.Server.load2dScriptsBundleStartUtterscroll);
   debiki2.ReactStore.initialize();
   debiki2.startRemainingReactRoots();
   debiki2.ReactStore.activateVolatileData();

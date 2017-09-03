@@ -228,7 +228,7 @@ const AvatarAboutAndButtons = createComponent({
   },
 
   selectAndUploadAvatar: function() {
-    $(this.refs.chooseAvatarInput).click();
+    this.refs.chooseAvatarInput.click();
   },
 
   createUploadAvatarButton: function() {

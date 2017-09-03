@@ -181,7 +181,7 @@ ReactDispatcher.register(function(payload) {
           $h.removeClasses(htmlElem, 'dw-vt');
           $h.addClasses(htmlElem, 'dw-hz');
           debiki.internal.layoutThreads();
-          debiki2.utils.onMouseDetected(debiki.internal.initUtterscrollAndTips);
+          debiki2.utils.onMouseDetected(Server.load2dScriptsBundleStartUtterscroll);
         }
         else {
           $h.removeClasses(htmlElem, 'dw-hz');
