@@ -61,16 +61,17 @@ function highlightPostBriefly(postElem) {
   const highlightOffClass = 'dw-highlight-off';
   const allClasses = highlightOnClass + ' ' + highlightOffClass;
   const $h = debiki2.$h;
-  $h.addClasses(head, highlightOnClass);
+  // On mind map pages, there're no post headers (except for for the original post).
+  if (head) $h.addClasses(head, highlightOnClass);
   $h.addClasses(body, highlightOnClass);
   setTimeout(function() {
-    $h.addClasses(head, highlightOffClass);
+    if (head) $h.addClasses(head, highlightOffClass);
     $h.addClasses(body, highlightOffClass);
     // At least Chrome returns 'Xs', e.g. '1.5s', regardles of the units in the CSS file.
     const durationSeconds = 4; // dupl constant, also in css [2DKQ7AM]
                                // doesn't work: parseFloat(head.style.transitionDuration);  (it's "")
     setTimeout(function() {
-      $h.removeClasses(head, allClasses);
+      if (head) $h.removeClasses(head, allClasses);
       $h.removeClasses(body, allClasses);
     }, durationSeconds * 1000);
   }, 700);

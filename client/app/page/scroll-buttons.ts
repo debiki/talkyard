@@ -21,7 +21,7 @@
 /// <reference path="../utils/DropdownModal.ts" />
 
 //------------------------------------------------------------------------------
-   module debiki2.page {
+   namespace debiki2.page {
 //------------------------------------------------------------------------------
 
 var keymaster: Keymaster = window['keymaster'];
@@ -110,8 +110,8 @@ export var ScrollButtons = createClassAndFactory({
 
   showOrHide: function() {
     if (this.isGone) return;
-    let pageColumn = document.getElementById('esPageScrollable');
-    let pageHasScrollbars = pageColumn.scrollHeight > window.innerHeight;
+    let pageColumnElem = $byId('esPageScrollable');
+    let pageHasScrollbars = pageColumnElem.scrollHeight > window.innerHeight;
     if (this.state.isShown !== pageHasScrollbars) {
       this.setState({ isShown: pageHasScrollbars });
     }
@@ -138,8 +138,8 @@ export var ScrollButtons = createClassAndFactory({
       }
     }
     var currentPos = {
-      windowLeft: $('#esPageColumn').scrollLeft(),
-      windowTop: $('#esPageColumn').scrollTop(),
+      windowLeft: $byId('esPageColumn').scrollLeft,
+      windowTop: $byId('esPageColumn').scrollTop,
       postNr: currentPostId
     };
     var lastPosTop = lastPost ? lastPost.windowTop : undefined;
@@ -218,10 +218,10 @@ export var ScrollButtons = createClassAndFactory({
     this.setState({
       currentVisitedPostIndex: nextIndex,
     });
-    const pageColumn = $('#esPageColumn');
+    const pageColumnElem = $byId('esPageColumn');
     if (_.isNumber(backPost.windowLeft)) {
-      if (backPost.windowLeft === pageColumn.scrollLeft() &&
-          backPost.windowTop === pageColumn.scrollTop()) {
+      if (backPost.windowLeft === pageColumnElem.scrollLeft &&
+          backPost.windowTop === pageColumnElem.scrollTop) {
         // Apparently the user has already scrolled back to the previous location, manually,
         // and then clicked Back. A bit weird. Could perhaps scroll to the next 'visitedPosts'
         // instead, but simpler to just:
@@ -229,15 +229,9 @@ export var ScrollButtons = createClassAndFactory({
       }
       // Restore the original window top and left coordinates, so the Back button
       // really moves back to the original position.
-      const htmlBody = pageColumn.animate({
-        'scrollTop': backPost.windowTop,
-        'scrollLeft': backPost.windowLeft
-      }, 'slow', 'swing');
+      smoothScroll(pageColumnElem, backPost.windowLeft, backPost.windowTop);
       if (backPost.postNr) {
-        htmlBody.queue(function(next) {
-          ReactActions.loadAndShowPost(backPost.postNr);
-          next();
-        });
+        ReactActions.loadAndShowPost(backPost.postNr);
       }
     }
     else if (_.isString(backPost.postNr)) {  // crazy, oh well [3KGU02]
@@ -256,15 +250,12 @@ export var ScrollButtons = createClassAndFactory({
   // Only invokable via the 'F' key — I rarely go forwards, and a button makes the UI to cluttered.
   goForward: function() {
     if (!this.canPerhapsGoForward()) return;
-    var forwPost = this.state.visitedPosts[this.state.currentVisitedPostIndex + 1];
+    const forwPost = this.state.visitedPosts[this.state.currentVisitedPostIndex + 1];
     if (forwPost.postNr) {
       ReactActions.loadAndShowPost(forwPost.postNr);
     }
     else if (forwPost.windowTop) {
-      $('#esPageColumn').animate({
-        'scrollTop': forwPost.windowTop,
-        'scrollLeft': forwPost.windowLeft
-      }, 'slow', 'swing');
+      smoothScroll($byId('esPageColumn'), forwPost.windowLeft, forwPost.windowTop);
     }
     else {
       // Ignore. Empty objects are added when the user uses the Top/Replies/Chat/End
@@ -326,7 +317,7 @@ var ScrollButtonsDropdownModal = createComponent({
       isOpen: true,
       atX: rect.left - 160,
       atY: rect.bottom,
-      enableGotoTopBtn: $('#esPageColumn').scrollTop() > SmallDistancePx,
+      enableGotoTopBtn: $byId('esPageColumn').scrollTop > SmallDistancePx,
       enableGotoEndBtn: bottomCoords.needsToScroll,
       enableGotoRepliesBtn:
         calcCoords('.dw-depth-0 > .dw-p-as', { marginTop: 65, marginBottom: 200 }).needsToScroll,
