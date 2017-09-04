@@ -107,6 +107,26 @@ function postJson(urlPath: string, requestData: RequestData) {
 }
 
 
+// If needed later:
+// loadCss: use https://github.com/filamentgroup/loadCSS/blob/master/src/loadCSS.js
+
+export function loadJs(src: string, success?: () => void) {
+  const promise = new Promise(function (resolve, reject) {
+    const scriptElem = document.createElement('script');
+    scriptElem.src = src;
+    scriptElem.onload = resolve;
+    scriptElem.onerror = reject;
+    document.head.appendChild(scriptElem);
+  });
+  promise.catch(function(error) {
+    pagedialogs.getServerErrorDialog().open(
+        `Error loading script ${src}: ${error.toString} [EdELDJSERR]`);
+  });
+  if (success) promise.then(success);
+  return promise;
+}
+
+
 function showLoadingOverlay() {
   document.body.appendChild(
       $h.parseHtml('<div id="theLoadingOverlay"><div class="icon-loading"></div></div>')[0]);
@@ -257,12 +277,9 @@ export function loadMoreScriptsBundle(callback) {
     return;
   }
   moreScriptsPromise = new Promise(function(resolve) {
-    window['yepnope']({
-      both: [d.i.assetUrlPrefix + 'more-bundle.' + d.i.minMaxJs],
-      complete: () => {
-        resolve();
-        setTimeout(callback, 0);
-      }
+    loadJs(d.i.assetUrlPrefix + 'more-bundle.' + d.i.minMaxJs, function() {
+      resolve();
+      setTimeout(callback, 0);
     });
   });
   return moreScriptsPromise;
@@ -274,12 +291,9 @@ export function load2dScriptsBundleStartUtterscroll() {
     return;
   }
   hasStartedLoading2dScripts = true;
-  window['yepnope']({
-    both: [d.i.assetUrlPrefix + '2d-bundle.' + d.i.minMaxJs],
-    complete: function() {
-      // Wrap in function, because not available until funtion evaluated (because then script loaded).
-      debiki.internal.initUtterscrollAndTips();
-    }
+  loadJs(d.i.assetUrlPrefix + '2d-bundle.' + d.i.minMaxJs, function() {
+    // Wrap in function, because not available until funtion evaluated (because then script loaded).
+    debiki.internal.initUtterscrollAndTips();
   });
 }
 
@@ -295,12 +309,9 @@ export function loadStaffScriptsBundle(callback) {
     // The staff scripts bundle requires both more-bundle.js and editor-bundle.js (to render
     // previews of CommonMark comments [7PKEW24]). This'll load them both.
     loadEditorAndMoreBundles(() => {
-      window['yepnope']({
-        both: [d.i.assetUrlPrefix + 'staff-bundle.' + d.i.minMaxJs],
-        complete: () => {
-          resolve();
-          callback();  // setTimeout(..., 0) not needed — done by loadMoreScriptsBundle() already
-        }
+      loadJs(d.i.assetUrlPrefix + 'staff-bundle.' + d.i.minMaxJs, function() {
+        resolve();
+        callback();  // setTimeout(..., 0) not needed — done by loadMoreScriptsBundle() already
       });
     });
   });
@@ -323,11 +334,8 @@ export function loadEditorAndMoreBundlesGetDeferred(): Promise<void> {
   editorScriptsPromise = new Promise(function(resolve) {
     // The editor scripts bundle requires more-bundle.js.
     loadMoreScriptsBundle(() => {
-      window['yepnope']({
-        both: [d.i.assetUrlPrefix + 'editor-bundle.' + d.i.minMaxJs],
-        complete: () => {
-          resolve();
-        }
+      loadJs(d.i.assetUrlPrefix + 'editor-bundle.' + d.i.minMaxJs, function() {
+        resolve();
       });
     });
   });

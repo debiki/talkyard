@@ -51,13 +51,10 @@ export var NewPasswordInput = createClassAndFactory({
 
   componentDidMount: function() {
     // The password strength test library is large, because it contains lists of all words.
-    window['yepnope']({
-      load:  debiki.internal.assetUrlPrefix + 'zxcvbn.js',
-      complete: () => {
-        // Check the password afterwards, in case a fast e2e test has already filled it in.
-        this.setState({ zxcvbnLoaded: true }, this.checkPasswordStrength);
-        dieIf(!window['zxcvbn'], "Error loading the password strength script zxcvbn [EsE7YKW2]");
-      }
+    Server.loadJs(debiki.internal.assetUrlPrefix + 'zxcvbn.js', function() {
+      // Check the password afterwards, in case a fast e2e test has already filled it in.
+      this.setState({ zxcvbnLoaded: true }, this.checkPasswordStrength);
+      dieIf(!window['zxcvbn'], "Error loading the password strength script zxcvbn [EsE7YKW2]");
     });
   },
 

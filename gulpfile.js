@@ -85,7 +85,6 @@ var slimJsFiles = [
       // Includes Rea.ReactCSSTransitionGroup:
       // COULD_OPTIMIZE SMALLER_BUNDLE or perhaps even remove? add pure CSS anims instead?
       'node_modules/react-transition-group/dist/react-transition-group.js',  // try to move to more-bundle
-      'modules/yepnope.js/yepnope.1.5.4-min.js',
       'node_modules/jquery/dist/jquery.js',//
       'client/third-party/abbreviate-jquery.js',//
       'target/client/app/utils/calcScrollRectIntoViewCoords.js',

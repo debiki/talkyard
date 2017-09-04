@@ -17,6 +17,7 @@
 
 /// <reference path="../plain-old-javascript.d.ts" />
 /// <reference path="../prelude.ts" />
+/// <reference path="../Server.ts" />
 
 //------------------------------------------------------------------------------
    namespace debiki2.page {
@@ -62,7 +63,7 @@ export function activateLikeButtons(settings: SettingsVisibleClientSide) {
   }
   // Google:
   if ($first('.g-plusone')) {
-    window['yepnope']({load: 'https://apis.google.com/js/platform.js'});
+    Server.loadJs('https://apis.google.com/js/platform.js');
   }
 }
 
