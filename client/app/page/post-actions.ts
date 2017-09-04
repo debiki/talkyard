@@ -158,11 +158,11 @@ export const PostActions = createComponent({
     morebundle.openShareDialog(this.props.post, event.target);
   },
   onLikeClick: function(event) {
-    loginIfNeededThen(LoginReason.LoginToLike, this.props.post.postNr, () => {
+    const post: Post = this.props.post;
+    loginIfNeededThen(LoginReason.LoginToLike, post.nr, () => {
       if (this.isGone) return;
-      let post: Post = this.props.post;
-      var toggleOn = !me_hasVoted(this.props.store.me, post.nr, 'VoteLike');
-      debiki.internal.toggleVote(post.nr, 'VoteLike', toggleOn);
+      const toggleOn = !me_hasVoted(this.props.store.me, post.nr, 'VoteLike');
+      toggleVote(this.props.store, post, 'VoteLike', toggleOn);
     });
   },
 
@@ -407,20 +407,23 @@ const MoreVotesDropdownModal = createComponent({
   },
 
   onWrongClick: function(event) {
-    loginIfNeededThen('LoginToVote', this.state.post.postNr, () => {
-      debiki.internal.toggleVote(this.state.post.nr, 'VoteWrong', !this.hasVoted('VoteWrong'));
+    const post: Post = this.state.post;
+    loginIfNeededThen('LoginToVote', post.nr, () => {
+      toggleVote(this.state.store, post, 'VoteWrong', !this.hasVoted('VoteWrong'));
       this.closeSoon();
     });
   },
   onBuryClick: function(event) {
-    loginIfNeededThen('LoginToVote', this.state.post.postNr, () => {
-      debiki.internal.toggleVote(this.state.post.nr, 'VoteBury', !this.hasVoted('VoteBury'));
+    const post: Post = this.state.post;
+    loginIfNeededThen('LoginToVote', post.nr, () => {
+      toggleVote(this.state.store, post, 'VoteBury', !this.hasVoted('VoteBury'));
       this.closeSoon();
     });
   },
   onUnwantedClick: function(event) {
-    loginIfNeededThen('LoginToVote', this.state.post.postNr, () => {
-      debiki.internal.toggleVote(this.state.post.nr, 'VoteUnwanted', !this.hasVoted('VoteUnwanted'));
+    const post: Post = this.state.post;
+    loginIfNeededThen('LoginToVote', post.nr, () => {
+      toggleVote(this.state.store, post, 'VoteUnwanted', !this.hasVoted('VoteUnwanted'));
       this.closeSoon();
     });
   },
@@ -479,8 +482,71 @@ const MoreVotesDropdownModal = createComponent({
 });
 
 
+function toggleVote(store: Store, post: Post, voteType: string, toggleOn: boolean) {
+  let action: string;
+  let postNrsRead: PostNr[];
+  if (!toggleOn) {
+    action = 'DeleteVote';
+  }
+  else {
+    action = 'CreateVote';
+    postNrsRead = findPostNrsRead(store.postsByNr, post);
+  }
+
+  const data = {
+    pageId: d.i.pageId,
+    postNr: post.nr,
+    vote: voteType,
+    action: action,
+    postNrsRead: postNrsRead
+  };
+
+  debiki2.Server.saveVote(data, function(updatedPost) {
+    debiki2.ReactActions.vote(updatedPost, action, voteType);
+  });
+}
+
+
+function findPostNrsRead(postsByNr: { [postNr: number]: Post }, post): PostNr[] {
+  const postsReadNrs = {};
+  postsReadNrs[post.nr] = post.nr;
+  let curPostNr = post.nr;
+  let nextParentNr = post.parentNr;
+  while (!postsReadNrs[nextParentNr]) {
+    const parent: Post = postsByNr[nextParentNr];
+    if (!parent) break;
+    const parentShown = $byId('post-' + parent.nr);
+    if (parentShown) {
+      postsReadNrs[parent.nr] = parent.nr;
+    }
+
+    // Also add all previous siblings, shown before curPostNr — because to find and read curPostNr,
+    // one needs to scroll past, and probably read, those too.
+    for (let i = 0; i < parent.childIdsSorted.length; ++i) {
+      const siblingNr = parent.childIdsSorted[i];
+      if (siblingNr === curPostNr) {
+        // We don't know if any siblings sorted *after* curPostNr has been read.
+        // @ifdef DEBUG
+        dieIf(!postsReadNrs[siblingNr], 'EdE4GUWKR0');
+        // @endif
+        break;
+      }
+      const sibling = postsByNr[siblingNr];
+      const siblingShown = sibling && $byId('post-' +siblingNr);
+      if (siblingShown) {
+        postsReadNrs[siblingNr] = siblingNr;
+      }
+    }
+    curPostNr = parent.nr;
+    nextParentNr = parent.parentNr;
+  }
+
+  return _.values(postsReadNrs);
+}
+
+
 // some dupl code [6KUW24]
-var MoreDropdownModal = createComponent({
+const MoreDropdownModal = createComponent({
   displayName: 'MoreDropdownModal',
 
   getInitialState: function () {

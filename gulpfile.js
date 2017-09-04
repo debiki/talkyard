@@ -103,7 +103,6 @@ var slimJsFiles = [
       'client/third-party/gifffer/gifffer.js',
       'client/third-party/get-set-cookie.js',
       'target/client/app/actions/edit/edit.js',
-      'target/client/app/actions/vote.js',
       'target/client/app/actions/reply.js',
       'target/client/app/if-in-iframe.js',
       'target/client/app/utils/jquery-find.js',
