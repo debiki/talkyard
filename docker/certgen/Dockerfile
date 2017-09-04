@@ -5,4 +5,6 @@
 
 FROM alpine:3.6
 
+# Stay alive forever.
+CMD ["tail", "-f", "/dev/null"]
 
