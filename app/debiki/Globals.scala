@@ -623,7 +623,7 @@ class Globals(
     val dbDaoFactory: RdbDaoFactory,
     val cache: DaoMemCache) {
 
-    val applicationVersion = "0.00.40"  // later, read from some build config file
+    val applicationVersion = "0.00.41"  // later, read from some build config file
 
     // 5 seconds sometimes in a test —> """
     // debiki.RateLimiterSpec *** ABORTED ***

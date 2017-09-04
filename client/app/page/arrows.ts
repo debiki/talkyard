@@ -234,16 +234,16 @@ function drawVerticalArrows(depth: number, isFirstChild: boolean,
         r.div({ className: 'dw-arw dw-arw-vt-line-to-sibling-2', key: 25 }));
 
     //          \
-    // Draw the  v  arrow to the very last sibling:
+    // Draw the  v  arrow to the very last sibling: — ... but always indent it, nowadays. [6UWADTW0]
     if (numRemainingWithArrows === 1) {
-      if (!horizontalLayout && depth === 2) {
+      //if (!horizontalLayout && depth === 2) {
         arrows.push(
           r.div({ className: 'dw-arw dw-arw-vt-curve-to-last-sibling-indented', key: 26 }));
-      }
+      /*}
       else {
         arrows.push(
           r.div({ className: 'dw-arw dw-arw-vt-curve-to-last-sibling-unindented', key: 27 }));
-      }
+      }*/
     }
 
     // Add a clickable handle that scrolls to the parent post and highlights it.

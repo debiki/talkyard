@@ -208,7 +208,9 @@
   // But do indent all replies to article replies, because article
   // replies are stacked on top of each other, so we need to
   // indent their replies.
-  .dw-t:not(.dw-depth-1) > .dw-single-and-multireplies > .dw-res > li:last-child
+  // (Previously, ended with li:last-child — then, the downmost reply was always  [6UWADTW0]
+  // indented, even if some earlier siblings weren't. This made others (and me sometimes) confused.
+  .dw-t:not(.dw-depth-1) > .dw-single-and-multireplies > .dw-res > li:only-child
     padding-left: 0
 
   .dw-t.dw-depth-0 > .dw-single-and-multireplies > .dw-res > li
