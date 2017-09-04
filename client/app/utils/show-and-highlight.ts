@@ -1,5 +1,5 @@
 /* Scrolls into view and highlights comments.
- * Copyright (C) 2010-2012 Kaj Magnus Lindberg (born 1979)
+ * Copyright (C) 2010-2012, 2017 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -15,8 +15,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-var d = { i: debiki.internal, u: debiki.v0.util };
+/// <reference path="scroll-into-view.ts" />
 
+//------------------------------------------------------------------------------
+   namespace debiki2 {
+//------------------------------------------------------------------------------
+
+// CLEAN_UP merge-rename with scroll-into-view.ts to scroll-and-show.ts?
 
 /**
  * There might be a position: fixed sidebar to the right. This hacky
@@ -43,7 +48,7 @@ debiki.internal.showAndHighlightPost = function(postElem, options) {
   // Add space for position-fixed stuff at the top: Forw/Back btns and open-sidebar btn.
   options.marginTop = options.marginTop || 60;
   options.marginBottom = options.marginBottom || 300;
-  d.i.scrollIntoView(postElem, options, function() {
+  utils.scrollIntoView(postElem, options, function() {
     highlightPostBriefly(postElem);
   });
 };
@@ -71,5 +76,7 @@ function highlightPostBriefly(postElem) {
   }, 700);
 }
 
-
+//------------------------------------------------------------------------------
+   }
+//------------------------------------------------------------------------------
 // vim: fdm=marker et ts=2 sw=2 fo=tcqwn list

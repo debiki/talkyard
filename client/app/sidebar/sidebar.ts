@@ -24,7 +24,6 @@
 /// <reference path="../utils/DropdownModal.ts" />
 /// <reference path="../avatar/AvatarAndName.ts" />
 /// <reference path="../util/FadingBackdrop.ts" />
-/// <reference path="minimap.ts" />
 //xx <reference path="unread-comments-tracker.ts" />
 /// <reference path="../more-bundle-not-yet-loaded.ts" />
 /// <reference path="../staff-bundle-not-yet-loaded.ts" />
@@ -552,9 +551,11 @@ export var Sidebar = createComponent({  // RENAME to ContextBar
 
     return (
       r.div({ className: 'dw-sidebar-z-index' },
+      /* Don't do until 2d-bundle.js has been loaded
       r.div({ id: 'dw-minimap-holder', className: 'dw-sidebar-is-open' },
         r.div({ className: 'dw-upper-right-corner' },
           MiniMap(minimapProps))),
+          */
       r.div({ id: 'dw-sidebar', className: 'esCtxbar' + sidebarClasses, ref: 'sidebar' },
         r.div({ className: 'esCtxbar_btns' },
           CloseSidebarButton({ onClick: this.closeSidebar }),

@@ -111,7 +111,6 @@ var slimJsFiles = [
       'target/client/app/page/resize-threads.js',
       //'target/client/app/posts/monitor-reading-progress-unused.js',
       'target/client/app/posts/resize.js',
-      'target/client/app/utils/show-and-highlight.js',
       //'target/client/app/posts/unread-unused.js',
       'target/client/app/utils/util.js',
       'target/client/app/utils/util-browser.js',
@@ -128,11 +127,12 @@ var moreJsFiles = [
       'node_modules/moment/min/moment.min.js',
       'target/client/more-typescript.js'];
 
-var twoDimJsFiles = [
+var _2dJsFiles = [
   'client/third-party/jquery-scrollable.js',
   'client/third-party/jquery.browser.js',
   'target/client/app/utterscroll/utterscroll-init-tips.js',
-  'client/app/utterscroll/utterscroll.js'];
+  'client/app/utterscroll/utterscroll.js',
+  'target/client/2d-typescript.js'];
 
 var staffJsFiles = [
       'target/client/staff-typescript.js'];
@@ -252,6 +252,13 @@ var moreTypescriptProject = typeScript.createProject({
   types: ['react', 'react-dom', 'lodash', 'core-js']
 });
 
+var _2dTypescriptProject = typeScript.createProject({
+  target: 'ES5',
+  outFile: '2d-typescript.js',
+  lib: ['es5', 'es2015', 'dom'],
+  types: ['react', 'react-dom', 'lodash', 'core-js']
+});
+
 var staffTypescriptProject = typeScript.createProject({
   target: 'ES5',
   outFile: 'staff-typescript.js',
@@ -271,6 +278,7 @@ var slimTypescriptSrc = [
     'client/shared/plain-old-javascript.d.ts',
     'client/app/**/*.ts',
     '!client/app/**/*.more.ts',
+    '!client/app/**/*.2d.ts',
     '!client/app/**/*.editor.ts',
     '!client/app/**/*.staff.ts',
     '!client/app/slim-bundle.d.ts',
@@ -324,6 +332,10 @@ gulp.task('compileMoreTypescript', function () {
   return compileOtherTypescript('more', moreTypescriptProject);
 });
 
+gulp.task('compile2dTypescript', function () {
+  return compileOtherTypescript('2d', _2dTypescriptProject);
+});
+
 gulp.task('compileStaffTypescript', function () {
   return compileOtherTypescript('staff', staffTypescriptProject);
 });
@@ -337,6 +349,7 @@ gulp.task('compileAllTypescript', function () {
       compileServerTypescript(),
       compileSlimTypescript(),
       compileOtherTypescript('more', moreTypescriptProject),
+      compileOtherTypescript('2d', _2dTypescriptProject),
       compileOtherTypescript('staff', staffTypescriptProject),
       compileOtherTypescript('editor', editorTypescriptProject));
 });
@@ -346,9 +359,10 @@ var compileTsTaskNames = [
   'compileServerTypescript',
   'compileSlimTypescript',
   'compileMoreTypescript',
+  'compile2dTypescript',
   'compileStaffTypescript',
   'compileEditorTypescript'];
-for (var i = 0; i <= 4; ++i) {
+for (var i = 0; i < compileTsTaskNames.length; ++i) {
   var compileTaskName = compileTsTaskNames[i];
   gulp.task(compileTaskName + '-concatScripts', [compileTaskName], function() {
     return makeConcatAllScriptsStream();
@@ -380,7 +394,7 @@ function makeConcatAllScriptsStream() {
   return es.merge(
       makeConcatStream('slim-bundle.js', slimJsFiles, 'DoCheckNewer'),
       makeConcatStream('more-bundle.js', moreJsFiles, 'DoCheckNewer'),
-      makeConcatStream('2d-bundle.js', twoDimJsFiles, 'DoCheckNewer'),
+      makeConcatStream('2d-bundle.js', _2dJsFiles, 'DoCheckNewer'),
       makeConcatStream('staff-bundle.js', staffJsFiles, 'DoCheckNewer'),
       makeConcatStream('editor-bundle.js', editorJsFiles, 'DoCheckNewer'),
       makeConcatStream('ed-comments.js', embeddedJsFiles),
@@ -485,6 +499,7 @@ gulp.task('watch', ['default'], function() {
   gulp.watch(serverTypescriptSrc, ['compileServerTypescript-concatScripts']).on('change', logChangeFn('Server TypeScript'));
   gulp.watch(slimTypescriptSrc, ['compileSlimTypescript-concatScripts']).on('change', logChangeFn('Slim TypeScript'));
   gulp.watch(makeOtherTypescriptSrc('more'), ['compileMoreTypescript-concatScripts']).on('change', logChangeFn('More TypeScript'));
+  gulp.watch(makeOtherTypescriptSrc('2d'), ['compile2dTypescript-concatScripts']).on('change', logChangeFn('2D TypeScript'));
   gulp.watch(makeOtherTypescriptSrc('staff'), ['compileStaffTypescript-concatScripts']).on('change', logChangeFn('Staff TypeScript'));
   gulp.watch(makeOtherTypescriptSrc('editor'), ['compileEditorTypescript-concatScripts']).on('change', logChangeFn('Editor TypeScript'));
 
