@@ -216,6 +216,7 @@ export function deleteById(itemsWithId: any[], idToDelete) {
 }
 
 
+export const $$all = $bySelector;
 export const $$bySelector = $bySelector;  // returns many, so should be named $$... not just $...
 export function $bySelector(selector: string): NodeListOf<Element> {   // RENAME
   return document.querySelectorAll(selector);

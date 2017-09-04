@@ -18,7 +18,7 @@
 /// <reference path="../utils/react-utils.ts" />
 
 //------------------------------------------------------------------------------
-   module debiki2.page.Hacks {
+   namespace debiki2.page.Hacks {
 //------------------------------------------------------------------------------
 
 
@@ -33,41 +33,44 @@ export function processPosts() {
 // is hidden by CSS. [4KY0S2]
 //
 function hideShowCollapseButtons() {
-   $('.dw-a-clps:not(.esP_Z-Show)').each(function() {
-      var $this = $(this);
-      var $thread = $this.closest('.dw-t');
-      if (!$thread.length)
-         return;
-
-      var threadElem = $thread[0];
-      var rect = threadElem.getBoundingClientRect();  // ooops, FORCED_REFLOW caused by this line
-      if (rect.height > 150) {
-         $this.addClass('esP_Z-Show');                // ... and this
-      }
-      else {
-         $this.removeClass('esP_Z-Show');             // ... and this
-      }
-   });
+  const collapseBtns = $$all('.dw-a-clps');
+  _.each(collapseBtns,function(collapseBtn) {
+    // Three steps up: dw-p-hd —> .dw-p —> .dw-t, we'll find the .closest('.dw-t').  IE11 doesn't
+    // support .closest.
+    const threadElem = collapseBtn.parentElement.parentElement.parentElement;
+    if (!threadElem) return;
+    const rect = threadElem.getBoundingClientRect();  // ooops, FORCED_REFLOW caused by this line
+    if (rect.height > 170) {
+      $h.addClasses(collapseBtn, 'esP_Z-Show');       // ... and this
+    }
+    else {
+      $h.removeClasses(collapseBtn, 'esP_Z-Show');    // ... and this
+    }
+  });
 }
 
 
 function addCanScrollHintsImpl() {
-  $('.dw-p-bd.esScrollHint-X').each(function() {
-    var overflowsX = this.scrollWidth > this.clientWidth;
+  // Remove scroll hints for elemes that no longer need it.
+  const elemsWithHint = $$all('.dw-p-bd.esScrollHint-X');
+  _.each(elemsWithHint,function(elem) {
+    const overflowsX = elem.scrollWidth > elem.clientWidth;
     if (!overflowsX) {
       // (Some of these will be checked again in the 2nd $('.dw-p-bd...') call below.)
-      $(this).removeClass('esScrollHint-X');
+      $h.removeClasses(elem, 'esScrollHint-X');
     }
   });
-  $('.dw-p-bd:not(.esScrollHint-X)').each(function() {
-    var overflowsX = this.scrollWidth > this.clientWidth;
+  // Add scroll hints for elemes that need it.
+  const elemsNoHint = $$all('.dw-p-bd:not(.esScrollHint-X)');
+  _.each(elemsNoHint,function(elem) {
+    const overflowsX = elem.scrollWidth > elem.clientWidth;
     if (overflowsX) {
-      $(this).addClass('esScrollHint-X');
+      $h.addClasses(elem, 'esScrollHint-X');
     }
   });
 }
 
-export var addCanScrollHintsSoon = _.debounce(addCanScrollHintsImpl, 1100);
+export const addCanScrollHintsSoon = _.debounce(addCanScrollHintsImpl, 1100);
 
 
 //------------------------------------------------------------------------------
