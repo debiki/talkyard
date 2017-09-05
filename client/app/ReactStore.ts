@@ -38,8 +38,8 @@
 const ChangeEvent = 'ChangeEvent';
 const htmlElem = document.getElementsByTagName('html')[0];
 
-declare const EventEmitter2; // don't know why, but the TypeScript defs doesn't work.
-export const ReactStore: any = new EventEmitter2();
+declare const EventEmitter3; // don't know why, but the TypeScript defs doesn't work.
+export const ReactStore = new EventEmitter3();
 
 // Avoid a harmless "possible EventEmitter memory leak detected" warning.
 ReactStore.setMaxListeners(20);

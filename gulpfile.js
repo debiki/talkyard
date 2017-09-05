@@ -96,7 +96,7 @@ var slimJsFiles = [
       // see comment in file for details.
       'client/third-party/rename-key-to-keymaster.js',
       'client/third-party/lodash-custom.js',
-      'node_modules/eventemitter2/lib/eventemitter2.js',  // COULD_OPTIMIZE takes 20ms to evaluate on my laptop. Is there no lightweight alternative?
+      'node_modules/eventemitter3/umd/eventemitter3.min.js',
       'node_modules/react-router/umd/ReactRouter.js',
       'node_modules/jquery-resizable/resizable.js',
       'client/third-party/gifffer/gifffer.js',
