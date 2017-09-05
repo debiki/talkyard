@@ -48,9 +48,6 @@ import scala.util.matching.Regex
 import Globals._
 import ed.server.EdContext
 import ed.server.http.GetRequest
-import java.net.InetAddress
-import org.elasticsearch.common.settings.Settings
-import org.elasticsearch.common.transport.{InetSocketTransportAddress, TransportAddress}
 import play.api.mvc.RequestHeader
 
 
@@ -106,6 +103,8 @@ class Globals(
   val conf: p.Configuration = appLoaderContext.initialConfiguration
   def rawConf: p.Configuration = conf
 
+  val config = new Config(conf)
+
   /** Can be accessed also after the test is done and Play.maybeApplication is None.
     */
   val isDev: Boolean = appLoaderContext.environment.mode == play.api.Mode.Dev
@@ -115,8 +114,21 @@ class Globals(
   def testsDoneServerGone: Boolean =
     isOrWasTest && (!isInitialized || Play.maybeApplication.isEmpty)
 
-  def isOrWasTestDisableScripts: Boolean = isOrWasTest && state.isTestDisableScripts
-  def isOrWasTestDisableBackgroundJobs: Boolean = isOrWasTest && state.isTestDisableBackgroundJobs
+  val isTestDisableScripts: Boolean = isOrWasTest && {
+    val disable = conf.getBoolean("isTestDisableScripts").getOrElse(false)
+    if (disable) {
+      p.Logger.info("Is test with scripts disabled. [EsM4GY82]")
+    }
+    disable
+  }
+
+  def isTestDisableBackgroundJobs: Boolean = isOrWasTest && {
+    val disable = conf.getBoolean("isTestDisableBackgroundJobs").getOrElse(false)
+    if (disable) {
+      p.Logger.info("Is test with background jobs disabled. [EsM6JY0K2]")
+    }
+    disable
+  }
 
   def isInitialized: Boolean = (_state ne null) && _state.isGood
 
@@ -129,15 +141,21 @@ class Globals(
     _state match {
       case Good(state) => state
       case Bad(anyException) =>
-        p.Logger.error("State not yet created, still connecting to other stuff. Stack trace:")
-        new Exception().printStackTrace()
+        p.Logger.warn("Accessing state before it's been created. I'm still connecting to other stuff.")
         throw anyException getOrElse StillConnectingException
     }
   }
 
 
   @volatile var killed = false
-  @volatile var stopCreatingState = false
+  @volatile var shallStopStuff = false
+
+  // 5 seconds sometimes in a test —> """
+  // debiki.RateLimiterSpec *** ABORTED ***
+  // Futures timed out after [5 seconds]
+  // """
+  // (in that case, all tests went fine, but couldn't shutdown the test server quickly enough)
+  val ShutdownTimeout: FiniteDuration = 10 seconds
 
   /** For now (forever?), ignore platforms that don't send Linux signals.
     */
@@ -162,31 +180,41 @@ class Globals(
   val mostMetrics = new MostMetrics(metricRegistry)
 
 
-  def applicationVersion: String = state.applicationVersion
+  val applicationVersion = "0.00.41"  // later, read from some build config file
 
   def applicationSecret: String = {
     throwForbiddenIfSecretNotChanged()
-    state.applicationSecret
+    _appSecret
   }
 
   def throwForbiddenIfSecretNotChanged() {
-    if (state.applicationSecretNotChanged && isProd)
+    val applicationSecretNotChanged = _appSecret == "changeme"
+    if (applicationSecretNotChanged && isProd)
       throwForbidden("EsE4UK20F", o"""Please edit the 'play.crypto.secret' config value,
           its still set to 'changeme'""")
   }
+
+  private val _appSecret = {
+    conf.getString("play.http.secret.key").orElse(
+      conf.getString("play.crypto.secret")).noneIfBlank.getOrDie(
+      "Config value 'play.http.secret.key' missing [EdECHANGEME]")
+  }
+
 
   /** Lets people do weird things, namely fake their ip address (&fakeIp=... url param)
     * in order to create many e2e test sites — also in prod mode, for smoke tests.
     * The e2e test sites will have ids like {{{test__...}}} so that they can be deleted safely.
     */
-  def e2eTestPassword: Option[String] = state.e2eTestPassword
+  val e2eTestPassword: Option[String] = conf.getString("ed.e2eTestPassword").noneIfBlank
 
   /** Lets people do some forbidden things, like creating a site with a too short
     * local hostname.
     */
-  def forbiddenPassword: Option[String] = state.forbiddenPassword
+  val forbiddenPassword: Option[String] = conf.getString("ed.forbiddenPassword").noneIfBlank
 
-  def mayFastForwardTime: Boolean = state.mayFastForwardTime
+  val mayFastForwardTime: Boolean =
+    if (!isProd) true
+    else conf.getBoolean("ed.mayFastForwardTime") getOrElse false
 
   def systemDao: SystemDao = state.systemDao  // [rename] to newSystemDao()?
 
@@ -205,14 +233,16 @@ class Globals(
   def endToEndTestMailer: ActorRef = state.mailerActorRef
 
   def renderPageContentInBackground(sitePageId: SitePageId) {
-    if (!isOrWasTestDisableBackgroundJobs) {
+    if (!isTestDisableBackgroundJobs) {
       state.renderContentActorRef ! sitePageId
     }
   }
 
   def spamChecker: SpamChecker = state.spamChecker
 
-  def securityComplaintsEmailAddress: Option[String] = state.securityComplaintsEmailAddress
+  val securityComplaintsEmailAddress: Option[String] =
+    conf.getString("ed.securityComplaintsEmailAddress").orElse(
+      conf.getString("debiki.securityComplaintsEmailAddress")).noneIfBlank
 
 
   /** Either exactly all sites uses HTTPS, or all of them use HTTP.
@@ -234,19 +264,89 @@ class Globals(
     * -->
     *  Either HTTP for all sites (assuming a trusted intranet), or HTTPS for all sites.
     */
-  def secure: Boolean = state.secure
+  val secure: Boolean =
+    conf.getBoolean("ed.secure").orElse(
+      conf.getBoolean("debiki.secure")) getOrElse {
+      p.Logger.info("Config value 'ed.secure' missing; defaulting to true. [DwM3KEF2]")
+      true
+    }
 
-  def scheme: String = state.scheme
-  def schemeColonSlashSlash: String = state.scheme + "://"
+  val scheme: String = if (secure) "https" else "http"
+  def schemeColonSlashSlash: String = scheme + "://"
 
-
-  def port: Int = state.port
+  val port: Int = {
+    if (isOrWasTest) {
+      // Not on classpath: play.api.test.Helpers.testServerPort
+      // Instead, duplicate its implementation here:
+      sys.props.get("testserver.port").map(_.toInt) getOrElse 19001
+    }
+    else {
+      conf.getInt("ed.port").orElse(conf.getInt("debiki.port")) getOrElse {
+        if (secure) 443
+        else 80
+      }
+    }
+  }
 
   def colonPort: String =
     if (secure && port == 443) ""
     else if (!secure && port == 80) ""
     else s":$port"
 
+  val baseDomainNoPort: String =
+    if (isOrWasTest) "localhost"
+    else conf.getString("ed.baseDomain").orElse(
+      conf.getString("debiki.baseDomain")).noneIfBlank getOrElse "localhost"
+
+  val baseDomainWithPort: String =
+    if (secure && port == 443) baseDomainNoPort
+    else if (!secure && port == 80) baseDomainNoPort
+    else s"$baseDomainNoPort:$port"
+
+
+  /** The hostname of the site created by default when setting up a new server. */
+  val firstSiteHostname: Option[String] = conf.getString(FirstSiteHostnameConfigValue).orElse(
+    conf.getString("debiki.hostname")).noneIfBlank
+
+  if (firstSiteHostname.exists(_ contains ':'))
+    p.Logger.error("Config value ed.hostname contains ':' [DwE4KUWF7]")
+
+  val becomeFirstSiteOwnerEmail: Option[String] =
+    conf.getString(BecomeOwnerEmailConfigValue).orElse(
+      conf.getString("debiki.becomeOwnerEmailAddress")).noneIfBlank
+
+  /** New sites may be created only from this hostname. */
+  val anyCreateSiteHostname: Option[String] =
+    conf.getString("ed.createSiteHostname").orElse(
+      conf.getString("debiki.createSiteHostname")).noneIfBlank
+  val anyCreateTestSiteHostname: Option[String] =
+    conf.getString("ed.createTestSiteHostname").orElse(
+      conf.getString("debiki.createTestSiteHostname")).noneIfBlank
+
+  val maxUploadSizeBytes: Int =
+    conf.getInt("ed.uploads.maxKiloBytes").orElse(
+      conf.getInt("debiki.uploads.maxKiloBytes").map(_ * 1000)).getOrElse(3*1000*1000)
+
+  val anyUploadsDir: Option[String] = {
+    val value = conf.getString(LocalhostUploadsDirConfigValueName).noneIfBlank
+    val pathSlash = if (value.exists(_.endsWith("/"))) value else value.map(_ + "/")
+    pathSlash match {
+      case None =>
+        Some(DefaultLocalhostUploadsDir)
+      case Some(path) =>
+        // SECURITY COULD test more dangerous dirs. Or whitelist instead?
+        if (path == "/" || path.startsWith("/etc/") || path.startsWith("/bin/")) {
+          p.Logger.warn(o"""Config value $LocalhostUploadsDirConfigValueName specifies
+                a dangerous path: $path — file uploads disabled. [DwE0GM2]""")
+          None
+        }
+        else {
+          pathSlash
+        }
+    }
+  }
+
+  val anyPublicUploadsDir: Option[String] = anyUploadsDir.map(_ + "public/")
 
   def originOf(site: Site): Option[String] = site.canonicalHost.map(originOf)
   def originOf(host: SiteHost): String = originOf(host.hostname)
@@ -265,36 +365,24 @@ class Globals(
     originOf(request.underlying)
 
 
-  def baseDomainWithPort: String = state.baseDomainWithPort
-  def baseDomainNoPort: String = state.baseDomainNoPort
-
-
-  def firstSiteHostname: Option[String] = state.firstSiteHostname
-  def becomeFirstSiteOwnerEmail: Option[String] = state.becomeFirstSiteOwnerEmail
-
-  /** New sites may be created only from this hostname. */
-  def anyCreateSiteHostname: Option[String] = state.anyCreateSiteHostname
-  def anyCreateTestSiteHostname: Option[String] = state.anyCreateTestSiteHostname
-
-  // Hmm, in this way there'll be just one conf field:
-  def config: Config = state.config
-
   def poweredBy = s"https://www.effectivediscussions.org"
 
 
   /** If a hostname matches this pattern, the site id can be extracted directly from the url.
     */
-  def siteByIdHostnameRegex: Regex = state.siteByIdHostnameRegex
+  val siteByIdHostnameRegex: Regex = {
+    // The hostname must be directly below the base domain, otherwise
+    // wildcard HTTPS certificates won't work: they cover 1 level below the
+    // base domain only, e.g. host.example.com but not sub.host.example.com,
+    // if the cert was issued for *.example.com.
+    s"""^$SiteByIdHostnamePrefix(.*)\\.$baseDomainNoPort$$""".r
+  }
 
   def SiteByIdHostnamePrefix = "site-"
 
   def siteByIdOrigin(siteId: SiteId): String =
     s"$scheme://$SiteByIdHostnamePrefix$siteId.$baseDomainWithPort"
 
-
-  def maxUploadSizeBytes: Int = state.maxUploadSizeBytes
-  def anyUploadsDir: Option[String] = state.anyUploadsDir
-  def anyPublicUploadsDir: Option[String] = state.anyPublicUploadsDir
 
   def pubSub: PubSubApi = state.pubSub
   def strangerCounter: StrangerCounterApi = state.strangerCounter
@@ -386,8 +474,6 @@ class Globals(
 
 
   def startStuff() {
-    p.Logger.info("Starting... [EsM200HELLO]")
-    isOrWasTest // initialise it now
     if (_state ne null)
       throw new jl.IllegalStateException(o"""Server already running, was it not properly
         shut down last time? Please hit CTRL+C to kill it. [DwE83KJ9]""")
@@ -398,36 +484,39 @@ class Globals(
     // If we're unable to connect to a service, then we'll set _state to a
     // developer / operations-team friendly error message about the service being
     // inaccessible, and some tips about how troubleshoot this and how to start it.
+    // Whilst the state is being created, we'll show a message in any browser that
+    // the server is starting, please wait — to me, that's more user friendly than
+    // a blank page, in case this takes long.
     val createStateFuture = Future {
       tryCreateStateUntilKilled()
     }
 
-    try {
-      Await.ready(createStateFuture, (isOrWasTest ? 99 | 5) seconds)
-      if (killed) {
-        p.Logger.info("Killed. Bye. [EsM200KILLED]")
-        // Play.stop() has no effect, not from here directly, nor from within a Future {},
-        // and Future { sleep(100ms); stop() } also doesn't work.
-        //  play.api.Play.stop(app)  <-- nope
-        // instead:
-        System.exit(0)
-        // However this leaves a RUNNING_PID file. So the docker container deletes it
-        // before start, see docker/play-prod/Dockerfile [65YKFU02]
-
-        // However this block won't run if we've started already. So exiting directly
-        // in the signal handler instea, right now, see [9KYKW25] above. Not sure why Play
-        // apparently ignores signals, once we've started (i.e. returned from this function).
-      }
-      else {
-        p.Logger.info("Started. [EsM200READY]")
-      }
+    createStateFuture foreach { _ =>
+      p.Logger.info("State created. [EsMSTATEREADY]")
     }
-    catch {
-      case _: TimeoutException =>
-        // We'll show a message in any browser that the server is starting, please wait
-        // — that's better than a blank page? In case this takes long.
-        p.Logger.info(
-          "Starting now, although not yet connected to all other services. Trying... [EsM200CRAZY]")
+
+    // When testing, never proceed before the server has started properly, or tests will fail (I think).
+    if (isOrWasTest) {
+      try {
+        Await.ready(createStateFuture, 99 seconds)
+        if (killed) {
+          p.Logger.info("Killed. Bye. [EsMKILLED]")
+          // Don't know how to tell Play to exit? Maybe might as well just:
+          System.exit(0)
+          // However this leaves a RUNNING_PID file. So the docker container deletes it
+          // before start, see docker/play-prod/Dockerfile [65YKFU02]  <— this was before,
+          //                                     when also Prod mode waited for the future.
+
+          // However this block won't run if we've started already. So exiting directly
+          // in the signal handler instea, right now, see [9KYKW25] above. Not sure why Play
+          // apparently ignores signals, once we've started (i.e. returned from this function).
+        }
+      }
+      catch {
+        case _: TimeoutException =>
+          p.Logger.error("Creating state takes too long, something is amiss? [EsESTATESLOW]")
+          System.exit(0)
+      }
     }
   }
 
@@ -437,13 +526,14 @@ class Globals(
     _state = Bad(None)
     var firsAttempt = true
 
-    while (_state.isBad && !killed && !stopCreatingState) {
+    while (_state.isBad && !killed && !shallStopStuff) {
       if (!firsAttempt) {
         // Don't attempt to connect to everything too quickly, because then 100 MB log data
         // with "Error connecting to database ..." are quickly generated.
-        Thread.sleep(3000)
-        if (killed || stopCreatingState) {
-          p.Logger.info("Aborting create-state loop [EsMSTOPSTATE1]")
+        Thread.sleep(4000)
+        if (killed || shallStopStuff) {
+          p.Logger.info(killed ? "Killed. Bye. [EsM200KILLED]" |
+              "Aborting create-state loop, shall stop stuff [EsMSTOPSTATE1]")
           return
         }
       }
@@ -485,7 +575,7 @@ class Globals(
       }
     }
 
-    if (killed || stopCreatingState) {
+    if (killed || shallStopStuff) {
       p.Logger.info("Aborting create-state loop [EsMSTOPSTATE2]")
       return
     }
@@ -494,11 +584,11 @@ class Globals(
     // Let's create them in this parallel thread rather than blocking the whole server.
     // (Takes 2? 5? seconds.)
     edContext.nashorn.startCreatingRenderEngines(
-      secure = state.secure,
+      secure = secure,
       cdnUploadsUrlPrefix = config.cdn.uploadsUrlPrefix,
-      isTestSoDisableScripts = isOrWasTestDisableScripts)
+      isTestSoDisableScripts = isTestDisableScripts)
 
-    if (!isOrWasTestDisableBackgroundJobs) {
+    if (!isTestDisableBackgroundJobs) {
       actorSystem.scheduler.scheduleOnce(5 seconds, state.renderContentActorRef,
           RenderContentService.RegenerateStaleHtml)(executionContext)
     }
@@ -512,9 +602,8 @@ class Globals(
     if (_state eq null)
       return
 
-    p.Logger.info("Shutting down... [EsMBYESOON]")
     if (_state.isBad) {
-      stopCreatingState = true
+      shallStopStuff = true
     }
     else {
       // Shutdown the notifier before the mailer, so no notifications are lost
@@ -533,7 +622,6 @@ class Globals(
     _state = null
     timeStartMillis = None
     timeOffsetMillis = 0
-    p.Logger.info("Done shutting down. [EsMBYE]")
 
     shutdownLogging()
   }
@@ -546,8 +634,8 @@ class Globals(
 
 
   private def shutdownActorAndWait(actorRef: ActorRef): Boolean = {
-    val future = gracefulStop(actorRef, state.ShutdownTimeout)
-    val stopped = Await.result(future, state.ShutdownTimeout)
+    val future = gracefulStop(actorRef, ShutdownTimeout)
+    val stopped = Await.result(future, ShutdownTimeout)
     stopped
   }
 
@@ -622,33 +710,6 @@ class Globals(
   private class State(
     val dbDaoFactory: RdbDaoFactory,
     val cache: DaoMemCache) {
-
-    val applicationVersion = "0.00.41"  // later, read from some build config file
-
-    // 5 seconds sometimes in a test —> """
-    // debiki.RateLimiterSpec *** ABORTED ***
-    // Futures timed out after [5 seconds]
-    // """
-    // (in that case, all tests went fine, but couldn't shutdown the test server quickly enough)
-    val ShutdownTimeout: FiniteDuration = 10 seconds
-
-    val config = new Config(conf)
-
-    val isTestDisableScripts: Boolean = {
-      val disable = conf.getBoolean("isTestDisableScripts").getOrElse(false)
-      if (disable) {
-        p.Logger.info("Is test with scripts disabled. [EsM4GY82]")
-      }
-      disable
-    }
-
-    val isTestDisableBackgroundJobs: Boolean = {
-      val disable = conf.getBoolean("isTestDisableBackgroundJobs").getOrElse(false)
-      if (disable) {
-        p.Logger.info("Is test with background jobs disabled. [EsM6JY0K2]")
-      }
-      disable
-    }
 
     // Redis. (A Redis client pool makes sense if we haven't saturate the CPU on localhost, or
     // if there're many Redis servers and we want to round robin between them. Not needed, now.)
@@ -733,111 +794,6 @@ class Globals(
 
     def systemDao: SystemDao = new SystemDao(dbDaoFactory, cache, outer) // RENAME to newSystemDao()?
 
-    val applicationSecret: String =
-      conf.getString("play.http.secret.key").orElse(
-          conf.getString("play.crypto.secret")).noneIfBlank.getOrDie(
-        "Config value 'play.http.secret.key' missing [EdECHANGEME]")
-
-    val applicationSecretNotChanged: Boolean = applicationSecret == "changeme"
-
-    val e2eTestPassword: Option[String] =
-      conf.getString("ed.e2eTestPassword").noneIfBlank
-
-    val forbiddenPassword: Option[String] =
-      conf.getString("ed.forbiddenPassword").noneIfBlank
-
-    val mayFastForwardTime: Boolean =
-      if (!isProd) true
-      else conf.getBoolean("ed.mayFastForwardTime") getOrElse false
-
-    val secure: Boolean =
-      conf.getBoolean("ed.secure").orElse(
-        conf.getBoolean("debiki.secure")) getOrElse {
-      p.Logger.info("Config value 'ed.secure' missing; defaulting to true. [DwM3KEF2]")
-      true
-    }
-
-    def scheme: String = if (secure) "https" else "http"
-
-    val port: Int = {
-      if (isOrWasTest) {
-        // Not on classpath: play.api.test.Helpers.testServerPort
-        // Instead, duplicate its implementation here:
-        sys.props.get("testserver.port").map(_.toInt) getOrElse 19001
-      }
-      else {
-        conf.getInt("ed.port").orElse(conf.getInt("debiki.port")) getOrElse {
-          if (secure) 443
-          else 80
-        }
-      }
-    }
-
-    val baseDomainNoPort: String =
-      if (isOrWasTest) "localhost"
-      else conf.getString("ed.baseDomain").orElse(
-        conf.getString("debiki.baseDomain")).noneIfBlank getOrElse "localhost"
-
-    val baseDomainWithPort: String =
-      if (secure && port == 443) baseDomainNoPort
-      else if (!secure && port == 80) baseDomainNoPort
-      else s"$baseDomainNoPort:$port"
-
-
-    /** The hostname of the site created by default when setting up a new server. */
-    val firstSiteHostname: Option[String] = conf.getString(FirstSiteHostnameConfigValue).orElse(
-      conf.getString("debiki.hostname")).noneIfBlank
-
-    if (firstSiteHostname.exists(_ contains ':'))
-      p.Logger.error("Config value ed.hostname contains ':' [DwE4KUWF7]")
-
-    val becomeFirstSiteOwnerEmail: Option[String] =
-      conf.getString(BecomeOwnerEmailConfigValue).orElse(
-        conf.getString("debiki.becomeOwnerEmailAddress")).noneIfBlank
-
-    val anyCreateSiteHostname: Option[String] =
-      conf.getString("ed.createSiteHostname").orElse(
-        conf.getString("debiki.createSiteHostname")).noneIfBlank
-    val anyCreateTestSiteHostname: Option[String] =
-      conf.getString("ed.createTestSiteHostname").orElse(
-        conf.getString("debiki.createTestSiteHostname")).noneIfBlank
-
-    // The hostname must be directly below the base domain, otherwise
-    // wildcard HTTPS certificates won't work: they cover 1 level below the
-    // base domain only, e.g. host.example.com but not sub.host.example.com,
-    // if the cert was issued for *.example.com.
-    val siteByIdHostnameRegex: Regex =
-      s"""^$SiteByIdHostnamePrefix(.*)\\.$baseDomainNoPort$$""".r
-
-    val maxUploadSizeBytes: Int =
-      conf.getInt("ed.uploads.maxKiloBytes").orElse(
-        conf.getInt("debiki.uploads.maxKiloBytes").map(_ * 1000)).getOrElse(3*1000*1000)
-
-    val anyUploadsDir: Option[String] = {
-      import Globals.LocalhostUploadsDirConfigValueName
-      val value = conf.getString(LocalhostUploadsDirConfigValueName).noneIfBlank
-      val pathSlash = if (value.exists(_.endsWith("/"))) value else value.map(_ + "/")
-      pathSlash match {
-        case None =>
-          Some(DefaultLocalhostUploadsDir)
-        case Some(path) =>
-          // SECURITY COULD test more dangerous dirs. Or whitelist instead?
-          if (path == "/" || path.startsWith("/etc/") || path.startsWith("/bin/")) {
-            p.Logger.warn(o"""Config value $LocalhostUploadsDirConfigValueName specifies
-                a dangerous path: $path — file uploads disabled. [DwE0GM2]""")
-            None
-          }
-          else {
-            pathSlash
-          }
-      }
-    }
-
-    val anyPublicUploadsDir: Option[String] = anyUploadsDir.map(_ + "public/")
-
-    val securityComplaintsEmailAddress: Option[String] =
-      conf.getString("ed.securityComplaintsEmailAddress").orElse(
-        conf.getString("debiki.securityComplaintsEmailAddress")).noneIfBlank
   }
 
 }

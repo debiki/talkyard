@@ -5,6 +5,7 @@ import debiki.onebox.Onebox
 import debiki.{Globals, RateLimiter, ReactRenderer, TextAndHtmlMaker}
 import ed.server.http.{PlainApiActions, SafeActions}
 import ed.server.security.EdSecurity
+import play.{api => p}
 import play.api._
 import play.api.http.FileMimeTypes
 import play.api.libs.ws.ahc.AhcWSComponents
@@ -23,7 +24,10 @@ class EdAppLoader extends ApplicationLoader {
     val isProd = context.environment.mode == play.api.Mode.Prod
     Globals.setIsProdForever(isProd)
 
-    new EdAppComponents(context).application
+    p.Logger.info("Starting... [EsMHELLO]")
+    val app = new EdAppComponents(context).application
+    p.Logger.info("Started. [EsMSTARTED]")
+    app
   }
 
 }
@@ -56,7 +60,9 @@ class EdAppComponents(appLoaderContext: ApplicationLoader.Context)
 
   applicationLifecycle.addStopHook { () =>
     Future.successful {
+      p.Logger.info("Shutting down... [EsMBYESOON]")
       globals.stopStuff()
+      p.Logger.info("Done shutting down. [EsMBYE]")
     }
   }
 
