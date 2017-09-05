@@ -61,10 +61,10 @@ const HostnameEditorDialog = createComponent({
     Server.changeHostname(hostname, () => {
       util.openDefaultStupidDialog({
         small: true,
-        body: r.span({}, "Hostname added. Now, go to ",
+        body: r.span({}, "Address added. Now, go to ",
           r.a({ href: linkToAdminPageAdvancedSettings(hostname) }, hostname),
           " and see if it works. If so, then, in the Admin Area, the Advanced section, click ",
-          r.b({}, "Redirect old hostnames"), "."),  // dupl button name [5KFU2R0]
+          r.b({}, "Redirect old addresses"), "."),  // dupl button name [5KFU2R0]
       });
       // COULD show a message at the new hostname about redirecting old hostnames.
       this.close();
@@ -79,10 +79,10 @@ const HostnameEditorDialog = createComponent({
           "1) You need to add a CNAME entry to your domain name server that points to ",
           r.b({}, r.samp({}, "c1.ed.community")),
           ". 2) Don't delete the old CNAME — leave it as is. Later, you can click a certain ",
-          r.b({}, "Redirect old hostnames"),  // dupl button name [5KFU2R0]
+          r.b({}, "Redirect old addresses"),  // dupl button name [5KFU2R0]
           " button to redirect visitors from the old address to the new."),
-        r.p({}, "You cannot change hostname too many times or too often."),
-        PatternInput({ label: "Hostname", ref: 'hostnameInput',
+        r.p({}, "You cannot change address too many times or too often."),
+        PatternInput({ label: "New address: (hostname)", ref: 'hostnameInput',
           placeholder: 'forum.example.com',
           notRegex: /\s/, notMessage: "No spaces please",
           notRegexTwo: /^https?:/, notMessageTwo: "Don't include http://",
@@ -99,7 +99,7 @@ const HostnameEditorDialog = createComponent({
         ModalBody({}, content),
         ModalFooter({},
           PrimaryButton({ onClick: this.submitHostname, disabled: !this.state.maySubmit },
-            "Change hostname"),
+            "Change address"),
           Button({ onClick: this.close }, "Cancel"))));
   }
 });

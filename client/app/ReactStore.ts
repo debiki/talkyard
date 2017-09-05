@@ -180,8 +180,7 @@ ReactDispatcher.register(function(payload) {
         if (is2dTree) {
           $h.removeClasses(htmlElem, 'dw-vt');
           $h.addClasses(htmlElem, 'dw-hz');
-          debiki.internal.layoutThreads();
-          debiki2.utils.onMouseDetected(Server.load2dScriptsBundleStartUtterscroll);
+          debiki2.utils.onMouseDetected(Server.load2dScriptsBundleStart2dStuff);
         }
         else {
           $h.removeClasses(htmlElem, 'dw-hz');
@@ -738,8 +737,10 @@ function summarizeReplies() {
     if (post.nr === BodyNr || post.nr === TitleNr || post.parentNr === BodyNr)
       return;
 
-    // offsetHeight = outer height, no margin
-    const isTooHigh = () => $byId('post-' + post.nr).offsetHeight > 150;
+    function isTooHigh() {
+      const postElem = $byId('post-' + post.nr);
+      return postElem && postElem.offsetHeight > 150; // offsetHeight = outer height, no margin
+    }
     if (post.childIdsSorted.length || isTooHigh()) {
       post.isTreeCollapsed = 'Truncated';
       post.summarize = true;

@@ -22,6 +22,7 @@
 /// <reference path="review-posts.staff.ts" />
 /// <reference path="users.staff.ts" />
 /// <reference path="users-one.staff.ts" />
+/// <reference path="hostname-editor.staff.ts" />
 
 //------------------------------------------------------------------------------
    module debiki2.admin {
@@ -600,48 +601,45 @@ var AdvancedSettingsComponent = React.createClass(<any> {
   },
 
   getCanonicalHostname: function() {
-    var host = _.find(this.props.hosts, (host: Host) => host.role == HostRole.Canonical);
+    const host = _.find(this.props.hosts, (host: Host) => host.role == HostRole.Canonical);
     return host ? host.hostname : null;
   },
 
   render: function() {
-    var props = this.props;
-    var hosts: Host[] = props.hosts;
-    var canonicalHostname = this.getCanonicalHostname();
-    if (!canonicalHostname)
-      return (
-        r.p({},
-          "No canonical host [EsM4KP0FYK2].", r.br(),
-          "All hosts: " + JSON.stringify(hosts)));
+    const props = this.props;
+    const hosts: Host[] = props.hosts;
+    const noCanonicalHostSpecifiedString = " (no address specified)";
+    const canonicalHostname = this.getCanonicalHostname() || noCanonicalHostSpecifiedString;
 
-    var RedirectButtonTitle = "Redirect old hostnames"; // dupl [5KFU2R0]
-    var canonicalHostnameSamp = r.samp({}, canonicalHostname);
-    var isDuplicate = location.hostname !== canonicalHostname;
+    const RedirectButtonTitle = "Redirect old addresses"; // dupl [5KFU2R0]
+    const canonicalHostnameSamp = r.samp({}, canonicalHostname);
+    const isDuplicate = location.hostname !== canonicalHostname &&
+        canonicalHostname !== noCanonicalHostSpecifiedString;
 
-    var duplicateHostnames =
+    const duplicateHostnames =
       _.filter(hosts, (h: Host) => h.role == HostRole.Duplicate).map((h: Host) => h.hostname);
-    var redirectingHostnames =
+    const redirectingHostnames =
       _.filter(hosts, (h: Host) => h.role == HostRole.Redirect).map((h: Host) => h.hostname);
 
-    var changeHostnameFormGroup =
+    const changeHostnameFormGroup =
       r.div({ className: 'form-group' },
-        r.label({ className: 'control-label col-sm-3' }, "Hostname"),
+        r.label({ className: 'control-label col-sm-3' }, "Address"),
         r.div({ className: 'col-sm-9 esA_Ss_S esAdmin_settings_setting' },
           location.protocol + "//", r.code({ className: 'esA_Ss_S_Hostname' }, canonicalHostname),
           r.div({ className: 'help-block' },
             "This is the address people type in the browser address bar to go to this forum."),
-          Button({ onClick: openHostnameEditor }, "Change hostname ...")));
+          Button({ onClick: openHostnameEditor }, "Change address ...")));
 
-    var duplicatingHostsFormGroup = duplicateHostnames.length === 0 ? null :
+    const duplicatingHostsFormGroup = duplicateHostnames.length === 0 ? null :
       r.div({ className: 'form-group has-error' },
-        r.label({ className: 'control-label col-sm-3' }, "Duplicating hostnames"),
+        r.label({ className: 'control-label col-sm-3' }, "Duplicate addresses"),
         r.div({ className: 'col-sm-9 esA_Ss_S-Hostnames esAdmin_settings_setting' },
           r.pre({}, duplicateHostnames.join('\n')),
           r.span({ className: 'help-block' },
-            "This forum is still accessible at the old hostnames listed above. " +
+            "This forum is still accessible at the old addresses listed above. " +
             "Search engines (like Google, Baidu, and Yandex) don't like that — they want your " +
-            "forum to be accessible via ", r.i({}, "one"), " hostname only. You should " +
-            "therefore ", r.i({}, "redirect"), " all the old hostnames to ",
+            "forum to be accessible via ", r.i({}, "one"), " addresses only. You should " +
+            "therefore ", r.i({}, "redirect"), " all the old addresses to ",
             canonicalHostnameSamp, ':'),
           isDuplicate
             ? r.p({}, "Go to ",
@@ -650,11 +648,11 @@ var AdvancedSettingsComponent = React.createClass(<any> {
                 ", login, and click ", r.b({}, RedirectButtonTitle))
             : Button({ onClick: this.redirectExtraHostnames }, RedirectButtonTitle)));
 
-    var redirectingHostsFormGroup = redirectingHostnames.length === 0 ? null :
+    const redirectingHostsFormGroup = redirectingHostnames.length === 0 ? null :
       r.div({ className: 'form-group' },
-        r.label({ className: 'control-label col-sm-3' }, "Redirecting hostnames"),
+        r.label({ className: 'control-label col-sm-3' }, "Redirecting addresses"),
         r.div({ className: 'col-sm-9 esA_Ss_S-Hostnames esAdmin_settings_setting' },
-          r.span({ className: 'help-block' }, "These old hostnames redirect to ",
+          r.span({ className: 'help-block' }, "These old addresses redirect to ",
             canonicalHostnameSamp, " (with status 302 Found):"),
           r.pre({}, redirectingHostnames.join('\n'))));
 

@@ -80,7 +80,58 @@ function registerEventHandlersFireLoginOut() {
   // Therefore, when the user switches back to this tab, check
   // if a new session has been started.
   Bliss.events(window, { 'focus': handleLoginInOtherBrowserTab });
-};
+}
+
+
+/**
+ * If the URL query string contains 2d=true/false, enables/disables
+ * horizontal comments. If the screen is narrow, forces one-column-layout.
+ * Returns the layout type in use: 'OneColumnLayout' or 'TreeLayout'.
+ */
+function chooseInitialLayout() {
+  var queryString = window.location.search;
+  var shallEnable2d = queryString.search('2d=true') !== -1;
+  var shallDisable2d = queryString.search('2d=false') !== -1 ||
+      // use window.outerWidth — it doesn't force a layout reflow (and it's fine that it might
+      // be a bit inexact because of browser window borders).
+      Math.max(window.outerWidth, window.outerHeight) < 1000;
+  var is2dEnabled = debiki2.ReactStore.allData().horizontalLayout;
+  if (is2dEnabled && shallDisable2d) {
+    disableHzComments();
+    return 'OneColumnLayout';
+  }
+  if (!is2dEnabled && shallEnable2d) {
+    enableHzComments();
+    return 'TreeLayout';
+  }
+
+  var htmlElemClasses = document.documentElement.classList;
+
+  function disableHzComments(){
+    htmlElemClasses.remove('dw-hz');
+    htmlElemClasses.add('dw-vt');
+    _.each(debiki2.$$all('.dw-depth-0'), function(threadElem) {
+      debiki2.$h.removeClasses(threadElem, 'dw-hz');
+    });
+    debiki2.ReactActions.setHorizontalLayout(false);
+  }
+
+  function enableHzComments(){
+    htmlElemClasses.remove('dw-vt');
+    htmlElemClasses.add('dw-hz');
+    _.each(debiki2.$$all('.dw-depth-0'), function(threadElem) {
+      debiki2.$h.addClasses(threadElem, 'dw-hz');
+    });
+    debiki2.ReactActions.setHorizontalLayout(true);
+  }
+
+  if (is2dEnabled) {
+    return 'TreeLayout';
+  }
+  else {
+    return 'OneColumnLayout';
+  }
+}
 
 
 
@@ -90,8 +141,10 @@ function registerEventHandlersFireLoginOut() {
  */
 function renderDiscussionPage() {
   // Do this before rendering the page.
-  d.i.layout = d.i.chooseLayout();
-  d.i.layoutThreads();
+  const _2dLayout = chooseInitialLayout() === 'TreeLayout';
+  if (_2dLayout) {
+    debiki2.utils.onMouseDetected(debiki2.Server.load2dScriptsBundleStart2dStuff);
+  }
 
   // Make it possible to test React.js performance in the browser.
   if (location.search.indexOf('breakReactChecksums=true') !== -1) {
@@ -155,9 +208,6 @@ function renderDiscussionPage() {
   var steps = [];
 
   steps.push(function() {
-    if (d.i.layout === 'TreeLayout') {
-      debiki2.utils.onMouseDetected(debiki2.Server.load2dScriptsBundleStartUtterscroll);
-    }
     registerEventHandlersFireLoginOut();
     debiki2.utils.startDetectingMouse();
   });
@@ -206,7 +256,7 @@ d.i.renderEmptyPage = function() {
   // dashbar depends on login/logout events, and it's shown even if there's no
   // root post — e.g. on blog list pages, which list child pages only but no
   // main title or article.)
-  debiki2.utils.onMouseDetected(debiki2.Server.load2dScriptsBundleStartUtterscroll);
+  debiki2.utils.onMouseDetected(debiki2.Server.load2dScriptsBundleStart2dStuff);
   debiki2.ReactStore.initialize();
   debiki2.startRemainingReactRoots();
   debiki2.ReactStore.activateVolatileData();

@@ -84,7 +84,10 @@ export var Metabar = createComponent({
   summarizeReplies: function() {
     ReactActions.summarizeReplies();
     setTimeout(() => {
-      this.setState({ numRepliesSummarized: $('.dw-p.dw-x').length });
+      this.setState({
+        numRepliesVisible: $$all('.dw-p').length,
+        numRepliesSummarized: $$all('.dw-p.dw-x').length
+      });
     }, 1);
   },
 
@@ -140,10 +143,10 @@ export var Metabar = createComponent({
     if (store.numPostsRepliesSection >= 10) {
       var doneSummarizing = !_.isNumber(this.state.numRepliesSummarized) ? null :
           r.span({ style: { marginLeft: '1em' }},
-            "Done.");
-          // Don't show num summarized — only visiblie replies are summarized, so
-          // the count would be confusingly low.
-          // So don't:  Summarized " + this.state.numRepliesSummarized + " replies.");
+          // Only visiblie replies are summarized, so the count might be confusingly low,
+          // if we don't clarify that only visible replies get summarized.
+          `Done. Summarized ${this.state.numRepliesSummarized} replies, ` +
+            `of the ${this.state.numRepliesVisible} replies previously shown.`);
       var minutes = estimateReadingTimeMinutesSkipOrigPost(<Post[]> _.values(store.postsByNr));
       if (minutes >= 10 || store.numPostsRepliesSection >= 20) {
         summarizeStuff =

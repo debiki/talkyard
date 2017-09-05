@@ -55,46 +55,4 @@ function findMaxNesting(thread) {
   return max;
 }
 
-
-/**
- * If the URL query string contains 2d=true/false, enables/disables
- * horizontal comments. If the screen is narrow, forces one-column-layout.
- * Returns the layout type in use: 'OneColumnLayout' or 'TreeLayout'.
- */
-d.i.chooseLayout = function(){
-  var shallEnable2d = window.location.toString().search('2d=true') !== -1;
-  var shallDisable2d = window.location.toString().search('2d=false') !== -1 ||
-      // use window.outerWidth — it doesn't force a layout reflow (and it's fine that it might
-      // be a bit inexact because of browser window borders).
-      Math.max(window.outerWidth, window.outerHeight) < 1000;
-  var is2dEnabled = $('html').is('.dw-hz');
-  if (is2dEnabled && shallDisable2d) {
-    disableHzComments();
-    return 'OneColumnLayout';
-  }
-  if (!is2dEnabled && shallEnable2d) {
-    enableHzComments();
-    return 'TreeLayout';
-  }
-
-  function disableHzComments(){
-    $('html').removeClass('dw-hz').addClass('dw-vt');
-    $('.dw-depth-0').removeClass('dw-hz');
-    debiki2.ReactActions.setHorizontalLayout(false);
-  }
-
-  function enableHzComments(){
-    $('html').removeClass('dw-vt').addClass('dw-hz');
-    $('.dw-depth-0').addClass('dw-hz');
-    debiki2.ReactActions.setHorizontalLayout(true);
-  }
-
-  if (is2dEnabled) {
-    return 'TreeLayout';
-  }
-  else {
-    return 'OneColumnLayout';
-  }
-};
-
 // vim: fdm=marker et ts=2 sw=2 tw=0 fo=r list

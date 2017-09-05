@@ -120,7 +120,7 @@ export function loadJs(src: string, success?: () => void) {
   });
   promise.catch(function(error) {
     pagedialogs.getServerErrorDialog().open(
-        `Error loading script ${src}: ${error.toString} [EdELDJSERR]`);
+        `Error loading script ${src}: ${error.toString()} [EdELDJSERR]`);
   });
   if (success) promise.then(success);
   return promise;
@@ -286,12 +286,13 @@ export function loadMoreScriptsBundle(callback) {
 }
 
 
-export function load2dScriptsBundleStartUtterscroll() {
+export function load2dScriptsBundleStart2dStuff() {
   if (hasStartedLoading2dScripts) {
     return;
   }
   hasStartedLoading2dScripts = true;
   loadJs(d.i.assetUrlPrefix + '2d-bundle.' + d.i.minMaxJs, function() {
+    debiki.internal.layoutThreads();
     // Wrap in function, because not available until funtion evaluated (because then script loaded).
     debiki.internal.initUtterscrollAndTips();
   });
