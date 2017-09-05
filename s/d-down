@@ -1,0 +1,3 @@
+#!/bin/bash
+
+s/d kill web app gulp ; s/d down

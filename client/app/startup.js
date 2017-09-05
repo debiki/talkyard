@@ -141,7 +141,7 @@ function chooseInitialLayout() {
  */
 function renderDiscussionPage() {
   // Do this before rendering the page.
-  const _2dLayout = chooseInitialLayout() === 'TreeLayout';
+  var _2dLayout = chooseInitialLayout() === 'TreeLayout';
   if (_2dLayout) {
     debiki2.utils.onMouseDetected(debiki2.Server.load2dScriptsBundleStart2dStuff);
   }
