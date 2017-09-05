@@ -102,35 +102,34 @@ export function timeExact(whenMs: number, clazz?: string) {
  */
 // COULD move to page/hacks.ts
 export function processTimeAgo(selector?: string) {
+  // COULD_OPTIMIZE seems is called twice? but once should be enough.
+
   selector = selector || '';
-  var timeDoneClass = 'esTimeDone';
+  const timeDoneClass = 'esTimeDone';
+  const now = Date.now();
 
   // First handle all long version timestamps (don't end with -ltr ("letter")).
   // Result: e.g. "5 hours ago"
-  $(selector + ' .dw-ago:not(.' + timeDoneClass + ')').each(function() {
-    var $this = $(this);
-    var isoDate = $this.text();
-    var then = debiki2['isoDateStringToMillis'](isoDate); // typescript compilation error without []
-    var now = Date.now();
-    var timeAgoString = debiki.prettyDuration(then, now);
-    $this.text(timeAgoString);
-    $this.addClass(timeDoneClass);
+  _.each($all(selector + ' .dw-ago:not(.' + timeDoneClass + ')'), function(elem: HTMLElement) {
+    const isoDate = elem.textContent;
+    const then = debiki2['isoDateStringToMillis'](isoDate); // typescript compilation error without []
+    const timeAgoString = debiki.prettyDuration(then, now);
+    elem.textContent = timeAgoString;
+    $h.addClasses(elem, timeDoneClass);
     // But don't add any title tooltip attr, see [85YKW20] above.
   });
 
   // Then handle all one-letter timestamps (end with -ltr ("letter")).
   // Result: e.g. "5h" (instead of "5 hours ago").
-  $(selector + ' .dw-ago-ltr:not(.' + timeDoneClass + ')').each(function() {
-    var $this = $(this);
-    var isoDate = $this.text();
-    var then = debiki2['isoDateStringToMillis'](isoDate); // typescript compilation error without []
-    var now = Date.now();
-    var durationLetter = debiki.prettyLetterDuration(then, now);
-    $this.text(durationLetter);
+  _.each($all(selector + ' .dw-ago-ltr:not(.' + timeDoneClass + ')'), function(elem: HTMLElement) {
+    const isoDate = elem.textContent;
+    const then = debiki2['isoDateStringToMillis'](isoDate); // typescript compilation error without []
+    const durationLetter = debiki.prettyLetterDuration(then, now);
+    elem.textContent = durationLetter;
     // Don't add any title tooltip [85YKW20]. That's better done by the React.js components
     // that knows what this date is about, so the tooltip can be e.g. "Last edited on <date>" or
     // "Created on <date>" rather than just the date.
-    $this.addClass(timeDoneClass);
+    $h.addClasses(elem, timeDoneClass);
   });
 
   // This no longer works, here in slim-bundle.js, because moment.js moved to more-bundle.js [E5F29V]
@@ -165,11 +164,13 @@ export function processTimeAgo(selector?: string) {
 //------------------------------------------------------------------------------
 
 //------------------------------------------------------------------------------
-   module debiki2.utils {
+   namespace debiki2.utils {
 //------------------------------------------------------------------------------
 
-export function makeMountNode() {
-  return $('<div>').appendTo('body')[0];
+export function makeMountNode(): HTMLElement {
+  const elem = Bliss.create('div');
+  document.body.appendChild(elem);
+  return elem;
 }
 
 //------------------------------------------------------------------------------
