@@ -222,9 +222,9 @@ export function $bySelector(selector: string): NodeListOf<Element> {   // RENAME
   return document.querySelectorAll(selector);
 }
 
-export function $first(selector: string): Element {
+export function $first(selector: string): HTMLElement {
   const elems = document.querySelectorAll(selector);
-  return elems.length ? elems[0] : null;
+  return <HTMLElement> (elems.length ? elems[0] : null);
 }
 
 export function $byId(elemId: string): HTMLElement {

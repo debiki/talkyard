@@ -26,20 +26,18 @@
 /// <reference path="../more-bundle-not-yet-loaded.ts" />
 
 //------------------------------------------------------------------------------
-   module debiki2.reactelements {  // rename to debiki2.topbar
+   namespace debiki2.reactelements {  // rename to debiki2.topbar
 //------------------------------------------------------------------------------
 
-var r = React.DOM;
-
-var FixedTopDist = 8;
+const FixedTopDist = 8;
 
 
 export function getTopbarHeightInclShadow(): number {
-  return $('.dw-fixed-topbar-wrap').height() + 4; // shadow size (the '+ X') dupl here: [5YKW25]
+  return $first('.dw-fixed-topbar-wrap').offsetHeight + 4; // shadow size (the '+ X') dupl here: [5YKW25]
 }
 
 
-export var TopBar = createComponent({
+export const TopBar = createComponent({
   displayName: 'TopBar',
   mixins: [debiki2.StoreListenerMixin, debiki2.utils.PageScrollMixin],
 
@@ -66,8 +64,8 @@ export var TopBar = createComponent({
       // later? — This layout reflow takes about 15 ms (core i7 laptop), that's about 5% of
       // the total time spent scripting & rendering before the first paint.
       if (this.isGone) return;
-      var rect = this.getThisRect();
-      var pageTop = getPageScrollableRect().top;
+      const rect = this.getThisRect();
+      const pageTop = getPageScrollableRect().top;
       this.setState({
         initialOffsetTop: rect.top - pageTop,
         fixed: rect.top < -FixedTopDist,
@@ -91,18 +89,18 @@ export var TopBar = createComponent({
     if (!_.isNumber(this.state.initialOffsetTop))
       return;
 
-    var store: Store = this.state.store;
-    var pageRect = getPageScrollableRect();
-    var pageLeft = pageRect.left;
+    const store: Store = this.state.store;
+    const pageRect = getPageScrollableRect();
+    let pageLeft = pageRect.left;
     if (store.isWatchbarOpen && !store.shallSidebarsOverlayPage) {
       pageLeft -= WatchbarWidth;
     }
-    var pageTop = pageRect.top;
-    var newTop = -pageTop - this.state.initialOffsetTop;
+    const pageTop = pageRect.top;
+    const newTop = -pageTop - this.state.initialOffsetTop;
     this.setState({ top: newTop, left: -pageLeft }); // CLEAN_UP `top` not used. What about `left`?
     if (!this.state.fixed) {
       if (-pageTop > this.state.initialOffsetTop + FixedTopDist || pageLeft < -40) {
-        var rect = this.getThisRect();
+        const rect = this.getThisRect();
         this.setState({
           fixed: true,
           // Update the height here, not in componentDidMount, because the height might change
@@ -120,7 +118,7 @@ export var TopBar = createComponent({
         this.setState({ fixed: false, top: 0, left: 0 });
       }
     }
-    var calcCoords = utils.calcScrollIntoViewCoordsInPageColumn;
+    const calcCoords = utils.calcScrollIntoViewCoordsInPageColumn;
     this.setState({
       // We cannot scroll above the title anyway, so as long as the upper .dw-page is visible,
       // disable the go-to-page-top button. Also, the upper parts of the page is just whitespace,
@@ -156,10 +154,10 @@ export var TopBar = createComponent({
   },
 
   render: function() {
-    var store: Store = this.state.store;
-    var me: Myself = store.me;
-    var pageRole = store.pageRole;
-    var isChat = page_isChatChannel(store.pageRole);
+    const store: Store = this.state.store;
+    const me: Myself = store.me;
+    const pageRole = store.pageRole;
+    const isChat = page_isChatChannel(store.pageRole);
 
     // Don't show all these buttons on a homepage / landing page, until after has scrolled down.
     // If not logged in, never show it — there's no reason for new users to login on the homepage.
@@ -169,14 +167,14 @@ export var TopBar = createComponent({
     // Sidebars just make newcomers confused, if shown on some About Us page. However, if logged
     // in already, then one likely knows how they work —> then one would instead be confused,
     // if the open-sidebars buttons were suddenly gone?
-    var hideSidebarBtns = page_isInfoPage(pageRole) && !me.isLoggedIn;
+    const hideSidebarBtns = page_isInfoPage(pageRole) && !me.isLoggedIn;
 
     // ------- Forum --> Category --> Sub Category
 
     let ancestorCategories;
-    let shallShowAncestors = settings_showCategories(store.settings, me);
-    let thereAreAncestors = nonEmpty(store.ancestorsRootFirst);
-    let isUnlisted = _.some(store.ancestorsRootFirst, a => a.unlisted);
+    const shallShowAncestors = settings_showCategories(store.settings, me);
+    const thereAreAncestors = nonEmpty(store.ancestorsRootFirst);
+    const isUnlisted = _.some(store.ancestorsRootFirst, a => a.unlisted);
 
     if (isUnlisted || isSection(pageRole)) {
       // Show no ancestors.
@@ -196,7 +194,7 @@ export var TopBar = createComponent({
     // direct messages, which aren't placed in any category (!thereAreAncestors).
     else if (thereAreAncestors || store.pageRole === PageRole.FormalMessage) {
       // Currently there's always just one site section, namely the forum.
-      var homePath = store.siteSections[0].path;
+      const homePath = store.siteSections[0].path;
       ancestorCategories =
         r.ol({ className: 'esTopbar_ancestors' },
           r.li({},
@@ -211,12 +209,12 @@ export var TopBar = createComponent({
 
     // ------- My Menu (avatar + username dropdown menu)
 
-    var urgentReviewTasks = makeNotfIcon('reviewUrgent', me.numUrgentReviewTasks);
-    var otherReviewTasks = makeNotfIcon('reviewOther', me.numOtherReviewTasks);
+    const urgentReviewTasks = makeNotfIcon('reviewUrgent', me.numUrgentReviewTasks);
+    const otherReviewTasks = makeNotfIcon('reviewOther', me.numOtherReviewTasks);
 
-    var talkToMeNotfs = makeNotfIcon('toMe', me.numTalkToMeNotfs);
-    var talkToOthersNotfs = makeNotfIcon('toOthers', me.numTalkToOthersNotfs);
-    var otherNotfs = makeNotfIcon('other', me.numOtherNotfs);
+    const talkToMeNotfs = makeNotfIcon('toMe', me.numTalkToMeNotfs);
+    const talkToOthersNotfs = makeNotfIcon('toOthers', me.numTalkToOthersNotfs);
+    const otherNotfs = makeNotfIcon('other', me.numOtherNotfs);
 
     let isImpersonatingClass = '';
     let impersonatingStrangerInfo;
@@ -233,7 +231,7 @@ export var TopBar = createComponent({
     let myAvatar = !me.isLoggedIn ? null :
         avatar.Avatar({ user: me, tiny: true, ignoreClicks: true });
 
-    var avatarNameDropdown = !me.isLoggedIn && !impersonatingStrangerInfo ? null :
+    const avatarNameDropdown = !me.isLoggedIn && !impersonatingStrangerInfo ? null :
       Button({ onClick: this.openMyMenu,
           // RENAME 'esAvtrName' + 'esMyMenu' to 's_MMB' (my-menu button).
           className: 'esAvtrName esMyMenu' + isImpersonatingClass,
@@ -253,14 +251,14 @@ export var TopBar = createComponent({
 
     // Don't show Log In on info pages, like a custom HTML homepage or About pages — that
     // has so far only made people confused.
-    var hideLogInAndSignUp =
+    const hideLogInAndSignUp =
         me.isLoggedIn || page_isInfoPage(pageRole) || impersonatingStrangerInfo;
 
-    var signupButton = hideLogInAndSignUp ? null :
+    const signupButton = hideLogInAndSignUp ? null :
       PrimaryButton({ className: 'dw-login esTopbar_signUp', onClick: this.onSignUpClick },
         r.span({}, "Sign Up"));
 
-    var loginButton = hideLogInAndSignUp ? null :
+    const loginButton = hideLogInAndSignUp ? null :
         PrimaryButton({ className: 'dw-login esTopbar_logIn', onClick: this.onLoginClick },
             r.span({ className: 'icon-user' }, 'Log In'));
 
@@ -268,22 +266,22 @@ export var TopBar = createComponent({
     // Placed here so it'll be available also when one has scrolled down a bit.
 
     // (Is it ok to call another React component from here? I.e. the page tools dialog.)
-    var toolsButton = !isStaff(me) || !store_shallShowPageToolsButton(store) ? null :
+    const toolsButton = !isStaff(me) || !store_shallShowPageToolsButton(store) ? null :
         Button({ className: 'dw-a-tools', onClick: this.showTools },
           r.a({ className: 'icon-wrench' }, 'Tools'));
 
     // ------- Search button
 
-    var searchButton =
+    const searchButton =
        utils.ModalDropdownButton({ title: r.span({ className: 'icon-search' }),
             className: 'esTB_SearchBtn', allowFullWidth: true, closeOnClick: false },
          SearchForm({}));
 
     // ------- Forum title
 
-    var pageTitle;
+    let pageTitle;
     if (pageRole === PageRole.Forum) {
-      var titleProps: any = _.clone(store);
+      const titleProps: any = _.clone(store);
       titleProps.hideButtons = this.state.fixed;
       pageTitle =
           r.div({ className: 'dw-topbar-title' }, page.Title(titleProps));
@@ -291,12 +289,12 @@ export var TopBar = createComponent({
 
     // ------- Custom title & Back to site button
 
-    var customTitle;
+    let customTitle;
     if (this.props.customTitle) {
       customTitle = r.h1({ className: 'esTopbar_custom_title' }, this.props.customTitle);
     }
 
-    var backToSiteButton;
+    let backToSiteButton;
     if (this.props.showBackToSite || this.props.backToSiteButtonTitle) {
       backToSiteButton = r.a({ className: 'esTopbar_custom_backToSite btn icon-reply',
           onClick: goBackToSite }, this.props.backToSiteButtonTitle || "Back from admin area");
@@ -307,13 +305,13 @@ export var TopBar = createComponent({
     // If server side, don't render any "X online" because that'd make the server side html
     // different from the html React generates client side to verify that the server's
     // html is up-to-date.
-    var usersHere = store.userSpecificDataAdded ? store_getUsersHere(store) : null;
+    const usersHere = store.userSpecificDataAdded ? store_getUsersHere(store) : null;
 
     // We'll show "X users online", to encourage people to open and learn about the contextbar.
     // They'll more likely to do that, if they see a message that means "other people here too,
     // check them out".
-    var contextbarTipsDetailed;
-    var contextbarTipsBrief;
+    let contextbarTipsDetailed;
+    let contextbarTipsBrief;
     if (!usersHere) {
       // Server side — skip this. Or own data not yet activated – wait until later.
     }
@@ -333,24 +331,24 @@ export var TopBar = createComponent({
       var numOthers = usersHere.numOnline - (usersHere.iAmHere ? 1 : 0);
       because then people get confused when inside the contextbar they see: sth like '1 user, you'
       although when collapsed, says '0 users'. So for now: */
-      var numOthers = usersHere.numOnline;
-      var inThisWhat = usersHere.areChatChannelMembers ? "chat"  : "forum";
+      const numOthers = usersHere.numOnline;
+      const inThisWhat = usersHere.areChatChannelMembers ? "chat"  : "forum";
       contextbarTipsDetailed = numOthers + " online in this " + inThisWhat;
       contextbarTipsBrief = r.span({}, '' + numOthers, r.span({ className: 'icon-user' }));
     }
-    var contextbarTips = !contextbarTipsDetailed ? null :
+    const contextbarTips = !contextbarTipsDetailed ? null :
         r.span({ className: 'esOpenCtxbarBtn_numOnline'},
           r.span({ className: 'detailed' }, contextbarTipsDetailed),
           r.span({ className: 'brief' }, contextbarTipsBrief));
 
-    var openContextbarButton = hideSidebarBtns ? null :
+    const openContextbarButton = hideSidebarBtns ? null :
         Button({ className: 'esOpenPagebarBtn', onClick: ReactActions.openPagebar,
             title: contextbarTipsDetailed },
           contextbarTips, r.span({ className: 'icon-left-open' }));
 
     // ------- Open Watchbar button
 
-    var openWatchbarButton = hideSidebarBtns ? null :
+    const openWatchbarButton = hideSidebarBtns ? null :
         Button({ className: 'esOpenWatchbarBtn', onClick: ReactActions.openWatchbar,
             title: "Your recent topics, joined chats, direct messages" },
           r.span({ className: 'icon-right-open' }),
@@ -369,9 +367,9 @@ export var TopBar = createComponent({
 
     // ------- The result
 
-    var extraMarginClass = this.props.extraMargin ? ' esTopbar-extraMargin' : '';
+    const extraMarginClass = this.props.extraMargin ? ' esTopbar-extraMargin' : '';
 
-    var topbar =
+    const topbar =
       r.div({ className: 'esTopbar' + extraMarginClass },
         r.div({ className: 'esTopbar_right' },
           signupButton,
@@ -385,9 +383,8 @@ export var TopBar = createComponent({
         pageTitle,
         ancestorCategories);
 
-    var fixItClass = '';
-    var styles = {};
-    var placeholderIfFixed;
+    let fixItClass = '';
+    let placeholderIfFixed;
     if (this.state.fixed) {
       fixItClass = ' dw-fixed-topbar-wrap';
       // (This placeholder is actually totally needed, otherwise in some cases it'd be
@@ -405,7 +402,7 @@ export var TopBar = createComponent({
     return (
       r.div({},
         placeholderIfFixed,
-        r.div({ className: 'esTopbarWrap' + fixItClass, style: styles },
+        r.div({ className: 'esTopbarWrap' + fixItClass },
           openWatchbarButton,
           openContextbarButton,
           r.div({ className: 'container' },
@@ -416,8 +413,8 @@ export var TopBar = createComponent({
 
 function makeNotfIcon(type: string, number: number) {
   if (!number) return null;
-  var numMax99 = Math.min(99, number);
-  var wideClass = number >= 10 ? ' esNotfIcon-wide' : '';
+  const numMax99 = Math.min(99, number);
+  const wideClass = number >= 10 ? ' esNotfIcon-wide' : '';
   return r.div({ className: 'esNotfIcon esNotfIcon-' + type + wideClass}, numMax99);
 }
 
@@ -425,7 +422,7 @@ function makeNotfIcon(type: string, number: number) {
 // COULD move SearchForm to more-bundle, so won't need to access via ['search']
 // (needs to do that currently, because not available server side)
 //
-var SearchForm = createComponent({
+const SearchForm = createComponent({
   displayName: 'SearchForm',
 
   getInitialState: function() {
@@ -433,7 +430,7 @@ var SearchForm = createComponent({
   },
 
   componentDidMount: function() {
-    $(this.refs.input).focus();
+    this.refs.input.focus();
   },
 
   onQueryChange: function(event) {
