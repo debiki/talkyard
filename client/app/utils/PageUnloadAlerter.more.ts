@@ -62,20 +62,22 @@ export var AlertIfLeavingRouteMixin = {
 };
 
 
+// Doesn't seem to work, when reloading the page in the browser: the overlay won't appear
+// until *after* the close/reload-page dialog has been closed. :-(
 function showUnloadWarning(event: BeforeUnloadEvent) {
-  var warningMessage = _.findLast(warningsByKey, () => true);
+  const warningMessage = _.findLast(warningsByKey, () => true);
   if (!warningMessage)
     return true;
 
   // Dim the page, because otherwise the unload warning dialog is hard to notice.
   // Un-dim the page when the dialog closes — the setTimeout callback seems to fire when
   // the unload warning dialog closes, just what we need.
-  var $overlay = $($.parseHTML('<div style="z-index:9999999;' +
-    'position:fixed;top:0;bottom:0;left:0;right:0;background-color:#000;opacity:0.5;"></div>'));
-  $overlay.appendTo('body');
+  const overlayElem = $h.wrapParseHtml('<div style="z-index:9999999;' +
+    'position:fixed;top:0;bottom:0;left:0;right:0;background-color:#000;opacity:0.5;"></div>');
+  document.body.appendChild(overlayElem);
   // No idea why, but unless $overlay.remove is wrapped in a function, it has no effect here
   // (not in Chrome 47.0.2526.106 at least).
-  setTimeout(function() { $overlay.remove() }, 100);
+  setTimeout(function() { overlayElem.remove() }, 100);
 
   return warningMessage;
 }

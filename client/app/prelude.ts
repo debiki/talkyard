@@ -253,7 +253,7 @@ export const $h = {
     dieIf(/#\./.test(classesString), 'EdE6EF2T47');
     // @endif
     const classes = classesString.replace(/ *, */g, ',').replace(/ +/g, ',').split(',');
-    elem.classList.add(...classes);
+    !elem || elem.classList.add(...classes);
   },
 
 
@@ -262,7 +262,7 @@ export const $h = {
     dieIf(/#\./.test(classesString), 'EdEKEW20P7');
     // @endif
     const classes = classesString.replace(/ *, */g, ',').replace(/ +/g, ',').split(',');
-    elem.classList.remove(...classes);
+    !elem || elem.classList.remove(...classes);
   },
 
 
@@ -270,6 +270,7 @@ export const $h = {
     // @ifdef DEBUG
     dieIf(/#\. /.test(clazz), 'EdE5JFB8W2');
     // @endif
+    if (!elem) return;
     const classes = elem.classList;
     if (classes.contains(clazz)) classes.remove(clazz);
     else classes.add(clazz);
@@ -283,7 +284,7 @@ export const $h = {
   },
 
 
-  wrapParseHtml: function(htmlText: string): Element {
+  wrapParseHtml: function(htmlText: string): HTMLElement {
     return $h.parseHtml('<div>' + htmlText + '</div>')[0];
   }
 

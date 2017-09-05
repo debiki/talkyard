@@ -18,28 +18,28 @@
 /// <reference path="../plain-old-javascript.d.ts" />
 
 //------------------------------------------------------------------------------
-   module debiki2.utils {
+   namespace debiki2.utils {
 //------------------------------------------------------------------------------
 
 
 export function highlightActiveLinkInHeader() {
-  var $activeLink = $();
-  var longestMatch = 0;
-  $('.esPageHeader a').each(function() {
-    var $a = $(this);
-    var href = $a.attr('href');
+  let activeLinkElem;
+  let longestMatch = 0;
+  _.each($all('.esPageHeader a'), function(linkElem: HTMLElement) {
+    const href = linkElem.getAttribute('href');
     if (!href) return;
-    var currentHref = href.indexOf('://') === -1
+    const currentHref = href.indexOf('://') === -1
       ? location.pathname + location.search + location.hash
       : location.href.toString();
-    var isActive = currentHref.indexOf(href) === 0;
+    const isActive = currentHref.indexOf(href) === 0;
     if (isActive && href.length >= longestMatch) {
       longestMatch = href.length;
-      $activeLink = $a;
+      activeLinkElem = linkElem;
     }
   });
-  $('.esActiveHeaderLink').removeClass('esActiveHeaderLink');
-  $activeLink.addClass('esActiveHeaderLink');
+  const className = 'esActiveHeaderLink';
+  $h.removeClasses($first('.' + className), className);
+  $h.addClasses(activeLinkElem, className);
 }
 
 
