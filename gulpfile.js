@@ -105,7 +105,6 @@ var slimJsFiles = [
       'target/client/app/actions/reply.js',
       'target/client/app/if-in-iframe.js',
       'target/client/app/utils/jquery-find.js',
-      'target/client/app/page/resize-threads.js',
       //'target/client/app/posts/monitor-reading-progress-unused.js',
       'target/client/app/posts/resize.js',
       //'target/client/app/posts/unread-unused.js',
@@ -127,7 +126,8 @@ var moreJsFiles = [
 var _2dJsFiles = [
   'client/third-party/jquery-scrollable.js',
   'client/third-party/jquery.browser.js',
-  'target/client/app/page/layout-threads.js',
+  'target/client/app/page/layout-threads.2d.js',
+  'target/client/app/page/resize-threads.2d.js',
   'target/client/app/utterscroll/utterscroll-init-tips.js',
   'client/app/utterscroll/utterscroll.js',
   'target/client/2d-typescript.js'];

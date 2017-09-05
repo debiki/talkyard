@@ -213,9 +213,6 @@ function renderDiscussionPage() {
   });
 
   steps.push(function() {
-    _.each(posts, function(post) {
-      d.i.makeThreadResizableForPost(post);
-    });
     debiki2.ReactActions.loadAndScrollToAnyUrlAnchorPost();
     debiki2.form.activateAnyCustomForm();
   });

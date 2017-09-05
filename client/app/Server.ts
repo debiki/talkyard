@@ -293,6 +293,7 @@ export function load2dScriptsBundleStart2dStuff() {
   hasStartedLoading2dScripts = true;
   loadJs(d.i.assetUrlPrefix + '2d-bundle.' + d.i.minMaxJs, function() {
     debiki.internal.layoutThreads();
+    debiki2.utils.onMouseDetected(d.i.makeColumnsResizable);
     // Wrap in function, because not available until funtion evaluated (because then script loaded).
     debiki.internal.initUtterscrollAndTips();
   });

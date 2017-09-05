@@ -1,4 +1,4 @@
-/* Makes threads resizable.
+/* Makes thread columns horizontally resizable, in 2d layout.
  * Copyright (C) 2010-2012 Kaj Magnus Lindberg (born 1979)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -16,15 +16,13 @@
  */
 
 
-
-(function() {
-
 var d = { i: debiki.internal, u: debiki.v0.util };
 var $ = d.i.$;
 
 
-d.i.makeThreadResizableForPost = function(post) {
-  var $thread = $(post).closest('.dw-t');
+d.i.makeColumnsResizable = function() {
+  // Skip the title
+  var $threads = $('.dw-depth-0 .dw-t');
 
   // Make replies to the root thread resizable horizontally. (Takes
   // perhaps 100 ms on my 6 core 2.8 GHz AMD, 24 depth-1 reply columns.)
@@ -37,12 +35,10 @@ d.i.makeThreadResizableForPost = function(post) {
   //
   // For touch devises, don't enable resizing of posts: it doesn't
   // work, and the resize handles steal touch events from buttons nearby.
-  debiki2.utils.onMouseDetected(function() {
-    $thread.filter(function() {
-      var $i = $(this);
-      return !$i.is('.dw-i-t') && $i.parent().closest('.dw-t').is('.dw-hz');
-    }).each($makeThreadEastResizable);
-  });
+  $threads.filter(function() {
+    var $i = $(this);
+    return !$i.is('.dw-i-t') && $i.parent().closest('.dw-t').is('.dw-hz');
+  }).each($makeThreadEastResizable);
 };
 
 
@@ -53,7 +49,5 @@ function $makeThreadEastResizable() {
   });
 };
 
-
-})();
 
 // vim: fdm=marker et ts=2 sw=2 tw=80 fo=tcqwn list
