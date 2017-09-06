@@ -216,6 +216,12 @@ export function deleteById(itemsWithId: any[], idToDelete) {
 }
 
 
+export function parsePostNr(postElem: HTMLElement): number {
+  // 5 = drop 'post-' from 'post-123'.
+  return parseInt(postElem.id && postElem.id.substr(5, 9));
+}
+
+
 export const $all = $bySelector;
 export const $$all = $bySelector;  // use $all instead?
 export const $$bySelector = $bySelector;  // returns many, so should be named $$... not just $...
@@ -285,7 +291,7 @@ export const $h = {
 
 
   wrapParseHtml: function(htmlText: string): HTMLElement {
-    return $h.parseHtml('<div>' + htmlText + '</div>')[0];
+    return <HTMLElement> $h.parseHtml('<div>' + htmlText + '</div>')[0];
   }
 
 };

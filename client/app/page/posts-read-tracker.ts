@@ -53,6 +53,7 @@ let readStatesByPostNr: { [postNr: number]: ReadState } = {};
 let postNrsVisibleLastTick: { [postNr: number]: boolean } = {};
 let pageId = debiki2.ReactStore.getPageId();
 let postNrsJustRead = [];
+let wentToTopAtMs: number;
 
 // Most people read 200 words per minute with a reading comprehension of 60%.
 // 0.1% read 1 000 wpm with a comprehension of 85%.
@@ -111,6 +112,7 @@ function reset() {
 
 let visibleUnreadPostsStats = [];
 let postsVisibleThisTick: { [postNr: number]: boolean } = {};
+let hadFocus = false;
 
 export function start() {
   reset();
@@ -132,12 +134,12 @@ export function getPostNrsAutoReadLongAgo(): number[] {
 
 
 function sendAnyRemainingData() {
-  if (talksWithSererAlready || !lastViewedPostNr || !unreportedSecondsReading ||
+  if (talksWithSererAlready || !unreportedSecondsReading ||
       unreportedSecondsReading <= TooFewSeconds)
     return;
 
   // @ifdef DEBUG
-  !debug || console.debug(`Sending remaining data via beacon: ${unreportedPostNrsRead.length} ` +
+  !debug || console.log(`Sending remaining data via beacon: ${unreportedPostNrsRead.length} ` +
       `posts, ${unreportedSecondsReading} seconds reading`);
   // @endif
 
@@ -148,8 +150,8 @@ function sendAnyRemainingData() {
 
 
 function trackReadingActivity() {
-  let store: Store = ReactStore.allData();
-  let me: Myself = store.me;
+  const store: Store = ReactStore.allData();
+  const me: Myself = store.me;
 
   if (me.id !== lastUserId) {
     reset();
@@ -171,24 +173,41 @@ function trackReadingActivity() {
     return;
 
   // Don't remove posts read one tick ago until now, so they get time to fade away slowly.
-  let hasReadMorePosts = postNrsJustRead.length;
+  const hasReadMorePosts = postNrsJustRead.length;
   // @ifdef DEBUG
-  !debug || !hasReadMorePosts || console.debug(`Marking as read: ${postNrsJustRead}`);
+  !debug || !hasReadMorePosts || console.log(`Marking as read: ${postNrsJustRead}`);
   // @endif
   _.each(postNrsJustRead, postNr => {
     debiki2.ReactActions.markPostAsRead(postNr, false);
   });
   postNrsJustRead = [];
 
-  let nowMs = Date.now();
+  const nowMs = Date.now();
 
   let hasScrolled = false;
-  let $pageColumn = $('#esPageColumn');
-  let curScrollLeft = $pageColumn.scrollLeft();
-  let curScrollTop = $pageColumn.scrollTop();
+  const pageColumnElem = $byId('esPageColumn');
+  const curScrollLeft = pageColumnElem.scrollLeft;
+  const curScrollTop = pageColumnElem.scrollTop;
+
+  if (lastScrollTop > 200 && curScrollTop <= 100) {
+    wentToTopAtMs = nowMs;
+  }
+  if (wentToTopAtMs) {
+    const secondsSinceWentToTop = (nowMs - wentToTopAtMs) / 1000;
+    if (lastViewedPostNr > BodyNr && (curScrollTop > 100 || secondsSinceWentToTop >= 4)) {
+      // The user scrolled to the top of the page, but then didn't click any top nav link.
+      // Instead s/he scrolled down a bit, or stayed there quite long.
+      // So apparently the user isn't interested in continuing reading at lastViewedPostNr.
+      // @ifdef DEBUG
+      !debug || console.log(`Resetting lastViewedPostNr (was: ${lastViewedPostNr})`);
+      // @endif
+      lastViewedPostNr = BodyNr;
+    }
+  }
+
   if (lastScrollLeft != curScrollLeft || lastScrollTop != curScrollTop) {
     // @ifdef DEBUG
-    !debug || console.debug(`Scroll detected, at ms: ${nowMs}`);
+    !debug || console.log(`Scroll detected, at ms: ${nowMs}`);
     // @endif
     lastScrollLeft = curScrollLeft;
     lastScrollTop = curScrollTop;
@@ -196,27 +215,32 @@ function trackReadingActivity() {
     hasScrolled = true;
   }
 
-  let millisSinceLastScroll = nowMs - lastScrolledAtMs;
-  if (millisSinceLastScroll > 3000) {
+  const millisSinceLastScroll = nowMs - lastScrolledAtMs;
+  if (millisSinceLastScroll > 2500) {
     // Now the user has been looking at that post for a while, so the next time we reopen
     // this page, focus that same post.
+    // @ifdef DEBUG
+    !debug || lastViewedPostNr === currentlyViewingPostNr ||
+        console.log(`Setting lastViewedPostNr to: ${currentlyViewingPostNr}`);
+    // @endif
     lastViewedPostNr = currentlyViewingPostNr;
+    wentToTopAtMs = undefined;
   }
 
-  let hasStoppedReading = millisSinceLastScroll > maxSecondsSinceLastScroll * 1000;
+  const hasStoppedReading = millisSinceLastScroll > maxSecondsSinceLastScroll * 1000;
   if (!hasStoppedReading) {
     unreportedSecondsReading += secondsBetweenTicks;
   }
   // @ifdef DEBUG
-  !debug || !hasStoppedReading || console.debug(`Not reading, at ms: ${lastScrolledAtMs}`);
+  !debug || !hasStoppedReading || console.log(`Not reading, at ms: ${lastScrolledAtMs}`);
   // @endif
 
   let millisSinceLastReport = nowMs - lastReportedToServerAtMs;
   if (!talksWithSererAlready && lastViewedPostNr && unreportedSecondsReading > TooFewSeconds && (
         hasReadMorePosts || millisSinceLastReport > ReportToServerIntervalSeconds * 1000)) {
     // @ifdef DEBUG
-    !debug || console.debug(`Reporting to server: ${unreportedSecondsReading} seconds, ` +
-        `these posts: ${unreportedPostNrsRead}`);
+    !debug || console.log(`Reporting to server: lastViewedPostNr: ${lastViewedPostNr}, ` +
+        `${unreportedSecondsReading} seconds reading, these post nrs: ${unreportedPostNrsRead}`);
     // @endif
     talksWithSererAlready = true;
     Server.trackReadingProgress(lastViewedPostNr, unreportedSecondsReading,
@@ -230,7 +254,8 @@ function trackReadingActivity() {
     unreportedPostNrsRead = [];
   }
 
-  if (hasStoppedReading || !document.hasFocus()) {
+  const hasFocus = document.hasFocus();
+  if (hasStoppedReading || !hasFocus) {
     secondsSpentReading = -maxConfusionSeconds;
     return;
   }
@@ -239,7 +264,7 @@ function trackReadingActivity() {
   // thread if parts of the thread is inside the viewport? isInViewport() takes
   // really long if there are > 200 comments (not good for mobile phones' battery?).
 
-  let unreadPosts: Post[] = [];
+  const unreadPosts: Post[] = [];
   _.each(store.postsByNr, (post: Post) => {
     if (!me_hasRead(me, post)) {
       unreadPosts.push(post);
@@ -247,10 +272,10 @@ function trackReadingActivity() {
   });
 
   // @ifdef DEBUG
-  !debug || console.debug(`Num unread posts = ${unreadPosts.length}`);
+  !debug || console.log(`Num unread posts = ${unreadPosts.length}`);
   // @endif
 
-  let shallRefreshVisiblePosts = hasScrolled || storeChanged;
+  const shallRefreshVisiblePosts = hasScrolled || storeChanged || (!hadFocus && hasFocus);
   storeChanged = false;
 
   if (shallRefreshVisiblePosts) {
@@ -258,15 +283,16 @@ function trackReadingActivity() {
     postsVisibleThisTick = {};
     currentlyViewingPostNr = 0;
 
-    let $postBodies = $('.dw-p-bd, .dw-ar-p-bd');
+    // Only post bodies below .dw-page, so won't include stuff in the sidebar.
+    const postBodyElems = $all('.dw-page .dw-p-bd');
 
-    $postBodies.each(function() {
-      if (!isInViewport(this))
+    _.each(postBodyElems, function(postBodyElem: HTMLElement) {
+      if (!isInViewport(postBodyElem))
         return;
 
-      let $postBody = $(this);
-      let postNr = $postBody.closest('.dw-p, .esC_M').dwPostId();
-      if (!postNr)
+      const postElem = postBodyElem.parentElement;
+      const postNr = parsePostNr(postElem);
+      if (!postNr)  // in Javascript, !NaN is true
         return;
 
       if (!currentlyViewingPostNr) {
@@ -288,7 +314,7 @@ function trackReadingActivity() {
         return;
 
       if (!progress.textLength) {
-        progress.textLength = $postBody.text().replace(/\s/g, '').length;
+        progress.textLength = postBodyElem.textContent.replace(/\s/g, '').length;
       }
 
       visibleUnreadPostsStats.push(progress);
@@ -341,7 +367,7 @@ function trackReadingActivity() {
     }
     if (fractionRead >= 1) {
       // @ifdef DEBUG
-      !debug || console.debug(`Just read post nr ${stats.postNr}`);
+      !debug || console.log(`Just read post nr ${stats.postNr}`);
       // @endif
       // Don't remove until next tick, so a fade-out animation gets time to run. [8LKW204R]
       postNrsJustRead.push(stats.postNr);
@@ -387,7 +413,11 @@ function fadeUnreadMark(postNr, fractionRead) {
   let percent = Math.floor(fractionRead * 5) * 20 + 10;
   percent = Math.min(90, percent);
   let selector = postNr === BodyNr ? '.dw-ar-p-hd' : '#post-' + postNr;
-  $(selector).find('.s_P_H_Unr').addClass('s_P_H_Unr-' + percent);  // [8LKW204R]
+  const postElem = $first(selector);
+  if (postElem) {
+    const unreadMarkElem = postElem.querySelector('.s_P_H_Unr');
+    $h.addClasses(unreadMarkElem, 's_P_H_Unr-' + percent);  // [8LKW204R]
+  }
 }
 
 
