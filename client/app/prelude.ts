@@ -222,6 +222,24 @@ export function parsePostNr(postElem: HTMLElement): number {
 }
 
 
+/**
+ * elem.matches('...:not(.aaa, .bbb)') doesn't work, because of the ','. Can use this
+ * fn instead: set skipSelector to '.aaa, .bbb'.
+ */
+export function ifEventOnNotThen(event: string, selector: string,
+      skipSelector: string, callback?: (elem: HTMLElement, event) => void) {
+  Bliss.delegate(document, event, selector, function(event) {
+    const elem: HTMLElement = <HTMLElement> event.target;
+    if (!elem) return;
+    if (skipSelector) {
+      if (elem.matches && elem.matches(skipSelector))
+        return;
+    }
+    callback(elem, event);
+  });
+}
+
+
 export const $all = $bySelector;
 export const $$all = $bySelector;  // use $all instead?
 export const $$bySelector = $bySelector;  // returns many, so should be named $$... not just $...

@@ -52,6 +52,7 @@ public/res/staff-bundle.*
 public/res/editor-bundle.*
 public/res/styles-bundle.*
 public/res/server-bundle.*
+public/res/jquery-bundle.*
 public/res/ed-comments.*
 public/res/zxcvbn.*
 

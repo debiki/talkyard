@@ -286,16 +286,15 @@ debiki2.utils.highlightActiveLinkInHeader();
 Gifffer();
 
 // Show large images on click.
-StupidLightbox.start('.dw-p-bd', ':not(.giffferated, .no-lightbox)');
+StupidLightbox.start('.dw-p-bd', '.giffferated, .no-lightbox');
 
 
 // Open about-user dialog if one clicks a @username mention (instead of navigating away to
 // the about-user page).
-Bliss.delegate(document, 'click', 'a.esMention', function(event) {
+debiki2.ifEventOnNotThen('click', 'a.esMention', '', function(linkElem, event) {
   event.preventDefault();
-  var href = event.target.href;
-  var username = href.replace(/^.*\/-\/users\//, '');
-  debiki2.morebundle.openAboutUserDialog(username, event.target);
+  var username = linkElem.href.replace(/^.*\/-\/users\//, '');
+  debiki2.morebundle.openAboutUserDialog(username, linkElem);
 });
 
 

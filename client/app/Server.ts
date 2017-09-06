@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/// <reference path="../typedefs/jquery/jquery.d.ts" />
+/// <reference path="plain-old-javascript.d.ts" />
 /// <reference path="model.ts" />
 /// <reference path="ServerApi.ts" />
 
@@ -184,7 +184,7 @@ function postJsonSuccess(urlPath, success: (response: any) => void, data: any, e
 
 export const testGet = get;
 
-function get(uri: string, options, success?: (response, xhr?: JQueryXHR) => void,
+function get(uri: string, options, success?: (response, xhr?: XMLHttpRequest) => void,
       error?: () => void): OngoingRequest {
   let dataType;
   let headers = {};
@@ -257,6 +257,7 @@ let editorScriptsPromise: Promise<any>;
 let moreScriptsPromise: Promise<any>;
 let hasStartedLoading2dScripts = false;
 let staffScriptsPromise: Promise<any>;
+let jQueryPromise: Promise<any>;
 
 
 // Won't call callback() until a bit later — so if you call React's setState(..), the
@@ -291,11 +292,13 @@ export function load2dScriptsBundleStart2dStuff() {
     return;
   }
   hasStartedLoading2dScripts = true;
-  loadJs(d.i.assetUrlPrefix + '2d-bundle.' + d.i.minMaxJs, function() {
-    debiki.internal.layoutThreads();
-    debiki2.utils.onMouseDetected(d.i.makeColumnsResizable);
-    // Wrap in function, because not available until funtion evaluated (because then script loaded).
-    debiki.internal.initUtterscrollAndTips();
+  loadJQuery(() => {
+    loadJs(d.i.assetUrlPrefix + '2d-bundle.' + d.i.minMaxJs, function() {
+      debiki.internal.layoutThreads();
+      debiki2.utils.onMouseDetected(d.i.makeColumnsResizable);
+      // Wrap in function, because not available until funtion evaluated (because then script loaded).
+      debiki.internal.initUtterscrollAndTips();
+    });
   });
 }
 
@@ -336,12 +339,31 @@ export function loadEditorAndMoreBundlesGetDeferred(): Promise<void> {
   editorScriptsPromise = new Promise(function(resolve) {
     // The editor scripts bundle requires more-bundle.js.
     loadMoreScriptsBundle(() => {
-      loadJs(d.i.assetUrlPrefix + 'editor-bundle.' + d.i.minMaxJs, function() {
-        resolve();
+      loadJQuery(() => {
+        loadJs(d.i.assetUrlPrefix + 'editor-bundle.' + d.i.minMaxJs, function() {
+          resolve();
+        });
       });
     });
   });
   return editorScriptsPromise;
+}
+
+
+function loadJQuery(callback) {
+  if (jQueryPromise) {
+    // Never call callback() immediately, because it's easier to write caller source code,
+    // if one knows that callback() will never be invoked immediately.
+    setTimeout(() => jQueryPromise.then(callback), 0);
+    return;
+  }
+  jQueryPromise = new Promise(function(resolve) {
+    loadJs(d.i.assetUrlPrefix + 'jquery-bundle.' + d.i.minMaxJs, function() {
+      resolve();
+      setTimeout(callback, 0);
+    });
+  });
+  return jQueryPromise;
 }
 
 

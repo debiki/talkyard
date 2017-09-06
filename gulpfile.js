@@ -82,15 +82,12 @@ var slimJsFiles = [
       'node_modules/react/dist/react.js',
       'node_modules/react-dom/dist/react-dom.js',
       'node_modules/create-react-class/create-react-class.js',
-      // Includes Rea.ReactCSSTransitionGroup:
       // COULD_OPTIMIZE SMALLER_BUNDLE or perhaps even remove? add pure CSS anims instead?
       'node_modules/react-transition-group/dist/react-transition-group.js',  // try to move to more-bundle
-      'node_modules/jquery/dist/jquery.js',//
-      'client/third-party/abbreviate-jquery.js',//
       'target/client/app/utils/calcScrollRectIntoViewCoords.js',
       'client/third-party/smoothscroll-tiny.js',
       'client/third-party/bliss.shy.js',
-      'client/third-party/stupid-lightbox.js',
+      'client/app/util/stupid-lightbox.js',
       'node_modules/keymaster/keymaster.js',
       // keymaster.js declares window.key, rename it to window.keymaster instead,
       // see comment in file for details.
@@ -98,13 +95,11 @@ var slimJsFiles = [
       'client/third-party/lodash-custom.js',
       'node_modules/eventemitter3/umd/eventemitter3.min.js',
       'node_modules/react-router/umd/ReactRouter.js',
-      'node_modules/jquery-resizable/resizable.js',
       'client/third-party/gifffer/gifffer.js',
       'client/third-party/get-set-cookie.js',
       'target/client/app/actions/edit/edit.js',
       'target/client/app/actions/reply.js',
       'target/client/app/if-in-iframe.js',
-      'target/client/app/utils/jquery-find.js',
       //'target/client/app/posts/monitor-reading-progress-unused.js',
       'target/client/app/posts/resize.js',
       //'target/client/app/posts/unread-unused.js',
@@ -150,6 +145,11 @@ var editorJsFiles = [
       'target/client/app/editor/mentions-markdown-it-plugin.js',
       'target/client/app/editor/onebox-markdown-it-plugin.js',
       'target/client/editor-typescript.js'];
+
+var jqueryJsFiles = [
+  'node_modules/jquery/dist/jquery.js',
+  'client/third-party/abbreviate-jquery.js',
+  'node_modules/jquery-resizable/resizable.js'];
 
 
 // For both touch devices and desktops.
@@ -395,6 +395,7 @@ function makeConcatAllScriptsStream() {
       makeConcatStream('2d-bundle.js', _2dJsFiles, 'DoCheckNewer'),
       makeConcatStream('staff-bundle.js', staffJsFiles, 'DoCheckNewer'),
       makeConcatStream('editor-bundle.js', editorJsFiles, 'DoCheckNewer'),
+      makeConcatStream('jquery-bundle.js', jqueryJsFiles),
       makeConcatStream('ed-comments.js', embeddedJsFiles),
       gulp.src('node_modules/zxcvbn/dist/zxcvbn.js').pipe(gulp.dest('public/res/')));
 }

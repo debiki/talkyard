@@ -53,6 +53,10 @@ const AboutUserDialog = createComponent({
     };
   },
 
+  componentWillUnmount: function() {
+    this.isGone = true;
+  },
+
   // SECURITY (minor) SHOULD make openForPostAt and openForUser(IdOrUsername) work in the same
   // way, so can block a guest regardless of how one clicks hen's name.  [5JKURQ0]
   openForPostAt: function(post: Post, at) {
@@ -92,13 +96,13 @@ const AboutUserDialog = createComponent({
 
   loadUser: function(idOrUsername: number | string) {
     Server.loadUserAnyDetails(idOrUsername, (user: MemberInclDetails) => {
-      if (!this.isMounted()) return;
+      if (this.isGone) return;
       if (!this.state.post) {
         this.setState({ user: user });
         return;
       }
       Server.loadAuthorBlockedInfo(this.state.post.uniqueId, (blocks: Blocks) => {
-        if (!this.isMounted()) return;
+        if (this.isGone) return;
         // These two are only included in the response for staff.
         var ipBlock;
         var browserBlock;

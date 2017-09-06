@@ -649,7 +649,8 @@ $.setProps = {
 	// Event delegation
 	delegate: overload(function (type, selector, callback) {
 		this.addEventListener(type, function(evt) {
-			if (evt.target.closest(selector)) {
+			// 'document' has no 'closest()' fn.
+			if (evt.target.closest && evt.target.closest(selector)) {
 				callback.call(this, evt);
 			}
 		});
