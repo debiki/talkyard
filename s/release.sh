@@ -89,11 +89,12 @@ sudo -i bash << EOF_SUDO
 
 cd $current_dir
 ./s/impl/release-as-root.sh $my_username $version_tag $@
-echo \$? > ./target/build-exit-code
+echo "\$?" > ./target/build-exit-code
 
 EOF_SUDO
 
 build_exit_code=`cat ./target/build-exit-code`
+echo "Build exit code: $build_exit_code"
 
 if [ "$build_exit_code" != '0' ]; then
   echo

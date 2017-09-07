@@ -315,6 +315,12 @@ class Globals(
     conf.getString(BecomeOwnerEmailConfigValue).orElse(
       conf.getString("debiki.becomeOwnerEmailAddress")).noneIfBlank
 
+  /** If accessing the server via ip address, then, if no website with a matching ip has been
+    * configured in the database, we'll show the site with id 'ipSiteId'. If not defined,
+    * we'll fallback FirstSiteId (i.e. 1, one).
+    */
+  val ipSiteId: Option[Int] = conf.getInt("ed.ipSiteId")
+
   /** New sites may be created only from this hostname. */
   val anyCreateSiteHostname: Option[String] =
     conf.getString("ed.createSiteHostname").orElse(
@@ -462,9 +468,16 @@ class Globals(
         }
       case None =>
         if (Site.Ipv4AnyPortRegex.matches(hostname)) {
-          // Make it possible to access the server before any domain has been connected
-          // to it and when we still don't know its ip, just after installation.
-          return firstSiteIdAndHostname
+          // Make it possible to access the server before any domain has been pointed
+          // to it, just after installation, by showing the site with id FirstSiteId (i.e. 1, one).
+          // If, however, a database has been imported, maybe we want to show a site with
+          // some other id, for the ip address. So first see if ipSiteId is defined.
+          return ipSiteId match {
+            case Some(id) =>
+              SiteBrief(id, hostname, SiteStatus.Active)  // probably the correct status?
+            case None =>
+              firstSiteIdAndHostname
+          }
         }
         throwNotFound("DwE0NSS0", s"There is no site with hostname '$hostname'")
     }
