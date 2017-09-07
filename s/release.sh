@@ -89,7 +89,7 @@ sudo -i bash << EOF_SUDO
 
 cd $current_dir
 ./s/impl/release-as-root.sh $my_username $version_tag $@
-echo "\$?" > ./target/build-exit-code
+echo "\$?" | tee ./target/build-exit-code
 
 EOF_SUDO
 
