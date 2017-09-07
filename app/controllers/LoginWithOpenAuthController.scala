@@ -87,8 +87,8 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
       Some(s"${globals.scheme}://${globals.baseDomainWithPort}")
     }
     else {
-      val anyOrigin = conf.getString(LoginOriginConfValName).orElse(conf.getString("debiki.loginOrigin")) orElse {
-        globals.firstSiteHostname map { hostname =>
+      val anyOrigin = conf.getString(LoginOriginConfValName) orElse {
+        globals.defaultSiteHostname map { hostname =>
           s"${globals.scheme}://$hostname${globals.colonPort}"
         }
       }

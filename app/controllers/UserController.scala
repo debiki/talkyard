@@ -826,6 +826,13 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
     if (username.length < MinUsernameLength)
       throwBadReq("DwE44KUY0", "Username too short")
 
+    SECURITY // add checks for other lengts too, to avoid database constraint exceptions.
+              // See if I've added all db constraints also.
+    // Create getStringMaxLen and getOptStringMaxLen helpers?
+    val about = (json \ "about").asOpt[String].trimNoneIfBlank
+    if (about.exists(_.length > 1500))
+      throwForbidden("EdE2QRRD40", "Too long about text, max is 1500 chars")  // db: max = 2000
+
     MemberPreferences(
       userId = (json \ "userId").as[UserId],
       fullName = (json \ "fullName").asOptStringNoneIfBlank,

@@ -38,7 +38,7 @@ class UploadsController @Inject()(cc: ControllerComponents, edContext: EdContext
 
   import context.safeActions.ExceptionAction
   import context.globals.{maxUploadSizeBytes, anyPublicUploadsDir}
-  import Globals.LocalhostUploadsDirConfigValueName
+  import Globals.LocalhostUploadsDirConfValName
 
   val MaxAvatarUploadSizeBytes: UnixDays =
     MaxAvatarTinySizeBytes + MaxAvatarSmallSizeBytes + MaxAvatarMediumSizeBytes
@@ -195,7 +195,7 @@ class UploadsController @Inject()(cc: ControllerComponents, edContext: EdContext
 
   def servePublicFileImpl(relativePath: String, request: mvc.Request[_]) = {
     val publicUploadsDir = anyPublicUploadsDir getOrElse throwNotFound(
-      "DwE8MEF2", o"""File not found because config value $LocalhostUploadsDirConfigValueName
+      "DwE8MEF2", o"""File not found because config value $LocalhostUploadsDirConfValName
         missing""")
 
     val p = relativePath

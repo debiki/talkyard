@@ -73,7 +73,7 @@ class SuperAdminController @Inject()(cc: ControllerComponents, edContext: EdCont
     OkSafeJson(Json.obj(
       "appVersion" -> globals.applicationVersion,
       "superadmin" -> Json.obj(
-        "firstSiteHostname" -> JsStringOrNull(globals.firstSiteHostname),
+        "firstSiteHostname" -> JsStringOrNull(globals.defaultSiteHostname),
         "baseDomain" -> globals.baseDomainWithPort,
         "sites" -> sites.map(siteToJson))))
   }

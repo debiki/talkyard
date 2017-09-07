@@ -162,7 +162,6 @@ class DebugTestController @Inject()(cc: ControllerComponents, edContext: EdConte
 
   def origin = GetAction { request =>
     val canonicalHost = request.dao.theSite().canonicalHost
-    val isFirstSite = globals.firstSiteHostname.contains(request.hostname)
     val response =
       s"""Globals.secure: ${globals.secure}
          |Globals.scheme: ${globals.scheme}
@@ -170,8 +169,11 @@ class DebugTestController @Inject()(cc: ControllerComponents, edContext: EdConte
          |Globals.baseDomainWithPort: ${globals.baseDomainWithPort}
          |Globals.baseDomainNoPort: ${globals.baseDomainNoPort}
          |
-         |Is first site: $isFirstSite
-         |First site hostnam: ${globals.firstSiteHostname}
+         |Is default site hostname: ${globals.defaultSiteHostname is request.hostname}
+         |Is default site id: ${globals.defaultSiteId == request.siteId}
+         |
+         |Default site hostname: ${globals.defaultSiteHostname}
+         |Default site id: ${globals.defaultSiteId}
          |
          |OAuth login origin: ${loginWithOpenAuthController.anyLoginOrigin}
          |

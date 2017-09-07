@@ -233,8 +233,8 @@ class SiteDao(
     }
     if (siteId == FirstSiteId && site.canonicalHost.isEmpty) {
       // No hostname specified in the database. Fallback to the config file.
-      val hostname = globals.firstSiteHostname.getOrDie(
-        "EsE5GKU2", s"No ${Globals.FirstSiteHostnameConfigValue} specified")
+      val hostname = globals.defaultSiteHostname.getOrDie(
+        "EsE5GKU2", s"No ${Globals.DefaultSiteHostnameConfValName} specified")
       val canonicalHost = SiteHost(hostname, SiteHost.RoleCanonical)
       site = site.copy(hosts = canonicalHost :: site.hosts)
     }

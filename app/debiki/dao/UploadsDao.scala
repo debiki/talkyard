@@ -52,12 +52,11 @@ trait UploadsDao {
   def addUploadedFile(uploadedFileName: String, tempFile: jio.File, uploadedById: UserId,
         browserIdData: BrowserIdData): UploadRef = {
 
-    import Globals.LocalhostUploadsDirConfigValueName
     def maxUploadSizeBytes = globals.maxUploadSizeBytes
 
     val publicUploadsDir = globals.anyPublicUploadsDir getOrElse throwForbidden(
       "DwE5KFY9", "File uploads disabled, config value missing: " +
-        LocalhostUploadsDirConfigValueName)
+        Globals.LocalhostUploadsDirConfValName)
 
     val uploadedDotSuffix = '.' + checkAndGetFileSuffix(uploadedFileName)
 

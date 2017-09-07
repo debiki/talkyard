@@ -172,7 +172,7 @@ object LoginController {
       if (request.siteId == Site.FirstSiteId)
         request.context.globals.becomeFirstSiteOwnerEmail getOrElse {
           val errorCode = "DwE8PY25"
-          val errorMessage = s"Config value '${Globals.BecomeOwnerEmailConfigValue}' missing"
+          val errorMessage = s"Config value '${Globals.BecomeOwnerEmailConfValName}' missing"
           Logger.error(s"$errorMessage [$errorCode]")
           throwInternalError(errorCode, errorMessage)
         }

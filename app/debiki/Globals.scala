@@ -60,11 +60,12 @@ object Globals {
 
   class DatabasePoolInitializationException(cause: Exception) extends RuntimeException(cause)
 
-  val LocalhostUploadsDirConfigValueName = "ed.uploads.localhostDir"
+  val LocalhostUploadsDirConfValName = "ed.uploads.localhostDir"
   val DefaultLocalhostUploadsDir = "/opt/ed/uploads/"
 
-  val FirstSiteHostnameConfigValue = "ed.hostname"
-  val BecomeOwnerEmailConfigValue = "ed.becomeOwnerEmailAddress"
+  val DefaultSiteIdConfValName = "ed.defaultSiteId"
+  val DefaultSiteHostnameConfValName = "ed.hostname"
+  val BecomeOwnerEmailConfValName = "ed.becomeOwnerEmailAddress"
 
   def isProd: Boolean = _isProd
 
@@ -241,8 +242,7 @@ class Globals(
   def spamChecker: SpamChecker = state.spamChecker
 
   val securityComplaintsEmailAddress: Option[String] =
-    conf.getString("ed.securityComplaintsEmailAddress").orElse(
-      conf.getString("debiki.securityComplaintsEmailAddress")).noneIfBlank
+    conf.getString("ed.securityComplaintsEmailAddress").noneIfBlank
 
 
   /** Either exactly all sites uses HTTPS, or all of them use HTTP.
@@ -265,8 +265,7 @@ class Globals(
     *  Either HTTP for all sites (assuming a trusted intranet), or HTTPS for all sites.
     */
   val secure: Boolean =
-    conf.getBoolean("ed.secure").orElse(
-      conf.getBoolean("debiki.secure")) getOrElse {
+    conf.getBoolean("ed.secure") getOrElse {
       p.Logger.info("Config value 'ed.secure' missing; defaulting to true. [DwM3KEF2]")
       true
     }
@@ -281,7 +280,7 @@ class Globals(
       sys.props.get("testserver.port").map(_.toInt) getOrElse 19001
     }
     else {
-      conf.getInt("ed.port").orElse(conf.getInt("debiki.port")) getOrElse {
+      conf.getInt("ed.port") getOrElse {
         if (secure) 443
         else 80
       }
@@ -295,8 +294,7 @@ class Globals(
 
   val baseDomainNoPort: String =
     if (isOrWasTest) "localhost"
-    else conf.getString("ed.baseDomain").orElse(
-      conf.getString("debiki.baseDomain")).noneIfBlank getOrElse "localhost"
+    else conf.getString("ed.baseDomain").noneIfBlank getOrElse "localhost"
 
   val baseDomainWithPort: String =
     if (secure && port == 443) baseDomainNoPort
@@ -304,37 +302,34 @@ class Globals(
     else s"$baseDomainNoPort:$port"
 
 
-  /** The hostname of the site created by default when setting up a new server. */
-  val firstSiteHostname: Option[String] = conf.getString(FirstSiteHostnameConfigValue).orElse(
-    conf.getString("debiki.hostname")).noneIfBlank
+  /** Accessing this hostname will return the default site, namely site 1 (or defaultSiteId,
+    * if configured.)
+    */
+  val defaultSiteHostname: Option[String] = conf.getString(DefaultSiteHostnameConfValName).noneIfBlank
 
-  if (firstSiteHostname.exists(_ contains ':'))
-    p.Logger.error("Config value ed.hostname contains ':' [DwE4KUWF7]")
+  if (defaultSiteHostname.exists(_ contains ':'))
+    p.Logger.error(s"Config value $DefaultSiteHostnameConfValName contains ':' [DwE4KUWF7]")
 
   val becomeFirstSiteOwnerEmail: Option[String] =
-    conf.getString(BecomeOwnerEmailConfigValue).orElse(
-      conf.getString("debiki.becomeOwnerEmailAddress")).noneIfBlank
+    conf.getString(BecomeOwnerEmailConfValName).noneIfBlank
 
   /** If accessing the server via ip address, then, if no website with a matching ip has been
-    * configured in the database, we'll show the site with id 'ipSiteId'. If not defined,
-    * we'll fallback FirstSiteId (i.e. 1, one).
+    * configured in the database, we'll show the site with id 'defaultSiteId'. If not defined,
+    * we'll use FirstSiteId (i.e. 1, one).
     */
-  val ipSiteId: Option[Int] = conf.getInt("ed.ipSiteId")
+  val defaultSiteId: SiteId = conf.getInt(DefaultSiteIdConfValName) getOrElse FirstSiteId
 
   /** New sites may be created only from this hostname. */
   val anyCreateSiteHostname: Option[String] =
-    conf.getString("ed.createSiteHostname").orElse(
-      conf.getString("debiki.createSiteHostname")).noneIfBlank
+    conf.getString("ed.createSiteHostname").noneIfBlank
   val anyCreateTestSiteHostname: Option[String] =
-    conf.getString("ed.createTestSiteHostname").orElse(
-      conf.getString("debiki.createTestSiteHostname")).noneIfBlank
+    conf.getString("ed.createTestSiteHostname").noneIfBlank
 
   val maxUploadSizeBytes: Int =
-    conf.getInt("ed.uploads.maxKiloBytes").orElse(
-      conf.getInt("debiki.uploads.maxKiloBytes").map(_ * 1000)).getOrElse(3*1000*1000)
+    conf.getInt("ed.uploads.maxKiloBytes").map(_ * 1000).getOrElse(3*1000*1000)
 
   val anyUploadsDir: Option[String] = {
-    val value = conf.getString(LocalhostUploadsDirConfigValueName).noneIfBlank
+    val value = conf.getString(LocalhostUploadsDirConfValName).noneIfBlank
     val pathSlash = if (value.exists(_.endsWith("/"))) value else value.map(_ + "/")
     pathSlash match {
       case None =>
@@ -342,7 +337,7 @@ class Globals(
       case Some(path) =>
         // SECURITY COULD test more dangerous dirs. Or whitelist instead?
         if (path == "/" || path.startsWith("/etc/") || path.startsWith("/bin/")) {
-          p.Logger.warn(o"""Config value $LocalhostUploadsDirConfigValueName specifies
+          p.Logger.warn(o"""Config value $LocalhostUploadsDirConfValName specifies
                 a dangerous path: $path — file uploads disabled. [DwE0GM2]""")
           None
         }
@@ -397,7 +392,7 @@ class Globals(
   /** Looks up a site by hostname, or directly by id.
     *
     * By id: If a HTTP request specifies a hostname like "site-<id>.<baseDomain>",
-    * for example:  site-123.debiki.com,
+    * for example:  site-123.ed.community,
     * then the site is looked up directly by id. This is useful for embedded
     * comment sites, since their address isn't important, and if we always access
     * them via site id, we don't need to ask the side admin to come up with any
@@ -421,16 +416,24 @@ class Globals(
     // Play supports one HTTP and one HTTPS port only, so it makes little sense
     // to include any port number when looking up a site.
     val hostname = if (host contains ':') host.span(_ != ':')._1 else host
-    def firstSiteIdAndHostname = {
-      val hostname = firstSiteHostname getOrElse throwForbidden(
-        "EsE5UYK2", o"""No first site hostname configured (config value:
-            ${Globals.FirstSiteHostnameConfigValue})""")
-      val firstSite = systemDao.getOrCreateFirstSite()
-      SiteBrief(Site.FirstSiteId, hostname, firstSite.status)
+    def defaultSiteIdAndHostname = {
+      val hostname = defaultSiteHostname getOrElse throwForbidden(
+        "EsE5UYK2", o"""No site hostname configured (config value: $DefaultSiteHostnameConfValName)""")
+      if (defaultSiteId != FirstSiteId) {
+        val site = systemDao.getSite(defaultSiteId).getOrDie(
+          "EdEDEFSITEID", o"""There's no site with id $defaultSiteId, which is the configured
+            default site id (config value: $DefaultSiteIdConfValName)""")
+        SiteBrief(defaultSiteId, hostname, site.status)
+      }
+      else {
+        // Lazy-create the very first site, with id 1, if doesn't yet exist.
+        val firstSite = systemDao.getOrCreateFirstSite()
+        SiteBrief(FirstSiteId, hostname, firstSite.status)
+      }
     }
 
-    if (firstSiteHostname.contains(hostname))
-      return firstSiteIdAndHostname
+    if (defaultSiteHostname.contains(hostname))
+      return defaultSiteIdAndHostname
 
     // If the hostname is like "site-123.example.com" then we'll just lookup id 123.
     val SiteByIdRegex = siteByIdHostnameRegex // uppercase, otherwise Scala won't "de-structure".
@@ -443,8 +446,8 @@ class Globals(
           case Some(site) =>
             COULD // link to canonical host if (site.hosts.exists(_.role == SiteHost.RoleCanonical))
             // Let the config file hostname have precedence over the database.
-            if (site.id == FirstSiteId && firstSiteHostname.isDefined)
-              return site.brief.copy(hostname = firstSiteHostname.get)
+            if (site.id == FirstSiteId && defaultSiteHostname.isDefined)
+              return site.brief.copy(hostname = defaultSiteHostname.get)
             else
               return site.brief
         }
@@ -469,15 +472,8 @@ class Globals(
       case None =>
         if (Site.Ipv4AnyPortRegex.matches(hostname)) {
           // Make it possible to access the server before any domain has been pointed
-          // to it, just after installation, by showing the site with id FirstSiteId (i.e. 1, one).
-          // If, however, a database has been imported, maybe we want to show a site with
-          // some other id, for the ip address. So first see if ipSiteId is defined.
-          return ipSiteId match {
-            case Some(id) =>
-              SiteBrief(id, hostname, SiteStatus.Active)  // probably the correct status?
-            case None =>
-              firstSiteIdAndHostname
-          }
+          // to it, just after installation, by lazy-creating an empty default site.
+          defaultSiteIdAndHostname
         }
         throwNotFound("DwE0NSS0", s"There is no site with hostname '$hostname'")
     }
@@ -727,8 +723,7 @@ class Globals(
     // Redis. (A Redis client pool makes sense if we haven't saturate the CPU on localhost, or
     // if there're many Redis servers and we want to round robin between them. Not needed, now.)
     val redisHost: ErrorMessage =
-      conf.getString("ed.redis.host").orElse(
-        conf.getString("debiki.redis.host")).noneIfBlank getOrElse "localhost"
+      conf.getString("ed.redis.host").noneIfBlank getOrElse "localhost"
     val redisClient: RedisClient = RedisClient(host = redisHost)(actorSystem)
 
     // Online user ids are cached in Redis so they'll be remembered accross server restarts,
@@ -792,8 +787,7 @@ class Globals(
         spamCheckBatchSize, spamCheckIntervalSeconds, actorSystem, executionContext, systemDao))
 
     val nginxHost: String =
-      conf.getString("ed.nginx.host").orElse(
-        conf.getString("debiki.nginx.host")).noneIfBlank getOrElse "localhost"
+      conf.getString("ed.nginx.host").noneIfBlank getOrElse "localhost"
     val (pubSub, strangerCounter) = PubSub.startNewActor(outer, nginxHost)
 
     val renderContentActorRef: ActorRef =
@@ -840,8 +834,7 @@ class Config(conf: play.api.Configuration) {
     val maxSitesTotal: Int = conf.getInt(s"$path.maxSitesTotal") getOrElse 1000
     REFACTOR; RENAME // Later: rename to ed.createSite.newSiteQuotaMBs?
     val quotaLimitMegabytes: Option[Int] =
-      conf.getInt("ed.newSite.quotaLimitMegabytes").orElse(
-        conf.getInt("debiki.newSite.quotaLimitMegabytes"))
+      conf.getInt("ed.newSite.quotaLimitMegabytes")
   }
 
   object superAdmin {
