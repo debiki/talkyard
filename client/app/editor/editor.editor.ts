@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2016 Kaj Magnus Lindberg
+ * Copyright (c) 2015-2017 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -23,22 +23,14 @@
    namespace debiki2.editor {
 //------------------------------------------------------------------------------
 
-var d = { i: debiki.internal };
-var r = React.DOM;
-var reactCreateFactory = React['createFactory'];
-var ReactBootstrap: any = window['ReactBootstrap'];
-var Modal: any = reactCreateFactory(ReactBootstrap.Modal);
-var ModalBody = reactCreateFactory(ReactBootstrap.ModalBody);
-var ModalFooter = reactCreateFactory(ReactBootstrap.ModalFooter);
-var ModalHeader = reactCreateFactory(ReactBootstrap.ModalHeader);
-var ModalTitle = reactCreateFactory(ReactBootstrap.ModalTitle);
-var PageUnloadAlerter = utils.PageUnloadAlerter;
-var FileAPI = null;
+const d = { i: debiki.internal };
+const r = React.DOM;
+let $;
+let FileAPI;
 
-var theEditor: any;
-var $: any = window['jQuery'];
-var WritingSomethingWarningKey = 'WritingSth';
-var WritingSomethingWarning = "You were writing something?";
+let theEditor: any;
+const WritingSomethingWarningKey = 'WritingSth';
+const WritingSomethingWarning = "You were writing something?";
 
 
 
@@ -47,7 +39,9 @@ export function getOrCreateEditor(success) {
     success(theEditor);
   }
   else {
+    // These might not be available until now, because scripts loaded in parallel (order = undefined).
     FileAPI = window['FileAPI'];
+    $ = window['jQuery'];
     theEditor = ReactDOM.render(Editor({}), utils.makeMountNode());
     success(theEditor);
   }
@@ -558,7 +552,7 @@ export var Editor = createComponent({
   },
 
   onTitleEdited: function(event) {
-    PageUnloadAlerter.addReplaceWarning(WritingSomethingWarningKey, WritingSomethingWarning);
+    utils.PageUnloadAlerter.addReplaceWarning(WritingSomethingWarningKey, WritingSomethingWarning);
     this.setState({ title: event.target.value });
     this.updatePreview();
   },
@@ -571,7 +565,7 @@ export var Editor = createComponent({
   },
 
   onTextEdited: function(event) {
-    PageUnloadAlerter.addReplaceWarning(WritingSomethingWarningKey, WritingSomethingWarning);
+    utils.PageUnloadAlerter.addReplaceWarning(WritingSomethingWarningKey, WritingSomethingWarning);
     var newText = event.target.value;
     this.setState({ text: newText });
     this.updatePreview();
@@ -623,7 +617,7 @@ export var Editor = createComponent({
   },
 
   onCancelClick: function() {
-    if (PageUnloadAlerter.wouldWarn(WritingSomethingWarningKey)) {
+    if (utils.PageUnloadAlerter.wouldWarn(WritingSomethingWarningKey)) {
       help.openHelpDialogUnlessHidden({
         content: "You can continue editing your text, if you open the editor again. " +
         "(But the text will currently be lost if you leave this page.)",  // [issue-62YKUw2]
@@ -778,7 +772,7 @@ export var Editor = createComponent({
   },
 
   closeEditor: function() {
-    PageUnloadAlerter.removeWarning(WritingSomethingWarningKey);
+    utils.PageUnloadAlerter.removeWarning(WritingSomethingWarningKey);
     this.returnSpaceAtBottomForEditor();
     this.setState({
       visible: false,
@@ -1166,19 +1160,19 @@ export var Editor = createComponent({
 });
 
 
-var GuidelinesModal = createClassAndFactory({
+const GuidelinesModal = createClassAndFactory({
   displayName: 'GuidelinesModal',
 
   render: function () {
-    var body = !this.props.isOpen ? null :
+    const body = !this.props.isOpen ? null :
       r.div({ className: 'dw-editor-guidelines-text',
         dangerouslySetInnerHTML: { __html: this.props.guidelines.safeHtml }});
     return (
-      Modal({ show: this.props.isOpen, onHide: this.props.close,
+      rb.Modal({ show: this.props.isOpen, onHide: this.props.close,
           dialogClassName: 'es-guidelines-modal' },
-        // ModalHeader({}, ModalTitle({}, "Guidelines")),
-        ModalBody({}, body),
-        ModalFooter({}, Button({ onClick: this.props.close }, "Okay"))));
+        // rb.ModalHeader({}, rb.ModalTitle({}, "Guidelines")),
+        rb.ModalBody({}, body),
+        rb.ModalFooter({}, Button({ onClick: this.props.close }, "Okay"))));
   }
 });
 
@@ -1197,7 +1191,7 @@ var SelectCategoryInput = createClassAndFactory({
   displayName: 'SelectCategoryInput',
 
   render: function () {
-    var categoryOptions = this.props.categories.map((category: Category) => {
+    const categoryOptions = this.props.categories.map((category: Category) => {
       return r.option({ value: category.id, key: category.id }, category.name);
     });
 

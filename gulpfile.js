@@ -136,8 +136,6 @@ var editorJsFiles = [
       'modules/sanitize-html/dist/sanitize-html.js',     // 1
       'client/third-party/html-css-sanitizer-bundle.js', // 2
       'node_modules/markdown-it/dist/markdown-it.js',
-      'node_modules/jquery.caret/dist/jquery.caret.min.js', // needed by jquery.atwho (next line)
-      'node_modules/at.js/dist/js/jquery.atwho.js',
       'node_modules/blacklist/dist/blacklist.js',  // needed by what?
       'node_modules/fileapi/dist/FileAPI.html5.js', // don't use the Flash version (w/o '.html5')
       'client/third-party/diff_match_patch.js',
@@ -149,6 +147,13 @@ var editorJsFiles = [
 var jqueryJsFiles = [
   'node_modules/jquery/dist/jquery.js',
   'client/third-party/abbreviate-jquery.js',
+   // jquery.caret is needed by jquery.atwho (the script just after, below).
+  'node_modules/jquery.caret/dist/jquery.caret.min.js',
+  // jquery.atwho is lazy-needed by the editor, but loaded here in the jquery-bundle, because
+  // then we know for sure that $ is available when jquery.atwho runs — if, however,  jquery.atwho
+  // was instead loaded in the editor-bundle.js, then $ might not yet have been loaded, when the
+  // jquery.atwho code runs —> error.
+  'node_modules/at.js/dist/js/jquery.atwho.js',
   'node_modules/jquery-resizable/resizable.js'];
 
 

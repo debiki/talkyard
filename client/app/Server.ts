@@ -110,7 +110,7 @@ function postJson(urlPath: string, requestData: RequestData) {
 // If needed later:
 // loadCss: use https://github.com/filamentgroup/loadCSS/blob/master/src/loadCSS.js
 
-export function loadJs(src: string, success?: () => void) {
+export function loadJs(src: string, success?: () => void): any {  // : Promise, but compilation error
   const promise = new Promise(function (resolve, reject) {
     const scriptElem = document.createElement('script');
     scriptElem.src = src;
@@ -270,18 +270,18 @@ export function loadEditorAndMoreBundles(callback?) {
 }
 
 
-export function loadMoreScriptsBundle(callback) {
+export function loadMoreScriptsBundle(callback?) {
   if (moreScriptsPromise) {
     // Never call callback() immediately, because it's easier to write caller source code,
     // if one knows that callback() will never be invoked immediately.
-    setTimeout(() => moreScriptsPromise.then(callback), 0);
+    !callback || setTimeout(() => moreScriptsPromise.then(callback), 0);
     return;
   }
   moreScriptsPromise = new Promise(function(resolve) {
     // Also: [7PLBF20]
     loadJs(d.i.assetUrlPrefix + 'more-bundle.' + d.i.minMaxJs, function() {
       resolve();
-      setTimeout(callback, 0);
+      !callback || setTimeout(callback, 0);
     });
   });
   return moreScriptsPromise;
@@ -337,12 +337,20 @@ export function loadEditorAndMoreBundlesGetDeferred(): Promise<void> {
     debug: debiki.isDev,
   };
 
+  // The editor scripts bundle requires more-bundle.js, and jquery-bundle (At.js,
+  // for @mention dropdowns). Load everything in parallel. This stuff is also prefetched,
+  // if supported by the browser, see: [7PLBF20].
+  const editorLoaded = loadJs(d.i.assetUrlPrefix + 'editor-bundle.' + d.i.minMaxJs);
+  const moreScriptsLoaded = loadMoreScriptsBundle();
+  const jQueryLoaded = loadJQuery();
+
+  showLoadingOverlay();
+  // But don't resolve the editorScriptsPromise until everything has been loaded.
   editorScriptsPromise = new Promise(function(resolve) {
-    // The editor scripts bundle requires more-bundle.js.
-    loadMoreScriptsBundle(() => {
-      loadJQuery(() => {
-        // Also: [7PLBF20]
-        loadJs(d.i.assetUrlPrefix + 'editor-bundle.' + d.i.minMaxJs, function() {
+    moreScriptsLoaded.then(function() {
+      jQueryLoaded.then(function() {
+        editorLoaded.then(function() {
+          removeLoadingOverlay();
           resolve();
         });
       });
@@ -352,18 +360,18 @@ export function loadEditorAndMoreBundlesGetDeferred(): Promise<void> {
 }
 
 
-function loadJQuery(callback) {
+function loadJQuery(callback?) {
   if (jQueryPromise) {
     // Never call callback() immediately, because it's easier to write caller source code,
     // if one knows that callback() will never be invoked immediately.
-    setTimeout(() => jQueryPromise.then(callback), 0);
+    !callback || setTimeout(() => jQueryPromise.then(callback), 0);
     return;
   }
   jQueryPromise = new Promise(function(resolve) {
     // Also: [7PLBF20]
     loadJs(d.i.assetUrlPrefix + 'jquery-bundle.' + d.i.minMaxJs, function() {
       resolve();
-      setTimeout(callback, 0);
+      !callback || setTimeout(callback, 0);
     });
   });
   return jQueryPromise;
