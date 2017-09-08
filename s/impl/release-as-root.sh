@@ -163,8 +163,7 @@ fi
 
 echo
 echo "Done building and testing $version_tag."
-echo
-exit 0
+echo "BUILD_OK" | tee ./target/build-exit-status
 
 
 # vim: et ts=2 sw=2 tw=0 list

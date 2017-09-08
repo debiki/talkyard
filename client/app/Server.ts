@@ -275,7 +275,7 @@ export function loadMoreScriptsBundle(callback?) {
     // Never call callback() immediately, because it's easier to write caller source code,
     // if one knows that callback() will never be invoked immediately.
     !callback || setTimeout(() => moreScriptsPromise.then(callback), 0);
-    return;
+    return moreScriptsPromise;
   }
   moreScriptsPromise = new Promise(function(resolve) {
     // Also: [7PLBF20]
@@ -309,7 +309,7 @@ export function loadStaffScriptsBundle(callback) {
     // Never call callback() immediately, because it's easier to write caller source code,
     // if one knows that callback() will never be invoked immediately.
     setTimeout(() => staffScriptsPromise.then(callback), 0);
-    return;
+    return staffScriptsPromise;
   }
   staffScriptsPromise = new Promise(function(resolve) {
     // The staff scripts bundle requires both more-bundle.js and editor-bundle.js (to render
@@ -365,7 +365,7 @@ function loadJQuery(callback?) {
     // Never call callback() immediately, because it's easier to write caller source code,
     // if one knows that callback() will never be invoked immediately.
     !callback || setTimeout(() => jQueryPromise.then(callback), 0);
-    return;
+    return jQueryPromise;
   }
   jQueryPromise = new Promise(function(resolve) {
     // Also: [7PLBF20]

@@ -93,10 +93,12 @@ echo "\$?" | tee ./target/build-exit-code
 
 EOF_SUDO
 
+build_exit_status=`cat ./target/build-exit-status`
 build_exit_code=`cat ./target/build-exit-code`
-echo "Build exit code: $build_exit_code"
 
-if [ "$build_exit_code" != '0' ]; then
+echo "Build result: $build_exit_status, exit code: $build_exit_code"
+
+if [ "$build_exit_status" != 'BUILD_OK' ]; then
   echo
   echo Build failed. Aborting.
   echo
