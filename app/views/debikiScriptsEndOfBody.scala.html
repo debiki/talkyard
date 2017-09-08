@@ -1,5 +1,5 @@
 @**
- * Copyright (C) 2013-2016 Kaj Magnus Lindberg
+ * Copyright (c) 2013-2017 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -26,7 +26,20 @@ for now. Later, use the Server.ts loadSlowScriptBundle etc functions. But that r
 rendering async react-router components [4WP7GU5]*@
 @if(tpi.anyCurrentPageRole.contains(PageRole.Forum) || tpi.anyCurrentPageId.isEmpty) {
 <script src="@tpi.assetUrl(s"more-bundle.${tpi.minMaxJs}")"></script>
+} else {
+@* Prefetch scripts. [7PLBF20]
+Safari and iOS doesn't support rel=prefetch — so the below stuff is for
+everyone-except-for-those-who-use-Apple. Use rel=prefetch (not =preload), because the script is
+only *perhaps* needed, and maybe not on this page but maybe on the next instead,
+and, in Chrome, prefetch requests won't get terminated, when navigating to the next page
+but pre*load* requests do get cancelled, see:
+ https://medium.com/reloading/preload-prefetch-and-priorities-in-chrome-776165961bbf *@
+<link rel="prefetch" href="@tpi.assetUrl(s"more-bundle.${tpi.minMaxJs}")" as="script">
 }
+<link rel="prefetch" href="@tpi.assetUrl(s"jquery-bundle.${tpi.minMaxJs}")" as="script">
+<link rel="prefetch" href="@tpi.assetUrl(s"editor-bundle.${tpi.minMaxJs}")" as="script">
+
+
 @if(loadStaffBundle) {
 <script src="@tpi.assetUrl(s"staff-bundle.${tpi.minMaxJs}")"></script>
 }

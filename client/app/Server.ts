@@ -278,6 +278,7 @@ export function loadMoreScriptsBundle(callback) {
     return;
   }
   moreScriptsPromise = new Promise(function(resolve) {
+    // Also: [7PLBF20]
     loadJs(d.i.assetUrlPrefix + 'more-bundle.' + d.i.minMaxJs, function() {
       resolve();
       setTimeout(callback, 0);
@@ -340,6 +341,7 @@ export function loadEditorAndMoreBundlesGetDeferred(): Promise<void> {
     // The editor scripts bundle requires more-bundle.js.
     loadMoreScriptsBundle(() => {
       loadJQuery(() => {
+        // Also: [7PLBF20]
         loadJs(d.i.assetUrlPrefix + 'editor-bundle.' + d.i.minMaxJs, function() {
           resolve();
         });
@@ -358,6 +360,7 @@ function loadJQuery(callback) {
     return;
   }
   jQueryPromise = new Promise(function(resolve) {
+    // Also: [7PLBF20]
     loadJs(d.i.assetUrlPrefix + 'jquery-bundle.' + d.i.minMaxJs, function() {
       resolve();
       setTimeout(callback, 0);
