@@ -89,12 +89,13 @@ sudo -i bash << EOF_SUDO
 
 cd $current_dir
 ./s/impl/release-as-root.sh $my_username $version_tag $@
+echo 'WHY WONT THIS echo RUN?'
 echo "\$?" | tee ./target/build-exit-code
 
 EOF_SUDO
 
 build_exit_status=`cat ./target/build-exit-status`
-build_exit_code=`cat ./target/build-exit-code`
+#build_exit_code=`cat ./target/build-exit-code`
 
 echo "Build result: $build_exit_status, exit code: $build_exit_code"
 

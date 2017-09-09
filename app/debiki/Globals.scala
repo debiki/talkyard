@@ -473,7 +473,7 @@ class Globals(
         if (Site.Ipv4AnyPortRegex.matches(hostname)) {
           // Make it possible to access the server before any domain has been pointed
           // to it, just after installation, by lazy-creating an empty default site.
-          defaultSiteIdAndHostname
+          return defaultSiteIdAndHostname
         }
         throwNotFound("DwE0NSS0", s"There is no site with hostname '$hostname'")
     }
