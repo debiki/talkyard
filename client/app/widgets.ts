@@ -103,12 +103,14 @@ export function MenuItemDivider() {
 
 export function UserName(props: { user: BriefUser, makeLink?: boolean, onClick?: any }) {
   // Some dupl code, see discussion.ts, edit-history-dialog.ts & avatar.ts [88MYU2]
-  let user = props.user;
-  var guestClass = user_isGuest(user) ? ' esP_By_F-G' : '';
-  var guestMark = user_isGuest(user) ? '? ' : '';
-  var fullName: any = !user.fullName ? undefined :
+  const user = props.user;
+  const isStackExchangeUser = user.username && user.username.search('__sx_') === 0; // [2QWGRC8P]
+
+  const guestClass = user_isGuest(user) ? ' esP_By_F-G' : '';
+  const guestMark = user_isGuest(user) ? '? ' : '';
+  let fullName: any = !user.fullName ? undefined :
     r.span({ className: 'esP_By_F' + guestClass }, user.fullName + ' ' + guestMark);
-  var username = !user.username ? null :
+  const username = !user.username || isStackExchangeUser ? null :
     r.span({ className: 'esP_By_U' },
       r.span({ className: 'esP_By_U_at' }, '@'), user.username);
 
@@ -117,17 +119,30 @@ export function UserName(props: { user: BriefUser, makeLink?: boolean, onClick?:
   }
 
 
-  let linkFn = props.makeLink ? 'a' : 'span';
-  let newProps: any = {
+  const linkFn = props.makeLink ? 'a' : 'span';
+  const newProps: any = {
     className: 'dw-p-by esP_By',
   };
 
-  if (props.makeLink) {
-    newProps.href = '/-/users/' + user.id;
+  // EffectiveDiscussions demo hack: usernames that starts with '__sx_' are of the form    [2QWGRC8P]
+  // '__sx_[subdomain]_[user-id]' where [subdomain] is a StackExchange subdomain, and
+  // [user-id] is a StackExchange user id. In this way, we can link & attribute comments
+  // directly to people at StackExchange, as required by StackOverflow's CC-By license.
+  if (isStackExchangeUser) {
+    const subdomainAndIdStr = user.username.substr(5, 9999);
+    const array = subdomainAndIdStr.split('_');
+    const subdomain = array[0];
+    const userId = array[1];
+    newProps.href = `https://${subdomain}.stackexchange.com/users/${userId}`;
+    newProps.target = '_blank';
   }
-
-  if (props.onClick) {
-    newProps.onClick = props.onClick;
+  else {
+    if (props.makeLink) {
+      newProps.href = '/-/users/' + user.id;
+    }
+    if (props.onClick) {
+      newProps.onClick = props.onClick;
+    }
   }
 
   return r[linkFn](newProps, fullName, username);
