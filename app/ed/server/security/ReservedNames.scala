@@ -18,6 +18,7 @@
 package ed.server.security
 
 import com.debiki.core.Prelude._
+import com.debiki.core.Validation
 
 
 object ReservedNames {
@@ -31,7 +32,10 @@ object ReservedNames {
     */
   def isSubdomainReserved(subdomain: String): Boolean = isWhateverReserved(subdomain)
 
-  def isUsernameReserved(username: String): Boolean = isWhateverReserved(username)
+  def isUsernameReserved(username: String): Boolean =   // [2PGKR8ML]
+    if (username.startsWith("__sx_") && // [2QWGRC8P]
+        Validation.StackExchangeUsernameRegex.matches(username)) false
+    else isWhateverReserved(username)
 
   /** Don't allow '@' because perhaps I'll let  @thename_@1234  or  @thename_@1234.sha256p
     * mean the Someone with [a public key prefix = 1234 and known by the forum]
@@ -57,7 +61,6 @@ object ReservedNames {
   private val EndsWithUnderscoreNumberRegex = ".+_[0-9a-f]*$".r
 
   private val StartsWithNumberRegex = "^[0-9].*".r
-
 
   private val allNames: Set[String] =
     LongListOfNames.toLowerCase.lines

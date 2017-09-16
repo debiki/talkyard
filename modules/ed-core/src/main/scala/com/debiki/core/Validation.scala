@@ -18,6 +18,7 @@
 package com.debiki.core
 
 import org.scalactic.{Good, Bad, Or, ErrorMessage}
+import Prelude._
 
 
 object Validation {
@@ -53,10 +54,15 @@ object Validation {
   }
 
 
+  val StackExchangeUsernameRegex = "^__sx_[a-z]+_[0-9]+__$".r
+
   /** Allows only usernames like '123_some_username', 3 - 20 chars.
     */
-  def checkUsername(username: String): String Or ErrorMessage = {
+  def checkUsername(username: String): String Or ErrorMessage = {  CLEAN_UP // merge with ReservedNames [2PGKR8ML]
     // WOULD add unit tests
+
+    if (StackExchangeUsernameRegex.matches(username))  // [2QWGRC8P]
+      return Good(username)
 
     if (username.length < 3)
       return Bad("The username is too short; it must be at least 3 characters")
