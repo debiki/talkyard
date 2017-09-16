@@ -3,6 +3,11 @@
 # Abort on any error
 set -e
 
+if [ `id -u` -eq 0 ]; then
+  echo "You are root. Don't run this as root please. Instead, you'll be asked for the root password only when needed."
+  exit 1
+fi
+
 my_username=$(whoami)
 
 

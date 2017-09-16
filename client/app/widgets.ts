@@ -119,7 +119,7 @@ export function UserName(props: { user: BriefUser, makeLink?: boolean, onClick?:
   }
 
 
-  const linkFn = props.makeLink ? 'a' : 'span';
+  const linkFn = <any>(props.makeLink ? r.a : r.span);
   const newProps: any = {
     className: 'dw-p-by esP_By',
   };
@@ -145,7 +145,7 @@ export function UserName(props: { user: BriefUser, makeLink?: boolean, onClick?:
     }
   }
 
-  return r[linkFn](newProps, fullName, username);
+  return linkFn(newProps, fullName, username);
 }
 
 //------------------------------------------------------------------------------

@@ -273,6 +273,7 @@ export const $h = {
 
   // classesString should be a space and/or comma separated class name string.
   addClasses: function(elem: Element, classesString: string) {
+    if (!classesString) return;
     // @ifdef DEBUG
     dieIf(/#\./.test(classesString), 'EdE6EF2T47');
     // @endif
@@ -282,6 +283,11 @@ export const $h = {
 
 
   removeClasses: function(elem: Element, classesString: string) {
+    if (!classesString) {
+      // If proceeding, would get this error:
+      // """Failed to execute 'remove' on 'DOMTokenList': The token provided must not be empty."""
+      return;
+    }
     // @ifdef DEBUG
     dieIf(/#\./.test(classesString), 'EdEKEW20P7');
     // @endif
@@ -291,6 +297,7 @@ export const $h = {
 
 
   toggleClass: function(elem: Element, clazz: string) {
+    if (!clazz) return;
     // @ifdef DEBUG
     dieIf(/#\. /.test(clazz), 'EdE5JFB8W2');
     // @endif
