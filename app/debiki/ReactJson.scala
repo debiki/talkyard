@@ -45,16 +45,17 @@ case class PageToJsonResult(
   jsonString: String,
   version: CachedPageVersion,
   pageTitle: Option[String],
-  customHeadTags: String,
-  adminOnlyHeadTags: String,
+  customHeadTags: FindHeadTagsResult,
   unapprovedPostAuthorIds: Set[UserId])
 
 case class FindHeadTagsResult(
+  includesTitleTag: Boolean,
+  includesDescription: Boolean,
   allTags: String,
   adminOnlyTags: String)
 
 object FindHeadTagsResult {
-  val None = FindHeadTagsResult("", "")
+  val None = FindHeadTagsResult(false, false, "", "")
 }
 
 
@@ -256,7 +257,7 @@ object ReactJson {
     // Meta tags allowed for custom HTML pages only, right now. Usually the homepage.
     // Only staff can edit custom html pages, currently, so reasonably safe, [2GKW0M]
     // + we remove weird attrs, below.
-    val headTags =
+    val headTags: FindHeadTagsResult =
       if (page.role != PageRole.CustomHtmlPage) FindHeadTagsResult.None
       else posts.find(_.isOrigPost) match {
         case None => FindHeadTagsResult.None
@@ -409,8 +410,7 @@ object ReactJson {
     val unapprovedPosts = posts.filter(!_.isSomeVersionApproved)
     val unapprovedPostAuthorIds = unapprovedPosts.map(_.createdById).toSet
 
-    PageToJsonResult(jsonString, version, pageTitle, customHeadTags = headTags.allTags,
-        adminOnlyHeadTags = headTags.adminOnlyTags, unapprovedPostAuthorIds)
+    PageToJsonResult(jsonString, version, pageTitle, headTags, unapprovedPostAuthorIds)
   }
 
 
@@ -423,6 +423,8 @@ object ReactJson {
     val doc = Jsoup.parse(postSource)
     val head = doc.head()
     val resultBuilder = StringBuilder.newBuilder
+    var includesTitleTag = false
+    var includesDescription = false
 
     import scala.collection.JavaConversions._
 
@@ -432,6 +434,7 @@ object ReactJson {
         titleTag.removeAttr(attribute.getKey)
       }
       resultBuilder append titleTag.toString append "\n"
+      includesTitleTag = true
     }
 
     // Could break out fn, these 3 blocks are similar:
@@ -442,7 +445,10 @@ object ReactJson {
       val attributes: jl.Iterable[org.jsoup.nodes.Attribute] = metaTag.attributes()
       for (attribute: org.jsoup.nodes.Attribute <- attributes) {
         attribute.getKey match {
-          case "name" | "property" | "content" => // fine
+          case "property" | "content" => // fine
+          case "name" => // fine
+            if (attribute.getValue == "description")
+              includesDescription = true
           case notAllowedAttr => metaTag.removeAttr(notAllowedAttr)
         }
       }
@@ -484,10 +490,14 @@ object ReactJson {
 
     val allHeadTags = resultBuilder.toString
 
-    // For now, allow no one but admins, to edit any head tags at all.
-    // Other staff members people may edit only Title and meta keywords?
+    // For now, allow no one but admins, to edit any head tags at all. [2GKW0M]
+    // Other people may edit only Title and meta keywords?
     val adminOnlyHeadTags = allHeadTags
-    FindHeadTagsResult(allHeadTags, adminOnlyHeadTags)
+    FindHeadTagsResult(
+      includesTitleTag = includesTitleTag,
+      includesDescription = includesDescription,
+      allHeadTags,
+      adminOnlyHeadTags)
   }
 
 

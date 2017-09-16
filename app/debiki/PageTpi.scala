@@ -81,19 +81,24 @@ class SiteTpi protected (
     // show the UTX website title.
     val pageRole = anyCurrentPageRole orElse anyCurrentPageMeta.map(_.pageRole)
     val thePageTitle =
-      if (pageRole is PageRole.UsabilityTesting) { // [plugin]
-        "Usability Testing Exchange"
+      if (anyCustomMetaTags.includesTitleTag) None
+      else if (pageRole is PageRole.UsabilityTesting) { // [plugin]
+        Some("Usability Testing Exchange")
       }
       else anyCurrentPageMeta.map(_.htmlHeadTitle) match {
-        case Some(title) if title.length > 0 => title
-        case _ => pageTitle.getOrElse("")
+        case t @ Some(title) if title.length > 0 => t
+        case _ => pageTitle
       }
-    val theDescription = anyCurrentPageMeta.map(_.htmlHeadDescription) getOrElse ""
+    val theDescription =
+      if (anyCustomMetaTags.includesDescription) None
+      else anyCurrentPageMeta.map(_.htmlHeadDescription)
     xml.Unparsed(views.html.debikiMeta(thePageTitle, description = theDescription).body)
   }
 
 
-  def anySafeMetaTags: Option[String] = None
+  def anyCustomMetaTags: FindHeadTagsResult = FindHeadTagsResult.None
+  def anySafeMetaTags: String = anyCustomMetaTags.allTags  // only admin can edit right now [2GKW0M]
+
   def anyCurrentPageId: Option[PageId] = None
   def anyCurrentPageRole: Option[PageRole] = None
   def anyCurrentPagePath: Option[PagePath] = None
@@ -251,12 +256,11 @@ class PageTpi(
   private val cachedPageHtml: String,
   private val cachedVersion: CachedPageVersion,
   private val pageTitle: Option[String],
-  private val safeMetaTags: String,
+  override val anyCustomMetaTags: FindHeadTagsResult,
   override val anyAltPageId: Option[AltPageId] = None,
   override val anyEmbeddingUrl: Option[String] = None)
   extends SiteTpi(pageReq, json = None, pageTitle = pageTitle) {
 
-  override def anySafeMetaTags = Some(safeMetaTags)
   override def anyCurrentPageId = Some(pageReq.thePageId)
   override def anyCurrentPageRole = Some(pageReq.thePageRole)
   override def anyCurrentPagePath = Some(pageReq.pagePath)

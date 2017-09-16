@@ -15,10 +15,14 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *@
 
-@(pageTitle: String, description: String)
+@(pageTitle: Option[String], description: Option[String])
 
-<title>@pageTitle</title>
-<meta name="description" content="@{description}">
+@if(pageTitle.nonEmpty) {
+<title>@{pageTitle.get}</title>
+}
+@if(description.nonEmpty) {
+<meta name="description" content="@{description.get}">
+}
 
 @* Some other viewport values, and the absence of a value,
 trigger Android bugs that report the wrong screen.width,
