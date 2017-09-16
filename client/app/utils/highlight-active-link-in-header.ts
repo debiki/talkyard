@@ -23,6 +23,12 @@
 
 
 export function highlightActiveLinkInHeader() {
+  const className = 'esActiveHeaderLink';
+  $h.removeClasses($first('.' + className), className);
+  if (location.pathname.search('/-/') === 0) {
+    // We're in the user profile area, or some other special place.
+    return;
+  }
   let activeLinkElem;
   let longestMatch = 0;
   _.each($all('.esPageHeader a'), function(linkElem: HTMLElement) {
@@ -37,8 +43,6 @@ export function highlightActiveLinkInHeader() {
       activeLinkElem = linkElem;
     }
   });
-  const className = 'esActiveHeaderLink';
-  $h.removeClasses($first('.' + className), className);
   $h.addClasses(activeLinkElem, className);
 }
 
