@@ -22,7 +22,7 @@ import com.debiki.core.Prelude._
 import com.google.{common => guava}
 import debiki.Globals
 import debiki.EdHttp._
-import java.{io => jio, util => ju}
+import java.{io => jio, util => ju, lang => jl}
 import java.awt.image.BufferedImage
 import java.nio.{file => jf}
 import java.nio.file.{attribute => jfa}
@@ -81,6 +81,24 @@ trait UploadsDao {
         catch {
           case _: jio.IOException =>
             None // not an image, fine
+          case ex: jl.ArrayIndexOutOfBoundsException =>
+            val message = ex.getMessage
+            if (message == "4096") {
+              // Bug in ImageIO, with stack trace: (happens for a few apparently a bit rare gifs)
+              // java.lang.ArrayIndexOutOfBoundsException: 4096
+              //   at com.sun.imageio.plugins.gif.GIFImageReader.read (GIFImageReader.java:984)
+              //   at debiki.dao.UploadsDao.liftedTree1$1 (UploadsDao.scala:80)
+              //   at debiki.dao.UploadsDao.addUploadedFile (UploadsDao.scala:80)
+              // caused by this Java bug:
+              //   https://bugs.openjdk.java.net/browse/JDK-7132728
+              // there's a maybe-workaround, but doesn't seem to generate a BufferedImage:
+              //   https://stackoverflow.com/a/23851091/694469 —>
+              //   —> https://github.com/DhyanB/Open-Imaging
+              p.Logger.warn(o"""Java ArrayIndexOutOfBoundsException: '4096' bug when reading
+                  uploaded image, site: $siteId, file name: $uploadedFileName, user: $uploadedById""")
+              None
+            }
+            else throw ex
         }
       anyImage match {
         case None =>
