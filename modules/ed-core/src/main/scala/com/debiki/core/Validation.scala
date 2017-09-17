@@ -62,7 +62,7 @@ object Validation {
     // WOULD add unit tests
 
     if (StackExchangeUsernameRegex.matches(username))  // [2QWGRC8P]
-      return Good(username)
+      return Good(username) ; SECURITY ; COULD // require that site id is 92 or 98 (the two demo forums)
 
     if (username.length < 3)
       return Bad("The username is too short; it must be at least 3 characters")

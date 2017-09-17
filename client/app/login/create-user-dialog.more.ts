@@ -20,6 +20,7 @@
 /// <reference path="../utils/PatternInput.more.ts" />
 /// <reference path="../util/FullNameInput.more.ts" />
 /// <reference path="../util/EmailInput.more.ts" />
+/// <reference path="../util/UsernameInput.more.ts" />
 /// <reference path="../util/stupid-dialog.more.ts" />
 /// <reference path="./new-password-input.more.ts" />
 
@@ -237,18 +238,9 @@ export var CreateUserDialogContent = createClassAndFactory({
                         (debiki.siteId === FirstSiteId ?
                             "in the config file." : "on the Create Site page.") });
 
-  // CLEAN_UP SHOULD reuse UsernameInput.more.ts [76KWU02]
     const usernameInput =
-        PatternInput({ label: "Username: (unique and short)", ref: 'username', id: 'e2eUsername',
-          tabIndex: 2,
-          addonBefore: '@', // [7RFWUQ2]
-          minLength: 3, maxLength: 20,
-          notRegex: / /, notMessage: "No spaces please",
-          notRegexTwo: /-/, notMessageTwo: "No hypens (-) please",
-          notRegexThree: /@/, notMessageThree: "Don't include the @",
-          notRegexFour: /[^a-zA-Z0-9_]/,
-          notMessageFour: "Only letters a-z A-Z and 0-9 and _",
-          onChange: (value, isOk) => this.updateValueOk('username', value, isOk)
+        util.UsernameInput({ label: "Username: (unique and short)", id: 'e2eUsername', tabIndex: 2,
+          onChangeValueOk: (value, isOk) => this.updateValueOk('username', value, isOk)
         });
 
     const passwordInput = props.createPasswordUser

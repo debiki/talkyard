@@ -23,10 +23,15 @@
 
 var r = React.DOM;
 
-// SHOULD reuse in create-user-dialog.more.ts [76KWU02]
-export var UsernameInput = createClassAndFactory({
+export const UsernameInput = createClassAndFactory({
+  displayName: 'UsernameInput',
+
+  getInitialState: function() {
+    return { username: '' };
+  },
+
   getValue: function() {
-    return this.refs.patternInput.getValue();
+    return this.state.username;
   },
 
   focus: function() {
@@ -38,7 +43,9 @@ export var UsernameInput = createClassAndFactory({
   },
 
   render: function() {
-    let extraHelp = this.props.help ? r.span({}, r.br(), this.props.help) : undefined;
+    const extraHelp = this.props.help ? r.span({}, r.br(), this.props.help) : undefined;
+    const username = this.state.username;
+    const maxLength = username.substr(0, 5) === '__sx_' ? 30 : 20; // [2QWGRC8P]
     return (
       utils.PatternInput({ label: this.props.label, ref: 'patternInput', id: this.props.id,
         className: this.props.className,
@@ -46,16 +53,19 @@ export var UsernameInput = createClassAndFactory({
         tabIndex: this.props.tabIndex,
         required: true,
         disabled: this.props.disabled,
-        addonBefore: '@',
-        minLength: 3, maxLength: 20,
+        addonBefore: '@', // [7RFWUQ2]
+        minLength: 3, maxLength,
         notRegex: / /, notMessage: "No spaces please",
         notRegexTwo: /-/, notMessageTwo: "No hypens (-) please",
         notRegexThree: /@/, notMessageThree: "Don't include the @",
         notRegexFour: /[^a-zA-Z0-9_]/,
         notMessageFour: "Only letters a-z A-Z and 0-9 and _",
-        onChange: this.props.onChangeValueOk,
+        onChange: (value, ok) => {
+          this.setState({ username: value });
+          this.props.onChangeValueOk(value, ok);
+        },
         onBlur: this.props.onBlur,
-        defaultValue: this.props.defaultValue,
+        value: username,
         help: r.span({}, "Your ", r.code({}, "@username"), ", unique and short", extraHelp) }));
   }
 });

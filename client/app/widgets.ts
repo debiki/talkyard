@@ -133,8 +133,10 @@ export function UserName(props: { user: BriefUser, makeLink?: boolean, onClick?:
     const array = subdomainAndIdStr.split('_');
     const subdomain = array[0];
     const userId = array[1];
-    newProps.href = `https://${subdomain}.stackexchange.com/users/${userId}`;
     newProps.target = '_blank';
+    newProps.href = subdomain === 'so'
+        ? `https://stackoverflow.com/users/${userId}`
+        : `https://${subdomain}.stackexchange.com/users/${userId}`;
   }
   else {
     if (props.makeLink) {
