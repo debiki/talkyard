@@ -375,7 +375,7 @@ export const Title = createComponent({
 
   render: function() {
     const store: Store = this.props;
-    const titlePost = store.postsByNr[TitleNr];
+    const titlePost: Post = store.postsByNr[TitleNr];
     if (!titlePost)
       return null;
 
@@ -387,7 +387,9 @@ export const Title = createComponent({
         r.span({ className: 'esPendingApproval' },
           store.pageDeletedAtMs ? "(Page deleted)" : "(Title pending approval)");
 
-    let titleText = titlePost.sanitizedHtml;
+    // Insert the title as plain text (don't interpret any html tags — that'd let Mallory mess up
+    // the formatting, even if sanitized).
+    let titleText = r.span({}, titlePost.unsafeSource);
 
     // Make forum titles link back to the forum default view.
     if (store.pageRole === PageRole.Forum) {

@@ -743,6 +743,7 @@ object ReactJson {
       "tags" -> JsArray(tags.toSeq.map(JsString)))
 
     if (post.isBodyHidden) fields :+= "isBodyHidden" -> JsTrue
+    if (post.isTitle) fields :+= "unsafeSource" -> JsStringOrNull(post.approvedSource)
 
     JsObject(fields)
   }

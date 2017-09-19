@@ -147,6 +147,7 @@ interface Post {
   branchSideways: number;
   likeScore: number;
   childIdsSorted: number[];
+  unsafeSource?: string;  // for titles, we insert the post source, as text (no html in titles)
   sanitizedHtml?: string;
   tags?: string[];
   numPendingFlags?: number;
