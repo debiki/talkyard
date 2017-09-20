@@ -37,9 +37,10 @@ class VideoOnebox(globals: Globals, nashorn: ReactRenderer)
 
   val cssClassName = "dw-ob-video"
 
+  // (rel=nofollow not needed – will be sanitized. Incl anyway.)
   def renderInstantly(url: String) = Success(o"""
      <video width='100%' height='100%' controls src='$url'>
-       <a href='$url'>$url</a>
+       <a href='$url' rel='nofollow'>$url</a>
      </video>
     """)
 

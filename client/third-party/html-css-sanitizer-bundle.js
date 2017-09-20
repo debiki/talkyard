@@ -4920,16 +4920,10 @@ function googleCajaSanitizeHtml(htmlTextUnsafe, allowClassAndIdAttr,
       // Allow <head>, just so that ... (4JDKTF20)
       'head'],
 
-    // Some Like-button data- attrs are hardcoded here, because currently allowing 'data-*'
     // doesn't work, not supported by sanitize-html (https://github.com/punkave/sanitize-html/issues/4)
     // Currently (Aug 30 2017) *all* data- attrs here are FB/Twitter/Google Like button stuff.
     allowedAttributes: {
-      a: ['href', 'name', 'target', 'rel',
-        // Twitter Like button:
-        'data-show-count', 'data-size'],
-      // All these data- are for FB's like button. Google uses data-size too.
-      div: ['data-action', 'data-colorscheme', 'data-href', 'data-kid-directed-site',
-        'data-layout', 'data-ref', 'data-share', 'data-show-faces', 'data-size', 'data-width'],
+      a: ['href', 'name', 'target', 'rel'],
       img: ['width', 'height', 'src'],
       video: ['width', 'height', 'src', 'controls', 'autoplay', 'loop'],
       source: ['src', 'type'],
@@ -4946,7 +4940,7 @@ function googleCajaSanitizeHtml(htmlTextUnsafe, allowClassAndIdAttr,
       // Javascript from inside CSS (e.g. url(javascript:...)) and position:fixed, however
       // Caja allows position:absolute so clickjacking would still be a little bit possbible.)
       // SECURITY SHOULD maybe allow 'class' only on custom html pages, orig post? [5JMUKWA1]
-      '*': ['id', 'class']
+      '*': ['id', 'class', 'data-*']
     },
 
     // allowedClasses: { elem: [...classes...] }
@@ -4958,11 +4952,43 @@ function googleCajaSanitizeHtml(htmlTextUnsafe, allowClassAndIdAttr,
       return frame.tag === 'head'
     }
   };
+
   if (!followLinks) {
-    sanitizeHtmlConfig.transformTags = {
-      'a': sanitizeHtml.simpleTransform('a', { 'rel': 'nofollow' })
-    };
+    var siteId = debiki2.ReactStore.allData().siteId;
+    //if (siteId === 98) {  // doesn't work, site id not updated when just rendering markdown.
+                            // instead, always rel=follow StackExchange links, for now.
+      // This is the insightful.demo.ed.community site — so make links to StackExchange rel=follow,
+      // as per the cc-by-sa license. This is a hack, but ... no time for the "real" solution
+      // right now, which SECURITY would probably be to rel=follow links in posts-upvoted-or-created-
+      // -by-trusted-members.
+      sanitizeHtmlConfig.transformTags = {
+        'a': function(tagName, attribs) {
+          var newAttribs = _.clone(attribs);
+          if (/^https:\/\/[^/.#?]+\.stackexchange\.com\/.*/.test(attribs.href) ||
+              /^https:\/\/stackoverflow\.com\/.*/.test(attribs.href)) {
+            // Allow StackExchange and StackOverflow rel=follow links, fine.
+            newAttribs.rel = 'follow';  // [2QWGRC8P]
+          }
+          else if (attribs.href === '/' || /^\/[^/:][^:]*$/.test(attribs.href)) {
+            // Don't add nofollow to site local links, i.e. that don't start with 'http(s)://'
+            // and also don't start with '///', but instead starts with '/something'.
+          }
+          else {
+            newAttribs.rel = 'nofollow';
+          }
+          return { tagName: 'a', attribs: newAttribs };
+        }
+      };
+    /*
+    }
+    else {
+      sanitizeHtmlConfig.transformTags = {
+        // Currently rel=nofollow added here: [7WBK2A04] too.
+        'a': sanitizeHtml.simpleTransform('a', { rel: 'nofollow' })
+      };
+    }*/
   }
+
   // SECURITY SHOULD remove classes & ids like 's_...' and 't_...' — that's internal stuff, and
   // could be used to make the post look weird. (Fairly harmless though.)
   // What? But I remove that already (2PUKRST0)

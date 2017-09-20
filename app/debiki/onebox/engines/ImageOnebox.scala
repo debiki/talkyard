@@ -47,8 +47,9 @@ class ImageOnebox(globals: Globals, nashorn: ReactRenderer)
     // COULD modify the sanitizer to allow _blank,
     // see: https://code.google.com/p/google-caja/issues/detail?id=1296
     // and: client/.../html-css-sanitizer-bundle.js
+    // (rel=nofollow not needed – will be sanitized. Incl anyway.)
     Success(
-      s"<a href='$betterUrl' target='_blank'><img src='$betterUrl'></a>")
+      s"<a href='$betterUrl' rel='nofollow' target='_blank'><img src='$betterUrl'></a>")
   }
 
 }

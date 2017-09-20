@@ -80,7 +80,8 @@ function renderOnebox(tokens, index, options, env, renderer) {
       }
       else {
         // The link couldn't be oneboxed. Show a plain <a href=...> link instead.
-        replacement = Bliss.create('a', { href: token.link, text: token.link });
+        // (rel=nofollow gets added here: [7WBK2A04] for other not-a-onebox-attempt links.)
+        replacement = Bliss.create('a', { href: token.link, rel: 'nofollow', text: token.link });
       }
       var placeholder = debiki2.$byId(randomId);
       // Sometimes the placeholder doesn't exist — I suppose one case is if one did more edits,
