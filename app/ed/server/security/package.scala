@@ -452,7 +452,7 @@ class EdSecurity(globals: Globals) {
     val fakeIpQueryParam = request.queryString.get("fakeIp").flatMap(_.headOption)
     val fakeIp = fakeIpQueryParam.orElse(
       request.cookies.get("dwCoFakeIp").map(_.value))  getOrElse {
-      return request.remoteAddress
+      return request.headers.get("X-Real-IP") getOrElse request.remoteAddress
     }
 
     if (globals.isProd) {
