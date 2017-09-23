@@ -162,9 +162,7 @@ class ViewPageController @Inject()(cc: ControllerComponents, edContext: EdContex
 
   private def viewPageImpl(request: GetRequest): Future[Result] = {
     // Similar to loadPost, keep in sync. [7PKW0YZ2]
-
     dieIfAssetsMissingIfDevTest()
-    globals.throwForbiddenIfSecretNotChanged()
 
     val specifiedPagePath = PagePath.fromUrlPath(request.siteId, request.request.path) match {
       case PagePath.Parsed.Good(path) => path

@@ -20,7 +20,6 @@ package ed.server.http
 import com.debiki.core._
 import com.debiki.core.DbDao.EmailAddressChangedException
 import com.debiki.core.Prelude._
-import debiki.Globals.StillConnectingException
 import org.apache.commons.lang3.exception.ExceptionUtils.getStackTrace
 import debiki._
 import ed.server.security.EdSecurity
@@ -124,7 +123,9 @@ class SafeActions(val globals: Globals, val security: EdSecurity, parsers: PlayB
           Future.successful(result)
         case ex: play.api.libs.json.JsResultException =>
           Future.successful(Results.BadRequest(s"Bad JSON: $ex [DwE70KX3]"))
-        case StillConnectingException =>
+        case Globals.AppSecretNotChangedException =>
+          Future.successful(BadAppSecretError)
+        case Globals.StillConnectingException =>
           Future.successful(ImStartingError)
         case ex: Globals.DatabasePoolInitializationException =>
           Future.successful(databaseGoneError(request, ex, startingUp = true))
@@ -141,6 +142,8 @@ class SafeActions(val globals: Globals, val security: EdSecurity, parsers: PlayB
         case ResultException(result) => result
         case ex: play.api.libs.json.JsResultException =>
           Results.BadRequest(s"Bad JSON: $ex [error DwE6PK30]")
+        case Globals.AppSecretNotChangedException =>
+          BadAppSecretError
         case Globals.StillConnectingException =>
           ImStartingError
         case ex: Globals.DatabasePoolInitializationException =>
@@ -191,10 +194,21 @@ class SafeActions(val globals: Globals, val security: EdSecurity, parsers: PlayB
       |""")
   }
 
+  private val BadAppSecretError = {
+    Results.InternalServerError(i"""500 Internal Server Error
+      |
+      |Admin: Please edit the '${Globals.AppSecretConfValName}' config value, in file /opt/ed/conf/app/play.conf.
+      |
+      |It's still set to "${Globals.AppSecretDefVal}".
+      |
+      |Replace it with about 80 random characters. [EdEDEFAPPSECRET]
+      |""")
+  }
+
   private val ImStartingError = {
     Results.InternalServerError(i"""500 Internal Server Error
       |
-      |Play Framework is starting. Please wait a few seconds, then reload this page.
+      |Play Framework is starting. Please wait a few seconds, then reload this page. [EdEIMSTARTING]
       |""")
   }
 

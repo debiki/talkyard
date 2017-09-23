@@ -56,6 +56,7 @@ object Globals {
   class NoStateError extends AssertionError(
     "No Globals.State created, please call onServerStartup() [DwE5NOS0]")
 
+  object AppSecretNotChangedException extends QuickException
   object StillConnectingException extends QuickException
 
   class DatabasePoolInitializationException(cause: Exception) extends RuntimeException(cause)
@@ -63,6 +64,8 @@ object Globals {
   val LocalhostUploadsDirConfValName = "ed.uploads.localhostDir"
   val DefaultLocalhostUploadsDir = "/opt/ed/uploads/"
 
+  val AppSecretConfValName = "play.http.secret.key"
+  val AppSecretDefVal = "change_this"
   val DefaultSiteIdConfValName = "ed.defaultSiteId"
   val DefaultSiteHostnameConfValName = "ed.hostname"
   val BecomeOwnerEmailConfValName = "ed.becomeOwnerEmailAddress"
@@ -139,10 +142,11 @@ class Globals(
     if (_state eq null) {
       throw new NoStateError()
     }
+    // Errors thrown here will be shown in the browser. Admin friendly :-)
     _state match {
       case Good(state) => state
       case Bad(anyException) =>
-        p.Logger.warn("Accessing state before it's been created. I'm still connecting to other stuff.")
+        p.Logger.warn("Accessing state before it's been created. I'm still trying to start.")
         throw anyException getOrElse StillConnectingException
     }
   }
@@ -183,22 +187,14 @@ class Globals(
 
   val applicationVersion = "0.00.41"  // later, read from some build config file
 
-  def applicationSecret: String = {
-    throwForbiddenIfSecretNotChanged()
-    _appSecret
-  }
+  def applicationSecret: String = _appSecret
 
-  def throwForbiddenIfSecretNotChanged() {
-    val applicationSecretNotChanged = _appSecret == "changeme"
-    if (applicationSecretNotChanged && isProd)
-      throwForbidden("EsE4UK20F", o"""Please edit the 'play.crypto.secret' config value,
-          its still set to 'changeme'""")
-  }
+  private var _appSecret: String = _
 
-  private val _appSecret = {
-    conf.getString("play.http.secret.key").orElse(
+  private def reloadAppSecret() {
+    _appSecret = conf.getString(AppSecretConfValName).orElse(
       conf.getString("play.crypto.secret")).noneIfBlank.getOrDie(
-      "Config value 'play.http.secret.key' missing [EdECHANGEME]")
+      s"Config value '$AppSecretConfValName' missing [EdENOAPPSECRET]")
   }
 
 
@@ -549,6 +545,10 @@ class Globals(
       firsAttempt = false
       val cache = makeCache
       try {
+        reloadAppSecret()
+        if (isProd && _appSecret == AppSecretDefVal)
+          throw AppSecretNotChangedException
+
         p.Logger.info("Connecting to database... [EsM200CONNDB]")
         val readOnlyDataSource = Debiki.createPostgresHikariDataSource(readOnly = true, conf, isOrWasTest)
         val readWriteDataSource = Debiki.createPostgresHikariDataSource(readOnly = false, conf, isOrWasTest)
@@ -575,6 +575,9 @@ class Globals(
       catch {
         case ex: com.zaxxer.hikari.pool.HikariPool.PoolInitializationException =>
           _state = Bad(Some(new DatabasePoolInitializationException(ex)))
+        case ex @ AppSecretNotChangedException =>
+          p.Logger.error(s"Admin error: The admin hasn't edited '$AppSecretConfValName' [EdE2QCHP4]", ex)
+          _state = Bad(Some(ex))
         case ex @ StillConnectingException =>
           p.Logger.error("Bug: StillConnectingException [EdE3PG7FY1]", ex)
           _state = Bad(Some(ex))
