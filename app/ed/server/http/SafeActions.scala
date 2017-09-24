@@ -201,7 +201,8 @@ class SafeActions(val globals: Globals, val security: EdSecurity, parsers: PlayB
       |
       |It's still set to "${Globals.AppSecretDefVal}".
       |
-      |Replace it with about 80 random characters. [EdEDEFAPPSECRET]
+      |Replace it with about 80 random characters. Then, in /opt/ed/, do:  docker-compose restart app
+      |and wait ten? twenty? seconds, then reload this page. [EdEDEFAPPSECRET]
       |""")
   }
 
