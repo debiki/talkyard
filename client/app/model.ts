@@ -481,6 +481,8 @@ interface Store {
   now: number;
   siteStatus: SiteStatus;
   isFirstSiteAdminEmailMissing?: boolean;
+  // Only used when creating the site, to show messages for embedded comments.
+  makeEmbeddedCommentsSite?: boolean;
   userMustBeAuthenticated: boolean;
   userMustBeApproved: boolean;
   settings: SettingsVisibleClientSide;
@@ -1062,6 +1064,7 @@ enum PricePlan {  // [4GKU024S]
   Unknown = 0,
   NonCommercial = 1,
   Business = 2,
+  EmbeddedComments = 3,
 }
 
 

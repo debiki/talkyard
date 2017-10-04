@@ -25,7 +25,7 @@
 /// <reference path="hostname-editor.staff.ts" />
 
 //------------------------------------------------------------------------------
-   module debiki2.admin {
+   namespace debiki2.admin {
 //------------------------------------------------------------------------------
 
 const r = React.DOM;
@@ -56,6 +56,7 @@ export function routes() {
         Route({ path: 'login', component: LoginAndSignupSettingsComponent }),
         Route({ path: 'moderation', component: ModerationSettingsComponent }),
         Route({ path: 'spam-flags', component: SpamFlagsSettingsComponent }),
+        Route({ path: 'embedded-comments', component: EmbeddedCommentsComponent }), // [8UP4QX0]
         Route({ path: 'advanced', component: AdvancedSettingsComponent })),
       Route({ path: 'users', component: UsersTabComponent },
         Route({ path: 'enabled', component: ActiveUsersPanelComponent }),
@@ -234,6 +235,7 @@ var SettingsPanelComponent = React.createClass(<any> {
           NavLink({ to: AdminRoot + 'settings/login', id: 'e2eAA_Ss_LoginL' }, "Signup and Login"),
           NavLink({ to: AdminRoot + 'settings/moderation', id: 'e2eAA_Ss_ModL'  }, "Moderation"),
           NavLink({ to: AdminRoot + 'settings/spam-flags', id: 'e2eAA_Ss_SpamFlagsL'  }, "Spam & flags"),
+          NavLink({ to: AdminRoot + 'settings/embedded-comments', id: 'e2eAA_Ss_EmbCmtsL' }, "Embedded Comments"),
           NavLink({ to: AdminRoot + 'settings/advanced', id: 'e2eAA_Ss_AdvancedL' }, "Advanced")),
         r.div({ className: 'form-horizontal esAdmin_settings col-sm-10' },
           React.cloneElement(this.props.children, this.props))));
@@ -588,6 +590,52 @@ var SpamFlagsSettingsComponent = React.createClass(<any> {
 
 
 
+const EmbeddedCommentsComponent = React.createClass(<any> {
+  render: function() {
+    const props = this.props;
+    const settings: Settings = props.currentSettings;
+    const embeddingUrl = settings.allowEmbeddingFrom.trim();
+    let dotMin = '.min';
+    // @ifdef DEBUG
+    dotMin = '';
+    // @endif
+
+    const urlSeemsValid = /https?:\/\/.+\..+/.test(embeddingUrl);
+    const anyInstructions = !urlSeemsValid ? null :
+        r.div({ className: 's_A_Ss_EmbCmts col-sm-offset-3 col-sm-9' },
+          r.h2({}, "Instructions"),
+          r.p({}, "On your website, i.e. ", r.code({}, embeddingUrl),
+            ", paste the following HTML in a web page or site template, " +
+            "where you want comments to appear:"),
+          r.pre({},  // script url defined here: [2WPGKS04]
+`<script>edCommentsServerUrl='${location.origin}';</script>
+<script async defer src="${assetsOrigin()}/-/ed-comments.v0${dotMin}.js"></script>
+<div class="ed-comments" style="margin-top: 45px;">
+<noscript>Please enable Javascript to view comments.</noscript>
+<p style="margin-top: 25px; opacity: 0.9; font-size: 96%">Comments powered by
+<a href="https://www.effectivediscussions.org">Effective Discussions</a>.</p>
+</div>`),
+          r.p({ className: 's_A_Ss_EmbCmts_Plugins' },
+            "Or, if you use ", r.b({}, "Gatsby"), " (a static website generator), there's ",
+            r.a({ href: 'https://www.npmjs.com/package/gatsby-plugin-ed-comments' },
+              "this plugin for you.")),
+          r.p({}, "Thereafter, try adding a comment, over at your website — should work now."));
+
+    return (
+      r.div({},
+        Setting2(props, { type: 'text', label: "Allow embedding from",
+          help: r.span({}, "Lets another website (your website) show embedded contents."),
+          getter: (s: Settings) => s.allowEmbeddingFrom,
+          update: (newSettings: Settings, target) => {
+            newSettings.allowEmbeddingFrom = target.value;
+          }
+        }),
+        anyInstructions));
+  }
+});
+
+
+
 var AdvancedSettingsComponent = React.createClass(<any> {
   redirectExtraHostnames: function() {
     Server.redirectExtraHostnames(() => {
@@ -664,14 +712,6 @@ var AdvancedSettingsComponent = React.createClass(<any> {
           getter: (s: Settings) => s.googleUniversalAnalyticsTrackingId,
           update: (newSettings: Settings, target) => {
             newSettings.googleUniversalAnalyticsTrackingId = target.value;
-          }
-        }),
-
-        Setting2(props, { type: 'text', label: "Allow embedding from",
-          help: r.span({}, "Allow another website to show embedded contents from this site."),
-          getter: (s: Settings) => s.allowEmbeddingFrom,
-          update: (newSettings: Settings, target) => {
-            newSettings.allowEmbeddingFrom = target.value;
           }
         }),
 
@@ -1026,7 +1066,7 @@ function Setting2(panelProps, props, anyChildren?) {
 
   var undoChangesButton;
   if (isDefined2(editedValue)) {
-    undoChangesButton = Button({ className: 'col-xs-offset-3 esAdmin_settings_setting_btn',
+    undoChangesButton = Button({ className: 'col-sm-offset-3 esAdmin_settings_setting_btn',
       disabled: props.disabled, onClick: () => {
         event.target[field] = currentValue;
         props.onChange(event);
@@ -1037,7 +1077,7 @@ function Setting2(panelProps, props, anyChildren?) {
   var resetToDefaultButton;
   var defaultValue = props.getter(defaultSettings);
   if (!undoChangesButton && valueOf(props.getter) !== defaultValue && props.canReset !== false) {
-    resetToDefaultButton = Button({ className: 'col-xs-offset-3 esAdmin_settings_setting_btn',
+    resetToDefaultButton = Button({ className: 'col-sm-offset-3 esAdmin_settings_setting_btn',
       disabled: props.disabled, onClick: () => {
         event.target[field] = defaultValue;
         props.onChange(event);

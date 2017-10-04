@@ -191,12 +191,6 @@ class Notifier(val systemDao: SystemDao, val siteDaoFactory: SiteDaoFactory)
     }
 
     val site = siteDao.theSite()
-    if (site.canonicalHost.isEmpty && site.embeddingSiteUrl.isEmpty) {
-      val problem = "neither chost nor embedding site url specified"
-      logWarning(problem)
-      return Some(problem)
-    }
-
     constructAndSendEmail(siteDao, site, user, notfs.take(MaxNotificationsPerEmail))
     None
   }

@@ -394,7 +394,7 @@ export function createSite(emailAddress: string, localHostname: string,
       pricePlan: pricePlan,
     },
     success: (response) => {
-      doneCallback(response.newSiteOrigin);
+      doneCallback(response.nextUrl);
     }
   });
 }
@@ -739,6 +739,12 @@ export function createForum(title: string, folder: string, success: (urlPath: st
     title: title,
     folder: folder,
   });
+}
+
+
+export function createEmbCmtsSiteGoToInstrs() {
+  postJsonSuccess('/-/create-embedded-comments-site',
+    () => location.assign('/-/admin/settings/embedded-comments'), {});
 }
 
 

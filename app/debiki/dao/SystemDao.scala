@@ -82,7 +82,7 @@ class SystemDao(
   private def createFirstSite(): Site = {
     readWriteTransaction { sysTx =>
       val firstSite = sysTx.createSite(Some(FirstSiteId), name = "Main Site", SiteStatus.NoAdmin,
-        embeddingSiteUrl = None, creatorIp = "0.0.0.0", creatorEmailAddress = "unknown@example.com",
+        creatorIp = "0.0.0.0", creatorEmailAddress = "unknown@example.com",
         quotaLimitMegabytes = None, maxSitesPerIp = 9999, maxSitesTotal = 9999,
         isTestSiteOkayToDelete = false, pricePlan = "-", createdAt = sysTx.now)
 
@@ -150,7 +150,7 @@ class SystemDao(
       }
 
       val newSite = sysTx.createSite(id = None, name = name, status,
-        embeddingSiteUrl, creatorIp = browserIdData.ip, creatorEmailAddress = creatorEmailAddress,
+        creatorIp = browserIdData.ip, creatorEmailAddress = creatorEmailAddress,
         quotaLimitMegabytes = config.createSite.quotaLimitMegabytes,
         maxSitesPerIp = maxSitesPerIp, maxSitesTotal = maxSitesTotal,
         isTestSiteOkayToDelete = isTestSiteOkayToDelete, pricePlan = pricePlan, sysTx.now)
@@ -181,6 +181,7 @@ class SystemDao(
       newSiteTx.startAuditLogBatch()
 
       newSiteTx.upsertSiteSettings(SettingsToSave(
+        allowEmbeddingFrom = Some(embeddingSiteUrl),
         orgFullName = Some(Some(organizationName))))
 
       val newSiteHost = SiteHost(hostname, SiteHost.RoleCanonical)

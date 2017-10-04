@@ -43,8 +43,8 @@ class ForumController @Inject()(cc: ControllerComponents, edContext: EdContext)
   def createForum: Action[JsValue] = AdminPostJsonAction(maxBytes = 200) { request =>
     val title = (request.body \ "title").as[String]
     val folder = (request.body \ "folder").as[String]
-    val pagePath = request.dao.createForum(title, folder = folder, request.who).pagePath
-    OkSafeJson(JsString(pagePath.value))
+    val result = request.dao.createForum(title, folder = folder, isForEmbCmts = false, request.who)
+    OkSafeJson(JsString(result.pagePath.value))
   }
 
 

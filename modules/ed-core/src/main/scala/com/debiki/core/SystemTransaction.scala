@@ -40,7 +40,7 @@ trait SystemTransaction {
     * (from the same IP or email address).
     */
   def createSite(id: Option[SiteId], name: String, status: SiteStatus,
-    embeddingSiteUrl: Option[String], creatorIp: String, creatorEmailAddress: String,
+    creatorIp: String, creatorEmailAddress: String,
     quotaLimitMegabytes: Option[Int], maxSitesPerIp: Int, maxSitesTotal: Int,
     isTestSiteOkayToDelete: Boolean, pricePlan: PricePlan, createdAt: When): Site
 

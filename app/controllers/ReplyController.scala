@@ -151,7 +151,7 @@ class ReplyController @Inject()(cc: ControllerComponents, edContext: EdContext)
 
     dao.createPage(pageRole, PageStatus.Published,
       anyCategoryId = Some(categoryId), anyFolder = slug, anySlug = folder,
-      titleTextAndHtml = textAndHtmlMaker.forTitle(s"Embedded comments for $embeddingUrl"),
+      titleTextAndHtml = textAndHtmlMaker.forTitle(s"Comments for $embeddingUrl"),
       bodyTextAndHtml = textAndHtmlMaker.forBodyOrComment(s"Comments for: $embeddingUrl"), showId = true,
       Who.System, request.spamRelatedStuff, altPageId = altPageId, embeddingUrl = Some(embeddingUrl))
   }

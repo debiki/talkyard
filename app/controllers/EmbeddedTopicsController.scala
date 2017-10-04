@@ -24,7 +24,8 @@ import debiki.dao.SiteDao
 import ed.server.{EdContext, EdController, RenderedPage}
 import ed.server.http._
 import javax.inject.Inject
-import play.api.mvc.ControllerComponents
+import play.api.libs.json.{JsString, JsValue}
+import play.api.mvc.{Action, ControllerComponents}
 
 
 /** Shows embedded comments.
@@ -33,6 +34,15 @@ class EmbeddedTopicsController @Inject()(cc: ControllerComponents, edContext: Ed
   extends EdController(cc, edContext) {
 
   import context.globals
+
+
+  def createEmbeddedCommentsSite: Action[JsValue] = AdminPostJsonAction(maxBytes = 200) { request =>
+    val settings = request.siteSettings
+    val title = "Comments for " + settings.allowEmbeddingFrom
+    request.dao.createForum(title, folder = "/", isForEmbCmts = true, request.who)
+    Ok
+  }
+
 
   def showTopic(embeddingUrl: String, discussionId: Option[AltPageId], edPageId: Option[PageId]) =
         AsyncGetAction { request =>
@@ -97,17 +107,6 @@ class EmbeddedTopicsController @Inject()(cc: ControllerComponents, edContext: Ed
       val altId = discussionId.getOrElse(embeddingUrl)
       dao.getRealPageId(altId)
     }
-  }
-
-
-  def showSetupInstructions = AdminGetAction { request =>
-    ??? /*
-    if (request.dao.loadSiteStatus() != SiteStatus.IsEmbeddedSite)
-      throwForbidden("DwE21FG4", "This is currently not an embedded comments site")
-
-    Ok(views.html.createsite.embeddingSiteInstructionsPage(
-      SiteTpi(request), request.dao.loadSite()).body) as HTML
-      */
   }
 
 }

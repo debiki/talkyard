@@ -78,11 +78,19 @@ class CreateSiteController @Inject()(cc: ControllerComponents, edContext: EdCont
 
     val acceptTermsAndPrivacy = (request.body \ "acceptTermsAndPrivacy").as[Boolean]
     val emailAddress = (request.body \ "emailAddress").as[String]
-    val localHostname = (request.body \ "localHostname").as[String]
+    val anyLocalHostname = (request.body \ "localHostname").asOpt[String]
     val anyEmbeddingSiteAddress = (request.body \ "embeddingSiteAddress").asOpt[String]
     val organizationName = (request.body \ "organizationName").as[String].trim
     val pricePlanInt = (request.body \ "pricePlan").as[Int]
     val okE2ePassword = hasOkE2eTestPassword(request.request)
+
+    val localHostname = anyLocalHostname getOrElse {
+      val embAddr = anyEmbeddingSiteAddress getOrElse {
+        throwForbidden("EdE2FGHS0", "No local hostname and no embedding address")
+      }
+      val slashHostname = embAddr.dropWhile(_ != '/')
+      "comments-for-" + slashHostname.filterNot("./:" contains _)   // also in info message [7PLBKA24]
+    }
 
     if (!acceptTermsAndPrivacy)
       throwForbidden("DwE877FW2", "You need to accept the terms of use and privacy policy")
@@ -116,7 +124,8 @@ class CreateSiteController @Inject()(cc: ControllerComponents, edContext: EdCont
       case 0 => "Unknown"
       case 1 => "NonCommercial"
       case 2 => "Business"
-      case _ => throwBadArgument("EsE7YKW28", "pricePlan", "not 0, 1 or 2")
+      case 3 => "EmbeddedComments"
+      case _ => throwBadArgument("EsE7YKW28", "pricePlan", "not 0, 1, 2 or 3")
     }
 
     globals.spamChecker.detectRegistrationSpam(request, name = localHostname,
@@ -152,8 +161,7 @@ class CreateSiteController @Inject()(cc: ControllerComponents, edContext: EdCont
             }
         }
 
-      COULD ; REFACTOR // rename newSiteOrigin to 'nextUrl'?
-      OkSafeJson(Json.obj("newSiteOrigin" -> goToUrl))
+      OkSafeJson(Json.obj("nextUrl" -> goToUrl))
     }
   }
 

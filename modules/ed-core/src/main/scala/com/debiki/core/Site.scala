@@ -143,7 +143,6 @@ case class Site(
   createdAt: When,
   creatorIp: String,
   creatorEmailAddress: String,
-  embeddingSiteUrl: Option[String],
   hosts: List[SiteHost]) {
 
   // Reqiure at most 1 canonical host.

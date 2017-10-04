@@ -25,6 +25,17 @@
    namespace debiki2 {
 //------------------------------------------------------------------------------
 
+export function assetsOrigin(): string {
+  // CLEAN_UP incl assetsOrigin in the data from the server, rather than debiki.uploadsUrlPrefix.
+  // This removes the url path from '(https:)//cdn-or-server-origin/-/u/', and ensures
+  // the protocol is https.
+  let protocol = 'https:';
+  // @ifdef DEBUG
+  protocol = 'http:';
+  // @endif
+  return protocol +
+    debiki.uploadsUrlPrefix.replace('/-/u/', '').replace('https:', '').replace('http:', '');
+}
 
 export function linkToPageId(pageId: PageId): string {
   return '/-' + pageId;

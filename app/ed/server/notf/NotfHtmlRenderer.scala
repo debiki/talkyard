@@ -49,18 +49,17 @@ case class NotfHtmlRenderer(siteDao: SiteDao, anyOrigin: Option[String]) {
     }*/
 
 
-  private def postUrl(pageMeta: PageMeta, post: Post): Option[String] =
+  private def postUrl(pageMeta: PageMeta, post: Post): String =
     pageMeta.embeddingPageUrl match {
       case Some(url) =>
-        // Include both topic and comment id, because it's possible to embed
-        // many different discussions (topics) on the same page.
-        Some(s"$url#debiki-topic-${pageMeta.pageId}-comment-${post.nr}")
+        // If many different discussions (topics) on the same page, would need to include
+        // discussion id too (i.e. `${pageMeta.pageId}`)
+        s"$url#ed-post-${post.nr}"  // 'ed' = EffectiveDiscussions
       case None =>
         // The page is hosted by Debiki so its url uniquely identifies the topic.
-        anyOrigin map { origin =>
-          val pageUrl = s"$origin/-${post.pageId}"
-          s"$pageUrl#post-${post.nr}"
-        }
+        val origin = anyOrigin getOrElse siteDao.globals.siteByIdOrigin(siteDao.siteId)
+        val pageUrl = s"$origin/-${post.pageId}"
+        s"$pageUrl#post-${post.nr}"
     }
 
 
@@ -110,11 +109,7 @@ case class NotfHtmlRenderer(siteDao: SiteDao, anyOrigin: Option[String]) {
     COULD // instead add a /-/view-notf?id=... endpoint that redirects to the correct
     // page & post nr, even if the post has been moved to another page. And tells the user if
     // the post was deleted or heavily edited or whatever.
-    val url = postUrl(pageMeta, post) getOrElse {
-      // Not an embedded discussion, and the site has no canonical host, so we
-      // cannot construct any address.
-      return Nil
-    }
+    val url = postUrl(pageMeta, post)
 
     // Don't include HTML right now. I do sanitize the HTML, but nevertheless
     // I'm a bit worried that there's any bug that results in XSS attacks,

@@ -51,7 +51,6 @@ GET   /-/load-online-users                       ed.server.pubsub.SubscriberCont
 
 GET   /-/embedded-comments      controllers.EmbeddedTopicsController.showTopic(embeddingUrl, discussionId: Option[String], edPageId: Option[String])
 GET   /-/embedded-editor        controllers.EmbeddedTopicsController.showEmbeddedEditor(embeddingUrl, discussionId: Option[String], edPageId: Option[String])
-GET   /-/embedded-comments-help controllers.EmbeddedTopicsController.showSetupInstructions
 
 GET   /-/search                 controllers.SearchController.showSearchPage(q: Option[String])
 POST  /-/search                 controllers.SearchController.doSearch
@@ -254,6 +253,7 @@ GET   /-/list-posts             controllers.ViewPageController.listPosts(authorI
 # updated by the deployment script (asset fingerprinting).
 GET   /-/assets/219/*file       controllers.Assets.at(path = "/public/res", file)
 GET   /robots.txt               controllers.Assets.at(path = "/public", file = "robots.txt")
+# These endpoints are linked from embedded comments HTML:  [2WPGKS04]
 GET   /-/ed-comments.js         controllers.Assets.at(path = "/public/res", file = "ed-comments.js")
 GET   /-/ed-comments.v0.js      controllers.Assets.at(path = "/public/res", file = "ed-comments.js")
 GET   /-/ed-comments.min.js     controllers.Assets.at(path = "/public/res", file = "ed-comments.min.js")

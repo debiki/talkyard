@@ -172,6 +172,7 @@ object ReactJson {
       "siteId" -> JsNumber(pageReq.siteId),
       "siteStatus" -> pageReq.dao.theSite().status.toInt,
       "isFirstSiteAdminEmailMissing" -> isFirstSiteAdminEmailMissing,
+      "makeEmbeddedCommentsSite" -> siteSettings.allowEmbeddingFrom.nonEmpty,
       "userMustBeAuthenticated" -> JsBoolean(siteSettings.userMustBeAuthenticated),
       "userMustBeApproved" -> JsBoolean(siteSettings.userMustBeApproved),
       "settings" -> makeSettingsVisibleClientSideJson(siteSettings),

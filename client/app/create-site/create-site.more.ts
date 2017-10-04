@@ -41,16 +41,16 @@ export function routes() {
        Route({ path: 'website', handler: CreateWebsiteComponent }),
        */
       IndexRoute({ component: CreateWebsiteComponent }),
-      Route({ path: 'embedded-comments', component: CreateEmbeddedSiteComponent })),
+      Route({ path: 'embedded-comments', component: CreateWebsiteComponent })),
     Route({ key: 'test-routes', path: '/-/create-test-site', component: CreateSomethingComponent },
       IndexRoute({ component: CreateWebsiteComponent }),
-      Route({ path: 'embedded-comments', component: CreateEmbeddedSiteComponent }))];
+      Route({ path: 'embedded-comments', component: CreateWebsiteComponent }))];
 }
 
 
 
-var CreateSomethingComponent = React.createClass({
-  displayName: 'CreateSiteComponent',
+const CreateSomethingComponent = React.createClass({
+  displayName: 'CreateSomethingComponent',
 
   getInitialState: function() {
     return {
@@ -65,43 +65,29 @@ var CreateSomethingComponent = React.createClass({
 });
 
 
-/* Later, if I make embedded comments work again:
-var ChooseSiteTypeComponent = React.createClass({
-  goToCreateSimpleSite: function() {
-    this.transitionTo('create-simple-site');
-  },
 
-  goToCreateEmbeddedSite: function() {
-    this.transitionTo('create-embedded-comments');
-  },
-
-  render: function() {
-    return r.div({},
-      r.h1({}, 'Choose Site Type'),
-      r.p({}, 'What do you want to create? (You can change your mind later.)'),
-      r.div({},
-        Button({ onClick: this.goToCreateSimpleSite }, 'A forum, bog or simple website')));
-        // Button({ onClick: this.goToCreateEmbeddedSite }, 'Embedded comments')));
-  }
-}); */
-
-
-
-var CreateWebsiteComponent = React.createClass(<any> {
-  displayName: 'CreateSimpleSiteComponent',
+const CreateWebsiteComponent = React.createClass(<any> {
+  displayName: 'CreateWebsiteComponent',
 
   getInitialState: function() {
+    // Later: add Non-Commercial or Hobby / Business checkbox.
+    let pricePlan = PricePlan.NonCommercial;
+    if (location.pathname.indexOf('business') !== -1) pricePlan = PricePlan.Business;
+    if (location.pathname.indexOf('embedded-comments') !== -1) pricePlan = PricePlan.EmbeddedComments;
+
     return {
+      pricePlan,
       okayStatuses: {
         email: false,
         email2: false,
-        hostname: false,
+        address: false,
         orgName: false,
         terms: false,
       },
       email: '',
       email2: null,
       showEmail2: false,
+      embeddingOrigin: '',
     };
   },
 
@@ -109,8 +95,8 @@ var CreateWebsiteComponent = React.createClass(<any> {
     if (this.state.showEmail2 && !prevState.showEmail2) {
       this.refs.emailAddress2.focus();
     }
-    if (this.state.showHostname && !prevState.showHostname) {
-      this.refs.localHostname.focus();
+    if (this.state.showAddress && !prevState.showAddress) {
+      (this.refs.embeddingOrigin || this.refs.localHostname).focus();
     }
     if (this.state.showRemaining && !prevState.showRemaining) {
       this.refs.organizationName.focus();
@@ -118,45 +104,58 @@ var CreateWebsiteComponent = React.createClass(<any> {
   },
 
   handleSubmit: function(event) {
-    var testSitePrefix = // dupl code [5UKF03]
+    const testSitePrefix = // dupl code [5UKF03]
       location.pathname.indexOf('create-test-site') !== -1 ? 'test--' : '';
-
-    // Later: add Non-Commercial or Hobby / Business checkbox.
-    var pricePlan = PricePlan.Unknown;
-    if (location.hash.indexOf('non-commercial') !== -1) pricePlan = PricePlan.NonCommercial;
-    if (location.hash.indexOf('business') !== -1) pricePlan = PricePlan.Business;
+    const isComments = this.state.pricePlan === PricePlan.EmbeddedComments;
+    const localHostname = isComments ? null : testSitePrefix + this.refs.localHostname.getValue();
+    const embeddingOrigin = !isComments ? null : this.refs.embeddingOrigin.getValue();
 
     event.preventDefault();
     Server.createSite(
         this.refs.emailAddress.getValue(),
-        testSitePrefix + this.refs.localHostname.getValue(),
-        null,
+        localHostname,
+        embeddingOrigin,
         this.refs.organizationName.getValue(),
-        pricePlan,
-        (newSiteOrigin) => {
-          window.location.assign(newSiteOrigin);
+        this.state.pricePlan,
+        (nextUrl) => {
+          window.location.assign(nextUrl);
         });
   },
 
   reportOkay: function(what, isOk) {
-    var okayStatuses = this.state.okayStatuses;
+    const okayStatuses = this.state.okayStatuses;
     okayStatuses[what] = isOk;
     this.setState({ okayStatuses: okayStatuses });
   },
 
   render: function() {
-    var state = this.state;
-    var okayStatuses = state.okayStatuses;
-    var disableSubmit = _.includes(_.values(okayStatuses), false);
-    var emailTypedOkTwice = okayStatuses.email && this.state.email === this.state.email2;
+    const state = this.state;
+    const okayStatuses = state.okayStatuses;
+    const disableSubmit = _.includes(_.values(okayStatuses), false);
+    const emailTypedOkTwice = okayStatuses.email && this.state.email === this.state.email2;
+    const isComments = this.state.pricePlan === PricePlan.EmbeddedComments;
+    const embeddingOriginOrLocalHostname = isComments
+      ? EmbeddingAddressInput({
+          style: { display: state.showAddress ? 'block' : 'none' },
+          onChangeValueOk: (value, isOk) => {
+            this.setState({ embeddingOrigin: value });
+            this.reportOkay('address', isOk)
+          } })
+      : LocalHostnameInput({ label: "Site Address:", placeholder: 'your-forum-name',
+            style: { display: state.showAddress ? 'block' : 'none' },
+            help: "The address of your new site. You can change this later,  " +
+                "e.g. to a custom domain.",
+            ref: 'localHostname',
+            onChangeValueOk: (value, isOk) => this.reportOkay('address', isOk) });
+
     return (
       r.div({},
-        r.h1({}, 'Create Forum'),
+        r.h1({}, isComments ? "Create Embedded Comments" : "Create Forum"),
         r.form({ className: 'esCreateSite', onSubmit: this.handleSubmit },
           EmailInput({ label: "Your email:", id: 'e2eEmail', className: 'esCreateSite_email',
               placeholder: 'your-email@example.com',
-              help: 'Your email address, which you will use to login and ' +
-                'administrate the site.', ref: 'emailAddress',
+              help: "Your email address, which you will use to login and administrate " +
+                (isComments ? "comments." : "the site."), ref: 'emailAddress',
               onChangeValueOk: (value, isOk) => {
                 this.setState({ email: value });
                 this.reportOkay('email', isOk)
@@ -170,25 +169,20 @@ var CreateWebsiteComponent = React.createClass(<any> {
             style: { display: state.showEmail2 ? 'block' : 'none' },
             placeholder: 'your-email@example.com',
             error: !emailTypedOkTwice,
-            help: 'Please type your email again.', ref: 'emailAddress2',
+            help: "Please type your email again.", ref: 'emailAddress2',
             onChangeValueOk: (value, isOk) => {
               this.setState({ email2: value });
               this.reportOkay('email2', isOk && value === this.state.email)
             } }),
 
-          NextStepButton({ onShowNextStep: () => this.setState({ showHostname: true }),
-              showThisStep: emailTypedOkTwice && !state.showHostname, id: 'e2eNext2' },
+          NextStepButton({ onShowNextStep: () => this.setState({ showAddress: true }),
+              showThisStep: emailTypedOkTwice && !state.showAddress, id: 'e2eNext2' },
             "Next"),
 
-          LocalHostnameInput({ label: 'Site Address:', placeholder: 'your-forum-name',
-              style: { display: state.showHostname ? 'block' : 'none' },
-              help: "The address of your new site. You can change this later,  " +
-                  "e.g. to a custom domain.",
-              ref: 'localHostname',
-              onChangeValueOk: (isOk) => this.reportOkay('hostname', isOk) }),
+          embeddingOriginOrLocalHostname,
 
           NextStepButton({ onShowNextStep: () => this.setState({ showRemaining: true }),
-              showThisStep: okayStatuses.hostname && !state.showRemaining, id: 'e2eNext3' },
+              showThisStep: okayStatuses.address && !state.showRemaining, id: 'e2eNext3' },
             "Next (the last)"),
 
           PatternInput({ label: "Organization name:", placeholder: "Your Organization Name",
@@ -203,7 +197,7 @@ var CreateWebsiteComponent = React.createClass(<any> {
           r.div({ style: { display: state.showRemaining ? 'block' : 'none' }},
             AcceptTerms({ reportOkay: (isOk) => this.reportOkay('terms', isOk) }),
 
-            InputTypeSubmit({ value: 'Create Site', disabled: disableSubmit })))));
+            InputTypeSubmit({ value: "Create Site", disabled: disableSubmit })))));
   }
 });
 
@@ -220,92 +214,20 @@ function NextStepButton(props, text) {
 
 
 
-// Currently not in use; embedded comments disabled & broken right now.
-var CreateEmbeddedSiteComponent = React.createClass(<any> {
-  displayName: 'CreateEmbeddedSiteComponent',
-
-  getInitialState: function() {
-    return { showErrors: false };
-  },
-
-  handleSubmit: function(event) {
-    event.preventDefault();
-    var anyError =
-        !this.refs.terms.areTermsAccepted() ||
-        this.refs.localHostname.findAnyError() ||
-        !this.refs.embeddingSiteAddress.isValid();
-        // COULD test email too
-    if (anyError) {
-      this.setState({ showErrors: true });
-      return;
-    }
-    die("unimpl [EsE5YKUFQ32]"); /*
-    Server.createSite(
-        this.refs.emailAddress.getValue(),
-        this.refs.localHostname.getValue(),
-        this.refs.embeddingSiteAddress.getValue(),
-         ??? organizationName.getValue(),  ?? this field is missing
-        (newSiteOrigin) => {
-          window.location.assign(newSiteOrigin);
-        }); */
-  },
-
-  updateDebikiAddress: function() {
-    var newEmbeddingSiteAddress = this.refs.embeddingSiteAddress.getValue();
-    var newLocalHostname = deriveLocalHostname(newEmbeddingSiteAddress);
-    this.refs.localHostname.setValue(newLocalHostname);
-  },
-
-  render: function() {
-    return (
-      r.div({},
-        r.h1({}, 'Create Embedded Site'),
-        r.form({ onSubmit: this.handleSubmit },
-          Input({ type: 'text', label: 'Email:', placeholder: 'your-email@example.com',
-              help: 'Your email address, which you will use to login and moderate comments.',
-              ref: 'emailAddress' }),
-
-          EmbeddingAddressInput({ ref: 'embeddingSiteAddress',
-              onChange: this.updateDebikiAddress }),
-
-          LocalHostnameInput({ label: 'Debiki Address', ref: 'localHostname',
-              help: 'This is where you login to moderate embedded comments.' }),
-
-          AcceptTerms({ ref: 'terms' }),
-
-          InputTypeSubmit({ value: "Create Site" }))));
-  }
-});
-
-
-
-// Currently not in use; embedded comments disabled & broken right now.
-export var EmbeddingAddressInput = createClassAndFactory({
-  getInitialState: function() {
-    return { bsStyle: 'error' };
-  },
-  isValid: function() {
-    var value = this.refs.input.getValue();
-    var valid = /https?:\/\/.+/.test(value);
-    return valid;
-  },
-  getValue: function() {
-    return this.refs.input.getValue();
-  },
-  onChange: function(event) {
-    this.setState({ bsStyle: this.isValid() ? 'success' : 'error' });
-    if (this.props.onChange) {
-      this.props.onChange(event);
-    }
-  },
-  render: function() {
-    return (
-      Input({ type: 'text', label: this.props.label || 'Embedding Site Address',
-        placeholder: 'https://www.example.com', onChange: this.onChange,
-        ref: 'input', bsStyle: this.state.bsStyle, help: this.props.help ||
-          'The address of the website where the embedded comments should appear.' }));
-  }
-});
+export function EmbeddingAddressInput(props) {
+  return (
+    PatternInput({ label: props.label || "Embedding site:",
+      id: 'e_EmbeddingOrigin', className: '',
+      style: props.style,
+      placeholder: 'https://your.website.com',
+      help: props.help || "The address of your blog / website where you're adding the comments.",
+      ref: 'embeddingOrigin',
+      regex: /\S/, message: "Address required",
+      regexTwo: /^https?:\/\/[^/]+/, messageTwo: "Should be http(s)://something...",
+      notRegex: /\S\s\S/, notMessage: "No spaces please",
+      notRegexTwo: /[@#\?]/, notMessageTwo: "No weird characters please (e.g. not @#?)",
+      onChangeValueOk: props.onChangeValueOk }));
+}
 
 
 
@@ -337,7 +259,7 @@ const AcceptTerms = createClassAndFactory({
  * and later 2) let them connect it to their own main domain, from the admin pages.
  * Then they can return to the default-domain address, if they mess up, and fix things.
  */
-var LocalHostnameInput = createClassAndFactory({
+const LocalHostnameInput = createClassAndFactory({
   contextTypes: {
     router: React.PropTypes.object.isRequired
   },
@@ -359,9 +281,10 @@ var LocalHostnameInput = createClassAndFactory({
   },
 
   onChange: function(event) {
-    this.setState({ value: event.target.value.toLowerCase() });
-    var anyError = this.findAnyError(event.target.value);
-    this.props.onChangeValueOk(!anyError);
+    const value = event.target.value.toLowerCase();
+    const anyError = this.findAnyError(value);
+    this.setState({ value });
+    this.props.onChangeValueOk(value, !anyError);
   },
 
   showErrors: function() {

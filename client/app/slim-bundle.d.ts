@@ -172,6 +172,7 @@ declare namespace debiki2 {
   var siteStatusToString;
   var cloneRect;
 
+  function assetsOrigin(): string;
   var linkToPageId;
   var linkToPostNr;
   var linkToNotificationSource;

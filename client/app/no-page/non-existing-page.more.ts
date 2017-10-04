@@ -54,7 +54,7 @@ export var NonExistingPage = createComponent({
     var adminPendingMatch = siteStatus === SiteStatus.NoAdmin ||
         store.isFirstSiteAdminEmailMissing;
     if (adminPendingMatch && !me.isLoggedIn && !store.newUserAccountCreated) {
-      return SignUpAsAdmin(this.state.store);
+      return SignUpAsAdmin({ store: this.state.store });
     }
     else if (me.isAdmin) {
       /*
@@ -63,32 +63,34 @@ export var NonExistingPage = createComponent({
       }
       else {
       */
-      return CreateSomethingHere(this.state.store);
+      return CreateSomethingHere({ store: this.state.store });
     }
     else {
-      return LoginToCreateSomething(this.state.store);
+      return LoginToCreateSomething({ store: this.state.store });
     }
   }
 });
 
 
 
-export var SignUpAsAdmin = createComponent({
+const SignUpAsAdmin = createComponent({
   render: function() {
-    var startOfTheEmailAddress;
+    const store: Store = this.props.store;
+    const embCmts = store.makeEmbeddedCommentsSite;
+    let startOfTheEmailAddress;
     if (this.props.obfuscatedAminEmail) {
       startOfTheEmailAddress =
         r.span({}, 'That is, ', r.samp({}, this.props.obfuscatedAminEmail + '...@...'));
     }
 
-    var anyEmailProblem = this.props.isFirstSiteAdminEmailMissing
+    const anyEmailProblem = this.props.isFirstSiteAdminEmailMissing
       ? r.p({ style: { color: 'hsl(0, 100%, 45%)', fontWeight: 'bold' }},
           "But you haven't specified any ", r.code({}, 'debiki.becomeOwnerEmailAddress'),
           " value in the config file — please edit it and do so.", r.br(),
           "Then restart the app server: ", r.code({}, "docker-compose restart app"))
       : null;
 
-    var loginBtn =
+    const loginBtn =
         PrimaryButton({ id: 'e2eLogin', disabled: !!anyEmailProblem,
             onClick: () => login.getLoginDialog().openToSignUp(LoginReason.BecomeAdmin) },
           "Continue");
@@ -104,9 +106,10 @@ export var SignUpAsAdmin = createComponent({
           loginBtn)
       : r.div({},
           r.h1({}, "Welcome"),
-          r.p({}, "This is your new website"),
-          r.p({}, "Look at the address bar above — it starts with the address " +
-              "you specified: ", r.code({}, location.hostname)),
+          r.p({}, embCmts ? "Here you'll moderate comments." : "This is your new website."),
+          r.p({}, "Look at the address bar above — it " + (
+              embCmts ? "reads 'comments-for-your-website-address': " :  // [7PLBKA24]
+                  "starts with the address you specified: "), r.code({}, location.hostname)),
           r.br(),
           loginBtn);
   }
@@ -114,7 +117,7 @@ export var SignUpAsAdmin = createComponent({
 
 
 
-export var LoginToCreateSomething = createComponent({
+const LoginToCreateSomething = createComponent({
   getInitialState: function() {
     return {};
   },
@@ -128,14 +131,20 @@ export var LoginToCreateSomething = createComponent({
   },
 
   render: function() {
+    const store: Store = this.props.store;
+    const embCmts = store.makeEmbeddedCommentsSite;
+
     let sendEmailAgainButton = this.state.emailSentAgain ? null :
       Button({ onClick: this.sendEmailAgain, className: 's_NP_EmailAgainB' },
         "Send email again");
 
+    const pleaseLoginText =
+        "Please login as admin to " + (embCmts ? "continue." : "create something here.");
+
     return (
       r.div({},
         r.h1({}, "Welcome"),
-        r.p({}, "Please login as admin to create something here."),
+        r.p({}, pleaseLoginText),
         r.p({}, "If you haven't done this already: Please click the link in the " +
             "email address verification email I have sent you."),
         r.br(),
@@ -163,25 +172,36 @@ export var EmbeddedCommentsLinks = createComponent({
 
 
 
-export var CreateSomethingHere = createComponent({
+const CreateSomethingHere = createComponent({
   getInitialState: function() {
     return {
       createWhat: PageRole.Forum, // later: undefined — if there'll be Blog and Wiki too? [8GYK34]
     };
   },
-  render: function() {
-    var createWhat: PageRole = this.state.createWhat;
-    var anyCreateForumPanel = createWhat === PageRole.Forum ?
-        CreateForumPanel(this.props) : null;
 
-    var anyCreateEmbeddedCommentsPanel = createWhat === PageRole.EmbeddedComments ?
-        CreateEmbeddedCommentsPanel(this.props) : null;
+  componentDidMount: function() {
+    const store: Store = this.props.store;
+    const embCmts = store.makeEmbeddedCommentsSite;
+    if (embCmts) {
+      Server.createEmbCmtsSiteGoToInstrs();  // (4WDKP07)
+    }
+  },
+
+  render: function() {
+    const store: Store = this.props.store;
+    const embCmts = store.makeEmbeddedCommentsSite;
+    const createWhat: PageRole = this.state.createWhat;
+    const anyCreateForumPanel = createWhat === PageRole.Forum ?
+        CreateForumPanel(store) : null;
+
+    /*
+    const anyCreateEmbeddedCommentsPanel = createWhat === PageRole.EmbeddedComments ?
+        CreateEmbeddedCommentsPanel(store) : null;
 
     // For all sites except for the first one, we have already asked the user
     // if s/he wanted to create an embedded comments site, and s/he didn't.
     var message;
     var anyCreateEmbeddedCommentsButton;
-    /*
     if (false) { // if (debiki.siteId === debiki.FirstSiteId) { // embedded comments broken now
       anyCreateEmbeddedCommentsButton =
           Button({ active: createWhat === PageRole.EmbeddedComments,
@@ -189,10 +209,19 @@ export var CreateSomethingHere = createComponent({
               'Setup Embedded Comments');
       message = 'This site is empty right now. What do you want to do?';
     }
-    else { */
+    else {
       message = "This site is empty right now. Do you want to create a forum?";
-    //}
+    }*/
 
+    if (embCmts) {
+      // We've told the server to create a forum & category for embedded comments  (4WDKP07)
+      // — show "Wait..." until it's done; afterwards, Server.createEmbCmtsSiteGoToInstrs
+      // auto-jumps to the next step.
+      return (
+        r.div({},
+          r.h1({}, "Wait..."),
+          r.p({}, "Creating embedded comments things ...")));
+    }
 
     return (
       r.div({},
@@ -207,8 +236,8 @@ export var CreateSomethingHere = createComponent({
               'Create a Forum'),
           anyCreateEmbeddedCommentsButton),
           */
-        anyCreateForumPanel,
-        anyCreateEmbeddedCommentsPanel));
+        anyCreateForumPanel));
+        // anyCreateEmbeddedCommentsPanel));
   }
 });
 

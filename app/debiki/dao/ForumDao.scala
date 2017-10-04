@@ -35,7 +35,7 @@ trait ForumDao {
   self: SiteDao =>
 
 
-  def createForum(title: String, folder: String, byWho: Who): CreateForumResult = {
+  def createForum(title: String, folder: String, isForEmbCmts: Boolean, byWho: Who): CreateForumResult = {
     val titleHtmlSanitized = context.nashorn.sanitizeHtml(title, followLinks = false)
     readWriteTransaction { transaction =>
 
