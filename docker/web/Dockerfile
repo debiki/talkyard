@@ -1,4 +1,4 @@
-# Parts Copyright (c) 2016 Kaj Magnus Lindberg
+# Parts Copyright (c) 2016, 2017 Kaj Magnus Lindberg
 # License: 2-clause BSD (Kaj Magnus's changes in this file only).
 #
 # Parts Copyright (C) 2011-2016 Nginx, Inc.
@@ -26,12 +26,13 @@
 # OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 # SUCH DAMAGE.
 
+# In the distant future: Maybe switch to https://github.com/envoyproxy/envoy ?  & Zipkin tracing
 
-FROM alpine:3.4
+FROM alpine:3.5
 
 # MAINTAINER NGINX Docker Maintainers "docker-maint@nginx.com"
 
-ENV NGINX_VERSION 1.11.10
+ENV NGINX_VERSION 1.13.5
 
 # Do this first, because we need 'make' early, and also it's boring to wait for Nginx
 # to download.
@@ -108,16 +109,18 @@ ENV CONFIG "\
 	--with-threads \
 	--with-stream \
 	--with-stream_ssl_module \
+	# preread = For SNI I think.
+	# --with-stream_ssl_preread_module \
 	# --with-stream_realip_module \
 	# --with-stream_geoip_module=dynamic \
 	# splits a request into subrequests, each returning a certain range of response -> effective caching of big responses
 	# --with-http_slice_module \
 	# --with-mail \
 	# --with-mail_ssl_module \
+	# --with-compat \
 	# asynchronous file I/O (AIO) on FreeBSD and Linux
 	--with-file-aio \
 	--with-http_v2_module \
-	--with-ipv6 \
 	# won't ever need to show any auto index? If adding it back, add 'autoindex off' here: [5KUP293]
 	--without-http_autoindex_module \
 	# skip server-side-includes module
@@ -144,13 +147,18 @@ ENV LUAJIT_INC /opt/luajit/include/luajit-2.1
 
 RUN \
 	export GNUPGHOME="$(mktemp -d)" \
-	# This address results in an error "keyserver receive failed: Address not available",
-	# apparently some firewall problem, see:
-	#   https://github.com/tianon/gosu/issues/17#issuecomment-203074866
-	#&& gpg --keyserver ha.pool.sks-keyservers.net --recv-keys "$GPG_KEYS" \
-	# Use port 80 instead:
-	&& gpg --keyserver hkp://p80.pool.sks-keyservers.net:80 --recv-keys "$GPG_KEYS" \
-	&& gpg --batch --verify nginx.tar.gz.asc nginx.tar.gz \
+	&& found=''; \
+	for server in \
+		ha.pool.sks-keyservers.net \
+		hkp://keyserver.ubuntu.com:80 \
+		hkp://p80.pool.sks-keyservers.net:80 \
+		pgp.mit.edu \
+	; do \
+		echo "Fetching GPG key $GPG_KEYS from $server"; \
+		gpg --keyserver "$server" --keyserver-options timeout=10 --recv-keys "$GPG_KEYS" && found=yes && break; \
+	done; \
+	test -z "$found" && echo >&2 "error: failed to fetch GPG key $GPG_KEYS" && exit 1; \
+	gpg --batch --verify nginx.tar.gz.asc nginx.tar.gz \
 	&& rm -r "$GNUPGHOME" nginx.tar.gz.asc \
 	&& mkdir -p /usr/src \
 	&& tar -zxC /usr/src -f nginx.tar.gz \
