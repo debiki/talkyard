@@ -91,9 +91,6 @@ log_statement = 'ddl'
 
 EOF
 
-# Let Postgres write to the log directory specified above.
-chown postgres /var/log/postgresql/
-
 
 # Help file about how to rsync to slave
 # ------------------------

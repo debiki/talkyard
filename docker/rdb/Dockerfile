@@ -1,11 +1,10 @@
-# Now (June 2016) Alpine 3.4 is out, supports Postgres 9.5. Try to switch to Alpine later
-# when someone has made such a Dockerfile.
+FROM postgres:10.0-alpine
 
-FROM postgres:9.6.0
-
-RUN apt-get update && \
-  apt-get install -y tree less vim curl net-tools telnet && \
-  rm -rf /var/lib/apt/lists/*
+RUN apk add --no-cache bash tree less vim curl net-tools
 
 COPY ./docker-entrypoint-initdb.d/ /docker-entrypoint-initdb.d/
+COPY ./chown-logs-then-exec-entrypoint.sh /
+
+ENTRYPOINT ["/chown-logs-then-exec-entrypoint.sh"]
+CMD ["postgres"]
 
