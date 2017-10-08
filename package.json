@@ -44,7 +44,7 @@
     "@types/node": "^8.0.9",
     "@types/tape": "^4.2.28",
     "chalk": "^1.1.1",
-    "cheerio": "^0.22.0",
+    "cheerio": "^1.0.0-rc.2",
     "del": "^2.0.2",
     "es6-promise": "^4.0.5",
     "event-stream": "^3.1.1",
