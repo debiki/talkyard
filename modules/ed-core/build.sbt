@@ -15,7 +15,7 @@ libraryDependencies ++= Seq(
   "commons-validator" % "commons-validator" % "1.5.1",
   "nu.validator.htmlparser" % "htmlparser" % "1.2.1",
   "org.owasp.encoder" % "encoder" % "1.1.1",
-  "com.typesafe.play" %% "play-json" % "2.6.3",
+  "com.typesafe.play" %% "play-json" % "2.6.6",
   "com.lambdaworks" % "scrypt" % "1.4.0", // COULD move to ed-server, see comments in src/main/scala/com/debiki/core/dao-db.scala
   "junit" % "junit" % "4.7" % "test",
   "org.specs2" %% "specs2-core" % "3.9.4" % "test",
