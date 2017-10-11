@@ -36,7 +36,7 @@ class SiteTransactionAppSpec extends DaoAppSuite {
       globals.siteDao(Site.FirstSiteId)
     }
 
-    lazy val forumId = dao.createForum(title = "Forum to delete", folder = "/",
+    lazy val forumId = dao.createForum(title = "Forum to delete", folder = "/", isForEmbCmts = false,
       Who(SystemUserId, browserIdData)).pagePath.thePageId
 
     var admin: User = null
@@ -296,7 +296,7 @@ class SiteTransactionAppSpec extends DaoAppSuite {
   "SiteTransaction can handle posts read stats" - {
       lazy val dao: SiteDao = globals.siteDao(Site.FirstSiteId)
 
-      lazy val forumId = dao.createForum(title = "Forum to delete", folder = "/",
+      lazy val forumId = dao.createForum(title = "Forum to delete", folder = "/", isForEmbCmts = false,
         Who(SystemUserId, browserIdData)).pagePath.thePageId
 
       var admin: User = null

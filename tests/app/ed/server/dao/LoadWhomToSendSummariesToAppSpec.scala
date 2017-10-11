@@ -35,14 +35,14 @@ class LoadWhomToSendSummariesToAppSpec extends DaoAppSuite {
     globals.siteDao(Site.FirstSiteId)
   }
 
-  lazy val forumId = dao.createForum(title = "Forum to delete", folder = "/",
+  lazy val forumId = dao.createForum(title = "Forum to delete", folder = "/", isForEmbCmts = false,
     Who(SystemUserId, browserIdData)).pagePath.thePageId
 
   lazy val site2 = createSite("site2")
 
   lazy val daoSite2 = globals.siteDao(site2.id)
 
-  lazy val forumSite2Id = daoSite2.createForum(title = "Forum site 2", folder = "/",
+  lazy val forumSite2Id = daoSite2.createForum(title = "Forum site 2", folder = "/", isForEmbCmts = false,
     Who(SystemUserId, browserIdData)).pagePath.thePageId
 
   var admin: User = null

@@ -60,14 +60,21 @@ if [ -z "$chromedrivers" ]; then
   die_if_in_script
 fi
 
-echo 'Do in another shell:
+
+test_selenium_up='curl --output /dev/null --silent --head --fail http://127.0.0.1:4444'
+if $($test_selenium_up) ; then
+  echo 'Selenium already running, fine.'
+else
+  echo 'Do in another shell: (so I can run end-to-end tests)
 
   s/selenium-start-invisible
-
-Press Enter to continue
 '
-
-read -s -p ''
+  printf 'Waiting for you'
+  until $($test_selenium_up); do
+    printf '.'
+    sleep 1
+  done
+fi
 
 
 # Derive version number

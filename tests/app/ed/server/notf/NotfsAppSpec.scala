@@ -68,7 +68,7 @@ class NotfsAppSpec extends DaoAppSuite() {
       dao = globals.siteDao(Site.FirstSiteId)
       owner = createPasswordOwner("ntf_ownr", dao)
       ownerWho = Who(owner.id, browserIdData)
-      createForumResult = dao.createForum("Forum", "/notf-test-forum/", ownerWho)
+      createForumResult = dao.createForum("Forum", "/notf-test-forum/", isForEmbCmts = false, ownerWho)
       categoryId = createForumResult.defaultCategoryId
       moderator = createPasswordModerator("ntf_mod", dao)
       member1 = createPasswordUser("ntf_mem1", dao)

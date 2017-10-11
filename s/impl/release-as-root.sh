@@ -46,7 +46,7 @@ s/d kill web app
 s/d down
 
 if [ -n "`docker ps -q`" ]; then
-  echo "Docker containers are running, please stop them. Look:"
+  echo "\nDocker containers are running, PLEASE STOP THEM, thanks. Look:\n"
   docker ps
   echo
   die_if_in_script

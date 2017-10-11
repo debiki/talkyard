@@ -29,7 +29,7 @@ class PromotionToFullMemberAppSpec extends DaoAppSuite() {
   }
 
   lazy val categoryId: CategoryId =
-    dao.createForum("Forum", "/tag-test-forum/",
+    dao.createForum("Forum", "/tag-test-forum/", isForEmbCmts = false,
       Who(owner.id, browserIdData)).defaultCategoryId
 
   lazy val owner: Member = createPasswordOwner("tag_adm", dao)

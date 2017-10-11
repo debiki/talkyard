@@ -79,7 +79,7 @@ class SummaryEmailsAppSpec extends DaoAppSuite(
   var dao: SiteDao = _
 
   lazy val forum = dao.createForum(title = "Forum to delete", folder = "/",
-    Who(SystemUserId, browserIdData))
+    isForEmbCmts = false, Who(SystemUserId, browserIdData))
 
   var categoryNoSummaries: CreateCategoryResult = _
 

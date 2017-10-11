@@ -61,7 +61,7 @@ class UserStatsAppSpec extends DaoAppSuite() {
       dao = globals.siteDao(Site.FirstSiteId)
       owner = createPasswordOwner("us_adm", dao)
       ownerWho = Who(owner.id, browserIdData)
-      createForumResult = dao.createForum("Forum", "/tag-test-forum/", ownerWho)
+      createForumResult = dao.createForum("Forum", "/tag-test-forum/", isForEmbCmts = false, ownerWho)
       categoryId = createForumResult.defaultCategoryId
       moderator = createPasswordModerator("us_mod", dao)
       member1 = createPasswordUser("us_mb1", dao)
