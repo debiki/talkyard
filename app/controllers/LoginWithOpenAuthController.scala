@@ -76,8 +76,11 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
   def conf: Configuration = globals.rawConf
 
   private val cache = caffeine.cache.Caffeine.newBuilder()
-    .maximumSize(10*1000)  // change to config value, e.g. 1e9 = 1GB mem cache. Default to 50M?
-    .expireAfterWrite(10, java.util.concurrent.TimeUnit.SECONDS)
+    .maximumSize(20*1000)  // change to config value, e.g. 1e9 = 1GB mem cache. Default to 50M?
+    // Don't expire too quickly — the user needs time to choose & typ a username.
+    // SECURITY COULD expire sooner (say 10 seconds) if just logging in, because then
+    // the user need not think or type anything.
+    .expireAfterWrite(5, java.util.concurrent.TimeUnit.MINUTES)
     .build().asInstanceOf[caffeine.cache.Cache[String, OpenAuthDetails]]
 
   lazy val anyLoginOrigin: Option[String] =
@@ -227,8 +230,6 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
         val xsrfToken = anyReturnToSiteXsrfToken getOrDie "DwE0F4C2"
         val oauthDetailsCacheKey = nextRandomString()
         SHOULD // use Redis instead, so logins won't fail because the app server was restarted.
-        SHOULD // set a 10 seconds? expiration time, to prevent Mallory from stealing and using the key,
-        // if it's leaked somehow, e.g. via log files that includes URLs.
         cache.put(oauthDetailsCacheKey, oauthDetails)
         val continueAtOriginalSiteUrl =
           originalSiteOrigin + routes.LoginWithOpenAuthController.continueAtOriginalSite(
@@ -465,8 +466,9 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
         cache.invalidate(oauthDetailsCacheKey)
         details
       case None =>
-        throwForbidden("DwE50VC4", o"""Bad auth data cache key — was the server just restarted?
-             Please login again""")
+        throwForbidden("DwE50VC4", o"""Bad auth data cache key — this happens if you wait
+             rather long (many minutes) with submitting the dialog.
+             Or if the server was just restarted. Please try to sign up again.""")
       case _ =>
         assErr("DwE2GVM0")
     }
