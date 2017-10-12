@@ -129,12 +129,13 @@ class UsabilityTestingExchangeController @Inject()(cc: ControllerComponents, edC
     val authzCtx = dao.getForumAuthzContext(Some(theRequester))
     // (Don't include deleted topics, to mitigate the below DoS attack. Ban people who post stuff
     // that the staff then deletes.)
-    val pageQuery = PageQuery(PageOrderOffset.ByCreatedAt(None), PageFilter.ShowAll)
+    val pageQuery = PageQuery(PageOrderOffset.ByCreatedAt(None), PageFilter.ShowAll,
+      includeAboutCategoryPages = false)
     val topicsWithAboutPage = dao.loadMaySeePagesInCategory(
       category.id, includeDescendants = false, authzCtx,
       pageQuery, limit = 1000) ;SECURITY // UTX DoS attack, fairly harmless. If topics created too fast.
 
-    // Filter away the About Category page.
+    // Filter away any topics that for some reason are of the wrong type (maybe was moved manually).
     val usabilityTestingTopics =
       topicsWithAboutPage.filter(_.pageRole == PageRole.UsabilityTesting)
 

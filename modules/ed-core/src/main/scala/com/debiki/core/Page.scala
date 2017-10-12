@@ -600,7 +600,10 @@ object PinPageWhere {
 
 
 
-case class PageQuery(orderOffset: PageOrderOffset, pageFilter: PageFilter)
+case class PageQuery(
+  orderOffset: PageOrderOffset,
+  pageFilter: PageFilter,
+  includeAboutCategoryPages: Boolean)
 
 /** How to sort pages, and where to start listing them, e.g. if fetching additional
   * pages after the user has scrolled down to the end of a page list.

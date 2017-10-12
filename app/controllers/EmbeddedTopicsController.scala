@@ -38,7 +38,7 @@ class EmbeddedTopicsController @Inject()(cc: ControllerComponents, edContext: Ed
 
   def createEmbeddedCommentsSite: Action[JsValue] = AdminPostJsonAction(maxBytes = 200) { request =>
     val settings = request.siteSettings
-    val title = "Comments for " + settings.allowEmbeddingFrom
+    val title = "Comments for " + settings.allowEmbeddingFrom.replaceFirst("https?://", "")
     request.dao.createForum(title, folder = "/", isForEmbCmts = true, request.who)
     Ok
   }

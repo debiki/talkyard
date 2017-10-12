@@ -268,7 +268,8 @@ class ForumController @Inject()(cc: ControllerComponents, edContext: EdContext)
       mutable.Map[CategoryId, Seq[PagePathAndMeta]]()
 
     val pageIds = ArrayBuffer[PageId]()
-    val pageQuery = PageQuery(PageOrderOffset.ByBumpTime(None), request.parsePageFilter())
+    val pageQuery = PageQuery(
+      PageOrderOffset.ByBumpTime(None), request.parsePageFilter(), includeAboutCategoryPages = false)
 
     for (category <- categories) {
       val recentTopics = dao.listMaySeeTopicsInclPinned(category.id, pageQuery,

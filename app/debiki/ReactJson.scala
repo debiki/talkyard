@@ -322,13 +322,15 @@ object ReactJson {
       makeForumIdAndAncestorsJson(page.meta, dao)
 
     val categories = makeCategoriesJson(authzCtx, dao)
+    val siteSettings = dao.getWholeSiteSettings()
 
     val anyLatestTopics: Seq[JsObject] =
       if (page.role == PageRole.Forum) {
         val rootCategoryId = page.meta.categoryId.getOrDie(
           "DwE7KYP2", s"Forum page '${page.id}', site '${transaction.siteId}', has no category id")
         val orderOffset = anyPageQuery.getOrElse(
-          PageQuery(PageOrderOffset.ByBumpTime(None), PageFilter.ShowAll))
+          PageQuery(PageOrderOffset.ByBumpTime(None), PageFilter.ShowAll,
+              includeAboutCategoryPages = siteSettings.showCategories))
         val authzCtx = dao.getForumAuthzContext(user = None)
         val topics = dao.listMaySeeTopicsInclPinned(rootCategoryId, orderOffset,
           includeDescendantCategories = true,
@@ -347,7 +349,6 @@ object ReactJson {
       idAndUser._1.toString -> JsUser(idAndUser._2)
     })
 
-    val siteSettings = dao.getWholeSiteSettings()
     //val pageSettings = dao.loadSinglePageSettings(pageId)
     val horizontalLayout = page.role == PageRole.MindMap // || pageSettings.horizontalComments
     val is2dTreeDefault = false // pageSettings.horizontalComments
@@ -879,7 +880,7 @@ object ReactJson {
     val anyReadingProgress = anyPageId.flatMap(transaction.loadReadProgress(user.id, _))
     val anyReadingProgressJson = anyReadingProgress.map(makeReadingProgressJson).getOrElse(JsNull)
 
-    Json.obj(
+    var json = Json.obj(
       "id" -> JsNumber(user.id),
       "userId" -> JsNumber(user.id), // try to remove, use 'id' instead
       "username" -> JsStringOrNull(user.anyUsername),
@@ -920,6 +921,13 @@ object ReactJson {
       "marksByPostId" -> JsObject(Nil),
       "readingProgress" -> anyReadingProgressJson,
       "closedHelpMessages" -> JsObject(Nil))
+
+    if (user.isAdmin) {
+      val siteSettings = transaction.loadSiteSettings()
+      json += "isEmbeddedCommentsSite" -> JsBoolean(siteSettings.exists(_.allowEmbeddingFrom.nonEmpty))
+    }
+
+    json
   }
 
 
@@ -1020,7 +1028,8 @@ object ReactJson {
         (Nil, Map[PageId, PageStuff]())
       }
       else {
-        val orderOffset = PageQuery(PageOrderOffset.ByBumpTime(None), PageFilter.ShowAll)
+        val orderOffset = PageQuery(PageOrderOffset.ByBumpTime(None), PageFilter.ShowAll,
+          includeAboutCategoryPages = true)
         // SHOULD avoid starting a new transaction, so can remove workaround [7YKG25P].
         // (We're passing dao to ForumController below.)
         val topics = request.dao.listMaySeeTopicsInclPinned(

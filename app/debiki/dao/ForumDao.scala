@@ -37,7 +37,7 @@ trait ForumDao {
 
   def createForum(title: String, folder: String, isForEmbCmts: Boolean, byWho: Who): CreateForumResult = {
     val titleHtmlSanitized = context.nashorn.sanitizeHtml(title, followLinks = false)
-    readWriteTransaction { transaction =>
+    val result = readWriteTransaction { transaction =>
 
       // The forum page points to the root category, which points back.
       transaction.deferConstraints()
@@ -45,28 +45,43 @@ trait ForumDao {
       val rootCategoryId = transaction.nextCategoryId()
 
       // Create forum page.
+      val introText = isForEmbCmts ? EmbeddedCommentsIntroText | ForumIntroText
       val (forumPagePath, _) = createPageImpl(
         PageRole.Forum, PageStatus.Published, anyCategoryId = Some(rootCategoryId),
         anyFolder = Some(folder), anySlug = Some(""), showId = false,
         titleSource = title, titleHtmlSanitized = titleHtmlSanitized,
-        bodySource = ForumIntroText.source, bodyHtmlSanitized = ForumIntroText.html,
+        bodySource = introText.source, bodyHtmlSanitized = introText.html,
         pinOrder = None, pinWhere = None,
         byWho, spamRelReqStuff = None, transaction)
 
       val forumPageId = forumPagePath.pageId getOrDie "DwE5KPFW2"
 
       val partialResult: CreateForumResult = createDefaultCategoriesAndTopics(
-        forumPageId, rootCategoryId, byWho, transaction)
+        forumPageId, rootCategoryId, isForEmbCmts = isForEmbCmts, byWho, transaction)
+
+      if (isForEmbCmts) {
+        val settings = SettingsToSave(
+          showCategories = Some(Some(false)),
+          showTopicFilterButton = Some(Some(false)),
+          showTopicTypes = Some(Some(false)),
+          selectTopicType = Some(Some(false)))
+        transaction.upsertSiteSettings(settings)
+      }
 
       // COULD create audit log entries.
 
       partialResult.copy(pagePath = forumPagePath)
     }
+
+    // So settings get refreshed (might have been changed above.)
+    emptyCache()
+
+    result
   }
 
 
   private def createDefaultCategoriesAndTopics(forumPageId: PageId, rootCategoryId: CategoryId,
-        byWho: Who, transaction: SiteTransaction): CreateForumResult = {
+        isForEmbCmts: Boolean, byWho: Who, transaction: SiteTransaction): CreateForumResult = {
 
     val defaultCategoryId = rootCategoryId + 1
     val staffCategoryId = rootCategoryId + 2
@@ -128,7 +143,7 @@ trait ForumDao {
       bySystem)(transaction)
 
     // Create forum welcome topic.
-    createPageImpl(
+    if (!isForEmbCmts) createPageImpl(
       PageRole.Discussion, PageStatus.Published, anyCategoryId = Some(defaultCategoryId),
       anyFolder = None, anySlug = Some("welcome"), showId = true,
       titleSource = WelcomeTopicTitle,
@@ -165,6 +180,13 @@ object ForumDao {
   val ForumIntroText: CommonMarkSourceAndHtml = {
     val source = o"""Edit this to tell people what this community is about.
         You can link back to your main website, if any."""
+    CommonMarkSourceAndHtml(source, html = s"<p>$source</p>")
+  }
+
+
+  val EmbeddedCommentsIntroText: CommonMarkSourceAndHtml = {
+    val source = o"""Here are comments posted at your website,
+         one topic here for each page over at your website."""
     CommonMarkSourceAndHtml(source, html = s"<p>$source</p>")
   }
 

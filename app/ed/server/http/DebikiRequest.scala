@@ -190,7 +190,9 @@ abstract class DebikiRequest[A] {
     }
 
     val filter = parsePageFilter()
-    Some(PageQuery(orderOffset, filter))
+    Some(PageQuery(orderOffset, filter,
+      // Later: Let user preferences override, if is staff. [8WK4SD7]
+      includeAboutCategoryPages = siteSettings.showCategories))
   }
 
 

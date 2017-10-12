@@ -89,7 +89,8 @@ class CreateSiteController @Inject()(cc: ControllerComponents, edContext: EdCont
         throwForbidden("EdE2FGHS0", "No local hostname and no embedding address")
       }
       val slashHostname = embAddr.dropWhile(_ != '/')
-      "comments-for-" + slashHostname.filterNot("./:" contains _)   // also in info message [7PLBKA24]
+      val hostnameWithDashes = slashHostname.filterNot("/:" contains _).replaceAllLiterally(".", "-")
+      "comments-for-" + hostnameWithDashes   // also in info message [7PLBKA24]
     }
 
     if (!acceptTermsAndPrivacy)

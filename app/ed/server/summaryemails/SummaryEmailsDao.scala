@@ -66,6 +66,7 @@ trait SummaryEmailsDao {
         : Vector[ActivitySummary] = {
     val activitySummaries = ArrayBuffer[ActivitySummary]()
     val allGroups = readOnlyTransaction(_.loadGroupsAsMap())
+    val settings = getWholeSiteSettings()
 
     val members = loadMembersInclDetailsById(userStats.map(_.userId))
     for (member <- members) {
@@ -98,7 +99,9 @@ trait SummaryEmailsDao {
           else if (millisSinceLast > OneDayInMillis) TopTopicsPeriod.Week
           else TopTopicsPeriod.Day
         val pageQuery = PageQuery(PageOrderOffset.ByScoreAndBumpTime(offset = None, period),
-          PageFilter.ForActivitySummaryEmail)
+          PageFilter.ForActivitySummaryEmail,
+          // About-category pages can be interesting? E.g. new category created & everyone clicks Like.
+          includeAboutCategoryPages = settings.showCategories)
 
         val topTopicsInclTooOld =
           listMaySeeTopicsInclPinned(categoryId, pageQuery,

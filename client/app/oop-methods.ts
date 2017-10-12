@@ -115,7 +115,7 @@ export function me_hasRead(me: Myself, post: Post) {
 
 export function settings_showCategories(settings: SettingsVisibleClientSide, me: Myself) {
   // Later: by default, do as 'settings' say, but let user preferences override. [8WK4SD7]
-  return isStaff(me) || settings.showCategories !== false;
+  return settings.showCategories !== false;
 }
 
 
@@ -127,7 +127,7 @@ export function settings_showFilterButton(settings: SettingsVisibleClientSide, m
 
 export function settings_showTopicTypes(settings: SettingsVisibleClientSide, me: Myself) {
   // Later: by default, do as 'settings' say, but let user preferences override. [8WK4SD7]
-  return isStaff(me) || settings.showTopicTypes !== false;
+  return settings.showTopicTypes !== false;
 }
 
 

@@ -155,7 +155,8 @@ trait PagesDao {
       anyCategoryId foreach { categoryId =>
         val pages = loadMaySeePagesInCategory(categoryId, includeDescendants = true,
           authzCtx,
-          PageQuery(PageOrderOffset.Any, PageFilter.ShowWaiting), limit = 20)
+          PageQuery(PageOrderOffset.Any, PageFilter.ShowWaiting,
+              includeAboutCategoryPages = false), limit = 20)
         // Client side, the limit is 10. Let's allow a few more topics in case people start
         // writing before the limit is reached but submit afterwards.
         if (pages.length >= 10 + 5)  // for now only

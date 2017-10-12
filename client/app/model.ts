@@ -244,6 +244,9 @@ interface Myself {
   readingProgress?: ReadingProgress;
   pageHelpMessage?: HelpMessage;
   closedHelpMessages: { [id: string]: number };  // id --> closed version of message   — id or nr?
+
+  // So can avoid showing getting-started-guide for admins — it's not needed, for embedded comments sites.
+  isEmbeddedCommentsSite?: boolean;
 }
 
 
