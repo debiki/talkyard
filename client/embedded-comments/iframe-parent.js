@@ -24,6 +24,14 @@ var serverOrigin = d.i.commentsServerOrigin;
 var embeddingUrl = window.location.origin + window.location.pathname + window.location.search;
 var discussionId;
 
+var postNrToFocus;
+var commentNrHashMatch = window.location.hash.match(/^#comment-(\d+)$/);  // [2PAWC0]
+if (commentNrHashMatch) {
+  commentNrStr = commentNrHashMatch[1];
+  var commentNr = parseInt(commentNrStr);
+  postNrToFocus = commentNr + 1;  // comment nr = post nr - 1  [2PAWC0]
+}
+
 var theCommentsIframe;
 var theEditorIframe;
 
@@ -147,6 +155,14 @@ function messageCommentsIframeNewWinTopSize() {
 }
 
 
+// Tells the iframe js code to scroll postNr into view, which it'll do by sending back a message to this
+// code here in the main win, with info about how to scroll — because the actuall scrolling is done
+// here in the main win.
+function messageCommentsIframeToMessageMeToScrollTo(postNr) {
+  sendToComments('["scrollToPostNr", ' + postNr + ']');
+}
+
+
 function onMessage(event) {
   // The message is a "[eventName, eventData]" string because IE <= 9 doesn't support
   // sending objects. CLEAN_UP COULD send a real obj nowadays, because we don't support IE 9 any more.
@@ -166,12 +182,19 @@ function onMessage(event) {
     case 'iframeInited':
       console.log("iframe-parent: got 'iframeInited' message");
       var iframe = findIframeThatSent(event);
-      setIframeBaseAddress(iframe);
+      setIframeBaseAddressAndDiscussionId(iframe);
       if (iframe === theCommentsIframe) {
+        // The iframe wants to know the real win dimensions, so it can position modal dialogs on screen.
         messageCommentsIframeNewWinTopSize();
+        // If we want to scroll to & highlight a post: The post is inside the iframe and we don't
+        // know where. So tell the iframe to send back a 'scrollComments' message to us,
+        // with info about how to scroll.
+        if (postNrToFocus) {
+          messageCommentsIframeToMessageMeToScrollTo(postNrToFocus);
+        }
       }
       break;
-    case 'setIframeSize':
+    case 'setIframeSize':  // COULD rename to sth like setIframeSizeAndMaybeScrollToPost
       var iframe = findIframeThatSent(event);
       setIframeSize(iframe, eventData);
       // Remove the "loading comments" info text.
@@ -246,7 +269,7 @@ function onMessage(event) {
 }
 
 
-function setIframeBaseAddress(iframe) {
+function setIframeBaseAddressAndDiscussionId(iframe) {
   iframe.contentWindow.postMessage(
       JSON.stringify(['setBaseAddress', {
         embeddingUrl: window.location.href,

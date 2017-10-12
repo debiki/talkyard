@@ -54,6 +54,7 @@ const ShareDialog = createComponent({
       atX: rect.left - 140,
       atY: rect.bottom - 60,
       post: post,
+      copied: undefined,
     });
   },
 
@@ -62,8 +63,22 @@ const ShareDialog = createComponent({
   },
 
   onComponentDidUpdate: function() {
+    this.selectTryCopy(false);
+  },
+
+  selectTryCopy: function(copy) {
     if (this.refs.linkInput) {
+      this.refs.linkInput.focus();
       this.refs.linkInput.select();
+      if (copy !== false) {
+        try {
+          const result= document.execCommand('copy');
+          if (result) this.setState({ copied: true });
+        }
+        catch (ex) {
+          // ignore
+        }
+      }
     }
   },
 
@@ -72,8 +87,23 @@ const ShareDialog = createComponent({
     let content;
     if (state.isOpen) {
       const post: Post = state.post;
-      const origin = location.protocol + '//' + location.host;
-      const url = origin + '/-' + debiki.getPageId() + '#post-' + post.nr;
+
+      let url: string;
+      const embeddingUrl = debiki.internal.embeddingUrl;
+      if (embeddingUrl) {
+        // Use '#comment-NNN' hashes for embedded comments, since they are often for blog   [2PAWC0]
+        // posts and might be confusing with urls like: http://blog/post/123#post-456
+        // this is better: http://blog/post/123#comment-456.
+        // Subtract 1 to get the comment nr — the firs reply is post 2, but comment 1.  [2PAWC0]
+        // (The orig post has post nr 1.)
+        const hash = post.nr >= FirstReplyNr ? '#comment-' + (post.nr - 1) : '';
+        url = embeddingUrl.split('#')[0] + hash;
+      }
+      else {
+        const origin = location.protocol + '//' + location.host;
+        const hash = post.nr >= FirstReplyNr ? '#post-' + post.nr : '';
+        url = origin + '/-' + debiki.getPageId() + hash;
+      }
       const makeShareButton = (where: string) => {  // dupl code [2WUGVSF0]
         return (
           r.a({ className: 'p_ShareIcon icon-' + where,
@@ -82,8 +112,11 @@ const ShareDialog = createComponent({
       content =
         r.div({ className: 's_ShareD' },
           r.div({ className: 's_ShareD_Title' },
-            "Copy a link to this post, or click a share button:"),
-          r.input({ className: 's_ShareD_Link', value: url, ref: 'linkInput', readOnly: true }),
+            this.state.copied ? "Copied." : (
+              this.state.copied === false ? "Hit CTRL+C to copy." : // UX What to say, if is mobile?
+                  "Click to copy link.")),
+          r.input({ className: 's_ShareD_Link', value: url, ref: 'linkInput', readOnly: true,
+              onClick: this.selectTryCopy }),
           r.div({ className: 's_ShareD_Social' },
             makeShareButton(Facebook),
             makeShareButton(Twitter),

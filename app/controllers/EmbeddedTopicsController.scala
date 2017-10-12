@@ -62,7 +62,7 @@ class EmbeddedTopicsController @Inject()(cc: ControllerComponents, edContext: Ed
         // So skip: ReactRenderer.renderPage(jsonStuff.jsonString)
         val tpi = new PageTpi(pageRequest, jsonStuff.jsonString, jsonStuff.version,
           "Dummy cached html [EdM2GRVUF05]", WrongCachedPageVersion,
-          jsonStuff.pageTitle, jsonStuff.customHeadTags)
+          jsonStuff.pageTitle, jsonStuff.customHeadTags, anyEmbeddingUrl = Some(embeddingUrl))
         val htmlString = views.html.templates.page(tpi).body
         (RenderedPage(htmlString, unapprovedPostAuthorIds = Set.empty), pageRequest)
       case Some(realId) =>

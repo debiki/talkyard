@@ -58,6 +58,12 @@ function onMessage(event) {
       // Sent from the comments iframe to the editor iframe, when one logs out in the comments iframe.
       debiki2.ReactActions.logoutClientSideOnly();
       break;
+    case 'scrollToPostNr':
+      var postNr = eventData;
+      debiki.scriptLoad.done(function() {
+        debiki2.ReactActions.loadAndShowPost(postNr);
+      });
+      break;
     case 'editorToggleReply':
       // This message is sent from an embedded comments page to the embedded editor.
       // It opens the editor to write a reply to `postId`.
