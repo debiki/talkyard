@@ -777,7 +777,7 @@ enum LoginReason {
   SignUp = 13,
   LoginToChat = 10,
   LoginToLike = 11,
-  BecomeAdmin = 12,
+  BecomeAdmin = 12, // COULD rename to BecomeOwner
   TryToAccessNotFoundPage = 14,
   SubmitEditorText = 15,
 }

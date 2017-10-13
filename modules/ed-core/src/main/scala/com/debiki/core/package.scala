@@ -386,7 +386,6 @@ package object core {
     import ReadingProgress._
 
     require(secondsReading >= 0, "EdE26SRY8")
-    require(lastViewedPostNr >= PageParts.BodyNr, "EdE38JHF9") // BUG fails for new sites & new pages
     require(firstVisitedAt.millis <= lastVisitedAt.millis, "EdE3WKB4U0")
     lastReadAt foreach { lastReadAt =>
       require(firstVisitedAt.millis <= lastReadAt.millis, "EdE5JTK28")

@@ -275,12 +275,13 @@ export var LoginDialogContent = createClassAndFactory({
       };
     };
 
-    var becomeAdminInstructions = loginReason === LoginReason.BecomeAdmin
-      ? r.div({ className: 'esLoginDlg_becomeAdminInstr' },
+    const isForFirstOwner = loginReason === LoginReason.BecomeAdmin;
+    const becomeOwnerInstructions = !isForFirstOwner ? null :
+        r.div({ className: 'esLoginDlg_becomeAdminInstr' },
           r.p({},
+            // Say "admin" not "owner" here — simpler to understand, and first owner is admin too.
             "Create admin account.", r.br(),
-            "Use the email address you specified previously."))
-      : null;
+            "Use the email address you specified previously."));
 
     const notFound = loginReason === 'LoginBecauseNotFound';
     const notFoundInstructions = !notFound ? null :
@@ -293,10 +294,10 @@ export var LoginDialogContent = createClassAndFactory({
             "Otherwise, you can ", r.a({ className: 's_LD_NotFound_HomeL', href: '/' },
               "go to the homepage.")));
 
-    var typePasswordForm = isSignUp ? null :
+    const typePasswordForm = isSignUp ? null :
         PasswordLoginDialogContent(childDialogProps);
 
-    var createUserForm = !isSignUp ? null :
+    const createUserForm = !isSignUp ? null :
         CreateUserDialogContent(childDialogProps);
 
     var loginAsGuestButton; /* CLEAN_UP, + more login-as-guest dialogs & stuff?
@@ -317,8 +318,11 @@ export var LoginDialogContent = createClassAndFactory({
           ", you agree to our ", r.a({ href: "/-/terms-of-use" }, "Terms of Use"),
           " and ", r.a({ href: '/-/privacy-policy' }, "Privacy Policy"));
 
-    var switchToOtherDialogInstead;
-    if (isSignUp) {
+    let switchToOtherDialogInstead;
+    if (isForFirstOwner) {
+      // Don't show any switch-between-login-and-signup buttons.
+    }
+    else if (isSignUp) {
       switchToOtherDialogInstead =
         r.div({ className: 'form-group esLD_Switch' },
           "(", r.i({}, "Already have an account? ",
@@ -349,7 +353,7 @@ export var LoginDialogContent = createClassAndFactory({
         createUserDialog,
         passwordLoginDialog,
         notFoundInstructions,
-        becomeAdminInstructions,
+        becomeOwnerInstructions,
         termsAndPrivacy,
         r.p({ id: 'dw-lgi-or-login-using' },
           isSignUp ? "Sign in ..." : "Log in ..."),
