@@ -135,7 +135,9 @@ export function getPostNrsAutoReadLongAgo(): number[] {
 
 function sendAnyRemainingData() {
   if (talksWithSererAlready || !unreportedSecondsReading ||
-      unreportedSecondsReading <= TooFewSeconds)
+      unreportedSecondsReading <= TooFewSeconds ||
+      // It's undef, if haven't looked at the page for long enough.
+      _.isUndefined(lastViewedPostNr))
     return;
 
   // @ifdef DEBUG
