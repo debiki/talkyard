@@ -138,6 +138,7 @@ describe("spam test, no external services:", () => {
     strangersBrowser.loginDialog.fillInEmail('__ed_spam' + '_test_123__@ex.co');
     strangersBrowser.loginDialog.fillInPassword("public1234");
     strangersBrowser.loginDialog.clickSubmit();
+    strangersBrowser.loginDialog.acceptTerms();
   });
 
   it("... but is rejected", () => {

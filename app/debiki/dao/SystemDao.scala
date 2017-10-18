@@ -82,7 +82,7 @@ class SystemDao(
   private def createFirstSite(): Site = {
     readWriteTransaction { sysTx =>
       val firstSite = sysTx.createSite(Some(FirstSiteId), name = "Main Site", SiteStatus.NoAdmin,
-        creatorIp = "0.0.0.0", creatorEmailAddress = "unknown@example.com",
+        creatorIp = "0.0.0.0",
         quotaLimitMegabytes = None, maxSitesPerIp = 9999, maxSitesTotal = 9999,
         isTestSiteOkayToDelete = false, pricePlan = "-", createdAt = sysTx.now)
 
@@ -109,7 +109,6 @@ class SystemDao(
     hostname: String,
     embeddingSiteUrl: Option[String],
     organizationName: String,
-    creatorEmailAddress: String,
     creatorId: UserId,
     browserIdData: BrowserIdData,
     isTestSiteOkayToDelete: Boolean,
@@ -150,7 +149,7 @@ class SystemDao(
       }
 
       val newSite = sysTx.createSite(id = None, name = name, status,
-        creatorIp = browserIdData.ip, creatorEmailAddress = creatorEmailAddress,
+        creatorIp = browserIdData.ip,
         quotaLimitMegabytes = config.createSite.quotaLimitMegabytes,
         maxSitesPerIp = maxSitesPerIp, maxSitesTotal = maxSitesTotal,
         isTestSiteOkayToDelete = isTestSiteOkayToDelete, pricePlan = pricePlan, sysTx.now)
@@ -171,7 +170,6 @@ class SystemDao(
           didWhat = AuditLogEntryType.CreateSite,
           doerId = creatorId,
           doneAt = oldSiteTx.now.toJavaDate,
-          emailAddress = Some(creatorEmailAddress),
           browserIdData = browserIdData,
           browserLocation = None,
           targetSiteId = Some(newSite.id)), oldSiteTx)
@@ -203,7 +201,6 @@ class SystemDao(
         didWhat = AuditLogEntryType.ThisSiteCreated,
         doerId = SystemUserId, // no admin account yet created
         doneAt = newSiteTx.now.toJavaDate,
-        emailAddress = Some(creatorEmailAddress),
         browserIdData = browserIdData,
         browserLocation = None,
         targetSiteId = createdFromSiteId))
@@ -217,7 +214,7 @@ class SystemDao(
     readOnlyTransaction { transaction =>
       new NumSites(
         byYou = transaction.countWebsites(createdFromIp = browserIdData.ip,
-          creatorEmailAddress = "dummy_ignore", testSites),
+          creatorEmailAddress = None, testSites),
         total = transaction.countWebsitesTotal(testSites))
     }
   }

@@ -171,6 +171,8 @@ object ReactJson {
       "now" -> JsNumber(globals.now().millis),
       "siteId" -> JsNumber(pageReq.siteId),
       "siteStatus" -> pageReq.dao.theSite().status.toInt,
+      "siteOwnerTermsUrl" -> JsStringOrNull(globals.siteOwnerTermsUrl),
+      "siteOwnerPrivacyUrl" -> JsStringOrNull(globals.siteOwnerPrivacyUrl),
       "isFirstSiteAdminEmailMissing" -> isFirstSiteAdminEmailMissing,
       "makeEmbeddedCommentsSite" -> siteSettings.allowEmbeddingFrom.nonEmpty,
       "userMustBeAuthenticated" -> JsBoolean(siteSettings.userMustBeAuthenticated),

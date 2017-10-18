@@ -160,26 +160,20 @@ object LoginController {
     */
   def shallBecomeOwner(request: JsonPostRequest, emailAddress: String): Boolean = {
     val site = request.dao.theSite()
-    val ownerEmailInDatabase = site.status match {
-      case SiteStatus.NoAdmin =>
-        site.creatorEmailAddress
-      case _ =>
-        // The very first signup has happened already, owner already created.
-        return false
+    if (site.status != SiteStatus.NoAdmin) {
+      // The very first signup has happened already, owner already created.
+      return false
     }
 
-    val ownerEmail =
-      if (request.siteId == Site.FirstSiteId)
+    lazy val firstSiteOwnerEmail =
         request.context.globals.becomeFirstSiteOwnerEmail getOrElse {
           val errorCode = "DwE8PY25"
           val errorMessage = s"Config value '${Globals.BecomeOwnerEmailConfValName}' missing"
           Logger.error(s"$errorMessage [$errorCode]")
           throwInternalError(errorCode, errorMessage)
         }
-      else
-        ownerEmailInDatabase
 
-    if (emailAddress != ownerEmail)
+    if (request.siteId == Site.FirstSiteId && emailAddress != firstSiteOwnerEmail)
       // Error code used client side; don't change.
       throwForbidden("_EsE403WEA_", "Wrong email address")
 

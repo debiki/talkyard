@@ -33,6 +33,7 @@ sealed abstract class AuditLogEntryType(protected val IntVal: Int) { def toInt =
 object AuditLogEntryType {
   case object CreateSite extends AuditLogEntryType(1)
   case object ThisSiteCreated extends AuditLogEntryType(2)
+  case object CreateForum extends AuditLogEntryType(12)
   case object NewPage extends AuditLogEntryType(3)
   case object NewReply extends AuditLogEntryType(4)
   case object NewChatMessage extends AuditLogEntryType(5)
@@ -46,11 +47,13 @@ object AuditLogEntryType {
   def fromInt(value: Int): Option[AuditLogEntryType] = Some(value match {
     case AuditLogEntryType.CreateSite.IntVal => AuditLogEntryType.CreateSite
     case AuditLogEntryType.ThisSiteCreated.IntVal => AuditLogEntryType.ThisSiteCreated
+    case AuditLogEntryType.CreateForum.IntVal => AuditLogEntryType.CreateForum
     case AuditLogEntryType.NewPage.IntVal => AuditLogEntryType.NewPage
     case AuditLogEntryType.NewReply.IntVal => AuditLogEntryType.NewReply
     case AuditLogEntryType.NewChatMessage.IntVal => AuditLogEntryType.NewChatMessage
     case AuditLogEntryType.EditPost.IntVal => AuditLogEntryType.EditPost
     case AuditLogEntryType.ChangePostSettings.IntVal => AuditLogEntryType.ChangePostSettings
+    case AuditLogEntryType.MovePost.IntVal => AuditLogEntryType.MovePost
     case AuditLogEntryType.UploadFile.IntVal => AuditLogEntryType.UploadFile
     case AuditLogEntryType.DeletePage.IntVal => AuditLogEntryType.DeletePage
     case AuditLogEntryType.UndeletePage.IntVal => AuditLogEntryType.UndeletePage

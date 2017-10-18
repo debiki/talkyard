@@ -142,7 +142,6 @@ case class Site(
   name: String,
   createdAt: When,
   creatorIp: String,
-  creatorEmailAddress: String,
   hosts: List[SiteHost]) {
 
   // Reqiure at most 1 canonical host.

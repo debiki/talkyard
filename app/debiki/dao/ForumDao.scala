@@ -41,6 +41,19 @@ trait ForumDao {
 
       // The forum page points to the root category, which points back.
       transaction.deferConstraints()
+      val creator = transaction.loadTheMember(byWho.id)
+
+      AuditDao.insertAuditLogEntry(AuditLogEntry(
+        siteId,
+        id = AuditLogEntry.UnassignedId,
+        didWhat = AuditLogEntryType.CreateForum,
+        doerId = byWho.id,
+        doneAt = transaction.now.toJavaDate,
+        // Incl email, so will remember forever the created-by-email, even if the user
+        // changes hens email later.
+        emailAddress = Some(creator.email),
+        browserIdData = byWho.browserIdData,
+        browserLocation = None), transaction)
 
       val rootCategoryId = transaction.nextCategoryId()
 
@@ -67,8 +80,6 @@ trait ForumDao {
           selectTopicType = Some(Some(false)))
         transaction.upsertSiteSettings(settings)
       }
-
-      // COULD create audit log entries.
 
       partialResult.copy(pagePath = forumPagePath)
     }

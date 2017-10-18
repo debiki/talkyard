@@ -17,7 +17,6 @@
 
 /// <reference path="../slim-bundle.d.ts" />
 /// <reference path="../react-bootstrap-old/Input.more.ts" />
-/// <reference path="../util/EmailInput.more.ts" />
 /// <reference path="../utils/PatternInput.more.ts" />
 
 //------------------------------------------------------------------------------
@@ -25,9 +24,7 @@
 //------------------------------------------------------------------------------
 
 var r = React.DOM;
-var reactCreateFactory = React['createFactory'];
 
-var EmailInput = util.EmailInput;
 var PatternInput = utils.PatternInput;
 
 
@@ -78,23 +75,14 @@ const CreateWebsiteComponent = React.createClass(<any> {
     return {
       pricePlan,
       okayStatuses: {
-        email: false,
-        email2: false,
         address: false,
         orgName: false,
-        terms: false,
       },
-      email: '',
-      email2: null,
-      showEmail2: false,
       embeddingOrigin: '',
     };
   },
 
   componentDidUpdate: function(prevProps, prevState) {
-    if (this.state.showEmail2 && !prevState.showEmail2) {
-      this.refs.emailAddress2.focus();
-    }
     if (this.state.showAddress && !prevState.showAddress) {
       (this.refs.embeddingOrigin || this.refs.localHostname).focus();
     }
@@ -112,7 +100,6 @@ const CreateWebsiteComponent = React.createClass(<any> {
 
     event.preventDefault();
     Server.createSite(
-        this.refs.emailAddress.getValue(),
         localHostname,
         embeddingOrigin,
         this.refs.organizationName.getValue(),
@@ -132,17 +119,14 @@ const CreateWebsiteComponent = React.createClass(<any> {
     const state = this.state;
     const okayStatuses = state.okayStatuses;
     const disableSubmit = _.includes(_.values(okayStatuses), false);
-    const emailTypedOkTwice = okayStatuses.email && this.state.email === this.state.email2;
     const isComments = this.state.pricePlan === PricePlan.EmbeddedComments;
     const embeddingOriginOrLocalHostname = isComments
       ? EmbeddingAddressInput({
-          style: { display: state.showAddress ? 'block' : 'none' },
           onChangeValueOk: (value, isOk) => {
             this.setState({ embeddingOrigin: value });
             this.reportOkay('address', isOk)
           } })
       : LocalHostnameInput({ label: "Site Address:", placeholder: 'your-forum-name',
-            style: { display: state.showAddress ? 'block' : 'none' },
             help: "The address of your new site. You can change this later,  " +
                 "e.g. to a custom domain.",
             ref: 'localHostname',
@@ -152,38 +136,11 @@ const CreateWebsiteComponent = React.createClass(<any> {
       r.div({},
         r.h1({}, isComments ? "Create Embedded Comments" : "Create Forum"),
         r.form({ className: 'esCreateSite', onSubmit: this.handleSubmit },
-          EmailInput({ label: "Your email:", id: 'e2eEmail', className: 'esCreateSite_email',
-              placeholder: 'your-email@example.com',
-              help: "Your email address, which you will use to login and administrate " +
-                (isComments ? "comments." : "the site."), ref: 'emailAddress',
-              onChangeValueOk: (value, isOk) => {
-                this.setState({ email: value });
-                this.reportOkay('email', isOk)
-              } }),
-
-          NextStepButton({ onShowNextStep: () => this.setState({ showEmail2: true }),
-              showThisStep: okayStatuses.email && !state.showEmail2, id: 'e2eNext1' },
-            "Next"),
-
-          PatternInput({ label: 'Verify email:', id: 'e2eEmail2', className: 'esCreateSite_email',
-            style: { display: state.showEmail2 ? 'block' : 'none' },
-            placeholder: 'your-email@example.com',
-            error: !emailTypedOkTwice,
-            help: "Please type your email again.", ref: 'emailAddress2',
-            onChangeValueOk: (value, isOk) => {
-              this.setState({ email2: value });
-              this.reportOkay('email2', isOk && value === this.state.email)
-            } }),
-
-          NextStepButton({ onShowNextStep: () => this.setState({ showAddress: true }),
-              showThisStep: emailTypedOkTwice && !state.showAddress, id: 'e2eNext2' },
-            "Next"),
-
           embeddingOriginOrLocalHostname,
 
           NextStepButton({ onShowNextStep: () => this.setState({ showRemaining: true }),
               showThisStep: okayStatuses.address && !state.showRemaining, id: 'e2eNext3' },
-            "Next (the last)"),
+            "Next"),
 
           PatternInput({ label: "Organization name:", placeholder: "Your Organization Name",
               style: { display: state.showRemaining ? 'block' : 'none' },
@@ -195,8 +152,6 @@ const CreateWebsiteComponent = React.createClass(<any> {
               onChangeValueOk: (value, isOk) => this.reportOkay('orgName', isOk) }),
 
           r.div({ style: { display: state.showRemaining ? 'block' : 'none' }},
-            AcceptTerms({ reportOkay: (isOk) => this.reportOkay('terms', isOk) }),
-
             InputTypeSubmit({ value: "Create Site", disabled: disableSubmit })))));
   }
 });
@@ -228,27 +183,6 @@ export function EmbeddingAddressInput(props) {
       notRegexTwo: /[@#\?]/, notMessageTwo: "No weird characters please (e.g. not @#?)",
       onChangeValueOk: props.onChangeValueOk }));
 }
-
-
-
-const AcceptTerms = createClassAndFactory({
-  onChange: function(e) {
-    this.props.reportOkay(this.refs.checkbox.getChecked());
-  },
-
-  render: function() {
-    const label =
-      r.span({},
-          'I accept the ',
-          r.a({ href: '/-/terms-of-use', target: '_blank'}, 'Terms of Use'),
-          ' and the ',
-          r.a({ href: '/-/privacy-policy', target: '_blank' }, 'Privacy Policy'));
-
-    return (
-      Input({ type: 'checkbox', label: label, ref: 'checkbox', id: 'e2eAcceptTerms',
-          onChange: this.onChange }));
-  }
-});
 
 
 

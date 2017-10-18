@@ -31,9 +31,6 @@ import scala.util.Try
 
 
 /** Creates new empty sites, for forums, blogs or embedded comments.
-  *
-  * Each new empty site remembers an admin email address. When the site creator later
-  * logs in with that email address, s/he becomes admin for the site.
   */
 class CreateSiteController @Inject()(cc: ControllerComponents, edContext: EdContext)
   extends EdController(cc, edContext) {
@@ -71,13 +68,12 @@ class CreateSiteController @Inject()(cc: ControllerComponents, edContext: EdCont
   }
 
 
-  def createSite: Action[JsValue] = AsyncPostJsonAction(RateLimits.CreateSite, maxBytes = 500) {
+  def createSite: Action[JsValue] = PostJsonAction(RateLimits.CreateSite, maxBytes = 500) {
         request =>
     val isTestSiteOkayToDelete = (request.body \ "testSiteOkDelete").asOpt[Boolean].contains(true)
     throwIfMayNotCreateSite(request, isTestSiteOkayToDelete)
 
     val acceptTermsAndPrivacy = (request.body \ "acceptTermsAndPrivacy").as[Boolean]
-    val emailAddress = (request.body \ "emailAddress").as[String]
     val anyLocalHostname = (request.body \ "localHostname").asOpt[String]
     val anyEmbeddingSiteAddress = (request.body \ "embeddingSiteAddress").asOpt[String]
     val organizationName = (request.body \ "organizationName").as[String].trim
@@ -106,11 +102,8 @@ class CreateSiteController @Inject()(cc: ControllerComponents, edContext: EdCont
     if (ed.server.security.ReservedNames.isSubdomainReserved(localHostname))
       throwForbidden("EdE5PKW01", s"Subdomain is reserved: '$localHostname'; choose another please")
 
-    if (!isValidNonLocalEmailAddress(emailAddress))
-      throwForbidden("DwE8FKJ4", "Bad email address")
-
     // Test sites have a certain prefix, so I know it's okay to delete them. [7UKPwF2]
-    if (TestSitePrefixes.exists(localHostname startsWith) && !isTestSiteOkayToDelete)
+    if (TestSitePrefixes.exists(localHostname.startsWith) && !isTestSiteOkayToDelete)
       throwForbidden("DwE48WK3", o"""Please choose another hostname; it must not
           start with any of: ${ TestSitePrefixes.mkString(", ") }""")
     if (localHostname.contains("--") && !isTestSiteOkayToDelete)
@@ -129,41 +122,36 @@ class CreateSiteController @Inject()(cc: ControllerComponents, edContext: EdCont
       case _ => throwBadArgument("EsE7YKW28", "pricePlan", "not 0, 1, 2 or 3")
     }
 
-    globals.spamChecker.detectRegistrationSpam(request, name = localHostname,
-        email = emailAddress) map { isSpamReason =>
-      throwForbiddenIfSpam(isSpamReason, "EdE4KG28")
+    val hostname = s"$localHostname.${globals.baseDomainNoPort}"
+    val deleteOldSite = isTestSiteOkayToDelete && hostname.startsWith(SiteHost.E2eTestPrefix)
 
-      val hostname = s"$localHostname.${globals.baseDomainNoPort}"
-      val deleteOldSite = isTestSiteOkayToDelete && hostname.startsWith(SiteHost.E2eTestPrefix)
+    val goToUrl: String =
+      try {
+        globals.systemDao.createSite(
+          name = localHostname, SiteStatus.NoAdmin, hostname = hostname,
+          embeddingSiteUrl = anyEmbeddingSiteAddress,
+          creatorId = request.user.map(_.id) getOrElse UnknownUserId,
+          browserIdData = request.theBrowserIdData, organizationName = organizationName,
+          isTestSiteOkayToDelete = isTestSiteOkayToDelete, skipMaxSitesCheck = okE2ePassword,
+          deleteOldSite = deleteOldSite, pricePlan = pricePlan,
+          createdFromSiteId = Some(request.siteId))
+        globals.originOf(hostname)
+      }
+      catch {
+        case _: DbDao.SiteAlreadyExistsException =>
+          throwForbidden("DwE039K2", "A site with that name has already been created")
+        case _: DbDao.TooManySitesCreatedByYouException =>
+          throwForbidden("DwE7IJ08", "You have created too many sites already, sorry.")
+        case DbDao.TooManySitesCreatedInTotalException =>
+          globals.config.createSite.tooManyTryLaterPagePath match {
+            case None =>
+              throwForbidden("EsE3YK5U8", "People have created too many forums already, sorry.")
+            case Some(path) =>
+              path
+          }
+      }
 
-      val goToUrl: String =
-        try {
-          globals.systemDao.createSite(
-            name = localHostname, SiteStatus.NoAdmin, hostname = hostname,
-            embeddingSiteUrl = anyEmbeddingSiteAddress, creatorEmailAddress = emailAddress,
-            creatorId = request.user.map(_.id) getOrElse UnknownUserId,
-            browserIdData = request.theBrowserIdData, organizationName = organizationName,
-            isTestSiteOkayToDelete = isTestSiteOkayToDelete, skipMaxSitesCheck = okE2ePassword,
-            deleteOldSite = deleteOldSite, pricePlan = pricePlan,
-            createdFromSiteId = Some(request.siteId))
-          globals.originOf(hostname)
-        }
-        catch {
-          case _: DbDao.SiteAlreadyExistsException =>
-            throwForbidden("DwE039K2", "A site with that name has already been created")
-          case _: DbDao.TooManySitesCreatedByYouException =>
-            throwForbidden("DwE7IJ08", "You have created too many sites already, sorry.")
-          case DbDao.TooManySitesCreatedInTotalException =>
-            globals.config.createSite.tooManyTryLaterPagePath match {
-              case None =>
-                throwForbidden("EsE3YK5U8", "People have created too many forums already, sorry.")
-              case Some(path) =>
-                path
-            }
-        }
-
-      OkSafeJson(Json.obj("nextUrl" -> goToUrl))
-    }
+    OkSafeJson(Json.obj("nextUrl" -> goToUrl))
   }
 
 

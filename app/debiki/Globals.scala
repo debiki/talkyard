@@ -69,6 +69,8 @@ object Globals {
   val DefaultSiteIdConfValName = "ed.defaultSiteId"
   val DefaultSiteHostnameConfValName = "ed.hostname"
   val BecomeOwnerEmailConfValName = "ed.becomeOwnerEmailAddress"
+  val SiteOwnerTermsUrl = "ed.siteOwnerTermsUrl"
+  val SiteOwnerPrivacyUrl = "ed.siteOwnerPrivacyUrl"
 
   def isProd: Boolean = _isProd
 
@@ -308,6 +310,12 @@ class Globals(
 
   val becomeFirstSiteOwnerEmail: Option[String] =
     conf.getString(BecomeOwnerEmailConfValName).noneIfBlank
+
+  val siteOwnerTermsUrl: Option[String] =
+    conf.getString(SiteOwnerTermsUrl).noneIfBlank
+
+  val siteOwnerPrivacyUrl: Option[String] =
+    conf.getString(SiteOwnerPrivacyUrl).noneIfBlank
 
   /** If accessing the server via ip address, then, if no website with a matching ip has been
     * configured in the database, we'll show the site with id 'defaultSiteId'. If not defined,

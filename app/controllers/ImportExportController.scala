@@ -231,7 +231,6 @@ class ImportExportController @Inject()(cc: ControllerComponents, edContext: EdCo
       siteToSave.canonicalHost.getOrDie("EsE2FUPFY7").hostname,
       embeddingSiteUrl = None,
       organizationName = "Dummy organization name [EsM8YKWP3]",  // fix later
-      creatorEmailAddress = siteToSave.creatorEmailAddress,
       creatorId = SystemUserId,
       browserIdData = browserIdData,
       isTestSiteOkayToDelete = true,
@@ -327,7 +326,6 @@ class ImportExportController @Inject()(cc: ControllerComponents, edContext: EdCo
       name = name,
       createdAt = When.fromMillis(createdAtMs),
       creatorIp = "0.0.0.0",
-      creatorEmailAddress = readString(jsObject, "creatorEmailAddress"),
       hosts = List(
         SiteHost(fullHostname, SiteHost.RoleCanonical)))
   }

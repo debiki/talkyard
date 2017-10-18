@@ -218,14 +218,9 @@ function pagesFor(browser) {
 
     createSite: {
       fillInFieldsAndSubmit: function(data) {
-        browser.waitAndSetValue('#e2eEmail', data.email);
-        browser.click('#e2eNext1');
-        browser.waitAndSetValue('#e2eEmail2', data.email);
-        browser.click('#e2eNext2');
         browser.setValue('#dwLocalHostname', data.localHostname);
         browser.click('#e2eNext3');
         browser.setValue('#e2eOrgName', data.localHostname);
-        browser.click('#e2eAcceptTerms');
         browser.click('input[type=submit]');
         browser.waitForVisible('#e2eLogin');
         assert.equal(data.origin, browser.origin());
@@ -514,6 +509,8 @@ function pagesFor(browser) {
         api.loginDialog.fillInPassword(data.password);
         console.log('clickSubmit...');
         api.loginDialog.clickSubmit();
+        console.log('acceptTerms...');
+        api.loginDialog.acceptTerms();
         console.log('waitForNeedVerifyEmailDialog...');
         api.loginDialog.waitForNeedVerifyEmailDialog();
         console.log('createPasswordAccount: done');
@@ -591,6 +588,8 @@ function pagesFor(browser) {
         api.loginDialog.fillInPassword("public1234");
         console.log('clickSubmit...');
         api.loginDialog.clickSubmit();
+        console.log('acceptTerms...');
+        api.loginDialog.acceptTerms();
         console.log('waitForWelcomeLoggedInDialog...');
         api.loginDialog.waitForAndCloseWelcomeLoggedInDialog();
         console.log('createPasswordAccount with no email: done');
@@ -649,6 +648,7 @@ function pagesFor(browser) {
         // user fields which are still visible for a short moment. Dupl code (2QPKW02)
         browser.waitAndSetValue('.esCreateUserDlg #e2eUsername', data.username);
         api.loginDialog.clickSubmit();
+        api.loginDialog.acceptTerms();
         api.loginDialog.waitAndClickOkInWelcomeDialog();
         browser.waitUntilModalGone();
       },
@@ -749,6 +749,7 @@ function pagesFor(browser) {
         console.log("typing Facebook user's new username...");
         browser.waitAndSetValue('.esCreateUserDlg #e2eUsername', data.username);
         api.loginDialog.clickSubmit();
+        api.loginDialog.acceptTerms();
         api.loginDialog.waitAndClickOkInWelcomeDialog();
         browser.waitUntilModalGone();
       },
@@ -835,6 +836,11 @@ function pagesFor(browser) {
       clickCancel: function() {
         browser.waitAndClick('#e2eLD_Cancel');
         browser.waitUntilModalGone();
+      },
+
+      acceptTerms: function() {
+        setCheckbox('.s_TermsD_CB input', true);
+        browser.waitAndClick('#e_TermsD_B');
       },
 
       reopenToClearAnyError: function() {
@@ -1882,6 +1888,7 @@ function pagesFor(browser) {
         api.loginDialog.fillInUsername(member.username);
         api.loginDialog.fillInPassword(member.password);
         api.loginDialog.clickSubmit();
+        api.loginDialog.acceptTerms();
       },
 
       signUpAsGuestViaTopbar: function(nameOrObj, email?: string) {

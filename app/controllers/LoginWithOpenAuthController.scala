@@ -80,7 +80,9 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
     // Don't expire too quickly — the user needs time to choose & typ a username.
     // SECURITY COULD expire sooner (say 10 seconds) if just logging in, because then
     // the user need not think or type anything.
-    .expireAfterWrite(5, java.util.concurrent.TimeUnit.MINUTES)
+    // The user might want to review the Terms of Use, so wait for an hour, here. [4WHKTP06]
+    // BUG SHOULD use Redis, so the key won't disappear after server restart.
+    .expireAfterWrite(65, java.util.concurrent.TimeUnit.MINUTES)
     .build().asInstanceOf[caffeine.cache.Cache[String, OpenAuthDetails]]
 
   lazy val anyLoginOrigin: Option[String] =

@@ -378,7 +378,7 @@ function loadJQuery(callback?) {
 }
 
 
-export function createSite(emailAddress: string, localHostname: string,
+export function createSite(localHostname: string,
     anyEmbeddingSiteAddress: string, organizationName: string,
     pricePlan: PricePlan, doneCallback: (string) => void) {
   const isTestSite = window.location.search.indexOf('testSiteOkDelete=true') !== -1 ||
@@ -386,7 +386,6 @@ export function createSite(emailAddress: string, localHostname: string,
   postJson('/-/create-site', {
     data: {
       acceptTermsAndPrivacy: true,
-      emailAddress: emailAddress,
       localHostname: localHostname,
       embeddingSiteAddress: anyEmbeddingSiteAddress,
       organizationName: organizationName,

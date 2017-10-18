@@ -227,32 +227,32 @@ var LoginDialog = createClassAndFactory({
  * This is a separate component because on embedded discussion pages, it's placed directly
  * in a popup window with no modal dialog around.
  */
-export var LoginDialogContent = createClassAndFactory({
+export const LoginDialogContent = createClassAndFactory({
   displayName: 'LoginDialogContent',
   render: function() {
-    var store: Store = this.props.store;
-    var loginReason = this.props.loginReason;
-    var isSignUp = this.props.isSignUp;
+    const store: Store = this.props.store;
+    const loginReason = this.props.loginReason;
+    const isSignUp = this.props.isSignUp;
 
-    var openChildDialog = (whichDialog) => {
+    const openChildDialog = (whichDialog) => {
       return (clickEvent) => {
         this.props.setChildDialog(whichDialog);
       }
     };
 
-    var closeChildDialog = (closeAll) => {
+    const closeChildDialog = (closeAll) => {
       this.props.setChildDialog(null);
       if (closeAll === 'CloseAllLoginDialogs') {
         this.props.close();
       }
     };
 
-    var childDialogProps = _.clone(this.props);
+    const childDialogProps = _.clone(this.props);
     childDialogProps.closeDialog = closeChildDialog;
     childDialogProps.createPasswordUser = true;
 
-    var createChildDialog = (title, contentFactory, className?) => {
-      var header = title ? ModalHeader({ closeButton: true }, ModalTitle({}, title)) : null;
+    const createChildDialog = (title, contentFactory, className?) => {
+      const header = title ? ModalHeader({ closeButton: true }, ModalTitle({}, title)) : null;
       return (
         Modal({ show: this.props.childDialog === contentFactory, onHide: closeChildDialog,
             dialogClassName: className },
@@ -260,11 +260,11 @@ export var LoginDialogContent = createClassAndFactory({
           ModalBody({}, contentFactory(childDialogProps))));
     };
 
-    var createUserDialog = createChildDialog(null, CreateUserDialogContent, 'esCreateUserDlg');
-    var passwordLoginDialog = createChildDialog("Log in with Password", PasswordLoginDialogContent);
+    const createUserDialog = createChildDialog(null, CreateUserDialogContent, 'esCreateUserDlg');
+    const passwordLoginDialog = createChildDialog("Log in with Password", PasswordLoginDialogContent);
     var guestLoginDialog; // no. CLEAN_UP, remove: createChildDialog("Log in as Guest", GuestLoginDialogContent);
 
-    var makeOauthProps = (iconClass: string, provider: string, includeWith?: boolean) => {
+    const makeOauthProps = (iconClass: string, provider: string, includeWith?: boolean) => {
       return {
         inclWith: includeWith,
         id: 'e2eLogin' + provider,
@@ -280,8 +280,9 @@ export var LoginDialogContent = createClassAndFactory({
         r.div({ className: 'esLoginDlg_becomeAdminInstr' },
           r.p({},
             // Say "admin" not "owner" here — simpler to understand, and first owner is admin too.
-            "Create admin account.", r.br(),
-            "Use the email address you specified previously."));
+            "Create admin account:"));
+            // UX SHOULD add back, for first site: "Use the email address you specified in the config file."));
+
 
     const notFound = loginReason === 'LoginBecauseNotFound';
     const notFoundInstructions = !notFound ? null :
@@ -309,14 +310,6 @@ export var LoginDialogContent = createClassAndFactory({
           Button({ onClick: openChildDialog(GuestLoginDialogContent),
               className: 'esLoginDlg_guestBtn' }, "Log in as Guest");
     } */
-
-    const termsAndPrivacy = loginReason === LoginReason.BecomeAdmin || !isSignUp
-      ? null // The owner doesn't need to agree to his/her own terms of use.
-             // And if we've signed up already, need not agree to the terms again?
-      : r.p({ id: 'dw-lgi-tos' },
-          (isSignUp ? "By proceeding" : "By logging in") +
-          ", you agree to our ", r.a({ href: "/-/terms-of-use" }, "Terms of Use"),
-          " and ", r.a({ href: '/-/privacy-policy' }, "Privacy Policy"));
 
     let switchToOtherDialogInstead;
     if (isForFirstOwner) {
@@ -354,7 +347,6 @@ export var LoginDialogContent = createClassAndFactory({
         passwordLoginDialog,
         notFoundInstructions,
         becomeOwnerInstructions,
-        termsAndPrivacy,
         r.p({ id: 'dw-lgi-or-login-using' },
           isSignUp ? "Sign in ..." : "Log in ..."),
         r.div({ id: 'dw-lgi-other-sites' },

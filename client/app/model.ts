@@ -483,6 +483,8 @@ interface Store {
   pageVersion: PageVersion;
   now: number;
   siteStatus: SiteStatus;
+  siteOwnerTermsUrl?: string;
+  siteOwnerPrivacyUrl?: string;
   isFirstSiteAdminEmailMissing?: boolean;
   // Only used when creating the site, to show messages for embedded comments.
   makeEmbeddedCommentsSite?: boolean;

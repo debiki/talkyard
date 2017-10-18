@@ -41,6 +41,7 @@ var EmailInput = util.EmailInput;
 
 
 var createUserDialog;
+var acceptTermsDialog;
 var addressVerificationEmailSentDialog;
 
 
@@ -49,6 +50,21 @@ function getCreateUserDialogs() {
     createUserDialog = ReactDOM.render(CreateUserDialog(), utils.makeMountNode());
   }
   return createUserDialog;
+}
+
+
+function waitUntilAcceptsTerms(store: Store, isOwner, after) {
+  // If this is the very first site on this server, then the current user is some server
+  // admin/owner who is setting up the organization's own first site — hen has already accepted
+  // some employment/freelancer contract or sth like that, needn't accept any ToS here.
+  if (isOwner && store.isFirstSiteAdminEmailMissing) {
+    after();
+    return;
+  }
+  if (!acceptTermsDialog) {
+    acceptTermsDialog = ReactDOM.render(AcceptTermsDialog(), utils.makeMountNode());
+  }
+  acceptTermsDialog.waitUntilAccepts(store, isOwner, after);
 }
 
 
@@ -145,17 +161,20 @@ export var CreateUserDialogContent = createClassAndFactory({
   doCreateUser: function() {
     const data: any = this.state.userData;
     data.returnToUrl = this.props.anyReturnToUrl;
-    if (this.props.authDataCacheKey) {
-      data.authDataCacheKey = this.props.authDataCacheKey;
-      Server.createOauthUser(data, this.handleCreateUserResponse, this.handleErrorResponse);
-    }
-    else if (this.props.createPasswordUser) {
-      data.password = this.refs.password.getValue();
-      Server.createPasswordUser(data, this.handleCreateUserResponse, this.handleErrorResponse);
-    }
-    else {
-      console.error('DwE7KFEW2');
-    }
+    waitUntilAcceptsTerms(
+        this.props.store, this.props.loginReason === LoginReason.BecomeAdmin, () => {
+      if (this.props.authDataCacheKey) { // [4WHKTP06]
+        data.authDataCacheKey = this.props.authDataCacheKey;
+        Server.createOauthUser(data, this.handleCreateUserResponse, this.handleErrorResponse);
+      }
+      else if (this.props.createPasswordUser) {
+        data.password = this.refs.password.getValue();
+        Server.createPasswordUser(data, this.handleCreateUserResponse, this.handleErrorResponse);
+      }
+      else {
+        console.error('DwE7KFEW2');
+      }
+    });
   },
 
   handleCreateUserResponse: function(response) {
@@ -190,12 +209,6 @@ export var CreateUserDialogContent = createClassAndFactory({
         window.location.reload();
       }
     }
-    else if (!window['debiki2']) {
-      // COULD remove — this cannot hapen any longer, loading the same script bundle
-      // everywhere right now. Remove this?
-      // We haven't loaded all JS that would be needed to continue on the same page.
-      window.location.assign('/');
-    }
     else {
       const isPage = $$byClass('dw-page').length;
       if (!isPage) console.log('should reload ... /? [DwE2KWF1]');
@@ -207,9 +220,8 @@ export var CreateUserDialogContent = createClassAndFactory({
   handleErrorResponse: function(failedRequest: HttpRequest) {
     if (hasErrorCode(failedRequest, '_EsE403WEA_')) {
       this.setState({ theWrongEmailAddress: this.state.userData.email });
-      const where = debiki.siteId === FirstSiteId ? "in the config file" : "on the Create Site page";
       util.openDefaultStupidDialog({
-        body: "Wrong email address. Please use the email address you specified " + where + '.',
+        body: "Wrong email address. Please use the email address you specified in the config file.",
       });
       return IgnoreThisError;
     }
@@ -234,9 +246,7 @@ export var CreateUserDialogContent = createClassAndFactory({
           disabled: hasEmailAddressAlready, defaultValue: props.email, help: emailHelp,
           required: true, // [0KPS2J] store.settings.requireVerifiedEmail !== false,
           error: this.state.userData.email !== this.state.theWrongEmailAddress ?
-              null : "Use the email address you specified " +
-                        (debiki.siteId === FirstSiteId ?
-                            "in the config file." : "on the Create Site page.") });
+              null : "Use the email address you specified in the config file." });
 
     const usernameInput =
         util.UsernameInput({ label: "Username: (unique and short)", id: 'e2eUsername', tabIndex: 2,
@@ -304,8 +314,59 @@ function continueOnMainPageAfterHavingCreatedUser() {
 }
 
 
+const AcceptTermsDialog = createComponent({
+  getInitialState: function () {
+    return { isOpen: false };
+  },
+  waitUntilAccepts: function(store, isOwner, after) {
+    this.setState({
+      isOpen: true,
+      accepts: false,
+      store,
+      isOwner,
+      after
+    });
+  },
+  close: function() {
+    const accepts = this.state.accepts;
+    this.setState({ isOpen: false });
+    if (accepts) {
+      this.state.after();
+    }
+  },
+  render: function () {
+    const isOwner = this.state.isOwner;
+    // We're providing a Software-as-a-Service to website owners, so 'Service' is a better word?
+    // However, non-website owners, merely 'Use' the website, it's not a SaaS provided to them.
+    const serviceOrUse = isOwner ? "Service" : "Use";
+    const accepts = this.state.accepts;
+    const store = this.state.store;
+    const forSiteOwners = isOwner ? " for site owners?" : '?';
+    const termsUrl = isOwner ?
+        store.siteOwnerTermsUrl || '/-/terms-for-site-owners': '/-/terms-of-use';
+    const privacyUrl = isOwner ?
+        store.siteOwnerPrivacyUrl || '/-/privacy-for-site-owners' : '/-/privacy-policy';
+    return (
+      // Don't set onHide — shouldn't be closeable by clicking outside, only by choosing Yes.
+      Modal({ show: this.state.isOpen },
+        ModalHeader({}, ModalTitle({}, "Terms and Privacy")),
+        ModalBody({}, r.p({},
+            "Do you accept our ", r.a({ href: termsUrl, target: '_blank' }, "Terms of " + serviceOrUse),
+            " and ", r.a({ href: privacyUrl, target: '_blank' }, "Privacy Policy"),
+            forSiteOwners),
+          Input({ type: 'checkbox', className: 's_TermsD_CB' + (accepts ? ' s_TermsD_CB-Accepts' : ''),
+            label: "Yes I accept", checked: accepts,
+            onChange: (event) => this.setState({ accepts: event.target.checked }) })),
+        ModalFooter({},
+          Button({ onClick: this.close, id: 'e_TermsD_B',
+              className: accepts ? 'btn-primary' : '' },
+            accepts ? "Continue" : "Cancel"))));
+  }
+});
+
+
 // CLEAN_UP RENAME to CreateUserResultDialog ?
-var AddressVerificationEmailSentDialog = createComponent({
+const AddressVerificationEmailSentDialog = createComponent({
   getInitialState: function () {
     return { isOpen: false };
   },

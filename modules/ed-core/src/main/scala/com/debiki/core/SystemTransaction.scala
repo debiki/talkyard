@@ -32,15 +32,14 @@ trait SystemTransaction {
 
   // ----- Sites
 
-  def countWebsites(createdFromIp: String, creatorEmailAddress: String, testSites: Boolean): Int
+  def countWebsites(createdFromIp: String, creatorEmailAddress: Option[String], testSites: Boolean): Int
   def countWebsitesTotal(testSites: Boolean): Int
 
   /** Throws SiteAlreadyExistsException if the site already exists.
     * Throws TooManySitesCreatedException if you've created too many websites already
     * (from the same IP or email address).
     */
-  def createSite(id: Option[SiteId], name: String, status: SiteStatus,
-    creatorIp: String, creatorEmailAddress: String,
+  def createSite(id: Option[SiteId], name: String, status: SiteStatus, creatorIp: String,
     quotaLimitMegabytes: Option[Int], maxSitesPerIp: Int, maxSitesTotal: Int,
     isTestSiteOkayToDelete: Boolean, pricePlan: PricePlan, createdAt: When): Site
 
