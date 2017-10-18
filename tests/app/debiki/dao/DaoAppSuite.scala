@@ -117,7 +117,7 @@ class DaoAppSuite(
     globals.systemDao.createSite(
       siteName, status = SiteStatus.Active, hostname = hostname,
       embeddingSiteUrl = None, organizationName = s"Site $hostname Organization Name",
-      creatorEmailAddress = s"admin@$hostname.co", creatorId = UnknownUserId, browserIdData,
+      creatorId = UnknownUserId, browserIdData,
       isTestSiteOkayToDelete = true, skipMaxSitesCheck = true,
       deleteOldSite = false, pricePlan = "Unknown", createdFromSiteId = None)
   }

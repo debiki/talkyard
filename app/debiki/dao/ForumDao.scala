@@ -51,7 +51,7 @@ trait ForumDao {
         doneAt = transaction.now.toJavaDate,
         // Incl email, so will remember forever the created-by-email, even if the user
         // changes hens email later.
-        emailAddress = Some(creator.email),
+        emailAddress = creator.email.trimNoneIfEmpty,
         browserIdData = byWho.browserIdData,
         browserLocation = None), transaction)
 

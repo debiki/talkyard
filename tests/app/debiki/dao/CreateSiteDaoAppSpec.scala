@@ -25,7 +25,7 @@ class CreateSiteDaoAppSpec extends DaoAppSuite(maxSitesTotal = Some(75)) {
 
   private def createOneSite(user: Member, prefix: Int, number: Int,
         ip: String = null, browserIdCookie: String = null,
-        browserFingerprint: Int = -1, email: Option[String] = None,
+        browserFingerprint: Int = -1,
         localHostname: Option[String] = None, hostname: Option[String] = None,
         isTestSite: Boolean = false): Site = {
     require(prefix % 20 == 0) // else prefix + number just below won't be a nice looking number
@@ -33,12 +33,10 @@ class CreateSiteDaoAppSpec extends DaoAppSuite(maxSitesTotal = Some(75)) {
     val thePrefix = s"crst-$prefix-$number"
     val theLocalHostname = localHostname getOrElse thePrefix
     val theHostname = hostname getOrElse s"$theLocalHostname.example.com"
-    val theEmail = email getOrElse s"$thePrefix@example.com"
     val theIdCookie = if (browserIdCookie eq null) s"$thePrefix-cookie" else browserIdCookie
     val theIp = if (ip eq null) s"$prefix.0.0.$number" else ip
     globals.systemDao.createSite(name = theLocalHostname, status = SiteStatus.Active, hostname = theHostname,
-      embeddingSiteUrl = None, organizationName = s"Org Name $thePrefix",
-      creatorEmailAddress = theEmail, creatorId = user.id,
+      embeddingSiteUrl = None, organizationName = s"Org Name $thePrefix", creatorId = user.id,
       BrowserIdData(ip = theIp, idCookie = theIdCookie, fingerprint = theFingerprint),
       isTestSiteOkayToDelete = isTestSite, skipMaxSitesCheck = false,
       deleteOldSite = false, pricePlan = "Unknown", createdFromSiteId = Some(FirstSiteId))
