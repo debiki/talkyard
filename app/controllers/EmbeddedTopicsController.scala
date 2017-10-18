@@ -18,13 +18,14 @@
 package controllers
 
 import com.debiki.core._
+import com.debiki.core.Prelude._
 import debiki._
 import debiki.EdHttp._
 import debiki.dao.SiteDao
 import ed.server.{EdContext, EdController, RenderedPage}
 import ed.server.http._
 import javax.inject.Inject
-import play.api.libs.json.{JsString, JsValue}
+import play.api.libs.json.JsValue
 import play.api.mvc.{Action, ControllerComponents}
 
 
@@ -104,7 +105,9 @@ class EmbeddedTopicsController @Inject()(cc: ControllerComponents, edContext: Ed
         embeddingUrl: String, dao: SiteDao): Option[PageId] = {
     // Lookup the page by real id, if specified, otherwise alt id, or embedding url.
     edPageId orElse {
-      val altId = discussionId.getOrElse(embeddingUrl)
+      val altId =
+        if (discussionId is "") embeddingUrl
+        else discussionId.getOrElse(embeddingUrl)
       dao.getRealPageId(altId)
     }
   }

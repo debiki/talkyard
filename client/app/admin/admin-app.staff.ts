@@ -610,7 +610,8 @@ const EmbeddedCommentsComponent = React.createClass(<any> {
           r.pre({},  // script url defined here: [2WPGKS04]
 `<script>edCommentsServerUrl='${location.origin}';</script>
 <script async defer src="${assetsOrigin()}/-/ed-comments.v0${dotMin}.js"></script>
-<div class="ed-comments" style="margin-top: 45px;">
+<!-- You can specify a per page discussion id on the next line, if your URLs might change. -->
+<div class="ed-comments" data-discussion-id="" style="margin-top: 45px;">
 <noscript>Please enable Javascript to view comments.</noscript>
 <p style="margin-top: 25px; opacity: 0.9; font-size: 96%">Comments powered by
 <a href="https://www.effectivediscussions.org">Effective Discussions</a>.</p>
@@ -624,7 +625,9 @@ const EmbeddedCommentsComponent = React.createClass(<any> {
     return (
       r.div({},
         Setting2(props, { type: 'text', label: "Allow embedding from",
-          help: r.span({}, "Lets another website (your website) show embedded contents."),
+          help: r.span({}, "Lets another website (your website) show embedded contents. " +
+            "You can add many domains — separate them with spaces."),
+          placeholder: "https://www.yourblog.com",
           getter: (s: Settings) => s.allowEmbeddingFrom,
           update: (newSettings: Settings, target) => {
             newSettings.allowEmbeddingFrom = target.value;

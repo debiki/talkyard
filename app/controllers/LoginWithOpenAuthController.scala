@@ -465,7 +465,8 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
       throwBadReq("DwE08GM6", "Auth data cache key missing")
     val oauthDetails = Option(cache.getIfPresent(oauthDetailsCacheKey)) match {
       case Some(details: OpenAuthDetails) =>
-        cache.invalidate(oauthDetailsCacheKey)
+        // Don't remove the cache key here — maybe the user specified a username that's
+        // in use already. Then hen needs to be able to submit again (using the same key).
         details
       case None =>
         throwForbidden("DwE50VC4", o"""Bad auth data cache key — this happens if you wait
@@ -560,6 +561,10 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
             "userCreatedAndLoggedIn" -> JsFalse,
             "emailVerifiedAndLoggedIn" -> JsFalse))
       }
+
+      // Everything went fine. Won't need to submit the dialog again, so remove the cache key.
+      cache.invalidate(oauthDetailsCacheKey)
+
       result.discardingCookies(CookiesToDiscardAfterLogin: _*)
     }
   }
