@@ -100,8 +100,9 @@ current_dir=`pwd`
 sudo -i bash << EOF_SUDO
 
 cd $current_dir
+rm -f ./target/build-exit-status
+
 ./s/impl/release-as-root.sh $my_username $version_tag $@
-echo 'WHY WONT THIS echo RUN?'
 echo "\$?" | tee ./target/build-exit-code
 
 EOF_SUDO
@@ -109,6 +110,7 @@ EOF_SUDO
 build_exit_status=`cat ./target/build-exit-status`
 #build_exit_code=`cat ./target/build-exit-code`
 
+echo
 echo "Build result: $build_exit_status, exit code: $build_exit_code"
 
 if [ "$build_exit_status" != 'BUILD_OK' ]; then
