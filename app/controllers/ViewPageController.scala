@@ -215,7 +215,7 @@ class ViewPageController @Inject()(cc: ControllerComponents, edContext: EdContex
       val json = ReactJson.emptySiteJson(pageRequest).toString()
       val html = views.html.specialpages.createSomethingHerePage(SiteTpi(pageRequest, Some(json))).body
       val renderedPage = RenderedPage(html, unapprovedPostAuthorIds = Set.empty)
-      return addVolatileJson(renderedPage, pageRequest)
+      return addVolatileJsonAndPreventClickjacking(renderedPage, pageRequest)
     }
 
     val pageMeta = correctPagePath.pageId.flatMap(dao.getPageMeta) getOrElse {
@@ -260,7 +260,7 @@ class ViewPageController @Inject()(cc: ControllerComponents, edContext: EdContex
 
   private def doRenderPage(request: PageGetRequest): Future[Result] = {
     val renderedPage = request.dao.renderPageMaybeUseCache(request)
-    addVolatileJson(renderedPage, request)
+    addVolatileJsonAndPreventClickjacking(renderedPage, request)
   }
 
 }
@@ -271,8 +271,14 @@ object ViewPageController {
   val HtmlEncodedVolatileJsonMagicString =
     "\"__html_encoded_volatile_json__\""
 
+  val ContSecPolHeaderName = "Content-Security-Policy"
+  val XContSecPolHeaderName = s"X-$ContSecPolHeaderName"
+  val frameAncestorsSpace = "frame-ancestors "
+  val frameAncestorsNone = s"$frameAncestorsSpace'none'"
 
-  def addVolatileJson(renderedPage: RenderedPage, request: PageRequest[_]): Future[Result] = {
+
+  def addVolatileJsonAndPreventClickjacking(renderedPage: RenderedPage, request: PageRequest[_])
+        : Future[Result] = {
     import request.{dao, requester}
     var pageHtml = renderedPage.html
 
@@ -295,14 +301,25 @@ object ViewPageController {
     requester.foreach(dao.pubSub.userIsActive(request.siteId, _, request.theBrowserIdData))
 
     var response = play.api.mvc.Results.Ok(pageHtml)
-    if (request.siteSettings.allowEmbeddingFrom.isEmpty) {
-      response = response.withHeaders("X-Frame-Options" -> "DENY")  // [7ACKRQ20]
+
+    // Prevent clickjacking or embedding & "stealing" content. Previously done in Nginx [7ACKRQ20].
+    val allowEmbeddingFrom = request.siteSettings.allowEmbeddingFrom
+    SECURITY // should one check for more weird chars? If evil admin attacks hens own site?
+    // "':/*" are ok, because one may include protocol and/or port, in CSP frame-ancestors,
+    // and "'self'", and wildcar '*'.
+    def allowEmbeddingIsWeird = allowEmbeddingFrom.exists("\r\t\n,;?&#\"\\" contains _)
+    if (allowEmbeddingFrom.isEmpty || allowEmbeddingIsWeird) {
+      response = response.withHeaders("X-Frame-Options" -> "DENY")  // For old browsers.
+      response = response.withHeaders(ContSecPolHeaderName -> frameAncestorsNone)
+      response = response.withHeaders(XContSecPolHeaderName -> frameAncestorsNone) // IE11
     }
     else {
-      SECURITY; SHOULD // Later: add X-Frame-Options: 'ALLOW-FROM origin' and also
-      // 'Content-Security-Policy: origin' for Chrome. For now, allow from anywhere though.
+      val framePolicy = frameAncestorsSpace + allowEmbeddingFrom
+      response = response.withHeaders(ContSecPolHeaderName -> framePolicy)  // [7ACKRQ20]
+      response = response.withHeaders(XContSecPolHeaderName -> framePolicy) // IE11
       // Also update: [4GUYQC0]
     }
+
     Future.successful(response as play.api.http.ContentTypes.HTML)
   }
 

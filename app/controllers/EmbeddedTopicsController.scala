@@ -88,7 +88,7 @@ class EmbeddedTopicsController @Inject()(cc: ControllerComponents, edContext: Ed
         (request.dao.renderPageMaybeUseCache(pageRequest), pageRequest)
     }
 
-    ViewPageController.addVolatileJson(renderedPage, pageRequest)
+    ViewPageController.addVolatileJsonAndPreventClickjacking(renderedPage, pageRequest)
   }
 
 
