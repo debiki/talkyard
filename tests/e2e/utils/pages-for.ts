@@ -218,9 +218,14 @@ function pagesFor(browser) {
 
     createSite: {
       fillInFieldsAndSubmit: function(data) {
-        browser.setValue('#dwLocalHostname', data.localHostname);
+        if (data.embeddingUrl) {
+          browser.setValue('#e_EmbeddingUrl', data.embeddingUrl);
+        }
+        else {
+          browser.setValue('#dwLocalHostname', data.localHostname);
+        }
         browser.click('#e2eNext3');
-        browser.setValue('#e2eOrgName', data.localHostname);
+        browser.setValue('#e2eOrgName', data.orgName || data.localHostname);
         browser.click('input[type=submit]');
         browser.waitForVisible('#e2eLogin');
         assert.equal(data.origin, browser.origin());

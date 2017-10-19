@@ -22,10 +22,19 @@ const utils = {
   },
 
   makeCreateSiteWithFakeIpUrl: function () {
+    return utils._makeCreateSiteUrlImpl(false);
+  },
+
+  makeCreateEmbeddedSiteWithFakeIpUrl: function () {
+    return utils._makeCreateSiteUrlImpl(true);
+  },
+
+  _makeCreateSiteUrlImpl: function (isEmbeddedSite: boolean) {
     function randomIpPart() { return '.' + Math.floor(Math.random() * 256); }
     const ip = '0' + randomIpPart() + randomIpPart() + randomIpPart();
-    return settings.mainSiteOrigin + '/-/create-site?fakeIp=' + ip +
-        '&e2eTestPassword=' + settings.e2eTestPassword + '&testSiteOkDelete=true';
+    const embedded = isEmbeddedSite ? '/embedded-comments' : '';
+    return settings.mainSiteOrigin + `/-/create-site${embedded}?fakeIp=${ip}` +
+        `&e2eTestPassword=${settings.e2eTestPassword}&testSiteOkDelete=true`;
   },
 
   findFirstLinkToUrlIn: function(url: string, text: string): string {

@@ -172,7 +172,7 @@ function NextStepButton(props, text) {
 export function EmbeddingAddressInput(props) {
   return (
     PatternInput({ label: props.label || "Embedding site:",
-      id: 'e_EmbeddingOrigin', className: '',
+      id: 'e_EmbeddingUrl', className: '',
       style: props.style,
       placeholder: 'https://your.website.com',
       help: props.help || "The address of your blog / website where you're adding the comments.",
