@@ -2,6 +2,7 @@
 
 import * as _ from 'lodash';
 import assert = require('assert');
+import fs = require('fs');
 import server = require('../utils/server');
 import utils = require('../utils/utils');
 import pages = require('../utils/pages');
@@ -24,6 +25,7 @@ let michael;
 let michaelsBrowser;
 let strangersBrowser;
 
+let data;
 let idAddress: IdAddress;
 let siteId: any;
 
@@ -66,12 +68,14 @@ describe("summary emails", () => {
 
   function createPasswordTestData() {
     const testId = utils.generateTestId();
-    const localHostname = settings.localHostname ||
-        settings.testLocalHostnamePrefix + 'create-site-' + testId;
+    const embeddingHostPort = `test--ec-${testId}.localhost:8080`;
+    const localHostname     = `test--ec-${testId}-localhost-8080`;
+    //const localHostname = settings.localHostname ||
+    //  settings.testLocalHostnamePrefix + 'create-site-' + testId;
     return {
       testId: testId,
-      embeddingUrl: 'http://test--embcmts01.localhost:8080/',
-      origin: 'http://comments-for-localhost8080.localhost',
+      embeddingUrl: `http://${embeddingHostPort}/`,
+      origin: `http://comments-for-${localHostname}.localhost`,
       //originRegexEscaped: utils.makeSiteOriginRegexEscaped(localHostname),
       orgName: "E2E Org Name",
       fullName: 'E2E Test ' + testId,
@@ -82,27 +86,65 @@ describe("summary emails", () => {
     }
   }
 
-  it('can create an embedded comments site as a Password user  @login @password', () => {
+  it('Owen creates an embedded comments site as a Password user  @login @password', () => {
     owensBrowser.perhapsDebugBefore();
-    const data = createPasswordTestData();
+    data = createPasswordTestData();
     owensBrowser.go(utils.makeCreateEmbeddedSiteWithFakeIpUrl());
     owensBrowser.disableRateLimits();
     owensBrowser.createSite.fillInFieldsAndSubmit(data);
     // New site; disable rate limits here too.
     owensBrowser.disableRateLimits();
     owensBrowser.click('#e2eLogin');
-    owensBrowser.loginDialog.createPasswordAccount(data);
+    owensBrowser.loginDialog.createPasswordAccount(data, true);
     const siteId = owensBrowser.getSiteId();
     const email = server.getLastEmailSenTo(siteId, data.email);
     const link = utils.findFirstLinkToUrlIn(
         data.origin + '/-/login-password-confirm-email', email.bodyHtmlText);
     owensBrowser.go(link);
     owensBrowser.waitAndClick('#e2eContinue');
-    owensBrowser.debug();
   });
 
 
+  it("... and creates an embedding page", () => {
+    owensBrowser.waitForVisible('#e_EmbCmtsHtml');
+    const htmlToPaste = owensBrowser.getText('#e_EmbCmtsHtml');
+    console.log('htmlToPaste: ' + htmlToPaste);
+    const dirPath = 'target'; //  doesn't work:   target/e2e-emb' — why not.
+    if (!fs.existsSync(dirPath)) {  // —>  "FAIL: Error \n unknown error line"
+      fs.mkdirSync(dirPath, '0777');
+    }
+    fs.writeFileSync(`${dirPath}/index.html`, `
+<html>
+<head>
+<title>Embedded comments E2E test</title>
+</head>
+<body style="background: black; color: #ccc; font-family: monospace">
+<p>This is an embedded comments E2E test page. Ok to delete. The comments:</p>
+${htmlToPaste}
+<p>/End of page.</p>
+</body>
+</head>`);
+  });
+
+
+  it("Maria opens the embedding page, not logged in", () => {
+    mariasBrowser.go(data.embeddingUrl);
+    mariasBrowser.waitForExist('iframe#ed-embedded-comments');
+    const iframe = mariasBrowser.element('iframe#ed-embedded-comments').value;
+    mariasBrowser.frame(iframe);
+    mariasBrowser.debug();
+  });
+
+
+  it("... and clicks Reply", () => {
+    mariasBrowser.topic.clickReplyToEmbeddingBlogPost();
+  });
+
+
+  // TODO test the *wrong* embedding origin, verify CSR policy works
+
   it("Done", () => {
+    mariasBrowser.debug();
     everyonesBrowsers.perhapsDebug();
   });
 

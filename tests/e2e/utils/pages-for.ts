@@ -503,7 +503,7 @@ function pagesFor(browser) {
         assert(!browser.isVisible(api.userProfilePage.avatarAboutButtonsSelector));
       },
 
-      createPasswordAccount: function(data) {
+      createPasswordAccount: function(data, shallBecomeOwner?: boolean) {
         console.log('createPasswordAccount: fillInFullName...');
         api.loginDialog.fillInFullName(data.fullName);
         console.log('fillInUsername...');
@@ -515,7 +515,7 @@ function pagesFor(browser) {
         console.log('clickSubmit...');
         api.loginDialog.clickSubmit();
         console.log('acceptTerms...');
-        api.loginDialog.acceptTerms();
+        api.loginDialog.acceptTerms(shallBecomeOwner);
         console.log('waitForNeedVerifyEmailDialog...');
         api.loginDialog.waitForNeedVerifyEmailDialog();
         console.log('createPasswordAccount: done');
@@ -843,7 +843,19 @@ function pagesFor(browser) {
         browser.waitUntilModalGone();
       },
 
-      acceptTerms: function() {
+      acceptTerms: function(isForSiteOwner?: boolean) {
+        browser.waitForVisible('#e_TermsL');
+        browser.waitForVisible('#e_PrivacyL');
+        const termsLinkHtml = browser.getHTML('#e_TermsL');
+        const privacyLinkHtml = browser.getHTML('#e_PrivacyL');
+        if (isForSiteOwner) {
+          assert(termsLinkHtml.indexOf('/-/terms-for-site-owners') >= 0);
+          assert(privacyLinkHtml.indexOf('/-/privacy-for-site-owners') >= 0);
+        }
+        else if (isForSiteOwner === false) {
+          assert(termsLinkHtml.indexOf('/-/terms-of-use') >= 0);
+          assert(privacyLinkHtml.indexOf('/-/privacy-policy') >= 0);
+        }
         setCheckbox('.s_TermsD_CB input', true);
         browser.waitAndClick('#e_TermsD_B');
       },
@@ -1249,6 +1261,10 @@ function pagesFor(browser) {
         const selector = whichButton === 'BottomButton' ?
             '.s_APAs_OPRB' : '.dw-ar-p + .esPA .dw-a-reply';
         api.topic.clickPostActionButton(selector);
+      },
+
+      clickReplyToEmbeddingBlogPost: function() {
+        api.topic.clickPostActionButton('.esPA .dw-a-reply');
       },
 
       clickReplyToPostNr: function(postNr: PostNr) {

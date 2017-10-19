@@ -84,8 +84,10 @@ class CreateSiteController @Inject()(cc: ControllerComponents, edContext: EdCont
       val embAddr = anyEmbeddingSiteAddress getOrElse {
         throwForbidden("EdE2FGHS0", "No local hostname and no embedding address")
       }
-      val slashHostname = embAddr.dropWhile(_ != '/')
-      val hostnameWithDashes = slashHostname.filterNot("/:" contains _).replaceAllLiterally(".", "-")
+      val hostnameWithDashes = embAddr
+        .replaceFirst("https?://", "")
+        .replaceAll("[.:]+", "-")   // www.example.com:8080 —> www-example-com-8080
+        .replaceFirst("/.*$", "")   // www.weird.com/some/path —> www-weird-com  only
       "comments-for-" + hostnameWithDashes   // also in info message [7PLBKA24]
     }
 

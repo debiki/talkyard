@@ -607,7 +607,7 @@ const EmbeddedCommentsComponent = React.createClass(<any> {
           r.p({}, "On your website, i.e. ", r.code({}, embeddingUrl),
             ", paste the following HTML in a web page or site template, " +
             "where you want comments to appear:"),
-          r.pre({},  // script url defined here: [2WPGKS04]
+          r.pre({ id: 'e_EmbCmtsHtml' },  // script url defined here: [2WPGKS04]
 `<script>edCommentsServerUrl='${location.origin}';</script>
 <script async defer src="${assetsOrigin()}/-/ed-comments.v0${dotMin}.js"></script>
 <!-- You can specify a per page discussion id on the next line, if your URLs might change. -->
