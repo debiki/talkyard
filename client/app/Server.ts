@@ -784,8 +784,8 @@ export function listAllUsernames(prefix: string, doneCallback: (usernames: Brief
 }
 
 
-export function listUsernames(prefix: string, success: (usernames: BriefUser) => void) {
-  let url = `/-/list-usernames?pageId=${d.i.pageId}&prefix=${prefix}`;
+export function listUsernames(prefix: string, pageId: PageId, success: (usernames: BriefUser) => void) {
+  let url = `/-/list-usernames?pageId=${pageId}&prefix=${prefix}`;
   get(url, success);
 }
 

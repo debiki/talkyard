@@ -61,6 +61,13 @@ function onMessage(event) {
     case 'scrollToPostNr':
       var postNr = eventData;
       debiki.scriptLoad.done(function() {
+        var pageId = debiki.getPageId();
+        if (!pageId || pageId === EmptyPageId) {
+          // Embedded comments discussion not yet lazy-created, so there's no post to scroll to.
+          // (Probably someone accidentally typed an url that ends with '#comment-1' for example,
+          // maybe when testing something.)
+          return;
+        }
         debiki2.ReactActions.loadAndShowPost(postNr);
       });
       break;

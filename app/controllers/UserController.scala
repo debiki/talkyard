@@ -667,7 +667,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
   def listUsernames(pageId: PageId, prefix: String) = GetAction { request =>
     import request.dao
 
-    val pageMeta = dao.getPageMeta(pageId) getOrElse throwIndistinguishableNotFound("EdE3FJB8W2")
+    val pageMeta = dao.getPageMeta(pageId) getOrElse throwIndistinguishableNotFound("EdE4Z0B8P5")
     val categoriesRootLast = dao.loadAncestorCategoriesRootLast(pageMeta.categoryId)
 
     SECURITY // Later: shouldn't list authors of hidden / deleted / whisper posts.

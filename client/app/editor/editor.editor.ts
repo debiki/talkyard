@@ -56,7 +56,18 @@ export function startMentionsParserImpl(textarea, onTextEdited) {
     insertTpl: '@${username}',
     callbacks: {
       remoteFilter: (prefix, callback) => {
-        Server.listUsernames(prefix, callback);
+        const pageId = d.i.pageId;
+        if (!pageId || pageId === EmptyPageId) {
+          // This is an embedded comments discussion, but there are no comments, so the
+          // discussion has not yet been lazy-created. So search among users, for now.
+          // UX maybe one *always* wants to search among all users? Unless if is chat channel?
+          Server.listAllUsernames(prefix, callback);
+        }
+        else {
+          // One probably wants to mention someone participating in the current discussion = page?
+          // So search among those users only.
+          Server.listUsernames(prefix, pageId, callback);
+        }
       }
     }
   }).on('inserted.atwho', (event, flag, query) => {
