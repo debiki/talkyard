@@ -40,7 +40,9 @@ class SiteCreatorSpec extends Specification {
       Site.isOkayName("x") must beFalse
       Site.isOkayName("a23456") must beTrue
       Site.isOkayName(
-        "a123456789-123456789-123456789-123456789-123456789") must beFalse
+        "a23456789-123456789-123456789-123456789-1234567890") must beTrue
+      Site.isOkayName(
+        "a23456789-123456789-123456789-123456789-123456789-123456789-12345") must beFalse
       Site.isOkayName(
         "a123456789-123456789") must beTrue
     }

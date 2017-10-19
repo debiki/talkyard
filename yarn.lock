@@ -215,6 +215,13 @@ babel-runtime@6.23.0, babel-runtime@^6.11.6, babel-runtime@^6.23.0, babel-runtim
     core-js "^2.4.0"
     regenerator-runtime "^0.10.0"
 
+babel-runtime@6.25.0:
+  version "6.25.0"
+  resolved "https://registry.yarnpkg.com/babel-runtime/-/babel-runtime-6.25.0.tgz#33b98eaa5d482bb01a8d1aa6b437ad2b01aec41c"
+  dependencies:
+    core-js "^2.4.0"
+    regenerator-runtime "^0.10.0"
+
 balanced-match@^0.4.1:
   version "0.4.2"
   resolved "https://registry.yarnpkg.com/balanced-match/-/balanced-match-0.4.2.tgz#cb3f3e3c732dc0f01ee70b403f302e61d7709838"
@@ -897,6 +904,10 @@ fd-slicer@~1.0.1:
 fibers@~1.0.15:
   version "1.0.15"
   resolved "https://registry.yarnpkg.com/fibers/-/fibers-1.0.15.tgz#22f039c8f18b856190fbbe4decf056154c1eae9c"
+
+fibers@~2.0.0:
+  version "2.0.0"
+  resolved "https://registry.yarnpkg.com/fibers/-/fibers-2.0.0.tgz#f26d0aaf1f99995fbe1cb3f340efac08bda9dc4b"
 
 figures@^2.0.0:
   version "2.0.0"
@@ -3755,12 +3766,20 @@ wdio-mocha-framework@^0.5.10:
     mocha "^3.2.0"
     wdio-sync "0.6.14"
 
-wdio-sync@0.6.14, wdio-sync@^0.6.14:
+wdio-sync@0.6.14:
   version "0.6.14"
   resolved "https://registry.yarnpkg.com/wdio-sync/-/wdio-sync-0.6.14.tgz#a1dcd5907ba1d04154aae6176c622d910c3ca9b3"
   dependencies:
     babel-runtime "6.23.0"
     fibers "~1.0.15"
+    object.assign "^4.0.3"
+
+wdio-sync@^0.7.0:
+  version "0.7.0"
+  resolved "https://registry.yarnpkg.com/wdio-sync/-/wdio-sync-0.7.0.tgz#2fb07d250121dc81f5635316542c3c49a1220168"
+  dependencies:
+    babel-runtime "6.25.0"
+    fibers "~2.0.0"
     object.assign "^4.0.3"
 
 webdriverio@^4.8.0:
