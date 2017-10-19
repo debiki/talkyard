@@ -42,7 +42,10 @@ object Site {
   def isOkayName(siteName: String): Boolean =
     OkWebsiteNameRegex matches siteName
 
-  private val OkWebsiteNameRegex = """[a-z][a-z0-9\-]{0,38}[a-z0-9]""".r
+  /** Shouldn't need more than 60 chars hostname? Even if 'comments-for-...(domain-with-dashes)'
+    * local hostnames.
+    */
+  private val OkWebsiteNameRegex = """[a-z][a-z0-9\-]{0,58}[a-z0-9]""".r
 
 }
 
