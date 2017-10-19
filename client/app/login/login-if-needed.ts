@@ -97,19 +97,6 @@ export function continueAfterLogin(anyReturnToUrl?: string) {
 }
 
 
-// Backwards compatibility, for now:
-/**
- * Prefix `RedirFromVerifEmailOnly` to the return-to-url, to indicate that
- * the redirect should happen only if an email address verification email is sent,
- * and via a link in that email.
- *
- * userData: { name, email, authDataCacheKey }
-debiki.internal.showCreateUserDialog = function(userData, anyReturnToUrl) {
-  getCreateUserDialogs().open(userData, anyReturnToUrl);
-};
- */
-
-
 //------------------------------------------------------------------------------
    }
 //------------------------------------------------------------------------------

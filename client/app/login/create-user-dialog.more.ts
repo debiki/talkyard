@@ -45,7 +45,7 @@ var acceptTermsDialog;
 var addressVerificationEmailSentDialog;
 
 
-function getCreateUserDialogs() {
+function getCreateUserDialog() {
   if (!createUserDialog) {
     createUserDialog = ReactDOM.render(CreateUserDialog(), utils.makeMountNode());
   }
@@ -86,13 +86,13 @@ function getAddressVerificationEmailSentDialog() {
  * userData: { name, email, authDataCacheKey }
  */
 debiki.internal.showCreateUserDialog = function(userData, anyReturnToUrl) {
-  getCreateUserDialogs().open(userData, anyReturnToUrl);
+  getCreateUserDialog().open(userData, anyReturnToUrl);
 };
 
 
 var CreateUserDialog = createClassAndFactory({
   getInitialState: function () {
-    return { isOpen: false, userData: {} };
+    return { isOpen: false, userData: {}, store: {} };
   },
   open: function(userData, anyReturnToUrl: string) {
     // In case any login dialog is still open:
@@ -108,11 +108,15 @@ var CreateUserDialog = createClassAndFactory({
     this.setState({ isOpen: false, userData: {} });
   },
   render: function () {
-    var childProps = _.clone(this.state.userData);
+    const store: Store = this.state.store;
+    const childProps = _.clone(this.state.userData);
     childProps.anyReturnToUrl = this.state.anyReturnToUrl;
-    childProps.store = this.state.store;
+    childProps.store = store;
     childProps.closeDialog = this.close;
     childProps.ref = 'content';
+    if (store.siteStatus === SiteStatus.NoAdmin) {
+      childProps.loginReason = LoginReason.BecomeAdmin;
+    }
     return (
       Modal({ show: this.state.isOpen, onHide: this.close, keyboard: false,
           dialogClassName: 'esCreateUserDlg' },
