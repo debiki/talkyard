@@ -60,6 +60,25 @@ function pagesFor(browser) {
     },
 
 
+    switchToFrame: function(selector) {
+      console.log(`switching to frame ${selector}...`);
+      browser.waitForExist(selector);
+      const iframe = browser.element(selector).value;
+      browser.frame(iframe);
+    },
+
+
+    switchToEmbeddedCommentsIrame: function() {
+      browser.frameParent();
+      browser.switchToFrame('iframe#ed-embedded-comments');
+    },
+
+
+    switchToEmbeddedEditorIrame: function() {
+      browser.frameParent();
+      browser.switchToFrame('iframe#ed-embedded-editor');
+    },
+
     // Workaround for bug(s) in Chrome? Chromedriver? Selenium? Webdriver?
     // 1) browser.refresh() causes a weird cannot-find-elem problem. Perhaps because of  [E2EBUG]
     //    some incompatibility between webdriver.io and Chrome? Recently there was a stale-

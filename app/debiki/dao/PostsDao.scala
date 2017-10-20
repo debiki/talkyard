@@ -33,6 +33,7 @@ import scala.collection.mutable.ArrayBuffer
 import PostsDao._
 import ed.server.auth.Authz
 import org.scalactic.{Bad, Good, One, Or}
+import math.max
 
 
 case class InsertPostResult(storePatchJson: JsObject, post: Post, reviewTask: Option[ReviewTask])
@@ -93,7 +94,7 @@ trait PostsDao {
         throwForbidden("EsE50WG4", s"Page '${page.id}' is a chat page; cannot post normal replies")
 
       val uniqueId = transaction.nextPostId()
-      val postNr = page.parts.highestReplyNr.map(_ + 1) getOrElse PageParts.FirstReplyNr
+      val postNr = page.parts.highestReplyNr.map(_ + 1).map(max(FirstReplyNr, _)) getOrElse FirstReplyNr
       val commonAncestorNr = page.parts.findCommonAncestorNr(replyToPostNrs.toSeq)
       val anyParent =
         if (commonAncestorNr == PageParts.NoNr) {

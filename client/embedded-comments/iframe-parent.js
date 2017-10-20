@@ -272,7 +272,7 @@ function onMessage(event) {
 function setIframeBaseAddressAndDiscussionId(iframe) {
   iframe.contentWindow.postMessage(
       JSON.stringify(['setBaseAddress', {
-        embeddingUrl: window.location.href,
+        embeddingUrl: embeddingUrl,
         discussionId: discussionId
       }]), '*');
 }

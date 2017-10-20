@@ -29,24 +29,9 @@ let data;
 let idAddress: IdAddress;
 let siteId: any;
 
-const forumTitle = "Summary Emails Forum";
-const topicOneEveryone = "topicOneEveryone";
-let topicOneEveryoneUrl: string;
+const mariasCommentText = 'mariasCommentText';
+const owensCommentText = 'owensCommentText';
 
-const topicTwoToSome = "topicTwoToSome";
-let topicTwoToSomeUrl: string;
-
-const topicThreeToOwen = "topicThreeToOwen";
-let topicThreeToOwenUrl: string;
-
-const topicFourToMaria = "topicFourToMaria";
-let topicFourToMariaUrl: string;
-
-const topicFiveMariaMonth = "topicFiveMariaAfterOneMonth";
-let topicFiveMariaMonthUrl: string;
-
-const lastTopicMichael = "lastTopicMichael";
-let lastTopicMichaelUrl: string;
 
 describe("summary emails", () => {
 
@@ -119,7 +104,7 @@ describe("summary emails", () => {
 <title>Embedded comments E2E test</title>
 </head>
 <body style="background: black; color: #ccc; font-family: monospace">
-<p>This is an embedded comments E2E test page. Ok to delete. The comments:</p>
+<p>This is an embedded comments E2E test page. Ok to delete. 27KT5QAX29. The comments:</p>
 ${htmlToPaste}
 <p>/End of page.</p>
 </body>
@@ -129,22 +114,91 @@ ${htmlToPaste}
 
   it("Maria opens the embedding page, not logged in", () => {
     mariasBrowser.go(data.embeddingUrl);
-    mariasBrowser.waitForExist('iframe#ed-embedded-comments');
-    const iframe = mariasBrowser.element('iframe#ed-embedded-comments').value;
-    mariasBrowser.frame(iframe);
-    mariasBrowser.debug();
+    mariasBrowser.switchToEmbeddedCommentsIrame();
   });
-
 
   it("... and clicks Reply", () => {
     mariasBrowser.topic.clickReplyToEmbeddingBlogPost();
+  });
+
+  it("... password-signs-up in a popup", () => {
+    console.log("switching to login popup window...");
+    mariasBrowser.swithToOtherTabOrWindow();
+    console.log("signs up...");
+    mariasBrowser.loginDialog.clickCreateAccountInstead();
+    mariasBrowser.loginDialog.createPasswordAccount(maria, false);
+    console.log("close login popup...");
+    mariasBrowser.close();
+  });
+
+  it("... verifies her email", () => {
+    const siteId = owensBrowser.getSiteId();
+    const email = server.getLastEmailSenTo(siteId, maria.emailAddress);
+    const link = utils.findFirstLinkToUrlIn(
+        data.origin + '/-/login-password-confirm-email', email.bodyHtmlText);
+    mariasBrowser.go(link);
+    mariasBrowser.waitAndClick('#e2eContinue');
+  });
+
+  it("... gets redirected to the embedding page", () => {
+    const url = mariasBrowser.url().value;
+    const source = mariasBrowser.getSource();
+    assert(source.indexOf('27KT5QAX29') >= 0);
+  });
+
+  it("... clicks Reply", () => {
+    mariasBrowser.switchToEmbeddedCommentsIrame();
+    mariasBrowser.topic.clickReplyToEmbeddingBlogPost();
+  });
+
+  it("... writes a comment", () => {
+    mariasBrowser.switchToEmbeddedEditorIrame();
+    mariasBrowser.editor.editText(mariasCommentText);
+  });
+
+  it("... posts it", () => {
+    mariasBrowser.editor.save();
+  });
+
+  it("... the comment it appears", () => {
+    mariasBrowser.switchToEmbeddedCommentsIrame();
+    mariasBrowser.topic.waitForPostNrVisible(2);  // that's the first reply nr, = comment 1
+    mariasBrowser.topic.assertPostTextMatches(2, mariasCommentText);
+  });
+
+  it("Owen sees it too", () => {
+    owensBrowser.go(data.embeddingUrl);
+    owensBrowser.switchToEmbeddedCommentsIrame();
+    owensBrowser.topic.waitForPostNrVisible(2);
+    owensBrowser.topic.assertPostTextMatches(2, mariasCommentText);
+  });
+
+  it("Owen replies to Maria (he's already logged in)", () => {
+    owensBrowser.topic.clickReplyToPostNr(2);
+    owensBrowser.switchToEmbeddedEditorIrame();
+    owensBrowser.editor.editText(owensCommentText);
+    owensBrowser.editor.save();
+  });
+
+  it("... his comment appears", () => {
+    owensBrowser.switchToEmbeddedCommentsIrame();
+    owensBrowser.topic.waitForPostNrVisible(3);
+    owensBrowser.topic.assertPostTextMatches(3, owensCommentText);
+  });
+
+  it("Maria sees Owen's comment and her own too", () => {
+    mariasBrowser.refresh();
+    mariasBrowser.switchToEmbeddedCommentsIrame();
+    mariasBrowser.topic.waitForPostNrVisible(2);
+    mariasBrowser.topic.waitForPostNrVisible(3);
+    mariasBrowser.topic.assertPostTextMatches(2, mariasCommentText);
+    mariasBrowser.topic.assertPostTextMatches(3, owensCommentText);
   });
 
 
   // TODO test the *wrong* embedding origin, verify CSR policy works
 
   it("Done", () => {
-    mariasBrowser.debug();
     everyonesBrowsers.perhapsDebug();
   });
 

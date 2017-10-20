@@ -50,6 +50,8 @@ class ReplyController @Inject()(cc: ControllerComponents, edContext: EdContext)
 
     throwBadRequestIf(text.isEmpty, "EdE85FK03", "Empty post")
     throwForbiddenIf(requester.isGroup, "EdE4GKRSR1", "Groups may not reply")
+    throwBadRequestIf(anyEmbeddingUrl.exists(_ contains '#'), "EdE0GK3P4",
+        s"Don't include any URL #hash in the embedding page URL: ${anyEmbeddingUrl.get}")
 
     DISCUSSION_QUALITY; COULD // require that the user has spent a reasonable time reading
     // the topic, in comparison to # posts in the topic, before allowing hen to post a reply.
