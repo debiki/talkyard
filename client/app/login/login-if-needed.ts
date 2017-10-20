@@ -30,14 +30,16 @@ export let anyContinueAfterLoginCallback = null;
 
 export function loginIfNeededReturnToPost(
       loginReason: LoginReason | string, postNr: PostNr, success: () => void, willCompose?: boolean) {
-  loginIfNeededReturnToAnchor('LoginToEdit', '#post-' + postNr, success, willCompose);
+  const anchor = postNr < FirstReplyNr ? '' : (
+    // We use 'comment-' for embedded comments, and they start on nr 1 = post 2. [2PAWC0]
+    d.i.isInEmbeddedCommentsIframe ? '#comment-' + (postNr - 1) : '#post-' + postNr);
+  loginIfNeededReturnToAnchor('LoginToEdit', anchor, success, willCompose);
 }
 
 
 export function loginIfNeededReturnToAnchor(
       loginReason: LoginReason | string, anchor: string, success: () => void, willCompose?: boolean) {
   const returnToUrl = makeReturnToPageHashForVerifEmail(anchor);
-  const d = { i: debiki.internal };
   success = success || function() {};
   if (ReactStore.getMe().isLoggedIn || (willCompose && ReactStore.mayComposeBeforeSignup())) {
     success();
@@ -77,7 +79,7 @@ function makeReturnToPageHashForVerifEmail(hash) {
 
 
 export function continueAfterLogin(anyReturnToUrl?: string) {
-  if (debiki.internal.isInLoginWindow) {
+  if (d.i.isInLoginWindow) {
     // We're in an admin section login page, or an embedded comments page login popup window.
     if (anyReturnToUrl && anyReturnToUrl.indexOf('_RedirFromVerifEmailOnly_') === -1) {
       window.location.assign(anyReturnToUrl);

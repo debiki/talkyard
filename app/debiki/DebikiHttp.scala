@@ -150,7 +150,7 @@ object EdHttp {
 
   def throwBadRequest(errCode: String, message: String = "") = throwBadReq(errCode, message)
 
-  def throwBadRequestIf(condition: Boolean, errCode: String, message: String = "") =
+  def throwBadRequestIf(condition: Boolean, errCode: String, message: => String = "") =
     if (condition) throwBadRequest(errCode, message)
 
   def throwBadReq(errCode: String, message: String = "") =

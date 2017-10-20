@@ -2080,10 +2080,7 @@ function pagesFor(browser) {
     browser.pause(200);
     isChecked = browser.isSelected(selector);
     console.log(selector + ' is checked: ' + isChecked);
-    browser.pause(400);
-    isChecked = browser.isSelected(selector);
-    console.log(selector + ' is checked: ' + isChecked);
-    browser.pause(800);
+    browser.pause(500);
     isChecked = browser.isSelected(selector);
     console.log(selector + ' is checked: ' + isChecked);
   }

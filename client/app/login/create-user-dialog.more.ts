@@ -25,10 +25,10 @@
 /// <reference path="./new-password-input.more.ts" />
 
 //------------------------------------------------------------------------------
-   module debiki2.login {
+   namespace debiki2.login {
 //------------------------------------------------------------------------------
 
-var d = { i: debiki.internal, u: debiki.v0.util };
+var d = { i: debiki.internal };
 var r = React.DOM;
 var Modal = rb.Modal;
 var ModalBody = rb.ModalBody;
@@ -71,7 +71,7 @@ function waitUntilAcceptsTerms(store: Store, isOwner, after) {
 function getAddressVerificationEmailSentDialog() {
   if (!addressVerificationEmailSentDialog) {
     addressVerificationEmailSentDialog =
-        ReactDOM.render(AddressVerificationEmailSentDialog(), utils.makeMountNode());
+        ReactDOM.render(CreateUserResultDialog(), utils.makeMountNode());
   }
   return addressVerificationEmailSentDialog;
 }
@@ -187,7 +187,7 @@ export var CreateUserDialogContent = createClassAndFactory({
       ReactActions.newUserAccountCreated();
       getAddressVerificationEmailSentDialog().sayVerifEmailSent();
     }
-    else if (this.props.anyReturnToUrl && !debiki.internal.isInLoginPopup &&
+    else if (this.props.anyReturnToUrl && !d.i.isInLoginPopup &&
         this.props.anyReturnToUrl.search('_RedirFromVerifEmailOnly_') === -1) {
       const returnToUrl = this.props.anyReturnToUrl.replace(/__dwHash__/, '#');
       const currentUrl = window.location.toString();
@@ -371,8 +371,8 @@ const AcceptTermsDialog = createComponent({
 });
 
 
-// CLEAN_UP RENAME to CreateUserResultDialog ?
-const AddressVerificationEmailSentDialog = createComponent({
+
+const CreateUserResultDialog = createComponent({
   getInitialState: function () {
     return { isOpen: false };
   },
@@ -392,12 +392,15 @@ const AddressVerificationEmailSentDialog = createComponent({
       : "Almost done! You just need to confirm your email address. We have " +
         "sent an email to you. Please click the link in the email to activate " +
         "your account. You can close this page.";
+    // Don't show a close-dialog button if there nothing on the page, after dialog closed.
+    const footer = d.i.isInLoginPopup ? null :
+        ModalFooter({},
+          PrimaryButton({ onClick: this.close }, "Okay"));
     return (
       Modal({ show: this.state.isOpen, onHide: this.close, id },
         ModalHeader({}, ModalTitle({}, "Welcome")),
         ModalBody({}, r.p({}, text)),
-        ModalFooter({},
-          PrimaryButton({ onClick: this.close }, "Okay"))));
+        footer));
   }
 });
 

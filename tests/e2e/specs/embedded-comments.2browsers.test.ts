@@ -142,6 +142,7 @@ ${htmlToPaste}
 
   it("... gets redirected to the embedding page", () => {
     const url = mariasBrowser.url().value;
+    assert(url === data.embeddingUrl);
     const source = mariasBrowser.getSource();
     assert(source.indexOf('27KT5QAX29') >= 0);
   });
