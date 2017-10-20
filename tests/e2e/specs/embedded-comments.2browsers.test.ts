@@ -196,6 +196,23 @@ ${htmlToPaste}
     mariasBrowser.topic.assertPostTextMatches(3, owensCommentText);
   });
 
+  it("When embedding via the wrong domain, the comments refuse to load", () => {
+    assert(isCommentsVisible(owensBrowser));
+    owensBrowser.go('http://wrong-embedding-domain.localhost:8080');
+    const source = owensBrowser.getSource();
+    assert(source.indexOf('27KT5QAX29') >= 0);
+    // There is an iframe but it's empty, because the Content-Security-Policy frame-ancestors
+    // policy forbids embedding from this domain.
+    owensBrowser.switchToEmbeddedCommentsIrame();
+    // Give any stuff that appears although it shouldn't, some time to load.
+    owensBrowser.pause(500);
+    assert(!isCommentsVisible(owensBrowser));
+  });
+
+
+  function isCommentsVisible(browser) {
+    return browser.isVisible('.dw-p');
+  }
 
   // TODO test the *wrong* embedding origin, verify CSR policy works
 
