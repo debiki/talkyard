@@ -90,7 +90,7 @@ class ImportExportController @Inject()(cc: ControllerComponents, edContext: EdCo
       }
 
     throwForbiddenIf(
-      deleteOld && siteData.site.hosts.exists(!_.hostname.startsWith(SiteHost.E2eTestPrefix)),
+      deleteOld && !siteData.site.hosts.forall(h => SiteHost.isE2eTestHostname(h.hostname)),
       "EdE7GPK4F0", s"Can only overwrite hostnames that start with ${SiteHost.E2eTestPrefix}")
 
     val newSite = doImportSite(siteData, browserIdData, deleteOldSite = deleteOld)

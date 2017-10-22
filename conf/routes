@@ -143,7 +143,7 @@ GET   /-/load-all-invites       controllers.InviteController.loadAllInvites
 POST  /-/send-invite            controllers.InviteController.sendInvite
 GET   /-/accept-invite/:key     controllers.InviteController.acceptInvite(key)
 
-POST  /-/create-embedded-comments-site  controllers.EmbeddedTopicsController.createEmbeddedCommentsSite
+POST  /-/create-embedded-comments-site  controllers.EmbeddedTopicsController.createEmbeddedCommentsForum
 POST  /-/create-forum           controllers.ForumController.createForum
 GET   /-/list-topics            controllers.ForumController.listTopics(categoryId: Int)
 GET   /-/list-topics-by-user    controllers.ForumController.listTopicsByUser(userId: Int)

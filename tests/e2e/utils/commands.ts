@@ -228,11 +228,15 @@ function addCommandsToBrowser(browser) {
 
   browser.addCommand('switchBackToFirstTabOrWindow', function(url) {
     // If no id specified, will switch to the first tab.
-    // I've tested "everything else", nothing works.
-    logMessage("Waiting for any OAuth loging popup to auto close, to prevent weird " +
+    browser.pause(500);
+    let ids = browser.getTabIds();
+    if (ids.length > 1) {
+      // I've tested "everything else", nothing works.
+      logMessage("Waiting for any OAuth loging popup to auto close, to prevent weird " +
         "invalid window ID errors");
-    browser.pause(2500);
-    const ids = browser.getTabIds();
+      browser.pause(2000);
+    }
+    ids = browser.getTabIds();
     if (ids.length > 1) {
       // So far all other tabs have been closed when we run this function. So > 1 tab = not tested,
       // so warn about that:

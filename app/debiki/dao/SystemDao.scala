@@ -133,8 +133,8 @@ class SystemDao(
 
     readWriteTransaction { sysTx =>
       if (deleteOldSite) {
-        dieUnless(hostname.startsWith(SiteHost.E2eTestPrefix), "EdE7PK5W8")
-        dieUnless(name.startsWith(SiteHost.E2eTestPrefix), "EdE50K5W4")
+        dieUnless(SiteHost.isE2eTestHostname(hostname), "EdE7PK5W8")
+        dieUnless(SiteHost.isE2eTestHostname(name), "EdE50K5W4")
         sysTx.deleteAnyHostname(hostname)
         val anyDeletedSite = sysTx.deleteSiteByName(name)
         forgetHostname(hostname)

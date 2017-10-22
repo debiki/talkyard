@@ -43,6 +43,7 @@ interface SiteData {
   meta: SiteMeta;
   settings: {
     companyFullName: string,
+    allowEmbeddingFrom?: string;
     // inviteOnly?: boolean;
     allowSignup?: boolean;
     // allowLocalSignup?: boolean;

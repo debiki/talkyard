@@ -33,7 +33,7 @@ const mariasCommentText = 'mariasCommentText';
 const owensCommentText = 'owensCommentText';
 
 
-describe("summary emails", () => {
+describe("embedded comments, new site", () => {
 
   it("initialize people", () => {
     browser.perhapsDebugBefore();

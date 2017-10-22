@@ -169,8 +169,15 @@ object SiteHost {
   case object RoleLink extends Role(3)
   case object RoleDuplicate extends Role(4)
 
+
   /** Should be used as prefix for both the hostname and the site name, for test sites. */
   val E2eTestPrefix = "e2e-test-"
+
+  val EmbeddedCommentsHostnamePrefix = "comments-for-"   // also in info message [7PLBKA24]
+
+  def isE2eTestHostname(hostname: String): Boolean =
+    hostname.startsWith(SiteHost.E2eTestPrefix) ||
+      hostname.startsWith(EmbeddedCommentsHostnamePrefix + E2eTestPrefix)
 }
 
 

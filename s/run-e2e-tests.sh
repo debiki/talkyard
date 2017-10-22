@@ -108,7 +108,9 @@ function runAllEndToEndTests {
   runEndToEndTest s/wdio target/e2e/wdio.2chrome.conf.js    --browser $browser --only summary-emails.2browsers $args
 
   # For this to work, first do:  ./node_modules/.bin/http-server target/ &
-  runEndToEndTest s/wdio target/e2e/wdio.2chrome.conf.js    --browser $browser --only embedded-comments.2browsers $args
+  runEndToEndTest s/wdio target/e2e/wdio.2chrome.conf.js    --browser $browser --only embedded-comments-create-site.2browsers $args
+  runEndToEndTest s/wdio target/e2e/wdio.2chrome.conf.js    --browser $browser --only embedded-comments-discussion-id.2browsers $args
+  #runEndToEndTest s/wdio target/e2e/wdio.2chrome.conf.js    --browser $browser --only embedded-comments-all-logins.2browsers $args
 
   # wip:
   # settings-allow-local-signup

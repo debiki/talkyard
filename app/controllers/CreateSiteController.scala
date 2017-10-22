@@ -22,7 +22,6 @@ import com.debiki.core.Prelude._
 import debiki._
 import debiki.EdHttp._
 import ed.server.{EdContext, EdController}
-import ed.server.spam.SpamChecker.throwForbiddenIfSpam
 import ed.server.http._
 import javax.inject.Inject
 import play.api.libs.json._
@@ -41,7 +40,8 @@ class CreateSiteController @Inject()(cc: ControllerComponents, edContext: EdCont
   // Let people use hostnames that start with 'test-' — good to know which sites are
   // in fact just people's test sites.
   // But reserve 'test--' (see if statement further below [7UKPwF2]) and these prefixes:
-  private val TestSitePrefixes = Seq("smoke-test-", "smoketest-", "delete-", "e2e-")
+  private val TestSitePrefixes =
+    Seq("smoke-test-", "smoketest-", "delete-", "e2e-", "comments-for-e2e-")
 
   // Don't allow names like x2345.example.com — x2345 is shorter than 6 chars (x23456 is ok though).
   private val MinLocalHostnameLength = 6
@@ -88,7 +88,7 @@ class CreateSiteController @Inject()(cc: ControllerComponents, edContext: EdCont
         .replaceFirst("https?://", "")
         .replaceAll("[.:]+", "-")   // www.example.com:8080 —> www-example-com-8080
         .replaceFirst("/.*$", "")   // www.weird.com/some/path —> www-weird-com  only
-      "comments-for-" + hostnameWithDashes   // also in info message [7PLBKA24]
+      SiteHost.EmbeddedCommentsHostnamePrefix + hostnameWithDashes
     }
 
     if (!acceptTermsAndPrivacy)
@@ -125,7 +125,7 @@ class CreateSiteController @Inject()(cc: ControllerComponents, edContext: EdCont
     }
 
     val hostname = s"$localHostname.${globals.baseDomainNoPort}"
-    val deleteOldSite = isTestSiteOkayToDelete && hostname.startsWith(SiteHost.E2eTestPrefix)
+    val deleteOldSite = isTestSiteOkayToDelete && SiteHost.isE2eTestHostname(hostname)
 
     val goToUrl: String =
       try {

@@ -575,6 +575,21 @@ function pagesFor(browser) {
         browser.waitUntilModalGone();
       },
 
+      // Embedded discussions do all logins in popups.
+      loginWithPasswordInPopup: function(username, password?: string) {
+        browser.swithToOtherTabOrWindow();
+        if (_.isObject(username)) {
+          password = username.password;
+          username = username.username;
+        }
+        api.loginDialog.tryLogin(username, password);
+        // The popup auto closes after login.
+        browser.waitUntil(function () {
+          return browser.getTabIds().length === 1;
+        });
+        browser.switchBackToFirstTabOrWindow();
+      },
+
       loginButBadPassword: function(username: string, password: string) {
         api.loginDialog.tryLogin(username, password);
         browser.waitForVisible('.esLoginDlg_badPwd');
@@ -664,7 +679,7 @@ function pagesFor(browser) {
         browser.waitForVisible('#e2ePassword');
       },
 
-      createGmailAccount: function(data) {
+      createGmailAccount: function(data, shallBecomeOwner?: boolean) {
         api.loginDialog.loginWithGmail(data);
         // This should be the first time we login with Gmail at this site, so we'll be asked
         // to choose a username.
@@ -672,7 +687,7 @@ function pagesFor(browser) {
         // user fields which are still visible for a short moment. Dupl code (2QPKW02)
         browser.waitAndSetValue('.esCreateUserDlg #e2eUsername', data.username);
         api.loginDialog.clickSubmit();
-        api.loginDialog.acceptTerms();
+        api.loginDialog.acceptTerms(shallBecomeOwner);
         api.loginDialog.waitAndClickOkInWelcomeDialog();
         browser.waitUntilModalGone();
       },
@@ -764,7 +779,7 @@ function pagesFor(browser) {
         browser.switchBackToFirstTabOrWindow();
       },
 
-      createFacebookAccount: function(data) {
+      createFacebookAccount: function(data, shallBecomeOwner?: boolean) {
         api.loginDialog.loginWithFacebook(data);
         // This should be the first time we login with Facebook at this site, so we'll be asked
         // to choose a username.
@@ -773,7 +788,7 @@ function pagesFor(browser) {
         console.log("typing Facebook user's new username...");
         browser.waitAndSetValue('.esCreateUserDlg #e2eUsername', data.username);
         api.loginDialog.clickSubmit();
-        api.loginDialog.acceptTerms();
+        api.loginDialog.acceptTerms(shallBecomeOwner);
         api.loginDialog.waitAndClickOkInWelcomeDialog();
         browser.waitUntilModalGone();
       },
@@ -1246,6 +1261,18 @@ function pagesFor(browser) {
       topLevelReplySelector: '.dw-depth-1 > .dw-p',
       replySelector: '.dw-depth-1 .dw-p',
       allRepliesTextSelector: '.dw-depth-0 > .dw-single-and-multireplies > .dw-res',
+      anyCommentSelector: '.dw-p',
+      anyReplyButtonSelector: '.dw-a-reply',
+
+      waitForReplyButtonAssertCommentsVisible: function() {
+        browser.waitForVisible(api.topic.anyReplyButtonSelector);
+        assert(browser.isVisible(api.topic.anyCommentSelector));
+      },
+
+      waitForReplyButtonAssertNoComments: function() {
+        browser.waitForVisible(api.topic.anyReplyButtonSelector);
+        assert(!browser.isVisible(api.topic.anyCommentSelector));
+      },
 
       assertNumRepliesVisible: function(num: number) {
         browser.waitForMyDataAdded();
