@@ -198,6 +198,7 @@ ${htmlToPaste}
 
   it("When embedding via the wrong domain, the comments refuse to load", () => {
     assert(isCommentsVisible(owensBrowser));
+    assert(isReplyButtonVisible(owensBrowser));
     owensBrowser.go('http://wrong-embedding-domain.localhost:8080');
     const source = owensBrowser.getSource();
     assert(source.indexOf('27KT5QAX29') >= 0);
@@ -207,14 +208,17 @@ ${htmlToPaste}
     // Give any stuff that appears although it shouldn't, some time to load.
     owensBrowser.pause(500);
     assert(!isCommentsVisible(owensBrowser));
+    assert(!isReplyButtonVisible(owensBrowser));
   });
-
 
   function isCommentsVisible(browser) {
     return browser.isVisible('.dw-p');
   }
 
-  // TODO test the *wrong* embedding origin, verify CSR policy works
+  function isReplyButtonVisible(browser) {
+    return browser.isVisible('.dw-a-reply');
+  }
+
 
   it("Done", () => {
     everyonesBrowsers.perhapsDebug();
