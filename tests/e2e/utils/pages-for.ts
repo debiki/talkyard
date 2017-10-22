@@ -138,7 +138,8 @@ function pagesFor(browser) {
           var elems = result.value;
           if (elems.length !== 1) {
             length = elems.length;
-            errors += browserNamePrefix(browserName) + "Bad num elems to click: " + count(elems) +
+            errors += browserNamePrefix(browserName) + "Bad num elems to click: " +
+              JSON.stringify(elems) +
               ", should be 1. Elems matches selector: " + selector + " [EsE5JKP82]\n";
           }
         });
@@ -692,13 +693,14 @@ function pagesFor(browser) {
         browser.waitUntilModalGone();
       },
 
-      loginWithGmail: function(data) {
+      loginWithGmail: function(data, isInPopupAlready?: boolean) {
         // Pause or sometimes the click misses the button. Is the browser doing some re-layout?
         browser.pause(150);
         api.waitAndClick('#e2eLoginGoogle');
 
-        // In Google's login popup window:
-        browser.swithToOtherTabOrWindow();
+        // Switch to a login popup window that got opened, for Google:
+        if (!isInPopupAlready)
+          browser.swithToOtherTabOrWindow();
 
         const emailInputSelector = 'input[type="email"]';
         const emailNext = '#identifierNext';
@@ -729,7 +731,7 @@ function pagesFor(browser) {
         while (true) {
           try {
             browser.pause(250);
-            console.log("typing Gmail email...");
+            console.log(`typing Gmail email: ${data.email}...`);
             browser.waitAndSetValue(emailInputSelector, data.email);
             break;
           }
@@ -775,8 +777,10 @@ function pagesFor(browser) {
         browser.waitForEnabled('#submit_approve_access');
         browser.click('#submit_approve_access'); */
 
-        console.log("switching back to first tab...");
-        browser.switchBackToFirstTabOrWindow();
+        if (!isInPopupAlready) {
+          console.log("switching back to first tab...");
+          browser.switchBackToFirstTabOrWindow();
+        }
       },
 
       createFacebookAccount: function(data, shallBecomeOwner?: boolean) {
@@ -793,13 +797,14 @@ function pagesFor(browser) {
         browser.waitUntilModalGone();
       },
 
-      loginWithFacebook: function(data) {
+      loginWithFacebook: function(data, isInPopupAlready?: boolean) {
         // Pause or sometimes the click misses the button. Is the browser doing some re-layout?
         browser.pause(100);
         api.waitAndClick('#e2eLoginFacebook');
 
         // In Facebook's login popup window:
-        browser.swithToOtherTabOrWindow();
+        if (!isInPopupAlready)
+          browser.swithToOtherTabOrWindow();
 
         // We'll get logged in immediately, if we're already logged in to Facebook. Wait for
         // a short while to find out what'll happen.
@@ -834,8 +839,10 @@ function pagesFor(browser) {
         //b.waitForVisible('[name=__CONFIRM__]');
         //b.click('[name=__CONFIRM__]');
 
-        console.log("switching back to first tab...");
-        browser.switchBackToFirstTabOrWindow();
+        if (!isInPopupAlready) {
+          console.log("switching back to first tab...");
+          browser.switchBackToFirstTabOrWindow();
+        }
       },
 
       loginPopupClosedBecauseAlreadyLoggedIn: () => {
@@ -1310,7 +1317,7 @@ function pagesFor(browser) {
       },
 
       clickReplyToEmbeddingBlogPost: function() {
-        api.topic.clickPostActionButton('.esPA .dw-a-reply');
+        api.topic.clickPostActionButton('.dw-ar-t > .esPA .dw-a-reply');
       },
 
       clickReplyToPostNr: function(postNr: PostNr) {

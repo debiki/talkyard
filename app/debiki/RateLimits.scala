@@ -209,7 +209,7 @@ object RateLimits {
 
   object ResetPassword extends RateLimits {
     val key = "RsPw"
-    val what = "resetted your password"
+    val what = "reset your password too many times"
     def maxPerFifteenSeconds = 2
     def maxPerFifteenMinutes = 7
     def maxPerDay = 12
@@ -219,7 +219,7 @@ object RateLimits {
 
   object ChangePassword extends RateLimits {
     val key = "ChPw"
-    val what = "changed your password"
+    val what = "changed your password too many times"
     def maxPerFifteenSeconds = 3
     def maxPerFifteenMinutes = 10
     def maxPerDay = 30
@@ -229,7 +229,7 @@ object RateLimits {
 
   object ConfigUser extends RateLimits {
     val key = "CoUs"
-    val what = "configured your settings"
+    val what = "configured your settings too many times"
     def maxPerFifteenSeconds = 5
     def maxPerFifteenMinutes = 50
     def maxPerDay = Unlimited
@@ -239,7 +239,7 @@ object RateLimits {
 
   object JoinSomething extends RateLimits {
     val key = "JoSt"
-    val what = "joined"
+    val what = "joined too many times"
     def maxPerFifteenSeconds = 5
     def maxPerFifteenMinutes = 15 * 3
     def maxPerDay = 24 * 10
