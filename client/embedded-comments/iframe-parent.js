@@ -52,12 +52,17 @@ if (commentsElems.length) {
   var embeddingUrlParam = 'embeddingUrl=' + embeddingUrl;
 
   discussionId = commentsElem.getAttribute('data-discussion-id');
-  var discussionIdParam = discussionId ? '&discussionId=' + discussionId : '';
+  if (/[#?& \t\n]/.test(discussionId)) {
+    var errorMessage = "Bad discussion id: " + discussionId + ' [EdE8UKWB4]';
+    console.log(errorMessage);
+    throw Error(errorMessage);
+  }
+  var discussionIdParam = discussionId ? 'discussionId=' + discussionId + '&' : '';
 
   var edPageId = commentsElem.getAttribute('data-ed-page-id');
-  var edPageIdParam = edPageId ? '&edPageId=' + edPageId : '';
+  var edPageIdParam = edPageId ? 'edPageId=' + edPageId + '&' : '';
 
-  var allUrlParams = embeddingUrlParam + discussionIdParam + edPageIdParam;
+  var allUrlParams = edPageIdParam + discussionIdParam + embeddingUrlParam;
   var commentsIframeUrl = serverOrigin + '/-/embedded-comments?' + allUrlParams;
   // '/-' + pageId; // '/-29/testing-nested-comment-is-it-working-or-not';  // /-/pageId
 

@@ -600,7 +600,7 @@ const EmbeddedCommentsComponent = React.createClass(<any> {
     dotMin = '';
     // @endif
 
-    const urlSeemsValid = /https?:\/\/.+\..+/.test(embeddingUrl);
+    const urlSeemsValid = /https?:\/\/.+/.test(embeddingUrl);   // 'http://localhost' is ok
     const anyInstructions = !urlSeemsValid ? null :
         r.div({ className: 's_A_Ss_EmbCmts col-sm-offset-3 col-sm-9' },
           r.h2({}, "Instructions"),
