@@ -75,7 +75,7 @@ describe("emb cmts all logins", () => {
 
 <p>/End of page.</p>
 </body>
-</head>`);
+</html>`);
   });
 
   it("Maja opens the embedding page", () => {

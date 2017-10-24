@@ -108,7 +108,7 @@ describe("embedded comments, new site", () => {
 ${htmlToPaste}
 <p>/End of page.</p>
 </body>
-</head>`);
+</html>`);
   });
 
 
