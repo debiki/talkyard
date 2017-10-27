@@ -1,1 +1,14 @@
-docker-compose  exec test  node --debug-brk --inspect=9229  node_modules/.bin/tape target/security-tests/**/*.js --host web
+#!/bin/bash
+
+# '--name test' is required, because the hostname in docker-compose (also 'test')
+# is ignored when using 'run'.
+
+set -x
+docker-compose  \
+  run \
+  --rm \
+  -p 9229:9229 \
+  --name test \
+  test \
+  node --debug-brk --inspect=9229 node_modules/.bin/tape target/security-tests/**/*.js --host web
+

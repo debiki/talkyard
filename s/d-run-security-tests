@@ -1,1 +1,13 @@
-docker-compose  exec test  node_modules/.bin/tape target/security-tests/**/*.js --host web
+#!/bin/bash
+
+# '--name test' is required, because the hostname in docker-compose (also 'test')
+# is ignored when using 'run'.
+
+set -x
+docker-compose  \
+  run \
+  --rm \
+  --name test \
+  test \
+  node_modules/.bin/tape target/security-tests/**/*.js --host web
+
