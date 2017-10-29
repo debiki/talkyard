@@ -80,22 +80,23 @@ export const ReviewAllPanelComponent = React.createClass(<any> {
 
 
 // For now. Don't want to rerender.
-var safeHtmlByMarkdownSource = {};
+const safeHtmlByMarkdownSource = {};
 
 
-var ReviewTask = createComponent({
+const ReviewTask = createComponent({
   displayName: 'ReviewTask',
 
   getInitialState: function() {
     return {};
   },
 
-  formatWhatAndWhys: function() {
-    var reviewTask: ReviewTask = this.props.reviewTask;
-    var what = reviewTask.pageId ? "The page below " : "The post below ";
-    var whys = [];
+  // Returns [string, string[]]
+  formatWhatAndWhys: function(): any[] {
+    const reviewTask: ReviewTask = this.props.reviewTask;
+    let what = reviewTask.pageId ? "The page below " : "The post below ";
+    const whys = [];
 
-    var post = this.props.reviewTask.post;
+    const post = this.props.reviewTask.post;
     if (!post.approvedRevNr) {
       what += "is hidden, waiting for approval, and ";
     }
@@ -103,7 +104,7 @@ var ReviewTask = createComponent({
       what += "has edits waiting for approval, and ";
     }
 
-    var who;
+    let who;
     if (ReviewReasons.isByNewUser(reviewTask)) {
       who = "a new user";
       if (ReviewReasons.isByThreatUser(reviewTask)) {
@@ -149,38 +150,33 @@ var ReviewTask = createComponent({
     return [what, whys];
   },
 
-  openPostInNewTab: function() {
-    var post = this.props.reviewTask.post;
-    var url = '/-'+ post.pageId +'#post-'+ post.nr;
-    window.open(url, '_blank');
-  },
-
   completeReviewTask: function(action: ReviewAction) {
-    var revisionNr = (this.props.reviewTask.post || {}).currRevNr;
+    const revisionNr = (this.props.reviewTask.post || {}).currRevNr;
     Server.completeReviewTask(this.props.reviewTask.id, revisionNr, action, () => {
       this.setState({ completed: true });
     });
   },
 
   render: function() {
-    var state = this.state;
-    var reviewTask: ReviewTask = this.props.reviewTask;
+    const reviewTask: ReviewTask = this.props.reviewTask;
 
-    var whatAndWhys = this.formatWhatAndWhys();
-    var what = whatAndWhys[0];
-    var whys = whatAndWhys[1];
+    const whatAndWhys: any[] = this.formatWhatAndWhys();
+    const what: string = whatAndWhys[0];
+    const whys: string[] = whatAndWhys[1];
 
-    var post: PostToReview = reviewTask.post;
+    const post: PostToReview = reviewTask.post;
 
-    var openPostButton =
-        Button({ onClick: this.openPostInNewTab, className: 'e_A_Rvw_ViewB' }, "View page");
+    const linkToPost = '/-'+ post.pageId + (post.nr >= FirstReplyNr ? '#post-'+ post.nr : '');
+    const postOrPage = reviewTask.pageId ? "page" : "post";
+    const openPostButton =
+        r.a({ href: linkToPost, className: 's_A_Rvw_ViewB' }, `Go to ${postOrPage}`);
 
     // For now:
-    var complete = (action) => {
+    const complete = (action) => {
       return () => this.completeReviewTask(action);
     };
-    var acceptButton;
-    var rejectButton;
+    let acceptButton;
+    let rejectButton;
     if (this.state.completed || reviewTask.completedAtMs) {
       acceptButton = r.span({}, " Has been reviewed.");
     }
@@ -189,7 +185,7 @@ var ReviewTask = createComponent({
       acceptButton = r.span({}, " Invalidated, perhaps the post was deleted?");
     }
     else {
-      var acceptText = post.approvedRevNr !== post.currRevNr ? "Approve" : "Looks fine";
+      const acceptText = post.approvedRevNr !== post.currRevNr ? "Approve" : "Looks fine";
       acceptButton =
           Button({ onClick: complete(ReviewAction.Accept),
               className: 'e_A_Rvw_AcptB' }, acceptText);
@@ -199,7 +195,7 @@ var ReviewTask = createComponent({
     }
 
 
-    var safeHtml;
+    let safeHtml: string;
     if (0 && post.currRevNr === post.approvedRevNr) {
       safeHtml = post.approvedHtmlSanitized;
     }
@@ -214,15 +210,15 @@ var ReviewTask = createComponent({
       }
     }
 
-    var anyDot = whys.length === 1 ? '.' : '';
-    var manyWhysClass = whys.length > 1 ? ' esReviewTask-manyWhys' : '';
+    const anyDot = whys.length === 1 ? '.' : '';
+    const manyWhysClass = whys.length > 1 ? ' esReviewTask-manyWhys' : '';
 
-    let itHasBeenHidden = !post.bodyHiddenAtMs ? null :
+    const itHasBeenHidden = !post.bodyHiddenAtMs ? null :
       "It has been hidden; only staff can see it. ";
 
-    var hereIsThePost = whys.length > 1 ? "Here it is:" : '';
+    const hereIsThePost = whys.length > 1 ? "Here it is:" : '';
 
-    var anyPageTitleToReview = !reviewTask.pageId ? null :
+    const anyPageTitleToReview = !reviewTask.pageId ? null :
       r.div({ className: 'esRT_TitleToReview' }, reviewTask.pageTitle);
 
     return (

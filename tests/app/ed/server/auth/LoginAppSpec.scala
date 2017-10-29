@@ -49,6 +49,8 @@ class LoginAppSpec extends DaoAppSuite() {
       }
     }
 
+    SECURITY // add test that verifies email login is prevented, also if email verification isn't enabled,
+    // before the email has been verified. [2PSK5W0R]
     "cannot login before email verified" in {
       intercept[DbDao.EmailNotVerifiedException.type] {
         dao.tryLoginAsMember(PasswordLoginAttempt(

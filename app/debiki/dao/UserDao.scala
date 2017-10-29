@@ -444,6 +444,11 @@ trait UserDao {
 
 
   def tryLoginAsMember(loginAttempt: MemberLoginAttempt): MemberLoginGrant = {
+    SECURITY; COULD // add setting that prevents people from logging in by username — because the
+    // username is public, can starting guessing passwords directly. (There are rate limits.) Sth like:
+    // if (!settings.allowLoginByUsername && loginAttempt.isByUsername) throwForbidden(...)
+    // + prevent submitting username, client side.
+
     val settings = getWholeSiteSettings()
     val loginGrant = readWriteTransaction { transaction =>
       val loginGrant = transaction.tryLoginAsMember(
