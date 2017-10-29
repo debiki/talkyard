@@ -95,7 +95,9 @@ trait UserDao {
       invite = invite.copy(acceptedAt = Some(transaction.now.toJavaDate), userId = Some(userId))
 
       // COULD loop and append 1, 2, 3, ... until there's no username clash.
+      transaction.deferConstraints()
       transaction.insertMember(newUser)
+      transaction.insertUserEmailAddress(newUser.primaryEmailInfo getOrDie "EdE3PDKR20")
       transaction.insertUsernameUsage(UsernameUsage(
         newUser.usernameLowercase, inUseFrom = transaction.now, userId = newUser.id))
       transaction.upsertUserStats(UserStats.forNewUser(
@@ -356,7 +358,9 @@ trait UserDao {
       val identityId = transaction.nextIdentityId
       val identity = newUserData.makeIdentity(userId = userId, identityId = identityId)
       ensureSiteActiveOrThrow(user, transaction)
+      transaction.deferConstraints()
       transaction.insertMember(user)
+      user.primaryEmailInfo.foreach(transaction.insertUserEmailAddress)
       transaction.insertUsernameUsage(UsernameUsage(
         usernameLowercase = user.usernameLowercase, inUseFrom = transaction.now, userId = user.id))
       transaction.upsertUserStats(UserStats.forNewUser(
@@ -400,7 +404,9 @@ trait UserDao {
       val userId = transaction.nextMemberId
       val user = userData.makeUser(userId)
       ensureSiteActiveOrThrow(user, transaction)
+      transaction.deferConstraints()
       transaction.insertMember(user)
+      user.primaryEmailInfo.foreach(transaction.insertUserEmailAddress)
       transaction.insertUsernameUsage(UsernameUsage(
         usernameLowercase = user.usernameLowercase, inUseFrom = now, userId = user.id))
       transaction.upsertUserStats(UserStats.forNewUser(
@@ -419,7 +425,7 @@ trait UserDao {
       var user = transaction.loadTheMemberInclDetails(userId)
       security.throwErrorIfPasswordTooWeak(
         password = newPassword, username = user.username,
-        fullName = user.fullName, email = user.emailAddress)
+        fullName = user.fullName, email = user.primaryEmailAddress)
       user = user.copy(passwordHash = Some(newPasswordSaltHash))
       transaction.updateMemberInclDetails(user)
     }
@@ -931,11 +937,14 @@ trait UserDao {
   }
 
 
-  def verifyEmail(userId: UserId, verifiedAt: ju.Date) {
+  def verifyPrimaryEmailAddress(userId: UserId, verifiedAt: ju.Date) {
     readWriteTransaction { transaction =>
       var user = transaction.loadTheMemberInclDetails(userId)
       user = user.copy(emailVerifiedAt = Some(verifiedAt))
+      val userEmailAddress = user.primaryEmailInfo getOrDie "EdE4JKA2S"
+      dieUnless(userEmailAddress.isVerified, "EdE7UNHR4")
       transaction.updateMemberInclDetails(user)
+      transaction.updateUserEmailAddress(userEmailAddress)
       // Now, when email verified, perhaps time to start sending summary emails.
       transaction.reconsiderSendingSummaryEmailsTo(user.id)
     }
@@ -1000,7 +1009,7 @@ trait UserDao {
         emailNotfPrefs: Option[EmailNotfPrefs] = None,
         activitySummaryEmailsIntervalMins: Option[Int] = None,
         isAdmin: Option[Boolean] = None, isOwner: Option[Boolean] = None) {
-    // Don't specify emailVerifiedAt here — use verifyEmail() instead; it refreshes the cache.
+    // Don't specify emailVerifiedAt — use verifyPrimaryEmailAddress() instead; it refreshes the cache.
     readWriteTransaction { transaction =>
       var user = transaction.loadTheMemberInclDetails(userId)
       emailNotfPrefs foreach { prefs =>
@@ -1120,7 +1129,7 @@ trait UserDao {
       // For now, don't allow the user to change his/her email. I haven't
       // implemented any related security checks, e.g. verifying with the old address
       // that this is okay, or sending an address confirmation email to the new address.
-      if (user.emailAddress != preferences.emailAddress)
+      if (user.primaryEmailAddress != preferences.emailAddress)
         throwForbidden("DwE44ELK9", "Must not modify one's email")
 
       val userAfter = user.copyWithNewPreferences(preferences)

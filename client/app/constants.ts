@@ -50,6 +50,8 @@ const LastStarMark = 3;
 // Sync with Scala, and an input error checker [6KG2W57]
 const MaxNumFirstPosts = 10;
 
+const MaxEmailsPerUser = 5;  // also in scala [4GKRDF0]
+
 const IgnoreThisError: ErrorPolicy = -112233;
 
 

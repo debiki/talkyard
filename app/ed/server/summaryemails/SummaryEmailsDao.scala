@@ -199,7 +199,7 @@ trait SummaryEmailsDao {
     val subject = s"[$siteName] Recent activity summary"
 
     val email = Email(EmailType.ActivitySummary, createdAt = now,
-      sendTo = member.emailAddress, toUserId = Some(member.id),
+      sendTo = member.primaryEmailAddress, toUserId = Some(member.id),
       subject = subject, bodyHtmlText = (emailId: String) => "?")
 
     val contents = {

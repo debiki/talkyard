@@ -149,7 +149,7 @@ class DaoAppSuite(
       createdAt = theCreatedAt,
       isAdmin = true, isOwner = isOwner).get)
     if (emailVerified) {
-      dao.verifyEmail(adm.id, theCreatedAt.toJavaDate)
+      dao.verifyPrimaryEmailAddress(adm.id, theCreatedAt.toJavaDate)
     }
     adm
   }
@@ -163,7 +163,7 @@ class DaoAppSuite(
       password = s"public-$password", createdAt = theCreatedAt,
       isAdmin = false, isModerator = true, isOwner = false).get)
     if (emailVerified) {
-      dao.verifyEmail(mod.id, theCreatedAt.toJavaDate)
+      dao.verifyPrimaryEmailAddress(mod.id, theCreatedAt.toJavaDate)
     }
     mod
   }
@@ -181,7 +181,7 @@ class DaoAppSuite(
       password = s"public-$password", createdAt = theCreatedAt,
       isAdmin = false, isOwner = false, trustLevel = trustLevel, threatLevel = threatLevel).get)
     if (emailVerified) {
-      dao.verifyEmail(member.id, theCreatedAt.toJavaDate)
+      dao.verifyPrimaryEmailAddress(member.id, theCreatedAt.toJavaDate)
     }
     member
   }

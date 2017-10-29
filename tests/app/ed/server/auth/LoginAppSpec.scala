@@ -59,7 +59,7 @@ class LoginAppSpec extends DaoAppSuite() {
     }
 
     "the email gets verified" in {
-      dao.verifyEmail(member1.id, globals.now().toJavaDate)
+      dao.verifyPrimaryEmailAddress(member1.id, globals.now().toJavaDate)
     }
 
     "cannot login with the wrong password" in {

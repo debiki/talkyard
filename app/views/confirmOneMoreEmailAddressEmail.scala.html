@@ -1,0 +1,41 @@
+@(siteAddress: String, username: String, emailAddress: String, safeVerificationUrl: String,
+    expirationTimeInHours: Int, globals: debiki.Globals)
+
+@origin = @{
+  globals.originOf(siteAddress)
+}
+
+@* For links you don't want people to click, unless they know what they're doing. *@
+@grayBoringLink(host: String) = {
+  <a href="@{globals.scheme + "://" + host}" style="text-decoration: none !important; color: #555 !important;">@host</a>
+}
+
+<div>
+<p>Hello @username,</p>
+
+<p>
+@* SECURITY, UNPOLITE [20KCQ5Y] what if Mallory chooses username "@alice_you_are_stupid" and then
+  adds email address alices.address@example.com? Then Alice will get this email, and see the text
+  "alice_you_are_stupid" and maybe gets sad, & angry at the website, rather than Mallory, and clicks
+  "mark as spam"?
+  Should the username not be included here, because of that? Or what if Mallory creates a website
+  like "alice-is-so-stupid-123.example.com" and specifies Alice's address as the owner's address?
+  Solution?: If there's a create-site domain, then always include a "Report this" link,
+  so the website or user can be investigated and maybe removed. *@
+To finish adding email address @emailAddress to user @username at @grayBoringLink(siteAddress),
+please click <a href="@Html(safeVerificationUrl)">this link</a>.
+</p>
+
+<p>
+(If however you don't know what this is about, don't click the link. @* SECURITY do what instead?
+Clicking a "wrong address" link that sends a notification to the user? (which is possible here since
+the user already exists) *@
+Maybe someone typed the wrong address.)
+</p>
+
+<p>
+Kind regards,<br>
+Effective Discussions
+</p>
+</div>
+

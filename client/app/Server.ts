@@ -568,14 +568,36 @@ export function loadUserAnyDetails(userIdOrUsername: UserId | string,
 
 
 export function listCompleteUsers(whichUsers, success: (users: MemberInclDetails[]) => void) {
-  get('/-/list-complete-users?whichUsers=' + whichUsers, response => {
+  get(`/-/list-complete-users?whichUsers=${whichUsers}`, response => {
     success(response.users);
+  });
+}
+
+
+export function loadEmailAddressesAndLoginMethods(userId: UserId, success) {
+  get(`/-/load-email-addrs-login-methods?userId=${userId}`, response => {
+    success(response);
   });
 }
 
 
 export function sendAddressVerifEmailAgain(success) {
   postJsonSuccess('/-/send-addr-verif-email-again', success, {});
+}
+
+
+export function addEmailAddresses(userId: UserId, emailAddress: string, success) {
+  postJsonSuccess('/-/add-email-address', success, { userId, emailAddress });
+}
+
+
+export function removeEmailAddresses(userId: UserId, emailAddress: string, success) {
+ postJsonSuccess('/-/remove-email-address', success, { userId, emailAddress });
+}
+
+
+export function setPrimaryEmailAddresses(userId: UserId, emailAddress: string, success) {
+  postJsonSuccess('/-/set-primary-email-address', success, { userId, emailAddress });
 }
 
 

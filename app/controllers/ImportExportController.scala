@@ -259,7 +259,8 @@ class ImportExportController @Inject()(cc: ControllerComponents, edContext: EdCo
 
       siteData.users foreach { user =>
         transaction.insertMember(user)
-        // [readlater] export & import username usages, later. For now, create new here.
+        // [readlater] export & import username usages & emails, later. For now, create new here.
+        user.primaryEmailInfo.foreach(transaction.insertUserEmailAddress)
         transaction.insertUsernameUsage(UsernameUsage(
           usernameLowercase = user.usernameLowercase, inUseFrom = transaction.now, userId = user.id))
         // [readlater] export & import UserStats. For now, create new "empty" here.
@@ -362,7 +363,7 @@ class ImportExportController @Inject()(cc: ControllerComponents, edContext: EdCo
         isApproved = readOptBool(jsObj, "isApproved"),
         approvedAt = readOptDateMs(jsObj, "approvedAtMs"),
         approvedById = readOptInt(jsObj, "approvedById"),
-        emailAddress = readString(jsObj, "emailAddress").trim,
+        primaryEmailAddress = readString(jsObj, "emailAddress").trim,
         emailNotfPrefs = EmailNotfPrefs.Receive, // [readlater]
         emailVerifiedAt = readOptDateMs(jsObj, "emailVerifiedAtMs"),
         emailForEveryNewPost = readOptBool(jsObj, "emailForEveryNewPost") getOrElse false,

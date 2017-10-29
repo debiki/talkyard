@@ -131,6 +131,12 @@ POST  /-/unblock-guest          controllers.UserController.unblockGuest
 GET   /-/load-author-blocks     controllers.UserController.loadAuthorBlocks(postId: Int)
 GET   /-/redir-to-my-last-topic controllers.UserController.redirectToMyLastTopic
 
+GET   /-/load-email-addrs-login-methods controllers.UserController.loadUserEmailsLogins(userId: Int)
+POST  /-/set-primary-email-address controllers.UserController.setPrimaryEmailAddresses
+POST  /-/add-email-address      controllers.UserController.addUserEmail
+POST  /-/remove-email-address   controllers.UserController.removeUserEmail
+GET   /-/confirm-email-address  controllers.UserController.confirmOneMoreEmailAddress(confirmationEmailId)
+
 GET   /-/unsubscribe            controllers.UnsubscriptionController.showForm(emailId)
 POST  /-/unsubscribe            controllers.UnsubscriptionController.handleForm(emailId)
 GET   /-/unsubscribed           controllers.UnsubscriptionController.showHasBeenUnsubscribed()

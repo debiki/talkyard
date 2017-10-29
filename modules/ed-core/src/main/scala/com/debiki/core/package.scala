@@ -586,6 +586,7 @@ package object core {
   def CLEAN_UP = ()       // Unused stuff that should be deleted after a grace period, or when
                           // the developers are less short of time.
   def DISCUSSION_QUALITY = () // Stuff to do to improve the quality of the discussions
+  def UNPOLITE = ()       // Vuln that lets a user be unpolite to someone else
 
 }
 

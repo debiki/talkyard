@@ -15,6 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+
 /// <reference path="../slim-bundle.d.ts" />
 /// <reference path="../util/UsernameInput.more.ts" />
 /// <reference path="./ActivitySummaryEmailsInterval.more.ts" />
@@ -24,13 +25,56 @@
 //------------------------------------------------------------------------------
 
 const r = ReactDOMFactories;
+const UsersPathSlash = '/-/users/';       // dupl [4GKQST20]
+const SlashPrefsSlash = '/preferences/';  // dupl [4GKQST20]
+
+import EmailInput = debiki2.util.EmailInput;
+const emailsLogins = 'emails-logins';  // [4JKT28TS]
 
 
 export const UserPreferences = createFactory({
-  displayName: 'UserPreferences',
+ displayName: 'UserPreferences',
 
   render: function() {
-    const me: Myself = this.props.me;
+    const upp = UsersPathSlash + this.props.match.params.usernameOrId + SlashPrefsSlash;
+    const emailsLoginsUrl = upp + emailsLogins;
+    const user: User = this.props.user;
+
+    const childProps = {
+      store: this.props.store,
+      user,
+      reloadUser: this.props.reloadUser,
+      emailsLoginsUrl,
+    };
+
+    const childRoute = Switch({},
+      Route({ path: '(.*)/about', exact: true, render: () => AboutUser(childProps) }),
+      Route({ path: '(.*)/' + emailsLogins, exact: true, render: () => EmailsLogins(childProps) }));
+
+    const isGuest = user_isGuest(user);
+    return (
+      // Without table-layout: fixed, the table can become 5000 px wide, because otherwise the
+      // default layout is width = as wide as the widest cell wants to be.
+      r.div({ style: { display: 'table', width: '100%', tableLayout: 'fixed' }},
+        r.div({ style: { display: 'table-row' }},
+          r.div({ className: 's_UP_Act_Nav' },
+            r.ul({ className: 'dw-sub-nav nav nav-pills nav-stacked' },
+              LiNavLink({ to: upp + 'about', className: 's_UP_Act_Nav_PostsB' }, "About"),
+              isGuest ? null : LiNavLink({
+                  to: emailsLoginsUrl, className: 's_UP_Act_Nav_TopicsB' }, "Emails, Logins"))),
+         r.div({ className: 's_UP_Act_List' },
+           childRoute))));
+  }
+});
+
+
+
+export const AboutUser = createFactory({
+  displayName: 'AboutUser',
+
+  render: function() {
+    const store: Store = this.props.store;
+    const me: Myself = store.me;
     const user: MemberInclDetails = this.props.user;
 
     const mayViewPrefs = isStaff(me) || (me.isAuthenticated && me.id === user.id);
@@ -48,7 +92,7 @@ export const UserPreferences = createFactory({
 
     const preferences = isGuest(user)
         ? GuestPreferences({ guest: user })
-        : MemberPreferences({ user: user, me: me, reloadUser: this.props.reloadUser });
+        : MemberPreferences(this.props);
 
     return (
       r.div({ className: 's_UP_Prefs' },
@@ -56,6 +100,7 @@ export const UserPreferences = createFactory({
         preferences));
   }
 });
+
 
 
 const GuestPreferences = createComponent({
@@ -84,30 +129,30 @@ const GuestPreferences = createComponent({
 
     let savingInfo = null;
     if (this.state.savingStatus === 'Saving') {
-      savingInfo = r.i({}, ' Saving...');
+      savingInfo = r.i({}, " Saving...");
     }
     else if (this.state.savingStatus === 'Saved') {
-      savingInfo = r.i({}, ' Saved.');
+      savingInfo = r.i({}, " Saved.");
     }
 
     return (
       r.form({ role: 'form', onSubmit: this.savePrefs },
 
         r.div({ className: 'form-group' },
-          r.label({ htmlFor: 'fullName' }, 'Name'),
+          r.label({ htmlFor: 'fullName' }, "Name"),
           r.input({ className: 'form-control', id: 'fullName', defaultValue: guest.fullName,
               onChange: (event) => { this._fullName = event.target.value }, required: true })),
 
         r.div({ className: 'form-group' },
-          r.label({ htmlFor: 'emailAddress' }, 'Email address'),
-          r.input({ type: 'email', className: 'form-control', id: 'emailAddress',
-              defaultValue: guest.email, disabled: true }),
-          r.p({ className: 'help-block' }, 'Not shown publicly. Cannot be changed.')),
+          r.label({}, "Email address"),
+          r.div({}, r.samp({}, guest.email)),
+          r.p({ className: 'help-block' }, "Not shown publicly. Cannot be changed.")),
 
         InputTypeSubmit({ id: 'e2eUP_Prefs_SaveB', value: "Save" }),
         savingInfo));
   }
 });
+
 
 
 const MemberPreferences = createComponent({
@@ -201,7 +246,8 @@ const MemberPreferences = createComponent({
   },
 
   render: function() {
-    const me: Myself = this.props.me;
+    const store: Store = this.props.store;
+    const me: Myself = store.me;
     const user: MemberInclDetails = this.props.user;
     const username = user.username || '(not specified)';
 
@@ -284,13 +330,12 @@ const MemberPreferences = createComponent({
 
         usernameStuff,
 
-        // Disable the email input — I've not implemented confirmation-emails-to-new-address
-        // or any double-check-password-before-changing-email.
         isBuiltInUser ? null : r.div({ className: 'form-group' },
-          r.label({ htmlFor: 'emailAddress' }, "Email address"),
-          r.input({ type: 'email', className: 'form-control', id: 'emailAddress',
-              onChange: (event) => { this._email = event.target.value },
-              defaultValue: user.email, disabled: true }),
+          r.label({}, "Email address"),
+          r.div({},
+            r.samp({}, user.email),
+            NavLink({ to: this.props.emailsLoginsUrl,
+                className: 'btn s_UP_Prefs_ChangeEmailB' }, "Change ...")),
           r.p({ className: 'help-block' }, "Not shown publicly.")),
 
         activitySummaryStuff,
@@ -330,6 +375,165 @@ const MemberPreferences = createComponent({
     'Receive an email when someone quotes you, replies to your post, or mentions your @username'
     'Do not suppress email notifications when I am active on the site'
     */
+  }
+});
+
+
+
+export const EmailsLogins = createFactory({
+  displayName: 'EmailsLogins',
+
+  getInitialState: function() {
+    return {};
+  },
+
+  componentDidMount: function() {
+    const user: MemberInclDetails = this.props.user;
+    this.loadEmailsLogins(user.id);
+  },
+
+  componentWillReceiveProps: function(nextProps) {
+    // a bit dupl code [5AWS2E9]
+    const me: Myself = this.props.store.me;
+    const user: MemberInclDetails = this.props.user;
+    const nextMe: Myself = nextProps.store.me;
+    const nextUser: MemberInclDetails = nextProps.user;
+    // If we log in as someone else, what stuff we may see might change.
+    if (me.id !== nextMe.id || user.id !== nextUser.id) {
+      this.loadEmailsLogins(nextUser.id);
+    }
+  },
+
+  loadEmailsLogins: function(userId: UserId) {
+    Server.loadEmailAddressesAndLoginMethods(userId, response => {
+      this.setState(response);
+    });
+  },
+
+  doAddEmail: function() {
+    this.setState({ showAddEmailInput: false, isAddingEmail: true });
+    const user: MemberInclDetails = this.props.user;
+    Server.addEmailAddresses(user.id, this.state.newEmailAddr, response => {
+      this.setState({ isAddingEmail: false, doneAddingEmail: true });
+      this.setState(response);
+    });
+  },
+
+  removeEmailAddress: function(emailAddress: string) {
+    const user: MemberInclDetails = this.props.user;
+    Server.removeEmailAddresses(user.id, emailAddress, response => {
+      // Remove the check-your-inbox message, in case the user remoed the email just added.
+      this.setState({ doneAddingEmail: undefined, ...response });
+    });
+  },
+
+  setPrimary: function(emailAddress: string) {
+    const user: MemberInclDetails = this.props.user;
+    Server.setPrimaryEmailAddresses(user.id, emailAddress, response => {
+      this.setState(response);
+      this.props.reloadUser();
+    });
+  },
+
+  render: function() {
+    const me: Myself = this.props.store.me;
+    const user: MemberInclDetails = this.props.user;
+    const isMe = me.id === user.id;
+    const youOrHen = isMe ? "you" : "the user";
+
+    if (!this.state.emailAddresses)
+      return r.p({}, "Loading ...");
+
+    const emailAddrs: UserEmailAddress[] = this.state.emailAddresses;
+    const loginMethods: UserLoginMethods[] = this.state.loginMethods;
+
+    const emailAddressesList =
+      r.ul({ className: 's_UP_EmLg_EmL' },
+        emailAddrs.map((addr) => {
+          let status = '';
+          let isVerifeid = false;
+
+          if (addr.verifiedAt || (
+              // Gmail = verified by Google: if one can login to Gmail, it's one's own address.
+              addr.emailAddress.indexOf('@gmail.com') >= 0)) {  // [2PKTRF0T]
+            status += "Verified. ";
+            isVerifeid = true;
+          }
+
+          let isLoginMethod = false;
+          _.each(loginMethods, (method: UserLoginMethods) => {
+            if (method.email === addr.emailAddress) {
+              isLoginMethod = true;
+              status += `For login with ${method.provider}. `;
+            }
+          });
+
+          const isPrimary = user.email === addr.emailAddress;
+          if (isPrimary) {
+            status += "Primary. ";
+          }
+
+          return r.li({ className: 's_UP_EmLg_EmL_It',  key: addr.emailAddress },
+            r.div({ className: 's_UP_EmLg_EmL_It_Em' }, addr.emailAddress),
+            r.div({}, status),
+            r.div({},
+              isPrimary || isLoginMethod ? null :
+                Button({ onClick: () => this.removeEmailAddress(addr.emailAddress) }, "Remove"),
+              isPrimary || !isVerifeid ? null :
+                Button({ onClick: () => this.setPrimary(addr.emailAddress) }, "Make Primary")));
+        }));
+
+    // Don't show the Add button again after one email added. Then it's harder to see
+    // the "check your inbox" message.
+    const showAddEmailInputButton = this.state.doneAddingEmail ? null : (
+        emailAddrs.length >= MaxEmailsPerUser
+          ? r.span({}, `(You cannot add more than ${MaxEmailsPerUser} addresses.)`)
+          : (this.state.showAddEmailInput || this.state.isAddingEmail
+              ? null
+              : Button({ onClick: () => this.setState({ showAddEmailInput: true }) },
+                  "Add email address")));
+
+    const addEmailInput = !this.state.showAddEmailInput ? null :
+      r.div({},
+        EmailInput({ label: "Type a new email address:", placeholder: "your.email@example.com",
+          onChangeValueOk: (value, ok) => this.setState({ newEmailAddr: value, emailOk: ok }) }),
+        PrimaryButton({ onClick: this.doAddEmail, disabled: !this.state.emailOk },
+          "Add"));
+
+    const isAddingEmailInfo = !this.state.isAddingEmail ? null :
+      r.div({}, "Adding...");
+
+    const doneAddingEmailInfo = !this.state.doneAddingEmail ? null :
+      r.div({ className: 's_UP_EmLg_EmAdded' }, "Added. We've sent you a verification email — ",
+          r.b({}, "check your email inbox", '.'));
+
+    const loginsList =
+      r.ul({ className: 's_UP_EmLg_LgL' },
+        loginMethods.map((method) => {
+          return r.li({ className: 's_UP_EmLg_LgL_It', key: `${method.provider}:${method.email}` },
+            r.span({ className: 's_UP_EmLg_LgL_It_How' }, method.provider),
+            ", as: ",
+            r.span({ className: 's_UP_EmLg_LgL_It_Id' }, method.email))
+            // r.div({}, Button({}, "Remove")))  — fix later
+        }));
+
+    return (
+      r.div({ className: 's_UP_EmLg' },
+        r.h3({}, "Email addresses"),
+        r.p({ className: 's_UP_EmLg_StatusExpl' },
+          `('Primary' means ${youOrHen} can login via this address, and we send notifications to it.` +
+          ` 'Verified' means ${youOrHen} clicked a verification link in an address verification email.)`),
+        emailAddressesList,
+        r.br(),
+        showAddEmailInputButton,
+        addEmailInput,
+        isAddingEmailInfo,
+        doneAddingEmailInfo,
+
+        r.h3({}, "Login methods"),
+        loginsList
+        // Button({}, "Add login method")  — fix later
+      ));
   }
 });
 

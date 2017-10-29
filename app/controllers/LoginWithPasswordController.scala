@@ -64,12 +64,12 @@ class LoginWithPasswordController @Inject()(cc: ControllerComponents, edContext:
   }
 
 
-  private def doLogin(request: ApiRequest[_], dao: SiteDao, email: String, password: String)
+  private def doLogin(request: ApiRequest[_], dao: SiteDao, emailOrUsername: String, password: String)
         : Seq[Cookie] = {
     val loginAttempt = PasswordLoginAttempt(
       ip = request.ip,
       date = request.ctime,
-      email = email,
+      emailOrUsername = emailOrUsername,
       password = password)
 
     // The browser checks for 'EsE403BPWD' so don't change it.
@@ -235,7 +235,7 @@ class LoginWithPasswordController @Inject()(cc: ControllerComponents, edContext:
       assErr("DwE8XK5", "Email was not sent to a role")
     }
 
-    request.dao.verifyEmail(roleId, request.ctime)
+    request.dao.verifyPrimaryEmailAddress(roleId, request.ctime)
     roleId
   }
 
