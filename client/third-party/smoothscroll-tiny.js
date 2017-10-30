@@ -24,9 +24,13 @@
 
 
     // return when scrollBehavior interface is supported
+    // NO DON'T — some scroll code & also e2e tests uses window.smoothScroll  /KajMagnus
+    // SMALLER_BUNDLE later when all browsers implement smooth scroll behavior, start using it
+    // everywhere and remove this smoothscroll-tiny.js file.
+    /*
     if ('scrollBehavior' in d.documentElement.style) {
       return;
-    }
+    }*/
 
     /*
      * globals
