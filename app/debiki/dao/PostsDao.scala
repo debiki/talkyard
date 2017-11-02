@@ -101,9 +101,9 @@ trait PostsDao {
           // Flat chat comments might not reply to anyone in particular.
           // On embedded comments pages, there's no Original Post, so top level comments
           // have no parent post.
-          if (postType != PostType.Flat && postType != PostType.CompletedForm &&
-              page.role != PageRole.EmbeddedComments)
-            throwBadReq("DwE2CGW7", "Non-flat non-form non-embedded comment with no parent post id")
+          if (postType != PostType.Flat && postType != PostType.AppendBottom &&
+              postType != PostType.CompletedForm && page.role != PageRole.EmbeddedComments)
+            throwBadReq("DwE2CGW7", "Post lacks parent id")
           else
             None
         }

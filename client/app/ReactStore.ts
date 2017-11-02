@@ -896,10 +896,17 @@ function sortPostIdsInPlaceBestFirst(postNrs: PostNr[], postsByNr: { [nr: number
       return aPos < bPos
     } */
 
+    // Place append-at-the-bottom posts at the bottom, sorted by time.
+    if (postA.postType !== PostType.AppendBottom && postB.postType === PostType.AppendBottom)
+      return -1;
+    if (postA.postType === PostType.AppendBottom && postB.postType !== PostType.AppendBottom)
+      return +1;
+    if (postA.postType === PostType.AppendBottom && postB.postType === PostType.AppendBottom)
+      return postA.nr < postB.nr ? -1 : +1;
+
     // Place deleted posts last; they're rather uninteresting?
     if (!isDeleted(postA) && isDeleted(postB))
       return -1;
-
     if (isDeleted(postA) && !isDeleted(postB))
       return +1;
 

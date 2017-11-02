@@ -983,13 +983,16 @@ export var Editor = createComponent({
     else if (isMindMapNode) {
       doingWhatInfo = "Add mind map node:";
     }
+    else if (state.anyPostType === PostType.AppendBottom) {
+      doingWhatInfo = "Append a comment at the bottom of the page:";
+    }
     else if (replyToPostNrs.length > 0) {
       doingWhatInfo =
         r.span({},
-          isChatReply ? 'Chat reply to ' : 'Reply to ',
+          isChatReply ? "Chat reply to " : "Reply to ",
           _.filter(replyToPostNrs, (id) => id !== NoPostId).map((postNr, index) => {
-            const anyAnd = index > 0 ? ' and ' : '';
-            const whichPost = postNr === 1 ? 'the Original Post' : 'post ' + postNr;
+            const anyAnd = index > 0 ? " and " : '';
+            const whichPost = postNr === 1 ? "the Original Post" : "post " + postNr;
             return (
               (<any> r.span)({ key: postNr },   // span has no .key, weird [TYPEERROR]
                 anyAnd,

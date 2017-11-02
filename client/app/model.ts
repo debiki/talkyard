@@ -158,6 +158,8 @@ interface Post {
 enum PostType {
   Normal = 1,
   Flat = 2,
+  ChatMessage = 3,
+  AppendBottom = 4,
   StaffWiki = 11,
   CommunityWiki = 12,
   CompletedForm = 21,

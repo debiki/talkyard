@@ -148,6 +148,9 @@ object PostType {
   /** A chat message in a chat room. */
   case object ChatMessage extends PostType(3)
 
+  /** A Normal post but appended to the bottom of the page, not sorted best-first. */
+  case object AppendBottom extends PostType(4)
+
   CLEAN_UP // remove StaffWiki, use the permission system instead.
   /** Any staff member can edit this post. No author name shown. */
   case object StaffWiki extends PostType(11) {
@@ -161,6 +164,8 @@ object PostType {
 
   case object CompletedForm extends PostType(21)
 
+  case object StatusChange extends PostType(31)
+
   // Later:
   // - FormSubmission(21)? Shown only to the page author(s) + admins? Cannot be voted on. Sorted by
   //    date. For FormSubmission pages only.
@@ -170,9 +175,11 @@ object PostType {
     case Normal.IntValue => Normal
     case Flat.IntValue => Flat
     case ChatMessage.IntValue => ChatMessage
+    case AppendBottom.IntValue => AppendBottom
     case StaffWiki.IntValue => StaffWiki
     case CommunityWiki.IntValue => CommunityWiki
     case CompletedForm.IntValue => CompletedForm
+    case StatusChange.IntValue => StatusChange
     case _ => return None
   })
 }
@@ -316,6 +323,8 @@ case class Post(
   def isOrigPostReply = PageParts.isReply(nr) && parentNr.contains(PageParts.BodyNr)
   def isMultireply = multireplyPostNrs.nonEmpty
   def isFlat = tyype == PostType.Flat
+  def isAppendBottom = tyype == PostType.AppendBottom
+  def isStatusChange = tyype == PostType.StatusChange
   def isBodyHidden = bodyHiddenAt.isDefined
   def isDeleted = deletedStatus.isDeleted
   def isSomeVersionApproved = approvedRevisionNr.isDefined
@@ -568,7 +577,8 @@ object Post {
         htmlSanitized: String,
         approvedById: Option[UserId]): Post = {
 
-    require(multireplyPostNrs.isEmpty || parent.isDefined || postType == PostType.Flat, "DwE4KFK28")
+    require(multireplyPostNrs.isEmpty || parent.isDefined ||
+      postType == PostType.Flat || postType == PostType.AppendBottom, "DwE4KFK28")
 
     val currentSourcePatch: Option[String] =
       if (approvedById.isDefined) None
@@ -699,10 +709,17 @@ object Post {
       return aPos < bPos
     } */
 
+    // Place append-at-the-bottom posts at the bottom, sorted by time.
+    if (postA.tyype != PostType.AppendBottom && postB.tyype == PostType.AppendBottom)
+      return true
+    if (postA.tyype == PostType.AppendBottom && postB.tyype != PostType.AppendBottom)
+      return false
+    if (postA.tyype == PostType.AppendBottom && postB.tyype == PostType.AppendBottom)
+      return postA.nr < postB.nr
+
     // Place deleted posts last; they're rather uninteresting?
     if (!postA.deletedStatus.isDeleted && postB.deletedStatus.isDeleted)
       return true
-
     if (postA.deletedStatus.isDeleted && !postB.deletedStatus.isDeleted)
       return false
 

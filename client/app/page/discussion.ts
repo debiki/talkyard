@@ -539,6 +539,7 @@ export const Title = createComponent({
 
 
 // (DELETE_LATER year 2017? not in use anywhere any longer, + delete all related stuff.)
+/*
 var SocialLinks = createComponent({
   render: function() {
     if (!this.props.socialLinksHtml)
@@ -548,10 +549,10 @@ var SocialLinks = createComponent({
     return (
       r.div({ dangerouslySetInnerHTML: { __html: this.props.socialLinksHtml }}));
   }
-});
+}); */
 
 
-var RootPostAndComments = createComponent({
+const RootPostAndComments = createComponent({
   getInitialState: function() {
     return { showClickReplyInstead: false };
   },
@@ -562,7 +563,7 @@ var RootPostAndComments = createComponent({
     ReactActions.loadAndShowPost(store.rootPostId);
   },
 
-  onOrigPostReplyClick: function(event) {
+  onAfterPageReplyClick: function(event, postType: PostType) {
     // Some dupl code [69KFUW20]
     event.preventDefault();
     const eventTarget = event.target; // React.js will clear the field
@@ -574,7 +575,7 @@ var RootPostAndComments = createComponent({
         window.parent.postMessage(JSON.stringify(['editorToggleReply', BodyNr]), '*');
       }
       else {
-        editor.toggleWriteReplyToPost(BodyNr, PostType.Normal);
+        editor.toggleWriteReplyToPost(BodyNr, postType);
       }
     });
   },
@@ -646,7 +647,7 @@ var RootPostAndComments = createComponent({
           NoCommentsPageActions({ post: rootPost, me: me })));
     }
 
-    var solvedBy;
+    let solvedBy;
     if (store.pageRole === PageRole.Question && store.pageAnsweredAtMs) {
       // onClick:... handled in ../utils/show-and-highlight.js currently (scrolls to solution).
       solvedBy = r.a({ className: 'dw-solved-by icon-ok-circled',
@@ -657,14 +658,14 @@ var RootPostAndComments = createComponent({
         "Solved in post #" + store.pageAnswerPostNr + ", click to view");
     }
 
-    var anyHorizontalArrowToChildren = null;
+    let anyHorizontalArrowToChildren = null;
     if (this.props.horizontalLayout) {
       anyHorizontalArrowToChildren =
           debiki2.renderer.drawHorizontalArrowFromRootPost(rootPost);
     }
 
-    var repliesAreFlat = false;
-    var childIds = rootPost.childIdsSorted.concat(this.props.topLevelCommentIdsSorted);
+    let repliesAreFlat = false;
+    let childIds = rootPost.childIdsSorted.concat(this.props.topLevelCommentIdsSorted);
 
     // On message pages, most likely max a few people talk — then threads make no sense.
     // On form submission pages, people don't see each others submissions, won't talk at all.
@@ -673,20 +674,24 @@ var RootPostAndComments = createComponent({
       childIds = _.values(store.postsByNr).map((post: Post) => post.nr);
     }
 
-    var isSquashing = false;
+    let isSquashing = false;
+    let firstAppendedIndex = 0;
 
-    var threadedChildren = childIds.map((childId, childIndex) => {
+    const threadedChildren = childIds.map((childId, childIndex) => {
       if (childId === BodyNr || childId === TitleNr)
         return null;
-      var child = postsByNr[childId];
+      const child: Post = postsByNr[childId];
       if (!child)
         return null; // deleted
+      if (child.postType !== PostType.AppendBottom) {
+        firstAppendedIndex += 1;
+      }
       if (isSquashing && child.squash)
         return null;
       if (child.postType === PostType.Flat)  // could rename Flat to Comment?
         return null;
       isSquashing = false;
-      var threadProps = _.clone(this.props);
+      const threadProps = _.clone(this.props);
       if (repliesAreFlat) threadProps.isFlat = true;
       threadProps.elemType = 'div';
       threadProps.postId = childId;  // rename to .postNr, right?
@@ -707,11 +712,19 @@ var RootPostAndComments = createComponent({
       }
     });
 
+    if (firstAppendedIndex < threadedChildren.length) {
+      // Draw a horizontal line above the first append-bottom comment, if there're normal
+      // best-first-order comments above.
+      const line = r.li({ className: 's_AppendBottomDiv' },
+          r.span({ className: 'icon-collapse' }), r.span({ className: 'icon-collapse' }));
+      threadedChildren.splice(firstAppendedIndex, 0, line);
+    }
+
     // Disable chat comments for now, they make people confused, and  [8KB42]
     // it'd be hard & take long to make them simpler to understand.
-    var hasChat = false; // hasChatSection(store.pageRole);
+    let hasChat = false; // hasChatSection(store.pageRole);
 
-    var flatComments = []; /*
+    let flatComments = []; /*
     if (hasChat) _.each(store.postsByNr, (child: Post, childId) => {
       if (!child || child.postType !== PostType.Flat)
         return null;
@@ -728,7 +741,7 @@ var RootPostAndComments = createComponent({
           Thread(threadProps)));
     }); */
 
-    var chatSection; /* Perhaps add back later — but probably not? [8KB42]
+    let chatSection; /* Perhaps add back later — but probably not? [8KB42]
     if (hasChat) {
       var anyClickReplyInsteadHelpMessage = this.state.showClickReplyInstead
           ? debiki2.help.HelpMessageBox({ large: true, message: clickReplyInsteadHelpMessage })
@@ -755,7 +768,7 @@ var RootPostAndComments = createComponent({
     const socialButtons = !store.settings.showSocialButtons ? null :
         SocialButtons(store.settings);
 
-    let postActions = post_shallRenderAsHidden(rootPost) ? null :
+    const postActions = post_shallRenderAsHidden(rootPost) ? null :
          PostActions({ store: this.props, post: rootPost });
 
     const mayReplyToOrigPost = store_mayIReply(store, rootPost);
@@ -765,9 +778,12 @@ var RootPostAndComments = createComponent({
         store.pageRole === PageRole.MindMap ||
           !mayReplyToOrigPost || _.every(threadedChildren, c => _.isEmpty(c)) ? null :
       r.div({ className: 's_APAs'},
-        r.a({ className: 's_APAs_OPRB dw-a dw-a-reply ' + makeReplyBtnIcon(store),
-            onClick: this.onOrigPostReplyClick },
-          makeReplyBtnTitle(store, rootPost, true)));
+        r.a({ className: 's_APAs_OPRB ' + makeReplyBtnIcon(store),
+            onClick: (event) => this.onAfterPageReplyClick(event, PostType.Normal) },
+          makeReplyBtnTitle(store, rootPost, true)),
+        r.a({ className: 's_APAs_ACBB icon-comment-empty',
+            onClick: (event) => this.onAfterPageReplyClick(event, PostType.AppendBottom) },
+          "Append comment below ", r.span({ className: 'icon-collapse' })));
 
     return (
       r.div({ className: threadClass },
@@ -790,7 +806,7 @@ var RootPostAndComments = createComponent({
 });
 
 
-var clickReplyInsteadHelpMessage = {
+const clickReplyInsteadHelpMessage = {
   id: 'EsH5UGPM2',
   version: 1,
   okayText: "Okay",
@@ -801,7 +817,7 @@ var clickReplyInsteadHelpMessage = {
 };
 
 
-var SquashedThreads = createComponent({
+const SquashedThreads = createComponent({
   onClick: function() {
     debiki2.ReactActions.unsquashTrees(this.props.postId);
   },

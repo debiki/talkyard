@@ -63,10 +63,10 @@
 
 .DW.DW .dw-ar-t > .dw-p-as > .dw-a-reply
   padding: 7px 17px 7px 13px !important;
-  color: white;
-  background-color: hsl($uiHue, 80%, 54%);
   position: relative;
   top: 1px;  // v-align with Close/Reopen text
+  color: white;
+  background-color: hsl($uiHue, 80%, 54%);
   &:hover
     color: white;
     background-color: hsl($uiHue, 80%, 62%);
@@ -240,12 +240,13 @@ html:not(.mouse) .dw-t > .dw-p-as .dw-a
 
 // Avoid float drop (the reply button is to the very left)
 .s_APAs_OPRB,
+.s_APAs_ACBB,
 .DW.DW .dw-p-as .dw-a-reply
   font-weight: bold;
-  background: hsl(207, 0%, 95%);
-  color: hsl(0, 0%, 18%);
   padding: 9px 12px 9px 8px;
   margin-left: 6px;
+  background: hsl(207, 0%, 95%);
+  color: hsl(0, 0%, 18%);
   &:before
     opacity: 0.6; // or icon too not-opaque
 
@@ -359,7 +360,8 @@ html:not(.mouse) .dw-t > .dw-p-as .dw-a
   a:first-child
     margin-left: 0;
 
-.s_APAs_OPRB
+.s_APAs_OPRB,  // orig post reply button
+.s_APAs_ACBB   // append comment at the bottom button
   float: left
   &:hover
     // dupl code (6KF0WR4Z)
@@ -367,6 +369,21 @@ html:not(.mouse) .dw-t > .dw-p-as .dw-a
     background: hsl($uiHue, 100%, 98%);
     outline: 1px solid hsl($uiHue, 100%, 92%);
     text-decoration: none;
+
+  &:before  // the icons
+    margin-right: 7px;
+
+.s_APAs_OPRB
+  padding-left: 10px;
+
+.s_APAs_ACBB
+  &:before
+    font-weight: bold;  // make comment icon bold
+
+  .icon-collapse:before
+    rotateFn(180deg);  // flip collapse-up so it instead looks like append-bottom
+    opacity: 0.62;
+    vertical-align: middle;
 
 
 // Inline action menu — currently not in use
