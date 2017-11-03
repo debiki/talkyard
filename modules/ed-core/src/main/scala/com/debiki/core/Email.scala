@@ -103,6 +103,7 @@ object EmailType {
   case object InvitePassword extends EmailType(13)
   case object CreateAccount extends EmailType(21)  // COULD rename to VerifyEmailAddress
   case object ResetPassword extends EmailType(22)
+  case object SiteCreatedSuperAdminNotf extends EmailType(41)
 
   def fromInt(value: Int): Option[EmailType] = Some(value match {
     case Notification.IntVal      => Notification
@@ -112,6 +113,7 @@ object EmailType {
     case InvitePassword.IntVal    => InvitePassword
     case CreateAccount.IntVal     => CreateAccount
     case ResetPassword.IntVal     => ResetPassword
+    case SiteCreatedSuperAdminNotf.IntVal => SiteCreatedSuperAdminNotf
     case _ =>
       return None
   })

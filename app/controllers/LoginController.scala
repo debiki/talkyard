@@ -141,6 +141,7 @@ class LoginController @Inject()(cc: ControllerComponents, edContext: EdContext)
     // Don't send a verif email, if already verified, because of possible security issues (?).
     // The verif link was written to the log files though (by ...LogDontSend(...) above),
     // in case needed for some reason.
+    // CLEAN_UP but then why create the email & save it in the db? Maybe only write to log instead?
     if (siteOwner.emailVerifiedAt.isEmpty) {
       globals.sendEmail(email, request.dao.siteId)
     }

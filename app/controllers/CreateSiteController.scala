@@ -24,6 +24,7 @@ import debiki.EdHttp._
 import ed.server.{EdContext, EdController}
 import ed.server.http._
 import javax.inject.Inject
+import org.owasp.encoder.Encode
 import play.api.libs.json._
 import play.api.mvc.{Action, ControllerComponents}
 import scala.util.Try
@@ -140,7 +141,31 @@ class CreateSiteController @Inject()(cc: ControllerComponents, edContext: EdCont
           isTestSiteOkayToDelete = isTestSiteOkayToDelete, skipMaxSitesCheck = okE2ePassword,
           deleteOldSite = deleteOldSite, pricePlan = pricePlan,
           createdFromSiteId = Some(request.siteId))
-        globals.originOf(hostname)
+
+        val newSiteOrigin = globals.originOf(hostname)
+
+        if (!isTestSiteOkayToDelete) {
+          val now = globals.now()
+          globals.config.superAdmin.emailAddresses foreach { superAdminEmailAddress =>
+            val email = Email.newWithId(
+              Email.generateRandomId(),
+              EmailType.SiteCreatedSuperAdminNotf,
+              createdAt = now,
+              sendTo = superAdminEmailAddress,
+              toUserId = None,
+              subject = s"[EffectiveDiscussions] New site created",
+              bodyHtmlText = i"""
+                |newSiteOrigin: ${ Encode.forHtmlContent(newSiteOrigin) }<br>
+                |embeddingUrl: ${ anyEmbeddingSiteAddress map Encode.forHtmlContent }<br>
+                |organizationName: ${ Encode.forHtmlContent(organizationName) }<br>
+                |pricePlan: ${ Encode.forHtmlContent(pricePlan) }<br>
+                |createdAt: ${ toIso8601T(now.toJavaDate) }<br>
+                |""")
+            globals.sendEmail(email, request.siteId)
+          }
+        }
+
+        newSiteOrigin
       }
       catch {
         case _: DbDao.SiteAlreadyExistsException =>
