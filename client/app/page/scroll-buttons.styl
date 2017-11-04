@@ -43,6 +43,11 @@
   .btn
     margin-right: 1px;
     padding-left: 10px; // else too much
+    // Make space for two lines, and line-break if needed.
+    height: 50px;
+    max-width: 120px;
+    white-space: normal;
+
 
 .esScrollDlg_title
   margin-bottom: 6px;
@@ -64,6 +69,19 @@
   .icon-comment:before
     position: relative;
     left: -2px;
+
+.esScrollDlg_Comments
+  padding-top: 4px;
+  .icon-comment
+    vertical-align: middle;
+    display: inline-block;
+    position: relative;
+    top: -2px;
+    left: -3px;
+  .esScrollDlg_Comments_Text
+    text-align: center;
+    display: inline-block;
+    vertical-align: middle;
 
 .esScrollDlg_Down_Arw
   rotateFn(90deg);

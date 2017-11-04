@@ -34,6 +34,7 @@ export var addVisitedPosition: (whereNext?) => void = _.noop;
 
 var WhereTop = 'T';
 var WhereReplies = 'R';
+var WhereComments = 'C';
 var WhereBottom = 'B';
 var SmallDistancePx = 5;
 
@@ -51,6 +52,14 @@ function scrollToReplies(addBackStep?) {
   utils.scrollIntoViewInPageColumn(
     // dupl code [5UKP20]
     '.dw-depth-0 > .dw-p-as', { marginTop: 65, marginBottom: 9999 });
+}
+function scrollToComments(addBackStep?) {
+  if (addBackStep !== false) {
+    addVisitedPosition(WhereComments);
+  }
+  utils.scrollIntoViewInPageColumn(
+    // dupl code [5UKP20]
+    '.s_AppendBottomDiv', { marginTop: 65, marginBottom: 9999 });
 }
 
 function scrollToBottom(addBackStep?) {
@@ -93,7 +102,8 @@ export var ScrollButtons = createClassAndFactory({
     keymaster('f', this.goForward);
     keymaster('1', scrollToTop);
     keymaster('2', scrollToReplies);
-    keymaster('3', scrollToBottom);
+    keymaster('3', scrollToComments);
+    keymaster('4', scrollToBottom);
   },
 
   componentWillUnmount: function() {
@@ -159,6 +169,12 @@ export var ScrollButtons = createClassAndFactory({
           lastPosTop =
             calcScrollIntoViewCoordsInPageColumn(
                 '.dw-depth-0 > .dw-p-as', { marginTop: 65, marginBottom: 9999 }).desiredParentTop;
+          break;
+        case WhereComments:
+          // DUPL CODE, fix  [5UKP20]
+          lastPosTop =
+            calcScrollIntoViewCoordsInPageColumn(
+              '.s_AppendBottomDiv', { marginTop: 65, marginBottom: 9999 }).desiredParentTop;
           break;
         default: die('EsE2YWK4X8');
       }
@@ -238,6 +254,7 @@ export var ScrollButtons = createClassAndFactory({
       switch (backPost.postNr) {
         case WhereTop: scrollToTop(false); break;
         case WhereReplies: scrollToReplies(false); break;
+        case WhereComments: scrollToComments(false); break;
         case WhereBottom: scrollToBottom(false); break;
         default: die('EsE4KGU02');
       }
@@ -271,12 +288,12 @@ export var ScrollButtons = createClassAndFactory({
     if (!this.state.isShown)
       return null;
 
-    var openScrollMenuButton = Button({ className: 'esScrollBtns_menu', ref: 'scrollMenuButton',
+    const openScrollMenuButton = Button({ className: 'esScrollBtns_menu', ref: 'scrollMenuButton',
         onClick: this.openScrollButtonsDialog }, "Scroll");
 
     // UX: Don't show num steps one can scroll back, don't: "Back (4)" — because people
     // sometimes think 4 is a post number.
-    var scrollBackButton =
+    const scrollBackButton =
         Button({ className: 'esScrollBtns_back', onClick: this.goBack,
             title: "Scroll back to your previous position on this page",
             disabled: this.state.currentVisitedPostIndex <= 0 },
@@ -292,7 +309,7 @@ export var ScrollButtons = createClassAndFactory({
 
 
 // some dupl code [6KUW24]
-var ScrollButtonsDropdownModal = createComponent({
+const ScrollButtonsDropdownModal = createComponent({
   getInitialState: function () {
     return {
       isOpen: false,
@@ -307,9 +324,9 @@ var ScrollButtonsDropdownModal = createComponent({
   },
 
   openAt: function(at) {
-    var rect = at.getBoundingClientRect();
-    var calcCoords = calcScrollIntoViewCoordsInPageColumn;
-    var bottomCoords = calcCoords('#thePageBottom', {
+    const rect = at.getBoundingClientRect();
+    const calcCoords = calcScrollIntoViewCoordsInPageColumn;
+    const bottomCoords = calcCoords('#thePageBottom', {
       marginTop: SmallDistancePx,
       marginBottom: -SmallDistancePx,
     });
@@ -321,6 +338,8 @@ var ScrollButtonsDropdownModal = createComponent({
       enableGotoEndBtn: bottomCoords.needsToScroll,
       enableGotoRepliesBtn:
         calcCoords('.dw-depth-0 > .dw-p-as', { marginTop: 65, marginBottom: 200 }).needsToScroll,
+      enableGotoCommentsBtn:
+        calcCoords('.s_AppendBottomDiv', { marginTop: 65, marginBottom: 200 }).needsToScroll,
     });
   },
 
@@ -338,52 +357,65 @@ var ScrollButtonsDropdownModal = createComponent({
     this.close();
   },
 
+  scrollToComments: function() {
+    scrollToComments();
+    this.close();
+  },
+
   scrollToEnd: function() {
     scrollToBottom();
     this.close();
   },
 
   render: function() {
-    var state = this.state;
-    var store: Store = this.state.store;
-    var pageRole: PageRole = store.pageRole;
-    var isChat = page_isChatChannel(pageRole);
-    var neverHasReplies = pageRole === PageRole.CustomHtmlPage || pageRole === PageRole.WebPage ||
+    const state = this.state;
+    const store: Store = this.state.store;
+    const pageRole: PageRole = store.pageRole;
+    const isChat = page_isChatChannel(pageRole);
+    const neverHasReplies = pageRole === PageRole.CustomHtmlPage || pageRole === PageRole.WebPage ||
         isSection(pageRole);
 
-    var content;
+    let content;
     if (state.isOpen) {
-      var topHelp = "Go to the top of the page. Shortcut: 1 (on the keyboard)";
-      var repliesHelp = "Go to the start of replies section. Shortcut: 2";
-      var endHelp = "Go to the bottom of the page. Shortcut: 3";
+      const topHelp = "Go to the top of the page. Shortcut: 1 (on the keyboard)";
+      const repliesHelp = "Go to the start of the replies section. Shortcut: 2";
+      const commentsHelp = "Go to the start of the comments and events section. Shortcut: 3";
+      const endHelp = "Go to the bottom of the page. Shortcut: 4";
 
-      var scrollToTopButton = isChat ? null :
+      const scrollToTopButton = isChat ? null :
         PrimaryButton({ className: 'esScrollDlg_Up', onClick: this.scrollToTop, title: topHelp,
             disabled: !state.enableGotoTopBtn },
           r.span({},
             r.span({ className: 'esScrollDlg_Up_Arw' }, '➜'), "Page top"));
 
-      var scrollToRepliesButton = isChat || neverHasReplies ? null :
+      const scrollToRepliesButton = isChat || neverHasReplies ? null :
         PrimaryButton({ className: 'esScrollDlg_Replies', onClick: this.scrollToReplies,
             title: repliesHelp, disabled: !state.enableGotoRepliesBtn },
-          r.span({ className: 'icon-comment' }, "Replies"));
+          r.span({ className: 'icon-reply' }, "Replies"));
 
-      var scrollToEndButton = PrimaryButton({ className: 'esScrollDlg_Down',
+      const scrollToCommentsButton = isChat || neverHasReplies ? null :
+        PrimaryButton({ className: 'esScrollDlg_Comments', onClick: this.scrollToComments,
+            title: commentsHelp, disabled: !state.enableGotoCommentsBtn },
+          r.span({ className: 'icon-comment' }),
+          r.span({ className: 'esScrollDlg_Comments_Text' }, "Comments", r.br(), "& Events"));
+
+      const scrollToEndButton = PrimaryButton({ className: 'esScrollDlg_Down',
           onClick: this.scrollToEnd, title: endHelp,
           disabled: !state.enableGotoEndBtn },
         r.span({},
           r.span({ className: 'esScrollDlg_Down_Arw' }, '➜'), isChat ? "Page bottom" : "Bottom"));
 
-      var shortcutsArray = [];
+      const shortcutsArray = [];
       if (scrollToTopButton) shortcutsArray.push("1");
       if (scrollToRepliesButton) shortcutsArray.push("2");
-      if (scrollToEndButton) shortcutsArray.push("3");
-      var shortcutsText = shortcutsArray.join(", ");
+      if (scrollToCommentsButton) shortcutsArray.push("3");
+      if (scrollToEndButton) shortcutsArray.push("4");
+      const shortcutsText = shortcutsArray.join(", ");
 
       content =
           r.div({},
             r.p({ className: 'esScrollDlg_title' }, "Scroll to:"),
-              scrollToTopButton, scrollToRepliesButton, scrollToEndButton,
+              scrollToTopButton, scrollToRepliesButton, scrollToCommentsButton, scrollToEndButton,
             r.p({ className: 'esScrollDlg_shortcuts' },
               "Keyboard shortcuts: ", r.b({}, shortcutsText),
               ", and ", r.b({}, "B"), " to scroll back"));

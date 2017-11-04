@@ -712,11 +712,19 @@ const RootPostAndComments = createComponent({
       }
     });
 
+    // Draw a horizontal line above the first append-bottom comment, if there're normal
+    // best-first-order comments above. And text that explains how this works.
     if (firstAppendedIndex < threadedChildren.length) {
-      // Draw a horizontal line above the first append-bottom comment, if there're normal
-      // best-first-order comments above.
-      const line = r.li({ className: 's_AppendBottomDiv' },
-          r.span({ className: 'icon-collapse' }), r.span({ className: 'icon-collapse' }));
+      const line =
+        r.li({ className: 's_AppendBottomDiv' },
+          r.span({},
+            r.span({ className: 's_AppendBottomDiv_Ar-Up' }, '➜'),
+            " Above: Replies, best first. "),
+          r.wbr(),
+          r.span({},
+            r.span({ style: { whiteSpace: 'nowrap' }},
+              r.span({ className: 's_AppendBottomDiv_Ar-Down' }, '➜'),
+              " Below: Comments and events, chronologically.")));
       threadedChildren.splice(firstAppendedIndex, 0, line);
     }
 
@@ -783,7 +791,7 @@ const RootPostAndComments = createComponent({
           makeReplyBtnTitle(store, rootPost, true)),
         r.a({ className: 's_APAs_ACBB icon-comment-empty',
             onClick: (event) => this.onAfterPageReplyClick(event, PostType.AppendBottom) },
-          "Append comment below ", r.span({ className: 'icon-collapse' })));
+          "Add comment at the bottom ", r.span({ className: 'icon-collapse' })));
 
     return (
       r.div({ className: threadClass },
