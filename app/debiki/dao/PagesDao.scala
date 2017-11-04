@@ -20,6 +20,7 @@ package debiki.dao
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import com.debiki.core.PageParts.MaxTitleLength
+import com.debiki.core.PageParts.FirstReplyNr
 import com.debiki.core.User.SystemUserId
 import debiki._
 import debiki.EdHttp._
@@ -27,6 +28,8 @@ import ed.server.auth.{Authz, ForumAuthzContext}
 import ed.server.notf.NotificationGenerator
 import java.{util => ju}
 import scala.collection.immutable
+import math.max
+import org.owasp.encoder.Encode
 
 
 /** Loads and saves pages and page parts (e.g. posts and patches).
@@ -425,26 +428,31 @@ trait PagesDao {
       var newPlannedAt: Option[ju.Date] = None
       var newDoneAt: Option[ju.Date] = None
       var newClosedAt: Option[ju.Date] = None
+      var newStatus = ""
 
       if (oldMeta.doneAt.isDefined) {
         // Keep all None, except for todos because they cannot be not-planned.
         if (pageRole == PageRole.ToDo || pageRole == PageRole.UsabilityTesting) {
           newPlannedAt = oldMeta.plannedAt
+          newStatus = "To-Do"
         }
       }
       else if (oldMeta.plannedAt.isDefined) {
         newPlannedAt = oldMeta.plannedAt
         newDoneAt = Some(now.toJavaDate)
         newClosedAt = Some(now.toJavaDate)
+        newStatus = "Done"
       }
       else if (pageRole == PageRole.ToDo || pageRole == PageRole.UsabilityTesting) {
         // These are always planned.
         newPlannedAt = Some(oldMeta.createdAt)
         newDoneAt = Some(now.toJavaDate)
         newClosedAt = Some(now.toJavaDate)
+        newStatus = "Done"
       }
       else {
         newPlannedAt = Some(now.toJavaDate)
+        newStatus = "Doing"
       }
 
       val newMeta = oldMeta.copy(
@@ -452,8 +460,11 @@ trait PagesDao {
         doneAt = newDoneAt,
         closedAt = newClosedAt,
         version = oldMeta.version + 1)
+
+      addMetaMessage(user, s" marked this topic as $newStatus", pageId, transaction)
+
       transaction.updatePageMeta(newMeta, oldMeta = oldMeta, markSectionPageStale = true)
-      // (COULD update audit log)
+      // Update audit log
       newMeta
     }
     refreshPageInMemCache(pageId)
@@ -475,13 +486,16 @@ trait PagesDao {
       if (!user.isStaff && user.id != oldMeta.authorId)
         throwForbidden("DwE5JPK7", "Only staff and the topic author can toggle it closed")
 
-      val newClosedAt: Option[ju.Date] = oldMeta.closedAt match {
-        case None => Some(now.toJavaDate)
-        case Some(_) => None
+      val (newClosedAt: Option[ju.Date], didWhat: String) = oldMeta.closedAt match {
+        case None => (Some(now.toJavaDate), "closed")
+        case Some(_) => (None, "reopened")
       }
       val newMeta = oldMeta.copy(closedAt = newClosedAt, version = oldMeta.version + 1)
+
+      addMetaMessage(user, s" $didWhat this topic", pageId, transaction)
+
       transaction.updatePageMeta(newMeta, oldMeta = oldMeta, markSectionPageStale = true)
-      // (COULD update audit log)
+      // Update audit log
       newClosedAt
     }
     refreshPageInMemCache(pageId)
@@ -529,6 +543,9 @@ trait PagesDao {
               version = pageMeta.version + 1), baseAuditEntry)
           }
 
+        val un = undelete ? "un" | ""
+        addMetaMessage(deleter, s" ${un}deleted this topic", pageId, transaction)
+
         transaction.updatePageMeta(newMeta, oldMeta = pageMeta, markSectionPageStale = true)
         transaction.insertAuditLogEntry(auditLogEntry)
         transaction.indexAllPostsOnPage(pageId)
@@ -536,6 +553,33 @@ trait PagesDao {
       }
 
     pageIds foreach refreshPageInMemCache
+  }
+
+
+  def addMetaMessage(doer: User, message: String, pageId: PageId, tx: SiteTransaction) {
+    // Some dupl code [3GTKYA02]
+    val page = PageDao(pageId, tx)
+    val postId = tx.nextPostId()
+    val postNr = page.parts.highestReplyNr.map(_ + 1).map(max(FirstReplyNr, _)) getOrElse FirstReplyNr
+
+    val metaMessage = Post.create(
+      uniqueId = postId,
+      pageId = pageId,
+      postNr = postNr,
+      parent = Some(page.parts.theBody),
+      multireplyPostNrs = Set.empty,
+      postType = PostType.MetaMessage,
+      createdAt = tx.now.toJavaDate,
+      createdById = doer.id,
+      source = message,
+      htmlSanitized = Encode.forHtmlContent(message),
+      approvedById = Some(SystemUserId))
+
+    tx.insertPost(metaMessage)
+    // Don't index — meta messages shouldn't be found, when searching.
+    // Don't update page meta; this type of post isn't part of the actual discussion. [4HDEKRQ0]
+
+    SHOULD // send back json so the satus message gets shown, without reloading the page. Fix later...
   }
 
 

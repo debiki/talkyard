@@ -163,6 +163,7 @@ enum PostType {
   StaffWiki = 11,
   CommunityWiki = 12,
   CompletedForm = 21,
+  MetaMessage = 31,
 }
 
 

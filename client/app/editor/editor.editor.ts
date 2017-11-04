@@ -324,34 +324,34 @@ export var Editor = createComponent({
     return link;
   },
 
-  toggleWriteReplyToPost: function(postId: number, anyPostType?: number) {
+  toggleWriteReplyToPost: function(postNr: number, anyPostType?: number) {
     if (this.alertBadState('WriteReply'))
       return;
-    var postIds = this.state.replyToPostNrs;
-    var index = postIds.indexOf(postId);
+    const postNrs = this.state.replyToPostNrs;
+    const index = postNrs.indexOf(postNr);
     if (index === -1) {
-      postIds.push(postId);
+      postNrs.push(postNr);
       this.showEditor();
     }
     else {
-      postIds.splice(index, 1);
+      postNrs.splice(index, 1);
     }
     // Don't change post type from flat to something else.
-    var postType = anyPostType;
-    if (postIds.length >= 2 && this.state.anyPostType === PostType.Flat) {
+    let postType = anyPostType;
+    if (postNrs.length >= 2 && this.state.anyPostType === PostType.Flat) {
       postType = PostType.Flat;
     }
     this.setState({
       anyPostType: postType,
-      replyToPostNrs: postIds,
-      text: this.state.text || this.state.draft || makeDefaultReplyText(this.state.store, postIds),
+      replyToPostNrs: postNrs,
+      text: this.state.text || this.state.draft || makeDefaultReplyText(this.state.store, postNrs),
     });
-    if (!postIds.length) {
+    if (!postNrs.length) {
       this.closeEditor();
     }
-    var writingWhat = WritingWhat.ReplyToNotOriginalPost;
-    if (_.isEqual([BodyNr], postIds)) writingWhat = WritingWhat.ReplyToOriginalPost;
-    else if (_.isEqual([NoPostId], postIds)) writingWhat = WritingWhat.ChatComment;
+    let writingWhat = WritingWhat.ReplyToNotOriginalPost;
+    if (_.isEqual([BodyNr], postNrs)) writingWhat = WritingWhat.ReplyToOriginalPost;
+    else if (_.isEqual([NoPostId], postNrs)) writingWhat = WritingWhat.ChatComment;
     this.loadGuidelines(writingWhat);
   },
 

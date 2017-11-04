@@ -101,14 +101,15 @@ export function MenuItemDivider() {
 }
 
 
-export function UserName(props: { user: BriefUser, makeLink?: boolean, onClick?: any }) {
+export function UserName(
+    props: { user: BriefUser, makeLink?: boolean, onClick?: any, avoidFullName?: boolean }) {
   // Some dupl code, see discussion.ts, edit-history-dialog.ts & avatar.ts [88MYU2]
   const user = props.user;
   const isStackExchangeUser = user.username && user.username.search('__sx_') === 0; // [2QWGRC8P]
 
   const guestClass = user_isGuest(user) ? ' esP_By_F-G' : '';
   const guestMark = user_isGuest(user) ? '? ' : '';
-  let fullName: any = !user.fullName ? undefined :
+  let fullName: any = !user.fullName || (props.avoidFullName && user.username) ? undefined :
     r.span({ className: 'esP_By_F' + guestClass }, user.fullName + ' ' + guestMark);
   const username = !user.username || isStackExchangeUser ? null :
     r.span({ className: 'esP_By_U' },

@@ -8,6 +8,8 @@ t_ = the_Whatever (for ids)
 e_ = end-to-end-test_Whatever (classes only, for stuff to click in End-to-End tests)
 p_ = public api (classes only, not ids)
 
+s_w-X = wraps an X, i.e., somewhere inside, there's an X. Or "'W'ith a X inside".
+
 esWhatever = old (s_Whatever = new & better)
 
 [refactor] rename esForum_ to esF_ and esForum_Nav to esF_BB
@@ -72,6 +74,8 @@ s_MB            = topic metabar (just below the Orig Post, before all replies)
 
 s_MMB-IsImp     = my menu button, is-impersonating
 s_MM            = my menu (one's avatar + username, in the topbar)
+
+s_MP            = meta message post, about the topic, e.g. "Nnn closed this topic 3 hours ago"
 
 s_NP            = No page, i.e. login-&-create-something-here stuff
 

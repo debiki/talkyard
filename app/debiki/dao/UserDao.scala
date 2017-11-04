@@ -840,9 +840,12 @@ trait UserDao {
     require(user.isMember, "EdE8KFUW2")
 
     val pageMeta = getPageMeta(pageId) getOrDie "EdE5JKDYE"
+    /* This can happen nowadays, after I added meta messages like "Nnn closed this topic". [4HDEKRQ0]
+       Maybe add some other assertion instead?
     if (newProgress.maxPostNr - PageParts.FirstReplyNr >= pageMeta.numRepliesTotal)
       throwForbidden("EdE7UKW25_", o"""Got post nr ${newProgress.maxPostNr} but there are only
           ${pageMeta.numRepliesTotal} posts in the topic""")
+          */
 
     readWriteTransaction { transaction =>
       val oldProgress = transaction.loadReadProgress(userId = user.id, pageId = pageId)

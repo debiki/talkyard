@@ -841,4 +841,50 @@ html.touch .dw-p-mark-click
 
 
 
+// Meta posts
+//===========================
+
+$metaPostMarignBottom = 35px;
+
+.DW .s_w-MP
+  margin-bottom: $metaPostMarignBottom;
+  // Place closer to the parent post, otherwise so much whitespace above.
+  // There's no Reply button anyway so no wrong-Reply-button-to-click.
+  margin-top: -20px;
+  /* Too many lines, looks cluttered:
+  border: 1px solid hsl(0, 0%, 90%);
+  border-left: none;
+  border-right: none; */
+// If is directly below the append-last separator though, don't remove so much whitespace.
+.s_AppendBottomDiv + .s_w-MP
+  margin-top: -5px;
+
+// If two meta posts are next to each other, remove whitespace in between,
+// & make border-bottom & top overlap (so won't be a 2px double border).
+.s_w-MP + .s_w-MP
+  margin-top: - $metaPostMarignBottom - 1px;
+
+.s_MP
+  border-left: none;
+  border-right: none;
+  color: hsl(0, 0%, 41%);
+  padding: 11px 0 10px;
+  font-style: italic;
+
+  .esAvtr
+    position: relative;
+    top: -4px;
+
+  .esP_By // s_MP_UN
+    color: hsl(0, 0%, 29%);
+    margin-right: 2px;
+
+  // Align with normal posts... also if (7UKBQP2)
+  margin-left: $avatarSpace;
+
+.esPage-Compact
+  .s_MP
+    margin-left: 0;   // ... narrow screens (7UKBQP2)
+
+
 // vim: fdm=marker et ts=2 sw=2 tw=0 fo=r list

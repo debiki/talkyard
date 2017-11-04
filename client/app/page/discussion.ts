@@ -52,6 +52,8 @@ const doneIcon = r.span({ className: 'icon-check' });
 const HelpTypePageClosed = 101;
 
 export const TitleBodyComments = createComponent({
+  displayName: 'TitleBodyComments',
+
   makeHelpMessage: function(): HelpMessage {
     const store: Store = this.props.store;
     const me: Myself = store.me;
@@ -357,6 +359,8 @@ export const TitleBodyComments = createComponent({
 
 
 export const Title = createComponent({
+  displayName: 'Title',
+
   getInitialState: function() {
     return { isEditing: false };
   },
@@ -553,6 +557,8 @@ var SocialLinks = createComponent({
 
 
 const RootPostAndComments = createComponent({
+  displayName: 'RootPostAndComments',
+
   getInitialState: function() {
     return { showClickReplyInstead: false };
   },
@@ -683,7 +689,9 @@ const RootPostAndComments = createComponent({
       const child: Post = postsByNr[childId];
       if (!child)
         return null; // deleted
-      if (child.postType !== PostType.AppendBottom) {
+      const isCommentOrEvent =
+          child.postType === PostType.AppendBottom || child.postType === PostType.MetaMessage;
+      if (!isCommentOrEvent) {
         firstAppendedIndex += 1;
       }
       if (isSquashing && child.squash)
@@ -705,6 +713,11 @@ const RootPostAndComments = createComponent({
           r.li({ key: childId },
             SquashedThreads(threadProps)));
       }
+      else if (child.postType === PostType.MetaMessage) {
+        return (
+          r.li({ key: childId, className: 's_w-MP' },
+            MetaPost(threadProps)));
+      }
       else {
         return (
           r.li({ key: childId },
@@ -724,7 +737,7 @@ const RootPostAndComments = createComponent({
           r.span({},
             r.span({ style: { whiteSpace: 'nowrap' }},
               r.span({ className: 's_AppendBottomDiv_Ar-Down' }, '➜'),
-              " Below: Comments and events, chronologically.")));
+              " Below: Comments and events.")));  // needn't mention "chronologically"?
       threadedChildren.splice(firstAppendedIndex, 0, line);
     }
 
@@ -825,7 +838,50 @@ const clickReplyInsteadHelpMessage = {
 };
 
 
+
+const MetaPost = createComponent({
+  displayName: 'MetaPost',
+
+  showAboutUser: function(event: Event) {
+    // Dupl code [1FVBP4E]
+    morebundle.openAboutUserDialogForAuthor(this.props.post, event.target);
+    event.preventDefault();
+    event.stopPropagation();
+  },
+
+  shouldComponentUpdate: function(nextProps, nextState) {
+    // These never change? Immutable?
+    // Harmless BUG: Well ... yes, if the action-doer renames henself — let's ignore that for now :-P
+    return false;
+  },
+
+  render: function() {
+    const store: Store = this.props;
+    const postsByNr: { [postNr: number]: Post; } = store.postsByNr;
+    const post: Post = postsByNr[this.props.postId];
+    const doer: BriefUser = store_getAuthorOrMissing(store, post);
+    const doersAvatar = avatar.Avatar({ user: doer, tiny: true });
+    const when = timeAgo(post.createdAtMs, 's_MP_At');
+    // This results in e.g.:  [avatar-img] @admin_alice closed this 3 hours ago
+    return (
+      // UX DESIGN COULD show an action icon to the left, where the poster's avatar is shown
+      // for normal posts. E.g. show a closed icon, or reopened, or topic-deleted icon.
+      // But then need to know what kind of action was done.
+      r.div({ className: 's_MP', id: `post-${post.nr}` },
+        doersAvatar,
+        UserName({ user: doer, makeLink: true, onClick: this.showAboutUser, avoidFullName: true }),
+        r.span({ className: 's_MP_Text', dangerouslySetInnerHTML: { __html: post.sanitizedHtml }}),
+        ' ',
+        when,
+        '.'));
+  }
+});
+
+
+
 const SquashedThreads = createComponent({
+  displayName: 'SquashedThreads',
+
   onClick: function() {
     debiki2.ReactActions.unsquashTrees(this.props.postId);
   },
@@ -856,6 +912,8 @@ const SquashedThreads = createComponent({
 
 
 var Thread = createComponent({
+  displayName: 'Thread',
+
   shouldComponentUpdate: function(nextProps, nextState) {
     var should = !nextProps.quickUpdate || !!nextProps.postsToUpdate[this.props.postId];
     return should;
@@ -1033,6 +1091,8 @@ function makeWrongWarning(post: Post) {
 
 
 export var Post = createComponent({
+  displayName: 'Post',
+
   onUncollapseClick: function(event) {
     debiki2.ReactActions.uncollapsePost(this.props.post);
   },
@@ -1186,6 +1246,8 @@ export var Post = createComponent({
 
 
 var ReplyReceivers = createComponent({
+  displayName: 'ReplyReceivers',
+
   render: function() {
     var store: Store = this.props.store;
     var multireplyClass = ' dw-mrrs'; // mrrs = multi reply receivers
@@ -1233,7 +1295,10 @@ var ReplyReceivers = createComponent({
 
 
 export var PostHeader = createComponent({
+  displayName: 'PostHeader',
+
   onUserClick: function(event: Event) {
+    // Dupl code [1FVBP4E]
     morebundle.openAboutUserDialogForAuthor(this.props.post, event.target);
     event.preventDefault();
     event.stopPropagation();
@@ -1380,6 +1445,8 @@ const abbrContentLength = isServerSide() ? 60 : (
 
 
 export const PostBody = createComponent({
+  displayName: 'PostBody',
+
   loadAndShow: function(event) {
     event.preventDefault();
     let post: Post = this.props.post;

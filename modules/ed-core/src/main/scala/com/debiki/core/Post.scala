@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2015 Kaj Magnus Lindberg
+ * Copyright (c) 2015, 2017 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -136,6 +136,7 @@ class PostBitFlags(val bits: Int) extends AnyVal {
 sealed abstract class PostType(protected val IntValue: Int) {
   def toInt = IntValue
   def isWiki = false
+  def placeLast = false
 }
 
 object PostType {
@@ -143,13 +144,14 @@ object PostType {
   case object Normal extends PostType(1)
 
   /** A comment in the flat section below the threaded discussion section. */
+  @deprecated("now", "delete?")
   case object Flat extends PostType(2)
 
   /** A chat message in a chat room. */
   case object ChatMessage extends PostType(3)
 
   /** A Normal post but appended to the bottom of the page, not sorted best-first. */
-  case object AppendBottom extends PostType(4)
+  case object AppendBottom extends PostType(4) { override def placeLast = true }
 
   CLEAN_UP // remove StaffWiki, use the permission system instead.
   /** Any staff member can edit this post. No author name shown. */
@@ -164,7 +166,9 @@ object PostType {
 
   case object CompletedForm extends PostType(21)
 
-  case object StatusChange extends PostType(31)
+  /** E.g. "Topic closed" or "Topic reopened" or "Nnn joined the chat".
+    * Doesn't increment the reply count. */
+  case object MetaMessage extends PostType(31) { override def placeLast = true }
 
   // Later:
   // - FormSubmission(21)? Shown only to the page author(s) + admins? Cannot be voted on. Sorted by
@@ -179,7 +183,7 @@ object PostType {
     case StaffWiki.IntValue => StaffWiki
     case CommunityWiki.IntValue => CommunityWiki
     case CompletedForm.IntValue => CompletedForm
-    case StatusChange.IntValue => StatusChange
+    case MetaMessage.IntValue => MetaMessage
     case _ => return None
   })
 }
@@ -317,14 +321,14 @@ case class Post(
   require(numUnwantedVotes >= 0, "DwE4GKY2")
   require(numTimesRead >= 0, "DwE2ZfMI3")
 
-  def isReply = PageParts.isReply(nr)
+  def isReply = PageParts.isReply(nr) && !isMetaMessage
   def isTitle = nr == PageParts.TitleNr
   def isOrigPost = nr == PageParts.BodyNr
   def isOrigPostReply = PageParts.isReply(nr) && parentNr.contains(PageParts.BodyNr)
-  def isMultireply = multireplyPostNrs.nonEmpty
+  def isMultireply = multireplyPostNrs.nonEmpty && !isMetaMessage
   def isFlat = tyype == PostType.Flat
   def isAppendBottom = tyype == PostType.AppendBottom
-  def isStatusChange = tyype == PostType.StatusChange
+  def isMetaMessage = tyype == PostType.MetaMessage
   def isBodyHidden = bodyHiddenAt.isDefined
   def isDeleted = deletedStatus.isDeleted
   def isSomeVersionApproved = approvedRevisionNr.isDefined
@@ -709,12 +713,12 @@ object Post {
       return aPos < bPos
     } */
 
-    // Place append-at-the-bottom posts at the bottom, sorted by time.
-    if (postA.tyype != PostType.AppendBottom && postB.tyype == PostType.AppendBottom)
+    // Place append-at-the-bottom and meta-message posts at the bottom, sorted by time.
+    if (!postA.tyype.placeLast && postB.tyype.placeLast)
       return true
-    if (postA.tyype == PostType.AppendBottom && postB.tyype != PostType.AppendBottom)
+    if (postA.tyype.placeLast && !postB.tyype.placeLast)
       return false
-    if (postA.tyype == PostType.AppendBottom && postB.tyype == PostType.AppendBottom)
+    if (postA.tyype.placeLast && postB.tyype.placeLast)
       return postA.nr < postB.nr
 
     // Place deleted posts last; they're rather uninteresting?

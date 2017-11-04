@@ -93,6 +93,7 @@ trait PostsDao {
       if (page.role.isChat)
         throwForbidden("EsE50WG4", s"Page '${page.id}' is a chat page; cannot post normal replies")
 
+      // Some dupl code [3GTKYA02]
       val uniqueId = transaction.nextPostId()
       val postNr = page.parts.highestReplyNr.map(_ + 1).map(max(FirstReplyNr, _)) getOrElse FirstReplyNr
       val commonAncestorNr = page.parts.findCommonAncestorNr(replyToPostNrs.toSeq)

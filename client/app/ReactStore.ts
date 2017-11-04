@@ -897,11 +897,13 @@ function sortPostIdsInPlaceBestFirst(postNrs: PostNr[], postsByNr: { [nr: number
     } */
 
     // Place append-at-the-bottom posts at the bottom, sorted by time.
-    if (postA.postType !== PostType.AppendBottom && postB.postType === PostType.AppendBottom)
+    const aLast = postA.postType === PostType.AppendBottom || postA.postType === PostType.MetaMessage;
+    const bLast = postB.postType === PostType.AppendBottom || postB.postType === PostType.MetaMessage;
+    if (!aLast && bLast)
       return -1;
-    if (postA.postType === PostType.AppendBottom && postB.postType !== PostType.AppendBottom)
+    if (aLast && !bLast)
       return +1;
-    if (postA.postType === PostType.AppendBottom && postB.postType === PostType.AppendBottom)
+    if (aLast && bLast)
       return postA.nr < postB.nr ? -1 : +1;
 
     // Place deleted posts last; they're rather uninteresting?

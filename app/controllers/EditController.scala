@@ -258,12 +258,8 @@ object EditController {
     |"""
 
   val ChatCommentGuidelines = i"""
-    |<p>In a chat comment, you can:</p>
-    |<ul>
-    |<li>Talk lightly and causally about this topic.</li>
-    |<li>Ask the Original Poster for clarifications.</li>
-    |<li>Post a topic status update.</li>
-    |</ul>
+    |<p>Your comment will be appended at the bottom of the page.</p>
+    |<p>Be kind to the others.</p>
     |"""
 
   val DirectMessageGuidelines = i"""
@@ -284,18 +280,12 @@ object EditController {
     |</ul>
     |"""
 
-  /*
-  val UsabilityTestingVideoGuidelines = /* [plugin] */ i"""
-    |<p>Here you can link to any video you've recorded. However, this is a public forum;
-    |anyone can see your link. If you don't like that, then instead post a <i>private message</>
-    |to the Original Post author instead (click his/her name). And, here, just reply someting
-    |like "Video submitted" so other people know about that.
-    |</p>
-    |""" */
-
   val UsabilityTestingTextGuidelines = /* [plugin] */ i"""
-    |<p>This is a public forum — anyone can see your feedback. (To say something in private,
-    |you can post a <i>direct message</i>, by clicking the relevant person's name.)
+    |<p>Give honest feedback, formulated in a <b>friendly</b> and <b>encouraging</b> way,
+    |so the receiver will want to <i>continue learning and experimenting</i>.
+    |</p>
+    |<p>This is a public forum — anyone can see your feedback. To say something in private,
+    |post a <i>direct message</i>, by clicking the relevant person's name.
     |</p>
     |"""
 
