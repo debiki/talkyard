@@ -132,7 +132,7 @@ const PinPageDialog = createComponent({
     const store: Store = this.props.store;
     this.setState({
       isOpen: true,
-      pinWhere: store.pinWhere,
+      pinWhere: store.pinWhere || PinPageWhere.InCategory,
     });
   },
 

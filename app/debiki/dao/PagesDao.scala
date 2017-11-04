@@ -325,23 +325,29 @@ trait PagesDao {
   }
 
 
-  def unpinPage(pageId: PageId) {
-    pinOrUnpin(pageId, pinWhere = None, pinOrder = None)
+  def unpinPage(pageId: PageId, requester: User) {
+    pinOrUnpin(pageId, pinWhere = None, pinOrder = None, requester)
   }
 
 
-  def pinPage(pageId: PageId, pinWhere: PinPageWhere, pinOrder: Int): Unit = {
-    pinOrUnpin(pageId, Some(pinWhere), Some(pinOrder))
+  def pinPage(pageId: PageId, pinWhere: PinPageWhere, pinOrder: Int, requester: User): Unit = {
+    pinOrUnpin(pageId, Some(pinWhere), Some(pinOrder), requester)
   }
 
 
-  private def pinOrUnpin(pageId: PageId, pinWhere: Option[PinPageWhere], pinOrder: Option[Int]) {
+  private def pinOrUnpin(pageId: PageId, pinWhere: Option[PinPageWhere], pinOrder: Option[Int],
+        requester: User) {
     require(pinWhere.isDefined == pinOrder.isDefined, "EdE2WRT5")
+    val didWhat = pinWhere match {
+      case None => "unpinned this topic"
+      case Some(_) => "pinned this topic"
+    }
     val (oldMeta, newMeta) = readWriteTransaction { transaction =>
       val oldMeta = transaction.loadThePageMeta(pageId)
       val newMeta = oldMeta.copy(pinWhere = pinWhere, pinOrder = pinOrder,
         version = oldMeta.version + 1)
       transaction.updatePageMeta(newMeta, oldMeta = oldMeta, markSectionPageStale = true)
+      addMetaMessage(requester, didWhat, pageId, transaction)
       (oldMeta, newMeta)
       // (COULD update audit log)
     }

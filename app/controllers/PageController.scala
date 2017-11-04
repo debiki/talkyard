@@ -95,14 +95,14 @@ class PageController @Inject()(cc: ControllerComponents, edContext: EdContext)
     val pinWhere = PinPageWhere.fromInt(pinWhereInt) getOrElse throwBadArgument(
       "DwE4KE28", "pinWhere")
 
-    request.dao.pinPage(pageId, pinWhere, pinOrder)
+    request.dao.pinPage(pageId, pinWhere, pinOrder, request.theRequester)
     Ok
   }
 
 
   def unpinPage: Action[JsValue] = StaffPostJsonAction(maxBytes = 1000) { request =>
     val pageId = (request.body \ "pageId").as[PageId]
-    request.dao.unpinPage(pageId)
+    request.dao.unpinPage(pageId, request.theRequester)
     Ok
   }
 
