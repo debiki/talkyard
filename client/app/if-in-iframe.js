@@ -22,7 +22,7 @@ if (d.i.isInEmbeddedCommentsIframe || d.i.isInEmbeddedEditor) {
 
 addEventListener('message', onMessage, false);
 
-window.parent.postMessage('["iframeInited", {}]', '*');
+window.parent.postMessage(['iframeInited', {}], '*');
 
 if (d.i.isInEmbeddedCommentsIframe)
   syncDocSizeWithIframeSize();
@@ -30,12 +30,10 @@ if (d.i.isInEmbeddedCommentsIframe)
 
 function onMessage(event) {
 
-  // The message is a "[eventName, eventData]" string because IE <= 9 doesn't support
-  // sending objects.
   var eventName;
   var eventData;
   try {
-    var json = JSON.parse(event.data);
+    var json = event.data;
     eventName = json[0];
     eventData = json[1];
   }
@@ -50,6 +48,12 @@ function onMessage(event) {
       d.i.embeddingUrl = eventData.embeddingUrl;
       d.i.altPageId = eventData.discussionId;
       addBaseElem(eventData);
+      break;
+    case 'setCurrentUser':
+      debiki.scriptLoad.done(function() {
+        debiki2.ReactActions.setNewMe(eventData);  // for now, just testing
+        // later: Server.upsertUserAndLogin(eventData);
+      });
       break;
     case 'justLoggedIn':
       debiki2.ReactActions.setNewMe(eventData);

@@ -155,8 +155,12 @@ jQuery(function($) {   // xx
 
 function messageCommentsIframeNewWinTopSize() {
   var rect = theCommentsIframe.getBoundingClientRect();
-  sendToComments('["iframeOffsetWinSize", {' +
-      '"top":' + (-rect.top) + ', "height":' + window.innerHeight + '}]');
+  sendToComments(['iframeOffsetWinSize', { top: -rect.top, height: window.innerHeight }]);
+}
+
+
+function messageCommentsIframeCurrentUser(user) {
+  sendToComments(['setCurrentUser', user]);
 }
 
 
@@ -164,7 +168,7 @@ function messageCommentsIframeNewWinTopSize() {
 // code here in the main win, with info about how to scroll — because the actuall scrolling is done
 // here in the main win.
 function messageCommentsIframeToMessageMeToScrollTo(postNr) {
-  sendToComments('["scrollToPostNr", ' + postNr + ']');
+  sendToComments(['scrollToPostNr', postNr]);
 }
 
 
@@ -191,6 +195,11 @@ function onMessage(event) {
       if (iframe === theCommentsIframe) {
         // The iframe wants to know the real win dimensions, so it can position modal dialogs on screen.
         messageCommentsIframeNewWinTopSize();
+        // Set current user:
+        var currentUser = window.edCurrentUser;
+        if (currentUser) {
+          messageCommentsIframeCurrentUser(currentUser);
+        }
         // If we want to scroll to & highlight a post: The post is inside the iframe and we don't
         // know where. So tell the iframe to send back a 'scrollComments' message to us,
         // with info about how to scroll.
@@ -276,10 +285,10 @@ function onMessage(event) {
 
 function setIframeBaseAddressAndDiscussionId(iframe) {
   iframe.contentWindow.postMessage(
-      JSON.stringify(['setBaseAddress', {
+      ['setBaseAddress', {
         embeddingUrl: embeddingUrl,
         discussionId: discussionId
-      }]), '*');
+      }], '*');
 }
 
 
@@ -354,7 +363,7 @@ function showEditor(show) {
   else {
     editorWrapper.style.display = 'none';
     placeholder.style.display = 'none';
-    sendToComments('["clearIsReplyingMarks", {}]');
+    sendToComments(['clearIsReplyingMarks', {}]);
   }
 }
 

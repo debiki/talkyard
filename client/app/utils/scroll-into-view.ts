@@ -81,7 +81,7 @@ export function scrollIntoView(elem, options, onDone?: () => void) {
   if (d.i.isInEmbeddedCommentsIframe) {
     delete options.parent;
     const rect = cloneRect(elem.getBoundingClientRect());
-    window.parent.postMessage(JSON.stringify(['scrollComments', [rect, options]]), '*');
+    window.parent.postMessage(['scrollComments', [rect, options]], '*');
   }
   else {
     if (!options.parent) {

@@ -38,8 +38,7 @@ d.i.handleReplyResult = function(data) {
     }
     // Send a message to the embedding page, which will forward it to
     // the comments iframe, which will show the new comment.
-    window.parent.postMessage(
-        JSON.stringify(['handleReplyResult', data]), '*');
+    window.parent.postMessage(['handleReplyResult', data], '*');
   }
   else {
     doHandleReplyResult(data);

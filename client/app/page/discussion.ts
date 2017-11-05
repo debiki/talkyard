@@ -584,7 +584,7 @@ const RootPostAndComments = createComponent({
       // editor is closed, and then we don't want to toggle it afterwards.
       $h.toggleClass(eventTarget, 'dw-replying');
       if (debiki.internal.isInEmbeddedCommentsIframe) {
-        window.parent.postMessage(JSON.stringify(['editorToggleReply', BodyNr]), '*');
+        window.parent.postMessage(['editorToggleReply', BodyNr], '*');
       }
       else {
         editor.toggleWriteReplyToPost(BodyNr, postType);

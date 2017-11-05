@@ -79,7 +79,7 @@ export function loadMyself(afterwardsCallback?) {
   Server.loadMyself((user) => {
     if (d.i.isInIframe) {
       // Tell the embedded-comments or embedded-editor iframe that we just logged in.
-      window.parent.postMessage(JSON.stringify(['justLoggedIn', user]), '*');
+      window.parent.postMessage(['justLoggedIn', user], '*');
     }
     setNewMe(user);
     if (afterwardsCallback) {
@@ -115,7 +115,7 @@ export function logoutClientSideOnly() {
   });
   if (d.i.isInEmbeddedCommentsIframe) {
     // Tell the editor iframe that we've logged out.
-    window.parent.postMessage(JSON.stringify(['logoutClientSideOnly', null]), '*');
+    window.parent.postMessage(['logoutClientSideOnly', null], '*');
   }
   // Quick fix that reloads the admin page (if one views it) so the login dialog appears:
   location.reload();
@@ -633,7 +633,7 @@ export function writeMessage(userId: UserId) {  // CLEAN_UP use LinkButton and h
 
 function sendToEditorIframe(message) {
   // Send the message to the embedding page; it'll forward it to the appropriate iframe.
-  window.parent.postMessage(JSON.stringify(message), '*');
+  window.parent.postMessage(message, '*');
 }
 
 // An alias, for better readability.
