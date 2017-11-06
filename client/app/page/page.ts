@@ -85,17 +85,19 @@ var Page = createComponent({
   },
 
   render: function() {
-    const isEmbeddedComments: boolean = debiki.internal.isInEmbeddedCommentsIframe;
+    const isEmbCmts: boolean = debiki.internal.isInEmbeddedCommentsIframe;
     const store: Store = this.props;
     const content = page_isChatChannel(store.pageRole)
         ? debiki2.page.ChatMessages({ store: store })
         : debiki2.page.TitleBodyComments({ store: store });
     const compactClass = this.state.useWideLayout ? '' : ' esPage-Compact';
     const pageTypeClass = ' s_PT-' + store.pageRole;
+    const topBar = isEmbCmts  || page_isChatChannel(store.pageRole) ? null : reactelements.TopBar({});
+    const scrollButtons = isEmbCmts ? null : debiki2.page.ScrollButtons();
     return (
       r.div({ className: 'esPage' + compactClass + pageTypeClass },
-        page_isChatChannel(store.pageRole) ? null : debiki2.reactelements.TopBar({}),
-        isEmbeddedComments ? null : debiki2.page.ScrollButtons(),
+        topBar,
+        scrollButtons,
         r.div({ className: 'container' },
           r.article({},
             content))));

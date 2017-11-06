@@ -19,7 +19,7 @@ package debiki.dao
 
 import com.debiki.core._
 import debiki.EdHttp.{throwForbidden, throwForbiddenIf}
-import ed.server.security.{SidStatus, BrowserId}
+import ed.server.security.{BrowserId, SidStatus}
 import java.{util => ju}
 import play.api.libs.json.JsArray
 import play.{api => p}
@@ -27,6 +27,7 @@ import scala.collection.{immutable, mutable}
 import Prelude._
 import EmailNotfPrefs.EmailNotfPrefs
 import debiki.ReactJson.NotfsAndCounts
+import org.scalactic.{ErrorMessage, Or}
 import scala.collection.mutable.ArrayBuffer
 
 
@@ -388,6 +389,27 @@ trait UserDao {
       addUserStats(UserStats(user.id, lastSeenAt = transaction.now))(transaction)
       MemberLoginGrant(Some(identity), user, isNewIdentity = true, isNewMember = false)
     }
+  }
+
+
+  /** Inserts a Single-Sign-On identity, or updates it if there is one already
+    * with a matching 1) external id, or 2) email.
+    * Also updates the related user, e.g. changes its bio / primary email address / username etc,
+    * to match the values specified in the request.
+    * Or creates a new user if there is none.
+    */
+  def upsertExternalSsoUserAndLogin(externalUser: ExternalSsoUser): MemberLoginGrant = {
+    // Lookup identity and user, and login — works if the user exists already.
+    readWriteTransaction { tx =>
+      tx.tryLoginAsExternalUser(externalUser) foreach { loginGrant =>
+        return loginGrant
+      }
+    }
+    // Create a new identity & user and login.
+    RACE // if the same user logs in in two browser tabs in parallel, a db-insert here might fail. Fine?
+    val loginGrant = createIdentityUserAndLogin(externalUser)
+    memCache.fireUserCreated(loginGrant.user)
+    loginGrant
   }
 
 

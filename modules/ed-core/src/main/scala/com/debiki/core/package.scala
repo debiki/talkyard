@@ -56,6 +56,8 @@ package object core {
   type LoginId = String
 
   type UserId = Int // when removing/renaming-to-UserId, search for UserId2 everywhere
+  type Username = String
+  type FullName = String
 
   // rename to MemberId? Or remove, use UserId instead.
   type RoleId = UserId
@@ -81,6 +83,9 @@ package object core {
   type IpAddress = String
 
   type EmailId = String
+  type EmailAddress = String
+
+  type ExternalId = String
 
   type AuditLogEntryId = Int
 
@@ -508,6 +513,8 @@ package object core {
 
 
   def isBlank(char: Char): Boolean = char <= ' '
+  def isEmptyOrHasBlanks(string: String): Boolean = string.isEmpty || string.exists(isBlank)
+  def isEmptyOrOnlyBlanks(string: String): Boolean = !string.exists(_ > ' ')
 
 
   def isValidNonLocalEmailAddress(address: String): Boolean =

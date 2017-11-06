@@ -322,6 +322,8 @@ trait SiteTransaction {
   def loginAsGuest(loginAttempt: GuestLoginAttempt): GuestLoginResult
   def configIdtySimple(ctime: ju.Date, emailAddr: String, emailNotfPrefs: EmailNotfPrefs)
 
+  def tryLoginAsExternalUser(externalUser: ExternalSsoUser): Option[MemberLoginGrant]
+
   def loadMemberInclDetails(userId: UserId): Option[MemberInclDetails] =
     loadMemberOrGroupInclDetails(userId) map {
       case member: MemberInclDetails => member

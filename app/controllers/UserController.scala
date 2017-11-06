@@ -728,6 +728,63 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
   }
 
 
+  def ssoUpsertUserAndLogin: Action[JsValue] = PostJsonAction(RateLimits.ConfigUser,
+        maxBytes = 3000) { request =>
+    import request.{body, dao}
+
+    val hmacSha256Base64 = (body \ "hmacSha256Base64").as[String]
+    val userJson = (body \ "externalUser").as[JsObject]
+    val userJsonStr = Json.stringify(userJson)
+
+    SECURITY; SHOULD // hash & compare userDataStr with the HMAC, using a per site secret.
+
+    val externalId = (userJson \ "externalId").as[String].trim
+    val emailAddress = (userJson \ "email").as[String].trim
+    val username = (userJson \ "username").as[String].trim
+    val fullName = (userJson \ "fullName").asOptStringNoneIfBlank
+    val avatarUrl = (userJson \ "avatarUrl").asOptStringNoneIfBlank
+    val aboutUser = (userJson \ "aboutUser").asOptStringNoneIfBlank
+
+    // Some dupl code. [2FKD05]
+    if (ed.server.security.ReservedNames.isUsernameReserved(username))
+      throwForbidden("EdE2WKTEFGE", s"Username is reserved: '$username'; choose another username")
+
+    throwBadRequestIf(!isValidNonLocalEmailAddress(emailAddress), "EdE24GKR101", "Bad email")
+    throwBadRequestIf(fullName.containsEmptyOrOnlyBlanks, "EdE7GMR70Q", "Empty name")
+    throwBadRequestIf(avatarUrl.containsEmptyOrHasBlanks, "EdE24GKR102", "Bad avatar url")
+    throwBadRequestIf(aboutUser.containsEmptyOrOnlyBlanks, "EdE24GKR103", "Empty about user text")
+
+    import ExternalSsoUser._
+    throwBadRequestIf(emailAddress.length > MaxEmailLength, "EdE4GKTRQ01", "Too long email address")
+    throwBadRequestIf(fullName.exists(_.length > MaxNameLength), "EdE1KBFS3", "Too long name")
+    throwBadRequestIf(
+      avatarUrl.exists(_.length > MaxAvatarUrlLength), "EdE4GKTRQ02", "Too long avatar url")
+    throwBadRequestIf(
+      aboutUser.exists(_.length > MaxAboutUserLength), "EdE4GKTRQ01", "Too long about user text")
+
+    // Dupl code [1PDKSWGT0]
+    throwBadRequestIf(Validation.checkName(fullName).isBad, "EdE2WBKG401", "Bad name")
+    throwBadRequestIf(Validation.checkUsername(username).isBad, "EdE2WBKG402", "Bad username")
+    throwBadRequestIf(Validation.checkEmail(emailAddress).isBad, "EdE2WBKG403", "Bad email")
+
+    val loginGrant: MemberLoginGrant = dao.upsertExternalSsoUserAndLogin(ExternalSsoUser(
+      externalId = externalId,
+      username = username,
+      name = fullName,
+      email = emailAddress,
+      avatarUrl = avatarUrl,
+      aboutUser = aboutUser))
+
+    import context.security.createSessionIdAndXsrfToken
+    val (_, _, sidAndXsrfCookies) = createSessionIdAndXsrfToken(dao.siteId, loginGrant.user.id)
+    SHOULD // return the user in the db and use it client side ... in case it's different from  [65JRKA2]
+    // the external user data. Maybe the external user changed hens username, but that couldn't
+    // be done server side, because someone else has that username already. Then the server
+    // will continue using the *old* username — and the client should, too.
+    Ok.withCookies(sidAndXsrfCookies: _*)
+  }
+
+
   /*
   private def userInfoToJson(userInfo: UserInfoAndStats): JsObject = {
     Json.obj(

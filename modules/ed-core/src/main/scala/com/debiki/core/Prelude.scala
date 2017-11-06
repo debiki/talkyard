@@ -498,6 +498,12 @@ object Prelude {
 
     def isEmptyOrContainsBlank: Boolean =
       underlying.isEmpty || underlying.get.trim.isEmpty
+
+    def containsEmptyOrHasBlanks: Boolean =
+      if (underlying.isEmpty) false else isEmptyOrHasBlanks(underlying.get)
+
+    def containsEmptyOrOnlyBlanks: Boolean =
+      if (underlying.isEmpty) false else isEmptyOrOnlyBlanks(underlying.get)
   }
 
   /**

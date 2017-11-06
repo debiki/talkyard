@@ -520,6 +520,11 @@ export function logout(success: () => void) {
 }
 
 
+export function ssoUpsertUserAndLogin(externalUser, hmacSha256Base64) {
+  postJsonSuccess('/-/sso-upsert-user-and-login', () => {}, { externalUser, hmacSha256Base64 });
+}
+
+
 export function makeImpersionateUserAtOtherSiteUrl(siteId: SiteId, userId: UserId,
       success: (url: string) => void) {
   const url = '/-/make-impersonate-other-site-url?siteId=' + siteId + '&userId=' + userId;

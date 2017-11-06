@@ -159,8 +159,8 @@ function messageCommentsIframeNewWinTopSize() {
 }
 
 
-function messageCommentsIframeCurrentUser(user) {
-  sendToComments(['setCurrentUser', user]);
+function messageCommentsIframeCurrentUser(user, hmac) {
+  sendToComments(['setCurrentUser', user, hmac]);
 }
 
 
@@ -173,19 +173,9 @@ function messageCommentsIframeToMessageMeToScrollTo(postNr) {
 
 
 function onMessage(event) {
-  // The message is a "[eventName, eventData]" string because IE <= 9 doesn't support
-  // sending objects. CLEAN_UP COULD send a real obj nowadays, because we don't support IE 9 any more.
-  var eventName;
-  var eventData;
-  try {
-    var json = JSON.parse(event.data);
-    eventName = json[0];
-    eventData = json[1];
-  }
-  catch (error) {
-    // This isn't a message from Debiki.
-    return;
-  }
+  var eventName = event.data[0];
+  var eventData = event.data[1];
+  //var hmacSha256Base64 = event.data[2];
 
   switch (eventName) {
     case 'iframeInited':
@@ -197,8 +187,12 @@ function onMessage(event) {
         messageCommentsIframeNewWinTopSize();
         // Set current user:
         var currentUser = window.edCurrentUser;
-        if (currentUser) {
-          messageCommentsIframeCurrentUser(currentUser);
+        var hmac = window.edCurrentUserHmacSha256Base64;
+        if (currentUser && hmac) {
+          messageCommentsIframeCurrentUser(currentUser, hmac);
+        }
+        else if (currentUser) {
+          console.log("SSO login error: No HMAC [EdE2WTFP5R]")
         }
         // If we want to scroll to & highlight a post: The post is inside the iframe and we don't
         // know where. So tell the iframe to send back a 'scrollComments' message to us,

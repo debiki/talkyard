@@ -106,9 +106,9 @@ object Invite {
 
 // Rename to NewMemberData?
 sealed abstract class NewUserData {
-  def name: Option[String]
+  def name: Option[String]   // RENAME to fullName
   def username: String
-  def email: String
+  def email: String  // RENAME to emailAddress
   def emailVerifiedAt: Option[ju.Date]
   def isAdmin: Boolean
   def isOwner: Boolean
@@ -188,6 +188,7 @@ object NewPasswordUserData {
         threatLevel: ThreatLevel = ThreatLevel.HopefullySafe)
         : NewPasswordUserData Or ErrorMessage = {
     for {
+      // Dupl code [1PDKSWGT0]
       okName <- Validation.checkName(name)
       okUsername <- Validation.checkUsername(username)
       okEmail <- Validation.checkEmail(email)
@@ -905,6 +906,66 @@ case class OpenAuthLoginAttempt(
   def profileProviderAndKey: OpenAuthProviderIdKey = openAuthDetails.providerIdAndKey
 }
 
+object ExternalSsoUser {
+  val MaxEmailLength = 150
+  val MaxNameLength = 100
+  val MaxAvatarUrlLength = 200
+  val MaxAboutUserLength = 1500
+}
+
+
+/** For single-sign-on (SSO).
+  */
+case class ExternalSsoUser(
+  externalId: ExternalId,
+  username: Username,
+  name: Option[FullName],
+  email: EmailAddress,
+  avatarUrl: Option[String],
+  aboutUser: Option[String],
+  isAdmin: Boolean = false,
+  isModerator: Boolean = false) extends NewUserData {
+
+  import ExternalSsoUser._
+
+  dieIf(isEmptyOrHasBlanks(username), "EdE5JUMQST2")
+  dieIf(!isValidNonLocalEmailAddress(email), "EdE2PKDSR01")
+  dieIf(name.containsEmptyOrOnlyBlanks, "EdE5DKRERQ")
+  dieIf(avatarUrl.containsEmptyOrHasBlanks, "EdE2PKDSR02")
+  dieIf(aboutUser.containsEmptyOrOnlyBlanks, "EdE2PKDSR03")
+
+  dieIf(email.length > MaxEmailLength, "EdE8UNMS201")
+  dieIf(name.exists(_.length > MaxNameLength), "EdE2WKTD50")
+  dieIf(avatarUrl.exists(_.length > MaxAvatarUrlLength), "EdE8UNMS202")
+  dieIf(aboutUser.exists(_.length > MaxAboutUserLength), "EdE8UNMS203")
+
+  dieIf(Validation.checkName(name).isBad, "EdEZ4JH901")
+  dieIf(Validation.checkUsername(username).isBad, "EdEZ4JH902")
+  dieIf(Validation.checkEmail(email).isBad, "EdEZ4JH903")
+
+  def isOwner = false
+  def emailVerifiedAt: Option[ju.Date] = die("EdE7UKFEW")
+
+  override def makeUser(userId: UserId, createdAt: ju.Date) = MemberInclDetails(
+    id = userId,
+    fullName = name,
+    username = username,
+    createdAt = createdAt,
+    isApproved = Some(true),
+    approvedAt = Some(createdAt),
+    approvedById = Some(SystemUserId),
+    emailAddress = email,
+    emailNotfPrefs = EmailNotfPrefs.Receive,
+    emailVerifiedAt = Some(createdAt),
+    isAdmin = isAdmin,
+    isModerator = isModerator)
+
+  def makeIdentity(userId: UserId, identityId: IdentityId): Identity =
+    SingleSignOnIdentity(identityId, userId = userId, externalUser = this)
+
+}
+
+
 
 /** A user might have many identities, e.g. an OpenAuth Google identity and
   * a Twitter identity.
@@ -940,7 +1001,7 @@ case class IdentityEmailId(
 }
 
 
-case class IdentityOpenId(
+case class IdentityOpenId(  // CLEAN_UP RENAME to OpenIdIdentity
   id: IdentityId,
   override val userId: UserId,
   openIdDetails: OpenIdDetails) extends Identity {
@@ -974,6 +1035,15 @@ case class OpenAuthIdentity(
   openAuthDetails: OpenAuthDetails) extends Identity {
 
   require(userId >= LowestAuthenticatedUserId, "EdE4KFJ7C")
+}
+
+
+case class SingleSignOnIdentity(
+  id: IdentityId,
+  override val userId: UserId,
+  externalUser: ExternalSsoUser) extends Identity {
+
+  require(userId >= LowestAuthenticatedUserId, "EdE5JKT20")
 }
 
 

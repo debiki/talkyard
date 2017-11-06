@@ -29,18 +29,9 @@ if (d.i.isInEmbeddedCommentsIframe)
 
 
 function onMessage(event) {
-
-  var eventName;
-  var eventData;
-  try {
-    var json = event.data;
-    eventName = json[0];
-    eventData = json[1];
-  }
-  catch (error) {
-    // This isn't a message from Debiki.
-    return;
-  }
+  var eventName = event.data[0];
+  var eventData = event.data[1];
+  var hmacSha256Base64 = event.data[2];
 
   switch (eventName) {
     case 'setBaseAddress':
@@ -51,8 +42,7 @@ function onMessage(event) {
       break;
     case 'setCurrentUser':
       debiki.scriptLoad.done(function() {
-        debiki2.ReactActions.setNewMe(eventData);  // for now, just testing
-        // later: Server.upsertUserAndLogin(eventData);
+        debiki2.Server.ssoUpsertUserAndLogin(eventData, hmacSha256Base64);
       });
       break;
     case 'justLoggedIn':
@@ -136,16 +126,10 @@ function syncDocSizeWithIframeSize() {
     lastWidth = currentWidth;
     lastHeight = currentHeight;
 
-    var message = JSON.stringify([
-      'setIframeSize', {
-        width: currentWidth,
-        height: currentHeight
-      }
-    ]);
-
-    window.parent.postMessage(message, '*');
-  };
-};
+    window.parent.postMessage(
+        ['setIframeSize', { width: currentWidth, height: currentHeight }], '*');
+  }
+}
 
 
 }
