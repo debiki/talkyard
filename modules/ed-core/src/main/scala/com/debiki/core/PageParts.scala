@@ -39,11 +39,8 @@ object PageParts {
 
   val MaxTitleLength = 150
 
-  def isArticleOrConfigPostNr(nr: PostNr): Boolean =
+  def isArticleOrTitlePostNr(nr: PostNr): Boolean =
     nr == PageParts.BodyNr || nr == PageParts.TitleNr
-
-
-  def isReply(postNr: PostNr): Boolean = postNr >= FirstReplyNr
 
 
   /** Finds the 0 to 3 most frequent posters.
@@ -106,7 +103,7 @@ abstract class PageParts {
     if (allPosts.isEmpty)
       return None
     val maxNr = allPosts.map(_.nr).max
-    if (PageParts.isArticleOrConfigPostNr(maxNr)) None
+    if (PageParts.isArticleOrTitlePostNr(maxNr)) None
     else Some(maxNr)
   }
 
@@ -115,7 +112,7 @@ abstract class PageParts {
 
   def topLevelComments: immutable.Seq[Post] =
     childrenBestFirstByParentNr.getOrElse(PageParts.NoNr, Nil) filterNot { post =>
-      PageParts.isArticleOrConfigPostNr(post.nr)
+      PageParts.isArticleOrTitlePostNr(post.nr)
     }
 
   def allPosts: immutable.Seq[Post]

@@ -320,15 +320,17 @@ case class Post(
   require(numBuryVotes >= 0, "DwE5FKW2")
   require(numUnwantedVotes >= 0, "DwE4GKY2")
   require(numTimesRead >= 0, "DwE2ZfMI3")
+  require(!(nr < PageParts.FirstReplyNr && shallAppendLast), "EdE2WTB064")
+  require(!(isMetaMessage && !isOrigPostReply), "EdE744GSQF")
 
-  def isReply = PageParts.isReply(nr) && !isMetaMessage
   def isTitle = nr == PageParts.TitleNr
   def isOrigPost = nr == PageParts.BodyNr
-  def isOrigPostReply = PageParts.isReply(nr) && parentNr.contains(PageParts.BodyNr)
-  def isMultireply = multireplyPostNrs.nonEmpty && !isMetaMessage
+  def isReply = nr >= PageParts.FirstReplyNr && !isMetaMessage
+  def isOrigPostReply = isReply && parentNr.contains(PageParts.BodyNr)
+  def isMultireply = isReply && multireplyPostNrs.nonEmpty
   def isFlat = tyype == PostType.Flat
-  def isAppendBottom = tyype == PostType.AppendBottom
   def isMetaMessage = tyype == PostType.MetaMessage
+  def shallAppendLast = isMetaMessage || tyype == PostType.AppendBottom
   def isBodyHidden = bodyHiddenAt.isDefined
   def isDeleted = deletedStatus.isDeleted
   def isSomeVersionApproved = approvedRevisionNr.isDefined
