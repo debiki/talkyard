@@ -427,42 +427,49 @@ trait PagesDao {
         throwForbidden("EsE4YK0W2", "Only the page author and staff may change the page status")
 
       val pageRole = oldMeta.pageRole
-      if (pageRole != PageRole.Problem && pageRole != PageRole.Idea && pageRole != PageRole.ToDo &&
+      if (pageRole != PageRole.Problem && pageRole != PageRole.Idea &&
           pageRole != PageRole.UsabilityTesting)
         throwBadReq("DwE6KEW2", "This page cannot be marked as planned or done")
 
       var newPlannedAt: Option[ju.Date] = None
+      var newStartedAt: Option[ju.Date] = None
       var newDoneAt: Option[ju.Date] = None
       var newClosedAt: Option[ju.Date] = None
       var newStatus = ""
 
       if (oldMeta.doneAt.isDefined) {
-        // Keep all None, except for todos because they cannot be not-planned.
-        if (pageRole == PageRole.ToDo || pageRole == PageRole.UsabilityTesting) {
-          newPlannedAt = oldMeta.plannedAt
-          newStatus = "To-Do"
-        }
+        // Change from status Done —> to Waiting (waiting for someone to plan-to-do-it, or close it).
+        newStatus = "Waiting"
       }
-      else if (oldMeta.plannedAt.isDefined) {
+      else if (oldMeta.startedAt.isDefined) {
+        // Started —> Done
         newPlannedAt = oldMeta.plannedAt
+        newStartedAt = oldMeta.startedAt
         newDoneAt = Some(now.toJavaDate)
         newClosedAt = Some(now.toJavaDate)
         newStatus = "Done"
       }
-      else if (pageRole == PageRole.ToDo || pageRole == PageRole.UsabilityTesting) {
-        // These are always planned.
-        newPlannedAt = Some(oldMeta.createdAt)
+      else if (oldMeta.plannedAt.isDefined) {
+        // Planned —> Started.
+        newPlannedAt = oldMeta.plannedAt
+        newStartedAt = Some(now.toJavaDate)
+        newStatus = "Started"
+      }
+      else if (pageRole == PageRole.UsabilityTesting) {  // [plugin]
+        // These get Done after just one status change, there's no Planned or Started. So bump to Done.
         newDoneAt = Some(now.toJavaDate)
         newClosedAt = Some(now.toJavaDate)
         newStatus = "Done"
       }
       else {
+        // Waiting —> Planned
         newPlannedAt = Some(now.toJavaDate)
-        newStatus = "Doing"
+        newStatus = "Planned"
       }
 
       val newMeta = oldMeta.copy(
         plannedAt = newPlannedAt,
+        startedAt = newStartedAt,
         doneAt = newDoneAt,
         closedAt = newClosedAt,
         version = oldMeta.version + 1)

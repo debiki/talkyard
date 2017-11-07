@@ -137,6 +137,7 @@ ReactDispatcher.register(function(payload) {
 
     case ReactActions.actionTypes.CyclePageDone:
       store.pagePlannedAtMs = action.plannedAtMs;
+      store.pageStartedAtMs = action.startedAtMs;
       store.pageDoneAtMs = action.doneAtMs;
       store.pageClosedAtMs = action.closedAtMs;
       break;

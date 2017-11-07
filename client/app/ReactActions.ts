@@ -219,6 +219,7 @@ export function cyclePageDone() {
     ReactDispatcher.handleViewAction({
       actionType: actionTypes.CyclePageDone,
       plannedAtMs: response.plannedAtMs,
+      startedAtMs: response.startedAtMs,
       doneAtMs: response.doneAtMs,
       closedAtMs: response.closedAtMs,
     });

@@ -1449,6 +1449,11 @@ function makeTitle(topic: Topic, className: string, settings: SettingsVisibleCli
     else if (!showIcons) {
       // Then don't show icons, unless done/fixed.
     }
+    else if (topic.startedAtMs) {
+      const fixing = topic.pageRole === PageRole.Problem ? 'fixing' : '';
+      tooltip = `We've started ${fixing} this`;
+      iconClass = 'icon-check-empty';
+    }
     else if (!topic.plannedAtMs) {
       tooltip = topic.pageRole === PageRole.Problem
           ? "This is an unsolved problem"
@@ -1459,13 +1464,13 @@ function makeTitle(topic: Topic, className: string, settings: SettingsVisibleCli
       tooltip = topic.pageRole === PageRole.Problem
           ? "We're planning to fix this"
           : "We're planning to do this";
-      iconClass = 'icon-check-empty';
+      iconClass = 'icon-check-dashed';
     }
     if (iconClass) {
       title = r.span({}, r.span({ className: iconClass }, title));
     }
   }
-  else if (topic.pageRole === PageRole.ToDo ||
+  else if (
           topic.pageRole === PageRole.UsabilityTesting) {  // [plugin]
     if (topic.doneAtMs) {
       iconClass = 'icon-check';

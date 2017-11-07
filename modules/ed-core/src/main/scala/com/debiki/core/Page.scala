@@ -94,6 +94,7 @@ object PageMeta {
         pageRole: PageRole,
         authorId: UserId,
         creationDati: ju.Date,
+        plannedAt: Option[ju.Date] = None,
         pinOrder: Option[Int] = None,
         pinWhere: Option[PinPageWhere] = None,
         categoryId: Option[CategoryId] = None,
@@ -105,6 +106,7 @@ object PageMeta {
       pageRole = pageRole,
       version = 1,
       createdAt = creationDati,
+      plannedAt = plannedAt,
       updatedAt = creationDati,
       publishedAt = if (publishDirectly) Some(creationDati) else None,
       categoryId = categoryId,
@@ -157,7 +159,8 @@ object PageMeta {
   * @param answeredAt For questions: when a reply was accepted as the answer to the question.
   * @param answerPostUniqueId The id of the post that answers this question.
   // [befrel] @param answerPostNr
-  * @param plannedAt When a problem/idea/todo got planned to be fixed/done.
+  * @param plannedAt When a problem/idea got planned to be fixed/done.
+  * @param startedAt When started fixing/implementing the problem/idea.
   * @param doneAt When a problem/idea/todo was done, e.g. when bug fixed or idea implemented.
   * @param closedAt When the topic was closed, e.g. if a question was off-topic or idea rejected.
   * @param lockedAt When locked so no new replies can be added.
@@ -197,6 +200,7 @@ case class PageMeta(
   answeredAt: Option[ju.Date] = None,
   answerPostUniqueId: Option[PostId] = None,
   plannedAt: Option[ju.Date] = None,
+  startedAt: Option[ju.Date] = None,
   doneAt: Option[ju.Date] = None,
   closedAt: Option[ju.Date] = None,
   lockedAt: Option[ju.Date] = None,
@@ -239,12 +243,13 @@ case class PageMeta(
   //require(numChildPages >= 0, "DwE8KPEF0") -- oops fails, not so very important, for now instead:
   require(answeredAt.isEmpty || createdAt.getTime <= answeredAt.get.getTime, "DwE4KG22")
   require(plannedAt.isEmpty || createdAt.getTime <= plannedAt.get.getTime, "DwE0FUY2")
+  require(startedAt.isEmpty || createdAt.getTime <= startedAt.get.getTime, "DwE5JRQ0")
   require(doneAt.isEmpty || createdAt.getTime <= doneAt.get.getTime, "DwE4PUG2")
   require(closedAt.isEmpty || createdAt.getTime <= closedAt.get.getTime, "DwE7KPE8")
   require(lockedAt.isEmpty || createdAt.getTime <= lockedAt.get.getTime, "DwE3KWV6")
   require(frozenAt.isEmpty || createdAt.getTime <= frozenAt.get.getTime, "DwE4YUF8")
-  require(doneAt.isEmpty || plannedAt.isDefined, "DwE59KEW2")
-  require(doneAt.isEmpty || plannedAt.get.getTime <= doneAt.get.getTime, "DwE6K8PY2")
+  require(doneAt.isEmpty || !plannedAt.exists(_.getTime > doneAt.get.getTime), "DwE6K8PY2")
+  require(doneAt.isEmpty || !startedAt.exists(_.getTime > doneAt.get.getTime), "EdE6K8PY3")
   // A topic that has been fixed or solved, should be in the closed state.
   require((doneAt.isEmpty && answeredAt.isEmpty) || closedAt.isDefined, "DwE4KEF7")
   // A locked or frozen topic, should be closed too.
@@ -279,7 +284,7 @@ case class PageMeta(
   def idVersion = PageIdVersion(pageId, version = version)
 
 
-  def copyWithNewVersion = copy(version = version + 1)
+  def copyWithNewVersion: PageMeta = copy(version = version + 1)
 
 
   def copyWithNewRole(newRole: PageRole): PageMeta = {
@@ -294,27 +299,19 @@ case class PageMeta(
         (None, None)
     }
 
-    val newPlannedAt = newRole match {
-      case PageRole.Problem | PageRole.Idea => plannedAt
-      case PageRole.ToDo =>
-        // To-Do:s are always either planned or done.
-        plannedAt orElse Some(createdAt)
+    val (newPlannedAt, newStartedAt, newDoneAt) = newRole match {
+      case PageRole.Problem | PageRole.Idea =>
+        // These page types understand planned/started/done, so keep them unchanged.
+        (plannedAt, startedAt, doneAt)
       case _ =>
-        if (plannedAt.isDefined) {
-          // Reopen it since changing type.
+        // Other page types cannot be in planned/started/done statuses, so clear those fields.
+        // However, if the topic is currently planned/started/done, then, when clearing
+        // those fields, the topic might end up as Closed, and then the Closed icon gets shown,
+        // which is confusing, and probably the topic was never just closed. — So clear closedAt.
+        if (plannedAt.isDefined || startedAt.isDefined || doneAt.isDefined) {
           newClosedAt = None
         }
-        None
-    }
-
-    val newDoneAt = newRole match {
-      case PageRole.Problem | PageRole.Idea | PageRole.ToDo => doneAt
-      case _ =>
-        if (doneAt.isDefined) {
-          // Reopen it since changing type.
-          newClosedAt = None
-        }
-        None
+        (None, None, None)
     }
 
     copy(
@@ -322,6 +319,7 @@ case class PageMeta(
       answeredAt = newAnsweredAt,
       answerPostUniqueId = newAnswerPostUniqueId,
       plannedAt = newPlannedAt,
+      startedAt = newStartedAt,
       doneAt = newDoneAt,
       closedAt = newClosedAt)
   }
@@ -538,7 +536,7 @@ object TopicListLayout {
  * The page status, see debiki-for-developers.txt #9vG5I.
  */
 sealed abstract class PageStatus
-object PageStatus {
+object PageStatus {  // RENAME to PagePublStatus — because there's also e.g. planned/doing/done statuses.
   // COULD rename to PrivateDraft, becaus ... other pages with limited
   // visibility might be considered Drafts (e.g. pages submitted for review).
   case object Draft extends PageStatus

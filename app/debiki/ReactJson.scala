@@ -380,6 +380,7 @@ object ReactJson {
       "pageAnsweredAtMs" -> dateOrNull(page.meta.answeredAt),
       "pageAnswerPostUniqueId" -> JsNumberOrNull(page.meta.answerPostUniqueId),
       "pagePlannedAtMs" -> dateOrNull(page.meta.plannedAt),
+      "pageStartedAtMs" -> dateOrNull(page.meta.startedAt),
       "pageDoneAtMs" -> dateOrNull(page.meta.doneAt),
       "pageClosedAtMs" -> dateOrNull(page.meta.closedAt),
       "pageLockedAtMs" -> dateOrNull(page.meta.lockedAt),

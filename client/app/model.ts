@@ -398,6 +398,7 @@ interface Topic {
   answeredAtMs?: number;
   answerPostUniqueId?: number;
   plannedAtMs?: number;
+  startedAtMs?: number;
   doneAtMs?: number;
   closedAtMs?: number;
   lockedAtMs?: number;
@@ -512,6 +513,7 @@ interface Store {
   pageAnswerPostUniqueId?: number;
   pageAnswerPostNr?: number;
   pagePlannedAtMs?: number;
+  pageStartedAtMs?: number;
   pageDoneAtMs?: number;
   pageClosedAtMs?: number;
   pageLockedAtMs?: number;
@@ -604,7 +606,7 @@ enum PageRole { // dupl in client/e2e/test-types.ts [5F8KW0P2]
   Question = 10,
   Problem = 14,
   Idea = 15,
-  ToDo = 13,  // remove? [4YK0F24]
+  ToDo = 13,  // Only used briefly when creating new topics. Gets converted to Idea with status Planned.
   MindMap = 11,
   Discussion = 12,
   FormalMessage = 17,

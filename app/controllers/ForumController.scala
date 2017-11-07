@@ -337,6 +337,7 @@ object ForumController {
       "answeredAtMs" -> dateOrNull(topic.meta.answeredAt),
       "answerPostUniqueId" -> JsNumberOrNull(topic.meta.answerPostUniqueId),
       "plannedAtMs" -> dateOrNull(topic.meta.plannedAt),
+      "startedAtMs" -> dateOrNull(topic.meta.startedAt),
       "doneAtMs" -> dateOrNull(topic.meta.doneAt),
       "closedAtMs" -> dateOrNull(topic.meta.closedAt),
       "lockedAtMs" -> dateOrNull(topic.meta.lockedAt),

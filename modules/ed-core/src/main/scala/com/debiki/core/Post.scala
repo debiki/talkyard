@@ -321,7 +321,7 @@ case class Post(
   require(numUnwantedVotes >= 0, "DwE4GKY2")
   require(numTimesRead >= 0, "DwE2ZfMI3")
   require(!(nr < PageParts.FirstReplyNr && shallAppendLast), "EdE2WTB064")
-  require(!(isMetaMessage && !isOrigPostReply), "EdE744GSQF")
+  require(!(isMetaMessage && isOrigPostReply), "EdE744GSQF")
 
   def isTitle = nr == PageParts.TitleNr
   def isOrigPost = nr == PageParts.BodyNr

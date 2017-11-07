@@ -132,6 +132,7 @@ class PageController @Inject()(cc: ControllerComponents, edContext: EdContext)
       request.theBrowserIdData)
     OkSafeJson(Json.obj(
       "plannedAtMs" -> JsLongOrNull(newMeta.plannedAt.map(_.getTime)),
+      "startedAtMs" -> JsLongOrNull(newMeta.startedAt.map(_.getTime)),
       "doneAtMs" -> JsLongOrNull(newMeta.doneAt.map(_.getTime)),
       "closedAtMs" -> JsLongOrNull(newMeta.closedAt.map(_.getTime))))
   }

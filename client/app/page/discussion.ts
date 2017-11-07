@@ -44,9 +44,9 @@ const closedIcon = r.span({ className: 'icon-block' });
 const questionIcon = r.span({ className: 'icon-help-circled' });
 const problemIcon = r.span({ className: 'icon-attention-circled' });
 const solvedIcon = r.span({ className: 'icon-ok-circled' });
-const todoIcon = r.span({ className: 'icon-check-empty' });
 const ideaIcon = r.span({ className: 'icon-idea' });
-const plannedIcon = r.span({ className: 'icon-check-empty' });
+const startedIcon = r.span({ className: 'icon-check-empty' });
+const plannedIcon = r.span({ className: 'icon-check-dashed' });
 const doneIcon = r.span({ className: 'icon-check' });
 
 const HelpTypePageClosed = 101;
@@ -122,10 +122,15 @@ export const TitleBodyComments = createComponent({
         return { id: 'EsH5GKU0', version: 1, className: 'esH_ProblemSolved', content: r.div({},
             "This is a problem and it has been ", doneIcon, " solved.") };
       }
+      else if (store.pageStartedAtMs) {
+        return { id: 'EsH7BK28', version: 1, className: 's_H_ProblemStarted', content: r.div({},
+          "This is a problem. We have ", startedIcon, " started fixing it, but it's not yet ",
+          doneIcon, " done.") };
+      }
       else if (store.pagePlannedAtMs) {
-        return { id: 'EsH2PK40', version: 1, className: 'esH_ProblemFixing', content: r.div({},
-            "This is a problem. Someone is ", plannedIcon, " fixing it, but it's not yet ",
-            doneIcon, " done.") };
+        return { id: 'EsH2PK40', version: 1, className: 's_H_ProblemPlanned', content: r.div({},
+            "This is a problem. We ", plannedIcon, " plan to fix it, but it's not yet ",
+            startedIcon, " started, not yet ", doneIcon, " done.") };
       }
       else {
         return { id: 'EsH1WKG5', version: 1, className: 'esH_ProblemNew', content: r.div({},
@@ -136,28 +141,22 @@ export const TitleBodyComments = createComponent({
     if (store.pageRole === PageRole.Idea) {
       if (store.pageDoneAtMs) {
         return { id: 'EsH9PK0', version: 1, content: r.div({},
-            "This is an idea that has been ", doneIcon, " implemented.") };
+            "This has been ", doneIcon, " implemented.") };
+      }
+      else if (store.pageStartedAtMs) {
+        return { id: 'EsH2WTSK', version: 1, content: r.div({},
+          "We have ", startedIcon, " started implementing this. " +
+          "But it's not yet ", doneIcon, " done.") };
       }
       else if (store.pagePlannedAtMs) {
         return { id: 'EsH44TK2', version: 1, content: r.div({},
-            "This idea has been ", plannedIcon, " planned, or is in progress. " +
-            "But it's not yet ", doneIcon, " done.") };
+            "We ", plannedIcon, " plan to implement this. " +
+            "But it's not yet ", startedIcon, " started, not yet ", doneIcon, " done.") };
       }
       else {
         return { id: 'EsH4GY6Z', version: 1, content: r.div({},
-            "This is an ", ideaIcon, " idea, not yet ", plannedIcon, " planned, not yet ",
-            doneIcon, " done.") };
-      }
-    }
-
-    if (store.pageRole === PageRole.ToDo) {
-      if (store.pageDoneAtMs) {
-        return { id: 'EsH22PKU', version: 1, content: r.div({},
-          "This is a todo; it's been ", doneIcon, " done.") };
-      }
-      else {
-        return { id: 'EsH3WY42', version: 1, content: r.div({},
-          "This is a ", plannedIcon, " todo task, not yet ", doneIcon, " done.") };
+            "This is an ", ideaIcon, " idea, not yet ", plannedIcon, " planned, not ",
+            startedIcon, " started, not ", doneIcon, " done.") };
       }
     }
 
@@ -451,27 +450,34 @@ export const Title = createComponent({
         let iconClass;
         let iconTooltip;
         if (store.pageRole === PageRole.Problem || store.pageRole === PageRole.Idea) {
-          if (!store.pagePlannedAtMs) {
+          if (store.pageDoneAtMs) {
             tooltip = store.pageRole === PageRole.Problem
-                ? "This is an unsolved problem"
-                : "This is an idea";
-            iconClass = store.pageRole === PageRole.Problem ?
-                'icon-attention-circled' : 'icon-idea';
-            iconTooltip = "Click to change status to planned";
+              ? "This has been fixed"
+              : "This has been done";
+            iconClass = 'icon-check';
+            iconTooltip = "Click to change status to new";
           }
-          else if (!store.pageDoneAtMs) {
+          else if (store.pageStartedAtMs) {
             tooltip = store.pageRole === PageRole.Problem
-                ? "We're planning to fix this"
-                : "We're planning to implement this";
+              ? "We're currently fixing this"
+              : "We're currently implementing this";
             iconClass = 'icon-check-empty';
             iconTooltip = "Click to mark as done";
           }
-          else {
+          else if (store.pagePlannedAtMs) {
             tooltip = store.pageRole === PageRole.Problem
-                ? "This has been fixed"
-                : "This has been done";
-            iconClass = 'icon-check';
-            iconTooltip = "Click to change status to new";
+              ? "We're planning to fix this"
+              : "We're planning to implement this";
+            iconClass = 'icon-check-dashed';
+            iconTooltip = "Click to mark as started";
+          }
+          else  {
+            tooltip = store.pageRole === PageRole.Problem
+              ? "This is an unsolved problem"
+              : "This is an idea";
+            iconClass = store.pageRole === PageRole.Problem ?
+              'icon-attention-circled' : 'icon-idea';
+            iconTooltip = "Click to change status to planned";
           }
         }
         else if (store.pageRole === PageRole.UsabilityTesting) {   // [plugin]
