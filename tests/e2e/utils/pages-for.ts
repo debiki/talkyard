@@ -956,6 +956,10 @@ function pagesFor(browser) {
         api.pageTitle.waitForVisible();
         assert(!browser.isVisible('.dw-p-ttl .icon-eye-off'));
       },
+
+      canBumpPageStatus: function() {
+        return browser.isVisible('.dw-p-ttl .dw-clickable');
+      },
     },
 
 
@@ -1187,11 +1191,15 @@ function pagesFor(browser) {
 
       setTopicType: function(type: PageRole) {
         let optionId = null;
-        var needsClickMore = false;
+        let needsClickMore = false;
         switch (type) {
+          case c.TestPageRole.Question: optionId = '#e2eTTD_QuestionO'; break;
+          case c.TestPageRole.Problem: optionId = '#e2eTTD_ProblemO'; break;
+          case c.TestPageRole.Idea: optionId = '#e2eTTD_IdeaO'; break;
+          case c.TestPageRole.OpenChat: optionId = '#e2eTTD_OpenChatO'; break;
+          case c.TestPageRole.PrivateChat: optionId = '#e2eTTD_PrivChatO'; break;
           case c.TestPageRole.Form: optionId = '#e2eTTD_FormO'; needsClickMore = true; break;
           case c.TestPageRole.WebPage: optionId = '#e2eTTD_WebPageO'; needsClickMore = true; break;
-          case c.TestPageRole.PrivateChat: optionId = '#e2eTTD_PrivChatO'; break;
           default: die('Test unimpl [EsE4WK0UP]');
         }
         api.waitAndClick('.esTopicType_dropdown');
@@ -1265,11 +1273,16 @@ function pagesFor(browser) {
         browser.assertTextMatches(`#post-${postNr} .dw-p-bd`, text)
       },
 
+      assertMetaPostTextMatches: function(postNr: PostNr, text: string) {
+        browser.assertTextMatches(`#post-${postNr} .s_MP_Text`, text)
+      },
+
       topLevelReplySelector: '.dw-depth-1 > .dw-p',
       replySelector: '.dw-depth-1 .dw-p',
       allRepliesTextSelector: '.dw-depth-0 > .dw-single-and-multireplies > .dw-res',
       anyCommentSelector: '.dw-p',
       anyReplyButtonSelector: '.dw-a-reply',
+      addBottomCommentSelector: '.s_APAs_ACBB',
 
       waitForReplyButtonAssertCommentsVisible: function() {
         browser.waitForVisible(api.topic.anyReplyButtonSelector);
@@ -1322,6 +1335,10 @@ function pagesFor(browser) {
 
       clickReplyToPostNr: function(postNr: PostNr) {
         api.topic.clickPostActionButton(`#post-${postNr} + .esPA .dw-a-reply`);
+      },
+
+      clickAddBottomComment: function() {
+        browser.waitAndClick(api.topic.addBottomCommentSelector);
       },
 
       canEditSomething: function(): boolean {
@@ -2032,6 +2049,12 @@ function pagesFor(browser) {
 
       replyToOrigPost: function(text: string, whichButton?: string) {
         api.topic.clickReplyToOrigPost(whichButton);
+        api.editor.editText(text);
+        api.editor.save();
+      },
+
+      addBottomComment: function(text: string) {
+        api.topic.clickAddBottomComment();
         api.editor.editText(text);
         api.editor.save();
       },

@@ -592,7 +592,7 @@ trait PagesDao {
     // Don't index — meta messages shouldn't be found, when searching.
     // Don't update page meta; this type of post isn't part of the actual discussion. [4HDEKRQ0]
 
-    SHOULD // send back json so the satus message gets shown, without reloading the page. Fix later...
+    SHOULD // send back json so the satus message gets shown, without reloading the page. [2PKRRSZ0]
   }
 
 

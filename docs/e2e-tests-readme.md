@@ -69,9 +69,10 @@ Run tests like so:
         s/wdio target/e2e/wdio.3chrome.conf.js --only 'categories.3browsers'
 
 1. To pause before, or after, the tests, and look at the resulting html pages, use the flag
-    `--db` (debug before) and `--da` (debug afterwards). Example:
+    `--db` (debug before) and `--da` (debug afterwards).
+     And specify `--nt` = no-timeouts, to prevent tests-took-too-long errors. Example:
 
-        s/wdio target/e2e/wdio.2chrome.conf.js --only 'chat.2browsers' --da
+        s/wdio target/e2e/wdio.2chrome.conf.js --only 'chat.2browsers' --da --nt
 
 
 ### Browsers other than Chrome
