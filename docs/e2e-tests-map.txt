@@ -155,13 +155,16 @@ topics -
   pin -
     globally:
     in category:
-  close:
+  close -
+    close:  page-type-question-closed.2browsers.test.ts
+    can leave bottom comment afterwards:  page-type-question-closed.2browsers.test.ts
+    can reply afterwards:  page-type-question-closed.2browsers.test.ts
   problems -
   questions -
-    answer own:
-    cannot answer others:
+    answer own:  page-type-question-closed.2browsers.test.ts
+    cannot answer others:  page-type-question-closed.2browsers.test.ts
     click-scroll to answer:
-    clear answer:
+    clear answer:  page-type-question-closed.2browsers.test.ts
   implement idea:
     cycle planned/done/pending:
   to-do:

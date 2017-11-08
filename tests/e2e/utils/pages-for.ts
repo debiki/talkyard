@@ -1426,6 +1426,43 @@ function pagesFor(browser) {
         api.waitAndClick('.icon-flag');  // for now, later: e_...
       },
 
+      canSelectAnswer: function() {
+        return browser.isVisible('.dw-a-solve');
+      },
+
+      selectPostNrAsAnswer: function(postNr) {
+        assert(!browser.isVisible(api.topic._makeUnsolveSelector(postNr)));
+        api.topic.clickPostActionButton(api.topic._makeSolveSelector(postNr));
+        browser.waitForVisible(api.topic._makeUnsolveSelector(postNr));
+      },
+
+      unselectPostNrAsAnswer: function(postNr) {
+        assert(!browser.isVisible(api.topic._makeSolveSelector(postNr)));
+        api.topic.clickPostActionButton(api.topic._makeUnsolveSelector(postNr));
+        browser.waitForVisible(api.topic._makeSolveSelector(postNr));
+      },
+
+      _makeSolveSelector(postNr) {
+        return `#post-${postNr} + .esPA .dw-a-solve`;
+      },
+
+      _makeUnsolveSelector(postNr) {
+        return `#post-${postNr} + .esPA .dw-a-unsolve`;
+      },
+
+      closeTopic: function() {
+        browser.waitAndClick(api.topic._closeButtonSelector);
+        browser.waitForVisible(api.topic._reopenButtonSelector);
+      },
+
+      reopenTopic: function() {
+        browser.waitAndClick(api.topic._reopenButtonSelector);
+        browser.waitForVisible(api.topic._closeButtonSelector);
+      },
+
+      _closeButtonSelector: '.dw-ar-t > .esPA > .dw-a-close.icon-block',
+      _reopenButtonSelector: '.dw-ar-t > .esPA > .dw-a-close.icon-circle-empty',
+
       refreshUntilBodyHidden: function(postNr: PostNr) {
         while (true) {
           let isHidden = api.topic.isPostBodyHidden(postNr);

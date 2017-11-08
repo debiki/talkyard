@@ -307,9 +307,13 @@ function addCommandsToBrowser(browser) {
     if (_.isString(regex2)) {
       regex2 = new RegExp(regex2);
     }
-    var textByBrowserName = byBrowser(browser.getText(selector));  // SLOW !!
+    // Log a friendly error, if the selector is absent — that'd be a test suite bug.
+    // Without this assert...isVisible, Webdriver just prints "Error" and one won't know
+    // what the problem is.
+    assert(browser.isVisible(selector), `No text matches: ${selector} [EdE1WBPGY93]`);
+    const textByBrowserName = byBrowser(browser.getText(selector));  // SLOW !!
     _.forOwn(textByBrowserName, function(text, browserName) {
-      var whichBrowser = isTheOnly(browserName) ? '' : ", browser: " + browserName;
+      const whichBrowser = isTheOnly(browserName) ? '' : ", browser: " + browserName;
       if (!many) {
         assert(!_.isArray(text), "Broken e2e test. Select only 1 elem please [EsE4KF0W2]");
       }
