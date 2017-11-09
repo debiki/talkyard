@@ -46,7 +46,7 @@ class UserStatsAppSpec extends DaoAppSuite() {
 
   def pretendThereAreManyReplies(pageId: PageId) {
     val oldMeta = dao.loadThePageMeta(pageId)
-    val newMeta = oldMeta.copy(numRepliesTotal = 9999, numRepliesVisible = 9999)
+    val newMeta = oldMeta.copy(numRepliesTotal = 9999, numRepliesVisible = 9999, numPostsTotal = 9999)
     dao.readWriteTransaction(_.updatePageMeta(newMeta, oldMeta = oldMeta,
       markSectionPageStale = false))
   }
@@ -305,7 +305,6 @@ class UserStatsAppSpec extends DaoAppSuite() {
     }
 
     "... views a chat topic with 2 messages, cannot read more than 2" in {
-      /* SHOULD add back this — need to add a num-meta-messages field to PageMeta then?  [4HDEKRQ0]
       playTime(1000)
       val exception = intercept[Exception] {
         dao.trackReadingProgressPerhapsPromote(member1, twoMessagesChatTopicId, ReadingProgress(
@@ -318,7 +317,6 @@ class UserStatsAppSpec extends DaoAppSuite() {
           secondsReading = 1))
       }
       exception.getMessage must include("EdE7UKW25_")
-      */
     }
 
     "... but can read 2" in {

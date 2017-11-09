@@ -292,7 +292,10 @@ class ImportExportController @Inject()(cc: ControllerComponents, edContext: EdCo
         newDao.updatePagePopularity(pagePartsDao, transaction)
         // For now: (e2e tests: page metas imported before posts, and page meta reply counts = wrong)
         val numReplies = pagePartsDao.allPosts.count(_.isReply)
-        val correctMeta = pageMeta.copy(numRepliesTotal = numReplies, numRepliesVisible = numReplies)
+        val correctMeta = pageMeta.copy(
+          numRepliesVisible = numReplies,
+          numRepliesTotal = numReplies,
+          numPostsTotal = pagePartsDao.numPostsTotal)
         transaction.updatePageMeta(correctMeta, oldMeta = pageMeta, markSectionPageStale = true)
       }
     }

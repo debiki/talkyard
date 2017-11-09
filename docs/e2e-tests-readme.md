@@ -32,6 +32,8 @@ Run tests like so:
 
         # sudo yarn global add node-gyp  # needed for Fibers to build? not sure.
         yarn add --dev wdio-sync  # to build the correct version of Fibers
+        # (don't do this inside Docker because then Yarn will build the C++ stuff
+        # that works with the libs inside the Docker container, not your host OS.)
         
         s/selenium-install # do this whenever Yarn has deleted everything
         s/selenium-start

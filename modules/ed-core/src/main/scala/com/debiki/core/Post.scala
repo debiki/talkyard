@@ -151,7 +151,7 @@ object PostType {
   case object ChatMessage extends PostType(3)
 
   /** A Normal post but appended to the bottom of the page, not sorted best-first. */
-  case object AppendBottom extends PostType(4) { override def placeLast = true }
+  case object BottomComment extends PostType(4) { override def placeLast = true }
 
   CLEAN_UP // remove StaffWiki, use the permission system instead.
   /** Any staff member can edit this post. No author name shown. */
@@ -179,7 +179,7 @@ object PostType {
     case Normal.IntValue => Normal
     case Flat.IntValue => Flat
     case ChatMessage.IntValue => ChatMessage
-    case AppendBottom.IntValue => AppendBottom
+    case BottomComment.IntValue => BottomComment
     case StaffWiki.IntValue => StaffWiki
     case CommunityWiki.IntValue => CommunityWiki
     case CompletedForm.IntValue => CompletedForm
@@ -326,11 +326,12 @@ case class Post(
   def isTitle = nr == PageParts.TitleNr
   def isOrigPost = nr == PageParts.BodyNr
   def isReply = nr >= PageParts.FirstReplyNr && !isMetaMessage
-  def isOrigPostReply = isReply && parentNr.contains(PageParts.BodyNr)
+  def isOrigPostReply = isReply && parentNr.contains(PageParts.BodyNr) && !isBottomComment
   def isMultireply = isReply && multireplyPostNrs.nonEmpty
   def isFlat = tyype == PostType.Flat
   def isMetaMessage = tyype == PostType.MetaMessage
-  def shallAppendLast = isMetaMessage || tyype == PostType.AppendBottom
+  def isBottomComment = tyype == PostType.BottomComment
+  def shallAppendLast = isMetaMessage || isBottomComment
   def isBodyHidden = bodyHiddenAt.isDefined
   def isDeleted = deletedStatus.isDeleted
   def isSomeVersionApproved = approvedRevisionNr.isDefined
@@ -584,7 +585,7 @@ object Post {
         approvedById: Option[UserId]): Post = {
 
     require(multireplyPostNrs.isEmpty || parent.isDefined ||
-      postType == PostType.Flat || postType == PostType.AppendBottom, "DwE4KFK28")
+      postType == PostType.Flat || postType == PostType.BottomComment, "DwE4KFK28")
 
     val currentSourcePatch: Option[String] =
       if (approvedById.isDefined) None

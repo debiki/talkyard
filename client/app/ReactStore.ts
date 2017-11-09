@@ -898,8 +898,8 @@ function sortPostIdsInPlaceBestFirst(postNrs: PostNr[], postsByNr: { [nr: number
     } */
 
     // Place append-at-the-bottom posts at the bottom, sorted by time.
-    const aLast = postA.postType === PostType.AppendBottom || postA.postType === PostType.MetaMessage;
-    const bLast = postB.postType === PostType.AppendBottom || postB.postType === PostType.MetaMessage;
+    const aLast = postA.postType === PostType.BottomComment || postA.postType === PostType.MetaMessage;
+    const bLast = postB.postType === PostType.BottomComment || postB.postType === PostType.MetaMessage;
     if (!aLast && bLast)
       return -1;
     if (aLast && !bLast)

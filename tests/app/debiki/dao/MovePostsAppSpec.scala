@@ -205,6 +205,7 @@ class MovePostsAppSpec extends DaoAppSuite(disableScripts = true, disableBackgro
         numOrigPostRepliesVisible = fromPageMetaBefore.numRepliesVisible - 1,
         numRepliesVisible = fromPageMetaBefore.numRepliesVisible - 1,
         numRepliesTotal = fromPageMetaBefore.numRepliesTotal - 1,
+        numPostsTotal = fromPageMetaBefore.numPostsTotal - 1,
         version = toPageMetaBefore.version + 1)
 
       info("to page meta properly updated")
@@ -218,6 +219,7 @@ class MovePostsAppSpec extends DaoAppSuite(disableScripts = true, disableBackgro
         numOrigPostRepliesVisible = toPageMetaBefore.numRepliesVisible + 0, // not an OP reply
         numRepliesVisible = toPageMetaBefore.numRepliesVisible + 1,
         numRepliesTotal = toPageMetaBefore.numRepliesTotal + 1,
+        numPostsTotal = toPageMetaBefore.numPostsTotal + 1,
         version = toPageMetaBefore.version + 1)
 
       info("post read stats moved to new page")

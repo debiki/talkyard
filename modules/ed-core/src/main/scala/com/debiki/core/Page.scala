@@ -94,13 +94,14 @@ object PageMeta {
         pageRole: PageRole,
         authorId: UserId,
         creationDati: ju.Date,
+        numPostsTotal: Int,
         plannedAt: Option[ju.Date] = None,
         pinOrder: Option[Int] = None,
         pinWhere: Option[PinPageWhere] = None,
         categoryId: Option[CategoryId] = None,
         url: Option[String] = None,
         hidden: Boolean = false,
-        publishDirectly: Boolean = false) = {
+        publishDirectly: Boolean = false): PageMeta = {
     var result = PageMeta(
       pageId = pageId,
       pageRole = pageRole,
@@ -121,6 +122,7 @@ object PageMeta {
       numUnwanteds = 0,
       numRepliesVisible = 0,
       numRepliesTotal = 0,
+      numPostsTotal = numPostsTotal,
       numChildPages = 0)
     if (hidden) {
       result = result.copy(hiddenAt = Some(When.fromDate(result.createdAt)))
@@ -156,6 +158,7 @@ object PageMeta {
   * @param numRepliesVisible Replies that haven't been deleted or hidden, and have been approved.
   *                          Includes collapsed and closed replies.
   * @param numRepliesTotal Counts all replies, also deleted, hidden and not-yet-approved replies.
+  * @param numPostsTotal Includes all replies, and also meta message posts.
   * @param answeredAt For questions: when a reply was accepted as the answer to the question.
   * @param answerPostUniqueId The id of the post that answers this question.
   // [befrel] @param answerPostNr
@@ -192,6 +195,7 @@ case class PageMeta(
   numUnwanteds: Int = 0,
   numRepliesVisible: Int = 0,
   numRepliesTotal: Int = 0,
+  numPostsTotal: Int = 0,
   numOrigPostLikeVotes: Int = 0,
   numOrigPostWrongVotes: Int = 0,
   numOrigPostBuryVotes: Int = 0,
@@ -226,14 +230,16 @@ case class PageMeta(
   require(numWrongs >= 0, "DwE9KEFW2")
   require(numBurys >= 0, "DwE2KEP4")
   require(numUnwanteds >= 0, "DwE4JGY7")
+  require(numPostsTotal >= numRepliesTotal, s"Fail: $numPostsTotal >= $numRepliesTotal [EdE2WTK4L]")
   require(numOrigPostLikeVotes >= 0, "DwE5KJF2")
-  require(numOrigPostLikeVotes <= numLikes, "DwE5KJF2B")
+  require(numOrigPostLikeVotes <= numLikes, s"Fail: $numOrigPostLikeVotes <= $numLikes [EdE5KJF2B]")
   require(numOrigPostWrongVotes >= 0, "DwE4WKEQ1")
-  require(numOrigPostWrongVotes <= numWrongs, "DwE4WKEQ1B")
+  require(numOrigPostWrongVotes <= numWrongs, s"Fail: $numOrigPostWrongVotes <= $numWrongs [EdE4WKEQ1B]")
   require(numOrigPostBuryVotes >= 0, "DwE8KGY4")
-  require(numOrigPostBuryVotes <= numBurys, "DwE8KGY4B")
+  require(numOrigPostBuryVotes <= numBurys, s"Fail: $numOrigPostBuryVotes <= $numBurys [EdE8KGY4B]")
   require(numOrigPostUnwantedVotes >= 0, "DwE0GFW8")
-  require(numOrigPostUnwantedVotes <= numUnwanteds, "DwE4GKY8")
+  require(numOrigPostUnwantedVotes <= numUnwanteds,
+    s"Fail: $numOrigPostUnwantedVotes <= $numUnwanteds [EdE4GKY8]")
   require(numOrigPostRepliesVisible >= 0, "DwE0GY42")
   require(numOrigPostRepliesVisible <= numRepliesVisible,
     s"Fail: $numOrigPostRepliesVisible <= $numRepliesVisible [EsE0GY42B]")

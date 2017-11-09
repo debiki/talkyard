@@ -84,6 +84,7 @@ case class NonExistingPage(
     pageRole,
     authorId = SystemUserId,
     creationDati = now.toJavaDate,
+    numPostsTotal = 0,
     categoryId = anyCategoryId,
     publishDirectly = true)
 

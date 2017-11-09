@@ -337,6 +337,7 @@ object ViewPageController {
       pageRole = pageRole,
       authorId = SystemUserId,
       creationDati = now.toJavaDate,
+      numPostsTotal = 0,
       categoryId = None,
       publishDirectly = true)
 

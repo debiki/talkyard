@@ -245,6 +245,7 @@ trait PagesDao {
     val uploadPaths = findUploadRefsInPost(bodyPost)
 
     val pageMeta = PageMeta.forNewPage(pageId, pageRole, authorId, now.toJavaDate,
+      numPostsTotal = 2, // title & body
       pinOrder = pinOrder, pinWhere = pinWhere,
       categoryId = anyCategoryId, url = None, publishDirectly = true,
       hidden = approvedById.isEmpty) // [7AWU2R0]
@@ -588,9 +589,13 @@ trait PagesDao {
       htmlSanitized = Encode.forHtmlContent(message),
       approvedById = Some(SystemUserId))
 
+    val pageMeta = tx.loadThePageMeta(pageId)
+    val pageMetaAfter = pageMeta.copy(numPostsTotal = pageMeta.numPostsTotal + 1)
+
     tx.insertPost(metaMessage)
+    // Don't mark the section page as stale — total posts count not shown (only total replies).
+    tx.updatePageMeta(pageMetaAfter, oldMeta = pageMeta, markSectionPageStale = false)
     // Don't index — meta messages shouldn't be found, when searching.
-    // Don't update page meta; this type of post isn't part of the actual discussion. [4HDEKRQ0]
 
     SHOULD // send back json so the satus message gets shown, without reloading the page. [2PKRRSZ0]
   }
@@ -609,6 +614,7 @@ trait PagesDao {
       numUnwanteds = page.parts.numUnwanteds,
       numRepliesVisible = page.parts.numRepliesVisible,
       numRepliesTotal = page.parts.numRepliesTotal,
+      numPostsTotal = page.parts.numPostsTotal,
       numOrigPostLikeVotes = page.parts.theBody.numLikeVotes,
       numOrigPostWrongVotes = page.parts.theBody.numWrongVotes,
       numOrigPostBuryVotes = page.parts.theBody.numBuryVotes,

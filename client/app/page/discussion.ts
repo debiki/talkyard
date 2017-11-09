@@ -696,7 +696,7 @@ const RootPostAndComments = createComponent({
       if (!child)
         return null; // deleted
       const isCommentOrEvent =
-          child.postType === PostType.AppendBottom || child.postType === PostType.MetaMessage;
+          child.postType === PostType.BottomComment || child.postType === PostType.MetaMessage;
       if (!isCommentOrEvent) {
         firstAppendedIndex += 1;
       }
@@ -809,7 +809,7 @@ const RootPostAndComments = createComponent({
             onClick: (event) => this.onAfterPageReplyClick(event, PostType.Normal) },
           makeReplyBtnTitle(store, rootPost, true)),
         r.a({ className: 's_APAs_ACBB icon-comment-empty',
-            onClick: (event) => this.onAfterPageReplyClick(event, PostType.AppendBottom) },
+            onClick: (event) => this.onAfterPageReplyClick(event, PostType.BottomComment) },
           "Add comment at the bottom ", r.span({ className: 'icon-collapse' })));
 
     return (

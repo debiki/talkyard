@@ -983,7 +983,7 @@ export var Editor = createComponent({
     else if (isMindMapNode) {
       doingWhatInfo = "Add mind map node:";
     }
-    else if (state.anyPostType === PostType.AppendBottom) {
+    else if (state.anyPostType === PostType.BottomComment) {
       doingWhatInfo = "Append a comment at the bottom of the page:";
     }
     else if (replyToPostNrs.length > 0) {

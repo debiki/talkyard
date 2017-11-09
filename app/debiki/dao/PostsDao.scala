@@ -102,7 +102,7 @@ trait PostsDao {
           // Flat chat comments might not reply to anyone in particular.
           // On embedded comments pages, there's no Original Post, so top level comments
           // have no parent post.
-          if (postType != PostType.Flat && postType != PostType.AppendBottom &&
+          if (postType != PostType.Flat && postType != PostType.BottomComment &&
               postType != PostType.CompletedForm && page.role != PageRole.EmbeddedComments)
             throwBadReq("DwE2CGW7", "Post lacks parent id")
           else
@@ -161,6 +161,7 @@ trait PostsDao {
         frequentPosterIds = newFrequentPosterIds,
         numRepliesVisible = page.parts.numRepliesVisible + (shallApprove ? 1 | 0),
         numRepliesTotal = page.parts.numRepliesTotal + 1,
+        numPostsTotal = page.parts.numPostsTotal + 1,
         numOrigPostRepliesVisible = page.parts.numOrigPostRepliesVisible + numNewOpRepliesVisible,
         version = oldMeta.version + 1)
 
@@ -448,6 +449,7 @@ trait PostsDao {
       // Chat messages are always visible, so increment all num-replies counters.
       numRepliesVisible = oldMeta.numRepliesVisible + 1,
       numRepliesTotal = oldMeta.numRepliesTotal + 1,
+      numPostsTotal = oldMeta.numPostsTotal + 1,
       //numOrigPostRepliesVisible <— leave as is — chat messages aren't orig post replies.
       lastReplyAt = Some(transaction.now.toJavaDate),
       lastReplyById = Some(authorId),
