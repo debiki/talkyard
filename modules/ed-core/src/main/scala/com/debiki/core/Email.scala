@@ -104,6 +104,7 @@ object EmailType {
   case object CreateAccount extends EmailType(21)  // COULD rename to VerifyEmailAddress
   case object ResetPassword extends EmailType(22)
   case object SiteCreatedSuperAdminNotf extends EmailType(41)
+  case object HelpExchangeReminder extends EmailType(31)  // [plugin]? Change to 101? but db constraints
 
   def fromInt(value: Int): Option[EmailType] = Some(value match {
     case Notification.IntVal      => Notification
@@ -114,6 +115,7 @@ object EmailType {
     case CreateAccount.IntVal     => CreateAccount
     case ResetPassword.IntVal     => ResetPassword
     case SiteCreatedSuperAdminNotf.IntVal => SiteCreatedSuperAdminNotf
+    case HelpExchangeReminder.IntVal => HelpExchangeReminder
     case _ =>
       return None
   })

@@ -23,8 +23,9 @@ import com.debiki.core._
 import debiki.DatabaseUtils.isConnectionClosedBecauseTestsDone
 import debiki.dao.{SiteDao, SiteDaoFactory, SystemDao}
 import ed.server.notf.Notifier._
+import org.owasp.encoder.Encode
 import play.{api => p}
-import scala.collection.immutable
+import scala.collection.{immutable, mutable}
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
 
@@ -34,6 +35,10 @@ object Notifier {
 
   val MaxNotificationsPerEmail = 5
   val MaxEmailBodyLength = 3000
+
+  /** Hacks, for Usability Testing Exchange (UTX). [plugin] */
+  val UtxSiteId = 94
+  val UtxTestQueueCategoryId = 5
 
   /**
    * Starts a single notifier actor.
@@ -54,6 +59,7 @@ object Notifier {
     // But how make that work, with tests?
     actorSystem.scheduler.schedule(4 seconds, 2 seconds, actorRef, "SendNotfs")  // [5KF0WU2T4]
     actorSystem.scheduler.schedule(3 seconds, 2 seconds, actorRef, "SendSummaries")
+    actorSystem.scheduler.schedule(10 seconds, 1 hour, actorRef, "SendUtxReminders")
     testInstanceCounter += 1
     actorRef
   }
@@ -91,6 +97,8 @@ class Notifier(val systemDao: SystemDao, val siteDaoFactory: SiteDaoFactory)
             loadAndSendNotifications()
           case "SendSummaries" =>
             createAndSendSummaryEmails()
+          case "SendUtxReminders" =>
+            createAndSendUtxReminderEmails()  // [plugin]
         }
       }
       catch {
@@ -115,6 +123,81 @@ class Notifier(val systemDao: SystemDao, val siteDaoFactory: SiteDaoFactory)
       val emails = siteDao.makeActivitySummaryEmails(userStats, now)
       emails foreach { case (email, _) =>
         globals.sendEmail(email, siteId)
+      }
+    }
+  }
+
+
+  CLEAN_UP; REFACTOR // break out to ed.server.utx.SomeNewClass? Later...  UtxDao maybe?
+  private def createAndSendUtxReminderEmails() {  // [plugin]
+    val now = globals.now()
+    val aDayAgo = now.minusDays(1)
+    val aWeekAgo = now.minusDays(7)
+    val dao = siteDaoFactory.newSiteDao(UtxSiteId)
+    var usersById: Map[UserId, User] = null
+    val userIdsNoReminder = dao.readOnlyTransaction { tx =>
+      val topics: Seq[PagePathAndMeta] =
+        tx.loadPagesInCategories(
+          Seq(UtxTestQueueCategoryId),
+          PageQuery(
+            PageOrderOffset.ByCreatedAt(Some(aDayAgo.toJavaDate)),
+            PageFilter.ShowWaiting,
+            includeAboutCategoryPages = false),
+          limit = 100)
+      val createdByUserIds = topics.map(_.meta.authorId).toSet
+      usersById = tx.loadUsersAsMap(createdByUserIds)
+      val emailsSentToAuthors: Map[UserId, Seq[Email]] = tx.loadEmailsSentTo(
+        createdByUserIds, after = aWeekAgo, emailType = EmailType.HelpExchangeReminder)
+      createdByUserIds filterNot { userId =>
+        emailsSentToAuthors.get(userId).exists(_.exists(_.tyype == EmailType.HelpExchangeReminder))
+      }
+    }
+
+    for (userId <- userIdsNoReminder ; user <- usersById.get(userId) ; if user.email.nonEmpty ;
+          userName <- user.anyName orElse user.anyUsername ;
+          if userId <= 101 || globals.conf.getBoolean("utx.reminders.enabled").is(true)) { HACK; SHOULD // remove when done testing live
+      val UtxTestQueueCategoryId = 5
+
+      val email = Email.newWithId(
+        Email.generateRandomId(),
+        EmailType.HelpExchangeReminder,
+        createdAt = now,
+        sendTo = user.email,
+        toUserId = Some(userId),
+        subject = s"[usability.testing.exchange] Reminder about giving feedback",
+        bodyHtmlText = i"""
+          |<p>Hi $userName,</p>
+          |
+          |<p>You'll get more feedback about the website you submitted to Usability Testing Exchange, if you give more feedback to others. If you haven't already, you can <a href="https://usability.testing.exchange/give-me-a-task">go here and give feedback to others</a>.
+          |</p>
+          |
+          |<p>We're glad you submitted your site. Please feel welcomed. Note: When you give feedback about something that is broken or doesn't look so great: be specific. Don't just say "I don't like it" — then the other person won't know what you have in mind, or what to change and improve. Instead, say e.g. "I don't understand what (something) is", or "I think that picture doesn't fit here".
+          |</p>
+          |
+          |<p>Please try to be friendly and also mention things you like. Don't say that something looks terrible and such things. We want people to stay happy and feel encouraged to continue learning and experimenting — especially if they are new to design and usability, and do mistakes.
+          |</p>
+          |
+          |<p>We hope you like looking at other people's websites & giving feedback :-) and that you'll learn from it, e.g. avoiding mistakes you see others make.
+          |</p>
+          |
+          |<p>So, when you have time:
+          |<a href="https://usability.testing.exchange/give-me-a-task">
+          |go here, and continue helping others</a>.
+          |</p>
+          |
+          |<p>Kind regards.</p>
+          |
+          |<p><small>PS. If you want to create a forum & community for your website,<br>
+          |check out <a href="https://www.effectivediscussions.org">Effective Discussions</a>.</small>
+          |</p>
+          |""")
+      dao.readWriteTransaction { tx =>
+        tx.saveUnsentEmail(email)
+      }
+      globals.sendEmail(email, dao.siteId)
+      dao.readWriteTransaction { tx =>
+        tx.updateSentEmail(
+          email.copy(sentOn = Some(globals.now().toJavaDate)))
       }
     }
   }

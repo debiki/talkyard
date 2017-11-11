@@ -523,6 +523,8 @@ trait SiteTransaction {
   def saveUnsentEmailConnectToNotfs(email: Email, notfs: Seq[Notification])
   def updateSentEmail(email: Email): Unit
   def loadEmailById(emailId: String): Option[Email]
+  def loadEmailsSentTo(userIds: Set[UserId], after: When,
+        emailType: EmailType): Map[UserId, Seq[Email]]
 
   def nextReviewTaskId(): ReviewTaskId
   def upsertReviewTask(reviewTask: ReviewTask)
