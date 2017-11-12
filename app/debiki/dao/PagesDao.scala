@@ -439,8 +439,8 @@ trait PagesDao {
       var newStatus = ""
 
       if (oldMeta.doneAt.isDefined) {
-        // Change from status Done —> to Waiting (waiting for someone to plan-to-do-it, or close it).
-        newStatus = "Waiting"
+        // Change from status Done —> to New.
+        newStatus = "New"
       }
       else if (oldMeta.startedAt.isDefined) {
         // Started —> Done
