@@ -37,10 +37,13 @@ do
     elif [[ "$line" =~ ^gulp_ ]] ; then
       echo -e "`echo "$line" | sed -r 's/^([^|]+\|)(.*)$/\\\\e[90m\1\\\\e[39m\2/'`"
     elif [[ "$line" =~ ^app_ ]] ; then
-      # The program 'jq' extracts the timestamp, severity, message etc fields from a json log message.
-      # The -j flag removes surrounding quotes.
-      json=$( egrep -o '\{".*\}' <<< "$line" )
+      # Require "| {" to reduce the risk that we instead find json in the middle of some
+      # other message (rather than a line with json *only*).
+      json=$( egrep -o '\| \{".*\}$' <<< "$line" )
       if [ -n "$json" ]; then
+        json="${json:2}"  # drops '| ' so we get valid json
+        # The program 'jq' extracts the timestamp, severity, message etc fields from a json log message.
+        # The -j flag removes surrounding quotes.
         pretty_json=$(echo "$json" | jq -j '.severity, "  ", .message, "  kvs: ", .kvs' )
         app="$(echo "$line" | sed -r 's/^([^|]+\|)(.*)$/\1/')"
         echo -e "\e[92m$app\e[39m $pretty_json"
