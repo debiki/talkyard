@@ -34,6 +34,7 @@ import debiki.RateLimits.TrackReadingActivity
 import ed.server.{EdContext, EdController}
 import ed.server.auth.Authz
 import javax.inject.Inject
+import org.apache.commons.codec.binary.{Base64, Hex}
 
 
 /** Handles requests related to users.
@@ -732,14 +733,33 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
         maxBytes = 3000) { request =>
     import request.{body, dao}
 
-    val hmacSha256Base64 = (body \ "hmacSha256Base64").as[String]
+    val hmacFromClient = (body \ "hmacSha256Base64").as[String]
     val userJson = (body \ "externalUser").as[JsObject]
-    val userJsonStr = Json.stringify(userJson)
+
+    var jsonToStringify = Json.obj()
+    val userJsonStr =  Json.stringify(userJson) // "The quick brown fox jumps over the lazy dog" //
 
     SECURITY; SHOULD // hash & compare userDataStr with the HMAC, using a per site secret.
+    import javax.crypto.Mac
+    import javax.crypto.spec.SecretKeySpec
+    val secret = "public" // "key" //
+    val hmacSha256 = Mac.getInstance("HmacSHA256")
+    val secretKeySpec = new SecretKeySpec(secret.getBytes("UTF-8"), "HmacSHA256")
+    hmacSha256.init(secretKeySpec)
+    val hashBytes: Array[Byte] = hmacSha256.doFinal(userJsonStr.getBytes("UTF-8"))
+    val correctHmac = Base64.encodeBase64String(hashBytes)
+
+    System.out.println(s"hashBase64: $correctHmac")
+    System.out.println(s"    secret: $secret")
+    System.out.println(s"   message: $userJsonStr")
+
+    //val hexBase64 = Hex.encodeHexString(hashBytes)
+    //val hexBase64 = Hex.encodeHexString(hashBytes)
+    //System.out.println(s"hexBase64: $hexBase64")
+    throwForbiddenIf(hmacFromClient != correctHmac, "_EdE2WBKG053", "Bad HMAC")
 
     val externalId = (userJson \ "externalId").as[String].trim
-    val emailAddress = (userJson \ "email").as[String].trim
+    val emailAddress = (userJson \ "emailAddress").as[String].trim
     val username = (userJson \ "username").as[String].trim
     val fullName = (userJson \ "fullName").asOptStringNoneIfBlank
     val avatarUrl = (userJson \ "avatarUrl").asOptStringNoneIfBlank
