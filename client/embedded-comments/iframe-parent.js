@@ -188,11 +188,10 @@ function onMessage(event) {
         // Set current user:
         var currentUser = window.edCurrentUser;
         var hmac = window.edCurrentUserHmacSha256Base64;
-        if (currentUser && hmac) {
+        if (currentUser) {
+          // If the hmac is absent, empty or wrong, this will result in the user getting logged out
+          // (session cookie deleted).
           messageCommentsIframeCurrentUser(currentUser, hmac);
-        }
-        else if (currentUser) {
-          console.log("SSO login error: No HMAC [EdE2WTFP5R]")
         }
         // If we want to scroll to & highlight a post: The post is inside the iframe and we don't
         // know where. So tell the iframe to send back a 'scrollComments' message to us,

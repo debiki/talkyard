@@ -733,16 +733,25 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
         maxBytes = 3000) { request =>
     import request.{body, dao}
 
-    val hmacFromClient = (body \ "hmacSha256Base64").as[String]
-    val userJson = (body \ "externalUser").as[JsObject]
+    val anyHmacFromClient = (body \ "hmacSha256Base64").asOptStringNoneIfBlank
+    val hmacFromClient = anyHmacFromClient getOrElse {
+      throw ResultException(
+        ForbiddenResult("_EdESSONOHMAC", "No HMAC")
+          .discardingCookies(context.security.DiscardingSessionCookie))
+    }
 
-    var jsonToStringify = Json.obj()
-    val userJsonStr =  Json.stringify(userJson) // "The quick brown fox jumps over the lazy dog" //
+    val userJsValue = (body \ "externalUser").as[JsValue]
+
+    val (userJson, userJsonStr) = userJsValue match {
+      case o: JsObject => (o, Json.stringify(o))
+      case s: JsString => (Json.parse(s.value), s.value)
+      case x => throwForbidden("EdE2WKDP0", "'externalUser' should be a string or an object")
+    }
 
     SECURITY; SHOULD // hash & compare userDataStr with the HMAC, using a per site secret.
     import javax.crypto.Mac
     import javax.crypto.spec.SecretKeySpec
-    val secret = "public" // "key" //
+    val secret = "public" // should be a site setting, for admins? owner? only
     val hmacSha256 = Mac.getInstance("HmacSHA256")
     val secretKeySpec = new SecretKeySpec(secret.getBytes("UTF-8"), "HmacSHA256")
     hmacSha256.init(secretKeySpec)
@@ -756,7 +765,11 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
     //val hexBase64 = Hex.encodeHexString(hashBytes)
     //val hexBase64 = Hex.encodeHexString(hashBytes)
     //System.out.println(s"hexBase64: $hexBase64")
-    throwForbiddenIf(hmacFromClient != correctHmac, "_EdE2WBKG053", "Bad HMAC")
+    if (hmacFromClient != correctHmac)
+      throw ResultException(
+        ForbiddenResult("_EdESSOBADHMAC", "Bad HMAC")
+          .discardingCookies(context.security.DiscardingSessionCookie))
+
 
     val externalId = (userJson \ "externalId").as[String].trim
     val emailAddress = (userJson \ "emailAddress").as[String].trim

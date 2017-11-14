@@ -79,6 +79,16 @@ function pagesFor(browser) {
       browser.switchToFrame('iframe#ed-embedded-editor');
     },
 
+    waitForCurrentUserNoHmacErrorDialog: function() {
+      browser.waitForVisible('.s_SED_Wrap');
+      browser.assertTextMatches('.s_SED_Wrap', '_EdESSONOHMAC');
+    },
+
+    waitForCurrentUserBadHmacErrorDialog: function() {
+      browser.waitForVisible('.s_SED_Wrap');
+      browser.assertTextMatches('.s_SED_Wrap', '_EdESSOBADHMAC');
+    },
+
     // Workaround for bug(s) in Chrome? Chromedriver? Selenium? Webdriver?
     // 1) browser.refresh() causes a weird cannot-find-elem problem. Perhaps because of  [E2EBUG]
     //    some incompatibility between webdriver.io and Chrome? Recently there was a stale-
@@ -2090,6 +2100,15 @@ function pagesFor(browser) {
         api.editor.save();
       },
 
+      replyToOrigPostInEmbeddedComments: function(text: string, whichButton?: string) {
+        browser.switchToEmbeddedCommentsIrame();
+        api.topic.clickReplyToEmbeddingBlogPost();
+        browser.switchToEmbeddedEditorIrame();
+        api.editor.editText(text);
+        api.editor.save();
+        browser.switchToEmbeddedCommentsIrame();
+      },
+
       addBottomComment: function(text: string) {
         api.topic.clickAddBottomComment();
         api.editor.editText(text);
@@ -2100,6 +2119,15 @@ function pagesFor(browser) {
         api.topic.clickReplyToPostNr(postNr);
         api.editor.editText(text);
         api.editor.save();
+      },
+
+      replyToPostNrInEmbeddedComments: function(postNr: PostNr, text: string) {
+        browser.switchToEmbeddedCommentsIrame();
+        api.topic.clickReplyToPostNr(postNr);
+        browser.switchToEmbeddedEditorIrame();
+        api.editor.editText(text);
+        api.editor.save();
+        browser.switchToEmbeddedCommentsIrame();
       },
 
       flagPost: function(postNr: PostNr, reason: 'Inapt' | 'Spam') {

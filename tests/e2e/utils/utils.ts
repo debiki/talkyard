@@ -1,4 +1,5 @@
 import settings = require('./settings');
+const crypto = require('crypto');
 import { dieIf } from './log-and-die'
 
 
@@ -51,6 +52,12 @@ const utils = {
     dieIf(mustMatch && !matches,
         `No link matching /${regexString}/ found in email [EsE5GPYK2], text: ${text}`);
     return matches ? matches[0] : undefined;
+  },
+
+  calcHmacSha256Base64(message: string, secret = 'public'): string {
+    const hmacBytes = crypto.createHmac('sha256', secret);
+    hmacBytes.update(message);
+    return hmacBytes.digest('base64');
   }
 };
 

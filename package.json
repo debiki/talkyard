@@ -63,6 +63,7 @@
     "gulp-watch": "^0.5.3",
     "gulp-wrap": "^0.13.0",
     "http-server": "^0.10.0",
+    "js-string-escape": "^1.0.1",
     "lodash": "^4.16.1",
     "lodash-cli": "^4.16.1",
     "minimist": "^1.2.0",

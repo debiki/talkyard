@@ -520,8 +520,11 @@ export function logout(success: () => void) {
 }
 
 
-export function ssoUpsertUserAndLogin(externalUser, hmacSha256Base64) {
-  postJsonSuccess('/-/sso-upsert-user-and-login', () => {}, { externalUser, hmacSha256Base64 });
+export function ssoUpsertUserAndLogin(externalUser: string | object, hmacSha256Base64: string) {
+  postJsonSuccess('/-/sso-upsert-user-and-login', debiki2.ReactActions.loadMyself, {
+    externalUser,
+    hmacSha256Base64
+  });
 }
 
 
