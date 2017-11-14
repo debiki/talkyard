@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2016 Kaj Magnus Lindberg
+ * Copyright (c) 2015-2017 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -68,9 +68,13 @@ export function buildForumRoutes() {
     Redirect({ key: 'redirB', from: rootNoSlash, to: defaultPath }),
     Route({ key: 'theRoutes', path: rootSlash, component: ForumComponent },
       Redirect({ from: RoutePathLatest + '/', to: rootSlash + RoutePathLatest }),
+      Redirect({ from: RoutePathNew + '/', to: rootSlash + RoutePathNew }),
       Redirect({ from: RoutePathTop + '/', to: rootSlash + RoutePathTop }),
       Redirect({ from: RoutePathCategories + '/', to: rootSlash + RoutePathCategories }),
       Route({ path: RoutePathLatest, component: LoadAndListTopicsComponent },
+        IndexRoute({ component: LoadAndListTopicsComponent }),
+        Route({ path: ':categorySlug', component: LoadAndListTopicsComponent })),
+      Route({ path: RoutePathNew, component: LoadAndListTopicsComponent },
         IndexRoute({ component: LoadAndListTopicsComponent }),
         Route({ path: ':categorySlug', component: LoadAndListTopicsComponent })),
       Route({ path: RoutePathTop, component: LoadAndListTopicsComponent },
@@ -127,7 +131,7 @@ const ForumComponent = React.createClass(<any> {
   checkSizeChangeLayout: function() {
     // Dupl code [5KFEWR7]
     if (this.isGone) return;
-    var isWide = this.isPageWide();
+    const isWide = this.isPageWide();
     if (isWide !== this.state.useWideLayout) {
       this.setState({ useWideLayout: isWide });
     }
@@ -142,9 +146,9 @@ const ForumComponent = React.createClass(<any> {
   },
 
   getActiveCategory: function() {
-    var store: Store = this.state.store;
-    var activeCategory: any;
-    var activeCategorySlug = store.newCategorySlug || this.props.params.categorySlug;
+    const store: Store = this.state.store;
+    let activeCategory: any;
+    const activeCategorySlug = store.newCategorySlug || this.props.params.categorySlug;
     if (activeCategorySlug) {
       activeCategory = _.find(store.categories, (category: Category) => {
         return category.slug === activeCategorySlug;
@@ -164,8 +168,8 @@ const ForumComponent = React.createClass(<any> {
   },
 
   makeHelpMessage: function(category: Category): any {
-    var store: Store = this.state.store;
-    var me: Myself = store.me;
+    const store: Store = this.state.store;
+    const me: Myself = store.me;
     if (!_.isEqual(category.newTopicTypes, [PageRole.Critique])) // [plugin] ...
       return null;
 
@@ -199,14 +203,14 @@ const ForumComponent = React.createClass(<any> {
   },
 
   render: function() {
-    var store: Store = this.state.store;
-    var activeCategory = this.getActiveCategory();
-    var helpMessage = activeCategory ? this.makeHelpMessage(activeCategory) : null;
+    const store: Store = this.state.store;
+    const activeCategory = this.getActiveCategory();
+    let helpMessage = activeCategory ? this.makeHelpMessage(activeCategory) : null;
     helpMessage = helpMessage
         ? debiki2.help.HelpMessageBox({ message: helpMessage })
         : null;
 
-    var childProps = _.assign({}, {
+    const childProps = _.assign({}, {
       store: store,
       useTable: this.state.useWideLayout,
       route: this.props.route,
@@ -223,7 +227,7 @@ const ForumComponent = React.createClass(<any> {
 
     // Should I use named components instead of manually passing all route stuff to ForumButtons?
     // https://github.com/rackt/react-router/blob/v2.0.0-rc5/docs/API.md#named-components
-    var forumButtonProps = _.assign({}, childProps, {
+    const forumButtonProps = _.assign({}, childProps, {
       route: this.props.route,
       routes: this.props.routes,
       location: this.props.location,
@@ -251,7 +255,7 @@ const ForumComponent = React.createClass(<any> {
 });
 
 
-var topicsAndCatsHelpMessage = {
+const topicsAndCatsHelpMessage = {
   id: 'EsH4YKG81',
   version: 1,
   content: r.span({},
@@ -260,15 +264,15 @@ var topicsAndCatsHelpMessage = {
 };
 
 
-var ForumIntroText = createComponent({
+const ForumIntroText = createComponent({
   render: function() {
-    var store: Store = this.props.store;
-    var user: Myself = store.me;
-    var introPost = store.postsByNr[BodyNr];
+    const store: Store = this.props.store;
+    const user: Myself = store.me;
+    const introPost = store.postsByNr[BodyNr];
     if (!introPost || introPost.isBodyHidden)
       return null;
 
-    var anyEditIntroBtn = user.isAdmin
+    const anyEditIntroBtn = user.isAdmin
         ? r.a({ className: 'esForumIntro_edit icon-edit',
               onClick: morebundle.openEditIntroDialog }, "Edit")
         : null;
@@ -287,7 +291,7 @@ var ForumIntroText = createComponent({
 
 
 
-var ForumButtons = createComponent({
+const ForumButtons = createComponent({
   mixins: [utils.WindowZoomResizeMixin],
 
   contextTypes: {
@@ -315,14 +319,14 @@ var ForumButtons = createComponent({
   },
 
   onWindowZoomOrResize: function() {
-    var newCompact = window.innerWidth < 801;
+    const newCompact = window.innerWidth < 801;
     if (this.state.compact !== newCompact) {
       this.setState({ compact: newCompact });
     }
   },
 
   openCategoryDropdown: function() {
-    var rect = ReactDOM.findDOMNode(this.refs.selectCategoryButton).getBoundingClientRect();
+    const rect = ReactDOM.findDOMNode(this.refs.selectCategoryButton).getBoundingClientRect();
     this.setState({ isCategoryDropdownOpen: true, categoryDropdownX: rect.left,
         categoryDropdownY: rect.bottom });
   },
@@ -332,12 +336,12 @@ var ForumButtons = createComponent({
   },
 
   setCategory: function(newCategorySlug) {
-    var store: Store = this.props.store;
+    const store: Store = this.props.store;
     dieIf(this.props.routes.length < 2, 'EsE6YPKU2');
     this.closeCategoryDropdown();
-    var currentPath = this.props.routes[SortOrderRouteIndex].path;
-    var nextPath = currentPath === RoutePathCategories ? RoutePathLatest : currentPath;
-    var slashSlug = newCategorySlug ? '/' + newCategorySlug : '';
+    const currentPath = this.props.routes[SortOrderRouteIndex].path;
+    const nextPath = currentPath === RoutePathCategories ? RoutePathLatest : currentPath;
+    const slashSlug = newCategorySlug ? '/' + newCategorySlug : '';
     this.context.router.push({
       pathname: store.pagePath.value + nextPath + slashSlug,
       query: this.props.location.query,
@@ -345,14 +349,14 @@ var ForumButtons = createComponent({
   },
 
   findTheDefaultCategory: function() {
-    var store: Store = this.props.store;
+    const store: Store = this.props.store;
     return _.find(store.categories, (category: Category) => {
       return category.isDefaultCategory;
     });
   },
 
   openSortOrderDropdown: function() {
-    var rect = ReactDOM.findDOMNode(this.refs.sortOrderButton).getBoundingClientRect();
+    const rect = ReactDOM.findDOMNode(this.refs.sortOrderButton).getBoundingClientRect();
     this.setState({ isSortOrderDropdownOpen: true, sortOrderDropdownX: rect.left,
         sortOrderDropdownY: rect.bottom });
   },
@@ -362,7 +366,7 @@ var ForumButtons = createComponent({
   },
 
   setSortOrder: function(newPath: string) {
-    var store: Store = this.props.store;
+    const store: Store = this.props.store;
     this.closeSortOrderDropdown();
     this.context.router.push({
       pathname: store.pagePath.value + newPath + this.slashCategorySlug(),
@@ -374,21 +378,22 @@ var ForumButtons = createComponent({
     if (!sortOrderRoutePath) {
       sortOrderRoutePath = this.props.routes[SortOrderRouteIndex].path;
     }
-    let store: Store = this.props.store;
-    let showTopicFilter = settings_showFilterButton(store.settings, store.me);
+    const store: Store = this.props.store;
+    const showTopicFilter = settings_showFilterButton(store.settings, store.me);
     // If there's no topic filter button, the text "All Topics" won't be visible to the
     // right of the Latest / Top sort order buttons, which makes it hard to understand what
     // Latest / Top means? Therefore, if `!showTopicFilter`, type "Latest topics" instead of
     // just "Latest". (Also, since the filter button is absent, there's more space for this.)
     switch (sortOrderRoutePath) {
-      case RoutePathLatest: return showTopicFilter ? "Latest" : "Latest topics";
+      case RoutePathLatest: return showTopicFilter ? "Active" : "Active topics";
+      case RoutePathNew: return showTopicFilter ? "New" : "New topics";
       case RoutePathTop: return showTopicFilter ? "Top" : "Popular topics";
       default: return null;
     }
   },
 
   setTopicFilter: function(entry: ExplainingTitleText) {
-    var newQuery = _.clone(this.props.location.query);
+    const newQuery = _.clone(this.props.location.query);
     if (entry.eventKey === FilterShowAll) {
       delete newQuery.filter;
     }
@@ -400,7 +405,7 @@ var ForumButtons = createComponent({
   },
 
   openTopicFilterDropdown: function() {
-    var rect = ReactDOM.findDOMNode(this.refs.topicFilterButton).getBoundingClientRect();
+    const rect = ReactDOM.findDOMNode(this.refs.topicFilterButton).getBoundingClientRect();
     this.setState({ isTopicFilterDropdownOpen: true, topicFilterX: rect.left,
         topicFilterY: rect.bottom });
   },
@@ -445,15 +450,15 @@ var ForumButtons = createComponent({
   },
 
   createTopic: function() {
-    var anyReturnToUrl = window.location.toString().replace(/#/, '__dwHash__');
+    const anyReturnToUrl = window.location.toString().replace(/#/, '__dwHash__');
     morebundle.loginIfNeeded('LoginToCreateTopic', anyReturnToUrl, () => {
       if (this.isGone) return;
-      var category: Category = this.props.activeCategory;
+      let category: Category = this.props.activeCategory;
       if (category.isForumItself) {
         category = this.findTheDefaultCategory();
         dieIf(!category, "No Uncategorized category [DwE5GKY8]");
       }
-      var newTopicTypes = category.newTopicTypes || [];
+      const newTopicTypes = category.newTopicTypes || [];
       if (newTopicTypes.length === 0) {
         debiki2.editor.editNewForumPage(category.id, PageRole.Discussion);
       }
@@ -475,11 +480,11 @@ var ForumButtons = createComponent({
   },
 
   render: function() {
-    let state = this.state;
-    let store: Store = this.props.store;
-    let settings: SettingsVisibleClientSide = store.settings;
-    let me: Myself = store.me;
-    let activeCategory: Category = this.props.activeCategory;
+    const state = this.state;
+    const store: Store = this.props.store;
+    const settings: SettingsVisibleClientSide = store.settings;
+    const me: Myself = store.me;
+    const activeCategory: Category = this.props.activeCategory;
     if (!activeCategory) {
       // The user has typed a non-existing category slug in the URL. Or she has just created
       // a category, opened a page and then clicked Back in the browser. Then this page
@@ -498,15 +503,15 @@ var ForumButtons = createComponent({
           PrimaryLinkButton({ href: '/' }, "Go to the homepage."));
     }
 
-    var showsCategoryTree = this.props.routes[SortOrderRouteIndex].path === RoutePathCategories;
-    var showsTopicList = !showsCategoryTree;
+    const showsCategoryTree = this.props.routes[SortOrderRouteIndex].path === RoutePathCategories;
+    const showsTopicList = !showsCategoryTree;
 
     // A tester got a little bit confused in the categories view, because it starts with
     // the filter-*topics* button. So insert this title, before, instead.
-    var anyPageTitle = showsCategoryTree ?
+    const anyPageTitle = showsCategoryTree ?
         r.div({ className: 'esF_BB_PageTitle' }, "Categories") : null;
 
-    var makeCategoryLink = (where, text, linkId, extraClass?) => Link({
+    const makeCategoryLink = (where, text, linkId, extraClass?) => Link({
       to: { pathname: store.pagePath.value + where, query: this.props.location.query },
       id: linkId,
       className: 'btn esForum_catsNav_btn ' + (extraClass || ''),
@@ -518,15 +523,15 @@ var ForumButtons = createComponent({
 
     // COULD remember which topics were listed previously and return to that view.
     // Or would a Back btn somewhere be better?
-    var topicListLink = showsTopicList ? null :
+    const topicListLink = showsTopicList ? null :
       makeCategoryLink(RoutePathLatest, "Topic list", 'e2eViewTopicsB', 'esForum_navLink');
 
-    var categoryMenuItems = store.categories.map((category: Category) => {
+    const categoryMenuItems = store.categories.map((category: Category) => {
       return MenuItem({ key: category.id, active: activeCategory.id === category.id,
           onClick: () => this.setCategory(category.slug) }, category.name);
     });
 
-    var listsTopicsInAllCats =
+    const listsTopicsInAllCats =
         // We list topics? (We're not on the Categories route? which lists categories)
         this.props.routes[SortOrderRouteIndex].path !== RoutePathCategories &&
         // No category selected?
@@ -543,7 +548,7 @@ var ForumButtons = createComponent({
             ref: 'selectCategoryButton' },
           activeCategory.name + ' ', r.span({ className: 'caret' }));
 
-    var categoriesDropdownModal =
+    const categoriesDropdownModal =
         DropdownModal({ show: state.isCategoryDropdownOpen, pullLeft: true,
             onHide: this.closeCategoryDropdown, atX: state.categoryDropdownX,
             atY: state.categoryDropdownY },
@@ -551,19 +556,19 @@ var ForumButtons = createComponent({
             categoryMenuItems));
 
     // The Latest/Top/Categories buttons, but use a dropdown if there's not enough space.
-    var currentSortOrderPath = this.props.routes[SortOrderRouteIndex].path;
-    var latestTopButton;
-    var latestTopDropdownModal;
+    const currentSortOrderPath = this.props.routes[SortOrderRouteIndex].path;
+    let latestNewTopButton;
+    let latestNewTopDropdownModal;
     if (showsCategoryTree) {
       // Then hide the sort topics buttons.
     }
     else if (state.compact) {
       // [refactor] use ModalDropdownButton instead
-      latestTopButton =
+      latestNewTopButton =
           Button({ onClick: this.openSortOrderDropdown, ref: 'sortOrderButton',
               className: 'esForum_catsNav_btn esF_BB_SortBtn' },
             this.getSortOrderName() + ' ', r.span({ className: 'caret' }));
-      latestTopDropdownModal =
+      latestNewTopDropdownModal =
         DropdownModal({ show: state.isSortOrderDropdownOpen, pullLeft: true,
             onHide: this.closeSortOrderDropdown, atX: state.sortOrderDropdownX,
             atY: state.sortOrderDropdownY },
@@ -571,27 +576,33 @@ var ForumButtons = createComponent({
             ExplainingListItem({ onClick: () => this.setSortOrder(RoutePathLatest),
                 active: currentSortOrderPath === RoutePathLatest,
                 title: this.getSortOrderName(RoutePathLatest),
-                text: "Shows latest topics first" }),
+                text: "Shows recently active topics first" }),
+            ExplainingListItem({ onClick: () => this.setSortOrder(RoutePathNew),
+              active: currentSortOrderPath === RoutePathNew,
+              title: this.getSortOrderName(RoutePathNew),
+              text: "Shows newest topics first" }),
             ExplainingListItem({ onClick: () => this.setSortOrder(RoutePathTop),
                 active: currentSortOrderPath === RoutePathTop,
                 title: this.getSortOrderName(RoutePathTop),
                 text: "Shows popular topics first" })));
     }
     else {
-      var slashSlug = this.slashCategorySlug();
-      latestTopButton =
+      const slashSlug = this.slashCategorySlug();
+      latestNewTopButton =
           r.ul({ className: 'nav esForum_catsNav_sort' },
             makeCategoryLink(RoutePathLatest + slashSlug, this.getSortOrderName(RoutePathLatest),
                 'e2eSortLatestB'),
+            makeCategoryLink(RoutePathNew + slashSlug, this.getSortOrderName(RoutePathNew),
+                'e_SortNewB'),
             makeCategoryLink(RoutePathTop + slashSlug, this.getSortOrderName(RoutePathTop),
                 'e2eSortTopB'));
     }
 
     // ------ The filter topics select.
 
-    let showFilterButton = settings_showFilterButton(settings, me);
+    const showFilterButton = settings_showFilterButton(settings, me);
 
-    var topicFilterValue = this.props.location.query.filter || FilterShowAll;
+    const topicFilterValue = this.props.location.query.filter || FilterShowAll;
     function makeTopicFilterText(filter) {
       switch (filter) {
         case FilterShowAll: return "All topics";
@@ -602,18 +613,18 @@ var ForumButtons = createComponent({
     }
 
     // [refactor] use ModalDropdownButton instead
-    var topicFilterButton = !showFilterButton ? null :
+    const topicFilterButton = !showFilterButton ? null :
       Button({ onClick: this.openTopicFilterDropdown,
           className: 'esForum_filterBtn esForum_catsNav_btn', ref: 'topicFilterButton' },
         makeTopicFilterText(topicFilterValue) + ' ', r.span({ className: 'caret' }));
 
-    var showDeletedFilterItem = !isStaff(me) || !showFilterButton ? null :
+    const showDeletedFilterItem = !isStaff(me) || !showFilterButton ? null :
       ExplainingListItem({ onSelect: this.setTopicFilter,
         activeEventKey: topicFilterValue, eventKey: FilterShowDeleted,
         title: makeTopicFilterText(FilterShowDeleted),
         text: "Shows all topics, including deleted topics" });
 
-    var topicFilterDropdownModal = !showFilterButton ? null :
+    const topicFilterDropdownModal = !showFilterButton ? null :
       DropdownModal({ show: state.isTopicFilterDropdownOpen, pullLeft: true,
           onHide: this.closeTopicFilterDropdown, atX: state.topicFilterX,
           atY: state.topicFilterY },
@@ -680,8 +691,8 @@ var ForumButtons = createComponent({
             anyPageTitle,
             categoriesDropdownButton,
             categoriesDropdownModal,
-            latestTopButton,
-            latestTopDropdownModal,
+            latestNewTopButton,
+            latestNewTopDropdownModal,
             topicFilterButton,
             topicFilterDropdownModal,
             categoryTreeLink,
@@ -772,7 +783,7 @@ const LoadAndListTopicsComponent = React.createClass(<any> {
         showLoadMoreButton: false
       });
       // Load from the start, no offset. Keep any topic filter though.
-      delete orderOffset.bumpedAt;
+      delete orderOffset.olderThan;
       delete orderOffset.score;
     }
     const categoryId = nextProps.activeCategory.id;
@@ -799,9 +810,9 @@ const LoadAndListTopicsComponent = React.createClass(<any> {
   countTopicsWaitingForCritique: function(topics?) { // for now only  [plugin]
     if (!this.props.activeCategory) return;
     topics = topics || this.state.topics;
-    var numWaitingForCritique = 0;
+    let numWaitingForCritique = 0;
     if (_.isEqual(this.props.activeCategory.newTopicTypes, [PageRole.Critique])) {
-      var waitingTopics = _.filter(topics, (topic: Topic) =>
+      const waitingTopics = _.filter(topics, (topic: Topic) =>
         !topic.closedAtMs && topic.pageRole === PageRole.Critique);
       numWaitingForCritique = waitingTopics.length;
       console.log(numWaitingForCritique + " topics waiting for critique. [EsM8PMU21]");
@@ -813,23 +824,29 @@ const LoadAndListTopicsComponent = React.createClass(<any> {
     const props = nextProps || this.props;
     let lastBumpedAt: number;
     let lastScore: number;
+    let lastCreatedAt: number;
     const lastTopic: any = _.last(this.state.topics);
     if (lastTopic) {
       // If we're loading more topics, we should continue with this offset.
       lastBumpedAt = lastTopic.bumpedAtMs || lastTopic.createdAtMs;
+      lastCreatedAt = lastTopic.createdAtMs;
       lastScore = lastTopic.popularityScore;  // always absent, currently [7IKA2V]
     }
 
     const orderOffset: OrderOffset = { sortOrder: -1 };
     if (props.routes[SortOrderRouteIndex].path === RoutePathTop) {
       orderOffset.sortOrder = TopicSortOrder.ScoreAndBumpTime;
-      orderOffset.bumpedAt = lastBumpedAt;
+      orderOffset.olderThan = lastBumpedAt;
       orderOffset.score = lastScore;
       orderOffset.period = props.topPeriod;
     }
+    else if (props.routes[SortOrderRouteIndex].path === RoutePathNew) {
+      orderOffset.sortOrder = TopicSortOrder.CreatedAt;
+      orderOffset.olderThan = lastCreatedAt;
+    }
     else {
       orderOffset.sortOrder = TopicSortOrder.BumpTime;
-      orderOffset.bumpedAt = lastBumpedAt;
+      orderOffset.olderThan = lastBumpedAt;
     }
     return orderOffset;
   },
@@ -872,9 +889,9 @@ export var ListTopicsComponent = createComponent({
   },
 
   render: function() {
-    let store: Store = this.props.store;
-    let me: Myself = store.me;
-    let topics: Topic[] = this.props.topics;
+    const store: Store = this.props.store;
+    const me: Myself = store.me;
+    const topics: Topic[] = this.props.topics;
     if (!topics) {
       // The min height preserves scrollTop, even though the topic list becomes empty
       // for a short while (which would otherwise reduce the windows height which
@@ -888,10 +905,10 @@ export var ListTopicsComponent = createComponent({
     if (!topics.length)
       return r.p({ id: 'e2eF_NoTopics' }, 'No topics.');
 
-    let useTable = this.props.useTable;
+    const useTable = this.props.useTable;
 
-    let activeCategory: Category = this.props.activeCategory;
-    let topicElems = topics.map((topic: Topic) => {
+    const activeCategory: Category = this.props.activeCategory;
+    const topicElems = topics.map((topic: Topic) => {
       return TopicRow({
           store: store, topic: topic, categories: store.categories,
           activeCategory: activeCategory, now: store.now,
@@ -904,8 +921,8 @@ export var ListTopicsComponent = createComponent({
     // It'll be closed by default (click to open) if there are only a few topics.
     // (Because if people haven't seen some icons and started wondering "what's that",
     // they're just going to be annoyed by the icon help tips?)
-    var numFewTopics = 10;
-    var iconsHelpClosed = !this.state.helpOpened; /* always start closed, for now,
+    const numFewTopics = 10;
+    const iconsHelpClosed = !this.state.helpOpened; /* always start closed, for now,
                                                     because doesn't look nice otherwise
         [refactor] So remove this stuff then:
         // User has clicked Hide?
@@ -962,6 +979,12 @@ export var ListTopicsComponent = createComponent({
       r.p({ className: 'icon-trash s_F_CatDdInfo' },
         "This category has been deleted");
 
+    let topicsHeader = "Topics";
+    switch (orderOffset.sortOrder) {
+      case TopicSortOrder.BumpTime: topicsHeader = "Topics, recently activity first"; break;
+      case TopicSortOrder.CreatedAt: topicsHeader = "Topics, newest first"; break;
+    }
+
     const categoryHeader = !settings_showCategories(store.settings, me) ? null :
         r.th({ className: 's_F_Ts_T_CN' }, "Category");
 
@@ -969,7 +992,7 @@ export var ListTopicsComponent = createComponent({
         r.table({ className: 'esF_TsT s_F_Ts-Wide dw-topic-list' + deletedClass },
           r.thead({},
             r.tr({},
-              r.th({}, "Topic"),
+              r.th({}, topicsHeader),
               categoryHeader,
               r.th({ className: 's_F_Ts_T_Avs' }, "Users"),
               r.th({ className: 'num dw-tpc-replies' }, "Replies"),
@@ -1342,9 +1365,9 @@ var LoadAndListCategoriesComponent = React.createClass(<any> {
 
 
 
-var CategoryRow = createComponent({
+const CategoryRow = createComponent({
   componentDidMount: function() {
-    var store: Store = this.props.store;
+    const store: Store = this.props.store;
     // If this is a newly created category, scroll it into view.
     if (this.props.category.slug === store.newCategorySlug) {
       utils.scrollIntoViewInPageColumn(ReactDOM.findDOMNode(this));
@@ -1352,12 +1375,12 @@ var CategoryRow = createComponent({
   },
 
   render: function() {
-    var store: Store = this.props.store;
-    var me: Myself = store.me;
-    var category: Category = this.props.category;
-    var recentTopicRows = category.recentTopics.map((topic: Topic) => {
-      var pinIconClass = topic.pinWhere ? ' icon-pin' : '';
-      var numReplies = topic.numPosts - 1;
+    const store: Store = this.props.store;
+    const me: Myself = store.me;
+    const category: Category = this.props.category;
+    const recentTopicRows = category.recentTopics.map((topic: Topic) => {
+      const pinIconClass = topic.pinWhere ? ' icon-pin' : '';
+      const numReplies = topic.numPosts - 1;
       return (
         r.tr({ key: topic.pageId },
           r.td({},
@@ -1369,14 +1392,14 @@ var CategoryRow = createComponent({
     });
 
     // This will briefly highlight a newly created category.
-    var isNewClass = category.slug === store.newCategorySlug ?
+    const isNewClass = category.slug === store.newCategorySlug ?
       ' esForum_cats_cat-new' : '';
 
     let isDeletedClass = category.isDeleted ? ' s_F_Cs_C-Dd' : '';
     let isDeletedText = category.isDeleted ?
         r.small({}, " (deleted)") : null;
 
-    var isDefault = category.isDefaultCategory && isStaff(me) ?
+    const isDefault = category.isDefaultCategory && isStaff(me) ?
         r.small({}, " (default category)") : null;
 
     return (
@@ -1406,7 +1429,7 @@ function makeTitle(topic: Topic, className: string, settings: SettingsVisibleCli
 
   if (topic.closedAtMs && !isDone(topic) && !isAnswered(topic)) {
     tooltip = page.makePageClosedTooltipText(topic.pageRole);
-    var closedIcon = r.span({ className: 'icon-block' });
+    const closedIcon = r.span({ className: 'icon-block' });
     title = r.span({}, closedIcon, title);
   }
   else if (topic.pageRole === PageRole.Question) {
@@ -1539,7 +1562,7 @@ function makeTitle(topic: Topic, className: string, settings: SettingsVisibleCli
 
 
 function createTopicBtnTitle(category: Category) {
-  var title = "Create Topic";
+  let title = "Create Topic";
   if (_.isEqual([PageRole.Idea], category.newTopicTypes)) {
     title = "Post an Idea";
   }

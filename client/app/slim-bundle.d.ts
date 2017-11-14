@@ -50,6 +50,7 @@ declare const ApiUrlPathPrefix;
 
 
 declare const RoutePathLatest;
+declare const RoutePathNew;
 declare const RoutePathTop;
 declare const RoutePathCategories;
 

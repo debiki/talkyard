@@ -32,24 +32,28 @@ export function makeForumTopicsQueryParams(orderOffset: OrderOffset): string {
   let params = '';
   if (orderOffset.sortOrder === TopicSortOrder.BumpTime) {
     params += 'sortOrder=ByBumpTime';
-    if (orderOffset.bumpedAt) {
-      params += '&bumpedAt=' + orderOffset.bumpedAt;
-    }
+  }
+  else if (orderOffset.sortOrder === TopicSortOrder.CreatedAt) {
+    params += 'sortOrder=ByCreatedAt';
   }
   else if (orderOffset.sortOrder === TopicSortOrder.ScoreAndBumpTime) {
     params += 'sortOrder=ByScore';
     params += '&period=' + orderOffset.period;
     if (_.isNumber(orderOffset.score)) {
       params += '&maxScore=' + orderOffset.score;
-      params += '&bumpedAt=' + orderOffset.bumpedAt;
     }
   }
+
+  if (orderOffset.olderThan) {
+    params += '&olderThan=' + orderOffset.olderThan;
+  }
+
   /* Perhaps add back sort-by-likes later?
   else if (orderOffset.sortOrder === TopicSortOrder.LikesAndBumpTime) {
     params += 'sortOrder=ByLikes';
-    if (_.isNumber(orderOffset.numLikes) && orderOffset.bumpedAt) {
+    if (_.isNumber(orderOffset.numLikes) && orderOffset.olderThan) {
       params += '&num=' + orderOffset.numLikes;
-      params += '&bumpedAt=' + orderOffset.bumpedAt;
+      params += '&olderThan=' + orderOffset.bumpedAt;
     }
   } */
   else {

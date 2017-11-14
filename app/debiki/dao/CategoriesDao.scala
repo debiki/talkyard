@@ -219,6 +219,7 @@ trait CategoriesDao {
       pageQuery, limit)
 
     // If sorting by bump time, sort pinned topics first. Otherwise, don't.
+    // (Could maybe show pinned topics if sorting by newest-first? Flarum & Discourse don't though.)
     val topicsInclPinned = pageQuery.orderOffset match {
       case orderOffset: PageOrderOffset.ByBumpTime if orderOffset.offset.isEmpty =>
         val pinnedTopics = loadMaySeePagesInCategory(

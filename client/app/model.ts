@@ -410,7 +410,8 @@ interface Topic {
 
 enum TopicSortOrder {
   BumpTime = 1,
-  ScoreAndBumpTime,
+  CreatedAt = 2,
+  ScoreAndBumpTime = 3,
   // LikesAndBumpTime, — perhaps add back later?
 }
 
@@ -428,8 +429,8 @@ enum TopTopicsPeriod {
 interface OrderOffset {  // COULD rename to TopicQuery? (because includes filter too now)
   sortOrder: TopicSortOrder;
 
-  // Latest first offset:
-  bumpedAt?: number;
+  // For by-bump-time and newest-first first offset:
+  olderThan?: number;
 
   // For sort-by-top-score offset & period:
   score?: number;

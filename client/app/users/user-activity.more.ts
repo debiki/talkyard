@@ -171,7 +171,7 @@ export let TopicsComponent = React.createClass(<any> {
       minHeight: 300,
       showLoadMoreButton: false,
       activeCategory: {},
-      orderOffset: <OrderOffset> { sortOrder: TopicSortOrder.BumpTime },
+      orderOffset: <OrderOffset> { sortOrder: TopicSortOrder.CreatedAt },
       // `routes` and `location` only needed if making categories clickable. [7FKR0QA]
       linkCategories: false,
       routes: null,

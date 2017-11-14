@@ -73,6 +73,7 @@ const ApiUrlPathPrefix = '/-/';
 
 
 const RoutePathLatest = 'latest';
+const RoutePathNew = 'new';
 const RoutePathTop = 'top';
 const RoutePathCategories = 'categories';
 

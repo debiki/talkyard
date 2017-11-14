@@ -165,11 +165,13 @@ abstract class DebikiRequest[A] {
 
   def parsePageQuery(): Option[PageQuery] = {
     val sortOrderStr = queryString.getFirst("sortOrder") getOrElse { return None }
-    def anyDateOffset = queryString.getLong("bumpedAt") map (new ju.Date(_))
+    def anyDateOffset = queryString.getLong("olderThan") map (new ju.Date(_))
 
     val orderOffset: PageOrderOffset = sortOrderStr match {
       case "ByBumpTime" =>
         PageOrderOffset.ByBumpTime(anyDateOffset)
+      case "ByCreatedAt" =>
+        PageOrderOffset.ByCreatedAt(anyDateOffset)
       case "ByScore" =>
         val scoreStr = queryString.getFirst("maxScore")
         val periodStr = queryString.getFirst("period")
@@ -184,7 +186,7 @@ abstract class DebikiRequest[A] {
           case (None, None) =>
             PageOrderOffset.ByLikesAndBumpTime(None)
           case _ =>
-            throwBadReq("DwE4KEW21", "Please specify both 'num' and 'bumpedAt' or none at all")
+            throwBadReq("DwE4KEW21", "Please specify both 'num' and 'olderThan' or none at all")
         }
       case x => throwBadReq("DwE05YE2", s"Bad sort order: `$x'")
     }
