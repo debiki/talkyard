@@ -1,4 +1,8 @@
-FROM docker.elastic.co/elasticsearch/elasticsearch:5.5.2
+# Use the -oss (open-source) configuration — it doesn't include X-Pack,
+# and therefore doesn't print any verbose "license expired" warnings
+# every minute.
+FROM docker.elastic.co/elasticsearch/elasticsearch-oss:6.0.0
+
 COPY elasticsearch.yml /usr/share/elasticsearch/config/elasticsearch.yml
 
 # For troubleshooting. Oops, maybe rpm not apt?

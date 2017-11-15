@@ -769,7 +769,7 @@ class Globals(
     val elasticSearchClient: es.client.transport.TransportClient =
       new es.transport.client.PreBuiltTransportClient(es.common.settings.Settings.EMPTY)
         .addTransportAddress(
-          new es.common.transport.InetSocketTransportAddress(
+          new es.common.transport.TransportAddress(
             jn.InetAddress.getByName(elasticSearchHost), 9300))
 
     val siteDaoFactory = new SiteDaoFactory(

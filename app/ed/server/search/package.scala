@@ -123,7 +123,7 @@ package object search {
     unapprovedSource: Option[String])(
     private val underlying: es.search.SearchHit) {
 
-    def score: Float = underlying.score
+    def score: Float = underlying.getScore
   }
 
 

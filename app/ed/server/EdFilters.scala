@@ -19,6 +19,7 @@ package ed.server
 
 import akka.stream.Materializer
 import com.debiki.core._
+import play.{api => p}
 import play.filters.gzip.{GzipFilter, GzipFilterConfig}
 
 
@@ -36,8 +37,7 @@ object EdFilters {
         // Play Framework (v2.4 at least) won't call this function for responses that already
         // have a content encoding, e.g. things that have been gzipped already,
         // like min.js.gz files.
-        import org.jboss.netty.handler.codec.http.HttpHeaders.Names
-        assert(response.header.headers.get(Names.CONTENT_ENCODING).isEmpty)
+        assert(response.header.headers.get(p.http.HeaderNames.CONTENT_ENCODING).isEmpty)
 
         // Compressing images tend to make them larger (they're compressed already).
         val uri = request.uri

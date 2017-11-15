@@ -20,7 +20,6 @@ package ed.server.search
 import akka.actor._
 import com.debiki.core._
 import debiki.dao.SystemDao
-import java.{util => ju}
 import org.elasticsearch.action.bulk.BulkResponse
 import org.elasticsearch.action.ActionListener
 import org.elasticsearch.action.index.{IndexRequestBuilder, IndexResponse}
@@ -28,6 +27,7 @@ import org.{elasticsearch => es}
 import play.{api => p}
 import scala.concurrent.duration._
 import Prelude._
+import org.elasticsearch.common.xcontent.XContentType
 import org.postgresql.util.PSQLException
 import play.api.Logger
 import scala.concurrent.ExecutionContext
@@ -147,7 +147,7 @@ class IndexingActor(
   val indexCreator = new IndexCreator()
   val postsRecentlyIndexed = new java.util.concurrent.ConcurrentLinkedQueue[SiteIdAndPost]
 
-  def receive = {
+  def receive: PartialFunction[Any, Unit] = {
     case IndexStuff =>
       // BUG race condition. Could instead: 1) find out in which languages indexes are missing.
       // 2) insert into the index queue entries for stuff in those languages. 3) create indexes.
@@ -206,7 +206,7 @@ class IndexingActor(
       client.prepareIndex(IndexName, PostDocType, docId)
         //.opType(es.action.index.IndexRequest.OpType.CREATE)
         //.version(...)
-        .setSource(doc.toString)
+        .setSource(doc.toString, XContentType.JSON)
         .setRouting(siteId.toString)  // we set this routing when searching too [4YK7CS2]
 
     requestBuilder.execute(new ActionListener[IndexResponse] {
