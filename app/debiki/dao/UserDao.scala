@@ -746,10 +746,10 @@ trait UserDao {
       "EsE6KFE0X", s"Your user cannot be found, id: ${byWho.id}"))
 
     lazy val numMembersAlready = transaction.loadMessageMembers(pageId).size
-    if (add && numMembersAlready + userIds.size > 200) {
+    if (add && numMembersAlready + userIds.size > 400) {
       // I guess something, not sure what?, would break if too many people join
       // the same page.
-      throwForbidden("EsE4FK0Y2", o"""Sorry but currently more than 200 page members
+      throwForbidden("EsE4FK0Y2", o"""Sorry but currently more than 400 page members
             isn't allowed. There are $numMembersAlready page members already""")
     }
 
