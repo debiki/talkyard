@@ -168,14 +168,20 @@ class Notifier(val systemDao: SystemDao, val siteDaoFactory: SiteDaoFactory)
         bodyHtmlText = i"""
           |<p>Hi $userName,</p>
           |
-          |<p>You'll get more feedback about the website you submitted to Usability Testing Exchange, if you give more feedback to others. If you haven't already, you can <a href="https://usability.testing.exchange/give-me-a-task">go here and give feedback to others</a>.
+          |<p>Welcome to Usability Testing Exchange; we're glad you submitted your site.
           |</p>
           |
-          |<p>We're glad you submitted your site. Please feel welcomed. Note: When you give feedback about something that is broken or doesn't look so great: be specific. Don't just say "I don't like it" — then the other person won't know what you have in mind, or what to change and improve. Instead, say e.g. "I don't understand what (something) is", or "I think that picture doesn't fit here".
+          |<p>You'll get more feedback yourself, if you give more feedback to others. If you haven't already, you can <a href="https://usability.testing.exchange/give-me-a-task">go here and give feedback to others</a>.
           |</p>
           |
-          |<p>Please try to be friendly and also mention things you like. Don't say that something looks terrible and such things. We want people to stay happy and feel encouraged to continue learning and experimenting — especially if they are new to design and usability, and do mistakes.
-          |</p>
+          |<p>When giving feedback:</p>
+          |
+          |<ul>
+          |<li>Please try to be friendly and also mention things you like. Don't say that something looks terrible. We want people to stay happy and feel encouraged to continue learning and experimenting — especially if they are new to design and usability, and do mistakes.
+          |</li>
+          |<li>Be specific. Don't just say "I don't like it" — then the other person won't know what you have in mind, or what to change and improve. Instead, say e.g. "I don't understand what (something) is", or "I think that picture doesn't fit here".
+          |</li>
+          |</ul>
           |
           |<p>We hope you like looking at other people's websites & giving feedback :-) and that you'll learn from it, e.g. avoiding mistakes you see others make.
           |</p>
@@ -187,8 +193,9 @@ class Notifier(val systemDao: SystemDao, val siteDaoFactory: SiteDaoFactory)
           |
           |<p>Kind regards.</p>
           |
-          |<p><small>PS. If you want to create a forum & community for your website,<br>
-          |check out <a href="https://www.effectivediscussions.org">Effective Discussions</a>.</small>
+          |<p>(PS. Want a forum/chat/community for your website?
+          |Check out <a href="https://www.effectivediscussions.org">Effective Discussions</a><br>
+          |— the open source discussion platform powering Usability Testing Exchange.)
           |</p>
           |""")
       dao.readWriteTransaction { tx =>

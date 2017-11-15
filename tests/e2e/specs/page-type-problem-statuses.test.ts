@@ -95,7 +95,7 @@ describe("Page statuses and bottom comments", () => {
     mariasBrowser.topic.assertMetaPostTextMatches(2, 'marked this topic as Planned');
     mariasBrowser.topic.assertMetaPostTextMatches(3, 'marked this topic as Started');
     mariasBrowser.topic.assertMetaPostTextMatches(4, 'marked this topic as Done');
-    mariasBrowser.topic.assertMetaPostTextMatches(5, 'marked this topic as Waiting');
+    mariasBrowser.topic.assertMetaPostTextMatches(5, 'marked this topic as New');
   });
 
   it("Done", () => {

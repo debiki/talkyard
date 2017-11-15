@@ -131,7 +131,6 @@ function runAllEndToEndTests {
   # wip:
   # settings-allow-local-signup
   # settings-allow-signup
-  # votes-and-best-first.2browsers
 }
 
 
