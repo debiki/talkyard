@@ -51,7 +51,7 @@ export const ReviewAllPanelComponent = React.createClass(<any> {
     Server.loadReviewTasks(reviewTasks => {
       promise.then(() => {
         if (this.isGone) return;
-        this.setState({ reviewTasks: reviewTasks });
+        this.setState({ reviewTasks: reviewTasks, store: ReactStore.allData() });
       });
     });
   },
@@ -64,9 +64,10 @@ export const ReviewAllPanelComponent = React.createClass(<any> {
     if (!this.state)
       return r.p({}, 'Loading...');
 
+    const store = this.state.store;
     const now = Date.now();
     const elems = this.state.reviewTasks.map((reviewTask: ReviewTask) => {
-      return ReviewTask({ reviewTask: reviewTask, now: now, key: reviewTask.id });
+      return ReviewTask({ reviewTask: reviewTask, now: now, key: reviewTask.id, store });
     });
 
     if (!elems.length)
@@ -159,6 +160,7 @@ const ReviewTask = createComponent({
 
   render: function() {
     const reviewTask: ReviewTask = this.props.reviewTask;
+    const store: Store = this.props.store;
 
     const whatAndWhys: any[] = this.formatWhatAndWhys();
     const what: string = whatAndWhys[0];
@@ -216,7 +218,33 @@ const ReviewTask = createComponent({
     const itHasBeenHidden = !post.bodyHiddenAtMs ? null :
       "It has been hidden; only staff can see it. ";
 
-    const hereIsThePost = whys.length > 1 ? "Here it is:" : '';
+    let flaggedByInfo;
+    if (reviewTask.flags && reviewTask.flags.length) {
+      flaggedByInfo =
+        r.div({},
+          r.div({ className: 's_RT_FlaggedBy'}, "Flagged by: "),
+          r.ul({ className: 's_RT_Flags' },
+            reviewTask.flags.map((flag: Flag) => {
+              const flagger = store.usersByIdBrief[flag.flaggerId] || {};
+              let reason = "Other";
+              switch (flag.flagType) {
+                case FlagType.Inapt: reason = "Inappropriate"; break;
+                case FlagType.Spam: reason = "Spam"; break;
+              }
+              const oldFlag = reviewTask.completedAtMs < flag.flaggedAt ? '' : " (old flag)";
+              const oldFlagClass = !oldFlag ? '' : ' s_RT_Flags_Flag-Old';
+              return (
+                r.li({ className: 's_RT_Flags_Flag' + oldFlagClass },
+                  UserName({ user: flagger }),
+                  " reason: ",
+                  reason,
+                  " on ",
+                  whenMsToIsoDate(flag.flaggedAt),
+                  oldFlag));
+            })));
+    }
+
+    const hereIsThePost = whys.length > 1 || flaggedByInfo ? "Here it is:" : '';
 
     const anyPageTitleToReview = !reviewTask.pageId ? null :
       r.div({ className: 'esRT_TitleToReview' }, reviewTask.pageTitle);
@@ -230,6 +258,7 @@ const ReviewTask = createComponent({
           anyDot),
         r.div({},
           itHasBeenHidden,
+          flaggedByInfo,
           hereIsThePost,
           r.div({ className: 'esReviewTask_it' },
             anyPageTitleToReview,

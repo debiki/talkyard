@@ -874,7 +874,7 @@ const LoadAndListTopicsComponent = React.createClass(<any> {
 
 
 
-export var ListTopicsComponent = createComponent({
+export const ListTopicsComponent = createComponent({
   getInitialState: function() {
     return {};
   },
@@ -906,12 +906,12 @@ export var ListTopicsComponent = createComponent({
       return r.p({ id: 'e2eF_NoTopics' }, 'No topics.');
 
     const useTable = this.props.useTable;
-
+    const orderOffset: OrderOffset = this.props.orderOffset;
     const activeCategory: Category = this.props.activeCategory;
+
     const topicElems = topics.map((topic: Topic) => {
       return TopicRow({
-          store: store, topic: topic, categories: store.categories,
-          activeCategory: activeCategory, now: store.now,
+          store, topic, categories: store.categories, activeCategory, now: store.now, orderOffset,
           key: topic.pageId, routes: this.props.routes, location: this.props.location,
           pagePath: store.pagePath, inTable: useTable });
     });
@@ -940,7 +940,6 @@ export var ListTopicsComponent = createComponent({
         : r.li({ key: 'ExplIcns', className: 'esF_TsL_T clearfix' }, iconsHelpStuff)); // (update BJJ CSS before changin this (!))
 
     let loadMoreTopicsBtn;
-    const orderOffset = this.props.orderOffset;
     if (this.props.showLoadMoreButton) {
       const queryString = '?' + debiki2.ServerApi.makeForumTopicsQueryParams(orderOffset);
       loadMoreTopicsBtn =
@@ -979,24 +978,27 @@ export var ListTopicsComponent = createComponent({
       r.p({ className: 'icon-trash s_F_CatDdInfo' },
         "This category has been deleted");
 
-    let topicsHeader = "Topics";
+    let topicsHeaderText = "Topics";
     switch (orderOffset.sortOrder) {
-      case TopicSortOrder.BumpTime: topicsHeader = "Topics, recently activity first"; break;
-      case TopicSortOrder.CreatedAt: topicsHeader = "Topics, newest first"; break;
+      case TopicSortOrder.BumpTime: topicsHeaderText = "Topics, recently activity first"; break;
+      case TopicSortOrder.CreatedAt: topicsHeaderText = "Topics, newest first"; break;
     }
 
     const categoryHeader = !settings_showCategories(store.settings, me) ? null :
         r.th({ className: 's_F_Ts_T_CN' }, "Category");
 
+    const activityHeaderText =
+        orderOffset.sortOrder === TopicSortOrder.CreatedAt ? "Created" : "Activity";
+
     const topicsTable = !useTable ? null :
         r.table({ className: 'esF_TsT s_F_Ts-Wide dw-topic-list' + deletedClass },
           r.thead({},
             r.tr({},
-              r.th({}, topicsHeader),
+              r.th({}, topicsHeaderText),
               categoryHeader,
               r.th({ className: 's_F_Ts_T_Avs' }, "Users"),
               r.th({ className: 'num dw-tpc-replies' }, "Replies"),
-              r.th({ className: 'num' }, "Activity"))),
+              r.th({ className: 'num' }, activityHeaderText))),
               // skip for now:  r.th({ className: 'num' }, "Feelings"))),  [8PKY25]
           r.tbody({},
             topicElems));
@@ -1015,7 +1017,7 @@ export var ListTopicsComponent = createComponent({
 });
 
 
-var IconHelpMessage = {
+const IconHelpMessage = {
   id: '5KY0W347',
   version: 1,
   content:
@@ -1056,7 +1058,7 @@ var IconHelpMessage = {
 
 
 
-var TopicRow = createComponent({
+const TopicRow = createComponent({
   contextTypes: {
     router: React.PropTypes.object.isRequired
   },
@@ -1086,21 +1088,21 @@ var TopicRow = createComponent({
     // Usually there are not more than `total * 2` like votes, as far as I've seen
     // at some popular topics @ meta.discourse.org. However, Discourse requires login;
     // currently Debiki doesn't.
-    var fraction = 1.0 * num / total / 2;
+    let fraction = 1.0 * num / total / 2;
     if (fraction > 1) {
       fraction = 1;
     }
     if (!this.minProb) {
       this.minProb = this.binProbLowerBound(0, 0) + 0.01;
     }
-    var probabilityLowerBound = this.binProbLowerBound(total, fraction);
+    const probabilityLowerBound = this.binProbLowerBound(total, fraction);
     if (probabilityLowerBound <= this.minProb)
       return null;
 
-    var size = 8 + 6 * probabilityLowerBound;
-    var saturation = Math.min(100, 100 * probabilityLowerBound);
-    var brightness = Math.max(50, 70 - 20 * probabilityLowerBound);
-    var color = 'hsl(0, ' + saturation + '%, ' + brightness + '%)' ; // from gray to red
+    const size = 8 + 6 * probabilityLowerBound;
+    const saturation = Math.min(100, 100 * probabilityLowerBound);
+    const brightness = Math.max(50, 70 - 20 * probabilityLowerBound);
+    const color = 'hsl(0, ' + saturation + '%, ' + brightness + '%)' ; // from gray to red
     return {
       fontSize: size,
       color: color,
@@ -1112,21 +1114,21 @@ var TopicRow = createComponent({
     // lower bounds of a binomial proportion. Unknown confidence interval size, I just
     // choose 1.04 below because it feels okay.
     // For details, see: modules/debiki-core/src/main/scala/com/debiki/core/statistics.scala
-    var defaultProbability = Math.min(0.5, proportionOfSuccesses);
-    var adjustment = 4;
-    var n_ = sampleSize + adjustment;
-    var p_ = (proportionOfSuccesses * sampleSize + adjustment * defaultProbability) / n_;
-    var z_unknownProb = 1.04;
-    var square = z_unknownProb * Math.sqrt(p_ * (1 - p_) / n_);
-    var lowerBound = p_ - square;
-    var upperBound = p_ + square;
+    const defaultProbability = Math.min(0.5, proportionOfSuccesses);
+    const adjustment = 4;
+    const n_ = sampleSize + adjustment;
+    const p_ = (proportionOfSuccesses * sampleSize + adjustment * defaultProbability) / n_;
+    const z_unknownProb = 1.04;
+    const square = z_unknownProb * Math.sqrt(p_ * (1 - p_) / n_);
+    const lowerBound = p_ - square;
+    const upperBound = p_ + square;
     return lowerBound;
   },
 
   makeCategoryLink: function(category: Category, skipQuery?: boolean) {
-    var store: Store = this.props.store;
+    const store: Store = this.props.store;
     dieIf(this.props.routes.length < 2, 'EdE5U2ZG');  // [7FKR0QA]
-    var sortOrderPath = this.props.routes[SortOrderRouteIndex].path;
+    const sortOrderPath = this.props.routes[SortOrderRouteIndex].path;
     // this.props.location.query — later: could convert to query string, unless skipQuery === true
     return store.pagePath.value + sortOrderPath + '/' + category.slug;
   },
@@ -1143,11 +1145,11 @@ var TopicRow = createComponent({
   },
 
   render: function() {
-    let store: Store = this.props.store;
-    let me = store.me;
-    let settings = store.settings;
-    let topic: Topic = this.props.topic;
-    let category: Category = _.find(store.categories, (category: Category) => {
+    const store: Store = this.props.store;
+    const me = store.me;
+    const settings = store.settings;
+    const topic: Topic = this.props.topic;
+    const category: Category = _.find(store.categories, (category: Category) => {
       return category.id === topic.categoryId;
     });
 
@@ -1180,7 +1182,7 @@ var TopicRow = createComponent({
     // but that won't work server side, because Date.now() changes all the time.
     // Would instead need to generate the tooltip dynamically (rather than include it in the html).
     // [compress]
-    var activityTitle = "Created on " + whenMsToIsoDate(topic.createdAtMs);
+    let activityTitle = "Created on " + whenMsToIsoDate(topic.createdAtMs);
 
     if (topic.lastReplyAtMs) {
       activityTitle += '\nLast reply on ' + whenMsToIsoDate(topic.lastReplyAtMs);
@@ -1195,7 +1197,7 @@ var TopicRow = createComponent({
     }
 
     let excerpt;  // [7PKY2X0]
-    let showExcerptAsParagraph =
+    const showExcerptAsParagraph =
         topic.pinWhere === PinPageWhere.Globally ||
         (topic.pinWhere && topic.categoryId === this.props.activeCategory.id) ||
         store.pageLayout >= TopicListLayout.ExcerptBelowTitle;
@@ -1232,19 +1234,19 @@ var TopicRow = createComponent({
             onClick: this.makeOnCategoryClickFn(category) },
         category.name);
 
-    var activityAgo = prettyLetterTimeAgo(topic.bumpedAtMs || topic.createdAtMs);
+    const activityAgo = prettyLetterTimeAgo(topic.bumpedAtMs || topic.createdAtMs);
 
     // Avatars: Original Poster, some frequent posters, most recent poster. [7UKPF26]
-    var author = store_getUserOrMissing(store, topic.authorId, 'EsE5KPF0');
-    var userAvatars = [
+    const author = store_getUserOrMissing(store, topic.authorId, 'EsE5KPF0');
+    const userAvatars = [
         avatar.Avatar({ key: 'OP', tiny: true, user: author, title: "created the topic" })];
-    for (var i = 0; i < topic.frequentPosterIds.length; ++i) {
-      var poster = store_getUserOrMissing(store, topic.frequentPosterIds[i], 'EsE2WK0F');
+    for (let i = 0; i < topic.frequentPosterIds.length; ++i) {
+      const poster = store_getUserOrMissing(store, topic.frequentPosterIds[i], 'EsE2WK0F');
       userAvatars.push(avatar.Avatar({ key: poster.id, tiny: true, user: poster,
             title: "frequent poster" }));
     }
     if (topic.lastReplyerId) {
-      var lastReplyer = store_getUserOrMissing(store, topic.lastReplyerId, 'EsE4GTZ7');
+      const lastReplyer = store_getUserOrMissing(store, topic.lastReplyerId, 'EsE4GTZ7');
       userAvatars.push(avatar.Avatar({ key: 'MR', tiny: true, user: lastReplyer,
             title: "most recent poster" }));
     }
@@ -1261,6 +1263,10 @@ var TopicRow = createComponent({
       manyLinesClass += ' s_F_Ts_T_Con-OneLine';
       showMoreClickHandler = this.showMoreExcerpt;
     }
+
+    const orderOffset: OrderOffset = this.props.orderOffset;
+    const activeAt = orderOffset.sortOrder === TopicSortOrder.CreatedAt ?
+        topic.createdAtMs : topic.bumpedAtMs || topic.createdAtMs;
 
     // We use a table layout, only for wide screens, because table columns = spacy.
     if (this.props.inTable) return (
@@ -1287,7 +1293,7 @@ var TopicRow = createComponent({
           !showCategories ? null : r.div({ className: 'esF_TsL_T_Row2_Cat' },
             r.span({ className: 'esF_TsL_T_Row2_Cat_Expl' }, "in: "), categoryName),
           r.span({ className: 'esF_TsL_T_Row2_When' },
-            prettyLetterTimeAgo(topic.bumpedAtMs || topic.createdAtMs))),
+            prettyLetterTimeAgo(activeAt))),
           anyThumbnails));
   }
 });
@@ -1301,7 +1307,7 @@ function topic_mediaThumbnailUrls(topic: Topic): string[] {
 }
 
 
-var LoadAndListCategoriesComponent = React.createClass(<any> {
+const LoadAndListCategoriesComponent = React.createClass(<any> {
   getInitialState: function() {
     return {};
   },
@@ -1323,7 +1329,7 @@ var LoadAndListCategoriesComponent = React.createClass(<any> {
   },
 
   loadCategories: function(props) {
-    var store: Store = props.store;
+    const store: Store = props.store;
     debiki2.Server.loadForumCategoriesTopics(store.pageId, props.location.query.filter,
         (categories: Category[]) => {
       if (this.isGone) return;
@@ -1335,12 +1341,12 @@ var LoadAndListCategoriesComponent = React.createClass(<any> {
     if (!this.state.categories)
       return r.p({}, "Loading...");
 
-    var categoryRows = this.state.categories.map((category: Category) => {
+    const categoryRows = this.state.categories.map((category: Category) => {
       return CategoryRow({ store: this.props.store, location: this.props.location,
           category: category, key: category.id });
     });
 
-    var recentTopicsColumnTitle;
+    let recentTopicsColumnTitle;
     switch (this.props.location.query.filter) {
       case FilterShowWaiting:
         recentTopicsColumnTitle = "Recent topics (those waiting)";

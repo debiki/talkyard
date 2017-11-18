@@ -1286,7 +1286,8 @@ object ReactJson {
       "user" -> JsUser(stuff.maybeBadUser),
       "pageId" -> JsStringOrNull(stuff.pageId),
       "pageTitle" -> JsStringOrNull(stuff.pageTitle),
-      "post" -> anyPost)
+      "post" -> anyPost,
+      "flags" -> stuff.flags.map(JsFlag))
   }
 
 
@@ -1573,6 +1574,16 @@ object ReactJson {
       "folder" -> pagePath.folder,
       "showId" -> pagePath.showId,
       "slug" -> pagePath.pageSlug)
+
+  def JsFlag(flag: PostFlag): JsValue =
+    Json.obj(
+      "flaggerId" -> flag.flaggerId,
+      "flagType" -> flag.flagType.toInt,
+      "flaggedAt" -> JsWhenMs(flag.doneAt),
+      //flagReason
+      "uniqueId" -> flag.uniqueId,
+      "pageId" -> flag.pageId,
+      "postNr" -> flag.postNr)
 
   def JsUploadUrlOrNull(uploadRef: Option[UploadRef]): JsValue =
     uploadRef.map(ref => JsString(ref.url)) getOrElse JsNull

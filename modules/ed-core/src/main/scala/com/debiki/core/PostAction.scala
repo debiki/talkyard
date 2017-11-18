@@ -43,11 +43,12 @@ object PostVoteType {
 }
 
 
-sealed abstract class PostFlagType extends PostActionType
+sealed abstract class PostFlagType extends PostActionType { def toInt: Int }
 object PostFlagType {
-  case object Spam extends PostFlagType
-  case object Inapt extends PostFlagType
-  case object Other extends PostFlagType
+  // dupl numbers [2PKWQUT0]
+  case object Spam extends PostFlagType { val toInt = 51 }
+  case object Inapt extends PostFlagType { val toInt = 52 }
+  case object Other extends PostFlagType { val toInt = 53 }
 }
 
 

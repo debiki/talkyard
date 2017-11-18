@@ -455,7 +455,10 @@ export function saveSpecialContent(specialContent: SpecialContent, success: () =
 
 
 export function loadReviewTasks(success: (tasks: ReviewTask[]) => void) {
-  get('/-/load-review-tasks', success);
+  get('/-/load-review-tasks', response => {
+    ReactActions.patchTheStore({ usersBrief: response.users });
+    success(response.reviewTasks);
+  });
 }
 
 

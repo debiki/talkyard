@@ -59,7 +59,7 @@ export const NavLink = createComponent({
 });
 
 
-export function whenMsToIsoDate(whenMs: number) {
+export function whenMsToIsoDate(whenMs: number): string {
   return new Date(whenMs).toISOString().replace(/T/, ' ')
 }
 

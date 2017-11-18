@@ -80,6 +80,7 @@ interface ReviewTask {
   pageId?: string;
   pageTitle?: string;
   post?: PostToReview;
+  flags: Flag[];
 }
 
 
@@ -111,9 +112,19 @@ enum ReviewAction {
 
 interface Flag {
   flaggerId: number;
-  flaggerDisplayName: string;
-  flagType: string;
+  flagType: FlagType;
+  flaggedAt: number,
   flagReason?: string;
+  uniqueId?: PostId;
+  pageId?: PageId;
+  postNr?: PostNr;
+}
+
+
+enum FlagType {
+  Spam = 51,
+  Inapt = 52,
+  Other = 53,
 }
 
 

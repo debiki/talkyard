@@ -213,7 +213,7 @@ trait SiteTransaction {
   def loadTagNotfLevels(userId: UserId): Map[TagLabel, NotfLevel]
   def listUsersWatchingTags(tags: Set[TagLabel]): Set[UserId]
 
-  def loadFlagsFor(pagePostNrs: immutable.Seq[PagePostNr]): immutable.Seq[PostFlag]
+  def loadFlagsFor(pagePostNrs: Iterable[PagePostNr]): immutable.Seq[PostFlag]
   def insertFlag(uniquePostId: PostId, pageId: PageId, postNr: PostNr, flagType: PostFlagType, flaggerId: UserId)
   def clearFlags(pageId: PageId, postNr: PostNr, clearedById: UserId)
 

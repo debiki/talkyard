@@ -18,14 +18,13 @@
 package controllers
 
 import com.debiki.core._
-import debiki.{Globals, ReactJson}
+import debiki.ReactJson
+import debiki.ReactJson.JsUser
 import debiki.EdHttp._
 import ed.server.{EdContext, EdController}
-import ed.server.http._
 import javax.inject.Inject
-import play.api._
 import play.api.libs.json._
-import play.api.mvc.{AbstractController, Action, ControllerComponents}
+import play.api.mvc.{Action, ControllerComponents}
 
 
 /** Lists posts for the moderation page, and approves/rejects/deletes posts
@@ -51,7 +50,10 @@ class ModerationController @Inject()(cc: ControllerComponents, edContext: EdCont
   def loadReviewTasks = StaffGetAction { request =>
     val (reviewStuff, usersById) = request.dao.loadReviewStuff(
       olderOrEqualTo = globals.now().toJavaDate, limit = 100)
-    OkSafeJson(JsArray(reviewStuff.map(ReactJson.reviewStufToJson(_, usersById))))
+    OkSafeJson(
+      Json.obj(
+        "reviewTasks" -> JsArray(reviewStuff.map(ReactJson.reviewStufToJson(_, usersById))),
+        "users" -> usersById.values.map(JsUser)))
   }
 
 

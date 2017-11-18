@@ -41,7 +41,8 @@ case class ReviewStuff(
   maybeBadUser: User,
   pageId: Option[PageId],
   pageTitle: Option[String],
-  post: Option[Post]) {
+  post: Option[Post],
+  flags: Seq[PostFlag]) {
 
   resolution.foreach(ReviewTaskResolution.requireIsValid)
 }
@@ -201,6 +202,13 @@ trait ReviewsDao {
       userIds.add(post.currentRevisionById)
       post.lastApprovedEditById.foreach(userIds.add)
     }
+
+    val flags: Seq[PostFlag] = transaction.loadFlagsFor(postsById.values.map(_.pagePostNr))
+    val flagsByPostId: Map[PostId, Seq[PostFlag]] = flags.groupBy(_.uniqueId)
+    flags foreach { flag =>
+      userIds.add(flag.flaggerId)
+    }
+
     val usersById = transaction.loadUsersAsMap(userIds)
 
     val pageIds = postsById.values.map(_.pageId)
@@ -211,6 +219,10 @@ trait ReviewsDao {
       def whichTask = s"site $siteId, review task id ${task.id}"
       val anyPost = task.postId.flatMap(postsById.get)
       val anyPageTitle = anyPost.flatMap(post => titlesByPageId.get(post.pageId))
+      val flags = task.postId match {
+        case None => Nil
+        case Some(id) => flagsByPostId.getOrElse(id, Nil)
+      }
       result.append(
         ReviewStuff(
           id = task.id,
@@ -225,7 +237,8 @@ trait ReviewsDao {
           maybeBadUser = usersById.get(task.maybeBadUserId) getOrDie "EdE2KU8B",
           pageId = task.pageId,
           pageTitle = anyPageTitle,
-          post = anyPost))
+          post = anyPost,
+          flags = flags))
     }
     (result.toSeq, usersById)
   }

@@ -196,8 +196,8 @@ object ForumDao {
 
 
   val EmbeddedCommentsIntroText: CommonMarkSourceAndHtml = {
-    val source = o"""Here are comments posted at your website,
-         one topic here for each page over at your website."""
+    val source = o"""Here are comments posted at your website.
+         One topic here, for each page over at your website."""
     CommonMarkSourceAndHtml(source, html = s"<p>$source</p>")
   }
 

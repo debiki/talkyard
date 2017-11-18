@@ -153,6 +153,8 @@ declare namespace debiki2 {
   function nonEmpty(x): boolean;
   function isBlank(x: string): boolean;
 
+  function whenMsToIsoDate(whenMs: number): string;
+
   var isWikiPost;
   var isStaff;
   var threatLevel_toString;
