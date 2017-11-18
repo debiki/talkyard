@@ -177,10 +177,14 @@ const ReviewTask = createComponent({
     const complete = (action) => {
       return () => this.completeReviewTask(action);
     };
+
+    let taskDoneInfo;
     let acceptButton;
     let rejectButton;
     if (this.state.completed || reviewTask.completedAtMs) {
-      acceptButton = r.span({}, " Has been reviewed.");
+      const taskDoneBy: BriefUser | null = store.usersByIdBrief[reviewTask.completedById];
+      const doneByInfo = !taskDoneBy ? null : r.span({}, " by ", UserName({ user: taskDoneBy }));
+      taskDoneInfo = r.span({}, " Has been reviewed", doneByInfo);
     }
     else if (reviewTask.invalidatedAtMs) {
       // Hmm could improve on this somehow.
@@ -218,6 +222,22 @@ const ReviewTask = createComponent({
     const itHasBeenHidden = !post.bodyHiddenAtMs ? null :
       "It has been hidden; only staff can see it. ";
 
+    const author = store.usersByIdBrief[post.createdById] || {};
+    const writtenByInfo =
+        r.div({ className: 's_RT_WrittenBy' },
+          "Written by: ", UserName({ user: author }));
+
+    const lastApprovedEditBy = !post.lastApprovedEditById ? null :
+        store.usersByIdBrief[post.lastApprovedEditById] || {};
+    const lastApprovedEditInfo = !lastApprovedEditBy ? null :
+        r.div({ className: 's_RT_LastAprEditBy' },
+          "Last approved edit by: ", UserName({ user: lastApprovedEditBy }));
+
+    // Minor BUG: This duplicates all flags for this post, for each review task. But
+    // there's one review task per flag.
+    // Fix this, by grouping all old & resolved review tasks together,
+    // and showing just one resolved review item, for those, & all related flags.
+    // Plus one new review task, with all new flags.
     let flaggedByInfo;
     if (reviewTask.flags && reviewTask.flags.length) {
       flaggedByInfo =
@@ -238,7 +258,7 @@ const ReviewTask = createComponent({
                   UserName({ user: flagger }),
                   " reason: ",
                   reason,
-                  " on ",
+                  ", on ",
                   whenMsToIsoDate(flag.flaggedAt),
                   oldFlag));
             })));
@@ -258,6 +278,8 @@ const ReviewTask = createComponent({
           anyDot),
         r.div({},
           itHasBeenHidden,
+          writtenByInfo,
+          lastApprovedEditInfo,
           flaggedByInfo,
           hereIsThePost,
           r.div({ className: 'esReviewTask_it' },
@@ -265,6 +287,7 @@ const ReviewTask = createComponent({
             r.div({ dangerouslySetInnerHTML: { __html: safeHtml }}))),
         r.div({ className: 'esReviewTask_btns' },
           openPostButton,
+          taskDoneInfo,
           acceptButton,
           rejectButton)));
 

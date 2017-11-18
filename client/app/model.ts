@@ -71,12 +71,12 @@ interface ReviewTask {
   //causedBy: BriefUser;
   reasonsLong: number;
   createdAtMs: number;
+  createdById: UserId;
   moreReasonsAtMs?: number;
   completedAtMs?: number;
-  completedBy?: BriefUser;
+  completedById?: UserId;
   invalidatedAtMs?: number;
   //resolution?: ?;
-  user?: BriefUser;
   pageId?: string;
   pageTitle?: string;
   post?: PostToReview;
@@ -88,16 +88,15 @@ interface PostToReview {
   pageId: PageId;
   nr: PostNr;
   uniqueId: PostId;
-  createdBy?: UserId;
+  createdById?: UserId;
   currentSource: string;
   currRevNr: number;
-  currRevComposedBy?: UserId;
+  currRevComposedById?: UserId;
   approvedSource?: string;
   approvedHtmlSanitized?: string;
   approvedRevNr?: number;
-  // approvedRevComposedById
-  //approvedRevApprovedById
-  // better: post.lastApporvedRevision.approvedById
+  lastApprovedEditById?: UserId;
+  //lastApprovedById
   bodyHiddenAtMs?: number;
   bodyHiddenById?: UserId;
   bodyHiddenReason?: string;

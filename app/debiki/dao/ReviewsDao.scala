@@ -38,7 +38,7 @@ case class ReviewStuff(
   completedBy: Option[User],
   invalidatedAt: Option[ju.Date],
   resolution: Option[ReviewTaskResolution],
-  maybeBadUser: User,
+  maybeBadUser: User, // remove? or change to a list, the most recent editors?
   pageId: Option[PageId],
   pageTitle: Option[String],
   post: Option[Post],
