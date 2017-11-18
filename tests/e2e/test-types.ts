@@ -43,6 +43,7 @@ interface SiteData {
   meta: SiteMeta;
   settings: {
     companyFullName: string,
+    embeddedOnlyHideSite?: boolean;
     allowEmbeddingFrom?: string;
     // inviteOnly?: boolean;
     allowSignup?: boolean;
@@ -51,6 +52,10 @@ interface SiteData {
     requireVerifiedEmail?: boolean;
     mayComposeBeforeSignup?: boolean;
     mayPostBeforeEmailVerified?: boolean;
+    singleSignOnEnabled?: boolean;
+    singleSignOnSecret?: string;
+    singleSignOnLoginUrl?: string;
+    singleSignOnLogoutUrl?: string;
     numFirstPostsToReview?: number,
     numFirstPostsToApprove?: number,
     numFirstPostsToAllow?: number,

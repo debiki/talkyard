@@ -572,11 +572,15 @@ interface SettingsVisibleClientSide {
   mayComposeBeforeSignup?: boolean;     // default: false
   doubleTypeEmailAddress?: boolean;     // default: false
   doubleTypePassword?: boolean;         // default: false
+  singleSignOnEnabled?: boolean;        // default: undefined —> false
+  singleSignOnLoginUrl?: string;        // default: undefined
+  singleSignOnLogoutUrl?: string;       // default: undefined
   forumMainView?: string;               // default: 'latest'
   forumTopicsSortButtons?: string;      // default: 'latest|top'
   forumCategoryLinks?: string;          // default: 'categories'
   forumTopicsLayout?: TopicListLayout;  // default: title only
   forumCategoriesLayout?: CategoriesLayout; // default: (there's only one as of Jan 2017)
+  embeddedOnlyHideSite?: boolean;       // default: undefined —> false
   showExperimental?: boolean;           // default: false
   showCategories?: boolean;             // default: true
   showTopicFilterButton?: boolean;      // default: true
@@ -992,6 +996,11 @@ interface Settings {
   doubleTypePassword: boolean;
   begForEmailAddress: boolean;
 
+  singleSignOnEnabled?: boolean;
+  singleSignOnSecret?: string;
+  singleSignOnLoginUrl?: string;
+  singleSignOnLogoutUrl?: string;
+
   // Moderation
   numFirstPostsToAllow: number;
   numFirstPostsToApprove: number;
@@ -1040,6 +1049,8 @@ interface Settings {
   googleUniversalAnalyticsTrackingId: string;
 
   showExperimental: boolean;
+
+  embeddedOnlyHideSite: boolean;
   allowEmbeddingFrom: string;
 }
 

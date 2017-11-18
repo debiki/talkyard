@@ -253,9 +253,9 @@ const LoginAndSignupSettingsComponent = React.createClass(<any> {
     const valueOf = (getter: (s: Settings) => any) =>
       firstDefinedOf(getter(editedSettings), getter(currentSettings));
 
+    const ssoEnabled = valueOf(s => s.singleSignOnEnabled);
     const requireVerifiedEmail = valueOf(s => s.requireVerifiedEmail);
     const mayComposeBeforeSignup = valueOf(s => s.mayComposeBeforeSignup);
-
     const canEnableGuestLogin =
       !valueOf(s => s.userMustBeApproved) && !valueOf(s => s.userMustBeAuthenticated) &&
         valueOf(s => s.allowSignup) && !requireVerifiedEmail;  // && !invite-only (6KWU20)
@@ -295,6 +295,7 @@ const LoginAndSignupSettingsComponent = React.createClass(<any> {
           help: "New users must specify an email address, and click an email verification link " +
               "(unless verified already via e.g. Gmail or Facebook). Recommended, because you'll " +
               "have a way to contact everyone. And we can send password reset emails.",
+          disabled: ssoEnabled,
           getter: (s: Settings) => s.requireVerifiedEmail,
           update: (newSettings: Settings, target) => {
             newSettings.requireVerifiedEmail = target.checked;
@@ -391,7 +392,64 @@ const LoginAndSignupSettingsComponent = React.createClass(<any> {
           update: (newSettings: Settings, target) => {
             newSettings.allowGuestLogin = target.checked;
           }
+        }),
+
+        // ---- Single Sign On
+
+        Setting2(props, { type: 'checkbox', label: "Enable Single Sign-On (SSO)", id: 'e_EnableSso',
+          className: 'e_A_Ss_S-EnableSsoCB',
+          help: "People will login over at your website, instead of via this site.",
+          getter: (s: Settings) => s.singleSignOnEnabled,
+          update: (newSettings: Settings, target) => {
+            newSettings.singleSignOnEnabled = target.checked;
+            if (newSettings.singleSignOnEnabled) {
+              // For now, otherwise things get too complicated. [2GFKGT04]
+              newSettings.requireVerifiedEmail = true;
+              newSettings.mayComposeBeforeSignup = false;
+              newSettings.mayPostBeforeEmailVerified = false;
+              newSettings.allowGuestLogin = false;
+            }
+          }
+        }),
+
+        // Don't let a human choose a random value. It'd likely be too short, not strong enough.
+        !ssoEnabled ? null : Setting2(props, { type: 'text', label: "SSO Secret",
+          help: r.span({}, "Type any key to auto-generate a long random value. Be sure to copy " +
+            "everything: press CTRL + A."),
+          placeholder: "A very long random value ...",
+          getter: (s: Settings) => s.singleSignOnSecret,
+          update: (newSettings: Settings, target) => {
+            const array = new Uint8Array(256 / 8); // 256 bits
+            const randomBytes = (window.crypto || (<any> window).msCrypto).getRandomValues(array);
+            newSettings.singleSignOnSecret = btoa(randomBytes);
+          }
+        }),
+
+        !ssoEnabled ? null : Setting2(props, { type: 'text', label: "SSO Login Url",
+          help: r.span({}, "A link to the login page at your website, example: ",
+            r.samp({}, "/login?returnToUrl=${currentUrlPathQuery}"), " — and ",
+            r.i({}, "currentUrlPathQuery"),
+            " gets replaced with the user's current URL path and query string, " +
+            "so you can redirect him/her back to his/her current page, after s/he has logged in."),
+          placeholder: "/login?returnToUrl=${currentUrlPathQuery}",
+          disabled: !ssoEnabled,
+          getter: (s: Settings) => s.singleSignOnLoginUrl,
+          update: (newSettings: Settings, target) => {
+            newSettings.singleSignOnLoginUrl = target.value;
+          }
+        }),
+
+        !ssoEnabled ? null : Setting2(props, { type: 'text', label: "SSO Logout Url",
+          help: r.span({}, "A link to the logout page at your website, example: ",
+            r.samp({}, "/logout?returnToUrl=${currentUrlPathQuery}")),
+          placeholder: "/logout?returnToUrl=${currentUrlPathQuery}",
+          disabled: !ssoEnabled,
+          getter: (s: Settings) => s.singleSignOnLogoutUrl,
+          update: (newSettings: Settings, target) => {
+            newSettings.singleSignOnLogoutUrl = target.value;
+          }
         })));
+        // aaa
   }
 });
 
@@ -594,11 +652,15 @@ const EmbeddedCommentsComponent = React.createClass(<any> {
   render: function() {
     const props = this.props;
     const settings: Settings = props.currentSettings;
+    const editedSettings: Settings = props.editedSettings;
     const embeddingUrl = settings.allowEmbeddingFrom.trim();
     let dotMin = '.min';
     // @ifdef DEBUG
     dotMin = '';
     // @endif
+
+    const valueOf = (getter: (s: Settings) => any) =>
+      firstDefinedOf(getter(editedSettings), getter(settings));
 
     const urlSeemsValid = /https?:\/\/.+/.test(embeddingUrl);   // 'http://localhost' is ok
     const anyInstructions = !urlSeemsValid ? null :
@@ -626,6 +688,17 @@ const EmbeddedCommentsComponent = React.createClass(<any> {
 
     return (
       r.div({},
+        Setting2(props, { type: 'checkbox', label: "Embedded only, hide site", id: 'e_EmbOnly',
+          className: 'e_A_Ss_S-EmbOnlyCB',
+          help: r.span({}, "Your site will be visible only for your staff, but ", r.i({}, "hidden"),
+            " for other people and search engines. Embedded comments will continue to work."),
+          disabled: !valueOf(s => s.allowEmbeddingFrom),
+          getter: (s: Settings) => s.embeddedOnlyHideSite,
+          update: (newSettings: Settings, target) => {
+            newSettings.embeddedOnlyHideSite = target.checked;
+          }
+        }),
+
         Setting2(props, { type: 'text', label: "Allow embedding from",
           help: r.span({}, "Lets another website (your website) show embedded contents. " +
             "You can add many domains — separate them with spaces."),
@@ -633,6 +706,9 @@ const EmbeddedCommentsComponent = React.createClass(<any> {
           getter: (s: Settings) => s.allowEmbeddingFrom,
           update: (newSettings: Settings, target) => {
             newSettings.allowEmbeddingFrom = target.value;
+            if (!target.value) {
+              newSettings.embeddedOnlyHideSite = false;
+            }
           }
         }),
         anyInstructions));

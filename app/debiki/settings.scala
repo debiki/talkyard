@@ -54,6 +54,11 @@ trait AllSettings {
     */
   def begForEmailAddress: Boolean
 
+  def singleSignOnEnabled: Boolean
+  def singleSignOnSecret: String
+  def singleSignOnLoginUrl: String
+  def singleSignOnLogoutUrl: String
+
   def forumMainView: String
   def forumTopicsSortButtons: String
   def forumCategoryLinks: String
@@ -81,6 +86,7 @@ trait AllSettings {
   def contentLicense: ContentLicense
   def googleUniversalAnalyticsTrackingId: String
   def showExperimental: Boolean
+  def embeddedOnlyHideSite: Boolean
   def allowEmbeddingFrom: String
   def htmlTagCssClasses: String
 
@@ -109,6 +115,10 @@ trait AllSettings {
     doubleTypeEmailAddress = Some(self.doubleTypeEmailAddress),
     doubleTypePassword = Some(self.doubleTypePassword),
     begForEmailAddress = Some(self.begForEmailAddress),
+    singleSignOnEnabled = Some(self.singleSignOnEnabled),
+    singleSignOnSecret = Some(self.singleSignOnSecret),
+    singleSignOnLoginUrl = Some(self.singleSignOnLoginUrl),
+    singleSignOnLogoutUrl = Some(self.singleSignOnLogoutUrl),
     forumMainView = Some(self.forumMainView),
     forumTopicsSortButtons = Some(self.forumTopicsSortButtons),
     forumCategoryLinks = Some(self.forumCategoryLinks),
@@ -136,6 +146,7 @@ trait AllSettings {
     contentLicense = Some(self.contentLicense),
     googleUniversalAnalyticsTrackingId = Some(self.googleUniversalAnalyticsTrackingId),
     showExperimental = Some(self.showExperimental),
+    embeddedOnlyHideSite = Some(self.embeddedOnlyHideSite),
     allowEmbeddingFrom = Some(self.allowEmbeddingFrom),
     htmlTagCssClasses = Some(self.htmlTagCssClasses),
     numFlagsToHidePost = Some(self.numFlagsToHidePost),
@@ -169,6 +180,10 @@ object AllSettings {
     val doubleTypeEmailAddress = false
     val doubleTypePassword = false
     val begForEmailAddress = false
+    val singleSignOnEnabled = false
+    val singleSignOnSecret = ""
+    val singleSignOnLoginUrl = ""
+    val singleSignOnLogoutUrl = ""
     val forumMainView = "latest"
     val forumTopicsSortButtons = "latest|top"
     val forumCategoryLinks = "categories"
@@ -200,6 +215,7 @@ object AllSettings {
     var contentLicense = ContentLicense.CcBySa4
     val googleUniversalAnalyticsTrackingId = ""
     val showExperimental = false
+    val embeddedOnlyHideSite = false
     val allowEmbeddingFrom = ""
     val htmlTagCssClasses = ""
     def numFlagsToHidePost = 3
@@ -239,6 +255,10 @@ case class EffectiveSettings(
   def doubleTypeEmailAddress: Boolean = firstInChain(_.doubleTypeEmailAddress) getOrElse default.doubleTypeEmailAddress
   def doubleTypePassword: Boolean = firstInChain(_.doubleTypePassword) getOrElse default.doubleTypePassword
   def begForEmailAddress: Boolean = firstInChain(_.begForEmailAddress) getOrElse default.begForEmailAddress
+  def singleSignOnEnabled: Boolean = firstInChain(_.singleSignOnEnabled) getOrElse default.singleSignOnEnabled
+  def singleSignOnSecret: String = firstInChain(_.singleSignOnSecret) getOrElse default.singleSignOnSecret
+  def singleSignOnLoginUrl: String = firstInChain(_.singleSignOnLoginUrl) getOrElse default.singleSignOnLoginUrl
+  def singleSignOnLogoutUrl: String = firstInChain(_.singleSignOnLogoutUrl) getOrElse default.singleSignOnLogoutUrl
   def forumMainView: String = firstInChain(_.forumMainView) getOrElse default.forumMainView
   def forumTopicsSortButtons: String = firstInChain(_.forumTopicsSortButtons) getOrElse default.forumTopicsSortButtons
   def forumCategoryLinks: String = firstInChain(_.forumCategoryLinks) getOrElse default.forumCategoryLinks
@@ -266,6 +286,7 @@ case class EffectiveSettings(
   def contentLicense: ContentLicense = firstInChain(_.contentLicense) getOrElse default.contentLicense
   def googleUniversalAnalyticsTrackingId: String = firstInChain(_.googleUniversalAnalyticsTrackingId) getOrElse default.googleUniversalAnalyticsTrackingId
   def showExperimental: Boolean = firstInChain(_.showExperimental) getOrElse default.showExperimental
+  def embeddedOnlyHideSite: Boolean = firstInChain(_.embeddedOnlyHideSite) getOrElse default.embeddedOnlyHideSite
   def allowEmbeddingFrom: String = firstInChain(_.allowEmbeddingFrom) getOrElse default.allowEmbeddingFrom
   def htmlTagCssClasses: String = firstInChain(_.htmlTagCssClasses) getOrElse default.htmlTagCssClasses
 
@@ -280,7 +301,7 @@ case class EffectiveSettings(
   def coreMemberFlagWeight: Float = firstInChain(_.coreMemberFlagWeight) getOrElse default.coreMemberFlagWeight
 
 
-  def isGuestLoginAllowed =
+  def isGuestLoginAllowed: Boolean =
     allowGuestLogin && !userMustBeAuthenticated && !userMustBeApproved &&
       !inviteOnly && allowSignup
 
@@ -310,6 +331,10 @@ object Settings2 {
       "doubleTypeEmailAddress" -> JsBooleanOrNull(s.doubleTypeEmailAddress),
       "doubleTypePassword" -> JsBooleanOrNull(s.doubleTypePassword),
       "begForEmailAddress" -> JsBooleanOrNull(s.begForEmailAddress),
+      "singleSignOnEnabled" -> JsBooleanOrNull(s.singleSignOnEnabled),
+      "singleSignOnSecret" -> JsStringOrNull(s.singleSignOnSecret),
+      "singleSignOnLoginUrl" -> JsStringOrNull(s.singleSignOnLoginUrl),
+      "singleSignOnLogoutUrl" -> JsStringOrNull(s.singleSignOnLogoutUrl),
       "forumMainView" -> JsStringOrNull(s.forumMainView),
       "forumTopicsSortButtons" -> JsStringOrNull(s.forumTopicsSortButtons),
       "forumCategoryLinks" -> JsStringOrNull(s.forumCategoryLinks),
@@ -337,6 +362,7 @@ object Settings2 {
       "contentLicense" -> JsNumberOrNull(s.contentLicense.map(_.toInt)),
       "googleUniversalAnalyticsTrackingId" -> JsStringOrNull(s.googleUniversalAnalyticsTrackingId),
       "showExperimental" -> JsBooleanOrNull(s.showExperimental),
+      "embeddedOnlyHideSite" -> JsBooleanOrNull(s.embeddedOnlyHideSite),
       "allowEmbeddingFrom" -> JsStringOrNull(s.allowEmbeddingFrom),
       "htmlTagCssClasses" -> JsStringOrNull(s.htmlTagCssClasses),
       "numFlagsToHidePost" -> JsNumberOrNull(s.numFlagsToHidePost),
@@ -364,6 +390,10 @@ object Settings2 {
     doubleTypeEmailAddress = anyBool(json, "doubleTypeEmailAddress", d.doubleTypeEmailAddress),
     doubleTypePassword = anyBool(json, "doubleTypePassword", d.doubleTypePassword),
     begForEmailAddress = anyBool(json, "begForEmailAddress", d.begForEmailAddress),
+    singleSignOnEnabled = anyBool(json, "singleSignOnEnabled", d.singleSignOnEnabled),
+    singleSignOnSecret = anyString(json, "singleSignOnSecret", d.singleSignOnSecret),
+    singleSignOnLoginUrl = anyString(json, "singleSignOnLoginUrl", d.singleSignOnLoginUrl),
+    singleSignOnLogoutUrl = anyString(json, "singleSignOnLogoutUrl", d.singleSignOnLogoutUrl),
     forumMainView = anyString(json, "forumMainView", d.forumMainView),
     forumTopicsSortButtons = anyString(json, "forumTopicsSortButtons", d.forumTopicsSortButtons),
     forumCategoryLinks = anyString(json, "forumCategoryLinks", d.forumCategoryLinks),
@@ -395,6 +425,7 @@ object Settings2 {
     googleUniversalAnalyticsTrackingId =
       anyString(json, "googleUniversalAnalyticsTrackingId", d.googleUniversalAnalyticsTrackingId),
     showExperimental = anyBool(json, "showExperimental", d.showExperimental),
+    embeddedOnlyHideSite = anyBool(json, "embeddedOnlyHideSite", d.embeddedOnlyHideSite),
     allowEmbeddingFrom = anyString(json, "allowEmbeddingFrom", d.allowEmbeddingFrom),
     htmlTagCssClasses = anyString(json, "htmlTagCssClasses", d.htmlTagCssClasses),
     numFlagsToHidePost = anyInt(json, "numFlagsToHidePost", d.numFlagsToHidePost),
