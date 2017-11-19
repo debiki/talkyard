@@ -322,10 +322,15 @@ td.dw-tpc-activity
   left: -6px;
 
 .s_F_Ts_T_Con-OneLine
-  height: 31px;
+  // If < 31px, the text won't be vertically centered.
+  // If using height instead of min-height, won't work with titles that (unfortunately)
+  // breaks to the next row.
+  min-height: 31px;
   overflow: hidden;
   // On click, more excerpt text will be shown, by .s_F_Ts_T_Con-More just below.
   cursor: pointer;
+  // Sometimes people submit a title that is a long link = one single super long word. Break it.
+  word-break: break-all;
 
 .s_F_Ts_T_Con-More
   // Show more excerpt, because -OneLine just above was clicked.
