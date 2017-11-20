@@ -81,6 +81,7 @@ var slimJsFiles = [
       // Place React first so we can replace it at index 0,1,2,3 with the optimized min.js versions.
       'node_modules/react/dist/react.js',
       'node_modules/react-dom/dist/react-dom.js',
+      'node_modules/prop-types/prop-types.js',
       'node_modules/create-react-class/create-react-class.js',
       // COULD_OPTIMIZE SMALLER_BUNDLE or perhaps even remove? add pure CSS anims instead?
       'node_modules/react-transition-group/dist/react-transition-group.js',  // try to move to more-bundle

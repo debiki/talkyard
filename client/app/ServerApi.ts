@@ -56,9 +56,7 @@ export function makeForumTopicsQueryParams(orderOffset: OrderOffset): string {
       params += '&olderThan=' + orderOffset.bumpedAt;
     }
   } */
-  else {
-    console.error('Bad orderOffset [DwE5FS0]');
-  }
+
   if (orderOffset.topicFilter) {
     params += '&filter=' + orderOffset.topicFilter;
   }

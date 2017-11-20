@@ -1167,7 +1167,8 @@ function pagesFor(browser) {
         browser.keys(['Return']);
         // Weird. The react-select dropdown is open and needs to be closed, otherwise
         // a modal overlay hides everything? Can be closed like so:
-        browser.click('#e2eAddUsD_SubmitB');
+        // No, now in rc.10 (instead of previous version, rc.3), the dropdown auto closes, after select.
+        // browser.click('#e2eAddUsD_SubmitB');
       },
 
       submit: function() {
