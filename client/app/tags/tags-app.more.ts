@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016 Kaj Magnus Lindberg
+ * Copyright (c) 2016, 2017 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -18,7 +18,7 @@
 /// <reference path="../slim-bundle.d.ts" />
 
 //------------------------------------------------------------------------------
-   module debiki2.tags {
+   namespace debiki2.tags {
 //------------------------------------------------------------------------------
 
 const r = React.DOM;
@@ -27,15 +27,15 @@ const TagsRoot = '/-/tags/';
 
 
 export function routes() {
-  return [
-    Redirect({ key: 'redir', from: TagsRoot, to: TagsRoot + '/all' }),
-    Route({ key: 'routes', path: TagsRoot, component: TagsAppComponent },
-      Route({ path: 'all', component: AllTagsPanelComponent }))];
+  return Switch({},
+    RedirAppend({ path: TagsRoot, append: 'all' }),
+    Route({ path: TagsRoot, component: TagsAppComponent }));
 }
 
 
 
 const TagsAppComponent = React.createClass(<any> {
+  displayName:  'TagsAppComponent',
   mixins: [debiki2.StoreListenerMixin],
 
   contextTypes: {
@@ -55,15 +55,18 @@ const TagsAppComponent = React.createClass(<any> {
   },
 
   render: function() {
+    const store: Store = this.state.store;
     return (
-      r.div({ className: "container esSA" },
-        React.cloneElement(this.props.children, { store: this.state.store })));
+      r.div({ className: 'container esSA' },
+        Route({ path: TagsRoot + 'all', render: () => AllTagsPanelComponent({ store }) })));
   }
 });
 
 
 
-var AllTagsPanelComponent = React.createClass(<any> {
+const AllTagsPanelComponent = createFactory({
+  displayName:  'AllTagsPanelComponent',
+
   componentWillMount: function() {
     Server.loadTagsAndStats();
     Server.loadMyTagNotfLevels();

@@ -19,14 +19,14 @@
 /// <reference path="constants.ts" />
 
 declare const ReactDOMServer: any;
-declare const ReactRouter: any;
+declare const ReactRouterDOM: any;
 declare const createReactClass: any;
+declare const parseQueryString: (s: string) => any;
+declare const stringifyQueryString: (s: any) => string;
 
 // node_modules/@types/react-addons-css-transition-group doesn't work, so use ':any' instead.
 var ReactCSSTransitionGroup: any = isServerSide() ? null :
   reactCreateFactory(window['ReactTransitionGroup'].CSSTransitionGroup);
-
-var Router: any = reactCreateFactory(ReactRouter.Router);
 
 // Don't <reference>, causes lots of TS errors.
 declare const Bliss: any;
@@ -75,9 +75,6 @@ function doNextFrameOrNow(something: () => void) {
 
 // If in an embedded comments iframe.
 export let iframeOffsetWinSize: { top: number, height: number } | undefined;
-
-
-export var Link: any = reactCreateFactory(ReactRouter.Link);
 
 
 export function die(errorMessage: string) {

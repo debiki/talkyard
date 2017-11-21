@@ -19,7 +19,7 @@
 /// <reference path="../more-bundle-already-loaded.d.ts" />
 
 //------------------------------------------------------------------------------
-   module debiki2.admin {
+   namespace debiki2.admin {
 //------------------------------------------------------------------------------
 
 const r = React.DOM;
@@ -30,12 +30,8 @@ const ModalBody = reactCreateFactory(ReactBootstrap.ModalBody);
 const ModalFooter = reactCreateFactory(ReactBootstrap.ModalFooter);
 
 
-export const AdminUserPageComponent = React.createClass(<any> {
-  displayName: 'AdminUserPageComponent',
-
-  contextTypes: {
-    router: React.PropTypes.object.isRequired
-  },
+export const AdminUserPage = createFactory({
+  displayName: 'AdminUserPage',
 
   getInitialState: function() {
     return {
@@ -53,7 +49,7 @@ export const AdminUserPageComponent = React.createClass(<any> {
 
   loadCompleteUser: function() {
     this.setState({ user: null });
-    const params = this.props.params;
+    const params = this.props.match.params;
     Server.loadUserAnyDetails(params.userId, (user: MemberInclDetails, stats: UserStats) => {
       if (!this.isMounted()) return;
       this.setState({

@@ -3,6 +3,7 @@
 // Copyright: Christopher Peng, https://github.com/Cap32
 // License: MIT
 // I (KajMagnus) made some changes, also MIT licensed, see "[KajMagnus]".
+// SMALLER_BUNDLE Later: Start using URLSearchParams instead, when supported by all browsers.
 
 (function (global, factory) {
 	if (typeof define === "function" && define.amd) {

@@ -4,10 +4,11 @@
 // In constants.ts:
 
 declare const ReactCSSTransitionGroup: any;
-declare const Router: any;
 declare function reactCreateFactory(x);
 declare function doNextFrameOrNow(x);
 declare function getSetCookie(cookieName: string, value?: string, options?: any): string;
+declare const parseQueryString: (s: string) => any;
+declare const stringifyQueryString: (s: any) => string;
 
 declare const ReactStartedClass;
 
@@ -74,16 +75,20 @@ declare namespace debiki2 {
   function $$byClass(className: string): HTMLCollectionOf<Element>;
   const $h: any;
 
-  // ReactRouter:
-  var Route;
-  var IndexRoute;
-  var Redirect;
-  var DefaultRoute;
+  // React-Router:
+  const Router: any;
+  const Switch: any;
+  const Route: any;
+  const Redirect: any;
+  function RedirToNoSlash({ path: string });
+  function RedirAppend({ path, append });
+  var Link; // ReactRouterDOM.Link
+  var NavLink; // ReactRouterDOM.NavLink
+  function LiNavLink(props, ...contents); // A NavLink in a <li>
 
-  var Link; // ReactRouter.Link
-  var NavLink: any;
   var createComponent: any;
   var createClassAndFactory: any;
+  function createFactory(componentDefinition);
 
   function replaceById(itemsWithId: any[], replacement);
   function deleteById(itemsWithId: any[], id);
@@ -182,7 +187,8 @@ declare namespace debiki2 {
   var linkToAdminPageAdvancedSettings;
   var linkToRedirToAboutCategoryPage;
   var linkToUserInAdminArea;
-  function linkToUserProfilePage(idOrUsername: UserId | string);
+  function linkToSendMessage(idOrUsername: UserId | string): string;
+  function linkToUserProfilePage(idOrUsername: UserId | string): string;
   function linkToAdminPage(me: Myself): string;
   var linkToReviewPage;
   var externalLinkToAdminHelp;
@@ -233,6 +239,7 @@ declare namespace debiki2 {
   // From widgets.ts:
   var PrimaryButton;
   var Button;
+  var PrimaryLinkButton;
   var LinkButton;
   var InputTypeSubmit; // could move to more-bundle.js, but is just 1 line
   var MenuItem;

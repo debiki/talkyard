@@ -46,6 +46,8 @@ const ReviewReasons = {
 
 
 export const ReviewAllPanelComponent = React.createClass(<any> {
+  displayName: 'ReviewAllPanelComponent',
+
   componentDidMount: function() {
     let promise: Promise<void> = Server.loadEditorAndMoreBundlesGetDeferred();
     Server.loadReviewTasks(reviewTasks => {
@@ -56,7 +58,7 @@ export const ReviewAllPanelComponent = React.createClass(<any> {
     });
   },
 
-  componentDidUnmount: function() {
+  componentWillUnmount: function() {
     this.isGone = true;
   },
 
@@ -253,8 +255,9 @@ const ReviewTask = createComponent({
               }
               const oldFlag = reviewTask.completedAtMs < flag.flaggedAt ? '' : " (old flag)";
               const oldFlagClass = !oldFlag ? '' : ' s_RT_Flags_Flag-Old';
+              const flagDummyId = `${flag.flaggedAt}|${flag.flaggerId}`; // [2PKRW08]
               return (
-                r.li({ className: 's_RT_Flags_Flag' + oldFlagClass },
+                r.li({ className: 's_RT_Flags_Flag' + oldFlagClass, key: flagDummyId },
                   UserName({ user: flagger }),
                   " reason: ",
                   reason,

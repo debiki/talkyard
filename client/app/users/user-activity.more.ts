@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2016 Kaj Magnus Lindberg
+ * Copyright (c) 2016, 2017 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -27,10 +27,8 @@ let NavItem = rb.NavItem;
 let Post = page.Post;
 
 
-export let UsersActivityComponent = React.createClass(<any> {
-  contextTypes: {
-    router: React.PropTypes.object.isRequired
-  },
+export let UsersActivity = createFactory({
+  displayName: 'UsersActivity',
 
   transitionTo: function(what) {
     this.props.transitionTo('activity/' + what);
@@ -42,7 +40,15 @@ export let UsersActivityComponent = React.createClass(<any> {
       user: this.props.user,
       reloadUser: this.props.loadCompleteUser,
     };
-    let activeRouteName = this.props.routes[3].path;
+    let activeRouteName = this.props.routes[3];
+
+    const childRoute = Switch({},
+      Route({ path: '(.*)/posts', exact: true, render: () => PostsComponent(childProps) }),
+      Route({ path: '(.*)/topics', exact: true, render: () => TopicsComponent(childProps) }));
+      // (.*)/mentions? Flarum includes mentions *of* the user, but wouldn't it make more sense
+      // to include mentions *by* the user? Discourse shows: (but -received in the notfs tab)
+      //Route({ path: 'likes-given', component: LikesGivenComponent }),
+      //Route({ path: 'likes-received', component: LikesReceivedComponent })
 
     return (
       // Without table-layout: fixed, the table can become 5000 px wide, because otherwise the
@@ -57,13 +63,15 @@ export let UsersActivityComponent = React.createClass(<any> {
               //NavItem({ eventKey: 'likes-given' }, "Likes Given"),
               //NavItem({ eventKey: 'likes-received' }, "Likes Received"))),
           r.div({ className: 's_UP_Act_List' },
-            React.cloneElement(this.props.children, childProps)))));
+            childRoute))));
   }
 });
 
 
 
-export let PostsComponent = React.createClass(<any> {
+export let PostsComponent = createFactory({
+  displayName: 'PostsComponent',
+
   getInitialState: function() {
     return { posts: null };
   },
@@ -71,6 +79,10 @@ export let PostsComponent = React.createClass(<any> {
   componentDidMount: function() {
     let user: MemberInclDetails = this.props.user;
     this.loadPosts(user.id);
+  },
+
+  componentWillUnmount: function() {
+    this.isGone = true;
   },
 
   componentWillReceiveProps: function(nextProps) {
@@ -86,8 +98,11 @@ export let PostsComponent = React.createClass(<any> {
   },
 
   loadPosts: function(userId: UserId) {
-    let me: Myself = this.props.store.me;
+    if (this.nowLoading === userId) return;
+    this.nowLoading = userId;
     Server.loadPostsByAuthor(userId, (response: any) => {
+      this.nowLoading = null;
+      if (this.isGone) return;
       this.setState({
         posts: response.posts,
         author: response.author,
@@ -128,7 +143,9 @@ export let PostsComponent = React.createClass(<any> {
 
 
 
-export let TopicsComponent = React.createClass(<any> {
+export let TopicsComponent = createFactory({
+  displayName: 'TopicsComponent',
+
   getInitialState: function() {
     return { topics: null };
   },
@@ -136,6 +153,10 @@ export let TopicsComponent = React.createClass(<any> {
   componentDidMount: function() {
     let user: MemberInclDetails = this.props.user;
     this.loadTopics(user.id);
+  },
+
+  componentWillUnmount: function() {
+    this.isGone = true;
   },
 
   componentWillReceiveProps: function(nextProps) {
@@ -151,7 +172,11 @@ export let TopicsComponent = React.createClass(<any> {
   },
 
   loadTopics: function(userId: UserId) {
+    if (this.nowLoading === userId) return;
+    this.nowLoading = userId;
     Server.loadTopicsByUser(userId, (topics: Topic[]) => {
+      this.nowLoading = null;
+      if (this.isGone) return;
       this.setState({ topics: topics });
     });
   },

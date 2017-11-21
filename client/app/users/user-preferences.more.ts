@@ -26,7 +26,9 @@
 const r = React.DOM;
 
 
-export const UserPreferencesComponent = React.createClass({
+export const UserPreferences = createFactory({
+  displayName: 'UserPreferences',
+
   render: function() {
     const me: Myself = this.props.me;
     const user: MemberInclDetails = this.props.user;

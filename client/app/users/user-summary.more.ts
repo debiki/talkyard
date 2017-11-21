@@ -21,12 +21,14 @@
    namespace debiki2.users {
 //------------------------------------------------------------------------------
 
-let r = React.DOM;
+const r = React.DOM;
 
 
-export let UserSummaryComponent = React.createClass(<any> {
+export const UserSummary = createFactory({
+  displayName: 'UserSummary',
+
   render: function() {
-    let stats: UserStats = this.props.stats;
+    const stats: UserStats = this.props.stats;
     return (
      r.div({ className: 's_UP_Stats' },
        r.h2({}, "Statistics"),

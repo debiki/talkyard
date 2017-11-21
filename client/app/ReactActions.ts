@@ -625,12 +625,6 @@ export function goToUsersNotifications(userId: UserId) {  // CLEAN_UP use LinkBu
 }
 
 
-export function writeMessage(userId: UserId) {  // CLEAN_UP use LinkButton and href= instead
-  // For now, until I've enabled react-router everywhere and won't have to reload the page.
-  location.assign(linkToUserProfilePage(userId) + '/activity/posts#writeMessage');
-}
-
-
 function sendToEditorIframe(message) {
   // Send the message to the embedding page; it'll forward it to the appropriate iframe.
   window.parent.postMessage(JSON.stringify(message), '*');

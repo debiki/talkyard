@@ -167,10 +167,6 @@ const AboutUserDialog = createComponent({
 const AboutUser = createComponent({
   displayName: 'AboutUser',
 
-  sendMessage: function() {
-    ReactActions.writeMessage(this.props.user.id);
-  },
-
   componentWillMount: function() {
     this.isUnmounted = false;
   },
@@ -204,7 +200,7 @@ const AboutUser = createComponent({
     }
 
     var sendMessageButton = !me_maySendDirectMessageTo(me, user) ? null :
-        PrimaryButton({ onClick: this.sendMessage, id: 'e2eUD_MessageB' },
+        PrimaryLinkButton({ href: linkToSendMessage(user.id), id: 'e2eUD_MessageB' },
           "Send Message");
 
     var userIsPageMember = page_isGroupTalk(store.pageRole) &&

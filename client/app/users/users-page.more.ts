@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2014-2016 Kaj Magnus Lindberg
+ * Copyright (c) 2014-2017 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -31,64 +31,44 @@ declare var moment: any;
 const r = React.DOM;
 const Nav = rb.Nav;
 const NavItem = rb.NavItem;
-
 const UsersRoot = '/-/users/';
-const ReactRouter = window['ReactRouter'];
-const Route = reactCreateFactory(ReactRouter.Route);
-const IndexRoute = reactCreateFactory(ReactRouter.IndexRoute);
-const Redirect = reactCreateFactory(ReactRouter.Redirect);
+const UsersRootAndIdParamSlash = UsersRoot + ':usernameOrId/';
 
 
 // Make the components async? So works also if more-bundle.js not yet loaded? [4WP7GU5]
 export function routes() {
   return (
-    Route({ path: UsersRoot, component: UsersHomeComponent },
-      IndexRoute({ component: DefaultComponent }),
-      Redirect({ from: ':usernameOrId', to: ':usernameOrId/activity' }),
-      Redirect({ from: ':usernameOrId/', to: ':usernameOrId/activity' }),
-      Route({ path: ':usernameOrId', component: UserPageComponent },
-        Redirect({ from: 'activity', to: 'activity/posts' }),
-        Route({ path: 'activity', component: UsersActivityComponent },
-          Route({ path: 'posts', component: PostsComponent  }),
-          Route({ path: 'topics', component: TopicsComponent })
-          // mentions? Flarum includes mentions *of* the user, but wouldn't it make more sense
-          // to include mentions *by* the user? Discourse shows: (but -received in the notfs tab)
-          //Route({ path: 'likes-given', component: LikesGivenComponent }),
-          //Route({ path: 'likes-received', component: LikesReceivedComponent })
-          ),
-        Route({ path: 'summary', component: UserSummaryComponent }),
-        Route({ path: 'notifications', component: UserNotificationsComponent }),
-        Route({ path: 'preferences', component: debiki2.users.UserPreferencesComponent }),
-        Route({ path: 'invites', component: debiki2.users.UserInvitesComponent }))));
+    // Let's keep this, although just one route — because maybe will move up to an "upper base route".
+    Route({ path: UsersRoot, component: UsersHomeComponent }));
 }
 
 
 
 const UsersHomeComponent = React.createClass(<any> {
-  componentDidMount: function() {
-    if (window.location.hash.indexOf('#writeMessage') !== -1) {
-      const usernameOrId = this.props.params.usernameOrId;
-      dieIf(/[^0-9]/.test(usernameOrId), 'Not a user id [EsE5YK0P2]');
-      const toUserId = parseInt(usernameOrId);
-      const myUserId = ReactStore.getMe().id;
-      dieIf(toUserId === myUserId, 'EsE7UMKW2');
-      dieIf(userId_isGuest(toUserId), 'EsE6JKY20');
-      editor.openToWriteMessage(toUserId);
-    }
-  },
+  displayName: 'UsersHomeComponent',
 
   render: function() {
     return (
       r.div({},
         reactelements.TopBar({ customTitle: "About User",
             backToSiteButtonTitle: "Back from user profile", extraMargin: true }),
-        this.props.children));
+        Switch({},
+          Route({ path: UsersRoot, component: BadUrlComponent, exact: true }),
+          Route({ path: UsersRoot + ':usernameOrId', exact: true,
+              render: ({ match }) =>
+                Redirect({
+                  to: UsersRoot + match.params.usernameOrId + '/activity' + this.props.location.hash })
+          }),
+          Route({ path: UsersRoot + ':usernameOrId/:section?/:subsection?',
+              component: UserPageComponent }))));
   }
 });
 
 
 
-const DefaultComponent = React.createClass(<any> {
+const BadUrlComponent = React.createClass(<any> {
+  displayName: 'BadUrlComponent',
+
   render: function() {
     return r.div({}, 'Unexpected URL [DwE7E1W31]');
   }
@@ -97,17 +77,17 @@ const DefaultComponent = React.createClass(<any> {
 
 
 const UserPageComponent = React.createClass(<any> {
+  displayName: 'UserPageComponent',
   mixins: [debiki2.StoreListenerMixin],
-
-  contextTypes: {
-    router: React.PropTypes.object.isRequired
-  },
 
   getInitialState: function() {
     return {
       store: debiki2.ReactStore.allData(),
       myId: null,
       user: null,
+      // Backw compat with react-router v3: (.slice removes '/-/' in '/-/users')
+      // CLEAN_UP remove 'routes', use params and params.section and .subsection instead
+      routes: this.props.location.pathname.split('/').slice(2),  // (4GKQS2)
     };
   },
 
@@ -124,12 +104,25 @@ const UserPageComponent = React.createClass(<any> {
     }
   },
 
+  componentWillReceiveProps: function(newProps) {
+    this.setState({
+      routes: newProps.location.pathname.split('/').slice(2),  // (4GKQS2)
+    });
+  },
+
   componentDidMount: function() {
     this.loadUserAnyDetails();
   },
 
   componentDidUpdate: function(prevProps) {
-    if (this.props.location.pathname !== prevProps.location.pathname) {
+    if (this.props.location.pathname === prevProps.location.pathname)
+      return;
+
+    const prevUsernameOrId: string = prevProps.match.params.usernameOrId;
+    const currentUser: MemberInclDetails = this.state.user;
+    const isSameUser = currentUser && (
+        '' + currentUser.id === prevUsernameOrId || currentUser.username === prevUsernameOrId);
+    if (!isSameUser) {
       this.loadUserAnyDetails();
     }
   },
@@ -139,13 +132,21 @@ const UserPageComponent = React.createClass(<any> {
   },
 
   transitionTo: function(subPath) {
-    this.context.router.push('/-/users/' + this.props.params.usernameOrId + '/' + subPath);
+    this.props.history.push('/-/users/' + this.props.match.params.usernameOrId + '/' + subPath);
   },
 
   loadUserAnyDetails: function(redirectToCorrectUsername) {
-    const usernameOrId: string | number = this.props.params.usernameOrId;
-    Server.loadUserAnyDetails(usernameOrId, (user, stats: UserStats) => {
+    const params = this.props.match.params;
+    const usernameOrId: string | number = params.usernameOrId;
+
+    if (this.nowLoading === usernameOrId) return;
+    this.nowLoading = usernameOrId;
+
+    Server.loadUserAnyDetails(usernameOrId, (user: MemberInclDetails, stats: UserStats) => {
+      this.nowLoading = null;
       if (this.isGone) return;
+      // This setState will trigger a rerender immediately, because we're not in a React event handler.
+      // But when rerendering here, the url might still show a user id, not a username. (5GKWS20)
       this.setState({ user: user, stats: stats });
       // 1) In case the user has changed his/her username, and userIdOrUsername is his/her *old*
       // name, user.username will be the current name — then show current name in the url [8KFU24R].
@@ -154,8 +155,13 @@ const UserPageComponent = React.createClass(<any> {
       const isNotLowercase = _.isString(usernameOrId) && usernameOrId !== usernameOrId.toLowerCase();
       if (user.username && (user.username.toLowerCase() !== usernameOrId || isNotLowercase) &&
           redirectToCorrectUsername !== false) {
-        this.context.router.replace('/-/users/' + user.username.toLowerCase());
+        let pathWithUsername = '/-/users/' + user.username.toLowerCase();
+        if (params.section) pathWithUsername += '/' + params.section;
+        if (params.subsection) pathWithUsername += '/' + params.subsection;
+        pathWithUsername += this.props.location.hash;
+        this.props.history.replace(pathWithUsername);
       }
+      this.maybeOpenMessageEditor(user.id);
     }, () => {
       if (this.isGone) return;
       // Error. We might not be allowed to see this user, so null it even if it was shown before.
@@ -163,14 +169,28 @@ const UserPageComponent = React.createClass(<any> {
     });
   },
 
+  maybeOpenMessageEditor: function(userId: number) {
+    if (window.location.hash.indexOf('#writeMessage') >= 0 && !this.hasOpenedEditor) {
+      this.hasOpenedEditor = true;
+      dieIf(userId_isGuest(userId), 'EdE6JKY20');
+      const myUserId = ReactStore.getMe().id;
+      if (userId !== myUserId) {
+        editor.openToWriteMessage(userId);
+      }
+    }
+  },
+
   render: function() {
     const store: Store = this.state.store;
     const me: Myself = store.me;
     const user: UserAnyDetails = this.state.user;
-    if (!user || !me)
+    const usernameOrId = this.props.match.params.usernameOrId;
+    // Wait until url updated to show username, instead of id, to avoid mounting & unmounting
+    // sub comoponents, which could result in duplicated load-data requests.  (5GKWS20)
+    if (!user || !me || parseInt(usernameOrId))
       return r.p({}, 'Loading...');
 
-    dieIf(!this.props.routes || !this.props.routes[2] || !this.props.routes[2].path, 'EsE5GKUW2');
+    dieIf(!this.state.routes || !this.state.routes[2], 'EsE5GKUW2');
 
     const showPrivateStuff = isStaff(me) || (me.isAuthenticated && me.id === user.id);
 
@@ -193,12 +213,25 @@ const UserPageComponent = React.createClass(<any> {
       store: store,
       me: me, // try to remove, incl already in `store`
       user: user,
+      routes: this.state.routes,
       stats: this.state.stats,
       reloadUser: this.loadUserAnyDetails,
       transitionTo: this.transitionTo
     };
 
-    let activeRouteName = this.props.routes[2].path;
+    let activeRouteName = this.state.routes[2];
+    const u = UsersRootAndIdParamSlash;
+
+    const childRoutes = Switch({},
+      Route({ path: u + 'activity', exact: true, render: ({ match }) => {
+        const hash = this.props.location.hash;
+        return Redirect({ to: UsersRoot + match.params.usernameOrId + '/activity/posts' + hash });
+      }}),
+      Route({ path: u + 'activity', render: (ps) => UsersActivity({ ...childProps, ...ps }) }),
+      Route({ path: u + 'summary', render: () => UserSummary(childProps) }),
+      Route({ path: u + 'notifications', render: () => UserNotifications(childProps) }),
+      Route({ path: u + 'preferences', render: () => UserPreferences(childProps) }),
+      Route({ path: u + 'invites', render: () => UserInvites(childProps) }));
 
     return (
       r.div({ className: 'container esUP' },
@@ -210,13 +243,15 @@ const UserPageComponent = React.createClass(<any> {
           notificationsNavItem,
           invitesNavItem,
           preferencesNavItem),
-        React.cloneElement(this.props.children, childProps)));
+        childRoutes));
   }
 });
 
 
 
 const AvatarAboutAndButtons = createComponent({
+  displayName: 'AvatarAboutAndButtons',
+
   getInitialState: function() {
     return {
       isUploadingProfilePic: false,
