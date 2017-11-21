@@ -2,6 +2,7 @@
 // Downloaded on 2017-11-21 like so:  wget https://unpkg.com/tiny-querystring/dist/tiny-querystring.umd.js
 // Copyright: Christopher Peng, https://github.com/Cap32
 // License: MIT
+// I (KajMagnus) made some changes, also MIT licensed, see "[KajMagnus]".
 
 (function (global, factory) {
 	if (typeof define === "function" && define.amd) {
@@ -13,7 +14,12 @@
 			exports: {}
 		};
 		factory(mod.exports);
-		global.tinyQuerystring = mod.exports;
+		// [KajMagnus]
+		// No:
+		// global.tinyQuerystring = mod.exports;
+		// Instead:
+		global.parseQueryString = mod.exports.parse;
+		global.stringifyQueryString = mod.exports.stringify;
 	}
 })(this, function (exports) {
 	'use strict';
@@ -27,6 +33,8 @@
 		}).reduce(function (obj, item, index) {
 			var ref = item.split('=');
 			var key = ref[0] || '';
+			// [KajMagnus] Drop any '?' in case it's part of the query string.
+			if (key[0] === '?') key = key.substr(1);
 			var val = decodeURIComponent(ref[1] || '');
 			var prev = obj[key];
 			obj[key] = prev === undefined ? val : [].concat(prev, val);
