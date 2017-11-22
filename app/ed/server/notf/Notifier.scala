@@ -171,31 +171,31 @@ class Notifier(val systemDao: SystemDao, val siteDaoFactory: SiteDaoFactory)
           |<p>Welcome to Usability Testing Exchange; we're glad you submitted your site.
           |</p>
           |
-          |<p>You'll get more feedback yourself, if you give more feedback to others. If you haven't already, you can <a href="https://usability.testing.exchange/give-me-a-task">go here and give feedback to others</a>.
+          |<p>You'll get more feedback yourself, if you give more feedback to others. If you haven't already, you can <a href="https://usability.testing.exchange/give-me-a-task">go here and give feedback</a>.
           |</p>
           |
           |<p>When giving feedback:</p>
           |
           |<ul>
-          |<li>Please try to be friendly and also mention things you like. Don't say that something looks terrible. We want people to stay happy and feel encouraged to continue learning and experimenting — especially if they are new to design and usability, and do mistakes.
+          |<li>Please be friendly and maybe mention things you like. Don't say that something looks terrible. We want people to feel encouraged to continue learning and experimenting -- especially if they are new to design and usability, and do mistakes.
           |</li>
-          |<li>Be specific. Don't just say "I don't like it" — then the other person won't know what you have in mind, or what to change and improve. Instead, say e.g. "I don't understand what (something) is", or "I think that picture doesn't fit here".
+          |<li>Be specific. Don't just say "I don't like it" -- then the other person won't know what to change and improve. Instead, say e.g. "I don't understand this text: ...", or "I think that picture doesn't fit here".
           |</li>
           |</ul>
           |
-          |<p>We hope you like looking at other people's websites & giving feedback :-) and that you'll learn from it, e.g. avoiding mistakes you see others make.
+          |<p>We hope you like looking at other people's websites & giving feedback :- ) and that you'll learn from it, e.g. avoiding mistakes you see others make.
           |</p>
           |
-          |<p>So, when you have time:
+          |<p>So, when you have time and want to,
           |<a href="https://usability.testing.exchange/give-me-a-task">
-          |go here, and continue helping others</a>.
+          |go here, and give feedback</a>.
           |</p>
           |
           |<p>Kind regards.</p>
           |
-          |<p>(PS. Want a forum/chat/community for your website?
+          |<p>(PS. Want a forum / chat / community for your website?
           |Check out <a href="https://www.effectivediscussions.org">Effective Discussions</a><br>
-          |— the open source discussion platform powering Usability Testing Exchange.)
+          |-- the open source discussion platform powering Usability Testing Exchange.)
           |</p>
           |""")
       dao.readWriteTransaction { tx =>
