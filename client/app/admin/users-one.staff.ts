@@ -42,6 +42,10 @@ export const AdminUserPage = createFactory({
     this.loadCompleteUser();
   },
 
+  componentWillUnmount: function(nextProps) {
+    this.isGone = true;
+  },
+
   componentWillReceiveProps: function(nextProps) {
     this.loadCompleteUser();
   },
@@ -50,7 +54,7 @@ export const AdminUserPage = createFactory({
     this.setState({ user: null });
     const params = this.props.match.params;
     Server.loadUserAnyDetails(params.userId, (user: MemberInclDetails, stats: UserStats) => {
-      if (!this.isMounted()) return;
+      if (this.isGone) return;
       this.setState({
         user: user,
         stats: stats,
