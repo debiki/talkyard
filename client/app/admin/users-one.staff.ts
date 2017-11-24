@@ -366,18 +366,23 @@ const MemberThreatLevelDialog = createComponent({
       : "Current threat level: " + threatLevel_toString(user.threatLevel);
 
     const actionContent = user.lockedThreatLevel
-        ? Button({ onClick: () => this.lockThreatLevelAt(null),
-              help: "Clears the manually assigned threat level." }, "Unlock")
+        ? r.div({},
+            Button({ onClick: () => this.lockThreatLevelAt(null) }),
+              "Unlock",
+            r.div({ className: 'help-block' },
+              "Clears the manually assigned threat level."))
         : r.div({},
-            Button({ onClick: () => this.lockThreatLevelAt(ThreatLevel.MildThreat),
-                help: "Marks this user as a mild threat, which means all comments s/he post " +
-                  "will be added to the review list. But they'll be shown directly to other " +
-                  "users." },
-              "Mild threat"),
-            Button({ onClick: () => this.lockThreatLevelAt(ThreatLevel.ModerateThreat),
-              help: "Marks this user as a moderate threat, which means that all comments " +
-                  "s/he post won't be visible until they've been approved by the staff." },
-              "Moderate threat"));
+            Button({ onClick: () => this.lockThreatLevelAt(ThreatLevel.MildThreat) },
+                "Mild threat"),
+            r.div({ className: 'help-block' },
+              "Marks this user as a mild threat, which means all comments s/he post " +
+              "will be added to the review list. But they'll be shown directly to other " +
+              "users."),
+            Button({ onClick: () => this.lockThreatLevelAt(ThreatLevel.ModerateThreat) },
+              "Moderate threat"),
+            r.div({ className: 'help-block' },
+              "Marks this user as a moderate threat, which means that all comments " +
+              "s/he post won't be visible until they've been approved by the staff."));
 
     return (
       Modal({ show: this.state.isOpen, onHide: this.close },

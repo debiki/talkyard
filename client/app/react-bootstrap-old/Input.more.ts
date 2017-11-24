@@ -45,14 +45,40 @@ export var Input = createComponent({
     var props = this.props;
     var childProps = _.clone(props);
     childProps.ref = 'theInput';
-    delete childProps.label;
-    delete childProps.children;
-    delete childProps.help;
-    delete childProps.addonBefore;
-    delete childProps.className;
 
-    if (props.type === 'select' || props.type === 'textarea') {
-      childProps.componentClass = props.type;
+    function makeCheckboxRadioProps() {
+      return {
+        ref: 'theInput',
+        id: props.id,
+        name: props.name,
+        bsClass: props.bsClass,
+        disabled: props.disabled,
+        inline: props.inline,
+        inputRef: props.inputRef,
+        title: props.title,
+        validationState: props.validationState,
+        checked: props.checked,
+        defaultChecked: props.defaultChecked,
+        onChange: props.onChange,
+      };
+    }
+
+    function makeFormControlProps() {
+      return {
+        ref: 'theInput',
+        id: props.id,
+        name: props.name,
+        bsClass: props.bsClass,
+        bsSize: props.bsSize,
+        disabled: props.disabled,
+        inputRef: props.inputRef,
+        componentClass: props.type === 'select' || props.type === 'textarea' ? props.type : undefined,
+        type: props.type,
+        placeholder: props.placeholder,
+        value: props.value,
+        defaultValue: props.defaultValue,
+        onChange: props.onChange,
+      };
     }
 
     let addonBefore = !props.addonBefore ? null : InputGroupAddon({}, props.addonBefore);
@@ -64,7 +90,7 @@ export var Input = createComponent({
       result = (
         r.div({ className: 'form-group ' + (props.className || '') },
           r.div({ className: props.wrapperClassName },
-            (isRadio ? Radio : Checkbox).call(null, childProps, props.label),
+            (isRadio ? Radio : Checkbox).call(null, makeCheckboxRadioProps(), props.label),
             r.span({ className: 'help-block' },
               props.help))));
     }
@@ -81,10 +107,10 @@ export var Input = createComponent({
       if (isCheckbox || isRadio) {
         dieIf(!props.labelFirst, 'EdE2WR8L9');
         // The help will become the checkbox label, so if it's clicked, the checkbox gets selected.
-        theInput = (isRadio ? Radio : Checkbox).call(null, childProps, props.help);
+        theInput = (isRadio ? Radio : Checkbox).call(null, makeCheckboxRadioProps(), props.help);
       }
       else {
-        theInput = FormControl(childProps, props.children);
+        theInput = FormControl(makeFormControlProps(), props.children);
         anyHelp = props.help && HelpBlock({}, props.help);
       }
       result = (
