@@ -24,8 +24,6 @@
 //------------------------------------------------------------------------------
 
 const r = ReactDOMFactories;
-const Nav = rb.Nav;
-const NavItem = rb.NavItem;
 
 
 export const ReviewPanel = createFactory({
@@ -52,9 +50,9 @@ export const ReviewPanel = createFactory({
     /* old:
     return (
         r.div({},
-            Nav({ bsStyle: 'pills', activeKey: this.state.activeRoute, onSelect: this.handleSelect,
+            Na v({ bsStyle: 'pills', activeKey: this.state.activeRoute, onSelect: this.handleSelect,
                 className: 'dw-sub-nav' },
-              NavItem({ eventKey: 'review-posts' }, 'Posts')),
+              Na vItem({ eventKey: 'review-posts' }, 'Posts')),
             r.div({ className: 'dw-admin-panel' },
               this.props.children)));
     */

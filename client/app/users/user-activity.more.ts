@@ -22,17 +22,13 @@
 //------------------------------------------------------------------------------
 
 const r = ReactDOMFactories;
-const Nav = rb.Nav;
-const NavItem = rb.NavItem;
 const Post = page.Post;
+const UsersPathSlash = '/-/users/';       // dupl [4GKQST20]
+const SlashActivitySlash = '/activity/';  // dupl [4GKQST20]
 
 
 export const UsersActivity = createFactory({
   displayName: 'UsersActivity',
-
-  transitionTo: function(what) {
-    this.props.transitionTo('activity/' + what);
-  },
 
   render: function() {
     let childProps = {
@@ -40,7 +36,6 @@ export const UsersActivity = createFactory({
       user: this.props.user,
       reloadUser: this.props.loadCompleteUser,
     };
-    let activeRouteName = this.props.routes[3];
 
     const childRoute = Switch({},
       Route({ path: '(.*)/posts', exact: true, render: () => PostsComponent(childProps) }),
@@ -50,18 +45,19 @@ export const UsersActivity = createFactory({
       //Route({ path: 'likes-given', component: LikesGivenComponent }),
       //Route({ path: 'likes-received', component: LikesReceivedComponent })
 
+    const uap = UsersPathSlash + this.props.match.params.usernameOrId + SlashActivitySlash;
+
     return (
       // Without table-layout: fixed, the table can become 5000 px wide, because otherwise the
       // default layout is width = as wide as the widest cell wants to be.
       r.div({ style: { display: 'table', width: '100%', tableLayout: 'fixed' }},
         r.div({ style: { display: 'table-row' }},
           r.div({ className: 's_UP_Act_Nav' },
-            Nav({ bsStyle: 'pills', activeKey: activeRouteName,
-                onSelect: this.transitionTo, className: 'dw-sub-nav nav-stacked' },
-              NavItem({ eventKey: 'posts', className: 's_UP_Act_Nav_PostsB' }, "Posts"),
-              NavItem({ eventKey: 'topics', className: 's_UP_Act_Nav_TopicsB' }, "Topics"))),
-              //NavItem({ eventKey: 'likes-given' }, "Likes Given"),
-              //NavItem({ eventKey: 'likes-received' }, "Likes Received"))),
+            r.ul({ className: 'dw-sub-nav nav-stacked nav nav-pills' },
+              LiNavLink({ to: uap + 'posts', className: 's_UP_Act_Nav_PostsB' }, "Posts"),
+              LiNavLink({ to: uap + 'topics', className: 's_UP_Act_Nav_TopicsB' }, "Topics"))),
+              //LiNavLink({ to: uap + 'likes-given' }, "Likes Given"),
+              //LiNavLink({ to: uap + 'likes-received' }, "Likes Received"))),
           r.div({ className: 's_UP_Act_List' },
             childRoute))));
   }

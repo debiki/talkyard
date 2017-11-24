@@ -29,10 +29,8 @@ declare var moment: any;
 //------------------------------------------------------------------------------
 
 const r = ReactDOMFactories;
-const Nav = rb.Nav;
-const NavItem = rb.NavItem;
 const UsersRoot = '/-/users/';
-const UsersRootAndIdParamSlash = UsersRoot + ':usernameOrId/';
+const UsersRootAndIdParamSlash = UsersRoot + ':usernameOrId/';  // dupl [4GKQST20]
 
 
 // Make the components async? So works also if more-bundle.js not yet loaded? [4WP7GU5]
@@ -85,9 +83,6 @@ const UserPageComponent = createReactClass(<any> {
       store: debiki2.ReactStore.allData(),
       myId: null,
       user: null,
-      // Backw compat with react-router v3: (.slice removes '/-/' in '/-/users')
-      // CLEAN_UP remove 'routes', use params and params.section and .subsection instead
-      routes: this.props.location.pathname.split('/').slice(2),  // (4GKQS2)
     };
   },
 
@@ -102,12 +97,6 @@ const UserPageComponent = createReactClass(<any> {
       // Now we might have access to more/less data about the user, so refresh.
       this.loadUserAnyDetails();
     }
-  },
-
-  componentWillReceiveProps: function(newProps) {
-    this.setState({
-      routes: newProps.location.pathname.split('/').slice(2),  // (4GKQS2)
-    });
   },
 
   componentDidMount: function() {
@@ -129,10 +118,6 @@ const UserPageComponent = createReactClass(<any> {
 
   componentWillUnmount: function() {
     this.isGone = true;
-  },
-
-  transitionTo: function(subPath) {
-    this.props.history.push('/-/users/' + this.props.match.params.usernameOrId + '/' + subPath);
   },
 
   loadUserAnyDetails: function(redirectToCorrectUsername) {
@@ -190,36 +175,33 @@ const UserPageComponent = createReactClass(<any> {
     if (!user || !me || parseInt(usernameOrId))
       return r.p({}, 'Loading...');
 
-    dieIf(!this.state.routes || !this.state.routes[2], 'EsE5GKUW2');
-
     const showPrivateStuff = isStaff(me) || (me.isAuthenticated && me.id === user.id);
+    const linkStart = UsersRoot + usernameOrId + '/';
 
     const activityNavItem = user.isGroup ? null :
-      NavItem({ eventKey: 'activity', className: 'e_UP_ActivityB' }, "Activity");
+      LiNavLink({ to: linkStart + 'activity', className: 'e_UP_ActivityB' }, "Activity");
 
     const summaryNavItem = user.isGroup ? null :
-      NavItem({ eventKey: 'summary', className: 'e_UP_SummaryB' }, "Summary");
+      LiNavLink({ to: linkStart + 'summary', className: 'e_UP_SummaryB' }, "Summary");
 
     const notificationsNavItem = !showPrivateStuff || user.isGroup ? null :
-      NavItem({ eventKey: 'notifications', className: 'e_UP_NotfsB' }, "Notifications");
+      LiNavLink({ to: linkStart + 'notifications', className: 'e_UP_NotfsB' }, "Notifications");
 
     const preferencesNavItem = !showPrivateStuff ? null :
-      NavItem({ eventKey: 'preferences', id: 'e2eUP_PrefsB' }, "Preferences");
+      LiNavLink({ to: linkStart + 'preferences', id: 'e2eUP_PrefsB' }, "Preferences");
 
     const invitesNavItem = !showPrivateStuff || !maySendInvites(user).value ? null :
-      NavItem({ eventKey: 'invites', id: 'e2eUP_InvitesB' }, "Invites");
+      LiNavLink({ to: linkStart + 'invites', id: 'e2eUP_InvitesB' }, "Invites");
 
     const childProps = {
       store: store,
       me: me, // try to remove, incl already in `store`
       user: user,
-      routes: this.state.routes,
+      match: this.props.match,
       stats: this.state.stats,
       reloadUser: this.loadUserAnyDetails,
-      transitionTo: this.transitionTo
     };
 
-    let activeRouteName = this.state.routes[2];
     const u = UsersRootAndIdParamSlash;
 
     const childRoutes = Switch({},
@@ -236,8 +218,7 @@ const UserPageComponent = createReactClass(<any> {
     return (
       r.div({ className: 'container esUP' },
         AvatarAboutAndButtons(childProps),
-        Nav({ bsStyle: 'pills', activeKey: activeRouteName,
-            onSelect: this.transitionTo, className: 'dw-sub-nav' },
+        r.ul({ className: 'dw-sub-nav nav nav-pills' },
           activityNavItem,
           summaryNavItem,
           notificationsNavItem,

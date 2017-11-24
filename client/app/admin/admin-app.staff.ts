@@ -29,8 +29,6 @@
 //------------------------------------------------------------------------------
 
 const r = ReactDOMFactories;
-const Nav = rb.Nav;
-const NavItem = rb.NavItem;
 const Alert = rb.Alert;
 
 const PageUnloadAlerter = utils.PageUnloadAlerter;

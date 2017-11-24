@@ -8,8 +8,6 @@ namespace rb {
   export var ModalFooter = reactCreateFactory(ReactBootstrap.ModalFooter);
 
   export var ReactSelect = reactCreateFactory(window['Select']);
-  export var Nav = reactCreateFactory(ReactBootstrap.Nav);
-  export var NavItem = reactCreateFactory(ReactBootstrap.NavItem);
   export var TabbedArea = reactCreateFactory(ReactBootstrap.TabbedArea);
   export var TabPane = reactCreateFactory(ReactBootstrap.TabPane);
   export var Tabs = reactCreateFactory(ReactBootstrap.Tabs);

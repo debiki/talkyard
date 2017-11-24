@@ -26,7 +26,6 @@ declare var moment: any;
 //------------------------------------------------------------------------------
 
 const r = ReactDOMFactories;
-const Nav = rb.Nav;
 
 
 export const UsersTab = createFactory({

@@ -7,8 +7,6 @@ declare namespace rb {
   var ModalBody;
   var ModalFooter;
 
-  var Nav;
-  var NavItem;
   var TabbedArea;
   var TabPane;
   var Alert;
