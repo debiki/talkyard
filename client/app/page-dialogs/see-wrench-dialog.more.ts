@@ -18,16 +18,15 @@
 /// <reference path="../slim-bundle.d.ts" />
 
 //------------------------------------------------------------------------------
-   module debiki2.pagedialogs {
+   namespace debiki2.pagedialogs {
 //------------------------------------------------------------------------------
 
-var r = React.DOM;
-var ReactBootstrap: any = window['ReactBootstrap'];
-var Modal = reactCreateFactory(ReactBootstrap.Modal);
-var ModalHeader = reactCreateFactory(ReactBootstrap.ModalHeader);
-var ModalTitle = reactCreateFactory(ReactBootstrap.ModalTitle);
-var ModalBody = reactCreateFactory(ReactBootstrap.ModalBody);
-var ModalFooter = reactCreateFactory(ReactBootstrap.ModalFooter);
+const r = ReactDOMFactories;
+var Modal = rb.Modal;
+var ModalHeader = rb.ModalHeader;
+var ModalTitle = rb.ModalTitle;
+var ModalBody = rb.ModalBody;
+var ModalFooter = rb.ModalFooter;
 
 
 var seeWrenchDialog;

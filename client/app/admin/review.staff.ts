@@ -23,17 +23,13 @@
    namespace debiki2.admin {
 //------------------------------------------------------------------------------
 
-var r = React.DOM;
-var Nav = rb.Nav;
-var NavItem = rb.NavItem;
+const r = ReactDOMFactories;
+const Nav = rb.Nav;
+const NavItem = rb.NavItem;
 
 
 export const ReviewPanel = createFactory({
   displayName: 'ReviewPanel',
-
-  contextTypes: {
-    router: React.PropTypes.object.isRequired
-  },
 
   /* Old: (remove later, when I've decided I'll remove review-posts.ts — right now it's
           only commented out here)

@@ -23,9 +23,9 @@
   namespace debiki2.help {
 //------------------------------------------------------------------------------
 
-var r = React.DOM;
-var Modal = rb.Modal;
-var ModalBody = rb.ModalBody;
+const r = ReactDOMFactories;
+const Modal = rb.Modal;
+const ModalBody = rb.ModalBody;
 
 
 export function openHelpDialogUnlessHidden(message) {

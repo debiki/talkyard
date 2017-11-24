@@ -22,11 +22,11 @@
    namespace debiki2.admin {
 //------------------------------------------------------------------------------
 
-var r = React.DOM;
-var Modal = rb.Modal;
-var ModalBody = rb.ModalBody;
-var ModalFooter = rb.ModalFooter;
-var PatternInput = utils.PatternInput;
+const r = ReactDOMFactories;
+const Modal = rb.Modal;
+const ModalBody = rb.ModalBody;
+const ModalFooter = rb.ModalFooter;
+const PatternInput = utils.PatternInput;
 
 
 var hostnameEditorDialog;

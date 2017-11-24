@@ -21,7 +21,7 @@
    namespace debiki2 {
 //------------------------------------------------------------------------------
 
-const r = React.DOM;
+const r = ReactDOMFactories;
 
 
 export const Router: any = reactCreateFactory(

@@ -29,7 +29,7 @@
 //------------------------------------------------------------------------------
 
 var d = { i: debiki.internal };
-var r = React.DOM;
+const r = ReactDOMFactories;
 var Modal = rb.Modal;
 var ModalBody = rb.ModalBody;
 var ModalFooter = rb.ModalFooter;

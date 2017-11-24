@@ -15,6 +15,7 @@ namespace rb {
   export var Tabs = reactCreateFactory(ReactBootstrap.Tabs);
   export var Tab = reactCreateFactory(ReactBootstrap.Tab);
   export var Alert = reactCreateFactory(ReactBootstrap.Alert);
+  export var ProgressBar = reactCreateFactory(ReactBootstrap.ProgressBar);
 
   export var FormGroup = reactCreateFactory(ReactBootstrap.FormGroup);
   export var ControlLabel = reactCreateFactory(ReactBootstrap.ControlLabel);
@@ -31,7 +32,7 @@ namespace rb {
    namespace debiki2 {
 //------------------------------------------------------------------------------
 
-var r = React.DOM;
+const r = ReactDOMFactories;
 
 
 // (Or move to slim-bundle? So the search results page can be generated server side.)

@@ -21,7 +21,7 @@
    namespace debiki2.tags {
 //------------------------------------------------------------------------------
 
-const r = React.DOM;
+const r = ReactDOMFactories;
 
 const TagsRoot = '/-/tags/';
 
@@ -34,13 +34,9 @@ export function routes() {
 
 
 
-const TagsAppComponent = React.createClass(<any> {
+const TagsAppComponent = createReactClass(<any> {
   displayName:  'TagsAppComponent',
   mixins: [debiki2.StoreListenerMixin],
-
-  contextTypes: {
-    router: React.PropTypes.object.isRequired
-  },
 
   getInitialState: function() {
     return {

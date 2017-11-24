@@ -28,7 +28,7 @@ declare var moment: any;
    namespace debiki2.users {
 //------------------------------------------------------------------------------
 
-const r = React.DOM;
+const r = ReactDOMFactories;
 const Nav = rb.Nav;
 const NavItem = rb.NavItem;
 const UsersRoot = '/-/users/';
@@ -44,7 +44,7 @@ export function routes() {
 
 
 
-const UsersHomeComponent = React.createClass(<any> {
+const UsersHomeComponent = createReactClass(<any> {
   displayName: 'UsersHomeComponent',
 
   render: function() {
@@ -66,7 +66,7 @@ const UsersHomeComponent = React.createClass(<any> {
 
 
 
-const BadUrlComponent = React.createClass(<any> {
+const BadUrlComponent = createReactClass(<any> {
   displayName: 'BadUrlComponent',
 
   render: function() {
@@ -76,7 +76,7 @@ const BadUrlComponent = React.createClass(<any> {
 
 
 
-const UserPageComponent = React.createClass(<any> {
+const UserPageComponent = createReactClass(<any> {
   displayName: 'UserPageComponent',
   mixins: [debiki2.StoreListenerMixin],
 

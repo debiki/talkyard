@@ -23,12 +23,12 @@
    namespace debiki2.pagedialogs {
 //------------------------------------------------------------------------------
 
-let r = React.DOM;
-let Modal = rb.Modal;
-let ModalHeader = rb.ModalHeader;
-let ModalTitle = rb.ModalTitle;
-let ModalBody = rb.ModalBody;
-let ModalFooter = rb.ModalFooter;
+const r = ReactDOMFactories;
+const Modal = rb.Modal;
+const ModalHeader = rb.ModalHeader;
+const ModalTitle = rb.ModalTitle;
+const ModalBody = rb.ModalBody;
+const ModalFooter = rb.ModalFooter;
 
 
 let viewAsDialog;

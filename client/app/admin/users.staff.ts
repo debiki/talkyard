@@ -25,7 +25,7 @@ declare var moment: any;
    namespace debiki2.admin {
 //------------------------------------------------------------------------------
 
-const r = React.DOM;
+const r = ReactDOMFactories;
 const Nav = rb.Nav;
 
 
@@ -42,7 +42,7 @@ export const UsersTab = createFactory({
     return (
       r.div({},
         r.div({ className: 'dw-sub-nav' },
-          Nav({ bsStyle: 'pills' },
+          r.ul({ className: 'nav nav-pills' },
             LiNavLink({ to: bp + 'enabled' }, "Enabled"),
             LiNavLink({ to: bp + 'new' }, "Waiting"),
             LiNavLink({ to: bp + 'invited' }, "Invite"))),

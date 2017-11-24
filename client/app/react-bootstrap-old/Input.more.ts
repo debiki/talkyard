@@ -4,7 +4,7 @@
    namespace debiki2 {
 //------------------------------------------------------------------------------
 
-let r = React.DOM;
+const r = ReactDOMFactories;
 let FormGroup = rb.FormGroup;
 let ControlLabel = rb.ControlLabel;
 let FormControl = rb.FormControl;

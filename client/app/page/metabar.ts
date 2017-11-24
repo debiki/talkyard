@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014 Kaj Magnus Lindberg (born 1979)
+ * Copyright (C) 2014 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -26,13 +26,13 @@
    module debiki2.page {
 //------------------------------------------------------------------------------
 
-var d = { i: debiki.internal, u: debiki.v0.util };
-var r = React.DOM;
-var DropdownModal = utils.DropdownModal;
-var ExplainingListItem = util.ExplainingListItem;
+const d = { i: debiki.internal, u: debiki.v0.util };
+const r = ReactDOMFactories;
+const DropdownModal = utils.DropdownModal;
+const ExplainingListItem = util.ExplainingListItem;
 
 
-var notfsLevelDropdownModal;
+let notfsLevelDropdownModal;
 
 export function openNotfsLevelDropdown(openButton, subject: NotfSubject, currentLevel: NotfLevel) {
   if (!notfsLevelDropdownModal) {

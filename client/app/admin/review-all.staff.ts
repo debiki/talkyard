@@ -22,7 +22,7 @@
    namespace debiki2.admin {
 //------------------------------------------------------------------------------
 
-var r = React.DOM;
+const r = ReactDOMFactories;
 
 
 /** The review reasons are a 64 bit bitflag. See this Scala file for their meanings:
@@ -45,7 +45,7 @@ const ReviewReasons = {
 };
 
 
-export const ReviewAllPanelComponent = React.createClass(<any> {
+export const ReviewAllPanelComponent = createReactClass(<any> {
   displayName: 'ReviewAllPanelComponent',
 
   componentDidMount: function() {

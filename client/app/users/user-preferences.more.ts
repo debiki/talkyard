@@ -23,7 +23,7 @@
    namespace debiki2.users {
 //------------------------------------------------------------------------------
 
-const r = React.DOM;
+const r = ReactDOMFactories;
 
 
 export const UserPreferences = createFactory({

@@ -22,7 +22,7 @@
    namespace debiki2.search {
 //------------------------------------------------------------------------------
 
-const r = React.DOM;
+const r = ReactDOMFactories;
 const SearchRootPath = '/-/search';
 
 
@@ -77,7 +77,7 @@ export function urlEncodeSearchQuery(query: string): string {
 }
 
 
-var SearchPageComponent = React.createClass(<any> {
+var SearchPageComponent = createReactClass(<any> {
   displayName: 'SearchPageComponent',
 
   render: function() {
@@ -96,13 +96,9 @@ var SearchPageComponent = React.createClass(<any> {
 
 
 
-var SearchPageContentComponent = React.createClass(<any> {
+var SearchPageContentComponent = createReactClass(<any> {
   displayName: 'SearchPageContentComponent',
   mixins: [debiki2.StoreListenerMixin],
-
-  contextTypes: {
-    router: React.PropTypes.object.isRequired
-  },
 
   getInitialState: function() {
     return {

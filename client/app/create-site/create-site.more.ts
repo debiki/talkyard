@@ -23,7 +23,7 @@
    namespace debiki2.createsite {
 //------------------------------------------------------------------------------
 
-const r = React.DOM;
+const r = ReactDOMFactories;
 
 const PatternInput = utils.PatternInput;
 
@@ -37,7 +37,7 @@ export function routes() {
 
 
 
-const CreateSomethingComponent = React.createClass({
+const CreateSomethingComponent = createReactClass({
   displayName: 'CreateSomethingComponent',
 
   getInitialState: function() {
@@ -190,9 +190,7 @@ export function EmbeddingAddressInput(props) {
  * Then they can return to the default-domain address, if they mess up, and fix things.
  */
 const LocalHostnameInput = createClassAndFactory({
-  contextTypes: {
-    router: React.PropTypes.object.isRequired
-  },
+  displayName: 'LocalHostnameInput',
 
   getInitialState: function() {
     return { value: '' }

@@ -21,13 +21,13 @@
    namespace debiki2.users {
 //------------------------------------------------------------------------------
 
-let r = React.DOM;
-let Nav = rb.Nav;
-let NavItem = rb.NavItem;
-let Post = page.Post;
+const r = ReactDOMFactories;
+const Nav = rb.Nav;
+const NavItem = rb.NavItem;
+const Post = page.Post;
 
 
-export let UsersActivity = createFactory({
+export const UsersActivity = createFactory({
   displayName: 'UsersActivity',
 
   transitionTo: function(what) {
@@ -211,7 +211,7 @@ export let TopicsComponent = createFactory({
 
 
 
-export let LikesGivenComponent = React.createClass(<any> {
+export let LikesGivenComponent = createReactClass(<any> {
   render: function() {
     return (
       r.p({}, "Not yet implemented 4"));
@@ -220,7 +220,7 @@ export let LikesGivenComponent = React.createClass(<any> {
 
 
 
-export let LikesReceivedComponent = React.createClass(<any> {
+export let LikesReceivedComponent = createReactClass(<any> {
   render: function() {
     return (
       r.p({}, "Not yet implemented 5"));

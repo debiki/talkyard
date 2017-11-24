@@ -20,6 +20,7 @@
 
 declare const ReactDOMServer: any;
 declare const ReactRouterDOM: any;
+declare const ReactDOMFactories: any;
 declare const createReactClass: any;
 declare const parseQueryString: (s: string) => any;
 declare const stringifyQueryString: (s: any) => string;
@@ -39,7 +40,7 @@ declare function smoothScroll(elem: Element, x: number, y: number);
 declare function getSetCookie(cookieName: string, value?: string, options?: any): string;
 
 // backw compat, later, do once per file instead (don't want a global 'r').
-const r = React.DOM;
+const r = ReactDOMFactories;
 
 // Let this be a function, not a variable, so it can be used directly.
 // (Otherwise there's a server side reactCreateFactory-not-yet-inited error)

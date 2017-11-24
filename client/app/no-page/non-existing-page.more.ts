@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 Kaj Magnus Lindberg (born 1979)
+ * Copyright (c) 2015 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -19,10 +19,10 @@
 /// <reference path="../react-bootstrap-old/Input.more.ts" />
 
 //------------------------------------------------------------------------------
-   module debiki2.nopage {
+   namespace debiki2.nopage {
 //------------------------------------------------------------------------------
 
-var r = React.DOM;
+const r = ReactDOMFactories;
 
 
 /**

@@ -1,5 +1,5 @@
 /* Shows a minimap of the discussion; a rectangle marks current viewport.
- * Copyright (C) 2013 Kaj Magnus Lindberg (born 1979)
+ * Copyright (C) 2013 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -27,7 +27,7 @@
 //------------------------------------------------------------------------------
 
 var d = { i: debiki.internal, u: debiki.v0.util };
-var r = React.DOM;
+const r = ReactDOMFactories;
 var $window = $(window);
 var $document = $(document);
 

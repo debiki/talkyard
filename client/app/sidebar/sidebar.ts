@@ -32,9 +32,9 @@
    namespace debiki2.sidebar {
 //------------------------------------------------------------------------------
 
-var keymaster: Keymaster = window['keymaster'];
-var r = React.DOM;
-var ModalDropdownButton = utils.ModalDropdownButton;
+const keymaster: Keymaster = window['keymaster'];
+const r = ReactDOMFactories;
+const ModalDropdownButton = utils.ModalDropdownButton;
 
 // COULD UX RESPONSIVE: add some screen/window/widget width or size state to some React store somehow. [6KP024]
 // Use outerWidth, it won't force a layout reflow.

@@ -22,7 +22,7 @@
    namespace debiki2.superadmin {
 //------------------------------------------------------------------------------
 
-const r = React.DOM;
+const r = ReactDOMFactories;
 const SuperAdminRoot = '/-/superadmin/';
 
 
@@ -33,13 +33,9 @@ export function routes() {
 
 
 
-const AdminAppComponent = React.createClass(<any> {
+const AdminAppComponent = createReactClass(<any> {
   displayName: 'AdminAppComponent',
   mixins: [debiki2.StoreListenerMixin],
-
-  contextTypes: {
-    router: React.PropTypes.object.isRequired
-  },
 
   getInitialState: function() {
     return {

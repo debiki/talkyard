@@ -39,13 +39,12 @@
 
 const d = { i: debiki.internal };
 
-var React = window['React']; // TypeScript file doesn't work
-var r = React.DOM;
-var DropdownModal = utils.DropdownModal;
-var ExplainingListItem = util.ExplainingListItem;
+const r = ReactDOMFactories;
+const DropdownModal = utils.DropdownModal;
+const ExplainingListItem = util.ExplainingListItem;
 
-var moreVotesDropdownModal;
-var moreDialog;
+let moreVotesDropdownModal;
+let moreDialog;
 
 
 export function openMoreVotesDropdown(post: Post, votesButton) {

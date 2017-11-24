@@ -22,12 +22,11 @@
    namespace debiki2.admin {
 //------------------------------------------------------------------------------
 
-const r = React.DOM;
-const ReactBootstrap: any = window['ReactBootstrap'];
-const Modal = reactCreateFactory(ReactBootstrap.Modal);
-const ModalTitle = reactCreateFactory(ReactBootstrap.ModalTitle);
-const ModalBody = reactCreateFactory(ReactBootstrap.ModalBody);
-const ModalFooter = reactCreateFactory(ReactBootstrap.ModalFooter);
+const r = ReactDOMFactories;
+const Modal = rb.Modal;
+const ModalTitle = rb.ModalTitle;
+const ModalBody = rb.ModalBody;
+const ModalFooter = rb.ModalFooter;
 
 
 export const AdminUserPage = createFactory({

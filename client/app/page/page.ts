@@ -34,7 +34,7 @@
    namespace debiki2 {
 //------------------------------------------------------------------------------
 
-var r = React.DOM;
+const r = ReactDOMFactories;
 
 
 var PageWithState = createComponent({

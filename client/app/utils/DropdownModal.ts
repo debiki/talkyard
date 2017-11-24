@@ -26,8 +26,8 @@
    module debiki2.utils {
 //------------------------------------------------------------------------------
 
-var r = React.DOM;
-var keymaster: Keymaster = window['keymaster'];
+const r = ReactDOMFactories;
+const keymaster: Keymaster = window['keymaster'];
 declare var ReactBootstrap: any;  // lazy loaded
 declare var Modal;                // lazy loaded
 

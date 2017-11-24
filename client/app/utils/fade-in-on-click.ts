@@ -18,10 +18,10 @@
 /// <reference path="react-utils.ts" />
 
 //------------------------------------------------------------------------------
-   module debiki2.utils {
+   namespace debiki2.utils {
 //------------------------------------------------------------------------------
 
-var r = React.DOM;
+const r = ReactDOMFactories;
 
 
 /**

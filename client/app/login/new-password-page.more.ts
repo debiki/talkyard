@@ -23,7 +23,7 @@
    namespace debiki2.login {
 //------------------------------------------------------------------------------
 
-var r = React.DOM;
+const r = ReactDOMFactories;
 
 
 export function renderNewPasswordPage(secretKey: string) {

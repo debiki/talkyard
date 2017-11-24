@@ -18,10 +18,10 @@
 /// <reference path="../slim-bundle.d.ts" />
 
 //------------------------------------------------------------------------------
-   module debiki2.pagedialogs {
+   namespace debiki2.pagedialogs {
 //------------------------------------------------------------------------------
 
-const r = React.DOM;
+const r = ReactDOMFactories;
 const DropdownModal = utils.DropdownModal;
 const Modal = rb.Modal;
 const ModalHeader = rb.ModalHeader;

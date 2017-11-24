@@ -21,7 +21,7 @@
    namespace debiki2.util {
 //------------------------------------------------------------------------------
 
-var r = React.DOM;
+const r = ReactDOMFactories;
 
 export const UsernameInput = createClassAndFactory({
   displayName: 'UsernameInput',

@@ -26,16 +26,16 @@
 /// <reference path="../widgets.ts" />
 
 //------------------------------------------------------------------------------
-   module debiki2.editor {
+   namespace debiki2.editor {
 //------------------------------------------------------------------------------
 
-var r = React.DOM;
-var DropdownModal = utils.DropdownModal;
-var ExplainingListItem = util.ExplainingListItem;
+const r = ReactDOMFactories;
+const DropdownModal = utils.DropdownModal;
+const ExplainingListItem = util.ExplainingListItem;
 
 
 
-export var SelectCategoryDropdown = createClassAndFactory({
+export const SelectCategoryDropdown = createClassAndFactory({
   displayName: 'SelectCategoryDropdown',
 
   getInitialState: function() {

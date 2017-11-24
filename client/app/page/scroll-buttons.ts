@@ -24,9 +24,9 @@
    namespace debiki2.page {
 //------------------------------------------------------------------------------
 
-var keymaster: Keymaster = window['keymaster'];
-var r = React.DOM;
-var calcScrollIntoViewCoordsInPageColumn = debiki2.utils.calcScrollIntoViewCoordsInPageColumn;
+const keymaster: Keymaster = window['keymaster'];
+const r = ReactDOMFactories;
+const calcScrollIntoViewCoordsInPageColumn = debiki2.utils.calcScrollIntoViewCoordsInPageColumn;
 
 export var addVisitedPosts: (currentPostNr: number, nextPostNr: number) => void = _.noop;
 export var addVisitedPositionAndPost: (nextPostNr: number) => void = _.noop;

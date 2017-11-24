@@ -29,8 +29,6 @@
    namespace debiki2 {
 //------------------------------------------------------------------------------
 
-var r = React.DOM;
-
 
 export function page_isGroupTalk(pageRole: PageRole): boolean {
   return page_isPersonalTalk(pageRole) || page_isChatChannel(pageRole);

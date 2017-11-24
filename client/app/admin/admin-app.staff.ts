@@ -28,7 +28,7 @@
    namespace debiki2.admin {
 //------------------------------------------------------------------------------
 
-const r = React.DOM;
+const r = ReactDOMFactories;
 const Nav = rb.Nav;
 const NavItem = rb.NavItem;
 const Alert = rb.Alert;
@@ -47,7 +47,7 @@ export function routes() {
 
 
 
-export var NotYetImplementedComponent = React.createClass(<any> {
+export var NotYetImplementedComponent = createReactClass(<any> {
   displayName: 'NotYetImplementedComponent',
   render: function() {
     return (
@@ -57,14 +57,10 @@ export var NotYetImplementedComponent = React.createClass(<any> {
 
 
 
-var AdminAppComponent = React.createClass(<any> {
+var AdminAppComponent = createReactClass(<any> {
   displayName: 'AdminAppComponent',
   mixins: [debiki2.StoreListenerMixin],
   // mixins: [PageUnloadAlerter.AlertIfLeavingRouteMixin], SHOULD make Alert... work again
-
-  contextTypes: {  // TODO delete all these
-    router: React.PropTypes.object.isRequired
-  },
 
   getInitialState: function() {
     return {
@@ -184,7 +180,7 @@ var AdminAppComponent = React.createClass(<any> {
       r.div({ className: 'esAdminArea' },
         reactelements.TopBar({ customTitle: "Admin Area", showBackToSite: true, extraMargin: true }),
         r.div({ className: 'container' },
-        Nav({ bsStyle: 'pills', className: 'dw-main-nav' },
+        r.ul({ className: 'dw-main-nav nav nav-pills' },
           settings,
           LiNavLink({ to: ar + 'users' }, "Users"),
           customize,

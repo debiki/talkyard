@@ -20,13 +20,13 @@ declare var moment: any;
 /// <reference path="../slim-bundle.d.ts" />
 
 //------------------------------------------------------------------------------
-   module debiki2.notification {
+   namespace debiki2.notification {
 //------------------------------------------------------------------------------
 
-var r = React.DOM;
+const r = ReactDOMFactories;
 
 
-export var Notification = createComponent({
+export const Notification = createComponent({
   render: function() {
     var notf: Notification = this.props.notification;
     var byUser = notf.byUser;

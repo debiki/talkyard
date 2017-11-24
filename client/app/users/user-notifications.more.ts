@@ -22,7 +22,7 @@
    namespace debiki2.users {
 //------------------------------------------------------------------------------
 
-var r = React.DOM;
+const r = ReactDOMFactories;
 
 
 export const UserNotifications = createFactory({

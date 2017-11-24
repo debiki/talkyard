@@ -33,7 +33,7 @@
    namespace debiki2.forum {
 //------------------------------------------------------------------------------
 
-const r = React.DOM;
+const r = ReactDOMFactories;
 const DropdownModal = utils.DropdownModal;
 const ModalDropdownButton = utils.ModalDropdownButton;
 const ExplainingListItem = util.ExplainingListItem;
@@ -79,7 +79,7 @@ export const ForumScrollBehavior = {
 };
 
 
-const ForumComponent = React.createClass(<any> {
+const ForumComponent = createReactClass(<any> {
   displayName: 'ForumComponent',
   mixins: [debiki2.StoreListenerMixin],
 

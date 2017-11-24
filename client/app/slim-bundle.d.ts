@@ -4,6 +4,8 @@
 // In constants.ts:
 
 declare const ReactCSSTransitionGroup: any;
+declare const ReactDOMFactories: any;
+declare const createReactClass: any;
 declare function reactCreateFactory(x);
 declare function doNextFrameOrNow(x);
 declare function getSetCookie(cookieName: string, value?: string, options?: any): string;

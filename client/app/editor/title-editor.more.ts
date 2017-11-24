@@ -19,15 +19,15 @@
 /// <reference path="../react-bootstrap-old/Input.more.ts" />
 
 //------------------------------------------------------------------------------
-   module debiki2.titleeditor {
+   namespace debiki2.titleeditor {
 //------------------------------------------------------------------------------
 
-var r = React.DOM;
-var SelectCategoryDropdown = editor.SelectCategoryDropdown;
-var ModalDropdownButton = utils.ModalDropdownButton;
+const r = ReactDOMFactories;
+const SelectCategoryDropdown = editor.SelectCategoryDropdown;
+const ModalDropdownButton = utils.ModalDropdownButton;
 
 
-export var TitleEditor = createComponent({
+export const TitleEditor = createComponent({
   displayName: 'TitleEditor',
 
   getInitialState: function() {

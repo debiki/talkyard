@@ -24,7 +24,7 @@
 //------------------------------------------------------------------------------
 
 const d = { i: debiki.internal };
-const r = React.DOM;
+const r = ReactDOMFactories;
 let $;
 let FileAPI;
 

@@ -19,10 +19,10 @@
 /// <reference path="../react-bootstrap-old/Input.more.ts" />
 
 //------------------------------------------------------------------------------
-   module debiki2.login {
+   namespace debiki2.login {
 //------------------------------------------------------------------------------
 
-var r = React.DOM;
+const r = ReactDOMFactories;
 
 // zxcvbn's strongest level is 4, but that makes people confused: they are often
 // unable to come up with strong password.

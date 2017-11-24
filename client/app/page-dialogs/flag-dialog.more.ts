@@ -20,19 +20,18 @@
 /// <reference path="../util/stupid-dialog.more.ts" />
 
 //------------------------------------------------------------------------------
-   module debiki2.pagedialogs {
+   namespace debiki2.pagedialogs {
 //------------------------------------------------------------------------------
 
-var r = React.DOM;
-var ReactBootstrap: any = window['ReactBootstrap'];
-var Modal = reactCreateFactory(ReactBootstrap.Modal);
-var ModalHeader = reactCreateFactory(ReactBootstrap.ModalHeader);
-var ModalTitle = reactCreateFactory(ReactBootstrap.ModalTitle);
-var ModalBody = reactCreateFactory(ReactBootstrap.ModalBody);
-var ModalFooter = reactCreateFactory(ReactBootstrap.ModalFooter);
+const r = ReactDOMFactories;
+const Modal = rb.Modal;
+const ModalHeader = rb.ModalHeader;
+const ModalTitle = rb.ModalTitle;
+const ModalBody = rb.ModalBody;
+const ModalFooter = rb.ModalFooter;
 
 
-var flagDialog;
+let flagDialog;
 
 export function openFlagDialog(postId: PostId) {
   if (!flagDialog) {

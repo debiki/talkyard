@@ -26,7 +26,7 @@
    namespace debiki2.forum {
 //------------------------------------------------------------------------------
 
-const r = React.DOM;
+const r = ReactDOMFactories;
 const Modal = rb.Modal;
 const ModalBody = rb.ModalBody;
 const ModalFooter = rb.ModalFooter;

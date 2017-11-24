@@ -17,11 +17,11 @@
 
 
 //------------------------------------------------------------------------------
-   module debiki2.utils {
+   namespace debiki2.utils {
 //------------------------------------------------------------------------------
 
 var d = { i: debiki.internal, u: debiki.v0.util };
-var r = React.DOM;
+const r = ReactDOMFactories;
 
 
 export var WindowZoomResizeMixin = {

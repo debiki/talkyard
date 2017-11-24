@@ -21,18 +21,17 @@ declare var moment: any;
 /// <reference path="../page-dialogs/about-user-dialog.more.ts" />
 
 //------------------------------------------------------------------------------
-  module debiki2.edithistory {
+  namespace debiki2.edithistory {
 //------------------------------------------------------------------------------
 
-var r = React.DOM;
-var ReactBootstrap: any = window['ReactBootstrap'];
-var Modal = reactCreateFactory(ReactBootstrap.Modal);
-var ModalBody = reactCreateFactory(ReactBootstrap.ModalBody);
-var ModalFooter = reactCreateFactory(ReactBootstrap.ModalFooter);
-var ModalHeader = reactCreateFactory(ReactBootstrap.ModalHeader);
-var ModalTitle = reactCreateFactory(ReactBootstrap.ModalTitle);
+const r = ReactDOMFactories;
+const Modal = rb.Modal;
+const ModalBody = rb.ModalBody;
+const ModalFooter = rb.ModalFooter;
+const ModalHeader = rb.ModalHeader;
+const ModalTitle = rb.ModalTitle;
 
-var editHistoryDialog;
+let editHistoryDialog;
 
 
 export function getEditHistoryDialog() {
