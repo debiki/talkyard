@@ -83,8 +83,10 @@ describe('/-/create-site  @createsite', () => {
     pages.topbar.clickLogout();
   });
 
-  if (!settings.include3rdPartyDependentTests)
+  if (!settings.include3rdPartyDependentTests) {
+    console.log("Skipping this spec; no 3rd party login credentials specified.");
     return;
+  }
 
   it('can create a new site as a Gmail user, when not logged in to Gmail  @login @gmail @google', () => {
     makeForumWithGmailAdminAccount();

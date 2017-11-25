@@ -139,7 +139,7 @@ var SearchPageContentComponent = createReactClass(<any> {
     // Update the URL if the user typed a new search query:
     const urlQueryParams = parseQueryString(this.props.location.search);
     if (urlQueryParams.q !== query.rawQuery) {
-      this.context.router.history.push({
+      this.props.history.push({
         pathname: this.props.location.pathname,
         search: stringifyQueryString({ ...urlQueryParams,  q: query.rawQuery }),
       });
@@ -171,7 +171,7 @@ var SearchPageContentComponent = createReactClass(<any> {
       }
       queryStringObj.advanced = true;
     }
-    this.context.router.history.push({
+    this.props.history.push({
       pathname: this.props.location.pathname,
       search: stringifyQueryString(queryStringObj),
     });
