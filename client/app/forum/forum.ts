@@ -59,7 +59,7 @@ export function buildForumRoutes() {
   // Or  /top/bugs/past-day/ or /top/bugs?period=PastDay
 
   return Switch({},
-    // This redirect e.g. '/forum/' and '/forum' to '/forum/latest':
+    // This redirects e.g. '/forum/' and '/forum' to '/forum/latest':
     Redirect({ path: rootSlash, to: defaultPath, exact: true }),
     Route({ path: rootSlash, component: ForumComponent }));
 

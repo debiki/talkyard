@@ -54,14 +54,14 @@ const TagsAppComponent = createReactClass(<any> {
     const store: Store = this.state.store;
     return (
       r.div({ className: 'container esSA' },
-        Route({ path: TagsRoot + 'all', render: () => AllTagsPanelComponent({ store }) })));
+        Route({ path: TagsRoot + 'all', render: () => AllTagsPanel({ store }) })));
   }
 });
 
 
 
-const AllTagsPanelComponent = createFactory({
-  displayName:  'AllTagsPanelComponent',
+const AllTagsPanel = createFactory({
+  displayName:  'AllTagsPanel',
 
   componentWillMount: function() {
     Server.loadTagsAndStats();

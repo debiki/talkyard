@@ -28,7 +28,7 @@ const SuperAdminRoot = '/-/superadmin/';
 
 export function routes() {
   return r.div({},
-    Route({ path: '/', component: AdminAppComponent }));
+    Route({ path: SuperAdminRoot, component: AdminAppComponent }));
 }
 
 
@@ -57,13 +57,13 @@ const AdminAppComponent = createReactClass(<any> {
     const store: Store = this.state.store;
     return (
       r.div({ className: 'container esSA' },
-        Route({ path: SuperAdminRoot, render: () => DashboardPanelComponent({ store }) })));
+        Route({ path: SuperAdminRoot, render: () => DashboardPanel({ store }) })));
   }
 });
 
 
-const DashboardPanelComponent = createFactory({
-  displayName: 'DashboardPanelComponent',
+const DashboardPanel = createFactory({
+  displayName: 'DashboardPanel',
 
   render: function() {
     var store: Store = this.props.store;

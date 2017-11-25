@@ -60,6 +60,8 @@ export const UsersTab = createFactory({
 
 
 export const ActiveUsersPanel = createFactory({
+  displayName: 'ActiveUsersPanel',
+
   render: function() {
     return UserList({ whichUsers: 'ActiveUsers', intro: r.p({},
       "Enabled user accounts:") }); /* (This just means that the ", r.i({}, "account "),
@@ -70,6 +72,8 @@ export const ActiveUsersPanel = createFactory({
 
 
 export const NewUsersPanel = createFactory({
+  displayName: 'NewUsersPanel',
+
   render: function() {
     return UserList({ whichUsers: 'NewUsers', intro: r.p({},
         "Users who have signed up to join this site, and are waiting for you to approve them:") });
@@ -78,6 +82,8 @@ export const NewUsersPanel = createFactory({
 
 
 export const InvitedUsersPanel = createFactory({
+  displayName: 'InvitedUsersPanel',
+
   getInitialState: function() {
     return {
       invites: null
@@ -144,7 +150,9 @@ export const InvitedUsersPanel = createFactory({
 });
 
 
-var UserList = createComponent({
+const UserList = createFactory({
+  displayName: 'UserList',
+
   componentDidMount: function() {
     Server.listCompleteUsers(this.props.whichUsers, users => {
       this.setState({ users: users });
@@ -155,12 +163,12 @@ var UserList = createComponent({
     if (!this.state)
       return r.p({}, 'Loading...');
 
-    var now = new Date().getTime();
-    var userRows = this.state.users.map((user: MemberInclDetails) => {
+    const now = new Date().getTime();
+    const userRows = this.state.users.map((user: MemberInclDetails) => {
       return UserRow({ user: user, now: now, key: user.id, whichUsers: this.props.whichUsers });
     });
 
-    var actionHeader = this.props.whichUsers === 'NewUsers'
+    const actionHeader = this.props.whichUsers === 'NewUsers'
         ? r.th({}, 'Actions')
         : null;
 
@@ -182,7 +190,9 @@ var UserList = createComponent({
 });
 
 
-var UserRow = createComponent({
+const UserRow = createFactory({
+  displayName: 'UserRow',
+
   getInitialState: function() {
     return {};
   },
@@ -206,9 +216,9 @@ var UserRow = createComponent({
   },
 
   render: function() {
-    var user: MemberInclDetails = this.props.user;
+    const user: MemberInclDetails = this.props.user;
 
-    var actions;
+    let actions;
     if (this.props.whichUsers !== 'NewUsers') {
       // Don't show any actions.
     }
@@ -228,12 +238,12 @@ var UserRow = createComponent({
           Button({ onClick: this.rejectUser }, 'Reject'));
     }
 
-    var actionsCell = actions
+    const actionsCell = actions
         ? r.td({}, actions)
         : null;
 
-    var usernameElem = r.span({ className: 'dw-username' }, user.username);
-    var fullNameElem;
+    const usernameElem = r.span({ className: 'dw-username' }, user.username);
+    let fullNameElem;
     if (user.fullName) {
       fullNameElem = r.span({ className: 'dw-fullname' }, ' (' + user.fullName + ')');
     }

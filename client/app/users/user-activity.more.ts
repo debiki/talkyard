@@ -38,8 +38,8 @@ export const UsersActivity = createFactory({
     };
 
     const childRoute = Switch({},
-      Route({ path: '(.*)/posts', exact: true, render: () => PostsComponent(childProps) }),
-      Route({ path: '(.*)/topics', exact: true, render: () => TopicsComponent(childProps) }));
+      Route({ path: '(.*)/posts', exact: true, render: () => UsersPosts(childProps) }),
+      Route({ path: '(.*)/topics', exact: true, render: () => UsersTopics(childProps) }));
       // (.*)/mentions? Flarum includes mentions *of* the user, but wouldn't it make more sense
       // to include mentions *by* the user? Discourse shows: (but -received in the notfs tab)
       //Route({ path: 'likes-given', component: LikesGivenComponent }),
@@ -65,8 +65,8 @@ export const UsersActivity = createFactory({
 
 
 
-export let PostsComponent = createFactory({
-  displayName: 'PostsComponent',
+const UsersPosts = createFactory({
+  displayName: 'UsersPosts',
 
   getInitialState: function() {
     return { posts: null };
@@ -139,8 +139,8 @@ export let PostsComponent = createFactory({
 
 
 
-export let TopicsComponent = createFactory({
-  displayName: 'TopicsComponent',
+const UsersTopics = createFactory({
+  displayName: 'UsersTopics',
 
   getInitialState: function() {
     return { topics: null };

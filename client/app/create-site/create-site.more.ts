@@ -32,7 +32,9 @@ const PatternInput = utils.PatternInput;
 export function routes() {
   return Switch({},
     RedirToNoSlash({ path: '/-/create-site/' }),
-    Route({ path: '/-/create-site', strict: true, component: CreateSomethingComponent }));
+    RedirToNoSlash({ path: '/-/create-test-site/' }),
+    Route({ path: '/-/create-site', strict: true, component: CreateSomethingComponent }),
+    Route({ path: '/-/create-test-site', strict: true, component: CreateSomethingComponent }));
 }
 
 

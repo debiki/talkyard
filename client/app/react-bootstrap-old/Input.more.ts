@@ -5,15 +5,15 @@
 //------------------------------------------------------------------------------
 
 const r = ReactDOMFactories;
-let FormGroup = rb.FormGroup;
-let ControlLabel = rb.ControlLabel;
-let FormControl = rb.FormControl;
-let HelpBlock = rb.HelpBlock;
-let Checkbox = rb.Checkbox;
-let Radio = rb.Radio;
-let InputGroupAddon = rb.InputGroupAddon;
+const FormGroup = rb.FormGroup;
+const ControlLabel = rb.ControlLabel;
+const FormControl = rb.FormControl;
+const HelpBlock = rb.HelpBlock;
+const Checkbox = rb.Checkbox;
+const Radio = rb.Radio;
+const InputGroupAddon = rb.InputGroupAddon;
 
-export var Input = createComponent({
+export const Input = createComponent({
   displayName: 'Input',
 
   getValue: function() {
@@ -42,55 +42,45 @@ export var Input = createComponent({
   // @endif
 
   render: function() {
-    var props = this.props;
-    var childProps = _.clone(props);
-    childProps.ref = 'theInput';
+    const props = this.props;
+    const childProps: any = {
+      ref: 'theInput',
+      id: props.id,
+      name: props.name,
+      bsClass: props.bsClass,
+      disabled: props.disabled,
+      inputRef: props.inputRef,
+      onChange: props.onChange,
+    };
 
-    function makeCheckboxRadioProps() {
-      return {
-        ref: 'theInput',
-        id: props.id,
-        name: props.name,
-        bsClass: props.bsClass,
-        disabled: props.disabled,
-        inline: props.inline,
-        inputRef: props.inputRef,
-        title: props.title,
-        validationState: props.validationState,
-        checked: props.checked,
-        defaultChecked: props.defaultChecked,
-        onChange: props.onChange,
-      };
+    const isCheckbox = props.type === 'checkbox';
+    const isRadio = props.type === 'radio';
+
+    if (isCheckbox || isRadio) {
+      childProps.inline = props.inline;
+      childProps.title = props.title;
+      childProps.validationState = props.validationState;
+      childProps.checked = props.checked;
+      childProps.defaultChecked = props.defaultChecked;
+    }
+    else {
+      childProps.bsSize = props.bsSize;
+      childProps.componentClass =
+          props.type === 'select' || props.type === 'textarea' ? props.type : undefined;
+      childProps.type = props.type;
+      childProps.placeholder = props.placeholder;
+      childProps.value = props.value;
+      childProps.defaultValue = props.defaultValue;
     }
 
-    function makeFormControlProps() {
-      return {
-        ref: 'theInput',
-        id: props.id,
-        name: props.name,
-        bsClass: props.bsClass,
-        bsSize: props.bsSize,
-        disabled: props.disabled,
-        inputRef: props.inputRef,
-        componentClass: props.type === 'select' || props.type === 'textarea' ? props.type : undefined,
-        type: props.type,
-        placeholder: props.placeholder,
-        value: props.value,
-        defaultValue: props.defaultValue,
-        onChange: props.onChange,
-      };
-    }
-
-    let addonBefore = !props.addonBefore ? null : InputGroupAddon({}, props.addonBefore);
+    const addonBefore = !props.addonBefore ? null : InputGroupAddon({}, props.addonBefore);
 
     let result;
-    let isCheckbox = props.type === 'checkbox';
-    let isRadio = props.type === 'radio';
     if ((isCheckbox || isRadio) && !props.labelFirst) {
       result = (
         r.div({ className: 'form-group ' + (props.className || '') },
           r.div({ className: props.wrapperClassName },
-            (isRadio ? Radio : Checkbox).call(null, makeCheckboxRadioProps(), props.label),
+            (isRadio ? Radio : Checkbox).call(null, childProps, props.label),
             r.span({ className: 'help-block' },
               props.help))));
     }
@@ -107,10 +97,10 @@ export var Input = createComponent({
       if (isCheckbox || isRadio) {
         dieIf(!props.labelFirst, 'EdE2WR8L9');
         // The help will become the checkbox label, so if it's clicked, the checkbox gets selected.
-        theInput = (isRadio ? Radio : Checkbox).call(null, makeCheckboxRadioProps(), props.help);
+        theInput = (isRadio ? Radio : Checkbox).call(null, childProps, props.help);
       }
       else {
-        theInput = FormControl(makeFormControlProps(), props.children);
+        theInput = FormControl(childProps, props.children);
         anyHelp = props.help && HelpBlock({}, props.help);
       }
       result = (
