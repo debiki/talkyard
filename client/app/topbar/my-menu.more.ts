@@ -23,8 +23,8 @@
    namespace debiki2.topbar {
 //------------------------------------------------------------------------------
 
-var r = React.DOM;
-var DropdownModal = utils.DropdownModal;
+const r = ReactDOMFactories;
+const DropdownModal = utils.DropdownModal;
 
 
 var myMenuDropdownModal;

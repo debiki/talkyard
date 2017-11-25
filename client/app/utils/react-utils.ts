@@ -35,28 +35,14 @@ export function createComponent(componentDefinition): any { // oops should obvio
 }
 
 
-export function createClassAndFactory(componentDefinition) { // rename createComponent to this
+export function createClassAndFactory(componentDefinition) { // rename createComponent to this NO... CLEAN_UP
   return createComponent(componentDefinition);
 }
 
 
-export const NavLink = createComponent({
-  contextTypes: {
-    router: React.PropTypes.object
-  },
-
-  render: function () {
-    const isActive = this.context.router.isActive(this.props.to, true);
-    let className = isActive ? 'active ' : '';
-    if (this.props.listItemClassName) {
-      className += this.props.listItemClassName;
-    }
-
-    return (
-      r.li({ className: className },
-        Link(this.props, this.props.children)));
-  }
-});
+export function createFactory(componentDefinition) { // ... let's name it "createFactory" only
+  return createComponent(componentDefinition);
+}
 
 
 export function whenMsToIsoDate(whenMs: number): string {

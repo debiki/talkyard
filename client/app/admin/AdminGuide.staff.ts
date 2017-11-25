@@ -20,7 +20,7 @@
    namespace debiki2.admin {
 //------------------------------------------------------------------------------
 
-var r = React.DOM;
+const r = ReactDOMFactories;
 
 
 // The admin guide is placed in the sidebar [8YKFW32], because then it'll be accessible from

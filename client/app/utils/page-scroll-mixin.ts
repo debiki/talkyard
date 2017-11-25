@@ -18,11 +18,11 @@
 /// <reference path="../plain-old-javascript.d.ts" />
 
 //------------------------------------------------------------------------------
-   module debiki2.utils {
+   namespace debiki2.utils {
 //------------------------------------------------------------------------------
 
-var d = { i: debiki.internal, u: debiki.v0.util };
-var r = React.DOM;
+const d = { i: debiki.internal, u: debiki.v0.util };
+const r = ReactDOMFactories;
 
 
 export var PageScrollMixin = {

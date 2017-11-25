@@ -81,6 +81,7 @@ var slimJsFiles = [
       // Place React first so we can replace it at index 0,1,2,3 with the optimized min.js versions.
       'node_modules/react/dist/react.js',
       'node_modules/react-dom/dist/react-dom.js',
+      'node_modules/react-dom-factories/index.js',
       'node_modules/prop-types/prop-types.js',
       'node_modules/create-react-class/create-react-class.js',
       // COULD_OPTIMIZE SMALLER_BUNDLE or perhaps even remove? add pure CSS anims instead?
@@ -95,7 +96,8 @@ var slimJsFiles = [
       'client/third-party/rename-key-to-keymaster.js',
       'client/third-party/lodash-custom.js',
       'node_modules/eventemitter3/umd/eventemitter3.min.js',
-      'node_modules/react-router/umd/ReactRouter.js',
+      'node_modules/react-router-dom/umd/react-router-dom.js',
+      'client/third-party/tiny-querystring.umd.js',
       'client/third-party/gifffer/gifffer.js',
       'client/third-party/get-set-cookie.js',
       'target/client/app/actions/edit/edit.js',
@@ -224,9 +226,11 @@ function compileServerTypescript() {
         'client/third-party/html-css-sanitizer-bundle.js',
         'node_modules/react/dist/react.min.js',
         'node_modules/react-dom/dist/react-dom-server.min.js',
+        'node_modules/react-dom-factories/index.js',
         'node_modules/create-react-class/create-react-class.min.js',
         // Don't need React CSS transitions server side.
-        'node_modules/react-router/umd/ReactRouter.js',
+        'node_modules/react-router-dom/umd/react-router-dom.js',
+        'client/third-party/tiny-querystring.umd.js',
         'node_modules/markdown-it/dist/markdown-it.min.js',
         'client/third-party/lodash-custom.js',
         'client/third-party/non-angular-slugify.js',

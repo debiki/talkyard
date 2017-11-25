@@ -28,15 +28,9 @@
    namespace debiki2.admin {
 //------------------------------------------------------------------------------
 
-const r = React.DOM;
-const ReactBootstrap: any = window['ReactBootstrap'];
-const Nav = reactCreateFactory(ReactBootstrap.Nav);
-const NavItem = reactCreateFactory(ReactBootstrap.NavItem);
-const Alert = reactCreateFactory(ReactBootstrap.Alert);
+const r = ReactDOMFactories;
+const Alert = rb.Alert;
 
-const ReactRouter = window['ReactRouter'];
-const Route = reactCreateFactory(ReactRouter.Route);
-const Redirect = reactCreateFactory(ReactRouter.Redirect);
 const PageUnloadAlerter = utils.PageUnloadAlerter;
 
 
@@ -44,39 +38,14 @@ const AdminRoot = '/-/admin/';
 
 // Make the components async? So works also if more-bundle.js hasn't yet been loaded? [4WP7GU5]
 export function routes() {
-  return [
-    Redirect({ key: 'redir', from: AdminRoot, to: AdminRoot + 'settings' }), // later: --> /dashboard
-    Route({ key: 'routes', path: AdminRoot, component: AdminAppComponent },
-      Redirect({ from: 'users', to: AdminRoot + 'users/enabled' }),
-      Redirect({ from: 'review', to: AdminRoot + 'review/all' }),
-      Redirect({ from: 'settings', to: AdminRoot + 'settings/legal' }),
-      Redirect({ from: 'customize', to: AdminRoot + 'customize/basic' }),
-      Route({ path: 'settings', component: SettingsPanelComponent },
-        Route({ path: 'legal', component: LegalSettingsComponent }),
-        Route({ path: 'login', component: LoginAndSignupSettingsComponent }),
-        Route({ path: 'moderation', component: ModerationSettingsComponent }),
-        Route({ path: 'spam-flags', component: SpamFlagsSettingsComponent }),
-        Route({ path: 'embedded-comments', component: EmbeddedCommentsComponent }), // [8UP4QX0]
-        Route({ path: 'advanced', component: AdvancedSettingsComponent })),
-      Route({ path: 'users', component: UsersTabComponent },
-        Route({ path: 'enabled', component: ActiveUsersPanelComponent }),
-        Route({ path: 'new', component: NewUsersPanelComponent }),
-        Route({ path: 'invited', component: InvitedUsersPanelComponent }),
-        Route({ path: 'staff', component: NotYetImplementedComponent }),
-        Route({ path: 'suspended', component: NotYetImplementedComponent }),
-        Route({ path: 'threats', component: NotYetImplementedComponent }),
-        Route({ path: 'id/:userId', component: AdminUserPageComponent })),
-      Route({ path: 'customize', component: CustomizePanelComponent },
-        Route({ path: 'basic', component: CustomizeBasicPanelComponent }),
-        Route({ path: 'html', component: CustomizeHtmlPanelComponent }),
-        Route({ path: 'css-js', component: CustomizeCssJsPanelComponent })),
-      Route({ path: 'review', component: ReviewPanelComponent },
-        Route({ path: 'all', component: ReviewAllPanelComponent })))];
+  return Switch({},
+    Redirect({ from: AdminRoot, to: AdminRoot + 'settings', exact: true }),
+    Route({ path: AdminRoot, component: AdminAppComponent }));
 }
 
 
 
-var NotYetImplementedComponent = React.createClass(<any> {
+export var NotYetImplementedComponent = createReactClass(<any> {
   displayName: 'NotYetImplementedComponent',
   render: function() {
     return (
@@ -86,18 +55,14 @@ var NotYetImplementedComponent = React.createClass(<any> {
 
 
 
-var AdminAppComponent = React.createClass(<any> {
+var AdminAppComponent = createReactClass(<any> {
+  displayName: 'AdminAppComponent',
   mixins: [debiki2.StoreListenerMixin],
   // mixins: [PageUnloadAlerter.AlertIfLeavingRouteMixin], SHOULD make Alert... work again
-
-  contextTypes: {
-    router: React.PropTypes.object.isRequired
-  },
 
   getInitialState: function() {
     return {
       store: debiki2.ReactStore.allData(),
-      activeRoute: this.props.routes[1].path,  // try to remove?
       defaultSettings: null,
       currentSettings: null,
       editedSettings: null,
@@ -108,11 +73,6 @@ var AdminAppComponent = React.createClass(<any> {
     this.setState({
       store: debiki2.ReactStore.allData(),
     });
-  },
-
-  selectNewTab: function(newRoute) {
-    this.setState({ activeRoute: newRoute });
-    this.context.router.push(AdminRoot + newRoute);
   },
 
   loadAllSettingsIfNeeded: function() {
@@ -177,11 +137,13 @@ var AdminAppComponent = React.createClass(<any> {
     if (!me)
       return r.p({}, 'Not logged in');
 
+    const ar = AdminRoot;
+
     var settings = me.isAdmin ?
-        NavItem({ eventKey: 'settings' }, 'Settings') : null;
+        LiNavLink({ to: ar + 'settings' }, "Settings") : null;
 
     var customize = me.isAdmin ?
-        NavItem({ eventKey: 'customize' }, 'Look and feel') : null;
+        LiNavLink({ to: ar + 'customize' }, "Look and feel") : null;
 
     var saveBar = _.isEmpty(this.state.editedSettings) ? null :
       r.div({ className: 'esA_SaveBar' },
@@ -191,60 +153,83 @@ var AdminAppComponent = React.createClass(<any> {
           Button({ onClick: this.undoSettings,
             className: 'esA_SaveBar_UndoAllB' }, "Undo all changes" )));
 
+    const childProps = {
+      store: store,
+      loadAllSettingsIfNeeded: this.loadAllSettingsIfNeeded,
+      defaultSettings: this.state.defaultSettings,
+      currentSettings: this.state.currentSettings,
+      editedSettings: this.state.editedSettings,
+      hosts: this.state.hosts,
+      removeUnchangedSettings: this.removeUnchangedSettings,
+      setEditedSettings: this.setEditedSettings,
+    };
+
+    const childRoutes = Switch({},
+        RedirAppend({ path: ar + 'users', append: '/enabled' }),
+        RedirAppend({ path: ar + 'review', append: '/all' }),
+        RedirAppend({ path: ar + 'settings', append: '/legal' }),
+        RedirAppend({ path: ar + 'customize', append: '/basic' }),
+        Route({ path: ar + 'settings', render: () => SettingsPanel(childProps) }),
+        Route({ path: ar + 'users', render: () => UsersTab(childProps) }),
+        Route({ path: ar + 'customize', render: () => CustomizePanel(childProps) }),
+        Route({ path: ar + 'review', render: () => ReviewPanel(childProps) }));
+
     return (
       r.div({ className: 'esAdminArea' },
         reactelements.TopBar({ customTitle: "Admin Area", showBackToSite: true, extraMargin: true }),
         r.div({ className: 'container' },
-        Nav({ bsStyle: 'pills', activeKey: this.state.activeRoute, onSelect: this.selectNewTab,
-            className: 'dw-main-nav' },
+        r.ul({ className: 'dw-main-nav nav nav-pills' },
           settings,
-          NavItem({ eventKey: 'users' }, 'Users'),
+          LiNavLink({ to: ar + 'users' }, "Users"),
           customize,
-          NavItem({ eventKey: 'review' }, 'Review')),
-        React.cloneElement(this.props.children, {
-          store: store,
-          loadAllSettingsIfNeeded: this.loadAllSettingsIfNeeded,
-          defaultSettings: this.state.defaultSettings,
-          currentSettings: this.state.currentSettings,
-          editedSettings: this.state.editedSettings,
-          hosts: this.state.hosts,
-          removeUnchangedSettings: this.removeUnchangedSettings,
-          setEditedSettings: this.setEditedSettings,
-        }),
-
+          LiNavLink({ to: ar + 'review' }, "Review")),
+        childRoutes,
         saveBar)));
   }
 });
 
 
 
-var SettingsPanelComponent = React.createClass(<any> {
+const SettingsPanel = createFactory({
+  displayName: 'SettingsPanel',
+
   componentDidMount: function() {
     this.props.loadAllSettingsIfNeeded();
   },
 
   render: function() {
-    var props = this.props;
+    const props = this.props;
     if (!props.currentSettings)
       return r.p({}, 'Loading...');
+
+    const sr = AdminRoot + 'settings/';
+    const ps = this.props;
 
     return (
       r.div({ className: 'esA_Ss' },
         r.ul({ className: 'esAdmin_settings_nav col-sm-2 nav nav-pills nav-stacked' },
-          NavLink({ to: AdminRoot + 'settings/legal', id: 'e2eAA_Ss_LegalL' }, "Legal"),
-          NavLink({ to: AdminRoot + 'settings/login', id: 'e2eAA_Ss_LoginL' }, "Signup and Login"),
-          NavLink({ to: AdminRoot + 'settings/moderation', id: 'e2eAA_Ss_ModL'  }, "Moderation"),
-          NavLink({ to: AdminRoot + 'settings/spam-flags', id: 'e2eAA_Ss_SpamFlagsL'  }, "Spam & flags"),
-          NavLink({ to: AdminRoot + 'settings/embedded-comments', id: 'e2eAA_Ss_EmbCmtsL' }, "Embedded Comments"),
-          NavLink({ to: AdminRoot + 'settings/advanced', id: 'e2eAA_Ss_AdvancedL' }, "Advanced")),
+          LiNavLink({ to: sr + 'legal', id: 'e2eAA_Ss_LegalL' }, "Legal"),
+          LiNavLink({ to: sr + 'login', id: 'e2eAA_Ss_LoginL' }, "Signup and Login"),
+          LiNavLink({ to: sr + 'moderation', id: 'e2eAA_Ss_ModL'  }, "Moderation"),
+          LiNavLink({ to: sr + 'spam-flags', id: 'e2eAA_Ss_SpamFlagsL'  }, "Spam & flags"),
+          LiNavLink({ to: sr + 'embedded-comments', id: 'e2eAA_Ss_EmbCmtsL' }, "Embedded Comments"),
+          LiNavLink({ to: sr + 'advanced', id: 'e2eAA_Ss_AdvancedL' }, "Advanced")),
         r.div({ className: 'form-horizontal esAdmin_settings col-sm-10' },
-          React.cloneElement(this.props.children, this.props))));
+          Switch({},
+            Route({ path: sr + 'legal', render: () => LegalSettings(ps) }),
+            Route({ path: sr + 'login', render: () => LoginAndSignupSettings(ps) }),
+            Route({ path: sr + 'moderation', render: () => ModerationSettings(ps) }),
+            Route({ path: sr + 'spam-flags', render: () => SpamFlagsSettings(ps) }),
+            Route({ path: sr + 'embedded-comments', render: () => EmbeddedCommentsSettings(ps) }), // [8UP4QX0]
+            Route({ path: sr + 'advanced', render: () => AdvancedSettings(ps) })))));
   }
 });
 
 
 
-const LoginAndSignupSettingsComponent = React.createClass(<any> {
+const LoginAndSignupSettings = createFactory({
+  displayName: 'LoginAndSignupSettings',
+
   render: function() {
     const props = this.props;
     const currentSettings: Settings = props.currentSettings;
@@ -397,7 +382,9 @@ const LoginAndSignupSettingsComponent = React.createClass(<any> {
 
 
 
-var ModerationSettingsComponent = React.createClass(<any> {
+const ModerationSettings = createFactory({
+  displayName: 'ModerationSettings',
+
   render: function() {
     var props = this.props;
     var currentSettings: Settings = props.currentSettings;
@@ -469,7 +456,9 @@ var ModerationSettingsComponent = React.createClass(<any> {
 
 
 
-var SpamFlagsSettingsComponent = React.createClass(<any> {
+const SpamFlagsSettings = createFactory({
+  displayName: 'SpamFlagsSettings',
+
   render: function() {
     var props = this.props;
     var currentSettings: Settings = props.currentSettings;
@@ -590,7 +579,9 @@ var SpamFlagsSettingsComponent = React.createClass(<any> {
 
 
 
-const EmbeddedCommentsComponent = React.createClass(<any> {
+const EmbeddedCommentsSettings = createFactory({
+  displayName: 'EmbeddedCommentsSettings',
+
   render: function() {
     const props = this.props;
     const settings: Settings = props.currentSettings;
@@ -641,7 +632,9 @@ const EmbeddedCommentsComponent = React.createClass(<any> {
 
 
 
-var AdvancedSettingsComponent = React.createClass(<any> {
+const AdvancedSettings = createFactory({
+  displayName: 'AdvancedSettings',
+
   redirectExtraHostnames: function() {
     Server.redirectExtraHostnames(() => {
       util.openDefaultStupidDialog({
@@ -740,7 +733,9 @@ var AdvancedSettingsComponent = React.createClass(<any> {
 
 
 
-var LegalSettingsComponent = React.createClass(<any> {
+const LegalSettings = createFactory({
+  displayName: 'LegalSettings',
+
   render: function() {
     var props = this.props;
     var currentSettings: Settings = props.currentSettings;
@@ -836,7 +831,9 @@ var LegalSettingsComponent = React.createClass(<any> {
 
 
 
-let CustomizePanelComponent = React.createClass(<any> {
+const CustomizePanel = createFactory({
+  displayName: 'CustomizePanel',
+
   componentDidMount: function() {
     this.props.loadAllSettingsIfNeeded();
   },
@@ -846,20 +843,28 @@ let CustomizePanelComponent = React.createClass(<any> {
     if (!props.currentSettings)
       return r.p({}, "Loading...");
 
+    const childProps = this.props;
+    const bp = AdminRoot + 'customize/'; // base path
     return (
       r.div({ className: 'esA_Ss s_A_Ss-LaF' },
         r.ul({ className: 'esAdmin_settings_nav col-sm-2 nav nav-pills nav-stacked' },
-          NavLink({ to: AdminRoot + 'customize/basic', id: 'e_A_Ss-LaF_Basic' }, "Basic"),
-          NavLink({ to: AdminRoot + 'customize/html', id: 'e_A_Ss-LaF_Html' }, "HTML"),
-          NavLink({ to: AdminRoot + 'customize/css-js', id: 'e_A_Ss-LaF_CssJs' }, "CSS and JS")),
+          LiNavLink({ to: bp + 'basic', id: 'e_A_Ss-LaF_Basic' }, "Basic"),
+          LiNavLink({ to: bp + 'html', id: 'e_A_Ss-LaF_Html' }, "HTML"),
+          LiNavLink({ to: bp + 'css-js', id: 'e_A_Ss-LaF_CssJs' }, "CSS and JS")),
         r.div({ className: 'form-horizontal esAdmin_settings col-sm-10' },
-          React.cloneElement(this.props.children, this.props))));
+          Switch({},
+            Route({ path: bp + 'basic', render: () => CustomizeBasicPanel(childProps) }),
+            Route({ path: bp + 'html', render: () => CustomizeHtmlPanel(childProps) }),
+            Route({ path: bp + 'css-js', render: () => CustomizeCssJsPanel(childProps) })),
+            )));
   }
 });
 
 
 
-let CustomizeBasicPanelComponent = React.createClass(<any> {
+const CustomizeBasicPanel = createFactory({
+  displayName: 'CustomizeBasicPanel',
+
   render: function() {
     let props = this.props;
     return (
@@ -921,7 +926,9 @@ let CustomizeBasicPanelComponent = React.createClass(<any> {
 
 
 
-const CustomizeHtmlPanelComponent = React.createClass(<any> {
+const CustomizeHtmlPanel = createFactory({
+  displayName: 'CustomizeHtmlPanel',
+
   render: function() {
     const props = this.props;
     return (
@@ -1002,7 +1009,9 @@ const CustomizeHtmlPanelComponent = React.createClass(<any> {
 
 
 
-const CustomizeCssJsPanelComponent = React.createClass(<any> {
+const CustomizeCssJsPanel = createFactory({
+  displayName: 'CustomizeCssJsPanel',
+
   render: function() {
     return (
       r.div({ className: 'form-horizontal esAdmin_customize' },

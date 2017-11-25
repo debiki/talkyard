@@ -24,16 +24,16 @@
    namespace debiki2.pagedialogs {
 //------------------------------------------------------------------------------
 
-var r = React.DOM;
-var Modal = rb.Modal;
-var ModalHeader = rb.ModalHeader;
-var ModalTitle = rb.ModalTitle;
-var ModalBody = rb.ModalBody;
-var ModalFooter = rb.ModalFooter;
-var PatternInput = utils.PatternInput;
+const r = ReactDOMFactories;
+const Modal = rb.Modal;
+const ModalHeader = rb.ModalHeader;
+const ModalTitle = rb.ModalTitle;
+const ModalBody = rb.ModalBody;
+const ModalFooter = rb.ModalFooter;
+const PatternInput = utils.PatternInput;
 
 
-var tagsDialog;
+let tagsDialog;
 
 
 export function openTagsDialog(store: Store, post: Post) {

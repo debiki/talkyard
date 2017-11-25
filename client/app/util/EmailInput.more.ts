@@ -18,10 +18,10 @@
 /// <reference path="../utils/PatternInput.more.ts" />
 
 //------------------------------------------------------------------------------
-   module debiki2.util {
+   namespace debiki2.util {
 //------------------------------------------------------------------------------
 
-var r = React.DOM;
+const r = ReactDOMFactories;
 
 
 export var EmailInput = createClassAndFactory({

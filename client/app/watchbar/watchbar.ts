@@ -26,14 +26,14 @@
 /// <reference path="../editor-bundle-not-yet-loaded.ts" />
 
 //------------------------------------------------------------------------------
-   module debiki2.watchbar {
+   namespace debiki2.watchbar {
 //------------------------------------------------------------------------------
 
-var keymaster: Keymaster = window['keymaster'];
-var r = React.DOM;
-var ModalDropdownButton = utils.ModalDropdownButton;
+const keymaster: Keymaster = window['keymaster'];
+const r = ReactDOMFactories;
+const ModalDropdownButton = utils.ModalDropdownButton;
 
-var watchbar;
+let watchbar;
 
 export function createWatchbar() {
   var elem = document.getElementById('esWatchbarColumn');

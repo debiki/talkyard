@@ -22,8 +22,8 @@
    namespace debiki2.admin {
 //------------------------------------------------------------------------------
 
-var r = React.DOM;
-var PageUnloadAlerter = utils.PageUnloadAlerter;
+const r = ReactDOMFactories;
+const PageUnloadAlerter = utils.PageUnloadAlerter;
 
 
 export var SpecialContent = createComponent({

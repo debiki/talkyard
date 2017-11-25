@@ -25,34 +25,41 @@ declare var moment: any;
    namespace debiki2.admin {
 //------------------------------------------------------------------------------
 
-var r = React.DOM;
-var ReactBootstrap: any = window['ReactBootstrap'];
-var Nav = reactCreateFactory(ReactBootstrap.Nav);
-var NavItem = reactCreateFactory(ReactBootstrap.NavItem);
+const r = ReactDOMFactories;
 
 
-export var UsersTabComponent = React.createClass(<any> {
+export const UsersTab = createFactory({
+  displayName: 'UsersTab',
+
   getInitialState: function() {
     return {};
   },
 
   render: function() {
+    const childProps = { store: this.props.store };
+    const bp = '/-/admin/users/';  // users base path
     return (
       r.div({},
         r.div({ className: 'dw-sub-nav' },
-          Nav({ bsStyle: 'pills' },
-            r.li({}, Link({ to: '/-/admin/users/enabled', activeClassName: 'active' }, "Enabled")),
-            r.li({}, Link({ to: '/-/admin/users/new', activeClassName: 'active' }, "Waiting")),
-            r.li({}, Link({ to: '/-/admin/users/invited', activeClassName: 'active' }, "Invite")))),
-            // with react-router-bootstrap, sth like:
-            //   NavItem({ eventKey: 'users-new' }, 'New Waiting'))),   ?
+          r.ul({ className: 'nav nav-pills' },
+            LiNavLink({ to: bp + 'enabled' }, "Enabled"),
+            LiNavLink({ to: bp + 'new' }, "Waiting"),
+            LiNavLink({ to: bp + 'invited' }, "Invite"))),
         r.div({ className: 'dw-admin-panel' },
-          React.cloneElement(this.props.children, { store: this.props.store }))));
+          Switch({},
+            Route({ path: bp + 'enabled', render: () => ActiveUsersPanel(childProps) }),
+            Route({ path: bp + 'new', render: () => NewUsersPanel(childProps) }),
+            Route({ path: bp + 'invited', render: () => InvitedUsersPanel(childProps) }),
+            Route({ path: bp + 'staff', component: NotYetImplementedComponent }),
+            Route({ path: bp + 'suspended', component: NotYetImplementedComponent }),
+            Route({ path: bp + 'threats', component: NotYetImplementedComponent }),
+            Route({ path: bp + 'id/:userId', render: (ps) => AdminUserPage({ ...childProps, ...ps }) })
+            ))));
   }
 });
 
 
-export var ActiveUsersPanelComponent = React.createClass({
+export const ActiveUsersPanel = createFactory({
   render: function() {
     return UserList({ whichUsers: 'ActiveUsers', intro: r.p({},
       "Enabled user accounts:") }); /* (This just means that the ", r.i({}, "account "),
@@ -62,7 +69,7 @@ export var ActiveUsersPanelComponent = React.createClass({
 });
 
 
-export var NewUsersPanelComponent = React.createClass({
+export const NewUsersPanel = createFactory({
   render: function() {
     return UserList({ whichUsers: 'NewUsers', intro: r.p({},
         "Users who have signed up to join this site, and are waiting for you to approve them:") });
@@ -70,7 +77,7 @@ export var NewUsersPanelComponent = React.createClass({
 });
 
 
-export var InvitedUsersPanelComponent = React.createClass({
+export const InvitedUsersPanel = createFactory({
   getInitialState: function() {
     return {
       invites: null

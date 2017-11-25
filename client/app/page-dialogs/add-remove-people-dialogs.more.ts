@@ -24,14 +24,14 @@
    namespace debiki2.pagedialogs {
 //------------------------------------------------------------------------------
 
-var r = React.DOM;
-var Modal = rb.Modal;
-var ModalHeader = rb.ModalHeader;
-var ModalTitle = rb.ModalTitle;
-var ModalBody = rb.ModalBody;
-var ModalFooter = rb.ModalFooter;
+const r = ReactDOMFactories;
+const Modal = rb.Modal;
+const ModalHeader = rb.ModalHeader;
+const ModalTitle = rb.ModalTitle;
+const ModalBody = rb.ModalBody;
+const ModalFooter = rb.ModalFooter;
 
-var addPeopleDialog;
+let addPeopleDialog;
 
 
 export function openAddPeopleDialog() {

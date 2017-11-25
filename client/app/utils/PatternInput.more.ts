@@ -18,10 +18,10 @@
 /// <reference path="../react-bootstrap-old/Input.more.ts" />
 
 //------------------------------------------------------------------------------
-   module debiki2.utils {
+   namespace debiki2.utils {
 //------------------------------------------------------------------------------
 
-var r = React.DOM;
+const r = ReactDOMFactories;
 
 
 export var PatternInput = createClassAndFactory({

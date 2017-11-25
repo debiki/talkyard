@@ -27,16 +27,16 @@
 /// <reference path="../editor-bundle-not-yet-loaded.ts" />
 
 //------------------------------------------------------------------------------
-   module debiki2.page {
+   namespace debiki2.page {
 //------------------------------------------------------------------------------
 
-var r = React.DOM;
+const r = ReactDOMFactories;
 
-var EditorBecomeFixedDist = 5;
-var DefaultEditorRows = 2;
+const EditorBecomeFixedDist = 5;
+const DefaultEditorRows = 2;
 
 
-export var ChatMessages = createComponent({
+export const ChatMessages = createComponent({
   componentDidUpdate: function() {
     // We should call onScroll() if a new message gets inserted below the current scroll pos.
     // Simply call it always, instead.

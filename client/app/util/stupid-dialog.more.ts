@@ -19,13 +19,12 @@
 /// <reference path="../slim-bundle.d.ts" />
 
 //------------------------------------------------------------------------------
-   module debiki2.util {
+   namespace debiki2.util {
 //------------------------------------------------------------------------------
 
-var r = React.DOM;
-var ReactBootstrap: any = window['ReactBootstrap'];
-var Modal = reactCreateFactory(ReactBootstrap.Modal);
-var ModalBody = reactCreateFactory(ReactBootstrap.ModalBody);
+const r = ReactDOMFactories;
+var Modal = rb.Modal;
+var ModalBody = rb.ModalBody;
 
 
 export interface StupidDialogStuff {

@@ -34,7 +34,7 @@
    namespace debiki2 {
 //------------------------------------------------------------------------------
 
-var r = React.DOM;
+const r = ReactDOMFactories;
 
 
 var PageWithState = createComponent({
@@ -104,17 +104,17 @@ var Page = createComponent({
 
 
 export function renderTitleBodyComments() {
-  var root = document.getElementById('dwPosts');
+  const root = document.getElementById('dwPosts');
   if (!root)
     return;
 
   debiki2.avatar.resetAvatars();
 
-  var store: Store = debiki2.ReactStore.allData();
+  const store: Store = debiki2.ReactStore.allData();
   if (store.pageRole === PageRole.Forum) {
     // scrollBehavior: debiki2.forum.ForumScrollBehavior,
     ReactDOM.render(
-        Router({ history: ReactRouter.browserHistory }, debiki2.forum.buildForumRoutes()), root);
+        Router({}, debiki2.forum.buildForumRoutes()), root);
   }
   else {
     ReactDOM.render(PageWithState(), root);
@@ -126,17 +126,17 @@ export function renderTitleBodyCommentsToString() {
   debiki2.avatar.resetAvatars();
 
   // Comment in the next line to skip React server side and debug in browser only.
-  //return '<p class="dw-page" data-reactid=".123" data-react-checksum="123">react_skipped</p>'
+  //return '<p class="dw-page" data-reactid=".123" data-react-checksum="123">react_skipped [BRWSRDBG]</p>'
 
-  var store: Store = debiki2.ReactStore.allData();
+  const store: Store = debiki2.ReactStore.allData();
   if (store.pageRole === PageRole.Forum) {
-    var routes = debiki2.forum.buildForumRoutes();
+    const routes = debiki2.forum.buildForumRoutes();
     // In the future, when using the HTML5 history API to update the URL when navigating
     // inside the forum, we can use `store.pagePath` below. But for now:
-    var store: Store = debiki2.ReactStore.allData();
-    var path = store.pagePath.value + 'latest';
+    const store: Store = debiki2.ReactStore.allData();
+    const path = store.pagePath.value + 'latest';
     return ReactDOMServer.renderToString(
-        Router({ history: ReactRouter.createMemoryHistory(path) }, routes));
+        Router({ location: path }, routes));
   }
   else {
     return ReactDOMServer.renderToString(Page(store));

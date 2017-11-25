@@ -21,7 +21,7 @@
    namespace debiki2 {
 //------------------------------------------------------------------------------
 
-const r = React.DOM;
+const r = ReactDOMFactories;
 const DropdownModal = utils.DropdownModal;
 const ExplainingListItem = util.ExplainingListItem;
 

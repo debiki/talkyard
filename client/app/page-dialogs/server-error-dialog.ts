@@ -20,7 +20,7 @@
    namespace debiki2.pagedialogs {
 //------------------------------------------------------------------------------
 
-const r = React.DOM;
+const r = ReactDOMFactories;
 
 let serverErrorDialog;
 

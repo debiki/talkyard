@@ -127,9 +127,7 @@ function pagesFor(browser) {
 
 
     _waitAndClickImpl: function(selector, mustBeExactlyOne) {
-      browser.waitForVisible(selector);
-      browser.waitForEnabled(selector);
-      browser.waitUntilLoadingOverlayGone();
+      api._waitForClickable(selector);
       if (!selector.startsWith('#') && mustBeExactlyOne) {
         var errors = '';
         var length = 1;
@@ -146,6 +144,13 @@ function pagesFor(browser) {
         assert.equal(length, 1, errors);
       }
       browser.click(selector);
+    },
+
+
+    _waitForClickable: function(selector) {
+      browser.waitForVisible(selector);
+      browser.waitForEnabled(selector);
+      browser.waitUntilLoadingOverlayGone();
     },
 
 
@@ -1339,7 +1344,8 @@ function pagesFor(browser) {
       },
 
       clickAddBottomComment: function() {
-        browser.waitAndClick(api.topic.addBottomCommentSelector);
+        browser._waitForClickable(api.topic.addBottomCommentSelector);
+        browser.topic.clickPostActionButton(api.topic.addBottomCommentSelector);
       },
 
       canEditSomething: function(): boolean {
@@ -2155,29 +2161,51 @@ function pagesFor(browser) {
   function setCheckbox(selector: string, checked: boolean) {
     // Sometimes, clicking this checkbox has no effect. Perhaps a sidebar appeared, which
     // caused the checkbox to move? so the click missed? Therefore, try many times.
+    // Update, 2017-11: Look here, the click works, but the button changes state back again,
+    // half a second after it was clicked (!):
+    // (I don't see how this could be related to any slow http request... We haven't clicked
+    // Save yet, no request sent.)
+    //   #sendSummaryEmails is visible, should be checked: true
+    //   #sendSummaryEmails is checked: false
+    //   #sendSummaryEmails **click**
+    //   #sendSummaryEmails is checked: true    <— the click worked, state changed
+    //   #sendSummaryEmails is checked: true
+    //   #sendSummaryEmails is checked: false   <— amazing, it does that by itself?
+    //   #sendSummaryEmails is checked: false     (all this was running in an *invisible*
+    //   #sendSummaryEmails is checked: false      browser, no real mouse interactions possible)
+    // So need to loop, ... until it stops undoing the click? Really weird.
+    //
     browser.waitForVisible(selector);
-    console.log(selector + ' is visible, should be checked: ' + checked);
-    for (let i = 0; i < 99; ++i) {
+    let bugRetry = 0;
+    const maxBugRetry = 2;
+    for (; bugRetry <= maxBugRetry; ++bugRetry) {
+      console.log(selector + ' is visible, should be checked: ' + checked);
+      for (let i = 0; i < 99; ++i) {
+        let isChecked = browser.isSelected(selector);
+        console.log(selector + ' is checked: ' + isChecked);
+        if (isChecked === checked)
+          break;
+        api.waitAndClick(selector);
+        console.log(selector + ' **click**');
+      }
+      // Somehow once this function exited with isChecked !== isRequired. Race condition?
+      // Let's find out:
       let isChecked = browser.isSelected(selector);
+      console.log(selector + ' is checked: ' + isChecked);
+      browser.pause(200);
+      isChecked = browser.isSelected(selector);
+      console.log(selector + ' is checked: ' + isChecked);
+      browser.pause(300);
+      isChecked = browser.isSelected(selector);
+      console.log(selector + ' is checked: ' + isChecked);
+      browser.pause(500);
+      isChecked = browser.isSelected(selector);
       console.log(selector + ' is checked: ' + isChecked);
       if (isChecked === checked)
         break;
-      api.waitAndClick(selector);
-      console.log(selector + ' **click**');
+      console.log("Checkbox refuses to change state. Clicking it again.");
     }
-    // Somehow once this function exited with isChecked !== isRequired. Race condition?
-    // Let's find out:
-    let isChecked = browser.isSelected(selector);
-    console.log(selector + ' is checked: ' + isChecked);
-    browser.pause(100);
-    isChecked = browser.isSelected(selector);
-    console.log(selector + ' is checked: ' + isChecked);
-    browser.pause(200);
-    isChecked = browser.isSelected(selector);
-    console.log(selector + ' is checked: ' + isChecked);
-    browser.pause(500);
-    isChecked = browser.isSelected(selector);
-    console.log(selector + ' is checked: ' + isChecked);
+    assert(bugRetry <= maxBugRetry, "Couldn't set checkbox to checked = " + checked);
   }
 
   // backw compat, for now

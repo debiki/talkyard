@@ -25,14 +25,16 @@ declare var moment: any;
    namespace debiki2.users {
 //------------------------------------------------------------------------------
 
-var r = React.DOM;
-var Modal = rb.Modal;
-var ModalBody = rb.ModalBody;
-var ModalFooter = rb.ModalFooter;
-var EmailInput = util.EmailInput;
+const r = ReactDOMFactories;
+const Modal = rb.Modal;
+const ModalBody = rb.ModalBody;
+const ModalFooter = rb.ModalFooter;
+const EmailInput = util.EmailInput;
 
 
-export var UserInvitesComponent = React.createClass<any, any>({
+export const UserInvites = createFactory({
+  displayName: 'UserInvites',
+
   getInitialState: function() {
     return { intives: null };
   },

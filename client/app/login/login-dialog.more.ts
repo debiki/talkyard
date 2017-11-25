@@ -27,7 +27,7 @@
 //------------------------------------------------------------------------------
 
 const d = { i: debiki.internal, u: debiki.v0.util };
-const r = React.DOM;
+const r = ReactDOMFactories;
 const Modal = rb.Modal;
 const ModalBody = rb.ModalBody;
 const ModalFooter = rb.ModalFooter;

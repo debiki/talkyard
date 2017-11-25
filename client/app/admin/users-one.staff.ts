@@ -19,23 +19,18 @@
 /// <reference path="../more-bundle-already-loaded.d.ts" />
 
 //------------------------------------------------------------------------------
-   module debiki2.admin {
+   namespace debiki2.admin {
 //------------------------------------------------------------------------------
 
-const r = React.DOM;
-const ReactBootstrap: any = window['ReactBootstrap'];
-const Modal = reactCreateFactory(ReactBootstrap.Modal);
-const ModalTitle = reactCreateFactory(ReactBootstrap.ModalTitle);
-const ModalBody = reactCreateFactory(ReactBootstrap.ModalBody);
-const ModalFooter = reactCreateFactory(ReactBootstrap.ModalFooter);
+const r = ReactDOMFactories;
+const Modal = rb.Modal;
+const ModalTitle = rb.ModalTitle;
+const ModalBody = rb.ModalBody;
+const ModalFooter = rb.ModalFooter;
 
 
-export const AdminUserPageComponent = React.createClass(<any> {
-  displayName: 'AdminUserPageComponent',
-
-  contextTypes: {
-    router: React.PropTypes.object.isRequired
-  },
+export const AdminUserPage = createFactory({
+  displayName: 'AdminUserPage',
 
   getInitialState: function() {
     return {
@@ -47,15 +42,19 @@ export const AdminUserPageComponent = React.createClass(<any> {
     this.loadCompleteUser();
   },
 
+  componentWillUnmount: function(nextProps) {
+    this.isGone = true;
+  },
+
   componentWillReceiveProps: function(nextProps) {
     this.loadCompleteUser();
   },
 
   loadCompleteUser: function() {
     this.setState({ user: null });
-    const params = this.props.params;
+    const params = this.props.match.params;
     Server.loadUserAnyDetails(params.userId, (user: MemberInclDetails, stats: UserStats) => {
-      if (!this.isMounted()) return;
+      if (this.isGone) return;
       this.setState({
         user: user,
         stats: stats,
@@ -367,18 +366,23 @@ const MemberThreatLevelDialog = createComponent({
       : "Current threat level: " + threatLevel_toString(user.threatLevel);
 
     const actionContent = user.lockedThreatLevel
-        ? Button({ onClick: () => this.lockThreatLevelAt(null),
-              help: "Clears the manually assigned threat level." }, "Unlock")
+        ? r.div({},
+            Button({ onClick: () => this.lockThreatLevelAt(null) }),
+              "Unlock",
+            r.div({ className: 'help-block' },
+              "Clears the manually assigned threat level."))
         : r.div({},
-            Button({ onClick: () => this.lockThreatLevelAt(ThreatLevel.MildThreat),
-                help: "Marks this user as a mild threat, which means all comments s/he post " +
-                  "will be added to the review list. But they'll be shown directly to other " +
-                  "users." },
-              "Mild threat"),
-            Button({ onClick: () => this.lockThreatLevelAt(ThreatLevel.ModerateThreat),
-              help: "Marks this user as a moderate threat, which means that all comments " +
-                  "s/he post won't be visible until they've been approved by the staff." },
-              "Moderate threat"));
+            Button({ onClick: () => this.lockThreatLevelAt(ThreatLevel.MildThreat) },
+                "Mild threat"),
+            r.div({ className: 'help-block' },
+              "Marks this user as a mild threat, which means all comments s/he post " +
+              "will be added to the review list. But they'll be shown directly to other " +
+              "users."),
+            Button({ onClick: () => this.lockThreatLevelAt(ThreatLevel.ModerateThreat) },
+              "Moderate threat"),
+            r.div({ className: 'help-block' },
+              "Marks this user as a moderate threat, which means that all comments " +
+              "s/he post won't be visible until they've been approved by the staff."));
 
     return (
       Modal({ show: this.state.isOpen, onHide: this.close },

@@ -36,6 +36,11 @@ const pageUrl = embeddingOrigin + '/' + pageSlug;
 
 describe("emb cmts all logins", () => {
 
+  if (!settings.include3rdPartyDependentTests) {
+    console.log("Skipping this spec; no 3rd party login credentials specified.");
+    return;
+  }
+
   it("initialize people", () => {
     browser.perhapsDebugBefore();
     everyonesBrowsers = _.assign(browser, pagesFor(browser));

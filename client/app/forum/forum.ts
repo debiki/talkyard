@@ -33,7 +33,7 @@
    namespace debiki2.forum {
 //------------------------------------------------------------------------------
 
-const r = React.DOM;
+const r = ReactDOMFactories;
 const DropdownModal = utils.DropdownModal;
 const ModalDropdownButton = utils.ModalDropdownButton;
 const ExplainingListItem = util.ExplainingListItem;
@@ -45,10 +45,6 @@ const MaxWaitingForCritique = 10; // for now only [plugin]
 /** Keep in sync with app/controllers/ForumController.NumTopicsToList. */
 const NumNewTopicsPerRequest = 40;
 
-// The route with path 'latest' or 'top' or 'categories'. It determines the sort order
-// (latest first, or best first).
-const SortOrderRouteIndex = 1;
-
 const FilterShowAll = 'ShowAll';
 const FilterShowWaiting = 'ShowWaiting';
 const FilterShowDeleted = 'ShowDeleted';
@@ -57,30 +53,16 @@ const FilterShowDeleted = 'ShowDeleted';
 export function buildForumRoutes() {
   const store: Store = ReactStore.allData();
   const rootSlash = store.pagePath.value;
-  const rootNoSlash = rootSlash.substr(0, rootSlash.length - 1);
   const defaultPath = rootSlash + (store.settings.forumMainView || RoutePathLatest);
 
   // later, COULD incl top period in URL, perhaps: top/ —> top-past-day/
-  // Or  /top/bugs/past-day/ ?
+  // Or  /top/bugs/past-day/ or /top/bugs?period=PastDay
 
-  return [
-    Redirect({ key: 'redirA', from: rootSlash, to: defaultPath }),
-    Redirect({ key: 'redirB', from: rootNoSlash, to: defaultPath }),
-    Route({ key: 'theRoutes', path: rootSlash, component: ForumComponent },
-      Redirect({ from: RoutePathLatest + '/', to: rootSlash + RoutePathLatest }),
-      Redirect({ from: RoutePathNew + '/', to: rootSlash + RoutePathNew }),
-      Redirect({ from: RoutePathTop + '/', to: rootSlash + RoutePathTop }),
-      Redirect({ from: RoutePathCategories + '/', to: rootSlash + RoutePathCategories }),
-      Route({ path: RoutePathLatest, component: LoadAndListTopicsComponent },
-        IndexRoute({ component: LoadAndListTopicsComponent }),
-        Route({ path: ':categorySlug', component: LoadAndListTopicsComponent })),
-      Route({ path: RoutePathNew, component: LoadAndListTopicsComponent },
-        IndexRoute({ component: LoadAndListTopicsComponent }),
-        Route({ path: ':categorySlug', component: LoadAndListTopicsComponent })),
-      Route({ path: RoutePathTop, component: LoadAndListTopicsComponent },
-        IndexRoute({ component: LoadAndListTopicsComponent }),
-        Route({ path: ':categorySlug', component: LoadAndListTopicsComponent })),
-      Route({ path: RoutePathCategories, component: LoadAndListCategoriesComponent }))];
+  return Switch({},
+    // This redirect e.g. '/forum/' and '/forum' to '/forum/latest':
+    Redirect({ path: rootSlash, to: defaultPath, exact: true }),
+    Route({ path: rootSlash, component: ForumComponent }));
+
 }
 
 
@@ -97,7 +79,8 @@ export const ForumScrollBehavior = {
 };
 
 
-const ForumComponent = React.createClass(<any> {
+const ForumComponent = createReactClass(<any> {
+  displayName: 'ForumComponent',
   mixins: [debiki2.StoreListenerMixin],
 
   getInitialState: function() {
@@ -145,10 +128,10 @@ const ForumComponent = React.createClass(<any> {
     this.setState({ topPeriod: period });
   },
 
-  getActiveCategory: function() {
+  getActiveCategory: function(currentCategorySlug: string) {
     const store: Store = this.state.store;
     let activeCategory: any;
-    const activeCategorySlug = store.newCategorySlug || this.props.params.categorySlug;
+    const activeCategorySlug = store.newCategorySlug || currentCategorySlug;
     if (activeCategorySlug) {
       activeCategory = _.find(store.categories, (category: Category) => {
         return category.slug === activeCategorySlug;
@@ -204,7 +187,25 @@ const ForumComponent = React.createClass(<any> {
 
   render: function() {
     const store: Store = this.state.store;
-    const activeCategory = this.getActiveCategory();
+
+    // This is done this way because of how React-Router v3 was working. It was simpler
+    // do do this than to totally-rewrite. Maybe refactor-&-simplify some day?
+    // Remove e.g. a '/forum/' prefix to the 'top/ideas' or 'new/bugs' whatever suffix:
+    const pathRelForumPage = this.props.location.pathname.replace(store.pagePath.value, '');
+    // This becomes e.g. ['new', 'ideas']:
+    const routes = pathRelForumPage.split('/');
+    const sortOrderRoute = routes[0];
+    switch (sortOrderRoute) {
+      case RoutePathLatest: break;
+      case RoutePathNew: break;
+      case RoutePathTop: break;
+      case RoutePathCategories: break;
+      default:
+        return r.p({}, `Bad route in the URL: '${sortOrderRoute}' [EdE2WKB4]`);
+    }
+    const currentCategorySlug = routes[1];
+    const activeCategory = this.getActiveCategory(currentCategorySlug);
+
     let helpMessage = activeCategory ? this.makeHelpMessage(activeCategory) : null;
     helpMessage = helpMessage
         ? debiki2.help.HelpMessageBox({ message: helpMessage })
@@ -213,8 +214,8 @@ const ForumComponent = React.createClass(<any> {
     const childProps = _.assign({}, {
       store: store,
       useTable: this.state.useWideLayout,
-      route: this.props.route,
-      location: this.props.location,
+      sortOrderRoute,
+      queryParams: parseQueryString(this.props.location.search),
       activeCategory: activeCategory,
       topPeriod: this.state.topPeriod,
       setTopPeriod: this.setTopPeriod,
@@ -225,19 +226,36 @@ const ForumComponent = React.createClass(<any> {
       },
     });
 
-    // Should I use named components instead of manually passing all route stuff to ForumButtons?
-    // https://github.com/rackt/react-router/blob/v2.0.0-rc5/docs/API.md#named-components
-    const forumButtonProps = _.assign({}, childProps, {
-      route: this.props.route,
-      routes: this.props.routes,
-      location: this.props.location,
-      params: this.props.params,
-    });
-
     /* Remove this? Doesn't look nice & makes the categories page look complicated.
-    var topsAndCatsHelp = this.props.routes[SortOrderRouteIndex].path === RoutePathCategories
+    var topsAndCatsHelp = this.props.sortOrderRoute === RoutePathCategories
       ? HelpMessageBox({ message: topicsAndCatsHelpMessage, className: 'esForum_topicsCatsHelp' })
       : null; */
+
+    const rootSlash = store.pagePath.value;
+    const childRoutes = r.div({},
+      Switch({},
+        RedirToNoSlash({ path: rootSlash + RoutePathLatest + '/' }),
+        RedirToNoSlash({ path: rootSlash + RoutePathNew + '/' }),
+        RedirToNoSlash({ path: rootSlash + RoutePathTop + '/' }),
+        RedirToNoSlash({ path: rootSlash + RoutePathCategories + '/' }),
+        Route({ path: rootSlash + RoutePathCategories, exact: true, strict: true, render: (props) => {
+          const propsWithRouterStuff = { ...childProps, ...props, isCategoriesRoute: true };
+          return r.div({},
+            ForumButtons(propsWithRouterStuff),
+            LoadAndListCategories(propsWithRouterStuff));
+        }}),
+        Route({ path: rootSlash + ':sortOrder?/:categorySlug?', strict: true, render: (props) => {
+          const propsWithRouterStuff = { ...childProps, ...props };
+          return r.div({},
+            ForumButtons(propsWithRouterStuff),
+            LoadAndListTopics(propsWithRouterStuff));
+        }})));
+    /* SHOULD instead of the below, throw? show? some error, if invalid sort order or bad cat name
+        Route({ path: rootSlash, component: LoadAndListTopics }),
+        Route({ path: rootSlash + RoutePathLatest, component: LoadAndListTopics }),
+        Route({ path: rootSlash + RoutePathNew, component: LoadAndListTopics }),
+        Route({ path: rootSlash + RoutePathTop, component: LoadAndListTopics })));
+        */
 
     return (
      r.div({},
@@ -248,9 +266,8 @@ const ForumComponent = React.createClass(<any> {
         r.div({ className: 'dw-page' }),
         ForumIntroText({ store: store }),
         helpMessage,
-        ForumButtons(forumButtonProps),
         //topsAndCatsHelp,
-        React.cloneElement(this.props.children, childProps))));
+        childRoutes)));
   }
 });
 
@@ -265,6 +282,8 @@ const topicsAndCatsHelpMessage = {
 
 
 const ForumIntroText = createComponent({
+  displayName: 'ForumIntroText',
+
   render: function() {
     const store: Store = this.props.store;
     const user: Myself = store.me;
@@ -292,11 +311,8 @@ const ForumIntroText = createComponent({
 
 
 const ForumButtons = createComponent({
+  displayName: 'ForumButtons',
   mixins: [utils.WindowZoomResizeMixin],
-
-  contextTypes: {
-    router: React.PropTypes.object.isRequired
-  },
 
   getInitialState: function() {
     return {
@@ -337,14 +353,13 @@ const ForumButtons = createComponent({
 
   setCategory: function(newCategorySlug) {
     const store: Store = this.props.store;
-    dieIf(this.props.routes.length < 2, 'EsE6YPKU2');
     this.closeCategoryDropdown();
-    const currentPath = this.props.routes[SortOrderRouteIndex].path;
+    const currentPath = this.props.sortOrderRoute;
     const nextPath = currentPath === RoutePathCategories ? RoutePathLatest : currentPath;
     const slashSlug = newCategorySlug ? '/' + newCategorySlug : '';
-    this.context.router.push({
+    this.props.history.push({
       pathname: store.pagePath.value + nextPath + slashSlug,
-      query: this.props.location.query,
+      search: this.props.location.search,
     });
   },
 
@@ -368,15 +383,15 @@ const ForumButtons = createComponent({
   setSortOrder: function(newPath: string) {
     const store: Store = this.props.store;
     this.closeSortOrderDropdown();
-    this.context.router.push({
+    this.props.history.push({
       pathname: store.pagePath.value + newPath + this.slashCategorySlug(),
-      query: this.props.location.query,
+      search: this.props.location.search,
     });
   },
 
   getSortOrderName: function(sortOrderRoutePath?: string) {
     if (!sortOrderRoutePath) {
-      sortOrderRoutePath = this.props.routes[SortOrderRouteIndex].path;
+      sortOrderRoutePath = this.props.sortOrderRoute;
     }
     const store: Store = this.props.store;
     const showTopicFilter = settings_showFilterButton(store.settings, store.me);
@@ -393,7 +408,7 @@ const ForumButtons = createComponent({
   },
 
   setTopicFilter: function(entry: ExplainingTitleText) {
-    const newQuery = _.clone(this.props.location.query);
+    const newQuery: any = { ...this.props.queryParams };
     if (entry.eventKey === FilterShowAll) {
       delete newQuery.filter;
     }
@@ -401,7 +416,10 @@ const ForumButtons = createComponent({
       newQuery.filter = entry.eventKey;
     }
     this.closeTopicFilterDropdown();
-    this.context.router.push({ pathname: this.props.location.pathname, query: newQuery });
+    this.props.history.push({
+      pathname: this.props.location.pathname,
+      search: stringifyQueryString(newQuery),
+    });
   },
 
   openTopicFilterDropdown: function() {
@@ -476,7 +494,8 @@ const ForumButtons = createComponent({
   },
 
   slashCategorySlug: function() {
-    return this.props.params.categorySlug ? '/' + this.props.params.categorySlug : '';
+    const slug = this.props.activeCategory.slug;
+    return slug ? '/' + slug : '';
   },
 
   render: function() {
@@ -484,6 +503,7 @@ const ForumButtons = createComponent({
     const store: Store = this.props.store;
     const settings: SettingsVisibleClientSide = store.settings;
     const me: Myself = store.me;
+    const showsCategoryTree: boolean = this.props.isCategoriesRoute;
     const activeCategory: Category = this.props.activeCategory;
     if (!activeCategory) {
       // The user has typed a non-existing category slug in the URL. Or she has just created
@@ -498,12 +518,12 @@ const ForumButtons = createComponent({
       return !store.userSpecificDataAdded ? null : r.p({},
           r.br(),
           "Category not found. Did you just create it? Or renamed it? Or you're not allowed " +
-          "to access it? Or perhaps it doesn't exist? [EdE0CAT]",
+          "to access it? Or perhaps it doesn't exist? [EdE0CAT]",  // (4JKSWX2)
           r.br(), r.br(),
-          PrimaryLinkButton({ href: '/' }, "Go to the homepage."));
+          PrimaryLinkButton({ href: '/' }, "Go to the homepage"));
     }
 
-    const showsCategoryTree = this.props.routes[SortOrderRouteIndex].path === RoutePathCategories;
+    const queryParams = this.props.queryParams;
     const showsTopicList = !showsCategoryTree;
 
     // A tester got a little bit confused in the categories view, because it starts with
@@ -511,8 +531,8 @@ const ForumButtons = createComponent({
     const anyPageTitle = showsCategoryTree ?
         r.div({ className: 'esF_BB_PageTitle' }, "Categories") : null;
 
-    const makeCategoryLink = (where, text, linkId, extraClass?) => Link({
-      to: { pathname: store.pagePath.value + where, query: this.props.location.query },
+    const makeCategoryLink = (where, text, linkId, extraClass?) => NavLink({
+      to: { pathname: store.pagePath.value + where, search: this.props.location.search },
       id: linkId,
       className: 'btn esForum_catsNav_btn ' + (extraClass || ''),
       activeClassName: 'active' }, text);
@@ -532,8 +552,8 @@ const ForumButtons = createComponent({
     });
 
     const listsTopicsInAllCats =
-        // We list topics? (We're not on the Categories route? which lists categories)
-        this.props.routes[SortOrderRouteIndex].path !== RoutePathCategories &&
+        // We list topics?
+        !showsCategoryTree &&
         // No category selected?
         activeCategory.isForumItself;
 
@@ -556,7 +576,7 @@ const ForumButtons = createComponent({
             categoryMenuItems));
 
     // The Latest/Top/Categories buttons, but use a dropdown if there's not enough space.
-    const currentSortOrderPath = this.props.routes[SortOrderRouteIndex].path;
+    const currentSortOrderPath = this.props.sortOrderRoute;
     let latestNewTopButton;
     let latestNewTopDropdownModal;
     if (showsCategoryTree) {
@@ -602,7 +622,7 @@ const ForumButtons = createComponent({
 
     const showFilterButton = settings_showFilterButton(settings, me);
 
-    const topicFilterValue = this.props.location.query.filter || FilterShowAll;
+    const topicFilterValue = queryParams.filter || FilterShowAll;
     function makeTopicFilterText(filter) {
       switch (filter) {
         case FilterShowAll: return "All topics";
@@ -660,11 +680,10 @@ const ForumButtons = createComponent({
               // ElasticSearch disabled server side, and is:* not supported anyway.
               disabled: true, title: "Not completely implemented" }));
     */
-    const sortOrderRoutePath = this.props.routes[SortOrderRouteIndex].path;
 
     let createTopicBtn;
     const mayCreateTopics = store_mayICreateTopics(store, activeCategory);
-    if (sortOrderRoutePath !== RoutePathCategories && mayCreateTopics) {
+    if (!showsCategoryTree && mayCreateTopics) {
      if (this.props.numWaitingForCritique < MaxWaitingForCritique)  // for now only [plugin]
       createTopicBtn = PrimaryButton({ onClick: this.createTopic, id: 'e2eCreateSth',
           className: 'esF_BB_CreateBtn'},
@@ -672,7 +691,7 @@ const ForumButtons = createComponent({
     }
 
     let createCategoryBtn;
-    if (sortOrderRoutePath === RoutePathCategories && me.isAdmin) {
+    if (showsCategoryTree && me.isAdmin) {
       createCategoryBtn = PrimaryButton({ onClick: this.createCategory, id: 'e2eCreateCategoryB' },
         "Create Category");
     }
@@ -705,7 +724,9 @@ const ForumButtons = createComponent({
 
 
 
-const LoadAndListTopicsComponent = React.createClass(<any> {
+const LoadAndListTopics = createFactory({
+  displayName: 'LoadAndListTopics',
+
   getInitialState: function(): any {
     // The server has included in the Flux store a list of the most recent topics, and we
     // can use that lis when rendering the topic list server side, or for the first time
@@ -729,9 +750,8 @@ const LoadAndListTopicsComponent = React.createClass(<any> {
   },
 
   isAllLatestTopicsView: function() {
-    dieIf(this.props.routes.length < 2, 'EsE5YPFK23');
-    return this.props.routes[SortOrderRouteIndex].path === RoutePathLatest &&
-        !this.props.params.categorySlug;
+    return this.props.sortOrderRoute === RoutePathLatest &&
+        !this.props.match.params.categorySlug;
   },
 
   componentDidMount: function() {
@@ -775,7 +795,7 @@ const LoadAndListTopicsComponent = React.createClass(<any> {
       return;
 
     const orderOffset: OrderOffset = this.getOrderOffset(nextProps);
-    orderOffset.topicFilter = nextProps.location.query.filter;
+    orderOffset.topicFilter = nextProps.queryParams.filter;
     if (isNewView) {
       this.setState({
         minHeight: ReactDOM.findDOMNode(this).clientHeight,
@@ -834,13 +854,13 @@ const LoadAndListTopicsComponent = React.createClass(<any> {
     }
 
     const orderOffset: OrderOffset = { sortOrder: -1 };
-    if (props.routes[SortOrderRouteIndex].path === RoutePathTop) {
+    if (props.sortOrderRoute === RoutePathTop) {
       orderOffset.sortOrder = TopicSortOrder.ScoreAndBumpTime;
       orderOffset.olderThan = lastBumpedAt;
       orderOffset.score = lastScore;
       orderOffset.period = props.topPeriod;
     }
-    else if (props.routes[SortOrderRouteIndex].path === RoutePathNew) {
+    else if (props.sortOrderRoute === RoutePathNew) {
       orderOffset.sortOrder = TopicSortOrder.CreatedAt;
       orderOffset.olderThan = lastCreatedAt;
     }
@@ -862,11 +882,11 @@ const LoadAndListTopicsComponent = React.createClass(<any> {
       orderOffset: this.getOrderOffset(),
       topPeriod: this.props.topPeriod,
       setTopPeriod: this.props.setTopPeriod,
-      // `routes` and `location` needed because category clickable. [7FKR0QA]
+      // `location` needed because category clickable. [7FKR0QA]
       // COULD try to find some other way to link categories to URL paths, that works
       // also in the user-activity.more.ts topic list. [7FKR0QA]
       linkCategories: true,
-      routes: this.props.routes,
+      sortOrderRoute: this.props.sortOrderRoute,
       location: this.props.location,
     });
   },
@@ -875,6 +895,8 @@ const LoadAndListTopicsComponent = React.createClass(<any> {
 
 
 export const ListTopicsComponent = createComponent({
+  displayName: 'ListTopicsComponent',
+
   getInitialState: function() {
     return {};
   },
@@ -892,6 +914,14 @@ export const ListTopicsComponent = createComponent({
     const store: Store = this.props.store;
     const me: Myself = store.me;
     const topics: Topic[] = this.props.topics;
+    const activeCategory: Category = this.props.activeCategory;
+    if (!activeCategory) {
+      // The category doesn't exist, or it's restricted, and maybe included in the
+      // user specific json. When the user specific json has been activated, either the
+      // category will exist and we won't get to here again, or a "category not found" message
+      // will be displayed (4JKSWX2). — But don't show any "Loading..." message here.
+      return null;
+    }
     if (!topics) {
       // The min height preserves scrollTop, even though the topic list becomes empty
       // for a short while (which would otherwise reduce the windows height which
@@ -907,12 +937,11 @@ export const ListTopicsComponent = createComponent({
 
     const useTable = this.props.useTable;
     const orderOffset: OrderOffset = this.props.orderOffset;
-    const activeCategory: Category = this.props.activeCategory;
 
     const topicElems = topics.map((topic: Topic) => {
       return TopicRow({
           store, topic, categories: store.categories, activeCategory, now: store.now, orderOffset,
-          key: topic.pageId, routes: this.props.routes, location: this.props.location,
+          key: topic.pageId, location: this.props.location,
           pagePath: store.pagePath, inTable: useTable });
     });
 
@@ -1059,9 +1088,7 @@ const IconHelpMessage = {
 
 
 const TopicRow = createComponent({
-  contextTypes: {
-    router: React.PropTypes.object.isRequired
-  },
+  displayName: 'TopicRow',
 
   getInitialState: function() {
     return {
@@ -1127,9 +1154,8 @@ const TopicRow = createComponent({
 
   makeCategoryLink: function(category: Category, skipQuery?: boolean) {
     const store: Store = this.props.store;
-    dieIf(this.props.routes.length < 2, 'EdE5U2ZG');  // [7FKR0QA]
-    const sortOrderPath = this.props.routes[SortOrderRouteIndex].path;
-    // this.props.location.query — later: could convert to query string, unless skipQuery === true
+    const sortOrderPath = this.props.sortOrderRoute;
+    // this.props.queryParams — later: could convert to query string, unless skipQuery === true
     return store.pagePath.value + sortOrderPath + '/' + category.slug;
   },
 
@@ -1137,9 +1163,9 @@ const TopicRow = createComponent({
     return (event) => {
       event.preventDefault();
       let urlPath = this.makeCategoryLink(category, true);
-      this.context.router.push({
+      this.props.history.push({
         pathname: urlPath,
-        query: this.props.location.query,  // [7FKR0QA]
+        search: this.props.location.search,  // [7FKR0QA]
       });
     };
   },
@@ -1307,7 +1333,9 @@ function topic_mediaThumbnailUrls(topic: Topic): string[] {
 }
 
 
-const LoadAndListCategoriesComponent = React.createClass(<any> {
+const LoadAndListCategories = createFactory({
+  displayName: 'LoadAndListCategories',
+
   getInitialState: function() {
     return {};
   },
@@ -1330,7 +1358,7 @@ const LoadAndListCategoriesComponent = React.createClass(<any> {
 
   loadCategories: function(props) {
     const store: Store = props.store;
-    debiki2.Server.loadForumCategoriesTopics(store.pageId, props.location.query.filter,
+    debiki2.Server.loadForumCategoriesTopics(store.pageId, props.queryParams.filter,
         (categories: Category[]) => {
       if (this.isGone) return;
       this.setState({ categories: categories });
@@ -1347,7 +1375,7 @@ const LoadAndListCategoriesComponent = React.createClass(<any> {
     });
 
     let recentTopicsColumnTitle;
-    switch (this.props.location.query.filter) {
+    switch (this.props.queryParams.filter) {
       case FilterShowWaiting:
         recentTopicsColumnTitle = "Recent topics (those waiting)";
         break;
@@ -1372,6 +1400,8 @@ const LoadAndListCategoriesComponent = React.createClass(<any> {
 
 
 const CategoryRow = createComponent({
+  displayName: 'CategoryRow',
+
   componentDidMount: function() {
     const store: Store = this.props.store;
     // If this is a newly created category, scroll it into view.
@@ -1414,7 +1444,7 @@ const CategoryRow = createComponent({
           r.div({ className: 'forum-title-wrap' },
             Link({ to: {
                 pathname: store.pagePath.value + RoutePathLatest + '/' + this.props.category.slug,
-                query: this.props.location.query }, className: 'forum-title' },
+                search: this.props.location.search }, className: 'forum-title' },
               category.name, isDefault), isDeletedText),
           r.p({ className: 'forum-description' }, category.description)),
         r.td({},  // class to esForum_cats_cat_topics?

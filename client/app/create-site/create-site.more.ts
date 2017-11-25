@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 Kaj Magnus Lindberg
+ * Copyright (c) 2015, 2017 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -20,50 +20,46 @@
 /// <reference path="../utils/PatternInput.more.ts" />
 
 //------------------------------------------------------------------------------
-   module debiki2.createsite {
+   namespace debiki2.createsite {
 //------------------------------------------------------------------------------
 
-var r = React.DOM;
+const r = ReactDOMFactories;
 
-var PatternInput = utils.PatternInput;
+const PatternInput = utils.PatternInput;
 
 
 
 export function routes() {
-  return [
-    Redirect({ key: 'redir', from: '/-/create-site/', to: '/-/create-site' }),
-    Route({ key: 'routes', path: '/-/create-site', component: CreateSomethingComponent },
-      /* Later, if one should choose between a site and embedded comments:
-       IndexRoute({ handler: ChooseSiteTypeComponent }),
-       Route({ path: 'website', handler: CreateWebsiteComponent }),
-       */
-      IndexRoute({ component: CreateWebsiteComponent }),
-      Route({ path: 'embedded-comments', component: CreateWebsiteComponent })),
-    Route({ key: 'test-routes', path: '/-/create-test-site', component: CreateSomethingComponent },
-      IndexRoute({ component: CreateWebsiteComponent }),
-      Route({ path: 'embedded-comments', component: CreateWebsiteComponent }))];
+  return Switch({},
+    RedirToNoSlash({ path: '/-/create-site/' }),
+    Route({ path: '/-/create-site', strict: true, component: CreateSomethingComponent }));
 }
 
 
 
-const CreateSomethingComponent = React.createClass({
+const CreateSomethingComponent = createReactClass({
   displayName: 'CreateSomethingComponent',
 
   getInitialState: function() {
+    const queryParams = parseQueryString(this.props.location.search);
     return {
-      pricePlan: this.props.location.query.pricePlan
+      pricePlan: queryParams.pricePlan
     };
   },
 
   render: function() {
+    // This was needed in the past. Can be simplified now, maybe this whole class can be elliminated.
+    const pricePlan = this.state.pricePlan;
     return (
-      React.cloneElement(this.props.children, { pricePlan: this.state.pricePlan }));
+      Route({ path: '*', render: (props) => {
+        return CreateWebsiteComponent({ ...props, pricePlan });
+      }}));
   }
 });
 
 
 
-const CreateWebsiteComponent = React.createClass(<any> {
+const CreateWebsiteComponent = createFactory({
   displayName: 'CreateWebsiteComponent',
 
   getInitialState: function() {
@@ -194,9 +190,7 @@ export function EmbeddingAddressInput(props) {
  * Then they can return to the default-domain address, if they mess up, and fix things.
  */
 const LocalHostnameInput = createClassAndFactory({
-  contextTypes: {
-    router: React.PropTypes.object.isRequired
-  },
+  displayName: 'LocalHostnameInput',
 
   getInitialState: function() {
     return { value: '' }
@@ -255,17 +249,17 @@ const LocalHostnameInput = createClassAndFactory({
   },
 
   render: function() {
-    var value = this.state.value;
-    var anyError;
+    const value = this.state.value;
+    let anyError: any;
     if (this.state.showErrors) {
-      var anyError = this.findAnyError();
+      anyError = this.findAnyError();
       if (anyError) {
         anyError = r.b({ style: { color: 'red' }}, anyError);
       }
     }
     // Check the router state, not location pathname, later after having upgr to react-router-
     // -some-version-for-which-the-docs-works.
-    var testSitePrefix = // dupl code [5UKF03]
+    const testSitePrefix = // dupl code [5UKF03]
         location.pathname.indexOf('create-test-site') !== -1 ? 'test--' : '';
     return (
       r.div({ className: 'form-group' + (anyError ? ' has-error' : ''), style: this.props.style },

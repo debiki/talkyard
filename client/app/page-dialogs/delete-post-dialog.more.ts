@@ -19,10 +19,10 @@
 /// <reference path="../react-bootstrap-old/Input.more.ts" />
 
 //------------------------------------------------------------------------------
-   module debiki2.pagedialogs {
+   namespace debiki2.pagedialogs {
 //------------------------------------------------------------------------------
 
-const r = React.DOM;
+const r = ReactDOMFactories;
 const Modal = rb.Modal;
 const ModalHeader = rb.ModalHeader;
 const ModalTitle = rb.ModalTitle;

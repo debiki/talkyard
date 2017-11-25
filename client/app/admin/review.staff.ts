@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 Kaj Magnus Lindberg
+ * Copyright (c) 2015, 2017 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -20,21 +20,14 @@
 /// <reference path="review-posts.staff.ts" />
 
 //------------------------------------------------------------------------------
-   module debiki2.admin {
+   namespace debiki2.admin {
 //------------------------------------------------------------------------------
 
-var d = { i: debiki.internal, u: debiki.v0.util };
-var r = React.DOM;
-var reactCreateFactory = React['createFactory'];
-var ReactBootstrap: any = window['ReactBootstrap'];
-var Nav = reactCreateFactory(ReactBootstrap.Nav);
-var NavItem = reactCreateFactory(ReactBootstrap.NavItem);
+const r = ReactDOMFactories;
 
 
-export var ReviewPanelComponent = React.createClass(<any> {
-  contextTypes: {
-    router: React.PropTypes.object.isRequired
-  },
+export const ReviewPanel = createFactory({
+  displayName: 'ReviewPanel',
 
   /* Old: (remove later, when I've decided I'll remove review-posts.ts — right now it's
           only commented out here)
@@ -52,14 +45,14 @@ export var ReviewPanelComponent = React.createClass(<any> {
 
   render: function() {
     return (
-      this.props.children);
+      Route({ path: '(.*)/all', exact: true, component: ReviewAllPanelComponent }));
 
     /* old:
     return (
         r.div({},
-            Nav({ bsStyle: 'pills', activeKey: this.state.activeRoute, onSelect: this.handleSelect,
+            Na v({ bsStyle: 'pills', activeKey: this.state.activeRoute, onSelect: this.handleSelect,
                 className: 'dw-sub-nav' },
-              NavItem({ eventKey: 'review-posts' }, 'Posts')),
+              Na vItem({ eventKey: 'review-posts' }, 'Posts')),
             r.div({ className: 'dw-admin-panel' },
               this.props.children)));
     */

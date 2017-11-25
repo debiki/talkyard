@@ -27,7 +27,7 @@
   namespace debiki2.help {
 //------------------------------------------------------------------------------
 
-var r = React.DOM;
+const r = ReactDOMFactories;
 
 
 export function isHelpMessageClosedAnyVersion(store: Store, messageId: string): boolean {

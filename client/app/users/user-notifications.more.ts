@@ -22,10 +22,12 @@
    namespace debiki2.users {
 //------------------------------------------------------------------------------
 
-var r = React.DOM;
+const r = ReactDOMFactories;
 
 
-export var UserNotificationsComponent = React.createClass<any, any>({
+export const UserNotifications = createFactory({
+  displayName: 'UserNotifications',
+
   getInitialState: function() {
     return { notfs: null, error: false };
   },

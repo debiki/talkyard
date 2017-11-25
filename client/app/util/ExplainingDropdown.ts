@@ -29,10 +29,10 @@
 // items inline, directly in slim-bundle.js.)
 
 //------------------------------------------------------------------------------
-   module debiki2.util {
+   namespace debiki2.util {
 //------------------------------------------------------------------------------
 
-var r = React.DOM;
+const r = ReactDOMFactories;
 
 
 export interface ExplainingTitleText {

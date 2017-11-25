@@ -18,12 +18,10 @@
 /// <reference path="../slim-bundle.d.ts" />
 
 //------------------------------------------------------------------------------
-   module debiki2.pagedialogs {
+   namespace debiki2.pagedialogs {
 //------------------------------------------------------------------------------
 
-const React = window['React']; // TypeScript stupid
-const r = React.DOM;
-
+const r = ReactDOMFactories;
 const DropdownModal = utils.DropdownModal;
 
 let votesDialog;

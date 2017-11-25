@@ -68,6 +68,10 @@ export function linkToUserProfilePage(userIdOrUsername: UserId | string): string
   return '/-/users/' + userIdOrUsername;
 }
 
+export function linkToSendMessage(userIdOrUsername: UserId | string): string {
+  return linkToUserProfilePage(userIdOrUsername) + '/activity/posts#writeMessage';
+}
+
 export function linkToInvitesFromUser(userId: UserId): string {
   return linkToUserProfilePage(userId) + '/invites';
 }

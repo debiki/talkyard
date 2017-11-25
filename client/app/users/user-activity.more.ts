@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2016 Kaj Magnus Lindberg
+ * Copyright (c) 2016, 2017 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -21,20 +21,14 @@
    namespace debiki2.users {
 //------------------------------------------------------------------------------
 
-let r = React.DOM;
-let Nav = rb.Nav;
-let NavItem = rb.NavItem;
-let Post = page.Post;
+const r = ReactDOMFactories;
+const Post = page.Post;
+const UsersPathSlash = '/-/users/';       // dupl [4GKQST20]
+const SlashActivitySlash = '/activity/';  // dupl [4GKQST20]
 
 
-export let UsersActivityComponent = React.createClass(<any> {
-  contextTypes: {
-    router: React.PropTypes.object.isRequired
-  },
-
-  transitionTo: function(what) {
-    this.props.transitionTo('activity/' + what);
-  },
+export const UsersActivity = createFactory({
+  displayName: 'UsersActivity',
 
   render: function() {
     let childProps = {
@@ -42,7 +36,16 @@ export let UsersActivityComponent = React.createClass(<any> {
       user: this.props.user,
       reloadUser: this.props.loadCompleteUser,
     };
-    let activeRouteName = this.props.routes[3].path;
+
+    const childRoute = Switch({},
+      Route({ path: '(.*)/posts', exact: true, render: () => PostsComponent(childProps) }),
+      Route({ path: '(.*)/topics', exact: true, render: () => TopicsComponent(childProps) }));
+      // (.*)/mentions? Flarum includes mentions *of* the user, but wouldn't it make more sense
+      // to include mentions *by* the user? Discourse shows: (but -received in the notfs tab)
+      //Route({ path: 'likes-given', component: LikesGivenComponent }),
+      //Route({ path: 'likes-received', component: LikesReceivedComponent })
+
+    const uap = UsersPathSlash + this.props.match.params.usernameOrId + SlashActivitySlash;
 
     return (
       // Without table-layout: fixed, the table can become 5000 px wide, because otherwise the
@@ -50,20 +53,21 @@ export let UsersActivityComponent = React.createClass(<any> {
       r.div({ style: { display: 'table', width: '100%', tableLayout: 'fixed' }},
         r.div({ style: { display: 'table-row' }},
           r.div({ className: 's_UP_Act_Nav' },
-            Nav({ bsStyle: 'pills', activeKey: activeRouteName,
-                onSelect: this.transitionTo, className: 'dw-sub-nav nav-stacked' },
-              NavItem({ eventKey: 'posts', className: 's_UP_Act_Nav_PostsB' }, "Posts"),
-              NavItem({ eventKey: 'topics', className: 's_UP_Act_Nav_TopicsB' }, "Topics"))),
-              //NavItem({ eventKey: 'likes-given' }, "Likes Given"),
-              //NavItem({ eventKey: 'likes-received' }, "Likes Received"))),
+            r.ul({ className: 'dw-sub-nav nav-stacked nav nav-pills' },
+              LiNavLink({ to: uap + 'posts', className: 's_UP_Act_Nav_PostsB' }, "Posts"),
+              LiNavLink({ to: uap + 'topics', className: 's_UP_Act_Nav_TopicsB' }, "Topics"))),
+              //LiNavLink({ to: uap + 'likes-given' }, "Likes Given"),
+              //LiNavLink({ to: uap + 'likes-received' }, "Likes Received"))),
           r.div({ className: 's_UP_Act_List' },
-            React.cloneElement(this.props.children, childProps)))));
+            childRoute))));
   }
 });
 
 
 
-export let PostsComponent = React.createClass(<any> {
+export let PostsComponent = createFactory({
+  displayName: 'PostsComponent',
+
   getInitialState: function() {
     return { posts: null };
   },
@@ -71,6 +75,10 @@ export let PostsComponent = React.createClass(<any> {
   componentDidMount: function() {
     let user: MemberInclDetails = this.props.user;
     this.loadPosts(user.id);
+  },
+
+  componentWillUnmount: function() {
+    this.isGone = true;
   },
 
   componentWillReceiveProps: function(nextProps) {
@@ -86,8 +94,11 @@ export let PostsComponent = React.createClass(<any> {
   },
 
   loadPosts: function(userId: UserId) {
-    let me: Myself = this.props.store.me;
+    if (this.nowLoading === userId) return;
+    this.nowLoading = userId;
     Server.loadPostsByAuthor(userId, (response: any) => {
+      this.nowLoading = null;
+      if (this.isGone) return;
       this.setState({
         posts: response.posts,
         author: response.author,
@@ -128,7 +139,9 @@ export let PostsComponent = React.createClass(<any> {
 
 
 
-export let TopicsComponent = React.createClass(<any> {
+export let TopicsComponent = createFactory({
+  displayName: 'TopicsComponent',
+
   getInitialState: function() {
     return { topics: null };
   },
@@ -136,6 +149,10 @@ export let TopicsComponent = React.createClass(<any> {
   componentDidMount: function() {
     let user: MemberInclDetails = this.props.user;
     this.loadTopics(user.id);
+  },
+
+  componentWillUnmount: function() {
+    this.isGone = true;
   },
 
   componentWillReceiveProps: function(nextProps) {
@@ -151,7 +168,11 @@ export let TopicsComponent = React.createClass(<any> {
   },
 
   loadTopics: function(userId: UserId) {
+    if (this.nowLoading === userId) return;
+    this.nowLoading = userId;
     Server.loadTopicsByUser(userId, (topics: Topic[]) => {
+      this.nowLoading = null;
+      if (this.isGone) return;
       this.setState({ topics: topics });
     });
   },
@@ -186,7 +207,7 @@ export let TopicsComponent = React.createClass(<any> {
 
 
 
-export let LikesGivenComponent = React.createClass(<any> {
+export let LikesGivenComponent = createReactClass(<any> {
   render: function() {
     return (
       r.p({}, "Not yet implemented 4"));
@@ -195,7 +216,7 @@ export let LikesGivenComponent = React.createClass(<any> {
 
 
 
-export let LikesReceivedComponent = React.createClass(<any> {
+export let LikesReceivedComponent = createReactClass(<any> {
   render: function() {
     return (
       r.p({}, "Not yet implemented 5"));

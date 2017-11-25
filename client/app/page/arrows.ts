@@ -36,8 +36,7 @@
   namespace debiki2.renderer {
 //------------------------------------------------------------------------------
 
-var React = window['React']; // TypeScript file doesn't work
-var r = React.DOM;
+const r = ReactDOMFactories;
 
 
 export function drawHorizontalArrowFromRootPost(rootPost) {

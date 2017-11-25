@@ -51,15 +51,13 @@ export function removeWarning(key: string) {
   }
 }
 
-
+/*
 export var AlertIfLeavingRouteMixin = {
-  contextTypes: {
-    router: React.PropTypes.object
-  },
   componentDidMount: function() {
+    This totally no longer works with react-router v4:
     this.context.router.setRouteLeaveHook(this.props.route, showUnloadWarning);
   }
-};
+}; */
 
 
 // Doesn't seem to work, when reloading the page in the browser: the overlay won't appear

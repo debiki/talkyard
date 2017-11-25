@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014 Kaj Magnus Lindberg (born 1979)
+ * Copyright (c) 2014, 2017 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -24,34 +24,34 @@
 /// <reference path="staff-bundle-already-loaded.d.ts" />
 
 //------------------------------------------------------------------------------
-   module debiki2 {
+   namespace debiki2 {
 //------------------------------------------------------------------------------
 
 
 export function startRemainingReactRoots() {
   const isEmbeddedComments: boolean = debiki.internal.isInEmbeddedCommentsIframe;
 
-  var adminAppElem = document.getElementById('dw-react-admin-app');
+  const adminAppElem = document.getElementById('dw-react-admin-app');
   if (adminAppElem)
     ReactDOM.render(
-        Router({ history: ReactRouter.browserHistory }, admin.routes()), adminAppElem);
+        Router({}, admin.routes()), adminAppElem);
 
-  var superAdminAppElem = document.getElementById('theSuperAdminApp');
+  const superAdminAppElem = document.getElementById('theSuperAdminApp');
   if (superAdminAppElem)
     ReactDOM.render(
-      Router({ history: ReactRouter.browserHistory }, superadmin.routes()), superAdminAppElem);
+        Router({}, superadmin.routes()), superAdminAppElem);
 
-  var tagsAppElem = document.getElementById('theTagsApp');
+  const tagsAppElem = document.getElementById('theTagsApp');
   if (tagsAppElem)
     ReactDOM.render(
-      Router({ history: ReactRouter.browserHistory }, tags.routes()), tagsAppElem);
+        Router({}, tags.routes()), tagsAppElem);
 
-  var nonExistingPageElem = document.getElementById('dw-non-existing-page');
+  const nonExistingPageElem = document.getElementById('dw-non-existing-page');
   if (nonExistingPageElem)
     ReactDOM.render(
         nopage.NonExistingPage({}), nonExistingPageElem);
 
-  var topbarElem = document.getElementById('theTopbar');
+  const topbarElem = document.getElementById('theTopbar');
   if (topbarElem && !isEmbeddedComments)
     ReactDOM.render(
         reactelements.TopBar({}), topbarElem);
@@ -61,30 +61,30 @@ export function startRemainingReactRoots() {
     watchbar.createWatchbar();
   }
 
-  var userPageElem = document.getElementById('dw-react-user-page');
+  const userPageElem = document.getElementById('dw-react-user-page');
   if (userPageElem) {
     ReactDOM.render(
         // .routes() always available, because the more-bundle.js is loaded on non-pages. [5WKE24]
-        Router({ history: ReactRouter.browserHistory }, users.routes()), userPageElem);
+        Router({}, users.routes()), userPageElem);
   }
 
   let searchPageElem = document.getElementById('t_SearchPage');
   if (searchPageElem) {
     ReactDOM.render(
-      // .routes() always available, because the more-bundle.js is loaded on non-pages. [5WKE24]
-      Router({ history: ReactRouter.browserHistory }, debiki2['search'].routes()), searchPageElem);
+        // .routes() always available, because the more-bundle.js is loaded on non-pages. [5WKE24]
+        Router({}, debiki2['search'].routes()), searchPageElem);
   }
 
-  var createSiteElem = document.getElementById('dw-react-create-site');
+  const createSiteElem = document.getElementById('dw-react-create-site');
   if (createSiteElem) {
     ReactDOM.render(
-        Router({ history: ReactRouter.browserHistory }, createsite.routes()), createSiteElem);
+        Router({}, createsite.routes()), createSiteElem);
   }
 }
 
 
 export function createSidebar() {
-  var sidebarElem = document.getElementById('dw-any-sidebar');
+  const sidebarElem = document.getElementById('dw-any-sidebar');
   if (sidebarElem)
     sidebar.createContextbar(sidebarElem);
 }

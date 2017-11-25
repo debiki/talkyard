@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015 Kaj Magnus Lindberg
+ * Copyright (c) 2015-2017 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -19,18 +19,17 @@
 /// <reference path="../slim-bundle.d.ts" />
 
 //------------------------------------------------------------------------------
-   module debiki2.forum {
+   namespace debiki2.forum {
 //------------------------------------------------------------------------------
 
-var r = React.DOM;
-var ReactBootstrap: any = window['ReactBootstrap'];
-var Modal = reactCreateFactory(ReactBootstrap.Modal);
-var ModalBody = reactCreateFactory(ReactBootstrap.ModalBody);
-var ModalFooter = reactCreateFactory(ReactBootstrap.ModalFooter);
-var ModalHeader = reactCreateFactory(ReactBootstrap.ModalHeader);
-var ModalTitle = reactCreateFactory(ReactBootstrap.ModalTitle);
+const r = ReactDOMFactories;
+const Modal = rb.Modal;
+const ModalBody = rb.ModalBody;
+const ModalFooter = rb.ModalFooter;
+const ModalHeader = rb.ModalHeader;
+const ModalTitle = rb.ModalTitle;
 
-var editIntroDialog;
+let editIntroDialog;
 
 export function openEditIntroDialog() {
   if (!editIntroDialog) {

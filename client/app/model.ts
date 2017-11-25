@@ -110,6 +110,7 @@ enum ReviewAction {
 
 
 interface Flag {
+  // COULD incl flag id = action id? or separate table for flags? [2PKRW08]
   flaggerId: number;
   flagType: FlagType;
   flaggedAt: number,
@@ -1097,7 +1098,7 @@ interface SuperAdminStuff {
 
 
 interface SASite {
-  id: string;
+  id: number;
   status: SiteStatus;
   name: string;
   canonicalHostname: string;

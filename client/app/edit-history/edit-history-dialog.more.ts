@@ -21,18 +21,17 @@ declare var moment: any;
 /// <reference path="../page-dialogs/about-user-dialog.more.ts" />
 
 //------------------------------------------------------------------------------
-  module debiki2.edithistory {
+  namespace debiki2.edithistory {
 //------------------------------------------------------------------------------
 
-var r = React.DOM;
-var ReactBootstrap: any = window['ReactBootstrap'];
-var Modal = reactCreateFactory(ReactBootstrap.Modal);
-var ModalBody = reactCreateFactory(ReactBootstrap.ModalBody);
-var ModalFooter = reactCreateFactory(ReactBootstrap.ModalFooter);
-var ModalHeader = reactCreateFactory(ReactBootstrap.ModalHeader);
-var ModalTitle = reactCreateFactory(ReactBootstrap.ModalTitle);
+const r = ReactDOMFactories;
+const Modal = rb.Modal;
+const ModalBody = rb.ModalBody;
+const ModalFooter = rb.ModalFooter;
+const ModalHeader = rb.ModalHeader;
+const ModalTitle = rb.ModalTitle;
 
-var editHistoryDialog;
+let editHistoryDialog;
 
 
 export function getEditHistoryDialog() {
@@ -53,6 +52,10 @@ var EditHistoryDialog = createClassAndFactory({
     };
   },
 
+  componentWillUnmount: function(nextProps) {
+    this.isGone = true;
+  },
+
   open: function(postId: number) {
     this.setState({
       isOpen: true,
@@ -61,10 +64,10 @@ var EditHistoryDialog = createClassAndFactory({
       revisionsRecentFirst: null,
     });
     utils.loadDiffMatchPatch(() => {
-      if (!this.isMounted()) return;
+      if (this.isGone) return;
       // (Reload revisions, even if we've loaded them already — perhaps the post was just edited.)
       Server.loadLatestPostRevisions(postId, (revisions) => {
-        if (!this.isMounted()) return;
+        if (this.isGone) return;
         this.setState({
           isLoading: false,
           revisionsRecentFirst: revisions,
@@ -84,7 +87,7 @@ var EditHistoryDialog = createClassAndFactory({
     this.setState({ isLoadingMore: true });
     Server.loadMorePostRevisions(this.state.postId, oldestRevisionLoaded.revisionNr - 1,
         (moreRevisions) => {
-      if (!this.isMounted()) return;
+      if (this.isGone) return;
       var revisions = this.state.revisionsRecentFirst.concat(moreRevisions);
       this.setState({
         revisionsRecentFirst: revisions,

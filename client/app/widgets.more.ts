@@ -8,13 +8,12 @@ namespace rb {
   export var ModalFooter = reactCreateFactory(ReactBootstrap.ModalFooter);
 
   export var ReactSelect = reactCreateFactory(window['Select']);
-  export var Nav = reactCreateFactory(ReactBootstrap.Nav);
-  export var NavItem = reactCreateFactory(ReactBootstrap.NavItem);
   export var TabbedArea = reactCreateFactory(ReactBootstrap.TabbedArea);
   export var TabPane = reactCreateFactory(ReactBootstrap.TabPane);
   export var Tabs = reactCreateFactory(ReactBootstrap.Tabs);
   export var Tab = reactCreateFactory(ReactBootstrap.Tab);
   export var Alert = reactCreateFactory(ReactBootstrap.Alert);
+  export var ProgressBar = reactCreateFactory(ReactBootstrap.ProgressBar);
 
   export var FormGroup = reactCreateFactory(ReactBootstrap.FormGroup);
   export var ControlLabel = reactCreateFactory(ReactBootstrap.ControlLabel);
@@ -31,7 +30,7 @@ namespace rb {
    namespace debiki2 {
 //------------------------------------------------------------------------------
 
-var r = React.DOM;
+const r = ReactDOMFactories;
 
 
 // (Or move to slim-bundle? So the search results page can be generated server side.)

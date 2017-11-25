@@ -36,10 +36,7 @@
    namespace debiki2.page {
 //------------------------------------------------------------------------------
 
-const React = window['React']; // TypeScript file doesn't work
-const r = React.DOM;
-const $: JQueryStatic = debiki.internal.$;
-
+const r = ReactDOMFactories;
 const closedIcon = r.span({ className: 'icon-block' });
 const questionIcon = r.span({ className: 'icon-help-circled' });
 const problemIcon = r.span({ className: 'icon-attention-circled' });

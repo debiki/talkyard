@@ -23,9 +23,9 @@
    module debiki2.editor {
 //------------------------------------------------------------------------------
 
-var r = React.DOM;
-var DropdownModal = utils.DropdownModal;
-var ExplainingListItem = util.ExplainingListItem;
+const r = ReactDOMFactories;
+const DropdownModal = utils.DropdownModal;
+const ExplainingListItem = util.ExplainingListItem;
 
 
 // BEM name: esTopicType -- no. Instead, esPTD = Page-Type-Dropdown?
