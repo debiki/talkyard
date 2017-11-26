@@ -219,19 +219,37 @@ function waitUntilLastEmailMatches(siteId: SiteId, emailAddress: string,
 }
 
 
+function lastEmailMatches(siteId: SiteId, emailAddress: string,
+      textOrTextsToMatch: string | string[], browser): string | false {
+  const textsToMatch: string[] =
+    _.isString(textOrTextsToMatch) ? [textOrTextsToMatch] : textOrTextsToMatch;
+  const regexs = textsToMatch.map(text => new RegExp(utils.regexEscapeSlashes(text)));
+  const email = getLastEmailSenTo(siteId, emailAddress);
+  for (let i = 0; i < regexs.length; ++i) {
+    const regex = regexs[i];
+    const matches = email.bodyHtmlText.match(regex);
+    if (matches) {
+      return matches[0];
+    }
+  }
+  return false;
+}
+
+
 export = {
-  initOrDie: initOrDie,
-  importSiteData: importSiteData,
-  playTimeSeconds: playTimeSeconds,
-  playTimeMinutes: playTimeMinutes,
-  playTimeHours: playTimeHours,
-  playTimeDays: playTimeDays,
-  getLastEmailSenTo: getLastEmailSenTo,
-  countLastEmailsSentTo: countLastEmailsSentTo,
-  getLastVerifyEmailAddressLinkEmailedTo: getLastVerifyEmailAddressLinkEmailedTo,
-  getLastUnsubscriptionLinkEmailedTo: getLastUnsubscriptionLinkEmailedTo,
-  getAnyUnsubscriptionLinkEmailedTo: getAnyUnsubscriptionLinkEmailedTo,
-  waitForUnsubscriptionLinkEmailedTo: waitForUnsubscriptionLinkEmailedTo,
-  waitUntilLastEmailMatches: waitUntilLastEmailMatches,
+  initOrDie,
+  importSiteData,
+  playTimeSeconds,
+  playTimeMinutes,
+  playTimeHours,
+  playTimeDays,
+  getLastEmailSenTo,
+  countLastEmailsSentTo,
+  getLastVerifyEmailAddressLinkEmailedTo,
+  getLastUnsubscriptionLinkEmailedTo,
+  getAnyUnsubscriptionLinkEmailedTo,
+  waitForUnsubscriptionLinkEmailedTo,
+  waitUntilLastEmailMatches,
+  lastEmailMatches,
 };
 

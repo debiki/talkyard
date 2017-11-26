@@ -405,7 +405,7 @@ ReactStore.activateMyself = function(anyNewMe: Myself) {
   // COULD sort perms somehow, how? [4JKT2W1]
   const oldMe: Myself = store.me;
   const everyonesPerms =
-      _.filter(oldMe.permsOnPages, (p: PermsOnPage) => p.forPeopleId = Groups.EveryoneId);
+      _.filter(oldMe.permsOnPages, (p: PermsOnPage) => p.forPeopleId === Groups.EveryoneId);
   newMe.permsOnPages = everyonesPerms.concat(newMe.permsOnPages);
 
   store.user = newMe; // try to remove

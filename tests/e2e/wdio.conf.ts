@@ -15,6 +15,9 @@ if (settings.only) {
 
 var api = { config: {
 
+  // Don't want the annoying warning that 'elementIdLocationInView' will be gone soon.
+  deprecationWarnings: false,
+
   debug: settings.debug,
 
   // ==================

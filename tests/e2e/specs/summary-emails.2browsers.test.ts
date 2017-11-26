@@ -168,9 +168,18 @@ describe("summary emails", () => {
 
   it("... Modya and Maria didn't get a new summary email", () => {
     // Still topic one:
+    // Quick fail fast but-only-probably-works test:
+    assertLastEmailDoesNotMatch(modya.emailAddress, topicTwoToSomeUrl);
+    assertLastEmailDoesNotMatch(maria.emailAddress, topicTwoToSomeUrl);
+    // Slow & safe test:
     server.waitUntilLastEmailMatches(siteId, modya.emailAddress, topicOneEveryoneUrl, browser);
     server.waitUntilLastEmailMatches(siteId, maria.emailAddress, topicOneEveryoneUrl, browser);
   });
+
+  function assertLastEmailDoesNotMatch(emailAddress, text) {
+    assert(!server.lastEmailMatches(siteId, emailAddress, text, browser),
+      `Email address ${emailAddress} got email about: ${topicTwoToSomeUrl}`);
+  }
 
   it("Owen disables summary emails for the Everyone group", () => {
     owensBrowser.complex.loginWithPasswordViaTopbar(owen.username, owen.password);
@@ -197,6 +206,11 @@ describe("summary emails", () => {
   });
 
   it("... but not anyone else", () => {
+    // Quick fail-fast but not so accurate tests:
+    assertLastEmailDoesNotMatch(modya.emailAddress, topicThreeToOwen);
+    assertLastEmailDoesNotMatch(maria.emailAddress, topicThreeToOwen);
+    assertLastEmailDoesNotMatch(mons.emailAddress, topicThreeToOwen);
+    assertLastEmailDoesNotMatch(michael.emailAddress, topicThreeToOwen);
     // Still topic one:
     server.waitUntilLastEmailMatches(siteId, modya.emailAddress, topicOneEveryoneUrl, browser);
     server.waitUntilLastEmailMatches(siteId, maria.emailAddress, topicOneEveryoneUrl, browser);
@@ -230,6 +244,11 @@ describe("summary emails", () => {
   });
 
   it("... but not anyone else", () => {
+    // Quick fail-fast but not so accurate tests:
+    assertLastEmailDoesNotMatch(modya.emailAddress, topicFourToMariaUrl);
+    assertLastEmailDoesNotMatch(mons.emailAddress, topicFourToMariaUrl);
+    assertLastEmailDoesNotMatch(michael.emailAddress, topicFourToMariaUrl);
+    assertLastEmailDoesNotMatch(owen.emailAddress, topicFourToMariaUrl);
     // Still topic one:
     server.waitUntilLastEmailMatches(siteId, modya.emailAddress, topicOneEveryoneUrl, browser);
     // Still topic two:

@@ -57,7 +57,7 @@
     "gulp-preprocess": "^2.0.0",
     "gulp-rename": "^1.2.0",
     "gulp-stylus": "^2.0.6",
-    "gulp-typescript": "^3.2.0",
+    "gulp-typescript": "^3.2.3",
     "gulp-uglify": "3.0.0",
     "gulp-util": "^3.0.8",
     "gulp-watch": "^0.5.3",
@@ -70,11 +70,11 @@
     "selenium-standalone": "^6.9.0",
     "sync-request": "^4.0.1",
     "tape": "^4.6.3",
-    "typescript": "^2.4.1",
-    "wdio-dot-reporter": "^0.0.8",
-    "wdio-mocha-framework": "^0.5.10",
+    "typescript": "^2.6.1",
+    "wdio-dot-reporter": "^0.0.9",
+    "wdio-mocha-framework": "^0.5.11",
     "wdio-sync": "^0.7.0",
-    "webdriverio": "^4.8.0"
+    "webdriverio": "^4.9.9"
   },
   "greenkeeper": {
     "ignore": [
