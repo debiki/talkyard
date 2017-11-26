@@ -509,6 +509,8 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
       pageExists = true,
       pagePath = pagePath,
       pageMeta = Some(pageMeta),
+      altPageId = None,
+      embeddingUrl = None,
       dao = request.dao,
       request = request.request)
 

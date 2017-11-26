@@ -63,7 +63,8 @@ class EmbeddedTopicsController @Inject()(cc: ControllerComponents, edContext: Ed
         // So skip: ReactRenderer.renderPage(jsonStuff.jsonString)
         val tpi = new PageTpi(pageRequest, jsonStuff.jsonString, jsonStuff.version,
           "Dummy cached html [EdM2GRVUF05]", WrongCachedPageVersion,
-          jsonStuff.pageTitle, jsonStuff.customHeadTags, anyEmbeddingUrl = Some(embeddingUrl))
+          jsonStuff.pageTitle, jsonStuff.customHeadTags, anyAltPageId = discussionId,
+          anyEmbeddingUrl = Some(embeddingUrl))
         val htmlString = views.html.templates.page(tpi).body
         (RenderedPage(htmlString, unapprovedPostAuthorIds = Set.empty), pageRequest)
       case Some(realId) =>
@@ -83,6 +84,8 @@ class EmbeddedTopicsController @Inject()(cc: ControllerComponents, edContext: Ed
           pageExists = true,
           pagePath = pagePath,
           pageMeta = Some(pageMeta),
+          embeddingUrl = Some(embeddingUrl),
+          altPageId = discussionId,
           dao = dao,
           request = request.request)
         (request.dao.renderPageMaybeUseCache(pageRequest), pageRequest)

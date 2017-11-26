@@ -27,7 +27,7 @@ var discussionId;
 var postNrToFocus;
 var commentNrHashMatch = window.location.hash.match(/^#comment-(\d+)$/);  // [2PAWC0]
 if (commentNrHashMatch) {
-  commentNrStr = commentNrHashMatch[1];
+  var commentNrStr = commentNrHashMatch[1];
   var commentNr = parseInt(commentNrStr);
   postNrToFocus = commentNr + 1;  // comment nr = post nr - 1  [2PAWC0]
 }
@@ -183,11 +183,15 @@ function onMessage(event) {
     return;
   }
 
+  // COULD REFACTOR: Actually, child iframes can message each other directly;
+  // need not send via the parent.
+
+  var iframe;
+
   switch (eventName) {
     case 'iframeInited':
       console.log("iframe-parent: got 'iframeInited' message");
-      var iframe = findIframeThatSent(event);
-      setIframeBaseAddressAndDiscussionId(iframe);
+      iframe = findIframeThatSent(event);
       if (iframe === theCommentsIframe) {
         // The iframe wants to know the real win dimensions, so it can position modal dialogs on screen.
         messageCommentsIframeNewWinTopSize();
@@ -200,7 +204,7 @@ function onMessage(event) {
       }
       break;
     case 'setIframeSize':  // COULD rename to sth like setIframeSizeAndMaybeScrollToPost
-      var iframe = findIframeThatSent(event);
+      iframe = findIframeThatSent(event);
       setIframeSize(iframe, eventData);
       // Remove the "loading comments" info text.
       var loadingText = document.getElementById('ed-loading-comments');
@@ -225,7 +229,7 @@ function onMessage(event) {
       break;
       */
     case 'justLoggedIn':
-      var iframe = findIframeThatSent(event);
+      iframe = findIframeThatSent(event);
       if (iframe === theCommentsIframe) {
         sendToEditor(event.data);
       }
@@ -234,7 +238,7 @@ function onMessage(event) {
       }
       break;
     case 'logoutClientSideOnly':
-      var iframe = findIframeThatSent(event);
+      iframe = findIframeThatSent(event);
       if (iframe === theCommentsIframe) {
         sendToEditor(event.data);
         showEditor(false);
@@ -274,15 +278,6 @@ function onMessage(event) {
 }
 
 
-function setIframeBaseAddressAndDiscussionId(iframe) {
-  iframe.contentWindow.postMessage(
-      JSON.stringify(['setBaseAddress', {
-        embeddingUrl: embeddingUrl,
-        discussionId: discussionId
-      }]), '*');
-}
-
-
 function setIframeSize(iframe, dimensions) {
   // Previously: iframe.style.width = dimensions.width + 'px'; — but now 2d scrolling disabled.
   iframe.style.height = dimensions.height + 'px';
@@ -306,14 +301,14 @@ function findIframeThatSent(event) {
 
 function sendToComments(message) {
   if (theCommentsIframe) {
-    theCommentsIframe.contentWindow.postMessage(message, '*');
+    theCommentsIframe.contentWindow.postMessage(message, serverOrigin);
   }
 }
 
 
 function sendToEditor(message) {
   if (theEditorIframe) {
-    theEditorIframe.contentWindow.postMessage(message, '*');
+    theEditorIframe.contentWindow.postMessage(message, serverOrigin);
   }
 }
 

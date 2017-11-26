@@ -22,13 +22,15 @@ if (d.i.isInEmbeddedCommentsIframe || d.i.isInEmbeddedEditor) {
 
 addEventListener('message', onMessage, false);
 
-window.parent.postMessage('["iframeInited", {}]', '*');
+window.parent.postMessage('["iframeInited", {}]', ed.embeddingOrigin);
 
 if (d.i.isInEmbeddedCommentsIframe)
   syncDocSizeWithIframeSize();
 
 
 function onMessage(event) {
+  if (event.origin !== ed.embeddingOrigin)
+    return;
 
   // The message is a "[eventName, eventData]" string because IE <= 9 doesn't support
   // sending objects.
@@ -45,12 +47,6 @@ function onMessage(event) {
   }
 
   switch (eventName) {
-    case 'setBaseAddress':
-      d.i.iframeBaseUrl = eventData.embeddingUrl;  // COULD remove? only d.i.embeddingUrl is enough?
-      d.i.embeddingUrl = eventData.embeddingUrl;
-      d.i.altPageId = eventData.discussionId;
-      addBaseElem(eventData);
-      break;
     case 'justLoggedIn':
       debiki2.ReactActions.setNewMe(eventData);
       break;
@@ -104,13 +100,6 @@ function onMessage(event) {
 };
 
 
-function addBaseElem(address) {
-  // Insert at the top of <head>.
-  var baseElem = debiki2.$h.parseHtml('<base href="' + address + '" target="_parent">')[0];
-  Bliss.start(baseElem, Bliss('head'));
-};
-
-
 /**
  * Polls the document size and tells the parent window to resize this <iframe> if needed,
  * to avoid scrollbars.
@@ -139,9 +128,9 @@ function syncDocSizeWithIframeSize() {
       }
     ]);
 
-    window.parent.postMessage(message, '*');
-  };
-};
+    window.parent.postMessage(message, ed.embeddingOrigin);
+  }
+}
 
 
 }

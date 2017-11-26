@@ -251,6 +251,8 @@ class ViewPageController @Inject()(cc: ControllerComponents, edContext: EdContex
       pageExists = true,
       pagePath = correctPagePath,
       pageMeta = Some(pageMeta),
+      altPageId = None,
+      embeddingUrl = None,
       dao = dao,
       request = request.request)
 

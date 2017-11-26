@@ -65,7 +65,8 @@ trait RenderedPageHtmlDao {
         renderContent(pageRequest.thePageId, renderResult.version, renderResult.jsonString)
 
       val tpi = new PageTpi(pageRequest, renderResult.jsonString, renderResult.version,
-        cachedHtml, cachedVersion, renderResult.pageTitle, renderResult.customHeadTags)
+        cachedHtml, cachedVersion, renderResult.pageTitle, renderResult.customHeadTags,
+        anyAltPageId = pageRequest.altPageId, anyEmbeddingUrl = pageRequest.embeddingUrl)
 
       val pageHtml: String = views.html.templates.page(tpi).body
 

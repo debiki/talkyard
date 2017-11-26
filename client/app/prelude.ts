@@ -15,6 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+/// <reference path="server-vars.d.ts" />
 /// <reference path="model.ts" />
 /// <reference path="constants.ts" />
 

@@ -47,6 +47,8 @@ class PageRequest[A](
   /** If the requested page does not exist, pagePath.pageId is empty. */
   val pagePath: PagePath,
   val pageMeta: Option[PageMeta],
+  val embeddingUrl: Option[String],
+  val altPageId: Option[String],
   val dao: SiteDao,
   val request: Request[A]) extends DebikiRequest[A] {
 
@@ -148,6 +150,7 @@ class DummyPageRequest[A](
   dao: SiteDao,
   request: Request[A]) extends PageRequest[A](
     siteIdAndCanonicalHostname, sid, xsrfToken, browserId, user, pageExists,
-    pagePath, Some(pageMeta), dao, request) {
+    pagePath, Some(pageMeta), altPageId = None, embeddingUrl = None,
+    dao = dao, request = request) {
 
 }

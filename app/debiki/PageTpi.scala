@@ -107,6 +107,15 @@ class SiteTpi protected (
   def anyAltPageId: Option[AltPageId] = None
   def anyEmbeddingUrl: Option[String] = None
 
+  def anyEmbeddingOrigin: Option[String] = anyEmbeddingUrl map { url =>
+    var numSlashes = 0
+    url.takeWhile(c => {
+      if (c == '/') numSlashes += 1
+      // The 3rd slash ends the origin in: 'https://serveraddress/url/path/etc'.
+      numSlashes <= 2
+    })
+  }
+
   def currentVersionString = ""
   def cachedVersionString = ""
 
@@ -257,8 +266,8 @@ class PageTpi(
   private val cachedVersion: CachedPageVersion,
   private val pageTitle: Option[String],
   override val anyCustomMetaTags: FindHeadTagsResult,
-  override val anyAltPageId: Option[AltPageId] = None,
-  override val anyEmbeddingUrl: Option[String] = None)
+  override val anyAltPageId: Option[AltPageId],
+  override val anyEmbeddingUrl: Option[String])
   extends SiteTpi(pageReq, json = None, pageTitle = pageTitle) {
 
   override def anyCurrentPageId = Some(pageReq.thePageId)

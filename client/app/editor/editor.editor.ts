@@ -479,7 +479,7 @@ export var Editor = createComponent({
       // being written. But that's wrong, clear those marks.
       if (d.i.isInEmbeddedEditor) {
         window.parent.postMessage(
-          JSON.stringify(['clearIsReplyingMarks', {}]), '*');
+          JSON.stringify(['clearIsReplyingMarks', {}]), ed.embeddingOrigin);
       }
       else {
         d.i.clearIsReplyingMarks();
@@ -740,7 +740,8 @@ export var Editor = createComponent({
     // and then back to normal.
     const newShowMaximized = !this.state.showMaximized || !this.state.splitHorizontally;
     if (d.i.isInEmbeddedEditor && newShowMaximized !== this.state.showMaximized) {
-      window.parent.postMessage(JSON.stringify(['maximizeEditor', newShowMaximized]), '*');
+      window.parent.postMessage(JSON.stringify(['maximizeEditor', newShowMaximized]),
+          ed.embeddingOrigin);
     }
     this.setState({
       showMaximized: !this.state.showMaximized || !this.state.splitHorizontally,
@@ -758,7 +759,7 @@ export var Editor = createComponent({
   toggleMinimized: function() {
     const nextShowMini = !this.state.showMinimized;
     if (d.i.isInEmbeddedEditor) {
-      window.parent.postMessage(JSON.stringify(['minimizeEditor', nextShowMini]), '*');
+      window.parent.postMessage(JSON.stringify(['minimizeEditor', nextShowMini]), ed.embeddingOrigin);
     }
     this.setState({ showMinimized: nextShowMini });
     if (nextShowMini) {
@@ -772,7 +773,7 @@ export var Editor = createComponent({
     this.makeSpaceAtBottomForEditor();
     this.setState({ visible: true });
     if (d.i.isInEmbeddedEditor) {
-      window.parent.postMessage(JSON.stringify(['showEditor', {}]), '*');
+      window.parent.postMessage(JSON.stringify(['showEditor', {}]), ed.embeddingOrigin);
     }
     // After rerender, focus the input fields:
     setTimeout(() => {
@@ -807,7 +808,7 @@ export var Editor = createComponent({
     });
     // Remove any is-replying highlights.
     if (d.i.isInEmbeddedEditor) {
-      window.parent.postMessage(JSON.stringify(['hideEditor', {}]), '*');
+      window.parent.postMessage(JSON.stringify(['hideEditor', {}]), ed.embeddingOrigin);
     }
     else {
       // (Old jQuery code.)

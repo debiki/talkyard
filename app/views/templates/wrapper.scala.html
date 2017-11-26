@@ -21,6 +21,9 @@
 <html class="@tpi.debikiHtmlTagClasses">
 <head>
 @tpi.debikiMeta
+@if(tpi.anyEmbeddingUrl.nonEmpty) {
+<base href="@{tpi.anyEmbeddingUrl.get}" target="_parent">
+}
 @Html(tpi.anySafeMetaTags)
 @tpi.debikiStyles
 @tpi.stylesheetBundle("styles.css")

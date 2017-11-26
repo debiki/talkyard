@@ -1,4 +1,5 @@
 
+/// <reference path="server-vars.d.ts" />
 /// <reference path="model.ts" />
 
 // In constants.ts:

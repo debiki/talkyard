@@ -37,6 +37,10 @@
   tpi.anyEmbeddingUrl.map(url => s"'${ Encode.forHtmlContent(url) }'") getOrElse "undefined"
 }
 
+@embeddingOriginOrUndefined = @{
+  tpi.anyEmbeddingOrigin.map(url => s"'${ Encode.forHtmlContent(url) }'") getOrElse "undefined"
+}
+
 @isInLoginWindowBoolStr = @{
   if (isInLoginWindow) "true" else "false"
 }
@@ -157,6 +161,12 @@ if (_showAdmGuide || (!_narrow && _cbOpen === 'true' &&
   _store.isContextbarOpen = true;
 }
 
+@* Add an entry in server-vars.d.ts whenever adding sth here. [5JWKA27] *@
+var ed = {
+  embeddingOrigin: @Html(embeddingOriginOrUndefined)
+};
+
+@* CLEAN_UP change from debiki.internal = {...} to ed = {...}, I've started, just above. *@
 var debiki = {
   siteId: '@siteId',
   currentVersion: '@tpi.currentVersionString',

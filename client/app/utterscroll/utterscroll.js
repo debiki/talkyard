@@ -400,7 +400,7 @@ debiki.Utterscroll = (function(options) {
 
     if (d.i.isInIframe)
       window.parent.postMessage(
-          JSON.stringify(['startUtterscrolling', cloneEvent(event)]), '*');
+          JSON.stringify(['startUtterscrolling', cloneEvent(event)]), ed.embeddingOrigin);
 
     return false;
   };
@@ -504,7 +504,7 @@ debiki.Utterscroll = (function(options) {
 
     if (d.i.isInIframe) {
       window.parent.postMessage(
-          JSON.stringify(['doUtterscroll', cloneEvent(event)]), '*');
+          JSON.stringify(['doUtterscroll', cloneEvent(event)]), ed.embeddingOrigin);
     }
     else {
       $elemToScroll.scrollLeft($elemToScroll.scrollLeft() - distNow.x);
@@ -533,7 +533,7 @@ debiki.Utterscroll = (function(options) {
 
     if (d.i.isInIframe)
       window.parent.postMessage(
-          JSON.stringify(['stopUtterscrolling', cloneEvent(event)]), '*');
+          JSON.stringify(['stopUtterscrolling', cloneEvent(event)]), ed.embeddingOrigin);
 
     return false;
   };
@@ -573,7 +573,7 @@ debiki.Utterscroll = (function(options) {
 
     document.onmousemove = function(event) {
       window.parent.postMessage(
-          JSON.stringify(['onMouseMove', cloneEvent(event)]), '*');
+          JSON.stringify(['onMouseMove', cloneEvent(event)]), ed.embeddingOrigin);
       if (origOnMouseMove)
         return origOnMouseMove(event);
     }
@@ -584,7 +584,7 @@ debiki.Utterscroll = (function(options) {
         returnValue = origOnMouseUp(event);
 
       window.parent.postMessage(
-          JSON.stringify(['stopUtterscrolling', cloneEvent(event)]), '*');
+          JSON.stringify(['stopUtterscrolling', cloneEvent(event)]), ed.embeddingOrigin);
       return returnValue;
     }
   }
