@@ -214,11 +214,15 @@ describe("user profile access:", () => {
     modyasBrowser.refresh();
   });
 
-  it("... Modya sees Maria's topics, incl the unlisted, but not the private message", () => {
-    let topics = modyasBrowser.userProfilePage.activity.topics;
+  // Split this into two, so won't timeout.
+  let topics;
+  it("... Modya sees Maria's topics + ...", () => {
+    topics = modyasBrowser.userProfilePage.activity.topics;
     topics.assertTopicTitleVisible(forum.topics.byMariaCategoryA.title);
     topics.assertTopicTitleVisible(forum.topics.byMariaCategoryANr2.title);
     topics.assertTopicTitleVisible(forum.topics.byMariaCategoryB.title);
+  });
+  it("... + the unlisted topic, but not the private message", () => {
     topics.assertTopicTitleVisible(forum.topics.byMariaUnlistedCat.title);
     topics.assertTopicTitleVisible(forum.topics.byMariaStaffOnlyCat.title);
     topics.assertTopicTitleVisible(forum.topics.byMariaDeletedCat.title);
@@ -226,13 +230,17 @@ describe("user profile access:", () => {
     topics.assertExactly(numPublicTopicsByMaria + 3);  // + 3 = unlisted + staff-only + deleted
   });
 
-  it("... and the public posts + the one on the unlisted page, but not the priv msg post", () => {
+  // Split this into two, so won't timeout.
+  let posts;
+  it("... and the public posts + ...", () => {
     modyasBrowser.userProfilePage.activity.switchToPosts({ shallFindPosts: true });
-    let posts = modyasBrowser.userProfilePage.activity.posts;
+    posts = modyasBrowser.userProfilePage.activity.posts;
     posts.assertPostTextVisible(mariasPublicReplyToMichael);
     posts.assertPostTextVisible(forum.topics.byMariaCategoryA.body);
     posts.assertPostTextVisible(forum.topics.byMariaCategoryANr2.body);
     posts.assertPostTextVisible(forum.topics.byMariaCategoryB.body);
+  });
+  it("... + the one on the unlisted page, but not the priv msg post", () => {
     posts.assertPostTextVisible(forum.topics.byMariaUnlistedCat.body);
     posts.assertPostTextVisible(forum.topics.byMariaStaffOnlyCat.body);
     posts.assertPostTextVisible(forum.topics.byMariaDeletedCat.body);
