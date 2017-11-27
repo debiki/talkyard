@@ -2195,13 +2195,16 @@ function pagesFor(browser) {
       browser.pause(300);
       isChecked = browser.isSelected(selector);
       console.log(selector + ' is checked: ' + isChecked);
-      browser.pause(300);
-      isChecked = browser.isSelected(selector);
-      console.log(selector + ' is checked: ' + isChecked);
       browser.pause(400);
       isChecked = browser.isSelected(selector);
       console.log(selector + ' is checked: ' + isChecked);
       browser.pause(500);
+      isChecked = browser.isSelected(selector);
+      console.log(selector + ' is checked: ' + isChecked);
+      browser.pause(600);
+      isChecked = browser.isSelected(selector);
+      console.log(selector + ' is checked: ' + isChecked);
+      browser.pause(700);
       isChecked = browser.isSelected(selector);
       console.log(selector + ' is checked: ' + isChecked);
       if (isChecked === checked)

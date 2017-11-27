@@ -81,11 +81,11 @@ var slimJsFiles = [
       // Place React first so we can replace it at index 0,1,2,3 with the optimized min.js versions.
       'node_modules/react/dist/react.js',
       'node_modules/react-dom/dist/react-dom.js',
-      'node_modules/react-dom-factories/index.js',
       'node_modules/prop-types/prop-types.js',
       'node_modules/create-react-class/create-react-class.js',
       // COULD_OPTIMIZE SMALLER_BUNDLE or perhaps even remove? add pure CSS anims instead?
       'node_modules/react-transition-group/dist/react-transition-group.js',  // try to move to more-bundle
+      'node_modules/react-dom-factories/index.js',
       'target/client/app/utils/calcScrollRectIntoViewCoords.js',
       'client/third-party/smoothscroll-tiny.js',
       'client/third-party/bliss.shy.js',
@@ -423,8 +423,9 @@ gulp.task('enable-prod-stuff', function() {
   // So we want to use react-with-addons.min.js, rather than minifying the .js ourselves.
   slimJsFiles[0] = 'node_modules/react/dist/react.min.js';
   slimJsFiles[1] = 'node_modules/react-dom/dist/react-dom.min.js';
-  slimJsFiles[2] = 'node_modules/create-react-class/create-react-class.min.js';
-  slimJsFiles[3] = 'node_modules/react-transition-group/dist/react-transition-group.min.js';
+  slimJsFiles[2] = 'node_modules/prop-types/prop-types.min.js';
+  slimJsFiles[3] = 'node_modules/create-react-class/create-react-class.min.js';
+  slimJsFiles[4] = 'node_modules/react-transition-group/dist/react-transition-group.min.js';
 });
 
 
