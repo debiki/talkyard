@@ -242,12 +242,12 @@ export function ifEventOnNotThen(event: string, selector: string,
 export const $all = $bySelector;
 export const $$all = $bySelector;  // use $all instead?
 export const $$bySelector = $bySelector;  // returns many, so should be named $$... not just $...
-export function $bySelector(selector: string): NodeListOf<Element> {   // RENAME
-  return document.querySelectorAll(selector);
+export function $bySelector(selector: string, elem?): NodeListOf<Element> {   // RENAME
+  return (elem || document).querySelectorAll(selector);
 }
 
-export function $first(selector: string): HTMLElement {
-  const elems = document.querySelectorAll(selector);
+export function $first(selector: string, elem?): HTMLElement {
+  const elems = (elem || document).querySelectorAll(selector);
   return <HTMLElement> (elems.length ? elems[0] : null);
 }
 

@@ -36,6 +36,7 @@ class CustomFormController @Inject()(cc: ControllerComponents, edContext: EdCont
 
   import context.security.{throwIndistinguishableNotFound, throwNoUnless}
 
+
   def handleJsonReply: Action[JsValue] = PostJsonAction(
         RateLimits.PostReply, maxBytes = MaxPostSize) { request =>
 
@@ -54,7 +55,7 @@ class CustomFormController @Inject()(cc: ControllerComponents, edContext: EdCont
     // (A bit weird, here we authz with Authz.maySubmitCustomForm(), but later in
     // PostsDao.insertReply via Authz.mayPostReply() — but works okay.)
     throwNoUnless(Authz.maySubmitCustomForm(
-      request.userAndLevels, request.user.map(dao.getGroupIds).getOrElse(Nil),
+      request.userAndLevels, dao.getGroupIds(request.user),
       pageMeta, inCategoriesRootLast = categoriesRootLast,
       permissions = dao.getPermsOnPages(categoriesRootLast)),
       "EdE2TE4A0")

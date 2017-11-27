@@ -54,14 +54,27 @@ export function activateAnyCustomForm() {
         });
       }
       else if (doWhat.value === 'SubmitToThisPage') {
-        Server.submitCustomFormAsJsonReply(formData, function() {
+        // FormData.entries() reqiures ES6? Do this instead:
+        const entries = [];
+        _.each($all('input', form), function(input: any) {
+          if (input.name && input.name !== 'doWhat' &&
+              input.type !== 'button' && input.type !== 'submit') {
+            const entry = {
+              name: input.name,
+              type: input.type,
+              value: input.value !== undefined ? input.value : input.checked
+            };
+            entries.push(entry);
+          }
+        });
+        Server.submitCustomFormAsJsonReply(entries, function() {
           // This messes with stuff rendered by React, but works fine nevertheless.
-          const thanks = form.querySelector('.FormThanks');
+          const thanks = $first('.FormThanks', form);
           const replacement = thanks || $h.parseHtml('<p class="esFormThanks">Thank you.</p>')[0];
           form.parentNode.insertBefore(replacement, form);
           form.remove();
         });
-        const submitButton = form.querySelector('button[type=submit]');
+        const submitButton = $first('button[type=submit]', form);
         if (submitButton) {
           submitButton.textContent = "Submitting ...";
           submitButton.setAttribute('disabled', 'disabled');

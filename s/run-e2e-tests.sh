@@ -97,7 +97,7 @@ function runAllEndToEndTests {
   runEndToEndTest s/wdio target/e2e/wdio.conf.js            --browser $browser --only user-profile-access $args
   runEndToEndTest s/wdio target/e2e/wdio.conf.js            --browser $browser --only user-profile-change-username $args
 
-  ## [E2EBUG] runEndToEndTest s/wdio target/e2e/wdio.3chrome.conf.js    --browser $browser --only custom-forms.3browsers $args
+  runEndToEndTest s/wdio target/e2e/wdio.3chrome.conf.js    --browser $browser --only custom-forms.3browsers $args
 
   runEndToEndTest s/wdio target/e2e/wdio.conf.js            --browser $browser --only authz-view-as-stranger $args
   runEndToEndTest s/wdio target/e2e/wdio.conf.js            --browser $browser --only authz-basic-see-reply-create $args

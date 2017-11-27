@@ -994,12 +994,11 @@ export function startPrivateGroupTalk(title: string, text: string, pageRole: Pag
 }
 
 
-export function submitCustomFormAsJsonReply(formData: FormData, success?: () => void) {
-  die('unimpl [EdE2WKUGAA]'); /*
+export function submitCustomFormAsJsonReply(entries: object[], success?: () => void) {
   postJsonSuccess('/-/submit-custom-form-as-json-reply', success, {
     pageId: d.i.pageId,
-    formInputs: formInputNameValues,
-  }); */
+    formInputs: entries,
+  });
 }
 
 

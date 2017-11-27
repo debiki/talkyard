@@ -43,6 +43,8 @@ var formPageBody = `
 ${formPageIntroText}
 
 <form>
+  <input name="doWhat" value="SubmitToThisPage">
+
   <label for="${textInputId}">textInputName:</label>
   <input id="${textInputId}" name="${textInputName}" type="text">
 
@@ -55,6 +57,8 @@ var formPageBody2 = `
 ${formPageIntroText}
 
 <form>
+  <input name="doWhat" value="SubmitToThisPage">
+
   <label for="${textInputId}">textInputName:</label>
   <input id="${textInputId}" name="${textInputName}" type="text">
 
@@ -66,6 +70,8 @@ ${formPageIntroText}
 
   <label for="${textareaId}">textareaName:</label>
   <input id="${textareaId}" name="${textareaName}">
+
+  <input type="button" name="should-be-ignored" value="Dummy button">
 
   <input id="submit" type="submit" value="Submit">
 </form>
@@ -94,6 +100,7 @@ describe("private chat", function() {
     var site: SiteData = make.forumOwnedByOwen('custom-forms', { title: forumTitle });
     site.settings.allowGuestLogin = true;
     site.settings.requireVerifiedEmail = false;
+    site.settings.mayPostBeforeEmailVerified = true;
     site.members.push(make.memberModeratorMons());
     site.members.push(make.memberMaria());
     idAddress = server.importSiteData(site);
@@ -125,8 +132,6 @@ describe("private chat", function() {
     strangerA.customForm.assertNumSubmissionVisible(0);
     // Shouldn't appear after reload:
     strangerA.refresh();
-    // This fails, incorrectly blocks looking for '.dw-p-flat' — skips other commands
-    // that ought to happen before. Very weird.  [E2EBUG]
     strangerA.customForm.assertNumSubmissionVisible(0);
   });
 
@@ -139,7 +144,6 @@ describe("private chat", function() {
   });
 
   it("Stranger B fills in and submits", function() {
-    // BUG Hangs here forever, test fails. Was working fine, until new Chrome version released.
     strangerB.waitAndSetValueForId(textInputId, strangerBInputText1);
     strangerB.customForm.submit();
   });
