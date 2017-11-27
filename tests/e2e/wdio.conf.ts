@@ -139,7 +139,9 @@ var api = { config: {
   mochaOpts: {
     ui: 'bdd',
     timeout: settings.waitforTimeout,
-    grep: settings.grep
+    grep: settings.grep,
+    // Bail after first test failure. Saves time, and can inspect the Selenium logs.
+    bail: true,
   },
 
 
