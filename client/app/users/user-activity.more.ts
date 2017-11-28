@@ -103,9 +103,6 @@ const UsersPosts = createFactory({
         posts: response.posts,
         author: response.author,
       });
-    }, () => {
-      // Forget all posts, in case we're no longer allowed to view the posts.
-      this.setState({ error: true, posts: null });
     });
   },
 

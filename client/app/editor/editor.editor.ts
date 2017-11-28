@@ -217,8 +217,9 @@ export var Editor = createComponent({
         if (!this.state.isUploadingFile) {
           this.setState({ isUploadingFile: true });
           pagedialogs.getProgressBarDialog().open("Uploading...", () => {
-            this.setState({ uploadCancelled: true });
             xhr.abort("Intentionally cancelled [EsM3GU05]");
+            if (this.isGone) return;
+            this.setState({ uploadCancelled: true });
           });
         }
         else {

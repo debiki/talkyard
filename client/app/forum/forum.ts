@@ -726,6 +726,7 @@ const ForumButtons = createComponent({
 
 const LoadAndListTopics = createFactory({
   displayName: 'LoadAndListTopics',
+  mixins: [debiki2.StoreListenerMixin],
 
   getInitialState: function(): any {
     // The server has included in the Flux store a list of the most recent topics, and we
@@ -746,6 +747,25 @@ const LoadAndListTopics = createFactory({
     }
     else {
       return {};
+    }
+  },
+
+  onChange: function() {
+    // REFACTOR should probably use the store, for the topic list, so need not do this.
+    if (this.state.isLoading === undefined) {
+      // We're still using a copy of the topics list in the store, so update the copy,
+      // maybe new user-specific data has been added.
+      const category: Category = this.props.activeCategory;
+      let topics;
+      if (category) {
+        topics = _.clone(this.props.store.topics);
+        topics.sort((t: Topic, t2: Topic) => topic_sortByLatestActivity(t, t2, category.id));
+      }
+      else {
+        // A restricted category, we may not see it?
+        topics = [];
+      }
+      this.setState({ topics });
     }
   },
 

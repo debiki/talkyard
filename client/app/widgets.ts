@@ -66,7 +66,13 @@ export const InputTypeSubmit: any = makeWidget(r.input, ' btn btn-primary', { ty
 
 function makeWidget(what, spaceWidgetClasses: string, extraProps?) {
   return function(origProps, ...children) {
-    var newProps = _.assign({}, origProps || {}, extraProps);
+    const newProps = _.assign({}, origProps || {}, extraProps);
+    const helpText = newProps.help;
+    if (helpText) {
+      // We'll show a help text <p> below the widget.
+      delete newProps.help;
+      newProps.key = newProps.key || 'widget';
+    }
     newProps.className = (origProps.className || '') + spaceWidgetClasses;
 
     // Prevent automatic submission of Button when placed in a <form>.
@@ -91,8 +97,13 @@ function makeWidget(what, spaceWidgetClasses: string, extraProps?) {
       delete newProps.primary;
     }
 
-    var args = [newProps].concat(children);
-    return what.apply(undefined, args);
+    const anyHelpDiv =
+        helpText && r.p({ className: 'help-block', key: newProps.key + '-help' }, helpText);
+
+    const widgetArgs = [newProps].concat(children);
+    const widget = what.apply(undefined, widgetArgs);
+
+    return anyHelpDiv ? [widget, anyHelpDiv] : widget;
   }
 }
 

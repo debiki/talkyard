@@ -12,11 +12,14 @@
   "engines": {
     "node": ">= 0.8.0"
   },
+  "resolutions": {
+    "@types/react": "16.0.25"
+  },
   "dependencies": {
     "@types/core-js": "^0.9.42",
     "@types/lodash": "^4.14.68",
-    "@types/react": "^15.0.35",
-    "@types/react-dom": "^15.5.1",
+    "@types/react": "^16.0.25",
+    "@types/react-dom": "^16.0.3",
     "at.js": "^1.5.3",
     "blacklist": "^1.1.4",
     "bootstrap": "3.1.1",
@@ -30,9 +33,9 @@
     "keymaster": "^1.6.2",
     "markdown-it": "^8.4.0",
     "moment": "^2.18.1",
-    "react": "^15.6.2",
+    "react": "^16.1.1",
     "react-bootstrap": "^0.31.5",
-    "react-dom": "^15.6.2",
+    "react-dom": "^16.1.1",
     "react-dom-factories": "^1.0.2",
     "react-router-dom": "^4.2.2",
     "react-select": "1.0.0-rc.10",

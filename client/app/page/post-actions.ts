@@ -133,7 +133,7 @@ export const PostActions = createComponent({
     // (Don't check this.props...isFlat here — use postType instead.)
     const post: Post = this.props.post;
     const newPostType = post.postType === PostType.Flat ? PostType.Flat : PostType.Normal;
-    login.loginIfNeededReturnToPost('LoginToComment', post.nr, function() {
+    login.loginIfNeededReturnToPost('LoginToComment', post.nr, () => {
       if (this.isGone) return;
       // Toggle highlighting first, because it'll be cleared later if the
       // editor is closed, and then we don't want to toggle it afterwards.

@@ -23,13 +23,12 @@
 /// <reference path="../utils/react-utils.ts" />
 
 //------------------------------------------------------------------------------
-   module debiki2.utils {
+   namespace debiki2.utils {
 //------------------------------------------------------------------------------
 
 const r = ReactDOMFactories;
 const keymaster: Keymaster = window['keymaster'];
-declare var ReactBootstrap: any;  // lazy loaded
-declare var Modal;                // lazy loaded
+declare const rb; // ReactBootstrap components, lazy loaded
 
 
 export const ModalDropdownButton = createComponent({
@@ -69,16 +68,18 @@ export const ModalDropdownButton = createComponent({
   },
 
   render: function() {
-    var props = this.props;
-    var state = this.state;
+    const props = this.props;
+    const state = this.state;
 
     // Don't create immediately, because creating all dropdowns and dialogs directly on
     // page load makes the page load slower (a few millis per dialog I think, adding up to
     // 30ms? 70ms? which is a lot).
-    var dropdownModal;
+    let dropdownModal;
     if (state.modalCreated) {
       dropdownModal =
-          DropdownModal({ show: state.isOpen, pullLeft: props.pullLeft,
+        // Prevent clicks from propagating outside the modal, and e.g. triggering an onClick outside.
+        r.div({ onClick: (event) => event.stopPropagation(), key: 'MDM' },
+         DropdownModal({ show: state.isOpen, pullLeft: props.pullLeft,
             onHide: this.closeDropdown, atX: state.buttonX, atY: state.buttonY,
             dialogClassName2: props.dialogClassName2, // <— should be this? CLEAN_UP: remove '2'
             className: props.dialogClassName,  // <— CLEAN_UP REMOVE/RENAME to dialogContentClassName?
@@ -86,13 +87,16 @@ export const ModalDropdownButton = createComponent({
             allowFullWidth: props.allowFullWidth, ref: 'dropdownModal',
             showCloseButton: props.showCloseButton,
             onContentClick: props.closeOnClick === false ? null : this.closeDropdown },
-          props.children);
+          props.children));
     }
 
-    return (
+    // Don't nest the dropdownModal inside the Button — then, all clicks inside the modal dialog,
+    // would propagate to the button, which does event.preventDefault(), making links inside the
+    // modal dialog stop working.
+    return [
       Button({ onClick: this.openDropdown, className: props.className, id: props.id,
-          ref: 'openButton' },
-        this.props.title, dropdownModal));
+          ref: 'openButton', key: 'MDB' }, this.props.title),
+      dropdownModal];
   }
 });
 
@@ -111,8 +115,6 @@ export const DropdownModal = createComponent({
 
   componentDidMount: function() {
     Server.loadMoreScriptsBundle(() => {
-      ReactBootstrap = window['ReactBootstrap'];
-      Modal = reactCreateFactory(ReactBootstrap.Modal);
       this.setState({ moreBundleLoaded: true });
     })
   },
@@ -225,7 +227,7 @@ export const DropdownModal = createComponent({
     const dialogClassName = this.props.dialogClassName2 ? ' ' + this.props.dialogClassName2 : '';
     var notTooWideClass = this.props.allowFullWidth ? '' : ' esDropModal-NotTooWide';
     return (
-      Modal({ show: this.props.show, onHide: this.props.onHide,
+      rb.Modal({ show: this.props.show, onHide: this.props.onHide,
           onShow: () => this.setState({ hideBackdrop: false }),
           dialogClassName: 'esDropModal' + notTooWideClass + dialogClassName,
           backdropStyle: backdropStyle },

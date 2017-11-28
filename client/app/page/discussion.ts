@@ -732,7 +732,7 @@ const RootPostAndComments = createComponent({
     // best-first-order comments above. And text that explains how this works.
     if (firstAppendedIndex < threadedChildren.length) {
       const line =
-        r.li({ className: 's_AppendBottomDiv' },
+        r.li({ className: 's_AppendBottomDiv', key: 'ApBtmDv' },
           r.span({},
             r.span({ className: 's_AppendBottomDiv_Ar-Up' }, '➜'),
             " Above: Replies, best first. "),

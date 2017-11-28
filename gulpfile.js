@@ -1,6 +1,6 @@
 /**
  * Build file for client scripts and styles.
- * Copyright (c) 2014-2016 Kaj Magnus Lindberg
+ * Copyright (c) 2014-2017 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -79,8 +79,8 @@ var thisIsAConcatenationMessage =
 //   block Google's CDN.
 var slimJsFiles = [
       // Place React first so we can replace it at index 0,1,2,3 with the optimized min.js versions.
-      'node_modules/react/dist/react.js',
-      'node_modules/react-dom/dist/react-dom.js',
+      'node_modules/react/umd/react.development.js',
+      'node_modules/react-dom/umd/react-dom.development.js',
       'node_modules/prop-types/prop-types.js',
       'node_modules/create-react-class/create-react-class.js',
       // COULD_OPTIMIZE SMALLER_BUNDLE or perhaps even remove? add pure CSS anims instead?
@@ -224,8 +224,8 @@ function compileServerTypescript() {
         // Needs to be first. There's some missing ';' at the start of the script bug?
         'modules/sanitize-html/dist/sanitize-html.min.js',
         'client/third-party/html-css-sanitizer-bundle.js',
-        'node_modules/react/dist/react.min.js',
-        'node_modules/react-dom/dist/react-dom-server.min.js',
+        'node_modules/react/umd/react.production.min.js',
+        'node_modules/react-dom/umd/react-dom-server.browser.production.min.js',
         'node_modules/react-dom-factories/index.js',
         'node_modules/create-react-class/create-react-class.min.js',
         // Don't need React CSS transitions server side.
@@ -421,8 +421,8 @@ gulp.task('wrap-javascript-concat-scripts', ['wrapJavascript'], function () {
 gulp.task('enable-prod-stuff', function() {
   // This script isn't just a minified script — it contains lots of optimizations.
   // So we want to use react-with-addons.min.js, rather than minifying the .js ourselves.
-  slimJsFiles[0] = 'node_modules/react/dist/react.min.js';
-  slimJsFiles[1] = 'node_modules/react-dom/dist/react-dom.min.js';
+  slimJsFiles[0] = 'node_modules/react/umd/react.production.min.js';
+  slimJsFiles[1] = 'node_modules/react-dom/umd/react-dom.production.min.js';
   slimJsFiles[2] = 'node_modules/prop-types/prop-types.min.js';
   slimJsFiles[3] = 'node_modules/create-react-class/create-react-class.min.js';
   slimJsFiles[4] = 'node_modules/react-transition-group/dist/react-transition-group.min.js';

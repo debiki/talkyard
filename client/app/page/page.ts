@@ -113,11 +113,11 @@ export function renderTitleBodyComments() {
   const store: Store = debiki2.ReactStore.allData();
   if (store.pageRole === PageRole.Forum) {
     // scrollBehavior: debiki2.forum.ForumScrollBehavior,
-    ReactDOM.render(
+    ReactDOM.hydrate(
         Router({}, debiki2.forum.buildForumRoutes()), root);
   }
   else {
-    ReactDOM.render(PageWithState(), root);
+    ReactDOM.hydrate(PageWithState(), root);
   }
 }
 

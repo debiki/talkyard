@@ -425,15 +425,16 @@ ReactStore.activateMyself = function(anyNewMe: Myself) {
   });
 
   if (_.isArray(store.topics)) {
-    _.each(store.me.restrictedTopics, (topic: Topic) => {
-      store.topics.push(topic);
-    });
-    store.topics.sort((t: Topic, t2: Topic) =>
-      topic_sortByLatestActivity(t, t2, store.categoryId));
-    // later: COULD try to avoid gaps, e.g. don't load restricted topics back to year 2000
+    store.topics = store.topics.concat(store.me.restrictedTopics);
+    store.topics.sort((t: Topic, t2: Topic) => topic_sortByLatestActivity(t, t2, store.categoryId));
+    // later: BUG COULD try to avoid gaps, e.g. don't load restricted topics back to year 2000
     // but public topics back to 2010 only.
-    // BUG we always sort by time, but in some rare cases, we want to sort by most-popular-first,
+    // BUG we always sort by time, but sometimes, we want to sort by most-popular-first, or created-at,
     // *and* at the same time call activateMyself() — then here we'll sort by the wrong thing.
+
+    // restrictedTopics might include publicly visible topics, which were already in store.topics.
+    // So now there might be duplicates, instore.topics.
+    store.topics = _.uniqBy(store.topics, 'pageId');
   }
 
   // Absent on about-user pages.

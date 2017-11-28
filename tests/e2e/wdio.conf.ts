@@ -212,8 +212,11 @@ var api = { config: {
 
   // Gets executed after all tests are done. You still have access to all global variables from
   // the test.
-  // after: function (capabilties, specs) {
-  // },
+  after: function (capabilties, specs) {
+    if (settings.debugAfterwards) {
+      global.browser.debug();
+    }
+  },
 
   // Gets executed after all workers got shut down and the process is about to exit. It is not
   // possible to defer the end of the process using a promise.
