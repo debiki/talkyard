@@ -495,6 +495,9 @@ object ReactJson {
 
     val allHeadTags = resultBuilder.toString
 
+    // COULD allow only-admin to edit <style> tags too. Don't let anyone else do that though,
+    // because: clickjacking.
+
     // For now, allow no one but admins, to edit any head tags at all. [2GKW0M]
     // Other people may edit only Title and meta keywords?
     val adminOnlyHeadTags = allHeadTags
