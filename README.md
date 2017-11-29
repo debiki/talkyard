@@ -229,9 +229,11 @@ Contributing
 If you'd like to contribute, read more
 [at the end of this page](https://www.effectivediscussions.org/dev/-81n25/technical-information) about contributing.
 
-In the future, I suppose there will be a Contributor License Agreement (CLA), similar to
-[Google's CLA](https://developers.google.com/open-source/cla/individual) — you'd open
-source your code and grant me a copyrigt license.
+You need to agree to our [Contributor License Agreement](./CLA-v1.txt). You do that by
+appending a single line paragraph with this text, to all your commit messages:
+
+> I, Your Full Name <your@email.address>, agree to the Contributor License Agreement, CLA-v1.txt.
+
 
 ### Hen and henbirds
 
