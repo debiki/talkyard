@@ -1,5 +1,4 @@
-Talkyard (formerly EffectiveDiscussions) is a discussion system with forum, chat, question & answers.
-Copyright (c) 2010-2018 Kaj Magnus Lindberg
+All Talkyard code is Copyright (c) 2010-2018 Kaj Magnus Lindberg, and also Copyright (c) Debiki AB.
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Affero General Public License as
@@ -28,7 +27,7 @@ Javascript and CSS:
 
   (This list might be incomplete. See package.json for a complete list of
   client side modules, and run `yarn install` to download licenses and
-  copyrights to `node_modules/`.)
+  copyrights to `node_modules/`. See project/Build.scala for server side stuff.)
 
   - angular-slugify (but all Angular stuff removed)
     ./client/third-party/non-angular-slugify.js
@@ -58,13 +57,13 @@ Javascript and CSS:
     Copyright (c) 2012 Matias Meno <m@tias.me>
     MIT License
 
-  - EventEmitter2
-    ./bower_components/eventemitter2/
+  - EventEmitter3
+    ./node_modules/eventemitter3/
     Copyright (c) 2013 hij1nx
     MIT license
 
   - FileAPI
-    bower_components/fileapi/dist/FileAPI.js
+    ./node_modules/fileapi/
     Copyright (C) 2012 FileAPI authors: Konstantin Lebedev, Demidov Vladimir.
     BSD license
     https://github.com/mailru/FileAPI
@@ -94,7 +93,7 @@ Javascript and CSS:
     https://code.google.com/p/google-caja/wiki/JsHtmlSanitizer
 
   - jQuery
-    ./bower_components/jquery/
+    ./node_modules/jquery/
     Copyright (c) 2011 John Resig, http://jquery.com/
     MIT license
 
@@ -117,7 +116,7 @@ Javascript and CSS:
     https://github.com/litera/jquery-scrollintoview/blob/master/
 
   - jQuery AtWho
-    ./bower_components/jquery.atwho/
+    ./node_modules/at.js/
     Copyright (c) 2013 chord.luo@gmail.com
     MIT license
 
@@ -128,27 +127,16 @@ Javascript and CSS:
     http://step2.googlecode.com/svn/code/java/trunk/example-consumer/src/main/webapp/popuplib.js
 
   - keymaster
-    ./bower_components/keymaster/
+    ./node_modules/keymaster/
     Copyright (c) 2011-2013 Thomas Fuchs
     MIT license
 
-  - LazyLoad
-    ./client/embedded-comments/parent-footer.js
-    Copyright (c) 2011 Ryan Grove <ryan@wonko.com>
-    The MIT license
-    https://github.com/rgrove/lazyload/
-
   - lodash
-    ./bower_components/lodash
+    ./node_modules/lodash/
     Copyright 2012-2013 The Dojo Foundation <http://dojofoundation.org/>
 
-  - modernizr
-    ./bower_components/modernizr/
-    Copyright (c) Faruk Ates, Paul Irish, Alex Sexton
-    BSD and MIT licenses
-
   - moment
-    bower_components/moment/
+    ./node_modules/moment/
     Copyright (c) 2011-2013 Tim Wood, Iskren Chernev, Moment.js contributors
 
   - pretty-bytes
@@ -165,11 +153,6 @@ Javascript and CSS:
 
   - React Router
     Copyright (c) 2014 Ryan Florence, Michael Jackson
-
-  - react-router-active-component
-    Copyright (c) 2016, Jonny Buchanan
-    The MIT License (MIT)
-    https://github.com/insin/react-router-active-component
 
   - React-Select
     Copyright (c) 2015 Jed Watson
