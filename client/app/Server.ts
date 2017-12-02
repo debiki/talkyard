@@ -846,9 +846,9 @@ export function saveVote(data, success: (updatedPost) => void) {
 }
 
 
-export function loadVoters(postId: PostId,
+export function loadVoters(postId: PostId, voteType: PostVoteType,
       doneCallback: (numVoters: number, someVoters: BriefUser[]) => void) {
- get('/-/load-voters?postId='+ postId + '&voteType=' + PostVoteType.Like, (response: any) => {
+ get('/-/load-voters?postId='+ postId + '&voteType=' + voteType, (response: any) => {
    doneCallback(response.numVoters, response.someVoters);
  });
 }

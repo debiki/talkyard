@@ -54,15 +54,15 @@ const VotesDialog = createComponent({
       post: post,
       voteType: voteType,
     });
-    this.loadVoters(post);
+    this.loadVoters(post, voteType);
   },
 
   close: function() {
     this.setState({ isOpen: false, post: null, likes: null });
   },
 
-  loadVoters: function(post: Post) {
-    Server.loadVoters(post.uniqueId, (numVoters: number, someVoters: BriefUser[]) => {
+  loadVoters: function(post: Post, voteType: PostVoteType) {
+    Server.loadVoters(post.uniqueId, voteType, (numVoters: number, someVoters: BriefUser[]) => {
       if (!this.state.isOpen) return;
       this.setState({
         post: post,
