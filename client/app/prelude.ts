@@ -272,17 +272,17 @@ export const $h = {
 
   // classesString should be a space and/or comma separated class name string.
   addClasses: function(elem: Element, classesString: string) {
-    if (!classesString) return;
+    if (!classesString || !elem) return;
     // @ifdef DEBUG
     dieIf(/#\./.test(classesString), 'EdE6EF2T47');
     // @endif
     const classes = classesString.replace(/ *, */g, ',').replace(/ +/g, ',').split(',');
-    !elem || elem.classList.add(...classes);
+    elem.classList.add(...classes);
   },
 
 
-  removeClasses: function(elem: Element, classesString: string) {
-    if (!classesString) {
+  removeClasses: function(elems: Element | Element[] | NodeList, classesString: string) {
+    if (!classesString || !elems) {
       // If proceeding, would get this error:
       // """Failed to execute 'remove' on 'DOMTokenList': The token provided must not be empty."""
       return;
@@ -291,7 +291,16 @@ export const $h = {
     dieIf(/#\./.test(classesString), 'EdEKEW20P7');
     // @endif
     const classes = classesString.replace(/ *, */g, ',').replace(/ +/g, ',').split(',');
-    !elem || elem.classList.remove(...classes);
+    const anyElems = <any> elems;
+    if (anyElems.length) {
+      for (let i = 0; i < anyElems.length; ++i) {
+        const classList = elems[i].classList;
+        if (classList) classList.remove(...classes);
+      }
+    }
+    else {
+      anyElems.classList.remove(...classes);
+    }
   },
 
 

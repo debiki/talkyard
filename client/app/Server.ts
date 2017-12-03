@@ -342,17 +342,14 @@ export function loadEditorAndMoreBundlesGetDeferred(): Promise<void> {
   // if supported by the browser, see: [7PLBF20].
   const editorLoaded = loadJs(d.i.assetUrlPrefix + 'editor-bundle.' + d.i.minMaxJs);
   const moreScriptsLoaded = loadMoreScriptsBundle();
-  const jQueryLoaded = loadJQuery();
 
   showLoadingOverlay();
   // But don't resolve the editorScriptsPromise until everything has been loaded.
   editorScriptsPromise = new Promise(function(resolve) {
     moreScriptsLoaded.then(function() {
-      jQueryLoaded.then(function() {
-        editorLoaded.then(function() {
-          removeLoadingOverlay();
-          resolve();
-        });
+      editorLoaded.then(function() {
+        removeLoadingOverlay();
+        resolve();
       });
     });
   });

@@ -25,7 +25,6 @@
 
 const d = { i: debiki.internal };
 const r = ReactDOMFactories;
-let $;
 let FileAPI;
 
 let theEditor: any;
@@ -42,7 +41,6 @@ export function getOrCreateEditor(success) {
   else {
     // These might not be available until now, because scripts loaded in parallel (order = undefined).
     FileAPI = window['FileAPI'];
-    $ = window['jQuery'];
     theEditor = ReactDOM.render(Editor({}), utils.makeMountNode());
     success(theEditor);
   }
@@ -107,7 +105,8 @@ export const Editor = createComponent({
   },
 
   componentDidMount: function() {
-    this.$columns = $('#esPageColumn, #esWatchbarColumn, #dw-sidebar .dw-comments');
+    // Minor BUG: resizing .dw-comments to adjust for the textarea doesn't work. (5YKQ27)
+    this.columns = $all('#esPageColumn, #esWatchbarColumn, #dw-sidebar .dw-comments');
     this.makeEditorResizable();
     this.initUploadFileStuff();
     this.perhapsShowGuidelineModal();
@@ -122,6 +121,9 @@ export const Editor = createComponent({
 
   componentDidUpdate: function(prevProps, prevState) {
     this.perhapsShowGuidelineModal();
+    if (!prevState.visible && this.state.visible) {
+      this.makeSpaceAtBottomForEditor();
+    }
   },
 
   componentWillUnmount: function() {
@@ -129,7 +131,7 @@ export const Editor = createComponent({
   },
 
   focusInputFields: function() {
-    var elemToFocus = findDOMNode(this.refs.titleInput);
+    let elemToFocus = findDOMNode(this.refs.titleInput);
     if (!elemToFocus) {
       elemToFocus = findDOMNode(this.refs.textarea);
     }
@@ -143,23 +145,25 @@ export const Editor = createComponent({
       // The iframe is resizable instead.
       return;
     }
-    // We also add class 'resizable' a bit below [7UGM27] because sometimes React removes it.
-    $(this.refs.editor).resizable({
-      direction: ['top'],
-      resize: this.makeSpaceAtBottomForEditor,
-    });
+    util.makeResizableUp(this.refs.editor, this.refs.resizeHandle, this.makeSpaceAtBottomForEditor);
   },
 
   makeSpaceAtBottomForEditor: function() {
-    this.$columns.css('bottom', $(this.refs.editor).height());
+    if (this.isGone) return;
+    const editorHeightPx = this.refs.editor.clientHeight + 'px';
+    _.each(this.columns, (c) => {
+      c.style.bottom = editorHeightPx; // has no effect for the sidebar (5YKQ27)
+    });
   },
 
   returnSpaceAtBottomForEditor: function() {
-    this.$columns.css('bottom', 0);
+    _.each(this.columns, (c) => {
+      c.style.bottom = '0px';
+    });
   },
 
   selectAndUploadFile: function() {
-    $(this.refs.uploadFileInput).click();
+    this.refs.uploadFileInput.click();
   },
 
   // We never un-initialize this, instead we reuse the same editor instance always once created.
@@ -169,10 +173,11 @@ export const Editor = createComponent({
 
     // Some browsers open a dropped file in the current browser tab, if one misses the
     // drop target with a few pixels. Prevent that. See: http://stackoverflow.com/questions/9544977/using-jquery-on-for-drop-events-when-uploading-files-from-the-desktop#comment20423424_9545050
-    $(document).on('dragover', event => {
+    document.addEventListener('dragover', event => {
       event.preventDefault();
       event.stopPropagation();
-    }).on('drop', event => {
+    });
+    document.addEventListener('drop', event => {
       event.preventDefault();
       event.stopPropagation();
     });
@@ -808,8 +813,8 @@ export const Editor = createComponent({
       window.parent.postMessage(JSON.stringify(['hideEditor', {}]), ed.embeddingOrigin);
     }
     else {
-      // (Old jQuery code.)
-      $('.dw-replying').removeClass('dw-replying');
+      // (Old jQuery based code.)
+      $h.removeClasses($all('.dw-replying'), 'dw-replying');
     }
   },
 
@@ -1112,8 +1117,7 @@ export const Editor = createComponent({
         r.div({ className: 'dw-preview-help' },
           help.HelpMessageBox({ message: previewHelpMessage }));
 
-    // (The $.resizable plugin needs class 'resizable' here. [7UGM27])
-    let editorClasses = d.i.isInEmbeddedEditor ? '' : 'editor-box-shadow resizable';
+    let editorClasses = d.i.isInEmbeddedEditor ? '' : 'editor-box-shadow';
     editorClasses += this.state.showMaximized ? ' s_E-Max' : '';
     editorClasses += this.state.splitHorizontally ? ' s_E-SplitHz' : '';
     editorClasses += this.state.showMinimized ? ' s_E-Min' : (
@@ -1171,7 +1175,8 @@ export const Editor = createComponent({
                 this.state.showOnlyPreview ? "Edit" : "Preview"),
               anyViewHistoryButton)),
             r.div({ className: 's_E_iPhoneKbd' },
-              "(This gray space is reserved", r.br(), "for the iPhone keyboard.)"))));
+              "(This gray space is reserved", r.br(), "for the iPhone keyboard.)"),
+            r.div({ className: 's_Resizor-Up', ref: 'resizeHandle' }))));
   }
 });
 

@@ -74,6 +74,8 @@ declare const ServerSideWindowWidth;
 
 declare namespace debiki2 {
 
+  function $first(selector: string): HTMLElement;
+  function $all(selector: string): HTMLCollectionOf<HTMLElement>;
   function $byId(elemId: string): HTMLElement;
   function $$byClass(className: string): HTMLCollectionOf<Element>;
   const $h: any;

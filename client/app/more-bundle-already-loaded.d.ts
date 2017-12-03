@@ -31,6 +31,7 @@ declare namespace debiki2 {
 
   namespace util {
     function makeStupidDialogGetter();
+    function makeResizableUp(elem, handle, onResize);
   }
 
   namespace topbar {
