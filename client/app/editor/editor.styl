@@ -221,14 +221,19 @@ $spacyYMinHeight = 400px;
     .editor-instructions
       margin: 14px 0 5px;
 
-    .editor
+    .rta // react-textarea-autocomplete
       width: 100%
       flex: 1; // it'll fill all available y-space
-      font-size: $postFontSize;
-      padding: 6px;
-      border: none;
-      &:focus
-        box-shadow: 0 1px 3px 2px hsl($uiHue, 100%, 79%);
+      .editor
+        // height 100% doesn't work but this does: (.rta is already position = relative)
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        font-size: $postFontSize;
+        padding: 6px;
+        border: none;
+        &:focus
+          box-shadow: 0 1px 3px 2px hsl($uiHue, 100%, 79%);
 
     @media (max-width: $showPreviewMinWidth)
       width: 100%;

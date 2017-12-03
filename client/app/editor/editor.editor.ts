@@ -32,6 +32,7 @@ let theEditor: any;
 const WritingSomethingWarningKey = 'WritingSth';
 const WritingSomethingWarning = "You were writing something?";
 
+export const ReactTextareaAutocomplete = reactCreateFactory(window['ReactTextareaAutocomplete']);
 
 
 export function getOrCreateEditor(success) {
@@ -48,35 +49,31 @@ export function getOrCreateEditor(success) {
 }
 
 
-export function startMentionsParserImpl(textarea, onTextEdited) {
-  $(textarea).atwho({
-    at: "@",
-    searchKey: 'username',
-    displayTpl: "<li data-value='${atwho-at}${username}'>${username} (${fullName})</li>",
-    insertTpl: '@${username}',
-    callbacks: {
-      remoteFilter: (prefix, callback) => {
+export const listUsernamesTrigger = {
+  '@': {
+    dataProvider: token =>
+      new Promise(function (resolve, reject) {
         const pageId = d.i.pageId;
         if (!pageId || pageId === EmptyPageId) {
           // This is an embedded comments discussion, but there are no comments, so the
           // discussion has not yet been lazy-created. So search among users, for now.
           // UX maybe one *always* wants to search among all users? Unless if is chat channel?
-          Server.listAllUsernames(prefix, callback);
+          Server.listAllUsernames(token, resolve);
         }
         else {
           // One probably wants to mention someone participating in the current discussion = page?
           // So search among those users only.
-          Server.listUsernames(prefix, pageId, callback);
+          Server.listUsernames(token, pageId, resolve);
         }
-      }
-    }
-  }).on('inserted.atwho', (event, flag, query) => {
-    onTextEdited(event);
-  });
-}
+      }),
+    component: ({ entity: { id, username, fullName }}) =>
+      r.div({}, `${username} (${fullName})`),
+    output: (item, trigger) => '@' + item.username
+  }
+};
 
 
-export var Editor = createComponent({
+export const Editor = createComponent({
   displayName: 'Editor',
   mixins: [debiki2.StoreListenerMixin],
 
@@ -111,7 +108,6 @@ export var Editor = createComponent({
 
   componentDidMount: function() {
     this.$columns = $('#esPageColumn, #esWatchbarColumn, #dw-sidebar .dw-comments');
-    startMentionsParserImpl(this.refs.textarea, this.onTextEdited);
     this.makeEditorResizable();
     this.initUploadFileStuff();
     this.perhapsShowGuidelineModal();
@@ -1100,13 +1096,17 @@ export var Editor = createComponent({
 
     const textErrorClass = this.state.showTextErrors && !this.isTextOk() ? ' esError' : '';
     const textarea =
-        r.textarea({ className: 'editor form-control esEdtr_textarea' +  textErrorClass,
-            ref: 'textarea', value: this.state.text,
-            onChange: this.onTextEdited, tabIndex: 1,
+        ReactTextareaAutocomplete({
+            className: 'editor form-control esEdtr_textarea' +  textErrorClass,
+            ref: 'textarea',
+            value: this.state.text,
+            onChange: this.onTextEdited,
             onKeyPress: this.onKeyPress,
             onKeyDown: this.onKeyDown,
-            placeholder: "Type here. You can use Markdown and HTML. " +
-                "Drag and drop to paste images." });
+            tabIndex: 1,
+            placeholder: "Type here. You can use Markdown and HTML. Drag and drop to paste images.",
+            loadingComponent: () => r.span({}, "Loading ..."),
+            trigger: listUsernamesTrigger });
 
     const previewHelp =
         r.div({ className: 'dw-preview-help' },

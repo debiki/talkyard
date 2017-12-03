@@ -141,6 +141,7 @@ var editorJsFiles = [
       'node_modules/markdown-it/dist/markdown-it.js',
       'node_modules/blacklist/dist/blacklist.js',  // needed by what?
       'node_modules/fileapi/dist/FileAPI.html5.js', // don't use the Flash version (w/o '.html5')
+      'node_modules/@webscopeio/react-textarea-autocomplete/umd/rta.min.js',
       'client/third-party/diff_match_patch.js',
       'client/third-party/non-angular-slugify.js',
       'target/client/app/editor/mentions-markdown-it-plugin.js',
@@ -150,13 +151,6 @@ var editorJsFiles = [
 var jqueryJsFiles = [
   'node_modules/jquery/dist/jquery.js',
   'client/third-party/abbreviate-jquery.js',
-   // jquery.caret is needed by jquery.atwho (the script just after, below).
-  'node_modules/jquery.caret/dist/jquery.caret.min.js',
-  // jquery.atwho is lazy-needed by the editor, but loaded here in the jquery-bundle, because
-  // then we know for sure that $ is available when jquery.atwho runs — if, however,  jquery.atwho
-  // was instead loaded in the editor-bundle.js, then $ might not yet have been loaded, when the
-  // jquery.atwho code runs —> error.
-  'node_modules/at.js/dist/js/jquery.atwho.js',
   'node_modules/jquery-resizable/resizable.js'];
 
 
@@ -482,7 +476,7 @@ gulp.task('compile-stylus', function () {
   return es.merge(
     makeStyleStream('public/res/', 'styles-bundle.css', [
         'node_modules/bootstrap/dist/css/bootstrap.css',
-        'node_modules/at.js/dist/css/jquery.atwho.css',
+        'node_modules/@webscopeio/react-textarea-autocomplete/style.css',
         'node_modules/react-select/dist/react-select.css',
         'node_modules/jquery-resizable/resizable.css',
         'client/third-party/stupid-lightbox.css',

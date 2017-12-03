@@ -35,6 +35,12 @@
   dependencies:
     "@types/node" "*"
 
+"@webscopeio/react-textarea-autocomplete@^1.3.3":
+  version "1.3.3"
+  resolved "https://registry.yarnpkg.com/@webscopeio/react-textarea-autocomplete/-/react-textarea-autocomplete-1.3.3.tgz#c651d4653a477aa39018d65ed6dba91979dcc325"
+  dependencies:
+    textarea-caret "3.0.2"
+
 accord@^0.24.1:
   version "0.24.1"
   resolved "https://registry.yarnpkg.com/accord/-/accord-0.24.1.tgz#af4fa2a121154b8f422080e6bb9f693be67f4159"
@@ -203,10 +209,6 @@ async@~0.2.6:
 asynckit@^0.4.0:
   version "0.4.0"
   resolved "https://registry.yarnpkg.com/asynckit/-/asynckit-0.4.0.tgz#c79ed97f7f34cb8f2ba1bc9790bcc366474b4b79"
-
-at.js@^1.5.3:
-  version "1.5.3"
-  resolved "https://registry.yarnpkg.com/at.js/-/at.js-1.5.3.tgz#8ec7324d924f0cfbd88dfceba7b2dcf2255e042c"
 
 atob@~1.1.0:
   version "1.1.3"
@@ -2001,10 +2003,6 @@ jquery-resizable@=1.0.6:
   version "1.0.6"
   resolved "https://registry.yarnpkg.com/jquery-resizable/-/jquery-resizable-1.0.6.tgz#e2f5bfc471a08bbf8fbeeeea156a8e7c9754e67c"
 
-jquery.caret@^0.3.1:
-  version "0.3.1"
-  resolved "https://registry.yarnpkg.com/jquery.caret/-/jquery.caret-0.3.1.tgz#9c093318faf327eff322e826ca9f3241368bc7b8"
-
 jquery@^2.2.4:
   version "2.2.4"
   resolved "https://registry.yarnpkg.com/jquery/-/jquery-2.2.4.tgz#2c89d6889b5eac522a7eea32c14521559c6cbf02"
@@ -3648,6 +3646,10 @@ tar-stream@1.5.2, tar-stream@^1.5.0:
     end-of-stream "^1.0.0"
     readable-stream "^2.0.0"
     xtend "^4.0.0"
+
+textarea-caret@3.0.2:
+  version "3.0.2"
+  resolved "https://registry.yarnpkg.com/textarea-caret/-/textarea-caret-3.0.2.tgz#f360c48699aa1abf718680a43a31a850665c2caf"
 
 then-request@^2.0.1:
   version "2.2.0"

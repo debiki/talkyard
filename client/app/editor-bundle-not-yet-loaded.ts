@@ -30,16 +30,6 @@ function ensureEditorCreated(success: (editor: any) => void) {
 }
 
 
-export function startMentionsParser(textarea, onTextEdited) {
-  Server.loadEditorAndMoreBundles(() => {
-    // The calling component might have been unmounted; then, `textarea` is gone.
-    if (document.body.contains(textarea)) {
-      debiki2.editor.startMentionsParserImpl(textarea, onTextEdited);
-    }
-  });
-}
-
-
 export function toggleWriteReplyToPost(postId: number, anyPostType?: number) {
   ensureEditorCreated(editor => {
     editor.toggleWriteReplyToPost(postId, anyPostType);

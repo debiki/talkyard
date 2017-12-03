@@ -6,8 +6,6 @@ declare namespace debiki2.editor {
 
   function getOrCreateEditor(success: (editor: any) => void);
 
-  function startMentionsParserImpl(textarea, onTextEdited);
-
   function markdownToSafeHtml(source: string): string;
 
 }
