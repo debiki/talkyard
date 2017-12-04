@@ -213,6 +213,7 @@ var api = { config: {
   // Gets executed after all tests are done. You still have access to all global variables from
   // the test.
   after: function (capabilties, specs) {
+    console.log("Done.");
     if (settings.debugAfterwards) {
       global.browser.debug();
     }

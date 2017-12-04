@@ -796,13 +796,18 @@ const RootPostAndComments = createComponent({
          PostActions({ store: this.props, post: rootPost });
 
     const mayReplyToOrigPost = store_mayIReply(store, rootPost);
+
+    // If direct message, use only the add-bottom-comment button. Confusing with orig reply too,
+    // when in practice it also just appends to the bottom. (Direct messages = flat, not threaded.)
+    const skipOrigPostReplyBtn = store.pageRole === PageRole.FormalMessage;
+
     const origPostReplyButton =
         // If mind map: Don't give people a large easily clickable button that keeps appending nodes.
         // People are supposed to think before adding new nodes, e.g. think about where to place them.
         store.pageRole === PageRole.MindMap ||
           !mayReplyToOrigPost || _.every(threadedChildren, c => _.isEmpty(c)) ? null :
       r.div({ className: 's_APAs'},
-        r.a({ className: 's_APAs_OPRB ' + makeReplyBtnIcon(store),
+        skipOrigPostReplyBtn ? null : r.a({ className: 's_APAs_OPRB ' + makeReplyBtnIcon(store),
             onClick: (event) => this.onAfterPageReplyClick(event, PostType.Normal) },
           makeReplyBtnTitle(store, rootPost, true)),
         r.a({ className: 's_APAs_ACBB icon-comment-empty',

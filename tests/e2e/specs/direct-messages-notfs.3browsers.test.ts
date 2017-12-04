@@ -30,6 +30,9 @@ let messageTitle = "Message title";
 let messageText = "Hi I have a question";
 let owensAnswer = "Yes what is it?";
 let mariasQuestion = "Can I ask questions?";
+let owensQuestionAnswer = "Yes if the number of questions is a prime number. 2, 3, 5, 7, 11 you know.";
+
+let siteId;
 
 
 describe("private chat", () => {
@@ -55,6 +58,7 @@ describe("private chat", () => {
     site.members.push(make.memberMichael());
     site.members.push(make.memberMaria());
     idAddress = server.importSiteData(site);
+    siteId = idAddress.id;
   });
 
 
@@ -99,6 +103,12 @@ describe("private chat", () => {
     owen.topic.waitForPostNrVisible(2);
   });
 
+  it("... he also got an email notf about this new topic", () => {
+    // This tests notfs when one clicks the append-bottom-comment button.
+    server.waitUntilLastEmailMatches(
+        siteId, owen.emailAddress, [messageTitle, messageText], browser);
+  });
+
   it("Maria sees the reply, replies", () => {
     maria.topic.waitForPostNrVisible(2);
     maria.topic.assertPostTextMatches(2, owensAnswer);
@@ -107,9 +117,48 @@ describe("private chat", () => {
     maria.topic.assertPostTextMatches(3, mariasQuestion);
   });
 
+  it("... she got a notification, dismisses it", () => {
+    maria.topbar.openNotfToMe();
+  });
+
+  it("... she got a notf email too", () => {
+    server.waitUntilLastEmailMatches(
+        siteId, maria.emailAddress, [messageTitle, owensAnswer], browser);
+  });
+
+  it("Maria leaves", () => {
+    maria.go('/');
+  });
+
   it("Owen sees Maria reply", () => {
     owen.topic.waitForPostNrVisible(3);
     owen.topic.assertPostTextMatches(3, mariasQuestion);
+  });
+
+  it("... and replies", () => {
+    owen.complex.addBottomComment(owensQuestionAnswer);
+    owen.topic.waitForPostNrVisible(4);
+  });
+
+  it("... he also got an email about Maria's reply", () => {
+    // This tests notfs when one clicks Reply for a particular post.
+    server.waitUntilLastEmailMatches(
+        siteId, owen.emailAddress, [messageTitle, mariasQuestion], browser);
+  });
+
+  it("Maria gets a notifiction, opens it", () => {
+    maria.topbar.openNotfToMe();
+  });
+
+  it("... she sees the question answer", () => {
+    maria.topic.waitForPostNrVisible(4);
+    maria.topic.assertPostTextMatches(4, owensQuestionAnswer);
+  });
+
+  it("... she also got an email with Owen's reply", () => {
+    // This tests notfs when one clicks the append-bottom-comment button.
+    server.waitUntilLastEmailMatches(
+        siteId, maria.emailAddress, [messageTitle, owensQuestionAnswer], browser);
   });
 
 
@@ -302,10 +351,6 @@ describe("private chat", () => {
   it("... and cannot access it via a direct link", () => {
   });
   */
-
-  it("Done", () => {
-    everyone.perhapsDebug();
-  });
 
 });
 

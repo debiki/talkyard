@@ -63,6 +63,8 @@ case class NotificationGenerator(transaction: SiteTransaction) {
     def notfCreatedAlreadyTo(userId: UserId) =
       generatedNotifications.toCreate.map(_.toUserId).contains(userId)
 
+    lazy val pageMemberIds: Set[UserId] = transaction.loadMessageMembers(newPost.pageId)
+
     // Mentions
     if (!skipMentions) {
       val mentionedUsernames = findMentions(newPost.approvedSource getOrDie "DwE82FK4").toSet
@@ -71,7 +73,6 @@ case class NotificationGenerator(transaction: SiteTransaction) {
       if (allMentioned) {
         val author = transaction.loadTheMember(newPost.createdById)
         if (mayMentionAll(author)) {
-          val pageMemberIds: Set[UserId] = transaction.loadMessageMembers(newPost.pageId)
           val moreToAdd: Set[UserId] = pageMemberIds -- mentionedUsers.map(_.id)
           mentionedUsers ++= transaction.loadMembersAsMap(moreToAdd).values.toSet
         }
@@ -89,8 +90,15 @@ case class NotificationGenerator(transaction: SiteTransaction) {
     }
 
     // People watching this topic or category
+    var remainingIds = transaction.loadUserIdsWatchingPage(page.id)
+
+    // Direct message? Notify everyone in the topic. For now, they're always watching.
+    if (page.role == PageRole.FormalMessage) {
+      remainingIds ++= pageMemberIds
+    }
+
     for {
-      userId <- transaction.loadUserIdsWatchingPage(page.id)
+      userId <- remainingIds
       if userId != newPost.createdById
       if !notfCreatedAlreadyTo(userId)
       user <- transaction.loadUser(userId)
