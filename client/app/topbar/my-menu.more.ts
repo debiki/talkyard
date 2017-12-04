@@ -24,40 +24,11 @@
 //------------------------------------------------------------------------------
 
 const r = ReactDOMFactories;
-const DropdownModal = utils.DropdownModal;
 
 
-var myMenuDropdownModal;
 
-export function openMyMenu(store: Store, where) {
-  if (!myMenuDropdownModal) {
-    myMenuDropdownModal = ReactDOM.render(MyMenuDropdownModal(), utils.makeMountNode());
-  }
-  myMenuDropdownModal.openAt(store, where);
-}
-
-
-var MyMenuDropdownModal = createComponent({
-  displayName: 'MyMenuDropdownModal',
-
-  getInitialState: function() {
-    return {
-      isOpen: false,
-    };
-  },
-
-  openAt: function(store: Store, where) {
-    this.setState({
-      isOpen: true,
-      store: store,
-      windowWidth: window.innerWidth,
-      buttonRect: cloneRect(where.getBoundingClientRect()),
-    });
-  },
-
-  close: function() {
-    this.setState({ isOpen: false });
-  },
+export const MyMenuContent = createFactory({
+  displayName: 'MyMenuContent',
 
   onLogoutClick: function() {
     debiki2.ReactActions.logout();
@@ -68,15 +39,15 @@ var MyMenuDropdownModal = createComponent({
   },
 
   viewOlderNotfs: function() {
-    let store: Store = this.state.store;
+    let store: Store = this.props.store;
     ReactActions.goToUsersNotifications(store.me.id);
   },
 
   render: function() {
     var menuContent;
 
-    if (this.state.isOpen) {
-      var store: Store = this.state.store;
+
+      var store: Store = this.props.store;
       var me: Myself = store.me;
 
       // ------- Staff link, notfs, help
@@ -157,7 +128,7 @@ var MyMenuDropdownModal = createComponent({
       // ------- The menu
 
       menuContent =
-        r.ul({ className: 'dropdown-menu', onClick: this.close },
+        r.ul({ className: 'dropdown-menu' },
           isViewingAsHint,
           stopImpersonatingMenuItem,
           notYourMenuHint,
@@ -173,14 +144,10 @@ var MyMenuDropdownModal = createComponent({
           notfsElems,
           myStuffDivider,
           unhideHelpMenuItem);
-    }
 
 
-    return (
-      DropdownModal({ show: this.state.isOpen, onHide: this.close, showCloseButton: true,
-          atRect: this.state.buttonRect, windowWidth: this.state.windowWidth,
-          className: 'esAvtrName esMyMenu' },
-        menuContent));
+
+    return menuContent;
   }
 });
 

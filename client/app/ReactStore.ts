@@ -343,6 +343,16 @@ ReactStore.initialize = function() {
     setContextbarOpen(false);
     ReactStore.emitChange();
   });
+
+  // Remember forums, needed to construct routes.
+  // For now, one forum only. And there's always a forum, created when the site gets created. [5RF2LK]
+  if (store.siteSections && store.siteSections.length >= 0) {
+    _.each(store.siteSections, (section: SiteSection) => {
+      if (section.pageRole === PageRole.Forum) {
+        store.forumPath = section.path; // only one forum, see above
+      }
+    });
+  }
 };
 
 

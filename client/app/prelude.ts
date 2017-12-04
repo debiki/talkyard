@@ -292,10 +292,9 @@ export const $h = {
     // @endif
     const classes = classesString.replace(/ *, */g, ',').replace(/ +/g, ',').split(',');
     const anyElems = <any> elems;
-    if (anyElems.length) {
+    if (_.isNumber(anyElems.length)) {
       for (let i = 0; i < anyElems.length; ++i) {
-        const classList = elems[i].classList;
-        if (classList) classList.remove(...classes);
+        elems[i].classList.remove(...classes);
       }
     }
     else {

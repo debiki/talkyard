@@ -144,8 +144,9 @@ class SiteTpi protected (
       minMaxJs = minMaxJs,
       minMaxCss = minMaxCss).body)
 
-  def debikiScriptsEndOfBody: Unparsed =
-    debikiScriptsEndOfBodyCustomStartupCode("debiki.internal.startDiscussionPage();")
+  def debikiScriptsEndOfBody(loadStaffBundle: Boolean = false): Unparsed =
+    debikiScriptsEndOfBodyCustomStartupCode(
+      "debiki.internal.startDiscussionPage();", loadStaffBundle = loadStaffBundle)
 
   def debikiScriptsEndOfBodyNoStartupCode =
     debikiScriptsEndOfBodyCustomStartupCode("")

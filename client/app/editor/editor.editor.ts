@@ -455,7 +455,7 @@ export const Editor = createComponent({
 
   scrollPostIntoView: function(postNr) {
     debiki.internal.showAndHighlightPost($byId('post-' + postNr), {
-      marginTop: reactelements.getTopbarHeightInclShadow(),
+      marginTop: topbar.getTopbarHeightInclShadow(),
       // Add + X so one sees the Reply button and a bit below the post.
       marginBottom: this.refs.editor.clientHeight + 90,
     })

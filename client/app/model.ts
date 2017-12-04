@@ -556,6 +556,8 @@ interface Store {
   isContextbarOpen: boolean;
   shallSidebarsOverlayPage?: boolean;
   siteSections: SiteSection[];
+  // For now, just one forum.
+  forumPath: string;
   strangersWatchbar: Watchbar;
   horizontalLayout: boolean;
   is2dTreeDefault: boolean;

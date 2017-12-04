@@ -37,7 +37,8 @@
 const r = ReactDOMFactories;
 
 
-var PageWithState = createComponent({
+export const PageWithStateComponent = createReactClass(<any> {
+  displayName: 'PageWithState',
   mixins: [debiki2.StoreListenerMixin],
 
   getInitialState: function() {
@@ -49,12 +50,18 @@ var PageWithState = createComponent({
   },
 
   render: function() {
-    return Page(this.state);
+    // Send router props to the page.
+    return Page({ store: this.state, ...this.props });
   }
 });
 
 
-var Page = createComponent({
+export const PageWithState = reactCreateFactory(<any> PageWithStateComponent);
+
+
+const Page = createComponent({
+  displayName: 'Page',
+
   getInitialState: function() {
     return {
       useWideLayout: this.isPageWide(),
@@ -86,7 +93,7 @@ var Page = createComponent({
 
   render: function() {
     const isEmbeddedComments: boolean = debiki.internal.isInEmbeddedCommentsIframe;
-    const store: Store = this.props;
+    const store: Store = this.props.store;
     const content = page_isChatChannel(store.pageRole)
         ? debiki2.page.ChatMessages({ store: store })
         : debiki2.page.TitleBodyComments({ store: store });
@@ -94,7 +101,7 @@ var Page = createComponent({
     const pageTypeClass = ' s_PT-' + store.pageRole;
     return (
       r.div({ className: 'esPage' + compactClass + pageTypeClass },
-        page_isChatChannel(store.pageRole) ? null : debiki2.reactelements.TopBar({}),
+        page_isChatChannel(store.pageRole) ? null : debiki2.topbar.TopBar({}),
         isEmbeddedComments ? null : debiki2.page.ScrollButtons(),
         r.div({ className: 'container' },
           r.article({},
@@ -103,31 +110,13 @@ var Page = createComponent({
 });
 
 
-export function renderTitleBodyComments() {
-  const root = document.getElementById('dwPosts');
-  if (!root)
-    return;
-
-  debiki2.avatar.resetAvatars();
-
-  const store: Store = debiki2.ReactStore.allData();
-  if (store.pageRole === PageRole.Forum) {
-    // scrollBehavior: debiki2.forum.ForumScrollBehavior,
-    ReactDOM.hydrate(
-        Router({}, debiki2.forum.buildForumRoutes()), root);
-  }
-  else {
-    ReactDOM.hydrate(PageWithState(), root);
-  }
-}
-
-
 export function renderTitleBodyCommentsToString() {
   debiki2.avatar.resetAvatars();
 
   // Comment in the next line to skip React server side and debug in browser only.
   //return '<p class="dw-page" data-reactid=".123" data-react-checksum="123">react_skipped [BRWSRDBG]</p>'
 
+  // Compare with [2FKB5P].
   const store: Store = debiki2.ReactStore.allData();
   if (store.pageRole === PageRole.Forum) {
     const routes = debiki2.forum.buildForumRoutes();
@@ -139,7 +128,7 @@ export function renderTitleBodyCommentsToString() {
         Router({ location: path }, routes));
   }
   else {
-    return ReactDOMServer.renderToString(Page(store));
+    return ReactDOMServer.renderToString(Page({ store }));
   }
 }
 

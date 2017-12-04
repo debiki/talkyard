@@ -176,7 +176,7 @@ var AdminAppComponent = createReactClass(<any> {
 
     return (
       r.div({ className: 'esAdminArea' },
-        reactelements.TopBar({ customTitle: "Admin Area", showBackToSite: true, extraMargin: true }),
+        topbar.TopBar({ customTitle: "Admin Area", showBackToSite: true, extraMargin: true }),
         r.div({ className: 'container' },
         r.ul({ className: 'dw-main-nav nav nav-pills' },
           settings,

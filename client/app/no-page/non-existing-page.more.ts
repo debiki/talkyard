@@ -63,7 +63,7 @@ export var NonExistingPage = createComponent({
       }
       else {
       */
-      return CreateSomethingHere({ store: this.state.store });
+      return CreateSomethingHere({ store: this.state.store }); // [5RF2LK]
     }
     else {
       return LoginToCreateSomething({ store: this.state.store });

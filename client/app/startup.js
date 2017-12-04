@@ -159,7 +159,8 @@ function renderDiscussionPage() {
   !Perf || Perf.start();
   var timeBefore = performance.now();
 
-  debiki2.renderTitleBodyComments();
+  debiki2.ReactStore.initialize();
+  debiki2.startMainReactRoot();
 
   var timeAfterBodyComments = performance.now();
   if (Perf) {
@@ -180,7 +181,6 @@ function renderDiscussionPage() {
   debiki2.processTimeAgo(numPosts > 20 ? '.dw-ar-p-hd' : '');
   var timeAfterTimeAgo = performance.now();
 
-  debiki2.ReactStore.initialize();
   debiki2.ReactStore.activateVolatileData();
   var timeAfterUserData = performance.now();
 
@@ -243,35 +243,8 @@ function renderDiscussionPage() {
 }
 
 
-/**
- * Use this function if there is no root post on the page, but only meta info.
- * (Otherwise, if you use `renderDiscussionPage()`, some error happens, which kills
- * other Javascript that runs on page load.)
- */
-d.i.renderEmptyPage = function() {
-  // (Don't skip all steps, although the page is empty. For example, the admin
-  // dashbar depends on login/logout events, and it's shown even if there's no
-  // root post — e.g. on blog list pages, which list child pages only but no
-  // main title or article.)
-  debiki2.utils.onMouseDetected(debiki2.Server.load2dScriptsBundleStart2dStuff);
-  debiki2.ReactStore.initialize();
-  debiki2.startRemainingReactRoots();
-  debiki2.ReactStore.activateVolatileData();
-  document.documentElement.classList.add(ReactStartedClass);
-  debiki2.utils.startDetectingMouse();
-};
-
-
 d.i.startDiscussionPage = function() {
-  Bliss.ready().then(function() {
-    if (debiki.getPageId()) {
-      renderDiscussionPage();
-    }
-    else {
-      // Skip most of the rendering step, since there is no Debiki page present.
-      d.i.renderEmptyPage();
-    }
-  });
+  Bliss.ready().then(renderDiscussionPage);
 };
 
 

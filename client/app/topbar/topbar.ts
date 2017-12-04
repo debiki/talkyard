@@ -22,11 +22,13 @@
 /// <reference path="../utils/page-scroll-mixin.ts" />
 /// <reference path="../utils/scroll-into-view.ts" />
 /// <reference path="../utils/utils.ts" />
+/// <reference path="../utils/DropdownModal.ts" />
 /// <reference path="../avatar/avatar.ts" />
+/// <reference path="../Server.ts" />
 /// <reference path="../more-bundle-not-yet-loaded.ts" />
 
 //------------------------------------------------------------------------------
-   namespace debiki2.reactelements {  // rename to debiki2.topbar
+   namespace debiki2.topbar {
 //------------------------------------------------------------------------------
 
 const FixedTopDist = 8;
@@ -144,10 +146,6 @@ export const TopBar = createComponent({
     morebundle.openPageToolsDialog();
   },
 
-  openMyMenu: function() {
-    morebundle.openMyMenu(this.state.store, this.refs.myMenuButton);
-  },
-
   viewOlderNotfs: function() {
     let store: Store = this.state.store;
     ReactActions.goToUsersNotifications(store.me.id);
@@ -232,19 +230,22 @@ export const TopBar = createComponent({
         avatar.Avatar({ user: me, tiny: true, ignoreClicks: true });
 
     const avatarNameDropdown = !me.isLoggedIn && !impersonatingStrangerInfo ? null :
-      Button({ onClick: this.openMyMenu,
+      utils.ModalDropdownButton({
           // RENAME 'esAvtrName' + 'esMyMenu' to 's_MMB' (my-menu button).
-          className: 'esAvtrName esMyMenu' + isImpersonatingClass,
-          ref: 'myMenuButton' },
-        urgentReviewTasks,
-        otherReviewTasks,
-        impersonatingStrangerInfo,
-        myAvatar,
-        r.span({ className: 'esAvtrName_name' }, me.username || me.fullName), // if screen wide
-        r.span({ className: 'esAvtrName_you' }, "You"), // if screen narrow
-        talkToMeNotfs,
-        talkToOthersNotfs,
-        otherNotfs);
+          className: 'esAvtrName esMyMenu' + isImpersonatingClass,  // CLEAN_UP RENAME btn class to ...B
+          dialogClassName: 'esAvtrName esMyMenu',
+          ref: 'myMenuButton',
+          title: r.span({},
+            urgentReviewTasks,
+            otherReviewTasks,
+            impersonatingStrangerInfo,
+            myAvatar,
+            r.span({ className: 'esAvtrName_name' }, me.username || me.fullName), // if screen wide
+            r.span({ className: 'esAvtrName_you' }, "You"), // if screen narrow
+            talkToMeNotfs,
+            talkToOthersNotfs,
+            otherNotfs) },
+        MyMenuContentComponent({ store }));
 
 
     // ------- Login button
@@ -407,6 +408,23 @@ export const TopBar = createComponent({
           openContextbarButton,
           r.div({ className: 'container' },
             topbar))));
+  }
+});
+
+
+const MyMenuContentComponent = createFactory({   // dupl code [4WKBTP0]
+  componentWillMount: function() {
+    Server.loadMoreScriptsBundle(() => {
+      this.setState({ moreScriptsLoaded: true });
+    });
+  },
+
+  render: function() {
+    if (!this.state)
+      return r.p({}, "Loading...");
+
+    // Lazy loaded.
+    return debiki2.topbar['MyMenuContent']({ store: this.props.store });
   }
 });
 

@@ -52,7 +52,7 @@ const FilterShowDeleted = 'ShowDeleted';
 
 export function buildForumRoutes() {
   const store: Store = ReactStore.allData();
-  const rootSlash = store.pagePath.value;
+  const rootSlash = store.forumPath;
   const defaultPath = rootSlash + (store.settings.forumMainView || RoutePathLatest);
 
   // later, COULD incl top period in URL, perhaps: top/ —> top-past-day/
@@ -79,7 +79,7 @@ export const ForumScrollBehavior = {
 };
 
 
-const ForumComponent = createReactClass(<any> {
+export const ForumComponent = createReactClass(<any> {
   displayName: 'ForumComponent',
   mixins: [debiki2.StoreListenerMixin],
 
@@ -191,8 +191,9 @@ const ForumComponent = createReactClass(<any> {
     // This is done this way because of how React-Router v3 was working. It was simpler
     // do do this than to totally-rewrite. Maybe refactor-&-simplify some day?
     // Remove e.g. a '/forum/' prefix to the 'top/ideas' or 'new/bugs' whatever suffix:
-    const pathRelForumPage = this.props.location.pathname.replace(store.pagePath.value, '');
+    const pathRelForumPage = this.props.location.pathname.replace(store.forumPath, '');
     // This becomes e.g. ['new', 'ideas']:
+
     const routes = pathRelForumPage.split('/');
     const sortOrderRoute = routes[0];
     switch (sortOrderRoute) {
@@ -231,7 +232,7 @@ const ForumComponent = createReactClass(<any> {
       ? HelpMessageBox({ message: topicsAndCatsHelpMessage, className: 'esForum_topicsCatsHelp' })
       : null; */
 
-    const rootSlash = store.pagePath.value;
+    const rootSlash = store.forumPath;
     const childRoutes = r.div({},
       Switch({},
         RedirToNoSlash({ path: rootSlash + RoutePathLatest + '/' }),
@@ -259,7 +260,7 @@ const ForumComponent = createReactClass(<any> {
 
     return (
      r.div({},
-      debiki2.reactelements.TopBar({}),
+      debiki2.topbar.TopBar({}),
       debiki2.page.ScrollButtons(),
       r.div({ className: 'container dw-forum' },
         // Include .dw-page to make renderDiscussionPage() in startup.js run: (a bit hacky)
@@ -358,7 +359,7 @@ const ForumButtons = createComponent({
     const nextPath = currentPath === RoutePathCategories ? RoutePathLatest : currentPath;
     const slashSlug = newCategorySlug ? '/' + newCategorySlug : '';
     this.props.history.push({
-      pathname: store.pagePath.value + nextPath + slashSlug,
+      pathname: store.forumPath + nextPath + slashSlug,
       search: this.props.location.search,
     });
   },
@@ -384,7 +385,7 @@ const ForumButtons = createComponent({
     const store: Store = this.props.store;
     this.closeSortOrderDropdown();
     this.props.history.push({
-      pathname: store.pagePath.value + newPath + this.slashCategorySlug(),
+      pathname: store.forumPath + newPath + this.slashCategorySlug(),
       search: this.props.location.search,
     });
   },
@@ -532,7 +533,7 @@ const ForumButtons = createComponent({
         r.div({ className: 'esF_BB_PageTitle' }, "Categories") : null;
 
     const makeCategoryLink = (where, text, linkId, extraClass?) => NavLink({
-      to: { pathname: store.pagePath.value + where, search: this.props.location.search },
+      to: { pathname: store.forumPath + where, search: this.props.location.search },
       id: linkId,
       className: 'btn esForum_catsNav_btn ' + (extraClass || ''),
       activeClassName: 'active' }, text);
@@ -962,7 +963,7 @@ export const ListTopicsComponent = createComponent({
       return TopicRow({
           store, topic, categories: store.categories, activeCategory, now: store.now, orderOffset,
           key: topic.pageId, location: this.props.location,
-          pagePath: store.pagePath, inTable: useTable });
+          inTable: useTable });
     });
 
     // Insert an icon explanation help message in the topic list. Anywhere else, and
@@ -1176,7 +1177,7 @@ const TopicRow = createComponent({
     const store: Store = this.props.store;
     const sortOrderPath = this.props.sortOrderRoute;
     // this.props.queryParams — later: could convert to query string, unless skipQuery === true
-    return store.pagePath.value + sortOrderPath + '/' + category.slug;
+    return store.forumPath + sortOrderPath + '/' + category.slug;
   },
 
   makeOnCategoryClickFn: function(category: Category) {
@@ -1463,7 +1464,7 @@ const CategoryRow = createComponent({
         r.td({ className: 'forum-info' }, // [rename] to esForum_cats_cat_meta
           r.div({ className: 'forum-title-wrap' },
             Link({ to: {
-                pathname: store.pagePath.value + RoutePathLatest + '/' + this.props.category.slug,
+                pathname: store.forumPath + RoutePathLatest + '/' + this.props.category.slug,
                 search: this.props.location.search }, className: 'forum-title' },
               category.name, isDefault), isDeletedText),
           r.p({ className: 'forum-description' }, category.description)),

@@ -30,7 +30,7 @@ const SearchRootPath = '/-/search';
 // e.g. ',' ':' '/' needn't be escaped in the query:
 //   http://stackoverflow.com/questions/75980/when-are-you-supposed-to-use-escape-instead-of-encodeuri-encodeuricomponent
 //   https://github.com/ReactTraining/react-router/issues/3764
-export function routes() {
+export function searchRoute() {
   return (
     Route({ path: SearchRootPath, component: SearchPageComponent }));
 }
@@ -83,7 +83,7 @@ var SearchPageComponent = createReactClass(<any> {
   render: function() {
     return (
       r.div({},
-        reactelements.TopBar({ backToSiteButtonTitle: "Back" }),
+        topbar.TopBar({ backToSiteButtonTitle: "Back" }),
         r.div({ className: 'esLegal_home container', style: { marginTop: '20px' } },
           // href="/" will be wrong if coming from the forum and it's base path isn't /, but e.g.
           // /forum/. Ignore this minor problem, for now. [7KUFS25]

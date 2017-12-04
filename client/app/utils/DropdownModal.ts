@@ -78,7 +78,7 @@ export const ModalDropdownButton = createComponent({
     if (state.modalCreated) {
       dropdownModal =
         // Prevent clicks from propagating outside the modal, and e.g. triggering an onClick outside.
-        r.div({ onClick: (event) => event.stopPropagation(), key: 'MDM' },
+        r.span({ onClick: (event) => event.stopPropagation(), key: 'MDM' },
          DropdownModal({ show: state.isOpen, pullLeft: props.pullLeft,
             onHide: this.closeDropdown, atX: state.buttonX, atY: state.buttonY,
             dialogClassName2: props.dialogClassName2, // <— should be this? CLEAN_UP: remove '2'

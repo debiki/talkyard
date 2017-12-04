@@ -115,6 +115,11 @@ declare namespace debiki2 {
     function isHelpMessageClosedAnyVersion(store: Store, messageId: string): boolean;
   }
 
+  namespace topbar {
+    function getTopbarHeightInclShadow(): number;
+    const TopBar: any;
+  }
+
   // should be moved to inside the editor bundle
   namespace editor {
     var SelectCategoryDropdown;

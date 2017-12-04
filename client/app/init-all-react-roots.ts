@@ -30,57 +30,142 @@
 
 export function startRemainingReactRoots() {
   const isEmbeddedComments: boolean = debiki.internal.isInEmbeddedCommentsIframe;
-
-  const adminAppElem = document.getElementById('dw-react-admin-app');
-  if (adminAppElem)
-    ReactDOM.render(
-        Router({}, admin.routes()), adminAppElem);
-
-  const superAdminAppElem = document.getElementById('theSuperAdminApp');
-  if (superAdminAppElem)
-    ReactDOM.render(
-        Router({}, superadmin.routes()), superAdminAppElem);
-
-  const tagsAppElem = document.getElementById('theTagsApp');
-  if (tagsAppElem)
-    ReactDOM.render(
-        Router({}, tags.routes()), tagsAppElem);
-
-  const nonExistingPageElem = document.getElementById('dw-non-existing-page');
-  if (nonExistingPageElem)
-    ReactDOM.render(
-        nopage.NonExistingPage({}), nonExistingPageElem);
-
-  const topbarElem = document.getElementById('theTopbar');
-  if (topbarElem && !isEmbeddedComments)
-    ReactDOM.render(
-        reactelements.TopBar({}), topbarElem);
-
   if (!isEmbeddedComments) {
+    const topbarElem = document.getElementById('theTopbar');
+    if (topbarElem)
+      ReactDOM.render(
+          topbar.TopBar({}), topbarElem);
+
     createSidebar();
     watchbar.createWatchbar();
   }
+}
 
-  const userPageElem = document.getElementById('dw-react-user-page');
-  if (userPageElem) {
+
+export function startMainReactRoot() {
+  // /-/admin/*
+  // app/views/adminPage.scala.html
+  // <div id="esPageColumn">
+  // <div id="esPageScrollable">
+  // <div id="@appId"></div>   and appId = "dw-react-admin-app"
+  const adminAppElem = document.getElementById('dw-react-admin-app');
+  if (adminAppElem) {
     ReactDOM.render(
-        // .routes() always available, because the more-bundle.js is loaded on non-pages. [5WKE24]
-        Router({}, users.routes()), userPageElem);
+        Router({}, admin.routes()), adminAppElem);
+    return;
   }
 
-  let searchPageElem = document.getElementById('t_SearchPage');
-  if (searchPageElem) {
+  // /-/superadmin/*clientRoute
+  // adminPage.scala.html, appId = "theSuperAdminApp"
+  const superAdminAppElem = document.getElementById('theSuperAdminApp');
+  if (superAdminAppElem) {
     ReactDOM.render(
-        // .routes() always available, because the more-bundle.js is loaded on non-pages. [5WKE24]
-        Router({}, debiki2['search'].routes()), searchPageElem);
+        Router({}, superadmin.routes()), superAdminAppElem);
+    return;
   }
 
+  // /-/tags/*
+  // adminPage.scala.html, appId = "theTagsApp"
+  const tagsAppElem = document.getElementById('theTagsApp');
+  if (tagsAppElem) {
+    ReactDOM.render(
+        Router({}, tags.routes()), tagsAppElem);
+    return;
+  }
+
+  // / (server root) if not created
+  // app/views/specialpages/createSomethingHerePage.scala.html
+  // <div class="container">
+  // <div id="dw-non-existing-page">
+  const nonExistingPageElem = document.getElementById('dw-non-existing-page');
+  if (nonExistingPageElem) {
+    ReactDOM.render(
+        nopage.NonExistingPage({}), nonExistingPageElem);
+    return;
+  }
+
+  // /-/create-site(/website | /embedded-comments)
+  // /-/create-test-site
+  // app/views/createsite/createSitePage.scala.html
+  // <div class="container" style="padding:30px 0 40px">
+  // @if(isTest) {
+  //   <div class="esTestSiteWarning alert-warning icon-warning">
+  //       You're creating a test site, it will be <b>deleted</b> later
+  //   </div>
+  // }
+  // <div id="dw-react-create-site"></div>
   const createSiteElem = document.getElementById('dw-react-create-site');
   if (createSiteElem) {
     ReactDOM.render(
         Router({}, createsite.routes()), createSiteElem);
+    return;
+  }
+
+  // /-/users/*
+  // <!-- users.scala.html -->
+  // @wrapper(tpi) {
+  // <div id="dw-react-user-page"></div>
+  const userPageElem = document.getElementById('dw-react-user-page');
+
+  // /-/search
+  // <!-- search.scala.html -->
+  // @wrapper(tpi) {
+  // <div id="t_SearchPage"></div>
+  const searchPageElem = document.getElementById('t_SearchPage');
+
+  const pageElem = document.getElementById('dwPosts');
+  const theElem = userPageElem || searchPageElem || pageElem;
+
+  dieIf(!theElem, 'EdE2LBRG3');
+
+  const store: Store = ReactStore.allData();
+  const forumRootSlash = store.forumPath;
+
+  const forumDefaultPath = forumRootSlash + (store.settings.forumMainView || RoutePathLatest);
+
+  if (location.pathname === '/-/embedded-comments') {
+    ReactDOM.hydrate(PageWithState(), pageElem);
+  }
+  else {
+    // Compare with [2FKB5P].
+    // Nothing below path /-/ is rendered server side (as of now), so then don't try to reuse any html.
+    const skipHydrate = location.pathname.search('/-/') === 0;
+    const renderOrHydrate = skipHydrate ? ReactDOM.render : ReactDOM.hydrate;
+    renderOrHydrate(
+        Router({},
+          Switch({},
+            // more-bundle.js is loaded directly on non-pages. Good for performance? since used here. [5WKE24]
+            Route({ path: '/-/', component: MoreScriptsRoutesComponent }),
+            // This redirects e.g. '/forum/' and '/forum' to '/forum/latest':
+            Redirect({ path: forumRootSlash, to: forumDefaultPath, exact: true }),
+            Route({ path: forumRootSlash + RoutePathLatest, component: forum.ForumComponent }),
+            Route({ path: forumRootSlash + RoutePathNew, component: forum.ForumComponent }),
+            Route({ path: forumRootSlash + RoutePathTop, component: forum.ForumComponent }),
+            Route({ path: forumRootSlash + RoutePathCategories, component: forum.ForumComponent }),
+            Route({ path: '/', component: PageWithStateComponent }))),
+      userPageElem || searchPageElem || pageElem);
   }
 }
+
+
+const MoreScriptsRoutesComponent = createReactClass(<any> {  // dupl code [4WKBTP0]
+  displayName: 'MoreScriptsRoutesComponent',
+
+  componentWillMount: function() {
+    Server.loadMoreScriptsBundle(() => {
+      this.setState({ moreScriptsLoaded: true });
+    });
+  },
+
+  render: function() {
+    if (!this.state)
+      return r.p({}, "Loading...");
+
+    return Switch({},
+      users.usersRoute(),
+      search.searchRoute());
+  }
+});
 
 
 export function createSidebar() {
