@@ -257,7 +257,7 @@ GET   /-/list-posts             controllers.ViewPageController.listPosts(authorI
 
 # Don't change the URL on the next line. The /-/assets/<version-number>/ is
 # updated by the deployment script (asset fingerprinting).
-GET   /-/assets/226/*file       controllers.Assets.at(path = "/public/res", file)
+GET   /-/assets/227/*file       controllers.Assets.at(path = "/public/res", file)
 GET   /robots.txt               controllers.Assets.at(path = "/public", file = "robots.txt")
 # These endpoints are linked from embedded comments HTML:  [2WPGKS04]
 GET   /-/ed-comments.js         controllers.Assets.at(path = "/public/res", file = "ed-comments.js")
