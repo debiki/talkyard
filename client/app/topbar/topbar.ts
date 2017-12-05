@@ -153,9 +153,10 @@ export const TopBar = createComponent({
 
   render: function() {
     const store: Store = this.state.store;
+    const page: Page = store.currentPage;
     const me: Myself = store.me;
-    const pageRole = store.pageRole;
-    const isChat = page_isChatChannel(store.pageRole);
+    const pageRole = page.pageRole;
+    const isChat = page_isChatChannel(page.pageRole);
 
     // Don't show all these buttons on a homepage / landing page, until after has scrolled down.
     // If not logged in, never show it — there's no reason for new users to login on the homepage.
@@ -171,8 +172,8 @@ export const TopBar = createComponent({
 
     let ancestorCategories;
     const shallShowAncestors = settings_showCategories(store.settings, me);
-    const thereAreAncestors = nonEmpty(store.ancestorsRootFirst);
-    const isUnlisted = _.some(store.ancestorsRootFirst, a => a.unlisted);
+    const thereAreAncestors = nonEmpty(page.ancestorsRootFirst);
+    const isUnlisted = _.some(page.ancestorsRootFirst, a => a.unlisted);
 
     if (isUnlisted || isSection(pageRole)) {
       // Show no ancestors.
@@ -180,7 +181,7 @@ export const TopBar = createComponent({
     else if (thereAreAncestors && shallShowAncestors) {
       ancestorCategories =
         r.ol({ className: 'esTopbar_ancestors' },
-          store.ancestorsRootFirst.map((ancestor: Ancestor) => {
+          page.ancestorsRootFirst.map((ancestor: Ancestor) => {
             let deletedClass = ancestor.isDeleted ? ' s_TB_Cs_C-Dd' : '';
             return (
                 r.li({ key: ancestor.categoryId, className: 's_TB_Cs_C' + deletedClass },
@@ -190,7 +191,7 @@ export const TopBar = createComponent({
     }
     // Add a Home link 1) if categories hidden (!shallShowAncestors), and 2) for
     // direct messages, which aren't placed in any category (!thereAreAncestors).
-    else if (thereAreAncestors || store.pageRole === PageRole.FormalMessage) {
+    else if (thereAreAncestors || page.pageRole === PageRole.FormalMessage) {
       // Currently there's always just one site section, namely the forum.
       const homePath = store.siteSections[0].path;
       ancestorCategories =
@@ -282,10 +283,9 @@ export const TopBar = createComponent({
 
     let pageTitle;
     if (pageRole === PageRole.Forum) {
-      const titleProps: any = _.clone(store);
-      titleProps.hideButtons = this.state.fixed;
       pageTitle =
-          r.div({ className: 'dw-topbar-title' }, page.Title(titleProps));
+          r.div({ className: 'dw-topbar-title' },
+            debiki2.page.Title({ store, hideButtons: this.state.fixed }));
     }
 
     // ------- Custom title & Back to site button

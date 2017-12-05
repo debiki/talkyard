@@ -522,7 +522,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
       }
       else {
         val everyonesPerms = request.dao.getPermsForEveryone()
-        ReactJson.noUserSpecificData(request.dao, everyonesPerms)
+        ReactJson.noUserSpecificData(request.dao, pageId, everyonesPerms)
       }
 
     json

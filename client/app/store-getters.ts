@@ -32,10 +32,11 @@
 
 
 export function store_thisIsMyPage(store: Store): boolean {
-  if (!store.postsByNr || !store.me.id) return false;
-  var bodyOrTitle = store.postsByNr[BodyNr] || store.postsByNr[TitleNr];
-  dieIf(!bodyOrTitle, 'EsE5YKF2');
-  return store.me.id === bodyOrTitle.authorId;
+  const page: Page = store.currentPage;
+  if (!page || !store.me.id) return false;
+  const bodyOrTitle = page.postsByNr[BodyNr] || page.postsByNr[TitleNr];
+  // If !bodyOrTitle, is an auto page, e.g. user profile or admin area.
+  return bodyOrTitle && store.me.id === bodyOrTitle.authorId;
 }
 
 
@@ -70,13 +71,15 @@ export function store_isUserOnline(store: Store, userId: UserId): boolean {
 
 
 export function store_getPageMembersList(store: Store): BriefUser[] {
-  return store.pageMemberIds.map(id => store_getUserOrMissing(store, id, 'EsE4UY2S'));
+  const page: Page = store.currentPage;
+  return page.pageMemberIds.map(id => store_getUserOrMissing(store, id, 'EsE4UY2S'));
 }
 
 
 export function store_getUsersOnThisPage(store: Store): BriefUser[] {
+  const page: Page = store.currentPage;
   var users: BriefUser[] = [];
-  _.each(store.postsByNr, (post: Post) => {
+  _.each(page.postsByNr, (post: Post) => {
     if (_.every(users, u => u.id !== post.authorId)) {
       var user = store_getAuthorOrMissing(store, post);
       users.push(user);
@@ -99,10 +102,11 @@ export function store_getUsersOnline(store: Store): BriefUser[] {
 
 
 export function store_getUsersHere(store: Store): UsersHere {
-  var isChat = page_isChatChannel(store.pageRole);
+  const page: Page = store.currentPage;
+  var isChat = page_isChatChannel(page.pageRole);
   var users: BriefUser[];
   var listMembers = isChat;
-  var listUsersOnPage = !listMembers && page_isDiscussion(store.pageRole);
+  var listUsersOnPage = !listMembers && page_isDiscussion(page.pageRole);
   if (listMembers) {
     users = store_getPageMembersList(store);
   }
@@ -130,19 +134,22 @@ export function store_getUsersHere(store: Store): UsersHere {
 
 
 export function store_canDeletePage(store: Store): boolean {
+  const page: Page = store.currentPage;
   // For now, don't let people delete sections = their forum — that just makes them confused.
-  return !store.pageDeletedAtMs && isStaff(store.me) &&
-      store.pageRole && !isSection(store.pageRole);
+  return !page.pageDeletedAtMs && isStaff(store.me) &&
+      page.pageRole && !isSection(page.pageRole);
 }
 
 
 export function store_canUndeletePage(store: Store): boolean {
-  return store.pageDeletedAtMs && isStaff(store.me);
+  const page: Page = store.currentPage;
+  return page.pageDeletedAtMs && isStaff(store.me);
 }
 
 
 export function store_canSelectPosts(store: Store): boolean {
-  return isStaff(store.me) && !store_isSection(store) && store.pageRole !== PageRole.CustomHtmlPage;
+  const page: Page = store.currentPage;
+  return isStaff(store.me) && !store_isSection(store) && page.pageRole !== PageRole.CustomHtmlPage;
 }
 
 
@@ -159,12 +166,14 @@ export function store_getCurrOrDefaultCat(store: Store): Category {
 
 
 export function store_isSection(store: Store): boolean {
-  return store.pageRole !== PageRole.Blog && store.pageRole !== PageRole.Forum;
+  const page: Page = store.currentPage;
+  return page.pageRole !== PageRole.Blog && page.pageRole !== PageRole.Forum;
 }
 
 
 export function store_thereAreFormReplies(store: Store): boolean {
-  return _.some(store.postsByNr, (post: Post) => {
+  const page: Page = store.currentPage;
+  return _.some(page.postsByNr, (post: Post) => {
     return post.postType === PostType.CompletedForm;
   });
 }
@@ -176,7 +185,8 @@ export function store_shallShowPageToolsButton(store: Store) {
 
 
 export function store_canPinPage(store: Store) {
-  return store.categoryId && store.pageRole !== PageRole.Forum;
+  const page: Page = store.currentPage;
+  return store.categoryId && page.pageRole !== PageRole.Forum;
 }
 
 

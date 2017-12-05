@@ -8,5 +8,14 @@ if (window && window.key) {
   }
   window.keymaster = window.key;
   window.key = 'Use window.keymaster instead [DwE7VEGP8]';
+
+
+  // Tell KeyMaster to handle Escape clicks also inside <input>s.
+  window.keymaster.filter = function(event) {
+    if (event.keyCode === 27) // escape is 27
+      return true;
+    var tagName = (event.target || event.originalTarget).tagName;
+    return !(tagName === 'INPUT' || tagName === 'SELECT' || tagName === 'TEXTAREA');
+  };
 }
 

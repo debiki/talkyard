@@ -573,12 +573,14 @@ package object core {
   def COULD_OPTIMIZE = ()
   def SMALLER_BUNDLE = ()
   def FORCED_REFLOW = ()  // Browser side only. Makes it slow.
+  def COULD_FREE_MEM = () // Browser side, can set null sth to free mem, but then maybe harder to debug.
   def UX = ()             // Usability can be improved.
   def RESPONSIVE = ()     // Would look better with responsive layout. Browser side only.
   def DB_CONFICT = ()     // When the same db rows might be updated by different transaction,
                           // causing deadlocks / rollbacks / delays.
   def HACK = ()           // Quick crazy fix, probably should be redone later in a better way.
   def DELETE_LATER = ()   // ... hmm. Rename to CLEANUP.
+  def REMOVE = ()
   def CLEAN_UP = ()       // Unused stuff that should be deleted after a grace period, or when
                           // the developers are less short of time.
   def DISCUSSION_QUALITY = () // Stuff to do to improve the quality of the discussions

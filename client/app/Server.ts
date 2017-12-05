@@ -660,8 +660,10 @@ export function lockThreatLevel(userId: UserId, threatLevel: ThreatLevel, succes
 
 export function savePageNoftLevel(newNotfLevel) {
   postJsonSuccess('/-/set-page-notf-level', () => {
-    const me: Myself = ReactStore.allData().me;
-    me.rolePageSettings = { notfLevel: newNotfLevel };  // [redux] modifying state in place
+    const store: Store = ReactStore.allData();
+    const me: Myself = store.me;
+    const myPageData: MyPageData = me.myCurrentPageData;
+    myPageData.rolePageSettings = { notfLevel: newNotfLevel };  // [redux] modifying state in place
     ReactActions.patchTheStore({ me: me });
   }, {
     pageId: d.i.pageId,

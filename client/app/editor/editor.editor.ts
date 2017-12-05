@@ -497,8 +497,10 @@ export const Editor = createComponent({
   },
 
   loadGuidelines: function(writingWhat: WritingWhat, categoryId?: number, pageRole?: PageRole) {
-    var theCategoryId = categoryId || ReactStore.allData().categoryId;
-    var thePageRole = pageRole || ReactStore.allData().pageRole;
+    const store: Store = ReactStore.allData();
+    const page: Page = store.currentPage;
+    var theCategoryId = categoryId || store.categoryId;
+    var thePageRole = pageRole || page.pageRole;
     var currentGuidelines = this.state.guidelines;
     if (currentGuidelines &&
         currentGuidelines.categoryId === theCategoryId &&
@@ -867,6 +869,7 @@ export const Editor = createComponent({
   render: function() {
     var state = this.state;
     var store: Store = state.store;
+    const page: Page = store.currentPage;
     var me: Myself = store.me;
     let settings: SettingsVisibleClientSide = store.settings;
     var isPrivateGroup = page_isPrivateGroup(this.state.newPageRole);
@@ -931,7 +934,7 @@ export const Editor = createComponent({
     const isOrigPostReply = _.isEqual([BodyNr], replyToPostNrs);
     const isChatComment = replyToPostNrs.length === 1 && replyToPostNrs[0] === NoPostId;
     const isChatReply = replyToPostNrs.indexOf(NoPostId) !== -1 && !isChatComment;
-    const isMindMapNode = replyToPostNrs.length === 1 && store.pageRole === PageRole.MindMap;
+    const isMindMapNode = replyToPostNrs.length === 1 && page.pageRole === PageRole.MindMap;
 
     let doingWhatInfo: any;
     if (_.isNumber(editingPostId)) {
@@ -976,10 +979,10 @@ export const Editor = createComponent({
     else if (isChatComment) {
       doingWhatInfo = "New chat comment:";
     }
-    else if (isOrigPostReply && page_isCritique(store.pageRole)) { // [plugin]
+    else if (isOrigPostReply && page_isCritique(page.pageRole)) { // [plugin]
       doingWhatInfo = "Your critique:";
     }
-    else if (isOrigPostReply && page_isUsabilityTesting(store.pageRole)) { // [plugin]
+    else if (isOrigPostReply && page_isUsabilityTesting(page.pageRole)) { // [plugin]
       //doingWhatInfo = "Your usability testing video link + description:";
       doingWhatInfo = "Your feedback and answers to questions:";
     }
@@ -1023,10 +1026,10 @@ export const Editor = createComponent({
       }
       else {
         saveButtonTitle = "Post reply";
-        if (isOrigPostReply && page_isCritique(store.pageRole)) { // [plugin]
+        if (isOrigPostReply && page_isCritique(page.pageRole)) { // [plugin]
           saveButtonTitle = makeSaveTitle("Submit", " critique");
         }
-        if (isOrigPostReply && page_isUsabilityTesting(store.pageRole)) { // [plugin]
+        if (isOrigPostReply && page_isUsabilityTesting(page.pageRole)) { // [plugin]
           //saveButtonTitle = makeSaveTitle("Submit", " video");
           saveButtonTitle = makeSaveTitle("Submit", " feedback");
         }
@@ -1244,12 +1247,13 @@ function wrapSelectedText(textarea, content: string, wrap: string, wrapAfter?: s
 
 
 function makeDefaultReplyText(store: Store, postIds: PostId[]): string {
+  const page: Page = store.currentPage;
   let result = '';
   // For UTX replies, include the instructions, in bold-italic lines,  [2JFKD0Y3]
   // so people can write their replies in between.
-  if (store.pageRole === PageRole.UsabilityTesting &&  // [plugin]
+  if (page.pageRole === PageRole.UsabilityTesting &&  // [plugin]
       postIds.length === 1 && postIds[0] === BodyNr) {
-    const origPost: Post = store.postsByNr[BodyNr];
+    const origPost: Post = page.postsByNr[BodyNr];
     if (!origPost) return '';
     const elemsInclText: HTMLCollection = $h.parseHtml(origPost.sanitizedHtml);
     // Remove top level text elems (only whitespace and newlines?), and anything after any <hr>

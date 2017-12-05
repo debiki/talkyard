@@ -63,9 +63,11 @@ var MovePostsDialog = createComponent({
   },
 
   doMove: function() {
-    Server.movePost(this.state.post.uniqueId, this.state.newHost, this.state.newPageId,
+    const store: Store = this.props.store;
+    const post: Post = this.state.post;
+    Server.movePost(post.uniqueId, this.state.newHost, this.state.newPageId,
         this.state.newParentNr, (postAfter: Post) => {
-      if (this.state.store.pageId === this.state.newPageId) {
+      if (store.currentPageId === this.state.newPageId) {
         // Within the same page, then scroll to the new location.
         // COULD add Back entry, which navigates back to the former parent or any
         // sibling just above.

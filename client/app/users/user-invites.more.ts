@@ -44,16 +44,18 @@ export const UserInvites = createFactory({
   },
 
   componentWillReceiveProps: function(nextProps: any) {
-    if (this.props.user.id === nextProps.user.id &&
-        this.props.store.me.id === nextProps.store.me.id)
+    const store: Store = this.props.store;
+    const nextStore: Store = nextProps.store;
+    if (this.props.user.id === nextProps.user.id && store.me.id === nextStore.me.id)
       return;
 
     this.loadInvites(nextProps.user.id);
   },
 
   loadInvites: function(userId: UserId) {
+    const store: Store = this.props.store;
     this.setState({ invites: null });
-    let me: Myself = this.props.store.me;
+    let me: Myself = store.me;
     var maySeeInvites = me.id === userId || isStaff(me);
     if (!maySeeInvites)
       return;

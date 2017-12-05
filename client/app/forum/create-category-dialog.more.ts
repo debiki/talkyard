@@ -121,10 +121,12 @@ const EditCategoryDialog = createClassAndFactory({
 
   save: function() {
     this.setState({ isSaving: true });
+    const store: Store = this.state.store;
+    const stateCat: Category = this.state.category;
     const category: Category = {
-      ...this.state.category,
-      parentCategoryId: ReactStore.getCategoryId(),
-      sectionPageId: debiki.internal.pageId,
+      ...stateCat,
+      parentId: ReactStore.getCategoryId(),
+      sectionPageId: store.currentPageId,
     };
     function falseToUndef(permissions: PermsOnPage[]) {
       const ps = _.clone(permissions);
@@ -257,6 +259,7 @@ const CategorySettings = createClassAndFactory({
 
   render: function () {
     const store: Store = this.props.store;
+    const page: Page = store.currentPage;
     const category: Category = this.props.category;
     if (!category)
       return null;
@@ -299,7 +302,7 @@ const CategorySettings = createClassAndFactory({
               help: r.div({ className: 'esCatDlg_slug_help' },
                 "Included in the computer address (URL) to this category. The address " +
                 "would be: ",
-                r.samp({}, location.origin + store.pagePath.value + RoutePathLatest + '/',
+                r.samp({}, location.origin + page.pagePath.value + RoutePathLatest + '/',
                   r.span({ className: 'esCatDlg_slug_help_addr_slug' }, category.slug))) }));
 
     let sortPositionText = "Click to set sort position";

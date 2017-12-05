@@ -53,10 +53,11 @@ export const TitleBodyComments = createComponent({
 
   makeHelpMessage: function(): HelpMessage {
     const store: Store = this.props.store;
+    const page: Page = store.currentPage;
     const me: Myself = store.me;
-    const bodyPost = store.postsByNr[BodyNr];
+    const bodyPost = page.postsByNr[BodyNr];
 
-    if (store.pageRole === PageRole.Form && store.pageClosedAtMs)
+    if (page.pageRole === PageRole.Form && page.pageClosedAtMs)
       return { id: 'EsH4PK04', version: 1, type: HelpTypePageClosed, content: r.div({},
         "This form has been ", closedIcon, "closed; you can no longer fill it in and post it.") };
 
@@ -78,15 +79,15 @@ export const TitleBodyComments = createComponent({
 
     // If this page was closed prematurely, show "... has been closed ..." instead of
     // e.g. "... is waiting for an answer..."
-    const isClosedUnfinished = store.pageClosedAtMs && !store.pageDoneAtMs && !store.pageAnsweredAtMs;
+    const isClosedUnfinished = page.pageClosedAtMs && !page.pageDoneAtMs && !page.pageAnsweredAtMs;
     const isClosedUsabilityTesting =
-        store.pageClosedAtMs && store.pageRole === PageRole.UsabilityTesting;  // [plugin]
+        page.pageClosedAtMs && page.pageRole === PageRole.UsabilityTesting;  // [plugin]
     if (isClosedUnfinished || isClosedUsabilityTesting) {
       const closed = r.b({}, closedIcon, "closed");
       const done = r.b({}, doneIcon, "done");
-      if (store.pageRole === PageRole.UsabilityTesting)  // [plugin]
+      if (page.pageRole === PageRole.UsabilityTesting)  // [plugin]
         return { id: 'Ed2PRK06', version: 1, type: HelpTypePageClosed, content: r.div({},
-          r.p({}, "This topic has been ", store.pageDoneAtMs ? done : closed, ", no more feedback " +
+          r.p({}, "This topic has been ", page.pageDoneAtMs ? done : closed, ", no more feedback " +
           "needed. (But you can leave more feedback, if you want to.)"),
           shareWithFriends) };
       return { id: 'EdH7UMPW', version: 1, type: HelpTypePageClosed, content: r.div({},
@@ -103,8 +104,8 @@ export const TitleBodyComments = createComponent({
       ...
     */
 
-    if (store.pageRole === PageRole.Question) {
-      if (store.pageAnsweredAtMs) {
+    if (page.pageRole === PageRole.Question) {
+      if (page.pageAnsweredAtMs) {
         return { id: 'EsH5JV8', version: 1, content: r.div({ className: 'esHelp-solved' },
             "This is a question and it has been ", solvedIcon, "answered.") };
       }
@@ -114,17 +115,17 @@ export const TitleBodyComments = createComponent({
       }
     }
 
-    if (store.pageRole === PageRole.Problem) {
-      if (store.pageDoneAtMs) {
+    if (page.pageRole === PageRole.Problem) {
+      if (page.pageDoneAtMs) {
         return { id: 'EsH5GKU0', version: 1, className: 'esH_ProblemSolved', content: r.div({},
             "This is a problem and it has been ", doneIcon, " solved.") };
       }
-      else if (store.pageStartedAtMs) {
+      else if (page.pageStartedAtMs) {
         return { id: 'EsH7BK28', version: 1, className: 's_H_ProblemStarted', content: r.div({},
           "This is a problem. We have ", startedIcon, " started fixing it, but it's not yet ",
           doneIcon, " done.") };
       }
-      else if (store.pagePlannedAtMs) {
+      else if (page.pagePlannedAtMs) {
         return { id: 'EsH2PK40', version: 1, className: 's_H_ProblemPlanned', content: r.div({},
             "This is a problem. We ", plannedIcon, " plan to fix it, but it's not yet ",
             startedIcon, " started, not yet ", doneIcon, " done.") };
@@ -135,17 +136,17 @@ export const TitleBodyComments = createComponent({
       }
     }
 
-    if (store.pageRole === PageRole.Idea) {
-      if (store.pageDoneAtMs) {
+    if (page.pageRole === PageRole.Idea) {
+      if (page.pageDoneAtMs) {
         return { id: 'EsH9PK0', version: 1, content: r.div({},
             "This has been ", doneIcon, " implemented.") };
       }
-      else if (store.pageStartedAtMs) {
+      else if (page.pageStartedAtMs) {
         return { id: 'EsH2WTSK', version: 1, content: r.div({},
           "We have ", startedIcon, " started implementing this. " +
           "But it's not yet ", doneIcon, " done.") };
       }
-      else if (store.pagePlannedAtMs) {
+      else if (page.pagePlannedAtMs) {
         return { id: 'EsH44TK2', version: 1, content: r.div({},
             "We ", plannedIcon, " plan to implement this. " +
             "But it's not yet ", startedIcon, " started, not yet ", doneIcon, " done.") };
@@ -157,8 +158,8 @@ export const TitleBodyComments = createComponent({
       }
     }
 
-    if (store.pageRole === PageRole.Critique) {  // [plugin]. Dupl code, (39pKFU0) below
-      if (store.pageClosedAtMs) {
+    if (page.pageRole === PageRole.Critique) {  // [plugin]. Dupl code, (39pKFU0) below
+      if (page.pageClosedAtMs) {
         return { id: 'EdH4KDPU2', version: 1, type: HelpTypePageClosed, content: r.span({},
           "This topic has been ", closedIcon, "closed. People won't get any additional " +
           "credits for posting more critique here.") };
@@ -171,7 +172,7 @@ export const TitleBodyComments = createComponent({
       else {
         const isPageAuthor = bodyPost.authorId === me.id;
         if (isPageAuthor) {
-          if (store.numPostsRepliesSection) {
+          if (page.numPostsRepliesSection) {
             return { id: 'EdH5GUF2', version: 1, content: r.span({},
                 "You have been given critique — see the Replies section below.") };
           }
@@ -194,7 +195,7 @@ export const TitleBodyComments = createComponent({
       }
     }
 
-    if (store.pageRole === PageRole.UsabilityTesting) {  // [plugin]. Dupl code, (39pKFU0) above
+    if (page.pageRole === PageRole.UsabilityTesting) {  // [plugin]. Dupl code, (39pKFU0) above
       if (!me.isAuthenticated) {
         // Could explain: here someone has asked for usability testing. X people have answered,
         // see the Replies section below.
@@ -203,7 +204,7 @@ export const TitleBodyComments = createComponent({
       else {
         const isPageAuthor = bodyPost.authorId === me.id;
         if (isPageAuthor) {
-          if (store.numPostsRepliesSection) {
+          if (page.numPostsRepliesSection) {
             return { id: 'EdH5P0WF2', version: 1, alwaysShow: true, content: r.div({},
               r.h1({ className: 's_UtxHelp_HaveAsked_Title' },
                 "There's feedbak for you"),
@@ -237,14 +238,14 @@ export const TitleBodyComments = createComponent({
               PrimaryButton({ className: 's_UtxHelp_HaveAsked_ContinueB' + skip,
                   onClick: () => {
                     let tasksToSkip = getSetCookie('edCoUtxSkip');
-                    tasksToSkip = (tasksToSkip || '') + store.pageId + ',';
+                    tasksToSkip = (tasksToSkip || '') + page.pageId + ',';
                     getSetCookie('edCoUtxSkip', tasksToSkip);
                     location.assign('/give-me-a-task');
                   }}, title));
           }
-          if (store.numPostsRepliesSection) {
+          if (page.numPostsRepliesSection) {
             let feedbacks =
-                _.filter(_.values(store.postsByNr), (post: Post) => post.parentNr === BodyNr);
+                _.filter(_.values(page.postsByNr), (post: Post) => post.parentNr === BodyNr);
             const itsFeedbackByMe =
                 _.some(feedbacks, (feedback: Post) => feedback.authorId == me.id);
             if (itsFeedbackByMe) {
@@ -287,6 +288,7 @@ export const TitleBodyComments = createComponent({
 
   render: function() {
     const store: Store = this.props.store;
+    const page: Page = store.currentPage;
 
     const anyHelpMessageData = this.makeHelpMessage();
     const anyHelpMessage = anyHelpMessageData
@@ -295,14 +297,14 @@ export const TitleBodyComments = createComponent({
 
     let anyAboutCategoryClass;
     let anyAboutCategoryTitle;
-    if (store.pageRole === PageRole.About) {
+    if (page.pageRole === PageRole.About) {
       anyAboutCategoryClass = 'dw-about-category';
       anyAboutCategoryTitle =
           r.h2({ className: 'dw-about-cat-ttl-prfx' }, "About category:")
     }
 
     let anyTitle = null;
-    let pageRole: PageRole = store.pageRole;
+    let pageRole: PageRole = page.pageRole;
     if (pageRole === PageRole.CustomHtmlPage ||
         pageRole === PageRole.EmbeddedComments ||  // maybe hide via css instead? [7SFAUM2]
         store.rootPostId !== BodyNr) {
@@ -312,7 +314,7 @@ export const TitleBodyComments = createComponent({
       // And show no title if we're showing a comment not the article as the root post.
     }
     else {
-      anyTitle = Title(store);
+      anyTitle = Title({ store });
     }
 
     let anyPostHeader = null;
@@ -326,10 +328,8 @@ export const TitleBodyComments = createComponent({
       // And show nothing if we're showing a comment not the article as the root post.
     }
     else {
-      const post = store.postsByNr[store.rootPostId];
-      const headerProps: any = _.clone(store);
-      headerProps.post = post;
-      anyPostHeader = PostHeader(headerProps);
+      const post = page.postsByNr[store.rootPostId];
+      anyPostHeader = PostHeader({ store, post });
       // anySocialLinks = SocialLinks({ socialLinksHtml: store.socialLinksHtml }); CLEAN_UP remove social links
     }
 
@@ -349,7 +349,7 @@ export const TitleBodyComments = createComponent({
           anyPostHeader,
           helpMessageBelowTitle,
           //anySocialLinks,
-          RootPostAndComments(store))));
+          RootPostAndComments({ store }))));
   },
 });
 
@@ -374,8 +374,9 @@ export const Title = createComponent({
   },
 
   render: function() {
-    const store: Store = this.props;
-    const titlePost: Post = store.postsByNr[TitleNr];
+    const store: Store = this.props.store;
+    const page: Page = store.currentPage;
+    const titlePost: Post = page.postsByNr[TitleNr];
     if (!titlePost)
       return null;
 
@@ -385,20 +386,20 @@ export const Title = createComponent({
 
     const deletedOrUnapprovedInfo = titlePost.isApproved ? false :
         r.span({ className: 'esPendingApproval' },
-          store.pageDeletedAtMs ? "(Page deleted)" : "(Title pending approval)");
+          page.pageDeletedAtMs ? "(Page deleted)" : "(Title pending approval)");
 
     // Insert the title as plain text (don't interpret any html tags — that'd let Mallory mess up
     // the formatting, even if sanitized).
     let titleText = r.span({}, titlePost.unsafeSource);
 
     // Make forum titles link back to the forum default view.
-    if (store.pageRole === PageRole.Forum) {
-      titleText = r.a({ href: store.pagePath.value }, titleText);
+    if (page.pageRole === PageRole.Forum) {
+      titleText = r.a({ href: page.pagePath.value }, titleText);
     }
 
     let anyShowForumInroBtn;
-    if (!this.props.hideButtons && store.pageRole === PageRole.Forum && store.hideForumIntro) {
-      const introPost = store.postsByNr[BodyNr];
+    if (!this.props.hideButtons && page.pageRole === PageRole.Forum && store.hideForumIntro) {
+      const introPost = page.postsByNr[BodyNr];
       if (introPost && !introPost.isBodyHidden) {
         // Don't show button too early — doing that would make server side and client side
         // React generated html differ.
@@ -423,75 +424,75 @@ export const Title = createComponent({
       contents = morebundle.TitleEditor(editorProps);
     }
     else {
-      let pinOrHiddenClass = this.props.pinWhere ? ' icon-pin' : '';
-      if (store.pageHiddenAtMs) {
+      let pinOrHiddenClass = page.pinWhere ? ' icon-pin' : '';
+      if (page.pageHiddenAtMs) {
         pinOrHiddenClass = ' icon-eye-off';
       }
       let tooltip = '';
       let icon;
       // (Some dupl code, see PostActions below and isDone() and isAnswered() in forum.ts [4KEPW2]
-      if (store.pageClosedAtMs && !store.pageDoneAtMs && !store.pageAnsweredAtMs) {
+      if (page.pageClosedAtMs && !page.pageDoneAtMs && !page.pageAnsweredAtMs) {
         icon = r.span({ className: 'icon-block' });
-        tooltip = makePageClosedTooltipText(store.pageRole) + '\n';
+        tooltip = makePageClosedTooltipText(page.pageRole) + '\n';
       }
-      else if (store.pageRole === PageRole.Question) {
-        icon = store.pageAnsweredAtMs
+      else if (page.pageRole === PageRole.Question) {
+        icon = page.pageAnsweredAtMs
             ? r.a({ className: 'icon-ok-circled dw-clickable',
-                onClick: utils.makeShowPostFn(TitleNr, this.props.pageAnswerPostNr) })
+                onClick: utils.makeShowPostFn(TitleNr, page.pageAnswerPostNr) })
             : r.span({ className: 'icon-help-circled' });
-        tooltip = makeQuestionTooltipText(store.pageAnsweredAtMs) + ".\n";
+        tooltip = makeQuestionTooltipText(page.pageAnsweredAtMs) + ".\n";
       }
-      else if (store.pageRole === PageRole.Problem || store.pageRole === PageRole.Idea ||
-                store.pageRole === PageRole.ToDo || store.pageRole === PageRole.UsabilityTesting) {
+      else if (page.pageRole === PageRole.Problem || page.pageRole === PageRole.Idea ||
+                page.pageRole === PageRole.ToDo || page.pageRole === PageRole.UsabilityTesting) {
         // (Some dupl code, see [5KEFEW2] in forum.ts.
         let iconClass;
         let iconTooltip;
-        if (store.pageRole === PageRole.Problem || store.pageRole === PageRole.Idea) {
-          if (store.pageDoneAtMs) {
-            tooltip = store.pageRole === PageRole.Problem
+        if (page.pageRole === PageRole.Problem || page.pageRole === PageRole.Idea) {
+          if (page.pageDoneAtMs) {
+            tooltip = page.pageRole === PageRole.Problem
               ? "This has been fixed"
               : "This has been done";
             iconClass = 'icon-check';
             iconTooltip = "Click to change status to new";
           }
-          else if (store.pageStartedAtMs) {
-            tooltip = store.pageRole === PageRole.Problem
+          else if (page.pageStartedAtMs) {
+            tooltip = page.pageRole === PageRole.Problem
               ? "We're currently fixing this"
               : "We're currently implementing this";
             iconClass = 'icon-check-empty';
             iconTooltip = "Click to mark as done";
           }
-          else if (store.pagePlannedAtMs) {
-            tooltip = store.pageRole === PageRole.Problem
+          else if (page.pagePlannedAtMs) {
+            tooltip = page.pageRole === PageRole.Problem
               ? "We're planning to fix this"
               : "We're planning to implement this";
             iconClass = 'icon-check-dashed';
             iconTooltip = "Click to mark as started";
           }
           else  {
-            tooltip = store.pageRole === PageRole.Problem
+            tooltip = page.pageRole === PageRole.Problem
               ? "This is an unsolved problem"
               : "This is an idea";
-            iconClass = store.pageRole === PageRole.Problem ?
+            iconClass = page.pageRole === PageRole.Problem ?
               'icon-attention-circled' : 'icon-idea';
             iconTooltip = "Click to change status to planned";
           }
         }
-        else if (store.pageRole === PageRole.UsabilityTesting) {   // [plugin]
-          tooltip = store.pageDoneAtMs
+        else if (page.pageRole === PageRole.UsabilityTesting) {   // [plugin]
+          tooltip = page.pageDoneAtMs
               ? "This has been done. Feedback has been given.\n"
               : "Waiting for feedback.\n";
-          iconClass = store.pageDoneAtMs ? 'icon-check' : 'icon-check-empty';
-          iconTooltip = store.pageDoneAtMs
+          iconClass = page.pageDoneAtMs ? 'icon-check' : 'icon-check-empty';
+          iconTooltip = page.pageDoneAtMs
               ? "Click to change status to waiting-for-feedback"
               : "Click to mark as done";
         }
         else {
-          tooltip = store.pageDoneAtMs
+          tooltip = page.pageDoneAtMs
               ? "This has been done or fixed.\n"
               : "This is about something to do or fix.\n";
-          iconClass = store.pageDoneAtMs ? 'icon-check' : 'icon-check-empty';
-          iconTooltip = store.pageDoneAtMs
+          iconClass = page.pageDoneAtMs ? 'icon-check' : 'icon-check-empty';
+          iconTooltip = page.pageDoneAtMs
               ? "Click to change status to not-yet-done"
               : "Click to mark as done";
         }
@@ -501,20 +502,20 @@ export const Title = createComponent({
         icon = r.span({ className: iconClass + clickableClass, onClick: onClick,
             title: iconTooltip });
       }
-      else if (store.pageRole === PageRole.FormalMessage) {
+      else if (page.pageRole === PageRole.FormalMessage) {
         icon = r.span({ className: 'icon-mail' });
         tooltip = "Personal message";
       }
-      else if (store.pageRole === PageRole.OpenChat) {
+      else if (page.pageRole === PageRole.OpenChat) {
         icon = '#';
         tooltip = "# means Chat Channel";
       }
-      else if (store.pageRole === PageRole.PrivateChat) {
+      else if (page.pageRole === PageRole.PrivateChat) {
         icon = r.span({ className: 'icon-lock' });
         tooltip = "This is a private chat channel";
       }
 
-      switch (this.props.pinWhere) {
+      switch (page.pinWhere) {
         case PinPageWhere.Globally: tooltip += "\nPinned globally."; break;
         case PinPageWhere.InCategory: tooltip += "\nPinned in this category."; break;
         default:
@@ -522,7 +523,7 @@ export const Title = createComponent({
 
       let deletedIcon;
       if (store_isPageDeleted(store)) {
-        let deletedReason = store.pageDeletedAtMs ?
+        let deletedReason = page.pageDeletedAtMs ?
             "This page has been deleted" : "Category deleted, so this page was deleted too";
         deletedIcon = r.span({ className: 'icon-trash', title: deletedReason });
         titleText = r.span({ className: 'esOP_title-deleted' }, titleText);
@@ -568,7 +569,7 @@ const RootPostAndComments = createComponent({
 
   loadAndShowRootPost: function(event) {
     event.preventDefault();
-    let store: Store = this.props;
+    const store: Store = this.props.store;
     ReactActions.loadAndShowPost(store.rootPostId);
   },
 
@@ -602,16 +603,17 @@ const RootPostAndComments = createComponent({
   }, */
 
   render: function() {
-    const store: Store = this.props;
-    const postsByNr: { [postNr: number]: Post; } = this.props.postsByNr;
+    const store: Store = this.props.store;
+    const page: Page = store.currentPage;
+    const postsByNr: { [postNr: number]: Post; } = page.postsByNr;
     const me = store.me;
-    const rootPost: Post = postsByNr[this.props.rootPostId];
+    const rootPost: Post = postsByNr[store.rootPostId];
     if (!rootPost)
-      return r.p({}, '(Root post missing, id: ' + this.props.rootPostId +
+      return r.p({}, '(Root post missing, id: ' + store.rootPostId +
           ', these are present: ' + _.keys(postsByNr) + ' [DwE8WVP4])');
-    const isBody = this.props.rootPostId === BodyNr;
-    const pageRole: PageRole = this.props.pageRole;
-    let threadClass = 'dw-t dw-depth-0' + horizontalCss(this.props.horizontalLayout);
+    const isBody = store.rootPostId === BodyNr;
+    const pageRole: PageRole = page.pageRole;
+    let threadClass = 'dw-t dw-depth-0' + horizontalCss(page.horizontalLayout);
     const postIdAttr = 'post-' + rootPost.nr;
     let postClass = 'dw-p';
     if (post_shallRenderAsHidden(rootPost)) postClass += ' s_P-Hdn';
@@ -624,7 +626,7 @@ const RootPostAndComments = createComponent({
 
     const deletedOrUnapprovedMessage = rootPost.isApproved ? false :
         r.div({ className: 'esPendingApproval' },
-          store.pageDeletedAtMs ? "(Page deleted)" : "(Text pending approval)");
+          page.pageDeletedAtMs ? "(Page deleted)" : "(Text pending approval)");
 
     let body = null;
     if (pageRole !== PageRole.EmbeddedComments) {  // maybed hide via CSS instead? [7SFAUM2]
@@ -657,30 +659,30 @@ const RootPostAndComments = createComponent({
     }
 
     let solvedBy;
-    if (store.pageRole === PageRole.Question && store.pageAnsweredAtMs) {
+    if (page.pageRole === PageRole.Question && page.pageAnsweredAtMs) {
       // onClick:... handled in ../utils/show-and-highlight.js currently (scrolls to solution).
       solvedBy = r.a({ className: 'dw-solved-by icon-ok-circled',
-          href: '#post-' + store.pageAnswerPostNr,
-          onMouseEnter: () => highlightPost(store.pageAnswerPostNr, true),
-          onMouseLeave: () => highlightPost(store.pageAnswerPostNr, false),
-          onClick: utils.makeShowPostFn(BodyNr, store.pageAnswerPostNr) },
-        "Solved in post #" + store.pageAnswerPostNr + ", click to view");
+          href: '#post-' + page.pageAnswerPostNr,
+          onMouseEnter: () => highlightPost(page.pageAnswerPostNr, true),
+          onMouseLeave: () => highlightPost(page.pageAnswerPostNr, false),
+          onClick: utils.makeShowPostFn(BodyNr, page.pageAnswerPostNr) },
+        "Solved in post #" + page.pageAnswerPostNr + ", click to view");
     }
 
     let anyHorizontalArrowToChildren = null;
-    if (this.props.horizontalLayout) {
+    if (page.horizontalLayout) {
       anyHorizontalArrowToChildren =
           debiki2.renderer.drawHorizontalArrowFromRootPost(rootPost);
     }
 
     let repliesAreFlat = false;
-    let childIds = rootPost.childIdsSorted.concat(this.props.topLevelCommentIdsSorted);
+    let childIds = rootPost.childIdsSorted.concat(page.topLevelCommentIdsSorted);
 
     // On message pages, most likely max a few people talk — then threads make no sense.
     // On form submission pages, people don't see each others submissions, won't talk at all.
-    if (store.pageRole === PageRole.FormalMessage || store.pageRole === PageRole.Form) {
+    if (page.pageRole === PageRole.FormalMessage || page.pageRole === PageRole.Form) {
       repliesAreFlat = true;
-      childIds = _.values(store.postsByNr).map((post: Post) => post.nr);
+      childIds = _.values(page.postsByNr).map((post: Post) => post.nr);
     }
 
     let isSquashing = false;
@@ -702,14 +704,14 @@ const RootPostAndComments = createComponent({
       if (child.postType === PostType.Flat)  // could rename Flat to Comment?
         return null;
       isSquashing = false;
-      const threadProps = _.clone(this.props);
+      const threadProps: any = { store };
       if (repliesAreFlat) threadProps.isFlat = true;
       threadProps.elemType = 'div';
       threadProps.postId = childId;  // rename to .postNr, right?
       threadProps.index = childIndex;
       threadProps.depth = 1;
       threadProps.indentationDepth = 0;
-      threadProps.is2dTreeColumn = this.props.horizontalLayout;
+      threadProps.is2dTreeColumn = page.horizontalLayout;
       if (child.squash) {
         isSquashing = true;
         return (
@@ -746,13 +748,13 @@ const RootPostAndComments = createComponent({
 
     // Disable chat comments for now, they make people confused, and  [8KB42]
     // it'd be hard & take long to make them simpler to understand.
-    let hasChat = false; // hasChatSection(store.pageRole);
+    let hasChat = false; // hasChatSection(page.pageRole);
 
     let flatComments = []; /*
-    if (hasChat) _.each(store.postsByNr, (child: Post, childId) => {
+    if (hasChat) _.each(page.postsByNr, (child: Post, childId) => {
       if (!child || child.postType !== PostType.Flat)
         return null;
-      var threadProps = _.clone(this.props);
+      var threadProps = _.clone(store);
       threadProps.isFlat = true;
       threadProps.elemType = 'div';
       threadProps.postId = childId;
@@ -773,7 +775,7 @@ const RootPostAndComments = createComponent({
       chatSection =
         r.div({},
           r.div({ className: 'dw-chat-title', id: 'dw-chat' },
-            store.numPostsChatSection + " chat comments"),
+            page.numPostsChatSection + " chat comments"),
           r.div({ className: 'dw-vt' },
             r.div({ className: 'dw-chat dw-single-and-multireplies' },
                 r.ol({ className: 'dw-res dw-singlereplies' },
@@ -793,18 +795,18 @@ const RootPostAndComments = createComponent({
         SocialButtons(store.settings);
 
     const postActions = post_shallRenderAsHidden(rootPost) ? null :
-         PostActions({ store: this.props, post: rootPost });
+         PostActions({ store, post: rootPost });
 
     const mayReplyToOrigPost = store_mayIReply(store, rootPost);
 
     // If direct message, use only the add-bottom-comment button. Confusing with orig reply too,
     // when in practice it also just appends to the bottom. (Direct messages = flat, not threaded.)
-    const skipOrigPostReplyBtn = store.pageRole === PageRole.FormalMessage;
+    const skipOrigPostReplyBtn = page.pageRole === PageRole.FormalMessage;
 
     const origPostReplyButton =
         // If mind map: Don't give people a large easily clickable button that keeps appending nodes.
         // People are supposed to think before adding new nodes, e.g. think about where to place them.
-        store.pageRole === PageRole.MindMap ||
+        page.pageRole === PageRole.MindMap ||
           !mayReplyToOrigPost || _.every(threadedChildren, c => _.isEmpty(c)) ? null :
       r.div({ className: 's_APAs'},
         skipOrigPostReplyBtn ? null : r.a({ className: 's_APAs_OPRB ' + makeReplyBtnIcon(store),
@@ -864,8 +866,9 @@ const MetaPost = createComponent({
   },
 
   render: function() {
-    const store: Store = this.props;
-    const postsByNr: { [postNr: number]: Post; } = store.postsByNr;
+    const store: Store = this.props.store;
+    const page: Page = store.currentPage;
+    const postsByNr: { [postNr: number]: Post; } = page.postsByNr;
     const post: Post = postsByNr[this.props.postId];
     const doer: BriefUser = store_getAuthorOrMissing(store, post);
     const doersAvatar = avatar.Avatar({ user: doer, tiny: true });
@@ -895,13 +898,15 @@ const SquashedThreads = createComponent({
   },
 
   render: function() {
-    var postsByNr: { [postNr: number]: Post; } = this.props.postsByNr;
+    const store: Store = this.props.store;
+    const page: Page = store.currentPage;
+    var postsByNr: { [postNr: number]: Post; } = page.postsByNr;
     var post: Post = postsByNr[this.props.postId];
     var parentPost: Post = postsByNr[post.parentNr];
 
     var arrows = debiki2.renderer.drawArrowsFromParent(
       postsByNr, parentPost, this.props.depth, this.props.index,
-      this.props.horizontalLayout, this.props.rootPostId, !!post.branchSideways);
+      page.horizontalLayout, this.props.rootPostId, !!post.branchSideways);
 
     var baseElem = r[this.props.elemType];
     var depthClass = ' dw-depth-' + this.props.depth;
@@ -932,8 +937,9 @@ var Thread = createComponent({
   },
 
   render: function() {
-    var store: Store = this.props;
-    var postsByNr: { [postNr: number]: Post; } = store.postsByNr;
+    const store: Store = this.props.store;
+    const page: Page = store.currentPage;
+    var postsByNr: { [postNr: number]: Post; } = page.postsByNr;
     var post: Post = postsByNr[this.props.postId];
     if (!post) {
       // This tree has been deleted.
@@ -943,7 +949,7 @@ var Thread = createComponent({
     var parentPost = postsByNr[post.parentNr];
     var deeper = this.props.depth + 1;
     var isFlat = this.props.isFlat;
-    var isMindMap = store.pageRole === PageRole.MindMap;
+    var isMindMap = page.pageRole === PageRole.MindMap;
     var thisAndSiblingsSideways = this.props.is2dTreeColumn && isMindMap;
 
     // Draw arrows, but not to multireplies, because we don't know if they reply to `post`
@@ -952,7 +958,7 @@ var Thread = createComponent({
     if (!post.multireplyPostNrs.length && !isFlat) {
       arrows = debiki2.renderer.drawArrowsFromParent(
         postsByNr, parentPost, this.props.depth, this.props.index,
-        this.props.horizontalLayout, this.props.rootPostId, thisAndSiblingsSideways);
+        page.horizontalLayout, this.props.rootPostId, thisAndSiblingsSideways);
     }
 
     var numDeletedChildren = 0;
@@ -989,7 +995,7 @@ var Thread = createComponent({
         var childIndentationDepth = this.props.indentationDepth;
         // All children except for the last one are indented.
         var isIndented = childIndex < post.childIdsSorted.length - 1 - numDeletedChildren;
-        if (!this.props.horizontalLayout && this.props.depth === 1) {
+        if (!page.horizontalLayout && this.props.depth === 1) {
           // Replies to article replies are always indented, even the last child.
           isIndented = true;
         }
@@ -1026,8 +1032,7 @@ var Thread = createComponent({
 
     var actions = isCollapsed(post) || post_shallRenderAsHidden(post)
       ? null
-      : PostActions({ store: this.props, post: post,
-          onClick: this.onAnyActionClick });
+      : PostActions({ store, post, onClick: this.onAnyActionClick });
 
     var renderCollapsed = (post.isTreeCollapsed || post.isPostCollapsed) &&
         // Don't collapse threads in the sidebar; there, comments are abbreviated
@@ -1135,9 +1140,10 @@ export var Post = createComponent({
   },
 
   render: function() {
-    var store: Store = this.props;
+    const store: Store = this.props.store;
+    const page: Page = store.currentPage;
     var post: Post = this.props.post;
-    var me: Myself = this.props.me;
+    var me: Myself = store.me;
     if (!post)
       return r.p({}, '(Post missing [DwE4UPK7])');
 
@@ -1188,7 +1194,7 @@ export var Post = createComponent({
       var headerProps = _.clone(this.props);
       headerProps.onMarkClick = this.onMarkClick;
       // For mind maps, each node is part of the article/page (rather than a comment) so skip author.
-      headerElem = store.pageRole === PageRole.MindMap ? null : PostHeader(headerProps);
+      headerElem = page.pageRole === PageRole.MindMap ? null : PostHeader(headerProps);
       bodyElem = PostBody(this.props);
 
       if (post.isTreeCollapsed === 'Truncated' && !this.props.abbreviate) {
@@ -1207,7 +1213,7 @@ export var Post = createComponent({
       replyReceivers = ReplyReceivers({ store: store, post: post });
     }
 
-    var mark = me.marksByPostId[post.nr];
+    const mark = me.marksByPostId[post.nr];
     switch (mark) {
       case YellowStarMark: extraClasses += ' dw-p-mark-yellow-star'; break;
       case BlueStarMark: extraClasses += ' dw-p-mark-blue-star'; break;
@@ -1217,7 +1223,7 @@ export var Post = createComponent({
     if (isWikiPost(post))
       extraClasses += ' dw-wiki';
 
-    if (store.pageRole === PageRole.Question && post.uniqueId === store.pageAnswerPostUniqueId)
+    if (page.pageRole === PageRole.Question && post.uniqueId === page.pageAnswerPostUniqueId)
       extraClasses += ' esP-solution';
 
     if (isFlat)
@@ -1257,7 +1263,8 @@ var ReplyReceivers = createComponent({
   displayName: 'ReplyReceivers',
 
   render: function() {
-    var store: Store = this.props.store;
+    const store: Store = this.props.store;
+    const page: Page = store.currentPage;
     var multireplyClass = ' dw-mrrs'; // mrrs = multi reply receivers
     var thisPost: Post = this.props.post;
     var repliedToPostIds = thisPost.multireplyPostNrs;
@@ -1273,7 +1280,7 @@ var ReplyReceivers = createComponent({
         // button in the chat section, and then replies to someone too.
         continue;
       }
-      var post = store.postsByNr[repliedToId];
+      var post = page.postsByNr[repliedToId];
       if (!post) {
         receivers.push(r.i({ key: repliedToId }, 'Unknown [DwE4KFYW2]'));
         continue;
@@ -1322,7 +1329,8 @@ export var PostHeader = createComponent({
   },
 
   render: function() {
-    let store: Store = this.props;
+    const store: Store = this.props.store;
+    const page: Page = store.currentPage;
     let me: Myself = store.me;
     let post: Post = this.props.post;
     let abbreviate = this.props.abbreviate;
@@ -1343,8 +1351,8 @@ export var PostHeader = createComponent({
 
     var linkFn = abbreviate ? 'span' : 'a';
 
-    var anySolutionIcon = store.pageRole === PageRole.Question &&
-        post.uniqueId === store.pageAnswerPostUniqueId
+    var anySolutionIcon = page.pageRole === PageRole.Question &&
+        post.uniqueId === page.pageAnswerPostUniqueId
       ? r.span({ className: 'esH_solution icon-ok-circled', title: "Solution" })
       : null;
 
@@ -1393,7 +1401,7 @@ export var PostHeader = createComponent({
     let by = isPageBody ? 'By ' : '';
     let isBodyPostClass = isPageBody ? ' dw-ar-p-hd' : '';
 
-    let is2dColumn = this.props.horizontalLayout && this.props.depth === 1;
+    let is2dColumn = page.horizontalLayout && this.props.depth === 1;
     let collapseIcon = is2dColumn ? 'icon-left-open' : 'icon-up-open';
     let isFlat = this.props.isFlat;
     let toggleCollapsedButton =

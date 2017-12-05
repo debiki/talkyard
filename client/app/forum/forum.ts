@@ -287,8 +287,9 @@ const ForumIntroText = createComponent({
 
   render: function() {
     const store: Store = this.props.store;
+    const page: Page = store.currentPage;
     const user: Myself = store.me;
-    const introPost = store.postsByNr[BodyNr];
+    const introPost = page.postsByNr[BodyNr];
     if (!introPost || introPost.isBodyHidden)
       return null;
 
@@ -753,13 +754,14 @@ const LoadAndListTopics = createFactory({
 
   onChange: function() {
     // REFACTOR should probably use the store, for the topic list, so need not do this.
+    const store: Store = this.props.store;
     if (this.state.isLoading === undefined) {
       // We're still using a copy of the topics list in the store, so update the copy,
       // maybe new user-specific data has been added.
       const category: Category = this.props.activeCategory;
       let topics;
       if (category) {
-        topics = _.clone(this.props.store.topics);
+        topics = _.clone(store.topics);
         topics.sort((t: Topic, t2: Topic) => topic_sortByLatestActivity(t, t2, category.id));
       }
       else {
@@ -1193,6 +1195,7 @@ const TopicRow = createComponent({
 
   render: function() {
     const store: Store = this.props.store;
+    const page: Page = store.currentPage;
     const me = store.me;
     const settings = store.settings;
     const topic: Topic = this.props.topic;
@@ -1247,27 +1250,27 @@ const TopicRow = createComponent({
     const showExcerptAsParagraph =
         topic.pinWhere === PinPageWhere.Globally ||
         (topic.pinWhere && topic.categoryId === this.props.activeCategory.id) ||
-        store.pageLayout >= TopicListLayout.ExcerptBelowTitle;
+        page.pageLayout >= TopicListLayout.ExcerptBelowTitle;
     if (showExcerptAsParagraph) {
       excerpt =
           r.p({ className: 'dw-p-excerpt' }, topic.excerpt);
           // , r.a({ href: topic.url }, 'read more')); — no, better make excerpt click open page?
     }
-    else if (store.pageLayout === TopicListLayout.TitleExcerptSameLine) {
+    else if (page.pageLayout === TopicListLayout.TitleExcerptSameLine) {
       excerpt =
           r.span({ className: 's_F_Ts_T_Con_B' }, topic.excerpt);
     }
     else {
       // No excerpt.
-      dieIf(store.pageLayout && store.pageLayout !== TopicListLayout.TitleOnly,
+      dieIf(page.pageLayout && page.pageLayout !== TopicListLayout.TitleOnly,
           'EdE5FK2W8');
     }
 
     let anyThumbnails;
-    if (store.pageLayout === TopicListLayout.ThumbnailLeft) {
+    if (page.pageLayout === TopicListLayout.ThumbnailLeft) {
       die('Unimplemented: thumbnail left [EdE7KW4024]')
     }
-    else if (store.pageLayout === TopicListLayout.ThumbnailsBelowTitle) {
+    else if (page.pageLayout === TopicListLayout.ThumbnailsBelowTitle) {
       let thumbnailUrls = topic_mediaThumbnailUrls(topic);
       let imgIndex = 0;
       anyThumbnails = _.isEmpty(thumbnailUrls) ? null :
@@ -1379,7 +1382,7 @@ const LoadAndListCategories = createFactory({
 
   loadCategories: function(props) {
     const store: Store = props.store;
-    debiki2.Server.loadForumCategoriesTopics(store.pageId, props.queryParams.filter,
+    debiki2.Server.loadForumCategoriesTopics(store.currentPageId, props.queryParams.filter,
         (categories: Category[]) => {
       if (this.isGone) return;
       this.setState({ categories: categories });

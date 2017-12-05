@@ -219,7 +219,23 @@ interface PostRevision {
 }
 
 
+interface MyPageData {
+  dbgSrc?: string;
+  rolePageSettings: PageUserSettings;
+  readingProgress?: ReadingProgress;
+  votes: any; // RENAME to votesByPostNr?   CLEAN_UP also see just below:  id or nr
+  unapprovedPosts: { [id: number]: Post };
+  unapprovedPostAuthors: BriefUser[];
+  postNrsAutoReadLongAgo: number[];
+  postNrsAutoReadNow: number[];
+
+  // For the current page only.
+  marksByPostId: { [postId: number]: any }; // sleeping BUG: probably using with Nr (although the name implies ID), but should be ID
+}
+
+
 interface Myself {
+  dbgSrc?: string;
   id?: UserId;
   isGroup?: boolean; // currently always undefined (i.e. false)
   isLoggedIn?: boolean;
@@ -229,7 +245,6 @@ interface Myself {
   username?: string;
   fullName?: string;
   avatarUrl?: string;
-  rolePageSettings: PageUserSettings;
   trustLevel: TrustLevel;
   threatLevel: ThreatLevel;
   permsOnPages: PermsOnPage[];
@@ -249,15 +264,14 @@ interface Myself {
   restrictedTopics: Topic[];
   restrictedCategories: Category[];
 
-  votes: any; // RENAME to votesByPostNr?   CLEAN_UP also see just below:  id or nr
-  unapprovedPosts: { [id: number]: Post };
-  unapprovedPostAuthors: BriefUser[];
-  postNrsAutoReadLongAgo: number[];
-  postNrsAutoReadNow: number[];
-  marksByPostId: { [postId: number]: any }; // sleeping BUG: probably using with Nr (although the name implies ID), but should be ID
-  readingProgress?: ReadingProgress;
   pageHelpMessage?: HelpMessage;
   closedHelpMessages: { [id: string]: number };  // id --> closed version of message   — id or nr?
+
+  myDataByPageId: { [id: string]: MyPageData };
+  myCurrentPageData: MyPageData;
+
+  // For all pages in the store / recent-posts-lists on the profile page.
+  marksByPostId: { [postId: number]: any }; // sleeping BUG: probably using with Nr (although the name implies ID), but should be ID
 
   // So can avoid showing getting-started-guide for admins — it's not needed, for embedded comments sites.
   isEmbeddedCommentsSite?: boolean;
@@ -345,6 +359,7 @@ interface HelpMessage {
 interface Category {
   id: CategoryId;
   parentId?: CategoryId;
+  sectionPageId?: any; // only when saving to server?
   name: string;
   slug: string;
   defaultTopicType: PageRole,
@@ -494,25 +509,13 @@ interface VolatileDataFromServer {
 }
 
 
-interface Store {
-  appVersion: string;
+interface Page {
+  dbgSrc?: string;
+  pageId: PageId;
   pageVersion: PageVersion;
-  now: number;
-  siteStatus: SiteStatus;
-  siteOwnerTermsUrl?: string;
-  siteOwnerPrivacyUrl?: string;
-  isFirstSiteAdminEmailMissing?: boolean;
-  // Only used when creating the site, to show messages for embedded comments.
-  makeEmbeddedCommentsSite?: boolean;
-  userMustBeAuthenticated: boolean;
-  userMustBeApproved: boolean;
-  settings: SettingsVisibleClientSide;
   pageMemberIds: UserId[];
-  pageId: string;
   forumId?: string;
-  categoryId?: number;
   ancestorsRootFirst?: Ancestor[];
-  hideForumIntro?: boolean;
   pageRole: PageRole;
   pagePath: PagePath;
   pageLayout?: TopicListLayout;
@@ -536,6 +539,27 @@ interface Store {
   numPostsRepliesSection: number;
   numPostsChatSection: number;
   numPostsExclTitle: number;
+  postsByNr: { [postNr: number]: Post };
+  topLevelCommentIdsSorted: number[];
+  horizontalLayout: boolean;
+  is2dTreeDefault: boolean;
+}
+
+
+interface Store {
+  appVersion: string;
+  now: number;
+  siteStatus: SiteStatus;
+  siteOwnerTermsUrl?: string;
+  siteOwnerPrivacyUrl?: string;
+  isFirstSiteAdminEmailMissing?: boolean;
+  // Only used when creating the site, to show messages for embedded comments.
+  makeEmbeddedCommentsSite?: boolean;
+  userMustBeAuthenticated: boolean;
+  userMustBeApproved: boolean;
+  settings: SettingsVisibleClientSide;
+  categoryId?: number;
+  hideForumIntro?: boolean;
   maxUploadSizeBytes: number;
   isInEmbeddedCommentsIframe: boolean;
   categories: Category[];
@@ -550,8 +574,6 @@ interface Store {
   isViewingAs?: boolean;
   rootPostId: number;
   usersByIdBrief: { [userId: number]: BriefUser };
-  postsByNr: { [postNr: number]: Post };
-  topLevelCommentIdsSorted: number[];
   isWatchbarOpen: boolean;
   isContextbarOpen: boolean;
   shallSidebarsOverlayPage?: boolean;
@@ -559,8 +581,6 @@ interface Store {
   // For now, just one forum.
   forumPath: string;
   strangersWatchbar: Watchbar;
-  horizontalLayout: boolean;
-  is2dTreeDefault: boolean;
   socialLinksHtml: string;
 
   numOnlineStrangers?: number;
@@ -569,6 +589,11 @@ interface Store {
   // If quickUpdate is true only posts in postsToUpdate will be updated.
   quickUpdate: boolean;
   postsToUpdate: { [postId: number]: boolean };
+
+  pagesById: { [pageId: string]: Page };
+  currentPage?: Page;
+  currentPageId?: PageId;
+  debugStartPageId: string;
 
   tagsStuff?: TagsStuff;
   superadmin?: SuperAdminStuff;

@@ -96,10 +96,7 @@ var AddPeopleDialog = createComponent({
   },
 
   render: function () {
-    var state = this.state;
-    var store: Store = this.state.store;
-    var content;
-
+    let content;
     if (this.state.isLoading)
       return r.p({}, "Loading...");
 
@@ -107,11 +104,13 @@ var AddPeopleDialog = createComponent({
       // Nothing.
     }
     else {
+      const store: Store = this.state.store;
+      const page: Page = store.currentPage;
       content =
         r.div({ id: 'e2eAddUsD'},
           rb.ReactSelect({ multi: true, value: this.state.selectedLabelValues,
             placeholder: "Select users",
-            options: makeLabelValues(this.state.allUsers, store.pageMemberIds),
+            options: makeLabelValues(this.state.allUsers, page.pageMemberIds),
             onChange: this.onSelectChange }));
     }
 

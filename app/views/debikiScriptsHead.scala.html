@@ -15,7 +15,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *@
 
-@(tpi: debiki.SiteTpi, siteId: Int, anyPageId: Option[String],
+@(tpi: debiki.SiteTpi, siteId: Int,
+  // CLEAN_UP remove anyPageRole and anyPagePath, they're in the store json already, don't dupl!
   anyPageRole: Option[com.debiki.core.PageRole], anyPagePath: Option[com.debiki.core.PagePath],
   isInLoginWindow: Boolean,
   reactStoreSafeJsonString: String, minMaxJs: String, minMaxCss: String)
@@ -23,11 +24,6 @@
 @import tpi.globals
 @import com.debiki.core.PageRole.InfoPageMaxId
 @import org.owasp.encoder.Encode
-
-@pageIdQuotedOrUndefined = @{
-  // This id is generated server side, it's safe, need not encode. Later: will be a number only.
-  anyPageId.map(id => s"'$id'") getOrElse "undefined"
-}
 
 @altPageIdOrUndefined = @{
   tpi.anyAltPageId.map(id => s"'${ Encode.forHtmlContent(id) }'") getOrElse "undefined"
@@ -101,6 +97,12 @@ var _store = JSON.parse(_unencodeHtmlContent(document.getElementById('thePageJso
 var _volatileData = JSON.parse(_unencodeHtmlContent(document.getElementById('theVolatileJson').text));
 var _me = _volatileData.me || _store.me || {};
 
+@* [4GKRW02] *@
+var _pageId = _store.currentPageId;
+var _cp = _store.pagesById[_pageId];
+_store.currentPage = _cp; @* Is set to {} in the embedded editor [2BK4P3R] *@
+
+
 var _isInIframe;
 try { _isInIframe = window.self !== window.top; }
 catch (e) { _isInIframe = true; }
@@ -135,7 +137,7 @@ if (_narrow) {
 @* Show the watchbar, unless we're on an info page. But do show it, if it's open already,
  also on info pages. Otherwise people get confused when they click a recent page in the
  watchbar, and then it (the watchbar) just disappears (closes). *@
-var _infoPage = !_store.pageRole || _store.pageRole <= @InfoPageMaxId;
+var _infoPage = !_cp || !_cp.pageRole || _cp.pageRole <= @InfoPageMaxId;
 
 @* The watchbar = important, because quickly sees new direct messages / chat messages, +
 recent topic list (which is very useful). Try to show it, always, if screen wide enough.
@@ -174,13 +176,13 @@ var debiki = {
   secure: @{globals.secure},
   pageDataFromServer: _store,
   volatileDataFromServer: _volatileData,
-  getPageId: function() { return @Html(pageIdQuotedOrUndefined); },
+  getPageId: function() { return _pageId; },@* CLEAN_UP remove, use store.currentPageId instead *@
   isDev: @{ if (globals.isDev) "true" else "false" },
   v0: { util: {} },@* CLEAN_UP remove v0.util *@
   internal: {
     minMaxJs: '@minMaxJs',
     serverOrigin: '//@tpi.serverAddress',
-    pageId: @Html(pageIdQuotedOrUndefined),
+    pageId: _pageId,@* CLEAN_UP remove, use store.currentPageId instead *@
     altPageId: @Html(altPageIdOrUndefined),
     pageRole: @{ anyPageRole.map(_.toInt) getOrElse "undefined" },
     isInLoginWindow: @isInLoginWindowBoolStr,

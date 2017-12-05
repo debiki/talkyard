@@ -165,8 +165,22 @@ object ReactJson {
     val isFirstSiteAdminEmailMissing = site.status == SiteStatus.NoAdmin &&
       site.id == FirstSiteId && globals.becomeFirstSiteOwnerEmail.isEmpty
     val everyonesPerms = pageReq.dao.getPermsForEveryone()
+    val pageId = pageReq.thePageId
+
+    val pageJsonObj = Json.obj(
+      "pageId" -> pageId,
+      "pageRole" -> JsNumber(pageReq.thePageRole.toInt),
+      "pagePath" -> JsPagePath(pageReq.pagePath),
+      "numPosts" -> JsNumber(0),
+      "numPostsRepliesSection" -> JsNumber(0),
+      "numPostsChatSection" -> JsNumber(0),
+      "numPostsExclTitle" -> JsNumber(0),
+      "postsByNr" -> JsObject(Nil),
+      "topLevelCommentIdsSorted" -> JsArray(),
+      "horizontalLayout" -> JsBoolean(false))
 
     Json.obj(
+      "dbgSrc" -> "ESJ",
       "appVersion" -> globals.applicationVersion,
       "now" -> JsNumber(globals.now().millis),
       "siteId" -> JsNumber(pageReq.siteId),
@@ -178,24 +192,16 @@ object ReactJson {
       "userMustBeAuthenticated" -> JsBoolean(siteSettings.userMustBeAuthenticated),
       "userMustBeApproved" -> JsBoolean(siteSettings.userMustBeApproved),
       "settings" -> makeSettingsVisibleClientSideJson(siteSettings),
-      "pageId" -> pageReq.thePageId,
-      "pageRole" -> JsNumber(pageReq.thePageRole.toInt),
-      "pagePath" -> JsPagePath(pageReq.pagePath),
-      "numPosts" -> JsNumber(0),
-      "numPostsRepliesSection" -> JsNumber(0),
-      "numPostsChatSection" -> JsNumber(0),
-      "numPostsExclTitle" -> JsNumber(0),
       "isInEmbeddedCommentsIframe" -> JsBoolean(false),
       "categories" -> JsArray(),
       "topics" -> JsArray(),
-      "me" -> noUserSpecificData(pageReq.dao, everyonesPerms),
+      "me" -> noUserSpecificData(pageReq.dao, pageId, everyonesPerms),
       "rootPostId" -> JsNumber(PageParts.BodyNr),
       "usersByIdBrief" -> JsObject(Nil),
-      "postsByNr" -> JsObject(Nil),
-      "topLevelCommentIdsSorted" -> JsArray(),
       "siteSections" -> JsArray(),
-      "horizontalLayout" -> JsBoolean(false),
-      "socialLinksHtml" -> JsNull)
+      "socialLinksHtml" -> JsNull,
+      "currentPageId" -> pageId,
+      "pagesById" -> Json.obj(pageId -> pageJsonObj))
   }
 
 
@@ -355,18 +361,10 @@ object ReactJson {
     val horizontalLayout = page.role == PageRole.MindMap // || pageSettings.horizontalComments
     val is2dTreeDefault = false // pageSettings.horizontalComments
 
-    val jsonObj = Json.obj(
-      "appVersion" -> globals.applicationVersion,
-      "pageVersion" -> page.meta.version,
-      "siteId" -> JsNumber(dao.siteId),
-      "siteStatus" -> dao.theSite().status.toInt,
-      // Later: move these two userMustBe... to settings {} too.
-      "userMustBeAuthenticated" -> JsBoolean(siteSettings.userMustBeAuthenticated),
-      "userMustBeApproved" -> JsBoolean(siteSettings.userMustBeApproved),
-      "settings" -> makeSettingsVisibleClientSideJson(siteSettings),
+    val pageJsonObj = Json.obj(
       "pageId" -> pageId,
+      "pageVersion" -> page.meta.version,
       "pageMemberIds" -> pageMemberIds,
-      "categoryId" -> JsNumberOrNull(page.meta.categoryId),
       "forumId" -> JsStringOrNull(anyForumId),
       "ancestorsRootFirst" -> ancestorsJsonRootFirst,
       "pageRole" -> JsNumber(page.role.toInt),
@@ -391,19 +389,32 @@ object ReactJson {
       "numPostsRepliesSection" -> numPostsRepliesSection,
       "numPostsChatSection" -> numPostsChatSection,
       "numPostsExclTitle" -> numPostsExclTitle,
+      "postsByNr" -> JsObject(allPostsJson),
+      "topLevelCommentIdsSorted" -> JsArray(topLevelCommentIdsSorted),
+      "horizontalLayout" -> JsBoolean(horizontalLayout),
+      "is2dTreeDefault" -> JsBoolean(is2dTreeDefault))
+
+    val jsonObj = Json.obj(
+      "dbgSrc" -> "PTJ",
+      "appVersion" -> globals.applicationVersion,
+      "siteId" -> JsNumber(dao.siteId),
+      "siteStatus" -> dao.theSite().status.toInt,
+      // Later: move these two userMustBe... to settings {} too.
+      "userMustBeAuthenticated" -> JsBoolean(siteSettings.userMustBeAuthenticated),
+      "userMustBeApproved" -> JsBoolean(siteSettings.userMustBeApproved),
+      "settings" -> makeSettingsVisibleClientSideJson(siteSettings),
+      "categoryId" -> JsNumberOrNull(page.meta.categoryId),
       "maxUploadSizeBytes" -> globals.maxUploadSizeBytes,
       "isInEmbeddedCommentsIframe" -> JsBoolean(page.role == PageRole.EmbeddedComments),
       "categories" -> categories,
       "topics" -> JsArray(anyLatestTopics),
-      "me" -> noUserSpecificData(dao, authzCtx.permissions),
+      "me" -> noUserSpecificData(dao, pageId, authzCtx.permissions),
       "rootPostId" -> JsNumber(BigDecimal(anyPageRoot getOrElse PageParts.BodyNr)),
       "usersByIdBrief" -> usersByIdJson,
-      "postsByNr" -> JsObject(allPostsJson),
-      "topLevelCommentIdsSorted" -> JsArray(topLevelCommentIdsSorted),
       "siteSections" -> makeSiteSectionsJson(dao),
-      "horizontalLayout" -> JsBoolean(horizontalLayout),
-      "is2dTreeDefault" -> JsBoolean(is2dTreeDefault),
-      "socialLinksHtml" -> JsString(socialLinksHtml))
+      "socialLinksHtml" -> JsString(socialLinksHtml),
+      "currentPageId" -> pageId,
+      "pagesById" -> Json.obj(pageId -> pageJsonObj))
 
     val jsonString = jsonObj.toString()
     val version = CachedPageVersion(
@@ -522,6 +533,7 @@ object ReactJson {
     val requester = request.requester
     val siteSettings = dao.getWholeSiteSettings()
     var result = Json.obj(
+      "dbgSrc" -> "SPJ",
       "appVersion" -> globals.applicationVersion,
       "siteId" -> JsNumber(dao.siteId),
       "siteStatus" -> request.dao.theSite().status.toInt,
@@ -535,7 +547,8 @@ object ReactJson {
       "maxUploadSizeBytes" -> globals.maxUploadSizeBytes,
       "siteSections" -> makeSiteSectionsJson(dao),
       "usersByIdBrief" -> Json.obj(),
-      "strangersWatchbar" -> makeStrangersWatcbarJson(dao))
+      "strangersWatchbar" -> makeStrangersWatcbarJson(dao),
+      "pagesById" -> Json.obj())
 
     if (inclCategoriesJson) {
       val authzCtx = dao.getForumAuthzContext(requester)
@@ -788,17 +801,15 @@ object ReactJson {
       JsArray(Post.sortPostsBestFirst(topLevelComments).map(reply => JsNumber(reply.nr))))
 
 
-  def noUserSpecificData(dao: SiteDao, everyonesPerms: Seq[PermsOnPages]): JsObject = {
+  def noUserSpecificData(dao: SiteDao, pageId: PageId, everyonesPerms: Seq[PermsOnPages]): JsObject = {
     require(everyonesPerms.forall(_.forPeopleId == Group.EveryoneId), "EdE2WBG08")
+
+    // Somewhat dupl code. (2WB4G7)
     Json.obj(
-      "rolePageSettings" -> JsObject(Nil),
+      "dbgSrc" -> "2FBS6Z8",
       "notifications" -> JsArray(),
       "watchbar" -> makeStrangersWatcbarJson(dao),
-      "votes" -> JsObject(Nil),
-      "unapprovedPosts" -> JsObject(Nil),
-      "unapprovedPostAuthors" -> JsArray(),
-      "postNrsAutoReadLongAgo" -> JsArray(Nil),  // should remove [5WKW219] + search for elsewhere
-      "postNrsAutoReadNow" -> JsArray(Nil),      // should remove
+      "myDataByPageId" -> JsObject(Nil),
       "marksByPostId" -> JsObject(Nil),
       "closedHelpMessages" -> JsObject(Nil),
       "permsOnPages" -> permsOnPagesToJson(everyonesPerms, excludeEveryone = false))
@@ -886,7 +897,25 @@ object ReactJson {
     val anyReadingProgress = anyPageId.flatMap(transaction.loadReadProgress(user.id, _))
     val anyReadingProgressJson = anyReadingProgress.map(makeReadingProgressJson).getOrElse(JsNull)
 
+    val userDataByPageId = anyPageId match {
+      case None => Json.obj()
+      case Some(pageId) =>
+        Json.obj(pageId ->
+          Json.obj(
+            "rolePageSettings" -> rolePageSettings,
+            "readingProgress" -> anyReadingProgressJson,
+            "votes" -> votes,
+            // later: "flags" -> JsArray(...) [7KW20WY1]
+            "unapprovedPosts" -> unapprovedPosts,
+            "unapprovedPostAuthors" -> unapprovedAuthors,  // should remove [5WKW219] + search for elsewhere
+            "postNrsAutoReadLongAgo" -> JsArray(Nil),      // should remove
+            "postNrsAutoReadNow" -> JsArray(Nil),
+            "marksByPostId" -> JsObject(Nil)))
+    }
+
+    // Somewhat dupl code, (2WB4G7) and [B28JG4].
     var json = Json.obj(
+      "dbgSrc" -> "4JKW7A0",
       "id" -> JsNumber(user.id),
       "userId" -> JsNumber(user.id), // try to remove, use 'id' instead
       "username" -> JsStringOrNull(user.anyUsername),
@@ -897,7 +926,6 @@ object ReactJson {
       "avatarUrl" -> JsUploadUrlOrNull(user.smallAvatar),
       "isEmailKnown" -> JsBoolean(user.email.nonEmpty),
       "isAuthenticated" -> JsBoolean(user.isAuthenticated),
-      "rolePageSettings" -> rolePageSettings,
       "trustLevel" -> JsNumber(user.effectiveTrustLevel.toInt),
       "threatLevel" -> JsNumber(threatLevel.toInt),
 
@@ -918,15 +946,8 @@ object ReactJson {
 
       "restrictedTopics" -> restrictedTopics,
       "restrictedCategories" -> restrictedCategories,
-      "votes" -> votes,
-      // later: "flags" -> JsArray(...) [7KW20WY1]
-      "unapprovedPosts" -> unapprovedPosts,
-      "unapprovedPostAuthors" -> unapprovedAuthors,
-      "postNrsAutoReadLongAgo" -> JsArray(Nil),
-      "postNrsAutoReadNow" -> JsArray(Nil),
-      "marksByPostId" -> JsObject(Nil),
-      "readingProgress" -> anyReadingProgressJson,
-      "closedHelpMessages" -> JsObject(Nil))
+      "closedHelpMessages" -> JsObject(Nil),
+      "myDataByPageId" -> userDataByPageId)
 
     if (user.isAdmin) {
       val siteSettings = transaction.loadSiteSettings()

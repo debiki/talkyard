@@ -90,19 +90,21 @@ export var NoCommentsPageActions = createComponent({
 
 
 export function makeReplyBtnIcon(store: Store) {
-  return store.pageRole === PageRole.MindMap ? 'icon-plus' : 'icon-reply';
+  const page: Page = store.currentPage;
+  return page.pageRole === PageRole.MindMap ? 'icon-plus' : 'icon-reply';
 }
 
 
 export function makeReplyBtnTitle(store: Store, post: Post, isAppendReplyButton: boolean) {
+  const page: Page = store.currentPage;
   if (post.nr !== BodyNr) {
-    if (store.pageRole === PageRole.MindMap)
+    if (page.pageRole === PageRole.MindMap)
       return "Add node";
     else
       return "Reply";
   }
 
-  switch (store.pageRole) {
+  switch (page.pageRole) {
     case PageRole.Critique: return "Give Critique"; // [plugin]
     case PageRole.UsabilityTesting: return "Give Feedback"; // [plugin]
     case PageRole.MindMap: return "Add Mind Map node";
@@ -157,10 +159,11 @@ export const PostActions = createComponent({
     morebundle.openShareDialog(this.props.post, event.target);
   },
   onLikeClick: function(event) {
+    const store: Store = this.props.store;
     const post: Post = this.props.post;
     loginIfNeededThen(LoginReason.LoginToLike, post.nr, () => {
       if (this.isGone) return;
-      const toggleOn = !me_hasVoted(this.props.store.me, post.nr, 'VoteLike');
+      const toggleOn = !me_hasVoted(store.me, post.nr, 'VoteLike');
       toggleVote(this.props.store, post, 'VoteLike', toggleOn);
     });
   },
@@ -176,19 +179,20 @@ export const PostActions = createComponent({
   render: function() {
     var post: Post = this.props.post;
     var store: Store = this.props.store;
-    var isQuestion = store.pageRole === PageRole.Question;
-    var isFlat = this.props.store.isFlat; // hmm isFlat shouldn't be placed in store, oh well
+    const page: Page = store.currentPage;
+    var isQuestion = page.pageRole === PageRole.Question;
     // (Some dupl code, see Title above and isDone() and isAnswered() in forum.ts [4KEPW2]
-    var isAnswered = isQuestion && store.pageAnsweredAtMs;
-    var isDone = store.pageDoneAtMs && (store.pageRole === PageRole.Problem ||
-      store.pageRole === PageRole.Idea || store.pageRole === PageRole.ToDo ||
-      store.pageRole === PageRole.UsabilityTesting);  // [plugin]
+    var isAnswered = isQuestion && page.pageAnsweredAtMs;
+    var isDone = page.pageDoneAtMs && (page.pageRole === PageRole.Problem ||
+      page.pageRole === PageRole.Idea || page.pageRole === PageRole.ToDo ||
+      page.pageRole === PageRole.UsabilityTesting);  // [plugin]
 
     var me: Myself = store.me;
+    const myPageData: MyPageData = me.myCurrentPageData;
     var isOwnPost = me.id === post.authorId;
     var isOwnPage = store_thisIsMyPage(store);
     var isPageBody = post.nr === BodyNr;
-    var votes = me.votes[post.nr] || [];
+    var votes = myPageData.votes[post.nr] || [];
     var isStaffOrOwnPage: boolean = isStaff(me) || isOwnPage;
 
     const deletedOrCollapsed = post_isDeletedOrCollapsed(post);
@@ -199,13 +203,13 @@ export const PostActions = createComponent({
       return r.div({ className: 'dw-p-as dw-as' });
 
     var acceptAnswerButton;
-    if (isStaffOrOwnPage && isQuestion && !store.pageAnsweredAtMs && !store.pageClosedAtMs &&
+    if (isStaffOrOwnPage && isQuestion && !page.pageAnsweredAtMs && !page.pageClosedAtMs &&
         !isPageBody && post.isApproved) {
       acceptAnswerButton = r.a({ className: 'dw-a dw-a-solve icon-ok-circled-empty',
           onClick: this.onAcceptAnswerClick, title: "Accept this as the answer to the " +
               "question or problem" }, "Solution?");
     }
-    else if (isQuestion && post.uniqueId === store.pageAnswerPostUniqueId) {
+    else if (isQuestion && post.uniqueId === page.pageAnswerPostUniqueId) {
       // (Do this even if !post.isApproved.)
       var solutionTooltip = isStaffOrOwnPage
           ? "Click to un-accept this answer"
@@ -227,15 +231,15 @@ export const PostActions = createComponent({
     // answered/fixed, the way to reopen it is to click the answered/fixed icon, to
     // mark it as not-answered/not-fixed again.)
     var closeReopenButton;
-    var canCloseOrReopen = !isDone && !isAnswered && page_canBeClosed(store.pageRole);
+    var canCloseOrReopen = !isDone && !isAnswered && page_canBeClosed(page.pageRole);
     if (isPageBody && canCloseOrReopen && isStaffOrOwnPage) {
       var closeReopenTitle = "Reopen";
       var closeReopenIcon = 'icon-circle-empty';
       var closeReopenTooltip;
-      if (!store.pageClosedAtMs) {
+      if (!page.pageClosedAtMs) {
         closeReopenTitle = "Close";
         closeReopenIcon = 'icon-block';
-        switch (store.pageRole) {
+        switch (page.pageRole) {
           case PageRole.Question:
             if (isOwnPage)
               closeReopenTooltip = "Close this question if you don't need an answer any more.";
@@ -271,6 +275,7 @@ export const PostActions = createComponent({
 
     // Bury votes aren't downvotes or bad in any way, so don't show them, except for
     // staff, so they can detect misuse.
+    // UX: one won't see one's own Bury vote (unless one is staff). That's confusing. What do about that?
     let numBurysText;
     if (isStaff(me) && post.numBuryVotes) {
       numBurysText = r.a({ className: 'dw-a dw-vote-count',
@@ -402,7 +407,8 @@ const MoreVotesDropdownModal = createComponent({
   },
 
   hasVoted: function(what): boolean {
-    return me_hasVoted(this.state.store.me, this.state.post.nr, what);
+    const store: Store = this.state.store;
+    return me_hasVoted(store.me, this.state.post.nr, what);
   },
 
   onWrongClick: function(event) {
@@ -431,8 +437,9 @@ const MoreVotesDropdownModal = createComponent({
     const store = this.state.store;
     const isFlat = store.isFlat; // hmm shouldn't place in the store object, oh well
     const me: Myself = store.me;
+    const myPageData: MyPageData = me.myCurrentPageData;
     const post: Post = this.state.post;
-    const votes = me.votes[post.nr] || [];
+    const votes = myPageData.votes[post.nr] || [];
     const isOwnPage = store_thisIsMyPage(store);
     const isStaffFullMemberOrOwnPage: boolean =
       isStaff(me) || me.trustLevel >= TrustLevel.Member || isOwnPage;
@@ -482,6 +489,7 @@ const MoreVotesDropdownModal = createComponent({
 
 
 function toggleVote(store: Store, post: Post, voteType: string, toggleOn: boolean) {
+  const page: Page = store.currentPage;
   let action: string;
   let postNrsRead: PostNr[];
   if (!toggleOn) {
@@ -489,7 +497,7 @@ function toggleVote(store: Store, post: Post, voteType: string, toggleOn: boolea
   }
   else {
     action = 'CreateVote';
-    postNrsRead = findPostNrsRead(store.postsByNr, post);
+    postNrsRead = findPostNrsRead(page.postsByNr, post);
   }
 
   const data = {
@@ -624,6 +632,7 @@ const MoreDropdownModal = createComponent({
 
   makeButtons: function() {
     const store: Store = this.state.store;
+    const page: Page = store.currentPage;
     const isFlat = store['isFlat']; // hmm shouldn't place in the store object, oh well
     const me: Myself = store.me;
     const post: Post = this.state.post;
@@ -631,7 +640,7 @@ const MoreDropdownModal = createComponent({
 
     const moreLinks = [];
     const isOwnPost = post.authorId === me.id;
-    const isMindMap = store.pageRole === PageRole.MindMap;
+    const isMindMap = page.pageRole === PageRole.MindMap;
 
     // ----- Report
 

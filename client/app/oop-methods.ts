@@ -104,8 +104,9 @@ export function me_hasRead(me: Myself, post: Post) {
   dieIf(!me.isLoggedIn, 'EdE2WKA0');
   // Title likely already read, before clicking some link to the page.
   if (post.nr === TitleNr) return true;
-  return me.postNrsAutoReadLongAgo.indexOf(post.nr) >= 0 ||
-      me.postNrsAutoReadNow.indexOf(post.nr) >= 0;
+  const myPageData: MyPageData = me.myCurrentPageData;
+  return myPageData.postNrsAutoReadLongAgo.indexOf(post.nr) >= 0 ||
+      myPageData.postNrsAutoReadNow.indexOf(post.nr) >= 0;
 }
 
 
@@ -142,7 +143,8 @@ export function settings_selectTopicType(settings: SettingsVisibleClientSide, me
 //----------------------------------
 
 export function store_isPageDeleted(store: Store): boolean {
-  return !!store.pageDeletedAtMs || _.some(store.ancestorsRootFirst, a => a.isDeleted);
+  const page: Page = store.currentPage;
+  return !!page.pageDeletedAtMs || _.some(page.ancestorsRootFirst, a => a.isDeleted);
 }
 
 
@@ -185,13 +187,14 @@ export function store_mayICreateTopics(store: Store, category: Category): boolea
 
 // Some dupl code! (8FUZWY02Q60)
 export function store_mayIReply(store: Store, post: Post): boolean {
+  const page: Page = store.currentPage;
   // Each reply on a mind map page is a mind map node. Thus, by replying, one modifies the mind map
   // itself. So, one needs to be allowed to edit the *page*, to add (= reply) mind-map-posts. [7KUE20]
-  if (store.pageRole === PageRole.MindMap)
+  if (page.pageRole === PageRole.MindMap)
     return store_mayIEditPage(store, post);
 
   let may: boolean;
-  const ancestorCategories: Ancestor[] = store.ancestorsRootFirst;
+  const ancestorCategories: Ancestor[] = page.ancestorsRootFirst;
   const me = store.me;
 
   // Later: [8PA2WFM] Perhaps let staff reply, although not approved. So staff can say
@@ -200,7 +203,7 @@ export function store_mayIReply(store: Store, post: Post): boolean {
   if (post_isDeletedOrCollapsed(post) || !post.isApproved)
     return false;
 
-  if (store.pageMemberIds.indexOf(me.id) >= 0)
+  if (page.pageMemberIds.indexOf(me.id) >= 0)
     may = true;
 
   me.permsOnPages.forEach((p: PermsOnPage) => {
@@ -242,8 +245,9 @@ function store_mayIEditImpl(store: Store, post: Post, isEditPage: boolean): bool
   if (post_isDeletedOrCollapsed(post))
     return false;
 
+  const page: Page = store.currentPage;
   const me = store.me;
-  const isMindMap = store.pageRole === PageRole.MindMap;
+  const isMindMap = page.pageRole === PageRole.MindMap;
   const isOwnPage = store_thisIsMyPage(store);
   const isOnPostOrWikiPost =
       post.authorId === me.id ||
@@ -262,7 +266,7 @@ function store_mayIEditImpl(store: Store, post: Post, isEditPage: boolean): bool
 
   // Direct messages aren't placed in any category and thus aren't affected by permissions.
   // Need this extra 'if':
-  if (store.pageMemberIds.indexOf(me.id) >= 0 && isOwn)
+  if (page.pageMemberIds.indexOf(me.id) >= 0 && isOwn)
     may = true;
 
   me.permsOnPages.forEach((p: PermsOnPage) => {
@@ -277,7 +281,7 @@ function store_mayIEditImpl(store: Store, post: Post, isEditPage: boolean): bool
   });
 
   // Here we loop through the cats in the correct order though, [0GMK2WAL].
-  const ancestorCategories: Ancestor[] = store.ancestorsRootFirst;
+  const ancestorCategories: Ancestor[] = page.ancestorsRootFirst;
   for (let i = 0; i < ancestorCategories.length; ++i) {
     const ancestor = ancestorCategories[i];
     me.permsOnPages.forEach((p: PermsOnPage) => {

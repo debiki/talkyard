@@ -186,7 +186,8 @@ const AboutUser = createComponent({
   },
 
   render: function() {
-    var store: Store = this.props.store;
+    const store: Store = this.props.store;
+    const page: Page = store.currentPage;
     var user: MemberInclDetails = this.props.user;
     var me: Myself = store.me;
     var userIsMe = user.id === me.id;
@@ -203,8 +204,8 @@ const AboutUser = createComponent({
         PrimaryLinkButton({ href: linkToSendMessage(user.id), id: 'e2eUD_MessageB' },
           "Send Message");
 
-    var userIsPageMember = page_isGroupTalk(store.pageRole) &&
-        _.includes(store.pageMemberIds, user.id);
+    var userIsPageMember = page_isGroupTalk(page.pageRole) &&
+        _.includes(page.pageMemberIds, user.id);
     var removeFromPageButton = userIsPageMember &&
         (isStaff(me) || store_thisIsMyPage(store)) && !userIsMe
       ? Button({ onClick: this.removeFromPage, id: 'e2eUD_RemoveB' }, "Remove from topic")

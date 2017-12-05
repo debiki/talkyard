@@ -51,7 +51,7 @@ var HelpDialog = createComponent({
   open: function(message: HelpMessage) {
     dieIf(!message.content, 'EsE6YK02W');
     // Bad practice to access the store like this? Oh well. Will rewrite anyway, in [redux] (?).
-    var store = ReactStore.allData();
+    var store: Store = ReactStore.allData();
     if (!isHelpMessageClosedAnyVersion(store, message.id)) {
       this.setState({ isOpen: true, message: message });
     }

@@ -87,7 +87,7 @@ class ForumController @Inject()(cc: ControllerComponents, edContext: EdContext)
     val categoryData = CategoryToSave(
       anyId = Some(categoryId),
       sectionPageId = sectionPageId,
-      parentId = (categoryJson \ "parentCategoryId").as[CategoryId],
+      parentId = (categoryJson \ "parentId").as[CategoryId],
       name = (categoryJson \ "name").as[String],
       slug = (categoryJson \ "slug").as[String].toLowerCase,
       description = CategoriesDao.CategoryDescriptionSource,

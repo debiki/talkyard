@@ -92,13 +92,15 @@ export var Metabar = createComponent({
   },
 
   render: function() {
-    var store: Store = this.state.store;
-    var ui = this.state.ui;
-    var me: Myself = store.me;
+    const store: Store = this.state.store;
+    const page: Page = store.currentPage;
+    const ui = this.state.ui;
+    const me: Myself = store.me;
+    const myPageData: MyPageData = me.myCurrentPageData;
 
     var notfLevelElem = me.isAuthenticated && !ui.showDetails
       ? r.span({ className: 'dw-page-notf-level', onClick: this.onToggleDetailsClick },
-          'Notifications: ' + notfLevel_title(me.rolePageSettings.notfLevel))
+          'Notifications: ' + notfLevel_title(myPageData.rolePageSettings.notfLevel))
       : null;
 
     var toggleDetailsBtn = !me.isLoggedIn ? null :
@@ -112,7 +114,7 @@ export var Metabar = createComponent({
     var summaryElem =
       r.div({ className: 'dw-cmts-tlbr-head' },
           r.ul({ className: 'dw-cmts-tlbr-summary' },
-              r.li({ className: 'dw-cmts-count' }, store.numPostsRepliesSection + " replies"),
+              r.li({ className: 'dw-cmts-count' }, page.numPostsRepliesSection + " replies"),
               nameLoginBtns,
               r.li({}, notfLevelElem)),
           toggleDetailsBtn);
@@ -122,7 +124,7 @@ export var Metabar = createComponent({
       : null;
 
     var anyExtraMeta;
-    if (store.pageRole === PageRole.FormalMessage) {
+    if (page.pageRole === PageRole.FormalMessage) {
       var members = store_getPageMembersList(store);
       var memberList = members.map((user) => {
         return (
@@ -140,18 +142,18 @@ export var Metabar = createComponent({
     // ----- Summarize replies section
 
     var summarizeStuff;
-    if (store.numPostsRepliesSection >= 10) {
+    if (page.numPostsRepliesSection >= 10) {
       var doneSummarizing = !_.isNumber(this.state.numRepliesSummarized) ? null :
           r.span({ style: { marginLeft: '1em' }},
           // Only visiblie replies are summarized, so the count might be confusingly low,
           // if we don't clarify that only visible replies get summarized.
           `Done. Summarized ${this.state.numRepliesSummarized} replies, ` +
             `of the ${this.state.numRepliesVisible} replies previously shown.`);
-      var minutes = estimateReadingTimeMinutesSkipOrigPost(<Post[]> _.values(store.postsByNr));
-      if (minutes >= 10 || store.numPostsRepliesSection >= 20) {
+      var minutes = estimateReadingTimeMinutesSkipOrigPost(<Post[]> _.values(page.postsByNr));
+      if (minutes >= 10 || page.numPostsRepliesSection >= 20) {
         summarizeStuff =
           r.div({ className: 'esMetabar_summarize' },
-            r.p({}, "There are " + store.numPostsRepliesSection + " replies. " +
+            r.p({}, "There are " + page.numPostsRepliesSection + " replies. " +
               "Estimated reading time: " + Math.ceil(minutes) + " minutes"),
             Button({ onClick: this.summarizeReplies }, "Summarize Replies"), doneSummarizing);
       }
@@ -169,14 +171,17 @@ export var Metabar = createComponent({
 });
 
 
-var MetabarDetails = createComponent({
-  render: function() {
-    var store: Store = this.props.store;
-    var user = store.user;
-    var userAuthenticated = user && user.isAuthenticated;
-    var notfLevel: NotfLevel = user.rolePageSettings.notfLevel;
+const MetabarDetails = createComponent({
+  displayName: 'MetabarDetails',
 
-    var notificationsElem = !userAuthenticated ? null :
+  render: function() {
+    const store: Store = this.props.store;
+    const me: Myself = store.me;
+    const myPageData: MyPageData = me.myCurrentPageData;
+    const userAuthenticated = me && me.isAuthenticated;
+    const notfLevel: NotfLevel = myPageData.rolePageSettings.notfLevel;
+
+    const notificationsElem = !userAuthenticated ? null :
       r.div({},
         r.div({ className: 'esMB_Dtls_Ntfs_Lbl' }, "Notifications about this topic:"),
         Button({ id: '7bw3gz5', className: 'dw-notf-level', onClick: event => {

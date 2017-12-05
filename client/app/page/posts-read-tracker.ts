@@ -153,6 +153,13 @@ function sendAnyRemainingData() {
 
 function trackReadingActivity() {
   const store: Store = ReactStore.allData();
+  const page: Page = store.currentPage;
+
+  // Skip auto-pages, e.g. user profile pages and the admin area — they have zero posts.
+  // (This'll also skip not-yet-created pages for embedded discussions.)
+  if (!page.numPosts)
+    return;
+
   const me: Myself = store.me;
 
   if (me.id !== lastUserId) {
@@ -168,8 +175,8 @@ function trackReadingActivity() {
   // post nrs are a lot larger than # posts —> the server says 'error'.
   if (_.isUndefined(isOldPageWithRandomPostNrs)) {
     // Large nrs = most likely random nrs, and 6 digits = large nrs.
-    const apparentlyRandomNrs = _.keysIn(store.postsByNr).filter(nr => nr.length >= 6);
-    isOldPageWithRandomPostNrs = !!apparentlyRandomNrs.length && _(store.postsByNr).size() < 10000;
+    const apparentlyRandomNrs = _.keysIn(page.postsByNr).filter(nr => nr.length >= 6);
+    isOldPageWithRandomPostNrs = !!apparentlyRandomNrs.length && _(page.postsByNr).size() < 10000;
   }
   if (isOldPageWithRandomPostNrs)
     return;
@@ -267,7 +274,7 @@ function trackReadingActivity() {
   // really long if there are > 200 comments (not good for mobile phones' battery?).
 
   const unreadPosts: Post[] = [];
-  _.each(store.postsByNr, (post: Post) => {
+  _.each(page.postsByNr, (post: Post) => {
     if (!me_hasRead(me, post)) {
       unreadPosts.push(post);
     }

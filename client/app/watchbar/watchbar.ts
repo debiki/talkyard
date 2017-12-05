@@ -101,7 +101,7 @@ const RecentTopicsAndNotfs = createComponent({
       if (_.some(directMessages, m => m.pageId === topic.pageId)) return;
       topicElems.push(
         SingleTopic({ key: topic.pageId, store: store, topic: topic, flavor: 'recent',
-            isCurrent: topic.pageId === store.pageId }));
+            isCurrent: topic.pageId === store.currentPageId }));
     });
     return (
         r.div({ className: 'esWB_Ts' },
@@ -142,7 +142,7 @@ const ChatChannels = createComponent({
     else {
       topicElems = topics.map((topic: WatchbarTopic) =>
           SingleTopic({ key: topic.pageId, store: store, topic: topic, flavor: 'chat',
-              isCurrent: topic.pageId === store.pageId }));
+              isCurrent: topic.pageId === store.currentPageId }));
     }
     const title = store.me.isLoggedIn ? "Joined Chats" : "Chat Channels";
     return (
@@ -167,7 +167,7 @@ var DirectMessages = createComponent({
     else {
       topicElems = topics.map((topic: WatchbarTopic) =>
           SingleTopic({ key: topic.pageId, store: store, topic: topic, flavor: 'direct',
-            isCurrent: topic.pageId === store.pageId }));
+            isCurrent: topic.pageId === store.currentPageId }));
     }
     return (
       r.div({ className: 'esWB_Ts' },

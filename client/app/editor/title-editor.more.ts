@@ -31,11 +31,13 @@ export const TitleEditor = createComponent({
   displayName: 'TitleEditor',
 
   getInitialState: function() {
+    const store: Store = this.props.store;
+    const page: Page = store.currentPage;
     return {
       showComplicated: false,
       isSaving: false,
-      pageRole: this.props.pageRole,
-      categoryId: this.props.categoryId,
+      pageRole: page.pageRole,
+      categoryId: store.categoryId,
     };
   },
 
@@ -55,23 +57,25 @@ export const TitleEditor = createComponent({
   },
 
   showComplicated: function() {
-    var store: Store = this.props;
-    var pagePath: PagePath = store.pagePath;
+    const store: Store = this.props.store;
+    const page: Page = store.currentPage;
+    const pagePath: PagePath = page.pagePath;
     this.setState({
       showComplicated: true,
       folder: pagePath.folder,
       slug: pagePath.slug,
       showId: pagePath.showId,
-      htmlTagCssClasses: store.pageHtmlTagCssClasses || '',
-      htmlHeadTitle: store.pageHtmlHeadTitle,
-      htmlHeadDescription: store.pageHtmlHeadDescription,
+      htmlTagCssClasses: page.pageHtmlTagCssClasses || '',
+      htmlHeadTitle: page.pageHtmlHeadTitle,
+      htmlHeadDescription: page.pageHtmlHeadDescription,
     });
   },
 
   onTitleChanged: function(event) {
-    var store: Store = this.props;
+    const store: Store = this.props.store;
+    const page: Page = store.currentPage;
     var idWillBeInUrlPath = this.refs.showIdInput ?
-        this.refs.showIdInput.getChecked() : store.pagePath.showId; // isIdShownInUrl();
+        this.refs.showIdInput.getChecked() : page.pagePath.showId; // isIdShownInUrl();
     if (!idWillBeInUrlPath) {
       // Then don't automatically change the slug to match the title, because links are more fragile
       // when no id included in the url, and might break if we change the slug. Also, the slug is likely
@@ -131,13 +135,13 @@ export const TitleEditor = createComponent({
   },
 
   render: function() {
-    let store: Store = this.props;
+    const store: Store = this.props.store;
+    const page: Page = store.currentPage;
     let me: Myself = store.me;
     let settings: SettingsVisibleClientSide = store.settings;
-    let pageRole: PageRole = this.props.pageRole;
-    let titlePost: Post = this.props.postsByNr[TitleNr];
+    let pageRole: PageRole = page.pageRole;
+    let titlePost: Post = page.postsByNr[TitleNr];
     let titleText = titlePost.sanitizedHtml; // for now. TODO only allow plain text?
-    let user = this.props.user;
     let isForumOrAboutOrMessage =
       pageRole === PageRole.Forum || pageRole === PageRole.About || pageRole === PageRole.FormalMessage;
 
@@ -225,14 +229,14 @@ export const TitleEditor = createComponent({
     // the whole dialog. Because if hiding it, then what about any changes made? Save or ignore?
 
     let layoutAndSettingsButton =
-        this.state.showLayoutAndSettings || !user.isAdmin || pageRole !== PageRole.Forum
+        this.state.showLayoutAndSettings || !me.isAdmin || pageRole !== PageRole.Forum
           ? null
           : r.a({ className: 'esTtlEdtr_openAdv icon-wrench', onClick: this.showLayoutAndSettings },
               "Layout and settings");
 
     let existsAdvStuffToEdit = pageRole === PageRole.Forum || store.settings.showExperimental;
     let advancedStuffButton = !existsAdvStuffToEdit ||
-        this.state.showComplicated || !user.isAdmin || pageRole === PageRole.FormalMessage
+        this.state.showComplicated || !me.isAdmin || pageRole === PageRole.FormalMessage
           ? null
           : r.a({ className: 'esTtlEdtr_openAdv icon-settings', onClick: this.showComplicated },
               "Advanced");
@@ -245,7 +249,7 @@ export const TitleEditor = createComponent({
       selectCategoryInput =
         Input({ type: 'custom', label: "Category", labelClassName: 'col-xs-2',
             wrapperClassName: 'col-xs-10' },
-          SelectCategoryDropdown({ store: this.props, pullLeft: true,
+          SelectCategoryDropdown({ store: this.props.store, pullLeft: true,
             selectedCategoryId: this.state.categoryId,
             onCategorySelected: this.onCategoryChanged }));
     }
@@ -263,8 +267,8 @@ export const TitleEditor = createComponent({
           "Planned or Implemented." }));
 
     var addBackForumIntroButton;
-    if (this.props.pageRole === PageRole.Forum) {
-      var introPost = this.props.postsByNr[BodyNr];
+    if (page.pageRole === PageRole.Forum) {
+      var introPost = page.postsByNr[BodyNr];
       var hasIntro = introPost && introPost.sanitizedHtml && !introPost.isBodyHidden;
       if (!hasIntro) {
         addBackForumIntroButton =

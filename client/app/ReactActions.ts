@@ -408,7 +408,9 @@ export function uncollapsePost(post) {
 
 
 export function loadAndShowPost(postNr: PostNr, showChildrenToo?: boolean, callback?) {
-  let anyPost = debiki2.ReactStore.allData().postsByNr[postNr];
+  const store: Store = debiki2.ReactStore.allData();
+  const page: Page = store.currentPage;
+  const anyPost = page.postsByNr[postNr];
   if (!anyPost || _.isEmpty(anyPost.sanitizedHtml)) {
     Server.loadPostByNr(debiki.internal.pageId, postNr, (storePatch: StorePatch) => {
       patchTheStore(storePatch);

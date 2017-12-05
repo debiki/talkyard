@@ -83,9 +83,11 @@ const UsersPosts = createFactory({
 
   componentWillReceiveProps: function(nextProps) {
     // a bit dupl code [5AWS2E9]
-    let me: Myself = this.props.store.me;
+    const store: Store = this.props.store;
+    const nextStore: Store = nextProps.store;
+    let me: Myself = store.me;
     let user: MemberInclDetails = this.props.user;
-    let nextMe: Myself = nextProps.store.me;
+    let nextMe: Myself = nextStore.me;
     let nextUser: MemberInclDetails = nextProps.user;
     // If we log in as someone else, which posts we may see might change.
     if (me.id !== nextMe.id || user.id !== nextUser.id) {
@@ -108,7 +110,6 @@ const UsersPosts = createFactory({
 
   render: function() {
     let store: Store = this.props.store;
-    let me: Myself = store.me;
     let posts: PostWithPage[] = this.state.posts;
     let author: BriefUser = this.state.author;
     if (!_.isArray(posts))
@@ -126,7 +127,7 @@ const UsersPosts = createFactory({
               className: 's_UP_Act_Ps_P_Link ' + pageRole_iconClass(post.pageRole) },
             post.pageTitle),
           avatar.Avatar({ user: author }),
-          Post({ post: post,  me: me, author: author }))); // author: [4WKA8YB]
+          Post({ post, store, author }))); // author: [4WKA8YB]
     });
 
     return (
@@ -154,9 +155,11 @@ const UsersTopics = createFactory({
 
   componentWillReceiveProps: function(nextProps) {
     // a bit dupl code [5AWS2E9]
-    let me: Myself = this.props.store.me;
+    const store: Store = this.props.store;
+    const nextStore: Store = nextProps.store;
+    let me: Myself = store.me;
     let user: MemberInclDetails = this.props.user;
-    let nextMe: Myself = nextProps.store.me;
+    let nextMe: Myself = nextStore.me;
     let nextUser: MemberInclDetails = nextProps.user;
     // If we log in as someone else, which topics we may see might change.
     if (me.id !== nextMe.id || user.id !== nextUser.id) {

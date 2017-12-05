@@ -49,7 +49,7 @@ export function me_toBriefUser(me: Myself): BriefUser {
 }
 
 export function me_hasVoted(me: Myself, postId: PostId, what: string): boolean {
-  var votes = me.votes[postId] || [];
+  var votes = me.myCurrentPageData.votes[postId] || [];
   return votes.indexOf(what) !== -1;
 }
 

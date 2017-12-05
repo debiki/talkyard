@@ -111,7 +111,7 @@ var slimJsFiles = [
       'client/third-party/popuplib.js',
       'target/client/app/login/login-popup.js',
       'target/client/slim-typescript.js',
-      'target/client/app/startup.js'];
+      'target/client/app/start-stuff.js'];
 
 var moreJsFiles = [
       'node_modules/react-bootstrap/dist/react-bootstrap.js',

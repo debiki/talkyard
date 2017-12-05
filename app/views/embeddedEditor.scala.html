@@ -26,6 +26,7 @@
   <script>
       debiki.internal.isInEmbeddedEditor = true;
       debiki.internal.isInEmbeddedCommentsIframe = false;
+      _store.currentPage = {}; @* Avoids null errors when editor accesses the current page. [2BK4P3R] *@
   </script>
 </head>
 <body>

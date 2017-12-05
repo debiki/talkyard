@@ -1,5 +1,5 @@
-/* Bootstraps Debiki's browser stuff.
- * Copyright (C) 2010-2013 Kaj Magnus Lindberg (born 1979)
+/*
+ * Copyright (c) 2010-2017 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -15,7 +15,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-"use strict";
+/// <reference path="prelude.ts" />
+
 
 var d = { i: debiki.internal, u: debiki.v0.util };
 
@@ -26,25 +27,7 @@ debiki.scriptLoad = {  // RENAME to ed.whenStarted(...) ?
   }
 };
 
-debiki.FirstSiteId = '1';
-debiki.debug = window.location.search.indexOf('debug=true') >= 0;
-d.i.TitleNr = 0;
-d.i.BodyNr = 1;
-
 var allPostsNotTitleSelector = '.debiki .dw-p:not(.dw-p-ttl)';
-
-// Debiki convention: Dialog elem tabindexes should vary from 101 to 109.
-// HTML generation code assumes this, too. See Debiki for Developers, #7bZG31.
-d.i.DEBIKI_TABINDEX_DIALOG_MAX = 109;
-
-
-// Tell KeyMaster to handle Escape clicks also inside <input>s.
-keymaster.filter = function(event) {
-  if (event.keyCode === 27) // escape is 27
-    return true;
-  var tagName = (event.target || event.originalTarget).tagName;
-  return !(tagName == 'INPUT' || tagName == 'SELECT' || tagName == 'TEXTAREA');
-};
 
 
 function handleLoginInOtherBrowserTab() {
@@ -95,7 +78,9 @@ function chooseInitialLayout() {
       // use window.outerWidth — it doesn't force a layout reflow (and it's fine that it might
       // be a bit inexact because of browser window borders).
       Math.max(window.outerWidth, window.outerHeight) < 1000;
-  var is2dEnabled = debiki2.ReactStore.allData().horizontalLayout;
+  const store: Store = debiki2.ReactStore.allData();
+  const page: Page = store.currentPage;
+  var is2dEnabled = page.horizontalLayout;
   if (is2dEnabled && shallDisable2d) {
     disableHzComments();
     return 'OneColumnLayout';
@@ -141,6 +126,7 @@ function chooseInitialLayout() {
  */
 function renderDiscussionPage() {
   // Do this before rendering the page.
+  debiki2.ReactStore.initialize();
   var _2dLayout = chooseInitialLayout() === 'TreeLayout';
   if (_2dLayout) {
     debiki2.utils.onMouseDetected(debiki2.Server.load2dScriptsBundleStart2dStuff);
@@ -155,24 +141,11 @@ function renderDiscussionPage() {
     console.log("I've altered the React.js checksums, everything will be rerendered. [EdMRERNDR2]");
   }
 
-  var Perf = location.search.indexOf('reactPerf=true') !== -1 ? React.addons.Perf : null;
-  !Perf || Perf.start();
   var timeBefore = performance.now();
 
-  debiki2.ReactStore.initialize();
   debiki2.startMainReactRoot();
 
   var timeAfterBodyComments = performance.now();
-  if (Perf) {
-    Perf.stop();
-    console.log('Perf.printInclusive:');
-    Perf.printInclusive();
-    console.log('Perf.printExclusive:');
-    Perf.printExclusive();
-    console.log('Perf.printWasted:');
-    Perf.printWasted();
-    console.log('You could also:  Perf.printDOM()');
-  }
 
   var posts = debiki2.$bySelector(allPostsNotTitleSelector);
   var numPosts = posts.length;
@@ -247,36 +220,5 @@ d.i.startDiscussionPage = function() {
   Bliss.ready().then(renderDiscussionPage);
 };
 
-
-if (location.pathname.search(ApiUrlPathPrefix) !== 0) {
-  debiki2.putInSessionStorage('returnToSiteUrl', window.location.toString());
-}
-
-// Later, when there's a single router for everything, bind this to router events instead:
-debiki2.utils.highlightActiveLinkInHeader();
-
-// Replace gifs with static images that won't play until clicked.
-Gifffer();
-
-// Show large images on click.
-StupidLightbox.start('.dw-p-bd', '.giffferated, .no-lightbox');
-
-
-// Open about-user dialog if one clicks a @username mention (instead of navigating away to
-// the about-user page).
-debiki2.ifEventOnNotThen('click', 'a.esMention', '', function(linkElem, event) {
-  event.preventDefault();
-  var username = linkElem.href.replace(/^.*\/-\/users\//, '');
-  debiki2.morebundle.openAboutUserDialog(username, linkElem);
-});
-
-
-d.u.addZoomOrResizeListener(debiki2.page.Hacks.addCanScrollHintsSoon);
-
-
-debiki2.dieIf(location.port && debiki.internal.serverOrigin.indexOf(':' + location.port) === -1,
-    "Wrong port or origin? The server thinks its origin is " + debiki.internal.serverOrigin +
-    " and it'll use that address when sending POST requests and loading scripts. " +
-    "But you're accessing the server via " + location.host + ". [EsE7YGK2]");
 
 // vim: fdm=marker et ts=2 sw=2 fo=tcqwn list

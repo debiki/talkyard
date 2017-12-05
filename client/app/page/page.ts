@@ -42,16 +42,16 @@ export const PageWithStateComponent = createReactClass(<any> {
   mixins: [debiki2.StoreListenerMixin],
 
   getInitialState: function() {
-    return debiki2.ReactStore.allData();
+    return { store: debiki2.ReactStore.allData() };
   },
 
   onChange: function() {
-    this.setState(debiki2.ReactStore.allData());
+    this.setState({ store: debiki2.ReactStore.allData() });
   },
 
   render: function() {
     // Send router props to the page.
-    return Page({ store: this.state, ...this.props });
+    return Page({ store: this.state.store, ...this.props });
   }
 });
 
@@ -94,13 +94,14 @@ const Page = createComponent({
   render: function() {
     const isEmbeddedComments: boolean = debiki.internal.isInEmbeddedCommentsIframe;
     const store: Store = this.props.store;
-    const content = page_isChatChannel(store.pageRole)
+    const page: Page = store.currentPage;
+    const content = page_isChatChannel(page.pageRole)
         ? debiki2.page.ChatMessages({ store: store })
         : debiki2.page.TitleBodyComments({ store: store });
     const compactClass = this.state.useWideLayout ? '' : ' esPage-Compact';
-    const pageTypeClass = ' s_PT-' + store.pageRole;
+    const pageTypeClass = ' s_PT-' + page.pageRole;
     const topbar = debiki2.topbar.TopBar({});
-    const isChat = page_isChatChannel(store.pageRole);
+    const isChat = page_isChatChannel(page.pageRole);
     return rFragment({},
       isChat ? topbar : null,
       isChat ? r.div({ id: 'theChatVspace' }) : null,
@@ -122,12 +123,12 @@ export function renderTitleBodyCommentsToString() {
 
   // Compare with [2FKB5P].
   const store: Store = debiki2.ReactStore.allData();
-  if (store.pageRole === PageRole.Forum) {
+  const page: Page = store.currentPage;
+  if (page.pageRole === PageRole.Forum) {
     const routes = debiki2.forum.buildForumRoutes();
     // In the future, when using the HTML5 history API to update the URL when navigating
     // inside the forum, we can use `store.pagePath` below. But for now:
-    const store: Store = debiki2.ReactStore.allData();
-    const path = store.pagePath.value + 'latest';
+    const path = page.pagePath.value + 'latest';
     return ReactDOMServer.renderToString(
         Router({ location: path }, routes));
   }

@@ -54,8 +54,9 @@ export var HelpMessageBox = createComponent({
 
   computeState: function() {
     var message: HelpMessage = this.props.message;
-    var me: Myself = ReactStore.allData().me;
-    if (!ReactStore.allData().userSpecificDataAdded) {
+    const store: Store = ReactStore.allData();
+    var me: Myself = store.me;
+    if (!store.userSpecificDataAdded) {
       // Don't want search engines to index help text.
       return { hidden: true };
     }

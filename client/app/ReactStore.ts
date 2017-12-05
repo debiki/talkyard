@@ -61,8 +61,39 @@ if (!store.me) {
 store.user = store.me; // try to remove
 
 
+// Auto pages are e.g. admin or user profile pages, html generated automatically when needed.
+// No page id or user created data server side. Auto pages need this default empty stuff,
+// to avoid null errors.
+function makeAutoPage(): any {
+  return {
+    dbgSrc: 'AP',
+    ancestorsRootFirst: [],
+    pageMemberIds: [],
+    postsByNr: [],
+  };
+}
+
+
+// This is for avoiding null errors, 1) when the current user visits an auto page, or 2) when
+// the user is new at the site and doesn't have any custom data/settings for the current page.
+// Dupl code [4FBR20].
+function makeNoPageData(): MyPageData {
+  return {
+    dbgSrc: 'MyNP',
+    rolePageSettings: {notfLevel: NotfLevel.Normal},
+    votes: {},
+    unapprovedPosts: {},
+    unapprovedPostAuthors: [],
+    postNrsAutoReadLongAgo: [],
+    postNrsAutoReadNow: [],
+    marksByPostId: {},
+  };
+}
+
+
 ReactDispatcher.register(function(payload) {
   const action = payload.action;
+  const currentPage = store.currentPage;
   switch (action.actionType) {
 
     case ReactActions.actionTypes.NewMyself:
@@ -77,7 +108,7 @@ ReactDispatcher.register(function(payload) {
         location.reload();
 
       // (No longer needed — now we redirect in Server.ts instead [9UMD24]. Remove this 'if' then?)
-      if (store.pageRole === PageRole.FormalMessage) {
+      if (currentPage.pageRole === PageRole.FormalMessage) {
         // We may not see it any longer.
         location.assign('/');
       }
@@ -109,72 +140,80 @@ ReactDispatcher.register(function(payload) {
       break;
 
     case ReactActions.actionTypes.PinPage:
-      store.pinOrder = action.pinOrder;
-      store.pinWhere = action.pinWhere;
+      currentPage.pinOrder = action.pinOrder;
+      currentPage.pinWhere = action.pinWhere;
       break;
 
     case ReactActions.actionTypes.UnpinPage:
-      store.pinOrder = undefined;
-      store.pinWhere = undefined;
+      currentPage.pinOrder = undefined;
+      currentPage.pinWhere = undefined;
       break;
 
     case ReactActions.actionTypes.SetPageNotfLevel:
-      store.me.rolePageSettings.notfLevel = action.newLevel;
+      store.me.myCurrentPageData.rolePageSettings.notfLevel = action.newLevel;
       break;
 
     case ReactActions.actionTypes.AcceptAnswer:
-      store.pageAnsweredAtMs = action.answeredAtMs;
-      store.pageAnswerPostUniqueId = action.answerPostUniqueId;
+      currentPage.pageAnsweredAtMs = action.answeredAtMs;
+      currentPage.pageAnswerPostUniqueId = action.answerPostUniqueId;
       findAnyAcceptedAnswerPostNr();
       break;
 
     case ReactActions.actionTypes.UnacceptAnswer:
-      store.pageAnsweredAtMs = null;
-      store.pageAnswerPostUniqueId = null;
-      store.pageAnswerPostNr = null;
-      store.pageClosedAtMs = null;
+      currentPage.pageAnsweredAtMs = null;
+      currentPage.pageAnswerPostUniqueId = null;
+      currentPage.pageAnswerPostNr = null;
+      currentPage.pageClosedAtMs = null;
       break;
 
     case ReactActions.actionTypes.CyclePageDone:
-      store.pagePlannedAtMs = action.plannedAtMs;
-      store.pageStartedAtMs = action.startedAtMs;
-      store.pageDoneAtMs = action.doneAtMs;
-      store.pageClosedAtMs = action.closedAtMs;
+      currentPage.pagePlannedAtMs = action.plannedAtMs;
+      currentPage.pageStartedAtMs = action.startedAtMs;
+      currentPage.pageDoneAtMs = action.doneAtMs;
+      currentPage.pageClosedAtMs = action.closedAtMs;
       break;
 
     case ReactActions.actionTypes.TogglePageClosed:
-      store.pageClosedAtMs = action.closedAtMs;
+      currentPage.pageClosedAtMs = action.closedAtMs;
       break;
 
     case ReactActions.actionTypes.DeletePages:
-      if (_.includes(action.pageIds, store.pageId)) {
-        store.pageDeletedAtMs = 1; // for now
-      }
+      // UNTESTED xx
+      _.each(action.pageIds, id => {
+        const page: Page = store.pagesById[id];
+        if (page) {
+          page.pageDeletedAtMs = 1; // for now
+        }
+      });
       break;
 
     case ReactActions.actionTypes.UndeletePages:
-      if (_.includes(action.pageIds, store.pageId)) {
-        store.pageDeletedAtMs = undefined;
-      }
+      // UNTESTED xx
+      _.each(action.pageIds, id => {
+        const page: Page = store.pagesById[id];
+        if (page) {
+          page.pageDeletedAtMs = undefined;
+        }
+      });
       break;
 
     case ReactActions.actionTypes.EditTitleAndSettings:
       if (action.htmlTagCssClasses) {
-        $h.removeClasses(htmlElem, store.pageHtmlTagCssClasses);
+        $h.removeClasses(htmlElem, currentPage.pageHtmlTagCssClasses);
         $h.addClasses(htmlElem, action.htmlTagCssClasses);
-        store.pageHtmlTagCssClasses = action.htmlTagCssClasses;
+        currentPage.pageHtmlTagCssClasses = action.htmlTagCssClasses;
       }
-      store.pageHtmlHeadTitle = firstDefinedOf(action.htmlHeadTitle, store.pageHtmlHeadTitle);
-      store.pageHtmlHeadDescription =
-        firstDefinedOf(action.htmlHeadDescription, store.pageHtmlHeadDescription);
-      store.ancestorsRootFirst = action.newAncestorsRootFirst;
+      currentPage.pageHtmlHeadTitle = firstDefinedOf(action.htmlHeadTitle, currentPage.pageHtmlHeadTitle);
+      currentPage.pageHtmlHeadDescription =
+        firstDefinedOf(action.htmlHeadDescription, currentPage.pageHtmlHeadDescription);
+      currentPage.ancestorsRootFirst = action.newAncestorsRootFirst;
       const parent: Ancestor = <Ancestor> _.last(action.newAncestorsRootFirst);
       store.categoryId = parent ? parent.categoryId : null;
-      const was2dTree = store.horizontalLayout;
-      store.pageRole = action.newPageRole || store.pageRole;
-      store.horizontalLayout = action.newPageRole === PageRole.MindMap || store.is2dTreeDefault;
-      const is2dTree = store.horizontalLayout;
-      updatePost(action.newTitlePost);
+      const was2dTree = currentPage.horizontalLayout;
+      currentPage.pageRole = action.newPageRole || currentPage.pageRole;
+      currentPage.horizontalLayout = action.newPageRole === PageRole.MindMap || currentPage.is2dTreeDefault;
+      const is2dTree = currentPage.horizontalLayout;
+      updatePost(action.newTitlePost, currentPage.pageId);
       if (was2dTree !== is2dTree) {
         // Rerender the page with the new layout.
         store.quickUpdate = false;
@@ -203,7 +242,7 @@ ReactDispatcher.register(function(payload) {
       break;
 
     case ReactActions.actionTypes.UpdatePost:
-      updatePost(action.post);
+      updatePost(action.post, currentPage.pageId);
       break;
 
     case ReactActions.actionTypes.VoteOnPost:
@@ -252,7 +291,7 @@ ReactDispatcher.register(function(payload) {
       break;
 
     case ReactActions.actionTypes.SetHorizontalLayout:
-      store.horizontalLayout = action.enabled;
+      currentPage.horizontalLayout = action.enabled;
       // Now all gifs will be recreated since the page is rerendered.
       stopGifsPlayOnClick();
       break;
@@ -287,11 +326,11 @@ ReactDispatcher.register(function(payload) {
 
     case ReactActions.actionTypes.AddMeAsPageMember:
       dieIf(!store.usersByIdBrief[store.me.id], 'EsE5PU81');
-      userIdList_add(store.pageMemberIds, store.me.id);
+      userIdList_add(currentPage.pageMemberIds, store.me.id);
       break;
 
     case ReactActions.actionTypes.RemoveMeAsPageMember:
-      userIdList_remove(store.pageMemberIds, store.me.id);
+      userIdList_remove(currentPage.pageMemberIds, store.me.id);
       break;
 
     case ReactActions.actionTypes.PatchTheStore:
@@ -326,7 +365,20 @@ ReactDispatcher.register(function(payload) {
 
 
 ReactStore.initialize = function() {
+  if (store.currentPageId) {
+    // This is done in an <html> inline script. [4GKRW02]
+    dieIf(!store.currentPage, 'EdE6KSQ84');
+    dieIf(store.currentPage !== store.pagesById[store.currentPageId], 'EdE5AZXB4');
+  }
+  else {
+    store.currentPage = makeAutoPage();
+  }
+
+  // Any current user not yet activated. Add data for strangers, so the initial rendering will work.
+  store.me.myCurrentPageData = makeNoPageData();
+
   findAnyAcceptedAnswerPostNr();
+
   store.usersByIdBrief = store.usersByIdBrief || {};
   let impCookie = getSetCookie(ImpersonationCookieName);
   if (impCookie) {
@@ -357,12 +409,13 @@ ReactStore.initialize = function() {
 
 
 function findAnyAcceptedAnswerPostNr() {
-  if (!store.pageAnswerPostUniqueId)
+  const page: Page = store.currentPage;
+  if (!page.pageAnswerPostUniqueId)
     return;
 
-  _.each(store.postsByNr, (post: Post) => {
-    if (post.uniqueId === store.pageAnswerPostUniqueId) {
-      store.pageAnswerPostNr = post.nr;
+  _.each(page.postsByNr, (post: Post) => {
+    if (post.uniqueId === page.pageAnswerPostUniqueId) {
+      page.pageAnswerPostNr = post.nr;
     }
   });
 }
@@ -393,12 +446,34 @@ ReactStore.activateMyself = function(anyNewMe: Myself) {
 
   const newMe = anyNewMe;
   if (!newMe) {
+    // Dupl 3 lines (2WKBPPWF0) ---
+    // Avoid null errors by setting to no-page-data, if we're currently not showing any page.
+    const myPageData: MyPageData = store.me.myDataByPageId[store.currentPageId] || makeNoPageData();
+    store.me.myCurrentPageData = myPageData;
+    // Remember marks per global post ids. COULD_FREE_MEM
+    store.me.marksByPostId = _.clone(myPageData.marksByPostId);
+    // -----------------------------
+
     // For now only. Later on, this data should be kept server side instead?
     addLocalStorageDataTo(store.me);
     debiki2.pubsub.subscribeToServerEvents();
     this.emitChange();
     return;
   }
+
+  // When changing user, only data for the current page gets loaded. So we don't need to
+  // update any other pages in the store, than the current page.
+  // @ifdef DEBUG
+  dieIf(_.size(newMe.myDataByPageId) > 1, 'EdE2WKB5U0');
+  // @endif
+
+  // Dupl 3 lines (2WKBPPWF0) ---
+  // Avoid null errors by setting to no-page-data, if we're currently not showing any page.
+  const myPageData: MyPageData = newMe.myDataByPageId[store.currentPageId] || makeNoPageData();
+  newMe.myCurrentPageData = myPageData;
+  // Remember marks per global post ids. COULD_FREE_MEM
+  newMe.marksByPostId = _.clone(myPageData.marksByPostId);
+  // -----------------------------
 
   if (newMe.isAdmin) {
     $h.addClasses(htmlElem, 'dw-is-admin dw-is-staff');
@@ -423,14 +498,15 @@ ReactStore.activateMyself = function(anyNewMe: Myself) {
   addLocalStorageDataTo(store.me);
   theStore_addOnlineUser(me_toBriefUser(newMe));
 
-  watchbar_markAsRead(store.me.watchbar, store.pageId);
+  watchbar_markAsRead(store.me.watchbar, store.currentPageId);
 
   // Show the user's own unapproved posts, or all, for admins.
-  _.each(store.me.unapprovedPosts, (post: Post) => {
-    updatePost(post);
+  _.each(myPageData.unapprovedPosts, (post: Post) => {
+    updatePost(post, store.currentPageId);
+    // COULD_FREE_MEM
   });
 
-  _.each(store.me.unapprovedPostAuthors, (author: BriefUser) => {
+  _.each(myPageData.unapprovedPostAuthors, (author: BriefUser) => {
     store.usersByIdBrief[author.id] = author;
   });
 
@@ -462,7 +538,7 @@ ReactStore.activateMyself = function(anyNewMe: Myself) {
     store.categories.sort((c:Category, c2:Category) => c.position - c2.position);
   }
 
-  const readingProgress = store.me.readingProgress;
+  const readingProgress = myPageData.readingProgress;
   if (readingProgress && readingProgress.lastViewedPostNr &&
       readingProgress.lastViewedPostNr >= FirstReplyNr) {
     if (ReactActions.anyAnchorPostNr()) {
@@ -543,17 +619,17 @@ ReactStore.mayComposeBeforeSignup = function() {
 };
 
 ReactStore.getPageId = function() {
-  return store.pageId;
+  return store.currentPageId;
 };
 
 
 ReactStore.getPageRole = function(): PageRole {
-  return store.pageRole;
+  return store.currentPage.pageRole;
 };
 
 
 ReactStore.getPageTitle = function(): string { // dupl code [5GYK2]
-  var titlePost = store.postsByNr[TitleNr];
+  var titlePost = store.currentPage.postsByNr[TitleNr];
   return titlePost ? titlePost.sanitizedHtml : "(no title)";
 };
 
@@ -568,7 +644,7 @@ ReactStore.getCategories = function() {
 };
 
 
-ReactStore.getCategoryId = function() {
+ReactStore.getCategoryId = function(): number {
   return store.categoryId;
 };
 
@@ -600,14 +676,15 @@ export var StoreListenerMixin = {
 
 
 export function clonePost(postNr: number): Post {
-  return _.cloneDeep(store.postsByNr[postNr]);
+  return _.cloneDeep(store.currentPage.postsByNr[postNr]);
 }
 
 
-function updatePost(post: Post, isCollapsing?: boolean) {
+function updatePost(post: Post, pageId: PageId, isCollapsing?: boolean) {
   store.now = new Date().getTime();
+  const page: Page = store.currentPage;
 
-  var oldVersion = store.postsByNr[post.nr];
+  var oldVersion = page.postsByNr[post.nr];
   if (oldVersion && !isCollapsing) {
     // If we've modified-saved-reloaded-from-the-server this post, then ignore the
     // collapse settings from the server, in case the user has toggled it client side.
@@ -619,42 +696,42 @@ function updatePost(post: Post, isCollapsing?: boolean) {
   }
   else if (!oldVersion) {
     // Hmm, subtract instead, if oldVersion and isDeleted(post). Fix later...
-    store.numPosts += 1;
+    page.numPosts += 1;
     if (post.nr !== TitleNr) {
-      store.numPostsExclTitle += 1;
+      page.numPostsExclTitle += 1;
     }
     if (post.postType === PostType.Flat) {
-      store.numPostsChatSection += 1;
+      page.numPostsChatSection += 1;
     }
     else if (post.nr !== TitleNr && post.nr !== BodyNr) {
-      store.numPostsRepliesSection += 1;
+      page.numPostsRepliesSection += 1;
     }
   }
 
   // Add or update the post itself.
-  store.postsByNr[post.nr] = post;
+  page.postsByNr[post.nr] = post;
 
   // In case this is a new post, update its parent's child id list.
-  var parentPost = store.postsByNr[post.parentNr];
+  var parentPost = page.postsByNr[post.parentNr];
   if (parentPost) {
     var alreadyAChild =
         _.find(parentPost.childIdsSorted, childId => childId === post.nr);
     if (!alreadyAChild) {
       parentPost.childIdsSorted.unshift(post.nr);
-      sortPostIdsInPlaceBestFirst(parentPost.childIdsSorted, store.postsByNr);
+      sortPostIdsInPlaceBestFirst(parentPost.childIdsSorted, page.postsByNr);
     }
   }
 
   // Update list of top level comments, for embedded comment pages, and custom form pages.
   if (!post.parentNr && post.nr != BodyNr && post.nr !== TitleNr) {
-    store.topLevelCommentIdsSorted = findTopLevelCommentIds(store.postsByNr);
-    sortPostIdsInPlaceBestFirst(store.topLevelCommentIdsSorted, store.postsByNr);
+    page.topLevelCommentIdsSorted = findTopLevelCommentIds(page.postsByNr);
+    sortPostIdsInPlaceBestFirst(page.topLevelCommentIdsSorted, page.postsByNr);
   }
 
   rememberPostsToQuickUpdate(post.nr);
   stopGifsPlayOnClick();
   setTimeout(() => {
-    page.Hacks.processPosts();
+    debiki2.page.Hacks.processPosts();
     if (!oldVersion && post.authorId === store.me.id) {
       // Show the user his/her new post.
       ReactActions.loadAndShowPost(post.nr);
@@ -664,12 +741,14 @@ function updatePost(post: Post, isCollapsing?: boolean) {
 
 
 function voteOnPost(action) {
-  var post: Post = action.post;
+  const post: Post = action.post;
 
-  var votes = store.me.votes[post.nr];
+  const me: Myself = store.me;
+  const myPageData: MyPageData = me.myCurrentPageData;
+  let votes = myPageData.votes[post.nr];
   if (!votes) {
     votes = [];
-    store.me.votes[post.nr] = votes;
+    myPageData.votes[post.nr] = votes;
   }
 
   if (action.doWhat === 'CreateVote') {
@@ -679,20 +758,22 @@ function voteOnPost(action) {
     _.remove(votes, (voteType) => voteType === action.voteType);
   }
 
-  updatePost(post);
+  updatePost(post, store.currentPageId);
 }
 
 
 function markPostAsRead(postId: number, manually: boolean) {
-  var currentMark = store.me.marksByPostId[postId];
+  const me: Myself = store.me;
+  const myPageData: MyPageData = me.myCurrentPageData;
+  const currentMark = myPageData.marksByPostId[postId];
   if (currentMark) {
     // All marks already mean that the post has been read. Do nothing.
   }
   else if (manually) {
-    store.me.marksByPostId[postId] = ManualReadMark;
+    myPageData.marksByPostId[postId] = ManualReadMark;
   }
   else {
-    store.me.postNrsAutoReadNow.push(postId);
+    myPageData.postNrsAutoReadNow.push(postId);
   }
   rememberPostsToQuickUpdate(postId);
 }
@@ -701,8 +782,10 @@ function markPostAsRead(postId: number, manually: boolean) {
 var lastPostIdMarkCycled = null;
 
 function cycleToNextMark(postId: number) {
-  var currentMark = store.me.marksByPostId[postId];
-  var nextMark;
+  const me: Myself = store.me;
+  const myPageData: MyPageData = me.myCurrentPageData;
+  const currentMark = myPageData.marksByPostId[postId];
+  let nextMark;
   // The first time when clicking the star icon, try to star the post,
   // rather than marking it as read or unread. However, when the user
   // continues clicking the same star icon, do cycle through the
@@ -736,7 +819,7 @@ function cycleToNextMark(postId: number) {
     }
   }
   lastPostIdMarkCycled = postId;
-  store.me.marksByPostId[postId] = nextMark;
+  myPageData.marksByPostId[postId] = nextMark;
 
   rememberPostsToQuickUpdate(postId);
 }
@@ -745,7 +828,7 @@ function cycleToNextMark(postId: number) {
 function summarizeReplies() {
   // For now, just collapse all threads with depth >= 2, if they're too long
   // i.e. they have successors, or consist of a long (high) comment.
-  _.each(store.postsByNr, (post: Post) => {
+  _.each(store.currentPage.postsByNr, (post: Post) => {
     if (post.nr === BodyNr || post.nr === TitleNr || post.parentNr === BodyNr)
       return;
 
@@ -775,12 +858,13 @@ function makeSummaryFor(post: Post, maxLength?: number): string {
 
 function unsquashTrees(postNr: number) {
   // Mark postNr and its nearest subsequent siblings as not squashed.
-  const post: Post = store.postsByNr[postNr];
-  const parent = store.postsByNr[post.parentNr];
+  const page: Page = store.currentPage;
+  const post: Post = page.postsByNr[postNr];
+  const parent = page.postsByNr[post.parentNr];
   let numLeftToUnsquash = -1;
   for (let i = 0; i < parent.childIdsSorted.length; ++i) {
     const childId = parent.childIdsSorted[i];
-    const child: Post = store.postsByNr[childId];
+    const child: Post = page.postsByNr[childId];
     if (!child)
       continue; // deleted
     if (child.nr == postNr) {
@@ -794,7 +878,7 @@ function unsquashTrees(postNr: number) {
     if (numLeftToUnsquash === 0)
       break;
   }
-  setTimeout(page.Hacks.processPosts);
+  setTimeout(debiki2.page.Hacks.processPosts);
 }
 
 
@@ -803,12 +887,13 @@ function collapseTree(post: Post) {
   post.isTreeCollapsed = 'Truncated';
   post.summarize = true;
   post.summary = makeSummaryFor(post, 70);
-  updatePost(post, true);
+  updatePost(post, store.currentPageId, true);
 }
 
 
 function showPostNr(postNr: PostNr, showChildrenToo?: boolean) {
-  let post: Post = store.postsByNr[postNr];
+  const page: Page = store.currentPage;
+  let post: Post = page.postsByNr[postNr];
   if (showChildrenToo) {
     uncollapsePostAndChildren(post);
   }
@@ -824,33 +909,34 @@ function showPostNr(postNr: PostNr, showChildrenToo?: boolean) {
     }
     postNrsSeen[post.nr] = true;
     uncollapseOne(post);
-    post = store.postsByNr[post.parentNr];
+    post = page.postsByNr[post.parentNr];
   }
   setTimeout(() => {
     debiki.internal.showAndHighlightPost($byId('post-' + postNr));
-    page.Hacks.processPosts();
+    debiki2.page.Hacks.processPosts();
   }, 1);
 }
 
 
 function uncollapsePostAndChildren(post: Post) {
+  const page: Page = store.currentPage;
   uncollapseOne(post);
   // Also uncollapse children and grandchildren so one won't have to Click-to-show... all the time.
   for (var i = 0; i < Math.min(post.childIdsSorted.length, 5); ++i) {
     var childId = post.childIdsSorted[i];
-    var child = store.postsByNr[childId];
+    var child = page.postsByNr[childId];
     if (!child)
       continue;
     uncollapseOne(child);
     for (var i2 = 0; i2 < Math.min(child.childIdsSorted.length, 3); ++i2) {
       var grandchildId = child.childIdsSorted[i2];
-      var grandchild = store.postsByNr[grandchildId];
+      var grandchild = page.postsByNr[grandchildId];
       if (!grandchild)
         continue;
       uncollapseOne(grandchild);
     }
   }
-  setTimeout(page.Hacks.processPosts);
+  setTimeout(debiki2.page.Hacks.processPosts);
 }
 
 
@@ -862,7 +948,7 @@ function uncollapseOne(post: Post) {
   p2.isPostCollapsed = false;
   p2.summarize = false;
   p2.squash = false;
-  updatePost(p2, true);
+  updatePost(p2, store.currentPageId, true);
 }
 
 
@@ -1011,7 +1097,7 @@ function handleNotifications(newNotfs: Notification[]) {
 function markAnyNotificationssAsSeen(postNr) {
   var notfs: Notification[] = store.me.notifications;
   _.each(notfs, (notf: Notification) => {
-    if (notf.pageId === store.pageId && notf.postNr === postNr) {
+    if (notf.pageId === store.currentPageId && notf.postNr === postNr) {
       // Modifying state directly, oh well [redux]
       if (!notf.seen) {
         notf.seen = true;
@@ -1072,42 +1158,54 @@ function patchTheStore(storePatch: StorePatch) {
     store.usersByIdBrief[user.id] = user;
   });
 
+  const currentPage: Page = store.currentPage;
+
   // If we just posted the very first reply on an embedded discussion, a page for the discussion
   // will have been created now, lazily. Then need to update the store page id.
-  if (storePatch.newlyCreatedPageId) {
-    dieIf(_.size(store.postsByNr) > NumEmptyPageDummyPosts, 'EdE2PB604');
-    store.pageId  = storePatch.newlyCreatedPageId;
+  if (storePatch.newlyCreatedPageId && currentPage) {
+    dieIf(_.size(currentPage.postsByNr) > NumEmptyPageDummyPosts, 'EdE2PB604');
+    dieIf(store.currentPageId !== EmptyPageId, 'EdEZ4BSSJ2');
+    dieIf(store.currentPageId !== currentPage.pageId, 'EdE7GBW2');
+    currentPage.pageId = storePatch.newlyCreatedPageId;
+    store.currentPageId  = storePatch.newlyCreatedPageId;
     // Later: Add this new page to the watchbar? Currently not needed, because pages created
     // lazily only for embedded comments, and then there's no watchbar.
   }
 
-  // Highligt pages with new posts, in the watchbar.
-  // And find out if some post was moved to elsewhere.
-  _.each(storePatch.postsByPageId, (posts: Post[], pageId: PageId) => {
-    if (pageId !== store.pageId) {
+  // New or moved posts?
+  _.each(storePatch.postsByPageId, (patchedPosts: Post[], patchedPageId: PageId) => {
+    // Highligt pages with new posts, in the watchbar.
+    if (patchedPageId !== store.currentPageId) {
       // Could look at the new posts to find out if there are any direct replies to the current
       // user, or @mentions, and update the watchbar accordingly. But probably
       // better to do this elsewhere, namely when handling notifications [4YK2E5]?
-      watchbar_markAsUnread(store.me.watchbar, pageId);
+      watchbar_markAsUnread(store.me.watchbar, patchedPageId);
     }
 
-    // Remove the post from its former parent, if we're moving it to elsewhere on this page,
+    // Find out if some post was moved to elsewhere.
+    // Remove the post from its former parent, if we're moving it to elsewhere on the page,
     // or to another page.
-    _.each(posts, (patchedPost: Post) => {
-      _.each(store.postsByNr, (oldPost: Post) => {
-        if (oldPost.uniqueId === patchedPost.uniqueId) {
-          var movedToNewPage = store.pageId !== pageId;
-          var movedOnThisPage = !movedToNewPage && oldPost.parentNr !== patchedPost.parentNr;
-          if (movedToNewPage || movedOnThisPage) {
-            var oldParent = store.postsByNr[oldPost.parentNr];
-            if (oldParent && oldParent.childIdsSorted) {
-              var index = oldParent.childIdsSorted.indexOf(oldPost.nr);
-              if (index !== -1) {
-                oldParent.childIdsSorted.splice(index, 1);
+    // (Don't lookup pagesById[patchedPageId] because won't work, if moved to new page.
+    // We need to search everything in pagesById, because we don't know which page might
+    // have been the old one, if any.)
+    // UNTESTED
+    _.each(store.pagesById, (oldPage: Page) => {
+      _.each(patchedPosts, (patchedPost: Post) => {
+        _.each(oldPage.postsByNr, (oldPost: Post) => {
+          if (oldPost.uniqueId === patchedPost.uniqueId) {
+            var movedToNewPage = oldPage.pageId !== patchedPageId;
+            var movedOnThisPage = !movedToNewPage && oldPost.parentNr !== patchedPost.parentNr;
+            if (movedToNewPage || movedOnThisPage) {
+              var oldParent = oldPage.postsByNr[oldPost.parentNr];
+              if (oldParent && oldParent.childIdsSorted) {
+                var index = oldParent.childIdsSorted.indexOf(oldPost.nr);
+                if (index !== -1) {
+                  oldParent.childIdsSorted.splice(index, 1);
+                }
               }
             }
           }
-        }
+        });
       });
     });
   });
@@ -1119,34 +1217,39 @@ function patchTheStore(storePatch: StorePatch) {
     return;
   }
 
-  var storePatchPageVersion = storePatch.pageVersionsByPageId[store.pageId];
-  if (!storePatchPageVersion || storePatchPageVersion < store.pageVersion) {
-    // These changes are old, might be out-of-date, ignore.
-    // COULD rename .usersBrief to .authorsBrief so it's apparent that they're related
-    // to the posts, and that it's ok to ignore them if the posts are too old.
-    return;
-  }
-  else if (storePatchPageVersion === store.pageVersion) {
-    // We might be loading the text of a hidden/unapproved comment, in order to show it.
-    // So although store & patch page versions are the same, proceed with updating
-    // any posts below.
-  }
-  else {
-    store.pageVersion = storePatchPageVersion;
-  }
+  _.each(store.pagesById, patchPage);
 
-  var posts = storePatch.postsByPageId[store.pageId];
-  _.each(posts || [], (post: Post) => {
-    updatePost(post);
-  });
+  function patchPage(page: Page) {
+    // UNTESTED
+    const storePatchPageVersion = storePatch.pageVersionsByPageId[page.pageId];
+    if (!storePatchPageVersion || storePatchPageVersion < page.pageVersion) {
+      // These changes are old, might be out-of-date, ignore.
+      // COULD rename .usersBrief to .authorsBrief so it's apparent that they're related
+      // to the posts, and that it's ok to ignore them if the posts are too old.
+      return;
+    }
+    else if (storePatchPageVersion === page.pageVersion) {
+      // We might be loading the text of a hidden/unapproved comment, in order to show it.
+      // So although store & patch page versions are the same, proceed with updating
+      // any posts below.
+    }
+    else {
+      page.pageVersion = storePatchPageVersion;
+    }
 
-  // The server should have marked this page as unread because of these new events.
-  // But we're looking at the page right now — so tell the server that the user has seen it.
-  // (The server doesn't know exactly which page we're looking at — perhaps we have many
-  // browser tabs open, for example.)
-  // COULD wait with marking it as seen until the user shows s/he is still here.
-  if (store.me.isAuthenticated) {
-    Server.markCurrentPageAsSeen();
+    const patchedPosts = storePatch.postsByPageId[page.pageId];
+    _.each(patchedPosts || [], (patchedPost: Post) => {
+      updatePost(patchedPost, page.pageId);
+    });
+
+    // The server should have marked this page as unread because of these new events.
+    // But we're looking at the page right now — so tell the server that the user has seen it.
+    // (The server doesn't know exactly which page we're looking at — perhaps we have many
+    // browser tabs open, for example.)
+    // COULD wait with marking it as seen until the user shows s/he is still here.
+    if (page.pageId === currentPage.pageId && store.me.isAuthenticated) {
+      Server.markCurrentPageAsSeen();
+    }
   }
 }
 
@@ -1233,7 +1336,7 @@ function watchbar_copyUnreadStatusFromTo(old: Watchbar, newWatchbar: Watchbar) {
 
 function makeStranger(store: Store): Myself {
   const stranger = {
-    rolePageSettings: { notfLevel: NotfLevel.Normal },
+    dbgSrc: '5BRCW27',
     trustLevel: TrustLevel.Stranger,
     threatLevel: ThreatLevel.HopefullySafe,
     permsOnPages: [],
@@ -1245,21 +1348,19 @@ function makeStranger(store: Store): Myself {
     numTalkToOthersNotfs: 0,
     numOtherNotfs: 0,
     thereAreMoreUnseenNotfs: false,
-    notifications: [],
+    notifications: <Notification[]> [],
 
-    watchbar: { 1: loadRecentWatchbarTopicsFromSessionStorage(), 2: [], 3: [], 4: [] },
+    watchbar: <Watchbar> { 1: loadRecentWatchbarTopicsFromSessionStorage(), 2: [], 3: [], 4: [] },
 
-    restrictedTopics: [],
-    restrictedCategories: [],
+    restrictedTopics: <Topic[]> [],
+    restrictedCategories: <Category[]> [],
 
-    votes: {},
-    unapprovedPosts: {},
-    unapprovedPostAuthors: [],
-    postNrsAutoReadLongAgo: [],
-    postNrsAutoReadNow: [],
+    closedHelpMessages: <any> {},
+
+    myDataByPageId: <any> {},
+    myCurrentPageData: makeNoPageData(),
+
     marksByPostId: {},
-
-    closedHelpMessages: {},
   };
   // There might be some globally pinned chats, which we also want to show in the watchbar.
   if (store.strangersWatchbar) {
@@ -1274,16 +1375,21 @@ function makeStranger(store: Store): Myself {
  * storing it client side only.
  */
 function addLocalStorageDataTo(me: Myself) {
-  me.postNrsAutoReadLongAgo = page.PostsReadTracker.getPostNrsAutoReadLongAgo();
-  me.marksByPostId = {}; // not implemented: loadMarksFromLocalStorage();
   me.closedHelpMessages = getFromLocalStorage('closedHelpMessages') || {};
+
+  if (!store.currentPageId)
+    return;
+
+  const myPageData: MyPageData = me.myCurrentPageData;
+  myPageData.postNrsAutoReadLongAgo = page.PostsReadTracker.getPostNrsAutoReadLongAgo();
+  myPageData.marksByPostId = {}; // not implemented: loadMarksFromLocalStorage();
 
   // The watchbar: Recent topics.
   if (me_isStranger(me)) {
     const recentTopics = loadRecentWatchbarTopicsFromSessionStorage();
     if (shallAddCurrentPageToSessionStorageWatchbar(recentTopics)) {
       recentTopics.unshift({
-        pageId: store.pageId,
+        pageId: store.currentPageId,
         url: location.pathname,
         title: ReactStore.getPageTitle(),
       });
@@ -1298,7 +1404,7 @@ function loadRecentWatchbarTopicsFromSessionStorage(): WatchbarTopic[] {
   // For privacy reasons, don't use localStorage?
   const topics = <WatchbarTopic[]> getFromSessionStorage('recentWatchbarTopics') || [];
   _.each(topics, topic => {
-    if (topic.pageId === store.pageId) {
+    if (topic.pageId === store.currentPageId) {
       topic.unread = false;
     }
   });
@@ -1307,13 +1413,14 @@ function loadRecentWatchbarTopicsFromSessionStorage(): WatchbarTopic[] {
 
 
 function shallAddCurrentPageToSessionStorageWatchbar(recentTopics: WatchbarTopic[]): boolean {
-  if (!store.pageId || store.pageId === EmptyPageId)
+  if (!store.currentPageId || store.currentPageId === EmptyPageId)
     return false;
 
-  if (!pageRole_shallListInRecentTopics(store.pageRole))
+  const currentPage: Page = store.currentPage;
+  if (!pageRole_shallListInRecentTopics(currentPage.pageRole))
     return false;
 
-  return _.every(recentTopics, (topic: WatchbarTopic) => topic.pageId !== store.pageId);
+  return _.every(recentTopics, (topic: WatchbarTopic) => topic.pageId !== currentPage.pageId);
 }
 
 
@@ -1329,7 +1436,9 @@ function saveMarksInLocalStorage(marks: { [postId: number]: any }) {
 
 function rememberPostsToQuickUpdate(startPostId: number) {
   store.quickUpdate = true;
-  var post = store.postsByNr[startPostId];
+  const currentPage: Page = store.currentPage;
+  const postsByNr = currentPage.postsByNr;
+  let post = postsByNr[startPostId];
   if (!post) {
     console.warn('Cannot find post to quick update, nr: ' + startPostId + ' [DwE4KJG0]');
     return;
@@ -1339,7 +1448,7 @@ function rememberPostsToQuickUpdate(startPostId: number) {
   // draw an arrow to `post`. However if you've added an Unwanted vote, and post a new reply,
   // then a hereafter unwanted earlier sibling might be moved below startPostId. So we need
   // to update all subsequent siblings too.
-  var parent: any = store.postsByNr[post.parentNr] || {};
+  var parent: any = postsByNr[post.parentNr] || {};
   for (var i = 0; i < (parent.childIdsSorted || []).length; ++i) {
     var siblingId = parent.childIdsSorted[i];
     store.postsToUpdate[siblingId] = true;
@@ -1351,7 +1460,7 @@ function rememberPostsToQuickUpdate(startPostId: number) {
   while (post) {
     store.postsToUpdate[post.nr] = true;
     visitedNrs[post.nr] = true;
-    post = store.postsByNr[post.parentNr];
+    post = postsByNr[post.parentNr];
     // The title & OP sometimes has parent = OP -> cycle, why? [OPCYCLE]
     if (post && visitedNrs[post.nr])
       break;

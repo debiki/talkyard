@@ -99,7 +99,7 @@ class SiteTpi protected (
   def anyCustomMetaTags: FindHeadTagsResult = FindHeadTagsResult.None
   def anySafeMetaTags: String = anyCustomMetaTags.allTags  // only admin can edit right now [2GKW0M]
 
-  def anyCurrentPageId: Option[PageId] = None
+  def anyCurrentPageId: Option[PageId] = None  ; CLEAN_UP ; REMOVE // not in use any more?
   def anyCurrentPageRole: Option[PageRole] = None
   def anyCurrentPagePath: Option[PagePath] = None
   def anyCurrentPageMeta: Option[PageMeta] = None
@@ -136,7 +136,6 @@ class SiteTpi protected (
     views.html.debikiScriptsHead(
       this, // Could remove all params below, use 'this' instead in the template.
       siteId = siteId,
-      anyPageId = anyCurrentPageId,
       anyPageRole = anyCurrentPageRole,
       anyPagePath = anyCurrentPagePath,
       reactStoreSafeJsonString = reactStoreSafeJsonString,

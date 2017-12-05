@@ -88,7 +88,7 @@ var LoginDialog = createClassAndFactory({
   },
 
   onChange: function() {
-    var newStore = debiki2.ReactStore.allData();
+    var newStore: Store = debiki2.ReactStore.allData();
     this.setState({ store: newStore });
     var loggedInUser = newStore.me;
     if (loggedInUser) {

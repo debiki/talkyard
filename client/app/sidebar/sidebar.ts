@@ -56,7 +56,8 @@ export var Sidebar = createComponent({  // RENAME to ContextBar
   mixins: [debiki2.StoreListenerMixin],
 
   getInitialState: function() {
-    var store: Store = debiki2.ReactStore.allData();
+    const store: Store = debiki2.ReactStore.allData();
+    const page: Page = store.currentPage;
     var me = store.me;
     // Show sidebar by default, in 1D layout, otherwise people will never notice
     // that it exists.
@@ -66,7 +67,7 @@ export var Sidebar = createComponent({  // RENAME to ContextBar
     var showSidebar = false;
     if (!store.horizontalLayout && localStorage) {
       var setting = localStorage.getItem('debikiShowSidebar');
-      if (store.numPosts <= SidebarNumCommentsLimit) {
+      if (page.numPosts <= SidebarNumCommentsLimit) {
         // Sidebar not needed — navigating only this few comments with not sidebar, is okay.
       }
       else if (!setting || setting === 'true') {
@@ -88,7 +89,7 @@ export var Sidebar = createComponent({  // RENAME to ContextBar
       this.loadAdminGuide();
     }
     else {
-      commentsType = isPageWithComments(store.pageRole) && !page_isChatChannel(store.pageRole)
+      commentsType = isPageWithComments(page.pageRole) && !page_isChatChannel(page.pageRole)
           ? 'Recent'
           : 'Users';
     }
@@ -178,7 +179,8 @@ export var Sidebar = createComponent({  // RENAME to ContextBar
   },
 
   loadOnlineUsers: function() {
-    this.setState({ lastLoadedOnlineUsersAsId: this.state.store.me.id });
+    const store: Store = this.state.store;
+    this.setState({ lastLoadedOnlineUsersAsId: store.me.id });
     // Skip for now, because now I'm including all online users are included in the page html.
     //Server.loadOnlineUsers();
   },
@@ -227,7 +229,8 @@ export var Sidebar = createComponent({  // RENAME to ContextBar
   },
 
   findComments: function() {
-    var store: Store = this.state.store;
+    const store: Store = this.state.store;
+    const page: Page = store.currentPage;
     var unreadComments = [];
     var recentComments = [];
     var starredComments = [];
@@ -236,7 +239,7 @@ export var Sidebar = createComponent({  // RENAME to ContextBar
     // And 2) all visible comments.
     var addRecursively = (postNrs: number[]) => {
       _.each(postNrs, (postNr) => {
-        var post: Post = store.postsByNr[postNr];
+        var post: Post = page.postsByNr[postNr];
         if (post) {
           addPost(post);
           addRecursively(post.childIdsSorted);
@@ -257,7 +260,7 @@ export var Sidebar = createComponent({  // RENAME to ContextBar
       // Do include comments that where auto-read right now — it'd be annoying
       // if they suddenly vanished from the sidebar just because the computer
       // suddenly automatically thought you've read them.
-      var autoReadLongAgo = store.user.postNrsAutoReadLongAgo.indexOf(postId) !== -1;
+      var autoReadLongAgo = store.user.myCurrentPageData.postNrsAutoReadLongAgo.indexOf(postId) !== -1;
       // No do include comments auto-read just now. Otherwise it's impossible to
       // figure out how the Unread tab works and the 'Let computer determine' checkbox.
       autoReadLongAgo = autoReadLongAgo || store.user.postIdsAutoReadNow.indexOf(postId) !== -1;
@@ -271,10 +274,10 @@ export var Sidebar = createComponent({  // RENAME to ContextBar
       */
     };
 
-    var rootPost = store.postsByNr[store.rootPostId];
+    var rootPost = page.postsByNr[store.rootPostId];
     addRecursively(rootPost.childIdsSorted);
 
-    _.each(store.postsByNr, (child: Post, childId) => {
+    _.each(page.postsByNr, (child: Post, childId) => {
       if (child.postType === PostType.Flat) {
         addPost(child);
       }
@@ -294,12 +297,14 @@ export var Sidebar = createComponent({  // RENAME to ContextBar
   },
 
   manuallyMarkedAsRead: function(postId: number): boolean {
-    var mark = this.state.store.user.marksByPostId[postId];
+    const store: Store = this.state.store;
+    const mark = store.me.myCurrentPageData.marksByPostId[postId];
     return !!mark; // any mark means it's been read already.
   },
 
   isStarred: function(postId: number) {
-    var mark = this.state.store.user.marksByPostId[postId];
+    const store: Store = this.state.store;
+    const mark = store.me.myCurrentPageData.marksByPostId[postId];
     return mark === BlueStarMark || mark === YellowStarMark;
   },
 
@@ -321,16 +326,17 @@ export var Sidebar = createComponent({  // RENAME to ContextBar
   },
 
   render: function() {
-    var store: Store = this.state.store;
+    const store: Store = this.state.store;
+    const page: Page = store.currentPage;
     var me: Myself = store.me;
 
-    var minimapProps = _.assign({ ref: 'minimap' }, store);
-    var commentsFound = isPageWithComments(store.pageRole) ? this.findComments() : null;
-    var isChat = page_isChatChannel(store.pageRole);
+    //var minimapProps = _.assign({ ref: 'minimap' }, store);
+    var commentsFound = isPageWithComments(page.pageRole) ? this.findComments() : null;
+    var isChat = page_isChatChannel(page.pageRole);
     var isStaffOrMyPage = isStaff(me) || store_thisIsMyPage(store);
 
     var sidebarClasses = '';
-    if (store.horizontalLayout) {
+    if (page.horizontalLayout) {
       sidebarClasses += ' dw-sidebar-fixed';
     }
 
@@ -386,7 +392,7 @@ export var Sidebar = createComponent({  // RENAME to ContextBar
       case 'Users':
         var title;
         var numOnlineStrangers = store.numOnlineStrangers;
-        if (store.pageRole === PageRole.Forum) {
+        if (page.pageRole === PageRole.Forum) {
           title = "Users online in this forum:";
         }
         else if (!usersHere.areChatChannelMembers && !usersHere.areTopicContributors) {
@@ -521,16 +527,16 @@ export var Sidebar = createComponent({  // RENAME to ContextBar
       /*
       helpMessageBoxOne =
           help.HelpMessageBox({ className: 'es-editor-help-one', message: helpMessageOne });
-      if (help.isHelpMessageClosed(this.state.store, helpMessageOne)) {
+      if (help.isHelpMessageClosed(store, helpMessageOne)) {
         helpMessageBoxTwo =
             help.HelpMessageBox({ className: 'es-editor-help-two', message: helpMessageTwo });
       }
-      if (help.isHelpMessageClosed(this.state.store, helpMessageTwo)) {
+      if (help.isHelpMessageClosed(store, helpMessageTwo)) {
       */
       helpMessageBoxTree =
           help.HelpMessageBox({ className: 'es-editor-help-three', message: helpMessageThree,
             showUnhideTips: false });
-      if (help.isHelpMessageClosed(this.state.store, helpMessageThree)) {
+      if (help.isHelpMessageClosed(store, helpMessageThree)) {
         helpMessageBoxFour =
             help.HelpMessageBox({ className: 'es-editor-help-four', message: helpMessageFour,
               // Don't show, because would cause them to forget what they just read about
@@ -538,11 +544,11 @@ export var Sidebar = createComponent({  // RENAME to ContextBar
               showUnhideTips: false });
       }
       // Dim the comments list until all help messages have been closed.
-      var dimCommentsStyle = help.isHelpMessageClosed(this.state.store, helpMessageFour) ?
+      var dimCommentsStyle = help.isHelpMessageClosed(store, helpMessageFour) ?
           null : { opacity: '0.6' };
     }
 
-    var addMorePeopleButton = !page_isGroupTalk(store.pageRole) || !isStaffOrMyPage ? null :
+    var addMorePeopleButton = !page_isGroupTalk(page.pageRole) || !isStaffOrMyPage ? null :
         r.button({ className: 'btn btn-default', onClick: morebundle.openAddPeopleDialog,
             id: 'e2eCB_AddPeopleB' },
           "Add more people");
@@ -584,7 +590,7 @@ export var Sidebar = createComponent({  // RENAME to ContextBar
 function makeCommentsContent(comments: Post[], currentPostNr: PostNr, store: Store, onPostClick) {
   var abbreviateHowMuch = smallWindow ? 'Much' : 'ABit';
   return comments.map((post: Post, index) => {
-    var postProps: any = _.clone(store);
+    var postProps: any = { store };
     postProps.post = post;
     postProps.onClick = (event) => onPostClick(post);
     postProps.abbreviate = abbreviateHowMuch;

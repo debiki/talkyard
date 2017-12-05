@@ -67,15 +67,18 @@ var PageToolsDialog = createComponent({
   },
 
   deletePage: function() {
-    ReactActions.deletePages([this.state.store.pageId], this.close);
+    const store: Store = this.props.store;
+    ReactActions.deletePages([store.currentPageId], this.close);
   },
 
   undeletePage: function() {
-    ReactActions.undeletePages([this.state.store.pageId], this.close);
+    const store: Store = this.props.store;
+    ReactActions.undeletePages([store.currentPageId], this.close);
   },
 
   render: function () {
-    var store: Store = this.state.store;
+    const store: Store = this.state.store;
+    const page: Page = store.currentPage;
     var childProps = {
       store: store,
       closeAllDialogs: this.close
@@ -90,10 +93,10 @@ var PageToolsDialog = createComponent({
       pinPageDialog = PinPageDialog(_.assign({ ref: 'pinPageDialog' }, childProps));
       pinPageButton =
           Button({ onClick: () => this.refs.pinPageDialog.open() },
-            store.pinWhere ? "Edit Pin" : "Pin Topic");
+            page.pinWhere ? "Edit Pin" : "Pin Topic");
     }
 
-    var unpinPageButton = (!store_canPinPage(store) || !store.pinWhere) ? null :
+    var unpinPageButton = (!store_canPinPage(store) || !page.pinWhere) ? null :
       Button({ onClick: this.unpinPage }, "Unpin Topic");
 
     var deletePageButton = !store_canDeletePage(store) ?  null :
@@ -129,9 +132,10 @@ const PinPageDialog = createComponent({
 
   open: function() {
     const store: Store = this.props.store;
+    const page: Page = store.currentPage;
     this.setState({
       isOpen: true,
-      pinWhere: store.pinWhere || PinPageWhere.InCategory,
+      pinWhere: page.pinWhere || PinPageWhere.InCategory,
     });
   },
 

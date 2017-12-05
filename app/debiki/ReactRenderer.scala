@@ -440,8 +440,8 @@ class ReactRenderer(globals: Globals) extends com.debiki.core.CommonMarkRenderer
   private def warmupJavascriptEngine(engine: js.ScriptEngine) {
     logger.debug(o"""Warming up Nashorn engine...""")
     val timeBefore = System.currentTimeMillis()
-    // Warming up with three laps seems enough, let's do 3 + 1.
-    for (i <- 1 to 4) {
+    // Warming up with three laps seems enough, almost all time is spent in at lap 1.
+    for (i <- 1 to 0) {  // fix TODO
       val timeBefore = System.currentTimeMillis()
       renderPageImpl(engine.asInstanceOf[js.Invocable], WarmUpReactStoreJsonString)
       def timeElapsed = System.currentTimeMillis() - timeBefore
@@ -576,22 +576,33 @@ object ReactRenderer {
     |
     |debiki2.ReactStore = {
     |  allData: function() {
-    |    return initialStateJson;
+    |    return initialState;
     |  },
     |  getUser: function() {
-    |    return initialStateJson.user;
+    |    return initialState.me;
     |  },
     |  getPageTitle: function() { // dupl code [5GYK2]
-    |    var titlePost = initialStateJson.postsByNr[TitleNr];
+    |    var titlePost = initialState.currentPage.postsByNr[TitleNr];
     |    return titlePost ? titlePost.sanitizedHtml : "(no title)";
     |  }
     |};
     |
-    |var initialStateJson = {};
+    |var initialState = {};
     |
     |function setInitialStateJson(jsonString) {
-    |  var json = JSON.parse(jsonString);
-    |  initialStateJson = json;
+    |  var s = JSON.parse(jsonString);
+    |  s.currentPage = s.pagesById[s.currentPageId];
+    |  // Fill in no-page-data to avoid null errors. Dupl code. [4FBR20]
+    |  s.me.myCurrentPageData = {
+    |    rolePageSettings: { notfLevel: NotfLevel.Normal },
+    |    votes: {},
+    |    unapprovedPosts: {},
+    |    unapprovedPostAuthors: [],
+    |    postNrsAutoReadLongAgo: [],
+    |    postNrsAutoReadNow: [],
+    |    marksByPostId: {},
+    |  };
+    |  initialState = s;
     |}
     |"""
 

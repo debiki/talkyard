@@ -370,7 +370,8 @@ const ScrollButtonsDropdownModal = createComponent({
   render: function() {
     const state = this.state;
     const store: Store = this.state.store;
-    const pageRole: PageRole = store.pageRole;
+    const page: Page = store.currentPage;
+    const pageRole: PageRole = page.pageRole;
     const isChat = page_isChatChannel(pageRole);
     const neverHasReplies = pageRole === PageRole.CustomHtmlPage || pageRole === PageRole.WebPage ||
         isSection(pageRole);

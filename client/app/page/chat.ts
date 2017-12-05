@@ -37,6 +37,8 @@ const DefaultEditorRows = 2;
 
 
 export const ChatMessages = createComponent({
+  displayName: 'ChatMessages',
+
   componentDidUpdate: function() {
     // We should call onScroll() if a new message gets inserted below the current scroll pos.
     // Simply call it always, instead.
@@ -49,7 +51,7 @@ export const ChatMessages = createComponent({
 
   render: function() {
     const store: Store = this.props.store;
-    const isChatMember = _.some(store.pageMemberIds, id => id === store.me.id);
+    const isChatMember = _.some(store.currentPage.pageMemberIds, id => id === store.me.id);
     const editorOrJoinButton = isChatMember
         ? ChatMessageEditor({ store: store, scrollDownToViewNewMessage: this.scrollDown })
         : JoinChatButton({});
@@ -64,6 +66,8 @@ export const ChatMessages = createComponent({
 
 
 const TitleAndLastChatMessages = createComponent({
+  displayName: 'TitleAndLastChatMessages',
+
   getInitialState: function() {
     return {};
   },
@@ -93,18 +97,17 @@ const TitleAndLastChatMessages = createComponent({
 
   render: function () {
     const store: Store = this.props.store;
-    const title = Title(store); // later: only if not scrolled down too far
+    const page: Page = store.currentPage;
+    const title = Title({ store }); // later: only if not scrolled down too far
 
-    const originalPost = store.postsByNr[store.rootPostId];
+    const originalPost = page.postsByNr[store.rootPostId];
     const origPostAuthor = store.usersByIdBrief[originalPost.authorId];
-    const headerProps: any = _.clone(store);
-    headerProps.post = originalPost;
-    const origPostHeader = PostHeader(headerProps); // { store: _, post: _ } would be better?
-    const origPostBody = PostBody({ store: store, post: originalPost });
+    const origPostHeader = PostHeader({ store, post: originalPost });
+    const origPostBody = PostBody({ store, post: originalPost });
     let canScrollUpToFetchOlder = true;
 
     const messages = [];
-    _.each(store.postsByNr, (post: Post) => {
+    _.each(page.postsByNr, (post: Post) => {
       if (post.nr === TitleNr || post.nr === BodyNr) {
         // We show the title & body elsewhere.
         return;
@@ -158,6 +161,8 @@ const TitleAndLastChatMessages = createComponent({
 
 
 const ChatMessage = createComponent({
+  displayName: 'ChatMessage',
+
   getInitialState: function() {
     return { isEditing: false };
   },
@@ -180,8 +185,7 @@ const ChatMessage = createComponent({
     const me: Myself = store.me;
     const post: Post = this.props.post;
     const author: BriefUser = store.usersByIdBrief[post.authorId];
-    const headerProps: any = _.clone(store);
-    headerProps.post = post;
+    const headerProps: any = { store, post };
     headerProps.isFlat = true;
     headerProps.exactTime = true;
     headerProps.stuffToAppend = (me.id !== author.id || state.isEditing) ? [] :
@@ -193,7 +197,7 @@ const ChatMessage = createComponent({
     return (
       r.div({ className: 'esC_M', id: 'post-' + post.nr },
         avatar.Avatar({ user: author }),
-        PostHeader(headerProps), // { store: _, post: _, ... } would be better?
+        PostHeader(headerProps),
         PostBody({ store: store, post: post })));
   }
 });
@@ -212,6 +216,7 @@ function DeletedChatMessage(props) {
 
 
 const FixedAtBottom = createComponent({
+  displayName: 'FixedAtBottom',
   mixins: [utils.PageScrollMixin, utils.WindowZoomResizeMixin],
 
   getInitialState: function() {
@@ -261,6 +266,8 @@ const FixedAtBottom = createComponent({
 
 
 const JoinChatButton = createComponent({
+  displayName: 'JoinChatButton',
+
   componentWillUnmount: function() {
     this.isGone = true;
   },
@@ -288,6 +295,8 @@ const JoinChatButton = createComponent({
 
 
 const ChatMessageEditor = createComponent({
+  displayName: 'ChatMessageEditor',
+
   getInitialState: function() {
     return {
       text: '',

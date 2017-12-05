@@ -271,6 +271,7 @@ function AdvancedSearchPanel(props: {
       onTagsSelectionChange: any,
       onNotTagsSelectionChange: any,
       onCategoriesSelectionChange: any }) {
+  const store: Store = this.props.store;
   return (
     r.div({},
       r.div({ className: 'form-group' },
@@ -278,21 +279,21 @@ function AdvancedSearchPanel(props: {
         // UX SHOULD add a modal backdrop and close Select if clicked.
         rb.ReactSelect({ multi: true, value: props.query.categorySlugs,
           placeholder: "Select categories", autoBlur: true,
-          options: makeCategoryLabelValues(props.store.categories),
+          options: makeCategoryLabelValues(store.categories),
           onChange: props.onCategoriesSelectionChange })),
       r.div({ className: 'form-group' },
         r.label({ className: 'control-label' }, "For posts with tags:"),
         // UX SHOULD add a modal backdrop and close Select if clicked.
         rb.ReactSelect({ multi: true, value: props.query.tags,
           placeholder: "Select tags",
-          options: makeTagLabelValues(props.store.tagsStuff),
+          options: makeTagLabelValues(store.tagsStuff),
           onChange: props.onTagsSelectionChange })),
       r.div({ className: 'form-group' },
         r.label({ className: 'control-label' }, "But ", r.i({}, "without"), " these tags:"),
         // UX SHOULD add a modal backdrop and close Select if clicked.
         rb.ReactSelect({ multi: true, value: props.query.notTags,
           placeholder: "Select tags",
-          options: makeTagLabelValues(props.store.tagsStuff),
+          options: makeTagLabelValues(store.tagsStuff),
           onChange: props.onNotTagsSelectionChange }))
       // On pages with tags:
       // But without these tags:
