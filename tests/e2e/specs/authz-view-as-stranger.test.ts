@@ -33,6 +33,7 @@ function assertPublicTopicsVisible(browser) {
   logAndAssertVisible(browser,"About category CategoryB");
   logAndAssertVisible(browser, forum.topics.byMariaCategoryA.title);
   logAndAssertVisible(browser, forum.topics.byMariaCategoryANr2.title);
+  logAndAssertVisible(browser, forum.topics.byMariaCategoryANr3.title);
   logAndAssertVisible(browser, forum.topics.byMariaCategoryB.title);
   logAndAssertVisible(browser, forum.topics.byMichaelCategoryA.title);
   process.stdout.write('\n');

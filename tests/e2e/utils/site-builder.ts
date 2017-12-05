@@ -307,7 +307,6 @@ function buildSite(site?: SiteData) {
         categoryId: forum.categories.categoryA.id,
         authorId: forum.members.maria.id,
       });
-
       forum.topics.byMariaCategoryANr2 = api.addPage({
         id: 'byMariaCategoryA_2',
         folder: '/',
@@ -319,6 +318,18 @@ function buildSite(site?: SiteData) {
         categoryId: forum.categories.categoryA.id,
         authorId: forum.members.maria.id,
       });
+      forum.topics.byMariaCategoryANr3 = api.addPage({
+        id: 'byMariaCategoryA_3',
+        folder: '/',
+        showId: false,
+        slug: 'by-maria-category-a-3',
+        role: c.TestPageRole.Discussion,
+        title: 'By Maria in CategoryA nr 3 title',
+        body: 'By Maria in CategoryA nr 3, text text text, 3.',
+        categoryId: forum.categories.categoryA.id,
+        authorId: forum.members.maria.id,
+      });
+
       forum.topics.byMariaCategoryB = api.addPage({
         id: 'byMariaCategoryB',
         folder: '/',

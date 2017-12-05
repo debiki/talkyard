@@ -1782,21 +1782,24 @@ function pagesFor(browser) {
         },
 
         posts: {
-          postSelector: '.s_UP_Act_Ps_P',
+          postSelector: '.s_UP_Act_Ps_P .dw-p-bd',
 
           assertExactly: function(num: number) {
             browser.assertExactly(num, api.userProfilePage.activity.posts.postSelector);
           },
 
+          // Do this separately, because can take rather long (suprisingly?).
+          waitForPostTextsVisible: function() {
+            browser.waitForVisible(api.userProfilePage.activity.posts.postSelector);
+          },
+
           assertPostTextVisible: function(postText: string) {
             let selector = api.userProfilePage.activity.posts.postSelector;
-            browser.waitForVisible(selector);
             browser.assertAnyTextMatches(selector, postText, null, 'FAST');
           },
 
           assertPostTextAbsent: function(postText: string) {
             let selector = api.userProfilePage.activity.posts.postSelector;
-            browser.waitForVisible(selector);
             browser.assertNoTextMatches(selector, postText);
           },
         },
@@ -1808,15 +1811,17 @@ function pagesFor(browser) {
             browser.assertExactly(num, api.userProfilePage.activity.topics.topicsSelector);
           },
 
+          waitForTopicTitlesVisible: function(title: string) {
+            browser.waitForVisible(api.userProfilePage.activity.topics.topicsSelector);
+          },
+
           assertTopicTitleVisible: function(title: string) {
             let selector = api.userProfilePage.activity.topics.topicsSelector;
-            browser.waitForVisible(selector);
             browser.assertAnyTextMatches(selector, title, null, 'FAST');
           },
 
           assertTopicTitleAbsent: function(title: string) {
             let selector = api.userProfilePage.activity.topics.topicsSelector;
-            browser.waitForVisible(selector);
             browser.assertNoTextMatches(selector, title);
           },
         }

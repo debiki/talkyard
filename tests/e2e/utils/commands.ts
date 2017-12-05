@@ -297,9 +297,10 @@ function addCommandsToBrowser(browser) {
     if (fast === 'FAST') {
       // This works with only one browser at a time, so only use if FAST, or tests will break.
       assertAnyOrNoneMatches(selector, true, regex, regex2);
+      process.stdout.write('F ');
       return;
     }
-    // With Chrome 60, this is suddenly *super slow* and the authz-view-as-stranger   [CHROME_60_BUG]
+    // With Chrome 60, this is suddenly *super slow* and the authz-view-as-stranger   [CHROME_60_BUG] because of (24DKR0)?
     // test takes 4 minutes and times out. Instead, use assertAnyOrNoneMatches (just above).
     if (_.isString(regex)) {
       regex = new RegExp(regex);
@@ -310,7 +311,7 @@ function addCommandsToBrowser(browser) {
     // Log a friendly error, if the selector is absent — that'd be a test suite bug.
     // Without this assert...isVisible, Webdriver just prints "Error" and one won't know
     // what the problem is.
-    assert(browser.isVisible(selector), `No text matches: ${selector} [EdE1WBPGY93]`);
+    assert(browser.isVisible(selector), `No text matches: ${selector} [EdE1WBPGY93]`);  // this could be the very-slow-thing (24DKR0) COULD_OPTIMIZE
     const textByBrowserName = byBrowser(browser.getText(selector));  // SLOW !!
     _.forOwn(textByBrowserName, function(text, browserName) {
       const whichBrowser = isTheOnly(browserName) ? '' : ", browser: " + browserName;
@@ -325,11 +326,13 @@ function addCommandsToBrowser(browser) {
           regex2.toString() + ", actual text: '" + text + whichBrowser);
       }
     });
+    process.stdout.write('S ');
   }
 
 
   // n starts on 1 not 0.
   browser.addCommand('assertNthTextMatches', function(selector, n, regex, regex2) {
+    console.log('browser.pause(500); // for now');
     browser.pause(500); // for now
     if (_.isString(regex)) {
       regex = new RegExp(regex);

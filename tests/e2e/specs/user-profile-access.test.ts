@@ -40,8 +40,8 @@ let mariasPrivateMessageBody = "Maria's private message to Michael";
 let michaelPublicReplyToMarias = "Michael's public reply to Maria";
 let michaelPrivateMessageReply = "Michael's private message reply";
 
-let numPublicTopicsByMaria = 3;
-let numPublicPostsByMaria = 4;
+let numPublicTopicsByMaria = 4;
+let numPublicPostsByMaria = 5;  // 4 topic original-posts, and her reply to Michaeel
 
 
 describe("user profile access:", () => {
@@ -129,10 +129,12 @@ describe("user profile access:", () => {
 
   it("... he sees Maria's posts and the reply to him, in Maria's activity list", () => {
     let posts = michaelsBrowser.userProfilePage.activity.posts;
+    posts.waitForPostTextsVisible();
     posts.assertPostTextVisible(mariasPrivateMessageBody);
     posts.assertPostTextVisible(mariasPublicReplyToMichael);
     posts.assertPostTextVisible(forum.topics.byMariaCategoryA.body);
     posts.assertPostTextVisible(forum.topics.byMariaCategoryANr2.body);
+    posts.assertPostTextVisible(forum.topics.byMariaCategoryANr3.body);
     posts.assertPostTextVisible(forum.topics.byMariaCategoryB.body);
     posts.assertPostTextAbsent(forum.topics.byMariaUnlistedCat.body);
     posts.assertPostTextAbsent(forum.topics.byMariaStaffOnlyCat.body);
@@ -143,8 +145,10 @@ describe("user profile access:", () => {
   it("... he sees Maria's topics, incl the private message to him", () => {
     michaelsBrowser.userProfilePage.activity.switchToTopics({ shallFindTopics: true });
     let topics = michaelsBrowser.userProfilePage.activity.topics;
+    topics.waitForTopicTitlesVisible();
     topics.assertTopicTitleVisible(forum.topics.byMariaCategoryA.title);
     topics.assertTopicTitleVisible(forum.topics.byMariaCategoryANr2.title);
+    topics.assertTopicTitleVisible(forum.topics.byMariaCategoryANr3.title);
     topics.assertTopicTitleVisible(forum.topics.byMariaCategoryB.title);
     topics.assertTopicTitleVisible(mariasPrivateMessageTitle);
     topics.assertTopicTitleAbsent(forum.topics.byMariaUnlistedCat.title);
@@ -169,8 +173,10 @@ describe("user profile access:", () => {
 
   it("... he doesn't see the private message topic", () => {
     let topics = mallorysBrowser.userProfilePage.activity.topics;
+    topics.waitForTopicTitlesVisible();
     topics.assertTopicTitleVisible(forum.topics.byMariaCategoryA.title);
     topics.assertTopicTitleVisible(forum.topics.byMariaCategoryANr2.title);
+    topics.assertTopicTitleVisible(forum.topics.byMariaCategoryANr3.title);
     topics.assertTopicTitleVisible(forum.topics.byMariaCategoryB.title);
     topics.assertTopicTitleAbsent(mariasPrivateMessageTitle);
     topics.assertExactly(numPublicTopicsByMaria);
@@ -179,6 +185,7 @@ describe("user profile access:", () => {
   it("... and doesn't see Maria's private message post", () => {
     mallorysBrowser.userProfilePage.activity.switchToPosts({ shallFindPosts: true });
     let posts = mallorysBrowser.userProfilePage.activity.posts;
+    posts.waitForPostTextsVisible();
     posts.assertPostTextVisible(mariasPublicReplyToMichael);
     posts.assertPostTextAbsent(mariasPrivateMessageBody);
     posts.assertExactly(numPublicPostsByMaria);
@@ -194,6 +201,7 @@ describe("user profile access:", () => {
 
   it("... hen only sees public posts", () => {
     let posts = strangersBrowser.userProfilePage.activity.posts;
+    posts.waitForPostTextsVisible();
     posts.assertPostTextAbsent(mariasPrivateMessageBody);
     posts.assertExactly(numPublicPostsByMaria);
   });
@@ -201,6 +209,7 @@ describe("user profile access:", () => {
   it("... and public topics", () => {
     strangersBrowser.userProfilePage.activity.switchToTopics({ shallFindTopics: true });
     let topics = strangersBrowser.userProfilePage.activity.topics;
+    topics.waitForTopicTitlesVisible();
     topics.assertTopicTitleAbsent(mariasPrivateMessageTitle);
     topics.assertExactly(numPublicTopicsByMaria);
   });
@@ -218,11 +227,14 @@ describe("user profile access:", () => {
   let topics;
   it("... Modya sees Maria's topics + ...", () => {
     topics = modyasBrowser.userProfilePage.activity.topics;
+    topics.waitForTopicTitlesVisible();
     topics.assertTopicTitleVisible(forum.topics.byMariaCategoryA.title);
     topics.assertTopicTitleVisible(forum.topics.byMariaCategoryANr2.title);
+    topics.assertTopicTitleVisible(forum.topics.byMariaCategoryANr3.title);
     topics.assertTopicTitleVisible(forum.topics.byMariaCategoryB.title);
   });
   it("... + the unlisted topic, but not the private message", () => {
+    topics.waitForTopicTitlesVisible();
     topics.assertTopicTitleVisible(forum.topics.byMariaUnlistedCat.title);
     topics.assertTopicTitleVisible(forum.topics.byMariaStaffOnlyCat.title);
     topics.assertTopicTitleVisible(forum.topics.byMariaDeletedCat.title);
@@ -235,12 +247,15 @@ describe("user profile access:", () => {
   it("... and the public posts + ...", () => {
     modyasBrowser.userProfilePage.activity.switchToPosts({ shallFindPosts: true });
     posts = modyasBrowser.userProfilePage.activity.posts;
+    posts.waitForPostTextsVisible();
     posts.assertPostTextVisible(mariasPublicReplyToMichael);
     posts.assertPostTextVisible(forum.topics.byMariaCategoryA.body);
     posts.assertPostTextVisible(forum.topics.byMariaCategoryANr2.body);
+    posts.assertPostTextVisible(forum.topics.byMariaCategoryANr3.body);
     posts.assertPostTextVisible(forum.topics.byMariaCategoryB.body);
   });
   it("... + the one on the unlisted page, but not the priv msg post", () => {
+    posts.waitForPostTextsVisible();
     posts.assertPostTextVisible(forum.topics.byMariaUnlistedCat.body);
     posts.assertPostTextVisible(forum.topics.byMariaStaffOnlyCat.body);
     posts.assertPostTextVisible(forum.topics.byMariaDeletedCat.body);
@@ -266,9 +281,11 @@ describe("user profile access:", () => {
 
   it("... and sees all her posts + except for the deleted & staff-only", () => {
     let posts = mariasBrowser.userProfilePage.activity.posts;
+    posts.waitForPostTextsVisible();
     posts.assertPostTextVisible(mariasPublicReplyToMichael);
     posts.assertPostTextVisible(forum.topics.byMariaCategoryA.body);
     posts.assertPostTextVisible(forum.topics.byMariaCategoryANr2.body);
+    posts.assertPostTextVisible(forum.topics.byMariaCategoryANr3.body);
     posts.assertPostTextVisible(forum.topics.byMariaCategoryB.body);
     posts.assertPostTextVisible(forum.topics.byMariaUnlistedCat.body);
     posts.assertPostTextVisible(mariasPrivateMessageBody);
@@ -278,8 +295,10 @@ describe("user profile access:", () => {
   it("... Modya sees Maria's topics, incl the unlisted, but not the private message", () => {
     mariasBrowser.userProfilePage.activity.switchToTopics({ shallFindTopics: true });
     let topics = mariasBrowser.userProfilePage.activity.topics;
+    topics.waitForTopicTitlesVisible();
     topics.assertTopicTitleVisible(forum.topics.byMariaCategoryA.title);
     topics.assertTopicTitleVisible(forum.topics.byMariaCategoryANr2.title);
+    topics.assertTopicTitleVisible(forum.topics.byMariaCategoryANr3.title);
     topics.assertTopicTitleVisible(forum.topics.byMariaCategoryB.title);
     topics.assertTopicTitleVisible(forum.topics.byMariaUnlistedCat.title);
     topics.assertTopicTitleVisible(mariasPrivateMessageTitle);
@@ -305,10 +324,6 @@ describe("user profile access:", () => {
   it("... and the Notifications tab, incl all notifiations", () => {
   });
   */
-
-  it("Done", () => {
-    everyone.perhapsDebug();
-  });
 
 });
 
