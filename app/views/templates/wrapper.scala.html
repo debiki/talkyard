@@ -40,10 +40,6 @@
 @* Auto collapse nav menu items, if narrow screen?  https://github.com/lukejacksonn/GreedyNav  *@
 @Html(tpi.siteSettings.headerHtml)
 </div>
-@if(tpi.anyCurrentPageRole.exists(_.isChat)) {
-  <div id="theTopbar" class="esTopBar"></div>
-  <div id="theChatVspace"></div>
-}
 
 @content
 

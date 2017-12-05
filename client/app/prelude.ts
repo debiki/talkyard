@@ -28,7 +28,9 @@ declare const stringifyQueryString: (s: any) => string;
 
 // node_modules/@types/react-addons-css-transition-group doesn't work, so use ':any' instead.
 var ReactCSSTransitionGroup: any = isServerSide() ? null :
-  reactCreateFactory(window['ReactTransitionGroup'].CSSTransitionGroup);
+    reactCreateFactory(window['ReactTransitionGroup'].CSSTransitionGroup);
+
+const rFragment = reactCreateFactory(React.Fragment);
 
 // Don't <reference>, causes lots of TS errors.
 declare const Bliss: any;

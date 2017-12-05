@@ -99,9 +99,13 @@ const Page = createComponent({
         : debiki2.page.TitleBodyComments({ store: store });
     const compactClass = this.state.useWideLayout ? '' : ' esPage-Compact';
     const pageTypeClass = ' s_PT-' + store.pageRole;
-    return (
+    const topbar = debiki2.topbar.TopBar({});
+    const isChat = page_isChatChannel(store.pageRole);
+    return rFragment({},
+      isChat ? topbar : null,
+      isChat ? r.div({ id: 'theChatVspace' }) : null,
       r.div({ className: 'esPage' + compactClass + pageTypeClass },
-        page_isChatChannel(store.pageRole) ? null : debiki2.topbar.TopBar({}),
+        isChat ? null : topbar,
         isEmbeddedComments ? null : debiki2.page.ScrollButtons(),
         r.div({ className: 'container' },
           r.article({},
