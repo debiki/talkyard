@@ -29,7 +29,6 @@ declare var moment: any;
 //------------------------------------------------------------------------------
 
 const r = ReactDOMFactories;
-const UsersRoot = '/-/users/';
 const UsersRootAndIdParamSlash = UsersRoot + ':usernameOrId/';  // dupl [4GKQST20]
 
 
@@ -47,18 +46,14 @@ const UsersHomeComponent = createReactClass(<any> {
 
   render: function() {
     return (
-      r.div({},
-        topbar.TopBar({ customTitle: "About User",
-            backToSiteButtonTitle: "Back from user profile", extraMargin: true }),
         Switch({},
           Route({ path: UsersRoot, component: BadUrlComponent, exact: true }),
           Route({ path: UsersRoot + ':usernameOrId', exact: true,
               render: ({ match }) =>
                 Redirect({
-                  to: UsersRoot + match.params.usernameOrId + '/activity' + this.props.location.hash })
-          }),
+                  to: UsersRoot + match.params.usernameOrId + '/activity' + this.props.location.hash })}),
           Route({ path: UsersRoot + ':usernameOrId/:section?/:subsection?',
-              component: UserPageComponent }))));
+              component: UserPageComponent })));
   }
 });
 

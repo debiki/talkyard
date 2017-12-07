@@ -8,6 +8,8 @@ declare const ReactCSSTransitionGroup: any;
 declare const ReactDOMFactories: any;
 declare const createReactClass: any;
 declare function reactCreateFactory(x);
+declare const rFragment: any;
+
 declare function doNextFrameOrNow(x);
 declare function getSetCookie(cookieName: string, value?: string, options?: any): string;
 declare const parseQueryString: (s: string) => any;
@@ -35,6 +37,8 @@ declare const LowestAuthenticatedUserId;
 declare const MaxGuestId;
 declare const UnknownUserId;
 
+declare function makeNoPageData(): MyPageData;
+declare function makeAutoPage(): any;
 
 declare const ManualReadMark;
 declare const YellowStarMark;
@@ -51,6 +55,8 @@ declare const SiteStatusStrings: string[];
 
 
 declare const ApiUrlPathPrefix;
+declare const UsersRoot;
+declare const SearchRootPath;
 
 
 declare const RoutePathLatest;

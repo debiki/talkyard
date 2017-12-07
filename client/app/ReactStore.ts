@@ -64,12 +64,13 @@ store.user = store.me; // try to remove
 // Auto pages are e.g. admin or user profile pages, html generated automatically when needed.
 // No page id or user created data server side. Auto pages need this default empty stuff,
 // to avoid null errors.
-function makeAutoPage(): any {
+export function makeAutoPage(): any {
   return {
     dbgSrc: 'AP',
     ancestorsRootFirst: [],
     pageMemberIds: [],
     postsByNr: [],
+    pagePath: {},
   };
 }
 
@@ -77,7 +78,7 @@ function makeAutoPage(): any {
 // This is for avoiding null errors, 1) when the current user visits an auto page, or 2) when
 // the user is new at the site and doesn't have any custom data/settings for the current page.
 // Dupl code [4FBR20].
-function makeNoPageData(): MyPageData {
+export function makeNoPageData(): MyPageData {
   return {
     dbgSrc: 'MyNP',
     rolePageSettings: {notfLevel: NotfLevel.Normal},
@@ -94,6 +95,8 @@ function makeNoPageData(): MyPageData {
 ReactDispatcher.register(function(payload) {
   const action = payload.action;
   const currentPage = store.currentPage;
+  // SHOULD clone the store here? [8GKB3QA] but might introduce so many bugs, so wait a bit.
+  // So becomes (more) immutable.
   switch (action.actionType) {
 
     case ReactActions.actionTypes.NewMyself:
@@ -208,7 +211,7 @@ ReactDispatcher.register(function(payload) {
         firstDefinedOf(action.htmlHeadDescription, currentPage.pageHtmlHeadDescription);
       currentPage.ancestorsRootFirst = action.newAncestorsRootFirst;
       const parent: Ancestor = <Ancestor> _.last(action.newAncestorsRootFirst);
-      store.categoryId = parent ? parent.categoryId : null;
+      currentPage.categoryId = parent ? parent.categoryId : null;
       const was2dTree = currentPage.horizontalLayout;
       currentPage.pageRole = action.newPageRole || currentPage.pageRole;
       currentPage.horizontalLayout = action.newPageRole === PageRole.MindMap || currentPage.is2dTreeDefault;
@@ -336,6 +339,10 @@ ReactDispatcher.register(function(payload) {
     case ReactActions.actionTypes.PatchTheStore:
       patchTheStore(action.storePatch);
       break;
+
+    case ReactActions.actionTypes.ShowNewPage:
+      showNewPage(action.newPage, action.newUsers, action.myData, action.history);
+    break;
 
     case ReactActions.actionTypes.UpdateUserPresence:
       if (action.presence === Presence.Active) {
@@ -511,8 +518,10 @@ ReactStore.activateMyself = function(anyNewMe: Myself) {
   });
 
   if (_.isArray(store.topics)) {
+    const currentPage: Page = store.currentPage;
     store.topics = store.topics.concat(store.me.restrictedTopics);
-    store.topics.sort((t: Topic, t2: Topic) => topic_sortByLatestActivity(t, t2, store.categoryId));
+    store.topics.sort((t: Topic, t2: Topic) =>
+        topic_sortByLatestActivity(t, t2, currentPage.categoryId));
     // later: BUG COULD try to avoid gaps, e.g. don't load restricted topics back to year 2000
     // but public topics back to 2010 only.
     // BUG we always sort by time, but sometimes, we want to sort by most-popular-first, or created-at,
@@ -645,7 +654,7 @@ ReactStore.getCategories = function() {
 
 
 ReactStore.getCategoryId = function(): number {
-  return store.categoryId;
+  return store.currentPage.categoryId;
 };
 
 
@@ -1251,6 +1260,73 @@ function patchTheStore(storePatch: StorePatch) {
       Server.markCurrentPageAsSeen();
     }
   }
+}
+
+
+function showNewPage(newPage: Page, newUsers: BriefUser[], myData: MyPageData | null, history) {
+
+  // Upload any current reading progress, before changing page id.
+  page.PostsReadTracker.sendAnyRemainingData(() => {}); // not as beacon
+
+  // Change page.
+  const oldPage: Page = store.currentPage;
+  store.pagesById[newPage.pageId] = newPage;
+  store.currentPage = newPage;
+  store.currentPageId = newPage.pageId;
+  if (myData) {
+    store.me.myDataByPageId[newPage.pageId] = myData;
+  }
+  store.me.myCurrentPageData = myData || makeNoPageData();
+
+  // Add users on the new page, to the global users-by-id map.
+  _.each(newUsers, (user: BriefUser) => {
+    store.usersByIdBrief[user.id] = user;
+  });
+
+  // Update <html> elem classes list, so pages with custom classes & CSS render properly.
+  const oldClassesStr = (oldPage.pageHtmlTagCssClasses || '') + magicClassFor(oldPage);
+  const newClassesStr = (newPage.pageHtmlTagCssClasses || '') + magicClassFor(newPage);
+  function magicClassFor(page: Page): string {
+    // Sync with Scala [4JXW5I2].
+    if (page_isChatChannel(page.pageRole)) return ' es-chat';
+    if (page.pageRole === PageRole.Forum) return ' es-forum';
+    return '';
+  }
+  if (oldClassesStr || newClassesStr) {
+    const regex = /[ ,]/;
+    const oldClasses = oldClassesStr.split(regex);
+    const newClasses = newClassesStr.split(regex);
+    addOrRemoveClasses(oldClasses, newClasses, $h.removeClasses);
+    addOrRemoveClasses(newClasses, oldClasses, $h.addClasses);
+    function addOrRemoveClasses(as, bs, fn) {
+      for (let i = 0; i < as.length; ++i) {
+        const a = as[i].trim();
+        if (a && bs.indexOf(a) === -1) {
+          fn(document.documentElement, a);
+        }
+      }
+    }
+  }
+
+  // Maybe a /-pageid path to the page was specified. But that won't work for forum pages,
+  // whose routes have been mounted only on path like /forum/. So, if the path is
+  // incorrect, then correct it: update the address bar to the correct page path.
+  // This is best done here? Before emitting the change event, so won't trigger changes twice?
+  // COULD_OPTIMIZE AVOID_RERENDER But history.replace triggers a re-render immediately :-(
+  // no way to avoid that? And instead merge with the emit(ChangeEvent) above?
+  const pagePath = newPage.pagePath.value;
+  if (pagePath && pagePath !== location.pathname) {
+    history.replace(pagePath + location.search + location.hash);
+  }
+
+  // Restart the reading progress tracker, now when on a new page.
+  page.PostsReadTracker.reset();
+
+  // Update any top header links so the hereaafter active one (if any) gets highlighted/underlineg.
+  debiki2.utils.highlightActiveLinkInHeader();
+
+  // When done rendering, replace date ISO strings with pretty dates.
+  setTimeout(debiki2.page.Hacks.processPosts);
 }
 
 

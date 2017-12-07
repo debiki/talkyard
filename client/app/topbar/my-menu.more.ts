@@ -55,14 +55,14 @@ export const MyMenuContent = createFactory({
       var urgentReviewTasks = makeNotfIcon('reviewUrgent', me.numUrgentReviewTasks);
       var otherReviewTasks = makeNotfIcon('reviewOther', me.numOtherReviewTasks);
       var adminMenuItem = !isStaff(me) ? null :
-        MenuItemLink({ href: linkToAdminPage(me), className: 'esMyMenu_admin' },
+        MenuItemLink({ to: linkToAdminPage(me), className: 'esMyMenu_admin' },
           r.span({ className: 'icon-settings' }, "Admin"));
       var reviewMenuItem = !urgentReviewTasks && !otherReviewTasks ? null :
-        MenuItemLink({ href: linkToReviewPage(), id: 'e2eMM_Review' },
+        MenuItemLink({ to: linkToReviewPage(), id: 'e2eMM_Review' },
           "Needs review ", urgentReviewTasks, otherReviewTasks);
 
       var adminHelpLink = !isStaff(me) ? null :
-        MenuItemLink({ href: externalLinkToAdminHelp(), target: '_blank',
+        MenuItemLink({ to: externalLinkToAdminHelp(), target: '_blank',
             className: 'esMyMenu_adminHelp' },
           r.span({}, (me.isAdmin ? "Admin" : "Staff") + " help ",
             r.span({ className: 'icon-link-ext' })));
@@ -71,7 +71,7 @@ export const MyMenuContent = createFactory({
 
       var notfsDivider = me.notifications.length ? MenuItemDivider() : null;
       var notfsElems = me.notifications.map((notf: Notification) =>
-          MenuItemLink({ key: notf.id, href: linkToNotificationSource(notf),
+          MenuItemLink({ key: notf.id, to: linkToNotificationSource(notf),
               className: notf.seen ? '' : 'esNotf-unseen' },
             notification.Notification({ notification: notf })));
       if (me.thereAreMoreUnseenNotfs) {
@@ -115,7 +115,7 @@ export const MyMenuContent = createFactory({
       let unhideHelpMenuItem;
       if (me.isLoggedIn) {
         viewProfileMenuItem =
-            MenuItemLink({ href: linkToMyProfilePage(store), id: 'e2eMM_Profile' },
+            MenuItemLink({ to: linkToMyProfilePage(store), id: 'e2eMM_Profile' },
               "View/edit your profile");
         logoutMenuItem =
             MenuItem({ onClick: this.onLogoutClick, id: 'e2eMM_Logout' }, "Log out");

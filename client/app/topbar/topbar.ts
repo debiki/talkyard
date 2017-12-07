@@ -16,6 +16,7 @@
  */
 
 /// <reference path="../ReactStore.ts" />
+/// <reference path="../ReactActions.ts" />
 /// <reference path="../links.ts" />
 /// <reference path="../widgets.ts" />
 /// <reference path="../page-methods.ts" />
@@ -185,7 +186,7 @@ export const TopBar = createComponent({
             let deletedClass = ancestor.isDeleted ? ' s_TB_Cs_C-Dd' : '';
             return (
                 r.li({ key: ancestor.categoryId, className: 's_TB_Cs_C' + deletedClass },
-                  r.a({ className: 'esTopbar_ancestors_link btn', href: ancestor.path },
+                  Link({ className: 'esTopbar_ancestors_link btn', to: ancestor.path },
                     ancestor.title)));
           }));
     }
@@ -197,7 +198,7 @@ export const TopBar = createComponent({
       ancestorCategories =
         r.ol({ className: 'esTopbar_ancestors' },
           r.li({},
-            r.a({ className: 'esTopbar_ancestors_link btn', href: homePath }, "Home")));
+            Link({ className: 'esTopbar_ancestors_link btn', to: homePath }, "Home")));
     }
     else {
       // This isn't a private-message topic, and still it isn't placed in any section,
@@ -276,8 +277,8 @@ export const TopBar = createComponent({
 
     const searchButton =
        utils.ModalDropdownButton({ title: r.span({ className: 'icon-search' }),
-            className: 'esTB_SearchBtn', allowFullWidth: true, closeOnClick: false },
-         SearchForm({}));
+            className: 'esTB_SearchBtn', allowFullWidth: true, closeOnClick: false,
+          render: SearchForm });
 
     // ------- Forum title
 
@@ -290,15 +291,31 @@ export const TopBar = createComponent({
 
     // ------- Custom title & Back to site button
 
-    let customTitle;
-    if (this.props.customTitle) {
-      customTitle = r.h1({ className: 'esTopbar_custom_title' }, this.props.customTitle);
+    // CLEAN_UP remove the props? Use if(path.search..) also for the admin area?
+    let extraMargin = this.props.extraMargin;
+    let customTitle = this.props.customTitle;
+    let backToSiteButton = this.props.backToSiteButtonTitle;
+
+    if (this.props.location) {
+      const path: string = this.props.location.pathname;
+      if (path.search(UsersRoot) === 0) {
+        customTitle = "About User";
+        backToSiteButton = "Back from user profile";
+      }
+      else if (path.search(SearchRootPath) === 0) {
+        customTitle = "Search Page";
+        backToSiteButton = "Back";
+      }
     }
 
-    let backToSiteButton;
-    if (this.props.showBackToSite || this.props.backToSiteButtonTitle) {
+    if (customTitle) {
+      customTitle = r.h1({ className: 'esTopbar_custom_title' }, customTitle);
+    }
+
+    if (this.props.showBackToSite || backToSiteButton) {
       backToSiteButton = r.a({ className: 'esTopbar_custom_backToSite btn icon-reply',
-          onClick: goBackToSite }, this.props.backToSiteButtonTitle || "Back from admin area");
+          onClick: goBackToSite }, backToSiteButton || "Back from admin area");
+      extraMargin = true;
     }
 
     // ------- Open Contextbar button
@@ -368,7 +385,7 @@ export const TopBar = createComponent({
 
     // ------- The result
 
-    const extraMarginClass = this.props.extraMargin ? ' esTopbar-extraMargin' : '';
+    const extraMarginClass = extraMargin ? ' esTopbar-extraMargin' : '';
 
     const topbar =
       r.div({ className: 'esTopbar' + extraMarginClass },
@@ -460,13 +477,14 @@ const SearchForm = createComponent({
     let searchEndpoint    = '/-/search';
     let searchUrl         = '/-/search?q=' + urlEncodedQuery;
     let searchUrlAdvanced = '/-/search?advanced=true&q=' + urlEncodedQuery;
+    const afterClick = this.props.closeDropdown;
     return (
         r.form({ className: 'esTB_SearchD', ref: 'form',
             method: 'get', acceptCharset: 'UTF-8', action: searchEndpoint },
           (<any> r.input)({ type: 'text', tabIndex: '1', placeholder: "Text to search for",  // [TYPEERROR]
               ref: 'input', name: 'q',
               value: this.state.queryInputText, onChange: this.onQueryChange }),
-          PrimaryLinkButton({ href: searchUrl, className: 'e_SearchB' }, "Search"),
+          PrimaryLinkButton({ href: searchUrl, className: 'e_SearchB', afterClick }, "Search"),
           r.div({},
             r.a({ className: 'esTB_SearchD_AdvL', href: searchUrlAdvanced },
               "Advanced search"))));

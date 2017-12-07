@@ -33,6 +33,7 @@ package object server {
     */
   case class RenderedPage(
     html: String,
+    reactStoreJsonString: String,
     unapprovedPostAuthorIds: Set[UserId])
 
 

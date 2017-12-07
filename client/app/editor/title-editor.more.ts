@@ -37,7 +37,7 @@ export const TitleEditor = createComponent({
       showComplicated: false,
       isSaving: false,
       pageRole: page.pageRole,
-      categoryId: store.categoryId,
+      categoryId: page.categoryId,
     };
   },
 

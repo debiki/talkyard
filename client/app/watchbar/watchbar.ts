@@ -38,11 +38,13 @@ let watchbar;
 export function createWatchbar() {
   var elem = document.getElementById('esWatchbarColumn');
   if (watchbar || !elem) return;
-  watchbar = ReactDOM.render(Watchbar(), elem);
+  watchbar = ReactDOM.render(Router({}, Watchbar()), elem);
 }
 
 
 export var Watchbar = createComponent({
+  displayName: 'Watchbar',
+
   mixins: [debiki2.StoreListenerMixin],
 
   getInitialState: function() {
@@ -87,6 +89,8 @@ export var Watchbar = createComponent({
 
 
 const RecentTopicsAndNotfs = createComponent({
+  displayName: 'RecentTopicsAndNotfs',
+
   render: function() {
     const store: Store = this.props.store;
     const watchbar: Watchbar = store.me.watchbar;
@@ -114,6 +118,8 @@ const RecentTopicsAndNotfs = createComponent({
 
 
 const ChatChannels = createComponent({
+  displayName: 'ChatChannels',
+
   componentWillUnmount: function() {
     this.isUnmounted = true;
   },
@@ -157,6 +163,8 @@ const ChatChannels = createComponent({
 
 
 var DirectMessages = createComponent({
+  displayName: 'DirectMessages',
+
   render: function() {
     var store: Store = this.props.store;
     var topics: WatchbarTopic[] = store.me.watchbar[WatchbarSection.DirectMessages];
@@ -178,13 +186,29 @@ var DirectMessages = createComponent({
 });
 
 
-var SingleTopic = createComponent({
+const SingleTopic = createComponent({
+  displayName: 'SingleTopic',
+
+  componentWillMount: function() {
+    const topic: WatchbarTopic = this.props.topic;
+    this._url = topic.url || linkToPageId(topic.pageId);
+  },
+
   // If this topic is clicked, when it's the current topic already, then open the dropdown.
-  onClick: function(event) {
+  onListItemClick: function(event) {
     if (!this.props.isCurrent)
       return;
     event.preventDefault();
     this.refs.actionsDropdown.openDropdown();
+  },
+
+  onLinkClick: function(event) {
+    if (this.props.isCurrent) return;
+    const didNavigate = page.Hacks.navigateTo(this._url);
+    if (didNavigate) {
+      event.stopPropagation();
+      event.preventDefault();
+    }
   },
 
   editChatTitleAndPurpose: function() {
@@ -213,8 +237,7 @@ var SingleTopic = createComponent({
     var isChat = flavor === 'chat';
     var isCurrentTopicClass = this.props.isCurrent ? ' esWB_T-Current' : '';
     var unreadClass = topic.unread ? ' esWB_T-Unread' : '';
-    var url = topic.url || linkToPageId(topic.pageId);
-    var title = topic.title || url;
+    var title = topic.title || this._url;
     // Roughly 30 chars fits. For now, to usually avoid unneeded tooltips: (dupl width [4YK0F2])
     var tooltip = title.length > 21 ? title : undefined;
     var moreClasses = isCurrentTopicClass + unreadClass;
@@ -250,8 +273,8 @@ var SingleTopic = createComponent({
     // Could show num unread posts / chat messages. But would be rather complicated:
     // need to track num unread, + last visit date too, in the watchbar data.
     return (
-        r.li({ className: 'esWB_LI esWB_T-' + flavor + moreClasses, onClick: this.onClick },
-          r.a({ className: 'esWB_T_Link', href: url, title: tooltip },
+        r.li({ className: 'esWB_LI esWB_T-' + flavor + moreClasses, onClick: this.onListItemClick },
+          r.a({ className: 'esWB_T_Link', href: this._url, title: tooltip, onClick: this.onLinkClick },
             r.span({ className: 'esWB_T_Title' }, title)),
           topicActionsButton));
   }

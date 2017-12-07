@@ -214,7 +214,7 @@ interface Page {
   numRepliesToReview?: number;
   numRepliesTotal?: number;
   pinOrder?: number;
-  pinWhere?: number;
+  pinWhere?: PinPageWhere;
   numLikes?: number;
   numWrongs?: number;
   numBuryVotes?: number;

@@ -499,7 +499,7 @@ export const Editor = createComponent({
   loadGuidelines: function(writingWhat: WritingWhat, categoryId?: number, pageRole?: PageRole) {
     const store: Store = ReactStore.allData();
     const page: Page = store.currentPage;
-    var theCategoryId = categoryId || store.categoryId;
+    var theCategoryId = categoryId || page.categoryId;
     var thePageRole = pageRole || page.pageRole;
     var currentGuidelines = this.state.guidelines;
     if (currentGuidelines &&

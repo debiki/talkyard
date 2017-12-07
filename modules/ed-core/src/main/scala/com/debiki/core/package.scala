@@ -571,6 +571,7 @@ package object core {
   def OPTIMIZE = ()
   def SHOULD_OPTIMIZE = ()
   def COULD_OPTIMIZE = ()
+  def AVOID_RERENDER = ()
   def SMALLER_BUNDLE = ()
   def FORCED_REFLOW = ()  // Browser side only. Makes it slow.
   def COULD_FREE_MEM = () // Browser side, can set null sth to free mem, but then maybe harder to debug.

@@ -19,6 +19,7 @@
 /// <reference path="sidebar/sidebar.ts" />
 /// <reference path="watchbar/watchbar.ts" />
 /// <reference path="page/metabar.ts" />
+/// <reference path="page/hacks.ts" />
 /// <reference path="react-elements/name-login-btns.ts" />
 /// <reference path="more-bundle-already-loaded.d.ts" />
 /// <reference path="staff-bundle-already-loaded.d.ts" />
@@ -101,22 +102,10 @@ export function startMainReactRoot() {
     return;
   }
 
-  // /-/users/*
-  // <!-- users.scala.html -->
-  // @wrapper(tpi) {
-  // <div id="dw-react-user-page"></div>
-  const userPageElem = document.getElementById('dw-react-user-page');
-
-  // /-/search
-  // <!-- search.scala.html -->
-  // @wrapper(tpi) {
-  // <div id="t_SearchPage"></div>
-  const searchPageElem = document.getElementById('t_SearchPage');
+  // The rest below is for the main React app: the forum topic list, topic pages, user profile
+  // pages, the search page.
 
   const pageElem = document.getElementById('dwPosts');
-  const theElem = userPageElem || searchPageElem || pageElem;
-
-  dieIf(!theElem, 'EdE2LBRG3');
 
   const store: Store = ReactStore.allData();
   const forumRootSlash = store.forumPath;
@@ -129,21 +118,26 @@ export function startMainReactRoot() {
   else {
     // Compare with [2FKB5P].
     // Nothing below path /-/ is rendered server side (as of now), so then don't try to reuse any html.
-    const skipHydrate = location.pathname.search('/-/') === 0;
+    const skipHydrate = true; // location.pathname.search('/-/') === 0;
     const renderOrHydrate = skipHydrate ? ReactDOM.render : ReactDOM.hydrate;
+    const isEmbCmts: boolean = debiki.internal.isInEmbeddedCommentsIframe;
     renderOrHydrate(
         Router({},
-          Switch({},
-            // more-bundle.js is loaded directly on non-pages. Good for performance? since used here. [5WKE24]
-            Route({ path: '/-/', component: MoreScriptsRoutesComponent }),
-            // This redirects e.g. '/forum/' and '/forum' to '/forum/latest':
-            Redirect({ path: forumRootSlash, to: forumDefaultPath, exact: true }),
-            Route({ path: forumRootSlash + RoutePathLatest, component: forum.ForumComponent }),
-            Route({ path: forumRootSlash + RoutePathNew, component: forum.ForumComponent }),
-            Route({ path: forumRootSlash + RoutePathTop, component: forum.ForumComponent }),
-            Route({ path: forumRootSlash + RoutePathCategories, component: forum.ForumComponent }),
-            Route({ path: '/', component: PageWithStateComponent }))),
-      userPageElem || searchPageElem || pageElem);
+          rFragment({},
+            Route({ render: debiki2.topbar.TopBar }),
+            isEmbCmts ? null : debiki2.page.ScrollButtons(),
+            isEmbCmts ? null : Route({ component: debiki2.page.Hacks.ExtReactRootNavComponent }),
+            Switch({},
+              // more-bundle.js is loaded directly on non-pages. Good for performance? since used here. [5WKE24]
+              Route({ path: '/-/', component: MoreScriptsRoutesComponent }),
+              // This redirects e.g. '/forum/' and '/forum' to '/forum/latest':
+              Redirect({ path: forumRootSlash, to: forumDefaultPath, exact: true }),
+              Route({ path: forumRootSlash + RoutePathLatest, component: forum.ForumComponent }),
+              Route({ path: forumRootSlash + RoutePathNew, component: forum.ForumComponent }),
+              Route({ path: forumRootSlash + RoutePathTop, component: forum.ForumComponent }),
+              Route({ path: forumRootSlash + RoutePathCategories, component: forum.ForumComponent }),
+              Route({ path: '/', component: PageWithStateComponent })))),
+      pageElem);
   }
 }
 
@@ -153,8 +147,14 @@ const MoreScriptsRoutesComponent = createReactClass(<any> {  // dupl code [4WKBT
 
   componentWillMount: function() {
     Server.loadMoreScriptsBundle(() => {
+      if (this.isGone) return;
+      ReactActions.showNewPage(makeAutoPage(), [], makeNoPageData(), this.props.history);
       this.setState({ moreScriptsLoaded: true });
     });
+  },
+
+  componentWillUnmount: function() {
+    this.isGone = true;
   },
 
   render: function() {

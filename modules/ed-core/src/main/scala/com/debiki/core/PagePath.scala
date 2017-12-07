@@ -264,6 +264,7 @@ object PagePath {
    * Parses the path part of a URL into a PagePath.
    *
    * URL path examples:
+   * - (server)/fold/ers/-pageId [2WBG49]
    * - (server)/fold/ers/-pageId/page-slug
    * - (server)/fold/ers/page-slug (here, the pageId is not shown in the path).
    */

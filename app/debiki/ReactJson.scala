@@ -194,7 +194,7 @@ object ReactJson {
       "settings" -> makeSettingsVisibleClientSideJson(siteSettings),
       "isInEmbeddedCommentsIframe" -> JsBoolean(false),
       "categories" -> JsArray(),
-      "topics" -> JsArray(),
+      "topics" -> JsNull,
       "me" -> noUserSpecificData(pageReq.dao, pageId, everyonesPerms),
       "rootPostId" -> JsNumber(PageParts.BodyNr),
       "usersByIdBrief" -> JsObject(Nil),
@@ -332,7 +332,7 @@ object ReactJson {
     val categories = makeCategoriesJson(authzCtx, dao)
     val siteSettings = dao.getWholeSiteSettings()
 
-    val anyLatestTopics: Seq[JsObject] =
+    val anyLatestTopics: JsValue =
       if (page.role == PageRole.Forum) {
         val rootCategoryId = page.meta.categoryId.getOrDie(
           "DwE7KYP2", s"Forum page '${page.id}', site '${transaction.siteId}', has no category id")
@@ -346,10 +346,10 @@ object ReactJson {
           limit = ForumController.NumTopicsToList)
         val pageStuffById = dao.getPageStuffById(topics.map(_.pageId))
         topics.foreach(_.meta.addUserIdsTo(userIdsToLoad))
-        topics.map(controllers.ForumController.topicToJson(_, pageStuffById))
+        JsArray(topics.map(controllers.ForumController.topicToJson(_, pageStuffById)))
       }
       else {
-        Nil
+        JsNull
       }
 
     val usersById = transaction.loadUsersAsMap(userIdsToLoad)
@@ -367,6 +367,7 @@ object ReactJson {
       "pageMemberIds" -> pageMemberIds,
       "forumId" -> JsStringOrNull(anyForumId),
       "ancestorsRootFirst" -> ancestorsJsonRootFirst,
+      "categoryId" -> JsNumberOrNull(page.meta.categoryId),
       "pageRole" -> JsNumber(page.role.toInt),
       "pagePath" -> JsPagePath(page.thePath),
       "pageLayout" -> JsNumber(page.meta.layout.toInt),
@@ -403,11 +404,10 @@ object ReactJson {
       "userMustBeAuthenticated" -> JsBoolean(siteSettings.userMustBeAuthenticated),
       "userMustBeApproved" -> JsBoolean(siteSettings.userMustBeApproved),
       "settings" -> makeSettingsVisibleClientSideJson(siteSettings),
-      "categoryId" -> JsNumberOrNull(page.meta.categoryId),
       "maxUploadSizeBytes" -> globals.maxUploadSizeBytes,
       "isInEmbeddedCommentsIframe" -> JsBoolean(page.role == PageRole.EmbeddedComments),
       "categories" -> categories,
-      "topics" -> JsArray(anyLatestTopics),
+      "topics" -> anyLatestTopics,
       "me" -> noUserSpecificData(dao, pageId, authzCtx.permissions),
       "rootPostId" -> JsNumber(BigDecimal(anyPageRoot getOrElse PageParts.BodyNr)),
       "usersByIdBrief" -> usersByIdJson,
@@ -544,6 +544,7 @@ object ReactJson {
       // (WOULD move 'me' to the volatile json; suddenly having it here in the main json is
       // a bit surprising.) CLEAN_UP
       "me" -> userNoPageToJson(request),
+      "rootPostId" -> JsNumber(PageParts.BodyNr),
       "maxUploadSizeBytes" -> globals.maxUploadSizeBytes,
       "siteSections" -> makeSiteSectionsJson(dao),
       "usersByIdBrief" -> Json.obj(),

@@ -19,7 +19,6 @@
 /// <reference path="../utils/utils.ts" />
 /// <reference path="../utils/react-utils.ts" />
 /// <reference path="../help/help.ts" />
-/// <reference path="../topbar/topbar.ts" />
 /// <reference path="../help/help.ts" />
 /// <reference path="../rules.ts" />
 /// <reference path="discussion.ts" />
@@ -42,11 +41,20 @@ export const PageWithStateComponent = createReactClass(<any> {
   mixins: [debiki2.StoreListenerMixin],
 
   getInitialState: function() {
-    return { store: debiki2.ReactStore.allData() };
+    return { store: ReactStore.allData() };
   },
 
   onChange: function() {
-    this.setState({ store: debiki2.ReactStore.allData() });
+    this.setState({ store: ReactStore.allData() });
+  },
+
+  componentWillMount: function() {
+    ReactActions.maybeLoadAndShowNewPage(this.state.store, this.props.history, this.props.location);
+  },
+
+  componentWillReceiveProps: function(nextProps) {
+    ReactActions.maybeLoadAndShowNewPage(this.state.store, this.props.history, this.props.location,
+        nextProps.location.pathname);
   },
 
   render: function() {
@@ -92,7 +100,6 @@ const Page = createComponent({
   },
 
   render: function() {
-    const isEmbeddedComments: boolean = debiki.internal.isInEmbeddedCommentsIframe;
     const store: Store = this.props.store;
     const page: Page = store.currentPage;
     const content = page_isChatChannel(page.pageRole)
@@ -100,14 +107,10 @@ const Page = createComponent({
         : debiki2.page.TitleBodyComments({ store: store });
     const compactClass = this.state.useWideLayout ? '' : ' esPage-Compact';
     const pageTypeClass = ' s_PT-' + page.pageRole;
-    const topbar = debiki2.topbar.TopBar({});
     const isChat = page_isChatChannel(page.pageRole);
     return rFragment({},
-      isChat ? topbar : null,
       isChat ? r.div({ id: 'theChatVspace' }) : null,
       r.div({ className: 'esPage' + compactClass + pageTypeClass },
-        isChat ? null : topbar,
-        isEmbeddedComments ? null : debiki2.page.ScrollButtons(),
         r.div({ className: 'container' },
           r.article({},
             content))));

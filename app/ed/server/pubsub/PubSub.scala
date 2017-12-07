@@ -179,6 +179,8 @@ class PubSubActor(val nginxHost: String, val globals: Globals) extends Actor {
   private val subscribersBySiteUserId =
     mutable.HashMap[SiteId, mutable.LinkedHashMap[UserId, UserWhenPages]]()
 
+  // Includes all pages in the user's watchbar, so we should be pushing updates  [8YDVP2A]
+  // to all pages in the user's React store, also those other than the one currently displayed.
   private val pageWatcherIdsBySitePageId =
     mutable.HashMap[SiteId, mutable.HashMap[PageId, mutable.Set[UserId]]]()
 

@@ -35,6 +35,9 @@ const origin = d.i.serverOrigin;
 
 const BadNameOrPasswordErrorCode = 'EsE403BPWD';
 
+function getPageId(): PageId {
+  return ReactStore.allData().currentPageId;
+}
 
 interface OngoingRequest {
   abort(message?: string);
@@ -666,14 +669,14 @@ export function savePageNoftLevel(newNotfLevel) {
     myPageData.rolePageSettings = { notfLevel: newNotfLevel };  // [redux] modifying state in place
     ReactActions.patchTheStore({ me: me });
   }, {
-    pageId: d.i.pageId,
+    pageId: getPageId(),
     pageNotfLevel: newNotfLevel
   });
 }
 
 
 export function loadMyself(callback: (user: any) => void) {
-  get(`/-/load-my-page-data?pageId=${debiki2.ReactStore.getPageId()}`, callback);
+  get(`/-/load-my-page-data?pageId=${getPageId()}`, callback);
 }
 
 
@@ -813,7 +816,7 @@ export function loadDraftAndGuidelines(writingWhat: WritingWhat, categoryId: num
 
 export function loadCurrentPostText(postNr: PostNr,
       doneCallback: (text: string, postUid: number, revisionNr: number) => void) {
-  get('/-/edit?pageId='+ d.i.pageId + '&postNr='+ postNr, (response: any) => {
+  get('/-/edit?pageId='+ getPageId() + '&postNr='+ postNr, (response: any) => {
     // COULD also load info about whether the user may apply and approve the edits.
     doneCallback(response.currentText, response.postUid, response.currentRevisionNr);
   });
@@ -856,7 +859,7 @@ export function loadVoters(postId: PostId, voteType: PostVoteType,
 export function saveEdits(postNr: number, text: string, doneCallback: () => void) {
   postJson('/-/edit', {
     data: {
-      pageId: d.i.pageId, // [7UWKBA1]
+      pageId: getPageId(), // [7UWKBA1]
       postNr: postNr,
       text: text
     },
@@ -872,7 +875,7 @@ export function savePageTitleAndSettings(newTitle: string, settings, success: (r
         error: () => void) {
   const data = {
     ...settings,
-    pageId: d.i.pageId,
+    pageId: getPageId(),
     newTitle: newTitle,
   };
   postJson('/-/edit-title-save-settings', {
@@ -905,7 +908,7 @@ export function loadMorePostRevisions(postId: PostId, revisionNr: number,
 
 export function pinPage(pinWhere: PinPageWhere, pinOrder: number, success: () => void) {
   postJsonSuccess('/-/pin-page', success, {
-    pageId: d.i.pageId,
+    pageId: getPageId(),
     pinWhere: pinWhere,
     pinOrder: pinOrder,
   });
@@ -913,7 +916,7 @@ export function pinPage(pinWhere: PinPageWhere, pinOrder: number, success: () =>
 
 
 export function unpinPage(success: () => void) {
-  postJsonSuccess('/-/unpin-page', success, { pageId: d.i.pageId });
+  postJsonSuccess('/-/unpin-page', success, { pageId: getPageId() });
 }
 
 
@@ -921,8 +924,8 @@ export function saveReply(postNrs: PostNr[], text: string, anyPostType: number,
     success: () => void) {
   postJson('/-/reply', {
     data: {
-      pageId: d.i.pageId || undefined,
-      altPageId: d.i.altPageId || undefined,
+      pageId: getPageId() || undefined,
+      altPageId: d.i.altPageId || undefined, // OOOOOPS
       embeddingUrl: d.i.embeddingUrl || undefined,
       postNrs: postNrs,
       postType: anyPostType || PostType.Normal,
@@ -939,7 +942,7 @@ export function saveReply(postNrs: PostNr[], text: string, anyPostType: number,
 export function insertChatMessage(text: string, success: () => void) {
   postJson('/-/chat', {
     data: {
-      pageId: d.i.pageId,
+      pageId: getPageId(),
       text: text
     },
     success: (response) => {
@@ -954,7 +957,7 @@ export function addUsersToPage(userIds: UserId[], success) {
   postJsonSuccess('/-/add-users-to-page', () => {
     // Send new store data in the reply? [5FKE0WY2]
     success();
-  }, { pageId: d.i.pageId, userIds: userIds });
+  }, { pageId: getPageId(), userIds: userIds });
 }
 
 
@@ -962,7 +965,7 @@ export function removeUsersFromPage(userIds: UserId[], success) {
   postJsonSuccess('/-/remove-users-from-page', () => {
     // Send new store data in the reply? [5FKE0WY2]
     success();
-  }, { pageId: d.i.pageId, userIds: userIds });
+  }, { pageId: getPageId(), userIds: userIds });
 }
 
 
@@ -972,7 +975,7 @@ export function joinChatChannel() {
       ReactActions.setWatchbar(newWatchbar);
     }
     ReactActions.addMeAsPageMember();
-  }, { pageId: d.i.pageId });
+  }, { pageId: getPageId() });
 }
 
 
@@ -982,7 +985,7 @@ export function leaveChatChannel() {
       ReactActions.setWatchbar(newWatchbar);
     }
     ReactActions.removeMeAsPageMember();
-  }, { pageId: d.i.pageId });
+  }, { pageId: getPageId() });
 }
 
 
@@ -995,7 +998,7 @@ export function startPrivateGroupTalk(title: string, text: string, pageRole: Pag
 
 export function submitCustomFormAsJsonReply(entries: object[], success?: () => void) {
   postJsonSuccess('/-/submit-custom-form-as-json-reply', success, {
-    pageId: d.i.pageId,
+    pageId: getPageId(),
     formInputs: entries,
   });
 }
@@ -1058,7 +1061,7 @@ export function flagPost(postNr: string, flagType: string, reason: string, succe
     ReactActions.patchTheStore(storePatch);
     if (success) success();
   }, {
-    pageId: d.i.pageId,
+    pageId: getPageId(),
     postNr: postNr,
     type: flagType,
     reason: reason
@@ -1067,14 +1070,14 @@ export function flagPost(postNr: string, flagType: string, reason: string, succe
 
 
 export function hidePostInPage(postNr: number, hide: boolean, success: (postAfter: Post) => void) {
-  postJsonSuccess('/-/hide-post', success, { pageId: d.i.pageId, postNr: postNr, hide: hide });
+  postJsonSuccess('/-/hide-post', success, { pageId: getPageId(), postNr: postNr, hide: hide });
 }
 
 
 export function deletePostInPage(postNr: number, repliesToo: boolean,
       success: (deletedPost) => void) {
   postJsonSuccess('/-/delete-post', success, {
-    pageId: d.i.pageId,
+    pageId: getPageId(),
     postNr: postNr,
     repliesToo: repliesToo,
   });
@@ -1107,7 +1110,7 @@ export function addRemovePostTags(postId: PostId, tags: string[], success: () =>
     ReactActions.patchTheStore(response);
     success();
   }, {
-    pageId: d.i.pageId,
+    pageId: getPageId(),
     postId: postId,
     tags: tags
   });
@@ -1116,7 +1119,7 @@ export function addRemovePostTags(postId: PostId, tags: string[], success: () =>
 
 export function changePostType(postNr: number, newType: PostType, success: () => void) {
   postJsonSuccess('/-/change-post-type', success, {
-    pageId: d.i.pageId,
+    pageId: getPageId(),
     postNr: postNr,
     newType: newType,
   });
@@ -1131,7 +1134,7 @@ export function movePost(postId: PostId, newHost: SiteId, newPageId: PageId,
     dieIf(!post, 'EsE7YKGW2');
     success(post);
   }, {
-    pageId: d.i.pageId,
+    pageId: getPageId(),
     postId: postId,
     newHost: newHost,
     newPageId: newPageId,
@@ -1180,22 +1183,32 @@ export function createPage(data, success: (newPageId: string) => void) {
 }
 
 
+export function loadPageJson(path: string, success: (response) => void) {
+  console.log(`Loading page: ${path}`);
+  get(path + '?json', response => {
+    console.log(`Done loading ${path}, now updating store...`);
+    success(response);
+    console.log(`Done updating store.`);
+  });
+}
+
+
 export function acceptAnswer(postId: number, success: (answeredAtMs: number) => void) {
-  postJsonSuccess('/-/accept-answer', success, { pageId: d.i.pageId, postId: postId });
+  postJsonSuccess('/-/accept-answer', success, { pageId: getPageId(), postId: postId });
 }
 
 
 export function unacceptAnswer(success: () => void) {
-  postJsonSuccess('/-/unaccept-answer', success, { pageId: d.i.pageId });
+  postJsonSuccess('/-/unaccept-answer', success, { pageId: getPageId() });
 }
 
 
 export function cyclePageDone(success: (newPlannedAndDoneAt: any) => void) {
-  postJsonSuccess('/-/cycle-page-done', success, { pageId: d.i.pageId });
+  postJsonSuccess('/-/cycle-page-done', success, { pageId: getPageId() });
 }
 
 export function togglePageClosed(success: (closedAtMs: number) => void) {
-  postJsonSuccess('/-/toggle-page-closed', success, { pageId: d.i.pageId });
+  postJsonSuccess('/-/toggle-page-closed', success, { pageId: getPageId() });
 }
 
 export function deletePages(pageIds: PageId[], success: () => void) {
@@ -1209,7 +1222,7 @@ export function undeletePages(pageIds: PageId[], success: () => void) {
 
 export function markCurrentPageAsSeen() {
   // COULD avoid showing the is-POSTing-data overlay.
-  postJsonSuccess('/-/mark-as-seen?pageId=' + d.i.pageId, () => {}, {});
+  postJsonSuccess('/-/mark-as-seen?pageId=' + getPageId(), () => {}, {});
 }
 
 
@@ -1224,12 +1237,12 @@ export function search(rawQuery: string, success: (results: SearchResults) => vo
 // Uses navigator.sendBeacon if the `success` isn't specified.
 export function trackReadingProgress(lastViewedPostNr: PostNr, secondsReading: number,
       postNrsRead: PostNr[], success?: () => void) {
-  if (d.i.pageId === EmptyPageId)
+  if (getPageId() === EmptyPageId)
     return;
 
   let nowMsUtc = Date.now(); // now() returns UTC
   let data = {
-    pageId: d.i.pageId,
+    pageId: getPageId(),
     visitStartedAt: nowMsUtc,
     lastViewedPostNr: lastViewedPostNr,
     lastReadAt: secondsReading > 0 ? nowMsUtc : null,

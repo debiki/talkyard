@@ -125,7 +125,7 @@ const EditCategoryDialog = createClassAndFactory({
     const stateCat: Category = this.state.category;
     const category: Category = {
       ...stateCat,
-      parentId: ReactStore.getCategoryId(),
+      parentId: ReactStore.getCategoryId(), // CLEAN_UP remove that fn, use instead: store.currentPage.categoryId
       sectionPageId: store.currentPageId,
     };
     function falseToUndef(permissions: PermsOnPage[]) {

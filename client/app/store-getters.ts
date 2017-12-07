@@ -156,7 +156,8 @@ export function store_canSelectPosts(store: Store): boolean {
 // Returns the current category, or if none, the default category.
 //
 export function store_getCurrOrDefaultCat(store: Store): Category {
-  var currCat = _.find(store.categories, (c: Category) => c.id === store.categoryId);
+  const currCatId = store.currentPage.categoryId;
+  const currCat = _.find(store.categories, (c: Category) => c.id === currCatId);
   if (currCat)
     return currCat;
 
@@ -186,7 +187,7 @@ export function store_shallShowPageToolsButton(store: Store) {
 
 export function store_canPinPage(store: Store) {
   const page: Page = store.currentPage;
-  return store.categoryId && page.pageRole !== PageRole.Forum;
+  return page.categoryId && page.pageRole !== PageRole.Forum;
 }
 
 

@@ -66,7 +66,7 @@ class EmbeddedTopicsController @Inject()(cc: ControllerComponents, edContext: Ed
           jsonStuff.pageTitle, jsonStuff.customHeadTags, anyAltPageId = discussionId,
           anyEmbeddingUrl = Some(embeddingUrl))
         val htmlString = views.html.templates.page(tpi).body
-        (RenderedPage(htmlString, unapprovedPostAuthorIds = Set.empty), pageRequest)
+        (RenderedPage(htmlString, "NoJson-1WB4Z6", unapprovedPostAuthorIds = Set.empty), pageRequest)
       case Some(realId) =>
         val pageMeta = dao.getThePageMeta(realId)
         val pagePath = PagePath(siteId = request.siteId, folder = "/", pageId = Some(realId),

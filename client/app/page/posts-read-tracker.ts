@@ -49,10 +49,10 @@ interface ReadState {
 }
 
 
-let readStatesByPostNr: { [postNr: number]: ReadState } = {};
-let postNrsVisibleLastTick: { [postNr: number]: boolean } = {};
-let pageId = debiki2.ReactStore.getPageId();
-let postNrsJustRead = [];
+let readStatesByPostNr: { [postNr: number]: ReadState };
+let postNrsVisibleLastTick: { [postNr: number]: boolean };
+let pageId;
+let postNrsJustRead;
 let wentToTopAtMs: number;
 
 // Most people read 200 words per minute with a reading comprehension of 60%.
@@ -98,7 +98,13 @@ let maxSecondsSinceLastScroll: number;
 let talksWithSererAlready: boolean;
 let isOldPageWithRandomPostNrs: boolean;
 
-function reset() {
+export function reset() {
+  readStatesByPostNr = {};
+  postNrsVisibleLastTick = {};
+  pageId = debiki2.ReactStore.getPageId();
+  postNrsJustRead = [];
+  wentToTopAtMs = undefined;
+
   lastScrolledAtMs = Date.now();
   lastScrollLeft = -1;
   lastScrollTop = -1;
@@ -133,7 +139,7 @@ export function getPostNrsAutoReadLongAgo(): number[] {
 }
 
 
-function sendAnyRemainingData() {
+export function sendAnyRemainingData(success?) {
   if (talksWithSererAlready || !unreportedSecondsReading ||
       unreportedSecondsReading <= TooFewSeconds ||
       // It's undef, if haven't looked at the page for long enough.
@@ -146,7 +152,7 @@ function sendAnyRemainingData() {
   // @endif
 
   // Don't include any 'success' callback —> sendBeacon will get used.
-  Server.trackReadingProgress(lastViewedPostNr, unreportedSecondsReading, unreportedPostNrsRead);
+  Server.trackReadingProgress(lastViewedPostNr, unreportedSecondsReading, unreportedPostNrsRead, success);
   lastReportedToServerAtMs = Date.now();
 }
 

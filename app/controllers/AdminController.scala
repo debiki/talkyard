@@ -50,7 +50,7 @@ class AdminController @Inject()(cc: ControllerComponents, edContext: EdContext)
       // "Login as administrator to access this page."
     }
     else {
-      val siteTpi = SiteTpi(apiReq)
+      val siteTpi = SiteTpi(apiReq, isAdminArea = true)
       val adminPageBody = views.html.adminPage(siteTpi, appId = "dw-react-admin-app").body
       Ok(adminPageBody) as HTML withCookies SecureCookie(
         EdSecurity.XsrfCookieName, apiReq.xsrfToken.value)

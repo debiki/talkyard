@@ -125,7 +125,6 @@ function chooseInitialLayout() {
  * first step is done, the user should conceive the page as mostly loaded.)
  */
 function renderDiscussionPage() {
-  // Do this before rendering the page.
   debiki2.ReactStore.initialize();
   var _2dLayout = chooseInitialLayout() === 'TreeLayout';
   if (_2dLayout) {
@@ -183,11 +182,12 @@ function renderDiscussionPage() {
   steps.push(function() {
     registerEventHandlersFireLoginOut();
     debiki2.utils.startDetectingMouse();
+    debiki2.ReactActions.loadAndScrollToAnyUrlAnchorPost();
   });
 
   steps.push(function() {
-    debiki2.ReactActions.loadAndScrollToAnyUrlAnchorPost();
     debiki2.form.activateAnyCustomForm();
+    debiki2.page.Hacks.reactRouterLinkifyTopHeaderLinks();
   });
 
   // Disable for now, I'll rewrite it to consider timestamps.

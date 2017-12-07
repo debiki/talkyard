@@ -40,8 +40,8 @@ object PageTpi {
 object SiteTpi {
 
   def apply(request: DebikiRequest[_], json: Option[String] = None,
-        pageTitle: Option[String] = None, isSearchPage: Boolean = false) =
-    new SiteTpi(request, json, pageTitle = pageTitle, isSearchPage = isSearchPage)
+        pageTitle: Option[String] = None, isAdminArea: Boolean = false) =
+    new SiteTpi(request, json, pageTitle = pageTitle, isAdminArea = isAdminArea)
 
 }
 
@@ -61,7 +61,7 @@ class SiteTpi protected (
   val debikiRequest: DebikiRequest[_],
   val json: Option[String] = None,
   pageTitle: Option[String] = None,
-  isSearchPage: Boolean = false) {
+  isAdminArea: Boolean = false) {
 
   def globals: Globals = debikiRequest.context.globals
 
@@ -121,6 +121,7 @@ class SiteTpi protected (
 
 
   def debikiHtmlTagClasses: String = {
+    // Sync with js [4JXW5I2].
     val chatClass = if (anyCurrentPageRole.exists(_.isChat)) "es-chat " else ""
     val forumClass = if (anyCurrentPageRole.contains(PageRole.Forum)) "es-forum " else ""
     val customClass = anyCurrentPageMeta.map(_.htmlTagCssClasses + " ") getOrElse ""
@@ -222,8 +223,9 @@ class SiteTpi protected (
 
   /** The initial data in the React-Flux model, a.k.a. store. */
   def reactStoreSafeJsonString: String =
-    json getOrElse ReactJson.makeSpecialPageJson(
-        debikiRequest, inclCategoriesJson = isSearchPage).toString()
+    json getOrElse ReactJson.makeSpecialPageJson(debikiRequest,
+      // The admin app is its own single-page-app and doesn't need the categories. [6TKQ20]
+      inclCategoriesJson = !isAdminArea).toString()
 
 
   def assetUrl(fileName: String): String = assetUrlPrefix + fileName

@@ -516,6 +516,7 @@ interface Page {
   pageMemberIds: UserId[];
   forumId?: string;
   ancestorsRootFirst?: Ancestor[];
+  categoryId?: number;
   pageRole: PageRole;
   pagePath: PagePath;
   pageLayout?: TopicListLayout;
@@ -558,7 +559,6 @@ interface Store {
   userMustBeAuthenticated: boolean;
   userMustBeApproved: boolean;
   settings: SettingsVisibleClientSide;
-  categoryId?: number;
   hideForumIntro?: boolean;
   maxUploadSizeBytes: number;
   isInEmbeddedCommentsIframe: boolean;

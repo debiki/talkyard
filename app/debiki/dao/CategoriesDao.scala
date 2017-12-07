@@ -162,10 +162,6 @@ trait CategoriesDao {
         // whole section (e.g. the whole forum) but only the root of a sub section (e.g.
         // a category in the forum). The top root shouldn't contain any pages, but subtree roots
         // usually contain pages. )
-        CLEAN_UP // investigate & remove this old comment:
-        // (If `restrictedOnly` is true, then most hidden topics won't be included, because
-        // they might not be placed inside restricted categories. Everything works fine
-        // anyway currently, though, see [7RIQ29]. )
         listDescendantMaySeeCategories(categoryId, includeRoot = true, authzCtx).map(_.id)
       }
       else {

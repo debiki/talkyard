@@ -23,7 +23,6 @@
 //------------------------------------------------------------------------------
 
 const r = ReactDOMFactories;
-const SearchRootPath = '/-/search';
 
 
 // COULD config the router to avoid % encoding in the URL inside tag names,
@@ -81,16 +80,14 @@ var SearchPageComponent = createReactClass(<any> {
   displayName: 'SearchPageComponent',
 
   render: function() {
-    return (
-      r.div({},
-        topbar.TopBar({ backToSiteButtonTitle: "Back" }),
+    return rFragment({},
         r.div({ className: 'esLegal_home container', style: { marginTop: '20px' } },
           // href="/" will be wrong if coming from the forum and it's base path isn't /, but e.g.
           // /forum/. Ignore this minor problem, for now. [7KUFS25]
           r.a({ className: 'esLegal_home_link', href: '/' }, "Home",
             r.span({ className: 'esLegal_home_arw' }, ' →'))),
         r.div({},
-          Route({ path: SearchRootPath, component: SearchPageContentComponent, exact: true }))));
+          Route({ path: SearchRootPath, component: SearchPageContentComponent, exact: true })));
   }
 });
 
@@ -101,21 +98,52 @@ var SearchPageContentComponent = createReactClass(<any> {
   mixins: [debiki2.StoreListenerMixin],
 
   getInitialState: function() {
+    const store = debiki2.ReactStore.allData();
     return {
       searchResults: null,
       isSearching: false,
-      store: debiki2.ReactStore.allData(),
+      store,
+      me: store.me,  // remove 'me' [8GKB3QA]
     };
   },
 
   onChange: function() {
-    this.setState({
-      store: debiki2.ReactStore.allData(),
-    });
+    const store = debiki2.ReactStore.allData();
+    this.setState({ store, me: store.me });  // remove 'me' [8GKB3QA]
   },
 
   componentWillMount: function() {
     const urlQueryParams = parseQueryString(this.props.location.search);
+    this.searchUseUrlQuery(urlQueryParams);
+    if (urlQueryParams.advanced) {
+      this.tagsLoaded = true;
+      Server.loadTagsAndStats();
+    }
+  },
+
+  componentDidUpdate: function(prevProps, prevState) {
+    // If 1) the user searches via the top bar search button, when already on the search page,
+    // the url query will change. (Don't know why hen would do that.)
+    const oldParams = parseQueryString(prevProps.location.search);
+    const curParams = parseQueryString(this.props.location.search);
+    const isNewQuery = oldParams.q !== curParams.q;
+
+    // Or if 2) the user clicks the Search button — then we'll update the URL to show the new query,
+    // which triggers this receive-props. But then we've sent a search request already.
+    const ignoreUrlChange = this.ignoreUrlChange;
+    this.ignoreUrlChange = false;
+
+    // If a new user logged in, hen might be allowed to see different search results.
+    const oldMe: Myself = prevState.me;
+    const curMe: Myself = this.state.me;
+    const isDifferentUser = oldMe.id !== curMe.id;
+
+    if ((isNewQuery && !ignoreUrlChange) || isDifferentUser) {
+      this.searchUseUrlQuery(curParams);
+    }
+  },
+
+  searchUseUrlQuery: function(urlQueryParams) {
     const searchQueryText = urlQueryParams.q || '';
     // searchQueryText has already been url decoded.
     const query = parseSearchQueryInputText(searchQueryText);
@@ -123,20 +151,15 @@ var SearchPageContentComponent = createReactClass(<any> {
     if (searchQueryText) {
       this.search(query);
     }
-    if (urlQueryParams.advanced) {
-      this.tagsLoaded = true;
-      Server.loadTagsAndStats();
-    }
   },
 
   componentWillUnmount: function() {
     this.isGone = true;
   },
 
-  search: function(query?: SearchQuery) {
-    query = query || this.state.query;
-    this.setState({ isSearching: true });
-    // Update the URL if the user typed a new search query:
+  searchAndUpdateUrl: function() {
+    // Update the URL if the user typed a new search query. This triggers a new search.
+    const query = this.state.query;
     const urlQueryParams = parseQueryString(this.props.location.search);
     if (urlQueryParams.q !== query.rawQuery) {
       this.props.history.push({
@@ -144,7 +167,18 @@ var SearchPageContentComponent = createReactClass(<any> {
         search: stringifyQueryString({ ...urlQueryParams,  q: query.rawQuery }),
       });
     }
+    // Do search, also if has searched for the same thing — because maybe new content was just added.
+    this.ignoreUrlChange = true;
+    this.search(query);
+  },
+
+  search: function(query: SearchQuery) {
+    if (this.searchingFor === query.rawQuery)
+      return;
+    this.searchingFor = query.rawQuery;
+    this.setState({ isSearching: true });
     Server.search(query.rawQuery, (results: SearchResults) => {
+      this.searchingFor = null;
       if (this.isGone) return;
       this.setState({
         isSearching: false,
@@ -205,6 +239,9 @@ var SearchPageContentComponent = createReactClass(<any> {
   },
 
   render: function() {
+    // BUG: """Warning: Each child in an array or iterator should have a unique "key" prop.
+    // Check the render method of `SearchPageContentComponent`."""
+
     const store: Store = this.state.store;
     const query: SearchQuery = this.state.query;
     const searchResults: SearchResults = this.state.searchResults;
@@ -251,7 +288,7 @@ var SearchPageContentComponent = createReactClass(<any> {
                 value: query.rawQuery,
                 className: 's_SP_QueryTI', onChange: this.onQueryTextEdited }),
             PrimaryButton({ value: "Search", className: 's_SP_SearchB',
-                onClick: () => this.search() },
+                onClick: () => this.searchAndUpdateUrl() },
               "Search"),
           advancedSearch),
         anyInfoText,
@@ -271,7 +308,7 @@ function AdvancedSearchPanel(props: {
       onTagsSelectionChange: any,
       onNotTagsSelectionChange: any,
       onCategoriesSelectionChange: any }) {
-  const store: Store = this.props.store;
+  const store: Store = props.store;
   return (
     r.div({},
       r.div({ className: 'form-group' },

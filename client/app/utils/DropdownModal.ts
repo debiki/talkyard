@@ -87,7 +87,7 @@ export const ModalDropdownButton = createComponent({
             allowFullWidth: props.allowFullWidth, ref: 'dropdownModal',
             showCloseButton: props.showCloseButton,
             onContentClick: props.closeOnClick === false ? null : this.closeDropdown },
-          props.children));
+          props.render ? props.render({ closeDropdown: this.closeDropdown }) : props.children));
     }
 
     // Don't nest the dropdownModal inside the Button — then, all clicks inside the modal dialog,

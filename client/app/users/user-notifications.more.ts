@@ -84,7 +84,7 @@ export const UserNotifications = createFactory({
 
     var notfsElems = this.state.notfs.map((notf: Notification) =>
         r.li({ key: notf.id },
-          r.a({ href: linkToNotificationSource(notf) },
+          Link({ to: linkToNotificationSource(notf) },
             notification.Notification({ notification: notf, verbose: true }))));
 
     return (

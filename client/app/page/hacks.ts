@@ -22,6 +22,81 @@
 //------------------------------------------------------------------------------
 
 
+/**
+ * React roots outside the main root, can use this hacky function to
+ * make navigation happen properly, in the main React root.
+ * This single-page-app navigation only works if ExtReactRootNavComponent has
+ * been mounted though — and then, this fn returns true; then the caller
+ * should skip any default click event action.
+ *
+ * CLEAN_UP REFACTOR maybe not needed? Supposedly, if creating different Router:s in separate
+ * react roots, but one gives them the same History object, they'll know what the others
+ * are doing and update their own routes proprely, when navigation happens in another React root...
+ *
+ * ...But still a bit needed, for any non-React links in the custom-html-top-header.
+ */
+export function navigateTo(path: string): boolean {
+  return doNavigate(path);
+}
+
+let doNavigate: (string) => boolean = function() {
+  return false;
+};
+
+export const ExtReactRootNavComponent = createReactClass({
+  displayName: 'ExtReactRootNavComponent',
+
+  componentWillMount: function() {
+    doNavigate = (path: string) => {
+      if (this.props.location.pathname !== path) {
+        this.props.history.push(path);
+        return true;
+      }
+    }
+  },
+
+  render: function() {
+    return null;
+  }
+});
+
+
+export function reactRouterLinkifyTopHeaderLinks() {
+  Bliss.delegate(document, 'click', '.esPageHeader a[href]', function(event) {
+    const elem = <HTMLLinkElement> event.target;
+    if (!elem || !elem.href || !elem.href.length) return;
+    // Try internal single-page-app navigation, if it's a link to a page here on the same site.
+    const href = elem.href;
+    let newUrlPath;
+    if (href.search('//') === -1) {
+      if (href[0] === '/') {
+        // And absolute url path, like '/some/page'.
+        newUrlPath = href;
+      }
+      else {
+        // A relative link, like 'some/page', weird. Don't try SPA navigation.
+        return;
+      }
+    }
+    else if (href.search(location.origin) === 0) {
+      // Something like 'https://this.server.com/page/path' — keep '/page/path' only.
+      newUrlPath = href.substr(location.origin.length)
+    }
+    else if (href.search(`//${location.hostname}/`) === 0) {
+      // Something like '//this.server.com/page/path' — keep '/page/path' only.
+      newUrlPath = href.substr(location.hostname.length + 2);
+    }
+    else {
+      // External link.
+      return;
+    }
+    event.preventDefault();
+    event.stopPropagation();
+    navigateTo(newUrlPath)
+  });
+}
+
+
 export function processPosts() {
   processTimeAgo();
   hideShowCollapseButtons();

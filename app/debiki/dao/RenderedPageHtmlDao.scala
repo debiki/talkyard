@@ -59,7 +59,8 @@ trait RenderedPageHtmlDao {
       val anyPageQuery = pageRequest.parsePageQuery()
       val anyPageRoot = pageRequest.pageRoot
 
-      val renderResult = ReactJson.pageToJson(pageRequest.thePageId, this, anyPageRoot, anyPageQuery)
+      val renderResult: PageToJsonResult =
+        ReactJson.pageToJson(pageRequest.thePageId, this, anyPageRoot, anyPageQuery)
 
       val (cachedHtml, cachedVersion) =
         renderContent(pageRequest.thePageId, renderResult.version, renderResult.jsonString)
@@ -70,7 +71,7 @@ trait RenderedPageHtmlDao {
 
       val pageHtml: String = views.html.templates.page(tpi).body
 
-      RenderedPage(pageHtml, renderResult.unapprovedPostAuthorIds)
+      RenderedPage(pageHtml, renderResult.jsonString, renderResult.unapprovedPostAuthorIds)
     }
   }
 
