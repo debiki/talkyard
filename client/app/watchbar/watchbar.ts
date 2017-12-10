@@ -191,7 +191,7 @@ const SingleTopic = createComponent({
 
   componentWillMount: function() {
     const topic: WatchbarTopic = this.props.topic;
-    this._url = topic.url || linkToPageId(topic.pageId);
+    this._url = linkToPageId(topic.pageId);
   },
 
   // If this topic is clicked, when it's the current topic already, then open the dropdown.
@@ -238,6 +238,11 @@ const SingleTopic = createComponent({
     var isCurrentTopicClass = this.props.isCurrent ? ' esWB_T-Current' : '';
     var unreadClass = topic.unread ? ' esWB_T-Unread' : '';
     var title = topic.title || this._url;
+
+    if (topic.type === PageRole.Forum) {  // [5KWQB42]
+      title = r.span({ className: 'icon-menu' }, title);
+    }
+
     // Roughly 30 chars fits. For now, to usually avoid unneeded tooltips: (dupl width [4YK0F2])
     var tooltip = title.length > 21 ? title : undefined;
     var moreClasses = isCurrentTopicClass + unreadClass;
@@ -249,8 +254,7 @@ const SingleTopic = createComponent({
     var viewMembersButtonTitle = !isChat ? "View people here" : (
         isAuthorOrStaff ? "View / add / remove members" : "View chat members");
 
-    // Would want to know if the *page* is of type chat, so can edit title etc, without
-    // having to join. [4KW0Y2]
+    // UX COULD check role? and make it possible to edit title etc, without having to join.
     var editChatInfoButton = !isChat || !isAuthorOrStaff || !this.props.isCurrent ? null :
         MenuItem({ onSelect: this.editChatTitleAndPurpose, id: 'e2eWB_EditTitlePurposeB' },
             r.span({ className: 'icon-help' }, "Edit chat title and purpose"));

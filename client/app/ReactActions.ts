@@ -695,21 +695,19 @@ export function loadAndShowNewPage(newUrlPath, history) {
     const pageId = newStore.currentPageId;
     const page = newStore.pagesById[pageId];
     const newUsers = _.values(newStore.usersByIdBrief);
-    const me: Myself = response.me;
-    const anyMyPageData = me ? me.myDataByPageId[pageId] : null;
 
     // This'll trigger a this.onChange() event.
-    showNewPage(page, newUsers, anyMyPageData, history);
+    showNewPage(page, newUsers, response.me, history);
   });
 }
 
 
-export function showNewPage(newPage: Page, newUsers: BriefUser[], myData: MyPageData, history: History) {
+export function showNewPage(newPage: Page, newUsers: BriefUser[], me: Myself, history: History) {
   ReactDispatcher.handleViewAction({
     actionType: actionTypes.ShowNewPage,
     newPage,
     newUsers,
-    myData,
+    me,
     history,
   });
 }

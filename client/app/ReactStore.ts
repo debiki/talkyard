@@ -341,7 +341,7 @@ ReactDispatcher.register(function(payload) {
       break;
 
     case ReactActions.actionTypes.ShowNewPage:
-      showNewPage(action.newPage, action.newUsers, action.myData, action.history);
+      showNewPage(action.newPage, action.newUsers, action.me, action.history);
     break;
 
     case ReactActions.actionTypes.UpdateUserPresence:
@@ -1263,7 +1263,7 @@ function patchTheStore(storePatch: StorePatch) {
 }
 
 
-function showNewPage(newPage: Page, newUsers: BriefUser[], myData: MyPageData | null, history) {
+function showNewPage(newPage: Page, newUsers: BriefUser[], newMe: Myself | null, history) {
 
   // Upload any current reading progress, before changing page id.
   page.PostsReadTracker.sendAnyRemainingData(() => {}); // not as beacon
@@ -1273,10 +1273,17 @@ function showNewPage(newPage: Page, newUsers: BriefUser[], myData: MyPageData | 
   store.pagesById[newPage.pageId] = newPage;
   store.currentPage = newPage;
   store.currentPageId = newPage.pageId;
-  if (myData) {
-    store.me.myDataByPageId[newPage.pageId] = myData;
+
+  let myData: MyPageData;
+  if (newMe) {
+    store.me.watchbar = newMe.watchbar;
+    const myData = newMe.myDataByPageId[newPage.pageId];
+    if (myData) {
+      store.me.myDataByPageId[newPage.pageId] = myData;
+    }
   }
   store.me.myCurrentPageData = myData || makeNoPageData();
+
 
   // Add users on the new page, to the global users-by-id map.
   _.each(newUsers, (user: BriefUser) => {
@@ -1387,7 +1394,7 @@ function notf_toWatchbarTopic(notf: Notification): WatchbarTopic {
   return {
     pageId: notf.pageId,
     title: notf.pageTitle,
-    // url?: string;
+    type: null, // COULD specify notf.pageType, but currently not used, only Forum matters [5KWQB42]
     unread: true,
     // We don't know about these two, info currently not included in the json: [4Y2KF8S]
     notfsToMe: 1,
@@ -1467,11 +1474,12 @@ function addLocalStorageDataTo(me: Myself) {
 
   // The watchbar: Recent topics.
   if (me_isStranger(me)) {
+    const page: Page = store.currentPage;
     const recentTopics = loadRecentWatchbarTopicsFromSessionStorage();
-    if (shallAddCurrentPageToSessionStorageWatchbar(recentTopics)) {
+    if (page && shallAddCurrentPageToSessionStorageWatchbar(recentTopics)) {
       recentTopics.unshift({
-        pageId: store.currentPageId,
-        url: location.pathname,
+        pageId: page.pageId,
+        type: page.pageRole,
         title: ReactStore.getPageTitle(),
       });
       putInSessionStorage('recentWatchbarTopics', recentTopics);

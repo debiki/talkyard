@@ -120,8 +120,8 @@ case class WatchbarWithTitles(
     val titleEtc = titlesEtcById.getOrElse(topic.pageId, NoTitleEtc)
     Json.obj(
       "pageId" -> topic.pageId,
-      "url" -> "", // ?
       "title" ->  titleEtc.title,
+      "type" -> titleEtc.role.toInt,
       "private" -> false,
       "numMembers" -> 0,
       "unread" -> topic.unread)
@@ -161,6 +161,10 @@ case class BareWatchbar(
         // section already.)
         this
       }
+      else if (isInNotRecentSection(pageMeta.pageId)) {
+        // Then it won't be shown in the Recent section anyway. Don't remove anything from Recent.
+        this
+      }
       else {
         copy(recentTopics = placeFirstMarkSeen(pageMeta, recentTopics))
       }
@@ -168,6 +172,14 @@ case class BareWatchbar(
     val newWatchbar = watchbarWithTopic.markPageAsSeen(pageId)
     if (newWatchbar != this) Some(newWatchbar)
     else None
+  }
+
+
+  def isInNotRecentSection(pageId: PageId): Boolean = {
+    if (notifications.exists(_.pageId == pageId)) return true
+    if (chatChannels.exists(_.pageId == pageId)) return true
+    if (directMessages.exists(_.pageId == pageId)) return true
+    false
   }
 
 

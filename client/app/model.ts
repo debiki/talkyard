@@ -489,11 +489,10 @@ enum WatchbarSection {
 interface WatchbarTopic {
   pageId: PageId;
   title: string;
-  url?: string;
+  type: PageRole,
   unread?: boolean;
   notfsToMe?: number;
   notfsToMany?: number;
-  // pageType: PageRole;  // [4KW0Y2] add later
 }
 
 
