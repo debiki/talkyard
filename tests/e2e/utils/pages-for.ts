@@ -277,6 +277,29 @@ function pagesFor(browser) {
         browser.waitForVisible('.esMyMenu');
       },
 
+      clickBack: function() {
+        browser.rememberCurrentUrl();
+        browser.waitAndClick('.esTopbar_custom_backToSite');
+        browser.waitForNewUrl();
+      },
+
+      clickHome: function() {
+        if (browser.isVisible('.esLegal_home_link')) {
+          browser.rememberCurrentUrl();
+          browser.click('.esLegal_home_link')
+          browser.waitForNewUrl();
+        }
+        else {
+          api.topbar.clickAncestor("Home");
+        }
+      },
+
+      clickAncestor: function(categoryName: string) {
+        browser.rememberCurrentUrl();
+        browser.waitForThenClickText('.esTopbar_ancestors_link', categoryName);
+        browser.waitForNewUrl();
+      },
+
       assertMyUsernameMatches: function(username: string) {
         browser.assertTextMatches('.esMyMenu .esAvtrName_name', username);
       },
@@ -943,7 +966,9 @@ function pagesFor(browser) {
       },
 
       openAboutAuthorDialog: function() {
-        browser.waitAndClick('.dw-ar-p-hd .esP_By');
+        const selector = '.dw-ar-p-hd .esP_By';
+        browser.waitForVisible(selector);
+        api.topic.clickPostActionButton(selector);
         browser.waitForVisible('.esUsrDlg');
       },
 
@@ -989,6 +1014,10 @@ function pagesFor(browser) {
         api.waitAndClick('#e2eViewTopicsB');
       },
 
+      clickViewNew: function() {
+        api.waitAndClick('#e_SortNewB');
+      },
+
       clickCreateCategory: function() {
         api.waitAndClick('#e2eCreateCategoryB');
       },
@@ -1031,6 +1060,10 @@ function pagesFor(browser) {
         browser.waitForVisible('.s_F_SI_TopB');
       },
 
+      openAboutUserDialogForUsername: function(username: string) {
+        browser.waitAndClickFirst(`.edAvtr[title^="${username}"]`);
+      },
+
       goToTopic: function(title: string) {
         browser.rememberCurrentUrl();
         browser.waitForThenClickText(api.forumTopicList.titleSelector, title);
@@ -1040,6 +1073,22 @@ function pagesFor(browser) {
 
       assertNumVisible: function(howMany: number) {
         browser.assertExactly(howMany, '.e2eTopicTitle');
+      },
+
+      assertTopicTitlesAreAndOrder: function(titles: string[]) {
+        console.log('Not tested: assertTopicTitlesAreAndOrder');
+        const els = <any> browser.$$(api.forumTopicList.titleSelector);
+        for (let i = 0; i < titles.length; ++i) {
+          const titleShouldBe = titles[i];
+          const actualTitleElem = els[i];
+          if (actualTitleElem) {
+            assert(false, `Title nr ${i} missing, should be: "${titleShouldBe}"`);
+          }
+          const actualTitle = actualTitleElem.getText();
+          if (titleShouldBe !== actualTitle) {
+            assert(false, `Title nr ${i} is: "${actualTitle}", should be: "${titleShouldBe}"`);
+          }
+        }
       },
 
       assertTopicVisible: function(title) {
@@ -1528,7 +1577,7 @@ function pagesFor(browser) {
             api.topic._isBodyVisible(postNr);
       },
 
-      clickPostActionButton: function(buttonSelector: string) {
+      clickPostActionButton: function(buttonSelector: string) {   // RENAME to scrollAndClick?
         // If the button is close to the bottom of the window, the fixed bottom bar might
         // be above it; then, if it's below the [Scroll][Back] buttons, it won't be clickable.
         // Or the button might be below the lower window edge.
@@ -1699,6 +1748,10 @@ function pagesFor(browser) {
     userProfilePage: {
       avatarAboutButtonsSelector: '.s_UP_AvtrAboutBtns',
 
+      waitForName: function() {
+        browser.waitForVisible('.esUP_Un');
+      },
+
       openActivityFor: function(who: string, origin?: string) {
         browser.go((origin || '') + `/-/users/${who}/activity/posts`);
       },
@@ -1770,8 +1823,10 @@ function pagesFor(browser) {
 
         switchToTopics: function(opts: { shallFindTopics: boolean }) {
           browser.waitAndClick('.s_UP_Act_Nav_TopicsB');
+          /*
           api.toGoogleAndBack(); // [E2EBUG] otherwise waitForVisible() on the next line hangs,
                                  // although this returns true: browser.isVisible('.s_UP_Act_Ts');
+           */
           browser.waitForVisible('.s_UP_Act_Ts');
           if (opts.shallFindTopics) {
             browser.waitForVisible('.e2eTopicTitle');

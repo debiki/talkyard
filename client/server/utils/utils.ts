@@ -7,6 +7,10 @@ export function putInLocalStorage(key, value) {
   throw new Error('putInLocalStorage called server side [DwE902D3]');
 }
 
+export function putInSessionStorage(key, value) {
+  throw new Error('putInSessionStorage called server side [EdE2WKB7Z]');
+}
+
 export function getFromLocalStorage(key): string {
   return null;
 }

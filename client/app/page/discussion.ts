@@ -394,7 +394,7 @@ export const Title = createComponent({
 
     // Make forum titles link back to the forum default view.
     if (page.pageRole === PageRole.Forum) {
-      titleText = r.a({ href: page.pagePath.value }, titleText);
+      titleText = Link({ to: page.pagePath.value }, titleText);
     }
 
     let anyShowForumInroBtn;

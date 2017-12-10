@@ -1315,9 +1315,14 @@ function showNewPage(newPage: Page, newUsers: BriefUser[], myData: MyPageData | 
   // COULD_OPTIMIZE AVOID_RERENDER But history.replace triggers a re-render immediately :-(
   // no way to avoid that? And instead merge with the emit(ChangeEvent) above?
   const pagePath = newPage.pagePath.value;
+  let correctedUrl;
   if (pagePath && pagePath !== location.pathname) {
-    history.replace(pagePath + location.search + location.hash);
+    correctedUrl = pagePath + location.search + location.hash;
+    history.replace(correctedUrl);
   }
+
+  // Make Back button work properly.
+  debiki2.rememberBackUrl(correctedUrl || location.toString());
 
   // Restart the reading progress tracker, now when on a new page.
   page.PostsReadTracker.reset();

@@ -1,4 +1,4 @@
-/// <reference path="../../client/app/model.ts"/>
+//xx <reference path="../../client/app/model.ts"/>
 /// <reference path="../../client/app/constants.ts" />
 
 // This results in a weird outside-the-project error:

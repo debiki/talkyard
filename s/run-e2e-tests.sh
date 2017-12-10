@@ -80,6 +80,9 @@ function runAllEndToEndTests {
   runEndToEndTest s/wdio target/e2e/wdio.2chrome.conf.js    --browser $browser --only create-site-admin-guide.2browsers $args
   runEndToEndTest s/wdio target/e2e/wdio.conf.js            --browser $browser --only oauth-signup-login $args
 
+  runEndToEndTest s/wdio target/e2e/wdio.conf.js            --browser $browser --only navigation-as-stranger $args
+  runEndToEndTest s/wdio target/e2e/wdio.conf.js            --browser $browser --only navigation-as-member $args
+
   runEndToEndTest s/wdio target/e2e/wdio.conf.js            --browser $browser --only votes-and-best-first $args
 
   runEndToEndTest s/wdio target/e2e/wdio.conf.js            --browser $browser --only editor-onebox $args

@@ -105,6 +105,16 @@ export function linkToAboutPage(): string {
 }
 
 
+export function rememberBackUrl(url: string) {
+  // Skip API pages — those are the ones we're returning *from*. (Don't require === 0 match;
+  // there might be a hostname.)
+  if (url.search(ApiUrlPathPrefix) >= 0) {
+    return;
+  }
+  debiki2.putInSessionStorage('returnToSiteUrl', url);
+}
+
+
 /**
  * Navigates back to the page that the user viewed before s/he entered the admin or
  * about-user area, or to the homepage ('/') if there's no previous page.

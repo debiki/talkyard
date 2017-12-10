@@ -281,6 +281,7 @@ class ImportExportController @Inject()(cc: ControllerComponents, edContext: EdCo
       siteData.posts foreach { post =>
         //val newId = transaction.nextPostId()
         transaction.insertPost(post)
+        // [readlater] Index post too; insert it into the index queue. And update this test: [2WBKP05].
       }
       siteData.permsOnPages foreach { permission =>
         transaction.insertPermsOnPages(permission)

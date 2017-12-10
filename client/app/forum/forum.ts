@@ -16,6 +16,7 @@
  */
 
 /// <reference path="../prelude.ts" />
+/// <reference path="../links.ts" />
 /// <reference path="../utils/react-utils.ts" />
 /// <reference path="../utils/utils.ts" />
 /// <reference path="../utils/window-zoom-resize-mixin.ts" />
@@ -790,6 +791,10 @@ const LoadAndListTopics = createFactory({
   componentWillReceiveProps: function(nextProps) {
     // This happens when switching category or showing top topics instead of latest topics.
     this.loadTopics(nextProps, false);
+  },
+
+  componentDidUpdate: function() {
+    rememberBackUrl(location.toString());
   },
 
   componentWillUnmount: function() {

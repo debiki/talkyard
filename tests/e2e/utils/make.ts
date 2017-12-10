@@ -250,7 +250,7 @@ const make = {
   },
 
   page: function(values: PageToMake): Page {
-    return {
+    return <any> {
       id: values.id,
       role: values.role,
       categoryId: values.categoryId,
