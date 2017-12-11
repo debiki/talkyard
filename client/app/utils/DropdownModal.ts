@@ -114,8 +114,13 @@ export const DropdownModal = createComponent({
 
   componentDidMount: function() {
     Server.loadMoreScriptsBundle(() => {
+      if (this.isGone) return;
       this.setState({ moreBundleLoaded: true });
     })
+  },
+
+  componentWillUnmount: function() {
+    this.isGone = true;
   },
 
   componentDidUpdate: function() {
@@ -123,7 +128,7 @@ export const DropdownModal = createComponent({
     // fires before the browser has done that — because without setTimeout(_, 0), the dialog
     // can become too small.
     setTimeout(() => {
-      if (!this.props.show || !this.refs.content)
+      if (!this.props.show || !this.refs.content || this.isGone)
         return;
       const content = this.refs.content;
       const rect = cloneRect(content.getBoundingClientRect());

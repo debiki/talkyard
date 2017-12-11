@@ -20,7 +20,6 @@
 /// <reference path="../utils/react-utils.ts" />
 /// <reference path="../utils/utils.ts" />
 /// <reference path="../utils/window-zoom-resize-mixin.ts" />
-/// <reference path="../utils/DropdownModal.ts" />
 /// <reference path="../util/ExplainingDropdown.ts" />
 /// <reference path="../Server.ts" />
 /// <reference path="../ServerApi.ts" />
@@ -35,7 +34,6 @@
 //------------------------------------------------------------------------------
 
 const r = ReactDOMFactories;
-const DropdownModal = utils.DropdownModal;
 const ModalDropdownButton = utils.ModalDropdownButton;
 const ExplainingListItem = util.ExplainingListItem;
 type ExplainingTitleText = util.ExplainingTitleText;
@@ -314,6 +312,7 @@ const ForumIntroText = createComponent({
 });
 
 
+const wideMinWidth = 801;
 
 const ForumButtons = createComponent({
   displayName: 'ForumButtons',
@@ -321,17 +320,7 @@ const ForumButtons = createComponent({
 
   getInitialState: function() {
     return {
-      compact: false,
-      // [refactor] use ModalDropdownButton instead of all these 3 x open/X/Y fields.
-      isCategoryDropdownOpen: false,
-      categoryDropdownX: -1,
-      categoryDropdownY: -1,
-      isSortOrderDropdownOpen: false,
-      sortOrderDropdownX: -1,
-      sortOrderDropdownY: -1,
-      isTopicFilterDropdownOpen: false,
-      topicFilterX: -1,
-      topicFilterY: -1,
+      compact: window.innerWidth < wideMinWidth,
     };
   },
 
@@ -340,25 +329,14 @@ const ForumButtons = createComponent({
   },
 
   onWindowZoomOrResize: function() {
-    const newCompact = window.innerWidth < 801;
+    const newCompact = window.innerWidth < wideMinWidth;
     if (this.state.compact !== newCompact) {
       this.setState({ compact: newCompact });
     }
   },
 
-  openCategoryDropdown: function() {
-    const rect = ReactDOM.findDOMNode(this.refs.selectCategoryButton).getBoundingClientRect();
-    this.setState({ isCategoryDropdownOpen: true, categoryDropdownX: rect.left,
-        categoryDropdownY: rect.bottom });
-  },
-
-  closeCategoryDropdown: function() {
-    this.setState({ isCategoryDropdownOpen: false });
-  },
-
   setCategory: function(newCategorySlug) {
     const store: Store = this.props.store;
-    this.closeCategoryDropdown();
     const currentPath = this.props.sortOrderRoute;
     const nextPath = currentPath === RoutePathCategories ? RoutePathLatest : currentPath;
     const slashSlug = newCategorySlug ? '/' + newCategorySlug : '';
@@ -375,19 +353,8 @@ const ForumButtons = createComponent({
     });
   },
 
-  openSortOrderDropdown: function() {
-    const rect = ReactDOM.findDOMNode(this.refs.sortOrderButton).getBoundingClientRect();
-    this.setState({ isSortOrderDropdownOpen: true, sortOrderDropdownX: rect.left,
-        sortOrderDropdownY: rect.bottom });
-  },
-
-  closeSortOrderDropdown: function() {
-    this.setState({ isSortOrderDropdownOpen: false });
-  },
-
   setSortOrder: function(newPath: string) {
     const store: Store = this.props.store;
-    this.closeSortOrderDropdown();
     this.props.history.push({
       pathname: store.forumPath + newPath + this.slashCategorySlug(),
       search: this.props.location.search,
@@ -420,21 +387,10 @@ const ForumButtons = createComponent({
     else {
       newQuery.filter = entry.eventKey;
     }
-    this.closeTopicFilterDropdown();
     this.props.history.push({
       pathname: this.props.location.pathname,
       search: stringifyQueryString(newQuery),
     });
-  },
-
-  openTopicFilterDropdown: function() {
-    const rect = ReactDOM.findDOMNode(this.refs.topicFilterButton).getBoundingClientRect();
-    this.setState({ isTopicFilterDropdownOpen: true, topicFilterX: rect.left,
-        topicFilterY: rect.bottom });
-  },
-
-  closeTopicFilterDropdown: function() {
-    this.setState({ isTopicFilterDropdownOpen: false });
   },
 
   /* If using a filter dropdown + full search text field like GitHub does:
@@ -566,37 +522,22 @@ const ForumButtons = createComponent({
         MenuItem({ key: -1, active: listsTopicsInAllCats,
           onClick: () => this.setCategory('') }, "All categories"));
 
-    // [refactor] use ModalDropdownButton instead
     let categoriesDropdownButton = omitCategoryStuff ? null :
-        Button({ onClick: this.openCategoryDropdown,
-            className: 'esForum_catsNav_btn esForum_catsDrop active',
-            ref: 'selectCategoryButton' },
-          activeCategory.name + ' ', r.span({ className: 'caret' }));
-
-    const categoriesDropdownModal =
-        DropdownModal({ show: state.isCategoryDropdownOpen, pullLeft: true,
-            onHide: this.closeCategoryDropdown, atX: state.categoryDropdownX,
-            atY: state.categoryDropdownY },
+        ModalDropdownButton({ className: 'esForum_catsNav_btn esForum_catsDrop active', pullLeft: true,
+            title: rFragment({}, activeCategory.name + ' ', r.span({ className: 'caret' })) },
           r.ul({ className: 'dropdown-menu' },
-            categoryMenuItems));
+              categoryMenuItems));
 
     // The Latest/Top/Categories buttons, but use a dropdown if there's not enough space.
     const currentSortOrderPath = this.props.sortOrderRoute;
     let latestNewTopButton;
-    let latestNewTopDropdownModal;
     if (showsCategoryTree) {
-      // Then hide the sort topics buttons.
+      // Then hide the sort order buttons.
     }
     else if (state.compact) {
-      // [refactor] use ModalDropdownButton instead
       latestNewTopButton =
-          Button({ onClick: this.openSortOrderDropdown, ref: 'sortOrderButton',
-              className: 'esForum_catsNav_btn esF_BB_SortBtn' },
-            this.getSortOrderName() + ' ', r.span({ className: 'caret' }));
-      latestNewTopDropdownModal =
-        DropdownModal({ show: state.isSortOrderDropdownOpen, pullLeft: true,
-            onHide: this.closeSortOrderDropdown, atX: state.sortOrderDropdownX,
-            atY: state.sortOrderDropdownY },
+          ModalDropdownButton({ className: 'esForum_catsNav_btn esF_BB_SortBtn', pullLeft: true,
+            title: rFragment({}, this.getSortOrderName() + ' ', r.span({ className: 'caret' })) },
           r.ul({},
             ExplainingListItem({ onClick: () => this.setSortOrder(RoutePathLatest),
                 active: currentSortOrderPath === RoutePathLatest,
@@ -637,22 +578,16 @@ const ForumButtons = createComponent({
       die('EsE4JK85');
     }
 
-    // [refactor] use ModalDropdownButton instead
-    const topicFilterButton = !showFilterButton ? null :
-      Button({ onClick: this.openTopicFilterDropdown,
-          className: 'esForum_filterBtn esForum_catsNav_btn', ref: 'topicFilterButton' },
-        makeTopicFilterText(topicFilterValue) + ' ', r.span({ className: 'caret' }));
-
     const showDeletedFilterItem = !isStaff(me) || !showFilterButton ? null :
       ExplainingListItem({ onSelect: this.setTopicFilter,
         activeEventKey: topicFilterValue, eventKey: FilterShowDeleted,
         title: makeTopicFilterText(FilterShowDeleted),
         text: "Shows all topics, including deleted topics" });
 
-    const topicFilterDropdownModal = !showFilterButton ? null :
-      DropdownModal({ show: state.isTopicFilterDropdownOpen, pullLeft: true,
-          onHide: this.closeTopicFilterDropdown, atX: state.topicFilterX,
-          atY: state.topicFilterY },
+    const topicFilterButton = !showFilterButton ? null :
+      ModalDropdownButton({ className: 'esForum_filterBtn esForum_catsNav_btn', pullLeft: true,
+          title: rFragment({},
+            makeTopicFilterText(topicFilterValue) + ' ', r.span({ className: 'caret' })) },
         r.ul({},
           ExplainingListItem({ onSelect: this.setTopicFilter,
               activeEventKey: topicFilterValue, eventKey: FilterShowAll,
@@ -714,11 +649,8 @@ const ForumButtons = createComponent({
           r.div({ className: 'esForum_catsNav' },
             anyPageTitle,
             categoriesDropdownButton,
-            categoriesDropdownModal,
             latestNewTopButton,
-            latestNewTopDropdownModal,
             topicFilterButton,
-            topicFilterDropdownModal,
             categoryTreeLink,
             topicListLink),
           createTopicBtn,

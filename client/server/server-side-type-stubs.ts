@@ -5,8 +5,6 @@
 // so unless they're declared here the TypeScript compiler complains.
 
 
-declare var debiki: any;
-
 declare module debiki2 {
     var ReactActions: any;
     var ReactStore: any;
