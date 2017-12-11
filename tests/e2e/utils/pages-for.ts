@@ -1469,6 +1469,11 @@ function pagesFor(browser) {
         browser.waitUntilModalGone();
       },
 
+      canVoteLike: function(postNr: PostNr) {
+        const likeVoteSelector = `#post-${postNr} + .esPA .dw-a-like`;  // dupl (4GKWSG02)
+        return browser.isVisible(likeVoteSelector);
+      },
+
       canVoteUnwanted: function(postNr: PostNr) {
         api.topic.clickMoreVotesForPostNr(postNr);
         browser.waitForVisible('.esDropModal_content .dw-a-like');
