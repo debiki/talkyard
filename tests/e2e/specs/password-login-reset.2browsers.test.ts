@@ -90,7 +90,7 @@ describe("private chat", function() {
   var resetPwdPageLink;
 
   it("... he gets a reset-pwd email with a choose-new-password page link", function() {
-    var email = server.getLastEmailSenTo(idAddress.id, michael.emailAddress);
+    var email = server.getLastEmailSenTo(idAddress.id, michael.emailAddress, michael);
     resetPwdPageLink = utils.findFirstLinkToUrlIn(
       idAddress.origin + '/-/reset-password/choose-password/', email.bodyHtmlText);
   });

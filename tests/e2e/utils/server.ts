@@ -131,15 +131,20 @@ function playTimeHours(hours: number) { playTimeSeconds(hours * 3600); }
 function playTimeDays(days: number) { playTimeSeconds(days * 3600 * 24); }
 
 
-function getLastEmailSenTo(siteId: SiteId, email: string, browser?): EmailSubjectBody {
-  for (let attemptNr = 1; attemptNr <= settings.waitforTimeout / 500; ++attemptNr) {  // (5JKWDSR9)
+function getLastEmailSenTo(siteId: SiteId, email: string, browser): EmailSubjectBody | null {
+  for (let attemptNr = 1; attemptNr <= settings.waitforTimeout / 500; ++attemptNr) {
     const response = getOrDie(settings.mainSiteOrigin + '/-/last-e2e-test-email?sentTo=' + email +
       '&siteId=' + siteId);
     const lastEmails = JSON.parse(response.body);
     if (lastEmails.length)
       return lastEmails[lastEmails.length - 1];
-    if (browser)
+    // Internal functions can pass null, if they pause themselves.
+    if (browser) {
       browser.pause(500 - 100); // 100 ms for a request, perhaps?
+    }
+    else {
+      return null;
+    }
   }
   die(`Timeout in getLastEmailSenTo, address: ${email} [EdE5JSRWG0]`)
 }
@@ -164,7 +169,7 @@ function getLastVerifyEmailAddressLinkEmailedTo(siteId: SiteId, emailAddress: st
 
 const unsubUrlRegexString = 'https?://.*/-/unsubscribe';
 
-function getLastUnsubscriptionLinkEmailedTo(siteId: SiteId, emailAddress: string, browser?): string {
+function getLastUnsubscriptionLinkEmailedTo(siteId: SiteId, emailAddress: string, browser): string {
   const email = getLastEmailSenTo(siteId, emailAddress, browser);
   return utils.findFirstLinkToUrlIn(unsubUrlRegexString, email.bodyHtmlText);
 }
@@ -177,10 +182,9 @@ function getAnyUnsubscriptionLinkEmailedTo(siteId: SiteId, emailAddress: string,
 
 
 function waitForUnsubscriptionLinkEmailedTo(siteId: SiteId, emailAddress: string, browser): string {
-  // COULD check wall clock time instead, so won't multiply with timeout in getLastEmailSenTo. (5JKWDSR9)
   for (let attemptNr = 1; attemptNr <= settings.waitforTimeout / 500; ++attemptNr) {
-    const email = getLastEmailSenTo(siteId, emailAddress);
-    const link = utils.findAnyFirstLinkToUrlIn(unsubUrlRegexString, email.bodyHtmlText);
+    const email = getLastEmailSenTo(siteId, emailAddress, null);
+    const link = !email ? null : utils.findAnyFirstLinkToUrlIn(unsubUrlRegexString, email.bodyHtmlText);
     if (!link)
       browser.pause(500 - 100); // 100 ms for a request, perhaps?
     else
@@ -194,28 +198,27 @@ function waitUntilLastEmailMatches(siteId: SiteId, emailAddress: string,
   const textsToMatch: string[] =
       _.isString(textOrTextsToMatch) ? [textOrTextsToMatch] : textOrTextsToMatch;
   const regexs = textsToMatch.map(text => new RegExp(utils.regexEscapeSlashes(text)));
-  let failures: string[];
-  // COULD check wall clock time instead, so won't multiply with timeout in getLastEmailSenTo. (5JKWDSR9)
+  let misses: string[];
   for (let attemptNr = 1; attemptNr <= settings.waitforTimeout / 500; ++attemptNr) {
-    const email = getLastEmailSenTo(siteId, emailAddress);
-    failures = [];
+    const email = getLastEmailSenTo(siteId, emailAddress, null);
+    misses = [];
     let matchingStrings: string[] = [];
     for (let i = 0; i < regexs.length; ++i) {
       const regex = regexs[i];
-      const matches = email.bodyHtmlText.match(regex);
+      const matches = !email ? null : email.bodyHtmlText.match(regex);
       if (matches) {
         matchingStrings.push(matches[0]);
       }
       else {
-        failures.push(textsToMatch[i]);
+        misses.push(textsToMatch[i]);
       }
     }
-    if (!failures.length)
+    if (!misses.length)
       return _.isString(textOrTextsToMatch) ? matchingStrings[0] : matchingStrings;
     browser.pause(500 - 100);
   }
-  const failuresString = failures.join(', ');
-  die(`Never got any email to ${emailAddress} matching ${failuresString} [EdE5JGK2Q1]`);
+  const missesString = misses.join(', ');
+  die(`Never got any email to ${emailAddress} matching ${missesString} [EdE5JGK2Q1]`);
 }
 
 
@@ -224,7 +227,7 @@ function lastEmailMatches(siteId: SiteId, emailAddress: string,
   const textsToMatch: string[] =
     _.isString(textOrTextsToMatch) ? [textOrTextsToMatch] : textOrTextsToMatch;
   const regexs = textsToMatch.map(text => new RegExp(utils.regexEscapeSlashes(text)));
-  const email = getLastEmailSenTo(siteId, emailAddress);
+  const email = getLastEmailSenTo(siteId, emailAddress, browser);
   for (let i = 0; i < regexs.length; ++i) {
     const regex = regexs[i];
     const matches = email.bodyHtmlText.match(regex);

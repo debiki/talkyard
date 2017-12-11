@@ -13,7 +13,7 @@
     "node": ">= 0.8.0"
   },
   "resolutions": {
-    "@types/react": "16.0.27",
+    "@types/react": "16.0.28",
     "prop-types": "15.6.0"
   },
   "dependencies": {
@@ -70,14 +70,14 @@
     "lodash-cli": "^4.16.1",
     "minimist": "^1.2.0",
     "request": "^2.64.0",
-    "selenium-standalone": "^6.9.0",
+    "selenium-standalone": "^6.12.0",
     "sync-request": "^4.0.1",
     "tape": "^4.6.3",
     "typescript": "^2.6.1",
     "wdio-dot-reporter": "^0.0.9",
-    "wdio-mocha-framework": "^0.5.11",
-    "wdio-sync": "^0.7.0",
-    "webdriverio": "^4.9.9"
+    "wdio-mocha-framework": "^0.5.12",
+    "wdio-sync": "^0.7.1",
+    "webdriverio": "^4.9.11"
   },
   "greenkeeper": {
     "ignore": [

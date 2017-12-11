@@ -75,6 +75,7 @@ site_nr=0
 function runAllEndToEndTests {
   browser=$1
   echo "Running all end-to-end tests in $browser..."
+
   runEndToEndTest s/wdio target/e2e/wdio.conf.js            --browser $browser --only all-links $args
   runEndToEndTest s/wdio target/e2e/wdio.conf.js            --browser $browser --only create-site-all-logins $args
   runEndToEndTest s/wdio target/e2e/wdio.2chrome.conf.js    --browser $browser --only create-site-admin-guide.2browsers $args

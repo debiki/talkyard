@@ -49,7 +49,7 @@ describe('/-/create-site  @createsite', () => {
     browser.click('#e2eLogin');
     pages.loginDialog.createPasswordAccount(data, true);
     const siteId = pages.getSiteId();
-    const email = server.getLastEmailSenTo(siteId, data.email);
+    const email = server.getLastEmailSenTo(siteId, data.email, browser);
     const link = utils.findFirstLinkToUrlIn(
         data.origin + '/-/login-password-confirm-email', email.bodyHtmlText);
     browser.go(link);

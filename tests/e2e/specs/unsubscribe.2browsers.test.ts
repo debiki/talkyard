@@ -97,7 +97,7 @@ describe("unsubscribe", () => {
   // the following would time out and make this test fail randomly. [5KF0WU2T4]
 
   it("The server sent reply notf email to Owen. He clicks unsub link, but waits w clicking unsub button", () => {
-    const unsubLink = server.getLastUnsubscriptionLinkEmailedTo(idAddress.id, owen.emailAddress);
+    const unsubLink = server.getLastUnsubscriptionLinkEmailedTo(idAddress.id, owen.emailAddress, owen);
     owen.go(unsubLink);
   });
 
@@ -122,7 +122,7 @@ describe("unsubscribe", () => {
   it("Owen gets a 2nd reply notf email — it arrives, although ...", () => {
     server.waitUntilLastEmailMatches(idAddress.id, owen.emailAddress, 'gröt_med_gurka', browser);
     owensLastUnsubLink =
-        server.getLastUnsubscriptionLinkEmailedTo(idAddress.id, owen.emailAddress);
+        server.getLastUnsubscriptionLinkEmailedTo(idAddress.id, owen.emailAddress, owen);
   });
 
   it("... no reply notf email sent to the guest, because hen hasn't clicked email-verif-link", () => {
@@ -196,7 +196,7 @@ describe("unsubscribe", () => {
   });
 
   it("Maria gets a notf email", () => {
-    let url = server.getLastUnsubscriptionLinkEmailedTo(idAddress.id, maria.emailAddress);
+    let url = server.getLastUnsubscriptionLinkEmailedTo(idAddress.id, maria.emailAddress, maria);
     assert(!!url);
   });
 
@@ -204,14 +204,14 @@ describe("unsubscribe", () => {
   // because the replies to Owen and the guest, were posted before the reply to Maria.
 
   it("Owen gets no more emails", () => {
-    let url = server.getLastUnsubscriptionLinkEmailedTo(idAddress.id, owen.emailAddress);
+    let url = server.getLastUnsubscriptionLinkEmailedTo(idAddress.id, owen.emailAddress, owen);
     assert(url === owensLastUnsubLink, "Owen got a *new* unsubscription email:\n" +
         `  First unsub url: ${owensLastUnsubLink}\n` +
         `  Last unsub url: ${url}`);
   });
 
   it("The guest also gets no more emails", () => {
-    let url = server.getLastUnsubscriptionLinkEmailedTo(idAddress.id, guestEmail);
+    let url = server.getLastUnsubscriptionLinkEmailedTo(idAddress.id, guestEmail, guest);
     assert(url === guestsUnsubscribeLink, "The guest got a *new* unsubscription email");
   });
 

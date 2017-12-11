@@ -82,7 +82,7 @@ describe("embedded comments, new site", () => {
     owensBrowser.click('#e2eLogin');
     owensBrowser.loginDialog.createPasswordAccount(data, true);
     const siteId = owensBrowser.getSiteId();
-    const email = server.getLastEmailSenTo(siteId, data.email);
+    const email = server.getLastEmailSenTo(siteId, data.email, owensBrowser);
     const link = utils.findFirstLinkToUrlIn(
         data.origin + '/-/login-password-confirm-email', email.bodyHtmlText);
     owensBrowser.go(link);
@@ -133,7 +133,7 @@ ${htmlToPaste}
 
   it("... verifies her email", () => {
     const siteId = owensBrowser.getSiteId();
-    const email = server.getLastEmailSenTo(siteId, maria.emailAddress);
+    const email = server.getLastEmailSenTo(siteId, maria.emailAddress, owensBrowser);
     const link = utils.findFirstLinkToUrlIn(
         data.origin + '/-/login-password-confirm-email', email.bodyHtmlText);
     mariasBrowser.go(link);
