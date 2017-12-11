@@ -15,7 +15,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/// <reference path="../plain-old-javascript.d.ts" />
 /// <reference path="../ReactStore.ts" />
 
 /**
@@ -30,9 +29,6 @@
 //------------------------------------------------------------------------------
    namespace debiki2.page.PostsReadTracker {
 //------------------------------------------------------------------------------
-
-let d = { i: debiki.internal, u: debiki.v0.util };
-let $: any = d.i.$;
 
 // @ifdef DEBUG
 let debug = location.hash.match("debug=(t|true|all|trackReadingActivity)");

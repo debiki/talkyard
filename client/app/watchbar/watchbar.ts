@@ -16,7 +16,6 @@
  */
 
 /// <reference path="../../typedefs/keymaster/keymaster.d.ts" />
-/// <reference path="../plain-old-javascript.d.ts" />
 /// <reference path="../ReactStore.ts" />
 /// <reference path="../help/help.ts" />
 /// <reference path="../store-getters.ts" />

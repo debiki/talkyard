@@ -2,7 +2,38 @@
 
 // The variables declared here are initialized in a certain <head><script>.  [5JWKA27]
 
-declare namespace ed {
-  const embeddingOrigin: string;
+declare namespace eds {
+  const siteId: number;
+  const secure: boolean;
+  const isDev: boolean;
+
+  const minMaxJs: boolean;
+  const serverOrigin: boolean;
+  const assetUrlPrefix: string;
+  const uploadsUrlPrefix: string;
+
+  const currentVersion: string;
+  const cachedVersion: string;
+
+  const pageDataFromServer: any;
+  const volatileDataFromServer: any;
+
+  const isInLoginWindow: boolean;
+  const isInLoginPopup: boolean;
+  const isInIframe: boolean;
+
+  // For embedded comments.
+  const isInEmbeddedCommentsIframe: boolean;
+  const isInEmbeddedEditor: boolean;
+  const embeddingOrigin: string | undefined;
+  const embeddingUrl: string | undefined;
+  const embeddedPageAltId: string | undefined;
+  // Sometimes lazy-inited when the page gets lazy-created, when the first reply is posted. [4HKW28]
+  let embeddedPageId: string | undefined;
+
+  // When creating new site.
+  const baseDomain: string | undefined;
 }
 
+// Old:
+declare const debiki: any;

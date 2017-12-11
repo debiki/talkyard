@@ -43,7 +43,7 @@ export function store_thisIsMyPage(store: Store): boolean {
 export function store_getAuthorOrMissing(store: Store, post: Post): BriefUser {
   var user = store_getUserOrMissing(store, post.authorId, false);
   if (user.isMissing) logError("Author " + post.authorId + " missing, page: " +
-      debiki.pageId + ", post nr: " + post.nr + " [EsE6TK2R0]");
+      store.currentPageId + ", post nr: " + post.nr + " [EsE6TK2R0]");
   return user;
 }
 
@@ -51,7 +51,7 @@ export function store_getAuthorOrMissing(store: Store, post: Post): BriefUser {
 export function store_getUserOrMissing(store: Store, userId: UserId, errorCode2): BriefUser {
   var user = store.usersByIdBrief[userId];
   if (!user) {
-    if (errorCode2) logError("User " + userId + " missing, page: " + debiki.pageId +
+    if (errorCode2) logError("User " + userId + " missing, page: " + store.currentPageId +
         ' [EsE38GT2R-' + errorCode2 + ']');
     return {
       id: userId,

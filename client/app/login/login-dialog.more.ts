@@ -15,7 +15,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/// <reference path="../plain-old-javascript.d.ts" />
 /// <reference path="../slim-bundle.d.ts" />
 /// <reference path="../react-bootstrap-old/Input.more.ts" />
 /// <reference path="../util/FullNameInput.more.ts" />
@@ -115,7 +114,7 @@ var LoginDialog = createClassAndFactory({
   open: function(isSignUp: boolean, loginReason: LoginReason | string,
         anyReturnToUrl?: string, callback?: () => void, preventClose?: boolean) {
 
-    dieIf(d.i.isInIframe, 'Login dialog in iframe [EdE5KER2]');
+    dieIf(eds.isInIframe, 'Login dialog in iframe [EdE5KER2]');
 
     // Don't allow logging in as someone else, when impersonating someone, because it's unclear
     // what should then happen: does one stop impersonating? or not?
@@ -378,12 +377,12 @@ var OpenAuthButton = createClassAndFactory({
     // (This parameter tells the server to set a certain cookie. Setting it here
     // instead has no effect, don't know why.)
     var mayNotCreateUser = props.loginReason === 'LoginToAdministrate' ? 'mayNotCreateUser&' : '';
-    var url = d.i.serverOrigin +
+    var url = eds.serverOrigin +
         '/-/login-openauth/' + props.provider.toLowerCase() +
         '?' + mayNotCreateUser +
-        (d.i.isInLoginWindow ? '' : 'isInLoginPopup&') +
+        (eds.isInLoginWindow ? '' : 'isInLoginPopup&') +
         'returnToUrl=' + (props.anyReturnToUrl || '');
-    if (d.i.isInLoginWindow) {
+    if (eds.isInLoginWindow) {
       // Let the server know we're in a login window, so it can choose to reply with
       // complete HTML pages to show in the popup window.
       // (Use a cookie not an URL param because the cookie will be present later whe we're
@@ -409,12 +408,12 @@ var OpenAuthButton = createClassAndFactory({
  * /
 function submitOpenIdLoginForm(openidIdentifier)
   form = $("""
-    <form action="#{d.i.serverOrigin}/-/api/login-openid" method="POST">
+    <form action="#{eds.serverOrigin}/-/api/login-openid" method="POST">
       <input type="text" name="openid_identifier" value="#openidIdentifier">
     </form>
     """)
   # Submit form in a new login popup window, unless we already are in a login window.
-  if d.i.isInLoginWindow
+  if eds.isInLoginWindow
     $('body').append(form)
   else
     d.i.createOpenIdLoginPopup(form)
@@ -502,7 +501,7 @@ var PasswordLoginDialogContent = createClassAndFactory({
         PrimaryButton({ onClick: this.doLogin, id: 'e2eSubmit' },
           "Log in" + inOrderTo(this.props.loginReason)),
         r.br(),
-        r.a({ href: debiki.internal.serverOrigin + '/-/reset-password/specify-email',
+        r.a({ href: eds.serverOrigin + '/-/reset-password/specify-email',
             // Once the password has been reset, the user will be logged in automatically. Then
             // it's confusing if this dialog is still open, so close it on click. [5KWE02X]
             // UX COULD show reset-pwd input in a dialog directly here instead, don't want it

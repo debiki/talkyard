@@ -15,7 +15,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/// <reference path="../plain-old-javascript.d.ts" />
 /// <reference path="../slim-bundle.d.ts" />
 /// <reference path="../more-bundle-already-loaded.d.ts" />
 
@@ -51,7 +50,7 @@ export const listUsernamesTrigger = {
   '@': {
     dataProvider: token =>
       new Promise(function (resolve, reject) {
-        const pageId = d.i.pageId;
+        const pageId = ReactStore.getPageId();
         if (!pageId || pageId === EmptyPageId) {
           // This is an embedded comments discussion, but there are no comments, so the
           // discussion has not yet been lazy-created. So search among users, for now.
@@ -141,7 +140,7 @@ export const Editor = createComponent({
   },
 
   makeEditorResizable: function() {
-    if (d.i.isInEmbeddedEditor) {
+    if (eds.isInEmbeddedEditor) {
       // The iframe is resizable instead.
       return;
     }
@@ -479,9 +478,9 @@ export const Editor = createComponent({
       // If this is an embedded editor, for an embedded comments page, that page
       // will now have highlighted some reply button to indicate a reply is
       // being written. But that's wrong, clear those marks.
-      if (d.i.isInEmbeddedEditor) {
+      if (eds.isInEmbeddedEditor) {
         window.parent.postMessage(
-          JSON.stringify(['clearIsReplyingMarks', {}]), ed.embeddingOrigin);
+          JSON.stringify(['clearIsReplyingMarks', {}]), eds.embeddingOrigin);
       }
       else {
         d.i.clearIsReplyingMarks();
@@ -612,7 +611,7 @@ export const Editor = createComponent({
     if (this.isGone) return;
 
     // (COULD verify still edits same post/thing, or not needed?)
-    var isEditingBody = this.state.editingPostId === d.i.BodyNr;
+    var isEditingBody = this.state.editingPostId === BodyNr;
     var sanitizerOpts = {
       allowClassAndIdAttr: true, // or only if isEditingBody?
       allowDataAttr: isEditingBody
@@ -743,9 +742,9 @@ export const Editor = createComponent({
     // Cycle from 1) normal to 2) maximized & tiled vertically, to 3) maximized & tiled horizontally
     // and then back to normal.
     const newShowMaximized = !this.state.showMaximized || !this.state.splitHorizontally;
-    if (d.i.isInEmbeddedEditor && newShowMaximized !== this.state.showMaximized) {
+    if (eds.isInEmbeddedEditor && newShowMaximized !== this.state.showMaximized) {
       window.parent.postMessage(JSON.stringify(['maximizeEditor', newShowMaximized]),
-          ed.embeddingOrigin);
+          eds.embeddingOrigin);
     }
     this.setState({
       showMaximized: !this.state.showMaximized || !this.state.splitHorizontally,
@@ -762,8 +761,8 @@ export const Editor = createComponent({
 
   toggleMinimized: function() {
     const nextShowMini = !this.state.showMinimized;
-    if (d.i.isInEmbeddedEditor) {
-      window.parent.postMessage(JSON.stringify(['minimizeEditor', nextShowMini]), ed.embeddingOrigin);
+    if (eds.isInEmbeddedEditor) {
+      window.parent.postMessage(JSON.stringify(['minimizeEditor', nextShowMini]), eds.embeddingOrigin);
     }
     this.setState({ showMinimized: nextShowMini });
     if (nextShowMini) {
@@ -776,8 +775,8 @@ export const Editor = createComponent({
   showEditor: function() {
     this.makeSpaceAtBottomForEditor();
     this.setState({ visible: true });
-    if (d.i.isInEmbeddedEditor) {
-      window.parent.postMessage(JSON.stringify(['showEditor', {}]), ed.embeddingOrigin);
+    if (eds.isInEmbeddedEditor) {
+      window.parent.postMessage(JSON.stringify(['showEditor', {}]), eds.embeddingOrigin);
     }
     // After rerender, focus the input fields:
     setTimeout(() => {
@@ -811,8 +810,8 @@ export const Editor = createComponent({
       backdropOpacity: 0,
     });
     // Remove any is-replying highlights.
-    if (d.i.isInEmbeddedEditor) {
-      window.parent.postMessage(JSON.stringify(['hideEditor', {}]), ed.embeddingOrigin);
+    if (eds.isInEmbeddedEditor) {
+      window.parent.postMessage(JSON.stringify(['hideEditor', {}]), eds.embeddingOrigin);
     }
     else {
       // (Old jQuery based code.)
@@ -1120,7 +1119,7 @@ export const Editor = createComponent({
         r.div({ className: 'dw-preview-help' },
           help.HelpMessageBox({ message: previewHelpMessage }));
 
-    let editorClasses = d.i.isInEmbeddedEditor ? '' : 'editor-box-shadow';
+    let editorClasses = eds.isInEmbeddedEditor ? '' : 'editor-box-shadow';
     editorClasses += this.state.showMaximized ? ' s_E-Max' : '';
     editorClasses += this.state.splitHorizontally ? ' s_E-SplitHz' : '';
     editorClasses += this.state.showMinimized ? ' s_E-Min' : (

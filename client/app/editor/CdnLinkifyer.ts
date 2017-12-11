@@ -15,10 +15,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/// <reference path="../plain-old-javascript.d.ts" />
 
 //------------------------------------------------------------------------------
-   module ed.editor.CdnLinkifyer {
+   namespace ed.editor.CdnLinkifyer {
 //------------------------------------------------------------------------------
 
 // SECURITY regex & evil input
@@ -35,7 +34,7 @@ var uploadsRegexInTag = /(\<[^\<\>]+\s[a-z]+=['"])\/-\/(u|uploads\/public)\/([a-
 
 
 export function replaceLinks(md: any) {
-  // (Don't exit here if !debiki.uploadsUrlPrefix, because it changes "suddenly"
+  // (Don't exit here if !eds.uploadsUrlPrefix, because it changes "suddenly"
   // when rendering server side. [5YKF02])
 
   // (There's always a rules.image.)
@@ -63,9 +62,9 @@ function defaultInlineRule(tokens, idx, options, env, self) {
 
 function makeMarkdownUrlReplacerRule(attrName: string, defaultRule) {
   return function(tokens, idx, options, env, self) {
-    // (Don't test this earlier, because debiki.uploadsUrlPrefix changes "suddenly"
+    // (Don't test this earlier, because eds.uploadsUrlPrefix changes "suddenly"
     // when rendering server side. [5YKF02])
-    if (!debiki.uploadsUrlPrefix)
+    if (!eds.uploadsUrlPrefix)
       return defaultRule(tokens, idx, options, env, self);
 
     var token = tokens[idx];
@@ -74,7 +73,7 @@ function makeMarkdownUrlReplacerRule(attrName: string, defaultRule) {
       var attrNameValue = token.attrs[attrIndex];
       var matches = attrNameValue[1].match(uploadsLinkRegex);
       if (matches) {
-        attrNameValue[1] = debiki.uploadsUrlPrefix + matches[2];
+        attrNameValue[1] = eds.uploadsUrlPrefix + matches[2];
       }
     }
     return defaultRule(tokens, idx, options, env, self);
@@ -84,15 +83,15 @@ function makeMarkdownUrlReplacerRule(attrName: string, defaultRule) {
 
 function makeHtmlUrlReplacerRule(md, defaultInlineRule) {
   return function(tokens, idx, options, env, self) {
-    // (Don't test this earlier, because debiki.uploadsUrlPrefix changes "suddenly"
+    // (Don't test this earlier, because eds.uploadsUrlPrefix changes "suddenly"
     // when rendering server side. [5YKF02])
-    if (!debiki.uploadsUrlPrefix)
+    if (!eds.uploadsUrlPrefix)
       return defaultInlineRule(tokens, idx, options, env, self);
 
     // Inside an html tag, replace any /-/u/... (uploads) match with the CDN address.
     var token = tokens[idx];
     var content = token.content;
-    token.content = content.replace(uploadsRegexInTag, '$1' + debiki.uploadsUrlPrefix + '$3');
+    token.content = content.replace(uploadsRegexInTag, '$1' + eds.uploadsUrlPrefix + '$3');
     return defaultInlineRule(tokens, idx, options, env, self);
   };
 }

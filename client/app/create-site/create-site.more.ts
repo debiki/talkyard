@@ -271,7 +271,7 @@ const LocalHostnameInput = createClassAndFactory({
         r.input({ type: 'text', id: 'dwLocalHostname', className: 'form-control',
             placeholder: this.props.placeholder, ref: 'input', onChange: this.onChange,
             value: value, onFocus: this.showErrors }),
-        r.kbd({}, '.' + debiki.baseDomain),
+        r.kbd({}, '.' + eds.baseDomain),
         r.p({ className: 'help-block' }, this.props.help),
         anyError));
   }

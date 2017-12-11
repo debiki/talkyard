@@ -20,8 +20,7 @@
 
 (function() {
 
-var d = { i: debiki.internal, u: debiki.v0.util };
-var $ = d.i.$;
+var d = { u: debiki.v0.util };
 
 
 function trunc(number) {

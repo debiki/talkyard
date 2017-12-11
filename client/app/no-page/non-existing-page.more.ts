@@ -95,7 +95,7 @@ const SignUpAsAdmin = createComponent({
             onClick: () => login.getLoginDialog().openToSignUp(LoginReason.BecomeAdmin) },
           "Continue");
 
-    return debiki.siteId === debiki.FirstSiteId
+    return eds.siteId === debiki.FirstSiteId
       ? r.div({},
           r.h1({}, "Welcome"),
           r.p({}, "You have successfully started the server."),

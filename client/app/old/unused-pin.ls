@@ -1,5 +1,5 @@
 /* Drags and sorts pinned posts; uses jQuery UI's Sortable.
- * Copyright (C) 2013 Kaj Magnus Lindberg (born 1979)
+ * Copyright (C) 2013 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -163,8 +163,8 @@ horizontalSettings = $.extend {}, sharedSettings,
 
 function tellServerChangePinnedPos(item, newPosition)
   postId = item.find('> .dw-t > .dw-p, > .dw-p').dwPostId!
-  data = [{ pageId: d.i.pageId, postId, position: newPosition }]
-  d.u.postJson { url:  "#{d.i.serverOrigin}/-/pin-at-position", data }
+  data = [{ pageId: d.i.pag  eId, postId, position: newPosition }]
+  d.u.postJson { url:  "#{d.  i.serv  erOrigin}/-/pin-at-position", data }
       .fail d.i.showSe rverResponseDialog
 
 */

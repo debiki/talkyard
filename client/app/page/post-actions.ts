@@ -15,7 +15,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/// <reference path="../plain-old-javascript.d.ts" />
 /// <reference path="../prelude.ts" />
 /// <reference path="../store-getters.ts" />
 /// <reference path="../utils/utils.ts" />
@@ -36,8 +35,6 @@
 //------------------------------------------------------------------------------
    namespace debiki2.page {
 //------------------------------------------------------------------------------
-
-const d = { i: debiki.internal };
 
 const r = ReactDOMFactories;
 const DropdownModal = utils.DropdownModal;
@@ -140,8 +137,8 @@ export const PostActions = createComponent({
       // Toggle highlighting first, because it'll be cleared later if the
       // editor is closed, and then we don't want to toggle it afterwards.
       $h.toggleClass(eventTarget, 'dw-replying');
-      if (debiki.internal.isInEmbeddedCommentsIframe) {
-        window.parent.postMessage(JSON.stringify(['editorToggleReply', post.nr]), ed.embeddingOrigin);
+      if (eds.isInEmbeddedCommentsIframe) {
+        window.parent.postMessage(JSON.stringify(['editorToggleReply', post.nr]), eds.embeddingOrigin);
       }
       else {
         debiki2.editor.toggleWriteReplyToPost(post.nr, newPostType);
@@ -344,8 +341,8 @@ export const PostActions = createComponent({
       tagList = r.ul({ className: 'esPA_Ts' }, tags);
     }
 
-    const adminLink = !me.isAdmin || !d.i.isInEmbeddedCommentsIframe || !isPageBody ? null :
-      r.a({ className: 'dw-a dw-a-admin icon-link-ext', href: d.i.serverOrigin + linkToReviewPage(),
+    const adminLink = !me.isAdmin || !eds.isInEmbeddedCommentsIframe || !isPageBody ? null :
+      r.a({ className: 'dw-a dw-a-admin icon-link-ext', href: eds.serverOrigin + linkToReviewPage(),
         target: '_blank' }, "Admin");
 
     return (
@@ -501,7 +498,7 @@ function toggleVote(store: Store, post: Post, voteType: string, toggleOn: boolea
   }
 
   const data = {
-    pageId: d.i.pageId,
+    pageId: store.currentPageId,
     postNr: post.nr,
     vote: voteType,
     action: action,

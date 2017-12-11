@@ -19,8 +19,6 @@ var d = { i: debiki.internal, u: debiki.v0.util };
 
 debiki.FirstSiteId = '1';
 debiki.debug = window.location.search.indexOf('debug=true') >= 0;
-d.i.TitleNr = 0;
-d.i.BodyNr = 1;
 
 var allPostsNotTitleSelector = '.debiki .dw-p:not(.dw-p-ttl)';
 
@@ -52,8 +50,8 @@ debiki2.ifEventOnNotThen('click', 'a.esMention', '', function(linkElem, event) {
 d.u.addZoomOrResizeListener(debiki2.page.Hacks.addCanScrollHintsSoon);
 
 
-debiki2.dieIf(location.port && debiki.internal.serverOrigin.indexOf(':' + location.port) === -1,
-  "Wrong port or origin? The server thinks its origin is " + debiki.internal.serverOrigin +
+debiki2.dieIf(location.port && eds.serverOrigin.indexOf(':' + location.port) === -1,
+  "Wrong port or origin? The server thinks its origin is " + eds.serverOrigin +
   " and it'll use that address when sending POST requests and loading scripts. " +
   "But you're accessing the server via " + location.host + ". [EsE7YGK2]");
 

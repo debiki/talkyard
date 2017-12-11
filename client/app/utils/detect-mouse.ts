@@ -16,7 +16,6 @@
  */
 
 /// <reference path="../../typedefs/jquery/jquery.d.ts" />
-/// <reference path="../plain-old-javascript.d.ts" />
 
 //------------------------------------------------------------------------------
    module debiki2.utils {

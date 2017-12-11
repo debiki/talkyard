@@ -15,7 +15,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/// <reference path="../plain-old-javascript.d.ts" />
 /// <reference path="avatar.ts" />
 /// <reference path="../more-bundle-not-yet-loaded.ts" />
 

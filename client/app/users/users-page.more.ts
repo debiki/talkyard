@@ -32,7 +32,6 @@ const r = ReactDOMFactories;
 const UsersRootAndIdParamSlash = UsersRoot + ':usernameOrId/';  // dupl [4GKQST20]
 
 
-// Make the components async? So works also if more-bundle.js not yet loaded? [4WP7GU5]
 export function usersRoute() {
   return (
     // Let's keep this, although just one route — because maybe will move up to an "upper base route".

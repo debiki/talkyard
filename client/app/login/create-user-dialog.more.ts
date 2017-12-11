@@ -15,7 +15,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/// <reference path="../plain-old-javascript.d.ts" />
 /// <reference path="../slim-bundle.d.ts" />
 /// <reference path="../utils/PatternInput.more.ts" />
 /// <reference path="../util/FullNameInput.more.ts" />
@@ -187,7 +186,7 @@ export var CreateUserDialogContent = createClassAndFactory({
       ReactActions.newUserAccountCreated();
       getAddressVerificationEmailSentDialog().sayVerifEmailSent();
     }
-    else if (this.props.anyReturnToUrl && !d.i.isInLoginPopup &&
+    else if (this.props.anyReturnToUrl && !eds.isInLoginPopup &&
         this.props.anyReturnToUrl.search('_RedirFromVerifEmailOnly_') === -1) {
       const returnToUrl = this.props.anyReturnToUrl.replace(/__dwHash__/, '#');
       const currentUrl = window.location.toString();
@@ -294,7 +293,7 @@ function continueOnMainPageAfterHavingCreatedUser() {
   // This won't work, might have been opened via other Debiki tab?
   //    if (window.opener && window.opener['debiki']) {
 
-  if (d.i.isInLoginPopup) {
+  if (eds.isInLoginPopup) {
     // We're in a login popup window for an embedded comments site. Continue in the opener tab
     // and close this popup (at the end of this function).
     debikiInternal = window.opener['debiki'].internal;
@@ -312,7 +311,7 @@ function continueOnMainPageAfterHavingCreatedUser() {
   // and create a user.
   login.continueAfterLogin();
 
-  if (d.i.isInLoginPopup) {
+  if (eds.isInLoginPopup) {
     close();  // closes the popup window
   }
 }
@@ -393,7 +392,7 @@ const CreateUserResultDialog = createComponent({
         "sent an email to you. Please click the link in the email to activate " +
         "your account. You can close this page.";
     // Don't show a close-dialog button if there nothing on the page, after dialog closed.
-    const footer = d.i.isInLoginPopup ? null :
+    const footer = eds.isInLoginPopup ? null :
         ModalFooter({},
           PrimaryButton({ onClick: this.close }, "Okay"));
     return (

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014 Kaj Magnus Lindberg (born 1979)
+ * Copyright (c) 2014-2017 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -15,7 +15,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/// <reference path="plain-old-javascript.d.ts" />
 /// <reference path="model.ts" />
 /// <reference path="ServerApi.ts" />
 
@@ -28,15 +27,16 @@
    namespace debiki2.Server {
 //------------------------------------------------------------------------------
 
-const d: any = { i: debiki.internal, u: debiki.v0.util };
+const d: any = { i: debiki.internal };
 
 // In embedded comments <iframes>, we cannot use relative paths.
-const origin = d.i.serverOrigin;
+const origin = eds.serverOrigin;
 
 const BadNameOrPasswordErrorCode = 'EsE403BPWD';
 
 function getPageId(): PageId {
-  return ReactStore.allData().currentPageId;
+  return eds.embeddedPageId || // [4HKW28]
+      ReactStore.allData().currentPageId;
 }
 
 interface OngoingRequest {
@@ -282,7 +282,7 @@ export function loadMoreScriptsBundle(callback?) {
   }
   moreScriptsPromise = new Promise(function(resolve) {
     // Also: [7PLBF20]
-    loadJs(d.i.assetUrlPrefix + 'more-bundle.' + d.i.minMaxJs, function() {
+    loadJs(eds.assetUrlPrefix + 'more-bundle.' + eds.minMaxJs, function() {
       resolve();
       !callback || setTimeout(callback, 0);
     });
@@ -297,7 +297,7 @@ export function load2dScriptsBundleStart2dStuff() {
   }
   hasStartedLoading2dScripts = true;
   loadJQuery(() => {
-    loadJs(d.i.assetUrlPrefix + '2d-bundle.' + d.i.minMaxJs, function() {
+    loadJs(eds.assetUrlPrefix + '2d-bundle.' + eds.minMaxJs, function() {
       debiki.internal.layoutThreads();
       debiki2.utils.onMouseDetected(d.i.makeColumnsResizable);
       // Wrap in function, because not available until funtion evaluated (because then script loaded).
@@ -318,7 +318,7 @@ export function loadStaffScriptsBundle(callback) {
     // The staff scripts bundle requires both more-bundle.js and editor-bundle.js (to render
     // previews of CommonMark comments [7PKEW24]). This'll load them both.
     loadEditorAndMoreBundles(() => {
-      loadJs(d.i.assetUrlPrefix + 'staff-bundle.' + d.i.minMaxJs, function() {
+      loadJs(eds.assetUrlPrefix + 'staff-bundle.' + eds.minMaxJs, function() {
         resolve();
         callback();  // setTimeout(..., 0) not needed — done by loadMoreScriptsBundle() already
       });
@@ -337,13 +337,13 @@ export function loadEditorAndMoreBundlesGetDeferred(): Promise<void> {
   // browser html5 support). However, works anyway, without any staticPath. Hmm.
   window['FileAPI'] = {
     staticPath: '/-/tfEF357cw/', // later: '/-/res/', — but first actually place the files here
-    debug: debiki.isDev,
+    debug: eds.isDev,
   };
 
   // The editor scripts bundle requires more-bundle.js, and jquery-bundle (At.js,
   // for @mention dropdowns). Load everything in parallel. This stuff is also prefetched,
   // if supported by the browser, see: [7PLBF20].
-  const editorLoaded = loadJs(d.i.assetUrlPrefix + 'editor-bundle.' + d.i.minMaxJs);
+  const editorLoaded = loadJs(eds.assetUrlPrefix + 'editor-bundle.' + eds.minMaxJs);
   const moreScriptsLoaded = loadMoreScriptsBundle();
 
   showLoadingOverlay();
@@ -369,7 +369,7 @@ function loadJQuery(callback?) {
   }
   jQueryPromise = new Promise(function(resolve) {
     // Also: [7PLBF20]
-    loadJs(d.i.assetUrlPrefix + 'jquery-bundle.' + d.i.minMaxJs, function() {
+    loadJs(eds.assetUrlPrefix + 'jquery-bundle.' + eds.minMaxJs, function() {
       resolve();
       !callback || setTimeout(callback, 0);
     });
@@ -859,7 +859,7 @@ export function loadVoters(postId: PostId, voteType: PostVoteType,
 export function saveEdits(postNr: number, text: string, doneCallback: () => void) {
   postJson('/-/edit', {
     data: {
-      pageId: getPageId(), // [7UWKBA1]
+      pageId: getPageId(),
       postNr: postNr,
       text: text
     },
@@ -925,8 +925,8 @@ export function saveReply(postNrs: PostNr[], text: string, anyPostType: number,
   postJson('/-/reply', {
     data: {
       pageId: getPageId() || undefined,
-      altPageId: d.i.altPageId || undefined, // OOOOOPS
-      embeddingUrl: d.i.embeddingUrl || undefined,
+      altPageId: eds.embeddedPageAltId || undefined,
+      embeddingUrl: eds.embeddingUrl || undefined,
       postNrs: postNrs,
       postType: anyPostType || PostType.Normal,
       text: text
@@ -1046,8 +1046,8 @@ export function submitUsabilityTestingRequest(formData: FormData) {  // [plugin]
 }
 
 
-export function loadPostByNr(pageId: PageId, postNr: PostNr, success: (patch: StorePatch) => void) {
-  get(`/-/load-post?pageId=${pageId}&postNr=${postNr}`, success);
+export function loadPostByNr(postNr: PostNr, success: (patch: StorePatch) => void) {
+  get(`/-/load-post?pageId=${getPageId()}&postNr=${postNr}`, success);
 }
 
 
@@ -1281,7 +1281,7 @@ let longPollingState = {
 export function sendLongPollingRequest(userId: UserId, success: (event: any) => void,
       error: () => void) {
   dieIf(longPollingState.ongoingRequest, "Already long-polling the server [EsE7KYUX2]");
-  console.debug(`Sending long polling request, ${debiki.siteId}:${userId} [EdDPS_BRWSRPOLL]`);
+  console.debug(`Sending long polling request, ${eds.siteId}:${userId} [EdDPS_BRWSRPOLL]`);
   const options: any = {
     dataType: 'json',
     // Firefox always calls the error callback if a long polling request is ongoing when
@@ -1297,7 +1297,7 @@ export function sendLongPollingRequest(userId: UserId, success: (event: any) => 
   // This is an easy-to-guess channel id, but in order to subscribe, the session cookie
   // must also be included in the request. So this should be safe.
   // The site id is included, because users at different sites can have the same id. [7YGK082]
-  const channelId = debiki.siteId + '-' + userId;
+  const channelId = eds.siteId + '-' + userId;
   let abortedBecauseNoData = false;
   longPollingState.ongoingRequest =
       get('/-/pubsub/subscribe/' + channelId, options, (response, xhr) => {

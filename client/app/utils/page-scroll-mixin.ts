@@ -15,14 +15,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/// <reference path="../plain-old-javascript.d.ts" />
 
 //------------------------------------------------------------------------------
    namespace debiki2.utils {
 //------------------------------------------------------------------------------
-
-const d = { i: debiki.internal, u: debiki.v0.util };
-const r = ReactDOMFactories;
 
 
 export var PageScrollMixin = {

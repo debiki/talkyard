@@ -52,7 +52,7 @@ function pagesFor(browser) {
 
     getSiteId: function(): string {
       const result = browser.execute(function() {
-        return window['debiki'].siteId;
+        return window['eds'].siteId;
       });
       dieIf(!result || _.isNaN(parseInt(result.value)),
           "Error getting site id, result: " + JSON.stringify(result));

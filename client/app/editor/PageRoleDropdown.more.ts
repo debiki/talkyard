@@ -89,7 +89,7 @@ export var PageRoleDropdown = createComponent({
 
     // HACK bjj... wants only Discussion & MindMap. Later, COULD add a show-only-these-
     // topic-types category & site setting, instead of hardcoding one site settings here.
-    var isBjjNotStaff = debiki.siteId === '12' && !isStaff(me);
+    var isBjjNotStaff = eds.siteId === 12 && !isStaff(me);
 
     var questionOption = isBjjNotStaff ? null :
       ExplainingListItem({ onSelect: this.onSelect, id: 'e2eTTD_QuestionO',

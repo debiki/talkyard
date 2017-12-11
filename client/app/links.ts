@@ -26,12 +26,12 @@
 //------------------------------------------------------------------------------
 
 export function assetsOrigin(): string {
-  // CLEAN_UP incl assetsOrigin in the data from the server, rather than debiki.uploadsUrlPrefix.
+  // CLEAN_UP incl assetsOrigin in the data from the server, rather than eds.uploadsUrlPrefix.
   // This removes the url path from '(https:)//cdn-or-server-origin/-/u/', and ensures
   // the protocol is ... hmm, that of the current page. Might not work, if testing on
   // localhost with http:, and using a https-CDN-assets-origin.
   return location.protocol +
-    debiki.uploadsUrlPrefix.replace('/-/u/', '').replace('https:', '').replace('http:', '');
+    eds.uploadsUrlPrefix.replace('/-/u/', '').replace('https:', '').replace('http:', '');
 }
 
 export function linkToPageId(pageId: PageId): string {

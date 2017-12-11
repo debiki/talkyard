@@ -15,7 +15,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/// <reference path="../plain-old-javascript.d.ts" />
 
 //------------------------------------------------------------------------------
    module debiki2.login {
@@ -32,7 +31,7 @@ export function loginIfNeededReturnToPost(
       loginReason: LoginReason | string, postNr: PostNr, success: () => void, willCompose?: boolean) {
   const anchor = postNr < FirstReplyNr ? '' : (
     // We use 'comment-' for embedded comments, and they start on nr 1 = post 2. [2PAWC0]
-    d.i.isInEmbeddedCommentsIframe ? '#comment-' + (postNr - 1) : '#post-' + postNr);
+    eds.isInEmbeddedCommentsIframe ? '#comment-' + (postNr - 1) : '#post-' + postNr);
   loginIfNeededReturnToAnchor('LoginToEdit', anchor, success, willCompose);
 }
 
@@ -44,13 +43,13 @@ export function loginIfNeededReturnToAnchor(
   if (ReactStore.getMe().isLoggedIn || (willCompose && ReactStore.mayComposeBeforeSignup())) {
     success();
   }
-  else if (d.i.isInIframe) {
+  else if (eds.isInIframe) {
     anyContinueAfterLoginCallback = success;
     // Don't open a dialog inside the iframe; open a popup instead.
     // Need to open the popup here immediately, before loading any scripts, because if
     // not done immediately after mouse click, the popup gets blocked (in Chrome at least).
     // And when opening in a popup, we don't need any more scripts here in the main win anyway.
-    const url = d.i.serverOrigin + '/-/login-popup?mode=' + loginReason +
+    const url = eds.serverOrigin + '/-/login-popup?mode=' + loginReason +
       '&isInLoginPopup&returnToUrl=' + returnToUrl;
     d.i.createLoginPopup(url)
   }
@@ -67,7 +66,7 @@ function makeReturnToPageHashForVerifEmail(hash) {
   // '__dwHash__' is an encoded hash that won't be lost when included in a GET URL.
   // The server replaces it with '#' later on.
   // If we're showing embedded comments in an <iframe>, use the embedding page's url.
-  const pageUrl = d.i.embeddingUrl ? d.i.embeddingUrl : window.location.toString();
+  const pageUrl = eds.embeddingUrl ? eds.embeddingUrl : window.location.toString();
   let returnToUrl = '_RedirFromVerifEmailOnly_' + pageUrl.replace(/#.*/, '');
   if (hash) {
     hash = hash.replace(/^#/, '');
@@ -78,7 +77,7 @@ function makeReturnToPageHashForVerifEmail(hash) {
 
 
 export function continueAfterLogin(anyReturnToUrl?: string) {
-  if (d.i.isInLoginWindow) {
+  if (eds.isInLoginWindow) {
     // We're in an admin section login page, or an embedded comments page login popup window.
     if (anyReturnToUrl && anyReturnToUrl.indexOf('_RedirFromVerifEmailOnly_') === -1) {
       window.location.assign(anyReturnToUrl);

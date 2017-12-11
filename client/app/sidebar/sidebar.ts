@@ -16,7 +16,6 @@
  */
 
 /// <reference path="../../typedefs/keymaster/keymaster.d.ts" />
-/// <reference path="../plain-old-javascript.d.ts" />
 /// <reference path="../ReactStore.ts" />
 /// <reference path="../page/discussion.ts" />
 /// <reference path="../page/scroll-buttons.ts" />

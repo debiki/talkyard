@@ -89,7 +89,7 @@ const ShareDialog = createComponent({
       const post: Post = state.post;
 
       let url: string;
-      const embeddingUrl = debiki.internal.embeddingUrl;
+      const embeddingUrl = eds.embeddingUrl;
       if (embeddingUrl) {
         // Use '#comment-NNN' hashes for embedded comments, since they are often for blog   [2PAWC0]
         // posts and might be confusing with urls like: http://blog/post/123#post-456
@@ -102,7 +102,7 @@ const ShareDialog = createComponent({
       else {
         const origin = location.protocol + '//' + location.host;
         const hash = post.nr >= FirstReplyNr ? '#post-' + post.nr : '';
-        url = origin + '/-' + debiki.getPageId() + hash;
+        url = origin + '/-' + ReactStore.getPageId() + hash;
       }
       const makeShareButton = (where: string) => {  // dupl code [2WUGVSF0]
         return (

@@ -99,9 +99,7 @@ class SiteTpi protected (
   def anyCustomMetaTags: FindHeadTagsResult = FindHeadTagsResult.None
   def anySafeMetaTags: String = anyCustomMetaTags.allTags  // only admin can edit right now [2GKW0M]
 
-  def anyCurrentPageId: Option[PageId] = None  ; CLEAN_UP ; REMOVE // not in use any more?
   def anyCurrentPageRole: Option[PageRole] = None
-  def anyCurrentPagePath: Option[PagePath] = None
   def anyCurrentPageMeta: Option[PageMeta] = None
 
   def anyAltPageId: Option[AltPageId] = None
@@ -138,7 +136,6 @@ class SiteTpi protected (
       this, // Could remove all params below, use 'this' instead in the template.
       siteId = siteId,
       anyPageRole = anyCurrentPageRole,
-      anyPagePath = anyCurrentPagePath,
       reactStoreSafeJsonString = reactStoreSafeJsonString,
       isInLoginWindow = isInLoginWindow,
       minMaxJs = minMaxJs,
@@ -250,7 +247,7 @@ class SiteTpi protected (
 class EditPageTpi(
   request: GetRequest,
   val pageRole: PageRole,
-  override val anyCurrentPageId: Option[PageId],
+  val anyEmbeddedPageId: Option[PageId],
   override val anyAltPageId: Option[AltPageId],
   override val anyEmbeddingUrl: Option[String]) extends SiteTpi(request) {
 
@@ -272,9 +269,7 @@ class PageTpi(
   override val anyEmbeddingUrl: Option[String])
   extends SiteTpi(pageReq, json = None, pageTitle = pageTitle) {
 
-  override def anyCurrentPageId = Some(pageReq.thePageId)
   override def anyCurrentPageRole = Some(pageReq.thePageRole)
-  override def anyCurrentPagePath = Some(pageReq.pagePath)
   override def anyCurrentPageMeta: Option[PageMeta] = pageReq.pageMeta
 
   override def currentVersionString: String = jsonVersion.computerString

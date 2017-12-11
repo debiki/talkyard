@@ -30,7 +30,7 @@
 
 
 export function startRemainingReactRoots() {
-  const isEmbeddedComments: boolean = debiki.internal.isInEmbeddedCommentsIframe;
+  const isEmbeddedComments: boolean = eds.isInEmbeddedCommentsIframe;
   if (!isEmbeddedComments) {
     const topbarElem = document.getElementById('theTopbar');
     if (topbarElem)
@@ -120,7 +120,7 @@ export function startMainReactRoot() {
     // Nothing below path /-/ is rendered server side (as of now), so then don't try to reuse any html.
     const skipHydrate = true; // location.pathname.search('/-/') === 0;
     const renderOrHydrate = skipHydrate ? ReactDOM.render : ReactDOM.hydrate;
-    const isEmbCmts: boolean = debiki.internal.isInEmbeddedCommentsIframe;
+    const isEmbCmts: boolean = eds.isInEmbeddedCommentsIframe;
     renderOrHydrate(
         Router({},
           rFragment({},
@@ -128,7 +128,8 @@ export function startMainReactRoot() {
             isEmbCmts ? null : debiki2.page.ScrollButtons(),
             isEmbCmts ? null : Route({ component: debiki2.page.Hacks.ExtReactRootNavComponent }),
             Switch({},
-              // more-bundle.js is loaded directly on non-pages. Good for performance? since used here. [5WKE24]
+              // If starting on one of the routes that need more-bundle.js, that bundle is
+              // included directly in a <script> tag. Good for performance? [5WKE24]
               Route({ path: '/-/', component: MoreScriptsRoutesComponent }),
               // This redirects e.g. '/forum/' and '/forum' to '/forum/latest':
               Redirect({ path: forumRootSlash, to: forumDefaultPath, exact: true }),

@@ -17,17 +17,23 @@
 
 @(tpi: debiki.EditPageTpi)
 
+@import org.owasp.encoder.Encode
+
+@embeddedPageIdOrUndefined = @{
+  tpi.anyEmbeddedPageId.map(id => s"'${ Encode.forJavaScript(id) }'") getOrElse "undefined"
+}
 
 <html class="DW dw-pri dw-embedded-editor">
 <head>
-  @tpi.debikiMeta
-  @tpi.debikiStyles
-  @tpi.debikiScriptsInHead()
-  <script>
-      debiki.internal.isInEmbeddedEditor = true;
-      debiki.internal.isInEmbeddedCommentsIframe = false;
-      _store.currentPage = {}; @* Avoids null errors when editor accesses the current page. [2BK4P3R] *@
-  </script>
+@tpi.debikiMeta
+@tpi.debikiStyles
+@tpi.debikiScriptsInHead()
+<script>
+eds.isInEmbeddedEditor = true;
+eds.isInEmbeddedCommentsIframe = false;
+eds.embeddedPageId = @Html(embeddedPageIdOrUndefined);
+_store.currentPage = {}; @* Avoids null errors when editor accesses the current page. [2BK4P3R] *@
+</script>
 </head>
 <body>
   <!-- embeddedEditor.scala.html -->

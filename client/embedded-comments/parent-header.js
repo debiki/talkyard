@@ -19,6 +19,7 @@
 // See readme.txt.
 
 
+window.eds = {};
 window.debiki = { internal: {}, v0: { util: {} } };
 
 // Finds Debiki server origin, by extracting origin of the debiki-embedded-comments.js script.

@@ -15,7 +15,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/// <reference path="plain-old-javascript.d.ts" />
 /// <reference path="ReactDispatcher.ts" />
 /// <reference path="Server.ts" />
 /// <reference path="login/login-if-needed.ts" />
@@ -24,10 +23,8 @@
    module debiki2.ReactActions {
 //------------------------------------------------------------------------------
 
-var d = { i: debiki.internal };
 
-
-export var actionTypes = {
+export const actionTypes = {
   NewMyself: 'NewMyself',
   Logout: 'Logout',
   NewUserAccountCreated: 'NewUserAccountCreated',
@@ -78,9 +75,9 @@ export function loadMyself(afterwardsCallback?) {
   // deleted by the server.)
 
   Server.loadMyself((user) => {
-    if (d.i.isInIframe) {
+    if (eds.isInIframe) {
       // Tell the embedded-comments or embedded-editor iframe that we just logged in.
-      window.parent.postMessage(JSON.stringify(['justLoggedIn', user]), ed.embeddingOrigin);
+      window.parent.postMessage(JSON.stringify(['justLoggedIn', user]), eds.embeddingOrigin);
     }
     setNewMe(user);
     if (afterwardsCallback) {
@@ -114,9 +111,9 @@ export function logoutClientSideOnly() {
   ReactDispatcher.handleViewAction({
     actionType: actionTypes.Logout
   });
-  if (d.i.isInEmbeddedCommentsIframe) {
+  if (eds.isInEmbeddedCommentsIframe) {
     // Tell the editor iframe that we've logged out.
-    window.parent.postMessage(JSON.stringify(['logoutClientSideOnly', null]), ed.embeddingOrigin);
+    window.parent.postMessage(JSON.stringify(['logoutClientSideOnly', null]), eds.embeddingOrigin);
   }
   // Quick fix that reloads the admin page (if one views it) so the login dialog appears:
   location.reload();
@@ -285,7 +282,7 @@ export function showForumIntro(visible: boolean) {
 
 export function editPostWithNr(postNr: number) {
   login.loginIfNeededReturnToPost('LoginToEdit', postNr, () => {
-    if (d.i.isInEmbeddedCommentsIframe) {
+    if (eds.isInEmbeddedCommentsIframe) {
       sendToEditorIframe(['editorEditPost', postNr]);
     }
     else {
@@ -297,7 +294,7 @@ export function editPostWithNr(postNr: number) {
 
 
 export function handleEditResult(editedPost) {
-  if (d.i.isInEmbeddedEditor) {
+  if (eds.isInEmbeddedEditor) {
     sendToCommentsIframe(['handleEditResult', editedPost]);
   }
   else {
@@ -413,7 +410,7 @@ export function loadAndShowPost(postNr: PostNr, showChildrenToo?: boolean, callb
   const page: Page = store.currentPage;
   const anyPost = page.postsByNr[postNr];
   if (!anyPost || _.isEmpty(anyPost.sanitizedHtml)) {
-    Server.loadPostByNr(debiki.internal.pageId, postNr, (storePatch: StorePatch) => {
+    Server.loadPostByNr(postNr, (storePatch: StorePatch) => {
       patchTheStore(storePatch);
       showAndCallCallback();
     });
@@ -740,7 +737,7 @@ export function goToUsersNotifications(userId: UserId) {  // CLEAN_UP use LinkBu
 
 function sendToEditorIframe(message) {
   // Send the message to the embedding page; it'll forward it to the appropriate iframe.
-  window.parent.postMessage(JSON.stringify(message), ed.embeddingOrigin);
+  window.parent.postMessage(JSON.stringify(message), eds.embeddingOrigin);
 }
 
 // An alias, for better readability.

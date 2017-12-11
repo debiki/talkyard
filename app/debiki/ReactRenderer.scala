@@ -555,12 +555,14 @@ object ReactRenderer {
     |"""
 
 
+  // CLEAN_UP remove debiki.v0 & .internal [4KSWPY]
   private def serverSideDebikiModule(secure: Boolean) = i"""
+    |var eds = {
+    |  secure: $secure
+    |};
     |var debiki = {
-    |  store: {},
     |  v0: { util: {} },
     |  internal: {},
-    |  secure: $secure
     |};
     |"""
 

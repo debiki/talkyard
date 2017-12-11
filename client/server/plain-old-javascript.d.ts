@@ -1,1 +1,0 @@
-../app/plain-old-javascript.d.ts

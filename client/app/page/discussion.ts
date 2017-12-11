@@ -15,7 +15,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/// <reference path="../plain-old-javascript.d.ts" />
 /// <reference path="../prelude.ts" />
 /// <reference path="../utils/utils.ts" />
 /// <reference path="../utils/react-utils.ts" />
@@ -581,8 +580,8 @@ const RootPostAndComments = createComponent({
       // Toggle highlighting first, because it'll be cleared later if the
       // editor is closed, and then we don't want to toggle it afterwards.
       $h.toggleClass(eventTarget, 'dw-replying');
-      if (debiki.internal.isInEmbeddedCommentsIframe) {
-        window.parent.postMessage(JSON.stringify(['editorToggleReply', BodyNr]), ed.embeddingOrigin);
+      if (eds.isInEmbeddedCommentsIframe) {
+        window.parent.postMessage(JSON.stringify(['editorToggleReply', BodyNr]), eds.embeddingOrigin);
       }
       else {
         editor.toggleWriteReplyToPost(BodyNr, postType);

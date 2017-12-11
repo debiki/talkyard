@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-var d = { i: debiki.internal, u: debiki.v0.util };
+var d = { i: debiki.internal };
 
 
 d.i.calcScrollRectIntoViewCoords = function(rect, options) {

@@ -163,9 +163,9 @@ function renderDiscussionPage() {
     ", time-ago: " + (timeAfterTimeAgo - timeBeforeTimeAgo) +
     ", user data: " + (timeAfterUserData - timeAfterTimeAgo) +
     ", remaining roots: " + (timeAfterRemainingRoots - timeAfterUserData) + " [DwM2F51]");
-  console.log("Cached html version: <" + debiki.cachedVersion +
-      ">, current: <" + debiki.currentVersion + "> [DwM4KGE8]");
-  if (debiki.currentVersion.split('|')[1] !== debiki.cachedVersion.split('|')[1]) {
+  console.log("Cached html version: <" + eds.cachedVersion +
+      ">, current: <" + eds.currentVersion + "> [DwM4KGE8]");
+  if (eds.currentVersion.split('|')[1] !== eds.cachedVersion.split('|')[1]) {
     console.log("Cached html is stale. React.js might have logged a " +
         "'checksum was invalid' warning above (in dev builds) [DwM5KJG4]");
   }

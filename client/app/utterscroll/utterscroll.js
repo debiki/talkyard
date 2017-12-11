@@ -21,8 +21,6 @@
   (function($){
 //----------------------------------------
 
-var d = { i: debiki.internal, u: debiki.v0.util };
-
 if (!debiki.Utterscroll) debiki.Utterscroll = {};
 
 
@@ -398,9 +396,9 @@ debiki.Utterscroll = (function(options) {
     startPos = { x: event.screenX, y: event.screenY };
     lastPos = { x: event.screenX, y: event.screenY };
 
-    if (d.i.isInIframe)
+    if (eds.isInIframe)
       window.parent.postMessage(
-          JSON.stringify(['startUtterscrolling', cloneEvent(event)]), ed.embeddingOrigin);
+          JSON.stringify(['startUtterscrolling', cloneEvent(event)]), eds.embeddingOrigin);
 
     return false;
   };
@@ -428,7 +426,7 @@ debiki.Utterscroll = (function(options) {
     if ($.browser && $.browser.mozilla && event.buttons === 0)
       return stopScroll(event);
 
-    if (d.i.isInIframe) {
+    if (eds.isInIframe) {
       // Message to parent sent by other `document.onmousemove`, see the end of
       // this file.
       return;
@@ -502,9 +500,9 @@ debiki.Utterscroll = (function(options) {
       ' rslt: '+ distNow.x +', '+ distNow.y);
     */
 
-    if (d.i.isInIframe) {
+    if (eds.isInIframe) {
       window.parent.postMessage(
-          JSON.stringify(['doUtterscroll', cloneEvent(event)]), ed.embeddingOrigin);
+          JSON.stringify(['doUtterscroll', cloneEvent(event)]), eds.embeddingOrigin);
     }
     else {
       $elemToScroll.scrollLeft($elemToScroll.scrollLeft() - distNow.x);
@@ -531,9 +529,9 @@ debiki.Utterscroll = (function(options) {
     $.event.remove(document, 'mouseup', stopScroll);
     uncoverIframes();
 
-    if (d.i.isInIframe)
+    if (eds.isInIframe)
       window.parent.postMessage(
-          JSON.stringify(['stopUtterscrolling', cloneEvent(event)]), ed.embeddingOrigin);
+          JSON.stringify(['stopUtterscrolling', cloneEvent(event)]), eds.embeddingOrigin);
 
     return false;
   };
@@ -567,13 +565,13 @@ debiki.Utterscroll = (function(options) {
   // the mouse is over the iframe, by posting these events to the parent that it
   // can use instead of e.g. the onmousemove event (which goes to the iframe
   // only).
-  if (d.i.isInIframe) {
+  if (eds.isInIframe) {
     var origOnMouseMove = document.onmousemove;
     var origOnMouseUp = document.onmouseup;
 
     document.onmousemove = function(event) {
       window.parent.postMessage(
-          JSON.stringify(['onMouseMove', cloneEvent(event)]), ed.embeddingOrigin);
+          JSON.stringify(['onMouseMove', cloneEvent(event)]), eds.embeddingOrigin);
       if (origOnMouseMove)
         return origOnMouseMove(event);
     }
@@ -584,7 +582,7 @@ debiki.Utterscroll = (function(options) {
         returnValue = origOnMouseUp(event);
 
       window.parent.postMessage(
-          JSON.stringify(['stopUtterscrolling', cloneEvent(event)]), ed.embeddingOrigin);
+          JSON.stringify(['stopUtterscrolling', cloneEvent(event)]), eds.embeddingOrigin);
       return returnValue;
     }
   }

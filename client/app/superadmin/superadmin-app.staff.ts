@@ -126,7 +126,7 @@ var SiteTableRow = createComponent({
     }
 
     // (Don't show a login button for the superadmin site itself, because already logged in.)
-    var loginButton = site.id === debiki.siteId
+    var loginButton = site.id === eds.siteId
         ? r.span({ className: 'esSA_ThisSite' }, "(this site)")
         : Button({ className: 'esSA_LoginB', onClick: this.loginAtSite }, "Super admin");
 

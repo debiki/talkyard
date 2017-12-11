@@ -49,7 +49,7 @@ ReactStore.setMaxListeners(20);
 // because the server serves cached HTML with no user specific data. Later on,
 // we'll insert user specific data into the store, and re-render. See
 // ReactStore.activateMyself().
-const store: Store = debiki.pageDataFromServer;
+const store: Store = eds.pageDataFromServer;
 window['theStore'] = store; // simplifies inspection in Dev Tools
 
 store.postsToUpdate = {};
@@ -433,7 +433,7 @@ let volatileDataActivated = false;
 ReactStore.activateVolatileData = function() {
   dieIf(volatileDataActivated, 'EsE4PFY03');
   volatileDataActivated = true;
-  const data: VolatileDataFromServer = debiki.volatileDataFromServer;
+  const data: VolatileDataFromServer = eds.volatileDataFromServer;
   theStore_setOnlineUsers(data.numStrangersOnline, data.usersOnline);
   ReactStore.activateMyself(data.me);
   store.quickUpdate = false;

@@ -29,7 +29,7 @@ d.i.createLoginPopup = function(url) {
 
   // For now. Fixes # in return-to-url.
   var url = url.replace(/#/, '__dwHash__');
-  var anyProtocol = d.i.isInIframe ? (d.i.secure ? 'https:' : 'http:') : '';
+  var anyProtocol = eds.isInIframe ? (eds.secure ? 'https:' : 'http:') : '';
 
   // Here is described how to configure the popup window:
   // http://svn.openid.net/repos/specifications/user_interface/1.0/trunk

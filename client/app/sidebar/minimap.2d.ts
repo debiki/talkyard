@@ -23,10 +23,9 @@
 /// <reference path="../utils/page-scroll-mixin.ts" />
 
 //------------------------------------------------------------------------------
-   module debiki2.sidebar {
+   namespace debiki2.sidebar {
 //------------------------------------------------------------------------------
 
-var d = { i: debiki.internal, u: debiki.v0.util };
 const r = ReactDOMFactories;
 var $window = $(window);
 var $document = $(document);

@@ -15,8 +15,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/// <reference path="../../typedefs/jquery/jquery.d.ts" />
-/// <reference path="../plain-old-javascript.d.ts" />
 /// <reference path="../prelude.ts" />
 /// <reference path="../rules.ts" />
 /// <reference path="../Server.ts" />

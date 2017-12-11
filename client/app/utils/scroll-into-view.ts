@@ -78,10 +78,10 @@ export function scrollIntoView(elem, options, onDone?: () => void) {
   options = options ? _.clone(options) : {};
   const duration = options.duration || 600;
 
-  if (d.i.isInEmbeddedCommentsIframe) {
+  if (eds.isInEmbeddedCommentsIframe) {
     delete options.parent;
     const rect = cloneRect(elem.getBoundingClientRect());
-    window.parent.postMessage(JSON.stringify(['scrollComments', [rect, options]]), ed.embeddingOrigin);
+    window.parent.postMessage(JSON.stringify(['scrollComments', [rect, options]]), eds.embeddingOrigin);
   }
   else {
     if (!options.parent) {

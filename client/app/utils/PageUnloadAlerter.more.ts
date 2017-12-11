@@ -17,14 +17,10 @@
 
 /// <reference path="../../typedefs/jquery/jquery.d.ts" />
 /// <reference path="../slim-bundle.d.ts" />
-/// <reference path="../plain-old-javascript.d.ts" />
 
 //------------------------------------------------------------------------------
-   module debiki2.utils.PageUnloadAlerter {
+   namespace debiki2.utils.PageUnloadAlerter {
 //------------------------------------------------------------------------------
-
-var d: any = { i: debiki.internal, u: debiki.v0.util };
-var $: JQueryStatic = d.i.$;
 
 var warningsByKey: any = {};
 

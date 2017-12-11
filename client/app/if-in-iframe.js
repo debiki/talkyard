@@ -17,19 +17,19 @@
 
 var d = { i: debiki.internal };
 
-if (d.i.isInEmbeddedCommentsIframe || d.i.isInEmbeddedEditor) {
+if (eds.isInEmbeddedCommentsIframe || eds.isInEmbeddedEditor) {
 
 
 addEventListener('message', onMessage, false);
 
-window.parent.postMessage('["iframeInited", {}]', ed.embeddingOrigin);
+window.parent.postMessage('["iframeInited", {}]', eds.embeddingOrigin);
 
-if (d.i.isInEmbeddedCommentsIframe)
+if (eds.isInEmbeddedCommentsIframe)
   syncDocSizeWithIframeSize();
 
 
 function onMessage(event) {
-  if (event.origin !== ed.embeddingOrigin)
+  if (event.origin !== eds.embeddingOrigin)
     return;
 
   // The message is a "[eventName, eventData]" string because IE <= 9 doesn't support
@@ -57,7 +57,7 @@ function onMessage(event) {
     case 'scrollToPostNr':
       var postNr = eventData;
       debiki.scriptLoad.done(function() {
-        var pageId = debiki.getPageId();
+        var pageId = ReactStore.getPageId();
         if (!pageId || pageId === EmptyPageId) {
           // Embedded comments discussion not yet lazy-created, so there's no post to scroll to.
           // (Probably someone accidentally typed an url that ends with '#comment-1' for example,
@@ -128,7 +128,7 @@ function syncDocSizeWithIframeSize() {
       }
     ]);
 
-    window.parent.postMessage(message, ed.embeddingOrigin);
+    window.parent.postMessage(message, eds.embeddingOrigin);
   }
 }
 

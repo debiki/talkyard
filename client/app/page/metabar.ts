@@ -23,10 +23,9 @@
 /// <reference path="../oop-methods.ts" />
 
 //------------------------------------------------------------------------------
-   module debiki2.page {
+   namespace debiki2.page {
 //------------------------------------------------------------------------------
 
-const d = { i: debiki.internal, u: debiki.v0.util };
 const r = ReactDOMFactories;
 const DropdownModal = utils.DropdownModal;
 const ExplainingListItem = util.ExplainingListItem;
@@ -185,7 +184,7 @@ const MetabarDetails = createComponent({
       r.div({},
         r.div({ className: 'esMB_Dtls_Ntfs_Lbl' }, "Notifications about this topic:"),
         Button({ id: '7bw3gz5', className: 'dw-notf-level', onClick: event => {
-              openNotfsLevelDropdown(event.target, { pageId: d.i.pageId }, notfLevel)
+              openNotfsLevelDropdown(event.target, { pageId: store.currentPageId }, notfLevel)
             }},
           r.span({}, notfLevel_title(notfLevel) + ' ', r.span({ className: 'caret' }))));
 

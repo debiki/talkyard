@@ -25,6 +25,7 @@ import debiki.dao.SiteDao
 import ed.server.{EdContext, EdController, RenderedPage}
 import ed.server.http._
 import javax.inject.Inject
+import org.owasp.encoder.Encode
 import play.api.libs.json.JsValue
 import play.api.mvc.{Action, ControllerComponents}
 
@@ -48,6 +49,13 @@ class EmbeddedTopicsController @Inject()(cc: ControllerComponents, edContext: Ed
   def showTopic(embeddingUrl: String, discussionId: Option[AltPageId], edPageId: Option[PageId]) =
         AsyncGetAction { request =>
     import request.dao
+
+    // This id gets encoded later [4GKW40], and if the encoded version is different from
+    // the original, something will probably break somewhere.
+    discussionId foreach { id =>
+      throwBadRequestIf(Encode.forJavaScript(id) != id,
+        "EdE2KB4G", "Bad discussion id, contains weird chars")
+    }
 
     val anyRealPageId = getAnyRealPageId(edPageId, discussionId, embeddingUrl, dao)
     val (renderedPage, pageRequest) = anyRealPageId match {
@@ -98,7 +106,7 @@ class EmbeddedTopicsController @Inject()(cc: ControllerComponents, edContext: Ed
   def showEmbeddedEditor(embeddingUrl: String, discussionId: Option[AltPageId],
         edPageId: Option[PageId]) = GetAction { request =>
     val anyRealPageId = getAnyRealPageId(edPageId, discussionId, embeddingUrl, request.dao)
-    val tpi = new EditPageTpi(request, PageRole.EmbeddedComments, anyCurrentPageId = anyRealPageId,
+    val tpi = new EditPageTpi(request, PageRole.EmbeddedComments, anyEmbeddedPageId = anyRealPageId,
       anyAltPageId = discussionId, anyEmbeddingUrl = Some(embeddingUrl))
     Ok(views.html.embeddedEditor(tpi).body) as HTML
   }
