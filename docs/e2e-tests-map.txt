@@ -51,11 +51,18 @@ login -
     too old, denied:
 
 different users -
-  switch user:
-  unapproved comments -
+  login, logout, switch user:  almost all tests
+
+unapproved comments -
+  embedded + not-embedded -
     see own, not others:
+    edit own:
+    may not post too many:
+    may continue after approved:
     staff sees all:
+    staff can edit:
     staff can approve:  (2WY0)
+    staff can delete:
 
 profile page -
   upload photo:  (8PK2)
@@ -170,6 +177,10 @@ topics -
   to-do:
     cycle done/pending:
   report:
+
+posts -
+  move on same page:
+  move to new page:
 
 editor -
   maximize editor:

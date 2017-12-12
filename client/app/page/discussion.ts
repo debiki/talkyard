@@ -800,13 +800,16 @@ const RootPostAndComments = createComponent({
 
     // If direct message, use only the add-bottom-comment button. Confusing with orig reply too,
     // when in practice it also just appends to the bottom. (Direct messages = flat, not threaded.)
-    const skipOrigPostReplyBtn = page.pageRole === PageRole.FormalMessage;
+    // If there're no replies, also don't show an extra orig-post-reply-button. (There's already
+    // a blue primary one, just below-and-to-the-right-of the orig post.)
+    const skipOrigPostReplyBtn =
+        page.pageRole === PageRole.FormalMessage || !mayReplyToOrigPost ||
+          _.every(threadedChildren, c => _.isEmpty(c));
 
     const origPostReplyButton =
         // If mind map: Don't give people a large easily clickable button that keeps appending nodes.
         // People are supposed to think before adding new nodes, e.g. think about where to place them.
-        page.pageRole === PageRole.MindMap ||
-          !mayReplyToOrigPost || _.every(threadedChildren, c => _.isEmpty(c)) ? null :
+        page.pageRole === PageRole.MindMap ? null :
       r.div({ className: 's_APAs'},
         skipOrigPostReplyBtn ? null : r.a({ className: 's_APAs_OPRB ' + makeReplyBtnIcon(store),
             onClick: (event) => this.onAfterPageReplyClick(event, PostType.Normal) },
