@@ -92,7 +92,7 @@ export function die(errorMessage: string) {
   }
   else {
     // Server side.
-    throw new Error(errorMessage);
+    throw Error(errorMessage);
   }
 }
 
@@ -108,6 +108,7 @@ export function logError(errorMessage: string) {
   setTimeout(() => {
     debiki2['Server'].logError(errorMessage);
   });
+  console.error(Error(errorMessage));
 }
 
 

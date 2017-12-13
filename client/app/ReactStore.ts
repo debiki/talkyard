@@ -530,6 +530,11 @@ ReactStore.activateMyself = function(anyNewMe: Myself) {
     // restrictedTopics might include publicly visible topics, which were already in store.topics.
     // So now there might be duplicates, instore.topics.
     store.topics = _.uniqBy(store.topics, 'pageId');
+
+    // Add users for these topics, so avatars can be shown in topic list.
+    _.each(store.me.restrictedTopicsUsers, (user: BriefUser) => {
+      store.usersByIdBrief[user.id] = user;
+    });
   }
 
   // Absent on about-user pages.
@@ -1441,6 +1446,7 @@ function makeStranger(store: Store): Myself {
     watchbar: <Watchbar> { 1: loadRecentWatchbarTopicsFromSessionStorage(), 2: [], 3: [], 4: [] },
 
     restrictedTopics: <Topic[]> [],
+    restrictedTopicsUsers: <BriefUser[]> [],
     restrictedCategories: <Category[]> [],
 
     closedHelpMessages: <any> {},

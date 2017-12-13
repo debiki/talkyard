@@ -841,10 +841,10 @@ object ReactJson {
       }
     }
     val watchbarWithTitles = dao.fillInWatchbarTitlesEtc(watchbar)
-    val (restrictedCategories, restrictedTopics) = listRestrictedCategoriesAndTopics(pageRequest)
+    val (restrCategories, restrTopics, users) = listRestrictedCategoriesAndTopics(pageRequest)
     dao.readOnlyTransaction { transaction =>
-      Some(userDataJsonImpl(user, pageRequest.pageId, watchbarWithTitles, restrictedCategories,
-        restrictedTopics, permissions, unapprovedPostAuthorIds,
+      Some(userDataJsonImpl(user, pageRequest.pageId, watchbarWithTitles, restrCategories,
+        restrictedTopics = restrTopics, restrictedTopicsUsers = users, permissions, unapprovedPostAuthorIds,
         pageRequest.dao.nashorn, transaction))
     }
   }
@@ -858,15 +858,16 @@ object ReactJson {
     val watchbar = request.dao.getOrCreateWatchbar(user.id)
     val watchbarWithTitles = request.dao.fillInWatchbarTitlesEtc(watchbar)
     request.dao.readOnlyTransaction(userDataJsonImpl(user, anyPageId = None, watchbarWithTitles,
-      restrictedCategories = JsArray(), restrictedTopics = Nil, permissions,
-      unapprovedPostAuthorIds = Set.empty, request.dao.nashorn, _))
+      restrictedCategories = JsArray(), restrictedTopics = Nil, restrictedTopicsUsers = Nil,
+      permissions, unapprovedPostAuthorIds = Set.empty, request.dao.nashorn, _))
   }
 
 
   private def userDataJsonImpl(user: User, anyPageId: Option[PageId],
         watchbar: WatchbarWithTitles, restrictedCategories: JsArray,
-        restrictedTopics: Seq[JsValue], permissions: Seq[PermsOnPages],
-        unapprovedPostAuthorIds: Set[UserId], nashorn: ReactRenderer, transaction: SiteTransaction): JsObject = {
+        restrictedTopics: Seq[JsValue], restrictedTopicsUsers: Seq[JsObject],
+        permissions: Seq[PermsOnPages], unapprovedPostAuthorIds: Set[UserId],
+        nashorn: ReactRenderer, transaction: SiteTransaction): JsObject = {
 
     val reviewTasksAndCounts =
       if (user.isStaff) transaction.loadReviewTaskCounts(user.isAdmin)
@@ -946,6 +947,7 @@ object ReactJson {
       "permsOnPages" -> permsOnPagesToJson(permissions, excludeEveryone = true),
 
       "restrictedTopics" -> restrictedTopics,
+      "restrictedTopicsUsers" -> restrictedTopicsUsers,
       "restrictedCategories" -> restrictedCategories,
       "closedHelpMessages" -> JsObject(Nil),
       "myDataByPageId" -> userDataByPageId)
@@ -1028,17 +1030,19 @@ object ReactJson {
 
   COULD ; REFACTOR // move to CategoriesDao? and change from param PageRequest to
   // user + pageMeta?
-  def listRestrictedCategoriesAndTopics(request: PageRequest[_]): (JsArray, Seq[JsValue]) = {
+  def listRestrictedCategoriesAndTopics(request: PageRequest[_])
+        : (JsArray, Seq[JsValue], Seq[JsObject]) = {
     // OLD: Currently there're only 2 types of "personal" topics: unlisted, & staff-only.
     // DON'T: if (!request.isStaff)
       //return (JsArray(), Nil)
 
+    val dao = request.dao
     val authzCtx = request.authzContext
 
     // SHOULD avoid starting a new transaction, so can remove workaround [7YKG25P].
     // (request.dao might start a new transaction)
     val (categories, defaultCategoryId) =
-      request.dao.listAllMaySeeCategories(authzCtx)  // oops, also includes publ cats [4KQSEF08]
+      dao.listAllMaySeeCategories(authzCtx)  // oops, also includes publ cats [4KQSEF08]
 
     // A tiny bit dupl code [5YK03W5]
     val categoriesJson = JsArray(categories.filterNot(_.isRoot) map { category =>
@@ -1047,10 +1051,10 @@ object ReactJson {
 
     val categoryId = request.thePageMeta.categoryId getOrElse {
       // Not a forum topic. Could instead show an option to add the page to the / a forum?
-      return (categoriesJson, Nil)
+      return (categoriesJson, Nil, Nil)
     }
 
-    val (topics, pageStuffById) =
+    val (topics: Seq[PagePathAndMeta], pageStuffById) =
       if (request.thePageRole != PageRole.Forum) {
         // Then won't list topics; no need to load any.
         (Nil, Map[PageId, PageStuff]())
@@ -1060,16 +1064,22 @@ object ReactJson {
           includeAboutCategoryPages = true)
         // SHOULD avoid starting a new transaction, so can remove workaround [7YKG25P].
         // (We're passing dao to ForumController below.)
-        val topics = request.dao.listMaySeeTopicsInclPinned(
+        val topics = dao.listMaySeeTopicsInclPinned(
           categoryId, orderOffset,
           includeDescendantCategories = true,
           authzCtx,
           limit = ForumController.NumTopicsToList)
-        val pageStuffById = request.dao.getPageStuffById(topics.map(_.pageId))
+        val pageStuffById = dao.getPageStuffById(topics.map(_.pageId))
         (topics, pageStuffById)
       }
 
-    (categoriesJson, topics.map(ForumController.topicToJson(_, pageStuffById)))
+    val userIds = mutable.Set[UserId]()
+    topics.foreach(_.meta.addUserIdsTo(userIds))
+    val users = dao.getUsersAsSeq(userIds)
+
+    (categoriesJson,
+      topics.map(ForumController.topicToJson(_, pageStuffById)),
+      users.map(JsUser))
   }
 
 

@@ -37,7 +37,7 @@ let watchbar;
 export function createWatchbar() {
   var elem = document.getElementById('esWatchbarColumn');
   if (watchbar || !elem) return;
-  watchbar = ReactDOM.render(Router({}, Watchbar()), elem);
+  watchbar = ReactDOM.render(Watchbar(), elem);
 }
 
 

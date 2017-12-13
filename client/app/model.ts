@@ -262,6 +262,7 @@ interface Myself {
   watchbar: Watchbar;
 
   restrictedTopics: Topic[];
+  restrictedTopicsUsers: BriefUser[];
   restrictedCategories: Category[];
 
   pageHelpMessage?: HelpMessage;
