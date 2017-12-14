@@ -37,7 +37,7 @@ const r = ReactDOMFactories;
 
 
 export const PageWithStateComponent = createReactClass(<any> {
-  displayName: 'PageWithState',
+  displayName: 'PageWithStateComponent',
   mixins: [debiki2.StoreListenerMixin],
 
   getInitialState: function() {

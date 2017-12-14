@@ -66,7 +66,7 @@ export const InputTypeSubmit: any = makeWidget(r.input, ' btn btn-primary', { ty
 
 function makeWidget(what, spaceWidgetClasses: string, extraProps?) {
   return function(origProps, ...children) {
-    const newProps = _.assign({}, origProps || {}, extraProps);
+    const newProps: any = _.assign({}, origProps || {}, extraProps);
     const helpText = newProps.help;
     if (helpText) {
       // We'll show a help text <p> below the widget.
@@ -99,6 +99,7 @@ function makeWidget(what, spaceWidgetClasses: string, extraProps?) {
 
     // Make link buttons navigate whithin the single-page-app, no page reloads. Even if they're
     // in a different React root. But skip the admin app — it's its own SPA. [6TKQ20]
+    // COULD use Link also in /-/admin sometimes, see  (5JKSW20).
     const afterClick = newProps.afterClick;
     delete newProps.afterClick;
     if (what === r.a && !newProps.onClick && newProps.href.search('/-/admin/') === -1) {
@@ -147,7 +148,8 @@ export function MenuItemLink(props, ...children) {
   // should have a unique "key" prop""" React.js warning.
 
   // If we're in the admin area, use <a href> because then the destinations are in another
-  // single-page-app. And if we're in the forum app, use Link, for instant within-the-SPA navigation.
+  // single-page-app. And if we're in the forum app, use Link, for instant
+  // within-the-SPA navigation.  (5JKSW20)
   const isInAdminArea = location.pathname.search('/-/admin/') === 0;
   const isToAdminArea = props.to.search('/-/admin/') === 0;
   const useSpaLink = isInAdminArea === isToAdminArea;

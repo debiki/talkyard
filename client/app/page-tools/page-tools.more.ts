@@ -67,12 +67,12 @@ var PageToolsDialog = createComponent({
   },
 
   deletePage: function() {
-    const store: Store = this.props.store;
+    const store: Store = this.state.store;
     ReactActions.deletePages([store.currentPageId], this.close);
   },
 
   undeletePage: function() {
-    const store: Store = this.props.store;
+    const store: Store = this.state.store;
     ReactActions.undeletePages([store.currentPageId], this.close);
   },
 

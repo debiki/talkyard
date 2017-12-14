@@ -173,19 +173,17 @@ var eds = {
   pageDataFromServer: _store,
   volatileDataFromServer: _volatileData,
   isDev: @{ if (globals.isDev) "true" else "false" },
-
-    minMaxJs: '@minMaxJs',
-    serverOrigin: '//@tpi.serverAddress',
-    isInLoginWindow: @isInLoginWindowBoolStr,
-    isInLoginPopup: @isInLoginWindowBoolStr && _isInIframe, // window.opener && window.opener.debiki,
-    isInIframe: _isInIframe,
-    isInEmbeddedCommentsIframe: _embCmts,
-    embeddingOrigin: @Html(embeddingOriginOrUndefined),
-    embeddingUrl: @Html(embeddingUrlOrUndefined),
-    embeddedPageId: _isInIframe ? _pageId : undefined,
-    embeddedPageAltId: @Html(altPageIdOrUndefined),
-    assetUrlPrefix: '@tpi.assetUrlPrefix',
-
+  minMaxJs: '@minMaxJs',
+  serverOrigin: '//@tpi.serverAddress',
+  isInLoginWindow: @isInLoginWindowBoolStr,
+  isInLoginPopup: @isInLoginWindowBoolStr && _isInIframe, // window.opener && window.opener.debiki,
+  isInIframe: _isInIframe,
+  isInEmbeddedCommentsIframe: _embCmts,
+  embeddingOrigin: @Html(embeddingOriginOrUndefined),
+  embeddingUrl: @Html(embeddingUrlOrUndefined),
+  embeddedPageId: _isInIframe ? _pageId : undefined,
+  embeddedPageAltId: @Html(altPageIdOrUndefined),
+  assetUrlPrefix: '@tpi.assetUrlPrefix',
   uploadsUrlPrefix: '@tpi.uploadsUrlPrefix'
 };
 

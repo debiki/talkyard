@@ -209,6 +209,9 @@ class ViewPageController @Inject()(cc: ControllerComponents, edContext: EdContex
       throwIndistinguishableNotFound("LoadJson-" + debugCode)
     }
 
+    // Continue also if correctPagePath.value != specifiedPagePath.value — that'll get
+    // corrected client site [4DKWWY0].
+
     // ?? maybe: if (request.user.isEmpty)
     //  globals.strangerCounter.strangerSeen(request.siteId, request.theBrowserIdData)
 
@@ -237,7 +240,6 @@ class ViewPageController @Inject()(cc: ControllerComponents, edContext: EdContex
     Future.successful(
       OkSafeJson(
         Json.obj(
-          "correctPagePath" -> correctPagePath.value, // or not needed? incl in the store string?
           "reactStoreJsonString" -> renderedPage.reactStoreJsonString,
           "me" -> anyUserSpecificDataJson)))
   }

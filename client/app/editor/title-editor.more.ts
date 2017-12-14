@@ -173,7 +173,7 @@ export const TitleEditor = createComponent({
 
     var complicatedStuff;
     if (this.state.showComplicated) {
-      var dashId = this.state.showId ? '-' + ReactStore.getPageId() : '';
+      var dashId = this.state.showId ? '-' + page.pageId : '';
       var slashSlug =  this.state.slug;
       if (dashId && slashSlug) slashSlug = '/' + slashSlug;
       var url = location.protocol + '//' + location.host +

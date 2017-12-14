@@ -62,7 +62,7 @@ var MovePostsDialog = createComponent({
   },
 
   doMove: function() {
-    const store: Store = this.props.store;
+    const store: Store = this.state.store;
     const post: Post = this.state.post;
     Server.movePost(post.uniqueId, this.state.newHost, this.state.newPageId,
         this.state.newParentNr, (postAfter: Post) => {

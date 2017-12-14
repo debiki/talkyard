@@ -378,9 +378,9 @@ trait PostsDao {
       }
 
       val (post, notfs) = anyLastMessageSameUserRecently match {
-        case Some(lastMessage) if !lastMessage.isDeleted =>
+        case Some(lastMessage) if !lastMessage.isDeleted && lastMessage.tyype == PostType.ChatMessage =>
           appendToLastChatMessage(lastMessage, textAndHtml, byWho, spamRelReqStuff, transaction)
-        case None =>
+        case _ =>
           val (post, notfs) =
             createNewChatMessage(page, textAndHtml, byWho, spamRelReqStuff, transaction)
           // For now, let's create review tasks only for new messages, but not when appending
@@ -510,8 +510,7 @@ trait PostsDao {
     // Note: Farily similar to editPostIfAuth() just below. [2GLK572]
     val authorId = byWho.id
 
-    if (lastPost.tyype != PostType.ChatMessage)
-      throwForbidden("EsE6YUW2", o"""Cannot append more chat text; post id ${lastPost.id}
+    dieIf(lastPost.tyype != PostType.ChatMessage, "EsE6YUW2", o"""Post id ${lastPost.id}
           is not a chat message""")
 
     require(lastPost.currentRevisionById == authorId, "EsE5JKU0")

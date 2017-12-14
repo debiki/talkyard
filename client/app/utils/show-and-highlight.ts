@@ -44,6 +44,10 @@ function addAnySidebarWidth(options) {
 
 
 debiki.internal.showAndHighlightPost = function(postElem, options) {
+  if (!postElem) {
+    logError('Got no post [EdE7JKWD20]');
+    return;
+  }
   options = addAnySidebarWidth(options);
   // Add space for position-fixed stuff at the top: Forw/Back btns and open-sidebar btn.
   options.marginTop = options.marginTop || 60;

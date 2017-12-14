@@ -607,7 +607,7 @@ export function maybeLoadAndShowNewPage(store: Store,
   if (store.isInEmbeddedCommentsIframe)
     return;
 
-  // If navigating within a mounted component.
+  // If navigating within a mounted component. Maybe new query string?
   if (location.pathname === newUrlPath)
     return;
 
@@ -653,7 +653,7 @@ export function maybeLoadAndShowNewPage(store: Store,
       hasPageAlready = true;
       if (page.pageId === store.currentPageId) {
         // We just loaded the whole html page from the server, and are already trying to
-        // render 'page'. Don't try to show that page again here.
+        // render 'page'. Need not do anything more here.
       }
       else {
         // FOR NOW: since pushing of updates to [pages in the store other than the one
@@ -682,7 +682,8 @@ export function loadAndShowNewPage(newUrlPath, history) {
   // So the user e.g. won't click Reply and start typing, but then the page suddenly changes.
   Server.loadPageJson(newUrlPath, response => {
     if (response.problemCode) {
-      // SHOULD look at the code and do sth "smart" instead.
+      // COULD look at the code and do sth "smart" instead. But not urgent — only pages one
+      // may access, should be shown & SPA-linked to anyway.
       die(`${response.problemMessage} [${response.problemCode}]`);
       return;
     }
@@ -693,13 +694,14 @@ export function loadAndShowNewPage(newUrlPath, history) {
     const page = newStore.pagesById[pageId];
     const newUsers = _.values(newStore.usersByIdBrief);
 
-    // This'll trigger a this.onChange() event.
+    // This'll trigger ReactStore onChange() event, and everything will redraw to show the new page.
     showNewPage(page, newUsers, response.me, history);
   });
 }
 
 
-export function showNewPage(newPage: Page, newUsers: BriefUser[], me: Myself, history: History) {
+export function showNewPage(newPage: Page | AutoPage, newUsers: BriefUser[],
+        me: Myself, history: History) {
   ReactDispatcher.handleViewAction({
     actionType: actionTypes.ShowNewPage,
     newPage,

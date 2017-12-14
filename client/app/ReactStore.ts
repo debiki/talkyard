@@ -64,8 +64,8 @@ store.user = store.me; // try to remove
 // Auto pages are e.g. admin or user profile pages, html generated automatically when needed.
 // No page id or user created data server side. Auto pages need this default empty stuff,
 // to avoid null errors.
-export function makeAutoPage(): any {
-  return {
+export function makeAutoPage(): Page {
+  return <Page> <any> <AutoPage> {
     dbgSrc: 'AP',
     ancestorsRootFirst: [],
     pageMemberIds: [],
@@ -81,7 +81,7 @@ export function makeAutoPage(): any {
 export function makeNoPageData(): MyPageData {
   return {
     dbgSrc: 'MyNP',
-    rolePageSettings: {notfLevel: NotfLevel.Normal},
+    rolePageSettings: { notfLevel: NotfLevel.Normal },
     votes: {},
     unapprovedPosts: {},
     unapprovedPostAuthors: [],
@@ -94,7 +94,7 @@ export function makeNoPageData(): MyPageData {
 
 ReactDispatcher.register(function(payload) {
   const action = payload.action;
-  const currentPage = store.currentPage;
+  const currentPage: Page = store.currentPage;
   // SHOULD clone the store here? [8GKB3QA] but might introduce so many bugs, so wait a bit.
   // So becomes (more) immutable.
   switch (action.actionType) {
@@ -181,7 +181,6 @@ ReactDispatcher.register(function(payload) {
       break;
 
     case ReactActions.actionTypes.DeletePages:
-      // UNTESTED xx
       _.each(action.pageIds, id => {
         const page: Page = store.pagesById[id];
         if (page) {
@@ -191,7 +190,6 @@ ReactDispatcher.register(function(payload) {
       break;
 
     case ReactActions.actionTypes.UndeletePages:
-      // UNTESTED xx
       _.each(action.pageIds, id => {
         const page: Page = store.pagesById[id];
         if (page) {
@@ -239,7 +237,7 @@ ReactDispatcher.register(function(payload) {
 
     case ReactActions.actionTypes.ShowForumIntro:
       store.hideForumIntro = !action.visible;
-      putInLocalStorage('hideForumIntro', action.visible ? 'false' : 'true');
+      putInLocalStorage('hideForumIntro', !action.visible);
       if (store.hideForumIntro) $h.addClasses(htmlElem, 'dw-hide-forum-intro');
       else $h.removeClasses(htmlElem, 'dw-hide-forum-intro');
       break;
@@ -375,6 +373,7 @@ ReactStore.initialize = function() {
   if (store.currentPageId) {
     // This is done in an <html> inline script. [4GKRW02]
     dieIf(!store.currentPage, 'EdE6KSQ84');
+    dieIf(store.currentPage.pageId !== store.currentPageId, 'EdE6LKT20');
     dieIf(store.currentPage !== store.pagesById[store.currentPageId], 'EdE5AZXB4');
   }
   else {
@@ -451,16 +450,17 @@ ReactStore.activateMyself = function(anyNewMe: Myself) {
     $h.addClasses(htmlElem, 'e2eMyDataAdded');
   }, 1);
 
-  const newMe = anyNewMe;
-  if (!newMe) {
-    // Dupl 3 lines (2WKBPPWF0) ---
+  let myPageData: MyPageData;
+  {
+    const me = anyNewMe || store.me;
     // Avoid null errors by setting to no-page-data, if we're currently not showing any page.
-    const myPageData: MyPageData = store.me.myDataByPageId[store.currentPageId] || makeNoPageData();
-    store.me.myCurrentPageData = myPageData;
+    myPageData = me.myDataByPageId[store.currentPageId] || makeNoPageData();
+    me.myCurrentPageData = myPageData;
     // Remember marks per global post ids. COULD_FREE_MEM
-    store.me.marksByPostId = _.clone(myPageData.marksByPostId);
-    // -----------------------------
+    me.marksByPostId = _.clone(myPageData.marksByPostId);
+  }
 
+  if (!anyNewMe) {
     // For now only. Later on, this data should be kept server side instead?
     addLocalStorageDataTo(store.me);
     debiki2.pubsub.subscribeToServerEvents();
@@ -468,19 +468,13 @@ ReactStore.activateMyself = function(anyNewMe: Myself) {
     return;
   }
 
+  const newMe = anyNewMe;
+
   // When changing user, only data for the current page gets loaded. So we don't need to
   // update any other pages in the store, than the current page.
   // @ifdef DEBUG
   dieIf(_.size(newMe.myDataByPageId) > 1, 'EdE2WKB5U0');
   // @endif
-
-  // Dupl 3 lines (2WKBPPWF0) ---
-  // Avoid null errors by setting to no-page-data, if we're currently not showing any page.
-  const myPageData: MyPageData = newMe.myDataByPageId[store.currentPageId] || makeNoPageData();
-  newMe.myCurrentPageData = myPageData;
-  // Remember marks per global post ids. COULD_FREE_MEM
-  newMe.marksByPostId = _.clone(myPageData.marksByPostId);
-  // -----------------------------
 
   if (newMe.isAdmin) {
     $h.addClasses(htmlElem, 'dw-is-admin dw-is-staff');
@@ -500,7 +494,7 @@ ReactStore.activateMyself = function(anyNewMe: Myself) {
       _.filter(oldMe.permsOnPages, (p: PermsOnPage) => p.forPeopleId === Groups.EveryoneId);
   newMe.permsOnPages = everyonesPerms.concat(newMe.permsOnPages);
 
-  store.user = newMe; // try to remove
+  store.user = newMe; // try to remove the .user field, use .me instead
   store.me = newMe;
   addLocalStorageDataTo(store.me);
   theStore_addOnlineUser(me_toBriefUser(newMe));
@@ -698,7 +692,14 @@ function updatePost(post: Post, pageId: PageId, isCollapsing?: boolean) {
   store.now = new Date().getTime();
   const page: Page = store.currentPage;
 
-  var oldVersion = page.postsByNr[post.nr];
+  if (page.pageId !== pageId) {
+    // Need to lookup the correct page then, just above, instead of using the current page?
+    // But for now, just ignore this. We currently reload, when navigating back to a page
+    // in the store anyway [8YDVP2A].
+    return;
+  }
+
+  const oldVersion = page.postsByNr[post.nr];
   if (oldVersion && !isCollapsing) {
     // If we've modified-saved-reloaded-from-the-server this post, then ignore the
     // collapse settings from the server, in case the user has toggled it client side.
@@ -726,9 +727,9 @@ function updatePost(post: Post, pageId: PageId, isCollapsing?: boolean) {
   page.postsByNr[post.nr] = post;
 
   // In case this is a new post, update its parent's child id list.
-  var parentPost = page.postsByNr[post.parentNr];
+  const parentPost = page.postsByNr[post.parentNr];
   if (parentPost) {
-    var alreadyAChild =
+    const alreadyAChild =
         _.find(parentPost.childIdsSorted, childId => childId === post.nr);
     if (!alreadyAChild) {
       parentPost.childIdsSorted.unshift(post.nr);
@@ -793,7 +794,7 @@ function markPostAsRead(postId: number, manually: boolean) {
 }
 
 
-var lastPostIdMarkCycled = null;
+let lastPostIdMarkCycled = null;
 
 function cycleToNextMark(postId: number) {
   const me: Myself = store.me;
@@ -1248,6 +1249,8 @@ function patchTheStore(storePatch: StorePatch) {
       // any posts below.
     }
     else {
+      // (Hmm this assumes we get all patches in between these two versions, or that
+      // the current patch contains all changes, since the current page version.)
       page.pageVersion = storePatchPageVersion;
     }
 
@@ -1282,7 +1285,7 @@ function showNewPage(newPage: Page, newUsers: BriefUser[], newMe: Myself | null,
   let myData: MyPageData;
   if (newMe) {
     store.me.watchbar = newMe.watchbar;
-    const myData = newMe.myDataByPageId[newPage.pageId];
+    myData = newMe.myDataByPageId[newPage.pageId];
     if (myData) {
       store.me.myDataByPageId[newPage.pageId] = myData;
     }
@@ -1330,7 +1333,7 @@ function showNewPage(newPage: Page, newUsers: BriefUser[], newMe: Myself | null,
   let correctedUrl;
   if (pagePath && pagePath !== location.pathname) {
     correctedUrl = pagePath + location.search + location.hash;
-    history.replace(correctedUrl);
+    history.replace(correctedUrl);  // [4DKWWY0]
   }
 
   // Make Back button work properly.
@@ -1339,7 +1342,7 @@ function showNewPage(newPage: Page, newUsers: BriefUser[], newMe: Myself | null,
   // Restart the reading progress tracker, now when on a new page.
   page.PostsReadTracker.reset();
 
-  // Update any top header links so the hereaafter active one (if any) gets highlighted/underlineg.
+  // Update any top header links so the hereaafter active one (if any) gets highlighted/underlined.
   debiki2.utils.highlightActiveLinkInHeader();
 
   // When done rendering, replace date ISO strings with pretty dates.

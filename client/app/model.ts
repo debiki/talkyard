@@ -509,8 +509,18 @@ interface VolatileDataFromServer {
 }
 
 
+// An auto generated page, like a user's profile, or the search results page.
+interface AutoPage {
+  dbgSrc: string,
+  ancestorsRootFirst?: Ancestor[];
+  pageMemberIds: UserId[];
+  postsByNr: { [postNr: number]: Post };
+  pagePath: {};
+}
+
+// A page with real user written content, e.g. a discussion, chat, info page or homepage.
 interface Page {
-  dbgSrc?: string;
+  dbgSrc: string;
   pageId: PageId;
   pageVersion: PageVersion;
   pageMemberIds: UserId[];

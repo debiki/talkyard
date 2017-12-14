@@ -950,7 +950,8 @@ object ReactJson {
       "restrictedTopicsUsers" -> restrictedTopicsUsers,
       "restrictedCategories" -> restrictedCategories,
       "closedHelpMessages" -> JsObject(Nil),
-      "myDataByPageId" -> userDataByPageId)
+      "myDataByPageId" -> userDataByPageId,
+      "marksByPostId" -> JsObject(Nil))
 
     if (user.isAdmin) {
       val siteSettings = transaction.loadSiteSettings()

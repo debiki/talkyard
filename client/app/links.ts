@@ -107,7 +107,8 @@ export function linkToAboutPage(): string {
 
 export function rememberBackUrl(url: string) {
   // Skip API pages — those are the ones we're returning *from*. (Don't require === 0 match;
-  // there might be a hostname.)
+  // there might be a hostname. Matching anywhere is ok, because the prefix is '/-/' and
+  // that substring isn't allowed in other non-api paths.)
   if (url.search(ApiUrlPathPrefix) >= 0) {
     return;
   }

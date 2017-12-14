@@ -146,7 +146,7 @@ export const ForumComponent = createReactClass(<any> {
     else {
       activeCategory = {
         name: "All categories",
-        id: forumPage.categoryId,
+        id: forumPage.categoryId, // the forum root category
         isForumItself: true,
         newTopicTypes: [],
       };
@@ -669,8 +669,8 @@ const LoadAndListTopics = createFactory({
     // The server has included in the Flux store a list of the most recent topics, and we
     // can use that lis when rendering the topic list server side, or for the first time
     // in the browser (but not after that, because then new topics might have appeared).
-    const store: Store = this.props.store;
     if (this.canUseTopicsInScriptTag()) {
+      const store: Store = this.props.store;
       return {
         topics: store.topics,
         showLoadMoreButton: store.topics && store.topics.length >= NumNewTopicsPerRequest
@@ -693,9 +693,8 @@ const LoadAndListTopics = createFactory({
       const category: Category = this.props.activeCategory;
       let topics;
       if (category) {
-        // Is null, if topics not yet loaded.
         topics = _.clone(store.topics);
-        !topics || topics.sort((t: Topic, t2: Topic) => topic_sortByLatestActivity(t, t2, category.id));
+        topics.sort((t: Topic, t2: Topic) => topic_sortByLatestActivity(t, t2, category.id));
       }
       else {
         // A restricted category, we may not see it?
@@ -706,7 +705,8 @@ const LoadAndListTopics = createFactory({
   },
 
   canUseTopicsInScriptTag: function() {
-    if (this.props.topicsInStoreMightBeOld)
+    const store: Store = this.props.store;
+    if (!store.topics || this.props.topicsInStoreMightBeOld)
       return false;
 
     // The server includes topics for the active-topics sort order, all categories.
@@ -853,7 +853,7 @@ const LoadAndListTopics = createFactory({
   },
 
   render: function() {
-    return ListTopicsComponent({
+    return TopicsList({
       topics: this.state.topics,
       store: this.props.store,
       useTable: this.props.useTable,
@@ -871,8 +871,8 @@ const LoadAndListTopics = createFactory({
 
 
 
-export const ListTopicsComponent = createComponent({
-  displayName: 'ListTopicsComponent',
+export const TopicsList = createComponent({
+  displayName: 'TopicsList',
 
   getInitialState: function() {
     return {};

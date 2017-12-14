@@ -131,6 +131,7 @@ function renderDiscussionPage() {
     debiki2.utils.onMouseDetected(debiki2.Server.load2dScriptsBundleStart2dStuff);
   }
 
+  // CLEAN_UP remove this? React 16 no longer uses these checksums, right?
   // Make it possible to test React.js performance in the browser.
   if (location.search.indexOf('breakReactChecksums=true') !== -1) {
     var reactRoots = debiki2.$bySelector('[data-react-checksum]');

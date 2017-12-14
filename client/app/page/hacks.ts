@@ -32,6 +32,7 @@
  * CLEAN_UP REFACTOR maybe not needed? Supposedly, if creating different Router:s in separate
  * react roots, but one gives them the same History object, they'll know what the others
  * are doing and update their own routes proprely, when navigation happens in another React root...
+ * .. NO don't do that? Because it's ~ 4 kb min.js.gz, feels like too much, when not really needed.
  *
  * ...But still a bit needed, for any non-React links in the custom-html-top-header.
  */

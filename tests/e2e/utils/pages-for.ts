@@ -1815,8 +1815,6 @@ function pagesFor(browser) {
       activity: {
         switchToPosts: function(opts: { shallFindPosts: boolean }) {
           browser.waitAndClick('.s_UP_Act_Nav_PostsB');
-          api.toGoogleAndBack(); // [E2EBUG] otherwise waitForVisible() on the next line hangs,
-                                 // although this returns true:  browser.isVisible('.s_UP_Act_Ps');
           browser.waitForVisible('.s_UP_Act_Ps');
           if (opts.shallFindPosts) {
             browser.waitForVisible('.s_UP_Act_Ps_P');
@@ -1828,10 +1826,6 @@ function pagesFor(browser) {
 
         switchToTopics: function(opts: { shallFindTopics: boolean }) {
           browser.waitAndClick('.s_UP_Act_Nav_TopicsB');
-          /*
-          api.toGoogleAndBack(); // [E2EBUG] otherwise waitForVisible() on the next line hangs,
-                                 // although this returns true: browser.isVisible('.s_UP_Act_Ts');
-           */
           browser.waitForVisible('.s_UP_Act_Ts');
           if (opts.shallFindTopics) {
             browser.waitForVisible('.e2eTopicTitle');

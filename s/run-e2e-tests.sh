@@ -131,6 +131,7 @@ function runAllEndToEndTests {
   runEndToEndTest s/wdio target/e2e/wdio.2chrome.conf.js    --browser $browser --only embedded-comments-create-site.2browsers $args
   runEndToEndTest s/wdio target/e2e/wdio.conf.js    --browser $browser --only embedded-comments-discussion-id $args
   runEndToEndTest s/wdio target/e2e/wdio.conf.js    --browser $browser --only embedded-comments-all-logins $args
+  runEndToEndTest s/wdio target/e2e/wdio.conf.js    --browser $browser --only embedded-comments-edit-and-vote $args
 
   # wip:
   # settings-allow-local-signup
