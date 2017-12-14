@@ -41,14 +41,18 @@ export const PageWithStateComponent = createReactClass(<any> {
   mixins: [debiki2.StoreListenerMixin],
 
   getInitialState: function() {
-    return { store: ReactStore.allData() };
+    const store: Store = ReactStore.allData();
+    const isMaybeWrongPage = this.props.location.pathname !== store.currentPage.pagePath.value;
+    return { store, isMaybeWrongPage };
   },
 
   onChange: function() {
-    this.setState({ store: ReactStore.allData() });
+    const store: Store = ReactStore.allData();
+    const isMaybeWrongPage = this.props.location.pathname !== store.currentPage.pagePath.value;
+    this.setState({ store, isMaybeWrongPage });
   },
 
-  componentWillMount: function() {
+  componentDidMount: function() {
     ReactActions.maybeLoadAndShowNewPage(this.state.store, this.props.history, this.props.location);
   },
 
@@ -58,8 +62,15 @@ export const PageWithStateComponent = createReactClass(<any> {
   },
 
   render: function() {
-    // Send router props to the page.
-    return Page({ store: this.state.store, ...this.props });
+    // 1. What does isMaybeWrongPage mean? Let's say we're in the forum. Then we click a link
+    // to /some-page. The URL will update immediately to /some-page, and React will activate
+    // the route to that page, i.e. this component, PageWithStateComponent.
+    // And we'll run this code — but we haven't yet loaded the new page. The current page
+    // is still the forum page. We'd render the forum, as a normal page, instead of as a topic list.
+    // That'd result in "a flash of the forum rendered incorrectly" and doesn't look nice.
+    // Instead, until we've loaded the new page, render nothing.
+    // 2. About ...this.props: That sends router props to the new page.
+    return this.state.isMaybeWrongPage ? null : Page({ store: this.state.store, ...this.props });
   }
 });
 
