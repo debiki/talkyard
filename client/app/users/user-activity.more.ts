@@ -185,7 +185,7 @@ const UsersTopics = createFactory({
       return (
         r.p({}, "Loading ..."));
 
-    let topicsElems = forum.ListTopicsComponent({
+    let topicsElems = forum.TopicsList({
       topics: this.state.topics,
       store: this.props.store,
       useTable: true,

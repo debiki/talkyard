@@ -1203,7 +1203,6 @@ function patchTheStore(storePatch: StorePatch) {
     // (Don't lookup pagesById[patchedPageId] because won't work, if moved to new page.
     // We need to search everything in pagesById, because we don't know which page might
     // have been the old one, if any.)
-    // UNTESTED
     _.each(store.pagesById, (oldPage: Page) => {
       _.each(patchedPosts, (patchedPost: Post) => {
         _.each(oldPage.postsByNr, (oldPost: Post) => {

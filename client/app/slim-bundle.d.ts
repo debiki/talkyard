@@ -233,7 +233,7 @@ declare namespace debiki2 {
   }
 
   namespace forum {
-    var ListTopicsComponent;
+    var TopicsList;
   }
 
   namespace page {

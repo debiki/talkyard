@@ -41,15 +41,19 @@ export const PageWithStateComponent = createReactClass(<any> {
   mixins: [debiki2.StoreListenerMixin],
 
   getInitialState: function() {
-    const store: Store = ReactStore.allData();
-    const isMaybeWrongPage = this.props.location.pathname !== store.currentPage.pagePath.value;
-    return { store, isMaybeWrongPage };
+    return this.makeState();
   },
 
   onChange: function() {
+    this.setState(this.makeState());
+  },
+
+  makeState: function() {
     const store: Store = ReactStore.allData();
-    const isMaybeWrongPage = this.props.location.pathname !== store.currentPage.pagePath.value;
-    this.setState({ store, isMaybeWrongPage });
+    // Is undef if on an embedded comments page (then, no router).
+    const location = this.props.location;
+    const isMaybeWrongPage = location && location.pathname !== store.currentPage.pagePath.value;
+    return { store, isMaybeWrongPage };
   },
 
   componentDidMount: function() {
