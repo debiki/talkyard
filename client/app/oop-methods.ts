@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016 Kaj Magnus Lindberg
+ * Copyright (c) 2016-2017 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -28,8 +28,14 @@
  */
 
 //------------------------------------------------------------------------------
-   module debiki2 {
+   namespace debiki2 {
 //------------------------------------------------------------------------------
+
+
+export function urlPath_isToPageId(urlPath: string, pageId: PageId): boolean {
+  const idPathRegex = new RegExp(`^.*/-${pageId}(/.*)?$`);  // [2WBG49]
+  return idPathRegex.test(urlPath);
+}
 
 
 export function topic_lastActivityAtMs(topic: Topic): number {

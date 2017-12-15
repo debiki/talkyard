@@ -100,11 +100,8 @@ export const ForumComponent = createReactClass(<any> {
     });
   },
 
-  componentWillMount: function() {
-    ReactActions.maybeLoadAndShowNewPage(this.state.store, this.props.history, this.props.location);
-  },
-
   componentDidMount: function() {
+    ReactActions.maybeLoadAndShowNewPage(this.state.store, this.props.history, this.props.location);
     // Dupl code [5KFEWR7]
     this.timerHandle = setInterval(this.checkSizeChangeLayout, 200);
   },

@@ -35,18 +35,39 @@
 
 const r = ReactDOMFactories;
 
+// UX COULD reset if logs out.
+const scrollXyByPageId = {};
+
+function rememberScrollPosition(pageId: PageId) {
+  const pageCol = $byId('esPageColumn');
+  scrollXyByPageId[pageId] = [pageCol.scrollLeft, pageCol.scrollTop];
+}
+
+// UX BUG SHOULD the first time for each new page, scroll to the last read post, ...
+// (i.e. ReadingProgress.lastViewedPostNr in model.ts)
+function scrollToLastPosition(pageId: PageId) {
+  const xy = scrollXyByPageId[pageId] || [0, 0];   // ... instead of always 0,0 first
+  const pageCol = $byId('esPageColumn');
+  pageCol.scrollLeft = xy[0];
+  pageCol.scrollTop = xy[1];
+}
+
 
 export const PageWithStateComponent = createReactClass(<any> {
   displayName: 'PageWithStateComponent',
   mixins: [debiki2.StoreListenerMixin],
 
   getInitialState: function() {
-    return this.makeState();
+    const state = this.makeState();
+    this.scrollPageId = state.store.currentPageId;
+    return state;
   },
+
 
   onChange: function() {
     this.setState(this.makeState());
   },
+
 
   makeState: function() {
     const store: Store = ReactStore.allData();
@@ -56,14 +77,53 @@ export const PageWithStateComponent = createReactClass(<any> {
     return { store, isMaybeWrongPage };
   },
 
+
   componentDidMount: function() {
-    ReactActions.maybeLoadAndShowNewPage(this.state.store, this.props.history, this.props.location);
+    const store: Store = this.state.store;
+    ReactActions.maybeLoadAndShowNewPage(store, this.props.history, this.props.location);
+    if (!this.state.isMaybeWrongPage) {
+      scrollToLastPosition(store.currentPageId);
+    }
   },
 
+
   componentWillReceiveProps: function(nextProps) {
-    ReactActions.maybeLoadAndShowNewPage(this.state.store, this.props.history, this.props.location,
-        nextProps.location.pathname);
+    const location = this.props.location;
+    if (!location)
+      return;
+
+    // If we're about to show another page, remember the current page's scroll offset.
+    const store: Store = this.state.store;
+    const nextUrlPath = nextProps.location.pathname;
+    if (nextUrlPath !== location.pathname && !urlPath_isToPageId(nextUrlPath, store.currentPageId)) {
+      rememberScrollPosition(store.currentPageId);
+    }
+
+    ReactActions.maybeLoadAndShowNewPage(store, this.props.history, location, nextUrlPath);
   },
+
+
+  componentDidUpdate: function(oldProps, oldState) {
+    const store: Store = this.state.store;
+    if (this.scrollPageId !== store.currentPageId && !this.state.isMaybeWrongPage) {
+      this.scrollPageId = store.currentPageId;
+      // Apparently some re-layout is still happening, so don't scroll until after that's been done.
+      // For example, inserting YouTube videos might take a while, for the browser? and afterwards
+      // it modifies the scroll offset to compensate for the size of the video? which results in
+      // the wrong scroll offset.
+      // Try three times, once immediately, so looks good. And once, quickly, hopefully will work.
+      // And once, even slower, works always, so far.
+      // BUG UX SHOULD make this work with just 1 scroll call, and immediately. Can do that (?)
+      // by remembering the page size, and forcing that min-height directly when switching page.
+      // So the total page size won't change, just because the browser inserts stuff it
+      // lazy-loads / lazy-inserts-sizes, like the above-mentioned videos ??
+      function updateScroll() { scrollToLastPosition(store.currentPageId); }
+      setTimeout(updateScroll);
+      setTimeout(updateScroll, 50);
+      setTimeout(updateScroll, 300);
+    }
+  },
+
 
   render: function() {
     // 1. What does isMaybeWrongPage mean? Let's say we're in the forum. Then we click a link
@@ -80,6 +140,7 @@ export const PageWithStateComponent = createReactClass(<any> {
 
 
 export const PageWithState = reactCreateFactory(<any> PageWithStateComponent);
+
 
 
 const Page = createComponent({

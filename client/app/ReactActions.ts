@@ -630,8 +630,7 @@ export function maybeLoadAndShowNewPage(store: Store,
 
     // Maybe the url path is wrong? Case 3 above (4WKBT80): test '/-pageid' urls.
     if (!isThisPage) {
-      const idPathRegex = new RegExp(`^.*/-${page.pageId}(/.*)?$`);  // [2WBG49]
-      isThisPage =  idPathRegex.test(newUrlPath);
+      isThisPage = urlPath_isToPageId(newUrlPath, page.pageId);
     }
 
     // In a forum, there's sth like '/latest/ideas' after the forum page path. So,
