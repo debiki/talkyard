@@ -94,14 +94,16 @@ var CreateUserDialog = createClassAndFactory({
     return { isOpen: false, userData: {}, store: {} };
   },
   open: function(userData, anyReturnToUrl: string) {
-    // In case any login dialog is still open:
-    login.getLoginDialog().close();
+    const loginDialog = login.getLoginDialog();
     this.setState({
       isOpen: true,
       userData: userData,
+      afterLoginCallback: loginDialog.getAfterLoginCallback(),
       anyReturnToUrl: anyReturnToUrl,
       store: ReactStore.allData(),
     });
+    // In case any login dialog is still open: (this resets the after-login-callback copied above)
+    loginDialog.close();
   },
   close: function() {
     this.setState({ isOpen: false, userData: {} });
@@ -109,6 +111,7 @@ var CreateUserDialog = createClassAndFactory({
   render: function () {
     const store: Store = this.state.store;
     const childProps = _.clone(this.state.userData);
+    childProps.afterLoginCallback = this.state.afterLoginCallback;
     childProps.anyReturnToUrl = this.state.anyReturnToUrl;
     childProps.store = store;
     childProps.closeDialog = this.close;

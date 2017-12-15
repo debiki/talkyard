@@ -23,7 +23,7 @@
 const d = { i: debiki.internal };
 
 
-// From before React.js.
+// From before React.js.  Gah! This needs to be refactored :-/  Try to remove this field.
 export let anyContinueAfterLoginCallback = null;
 
 

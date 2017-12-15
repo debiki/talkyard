@@ -146,6 +146,10 @@ var LoginDialog = createClassAndFactory({
       });
   },
 
+  getAfterLoginCallback: function() {
+    return this.state.afterLoginCallback;
+  },
+
   switchBetweenLoginAndSignUp: function() {
     this.setState({ isSignUp: !this.state.isSignUp });
   },

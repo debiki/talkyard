@@ -1,0 +1,3 @@
+#!/bin/bash
+
+s/d kill web app ; s/d start web app ; s/d-logs -f --tail 0
