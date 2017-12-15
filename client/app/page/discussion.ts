@@ -234,7 +234,7 @@ export const TitleBodyComments = createComponent({
             const skip = isSkip ? '-skip' : '';
             const title = isSkip ? "Skip this task" : "Pick another task";
             return (
-              PrimaryButton({ className: 's_UtxHelp_HaveAsked_ContinueB' + skip,
+              PrimaryButton({ className: 's_UtxHelp_HaveAsked_ContinueB' + skip, // dupl code (8JKWKSA1)
                   onClick: () => {
                     let tasksToSkip = getSetCookie('edCoUtxSkip');
                     tasksToSkip = (tasksToSkip || '') + page.pageId + ',';
@@ -723,8 +723,26 @@ const RootPostAndComments = createComponent({
             MetaPost(threadProps)));
       }
       else {
+        // [plugin] [utx] ----------------------------
+        let pickNextTaskStuff;
+        if (page.pageRole === PageRole.UsabilityTesting && me.id === child.authorId &&
+            me.id !== rootPost.authorId) {
+          pickNextTaskStuff = debiki2.help.HelpMessageBox({ className: 's_UtxNextTask', message: {
+            id: 'EdH5P0WF2', version: 1, alwaysShow: true, content: r.div({},
+              r.h1({ className: 's_UtxHelp_HaveAsked_Title' }, "Done"),
+              r.p({}, "You feedback is below. Continue giving feedback to others?"),
+              PrimaryButton({ className: 's_UtxHelp_HaveAsked_ContinueB', // dupl code (8JKWKSA1)
+                  onClick: () => {
+                    let tasksToSkip = getSetCookie('edCoUtxSkip');
+                    tasksToSkip = (tasksToSkip || '') + page.pageId + ',';
+                    getSetCookie('edCoUtxSkip', tasksToSkip);
+                    location.assign('/give-me-a-task');
+                  }}, "Next task")) }});
+        }
+        // --/ [plugin] [utx] ------------------------
         return (
           r.li({ key: childId },
+            pickNextTaskStuff,
             Thread(threadProps)));
       }
     });
