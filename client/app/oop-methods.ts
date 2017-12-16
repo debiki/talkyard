@@ -38,6 +38,20 @@ export function urlPath_isToPageId(urlPath: string, pageId: PageId): boolean {
 }
 
 
+export function urlPath_isToForum(urlPath: string, forumPath: string): boolean {
+  if (urlPath === forumPath)
+    return true;
+  // Look for forum-path + /active|/new|etc routes:
+  const slash = forumPath[forumPath.length - 1] === '/' ? '' : '/';
+  const latest = RoutePathLatest;
+  const neew = RoutePathNew;
+  const top = RoutePathTop;
+  const cats = RoutePathCategories;
+  const isToForumRegex = new RegExp(`^${forumPath}${slash}(${latest}|${neew}|${top}|${cats})(/.*)?$`);
+  return isToForumRegex.test(urlPath);
+}
+
+
 export function topic_lastActivityAtMs(topic: Topic): number {
    return topic.bumpedAtMs || topic.createdAtMs;
 }

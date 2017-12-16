@@ -1331,8 +1331,13 @@ function showNewPage(newPage: Page, newUsers: BriefUser[], newMe: Myself | null,
   const pagePath = newPage.pagePath.value;
   let correctedUrl;
   if (pagePath && pagePath !== location.pathname) {
-    correctedUrl = pagePath + location.search + location.hash;
-    history.replace(correctedUrl);  // [4DKWWY0]
+    if (newPage.pageRole === PageRole.Forum && urlPath_isToForum(location.pathname, pagePath)) {
+      // Fine, is to somewhere inside the forum, not supposed to be an exact match.
+    }
+    else {
+      correctedUrl = pagePath + location.search + location.hash;
+      history.replace(correctedUrl);  // [4DKWWY0]
+    }
   }
 
   // Make Back button work properly.

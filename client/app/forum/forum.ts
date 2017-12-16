@@ -78,9 +78,20 @@ export const ForumScrollBehavior = {
 };
 
 
+let lastScrollYByPath = {};
+let scrollToWhenCommentsLoaded;
+
+function scrollToLastPositionSoon() {
+  setTimeout(function() {
+    $byId('esPageColumn').scrollTop = scrollToWhenCommentsLoaded || 0;
+    scrollToWhenCommentsLoaded = 0;
+  });
+}
+
+
 export const ForumComponent = createReactClass(<any> {
   displayName: 'ForumComponent',
-  mixins: [debiki2.StoreListenerMixin],
+  mixins: [StoreListenerMixin, utils.PageScrollMixin],
 
   getInitialState: function() {
     const store: Store = debiki2.ReactStore.allData();
@@ -102,6 +113,8 @@ export const ForumComponent = createReactClass(<any> {
 
   componentDidMount: function() {
     ReactActions.maybeLoadAndShowNewPage(this.state.store, this.props.history, this.props.location);
+    scrollToWhenCommentsLoaded = lastScrollYByPath[this.props.location.pathname] || 0;
+    lastScrollYByPath = {};
     // Dupl code [5KFEWR7]
     this.timerHandle = setInterval(this.checkSizeChangeLayout, 200);
   },
@@ -109,6 +122,14 @@ export const ForumComponent = createReactClass(<any> {
   componentWillUnmount: function() {
     this.isGone = true;
     clearInterval(this.timerHandle);
+  },
+
+  onScroll: function() {
+    // Remember scroll only for the current sort order, otherwise, if there's a scroll position
+    // remembered for each possible combination of categories and sort orders, the user will get
+    // confused, because hen won't remember that stuff, henself, and wonder "why not starts at top?".
+    lastScrollYByPath = {};
+    lastScrollYByPath[this.props.location.pathname] = $byId('esPageColumn').scrollTop;
   },
 
   checkSizeChangeLayout: function() {
@@ -698,6 +719,7 @@ const LoadAndListTopics = createFactory({
         topics = [];
       }
       this.setState({ topics });
+      scrollToLastPositionSoon();
     }
   },
 
@@ -802,6 +824,7 @@ const LoadAndListTopics = createFactory({
         showLoadMoreButton: newlyLoadedTopics.length >= NumNewTopicsPerRequest
       });
       this.countTopicsWaitingForCritique(topics); // for now only
+      scrollToLastPositionSoon();
     });
   },
 

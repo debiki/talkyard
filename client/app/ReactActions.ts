@@ -637,15 +637,7 @@ export function maybeLoadAndShowNewPage(store: Store,
     // special check for forum pages; just a prefix match is enough.
     const storePageIsTheForum = storePagePath === store.forumPath;
     if (!isThisPage && storePageIsTheForum) {
-      // We've already tested for an exact path match — so only look for /active|/new|etc routes now.
-      const slash = storePagePath[storePagePath.length - 1] === '/' ? '' : '/';
-      const latest = RoutePathLatest;
-      const neew = RoutePathNew;
-      const top = RoutePathTop;
-      const cats = RoutePathCategories;
-      const newPathIsToForumRegex = new RegExp(
-          `^${store.forumPath}${slash}(${latest}|${neew}|${top}|${cats})(/.*)?$`);
-      isThisPage = newPathIsToForumRegex.test(newUrlPath);
+      isThisPage = urlPath_isToForum(newUrlPath, store.forumPath);
     }
 
     if (isThisPage) {
