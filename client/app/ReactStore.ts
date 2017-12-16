@@ -159,7 +159,9 @@ ReactDispatcher.register(function(payload) {
     case ReactActions.actionTypes.AcceptAnswer:
       currentPage.pageAnsweredAtMs = action.answeredAtMs;
       currentPage.pageAnswerPostUniqueId = action.answerPostUniqueId;
-      findAnyAcceptedAnswerPostNr();
+      const post = page_findPostById(currentPage, action.answerPostUniqueId);
+      dieIf(!post, 'EdE2WKB49');
+      currentPage.pageAnswerPostNr = post.nr;
       break;
 
     case ReactActions.actionTypes.UnacceptAnswer:
@@ -383,8 +385,6 @@ ReactStore.initialize = function() {
   // Any current user not yet activated. Add data for strangers, so the initial rendering will work.
   store.me.myCurrentPageData = makeNoPageData();
 
-  findAnyAcceptedAnswerPostNr();
-
   store.usersByIdBrief = store.usersByIdBrief || {};
   let impCookie = getSetCookie(ImpersonationCookieName);
   if (impCookie) {
@@ -412,19 +412,6 @@ ReactStore.initialize = function() {
     });
   }
 };
-
-
-function findAnyAcceptedAnswerPostNr() {
-  const page: Page = store.currentPage;
-  if (!page.pageAnswerPostUniqueId)
-    return;
-
-  _.each(page.postsByNr, (post: Post) => {
-    if (post.uniqueId === page.pageAnswerPostUniqueId) {
-      page.pageAnswerPostNr = post.nr;
-    }
-  });
-}
 
 
 let volatileDataActivated = false;

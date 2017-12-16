@@ -352,6 +352,10 @@ object ReactJson {
         JsNull
       }
 
+    val anyAnswerPostNr = page.meta.answerPostUniqueId flatMap { postId =>
+      posts.find(_.id == postId).map(_.nr)
+    }
+
     val usersById = transaction.loadUsersAsMap(userIdsToLoad)
     val usersByIdJson = JsObject(usersById map { idAndUser =>
       idAndUser._1.toString -> JsUser(idAndUser._2)
@@ -378,6 +382,7 @@ object ReactJson {
       "pinWhere" -> JsNumberOrNull(page.meta.pinWhere.map(_.toInt)),
       "pageAnsweredAtMs" -> dateOrNull(page.meta.answeredAt),
       "pageAnswerPostUniqueId" -> JsNumberOrNull(page.meta.answerPostUniqueId),
+      "pageAnswerPostNr" -> JsNumberOrNull(anyAnswerPostNr),
       "pagePlannedAtMs" -> dateOrNull(page.meta.plannedAt),
       "pageStartedAtMs" -> dateOrNull(page.meta.startedAt),
       "pageDoneAtMs" -> dateOrNull(page.meta.doneAt),

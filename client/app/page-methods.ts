@@ -51,6 +51,17 @@ export function page_isInfoPage(pageRole: PageRole): boolean {
 }
 
 
+export function page_findPostById(page: Page, postId: PostId): Post | undefined {
+  let thePost = undefined;
+  _.each(page.postsByNr, (post: Post) => {
+    if (post.uniqueId === postId) {
+      thePost = post;
+    }
+  });
+  return thePost;
+}
+
+
 export function page_mayChangeRole(pageRole: PageRole): boolean {
   // Sync with Scala [6KUW204]
   return !isSection(pageRole) && !page_isChatChannel(pageRole) && !page_isPrivateGroup(pageRole) &&
