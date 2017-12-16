@@ -68,6 +68,10 @@ export function linkToUserProfilePage(userIdOrUsername: UserId | string): string
   return '/-/users/' + userIdOrUsername;
 }
 
+export function linkToUsersNotfs(userIdOrUsername: UserId | string): string {
+  return linkToUserProfilePage(userIdOrUsername) + '/notifications';
+}
+
 export function linkToSendMessage(userIdOrUsername: UserId | string): string {
   return linkToUserProfilePage(userIdOrUsername) + '/activity/posts#writeMessage';
 }

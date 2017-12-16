@@ -38,11 +38,6 @@ export const MyMenuContent = createFactory({
     pagedialogs.openViewAsDialog();
   },
 
-  viewOlderNotfs: function() {
-    let store: Store = this.props.store;
-    ReactActions.goToUsersNotifications(store.me.id);
-  },
-
   render: function() {
     var menuContent;
 
@@ -76,7 +71,8 @@ export const MyMenuContent = createFactory({
             notification.Notification({ notification: notf })));
       if (me.thereAreMoreUnseenNotfs) {
         notfsElems.push(
-            MenuItem({ key: 'More', onClick: this.viewOlderNotfs }, "View more notifications..."));
+            MenuItemLink({ key: 'More', to: linkToUsersNotfs(me.id) },
+              "View more notifications..."));
       }
 
       // ------- Stop impersonating

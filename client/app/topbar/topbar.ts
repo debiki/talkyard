@@ -147,11 +147,6 @@ export const TopBar = createComponent({
     morebundle.openPageToolsDialog();
   },
 
-  viewOlderNotfs: function() {
-    let store: Store = this.state.store;
-    ReactActions.goToUsersNotifications(store.me.id);
-  },
-
   render: function() {
     const store: Store = this.state.store;
     const page: Page = store.currentPage;

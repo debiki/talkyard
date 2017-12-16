@@ -873,7 +873,7 @@ object ReactJson {
       if (user.isStaff) transaction.loadReviewTaskCounts(user.isAdmin)
       else ReviewTaskCounts(0, 0)
 
-    val notfsAndCounts = loadNotifications(user.id, transaction, unseenFirst = true, limit = 30)
+    val notfsAndCounts = loadNotifications(user.id, transaction, unseenFirst = true, limit = 20)
 
     val (rolePageSettings, votes, unapprovedPosts, unapprovedAuthors) =
       anyPageId map { pageId =>

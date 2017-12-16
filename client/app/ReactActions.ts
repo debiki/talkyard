@@ -731,11 +731,6 @@ export function openPagePostNr(pageId: string, postNr: number) { // CLEAN_UP use
 }
 
 
-export function goToUsersNotifications(userId: UserId) {  // CLEAN_UP use LinkButton and href= instead
-  window.location.assign(linkToUserProfilePage(userId) + '/notifications');
-}
-
-
 function sendToEditorIframe(message) {
   // Send the message to the embedding page; it'll forward it to the appropriate iframe.
   window.parent.postMessage(JSON.stringify(message), eds.embeddingOrigin);
