@@ -1,4 +1,4 @@
-FROM postgres:10.0-alpine
+FROM postgres:10.1-alpine
 
 RUN apk add --no-cache bash tree less vim curl net-tools
 

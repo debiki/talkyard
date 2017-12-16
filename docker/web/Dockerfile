@@ -32,7 +32,7 @@ FROM alpine:3.5
 
 # MAINTAINER NGINX Docker Maintainers "docker-maint@nginx.com"
 
-ENV NGINX_VERSION 1.13.5
+ENV NGINX_VERSION 1.13.7
 
 # Do this first, because we need 'make' early, and also it's boring to wait for Nginx
 # to download.
@@ -206,11 +206,10 @@ RUN \
 	&& mv /usr/bin/envsubst /tmp/ \
 	\
 	&& runDeps="$( \
-		scanelf --needed --nobanner /usr/sbin/nginx /usr/lib/nginx/modules/*.so /tmp/envsubst \
-			| awk '{ gsub(/,/, "\nso:", $2); print "so:" $2 }' \
+		scanelf --needed --nobanner --format '%n#p' /usr/sbin/nginx /usr/lib/nginx/modules/*.so /tmp/envsubst \
+			| tr ',' '\n' \
 			| sort -u \
-			| xargs -r apk info --installed \
-			| sort -u \
+			| awk 'system("[ -e /usr/local/lib/" $1 " ]") == 0 { next } { print "so:" $1 }' \
 	)" \
 	&& apk add --no-cache --virtual .nginx-rundeps $runDeps \
 	&& apk del .build-deps \
