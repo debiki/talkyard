@@ -50,13 +50,6 @@ class EmbeddedTopicsController @Inject()(cc: ControllerComponents, edContext: Ed
         AsyncGetAction { request =>
     import request.dao
 
-    // This id gets encoded later [4GKW40], and if the encoded version is different from
-    // the original, something will probably break somewhere.
-    discussionId foreach { id =>
-      throwBadRequestIf(Encode.forJavaScript(id) != id,
-        "EdE2KB4G", "Bad discussion id, contains weird chars")
-    }
-
     val anyRealPageId = getAnyRealPageId(edPageId, discussionId, embeddingUrl, dao)
     val (renderedPage, pageRequest) = anyRealPageId match {
       case None =>

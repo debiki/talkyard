@@ -26,7 +26,7 @@
 @import org.owasp.encoder.Encode
 
 @altPageIdOrUndefined = @{
-  tpi.anyAltPageId.map(id => s"'${ Encode.forJavaScript(id) }'") getOrElse "undefined" // [4GKW40]
+  tpi.anyAltPageId.map(id => s"'${ Encode.forJavaScript(id) }'") getOrElse "undefined"
 }
 
 @embeddingUrlOrUndefined = @{
