@@ -346,11 +346,13 @@ trait PagesDao {
     val (oldMeta, newMeta) = readWriteTransaction { transaction =>
       val oldMeta = transaction.loadThePageMeta(pageId)
       val newMeta = oldMeta.copy(pinWhere = pinWhere, pinOrder = pinOrder,
-        version = oldMeta.version + 1)
+        version = oldMeta.version + 1, numPostsTotal = oldMeta.numPostsTotal + 1)
+
       transaction.updatePageMeta(newMeta, oldMeta = oldMeta, markSectionPageStale = true)
-      addMetaMessage(requester, didWhat, pageId, transaction)
-      (oldMeta, newMeta)
       // (COULD update audit log)
+      addMetaMessage(requester, didWhat, pageId, transaction)
+
+      (oldMeta, newMeta)
     }
     if (newMeta.isChatPinnedGlobally != oldMeta.isChatPinnedGlobally) {
       // When a chat gets un/pinned globally, need rerender watchbar, affects all pages. [0GPHSR4]
@@ -473,12 +475,13 @@ trait PagesDao {
         startedAt = newStartedAt,
         doneAt = newDoneAt,
         closedAt = newClosedAt,
+        numPostsTotal = oldMeta.numPostsTotal + 1,
         version = oldMeta.version + 1)
-
-      addMetaMessage(user, s" marked this topic as $newStatus", pageId, transaction)
 
       transaction.updatePageMeta(newMeta, oldMeta = oldMeta, markSectionPageStale = true)
       // Update audit log
+      addMetaMessage(user, s" marked this topic as $newStatus", pageId, transaction)
+
       newMeta
     }
     refreshPageInMemCache(pageId)
@@ -504,12 +507,15 @@ trait PagesDao {
         case None => (Some(now.toJavaDate), "closed")
         case Some(_) => (None, "reopened")
       }
-      val newMeta = oldMeta.copy(closedAt = newClosedAt, version = oldMeta.version + 1)
-
-      addMetaMessage(user, s" $didWhat this topic", pageId, transaction)
+      val newMeta = oldMeta.copy(
+        closedAt = newClosedAt,
+        version = oldMeta.version + 1,
+        numPostsTotal = oldMeta.numPostsTotal + 1)
 
       transaction.updatePageMeta(newMeta, oldMeta = oldMeta, markSectionPageStale = true)
       // Update audit log
+      addMetaMessage(user, s" $didWhat this topic", pageId, transaction)
+
       newClosedAt
     }
     refreshPageInMemCache(pageId)
@@ -547,7 +553,7 @@ trait PagesDao {
           pageId = Some(pageId),
           pageRole = Some(pageMeta.pageRole))
 
-        val (newMeta, auditLogEntry) =
+        var (newMeta, auditLogEntry) =
           if (undelete) {
             (pageMeta.copy(deletedAt = None, version = pageMeta.version + 1),
               baseAuditEntry.copy(didWhat = AuditLogEntryType.UndeletePage))
@@ -556,14 +562,15 @@ trait PagesDao {
             (pageMeta.copy(deletedAt = Some(transaction.now.toJavaDate),
               version = pageMeta.version + 1), baseAuditEntry)
           }
-
-        val un = undelete ? "un" | ""
-        addMetaMessage(deleter, s" ${un}deleted this topic", pageId, transaction)
+        newMeta = newMeta.copy(numPostsTotal = newMeta.numPostsTotal + 1)
 
         transaction.updatePageMeta(newMeta, oldMeta = pageMeta, markSectionPageStale = true)
         transaction.insertAuditLogEntry(auditLogEntry)
         transaction.indexAllPostsOnPage(pageId)
         // (Keep in top-topics table, so staff can list popular-but-deleted topics.)
+
+        val un = undelete ? "un" | ""
+        addMetaMessage(deleter, s" ${un}deleted this topic", pageId, transaction)
       }
 
     pageIds foreach refreshPageInMemCache
@@ -589,13 +596,15 @@ trait PagesDao {
       htmlSanitized = Encode.forHtmlContent(message),
       approvedById = Some(SystemUserId))
 
+    // Don't mark the section page as stale — total posts count not shown (only total replies).
+    // Don't index — meta messages shouldn't be found, when searching.
+
+    // The caller must have remembered to update numPostsTotal.
     val pageMeta = tx.loadThePageMeta(pageId)
-    val pageMetaAfter = pageMeta.copy(numPostsTotal = pageMeta.numPostsTotal + 1)
+    dieIf(pageMeta.numPostsTotal != postNr + 1, "EdE3PFK2W0", o"""pageMeta.numPostsTotal
+        is ${pageMeta.numPostsTotal} but should be = postNr + 1 = ${postNr + 1}""")
 
     tx.insertPost(metaMessage)
-    // Don't mark the section page as stale — total posts count not shown (only total replies).
-    tx.updatePageMeta(pageMetaAfter, oldMeta = pageMeta, markSectionPageStale = false)
-    // Don't index — meta messages shouldn't be found, when searching.
 
     SHOULD // send back json so the satus message gets shown, without reloading the page. [2PKRRSZ0]
   }

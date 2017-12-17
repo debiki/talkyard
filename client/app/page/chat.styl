@@ -92,7 +92,10 @@ html.es-chat
   padding: 3px 6px 3px 3px;
   margin: -3px 0;
   color: hsl($uiHue, 70%, 48%);
-  font-weight: bold;
+  &.s_My
+    font-weight: bold;
+  &.icon-edit:not(.s_My)::before
+    opacity: 0.76;
   font-size: 108%;
   background: none;
   border: none;
@@ -140,4 +143,19 @@ html.es-chat
 .esC_Edtr_textarea
   width: 100%;
   border-radius: 4px;
+
+
+// Meta posts
+.esChatPage .s_MP
+  .esAvtr
+    position: relative;
+    top: -3px;
+    width: 51px;
+    margin: 0;
+    left: 7px;
+
+  // Place 14px from any comment just below, but close to any subsecuent meta message just below.
+  margin: 0 0 14px;
+  + .s_MP
+    margin-top: -14px;
 

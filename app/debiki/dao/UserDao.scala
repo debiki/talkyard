@@ -839,12 +839,12 @@ trait UserDao {
     // attacks too simple. [8PLKW46]
     require(user.isMember, "EdE8KFUW2")
 
-    val pageMeta = getPageMeta(pageId) getOrDie "EdE5JKDYE"
-    if (newProgress.maxPostNr + 1 > pageMeta.numPostsTotal)  // post nrs start on TitleNr = 0 so add + 1
-      throwForbidden("EdE7UKW25_", o"""Got post nr ${newProgress.maxPostNr} but there are only
-          ${pageMeta.numPostsTotal} posts in the topic""")
-
     readWriteTransaction { transaction =>
+      val pageMeta = transaction.loadPageMeta(pageId) getOrDie "EdE5JKDYE"
+      if (newProgress.maxPostNr + 1 > pageMeta.numPostsTotal) // post nrs start on TitleNr = 0 so add + 1
+        throwForbidden("EdE7UKW25_", o"""Got post nr ${newProgress.maxPostNr} but there are only
+          ${pageMeta.numPostsTotal} posts on page '$pageId'""")
+
       val oldProgress = transaction.loadReadProgress(userId = user.id, pageId = pageId)
 
       val (numMoreNonOrigPostsRead, numMoreTopicsEntered, resultingProgress) =

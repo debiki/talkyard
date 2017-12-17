@@ -675,22 +675,22 @@ const RootPostAndComments = createComponent({
     }
 
     let repliesAreFlat = false;
-    let childIds = rootPost.childIdsSorted.concat(page.topLevelCommentIdsSorted);
+    let childNrs = rootPost.childIdsSorted.concat(page.topLevelCommentIdsSorted);
 
     // On message pages, most likely max a few people talk — then threads make no sense.
     // On form submission pages, people don't see each others submissions, won't talk at all.
     if (page.pageRole === PageRole.FormalMessage || page.pageRole === PageRole.Form) {
       repliesAreFlat = true;
-      childIds = _.values(page.postsByNr).map((post: Post) => post.nr);
+      childNrs = _.values(page.postsByNr).map((post: Post) => post.nr);
     }
 
     let isSquashing = false;
     let firstAppendedIndex = 0;
 
-    const threadedChildren = childIds.map((childId, childIndex) => {
-      if (childId === BodyNr || childId === TitleNr)
+    const threadedChildren = childNrs.map((childNr, childIndex) => {
+      if (childNr === BodyNr || childNr === TitleNr)
         return null;
-      const child: Post = postsByNr[childId];
+      const child: Post = postsByNr[childNr];
       if (!child)
         return null; // deleted
       const isCommentOrEvent =
@@ -706,7 +706,8 @@ const RootPostAndComments = createComponent({
       const threadProps: any = { store };
       if (repliesAreFlat) threadProps.isFlat = true;
       threadProps.elemType = 'div';
-      threadProps.postId = childId;  // rename to .postNr, right?
+      threadProps.post = child;
+      threadProps.postId = childNr;  // CLEAN_UP should be .postNr. But use .post only?
       threadProps.index = childIndex;
       threadProps.depth = 1;
       threadProps.indentationDepth = 0;
@@ -714,12 +715,12 @@ const RootPostAndComments = createComponent({
       if (child.squash) {
         isSquashing = true;
         return (
-          r.li({ key: childId },
+          r.li({ key: childNr },
             SquashedThreads(threadProps)));
       }
       else if (child.postType === PostType.MetaMessage) {
         return (
-          r.li({ key: childId, className: 's_w-MP' },
+          r.li({ key: childNr, className: 's_w-MP' },
             MetaPost(threadProps)));
       }
       else {
@@ -741,7 +742,7 @@ const RootPostAndComments = createComponent({
         }
         // --/ [plugin] [utx] ------------------------
         return (
-          r.li({ key: childId },
+          r.li({ key: childNr },
             pickNextTaskStuff,
             Thread(threadProps)));
       }
@@ -869,7 +870,7 @@ const clickReplyInsteadHelpMessage = {
 
 
 
-const MetaPost = createComponent({
+export const MetaPost = createComponent({
   displayName: 'MetaPost',
 
   showAboutUser: function(event: Event) {
@@ -887,9 +888,7 @@ const MetaPost = createComponent({
 
   render: function() {
     const store: Store = this.props.store;
-    const page: Page = store.currentPage;
-    const postsByNr: { [postNr: number]: Post; } = page.postsByNr;
-    const post: Post = postsByNr[this.props.postId];
+    const post: Post = this.props.post;
     const doer: BriefUser = store_getAuthorOrMissing(store, post);
     const doersAvatar = avatar.Avatar({ user: doer, tiny: true });
     const when = timeAgo(post.createdAtMs, 's_MP_At');

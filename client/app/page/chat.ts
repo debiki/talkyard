@@ -122,8 +122,10 @@ const TitleAndLastChatMessages = createComponent({
         // and remove the you-can-scroll-up indicator?)
         canScrollUpToFetchOlder = false;
       }
-      messages.push(
-        ChatMessage({ key: post.uniqueId, store: store, post: post }));
+      const postProps = { key: post.uniqueId, store, post };
+      const postElem =
+          post.postType === PostType.MetaMessage ? MetaPost(postProps) : ChatMessage(postProps);
+      messages.push(postElem);
     });
 
     if (!messages.length) {
@@ -188,10 +190,17 @@ const ChatMessage = createComponent({
     const headerProps: any = { store, post };
     headerProps.isFlat = true;
     headerProps.exactTime = true;
-    headerProps.stuffToAppend = (me.id !== author.id || state.isEditing) ? [] :
-      [r.button({ className: 'esC_M_EdB icon-edit', key: 'e', onClick: this.edit }, "edit"),
+
+    const isMine = me.id === author.id;
+    const isMineClass = isMine ? ' s_My' : '';
+    const mayEditDelete = post.postType === PostType.ChatMessage && !state.isEditing && (
+        isMine || isStaff(me));
+    headerProps.stuffToAppend = !mayEditDelete ? [] : [
+        r.button({ className: 'esC_M_EdB icon-edit' + isMineClass, key: 'e', onClick: this.edit },
+          "edit"),
         // (Don't show a trash icon, makes the page look too cluttered.)
-        r.button({className: 'esC_M_EdB', key: 'd', onClick: this.delete_ }, "delete")];
+        r.button({className: 'esC_M_EdB' + isMineClass, key: 'd', onClick: this.delete_ }, "delete")];
+
     //headerProps.stuffToAppend.push(
     //  r.button({ className: 'esC_M_MoreB icon-ellipsis', key: 'm' }, "more"));
     return (
