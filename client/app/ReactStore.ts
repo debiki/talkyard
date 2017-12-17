@@ -1327,6 +1327,10 @@ function showNewPage(newPage: Page, newUsers: BriefUser[], newMe: Myself | null,
     }
   }
 
+  if (me_isStranger(store.me)) {
+    addPageToSessionWatchbar(store.currentPage, store.me.watchbar);
+  }
+
   // Make Back button work properly.
   debiki2.rememberBackUrl(correctedUrl || location.toString());
 
@@ -1474,18 +1478,28 @@ function addLocalStorageDataTo(me: Myself) {
 
   // The watchbar: Recent topics.
   if (me_isStranger(me)) {
-    const page: Page = store.currentPage;
-    const recentTopics = loadRecentWatchbarTopicsFromSessionStorage();
-    if (page && shallAddCurrentPageToSessionStorageWatchbar(recentTopics)) {
-      recentTopics.unshift({
-        pageId: page.pageId,
-        type: page.pageRole,
-        title: ReactStore.getPageTitle(),
-      });
-      putInSessionStorage('recentWatchbarTopics', recentTopics);
-    }
-    me.watchbar[WatchbarSection.RecentTopics] = recentTopics;
+    addPageToSessionWatchbar(store.currentPage, me.watchbar);
   }
+}
+
+
+function addPageToSessionWatchbar(page: Page, watchbar: Watchbar) {
+  const recentTopics = loadRecentWatchbarTopicsFromSessionStorage();
+  if (page && shallAddCurrentPageToSessionStorageWatchbar(recentTopics)) {
+    const index = _.findIndex(recentTopics, (topic: WatchbarTopic) => topic.pageId === page.pageId);
+    if (index >= 0) {
+      recentTopics.splice(index, 1);
+    }
+    recentTopics.unshift({
+      pageId: page.pageId,
+      type: page.pageRole,
+      title: ReactStore.getPageTitle(),
+    });
+    // Not more than ... 7? in the recent list.
+    recentTopics.splice(7, 999);
+    putInSessionStorage('recentWatchbarTopics', recentTopics);
+  }
+  watchbar[WatchbarSection.RecentTopics] =  recentTopics;
 }
 
 
@@ -1509,7 +1523,7 @@ function shallAddCurrentPageToSessionStorageWatchbar(recentTopics: WatchbarTopic
   if (!pageRole_shallListInRecentTopics(currentPage.pageRole))
     return false;
 
-  return _.every(recentTopics, (topic: WatchbarTopic) => topic.pageId !== currentPage.pageId);
+  return true;
 }
 
 
