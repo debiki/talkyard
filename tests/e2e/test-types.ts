@@ -338,7 +338,7 @@ interface EmailSubjectBody {
 }
 
 
-interface LargeTestForum {
+interface EmptyTestForum {
   siteData: SiteData;
   forumPage: any;
   members: {
@@ -354,14 +354,25 @@ interface LargeTestForum {
   guests: {
     gunnar: any;
   },
+  categories: any;
+}
+
+
+interface LargeTestForum extends EmptyTestForum {
   topics: {
     byMariaCategoryA: PageJustAdded;
+    byMariaCategoryANr2: PageJustAdded;
+    byMariaCategoryANr3: PageJustAdded;
+    byMariaCategoryB: PageJustAdded;
     byMariaStaffOnlyCat: PageJustAdded;
     byMariaUnlistedCat: PageJustAdded;
     byMariaDeletedCat: PageJustAdded;
     byMichaelCategoryA: PageJustAdded;
+    aboutCategoryA: { title: string };
+    aboutCategoryB: { title: string };
+    aboutUnlistedCategory: { title: string };
+    aboutStaffOnlyCategory: { title: string };
+    aboutDeletedCategory: { title: string };
   },
-  categories: any;
 }
-
 

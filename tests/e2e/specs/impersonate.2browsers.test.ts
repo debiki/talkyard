@@ -100,6 +100,7 @@ describe("impersonate", () => {
     owen.userProfilePage.preferences.setFullName(marilonFullName);
     owen.userProfilePage.preferences.save();
     owen.refresh();
+    owen.userProfilePage.waitForName();
     owen.userProfilePage.assertUsernameIs(maria.username);
     owen.userProfilePage.assertFullNameIs(marilonFullName);
     owen.userProfilePage.assertFullNameIsNot(maria.fullName);

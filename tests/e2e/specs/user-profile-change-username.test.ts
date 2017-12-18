@@ -123,6 +123,7 @@ describe("user profile access:", () => {
 
   it("She reloads the page, sees her username is now " + mariasUsername2, () => {
     mariasBrowser.refresh();
+    mariasBrowser.userProfilePage.waitForName();
     mariasBrowser.userProfilePage.assertUsernameIs(mariasUsername2);
   });
 

@@ -142,7 +142,7 @@ function buildSite(site?: SiteData) {
     },
 
 
-    addLargeForum: function(opts: { title: string, introText?: string }): LargeTestForum {
+    addEmptyForum: function(opts: { title: string, introText?: string }): EmptyTestForum {
       let forum = {
         siteData: site,
         forumPage: null,
@@ -178,10 +178,6 @@ function buildSite(site?: SiteData) {
 
       const rootCategoryId = 1;
       const defaultCategoryId = 2;
-      const categoryBId = 3;
-      const staffOnlyCategoryId = 4;
-      const unlistedCategoryId = 5;
-      const deletedCategoryId = 6;
 
       const forumPage = forum.forumPage = api.addForumPageAndRootCategory({
         id: 'fmp',
@@ -201,9 +197,21 @@ function buildSite(site?: SiteData) {
         aboutPageText: "Category A description.",
       });
 
+      return forum;
+    },
+
+
+    addLargeForum: function(opts: { title: string, introText?: string }): LargeTestForum {
+      const forum: LargeTestForum = <LargeTestForum> api.addEmptyForum(opts);
+      const forumPage: PageJustAdded = forum.forumPage;
+      const categoryBId = 3;
+      const staffOnlyCategoryId = 4;
+      const unlistedCategoryId = 5;
+      const deletedCategoryId = 6;
+
       forum.categories.categoryB = api.addCategoryWithAboutPage(forumPage, {
         id: categoryBId,
-        parentCategoryId: rootCategoryId,
+        parentCategoryId: forumPage.categoryId,
         name: "CategoryB",
         slug: 'category-b',
         aboutPageText: "Category B description.",
@@ -211,7 +219,7 @@ function buildSite(site?: SiteData) {
 
       forum.categories.staffOnlyCategory = api.addCategoryWithAboutPage(forumPage, {
         id: staffOnlyCategoryId,
-        parentCategoryId: rootCategoryId,
+        parentCategoryId: forumPage.categoryId,
         name: "Staff Only",
         slug: 'staff-only',
         aboutPageText: "Staff only category description.",
@@ -219,7 +227,7 @@ function buildSite(site?: SiteData) {
 
       forum.categories.unlistedCategory = api.addCategoryWithAboutPage(forumPage, {
         id: unlistedCategoryId,
-        parentCategoryId: rootCategoryId,
+        parentCategoryId: forumPage.categoryId,
         name: "Unlisted Cat",
         slug: 'unlisted-cat',
         aboutPageText: "Unlisted category description.",
@@ -228,7 +236,7 @@ function buildSite(site?: SiteData) {
 
       forum.categories.deletedCategory = api.addCategoryWithAboutPage(forumPage, {
         id: deletedCategoryId,
-        parentCategoryId: rootCategoryId,
+        parentCategoryId: forumPage.categoryId,
         name: "Deleted Category",
         slug: 'deleted-category',
         aboutPageText: "Deleted category description.",
