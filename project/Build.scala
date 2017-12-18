@@ -49,14 +49,14 @@ object ApplicationBuild extends Build {
   // unless they're compiled first, in a separate step in another project. So place the Logback
   // stuff (custom Logback layout) in this separate project — and you need to do publish-local in it.
   lazy val edLogging =
-    (Project("ed-logging", file("modules/ed-logging")))
+    Project("ed-logging", file("modules/ed-logging"))
 
 
   val appDependencies = Seq(
     play.sbt.PlayImport.ws,
     // Gzip filter.
     play.sbt.Play.autoImport.filters,
-    "com.typesafe.play" %% "play-json" % "2.6.6",
+    "com.typesafe.play" %% "play-json" % "2.6.8",
     // OpenAuth and OpenID etc Authentication.
     "com.mohiva" %% "play-silhouette" % "5.0.0",
     "com.mohiva" %% "play-silhouette-crypto-jca" % "5.0.0",
@@ -70,8 +70,8 @@ object ApplicationBuild extends Build {
     "com.github.ben-manes.caffeine" % "caffeine" % "2.2.6",
     "com.github.etaty" %% "rediscala" % "1.8.0",
     // Search engine, in https://mvnrepository.com.
-    "org.elasticsearch" % "elasticsearch" % "6.0.0",
-    "org.elasticsearch.client" % "transport" % "6.0.0",
+    "org.elasticsearch" % "elasticsearch" % "6.1.0",
+    "org.elasticsearch.client" % "transport" % "6.1.0",
     // ElasticSearch needs log4j
     "log4j" % "log4j" % "1.2.17",
     "org.apache.commons" % "commons-email" % "1.4",
