@@ -551,7 +551,8 @@ function pagesFor(browser) {
         assert(!browser.isVisible(api.userProfilePage.avatarAboutButtonsSelector));
       },
 
-      createPasswordAccount: function(data, shallBecomeOwner?: boolean) {
+      createPasswordAccount: function(data: { fullName, username, email?, emailAddress?, password },
+            shallBecomeOwner?: boolean, anyVerifyEmail?) {
         console.log('createPasswordAccount: fillInFullName...');
         api.loginDialog.fillInFullName(data.fullName);
         console.log('fillInUsername...');
@@ -565,7 +566,9 @@ function pagesFor(browser) {
         console.log('acceptTerms...');
         api.loginDialog.acceptTerms(shallBecomeOwner);
         console.log('waitForNeedVerifyEmailDialog...');
+        if (anyVerifyEmail !== 'THERE_WILL_BE_NO_VERIFY_EMAIL_DIALOG') {
         api.loginDialog.waitForNeedVerifyEmailDialog();
+        }
         console.log('createPasswordAccount: done');
       },
 
@@ -708,7 +711,8 @@ function pagesFor(browser) {
         browser.waitForVisible('#e2ePassword');
       },
 
-      createGmailAccount: function(data, shallBecomeOwner?: boolean) {
+      createGmailAccount: function(data: { email: string, password: string, username: string },
+            shallBecomeOwner?: boolean, anyWelcomeDialog?: string) {
         api.loginDialog.loginWithGmail(data);
         // This should be the first time we login with Gmail at this site, so we'll be asked
         // to choose a username.
@@ -717,11 +721,13 @@ function pagesFor(browser) {
         browser.waitAndSetValue('.esCreateUserDlg #e2eUsername', data.username);
         api.loginDialog.clickSubmit();
         api.loginDialog.acceptTerms(shallBecomeOwner);
-        api.loginDialog.waitAndClickOkInWelcomeDialog();
+        if (anyWelcomeDialog !== 'THERE_WILL_BE_NO_WELCOME_DIALOG') {
+          api.loginDialog.waitAndClickOkInWelcomeDialog();
+        }
         browser.waitUntilModalGone();
       },
 
-      loginWithGmail: function(data, isInPopupAlready?: boolean) {
+      loginWithGmail: function(data: { email: string, password: string }, isInPopupAlready?: boolean) {
         // Pause or sometimes the click misses the button. Is the browser doing some re-layout?
         browser.pause(150);
         api.waitAndClick('#e2eLoginGoogle');
@@ -811,7 +817,8 @@ function pagesFor(browser) {
         }
       },
 
-      createFacebookAccount: function(data, shallBecomeOwner?: boolean) {
+      createFacebookAccount: function(data: { email: string, password: string, username: string },
+            shallBecomeOwner?: boolean, anyWelcomeDialog?) {
         api.loginDialog.loginWithFacebook(data);
         // This should be the first time we login with Facebook at this site, so we'll be asked
         // to choose a username.
@@ -821,11 +828,13 @@ function pagesFor(browser) {
         browser.waitAndSetValue('.esCreateUserDlg #e2eUsername', data.username);
         api.loginDialog.clickSubmit();
         api.loginDialog.acceptTerms(shallBecomeOwner);
-        api.loginDialog.waitAndClickOkInWelcomeDialog();
+        if (anyWelcomeDialog !== 'THERE_WILL_BE_NO_WELCOME_DIALOG') {
+          api.loginDialog.waitAndClickOkInWelcomeDialog();
+        }
         browser.waitUntilModalGone();
       },
 
-      loginWithFacebook: function(data, isInPopupAlready?: boolean) {
+      loginWithFacebook: function(data: { email: string, password: string }, isInPopupAlready?: boolean) {
         // Pause or sometimes the click misses the button. Is the browser doing some re-layout?
         browser.pause(100);
         api.waitAndClick('#e2eLoginFacebook');

@@ -41,6 +41,7 @@ export = {
   TitleNr: 0,
   BodyNr: 1,
   FirstReplyNr: 2,  // [5FKF0F2]
+  SystemUserId: 1,
   EveryoneId: 10,
   NewMembersId: 11,
   BasicMembersId: 12,

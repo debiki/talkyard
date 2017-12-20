@@ -354,7 +354,9 @@ interface EmptyTestForum {
   guests: {
     gunnar: any;
   },
-  categories: any;
+  categories: {
+    categoryA: CategoryJustAdded;
+  },
 }
 
 
@@ -373,6 +375,13 @@ interface LargeTestForum extends EmptyTestForum {
     aboutUnlistedCategory: { title: string };
     aboutStaffOnlyCategory: { title: string };
     aboutDeletedCategory: { title: string };
+  },
+  categories: {
+    categoryA: CategoryJustAdded;
+    categoryB: CategoryJustAdded;
+    staffOnlyCategory: CategoryJustAdded;
+    unlistedCategory: CategoryJustAdded;
+    deletedCategory: CategoryJustAdded;
   },
 }
 

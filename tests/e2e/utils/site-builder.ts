@@ -196,6 +196,7 @@ function buildSite(site?: SiteData) {
         slug: 'category-a',
         aboutPageText: "Category A description.",
       });
+      api.addDefaultCatPerms(site, forum.categories.categoryA.id, 1);
 
       return forum;
     },
@@ -245,39 +246,9 @@ function buildSite(site?: SiteData) {
 
       // ---- Permissions on categories
 
-      function addDefaultCatPerms(categoryId: CategoryId, startPermissionId: PermissionId) {
-        site.permsOnPages.push({
-          id: startPermissionId,
-          forPeopleId: c.EveryoneId,
-          onCategoryId: categoryId,
-          mayEditOwn: true,
-          mayCreatePage: true,
-          mayPostComment: true,
-          maySee: true,
-          maySeeOwn: true,
-        });
-
-        site.permsOnPages.push({
-          id: startPermissionId + 1,
-          forPeopleId: c.StaffId,
-          onCategoryId: categoryId,
-          mayEditPage: true,
-          mayEditComment: true,
-          mayEditWiki: true,
-          mayEditOwn: true,
-          mayDeletePage: true,
-          mayDeleteComment: true,
-          mayCreatePage: true,
-          mayPostComment: true,
-          maySee: true,
-          maySeeOwn: true,
-        });
-      }
-
-      addDefaultCatPerms(forum.categories.categoryA.id, 1);
-      addDefaultCatPerms(forum.categories.categoryB.id, 3);
-      addDefaultCatPerms(forum.categories.unlistedCategory.id, 5);
-      addDefaultCatPerms(forum.categories.deletedCategory.id, 7);
+      api.addDefaultCatPerms(site, forum.categories.categoryB.id, 3);
+      api.addDefaultCatPerms(site, forum.categories.unlistedCategory.id, 5);
+      api.addDefaultCatPerms(site, forum.categories.deletedCategory.id, 7);
 
       // Staff only:
       site.permsOnPages.push({
@@ -399,7 +370,37 @@ function buildSite(site?: SiteData) {
       });
 
       return forum;
-    }
+    },
+
+    addDefaultCatPerms: function(site, categoryId: CategoryId, startPermissionId: PermissionId) {
+      site.permsOnPages.push({
+        id: startPermissionId,
+        forPeopleId: c.EveryoneId,
+        onCategoryId: categoryId,
+        mayEditOwn: true,
+        mayCreatePage: true,
+        mayPostComment: true,
+        maySee: true,
+        maySeeOwn: true,
+      });
+
+      site.permsOnPages.push({
+        id: startPermissionId + 1,
+        forPeopleId: c.StaffId,
+        onCategoryId: categoryId,
+        mayEditPage: true,
+        mayEditComment: true,
+        mayEditWiki: true,
+        mayEditOwn: true,
+        mayDeletePage: true,
+        mayDeleteComment: true,
+        mayCreatePage: true,
+        mayPostComment: true,
+        maySee: true,
+        maySeeOwn: true,
+      });
+    },
+
   };
 
   return api;

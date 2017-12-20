@@ -129,9 +129,11 @@ function runAllEndToEndTests {
 
   # For this to work, first do:  ./node_modules/.bin/http-server target/ &
   runEndToEndTest s/wdio target/e2e/wdio.2chrome.conf.js    --browser $browser --only embedded-comments-create-site.2browsers $args
-  runEndToEndTest s/wdio target/e2e/wdio.conf.js    --browser $browser --only embedded-comments-discussion-id $args
-  runEndToEndTest s/wdio target/e2e/wdio.conf.js    --browser $browser --only embedded-comments-all-logins $args
-  runEndToEndTest s/wdio target/e2e/wdio.conf.js    --browser $browser --only embedded-comments-edit-and-vote $args
+  runEndToEndTest s/wdio target/e2e/wdio.conf.js            --browser $browser --only embedded-comments-discussion-id $args
+  runEndToEndTest s/wdio target/e2e/wdio.conf.js            --browser $browser --only embedded-comments-all-logins $args
+  runEndToEndTest s/wdio target/e2e/wdio.conf.js            --browser $browser --only embedded-comments-edit-and-vote $args
+
+  runEndToEndTest s/wdio target/e2e/wdio.conf.js            --browser $browser --only utx-all-logins $args
 
   # wip:
   # settings-allow-local-signup
