@@ -102,7 +102,6 @@ describe("spam test, no external services:", () => {
 
   it("A guest logs in", () => {
     guestsBrowser.go(idAddress.origin);
-    guestsBrowser.disableRateLimits();
     guestsBrowser.complex.signUpAsGuestViaTopbar(guest);
   });
 

@@ -35,6 +35,7 @@ describe(testName, () => {
 
   it("can sign up and reply with Gmail @login @gmail @google", () => {
     browser.go(idAddress.origin);
+    browser.disableRateLimits();
     browser.topbar.clickSignUp();
     browser.loginDialog.createGmailAccount({
       username: 'gmail_user',
@@ -42,6 +43,7 @@ describe(testName, () => {
       password: settings.gmailPassword,
     });
     browser.topbar.assertMyUsernameMatches('gmail_user');
+    browser.disableRateLimits();
   });
 
   it("the Gmail user can create a topic  @gmail @google", () => {
@@ -99,10 +101,6 @@ describe(testName, () => {
 
   it("the facebook user's reply is visible @facebook", () => {
     browser.topic.assertPostTextMatches(3, 'the fb_user');
-  });
-
-  it("Done.", () => {
-    browser.perhapsDebug();
   });
 
 });

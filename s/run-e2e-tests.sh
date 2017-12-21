@@ -12,6 +12,14 @@ until $(curl --output /dev/null --silent --head --fail http://localhost/-/are-sc
   sleep 1
 done
 
+function log_message {
+  echo "`date --iso-8601=seconds --utc`: $1"
+}
+
+failfile=target/e2e-failures.txt
+echo "" >> $failfile
+log_message "Running: $*" >> $failfile
+
 
 function runEndToEndTest {
   site_nr=`printf '%d' $(($site_nr + 1))`
@@ -20,6 +28,7 @@ function runEndToEndTest {
   echo "Next test: $cmd"
   $cmd
   if [ $? -ne 0 ]; then
+    log_message "Failed: $cmd" >> $failfile
     # Try again, so some harmless race condition I haven't thought about that breaks the test,
     # won't result in a false failures. Usually a race condition breaks the tests only very
     # infrequently, so it's "impossible" to reproduce manually, and thus hard to fix. However,
@@ -28,8 +37,14 @@ function runEndToEndTest {
     echo
     echo "*** Test failed. Trying once more... [EdM2WK8GB] ***"
     echo
+    sleep 3
+    site_nr=`printf '%d' $(($site_nr + 1))`
+    cmd="$@ --deleteOldSite --localHostname=e2e-test-$site_nr"
+    echo "Again: $cmd"
     $cmd
     if [ $? -ne 0 ]; then
+      log_message "Failed: $cmd" >> $failfile
+      log_message "Test failed twice, aborting." >> $failfile
       cmd_with_debug=$(echo $@ | sed 's/wdio /wdio-debug-9101 /')
       echo
       echo "*** ERROR [EsE5KPY02] ***"
@@ -147,6 +162,7 @@ if [ -n "$run_all" ]; then
   runAllEndToEndTests firefox
 fi
 
+log_message "Done." >> $failfile
 echo "Done running end-to-end tests."
 
 # vim: et ts=2 sw=2 tw=0

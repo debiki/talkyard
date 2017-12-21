@@ -92,6 +92,7 @@ describe("emb cmts all logins", () => {
   it("... clicks Reply and logs in, with Gmail @gmail", () => {
     majasBrowser.topic.clickReplyToEmbeddingBlogPost();
     majasBrowser.swithToOtherTabOrWindow();
+    majasBrowser.disableRateLimits();
     majasBrowser.loginDialog.loginWithGmail({
       email: settings.gmailEmail,
       password: settings.gmailPassword,
@@ -121,6 +122,7 @@ describe("emb cmts all logins", () => {
     michaelsBrowser.topic.waitForReplyButtonAssertCommentsVisible();
     michaelsBrowser.topic.clickReplyToEmbeddingBlogPost();
     michaelsBrowser.swithToOtherTabOrWindow();
+    michaelsBrowser.disableRateLimits();
     michaelsBrowser.loginDialog.loginWithFacebook({
       email: settings.facebookUserEmail,
       password: settings.facebookUserPassword,

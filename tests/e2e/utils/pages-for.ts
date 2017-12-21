@@ -610,6 +610,7 @@ function pagesFor(browser) {
       // Embedded discussions do all logins in popups.
       loginWithPasswordInPopup: function(username, password?: string) {
         browser.swithToOtherTabOrWindow();
+        browser.disableRateLimits();
         if (_.isObject(username)) {
           password = username.password;
           username = username.username;
@@ -2095,6 +2096,7 @@ function pagesFor(browser) {
       },
 
       signUpAsGuestViaTopbar: function(nameOrObj, email?: string) {
+        browser.disableRateLimits();
         api.topbar.clickSignUp();
         let name = nameOrObj;
         if (_.isObject(nameOrObj)) {
@@ -2172,7 +2174,24 @@ function pagesFor(browser) {
       },
 
       replyToPostNr: function(postNr: PostNr, text: string) {
-        api.topic.clickReplyToPostNr(postNr);
+        // Sometimes the click fails — maybe a sidebar opens, making the button move a bit? Or
+        // the window scrolls, making the click miss? Or whatever. If the click misses the
+        // button, most likely, the editor won't open. So, if after clicking, the editor
+        // won't appear, then click again.
+        browser.pause(50); // makes the first click more likely to succeed (without,
+        // failed 2 times out of 4 at a place in unsubscribe.2browsers.test.ts — but with,
+        // failed 2 times out of 20).
+        for (let clickAttempt = 0; true; ++clickAttempt) {
+          api.topic.clickReplyToPostNr(postNr);
+          try {
+            browser.waitForVisible('.esEdtr_textarea', 5000);
+            break;
+          }
+          catch (ignore) {
+            logMessage("When clicking the Reply button, the editor didn't open. Trying again");
+            dieIf(clickAttempt === 3, "Couldn't click Reply and write a reply [EdE7FKAC2]");
+          }
+        }
         api.editor.editText(text);
         api.editor.save();
       },

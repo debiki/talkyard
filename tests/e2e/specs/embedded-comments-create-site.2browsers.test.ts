@@ -124,6 +124,7 @@ ${htmlToPaste}
   it("... password-signs-up in a popup", () => {
     console.log("switching to login popup window...");
     mariasBrowser.swithToOtherTabOrWindow();
+    mariasBrowser.disableRateLimits();
     console.log("signs up...");
     mariasBrowser.loginDialog.clickCreateAccountInstead();
     mariasBrowser.loginDialog.createPasswordAccount(maria, false);
