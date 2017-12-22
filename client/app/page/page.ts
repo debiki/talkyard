@@ -107,20 +107,29 @@ export const PageWithStateComponent = createReactClass(<any> {
     const store: Store = this.state.store;
     if (this.scrollPageId !== store.currentPageId && !this.state.isMaybeWrongPage) {
       this.scrollPageId = store.currentPageId;
-      // Apparently some re-layout is still happening, so don't scroll until after that's been done.
-      // For example, inserting YouTube videos might take a while, for the browser? and afterwards
-      // it modifies the scroll offset to compensate for the size of the video? which results in
-      // the wrong scroll offset.
-      // Try three times, once immediately, so looks good. And once, quickly, hopefully will work.
-      // And once, even slower, works always, so far.
-      // BUG UX SHOULD make this work with just 1 scroll call, and immediately. Can do that (?)
-      // by remembering the page size, and forcing that min-height directly when switching page.
-      // So the total page size won't change, just because the browser inserts stuff it
-      // lazy-loads / lazy-inserts-sizes, like the above-mentioned videos ??
-      function updateScroll() { scrollToLastPosition(store.currentPageId); }
-      setTimeout(updateScroll);
-      setTimeout(updateScroll, 50);
-      setTimeout(updateScroll, 300);
+      const hash = location.hash;
+      // Magic hash params start with &, like &param=value or &debug. [2FG6MJ9]
+      const anyAndIndex = hash.indexOf('&');
+      const isScrollTarget = hash && anyAndIndex !== 1;  // '#' is at 0 so '#&...' = index 1
+      if (isScrollTarget) {
+        // Then scroll to the scroll target, probably #post-123, instead of to the last position.
+      }
+      else {
+        // Apparently some re-layout is still happening, so don't scroll until after that's been done.
+        // For example, inserting YouTube videos might take a while, for the browser? and afterwards
+        // it modifies the scroll offset to compensate for the size of the video? which results in
+        // the wrong scroll offset.
+        // Try three times, once immediately, so looks good. And once, quickly, hopefully will work.
+        // And once, even slower, works always, so far.
+        // BUG UX SHOULD make this work with just 1 scroll call, and immediately. Can do that (?)
+        // by remembering the page size, and forcing that min-height directly when switching page.
+        // So the total page size won't change, just because the browser inserts stuff it
+        // lazy-loads / lazy-inserts-sizes, like the above-mentioned videos ??
+        function updateScroll() { scrollToLastPosition(store.currentPageId); }
+        setTimeout(updateScroll);
+        setTimeout(updateScroll, 50);
+        setTimeout(updateScroll, 300);
+      }
     }
   },
 

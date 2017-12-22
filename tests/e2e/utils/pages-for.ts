@@ -1000,6 +1000,13 @@ function pagesFor(browser) {
       canBumpPageStatus: function() {
         return browser.isVisible('.dw-p-ttl .dw-clickable');
       },
+
+      changeStatusToPlanned: function() {
+        const selector = '.icon-idea.dw-clickable';
+        browser.waitForVisible(selector);
+        api.topic.clickPostActionButton(selector);
+        browser.waitForVisible('.icon-check-dashed.dw-clickable');
+      },
     },
 
 
@@ -2178,6 +2185,7 @@ function pagesFor(browser) {
         // the window scrolls, making the click miss? Or whatever. If the click misses the
         // button, most likely, the editor won't open. So, if after clicking, the editor
         // won't appear, then click again.
+        api.topic.waitForPostNrVisible(postNr);
         browser.pause(50); // makes the first click more likely to succeed (without,
         // failed 2 times out of 4 at a place in unsubscribe.2browsers.test.ts — but with,
         // failed 2 times out of 20).

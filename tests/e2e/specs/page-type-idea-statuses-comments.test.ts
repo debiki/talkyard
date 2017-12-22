@@ -109,8 +109,7 @@ describe("Page statuses and bottom comments", () => {
   });
 
   it("Changes status to Planned (so we know back-to-the-start and-then-bump-one-step works)", () => {
-    mariasBrowser.waitAndClick('.icon-idea.dw-clickable');   // event #post-9
-    mariasBrowser.waitForVisible('.icon-check-dashed.dw-clickable');
+    mariasBrowser.pageTitle.changeStatusToPlanned();         // event #post-9
   });
 
   it("Posts another bottom comment", () => {

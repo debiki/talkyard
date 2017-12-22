@@ -31,7 +31,7 @@
 //------------------------------------------------------------------------------
 
 // @ifdef DEBUG
-let debug = location.hash.match("debug=(t|true|all|trackReadingActivity)");
+let debug = location.hash.match("debug=(t|true|all|trackReadingActivity)"); // [2FG6MJ9]
 // @endif
 
 export let debugIntervalHandler = null;

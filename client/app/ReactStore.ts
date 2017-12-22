@@ -1340,6 +1340,11 @@ function showNewPage(newPage: Page, newUsers: BriefUser[], newMe: Myself | null,
   // Update any top header links so the hereaafter active one (if any) gets highlighted/underlined.
   debiki2.utils.highlightActiveLinkInHeader();
 
+  // REFACTOR Maybe combine start-page.ts, and this showNewPage(), and loadAndScrollToAnyUrlAnchorPost(),
+  // into one single file/module? because it's all do-when-showing-new-page stuff.
+  // (Don't call directly — would trigger render() from inside render().
+  setTimeout(ReactActions.loadAndScrollToAnyUrlAnchorPost);
+
   // When done rendering, replace date ISO strings with pretty dates.
   setTimeout(debiki2.page.Hacks.processPosts);
 }
