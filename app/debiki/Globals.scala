@@ -61,6 +61,7 @@ object Globals {
 
   class DatabasePoolInitializationException(cause: Exception) extends RuntimeException(cause)
 
+  val CdnOriginConfValName = "ed.cdn.origin"
   val LocalhostUploadsDirConfValName = "ed.uploads.localhostDir"
   val DefaultLocalhostUploadsDir = "/opt/ed/uploads/"
 
@@ -267,6 +268,27 @@ class Globals(
       p.Logger.info("Config value 'ed.secure' missing; defaulting to true. [DwM3KEF2]")
       true
     }
+
+  /** If secure=true, then prefix with 'https:', if absent (i.e. if only '//' specified),
+    * so a 'http:' embedded comments iframe parent base address (i.e. a <base href=...> elem)
+    * won't make us use http instead of https — that could break embedded comments when testing
+    * locally and embedding page = http://localhost/... .
+    */
+  val anyCdnOrigin: Option[String] =
+    config.cdn.origin.map(origin => {
+      if (origin.startsWith("https:")) origin
+      else if (secure && origin.startsWith("//")) "https:" + origin
+      else if (!secure) origin
+      else if (origin.startsWith("http:")) {
+        die("EdEINSECCDNORIG", o"""The server is configured to use https, but in the config file,
+            $CdnOriginConfValName is http://... (not https)""")
+      }
+      else {
+        die("EdEBADCDNORIG", o"""In the config file, $CdnOriginConfValName is not http(s)
+            but something else weird.""".stripMargin)
+      }
+    })
+
 
   val scheme: String = if (secure) "https" else "http"
   def schemeColonSlashSlash: String = scheme + "://"
@@ -834,7 +856,7 @@ class Config(conf: play.api.Configuration) {
   val uploadsUrlPath: String = controllers.routes.UploadsController.servePublicFile("").url
 
   object cdn {
-    val origin: Option[String] = conf.getString("ed.cdn.origin").noneIfBlank
+    val origin: Option[String] = conf.getString(CdnOriginConfValName).noneIfBlank
     def uploadsUrlPrefix: Option[String] = origin.map(_ + uploadsUrlPath)
   }
 

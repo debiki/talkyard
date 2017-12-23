@@ -153,6 +153,7 @@ class SiteTpi protected (
     views.html.debikiScriptsEndOfBody(
       this, startupCode = startupCode, loadStaffBundle = loadStaffBundle).body)
 
+  def secureProtoColonOrEmpty = if (globals.secure) "https:" else ""
 
   def hostname: String = debikiRequest.host
 
@@ -237,7 +238,8 @@ class SiteTpi protected (
     * embedded comments iframes.
     */
   def cdnOrServerOrigin: String =
-    globals.config.cdn.origin.getOrElse(globals.schemeColonSlashSlash + serverAddress)
+    globals.anyCdnOrigin.getOrElse(globals.schemeColonSlashSlash + serverAddress)
+
 
   def serverAddress: String = debikiRequest.request.host
 

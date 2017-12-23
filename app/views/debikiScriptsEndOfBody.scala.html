@@ -15,7 +15,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *@
 
-@import com.debiki.core.PageRole
 @(tpi: debiki.SiteTpi, startupCode: String, loadStaffBundle: Boolean)
 
 
@@ -35,7 +34,6 @@ but pre*load* requests do get cancelled, see:
  https://medium.com/reloading/preload-prefetch-and-priorities-in-chrome-776165961bbf *@
 <link rel="prefetch" href="@tpi.assetUrl(s"more-bundle.${tpi.minMaxJs}")" as="script">
 }
-<link rel="prefetch" href="@tpi.assetUrl(s"jquery-bundle.${tpi.minMaxJs}")" as="script">
 <link rel="prefetch" href="@tpi.assetUrl(s"editor-bundle.${tpi.minMaxJs}")" as="script">
 
 
