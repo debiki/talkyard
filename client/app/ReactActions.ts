@@ -601,7 +601,7 @@ export function patchTheStore(storePatch: StorePatch) {
 
 
 export function maybeLoadAndShowNewPage(store: Store,
-        history: History, location: Location, newUrlPath?: string) {
+        history, location: Location, newUrlPath?: string) {
 
   // No router, so no history or location, if in embedded discussion.
   if (store.isInEmbeddedCommentsIframe)
@@ -636,15 +636,21 @@ export function maybeLoadAndShowNewPage(store: Store,
     // In a forum, there's sth like '/latest/ideas' after the forum page path. So,
     // special check for forum pages; just a prefix match is enough.
     const storePageIsTheForum = storePagePath === store.forumPath;
+    const newPathIsToForum = urlPath_isToForum(newUrlPath, store.forumPath);
     if (!isThisPage && storePageIsTheForum) {
-      isThisPage = urlPath_isToForum(newUrlPath, store.forumPath);
+      isThisPage =  newPathIsToForum;
     }
 
     if (isThisPage) {
       hasPageAlready = true;
       if (page.pageId === store.currentPageId) {
         // We just loaded the whole html page from the server, and are already trying to
-        // render 'page'. Need not do anything more here.
+        // render 'page'. Or we clicked a '/-pageid#post-nr' link, to '/the-current-page'.
+        // Need not do anything more here, except for maybe change from '/-pageid#post-nr'
+        // back to '/the-current-page' + '#post-nr':
+        if (newUrlPath !== page.pagePath.value && !newPathIsToForum) {
+          history.replace(page.pagePath.value + location.search + location.hash);
+        }
       }
       else {
         // FOR NOW: since pushing of updates to [pages in the store other than the one

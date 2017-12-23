@@ -26,7 +26,9 @@ function runEndToEndTest {
   cmd="$@ --deleteOldSite --localHostname=e2e-test-$site_nr"
   echo "—————————————————————————————————————————————————————————"
   echo "Next test: $cmd"
-  $cmd
+  # Sometimes, randomly?, there's some weird port conflict causing this to fail & hang forever.
+  # So timeout after 3 minutes. The slow tests take about one minute.
+  timeout --foreground 180 $cmd
   if [ $? -ne 0 ]; then
     log_message "Failed: $cmd" >> $failfile
     # Try again, so some harmless race condition I haven't thought about that breaks the test,

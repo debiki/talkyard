@@ -1297,8 +1297,6 @@ function showNewPage(newPage: Page, newUsers: BriefUser[], newMe: Myself | null,
     const regex = /[ ,]/;
     const oldClasses = oldClassesStr.split(regex);
     const newClasses = newClassesStr.split(regex);
-    addOrRemoveClasses(oldClasses, newClasses, $h.removeClasses);
-    addOrRemoveClasses(newClasses, oldClasses, $h.addClasses);
     function addOrRemoveClasses(as, bs, fn) {
       for (let i = 0; i < as.length; ++i) {
         const a = as[i].trim();
@@ -1307,6 +1305,8 @@ function showNewPage(newPage: Page, newUsers: BriefUser[], newMe: Myself | null,
         }
       }
     }
+    addOrRemoveClasses(oldClasses, newClasses, $h.removeClasses);
+    addOrRemoveClasses(newClasses, oldClasses, $h.addClasses);
   }
 
   // Maybe a /-pageid path to the page was specified. But that won't work for forum pages,
