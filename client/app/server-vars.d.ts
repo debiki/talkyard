@@ -8,7 +8,7 @@ declare namespace eds {
   const isDev: boolean;
 
   const minMaxJs: boolean;
-  const serverOrigin: boolean;
+  const serverOrigin: string;
   const assetUrlPrefix: string;
   const uploadsUrlPrefix: string;
 

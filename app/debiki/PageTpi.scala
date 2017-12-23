@@ -153,7 +153,10 @@ class SiteTpi protected (
     views.html.debikiScriptsEndOfBody(
       this, startupCode = startupCode, loadStaffBundle = loadStaffBundle).body)
 
-  def secureProtoColonOrEmpty = if (globals.secure) "https:" else ""
+  /** Resources starting with '//' should be prefixed with this, so they'll be fetched via https,
+    * even if there is a {{{<base href='http://...>}}} tag (i.e. not https).
+    */
+  def httpsColonOrEmpty: String = if (globals.secure) "https:" else ""
 
   def hostname: String = debikiRequest.host
 

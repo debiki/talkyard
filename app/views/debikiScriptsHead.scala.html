@@ -174,7 +174,7 @@ var eds = {
   volatileDataFromServer: _volatileData,
   isDev: @{ if (globals.isDev) "true" else "false" },
   minMaxJs: '@minMaxJs',
-  serverOrigin: '//@tpi.serverAddress',
+  serverOrigin: '@{tpi.httpsColonOrEmpty}//@tpi.serverAddress',
   isInLoginWindow: @isInLoginWindowBoolStr,
   isInLoginPopup: @isInLoginWindowBoolStr && _isInIframe, // window.opener && window.opener.debiki,
   isInIframe: _isInIframe,

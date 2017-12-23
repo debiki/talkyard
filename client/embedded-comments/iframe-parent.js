@@ -70,6 +70,7 @@ if (commentsElems.length) {
   // no messages at all from it.
   theCommentsIframe = Bliss.create('iframe', {
     id: 'ed-embedded-comments',
+    name: 'edComments',
     height: 0, // don't `hide()` (see comment just above)
     style: {
       padding: 0,
@@ -117,6 +118,7 @@ if (commentsElems.length) {
   var editorIframeUrl = serverOrigin + '/-/embedded-editor?' + allUrlParams;
   theEditorIframe = Bliss.create('iframe', {
     id: 'ed-embedded-editor',
+    name: 'edEditor',
     style: {
       display: 'block', // otherwise 'inline' —> some blank space below, because of descender spacing?
       padding: 0,
@@ -314,7 +316,12 @@ function sendToEditor(message) {
 
 
 function scrollComments(rectToScrollIntoView, options) {
-  options.parent = document.body;
+  // For a discussion about using <html> or <body>, see:
+  // https://stackoverflow.com/questions/19618545/
+  //    body-scrolltop-vs-documentelement-scrolltop-vs-window-pagyoffset-vs-window-scrol
+  // COULD use  window.scrollY instead, that's maybe more future compatible,
+  // see: https://stackoverflow.com/a/33462363/694469
+  options.parent = document.documentElement.scrollTop ? document.documentElement : document.body;
   var commentsIframe = document.getElementById('ed-embedded-comments');
   var iframeRect = commentsIframe.getBoundingClientRect();
   var rectWithOffset = {
