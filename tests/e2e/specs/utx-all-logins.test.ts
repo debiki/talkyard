@@ -56,6 +56,9 @@ const queueCategoryId = 3;
 
 describe("usability testing exchange, all logins:", () => {
 
+  if (!settings.include3rdPartyDependentTests)
+    return;
+
   it("import a site", () => {
     browser.perhapsDebugBefore();
     const builder = buildSite();
