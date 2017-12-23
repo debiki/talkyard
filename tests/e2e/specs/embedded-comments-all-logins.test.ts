@@ -26,6 +26,7 @@ let idAddress: IdAddress;
 let siteId: any;
 
 const majasComment = 'majasComment';
+const majas2ndComment = 'majas2ndComment';
 const michaelsComment = 'michaelsComment';
 
 const localHostname = 'comments-for-e2e-test-emballgi-localhost-8080';
@@ -89,7 +90,7 @@ describe("emb cmts all logins", () => {
     majasBrowser.disableRateLimits();
   });
 
-  it("... clicks Reply and logs in, with Gmail @gmail", () => {
+  it("... clicks Reply and signs up, with Gmail @gmail", () => {
     majasBrowser.topic.clickReplyToEmbeddingBlogPost();
     majasBrowser.swithToOtherTabOrWindow();
     majasBrowser.disableRateLimits();
@@ -115,7 +116,7 @@ describe("emb cmts all logins", () => {
     majasBrowser.topic.assertPostTextMatches(2, majasComment);
   });
 
-  it("Michael logs in, with Facebook", () => {
+  it("Michael signs up, with Facebook", () => {
     michaelsBrowser.waitAndClick('.dw-a-logout');
     // Now the page reloads. Wait.
     michaelsBrowser.switchToEmbeddedCommentsIrame();
@@ -147,9 +148,31 @@ describe("emb cmts all logins", () => {
     michaelsBrowser.topic.assertPostTextMatches(3, michaelsComment);
   });
 
+  it("Maja logs in again, with Gmail", () => {
+    majasBrowser.waitAndClick('.dw-a-logout');
+    // Now the page reloads. Wait.
+    majasBrowser.switchToEmbeddedCommentsIrame();
+    majasBrowser.topic.waitForReplyButtonAssertCommentsVisible();
+    majasBrowser.topic.clickReplyToEmbeddingBlogPost();
+    majasBrowser.swithToOtherTabOrWindow();
+    majasBrowser.disableRateLimits();
+    majasBrowser.loginDialog.loginWithGmail({
+      email: settings.gmailEmail,
+      password: settings.gmailPassword,
+    }, true);
+    majasBrowser.switchBackToFirstTabOrWindow();
+  });
 
-  it("Done", () => {
-    everyonesBrowsers.perhapsDebug();
+  it("... posts a second comment", () => {
+    majasBrowser.switchToEmbeddedEditorIrame();
+    majasBrowser.editor.editText(majas2ndComment);
+    majasBrowser.editor.save();
+  });
+
+  it("... it appears, it too", () => {
+    majasBrowser.switchToEmbeddedCommentsIrame();
+    majasBrowser.topic.waitForPostNrVisible(4);
+    majasBrowser.topic.assertPostTextMatches(4, majas2ndComment);
   });
 
 });
