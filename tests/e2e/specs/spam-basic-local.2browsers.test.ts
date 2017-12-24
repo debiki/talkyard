@@ -106,7 +106,7 @@ describe("spam test, no external services:", () => {
   });
 
   it("... which will be visible, initially", () => {
-    assert(mallorysBrowser.isVisible(post2Selector));
+    mallorysBrowser.waitForVisible(post2Selector);
   });
 
   it("... then he posts a *not* spam comment", () => {
