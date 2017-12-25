@@ -39,21 +39,30 @@ var gzip = require('gulp-gzip');
 var gulpUtil = require('gulp-util');
 var es = require('event-stream');
 var fs = require("fs");
+var execSync = require('child_process').execSync;
 var path = require("path");
 var preprocess = require('gulp-preprocess');
 
 var watchAndLiveForever = false;
 var currentDirectorySlash = __dirname + '/';
+var versionFilePath = 'version.txt';
 
 
-var copyrightAndLicenseBanner =
+function makeCopyrightAndLicenseBanner() {
+  var version = fs.readFileSync(versionFilePath, { encoding: 'utf8' }).trim();
+  var gitHash = execSync('git rev-parse --short HEAD', { encoding: 'utf8' }).trim();
+  var versionTag = version + '-' + gitHash;  // also in Bash and Scala [8GKB4W2]
+  return (
   '/*!\n' +
+  ' * EffectiveDiscussions ' + versionTag + '\n' +
+  ' *\n' +
   ' * This file is copyrighted and licensed under the AGPL license.\n' +
   ' * Some parts of it might be licensed under more permissive\n' +
   ' * licenses, e.g. MIT or Apache 2. Find the source code and\n' +
   ' * exact details here:\n' +
   ' *   https://github.com/debiki/debiki-server\n' +
-  ' */\n';
+  ' */\n');
+}
 
 var thisIsAConcatenationMessage =
   '/*!\n' +
@@ -389,7 +398,7 @@ function makeConcatAllScriptsStream() {
         .pipe(wrap(nextFileTemplate))
         .pipe(concat(outputFileName))
         .pipe(header(thisIsAConcatenationMessage))
-        .pipe(header(copyrightAndLicenseBanner))
+        .pipe(header(makeCopyrightAndLicenseBanner()))
         .pipe(gulp.dest('public/res/'));
   }
 
@@ -435,7 +444,7 @@ gulp.task('minifyScripts', ['compileConcatAllScripts'], function() {
         this.emit('end');
       }))
       .pipe(rename({ extname: '.min.js' }))
-      .pipe(header(copyrightAndLicenseBanner))
+      .pipe(header(makeCopyrightAndLicenseBanner()))
       .pipe(gulp.dest('public/res/'))
       .pipe(gzip())
       .pipe(gulp.dest('public/res/'));
@@ -466,7 +475,7 @@ gulp.task('compile-stylus', function () {
       .pipe(concat(destFile))
       .pipe(gulp.dest(destDir))
       .pipe(cleanCSS())
-      .pipe(header(copyrightAndLicenseBanner))
+      .pipe(header(makeCopyrightAndLicenseBanner()))
       .pipe(rename({ extname: '.min.css' }))
       .pipe(gulp.dest(destDir))
       .pipe(gzip())

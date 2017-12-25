@@ -16,7 +16,7 @@ function log_message {
   echo "`date --iso-8601=seconds --utc`: $1"
 }
 
-failfile=target/e2e-failures.txt
+failfile=tests/e2e-failures.txt
 echo "" >> $failfile
 log_message "Running: $*" >> $failfile
 

@@ -61,5 +61,8 @@ public/res/zxcvbn.*
 #   see: http://code.google.com/p/selenium/issues/detail?id=3475
 /chromedriver.log
 
+# Failed e2e tests, not kept in target/ so won't get removed when doing 'clean'.
+tests/e2e-failures.txt
+
 # Play's auto generated self signed cert.
 conf/generated.keystore
