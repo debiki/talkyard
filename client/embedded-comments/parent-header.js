@@ -43,7 +43,9 @@ debiki.internal.commentsServerOrigin = window.edCommentsServerUrl || (function()
 })();
 
 
-debiki.internal.runDebikisCode = function() {
+// Wrap all js in this script bundle in a function, so variables and functions won't become global.
+// We'll add `})();` later in parent-footer.js.
+(function() {
 
 
 // vim: et sw=2 ts=2 tw=0 list

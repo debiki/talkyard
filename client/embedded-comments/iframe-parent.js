@@ -20,38 +20,34 @@ console.log("iframe-parent: start");
 var d = { i: debiki.internal };
 var serverOrigin = d.i.commentsServerOrigin;
 
-// Escape any hash fragment.
-var embeddingUrl = window.location.origin + window.location.pathname + window.location.search;
-var discussionId;
-
 var postNrToFocus;
-var commentNrHashMatch = window.location.hash.match(/^#comment-(\d+)$/);  // [2PAWC0]
-if (commentNrHashMatch) {
-  var commentNrStr = commentNrHashMatch[1];
-  var commentNr = parseInt(commentNrStr);
-  postNrToFocus = commentNr + 1;  // comment nr = post nr - 1  [2PAWC0]
-}
 
-var theCommentsIframe;
-var theEditorIframe;
+var commentsIframe;
+var editorIframe;
+var editorWrapper;
+var editorPlaceholder;
 
 addEventListener('scroll', messageCommentsIframeNewWinTopSize);
 addEventListener('message', onMessage, false);
 
 
-// Create <iframe>s for embedded comments and an embedded editor.
-// Show a "Loading comments..." message until comments loaded.
-// For now, choose the first .debiki-emdbedded-comments only, because
-// the embedded editor will be bound to one page only, and two editors
-// seems complicated.
-var commentsElems = document.getElementsByClassName('ed-comments');
-if (commentsElems.length) {
+function loadCommentsCreateEditor() {
+  console.log("iframe-parent: loadCommentsCreateEditor()");
+  // Create <iframe>s for embedded comments and an embedded editor.
+  // Show a "Loading comments..." message until comments loaded.
+  // For now, choose the first .debiki-emdbedded-comments only, because
+  // the embedded editor will be bound to one page only, and two editors
+  // seems complicated.
+  var commentsElems = document.getElementsByClassName('ed-comments');
+  if (!commentsElems.length)
+    return;
   var commentsElem = commentsElems[0];
   console.log("iframe-parent: found commentsElem");
 
+  var embeddingUrl = window.location.origin + window.location.pathname + window.location.search;
   var embeddingUrlParam = 'embeddingUrl=' + embeddingUrl;
 
-  discussionId = commentsElem.getAttribute('data-discussion-id');
+  var discussionId = commentsElem.getAttribute('data-discussion-id');
   if (/[#?& \t\n]/.test(discussionId)) {
     var errorMessage = "Bad discussion id: " + discussionId + ' [EdE8UKWB4]';
     console.log(errorMessage);
@@ -68,7 +64,7 @@ if (commentsElems.length) {
 
   // Don't `hide()` the iframe, then FireFox acts as if it doesn't exist: FireFox receives
   // no messages at all from it.
-  theCommentsIframe = Bliss.create('iframe', {
+  commentsIframe = Bliss.create('iframe', {
     id: 'ed-embedded-comments',
     name: 'edComments',
     height: 0, // don't `hide()` (see comment just above)
@@ -82,8 +78,8 @@ if (commentsElems.length) {
     src: commentsIframeUrl
   });
 
-  Bliss.start(theCommentsIframe, commentsElem);
-  console.log("iframe-parent: inserted theCommentsIframe");
+  Bliss.start(commentsIframe, commentsElem);
+  console.log("iframe-parent: inserted commentsIframe");
 
   var loadingCommentsElem = Bliss.create('p', {
     id: 'ed-loading-comments',
@@ -92,7 +88,7 @@ if (commentsElems.length) {
 
   Bliss.start(loadingCommentsElem, commentsElem);
 
-  var editorWrapper = Bliss.create('div', {
+  editorWrapper = Bliss.create('div', {
     id: 'ed-editor-wrapper',
     style: {
       display: 'none',
@@ -116,7 +112,7 @@ if (commentsElems.length) {
   console.log("iframe-parent: inserted editorWrapper");
 
   var editorIframeUrl = serverOrigin + '/-/embedded-editor?' + allUrlParams;
-  theEditorIframe = Bliss.create('iframe', {
+  editorIframe = Bliss.create('iframe', {
     id: 'ed-embedded-editor',
     name: 'edEditor',
     style: {
@@ -131,17 +127,36 @@ if (commentsElems.length) {
     src: editorIframeUrl
   });
 
-  Bliss.inside(theEditorIframe, editorWrapper);
+  Bliss.inside(editorIframe, editorWrapper);
   console.log("iframe-parent: inserted editorIframe");
 
-  // Editor placeholder, so the <iframe> won't occlude the lower parts of the page.
-  var editorPlaceholder = Bliss.create('div', {
+  findCommentToScrollTo();
+  makeEditorResizable();
+}
+
+
+function removeCommentsAndEditor() {
+  console.log("iframe-parent: removeCommentsAndEditor()");
+  if (commentsIframe) {
+    commentsIframe.remove();
+    commentsIframe = null;
+  }
+  if (editorIframe) {
+    editorIframe.remove();
+    editorIframe = null;
+    editorWrapper.remove();
+    editorWrapper = null;
+  }
+}
+
+
+// Editor placeholder, so the <iframe> won't occlude the lower parts of the page.
+function createEditorPlaceholder() {
+  editorPlaceholder = Bliss.create('div', {
     id: 'ed-editor-placeholder',
     display: 'none'
   });
   Bliss.inside(editorPlaceholder, document.body);
-
-  makeEditorResizable();
 }
 
 
@@ -156,7 +171,8 @@ jQuery(function($) {   // xx
 
 
 function messageCommentsIframeNewWinTopSize() {
-  var rect = theCommentsIframe.getBoundingClientRect();
+  if (!commentsIframe) return;
+  var rect = commentsIframe.getBoundingClientRect();
   sendToComments('["iframeOffsetWinSize", {' +
       '"top":' + (-rect.top) + ', "height":' + window.innerHeight + '}]');
 }
@@ -171,6 +187,8 @@ function messageCommentsIframeToMessageMeToScrollTo(postNr) {
 
 
 function onMessage(event) {
+  if (!commentsIframe) return;
+
   // The message is a "[eventName, eventData]" string because IE <= 9 doesn't support
   // sending objects. CLEAN_UP COULD send a real obj nowadays, because we don't support IE 9 any more.
   var eventName;
@@ -194,7 +212,7 @@ function onMessage(event) {
     case 'iframeInited':
       console.log("iframe-parent: got 'iframeInited' message");
       iframe = findIframeThatSent(event);
-      if (iframe === theCommentsIframe) {
+      if (iframe === commentsIframe) {
         // The iframe wants to know the real win dimensions, so it can position modal dialogs on screen.
         messageCommentsIframeNewWinTopSize();
         // If we want to scroll to & highlight a post: The post is inside the iframe and we don't
@@ -232,7 +250,7 @@ function onMessage(event) {
       */
     case 'justLoggedIn':
       iframe = findIframeThatSent(event);
-      if (iframe === theCommentsIframe) {
+      if (iframe === commentsIframe) {
         sendToEditor(event.data);
       }
       else {
@@ -241,7 +259,7 @@ function onMessage(event) {
       break;
     case 'logoutClientSideOnly':
       iframe = findIframeThatSent(event);
-      if (iframe === theCommentsIframe) {
+      if (iframe === commentsIframe) {
         sendToEditor(event.data);
         showEditor(false);
       }
@@ -290,27 +308,33 @@ function setIframeSize(iframe, dimensions) {
 
 function findIframeThatSent(event) {
   // See http://stackoverflow.com/a/18267415/694469
-
-  var commentsIframe = document.getElementById('ed-embedded-comments');
   if (commentsIframe && commentsIframe.contentWindow === event.source)
     return commentsIframe;
-
-  var editorIframe = document.getElementById('ed-embedded-editor');
   if (editorIframe && editorIframe.contentWindow === event.source)
     return editorIframe;
 }
 
 
 function sendToComments(message) {
-  if (theCommentsIframe) {
-    theCommentsIframe.contentWindow.postMessage(message, serverOrigin);
+  if (commentsIframe) {
+    commentsIframe.contentWindow.postMessage(message, serverOrigin);
   }
 }
 
 
 function sendToEditor(message) {
-  if (theEditorIframe) {
-    theEditorIframe.contentWindow.postMessage(message, serverOrigin);
+  if (editorIframe) {
+    editorIframe.contentWindow.postMessage(message, serverOrigin);
+  }
+}
+
+
+function findCommentToScrollTo() {
+  var commentNrHashMatch = window.location.hash.match(/^#comment-(\d+)$/);  // [2PAWC0]
+  if (commentNrHashMatch) {
+    var commentNrStr = commentNrHashMatch[1];
+    var commentNr = parseInt(commentNrStr);
+    postNrToFocus = commentNr + 1;  // comment nr = post nr - 1  [2PAWC0]
   }
 }
 
@@ -322,7 +346,6 @@ function scrollComments(rectToScrollIntoView, options) {
   // COULD use  window.scrollY instead, that's maybe more future compatible,
   // see: https://stackoverflow.com/a/33462363/694469
   options.parent = document.documentElement.scrollTop ? document.documentElement : document.body;
-  var commentsIframe = document.getElementById('ed-embedded-comments');
   var iframeRect = commentsIframe.getBoundingClientRect();
   var rectWithOffset = {
     top: rectToScrollIntoView.top + iframeRect.top,
@@ -340,8 +363,6 @@ function scrollComments(rectToScrollIntoView, options) {
 var hasInitedEditorHeight = false;
 
 function showEditor(show) {
-  var placeholder = document.getElementById('ed-editor-placeholder');
-  var editorWrapper = document.getElementById('ed-editor-wrapper');
   if (show) {
     editorWrapper.style.display = 'block';
     if (!hasInitedEditorHeight) {
@@ -350,12 +371,12 @@ function showEditor(show) {
       var initialHeight = Math.max(Math.min(300, window.innerHeight), window.innerHeight / 2.8);
       editorWrapper.style.height = initialHeight + 'px';
     }
-    placeholder.style.display = 'block';
-    placeholder.style.height = editorWrapper.clientHeight + 'px';
+    editorPlaceholder.style.display = 'block';
+    editorPlaceholder.style.height = editorWrapper.clientHeight + 'px';
   }
   else {
     editorWrapper.style.display = 'none';
-    placeholder.style.display = 'none';
+    editorPlaceholder.style.display = 'none';
     sendToComments('["clearIsReplyingMarks", {}]');
   }
 }
@@ -366,7 +387,6 @@ var oldBorderTop;
 var oldPaddingTop;
 
 function setEditorMaximized(maximized) {
-  var editorWrapper = document.getElementById('ed-editor-wrapper');
   if (maximized) {
     oldHeight = editorWrapper.style.height;
     oldBorderTop = editorWrapper.style.borderTop;
@@ -403,8 +423,6 @@ function setEditorMinimized(minimized) {
 
 
 function makeEditorResizable() {
-  var editorPlaceholder = document.getElementById('ed-editor-placeholder');
-  var editorWrapper = document.getElementById('ed-editor-wrapper');
   editorWrapper.addEventListener('mousedown', startDrag);
 
   var startY = 0;
@@ -451,5 +469,14 @@ function coverIframesSoWontStealMouseEvents(cover) {
   Bliss.set(editor, newVisibilityStyle);
 }
 
+
+createEditorPlaceholder();
+loadCommentsCreateEditor();
+
+// Some static sites, like Gatsby.js, don't reload whole pages, instead they load json, un/re-mount
+// React componets and do history.push, to render the new page. Then a way is needed
+// to load the comments for the new URL.
+window.edRemoveCommentsAndEditor = removeCommentsAndEditor;
+window.edReloadCommentsAndEditor = loadCommentsCreateEditor;
 
 // vim: fdm=marker et ts=2 sw=2 fo=tcqwn list
