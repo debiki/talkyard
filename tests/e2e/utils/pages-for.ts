@@ -148,6 +148,10 @@ function pagesFor(browser) {
 
 
     _waitForClickable: function(selector) {
+      // Without pause(..), the tests often break when run in an *invisible* browser, but works
+      // just fine when run in a *visible* browser. Meaning, it's very hard to fix any race
+      // conditions, because only fails when I cannot see. So for now, pause(100).
+      browser.pause(100);
       browser.waitForVisible(selector);
       browser.waitForEnabled(selector);
       browser.waitUntilLoadingOverlayGone();
@@ -1610,6 +1614,7 @@ function pagesFor(browser) {
         // and then we won't scroll down — but then just before `browser.waitAndClick`
         // they appear, so the click fails. That's why we try once more.
         //
+        browser.waitForVisible(buttonSelector);
         for (let attemptNr = 1; attemptNr <= 2; ++attemptNr) {
           while (true) {
             let replyButtonLocation = browser.getLocationInView(buttonSelector);
