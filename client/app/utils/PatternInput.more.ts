@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015 Kaj Magnus Lindberg
+ * Copyright (c) 2015, 2017 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -24,10 +24,10 @@
 const r = ReactDOMFactories;
 
 
-export var PatternInput = createClassAndFactory({
+export const PatternInput = createClassAndFactory({
   getInitialState: function() {
     return {
-      showErrors: (this.props || {}).showErrors,
+      showErrors: (this.props || <any> {}).showErrors,
       value: this.props.defaultValue || "",
     };
   },
@@ -41,20 +41,20 @@ export var PatternInput = createClassAndFactory({
   },
 
   onChange: function(event) {
-    var anyError = this.findAnyError(event.target.value);
+    const anyError = this.findAnyError(event.target.value);
     this.setState({ value: event.target.value, hasError: !!anyError });
-    var onChangeValuOk = this.props.onChangeValueOk || this.props.onChange;
+    const onChangeValuOk = this.props.onChangeValueOk || this.props.onChange;
     if (onChangeValuOk) {
       onChangeValuOk(event.target.value, !anyError);
     }
   },
 
   componentDidUpdate: function() {
-    var hasError = !!this.findAnyError(this.state.value);
+    const hasError = !!this.findAnyError(this.state.value);
     if (hasError !== this.state.hasError) {
       this.setState({ hasError: hasError });
       // We got new props (perhaps this.props.error?) and now we're okay or broken, instead.
-      var onChangeValuOk = this.props.onChangeValueOk || this.props.onChange;
+      const onChangeValuOk = this.props.onChangeValueOk || this.props.onChange;
       if (onChangeValuOk) {
         onChangeValuOk(this.state.value, !hasError);
       }
@@ -62,13 +62,13 @@ export var PatternInput = createClassAndFactory({
   },
 
   componentWillUnmount: function() {
-    this.hasUnmounted = true;
+    this.isGone = true;
   },
 
   showErrorsSoon: function() {
     clearTimeout(this.showErrorsTimeoutHandle);
     this.showErrorsTimeoutHandle = setTimeout(() => {
-      if (this.hasUnmounted) return;
+      if (this.isGone) return;
       this.showErrors();
     }, 3000);
   },
@@ -85,7 +85,7 @@ export var PatternInput = createClassAndFactory({
     if (this.props.required === false && _.isEmpty(value))
       return null;
 
-    var lengthError = this.checkLength(value);
+    const lengthError = this.checkLength(value);
     if (this.props.testLengthFirst && lengthError)
       return lengthError;
 
@@ -133,9 +133,9 @@ export var PatternInput = createClassAndFactory({
   },
 
   render: function() {
-    var anyError;
+    let anyError;
     if (this.state.showErrors || this.props.error) {
-      var anyError = this.findAnyError(this.state.value);
+      anyError = this.findAnyError(this.state.value);
       if (anyError && _.isString(anyError)) {
         anyError = r.b({ style: { color: 'red' }}, anyError);
       }

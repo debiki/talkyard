@@ -27,7 +27,6 @@
    namespace debiki2.login {
 //------------------------------------------------------------------------------
 
-var d = { i: debiki.internal };
 const r = ReactDOMFactories;
 var Modal = rb.Modal;
 var ModalBody = rb.ModalBody;

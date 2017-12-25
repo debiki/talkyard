@@ -51,6 +51,8 @@ export const Input = createComponent({
       disabled: props.disabled,
       inputRef: props.inputRef,
       onChange: props.onChange,
+      onFocus: props.onFocus,
+      onBlur: props.onBlur,
     };
 
     const isCheckbox = props.type === 'checkbox';
