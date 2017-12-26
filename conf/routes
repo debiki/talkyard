@@ -69,6 +69,7 @@ GET   /-/create-test-site                   controllers.CreateSiteController.sho
 GET   /-/create-test-site/website           controllers.CreateSiteController.showPage(isTest = "true")
 GET   /-/create-test-site/embedded-comments controllers.CreateSiteController.showPage(isTest = "true")
 POST  /-/create-site                        controllers.CreateSiteController.createSite
+POST  /-/delete-test-site                   controllers.CreateSiteController.deleteTestSite
 
 GET   /-/admin                  controllers.AdminController.redirectToAdminPage
 GET   /-/admin/                 controllers.AdminController.viewAdminPage(whatever = "")

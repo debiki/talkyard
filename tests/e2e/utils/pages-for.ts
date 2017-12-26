@@ -1985,7 +1985,7 @@ function pagesFor(browser) {
 
     adminArea: {
       waitAssertVisible: function() {
-        browser.waitForVisible('h1');
+        browser.waitForVisible('h1.esTopbar_custom_title');
         browser.assertTextMatches('h1', "Admin Area");
       },
 
@@ -2177,6 +2177,15 @@ function pagesFor(browser) {
         api.topic.clickReplyToOrigPost(whichButton);
         api.editor.editText(text);
         api.editor.save();
+      },
+
+      replyToEmbeddingBlogPost: function(text: string) {
+        browser.switchToEmbeddedCommentsIrame();
+        api.topic.clickReplyToEmbeddingBlogPost();
+        browser.switchToEmbeddedEditorIrame();
+        api.editor.editText(text);
+        api.editor.save();
+        browser.switchToEmbeddedCommentsIrame();
       },
 
       addBottomComment: function(text: string) {

@@ -120,6 +120,11 @@ function importSiteData(siteData: SiteData): IdAddress {
 }
 
 
+function deleteOldTestSite(localHostname: string) {
+  postOrDie(settings.mainSiteOrigin + '/-/delete-test-site', { localHostname });
+}
+
+
 function playTimeSeconds(seconds: number) {
   const url = settings.mainSiteOrigin + '/-/play-time';
   postOrDie(url, { seconds: seconds });
@@ -242,6 +247,7 @@ function lastEmailMatches(siteId: SiteId, emailAddress: string,
 export = {
   initOrDie,
   importSiteData,
+  deleteOldTestSite,
   playTimeSeconds,
   playTimeMinutes,
   playTimeHours,

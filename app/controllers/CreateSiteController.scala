@@ -185,6 +185,17 @@ class CreateSiteController @Inject()(cc: ControllerComponents, edContext: EdCont
   }
 
 
+  def deleteTestSite: Action[JsValue] = PostJsonAction(RateLimits.CreateSite, maxBytes = 500) {
+        request =>
+    val localHostname = (request.body \ "localHostname").as[String]
+    throwForbiddenUnless(SiteHost.isE2eTestHostname(localHostname), "EdE7UKFW2", "Not a test site")
+    request.dao.readWriteTransaction { tx =>
+      tx.asSystem.deleteAnyHostname(localHostname)
+    }
+    Ok
+  }
+
+
   private def throwIfMayNotCreateSite(request: DebikiRequest[_], isTest: Boolean) {
     import ed.server.Whatever
     if (isTest && (

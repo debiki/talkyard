@@ -37,3 +37,9 @@
 [submodule "modules/sanitize-html"]
 	path = modules/sanitize-html
 	url = ../sanitize-html.git
+[submodule "modules/gatsby-plugin-ed-comments"]
+	path = modules/gatsby-plugin-ed-comments
+	url = https://github.com/debiki/gatsby-plugin-ed-comments.git
+[submodule "modules/gatsby-starter-blog"]
+	path = modules/gatsby-starter-blog
+	url = https://github.com/debiki/gatsby-starter-blog.git

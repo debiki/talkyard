@@ -616,7 +616,7 @@ const EmbeddedCommentsSettings = createFactory({
 
     return (
       r.div({},
-        Setting2(props, { type: 'text', label: "Allow embedding from",
+        Setting2(props, { type: 'text', label: "Allow embedding from", id: 'e_AllowEmbFrom',
           help: r.span({}, "Lets another website (your website) show embedded contents. " +
             "You can add many domains — separate them with spaces."),
           placeholder: "https://www.yourblog.com",

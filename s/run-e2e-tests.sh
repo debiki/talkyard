@@ -149,6 +149,14 @@ function runAllEndToEndTests {
   runEndToEndTest s/wdio target/e2e/wdio.conf.js            --browser $browser --only embedded-comments-discussion-id $args
   runEndToEndTest s/wdio target/e2e/wdio.conf.js            --browser $browser --only embedded-comments-all-logins $args
   runEndToEndTest s/wdio target/e2e/wdio.conf.js            --browser $browser --only embedded-comments-edit-and-vote $args
+  # For this to work, first do:
+  # pushd .
+  # cd modules/gatsby-starter-blog/
+  # rm -fr .cache public
+  # yarn build
+  # popd
+  # ./node_modules/.bin/http-server -p8000 modules/gatsby-starter-blog/public/
+  runEndToEndTest s/wdio target/e2e/wdio.conf.js            --browser $browser --only embedded-comments-gatsby $args
 
   runEndToEndTest s/wdio target/e2e/wdio.conf.js            --browser $browser --only utx-all-logins $args
 
