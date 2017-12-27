@@ -86,6 +86,20 @@ if [ "$1" = '--all' ]; then
   shift
 fi
 
+
+# Start building the Gatsby blog, if needed.
+if [ ! -d modules/gatsby-starter-blog/public/ ]; then
+  echo "Building the Gatsby starter blog public html..."
+  pushd .
+  cd modules/gatsby-starter-blog/
+  rm -fr .cache public
+  yarn build &
+  yarn_build_gatsby_pid=$(jobs -l | grep yarn | cut -f2 -d ' ')
+  echo "Background building the Gatsby blog in process id $yarn_build_gatsby_pid"
+  popd
+fi
+
+
 args=$@
 site_nr=0
 
@@ -144,19 +158,57 @@ function runAllEndToEndTests {
 
   runEndToEndTest s/wdio target/e2e/wdio.2chrome.conf.js    --browser $browser --only summary-emails.2browsers $args
 
-  # For this to work, first do:  ./node_modules/.bin/http-server target/ &
+
+  # Embedded comments
+  # ------------
+  # Start a http server, for the embedding html pages, if needed.
+  server_port_8080=$(netstat -nl | grep ':8080.*LISTEN')
+  server_port_8080_pid=''
+  if [ -z "$server_port_8080" ]; then
+    echo "Starting a http server for embedded comments html pages..."
+    ./node_modules/.bin/http-server -p8080 target/ &
+    # Field 2 is the process id.
+    server_port_8080_pid=$(jobs -l | grep p8080 | cut -f2 -d ' ')
+  fi
+  # else: the user has probably started the server henself already, do nothing.
+
   runEndToEndTest s/wdio target/e2e/wdio.2chrome.conf.js    --browser $browser --only embedded-comments-create-site.2browsers $args
   runEndToEndTest s/wdio target/e2e/wdio.conf.js            --browser $browser --only embedded-comments-discussion-id $args
   runEndToEndTest s/wdio target/e2e/wdio.conf.js            --browser $browser --only embedded-comments-all-logins $args
   runEndToEndTest s/wdio target/e2e/wdio.conf.js            --browser $browser --only embedded-comments-edit-and-vote $args
-  # For this to work, first do:
-  # pushd .
-  # cd modules/gatsby-starter-blog/
-  # rm -fr .cache public
-  # yarn build
-  # popd
-  # ./node_modules/.bin/http-server -p8000 modules/gatsby-starter-blog/public/
+
+  if [ -n "$server_port_8080_pid" ]; then
+    kill $server_port_8080_pid
+    echo "Stopped the http server for the embedded comments."
+  fi
+
+
+  # Gatsby embedded comments
+  # ------------
+  if [ -n $"yarn_build_gatsby_pid" ]; then
+    echo "Waiting for \$yarn_build_gatsby_pid $yarn_build_gatsby_pid to finish ..."
+    wait $yarn_build_gatsby_pid
+  fi
+  # And then start a server, for the blog: (but let's do that here, if not started)
+  server_port_8000=$(netstat -nl | grep ':8000.*LISTEN')
+  if [ -z "$server_port_8000" ]; then
+    echo "Starting a http server for the Gatsby blog..."
+    ./node_modules/.bin/http-server -p8000 modules/gatsby-starter-blog/public/ &
+    # Field 2 is the process id.
+    server_port_8000_pid=$(jobs -l | grep p8000 | cut -f2 -d ' ')
+  fi
+  # else: the user has probably started the server henself already, do nothing.
+
   runEndToEndTest s/wdio target/e2e/wdio.conf.js            --browser $browser --only embedded-comments-gatsby $args
+
+  if [ -n "$server_port_8000_pid" ]; then
+    kill $server_port_8000_pid
+    echo "Stopped the http server for the Gatsby blog."
+  fi
+
+
+  # Usability Testing Exchange
+  # ------------
 
   runEndToEndTest s/wdio target/e2e/wdio.conf.js            --browser $browser --only utx-all-logins $args
 
