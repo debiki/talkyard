@@ -77,22 +77,6 @@ else
 fi
 
 
-test_embedding_server_up='curl --output /dev/null --silent --head --fail http://127.0.0.1:8080'
-if $($test_embedding_server_up) ; then
-  echo 'Embedding comments server already running, fine.'
-else
-  echo 'Do in another shell: (for end-to-end tests of embedded comments)
-
-  ./node_modules/.bin/http-server target/
-'
-  printf 'Waiting for you'
-  until $($test_embedding_server_up); do
-    printf '.'
-    sleep 2
-  done
-fi
-
-
 
 # Derive version number
 # ----------------------

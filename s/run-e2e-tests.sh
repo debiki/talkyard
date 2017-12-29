@@ -185,7 +185,7 @@ function runAllEndToEndTests {
 
   # Gatsby embedded comments
   # ------------
-  if [ -n $"yarn_build_gatsby_pid" ]; then
+  if [ -n "$yarn_build_gatsby_pid" ]; then
     echo "Waiting for \$yarn_build_gatsby_pid $yarn_build_gatsby_pid to finish ..."
     wait $yarn_build_gatsby_pid
   fi
