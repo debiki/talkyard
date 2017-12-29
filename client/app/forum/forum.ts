@@ -1006,7 +1006,7 @@ export const TopicsList = createComponent({
 
     let topicsHeaderText = "Topics";
     switch (orderOffset.sortOrder) {
-      case TopicSortOrder.BumpTime: topicsHeaderText = "Topics, recently activity first"; break;
+      case TopicSortOrder.BumpTime: topicsHeaderText = "Topics, recently active first"; break;
       case TopicSortOrder.CreatedAt: topicsHeaderText = "Topics, newest first"; break;
     }
 
@@ -1246,8 +1246,6 @@ const TopicRow = createComponent({
       Link({ to: this.makeCategoryLink(category), className: 'esF_Ts_T_CName' },
         category.name);
 
-    const activityAgo = prettyLetterTimeAgo(topic.bumpedAtMs || topic.createdAtMs);
-
     // Avatars: Original Poster, some frequent posters, most recent poster. [7UKPF26]
     const author = store_getUserOrMissing(store, topic.authorId, 'EsE5KPF0');
     const userAvatars = [
@@ -1277,8 +1275,8 @@ const TopicRow = createComponent({
     }
 
     const orderOffset: OrderOffset = this.props.orderOffset;
-    const activeAt = orderOffset.sortOrder === TopicSortOrder.CreatedAt ?
-        topic.createdAtMs : topic.bumpedAtMs || topic.createdAtMs;
+    const activeAt = prettyLetterTimeAgo(orderOffset.sortOrder === TopicSortOrder.CreatedAt ?
+        topic.createdAtMs : topic.bumpedAtMs || topic.createdAtMs);
 
     // We use a table layout, only for wide screens, because table columns = spacy.
     if (this.props.inTable) return (
@@ -1291,7 +1289,7 @@ const TopicRow = createComponent({
         !showCategories ? null : r.td({ className: 's_F_Ts_T_CN' }, categoryName),
         r.td({ className: 's_F_Ts_T_Avs' }, userAvatars),
         r.td({ className: 'num dw-tpc-replies' }, topic.numPosts - 1),
-        r.td({ className: 'num dw-tpc-activity', title: activityTitle }, activityAgo)));
+        r.td({ className: 'num dw-tpc-activity', title: activityTitle }, activeAt)));
         // skip for now:  r.td({ className: 'num dw-tpc-feelings' }, feelings)));  [8PKY25]
     else return (
       r.li({ className: 'esF_TsL_T e2eF_T' },
@@ -1304,9 +1302,8 @@ const TopicRow = createComponent({
           r.div({ className: 'esF_TsL_T_Row2_Users' }, userAvatars),
           !showCategories ? null : r.div({ className: 'esF_TsL_T_Row2_Cat' },
             r.span({ className: 'esF_TsL_T_Row2_Cat_Expl' }, "in: "), categoryName),
-          r.span({ className: 'esF_TsL_T_Row2_When' },
-            prettyLetterTimeAgo(activeAt))),
-          anyThumbnails));
+          r.span({ className: 'esF_TsL_T_Row2_When' }, activeAt)),
+        anyThumbnails));
   }
 });
 
