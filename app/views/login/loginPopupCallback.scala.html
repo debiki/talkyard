@@ -1,5 +1,5 @@
 @**
- * Copyright (C) 2012 Kaj Magnus Lindberg (born 1979)
+ * Copyright (c) 2012 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -18,15 +18,32 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <script type='text/javascript'>
-  function returnToOpener() {
+<script type='text/javascript'>
+@* This fails in Chrome 63, although the opener's origin is the same,
+because of this Chrome bug: https://bugs.chromium.org/p/chromium/issues/detail?id=796912
+- In an embedded discussion iframe,
+- click Reply or Flag, so login popup opens,
+- in the popup, login with Gmail *when you're not logged in already in Gmail* so that
+    you need to type your email & password in the Gmail login dialogs.
+- then, after you're done logging in to Gmail, and the popup redirects back to the html here,
+   we won't be allowed to access window.opener. Although we're back on the original domain (!),
+   same as the iframe (the iframe is window.opener). Work around: [4PKGTEW20]
+*@
+function returnToOpener() {
+  try { // try = because the Chrome bug, see above [4PKGTEW20].
     window.opener.debiki.internal.handleLoginResponse({
       queryString: (window.location+'').split('?')[1],
-      status: 'LoginOk',
+      status: 'LoginOk'
     });
-    window.close();
   }
-  </script>
+  catch (err) {
+    if (console && console.error) {
+      console.error(err.toString() + ' [EdEXORIG01]');
+    }
+  }
+  window.close();
+}
+</script>
 </head>
 <body onload='returnToOpener();'>
   <!-- views/login/loginPopupCallback.scala.html -->

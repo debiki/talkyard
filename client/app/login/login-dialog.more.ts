@@ -331,7 +331,6 @@ export const LoginDialogContent = createClassAndFactory({
       // let admins invite new staff, if the site is in ReadAndCleanOnly mode. [5PY8FD2]
       // BUG currently no store data is included on /-/login, so even if siteStatus > Active,
       // the "Create account" link inserted below (in `else`) will be added, nevertheless.
-      // SHOULD include store data also in app/views/login/popupMain.scala.html [4PKF02T]
     }
     else {
       // The login dialog opens not only via the Log In button, but also if one clicks
@@ -388,7 +387,7 @@ var OpenAuthButton = createClassAndFactory({
         'returnToUrl=' + (props.anyReturnToUrl || '');
     if (eds.isInLoginWindow) {
       // Let the server know we're in a login window, so it can choose to reply with
-      // complete HTML pages to show in the popup window.
+      // complete HTML pages to show in the login window.
       // (Use a cookie not an URL param because the cookie will be present later whe we're
       // being redirected back to the server from the OpenAuth provider.)
       getSetCookie('dwCoIsInLoginWindow', 'true');

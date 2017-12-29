@@ -32,16 +32,25 @@
 <!DOCTYPE html>
 <html>
 <body>
-  <!-- views/login/closePopupShowCreateUserDialog.scala.html -->
-  <script type='text/javascript'>
+<!-- views/login/closePopupShowCreateUserDialog.scala.html -->
+<script type='text/javascript'>
+@* This sometimes fails in Chrome 63, although the opener's origin is the same.
+Don't know if that's a Chrome bug. *@
+  try {
     window.opener.debiki.internal.showCreateUserDialog({
       providerId: '@providerId',
       name: '@newUserName',
       email: '@newUserEmail',
       authDataCacheKey: '@authDataCacheKey'
     }, '@continueToUrlOrEmpty');
-    window.close();
-  </script>
+  }
+  catch (err) {
+    if (console && console.error) {
+      console.error(err.toString() + ' [EdEXORIG02]');
+    }
+  }
+  window.close();
+</script>
 </body>
 </html>
 

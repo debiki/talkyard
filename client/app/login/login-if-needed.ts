@@ -44,14 +44,39 @@ export function loginIfNeededReturnToAnchor(
     success();
   }
   else if (eds.isInIframe) {
-    anyContinueAfterLoginCallback = success;
+    // A Chrome 63 bug: https://bugs.chromium.org/p/chromium/issues/detail?id=796912
+    // (fixed in Chrome 64) causes a cross-origin-error when the popup, from the *same* origin,
+    // attempts to call the callback. So poll for a login cookie instead a bit below,
+    // and call `success` there. :- (  // [4PKGTEW20]
+    // DO_LATER 2019-01-01, remove this Chrome 63 bug workaround? Maybe check browser usage stats first?
+    //anyContinueAfterLoginCallback = success;
+
     // Don't open a dialog inside the iframe; open a popup instead.
     // Need to open the popup here immediately, before loading any scripts, because if
     // not done immediately after mouse click, the popup gets blocked (in Chrome at least).
     // And when opening in a popup, we don't need any more scripts here in the main win anyway.
     const url = eds.serverOrigin + '/-/login-popup?mode=' + loginReason +
       '&isInLoginPopup&returnToUrl=' + returnToUrl;
-    d.i.createLoginPopup(url)
+    d.i.createLoginPopup(url);
+
+    let checkLoggedInHandle = setInterval(function() {
+      const sessionId = getSetCookie('dwCoSid');
+      if (sessionId && checkLoggedInHandle) {
+        console.log("Logged in (login-if-needed.ts, isInIframe)");
+        clearInterval(checkLoggedInHandle);
+        checkLoggedInHandle = null;
+        !success || success();  // [4PKGTEW20]
+      }
+    }, 1000);
+    // If the user hasn't logged in within 8 minutes, skip the after-login stuff. The user
+    // likely doesn't remember anyway, what hen was trying to do. And might login in another
+    // tab instead, when so much time has passed, and just gets confused if something then auto-
+    // happens here? (So don't call `success()`.)
+    setTimeout(function() {
+      if (!checkLoggedInHandle) return;
+      clearInterval(checkLoggedInHandle);
+      checkLoggedInHandle = null;
+    }, 1000*60*8)
   }
   else {
     morebundle.loginIfNeeded(loginReason, returnToUrl, success);

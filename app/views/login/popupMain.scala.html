@@ -1,5 +1,5 @@
 @**
- * Copyright (C) 2014 Kaj Magnus Lindberg (born 1979)
+ * Copyright (c) 2014 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -29,25 +29,6 @@
   <link rel="stylesheet" href="@asset("fontello/css/fontello-embedded.css")"/>
   <link rel="stylesheet" href="@asset(s"styles-bundle.${tpi.minMaxCss}")"/>
   @tpi.debikiScriptsInHead(isInLoginWindow = true)
-  @* CLEAN_UP remove this comment, just check the 2 x "apparently" below.
-  SHOULD include React store data here. Needed if site deactivated,  [4PKF02T]
-  so we'll know if we should show any "Create account" link or not. * @
-  <script>
-    var debiki = {
-      pageDataFromServer: {},
-      volatileDataFromServer: {},
-      internal: {
-        isInLoginWindow: true,  <———  apparently not needed any longer
-        isInLoginPopup: window.opener && window.opener.debiki,  <——— apparently not needed any longer
-        serverOrigin: '@serverAddress',
-        assetsUrlPathStart: '@serverAddress@asset("")', @* CLEAN_UP remove? + serverAddress too * @
-        assetUrlPrefix: '@tpi.assetUrlPrefix'
-      },
-      v0: {
-       util: {}
-      }
-    };
-  </script> *@
   <script src="@asset(s"slim-bundle.${tpi.minMaxJs}")"></script>
   <script src="@asset(s"more-bundle.${tpi.minMaxJs}")"></script>
 </head>
