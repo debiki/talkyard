@@ -421,6 +421,7 @@ const ChatMessageEditor = createComponent({
           value: this.state.text, onChange: this.onTextEdited,
           onKeyPress: this.onKeyPress,
           onKeyDown: this.onKeyDown,
+          closeOnClickOutside: true,
           placeholder: "Type here. You can use Markdown and HTML.",
           disabled: disabled,
           rows: this.state.rows,

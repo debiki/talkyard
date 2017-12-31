@@ -35,9 +35,9 @@
   dependencies:
     "@types/node" "*"
 
-"@webscopeio/react-textarea-autocomplete@^1.3.3":
-  version "1.4.0"
-  resolved "https://registry.yarnpkg.com/@webscopeio/react-textarea-autocomplete/-/react-textarea-autocomplete-1.4.0.tgz#ba006b8b3bf32931ca4f30c5fcee8157b41a8954"
+"@webscopeio/react-textarea-autocomplete@^1.4.1":
+  version "1.4.1"
+  resolved "https://registry.yarnpkg.com/@webscopeio/react-textarea-autocomplete/-/react-textarea-autocomplete-1.4.1.tgz#454ed595c2d8f8d976271ca5258eca92c8471332"
   dependencies:
     eslint-plugin-prettier "^2.3.1"
     textarea-caret "3.0.2"

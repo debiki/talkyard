@@ -1110,6 +1110,7 @@ export const Editor = createComponent({
             onChange: this.onTextEdited,
             onKeyPress: this.onKeyPress,
             onKeyDown: this.onKeyDown,
+            closeOnClickOutside: true,
             tabIndex: 1,
             placeholder: "Type here. You can use Markdown and HTML. Drag and drop to paste images.",
             loadingComponent: () => r.span({}, "Loading ..."),
