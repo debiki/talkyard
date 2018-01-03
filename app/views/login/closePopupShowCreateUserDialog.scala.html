@@ -34,23 +34,29 @@
 <body>
 <!-- views/login/closePopupShowCreateUserDialog.scala.html -->
 <script type='text/javascript'>
-@* This sometimes fails in Chrome 63, although the opener's origin is the same.
-Don't know if that's a Chrome bug. *@
-  try {
     window.opener.debiki.internal.showCreateUserDialog({
       providerId: '@providerId',
       name: '@newUserName',
       email: '@newUserEmail',
       authDataCacheKey: '@authDataCacheKey'
     }, '@continueToUrlOrEmpty');
-  }
-  catch (err) {
-    if (console && console.error) {
-      console.error(err.toString() + ' [EdEXORIG02]');
-    }
-  }
-  window.close();
+    window.close();
 </script>
+<p>
+  Google Chrome bug. If this window remains open, you have run into
+  <a href="https://bugs.chromium.org/p/chromium/issues/detail?id=796912">
+      a Google Chrome v. 63 bug</a>.<br>
+</p>
+<p>
+  <b>Do this:</b><br>
+  Close this window (but read this first),<br>
+  and then type your Gmail address in the email input field,<br>
+  fill in a username and password,<br>
+  and click <b>Create Account</b>.
+</p>
+<p>
+  (Google has fixed this bug in Chrome v. 64, soon to be released.)<br>
+</p>
 </body>
 </html>
 
