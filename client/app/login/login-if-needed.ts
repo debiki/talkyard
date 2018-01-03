@@ -48,7 +48,7 @@ export function loginIfNeededReturnToAnchor(
     // (fixed in Chrome 64) causes a cross-origin-error when the popup, from the *same* origin,
     // attempts to call the callback. So poll for a login cookie instead a bit below,
     // and call `success` there. :- (  // [4PKGTEW20]
-    // DO_LATER 2019-01-01, remove this Chrome 63 bug workaround? Maybe check browser usage stats first?
+    // DO_AFTER 2019-01-01, remove this Chrome 63 bug workaround? Maybe check browser usage stats first?
     //anyContinueAfterLoginCallback = success;
 
     // Don't open a dialog inside the iframe; open a popup instead.

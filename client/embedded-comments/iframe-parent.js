@@ -191,15 +191,24 @@ function onMessage(event) {
 
   // The message is a "[eventName, eventData]" string because IE <= 9 doesn't support
   // sending objects. CLEAN_UP COULD send a real obj nowadays, because we don't support IE 9 any more.
+  // Should add a date for when the browser cached js file that assumes type string expires —
+  // it's cached for a year. Then, after a year, this if === 'string' can eventually be removed and
+  // js objects, instead of strings, can be used. DO_AFTER 2019-03-01 maybe? Today is 2018-01-03.
   var eventName;
   var eventData;
   try {
-    var json = JSON.parse(event.data);
-    eventName = json[0];
-    eventData = json[1];
+    if (typeof event.data === 'string') {
+      var json = JSON.parse(event.data);
+      eventName = json[0];
+      eventData = json[1];
+    }
+    else {
+      eventName = event.data[0];
+      eventData = event.data[1];
+    }
   }
   catch (error) {
-    // This isn't a message from Debiki.
+    // This message isn't for us.
     return;
   }
 

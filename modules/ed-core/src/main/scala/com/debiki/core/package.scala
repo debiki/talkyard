@@ -581,7 +581,7 @@ package object core {
                           // causing deadlocks / rollbacks / delays.
   def HACK = ()           // Quick crazy fix, probably should be redone later in a better way.
   def DELETE_LATER = ()   // ... hmm. Rename to CLEANUP.
-  def DO_LATER = ()       // Something that should be done after a certain date.
+  def DO_AFTER = ()       // Something that should be done after a certain date.
   def REMOVE = ()
   def CLEAN_UP = ()       // Unused stuff that should be deleted after a grace period, or when
                           // the developers are less short of time.
