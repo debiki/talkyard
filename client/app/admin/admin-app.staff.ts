@@ -601,7 +601,7 @@ const EmbeddedCommentsSettings = createFactory({
             // script url defined here: [2WPGKS04]
             // this code is dupl in e2e test [2JKWTQ0].
 `<script>edCommentsServerUrl='${location.origin}';</script>
-<script async defer src="${assetsOrigin()}/-/ed-comments.v0${dotMin}.js"></script>
+<script async defer src="${assetsOrigin()}/-/ed-comments${dotMin}.js"></script>
 <!-- You can specify a per page discussion id on the next line, if your URLs might change. -->
 <div class="ed-comments" data-discussion-id="" style="margin-top: 45px;">
 <noscript>Please enable Javascript to view comments.</noscript>
