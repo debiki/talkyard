@@ -36,18 +36,22 @@ export const UserPreferences = createFactory({
  displayName: 'UserPreferences',
 
   render: function() {
-    const upp = UsersPathSlash + this.props.match.params.usernameOrId + SlashPrefsSlash;
-    const emailsLoginsUrl = upp + emailsLogins;
+    const prefsPathSlash = UsersPathSlash + this.props.match.params.usernameOrId + SlashPrefsSlash;
+    const aboutPath = prefsPathSlash + 'about';
+    const emailsLoginsPath = prefsPathSlash + emailsLogins;
     const user: User = this.props.user;
+    const location = this.props.location;
 
     const childProps = {
       store: this.props.store,
       user,
       reloadUser: this.props.reloadUser,
-      emailsLoginsUrl,
+      emailsLoginsPath,
     };
 
     const childRoute = Switch({},
+      Route({ path: prefsPathSlash, exact: true, render: ({ match }) =>
+          Redirect({ to: aboutPath + location.search + location.hash })}),
       Route({ path: '(.*)/about', exact: true, render: () => AboutUser(childProps) }),
       Route({ path: '(.*)/' + emailsLogins, exact: true, render: () => EmailsLogins(childProps) }));
 
@@ -59,9 +63,9 @@ export const UserPreferences = createFactory({
         r.div({ style: { display: 'table-row' }},
           r.div({ className: 's_UP_Act_Nav' },
             r.ul({ className: 'dw-sub-nav nav nav-pills nav-stacked' },
-              LiNavLink({ to: upp + 'about', className: 's_UP_Act_Nav_PostsB' }, "About"),
+              LiNavLink({ to: aboutPath, className: 's_UP_Act_Nav_PostsB' }, "About"),
               isGuest ? null : LiNavLink({
-                  to: emailsLoginsUrl, className: 's_UP_Act_Nav_TopicsB' }, "Emails, Logins"))),
+                  to: emailsLoginsPath, className: 's_UP_Act_Nav_TopicsB' }, "Emails, Logins"))),
          r.div({ className: 's_UP_Act_List' },
            childRoute))));
   }
@@ -334,7 +338,7 @@ const MemberPreferences = createComponent({
           r.label({}, "Email address"),
           r.div({},
             r.samp({}, user.email),
-            NavLink({ to: this.props.emailsLoginsUrl,
+            NavLink({ to: this.props.emailsLoginsPath,
                 className: 'btn s_UP_Prefs_ChangeEmailB' }, "Change ...")),
           r.p({ className: 'help-block' }, "Not shown publicly.")),
 
