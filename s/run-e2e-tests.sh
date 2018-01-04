@@ -176,6 +176,7 @@ function runAllEndToEndTests {
   runEndToEndTest s/wdio target/e2e/wdio.conf.js            --browser $browser --only embedded-comments-discussion-id $args
   runEndToEndTest s/wdio target/e2e/wdio.conf.js            --browser $browser --only embedded-comments-all-logins $args
   runEndToEndTest s/wdio target/e2e/wdio.conf.js            --browser $browser --only embedded-comments-edit-and-vote $args
+  runEndToEndTest s/wdio target/e2e/wdio.conf.js            --browser $browser --only embedded-comments-short-script-cache-time $args
 
   if [ -n "$server_port_8080_pid" ]; then
     kill $server_port_8080_pid
