@@ -86,7 +86,7 @@ case class Email(
 
   dieIf(sentTo.isEmpty, "EdENOEMLADR")
   dieIf(!sentTo.contains("@"), "EdEBADEMLADR")
-  if (tyype == EmailType.CreateAccount || tyype == EmailType.ResetPassword ||
+  if (tyype == EmailType.VerifyAddress || tyype == EmailType.ResetPassword ||
       tyype == EmailType.InvitePassword || tyype == EmailType.InviteAccepted) {
     dieIf(toUserId.isEmpty, "DwE44BPK6", s"Email '$id' lacks toUserId")
   }
@@ -101,7 +101,7 @@ object EmailType {
   case object Invite extends EmailType(11)
   case object InviteAccepted extends EmailType(12)
   case object InvitePassword extends EmailType(13)
-  case object CreateAccount extends EmailType(21)  // COULD rename to VerifyEmailAddress
+  case object VerifyAddress extends EmailType(21)
   case object ResetPassword extends EmailType(22)
   case object SiteCreatedSuperAdminNotf extends EmailType(41)
   case object HelpExchangeReminder extends EmailType(31)  // [plugin]? Change to 101? but db constraints
@@ -112,7 +112,7 @@ object EmailType {
     case Invite.IntVal            => Invite
     case InviteAccepted.IntVal    => InviteAccepted
     case InvitePassword.IntVal    => InvitePassword
-    case CreateAccount.IntVal     => CreateAccount
+    case VerifyAddress.IntVal     => VerifyAddress
     case ResetPassword.IntVal     => ResetPassword
     case SiteCreatedSuperAdminNotf.IntVal => SiteCreatedSuperAdminNotf
     case HelpExchangeReminder.IntVal => HelpExchangeReminder

@@ -68,7 +68,7 @@ case class NotificationGenerator(transaction: SiteTransaction) {
     // Mentions
     if (!skipMentions) {
       val mentionedUsernames = findMentions(newPost.approvedSource getOrDie "DwE82FK4").toSet
-      var mentionedUsers = mentionedUsernames.flatMap(transaction.loadMemberByEmailOrUsername)
+      var mentionedUsers = mentionedUsernames.flatMap(transaction.loadMemberByPrimaryEmailOrUsername)
       val allMentioned = mentionsAllInChannel(mentionedUsernames)
       if (allMentioned) {
         val author = transaction.loadTheMember(newPost.createdById)
@@ -176,8 +176,8 @@ case class NotificationGenerator(transaction: SiteTransaction) {
     val deletedMentions = oldMentions -- newMentions
     val createdMentions = newMentions -- oldMentions
 
-    var mentionsDeletedForUsers = deletedMentions.flatMap(transaction.loadMemberByEmailOrUsername)
-    var mentionsCreatedForUsers = createdMentions.flatMap(transaction.loadMemberByEmailOrUsername)
+    var mentionsDeletedForUsers = deletedMentions.flatMap(transaction.loadMemberByPrimaryEmailOrUsername)
+    var mentionsCreatedForUsers = createdMentions.flatMap(transaction.loadMemberByPrimaryEmailOrUsername)
 
     val newMentionsIncludesAll = mentionsAllInChannel(newMentions)
     val oldMentionsIncludesAll = mentionsAllInChannel(oldMentions)
@@ -196,7 +196,7 @@ case class NotificationGenerator(transaction: SiteTransaction) {
 
     if (mentionsForAllDeleted) {
       // CLEAN_UP COULD simplify this whole function — needn't load mentionsDeletedForUsers above.
-      var usersMentionedAfter = newMentions.flatMap(transaction.loadMemberByEmailOrUsername)
+      var usersMentionedAfter = newMentions.flatMap(transaction.loadMemberByPrimaryEmailOrUsername)
       val toDelete: Set[UserId] = previouslyMentionedUserIds -- usersMentionedAfter.map(_.id)
       // (COULD_OPTIMIZE: needn't load anything here — we have the user ids already.)
       mentionsDeletedForUsers = transaction.loadMembersAsMap(toDelete).values.toSet

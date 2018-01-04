@@ -354,6 +354,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
   def setPrimaryEmailAddresses: Action[JsValue] =
         PostJsonAction(RateLimits.AddEmailLogin, maxBytes = 300) { request =>
     import request.{dao, body, theRequester => requester}
+    // SECURITY maybe send an email and verify with the old address that changing to the new is ok?
 
     val userId = (body \ "userId").as[UserId]
     val emailAddress = (body \ "emailAddress").as[String]
@@ -368,7 +369,9 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
       val userEmailAddrs = tx.loadUserEmailAddresses(userId)
       val address = userEmailAddrs.find(_.emailAddress == emailAddress)
       throwForbiddenIf(address.isEmpty, "EdE2YGUWF03", "Not your email address")
-      throwForbiddenIf(address.flatMap(_.verifiedAt).isEmpty, "EdE5AA20I", "Address not verified")
+      throwForbiddenIf(
+        address.flatMap(_.verifiedAt).isEmpty, "EdE5AA20I", "Address not verified") // [7GUKRWJ]
+
       tx.updateMemberInclDetails(member.copy(primaryEmailAddress = emailAddress))
     }
 
@@ -384,7 +387,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
     val emailAddress = (body \ "emailAddress").as[String]
 
     throwForbiddenIf(requester.id != userId && !requester.isAdmin,
-      "EdE4JTA2F0", "You may not add an email address to someone elses account")
+      "EdE4JTA2F0", "You may not add an email address to someone else's account")
 
     val member: MemberInclDetails = dao.readWriteTransaction { tx =>
       val userEmailAddrs = tx.loadUserEmailAddresses(userId)
@@ -392,7 +395,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
         "EdE5AVH20", "You've added that email already")
       throwForbiddenIf(userEmailAddrs.length >= MaxEmailsPerUser,
         "EdE2QDS0H", "You've added too many email addresses")
-      val member = tx.loadTheMemberInclDetails(userId) // ensures user exists
+      val member = tx.loadTheMemberInclDetails(userId) // also ensures the user exists
       val newAddress = UserEmailAddress(
         userId, emailAddress = emailAddress, addedAt = tx.now, verifiedAt = None)
       tx.insertUserEmailAddress(newAddress)
@@ -416,7 +419,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
     val (siteName, origin) = dao.theSiteNameAndOrigin()
     val host = request.host
 
-    val returnToUrl = s"$host/-/users/${user.username}/preferences/emails-logins"
+    val returnToUrl = s"$host/-/users/${user.username}/preferences/emails-logins"  // [4JKT28TS]
 
     val emailId = Email.generateRandomId()
 
@@ -427,7 +430,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
 
     val email = Email.newWithId(
       emailId,
-      EmailType.CreateAccount,
+      EmailType.VerifyAddress,
       createdAt = globals.now(),
       sendTo = newEmailAddress,
       toUserId = Some(user.id),
@@ -447,7 +450,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
 
 
   def confirmOneMoreEmailAddress(confirmationEmailId: String): Action[Unit] = GetAction { request =>
-    import request.{dao, body, requester}
+    import request.{dao, requester}
     val email = dao.loadEmailById(confirmationEmailId) getOrElse {
       throwForbidden("EdE1WRB20", "Link expired? Or bad email id.")
     }
@@ -469,7 +472,8 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
       member
     }
 
-    // Maybe the user is no longer logged in? But don't think hen should get logged in
+    // What do now? Let's redirect to the user's email list.
+    // But maybe the user is not currently logged in? I don't think hen should get logged in
     // just by clicking the link. Maybe this isn't supposed to be an email address hen wants
     // to be able to login with.
     val emailsPath = requester.isDefined ? "/preferences/emails-logins" | ""  // [4JKT28TS]
@@ -485,12 +489,12 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
     val emailAddress = (body \ "emailAddress").as[String]
 
     throwForbiddenIf(requester.id != userId && !requester.isAdmin,
-      "EdE6LTMQR20", "You may not remove an email address from someone elses account")
+      "EdE6LTMQR20", "You may not remove an email address from someone else's account")
 
     dao.readWriteTransaction { tx =>
       val member = tx.loadTheMemberInclDetails(userId) // ensures user exists
       throwForbiddenIf(member.primaryEmailAddress == emailAddress,
-        "EdET7UKW2", s"Cannot remove a member's primary email address: $emailAddress")
+        "EdET7UKW2", s"Cannot remove the primary email address: $emailAddress")
 
       val anyAddress = tx.loadUserEmailAddresses(userId).find(_.emailAddress == emailAddress)
       throwForbiddenIf(anyAddress.isEmpty,

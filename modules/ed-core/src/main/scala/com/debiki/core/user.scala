@@ -423,11 +423,35 @@ sealed trait User {
 }
 
 
+/**
+  *
+  * @param id
+  * @param fullName
+  * @param theUsername
+  * @param email
+  * @param emailNotfPrefs
+  * @param emailVerifiedAt when the user's first primary email address was verified.
+  *   If hen changes hens primary address, this field won't change, and,
+  *   one may not change to a not-verified address. [7GUKRWJ]
+  * @param passwordHash
+  * @param tinyAvatar
+  * @param smallAvatar
+  * @param isApproved
+  * @param suspendedTill
+  * @param trustLevel
+  * @param lockedTrustLevel
+  * @param threatLevel
+  * @param lockedThreatLevel
+  * @param isAdmin
+  * @param isOwner
+  * @param isModerator
+  * @param isSuperAdmin
+  */
 case class Member(
   id: UserId,
   fullName: Option[String],
   theUsername: String,
-  email: String,  // COULD rename to emailAddr
+  email: String,  // COULD RENAME to primaryEmailAddr
   emailNotfPrefs: EmailNotfPrefs,
   emailVerifiedAt: Option[ju.Date] = None,
   passwordHash: Option[String] = None,
@@ -731,7 +755,10 @@ case class UserEmailAddress(
   verifiedAt: Option[When]) {
 
   require(isValidNonLocalEmailAddress(emailAddress), "EdE4JUKS0")
-  // require(!verifiedAt.exists(_.isBefore(addedAt)), "EdE6JUKW1A") failed
+
+  // Cannot add this test, because OpenAuth emails are verified maybe 100 ms before the user gets
+  // created. Could fix that, update timestamps in db, then add constraint? [5GKRWZI]
+  // require(!verifiedAt.exists(_.isBefore(addedAt)), "EdE6JUKW1A")
 
   def isVerified: Boolean = verifiedAt.isDefined
 }

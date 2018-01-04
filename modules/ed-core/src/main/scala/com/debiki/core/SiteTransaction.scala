@@ -404,7 +404,7 @@ trait SiteTransaction {
     loadUsersAsMap(userIds).mapValues(_.asInstanceOf[Member])
   }
 
-  def loadMemberByEmailOrUsername(emailOrUsername: String): Option[Member]
+  def loadMemberByPrimaryEmailOrUsername(emailOrUsername: String): Option[Member]
 
   def loadMembersWithPrefix(usernamePrefix: String): immutable.Seq[Member]
 

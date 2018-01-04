@@ -214,7 +214,7 @@ class LoginWithPasswordController @Inject()(cc: ControllerComponents, edContext:
       throwForbidden("DwE7GJP03", "Link expired? Bad email id; email not found.")
     }
 
-    if (email.tyype != EmailType.CreateAccount)
+    if (email.tyype != EmailType.VerifyAddress)
       throwForbidden("DwE2DKP9", s"Bad email type: ${email.tyype}")
 
     email.sentOn match {
@@ -270,7 +270,7 @@ object LoginWithPasswordController {
 
     val email = Email.newWithId(
       emailId,
-      EmailType.CreateAccount,
+      EmailType.VerifyAddress,
       createdAt = globals.now(),
       sendTo = user.email,
       toUserId = Some(user.id),

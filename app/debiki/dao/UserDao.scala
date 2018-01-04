@@ -78,7 +78,7 @@ trait UserDao {
         throwForbidden("DwE0FKW2", "You have joined the site already, but this link has expired")
       }
 
-      if (transaction.loadMemberByEmailOrUsername(invite.emailAddress).isDefined)
+      if (transaction.loadMemberByPrimaryEmailOrUsername(invite.emailAddress).isDefined)
         throwForbidden("DwE8KFG4", o"""You have joined this site already, so this
              join-site invitation link does nothing. Thanks for clicking it anyway""")
 
@@ -611,7 +611,7 @@ trait UserDao {
   def loadMemberByEmailOrUsername(emailOrUsername: String): Option[Member] = {
     readOnlyTransaction { transaction =>
       // Don't need to cache this? Only called when logging in.
-      transaction.loadMemberByEmailOrUsername(emailOrUsername)
+      transaction.loadMemberByPrimaryEmailOrUsername(emailOrUsername)
     }
   }
 
@@ -1126,11 +1126,9 @@ trait UserDao {
           firstMentionAt = None))
       }
 
-      // For now, don't allow the user to change his/her email. I haven't
-      // implemented any related security checks, e.g. verifying with the old address
-      // that this is okay, or sending an address confirmation email to the new address.
+      // Changing address is done via UserController.setPrimaryEmailAddresses instead, not here
       if (user.primaryEmailAddress != preferences.emailAddress)
-        throwForbidden("DwE44ELK9", "Must not modify one's email")
+        throwForbidden("DwE44ELK9", "Shouldn't modify one's email here")
 
       val userAfter = user.copyWithNewPreferences(preferences)
       try transaction.updateMemberInclDetails(userAfter)
