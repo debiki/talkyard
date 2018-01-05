@@ -63,9 +63,9 @@ export const UserPreferences = createFactory({
         r.div({ style: { display: 'table-row' }},
           r.div({ className: 's_UP_Act_Nav' },
             r.ul({ className: 'dw-sub-nav nav nav-pills nav-stacked' },
-              LiNavLink({ to: aboutPath, className: 's_UP_Act_Nav_PostsB' }, "About"),
+              LiNavLink({ to: aboutPath, className: 's_UP_Prf_Nav_AbtL' }, "About"),
               isGuest ? null : LiNavLink({
-                  to: emailsLoginsPath, className: 's_UP_Act_Nav_TopicsB' }, "Emails, Logins"))),
+                  to: emailsLoginsPath, className: 's_UP_Prf_Nav_EmLgL' }, "Emails, Logins"))),
          r.div({ className: 's_UP_Act_List' },
            childRoute))));
   }
@@ -482,9 +482,11 @@ export const EmailsLogins = createFactory({
             r.div({}, status),
             r.div({},
               isPrimary || isLoginMethod ? null :
-                Button({ onClick: () => this.removeEmailAddress(addr.emailAddress) }, "Remove"),
+                Button({ onClick: () => this.removeEmailAddress(addr.emailAddress),
+                    className: 'e_RemoveEmB' }, "Remove"),
               isPrimary || !isVerifeid ? null :
-                Button({ onClick: () => this.setPrimary(addr.emailAddress) }, "Make Primary")));
+                Button({ onClick: () => this.setPrimary(addr.emailAddress),
+                    className: 'e_MakeEmPrimaryB' }, "Make Primary")));
         }));
 
     // Don't show the Add button again after one email added. Then it's harder to see
@@ -494,14 +496,16 @@ export const EmailsLogins = createFactory({
           ? r.span({}, `(You cannot add more than ${MaxEmailsPerUser} addresses.)`)
           : (this.state.showAddEmailInput || this.state.isAddingEmail
               ? null
-              : Button({ onClick: () => this.setState({ showAddEmailInput: true }) },
+              : Button({ onClick: () => this.setState({ showAddEmailInput: true }),
+                    className: 'e_AddEmail' },
                   "Add email address")));
 
     const addEmailInput = !this.state.showAddEmailInput ? null :
       r.div({},
         EmailInput({ label: "Type a new email address:", placeholder: "your.email@example.com",
+          className: 'e_NewEmail',
           onChangeValueOk: (value, ok) => this.setState({ newEmailAddr: value, emailOk: ok }) }),
-        PrimaryButton({ onClick: this.doAddEmail, disabled: !this.state.emailOk },
+        PrimaryButton({ onClick: this.doAddEmail, disabled: !this.state.emailOk, className: 'e_SaveEmB' },
           "Add"));
 
     const isAddingEmailInfo = !this.state.isAddingEmail ? null :

@@ -375,6 +375,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
       tx.updateMemberInclDetails(member.copy(primaryEmailAddress = emailAddress))
     }
 
+    dao.removeUserFromMemCache(userId)
     loadUserEmailsLoginsImpl(userId, request)
   }
 

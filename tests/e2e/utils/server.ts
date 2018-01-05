@@ -172,6 +172,13 @@ function getLastVerifyEmailAddressLinkEmailedTo(siteId: SiteId, emailAddress: st
 }
 
 
+function getLastVerifyAnotherEmailAddressLinkEmailedTo(siteId: SiteId, emailAddress: string,
+      browser?): string {
+  const email = getLastEmailSenTo(siteId, emailAddress, browser);
+  return utils.findFirstLinkToUrlIn('https?://.*/-/confirm-email-address', email.bodyHtmlText);
+}
+
+
 const unsubUrlRegexString = 'https?://.*/-/unsubscribe';
 
 function getLastUnsubscriptionLinkEmailedTo(siteId: SiteId, emailAddress: string, browser): string {
@@ -255,6 +262,7 @@ export = {
   getLastEmailSenTo,
   countLastEmailsSentTo,
   getLastVerifyEmailAddressLinkEmailedTo,
+  getLastVerifyAnotherEmailAddressLinkEmailedTo,
   getLastUnsubscriptionLinkEmailedTo,
   getAnyUnsubscriptionLinkEmailedTo,
   waitForUnsubscriptionLinkEmailedTo,
