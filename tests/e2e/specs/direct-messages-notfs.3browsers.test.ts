@@ -146,19 +146,21 @@ describe("private chat", () => {
         siteId, owen.emailAddress, [messageTitle, mariasQuestion], browser);
   });
 
-  it("Maria gets a notifiction, opens it", () => {
+  it("Maria gets an email with Owen's reply", () => {
+    // This tests notfs when one clicks the append-bottom-comment button.
+    // TESTS_MISSING No? Instead, should  be Maria that clicks append-bottom to Owen because
+    // Maria is the orig-poster, she'll always get a notf, everything is a reply to her.
+    server.waitUntilLastEmailMatches(
+        siteId, maria.emailAddress, [messageTitle, owensQuestionAnswer], browser);
+  });
+
+  it("... and she gets an in-browser notifiction too, opens it", () => {
     maria.topbar.openNotfToMe();
   });
 
   it("... she sees the question answer", () => {
     maria.topic.waitForPostNrVisible(4);
     maria.topic.assertPostTextMatches(4, owensQuestionAnswer);
-  });
-
-  it("... she also got an email with Owen's reply", () => {
-    // This tests notfs when one clicks the append-bottom-comment button.
-    server.waitUntilLastEmailMatches(
-        siteId, maria.emailAddress, [messageTitle, owensQuestionAnswer], browser);
   });
 
 

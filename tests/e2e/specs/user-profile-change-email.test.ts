@@ -223,7 +223,7 @@ describe("user profile change email:", () => {
 
   it("... and it's listed as her login method", () => {
     const text = mariasBrowser.getText('.s_UP_EmLg_LgL');
-    assert(text.search("Password") > 0);
+    assert(text.search("Password") >= 0);
     assert(text.search(mariasAddress2) > 0);
   });
 

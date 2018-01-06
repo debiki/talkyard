@@ -37,9 +37,9 @@ function runEndToEndTest {
     # if the test breaks directly *again*, then apparently the failure / race-condition is easy
     # to reproduce, so I'll be able to fix it :-)
     echo
-    echo "*** Test failed. Trying once more... [EdM2WK8GB] ***"
+    echo "*** Test failed. Waiting a few seconds, then trying again ... [EdME2ETRYAGAIN] ***"
     echo
-    sleep 3
+    sleep 7
     site_nr=`printf '%d' $(($site_nr + 1))`
     cmd="$@ --deleteOldSite --localHostname=e2e-test-$site_nr"
     echo "Again: $cmd"

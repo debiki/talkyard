@@ -248,6 +248,7 @@ class Notifier(val systemDao: SystemDao, val siteDaoFactory: SiteDaoFactory)
       val anyProblem = trySendToSingleUser(userId, anyUser, userNotfs, siteDao)
 
       anyProblem foreach { problem =>
+        System.err.println("Not sendnig email to user $userId, site $siteId; problem: $problem")
         siteDao.updateNotificationSkipEmail(userNotfs)
       }
     }
