@@ -281,7 +281,7 @@ class SummaryEmailsAppSpec extends DaoAppSuite(
       }
 
       "Max verifies his email address" in {
-        dao.verifyEmail(max.id, globals.now().toJavaDate)
+        dao.verifyPrimaryEmailAddress(max.id, globals.now().toJavaDate)
       }
 
       "now he gets a summary email: both Adm's and Mia's pages" in {

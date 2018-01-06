@@ -126,7 +126,7 @@ class UserStatsAppSpec extends DaoAppSuite() {
 
     "... logs in, stats get updated" in {
       playTime(1000)
-      dao.verifyEmail(member1.id, globals.now().toJavaDate)
+      dao.verifyPrimaryEmailAddress(member1.id, globals.now().toJavaDate)
       val loginGrant = dao.tryLoginAsMember(PasswordLoginAttempt(
         ip = "1.2.3.4", globals.now().toJavaDate, member1.email, "public-us_mb1"))
       val stats = loadUserStats(member1.id)(dao)

@@ -602,6 +602,10 @@ function pagesFor(browser) {
         browser.waitAndSetValue('#e2ePassword', password);
       },
 
+      waitForBadLoginMessage: function() {
+        browser.waitForVisible('.esLoginDlg_badPwd');
+      },
+
       loginWithPassword: function(username, password?: string) {
         if (_.isObject(username)) {
           password = username.password;
@@ -609,6 +613,13 @@ function pagesFor(browser) {
         }
         api.loginDialog.tryLogin(username, password);
         browser.waitUntilModalGone();
+      },
+
+      loginWithEmailAndPassword: function(emailAddress: string, password: string, badLogin) {
+        api.loginDialog.tryLogin(emailAddress, password);
+        if (badLogin !== 'BAD_LOGIN') {
+          browser.waitUntilModalGone();
+        }
       },
 
       // Embedded discussions do all logins in popups.
@@ -1925,6 +1936,18 @@ function pagesFor(browser) {
       },
 
       preferences: {
+        switchToEmailsLogins: function() {
+          browser.waitAndClick('.s_UP_Prf_Nav_EmLgL');
+          browser.waitForVisible('.s_UP_EmLg_EmL');
+        },
+
+        switchToAbout: function() {
+          browser.waitAndClick('.s_UP_Prf_Nav_AbtL');
+          browser.waitForVisible('.e_UP_Prefs_FN');
+        },
+
+        // ---- Should be wrapped in `about { .. }`:
+
         setFullName: function(fullName: string) {
           browser.waitAndSetValue('.e_UP_Prefs_FN input', fullName);
         },
@@ -1950,6 +1973,60 @@ function pagesFor(browser) {
         clickSave: function() {
           browser.waitAndClick('#e2eUP_Prefs_SaveB');
         },
+
+        // ---- /END should be wrapped in `about { .. }`.
+
+        emailsLogins: {
+          getEmailAddress: function() {
+            browser.waitForVisible('.s_UP_EmLg_EmL_It_Em');
+            return browser.getText('.s_UP_EmLg_EmL_It_Em');
+          },
+
+          addEmailAddress: function(address) {
+            const emailsLogins = api.userProfilePage.preferences.emailsLogins;
+            emailsLogins.clickAddEmailAddress();
+            emailsLogins.typeNewEmailAddress(address);
+            emailsLogins.saveNewEmailAddress();
+          },
+
+          clickAddEmailAddress: function() {
+            browser.waitAndClick('.e_AddEmail');
+            browser.waitForVisible('.e_NewEmail input');
+          },
+
+          typeNewEmailAddress: function(emailAddress) {
+            browser.waitAndSetValue('.e_NewEmail input', emailAddress);
+          },
+
+          saveNewEmailAddress: function() {
+            browser.waitAndClick('.e_SaveEmB');
+            browser.waitForVisible('.s_UP_EmLg_EmAdded');
+          },
+
+          canRemoveEmailAddress: function() {
+            browser.waitForVisible('.e_AddEmail');
+            // Now any remove button should have appeared.
+            return browser.isVisible('.e_RemoveEmB');
+          },
+
+          removeOneEmailAddress: function() {
+            browser.waitAndClick('.e_RemoveEmB');
+            while (browser.isVisible('.e_RemoveEmB')) {
+              browser.pause(200);
+            }
+          },
+
+          canMakeOtherEmailPrimary: function() {
+            // Only call this function if another email has been added (then there's a Remove button).
+            browser.waitForVisible('.e_RemoveEmB');
+            // Now the make-primary button would also have appeared, if it's here.
+            return browser.isVisible('.e_MakeEmPrimaryB');
+          },
+
+          makeOtherEmailPrimary: function() {
+            browser.waitAndClick('.e_MakeEmPrimaryB');
+          }
+        }
       }
     },
 
@@ -2117,6 +2194,13 @@ function pagesFor(browser) {
           email = nameOrObj.emailAddress;
         }
         api.loginDialog.signUpAsGuest(name, email);
+      },
+
+      signUpAsGmailUserViaTopbar: function({ username }) {
+        browser.disableRateLimits();
+        api.topbar.clickSignUp();
+        api.loginDialog.createGmailAccount({
+            email: settings.gmailEmail, password: settings.gmailPassword, username });
       },
 
       logInAsGuestViaTopbar: function(nameOrObj, email?: string) {

@@ -484,6 +484,7 @@ object Prelude {
     def oneIfDefined: Int = if (underlying.isDefined) 1 else 0
     def is(value: T): Boolean = underlying.contains(value)
     def isNot(value: T): Boolean = !underlying.contains(value)
+    def isSomethingButNot(value: T): Boolean = underlying.isDefined && !underlying.contains(value)
   }
 
   implicit class BlankStringToNone(underlying: Option[String]) {

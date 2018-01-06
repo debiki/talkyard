@@ -10,6 +10,17 @@ p_ = public api (classes only, not ids)
 
 s_w-X = wraps an X, i.e., somewhere inside, there's an X. Or "'W'ith a X inside".
 
+In-the-middle or at-a-word-end abbreviations: (but not at the start of the selector)
+Em = email
+B  = button
+T  = table
+L  = list
+It = list item
+D  = dialog
+CB = checkbox
+Example: s_Whatever_SaveB = save button. Or s_SomethingElse_EmT = email addresses table.
+
+
 esWhatever = old (s_Whatever = new & better)
 
 [refactor] rename esForum_ to esF_ and esForum_Nav to esF_BB
@@ -85,6 +96,7 @@ esUD            = About user dialog
 
 s_UP            = A user's public profile page
 s_UP_Ab         = The about part (the top of the profile page)
+s_UP_EmLg       = Emails and logins
 esUP_Un         = Username  COULD rename t s_UP_Ab_UN
 esUP_FN         = Full name
 esUP_Prefs      = ... the preferences section

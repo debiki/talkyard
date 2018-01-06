@@ -31,7 +31,7 @@ export const UsersActivity = createFactory({
   displayName: 'UsersActivity',
 
   render: function() {
-    let childProps = {
+    const childProps = {
       store: this.props.store,
       user: this.props.user,
       reloadUser: this.props.loadCompleteUser,

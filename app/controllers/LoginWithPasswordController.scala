@@ -64,12 +64,12 @@ class LoginWithPasswordController @Inject()(cc: ControllerComponents, edContext:
   }
 
 
-  private def doLogin(request: ApiRequest[_], dao: SiteDao, email: String, password: String)
+  private def doLogin(request: ApiRequest[_], dao: SiteDao, emailOrUsername: String, password: String)
         : Seq[Cookie] = {
     val loginAttempt = PasswordLoginAttempt(
       ip = request.ip,
       date = request.ctime,
-      email = email,
+      emailOrUsername = emailOrUsername,
       password = password)
 
     // The browser checks for 'EsE403BPWD' so don't change it.
@@ -214,7 +214,7 @@ class LoginWithPasswordController @Inject()(cc: ControllerComponents, edContext:
       throwForbidden("DwE7GJP03", "Link expired? Bad email id; email not found.")
     }
 
-    if (email.tyype != EmailType.CreateAccount)
+    if (email.tyype != EmailType.VerifyAddress)
       throwForbidden("DwE2DKP9", s"Bad email type: ${email.tyype}")
 
     email.sentOn match {
@@ -235,7 +235,7 @@ class LoginWithPasswordController @Inject()(cc: ControllerComponents, edContext:
       assErr("DwE8XK5", "Email was not sent to a role")
     }
 
-    request.dao.verifyEmail(roleId, request.ctime)
+    request.dao.verifyPrimaryEmailAddress(roleId, request.ctime)
     roleId
   }
 
@@ -270,7 +270,7 @@ object LoginWithPasswordController {
 
     val email = Email.newWithId(
       emailId,
-      EmailType.CreateAccount,
+      EmailType.VerifyAddress,
       createdAt = globals.now(),
       sendTo = user.email,
       toUserId = Some(user.id),

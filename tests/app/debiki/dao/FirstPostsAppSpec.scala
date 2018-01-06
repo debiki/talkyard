@@ -21,7 +21,7 @@ import com.debiki.core._
 import debiki.EdHttp.ResultException
 
 
-class FirstPostsAppSpec extends ReviewStuffAppSuite("4FY2") {
+class FirstPostsAppSpec extends ReviewStuffAppSuite("4fy2") {
 
   val reviewReasons = Seq(ReviewReason.NewPost, ReviewReason.IsByNewUser)
 
@@ -376,7 +376,7 @@ class FirstPostsAppSpec extends ReviewStuffAppSuite("4FY2") {
 
       "PagesDao" - {
         "lets staff approve and review a user's firts pages too, not just replies" in {
-          val member = createPasswordUser(s"mem_4ZM2", dao)
+          val member = createPasswordUser(s"mem_4zm2", dao)
 
           info("create Allow = 2 pages, pending approval since Approve > 0")
           val first = createPage(PageRole.Discussion, textAndHtmlMaker.testTitle("Member Page 4ZM2"),

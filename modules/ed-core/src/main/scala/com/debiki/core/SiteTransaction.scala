@@ -313,6 +313,8 @@ trait SiteTransaction {
   def nextIdentityId: IdentityId
   def insertIdentity(Identity: Identity)
   def loadIdtyDetailsAndUser(userId: UserId): Option[(Identity, User)]
+  def loadIdentities(userId: UserId): Seq[Identity] =
+    loadIdtyDetailsAndUser(userId).map(_._1).toVector // for now
 
   def nextMemberId: UserId
   def insertMember(user: MemberInclDetails)
@@ -356,6 +358,11 @@ trait SiteTransaction {
   def updateMemberInclDetails(user: MemberInclDetails): Boolean
   def updateGuest(guest: Guest): Boolean
 
+  def insertUserEmailAddress(userEmailAddress: UserEmailAddress)
+  def updateUserEmailAddress(userEmailAddress: UserEmailAddress)
+  def deleteUserEmailAddress(userId: UserId, emailAddress: String)
+  def loadUserEmailAddresses(userId: UserId): Seq[UserEmailAddress]
+
   def insertUsernameUsage(usage: UsernameUsage)
   def updateUsernameUsage(usage: UsernameUsage)
   def loadUsersOldUsernames(userId: UserId): Seq[UsernameUsage]
@@ -397,7 +404,7 @@ trait SiteTransaction {
     loadUsersAsMap(userIds).mapValues(_.asInstanceOf[Member])
   }
 
-  def loadMemberByEmailOrUsername(emailOrUsername: String): Option[Member]
+  def loadMemberByPrimaryEmailOrUsername(emailOrUsername: String): Option[Member]
 
   def loadMembersWithPrefix(usernamePrefix: String): immutable.Seq[Member]
 

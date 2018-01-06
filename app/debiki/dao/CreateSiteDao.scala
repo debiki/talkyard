@@ -34,7 +34,7 @@ object CreateSiteDao {  RENAME // but to what. & move, but to where?
       isApproved = None,
       approvedAt = None,
       approvedById = None,
-      emailAddress = "",
+      primaryEmailAddress = "",
       emailNotfPrefs = EmailNotfPrefs.DontReceive,
       emailVerifiedAt = None,
       summaryEmailIntervalMins = Some(SummaryEmails.DoNotSend),

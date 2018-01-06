@@ -20,7 +20,7 @@ package debiki.dao
 import com.debiki.core._
 
 
-class ThreatLevelsAppSpec extends ReviewStuffAppSuite("6GP4") {
+class ThreatLevelsAppSpec extends ReviewStuffAppSuite("6gp4") {
 
   override def nestedSuites = Vector(
     new NestedPostsSuite {

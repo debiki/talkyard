@@ -807,6 +807,21 @@ interface MemberInclDetails extends MemberOrGroupInclDetails {
 }
 
 
+interface UserEmailAddress {
+  emailAddress: string;
+  addedAt: number;
+  verifiedAt?: number;
+  removedAt?: number;
+}
+
+
+interface UserLoginMethods {
+  loginType: string;
+  provider: string;
+  email?: string;
+}
+
+
 enum TrustLevel {
   Stranger = 0,
   New = 1,

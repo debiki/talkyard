@@ -48,6 +48,8 @@ declare const LastStarMark;
 
 declare const MaxNumFirstPosts;
 
+declare const MaxEmailsPerUser;
+
 declare const IgnoreThisError: number;
 
 
@@ -168,6 +170,7 @@ declare namespace debiki2 {
   var page_isPrivateGroup: any;
   function pageRole_iconClass(pageRole: PageRole): string;
 
+  function uppercaseFirst(text: string): string;
   function firstDefinedOf(x, y, z?): any;
   function isNullOrUndefined(x): boolean;
   function isDefined2(x): boolean;

@@ -27,13 +27,14 @@ import ed.server.http._
 import java.{util => ju}
 import play.api.mvc
 import play.api.libs.json._
-import play.api.mvc.{AbstractController, Action, ControllerComponents}
+import play.api.mvc.{Action, ControllerComponents}
 import scala.util.Try
 import scala.collection.immutable
 import debiki.RateLimits.TrackReadingActivity
 import ed.server.{EdContext, EdController}
 import ed.server.auth.Authz
 import javax.inject.Inject
+import org.owasp.encoder.Encode
 
 
 /** Handles requests related to users.
@@ -43,6 +44,8 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
 
   import context.security.{throwNoUnless, throwIndistinguishableNotFound}
   import context.globals
+
+  val MaxEmailsPerUser: Int = 5  // also in js [4GKRDF0]
 
 
   def listCompleteUsers(whichUsers: String): Action[Unit] = StaffGetAction { request =>
@@ -190,8 +193,8 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
     if (callerIsStaff || callerIsUserHerself) {
       val anyApprover = user.approvedById.flatMap(usersById.get)
       val safeEmail =
-        if (callerIsAdmin || callerIsUserHerself) user.emailAddress
-        else hideEmailLocalPart(user.emailAddress)
+        if (callerIsAdmin || callerIsUserHerself) user.primaryEmailAddress
+        else hideEmailLocalPart(user.primaryEmailAddress)
 
       userJson += "email" -> JsString(safeEmail)
       userJson += "emailForEveryNewPost" -> JsBoolean(user.emailForEveryNewPost)
@@ -290,6 +293,224 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
       result += "notfsNewSinceId" -> JsNumber(stats.notfsNewSinceId)
     }
     result
+  }
+
+
+  def loadUserEmailsLogins(userId: UserId): Action[Unit] = GetAction { request =>
+    loadUserEmailsLoginsImpl(userId, request)
+  }
+
+
+  private def loadUserEmailsLoginsImpl(userId: UserId, request: DebikiRequest[_]): mvc.Result = {
+    import request.{dao, theRequester => requester}
+    // Could refactor and break out functions. Later some day maybe.
+
+    throwForbiddenIf(requester.id != userId && !requester.isAdmin,
+      "EdE5JKWTDY2", "You may not see someone elses email addresses")
+
+    val (memberInclDetails, emails, identities) = dao.readOnlyTransaction { tx =>
+      (tx.loadTheMemberInclDetails(userId),
+        tx.loadUserEmailAddresses(userId),
+        tx.loadIdentities(userId))
+    }
+
+    val emailsJson = JsArray(emails map { userEmailAddress =>
+      Json.obj(
+        "emailAddress" -> userEmailAddress.emailAddress,
+        "addedAt" -> JsWhenMs(userEmailAddress.addedAt),
+        "verifiedAt" -> JsWhenMsOrNull(userEmailAddress.verifiedAt))
+    })
+
+    var loginMethodsJson = JsArray(identities map { identity: Identity =>
+      val (provider, email) = identity match {
+        case oa: OpenAuthIdentity =>
+          val details = oa.openAuthDetails
+          (details.providerId, details.email)
+        case oid: IdentityOpenId =>
+          val details = oid.openIdDetails
+          (details.oidEndpoint, details.email)
+        case x =>
+          (classNameOf(x), None)
+      }
+      Json.obj(
+        "loginType" -> classNameOf(identity),
+        "provider" -> provider,
+        "email" -> JsStringOrNull(email))
+    })
+
+    if (memberInclDetails.passwordHash.isDefined) {
+      loginMethodsJson :+= Json.obj(
+        "loginType" -> "Local",
+        "provider" -> "password",
+        "email" -> memberInclDetails.primaryEmailAddress)
+    }
+
+    OkSafeJson(Json.obj(
+      "emailAddresses" -> emailsJson,
+      "loginMethods" -> loginMethodsJson))
+  }
+
+
+  def setPrimaryEmailAddresses: Action[JsValue] =
+        PostJsonAction(RateLimits.AddEmailLogin, maxBytes = 300) { request =>
+    import request.{dao, body, theRequester => requester}
+    // SECURITY maybe send an email and verify with the old address that changing to the new is ok?
+
+    val userId = (body \ "userId").as[UserId]
+    val emailAddress = (body \ "emailAddress").as[String]
+
+    throwForbiddenIf(requester.id != userId && !requester.isAdmin,
+      "EdE4JTA2F0", "You may not add an email address to someone elses account")
+
+    dao.readWriteTransaction { tx =>
+      val member = tx.loadTheMemberInclDetails(userId)
+      throwBadRequestIf(member.primaryEmailAddress == emailAddress,
+        "EdE5GPTVXZ", "Already your primary address")
+      val userEmailAddrs = tx.loadUserEmailAddresses(userId)
+      val address = userEmailAddrs.find(_.emailAddress == emailAddress)
+      throwForbiddenIf(address.isEmpty, "EdE2YGUWF03", "Not your email address")
+      throwForbiddenIf(
+        address.flatMap(_.verifiedAt).isEmpty, "EdE5AA20I", "Address not verified") // [7GUKRWJ]
+
+      tx.updateMemberInclDetails(member.copy(primaryEmailAddress = emailAddress))
+    }
+
+    dao.removeUserFromMemCache(userId)
+    loadUserEmailsLoginsImpl(userId, request)
+  }
+
+
+  def addUserEmail: Action[JsValue] = PostJsonAction(RateLimits.AddEmailLogin, maxBytes = 300) {
+        request =>
+    import request.{dao, body, theRequester => requester}
+
+    val userId = (body \ "userId").as[UserId]
+    val emailAddress = (body \ "emailAddress").as[String]
+
+    throwForbiddenIf(requester.id != userId && !requester.isAdmin,
+      "EdE4JTA2F0", "You may not add an email address to someone else's account")
+
+    val member: MemberInclDetails = dao.readWriteTransaction { tx =>
+      val userEmailAddrs = tx.loadUserEmailAddresses(userId)
+      throwForbiddenIf(userEmailAddrs.exists(_.emailAddress == emailAddress),
+        "EdE5AVH20", "You've added that email already")
+      throwForbiddenIf(userEmailAddrs.length >= MaxEmailsPerUser,
+        "EdE2QDS0H", "You've added too many email addresses")
+      val member = tx.loadTheMemberInclDetails(userId) // also ensures the user exists
+      val newAddress = UserEmailAddress(
+        userId, emailAddress = emailAddress, addedAt = tx.now, verifiedAt = None)
+      tx.insertUserEmailAddress(newAddress)
+      member
+    }
+
+    BUG; RACE // If the server crashes / gets shut down, the email won't get sent.
+    // Instead, add it to some emails-to-send queue. In the same transaction, as above.
+
+    val email = createNewEmailAddrVerifEmailDontSend(member, request, emailAddress)
+    globals.sendEmail(email, dao.siteId)
+
+    loadUserEmailsLoginsImpl(userId, request)
+  }
+
+
+  private def createNewEmailAddrVerifEmailDontSend(user: MemberInclDetails, request: DebikiRequest[_],
+        newEmailAddress: String): Email = {
+
+    import context.globals, request.dao
+    val (siteName, origin) = dao.theSiteNameAndOrigin()
+    val host = request.host
+
+    val returnToUrl = s"$host/-/users/${user.username}/preferences/emails-logins"  // [4JKT28TS]
+
+    val emailId = Email.generateRandomId()
+
+    val safeEmailAddrVerifUrl =
+      globals.originOf(host) +
+        routes.UserController.confirmOneMoreEmailAddress(
+          emailId) // safe, generated by the server
+
+    val email = Email.newWithId(
+      emailId,
+      EmailType.VerifyAddress,
+      createdAt = globals.now(),
+      sendTo = newEmailAddress,
+      toUserId = Some(user.id),
+      subject = s"[$siteName] Confirm your email address",
+      bodyHtmlText =
+        views.html.confirmOneMoreEmailAddressEmail(
+          siteAddress = host,
+          username = user.username,
+          emailAddress = newEmailAddress,
+          safeVerificationUrl = safeEmailAddrVerifUrl,
+          expirationTimeInHours = 1,
+          globals).body)
+
+    dao.saveUnsentEmail(email)
+    email
+  }
+
+
+  def confirmOneMoreEmailAddress(confirmationEmailId: String): Action[Unit] = GetAction { request =>
+    import request.{dao, requester}
+    val email = dao.loadEmailById(confirmationEmailId) getOrElse {
+      throwForbidden("EdE1WRB20", "Link expired? Or bad email id.")
+    }
+
+    val toUserId = email.toUserId getOrElse throwForbidden(
+      "EdE1FKDP0", "Wrong email type: No user id")
+    throwForbiddenIf(requester.map(_.id) isSomethingButNot toUserId,
+      "EdE7UKTQ1", "You're logged in as a the wrong user")
+
+    val member: MemberInclDetails = dao.readWriteTransaction { tx =>
+      val member = dao.loadTheMemberInclDetailsById(toUserId)
+      val userEmailAddrs = tx.loadUserEmailAddresses(toUserId)
+      val userEmailAddr = userEmailAddrs.find(_.emailAddress == email.sentTo) getOrElse {
+        // This might happen if a user removes hens address, and clicks the verif link afterwards?
+        throwForbidden("EdE1WKBPE", "Not your email address, did you remove it?")
+      }
+      val addrVerified = userEmailAddr.copy(verifiedAt = Some(tx.now))
+      tx.updateUserEmailAddress(addrVerified)
+      member
+    }
+
+    // What do now? Let's redirect to the user's email list.
+    // But maybe the user is not currently logged in? I don't think hen should get logged in
+    // just by clicking the link. Maybe this isn't supposed to be an email address hen wants
+    // to be able to login with.
+    val emailsPath = requester.isDefined ? "/preferences/emails-logins" | ""  // [4JKT28TS]
+    TemporaryRedirect(s"/-/users/${member.username}$emailsPath")
+  }
+
+
+  def removeUserEmail: Action[JsValue] = PostJsonAction(RateLimits.AddEmailLogin, maxBytes = 300) {
+        request =>
+    import request.{dao, body, theRequester => requester}
+
+    val userId = (body \ "userId").as[UserId]
+    val emailAddress = (body \ "emailAddress").as[String]
+
+    throwForbiddenIf(requester.id != userId && !requester.isAdmin,
+      "EdE6LTMQR20", "You may not remove an email address from someone else's account")
+
+    dao.readWriteTransaction { tx =>
+      val member = tx.loadTheMemberInclDetails(userId) // ensures user exists
+      throwForbiddenIf(member.primaryEmailAddress == emailAddress,
+        "EdET7UKW2", s"Cannot remove the primary email address: $emailAddress")
+
+      val anyAddress = tx.loadUserEmailAddresses(userId).find(_.emailAddress == emailAddress)
+      throwForbiddenIf(anyAddress.isEmpty,
+        "EdE8UKDR1", s"No such email address: $emailAddress")
+
+      val identities = tx.loadIdentities(userId)
+      val identityUsingEmail = identities.find(_.usesEmailAddress(emailAddress))
+      identityUsingEmail foreach { identity =>
+        throwForbidden(
+          "EdE3Q1ZB9", s"Email address: $emailAddress in use, login method: ${identity.loginMethodName}")
+      }
+      tx.deleteUserEmailAddress(userId, emailAddress)
+    }
+
+    loadUserEmailsLoginsImpl(userId, request)
   }
 
 

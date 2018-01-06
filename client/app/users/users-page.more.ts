@@ -206,7 +206,7 @@ const UserPageComponent = createReactClass(<any> {
       Route({ path: u + 'activity', render: (ps) => UsersActivity({ ...childProps, ...ps }) }),
       Route({ path: u + 'summary', render: () => UserSummary(childProps) }),
       Route({ path: u + 'notifications', render: () => UserNotifications(childProps) }),
-      Route({ path: u + 'preferences', render: () => UserPreferences(childProps) }),
+      Route({ path: u + 'preferences', render: (ps) => UserPreferences({ ...childProps, ...ps }) }),
       Route({ path: u + 'invites', render: () => UserInvites(childProps) }));
 
     return (

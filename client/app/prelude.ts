@@ -151,6 +151,12 @@ export function toId(x: number | { id: number } | { uniqueId: number }): number 
 }
 
 
+export function uppercaseFirst(text: string): string {
+  return !text ? text : (
+    text[0].toUpperCase() + text.substr(1));
+}
+
+
 export function isBlank(x): boolean {
   return _.isEmpty(x) || !x.trim();
 }

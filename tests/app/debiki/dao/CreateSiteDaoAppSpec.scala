@@ -48,7 +48,7 @@ class CreateSiteDaoAppSpec extends DaoAppSuite(maxSitesTotal = Some(75)) {
     "create sites" in {
       globals.systemDao.getOrCreateFirstSite()
       val dao = globals.siteDao(Site.FirstSiteId)
-      createPasswordOwner("555uuyyWW", dao)
+      createPasswordOwner("555uuyyww", dao)
       val user = createPasswordUser("qq33yy55ee", dao)
 
       info("a real site")
@@ -63,7 +63,7 @@ class CreateSiteDaoAppSpec extends DaoAppSuite(maxSitesTotal = Some(75)) {
 
     "reject weird sites" in {
       val dao = globals.siteDao(Site.FirstSiteId)
-      val user = createPasswordUser("gg99YY22cc", dao)
+      val user = createPasswordUser("gg99yy22cc", dao)
 
       info("Weird local hostname")
       intercept[Exception] {
@@ -83,7 +83,7 @@ class CreateSiteDaoAppSpec extends DaoAppSuite(maxSitesTotal = Some(75)) {
 
     "not create too many sites per person" in {
       val dao = globals.siteDao(Site.FirstSiteId)
-      val user = createPasswordUser("pp55WW99zz", dao)
+      val user = createPasswordUser("pp55ww99zz", dao)
 
       info("per ip")
       var numCreated = 0
@@ -122,7 +122,7 @@ class CreateSiteDaoAppSpec extends DaoAppSuite(maxSitesTotal = Some(75)) {
 
     "not create too many sites in total" in {
       val dao = globals.siteDao(Site.FirstSiteId)
-      val user = createPasswordUser("22FF44bbUU", dao)
+      val user = createPasswordUser("22ff44bbuu", dao)
       var numCreated = 0
       intercept[Exception] {
         while (numCreated < 99) {

@@ -83,7 +83,7 @@ case class Invite(
     isApproved = None,
     approvedAt = None,
     approvedById = None,
-    emailAddress = emailAddress,
+    primaryEmailAddress = emailAddress,
     emailNotfPrefs = EmailNotfPrefs.Receive,
     emailVerifiedAt = Some(currentTime))
 }
@@ -121,7 +121,7 @@ sealed abstract class NewUserData {
     isApproved = None,
     approvedAt = None,
     approvedById = None,
-    emailAddress = email,
+    primaryEmailAddress = email,
     emailNotfPrefs = EmailNotfPrefs.Receive,
     emailVerifiedAt = emailVerifiedAt,
     isAdmin = isAdmin,
@@ -161,7 +161,7 @@ case class NewPasswordUserData(
     isApproved = None,
     approvedAt = None,
     approvedById = None,
-    emailAddress = email,
+    primaryEmailAddress = email,
     emailNotfPrefs = EmailNotfPrefs.Receive,
     emailVerifiedAt = None,
     passwordHash = Some(passwordHash),
@@ -423,11 +423,35 @@ sealed trait User {
 }
 
 
+/**
+  *
+  * @param id
+  * @param fullName
+  * @param theUsername
+  * @param email
+  * @param emailNotfPrefs
+  * @param emailVerifiedAt when the user's first primary email address was verified.
+  *   If hen changes hens primary address, this field won't change, and,
+  *   one may not change to a not-verified address. [7GUKRWJ]
+  * @param passwordHash
+  * @param tinyAvatar
+  * @param smallAvatar
+  * @param isApproved
+  * @param suspendedTill
+  * @param trustLevel
+  * @param lockedTrustLevel
+  * @param threatLevel
+  * @param lockedThreatLevel
+  * @param isAdmin
+  * @param isOwner
+  * @param isModerator
+  * @param isSuperAdmin
+  */
 case class Member(
   id: UserId,
   fullName: Option[String],
   theUsername: String,
-  email: String,  // COULD rename to emailAddr
+  email: String,  // COULD RENAME to primaryEmailAddr
   emailNotfPrefs: EmailNotfPrefs,
   emailVerifiedAt: Option[ju.Date] = None,
   passwordHash: Option[String] = None,
@@ -519,7 +543,7 @@ case class MemberInclDetails(
   isApproved: Option[Boolean],
   approvedAt: Option[ju.Date],
   approvedById: Option[UserId],
-  emailAddress: String,
+  primaryEmailAddress: String,
   emailNotfPrefs: EmailNotfPrefs,
   emailVerifiedAt: Option[ju.Date] = None,
   emailForEveryNewPost: Boolean = false,
@@ -547,7 +571,7 @@ case class MemberInclDetails(
   require(User.isOkayUserId(id), "DwE077KF2")
   require(username.length >= 2, "DwE6KYU9")
   require(!username.contains(isBlank _), "EdE8FKY07")
-  require(!emailAddress.contains(isBlank _), "EdE6FKU02")
+  require(!primaryEmailAddress.contains(isBlank _), "EdE6FKU02")
   require(fullName == fullName.map(_.trim), "EdE3WKD5F")
   require(country == country.map(_.trim), "EdEZ8KP02")
   require(!website.exists(_.contains(isBlank _)), "EdE4AB6GD")
@@ -562,7 +586,7 @@ case class MemberInclDetails(
   require(!suspendedById.exists(_ < LowestNonGuestId), "DwE7K2WF5")
   require(!isAdmin || !isModerator, s"User $id is both admin and moderator [EdE7JLRV2]")
   require(!isGuest, "DwE0GUEST223")
-  require(!isEmailLocalPartHidden(emailAddress), "DwE2WFE1")
+  require(!isEmailLocalPartHidden(primaryEmailAddress), "DwE2WFE1")
   require(tinyAvatar.isDefined == smallAvatar.isDefined &&
     smallAvatar.isDefined == mediumAvatar.isDefined, "EdE8UMW2")
 
@@ -581,11 +605,19 @@ case class MemberInclDetails(
 
   def createdWhen: When = When.fromDate(createdAt)
 
+  def primaryEmailInfo: Option[UserEmailAddress] =
+    if (primaryEmailAddress.isEmpty) None
+    else Some(UserEmailAddress(
+      userId = id,
+      emailAddress = primaryEmailAddress,
+      addedAt = When.fromDate(createdAt),
+      verifiedAt = When.fromOptDate(emailVerifiedAt)))
+
 
   def whenTimeForNexSummaryEmail(stats: UserStats, myGroups: immutable.Seq[Group])
         : Option[When] = {
     require(stats.userId == id, "EdE2GPKW01")
-    if (emailAddress.isEmpty || emailVerifiedAt.isEmpty)
+    if (primaryEmailAddress.isEmpty || emailVerifiedAt.isEmpty)
       return None
     val anyIntervalMins = effectiveSummaryEmailIntervalMins(myGroups)
     val intervalMins = anyIntervalMins getOrElse {
@@ -624,7 +656,7 @@ case class MemberInclDetails(
     userId = id,
     fullName = fullName,
     username = username,
-    emailAddress = emailAddress,
+    emailAddress = primaryEmailAddress,
     summaryEmailIntervalMins = summaryEmailIntervalMins,
     summaryEmailIfActive = summaryEmailIfActive,
     about = about,
@@ -635,12 +667,12 @@ case class MemberInclDetails(
 
   def copyWithNewPreferences(preferences: MemberPreferences): MemberInclDetails = {
     val newEmailAddress =
-      if (isEmailLocalPartHidden(preferences.emailAddress)) this.emailAddress
+      if (isEmailLocalPartHidden(preferences.emailAddress)) this.primaryEmailAddress
       else preferences.emailAddress
     copy(
       fullName = preferences.fullName,
       username = preferences.username,
-      emailAddress = newEmailAddress,
+      primaryEmailAddress = newEmailAddress,
       summaryEmailIntervalMins = preferences.summaryEmailIntervalMins,
       summaryEmailIfActive = preferences.summaryEmailIfActive,
       about = preferences.about,
@@ -658,7 +690,7 @@ case class MemberInclDetails(
     id = id,
     fullName = fullName,
     theUsername = username,
-    email = emailAddress,
+    email = primaryEmailAddress,
     emailNotfPrefs = emailNotfPrefs,
     emailVerifiedAt = emailVerifiedAt,
     passwordHash = passwordHash,
@@ -715,6 +747,21 @@ case class GroupPreferences(
 
 }
 
+
+case class UserEmailAddress(
+  userId: UserId,
+  emailAddress: String,
+  addedAt: When,
+  verifiedAt: Option[When]) {
+
+  require(isValidNonLocalEmailAddress(emailAddress), "EdE4JUKS0")
+
+  // Cannot add this test, because OpenAuth emails are verified maybe 100 ms before the user gets
+  // created. Could fix that, update timestamps in db, then add constraint? [5GKRWZI]
+  // require(!verifiedAt.exists(_.isBefore(addedAt)), "EdE6JUKW1A")
+
+  def isVerified: Boolean = verifiedAt.isDefined
+}
 
 
 case class UsernameUsage(
@@ -878,8 +925,11 @@ case class GuestLoginResult(guest: Guest, isNewUser: Boolean)
 case class PasswordLoginAttempt(
   ip: String,
   date: ju.Date,
-  email: String,
+  emailOrUsername: String,
   password: String) extends MemberLoginAttempt {
+
+  def isByEmail: Boolean = emailOrUsername contains '@'
+  def isByUsername: Boolean = !isByEmail
 }
 
 
@@ -913,6 +963,8 @@ sealed abstract class Identity {
 
   def id: IdentityId
   def userId: UserId
+  def usesEmailAddress(emailAddress: String): Boolean
+  def loginMethodName: String
 
   //checkId(id, "DwE02krc3g")  TODO check how?
   require(isOkayUserId(userId), "DwE864rsk215")
@@ -937,6 +989,13 @@ case class IdentityEmailId(
 ) extends Identity {
   // Either only email id known, or all info known.
   // require((userId startsWith "?") == emailSent.isEmpty)    TODO what?
+
+  /* After the email has been sent, the email address isn't used any more, and can be removed;
+   * this is one-time login only.
+   */
+  def usesEmailAddress(emailAddress: String) = false
+  def loginMethodName: String = "Email link"
+
 }
 
 
@@ -946,6 +1005,12 @@ case class IdentityOpenId(
   openIdDetails: OpenIdDetails) extends Identity {
 
   def displayName: String = openIdDetails.firstName
+  def usesEmailAddress(emailAddress: String): Boolean =
+    openIdDetails.email is emailAddress
+
+  /** Needn't look nice, no one uses OpenID nowadays anyway? It's dead? */
+  def loginMethodName = s"OpenID ${openIdDetails.oidEndpoint}"
+
 }
 
 
@@ -972,6 +1037,11 @@ case class OpenAuthIdentity(
   id: IdentityId,
   override val userId: UserId,
   openAuthDetails: OpenAuthDetails) extends Identity {
+
+  def usesEmailAddress(emailAddress: String): Boolean =
+    openAuthDetails.email is emailAddress
+
+  def loginMethodName: String = openAuthDetails.providerId
 
   require(userId >= LowestAuthenticatedUserId, "EdE4KFJ7C")
 }

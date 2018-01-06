@@ -59,7 +59,7 @@ class InviteController @Inject()(cc: ControllerComponents, edContext: EdContext)
 
     // Is toEmailAddress already a member or already invited?
     request.dao.readOnlyTransaction { transaction =>
-      val alreadyExistingUser = transaction.loadMemberByEmailOrUsername(toEmailAddress)
+      val alreadyExistingUser = transaction.loadMemberByPrimaryEmailOrUsername(toEmailAddress)
       if (alreadyExistingUser.nonEmpty)
         throwForbidden("_EsE403IUAM_", "That person has joined this site already")
 
@@ -178,7 +178,7 @@ class InviteController @Inject()(cc: ControllerComponents, edContext: EdContext)
     Email(
       EmailType.InvitePassword,
       createdAt = globals.now(),
-      sendTo = newUser.emailAddress,
+      sendTo = newUser.primaryEmailAddress,
       toUserId = Some(newUser.id),
       subject = s"[$siteHostname] Welcome! Account created",
       bodyHtmlText = (emailId) => views.html.invite.welcomeSetPasswordEmail(
@@ -193,9 +193,9 @@ class InviteController @Inject()(cc: ControllerComponents, edContext: EdContext)
       createdAt = globals.now(),
       sendTo = inviter.email,
       toUserId = Some(inviter.id),
-      subject = s"[$siteHostname] Your invitation for ${newUser.emailAddress} to join was accepted",
+      subject = s"[$siteHostname] Your invitation for ${newUser.primaryEmailAddress} to join was accepted",
       bodyHtmlText = (emailId) => views.html.invite.inviteAcceptedEmail(
-        siteHostname = siteHostname, invitedEmailAddress = newUser.emailAddress).body)
+        siteHostname = siteHostname, invitedEmailAddress = newUser.primaryEmailAddress).body)
   }
 }
 

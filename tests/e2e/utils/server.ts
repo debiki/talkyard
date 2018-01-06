@@ -172,6 +172,15 @@ function getLastVerifyEmailAddressLinkEmailedTo(siteId: SiteId, emailAddress: st
 }
 
 
+function waitAndGetVerifyAnotherEmailAddressLinkEmailedTo(siteId: SiteId, emailAddress: string,
+      browser?): string {
+  waitUntilLastEmailMatches(
+    siteId, emailAddress, ["To finish adding", /* [B4FR20L_] */ emailAddress], browser);
+  const email = getLastEmailSenTo(siteId, emailAddress, browser);
+  return utils.findFirstLinkToUrlIn('https?://.*/-/confirm-email-address', email.bodyHtmlText);
+}
+
+
 const unsubUrlRegexString = 'https?://.*/-/unsubscribe';
 
 function getLastUnsubscriptionLinkEmailedTo(siteId: SiteId, emailAddress: string, browser): string {
@@ -255,6 +264,7 @@ export = {
   getLastEmailSenTo,
   countLastEmailsSentTo,
   getLastVerifyEmailAddressLinkEmailedTo,
+  waitAndGetVerifyAnotherEmailAddressLinkEmailedTo,
   getLastUnsubscriptionLinkEmailedTo,
   getAnyUnsubscriptionLinkEmailedTo,
   waitForUnsubscriptionLinkEmailedTo,

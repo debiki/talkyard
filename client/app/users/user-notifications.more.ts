@@ -33,15 +33,15 @@ export const UserNotifications = createFactory({
   },
 
   componentDidMount: function() {
-    var user: MemberInclDetails = this.props.user;
+    const user: MemberInclDetails = this.props.user;
     this.loadNotifications(user.id);
   },
 
-  componentWillReceiveProps: function(nextProps) {
-    var me: Myself = this.props.me;
-    var user: MemberInclDetails = this.props.user;
-    var nextLoggedInUser: Myself = nextProps.me;
-    var nextUser: MemberInclDetails = nextProps.user;
+  componentWillReceiveProps: function(nextProps: any) {
+    const me: Myself = this.props.store.me;
+    const user: MemberInclDetails = this.props.user;
+    const nextLoggedInUser: Myself = nextProps.store.me;
+    const nextUser: MemberInclDetails = nextProps.user;
     if (me.id !== nextLoggedInUser.id ||
         user.id !== nextUser.id) {
       this.loadNotifications(nextUser.id);
@@ -49,7 +49,7 @@ export const UserNotifications = createFactory({
   },
 
   loadNotifications: function(userId: UserId) {
-    var me: Myself = this.props.me;
+    const me: Myself = this.props.store.me;
     if (me.id !== userId && !isStaff(me)) {
       this.setState({
         error: "May not list an other user's notifications. [EdE7WK2L_]",
@@ -74,15 +74,16 @@ export const UserNotifications = createFactory({
     if (!this.state.notfs)
       return r.p({}, "Loading...");
 
-    let user: MemberInclDetails = this.props.user;
-    let me: Myself = this.props.me;
-    let isMe = user.id === me.id;
-    let toWho = isMe ? "you" : user.username || user.fullName;
+    const user: MemberInclDetails = this.props.user;
+    const store: Store = this.props.store;
+    const me: Myself = store.me;
+    const isMe = user.id === me.id;
+    const toWho = isMe ? "you" : user.username || user.fullName;
 
-    let anyNoNotfsMessage = this.state.notfs.length ? null :
+    const anyNoNotfsMessage = this.state.notfs.length ? null :
         r.p({ className: 'e_UP_Notfs_None' }, "No notifications");
 
-    var notfsElems = this.state.notfs.map((notf: Notification) =>
+    const notfsElems = this.state.notfs.map((notf: Notification) =>
         r.li({ key: notf.id },
           Link({ to: linkToNotificationSource(notf) },
             notification.Notification({ notification: notf, verbose: true }))));
