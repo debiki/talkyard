@@ -92,7 +92,7 @@ class MessagesDaoAppSpec extends DaoAppSuite(disableScripts = true, disableBackg
 
 
     "only send message to staff if is TrustLevel.New" in {
-      val admin = createPasswordOwner("33BT02uf", dao)
+      val admin = createPasswordOwner("33bt02uf", dao)
       val newUser = createPasswordUser("zz39ys40rf", dao, trustLevel = TrustLevel.NewMember)
       val otherUser = createPasswordUser("z39gi4ck", dao, trustLevel = TrustLevel.NewMember)
 

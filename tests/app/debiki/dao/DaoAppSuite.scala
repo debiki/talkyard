@@ -169,7 +169,7 @@ class DaoAppSuite(
   }
 
 
-  /** Its name will be "User $password", username "user_$password" and email "user-$password@x.c",
+  /** Its name will be "User $password", username "user_$password" and email "user-$password@x.co",
     */
   def createPasswordUser(password: String, dao: SiteDao,
         trustLevel: TrustLevel = TrustLevel.NewMember,
@@ -177,7 +177,7 @@ class DaoAppSuite(
         createdAt: Option[When] = None, emailVerified: Boolean = false): Member = {
     val theCreatedAt = createdAt.getOrElse(globals.now())
     val member = dao.createPasswordUserCheckPasswordStrong(NewPasswordUserData.create(
-      name = Some(s"User $password"), username = s"user_$password", email = s"user-$password@x.c",
+      name = Some(s"User $password"), username = s"user_$password", email = s"user-$password@x.co",
       password = s"public-$password", createdAt = theCreatedAt,
       isAdmin = false, isOwner = false, trustLevel = trustLevel, threatLevel = threatLevel).get)
     if (emailVerified) {
