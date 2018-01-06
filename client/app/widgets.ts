@@ -61,6 +61,7 @@ export const PrimaryButton: any = makeWidget(r.button, ' btn btn-primary');
 export const Button: any = makeWidget(r.button, ' btn btn-default');
 export const PrimaryLinkButton: any = makeWidget(r.a, ' btn btn-primary');
 export const LinkButton: any = makeWidget(r.a, ' btn btn-default');  // not blue [2GKR5L0]
+export const ExtLinkButton: any = makeWidget(r.a, ' btn btn-default', { ext: true });
 export const InputTypeSubmit: any = makeWidget(r.input, ' btn btn-primary', { type: 'submit' });
 
 
@@ -101,8 +102,10 @@ function makeWidget(what, spaceWidgetClasses: string, extraProps?) {
     // in a different React root. But skip the admin app — it's its own SPA. [6TKQ20]
     // COULD use Link also in /-/admin sometimes, see  (5JKSW20).
     const afterClick = newProps.afterClick;
+    const isExternal = newProps.ext;
     delete newProps.afterClick;
-    if (what === r.a && !newProps.onClick && newProps.href.search('/-/admin/') === -1) {
+    delete newProps.ext;
+    if (what === r.a && !isExternal && !newProps.onClick && newProps.href.search('/-/admin/') === -1) {
       newProps.onClick = function(event) {
         event.preventDefault(); // avoids full page reload
         debiki2.page['Hacks'].navigateTo(newProps.href);

@@ -98,7 +98,7 @@ export const AdminUserPage = createFactory({
       return r.p({}, 'Loading...');
 
     const showPublProfileButton =
-        LinkButton({ href: this.publicProfileLink(), id: 'e2eA_Us_U_ShowPublProfB' },
+        ExtLinkButton({ href: this.publicProfileLink(), id: 'e2eA_Us_U_ShowPublProfB' },
           "Show Public Profile");
 
     let usernameAndFullName = user.username;
@@ -168,6 +168,7 @@ export const AdminUserPage = createFactory({
           showPublProfileButton),
 
         r.p({}, "Username: " + usernameAndFullName, thatIsYou),
+        r.p({}, "Email: " + user.email),
         user.isGroup ? r.p({}, "Is a group.") : null,
         user.isGroup ? null : r.p({}, "Admin: " + user.isAdmin, ' ', toggleAdminButton),
         moderatorInfo,
