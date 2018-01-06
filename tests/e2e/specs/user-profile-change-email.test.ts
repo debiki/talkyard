@@ -26,7 +26,6 @@ let michael;
 let michaelsBrowser;
 let mallory;
 let mallorysBrowser;
-let strangersBrowser;
 
 let idAddress: IdAddress;
 let siteId;
@@ -39,30 +38,9 @@ const michalesSecondReply = 'michalesSecondReply';
 
 const mariasTopicATitle = 'mariasTopicATitle';
 const mariasTopicABody = 'mariasTopicABody';
-let mariasTopicAUrl;
-
-/*
-
-maria cannot delete the maria2@x.co address because it's the primary address
-
-maria deletes the original maria@x.co address
-
-it's gone
-
----
-
-other test:
-
-gmail user signs up
-gmail user adds addr2@x.co
-changes primary addr
-
-but cannot delete the original gmail addr, because still in use by the gmail login method
-
- */
 
 
-describe("user profile access:", () => {
+describe("user profile change email:", () => {
 
   it("import a site, init people", () => {
     browser.perhapsDebugBefore();
@@ -145,17 +123,11 @@ describe("user profile access:", () => {
     mariasBrowser.userProfilePage.preferences.emailsLogins.addEmailAddress(mariasAddress2);
   });
 
-  it("Maria gets an address verification email", () => {
-    server.waitUntilLastEmailMatches(
-        siteId, mariasAddress2, [
-          "To finish adding", // [B4FR20L_]
-          mariasAddress2], browser);
-  });
-
   let mariasEmailVerifLink;
 
-  it("... she remembers the link", () => {
-    mariasEmailVerifLink = server.getLastVerifyAnotherEmailAddressLinkEmailedTo(siteId, mariasAddress2);
+  it("Maria gets an address verification email, she remembers the link", () => {
+    mariasEmailVerifLink = server.waitAndGetVerifyAnotherEmailAddressLinkEmailedTo(
+        siteId, mariasAddress2);
   });
 
   it("Mallory adds the same address", () => {

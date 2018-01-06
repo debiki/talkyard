@@ -2196,6 +2196,13 @@ function pagesFor(browser) {
         api.loginDialog.signUpAsGuest(name, email);
       },
 
+      signUpAsGmailUserViaTopbar: function({ username }) {
+        browser.disableRateLimits();
+        api.topbar.clickSignUp();
+        api.loginDialog.createGmailAccount({
+            email: settings.gmailEmail, password: settings.gmailPassword, username });
+      },
+
       logInAsGuestViaTopbar: function(nameOrObj, email?: string) {
         api.topbar.clickLogin();
         let name = nameOrObj;
