@@ -58,11 +58,12 @@ export const NameLoginBtns = createComponent({
 
     let userNameElem = null;
     let logoutBtnElem = null;
+    const target = eds.isInEmbeddedCommentsIframe ? '_blank' : undefined;
     if (me.isLoggedIn) {
       userNameElem =
           r.span({ className: 'dw-u-info' },
             "Logged in as ",
-            r.a({ className: 's_MB_Name', href: linkToUserProfilePage(me.username) },
+            r.a({ className: 's_MB_Name', href: linkToUserProfilePage(me.username), target },
               r.span({ className: 'esP_By_F' }, me.fullName ? me.fullName + ' ' : ''),
               r.span({ className: 'esP_By_U' }, '@' + me.username)));
       logoutBtnElem =

@@ -96,6 +96,7 @@ function loadCommentsCreateEditor() {
       // height will be set once opened.
       left: 0,
       position: 'fixed',
+      'z-index': 1,
       bottom: 0,
       'box-sizing': 'content-box',
       cursor: 'ns-resize',

@@ -25,6 +25,9 @@
    namespace debiki2 {
 //------------------------------------------------------------------------------
 
+const origin = eds.isInEmbeddedCommentsIframe ? eds.serverOrigin : '';
+
+
 export function assetsOrigin(): string {
   // CLEAN_UP incl assetsOrigin in the data from the server, rather than eds.uploadsUrlPrefix.
   // This removes the url path from '(https:)//cdn-or-server-origin/-/u/', and ensures
@@ -35,7 +38,7 @@ export function assetsOrigin(): string {
 }
 
 export function linkToPageId(pageId: PageId): string {
-  return '/-' + pageId;
+  return origin + '/-' + pageId;
 }
 
 
@@ -47,11 +50,11 @@ export function linkToPostNr(pageId: PageId, postNr: PostNr): string {
 export function linkToAdminPage(me: Myself): string {
   // By default, redirects to path not available to non-admins. So send non-admins to reviews section.
   const morePath = me.isAdmin ? '' : 'review/all';
-  return '/-/admin/' + morePath;
+  return origin + '/-/admin/' + morePath;
 }
 
 export function linkToAdminPageAdvancedSettings(hostname?: string): string {
-  const origin = hostname ? '//' + hostname : '';
+  const origin = hostname ? '//' + hostname : '';   // ?? or just reuse 'origin' from above ?
   return origin + '/-/admin/settings/advanced';
 }
 
@@ -65,7 +68,7 @@ export function linkToReviewPage(): string {
 
 
 export function linkToUserProfilePage(userIdOrUsername: UserId | string): string {
-  return '/-/users/' + userIdOrUsername;
+  return origin + '/-/users/' + userIdOrUsername;
 }
 
 export function linkToUsersNotfs(userIdOrUsername: UserId | string): string {
@@ -81,7 +84,7 @@ export function linkToInvitesFromUser(userId: UserId): string {
 }
 
 export function linkToMyProfilePage(store: Store): string {
-  return '/-/users/' + store.me.id;
+  return origin + '/-/users/' + store.me.id;
 }
 
 

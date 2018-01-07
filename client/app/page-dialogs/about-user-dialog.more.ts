@@ -203,7 +203,8 @@ const AboutUser = createComponent({
     const afterClick = this.props.close;
 
     var sendMessageButton = !me_maySendDirectMessageTo(me, user) ? null :
-        PrimaryLinkButton({ href: linkToSendMessage(user.id), id: 'e2eUD_MessageB', afterClick },
+        PrimaryLinkButton({ href: linkToSendMessage(user.id), id: 'e2eUD_MessageB', afterClick,
+            target: '_blank' },
           "Send Message");
 
     var userIsPageMember = page_isGroupTalk(page.pageRole) &&
@@ -217,7 +218,8 @@ const AboutUser = createComponent({
       r.div({},
         r.div({ className: 'dw-about-user-actions' },
           sendMessageButton,
-          LinkButton({ href: linkToUserProfilePage(user.id), id: 'e2eUD_ProfileB', afterClick },
+          LinkButton({ href: linkToUserProfilePage(user.id), id: 'e2eUD_ProfileB', afterClick,
+              target: '_blank' },
             "View Profile"),
           removeFromPageButton),
         avatar.Avatar({ user: user, large: true, clickOpensUserProfilePage: true }),

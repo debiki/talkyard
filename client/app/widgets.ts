@@ -102,7 +102,7 @@ function makeWidget(what, spaceWidgetClasses: string, extraProps?) {
     // in a different React root. But skip the admin app — it's its own SPA. [6TKQ20]
     // COULD use Link also in /-/admin sometimes, see  (5JKSW20).
     const afterClick = newProps.afterClick;
-    const isExternal = newProps.ext;
+    const isExternal = newProps.ext || eds.isInEmbeddedCommentsIframe;
     delete newProps.afterClick;
     delete newProps.ext;
     if (what === r.a && !isExternal && !newProps.onClick && newProps.href.search('/-/admin/') === -1) {
