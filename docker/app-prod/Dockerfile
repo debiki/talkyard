@@ -18,13 +18,16 @@ RUN mkdir -p /opt/ed/uploads/ && \
 COPY app             /opt/ed/app
 COPY app-lib-debiki  /opt/ed/app/lib/
 COPY app-bin         /opt/ed/app/bin/
-COPY app-conf        /opt/ed/app/conf/
+# Only copy *-prod files. Other stuff might contain private things, e.g. override.conf might
+# contain test suite OpenAuth credentials.
+COPY app-conf/app-prod.conf  /opt/ed/app/conf/
+COPY app-conf/logback.xml    /opt/ed/app/conf/
 COPY build-info      /opt/ed/build-info/
 
-VOLUME ["/opt/ed/app-conf", "/opt/ed/uploads"]
-
 ENV PLAY_HEAP_MEMORY_MB 1000
-ENV CONFIG_FILE /opt/ed/app-conf/localhost.conf
+
+# Play will search for app-prod-override.conf in the same dir. See [4WDKPU2] in ed-prod-one.
+ENV CONFIG_FILE /opt/ed/app/conf/app-prod.conf
 
 WORKDIR /opt/ed/app
 

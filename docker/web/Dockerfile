@@ -231,7 +231,7 @@ RUN apk add --no-cache bash tree curl net-tools
 
 COPY 502.html             /opt/nginx/html/502.html
 COPY 503.html             /opt/nginx/html/503.html
-COPY default-site         /etc/nginx/default-site/
+COPY sites-enabled-manual /etc/nginx/sites-enabled-manual/
 # old, remove once I've edited edm & edc
 COPY server-listen.conf   /etc/nginx/listen.conf
 COPY server-listen.conf   /etc/nginx/

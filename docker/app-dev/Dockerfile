@@ -31,9 +31,6 @@ RUN apk add --no-cache \
   --repository http://dl-cdn.alpinelinux.org/alpine/edge/testing/ \
   gosu
 
-# We'll map ~/.ivy2 and ~/.m2 to here, so the JAR cache won't vanish on container restart.
-VOLUME ["/home/owner/.ivy2", "/home/owner/.sbt", "/opt/ed"]
-
 # Play's HTTP and HTTPS listen ports, Java debugger port, JMX port 3333.
 EXPOSE 9000 9443 9999 3333
 
@@ -59,5 +56,6 @@ CMD cd /opt/ed/app/ && exec /opt/typesafe-activator/bin/activator \
   -Dcom.sun.management.jmxremote.authenticate=false \
   -Dhttp.port=9000 \
   -Dhttps.port=9443 \
+  -Dconfig.file=/opt/ed/app/conf/app-dev.conf \
   run
 
