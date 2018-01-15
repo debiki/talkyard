@@ -35,10 +35,12 @@ function loadCommentsCreateEditor() {
   console.log("iframe-parent: loadCommentsCreateEditor()");
   // Create <iframe>s for embedded comments and an embedded editor.
   // Show a "Loading comments..." message until comments loaded.
-  // For now, choose the first .debiki-emdbedded-comments only, because
+  // For now, choose the first .talkyard-comments only, because
   // the embedded editor will be bound to one page only, and two editors
   // seems complicated.
-  var commentsElems = document.getElementsByClassName('ed-comments');
+  var commentsElems = document.getElementsByClassName('ed-comments'); // old name [2EBG05]
+  if (!commentsElems.length)
+    commentsElems = document.getElementsByClassName('talkyard-comments');
   if (!commentsElems.length)
     return;
   var commentsElem = commentsElems[0];

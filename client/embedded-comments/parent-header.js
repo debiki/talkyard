@@ -24,20 +24,28 @@ window.debiki = { internal: {}, v0: { util: {} } };
 
 // Finds Debiki server origin, by extracting origin of the debiki-embedded-comments.js script.
 // We need it when loading the <iframe>s with embedded comments and the editor.
-debiki.internal.commentsServerOrigin = window.edCommentsServerUrl || (function() {
+debiki.internal.commentsServerOrigin =
+    window.talkyardCommentsServerUrl ||
+    window.edCommentsServerUrl || // old name [2EBG05]
+    (function() {
   var origin;
   var scripts = document.getElementsByTagName('script');
   for (var i = 0; i < scripts.length; ++i) {
     script = scripts[i];
     var srcAttr = script.src;
+    // Old name? [2EBG05]
     var isEmbeddedCommentsScript = srcAttr.search(/\/-\/ed-comments.(min\.)?js/) !== -1;
+    // New name?
+    if (!isEmbeddedCommentsScript) {
+      isEmbeddedCommentsScript = srcAttr.search(/\/-\/talkyard-comments.(min\.)?js/) !== -1;
+    }
     if (isEmbeddedCommentsScript) {
       origin = srcAttr.match(/^[^/]*\/\/[^/]+/)[0];
     }
   }
   if (!origin && console.error) {
     console.error("Error extracting Effective Discussions embedded comments server origin, " +
-      "is there no '/-/ed-comments.min.js' script?");
+      "is there no '/-/talkyard-comments.min.js' script?");
   }
   return origin;
 })();

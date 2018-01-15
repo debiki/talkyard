@@ -600,13 +600,13 @@ const EmbeddedCommentsSettings = createFactory({
           r.pre({ id: 'e_EmbCmtsHtml' },
             // script url defined here: [2WPGKS04]
             // this code is dupl in e2e test [2JKWTQ0].
-`<script>edCommentsServerUrl='${location.origin}';</script>
-<script async defer src="${assetsOrigin()}/-/ed-comments${dotMin}.js"></script>
+`<script>talkyardCommentsServerUrl='${location.origin}';</script>
+<script async defer src="${assetsOrigin()}/-/talkyard-comments${dotMin}.js"></script>
 <!-- You can specify a per page discussion id on the next line, if your URLs might change. -->
-<div class="ed-comments" data-discussion-id="" style="margin-top: 45px;">
+<div class="talkyard-comments" data-discussion-id="" style="margin-top: 45px;">
 <noscript>Please enable Javascript to view comments.</noscript>
 <p style="margin-top: 25px; opacity: 0.9; font-size: 96%">Comments powered by
-<a href="https://www.effectivediscussions.org">Effective Discussions</a>.</p>
+<a href="https://www.talkyard.io">Talkyard</a>.</p>
 </div>`),
           r.p({ className: 's_A_Ss_EmbCmts_Plugins' },
             "Or, if you use ", r.b({}, "Gatsby"), " (a static website generator), there's ",

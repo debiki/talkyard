@@ -393,7 +393,7 @@ class Globals(
     originOf(request.underlying)
 
 
-  def poweredBy = s"https://www.effectivediscussions.org"
+  def poweredBy = s"https://www.talkyard.io"
 
 
   /** If a hostname matches this pattern, the site id can be extracted directly from the url.

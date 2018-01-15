@@ -269,6 +269,9 @@ GET   /robots.txt               controllers.Assets.at(path = "/public", file = "
 
 # These endpoints are linked from embedded comments HTML:  [2WPGKS04]
 # Ensure they aren't cached for too long. [2WBKP46]
+GET   /-/talkyard-comments.js     controllers.Assets.at(path = "/public/res", file = "ed-comments.js")
+GET   /-/talkyard-comments.min.js controllers.Assets.at(path = "/public/res", file = "ed-comments.min.js")
+# Old names: [2EBG05]
 GET   /-/ed-comments.js         controllers.Assets.at(path = "/public/res", file = "ed-comments.js")
 GET   /-/ed-comments.v0.js      controllers.Assets.at(path = "/public/res", file = "ed-comments.js")
 GET   /-/ed-comments.min.js     controllers.Assets.at(path = "/public/res", file = "ed-comments.min.js")
