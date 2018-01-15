@@ -4957,7 +4957,7 @@ function googleCajaSanitizeHtml(htmlTextUnsafe, allowClassAndIdAttr,
     var siteId = debiki2.ReactStore.allData().siteId;
     //if (siteId === 98) {  // doesn't work, site id not updated when just rendering markdown.
                             // instead, always rel=follow StackExchange links, for now.
-      // This is the insightful.demo.ed.community site — so make links to StackExchange rel=follow,
+      // This is the insightful.demo.talkyard.io site — so make links to StackExchange rel=follow,
       // as per the cc-by-sa license. This is a hack, but ... no time for the "real" solution
       // right now, which SECURITY would probably be to rel=follow links in posts-upvoted-or-created-
       // -by-trusted-members.

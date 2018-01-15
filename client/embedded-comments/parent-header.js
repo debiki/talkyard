@@ -15,14 +15,14 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-// This file is prefixed to embedded-comments.js by gulpfile.js.
+// This file is prefixed to the embedded comments script bundle, by gulpfile.js.
 // See readme.txt.
 
 
 window.eds = {};
 window.debiki = { internal: {}, v0: { util: {} } };
 
-// Finds Debiki server origin, by extracting origin of the debiki-embedded-comments.js script.
+// Finds the server origin, by extracting origin of the embedded comments script url.
 // We need it when loading the <iframe>s with embedded comments and the editor.
 debiki.internal.commentsServerOrigin =
     window.talkyardCommentsServerUrl ||
@@ -33,11 +33,9 @@ debiki.internal.commentsServerOrigin =
   for (var i = 0; i < scripts.length; ++i) {
     script = scripts[i];
     var srcAttr = script.src;
-    // Old name? [2EBG05]
-    var isEmbeddedCommentsScript = srcAttr.search(/\/-\/ed-comments.(min\.)?js/) !== -1;
-    // New name?
+    var isEmbeddedCommentsScript = srcAttr.search(/\/-\/ed-comments.(min\.)?js/) !== -1; // old [2EBG05]
     if (!isEmbeddedCommentsScript) {
-      isEmbeddedCommentsScript = srcAttr.search(/\/-\/talkyard-comments.(min\.)?js/) !== -1;
+      isEmbeddedCommentsScript = srcAttr.search(/\/-\/talkyard-comments.(min\.)?js/) !== -1; // new name
     }
     if (isEmbeddedCommentsScript) {
       origin = srcAttr.match(/^[^/]*\/\/[^/]+/)[0];

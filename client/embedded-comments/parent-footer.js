@@ -1,5 +1,5 @@
 
-// This file is appended to embedded-comments.js by gulpfile.js.
+// This file is appended to the embedded comments script bundle, by gulpfile.js.
 // See readme.txt. In parent-header.js, we ended with: `(function() {` and here we finish with:
 
 })();

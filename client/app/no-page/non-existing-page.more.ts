@@ -108,7 +108,7 @@ const SignUpAsAdmin = createComponent({
           r.h1({}, "Welcome"),
           r.p({}, embCmts ? "Here you'll moderate comments." : "This is your new website."),
           r.p({}, "Look at the address bar above" + (
-                embCmts ? ': ' : // will be like: 'comments-for-www-example-com.ed.community' [7PLBKA24]
+                embCmts ? ': ' : // will be like: 'comments-for-your-site.example.com' [7PLBKA24]
                   " — it starts with the address you specified: "), r.code({}, location.hostname)),
           r.br(),
           loginBtn);

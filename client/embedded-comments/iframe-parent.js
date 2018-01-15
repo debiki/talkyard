@@ -57,12 +57,14 @@ function loadCommentsCreateEditor() {
   }
   var discussionIdParam = discussionId ? 'discussionId=' + discussionId + '&' : '';
 
-  var edPageId = commentsElem.getAttribute('data-ed-page-id');
+  var edPageId = commentsElem.getAttribute('data-ed-page-id'); // old name [2EBG05]
+  if (!edPageId) {
+    edPageId = commentsElem.getAttribute('data-talkyard-page-id');
+  }
   var edPageIdParam = edPageId ? 'edPageId=' + edPageId + '&' : '';
 
   var allUrlParams = edPageIdParam + discussionIdParam + embeddingUrlParam;
   var commentsIframeUrl = serverOrigin + '/-/embedded-comments?' + allUrlParams;
-  // '/-' + pageId; // '/-29/testing-nested-comment-is-it-working-or-not';  // /-/pageId
 
   // Don't `hide()` the iframe, then FireFox acts as if it doesn't exist: FireFox receives
   // no messages at all from it.
@@ -488,7 +490,9 @@ loadCommentsCreateEditor();
 // Some static sites, like Gatsby.js, don't reload whole pages, instead they load json, un/re-mount
 // React componets and do history.push, to render the new page. Then a way is needed
 // to load the comments for the new URL.
-window.edRemoveCommentsAndEditor = removeCommentsAndEditor;
-window.edReloadCommentsAndEditor = loadCommentsCreateEditor;
+window.edRemoveCommentsAndEditor = removeCommentsAndEditor;  // old name [2EBG05]
+window.edReloadCommentsAndEditor = loadCommentsCreateEditor; // old name [2EBG05]
+window.talkyardRemoveCommentsAndEditor = removeCommentsAndEditor;
+window.talkyardReloadCommentsAndEditor = loadCommentsCreateEditor;
 
 // vim: fdm=marker et ts=2 sw=2 fo=tcqwn list
