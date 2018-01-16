@@ -43,3 +43,6 @@
 [submodule "modules/gatsby-starter-blog"]
 	path = modules/gatsby-starter-blog
 	url = https://github.com/debiki/gatsby-starter-blog.git
+[submodule "modules/gatsby-starter-blog-ed-comments-0.4.4"]
+	path = modules/gatsby-starter-blog-ed-comments-0.4.4
+	url = https://github.com/debiki/gatsby-starter-blog.git
