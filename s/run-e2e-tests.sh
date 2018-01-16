@@ -224,7 +224,8 @@ function runAllEndToEndTests {
 
   if [ -n "$server_port_8000_pid" ]; then
     kill $server_port_8000_pid
-    echo "Stopped the http server for the Gatsby blog."
+    wait $server_port_8000_pid
+    echo "Stopped the http server for the Gatsby blog, pid $server_port_8000_pid."
   fi
 
 
@@ -242,6 +243,7 @@ function runAllEndToEndTests {
     ./node_modules/.bin/http-server -p8000 modules/gatsby-starter-blog-ed-comments-0.4.4/public/ &
     # Field 2 is the process id.
     server_port_8000_pid2=$(jobs -l | grep p8000 | cut -f2 -d ' ')
+    echo "Gatsby blog server running as pid $server_port_8000_pid2."
   fi
   # else: the user has probably started the server henself already, do nothing.
 
@@ -249,7 +251,8 @@ function runAllEndToEndTests {
 
   if [ -n "$server_port_8000_pid2" ]; then
     kill $server_port_8000_pid2
-    echo "Stopped the http server for the Gatsby blog, old ed-comments 0.4.4."
+    wait $server_port_8000_pid2
+    echo "Stopped the http server for the Gatsby blog, old ed-comments 0.4.4, pid $server_port_8000_pid2."
   fi
   #------------------------------------------------------------
 
