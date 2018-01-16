@@ -87,17 +87,33 @@ if [ "$1" = '--all' ]; then
 fi
 
 
+#------------------------------------------------------------
+# dupl code (7UKTWC0)
 # Start building the Gatsby blog, if needed.
 if [ ! -d modules/gatsby-starter-blog/public/ ]; then
   echo "Building the Gatsby starter blog public html..."
   pushd .
   cd modules/gatsby-starter-blog/
   rm -fr .cache public
-  yarn build &
+  (yarn && yarn build) &
   yarn_build_gatsby_pid=$(jobs -l | grep yarn | cut -f2 -d ' ')
   echo "Background building the Gatsby blog in process id $yarn_build_gatsby_pid"
   popd
 fi
+
+# dupl code (7UKTWC0)
+# Start building another version of the Gatsby blog, with an older ed-comments version.
+if [ ! -d modules/gatsby-starter-blog-ed-comments-0.4.4/public/ ]; then
+  echo "Building the Gatsby starter blog public html, for ed-comments 0.4.4..."
+  pushd .
+  cd modules/gatsby-starter-blog-ed-comments-0.4.4/
+  rm -fr .cache public
+  (yarn && yarn build) &
+  yarn_build_gatsby_pid2=$(jobs -l | grep yarn | cut -f2 -d ' ')
+  echo "Background building the Gatsby blog, ed-comments 0.4.4, in process id $yarn_build_gatsby_pid2"
+  popd
+fi
+#------------------------------------------------------------
 
 
 args=$@
@@ -186,6 +202,8 @@ function runAllEndToEndTests {
   fi
 
 
+  #------------------------------------------------------------
+  # dupl code (8BMFEW2)
   # Gatsby embedded comments
   # ------------
   if [ -n "$yarn_build_gatsby_pid" ]; then
@@ -208,6 +226,32 @@ function runAllEndToEndTests {
     kill $server_port_8000_pid
     echo "Stopped the http server for the Gatsby blog."
   fi
+
+
+  # dupl code (8BMFEW2)
+  # Gatsby embedded comments, old version 0.4.4
+  # ------------
+  if [ -n "$yarn_build_gatsby_pid2" ]; then
+    echo "Waiting for \$yarn_build_gatsby_pid2 $yarn_build_gatsby_pid2 to finish, old ed-comments 0.4.4 ..."
+    wait $yarn_build_gatsby_pid2
+  fi
+  # And then start a server, for the blog: (but let's do that here, if not started)
+  server_port_8000=$(netstat -nl | grep ':8000.*LISTEN')
+  if [ -z "$server_port_8000" ]; then
+    echo "Starting a http server for the Gatsby blog, old ed-comments 0.4.4..."
+    ./node_modules/.bin/http-server -p8000 modules/gatsby-starter-blog-ed-comments-0.4.4/public/ &
+    # Field 2 is the process id.
+    server_port_8000_pid2=$(jobs -l | grep p8000 | cut -f2 -d ' ')
+  fi
+  # else: the user has probably started the server henself already, do nothing.
+
+  runEndToEndTest s/wdio target/e2e/wdio.conf.js            --browser $browser --only embedded-comments-gatsby $args
+
+  if [ -n "$server_port_8000_pid2" ]; then
+    kill $server_port_8000_pid2
+    echo "Stopped the http server for the Gatsby blog, old ed-comments 0.4.4."
+  fi
+  #------------------------------------------------------------
 
 
   # Usability Testing Exchange
