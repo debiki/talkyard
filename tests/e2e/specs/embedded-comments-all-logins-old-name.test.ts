@@ -71,9 +71,14 @@ describe("emb cmts all logins", () => {
 <body style="background: black; color: #ccc; font-family: monospace">
 <p>This is an embedded comments E2E test page. Ok to delete. 27KT5QAX29. The comments:</p>
 
-<script>talkyardCommentsServerUrl='http://${localHostname}.localhost';</script>
-<script async defer src="http://${localHostname}.localhost/-/talkyard-comments.js"></script>
-<div class="talkyard-comments" style="margin-top: 45px;">
+<script>edCommentsServerUrl='http://${localHostname}.localhost';</script>
+<script async defer src="http://${localHostname}.localhost/-/ed-comments.v0.min.js"></script>
+<!-- You can specify a per page discussion id on the next line, if your URLs might change. -->
+<div class="ed-comments" style="margin-top: 45px;">
+<noscript>Please enable Javascript to view comments.</noscript>
+<p style="margin-top: 25px; opacity: 0.9; font-size: 96%">Comments powered by
+<a href="https://www.effectivediscussions.org">Effective Discussions</a>.</p>
+
 <p>/End of page.</p>
 </body>
 </html>`);

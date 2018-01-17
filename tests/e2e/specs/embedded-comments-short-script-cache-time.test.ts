@@ -10,6 +10,7 @@ let everyonesBrowsers;
 
 const scriptUrl = 'http://localhost/-/ed-comments.min.js';
 const scriptUrl2 = 'http://localhost/-/ed-comments.v0.min.js';
+const scriptUrl3 = 'http://localhost/-/talkyard-comments.min.js';
 
 describe("the embedded comments script is cached for a day only", () => {
 
@@ -25,7 +26,7 @@ describe("the embedded comments script is cached for a day only", () => {
 
   it("the cache time is just one day", () => {
     let theUrl = scriptUrl;
-    for (let i = 0; i < 2; ++i) {
+    for (let i = 0; i < 3; ++i) {
       const response = syncRequest('GET', theUrl);
       const headers = response.headers;
       if (headers['cache-control'] !== "max-age=86400, s-maxage=86400, public") {  // [2WBKP46]
@@ -33,7 +34,8 @@ describe("the embedded comments script is cached for a day only", () => {
             JSON.stringify(headers));
         assert(false);
       }
-      theUrl = scriptUrl2;
+      if (i === 0) theUrl = scriptUrl2;
+      else theUrl = scriptUrl3;
     }
   });
 

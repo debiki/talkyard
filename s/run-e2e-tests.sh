@@ -95,8 +95,8 @@ if [ ! -d modules/gatsby-starter-blog/public/ ]; then
   pushd .
   cd modules/gatsby-starter-blog/
   rm -fr .cache public
-  (yarn && yarn build) &
-  yarn_build_gatsby_pid=$(jobs -l | grep yarn | cut -f2 -d ' ')
+  (yarn && yarn build && echo 'yarn-build-1' ) &
+  yarn_build_gatsby_pid=$(jobs -l | grep yarn-build-1 | awk '{ printf $2; }')
   echo "Background building the Gatsby blog in process id $yarn_build_gatsby_pid"
   popd
 fi
@@ -108,8 +108,8 @@ if [ ! -d modules/gatsby-starter-blog-ed-comments-0.4.4/public/ ]; then
   pushd .
   cd modules/gatsby-starter-blog-ed-comments-0.4.4/
   rm -fr .cache public
-  (yarn && yarn build) &
-  yarn_build_gatsby_pid2=$(jobs -l | grep yarn | cut -f2 -d ' ')
+  (yarn && yarn build && echo 'yarn-build-2' ) &
+  yarn_build_gatsby_pid2=$(jobs -l | grep yarn-build-2 | awk '{ printf $2; }')
   echo "Background building the Gatsby blog, ed-comments 0.4.4, in process id $yarn_build_gatsby_pid2"
   popd
 fi
@@ -186,15 +186,20 @@ function runAllEndToEndTests {
     echo "Starting a http server for embedded comments html pages..."
     ./node_modules/.bin/http-server -p8080 target/ &
     # Field 2 is the process id.
-    server_port_8080_pid=$(jobs -l | grep p8080 | cut -f2 -d ' ')
+    server_port_8080_pid=$(jobs -l | grep p8080 | awk '{ printf $2; }')
   fi
   # else: the user has probably started the server henself already, do nothing.
 
   runEndToEndTest s/wdio target/e2e/wdio.2chrome.conf.js    --browser $browser --only embedded-comments-create-site.2browsers $args
-  runEndToEndTest s/wdio target/e2e/wdio.conf.js            --browser $browser --only embedded-comments-discussion-id $args
-  runEndToEndTest s/wdio target/e2e/wdio.conf.js            --browser $browser --only embedded-comments-all-logins $args
-  runEndToEndTest s/wdio target/e2e/wdio.conf.js            --browser $browser --only embedded-comments-edit-and-vote $args
-  runEndToEndTest s/wdio target/e2e/wdio.conf.js            --browser $browser --only embedded-comments-short-script-cache-time $args
+  # (no -old-name version, because the new name is always included in the server's genetarted html.)
+  runEndToEndTest s/wdio target/e2e/wdio.conf.js            --browser $browser --only embedded-comments-discussion-id.test $args
+  runEndToEndTest s/wdio target/e2e/wdio.conf.js            --browser $browser --only embedded-comments-discussion-id-old-name $args
+  runEndToEndTest s/wdio target/e2e/wdio.conf.js            --browser $browser --only embedded-comments-all-logins.test $args
+  runEndToEndTest s/wdio target/e2e/wdio.conf.js            --browser $browser --only embedded-comments-all-logins-old-name $args
+  runEndToEndTest s/wdio target/e2e/wdio.conf.js            --browser $browser --only embedded-comments-edit-and-vote.test $args
+  runEndToEndTest s/wdio target/e2e/wdio.conf.js            --browser $browser --only embedded-comments-edit-and-vote-old-name $args
+  runEndToEndTest s/wdio target/e2e/wdio.conf.js            --browser $browser --only embedded-comments-short-script-cache-time.test $args
+  # (all names included in short-cache-time already)
 
   if [ -n "$server_port_8080_pid" ]; then
     kill $server_port_8080_pid
@@ -216,7 +221,7 @@ function runAllEndToEndTests {
     echo "Starting a http server for the Gatsby blog..."
     ./node_modules/.bin/http-server -p8000 modules/gatsby-starter-blog/public/ &
     # Field 2 is the process id.
-    server_port_8000_pid=$(jobs -l | grep p8000 | cut -f2 -d ' ')
+    server_port_8000_pid=$(jobs -l | grep p8000 | awk '{ printf $2; }')
   fi
   # else: the user has probably started the server henself already, do nothing.
 
@@ -242,7 +247,7 @@ function runAllEndToEndTests {
     echo "Starting a http server for the Gatsby blog, old ed-comments 0.4.4..."
     ./node_modules/.bin/http-server -p8000 modules/gatsby-starter-blog-ed-comments-0.4.4/public/ &
     # Field 2 is the process id.
-    server_port_8000_pid2=$(jobs -l | grep p8000 | cut -f2 -d ' ')
+    server_port_8000_pid2=$(jobs -l | grep p8000 | awk '{ printf $2; }')
     echo "Gatsby blog server running as pid $server_port_8000_pid2."
   fi
   # else: the user has probably started the server henself already, do nothing.
