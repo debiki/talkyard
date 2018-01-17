@@ -177,6 +177,12 @@ function runAllEndToEndTests {
   runEndToEndTest s/wdio target/e2e/wdio.2chrome.conf.js    --browser $browser --only summary-emails.2browsers $args
 
 
+  # Usability Testing Exchange
+  # ------------
+
+  runEndToEndTest s/wdio target/e2e/wdio.conf.js            --browser $browser --only utx-all-logins $args
+
+
   # Embedded comments
   # ------------
   # Start a http server, for the embedding html pages, if needed.
@@ -260,12 +266,6 @@ function runAllEndToEndTests {
     echo "Stopped the http server for the Gatsby blog, old ed-comments 0.4.4, pid $server_port_8000_pid2."
   fi
   #------------------------------------------------------------
-
-
-  # Usability Testing Exchange
-  # ------------
-
-  runEndToEndTest s/wdio target/e2e/wdio.conf.js            --browser $browser --only utx-all-logins $args
 
   # wip:
   # settings-allow-local-signup

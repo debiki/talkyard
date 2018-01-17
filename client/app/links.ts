@@ -136,7 +136,7 @@ export function goBackToSite() {
 
 
 export function externalLinkToAdminHelp(): string {
-  return 'https://www.effectivediscussions.org/forum/latest/support';
+  return 'https://www.talkyard.io/forum/latest/support';
 }
 
 //------------------------------------------------------------------------------

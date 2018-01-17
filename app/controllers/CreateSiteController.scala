@@ -153,7 +153,7 @@ class CreateSiteController @Inject()(cc: ControllerComponents, edContext: EdCont
               createdAt = now,
               sendTo = superAdminEmailAddress,
               toUserId = None,
-              subject = s"[EffectiveDiscussions] New site created",
+              subject = s"[Talkyard] New site created",
               bodyHtmlText = i"""
                 |newSiteOrigin: ${ Encode.forHtmlContent(newSiteOrigin) }<br>
                 |embeddingUrl: ${ anyEmbeddingSiteAddress map Encode.forHtmlContent }<br>

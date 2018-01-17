@@ -1,4 +1,4 @@
-EffectiveDiscussions security tests
+Talkyard security tests
 ===================================
 
 The security tests are written in TypeScript and use Tape = test-anything-protocol for Node.js.

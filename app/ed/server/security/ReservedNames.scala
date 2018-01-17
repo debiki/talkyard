@@ -992,6 +992,10 @@ for
 while
 done
 
+ta1kyard
+talkyard
+talkyards
+ta1kyards
 effective
 discussion
 discussions

@@ -1,17 +1,17 @@
-EffectiveDiscussions
+Talkyard
 =============================
 
-EffectiveDiscussions (ED) is discussion forum software, with chat and question-answers features.
+Talkyard (formerly EffectiveDiscussions) is discussion forum software, with chat and question-answers features.
 And embedded comments for static websites / blogs.
-Inspired by Discourse, Slack, StackOverflow, Reddit and Hacker News.
+Inspired by Discourse, Slack, StackOverflow, Reddit and Hacker News, Disqus.
 
 Screenshots below.<br>
-See it live: https://www.effectivediscussions.org/forum/latest<br>
-Read about it: https://www.effectivediscussions.org/
+See it live: https://www.talkyard.io/forum/latest<br>
+Read about it: https://www.talkyard.io/
 
 Organizations often create a forum (e.g. Discourse) and a chat (Slack/Gitter/Discord),
 and use StackOverflow, and maybe Disqus for embedded comments — then they split their community.
-With EffectiveDiscussions, you can gather your community in one place.<br>
+With Talkyard, you can gather your community in one place.<br>
 
 ED gives you both traditional "flat-chat" comments (in chat topics),
 and Hacker News / Reddit style threaded comments, with improvements: you can quickly
@@ -85,7 +85,7 @@ how to use docker-compose already.
         sudo tee -a /etc/sysctl.conf <<EOF
 
         ###################################################################
-        # EffectiveDiscussions settings
+        # Talkyard settings
         #
         # Up the max backlog queue size (num connections per port), default = 128
         net.core.somaxconn=8192
@@ -227,7 +227,7 @@ Contributing
 -----------------------------
 
 If you'd like to contribute, read more
-[at the end of this page](https://www.effectivediscussions.org/dev/-81n25/technical-information) about contributing.
+[at the end of this page](https://www.talkyard.io/dev/-81n25/technical-information) about contributing.
 
 In the future, I suppose there will be a Contributor License Agreement (CLA), similar to
 [Google's CLA](https://developers.google.com/open-source/cla/individual) — you'd open
@@ -260,7 +260,7 @@ This project looks like so:
 
     server/
      |
-     +-docker-compose.yml   <-- tells Docker how to run EffectiveDiscussions
+     +-docker-compose.yml   <-- tells Docker how to run Talkyard
      |
      +-client/         <-- Javascript, CSS, React.js components
      | +-app/          <-- Client side code
@@ -366,7 +366,7 @@ forum software.
 License
 -----------------------------
 
-Currently AGPL — please let me know if you want me to change to GPL, contact info here: https://www.effectivediscussions.org/contact
+Currently AGPL — please let me know if you want me to change to GPL, contact info here: https://www.talkyard.io/contact
 
 
     Copyright (c) 2010-2017  Kaj Magnus Lindberg

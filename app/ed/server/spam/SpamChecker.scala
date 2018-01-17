@@ -415,7 +415,7 @@ class SpamChecker(
       return Future.successful(None)
 
     val SafeBrowsingApiEndpoint = "https://sb-ssl.google.com/safebrowsing/api/lookup"
-    val clientName = "EffectiveDiscussions"
+    val clientName = "Talkyard"
     val protocolVersion = "3.1"
     val applicationVersion = appVersion
 

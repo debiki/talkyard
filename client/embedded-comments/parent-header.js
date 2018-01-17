@@ -42,7 +42,7 @@ debiki.internal.commentsServerOrigin =
     }
   }
   if (!origin && console.error) {
-    console.error("Error extracting Effective Discussions embedded comments server origin, " +
+    console.error("Error extracting Talkyard embedded comments server origin, " +
       "is there no '/-/talkyard-comments.min.js' script?");
   }
   return origin;

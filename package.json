@@ -1,9 +1,9 @@
 {
   "author": "Kaj Magnus Lindberg",
   "name": "ed-client",
-  "description": "Javascript and styles for EffectiveDiscussions",
+  "description": "Javascript and styles for Talkyard",
   "version": "0.0.1",
-  "homepage": "https://www.effectivediscussions.org",
+  "homepage": "https://www.talkyard.io",
   "license": "AGPL-3.0",
   "repository": {
     "type": "git",

@@ -47,7 +47,7 @@ export var AdminGuide =
       r.li({}, "Tell a few people to have a look at your forum. Ask if they understand its purpose. Edit the forum intro text and the welcome topic, until everything is clear.")),
     r.p({}, "Then start promoting your community: link to it on the Internet, and tell people about it. You can invite people via email: go to the Admin Area, click ", r.strong({}, "Users"), ", then ", r.strong({}, "Invite"), "."),
     r.h2({}, "Need help?"),
-    r.p({}, "For help, go to EffectiveDiscussion's ", r.a({ href: 'http://www.effectivediscussions.org/forum/latest/support', target: '_blank' }, "support forum", r.span({ className: 'icon-link-ext' })), ". Over there, there's an ", r.em({}, "Ideas"), " category too, and you're welcome to make suggestions."));
+    r.p({}, "For help, go to Talkyard's ", r.a({ href: 'http://www.talkyard.io/forum/latest/support', target: '_blank' }, "support forum", r.span({ className: 'icon-link-ext' })), ". Over there, there's an ", r.em({}, "Ideas"), " category too, and you're welcome to make suggestions."));
 
 //------------------------------------------------------------------------------
    }

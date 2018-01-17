@@ -992,7 +992,7 @@ const CustomizeHtmlPanel = createFactory({
         }),
 
         // Skip for now; don't want to clarify for people how this works. Needs a <script> too :-P
-        // But enable on www.effectivediscussions.org — it already uses this.
+        // But enable on www.talkyard.io — it already uses this.
         Setting2(props, { type: 'textarea', label: "Social links HTML",
           help: "Google+, Facebook, Twitter like and share buttons. Don't forget " +
             "to include a script too, e.g. in the <i>Scripts HTML</i> config value. " +

@@ -513,7 +513,7 @@ object ReactRenderer {
   private val CheckPasswordStrength = i"""
     |function checkPasswordStrength(password, username, userFullName, email) {
     |  var passwordStrength = zxcvbn(password, [
-    |      userFullName, email, username, 'debiki', 'effectivediscussions']);
+    |      userFullName, email, username, 'debiki', 'talkyard']);
     |  return '' +
     |      passwordStrength.entropy + '|' +
     |      passwordStrength.crack_time + '|' +

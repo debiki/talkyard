@@ -43,7 +43,7 @@ package object util {
         </p>
         <p style='font-size: 85%; opacity: 0.68;'>
           Powered by {
-            makeUnderlinedLink("EffectiveDiscussions", url = "https://www.effectivediscussions.org") }
+            makeUnderlinedLink("Talkyard", url = "https://www.talkyard.io") }
         </p>
       </div>
   }

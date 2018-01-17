@@ -202,7 +202,7 @@ export function UserName(
     className: 'dw-p-by esP_By',
   };
 
-  // EffectiveDiscussions demo hack: usernames that starts with '__sx_' are of the form    [2QWGRC8P]
+  // Talkyard demo hack: usernames that starts with '__sx_' are of the form    [2QWGRC8P]
   // '__sx_[subdomain]_[user-id]' where [subdomain] is a StackExchange subdomain, and
   // [user-id] is a StackExchange user id. In this way, we can link & attribute comments
   // directly to people at StackExchange, as required by StackOverflow's CC-By license.

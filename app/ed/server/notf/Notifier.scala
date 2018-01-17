@@ -194,7 +194,7 @@ class Notifier(val systemDao: SystemDao, val siteDaoFactory: SiteDaoFactory)
           |<p>Kind regards.</p>
           |
           |<p>(PS. Want a forum / chat / community for your website?
-          |Check out <a href="https://www.effectivediscussions.org">Effective Discussions</a><br>
+          |Check out <a href="https://www.talkyard.io">Talkyard</a><br>
           |-- the open source discussion platform powering Usability Testing Exchange.)
           |</p>
           |""")
@@ -349,7 +349,7 @@ class Notifier(val systemDao: SystemDao, val siteDaoFactory: SiteDaoFactory)
         </p>
         <p style='font-size: 85%; opacity: 0.68;'>
           Powered by {
-            makeBoringLink("EffectiveDiscussions", url = "https://www.effectivediscussions.org") }
+            makeBoringLink("Talkyard", url = "https://www.talkyard.io") }
         </p>
       </div>.toString
 

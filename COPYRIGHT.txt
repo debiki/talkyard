@@ -1,5 +1,5 @@
-EffectiveDiscussions is a discussion system with forum, chat, question & answers.
-Copyright (c) 2010-2016 Kaj Magnus Lindberg
+Talkyard (formerly EffectiveDiscussions) is a discussion system with forum, chat, question & answers.
+Copyright (c) 2010-2018 Kaj Magnus Lindberg
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Affero General Public License as
@@ -18,7 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                         ***
 
 
-Some components of EffectiveDiscussions are copyrighted by other people and licensed
+Some components of Talkyard are copyrighted by other people and licensed
 under licenses that are compatible to the terms of the GNU Affero
 General Public License, e.g. Apache 2 and MIT. See the respective
 components, including:

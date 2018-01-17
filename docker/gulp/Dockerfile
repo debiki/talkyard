@@ -1,4 +1,4 @@
-# Node.js 8.x Linux Dockerfile, for running Gulp & Tape, for EffectiveDiscussions.
+# Node.js 8.x Linux Dockerfile, for running Gulp & Tape, for Talkyard.
 #
 # Unfortunately, the default Node.js Dockerfile creates a user 'node' with id 1000.
 # However, most people on Linux have id 1000 already, so 'node' = 1000 results in an error

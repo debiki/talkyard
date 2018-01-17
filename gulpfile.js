@@ -54,7 +54,7 @@ function makeCopyrightAndLicenseBanner() {
   var versionTag = version + '-' + gitHash;  // also in Bash and Scala [8GKB4W2]
   return (
   '/*!\n' +
-  ' * EffectiveDiscussions ' + versionTag + '\n' +
+  ' * Talkyard ' + versionTag + '\n' +
   ' *\n' +
   ' * This file is copyrighted and licensed under the AGPL license.\n' +
   ' * Some parts of it might be licensed under more permissive\n' +

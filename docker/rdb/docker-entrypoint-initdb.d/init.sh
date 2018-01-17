@@ -7,7 +7,7 @@
 set -e
 
 
-# Create an Effective Discussions user, and a replication user.
+# Create a Talkyard user, and a replication user.
 # ------------------------
 
 psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" <<EOF
