@@ -83,6 +83,7 @@ const HostnameEditorDialog = createComponent({
           " button to redirect visitors from the old address to the new."),
         r.p({}, "You cannot change address too many times or too often."),
         PatternInput({ label: "New address: (hostname)", ref: 'hostnameInput',
+          className: 's_A_NewAdrD_HostnI',
           placeholder: 'forum.example.com',
           notRegex: /\s/, notMessage: "No spaces please",
           notRegexTwo: /^https?:/, notMessageTwo: "Don't include http://",
@@ -95,7 +96,7 @@ const HostnameEditorDialog = createComponent({
           error: this.state.error, onChangeValueOk: this.onHostnameChanged }));
 
     return (
-      Modal({ show: this.state.isOpen, onHide: this.close, dialogClassName: 'esUsrDlg' },
+      Modal({ show: this.state.isOpen, onHide: this.close, dialogClassName: 's_A_NewAdrD' },
         ModalBody({}, content),
         ModalFooter({},
           PrimaryButton({ onClick: this.submitHostname, disabled: !this.state.maySubmit },

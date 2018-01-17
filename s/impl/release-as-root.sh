@@ -66,7 +66,7 @@ s/d build
 s/d-gulp release
 
 # Delete unminified files, so Docker diffs a few MB smaller.
-find public/res/ -type f -name '*\.js' -not -name '*\.min\.js' -not -name 'zxcvbn\.js' | xargs rm
+find public/res/ -type f -name '*\.js' -not -name '*\.min\.js' -not -name 'ed-comments\.js' -not -name 'zxcvbn\.js' | xargs rm
 find public/res/ -type f -name '*\.css' -not -name '*\.min\.css' | xargs rm
 # COULD add tests that verifies the wrong css & js haven't been deleted?
 # One at a time, or out-of-memory:
