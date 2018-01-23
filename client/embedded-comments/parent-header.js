@@ -25,7 +25,8 @@ window.debiki = { internal: {}, v0: { util: {} } };
 // Finds the server origin, by extracting origin of the embedded comments script url.
 // We need it when loading the <iframe>s with embedded comments and the editor.
 debiki.internal.commentsServerOrigin =
-    window.talkyardCommentsServerUrl ||
+    window.talkyardServerUrl ||
+    window.talkyardCommentsServerUrl ||  // old name
     window.edCommentsServerUrl || // old name [2EBG05]
     (function() {
   var origin;
