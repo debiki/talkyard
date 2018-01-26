@@ -457,9 +457,7 @@ export const EmailsLogins = createFactory({
           let status = '';
           let isVerifeid = false;
 
-          if (addr.verifiedAt || (
-              // Gmail = verified by Google: if one can login to Gmail, it's one's own address.
-              addr.emailAddress.indexOf('@gmail.com') >= 0)) {  // [2PKTRF0T]
+          if (addr.verifiedAt) {
             status += "Verified. ";
             isVerifeid = true;
           }

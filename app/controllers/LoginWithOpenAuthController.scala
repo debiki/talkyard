@@ -362,7 +362,7 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
     // Don't know about Facebook and GitHub. Twitter has no emails at all. So for now:
     // (I'm fairly sure Google knows that each Gmail address is owned by the correct user.)
     oauthDetails.providerId == GoogleProvider.ID &&
-      oauthDetails.email.exists(_ endsWith "@gmail.com")  // [2PKTRF0T]
+      oauthDetails.email.exists(_ endsWith "@gmail.com")
   }
 
 

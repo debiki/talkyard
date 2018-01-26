@@ -72,6 +72,7 @@ object ReservedNames {
       .filterNot(_.isEmpty)
       .toSet
 
+  // Also see [2WJBG04]
   private def LongListOfNames: String = """
 
 #------------------------------------------------------------------------------

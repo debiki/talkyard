@@ -17,8 +17,9 @@
 
 package com.debiki.core
 
-import org.scalactic.{Good, Bad, Or, ErrorMessage}
+import org.scalactic.{Bad, ErrorMessage, Good, Or}
 import Prelude._
+import scala.util.matching.Regex
 
 
 object Validation {
@@ -27,6 +28,10 @@ object Validation {
 
   private val UsernameOkCharsRegex = "[A-Za-z0-9_]*".r
   private val UsernameOkFirstCharRegex = "[A-Za-z0-9]".r
+
+  // Right now only '_' is allowed, but include '.' and '-' too in case later on Talkyard will,
+  // just like Discourse, allow those chars too.
+  private val TwoSpecialCharsRegex = ".*[_.-]{2}.*".r
 
 
   def checkName(name: Option[String]): Option[String] Or ErrorMessage = {
@@ -54,27 +59,37 @@ object Validation {
   }
 
 
-  val StackExchangeUsernameRegex = "^__sx_[a-z]+_[0-9]+__$".r
+  val StackExchangeUsernameRegex: Regex = "^__sx_[a-z]+_[0-9]+__$".r
+
+  val TooShortErrorMessage = "The username is too short; it must be at least 3 characters"
+  val TooLongErrorMessage = "The username is too long; it must be at most 20 characters"
+  val BadCharsErrorMessage = "The username must use characters a-z, A-Z, 0-9 and _ only"
+  val TwoSpecialCharsErrorMessage = "The username has two special chars in a row"
+  val BadFirstCharErrorMessage = "The username's first character must be one of a-z, A-Z, 0-9"
 
   /** Allows only usernames like '123_some_username', 3 - 20 chars.
     */
   def checkUsername(username: String): String Or ErrorMessage = {  CLEAN_UP // merge with ReservedNames [2PGKR8ML]
     // WOULD add unit tests
+    // Also see [2WJBG04]
 
     if (StackExchangeUsernameRegex.matches(username))  // [2QWGRC8P]
       return Good(username) ; SECURITY ; COULD // require that site id is 92 or 98 (the two demo forums)
 
     if (username.length < 3)
-      return Bad("The username is too short; it must be at least 3 characters")
+      return Bad(TooShortErrorMessage)
 
     if (username.length > 20)
-      return Bad("The username is too long; it must be at most 20 characters")
+      return Bad(TooLongErrorMessage)
 
     if (UsernameOkCharsRegex.unapplySeq(username).isEmpty)
-      return Bad("The username must use characters a-z, A-Z, 0-9 and _ only")
+      return Bad(BadCharsErrorMessage)
+
+    if (TwoSpecialCharsRegex.matches(username))
+      return Bad(TwoSpecialCharsErrorMessage)
 
     if (UsernameOkFirstCharRegex.unapplySeq(username.charAt(0)).isEmpty)
-      return Bad("The username's first character must be one of a-z, A-Z, 0-9")
+      return Bad(BadFirstCharErrorMessage)
 
     Good(username)
   }
