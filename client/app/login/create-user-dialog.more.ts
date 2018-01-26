@@ -16,7 +16,6 @@
  */
 
 /// <reference path="../slim-bundle.d.ts" />
-/// <reference path="../utils/PatternInput.more.ts" />
 /// <reference path="../util/FullNameInput.more.ts" />
 /// <reference path="../util/EmailInput.more.ts" />
 /// <reference path="../util/UsernameInput.more.ts" />
@@ -28,19 +27,18 @@
 //------------------------------------------------------------------------------
 
 const r = ReactDOMFactories;
-var Modal = rb.Modal;
-var ModalBody = rb.ModalBody;
-var ModalFooter = rb.ModalFooter;
-var ModalHeader = rb.ModalHeader;
-var ModalTitle = rb.ModalTitle;
-var PatternInput = utils.PatternInput;
-var FullNameInput = util.FullNameInput;
-var EmailInput = util.EmailInput;
+const Modal = rb.Modal;
+const ModalBody = rb.ModalBody;
+const ModalFooter = rb.ModalFooter;
+const ModalHeader = rb.ModalHeader;
+const ModalTitle = rb.ModalTitle;
+const FullNameInput = util.FullNameInput;
+const EmailInput = util.EmailInput;
 
 
-var createUserDialog;
-var acceptTermsDialog;
-var addressVerificationEmailSentDialog;
+let createUserDialog;
+let acceptTermsDialog;
+let addressVerificationEmailSentDialog;
 
 
 function getCreateUserDialog() {
@@ -51,6 +49,11 @@ function getCreateUserDialog() {
 }
 
 
+// Is a separate terms dialog really a good idea? Good for sites with unusual terms — could
+// a summary of the unusual stuff, in the dialog? E.g. decentralized commenting
+// systems, where things one say cannot really be deleted.
+// But in other cases, maybe makes people nervous?
+// Do UX testing to find out maybe?
 function waitUntilAcceptsTerms(store: Store, isOwner, after) {
   // If this is the very first site on this server, then the current user is some server
   // admin/owner who is setting up the organization's own first site — hen has already accepted
@@ -88,7 +91,9 @@ debiki.internal.showCreateUserDialog = function(userData, anyReturnToUrl) {
 };
 
 
-var CreateUserDialog = createClassAndFactory({
+const CreateUserDialog = createClassAndFactory({
+  displayName: 'CreateUserDialog',
+
   getInitialState: function () {
     return { isOpen: false, userData: {}, store: {} };
   },
@@ -128,6 +133,8 @@ var CreateUserDialog = createClassAndFactory({
 
 
 export var CreateUserDialogContent = createClassAndFactory({
+  displayName: 'CreateUserDialogContent',
+
   getInitialState: function() {
     return {
       okayStatuses: {
@@ -320,6 +327,8 @@ function continueOnMainPageAfterHavingCreatedUser() {
 
 
 const AcceptTermsDialog = createComponent({
+  displayName: 'AcceptTermsDialog',
+
   getInitialState: function () {
     return { isOpen: false };
   },
@@ -374,6 +383,8 @@ const AcceptTermsDialog = createComponent({
 
 
 const CreateUserResultDialog = createComponent({
+  displayName: 'CreateUserResultDialog',
+
   getInitialState: function () {
     return { isOpen: false };
   },

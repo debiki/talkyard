@@ -600,7 +600,7 @@ const EmbeddedCommentsSettings = createFactory({
           r.pre({ id: 'e_EmbCmtsHtml' },
             // script url defined here: [2WPGKS04]
             // this code is dupl in e2e test [2JKWTQ0].
-`<script>talkyardCommentsServerUrl='${location.origin}';</script>
+`<script>talkyardServerUrl='${location.origin}';</script>
 <script async defer src="${assetsOrigin()}/-/talkyard-comments${dotMin}.js"></script>
 <!-- You can specify a per page discussion id on the next line, if your URLs might change. -->
 <div class="talkyard-comments" data-discussion-id="" style="margin-top: 45px;">
@@ -608,11 +608,29 @@ const EmbeddedCommentsSettings = createFactory({
 <p style="margin-top: 25px; opacity: 0.9; font-size: 96%">Comments powered by
 <a href="https://www.talkyard.io">Talkyard</a>.</p>
 </div>`),
+          r.p({},
+            "Thereafter, try adding a comment, over at your website — should work now."),
           r.p({ className: 's_A_Ss_EmbCmts_Plugins' },
-            "Or, if you use ", r.b({}, "Gatsby"), " (a static website generator), there's ",
-            r.a({ href: 'https://www.npmjs.com/package/gatsby-plugin-ed-comments' },
-              "this plugin for you.")),
-          r.p({}, "Thereafter, try adding a comment, over at your website — should work now."));
+            r.b({}, "However"),
+            " if you use any of these (below), have a look at their specific instructions:"),
+          r.ul({},
+            r.li({},
+              r.b({}, "Hugo"), " — see ",
+              r.a({ href: 'https://hugo-demo.talkyard.io/posts/demo-and-instructions/' },
+                "these instructions"), '.'),
+            r.li({},
+              r.b({}, "Gatsby"), " — use ",
+              r.a({ href: 'https://www.npmjs.com/package/@debiki/gatsby-plugin-talkyard' },
+                "this plugin"), '.'),
+            r.li({},
+              r.b({}, "Jekyll"), " — see ",
+              r.a({ href: 'https://jekyll-demo.talkyard.io/2018/01/09/installation-instructions.html' },
+                "these instructions"), '.'),
+            r.li({},
+              r.b({}, "Hexo"), " — see ",
+              r.a({ href: 'https://hexo-comments.demo.ed.community/2018/01/04/demo-and-instructions/' },
+                "these instructions"), '.'),
+            ));
 
     return (
       r.div({},
