@@ -106,7 +106,7 @@ class CreateSiteController @Inject()(cc: ControllerComponents, edContext: EdCont
       throwForbidden("DwE2JYK8", "The local hostname should be at least six chars")
 
     if (ed.server.security.ReservedNames.isSubdomainReserved(localHostname))
-      throwForbidden("EdE5PKW01", s"Subdomain is reserved: '$localHostname'; choose another please")
+      throwForbidden("TyE5KWW02", s"Subdomain is reserved: '$localHostname'; choose another please")
 
     // Test sites have a certain prefix, so I know it's okay to delete them. [7UKPwF2]
     if (TestSitePrefixes.exists(localHostname.startsWith) && !isTestSiteOkayToDelete)

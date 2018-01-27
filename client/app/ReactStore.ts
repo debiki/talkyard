@@ -1299,8 +1299,10 @@ function showNewPage(newPage: Page, newUsers: BriefUser[], newMe: Myself | null,
   const newClassesStr = (newPage.pageHtmlTagCssClasses || '') + magicClassFor(newPage);
   function magicClassFor(page: Page): string {
     // Sync with Scala [4JXW5I2].
-    if (page_isChatChannel(page.pageRole)) return ' es-chat';
+    if (page_isChatChannel(page.pageRole)) return ' dw-vt es-chat';
     if (page.pageRole === PageRole.Forum) return ' es-forum';
+    if (page.pageRole === PageRole.MindMap) return ' dw-hz';
+    if (page.pageRole) return ' dw-vt';
     return '';
   }
   if (oldClassesStr || newClassesStr) {
