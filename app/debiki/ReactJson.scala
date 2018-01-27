@@ -1044,6 +1044,7 @@ object ReactJson {
 
     val dao = request.dao
     val authzCtx = request.authzContext
+    val siteSettings = dao.getWholeSiteSettings()
 
     // SHOULD avoid starting a new transaction, so can remove workaround [7YKG25P].
     // (request.dao might start a new transaction)
@@ -1067,7 +1068,7 @@ object ReactJson {
       }
       else {
         val orderOffset = PageQuery(PageOrderOffset.ByBumpTime(None), PageFilter.ShowAll,
-          includeAboutCategoryPages = true)
+          includeAboutCategoryPages = siteSettings.showCategories)
         // SHOULD avoid starting a new transaction, so can remove workaround [7YKG25P].
         // (We're passing dao to ForumController below.)
         val topics = dao.listMaySeeTopicsInclPinned(
