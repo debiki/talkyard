@@ -168,6 +168,13 @@
   margin: 0 0.5ex;
   padding: 0.55ex 0.5ex;
 
+.icon-unlisted:before
+  content: '\e814';  // same as .icon-menu: '☰' looks like a list.
+  // Draw a line through the list, to show the -whatever- is *un*listed.
+  background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' version='1.1' preserveAspectRatio='none' viewBox='0 0 100 100'><path d='M77 0 L23 100 ' stroke='#5a5a5a' stroke-width='12'/></svg>");
+  background-repeat: no-repeat;
+  background-position: center center;
+
 
 // Twitter Bootstrap
 //===========================

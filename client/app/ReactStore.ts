@@ -130,16 +130,15 @@ ReactDispatcher.register(function(payload) {
       break;
 
     case ReactActions.actionTypes.CreateEditForumCategory:
-      store.categories = action.allCategories;
+      patchTheStore({
+        publicCategories: action.publicCategories,
+        restrictedCategories: action.restrictedCategories,
+      });
       // COULD sort perms somehow, how? And remove dupls? [4JKT2W1]
       store.me.permsOnPages = store.me.permsOnPages.concat(action.myNewPermissions);
       // (If editing, only the slug might have been changed, not the id.)
       store.newCategoryId = action.newCategoryId;
       store.newCategorySlug = action.newCategorySlug;
-      break;
-
-    case ReactActions.actionTypes.SetCategories:
-      store.categories = action.categories;
       break;
 
     case ReactActions.actionTypes.PinPage:
@@ -402,6 +401,8 @@ ReactStore.initialize = function() {
     ReactStore.emitChange();
   });
 
+  store.categories = _.clone(store.publicCategories);
+
   // Remember forums, needed to construct routes.
   // For now, one forum only. And there's always a forum, created when the site gets created. [5RF2LK]
   if (store.siteSections && store.siteSections.length >= 0) {
@@ -520,17 +521,7 @@ ReactStore.activateMyself = function(anyNewMe: Myself) {
 
   // Absent on about-user pages.
   if (store.categories) {
-    _.each(store.me.restrictedCategories, (category:Category) => {
-      // Avoid adding cats twice. Currently, me.restrictedCategories might incl publ cats. [4KQSEF08]
-      const index = _.findIndex(store.categories, { id: category.id });
-      if (index >= 0) {
-        store.categories.splice(index, 1, category);
-      }
-      else {
-        store.categories.push(category);
-      }
-    });
-    store.categories.sort((c:Category, c2:Category) => c.position - c2.position);
+    addRestrictedCategories(store.me.restrictedCategories, store.categories);
   }
 
   const readingProgress = myPageData.readingProgress;
@@ -555,6 +546,21 @@ ReactStore.activateMyself = function(anyNewMe: Myself) {
   debiki2.pubsub.subscribeToServerEvents();
   store.quickUpdate = false;
 };
+
+
+function addRestrictedCategories(restrictedCategories: Category[], categories: Category[]) {
+  _.each(restrictedCategories, (category:Category) => {
+    // Avoid adding cats twice. Currently, me.restrictedCategories might incl publ cats. [4KQSEF08]
+    const index = _.findIndex(categories, { id: category.id });
+    if (index >= 0) {
+      categories.splice(index, 1, category);
+    }
+    else {
+      categories.push(category);
+    }
+  });
+  categories.sort((c:Category, c2:Category) => c.position - c2.position);
+}
 
 
 ReactStore.allData = function() {
@@ -1145,10 +1151,14 @@ function patchTheStore(storePatch: StorePatch) {
     store.me = <Myself> _.assign(store.me || {}, storePatch.me);
   }
 
-  if (storePatch.categories) {
+  if (storePatch.publicCategories) {
+    dieIf(!storePatch.restrictedCategories, 'TyEK2WP49');
     // [redux] modifying the store in place, again.
     // Hmm what if the patch contains fever categories? Currently (2016-12), won't happen, though.
-    store.categories = storePatch.categories;
+    store.publicCategories = storePatch.publicCategories;
+    store.me.restrictedCategories = storePatch.restrictedCategories;
+    store.categories = _.clone(store.publicCategories);
+    addRestrictedCategories(store.me.restrictedCategories, store.categories);
   }
 
   if (storePatch.tagsStuff) {

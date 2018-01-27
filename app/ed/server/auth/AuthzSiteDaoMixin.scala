@@ -36,6 +36,11 @@ trait AuthzSiteDaoMixin {
   import context.security.throwIndistinguishableNotFound
 
 
+  def getForumPublicAuthzContext(): ForumAuthzContext = {
+    getForumAuthzContext(None)
+  }
+
+
   def getForumAuthzContext(user: Option[User]): ForumAuthzContext = {
     val groupIds = getGroupIds(user)
     val permissions = getPermsForPeople(groupIds)

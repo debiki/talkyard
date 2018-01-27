@@ -110,6 +110,12 @@ html.js:not(.dw-react-started)
 .esForum_catsNav_btn.btn
   float: left;
 
+// Make restricted/unlisted/deleted icons in the categories dropdown lighter.
+.s_F_BB_CsM
+  [class^="icon-"]:before,
+  [class*=" icon-"]:before
+    opacity: 0.5;
+
 .esF_BB_SortBtn
   margin-left: $forumNavBtnGroupLeft !important;
   border: none !important;

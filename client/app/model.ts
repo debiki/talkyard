@@ -573,6 +573,7 @@ interface Store {
   maxUploadSizeBytes: number;
   isInEmbeddedCommentsIframe: boolean;
   categories: Category[];
+  publicCategories: Category[];
   newCategoryId: string; // would like to remove. Later, when everything is one SPA and there's just one router available from everywhere. Then I can transition directly to the new category without this variable.
   newCategorySlug: string; // would like to remove
   topics: Topic[];
@@ -1008,7 +1009,8 @@ interface StorePatch {
   // can be discarded.
   appVersion?: string;
 
-  categories?: Category[];
+  publicCategories?: Category[];
+  restrictedCategories?: Category[];
 
   pageVersionsByPageId?: { [pageId: string]: PageVersion };
   postsByPageId?: { [pageId: string]: Post[] };

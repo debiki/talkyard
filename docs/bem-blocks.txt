@@ -60,6 +60,7 @@ esEID           = Edit intro dialog
 
 esF             = the forum main page, incl sort & filter buttons, and topic list and category list
 esF_BB          = forum button bar: sort & filter buttons
+s_F_BB_CsM      = categories menu
 esF_TsT         = forum topic list, ... rename to s_F_Ts
 esF_Ts_T        = a topic in the topic list
 esF_Ts_T_CName  = topic category name

@@ -333,7 +333,7 @@ trait CategoriesDao {
     }
 
     COULD // add a seeUnlisted permission? If in a cat, a certain group should see unlisted topics.
-    val onlyForStaff = startCategory.unlisted || startCategory.isDeleted
+    val onlyForStaff = startCategory.unlisted || startCategory.isDeleted  // [5JKWT42]
     if (onlyForStaff && !authzCtx.isStaff)
       return
 

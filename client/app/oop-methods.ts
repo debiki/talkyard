@@ -330,6 +330,21 @@ export function store_findCatsWhereIMayCreateTopics(store: Store): Category[] {
 }
 
 
+export function category_isPublic(category: Category, store: Store): boolean {
+  return _.some(store.publicCategories, (c: Category) => {
+    return c.id === category.id;
+  });
+}
+
+
+export function category_iconClass(category: Category, store: Store): string {
+  // (Deleted and unlisted categories aren't included in the public categories list. [5JKWT42])
+  const isPublic = category_isPublic(category, store);
+  return isPublic ? '' : (
+      category.isDeleted ? 'icon-trash ' : (
+          category.unlisted ? 'icon-unlisted ' : 'icon-lock '));
+}
+
 
 // Forum buttons
 //----------------------------------

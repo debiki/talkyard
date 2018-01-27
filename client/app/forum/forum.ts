@@ -527,7 +527,8 @@ const ForumButtons = createComponent({
 
     const categoryMenuItems = store.categories.map((category: Category) => {
       return MenuItem({ key: category.id, active: activeCategory.id === category.id,
-          onClick: () => this.setCategory(category.slug) }, category.name);
+          onClick: () => this.setCategory(category.slug) },
+            r.span({ className: category_iconClass(category, store) }, category.name));
     });
 
     const listsTopicsInAllCats =
@@ -540,10 +541,13 @@ const ForumButtons = createComponent({
         MenuItem({ key: -1, active: listsTopicsInAllCats,
           onClick: () => this.setCategory('') }, "All categories"));
 
+    const activeCategoryIcon = category_iconClass(activeCategory, store);
+
     let categoriesDropdownButton = omitCategoryStuff ? null :
         ModalDropdownButton({ className: 'esForum_catsNav_btn esForum_catsDrop active', pullLeft: true,
-            title: rFragment({}, activeCategory.name + ' ', r.span({ className: 'caret' })) },
-          r.ul({ className: 'dropdown-menu' },
+            title: r.span({ className: activeCategoryIcon },
+                activeCategory.name + ' ', r.span({ className: 'caret' })) },
+          r.ul({ className: 'dropdown-menu s_F_BB_CsM' },
               categoryMenuItems));
 
     // The Latest/Top/Categories buttons, but use a dropdown if there's not enough space.
@@ -1242,9 +1246,11 @@ const TopicRow = createComponent({
     }
 
     let showCategories = settings_showCategories(settings, me);
-    let categoryName = !category || !showCategories ? null :
-      Link({ to: this.makeCategoryLink(category), className: 'esF_Ts_T_CName' },
-        category.name);
+    let categoryName;
+    if (category && showCategories) {
+      categoryName = Link({ to: this.makeCategoryLink(category),
+          className: category_iconClass(category, store) + 'esF_Ts_T_CName' }, category.name);
+    }
 
     // Avatars: Original Poster, some frequent posters, most recent poster. [7UKPF26]
     const author = store_getUserOrMissing(store, topic.authorId, 'EsE5KPF0');
@@ -1421,13 +1427,15 @@ const CategoryRow = createComponent({
     const isDefault = category.isDefaultCategory && isStaff(me) ?
         r.small({}, " (default category)") : null;
 
+    const categoryIconClass = category_iconClass(category, store);
+
     return (
       r.tr({ className: 'esForum_cats_cat' + isNewClass + isDeletedClass },
         r.td({ className: 'forum-info' }, // [rename] to esForum_cats_cat_meta
           r.div({ className: 'forum-title-wrap' },
             Link({ to: {
                 pathname: store.forumPath + RoutePathLatest + '/' + this.props.category.slug,
-                search: this.props.location.search }, className: 'forum-title' },
+                search: this.props.location.search }, className: categoryIconClass + 'forum-title' },
               category.name, isDefault), isDeletedText),
           r.p({ className: 'forum-description' }, category.description)),
         r.td({},  // class to esForum_cats_cat_topics?

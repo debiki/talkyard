@@ -29,7 +29,6 @@ export const actionTypes = {
   Logout: 'Logout',
   NewUserAccountCreated: 'NewUserAccountCreated',
   CreateEditForumCategory: 'CreateEditForumCategory',
-  SetCategories: 'SetCategories',
   PinPage: 'PinPage',
   UnpinPage: 'UnpinPage',
   DeletePages: 'DeletePages',
@@ -125,7 +124,8 @@ export function saveCategory(category: Category, permissions: PermsOnPage[],
   Server.saveCategory(category, permissions, (response) => {
     ReactDispatcher.handleViewAction({
       actionType: actionTypes.CreateEditForumCategory,
-      allCategories: response.allCategories,
+      publicCategories: response.publicCategories,
+      restrictedCategories: response.restrictedCategories,
       myNewPermissions: response.myNewPermissions,
       newCategoryId: response.newCategoryId,
       newCategorySlug: response.newCategorySlug,
@@ -148,14 +148,6 @@ export function undeleteCategory(categoryId: number, success: () => void, error:
     patchTheStore(storePatch);
     success();
   }, error);
-}
-
-
-export function setCategories(categories: Category[]) {
-  ReactDispatcher.handleViewAction({
-    actionType: actionTypes.SetCategories,
-    categories: categories,
-  });
 }
 
 

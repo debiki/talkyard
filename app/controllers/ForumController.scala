@@ -161,8 +161,9 @@ class ForumController @Inject()(cc: ControllerComponents, edContext: EdContext)
     val callersNewPerms = permsWithIds.filter(callersGroupIds contains _.forPeopleId)
 
     OkSafeJson(Json.obj(
-      "allCategories" -> ReactJson.makeCategoriesJson(
-        dao.getForumAuthzContext(requester), request.dao),
+      // 2 dupl lines [7UXAI1]
+      "publicCategories" -> ReactJson.makeCategoriesJson(dao.getForumPublicAuthzContext(), dao),
+      "restrictedCategories" -> ReactJson.makeCategoriesJson(dao.getForumAuthzContext(requester), dao),
       "myNewPermissions" -> JsArray(callersNewPerms map ReactJson.permissionToJson),
       "newCategoryId" -> category.id,
       "newCategorySlug" -> category.slug))

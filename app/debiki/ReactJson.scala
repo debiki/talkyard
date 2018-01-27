@@ -193,7 +193,7 @@ object ReactJson {
       "userMustBeApproved" -> JsBoolean(siteSettings.userMustBeApproved),
       "settings" -> makeSettingsVisibleClientSideJson(siteSettings),
       "isInEmbeddedCommentsIframe" -> JsBoolean(false),
-      "categories" -> JsArray(),
+      "publicCategories" -> JsArray(),
       "topics" -> JsNull,
       "me" -> noUserSpecificData(pageReq.dao, pageId, everyonesPerms),
       "rootPostId" -> JsNumber(PageParts.BodyNr),
@@ -243,7 +243,7 @@ object ReactJson {
 
     // The json constructed here will be cached & sent to "everyone", so in this function
     // we always specify !isStaff and the requester must be a stranger (user = None):
-    val authzCtx = dao.getForumAuthzContext(None)
+    val authzCtx = dao.getForumPublicAuthzContext()
     def globals = dao.globals
 
     val socialLinksHtml = dao.getWholeSiteSettings().socialLinksHtml
@@ -411,7 +411,7 @@ object ReactJson {
       "settings" -> makeSettingsVisibleClientSideJson(siteSettings),
       "maxUploadSizeBytes" -> globals.maxUploadSizeBytes,
       "isInEmbeddedCommentsIframe" -> JsBoolean(page.role == PageRole.EmbeddedComments),
-      "categories" -> categories,
+      "publicCategories" -> categories,
       "topics" -> anyLatestTopics,
       "me" -> noUserSpecificData(dao, pageId, authzCtx.permissions),
       "rootPostId" -> JsNumber(BigDecimal(anyPageRoot getOrElse PageParts.BodyNr)),
@@ -557,8 +557,9 @@ object ReactJson {
       "pagesById" -> Json.obj())
 
     if (inclCategoriesJson) {
-      val authzCtx = dao.getForumAuthzContext(requester)
-      result += "categories" -> makeCategoriesJson(authzCtx, dao)
+      // Don't specify any user —> we'll include only public categories here.
+      val authzCtx = dao.getForumPublicAuthzContext()
+      result += "publicCategories" -> makeCategoriesJson(authzCtx, dao)
     }
 
     result
@@ -856,14 +857,17 @@ object ReactJson {
 
 
   def userNoPageToJson(request: DebikiRequest[_]): JsValue = {
+    import request.authzContext
+    val dao = request.dao
     val user = request.user getOrElse {
       return JsNull
     }
-    val permissions = request.authzContext.permissions
-    val watchbar = request.dao.getOrCreateWatchbar(user.id)
-    val watchbarWithTitles = request.dao.fillInWatchbarTitlesEtc(watchbar)
+    val permissions = authzContext.permissions
+    val watchbar = dao.getOrCreateWatchbar(user.id)
+    val watchbarWithTitles = dao.fillInWatchbarTitlesEtc(watchbar)
+    val restrictedCategories = listRestrictedCategoriesJson(dao, authzContext)
     request.dao.readOnlyTransaction(userDataJsonImpl(user, anyPageId = None, watchbarWithTitles,
-      restrictedCategories = JsArray(), restrictedTopics = Nil, restrictedTopicsUsers = Nil,
+      restrictedCategories, restrictedTopics = Nil, restrictedTopicsUsers = Nil,
       permissions, unapprovedPostAuthorIds = Set.empty, request.dao.nashorn, _))
   }
 
@@ -1034,6 +1038,17 @@ object ReactJson {
   }
 
 
+  def listRestrictedCategoriesJson(dao: SiteDao, authzCtx: ForumAuthzContext): JsArray = {
+    val (categories, defaultCategoryId) =
+      dao.listAllMaySeeCategories(authzCtx)  // oops, also includes publ cats [4KQSEF08]
+
+    // A tiny bit dupl code [5YK03W5]
+    JsArray(categories.filterNot(_.isRoot) map { category =>
+      makeCategoryJson(category, defaultCategoryId.contains(category.id))
+    })
+  }
+
+
   COULD ; REFACTOR // move to CategoriesDao? and change from param PageRequest to
   // user + pageMeta?
   def listRestrictedCategoriesAndTopics(request: PageRequest[_])
@@ -1048,13 +1063,7 @@ object ReactJson {
 
     // SHOULD avoid starting a new transaction, so can remove workaround [7YKG25P].
     // (request.dao might start a new transaction)
-    val (categories, defaultCategoryId) =
-      dao.listAllMaySeeCategories(authzCtx)  // oops, also includes publ cats [4KQSEF08]
-
-    // A tiny bit dupl code [5YK03W5]
-    val categoriesJson = JsArray(categories.filterNot(_.isRoot) map { category =>
-      makeCategoryJson(category, defaultCategoryId.contains(category.id))
-    })
+    val categoriesJson = listRestrictedCategoriesJson(dao, authzCtx)
 
     val categoryId = request.thePageMeta.categoryId getOrElse {
       // Not a forum topic. Could instead show an option to add the page to the / a forum?
@@ -1245,12 +1254,14 @@ object ReactJson {
   }
 
 
-  def makeCategoriesStorePatch(authzCtx: ForumAuthzContext, dao: SiteDao)
-        : JsValue = {
-    val categoriesJson = makeCategoriesJson(authzCtx, dao)
+  def makeCategoriesStorePatch(authzCtx: ForumAuthzContext, dao: SiteDao): JsValue = {
+    // 2 dupl lines [7UXAI1]
+    val restrCategoriesJson = makeCategoriesJson(authzCtx, dao)
+    val publCategoriesJson = makeCategoriesJson(dao.getForumPublicAuthzContext(), dao)
     Json.obj(
       "appVersion" -> dao.globals.applicationVersion,
-      "categories" -> categoriesJson)
+      "restrictedCategories" -> restrCategoriesJson,
+      "publicCategories" -> publCategoriesJson)
   }
 
 
