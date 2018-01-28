@@ -401,12 +401,25 @@ object ViewPageController {
 
   def addVolatileJsonAndPreventClickjacking(renderedPage: RenderedPage, request: PageRequest[_])
         : Future[Result] = {
+    val pageHtml = renderedPage.html
+    addVolatileJsonAndPreventClickjacking2(pageHtml, renderedPage.unapprovedPostAuthorIds, request)
+  }
+
+
+  def addVolatileJsonAndPreventClickjacking2(pageHtmlNoVolData: String,
+        unapprovedPostAuthorIds: Set[UserId], request: DebikiRequest[_]): Future[Result] = {
     import request.{dao, requester}
-    var pageHtml = renderedPage.html
 
     val usersOnlineStuff = dao.loadUsersOnlineStuff() // could do asynchronously later
-    val anyUserSpecificDataJson =
-      ReactJson.userDataJson(request, renderedPage.unapprovedPostAuthorIds)
+
+    val anyUserSpecificDataJson: Option[JsValue] =
+      request match {
+        case pageRequest: PageRequest[_] =>
+          ReactJson.userDataJson(pageRequest, unapprovedPostAuthorIds)
+        case _: DebikiRequest[_] =>
+          Some(ReactJson.userNoPageToJson(request))
+      }
+
     val volatileJson = Json.obj(
       "usersOnline" -> usersOnlineStuff.usersJson,
       "numStrangersOnline" -> usersOnlineStuff.numStrangers,
@@ -415,10 +428,10 @@ object ViewPageController {
     // Insert volatile and user specific data into the HTML.
     // The Scala templates take care to place the <script type="application/json">
     // tag with the magic-string-that-we'll-replace-with-user-specific-data before
-    // user editable HTML for comments and the page title and body.
+    // user editable HTML for comments and the page title and body. [8BKAZ2G]
     val htmlEncodedJson = org.owasp.encoder.Encode.forHtmlContent(volatileJson.toString)
-    pageHtml = org.apache.commons.lang3.StringUtils.replaceOnce(
-        pageHtml, HtmlEncodedVolatileJsonMagicString, htmlEncodedJson)
+    val pageHtml = org.apache.commons.lang3.StringUtils.replaceOnce(
+        pageHtmlNoVolData, HtmlEncodedVolatileJsonMagicString, htmlEncodedJson)
 
     requester.foreach(dao.pubSub.userIsActive(request.siteId, _, request.theBrowserIdData))
 

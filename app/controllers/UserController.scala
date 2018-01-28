@@ -693,9 +693,10 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
   }
 
 
-  def viewUserPage(whatever: String) = GetAction { request =>
+  def viewUserPage(whatever: String): Action[Unit] = AsyncGetAction { request =>
     val htmlStr = views.html.templates.users(SiteTpi(request)).body
-    Ok(htmlStr) as HTML
+    ViewPageController.addVolatileJsonAndPreventClickjacking2(htmlStr,
+      unapprovedPostAuthorIds = Set.empty, request)
   }
 
 
@@ -743,7 +744,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
       }
       else {
         val everyonesPerms = request.dao.getPermsForEveryone()
-        ReactJson.noUserSpecificData(request.dao, pageId, everyonesPerms)
+        ReactJson.noUserSpecificData(request.dao, everyonesPerms)
       }
 
     json

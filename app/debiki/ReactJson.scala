@@ -195,7 +195,7 @@ object ReactJson {
       "isInEmbeddedCommentsIframe" -> JsBoolean(false),
       "publicCategories" -> JsArray(),
       "topics" -> JsNull,
-      "me" -> noUserSpecificData(pageReq.dao, pageId, everyonesPerms),
+      "me" -> noUserSpecificData(pageReq.dao, everyonesPerms),
       "rootPostId" -> JsNumber(PageParts.BodyNr),
       "usersByIdBrief" -> JsObject(Nil),
       "siteSections" -> JsArray(),
@@ -413,7 +413,7 @@ object ReactJson {
       "isInEmbeddedCommentsIframe" -> JsBoolean(page.role == PageRole.EmbeddedComments),
       "publicCategories" -> categories,
       "topics" -> anyLatestTopics,
-      "me" -> noUserSpecificData(dao, pageId, authzCtx.permissions),
+      "me" -> noUserSpecificData(dao, authzCtx.permissions),
       "rootPostId" -> JsNumber(BigDecimal(anyPageRoot getOrElse PageParts.BodyNr)),
       "usersByIdBrief" -> usersByIdJson,
       "siteSections" -> makeSiteSectionsJson(dao),
@@ -546,9 +546,7 @@ object ReactJson {
       "userMustBeAuthenticated" -> JsBoolean(siteSettings.userMustBeAuthenticated),
       "userMustBeApproved" -> JsBoolean(siteSettings.userMustBeApproved),
       "settings" -> makeSettingsVisibleClientSideJson(siteSettings),
-      // (WOULD move 'me' to the volatile json; suddenly having it here in the main json is
-      // a bit surprising.) CLEAN_UP
-      "me" -> userNoPageToJson(request),
+      "me" -> noUserSpecificData(dao, dao.getPermsForEveryone()),
       "rootPostId" -> JsNumber(PageParts.BodyNr),
       "maxUploadSizeBytes" -> globals.maxUploadSizeBytes,
       "siteSections" -> makeSiteSectionsJson(dao),
@@ -808,7 +806,7 @@ object ReactJson {
       JsArray(Post.sortPostsBestFirst(topLevelComments).map(reply => JsNumber(reply.nr))))
 
 
-  def noUserSpecificData(dao: SiteDao, pageId: PageId, everyonesPerms: Seq[PermsOnPages]): JsObject = {
+  def noUserSpecificData(dao: SiteDao, everyonesPerms: Seq[PermsOnPages]): JsObject = {
     require(everyonesPerms.forall(_.forPeopleId == Group.EveryoneId), "EdE2WBG08")
 
     // Somewhat dupl code. (2WB4G7)
