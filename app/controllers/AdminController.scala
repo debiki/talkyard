@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013-2014 Kaj Magnus Lindberg (born 1979)
+ * Copyright (c) 2013-2014, 2018 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -21,7 +21,8 @@ import debiki._
 import ed.server._
 import ed.server.security.EdSecurity
 import javax.inject.Inject
-import play.api.mvc.ControllerComponents
+import play.api.mvc.{Action, ControllerComponents}
+import scala.concurrent.Future
 
 
 
@@ -33,27 +34,29 @@ class AdminController @Inject()(cc: ControllerComponents, edContext: EdContext)
   import context.security.SecureCookie
 
 
-  def redirectToAdminPage() = GetAction { _ =>
+  def redirectToAdminPage(): Action[Unit] = GetAction { _ =>
     Redirect(routes.AdminController.viewAdminPage("").url)
   }
 
 
-  def viewAdminPage(whatever: String) = GetAction { apiReq =>
+  def viewAdminPage(whatever: String): Action[Unit] = AsyncGetAction { apiReq =>
     dieIfAssetsMissingIfDevTest()
 
     if (!apiReq.user.exists(_.isStaff)) {
-      Ok(views.html.login.loginPopup(
+      Future.successful(Ok(views.html.login.loginPopup(
         SiteTpi(apiReq),
         mode = "LoginToAdministrate",
         serverAddress = s"//${apiReq.host}",
-        returnToUrl = apiReq.uri)) as HTML
-      // "Login as administrator to access this page."
+        returnToUrl = apiReq.uri)) as HTML)
     }
     else {
       val siteTpi = SiteTpi(apiReq, isAdminArea = true)
-      val adminPageBody = views.html.adminPage(siteTpi, appId = "dw-react-admin-app").body
-      Ok(adminPageBody) as HTML withCookies SecureCookie(
-        EdSecurity.XsrfCookieName, apiReq.xsrfToken.value)
+      val adminPageHtmlStr = views.html.adminPage(siteTpi, appId = "dw-react-admin-app").body
+      ViewPageController.addVolatileJsonAndPreventClickjacking2(adminPageHtmlStr,
+          unapprovedPostAuthorIds = Set.empty, apiReq) map { response =>
+        response withCookies SecureCookie(
+          EdSecurity.XsrfCookieName, apiReq.xsrfToken.value)
+      }
     }
   }
 
