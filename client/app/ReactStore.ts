@@ -1305,11 +1305,12 @@ function showNewPage(newPage: Page, newUsers: BriefUser[], newMe: Myself | null,
   const newClassesStr = (newPage.pageHtmlTagCssClasses || '') + magicClassFor(newPage);
   function magicClassFor(page: Page): string {
     // Sync with Scala [4JXW5I2].
-    if (page_isChatChannel(page.pageRole)) return ' dw-vt es-chat';
-    if (page.pageRole === PageRole.Forum) return ' es-forum';
-    if (page.pageRole === PageRole.MindMap) return ' dw-hz';
-    if (page.pageRole) return ' dw-vt';
-    return '';
+    let clazz = '';
+    if (page_isChatChannel(page.pageRole)) clazz = ' dw-vt es-chat';
+    if (page.pageRole === PageRole.Forum) clazz = ' es-forum';
+    if (page.pageRole === PageRole.MindMap) clazz = ' dw-hz';
+    if (page.pageRole) clazz = ' dw-vt';
+    return clazz + (!page.pageRole ? '' : ' s_PT-' + page.pageRole);  // [5J7KTW2]
   }
   if (oldClassesStr || newClassesStr) {
     const regex = /[ ,]/;

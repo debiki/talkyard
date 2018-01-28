@@ -120,10 +120,11 @@ class SiteTpi protected (
 
   def debikiHtmlTagClasses: String = {
     // Sync with js [4JXW5I2].
-    val chatClass = if (anyCurrentPageRole.exists(_.isChat)) "es-chat " else ""
-    val forumClass = if (anyCurrentPageRole.contains(PageRole.Forum)) "es-forum " else ""
-    val customClass = anyCurrentPageMeta.map(_.htmlTagCssClasses + " ") getOrElse ""
-    "DW dw-pri " + chatClass + forumClass + customClass
+    val chatClass = if (anyCurrentPageRole.exists(_.isChat)) " es-chat" else ""
+    val forumClass = if (anyCurrentPageRole.contains(PageRole.Forum)) " es-forum" else ""
+    val customClass = anyCurrentPageMeta.map(" " + _.htmlTagCssClasses) getOrElse ""
+    val pageTypeClass = anyCurrentPageRole.map(" s_PT-" + _.toInt) getOrElse "" // [5J7KTW2]
+    "DW dw-pri" + pageTypeClass + chatClass + forumClass + customClass + " "
   }
 
   def xsrfToken: String = debikiRequest.xsrfToken.value

@@ -191,7 +191,7 @@ const Page = createComponent({
         ? debiki2.page.ChatMessages({ store: store })
         : debiki2.page.TitleBodyComments({ store: store });
     const compactClass = this.state.useWideLayout ? '' : ' esPage-Compact';
-    const pageTypeClass = ' s_PT-' + page.pageRole;
+    const pageTypeClass = ' s_PT-' + page.pageRole;  // REFACTOR place here: [5J7KTW2] instead
     const isChat = page_isChatChannel(page.pageRole);
     return rFragment({},
       isChat ? r.div({ id: 'theChatVspace' }) : null,
