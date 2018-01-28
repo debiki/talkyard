@@ -132,7 +132,7 @@ export const Editor = createComponent({
   focusInputFields: function() {
     let elemToFocus = findDOMNode(this.refs.titleInput);
     if (!elemToFocus) {
-      elemToFocus = findDOMNode(this.refs.textarea);
+      elemToFocus = findDOMNode(this.refs.rtaTextarea.textareaRef);
     }
     if (elemToFocus) {
       elemToFocus.focus();
@@ -254,7 +254,7 @@ export const Editor = createComponent({
           linkHtml,
         });
         // Scroll down so people will see the new line we just appended.
-        scrollToBottom(this.refs.textarea);
+        scrollToBottom(this.refs.rtaTextarea.textareaRef);
         this.updatePreview(() => {
           // This happens to early, not sure why. So wait for a while.
           setTimeout(() => {
@@ -836,31 +836,31 @@ export const Editor = createComponent({
   },
 
   makeTextBold: function() {
-    var newText = wrapSelectedText(this.refs.textarea, "bold text", '**');
+    var newText = wrapSelectedText(this.refs.rtaTextarea.textareaRef, "bold text", '**');
     this.setState({ text: newText });
     this.updatePreview();
   },
 
   makeTextItalic: function() {
-    var newText = wrapSelectedText(this.refs.textarea, "emphasized text", '*');
+    var newText = wrapSelectedText(this.refs.rtaTextarea.textareaRef, "emphasized text", '*');
     this.setState({ text: newText });
     this.updatePreview();
   },
 
   markupAsCode: function() {
-    var newText = wrapSelectedText(this.refs.textarea, "preformatted text", '`');
+    var newText = wrapSelectedText(this.refs.rtaTextarea.textareaRef, "preformatted text", '`');
     this.setState({ text: newText });
     this.updatePreview();
   },
 
   quoteText: function() {
-    var newText = wrapSelectedText(this.refs.textarea, "quoted text", '> ', null, '\n\n');
+    var newText = wrapSelectedText(this.refs.rtaTextarea.textareaRef, "quoted text", '> ', null, '\n\n');
     this.setState({ text: newText });
     this.updatePreview();
   },
 
   addHeading: function() {
-    var newText = wrapSelectedText(this.refs.textarea, "Heading", '### ', null, '\n\n');
+    var newText = wrapSelectedText(this.refs.rtaTextarea.textareaRef, "Heading", '### ', null, '\n\n');
     this.setState({ text: newText });
     this.updatePreview();
   },
@@ -1105,7 +1105,7 @@ export const Editor = createComponent({
     const textarea =
         ReactTextareaAutocomplete({
             className: 'editor form-control esEdtr_textarea' +  textErrorClass,
-            ref: 'textarea',
+            ref: 'rtaTextarea',
             value: this.state.text,
             onChange: this.onTextEdited,
             onKeyPress: this.onKeyPress,
@@ -1211,7 +1211,7 @@ function page_isUsabilityTesting(pageType: PageRole): boolean {  // [plugin]
 }
 
 
-var SelectCategoryInput = createClassAndFactory({
+const SelectCategoryInput = createClassAndFactory({
   displayName: 'SelectCategoryInput',
 
   render: function () {
@@ -1232,11 +1232,11 @@ var SelectCategoryInput = createClassAndFactory({
 
 function wrapSelectedText(textarea, content: string, wrap: string, wrapAfter?: string,
       newlines?: string) {
-  var startIndex = textarea.selectionStart;
-  var endIndex = textarea.selectionEnd;
-  var selectedText = textarea.value.substring(startIndex, endIndex);
-  var textBefore = textarea.value.substring(0, startIndex);
-  var textAfter = textarea.value.substring(endIndex);
+  const startIndex = textarea.selectionStart;
+  const endIndex = textarea.selectionEnd;
+  const selectedText = textarea.value.substring(startIndex, endIndex);
+  const textBefore = textarea.value.substring(0, startIndex);
+  const textAfter = textarea.value.substring(endIndex);
 
   if (_.isUndefined(wrapAfter)) wrapAfter = wrap;
   if (selectedText) content = selectedText;
