@@ -22,7 +22,6 @@ import debiki.{RateLimits, SiteTpi}
 import ed.server.search._
 import ed.server.http._
 import scala.collection.immutable.Seq
-import scala.concurrent.Future
 import Prelude._
 import debiki.dao.SearchQuery
 import ed.server.{EdContext, EdController}
@@ -38,15 +37,14 @@ import SearchController._
 class SearchController @Inject()(cc: ControllerComponents, edContext: EdContext)
   extends EdController(cc, edContext) {
 
-  private val SearchPhraseFieldName = "searchPhrase"
-
 
   /** 'q' not 'query', so urls becomes a tiny bit shorter, because people will sometimes
     * copy & paste search phrase urls in emails etc? Google uses 'q' not 'query' anyway.
     */
-  def showSearchPage(q: Option[String]) = AsyncGetAction { request =>
+  def showSearchPage(q: Option[String]): Action[Unit] = AsyncGetAction { request =>
     val htmlStr = views.html.templates.search(SiteTpi(request)).body
-    Future.successful(Ok(htmlStr) as HTML)
+    ViewPageController.addVolatileJsonAndPreventClickjacking2(htmlStr,
+        unapprovedPostAuthorIds = Set.empty, request)
   }
 
 
@@ -90,7 +88,7 @@ object SearchController {
 
 
   def parseRawSearchQueryString(rawQuery: String,
-        getCategoryIdFn: Function1[String, Option[CategoryId]]): SearchQuery = {
+        getCategoryIdFn: (String) => Option[CategoryId]): SearchQuery = {
     // Sync with parseSearchQueryInputText(text) in JS [5FK8W2R]
     var fullTextQuery = rawQuery
 

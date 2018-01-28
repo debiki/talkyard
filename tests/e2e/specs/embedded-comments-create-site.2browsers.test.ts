@@ -66,7 +66,7 @@ describe("embedded comments, new site", () => {
       fullName: 'E2E Test ' + testId,
       email: settings.testEmailAddressPrefix + testId + '@example.com',
       // Prefix the number with 'z' because '..._<number>' is reserved. [7FLA3G0L]
-      username: 'e2e_test__z' + testId,
+      username: 'e2e_test_z' + testId,
       password: 'pub5KFV2FY8C',
     }
   }
