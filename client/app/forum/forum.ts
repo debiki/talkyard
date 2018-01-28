@@ -153,7 +153,7 @@ export const ForumComponent = createReactClass(<any> {
     const store: Store = this.state.store;
     const forumPage: Page = store.currentPage;
     let activeCategory: any;
-    const activeCategorySlug = store.newCategorySlug || currentCategorySlug;
+    const activeCategorySlug = currentCategorySlug;
     if (activeCategorySlug) {
       activeCategory = _.find(store.categories, (category: Category) => {
         return category.slug === activeCategorySlug;
@@ -1393,7 +1393,7 @@ const CategoryRow = createComponent({
 
   componentDidMount: function() {
     const store: Store = this.props.store;
-    // If this is a newly created category, scroll it into view.
+    // If this is a newly created category, scroll it into view. [7KFWIQ2]
     if (this.props.category.slug === store.newCategorySlug) {
       utils.scrollIntoViewInPageColumn(ReactDOM.findDOMNode(this));
     }

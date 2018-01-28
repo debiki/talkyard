@@ -127,7 +127,6 @@ export function saveCategory(category: Category, permissions: PermsOnPage[],
       publicCategories: response.publicCategories,
       restrictedCategories: response.restrictedCategories,
       myNewPermissions: response.myNewPermissions,
-      newCategoryId: response.newCategoryId,
       newCategorySlug: response.newCategorySlug,
     });
     success();

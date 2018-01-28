@@ -574,8 +574,7 @@ interface Store {
   isInEmbeddedCommentsIframe: boolean;
   categories: Category[];
   publicCategories: Category[];
-  newCategoryId: string; // would like to remove. Later, when everything is one SPA and there's just one router available from everywhere. Then I can transition directly to the new category without this variable.
-  newCategorySlug: string; // would like to remove
+  newCategorySlug: string; // for temporarily highlighting a newly created category
   topics: Topic[];
   user: Myself; // try to remove, use 'me' instead:
   me: Myself;
