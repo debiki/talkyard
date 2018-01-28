@@ -282,7 +282,7 @@ const CategorySettings = createClassAndFactory({
       r.div({ className: 'form-group' },
         r.label({ className: 'control-label', style: { display: 'block' }}, "Default topic type"),
         PageRoleDropdown({ store: store, pageRole: category.defaultTopicType,
-          complicated: store.settings.showExperimental, hideMore: true,
+          complicated: store.settings.showExperimental, hideStaffOnly: true,
           onSelect: this.setDefaultTopicType,
           title: 'Topic type', className: 'esEdtr_titleEtc_pageRole', pullLeft: true }),
         r.span({ className: 'help-block' },

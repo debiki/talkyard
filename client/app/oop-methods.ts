@@ -331,6 +331,10 @@ export function store_findCatsWhereIMayCreateTopics(store: Store): Category[] {
 
 
 export function category_isPublic(category: Category, store: Store): boolean {
+  if (category.isForumItself) {
+    // This is the All Categories category dropdown item.
+    return true;
+  }
   return _.some(store.publicCategories, (c: Category) => {
     return c.id === category.id;
   });

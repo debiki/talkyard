@@ -1075,9 +1075,9 @@ const IconHelpMessage = {
         r.li({},
           r.span({ className: 'icon-check' },
             "Something that's been done or fixed.")),
-        r.li({},
+        /* r.li({}, disable mind maps [NOMINDMAPS]
           r.span({ className: 'icon-sitemap' },
-            "A mind map.")),
+            "A mind map.")),  */
         r.li({},
           r.span({ className: 'icon-block' },
             "Topic closed.")),

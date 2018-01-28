@@ -115,23 +115,24 @@ export var PageRoleDropdown = createComponent({
         title: PageRole_OpenChat_IconString,
         text: "A perhaps never-ending conversation." });
 
-    var privateChatOption = !isStaff(me) ? null :
+    var privateChatOption = !isStaff(me) || props.hideStaffOnly ? null :
       ExplainingListItem({ onSelect: this.onSelect, id: 'e2eTTD_PrivChatO',
         activeEventKey: pageRole, eventKey: PageRole.PrivateChat,
         title: PageRole_PrivateChat_IconString,
         text: "Only visible to people that get invited to join the chat." });
 
-    var wikiMindMap = user_isGuest(me) || !complicated ? false :
+    /*
+    var wikiMindMap = user_isGuest(me) || !complicated ? false :   [NOMINDMAPS]
       ExplainingListItem({ onSelect: this.onSelect, id: 'e2eTTD_MindMapO',
         activeEventKey: pageRole, eventKey: PageRole.MindMap,
         title: PageRole_MindMap_IconString,
-        text: "Comments laid out in a mind map tree." });
+        text: "Comments laid out in a mind map tree." }); */
 
-    var showMore = !isStaff(me) || showAllOptions || props.hideMore ? null :
+    var showMore = !isStaff(me) || props.hideStaffOnly || showAllOptions ? null :
       ExplainingListItem({ onClick: this.showAllOptions,
         title: r.span({ className: 'esPageRole_showMore' }, "More...") });
 
-    var staffOnlyDivider = !isStaff(me) ? null :
+    var staffOnlyDivider = !isStaff(me) || props.hideStaffOnly ? null :
         r.div({ className: 'esDropModal_header' }, "Only staff can create these:");
 
     var adminOnlyDivider;
@@ -174,7 +175,7 @@ export var PageRoleDropdown = createComponent({
           problemOption,
           ideaOption,
           chatOption,
-          wikiMindMap,
+          //wikiMindMap,
 
           staffOnlyDivider,
           privateChatOption,
