@@ -125,6 +125,7 @@ describe("embedded comments, Gatsby blog and un/re-mmounting comments", () => {
 
   it("Goes to /my-second-post", () => {
     owensBrowser.frameParent();
+    owensBrowser.scrollToTop();
     owensBrowser.click('a[href="/"]');
     owensBrowser.waitAndClick('a[href*="my-second-post"]');
   });
@@ -136,8 +137,9 @@ describe("embedded comments, Gatsby blog and un/re-mmounting comments", () => {
     owensBrowser.topic.postNrContains(c.FirstReplyNr, owens2ndPostComment);
   });
 
-  it("... the comment appear on the other page with the same discussion id", () => {
+  it("... the comment appears on the other page with the same discussion id", () => {
     owensBrowser.frameParent();
+    owensBrowser.scrollToTop();
     owensBrowser.click('a[href="/"]');
     owensBrowser.waitAndClick('a[href*="same-discussion-id-as-2nd-post"]');
     owensBrowser.switchToEmbeddedCommentsIrame();
@@ -147,6 +149,7 @@ describe("embedded comments, Gatsby blog and un/re-mmounting comments", () => {
 
   it("... the last blog post is still empty", () => {
     owensBrowser.frameParent();
+    owensBrowser.scrollToTop();
     owensBrowser.click('a[href="/"]');
     owensBrowser.waitAndClick('a[href*="hello-world"]');
     owensBrowser.switchToEmbeddedCommentsIrame();

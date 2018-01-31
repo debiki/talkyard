@@ -105,7 +105,7 @@ describe("emb cmts edit and vote", () => {
     majasBrowser.editor.editText(majasFirstCommentEdited);
     majasBrowser.editor.save();
     majasBrowser.switchToEmbeddedCommentsIrame();
-    majasBrowser.topic.assertPostTextMatches(2, majasFirstCommentEdited);
+    majasBrowser.topic.waitUntilPostTextMatches(2, majasFirstCommentEdited);
   });
 
   it("She can edit it, also after reloading the page (old comment, old page)", () => {
@@ -116,7 +116,7 @@ describe("emb cmts edit and vote", () => {
     majasBrowser.editor.editText(majasFirstCommentEditedTwice);
     majasBrowser.editor.save();
     majasBrowser.switchToEmbeddedCommentsIrame();
-    majasBrowser.topic.assertPostTextMatches(2, majasFirstCommentEditedTwice);
+    majasBrowser.topic.waitUntilPostTextMatches(2, majasFirstCommentEditedTwice);
   });
 
   it("She cannot upvote", () => {
@@ -154,7 +154,7 @@ describe("emb cmts edit and vote", () => {
     michaelsBrowser.editor.editText(michaelsCommentEdited);
     michaelsBrowser.editor.save();
     michaelsBrowser.switchToEmbeddedCommentsIrame();
-    michaelsBrowser.topic.assertPostTextMatches(3, michaelsCommentEdited);
+    michaelsBrowser.topic.waitUntilPostTextMatches(3, michaelsCommentEdited);
   });
 
   it("He upvotes Maria's comment", () => {

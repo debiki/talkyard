@@ -79,6 +79,19 @@ function pagesFor(browser) {
       browser.switchToFrame('iframe#ed-embedded-editor');
     },
 
+
+    scrollToTop: function() {
+      // I think some browsers wants to scroll <body> others want to scroll <html>, so do both.
+      browser.scroll('body', 0, 0);
+      browser.scroll('html', 0, 0);
+      // Apparently takes a short while for the scroll to happen. I couldn't find any getScroll
+      // function to poll and test when the scrolling is done, so just do this:
+      // (200 ms is too short; then sometimes the stuff at the top won't be visible, when this
+      // function returns.)
+      browser.pause(500);
+    },
+
+
     // Workaround for bug(s) in Chrome? Chromedriver? Selenium? Webdriver?
     // 1) browser.refresh() causes a weird cannot-find-elem problem. Perhaps because of  [E2EBUG]
     //    some incompatibility between webdriver.io and Chrome? Recently there was a stale-
@@ -1358,6 +1371,10 @@ function pagesFor(browser) {
 
       assertPostTextMatches: function(postNr: PostNr, text: string) {
         browser.assertTextMatches(`#post-${postNr} .dw-p-bd`, text)
+      },
+
+      waitUntilPostTextMatches: function(postNr: PostNr, text: string) {
+        browser.waitUntilTextMatches(`#post-${postNr} .dw-p-bd`, text);
       },
 
       assertMetaPostTextMatches: function(postNr: PostNr, text: string) {
