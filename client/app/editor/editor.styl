@@ -4,6 +4,10 @@ $showPreviewMinWidth = 900px;
 $spacyButtonsMinWidth = 450px;
 $spacyYMinHeight = 400px;
 
+// Without this, height = auto, and won't be full size, in Firefox (but fine in Chrome, weird).
+.DW.DW .rta__textarea
+  height: 100%;
+
 .dw-embedded-editor
   #debiki-editor-controller
     height: 100% !important
