@@ -33,7 +33,7 @@ export var AdminGuide =
   r.div({ className: 'esAdminGuide' },
     r.p({}, "Welcome! You're an admin, so you can edit settings, define what this community is about, and invite people."),
     r.h2({}, "Edit settings"),
-    r.p({}, "Go to the admin area by clicking your name to the upper right, then click ", r.strong({}, "Admin"), ". Have a look at the settings, in case there's something you'd like to change. To make the forum private, edit settings in the ", r.strong({}, "Login"), " section. You can edit colors and fonts in the ", r.strong({}, "Customize"), " section."),
+    r.p({}, "Go to the admin area by clicking your name to the upper right, then click ", r.strong({}, "Admin"), ". Have a look at the settings, in case there's something you'd like to change. To make the forum private, edit settings in the ", r.strong({}, "Login"), " section. You can edit colors and fonts in the ", r.strong({}, "Look and Feel"), " section."),
     r.h2({}, "Clarify what this community is about"),
     r.p({}, "On ", r.a({ href: "/" }, "the forum main page"), ", edit the forum intro text (just below the forum title). And edit the ", r.em({}, "Welcome to this community"), " topic."),
     r.h2({}, "Create categories"),
