@@ -206,7 +206,7 @@ export const TitleBodyComments = createComponent({
           if (page.numPostsRepliesSection) {
             return { id: 'EdH5P0WF2', version: 1, alwaysShow: true, content: r.div({},
               r.h1({ className: 's_UtxHelp_HaveAsked_Title' },
-                "There's feedbak for you"),
+                "There's feedback for you"),
               r.p({}, "Look below — someone has posted feedback to you."),
               shareWithFriends) };
           }
