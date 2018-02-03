@@ -16,18 +16,35 @@
   .help-block
     margin-bottom: 0;
 
-.s_TermsD_CB label
-  padding: 5px;
-  font-size: 16px;
-  font-weight: bold;
-  color: hsl($uiHue, 80%, 35%);
-.s_TermsD_CB-Accepts label
-  color: hsl($uiHue, 100%, 20%);
+.esCreateUser .s_TermsD_CB
+  margin: 20px 0 0;
 
 .s_TermsD_CB input
-  float: none !important;
-  margin-right: 9px;
+  width: 14px;
+
+
+.s_TermsD_CB label
+  //padding: 5px; – when in own dialog [5JKWSR1]
+  font-size: 15px;  // 16px – when in own dialog [5JKWSR1]
+  //font-weight: bold;  – when in own dialog [5JKWSR1]
+  //color: hsl($uiHue, 80%, 35%);  – when in own dialog [5JKWSR1]
+
+//.s_TermsD_CB-Accepts label
+//  color: hsl($uiHue, 100%, 20%);  – when in own dialog [5JKWSR1]
+
+.s_TermsD_CB a
+  text-decoration: underline;
+
+.s_TermsD_CB input
+  //float: none !important; — when in own dialog [5JKWSR1]
+  //margin-right: 9px;
   position: relative;
   top: 1px;
   cursor: pointer;
+
+
+.s_CreateUser_TermsTips
+  font-weight: bold;
+  color: red;
+  margin: 0 0 5px;
 

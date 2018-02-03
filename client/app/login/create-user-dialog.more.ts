@@ -49,11 +49,12 @@ function getCreateUserDialog() {
 }
 
 
-// Is a separate terms dialog really a good idea? Good for sites with unusual terms — could
+// Is a separate terms dialog really a good idea? Good for sites with unusual terms — could   [5JKWSR1]
 // a summary of the unusual stuff, in the dialog? E.g. decentralized commenting
 // systems, where things one say cannot really be deleted.
 // But in other cases, maybe makes people nervous?
 // Do UX testing to find out maybe?
+/*
 function waitUntilAcceptsTerms(store: Store, isOwner, after) {
   // If this is the very first site on this server, then the current user is some server
   // admin/owner who is setting up the organization's own first site — hen has already accepted
@@ -66,7 +67,7 @@ function waitUntilAcceptsTerms(store: Store, isOwner, after) {
     acceptTermsDialog = ReactDOM.render(AcceptTermsDialog(), utils.makeMountNode());
   }
   acceptTermsDialog.waitUntilAccepts(store, isOwner, after);
-}
+} */
 
 
 function getAddressVerificationEmailSentDialog() {
@@ -142,6 +143,7 @@ export var CreateUserDialogContent = createClassAndFactory({
         email: this.props.providerId && this.props.email && this.props.email.length,
         username: false,
         password: !this.props.createPasswordUser,
+        terms: false,
       },
       userData: {
         fullName: this.props.name,
@@ -164,6 +166,11 @@ export var CreateUserDialogContent = createClassAndFactory({
     if (what !== 'password' && this.refs.password) {
       setTimeout(this.refs.password.checkPasswordStrength, 1);
     }
+    if (what !== 'terms') {
+      if (okayStatuses.fullName && okayStatuses.email && okayStatuses.username && okayStatuses.password) {
+        setTimeout(() => this.setState({ showTermsTips: true }), 3000);
+      }
+    }
   },
 
   setEmailOk: function(value, isOk) {
@@ -173,20 +180,22 @@ export var CreateUserDialogContent = createClassAndFactory({
   doCreateUser: function() {
     const data: any = this.state.userData;
     data.returnToUrl = this.props.anyReturnToUrl;
-    waitUntilAcceptsTerms(
-        this.props.store, this.props.loginReason === LoginReason.BecomeAdmin, () => {
-      if (this.props.authDataCacheKey) { // [4WHKTP06]
-        data.authDataCacheKey = this.props.authDataCacheKey;
-        Server.createOauthUser(data, this.handleCreateUserResponse, this.handleErrorResponse);
-      }
-      else if (this.props.createPasswordUser) {
-        data.password = this.refs.password.getValue();
-        Server.createPasswordUser(data, this.handleCreateUserResponse, this.handleErrorResponse);
-      }
-      else {
-        console.error('DwE7KFEW2');
-      }
-    });
+
+    // Maybe use a dedicated Terms dialog, later? If unusual terms. So keep this, commented out:
+    //waitUntilAcceptsTerms(   [5JKWSR1]
+    //    this.props.store, this.props.loginReason === LoginReason.BecomeAdmin, () => {
+
+    if (this.props.authDataCacheKey) { // [4WHKTP06]
+      data.authDataCacheKey = this.props.authDataCacheKey;
+      Server.createOauthUser(data, this.handleCreateUserResponse, this.handleErrorResponse);
+    }
+    else if (this.props.createPasswordUser) {
+      data.password = this.refs.password.getValue();
+      Server.createPasswordUser(data, this.handleCreateUserResponse, this.handleErrorResponse);
+    }
+    else {
+      console.error('DwE7KFEW2');
+    }
   },
 
   handleCreateUserResponse: function(response) {
@@ -275,7 +284,15 @@ export var CreateUserDialogContent = createClassAndFactory({
         id: 'e2eFullName', defaultValue: props.name, tabIndex: 2,
         onChangeValueOk: (value, isOk) => this.updateValueOk('fullName', value, isOk) });
 
+    const termsLinkAndCheckbox = TermsLinksAndCheckbox({
+        store, isOwner: this.props.loginReason === LoginReason.BecomeAdmin,
+        accepts: state.okayStatuses.terms,
+        setAccepts: (accepts) => this.updateValueOk('terms', 'dummy', accepts) });
+
     const disableSubmit = _.includes(_.values(this.state.okayStatuses), false);
+
+    const termsTips = !disableSubmit || !state.showTermsTips ? null :
+        r.p({ className: 's_CreateUser_TermsTips' }, "Accept the Terms and Privacy");
 
     return (
       r.form({ className: 'esCreateUser' },
@@ -285,6 +302,8 @@ export var CreateUserDialogContent = createClassAndFactory({
         // the full-name-input was a password verification field.
         fullNameInput,
         passwordInput,
+        termsLinkAndCheckbox,
+        termsTips,
         PrimaryButton({ onClick: this.doCreateUser, disabled: disableSubmit, id: 'e2eSubmit',
             tabIndex: 2 }, "Create Account")));
   }
@@ -326,7 +345,9 @@ function continueOnMainPageAfterHavingCreatedUser() {
 }
 
 
-const AcceptTermsDialog = createComponent({
+/* Currently instead included in the username etc dialog. Maybe move back to separate dialog,
+  later again?
+const AcceptTermsDialog = createComponent({  // [5JKWSR1]
   displayName: 'AcceptTermsDialog',
 
   getInitialState: function () {
@@ -377,6 +398,36 @@ const AcceptTermsDialog = createComponent({
           Button({ onClick: this.close, id: 'e_TermsD_B',
               className: accepts ? 'btn-primary' : '' },
             accepts ? "Continue" : "Cancel"))));
+  }
+}); */
+
+
+
+const TermsLinksAndCheckbox = createComponent({
+  displayName: 'TermsLinksAndCheckbox',
+
+  render: function () {
+    const isOwner = this.props.isOwner;
+    // We're providing a Software-as-a-Service to website owners, so 'Service' is a better word?
+    // However, non-website owners, merely 'Use' the website, it's not a SaaS provided to them.
+    const serviceOrUse = isOwner ? "Service" : "Use";
+    const accepts = this.props.accepts;
+    const store = this.props.store;
+    const forSiteOwners = isOwner ? " for site owners" : null;
+    const termsUrl = isOwner ?
+      store.siteOwnerTermsUrl || '/-/terms-for-site-owners': '/-/terms-of-use';
+    const privacyUrl = isOwner ?
+      store.siteOwnerPrivacyUrl || '/-/privacy-for-site-owners' : '/-/privacy-policy';
+    return (
+      Input({ type: 'checkbox', className: 's_TermsD_CB' + (accepts ? ' s_TermsD_CB-Accepts' : ''),
+          label: rFragment({},
+            "I accept the ",
+            r.a({ href: termsUrl, target: '_blank', id: 'e_TermsL' }, "Terms of " + serviceOrUse),
+            " and ",
+            r.a({ href: privacyUrl, target: '_blank', id: 'e_PrivacyL' }, "Privacy Policy"),
+            forSiteOwners),
+          checked: accepts,
+          onChange: (event) => this.props.setAccepts(event.target.checked) }));
   }
 });
 
