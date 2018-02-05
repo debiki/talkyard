@@ -25,7 +25,6 @@ import debiki.dao.SiteDao
 import ed.server.{EdContext, EdController, RenderedPage}
 import ed.server.http._
 import javax.inject.Inject
-import org.owasp.encoder.Encode
 import play.api.libs.json.JsValue
 import play.api.mvc.{Action, ControllerComponents}
 
@@ -46,8 +45,8 @@ class EmbeddedTopicsController @Inject()(cc: ControllerComponents, edContext: Ed
   }
 
 
-  def showTopic(embeddingUrl: String, discussionId: Option[AltPageId], edPageId: Option[PageId]) =
-        AsyncGetAction { request =>
+  def showTopic(embeddingUrl: String, discussionId: Option[AltPageId], edPageId: Option[PageId])
+        : Action[Unit] = AsyncGetAction { request =>
     import request.dao
 
     val anyRealPageId = getAnyRealPageId(edPageId, discussionId, embeddingUrl, dao)
@@ -97,11 +96,13 @@ class EmbeddedTopicsController @Inject()(cc: ControllerComponents, edContext: Ed
 
 
   def showEmbeddedEditor(embeddingUrl: String, discussionId: Option[AltPageId],
-        edPageId: Option[PageId]) = GetAction { request =>
+        edPageId: Option[PageId]): Action[Unit] = AsyncGetAction { request =>
     val anyRealPageId = getAnyRealPageId(edPageId, discussionId, embeddingUrl, request.dao)
     val tpi = new EditPageTpi(request, PageRole.EmbeddedComments, anyEmbeddedPageId = anyRealPageId,
       anyAltPageId = discussionId, anyEmbeddingUrl = Some(embeddingUrl))
-    Ok(views.html.embeddedEditor(tpi).body) as HTML
+    val htmlStr = views.html.embeddedEditor(tpi).body
+    ViewPageController.addVolatileJsonAndPreventClickjacking2(htmlStr,
+      unapprovedPostAuthorIds = Set.empty, request)
   }
 
 

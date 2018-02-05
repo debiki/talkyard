@@ -33,6 +33,7 @@ eds.isInEmbeddedEditor = true;
 eds.isInEmbeddedCommentsIframe = false;
 eds.embeddedPageId = @Html(embeddedPageIdOrUndefined);
 _store.currentPage = {}; @* Avoids null errors when editor accesses the current page. [2BK4P3R] *@
+_store.me = _volatileData.me;
 </script>
 </head>
 <body>
