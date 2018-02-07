@@ -13,6 +13,9 @@ const logMessage = logAndDie.logMessage;
 
 declare let browser: any;
 
+const newMembersEmail = 'e2e-test--mia@example.com';
+const newMembersTopicTitle = 'newMembersTopicTitle';
+const newMembersTopicText = 'newMembersTopicText';
 
 describe('/-/create-site  @createsite', () => {
 
@@ -34,11 +37,13 @@ describe('/-/create-site  @createsite', () => {
     }
   }
 
+  it('initialize', () => {
+    browser = _.assign(browser, pagesFor(browser));
+  });
+
   it('can create a new site as a Password user  @login @password', () => {
     // Something timed out in here, twice. [E2EBUG]
     // Break up into smaller steps then? To find out what.
-
-    browser = _.assign(browser, pagesFor(browser));
     browser.perhapsDebugBefore();
     const data = createPasswordTestData();
     browser.go(utils.makeCreateSiteWithFakeIpUrl());
@@ -92,10 +97,35 @@ describe('/-/create-site  @createsite', () => {
     makeForumWithGmailAdminAccount();
   });
 
+  let forumUrl;
   it('can actually use the Gmail admin account to create stuff @gmail @google', () => {
     pages.complex.createAndSaveTopic({ title: "Gmail topic title", body: "Body" });
     pages.topbar.clickLogout(); // (6HRWJ3)
+    forumUrl = browser.url().value;
   });
+
+  // This is for OpenAuth created users. [7LERTA1]
+  //describe('owner gets notifications about new topics (because is owner)', () => {  'describe' —> ignored
+    it('a new member signs up', () => {
+      pages.complex.signUpAsMemberViaTopbar({
+          emailAddress: newMembersEmail, username: 'Mia', password: 'public1122' });
+    });
+    it('verifies hens email address', () => {
+      const siteId = pages.getSiteId();
+      const link = server.getLastVerifyEmailAddressLinkEmailedTo(siteId, newMembersEmail, browser);
+      browser.go(link);
+    });
+    it('posts a topic', () => {
+      browser.go('/');
+      pages.complex.createAndSaveTopic({ title: newMembersTopicTitle, body: newMembersTopicText });
+    });
+    it('the owner gets an email notification', () => {
+      const siteId = pages.getSiteId();
+      server.waitUntilLastEmailMatches(
+          siteId, settings.gmailEmail, [newMembersTopicTitle, newMembersTopicText], browser);
+      pages.topbar.clickLogout(); // (6HRWJ3)
+    });
+  //});
 
   it('can create a new site as a Gmail user, when already logged in to Gmail  @login @gmail @google', () => {
     // Now we're logged in already, so the Gmail login flow is / might-be slightly different.

@@ -124,6 +124,7 @@ sealed abstract class NewUserData {
     primaryEmailAddress = email,
     emailNotfPrefs = EmailNotfPrefs.Receive,
     emailVerifiedAt = emailVerifiedAt,
+    emailForEveryNewPost = isOwner,  // [7LERTA1]
     isAdmin = isAdmin,
     isOwner = isOwner)
 
@@ -164,6 +165,9 @@ case class NewPasswordUserData(
     primaryEmailAddress = email,
     emailNotfPrefs = EmailNotfPrefs.Receive,
     emailVerifiedAt = None,
+    // Initially, when the forum / comments site is tiny, it's good to be notified
+    // about everything. (isOwner —> it's the very first user, so the site is empty.) [7LERTA1]
+    emailForEveryNewPost = isOwner,
     passwordHash = Some(passwordHash),
     isOwner = isOwner,
     isAdmin = isAdmin,

@@ -2192,7 +2192,8 @@ function pagesFor(browser) {
         api.loginDialog.loginWithPassword(credentials);
       },
 
-      signUpAsMemberViaTopbar: function(member: Member) {
+      signUpAsMemberViaTopbar: function(
+            member: { emailAddress: string, username: string, password: string }) {
         api.topbar.clickSignUp();
         api.loginDialog.fillInEmail(member.emailAddress);
         api.loginDialog.fillInUsername(member.username);

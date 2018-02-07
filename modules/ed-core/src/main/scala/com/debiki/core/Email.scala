@@ -62,8 +62,10 @@ object Email {
       bodyHtmlText = bodyHtmlText(emailId))
   }
 
-  def isE2eTestEmailAddress(address: String) =
-    address.startsWith("e2e-test--") && address.endsWith("@example.com")
+  def isE2eTestEmailAddress(address: String): Boolean =
+    address.startsWith("e2e-test-") || address.startsWith("e2e.test.") ||
+      address.startsWith("debiki.tester")
+
 
   /** The email id should be a random value, so it cannot be guessed,
     * because it's a key in reset password, unsubscription and create account urls.

@@ -13,23 +13,25 @@ declare var browser: any;
 declare var browserA: any;
 declare var browserB: any;
 
-var everyone;
-var owen;
-var maria;
+let everyone;
+let owen;
+let maria;
 
-var forumTitle = "Adm Guide";
-var editedForumTitle = "Adm Guide Edtd";
-var testId = utils.generateTestId();
-var newOrgName = "New Org Name";
-var newIntroText = "Intro text text text.";
-var newWelcomeTopicText = "New welcome topic text text text";
-var newWelcomeTopicTitle = "New Welcome Title Title Title";
-var newCategoryName = "Wasteland";
-var newTopicTitle = "Total Desert";
-var newTopicText = "No water here text text text";
-var siteId: string;
-var siteUrl: string;
+const forumTitle = "Adm Guide";
+const editedForumTitle = "Adm Guide Edtd";
+const testId = utils.generateTestId();
+const newOrgName = "New Org Name";
+const newIntroText = "Intro text text text.";
+const newWelcomeTopicText = "New welcome topic text text text";
+const newWelcomeTopicTitle = "New Welcome Title Title Title";
+const newCategoryName = "Wasteland";
+const newTopicTitle = "Total Desert";
+const newTopicText = "No water here text text text";
+let siteId: string;
+let siteUrl: string;
 
+const mariasTopicTitle = "mariasTopicTitle";
+const mariasTopicText = "mariasTopicText";
 
 describe("create site, follow the admin guide", function() {
 
@@ -173,8 +175,14 @@ describe("create site, follow the admin guide", function() {
     // ...
   });
 
-  it("Done", function() {
-    everyone.perhapsDebug();
+  it("Maria creates a topic", function() {
+    maria.complex.createAndSaveTopic({ title: mariasTopicTitle, body: mariasTopicText });
+  });
+
+  // This is for email + password users. [7LERTA1]
+  it("Owen gets a notification (site owners get notified about everything)", function() {
+    server.waitUntilLastEmailMatches(
+        siteId, owen.emailAddress, [mariasTopicTitle, mariasTopicText], browser);
   });
 
 });
