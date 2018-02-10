@@ -111,8 +111,12 @@ class LoginWithPasswordController @Inject()(cc: ControllerComponents, edContext:
     val dao = daoFor(request.request)
     val siteSettings = dao.getWholeSiteSettings()
 
+    val becomeOwner = LoginController.shallBecomeOwner(request, emailAddress)
+    val requireVerifiedEmail = becomeOwner || siteSettings.requireVerifiedEmail
+    val mayPostBeforeEmailVerified = !becomeOwner && siteSettings.mayPostBeforeEmailVerified
+
     // Some dupl code. [2FKD05]
-    if (!siteSettings.requireVerifiedEmail && emailAddress.isEmpty) {
+    if (!requireVerifiedEmail && emailAddress.isEmpty) {
       // Fine. If needn't verify email, then people can specify non-existing addresses,
       // so then we might as well accept no-email-at-all.
     }
@@ -131,8 +135,6 @@ class LoginWithPasswordController @Inject()(cc: ControllerComponents, edContext:
 
       // Password strength tested in createPasswordUserCheckPasswordStrong() below.
 
-      val becomeOwner = LoginController.shallBecomeOwner(request, emailAddress)
-
       val userData =
         NewPasswordUserData.create(name = fullName, email = emailAddress, username = username,
             password = password, createdAt = globals.now(),
@@ -147,14 +149,14 @@ class LoginWithPasswordController @Inject()(cc: ControllerComponents, edContext:
         if (newMember.email.nonEmpty) {
           sendEmailAddressVerificationEmail(newMember, anyReturnToUrl, request.host, request.dao)
         }
-        if (newMember.email.nonEmpty && !siteSettings.mayPostBeforeEmailVerified) {
+        if (newMember.email.nonEmpty && !mayPostBeforeEmailVerified) {
           TESTS_MISSING // no e2e tests for this
           // Apparently the staff wants to know that all email addresses actually work.
           // (But if no address specifeid — then, just below, we'll log the user in directly.)
           Nil
         }
         else {
-          dieIf(newMember.email.isEmpty && siteSettings.requireVerifiedEmail, "EdE2GKF06")
+          dieIf(newMember.email.isEmpty && requireVerifiedEmail, "EdE2GKF06")
           dao.pubSub.userIsActive(request.siteId, newMember, request.theBrowserIdData)
           val (_, _, sidAndXsrfCookies) = createSessionIdAndXsrfToken(dao.siteId, newMember.id)
           sidAndXsrfCookies

@@ -33,6 +33,10 @@ const mariasCommentText = 'mariasCommentText';
 const owensCommentText = 'owensCommentText';
 
 
+// dupl code! [5GKWXT20]
+// This test embedded comments site creation, with the default settings.
+// Then, people who post comments are not required to verify their email.
+
 describe("embedded comments, new site", () => {
 
   it("initialize people", () => {
@@ -121,39 +125,7 @@ ${htmlToPaste}
     mariasBrowser.topic.clickReplyToEmbeddingBlogPost();
   });
 
-  it("... password-signs-up in a popup", () => {
-    console.log("switching to login popup window...");
-    mariasBrowser.swithToOtherTabOrWindow();
-    mariasBrowser.disableRateLimits();
-    console.log("signs up...");
-    mariasBrowser.loginDialog.clickCreateAccountInstead();
-    mariasBrowser.loginDialog.createPasswordAccount(maria, false);
-    console.log("close login popup...");
-    mariasBrowser.close();
-  });
-
-  it("... verifies her email", () => {
-    const siteId = owensBrowser.getSiteId();
-    const email = server.getLastEmailSenTo(siteId, maria.emailAddress, owensBrowser);
-    const link = utils.findFirstLinkToUrlIn(
-        data.origin + '/-/login-password-confirm-email', email.bodyHtmlText);
-    mariasBrowser.go(link);
-    mariasBrowser.waitAndClick('#e2eContinue');
-  });
-
-  it("... gets redirected to the embedding page", () => {
-    const url = mariasBrowser.url().value;
-    assert(url === data.embeddingUrl);
-    const source = mariasBrowser.getSource();
-    assert(source.indexOf('27KT5QAX29') >= 0);
-  });
-
-  it("... clicks Reply", () => {
-    mariasBrowser.switchToEmbeddedCommentsIrame();
-    mariasBrowser.topic.clickReplyToEmbeddingBlogPost();
-  });
-
-  it("... writes a comment", () => {
+  it("... writes a comment (not yet logged in)", () => {
     mariasBrowser.switchToEmbeddedEditorIrame();
     mariasBrowser.editor.editText(mariasCommentText);
   });
@@ -162,13 +134,25 @@ ${htmlToPaste}
     mariasBrowser.editor.save();
   });
 
+  it("... password-signs-up in a popup", () => {
+    console.log("switching to login popup window...");
+    mariasBrowser.swithToOtherTabOrWindow();
+    mariasBrowser.disableRateLimits();
+    console.log("signs up...");
+    mariasBrowser.loginDialog.clickCreateAccountInstead();
+    mariasBrowser.loginDialog.createPasswordAccount(maria, false, 'THERE_WILL_BE_NO_VERIFY_EMAIL_DIALOG');
+    mariasBrowser.switchBackToFirstTabOrWindow();
+  });
+
   it("... the comment it appears", () => {
+    mariasBrowser.debug()
     mariasBrowser.switchToEmbeddedCommentsIrame();
     mariasBrowser.topic.waitForPostNrVisible(2);  // that's the first reply nr, = comment 1
     mariasBrowser.topic.assertPostTextMatches(2, mariasCommentText);
   });
 
   it("Owen sees it too", () => {
+    mariasBrowser.debug()
     owensBrowser.go(data.embeddingUrl);
     owensBrowser.switchToEmbeddedCommentsIrame();
     owensBrowser.topic.waitForPostNrVisible(2);

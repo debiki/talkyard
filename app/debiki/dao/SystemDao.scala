@@ -178,8 +178,18 @@ class SystemDao(
       val newSiteTx = sysTx.siteTransaction(newSite.id)
       newSiteTx.startAuditLogBatch()
 
+      // Nowadays people kind of never post any comments to blogs. So, for now,
+      // make it easy to post, by opening the editor and letting people start writing directly.
+      // COULD add separate require-email & may-post-before-email-verified for embedded comments?
+      // Or change the settings to Ints? 0 = never, 1 = embedded comments only, 2 = always.
+      val notIfEmbedded = if (embeddingSiteUrl.isDefined) Some(Some(false)) else None
+      val yesIfEmbedded = if (embeddingSiteUrl.isDefined) Some(Some(true)) else None
+
       newSiteTx.upsertSiteSettings(SettingsToSave(
         allowEmbeddingFrom = Some(embeddingSiteUrl),
+        requireVerifiedEmail = notIfEmbedded,
+        mayComposeBeforeSignup = yesIfEmbedded,
+        mayPostBeforeEmailVerified = yesIfEmbedded,
         orgFullName = Some(Some(organizationName))))
 
       val newSiteHost = SiteHost(hostname, SiteHost.RoleCanonical)

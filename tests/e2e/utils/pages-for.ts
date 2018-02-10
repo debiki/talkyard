@@ -2139,6 +2139,10 @@ function pagesFor(browser) {
         },
 
         login: {
+          setRequireVerifiedEmail: function(isRequired: boolean) {
+            setCheckbox('.e_A_Ss_S-RequireVerifiedEmailCB input', isRequired);
+          },
+
           setLoginRequired: function(isRequired: boolean) {
             setCheckbox('#e2eLoginRequiredCB', isRequired);
           },

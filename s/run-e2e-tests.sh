@@ -196,7 +196,8 @@ function runAllEndToEndTests {
   fi
   # else: the user has probably started the server henself already, do nothing.
 
-  runEndToEndTest s/wdio target/e2e/wdio.2chrome.conf.js    --browser $browser --only embedded-comments-create-site.2browsers $args
+  runEndToEndTest s/wdio target/e2e/wdio.2chrome.conf.js    --browser $browser --only embedded-comments-create-site-no-verif-email.2browsers $args
+  runEndToEndTest s/wdio target/e2e/wdio.2chrome.conf.js    --browser $browser --only embedded-comments-create-site-req-verif-email.2browsers $args
   # (no -old-name version, because the new name is always included in the server's genetarted html.)
   runEndToEndTest s/wdio target/e2e/wdio.conf.js            --browser $browser --only embedded-comments-discussion-id.test $args
   runEndToEndTest s/wdio target/e2e/wdio.conf.js            --browser $browser --only embedded-comments-discussion-id-old-name $args
