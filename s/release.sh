@@ -156,10 +156,10 @@ sudo docker push debiki/talkyard-certgen:$version_tag
 echo $version_tag >> modules/ed-versions/version-tags.log
 pushd .
 cd modules/ed-versions/
-git checkout master
+git checkout topic-talkyard
 git add version-tags.log
 git commit -m "Add $version_tag."
-git push origin master
+git push origin topic-talkyard
 popd
 
 git tag $version_tag
