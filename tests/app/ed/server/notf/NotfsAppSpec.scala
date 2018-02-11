@@ -79,6 +79,14 @@ class NotfsAppSpec extends DaoAppSuite() {
       member6NotInAnyChat = createPasswordUser("ntf_0cht6", dao)
       member7NotInAnyChat = createPasswordUser("ntf_0cht7", dao)
       memberNeverMentioned = createPasswordUser("ntf_wrng", dao)
+
+      // Disable notfs about everything to the owner, other notfs counts will be wrong.
+      // Dupl code. [7UJKWRQ2]
+      dao.readWriteTransaction { tx =>
+        var ownerInclDetails = tx.loadTheMemberInclDetails(owner.id)
+        ownerInclDetails = ownerInclDetails.copy(emailForEveryNewPost = false)
+        tx.updateMemberInclDetails(ownerInclDetails)
+      }
     }
 
     "staff creates stuff" in {

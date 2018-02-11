@@ -145,14 +145,12 @@ ${htmlToPaste}
   });
 
   it("... the comment it appears", () => {
-    mariasBrowser.debug()
     mariasBrowser.switchToEmbeddedCommentsIrame();
     mariasBrowser.topic.waitForPostNrVisible(2);  // that's the first reply nr, = comment 1
     mariasBrowser.topic.assertPostTextMatches(2, mariasCommentText);
   });
 
   it("Owen sees it too", () => {
-    mariasBrowser.debug()
     owensBrowser.go(data.embeddingUrl);
     owensBrowser.switchToEmbeddedCommentsIrame();
     owensBrowser.topic.waitForPostNrVisible(2);

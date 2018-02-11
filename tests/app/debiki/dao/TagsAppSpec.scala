@@ -79,6 +79,14 @@ class TagsAppSpec extends DaoAppSuite() {
     "prepare" in {
       dao
       theOwner
+
+      // Disable notfs about everything to the owner, other notfs counts will be wrong.
+      // Dupl code. [7UJKWRQ2]
+      dao.readWriteTransaction { tx =>
+        var ownerInclDetails = tx.loadTheMemberInclDetails(theOwner.id)
+        ownerInclDetails = ownerInclDetails.copy(emailForEveryNewPost = false)
+        tx.updateMemberInclDetails(ownerInclDetails)
+      }
     }
 
     "load, add, remove tags" in {
