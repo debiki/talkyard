@@ -34,10 +34,10 @@ RUN apk add --no-cache \
 # Play's HTTP and HTTPS listen ports, Java debugger port, JMX port 3333.
 EXPOSE 9000 9443 9999 3333
 
-RUN mkdir -p /opt/ed/uploads/ && \
-    chmod -R ugo+rw /opt/ed/uploads/
+RUN mkdir -p /opt/talkyard/uploads/ && \
+    chmod -R ugo+rw /opt/talkyard/uploads/
 
-WORKDIR /opt/ed/app/
+WORKDIR /opt/talkyard/app/
 
 COPY entrypoint.sh /docker-entrypoint.sh
 RUN  chmod ugo+x   /docker-entrypoint.sh
@@ -46,7 +46,7 @@ ENTRYPOINT ["/docker-entrypoint.sh"]
 # Overriden in docker-compose.yml
 ENV PLAY_HEAP_MEMORY_MB 1048
 
-CMD cd /opt/ed/app/ && exec /opt/typesafe-activator/bin/activator \
+CMD cd /opt/talkyard/app/ && exec /opt/typesafe-activator/bin/activator \
   -mem $PLAY_HEAP_MEMORY_MB \
   -jvm-debug 9999 \
    # see [30PUK42] in app-prod/Dockerfile
@@ -56,6 +56,6 @@ CMD cd /opt/ed/app/ && exec /opt/typesafe-activator/bin/activator \
   -Dcom.sun.management.jmxremote.authenticate=false \
   -Dhttp.port=9000 \
   -Dhttps.port=9443 \
-  -Dconfig.file=/opt/ed/app/conf/app-dev.conf \
+  -Dconfig.file=/opt/talkyard/app/conf/app-dev.conf \
   run
 

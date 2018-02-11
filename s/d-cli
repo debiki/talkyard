@@ -23,8 +23,8 @@ docker-compose run --rm --service-ports app /opt/typesafe-activator/bin/activato
   -Dcom.sun.management.jmxremote.authenticate=false \
   -Dhttp.port=9000 \
   -Dhttps.port=9443 \
-  -Dconfig.file=/opt/ed/app/conf/app-dev.conf \
+  -Dconfig.file=/opt/talkyard/app/conf/app-dev.conf \
   "$@"
 
 # -J-XX:+HeapDumpOnOutOfMemoryError \
-# -J-XX:HeapDumpPath=/opt/ed/app/ \
+# -J-XX:HeapDumpPath=/opt/talkyard/app/ \
