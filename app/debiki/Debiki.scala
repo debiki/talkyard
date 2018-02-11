@@ -29,7 +29,7 @@ object Debiki {
   def createPostgresHikariDataSource(readOnly: Boolean, conf: p.Configuration, isTest: Boolean)
         : HikariDataSource = {
 
-    def configStr(path: String) =
+    def configStr(path: String): String =
       conf.getString(path) getOrElse runErr("TyE93KI2", "Config value missing: "+ path)
 
     // I've hardcoded credentials to the test database here, so that it
@@ -49,7 +49,7 @@ object Debiki {
       if (isTest) "talkyard_test"
       else configStr("talkyard.postgresql.database")
 
-    val server = conf.getString("talkyard.postgresql.host")
+    val server = configStr("talkyard.postgresql.host")
     val port = configStr("talkyard.postgresql.port").toInt
 
     val readOrWrite = readOnly ? "read only" | "read-write"
