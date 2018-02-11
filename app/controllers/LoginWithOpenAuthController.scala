@@ -70,7 +70,7 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
     IsInLoginWindowCookieName, IsInLoginPopupCookieName, MayCreateUserCookieName,
     AuthStateCookieName).map(DiscardingSecureCookie)
 
-  private val LoginOriginConfValName = "ed.loginOrigin"
+  private val LoginOriginConfValName = "talkyard.loginOrigin"
   private var configErrorMessage: Option[String] = None
 
   def conf: Configuration = globals.rawConf

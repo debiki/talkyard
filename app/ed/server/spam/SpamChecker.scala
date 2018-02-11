@@ -143,7 +143,7 @@ class SpamChecker(
   // low traffic newly created sites? + 1 global for commercial low traffic sites?
   // (and one per site for high traffic sites)
   private val anyAkismetKey: Option[String] =
-    playConf.getString("ed.akismetApiKey").noneIfBlank
+    playConf.getString("talkyard.akismetApiKey").noneIfBlank
 
   val AkismetAlwaysSpamName = "viagra-test-123"
 
@@ -167,7 +167,7 @@ class SpamChecker(
     val Tweet = "tweet" // twitter messages
   }
 
-  val GoogleApiKeyName = "ed.googleApiKey"
+  val GoogleApiKeyName = "talkyard.googleApiKey"
   val anyGoogleApiKey = playConf.getString(GoogleApiKeyName)
 
 

@@ -10,9 +10,9 @@ version="`cat version.txt | sed s/WIP/SNAPSHOT/`"
 rm -fr target/docker-app-prod
 cp -a docker/app-prod target/docker-app-prod
 cd target/docker-app-prod
-cp ../universal/ed-server-$version.zip ./
-unzip -q ed-server-$version.zip
-mv ed-server-$version app
+cp ../universal/talkyard-server-$version.zip ./
+unzip -q talkyard-server-$version.zip
+mv talkyard-server-$version app
 
 # ( &> redirects both stderr and stdout.)
 mkdir build-info
@@ -39,6 +39,6 @@ mv app/conf app-conf
 # This readme is for the development repo. Create another one, if any, for prod.
 rm app/README.md
 
-docker build --tag=debiki/ed-app:latest .
+docker build --tag=debiki/talkyard-app:latest .
 
-echo "Image tag: debiki/ed-app:latest"
+echo "Image tag: debiki/talkyard-app:latest"

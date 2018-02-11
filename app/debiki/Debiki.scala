@@ -30,32 +30,27 @@ object Debiki {
         : HikariDataSource = {
 
     def configStr(path: String) =
-      conf.getString(path).orElse({
-        val oldPath = path.replaceFirst("ed\\.", "debiki.")
-        conf.getString(oldPath)
-      }) getOrElse
-        runErr("DwE93KI2", "Config value missing: "+ path)
+      conf.getString(path) getOrElse runErr("TyE93KI2", "Config value missing: "+ path)
 
     // I've hardcoded credentials to the test database here, so that it
     // cannot possibly happen, that you accidentally connect to the prod
-    // database. (You'll never name the prod schema "ed_test",
+    // database. (You'll never name the prod schema "talkyard_test",
     // with "auto-deleted" as password?)
     def user =
-      if (isTest) "ed_test"
-      else configStr("ed.postgresql.user")
+      if (isTest) "talkyard_test"
+      else configStr("talkyard.postgresql.user")
 
     def password =
       if (isTest) "public"
-      else sys.env.get("ED_POSTGRESQL_PASSWORD").orElse(sys.env.get("DEBIKI_POSTGRESQL_PASSWORD"))
-          .getOrElse(configStr("ed.postgresql.password"))
+      else sys.env.get("TALKYARD_POSTGRESQL_PASSWORD").orElse(sys.env.get("ED_POSTGRESQL_PASSWORD"))
+          .getOrElse(configStr("talkyard.postgresql.password"))
 
     def database =
-      if (isTest) "ed_test"
-      else configStr("ed.postgresql.database")
+      if (isTest) "talkyard_test"
+      else configStr("talkyard.postgresql.database")
 
-    val server = conf.getString("ed.postgresql.host").getOrElse(
-      configStr("ed.postgresql.server"))  // deprecated name
-    val port = configStr("ed.postgresql.port").toInt
+    val server = conf.getString("talkyard.postgresql.host")
+    val port = configStr("talkyard.postgresql.port").toInt
 
     val readOrWrite = readOnly ? "read only" | "read-write"
     play.Logger.info(s"Connecting to database: $server:$port/$database as user $user, $readOrWrite")

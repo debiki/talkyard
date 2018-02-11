@@ -13,7 +13,7 @@ Organizations often create a forum (e.g. Discourse) and a chat (Slack/Gitter/Dis
 and use StackOverflow, and maybe Disqus for embedded comments — then they split their community.
 With Talkyard, you can gather your community in one place.<br>
 
-ED gives you both traditional "flat-chat" comments (in chat topics),
+Talkyard gives you both traditional "flat-chat" comments (in chat topics),
 and Hacker News / Reddit style threaded comments, with improvements: you can quickly
 find the parent comment (even if it's far away), read it, and jump back and continue reading.
 And you can quickly find out which new comments were posted in a long threaded discussion,
@@ -53,9 +53,9 @@ Users online:
 
 ### How install?
 
-_This_ repository is for writing ED source code.
-To _install_ ED, instead go to: https://github.com/debiki/ed-prod-one
-("ed-prod-one" means "production installation on one single server").
+_This_ repository is for writing Talkyard source code.
+To _install_ Talkyard, instead go to: https://github.com/debiki/talkyard-prod-one
+("talkyard-prod-one" means "production installation on one single server").
 
 
 Getting Started

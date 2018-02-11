@@ -9,7 +9,7 @@
   </appender>
 
   <appender name="FILE" class="ch.qos.logback.core.FileAppender">
-    <file>/var/log/ed/ed-app.log</file>
+    <file>/var/log/talkyard/talkyard-app.log</file>
     <encoder class="ch.qos.logback.core.encoder.LayoutWrappingEncoder">
       <layout class="ed.stackdriver.StackdriverLayout" />
     </encoder>

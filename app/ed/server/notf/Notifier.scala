@@ -214,7 +214,7 @@ class Notifier(val systemDao: SystemDao, val siteDaoFactory: SiteDaoFactory)
     // COULD use ninjaEdit ninja edit timeout/delay setting here instead (that is, num minutes
     // one is allowed to edit a post directly after having posted it, without the edits appearing
     // in the version history. Usually a few minutes. Google for "Discourse ninja edit")
-    val delay = sys.props.get("ed.notifier.delayInMinutes").map(_.toInt) getOrElse 0
+    val delay = sys.props.get("talkyard.notifier.delayInMinutes").map(_.toInt) getOrElse 0
     val notfsBySiteId: Map[SiteId, Seq[Notification]] =
       systemDao.loadNotificationsToMailOut(delayInMinutes = delay, numToLoad = 11)
     if (notfsBySiteId.nonEmpty) {
