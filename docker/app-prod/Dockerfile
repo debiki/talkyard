@@ -13,11 +13,11 @@ EXPOSE 9000 9443 9999 3333
 RUN mkdir -p /opt/talkyard/uploads/ && \
     chmod -R ugo+rw /opt/talkyard/uploads/
 
-# Frequently modified JARs have been moved to app-lib-debiki/ and we here copy them in a
+# Frequently modified JARs have been moved to app-lib-talkyard/ and we here copy them in a
 # separate step, so only that step will have to be pushed/pulled to/from Docker Hub.
-COPY app             /opt/talkyard/app
-COPY app-lib-debiki  /opt/talkyard/app/lib/
-COPY app-bin         /opt/talkyard/app/bin/
+COPY app              /opt/talkyard/app
+COPY app-lib-talkyard /opt/talkyard/app/lib/
+COPY app-bin          /opt/talkyard/app/bin/
 # Only copy *-prod files. Other stuff might contain private things, e.g. override.conf might
 # contain test suite OpenAuth credentials.
 COPY app-conf/app-prod.conf  /opt/talkyard/app/conf/

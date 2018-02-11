@@ -30,9 +30,9 @@ set -e
 # Move our own JARs do a separate folder, so they can be copied in a separate Dockerfile
 # COPY step, so that when pushing/pulling to/from Docker Hub, only the very last COPY will
 # usually have to be pushed (and pulled by others).
-mkdir app-lib-debiki
-mv app/lib/*debiki* app-lib-debiki/
-mv app/lib/*ed-server* app-lib-debiki/
+mkdir app-lib-talkyard
+mv app/lib/*debiki* app-lib-talkyard/
+mv app/lib/*talkyard-server* app-lib-talkyard/
 mv app/bin app-bin
 mv app/conf app-conf
 
