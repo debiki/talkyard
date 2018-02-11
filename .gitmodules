@@ -12,10 +12,10 @@
 	url = https://github.com/JanX2/google-diff-match-patch-git-svn.git
 [submodule "modules/ed-prod-one-test"]
 	path = modules/ed-prod-one-test
-	url = ../ed-prod-one.git
+	url = ../talkyard-prod-one.git
 [submodule "modules/ed-versions"]
 	path = modules/ed-versions
-	url = ../ed-versions.git
+	url = ../talkyard-versions.git
 [submodule "docker/web/modules/nchan"]
 	path = docker/web/modules/nchan
 	url = https://github.com/slact/nchan.git
