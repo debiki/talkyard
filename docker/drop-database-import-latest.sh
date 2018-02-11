@@ -57,30 +57,13 @@ zcat $1/$latest_dump | $psql
 
 echo '... Done importing.'
 
-echo 'Creating (or recreating) debiki_test...'
-$psql -c 'drop database if exists debiki_test;'
-$psql -c 'drop user if exists debiki_test;'
-$psql -c "create user debiki_test with password 'public';"
-$psql -c 'create database debiki_test owner debiki_test;'
-echo '... Done recreating debiki_test.'
+echo 'Creating (or recreating) talkyard_test...'
+$psql -c 'drop database if exists talkyard_test;'
+$psql -c 'drop user if exists talkyard_test;'
+$psql -c "create user talkyard_test with password 'public';"
+$psql -c 'create database talkyard_test owner talkyard_test;'
+echo '... Done recreating talkyard_test.'
 
-# If we happened to import a prod database, rename it to debiki_dev; the config
-# files expect that name.
-any_prod_row=`$psql -c '\l' | grep debiki_prod`
-if [ -n "$any_prod_row" ]; then
-  read -r -p "Shall I rename debiki_prod to debiki_dev, and drop any current debiki_dev? [Y/n]" response
-  response=${response,,}    # tolower
-  if [[ $response =~ ^(no|n)$ ]] ; then
-    echo "I won't rename it then. Bye."
-    exit 0
-  fi
-  echo 'Renaming debiki_prod to debiki_dev...'
-  $psql -c 'drop database if exists debiki_dev;'
-  $psql -c 'drop user if exists debiki_dev;'
-  $psql -c 'alter database debiki_prod rename to debiki_dev;'
-  $psql -c 'alter user debiki_prod rename to debiki_dev;'
-  $psql -c "alter user debiki_dev with password 'public';"
-fi
 
 echo "Done. If the web and application servers aren't running, you can start them now:"
 echo "  docker-compose start web app"
