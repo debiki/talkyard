@@ -61,17 +61,17 @@ object Globals {
 
   class DatabasePoolInitializationException(cause: Exception) extends RuntimeException(cause)
 
-  val CdnOriginConfValName = "ed.cdn.origin"
-  val LocalhostUploadsDirConfValName = "ed.uploads.localhostDir"
-  val DefaultLocalhostUploadsDir = "/opt/ed/uploads/"
+  val CdnOriginConfValName = "talkyard.cdn.origin"
+  val LocalhostUploadsDirConfValName = "talkyard.uploads.localhostDir"
+  val DefaultLocalhostUploadsDir = "/opt/talkyard/uploads/"  // [ren-talkyard] Ooops
 
   val AppSecretConfValName = "play.http.secret.key"
   val AppSecretDefVal = "change_this"
-  val DefaultSiteIdConfValName = "ed.defaultSiteId"
-  val DefaultSiteHostnameConfValName = "ed.hostname"
-  val BecomeOwnerEmailConfValName = "ed.becomeOwnerEmailAddress"
-  val SiteOwnerTermsUrl = "ed.siteOwnerTermsUrl"
-  val SiteOwnerPrivacyUrl = "ed.siteOwnerPrivacyUrl"
+  val DefaultSiteIdConfValName = "talkyard.defaultSiteId"
+  val DefaultSiteHostnameConfValName = "talkyard.hostname"
+  val BecomeOwnerEmailConfValName = "talkyard.becomeOwnerEmailAddress"
+  val SiteOwnerTermsUrl = "talkyard.siteOwnerTermsUrl"
+  val SiteOwnerPrivacyUrl = "talkyard.siteOwnerPrivacyUrl"
 
   def isProd: Boolean = _isProd
 
@@ -205,16 +205,16 @@ class Globals(
     * in order to create many e2e test sites — also in prod mode, for smoke tests.
     * The e2e test sites will have ids like {{{test__...}}} so that they can be deleted safely.
     */
-  val e2eTestPassword: Option[String] = conf.getString("ed.e2eTestPassword").noneIfBlank
+  val e2eTestPassword: Option[String] = conf.getString("talkyard.e2eTestPassword").noneIfBlank
 
   /** Lets people do some forbidden things, like creating a site with a too short
     * local hostname.
     */
-  val forbiddenPassword: Option[String] = conf.getString("ed.forbiddenPassword").noneIfBlank
+  val forbiddenPassword: Option[String] = conf.getString("talkyard.forbiddenPassword").noneIfBlank
 
   val mayFastForwardTime: Boolean =
     if (!isProd) true
-    else conf.getBoolean("ed.mayFastForwardTime") getOrElse false
+    else conf.getBoolean("talkyard.mayFastForwardTime") getOrElse false
 
   def systemDao: SystemDao = state.systemDao  // [rename] to newSystemDao()?
 
@@ -241,7 +241,7 @@ class Globals(
   def spamChecker: SpamChecker = state.spamChecker
 
   val securityComplaintsEmailAddress: Option[String] =
-    conf.getString("ed.securityComplaintsEmailAddress").noneIfBlank
+    conf.getString("talkyard.securityComplaintsEmailAddress").noneIfBlank
 
 
   /** Either exactly all sites uses HTTPS, or all of them use HTTP.
@@ -264,8 +264,8 @@ class Globals(
     *  Either HTTP for all sites (assuming a trusted intranet), or HTTPS for all sites.
     */
   val secure: Boolean =
-    conf.getBoolean("ed.secure") getOrElse {
-      p.Logger.info("Config value 'ed.secure' missing; defaulting to true. [DwM3KEF2]")
+    conf.getBoolean("talkyard.secure") getOrElse {
+      p.Logger.info("Config value 'talkyard.secure' missing; defaulting to true. [DwM3KEF2]")
       true
     }
 
@@ -300,7 +300,7 @@ class Globals(
       sys.props.get("testserver.port").map(_.toInt) getOrElse 19001
     }
     else {
-      conf.getInt("ed.port") getOrElse {
+      conf.getInt("talkyard.port") getOrElse {
         if (secure) 443
         else 80
       }
@@ -314,7 +314,7 @@ class Globals(
 
   val baseDomainNoPort: String =
     if (isOrWasTest) "localhost"
-    else conf.getString("ed.baseDomain").noneIfBlank getOrElse "localhost"
+    else conf.getString("talkyard.baseDomain").noneIfBlank getOrElse "localhost"
 
   val baseDomainWithPort: String =
     if (secure && port == 443) baseDomainNoPort
@@ -347,12 +347,12 @@ class Globals(
 
   /** New sites may be created only from this hostname. */
   val anyCreateSiteHostname: Option[String] =
-    conf.getString("ed.createSiteHostname").noneIfBlank
+    conf.getString("talkyard.createSiteHostname").noneIfBlank
   val anyCreateTestSiteHostname: Option[String] =
-    conf.getString("ed.createTestSiteHostname").noneIfBlank
+    conf.getString("talkyard.createTestSiteHostname").noneIfBlank
 
   val maxUploadSizeBytes: Int =
-    conf.getInt("ed.uploads.maxKiloBytes").map(_ * 1000).getOrElse(3*1000*1000)
+    conf.getInt("talkyard.uploads.maxKiloBytes").map(_ * 1000).getOrElse(3*1000*1000)
 
   val anyUploadsDir: Option[String] = {
     val value = conf.getString(LocalhostUploadsDirConfValName).noneIfBlank
@@ -757,7 +757,7 @@ class Globals(
     // Redis. (A Redis client pool makes sense if we haven't saturate the CPU on localhost, or
     // if there're many Redis servers and we want to round robin between them. Not needed, now.)
     val redisHost: ErrorMessage =
-      conf.getString("ed.redis.host").noneIfBlank getOrElse "localhost"
+      conf.getString("talkyard.redis.host").noneIfBlank getOrElse "localhost"
     val redisClient: RedisClient = RedisClient(host = redisHost)(actorSystem)
 
     // Online user ids are cached in Redis so they'll be remembered accross server restarts,
@@ -803,8 +803,8 @@ class Globals(
       if (isTestDisableBackgroundJobs) None
       else Some(Notifier.startNewActor(executionContext, actorSystem, systemDao, siteDaoFactory))
 
-    def indexerBatchSize: Int = conf.getInt("ed.search.indexer.batchSize") getOrElse 100
-    def indexerIntervalSeconds: Int = conf.getInt("ed.search.indexer.intervalSeconds") getOrElse 5
+    def indexerBatchSize: Int = conf.getInt("talkyard.search.indexer.batchSize") getOrElse 100
+    def indexerIntervalSeconds: Int = conf.getInt("talkyard.search.indexer.intervalSeconds") getOrElse 5
 
     val indexerActorRef: Option[ActorRef] =
       if (isTestDisableBackgroundJobs) None
@@ -812,8 +812,8 @@ class Globals(
           indexerBatchSize, indexerIntervalSeconds, executionContext,
           elasticSearchClient, actorSystem, systemDao))
 
-    def spamCheckBatchSize: Int = conf.getInt("ed.spamcheck.batchSize") getOrElse 20
-    def spamCheckIntervalSeconds: Int = conf.getInt("ed.spamcheck.intervalSeconds") getOrElse 1
+    def spamCheckBatchSize: Int = conf.getInt("talkyard.spamcheck.batchSize") getOrElse 20
+    def spamCheckIntervalSeconds: Int = conf.getInt("talkyard.spamcheck.intervalSeconds") getOrElse 1
 
     val spamCheckActorRef: Option[ActorRef] =
       if (isTestDisableBackgroundJobs) None
@@ -821,7 +821,7 @@ class Globals(
         spamCheckBatchSize, spamCheckIntervalSeconds, actorSystem, executionContext, systemDao))
 
     val nginxHost: String =
-      conf.getString("ed.nginx.host").noneIfBlank getOrElse "localhost"
+      conf.getString("talkyard.nginx.host").noneIfBlank getOrElse "localhost"
     val (pubSub, strangerCounter) = PubSub.startNewActor(outer, nginxHost)
 
     val renderContentActorRef: ActorRef =
@@ -841,10 +841,10 @@ class Globals(
 
 
 object Config {
-  val CreateSitePath = "ed.createSite"
-  val SuperAdminPath = "ed.superAdmin"
+  val CreateSitePath = "talkyard.createSite"
+  val SuperAdminPath = "talkyard.superAdmin"
   val SuperAdminEmailAddressesPath = s"$SuperAdminPath.emailAddresses"
-  val CnameTargetHostConfValName = "ed.cnameTargetHost"
+  val CnameTargetHostConfValName = "talkyard.cnameTargetHost"
 }
 
 
@@ -868,7 +868,7 @@ class Config(conf: play.api.Configuration) {
     val maxSitesTotal: Int = conf.getInt(s"$path.maxSitesTotal") getOrElse 1000
     REFACTOR; RENAME // Later: rename to ed.createSite.newSiteQuotaMBs?
     val quotaLimitMegabytes: Option[Int] =
-      conf.getInt("ed.newSite.quotaLimitMegabytes")
+      conf.getInt("talkyard.newSite.quotaLimitMegabytes")
   }
 
   object superAdmin {

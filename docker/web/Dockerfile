@@ -262,7 +262,7 @@ ENV \
     ED_NGX_LIMIT_RATE_AFTER=5m
 
 # Frequently edited, so do last.
-COPY ed-lua /opt/ed/lua/
+COPY ed-lua /opt/talkyard/lua/
 
 
 # Don't expose port 81 (the publish-websocket-messages port) — it should be accessible from

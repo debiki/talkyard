@@ -30,7 +30,7 @@ object ApplicationBuild extends Build {
     finally source.close()
   }
 
-  val appName = "ed-server"
+  val appName = "talkyard-server"
   val appVersion = {
     // Change from WIP (work-in-progress) to SNAPSHOT, suitable for the Java/Scala world.
     versionFileContents.replaceAllLiterally("WIP", "SNAPSHOT")

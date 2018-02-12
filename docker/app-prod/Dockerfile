@@ -10,29 +10,29 @@ RUN apk add --no-cache \
 # Play's HTTP and HTTPS listen ports, Java debugger port, JMX port 3333.
 EXPOSE 9000 9443 9999 3333
 
-RUN mkdir -p /opt/ed/uploads/ && \
-    chmod -R ugo+rw /opt/ed/uploads/
+RUN mkdir -p /opt/talkyard/uploads/ && \
+    chmod -R ugo+rw /opt/talkyard/uploads/
 
-# Frequently modified JARs have been moved to app-lib-debiki/ and we here copy them in a
+# Frequently modified JARs have been moved to app-lib-talkyard/ and we here copy them in a
 # separate step, so only that step will have to be pushed/pulled to/from Docker Hub.
-COPY app             /opt/ed/app
-COPY app-lib-debiki  /opt/ed/app/lib/
-COPY app-bin         /opt/ed/app/bin/
+COPY app              /opt/talkyard/app
+COPY app-lib-talkyard /opt/talkyard/app/lib/
+COPY app-bin          /opt/talkyard/app/bin/
 # Only copy *-prod files. Other stuff might contain private things, e.g. override.conf might
 # contain test suite OpenAuth credentials.
-COPY app-conf/app-prod.conf  /opt/ed/app/conf/
-COPY app-conf/logback.xml    /opt/ed/app/conf/
-COPY build-info      /opt/ed/build-info/
+COPY app-conf/app-prod.conf  /opt/talkyard/app/conf/
+COPY app-conf/logback.xml    /opt/talkyard/app/conf/
+COPY build-info      /opt/talkyard/build-info/
 
 ENV PLAY_HEAP_MEMORY_MB 1000
 
-# Play will search for app-prod-override.conf in the same dir. See [4WDKPU2] in ed-prod-one.
-ENV CONFIG_FILE /opt/ed/app/conf/app-prod.conf
+# Play will search for app-prod-override.conf in the same dir. See [4WDKPU2] in talkyard-prod-one.
+ENV CONFIG_FILE /opt/talkyard/app/conf/app-prod.conf
 
-WORKDIR /opt/ed/app
+WORKDIR /opt/talkyard/app
 
-# this —> "Bad root server path: /opt/ed/app/-jvm-debug 9999", no idea why...
-CMD ["/opt/ed/app/bin/ed-server", \
+# this —> "Bad root server path: /opt/talkyard/app/-jvm-debug 9999", no idea why...
+CMD ["/opt/talkyard/app/bin/talkyard-server", \
   "-jvm-debug 9999", \
   "-Dcom.sun.management.jmxremote.port=3333", \
   "-Dcom.sun.management.jmxremote.ssl=false", \
@@ -43,7 +43,7 @@ CMD ["/opt/ed/app/bin/ed-server", \
 
 # ...but this identical command works fine:
 # the PID file might not get deleted if we shutdown during startup, see Globals.scala [65YKFU02]
-CMD rm -f /opt/ed/app/RUNNING_PID && exec /opt/ed/app/bin/ed-server \
+CMD rm -f /opt/talkyard/app/RUNNING_PID && exec /opt/talkyard/app/bin/talkyard-server \
   -J-Xms${PLAY_HEAP_MEMORY_MB}m \
   -J-Xmx${PLAY_HEAP_MEMORY_MB}m \
   -jvm-debug 9999 \

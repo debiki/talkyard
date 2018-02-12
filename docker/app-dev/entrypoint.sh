@@ -3,7 +3,7 @@
 # *** Dupl code *** see gulp/entrypoint.sh too [7GY8F2]
 # (Cannot fix, Docker doesn't support symlinks in build dirs.)
 
-cd /opt/ed/app
+cd /opt/talkyard/app
 
 # Create user 'owner' with the same id as the person who runs docker, so that file
 # 'gulp build' creates will be owned by that person (otherwise they'll be owned by root
@@ -34,14 +34,14 @@ if [ $file_owner_id -ne 0 ] ; then
   chown owner /home/owner/.ivy2
   chown owner /home/owner/.sbt
   # Make saving-uploads work (this dir, mounted in docker-compose.yml, shouldn't be owned by root).
-  chown owner /opt/ed/uploads/
-  chown owner /var/log/ed/
+  chown owner /opt/talkyard/uploads/
+  chown owner /var/log/talkyard/
 
   # Here, 'exec gosu owner $*' will:
   # 1) run $* as user owner, which has the same user id as the file owner on the Docker host
   # 2) use our current process id, namely 1. Then the Scala app will receive any shutdown signal,
   #    see: https://docs.docker.com/engine/userguide/eng-image/dockerfile_best-practices/#entrypoint
-  # However! 'gosu' doesn't work with "cd ... &&", and we need to have 'owner' cd to /opt/ed/app/.
+  # However! 'gosu' doesn't work with "cd ... &&", and we need to have 'owner' cd to /opt/talkyard/app/.
   # So instead use 'exec su -c ...'
   # exec gosu owner $*
   set -x

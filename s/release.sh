@@ -133,21 +133,21 @@ echo 'Tag and publish to Docker? Press Enter to continue'
 read -s -p ''
 
 
-echo "Publishing to debiki/ed-*:$version_tag..."
+echo "Publishing to debiki/talkyard-*:$version_tag..."
 
-sudo docker tag debiki/ed-app debiki/ed-app:$version_tag
-sudo docker tag debiki/ed-web debiki/ed-web:$version_tag
-sudo docker tag debiki/ed-rdb debiki/ed-rdb:$version_tag
-sudo docker tag debiki/ed-cache debiki/ed-cache:$version_tag
-sudo docker tag debiki/ed-search debiki/ed-search:$version_tag
-sudo docker tag debiki/ed-certgen debiki/ed-certgen:$version_tag
+sudo docker tag debiki/talkyard-app debiki/talkyard-app:$version_tag
+sudo docker tag debiki/talkyard-web debiki/talkyard-web:$version_tag
+sudo docker tag debiki/talkyard-rdb debiki/talkyard-rdb:$version_tag
+sudo docker tag debiki/talkyard-cache debiki/talkyard-cache:$version_tag
+sudo docker tag debiki/talkyard-search debiki/talkyard-search:$version_tag
+sudo docker tag debiki/talkyard-certgen debiki/talkyard-certgen:$version_tag
 
-sudo docker push debiki/ed-app:$version_tag
-sudo docker push debiki/ed-web:$version_tag
-sudo docker push debiki/ed-rdb:$version_tag
-sudo docker push debiki/ed-cache:$version_tag
-sudo docker push debiki/ed-search:$version_tag
-sudo docker push debiki/ed-certgen:$version_tag
+sudo docker push debiki/talkyard-app:$version_tag
+sudo docker push debiki/talkyard-web:$version_tag
+sudo docker push debiki/talkyard-rdb:$version_tag
+sudo docker push debiki/talkyard-cache:$version_tag
+sudo docker push debiki/talkyard-search:$version_tag
+sudo docker push debiki/talkyard-certgen:$version_tag
 
 
 # Bump version number
@@ -156,10 +156,10 @@ sudo docker push debiki/ed-certgen:$version_tag
 echo $version_tag >> modules/ed-versions/version-tags.log
 pushd .
 cd modules/ed-versions/
-git checkout master
+git checkout topic-talkyard
 git add version-tags.log
 git commit -m "Add $version_tag."
-git push origin master
+git push origin topic-talkyard
 popd
 
 git tag $version_tag

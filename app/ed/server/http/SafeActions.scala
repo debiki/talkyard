@@ -59,7 +59,7 @@ class SafeActions(val globals: Globals, val security: EdSecurity, parsers: PlayB
 
 
   val allowFakeIp: Boolean = {
-    val allow = !globals.isProd || globals.conf.getBoolean("ed.allowFakeIp").getOrElse(false)
+    val allow = !globals.isProd || globals.conf.getBoolean("talkyard.allowFakeIp").getOrElse(false)
     if (allow) {
       Logger.info("Enabling fake IPs [DwM0Fk258]")
     }

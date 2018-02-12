@@ -2,13 +2,13 @@ version: '3.1'
 services:
   web:
     build: docker/web/
-    image: debiki/ed-web
+    image: debiki/talkyard-web
     volumes:
-      - ./docker/data/uploads/:/opt/ed/uploads/:ro
+      - ./docker/data/uploads/:/opt/talkyard/uploads/:ro
       - ./docker/data/letsencrypt/:/etc/letsencrypt/:ro
       # Mount the Lua scripts, rather than relying on Docker's COPY, so Nginx can
       # auto reload them after edits. (We COPY them too, so will work in Prod.)
-      - ./docker/web/ed-lua/:/opt/ed/lua/:ro
+      - ./docker/web/ed-lua/:/opt/talkyard/lua/:ro
     ports:
       # Don't expose port 81 (for publishing WebSocket events)  — it should be reachable only
       # from inside the Docker network.
@@ -21,12 +21,12 @@ services:
 
   app:
     build: docker/app-dev/
-    # image: debiki/ed-app — however, created by ./docker/build-app-prod.sh.
+    # image: debiki/talkyard-app — however, created by ./docker/build-app-prod.sh.
     stdin_open: true  # otherwise Play exits
     volumes:
-      - ./:/opt/ed/app/
-      - ./docker/data/uploads/:/opt/ed/uploads/
-      - ./docker/data/app-logs/:/var/log/ed/
+      - ./:/opt/talkyard/app/
+      - ./docker/data/uploads/:/opt/talkyard/uploads/
+      - ./docker/data/app-logs/:/var/log/talkyard/
       # Without this it takes forever to start because sbt would always download all dependencies.
       - $HOME/.ivy2/:/home/owner/.ivy2/
       - $HOME/.sbt/:/home/owner/.sbt/
@@ -48,7 +48,7 @@ services:
 
   cache:
     build: docker/cache/
-    image: debiki/ed-cache
+    image: debiki/talkyard-cache
     volumes:
       - ./docker/data/cache/:/data/
     ports:
@@ -58,7 +58,7 @@ services:
 
   search:
     build: docker/search/
-    image: debiki/ed-search
+    image: debiki/talkyard-search
     # If too low, the 'search' container will suddenly exit with code 137. No error message
     # will get logged — instead it just exits, suddenly. Why? OOM-killed? In Docker? Hmm.
     #mem_limit: 800M
@@ -73,7 +73,7 @@ services:
 
   rdb:
     build: docker/rdb/
-    image: debiki/ed-rdb
+    image: debiki/talkyard-rdb
     volumes:
       - ./docker/data/rdb/:/var/lib/postgresql/data/
       - ./docker/data/rdb-logs/:/var/log/postgresql/
@@ -128,7 +128,7 @@ services:
 
   certgen:
     build: docker/certgen/
-    image: debiki/ed-certgen
+    image: debiki/talkyard-certgen
     # Only want to build (but not run) this container, in dev/test mode.
     command: 'echo'
 

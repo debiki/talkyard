@@ -42,14 +42,14 @@ object Mailer {
     */
   def startNewActor(actorSystem: ActorSystem, daoFactory: SiteDaoFactory, config: p.Configuration,
         now: () => When): ActorRef = {
-    val anySmtpServerName = config.getString("ed.smtp.host").orElse(
-      config.getString("ed.smtp.server")).noneIfBlank // old deprecated name
-    val anySmtpPort = config.getInt("ed.smtp.port")
-    val anySmtpSslPort = config.getInt("ed.smtp.sslPort")
-    val anySmtpUserName = config.getString("ed.smtp.user").noneIfBlank
-    val anySmtpPassword = config.getString("ed.smtp.password").noneIfBlank
-    val anyUseSslOrTls = config.getBoolean("ed.smtp.useSslOrTls")
-    val anyFromAddress = config.getString("ed.smtp.fromAddress").noneIfBlank
+    val anySmtpServerName = config.getString("talkyard.smtp.host").orElse(
+      config.getString("talkyard.smtp.server")).noneIfBlank // old deprecated name
+    val anySmtpPort = config.getInt("talkyard.smtp.port")
+    val anySmtpSslPort = config.getInt("talkyard.smtp.sslPort")
+    val anySmtpUserName = config.getString("talkyard.smtp.user").noneIfBlank
+    val anySmtpPassword = config.getString("talkyard.smtp.password").noneIfBlank
+    val anyUseSslOrTls = config.getBoolean("talkyard.smtp.useSslOrTls")
+    val anyFromAddress = config.getString("talkyard.smtp.fromAddress").noneIfBlank
 
     val actorRef =
         (anySmtpServerName, anySmtpPort, anySmtpSslPort, anySmtpUserName, anySmtpPassword, anyFromAddress) match {

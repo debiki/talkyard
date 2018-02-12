@@ -11,22 +11,22 @@ set -e
 # ------------------------
 
 psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" <<EOF
-create user ed password '$POSTGRES_PASSWORD';
-create database ed;
-grant all privileges on database ed to ed;
+create user talkyard password '$POSTGRES_PASSWORD';
+create database talkyard;
+grant all privileges on database talkyard to talkyard;
 
 create user repl replication login connection limit 1 encrypted password '$POSTGRES_PASSWORD';
 EOF
 
 
-# Create a test user, ed_test
+# Create a test user, talkyard_test
 # ------------------------
 
 if [ -n "$CREATE_TEST_USER" ]; then
   psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" <<EOF
-  create user ed_test password 'public';
-  create database ed_test;
-  grant all privileges on database ed_test to ed_test;
+  create user talkyard_test password 'public';
+  create database talkyard_test;
+  grant all privileges on database talkyard_test to talkyard_test;
 EOF
 fi
 
