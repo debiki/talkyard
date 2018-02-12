@@ -95,7 +95,8 @@ if [ ! -d modules/gatsby-starter-blog/public/ ]; then
   pushd .
   cd modules/gatsby-starter-blog/
   rm -fr .cache public
-  (yarn && yarn build && echo 'yarn-build-1' ) &
+  # 'yarn' doesn't work, result in a "Gatsby may not be installed" error. 'npm install' works.
+  (npm install && yarn build && echo 'yarn-build-1' ) &
   yarn_build_gatsby_pid=$(jobs -l | grep yarn-build-1 | awk '{ printf $2; }')
   echo "Background building the Gatsby blog in process id $yarn_build_gatsby_pid"
   popd
@@ -108,7 +109,8 @@ if [ ! -d modules/gatsby-starter-blog-ed-comments-0.4.4/public/ ]; then
   pushd .
   cd modules/gatsby-starter-blog-ed-comments-0.4.4/
   rm -fr .cache public
-  (yarn && yarn build && echo 'yarn-build-2' ) &
+  # 'yarn' doesn't work, result in a "Gatsby may not be installed" error. 'npm install' works.
+  (npm install && yarn build && echo 'yarn-build-2' ) &
   yarn_build_gatsby_pid2=$(jobs -l | grep yarn-build-2 | awk '{ printf $2; }')
   echo "Background building the Gatsby blog, ed-comments 0.4.4, in process id $yarn_build_gatsby_pid2"
   popd
