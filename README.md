@@ -7,8 +7,9 @@ Inspired by Discourse, Slack, StackOverflow, Reddit and Hacker News, Disqus.
 
 Screenshots below.<br>
 See it live: https://www.talkyard.io/forum/latest<br>
-Read about it: https://www.talkyard.io/
+Read about it: https://www.talkyard.io/, and more demos.
 
+<!--
 Organizations often create a forum (e.g. Discourse) and a chat (Slack/Gitter/Discord),
 and use StackOverflow, and maybe Disqus for embedded comments — then they split their community.
 With Talkyard, you can gather your community in one place.<br>
@@ -19,12 +20,20 @@ find the parent comment (even if it's far away), read it, and jump back and cont
 And you can quickly find out which new comments were posted in a long threaded discussion,
 while you were away for lunch
 (you won't need to scan the whole page, top to bottom, to find them).
+-->
 
-Simple installation, if you know a bit about Docker. Automatic upgrades.
+
+### How install?
+
+_This_ repository is for writing Talkyard source code.
+To _install_ Talkyard, instead go to: https://github.com/debiki/talkyard-prod-one
+("-prod-one" means "production installation on one server").
+
+Docker based installation. Automatic upgrades.
 One installation can host many sites.
-There's a hosted solution too, if you don't want to install it yourself. See the 'read about it' link above.
+There's [hosting](https://www.talkyard.io/pricing), if you don't want to install it yourself.
 
-Be prepared to report some problems and maybe missing features — this is beta software; there might be bugs.
+Do be prepared to report problems and missing features — this is beta software; there might be bugs.
 
 
 ### Screenshots
@@ -51,13 +60,6 @@ Users online:
 ![ed-online-users](https://cloud.githubusercontent.com/assets/7477359/19680424/f0353f86-9aa5-11e6-84d9-94d46f228b93.jpg)
 
 
-### How install?
-
-_This_ repository is for writing Talkyard source code.
-To _install_ Talkyard, instead go to: https://github.com/debiki/talkyard-prod-one
-("talkyard-prod-one" means "production installation on one single server").
-
-
 Getting Started
 -----------------------------
 
@@ -75,8 +77,8 @@ how to use docker-compose already.
 
 1. Clone this repository, `cd` into it. Then update submodules:
 
-        git clone https://github.com/debiki/ed-server.git ed
-        cd ed
+        git clone https://github.com/debiki/talkyard.git talkyard
+        cd talkyard
         git submodule update --init
 
 1. Append some settings to the system config so that ElasticSearch will work:
@@ -116,7 +118,7 @@ how to use docker-compose already.
   This log message might take 10 - 20 minutes: (lots of stuff is being downloaded — we'll try to
   include all that in the Docker image directly instead, later)
 
-        Loading project definition from /opt/ed/app/project
+        Loading project definition from /opt/talkyard/app/project
 
    Wait until this appears in the logs:
 
