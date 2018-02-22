@@ -65,7 +65,7 @@ export const SelectCategoryDropdown = createClassAndFactory({
     var state = this.state;
     var store: Store = props.store;
     var selectedCategory: Category =
-      _.find(store.categories, c => c.id === props.selectedCategoryId);
+      _.find(store.currentCategories, c => c.id === props.selectedCategoryId);
 
     dieIf(!selectedCategory && props.selectedCategoryId, "Selected category missing [EdE5YFK24]");
     const categoryName = selectedCategory ? selectedCategory.name : "Select category...";
@@ -74,7 +74,7 @@ export const SelectCategoryDropdown = createClassAndFactory({
       Button({ onClick: this.open, ref: 'dropdownButton' },
         categoryName + ' ', r.span({ className: 'caret' }));
 
-    var categoryListItems = store.categories.map((category: Category) => {
+    var categoryListItems = store.currentCategories.map((category: Category) => {
       return ExplainingListItem({ onSelect: this.onCategorySelected,
         activeEventKey: props.selectedCategoryId, eventKey: category.id, key: category.id,
         title: category.name, text: category.description });

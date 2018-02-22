@@ -214,6 +214,8 @@ export function renderTitleBodyCommentsToString() {
   const page: Page = store.currentPage;
   if (page.pageRole === PageRole.Forum) {
     const defaultPath = page.pagePath.value + (store.settings.forumMainView || RoutePathLatest);
+    // Otherwise rendering the categories dropdown button results in a null error:
+    store.currentCategories = store.publicCategories;
     const routes = Route({ path: defaultPath, component: forum.ForumComponent });
     // In the future, when using the HTML5 history API to update the URL when navigating
     // inside the forum, we can use `store.pagePath` below. But for now:

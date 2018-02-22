@@ -73,8 +73,11 @@ export var Watchbar = createComponent({
     const store: Store = this.state.store;
     const me = store.me;
 
-    const communities = SubCommunities({ store: store });
-    const recentTopicsAndNotfs = RecentTopicsAndNotfs({ store: store });
+    const forumPages = _.filter(store.siteSections, (s: SiteSection) => s.pageRole === PageRole.Forum);
+    const hasSubCommunities = forumPages.length >= 2;
+
+    const communities = hasSubCommunities ? SubCommunities({ store: store }) : null;
+    const recentTopicsAndNotfs = RecentTopicsAndNotfs({ store: store, hasSubCommunities });
     const chatChannels = ChatChannels({ store: store });
     const directMessages = me.isLoggedIn ? DirectMessages({ store: store }) : null;
 
@@ -98,19 +101,13 @@ const SubCommunities = createComponent({
     const subCommunities: WatchbarTopic[] = watchbar[WatchbarSection.SubCommunities];
     const subCommunitiesElems = [];
 
-    // If there's just one forum, then there aren't really any sub communities. Then just show
-    // the text "Forum", linking to that forum — instead of a list of sub communities.
-    const forumPages = _.filter(store.siteSections, (s: SiteSection) => s.pageRole === PageRole.Forum);
-    const home = forumPages.length <= 1;
-
     _.each(subCommunities, (topic: WatchbarTopic) => {
       subCommunitiesElems.push(
         SingleTopic({ key: topic.pageId, store: store, topic: topic, flavor: 'SubCommunities',
-            isCurrent: topic.pageId === store.currentPageId, home }));
+            isCurrent: topic.pageId === store.currentPageId }));
     });
 
-    const header = home ? null :
-        r.h3({ style: { wordSpacing: '2px' }}, "Communities");  // skip "sub" here
+    const header = r.h3({ style: { wordSpacing: '2px' }}, "Communities");  // skip "sub" here
 
     const newCommunityButton = Button({ onClick: () => Server.createForum(
       "New Sub Community",
@@ -137,6 +134,18 @@ const RecentTopicsAndNotfs = createComponent({
     const chatChannels: WatchbarTopic[] = watchbar[WatchbarSection.ChatChannels];
     const directMessages: WatchbarTopic[] = watchbar[WatchbarSection.DirectMessages];
     const topicElems = [];
+
+    // If there's just a single forum (no other forums = sub communities) then always show
+    // it first in the Recent list (instead of in a separate 'Communities' watchbar section).
+    if (!this.props.hasSubCommunities) {
+      const forum = watchbar[WatchbarSection.SubCommunities][0];
+      if (forum) {
+        topicElems.push(
+            SingleTopic({ key: forum.pageId, store: store, topic: forum, flavor: 'recent',
+              isCurrent: forum.pageId === store.currentPageId }));
+      }
+    }
+
     _.each(recentTopics, (topic: WatchbarTopic) => {
       // If the topic is listed in the Chat Channels or Direct Messages section, skip it
       // here in the recent-topics list.
@@ -146,6 +155,7 @@ const RecentTopicsAndNotfs = createComponent({
         SingleTopic({ key: topic.pageId, store: store, topic: topic, flavor: 'recent',
             isCurrent: topic.pageId === store.currentPageId }));
     });
+
     return (
         r.div({ className: 'esWB_Ts' },
           r.h3({ style: { wordSpacing: '2px' }}, "Recently viewed"),
@@ -313,7 +323,7 @@ const SingleTopic = createComponent({
     return (
         r.li({ className: 'esWB_LI esWB_T-' + flavor + moreClasses, onClick: this.onListItemClick },
           r.a({ className: 'esWB_T_Link', href: this._url, title: tooltip, onClick: this.onLinkClick },
-            r.span({ className: 'esWB_T_Title' }, this.props.home ? "Forum" : title)),
+            r.span({ className: 'esWB_T_Title' }, title)),
           topicActionsButton));
   }
 });

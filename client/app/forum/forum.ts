@@ -158,7 +158,7 @@ export const ForumComponent = createReactClass(<any> {
     let activeCategory: any;
     const activeCategorySlug = currentCategorySlug;
     if (activeCategorySlug) {
-      activeCategory = _.find(store.categories, (category: Category) => {
+      activeCategory = _.find(store.currentCategories, (category: Category) => {
         return category.slug === activeCategorySlug;
       });
       // If `activeCategory` is null here, that's probably because the category is
@@ -371,7 +371,7 @@ const ForumButtons = createComponent({
 
   findTheDefaultCategory: function() {
     const store: Store = this.props.store;
-    return _.find(store.categories, (category: Category) => {
+    return _.find(store.currentCategories, (category: Category) => {
       return category.isDefaultCategory;
     });
   },
@@ -530,7 +530,7 @@ const ForumButtons = createComponent({
     const topicListLink = showsTopicList ? null :
       makeCategoryLink(RoutePathLatest, "Topic list", 'e2eViewTopicsB', 'esForum_navLink');
 
-    const categoryMenuItems = store.categories.map((category: Category) => {
+    const categoryMenuItems = store.currentCategories.map((category: Category) => {
       return MenuItem({ key: category.id, active: activeCategory.id === category.id,
           onClick: () => this.setCategory(category.slug) },
             r.span({ className: category_iconClass(category, store) }, category.name));
@@ -946,7 +946,7 @@ export const TopicsList = createComponent({
 
     const topicElems = topics.map((topic: Topic) => {
       return TopicRow({
-          store, topic, categories: store.categories, activeCategory, now: store.now, orderOffset,
+          store, topic, categories: store.currentCategories, activeCategory, now: store.now, orderOffset,
           key: topic.pageId, sortOrderRoute: this.props.sortOrderRoute,
           inTable: useTable });
     });
@@ -1171,7 +1171,7 @@ const TopicRow = createComponent({
     const me = store.me;
     const settings = store.settings;
     const topic: Topic = this.props.topic;
-    const category: Category = _.find(store.categories, (category: Category) => {
+    const category: Category = _.find(store.currentCategories, (category: Category) => {
       return category.id === topic.categoryId;
     });
 
@@ -1365,7 +1365,7 @@ const LoadAndListCategories = createFactory({
 
     const categoryRows = this.state.categories.map((category: Category) => {
       return CategoryRow({ store: this.props.store, location: this.props.location,
-          category: category, key: category.id });
+          forumPath: this.props.forumPath, category: category, key: category.id });
     });
 
     let recentTopicsColumnTitle;

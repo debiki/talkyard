@@ -157,12 +157,12 @@ export function store_canSelectPosts(store: Store): boolean {
 //
 export function store_getCurrOrDefaultCat(store: Store): Category {
   const currCatId = store.currentPage.categoryId;
-  const currCat = _.find(store.categories, (c: Category) => c.id === currCatId);
+  const currCat = _.find(store.currentCategories, (c: Category) => c.id === currCatId);
   if (currCat)
     return currCat;
 
   // Apparently we're showing all categories, haven't selected any specific category.
-  return _.find(store.categories, (c: Category) => c.isDefaultCategory);
+  return _.find(store.currentCategories, (c: Category) => c.isDefaultCategory);
 }
 
 

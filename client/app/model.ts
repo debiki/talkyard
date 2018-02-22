@@ -572,7 +572,7 @@ interface Store {
   hideForumIntro?: boolean;
   maxUploadSizeBytes: number;
   isInEmbeddedCommentsIframe: boolean;
-  categories: Category[];
+  currentCategories: Category[];
   publicCategories: Category[];
   newCategorySlug: string; // for temporarily highlighting a newly created category
   topics: Topic[];

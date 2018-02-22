@@ -346,7 +346,7 @@ ReactDispatcher.register(function(payload) {
       break;
 
     case ReactActions.actionTypes.ShowNewPage:
-      showNewPage(action.newPage, action.newUsers, action.me, action.history);
+      showNewPage(action.newPage, action.newPublicCategories, action.newUsers, action.me, action.history);
     break;
 
     case ReactActions.actionTypes.UpdateUserPresence:
@@ -407,7 +407,7 @@ ReactStore.initialize = function() {
     ReactStore.emitChange();
   });
 
-  store.categories = _.clone(store.publicCategories);
+  store.currentCategories = _.clone(store.publicCategories);
 };
 
 
@@ -516,8 +516,8 @@ ReactStore.activateMyself = function(anyNewMe: Myself) {
   }
 
   // Absent on about-user pages.
-  if (store.categories) {
-    addRestrictedCategories(store.me.restrictedCategories, store.categories);
+  if (store.currentCategories) {
+    addRestrictedCategories(store.me.restrictedCategories, store.currentCategories);
   }
 
   const readingProgress = myPageData.readingProgress;
@@ -637,7 +637,7 @@ ReactStore.getMe = function(): Myself {
 
 
 ReactStore.getCategories = function() {
-  return store.categories;
+  return store.currentCategories;
 };
 
 
@@ -1153,8 +1153,8 @@ function patchTheStore(storePatch: StorePatch) {
     // Hmm what if the patch contains fever categories? Currently (2016-12), won't happen, though.
     store.publicCategories = storePatch.publicCategories;
     store.me.restrictedCategories = storePatch.restrictedCategories;
-    store.categories = _.clone(store.publicCategories);
-    addRestrictedCategories(store.me.restrictedCategories, store.categories);
+    store.currentCategories = _.clone(store.publicCategories);
+    addRestrictedCategories(store.me.restrictedCategories, store.currentCategories);
   }
 
   if (storePatch.tagsStuff) {
@@ -1263,7 +1263,8 @@ function patchTheStore(storePatch: StorePatch) {
 }
 
 
-function showNewPage(newPage: Page, newUsers: BriefUser[], newMe: Myself | null, history) {
+function showNewPage(newPage: Page, newPublicCategories: Category[], newUsers: BriefUser[],
+        newMe: Myself | null, history) {
 
   // Upload any current reading progress, before changing page id.
   page.PostsReadTracker.sendAnyRemainingData(() => {}); // not as beacon
@@ -1274,6 +1275,10 @@ function showNewPage(newPage: Page, newUsers: BriefUser[], newMe: Myself | null,
   store.currentPage = newPage;
   store.currentPageId = newPage.pageId;
 
+  // Update categories — maybe this page is in a different sub community with different categories.
+  store.publicCategories = newPublicCategories;  // hmm could rename to currentPublicCategories
+  store.currentCategories = _.clone(newPublicCategories);
+
   let myData: MyPageData;
   if (newMe) {
     store.me.watchbar = newMe.watchbar;
@@ -1281,6 +1286,7 @@ function showNewPage(newPage: Page, newUsers: BriefUser[], newMe: Myself | null,
     if (myData) {
       store.me.myDataByPageId[newPage.pageId] = myData;
     }
+    addRestrictedCategories(newMe.restrictedCategories, store.currentCategories);
   }
   store.me.myCurrentPageData = myData || makeNoPageData();
 
