@@ -87,6 +87,10 @@ class PageTitleSettingsController @Inject()(cc: ControllerComponents, edContext:
            and certain other stuff""")
     }
 
+    if (anyShowId.is(true) && (anyNewRole.is(PageRole.Forum) || oldMeta.pageRole == PageRole.Forum)) {
+      throwForbidden("EdE22PKGEW0", "Forum pages should not show show the page id.")
+    }
+
     // SECURITY COULD prevent non-admins from changing the title of pages other than forum topics.
     // (A moderator shouldn't be able to rename the whole forum, or e.g. the about-us page.)
 

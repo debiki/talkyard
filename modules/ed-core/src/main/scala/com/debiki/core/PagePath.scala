@@ -260,27 +260,32 @@ object PagePath {
     case class Bad(error: String) extends Parsed
   }
 
-  /**
-   * Parses the path part of a URL into a PagePath.
-   *
-   * URL path examples:
-   * - (server)/fold/ers/-pageId [2WBG49]
-   * - (server)/fold/ers/-pageId/page-slug
-   * - (server)/fold/ers/page-slug (here, the pageId is not shown in the path).
-   */
+  /** Parses the path part of a URL into a PagePath.
+    *
+    * URL path examples:
+    * - (server)/fold/ers/-pageId [2WBG49]
+    * - (server)/fold/ers/-pageId/page-slug
+    * - (server)/fold/ers/page-slug (here, the pageId is not shown in the path).
+    *
+    * But also:
+    * - (server)/forum/latest/bugs — and this should be changed to just /forum/.
+    */
   def fromUrlPath(siteId: SiteId, path: String): PagePath.Parsed = {
     // For now, quick hack to match all forum paths. Later, compare with in-mem cached forum paths.
     var adjustedPath = path
-    // If a forum is located at /:
-    if (path == "/categories" ||   Gah!! Gah !! Gah!!
-        path == "/latest" || path == "/top" || path == "/new" || path == "/unread" ||
-        path.startsWith("/latest/") || path.startsWith("/top/") ||
-        path.startsWith("/new/") || path.startsWith("/unread/")) {
-      adjustedPath = "/"
+    // If a forum is located at /base-path/, but also a sort order is specified, e.g. /latest or /top:
+    if (path.contains("/-")) {
+      // It's a page, not a forum. Ok as is.
     }
-    // If a forum is located at /forum/:  (but exclude /forum/-pageid/slug paths)
-    else if (path.startsWith("/forum/") && !path.startsWith("/forum/-")) {
-      adjustedPath = "/forum/"
+    else if (path.endsWith("/categories") ||
+        path.endsWith("/latest") || path.endsWith("/top") || path.endsWith("/new") ||
+        path.endsWith("/unread")) {
+      adjustedPath = path.dropRightWhile(_ != '/')
+    }
+    else if (path.contains("/latest/") || path.contains("/top/") ||
+        path.contains("/new/") || path.contains("/unread/")) {
+      // First drop the category name, then the last '/', then the sort order ('top'/'latest'/etc).
+      adjustedPath = path.dropRightWhile(_ != '/').dropRight(1).dropRightWhile(_ != '/')
     }
     fromUrlPathImpl(siteId, adjustedPath)
   }
