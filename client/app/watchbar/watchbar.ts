@@ -73,6 +73,7 @@ export var Watchbar = createComponent({
     const store: Store = this.state.store;
     const me = store.me;
 
+    const communities = SubCommunities({ store: store });
     const recentTopicsAndNotfs = RecentTopicsAndNotfs({ store: store });
     const chatChannels = ChatChannels({ store: store });
     const directMessages = me.isLoggedIn ? DirectMessages({ store: store }) : null;
@@ -80,9 +81,48 @@ export var Watchbar = createComponent({
     return (
       r.div({ className: 'esWB', ref: 'watchbar' },
         r.button({ className: 'esWB_CloseB esCloseCross', onClick: ReactActions.closeWatchbar }),
+        communities,
         recentTopicsAndNotfs,
         chatChannels,
         directMessages));
+  }
+});
+
+
+const SubCommunities = createComponent({
+  displayName: 'SubCommunities',
+
+  render: function() {
+    const store: Store = this.props.store;
+    const watchbar: Watchbar = store.me.watchbar;
+    const subCommunities: WatchbarTopic[] = watchbar[WatchbarSection.SubCommunities];
+    const subCommunitiesElems = [];
+
+    // If there's just one forum, then there aren't really any sub communities. Then just show
+    // the text "Forum", linking to that forum — instead of a list of sub communities.
+    const forumPages = _.filter(store.siteSections, (s: SiteSection) => s.pageRole === PageRole.Forum);
+    const home = forumPages.length <= 1;
+
+    _.each(subCommunities, (topic: WatchbarTopic) => {
+      subCommunitiesElems.push(
+        SingleTopic({ key: topic.pageId, store: store, topic: topic, flavor: 'SubCommunities',
+            isCurrent: topic.pageId === store.currentPageId, home }));
+    });
+
+    const header = home ? null :
+        r.h3({ style: { wordSpacing: '2px' }}, "Communities");  // skip "sub" here
+
+    const newCommunityButton = Button({ onClick: () => Server.createForum(
+      "New Sub Community",
+      '/forum2/',
+      () => {}
+      ) }, "Add new ...");
+    return (
+      r.div({ className: 'esWB_Ts' },
+        header,
+        r.ul({},
+          subCommunitiesElems,
+          newCommunityButton)));
   }
 });
 
@@ -108,7 +148,6 @@ const RecentTopicsAndNotfs = createComponent({
     });
     return (
         r.div({ className: 'esWB_Ts' },
-          // Not "recent topics", because contains non-topics too, e.g. forum itself.
           r.h3({ style: { wordSpacing: '2px' }}, "Recently viewed"),
           r.ul({},
             topicElems)));
@@ -238,10 +277,6 @@ const SingleTopic = createComponent({
     var unreadClass = topic.unread ? ' esWB_T-Unread' : '';
     var title = topic.title || this._url;
 
-    if (topic.type === PageRole.Forum) {  // [5KWQB42]
-      title = r.span({ className: 'icon-menu' }, title);
-    }
-
     // Roughly 30 chars fits. For now, to usually avoid unneeded tooltips: (dupl width [4YK0F2])
     var tooltip = title.length > 21 ? title : undefined;
     var moreClasses = isCurrentTopicClass + unreadClass;
@@ -278,7 +313,7 @@ const SingleTopic = createComponent({
     return (
         r.li({ className: 'esWB_LI esWB_T-' + flavor + moreClasses, onClick: this.onListItemClick },
           r.a({ className: 'esWB_T_Link', href: this._url, title: tooltip, onClick: this.onLinkClick },
-            r.span({ className: 'esWB_T_Title' }, title)),
+            r.span({ className: 'esWB_T_Title' }, this.props.home ? "Forum" : title)),
           topicActionsButton));
   }
 });

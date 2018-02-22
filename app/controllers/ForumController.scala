@@ -159,11 +159,12 @@ class ForumController @Inject()(cc: ControllerComponents, edContext: EdContext)
 
     val callersGroupIds = request.authzContext.groupIds
     val callersNewPerms = permsWithIds.filter(callersGroupIds contains _.forPeopleId)
+    val mkJson = ReactJson.makeCategoriesJson _
 
     OkSafeJson(Json.obj(
       // 2 dupl lines [7UXAI1]
-      "publicCategories" -> ReactJson.makeCategoriesJson(dao.getForumPublicAuthzContext(), dao),
-      "restrictedCategories" -> ReactJson.makeCategoriesJson(dao.getForumAuthzContext(requester), dao),
+      "publicCategories" -> mkJson(category.id, dao.getForumPublicAuthzContext(), dao),
+      "restrictedCategories" -> mkJson(category.id, dao.getForumAuthzContext(requester), dao),
       "myNewPermissions" -> JsArray(callersNewPerms map ReactJson.permissionToJson),
       "newCategoryId" -> category.id,
       "newCategorySlug" -> category.slug))
@@ -185,7 +186,7 @@ class ForumController @Inject()(cc: ControllerComponents, edContext: EdContext)
     val categoryId = (request.body \ "categoryId").as[CategoryId]
     request.dao.deleteUndeleteCategory(categoryId, delete = delete, request.who)
     val patch = ReactJson.makeCategoriesStorePatch(
-      dao.getForumAuthzContext(requester), request.dao)
+      categoryId, dao.getForumAuthzContext(requester), request.dao)
     OkSafeJson(patch)
   }
 

@@ -111,6 +111,14 @@ $currentItemBgColor =  hsl($watchbarHue, 70%, 32%);
   &:hover
     box-shadow: 0 0 0 8px hsl(207, 85%, 22%);
 
+.esWB_Ts
+  clear: both; // or the "Home" text at the top might exand and include the float:right close cross
+  ul:first-child // if there's no watchbar section title
+    .esWB_T_Link
+      padding-left: 0;
+      .esWB_T_Title
+        text-transform: uppercase;
+
 .esWB_T_B
   float: right;  // [4WKE2R]
   display: inline-block;

@@ -24,10 +24,10 @@ import scala.collection.mutable.ArrayBuffer
 import BareWatchbar.MaxRecentTopics
 
 
-sealed abstract class WatchbarSection(val IntVal: Int) { def toInt = IntVal }
+sealed abstract class WatchbarSection(val IntVal: Int) { def toInt: Int = IntVal }
 object WatchbarSection {
-  case object RecentTopics extends WatchbarSection(1)
-  case object Notifications extends WatchbarSection(2)
+  case object SubCommunities extends WatchbarSection(1)
+  case object RecentTopics extends WatchbarSection(2)
   case object ChatChannels extends WatchbarSection(3)
   case object DirectMessages extends WatchbarSection(4)
 }
@@ -65,13 +65,13 @@ object WatchbarTopic {
   */
 sealed trait Watchbar {
 
+  def subCommunities: immutable.Seq[WatchbarTopic]
   def recentTopics: immutable.Seq[WatchbarTopic]
-  def notifications: immutable.Seq[WatchbarTopic]
   def chatChannels: immutable.Seq[WatchbarTopic]
   def directMessages: immutable.Seq[WatchbarTopic]
 
   lazy val watchedPageIds: Set[PageId] = {
-    (recentTopics.map(_.pageId) ++ notifications.map(_.pageId) ++
+    (subCommunities.map(_.pageId) ++ recentTopics.map(_.pageId) ++
       chatChannels.map(_.pageId) ++ directMessages.map(_.pageId)).toSet
   }
 
@@ -86,9 +86,9 @@ sealed trait Watchbar {
         if (topic.unread) sb.append(":1")
       }
     }
-    append(recentTopics)
+    append(subCommunities)
     sb.append('|')
-    append(notifications)
+    append(recentTopics)
     sb.append('|')
     append(chatChannels)
     sb.append('|')
@@ -100,8 +100,8 @@ sealed trait Watchbar {
 
 
 case class WatchbarWithTitles(
+  subCommunities: immutable.Seq[WatchbarTopic],
   recentTopics: immutable.Seq[WatchbarTopic],
-  notifications: immutable.Seq[WatchbarTopic],
   chatChannels: immutable.Seq[WatchbarTopic],
   directMessages: immutable.Seq[WatchbarTopic],
   titlesEtcById: Map[PageId, PageTitleRole]) extends Watchbar {
@@ -109,8 +109,8 @@ case class WatchbarWithTitles(
 
   def toJsonWithTitles: JsValue = {
     Json.obj(
-      "1" -> recentTopics.map(topicToJsonWithTitleEtc),
-      "2" -> notifications.map(topicToJsonWithTitleEtc),
+      "1" -> subCommunities.map(topicToJsonWithTitleEtc),
+      "2" -> recentTopics.map(topicToJsonWithTitleEtc),
       "3" -> chatChannels.map(topicToJsonWithTitleEtc),
       "4" -> directMessages.map(topicToJsonWithTitleEtc))
   }
@@ -131,21 +131,21 @@ case class WatchbarWithTitles(
   /** Used if a page has been deleted or made private, so that title etc is no longer available */
   private def NoTitleEtc = new PageTitleRole {
     def title = "(page gone, DwM5YKW24)"
-    def role = PageRole.Discussion
+    def role: PageRole = PageRole.Discussion
   }
 }
 
 
 
 case class BareWatchbar(
+  subCommunities: immutable.Seq[WatchbarTopic],
   recentTopics: immutable.Seq[WatchbarTopic],
-  notifications: immutable.Seq[WatchbarTopic],
   chatChannels: immutable.Seq[WatchbarTopic],
   directMessages: immutable.Seq[WatchbarTopic]) extends Watchbar {
 
 
   def addTitlesEtc(titlesEtcById: Map[PageId, PageTitleRole]) = WatchbarWithTitles(
-    recentTopics, notifications, chatChannels, directMessages, titlesEtcById)
+    subCommunities, recentTopics, chatChannels, directMessages, titlesEtcById)
 
 
   /** Returns None, if wasn't changed, or Some(new-watchbar).
@@ -161,6 +161,9 @@ case class BareWatchbar(
         // section already.)
         this
       }
+      else if (pageMeta.pageRole == PageRole.Forum) {
+        copy(subCommunities = placeFirstMarkSeen(pageMeta, subCommunities))
+      }
       else if (isInNotRecentSection(pageMeta.pageId)) {
         // Then it won't be shown in the Recent section anyway. Don't remove anything from Recent.
         this
@@ -175,8 +178,8 @@ case class BareWatchbar(
   }
 
 
-  def isInNotRecentSection(pageId: PageId): Boolean = {
-    if (notifications.exists(_.pageId == pageId)) return true
+  private def isInNotRecentSection(pageId: PageId): Boolean = {
+    // (skip subCommunities)
     if (chatChannels.exists(_.pageId == pageId)) return true
     if (directMessages.exists(_.pageId == pageId)) return true
     false
@@ -195,8 +198,8 @@ case class BareWatchbar(
       addDirectMessage(pageId, hasSeenIt)
     }
     else {
-      // Add to recent list? Or do what? This cannot happen right now.
-      unimplemented("EsE3PK04W")
+      // Add to recent list? Or do what? (This cannot happen right now.)
+      die(s"Unexpected page type: $pageRole", "EsE3PK04W")
     }
   }
 
@@ -252,8 +255,8 @@ case class BareWatchbar(
       if (topic.pageId == pageId) topic.copy(unread = !seen)
       else topic
     BareWatchbar(
+      subCommunities = subCommunities.map(mark),
       recentTopics = recentTopics.map(mark),
-      notifications = notifications.map(mark),
       chatChannels = chatChannels.map(mark),
       directMessages = directMessages.map(mark))
   }
@@ -309,9 +312,12 @@ object BareWatchbar {
     */
   def fromJson(json: JsObject): BareWatchbar = {
     import WatchbarTopic.topicReads
+    val subCommunitiesJson = (json \ WatchbarSection.SubCommunities.toInt.toString).as[JsArray]
+    val subCommunities = subCommunitiesJson.as[immutable.Seq[WatchbarTopic]]
     val recentTopicsJson = (json \ WatchbarSection.RecentTopics.toInt.toString).as[JsArray]
     val recentTopics = recentTopicsJson.as[immutable.Seq[WatchbarTopic]]
-    BareWatchbar(recentTopics = recentTopics, Nil, Nil, Nil)
+    // (The rest are filled in by looking at joined-chats and recent-direct-messages in the database.)
+    BareWatchbar(subCommunities = subCommunities, recentTopics = recentTopics, Nil, Nil)
   }
 
 
@@ -332,8 +338,8 @@ object BareWatchbar {
       BareWatchbar(
         // (String.split(char) is a bit weird in that it discards all trailing empty fragments,
         // hence the if >= X and parts(X-1) here.)
-        recentTopics = if (parts.length >= 1) toTopics(parts(0)) else Nil,
-        notifications = if (parts.length >= 2) toTopics(parts(1)) else Nil,
+        subCommunities = if (parts.length >= 1) toTopics(parts(0)) else Nil,
+        recentTopics = if (parts.length >= 2) toTopics(parts(1)) else Nil,
         chatChannels = if (parts.length >= 3) toTopics(parts(2)) else Nil,
         directMessages = if (parts.length >= 4) toTopics(parts(3)) else Nil)
     }

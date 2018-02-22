@@ -63,7 +63,7 @@ object Globals {
 
   val CdnOriginConfValName = "talkyard.cdn.origin"
   val LocalhostUploadsDirConfValName = "talkyard.uploads.localhostDir"
-  val DefaultLocalhostUploadsDir = "/opt/talkyard/uploads/"  // [ren-talkyard] Ooops
+  val DefaultLocalhostUploadsDir = "/opt/talkyard/uploads/"
 
   val AppSecretConfValName = "play.http.secret.key"
   val AppSecretDefVal = "change_this"

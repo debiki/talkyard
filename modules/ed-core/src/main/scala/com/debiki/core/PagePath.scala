@@ -272,7 +272,7 @@ object PagePath {
     // For now, quick hack to match all forum paths. Later, compare with in-mem cached forum paths.
     var adjustedPath = path
     // If a forum is located at /:
-    if (path == "/categories" ||
+    if (path == "/categories" ||   Gah!! Gah !! Gah!!
         path == "/latest" || path == "/top" || path == "/new" || path == "/unread" ||
         path.startsWith("/latest/") || path.startsWith("/top/") ||
         path.startsWith("/new/") || path.startsWith("/unread/")) {

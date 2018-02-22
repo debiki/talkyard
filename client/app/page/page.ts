@@ -213,7 +213,8 @@ export function renderTitleBodyCommentsToString() {
   const store: Store = debiki2.ReactStore.allData();
   const page: Page = store.currentPage;
   if (page.pageRole === PageRole.Forum) {
-    const routes = debiki2.forum.buildForumRoutes();
+    const defaultPath = page.pagePath.value + (store.settings.forumMainView || RoutePathLatest);
+    const routes = Route({ path: defaultPath, component: forum.ForumComponent });
     // In the future, when using the HTML5 history API to update the URL when navigating
     // inside the forum, we can use `store.pagePath` below. But for now:
     const path = page.pagePath.value + 'latest';

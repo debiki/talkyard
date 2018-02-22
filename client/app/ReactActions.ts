@@ -626,10 +626,10 @@ export function maybeLoadAndShowNewPage(store: Store,
 
     // In a forum, there's sth like '/latest/ideas' after the forum page path. So,
     // special check for forum pages; just a prefix match is enough.
-    const storePageIsTheForum = storePagePath === store.forumPath;
-    const newPathIsToForum = urlPath_isToForum(newUrlPath, store.forumPath);
-    if (!isThisPage && storePageIsTheForum) {
-      isThisPage =  newPathIsToForum;
+    const storePageIsForum = page.pageRole === PageRole.Forum;
+    const newPathIsToThatForum = urlPath_isToForum(newUrlPath, storePagePath);
+    if (!isThisPage && storePageIsForum) {
+      isThisPage = newPathIsToThatForum;
     }
 
     if (isThisPage) {
@@ -639,7 +639,7 @@ export function maybeLoadAndShowNewPage(store: Store,
         // render 'page'. Or we clicked a '/-pageid#post-nr' link, to '/the-current-page'.
         // Need not do anything more here, except for maybe change from '/-pageid#post-nr'
         // back to '/the-current-page' + '#post-nr':
-        if (newUrlPath !== page.pagePath.value && !newPathIsToForum) {
+        if (newUrlPath !== page.pagePath.value && !newPathIsToThatForum) {
           history.replace(page.pagePath.value + location.search + location.hash);
         }
       }

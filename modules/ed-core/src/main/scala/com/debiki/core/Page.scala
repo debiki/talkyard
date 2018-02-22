@@ -404,7 +404,8 @@ object PageRole {
     override def canHaveReplies = false
   }
 
-  /** Lists forum topics and categories. */
+  /** Lists forum topics and categories. A Talkyard site can have many forum pages.
+    * Each forum is then its own sub community, like a Reddit subreddit. */
   case object Forum extends PageRole(7) {
     override def isSection = true
     override def mayChangeRole = false

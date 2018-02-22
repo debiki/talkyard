@@ -107,11 +107,6 @@ export function startMainReactRoot() {
 
   const pageElem = document.getElementById('dwPosts');
 
-  const store: Store = ReactStore.allData();
-  const forumRootSlash = store.forumPath;
-
-  const forumDefaultPath = forumRootSlash + (store.settings.forumMainView || RoutePathLatest);
-
   if (location.pathname === '/-/embedded-comments') {
     ReactDOM.hydrate(PageWithState(), pageElem);
   }
@@ -121,23 +116,43 @@ export function startMainReactRoot() {
     const skipHydrate = true; // location.pathname.search('/-/') === 0;
     const renderOrHydrate = skipHydrate ? ReactDOM.render : ReactDOM.hydrate;
     const isEmbCmts: boolean = eds.isInEmbeddedCommentsIframe;
+
+    // A route for about-user pages and the staff area.
+    const sectionsAndPages = [
+      // If starting on one of the routes that need more-bundle.js, that bundle is
+      // included directly in a <script> tag. Good for performance? [5WKE24]
+      Route({ path: '/-/', component: MoreScriptsRoutesComponent })];
+
+    // Routes for the forum, or maybe many forums (if there're different sub communities).
+    const store: Store = ReactStore.allData();
+    for (let i = 0; i < store.siteSections.length; ++i) {
+      const section: SiteSection = store.siteSections[i];
+      if (section.pageRole === PageRole.Forum) {
+        const forumRootSlash = section.path;
+        const forumDefaultPath = forumRootSlash + (store.settings.forumMainView || RoutePathLatest);
+
+        // This redirects e.g. '/forum/' and '/forum' to '/forum/latest':
+        sectionsAndPages.push(Redirect({ path: forumRootSlash, to: forumDefaultPath, exact: true }));
+
+        const fc = forum.ForumComponent;
+        sectionsAndPages.push(Route({ path: forumRootSlash + RoutePathLatest, component: fc }));
+        sectionsAndPages.push(Route({ path: forumRootSlash + RoutePathNew, component: fc }));
+        sectionsAndPages.push(Route({ path: forumRootSlash + RoutePathTop, component: fc }));
+        sectionsAndPages.push(Route({ path: forumRootSlash + RoutePathCategories, component: fc }));
+      }
+      // else ?? — currently cannot happen.
+    }
+
+    // Routes for single pages, e.g. chat channels or discussion topics.
+    sectionsAndPages.push(Route({ path: '/', component: PageWithStateComponent }));
+
     renderOrHydrate(
         Router({},
           rFragment({},
             Route({ render: debiki2.topbar.TopBar }),
             isEmbCmts ? null : debiki2.page.ScrollButtons(),
             isEmbCmts ? null : Route({ component: debiki2.page.Hacks.ExtReactRootNavComponent }),
-            Switch({},
-              // If starting on one of the routes that need more-bundle.js, that bundle is
-              // included directly in a <script> tag. Good for performance? [5WKE24]
-              Route({ path: '/-/', component: MoreScriptsRoutesComponent }),
-              // This redirects e.g. '/forum/' and '/forum' to '/forum/latest':
-              Redirect({ path: forumRootSlash, to: forumDefaultPath, exact: true }),
-              Route({ path: forumRootSlash + RoutePathLatest, component: forum.ForumComponent }),
-              Route({ path: forumRootSlash + RoutePathNew, component: forum.ForumComponent }),
-              Route({ path: forumRootSlash + RoutePathTop, component: forum.ForumComponent }),
-              Route({ path: forumRootSlash + RoutePathCategories, component: forum.ForumComponent }),
-              Route({ path: '/', component: PageWithStateComponent })))),
+            Switch({ children: sectionsAndPages }))),
       pageElem);
   }
 }
