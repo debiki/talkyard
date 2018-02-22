@@ -1279,6 +1279,10 @@ function showNewPage(newPage: Page, newPublicCategories: Category[], newUsers: B
   store.publicCategories = newPublicCategories;  // hmm could rename to currentPublicCategories
   store.currentCategories = _.clone(newPublicCategories);
 
+  // Forget any topics from the original page load. Maybe we're now in a different sub community,
+  // or some new topics have been created. Better reload.
+  store.topics = null;
+
   let myData: MyPageData;
   if (newMe) {
     store.me.watchbar = newMe.watchbar;

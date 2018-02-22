@@ -575,7 +575,7 @@ interface Store {
   currentCategories: Category[];
   publicCategories: Category[];
   newCategorySlug: string; // for temporarily highlighting a newly created category
-  topics: Topic[];
+  topics?: Topic[];
   user: Myself; // try to remove, use 'me' instead:
   me: Myself;
   userSpecificDataAdded?: boolean; // is always false, server side

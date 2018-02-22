@@ -137,13 +137,14 @@ export const TitleEditor = createComponent({
   render: function() {
     const store: Store = this.props.store;
     const page: Page = store.currentPage;
-    let me: Myself = store.me;
-    let settings: SettingsVisibleClientSide = store.settings;
-    let pageRole: PageRole = page.pageRole;
-    let titlePost: Post = page.postsByNr[TitleNr];
-    let titleText = titlePost.sanitizedHtml; // for now. TODO only allow plain text?
-    let isForumOrAboutOrMessage =
-      pageRole === PageRole.Forum || pageRole === PageRole.About || pageRole === PageRole.FormalMessage;
+    const me: Myself = store.me;
+    const settings: SettingsVisibleClientSide = store.settings;
+    const pageRole: PageRole = page.pageRole;
+    const titlePost: Post = page.postsByNr[TitleNr];
+    const titleText = titlePost.sanitizedHtml; // for now. TODO only allow plain text?
+    const isForum = pageRole === PageRole.Forum;
+    const isForumOrAboutOrMessage =
+        isForum || pageRole === PageRole.About || pageRole === PageRole.FormalMessage;
 
     if (!this.state.editorScriptsLoaded) {
       // The title is not shown, so show some whitespace to avoid the page jumping upwards.
@@ -195,18 +196,20 @@ export const TitleEditor = createComponent({
                 "into the <html><head><meta name='description' content='...'> attribute." }));
 
 
-      var anyUrlAndCssClassEditor = !store.settings.showExperimental ? null :
+      // Forum pages must not have a slug (then /latest etc suffixes won't work),
+      // and should not show the page id.
+      const anyUrlAndCssClassEditor = !store.settings.showExperimental ? null :
         r.div({ className: 'esTtlEdtr_urlSettings' },
           r.p({}, r.b({}, "Ignore this "), "— unless you understand URL addresses and CSS."),
-          Input({ label: 'Page slug', type: 'text', ref: 'slugInput', className: 'dw-i-slug',
-            labelClassName: 'col-xs-2', wrapperClassName: 'col-xs-10',
+          isForum ? null : Input({ label: 'Page slug', type: 'text', ref: 'slugInput',
+            className: 'dw-i-slug', labelClassName: 'col-xs-2', wrapperClassName: 'col-xs-10',
             value: this.state.slug, onChange: this.onSlugChanged,
             help: "The name of this page in the URL."}),
           Input({ label: 'Folder', type: 'text', ref: 'folderInput', className: 'dw-i-folder',
             labelClassName: 'col-xs-2', wrapperClassName: 'col-xs-10',
             value: this.state.folder, onChange: this.onFolderChanged,
             help: "Any /url/path/ to this page." }),
-          Input({ label: 'Show page ID in URL', type: 'checkbox', ref: 'showIdInput',
+          isForum ? null : Input({ label: 'Show page ID in URL', type: 'checkbox', ref: 'showIdInput',
             wrapperClassName: 'col-xs-offset-2 col-xs-10',
             className: 'dw-i-showid', checked: this.state.showId,
             onChange: this.onShowIdChanged }),
