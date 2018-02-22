@@ -101,7 +101,9 @@ const SubCommunities = createComponent({
     const subCommunities: WatchbarTopic[] = watchbar[WatchbarSection.SubCommunities];
     const subCommunitiesElems = [];
 
-    _.each(subCommunities, (topic: WatchbarTopic) => {
+    const subCommunitiesSorted = cloneAndSort(subCommunities);
+
+    _.each(subCommunitiesSorted, (topic: WatchbarTopic) => {
       subCommunitiesElems.push(
         SingleTopic({ key: topic.pageId, store: store, topic: topic, flavor: 'SubCommunities',
             isCurrent: topic.pageId === store.currentPageId }));
@@ -142,11 +144,13 @@ const RecentTopicsAndNotfs = createComponent({
       if (forum) {
         topicElems.push(
             SingleTopic({ key: forum.pageId, store: store, topic: forum, flavor: 'recent',
-              isCurrent: forum.pageId === store.currentPageId }));
+              isCurrent: forum.pageId === store.currentPageId, forumIcon: true }));
       }
     }
 
-    _.each(recentTopics, (topic: WatchbarTopic) => {
+    const recentTopicsSorted = cloneAndSort(recentTopics);
+
+    _.each(recentTopicsSorted, (topic: WatchbarTopic) => {
       // If the topic is listed in the Chat Channels or Direct Messages section, skip it
       // here in the recent-topics list.
       if (_.some(chatChannels, c => c.pageId === topic.pageId)) return;
@@ -318,6 +322,10 @@ const SingleTopic = createComponent({
           leaveChatButton
         ));
 
+    if (this.props.forumIcon) {
+      title = r.span({ className: 'icon-menu' }, title);
+    }
+
     // Could show num unread posts / chat messages. But would be rather complicated:
     // need to track num unread, + last visit date too, in the watchbar data.
     return (
@@ -335,6 +343,20 @@ var NoTopics = function() {
       r.span({ className: 'esWB_T_Link' },
         r.i({ className: 'esWB_T_None' }, "None" ))));
 };
+
+
+// The database remembers watchbar topics recent-first, but let's present them
+// alphabetically; it's so confusing otherwise when all topics shift position whenever
+// one views a page.
+function cloneAndSort(topics: WatchbarTopic[]) {
+  const topicsSorted = _.clone(topics);
+  topicsSorted.sort((ta, tb) => {
+    const titleA = ta.title.toLowerCase();
+    const titleB = tb.title.toLowerCase();
+    return titleA < titleB ? -1 : (titleA > titleB ? +1 : 0);
+  });
+  return topicsSorted;
+}
 
 
 //------------------------------------------------------------------------------
