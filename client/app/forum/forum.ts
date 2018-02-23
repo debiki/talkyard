@@ -238,10 +238,12 @@ export const ForumComponent = createReactClass(<any> {
         ? debiki2.help.HelpMessageBox({ message: helpMessage })
         : null;
 
+    const layout = store.currentPage.pageLayout;
+
     const childProps = _.assign({}, {
       store: store,
       forumPath,
-      useTable: this.state.useWideLayout,
+      useTable: this.state.useWideLayout && layout != TopicListLayout.NewsFeed,
       sortOrderRoute,
       queryParams: parseQueryString(this.props.location.search),
       activeCategory: activeCategory,
@@ -1242,7 +1244,7 @@ const TopicRow = createComponent({
     if (page.pageLayout === TopicListLayout.ThumbnailLeft) {
       die('Unimplemented: thumbnail left [EdE7KW4024]')
     }
-    else if (page.pageLayout === TopicListLayout.ThumbnailsBelowTitle) {
+    else if (page.pageLayout >= TopicListLayout.ThumbnailsBelowTitle) {
       let thumbnailUrls = topic_mediaThumbnailUrls(topic);
       let imgIndex = 0;
       anyThumbnails = _.isEmpty(thumbnailUrls) ? null :

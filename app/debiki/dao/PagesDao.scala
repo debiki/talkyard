@@ -117,7 +117,7 @@ trait PagesDao {
       titleSource = title.text, titleHtmlSanitized = title.safeHtml,
       bodySource = body.text, bodyHtmlSanitized = body.safeHtml,
       pinOrder = pinOrder, pinWhere = pinWhere,
-      byWho, spamRelReqStuff, transaction = transaction)
+      byWho, spamRelReqStuff, transaction = transaction, layout = None)
 
 
   def createPageImpl(pageRole: PageRole, pageStatus: PageStatus,
@@ -128,6 +128,7 @@ trait PagesDao {
       pinOrder: Option[Int], pinWhere: Option[PinPageWhere],
       byWho: Who, spamRelReqStuff: Option[SpamRelReqStuff],
       transaction: SiteTransaction, hidePageBody: Boolean = false,
+      layout: Option[TopicListLayout] = None,
       bodyPostType: PostType = PostType.Normal,
       altPageId: Option[AltPageId] = None, embeddingUrl: Option[String] = None): (PagePath, Post) = {
 
@@ -246,6 +247,7 @@ trait PagesDao {
 
     val pageMeta = PageMeta.forNewPage(pageId, pageRole, authorId, now.toJavaDate,
       numPostsTotal = 2, // title & body
+      layout = layout,
       pinOrder = pinOrder, pinWhere = pinWhere,
       categoryId = anyCategoryId, url = None, publishDirectly = true,
       hidden = approvedById.isEmpty) // [7AWU2R0]

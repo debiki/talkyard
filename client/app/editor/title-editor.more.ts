@@ -168,8 +168,12 @@ export const TitleEditor = createComponent({
                     topicListLayout_getName(TopicListLayout.TitleOnly)),
                   MenuItem({ onClick: mkSetter(TopicListLayout.TitleExcerptSameLine) },
                     topicListLayout_getName(TopicListLayout.TitleExcerptSameLine)),
+                  MenuItem({ onClick: mkSetter(TopicListLayout.ExcerptBelowTitle) },
+                    topicListLayout_getName(TopicListLayout.ExcerptBelowTitle)),
                   MenuItem({ onClick: mkSetter(TopicListLayout.ThumbnailsBelowTitle) },
-                    topicListLayout_getName(TopicListLayout.ThumbnailsBelowTitle)))))));
+                    topicListLayout_getName(TopicListLayout.ThumbnailsBelowTitle)),
+                  MenuItem({ onClick: mkSetter(TopicListLayout.NewsFeed) },
+                    topicListLayout_getName(TopicListLayout.NewsFeed)))))));
       }
 
     var complicatedStuff;
@@ -311,7 +315,9 @@ export const TitleEditor = createComponent({
 function topicListLayout_getName(pageLayout: TopicListLayout): string {
   switch (pageLayout) {
     case TopicListLayout.TitleExcerptSameLine: return "Title and excerpt on same line";
-    case TopicListLayout.ThumbnailsBelowTitle: return "Thumbnails and excerpt below title";
+    case TopicListLayout.ExcerptBelowTitle: return "Excerpt below title";
+    case TopicListLayout.ThumbnailsBelowTitle: return "Excerpt and preview images below title";
+    case TopicListLayout.NewsFeed: return "News feed";
     case TopicListLayout.TitleOnly: // fall through
     default:
       return "Show topic title only";

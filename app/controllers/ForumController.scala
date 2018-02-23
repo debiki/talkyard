@@ -17,7 +17,7 @@
 
 package controllers
 
-import debiki.dao.{CategoriesDao, CategoryToSave, PageStuff, SiteDao}
+import debiki.dao._
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki._
@@ -41,9 +41,32 @@ class ForumController @Inject()(cc: ControllerComponents, edContext: EdContext)
 
 
   def createForum: Action[JsValue] = AdminPostJsonAction(maxBytes = 200) { request =>
-    val title = (request.body \ "title").as[String]
-    val folder = (request.body \ "folder").as[String]
-    val result = request.dao.createForum(title, folder = folder, isForEmbCmts = false, request.who)
+    import request.body
+
+    val title = (body \ "title").as[String]
+    val folder = (body \ "folder").as[String]
+    val useCategories = (body \ "useCategories").as[Boolean]
+
+    val no = if (!useCategories) Some(false) else None
+    val createSupportCategory = no getOrElse (body \ "createSupportCategory").as[Boolean]
+    val createIdeasCategory = no getOrElse (body \ "createIdeasCategory").as[Boolean]
+    val createOtherCategory = no getOrElse (body \ "createOtherCategory").as[Boolean]
+
+    val topicListStyleInt = (body \ "topicListStyle").as[Int]
+    val topicListStyle = TopicListLayout.fromInt(topicListStyleInt) getOrElse throwBadRequest(
+      "TyE5JKSEW2", "Bad topic list style number")
+
+    val options = CreateForumOptions(
+      isForEmbeddedComments = false,
+      title = title,
+      folder = folder,
+      useCategories = useCategories,
+      createSupportCategory = createSupportCategory,
+      createIdeasCategory = createIdeasCategory,
+      createOtherCategory = createOtherCategory,
+      topicListStyle = topicListStyle)
+
+    val result = request.dao.createForum(options, request.who)
     OkSafeJson(JsString(result.pagePath.value))
   }
 

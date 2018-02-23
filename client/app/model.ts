@@ -390,6 +390,7 @@ enum TopicListLayout {
   ExcerptBelowTitle = 3,
   ThumbnailLeft = 4,
   ThumbnailsBelowTitle = 5,
+  NewsFeed = 6,
 }
 
 

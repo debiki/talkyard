@@ -39,7 +39,7 @@ export var AdminGuide =
     r.h2({}, "Create categories"),
     r.p({}, "On ", r.a({ href: "/" }, "the forum main page"), ", click ", r.strong({}, "Categories"), ", then ", r.strong({}, "Create Category"), ". Edit the about-this-category topic that you'll find in each category you create. Don't create too many categories (if you do, they might look rather empty)."),
     r.h2({}, "Build your community"),
-    r.p({}, "Building a community is hard. Before launching:"),
+    r.p({}, "Before launching your community:"),
     r.ul({},
       r.li({}, "Make sure people will understand what this community is about — see the ", r.em({}, "Clarify what this community is about"), " section above."),
       r.li({}, "Create some interesting topics, so people won't find an empty forum."),

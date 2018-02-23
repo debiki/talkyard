@@ -80,6 +80,7 @@ export function startMainReactRoot() {
   // <div id="dw-non-existing-page">
   const nonExistingPageElem = document.getElementById('dw-non-existing-page');
   if (nonExistingPageElem) {
+    $h.addClasses(document.documentElement, 's_NoPage');
     ReactDOM.render(
         nopage.NonExistingPage({}), nonExistingPageElem);
     return;

@@ -433,6 +433,9 @@ trait CategoriesDao {
         byWho: Who)(transaction: SiteTransaction): CreateCategoryResult = {
 
     val categoryId = transaction.nextCategoryId()
+    dieIf(newCategoryData.anyId isNot categoryId, "TyE4GKWRQ",
+      o"""transaction.nextCategoryId() = $categoryId but newCategoryData.anyId is
+         ${newCategoryData.anyId.get}, site id $siteId""")
 
     // Discourse currently has 28 categories so 65 is a lot.
     // Can remove this later, when I think I won't want to add more cat perms via db migrations.

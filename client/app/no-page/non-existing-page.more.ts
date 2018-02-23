@@ -225,8 +225,8 @@ const CreateSomethingHere = createComponent({
 
     return (
       r.div({},
-        r.h1({}, "Forum name"),
-        r.p({}, "What shall the forum be named? (You can rename it later.)"),
+        r.h1({}, "Configure your forum"),
+        r.p({}, "You can change all this later; nothing is carved in stone."),
         /* Add this back later if there'll be Blog and Wiki options too [8GYK34]
         r.p({}, message),
         r.div({ className: 'do-what-options' },
@@ -246,29 +246,183 @@ const CreateSomethingHere = createComponent({
 export var CreateForumPanel = createComponent({
   getInitialState: function() {
     return {
-      forumName: ''
+      title: '',
+      useCategories: true,
+      createSupportCategory: true,
+      createIdeasCategory: true,
+      createOtherCategory: false,
+      topicListStyle: TopicListLayout.ExcerptBelowTitle,
+      nextChoice: 1,
     };
   },
 
   handleChange: function() {
     this.setState({
-      forumName: this.refs.forumName.getValue()
+      title: this.refs.forumName.getValue()
     });
   },
 
   createForum: function() {
-    Server.createForum(this.state.forumName, '/', (forumUrlPath: string) => {
+    Server.createForum(<any> { folder: '/', ...this.state }, (forumUrlPath: string) => {
       window.location.assign(forumUrlPath);
     });
   },
 
   render: function() {
+
+    let nextChoice = this.state.nextChoice;
+
+    // Most defaults are ok; one can simply click Next, Next, Next.
+    let thisChoiceDone = true;
+
+    // Why these choices? Actually people like things they've invested a bit on-topic time
+    // and decisions in. I think these choices make people feel the forum
+    // is *theirs*, something *they* have created. And then they like it more. People don't
+    // think ready made food they buy, is tasty. But if they have to do a tiny simple bit of
+    // work, to prepare the food (like, mixing two ingredients) — then they think the food
+    // tastes really nice. Just because they feel they made it.
+    // So let them work a tiny bit here, to get started. Also, this helps them start out
+    // with a forum that looks & works better for their use case.
+
+    let forumNameChoice;
+    let useCategoriesChoice;
+    let createSupportCategoryChoice;
+    let createIdeasCategoryChoice;
+    let createOtherCategoryChoice;
+    let topicListStyleChoiceAndCreateButton;
+
+    let nextButton;
+    let createButton;
+
+    forumNameChoice = Input({ type: 'text', label: "Forum name:",
+        placeholder: "Enter forum name here",
+        ref: 'forumName', onChange: this.handleChange });
+
+    if (nextChoice === 1 && !this.state.title) {
+      thisChoiceDone = false;
+    }
+
+    if (nextChoice >= 2) {
+      useCategoriesChoice = Input({ type: 'checkbox',
+          label: "Use categories? Probably a good idea, unless the forum will be very small. " +
+              "(Default: Yes)",
+          checked: this.state.useCategories,
+          onChange: (event) => this.setState({ useCategories: event.target.checked }) });
+    }
+
+    if (this.state.useCategories) {
+      if (nextChoice >= 3) {
+        createSupportCategoryChoice = Input({ type: 'checkbox',
+            label: "Create a Support category? Where people can ask questions.",
+            checked: this.state.createSupportCategory,
+            onChange: (event) => this.setState({ createSupportCategory: event.target.checked }) });
+      }
+
+      if (nextChoice >= 4) {
+        createIdeasCategoryChoice = Input({ type: 'checkbox',
+            label: "Create an Ideas category? Where people can suggest ideas.",
+            checked: this.state.createIdeasCategory,
+            onChange: (event) => this.setState({ createIdeasCategory: event.target.checked }) });
+      }
+
+      if (nextChoice >= 5) {
+        createOtherCategoryChoice = Input({ type: 'checkbox',
+            label: "Create an Other category? For topics that don't fit anywhere else. (Default: No)",
+            checked: this.state.createOtherCategory,
+            onChange: (event) => this.setState({ createOtherCategory: event.target.checked }) });
+      }
+    }
+    else {
+      nextChoice = 6;
+    }
+
+    if (nextChoice >= 6) {
+      const style = this.state.topicListStyle;
+      let topicListPreviewImgSrc;
+
+      let imgWidth;
+      // Image widths: (so they'll show the same "zoom" level)
+      // topic-list-titles-only.jpg: 978                      * 0.6295 = 621
+      // topic-list-title-excerpt-same-line.jpg: 1055 pixels  * 0.6295 = 664
+      // topic-list-excerpt-below-title.jpg: 1112 pixels      * 0.6295 = 700
+      // topic-list-excerpts-and-thumbnails.jpg: 1112 pixels  * 0.6295 = 700
+      // topic-list-news-feed.jpg: 810 pixels                 * 0.6295 = 510
+
+      switch (style) {
+        case TopicListLayout.TitleOnly:
+          topicListPreviewImgSrc = '/-/img/create-site/topic-list-titles-only.jpg';
+          imgWidth = 621;
+          break;
+        case TopicListLayout.TitleExcerptSameLine:
+          topicListPreviewImgSrc = '/-/img/create-site/topic-list-title-excerpt-same-line.jpg';
+          imgWidth = 664;
+          break;
+        case TopicListLayout.ExcerptBelowTitle:
+          topicListPreviewImgSrc = '/-/img/create-site/topic-list-excerpt-below-title.jpg';
+          imgWidth = 700;
+          break;
+        //case TopicListLayout.ThumbnailLeft:
+          // Not implemented.
+        case TopicListLayout.ThumbnailsBelowTitle:
+          topicListPreviewImgSrc = '/-/img/create-site/topic-list-excerpts-and-thumbnails.jpg';
+          imgWidth = 700;
+          break;
+        case TopicListLayout.NewsFeed:
+          topicListPreviewImgSrc = '/-/img/create-site/topic-list-news-feed.jpg';
+          imgWidth = 510;
+          break;
+      }
+
+      const setTopicsStyle =
+          (newStyle) => { return () => this.setState({ topicListStyle: newStyle }) };
+
+      topicListStyleChoiceAndCreateButton =
+          r.div({ class: 'clearfix' },
+            r.br(),
+            r.div({ style: { float: 'left' }},
+              r.p({}, r.b({}, "How shall the topic list look?")),
+              Input({ type: 'radio', label: "Titles only",
+                checked: style === TopicListLayout.TitleOnly,
+                onChange: setTopicsStyle(TopicListLayout.TitleOnly) }),
+              Input({ type: 'radio', label: "Titles and excerpt, same line",
+                checked: style === TopicListLayout.TitleExcerptSameLine,
+                onChange: setTopicsStyle(TopicListLayout.TitleExcerptSameLine) }),
+              Input({ type: 'radio', label: "Excerpt in separate paragraph",
+                checked: style === TopicListLayout.ExcerptBelowTitle,
+                onChange: setTopicsStyle(TopicListLayout.ExcerptBelowTitle),
+                help: rFragment({}, "Shows a bit what each topic is about.", r.br(),
+                  "This is the default.") }),
+              Input({ type: 'radio', label: "Excerpts and thumbnails",
+                checked: style === TopicListLayout.ThumbnailsBelowTitle,
+                onChange: setTopicsStyle(TopicListLayout.ThumbnailsBelowTitle),
+                help: "Like above, plus small preview images." }),
+              Input({ type: 'radio', label: "Like a news feed",
+                checked: style === TopicListLayout.NewsFeed,
+                onChange: setTopicsStyle(TopicListLayout.NewsFeed),
+                help: "Like above, but full width (no table layout)." }),
+              PrimaryButton({ className: 's_NP_CreateForumB',
+                onClick: this.createForum, disabled: !this.state.title.trim(),
+                id: 'e2eDoCreateForum' }, "Create Forum")),
+            r.div({ className: 's_NP_TopicsPreview' },
+              r.p({}, r.i({}, "Topic list preview:")),
+              r.img({ width: imgWidth, src: topicListPreviewImgSrc })));
+    }
+
+    if (nextChoice <= 5) {
+      const last = nextChoice === 5 ? " (last)" : '';
+      nextButton = PrimaryButton({ onClick: () => this.setState({ nextChoice: nextChoice + 1 }),
+          disabled: !thisChoiceDone, id: 'e2eDoCreateForum' }, "Next" + last);
+    }
+
     return (
       r.div({},
-        Input({ type: 'text', label: "Forum name:", placeholder: "Enter forum name here",
-            ref: 'forumName', onChange: this.handleChange }),
-        PrimaryButton({ onClick: this.createForum, disabled: !this.state.forumName.length,
-            id: 'e2eDoCreateForum' }, "Create Forum")));
+        forumNameChoice,
+        useCategoriesChoice,
+        createSupportCategoryChoice,
+        createIdeasCategoryChoice,
+        createOtherCategoryChoice,
+        topicListStyleChoiceAndCreateButton,
+        nextButton));
   }
 });
 

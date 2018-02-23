@@ -95,6 +95,7 @@ object PageMeta {
         authorId: UserId,
         creationDati: ju.Date,
         numPostsTotal: Int,
+        layout: Option[TopicListLayout] = None,
         plannedAt: Option[ju.Date] = None,
         pinOrder: Option[Int] = None,
         pinWhere: Option[PinPageWhere] = None,
@@ -113,7 +114,7 @@ object PageMeta {
       categoryId = categoryId,
       embeddingPageUrl = url,
       authorId = authorId,
-      layout = TopicListLayout.Default,
+      layout = layout getOrElse TopicListLayout.Default,
       pinOrder = pinOrder,
       pinWhere = pinWhere,
       numLikes = 0,
@@ -526,6 +527,7 @@ object TopicListLayout {
   object ExcerptBelowTitle extends TopicListLayout(3)
   object ThumbnailLeft extends TopicListLayout(4)
   object ThumbnailsBelowTitle extends TopicListLayout(5)
+  object NewsFeed extends TopicListLayout(6)
 
   def fromInt(value: Int): Option[TopicListLayout] = Some(value match {
     case Default.IntVal => Default
@@ -534,6 +536,7 @@ object TopicListLayout {
     case ExcerptBelowTitle.IntVal => ExcerptBelowTitle
     case ThumbnailLeft.IntVal => ThumbnailLeft
     case ThumbnailsBelowTitle.IntVal => ThumbnailsBelowTitle
+    case NewsFeed.IntVal => NewsFeed
     case _ => return None
   })
 }

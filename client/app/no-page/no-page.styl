@@ -15,6 +15,15 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+.s_NoPage body
+  overflow: auto; // otherwise no y scrollbars
+
+.s_NoPage .container
+  width: 100%;  // otherwise narrower, causing the topic list preview to float drop
+  max-width: 1150px;
+  margin: 0 auto;
+  padding: 0 10px 0 20px;
+
 
 #dw-non-existing-page
   h1
@@ -31,6 +40,22 @@
 
     .btn
       margin-right: 10px;
+
+.s_NoPage .radio
+  margin-bottom: 7px;
+
+.s_NP_CreateForumB
+  margin: 1em 0 2em;
+  padding: 1.2ex 2.2ex;
+  font-weight: bold;
+
+.s_NP_TopicsPreview
+  float: left;
+  max-width: 700px;
+  min-height: 700px; // avoids changing page height when changing preview image
+  margin-left: 30px;
+  img
+    box-shadow: hsl(0, 0%, 53%) 5px 5px 32px;
 
 
 // vim: fdm=marker et ts=2 sw=2 tw=0 fo=r list

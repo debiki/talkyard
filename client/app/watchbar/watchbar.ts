@@ -111,11 +111,18 @@ const SubCommunities = createComponent({
 
     const header = r.h3({ style: { wordSpacing: '2px' }}, "Communities");  // skip "sub" here
 
-    const newCommunityButton = Button({ onClick: () => Server.createForum(
-      "New Sub Community",
-      '/forum2/',
-      () => {}
-      ) }, "Add new ...");
+    // Just a test.
+    const newCommunityButton = Button({ onClick: () => Server.createForum({
+      title: "New Sub Community",
+      folder: '/forum2/',
+        useCategories: true,
+        createSupportCategory: true,
+        createIdeasCategory: true,
+        createOtherCategory: true,
+        topicListStyle: TopicListLayout.NewsFeed
+      },
+      () => {} )}, "Add new ...");
+
     return (
       r.div({ className: 'esWB_Ts' },
         header,

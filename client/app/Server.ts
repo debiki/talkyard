@@ -760,11 +760,9 @@ export function loadAuthorBlockedInfo(postId: number, success: (response: Blocks
 }
 
 
-export function createForum(title: string, folder: string, success: (urlPath: string) => void) {
-  postJsonSuccess('/-/create-forum', success, {
-    title: title,
-    folder: folder,
-  });
+export function createForum(options: { title, folder, useCategories, createSupportCategory,
+      createIdeasCategory, createOtherCategory, topicListStyle }, success: (urlPath: string) => void) {
+  postJsonSuccess('/-/create-forum', success, options);
 }
 
 

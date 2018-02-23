@@ -23,6 +23,17 @@ import scala.collection.immutable
 import ForumDao._
 
 
+case class CreateForumOptions(
+  isForEmbeddedComments: Boolean,
+  title: String,
+  folder: String,
+  useCategories: Boolean,
+  createSupportCategory: Boolean,
+  createIdeasCategory: Boolean,
+  createOtherCategory: Boolean,
+  topicListStyle: TopicListLayout)
+
+
 case class CreateForumResult(
   pagePath: PagePath,
   staffCategoryId: CategoryId,
@@ -36,7 +47,22 @@ trait ForumDao {
 
 
   def createForum(title: String, folder: String, isForEmbCmts: Boolean, byWho: Who): CreateForumResult = {
-    val titleHtmlSanitized = context.nashorn.sanitizeHtml(title, followLinks = false)
+    createForum(CreateForumOptions(
+      isForEmbeddedComments = false,
+      title = title,
+      folder = folder,
+      useCategories = true,
+      createSupportCategory = false,
+      createIdeasCategory = false,
+      createOtherCategory = false,
+      topicListStyle = TopicListLayout.TitleExcerptSameLine), byWho)
+  }
+
+
+  def createForum(options: CreateForumOptions, byWho: Who): CreateForumResult = {
+    val titleHtmlSanitized = context.nashorn.sanitizeHtml(options.title, followLinks = false)
+    val isForEmbCmts = options.isForEmbeddedComments
+
     val result = readWriteTransaction { transaction =>
 
       // The forum page points to the root category, which points back.
@@ -61,25 +87,32 @@ trait ForumDao {
       val introText = isForEmbCmts ? EmbeddedCommentsIntroText | ForumIntroText
       val (forumPagePath, _) = createPageImpl(
         PageRole.Forum, PageStatus.Published, anyCategoryId = Some(rootCategoryId),
-        anyFolder = Some(folder), anySlug = Some(""), showId = false,
-        titleSource = title, titleHtmlSanitized = titleHtmlSanitized,
+        anyFolder = Some(options.folder), anySlug = Some(""), showId = false,
+        titleSource = options.title, titleHtmlSanitized = titleHtmlSanitized,
         bodySource = introText.source, bodyHtmlSanitized = introText.html,
         pinOrder = None, pinWhere = None,
-        byWho, spamRelReqStuff = None, transaction)
+        byWho, spamRelReqStuff = None, transaction, layout = Some(options.topicListStyle))
 
       val forumPageId = forumPagePath.pageId getOrDie "DwE5KPFW2"
 
       val partialResult: CreateForumResult = createDefaultCategoriesAndTopics(
-        forumPageId, rootCategoryId, isForEmbCmts = isForEmbCmts, byWho, transaction)
+        forumPageId, rootCategoryId, isForEmbCmts = isForEmbCmts, options, byWho, transaction)
 
-      if (isForEmbCmts) {
-        val settings = SettingsToSave(
-          showCategories = Some(Some(false)),
-          showTopicFilterButton = Some(Some(false)),
-          showTopicTypes = Some(Some(false)),
-          selectTopicType = Some(Some(false)))
-        transaction.upsertSiteSettings(settings)
-      }
+      val settings =
+        if (isForEmbCmts) {
+          Some(SettingsToSave(
+            showCategories = Some(Some(false)),
+            showTopicFilterButton = Some(Some(false)),
+            showTopicTypes = Some(Some(false)),
+            selectTopicType = Some(Some(false))))
+        }
+        else if (!options.useCategories) {
+          Some(SettingsToSave(
+            showCategories = Some(Some(false))))
+        }
+        else None
+
+      settings.foreach(transaction.upsertSiteSettings)
 
       partialResult.copy(pagePath = forumPagePath)
     }
@@ -92,10 +125,11 @@ trait ForumDao {
 
 
   private def createDefaultCategoriesAndTopics(forumPageId: PageId, rootCategoryId: CategoryId,
-        isForEmbCmts: Boolean, byWho: Who, transaction: SiteTransaction): CreateForumResult = {
+        isForEmbCmts: Boolean, options: CreateForumOptions, byWho: Who, transaction: SiteTransaction)
+        : CreateForumResult = {
 
-    val defaultCategoryId = rootCategoryId + 1
-    val staffCategoryId = rootCategoryId + 2
+    val staffCategoryId = rootCategoryId + 1
+    val defaultCategoryId = rootCategoryId + 2
     val bySystem = Who(SystemUserId, byWho.browserIdData)
 
     // Create forum root category.
@@ -114,26 +148,6 @@ trait ForumDao {
       createdAt = transaction.now.toJavaDate,
       updatedAt = transaction.now.toJavaDate))
 
-    // Create the default category.
-    createCategoryImpl(
-      CategoryToSave(
-        anyId = Some(defaultCategoryId),
-        sectionPageId = forumPageId,
-        parentId = rootCategoryId,
-        shallBeDefaultCategory = true,
-        name = DefaultCategoryName,
-        slug = DefaultCategorySlug,
-        position = DefaultCategoryPosition,
-        description = "New topics get placed here, unless another category is selected.",
-        newTopicTypes = immutable.Seq(PageRole.Discussion),
-        unlisted = false,
-        includeInSummaries = IncludeInSummaries.Default,
-        isCreatingNewForum = true),
-      immutable.Seq[PermsOnPages](
-        makeEveryonesDefaultCategoryPerms(defaultCategoryId),
-        makeStaffCategoryPerms(defaultCategoryId)),
-      bySystem)(transaction)
-
     // Create the Staff category.
     createCategoryImpl(
       CategoryToSave(
@@ -143,8 +157,8 @@ trait ForumDao {
         shallBeDefaultCategory = false,
         name = "Staff",
         slug = "staff",
-        position = Category.DefaultPosition + 10,
-        description = "Private category for staff discussions",
+        position = DefaultCategoryPosition + 10,
+        description = "Private category for staff discussions.",
         newTopicTypes = immutable.Seq(PageRole.Discussion),
         unlisted = false,
         includeInSummaries = IncludeInSummaries.Default,
@@ -153,9 +167,90 @@ trait ForumDao {
         makeStaffCategoryPerms(staffCategoryId)),
       bySystem)(transaction)
 
+    var nextCategoryId = defaultCategoryId
+    def getAndBumpCategoryId() = {
+      nextCategoryId += 1
+      nextCategoryId - 1
+    }
+
+    if (options.createSupportCategory) {
+      val categoryId = getAndBumpCategoryId()
+      createCategoryImpl(
+        CategoryToSave(
+          anyId = Some(categoryId),
+          sectionPageId = forumPageId,
+          parentId = rootCategoryId,
+          shallBeDefaultCategory = categoryId == defaultCategoryId,
+          name = "Support",
+          slug = "support",
+          position = DefaultCategoryPosition - 2,
+          description = "Here you can ask questions and report problems.",
+          newTopicTypes = immutable.Seq(PageRole.Question),
+          unlisted = false,
+          includeInSummaries = IncludeInSummaries.Default,
+          isCreatingNewForum = true),
+        immutable.Seq[PermsOnPages](
+          makeEveryonesDefaultCategoryPerms(categoryId),
+          makeStaffCategoryPerms(categoryId)),
+        bySystem)(transaction)
+    }
+
+    if (options.createIdeasCategory) {
+      val categoryId = getAndBumpCategoryId()
+      createCategoryImpl(
+        CategoryToSave(
+          anyId = Some(categoryId),
+          sectionPageId = forumPageId,
+          parentId = rootCategoryId,
+          shallBeDefaultCategory = categoryId == defaultCategoryId,
+          name = "Ideas",
+          slug = "ideas",
+          position = DefaultCategoryPosition - 1,
+          description = "Here you can suggest new ideas.",
+          newTopicTypes = immutable.Seq(PageRole.Idea),
+          unlisted = false,
+          includeInSummaries = IncludeInSummaries.Default,
+          isCreatingNewForum = true),
+        immutable.Seq[PermsOnPages](
+          makeEveryonesDefaultCategoryPerms(categoryId),
+          makeStaffCategoryPerms(categoryId)),
+        bySystem)(transaction)
+    }
+
+    // If we didn't create a Support or Ideas category, we'll need to create the General
+    // category in any case, so that there'll be a default category.
+    val createGeneralCategory =
+      options.createOtherCategory || (!options.createSupportCategory && !options.createIdeasCategory)
+
+    var generalCategoryId: Option[CategoryId] = None
+
+    if (createGeneralCategory) {
+      val categoryId = getAndBumpCategoryId()
+      generalCategoryId = Some(categoryId)
+      createCategoryImpl(
+        CategoryToSave(
+          anyId = Some(categoryId),
+          sectionPageId = forumPageId,
+          parentId = rootCategoryId,
+          shallBeDefaultCategory = categoryId == defaultCategoryId,
+          name = DefaultCategoryName,
+          slug = DefaultCategorySlug,
+          position = DefaultCategoryPosition,
+          description = "For topics that don't fit in any other category.",
+          newTopicTypes = immutable.Seq(PageRole.Discussion),
+          unlisted = false,
+          includeInSummaries = IncludeInSummaries.Default,
+          isCreatingNewForum = true),
+        immutable.Seq[PermsOnPages](
+          makeEveryonesDefaultCategoryPerms(categoryId),
+          makeStaffCategoryPerms(categoryId)),
+        bySystem)(transaction)
+    }
+
     // Create forum welcome topic.
     if (!isForEmbCmts) createPageImpl(
-      PageRole.Discussion, PageStatus.Published, anyCategoryId = Some(defaultCategoryId),
+      PageRole.Discussion, PageStatus.Published,
+      anyCategoryId = generalCategoryId orElse Some(defaultCategoryId),
       anyFolder = None, anySlug = Some("welcome"), showId = true,
       titleSource = WelcomeTopicTitle,
       titleHtmlSanitized = WelcomeTopicTitle,
@@ -175,8 +270,8 @@ trait ForumDao {
   private val RootCategoryName = "(Root Category)"  // In Typescript test code too [7UKPX5]
   private val RootCategorySlug = "(root-category)"  //
 
-  private val DefaultCategoryName = "Uncategorized"
-  private val DefaultCategorySlug = "uncategorized"
+  private val DefaultCategoryName = "General"
+  private val DefaultCategorySlug = "general"
   private val DefaultCategoryPosition = 1000
 
 }
