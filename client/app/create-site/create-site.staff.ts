@@ -16,8 +16,7 @@
  */
 
 /// <reference path="../slim-bundle.d.ts" />
-/// <reference path="../react-bootstrap-old/Input.more.ts" />
-/// <reference path="../utils/PatternInput.more.ts" />
+/// <reference path="../more-bundle-already-loaded.d.ts" />
 
 //------------------------------------------------------------------------------
    namespace debiki2.createsite {

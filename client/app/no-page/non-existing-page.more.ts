@@ -274,40 +274,6 @@ export var CreateForumPanel = createComponent({
 
 
 
-export var CreateEmbeddedCommentsPanel = createComponent({
-  getInitialState: function() {
-    return {
-      validAddress: false
-    };
-  },
-
-  onChange: function() {
-    this.setState({
-      validAddress: this.refs.embeddingAddress.isValid()
-    });
-  },
-
-  saveEmbeddedCommentsAddress: function() {
-    var setting: Setting = {
-      type: 'WholeSite',
-      name: 'EmbeddingSiteUrl',
-      newValue: this.refs.embeddingAddress.getValue(),
-    };
-    die("Unimplemented [EsE4KUPKFW2]"); // the old complicated settings stuff is now gone
-  },
-
-  render: function() {
-    return (
-      r.div({},
-        debiki2.createsite.EmbeddingAddressInput({ ref: 'embeddingAddress',
-            label: 'Embedding Site Address:', onChange: this.onChange,
-            help: 'Enter the address of the website where the embedded comments should appear.' }),
-        Button({ onClick: this.saveEmbeddedCommentsAddress, disabled: !this.state.validAddress },
-          'Create')));
-  }
-});
-
-
 //------------------------------------------------------------------------------
    }
 //------------------------------------------------------------------------------

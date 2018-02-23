@@ -10,5 +10,9 @@ declare namespace debiki2 {
     var routes;
   }
 
+  namespace createsite {
+    var routes;
+  }
+
 }
 

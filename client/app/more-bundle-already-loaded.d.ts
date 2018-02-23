@@ -96,10 +96,6 @@ declare namespace debiki2.nopage {
   var NonExistingPage;
 }
 
-declare namespace debiki2.createsite {
-  var routes;
-}
-
 declare namespace debiki2.tags {
   var routes;
 }
