@@ -99,6 +99,7 @@ trait CategoriesDao {
     */
   def listMaySeeSectionCategories(pageId: PageId, authzCtx: ForumAuthzContext)
         : (Seq[Category], CategoryId) = {
+    // A bit dupl code (7UKWTW1)
     loadRootCategory(pageId) match {
       case Some(rootCategory) =>
         val categories = listDescendantMaySeeCategories(rootCategory.id, includeRoot = false,
@@ -110,26 +111,27 @@ trait CategoriesDao {
   }
 
 
-  /** Sometimes the section page id is undefined — for example, when talking with someone
+  /** OLD: Sometimes the section page id is undefined — for example, when talking with someone
     * in a personal chat. That chat topic isn't placed in any section (e.g. blog or forum).
-    * Then we want to list all categories, not just all categories in some (undefined) section.
+    * NO???: Then we want to list all categories, not just all categories in some (undefined) section.
     *
-    * Returns (categories, default-category-id).  (Currently there can be only 1 default category)
+    * Returns (categories, default-category-id). (There can be only 1 default category per sub community.)
     */
-  def listAllMaySeeCategories(authzCtx: ForumAuthzContext)
+  def listAllMaySeeCategories(categoryId: CategoryId, authzCtx: ForumAuthzContext)
         : (Seq[Category], Option[CategoryId]) = {
     if (rootCategories eq null) {
       loadBuildRememberCategoryMaps()
       dieIf(rootCategories eq null, "EsE4KG0W2")
     }
-    unimplementedIf(rootCategories.length > 1, "EsU4KT2R8")
+
     if (rootCategories.isEmpty)
       return (Nil, None)
 
-    val rootCategory = rootCategories.head
+    // A bit dupl code (7UKWTW1)
+    val rootCategory = loadRootCategory(categoryId) getOrDie "TyEPKDRW0"
     val categories = listDescendantMaySeeCategories(rootCategory.id, includeRoot = false,
       authzCtx).sortBy(_.position)
-    (categories, Some(rootCategory.defaultCategoryId getOrDie "EsE4GK02"))
+    (categories, Some(rootCategory.defaultCategoryId getOrDie "TyE5JKF2"))
   }
 
 
@@ -268,7 +270,7 @@ trait CategoriesDao {
   }
 
 
-  def loadCategoryBySlug(slug: String): Option[Category] = {
+  def loadCategoryBySlug(slug: String): Option[Category] = {  // oops — same slug, different sub communities?
     val catsStuff = loadBuildRememberCategoryMaps()
     catsStuff._1.values.find(_.slug == slug)
   }
@@ -365,7 +367,7 @@ trait CategoriesDao {
 
     rootCategories = categoriesById.values.filter(_.isRoot).toVector
     val anyRoot = categoriesById.values.find(_.isRoot)
-    defaultCategoryId = anyRoot.flatMap(_.defaultCategoryId) getOrElse NoCategoryId
+    defaultCategoryId = anyRoot.flatMap(_.defaultCategoryId) getOrElse NoCategoryId   // oops
     (categoriesById, categoriesByParentId, defaultCategoryId)
   }
 

@@ -472,16 +472,16 @@ interface OrderOffset {  // COULD rename to TopicQuery? (because includes filter
 
 // Ought to use real field names instead of numbers. Later.
 interface Watchbar {
-  1: WatchbarTopic[]; // WatchbarSection.RecentTopics
-  2: WatchbarTopic[]; // WatchbarSection.Notifications
+  1: WatchbarTopic[]; // WatchbarSection.SubCommunities
+  2: WatchbarTopic[]; // WatchbarSection.RecentTopics
   3: WatchbarTopic[]; // WatchbarSection.ChatChannels
   4: WatchbarTopic[]; // WatchbarSection.DirectMessages
 }
 
 
 enum WatchbarSection {
-  RecentTopics = 1,
-  Notifications = 2,
+  SubCommunities = 1,
+  RecentTopics = 2,
   ChatChannels = 3,
   DirectMessages = 4,
 }
@@ -572,10 +572,10 @@ interface Store {
   hideForumIntro?: boolean;
   maxUploadSizeBytes: number;
   isInEmbeddedCommentsIframe: boolean;
-  categories: Category[];
+  currentCategories: Category[];
   publicCategories: Category[];
   newCategorySlug: string; // for temporarily highlighting a newly created category
-  topics: Topic[];
+  topics?: Topic[];
   user: Myself; // try to remove, use 'me' instead:
   me: Myself;
   userSpecificDataAdded?: boolean; // is always false, server side
@@ -588,8 +588,6 @@ interface Store {
   isContextbarOpen: boolean;
   shallSidebarsOverlayPage?: boolean;
   siteSections: SiteSection[];
-  // For now, just one forum.
-  forumPath: string;
   strangersWatchbar: Watchbar;
   socialLinksHtml: string;
 

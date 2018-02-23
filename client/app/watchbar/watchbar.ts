@@ -73,16 +73,55 @@ export var Watchbar = createComponent({
     const store: Store = this.state.store;
     const me = store.me;
 
-    const recentTopicsAndNotfs = RecentTopicsAndNotfs({ store: store });
+    const forumPages = _.filter(store.siteSections, (s: SiteSection) => s.pageRole === PageRole.Forum);
+    const hasSubCommunities = forumPages.length >= 2;
+
+    const communities = hasSubCommunities ? SubCommunities({ store: store }) : null;
+    const recentTopicsAndNotfs = RecentTopicsAndNotfs({ store: store, hasSubCommunities });
     const chatChannels = ChatChannels({ store: store });
     const directMessages = me.isLoggedIn ? DirectMessages({ store: store }) : null;
 
     return (
       r.div({ className: 'esWB', ref: 'watchbar' },
         r.button({ className: 'esWB_CloseB esCloseCross', onClick: ReactActions.closeWatchbar }),
+        communities,
         recentTopicsAndNotfs,
         chatChannels,
         directMessages));
+  }
+});
+
+
+const SubCommunities = createComponent({
+  displayName: 'SubCommunities',
+
+  render: function() {
+    const store: Store = this.props.store;
+    const watchbar: Watchbar = store.me.watchbar;
+    const subCommunities: WatchbarTopic[] = watchbar[WatchbarSection.SubCommunities];
+    const subCommunitiesElems = [];
+
+    const subCommunitiesSorted = cloneAndSort(subCommunities);
+
+    _.each(subCommunitiesSorted, (topic: WatchbarTopic) => {
+      subCommunitiesElems.push(
+        SingleTopic({ key: topic.pageId, store: store, topic: topic, flavor: 'SubCommunities',
+            isCurrent: topic.pageId === store.currentPageId }));
+    });
+
+    const header = r.h3({ style: { wordSpacing: '2px' }}, "Communities");  // skip "sub" here
+
+    const newCommunityButton = Button({ onClick: () => Server.createForum(
+      "New Sub Community",
+      '/forum2/',
+      () => {}
+      ) }, "Add new ...");
+    return (
+      r.div({ className: 'esWB_Ts' },
+        header,
+        r.ul({},
+          subCommunitiesElems,
+          newCommunityButton)));
   }
 });
 
@@ -97,7 +136,21 @@ const RecentTopicsAndNotfs = createComponent({
     const chatChannels: WatchbarTopic[] = watchbar[WatchbarSection.ChatChannels];
     const directMessages: WatchbarTopic[] = watchbar[WatchbarSection.DirectMessages];
     const topicElems = [];
-    _.each(recentTopics, (topic: WatchbarTopic) => {
+
+    // If there's just a single forum (no other forums = sub communities) then always show
+    // it first in the Recent list (instead of in a separate 'Communities' watchbar section).
+    if (!this.props.hasSubCommunities) {
+      const forum = watchbar[WatchbarSection.SubCommunities][0];
+      if (forum) {
+        topicElems.push(
+            SingleTopic({ key: forum.pageId, store: store, topic: forum, flavor: 'recent',
+              isCurrent: forum.pageId === store.currentPageId, forumIcon: true }));
+      }
+    }
+
+    const recentTopicsSorted = cloneAndSort(recentTopics);
+
+    _.each(recentTopicsSorted, (topic: WatchbarTopic) => {
       // If the topic is listed in the Chat Channels or Direct Messages section, skip it
       // here in the recent-topics list.
       if (_.some(chatChannels, c => c.pageId === topic.pageId)) return;
@@ -106,9 +159,9 @@ const RecentTopicsAndNotfs = createComponent({
         SingleTopic({ key: topic.pageId, store: store, topic: topic, flavor: 'recent',
             isCurrent: topic.pageId === store.currentPageId }));
     });
+
     return (
         r.div({ className: 'esWB_Ts' },
-          // Not "recent topics", because contains non-topics too, e.g. forum itself.
           r.h3({ style: { wordSpacing: '2px' }}, "Recently viewed"),
           r.ul({},
             topicElems)));
@@ -238,10 +291,6 @@ const SingleTopic = createComponent({
     var unreadClass = topic.unread ? ' esWB_T-Unread' : '';
     var title = topic.title || this._url;
 
-    if (topic.type === PageRole.Forum) {  // [5KWQB42]
-      title = r.span({ className: 'icon-menu' }, title);
-    }
-
     // Roughly 30 chars fits. For now, to usually avoid unneeded tooltips: (dupl width [4YK0F2])
     var tooltip = title.length > 21 ? title : undefined;
     var moreClasses = isCurrentTopicClass + unreadClass;
@@ -273,6 +322,10 @@ const SingleTopic = createComponent({
           leaveChatButton
         ));
 
+    if (this.props.forumIcon) {
+      title = r.span({ className: 'icon-menu' }, title);
+    }
+
     // Could show num unread posts / chat messages. But would be rather complicated:
     // need to track num unread, + last visit date too, in the watchbar data.
     return (
@@ -290,6 +343,20 @@ var NoTopics = function() {
       r.span({ className: 'esWB_T_Link' },
         r.i({ className: 'esWB_T_None' }, "None" ))));
 };
+
+
+// The database remembers watchbar topics recent-first, but let's present them
+// alphabetically; it's so confusing otherwise when all topics shift position whenever
+// one views a page.
+function cloneAndSort(topics: WatchbarTopic[]) {
+  const topicsSorted = _.clone(topics);
+  topicsSorted.sort((ta, tb) => {
+    const titleA = ta.title.toLowerCase();
+    const titleB = tb.title.toLowerCase();
+    return titleA < titleB ? -1 : (titleA > titleB ? +1 : 0);
+  });
+  return topicsSorted;
+}
 
 
 //------------------------------------------------------------------------------

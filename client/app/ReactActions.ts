@@ -626,10 +626,10 @@ export function maybeLoadAndShowNewPage(store: Store,
 
     // In a forum, there's sth like '/latest/ideas' after the forum page path. So,
     // special check for forum pages; just a prefix match is enough.
-    const storePageIsTheForum = storePagePath === store.forumPath;
-    const newPathIsToForum = urlPath_isToForum(newUrlPath, store.forumPath);
-    if (!isThisPage && storePageIsTheForum) {
-      isThisPage =  newPathIsToForum;
+    const storePageIsForum = page.pageRole === PageRole.Forum;
+    const newPathIsToThatForum = storePageIsForum && urlPath_isToForum(newUrlPath, storePagePath);
+    if (!isThisPage && storePageIsForum) {
+      isThisPage = newPathIsToThatForum;
     }
 
     if (isThisPage) {
@@ -639,7 +639,7 @@ export function maybeLoadAndShowNewPage(store: Store,
         // render 'page'. Or we clicked a '/-pageid#post-nr' link, to '/the-current-page'.
         // Need not do anything more here, except for maybe change from '/-pageid#post-nr'
         // back to '/the-current-page' + '#post-nr':
-        if (newUrlPath !== page.pagePath.value && !newPathIsToForum) {
+        if (newUrlPath !== page.pagePath.value && !newPathIsToThatForum) {
           history.replace(page.pagePath.value + location.search + location.hash);
         }
       }
@@ -681,18 +681,20 @@ export function loadAndShowNewPage(newUrlPath, history) {
     const pageId = newStore.currentPageId;
     const page = newStore.pagesById[pageId];
     const newUsers = _.values(newStore.usersByIdBrief);
+    const newPublicCategories = newStore.publicCategories;
 
     // This'll trigger ReactStore onChange() event, and everything will redraw to show the new page.
-    showNewPage(page, newUsers, response.me, history);
+    showNewPage(page, newPublicCategories, newUsers, response.me, history);
   });
 }
 
 
-export function showNewPage(newPage: Page | AutoPage, newUsers: BriefUser[],
+export function showNewPage(newPage: Page | AutoPage, newPublicCategories, newUsers: BriefUser[],
         me: Myself, history: History) {
   ReactDispatcher.handleViewAction({
     actionType: actionTypes.ShowNewPage,
     newPage,
+    newPublicCategories,
     newUsers,
     me,
     history,

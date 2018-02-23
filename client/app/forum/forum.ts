@@ -49,20 +49,23 @@ const FilterShowWaiting = 'ShowWaiting';
 const FilterShowDeleted = 'ShowDeleted';
 
 
-export function buildForumRoutes() {
+/*
+export function buildServerSideForumRoute(forumPath: string) {
   const store: Store = ReactStore.allData();
-  const rootSlash = store.forumPath;
+  const rootSlash = forumPath;
   const defaultPath = rootSlash + (store.settings.forumMainView || RoutePathLatest);
 
   // later, COULD incl top period in URL, perhaps: top/ —> top-past-day/
   // Or  /top/bugs/past-day/ or /top/bugs?period=PastDay
 
-  return Switch({},
-    // This redirects e.g. '/forum/' and '/forum' to '/forum/latest':
-    Redirect({ path: rootSlash, to: defaultPath, exact: true }),
-    Route({ path: rootSlash, component: ForumComponent }));
+  return Route({ path: rootSlash, component: ForumComponent });
 
-}
+  /* Old:
+  return Switch({},
+    // This redirects e.g. '/forum/' and '/forum' to '/forum/latest':  <— not needed? This is server side
+    Redirect({ path: rootSlash, to: defaultPath, exact: true }),
+    Route({ path: rootSlash, component: ForumComponent })); * /
+} */
 
 
 export const ForumScrollBehavior = {
@@ -155,7 +158,7 @@ export const ForumComponent = createReactClass(<any> {
     let activeCategory: any;
     const activeCategorySlug = currentCategorySlug;
     if (activeCategorySlug) {
-      activeCategory = _.find(store.categories, (category: Category) => {
+      activeCategory = _.find(store.currentCategories, (category: Category) => {
         return category.slug === activeCategorySlug;
       });
       // If `activeCategory` is null here, that's probably because the category is
@@ -209,11 +212,12 @@ export const ForumComponent = createReactClass(<any> {
 
   render: function() {
     const store: Store = this.state.store;
+    const forumPath = store.currentPage.pagePath.value;
 
     // This is done this way because of how React-Router v3 was working. It was simpler
     // do do this than to totally-rewrite. Maybe refactor-&-simplify some day?
     // Remove e.g. a '/forum/' prefix to the 'top/ideas' or 'new/bugs' whatever suffix:
-    const pathRelForumPage = this.props.location.pathname.replace(store.forumPath, '');
+    const pathRelForumPage = this.props.location.pathname.replace(forumPath, '');
     // This becomes e.g. ['new', 'ideas']:
 
     const routes = pathRelForumPage.split('/');
@@ -236,6 +240,7 @@ export const ForumComponent = createReactClass(<any> {
 
     const childProps = _.assign({}, {
       store: store,
+      forumPath,
       useTable: this.state.useWideLayout,
       sortOrderRoute,
       queryParams: parseQueryString(this.props.location.search),
@@ -254,7 +259,7 @@ export const ForumComponent = createReactClass(<any> {
       ? HelpMessageBox({ message: topicsAndCatsHelpMessage, className: 'esForum_topicsCatsHelp' })
       : null; */
 
-    const rootSlash = store.forumPath;
+    const rootSlash = forumPath;
     const childRoutes = r.div({},
       Switch({},
         RedirToNoSlash({ path: rootSlash + RoutePathLatest + '/' }),
@@ -359,14 +364,14 @@ const ForumButtons = createComponent({
     const nextPath = currentPath === RoutePathCategories ? RoutePathLatest : currentPath;
     const slashSlug = newCategorySlug ? '/' + newCategorySlug : '';
     this.props.history.push({
-      pathname: store.forumPath + nextPath + slashSlug,
+      pathname: this.props.forumPath + nextPath + slashSlug,
       search: this.props.location.search,
     });
   },
 
   findTheDefaultCategory: function() {
     const store: Store = this.props.store;
-    return _.find(store.categories, (category: Category) => {
+    return _.find(store.currentCategories, (category: Category) => {
       return category.isDefaultCategory;
     });
   },
@@ -374,7 +379,7 @@ const ForumButtons = createComponent({
   setSortOrder: function(newPath: string) {
     const store: Store = this.props.store;
     this.props.history.push({
-      pathname: store.forumPath + newPath + this.slashCategorySlug(),
+      pathname: this.props.forumPath + newPath + this.slashCategorySlug(),
       search: this.props.location.search,
     });
   },
@@ -511,7 +516,7 @@ const ForumButtons = createComponent({
         r.div({ className: 'esF_BB_PageTitle' }, "Categories") : null;
 
     const makeCategoryLink = (where, text, linkId, extraClass?) => NavLink({
-      to: { pathname: store.forumPath + where, search: this.props.location.search },
+      to: { pathname: this.props.forumPath + where, search: this.props.location.search },
       id: linkId,
       className: 'btn esForum_catsNav_btn ' + (extraClass || ''),
       activeClassName: 'active' }, text);
@@ -525,7 +530,7 @@ const ForumButtons = createComponent({
     const topicListLink = showsTopicList ? null :
       makeCategoryLink(RoutePathLatest, "Topic list", 'e2eViewTopicsB', 'esForum_navLink');
 
-    const categoryMenuItems = store.categories.map((category: Category) => {
+    const categoryMenuItems = store.currentCategories.map((category: Category) => {
       return MenuItem({ key: category.id, active: activeCategory.id === category.id,
           onClick: () => this.setCategory(category.slug) },
             r.span({ className: category_iconClass(category, store) }, category.name));
@@ -776,7 +781,7 @@ const LoadAndListTopics = createFactory({
     const store: Store = nextProps.store;
     let currentPageIsForumPage;
     _.each(store.pagesById, (page: Page) => {
-      if (page.pagePath.value !== store.forumPath)
+      if (page.pagePath.value !== this.props.forumPath)
         return;
       if (page.pageId === store.currentPageId) {
         currentPageIsForumPage = true;
@@ -941,7 +946,7 @@ export const TopicsList = createComponent({
 
     const topicElems = topics.map((topic: Topic) => {
       return TopicRow({
-          store, topic, categories: store.categories, activeCategory, now: store.now, orderOffset,
+          store, topic, categories: store.currentCategories, activeCategory, now: store.now, orderOffset,
           key: topic.pageId, sortOrderRoute: this.props.sortOrderRoute,
           inTable: useTable });
     });
@@ -1157,7 +1162,7 @@ const TopicRow = createComponent({
     const store: Store = this.props.store;
     const sortOrderPath = this.props.sortOrderRoute;
     // this.props.queryParams — later: could convert to query string, unless skipQuery === true
-    return store.forumPath + sortOrderPath + '/' + category.slug;
+    return this.props.forumPath + sortOrderPath + '/' + category.slug;
   },
 
   render: function() {
@@ -1166,7 +1171,7 @@ const TopicRow = createComponent({
     const me = store.me;
     const settings = store.settings;
     const topic: Topic = this.props.topic;
-    const category: Category = _.find(store.categories, (category: Category) => {
+    const category: Category = _.find(store.currentCategories, (category: Category) => {
       return category.id === topic.categoryId;
     });
 
@@ -1360,7 +1365,7 @@ const LoadAndListCategories = createFactory({
 
     const categoryRows = this.state.categories.map((category: Category) => {
       return CategoryRow({ store: this.props.store, location: this.props.location,
-          category: category, key: category.id });
+          forumPath: this.props.forumPath, category: category, key: category.id });
     });
 
     let recentTopicsColumnTitle;
@@ -1434,7 +1439,7 @@ const CategoryRow = createComponent({
         r.td({ className: 'forum-info' }, // [rename] to esForum_cats_cat_meta
           r.div({ className: 'forum-title-wrap' },
             Link({ to: {
-                pathname: store.forumPath + RoutePathLatest + '/' + this.props.category.slug,
+                pathname: this.props.forumPath + RoutePathLatest + '/' + this.props.category.slug,
                 search: this.props.location.search }, className: categoryIconClass + 'forum-title' },
               category.name, isDefault), isDeletedText),
           r.p({ className: 'forum-description' }, category.description)),

@@ -329,7 +329,7 @@ object ReactJson {
     val (anyForumId: Option[PageId], ancestorsJsonRootFirst: Seq[JsObject]) =
       makeForumIdAndAncestorsJson(page.meta, dao)
 
-    val categories = makeCategoriesJson(authzCtx, dao)
+    val categories = page.meta.categoryId.map(makeCategoriesJson(_, authzCtx, dao)) getOrElse JsArray()
     val siteSettings = dao.getWholeSiteSettings()
 
     val anyLatestTopics: JsValue =
@@ -554,11 +554,13 @@ object ReactJson {
       "strangersWatchbar" -> makeStrangersWatcbarJson(dao),
       "pagesById" -> Json.obj())
 
-    if (inclCategoriesJson) {
+    /*
+    if (inclCategoriesJson) {  // Why???
       // Don't specify any user —> we'll include only public categories here.
       val authzCtx = dao.getForumPublicAuthzContext()
       result += "publicCategories" -> makeCategoriesJson(authzCtx, dao)
-    }
+    } */
+    result += "publicCategories" -> JsArray()
 
     result
   }
@@ -863,7 +865,7 @@ object ReactJson {
     val permissions = authzContext.permissions
     val watchbar = dao.getOrCreateWatchbar(user.id)
     val watchbarWithTitles = dao.fillInWatchbarTitlesEtc(watchbar)
-    val restrictedCategories = listRestrictedCategoriesJson(dao, authzContext)
+    val restrictedCategories = JsArray() // listRestrictedCategoriesJson(dao, authzContext)
     request.dao.readOnlyTransaction(userDataJsonImpl(user, anyPageId = None, watchbarWithTitles,
       restrictedCategories, restrictedTopics = Nil, restrictedTopicsUsers = Nil,
       permissions, unapprovedPostAuthorIds = Set.empty, request.dao.nashorn, _))
@@ -1036,9 +1038,10 @@ object ReactJson {
   }
 
 
-  def listRestrictedCategoriesJson(dao: SiteDao, authzCtx: ForumAuthzContext): JsArray = {
+  private def listRestrictedCategoriesJson(categoryId: CategoryId, dao: SiteDao,
+        authzCtx: ForumAuthzContext): JsArray = {
     val (categories, defaultCategoryId) =
-      dao.listAllMaySeeCategories(authzCtx)  // oops, also includes publ cats [4KQSEF08]
+      dao.listAllMaySeeCategories(categoryId, authzCtx)  // oops, also includes publ cats [4KQSEF08]
 
     // A tiny bit dupl code [5YK03W5]
     JsArray(categories.filterNot(_.isRoot) map { category =>
@@ -1059,14 +1062,14 @@ object ReactJson {
     val authzCtx = request.authzContext
     val siteSettings = dao.getWholeSiteSettings()
 
-    // SHOULD avoid starting a new transaction, so can remove workaround [7YKG25P].
-    // (request.dao might start a new transaction)
-    val categoriesJson = listRestrictedCategoriesJson(dao, authzCtx)
-
     val categoryId = request.thePageMeta.categoryId getOrElse {
       // Not a forum topic. Could instead show an option to add the page to the / a forum?
-      return (categoriesJson, Nil, Nil)
+      return (JsArray(), Nil, Nil)
     }
+
+    // SHOULD avoid starting a new transaction, so can remove workaround [7YKG25P].
+    // (request.dao might start a new transaction)
+    val categoriesJson = listRestrictedCategoriesJson(categoryId, dao, authzCtx)
 
     val (topics: Seq[PagePathAndMeta], pageStuffById) =
       if (request.thePageRole != PageRole.Forum) {
@@ -1252,10 +1255,11 @@ object ReactJson {
   }
 
 
-  def makeCategoriesStorePatch(authzCtx: ForumAuthzContext, dao: SiteDao): JsValue = {
+  def makeCategoriesStorePatch(categoryId: CategoryId, authzCtx: ForumAuthzContext, dao: SiteDao)
+        : JsValue = {
     // 2 dupl lines [7UXAI1]
-    val restrCategoriesJson = makeCategoriesJson(authzCtx, dao)
-    val publCategoriesJson = makeCategoriesJson(dao.getForumPublicAuthzContext(), dao)
+    val restrCategoriesJson = makeCategoriesJson(categoryId, authzCtx, dao)
+    val publCategoriesJson = makeCategoriesJson(categoryId, dao.getForumPublicAuthzContext(), dao)
     Json.obj(
       "appVersion" -> dao.globals.applicationVersion,
       "restrictedCategories" -> restrCategoriesJson,
@@ -1263,9 +1267,9 @@ object ReactJson {
   }
 
 
-  def makeCategoriesJson(authzCtx: ForumAuthzContext, dao: SiteDao)
+  def makeCategoriesJson(categoryId: CategoryId, authzCtx: ForumAuthzContext, dao: SiteDao)
         : JsArray = {
-    val (categories, defaultCategoryId) = dao.listAllMaySeeCategories(authzCtx)
+    val (categories, defaultCategoryId) = dao.listAllMaySeeCategories(categoryId, authzCtx)
     // A tiny bit dupl code [5YK03W5]
     val categoriesJson = JsArray(categories.filterNot(_.isRoot) map { category =>
       makeCategoryJson(category, defaultCategoryId.contains(category.id))

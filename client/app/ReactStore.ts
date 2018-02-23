@@ -346,7 +346,7 @@ ReactDispatcher.register(function(payload) {
       break;
 
     case ReactActions.actionTypes.ShowNewPage:
-      showNewPage(action.newPage, action.newUsers, action.me, action.history);
+      showNewPage(action.newPage, action.newPublicCategories, action.newUsers, action.me, action.history);
     break;
 
     case ReactActions.actionTypes.UpdateUserPresence:
@@ -407,17 +407,7 @@ ReactStore.initialize = function() {
     ReactStore.emitChange();
   });
 
-  store.categories = _.clone(store.publicCategories);
-
-  // Remember forums, needed to construct routes.
-  // For now, one forum only. And there's always a forum, created when the site gets created. [5RF2LK]
-  if (store.siteSections && store.siteSections.length >= 0) {
-    _.each(store.siteSections, (section: SiteSection) => {
-      if (section.pageRole === PageRole.Forum) {
-        store.forumPath = section.path; // only one forum, see above
-      }
-    });
-  }
+  store.currentCategories = _.clone(store.publicCategories);
 };
 
 
@@ -526,8 +516,8 @@ ReactStore.activateMyself = function(anyNewMe: Myself) {
   }
 
   // Absent on about-user pages.
-  if (store.categories) {
-    addRestrictedCategories(store.me.restrictedCategories, store.categories);
+  if (store.currentCategories) {
+    addRestrictedCategories(store.me.restrictedCategories, store.currentCategories);
   }
 
   const readingProgress = myPageData.readingProgress;
@@ -647,7 +637,7 @@ ReactStore.getMe = function(): Myself {
 
 
 ReactStore.getCategories = function() {
-  return store.categories;
+  return store.currentCategories;
 };
 
 
@@ -1163,8 +1153,8 @@ function patchTheStore(storePatch: StorePatch) {
     // Hmm what if the patch contains fever categories? Currently (2016-12), won't happen, though.
     store.publicCategories = storePatch.publicCategories;
     store.me.restrictedCategories = storePatch.restrictedCategories;
-    store.categories = _.clone(store.publicCategories);
-    addRestrictedCategories(store.me.restrictedCategories, store.categories);
+    store.currentCategories = _.clone(store.publicCategories);
+    addRestrictedCategories(store.me.restrictedCategories, store.currentCategories);
   }
 
   if (storePatch.tagsStuff) {
@@ -1273,7 +1263,8 @@ function patchTheStore(storePatch: StorePatch) {
 }
 
 
-function showNewPage(newPage: Page, newUsers: BriefUser[], newMe: Myself | null, history) {
+function showNewPage(newPage: Page, newPublicCategories: Category[], newUsers: BriefUser[],
+        newMe: Myself | null, history) {
 
   // Upload any current reading progress, before changing page id.
   page.PostsReadTracker.sendAnyRemainingData(() => {}); // not as beacon
@@ -1284,6 +1275,14 @@ function showNewPage(newPage: Page, newUsers: BriefUser[], newMe: Myself | null,
   store.currentPage = newPage;
   store.currentPageId = newPage.pageId;
 
+  // Update categories — maybe this page is in a different sub community with different categories.
+  store.publicCategories = newPublicCategories;  // hmm could rename to currentPublicCategories
+  store.currentCategories = _.clone(newPublicCategories);
+
+  // Forget any topics from the original page load. Maybe we're now in a different sub community,
+  // or some new topics have been created. Better reload.
+  store.topics = null;
+
   let myData: MyPageData;
   if (newMe) {
     store.me.watchbar = newMe.watchbar;
@@ -1291,6 +1290,7 @@ function showNewPage(newPage: Page, newUsers: BriefUser[], newMe: Myself | null,
     if (myData) {
       store.me.myDataByPageId[newPage.pageId] = myData;
     }
+    addRestrictedCategories(newMe.restrictedCategories, store.currentCategories);
   }
   store.me.myCurrentPageData = myData || makeNoPageData();
 
@@ -1347,7 +1347,7 @@ function showNewPage(newPage: Page, newUsers: BriefUser[], newMe: Myself | null,
   }
 
   if (me_isStranger(store.me)) {
-    addPageToSessionWatchbar(store.currentPage, store.me.watchbar);
+    addPageToStrangersWatchbar(store.currentPage, store.me.watchbar);
   }
 
   // Make Back button work properly.
@@ -1421,7 +1421,7 @@ function notf_toWatchbarTopic(notf: Notification): WatchbarTopic {
   return {
     pageId: notf.pageId,
     title: notf.pageTitle,
-    type: null, // COULD specify notf.pageType, but currently not used, only Forum matters [5KWQB42]
+    type: null, // COULD specify notf.pageType, but currently not used
     unread: true,
     // We don't know about these two, info currently not included in the json: [4Y2KF8S]
     notfsToMe: 1,
@@ -1431,8 +1431,8 @@ function notf_toWatchbarTopic(notf: Notification): WatchbarTopic {
 
 
 function watchbar_foreachTopic(watchbar: Watchbar, fn: (topic: WatchbarTopic) => void) {
+  _.each(watchbar[WatchbarSection.SubCommunities], fn);
   _.each(watchbar[WatchbarSection.RecentTopics], fn);
-  _.each(watchbar[WatchbarSection.Notifications], fn);
   _.each(watchbar[WatchbarSection.ChatChannels], fn);
   _.each(watchbar[WatchbarSection.DirectMessages], fn);
 }
@@ -1465,7 +1465,7 @@ function makeStranger(store: Store): Myself {
     thereAreMoreUnseenNotfs: false,
     notifications: <Notification[]> [],
 
-    watchbar: <Watchbar> { 1: loadRecentWatchbarTopicsFromSessionStorage(), 2: [], 3: [], 4: [] },
+    watchbar: loadWatchbarFromSessionStorage(),
 
     restrictedTopics: <Topic[]> [],
     restrictedTopicsUsers: <BriefUser[]> [],
@@ -1500,42 +1500,49 @@ function addLocalStorageDataTo(me: Myself) {
   myPageData.postNrsAutoReadLongAgo = page.PostsReadTracker.getPostNrsAutoReadLongAgo();
   myPageData.marksByPostId = {}; // not implemented: loadMarksFromLocalStorage();
 
-  // The watchbar: Recent topics.
   if (me_isStranger(me)) {
-    addPageToSessionWatchbar(store.currentPage, me.watchbar);
+    addPageToStrangersWatchbar(store.currentPage, me.watchbar);
   }
 }
 
 
-function addPageToSessionWatchbar(page: Page, watchbar: Watchbar) {
-  const recentTopics = loadRecentWatchbarTopicsFromSessionStorage();
-  if (page && shallAddCurrentPageToSessionStorageWatchbar(recentTopics)) {
-    const index = _.findIndex(recentTopics, (topic: WatchbarTopic) => topic.pageId === page.pageId);
+function addPageToStrangersWatchbar(page: Page, watchbar: Watchbar) {
+  if (!page) return;
+  const sessionWatchbar = loadWatchbarFromSessionStorage();
+  const watchbarIndex = page.pageRole === PageRole.Forum ?
+      WatchbarSection.SubCommunities : WatchbarSection.RecentTopics;
+  const topics = sessionWatchbar[watchbarIndex];
+  if (shallAddCurrentPageToSessionStorageWatchbar(topics)) {
+    const index = _.findIndex(topics, (topic: WatchbarTopic) => topic.pageId === page.pageId);
     if (index >= 0) {
-      recentTopics.splice(index, 1);
+      topics.splice(index, 1);
     }
-    recentTopics.unshift({
+    topics.unshift({
       pageId: page.pageId,
       type: page.pageRole,
       title: ReactStore.getPageTitle(),
     });
     // Not more than ... 7? in the recent list.
-    recentTopics.splice(7, 999);
-    putInSessionStorage('recentWatchbarTopics', recentTopics);
+    topics.splice(7, 999);
+    putInSessionStorage('strangersWatchbar', sessionWatchbar);
   }
-  watchbar[WatchbarSection.RecentTopics] =  recentTopics;
+  watchbar[watchbarIndex] = topics;
 }
 
 
-function loadRecentWatchbarTopicsFromSessionStorage(): WatchbarTopic[] {
+function loadWatchbarFromSessionStorage(): Watchbar {
   // For privacy reasons, don't use localStorage?
-  const topics = <WatchbarTopic[]> getFromSessionStorage('recentWatchbarTopics') || [];
-  _.each(topics, topic => {
-    if (topic.pageId === store.currentPageId) {
-      topic.unread = false;
-    }
-  });
-  return topics;
+  const watchbar = <Watchbar> getFromSessionStorage('strangersWatchbar') || {1:[],2:[],3:[],4:[]};
+  unmarkCurrentTopic(watchbar[WatchbarSection.SubCommunities]);
+  unmarkCurrentTopic(watchbar[WatchbarSection.RecentTopics]);
+  function unmarkCurrentTopic(topics) {
+    _.each(topics, topic => {
+      if (topic.pageId === store.currentPageId) {
+        topic.unread = false;
+      }
+    });
+  }
+  return watchbar;
 }
 
 
@@ -1544,10 +1551,7 @@ function shallAddCurrentPageToSessionStorageWatchbar(recentTopics: WatchbarTopic
     return false;
 
   const currentPage: Page = store.currentPage;
-  if (!pageRole_shallListInRecentTopics(currentPage.pageRole))
-    return false;
-
-  return true;
+  return pageRole_shallInclInWatchbar(currentPage.pageRole)
 }
 
 

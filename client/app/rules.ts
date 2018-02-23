@@ -79,7 +79,7 @@ export function isPageWithSidebar(pageRole: PageRole): boolean {
   return true; // hmm remove this fn then, now
 }
 
-export function pageRole_shallListInRecentTopics(pageRole: PageRole): boolean {
+export function pageRole_shallInclInWatchbar(pageRole: PageRole): boolean {
   switch (pageRole) {
     case PageRole.EmbeddedComments:
     case PageRole.CustomHtmlPage:
@@ -102,7 +102,7 @@ export function userGetWatchbarTopicIds(user: Myself): PageId[] {
   var watchbarTopics: WatchbarTopics = user.watchbarTopics;
   if (!watchbarTopics) return [];
   // For now: Concat with something so as to not return the original array.
-  return watchbarTopics.recentTopics.map(t => t.pageId).concat([]);
+  return watchbarTopics.recentTopics.map(t => t.pageId).concat([]);   /// todo
 }
 
 

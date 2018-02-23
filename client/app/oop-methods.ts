@@ -197,7 +197,7 @@ export function store_mayICreateTopics(store: Store, category: Category): boolea
       });
       // Latent BUG: should check cats starting at root, but here we start with the "childmost" cat.
       // Fix, before enabling child cats. [0GMK2WAL]
-      currentCategory = _.find(store.categories, c => c.id === currentCategory.parentId);
+      currentCategory = _.find(store.currentCategories, c => c.id === currentCategory.parentId);
     }
   }
 
@@ -323,7 +323,7 @@ function store_mayIEditImpl(store: Store, post: Post, isEditPage: boolean): bool
 
 
 export function store_findCatsWhereIMayCreateTopics(store: Store): Category[] {
-  return _.filter(store.categories, (c: Category) => {
+  return _.filter(store.currentCategories, (c: Category) => {
     if (c.isForumItself) return false;
     return store_mayICreateTopics(store, c);
   });
@@ -347,7 +347,7 @@ export function category_isPublic(category: Category, store: Store): boolean {
 export function category_iconClass(category: Category | CategoryId, store: Store): string {
   // (Deleted and unlisted categories aren't included in the public categories list. [5JKWT42])
   const theCategory: Category =
-      _.isNumber(category) ? _.find(store.categories, (c) => c.id === category) : category;
+      _.isNumber(category) ? _.find(store.currentCategories, (c) => c.id === category) : category;
 
   const isPublic = category_isPublic(theCategory, store);
   return isPublic ? '' : (
