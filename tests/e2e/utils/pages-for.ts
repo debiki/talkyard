@@ -282,6 +282,17 @@ function pagesFor(browser) {
         browser.pause(200); // [e2erace] otherwise it won't find the next input, in the
                             // create-site-all-logins @facebook test
         browser.waitAndSetValue('input[type="text"]', forumTitle);
+        // Click Next, Next ... to accept all default choices.
+        api.waitAndClick('.e_Next');
+        browser.pause(200); // Wait for next button
+        api.waitAndClick('.e_Next');
+        browser.pause(200);
+        api.waitAndClick('.e_Next');
+        browser.pause(200);
+        api.waitAndClick('.e_Next');
+        browser.pause(200);
+        api.waitAndClick('.e_Next');
+        browser.pause(200);
         api.waitAndClick('#e2eDoCreateForum');
         var actualTitle = browser.waitAndGetVisibleText('h1.dw-p-ttl');
         assert.equal(actualTitle, forumTitle);

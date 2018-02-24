@@ -140,7 +140,7 @@ class ReplyController @Inject()(cc: ControllerComponents, edContext: EdContext)
 
     val slug = None
     val folder = None
-    val categoryId = DefaultCategoryId // for now, should lookup instead, based on embedding site origin?
+    val categoryId = dao.getDefaultCategoryId()
     val categoriesRootLast = dao.loadAncestorCategoriesRootLast(categoryId)
     val pageRole = PageRole.EmbeddedComments
 

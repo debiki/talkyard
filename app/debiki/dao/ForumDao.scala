@@ -48,13 +48,13 @@ trait ForumDao {
 
   def createForum(title: String, folder: String, isForEmbCmts: Boolean, byWho: Who): CreateForumResult = {
     createForum(CreateForumOptions(
-      isForEmbeddedComments = false,
+      isForEmbeddedComments = isForEmbCmts,
       title = title,
       folder = folder,
-      useCategories = true,
+      useCategories = !isForEmbCmts,
       createSupportCategory = false,
       createIdeasCategory = false,
-      createOtherCategory = false,
+      createOtherCategory = isForEmbCmts,
       topicListStyle = TopicListLayout.TitleExcerptSameLine), byWho)
   }
 

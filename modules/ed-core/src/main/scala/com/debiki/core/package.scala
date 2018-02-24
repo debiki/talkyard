@@ -46,7 +46,6 @@ package object core {
 
   type CategoryId = Int
   val NoCategoryId = 0
-  val DefaultCategoryId = 2 // hack, for now. COULD lookup in database instead
 
   type SiteId = Int
   val NoSiteId = 0

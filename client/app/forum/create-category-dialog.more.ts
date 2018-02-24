@@ -87,7 +87,7 @@ const EditCategoryDialog = createClassAndFactory({
       });
     }
     else {
-      const categoryId = -1; // then the server will give it a >= 1 id
+      const categoryId = -1; // then the server will give it a >= 1 id  [4GKWSR1]
       Server.loadGroups((groups: Group[]) => {
         const newCategory: Category = {
           id: categoryId,

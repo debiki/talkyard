@@ -93,6 +93,17 @@ trait CategoriesDao {
   private var rootCategories: Seq[Category] = _
 
 
+  def getDefaultCategoryId(): CategoryId = {
+    COULD_OPTIMIZE // remember default category, refresh when saving a root category?
+    if (rootCategories eq null) {
+      loadBuildRememberCategoryMaps()
+      dieIf(rootCategories eq null, "TyE2PK50")
+    }
+    dieIf(rootCategories.isEmpty, "TyE2FWBK5")
+    rootCategories.head.defaultCategoryId getOrDie "TyE2KQBP6"
+  }
+
+
   /** List categories in the site section (forum/blog/whatever) at page pageId.
     * Sorts by Category.position (which doesn't make much sense if there are sub categories).
     * Returns (categories, default-category-id).
@@ -432,10 +443,19 @@ trait CategoriesDao {
   def createCategoryImpl(newCategoryData: CategoryToSave, permissions: immutable.Seq[PermsOnPages],
         byWho: Who)(transaction: SiteTransaction): CreateCategoryResult = {
 
-    val categoryId = transaction.nextCategoryId()
-    dieIf(newCategoryData.anyId isNot categoryId, "TyE4GKWRQ",
-      o"""transaction.nextCategoryId() = $categoryId but newCategoryData.anyId is
-         ${newCategoryData.anyId.get}, site id $siteId""")
+    val categoryId = transaction.nextCategoryId()  // [4GKWSR1]
+    newCategoryData.anyId foreach { id =>
+      if (id < 0) {
+        // Fine, this means we're to choose an id here. The caller (I mean the browser)
+        // include a category id < 0, so the permissions also being saved can identify that
+        // category.
+      }
+      else {
+        dieIf(id == 0, "TyE2WBP8")
+        dieIf(id != categoryId, "TyE4GKWRQ", o"""transaction.nextCategoryId() = $categoryId
+            but newCategoryData.anyId is ${newCategoryData.anyId.get}, site id $siteId""")
+      }
+    }
 
     // Discourse currently has 28 categories so 65 is a lot.
     // Can remove this later, when I think I won't want to add more cat perms via db migrations.

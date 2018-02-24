@@ -411,7 +411,7 @@ export var CreateForumPanel = createComponent({
     if (nextChoice <= 5) {
       const last = nextChoice === 5 ? " (last)" : '';
       nextButton = PrimaryButton({ onClick: () => this.setState({ nextChoice: nextChoice + 1 }),
-          disabled: !thisChoiceDone, id: 'e2eDoCreateForum' }, "Next" + last);
+          disabled: !thisChoiceDone, className: 'e_Next' }, "Next" + last);
     }
 
     return (
