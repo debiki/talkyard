@@ -214,7 +214,7 @@ var LoginDialog = createClassAndFactory({
     */
 
     const modalFooter = state.preventClose ? ModalFooter({}) :
-        ModalFooter({}, Button({ onClick: this.close, id: 'e2eLD_Cancel' }, "Cancel"));
+        ModalFooter({}, Button({ onClick: this.close, id: 'e2eLD_Cancel', tabIndex: 3 }, "Cancel"));
 
     return (
       Modal({ show: state.isOpen, onHide: this.close, dialogClassName: 'dw-login-modal' + fade,
