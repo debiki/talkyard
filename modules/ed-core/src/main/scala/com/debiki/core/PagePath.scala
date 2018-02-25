@@ -268,7 +268,7 @@ object PagePath {
     * - (server)/fold/ers/page-slug (here, the pageId is not shown in the path).
     *
     * But also:
-    * - (server)/forum/latest/bugs — and this should be changed to just /forum/.
+    * - (server)/forum/latest/bugs — and this should be changed to just /forum/. [5AQXJ2]
     */
   def fromUrlPath(siteId: SiteId, path: String): PagePath.Parsed = {
     // For now, quick hack to match all forum paths. Later, compare with in-mem cached forum paths.

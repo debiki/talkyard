@@ -87,8 +87,16 @@ class PageTitleSettingsController @Inject()(cc: ControllerComponents, edContext:
            and certain other stuff""")
     }
 
-    if (anyShowId.is(true) && (anyNewRole.is(PageRole.Forum) || oldMeta.pageRole == PageRole.Forum)) {
-      throwForbidden("EdE22PKGEW0", "Forum pages should not show show the page id.")
+    if (anyNewRole.is(PageRole.Forum) || (anyNewRole.isEmpty && oldMeta.pageRole == PageRole.Forum)) {
+      throwForbiddenIf(anyShowId.is(true), "TyE22PKGEW0", "Forum pages should not show the page id.")
+      throwBadRequestIf(anySlug.isDefined, "TyE2PKDPU0", "Forum pages should have no page slug")
+    }
+
+    // For now, disallow slugs like 'latest', 'top', 'unread' etc — because right now
+    // they'd be mistaken for forum sort orders. [5AQXJ2]
+    anySlug foreach { slug =>
+      if (slug == "latest" || slug == "active" || slug == "new" || slug == "top" || slug == "unread")
+        throwForbidden("TyE2PKHWR0", s"Page slug '$slug' is currently reserved, use something else")
     }
 
     // SECURITY COULD prevent non-admins from changing the title of pages other than forum topics.

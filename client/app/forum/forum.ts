@@ -49,24 +49,6 @@ const FilterShowWaiting = 'ShowWaiting';
 const FilterShowDeleted = 'ShowDeleted';
 
 
-/*
-export function buildServerSideForumRoute(forumPath: string) {
-  const store: Store = ReactStore.allData();
-  const rootSlash = forumPath;
-  const defaultPath = rootSlash + (store.settings.forumMainView || RoutePathLatest);
-
-  // later, COULD incl top period in URL, perhaps: top/ —> top-past-day/
-  // Or  /top/bugs/past-day/ or /top/bugs?period=PastDay
-
-  return Route({ path: rootSlash, component: ForumComponent });
-
-  /* Old:
-  return Switch({},
-    // This redirects e.g. '/forum/' and '/forum' to '/forum/latest':  <— not needed? This is server side
-    Redirect({ path: rootSlash, to: defaultPath, exact: true }),
-    Route({ path: rootSlash, component: ForumComponent })); * /
-} */
-
 
 export const ForumScrollBehavior = {
   updateScrollPosition: function(position, actionType) {
@@ -889,6 +871,7 @@ const LoadAndListTopics = createFactory({
     return TopicsList({
       topics: this.state.topics,
       store: this.props.store,
+      forumPath: this.props.forumPath,
       useTable: this.props.useTable,
       minHeight: this.state.minHeight,
       showLoadMoreButton: this.state.showLoadMoreButton,
@@ -952,7 +935,7 @@ export const TopicsList = createComponent({
       return TopicRow({
           store, topic, categories: store.currentCategories, activeCategory, now: store.now, orderOffset,
           key: topic.pageId, sortOrderRoute: this.props.sortOrderRoute,
-          inTable: useTable });
+          inTable: useTable, forumPath: this.props.forumPath });
     });
 
     // Insert an icon explanation help message in the topic list. Anywhere else, and

@@ -89,10 +89,11 @@ trait CategoriesDao {
   // The dao shouldn't live past the current HTTP request anyway.
   private var categoriesById: Map[CategoryId, Category] = _
   private var categoriesByParentId: mutable.HashMap[CategoryId, ArrayBuffer[Category]] = _
-  private var defaultCategoryId = NoCategoryId
   private var rootCategories: Seq[Category] = _
 
 
+  /** BUG [4GWRQA28] For now, if many sub communities: Returns a random default category.
+    */
   def getDefaultCategoryId(): CategoryId = {
     COULD_OPTIMIZE // remember default category, refresh when saving a root category?
     if (rootCategories eq null) {
@@ -276,12 +277,16 @@ trait CategoriesDao {
   def loadCategory(id: CategoryId): Option[(Category, Boolean)] = {
     val catsStuff = loadBuildRememberCategoryMaps()
     val anyCategory = catsStuff._1.get(id)
-    val defaultId = catsStuff._3
-    anyCategory.map(category => (category, category.id == defaultId))
+    anyCategory map { category =>
+      val rootCategory: Option[Category] = category.parentId.flatMap(catsStuff._1.get)
+      (category, rootCategory.flatMap(_.defaultCategoryId) is category.id)
+    }
   }
 
 
-  def loadCategoryBySlug(slug: String): Option[Category] = {  // oops — same slug, different sub communities?
+  // Some time later: Add a site section page id? So will load the correct category, also
+  // if there're many sub communities with the same category slug.
+  def loadCategoryBySlug(slug: String): Option[Category] = {
     val catsStuff = loadBuildRememberCategoryMaps()
     catsStuff._1.values.find(_.slug == slug)
   }
@@ -331,7 +336,7 @@ trait CategoriesDao {
       return
     }
 
-    val (categoriesById, categoriesByParentId, _) = loadBuildRememberCategoryMaps()
+    val (categoriesById, categoriesByParentId) = loadBuildRememberCategoryMaps()
     val startCategory = categoriesById.getOrElse(rootCategoryId, {
       return
     })
@@ -364,9 +369,9 @@ trait CategoriesDao {
 
 
   private def loadBuildRememberCategoryMaps(): (Map[CategoryId, Category],
-        mutable.HashMap[CategoryId, ArrayBuffer[Category]], CategoryId) = {
+        mutable.HashMap[CategoryId, ArrayBuffer[Category]]) = {
     if (categoriesById ne null)
-      return (categoriesById, categoriesByParentId, defaultCategoryId)
+      return (categoriesById, categoriesByParentId)
 
     categoriesByParentId = mutable.HashMap[CategoryId, ArrayBuffer[Category]]()
     categoriesById = loadCategoryMap()
@@ -378,8 +383,7 @@ trait CategoriesDao {
 
     rootCategories = categoriesById.values.filter(_.isRoot).toVector
     val anyRoot = categoriesById.values.find(_.isRoot)
-    defaultCategoryId = anyRoot.flatMap(_.defaultCategoryId) getOrElse NoCategoryId   // oops
-    (categoriesById, categoriesByParentId, defaultCategoryId)
+    (categoriesById, categoriesByParentId)
   }
 
   COULD_OPTIMIZE // cache

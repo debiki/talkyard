@@ -552,15 +552,8 @@ object ReactJson {
       "siteSections" -> makeSiteSectionsJson(dao),
       "usersByIdBrief" -> Json.obj(),
       "strangersWatchbar" -> makeStrangersWatcbarJson(dao),
-      "pagesById" -> Json.obj())
-
-    /*
-    if (inclCategoriesJson) {  // Why???
-      // Don't specify any user —> we'll include only public categories here.
-      val authzCtx = dao.getForumPublicAuthzContext()
-      result += "publicCategories" -> makeCategoriesJson(authzCtx, dao)
-    } */
-    result += "publicCategories" -> JsArray()
+      "pagesById" -> Json.obj(),
+      "publicCategories" -> JsArray())
 
     result
   }
@@ -865,7 +858,7 @@ object ReactJson {
     val permissions = authzContext.permissions
     val watchbar = dao.getOrCreateWatchbar(user.id)
     val watchbarWithTitles = dao.fillInWatchbarTitlesEtc(watchbar)
-    val restrictedCategories = JsArray() // listRestrictedCategoriesJson(dao, authzContext)
+    val restrictedCategories = JsArray()
     request.dao.readOnlyTransaction(userDataJsonImpl(user, anyPageId = None, watchbarWithTitles,
       restrictedCategories, restrictedTopics = Nil, restrictedTopicsUsers = Nil,
       permissions, unapprovedPostAuthorIds = Set.empty, request.dao.nashorn, _))

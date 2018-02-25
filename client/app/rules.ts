@@ -98,14 +98,6 @@ export function me_isStranger(me: Myself): boolean {
 }
 
 
-export function userGetWatchbarTopicIds(user: Myself): PageId[] {
-  var watchbarTopics: WatchbarTopics = user.watchbarTopics;
-  if (!watchbarTopics) return [];
-  // For now: Concat with something so as to not return the original array.
-  return watchbarTopics.recentTopics.map(t => t.pageId).concat([]);   /// todo
-}
-
-
 export function maySendInvites(user: Myself | MemberInclDetails): MayMayNot {
   // Currently only admins may send invites.
   if (!user.isAdmin || user.isGroup) return mayMayNot(false, "is not admin");

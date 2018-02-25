@@ -77,6 +77,7 @@ class CustomFormController @Inject()(cc: ControllerComponents, edContext: EdCont
     val titleTextAndHtml = textAndHtmlMaker.forTitle(titleText)
     val bodyTextAndHtml = textAndHtmlMaker.forBodyOrCommentAsPlainTextWithLinks(bodyText)
 
+    // BUG (need not fix now) if there are many sub communities with the same category slug. [4GWRQA28]
     val categorySlug = (request.body \ "categorySlug").as[String]
     val category = request.dao.loadCategoryBySlug(categorySlug).getOrThrowBadArgument(
         "EsE0FYK42", s"No category with slug: $categorySlug")

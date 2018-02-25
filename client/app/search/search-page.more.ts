@@ -316,7 +316,7 @@ function AdvancedSearchPanel(props: {
         // UX SHOULD add a modal backdrop and close Select if clicked.
         rb.ReactSelect({ multi: true, value: props.query.categorySlugs,
           placeholder: "Select categories", autoBlur: true,
-          // BUG: (need not fix now) If there are many sub communities, this'll list categories from ...
+          // BUG: [4GWRQA28] (need not fix now) If many sub communities, this'll list categories from ...
           // ?which? sub community? But not all. Probably want to list cats from all sub communities?
           options: makeCategoryLabelValues(store.currentCategories),
           onChange: props.onCategoriesSelectionChange })),

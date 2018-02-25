@@ -109,9 +109,10 @@ const SubCommunities = createComponent({
             isCurrent: topic.pageId === store.currentPageId }));
     });
 
-    const header = r.h3({ style: { wordSpacing: '2px' }}, "Communities");  // skip "sub" here
+    const header = r.h3({}, "Communities");  // skip "sub" here
 
-    // Just a test.
+    // Just a test; make this look & work better, later. Also should be for adding existing
+    // sub communities, not creating new ones.
     const newCommunityButton = Button({ onClick: () => Server.createForum({
       title: "New Sub Community",
       folder: '/forum2/',
