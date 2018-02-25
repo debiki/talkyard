@@ -834,8 +834,21 @@ const RootPostAndComments = createComponent({
             onClick: (event) => this.onAfterPageReplyClick(event, PostType.Normal) },
           makeReplyBtnTitle(store, rootPost, true)),
         r.a({ className: 's_APAs_ACBB icon-comment-empty',
-            onClick: (event) => this.onAfterPageReplyClick(event, PostType.BottomComment) },
-          "Add comment at the bottom ", r.span({ className: 'icon-collapse' })));
+            onClick: (event) => {
+              morebundle.openHelpDialogUnlessHidden({ id: '5JKWS', version: 1,
+              defaultHide: false,
+              content: rFragment({},
+                r.p({}, "You're adding a comment that will stay at the bottom of the page. " +
+                  "It won't rise to the top even if it gets upvotes."),
+                r.p({}, "This is useful for status messages, e.g. to clarify why you close/reopen " +
+                  "a topic. Or for suggesting changes to the original post."),
+                r.p({}, "To reply to someone, click Reply instead.")),
+              doAfter: () => {
+                  this.onAfterPageReplyClick(event, PostType.BottomComment)
+                }
+              });
+            } },
+          "Add bottom comment ", r.span({ className: 'icon-collapse' })));
 
     return (
       r.div({ className: threadClass },

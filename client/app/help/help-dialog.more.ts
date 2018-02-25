@@ -33,7 +33,7 @@ export function openHelpDialogUnlessHidden(message) {
 }
 
 
-var helpDialog;
+let helpDialog;
 
 function getHelpDialog() {
   if (!helpDialog) {
@@ -43,7 +43,9 @@ function getHelpDialog() {
 }
 
 
-var HelpDialog = createComponent({
+const HelpDialog = createComponent({
+  displayName: 'HelpDialog',
+
   getInitialState: function () {
     return { isOpen: false };
   },
@@ -51,25 +53,37 @@ var HelpDialog = createComponent({
   open: function(message: HelpMessage) {
     dieIf(!message.content, 'EsE6YK02W');
     // Bad practice to access the store like this? Oh well. Will rewrite anyway, in [redux] (?).
-    var store: Store = ReactStore.allData();
+    const store: Store = ReactStore.allData();
     if (!isHelpMessageClosedAnyVersion(store, message.id)) {
-      this.setState({ isOpen: true, message: message });
+      this.setState({
+        isOpen: true,
+        message: message,
+        hideNextTime: message.defaultHide !== false,
+      });
+    }
+    else if (message.doAfter) {
+      message.doAfter();
     }
   },
 
   close: function() {
-    if (this.refs.hideMeCheckbox && this.refs.hideMeCheckbox.getChecked()) {
+    if (this.state.hideNextTime) {
       ReactActions.hideHelpMessageWithId(this.state.message.id);
     }
+    const doAfter = this.state.message.doAfter;
     this.setState({ isOpen: false, message: null });
+    if (doAfter) {
+      doAfter();
+    }
   },
 
   render: function () {
-    var message: HelpMessage = this.state.message;
-    var content = message ? message.content : null;
+    const message: HelpMessage = this.state.message;
+    let content = message ? message.content : null;
 
-    var hideThisHelpTipsCheckbox = !message || !message.id ? null :
-      Input({ type: 'checkbox', defaultChecked: true, ref: 'hideMeCheckbox',
+    const hideThisHelpTipsCheckbox = !message || !message.id ? null :
+      Input({ type: 'checkbox', checked: this.state.hideNextTime,
+        onChange: (event) => this.setState({ hideNextTime: event.target.checked }),
         label: "Hide this tips" });
 
     content = !content ? null :

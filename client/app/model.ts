@@ -351,6 +351,8 @@ interface HelpMessage {
   id: string;
   version: number;
   content: any;
+  defaultHide?: boolean;
+  doAfter?: () => void;
   type?: number;
   className?: string;
   alwaysShow?: boolean;
