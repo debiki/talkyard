@@ -264,7 +264,11 @@ export var CreateForumPanel = createComponent({
 
   createForum: function() {
     Server.createForum(<any> { folder: '/', ...this.state }, (forumUrlPath: string) => {
-      window.location.assign(forumUrlPath);
+      // When the forum has just beeen created, there're some "About category ..." topics
+      // which people sometimes mistake for being actual categories. So show the categories
+      // list page instead, to avoid this confusion. (This shouldn't be a problem later on,
+      // when there're 'normal' topics too.)  [2PGHWQ0]
+      window.location.assign(forumUrlPath + RoutePathCategories);
     });
   },
 
