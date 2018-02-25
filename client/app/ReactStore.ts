@@ -1493,6 +1493,12 @@ function makeStranger(store: Store): Myself {
 function addLocalStorageDataTo(me: Myself) {
   me.closedHelpMessages = getFromLocalStorage('closedHelpMessages') || {};
 
+  if (me_isStranger(me)) {
+    const sessionWatchbar = loadWatchbarFromSessionStorage();
+    me.watchbar[WatchbarSection.SubCommunities] = sessionWatchbar[WatchbarSection.SubCommunities];
+    me.watchbar[WatchbarSection.RecentTopics] = sessionWatchbar[WatchbarSection.RecentTopics];
+  }
+
   if (!store.currentPageId)
     return;
 
@@ -1507,26 +1513,31 @@ function addLocalStorageDataTo(me: Myself) {
 
 
 function addPageToStrangersWatchbar(page: Page, watchbar: Watchbar) {
-  if (!page) return;
-  const sessionWatchbar = loadWatchbarFromSessionStorage();
+  if (!page || !shallAddCurrentPageToSessionStorageWatchbar())
+    return;
+
+  // Add page to the sub-communities watchbar section, or the recent-topics section?
   const watchbarIndex = page.pageRole === PageRole.Forum ?
       WatchbarSection.SubCommunities : WatchbarSection.RecentTopics;
-  const topics = sessionWatchbar[watchbarIndex];
-  if (shallAddCurrentPageToSessionStorageWatchbar(topics)) {
-    const index = _.findIndex(topics, (topic: WatchbarTopic) => topic.pageId === page.pageId);
-    if (index >= 0) {
-      topics.splice(index, 1);
-    }
-    topics.unshift({
-      pageId: page.pageId,
-      type: page.pageRole,
-      title: ReactStore.getPageTitle(),
-    });
-    // Not more than ... 7? in the recent list.
-    topics.splice(7, 999);
-    putInSessionStorage('strangersWatchbar', sessionWatchbar);
+  const topics = watchbar[watchbarIndex];
+
+  // Remove the current page.
+  const thisPageIndex = _.findIndex(topics, (topic: WatchbarTopic) => topic.pageId === page.pageId);
+  if (thisPageIndex >= 0) {
+    topics.splice(thisPageIndex, 1);
   }
-  watchbar[watchbarIndex] = topics;
+
+  // Add it back, first.
+  topics.unshift({
+    pageId: page.pageId,
+    type: page.pageRole,
+    title: ReactStore.getPageTitle(),
+  });
+  // Not more than ... 7? in the recent list.
+  topics.splice(7, 999);
+
+  // Save, so remembered accross page reloads.
+  putInSessionStorage('strangersWatchbar', watchbar);
 }
 
 
@@ -1546,7 +1557,7 @@ function loadWatchbarFromSessionStorage(): Watchbar {
 }
 
 
-function shallAddCurrentPageToSessionStorageWatchbar(recentTopics: WatchbarTopic[]): boolean {
+function shallAddCurrentPageToSessionStorageWatchbar(): boolean {
   if (!store.currentPageId || store.currentPageId === EmptyPageId)
     return false;
 
