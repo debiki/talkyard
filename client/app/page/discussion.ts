@@ -825,6 +825,10 @@ const RootPostAndComments = createComponent({
         page.pageRole === PageRole.FormalMessage || !mayReplyToOrigPost ||
           _.every(threadedChildren, c => _.isEmpty(c));
 
+    // Right now the append-bottom-comment button feels mostly confusing, on embedded comments
+    // pages? UX Maybe later add back, for staff only or power users?
+    const skipBottomCommentBtn = pageRole === PageRole.EmbeddedComments;
+
     const origPostReplyButton =
         // If mind map: Don't give people a large easily clickable button that keeps appending nodes.
         // People are supposed to think before adding new nodes, e.g. think about where to place them.
@@ -833,7 +837,7 @@ const RootPostAndComments = createComponent({
         skipOrigPostReplyBtn ? null : r.a({ className: 's_APAs_OPRB ' + makeReplyBtnIcon(store),
             onClick: (event) => this.onAfterPageReplyClick(event, PostType.Normal) },
           makeReplyBtnTitle(store, rootPost, true)),
-        r.a({ className: 's_APAs_ACBB icon-comment-empty',
+        skipBottomCommentBtn ? null : r.a({ className: 's_APAs_ACBB icon-comment-empty',
             onClick: (event) => {
               morebundle.openHelpDialogUnlessHidden({ id: '5JKWS', version: 1,
               defaultHide: false,
