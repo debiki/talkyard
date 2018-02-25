@@ -302,6 +302,9 @@ var SearchPageContentComponent = createReactClass(<any> {
 
 
 
+// COULD:
+// - search in titles only
+// - search by user
 function AdvancedSearchPanel(props: {
       store: Store,
       query: SearchQuery,

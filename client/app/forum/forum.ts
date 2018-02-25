@@ -747,9 +747,8 @@ const LoadAndListTopics = createFactory({
     this.isGone = true;
   },
 
-  onLoadMoreTopicsClick: function(event) {
+  loadMoreTopics: function() {
     this.loadTopics(this.props, true);
-    event.preventDefault();
   },
 
   loadTopics: function(nextProps, loadMore) {
@@ -819,7 +818,10 @@ const LoadAndListTopics = createFactory({
         showLoadMoreButton: newlyLoadedTopics.length >= NumNewTopicsPerRequest
       });
       this.countTopicsWaitingForCritique(topics); // for now only
-      scrollToLastPositionSoon();
+      // Only scroll to last position once, when opening the page. Not when loading more topics.
+      if (!loadMore) {
+        scrollToLastPositionSoon();
+      }
     });
   },
 
@@ -875,6 +877,7 @@ const LoadAndListTopics = createFactory({
       useTable: this.props.useTable,
       minHeight: this.state.minHeight,
       showLoadMoreButton: this.state.showLoadMoreButton,
+      loadMoreTopics: this.loadMoreTopics,
       activeCategory: this.props.activeCategory,
       orderOffset: this.getOrderOffset(),
       topPeriod: this.props.topPeriod,
@@ -966,8 +969,10 @@ export const TopicsList = createComponent({
       const queryString = '?' + debiki2.ServerApi.makeForumTopicsQueryParams(orderOffset);
       loadMoreTopicsBtn =
         r.div({},
-          r.a({ className: 'load-more', onClick: this.onLoadMoreTopicsClick,
-              href: queryString }, 'Load more ...'));
+          r.a({ className: 'load-more', href: queryString, onClick: (event) => {
+            event.preventDefault();
+            this.props.loadMoreTopics();
+          } }, "Load more ..."));
     }
 
     let topTopicsPeriodButton;

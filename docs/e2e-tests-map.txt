@@ -121,6 +121,12 @@ forum -
     show deleted:
     background thread deletes spam comment —> popularity recalculated:  (not yet impl)
   live updates:  (4FE2)
+  load more topics, all topics listed -
+    via js:
+    js disabled:
+    'newest' sort order:
+    'newest' and a category:
+    click load-more twice:
 
 forum intro text -  (5KC2)
   edit, remove, add back:

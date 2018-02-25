@@ -164,10 +164,11 @@ const UserPageComponent = createReactClass(<any> {
     const me: Myself = store.me;
     const user: UserAnyDetails = this.state.user;
     const usernameOrId = this.props.match.params.usernameOrId;
+
     // Wait until url updated to show username, instead of id, to avoid mounting & unmounting
     // sub comoponents, which could result in duplicated load-data requests.  (5GKWS20)
-    if (!user || !me || parseInt(usernameOrId))
-      return r.p({}, 'Loading...');
+    if (!user || !me || (user.username && parseInt(usernameOrId)))
+      return r.p({ className: 'container' }, 'Loading...');
 
     const showPrivateStuff = isStaff(me) || (me.isAuthenticated && me.id === user.id);
     const linkStart = UsersRoot + usernameOrId + '/';

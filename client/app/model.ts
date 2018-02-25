@@ -730,6 +730,7 @@ interface SpecialContent {
 interface User {
   id: UserId;
   isGroup?: boolean;
+  username?: string; // not for guests
 }
 
 
@@ -757,6 +758,7 @@ interface BriefUser extends User {
 interface UserAnyDetails {
   id: UserId;
   isGroup?: boolean;
+  username?: string; // not for guests
 }
 
 

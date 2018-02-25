@@ -217,7 +217,7 @@ class ForumController @Inject()(cc: ControllerComponents, edContext: EdContext)
   /** Later, I'll add about user pages? About tag? So category-id is optional, might
     * be user-id or tag-id instead.
     */
-  def redirectToAboutPage(categoryId: Option[CategoryId]) = AdminGetAction { request =>
+  def redirectToAboutPage(categoryId: Option[CategoryId]): Action[Unit] = AdminGetAction { request =>
     val pageId =
       categoryId map { id =>
         request.dao.loadAboutCategoryPageId(id) getOrElse {
@@ -230,7 +230,7 @@ class ForumController @Inject()(cc: ControllerComponents, edContext: EdContext)
   }
 
 
-  def listTopics(categoryId: Int) = GetAction { request =>
+  def listTopics(categoryId: Int): Action[Unit] = GetAction { request =>
     SECURITY; TESTS_MISSING  // securified
     import request.{dao, requester}
     val authzCtx = dao.getForumAuthzContext(requester)
@@ -243,7 +243,7 @@ class ForumController @Inject()(cc: ControllerComponents, edContext: EdContext)
   }
 
 
-  def listTopicsByUser(userId: UserId) = GetAction { request =>
+  def listTopicsByUser(userId: UserId): Action[Unit] = GetAction { request =>
     import request.{dao, requester}
     val isStaffOrSelf = requester.exists(_.isStaff) || requester.exists(_.id == userId)
     val topicsInclForbidden = dao.loadPagesByUser(
@@ -266,7 +266,7 @@ class ForumController @Inject()(cc: ControllerComponents, edContext: EdContext)
   }
 
 
-  def listCategories(forumId: PageId) = GetAction { request =>
+  def listCategories(forumId: PageId): Action[Unit] = GetAction { request =>
     unused("EsE4KFC02")
     SECURITY; TESTS_MISSING  // securified
     import request.{dao, requester}
@@ -281,7 +281,7 @@ class ForumController @Inject()(cc: ControllerComponents, edContext: EdContext)
   }
 
 
-  def listCategoriesAndTopics(forumId: PageId) = GetAction { request =>
+  def listCategoriesAndTopics(forumId: PageId): Action[Unit] = GetAction { request =>
     SECURITY; TESTS_MISSING // securified
     import request.{dao, requester}
     val authzCtx = dao.getForumAuthzContext(requester)
