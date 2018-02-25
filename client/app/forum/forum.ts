@@ -287,8 +287,10 @@ export const ForumComponent = createReactClass(<any> {
         Route({ path: rootSlash + RoutePathTop, component: LoadAndListTopics })));
         */
 
+    const layoutClass = ' s_F-Layout' + layout;
+
     return (
-      r.div({ className: 'container dw-forum' },
+      r.div({ className: 'container dw-forum' + layoutClass },
         // Include .dw-page to make renderDiscussionPage() in startup.js run: (a bit hacky)
         r.div({ className: 'dw-page' }),
         ForumIntroText({ store: store }),

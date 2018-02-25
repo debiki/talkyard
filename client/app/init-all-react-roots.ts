@@ -147,6 +147,7 @@ export function startMainReactRoot() {
     // Routes for single pages, e.g. chat channels or discussion topics.
     sectionsAndPages.push(Route({ path: '/', component: PageWithStateComponent }));
 
+    // Sync with server side rendering code [7UKTWR].
     renderOrHydrate(
         Router({},
           rFragment({},

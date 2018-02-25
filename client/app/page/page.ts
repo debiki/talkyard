@@ -216,14 +216,24 @@ export function renderTitleBodyCommentsToString() {
     const defaultPath = page.pagePath.value + (store.settings.forumMainView || RoutePathLatest);
     // Otherwise rendering the categories dropdown button results in a null error:
     store.currentCategories = store.publicCategories;
-    const routes = Route({ path: defaultPath, component: forum.ForumComponent });
+    const forumRoute = Route({ path: defaultPath, component: forum.ForumComponent });
     // In the future, when using the HTML5 history API to update the URL when navigating
     // inside the forum, we can use `store.pagePath` below. But for now:
     const path = page.pagePath.value + 'latest';
+
+    // Sync with client side rendering code [7UKTWR], otherwise React will do mistakes when
+    // trying to reuse the server side html, resulting in CSS classes ending up on the wrong
+    // elements and a somewhat broken page.
     return ReactDOMServer.renderToString(
-        Router({ location: path }, routes));
+        Router({ location: path },
+          rFragment({},
+            Route({ render: debiki2.topbar.TopBar }),
+            debiki2.page.ScrollButtons(),
+            null,
+            forumRoute)));
   }
   else {
+    // For some reason this works fine, although is a bit different from the client side html [7UKTWR].
     return ReactDOMServer.renderToString(Page({ store }));
   }
 }
