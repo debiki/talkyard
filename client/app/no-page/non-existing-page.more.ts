@@ -296,19 +296,18 @@ export var CreateForumPanel = createComponent({
     let topicListStyleChoiceAndCreateButton;
 
     let nextButton;
-    let createButton;
 
     forumNameChoice = Input({ type: 'text', label: "Forum name:",
         placeholder: "Enter forum name here",
         ref: 'forumName', onChange: this.handleChange });
 
-    if (nextChoice === 1 && !this.state.title) {
+    if (nextChoice === 1 && !this.state.title.trim()) {
       thisChoiceDone = false;
     }
 
     if (nextChoice >= 2) {
       useCategoriesChoice = Input({ type: 'checkbox',
-          label: "Use categories? Probably a good idea, unless the forum will be very small. " +
+          label: "Use categories? Probably a good idea, unless the forum will be small. " +
               "(Default: Yes)",
           checked: this.state.useCategories,
           onChange: (event) => this.setState({ useCategories: event.target.checked }) });

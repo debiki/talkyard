@@ -89,7 +89,7 @@ class PageTitleSettingsController @Inject()(cc: ControllerComponents, edContext:
 
     if (anyNewRole.is(PageRole.Forum) || (anyNewRole.isEmpty && oldMeta.pageRole == PageRole.Forum)) {
       throwForbiddenIf(anyShowId.is(true), "TyE22PKGEW0", "Forum pages should not show the page id.")
-      throwBadRequestIf(anySlug.isDefined, "TyE2PKDPU0", "Forum pages should have no page slug")
+      throwForbiddenIf(anySlug.isDefined, "TyE2PKDPU0", "Forum pages should have no page slug")
     }
 
     // For now, disallow slugs like 'latest', 'top', 'unread' etc — because right now

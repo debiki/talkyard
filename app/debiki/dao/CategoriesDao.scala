@@ -450,9 +450,9 @@ trait CategoriesDao {
     val categoryId = transaction.nextCategoryId()  // [4GKWSR1]
     newCategoryData.anyId foreach { id =>
       if (id < 0) {
-        // Fine, this means we're to choose an id here. The caller (I mean the browser)
-        // include a category id < 0, so the permissions also being saved can identify that
-        // category.
+        // Fine, this means we're to choose an id here. The requester specifies
+        // a category id < 0, so the permissions also being saved can identify the
+        // category they are about.
       }
       else {
         dieIf(id == 0, "TyE2WBP8")

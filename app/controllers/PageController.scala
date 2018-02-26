@@ -49,8 +49,8 @@ class PageController @Inject()(cc: ControllerComponents, edContext: EdContext)
     val pageRole = PageRole.fromInt(pageRoleInt) getOrElse throwBadArgument("DwE3KE04", "pageRole")
     val pageStatusStr = (body \ "pageStatus").as[String]
     val pageStatus = PageStatus.parse(pageStatusStr)
-    val anyFolder = (body \ "folder").asOpt[String]
-    val anySlug = (body \ "pageSlug").asOpt[String]
+    val anyFolder = (body \ "folder").asOptStringNoneIfBlank
+    val anySlug = (body \ "pageSlug").asOptStringNoneIfBlank
     val titleText = (body \ "pageTitle").as[String]
     val bodyText = (body \ "pageBody").as[String]
     val showId = (body \ "showId").asOpt[Boolean].getOrElse(true)
@@ -59,6 +59,13 @@ class PageController @Inject()(cc: ControllerComponents, edContext: EdContext)
       allowClassIdDataAttrs = true, followLinks = pageRole.shallFollowLinks)
 
     val titleTextAndHtml = textAndHtmlMaker.forTitle(titleText)
+
+    if (!requester.isStaff) {
+      // Showing id —> page slug cannot be mistaken for forum sort order [5AQXJ2].
+      throwForbiddenIf(!showId, "TyE2PKDQC", "Only staff may hide page id")
+      throwForbiddenIf(anyFolder.isDefined, "TyE4GHW2", "Only staff may specify folder")
+      throwForbiddenIf(pageRole.isSection, "TyE6LUMR2", "Only staff may create new site sections")
+    }
 
     // COULD make the Dao transaction like, and run this inside the transaction. [transaction]
     // Non-staff users shouldn't be able to create anything outside the forum section(s)
