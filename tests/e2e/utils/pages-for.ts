@@ -1453,8 +1453,14 @@ function pagesFor(browser) {
       },
 
       clickAddBottomComment: function() {
-        browser._waitForClickable(api.topic.addBottomCommentSelector);
-        browser.topic.clickPostActionButton(api.topic.addBottomCommentSelector);
+        api._waitForClickable(api.topic.addBottomCommentSelector);
+        api.topic.clickPostActionButton(api.topic.addBottomCommentSelector);
+        // Dismiss any help dialog that explains what bottom comments are.
+        browser.pause(150);
+        if (browser.isVisible('.e_HelpOk')) {
+          api.waitAndClick('.e_HelpOk');
+          browser.waitUntilModalGone();
+        }
       },
 
       canEditSomething: function(): boolean {

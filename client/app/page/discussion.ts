@@ -816,13 +816,14 @@ const RootPostAndComments = createComponent({
          PostActions({ store, post: rootPost });
 
     const mayReplyToOrigPost = store_mayIReply(store, rootPost);
+    const isFormalMessage = page.pageRole === PageRole.FormalMessage;
 
     // If direct message, use only the add-bottom-comment button. Confusing with orig reply too,
     // when in practice it also just appends to the bottom. (Direct messages = flat, not threaded.)
     // If there're no replies, also don't show an extra orig-post-reply-button. (There's already
     // a blue primary one, just below-and-to-the-right-of the orig post.)
     const skipOrigPostReplyBtn =
-        page.pageRole === PageRole.FormalMessage || !mayReplyToOrigPost ||
+        isFormalMessage || !mayReplyToOrigPost ||
           _.every(threadedChildren, c => _.isEmpty(c));
 
     // Right now the append-bottom-comment button feels mostly confusing, on embedded comments
@@ -839,20 +840,25 @@ const RootPostAndComments = createComponent({
           makeReplyBtnTitle(store, rootPost, true)),
         skipBottomCommentBtn ? null : r.a({ className: 's_APAs_ACBB icon-comment-empty',
             onClick: (event) => {
-              morebundle.openHelpDialogUnlessHidden({ id: '5JKWS', version: 1,
-              defaultHide: false,
-              content: rFragment({},
-                r.p({}, "You're adding a comment that will stay at the bottom of the page. " +
-                  "It won't rise to the top even if it gets upvotes."),
-                r.p({}, "This is useful for status messages, e.g. to clarify why you close/reopen " +
-                  "a topic. Or for suggesting changes to the original post."),
-                r.p({}, "To reply to someone, click Reply instead.")),
-              doAfter: () => {
-                  this.onAfterPageReplyClick(event, PostType.BottomComment)
-                }
-              });
+              const doReply = () => this.onAfterPageReplyClick(event, PostType.BottomComment);
+              // Comments always added at the bottom on formal messages; no explanation needed. [4GKWC6]
+              if (isFormalMessage) {
+                doReply();
+              }
+              else {
+                morebundle.openHelpDialogUnlessHidden({ id: '5JKWS', version: 1, defaultHide: false,
+                  content: rFragment({},
+                    r.p({}, "You're adding a comment that will stay at the bottom of the page. " +
+                      "It won't rise to the top even if it gets upvotes."),
+                    r.p({}, "This is useful for status messages, e.g. to clarify why you close/reopen " +
+                      "a topic. Or for suggesting changes to the original post."),
+                    r.p({}, "To reply to someone, click Reply instead.")),
+                  doAfter: doReply
+                });
+              }
             } },
-          "Add bottom comment ", r.span({ className: 'icon-collapse' })));
+          isFormalMessage ? "Add comment" : rFragment({},
+              "Add bottom comment ", r.span({ className: 'icon-collapse' }))));
 
     return (
       r.div({ className: threadClass },

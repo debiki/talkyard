@@ -378,8 +378,9 @@ html:not(.mouse) .dw-t > .dw-p-as .dw-a
   padding-left: 10px;
   margin: 0 8px 10px 0; // whitespace between the OP Reply btn and the Append-Bottom button
 
-.s_APAs_ACBB
-  // Make it less prominent, so people won't accidentally use this button instead of Reply.
+// Make it less prominent, so people won't accidentally use this button instead of Reply.
+// Except for in formal discussions; then ok to use it (comments always appended at the bottom). [4GKWC6]
+.esPage:not(.s_PT-17) .s_APAs_ACBB
   background: none;
   color: hsl(0, 0%, 25%);
   font-weight: normal;

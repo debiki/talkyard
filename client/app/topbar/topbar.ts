@@ -267,7 +267,7 @@ export const TopBar = createComponent({
     // (Is it ok to call another React component from here? I.e. the page tools dialog.)
     const toolsButton = !isStaff(me) || !store_shallShowPageToolsButton(store) ? null :
         Button({ className: 'dw-a-tools', onClick: this.showTools },
-          r.a({ className: 'icon-wrench' }, 'Tools'));
+          r.a({ className: 'icon-wrench' }, "Tools"));
 
     // ------- Search button
 

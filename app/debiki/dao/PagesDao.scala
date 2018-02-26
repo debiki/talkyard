@@ -528,6 +528,10 @@ trait PagesDao {
   def deletePagesIfAuth(pageIds: Seq[PageId], deleterId: UserId, browserIdData: BrowserIdData,
         undelete: Boolean) {
     readWriteTransaction { transaction =>
+      // SHOULD LATER: [4GWRQA28] If is sub community (= forum page), delete the root category too,
+      // so all topics in the sub community will get deleted.
+      // And remove the sub community from the watchbar's Communities section.
+      // (And if undeleting the sub community, undelete the root category too.)
       deletePagesImpl(pageIds, deleterId, browserIdData, undelete = undelete)(transaction)
     }
   }

@@ -136,8 +136,9 @@ export function store_getUsersHere(store: Store): UsersHere {
 export function store_canDeletePage(store: Store): boolean {
   const page: Page = store.currentPage;
   // For now, don't let people delete sections = their forum — that just makes them confused.
+  // Unless there are many sub communities — then let them delete all but one.
   return !page.pageDeletedAtMs && isStaff(store.me) &&
-      page.pageRole && !isSection(page.pageRole);
+      page.pageRole && (!isSection(page.pageRole) || store_thereAreSubCommunities(store));
 }
 
 
@@ -169,6 +170,12 @@ export function store_getCurrOrDefaultCat(store: Store): Category {
 export function store_isSection(store: Store): boolean {
   const page: Page = store.currentPage;
   return page.pageRole !== PageRole.Blog && page.pageRole !== PageRole.Forum;
+}
+
+
+export function store_thereAreSubCommunities(store: Store): boolean {
+  const forumPages = _.filter(store.siteSections, (s: SiteSection) => s.pageRole === PageRole.Forum);
+  return forumPages.length >= 2;
 }
 
 

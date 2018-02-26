@@ -73,9 +73,7 @@ export var Watchbar = createComponent({
     const store: Store = this.state.store;
     const me = store.me;
 
-    const forumPages = _.filter(store.siteSections, (s: SiteSection) => s.pageRole === PageRole.Forum);
-    const hasSubCommunities = forumPages.length >= 2;
-
+    const hasSubCommunities = store_thereAreSubCommunities(store);
     const communities = hasSubCommunities ? SubCommunities({ store: store }) : null;
     const recentTopicsAndNotfs = RecentTopicsAndNotfs({ store: store, hasSubCommunities });
     const chatChannels = ChatChannels({ store: store });

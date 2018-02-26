@@ -92,7 +92,7 @@ const HelpDialog = createComponent({
             r.div({ className: 'esHelpDlg_body' }, content),
             r.div({ className: 'esHelpDlg_btns' },
               hideThisHelpTipsCheckbox,
-              PrimaryButton({ onClick: this.close }, "Okay"))));
+              PrimaryButton({ onClick: this.close, className: 'e_HelpOk' }, "Okay"))));
 
     return (
       Modal({ show: this.state.isOpen, onHide: this.close, dialogClassName: 'esHelpDlg' },
