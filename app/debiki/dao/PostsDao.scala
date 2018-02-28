@@ -77,149 +77,9 @@ trait PostsDao {
 
     quickCheckIfSpamThenThrow(byWho, textAndHtml, spamRelReqStuff)
 
-    val (newPost, author, notifications, anyReviewTask) = readWriteTransaction { transaction =>
-      val authorAndLevels = loadUserAndLevels(byWho, transaction)
-      val author = authorAndLevels.user
-      val page = PageDao(pageId, transaction)
-      val replyToPosts = page.parts.getPostsAllOrError(replyToPostNrs) getOrIfBad  { missingPostNr =>
-        throwNotFound(s"Post nr $missingPostNr not found", "EdE4JK2RJ")
-      }
-
-      dieOrThrowNoUnless(Authz.mayPostReply(authorAndLevels, transaction.loadGroupIds(author),
-        postType, page.meta, replyToPosts, transaction.loadAnyPrivateGroupTalkMembers(page.meta),
-        transaction.loadCategoryPathRootLast(page.meta.categoryId),
-        transaction.loadPermsOnPages()), "EdEMAY0RE")
-
-      if (page.role.isChat)
-        throwForbidden("EsE50WG4", s"Page '${page.id}' is a chat page; cannot post normal replies")
-
-      // Some dupl code [3GTKYA02]
-      val uniqueId = transaction.nextPostId()
-      val postNr = page.parts.highestReplyNr.map(_ + 1).map(max(FirstReplyNr, _)) getOrElse FirstReplyNr
-      val commonAncestorNr = page.parts.findCommonAncestorNr(replyToPostNrs.toSeq)
-      val anyParent =
-        if (commonAncestorNr == PageParts.NoNr) {
-          // Flat chat comments might not reply to anyone in particular.
-          // On embedded comments pages, there's no Original Post, so top level comments
-          // have no parent post.
-          if (postType != PostType.Flat && postType != PostType.BottomComment &&
-              postType != PostType.CompletedForm && page.role != PageRole.EmbeddedComments)
-            throwBadReq("DwE2CGW7", "Post lacks parent id")
-          else
-            None
-        }
-        else {
-          val anyParent = page.parts.postByNr(commonAncestorNr)
-          if (anyParent.isEmpty) {
-            throwBadReq("DwEe8HD36", o"""Cannot reply to common ancestor post '$commonAncestorNr';
-                it does not exist""")
-          }
-          anyParent
-        }
-      if (anyParent.exists(_.deletedStatus.isDeleted))
-        throwForbidden(
-          "The parent post has been deleted; cannot reply to a deleted post", "DwE5KDE7")
-
-      val (reviewReasons: Seq[ReviewReason], shallApprove) =
-        throwOrFindReviewPostReasons(page.meta, authorAndLevels, transaction)
-
-      val approverId =
-        if (author.isStaff) {
-          dieIf(!shallApprove, "EsE5903")
-          Some(author.id)
-        }
-        else if (shallApprove) Some(SystemUserId)
-        else None
-
-      val newPost = Post.create(
-        uniqueId = uniqueId,
-        pageId = pageId,
-        postNr = postNr,
-        parent = anyParent,
-        multireplyPostNrs = (replyToPostNrs.size > 1) ? replyToPostNrs | Set.empty,
-        postType = postType,
-        createdAt = now.toJavaDate,
-        createdById = authorId,
-        source = textAndHtml.text,
-        htmlSanitized = textAndHtml.safeHtml,
-        approvedById = approverId)
-
-      val shallBumpPage = !page.isClosed && shallApprove
-      val numNewOpRepliesVisible = (shallApprove && newPost.isOrigPostReply) ? 1 | 0
-      val newFrequentPosterIds: Seq[UserId] =
-        if (shallApprove)
-          PageParts.findFrequentPosters(newPost +: page.parts.allPosts,
-            ignoreIds = Set(page.meta.authorId, authorId))
-        else
-          page.meta.frequentPosterIds
-
-      val oldMeta = page.meta
-      val newMeta = oldMeta.copy(
-        bumpedAt = shallBumpPage ? Option(now.toJavaDate) | oldMeta.bumpedAt,
-        lastReplyAt = shallApprove ? Option(now.toJavaDate) | oldMeta.lastReplyAt,
-        lastReplyById = shallApprove ? Option(authorId) | oldMeta.lastReplyById,
-        frequentPosterIds = newFrequentPosterIds,
-        numRepliesVisible = page.parts.numRepliesVisible + (shallApprove ? 1 | 0),
-        numRepliesTotal = page.parts.numRepliesTotal + 1,
-        numPostsTotal = page.parts.numPostsTotal + 1,
-        numOrigPostRepliesVisible = page.parts.numOrigPostRepliesVisible + numNewOpRepliesVisible,
-        version = oldMeta.version + 1)
-
-      val uploadRefs = findUploadRefsInPost(newPost)
-
-      val auditLogEntry = AuditLogEntry(
-        siteId = siteId,
-        id = AuditLogEntry.UnassignedId,
-        didWhat = AuditLogEntryType.NewReply,
-        doerId = authorId,
-        doneAt = now.toJavaDate,
-        browserIdData = byWho.browserIdData,
-        pageId = Some(pageId),
-        uniquePostId = Some(newPost.id),
-        postNr = Some(newPost.nr),
-        targetPageId = anyParent.map(_.pageId),
-        targetUniquePostId = anyParent.map(_.id),
-        targetPostNr = anyParent.map(_.nr),
-        targetUserId = anyParent.map(_.createdById))
-
-      val anyReviewTask = if (reviewReasons.isEmpty) None
-      else Some(ReviewTask(
-        id = transaction.nextReviewTaskId(),
-        reasons = reviewReasons.to[immutable.Seq],
-        createdById = SystemUserId,
-        createdAt = now.toJavaDate,
-        createdAtRevNr = Some(newPost.currentRevisionNr),
-        maybeBadUserId = authorId,
-        postId = Some(newPost.id),
-        postNr = Some(newPost.nr)))
-
-      val stats = UserStats(
-        authorId,
-        lastSeenAt = now,
-        lastPostedAt = Some(now),
-        firstDiscourseReplyAt = Some(now),
-        numDiscourseRepliesPosted = 1,
-        numDiscourseTopicsRepliedIn = 0) // SHOULD update properly
-
-      addUserStats(stats)(transaction)
-      transaction.insertPost(newPost)
-      transaction.indexPostsSoon(newPost)
-      transaction.spamCheckPostsSoon(byWho, spamRelReqStuff, newPost)
-      transaction.updatePageMeta(newMeta, oldMeta = oldMeta, markSectionPageStale = shallApprove)
-      if (shallApprove) {
-        val pagePartsInclNewPost = PreLoadedPageParts(pageId, page.parts.allPosts :+ newPost)
-        updatePagePopularity(pagePartsInclNewPost, transaction)
-      }
-      uploadRefs foreach { uploadRef =>
-        transaction.insertUploadedFileReference(newPost.id, uploadRef, authorId)
-      }
-      insertAuditLogEntry(auditLogEntry, transaction)
-      anyReviewTask.foreach(transaction.upsertReviewTask)
-
-      val notifications = NotificationGenerator(transaction).generateForNewPost(page, newPost)
-      transaction.saveDeleteNotifications(notifications)
-
-      (newPost, author, notifications, anyReviewTask)
+    val (newPost, author, notifications, anyReviewTask) = readWriteTransaction { tx =>
+      insertReplyImpl(textAndHtml, pageId, replyToPostNrs, postType, byWho, spamRelReqStuff,
+        now, authorId, tx)
     }
 
     refreshPageInMemCache(pageId)
@@ -229,6 +89,158 @@ trait PostsDao {
       byId = author.id)
 
     InsertPostResult(storePatchJson, newPost, anyReviewTask)
+  }
+
+
+  def insertReplyImpl(textAndHtml: TextAndHtml, pageId: PageId, replyToPostNrs: Set[PostNr],
+        postType: PostType, byWho: Who, spamRelReqStuff: SpamRelReqStuff,
+        now: When, authorId: UserId, transaction: SiteTransaction, skipNotifications: Boolean = false)
+        : (Post, User, Notifications, Option[ReviewTask]) = {
+
+    val authorAndLevels = loadUserAndLevels(byWho, transaction)
+    val author = authorAndLevels.user
+    val page = PageDao(pageId, transaction)
+    val replyToPosts = page.parts.getPostsAllOrError(replyToPostNrs) getOrIfBad  { missingPostNr =>
+      throwNotFound(s"Post nr $missingPostNr not found", "EdE4JK2RJ")
+    }
+
+    dieOrThrowNoUnless(Authz.mayPostReply(authorAndLevels, transaction.loadGroupIds(author),
+      postType, page.meta, replyToPosts, transaction.loadAnyPrivateGroupTalkMembers(page.meta),
+      transaction.loadCategoryPathRootLast(page.meta.categoryId),
+      transaction.loadPermsOnPages()), "EdEMAY0RE")
+
+    if (page.role.isChat)
+      throwForbidden("EsE50WG4", s"Page '${page.id}' is a chat page; cannot post normal replies")
+
+    // Some dupl code [3GTKYA02]
+    val uniqueId = transaction.nextPostId()
+    val postNr = page.parts.highestReplyNr.map(_ + 1).map(max(FirstReplyNr, _)) getOrElse FirstReplyNr
+    val commonAncestorNr = page.parts.findCommonAncestorNr(replyToPostNrs.toSeq)
+    val anyParent =
+      if (commonAncestorNr == PageParts.NoNr) {
+        // Flat chat comments might not reply to anyone in particular.
+        // On embedded comments pages, there's no Original Post, so top level comments
+        // have no parent post.
+        if (postType != PostType.Flat && postType != PostType.BottomComment &&
+            postType != PostType.CompletedForm && page.role != PageRole.EmbeddedComments)
+          throwBadReq("DwE2CGW7", "Post lacks parent id")
+        else
+          None
+      }
+      else {
+        val anyParent = page.parts.postByNr(commonAncestorNr)
+        if (anyParent.isEmpty) {
+          throwBadReq("DwEe8HD36", o"""Cannot reply to common ancestor post '$commonAncestorNr';
+              it does not exist""")
+        }
+        anyParent
+      }
+    if (anyParent.exists(_.deletedStatus.isDeleted))
+      throwForbidden(
+        "The parent post has been deleted; cannot reply to a deleted post", "DwE5KDE7")
+
+    val (reviewReasons: Seq[ReviewReason], shallApprove) =
+      throwOrFindReviewPostReasons(page.meta, authorAndLevels, transaction)
+
+    val approverId =
+      if (author.isStaff) {
+        dieIf(!shallApprove, "EsE5903")
+        Some(author.id)
+      }
+      else if (shallApprove) Some(SystemUserId)
+      else None
+
+    val newPost = Post.create(
+      uniqueId = uniqueId,
+      pageId = pageId,
+      postNr = postNr,
+      parent = anyParent,
+      multireplyPostNrs = (replyToPostNrs.size > 1) ? replyToPostNrs | Set.empty,
+      postType = postType,
+      createdAt = now.toJavaDate,
+      createdById = authorId,
+      source = textAndHtml.text,
+      htmlSanitized = textAndHtml.safeHtml,
+      approvedById = approverId)
+
+    val shallBumpPage = !page.isClosed && shallApprove
+    val numNewOpRepliesVisible = (shallApprove && newPost.isOrigPostReply) ? 1 | 0
+    val newFrequentPosterIds: Seq[UserId] =
+      if (shallApprove)
+        PageParts.findFrequentPosters(newPost +: page.parts.allPosts,
+          ignoreIds = Set(page.meta.authorId, authorId))
+      else
+        page.meta.frequentPosterIds
+
+    val oldMeta = page.meta
+    val newMeta = oldMeta.copy(
+      bumpedAt = shallBumpPage ? Option(now.toJavaDate) | oldMeta.bumpedAt,
+      lastReplyAt = shallApprove ? Option(now.toJavaDate) | oldMeta.lastReplyAt,
+      lastReplyById = shallApprove ? Option(authorId) | oldMeta.lastReplyById,
+      frequentPosterIds = newFrequentPosterIds,
+      numRepliesVisible = page.parts.numRepliesVisible + (shallApprove ? 1 | 0),
+      numRepliesTotal = page.parts.numRepliesTotal + 1,
+      numPostsTotal = page.parts.numPostsTotal + 1,
+      numOrigPostRepliesVisible = page.parts.numOrigPostRepliesVisible + numNewOpRepliesVisible,
+      version = oldMeta.version + 1)
+
+    val uploadRefs = findUploadRefsInPost(newPost)
+
+    val auditLogEntry = AuditLogEntry(
+      siteId = siteId,
+      id = AuditLogEntry.UnassignedId,
+      didWhat = AuditLogEntryType.NewReply,
+      doerId = authorId,
+      doneAt = now.toJavaDate,
+      browserIdData = byWho.browserIdData,
+      pageId = Some(pageId),
+      uniquePostId = Some(newPost.id),
+      postNr = Some(newPost.nr),
+      targetPageId = anyParent.map(_.pageId),
+      targetUniquePostId = anyParent.map(_.id),
+      targetPostNr = anyParent.map(_.nr),
+      targetUserId = anyParent.map(_.createdById))
+
+    val anyReviewTask = if (reviewReasons.isEmpty) None
+    else Some(ReviewTask(
+      id = transaction.nextReviewTaskId(),
+      reasons = reviewReasons.to[immutable.Seq],
+      createdById = SystemUserId,
+      createdAt = now.toJavaDate,
+      createdAtRevNr = Some(newPost.currentRevisionNr),
+      maybeBadUserId = authorId,
+      postId = Some(newPost.id),
+      postNr = Some(newPost.nr)))
+
+    val stats = UserStats(
+      authorId,
+      lastSeenAt = now,
+      lastPostedAt = Some(now),
+      firstDiscourseReplyAt = Some(now),
+      numDiscourseRepliesPosted = 1,
+      numDiscourseTopicsRepliedIn = 0) // SHOULD update properly
+
+    addUserStats(stats)(transaction)
+    transaction.insertPost(newPost)
+    transaction.indexPostsSoon(newPost)
+    transaction.spamCheckPostsSoon(byWho, spamRelReqStuff, newPost)
+    transaction.updatePageMeta(newMeta, oldMeta = oldMeta, markSectionPageStale = shallApprove)
+    if (shallApprove) {
+      val pagePartsInclNewPost = PreLoadedPageParts(pageId, page.parts.allPosts :+ newPost)
+      updatePagePopularity(pagePartsInclNewPost, transaction)
+    }
+    uploadRefs foreach { uploadRef =>
+      transaction.insertUploadedFileReference(newPost.id, uploadRef, authorId)
+    }
+    insertAuditLogEntry(auditLogEntry, transaction)
+    anyReviewTask.foreach(transaction.upsertReviewTask)
+
+    val notifications =
+      if (skipNotifications) Notifications.None
+      else NotificationGenerator(transaction).generateForNewPost(page, newPost)
+    transaction.saveDeleteNotifications(notifications)
+
+    (newPost, author, notifications, anyReviewTask)
   }
 
 

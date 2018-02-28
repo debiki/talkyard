@@ -761,7 +761,7 @@ export function loadAuthorBlockedInfo(postId: number, success: (response: Blocks
 
 
 export function createForum(options: { title, folder, useCategories, createSupportCategory,
-      createIdeasCategory, createOtherCategory, topicListStyle }, success: (urlPath: string) => void) {
+      createIdeasCategory, topicListStyle }, success: (urlPath: string) => void) {
   postJsonSuccess('/-/create-forum', success, options);
 }
 

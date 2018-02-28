@@ -30,7 +30,6 @@ case class CreateForumOptions(
   useCategories: Boolean,
   createSupportCategory: Boolean,
   createIdeasCategory: Boolean,
-  createOtherCategory: Boolean,
   topicListStyle: TopicListLayout)
 
 
@@ -54,7 +53,6 @@ trait ForumDao {
       useCategories = !isForEmbCmts,
       createSupportCategory = false,
       createIdeasCategory = false,
-      createOtherCategory = isForEmbCmts,
       topicListStyle = TopicListLayout.TitleExcerptSameLine), byWho)
   }
 
@@ -132,6 +130,10 @@ trait ForumDao {
     val defaultCategoryId = rootCategoryId + 2
     val bySystem = Who(SystemUserId, byWho.browserIdData)
 
+    var anySupportCategoryId: Option[CategoryId] = None
+    var anyIdeasCategoryId: Option[CategoryId] = None
+    var uncategorizedCategoryId: CategoryId = -1
+
     // Create forum root category.
     transaction.insertCategoryMarkSectionPageStale(Category(
       id = rootCategoryId,
@@ -175,6 +177,7 @@ trait ForumDao {
 
     if (options.createSupportCategory) {
       val categoryId = getAndBumpCategoryId()
+      anySupportCategoryId = Some(categoryId)
       createCategoryImpl(
         CategoryToSave(
           anyId = Some(categoryId),
@@ -197,6 +200,7 @@ trait ForumDao {
 
     if (options.createIdeasCategory) {
       val categoryId = getAndBumpCategoryId()
+      anyIdeasCategoryId = Some(categoryId)
       createCategoryImpl(
         CategoryToSave(
           anyId = Some(categoryId),
@@ -217,40 +221,31 @@ trait ForumDao {
         bySystem)(transaction)
     }
 
-    // If we didn't create a Support or Ideas category, we'll need to create the General
-    // category in any case, so that there'll be a default category.
-    val createGeneralCategory =
-      options.createOtherCategory || (!options.createSupportCategory && !options.createIdeasCategory)
-
-    var generalCategoryId: Option[CategoryId] = None
-
-    if (createGeneralCategory) {
-      val categoryId = getAndBumpCategoryId()
-      generalCategoryId = Some(categoryId)
-      createCategoryImpl(
+    // Always create the Uncategorized category.
+    uncategorizedCategoryId = getAndBumpCategoryId()
+    createCategoryImpl(
         CategoryToSave(
-          anyId = Some(categoryId),
+          anyId = Some(uncategorizedCategoryId),
           sectionPageId = forumPageId,
           parentId = rootCategoryId,
-          shallBeDefaultCategory = categoryId == defaultCategoryId,
-          name = DefaultCategoryName,
-          slug = DefaultCategorySlug,
+          shallBeDefaultCategory = uncategorizedCategoryId == defaultCategoryId,
+          name = UncategorizedCategoryName,
+          slug = UncategorizedCategorySlug,
           position = DefaultCategoryPosition,
-          description = "For topics that don't fit in any other category.",
+          description = "For topics that don't fit in other categories.",
           newTopicTypes = immutable.Seq(PageRole.Discussion),
           unlisted = false,
           includeInSummaries = IncludeInSummaries.Default,
           isCreatingNewForum = true),
         immutable.Seq[PermsOnPages](
-          makeEveryonesDefaultCategoryPerms(categoryId),
-          makeStaffCategoryPerms(categoryId)),
+          makeEveryonesDefaultCategoryPerms(uncategorizedCategoryId),
+          makeStaffCategoryPerms(uncategorizedCategoryId)),
         bySystem)(transaction)
-    }
 
     // Create forum welcome topic.
     if (!isForEmbCmts) createPageImpl(
       PageRole.Discussion, PageStatus.Published,
-      anyCategoryId = generalCategoryId orElse Some(defaultCategoryId),
+      anyCategoryId = Some(uncategorizedCategoryId),
       anyFolder = None, anySlug = Some("welcome"), showId = true,
       titleSource = WelcomeTopicTitle,
       titleHtmlSanitized = WelcomeTopicTitle,
@@ -258,6 +253,87 @@ trait ForumDao {
       bodyHtmlSanitized = welcomeTopic.html,
       pinOrder = Some(WelcomeToForumTopicPinOrder),
       pinWhere = Some(PinPageWhere.Globally),
+      bySystem,
+      spamRelReqStuff = None,
+      transaction)
+
+    // Create staff chat
+    if (!isForEmbCmts) createPageImpl(
+      PageRole.OpenChat, PageStatus.Published,
+      anyCategoryId = Some(staffCategoryId),
+      anyFolder = None, anySlug = Some("staff-chat"), showId = true,
+      titleSource = StaffChatTopicTitle,
+      titleHtmlSanitized = StaffChatTopicTitle,
+      bodySource = StaffChatTopicText,
+      bodyHtmlSanitized = s"<p>$StaffChatTopicText</p>",
+      pinOrder = None,
+      pinWhere = None,
+      bySystem,
+      spamRelReqStuff = None,
+      transaction)
+
+    // Create example threaded discussion.
+    if (!isForEmbCmts) createPageImpl(
+      PageRole.Discussion, PageStatus.Published,
+      anyCategoryId = Some(uncategorizedCategoryId),
+      anyFolder = None, anySlug = Some("example-discussion"), showId = true,
+      titleSource = ExampleThreadedDiscussionTitle,
+      titleHtmlSanitized = ExampleThreadedDiscussionTitle,
+      bodySource = ExampleThreadedDiscussionText,
+      bodyHtmlSanitized = s"<p>$ExampleThreadedDiscussionText</p>",
+      pinOrder = None,
+      pinWhere = None,
+      bySystem,
+      spamRelReqStuff = None,
+      transaction)
+
+    // Create example problem.
+    if (!isForEmbCmts) createPageImpl(
+      PageRole.Problem, PageStatus.Published,
+      anyCategoryId = anySupportCategoryId orElse Some(uncategorizedCategoryId),
+      anyFolder = None, anySlug = Some("example-problem"), showId = true,
+      titleSource = ExampleProblemTitle,
+      titleHtmlSanitized = ExampleProblemTitle,
+      bodySource = ExampleProblemText.source,
+      bodyHtmlSanitized = ExampleProblemText.html,
+      pinOrder = None,
+      pinWhere = None,
+      bySystem,
+      spamRelReqStuff = None,
+      transaction)
+
+    // Create example question.
+    if (!isForEmbCmts) {
+      val questionPagePath = createPageImpl(
+        PageRole.Question, PageStatus.Published,
+        anyCategoryId = anySupportCategoryId orElse Some(uncategorizedCategoryId),
+        anyFolder = None, anySlug = Some("example-question"), showId = true,
+        titleSource = ExampleQuestionTitle,
+        titleHtmlSanitized = ExampleQuestionTitle,
+        bodySource = ExampleQuestionText.source,
+        bodyHtmlSanitized = ExampleQuestionText.html,
+        pinOrder = None,
+        pinWhere = None,
+        bySystem,
+        spamRelReqStuff = None,
+        transaction)._1
+      insertReplyImpl(textAndHtmlMaker.testBody(ExampleAnswerText), questionPagePath.thePageId,
+        replyToPostNrs = Set(PageParts.BodyNr), PostType.Normal,
+        bySystem, SystemSpamStuff, globals.now(), SystemUserId, transaction, skipNotifications = true)
+    }
+
+    // Create example idea.
+    if (!isForEmbCmts) createPageImpl(
+      PageRole.Idea, PageStatus.Published,
+      anyCategoryId = anyIdeasCategoryId orElse anySupportCategoryId orElse Some(
+        uncategorizedCategoryId),
+      anyFolder = None, anySlug = Some("example-idea"), showId = true,
+      titleSource = ExampleIdeaTitle,
+      titleHtmlSanitized = ExampleIdeaTitle,
+      bodySource = ExampleIdeaText.source,
+      bodyHtmlSanitized = ExampleIdeaText.html,
+      pinOrder = None,
+      pinWhere = None,
       bySystem,
       spamRelReqStuff = None,
       transaction)
@@ -270,8 +346,9 @@ trait ForumDao {
   private val RootCategoryName = "(Root Category)"  // In Typescript test code too [7UKPX5]
   private val RootCategorySlug = "(root-category)"  //
 
-  private val DefaultCategoryName = "General"
-  private val DefaultCategorySlug = "general"
+  private val UncategorizedCategoryName = "Uncategorized"
+  private val UncategorizedCategorySlug = "uncategorized"
+
   private val DefaultCategoryPosition = 1000
 
 }
@@ -279,27 +356,27 @@ trait ForumDao {
 
 object ForumDao {
 
-  val WelcomeToForumTopicPinOrder = 5
+  private val WelcomeToForumTopicPinOrder = 5
   val AboutCategoryTopicPinOrder = 10
 
 
-  val ForumIntroText: CommonMarkSourceAndHtml = {
+  private val ForumIntroText: CommonMarkSourceAndHtml = {
     val source = o"""Edit this to tell people what this community is about.
         You can link back to your main website, if any."""
     CommonMarkSourceAndHtml(source, html = s"<p>$source</p>")
   }
 
 
-  val EmbeddedCommentsIntroText: CommonMarkSourceAndHtml = {
+  private val EmbeddedCommentsIntroText: CommonMarkSourceAndHtml = {
     val source = o"""Here are comments posted at your website.
          One topic here, for each page over at your website."""
     CommonMarkSourceAndHtml(source, html = s"<p>$source</p>")
   }
 
 
-  val WelcomeTopicTitle = "Welcome to this community"
+  private val WelcomeTopicTitle = "Welcome to this community"
 
-  val welcomeTopic: CommonMarkSourceAndHtml = {
+  private val welcomeTopic: CommonMarkSourceAndHtml = {
     val para1Line1 = "Edit this to clarify what this community is about. This first paragraph"
     val para1Line2 = "is shown to everyone, on the forum homepage."
     val para2Line1 = "Here, below the first paragraph, add details like:"
@@ -327,6 +404,109 @@ object ForumDao {
         """)
   }
 
+  private val ToDeleteText =
+    "(To delete this example topic, click 'Tools' at the top, and then click Delete.)"
+
+  private val StaffChatTopicTitle = "Staff chat"
+  private val StaffChatTopicText = "This is a private chat for staff."
+
+  private val ExampleThreadedDiscussionTitle = "Example discussion"
+  private val ExampleThreadedDiscussionText =
+    o"""This is an open ended discussion. Good comments rise to the top, and people can click
+       Disagree to show that they disagree about something."""
+
+  private val ExampleProblemTitle = "Example problem"
+  private val ExampleProblemText = {
+    val para1 = o"""If you get a report about something being broken, and you need to fix it,
+      you can change the topic type to Problem (like this topic) — click the pencil to the
+      right of the title."""
+    val para2 =
+      o"""Then, when you decide to fix the problem,
+      click <span class="icon-attention-circled"></span> to the left of the title,
+      to change the status to We-plan-to-fix-this.
+      Click again to change status to Fixing-now, and Fixed."""
+    val para3 = o"""In the topic list, people see if a problem is new, or if it's been solved:
+      the <span class="icon-attention-circled"></span> and
+      <span class="icon-check"></span> icons."""
+    CommonMarkSourceAndHtml(
+      source = i"""
+        |$para1
+        |
+        |$para2
+        |
+        |$para3
+        |
+        |$ToDeleteText
+        |""",
+      html = i"""
+        |<p>$para1</p>
+        |<p>$para2</p>
+        |<p>$para3</p>
+        |<p>$ToDeleteText</p>
+        """)
+  }
+
+  private val ExampleIdeaTitle = "Example idea"
+  private val ExampleIdeaText = {
+    val para1 = o"""This is an example idea. Click the idea icon to the left of the title
+      (i.e. <span class="icon-idea"></span>)
+      to change status from New Idea, to Planned-to-do, to Doing-now, to Done."""
+    val para2 = o"""In the topic list, everyone sees the status of the idea at a glance
+      — the status icon is shown to the left (e.g.
+      <span class="icon-idea"></span> or <span class="icon-check"></span>).</div>"""
+    CommonMarkSourceAndHtml(
+      source = i"""
+        |$para1
+        |
+        |$para2
+        |
+        |$ToDeleteText
+        |""",
+      html = i"""
+        |<p>$para1</p>
+        |<p>$para2</p>
+        |<p>$ToDeleteText</p>
+        """)
+  }
+
+  private val ExampleQuestionTitle = "Example question"
+  private val ExampleQuestionText = {
+    val para1 = o"""This is an example question. Click "Solution" below to accept an answer.
+      In the topic list, everyone sees that this is a question, and if it's new
+      (the <span class="icon-help-circled"></span> icon), or if it's been answered (
+      the <span class="icon-ok-circled-empty"></span> icon)."""
+    val para2 = o"""In the topic list: To see all unanswered questions, click "All topic"
+      and then choose "Only waiting", look:"""
+    val para3 = """<img class="no-lightbox" src="/-/img/tips/how-click-show-waiting.jpg">"""
+    CommonMarkSourceAndHtml(
+      source = i"""
+        |$para1
+        |
+        |$para2
+        |
+        |$para3
+        |
+        |$ToDeleteText
+        |""",
+      html = i"""
+        |<p>$para1</p>
+        |<p>$para2</p>
+        |$para3
+        |<p>$ToDeleteText</p>
+        """)
+  }
+
+  private val ExampleAnswerText = o"""Example answer. The one who posted the question,
+    and the staff (you?), can click Solution below, to accept this answer and mark
+    the question as solved."""
+
+  // SHOULD separate layout: chat/flat/threaded/2d, from
+  // topic type: idea/question/discussion/wiki/etc ?
+  //
+  //val ExampleFlatDiscussionTopicTitle = "Example discussion, flat"
+  //val ExampleFlatDiscussionTopicText =
+  // "If you prefer flat (not threaded) discussions, instead of threaded discussions,
+  // you can edit the category and change the default topic type from Discussion to Chat."
 
   // Sync with dupl code in Typescript. [7KFWY025]
   def makeEveryonesDefaultCategoryPerms(categoryId: CategoryId) = PermsOnPages(

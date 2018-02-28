@@ -248,6 +248,7 @@ package object core {
   def FirstSiteId = Site.FirstSiteId
   val NoUserId = 0
   def SystemUserId = User.SystemUserId
+  def SystemSpamStuff = SpamRelReqStuff(userAgent = None, referer = None, uri = "/dummy")
   def SystemUserFullName = User.SystemUserFullName
   def SystemUserUsername = User.SystemUserUsername
   def UnknownUserId = User.UnknownUserId
