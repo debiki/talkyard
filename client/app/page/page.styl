@@ -125,9 +125,14 @@ $newsFeedWidth = 830px;
   .container
     width: 100%;
     max-width: 1100px;
-    // Title & excerpt on the same line —> make a bit wider
+    // 2 = Title & excerpt on the same line —> make a bit wider
     &.s_F-Layout2
       max-width: 1110px;
+    // 3,4,5 = excerpt on separate line —> needn't be so wide
+    &.s_F-Layout3,
+    &.s_F-Layout4,
+    &.s_F-Layout5
+      max-width: 1050px;
     // 6 = TopicListLayout = news feed: title & excerpt shown full width, so don't be too wide
     &.s_F-Layout6
       max-width: $newsFeedWidth;

@@ -74,7 +74,6 @@ describe('/-/create-site  @createsite', () => {
   });
 
   it("the forum works: can post a topic", () => {
-    pages.forumButtons.clickViewTopics(); // [2PGHWQ0]
     browser.waitAndClick('#e2eCreateSth');
     browser.waitAndSetValue('.esEdtr_titleEtc_title', "New tpc ttl");
     browser.setValue('textarea', "New tpc txt");
@@ -99,7 +98,6 @@ describe('/-/create-site  @createsite', () => {
   });
 
   it('can actually use the Gmail admin account to create stuff @gmail @google', () => {
-    pages.forumButtons.clickViewTopics();
     pages.complex.createAndSaveTopic({ title: "Gmail topic title", body: "Body" });
     pages.topbar.clickLogout(); // (6HRWJ3)
   });
@@ -150,7 +148,6 @@ describe('/-/create-site  @createsite', () => {
   });
 
   it('can actually use the FB admin account to create stuff @facebook', () => {
-    pages.forumButtons.clickViewTopics();
     pages.complex.createAndSaveTopic({ title: "Facebook topic title", body: "Body" });
     pages.topbar.clickLogout(); // (6HRWJ3)
   });
