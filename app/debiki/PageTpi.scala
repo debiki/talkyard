@@ -100,6 +100,7 @@ class SiteTpi protected (
   def anySafeMetaTags: String = anyCustomMetaTags.allTags  // only admin can edit right now [2GKW0M]
 
   def anyCurrentPageRole: Option[PageRole] = None
+  def anyCurrentPageLayout: Option[TopicListLayout] = None
   def anyCurrentPageMeta: Option[PageMeta] = None
 
   def anyAltPageId: Option[AltPageId] = None
@@ -123,8 +124,9 @@ class SiteTpi protected (
     val chatClass = if (anyCurrentPageRole.exists(_.isChat)) " es-chat" else ""
     val forumClass = if (anyCurrentPageRole.contains(PageRole.Forum)) " es-forum" else ""
     val customClass = anyCurrentPageMeta.map(" " + _.htmlTagCssClasses) getOrElse ""
-    val pageTypeClass = anyCurrentPageRole.map(" s_PT-" + _.toInt) getOrElse "" // [5J7KTW2]
-    "DW dw-pri" + pageTypeClass + chatClass + forumClass + customClass + " "
+    val pageTypeClass = anyCurrentPageRole.map(" s_PT-" + _.toInt) getOrElse ""     // [5J7KTW2]
+    val pageLayoutClass = anyCurrentPageLayout.map(" s_PL-" + _.toInt) getOrElse ""
+    "DW dw-pri" + pageTypeClass + pageLayoutClass + chatClass + forumClass + customClass + " "
   }
 
   def xsrfToken: String = debikiRequest.xsrfToken.value
@@ -250,6 +252,8 @@ class SiteTpi protected (
 }
 
 
+/** For the editor, on embedded comments discussions.
+  */
 class EditPageTpi(
   request: GetRequest,
   val pageRole: PageRole,
@@ -275,6 +279,7 @@ class PageTpi(
   override val anyEmbeddingUrl: Option[String])
   extends SiteTpi(pageReq, json = None, pageTitle = pageTitle) {
 
+  override def anyCurrentPageLayout = Some(pageReq.thePageMeta.layout)
   override def anyCurrentPageRole = Some(pageReq.thePageRole)
   override def anyCurrentPageMeta: Option[PageMeta] = pageReq.pageMeta
 

@@ -118,24 +118,30 @@ html:not(.es-watchbar-open)
 // Page width & padding
 //==============================
 
-$newsFeedWidth = 830px;
+$newsFeedWidth = 850px;
 
 .esScrollBtns_fixedBar,
 #esPageColumn
   .container
     width: 100%;
-    max-width: 1100px;
-    // 2 = Title & excerpt on the same line —> make a bit wider
-    &.s_F-Layout2
-      max-width: 1110px;
-    // 3,4,5 = excerpt on separate line —> needn't be so wide
-    &.s_F-Layout3,
-    &.s_F-Layout4,
-    &.s_F-Layout5
-      max-width: 1050px;
-    // 6 = TopicListLayout = news feed: title & excerpt shown full width, so don't be too wide
-    &.s_F-Layout6
-      max-width: $newsFeedWidth;
+    // This'll be for forum topic layouts 3,4,5 = excerpt on separate line —> needn't be so wide
+    max-width: 1050px;
+
+setContainerMaxWidth($maxWidth)
+  .esScrollBtns_fixedBar,
+  #esPageColumn
+    .container
+      max-width: $maxWidth;
+
+html.s_PT-7  // forum
+  &.s_PL-1
+    setContainerMaxWidth(1080px);
+  // 2 = Title & excerpt on the same line —> make a bit wider
+  &.s_PL-2
+    setContainerMaxWidth(1110px);
+  // 6 = TopicListLayout = news feed: title & excerpt shown full width, so don't be too wide
+  &.s_PL-6
+    setContainerMaxWidth($newsFeedWidth);
 
 // With Javascript disabled, pages are directly from the server and thus always for mobile
 // phones = narrow layout = news feed topic list. So restrict the width.
