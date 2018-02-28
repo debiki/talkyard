@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2014 Kaj Magnus Lindberg (born 1979)
+ * Copyright (c) 2014-2018 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -396,7 +396,7 @@ td.dw-tpc-activity
 
   tbody
     tr
-      border-top: 1px solid hsl(0, 0%, 89%);
+      border-top: 1px solid hsl(0, 0%, 92%);
       &:first-child
         border-top-color: hsl(0, 0%, 91%);
         border-top-width: 3px;
@@ -529,7 +529,7 @@ td.dw-tpc-activity
         .icon-idea:before
           font-size: 17px;
           color: hsl(0, 0%, 60%);
-          margin-right: 3px; // there's some whitespace to the right inside the icon
+          margin-right: 6px; // there's some whitespace to the right inside the icon
           // There's some whitespace to the left, it's not a square.
           position: relative;
           left: -1px;
@@ -560,7 +560,7 @@ td.dw-tpc-activity
 
         .dw-p-excerpt
           color: hsl(0, 0%, 53%);
-          margin: 1ex 20px 1ex 0;
+          margin: 0.8ex 20px 1.2ex 0;
           max-width: 650px;
           font-size: 100%;
           letter-spacing: -0.1px; // weird, easier to read I think
@@ -724,66 +724,10 @@ html.js:not(.dw-react-started) .dw-tpc-activity .dw-ago-ltr
     position: relative;
     top: -1px;
 
-
-
-/* --- Forum topic list --- */
-
-.DW .dw-a-new-forum-topic {
-  margin: 30px 0 13px;
-  background: white;
-}
-
-.topic-table .topic-title {
-  white-space: nowrap;
-  font-weight: bold;
-  color: hsl(0, 0%, 8%);
-}
-
-.topic-table tbody {
-  /* Copied from Twitter Bootstrap */
-  border-bottom: 1px solid hsl(0, 0%, 87%);
-}
-
 .topic-details {
   color: gray;
 }
 
-.topic-excerpt {
-  color: #555;
-  height: 68px;
-  display: none;
-}
-
-.topic-list {
-  margin-left: 0;
-  border-top: 1px solid hsl(0, 0%, 87%);
-}
-
-.topic-list > li {
-  list-style-type: none;
-  margin: 0;
-  padding: 10px 0 5px;
-  border-bottom: 1px solid hsl(0, 0%, 87%);
-}
-
-.topic-list > li:hover {
-  background-color: #f9f9f9;
-  cursor: pointer;
-}
-
-.topic-list > li:hover .topic-details,
-.topic-list > li:hover .topic-excerpt {
-  color: #333; /* darker, since background now gray */
-}
-
-.topic-list .topic-title {
-  font-family: $uiFont;
-  margin: 20px 0 5px;
-}
-
-.topic-list .topic-details {
-  margin-bottom: 5px;
-}
 
 
 // Forum in list layout (not table)

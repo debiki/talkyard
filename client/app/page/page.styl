@@ -124,7 +124,10 @@ $newsFeedWidth = 830px;
 #esPageColumn
   .container
     width: 100%;
-    max-width: 1150px;
+    max-width: 1100px;
+    // Title & excerpt on the same line —> make a bit wider
+    &.s_F-Layout2
+      max-width: 1110px;
     // 6 = TopicListLayout = news feed: title & excerpt shown full width, so don't be too wide
     &.s_F-Layout6
       max-width: $newsFeedWidth;
