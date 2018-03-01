@@ -70,7 +70,7 @@ class DebugTestController @Inject()(cc: ControllerComponents, edContext: EdConte
   }
 
 
-  SECURITY; COULD // allow only if a Ops team password header? is included? For now, superadmins only.
+  SECURITY; COULD // <—— allow only if a Ops team password header? is included? For now, superadmins only.
   def showMetrics = SuperAdminGetAction { _ =>
     val osMXBean = ManagementFactory.getOperatingSystemMXBean
     val systemLoad = osMXBean.getSystemLoadAverage
@@ -107,7 +107,7 @@ class DebugTestController @Inject()(cc: ControllerComponents, edContext: EdConte
   }
 
 
-  SECURITY; COULD // make this accessible only for admins + if ok forbidden-password specified.
+  SECURITY; COULD // <—— make this accessible only for admins + if ok forbidden-password specified.
   def showBuildInfo = GetAction { _ =>
     import generatedcode.BuildInfo
     val infoTextBuilder = StringBuilder.newBuilder
@@ -217,7 +217,7 @@ class DebugTestController @Inject()(cc: ControllerComponents, edContext: EdConte
 
   def showLastE2eTestEmailSent(siteId: SiteId, sentTo: String): Action[Unit] =
         ExceptionAction.async(empty) { request =>
-    SECURITY // COULD add and check an e2e password. Or rate limits.
+    SECURITY // COULD add and check an e2e password. Or rate limits.  <——
 
     if (!Email.isE2eTestEmailAddress(sentTo))
       throwForbidden("DwEZ4GKE7", "Not an end-to-end test email address")

@@ -362,7 +362,7 @@ class PubSubActor(val nginxHost: String, val globals: Globals) extends Actor {
 
   private def sendPublishRequest(siteId: SiteId, toUserIds: Iterable[UserId], tyype: String,
         json: JsValue) {
-    SECURITY; SHOULD // extra check that I won't send messages about pages a user may not access.
+    SECURITY; SHOULD // extra check that I won't send messages about pages a user may not access. <——
     dieIf(siteId == NoSiteId, "EsE7UW7Y2", "Cannot send requests to NoSiteId")
     // Nchan supports publishing to at most 255 channels in one single request, so split in
     // groups of 255 channels. However, for now, split in groups of only 3 channels,

@@ -870,7 +870,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
   }
 
 
-  SECURITY // don't allow if user listing disabled, & isn't staff [8FKU2A4]
+  SECURITY // don't allow if user listing disabled, & isn't staff [8FKU2A4]   <——
   def listAllUsers(usernamePrefix: String) = GetAction { request =>
     // Authorization check: Is a member? Add MemberGetAction?
     request.theMember
@@ -1053,7 +1053,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
     if (username.length < MinUsernameLength)
       throwBadReq("DwE44KUY0", "Username too short")
 
-    SECURITY // add checks for other lengts too, to avoid database constraint exceptions.
+    SECURITY // add checks for other lengts too, to avoid database constraint exceptions.  <——
               // See if I've added all db constraints also.
     // Create getStringMaxLen and getOptStringMaxLen helpers?
     val about = (json \ "about").asOpt[String].trimNoneIfBlank

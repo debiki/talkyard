@@ -211,7 +211,7 @@ class LoginWithPasswordController @Inject()(cc: ControllerComponents, edContext:
 
 
   private def finishEmailAddressVerification(emailId: String, request: ApiRequest[_]): UserId = {
-    SECURITY // don't let the same email verif url be used more than once?
+    SECURITY // don't let the same email verif url be used more than once?  <——
     val email = request.dao.loadEmailById(emailId) getOrElse {
       throwForbidden("DwE7GJP03", "Link expired? Bad email id; email not found.")
     }

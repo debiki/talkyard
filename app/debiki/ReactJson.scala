@@ -274,7 +274,7 @@ object ReactJson {
           findHeadTags(origPost.approvedSource getOrElse "")
       }
 
-    SECURITY; SHOULD // allow only admins to change this (not moderators). Not urgent though. [2GKW0M]
+    SECURITY; SHOULD // allow only admins to change this (not moderators). Not urgent though. [2GKW0M] <——
     // Fix that, by hiding/collapsing <head>, if the editor isn't an admin?
     // And, when saving a page, compare head tags before, with after, and if changed, throw Forbidden.
     // And when creating, throw forbidden, unless is admin.
@@ -581,7 +581,7 @@ object ReactJson {
 
 
   def makeSiteSectionsJson(dao: SiteDao): JsValue = {
-    SECURITY; SHOULD // not show any hidden/private site sections. Currently harmless though:
+    SECURITY; SHOULD // not show any hidden/private site sections. Currently harmless though:  <——
     // there can be only 1 section and it always has the same id. (unless adds more manually via SQL)
     val sectionPageIds = dao.loadSectionPageIdsAsSeq()
     val jsonObjs = for {

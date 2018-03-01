@@ -153,8 +153,8 @@ class ResetPasswordController @Inject()(cc: ControllerComponents, edContext: EdC
     val loginGrant = loginByEmailOrThrow(anyResetPasswordEmailId, request)
     request.dao.changePasswordCheckStrongEnough(loginGrant.user.id, newPassword)
 
-    SECURITY // SHOULD test if reset password email too old, expired
-    SECURITY // SHOULD mark reset password email as used, so cannot be used again
+    SECURITY // SHOULD test if reset password email too old, expired   <——
+    SECURITY // SHOULD mark reset password email as used, so cannot be used again   <——
 
     // Log the user in and show password changed message.
     request.dao.pubSub.userIsActive(request.siteId, loginGrant.user, request.theBrowserIdData)

@@ -50,7 +50,7 @@ class SearchEngine(
       boolQuery.must(
         // If is staff, could search unapproved html too, something like:
         // .setQuery(QueryBuilders.multiMatchQuery(phrase, "approvedHtml", "unapprovedSource"))
-        // SECURITY ElasticSearch won't interpret any stuff in fullTextQuery as magic commands
+        // SECURITY ElasticSearch won't interpret any stuff in fullTextQuery as magic commands  <——
         // and start doing weird things? E.g. do a "*whatever" regex search, enabling a DoS attack?
         QueryBuilders.matchQuery(PostDocFields.ApprovedPlainText, searchQuery.fullTextQuery))
 

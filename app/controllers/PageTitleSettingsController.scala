@@ -99,7 +99,7 @@ class PageTitleSettingsController @Inject()(cc: ControllerComponents, edContext:
         throwForbidden("TyE2PKHWR0", s"Page slug '$slug' is currently reserved, use something else")
     }
 
-    // SECURITY COULD prevent non-admins from changing the title of pages other than forum topics.
+    // SECURITY COULD prevent non-admins from changing the title of pages other than forum topics. <——
     // (A moderator shouldn't be able to rename the whole forum, or e.g. the about-us page.)
 
     // Bad request?

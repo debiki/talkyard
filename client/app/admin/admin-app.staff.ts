@@ -1041,7 +1041,7 @@ const CustomizeCssJsPanel = createFactory({
             "you use it to describe the look and formatting of this site.",
           placeholder: ".selector { color: something }" }),
 
-        // SECURITY hide with display: none? Or if Experimental not enabled?
+        // SECURITY hide with display: none? Or if Experimental not enabled?  <——
         SpecialContent({ contentId: '_javascript', label: 'Javascript',
           help: "Javascript for this site. Be careful because with Javascript you can break " +
             "everything and add security bugs.",

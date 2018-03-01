@@ -74,7 +74,7 @@ object Validation {
     // Also see [2WJBG04]
 
     if (StackExchangeUsernameRegex.matches(username))  // [2QWGRC8P]
-      return Good(username) ; SECURITY ; COULD // require that site id is 92 or 98 (the two demo forums)
+      return Good(username) ; SECURITY ; COULD // require that site id is 92 or 98 (the two demo forums) <——
 
     if (username.length < 3)
       return Bad(TooShortErrorMessage)

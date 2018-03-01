@@ -134,7 +134,7 @@ class ReplyController @Inject()(cc: ControllerComponents, edContext: EdContext)
 
     val siteSettings = request.dao.getWholeSiteSettings()
     if (siteSettings.allowEmbeddingFrom.isEmpty) {
-      SECURITY; SHOULD // Later, check that allowEmbeddingFrom origin matches... the referer? [4GUYQC0].
+      SECURITY; SHOULD // Later, check that allowEmbeddingFrom origin matches... the referer? [4GUYQC0]. <——
       throwForbidden2("EdE2WTKG8", "Embedded comments allow-from origin not configured")
     }
 

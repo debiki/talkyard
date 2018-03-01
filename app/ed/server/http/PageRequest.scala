@@ -128,7 +128,7 @@ class PageRequest[A](
     * to DoS attack the server. SECURITY COULD use a magic config file password instead.
     */
   def bypassCache: Boolean =
-    (!Globals.isProd || user.exists(_.isStaff)) &&
+    (!Globals.isProd || user.exists(_.isStaff)) &&  // SECURITY SHOULD <—— oops, evil admins!
       request.queryString.getEmptyAsNone("bypassCache") == Some("true")
 
 }

@@ -4850,9 +4850,9 @@ function googleCajaSanitizeHtml(htmlTextUnsafe, allowClassAndIdAttr,
   // only the http/https/mailto URI schemes, and relative URLs
   // (but not e.g. `javascript:'). This is reasonably safe?
   // SECURITY COULD prevent URLs with any '?' though.
-  // SECURITY COULD prevent URLs starting with an IP number? (so cannot
+  // SECURITY COULD prevent URLs starting with an IP number? (so cannot   <——
   // connect to local gateway)
-  // SECURITY write tests for HTML sanitization, for both article and comments.
+  // SECURITY write tests for HTML sanitization, for both article and comments.  <——
   // 2. sanitizeAttribs by default allows all id and class attributes.
   // We don't want anyone to be able to use the .dw-* classes/ids though,
   // so filter them out. Allow `debiki-' though, that's the public CSS API.
@@ -4939,7 +4939,7 @@ function googleCajaSanitizeHtml(htmlTextUnsafe, allowClassAndIdAttr,
       // Don't allow style=.., because of clickjacking. (Caja seems to remove
       // Javascript from inside CSS (e.g. url(javascript:...)) and position:fixed, however
       // Caja allows position:absolute so clickjacking would still be a little bit possbible.)
-      // SECURITY SHOULD maybe allow 'class' only on custom html pages, orig post? [5JMUKWA1]
+      // SECURITY SHOULD maybe allow 'class' only on custom html pages, orig post? hmm. Better?: Only staff [5JMUKWA1] <——
       '*': ['id', 'class', 'data-*']
     },
 
@@ -4989,7 +4989,7 @@ function googleCajaSanitizeHtml(htmlTextUnsafe, allowClassAndIdAttr,
     }*/
   }
 
-  // SECURITY SHOULD remove classes & ids like 's_...' and 't_...' — that's internal stuff, and
+  // SECURITY SHOULD remove classes & ids like 's_...' and 't_...' — that's internal stuff, and  <——
   // could be used to make the post look weird. (Fairly harmless though.)
   // What? But I remove that already (2PUKRST0)
   // See: https://github.com/punkave/sanitize-html#transformations

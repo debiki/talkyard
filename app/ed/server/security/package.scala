@@ -319,7 +319,7 @@ class EdSecurity(globals: Globals) {
             return SidBadFormat
           }
         val ageMillis = (new ju.Date).getTime - dateStr.toLong
-        SECURITY //if (ageMillis > _sidMaxMillis)  SHOULD expire the sid
+        SECURITY //if (ageMillis > _sidMaxMillis)  SHOULD expire the sid  <——
         //  return SidExpired(ageMillis - _sidMaxMillis)
         SidOk(
           value = value,

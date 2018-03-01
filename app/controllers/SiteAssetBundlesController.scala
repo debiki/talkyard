@@ -68,7 +68,7 @@ class SiteAssetBundlesController @Inject()(cc: ControllerComponents, edContext: 
         // but we always serve the most recent version of the bundle.
         val bundle = try {
           CLEAN_UP // this is no longer possible?: (because I simplified th assets system)
-          // SECURITY don't load foreign tenant stuff from any private
+          // SECURITY don't load foreign tenant stuff from any private   <—— clean up & delete
           // other-site/_hidden-underscore-folder/, or if read access restricted
           // in some other manner. (Fix later, in AssetBundleLoader?)
           dao.getAssetBundle(nameNoSuffix, suffix)

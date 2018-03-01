@@ -470,7 +470,7 @@ trait PostsDao {
 
     val uploadRefs = findUploadRefsInPost(newPost)
 
-    SECURITY // COULD: if is new chat user, create review task to look at his/her first
+    SECURITY // COULD: if is new chat user, create review task to look at his/her first  <——
     // chat messages, but only the first few.
 
     val auditLogEntry = AuditLogEntry(
@@ -1372,7 +1372,7 @@ trait PostsDao {
     readWriteTransaction { transaction =>
       val page = PageDao(pageId, transaction)
       val voter = transaction.loadTheUser(voterId)
-      SECURITY // minor. Should be if-may-not-see-*post*. And should do a pre-check in VoteController.
+      SECURITY // minor. Should be if-may-not-see-*post*. And should do a pre-check in VoteController. <——
       throwIfMayNotSeePage(page, Some(voter))(transaction)
 
       val post = page.parts.thePostByNr(postNr)
@@ -1684,7 +1684,7 @@ trait PostsDao {
           threatLevel = ThreatLevel.ModerateThreat, blockerId = SystemUserId)(transaction)
       }
 
-      SECURITY ; BUG // minor: if the author has posted > numThings post, only the most recent ones
+      SECURITY ; BUG // minor: if the author has posted > numThings post, only the most recent ones  <——
       // will get hidden here, because we loaded only the most recent ones, above.
       // — However, new users are rate limited, so not super likely to happen.
 
@@ -1738,7 +1738,7 @@ trait PostsDao {
   private def hidePostsOnPage(posts: Iterable[Post], pageId: PageId, reason: String)(
         transaction: SiteTransaction) {
     dieIf(posts.exists(_.pageId != pageId), "EdE7GKU23Y4")
-    dieIf(posts.exists(_.isTitle), "EdE5KP0WY2") ; SECURITY ; ANNOYING // end users can trigger internal error
+    dieIf(posts.exists(_.isTitle), "EdE5KP0WY2") ; SECURITY ; ANNOYING // end users can trigger internal error  <——
     val postsToHide = posts.filter(!_.isBodyHidden)
     if (postsToHide.isEmpty)
       return

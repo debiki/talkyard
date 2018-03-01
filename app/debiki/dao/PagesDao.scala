@@ -37,7 +37,7 @@ import org.owasp.encoder.Encode
   * (There's also a class PageDao (with no 's' in the name) that focuses on
   * one specific single page.)
   *
-  * SECURITY SHOULD either continue creating review tasks for new users, until they've been
+  * SECURITY SHOULD either continue creating review tasks for new users, until they've been  <——
   * reviewed and we know the user is safe. Or block the user from posting more comments,
   * until his/her first ones have been reviewed.
   */

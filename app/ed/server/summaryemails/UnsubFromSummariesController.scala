@@ -76,7 +76,7 @@ class UnsubFromSummariesController @Inject()(cc: ControllerComponents, edContext
       "EdE6BTU5Y9", WhatInpName)
     val site = globals.lookupSiteOrThrow(request)
 
-    SECURITY; SHOULD // rate limit?
+    SECURITY; SHOULD // rate limit?  <——
 
     val dao = globals.siteDao(site.id)
     val email = dao.loadEmailById(emailId) getOrElse throwForbidden("EdE8YEM2Q", "Bad email id")
