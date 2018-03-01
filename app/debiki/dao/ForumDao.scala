@@ -317,7 +317,7 @@ trait ForumDao {
         bySystem,
         spamRelReqStuff = None,
         transaction)._1
-      insertReplyImpl(textAndHtmlMaker.wraInParagraph(ExampleAnswerText, isTitle = false),
+      insertReplyImpl(textAndHtmlMaker.wrapInParagraph(ExampleAnswerText, isTitle = false),
         questionPagePath.thePageId, replyToPostNrs = Set(PageParts.BodyNr), PostType.Normal,
         bySystem, SystemSpamStuff, globals.now(), SystemUserId, transaction, skipNotifications = true)
     }

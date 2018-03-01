@@ -50,7 +50,7 @@ case class PermsOnPages(
   // nofollow removed
   // upload images / other attachments
 
-  require(forPeopleId >= User.LowestHumanMemberId, "EdE8G4HU2W")
+  require(forPeopleId >= LowestTalkToMemberId, "EdE8G4HU2W")
   require(!onCategoryId.contains(NoCategoryId), "EdE8UGF0W2")
   require(!onPageId.exists(_.isEmpty), "EdE8UGF0W3")
   require(!onPostId.contains(NoPostId), "EdE8UGF0W4")

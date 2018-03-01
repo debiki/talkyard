@@ -256,7 +256,7 @@ package object core {
   def UnknownUserGuestCookie = User.UnknownUserGuestCookie
   def MaxGuestId = User.MaxGuestId
   def LowestNonGuestId = User.LowestNonGuestId
-  def LowestHumanMemberId = User.LowestHumanMemberId
+  def LowestTalkToMemberId = User.LowestTalkToMemberId
 
   val FirstRevisionNr = PostRevision.FirstRevisionNr
 

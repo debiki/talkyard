@@ -201,7 +201,7 @@ class TextAndHtmlMaker(nashorn: ReactRenderer) {
   def testTitle(text: String): TextAndHtml = test(text, isTitle = true)
   def testBody(text: String): TextAndHtml = test(text, isTitle = false)
 
-  def wraInParagraph(text: String, isTitle: Boolean): TextAndHtml = {
+  def wrapInParagraph(text: String, isTitle: Boolean): TextAndHtml = {
     new TextAndHtmlImpl(text, s"<p>$text</p>", links = Nil, linkDomains = Set.empty,
       linkAddresses = Nil, isTitle = isTitle, followLinks = false,
       allowClassIdDataAttrs = false)

@@ -253,9 +253,6 @@ case class NameAndUsername(id: UserId, fullName: String, username: String)
 
 case object User {
 
-  /** The only other member is the System user. But it's a computer. */
-  val LowestHumanMemberId = 2
-
   /** Cannot talk with members with lower ids (System and SuperAdmin). */
   val LowestTalkToMemberId = 3
 
@@ -299,7 +296,6 @@ case object User {
     !isGuestId(userId)
 
   def isMember(userId: UserId): Boolean = userId >= LowestMemberId
-  def isHumanMember(userId: UserId): Boolean = userId >= LowestHumanMemberId
 
   def isOkayUserId(id: UserId): Boolean =
     id >= LowestAuthenticatedUserId ||
@@ -389,7 +385,7 @@ sealed trait User {
   def isApprovedOrStaff: Boolean = false
   def isSystemUser: Boolean = id == SystemUserId
   def isStaff: Boolean = isAdmin || isModerator || isSystemUser
-  def isHuman: Boolean = id >= LowestHumanMemberId
+  def isHuman: Boolean = id >= LowestTalkToMemberId
 
   def isStaffOrCoreMember: Boolean =
     isStaff || effectiveTrustLevel.toInt >= TrustLevel.CoreMember.toInt

@@ -389,7 +389,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
 
     throwForbiddenIf(requester.id != userId && !requester.isAdmin,
       "EdE4JTA2F0", "You may not add an email address to someone else's account")
-    throwForbiddenIf(userId < LowestHumanMemberId,
+    throwForbiddenIf(userId < LowestTalkToMemberId,
       "TyE2GKD052", "Cannot add email addresses to built-in users")
 
     val member: MemberInclDetails = dao.readWriteTransaction { tx =>
@@ -921,7 +921,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
     val prefs = userPrefsFromJson(request.body)
     val staffOrSelf = request.theUser.isStaff || request.theUserId == prefs.userId
     throwForbiddenIf(!staffOrSelf, "DwE15KFE5", "Not your preferences")
-    throwForbiddenIf(prefs.userId < LowestHumanMemberId,
+    throwForbiddenIf(prefs.userId < LowestTalkToMemberId,
       "TyE2GKVQ", "Cannot configure preferences for this user, it's a built-in user")
     request.dao.saveMemberPreferences(prefs, request.who)
     Ok
