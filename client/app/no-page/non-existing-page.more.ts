@@ -380,7 +380,7 @@ export var CreateForumPanel = createComponent({
               Input({ type: 'radio', label: "Excerpt in separate paragraph",
                 checked: style === TopicListLayout.ExcerptBelowTitle,
                 onChange: setTopicsStyle(TopicListLayout.ExcerptBelowTitle),
-                help: rFragment({}, "Shows a bit what each topic is about.", r.br(),
+                help: rFragment({}, "Shows a preview of each topic.", r.br(),
                   "This is the default.") }),
               Input({ type: 'radio', label: "Excerpts and thumbnails",
                 checked: style === TopicListLayout.ThumbnailsBelowTitle,

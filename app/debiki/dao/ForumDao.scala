@@ -317,8 +317,8 @@ trait ForumDao {
         bySystem,
         spamRelReqStuff = None,
         transaction)._1
-      insertReplyImpl(textAndHtmlMaker.testBody(ExampleAnswerText), questionPagePath.thePageId,
-        replyToPostNrs = Set(PageParts.BodyNr), PostType.Normal,
+      insertReplyImpl(textAndHtmlMaker.wraInParagraph(ExampleAnswerText, isTitle = false),
+        questionPagePath.thePageId, replyToPostNrs = Set(PageParts.BodyNr), PostType.Normal,
         bySystem, SystemSpamStuff, globals.now(), SystemUserId, transaction, skipNotifications = true)
     }
 
@@ -405,7 +405,7 @@ object ForumDao {
   }
 
   private val ToDeleteText =
-    "(To delete this example topic, click 'Tools' at the top, and then click Delete.)"
+    "(To delete this example topic, click Tools at the top, and then click Delete.)"
 
   private val StaffChatTopicTitle = "Staff chat"
   private val StaffChatTopicText = "This is a private chat for staff."
@@ -477,7 +477,7 @@ object ForumDao {
       the <span class="icon-ok-circled-empty"></span> icon)."""
     val para2 = o"""In the topic list: To see all unanswered questions, click "All topic"
       and then choose "Only waiting", look:"""
-    val para3 = """<img class="no-lightbox" src="/-/img/tips/how-click-show-waiting.jpg">"""
+    val para3 = """<img class="no-lightbox" src="/-/img/tips/how-click-show-waiting-680px.jpg">"""
     CommonMarkSourceAndHtml(
       source = i"""
         |$para1

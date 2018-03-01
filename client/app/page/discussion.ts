@@ -857,8 +857,7 @@ const RootPostAndComments = createComponent({
                 });
               }
             } },
-          isFormalMessage ? "Add comment" : rFragment({},
-              "Add bottom comment ", r.span({ className: 'icon-collapse' }))));
+          isFormalMessage ? "Add comment" : "Add bottom comment"));
 
     return (
       r.div({ className: threadClass },

@@ -56,6 +56,8 @@ export const UserPreferences = createFactory({
       Route({ path: '(.*)/' + emailsLogins, exact: true, render: () => EmailsLogins(childProps) }));
 
     const isGuest = user_isGuest(user);
+    const isBuiltInUser = user.id < LowestAuthenticatedUserId;
+
     return (
       // Without table-layout: fixed, the table can become 5000 px wide, because otherwise the
       // default layout is width = as wide as the widest cell wants to be.
@@ -64,7 +66,7 @@ export const UserPreferences = createFactory({
           r.div({ className: 's_UP_Act_Nav' },
             r.ul({ className: 'dw-sub-nav nav nav-pills nav-stacked' },
               LiNavLink({ to: aboutPath, className: 's_UP_Prf_Nav_AbtL' }, "About"),
-              isGuest ? null : LiNavLink({
+              isGuest || isBuiltInUser ? null : LiNavLink({
                   to: emailsLoginsPath, className: 's_UP_Prf_Nav_EmLgL' }, "Emails, Logins"))),
          r.div({ className: 's_UP_Act_List' },
            childRoute))));
@@ -80,6 +82,7 @@ export const AboutUser = createFactory({
     const store: Store = this.props.store;
     const me: Myself = store.me;
     const user: MemberInclDetails = this.props.user;
+    const isSystemUser = user.id === SystemUserId;
 
     const mayViewPrefs = isStaff(me) || (me.isAuthenticated && me.id === user.id);
 
@@ -87,7 +90,7 @@ export const AboutUser = createFactory({
       return r.p({}, "Forbidden");
 
     let anyNotYourPrefsInfo;
-    if (me.id !== user.id) {
+    if (me.id !== user.id && !isSystemUser) {
       const prefsAndCanBecause = " preferences. You can do that, because you're an administrator.";
       anyNotYourPrefsInfo = user.isGroup
         ? r.p({}, "You are editing a ", r.b({}, "group's"), prefsAndCanBecause)
@@ -257,6 +260,7 @@ const MemberPreferences = createComponent({
 
     // These ids = hardcoded users & groups, e.g. System and Everyone.
     const isBuiltInUser = user.id < LowestAuthenticatedUserId;
+    const isSystemUser = user.id === SystemUserId;
 
     let savingInfo = null;
     if (this.state.savingStatus === 'Saving') {
@@ -304,8 +308,10 @@ const MemberPreferences = createComponent({
     const emailIfVisitRegularly = (user.isGroup ? "Email them also if they" : "Email me also if I") +
         " visit here regularly.";
 
+    // Summary emails can be configured for groups (in particular, the Everyone group = default settings).
+    // But not for the System user.
     const howOftenSend = user.isGroup ? "How often shall we send" : "How often do you want";
-    const activitySummaryStuff =
+    const activitySummaryStuff = isSystemUser ? null :
       r.div({ className: 'form-group', style: { margin: '22px 0 25px' } },
         r.label({}, "Activity summary emails"),  // more like a mini title
         r.div({ className: 'checkbox' },  // [7PK4WY1]
@@ -369,7 +375,9 @@ const MemberPreferences = createComponent({
                 defaultChecked: user.emailForEveryNewPost }),
               "Be notified about every new post (unless you mute the topic or category)")))),
 
-        InputTypeSubmit({ id: 'e2eUP_Prefs_SaveB', value: "Save", disabled: this.badPrefs() }),
+        isSystemUser ? null :
+          InputTypeSubmit({ id: 'e2eUP_Prefs_SaveB', value: "Save", disabled: this.badPrefs() }),
+
         savingInfo));
 
     /* Discoruse's email options:
