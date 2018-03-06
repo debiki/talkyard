@@ -130,6 +130,8 @@ object ReactJson {
       json += "doubleTypePassword" -> JsBoolean(settings.doubleTypePassword)
     if (settings.begForEmailAddress != D.begForEmailAddress)
       json += "begForEmailAddress" -> JsBoolean(settings.begForEmailAddress)
+    if (settings.showSubCommunities != D.showSubCommunities)
+      json += "showSubCommunities" -> JsBoolean(settings.showSubCommunities)
     if (settings.showExperimental != D.showExperimental)
       json += "showExperimental" -> JsBoolean(settings.showExperimental)
     if (settings.forumMainView != D.forumMainView)
@@ -592,8 +594,7 @@ object ReactJson {
       Json.obj(
         "pageId" -> metaAndPath.pageId,
         "path" -> metaAndPath.path.value,
-        "pageRole" -> metaAndPath.pageRole.toInt,
-        "name" -> "(?? [EsU2UWY0]")
+        "pageRole" -> metaAndPath.pageRole.toInt)
     }
     JsArray(jsonObjs)
   }

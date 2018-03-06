@@ -152,6 +152,7 @@ GET   /-/accept-invite/:key     controllers.InviteController.acceptInvite(key)
 
 POST  /-/create-embedded-comments-site  controllers.EmbeddedTopicsController.createEmbeddedCommentsForum
 POST  /-/create-forum           controllers.ForumController.createForum
+GET   /-/list-forums            controllers.ForumController.listForums
 GET   /-/list-topics            controllers.ForumController.listTopics(categoryId: Int)
 GET   /-/list-topics-by-user    controllers.ForumController.listTopicsByUser(userId: Int)
 GET   /-/list-categories        controllers.ForumController.listCategories(forumId)

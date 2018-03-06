@@ -30,6 +30,7 @@ case class CreateForumOptions(
   useCategories: Boolean,
   createSupportCategory: Boolean,
   createIdeasCategory: Boolean,
+  createExampleTopics: Boolean,
   topicListStyle: TopicListLayout)
 
 
@@ -53,6 +54,7 @@ trait ForumDao {
       useCategories = !isForEmbCmts,
       createSupportCategory = false,
       createIdeasCategory = false,
+      createExampleTopics = !isForEmbCmts,
       topicListStyle = TopicListLayout.TitleExcerptSameLine), byWho)
   }
 
@@ -273,7 +275,7 @@ trait ForumDao {
       transaction)
 
     // Create example threaded discussion.
-    if (!isForEmbCmts) createPageImpl(
+    if (options.createExampleTopics) createPageImpl(
       PageRole.Discussion, PageStatus.Published,
       anyCategoryId = Some(uncategorizedCategoryId),
       anyFolder = None, anySlug = Some("example-discussion"), showId = true,
@@ -288,7 +290,7 @@ trait ForumDao {
       transaction)
 
     // Create example problem.
-    if (!isForEmbCmts) createPageImpl(
+    if (options.createExampleTopics) createPageImpl(
       PageRole.Problem, PageStatus.Published,
       anyCategoryId = anySupportCategoryId orElse Some(uncategorizedCategoryId),
       anyFolder = None, anySlug = Some("example-problem"), showId = true,
@@ -303,7 +305,7 @@ trait ForumDao {
       transaction)
 
     // Create example question.
-    if (!isForEmbCmts) {
+    if (options.createExampleTopics) {
       val questionPagePath = createPageImpl(
         PageRole.Question, PageStatus.Published,
         anyCategoryId = anySupportCategoryId orElse Some(uncategorizedCategoryId),
@@ -323,7 +325,7 @@ trait ForumDao {
     }
 
     // Create example idea.
-    if (!isForEmbCmts) createPageImpl(
+    if (options.createExampleTopics) createPageImpl(
       PageRole.Idea, PageStatus.Published,
       anyCategoryId = anyIdeasCategoryId orElse anySupportCategoryId orElse Some(
         uncategorizedCategoryId),

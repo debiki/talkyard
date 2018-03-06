@@ -99,8 +99,8 @@ declare namespace debiki2 {
   var NavLink; // ReactRouterDOM.NavLink
   function LiNavLink(props, ...contents); // A NavLink in a <li>
 
-  var createComponent: any;
-  var createClassAndFactory: any;
+  var createComponent: any;       // don't use — I'm renaming to createFactory
+  var createClassAndFactory: any; // don't use — I'm renaming to createFactory
   function createFactory(componentDefinition);
 
   function replaceById(itemsWithId: any[], replacement);

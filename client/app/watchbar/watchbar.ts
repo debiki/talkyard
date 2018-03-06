@@ -73,9 +73,9 @@ export var Watchbar = createComponent({
     const store: Store = this.state.store;
     const me = store.me;
 
-    const hasSubCommunities = store_thereAreSubCommunities(store);
-    const communities = hasSubCommunities ? SubCommunities({ store: store }) : null;
-    const recentTopicsAndNotfs = RecentTopicsAndNotfs({ store: store, hasSubCommunities });
+    const showSubCommunities = store.settings.showSubCommunities;
+    const communities = showSubCommunities ? SubCommunities({ store: store }) : null;
+    const recentTopicsAndNotfs = RecentTopicsAndNotfs({ store: store, showSubCommunities });
     const chatChannels = ChatChannels({ store: store });
     const directMessages = me.isLoggedIn ? DirectMessages({ store: store }) : null;
 
@@ -109,18 +109,16 @@ const SubCommunities = createComponent({
 
     const header = r.h3({}, "Communities");  // skip "sub" here
 
-    // Just a test; make this look & work better, later. Also should be for adding existing
-    // sub communities, not creating new ones.
-    const newCommunityButton = Button({ onClick: () => Server.createForum({
-      title: "New Sub Community",
-      folder: '/forum2/',
-        useCategories: true,
-        createSupportCategory: true,
-        createIdeasCategory: true,
-        createOtherCategory: true,
-        topicListStyle: TopicListLayout.NewsFeed
-      },
-      () => {} )}, "Add new ...");
+    // Show add-more-communities button, if hasn't joined all communities yet — or if is
+    // admin, because can then create more communities.
+    const numCommunitiesJoined = subCommunitiesSorted.length;
+    const numCommunitiesTotal = store_numSubCommunities(store);
+    const me: Myself = store.me;
+    const newCommunityButton = !me.isAdmin && numCommunitiesJoined >= numCommunitiesTotal ? null :
+      r.li({ className: 'esWB_LI esWB_T-SubCommunities' },
+        r.a({ className: 'esWB_T_Link', onClick: () => morebundle.joinOrCreateSubCommunity(store) },
+          r.span({ className: 's_WB_AddSubComB_Plus' }, '+'),
+          r.span({ className: 's_WB_AddSubComB_Title esWB_T_Title' }, "Add ...")));
 
     return (
       r.div({ className: 'esWB_Ts' },
@@ -145,7 +143,7 @@ const RecentTopicsAndNotfs = createComponent({
 
     // If there's just a single forum (no other forums = sub communities) then always show
     // it first in the Recent list (instead of in a separate 'Communities' watchbar section).
-    if (!this.props.hasSubCommunities) {
+    if (!this.props.showSubCommunities) {
       const forum = watchbar[WatchbarSection.SubCommunities][0];
       if (forum) {
         topicElems.push(
@@ -359,7 +357,8 @@ function cloneAndSort(topics: WatchbarTopic[]) {
   topicsSorted.sort((ta, tb) => {
     const titleA = ta.title.toLowerCase();
     const titleB = tb.title.toLowerCase();
-    return titleA < titleB ? -1 : (titleA > titleB ? +1 : 0);
+    return titleA < titleB ? -1 : (titleA > titleB ? +1 : (
+      ta.pageId < tb.pageId ? -1 : (ta.pageId > tb.pageId ? +1 : 0)));
   });
   return topicsSorted;
 }

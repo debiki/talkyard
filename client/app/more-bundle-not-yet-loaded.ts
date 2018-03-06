@@ -168,6 +168,13 @@ export function openWikifyDialog(post: Post) {
 }
 
 
+export function joinOrCreateSubCommunity(store: Store) {
+   Server.loadMoreScriptsBundle(() => {
+     debiki2.subcommunities.joinOrCreateSubCommunity(store);
+   });
+}
+
+
 export function loginIfNeeded(loginReason: LoginReason | string,
       anyReturnToUrl?: string, success?: () => void, willCompose?: boolean) {
   Server.loadMoreScriptsBundle(() => {

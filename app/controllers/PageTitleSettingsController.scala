@@ -27,7 +27,7 @@ import ed.server.{EdContext, EdController}
 import ed.server.http._
 import javax.inject.Inject
 import play.api.libs.json._
-import play.api.mvc.ControllerComponents
+import play.api.mvc.{Action, ControllerComponents}
 
 
 /** Edits the page title and changes settings like forum category, URL path,
@@ -37,7 +37,7 @@ class PageTitleSettingsController @Inject()(cc: ControllerComponents, edContext:
   extends EdController(cc, edContext) {
 
 
-  def editTitleSaveSettings = PostJsonAction(RateLimits.EditPost, maxBytes = 2000) {
+  def editTitleSaveSettings: Action[JsValue] = PostJsonAction(RateLimits.EditPost, maxBytes = 2000) {
         request: JsonPostRequest =>
 
     val pageId = (request.body \ "pageId").as[PageId]
@@ -47,12 +47,12 @@ class PageTitleSettingsController @Inject()(cc: ControllerComponents, edContext:
     val anyFolder = (request.body \ "folder").asOpt[String] map { folder =>
       if (folder.trim.isEmpty) "/" else folder.trim
     }
-    val anySlug = (request.body \ "slug").asOptStringTrimmed
+    val anySlug = (request.body \ "slug").asOptStringNoneIfBlank
     val anyShowId = (request.body \ "showId").asOpt[Boolean]
     val anyLayout = (request.body \ "pageLayout").asOpt[Int].flatMap(TopicListLayout.fromInt)
-    val anyHtmlTagCssClasses = (request.body \ "htmlTagCssClasses").asOptStringTrimmed
-    val anyHtmlHeadTitle = (request.body \ "htmlHeadTitle").asOptStringTrimmed
-    val anyHtmlHeadDescription = (request.body \ "htmlHeadDescription").asOptStringTrimmed
+    val anyHtmlTagCssClasses = (request.body \ "htmlTagCssClasses").asOptStringNoneIfBlank
+    val anyHtmlHeadTitle = (request.body \ "htmlHeadTitle").asOptStringNoneIfBlank
+    val anyHtmlHeadDescription = (request.body \ "htmlHeadDescription").asOptStringNoneIfBlank
 
     val anyNewRole: Option[PageRole] = anyNewRoleInt map { newRoleInt =>
       PageRole.fromInt(newRoleInt) getOrElse throwBadArgument("DwE4GU8", "pageRole")

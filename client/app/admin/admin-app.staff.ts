@@ -731,6 +731,18 @@ const AdvancedSettings = createFactory({
         }),
 
         Setting2(props, {
+          type: 'checkbox', label: "Enable sub communities",
+          help: "Lets admins create sub communities. A sub community is a separate forum with " +
+            "its own categories and topic lists. A bit like a subreddit, if you know " +
+            "about the website called Reddit. " +
+            "Also lets site members search for and join sub communities of their choice.",
+          getter: (s: Settings) => s.showSubCommunities,
+          update: (newSettings: Settings, target) => {
+            newSettings.showSubCommunities = target.checked;
+          }
+        }),
+
+        Setting2(props, {
           type: 'checkbox', label: "Experimental",
           help: "Enables some currently not-well-tested features " +
           "like Wiki MindMaps and custom HTML pages.",

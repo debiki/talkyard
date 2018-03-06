@@ -69,6 +69,9 @@ declare namespace debiki2.pagedialogs {
   function getProgressBarDialog();
 }
 
+declare namespace debiki2.subcommunities {
+  function joinOrCreateSubCommunity(store: Store);
+}
 
 declare namespace debiki2.edithistory {
 

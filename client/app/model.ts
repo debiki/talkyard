@@ -621,6 +621,7 @@ interface SettingsVisibleClientSide {
   mayComposeBeforeSignup?: boolean;     // default: false
   doubleTypeEmailAddress?: boolean;     // default: false
   doubleTypePassword?: boolean;         // default: false
+  showSubCommunities?: boolean;         // default: false
   forumMainView?: string;               // default: 'latest'
   forumTopicsSortButtons?: string;      // default: 'latest|top'
   forumCategoryLinks?: string;          // default: 'categories'
@@ -684,11 +685,18 @@ interface Ancestor {  // server side: [6FK02QFV]
 }
 
 
+interface Forum {
+  pageId: PageId;
+  path: string;
+  title: string;
+  description: string;
+}
+
+
 interface SiteSection {
   pageId: PageId;
   path: string;
   pageRole: PageRole;
-  name: string;
 }
 
 
@@ -1105,6 +1113,8 @@ interface Settings {
   contentLicense: ContentLicense;
 
   googleUniversalAnalyticsTrackingId: string;
+
+  showSubCommunities: boolean;
 
   showExperimental: boolean;
   allowEmbeddingFrom: string;

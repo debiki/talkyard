@@ -138,7 +138,7 @@ export function store_canDeletePage(store: Store): boolean {
   // For now, don't let people delete sections = their forum — that just makes them confused.
   // Unless there are many sub communities — then let them delete all but one.
   return !page.pageDeletedAtMs && isStaff(store.me) &&
-      page.pageRole && (!isSection(page.pageRole) || store_thereAreSubCommunities(store));
+      page.pageRole && (!isSection(page.pageRole) || store_numSubCommunities(store) > 1);
 }
 
 
@@ -173,9 +173,9 @@ export function store_isSection(store: Store): boolean {
 }
 
 
-export function store_thereAreSubCommunities(store: Store): boolean {
+export function store_numSubCommunities(store: Store): number {
   const forumPages = _.filter(store.siteSections, (s: SiteSection) => s.pageRole === PageRole.Forum);
-  return forumPages.length >= 2;
+  return forumPages.length;
 }
 
 

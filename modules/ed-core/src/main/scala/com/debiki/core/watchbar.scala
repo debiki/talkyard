@@ -30,6 +30,14 @@ object WatchbarSection {
   case object RecentTopics extends WatchbarSection(2)
   case object ChatChannels extends WatchbarSection(3)
   case object DirectMessages extends WatchbarSection(4)
+
+  def fromInt(value: Int): Option[WatchbarSection] = Some(value match {
+    case SubCommunities.IntVal => SubCommunities
+    case RecentTopics.IntVal => RecentTopics
+    case ChatChannels.IntVal => ChatChannels
+    case DirectMessages.IntVal => DirectMessages
+    case _ => return None
+  })
 }
 
 

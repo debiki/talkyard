@@ -22,17 +22,20 @@
 //------------------------------------------------------------------------------
 
 const r = ReactDOMFactories;
-var Modal = rb.Modal;
-var ModalBody = rb.ModalBody;
+const Modal = rb.Modal;
+const ModalBody = rb.ModalBody;
 
 
 export interface StupidDialogStuff {
   dialogClassName?: string;
-  //header?: any;
   body?: any;
   closeButtonTitle?: any;
+  primaryButtonTitle?: any;
+  secondaryButonTitle?: any;
   small?: boolean,
-  onCloseOk?: () => void,
+  // number = 1 if primary / okay button clicked, 2 if secondary button clicked, and
+  // 0 if no button clicked, that is, if dialog closed by clicking x or outside.
+  onCloseOk?: (number) => void,
   preventClose?: boolean,
 }
 
@@ -40,9 +43,13 @@ export interface StupidDialogStuff {
 /**
  * Makes a function that returns a simple dialog that you can use for dialogs
  * like: "Wrong password [Okay]" i.e. only a simple message and a close button.
+ *
+ * But if you specify `primaryButtonTitle` and `secondaryButtonTitle` it'll show two
+ * buttons, and pass 0, 1 or 2 to `onCloseOk` depending on if the primary (1)
+ * or secondary (2) button, or no button (0, if click outside closes) was clicked.
  */
 export function makeStupidDialogGetter() {
-  var stupidDialog;
+  let stupidDialog;
 
   return function() {
     if (!stupidDialog) {
@@ -53,14 +60,16 @@ export function makeStupidDialogGetter() {
 }
 
 
-var getDefaultStupidDialog = makeStupidDialogGetter();
+const getDefaultStupidDialog = makeStupidDialogGetter();
 
 export function openDefaultStupidDialog(stuff: StupidDialogStuff) {
   getDefaultStupidDialog().open(stuff);
 }
 
 
-export var StupidDialog = createComponent({
+export const StupidDialog = createComponent({
+  displayName: 'StupidDialog',
+
   getInitialState: function () {
     return { isOpen: false };
   },
@@ -69,34 +78,31 @@ export var StupidDialog = createComponent({
     this.setState({ isOpen: true, stuff: stuff });
   },
 
-  close: function() {
+  close: function(whichButton: number) {
     this.setState({ isOpen: false });
-    var stuff: StupidDialogStuff = this.state.stuff || {};
+    const stuff: StupidDialogStuff = this.state.stuff || {};
     if (stuff.onCloseOk) {
-      stuff.onCloseOk();
+      stuff.onCloseOk(whichButton);
     }
   },
 
   render: function () {
     const stuff: StupidDialogStuff = this.state.stuff || {};
     const preventClose = stuff.preventClose;
-    let body = stuff.body;
-    //if (_.isString(body)) {  -- why this if?
-      body = ModalBody({ className: 'clearfix' },
-        r.div({ style: { marginBottom: '2em' }}, body),
-        preventClose ? null : PrimaryButton({ onClick: this.close, className: 'e_SD_CloseB' },
-          stuff.closeButtonTitle || "Okay"));
-    /*}
-    else if (body) {
-      die("Non-string content not implemented [EsE7KYKW2]");
-    }*/
+    const makeCloseFn = (whichButton) => () => this.close(whichButton);
+    const body = ModalBody({ className: 'clearfix' },
+      r.div({ style: { marginBottom: '2em' }}, stuff.body),
+      r.div({ style: { float: 'right' }},
+        preventClose ? null : PrimaryButton({ onClick: makeCloseFn(1), className: 'e_SD_CloseB' },
+          stuff.closeButtonTitle || stuff.primaryButtonTitle || "Okay"),
+        preventClose || !stuff.secondaryButonTitle ? null : Button({
+            onClick: makeCloseFn(2), className: 'e_SD_SecB' },
+          stuff.secondaryButonTitle)));
     return (
-      Modal({ show: this.state.isOpen, onHide: preventClose ? null : this.close,
+      Modal({ show: this.state.isOpen, onHide: preventClose ? null : makeCloseFn(0),
           dialogClassName: 'esStupidDlg ' + (stuff.small ? ' esStupidDlg-Small' : '') +
               (stuff.dialogClassName || '') },
-        //stuff.header,
         body));
-        // stuff.footer || defaultFooter()));
   }
 });
 

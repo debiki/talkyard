@@ -51,6 +51,8 @@ class ForumController @Inject()(cc: ControllerComponents, edContext: EdContext)
     val createSupportCategory = no getOrElse (body \ "createSupportCategory").as[Boolean]
     val createIdeasCategory = no getOrElse (body \ "createIdeasCategory").as[Boolean]
 
+    val createExampleTopics = (body \ "createExampleTopics").as[Boolean]
+
     val topicListStyleInt = (body \ "topicListStyle").as[Int]
     val topicListStyle = TopicListLayout.fromInt(topicListStyleInt) getOrElse throwBadRequest(
       "TyE5JKSEW2", "Bad topic list style number")
@@ -62,10 +64,34 @@ class ForumController @Inject()(cc: ControllerComponents, edContext: EdContext)
       useCategories = useCategories,
       createSupportCategory = createSupportCategory,
       createIdeasCategory = createIdeasCategory,
+      createExampleTopics = createExampleTopics,
       topicListStyle = topicListStyle)
 
     val result = request.dao.createForum(options, request.who)
     OkSafeJson(JsString(result.pagePath.value))
+  }
+
+
+  def listForums: Action[Unit] = GetAction { request =>
+    import request.dao
+    SECURITY // Later, not now: Set permissions on site sections, load only those the requester may see.
+    val sectionPageIds = dao.loadSectionPageIdsAsSeq()
+    val pageStuffById = dao.getPageStuffById(sectionPageIds)
+    val forumJsObjs = for {
+      pageId <- sectionPageIds
+      // (We're not in a transaction, the page might just have been deleted.)
+      pageStuff: PageStuff <- pageStuffById.get(pageId)
+      if pageStuff.pageRole == PageRole.Forum
+      pagePath: PagePath <- dao.getPagePath(pageId)
+    } yield {
+      // Return model.ts: interface Forum.
+      Json.obj(
+        "pageId" -> pageId,
+        "path" -> pagePath.value,
+        "title" -> pageStuff.title,
+        "description" -> pageStuff.bodyExcerpt)
+    }
+    OkSafeJson(JsArray(forumJsObjs))
   }
 
 

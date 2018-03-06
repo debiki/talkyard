@@ -80,6 +80,7 @@ trait AllSettings {
   def contribAgreement: ContribAgreement
   def contentLicense: ContentLicense
   def googleUniversalAnalyticsTrackingId: String
+  def showSubCommunities: Boolean
   def showExperimental: Boolean
   def allowEmbeddingFrom: String
   def htmlTagCssClasses: String
@@ -135,6 +136,7 @@ trait AllSettings {
     contribAgreement = Some(self.contribAgreement),
     contentLicense = Some(self.contentLicense),
     googleUniversalAnalyticsTrackingId = Some(self.googleUniversalAnalyticsTrackingId),
+    showSubCommunities = Some(self.showSubCommunities),
     showExperimental = Some(self.showExperimental),
     allowEmbeddingFrom = Some(self.allowEmbeddingFrom),
     htmlTagCssClasses = Some(self.htmlTagCssClasses),
@@ -199,6 +201,7 @@ object AllSettings {
     var contribAgreement = ContribAgreement.CcBy3And4
     var contentLicense = ContentLicense.CcBySa4
     val googleUniversalAnalyticsTrackingId = ""
+    val showSubCommunities = false
     val showExperimental = false
     val allowEmbeddingFrom = ""
     val htmlTagCssClasses = ""
@@ -265,6 +268,7 @@ case class EffectiveSettings(
   def contribAgreement: ContribAgreement = firstInChain(_.contribAgreement) getOrElse default.contribAgreement
   def contentLicense: ContentLicense = firstInChain(_.contentLicense) getOrElse default.contentLicense
   def googleUniversalAnalyticsTrackingId: String = firstInChain(_.googleUniversalAnalyticsTrackingId) getOrElse default.googleUniversalAnalyticsTrackingId
+  def showSubCommunities: Boolean = firstInChain(_.showSubCommunities) getOrElse default.showSubCommunities
   def showExperimental: Boolean = firstInChain(_.showExperimental) getOrElse default.showExperimental
   def allowEmbeddingFrom: String = firstInChain(_.allowEmbeddingFrom) getOrElse default.allowEmbeddingFrom
   def htmlTagCssClasses: String = firstInChain(_.htmlTagCssClasses) getOrElse default.htmlTagCssClasses
@@ -336,6 +340,7 @@ object Settings2 {
       "contribAgreement" -> JsNumberOrNull(s.contribAgreement.map(_.toInt)),
       "contentLicense" -> JsNumberOrNull(s.contentLicense.map(_.toInt)),
       "googleUniversalAnalyticsTrackingId" -> JsStringOrNull(s.googleUniversalAnalyticsTrackingId),
+      "showSubCommunities" -> JsBooleanOrNull(s.showSubCommunities),
       "showExperimental" -> JsBooleanOrNull(s.showExperimental),
       "allowEmbeddingFrom" -> JsStringOrNull(s.allowEmbeddingFrom),
       "htmlTagCssClasses" -> JsStringOrNull(s.htmlTagCssClasses),
@@ -394,6 +399,7 @@ object Settings2 {
       ContentLicense.fromInt(_) getOrElse throwBadRequest("EsE5YK28", "Invalid content license"))),
     googleUniversalAnalyticsTrackingId =
       anyString(json, "googleUniversalAnalyticsTrackingId", d.googleUniversalAnalyticsTrackingId),
+    showSubCommunities = anyBool(json, "showSubCommunities", d.showSubCommunities),
     showExperimental = anyBool(json, "showExperimental", d.showExperimental),
     allowEmbeddingFrom = anyString(json, "allowEmbeddingFrom", d.allowEmbeddingFrom),
     htmlTagCssClasses = anyString(json, "htmlTagCssClasses", d.htmlTagCssClasses),

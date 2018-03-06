@@ -314,8 +314,6 @@ object EdHttp {
 
 
   implicit class RichJsLookupResult(val underlying: JsLookupResult) {
-    def asOptStringTrimmed: Option[String] = underlying.asOpt[String].map(_.trim)
-
     def asOptStringNoneIfBlank: Option[String] = underlying.asOpt[String].map(_.trim) match {
       case Some("") => None
       case x => x

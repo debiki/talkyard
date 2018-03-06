@@ -44,7 +44,7 @@ export function openTagsDialog(store: Store, post: Post) {
 }
 
 
-var TagsDialog = createComponent({
+const TagsDialog = createComponent({
   displayName: 'TagsDialog',
 
   getInitialState: function () {
@@ -55,22 +55,18 @@ var TagsDialog = createComponent({
     };
   },
 
-  componentWillMount: function() {
-    this.isUnmounted = false;
-  },
-
   componentWillUnmount: function() {
-    this.isUnmounted = true;
+    this.isGone = true;
   },
 
   open: function(store, post: Post) {
     this.setState({ isOpen: true, isLoading: true });
     Server.loadAllTags((tags) => {
-      if (this.isUnmounted) return;
+      if (this.isGone) return;
       this.setState({ allTags: tags });
     });
     Server.loadEditorAndMoreBundles(() => {
-      if (this.isUnmounted || !this.state.isOpen) return;
+      if (this.isGone || !this.state.isOpen) return;
       this.setState({
         isLoading: false,
         store: store,
@@ -95,8 +91,8 @@ var TagsDialog = createComponent({
 
   createAndAddTag: function() {
     // [redux] modifying state in place
-    var tags = this.state.tags;
-    var newTag = this.refs.newTagInput.getValue();
+    let tags = this.state.tags;
+    const newTag = this.refs.newTagInput.getValue();
     tags.push(newTag);
     tags = _.uniq(tags);
     this.setState({ tags: tags });
@@ -104,16 +100,16 @@ var TagsDialog = createComponent({
 
   save: function() {
     Server.addRemovePostTags(this.state.post.uniqueId, this.state.tags, () => {
-      if (this.isUnmounted) return;
+      if (this.isGone) return;
       this.close();
     });
   },
 
   render: function () {
-    var state = this.state;
-    var post: Post = state.post;
-    var title;
-    var content;
+    const state = this.state;
+    const post: Post = state.post;
+    let title;
+    let content;
 
     if (this.state.isLoading)
       return r.p({}, "Loading...");
