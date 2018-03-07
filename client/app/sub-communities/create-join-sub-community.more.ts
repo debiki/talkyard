@@ -62,8 +62,9 @@ export function joinOrCreateSubCommunity(store: Store) {
   }
   function selectAndJoin() {
     selectSubCommunity(store, (forum: Forum) => {
-      // Visiting the forum page, will add it to the watchbar, the sub communities section.
-      location.assign(forum.path);
+      Server.joinPage(forum.pageId, () => {
+        location.assign(forum.path);
+      });
     });
   }
 }

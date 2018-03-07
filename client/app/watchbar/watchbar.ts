@@ -103,7 +103,7 @@ const SubCommunities = createComponent({
 
     _.each(subCommunitiesSorted, (topic: WatchbarTopic) => {
       subCommunitiesElems.push(
-        SingleTopic({ key: topic.pageId, store: store, topic: topic, flavor: 'SubCommunities',
+        SingleTopic({ key: topic.pageId, store: store, topic: topic, flavor: 'SubCom',
             isCurrent: topic.pageId === store.currentPageId }));
     });
 
@@ -280,50 +280,65 @@ const SingleTopic = createComponent({
     sidebar.contextBar.highligtDuringMillis(700);
   },
 
-  openLeaveChatDialog: function() {
+  openLeavePageDialog: function() {
     // For now: (Later, ask: Really? Why? No.)
-    Server.leaveChatChannel();
+    // If the current page is a forum = sub community, then this'll move the forum from the
+    // sub communities section, to the recent section, and if clicking & viewing it again,
+    // it won't be auto-joined just because of that. [5JKW20Z]
+    Server.leavePage();
+  },
+
+  openJoinPageDialog: function() {
+    Server.joinPage();
   },
 
   render: function() {
-    var store: Store = this.props.store;
-    var me: Myself = store.me;
-    var topic: WatchbarTopic = this.props.topic;
-    var flavor: string = this.props.flavor;
-    var isChat = flavor === 'chat';
-    var isCurrentTopicClass = this.props.isCurrent ? ' esWB_T-Current' : '';
-    var unreadClass = topic.unread ? ' esWB_T-Unread' : '';
-    var title = topic.title || this._url;
+    const store: Store = this.props.store;
+    const me: Myself = store.me;
+    const topic: WatchbarTopic = this.props.topic;
+    const flavor: string = this.props.flavor;
+    const isSubCommunity = flavor === 'SubCom';
+    const isChat = flavor === 'chat';
+    const isRecent = flavor === 'recent';
+    const isCurrentTopicClass = this.props.isCurrent ? ' esWB_T-Current' : '';
+    const unreadClass = topic.unread ? ' esWB_T-Unread' : '';
+    let title = topic.title || this._url;
 
     // Roughly 30 chars fits. For now, to usually avoid unneeded tooltips: (dupl width [4YK0F2])
-    var tooltip = title.length > 21 ? title : undefined;
-    var moreClasses = isCurrentTopicClass + unreadClass;
+    const tooltip = title.length > 21 ? title : undefined;
+    const moreClasses = isCurrentTopicClass + unreadClass;
 
     // COULD add a WatchbarTopic.createdByMe field? or .mayAddMembers and .mayRemoveMembers?
     // (Or load lazily, when opening the dropdown?)
-    var isAuthorOrStaff = isStaff(me);
+    const isAuthorOrStaff = isStaff(me);
 
-    var viewMembersButtonTitle = !isChat ? "View people here" : (
+    const viewMembersButtonTitle = !isChat ? "View people here" : (
         isAuthorOrStaff ? "View / add / remove members" : "View chat members");
 
     // UX COULD check role? and make it possible to edit title etc, without having to join.
-    var editChatInfoButton = !isChat || !isAuthorOrStaff || !this.props.isCurrent ? null :
+    const editChatInfoButton = !isChat || !isAuthorOrStaff || !this.props.isCurrent ? null :
         MenuItem({ onSelect: this.editChatTitleAndPurpose, id: 'e2eWB_EditTitlePurposeB' },
-            r.span({ className: 'icon-help' }, "Edit chat title and purpose"));
+          "Edit chat title and purpose");
 
-    var leaveChatButton = !isChat ? null :
-        MenuItem({ onSelect: this.openLeaveChatDialog, id: 'e2eWB_LeaveB' },
-            r.span({ className: 'icon-help' }, "Leave this chat"));
+    const leaveButton = !isChat && !isSubCommunity ? null :
+        MenuItem({ onSelect: this.openLeavePageDialog, id: 'e2eWB_LeaveB' },
+          "Leave this " + (isChat ? "chat" : "community"));
 
-    var topicActionsButton = !this.props.isCurrent ? null :
+    // If a community is listed in the Recent section, then one hasn't joined it.
+    const joinButton = !isRecent || topic.type !== PageRole.Forum ? null  :
+      MenuItem({ onSelect: this.openJoinPageDialog, id: 'e_JoinB' },
+        "Join this community");
+
+    const topicActionsButton = !this.props.isCurrent ? null :
       ModalDropdownButton({ title: r.span({ className: 'icon-settings', title: "Topic actions" }),
           className: 'esWB_T_B', id: 'e2eTopicActionsB', ref: 'actionsDropdown', pullLeft: true,
           dialogClassName: 'esWB_T_D' },
         r.ul({ className: 'dropdown-menu' },
           MenuItem({ onSelect: this.viewChatMembers, id: 'e2eWB_ViewPeopleB' },
-            r.span({ className: 'icon-help' }, viewMembersButtonTitle)),
+            viewMembersButtonTitle),
           editChatInfoButton,
-          leaveChatButton
+          leaveButton,
+          joinButton,
         ));
 
     if (this.props.forumIcon) {

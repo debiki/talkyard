@@ -994,17 +994,26 @@ export function removeUsersFromPage(userIds: UserId[], success) {
 }
 
 
-export function joinChatChannel() {
+export function joinPage(pageId?: PageId, onDone?) {
+  if (_.isFunction(pageId)) {
+    onDone = pageId;
+  }
   postJsonSuccess('/-/join-page', (newWatchbar) => {
     if (newWatchbar) {
       ReactActions.setWatchbar(newWatchbar);
     }
-    ReactActions.addMeAsPageMember();
-  }, { pageId: getPageId() });
+    if (!pageId) {
+      ReactActions.addMeAsPageMember();
+    }
+    // else: Will load users, when loading page.
+    if (onDone) {
+      onDone();
+    }
+  }, { pageId: pageId || getPageId() });
 }
 
 
-export function leaveChatChannel() {
+export function leavePage() {
   postJsonSuccess('/-/leave-page', (newWatchbar) => {
     if (newWatchbar) {
       ReactActions.setWatchbar(newWatchbar);

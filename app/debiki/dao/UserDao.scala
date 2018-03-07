@@ -724,8 +724,10 @@ trait UserDao {
     // - everyone's context bar (the users list)
     // - the Join Chat button (disappears/appears)
 
-    // The page JSON includes a list of all page members, so:
-    refreshPageInMemCache(pageId)
+    // Chat page JSON includes a list of all page members, so:
+    if (pageMeta.pageRole.isChat) {
+      refreshPageInMemCache(pageId)
+    }
 
     var watchbarsByUserId = Map[UserId, BareWatchbar]()
     userIds foreach { userId =>
@@ -746,6 +748,11 @@ trait UserDao {
     byWho: Who, couldntAdd: mutable.Set[UserId], transaction: SiteTransaction): PageMeta = {
     val pageMeta = transaction.loadPageMeta(pageId) getOrElse
       security.throwIndistinguishableNotFound("42PKD0")
+
+    // Right now, to join a forum page = sub community, one just adds it to one's watchbar.
+    // But we don't add/remove the user from the page members list, so nothing to do here.
+    if (pageMeta.pageRole == PageRole.Forum)
+      return pageMeta
 
     val usersById = transaction.loadMembersAsMap(userIds + byWho.id)
     val me = usersById.getOrElse(byWho.id, throwForbidden(

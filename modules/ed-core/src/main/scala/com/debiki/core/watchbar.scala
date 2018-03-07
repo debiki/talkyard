@@ -169,11 +169,16 @@ case class BareWatchbar(
         // section already.)
         this
       }
-      else if (pageMeta.pageRole == PageRole.Forum) {
+      // The very first time one visits a sub community, auto add it to the communities
+      // section. When one leaves it, it gets moved to the recent section. So,
+      // if a forum = sub community is in the recent section, that means we've left it.  [5JKW20Z]
+      // Then don't add it back to the communities section (until the user re-joins it explicitly).
+      else if (pageMeta.pageRole == PageRole.Forum && !isInRecentSection(pageMeta.pageId)) {
         copy(subCommunities = placeFirstMarkSeen(pageMeta, subCommunities))
       }
-      else if (isInNotRecentSection(pageMeta.pageId)) {
-        // Then it won't be shown in the Recent section anyway. Don't remove anything from Recent.
+      else if (isInOtherThanRecentSection(pageMeta.pageId)) {
+        // Then it'll be shown in that other section only. Don't place it first in the Recent
+        // section — that might remove something else from that section (because max topics limit).
         this
       }
       else {
@@ -186,7 +191,12 @@ case class BareWatchbar(
   }
 
 
-  private def isInNotRecentSection(pageId: PageId): Boolean = {
+  private def isInRecentSection(pageId: PageId): Boolean = {
+    recentTopics.exists(_.pageId == pageId)
+  }
+
+
+  private def isInOtherThanRecentSection(pageId: PageId): Boolean = {
     // (skip subCommunities)
     if (chatChannels.exists(_.pageId == pageId)) return true
     if (directMessages.exists(_.pageId == pageId)) return true
@@ -199,7 +209,10 @@ case class BareWatchbar(
 
 
   def addPage(pageId: PageId, pageRole: PageRole, hasSeenIt: Boolean): BareWatchbar = {
-    if (pageRole.isChat) {
+    if (pageRole == PageRole.Forum) {
+      addSubCommunity(pageId, hasSeenIt)
+    }
+    else if (pageRole.isChat) {
       addChatChannel(pageId, hasSeenIt)
     }
     else if (pageRole.isPrivateGroupTalk) {
@@ -212,24 +225,45 @@ case class BareWatchbar(
   }
 
 
+  private def addSubCommunity(pageId: PageId, hasSeenIt: Boolean): BareWatchbar = {
+    // Dupl code (2KRW0B5), hard to break out function, because of copy(field = ...) below?
+    if (subCommunities.exists(_.pageId == pageId)) {
+      if (hasSeenIt) markPageAsSeen(pageId)
+      else this
+    }
+    else {
+      copy(
+        subCommunities = WatchbarTopic(pageId, unread = !hasSeenIt) +: subCommunities,
+        recentTopics = recentTopics.filter(_.pageId != pageId))
+    }
+  }
+
+
   private def addChatChannel(pageId: PageId, hasSeenIt: Boolean): BareWatchbar = {
+    // Dupl code (2KRW0B5)
     if (chatChannels.exists(_.pageId == pageId)) {
       if (hasSeenIt) markPageAsSeen(pageId)
       else this
     }
     else {
-      copy(chatChannels = WatchbarTopic(pageId, unread = !hasSeenIt) +: chatChannels)
+      copy(
+        chatChannels = WatchbarTopic(pageId, unread = !hasSeenIt) +: chatChannels,
+        recentTopics = recentTopics.filter(_.pageId != pageId))
     }
   }
 
 
   private def addDirectMessage(pageId: PageId, hasSeenIt: Boolean): BareWatchbar = {
+    // Dupl code (2KRW0B5)
     if (directMessages.exists(_.pageId == pageId)) {
       if (hasSeenIt) markPageAsSeen(pageId)
       else this
     }
     else {
-      copy(directMessages = WatchbarTopic(pageId, unread = !hasSeenIt) +: directMessages)
+      copy(
+        directMessages = WatchbarTopic(pageId, unread = !hasSeenIt) +: directMessages,
+        // These are never placed in the recent section? Remove anyway, just in case.
+        recentTopics = recentTopics.filter(_.pageId != pageId))
     }
   }
 
@@ -242,6 +276,7 @@ case class BareWatchbar(
       if (pageMeta.isPrivateGroupTalk) recentTopics.filter(_.pageId != pageMeta.pageId)
       else placeFirstMarkSeen(pageMeta, recentTopics)
     copy(
+      subCommunities = subCommunities.filter(_.pageId != pageMeta.pageId),
       recentTopics = newRecent,
       chatChannels = chatChannels.filter(_.pageId != pageMeta.pageId),
       directMessages = directMessages.filter(_.pageId != pageMeta.pageId))

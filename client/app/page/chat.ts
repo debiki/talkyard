@@ -288,7 +288,7 @@ const JoinChatButton = createComponent({
         // because we've joined the chat already (some time long ago). So, need do nothing, now.
         return;
       }
-      Server.joinChatChannel();
+      Server.joinPage();
     });
   },
 
