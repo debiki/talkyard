@@ -23,7 +23,7 @@
 
 const r = ReactDOMFactories;
 const Post = page.Post;
-const UsersPathSlash = '/-/users/';       // dupl [4GKQST20]
+const UsersPathSlash = UsersRoot;
 const SlashActivitySlash = '/activity/';  // dupl [4GKQST20]
 
 

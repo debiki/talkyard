@@ -89,16 +89,6 @@ export const NameLoginBtns = createComponent({
 });
 
 
-/* CLEAN_UP delete this old stuff? The comment is out-of-date?
-function goToUserPage(userId: UserId) {
-  // If using an <a> link, then, if already in the /-/users/ SPA, no rerendering
-  // of React elements will be triggered (not sure why) so the contents of the
-  // page won't change: it'll show details for one user, but the URL will be
-  // for another (namely the currently logged in user). Workaround: update
-  // window.location — this rerenders the React components.
-  window.location.assign('/-/users/' + userId);
-} */
-
 //------------------------------------------------------------------------------
    }
 //------------------------------------------------------------------------------

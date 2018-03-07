@@ -25,6 +25,9 @@
    namespace debiki2 {
 //------------------------------------------------------------------------------
 
+// This results in a '' origin also for embedded comments pages — which means
+// the links won't work, client side: they'll link to https://embedding-site/...
+// instead of https://comments-for-.../.  More details here: [7UKWBP4].
 const origin = eds.isInEmbeddedCommentsIframe ? eds.serverOrigin : '';
 
 
@@ -68,7 +71,7 @@ export function linkToReviewPage(): string {
 
 
 export function linkToUserProfilePage(userIdOrUsername: UserId | string): string {
-  return origin + '/-/users/' + userIdOrUsername;
+  return origin + UsersRoot + userIdOrUsername;
 }
 
 export function linkToUsersNotfs(userIdOrUsername: UserId | string): string {
@@ -84,7 +87,7 @@ export function linkToInvitesFromUser(userId: UserId): string {
 }
 
 export function linkToMyProfilePage(store: Store): string {
-  return origin + '/-/users/' + store.me.id;
+  return origin + UsersRoot + store.me.id;
 }
 
 

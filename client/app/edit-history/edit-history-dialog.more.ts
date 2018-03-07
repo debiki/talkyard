@@ -174,6 +174,7 @@ var diffHelpMessage = {
 
 
 // COULD move to some utils class? Some dupl code, see posts.ts [88MYU2]
+// CLEAN_UP, REMOVE? only used in edit history dialog. Use UserName instead?
 var UserNameLink = createComponent({
   onClick: function(event) {
     pagedialogs.getAboutUserDialog().openForUser(this.props.user, event.target);

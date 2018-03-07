@@ -25,7 +25,7 @@
 //------------------------------------------------------------------------------
 
 const r = ReactDOMFactories;
-const UsersPathSlash = '/-/users/';       // dupl [4GKQST20]
+const UsersPathSlash = UsersRoot;
 const SlashPrefsSlash = '/preferences/';  // dupl [4GKQST20]
 
 import EmailInput = debiki2.util.EmailInput;

@@ -90,6 +90,7 @@ MentionsMarkdownItPlugin.prototype.render = function(tokens, id, options, env) {
   // The username is [a-zA-Z_0-9] so we don't need to escape it. And besides we sanitize
   // everything later on anyway.
   var username = tokens[id].username;
+  // BUG won't work in embedded comments discussions — would link to https://the.embedding.site/-/users/.
   return '<a class="esMention" href="/-/users/' + username + '">@' + username + '</a>';
 };
 

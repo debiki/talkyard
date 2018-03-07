@@ -556,6 +556,8 @@ object ReactRenderer {
 
 
   // CLEAN_UP remove debiki.v0 & .internal [4KSWPY]
+  // Needs serverOrigin and isInEmbeddedCommentsIframe, so can generate working links  [7UKWBP4]
+  // also for embedded comments pages.
   private def serverSideDebikiModule(secure: Boolean) = i"""
     |var eds = {
     |  secure: $secure

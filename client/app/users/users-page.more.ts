@@ -134,7 +134,7 @@ const UserPageComponent = createReactClass(<any> {
       const isNotLowercase = _.isString(usernameOrId) && usernameOrId !== usernameOrId.toLowerCase();
       if (user.username && (user.username.toLowerCase() !== usernameOrId || isNotLowercase) &&
           redirectToCorrectUsername !== false) {
-        let pathWithUsername = '/-/users/' + user.username.toLowerCase();
+        let pathWithUsername = UsersRoot + user.username.toLowerCase();
         if (params.section) pathWithUsername += '/' + params.section;
         if (params.subsection) pathWithUsername += '/' + params.subsection;
         pathWithUsername += this.props.location.hash;

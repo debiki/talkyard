@@ -196,11 +196,12 @@ export function UserName(
     fullName = "(Unknown author)";
   }
 
-
   const linkFn = <any>(props.makeLink ? r.a : r.span);
   const newProps: any = {
     className: 'dw-p-by esP_By',
   };
+
+  let bugWrapInDiv = false;
 
   // Talkyard demo hack: usernames that starts with '__sx_' are of the form    [2QWGRC8P]
   // '__sx_[subdomain]_[user-id]' where [subdomain] is a StackExchange subdomain, and
@@ -218,14 +219,29 @@ export function UserName(
   }
   else {
     if (props.makeLink) {
-      newProps.href = '/-/users/' + user.id;
+      newProps.href = linkToUserProfilePage(user.id);
+      // BUG [7UKWBP4] workaround: embedded comments pages rendered server side, don't know
+      // that they're embedded comments pages and won't prefix links with https://comments-for-.../.
+      // When rendering client side, the links will get that prefix and work fine — however,
+      // React decides to keep the server side link instead of the client side link,
+      // when matching the server side html with the client side html.
+      // The real fix is to include the comments-for-... origin server side too, but for now,
+      // add a key prop so React understands it shouldn't reuse the server side link.
+      if (eds.isInEmbeddedCommentsIframe) {
+        bugWrapInDiv = true;
+      }
     }
     if (props.onClick) {
       newProps.onClick = props.onClick;
     }
   }
 
-  return linkFn(newProps, fullName, username);
+  let result = linkFn(newProps, fullName, username);
+  if (bugWrapInDiv) {
+    // React 16.2 removes span but keeps div.
+    result = r.div({ style: { display: 'inline' }}, result);
+  }
+  return result;
 }
 
 //------------------------------------------------------------------------------
