@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014-2016 Kaj Magnus Lindberg
+ * Copyright (c) 2014-2018 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -60,7 +60,7 @@ export function openMoreDropdown(store, post, moreButton) {
 }
 
 
-export var NoCommentsPageActions = createComponent({
+export const NoCommentsPageActions = createComponent({
   displayName: 'NoCommentsPageActions',
 
   onEditClick: function(event) {
@@ -68,8 +68,8 @@ export var NoCommentsPageActions = createComponent({
   },
 
   render: function() {
-    var me: Myself = this.props.me;
-    var post: Post = this.props.post;
+    const me: Myself = this.props.me;
+    const post: Post = this.props.post;
 
     if (!post.isApproved && !post.sanitizedHtml)
       return null;
@@ -77,7 +77,7 @@ export var NoCommentsPageActions = createComponent({
     if (!me.isAdmin)
       return null;
 
-    var actions =
+    const actions =
           r.a({ className: 'dw-a dw-a-edit icon-edit', onClick: this.onEditClick }, 'Edit');
 
     return (
@@ -174,23 +174,24 @@ export const PostActions = createComponent({
   },
 
   render: function() {
-    var post: Post = this.props.post;
-    var store: Store = this.props.store;
+    const post: Post = this.props.post;
+    const store: Store = this.props.store;
     const page: Page = store.currentPage;
-    var isQuestion = page.pageRole === PageRole.Question;
+    const isQuestion = page.pageRole === PageRole.Question;
     // (Some dupl code, see Title above and isDone() and isAnswered() in forum.ts [4KEPW2]
-    var isAnswered = isQuestion && page.pageAnsweredAtMs;
-    var isDone = page.pageDoneAtMs && (page.pageRole === PageRole.Problem ||
+    const isAnswered = isQuestion && page.pageAnsweredAtMs;
+    const isDone = page.pageDoneAtMs && (page.pageRole === PageRole.Problem ||
       page.pageRole === PageRole.Idea || page.pageRole === PageRole.ToDo ||
       page.pageRole === PageRole.UsabilityTesting);  // [plugin]
 
-    var me: Myself = store.me;
+    const me: Myself = store.me;
     const myPageData: MyPageData = me.myCurrentPageData;
-    var isOwnPost = me.id === post.authorId;
-    var isOwnPage = store_thisIsMyPage(store);
-    var isPageBody = post.nr === BodyNr;
-    var votes = myPageData.votes[post.nr] || [];
-    var isStaffOrOwnPage: boolean = isStaff(me) || isOwnPage;
+    const isOwnPost = me.id === post.authorId;
+    const isOwnPage = store_thisIsMyPage(store);
+    const isPageBody = post.nr === BodyNr;
+    const votes = myPageData.votes[post.nr] || [];
+    const isStaffOrOwnPage: boolean = isStaff(me) || isOwnPage;
+    const isEmbeddedOrigPost = isPageBody && eds.isInEmbeddedCommentsIframe;
 
     const deletedOrCollapsed = post_isDeletedOrCollapsed(post);
 
@@ -199,7 +200,7 @@ export const PostActions = createComponent({
     if (deletedOrCollapsed)
       return r.div({ className: 'dw-p-as dw-as' });
 
-    var acceptAnswerButton;
+    let acceptAnswerButton;
     if (isStaffOrOwnPage && isQuestion && !page.pageAnsweredAtMs && !page.pageClosedAtMs &&
         !isPageBody && post.isApproved) {
       acceptAnswerButton = r.a({ className: 'dw-a dw-a-solve icon-ok-circled-empty',
@@ -208,11 +209,11 @@ export const PostActions = createComponent({
     }
     else if (isQuestion && post.uniqueId === page.pageAnswerPostUniqueId) {
       // (Do this even if !post.isApproved.)
-      var solutionTooltip = isStaffOrOwnPage
+      const solutionTooltip = isStaffOrOwnPage
           ? "Click to un-accept this answer"
           : "This post has been accepted as the answer";
-      var elemType = isStaffOrOwnPage ? 'a' : 'span';
-      var unsolveClass = isStaffOrOwnPage ? ' dw-a-unsolve' : '';
+      const elemType = isStaffOrOwnPage ? 'a' : 'span';
+      const unsolveClass = isStaffOrOwnPage ? ' dw-a-unsolve' : '';
       acceptAnswerButton = r[elemType]({ className: 'dw-a dw-a-solved icon-ok-circled' + unsolveClass,
           onClick: isStaffOrOwnPage ? this.onUnacceptAnswerClick : null, title: solutionTooltip },
         "Solution");
@@ -227,12 +228,12 @@ export const PostActions = createComponent({
     // button if the topic has been closed unanswered / unfixed. (But if it's been
     // answered/fixed, the way to reopen it is to click the answered/fixed icon, to
     // mark it as not-answered/not-fixed again.)
-    var closeReopenButton;
-    var canCloseOrReopen = !isDone && !isAnswered && page_canBeClosed(page.pageRole);
+    let closeReopenButton;
+    const canCloseOrReopen = !isDone && !isAnswered && page_canBeClosed(page.pageRole);
     if (isPageBody && canCloseOrReopen && isStaffOrOwnPage) {
-      var closeReopenTitle = "Reopen";
-      var closeReopenIcon = 'icon-circle-empty';
-      var closeReopenTooltip;
+      let closeReopenTitle = "Reopen";
+      let closeReopenIcon = 'icon-circle-empty';
+      let closeReopenTooltip;
       if (!page.pageClosedAtMs) {
         closeReopenTitle = "Close";
         closeReopenIcon = 'icon-block';
@@ -319,7 +320,9 @@ export const PostActions = createComponent({
               onClick: this.onLinkClick });
 
     // Build a More... dropdown, but if it would have only one single menu item, inline
-    // that menu item instead.
+    // that menu item instead. — This stuff makes no sense for an embedded discussion orig-post
+    // and gets hidden by CSS [5UKWBP2] (but not here because then React messes up the markup
+    // when merging server and client side markup).
     let flagBtn;
     let moreDropdown;
     if (me.isLoggedIn) {
@@ -330,7 +333,7 @@ export const PostActions = createComponent({
     else if (!isOwnPost) {
       flagBtn =
         r.a({ className: 'dw-a dw-a-flag icon-flag',
-            onClick: (event) => flagPost(post, cloneRect(event.target.getBoundingClientRect())),
+            onClick: (event) => flagPost(post, cloneEventTargetRect(event)),
           title: "Report this post" });
     }
 
@@ -342,7 +345,7 @@ export const PostActions = createComponent({
       tagList = r.ul({ className: 'esPA_Ts' }, tags);
     }
 
-    const adminLink = !me.isAdmin || !eds.isInEmbeddedCommentsIframe || !isPageBody ? null :
+    const adminLink = !me.isAdmin || !isEmbeddedOrigPost ? null :
       r.a({ className: 'dw-a dw-a-admin icon-link-ext', href: eds.serverOrigin + linkToReviewPage(),
         target: '_blank' }, "Admin");
 
@@ -385,7 +388,7 @@ const MoreVotesDropdownModal = createComponent({
   },
 
   openForAt: function(post: Post, at) {
-    var rect = cloneRect(at.getBoundingClientRect());
+    const rect = cloneRect(at.getBoundingClientRect());
     rect.left -= 140; // then modal position looks better
     rect.right += 100;
     this.setState({
@@ -748,8 +751,8 @@ const MoreDropdownModal = createComponent({
   },
 
   render: function() {
-    var state = this.state;
-    var content = state.isOpen ? this.makeButtons() : null;
+    const state = this.state;
+    const content = state.isOpen ? this.makeButtons() : null;
     return (
       DropdownModal({ show: state.isOpen, onHide: this.close, showCloseButton: true,
           atRect: state.buttonRect, windowWidth: state.windowWidth },

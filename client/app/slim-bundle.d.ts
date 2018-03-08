@@ -200,6 +200,7 @@ declare namespace debiki2 {
   function store_canPinPage(store: Store);
   var siteStatusToString;
   var cloneRect;
+  var cloneEventTargetRect;
 
   function assetsOrigin(): string;
   var linkToPageId;

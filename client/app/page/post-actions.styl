@@ -393,6 +393,14 @@ html:not(.mouse) .dw-t > .dw-p-as .dw-a
     opacity: 0.62;
     vertical-align: middle;
 
+// These buttons makes no sense, for embedded discussions. [5UKWBP2]
+html.s_InIframe .dw-ar-t > .dw-p-as
+  .dw-a-edit,
+  .dw-a-link,
+  .dw-a-flag,
+  .dw-a-close,
+  .dw-a-more
+    display: none;
 
 // Inline action menu — currently not in use
 //---------------------------

@@ -39,6 +39,10 @@ export function cloneRect(rect: ClientRect | Rect): Rect {
   throw new Error('cloneRect called server side [DwE8PK0GW1]');
 }
 
+export function cloneEventTargetRect(event): Rect {
+  throw new Error('cloneEventTargetRect called server side [TyE4UKWQ2]');
+}
+
 export function event_isEnter(event) {
   throw new Error('event_isEnter called server side [DwE5KYF204]');
 }

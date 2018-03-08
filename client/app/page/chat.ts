@@ -177,8 +177,8 @@ const ChatMessage = createComponent({
     });
   },
 
-  delete_: function() {
-    morebundle.openDeletePostDialog(this.props.post);
+  delete_: function(event) {
+    morebundle.openDeletePostDialog(this.props.post, cloneEventTargetRect(event));
   },
 
   render: function () {

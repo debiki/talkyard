@@ -181,6 +181,9 @@ export function cloneRect(rect: ClientRect | Rect): Rect {
   };
 }
 
+export function cloneEventTargetRect(event): Rect {
+  return cloneRect(event.target.getBoundingClientRect());
+}
 
 export function event_isCtrlEnter(event) {
   return event.ctrlKey && event_isEnter(event);

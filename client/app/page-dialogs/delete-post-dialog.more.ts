@@ -74,7 +74,7 @@ const DeletePostDialog = createComponent({
       const isMyPost = me.id === post.authorId;
       const yourOrThis = isMyPost ? "your" : "this";
       title = "Delete " + yourOrThis + " post?";
-      content = !isStaff(me) ? null :
+      content = !isStaff(me) ? null :   // UX BUG hide if is chat? then no replies?
         r.div({ className: 'dw-delete-btns' },
           isStaff(me)
               ? Input({ type: 'checkbox', label: "Delete replies too",
