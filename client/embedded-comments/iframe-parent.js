@@ -229,8 +229,6 @@ function onMessage(event) {
       console.log("iframe-parent: got 'iframeInited' message");
       iframe = findIframeThatSent(event);
       if (iframe === commentsIframe) {
-        // The iframe wants to know the real win dimensions, so it can position modal dialogs on screen.
-        messageCommentsIframeNewWinTopSize();
         // If we want to scroll to & highlight a post: The post is inside the iframe and we don't
         // know where. So tell the iframe to send back a 'scrollComments' message to us,
         // with info about how to scroll.
@@ -242,6 +240,13 @@ function onMessage(event) {
     case 'setIframeSize':  // COULD rename to sth like setIframeSizeAndMaybeScrollToPost
       iframe = findIframeThatSent(event);
       setIframeSize(iframe, eventData);
+      // The comments iframe wants to know the real win dimensions, so it can position modal
+      // dialogs on screen. But wait until the iframe has been resized — because if
+      // the iframe bottom, is higher up than the window bottom, then that'd reduce
+      // the height we send to the iframe.
+      if (iframe === commentsIframe) {
+        setTimeout(messageCommentsIframeNewWinTopSize);
+      }
       // Remove the "loading comments" info text.
       var loadingText = document.getElementById('ed-loading-comments');
       if (loadingText)

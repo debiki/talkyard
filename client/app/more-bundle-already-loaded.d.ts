@@ -56,14 +56,14 @@ declare namespace debiki2 {
 declare namespace debiki2.pagedialogs {
 
   function openAddPeopleDialog();
-  function openDeletePostDialog(post: Post);
-  function openFlagDialog(postId: PostId);
-  function openMovePostsDialog(store: Store, post: Post, closeCaller);
+  function openDeletePostDialog(post: Post, at: Rect);
+  function openFlagDialog(postId: PostId, at: Rect);
+  function openMovePostsDialog(store: Store, post: Post, closeCaller, at: Rect);
   function openSeeWrenchDialog();
   function openShareDialog(post: Post, button);
   function openTagsDialog(store: Store, post: Post);
   function openWikifyDialog(post: Post);
-  function openLikesDialog(post: Post, voteType: PostVoteType, at)
+  function openLikesDialog(post: Post, voteType: PostVoteType, at: Rect)
 
   function getAboutUserDialog();
   function getProgressBarDialog();

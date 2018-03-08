@@ -82,6 +82,8 @@ declare const ServerSideWindowWidth;
 
 declare namespace debiki2 {
 
+  let iframeOffsetWinSize;
+
   function $first(selector: string): HTMLElement;
   function $all(selector: string): HTMLCollectionOf<HTMLElement>;
   function $byId(elemId: string): HTMLElement;

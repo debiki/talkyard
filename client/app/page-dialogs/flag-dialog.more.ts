@@ -24,7 +24,6 @@
 //------------------------------------------------------------------------------
 
 const r = ReactDOMFactories;
-const Modal = rb.Modal;
 const ModalHeader = rb.ModalHeader;
 const ModalTitle = rb.ModalTitle;
 const ModalBody = rb.ModalBody;
@@ -33,15 +32,15 @@ const ModalFooter = rb.ModalFooter;
 
 let flagDialog;
 
-export function openFlagDialog(postId: PostId) {
+export function openFlagDialog(postId: PostId, at: Rect) {
   if (!flagDialog) {
     flagDialog = ReactDOM.render(FlagDialog(), utils.makeMountNode());
   }
-  flagDialog.open(postId);
+  flagDialog.open(postId, at);
 }
 
 
-var FlagDialog = createComponent({
+const FlagDialog = createComponent({
   getInitialState: function () {
     return {
       isOpen: false,
@@ -51,10 +50,12 @@ var FlagDialog = createComponent({
     };
   },
 
-  open: function(postId) {
+  open: function(postId, at: Rect) {
     this.setState({
       isOpen: true,
       postId: postId,
+      atRect: at,
+      windowWidth: window.innerWidth,
     });
   },
 
@@ -85,8 +86,8 @@ var FlagDialog = createComponent({
   },
 
   render: function () {
-    var flagType = this.state.flagType;
-    var anyReasonInput;
+    const flagType = this.state.flagType;
+    let anyReasonInput;
     if (!this.state.isOpen) {
       // Nothing.
     }
@@ -98,7 +99,8 @@ var FlagDialog = createComponent({
     }
 
     return (
-      Modal({ show: this.state.isOpen, onHide: this.close },
+      utils.DropdownModal({ show: this.state.isOpen, onHide: this.close, showCloseButton: true,
+          atRect: this.state.atRect, windowWidth: this.state.windowWidth },
         ModalHeader({}, ModalTitle({}, "Report Comment")),
         ModalBody({},
           r.form({},

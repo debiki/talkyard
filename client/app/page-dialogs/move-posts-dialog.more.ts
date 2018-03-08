@@ -24,7 +24,6 @@
 //------------------------------------------------------------------------------
 
 const r = ReactDOMFactories;
-const Modal = rb.Modal;
 const ModalHeader = rb.ModalHeader;
 const ModalTitle = rb.ModalTitle;
 const ModalBody = rb.ModalBody;
@@ -34,11 +33,11 @@ const PatternInput = utils.PatternInput;
 let movePostsDialog;
 
 
-export function openMovePostsDialog(store: Store, post: Post, closeCaller) {
+export function openMovePostsDialog(store: Store, post: Post, closeCaller, at: Rect) {
   if (!movePostsDialog) {
     movePostsDialog = ReactDOM.render(MovePostsDialog(), utils.makeMountNode());
   }
-  movePostsDialog.open(store, post, closeCaller);
+  movePostsDialog.open(store, post, closeCaller, at);
 }
 
 
@@ -47,13 +46,15 @@ var MovePostsDialog = createComponent({
     return {};
   },
 
-  open: function(store: Store, post: Post, closeCaller) {
+  open: function(store: Store, post: Post, closeCaller, at) {
     this.setState({
       isOpen: true,
       store: store,
       post: post,
       newParentUrl: '',
       closeCaller: closeCaller,
+      atRect: at,
+      windowWidth: window.innerWidth,
     });
   },
 
@@ -116,7 +117,8 @@ var MovePostsDialog = createComponent({
       Button({ onClick: this.previewNewParent }, "Preview"));
 
     return (
-      Modal({ show: this.state.isOpen, onHide: this.close },
+      utils.DropdownModal({ show: this.state.isOpen, onHide: this.close, showCloseButton: true,
+          atRect: this.state.atRect, windowWidth: this.state.windowWidth },
         ModalHeader({}, ModalTitle({}, "Move post")),
         ModalBody({}, content),
         ModalFooter({}, Button({ onClick: this.close }, "Cancel"))));

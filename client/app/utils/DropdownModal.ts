@@ -153,6 +153,7 @@ export const DropdownModal = createComponent({
         // to the left, so 6px not 0px here:
         content.style.left = '6px';
       }
+      this.setState({ fitsInDisplay: true });
     }, 0);
   },
 
@@ -193,43 +194,47 @@ export const DropdownModal = createComponent({
     if (!this.state.moreBundleLoaded)
       return null;
 
-    var content;
+    let content;
     if (this.props.show) {
-      var closeButton = !this.props.showCloseButton ? null :
+      const closeButton = !this.props.showCloseButton ? null :
         r.div({ className: 'esDropModal_CloseB esCloseCross', onClick: this.props.onHide });
 
       // Try to remove props.atX & .pullLeft, use betweenX everywhere instead. CLEAN_UP
-      var atX = this.props.atX;
-      var atY = this.props.atY;
-      var pullLeft = this.props.pullLeft;
+      let atX = this.props.atX;
+      let atY = this.props.atY;
+      let pullLeft = this.props.pullLeft;
 
-      var rect: ClientRect = this.props.atRect;
+      const rect: ClientRect = this.props.atRect;
       if (rect) {
-        var windowMiddle = this.props.windowWidth / 2;
-        var spaceLeft = windowMiddle - rect.left;
-        var spaceRight = rect.right - windowMiddle;
+        const windowMiddle = this.props.windowWidth / 2;
+        const spaceLeft = windowMiddle - rect.left;
+        const spaceRight = rect.right - windowMiddle;
         pullLeft = spaceLeft > spaceRight;
         atX = pullLeft ? rect.left : rect.right;
         atY = rect.bottom;
       }
 
-      var left = pullLeft ? atX : undefined;
-      var right = pullLeft ? undefined : 'calc(100% - ' + atX + 'px)';
-      var styles = {
+      // Place at atX, atY.
+      const left = pullLeft ? atX : undefined;
+      const right = pullLeft ? undefined : 'calc(100% - ' + atX + 'px)';
+      const styles = {
         left: left,
         right: right,
         top: atY,
+        // Avoid flashing it at the wrong position, before it's been moved to fit on screen.
+        visibility: this.state.fitsInDisplay ? 'visible' : 'hidden',
       };
+
       content =
         r.div({ className: 'esDropModal_content ' + (this.props.className || ''), style: styles,
             ref: 'content', onClick: this.props.onContentClick }, closeButton, this.props.children);
     }
 
-    var backdropStyle: any = { opacity: 0.08 };
+    const backdropStyle: any = { opacity: 0.08 };
     if (this.state.hideBackdrop) backdropStyle.display = 'none';
 
     const dialogClassName = this.props.dialogClassName2 ? ' ' + this.props.dialogClassName2 : '';
-    var notTooWideClass = this.props.allowFullWidth ? '' : ' esDropModal-NotTooWide';
+    const notTooWideClass = this.props.allowFullWidth ? '' : ' esDropModal-NotTooWide';
     return (
       rb.Modal({ show: this.props.show, onHide: this.props.onHide,
           onShow: () => this.setState({ hideBackdrop: false }),

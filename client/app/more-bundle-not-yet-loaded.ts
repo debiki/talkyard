@@ -54,9 +54,9 @@ export function openAddPeopleDialog() {
 }
 
 
-export function openDeletePostDialog(post: Post) {
+export function openDeletePostDialog(post: Post, at: Rect) {
   Server.loadMoreScriptsBundle(() => {
-    debiki2.pagedialogs.openDeletePostDialog(post);
+    debiki2.pagedialogs.openDeletePostDialog(post, at);
   });
 }
 
@@ -82,9 +82,9 @@ export function openEditIntroDialog() {
 }
 
 
-export function openFlagDialog(postId: PostId) {
+export function openFlagDialog(postId: PostId, at: Rect) {
   Server.loadMoreScriptsBundle(() => {
-    debiki2.pagedialogs.openFlagDialog(postId);
+    debiki2.pagedialogs.openFlagDialog(postId, at);
   });
 }
 
@@ -110,9 +110,9 @@ export function openLoginDialogToSignUp(purpose: LoginReason | string) {
 }
 
 
-export function openMovePostsDialog(store: Store, post: Post, closeCaller) {
+export function openMovePostsDialog(store: Store, post: Post, closeCaller, at: Rect) {
   Server.loadMoreScriptsBundle(() => {
-    debiki2.pagedialogs.openMovePostsDialog(store, post, closeCaller);
+    debiki2.pagedialogs.openMovePostsDialog(store, post, closeCaller, at);
   });
 }
 

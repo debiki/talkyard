@@ -75,7 +75,9 @@ export const StupidDialog = createComponent({
   },
 
   open: function(stuff: StupidDialogStuff) {
-    this.setState({ isOpen: true, stuff: stuff });
+    const winWidth = window.innerWidth;
+    const atX = eds.isInEmbeddedCommentsIframe ? winWidth / 2 : undefined;
+    this.setState({ isOpen: true, stuff, atX, winWidth });
   },
 
   close: function(whichButton: number) {
@@ -98,11 +100,30 @@ export const StupidDialog = createComponent({
         preventClose || !stuff.secondaryButonTitle ? null : Button({
             onClick: makeCloseFn(2), className: 'e_SD_SecB' },
           stuff.secondaryButonTitle)));
-    return (
-      Modal({ show: this.state.isOpen, onHide: preventClose ? null : makeCloseFn(0),
-          dialogClassName: 'esStupidDlg ' + (stuff.small ? ' esStupidDlg-Small' : '') +
-              (stuff.dialogClassName || '') },
-        body));
+    let result;
+    const className = 'esStupidDlg ' + (stuff.small ? ' esStupidDlg-Small' : '') +
+            (stuff.dialogClassName || '');
+
+    // CLEAN_UP, SMALLER_BUNDLE: use the same type of dialog for both non-iframe and iframe.
+    if (!eds.isInEmbeddedCommentsIframe) {
+      result = (
+        Modal({ show: this.state.isOpen, onHide: preventClose ? null : makeCloseFn(0),
+            dialogClassName: className },
+          body));
+    }
+    else {
+      // Don't use Modal — it could display outside the browser's viewport.
+      result = (
+        utils.DropdownModal({ show: this.state.isOpen, onHide: preventClose ? null : makeCloseFn(0),
+            showCloseButton: !preventClose, className,
+            // For now:
+            windowWidth: this.state.winWidth,
+            atX: this.state.atX - 150,
+            atY: debiki2.iframeOffsetWinSize.top + 80,
+          },
+          body));
+    }
+    return result;
   }
 });
 

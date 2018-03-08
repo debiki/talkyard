@@ -23,7 +23,6 @@
 //------------------------------------------------------------------------------
 
 const r = ReactDOMFactories;
-const Modal = rb.Modal;
 const ModalHeader = rb.ModalHeader;
 const ModalTitle = rb.ModalTitle;
 const ModalBody = rb.ModalBody;
@@ -32,15 +31,15 @@ const ModalFooter = rb.ModalFooter;
 
 let deletePostDialog;
 
-export function openDeletePostDialog(post: Post) {
+export function openDeletePostDialog(post: Post, at: Rect) {
   if (!deletePostDialog) {
     deletePostDialog = ReactDOM.render(DeletePostDialog(), utils.makeMountNode());
   }
-  deletePostDialog.open(post);
+  deletePostDialog.open(post, at);
 }
 
 
-var DeletePostDialog = createComponent({
+const DeletePostDialog = createComponent({
   getInitialState: function () {
     return {
       isOpen: false,
@@ -49,8 +48,13 @@ var DeletePostDialog = createComponent({
     };
   },
 
-  open: function(post: Post) {
-    this.setState({ isOpen: true, post: post });
+  open: function(post: Post, at: Rect) {
+    this.setState({
+      isOpen: true,
+      post: post,
+      atRect: at,
+      windowWidth: window.innerWidth,
+    });
   },
 
   close: function() {
@@ -62,13 +66,13 @@ var DeletePostDialog = createComponent({
   },
 
   render: function () {
-    var title;
-    var content;
+    let title;
+    let content;
     if (this.state.isOpen) {
-      var me: Myself = this.state.loggedInUser;
-      var post: Post = this.state.post;
-      var isMyPost = me.id === post.authorId;
-      var yourOrThis = isMyPost ? "your" : "this";
+      const me: Myself = this.state.loggedInUser;
+      const post: Post = this.state.post;
+      const isMyPost = me.id === post.authorId;
+      const yourOrThis = isMyPost ? "your" : "this";
       title = "Delete " + yourOrThis + " post?";
       content = !isStaff(me) ? null :
         r.div({ className: 'dw-delete-btns' },
@@ -78,7 +82,9 @@ var DeletePostDialog = createComponent({
               : null);
     }
     return (
-      Modal({ show: this.state.isOpen, onHide: this.close, dialogClassName: 'dw-delete-post-dialog' },
+      utils.DropdownModal({ show: this.state.isOpen, onHide: this.close, showCloseButton: true,
+          className: 'dw-delete-post-dialog',
+          atRect: this.state.atRect, windowWidth: this.state.windowWidth },
         ModalHeader({}, ModalTitle({}, title)),
         content ? ModalBody({}, content) : null,
         ModalFooter({},

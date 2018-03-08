@@ -329,7 +329,8 @@ export const PostActions = createComponent({
     }
     else if (!isOwnPost) {
       flagBtn =
-        r.a({ className: 'dw-a dw-a-flag icon-flag', onClick: () => flagPost(post),
+        r.a({ className: 'dw-a dw-a-flag icon-flag',
+            onClick: (event) => flagPost(post, cloneRect(event.target.getBoundingClientRect())),
           title: "Report this post" });
     }
 
@@ -575,7 +576,7 @@ const MoreDropdownModal = createComponent({
   },
 
   onFlagClick: function(event) {
-    flagPost(this.state.post);
+    flagPost(this.state.post, this.state.buttonRect);
     this.close();
   },
 
@@ -585,7 +586,7 @@ const MoreDropdownModal = createComponent({
   },
 
   onDeleteClick: function(event) {
-    morebundle.openDeletePostDialog(this.state.post);
+    morebundle.openDeletePostDialog(this.state.post, this.state.buttonRect);
     this.close();
   },
 
@@ -612,7 +613,8 @@ const MoreDropdownModal = createComponent({
     this.close();
   }, */
   onMoveClick: function(event) {
-    morebundle.openMovePostsDialog(this.state.store, this.state.post, this.close);
+    morebundle.openMovePostsDialog(this.state.store, this.state.post, this.close, this.state.buttonRect);
+    this.close();
   },
   onSeeWrenchClick: function(event) {
     debiki2.pagedialogs.openSeeWrenchDialog();
@@ -689,7 +691,7 @@ const MoreDropdownModal = createComponent({
 
     // ----- Tags
 
-    if (isStaff(me) || isOwnPost) {
+    if ((isStaff(me) || isOwnPost) && !eds.isInEmbeddedCommentsIframe) {
       moreLinks.push(
         r.a({ className: 'dw-a icon-plus', onClick: this.openTagsDialog, key: 'ts' },
           "Add/remove tags"));
@@ -715,7 +717,9 @@ const MoreDropdownModal = createComponent({
 
     // ----- Move post
 
-    if (!isPageBody && isStaff(me)) {
+    // UX BUG Currently doesn't work in iframes — because the copy-link dialog copies addresses
+    // with the embedding site's origin, and when pasting the link, that'll be the wrong origin.
+    if (!isPageBody && isStaff(me) && !eds.isInEmbeddedCommentsIframe) {
       moreLinks.push(
         r.a({ className: 'dw-a icon-paper-plane-empty', onClick: this.onMoveClick, key: 'mp' },
           "Move"));
@@ -754,9 +758,9 @@ const MoreDropdownModal = createComponent({
 });
 
 
-function flagPost(post: Post) {
+function flagPost(post: Post, at: Rect) {
   loginIfNeededThen('LoginToFlag', post.nr, () => {
-    morebundle.openFlagDialog(post.nr);
+    morebundle.openFlagDialog(post.nr, at);
   });
 }
 
