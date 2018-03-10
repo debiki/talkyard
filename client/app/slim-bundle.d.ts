@@ -1,6 +1,10 @@
 
 /// <reference path="server-vars.d.ts" />
 /// <reference path="model.ts" />
+/// <reference path="translations.d.ts" />
+
+declare const t: TalkyardTranslations;
+
 
 // In constants.ts:
 

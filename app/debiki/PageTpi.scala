@@ -70,6 +70,8 @@ class SiteTpi protected (
   def siteId: SiteId = debikiRequest.siteId
   def siteSettings: EffectiveSettings = debikiRequest.siteSettings
 
+  def languageCode: String = siteSettings.languageCode
+
   def isLoggedIn: Boolean = debikiRequest.user isDefined
   def isOwner: Boolean = debikiRequest.user.exists(_.isOwner)
   def isAdmin: Boolean = debikiRequest.user.exists(_.isAdmin)

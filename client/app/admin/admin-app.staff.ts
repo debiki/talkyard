@@ -44,7 +44,7 @@ export function routes() {
 
 
 
-export var NotYetImplementedComponent = createReactClass(<any> {
+export const NotYetImplementedComponent = createReactClass(<any> {
   displayName: 'NotYetImplementedComponent',
   render: function() {
     return (
@@ -54,7 +54,7 @@ export var NotYetImplementedComponent = createReactClass(<any> {
 
 
 
-var AdminAppComponent = createReactClass(<any> {
+const AdminAppComponent = createReactClass(<any> {
   displayName: 'AdminAppComponent',
   mixins: [debiki2.StoreListenerMixin],
   // mixins: [PageUnloadAlerter.AlertIfLeavingRouteMixin], SHOULD make Alert... work again
@@ -109,7 +109,7 @@ var AdminAppComponent = createReactClass(<any> {
 
   removeUnchangedSettings: function(settings: Settings) {
     _.each(settings, (value, name) => {
-      var currentValue = this.state.currentSettings[name];
+      const currentValue = this.state.currentSettings[name];
       if (currentValue === value) {
         delete settings[name];
       }
@@ -131,20 +131,20 @@ var AdminAppComponent = createReactClass(<any> {
   },
 
   render: function() {
-    var store: Store = this.state.store;
-    var me = store.me;
+    const store: Store = this.state.store;
+    const me = store.me;
     if (!me)
       return r.p({}, 'Not logged in');
 
     const ar = AdminRoot;
 
-    var settings = me.isAdmin ?
+    const settings = me.isAdmin ?
         LiNavLink({ to: ar + 'settings' }, "Settings") : null;
 
-    var customize = me.isAdmin ?
+    const customize = me.isAdmin ?
         LiNavLink({ to: ar + 'customize' }, "Look and feel") : null;
 
-    var saveBar = _.isEmpty(this.state.editedSettings) ? null :
+    const saveBar = _.isEmpty(this.state.editedSettings) ? null :
       r.div({ className: 'esA_SaveBar' },
         r.div({ className: 'container' },
           PrimaryButton({ onClick: this.saveSettings,
@@ -212,6 +212,7 @@ const SettingsPanel = createFactory({
           LiNavLink({ to: sr + 'moderation', id: 'e2eAA_Ss_ModL'  }, "Moderation"),
           LiNavLink({ to: sr + 'spam-flags', id: 'e2eAA_Ss_SpamFlagsL'  }, "Spam & flags"),
           LiNavLink({ to: sr + 'embedded-comments', id: 'e2eAA_Ss_EmbCmtsL' }, "Embedded Comments"),
+          LiNavLink({ to: sr + 'language', id: 'e_AA_Ss_Lang' }, "Language"),
           LiNavLink({ to: sr + 'advanced', id: 'e2eAA_Ss_AdvancedL' }, "Advanced")),
         r.div({ className: 'form-horizontal esAdmin_settings col-sm-10' },
           Switch({},
@@ -220,6 +221,7 @@ const SettingsPanel = createFactory({
             Route({ path: sr + 'moderation', render: () => ModerationSettings(ps) }),
             Route({ path: sr + 'spam-flags', render: () => SpamFlagsSettings(ps) }),
             Route({ path: sr + 'embedded-comments', render: () => EmbeddedCommentsSettings(ps) }), // [8UP4QX0]
+            Route({ path: sr + 'language', render: () => LanguageSettings(ps) }),
             Route({ path: sr + 'advanced', render: () => AdvancedSettings(ps) })))));
   }
 });
@@ -385,11 +387,11 @@ const ModerationSettings = createFactory({
   displayName: 'ModerationSettings',
 
   render: function() {
-    var props = this.props;
-    var currentSettings: Settings = props.currentSettings;
-    var editedSettings: Settings = props.editedSettings;
+    const props = this.props;
+    const currentSettings: Settings = props.currentSettings;
+    const editedSettings: Settings = props.editedSettings;
 
-    var valueOf = (getter: (s: Settings) => any) =>
+    const valueOf = (getter: (s: Settings) => any) =>
       firstDefinedOf(getter(editedSettings), getter(currentSettings));
 
     // Makes a number smaller than MaxNumFirstPosts — and keeps the last typed digit,
@@ -408,7 +410,7 @@ const ModerationSettings = createFactory({
             "they've been reviewed. Max " + MaxNumFirstPosts + ".",
           getter: (s: Settings) => s.numFirstPostsToReview,
           update: (newSettings: Settings, target) => {
-            var num = parseInt(target.value);
+            let num = parseInt(target.value);
             if (_.isNaN(num)) num = currentSettings.numFirstPostsToReview;
             if (num < 0) num = 0;
             if (num > MaxNumFirstPosts) num = makeSmall(num);
@@ -423,7 +425,7 @@ const ModerationSettings = createFactory({
             "Set to 0 to disable. Max is " + MaxNumFirstPosts + ".",
           getter: (s: Settings) => s.numFirstPostsToApprove,
           update: (newSettings: Settings, target) => {
-            var num = parseInt(target.value);
+            let num = parseInt(target.value);
             if (_.isNaN(num)) num = currentSettings.numFirstPostsToApprove;
             if (num < 0) num = 0;
             if (num > MaxNumFirstPosts) num = makeSmall(num);
@@ -440,7 +442,7 @@ const ModerationSettings = createFactory({
               "posting anything more, until the first posts have been approved by staff.",
           getter: (s: Settings) => s.numFirstPostsToAllow,
           update: (newSettings: Settings, target) => {
-            var num = parseInt(target.value);
+            let num = parseInt(target.value);
             if (_.isNaN(num)) num = currentSettings.numFirstPostsToAllow;
             if (num < 0) num = 0;
             if (num > MaxNumFirstPosts) num = makeSmall(num);
@@ -459,14 +461,14 @@ const SpamFlagsSettings = createFactory({
   displayName: 'SpamFlagsSettings',
 
   render: function() {
-    var props = this.props;
-    var currentSettings: Settings = props.currentSettings;
-    var editedSettings: Settings = props.editedSettings;
+    const props = this.props;
+    const currentSettings: Settings = props.currentSettings;
+    const editedSettings: Settings = props.editedSettings;
 
-    var valueOf = (getter: (s: Settings) => any) =>
+    const valueOf = (getter: (s: Settings) => any) =>
       firstDefinedOf(getter(editedSettings), getter(currentSettings));
 
-    var LargeNumber = 9999;
+    const LargeNumber = 9999;
 
     return (
       r.div({},
@@ -475,7 +477,7 @@ const SpamFlagsSettings = createFactory({
           help: "If a post gets these many flags, it'll get hidden, automatically.",
           getter: (s: Settings) => s.numFlagsToHidePost,
           update: (newSettings: Settings, target) => {
-            var num = parseInt(target.value);
+            let num = parseInt(target.value);
             if (_.isNaN(num)) num = currentSettings.numFlagsToHidePost;
             if (num < 0) num = 0;
             if (num > LargeNumber) num = LargeNumber;
@@ -490,7 +492,7 @@ const SpamFlagsSettings = createFactory({
               "so s/he won't just insert even more bad stuff.",
           getter: (s: Settings) => s.cooldownMinutesAfterFlaggedHidden,
           update: (newSettings: Settings, target) => {
-            var num = parseInt(target.value);
+            let num = parseInt(target.value);
             if (_.isNaN(num)) num = currentSettings.cooldownMinutesAfterFlaggedHidden;
             if (num < 0) num = 0;
             if (num > LargeNumber) num = LargeNumber;
@@ -507,7 +509,7 @@ const SpamFlagsSettings = createFactory({
             "and s/he won't be allowed to post more posts, until staff has had a look."),
           getter: (s: Settings) => s.numFlagsToBlockNewUser,
           update: (newSettings: Settings, target) => {
-            var num = parseInt(target.value);
+            let num = parseInt(target.value);
             if (_.isNaN(num)) num = currentSettings.numFlagsToBlockNewUser;
             if (num < 0) num = 0;
             if (num > LargeNumber) num = LargeNumber;
@@ -523,7 +525,7 @@ const SpamFlagsSettings = createFactory({
             "and s/he won't be allowed to post more posts, until staff has had a look."),
           getter: (s: Settings) => s.numFlaggersToBlockNewUser,
           update: (newSettings: Settings, target) => {
-            var num = parseInt(target.value);
+            let num = parseInt(target.value);
             if (_.isNaN(num)) num = currentSettings.numFlaggersToBlockNewUser;
             if (num < 0) num = 0;
             if (num > LargeNumber) num = LargeNumber;
@@ -551,7 +553,7 @@ const SpamFlagsSettings = createFactory({
             "as two flags from two different users"),
           getter: (s: Settings) => s.regularMemberFlagWeight,
           update: (newSettings: Settings, target) => {
-            var num = parseFloat(target.value);
+            let num = parseFloat(target.value);
             if (_.isNaN(num)) num = currentSettings.regularMemberFlagWeight;
             if (num < 0) num = 0;
             if (num > LargeNumber) num = LargeNumber;
@@ -565,7 +567,7 @@ const SpamFlagsSettings = createFactory({
             "How much more should I care about flags from core members and staff?"),
           getter: (s: Settings) => s.coreMemberFlagWeight,
           update: (newSettings: Settings, target) => {
-            var num = parseFloat(target.value);
+            let num = parseFloat(target.value);
             if (_.isNaN(num)) num = currentSettings.coreMemberFlagWeight;
             if (num < 0) num = 0;
             if (num > LargeNumber) num = LargeNumber;
@@ -644,6 +646,35 @@ const EmbeddedCommentsSettings = createFactory({
           }
         }),
         anyInstructions));
+  }
+});
+
+
+
+const LanguageSettings = createFactory({
+  displayName: 'LanguageSettings',
+
+  render: function() {
+    const props = this.props;
+    const currentSettings: Settings = props.currentSettings;
+    const editedSettings: Settings = props.editedSettings;
+
+    const valueOf = (getter: (s: Settings) => any) =>
+      firstDefinedOf(getter(editedSettings), getter(currentSettings));
+
+    return (
+      r.div({},
+        // UX SHOULD change to a dropdown, with only the supported languages.
+        Setting2(props, { type: 'text', label: "Language", id: 'e_AA_Ss_LangCodeTI',
+          help: r.span({}, "The language for the user interface, e.g. 'en' (English) or 'sv' " +
+            "(Swedish)."),
+          canReset: false,
+          getter: (s: Settings) => s.languageCode,
+          update: (newSettings: Settings, target) => {
+            newSettings.languageCode = target.value;
+          }
+        }),
+      ));
   }
 });
 
@@ -766,17 +797,17 @@ const LegalSettings = createFactory({
   displayName: 'LegalSettings',
 
   render: function() {
-    var props = this.props;
-    var currentSettings: Settings = props.currentSettings;
-    var editedSettings: Settings = props.editedSettings;
+    const props = this.props;
+    const currentSettings: Settings = props.currentSettings;
+    const editedSettings: Settings = props.editedSettings;
 
-    var valueOf = (getter: (s: Settings) => any) =>
+    const valueOf = (getter: (s: Settings) => any) =>
       firstDefinedOf(getter(editedSettings), getter(currentSettings));
 
-    var termsOfUseLink = r.a({ href: '/-/terms-of-use', target: '_blank' },
+    const termsOfUseLink = r.a({ href: '/-/terms-of-use', target: '_blank' },
       'Terms of Use');
 
-    var userContentTermsLink = r.a({ href: '/-/terms-of-use#3', target: '_blank' },
+    const userContentTermsLink = r.a({ href: '/-/terms-of-use#3', target: '_blank' },
       "section about user contributions on your Terms of Use");
 
     return (
@@ -1063,18 +1094,18 @@ const CustomizeCssJsPanel = createFactory({
 
 
 function Setting2(panelProps, props, anyChildren?) {
-  var editedSettings = panelProps.editedSettings;
-  var currentSettings = panelProps.currentSettings;
-  var defaultSettings = panelProps.defaultSettings;
+  const editedSettings = panelProps.editedSettings;
+  const currentSettings = panelProps.currentSettings;
+  const defaultSettings = panelProps.defaultSettings;
 
-  var editedValue = props.getter(editedSettings);
-  var currentValue = props.getter(currentSettings);
+  const editedValue = props.getter(editedSettings);
+  const currentValue = props.getter(currentSettings);
 
   dieIf(props.onChange, 'EsE3GUK02');
   dieIf(!props.update, 'EsE22PYK5');
   dieIf(props.value, 'EsE6JY2F4');
 
-  var valueOf = (getter: (s: Settings) => any) =>
+  const valueOf = (getter: (s: Settings) => any) =>
     firstDefinedOf(getter(editedSettings), getter(currentSettings));
 
   props.value = firstDefinedOf(editedValue, currentValue);
@@ -1096,7 +1127,7 @@ function Setting2(panelProps, props, anyChildren?) {
   }
 
   props.onChange = (event) => {
-    var newSettings = _.clone(editedSettings);
+    const newSettings = _.clone(editedSettings);
     props.update(newSettings, event.target);
     panelProps.removeUnchangedSettings(newSettings);
     panelProps.setEditedSettings(newSettings);
@@ -1104,10 +1135,10 @@ function Setting2(panelProps, props, anyChildren?) {
 
   // ----- Reset and undo buttons
 
-  var field = props.type === 'checkbox' ? 'checked' : 'value';
-  var event = { target: {} };
+  const field = props.type === 'checkbox' ? 'checked' : 'value';
+  const event = { target: {} };
 
-  var undoChangesButton;
+  let undoChangesButton;
   if (isDefined2(editedValue)) {
     undoChangesButton = Button({ className: 'col-sm-offset-3 esAdmin_settings_setting_btn',
       disabled: props.disabled, onClick: () => {
@@ -1117,8 +1148,8 @@ function Setting2(panelProps, props, anyChildren?) {
   }
 
   // Show the Reset button only if there's no Undo button — both at the same time looks confusing.
-  var resetToDefaultButton;
-  var defaultValue = props.getter(defaultSettings);
+  let resetToDefaultButton;
+  const defaultValue = props.getter(defaultSettings);
   if (!undoChangesButton && valueOf(props.getter) !== defaultValue && props.canReset !== false) {
     resetToDefaultButton = Button({ className: 'col-sm-offset-3 esAdmin_settings_setting_btn',
       disabled: props.disabled, onClick: () => {

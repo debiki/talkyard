@@ -48,13 +48,17 @@ var currentDirectorySlash = __dirname + '/';
 var versionFilePath = 'version.txt';
 
 
-function makeCopyrightAndLicenseBanner() {
+function getVersionTag() {
   var version = fs.readFileSync(versionFilePath, { encoding: 'utf8' }).trim();
   var gitHash = execSync('git rev-parse --short HEAD', { encoding: 'utf8' }).trim();
-  var versionTag = version + '-' + gitHash;  // also in Bash and Scala [8GKB4W2]
+  return version + '-' + gitHash;  // also in Bash and Scala [8GKB4W2]
+}
+
+
+function makeCopyrightAndLicenseBanner() {
   return (
   '/*!\n' +
-  ' * Talkyard ' + versionTag + '\n' +
+  ' * Talkyard ' + getVersionTag() + '\n' +
   ' *\n' +
   ' * This file is copyrighted and licensed under the AGPL license.\n' +
   ' * Some parts of it might be licensed under more permissive\n' +
@@ -63,6 +67,11 @@ function makeCopyrightAndLicenseBanner() {
   ' *   https://github.com/debiki/debiki-server\n' +
   ' */\n');
 }
+
+function makeTranslationsCopyrightAndLicenseBanner() {
+  return '/*! Talkyard ' + getVersionTag() + ', license: AGPL. */\n';
+}
+
 
 var thisIsAConcatenationMessage =
   '/*!\n' +
@@ -432,7 +441,22 @@ gulp.task('enable-prod-stuff', function() {
 });
 
 
-gulp.task('minifyScripts', ['compileConcatAllScripts'], function() {
+// Similar to 'minifyScripts', but a different copyright header.
+gulp.task('minifyTranslations', ['buildTranslations'], function() {
+  return gulp.src(['public/res/translations/**/*.js'])
+      .pipe(uglify().on('error', function(err) {
+        gulpUtil.log(gulpUtil.colors.red("*** Error ***"), err.toString());
+        this.emit('end');
+      }))
+      .pipe(rename({ extname: '.min.js' }))
+      .pipe(header(makeTranslationsCopyrightAndLicenseBanner()))
+      .pipe(gulp.dest('public/res/translations/'))
+      .pipe(gzip())
+      .pipe(gulp.dest('public/res/translations/'));
+});
+
+
+gulp.task('minifyScripts', ['compileConcatAllScripts', 'minifyTranslations'], function() {
   // preprocess() removes all @ifdef DEBUG — however (!) be sure to not place '// @endif'
   // on the very last line in a {} block, because it would get removed, by... by what? the
   // Typescript compiler? This results in an impossible-to-understand "Unbalanced delimiter
@@ -569,6 +593,39 @@ gulp.task('compile-e2e-scripts', function() {
 gulp.task('build-e2e', ['clean-e2e', 'compile-e2e-scripts'], function() {
 });
 
+
+// ------------------------------------------------------------------------
+//  Translations
+// ------------------------------------------------------------------------
+
+gulp.task('cleanTranslations', function () {
+  return del([
+    'public/res/translations/**/*']);
+});
+
+// Transpiles translations/(language-code)/i18n.ts to one-js-file-per-source-file
+// in public/res/translations/... .
+gulp.task('compileTranslations', function() {
+  var stream = gulp.src([
+    'translations/**/*.ts'])
+    .pipe(typeScript({
+      declarationFiles: true,
+      lib: ['es5', 'es2015', 'dom'],
+      types: ['core-js']
+    }));
+
+  if (watchAndLiveForever) {
+    stream.on('error', function() {
+      console.log('\n!!! Error compiling translations TypeScript !!!\n');
+    });
+  }
+  return stream.js
+    .pipe(gulp.dest('public/res/translations'));
+});
+
+
+gulp.task('buildTranslations', ['cleanTranslations', 'compileTranslations'], function() {
+});
 
 
 // ------------------------------------------------------------------------

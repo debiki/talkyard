@@ -148,7 +148,7 @@ export const ForumComponent = createReactClass(<any> {
     }
     else {
       activeCategory = {
-        name: "All categories",
+        name: t.fb.allCats,
         id: forumPage.categoryId, // the forum root category
         isForumItself: true,
         newTopicTypes: [],
@@ -303,7 +303,7 @@ const ForumIntroText = createComponent({
 
     const anyEditIntroBtn = user.isAdmin
         ? r.a({ className: 'esForumIntro_edit icon-edit',
-              onClick: morebundle.openEditIntroDialog }, "Edit")
+              onClick: morebundle.openEditIntroDialog }, t.fi.edit)
         : null;
 
     return r.div({ className: 'esForumIntro' },
@@ -311,10 +311,10 @@ const ForumIntroText = createComponent({
       r.div({ className: 'esForumIntro_btns' },
         anyEditIntroBtn,
         r.a({ className: 'esForumIntro_close', onClick: () => ReactActions.showForumIntro(false) },
-          r.span({ className: 'icon-cancel' }, "Hide"),
+          r.span({ className: 'icon-cancel' }, t.fi.hide_1),
           r.span({ className: 'esForumIntro_close_reopen' },
-            ", click ", r.span({ className: 'icon-info-circled dw-forum-intro-show' }),
-              " to reopen"))));
+            t.fi.hide_2, r.span({ className: 'icon-info-circled dw-forum-intro-show' }),
+              t.fi.hide_3))));
   }
 });
 
@@ -379,9 +379,9 @@ const ForumButtons = createComponent({
     // Latest / Top means? Therefore, if `!showTopicFilter`, type "Latest topics" instead of
     // just "Latest". (Also, since the filter button is absent, there's more space for this.)
     switch (sortOrderRoutePath) {
-      case RoutePathLatest: return showTopicFilter ? "Active" : "Active topics";
-      case RoutePathNew: return showTopicFilter ? "New" : "New topics";
-      case RoutePathTop: return showTopicFilter ? "Top" : "Popular topics";
+      case RoutePathLatest: return showTopicFilter ? t.fb.active : t.fb.activeTopics;
+      case RoutePathNew: return showTopicFilter ? t.fb.new : t.fb.newTopics;
+      case RoutePathTop: return showTopicFilter ? t.fb.top : t.fb.topTopics;
       default: return null;
     }
   },
@@ -497,7 +497,7 @@ const ForumButtons = createComponent({
     // A tester got a little bit confused in the categories view, because it starts with
     // the filter-*topics* button. So insert this title, before, instead.
     const anyPageTitle = showsCategoryTree ?
-        r.div({ className: 'esF_BB_PageTitle' }, "Categories") : null;
+        r.div({ className: 'esF_BB_PageTitle' }, t.categories) : null;
 
     const makeCategoryLink = (where, text, linkId, extraClass?) => NavLink({
       to: { pathname: this.props.forumPath + where, search: this.props.location.search },
@@ -507,12 +507,12 @@ const ForumButtons = createComponent({
 
     let omitCategoryStuff = showsCategoryTree || !settings_showCategories(store.settings, me);
     let categoryTreeLink = omitCategoryStuff ? null :
-      makeCategoryLink(RoutePathCategories, "Categories", 'e2eViewCategoriesB', 'esForum_navLink');
+      makeCategoryLink(RoutePathCategories, t.categories, 'e2eViewCategoriesB', 'esForum_navLink');
 
     // COULD remember which topics were listed previously and return to that view.
     // Or would a Back btn somewhere be better?
     const topicListLink = showsTopicList ? null :
-      makeCategoryLink(RoutePathLatest, "Topic list", 'e2eViewTopicsB', 'esForum_navLink');
+      makeCategoryLink(RoutePathLatest, t.fb.topicList, 'e2eViewTopicsB', 'esForum_navLink');
 
     const categoryMenuItems = store.currentCategories.map((category: Category) => {
       return MenuItem({ key: category.id, active: activeCategory.id === category.id,
@@ -528,7 +528,7 @@ const ForumButtons = createComponent({
 
     categoryMenuItems.unshift(
         MenuItem({ key: -1, active: listsTopicsInAllCats,
-          onClick: () => this.setCategory('') }, "All categories"));
+          onClick: () => this.setCategory('') }, t.fb.allCats));
 
     const activeCategoryIcon = category_iconClass(activeCategory, store);
 
@@ -553,15 +553,15 @@ const ForumButtons = createComponent({
             ExplainingListItem({ onClick: () => this.setSortOrder(RoutePathLatest),
                 active: currentSortOrderPath === RoutePathLatest,
                 title: this.getSortOrderName(RoutePathLatest),
-                text: "Shows recently active topics first" }),
+                text: t.fb.activeDescr }),
             ExplainingListItem({ onClick: () => this.setSortOrder(RoutePathNew),
               active: currentSortOrderPath === RoutePathNew,
               title: this.getSortOrderName(RoutePathNew),
-              text: "Shows newest topics first" }),
+              text: t.fb.newDescr }),
             ExplainingListItem({ onClick: () => this.setSortOrder(RoutePathTop),
                 active: currentSortOrderPath === RoutePathTop,
                 title: this.getSortOrderName(RoutePathTop),
-                text: "Shows popular topics first" })));
+                text: t.fb.topDescr })));
     }
     else {
       const slashSlug = this.slashCategorySlug();
@@ -582,9 +582,9 @@ const ForumButtons = createComponent({
     const topicFilterValue = queryParams.filter || FilterShowAll;
     function makeTopicFilterText(filter) {
       switch (filter) {
-        case FilterShowAll: return "All topics";
-        case FilterShowWaiting: return "Only waiting";
-        case FilterShowDeleted: return "Show deleted";
+        case FilterShowAll: return t.fb.allTopics;
+        case FilterShowWaiting: return t.fb.onlyWaiting;
+        case FilterShowDeleted: return t.fb.showDeleted;
       }
       die('EsE4JK85');
     }
@@ -593,7 +593,7 @@ const ForumButtons = createComponent({
       ExplainingListItem({ onSelect: this.setTopicFilter,
         activeEventKey: topicFilterValue, eventKey: FilterShowDeleted,
         title: makeTopicFilterText(FilterShowDeleted),
-        text: "Shows all topics, including deleted topics" });
+        text: t.fb.showDeletedDescr });
 
     const topicFilterButton = !showFilterButton ? null :
       ModalDropdownButton({ className: 'esForum_filterBtn esForum_catsNav_btn', pullLeft: true,
@@ -602,14 +602,15 @@ const ForumButtons = createComponent({
         r.ul({},
           ExplainingListItem({ onSelect: this.setTopicFilter,
               activeEventKey: topicFilterValue, eventKey: FilterShowAll,
-              title: "Show all topics",
-              text: "Shows all forum topics" }),
+              title: t.fb.showAllTopics,
+              text: t.fb.showAllTopicsDescr }),
           ExplainingListItem({ onSelect: this.setTopicFilter,
               activeEventKey: topicFilterValue, eventKey: FilterShowWaiting,
               title: makeTopicFilterText(FilterShowWaiting),
               text: r.span({},
-                "Shows only questions ", r.b({}, r.i({}, "waiting")), " for a solution, " +
-                "plus ideas and problems not yet handled" ) }),
+                t.fb.onlyWaitingDescr_1,  // "shows only ..."
+                r.b({}, r.i({}, t.fb.onlyWaitingDescr_2)),  // "waiting"
+                t.fb.onlyWaitingDescr_3 ) }), // "for a solution ..."
           showDeletedFilterItem));
 
     /* A filter dropdown and search box instead of the <select> above:
@@ -644,13 +645,13 @@ const ForumButtons = createComponent({
     let createCategoryBtn;
     if (showsCategoryTree && me.isAdmin) {
       createCategoryBtn = PrimaryButton({ onClick: this.createCategory, id: 'e2eCreateCategoryB' },
-        "Create Category");
+        t.fb.createCat);
     }
 
     let editCategoryBtn;
     if (!activeCategory.isForumItself && me.isAdmin) {
       editCategoryBtn = Button({ onClick: this.editCategory, className: 'esF_BB_EditCat' },
-        "Edit Category");
+        t.fb.editCat);
     }
 
     const whatClass = showsCategoryTree ? 's_F_BB-Cats' : 's_F_BB-Topics';
@@ -923,11 +924,11 @@ export const TopicsList = createComponent({
       // COULD make minHeight work when switching to the Categories view too? But should
       // then probably scroll the top of the categories list into view.
       // COULD use store.topics, used when rendering server side, but for now:
-      return r.p({ style: { minHeight: this.props.minHeight } }, "Loading...");
+      return r.p({ style: { minHeight: this.props.minHeight } }, t.loading);
     }
 
     if (!topics.length)
-      return r.p({ id: 'e2eF_NoTopics' }, 'No topics.');
+      return r.p({ id: 'e2eF_NoTopics' }, t.noTopics);
 
     const useTable = this.props.useTable;
     const orderOffset: OrderOffset = this.props.orderOffset;
@@ -955,7 +956,7 @@ export const TopicsList = createComponent({
         */
     const iconsHelpStuff = iconsHelpClosed || help.isHelpMessageClosed(store, IconHelpMessage)
         ? r.a({ className: 'esForum_topics_openIconsHelp icon-info-circled',
-              onClick: this.openIconsHelp }, "Explain icons...")
+              onClick: this.openIconsHelp }, t.ft.explIcons)
         : HelpMessageBox({ message: IconHelpMessage, showUnhideTips: false });
     topicElems.splice(Math.min(topicElems.length, numFewTopics), 0,
       useTable
@@ -970,7 +971,7 @@ export const TopicsList = createComponent({
           r.a({ className: 'load-more', href: queryString, onClick: (event) => {
             event.preventDefault();
             this.props.loadMoreTopics();
-          } }, "Load more ..."));
+          } }, t.loadMore));
     }
 
     let topTopicsPeriodButton;
@@ -983,15 +984,15 @@ export const TopicsList = createComponent({
       };
 
       topTopicsPeriodButton = r.div({},
-          r.span({ className: 'esForum_sortInfo' }, "Popular topics, "),
+          r.span({ className: 'esForum_sortInfo' }, t.ft.popularTopicsComma),
           ModalDropdownButton({ className: 'esForum_sortInfo s_F_SI_TopB', pullLeft: true,
               title: r.span({},
                 topPeriod_toString(this.props.topPeriod) + ' ', r.span({ className: 'caret' })) },
             r.ul({ className: 'dropdown-menu' },
               makeTopPeriodListItem(TopTopicsPeriod.All,
-                "Shows the most popular topics first, all time."),
+                t.ft.topFirstAllTime),
               makeTopPeriodListItem(TopTopicsPeriod.Day,
-                "Shows topics popular during the past day."),
+                t.ft.topFirstPastDay),
               makeTopPeriodListItem(TopTopicsPeriod.Week),
               makeTopPeriodListItem(TopTopicsPeriod.Month),
               makeTopPeriodListItem(TopTopicsPeriod.Quarter),
@@ -1001,16 +1002,16 @@ export const TopicsList = createComponent({
     const deletedClass = !activeCategory.isDeleted ? '' : ' s_F_Ts-CatDd';
     const categoryDeletedInfo = !activeCategory.isDeleted ? null :
       r.p({ className: 'icon-trash s_F_CatDdInfo' },
-        "This category has been deleted");
+        t.ft.catHasBeenDeleted);
 
     let topicsHeaderText = "Topics";
     switch (orderOffset.sortOrder) {
-      case TopicSortOrder.BumpTime: topicsHeaderText = "Topics, recently active first"; break;
-      case TopicSortOrder.CreatedAt: topicsHeaderText = "Topics, newest first"; break;
+      case TopicSortOrder.BumpTime: topicsHeaderText = t.ft.topicsActiveFirst; break;
+      case TopicSortOrder.CreatedAt: topicsHeaderText = t.ft.topicsNewestFirst; break;
     }
 
     const categoryHeader = !settings_showCategories(store.settings, me) ? null :
-        r.th({ className: 's_F_Ts_T_CN' }, "Category");
+        r.th({ className: 's_F_Ts_T_CN' }, t.category);
 
     const activityHeaderText =
         orderOffset.sortOrder === TopicSortOrder.CreatedAt ? "Created" : "Activity";
@@ -1584,24 +1585,25 @@ function makeTitle(topic: Topic, className: string, settings: SettingsVisibleCli
 
 
 function createTopicBtnTitle(category: Category) {
-  let title = "Create Topic";
+  let title = t.fb.createTopic;
   if (_.isEqual([PageRole.Idea], category.newTopicTypes)) {
-    title = "Post an Idea";
+    title = t.fb.postIdea;
   }
   else if (_.isEqual([PageRole.Question], category.newTopicTypes)) {
-    title = "Ask a Question";
+    title = t.fb.askQuestion;
   }
   else if (_.isEqual([PageRole.Problem], category.newTopicTypes)) {
-    title = "Report a Problem";
+    title = t.fb.reportProblem;
   }
   else if (_.isEqual([PageRole.MindMap], category.newTopicTypes)) {
-    title = "Create Mind Map";
+    title = t.fb.createMindMap;
   }
-  else if (_.isEqual([PageRole.Critique], category.newTopicTypes)) {
+  /*
+  else if (_.isEqual([PageRole.Critique], category.newTopicTypes)) { CLEAN_UP remove
     title = "Ask for Critique"; // [plugin]
-  }
+  } */
   else if (areWebPages(category.newTopicTypes)) {
-    title = "Create Page";
+    title = t.fb.createPage;
   }
   function areWebPages(topicTypes: PageRole[]): boolean {
     return isWebPage(topicTypes[0]) && (

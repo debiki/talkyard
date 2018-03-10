@@ -55,6 +55,7 @@ public/res/server-bundle.*
 public/res/jquery-bundle.*
 public/res/ed-comments.*
 public/res/zxcvbn.*
+public/res/translations/
 
 # When running Chrome browser tests, ChromeDriver generates this file and it
 # seems it's location is hardcoded,

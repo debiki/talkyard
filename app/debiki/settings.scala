@@ -79,6 +79,7 @@ trait AllSettings {
   def orgShortName: String
   def contribAgreement: ContribAgreement
   def contentLicense: ContentLicense
+  def languageCode: String
   def googleUniversalAnalyticsTrackingId: String
   def showSubCommunities: Boolean
   def showExperimental: Boolean
@@ -135,6 +136,7 @@ trait AllSettings {
     orgShortName = Some(self.orgShortName),
     contribAgreement = Some(self.contribAgreement),
     contentLicense = Some(self.contentLicense),
+    languageCode = Some(self.languageCode),
     googleUniversalAnalyticsTrackingId = Some(self.googleUniversalAnalyticsTrackingId),
     showSubCommunities = Some(self.showSubCommunities),
     showExperimental = Some(self.showExperimental),
@@ -198,8 +200,9 @@ object AllSettings {
     val orgDomain = ""
     val orgFullName = ""
     val orgShortName = ""
-    var contribAgreement = ContribAgreement.CcBy3And4
-    var contentLicense = ContentLicense.CcBySa4
+    val contribAgreement = ContribAgreement.CcBy3And4
+    val contentLicense = ContentLicense.CcBySa4
+    val languageCode = "en"
     val googleUniversalAnalyticsTrackingId = ""
     val showSubCommunities = false
     val showExperimental = false
@@ -267,6 +270,7 @@ case class EffectiveSettings(
   def orgShortName: String = firstInChain(_.orgShortName) getOrElse default.orgShortName
   def contribAgreement: ContribAgreement = firstInChain(_.contribAgreement) getOrElse default.contribAgreement
   def contentLicense: ContentLicense = firstInChain(_.contentLicense) getOrElse default.contentLicense
+  def languageCode: String = firstInChain(_.languageCode) getOrElse default.languageCode
   def googleUniversalAnalyticsTrackingId: String = firstInChain(_.googleUniversalAnalyticsTrackingId) getOrElse default.googleUniversalAnalyticsTrackingId
   def showSubCommunities: Boolean = firstInChain(_.showSubCommunities) getOrElse default.showSubCommunities
   def showExperimental: Boolean = firstInChain(_.showExperimental) getOrElse default.showExperimental
@@ -339,6 +343,7 @@ object Settings2 {
       "companyShortName" -> JsStringOrNull(s.orgShortName),
       "contribAgreement" -> JsNumberOrNull(s.contribAgreement.map(_.toInt)),
       "contentLicense" -> JsNumberOrNull(s.contentLicense.map(_.toInt)),
+      "languageCode" -> JsStringOrNull(s.languageCode),
       "googleUniversalAnalyticsTrackingId" -> JsStringOrNull(s.googleUniversalAnalyticsTrackingId),
       "showSubCommunities" -> JsBooleanOrNull(s.showSubCommunities),
       "showExperimental" -> JsBooleanOrNull(s.showExperimental),
@@ -397,6 +402,7 @@ object Settings2 {
         "EsE5YK28", "Invalid contributors agreement"))),
     contentLicense = anyInt(json, "contentLicense", d.contentLicense.toInt).map(_.map(
       ContentLicense.fromInt(_) getOrElse throwBadRequest("EsE5YK28", "Invalid content license"))),
+    languageCode = anyString(json, "languageCode", d.languageCode),
     googleUniversalAnalyticsTrackingId =
       anyString(json, "googleUniversalAnalyticsTrackingId", d.googleUniversalAnalyticsTrackingId),
     showSubCommunities = anyBool(json, "showSubCommunities", d.showSubCommunities),

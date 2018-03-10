@@ -1112,6 +1112,7 @@ interface Settings {
   contribAgreement: ContribAgreement;
   contentLicense: ContentLicense;
 
+  languageCode: string;
   googleUniversalAnalyticsTrackingId: string;
 
   showSubCommunities: boolean;

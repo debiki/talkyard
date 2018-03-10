@@ -1,0 +1,1 @@
+../app/translations.d.ts

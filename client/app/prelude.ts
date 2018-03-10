@@ -18,7 +18,9 @@
 /// <reference path="server-vars.d.ts" />
 /// <reference path="model.ts" />
 /// <reference path="constants.ts" />
+/// <reference path="translations.d.ts" />
 
+declare const t: TalkyardTranslations;
 declare const ReactDOMServer: any;
 declare const ReactRouterDOM: any;
 declare const ReactDOMFactories: any;
