@@ -613,6 +613,7 @@ interface Store {
 
 // Default settings: [8L4KWU02]
 interface SettingsVisibleClientSide {
+  languageCode?: string;                // default: 'en'
   inviteOnly?: boolean;                 // default: false
   allowSignup?: boolean;                // default: true
   allowLocalSignup?: boolean;           // default: true

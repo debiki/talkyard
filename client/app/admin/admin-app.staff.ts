@@ -665,6 +665,7 @@ const LanguageSettings = createFactory({
     return (
       r.div({},
         // UX SHOULD change to a dropdown, with only the supported languages.
+        // And sync the dropdown options with which-languages-actually-exists [5JUKQR2].
         Setting2(props, { type: 'text', label: "Language", id: 'e_AA_Ss_LangCodeTI',
           help: r.span({}, "The language for the user interface, e.g. 'en' (English) or 'sv' " +
             "(Swedish)."),

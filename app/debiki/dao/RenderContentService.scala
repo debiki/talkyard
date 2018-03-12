@@ -96,16 +96,16 @@ class RenderContentActor(
 
 
   private def isStillOutOfDate(sitePageId: SitePageId): Boolean = {
-    val (cachedVersion, currentVersion) =
+    val (cachedHtmlVersion, currentPageVersion) =
       globals.systemDao.loadCachedPageVersion(sitePageId) getOrElse {
         return true
       }
     // We don't have any hash of any up-to-date data for this page, so we cannot use
-    // cachedVersion.dataHash. Instead, compare site and page version numbers.
+    // cachedVersion.reactStoreJsonHash. Instead, compare site and page version numbers.
     // (We might re-render a little bit too often.)
-    cachedVersion.siteVersion != currentVersion.siteVersion ||
-      cachedVersion.pageVersion != currentVersion.pageVersion ||
-      cachedVersion.appVersion != globals.applicationVersion
+    cachedHtmlVersion.siteVersion != currentPageVersion.siteVersion ||
+      cachedHtmlVersion.pageVersion != currentPageVersion.pageVersion ||
+      cachedHtmlVersion.appVersion != globals.applicationVersion
   }
 
 
@@ -141,7 +141,7 @@ class RenderContentActor(
     }
     p.Logger.debug(message)
 
-    // Remove cached whole-page-html, so we'll generate a new page with the new content.
+    // Remove cached whole-page-html, so we'll generate a new page with the new content. [7UWS21]
     dao.removeFromMemCache(
       RenderedPageHtmlDao.renderedPageKey(sitePageId))
   }

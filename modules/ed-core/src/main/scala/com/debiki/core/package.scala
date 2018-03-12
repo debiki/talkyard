@@ -281,11 +281,11 @@ package object core {
     siteVersion: SiteVersion,
     pageVersion: PageVersion,
     appVersion: String,
-    dataHash: String) {
+    reactStoreJsonHash: String) {
 
     /** Interpreted by the computer (startup.js looks for the '|'). */
     def computerString =
-      s"site: $siteVersion, page: $pageVersion | app: $appVersion, hash: $dataHash"
+      s"site: $siteVersion, page: $pageVersion | app: $appVersion, hash: $reactStoreJsonHash"
   }
 
 
@@ -308,7 +308,7 @@ package object core {
 
 
   val WrongCachedPageVersion = CachedPageVersion(siteVersion = -1, pageVersion = -1,
-    appVersion = "wrong", dataHash = "wrong")
+    appVersion = "wrong", reactStoreJsonHash = "wrong")
 
 
   case class TagAndStats(

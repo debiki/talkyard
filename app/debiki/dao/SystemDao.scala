@@ -258,6 +258,8 @@ class SystemDao(
     }
 
 
+  /** Returns Option(cached-html-version, current-page-version).
+    */
   def loadCachedPageVersion(sitePageId: SitePageId)
         : Option[(CachedPageVersion, SitePageVersion)] = {
     readOnlyTransaction { transaction =>

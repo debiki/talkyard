@@ -110,6 +110,8 @@ object ReactJson {
     // Only include settings that differ from the default.
     var json = Json.obj()
     val D = AllSettings.Default
+    if (settings.languageCode != D.languageCode)
+      json += "languageCode" -> JsString(settings.languageCode)
     if (settings.inviteOnly != D.inviteOnly)
       json += "inviteOnly" -> JsBoolean(settings.inviteOnly)
     if (settings.allowSignup != D.allowSignup)
@@ -428,7 +430,7 @@ object ReactJson {
       siteVersion = transaction.loadSiteVersion(),
       pageVersion = page.version,
       appVersion = globals.applicationVersion,
-      dataHash = hashSha1Base64UrlSafe(jsonString))
+      reactStoreJsonHash = hashSha1Base64UrlSafe(jsonString))
 
     val unapprovedPosts = posts.filter(!_.isSomeVersionApproved)
     val unapprovedPostAuthorIds = unapprovedPosts.map(_.createdById).toSet

@@ -12,7 +12,9 @@
 //   `ChatN: "...(noun here)..."` and `ChatV: "...(verb here)..."`.
 // - If the field ends with an V, then it's a verb (not a noun)
 
-var t: TalkyardTranslations = {
+var t: TalkyardTranslations;
+
+var t_en: TalkyardTranslations = t = {
 
   // A single or a few words, sorted alphabetically, to reuse everywhere.
 

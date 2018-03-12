@@ -1154,6 +1154,7 @@ trait UserDao {
       // COULD have above markPagesWithUserAvatarAsStale() return a page id list and
       // uncache only those pages.
       if (preferences.changesStuffIncludedEverywhere(user)) {
+        // COULD_OPTIMIZE bump only page versions for the pages on which the user has posted something.
         emptyCacheImpl(transaction)
       }
     }

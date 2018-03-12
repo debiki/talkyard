@@ -48,14 +48,24 @@ trait SettingsDao {
 
 
   def saveSiteSettings(settingsToSave: SettingsToSave) {
-    // ... test settings ...
+    // COULD test here that settings are valid? No inconsistencies?
+
     readWriteTransaction { transaction =>
+      val oldSettings = loadWholeSiteSettings(transaction)
       transaction.upsertSiteSettings(settingsToSave)
       val newSettings = loadWholeSiteSettings(transaction)
       newSettings.findAnyError foreach { error =>
         // This'll rollback the transaction.
         throwForbidden("EsE40GY28", s"Bad settings: $error")
       }
+
+      // If the language was changed, all cached page html in the database needs
+      // to be rerendered, so button titles etc are shown in the new langage.
+      SECURITY // DoS attack by evil admin: rerendering everything = expensive. SHOULD add rate limits.
+      if (oldSettings.languageCode != newSettings.languageCode) {
+        transaction.bumpSiteVersion()
+      }
+
       memCache.clearSingleSite(siteId)
     }
   }

@@ -110,22 +110,25 @@ trait RenderedPageHtmlDao {
       if (pageReq.thePageRole == PageRole.Forum) {
         rememberForum(pageReq.thePageId)
       }
+      // Here we might load and mem-cache actually stale html from the database. But if
+      // loading stale html, we also enqueue the page to be rerendered in the background,
+      // and once it's been rerendered, we update this mem cache. [7UWS21]
       Some(loadPageFromDatabaseAndRender(pageReq))
     }, metric = globals.mostMetrics.renderPageCacheMetrics) getOrDie "DwE93IB7"
   }
 
 
-  private def renderContent(pageId: PageId, currentVersion: CachedPageVersion,
+  private def renderContent(pageId: PageId, currentJsonVersion: CachedPageVersion,
         reactStore: String): (String, CachedPageVersion) = {
     // COULD reuse the caller's transaction, but the caller currently uses > 1  :-(
     // Or could even do this outside any transaction.
     readOnlyTransaction { transaction =>
-      transaction.loadCachedPageContentHtml(pageId) foreach { case (cachedHtml, cachedVersion) =>
+      transaction.loadCachedPageContentHtml(pageId) foreach { case (cachedHtml, cachedHtmlVersion) =>
         // Here we can compare hash sums of the up-to-date data and the data that was
         // used to generate the cached page. We ignore page version and site version.
         // Hash sums are always correct, so we'll never rerender unless we actually need to.
-        if (cachedVersion.appVersion != currentVersion.appVersion ||
-            cachedVersion.dataHash != currentVersion.dataHash) {
+        if (cachedHtmlVersion.appVersion != currentJsonVersion.appVersion ||
+            cachedHtmlVersion.reactStoreJsonHash != currentJsonVersion.reactStoreJsonHash) {
           // The browser will make cachedhtml up-to-date by running React.js with up-to-date
           // json, so it's okay to return cachedHtml. However, we'd rather send up-to-date
           // html, and this page is being accessed, so regenerate html. [4KGJW2]
@@ -135,7 +138,7 @@ trait RenderedPageHtmlDao {
           // Then timeout and return the old cached page.
           globals.renderPageContentInBackground(SitePageId(siteId, pageId))
         }
-        return (cachedHtml, cachedVersion)
+        return (cachedHtml, cachedHtmlVersion)
       }
     }
 
@@ -147,9 +150,9 @@ trait RenderedPageHtmlDao {
 
     readWriteTransaction { transaction =>
       transaction.saveCachedPageContentHtmlPerhapsBreakTransaction(
-        pageId, currentVersion, newHtml)
+        pageId, currentJsonVersion, newHtml)
     }
-    (newHtml, currentVersion)
+    (newHtml, currentJsonVersion)
   }
 
 

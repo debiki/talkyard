@@ -370,6 +370,11 @@ class ReactRenderer(globals: Globals) extends com.debiki.core.CommonMarkRenderer
         |
         |function renderReactServerSide() {
         |  try {
+        |    // Each language file creates a 't_(lang-code)' global variable, e.g. 't_en' for English.
+        |    // And they all set a global 'var t' to themselves. Update 't' here; it gets used
+        |    // during rendering.
+        |    var langCode = initialState.settings.languageCode || '${AllSettings.Default.languageCode}';
+        |    t = global['t_' + langCode];
         |    return debiki2.renderTitleBodyCommentsToString();
         |  }
         |  catch (e) {
@@ -385,15 +390,19 @@ class ReactRenderer(globals: Globals) extends com.debiki.core.CommonMarkRenderer
 
     var javascriptStream: jio.InputStream = null
     try {
-      val path = s"/public/res/server-bundle$min.js"
-      javascriptStream = getClass.getResourceAsStream(path)
-      if (javascriptStream eq null) {
-        val message = s"Script not found: $path, 'gulp build' has not been run or isn't done?"
-        logger.error(message + " [EsE7JKV2]")
-        throw new DebikiException("EsE7JKV3", message)
+      // Add translations, required by the render-page-code later when it runs.
+      def addTranslation(langCode: String) {
+        val translScript = loadFileAsString(
+          s"/public/res/translations/$langCode/i18n$min.js", isTranslation = true)
+        scriptBuilder.append(translScript)
       }
-      val rendererScript = scala.io.Source.fromInputStream(
-        javascriptStream)(scala.io.Codec.UTF8).mkString
+
+      // Sync with the languages in the /translations/ dir, and the admin UI language selector. [5JUKQR2]
+      addTranslation("en")
+      addTranslation("sv")
+
+      // Add render page code.
+      val rendererScript = loadFileAsString(s"/public/res/server-bundle$min.js", isTranslation = false)
       scriptBuilder.append(rendererScript)
     }
     finally {
@@ -434,6 +443,25 @@ class ReactRenderer(globals: Globals) extends com.debiki.core.CommonMarkRenderer
          thread id: $threadId, name: $threadName""")
 
     newEngine
+  }
+
+
+  private def loadFileAsString(path: String, isTranslation: Boolean): String = {
+    val javascriptStream = getClass.getResourceAsStream(path)
+    if (javascriptStream eq null) {
+      if (isTranslation) {
+        val message = s"Language file not found: $path, 'gulp buildTranslations' not run or isn't done?"
+        logger.error(message + " [TyE47UKDW2]")
+        throw new DebikiException("TyE47UKDW3", message)
+      }
+      else {
+        val message = s"Script not found: $path, 'gulp build' has not been run or isn't done?"
+        logger.error(message + " [TyE7JKV2]")
+        throw new DebikiException("TyE7JKV3", message)
+      }
+    }
+    scala.io.Source.fromInputStream(
+      javascriptStream)(scala.io.Codec.UTF8).mkString
   }
 
 
