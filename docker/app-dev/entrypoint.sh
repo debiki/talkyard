@@ -16,6 +16,7 @@ if [ $? -eq 1 -a $file_owner_id -ne 0 ] ; then
   # So create it:
   # We map /home/owner/.ivy and .m2 to the host user's .ivy and .m2 (in the Dockerfile).
   # -D = don't assign password (would block Docker waiting for input).
+  echo "Creating user 'owner' with id $file_owner_id..."
   adduser -u $file_owner_id -h /home/owner/ -D owner   # [5RZ4HA9]
 fi
 

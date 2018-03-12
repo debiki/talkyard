@@ -21,7 +21,8 @@ services:
 
   app:
     build: docker/app-dev/
-    # image: debiki/talkyard-app — however, created by ./docker/build-app-prod.sh.
+    # (Image debiki/talkyard-app = for production, and gets created by ./docker/build-app-prod.sh.)
+    image: debiki/talkyard-app-dev
     stdin_open: true  # otherwise Play exits
     volumes:
       - ./:/opt/talkyard/app/
@@ -101,6 +102,7 @@ services:
 
   test:
     build: docker/gulp/
+    image: debiki/talkyard-test
     volumes:
       - ./:/opt/debiki/server/
     ports:
@@ -122,6 +124,7 @@ services:
   # instead it just transpiles Typescript and Stylus.
   gulp:
     build: docker/gulp/
+    image: debiki/talkyard-gulp
     volumes:
       - ./:/opt/debiki/server/
     command: ['yarn install && gulp watch']
