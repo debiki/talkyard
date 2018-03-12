@@ -30,7 +30,8 @@ declare const NoPermissionId;
 
 declare const NoPostId;
 declare const TitleNr;
-declare const BodyNr;
+declare const BodyNr: number;
+declare const BodyNrStr: string;
 declare const FirstReplyNr;
 
 declare let NoUserId;

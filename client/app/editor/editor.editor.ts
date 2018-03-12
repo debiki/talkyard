@@ -28,7 +28,6 @@ let FileAPI;
 
 let theEditor: any;
 const WritingSomethingWarningKey = 'WritingSth';
-const WritingSomethingWarning = "You were writing something?";
 
 export const ReactTextareaAutocomplete = reactCreateFactory(window['ReactTextareaAutocomplete']);
 
@@ -189,7 +188,7 @@ export const Editor = createComponent({
         if (files.length > 1) {
           // This'll log a warning server side, I think I want that (want to know how
           // often this happens)
-          die("Sorry but currently you can upload only one file at a time [EsM5JYW2]");
+          die(t.e.UploadMaxOneFile + " [TyM5JYW2]");
         }
         this.uploadFiles(files);
       });
@@ -216,7 +215,7 @@ export const Editor = createComponent({
         if (this.isGone) return;
         if (!this.state.isUploadingFile) {
           this.setState({ isUploadingFile: true });
-          pagedialogs.getProgressBarDialog().open("Uploading...", () => {
+          pagedialogs.getProgressBarDialog().open(t.UploadingDots, () => {
             xhr.abort("Intentionally cancelled [EsM3GU05]");
             if (this.isGone) return;
             this.setState({ uploadCancelled: true });
@@ -276,7 +275,7 @@ export const Editor = createComponent({
 
   showUploadProgress: function(percent) {
     if (percent === 0) {
-      pagedialogs.getProgressBarDialog().open("Uploading...", this.cancelUpload);
+      pagedialogs.getProgressBarDialog().open(t.UploadingDots, this.cancelUpload);
     }
     else {
       pagedialogs.getProgressBarDialog().setDonePercent(percent);
@@ -462,19 +461,19 @@ export const Editor = createComponent({
 
   alertBadState: function(wantsToDoWhat = null) {
     if (wantsToDoWhat !== 'WriteReply' && this.state.replyToPostNrs.length > 0) {
-      alert('Please first finish writing your post');
+      alert(t.e.PleaseFinishPost);
       return true;
     }
     if (this.state.isWritingChatMessage) {
-      alert('Please first finish writing your chat message');
+      alert(t.e.PleaseFinishChatMsg);
       return true;
     }
     if (this.state.messageToUserIds.length) {
-      alert('Please first finish writing your message');
+      alert(t.e.PleaseFinishMsg);
       return true;
     }
     if (_.isNumber(this.state.editingPostId)) {
-      alert('Please first save your current edits');
+      alert(t.e.PleaseSaveEdits);
       // If this is an embedded editor, for an embedded comments page, that page
       // will now have highlighted some reply button to indicate a reply is
       // being written. But that's wrong, clear those marks.
@@ -488,7 +487,7 @@ export const Editor = createComponent({
       return true;
     }
     if (this.state.newPageRole) {
-      alert("Please first either save or cancel your new topic");
+      alert(t.e.PleaseSaveOrCancel);
       d.i.clearIsReplyingMarks();
       return true;
     }
@@ -566,7 +565,7 @@ export const Editor = createComponent({
   },
 
   onTitleEdited: function(event) {
-    utils.PageUnloadAlerter.addReplaceWarning(WritingSomethingWarningKey, WritingSomethingWarning);
+    utils.PageUnloadAlerter.addReplaceWarning(WritingSomethingWarningKey, t.e.WritingSomethingWarning);
     this.setState({ title: event.target.value });
     this.updatePreview();
   },
@@ -579,7 +578,7 @@ export const Editor = createComponent({
   },
 
   onTextEdited: function(event) {
-    utils.PageUnloadAlerter.addReplaceWarning(WritingSomethingWarningKey, WritingSomethingWarning);
+    utils.PageUnloadAlerter.addReplaceWarning(WritingSomethingWarningKey, t.e.WritingSomethingWarning);
     var newText = event.target.value;
     this.setState({ text: newText });
     this.updatePreview();
@@ -633,8 +632,7 @@ export const Editor = createComponent({
   onCancelClick: function() {
     if (utils.PageUnloadAlerter.wouldWarn(WritingSomethingWarningKey)) {
       help.openHelpDialogUnlessHidden({
-        content: "You can continue editing your text, if you open the editor again. " +
-        "(But the text will currently be lost if you leave this page.)",  // [issue-62YKUw2]
+        content: t.e.CanContinueEditing,  // [issue-62YKUw2]
         id: '7YK35W1',
       });
     }
@@ -674,7 +672,7 @@ export const Editor = createComponent({
   },
 
   saveEdits: function() {
-    this.throwIfBadTitleOrText(null, "Please don't delete all text. Write something.");
+    this.throwIfBadTitleOrText(null, t.e.PleaseDontDeleteAll);
     Server.saveEdits(this.state.editingPostId, this.state.text, () => {
       this.callOnDoneCallback(true);
       this.clearTextAndClose();
@@ -682,7 +680,7 @@ export const Editor = createComponent({
   },
 
   saveNewPost: function() {
-    this.throwIfBadTitleOrText(null, "Please write something.");
+    this.throwIfBadTitleOrText(null, t.e.PleaseWriteSth);
     Server.saveReply(this.state.replyToPostNrs, this.state.text, this.state.anyPostType, () => {
       this.callOnDoneCallback(true);
       this.clearTextAndClose();
@@ -690,8 +688,8 @@ export const Editor = createComponent({
   },
 
   saveNewForumPage: function() {
-    this.throwIfBadTitleOrText("Please write a topic title.", "Please write something.");
-    var data = {
+    this.throwIfBadTitleOrText(t.e.PleaseWriteTitle, t.e.PleaseWriteSth);
+    const data = {
       categoryId: this.state.newForumTopicCategoryId,
       pageRole: this.state.newPageRole,
       pageStatus: 'Published',
@@ -712,7 +710,7 @@ export const Editor = createComponent({
   },
 
   startPrivateGroupTalk: function() {
-    this.throwIfBadTitleOrText("Please write a message title.", "Please write a message.");
+    this.throwIfBadTitleOrText(t.e.PleaseWriteMsgTitle, t.e.PleaseWriteMsg);
     var state = this.state;
     Server.startPrivateGroupTalk(state.title, state.text, this.state.newPageRole,
         state.messageToUserIds, (pageId: PageId) => {
@@ -836,31 +834,31 @@ export const Editor = createComponent({
   },
 
   makeTextBold: function() {
-    var newText = wrapSelectedText(this.refs.rtaTextarea.textareaRef, "bold text", '**');
+    var newText = wrapSelectedText(this.refs.rtaTextarea.textareaRef, t.e.exBold, '**');
     this.setState({ text: newText });
     this.updatePreview();
   },
 
   makeTextItalic: function() {
-    var newText = wrapSelectedText(this.refs.rtaTextarea.textareaRef, "emphasized text", '*');
+    var newText = wrapSelectedText(this.refs.rtaTextarea.textareaRef, t.e.exEmph, '*');
     this.setState({ text: newText });
     this.updatePreview();
   },
 
   markupAsCode: function() {
-    var newText = wrapSelectedText(this.refs.rtaTextarea.textareaRef, "preformatted text", '`');
+    var newText = wrapSelectedText(this.refs.rtaTextarea.textareaRef, t.e.exPre, '`');
     this.setState({ text: newText });
     this.updatePreview();
   },
 
   quoteText: function() {
-    var newText = wrapSelectedText(this.refs.rtaTextarea.textareaRef, "quoted text", '> ', null, '\n\n');
+    var newText = wrapSelectedText(this.refs.rtaTextarea.textareaRef, t.e.exQuoted, '> ', null, '\n\n');
     this.setState({ text: newText });
     this.updatePreview();
   },
 
   addHeading: function() {
-    var newText = wrapSelectedText(this.refs.rtaTextarea.textareaRef, "Heading", '### ', null, '\n\n');
+    var newText = wrapSelectedText(this.refs.rtaTextarea.textareaRef, t.e.ExHeading, '### ', null, '\n\n');
     this.setState({ text: newText });
     this.updatePreview();
   },
@@ -890,7 +888,7 @@ export const Editor = createComponent({
             r.div({ className: 'dw-editor-guidelines clearfix' },
               r.div({ className: 'dw-editor-guidelines-text',
                 dangerouslySetInnerHTML: { __html: this.state.guidelines.safeHtml }}),
-              r.a({ className: 'icon-cancel dw-hide', onClick: this.hideGuidelines }, "Hide")));
+              r.a({ className: 'icon-cancel dw-hide', onClick: this.hideGuidelines }, t.Hide)));
       }
     }
 
@@ -911,7 +909,7 @@ export const Editor = createComponent({
       titleInput =
           r.input({ className: 'title-input esEdtr_titleEtc_title form-control' + titleErrorClass,
               type: 'text', ref: 'titleInput', tabIndex: 1, onChange: this.onTitleEdited,
-              placeholder: "Type a title — what is this about, in one brief sentence?" });
+              placeholder: t.e.TitlePlaceholder });
 
       if (this.state.newForumTopicCategoryId && !isPrivateGroup &&
           settings_showCategories(settings, me))
@@ -924,7 +922,7 @@ export const Editor = createComponent({
         pageRoleDropdown = PageRoleDropdown({ store: store, pageRole: this.state.newPageRole,
             complicated: store.settings.showExperimental,
             onSelect: this.changeNewForumPageRole,
-            title: 'Topic type', className: 'esEdtr_titleEtc_pageRole' });
+            title: t.TopicType, className: 'esEdtr_titleEtc_pageRole' });
       }
     }
 
@@ -939,31 +937,33 @@ export const Editor = createComponent({
     if (_.isNumber(editingPostId)) {
       doingWhatInfo =
         r.span({},
-          'Edit ', r.a({ href: '#post-' + editingPostId }, 'post ' + editingPostId + ':'));
+          // "Edit post X:"
+          t.e.EditPost_1,
+          r.a({ href: '#post-' + editingPostId }, t.e.EditPost_2 + editingPostId + ':'));
     }
     else if (this.state.isWritingChatMessage) {
-      doingWhatInfo = "Type a chat message:";
+      doingWhatInfo = t.e.TypeChatMsg;
     }
     else if (this.state.messageToUserIds.length) {
-      doingWhatInfo = "Your message:";
+      doingWhatInfo = t.e.YourMsg;
     }
     else if (this.state.newPageRole) {
-      let what = "Create new topic";
+      let what = t.e.CreateTopic;
       switch (this.state.newPageRole) {
-        case PageRole.CustomHtmlPage: what = "Create a custom HTML page (add your own <h1> title)"; break;
-        case PageRole.WebPage: what = "Create an info page"; break;
-        case PageRole.Code: what = "Create a source code page"; break;
+        case PageRole.CustomHtmlPage: what = t.e.CreateCustomHtml; break;
+        case PageRole.WebPage: what = t.e.CreateInfoPage; break;
+        case PageRole.Code: what = t.e.CreateCode; break;
         case PageRole.SpecialContent: die('DwE5KPVW2'); break;
         case PageRole.EmbeddedComments: die('DwE2WCCP8'); break;
         case PageRole.Blog: die('DwE2WQB9'); break;
         case PageRole.Forum: die('DwE5JKF9'); break;
         case PageRole.About: die('DwE1WTFW8'); break;
-        case PageRole.Question: what = "Ask a question"; break;
-        case PageRole.Problem: what = "Report a problem"; break;
-        case PageRole.Idea: what = "Suggest an idea"; break;
+        case PageRole.Question: what = t.e.AskQuestion; break;
+        case PageRole.Problem: what = t.e.ReportProblem; break;
+        case PageRole.Idea: what = t.e.SuggestIdea; break;
         case PageRole.ToDo: what = "Create a todo"; break;
-        case PageRole.OpenChat: what = "New chat channel title and purpose"; break;
-        case PageRole.PrivateChat: what = "New private chat title and purpose"; break;
+        case PageRole.OpenChat: what = t.e.NewChat; break;
+        case PageRole.PrivateChat: what = t.e.NewPrivChat; break;
         case PageRole.MindMap: what = "Create a mind map page"; break;
         case PageRole.Discussion: break; // use default
         case PageRole.FormalMessage: die('EsE2KFE78'); break;
@@ -973,7 +973,7 @@ export const Editor = createComponent({
       doingWhatInfo = what + ":";
     }
     else if (replyToPostNrs.length === 0) {
-      doingWhatInfo = 'Please select one or more posts to reply to.';
+      doingWhatInfo = t.e.PleaseSelectPosts;
     }
     else if (isChatComment) {
       doingWhatInfo = "New chat comment:";
@@ -989,15 +989,16 @@ export const Editor = createComponent({
       doingWhatInfo = "Add mind map node:";
     }
     else if (state.anyPostType === PostType.BottomComment) {
-      doingWhatInfo = "Append a comment at the bottom of the page:";
+      doingWhatInfo = t.e.AppendComment;
     }
     else if (replyToPostNrs.length > 0) {
       doingWhatInfo =
         r.span({},
-          isChatReply ? "Chat reply to " : "Reply to ",
+          isChatReply ? "Chat reply to " : t.e.ReplyTo,
           _.filter(replyToPostNrs, (id) => id !== NoPostId).map((postNr, index) => {
             const anyAnd = index > 0 ? " and " : '';
-            const whichPost = postNr === 1 ? "the Original Post" : "post " + postNr;
+            const whichPost = postNr === BodyNrStr ?
+                t.e.ReplyTo_theOrigPost : t.e.ReplyTo_post + postNr;
             return (
               (<any> r.span)({ key: postNr },   // span has no .key, weird [TYPEERROR]
                 anyAnd,
@@ -1008,17 +1009,17 @@ export const Editor = createComponent({
 
     function makeSaveTitle(brief, extra) {
       if (!extra) return brief;
-      return r.span({}, brief, r.span({ className: 'esE_SaveB_Verbose' }, extra));
+      return r.span({}, brief, r.span({ className: 'esE_SaveB_Verbose' }, ' ' + extra));
     }
 
-    let saveButtonTitle = "Save";
-    let cancelButtonTitle = "Cancel";
+    let saveButtonTitle = t.Save;
+    let cancelButtonTitle = t.Cancel;
     if (_.isNumber(this.state.editingPostId)) {
-      saveButtonTitle = makeSaveTitle("Save", " edits");
+      saveButtonTitle = makeSaveTitle(t.e.Save, t.e.edits);
     }
     else if (replyToPostNrs.length) {
       if (isChatComment) {
-        saveButtonTitle = makeSaveTitle("Post", " comment");
+        saveButtonTitle = makeSaveTitle(t.e.Post, t.e.comment);
       }
       else if (isMindMapNode) {
         saveButtonTitle = makeSaveTitle("Add", " node");
@@ -1035,30 +1036,30 @@ export const Editor = createComponent({
       }
     }
     else if (this.state.isWritingChatMessage) {
-      saveButtonTitle = "Post message";
-      cancelButtonTitle = "Simple editor";
+      saveButtonTitle = t.e.PostMessage;
+      cancelButtonTitle = t.e.SimpleEditor;
     }
     else if (this.state.messageToUserIds.length) {
-      saveButtonTitle = makeSaveTitle("Send", " message");
+      saveButtonTitle = makeSaveTitle(t.e.Send, t.e.message);
     }
     else if (this.state.newPageRole) {
       switch (this.state.newPageRole) {
         case PageRole.CustomHtmlPage:
         case PageRole.WebPage:
         case PageRole.Code:
-          saveButtonTitle = makeSaveTitle("Create", " page");
+          saveButtonTitle = makeSaveTitle(t.e.Create, t.e.page);
           break;
         case PageRole.OpenChat:
         case PageRole.PrivateChat:
-          saveButtonTitle = makeSaveTitle("Create", " chat");
+          saveButtonTitle = makeSaveTitle(t.e.Create, t.e.chat);
           break;
-        case PageRole.Question: saveButtonTitle = makeSaveTitle("Post", " question"); break;
-        case PageRole.Problem: saveButtonTitle = makeSaveTitle("Submit", " problem"); break;
-        case PageRole.Idea: saveButtonTitle = makeSaveTitle("Create", " idea"); break;
+        case PageRole.Question: saveButtonTitle = makeSaveTitle(t.e.Post, t.e.question); break;
+        case PageRole.Problem: saveButtonTitle = makeSaveTitle(t.e.Submit, t.e.problem); break;
+        case PageRole.Idea: saveButtonTitle = makeSaveTitle(t.e.Create, t.e.idea); break;
         case PageRole.ToDo: saveButtonTitle = makeSaveTitle("Create", " to-do"); break;
         case PageRole.MindMap: saveButtonTitle = makeSaveTitle("Create", " mind map"); break;
         default:
-          saveButtonTitle = makeSaveTitle("Create", " topic");
+          saveButtonTitle = makeSaveTitle(t.e.Create, t.e.topic);
       }
     }
 
@@ -1066,7 +1067,7 @@ export const Editor = createComponent({
     if (this.state.editingPostRevisionNr && this.state.editingPostRevisionNr !== 1) {
       anyViewHistoryButton =
           r.a({ onClick: this.showEditHistory, className: 'view-edit-history', tabIndex: 1 },
-            "View old edits");
+            t.e.ViewOldEdits);
     }
 
     // If not visible, don't remove the editor, just hide it, so we won't have
@@ -1085,20 +1086,20 @@ export const Editor = createComponent({
 
     const textareaButtons =
       r.div({ className: 'esEdtr_txtBtns' },
-        r.button({ onClick: this.selectAndUploadFile, title: "Upload a file or image",
+        r.button({ onClick: this.selectAndUploadFile, title: t.e.UploadBtnTooltip,
             className: 'esEdtr_txtBtn' },
           r.span({ className: 'icon-upload' })),
         r.input({ name: 'files', type: 'file', multiple: false, // dupl code [2UK503]
           ref: 'uploadFileInput', style: { width: 0, height: 0, float: 'left' }}),
-        r.button({ onClick: this.makeTextBold, title: "Make text bold",
+        r.button({ onClick: this.makeTextBold, title: t.e.BoldBtnTooltip,
             className: 'esEdtr_txtBtn' }, 'B'),
-        r.button({ onClick: this.makeTextItalic, title: "Emphasize",
+        r.button({ onClick: this.makeTextItalic, title: t.e.EmBtnTooltip,
           className: 'esEdtr_txtBtn esEdtr_txtBtn-em' }, r.i({}, 'I')),
-        r.button({ onClick: this.quoteText, title: "Quote",
+        r.button({ onClick: this.quoteText, title: t.e.QuoteBtnTooltip,
           className: 'esEdtr_txtBtn' }, '"'),
-        r.button({ onClick: this.markupAsCode, title: "Preformatted text",
+        r.button({ onClick: this.markupAsCode, title: t.e.PreBtnTooltip,
           className: 'esEdtr_txtBtn' }, r.span({ className: 'icon-code' })),
-        r.button({ onClick: this.addHeading, title: "Heading",
+        r.button({ onClick: this.addHeading, title: t.e.HeadingBtnTooltip,
             className: 'esEdtr_txtBtn' }, 'H'));
 
     const textErrorClass = this.state.showTextErrors && !this.isTextOk() ? ' esError' : '';
@@ -1112,8 +1113,8 @@ export const Editor = createComponent({
             onKeyDown: this.onKeyDown,
             closeOnClickOutside: true,
             tabIndex: 1,
-            placeholder: "Type here. You can use Markdown and HTML. Drag and drop to paste images.",
-            loadingComponent: () => r.span({}, "Loading ..."),
+            placeholder: t.e.TypeHerePlaceholder,
+            loadingComponent: () => r.span({}, t.Loading),
             trigger: listUsernamesTrigger });
 
     const previewHelp =
@@ -1130,8 +1131,8 @@ export const Editor = createComponent({
     const previewStyles = this.state.showOnlyPreview ? { display: 'block' } : null;
 
     const maximizeAndHorizSplitBtnTitle =
-        !this.state.showMaximized ? "Maximize" : (
-          this.state.splitHorizontally ? "Back to normal" : "Tile horizontally");
+        !this.state.showMaximized ? t.e.Maximize : (
+          this.state.splitHorizontally ? t.e.ToNormal : t.e.TileHorizontally);
 
     return (
       r.div({ style: styles },
@@ -1158,7 +1159,7 @@ export const Editor = createComponent({
                 textareaButtons,
                 textarea)),
             r.div({ className: 'preview-area', style: previewStyles },
-              r.div({}, titleInput ? "Preview: (title excluded)" : "Preview:"),
+              r.div({}, t.e.PreviewC + (titleInput ? t.e.TitleExcl : '')),
               previewHelp,
               r.div({ className: 'preview', ref: 'preview',
                   dangerouslySetInnerHTML: { __html: this.state.safePreviewHtml }})),
@@ -1173,12 +1174,12 @@ export const Editor = createComponent({
               // because float right.
               Button({ onClick: this.toggleMinimized, id: 'esMinimizeBtn',
                   primary: this.state.showMinimized, tabIndex: 3 },
-                this.state.showMinimized ? "Show editor again" : "Minimize"),
+                this.state.showMinimized ? t.e.ShowEditorAgain : t.e.Minimize),
               Button({ onClick: this.togglePreview, id: 'esPreviewBtn', tabIndex: 2 },
-                this.state.showOnlyPreview ? "Edit" : "Preview"),
+                this.state.showOnlyPreview ? t.EditV : t.PreviewV),
               anyViewHistoryButton)),
             r.div({ className: 's_E_iPhoneKbd' },
-              "(This gray space is reserved", r.br(), "for the iPhone keyboard.)"),
+              t.e.IPhoneKbdSpace_1, r.br(), t.e.IPhoneKbdSpace_2),
             r.div({ className: 's_Resizor-Up', ref: 'resizeHandle' }))));
   }
 });
@@ -1194,9 +1195,8 @@ const GuidelinesModal = createClassAndFactory({
     return (
       rb.Modal({ show: this.props.isOpen, onHide: this.props.close,
           dialogClassName: 'es-guidelines-modal' },
-        // rb.ModalHeader({}, rb.ModalTitle({}, "Guidelines")),
         rb.ModalBody({}, body),
-        rb.ModalFooter({}, Button({ onClick: this.props.close }, "Okay"))));
+        rb.ModalFooter({}, Button({ onClick: this.props.close }, t.Okay))));
   }
 });
 
@@ -1283,25 +1283,13 @@ function makeDefaultReplyText(store: Store, postIds: PostId[]): string {
 }
 
 
-var previewHelpMessage = {
+const previewHelpMessage = {
   id: 'EdH7MF24',
   version: 1,
   content:
-      r.span({}, "Here you can preview how your post will look.",
-        r.br(), "You cannot type here.")
+      r.span({}, t.e.PreviewInfo,
+        r.br(), t.e.CannotType)
 };
-
-
-var newCategoryPlaceholderText =
-    "Replace this first paragraph with a short description of this category.\n" +
-    "Please keep it short — the text will appear on the category list page.]\n" +
-    "\n" +
-    "Here, after the first paragraph, you can add a longer description, with\n" +
-    "for example category guidelines or rules.\n" +
-    "\n" +
-    "Below in the comments section, you can discuss this category. For example,\n" +
-    "should it be merged with another category? Or should it be split\n" +
-    "into many categories?\n";
 
 
 //------------------------------------------------------------------------------

@@ -85,7 +85,7 @@ export var PageRoleDropdown = createComponent({
       ExplainingListItem({ onSelect: this.onSelect,
         activeEventKey: pageRole, eventKey: PageRole.Discussion,
         title: PageRole_Discussion_IconString,
-        text: "A discussion about something." });
+        text: t.pt.DiscussionExpl });
 
     // HACK bjj... wants only Discussion & MindMap. Later, COULD add a show-only-these-
     // topic-types category & site setting, instead of hardcoding one site settings here.
@@ -95,31 +95,31 @@ export var PageRoleDropdown = createComponent({
       ExplainingListItem({ onSelect: this.onSelect, id: 'e2eTTD_QuestionO',
         activeEventKey: pageRole, eventKey: PageRole.Question,
         title: PageRole_Question_IconString,
-        text: r.span({}, "One answer can be marked as the accepted answer.") });
+        text: r.span({}, t.pt.QuestionExpl) });
 
     var problemOption = isBjjNotStaff ? null :
       ExplainingListItem({ onSelect: this.onSelect, id: 'e2eTTD_ProblemO',
         activeEventKey: pageRole, eventKey: PageRole.Problem,
         title: PageRole_Problem_IconString,
-        text: "If something is broken or doesn't work. Can be marked as fixed/solved." });
+        text: t.pt.ProblExpl });
 
     var ideaOption = isBjjNotStaff ? null :
       ExplainingListItem({ onSelect: this.onSelect, id: 'e2eTTD_IdeaO',
         activeEventKey: pageRole, eventKey: PageRole.Idea,
         title: PageRole_Idea_IconString,
-        text: "A suggestion. Can be marked as done/implemented." });
+        text: t.pt.IdeaExpl });
 
     var chatOption = user_isGuest(me) || isBjjNotStaff ? null :
       ExplainingListItem({ onSelect: this.onSelect, id: 'e2eTTD_OpenChatO',
         activeEventKey: pageRole, eventKey: PageRole.OpenChat,
         title: PageRole_OpenChat_IconString,
-        text: "A perhaps never-ending conversation." });
+        text: t.pt.ChatExpl });
 
     var privateChatOption = !isStaff(me) || props.hideStaffOnly ? null :
       ExplainingListItem({ onSelect: this.onSelect, id: 'e2eTTD_PrivChatO',
         activeEventKey: pageRole, eventKey: PageRole.PrivateChat,
         title: PageRole_PrivateChat_IconString,
-        text: "Only visible to people that get invited to join the chat." });
+        text: t.pt.PrivChatExpl });
 
     /*
     var wikiMindMap = user_isGuest(me) || !complicated ? false :   [NOMINDMAPS]
@@ -130,7 +130,7 @@ export var PageRoleDropdown = createComponent({
 
     var showMore = !isStaff(me) || props.hideStaffOnly || showAllOptions ? null :
       ExplainingListItem({ onClick: this.showAllOptions,
-        title: r.span({ className: 'esPageRole_showMore' }, "More...") });
+        title: r.span({ className: 'esPageRole_showMore' }, t.MoreDots) });
 
     var staffOnlyDivider = !isStaff(me) || props.hideStaffOnly ? null :
         r.div({ className: 'esDropModal_header' }, "Only staff can create these:");
@@ -167,7 +167,7 @@ export var PageRoleDropdown = createComponent({
       DropdownModal({ show: state.open, onHide: this.close, showCloseButton: true,
           atRect: this.state.buttonRect, windowWidth: this.state.windowWidth,
           ref: 'dropdownModal' },
-        r.div({ className: 'esDropModal_header'}, "Select topic type:"),
+        r.div({ className: 'esDropModal_header'}, t.pt.SelectTypeC),
         r.ul({ className: 'esTopicType' },
 
           discussionOption,
@@ -198,21 +198,21 @@ export var PageRoleDropdown = createComponent({
 
 function pageRole_toIconString(pageRole: PageRole) {
   switch (pageRole) {
-    case PageRole.CustomHtmlPage: return "Custom HTML page";
-    case PageRole.WebPage: return "Info page";
-    case PageRole.Code: return "Code";
+    case PageRole.CustomHtmlPage: return t.pt.CustomHtml;
+    case PageRole.WebPage: return t.pt.InfoPage;
+    case PageRole.Code: return t.pt.Code;
     case PageRole.SpecialContent: return "Special content";
-    case PageRole.EmbeddedComments: return "Embedded comments";
-    case PageRole.Blog: return "Blog";
-    case PageRole.Forum: return "Forum";
-    case PageRole.About: return "About";
+    case PageRole.EmbeddedComments: return t.pt.EmbCmts;
+    case PageRole.Blog: return t.BlogN;
+    case PageRole.Forum: return t.Forum;
+    case PageRole.About: return t.pt.About;
     case PageRole.Question: return PageRole_Question_IconString;
     case PageRole.Problem: return PageRole_Problem_IconString;
     case PageRole.Idea: return PageRole_Idea_IconString;
     case PageRole.ToDo: return PageRole_Todo_IconString;
     case PageRole.MindMap: return PageRole_MindMap_IconString;
     case PageRole.Discussion: return PageRole_Discussion_IconString;
-    case PageRole.FormalMessage: return "Message";
+    case PageRole.FormalMessage: return t.MessageN;
     case PageRole.OpenChat: return PageRole_OpenChat_IconString;
     case PageRole.PrivateChat: return PageRole_PrivateChat_IconString;
     case PageRole.Form: return PageRole_Form_IconString;
@@ -225,17 +225,17 @@ function pageRole_toIconString(pageRole: PageRole) {
 var iconFor = pageRole_iconClass;
 
 var PageRole_Discussion_IconString =
-  r.span({ className: iconFor(PageRole.Discussion) }, "Discussion");
-var PageRole_Question_IconString = r.span({ className: iconFor(PageRole.Question) }, "Question");
-var PageRole_Problem_IconString = r.span({ className: iconFor(PageRole.Problem) }, "Problem");
-var PageRole_Idea_IconString = r.span({ className: iconFor(PageRole.Idea) }, "Idea");
+  r.span({ className: iconFor(PageRole.Discussion) }, t.Discussion);
+var PageRole_Question_IconString = r.span({ className: iconFor(PageRole.Question) }, t.Question);
+var PageRole_Problem_IconString = r.span({ className: iconFor(PageRole.Problem) }, t.Problem);
+var PageRole_Idea_IconString = r.span({ className: iconFor(PageRole.Idea) }, t.Idea);
 var PageRole_MindMap_IconString = r.span({ className: iconFor(PageRole.MindMap) }, "Mind Map");
 
 var PageRole_Todo_IconString = r.span({ className: iconFor(PageRole.ToDo) }, "Todo");
-var PageRole_OpenChat_IconString = r.span({ className: iconFor(PageRole.OpenChat) }, "Chat");
-var PageRole_PrivateChat_IconString = r.span({ className: iconFor(PageRole.PrivateChat) }, "Private Chat");
+var PageRole_OpenChat_IconString = r.span({ className: iconFor(PageRole.OpenChat) }, t.ChatN);
+var PageRole_PrivateChat_IconString = r.span({ className: iconFor(PageRole.PrivateChat) }, t.pt.PrivChat);
 
-var PageRole_Form_IconString = r.span({ className: iconFor(PageRole.Form) }, "Form");
+var PageRole_Form_IconString = r.span({ className: iconFor(PageRole.Form) }, t.pt.Form);
 
 // Use the same icon as ToDo.
 var PageRole_UsabilityTesting_IconString = r.span({ className: iconFor(PageRole.ToDo) }, // [plugin]

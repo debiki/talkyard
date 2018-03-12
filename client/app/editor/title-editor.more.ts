@@ -254,24 +254,21 @@ export const TitleEditor = createComponent({
     }
     else if (settings_showCategories(settings, me)) {
       selectCategoryInput =
-        Input({ type: 'custom', label: "Category", labelClassName: 'col-xs-2',
+        Input({ type: 'custom', label: t.Category, labelClassName: 'col-xs-2',
             wrapperClassName: 'col-xs-10' },
           SelectCategoryDropdown({ store: this.props.store, pullLeft: true,
             selectedCategoryId: this.state.categoryId,
             onCategorySelected: this.onCategoryChanged }));
     }
 
-    var selectTopicType =
+    const selectTopicType =
         !page_mayChangeRole(pageRole) || !settings_selectTopicType(settings, me) ? null :
-      Input({ type: 'custom', label: "Topic type", labelClassName: 'col-xs-2',
+      Input({ type: 'custom', label: t.TopicType, labelClassName: 'col-xs-2',
           wrapperClassName: 'col-xs-10' },
         editor.PageRoleDropdown({ store: store, pageRole: this.state.pageRole,
           onSelect: this.onPageRoleChanged, pullLeft: true,
           complicated: store.settings.showExperimental,
-          title: 'Topic type', className: 'esEdtr_titleEtc_pageRole',
-          help: "Makes the topic behave differently. For example, topics of type " +
-          "Question can be marked as solved, and Idea topics can be New, " +
-          "Planned or Implemented." }));
+          className: 'esEdtr_titleEtc_pageRole' }));
 
     var addBackForumIntroButton;
     if (page.pageRole === PageRole.Forum) {
@@ -287,10 +284,10 @@ export const TitleEditor = createComponent({
     }
 
     var saveCancel = this.state.isSaving
-      ? r.div({}, 'Saving...')
+      ? r.div({}, t.SavingDots)
       : r.div({ className: 'dw-save-btns-etc' },
-          PrimaryButton({ onClick: this.save, className: 'e2eSaveBtn' }, "Save"),
-          Button({ onClick: this.props.closeEditor, className: 'e2eCancelBtn' }, "Cancel"));
+          PrimaryButton({ onClick: this.save, className: 'e2eSaveBtn' }, t.Save),
+          Button({ onClick: this.props.closeEditor, className: 'e2eCancelBtn' }, t.Cancel));
 
     return (
       r.div({ className: 'dw-p-ttl-e' },

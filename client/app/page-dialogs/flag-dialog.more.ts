@@ -71,7 +71,7 @@ const FlagDialog = createComponent({
     Server.flagPost(this.state.postId, this.state.flagType, this.state.reason, () => {
       this.close();
       util.openDefaultStupidDialog({
-        body: "Thanks. You have reported it. The forum staff will take a look.",
+        body: t.fd.ThanksHaveReported,
         small: true,
       });
     });
@@ -95,33 +95,33 @@ const FlagDialog = createComponent({
       anyReasonInput =
         r.div({ style: { margin: '-15px 30px 0' } },
           Input({ type: 'textarea', onChange: this.editReason, value: this.state.reason,
-              placeholder: "Please tell us what you are concerned about." }));
+              placeholder: t.fd.PleaseTellConcerned }));
     }
 
     return (
       utils.DropdownModal({ show: this.state.isOpen, onHide: this.close, showCloseButton: true,
           atRect: this.state.atRect, windowWidth: this.state.windowWidth },
-        ModalHeader({}, ModalTitle({}, "Report Comment")),
+        ModalHeader({}, ModalTitle({}, t.fd.ReportComment)),
         ModalBody({},
           r.form({},
             Input({ type: 'radio', label: 'Inappropriate', checked: flagType === 'Inapt',
                 onChange: () => this.chooseFlag('Inapt'), className: 'e_FD_InaptRB',
-                help: "This post contains offensive or abusive content." }),
+                help: t.fd.OptOffensive }),
 
             Input({ type: 'radio', label: 'Spam', checked: flagType === 'Spam',
                 onChange: () => this.chooseFlag('Spam'), lassName: 'e_FD_SpamRB',
-                help: "This post is an unwanted advertisement." }),
+                help: t.fd.OptSpam }),
 
             Input({ type: 'radio', label: 'Other', checked: flagType === 'Other',
                 onChange: () => this.chooseFlag('Other'), className: 'e_FD_OtherRB',
-                help: "Notify staff about this post for some other reason." }))),
+                help: t.fd.OptOther }))),
 
           anyReasonInput,
 
         ModalFooter({},
           Button({ onClick: this.submit, disabled: !flagType, bsStyle: 'primary',
-              className: 'e_FD_SubmitB' }, "Submit"),
-          Button({ onClick: this.close, className: 'e_FD_CancelB' }, "Cancel"))));
+              className: 'e_FD_SubmitB' }, t.Submit),
+          Button({ onClick: this.close, className: 'e_FD_CancelB' }, t.Cancel))));
   }
 });
 

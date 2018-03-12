@@ -30,6 +30,7 @@ const NoPermissionId = 0;
 const NoPostId = -1;  // dupl in reply.js
 const TitleNr = 0;
 const BodyNr = 1;
+const BodyNrStr = '1';
 const FirstReplyNr = 2;
 
 let NoUserId = 0;

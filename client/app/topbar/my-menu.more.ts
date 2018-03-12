@@ -51,15 +51,15 @@ export const MyMenuContent = createFactory({
       var otherReviewTasks = makeNotfIcon('reviewOther', me.numOtherReviewTasks);
       var adminMenuItem = !isStaff(me) ? null :
         MenuItemLink({ to: linkToAdminPage(me), className: 'esMyMenu_admin' },
-          r.span({ className: 'icon-settings' }, "Admin"));
+          r.span({ className: 'icon-settings' }, t.Admin));
       var reviewMenuItem = !urgentReviewTasks && !otherReviewTasks ? null :
         MenuItemLink({ to: linkToReviewPage(), id: 'e2eMM_Review' },
-          "Needs review ", urgentReviewTasks, otherReviewTasks);
+          t.mm.NeedsReview, urgentReviewTasks, otherReviewTasks);
 
       var adminHelpLink = !isStaff(me) ? null :
         MenuItemLink({ to: externalLinkToAdminHelp(), target: '_blank',
             className: 'esMyMenu_adminHelp' },
-          r.span({}, (me.isAdmin ? "Admin" : "Staff") + " help ",
+          r.span({}, me.isAdmin ? t.mm.AdminHelp : t.mm.StaffHelp,
             r.span({ className: 'icon-link-ext' })));
 
       // ------- Personal notf icons
@@ -72,7 +72,7 @@ export const MyMenuContent = createFactory({
       if (me.thereAreMoreUnseenNotfs) {
         notfsElems.push(
             MenuItemLink({ key: 'More', to: linkToUsersNotfs(me.id) },
-              "View more notifications..."));
+              t.mm.MoreNotfs));
       }
 
       // ------- Stop impersonating
@@ -112,13 +112,13 @@ export const MyMenuContent = createFactory({
       if (me.isLoggedIn) {
         viewProfileMenuItem =
             MenuItemLink({ to: linkToMyProfilePage(store), id: 'e2eMM_Profile' },
-              "View/edit your profile");
+              t.mm.ViewProfile);
         logoutMenuItem =
-            MenuItem({ onClick: this.onLogoutClick, id: 'e2eMM_Logout' }, "Log out");
+            MenuItem({ onClick: this.onLogoutClick, id: 'e2eMM_Logout' }, t.mm.LogOut);
         myStuffDivider = MenuItemDivider();
         unhideHelpMenuItem =
           MenuItem({ onClick: ReactActions.showHelpMessagesAgain },
-            r.span({ className: 'icon-help' }, "Unhide help messages"))
+            r.span({ className: 'icon-help' }, t.mm.UnhideHelp))
       }
 
       // ------- The menu

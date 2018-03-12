@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014-2017 Kaj Magnus Lindberg
+ * Copyright (c) 2014-2018 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -58,7 +58,7 @@ export const TitleBodyComments = createComponent({
 
     if (page.pageRole === PageRole.Form && page.pageClosedAtMs)
       return { id: 'EsH4PK04', version: 1, type: HelpTypePageClosed, content: r.div({},
-        "This form has been ", closedIcon, "closed; you can no longer fill it in and post it.") };
+        t.d.ThisFormClosed_1, closedIcon, t.d.ThisFormClosed_2) };
 
     const makeShareButton = (where: string) => {  // dupl code [2WUGVSF0]
       return (
@@ -69,7 +69,7 @@ export const TitleBodyComments = createComponent({
     const shareWithFriends =
       r.div({},
         r.p({ style: { display: 'inline-block', paddingRight: 13 }},
-            "Share Usability Testing Exchange with your friends?"),
+            "Share Usability Testing Exchange with your friends?"),   // [plugin]
           r.span({ className: 's_ShareD_Social' },
             makeShareButton(pagedialogs.Facebook),
             makeShareButton(pagedialogs.Twitter),
@@ -82,7 +82,7 @@ export const TitleBodyComments = createComponent({
     const isClosedUsabilityTesting =
         page.pageClosedAtMs && page.pageRole === PageRole.UsabilityTesting;  // [plugin]
     if (isClosedUnfinished || isClosedUsabilityTesting) {
-      const closed = r.b({}, closedIcon, "closed");
+      const closed = r.b({}, closedIcon, t.closed);
       const done = r.b({}, doneIcon, "done");
       if (page.pageRole === PageRole.UsabilityTesting)  // [plugin]
         return { id: 'Ed2PRK06', version: 1, type: HelpTypePageClosed, content: r.div({},
@@ -90,8 +90,7 @@ export const TitleBodyComments = createComponent({
           "needed. (But you can leave more feedback, if you want to.)"),
           shareWithFriends) };
       return { id: 'EdH7UMPW', version: 1, type: HelpTypePageClosed, content: r.div({},
-          "This topic has been ", closed, ". You can still post comments, " +
-          "but that won't make this topic bump to the top of the latest-topics list.") };
+          t.d.ThisTopicClosed_1, closed, t.d.ThisTopicClosed_2) };
     }
 
 
@@ -106,54 +105,67 @@ export const TitleBodyComments = createComponent({
     if (page.pageRole === PageRole.Question) {
       if (page.pageAnsweredAtMs) {
         return { id: 'EsH5JV8', version: 1, content: r.div({ className: 'esHelp-solved' },
-            "This is a question and it has been ", solvedIcon, "answered.") };
+            t.d.ThisQuestSloved_1, solvedIcon, t.d.ThisQuestSloved_2) };
       }
       else {
         return { id: 'EsH2YK03', version: 1, content: r.div({},
-            "This is a ", questionIcon, "question, waiting for an ", solvedIcon, "answer.") };
+            t.d.ThisQuestWaiting_1, questionIcon,
+            t.d.ThisQuestWaiting_2, solvedIcon,
+            t.d.ThisQuestWaiting_3) };
       }
     }
 
     if (page.pageRole === PageRole.Problem) {
       if (page.pageDoneAtMs) {
         return { id: 'EsH5GKU0', version: 1, className: 'esH_ProblemSolved', content: r.div({},
-            "This is a problem and it has been ", doneIcon, " solved.") };
+            t.d.ThisProblSolved_1, doneIcon, t.d.ThisProblSolved_2) };
       }
       else if (page.pageStartedAtMs) {
         return { id: 'EsH7BK28', version: 1, className: 's_H_ProblemStarted', content: r.div({},
-          "This is a problem. We have ", startedIcon, " started fixing it, but it's not yet ",
-          doneIcon, " done.") };
+            t.d.ThisProblStarted_1, startedIcon,
+            t.d.ThisProblStarted_2, doneIcon,
+            t.d.ThisProblStarted_3) };
       }
       else if (page.pagePlannedAtMs) {
         return { id: 'EsH2PK40', version: 1, className: 's_H_ProblemPlanned', content: r.div({},
-            "This is a problem. We ", plannedIcon, " plan to fix it, but it's not yet ",
-            startedIcon, " started, not yet ", doneIcon, " done.") };
+            t.d.ThisProblPlanned_1, plannedIcon,
+            t.d.ThisProblPlanned_2, startedIcon,
+            t.d.ThisProblPlanned_3, doneIcon,
+            t.d.ThisProblPlanned_4) };
       }
       else {
         return { id: 'EsH1WKG5', version: 1, className: 'esH_ProblemNew', content: r.div({},
-            "This is a ", problemIcon, " problem. It's not yet ", doneIcon, " solved.") };
+            t.d.ThisProblemNew_1, problemIcon,
+            t.d.ThisProblemNew_2, doneIcon,
+            t.d.ThisProblemNew_3) };
       }
     }
 
     if (page.pageRole === PageRole.Idea) {
       if (page.pageDoneAtMs) {
         return { id: 'EsH9PK0', version: 1, content: r.div({},
-            "This has been ", doneIcon, " implemented.") };
+            t.d.ThisIdeaDone_1, doneIcon, t.d.ThisIdeaDone_2) };
       }
       else if (page.pageStartedAtMs) {
         return { id: 'EsH2WTSK', version: 1, content: r.div({},
-          "We have ", startedIcon, " started implementing this. " +
-          "But it's not yet ", doneIcon, " done.") };
+          t.d.ThisIdeaStarted_1, startedIcon,
+          t.d.ThisIdeaStarted_2, doneIcon,
+          t.d.ThisIdeaStarted_3) };
       }
       else if (page.pagePlannedAtMs) {
         return { id: 'EsH44TK2', version: 1, content: r.div({},
-            "We ", plannedIcon, " plan to implement this. " +
-            "But it's not yet ", startedIcon, " started, not yet ", doneIcon, " done.") };
+            t.d.ThisIdeaPlanned_1, plannedIcon,
+            t.d.ThisIdeaPlanned_2, startedIcon,
+            t.d.ThisIdeaPlanned_3, doneIcon,
+            t.d.ThisIdeaPlanned_4) };
       }
       else {
         return { id: 'EsH4GY6Z', version: 1, content: r.div({},
-            "This is an ", ideaIcon, " idea, not yet ", plannedIcon, " planned, not ",
-            startedIcon, " started, not ", doneIcon, " done.") };
+            t.d.ThisIdeaNew_1, ideaIcon,
+            t.d.ThisIdeaNew_2, plannedIcon,
+            t.d.ThisIdeaNew_3, startedIcon,
+            t.d.ThisIdeaNew_4, doneIcon,
+            t.d.ThisIdeaNew_5) };
       }
     }
 
@@ -299,7 +311,7 @@ export const TitleBodyComments = createComponent({
     if (page.pageRole === PageRole.About) {
       anyAboutCategoryClass = 'dw-about-category';
       anyAboutCategoryTitle =
-          r.h2({ className: 'dw-about-cat-ttl-prfx' }, "About category:")
+          r.h2({ className: 'dw-about-cat-ttl-prfx' }, t.d.AboutCat)
     }
 
     let anyTitle = null;
@@ -385,7 +397,7 @@ export const Title = createComponent({
 
     const deletedOrUnapprovedInfo = titlePost.isApproved ? false :
         r.span({ className: 'esPendingApproval' },
-          page.pageDeletedAtMs ? "(Page deleted)" : "(Title pending approval)");
+          page.pageDeletedAtMs ? t.d.PageDeleted : t.d.TitlePendAppr);
 
     // Insert the title as plain text (don't interpret any html tags — that'd let Mallory mess up
     // the formatting, even if sanitized).
@@ -449,32 +461,32 @@ export const Title = createComponent({
         if (page.pageRole === PageRole.Problem || page.pageRole === PageRole.Idea) {
           if (page.pageDoneAtMs) {
             tooltip = page.pageRole === PageRole.Problem
-              ? "This has been fixed"
-              : "This has been done";
+              ? t.d.TooltipProblFixed
+              : t.d.TooltipDone;
             iconClass = 'icon-check';
-            iconTooltip = "Click to change status to new";
+            iconTooltip = t.d.ClickStatusNew;
           }
           else if (page.pageStartedAtMs) {
             tooltip = page.pageRole === PageRole.Problem
-              ? "We're currently fixing this"
-              : "We're currently implementing this";
+              ? t.d.TooltipFixing
+              : t.d.TooltipImplementing;
             iconClass = 'icon-check-empty';
-            iconTooltip = "Click to mark as done";
+            iconTooltip = t.d.ClickStatusDone;
           }
           else if (page.pagePlannedAtMs) {
             tooltip = page.pageRole === PageRole.Problem
-              ? "We're planning to fix this"
-              : "We're planning to implement this";
+              ? t.d.TooltipProblPlanned
+              : t.d.TooltipIdeaPlanned;
             iconClass = 'icon-check-dashed';
-            iconTooltip = "Click to mark as started";
+            iconTooltip = t.d.ClickStatusStarted;
           }
           else  {
             tooltip = page.pageRole === PageRole.Problem
-              ? "This is an unsolved problem"
-              : "This is an idea";
+              ? t.d.TooltipUnsProbl
+              : t.d.TooltipIdea;
             iconClass = page.pageRole === PageRole.Problem ?
               'icon-attention-circled' : 'icon-idea';
-            iconTooltip = "Click to change status to planned";
+            iconTooltip = t.d.ClickStatusPlanned;
           }
         }
         else if (page.pageRole === PageRole.UsabilityTesting) {   // [plugin]
@@ -487,6 +499,7 @@ export const Title = createComponent({
               : "Click to mark as done";
         }
         else {
+          // CLEAN_UP reove this [4YK0F24]? No more page type to-do?
           tooltip = page.pageDoneAtMs
               ? "This has been done or fixed.\n"
               : "This is about something to do or fix.\n";
@@ -503,27 +516,27 @@ export const Title = createComponent({
       }
       else if (page.pageRole === PageRole.FormalMessage) {
         icon = r.span({ className: 'icon-mail' });
-        tooltip = "Personal message";
+        tooltip = t.d.TooltipPersMsg;
       }
       else if (page.pageRole === PageRole.OpenChat) {
         icon = '#';
-        tooltip = "# means Chat Channel";
+        tooltip = t.d.TooltipChat;
       }
       else if (page.pageRole === PageRole.PrivateChat) {
         icon = r.span({ className: 'icon-lock' });
-        tooltip = "This is a private chat channel";
+        tooltip = t.d.TooltipPrivChat;
       }
 
       switch (page.pinWhere) {
-        case PinPageWhere.Globally: tooltip += "\nPinned globally."; break;
-        case PinPageWhere.InCategory: tooltip += "\nPinned in this category."; break;
+        case PinPageWhere.Globally: tooltip += t.d.TooltipPinnedGlob; break;
+        case PinPageWhere.InCategory: tooltip += t.d.TooltipPinnedCat; break;
         default:
       }
 
       let deletedIcon;
       if (store_isPageDeleted(store)) {
         let deletedReason = page.pageDeletedAtMs ?
-            "This page has been deleted" : "Category deleted, so this page was deleted too";
+            t.d.ThisPageDeleted : t.d.CatDeldPageToo;
         deletedIcon = r.span({ className: 'icon-trash', title: deletedReason });
         titleText = r.span({ className: 'esOP_title-deleted' }, titleText);
       }
@@ -625,7 +638,7 @@ const RootPostAndComments = createComponent({
 
     const deletedOrUnapprovedMessage = rootPost.isApproved ? false :
         r.div({ className: 'esPendingApproval' },
-          page.pageDeletedAtMs ? "(Page deleted)" : "(Text pending approval)");
+          page.pageDeletedAtMs ? t.d.PageDeleted : t.d.TextPendingApproval);
 
     let body = null;
     if (pageRole !== PageRole.EmbeddedComments) {  // maybed hide via CSS instead? [7SFAUM2]
@@ -633,7 +646,7 @@ const RootPostAndComments = createComponent({
       if (post_shallRenderAsHidden(rootPost)) {
         bodyContent = (
             r.div({ className: 'dw-p-bd-blk esOrigPost', onClick: this.loadAndShowRootPost },
-              "Post hidden; click to show"));
+              t.d.PostHiddenClickShow));
       }
       else {
         bodyContent = (
@@ -665,7 +678,7 @@ const RootPostAndComments = createComponent({
           onMouseEnter: () => highlightPost(page.pageAnswerPostNr, true),
           onMouseLeave: () => highlightPost(page.pageAnswerPostNr, false),
           onClick: utils.makeShowPostFn(BodyNr, page.pageAnswerPostNr) },
-        "Solved in post #" + page.pageAnswerPostNr + ", click to view");
+        t.d.SolvedClickView_1 + page.pageAnswerPostNr + t.d.SolvedClickView_2);
     }
 
     let anyHorizontalArrowToChildren = null;
@@ -754,13 +767,13 @@ const RootPostAndComments = createComponent({
       const line =
         r.li({ className: 's_AppendBottomDiv', key: 'ApBtmDv' },
           r.span({},
-            r.span({ className: 's_AppendBottomDiv_Ar-Up' }, '➜'),
-            " Above: Replies, best first. "),
+            r.span({ className: 's_AppendBottomDiv_Ar-Up' }, '➜'),   // spaces here instead?
+            t.d.AboveBestFirst),
           r.wbr(),
           r.span({},
             r.span({ style: { whiteSpace: 'nowrap' }},
               r.span({ className: 's_AppendBottomDiv_Ar-Down' }, '➜'),
-              " Below: Comments and events.")));  // needn't mention "chronologically"?
+              t.d.BelowCmtsEvents)));  // needn't mention "chronologically"?
       threadedChildren.splice(firstAppendedIndex, 0, line);
     }
 
@@ -848,16 +861,14 @@ const RootPostAndComments = createComponent({
               else {
                 morebundle.openHelpDialogUnlessHidden({ id: '5JKWS', version: 1, defaultHide: false,
                   content: rFragment({},
-                    r.p({}, "You're adding a comment that will stay at the bottom of the page. " +
-                      "It won't rise to the top even if it gets upvotes."),
-                    r.p({}, "This is useful for status messages, e.g. to clarify why you close/reopen " +
-                      "a topic. Or for suggesting changes to the original post."),
-                    r.p({}, "To reply to someone, click Reply instead.")),
+                    r.p({}, t.d.BottomCmtExpl_1),
+                    r.p({}, t.d.BottomCmtExpl_2),
+                    r.p({}, t.d.BottomCmtExpl_3)),
                   doAfter: doReply
                 });
               }
             } },
-          isFormalMessage ? "Add comment" : "Add bottom comment"));
+          isFormalMessage ? t.d.AddComment : t.d.AddBottomComment));
 
     return (
       r.div({ className: threadClass },
@@ -880,6 +891,7 @@ const RootPostAndComments = createComponent({
 });
 
 
+/*
 const clickReplyInsteadHelpMessage = {
   id: 'EsH5UGPM2',
   version: 1,
@@ -888,7 +900,7 @@ const clickReplyInsteadHelpMessage = {
     r.b({}, "If you want to reply to someone"), ", then instead click ",
     r.span({ className: 'icon-reply', style: { margin: '0 1ex' }}, "Reply"),
     " just below his/her post.")
-};
+}; */
 
 
 
@@ -960,7 +972,7 @@ const SquashedThreads = createComponent({
           is2dColumnClass },
         arrows,
         r.a({ className: 'dw-x-show', onClick: this.onClick },
-          "Click to show more replies" + postNrDebug)));
+          t.d.ClickSeeMoreRepls + postNrDebug)));
   }
 });
 
@@ -1127,18 +1139,18 @@ function makeWrongWarning(post: Post) {
   if (post.numWrongVotes <= 1)
     return null;
 
-  var wrongWarning = null;
-  var wrongness = post.numWrongVotes / (post.numLikeVotes || 1);
+  let wrongWarning = null;
+  const wrongness = post.numWrongVotes / (post.numLikeVotes || 1);
   // One, two, three, many.
   if (post.numWrongVotes > 3 && wrongness > 1) {
     wrongWarning =
       r.div({ className: 'esWrong esWrong-Very' },
-        r.div({ className: 'esWrong_Txt icon-warning' }, "Many disagree with this:"));
+        r.div({ className: 'esWrong_Txt icon-warning' }, t.d.ManyDisagree));
   }
   else if (wrongness > 0.33) {
     wrongWarning =
       r.div({ className: 'esWrong' },
-        r.div({ className: 'esWrong_Txt icon-warning' }, "Some disagree with this:"));
+        r.div({ className: 'esWrong_Txt icon-warning' }, t.d.SomeDisagree));
   }
   return wrongWarning;
 }
@@ -1152,7 +1164,7 @@ export var Post = createComponent({
   },
 
   onClick: function(event) {
-    var props = this.props;
+    const props = this.props;
     if (!props.abbreviate) {
       if (props.post.isTreeCollapsed || props.post.isPostCollapsed) {
         this.onUncollapseClick(event);
@@ -1207,7 +1219,7 @@ export var Post = createComponent({
       // COULD remove this way of collapsing comments, which doesn't show the first line?
       // Currently inactive, this is dead code (!== 'Truncated' is always false).
       var text = this.props.is2dTreeColumn ? '' : (
-          "Click to show " + (post.isTreeCollapsed ? "more comments" : "this comment"));
+          t.d.ClickSeeMoreComments(post.isTreeCollapsed));
       if (debiki.debug) text +='  #' + this.props.postId;
       var iconClass = this.props.is2dTreeColumn ? 'icon-right-open' : 'icon-down-open';
       bodyElem =
@@ -1223,14 +1235,14 @@ export var Post = createComponent({
       headerElem =
           r.div({ className: 'dw-p-hd' },
             anyAvatar,
-            'Comment pending approval, posted ', timeAgo(post.createdAtMs), '.');
+            t.d.CmtPendAppr, timeAgo(post.createdAtMs), '.');
       extraClasses += ' dw-p-unapproved';
     }
     else {
       if (!post.isApproved) {
-        var the = post.authorId === me.id ? 'Your' : 'The';
+        const isMine = post.authorId === me.id;
         pendingApprovalElem = r.div({ className: 'dw-p-pending-mod',
-            onClick: this.onUncollapseClick }, the, ' comment below is pending approval.');
+            onClick: this.onUncollapseClick }, t.d.CmtBelowPendAppr(isMine));
       }
       var headerProps = _.clone(this.props);
       headerProps.onMarkClick = this.onMarkClick;
@@ -1240,7 +1252,7 @@ export var Post = createComponent({
 
       if (post.isTreeCollapsed === 'Truncated' && !this.props.abbreviate) {
         extraClasses += ' dw-x';
-        clickToExpand = r.div({ className: 'dw-x-show' }, "click to show");
+        clickToExpand = r.div({ className: 'dw-x-show' }, t.d.clickToShow);
         clickCover = r.div({ className: 'dw-x-cover' });
       }
     }
@@ -1337,14 +1349,14 @@ var ReplyReceivers = createComponent({
           // rather than opening an about-user dialog. ⬆ is Unicode upwards-black-arrow U+2B06.
           r.span({ className: '-RRs_RR_Aw' }, '⬆'));
       if (receivers.length) {
-        link = r.span({ key: post.nr }, ' and', link);
+        link = r.span({ key: post.nr }, t.d._and, link);
       }
       receivers.push(link);
     }
     var elem = this.props.comma ? 'span' : 'div';
     return (
       r[elem]({ className: 'dw-rrs' + multireplyClass }, // rrs = reply receivers
-        (this.props.comma ? '— i' : 'I') + 'n reply to', receivers, ':'));
+        this.props.comma ? t.d.dashInReplyTo : t.d.InReplyTo, receivers, ':'));
   }
 });
 
@@ -1380,7 +1392,7 @@ export var PostHeader = createComponent({
 
     if (isWikiPost(post)) {
       if (abbreviate) {
-        return r.div({ className: 'dw-p-hd' }, 'Wiki');
+        return r.div({ className: 'dw-p-hd' }, t.Wiki);
       }
       if (this.props.is2dTreeColumn || post.isTreeCollapsed || post.nr === BodyNr) {
         return null;
@@ -1394,7 +1406,7 @@ export var PostHeader = createComponent({
 
     var anySolutionIcon = page.pageRole === PageRole.Question &&
         post.uniqueId === page.pageAnswerPostUniqueId
-      ? r.span({ className: 'esH_solution icon-ok-circled', title: "Solution" })
+      ? r.span({ className: 'esH_solution icon-ok-circled', title: t.Solution })
       : null;
 
     // (Dupl code, for anyAvatar [503KP25])
@@ -1409,7 +1421,7 @@ export var PostHeader = createComponent({
       //var byVariousPeople = post.numEditors > 1 ? ' by various people' : null;
       editInfo =
           r.span({ onClick: this.showEditHistory, className: 'esP_viewHist icon-edit',
-              title: "Click to view old edits"},
+              title: t.d.ClickViewEdits },
             editedAt);
     }
 
@@ -1439,7 +1451,7 @@ export var PostHeader = createComponent({
         r.span({ className: 's_P_H_Unr icon-circle' });
 
     let isPageBody = post.nr === BodyNr;
-    let by = isPageBody ? 'By ' : '';
+    let by = isPageBody ? t.d.By : '';
     let isBodyPostClass = isPageBody ? ' dw-ar-p-hd' : '';
 
     let is2dColumn = page.horizontalLayout && this.props.depth === 1;
@@ -1521,7 +1533,7 @@ export const PostBody = createComponent({
     let body;
     if (post_shallRenderAsHidden(post)) {
       body = r.div({ className: 'dw-p-bd-blk', onClick: this.loadAndShow },
-        "Post hidden; click to show");
+        t.d.PostHiddenClickShow);
     }
     else if (this.props.abbreviate) {
       if (this.cachedAbbrevTextSource !== post.sanitizedHtml) {
@@ -1555,18 +1567,18 @@ function horizontalCss(horizontal) {
 export function makePageClosedTooltipText(pageRole: PageRole) {
   switch (pageRole) {
     case PageRole.Question:
-      return "This question has been closed without any accepted answer.";
+      return t.d.TooltipQuestClosedNoAnsw;
     case PageRole.ToDo:
       return "This To-Do has been closed. It probably won't be done or fixed.";
     default:
-      return "This topic is closed.";
+      return t.d.TooltipTopicClosed;
   }
 }
 
 
 // Could move elsewhere? Where?
 export function makeQuestionTooltipText(isAnswered) {
-  return isAnswered ? "This is a solved question" : "This is an unsolved question";
+  return isAnswered ? t.d.TooltipQuestSolved : t.d.TooltipQuestUnsolved;
 }
 
 

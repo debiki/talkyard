@@ -134,7 +134,7 @@ const TitleAndLastChatMessages = createComponent({
 
     const thisIsTheWhat =
         r.p({},
-          "This is the " + ReactStore.getPageTitle() + " chat channel, created by ",
+          t.c.About_1 + ReactStore.getPageTitle() + t.c.About_2,
           avatar.AvatarAndName({ user: origPostAuthor, hideAvatar: true }),
           ", ", timeExact(originalPost.createdAtMs));
 
@@ -146,14 +146,14 @@ const TitleAndLastChatMessages = createComponent({
 
     const scrollUpTips = !canScrollUpToFetchOlder ? null :
       r.div({ className: 'esChat_scrollUpTips' },
-        "Scroll up to view older comments", r.br(), "(Not implemented though. So don't)");
+        t.c.ScrollUpViewComments, r.br(), t.NotImplemented);
 
     return (
       r.div({ className: 'esLastChatMsgs', style: perhapsHidden },
         title,
         r.div({ className: 'esChatChnl_about'},
           thisIsTheWhat,
-          r.div({}, "Purpose:"),
+          r.div({}, t.c.Purpose),
           origPostBody),
         scrollUpTips,
         messages));
@@ -197,9 +197,9 @@ const ChatMessage = createComponent({
         isMine || isStaff(me));
     headerProps.stuffToAppend = !mayEditDelete ? [] : [
         r.button({ className: 'esC_M_EdB icon-edit' + isMineClass, key: 'e', onClick: this.edit },
-          "edit"),
+          t.c.edit),
         // (Don't show a trash icon, makes the page look too cluttered.)
-        r.button({className: 'esC_M_EdB' + isMineClass, key: 'd', onClick: this.delete_ }, "delete")];
+        r.button({className: 'esC_M_EdB' + isMineClass, key: 'd', onClick: this.delete_ }, t.c.delete)];
 
     //headerProps.stuffToAppend.push(
     //  r.button({ className: 'esC_M_MoreB icon-ellipsis', key: 'm' }, "more"));
@@ -219,7 +219,7 @@ function DeletedChatMessage(props) {
     r.div({ className: 'esC_M', id: 'post-' + post.nr, key: props.key },
       r.div({ className: 'dw-p-bd' },
         r.div({ className: 'dw-p-bd-blk' },
-          "(Message deleted)"))));
+          t.c.MessageDeleted))));
 }
 
 
@@ -297,7 +297,7 @@ const JoinChatButton = createComponent({
       r.div({ className: 'esJoinChat' },
         PrimaryButton({ id: 'theJoinChatB', className: 'esJoinChat_btn',
             onClick: this.joinChannel },
-          "Join this chat")));
+          t.c.JoinThisChat)));
   }
 });
 
@@ -405,10 +405,10 @@ const ChatMessageEditor = createComponent({
         r.div({ className: 'esC_Edtr_Bs' },
           r.button({ className: 'esC_Edtr_SaveB btn btn-primary', onClick: this.saveChatMessage,
               disabled: disabled },
-            "↵ Post message"),
+            '↵ ' + t.c.PostMessage),
           r.button({ className: 'esC_Edtr_AdvB btn btn-default', onClick: this.useAdvancedEditor,
               disabled: disabled },
-            "Advanced editor"));
+            t.c.AdvancedEditor));
 
     // In the editor scripts bundle, lazy loaded.
     const ReactTextareaAutocomplete = editor['ReactTextareaAutocomplete'];
@@ -422,10 +422,10 @@ const ChatMessageEditor = createComponent({
           onKeyPress: this.onKeyPress,
           onKeyDown: this.onKeyDown,
           closeOnClickOutside: true,
-          placeholder: "Type here. You can use Markdown and HTML.",
+          placeholder: t.c.TypeHere,
           disabled: disabled,
           rows: this.state.rows,
-          loadingComponent: () => r.span({}, "Loading ..."),
+          loadingComponent: () => r.span({}, t.Loading),
           trigger: listUsernamesTrigger }),
         buttons));
   }

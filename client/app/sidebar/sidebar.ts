@@ -37,10 +37,10 @@ const ModalDropdownButton = utils.ModalDropdownButton;
 
 // COULD UX RESPONSIVE: add some screen/window/widget width or size state to some React store somehow. [6KP024]
 // Use outerWidth, it won't force a layout reflow.
-var smallWindow = Math.min(window.outerWidth, window.outerHeight) < 500;
-var windowWideEnoughForTabButtons = window.outerWidth > 1010;
+const smallWindow = Math.min(window.outerWidth, window.outerHeight) < 500;
+const windowWideEnoughForTabButtons = window.outerWidth > 1010;
 
-var SidebarNumCommentsLimit = 5 + 1;  // 5 + page body
+const SidebarNumCommentsLimit = 5 + 1;  // 5 + page body
 
 // Or should one interact with it via Actions instead? For now, this is simpler & faster:
 export var contextBar;
@@ -57,7 +57,7 @@ export var Sidebar = createComponent({  // RENAME to ContextBar
   getInitialState: function() {
     const store: Store = debiki2.ReactStore.allData();
     const page: Page = store.currentPage;
-    var me = store.me;
+    const me = store.me;
     // Show sidebar by default, in 1D layout, otherwise people will never notice
     // that it exists.
 
@@ -82,7 +82,7 @@ export var Sidebar = createComponent({  // RENAME to ContextBar
     // If is admin, show the admin guide, unless the admin has clicked away from it.
     // If is chat, then we want to see online users (however, showing recent comments makes no
     // sense, because the chat messages (= comments) are already sorted chronologically).
-    var commentsType;
+    let commentsType;
     if (me.isAdmin && getFromLocalStorage('showAdminGuide') !== 'false') {
       commentsType = 'AdminGuide';
       this.loadAdminGuide();
@@ -102,7 +102,7 @@ export var Sidebar = createComponent({  // RENAME to ContextBar
   },
 
   onChange: function() {
-    var newStore: Store = debiki2.ReactStore.allData();
+    const newStore: Store = debiki2.ReactStore.allData();
     this.setState({
       store: newStore,
     });
@@ -153,7 +153,7 @@ export var Sidebar = createComponent({  // RENAME to ContextBar
   },
 
   componentDidMount: function() {
-    var store: Store = this.state.store;
+    const store: Store = this.state.store;
     keymaster('s', this.toggleSidebarOpen);
     if (store.isContextbarOpen && this.state.lastLoadedOnlineUsersAsId !== store.me.id) {
       this.loadOnlineUsers();
@@ -166,7 +166,7 @@ export var Sidebar = createComponent({  // RENAME to ContextBar
 
   componentWillUpdate: function(newProps, newState) {
     // Stop always-showing-the-admin-guide-on-page-load if the admin clicks away from it.
-    var store: Store = this.state.store;
+    const store: Store = this.state.store;
     if (store.me.isAdmin && this.state.commentsType !== newState.commentsType) {
       putInLocalStorage(
           'showAdminGuide', newState.commentsType === 'AdminGuide' ? 'true' : 'false');
@@ -230,15 +230,15 @@ export var Sidebar = createComponent({  // RENAME to ContextBar
   findComments: function() {
     const store: Store = this.state.store;
     const page: Page = store.currentPage;
-    var unreadComments = [];
-    var recentComments = [];
-    var starredComments = [];
+    const unreadComments = [];
+    let recentComments = [];
+    const starredComments = [];
 
     // Find 1) all unread comments, sorted in the way they appear on the page
     // And 2) all visible comments.
-    var addRecursively = (postNrs: number[]) => {
+    const addRecursively = (postNrs: number[]) => {
       _.each(postNrs, (postNr) => {
-        var post: Post = page.postsByNr[postNr];
+        const post: Post = page.postsByNr[postNr];
         if (post) {
           addPost(post);
           addRecursively(post.childIdsSorted);
@@ -246,7 +246,7 @@ export var Sidebar = createComponent({  // RENAME to ContextBar
       });
     };
 
-    var addPost = (post: Post) => {
+    const addPost = (post: Post) => {
       if (isDeleted(post))
         return;
 
@@ -273,7 +273,7 @@ export var Sidebar = createComponent({  // RENAME to ContextBar
       */
     };
 
-    var rootPost = page.postsByNr[store.rootPostId];
+    const rootPost = page.postsByNr[store.rootPostId];
     addRecursively(rootPost.childIdsSorted);
 
     _.each(page.postsByNr, (child: Post, childId) => {
@@ -312,7 +312,7 @@ export var Sidebar = createComponent({  // RENAME to ContextBar
   },
 
   focusPost: function(post: Post) {
-    var store: Store = this.state.store;
+    const store: Store = this.state.store;
     this.setState({
       currentPostId: post.nr
     });
@@ -327,48 +327,48 @@ export var Sidebar = createComponent({  // RENAME to ContextBar
   render: function() {
     const store: Store = this.state.store;
     const page: Page = store.currentPage;
-    var me: Myself = store.me;
+    const me: Myself = store.me;
 
     //var minimapProps = _.assign({ ref: 'minimap' }, store);
-    var commentsFound = isPageWithComments(page.pageRole) ? this.findComments() : null;
-    var isChat = page_isChatChannel(page.pageRole);
-    var isStaffOrMyPage = isStaff(me) || store_thisIsMyPage(store);
+    const commentsFound = isPageWithComments(page.pageRole) ? this.findComments() : null;
+    const isChat = page_isChatChannel(page.pageRole);
+    const isStaffOrMyPage = isStaff(me) || store_thisIsMyPage(store);
 
-    var sidebarClasses = '';
+    let sidebarClasses = '';
     if (page.horizontalLayout) {
       sidebarClasses += ' dw-sidebar-fixed';
     }
 
-    var usersHere = store_getUsersHere(store);
+    const usersHere = store_getUsersHere(store);
 
     // If the current user is the only active user, write "you" instead of "1"
     // because it'd be so boring to see "1" online user and click the Users tab only
     // to find out that it's oneself. (Also, skip spaces around '/' if number not "you")
-    var numOnlineTextSlash = usersHere.onlyMeOnline ? "you / " : usersHere.numOnline + "/";
+    const numOnlineTextSlash = usersHere.onlyMeOnline ? "you / " : usersHere.numOnline + "/";
 
     //var unreadBtnTitle = commentsFound ? 'Unread (' + commentsFound.unread.length + ')' : null;
-    var starredBtnTitle = commentsFound ? 'Bookmarks (' + commentsFound.starred.length + ')' : null;
-    var usersBtnTitle = usersHere.areChatChannelMembers || usersHere.areTopicContributors
-        ? "Users (" + numOnlineTextSlash + usersHere.users.length + ")"
-        : "Users (" + usersHere.numOnline + ")";
+    const starredBtnTitle = commentsFound ? `${t.Bookmarks} (${commentsFound.starred.length})` : null;
+    const usersBtnTitle = usersHere.areChatChannelMembers || usersHere.areTopicContributors
+        ? `${t.Users} (${numOnlineTextSlash + usersHere.users.length})`
+        : `${t.Users} (${usersHere.numOnline})`;
 
     // COULD show a "Recent searches" on the search results page. Click a recent search, to
     // use it again.
 
-    var title;
-    var unreadClass = '';
-    var recentClass = '';
-    var starredClass = '';
-    var usersClass = '';
-    var adminGuideActiveClass = '';
-    var listItems: any[];
+    let title;
+    let unreadClass = '';
+    let recentClass = '';
+    let starredClass = '';
+    let usersClass = '';
+    let adminGuideActiveClass = '';
+    let listItems: any[];
 
     // (If the page type was just changed to a page without comments, the Recent or Bookmarks
     // tab might be open, although commentsFound is now null (40WKP20) )
     switch (this.state.commentsType) {
       case 'Recent':
         let recentComments = commentsFound ? commentsFound.recent : []; // see (40WKP20) above
-        title = recentComments.length ? "Recent comments in this topic:" : "No comments.";
+        title = recentComments.length ? t.cb.RecentComments : t.cb.NoComments;
         recentClass = ' active';
         listItems = makeCommentsContent(recentComments, this.state.currentPostId, store,
             this.onPostClick);
@@ -382,25 +382,24 @@ export var Sidebar = createComponent({  // RENAME to ContextBar
         listItems = ...
         break; */
       case 'Starred':
-        title = "Your bookmarks:";
+        title = t.cb.YourBookmarks;
         starredClass = ' active';
         let starredComments = commentsFound ? commentsFound.starred : []; // see (40WKP20) above
         listItems = makeCommentsContent(starredComments, this.state.currentPostId, store,
             this.onPostClick);
         break;
       case 'Users':
-        var title;
-        var numOnlineStrangers = store.numOnlineStrangers;
+        let numOnlineStrangers = store.numOnlineStrangers;
         if (page.pageRole === PageRole.Forum) {
-          title = "Users online in this forum:";
+          title = t.cb.UsersOnlineForum;
         }
         else if (!usersHere.areChatChannelMembers && !usersHere.areTopicContributors) {
-          title = "Users online:";
+          title = t.cb.UsersOnline;
         }
         else {
           title = r.div({},
-            "Users in this " + (isChat ? "chat: " : "topic:"),
-            r.span({ className: 'esCtxbar_onlineCol' }, "Online"));
+            t.cb.UsersInThis(isChat),
+            r.span({ className: 'esCtxbar_onlineCol' }, t.Online));
           // Don't show num online strangers, when listing post authors for the current topic only.
           numOnlineStrangers = 0;
         }
@@ -408,14 +407,14 @@ export var Sidebar = createComponent({  // RENAME to ContextBar
         listItems = makeUsersContent(store, usersHere.users, store.me.id, numOnlineStrangers);
         break;
       case 'AdminGuide':
-        title = "Getting Started Guide";
+        title = t.cb.GettingStartedGuide;
         adminGuideActiveClass = ' active';
         break;
       default:
         console.error('[DwE4PM091]');
     }
 
-    var tipsGuideOrExtraConfig;
+    let tipsGuideOrExtraConfig;
     if (this.state.commentsType === 'Recent') {
       /* Skip this, I think people won't read it anyway and it makes the page look very
           cluttered and complicated.
@@ -429,7 +428,7 @@ export var Sidebar = createComponent({  // RENAME to ContextBar
     if (this.state.commentsType === 'Starred') {
       tipsGuideOrExtraConfig =
         r.div({},
-          r.p({}, "Not implemented.")); /*
+          r.p({}, t.NotImplemented)); /*
           r.p({}, "You have not bookmarked any comments on this page."),
           r.p({}, 'To bookmark a comment, click the star in its upper left ' +
             "corner, so the star turns blue or yellow. (You can use these two colors in " +
@@ -453,18 +452,18 @@ export var Sidebar = createComponent({  // RENAME to ContextBar
           tips);
     }*/
     else if (this.state.commentsType === 'AdminGuide') {
-      tipsGuideOrExtraConfig = this.state.adminGuide || r.p({}, "Loading...");
+      tipsGuideOrExtraConfig = this.state.adminGuide || r.p({}, t.Loading);
     }
 
-    var recentButton;
-    var starredButton;
-    var unreadButton;
-    var adminGuideButton;
+    let recentButton;
+    let starredButton;
+    let unreadButton;
+    let adminGuideButton;
     if (commentsFound) {
       if (windowWideEnoughForTabButtons) {
         recentButton = isChat ? null :
             r.button({ className: 'btn btn-default' + recentClass, onClick: this.showRecent },
-              'Recent');
+              t.Recent);
         //unreadButton =
         // r.button({ className: 'btn btn-default' + unreadClass, onClick: this.showUnread },
         //   unreadBtnTitle);
@@ -473,7 +472,7 @@ export var Sidebar = createComponent({  // RENAME to ContextBar
               starredBtnTitle);
       }
       else {
-        recentButton = isChat ? null : MenuItem({ onClick: this.showRecent }, "Recent");
+        recentButton = isChat ? null : MenuItem({ onClick: this.showRecent }, t.Recent);
         //unreadButton = MenuItem({ onClick: this.showUnread }, "Unread"),
         starredButton = MenuItem({ onClick: this.showStarred },
           starredBtnTitle);
@@ -483,14 +482,14 @@ export var Sidebar = createComponent({  // RENAME to ContextBar
     if (me.isAdmin) {
       if (windowWideEnoughForTabButtons) {
         adminGuideButton = r.button({ className: 'btn btn-default' + adminGuideActiveClass,
-          onClick: this.showAdminGuide }, "Guide");
+          onClick: this.showAdminGuide }, t.cb.Guide);
       }
       else {
-        adminGuideButton = MenuItem({ onClick: this.showAdminGuide }, "Admin Guide");
+        adminGuideButton = MenuItem({ onClick: this.showAdminGuide }, t.cb.AdminGuide);
       }
     }
 
-    var tabButtons;
+    let tabButtons;
     if (windowWideEnoughForTabButtons) {
       tabButtons =
         r.div({},
@@ -515,11 +514,11 @@ export var Sidebar = createComponent({  // RENAME to ContextBar
 
     // Show four help messages: first no. 1, then 2, 3, 4, one at a time, which clarify
     // how the sidebar recent-comments list works.
-    var helpMessageBoxOne;
-    var helpMessageBoxTwo;
-    var helpMessageBoxTree;
-    var helpMessageBoxFour;
-    var dimCommentsStyle: { opacity: string; };
+    let helpMessageBoxOne;
+    let helpMessageBoxTwo;
+    let helpMessageBoxTree;
+    let helpMessageBoxFour;
+    let dimCommentsStyle: { opacity: string; };
     if (this.state.commentsType === 'Recent' && listItems.length >= 6) {
       // People think 4 tips are too many, and the first two are a bit redundant, so
       // remove them for now.
@@ -543,14 +542,14 @@ export var Sidebar = createComponent({  // RENAME to ContextBar
               showUnhideTips: false });
       }
       // Dim the comments list until all help messages have been closed.
-      var dimCommentsStyle = help.isHelpMessageClosed(store, helpMessageFour) ?
+      dimCommentsStyle = help.isHelpMessageClosed(store, helpMessageFour) ?
           null : { opacity: '0.6' };
     }
 
-    var addMorePeopleButton = !page_isGroupTalk(page.pageRole) || !isStaffOrMyPage ? null :
+    const addMorePeopleButton = !page_isGroupTalk(page.pageRole) || !isStaffOrMyPage ? null :
         r.button({ className: 'btn btn-default', onClick: morebundle.openAddPeopleDialog,
             id: 'e2eCB_AddPeopleB' },
-          "Add more people");
+          t.cb.AddPeople);
 
     sidebarClasses += adminGuideActiveClass ? ' esCtxbar-adminGuide' : '';
 
@@ -587,9 +586,9 @@ export var Sidebar = createComponent({  // RENAME to ContextBar
 
 
 function makeCommentsContent(comments: Post[], currentPostNr: PostNr, store: Store, onPostClick) {
-  var abbreviateHowMuch = smallWindow ? 'Much' : 'ABit';
+  const abbreviateHowMuch = smallWindow ? 'Much' : 'ABit';
   return comments.map((post: Post, index) => {
-    var postProps: any = { store };
+    const postProps: any = { store };
     postProps.post = post;
     postProps.onClick = (event) => onPostClick(post);
     postProps.abbreviate = abbreviateHowMuch;
@@ -616,14 +615,14 @@ function makeUsersContent(store: Store, users: BriefUser[], myId: UserId,
     }
     return store_isUserOnline(store, a.id) ? -1 : +1;
   });
-  var currentUserIsStranger = true;
-  var listItems = users.map((user: BriefUser) => {
-    var thatsYou = user.id === myId ?
-        r.span({ className: 'esPresence_thatsYou' }, " — that's you") : null;
+  let currentUserIsStranger = true;
+  const listItems = users.map((user: BriefUser) => {
+    const thatsYou = user.id === myId ?
+        r.span({ className: 'esPresence_thatsYou' }, ' — ' + t.cb.thatsYou) : null;
     currentUserIsStranger = currentUserIsStranger && user.id !== myId;
-    var isUserOnline = store_isUserOnline(store, user.id);
-    var presenceClass = isUserOnline ? 'active' : 'away';
-    var presenceTitle = isUserOnline ? 'Active' : 'Away';
+    const isUserOnline = store_isUserOnline(store, user.id);
+    const presenceClass = isUserOnline ? 'active' : 'away';
+    const presenceTitle = isUserOnline ? t.Active : t.Away;
     return (
         r.div({ key: user.id, className: 'esPresence esPresence-' + presenceClass,
             onClick: (event) => morebundle.openAboutUserDialog(user.id, event.target) },
@@ -633,14 +632,11 @@ function makeUsersContent(store: Store, users: BriefUser[], myId: UserId,
   });
 
   if (numOnlineStrangers) {
-    var numOtherStrangers = numOnlineStrangers - (currentUserIsStranger ? 1 : 0);
-    var plus = listItems.length ? '+ ' : '';
-    var youAnd = currentUserIsStranger ? "You, and " : '';
-    var people = numOtherStrangers === 1 ? " person" : " people";
-    var have = numOtherStrangers === 1 ? "has" : "have";
-    var strangers = numOtherStrangers === 0 && currentUserIsStranger
-      ? (listItems.length ? "you" : "Only you, it seems")
-      : youAnd + numOtherStrangers + people + " who " + have + " not logged in";
+    const numOtherStrangers = numOnlineStrangers - (currentUserIsStranger ? 1 : 0);
+    const plus = listItems.length ? '+ ' : '';
+    const strangers = numOtherStrangers === 0 && currentUserIsStranger
+      ? (listItems.length ? t.you : t.cb.OnlyYou)
+      : t.cb.YouAnd + t.cb.NumStrangers(numOtherStrangers);
     listItems.push(
         r.div({ key: 'strngrs', className: 'esPresence esPresence-strangers' }, plus + strangers));
   }
@@ -666,29 +662,29 @@ var helpMessageTwo = {
   moreHelpAwaits: true,
 }; */
 
-var helpMessageThree = {
+const helpMessageThree = {
   id: 'EsH7UGY2',
   version: 1,
   content: r.div({ className: 'esCB_Help' },
     r.p({},
       r.span({ className: 'esCB_Help_ArwLeft' }, "➜"),
-      "The replies to the left are sorted by ", r.b({}, "best-first.")),
+      t.cb.RepliesToTheLeft, r.b({}, t.cb.bestFirst)),
     r.p({},
-      "But below ", r.span({ className: 'esCB_Help_ArwDown' }, "➜"),
-      " the same replies are instead sorted by ", r.b({}, "newest-first."))),
-  okayText: "Okay ...",
+      t.cb.ButBelow, r.span({ className: 'esCB_Help_ArwDown' }, "➜"),
+      t.cb.insteadBy, r.b({}, t.cb.newestFirst))),
+  okayText: t.OkayDots,
   moreHelpAwaits: true,
 };
 
-var helpMessageFour = {
+const helpMessageFour = {
   id: 'EsH6GJYu8',
   version: 1,
   content: r.div({ className: 'esCB_Help' },
-    r.p({}, "So if you leave, and come back here later, below you'll find ",
-      r.strong({ className: 'esCB_Help_Large' }, "all new replies.")),
-    r.p({}, r.strong({ className: 'esCB_Help_Large' }, "Click"),
-      " a reply below to read it — because only an excerpt is shown, below.")),
-  okayText: "Okay.",
+    r.p({}, t.cb.SoIfLeave,
+      r.strong({ className: 'esCB_Help_Large' }, t.cb.allNewReplies)),
+    r.p({}, r.strong({ className: 'esCB_Help_Large' }, t.cb.Click),
+      t.cb.aReplyToReadIt)),
+  okayText: t.Okay + '.',
   moreHelpAwaits: false,
 };
 
@@ -696,7 +692,7 @@ var helpMessageFour = {
 function CloseSidebarButton(props) {
   return (
       r.button({ className: 'esCtxbar_close esCloseCross', onClick: props.onClick,
-          title: "Close (keyboard shortcut: S)" }));
+          title: t.cb.CloseShortcutS }));
 }
 
 

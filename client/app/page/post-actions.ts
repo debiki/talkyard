@@ -78,7 +78,7 @@ export const NoCommentsPageActions = createComponent({
       return null;
 
     const actions =
-          r.a({ className: 'dw-a dw-a-edit icon-edit', onClick: this.onEditClick }, 'Edit');
+          r.a({ className: 'dw-a dw-a-edit icon-edit', onClick: this.onEditClick }, t.EditV);
 
     return (
       r.div({ className: 'dw-p-as dw-as' }, actions));
@@ -98,7 +98,7 @@ export function makeReplyBtnTitle(store: Store, post: Post, isAppendReplyButton:
     if (page.pageRole === PageRole.MindMap)
       return "Add node";
     else
-      return "Reply";
+      return t.ReplyV;
   }
 
   switch (page.pageRole) {
@@ -106,7 +106,7 @@ export function makeReplyBtnTitle(store: Store, post: Post, isAppendReplyButton:
     case PageRole.UsabilityTesting: return "Give Feedback"; // [plugin]
     case PageRole.MindMap: return "Add Mind Map node";
     default:
-      return isAppendReplyButton ? "Reply to the Original Post" : "Reply";
+      return isAppendReplyButton ? t.pa.ReplyToOp : t.ReplyV;
   }
 }
 
@@ -204,19 +204,18 @@ export const PostActions = createComponent({
     if (isStaffOrOwnPage && isQuestion && !page.pageAnsweredAtMs && !page.pageClosedAtMs &&
         !isPageBody && post.isApproved) {
       acceptAnswerButton = r.a({ className: 'dw-a dw-a-solve icon-ok-circled-empty',
-          onClick: this.onAcceptAnswerClick, title: "Accept this as the answer to the " +
-              "question or problem" }, "Solution?");
+          onClick: this.onAcceptAnswerClick, title: t.pa.AcceptBtnExpl }, t.pa.SolutionQ);
     }
     else if (isQuestion && post.uniqueId === page.pageAnswerPostUniqueId) {
       // (Do this even if !post.isApproved.)
       const solutionTooltip = isStaffOrOwnPage
-          ? "Click to un-accept this answer"
-          : "This post has been accepted as the answer";
+          ? t.pa.ClickUnaccept
+          : t.pa.PostAccepted;
       const elemType = isStaffOrOwnPage ? 'a' : 'span';
       const unsolveClass = isStaffOrOwnPage ? ' dw-a-unsolve' : '';
       acceptAnswerButton = r[elemType]({ className: 'dw-a dw-a-solved icon-ok-circled' + unsolveClass,
           onClick: isStaffOrOwnPage ? this.onUnacceptAnswerClick : null, title: solutionTooltip },
-        "Solution");
+        t.Solution);
     }
 
     const replyButton = !store_mayIReply(store, post) ? null :
@@ -231,25 +230,24 @@ export const PostActions = createComponent({
     let closeReopenButton;
     const canCloseOrReopen = !isDone && !isAnswered && page_canBeClosed(page.pageRole);
     if (isPageBody && canCloseOrReopen && isStaffOrOwnPage) {
-      let closeReopenTitle = "Reopen";
+      let closeReopenTitle = t.Reopen;
       let closeReopenIcon = 'icon-circle-empty';
       let closeReopenTooltip;
       if (!page.pageClosedAtMs) {
-        closeReopenTitle = "Close";
+        closeReopenTitle = t.Close;
         closeReopenIcon = 'icon-block';
         switch (page.pageRole) {
           case PageRole.Question:
             if (isOwnPage)
-              closeReopenTooltip = "Close this question if you don't need an answer any more.";
+              closeReopenTooltip = t.pa.CloseOwnQuestionTooltip;
             else
-              closeReopenTooltip = "Close this question if it doesn't need an answer, e.g. if " +
-                  "it is off-topic or already answered in another topic.";
+              closeReopenTooltip = t.pa.CloseOtherQuestionTooltip;
             break;
           case PageRole.ToDo:
-            closeReopenTooltip = "Close this To-Do if it does not need to be done or fixed.";
+            closeReopenTooltip = t.pa.CloseToDoTooltip;
             break;
           default:
-            closeReopenTooltip = "Close this topic if it needs no further consideration.";
+            closeReopenTooltip = t.pa.CloseTopicTooltip;
         }
       }
       closeReopenButton = r.a({ className: 'dw-a dw-a-close ' + closeReopenIcon,
@@ -260,15 +258,14 @@ export const PostActions = createComponent({
     if (post.numLikeVotes) {
       numLikesText = r.a({ className: 'dw-a dw-vote-count',
             onClick: (event) => morebundle.openLikesDialog(post, PostVoteType.Like, event.target) },
-          post.numLikeVotes === 1 ? "1 Like" : post.numLikeVotes + " Likes");
+          t.pa.NumLikes(post.numLikeVotes));
     }
 
     let numWrongsText;
     if (post.numWrongVotes) {
       numWrongsText = r.a({ className: 'dw-a dw-vote-count',
           onClick: (event) => morebundle.openLikesDialog(post, PostVoteType.Disagree, event.target) },
-          post.numWrongVotes + " Disagree");
-          //post.numWrongVotes === 1 ? "1 Wrong" : post.numWrongVotes + " Wrongs");
+          t.pa.NumDisagree(post.numWrongVotes));
     }
 
     // Bury votes aren't downvotes or bad in any way, so don't show them, except for
@@ -278,14 +275,14 @@ export const PostActions = createComponent({
     if (isStaff(me) && post.numBuryVotes) {
       numBurysText = r.a({ className: 'dw-a dw-vote-count',
           onClick: (event) => morebundle.openLikesDialog(post, PostVoteType.Bury, event.target) },
-          post.numBuryVotes === 1 ? "1 Bury" : post.numBuryVotes + " Burys");
+          t.pa.NumBury(post.numBuryVotes));
     }
 
     let numUnwantedsText;
     if (post.numUnwantedVotes) {
       numUnwantedsText = r.a({ className: 'dw-a dw-vote-count',
           onClick: (event) => morebundle.openLikesDialog(post, PostVoteType.Unwanted, event.target) },
-          post.numUnwantedVotes === 1 ? "1 Unwanted" : post.numUnwantedVotes + " Unwanteds");
+          t.pa.NumUnwanted(post.numUnwantedVotes));
     }
 
     let downvotesDropdown;
@@ -300,23 +297,23 @@ export const PostActions = createComponent({
       // Always hide the downvotes inside this dropdown, so one has to click one
       // extra time (to open the dropdown), before one can downvote.
       downvotesDropdown = post.nr === BodyNr ? null :
-          r.span({ className: 'dropdown navbar-right', title: "More votes...",
+          r.span({ className: 'dropdown navbar-right', title: t.pa.MoreVotes,
               onClick: this.openMoreVotesDropdown },
             r.a({ className: 'dw-a dw-a-votes' + myOtherVotes }, ''));
 
       likeVoteButton =
           r.a({ className: 'dw-a dw-a-like icon-heart' + myLikeVote,
-            title: "Like this", onClick: this.onLikeClick });
+            title: t.pa.LikeThis, onClick: this.onLikeClick });
     }
 
 
     const mayEdit = store_mayIEditPost(store, post);
     const editButton = !mayEdit ? null :
-        r.a({ className: 'dw-a dw-a-edit icon-edit', title: "Edit",
+        r.a({ className: 'dw-a dw-a-edit icon-edit', title: t.EditV,
               onClick: this.onEditClick });
 
     const link = deletedOrCollapsed ? null :
-        r.a({ className: 'dw-a dw-a-link icon-link', title: "Link to this post",
+        r.a({ className: 'dw-a dw-a-link icon-link', title: t.pa.LinkToPost,
               onClick: this.onLinkClick });
 
     // Build a More... dropdown, but if it would have only one single menu item, inline
@@ -328,13 +325,13 @@ export const PostActions = createComponent({
     if (me.isLoggedIn) {
       moreDropdown =
         r.span({className: 'dropdown navbar-right', onClick: this.openMoreDropdown},
-          r.a({className: 'dw-a dw-a-more icon-menu', title: "More..."}));
+          r.a({className: 'dw-a dw-a-more icon-menu', title: t.pa.More}));
     }
     else if (!isOwnPost) {
       flagBtn =
         r.a({ className: 'dw-a dw-a-flag icon-flag',
             onClick: (event) => flagPost(post, cloneEventTargetRect(event)),
-          title: "Report this post" });
+          title: t.pa.ReportThisPost });
     }
 
     let tagList;
@@ -347,7 +344,7 @@ export const PostActions = createComponent({
 
     const adminLink = !me.isAdmin || !isEmbeddedOrigPost ? null :
       r.a({ className: 'dw-a dw-a-admin icon-link-ext', href: eds.serverOrigin + linkToReviewPage(),
-        target: '_blank' }, "Admin");
+        target: '_blank' }, t.pa.Admin);
 
     return (
       r.div({ className: 'dw-p-as dw-as esPA', onClick: this.props.onClick },
@@ -453,26 +450,23 @@ const MoreVotesDropdownModal = createComponent({
 
     const wrongVoteButton =
       ExplainingListItem({
-        title: r.span({ className: 'dw-a-wrong icon-warning' + myWrongVote }, "Disagree"),
-        text: r.span({}, "Click here to disagree with this post, " +
-            "or to warn others about factual errors."),
+        title: r.span({ className: 'dw-a-wrong icon-warning' + myWrongVote }, t.pa.Disagree),
+        text: r.span({}, t.pa.DisagreeExpl),
         onClick: this.onWrongClick, key: 'w' });
 
     // Skip if flat, because then cannot change sort order or collapse, so Bury would be pointless.
     // Also, should be full member, otherwise probably doesn't know what Bury is?
     const buryVoteButton = isFlat || !isStaffFullMemberOrOwnPage ? null :  // [7UKDR10]
       ExplainingListItem({
-        title: r.span({ className: 'dw-a-bury icon-bury' + myBuryVote }, "Bury"),
-        text: r.span({}, "Click to sort other posts before this post. " +
-          "Only the forum staff can see your vote."),
+        title: r.span({ className: 'dw-a-bury icon-bury' + myBuryVote }, t.pa.Bury),
+        text: r.span({}, t.pa.BuryExpl),
             // "If the post is correct, but not interesting to read."
         onClick: this.onBuryClick, key: 'b' });
 
     const unwantedVoteButton = !isStaffOrCoreMember ? null :  // [4DKWV9J2]
       ExplainingListItem({
-        title: r.span({ className: 'dw-a-unwanted icon-cancel' + myUnwantedVote }, "Unwanted"),
-        text: "If you do not want this post on this website. This would reduce the trust I have " +
-            "in the post author. Only the forum staff can see your vote.",
+        title: r.span({ className: 'dw-a-unwanted icon-cancel' + myUnwantedVote }, t.pa.Unwanted),
+        text: t.pa.UnwantedExpl,
         onClick: this.onUnwantedClick, key: 'u' });
 
     return [wrongVoteButton, buryVoteButton, unwantedVoteButton];
@@ -648,7 +642,7 @@ const MoreDropdownModal = createComponent({
 
     moreLinks.push(
       r.a({ className: 'dw-a dw-a-flag icon-flag', onClick: this.onFlagClick, key: 'rp' },
-        "Report"));
+        t.pa.Report));
 
     // ----- Pin post
 
@@ -697,7 +691,7 @@ const MoreDropdownModal = createComponent({
     if ((isStaff(me) || isOwnPost) && !eds.isInEmbeddedCommentsIframe) {
       moreLinks.push(
         r.a({ className: 'dw-a icon-plus', onClick: this.openTagsDialog, key: 'ts' },
-          "Add/remove tags"));
+          t.pa.AddTags));
     }
 
     // ----- Delete
@@ -705,7 +699,7 @@ const MoreDropdownModal = createComponent({
     if (!isPageBody && (isStaff(me) || isOwnPost)) {
       moreLinks.push(
         r.a({ className: 'dw-a dw-a-delete icon-trash', onClick: this.onDeleteClick, key: 'dl' },
-          "Delete"));
+          t.Delete));
     }
 
     // ----- Post settings
@@ -715,7 +709,7 @@ const MoreDropdownModal = createComponent({
     if ((isPageBody || isMindMap) && (isStaff(me) || isOwnPost) && !isFlat) {
       moreLinks.push(
         r.a({ className: 'dw-a icon-users', onClick: this.onWikifyClick, key: 'wf' },
-          isWikiPost(post) ? "Un-Wikify" : "Wikify"));
+          isWikiPost(post) ? t.pa.UnWikify : t.pa.Wikify));
     }
 
     // ----- Move post
@@ -725,7 +719,7 @@ const MoreDropdownModal = createComponent({
     if (!isPageBody && isStaff(me) && !eds.isInEmbeddedCommentsIframe) {
       moreLinks.push(
         r.a({ className: 'dw-a icon-paper-plane-empty', onClick: this.onMoveClick, key: 'mp' },
-          "Move"));
+          t.Move));
     }
 
     // ----- Look elsewhere button
@@ -735,7 +729,7 @@ const MoreDropdownModal = createComponent({
     if (isPageBody && isStaff(me)) {
       moreLinks.push(
         r.a({ className: 'dw-a icon-help-circled', onClick: this.onSeeWrenchClick, key: 'sw' },
-          "Pin / Delete / Category ..."));
+          t.pa.PinDeleteEtc));
     }
 
     // ----- Mind map branch sideways

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 Kaj Magnus Lindberg
+ * Copyright (c) 2015-2018 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -73,7 +73,7 @@ export function getLoginDialog() {   // also called from Scala template
 }
 
 
-var LoginDialog = createClassAndFactory({
+const LoginDialog = createClassAndFactory({
   displayName: 'LoginDialog',
   mixins: [debiki2.StoreListenerMixin],
 
@@ -87,9 +87,9 @@ var LoginDialog = createClassAndFactory({
   },
 
   onChange: function() {
-    var newStore: Store = debiki2.ReactStore.allData();
+    const newStore: Store = debiki2.ReactStore.allData();
     this.setState({ store: newStore });
-    var loggedInUser = newStore.me;
+    const loggedInUser = newStore.me;
     if (loggedInUser) {
       // Might have just logged in in another tab. Then cancel any login happening in this tab.
       // Or, if we logged in in this tab, just close the dialog.
@@ -122,9 +122,8 @@ var LoginDialog = createClassAndFactory({
       util.openDefaultStupidDialog({
         preventClose: true,
         body: r.div({},
-          r.p({}, "Page not found, or Access Denied."),
-          r.p({}, "You're impersonating someone, who might not have access to all parts " +
-            "of this website.")) });
+          r.p({}, t.ld.NotFoundOrPrivate),
+          r.p({}, t.ld.IsImpersonating)) });
       return;
     }
 
@@ -190,13 +189,13 @@ var LoginDialog = createClassAndFactory({
     let title;
     switch (state.loginReason) {
       case 'LoginToAuthenticate':
-        title = "Authentication required to access this site";
+        title = t.ld.AuthRequired;
         break;
       case LoginReason.LoginToLike:
-        title = "Log in to Like this post";
+        title = t.ld.LoginToLike;
         break;
       default:
-        title = this.state.isSignUp ? "Create account" : "Log in";
+        title = this.state.isSignUp ? t.ld.CreateAcconut : t.ld.LogIn;
     }
 
     const content = LoginDialogContent({ isSignUp: state.isSignUp, loginReason: state.loginReason,
@@ -214,7 +213,7 @@ var LoginDialog = createClassAndFactory({
     */
 
     const modalFooter = state.preventClose ? ModalFooter({}) :
-        ModalFooter({}, Button({ onClick: this.close, id: 'e2eLD_Cancel', tabIndex: 3 }, "Cancel"));
+        ModalFooter({}, Button({ onClick: this.close, id: 'e2eLD_Cancel', tabIndex: 3 }, t.Cancel));
 
     return (
       Modal({ show: state.isOpen, onHide: this.close, dialogClassName: 'dw-login-modal' + fade,
@@ -264,7 +263,7 @@ export const LoginDialogContent = createClassAndFactory({
     };
 
     const createUserDialog = createChildDialog(null, CreateUserDialogContent, 'esCreateUserDlg');
-    const passwordLoginDialog = createChildDialog("Log in with Password", PasswordLoginDialogContent);
+    const passwordLoginDialog = createChildDialog(t.ld.LogInWithPwd, PasswordLoginDialogContent);
     var guestLoginDialog; // no. CLEAN_UP, remove: createChildDialog("Log in as Guest", GuestLoginDialogContent);
 
     const makeOauthProps = (iconClass: string, provider: string, includeWith?: boolean) => {
@@ -283,20 +282,19 @@ export const LoginDialogContent = createClassAndFactory({
         r.div({ className: 'esLoginDlg_becomeAdminInstr' },
           r.p({},
             // Say "admin" not "owner" here — simpler to understand, and first owner is admin too.
-            "Create admin account:"));
+            t.ld.CreateAdmAcct));
             // UX SHOULD add back, for first site: "Use the email address you specified in the config file."));
 
 
     const notFound = loginReason === 'LoginBecauseNotFound';
     const notFoundInstructions = !notFound ? null :
         r.div({ className: 'esLoginDlg_becomeAdminInstr' },
-          r.h1({ className: 's_LD_NotFound_Title' }, "Page not found, or Access Denied"),
+          r.h1({ className: 's_LD_NotFound_Title' }, t.ld.NotFoundOrPrivate),
           r.p({ className: 's_LD_NotFound_Details' },
-            "If you think the page exists, log in as someone who may access it. " +
-            (this.props.isLoggedIn ?
-                "(You are logged in already, but perhaps it's the wrong account?) " : '') +
-            "Otherwise, you can ", r.a({ className: 's_LD_NotFound_HomeL', href: '/' },
-              "go to the homepage.")));
+            t.ld.IfYouThinkExistsThen +
+            (this.props.isLoggedIn ? t.ld.LoggedInAlready : '') +
+            t.ld.OtherwiesGoToHome_1, r.a({ className: 's_LD_NotFound_HomeL', href: '/' },
+              t.ld.OtherwiesGoToHome_2)));
 
     const typePasswordForm = isSignUp ? null :
         PasswordLoginDialogContent(childDialogProps);
@@ -321,10 +319,11 @@ export const LoginDialogContent = createClassAndFactory({
     else if (isSignUp) {
       switchToOtherDialogInstead =
         r.div({ className: 'form-group esLD_Switch' },
-          "(", r.i({}, "Already have an account? ",
+          "(", r.i({}, t.ld.AlreadyHaveAcctQ,
+            t.ld.LoginInstead_1,
             r.a({ className: 'esLD_Switch_L', onClick: this.props.switchBetweenLoginAndSignUp },
-              "Log in"),
-            " instead"), " )");
+              t.ld.LoginInstead_2),
+            t.ld.LoginInstead_3), " )");
     }
     else if (store.siteStatus > SiteStatus.Active) {
       // Right now, don't allow creation of new accounts, for deactivated sites. Later, though,
@@ -337,10 +336,11 @@ export const LoginDialogContent = createClassAndFactory({
       // e.g. Create Topic. So it's important to be able to switch to sign-up.
       switchToOtherDialogInstead =
         r.div({ className: 'form-group esLD_Switch' },
-          "(", r.i({}, "New user? ",
+          "(", r.i({}, t.ld.NewUserQ,
+          t.ld.SignUpInstead_1,
           r.a({ className: 'esLD_Switch_L', onClick: this.props.switchBetweenLoginAndSignUp },
-            "Sign up"),
-          " instead"), " )");
+            t.ld.SignUpInstead_2),
+          t.ld.SignUpInstead_3), " )");
     }
 
     return (
@@ -349,8 +349,7 @@ export const LoginDialogContent = createClassAndFactory({
         passwordLoginDialog,
         notFoundInstructions,
         becomeOwnerInstructions,
-        r.p({ id: 'dw-lgi-or-login-using' },
-          isSignUp ? "Sign in ..." : "Log in ..."),
+        r.p({ id: 'dw-lgi-or-login-using' }, (isSignUp ? t.ld.SignIn : t.ld.LogIn) + ' ...'),
         r.div({ id: 'dw-lgi-other-sites' },
           OpenAuthButton(makeOauthProps('icon-google', 'Google', true)),
           OpenAuthButton(makeOauthProps('icon-facebook', 'Facebook')),
@@ -361,8 +360,8 @@ export const LoginDialogContent = createClassAndFactory({
 
         r.p({ id: 'dw-lgi-or-login-using' },
           isSignUp
-              ? "Or create account here:"
-              : "Or fill in:"),
+              ? t.ld.OrCreateAcctHere
+              : t.ld.OrFillin),
 
         switchToOtherDialogInstead,
         typePasswordForm,
@@ -371,16 +370,16 @@ export const LoginDialogContent = createClassAndFactory({
 });
 
 
-var OpenAuthButton = createClassAndFactory({
+const OpenAuthButton = createClassAndFactory({
   displayName: 'OpenAuthButton',
   onClick: function() {
-    var props = this.props;
+    const props = this.props;
     // Any new user wouldn't be granted access to the admin page, so don't allow
     // creation of  new users from here.
     // (This parameter tells the server to set a certain cookie. Setting it here
     // instead has no effect, don't know why.)
-    var mayNotCreateUser = props.loginReason === 'LoginToAdministrate' ? 'mayNotCreateUser&' : '';
-    var url = eds.serverOrigin +
+    const mayNotCreateUser = props.loginReason === 'LoginToAdministrate' ? 'mayNotCreateUser&' : '';
+    const url = eds.serverOrigin +
         '/-/login-openauth/' + props.provider.toLowerCase() +
         '?' + mayNotCreateUser +
         (eds.isInLoginWindow ? '' : 'isInLoginPopup&') +
@@ -464,7 +463,7 @@ var GuestLoginDialogContent = createClassAndFactory({
 }); */
 
 
-var PasswordLoginDialogContent = createClassAndFactory({
+const PasswordLoginDialogContent = createClassAndFactory({
   displayName: 'PasswordLoginDialogContent',
 
   getInitialState: function() {
@@ -472,8 +471,8 @@ var PasswordLoginDialogContent = createClassAndFactory({
   },
 
   doLogin: function() {
-    var emailOrUsername = this.refs.whoInput.getValue();
-    var password = this.refs.passwordInput.getValue();
+    const emailOrUsername = this.refs.whoInput.getValue();
+    const password = this.refs.passwordInput.getValue();
     Server.loginWithPassword(emailOrUsername, password, () => {
       login.continueAfterLogin(this.props.anyReturnToUrl);
     }, () => {
@@ -489,20 +488,20 @@ var PasswordLoginDialogContent = createClassAndFactory({
   },
 
   render: function() {
-    var hideClass = this.state.hideBadPasswordMessage ? ' esHidden' : '';
-    var badPasswordMessage = !this.state.badPassword ? null :
+    const hideClass = this.state.hideBadPasswordMessage ? ' esHidden' : '';
+    const badPasswordMessage = !this.state.badPassword ? null :
         r.div({ className: 'esLoginDlg_badPwd' + hideClass },
-          r.b({}, "Wrong username or password"));
+          r.b({}, t.ld.BadCreds));
 
     return (
       r.form({},
-        Input({ type: 'text', label: "Username or email:", ref: 'whoInput',
+        Input({ type: 'text', label: t.ld.UsernameOrEmailC, ref: 'whoInput',
             onChange: this.clearError, id: 'e2eUsername' }),
-        Input({ type: 'password', label: "Password:", ref: 'passwordInput',
+        Input({ type: 'password', label: t.ld.PasswordC, ref: 'passwordInput',
             onChange: this.clearError, id: 'e2ePassword' }),
         badPasswordMessage,
         PrimaryButton({ onClick: this.doLogin, id: 'e2eSubmit' },
-          "Log in" + inOrderTo(this.props.loginReason)),
+          loginToWhat(this.props.loginReason)),
         r.br(),
         r.a({ href: eds.serverOrigin + '/-/reset-password/specify-email',
             // Once the password has been reset, the user will be logged in automatically. Then
@@ -512,7 +511,7 @@ var PasswordLoginDialogContent = createClassAndFactory({
             onClick: () => this.props.closeDialog('CloseAllLoginDialogs'),
             target: '_blank', className: 'dw-reset-pswd',
             style: { marginTop: '1ex', display: 'inline-block' }},
-          "Did you forget your password?")));
+          t.ld.ForgotPwd)));
   }
 });
 
@@ -520,11 +519,11 @@ var PasswordLoginDialogContent = createClassAndFactory({
 /**
  * Text to append to the login button so it reads e.g. "Log in to write a comment".
  */
-function inOrderTo(loginReason: string): string {
+function loginToWhat(loginReason: string): string {
   switch (loginReason) {
-    case 'LoginToSubmit': return " and submit";
-    case 'LoginToComment': return " to write a comment";
-    case 'LoginToCreateTopic': return " to create topic";
+    case 'LoginToSubmit': return t.ld.LoginToSubmit;
+    case 'LoginToComment': return t.ld.LoginToComment;
+    case 'LoginToCreateTopic': return t.ld.LoginToCreateTopic;
     default: return "";
   }
 }

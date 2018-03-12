@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015 Kaj Magnus Lindberg
+ * Copyright (c) 2015-2018 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -35,19 +35,19 @@ const ModalDropdownButton = utils.ModalDropdownButton;
 let watchbar;
 
 export function createWatchbar() {
-  var elem = document.getElementById('esWatchbarColumn');
+  const elem = document.getElementById('esWatchbarColumn');
   if (watchbar || !elem) return;
   watchbar = ReactDOM.render(Watchbar(), elem);
 }
 
 
-export var Watchbar = createComponent({
+export const Watchbar = createComponent({
   displayName: 'Watchbar',
 
   mixins: [debiki2.StoreListenerMixin],
 
   getInitialState: function() {
-    var store = debiki2.ReactStore.allData();
+    const store = debiki2.ReactStore.allData();
     return {
       store: store,
     };
@@ -118,7 +118,7 @@ const SubCommunities = createComponent({
       r.li({ className: 'esWB_LI esWB_T-SubCommunities' },
         r.a({ className: 'esWB_T_Link', onClick: () => morebundle.joinOrCreateSubCommunity(store) },
           r.span({ className: 's_WB_AddSubComB_Plus' }, '+'),
-          r.span({ className: 's_WB_AddSubComB_Title esWB_T_Title' }, "Add ...")));
+          r.span({ className: 's_WB_AddSubComB_Title esWB_T_Title' }, t.wb.AddCommunity)));
 
     return (
       r.div({ className: 'esWB_Ts' },
@@ -166,7 +166,7 @@ const RecentTopicsAndNotfs = createComponent({
 
     return (
         r.div({ className: 'esWB_Ts' },
-          r.h3({ style: { wordSpacing: '2px' }}, "Recently viewed"),
+          r.h3({ style: { wordSpacing: '2px' }}, t.wb.RecentlyViewed),
           r.ul({},
             topicElems)));
   }
@@ -206,11 +206,11 @@ const ChatChannels = createComponent({
           SingleTopic({ key: topic.pageId, store: store, topic: topic, flavor: 'chat',
               isCurrent: topic.pageId === store.currentPageId }));
     }
-    const title = store.me.isLoggedIn ? "Joined Chats" : "Chat Channels";
+    const title = store.me.isLoggedIn ? t.wb.JoinedChats : t.wb.ChatChannels;
     return (
       r.div({ className: 'esWB_Ts' },
         r.button({ className: 'esWB_CreateB', id: 'e2eCreateChatB',
-            onClick: this.createChatChannel, title: "Create chat channel" }, '+'),
+            onClick: this.createChatChannel, title: t.wb.CreateChat }, '+'),
         r.h3({}, title),
         r.ul({},
           topicElems)));
@@ -218,13 +218,13 @@ const ChatChannels = createComponent({
 });
 
 
-var DirectMessages = createComponent({
+const DirectMessages = createComponent({
   displayName: 'DirectMessages',
 
   render: function() {
-    var store: Store = this.props.store;
-    var topics: WatchbarTopic[] = store.me.watchbar[WatchbarSection.DirectMessages];
-    var topicElems;
+    const store: Store = this.props.store;
+    const topics: WatchbarTopic[] = store.me.watchbar[WatchbarSection.DirectMessages];
+    let topicElems;
     if (_.isEmpty(topics)) {
       topicElems = NoTopics();
     }
@@ -235,7 +235,7 @@ var DirectMessages = createComponent({
     }
     return (
       r.div({ className: 'esWB_Ts' },
-        r.h3({}, "Direct Messages"),
+        r.h3({}, t.wb.DirectMsgs),
         r.ul({},
           topicElems)));
   }
@@ -312,25 +312,25 @@ const SingleTopic = createComponent({
     // (Or load lazily, when opening the dropdown?)
     const isAuthorOrStaff = isStaff(me);
 
-    const viewMembersButtonTitle = !isChat ? "View people here" : (
-        isAuthorOrStaff ? "View / add / remove members" : "View chat members");
+    const viewMembersButtonTitle = !isChat ? t.wb.ViewPeopleHere : (
+        isAuthorOrStaff ? t.wb.ViewAddRemoveMembers : t.wb.ViewChatMembers);
 
     // UX COULD check role? and make it possible to edit title etc, without having to join.
     const editChatInfoButton = !isChat || !isAuthorOrStaff || !this.props.isCurrent ? null :
         MenuItem({ onSelect: this.editChatTitleAndPurpose, id: 'e2eWB_EditTitlePurposeB' },
-          "Edit chat title and purpose");
+          t.wb.EditChat);
 
     const leaveButton = !isChat && !isSubCommunity ? null :
         MenuItem({ onSelect: this.openLeavePageDialog, id: 'e2eWB_LeaveB' },
-          "Leave this " + (isChat ? "chat" : "community"));
+          t.wb.LeaveThisX(isChat));
 
     // If a community is listed in the Recent section, then one hasn't joined it.
     const joinButton = !isRecent || topic.type !== PageRole.Forum ? null  :
       MenuItem({ onSelect: this.openJoinPageDialog, id: 'e_JoinB' },
-        "Join this community");
+        t.wb.JoinThisCommunity);
 
     const topicActionsButton = !this.props.isCurrent ? null :
-      ModalDropdownButton({ title: r.span({ className: 'icon-settings', title: "Topic actions" }),
+      ModalDropdownButton({ title: r.span({ className: 'icon-settings', title: t.wb.TopicActions }),
           className: 'esWB_T_B', id: 'e2eTopicActionsB', ref: 'actionsDropdown', pullLeft: true,
           dialogClassName: 'esWB_T_D' },
         r.ul({ className: 'dropdown-menu' },
@@ -356,11 +356,11 @@ const SingleTopic = createComponent({
 });
 
 
-var NoTopics = function() {
+const NoTopics = function() {
   return (
     r.li({ className: 'esWB_LI esWB_T-None' },
       r.span({ className: 'esWB_T_Link' },
-        r.i({ className: 'esWB_T_None' }, "None" ))));
+        r.i({ className: 'esWB_T_None' }, t.None ))));
 };
 
 
