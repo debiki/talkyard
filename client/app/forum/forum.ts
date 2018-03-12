@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2017 Kaj Magnus Lindberg
+ * Copyright (c) 2015-2018 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -38,8 +38,6 @@ const ModalDropdownButton = utils.ModalDropdownButton;
 const ExplainingListItem = util.ExplainingListItem;
 type ExplainingTitleText = util.ExplainingTitleText;
 const HelpMessageBox = debiki2.help.HelpMessageBox;
-
-const MaxWaitingForCritique = 10; // for now only [plugin]
 
 /** Keep in sync with app/controllers/ForumController.NumTopicsToList. */
 const NumNewTopicsPerRequest = 40;
@@ -157,41 +155,6 @@ export const ForumComponent = createReactClass(<any> {
     return activeCategory;
   },
 
-  makeHelpMessage: function(category: Category): any {
-    const store: Store = this.state.store;
-    const me: Myself = store.me;
-    if (!_.isEqual(category.newTopicTypes, [PageRole.Critique])) // [plugin] ...
-      return null;
-
-    if (!me.isAuthenticated)
-      return { id: 'EdHKEW21', version: 1, content: r.span({},
-          r.p({}, "Click ", r.b({}, "Log In"), ", to the right just above.")) };
-
-    // For now only.  [85SKW32]
-    if (this.state.numWaitingForCritique >= MaxWaitingForCritique) //  [plugin]
-      return { id: 'Es5GUPM2', version: 1, alwaysShow: true, isWarning: true, content: r.span({},
-        r.p({}, r.b({}, "You cannot currently ask for critique"),
-          " — too many topics waiting for critique already."),
-        r.p({}, "Check back later. Or send an email to me, kaj.magnus.lindberg at gmail dot com, " +
-          "and tell me to notify you when you can ask for critique again.")) };
-
-    // if too-few-topics then
-    return { id: 'EdH4KBP2', version: 1, content: r.span({},  // [plugin]
-        r.p({}, "You can click ", r.b({}, "Ask for Critique"), " (to the right just below)."),
-        r.p({}, "(Normally, you would need to first help others and gather credits, " +
-          "before you can ask for critique yourself. But right now there are few " +
-          "open topics here, so you can ask directly instead.)")) };
-
-    // enough credits: [plugin]:
-    // return { id: 'EdH8PU01', version: 1, content: r.span({}, "Click Ask for Critique") };
-    // else:
-    // return { id: 'EdH4KGU0', version: 1, content:
-    //   Select a topic that you'd like to critique:
-    //    (You need credits, before you can ask for critique yourself — and you get credits, by
-    //    critiquing to others.)
-    // }
-  },
-
   render: function() {
     const store: Store = this.state.store;
     const forumPath = store.currentPage.pagePath.value;
@@ -214,12 +177,6 @@ export const ForumComponent = createReactClass(<any> {
     }
     const currentCategorySlug = routes[1];
     const activeCategory = this.getActiveCategory(currentCategorySlug);
-
-    let helpMessage = activeCategory ? this.makeHelpMessage(activeCategory) : null;
-    helpMessage = helpMessage
-        ? debiki2.help.HelpMessageBox({ message: helpMessage })
-        : null;
-
     const layout = store.currentPage.pageLayout;
 
     const childProps = _.assign({}, {
@@ -231,11 +188,6 @@ export const ForumComponent = createReactClass(<any> {
       activeCategory: activeCategory,
       topPeriod: this.state.topPeriod,
       setTopPeriod: this.setTopPeriod,
-      numWaitingForCritique: this.state.numWaitingForCritique,  // for now only [plugin]
-      setNumWaitingForCritique: (numWaiting) => {               // for now only [plugin]
-        if (this.state.numWaitingForCritique !== numWaiting)
-          this.setState({ numWaitingForCritique: numWaiting });
-      },
     });
 
     /* Remove this? Doesn't look nice & makes the categories page look complicated.
@@ -274,20 +226,20 @@ export const ForumComponent = createReactClass(<any> {
         // Include .dw-page to make renderDiscussionPage() in startup.js run: (a bit hacky)
         r.div({ className: 'dw-page' }),
         ForumIntroText({ store: store }),
-        helpMessage,
         //topsAndCatsHelp,
         childRoutes));
   }
 });
 
 
+/* ? Remove ?
 const topicsAndCatsHelpMessage = {
   id: 'EsH4YKG81',
   version: 1,
   content: r.span({},
     "A ", r.i({}, r.b({}, "category")), " is a group of topics. " +
     "A ", r.i({}, r.b({}, "topic")), " is a discussion or question."),
-};
+}; */
 
 
 const ForumIntroText = createComponent({
@@ -636,7 +588,6 @@ const ForumButtons = createComponent({
     let createTopicBtn;
     const mayCreateTopics = store_mayICreateTopics(store, activeCategory);
     if (!showsCategoryTree && mayCreateTopics) {
-     if (this.props.numWaitingForCritique < MaxWaitingForCritique)  // for now only [plugin]
       createTopicBtn = PrimaryButton({ onClick: this.createTopic, id: 'e2eCreateSth',
           className: 'esF_BB_CreateBtn'},
         createTopicBtnTitle(activeCategory));
@@ -779,8 +730,6 @@ const LoadAndListTopics = createFactory({
       return;
     }
 
-    this.countTopicsWaitingForCritique(); // for now only
-
     // Avoid loading the same topics many times:
     // - On page load, componentDidMount() and componentWillReceiveProps() both loads topics.
     // - When we're refreshing the page because of Flux events, don't load the same topics again.
@@ -816,25 +765,12 @@ const LoadAndListTopics = createFactory({
         topics: topics,
         showLoadMoreButton: newlyLoadedTopics.length >= NumNewTopicsPerRequest
       });
-      this.countTopicsWaitingForCritique(topics); // for now only
+
       // Only scroll to last position once, when opening the page. Not when loading more topics.
       if (!loadMore) {
         scrollToLastPositionSoon();
       }
     });
-  },
-
-  countTopicsWaitingForCritique: function(topics?) { // for now only  [plugin]
-    if (!this.props.activeCategory) return;
-    topics = topics || this.state.topics;
-    let numWaitingForCritique = 0;
-    if (_.isEqual(this.props.activeCategory.newTopicTypes, [PageRole.Critique])) {
-      const waitingTopics = _.filter(topics, (topic: Topic) =>
-        !topic.closedAtMs && topic.pageRole === PageRole.Critique);
-      numWaitingForCritique = waitingTopics.length;
-      console.log(numWaitingForCritique + " topics waiting for critique. [EsM8PMU21]");
-    }
-    this.props.setNumWaitingForCritique(numWaitingForCritique);
   },
 
   getOrderOffset: function(nextProps?) {
@@ -1597,10 +1533,6 @@ function createTopicBtnTitle(category: Category) {
   else if (_.isEqual([PageRole.MindMap], category.newTopicTypes)) {
     title = t.fb.CreateMindMap;
   }
-  /*
-  else if (_.isEqual([PageRole.Critique], category.newTopicTypes)) { CLEAN_UP remove
-    title = "Ask for Critique"; // [plugin]
-  } */
   else if (areWebPages(category.newTopicTypes)) {
     title = t.fb.CreatePage;
   }

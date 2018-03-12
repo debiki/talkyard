@@ -508,6 +508,8 @@ interface TalkyardTranslations {
     Save: string;
     edits: string;
 
+    PostReply: "Post reply",
+
     Post: string;
     comment: string;
     question: string;

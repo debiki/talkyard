@@ -169,44 +169,7 @@ export const TitleBodyComments = createComponent({
       }
     }
 
-    if (page.pageRole === PageRole.Critique) {  // [plugin]. Dupl code, (39pKFU0) below
-      if (page.pageClosedAtMs) {
-        return { id: 'EdH4KDPU2', version: 1, type: HelpTypePageClosed, content: r.span({},
-          "This topic has been ", closedIcon, "closed. People won't get any additional " +
-          "credits for posting more critique here.") };
-      }
-      if (!me.isAuthenticated) {
-        // Could explain: here someone has asked for critique. X people have answered,
-        // see the Replies section below.
-        return null;
-      }
-      else {
-        const isPageAuthor = bodyPost.authorId === me.id;
-        if (isPageAuthor) {
-          if (page.numPostsRepliesSection) {
-            return { id: 'EdH5GUF2', version: 1, content: r.span({},
-                "You have been given critique — see the Replies section below.") };
-          }
-          else {
-            return { id: 'EdH0SE2W', version: 1, content: r.div({},
-                r.p({}, "Now you have asked for critique. You'll be notified via email later " +
-                  "when you get critique."),
-                r.p({},
-                  "Next, proofread your text below, to make sure it asks for " +
-                  "the right things and is easy to understand. To edit it, " +
-                  "click the edit icon (", r.span({ className: 'icon-edit' }),
-                  ") just below your post.")) };
-          }
-        }
-        else {
-          return { id: 'EdH7YM21', version: 1, content: r.span({},
-            "Click ", r.b({}, "Give Critique"), " below, to critique this — then you'll " +
-            "get credits, which you can use to ask for critique yourself.") };
-        }
-      }
-    }
-
-    if (page.pageRole === PageRole.UsabilityTesting) {  // [plugin]. Dupl code, (39pKFU0) above
+    if (page.pageRole === PageRole.UsabilityTesting) {  // [plugin]
       if (!me.isAuthenticated) {
         // Could explain: here someone has asked for usability testing. X people have answered,
         // see the Replies section below.

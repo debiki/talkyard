@@ -23,7 +23,7 @@ const TestPageRole = {  // dupl in client/app/constants.ts [5F8KW0P2]
   PrivateChat: <PageRole> 19,
     // DirectMessage: 20,
   Form: <PageRole> 20,  // try to remove?
-  Critique: <PageRole> 16, // [plugin]
+  Critique: <PageRole> 16, // [plugin] CLEAN_UP REMOVE
 };
 
 const TestTrustLevel = {

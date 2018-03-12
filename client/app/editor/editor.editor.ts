@@ -967,7 +967,6 @@ export const Editor = createComponent({
         case PageRole.MindMap: what = "Create a mind map page"; break;
         case PageRole.Discussion: break; // use default
         case PageRole.FormalMessage: die('EsE2KFE78'); break;
-        case PageRole.Critique: what = "Ask for critique"; break; // [plugin]
         case PageRole.UsabilityTesting: what = "Do usability testing"; break; // [plugin]
       }
       doingWhatInfo = what + ":";
@@ -977,9 +976,6 @@ export const Editor = createComponent({
     }
     else if (isChatComment) {
       doingWhatInfo = "New chat comment:";
-    }
-    else if (isOrigPostReply && page_isCritique(page.pageRole)) { // [plugin]
-      doingWhatInfo = "Your critique:";
     }
     else if (isOrigPostReply && page_isUsabilityTesting(page.pageRole)) { // [plugin]
       //doingWhatInfo = "Your usability testing video link + description:";
@@ -1025,10 +1021,7 @@ export const Editor = createComponent({
         saveButtonTitle = makeSaveTitle("Add", " node");
       }
       else {
-        saveButtonTitle = "Post reply";
-        if (isOrigPostReply && page_isCritique(page.pageRole)) { // [plugin]
-          saveButtonTitle = makeSaveTitle("Submit", " critique");
-        }
+        saveButtonTitle = t.e.PostReply;
         if (isOrigPostReply && page_isUsabilityTesting(page.pageRole)) { // [plugin]
           //saveButtonTitle = makeSaveTitle("Submit", " video");
           saveButtonTitle = makeSaveTitle("Submit", " feedback");
@@ -1075,14 +1068,6 @@ export const Editor = createComponent({
     const styles = {
       display: this.state.visible ? 'block' : 'none'
     };
-
-    let anyTextareaInstructions;
-    if (this.state.newPageRole === PageRole.Critique) {  // [plugin]
-      anyTextareaInstructions =
-          r.div({ className: 'editor-instructions' },
-              "Add a link to your work, or upload an image. " +
-              "And tell people what you want feedback about:");
-    }
 
     const textareaButtons =
       r.div({ className: 'esEdtr_txtBtns' },
@@ -1155,7 +1140,6 @@ export const Editor = createComponent({
                   r.div({},
                     categoriesDropdown,
                     pageRoleDropdown)),
-                anyTextareaInstructions,
                 textareaButtons,
                 textarea)),
             r.div({ className: 'preview-area', style: previewStyles },
@@ -1199,11 +1183,6 @@ const GuidelinesModal = createClassAndFactory({
         rb.ModalFooter({}, Button({ onClick: this.props.close }, t.Okay))));
   }
 });
-
-
-function page_isCritique(pageType: PageRole): boolean {  // [plugin]
-  return pageType === PageRole.Critique;
-}
 
 
 function page_isUsabilityTesting(pageType: PageRole): boolean {  // [plugin]

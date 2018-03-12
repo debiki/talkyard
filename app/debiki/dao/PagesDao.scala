@@ -153,22 +153,6 @@ trait PagesDao {
     require(!bodySource.isEmpty && !bodyHtmlSanitized.isEmpty, "EsE1WKUQ5")
     require(pinOrder.isDefined == pinWhere.isDefined, "Ese5MJK2")
 
-    // Don't allow more than ... 10 topics with no critique? For now only.
-    // For now, don't restrict PageRole.UsabilityTesting — I'll "just" sort by oldest-first instead?
-    if (pageRole == PageRole.Critique) { // [plugin] [85SKW32]
-      anyCategoryId foreach { categoryId =>
-        val pages = loadMaySeePagesInCategory(categoryId, includeDescendants = true,
-          authzCtx,
-          PageQuery(PageOrderOffset.Any, PageFilter.ShowWaiting,
-              includeAboutCategoryPages = false), limit = 20)
-        // Client side, the limit is 10. Let's allow a few more topics in case people start
-        // writing before the limit is reached but submit afterwards.
-        if (pages.length >= 10 + 5)  // for now only
-          throwForbidden("DwE8GUM2", o"""Too many topics waiting for critique,
-            you cannot submit more topics at this time, sorry. Check back later.""")
-      }
-    }
-
     val pageSlug = anySlug.getOrElse({
         commonmarkRenderer.slugifyTitle(titleSource)
     }).take(PagePath.MaxSlugLength).dropRightWhile(_ == '-').dropWhile(_ == '-')

@@ -568,6 +568,8 @@ var t_en: TalkyardTranslations = t = {
     Save: "Save",
     edits: "edits",
 
+    PostReply: "Post reply",
+
     Post: "Post",
     comment: "comment",
     question: "question",
