@@ -7,17 +7,27 @@ declare namespace rb {
   var ModalBody;
   var ModalFooter;
 
+  var ReactSelect;
   var TabbedArea;
   var TabPane;
+  var Tabs;
+  var Tab;
   var Alert;
   var ProgressBar;
 
-  var Expandable;
+  var FormGroup;
+  var ControlLabel;
+  var FormControl;
+  var HelpBlock;
+  var Checkbox;
+  var Radio;
+  var InputGroupAddon;
 }
 
 
 declare namespace debiki2 {
 
+  var Expandable;
   var Input;
 
   namespace forum {

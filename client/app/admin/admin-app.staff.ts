@@ -656,25 +656,45 @@ const LanguageSettings = createFactory({
 
   render: function() {
     const props = this.props;
+    const defaultSettings: Settings = props.defaultSettings;
     const currentSettings: Settings = props.currentSettings;
     const editedSettings: Settings = props.editedSettings;
 
     const valueOf = (getter: (s: Settings) => any) =>
       firstDefinedOf(getter(editedSettings), getter(currentSettings));
 
+    // Sync this list with the language files in /translations/ and the server scripts bundle. [5JUKQR2].
+    const languageOptions = [{
+      value: 'en', label: "English"
+    }, {
+      value: 'sv', label: "Swedish"
+    }];
+
+    const selectedLangCode = firstDefinedOf(editedSettings.languageCode, currentSettings.languageCode);
+    const selectedLangOpt = _.find(languageOptions, (opt) => opt.value === selectedLangCode);
+
+    const setLangCode = (code) => {
+      // A bit dupl code. [7UKWBP32]
+      const newSettings = _.clone(editedSettings);
+      newSettings.languageCode = code;
+      props.removeUnchangedSettings(newSettings);
+      props.setEditedSettings(newSettings);
+    };
+
     return (
       r.div({},
-        // UX SHOULD change to a dropdown, with only the supported languages.
-        // And sync the dropdown options with which-languages-actually-exists [5JUKQR2].
-        Setting2(props, { type: 'text', label: "Language", id: 'e_AA_Ss_LangCodeTI',
-          help: r.span({}, "The language for the user interface, e.g. 'en' (English) or 'sv' " +
-            "(Swedish)."),
-          canReset: false,
-          getter: (s: Settings) => s.languageCode,
-          update: (newSettings: Settings, target) => {
-            newSettings.languageCode = target.value;
-          }
-        }),
+        Setting2(props, { type: 'custom', label: "Language",
+            getter: (s: Settings) => s.languageCode,
+            undo: () => setLangCode(currentSettings.languageCode),
+            reset: () => setLangCode(defaultSettings.languageCode) },
+          rFragment({},
+            rb.ReactSelect({ multi: false, clearable: false,
+                value: selectedLangOpt, options: languageOptions,
+                onChange: (langCodeAndName) => {
+                  setLangCode(langCodeAndName.value);
+                } }),
+            rb.HelpBlock({}, "The language for the user interface, e.g. button titles. " +
+              "(But the admin area — where you are now — is always in English though.)"))),
       ));
   }
 });
@@ -1094,6 +1114,10 @@ const CustomizeCssJsPanel = createFactory({
 });
 
 
+/**
+ * For select-option inputs, see ReactSelect above and type = 'custom'.
+ * If needed more than once, break out some reusable thing?
+ */
 function Setting2(panelProps, props, anyChildren?) {
   const editedSettings = panelProps.editedSettings;
   const currentSettings = panelProps.currentSettings;
@@ -1103,8 +1127,14 @@ function Setting2(panelProps, props, anyChildren?) {
   const currentValue = props.getter(currentSettings);
 
   dieIf(props.onChange, 'EsE3GUK02');
-  dieIf(!props.update, 'EsE22PYK5');
   dieIf(props.value, 'EsE6JY2F4');
+  if (props.type === 'custom') {
+    dieIf(!props.undo, 'TyE7UKBW2');
+    dieIf(!props.reset, 'TyE7UKBW8');
+  }
+  else {
+    dieIf(!props.update, 'EsE22PYK5');
+  }
 
   const valueOf = (getter: (s: Settings) => any) =>
     firstDefinedOf(getter(editedSettings), getter(currentSettings));
@@ -1128,6 +1158,7 @@ function Setting2(panelProps, props, anyChildren?) {
   }
 
   props.onChange = (event) => {
+    // A bit dupl code. [7UKWBP32]
     const newSettings = _.clone(editedSettings);
     props.update(newSettings, event.target);
     panelProps.removeUnchangedSettings(newSettings);
@@ -1142,10 +1173,10 @@ function Setting2(panelProps, props, anyChildren?) {
   let undoChangesButton;
   if (isDefined2(editedValue)) {
     undoChangesButton = Button({ className: 'col-sm-offset-3 esAdmin_settings_setting_btn',
-      disabled: props.disabled, onClick: () => {
+      disabled: props.disabled, onClick: props.undo || (() => {
         event.target[field] = currentValue;
         props.onChange(event);
-      }}, "Undo changes");
+      })}, "Undo changes");
   }
 
   // Show the Reset button only if there's no Undo button — both at the same time looks confusing.
@@ -1153,10 +1184,10 @@ function Setting2(panelProps, props, anyChildren?) {
   const defaultValue = props.getter(defaultSettings);
   if (!undoChangesButton && valueOf(props.getter) !== defaultValue && props.canReset !== false) {
     resetToDefaultButton = Button({ className: 'col-sm-offset-3 esAdmin_settings_setting_btn',
-      disabled: props.disabled, onClick: () => {
+      disabled: props.disabled, onClick: props.reset || (() => {
         event.target[field] = defaultValue;
         props.onChange(event);
-      }}, "Reset to default");
+      })}, "Reset to default");
   }
 
   return (
