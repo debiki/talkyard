@@ -165,11 +165,12 @@ var t_en: TalkyardTranslations = t = {
     frequentPoster: "frequent poster",
     mostRecentPoster: "most recent poster",
 
-    inColon: "in: ",
+    inC: "in: ",
 
     TitleFixed: "This has been fixed",
     TitleDone: "This has been done",
-    TitleStarted: (fixing: string) => `We've started ${fixing} this`,
+    TitleStarted: "We've started this",
+    TitleStartedFixing: "We've started fixing this",
     TitleUnsolved: "This is an unsolved problem",
     TitleIdea: "This is an idea",
     TitlePlanningFix: "We're planning to fix this",
@@ -212,7 +213,8 @@ var t_en: TalkyardTranslations = t = {
     ViewAddRemoveMembers: "View / add / remove members",
     ViewChatMembers: "View chat members",
     EditChat: "Edit chat title and purpose",
-    LeaveThisX: (isChat: boolean) => "Leave this " + (isChat ? "chat" : "community"),
+    LeaveThisChat: "Leave this chat",
+    LeaveThisCommunity: "Leave this community",
     JoinThisCommunity: "Join this community",
   },
 
@@ -227,7 +229,8 @@ var t_en: TalkyardTranslations = t = {
 
     UsersOnline: "Users online:",
     UsersOnlineForum: "Users online in this forum:",
-    UsersInThis: (isChat: boolean) => "Users in this " + (isChat ? "chat: " : "topic:"),
+    UsersInThisChat: "Users in this chat:",
+    UsersInThisTopic: "Users in this topic:",
 
     GettingStartedGuide: "Getting Started Guide",
     AdminGuide: "Admin Guide",
@@ -352,8 +355,8 @@ var t_en: TalkyardTranslations = t = {
     SolvedClickView_1: "Solved in post #",
     SolvedClickView_2: ", click to view",
 
-    AboveBestFirst: " Above: Replies, best first. ",
-    BelowCmtsEvents: " Below: Comments and events.",
+    AboveBestFirst: "Above: Replies, best first.",
+    BelowCmtsEvents: "Below: Comments and events.",
 
     BottomCmtExpl_1: "You're adding a comment that will stay at the bottom of the page. " +
         "It won't rise to the top even if it gets upvotes.",
@@ -366,7 +369,8 @@ var t_en: TalkyardTranslations = t = {
 
     PostHiddenClickShow: "Post hidden; click to show",
     ClickSeeMoreRepls: "Click to show more replies",
-    ClickSeeMoreComments: (many: boolean) => "Click to show " + (many ? "more comments" : "this comment"),
+    ClickSeeMoreComments: "Click to show more comments",
+    ClickSeeThisComment: "Click to show this comment",
     clickToShow: "click to show",
 
     ManyDisagree: "Many disagree with this:",
@@ -391,8 +395,8 @@ var t_en: TalkyardTranslations = t = {
     ReplyToOp: "Reply to the Original Post",
 
     CloseOwnQuestionTooltip: "Close this question if you don't need an answer any more.",
-    CloseOtherQuestionTooltip: "Close this question if it doesn't need an answer, e.g. if " +
-                  "it is off-topic or already answered in another topic.",
+    CloseOthersQuestionTooltip: "Close this question if it doesn't need an answer, e.g. if " +
+        "it is off-topic or already answered in another topic.",
     CloseToDoTooltip: "Close this To-Do if it does not need to be done or fixed.",
     CloseTopicTooltip: "Close this topic if it needs no further consideration.",
 
@@ -409,7 +413,6 @@ var t_en: TalkyardTranslations = t = {
     MoreVotes: "More votes...",
     LikeThis: "Like this",
     LinkToPost: "Link to this post",
-    More: "More...",
     Report: "Report",
     ReportThisPost: "Report this post",
     Admin: "Admin",
@@ -468,8 +471,8 @@ var t_en: TalkyardTranslations = t = {
 
     IfYouThinkExistsThen: "If you think the page exists, log in as someone who may access it. ",
     LoggedInAlready: "(You are logged in already, but perhaps it's the wrong account?) ",
-    OtherwiesGoToHome_1: "Otherwise, you can ",
-    OtherwiesGoToHome_2: "go to the homepage.",
+    ElseGoToHome_1: "Otherwise, you can ",
+    ElseGoToHome_2: "go to the homepage.",
 
     CreateAcconut: "Create account",
     SignIn: "Sign in ...",

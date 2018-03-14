@@ -322,7 +322,7 @@ const SingleTopic = createComponent({
 
     const leaveButton = !isChat && !isSubCommunity ? null :
         MenuItem({ onSelect: this.openLeavePageDialog, id: 'e2eWB_LeaveB' },
-          t.wb.LeaveThisX(isChat));
+          isChat? t.wb.LeaveThisChat : t.wb.LeaveThisCommunity);
 
     // If a community is listed in the Recent section, then one hasn't joined it.
     const joinButton = !isRecent || topic.type !== PageRole.Forum ? null  :

@@ -1239,7 +1239,7 @@ const TopicRow = createComponent({
         r.div({ className: 'esF_TsL_T_Row2' },
           r.div({ className: 'esF_TsL_T_Row2_Users' }, userAvatars),
           !showCategories ? null : r.div({ className: 'esF_TsL_T_Row2_Cat' },
-            r.span({ className: 'esF_TsL_T_Row2_Cat_Expl' }, t.ft.inColon), categoryName),
+            r.span({ className: 'esF_TsL_T_Row2_Cat_Expl' }, t.ft.inC), categoryName),
           r.span({ className: 'esF_TsL_T_Row2_When' }, activeAt)),
         anyThumbnails));
   }
@@ -1432,8 +1432,8 @@ function makeTitle(topic: Topic, className: string, settings: SettingsVisibleCli
       // Then don't show icons, unless done/fixed.
     }
     else if (topic.startedAtMs) {
-      const fixing = topic.pageRole === PageRole.Problem ? 'fixing' : '';
-      tooltip = t.ft.TitleStarted(fixing);
+      tooltip = topic.pageRole === PageRole.Problem ?
+          t.ft.TitleStartedFixing : t.ft.TitleStarted;
       iconClass = 'icon-check-empty';
     }
     else if (!topic.plannedAtMs) {

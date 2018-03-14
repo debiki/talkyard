@@ -730,7 +730,7 @@ const RootPostAndComments = createComponent({
       const line =
         r.li({ className: 's_AppendBottomDiv', key: 'ApBtmDv' },
           r.span({},
-            r.span({ className: 's_AppendBottomDiv_Ar-Up' }, '➜'),   // spaces here instead?
+            r.span({ className: 's_AppendBottomDiv_Ar-Up' }, '➜'),
             t.d.AboveBestFirst),
           r.wbr(),
           r.span({},
@@ -1182,7 +1182,7 @@ export var Post = createComponent({
       // COULD remove this way of collapsing comments, which doesn't show the first line?
       // Currently inactive, this is dead code (!== 'Truncated' is always false).
       var text = this.props.is2dTreeColumn ? '' : (
-          t.d.ClickSeeMoreComments(post.isTreeCollapsed));
+          post.isTreeCollapsed ? t.d.ClickSeeMoreComments : t.d.ClickSeeThisComment);
       if (debiki.debug) text +='  #' + this.props.postId;
       var iconClass = this.props.is2dTreeColumn ? 'icon-right-open' : 'icon-down-open';
       bodyElem =

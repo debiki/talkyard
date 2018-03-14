@@ -128,11 +128,12 @@ interface TalkyardTranslations {
     frequentPoster: string;
     mostRecentPoster: string;
 
-    inColon: string;
+    inC: string;
 
     TitleFixed: string;
     TitleDone: string;
-    TitleStarted: (string) => string;
+    TitleStarted: string;
+    TitleStartedFixing: string;
     TitleUnsolved: string;
     TitleIdea: string;
     TitlePlanningFix: string;
@@ -170,7 +171,8 @@ interface TalkyardTranslations {
     ViewAddRemoveMembers: string;
     ViewChatMembers: string;
     EditChat: string;
-    LeaveThisX: (isChat: boolean) => string;
+    LeaveThisChat: string;
+    LeaveThisCommunity: string;
     JoinThisCommunity: string;
     TopicActions: string;
   },
@@ -185,7 +187,8 @@ interface TalkyardTranslations {
 
     UsersOnline: string;
     UsersOnlineForum: string;
-    UsersInThis: (isChat: boolean) => string;
+    UsersInThisChat: string;
+    UsersInThisTopic:  string;
 
     GettingStartedGuide: string;
     AdminGuide: string;
@@ -218,7 +221,7 @@ interface TalkyardTranslations {
     ReplyToOp: string;
 
     CloseOwnQuestionTooltip: string;
-    CloseOtherQuestionTooltip: string;
+    CloseOthersQuestionTooltip: string;
     CloseToDoTooltip: string;
     CloseTopicTooltip: string;
 
@@ -356,7 +359,8 @@ interface TalkyardTranslations {
 
     PostHiddenClickShow: string;
     ClickSeeMoreRepls: string;
-    ClickSeeMoreComments: (many: boolean) => string;
+    ClickSeeMoreComments: string;
+    ClickSeeThisComment: string;
     clickToShow: string;
 
     ManyDisagree: string;
@@ -411,8 +415,8 @@ interface TalkyardTranslations {
 
     IfYouThinkExistsThen: string;
     LoggedInAlready: string;
-    OtherwiesGoToHome_1: string;
-    OtherwiesGoToHome_2: string;
+    ElseGoToHome_1: string;
+    ElseGoToHome_2: string;
 
     CreateAcconut: string;
     SignIn: string;

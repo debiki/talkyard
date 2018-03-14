@@ -293,8 +293,8 @@ export const LoginDialogContent = createClassAndFactory({
           r.p({ className: 's_LD_NotFound_Details' },
             t.ld.IfYouThinkExistsThen +
             (this.props.isLoggedIn ? t.ld.LoggedInAlready : '') +
-            t.ld.OtherwiesGoToHome_1, r.a({ className: 's_LD_NotFound_HomeL', href: '/' },
-              t.ld.OtherwiesGoToHome_2)));
+            t.ld.ElseGoToHome_1, r.a({ className: 's_LD_NotFound_HomeL', href: '/' },
+              t.ld.ElseGoToHome_2)));
 
     const typePasswordForm = isSignUp ? null :
         PasswordLoginDialogContent(childDialogProps);

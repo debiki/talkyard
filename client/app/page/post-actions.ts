@@ -241,7 +241,7 @@ export const PostActions = createComponent({
             if (isOwnPage)
               closeReopenTooltip = t.pa.CloseOwnQuestionTooltip;
             else
-              closeReopenTooltip = t.pa.CloseOtherQuestionTooltip;
+              closeReopenTooltip = t.pa.CloseOthersQuestionTooltip;
             break;
           case PageRole.ToDo:
             closeReopenTooltip = t.pa.CloseToDoTooltip;
@@ -325,7 +325,7 @@ export const PostActions = createComponent({
     if (me.isLoggedIn) {
       moreDropdown =
         r.span({className: 'dropdown navbar-right', onClick: this.openMoreDropdown},
-          r.a({className: 'dw-a dw-a-more icon-menu', title: t.pa.More}));
+          r.a({className: 'dw-a dw-a-more icon-menu', title: t.MoreDots}));
     }
     else if (!isOwnPost) {
       flagBtn =

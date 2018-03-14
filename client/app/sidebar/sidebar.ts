@@ -398,7 +398,7 @@ export var Sidebar = createComponent({  // RENAME to ContextBar
         }
         else {
           title = r.div({},
-            t.cb.UsersInThis(isChat),
+            isChat ? t.cb.UsersInThisChat : t.cb.UsersInThisTopic,
             r.span({ className: 'esCtxbar_onlineCol' }, t.Online));
           // Don't show num online strangers, when listing post authors for the current topic only.
           numOnlineStrangers = 0;
@@ -634,9 +634,10 @@ function makeUsersContent(store: Store, users: BriefUser[], myId: UserId,
   if (numOnlineStrangers) {
     const numOtherStrangers = numOnlineStrangers - (currentUserIsStranger ? 1 : 0);
     const plus = listItems.length ? '+ ' : '';
+    const youAnd = currentUserIsStranger ? t.cb.YouAnd : '';
     const strangers = numOtherStrangers === 0 && currentUserIsStranger
-      ? (listItems.length ? t.you : t.cb.OnlyYou)
-      : t.cb.YouAnd + t.cb.NumStrangers(numOtherStrangers);
+        ? (listItems.length ? t.you : t.cb.OnlyYou)
+        : youAnd + t.cb.NumStrangers(numOtherStrangers);
     listItems.push(
         r.div({ key: 'strngrs', className: 'esPresence esPresence-strangers' }, plus + strangers));
   }
