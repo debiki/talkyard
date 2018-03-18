@@ -1,5 +1,5 @@
 @**
- * Copyright (C) 2016 Kaj Magnus Lindberg
+ * Copyright (c) 2016, 2018 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -18,7 +18,9 @@
 @(tpi: debiki.SiteTpi)
 
 
-@wrapper(tpi) {
+@* GDPR: People might search for personal data via the url, so disable Google Analytics,
+so the url won't be sent to Google. *@
+@wrapper(tpi, useGoogleAnalytics = false) {
   <!-- search.scala.html -->
 
   @* A React component will be mounted here. CLEAN_UP remove this file *@

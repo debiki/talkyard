@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *@
 
-@(tpi: debiki.SiteTpi)(content: Html)
+@(tpi: debiki.SiteTpi, useGoogleAnalytics: Boolean = true)(content: Html)
 
 <!DOCTYPE html>
 <html class="@tpi.debikiHtmlTagClasses">
@@ -29,7 +29,9 @@
 @tpi.stylesheetBundle("styles.css")
 @Html(tpi.siteSettings.headStylesHtml)
 @tpi.debikiScriptsInHead()
+@if(useGoogleAnalytics) {
 @Html(tpi.anyGoogleUniversalAnalyticsScript)
+}
 </head>
 <body>
 <!-- wrapper.scala.html -->
