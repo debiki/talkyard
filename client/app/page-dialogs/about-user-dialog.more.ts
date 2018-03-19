@@ -129,11 +129,11 @@ const AboutUserDialog = createComponent({
   },
 
   render: function () {
-    var content;
+    let content;
 
     if (this.state.isOpen) {
-      var user: MemberInclDetails = this.state.user;
-      var childProps = _.assign({
+      const user: MemberInclDetails = this.state.user;
+      const childProps = _.assign({
         store: this.state.store,
         reload: this.reload,
         post: this.state.post,
@@ -176,7 +176,7 @@ const AboutUser = createComponent({
   },
 
   removeFromPage: function() {
-    var user: MemberInclDetails = this.props.user;
+    const user: MemberInclDetails = this.props.user;
     Server.removeUsersFromPage([user.id], () => {
       if (!this.isUnmounted) this.props.close();
       // [redux] send a page-members patch [5FKE0WY2]
@@ -188,11 +188,11 @@ const AboutUser = createComponent({
   render: function() {
     const store: Store = this.props.store;
     const page: Page = store.currentPage;
-    var user: MemberInclDetails = this.props.user;
-    var me: Myself = store.me;
-    var userIsMe = user.id === me.id;
+    const user: MemberInclDetails = this.props.user;
+    const me: Myself = store.me;
+    const userIsMe = user.id === me.id;
 
-    var isStaffInfo = null;
+    let isStaffInfo = null;
     if (user.isModerator) {
       isStaffInfo = "Is moderator.";
     }
@@ -200,16 +200,19 @@ const AboutUser = createComponent({
       isStaffInfo = "Is administrator.";
     }
 
+    const isGoneInfo = !user_isGone(user) ? null :
+      r.p({}, "Is deactivated or deleted, cannot be contacted.");
+
     const afterClick = this.props.close;
 
-    var sendMessageButton = !me_maySendDirectMessageTo(me, user) ? null :
+    const sendMessageButton = !me_maySendDirectMessageTo(me, user) ? null :
         PrimaryLinkButton({ href: linkToSendMessage(user.id), id: 'e2eUD_MessageB', afterClick,
             target: '_blank' },
           "Send Message");
 
-    var userIsPageMember = page_isGroupTalk(page.pageRole) &&
+    const userIsPageMember = page_isGroupTalk(page.pageRole) &&
         _.includes(page.pageMemberIds, user.id);
-    var removeFromPageButton = userIsPageMember &&
+    const removeFromPageButton = userIsPageMember &&
         (isStaff(me) || store_thisIsMyPage(store)) && !userIsMe
       ? Button({ onClick: this.removeFromPage, id: 'e2eUD_RemoveB' }, "Remove from topic")
       : null;
@@ -226,7 +229,8 @@ const AboutUser = createComponent({
         r.div({},
           r.b({}, user.username), r.br(),
           user.fullName, r.br(),
-          isStaffInfo)));
+          isStaffInfo,
+          isGoneInfo)));
   }
 });
 

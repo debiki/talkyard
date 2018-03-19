@@ -345,6 +345,16 @@ object Prelude {
 
   def nextRandomAzLetter(): Char = ('a' + _random.nextInt(26)).toChar
 
+  def nextRandomLong(min: Int = 0): Long = {
+    require(min < Long.MaxValue / 2, "TyE4KGKRY")
+    var result = 0L
+    do {
+      result = _random.nextLong()
+    }
+    while (result < min)
+    result
+  }
+
 
   /** This 130 bits string will be almost 26 chars, since each char in a 32 chars
     * alphabet has 5 bits (but we use 36 chars here).

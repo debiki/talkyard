@@ -176,6 +176,7 @@ declare namespace debiki2 {
   var page_isPrivateGroup: any;
   var page_isPrivateGroup: any;
   function pageRole_iconClass(pageRole: PageRole): string;
+  function user_isGone(user: Myself | BriefUser | MemberInclDetails | UserAnyDetails): boolean;
 
   function uppercaseFirst(text: string): string;
   function firstDefinedOf(x, y, z?): any;

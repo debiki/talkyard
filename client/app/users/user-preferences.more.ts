@@ -29,7 +29,8 @@ const UsersPathSlash = UsersRoot;
 const SlashPrefsSlash = '/preferences/';  // dupl [4GKQST20]
 
 import EmailInput = debiki2.util.EmailInput;
-const emailsLogins = 'emails-logins';  // [4JKT28TS]
+const privacyPathSeg = 'privacy';
+const accountPathSeg = 'account';  // [4JKT28TS]
 
 
 export const UserPreferences = createFactory({
@@ -38,7 +39,8 @@ export const UserPreferences = createFactory({
   render: function() {
     const prefsPathSlash = UsersPathSlash + this.props.match.params.usernameOrId + SlashPrefsSlash;
     const aboutPath = prefsPathSlash + 'about';
-    const emailsLoginsPath = prefsPathSlash + emailsLogins;
+    const privacyPath = prefsPathSlash + privacyPathSeg;
+    const emailsLoginsPath = prefsPathSlash + accountPathSeg;
     const user: User = this.props.user;
     const location = this.props.location;
 
@@ -53,7 +55,8 @@ export const UserPreferences = createFactory({
       Route({ path: prefsPathSlash, exact: true, render: ({ match }) =>
           Redirect({ to: aboutPath + location.search + location.hash })}),
       Route({ path: '(.*)/about', exact: true, render: () => AboutUser(childProps) }),
-      Route({ path: '(.*)/' + emailsLogins, exact: true, render: () => EmailsLogins(childProps) }));
+      Route({ path: '(.*)/' + privacyPathSeg, exact: true, render: () => Privacy(childProps) }),
+      Route({ path: '(.*)/' + accountPathSeg, exact: true, render: () => Account(childProps) }));
 
     const isGuest = user_isGuest(user);
     const isBuiltInUser = user.id < LowestAuthenticatedUserId;
@@ -67,7 +70,9 @@ export const UserPreferences = createFactory({
             r.ul({ className: 'dw-sub-nav nav nav-pills nav-stacked' },
               LiNavLink({ to: aboutPath, className: 's_UP_Prf_Nav_AbtL' }, "About"),
               isGuest || isBuiltInUser ? null : LiNavLink({
-                  to: emailsLoginsPath, className: 's_UP_Prf_Nav_EmLgL' }, "Emails, Logins"))),
+                  to: privacyPath, className: 's_UP_Prf_Nav_AbtL' }, "Privacy"),
+              isGuest || isBuiltInUser ? null : LiNavLink({
+                  to: emailsLoginsPath, className: 's_UP_Prf_Nav_EmLgL' }, "Account"))),
          r.div({ className: 's_UP_Act_List' },
            childRoute))));
   }
@@ -392,8 +397,28 @@ const MemberPreferences = createComponent({
 
 
 
-export const EmailsLogins = createFactory({
-  displayName: 'EmailsLogins',
+export const Privacy = createFactory({
+  displayName: 'Privacy',
+
+  getInitialState: function() {
+    return {};
+  },
+
+  render: function() {
+    const me: Myself = this.props.store.me;
+    const user: MemberInclDetails = this.props.user;
+    const isMe = me.id === user.id;
+
+    return (
+      r.div({},
+      ));
+  }
+});
+
+
+
+export const Account = createFactory({
+  displayName: 'Account',
 
   getInitialState: function() {
     return {};
@@ -444,6 +469,33 @@ export const EmailsLogins = createFactory({
     Server.setPrimaryEmailAddresses(user.id, emailAddress, response => {
       this.setState(response);
       this.props.reloadUser();
+    });
+  },
+
+  deleteUser: function() {
+    const me: Myself = this.props.store.me;
+    const user: MemberInclDetails = this.props.user;
+    const isMe = me.id === user.id;
+    util.openDefaultStupidDialog({
+      dialogClassName: '',
+      body: (isMe
+        ? "Delete your account? We'll remove your name, forget your email address, password and " +
+          "any online identities (like Facebook or Twitter login). " +
+          "You won't be able to login again. This cannot be undone."
+        : "Delete this user? We'll remove the name, forget the email address, password and " +
+          "online identities (like Facebook or Twitter login). " +
+          "The user won't be able to login again. This cannot be undone."),
+      primaryButtonTitle: "Cancel",
+      secondaryButonTitle: "Yes, delete",
+      onCloseOk: (number) => {
+        if (!number || number === 1) {
+          // Click outside dialog, or on primary button = cancel, do nothing.
+        }
+        else {
+          dieIf(number !== 2, 'TyE6UKBA');
+          Server.deleteUser(user.id, this.props.reloadUser);
+        }
+      },
     });
   },
 
@@ -531,6 +583,16 @@ export const EmailsLogins = createFactory({
             // r.div({}, Button({}, "Remove")))  — fix later
         }));
 
+    // Later:
+    //const deactivateButton = user.deletedAt ? null : (
+    //  Button({}, user.deactivatedAt ? "Activate" : "Deactivate"));
+    // + hide Delete button, until deactivated (unless is admin).
+
+    const dangerZone = user.deletedAt || !me.isAdmin ? null : (
+      rFragment({},
+        r.h3({ style: { marginBottom: '1.3em' }}, "Danger zone"),
+        Button({ onClick: this.deleteUser }, "Delete account")));
+
     return (
       r.div({ className: 's_UP_EmLg' },
         r.h3({}, "Email addresses"),
@@ -545,8 +607,9 @@ export const EmailsLogins = createFactory({
         doneAddingEmailInfo,
 
         r.h3({}, "Login methods"),
-        loginsList
+        loginsList,
         // Button({}, "Add login method")  — fix later
+        dangerZone,
       ));
   }
 });

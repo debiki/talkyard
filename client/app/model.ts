@@ -242,6 +242,8 @@ interface Myself {
   isAdmin?: boolean;
   isModerator?: boolean;
   isAuthenticated?: boolean;  // change to !isGuest? — no, there are strangers too.
+  deactivatedAt?: number;
+  deletedAt?: number;
   username?: string;
   fullName?: string;
   avatarUrl?: string;
@@ -760,6 +762,7 @@ interface BriefUser extends User {
   isEmailUnknown?: boolean;
   avatarUrl?: string;
   isMissing?: boolean;
+  isGone?: boolean;
 }
 
 
@@ -816,6 +819,8 @@ interface MemberInclDetails extends MemberOrGroupInclDetails {
   lockedTrustLevel?: TrustLevel;
   threatLevel?: ThreatLevel;
   lockedThreatLevel?: ThreatLevel;
+  deactivatedAt?: number;
+  deletedAt?: number;
 }
 
 

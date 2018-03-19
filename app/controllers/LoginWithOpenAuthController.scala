@@ -506,7 +506,7 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
     else if (!isValidNonLocalEmailAddress(emailAddress))
       throwUnprocessableEntity("EdE7MNH0R1", "Bad email address")
 
-    if (ed.server.security.ReservedNames.isUsernameReserved(username))
+    if (ed.server.security.ReservedNames.isUsernameReserved(username)) // [5LKKWA10]
       throwForbidden("EdE4SWWB9", s"Username is reserved: '$username'; choose another username")
 
     globals.spamChecker.detectRegistrationSpam(request, name = username, email = emailAddress) map {
@@ -515,7 +515,7 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
 
       val becomeOwner = LoginController.shallBecomeOwner(request, emailAddress)
 
-      val userData =
+      val userData = // [5LKKWA10]
         NewOauthUserData.create(name = fullName, username = username, email = emailAddress,
             emailVerifiedAt = emailVerifiedAt, identityData = oauthDetails,
             isAdmin = becomeOwner, isOwner = becomeOwner) match {

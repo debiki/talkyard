@@ -170,13 +170,17 @@ const UserPageComponent = createReactClass(<any> {
     if (!user || !me || (user.username && parseInt(usernameOrId)))
       return r.p({ className: 'container' }, 'Loading...');
 
-    const showPrivateStuff = isStaff(me) || (me.isAuthenticated && me.id === user.id);
+    const imStaff = isStaff(me);
+    const userGone = user_isGone(user);
+    const userGoneNotStaff = userGone && !imStaff;
+
+    const showPrivateStuff = imStaff || (!userGone && me.isAuthenticated && me.id === user.id);
     const linkStart = UsersRoot + usernameOrId + '/';
 
-    const activityNavItem = user.isGroup ? null :
+    const activityNavItem = userGoneNotStaff || user.isGroup ? null :
       LiNavLink({ to: linkStart + 'activity', className: 'e_UP_ActivityB' }, "Activity");
 
-    const summaryNavItem = user.isGroup ? null :
+    const summaryNavItem = userGoneNotStaff || user.isGroup ? null :
       LiNavLink({ to: linkStart + 'summary', className: 'e_UP_SummaryB' }, "Summary");
 
     const notificationsNavItem = !showPrivateStuff || user.isGroup ? null :
@@ -199,7 +203,7 @@ const UserPageComponent = createReactClass(<any> {
 
     const u = UsersRootAndIdParamSlash;
 
-    const childRoutes = Switch({},
+    const childRoutes = userGoneNotStaff ? null : Switch({},
       Route({ path: u + 'activity', exact: true, render: ({ match }) => {
         const hash = this.props.location.hash;
         return Redirect({ to: UsersRoot + match.params.usernameOrId + '/activity/posts' + hash });
@@ -316,6 +320,7 @@ const AvatarAboutAndButtons = createComponent({
     const user: MemberInclDetails = this.props.user;
     const stats: UserStats = this.props.stats;
     const me: Myself = this.props.me;
+    const isGone = user_isGone(user);
     let suspendedInfo;
     if (user.suspendedAtEpoch) {
       const whatAndUntilWhen = (<number | string> user.suspendedTillEpoch) === 'Forever'
@@ -325,6 +330,9 @@ const AvatarAboutAndButtons = createComponent({
           'This user is ' + whatAndUntilWhen, r.br(),
           'Reason: ' + user.suspendedReason);
     }
+
+    const deletedInfo = !isGone ? null :
+      r.p({}, "Has been deactivated or deleted.");
 
     const isMe = me.id === user.id;
 
@@ -357,16 +365,15 @@ const AvatarAboutAndButtons = createComponent({
     const uploadAvatarBtnText = user.mediumAvatarUrl ? "Change photo" : "Upload photo";
     const avatarMissingClass = user.mediumAvatarUrl ? '' : ' esMedAvtr-missing';
 
-    const anyUploadPhotoBtn = (isMe || isStaff(me)) && !isGuest(user)
-      ? r.div({},
+    const anyUploadPhotoBtn = isGone || isGuest(user) || !isMe && !isStaff(me) ? null :
+        r.div({},
           // File inputs are ugly, so we hide the file input (size 0 x 0) and activate
           // it by clicking a beautiful button instead:
           PrimaryButton({ id: 'e2eChooseAvatarInput', className: 'esMedAvtr_uplBtn',
               onClick: this.selectAndUploadAvatar }, uploadAvatarBtnText),
           r.input({ name: 'files', type: 'file', multiple: false, // dupl code [2UK503]
               ref: 'chooseAvatarInput',
-              style: { width: 0, height: 0, position: 'absolute', left: -999 }}))
-      : null;
+              style: { width: 0, height: 0, position: 'absolute', left: -999 }}));
 
 
     const adminButton = !isStaff(me) || isGuest(user) ? null :
@@ -392,7 +399,8 @@ const AvatarAboutAndButtons = createComponent({
           r.h1({ className: 'esUP_Un' }, user.username, thatIsYou, isAGroup),
           r.h2({ className: 'esUP_FN' }, user.fullName, isWhatInfo),
           r.div({ className: 's_UP_About' }, user.about),
-          suspendedInfo)),
+          suspendedInfo,
+          deletedInfo)),
         !stats ? null : r.div({ className: 's_UP_Ab_Stats' },
           r.div({ className: 's_UP_Ab_Stats_Stat' },
             "Joined: " + moment(stats.firstSeenAt).fromNow()),

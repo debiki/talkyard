@@ -29,7 +29,7 @@ case class BrowserLocation(
   city: Option[String])
 
 
-sealed abstract class AuditLogEntryType(protected val IntVal: Int) { def toInt = IntVal }
+sealed abstract class AuditLogEntryType(protected val IntVal: Int) { def toInt: Int = IntVal }
 object AuditLogEntryType {
   case object CreateSite extends AuditLogEntryType(1)
   case object ThisSiteCreated extends AuditLogEntryType(2)
@@ -44,6 +44,9 @@ object AuditLogEntryType {
   case object DeletePage extends AuditLogEntryType(9)
   case object UndeletePage extends AuditLogEntryType(10)
 
+  case object DeactivateUser extends AuditLogEntryType(101)
+  case object DeleteUser extends AuditLogEntryType(102)
+
   def fromInt(value: Int): Option[AuditLogEntryType] = Some(value match {
     case AuditLogEntryType.CreateSite.IntVal => AuditLogEntryType.CreateSite
     case AuditLogEntryType.ThisSiteCreated.IntVal => AuditLogEntryType.ThisSiteCreated
@@ -57,6 +60,8 @@ object AuditLogEntryType {
     case AuditLogEntryType.UploadFile.IntVal => AuditLogEntryType.UploadFile
     case AuditLogEntryType.DeletePage.IntVal => AuditLogEntryType.DeletePage
     case AuditLogEntryType.UndeletePage.IntVal => AuditLogEntryType.UndeletePage
+    case AuditLogEntryType.DeactivateUser.IntVal => AuditLogEntryType.DeactivateUser
+    case AuditLogEntryType.DeleteUser.IntVal => AuditLogEntryType.DeleteUser
     case _ => return None
   })
 }

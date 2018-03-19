@@ -388,7 +388,9 @@ class ImportExportController @Inject()(cc: ControllerComponents, edContext: EdCo
         suspendedAt = readOptDateMs(jsObj, "suspendedAtMs"),
         suspendedTill = readOptDateMs(jsObj, "suspendedTillMs"),
         suspendedById = readOptInt(jsObj, "suspendedById"),
-        suspendedReason = readOptString(jsObj, "suspendedReason")))
+        suspendedReason = readOptString(jsObj, "suspendedReason"),
+        deactivatedAt = readOptWhen(jsObj, "deactivatedAt"),
+        deletedAt = readOptWhen(jsObj, "deletedAt")))
     }
     catch {
       case ex: IllegalArgumentException =>

@@ -409,7 +409,7 @@ object ReactJson {
       "appVersion" -> globals.applicationVersion,
       "siteId" -> JsNumber(dao.siteId),
       "siteStatus" -> dao.theSite().status.toInt,
-      // Later: move these two userMustBe... to settings {} too.
+      // CLEAN_UP Later: move these two userMustBe... to settings {} too.
       "userMustBeAuthenticated" -> JsBoolean(siteSettings.userMustBeAuthenticated),
       "userMustBeApproved" -> JsBoolean(siteSettings.userMustBeApproved),
       "settings" -> makeSettingsVisibleClientSideJson(siteSettings),
@@ -930,6 +930,8 @@ object ReactJson {
       "isLoggedIn" -> JsBoolean(true),
       "isAdmin" -> JsBoolean(user.isAdmin),
       "isModerator" -> JsBoolean(user.isModerator),
+      "isDeactivated" -> JsBoolean(user.isDeactivated),
+      "isDeleted" -> JsBoolean(user.isDeleted),
       "avatarUrl" -> JsUploadUrlOrNull(user.smallAvatar),
       "isEmailKnown" -> JsBoolean(user.email.nonEmpty),
       "isAuthenticated" -> JsBoolean(user.isAuthenticated),
@@ -1612,6 +1614,9 @@ object ReactJson {
     }
     if (user.isModerator) {
       json += "isModerator" -> JsTrue
+    }
+    if (user.isGone) {
+      json += "isGone" -> JsTrue
     }
     json
   }

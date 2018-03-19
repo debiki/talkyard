@@ -130,6 +130,18 @@ export function me_hasRead(me: Myself, post: Post) {
 }
 
 
+// Users
+//----------------------------------
+
+export function user_isGone(user: Myself | BriefUser | MemberInclDetails | UserAnyDetails): boolean {
+  // These two casts work for UserAnyDetails too.
+  const membInclDetails = <Myself | MemberInclDetails> user;
+  const briefUser = <BriefUser> user;
+
+  return briefUser.isGone || !!membInclDetails.deactivatedAt || !!membInclDetails.deletedAt;
+}
+
+
 // Settings
 //----------------------------------
 

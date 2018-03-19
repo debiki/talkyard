@@ -269,7 +269,14 @@ class ForumController @Inject()(cc: ControllerComponents, edContext: EdContext)
 
   def listTopicsByUser(userId: UserId): Action[Unit] = GetAction { request =>
     import request.{dao, requester}
-    val isStaffOrSelf = requester.exists(_.isStaff) || requester.exists(_.id == userId)
+
+    val isStaff = requester.exists(_.isStaff)
+    val isStaffOrSelf = isStaff || requester.exists(_.id == userId)
+    val user = dao.getTheUser(userId)
+
+    throwForbiddenIf(user.isGone && !isStaff,
+      "TyE7UKWDP2", "User deactivated or deleted, cannot list topics")
+
     val topicsInclForbidden = dao.loadPagesByUser(
       userId, isStaffOrSelf = isStaffOrSelf, limit = 200)
     val topics = topicsInclForbidden filter { page: PagePathAndMeta =>

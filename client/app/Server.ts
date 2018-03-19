@@ -735,6 +735,11 @@ export function saveUserPreferences(prefs, isGroup: boolean, success: () => void
 }
 
 
+export function deleteUser(userId, success: () => void) {
+  postJsonSuccess(`/-/delete-user`, success, { userId });
+}
+
+
 export function saveGuest(guest, success: () => void) {
   postJsonSuccess('/-/save-guest', success, guest);
 }

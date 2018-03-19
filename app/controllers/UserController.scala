@@ -58,6 +58,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
         onlyPendingApproval = true
     }
     request.dao.readOnlyTransaction { transaction =>
+      // Ok to load also deactivated users — the requester is staff.
       val usersPendingApproval = transaction.loadMembersInclDetails(
         onlyApproved = onlyApproved,
         onlyPendingApproval = onlyPendingApproval)
@@ -147,8 +148,14 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
           throwNotFound("EsE4AK7B", "Many users with this username, weird")
 
         val userId = possibleUserIds.head
-        transaction.loadMemberOrGroupInclDetails(userId) getOrElse throwNotFound(
-          "EsE8PKU02", "User not found")
+
+        // If the user has been deleted, don't allow looking up the anonymized profile,
+        // via the old username. (This !isGone test won't be needed, if old usernames are
+        // replaced with hashes. [6UKBWTA2])
+        transaction.loadMemberOrGroupInclDetails(userId).filter(_ match {
+          case member: MemberInclDetails => !member.isGone || callerIsStaff
+          case _ => true
+        }) getOrElse throwNotFound("EsE8PKU02", "User not found")
       }
 
       val groups = transaction.loadGroups(memberOrGroup)
@@ -182,6 +189,8 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
       "fullName" -> user.fullName,
       "isAdmin" -> user.isAdmin,
       "isModerator" -> user.isModerator,
+      "deactivatedAt" -> JsWhenMsOrNull(user.deactivatedAt),
+      "deletedAt" -> JsWhenMsOrNull(user.deletedAt),
       "country" -> JsStringOrNull(user.country),
       "url" -> JsStringOrNull(user.website),
       "about" -> JsStringOrNull(user.about),
@@ -422,7 +431,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
     val (siteName, origin) = dao.theSiteNameAndOrigin()
     val host = request.host
 
-    val returnToUrl = s"$host/-/users/${user.username}/preferences/emails-logins"  // [4JKT28TS]
+    val returnToUrl = s"$host/-/users/${user.username}/preferences/account"  // [4JKT28TS]
 
     val emailId = Email.generateRandomId()
 
@@ -479,7 +488,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
     // But maybe the user is not currently logged in? I don't think hen should get logged in
     // just by clicking the link. Maybe this isn't supposed to be an email address hen wants
     // to be able to login with.
-    val emailsPath = requester.isDefined ? "/preferences/emails-logins" | ""  // [4JKT28TS]
+    val emailsPath = requester.isDefined ? "/preferences/account" | ""  // [4JKT28TS]
     TemporaryRedirect(s"/-/users/${member.username}$emailsPath")
   }
 
@@ -951,6 +960,16 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
         throwForbidden("DwE5KQP4", o"""There is another guest with the exact same name
             and other data. Please change the name, e.g. append "2".""")
     }
+    Ok
+  }
+
+
+  def deleteUser: Action[JsValue] = PostJsonAction(RateLimits.CreateUser, maxBytes = 100) { request =>
+    import request.{dao, theRequester => requester}
+    val userId = (request.body \ "userId").as[UserId]
+    throwForbiddenIf(userId != requester.id && !requester.isAdmin,
+      "TyE7UBQP21", "Cannot delete other user")
+    dao.deleteUser(userId, request.who)
     Ok
   }
 

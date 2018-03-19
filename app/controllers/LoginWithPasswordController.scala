@@ -126,7 +126,7 @@ class LoginWithPasswordController @Inject()(cc: ControllerComponents, edContext:
     else if (!isValidNonLocalEmailAddress(emailAddress))
       throwUnprocessableEntity("EdE80KFP2", "Bad email address")
 
-    if (ed.server.security.ReservedNames.isUsernameReserved(username))
+    if (ed.server.security.ReservedNames.isUsernameReserved(username))  // [5LKKWA10]
       throwForbidden("EdE5PKW01", s"Username is reserved: '$username'; choose another username")
 
     globals.spamChecker.detectRegistrationSpam(request, name = username, email = emailAddress) map {
@@ -135,7 +135,7 @@ class LoginWithPasswordController @Inject()(cc: ControllerComponents, edContext:
 
       // Password strength tested in createPasswordUserCheckPasswordStrong() below.
 
-      val userData =
+      val userData =  // [5LKKWA10]
         NewPasswordUserData.create(name = fullName, email = emailAddress, username = username,
             password = password, createdAt = globals.now(),
             isAdmin = becomeOwner, isOwner = becomeOwner) match {

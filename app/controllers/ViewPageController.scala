@@ -54,6 +54,9 @@ class ViewPageController @Inject()(cc: ControllerComponents, edContext: EdContex
     val callerIsStaffOrAuthor = callerIsStaff || caller.exists(_.id == authorId)
     val author = dao.getUser(authorId) getOrElse throwNotFound("EdE2FWKA9", "Author not found")
 
+    throwForbiddenIf(author.isGone && !callerIsStaff,
+      "TyE2KGUK03", "User deactivated or deleted, cannot list posts")
+
     val postsInclForbidden = dao.readOnlyTransaction { transaction =>
       transaction.loadPostsByAuthorSkipTitles(authorId, limit = 999, OrderBy.MostRecentFirst)
     }

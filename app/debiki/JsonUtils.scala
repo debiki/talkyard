@@ -18,6 +18,7 @@
 package debiki
 
 import com.debiki.core.Prelude._
+import com.debiki.core.When
 import java.{util => ju}
 import play.api.libs.json._
 
@@ -116,6 +117,14 @@ object JsonUtils {
         // Will this be readable? Perhaps use json.value[fieldName] match ... instead, above.
         throwBadJson("EsE2GKU8", s"'$fieldName' is not a boolean: " + errors.toString())
     }
+
+
+  def readWhen(json: JsValue, fieldName: String): When =
+    When.fromDate(readDateMs(json, fieldName: String))
+
+
+  def readOptWhen(json: JsValue, fieldName: String): Option[When] =
+    readOptDateMs(json, fieldName).map(When.fromDate)
 
 
   def readDateMs(json: JsValue, fieldName: String): ju.Date =

@@ -132,6 +132,7 @@ trait SiteTransaction {
   // Rename to insert/loadPageMemberIds? [rename]
   def insertMessageMember(pageId: PageId, userId: UserId, addedById: UserId): Boolean
   def removePageMember(pageId: PageId, userId: UserId, removedById: UserId): Boolean
+  def removeDeletedMemberFromAllPages(userId: UserId)
 
   def loadMessageMembers(pageId: PageId): Set[UserId]
 
@@ -306,12 +307,14 @@ trait SiteTransaction {
 
   def insertInvite(invite: Invite)
   def updateInvite(invite: Invite): Boolean
+  def forgetInviteEmailSentToAddress(userId: UserId, replaceWithAddr: String)
   def loadInvite(secretKey: String): Option[Invite]
   def loadInvites(createdById: UserId): immutable.Seq[Invite]
   def loadAllInvites(limit: Int): immutable.Seq[Invite]
 
   def nextIdentityId: IdentityId
   def insertIdentity(Identity: Identity)
+  def deleteAllUsersIdentities(userId: UserId)
   def loadIdtyDetailsAndUser(userId: UserId): Option[(Identity, User)]
   def loadIdentities(userId: UserId): Seq[Identity] =
     loadIdtyDetailsAndUser(userId).map(_._1).toVector // for now
@@ -361,6 +364,7 @@ trait SiteTransaction {
   def insertUserEmailAddress(userEmailAddress: UserEmailAddress)
   def updateUserEmailAddress(userEmailAddress: UserEmailAddress)
   def deleteUserEmailAddress(userId: UserId, emailAddress: String)
+  def deleteAllUsersEmailAddresses(userId: UserId)
   def loadUserEmailAddresses(userId: UserId): Seq[UserEmailAddress]
 
   def insertUsernameUsage(usage: UsernameUsage)
@@ -532,6 +536,7 @@ trait SiteTransaction {
   def loadEmailById(emailId: String): Option[Email]
   def loadEmailsSentTo(userIds: Set[UserId], after: When,
         emailType: EmailType): Map[UserId, Seq[Email]]
+  def forgetEmailSentToAddress(userId: UserId, replaceWithAddr: String)
 
   def nextReviewTaskId(): ReviewTaskId
   def upsertReviewTask(reviewTask: ReviewTask)

@@ -115,6 +115,7 @@ GET   /-/list-usernames         controllers.UserController.listUsernames(pageId,
 POST  /-/save-member-preferences controllers.UserController.saveMemberPreferences
 POST  /-/save-group-preferences controllers.UserController.saveGroupPreferences
 POST  /-/save-guest             controllers.UserController.saveGuest
+POST  /-/delete-user            controllers.UserController.deleteUser
 # Currently ignores group inheritance of settings. [2WHK7PU0]
 GET   /-/list-complete-users    controllers.UserController.listCompleteUsers(whichUsers)
 GET   /-/load-user-any-details  controllers.UserController.loadUserAnyDetails(who)

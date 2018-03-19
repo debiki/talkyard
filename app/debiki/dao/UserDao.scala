@@ -19,7 +19,7 @@ package debiki.dao
 
 import com.debiki.core._
 import debiki.EdHttp.{throwForbidden, throwForbiddenIf}
-import ed.server.security.{SidStatus, BrowserId}
+import ed.server.security.{SidStatus, BrowserId, ReservedNames}
 import java.{util => ju}
 import play.api.libs.json.JsArray
 import play.{api => p}
@@ -560,9 +560,19 @@ trait UserDao {
   }
 
 
+  def getTheMember(userId: UserId): User = {
+    getMember(userId).getOrElse(throw UserNotFoundException(userId))
+  }
+
+
   def getMember(userId: UserId): Option[Member] = {
     require(userId >= User.LowestMemberId, "EsE4GKX24")
     getUser(userId).map(_.asInstanceOf[Member])
+  }
+
+
+  def getTheUser(userId: UserId): User = {
+    getUser(userId).getOrElse(throw UserNotFoundException(userId))
   }
 
 
@@ -938,6 +948,7 @@ trait UserDao {
         if (!transaction.loadUser(me.id).exists(_.isStaff))
           throwForbidden("EsE5Y5IKF0", "May not list other users' notifications")
       }
+      SECURITY; SHOULD // filter out priv msg notf, unless isMe or isAdmin.
       debiki.ReactJson.loadNotifications(userId, transaction, unseenFirst = false, limit = 100,
         upToWhen = None) // later: Some(upToWhenDate), and change to limit = 50 above?
     }
@@ -965,6 +976,15 @@ trait UserDao {
     require(smallAvatar.isDefined == tinyAvatar.isDefined, "EsE9PYM2")
     require(smallAvatar.isDefined == mediumAvatar.isDefined, "EsE8YFM2")
     readWriteTransaction { transaction =>
+      setUserAvatarImpl(userId, tinyAvatar, smallAvatar, mediumAvatar, browserIdData, transaction)
+    }
+  }
+
+
+  private def setUserAvatarImpl(userId: UserId, tinyAvatar: Option[UploadRef],
+        smallAvatar: Option[UploadRef], mediumAvatar: Option[UploadRef],
+        browserIdData: BrowserIdData, transaction: SiteTransaction) {
+
       val userBefore = transaction.loadTheMemberInclDetails(userId)
       val userAfter = userBefore.copy(
         tinyAvatar = tinyAvatar,
@@ -1008,14 +1028,12 @@ trait UserDao {
       // COULD have above markPagesWithUserAvatarAsStale() return a page id list and
       // uncache only those pages.
       emptyCacheImpl(transaction)
-    }
   }
 
 
   def configRole(userId: RoleId,
         emailNotfPrefs: Option[EmailNotfPrefs] = None,
-        activitySummaryEmailsIntervalMins: Option[Int] = None,
-        isAdmin: Option[Boolean] = None, isOwner: Option[Boolean] = None) {
+        activitySummaryEmailsIntervalMins: Option[Int] = None) {
     // Don't specify emailVerifiedAt — use verifyPrimaryEmailAddress() instead; it refreshes the cache.
     readWriteTransaction { transaction =>
       var user = transaction.loadTheMemberInclDetails(userId)
@@ -1024,12 +1042,6 @@ trait UserDao {
       }
       activitySummaryEmailsIntervalMins foreach { mins =>
         user = user.copy(summaryEmailIntervalMins = Some(mins))
-      }
-      isAdmin foreach { isAdmin =>
-        user = user.copy(isAdmin = isAdmin)
-      }
-      isOwner foreach { isOwner =>
-        user = user.copy(isOwner = isOwner)
       }
       transaction.updateMemberInclDetails(user)
     }
@@ -1044,10 +1056,6 @@ trait UserDao {
       // COULD refresh guest in cache: new email prefs --> perhaps show "??" not "?" after name.
     }
   }
-
-
-  def listUsers(): Seq[User] =
-    readOnlyTransaction(_.loadUsers())
 
 
   def listUsersNotifiedAboutPost(postId: PostId): Set[UserId] =
@@ -1080,6 +1088,8 @@ trait UserDao {
     // Similar to saveGroupPreferences below. (0QE15TW93)
     SECURITY // should create audit log entry. Should allow staff to change usernames.
     BUG // the lost update bug (if staff + user henself changes the user's prefs at the same time)
+
+    throwForbiddenIfBadNames(preferences)
 
     readWriteTransaction { transaction =>
       val user = transaction.loadTheMemberInclDetails(preferences.userId)
@@ -1155,6 +1165,7 @@ trait UserDao {
       // uncache only those pages.
       if (preferences.changesStuffIncludedEverywhere(user)) {
         // COULD_OPTIMIZE bump only page versions for the pages on which the user has posted something.
+        // Use markPagesWithUserAvatarAsStale ?
         emptyCacheImpl(transaction)
       }
     }
@@ -1165,6 +1176,8 @@ trait UserDao {
     // Similar to saveMemberPreferences above. (0QE15TW93)
     SECURITY // should create audit log entry. Should allow staff to change usernames.
     BUG // the lost update bug (if staff + user henself changes the user's prefs at the same time)
+
+    throwForbiddenIfBadNames(preferences)
 
     readWriteTransaction { transaction =>
       val group = transaction.loadTheGroupInclDetails(preferences.groupId)
@@ -1190,6 +1203,19 @@ trait UserDao {
       // Group names aren't shown everywhere. So need not empty cache (as is however
       // done here [2WBU0R1]).
     }
+  }
+
+
+  /** Should do the same tests as [5LKKWA10].
+    */
+  private def throwForbiddenIfBadNames(
+        preferences: { def username: String; def fullName: Option[String] }) {
+    throwForbiddenIf(Validation.checkName(preferences.fullName).isBad,
+      "TyE5KKWDR1", s"Weird name, not allowed: ${preferences.fullName}")
+    throwForbiddenIf(Validation.checkUsername(preferences.username).isBad,
+      "TyE4KUK02", s"Invalid username: ${preferences.username}")
+    throwForbiddenIf(ReservedNames.isUsernameReserved(preferences.username),
+      "TyE5K24ZQ1", s"Username is reserved: '${preferences.username}'; pick another username")
   }
 
 
@@ -1230,6 +1256,96 @@ trait UserDao {
       if (block.isActiveAt(globals.now()) && block.threatLevel == ThreatLevel.SevereThreat)
         throwForbidden("DwE403BK01", o"""Not allowed. Please sign up with a username
             and password, or login with Google or Facebook, for example.""")
+    }
+  }
+
+
+  def deleteUser(userId: UserId, byWho: Who) {
+    readWriteTransaction { tx =>
+      tx.deferConstraints()
+
+      val deleter = tx.loadTheUser(byWho.id)
+      require(userId == deleter.id || deleter.isAdmin, "TyE7UKBW1")
+
+      val anonUsername = "anon" + nextRandomLong().toString.take(10)
+      val anonEmail = anonUsername + "@example.com"
+
+      // Use this fn so uploads ref counts get decremented.
+      setUserAvatarImpl(userId: UserId, tinyAvatar = None, smallAvatar = None, mediumAvatar = None,
+        browserIdData = byWho.browserIdData, transaction = tx)
+
+      // Load member after having forgotten avatar images (above).
+      val memberBefore = tx.loadTheMemberInclDetails(userId)
+
+      // This resets the not-mentioned-here fields to default values.
+      val memberDeleted = MemberInclDetails(
+        id = memberBefore.id,
+        fullName = None,
+        username = anonUsername,
+        createdAt = memberBefore.createdAt,
+        isApproved = memberBefore.isApproved,
+        approvedAt = memberBefore.approvedAt,
+        approvedById = memberBefore.approvedById,
+        primaryEmailAddress = anonEmail,
+        emailNotfPrefs = EmailNotfPrefs.DontReceive,
+        suspendedAt = memberBefore.suspendedAt,
+        suspendedTill = memberBefore.suspendedTill,
+        suspendedById = memberBefore.suspendedById,
+        suspendedReason = memberBefore.suspendedReason,
+        trustLevel = memberBefore.trustLevel,
+        lockedTrustLevel = memberBefore.lockedTrustLevel,
+        threatLevel = memberBefore.threatLevel,
+        lockedThreatLevel = memberBefore.lockedThreatLevel,
+        deactivatedAt = memberBefore.deactivatedAt,
+        deletedAt = Some(tx.now))
+
+      val auditLogEntry = AuditLogEntry(
+        siteId = siteId,
+        id = AuditLogEntry.UnassignedId,
+        didWhat = AuditLogEntryType.DeleteUser,
+        doerId = byWho.id,
+        doneAt = tx.now.toJavaDate,
+        browserIdData = byWho.browserIdData,
+        targetUserId = Some(userId))
+
+      // Right now, members must have email addresses. Later, don't require this, and
+      // skip inserting any dummy email here. [no-email]
+      tx.deleteAllUsersEmailAddresses(userId)
+      tx.insertUserEmailAddress(UserEmailAddress(userId, anonEmail, addedAt = tx.now, verifiedAt = None))
+
+      SECURITY; COULD // if the user needs to be blocked (e.g. a spammer), remember ... a hash?
+      // of hens identity ids, in a block list, to prevent hen from signing up again.
+      // Otherwise, right now, someone who signed up with Facebook and got blocked, can just
+      // delete hens account and signup again with the same Facebook account.
+      tx.deleteAllUsersIdentities(userId)
+
+      // If we've sent emails to the user, delete hens email address from the emails.
+      tx.forgetEmailSentToAddress(userId, replaceWithAddr = anonEmail)
+      tx.forgetInviteEmailSentToAddress(userId, replaceWithAddr = anonEmail)
+
+      // Audit log entries get scrubbed automatically after a while; don't delete them from here
+      // (that'd be too soon — they're used to prevent e.g. app layer DoS attacks).
+
+      // Keep usernames — to prevent others from impersonating this user.
+      // And remember the current username, and the new anonNNNN username:
+      PRIVACY // Maybe remember username hashes instead? hashed with sth like scrypt. [6UKBWTA2]
+      // Can websearch for "privacy hash usernames".
+      val oldUsernames: Seq[UsernameUsage] = tx.loadUsersOldUsernames(userId)
+      oldUsernames.filter(_.inUseTo.isEmpty) foreach { usage: UsernameUsage =>
+        val usageStopped = usage.copy(inUseTo = Some(tx.now))
+        tx.updateUsernameUsage(usageStopped)
+      }
+      tx.insertUsernameUsage(UsernameUsage(
+        anonUsername, inUseFrom = tx.now, userId = userId))
+
+      tx.updateMemberInclDetails(memberDeleted)
+      tx.insertAuditLogEntry(auditLogEntry)
+
+      tx.removeDeletedMemberFromAllPages(userId)
+
+      // Clear the page cache, by clearing all caches.  [2WBU0R1]
+      emptyCacheImpl(tx)
+      removeUserFromMemCache(userId)
     }
   }
 

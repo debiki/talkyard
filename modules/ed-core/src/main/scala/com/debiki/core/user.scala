@@ -253,25 +253,28 @@ case class NameAndUsername(id: UserId, fullName: String, username: String)
 
 case object User {
 
-  /** Cannot talk with members with lower ids (System and SuperAdmin). */
-  val LowestTalkToMemberId = 3
-
   /** Used when things are inserted or updated automatically in the database. */
   val SystemUserId = 1
   val SystemUserUsername = "system"
   val SystemUserFullName = "System"
 
-  // Later ...  [4KYFU02]
   val SuperAdminId = 2
+
+  // The real ids of deactivated and deleted users, are replaced with these ids, when rendering
+  // pages, so others won't find the real ids of the deactivated/deleted accounts.
+  val DeactivatedUserId = 3
+  val DeletedUserId = 4
+
+  // ?? If a member chooses to post anonymously:
+  // val AnonymousUserId = 7
+
+  /** Cannot talk with members with lower ids (System, SuperAdmin, Deactivated, Deleted users). */
+  val LowestTalkToMemberId = 5  // change to 7 ? == AnonymousUserId (maybe 5 & 6 neded for sth else cannot-talk)
 
   /** A user that did something, e.g. voted on a comment, but was not logged in. */
   val UnknownUserId: UserId = -3
   val UnknownUserName = "Unknown"
   val UnknownUserGuestCookie = "UU"
-
-  // Perhaps in the future:
-  // /** A user that has logged in and can post comments, but is anonymous. */
-  // val AnonymousUserId = -1
 
   /** Guests with custom name and email, but not guests with magic ids like the Unknown user. */
   val MaxCustomGuestId: UserId = -10
@@ -285,8 +288,8 @@ case object User {
     */
   val LowestAuthenticatedUserId = 100   // also in js  [8PWK1Q2W]
 
-  val LowestMemberId = SystemUserId // -1    No, change to -2  [4KYFU02]
-  val LowestNonGuestId = 1  // later: rename to LowestMemberId?
+  val LowestMemberId: UserId = SystemUserId
+  val LowestNonGuestId = 1  // CLEAN_UP RENAME to LowestMemberId?
   assert(LowestNonGuestId == SystemUserId)
 
   def isGuestId(userId: UserId): Boolean =
@@ -380,12 +383,15 @@ sealed trait User {
   def isOwner: Boolean
   def isModerator: Boolean
   def isSuperAdmin: Boolean
+  def isDeactivated: Boolean = false
+  def isDeleted: Boolean = false
 
   def isAuthenticated: Boolean = isRoleId(id)
   def isApprovedOrStaff: Boolean = false
   def isSystemUser: Boolean = id == SystemUserId
   def isStaff: Boolean = isAdmin || isModerator || isSystemUser
   def isHuman: Boolean = id >= LowestTalkToMemberId
+  def isGone: Boolean = isDeactivated || isDeleted
 
   def isStaffOrCoreMember: Boolean =
     isStaff || effectiveTrustLevel.toInt >= TrustLevel.CoreMember.toInt
@@ -446,6 +452,8 @@ sealed trait User {
   * @param isOwner
   * @param isModerator
   * @param isSuperAdmin
+  * @param isDeactivated
+  * @param isDeleted
   */
 case class Member(
   id: UserId,
@@ -466,7 +474,9 @@ case class Member(
   isAdmin: Boolean = false,
   isOwner: Boolean = false,
   isModerator: Boolean = false,
-  isSuperAdmin: Boolean = false) extends User {
+  isSuperAdmin: Boolean = false,
+  override val isDeactivated: Boolean = false,
+  override val isDeleted: Boolean = false) extends User {
 
   override def anyName: Option[String] = fullName
   override def anyUsername: Option[String] = username
@@ -509,7 +519,7 @@ case class Guest(
   lockedThreatLevel: Option[ThreatLevel] = None) extends User {
 
   def theUsername: Nothing = die("EsE7YKWP4")
-  def username = None
+  def username: Option[String] = None
   def emailVerifiedAt: Option[ju.Date] = None
   def passwordHash: Option[String] = None
   def tinyAvatar: Option[UploadRef] = None
@@ -520,7 +530,7 @@ case class Guest(
   def isModerator: Boolean = false
   def isSuperAdmin: Boolean = false
   def suspendedTill: Option[ju.Date] = None
-  def effectiveTrustLevel = TrustLevel.NewMember
+  def effectiveTrustLevel: TrustLevel = TrustLevel.NewMember
 
   override def anyName = Some(guestName)
   def usernameOrGuestName: String = guestName
@@ -566,7 +576,9 @@ case class MemberInclDetails(
   trustLevel: TrustLevel = TrustLevel.NewMember,
   lockedTrustLevel: Option[TrustLevel] = None,
   threatLevel: ThreatLevel = ThreatLevel.HopefullySafe,
-  lockedThreatLevel: Option[ThreatLevel] = None) extends MemberOrGroupInclDetails {
+  lockedThreatLevel: Option[ThreatLevel] = None,
+  deactivatedAt: Option[When] = None,
+  deletedAt: Option[When] = None) extends MemberOrGroupInclDetails {
 
   require(User.isOkayUserId(id), "DwE077KF2")
   require(username.length >= 2, "DwE6KYU9")
@@ -589,6 +601,8 @@ case class MemberInclDetails(
   require(!isEmailLocalPartHidden(primaryEmailAddress), "DwE2WFE1")
   require(tinyAvatar.isDefined == smallAvatar.isDefined &&
     smallAvatar.isDefined == mediumAvatar.isDefined, "EdE8UMW2")
+  require(!deactivatedAt.exists(_.isBefore(createdWhen)), "TyE2GKDU0")
+  require(!deletedAt.exists(_.isBefore(createdWhen)), "TyE1PUF054")
 
   def isStaff: Boolean = isAdmin || isModerator
   def isApprovedOrStaff: Boolean = approvedAt.isDefined || isStaff
@@ -597,6 +611,10 @@ case class MemberInclDetails(
 
   def isSuspendedAt(when: ju.Date): Boolean =
     User.isSuspendedAt(when, suspendedTill = suspendedTill)
+
+  def isDeactivated: Boolean = deactivatedAt.isDefined
+  def isDeleted: Boolean = deletedAt.isDefined
+  def isGone: Boolean = isDeactivated || isDeleted
 
   def effectiveTrustLevel: TrustLevel = lockedTrustLevel getOrElse trustLevel
   def effectiveThreatLevel: ThreatLevel = lockedThreatLevel getOrElse threatLevel
@@ -702,7 +720,9 @@ case class MemberInclDetails(
     lockedThreatLevel = lockedThreatLevel,
     isAdmin = isAdmin,
     isModerator = isModerator,
-    isOwner = isOwner)
+    isOwner = isOwner,
+    isDeactivated = deactivatedAt.isDefined,
+    isDeleted = deletedAt.isDefined)
 }
 
 
@@ -812,9 +832,9 @@ case class Group(
   extends User with MemberOrGroupInclDetails {  // COULD split into two? One without, one with details
 
   def email: String = ""
-  def passwordHash = None
-  def emailVerifiedAt = None
-  def emailNotfPrefs = EmailNotfPrefs.DontReceive
+  def passwordHash: Option[String] = None
+  def emailVerifiedAt: Option[ju.Date] = None
+  def emailNotfPrefs: EmailNotfPrefs = EmailNotfPrefs.DontReceive
 
   def isModerator: Boolean = id == Group.ModeratorsId
   def isAdmin: Boolean = id == Group.AdminsId

@@ -1,0 +1,5 @@
+
+
+[no-email]:
+Let people create accounts without specifying any email address. Like at Reddit.
+
