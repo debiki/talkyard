@@ -29,7 +29,7 @@ const TestPageRole = {  // dupl in client/app/constants.ts [5F8KW0P2]
 const TestTrustLevel = {
   New: <TrustLevel> 1,
   Basic: <TrustLevel> 2,
-  Member: <TrustLevel> 3,
+  FullMember: <TrustLevel> 3,
   Trusted: <TrustLevel> 4,
   Regular: <TrustLevel> 5,
   CoreMember: <TrustLevel> 6,

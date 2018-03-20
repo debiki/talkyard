@@ -201,7 +201,7 @@ const AboutUser = createComponent({
     }
 
     const isGoneInfo = !user_isGone(user) ? null :
-      r.p({}, "Is deactivated or deleted, cannot be contacted.");
+      r.p({}, "Is deactivated or deleted.");
 
     const afterClick = this.props.close;
 

@@ -810,6 +810,7 @@ object ReactJson {
     // Somewhat dupl code. (2WB4G7)
     Json.obj(
       "dbgSrc" -> "2FBS6Z8",
+      "trustLevel" -> TrustLevel.StrangerDummyLevel,
       "notifications" -> JsArray(),
       "watchbar" -> makeStrangersWatcbarJson(dao),
       "myDataByPageId" -> JsObject(Nil),

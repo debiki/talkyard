@@ -47,57 +47,6 @@ class ViewPageController @Inject()(cc: ControllerComponents, edContext: EdContex
 
 
 
-  def listPosts(authorId: UserId): Action[Unit] = GetAction { request: GetRequest =>
-    import request.{dao, user => caller}
-
-    val callerIsStaff = caller.exists(_.isStaff)
-    val callerIsStaffOrAuthor = callerIsStaff || caller.exists(_.id == authorId)
-    val author = dao.getUser(authorId) getOrElse throwNotFound("EdE2FWKA9", "Author not found")
-
-    throwForbiddenIf(author.isGone && !callerIsStaff,
-      "TyE2KGUK03", "User deactivated or deleted, cannot list posts")
-
-    val postsInclForbidden = dao.readOnlyTransaction { transaction =>
-      transaction.loadPostsByAuthorSkipTitles(authorId, limit = 999, OrderBy.MostRecentFirst)
-    }
-    val pageIdsInclForbidden = postsInclForbidden.map(_.pageId).toSet
-    val pageMetaById = dao.getPageMetasAsMap(pageIdsInclForbidden)
-
-    val posts = for {
-      post <- postsInclForbidden
-      pageMeta <- pageMetaById.get(post.pageId)
-      if dao.maySeePostUseCache(post, pageMeta, caller,
-          maySeeUnlistedPages = callerIsStaffOrAuthor)._1
-    } yield post
-
-    val pageIds = posts.map(_.pageId).distinct
-    val pageStuffById = dao.getPageStuffById(pageIds)
-    val tagsByPostId = dao.readOnlyTransaction(_.loadTagsByPostId(posts.map(_.id)))
-
-    val postsJson = posts flatMap { post =>
-      val pageMeta = pageMetaById.get(post.pageId) getOrDie "EdE2KW07E"
-      val tags = tagsByPostId.getOrElse(post.id, Set.empty)
-      var postJson = ReactJson.postToJsonOutsidePage(post, pageMeta.pageRole,
-        showHidden = true, includeUnapproved = callerIsStaffOrAuthor, tags, nashorn = context.nashorn)
-
-      pageStuffById.get(post.pageId) map { pageStuff =>
-        postJson += "pageId" -> JsString(post.pageId)
-        postJson += "pageTitle" -> JsString(pageStuff.title)
-        postJson += "pageRole" -> JsNumber(pageStuff.pageRole.toInt)
-        if (callerIsStaff && (post.numPendingFlags > 0 || post.numHandledFlags > 0)) {
-          postJson += "numPendingFlags" -> JsNumber(post.numPendingFlags)
-          postJson += "numHandledFlags" -> JsNumber(post.numHandledFlags)
-        }
-        postJson
-      }
-    }
-
-    OkSafeJson(Json.obj(
-      "author" -> ReactJson.JsUser(author),
-      "posts" -> JsArray(postsJson)))
-  }
-
-
   def loadPost(pageId: PageId, postNr: PostNr): Action[Unit] = GetActionAllowAnyone { request =>
     // Similar to getPageAsJsonImpl and getPageAsHtmlImpl, keep in sync. [7PKW0YZ2]
 

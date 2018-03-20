@@ -729,9 +729,14 @@ export function setTagNotfLevel(tagLabel: TagLabel, newNotfLevel: NotfLevel) {
 }
 
 
-export function saveUserPreferences(prefs, isGroup: boolean, success: () => void) {
+export function saveAboutUserPrefs(prefs, isGroup: boolean, success: () => void) {
   const what = isGroup ? 'group' : 'member';
-  postJsonSuccess(`/-/save-${what}-preferences`, success, prefs);
+  postJsonSuccess(`/-/save-about-${what}-prefs`, success, prefs);
+}
+
+
+export function saveMemberPrivacyPrefs(prefs, success: () => void) {
+ postJsonSuccess(`/-/save-privacy-prefs`, success, prefs);
 }
 
 

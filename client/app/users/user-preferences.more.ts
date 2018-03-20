@@ -103,8 +103,8 @@ export const AboutUser = createFactory({
     }
 
     const preferences = isGuest(user)
-        ? GuestPreferences({ guest: user })
-        : MemberPreferences(this.props);
+        ? AboutGuest({ guest: user })
+        : AboutMember(this.props);
 
     return (
       r.div({ className: 's_UP_Prefs' },
@@ -115,8 +115,8 @@ export const AboutUser = createFactory({
 
 
 
-const GuestPreferences = createComponent({
-  displayName: 'GuestPreferences',
+const AboutGuest = createComponent({
+  displayName: 'AboutGuest',
 
   getInitialState: function() {
     return {};
@@ -139,6 +139,7 @@ const GuestPreferences = createComponent({
   render: function() {
     const guest: Guest = this.props.guest;
 
+    // Dupl Saving... code [7UKBQT2
     let savingInfo = null;
     if (this.state.savingStatus === 'Saving') {
       savingInfo = r.i({}, " Saving...");
@@ -167,8 +168,8 @@ const GuestPreferences = createComponent({
 
 
 
-const MemberPreferences = createComponent({
-  displayName: 'MemberPreferences',
+const AboutMember = createComponent({
+  displayName: 'AboutMember',
 
   getInitialState: function() {
     let user: MemberInclDetails = this.props.user;
@@ -246,7 +247,7 @@ const MemberPreferences = createComponent({
     // This won't update the name in the name-login-button component. But will
     // be automatically fixed when I've ported everything to React and use
     // some global React state instead of cookies to remember the user name.
-    Server.saveUserPreferences(prefs, user.isGroup, () => {
+    Server.saveAboutUserPrefs(prefs, user.isGroup, () => {
       if (this.isGone) return;
       this.setState({
         savingStatus: 'Saved',
@@ -267,6 +268,7 @@ const MemberPreferences = createComponent({
     const isBuiltInUser = user.id < LowestAuthenticatedUserId;
     const isSystemUser = user.id === SystemUserId;
 
+    // Dupl Saving... code [7UKBQT2]
     let savingInfo = null;
     if (this.state.savingStatus === 'Saving') {
       savingInfo = r.i({}, ' Saving...');
@@ -401,17 +403,72 @@ export const Privacy = createFactory({
   displayName: 'Privacy',
 
   getInitialState: function() {
-    return {};
+    const user: MemberInclDetails = this.props.user;
+    return {
+      hideActivityForStrangers: user.seeActivityMinTrustLevel >= TrustLevel.FullMember,
+      hideActivityForAll: user.seeActivityMinTrustLevel >= TrustLevel.CoreMember,
+    };
+  },
+
+  savePrivacyPrefs: function(event) {
+    event.preventDefault();
+    const seeActivityMinTrustLevel = this.state.hideActivityForAll ? TrustLevel.CoreMember : (
+        this.state.hideActivityForStrangers ? TrustLevel.FullMember : null);
+    const user: MemberInclDetails = this.props.user;
+    const prefs = {
+      userId: user.id,
+      seeActivityMinTrustLevel: seeActivityMinTrustLevel,
+    };
+    Server.saveMemberPrivacyPrefs(prefs, () => {
+      if (this.isGone) return;
+      this.setState({
+        savingStatus: 'Saved',
+      });
+      this.props.reloadUser(false);
+    });
+    this.setState({ savingStatus: 'Saving' });
   },
 
   render: function() {
+    const state = this.state;
     const me: Myself = this.props.store.me;
     const user: MemberInclDetails = this.props.user;
     const isMe = me.id === user.id;
+    const your = isMe ? "your" : "this user's";
+
+    // Dupl Saving... code [7UKBQT2]
+    let savingInfo = null;
+    if (this.state.savingStatus === 'Saving') {
+      savingInfo = r.i({}, " Saving ...");
+    }
+    else if (this.state.savingStatus === 'Saved') {
+      savingInfo = r.i({}, " Saved.");
+    }
 
     return (
-      r.div({},
-      ));
+      r.form({ role: 'form', onSubmit: this.savePrivacyPrefs },
+        Input({ type: 'checkbox', className: '',
+            label: rFragment({},
+              `Hide ${your} recent activity for strangers and new members?`, r.br(),
+              "(But not for those who have been active members for a while.)"),
+            checked: state.hideActivityForStrangers,
+            onChange: (event: CheckboxEvent) => this.setState({
+              hideActivityForStrangers: event.target.checked,
+              hideActivityForAll: false,
+            }) }),
+
+        Input({ type: 'checkbox', className: '',
+            label: rFragment({},
+              `Hide ${your} recent activity for everyone?`, r.br(),
+              "(Except for staff and trusted core members.)"),
+            checked: state.hideActivityForAll,
+            onChange: (event: CheckboxEvent) => this.setState({
+              hideActivityForStrangers: event.target.checked || state.hideActivityForStrangers,
+              hideActivityForAll: event.target.checked,
+            }) }),
+
+        InputTypeSubmit({ id: '', style: { marginTop: '11px' }, value: "Save" }),
+        savingInfo));
   }
 });
 

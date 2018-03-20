@@ -21,6 +21,7 @@ import com.debiki.core._
 import com.debiki.core.Prelude._
 import com.debiki.core.User.{MinUsernameLength, isGuestId}
 import debiki._
+import debiki.dao.SiteDao
 import debiki.EdHttp._
 import debiki.ReactJson._
 import ed.server.http._
@@ -77,18 +78,22 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
   /** Loads a member or group, incl details, or a guest (then there are no details).
     */
   def loadUserAnyDetails(who: String): Action[Unit] = GetAction { request =>
-    val (userJson, anyStatsJson) = Try(who.toInt).toOption match {
-      case Some(userId) => loadUserJsonAnyDetailsById(userId, includeStats = true, request)
+    val (userJson, anyStatsJson, userId) = Try(who.toInt).toOption match {
+      case Some(id) => loadUserJsonAnyDetailsById(id, includeStats = true, request)
       case None => loadMemberOrGroupJsonInclDetailsByEmailOrUsername(
         who, includeStats = true, request)
     }
-    OkSafeJson(Json.toJson(Map("user" -> userJson, "stats" -> anyStatsJson)))
+    // Maybe? No, stats is ok to show? Could possibly add another conf val, hmm.
+    /*val stats =
+      if (maySeeActivity(userId, request.requester, request.dao)) anyStatsJson
+      else JsNull */
+    OkSafeJson(Json.obj("user" -> userJson, "stats" -> anyStatsJson))
   }
 
 
   // A tiny bit dupl code [5YK02F4]
   private def loadUserJsonAnyDetailsById(userId: UserId, includeStats: Boolean,
-        request: DebikiRequest[_]): (JsObject, JsValue) = {
+        request: DebikiRequest[_]): (JsObject, JsValue, UserId) = {
     val callerIsStaff = request.user.exists(_.isStaff)
     val callerIsAdmin = request.user.exists(_.isAdmin)
     val callerIsUserHerself = request.user.exists(_.id == userId)
@@ -114,14 +119,15 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
             callerIsAdmin = callerIsAdmin)
 
         }
-      (usersJson, stats.map(makeUserStatsJson(_, isStaffOrSelf)).getOrElse(JsNull))
+      (usersJson, stats.map(makeUserStatsJson(_, isStaffOrSelf)).getOrElse(JsNull), userId)
     }
   }
 
 
   // A tiny bit dupl code [5YK02F4]
   private def loadMemberOrGroupJsonInclDetailsByEmailOrUsername(emailOrUsername: String,
-        includeStats: Boolean, request: DebikiRequest[_]) = {
+        includeStats: Boolean, request: DebikiRequest[_])
+        : (JsObject, JsValue, UserId) = {
     val callerIsStaff = request.user.exists(_.isStaff)
     val callerIsAdmin = request.user.exists(_.isAdmin)
 
@@ -168,11 +174,11 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
           val userJson = jsonForMemberInclDetails(
             member, Map.empty, groups, callerIsAdmin = callerIsAdmin,
             callerIsStaff = callerIsStaff, callerIsUserHerself = callerIsUserHerself)
-          (userJson, stats.map(makeUserStatsJson(_, isStaffOrSelf)).getOrElse(JsNull))
+          (userJson, stats.map(makeUserStatsJson(_, isStaffOrSelf)).getOrElse(JsNull), member.id)
         case group: Group =>
           val groupJson = jsonForGroupInclDetails(
             group, callerIsAdmin = callerIsAdmin, callerIsStaff = callerIsStaff)
-          (groupJson, JsNull)
+          (groupJson, JsNull, group.id)
       }
     }
   }
@@ -194,6 +200,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
       "country" -> JsStringOrNull(user.country),
       "url" -> JsStringOrNull(user.website),
       "about" -> JsStringOrNull(user.about),
+      "seeActivityMinTrustLevel" -> JsNumberOrNull(user.seeActivityMinTrustLevel.map(_.toInt)),
       "avatarUrl" -> JsUploadUrlOrNull(user.smallAvatar),
       "mediumAvatarUrl" -> JsUploadUrlOrNull(user.mediumAvatar),
       "suspendedTillEpoch" -> DateEpochOrNull(user.suspendedTill),
@@ -302,6 +309,93 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
       result += "notfsNewSinceId" -> JsNumber(stats.notfsNewSinceId)
     }
     result
+  }
+
+
+  def listTopicsByUser(userId: UserId): Action[Unit] = GetAction { request =>
+    import request.{dao, requester}
+
+    val isStaff = requester.exists(_.isStaff)
+    val isStaffOrSelf = isStaff || requester.exists(_.id == userId)
+    val user = dao.getTheUser(userId)
+
+    throwForbiddenIfActivityPrivate(userId, requester, dao)
+
+    val topicsInclForbidden = dao.loadPagesByUser(
+      userId, isStaffOrSelf = isStaffOrSelf, limit = 200)
+    val topics = topicsInclForbidden filter { page: PagePathAndMeta =>
+      dao.maySeePageUseCache(page.meta, requester, maySeeUnlisted = isStaffOrSelf)._1
+    }
+    ForumController.makeTopicsResponse(topics, dao)
+  }
+
+
+  def listPostsByUser(authorId: UserId): Action[Unit] = GetAction { request: GetRequest =>
+    import request.{dao, user => caller}
+
+    val callerIsStaff = caller.exists(_.isStaff)
+    val callerIsStaffOrAuthor = callerIsStaff || caller.exists(_.id == authorId)
+    val author = dao.getUser(authorId) getOrElse throwNotFound("EdE2FWKA9", "Author not found")
+
+    throwForbiddenIfActivityPrivate(authorId, caller, dao)
+
+    val postsInclForbidden = dao.readOnlyTransaction { transaction =>
+      transaction.loadPostsByAuthorSkipTitles(authorId, limit = 999, OrderBy.MostRecentFirst)
+    }
+    val pageIdsInclForbidden = postsInclForbidden.map(_.pageId).toSet
+    val pageMetaById = dao.getPageMetasAsMap(pageIdsInclForbidden)
+
+    val posts = for {
+      post <- postsInclForbidden
+      pageMeta <- pageMetaById.get(post.pageId)
+      if dao.maySeePostUseCache(post, pageMeta, caller,
+        maySeeUnlistedPages = callerIsStaffOrAuthor)._1
+    } yield post
+
+    val pageIds = posts.map(_.pageId).distinct
+    val pageStuffById = dao.getPageStuffById(pageIds)
+    val tagsByPostId = dao.readOnlyTransaction(_.loadTagsByPostId(posts.map(_.id)))
+
+    val postsJson = posts flatMap { post =>
+      val pageMeta = pageMetaById.get(post.pageId) getOrDie "EdE2KW07E"
+      val tags = tagsByPostId.getOrElse(post.id, Set.empty)
+      var postJson = ReactJson.postToJsonOutsidePage(post, pageMeta.pageRole,
+        showHidden = true, includeUnapproved = callerIsStaffOrAuthor, tags, nashorn = context.nashorn)
+
+      pageStuffById.get(post.pageId) map { pageStuff =>
+        postJson += "pageId" -> JsString(post.pageId)
+        postJson += "pageTitle" -> JsString(pageStuff.title)
+        postJson += "pageRole" -> JsNumber(pageStuff.pageRole.toInt)
+        if (callerIsStaff && (post.numPendingFlags > 0 || post.numHandledFlags > 0)) {
+          postJson += "numPendingFlags" -> JsNumber(post.numPendingFlags)
+          postJson += "numHandledFlags" -> JsNumber(post.numHandledFlags)
+        }
+        postJson
+      }
+    }
+
+    OkSafeJson(Json.obj(
+      "author" -> ReactJson.JsUser(author),
+      "posts" -> JsArray(postsJson)))
+  }
+
+
+  private def throwForbiddenIfActivityPrivate(userId: UserId, requester: Option[User], dao: SiteDao) {
+    throwForbiddenIf(!maySeeActivity(userId, requester, dao),
+      "TyE4JKKQX3", "Not allowed to list activity for this user")
+  }
+
+
+  private def maySeeActivity(userId: UserId, requester: Option[User], dao: SiteDao): Boolean = {
+    if (!User.isMember(userId))
+      return true
+
+    val memberInclDetails = dao.loadTheMemberInclDetailsById(userId)
+    memberInclDetails.seeActivityMinTrustLevel match {
+      case None => true
+      case Some(minLevel) =>
+        requester.exists(_.effectiveTrustLevel.toInt >= minLevel.toInt)
+    }
   }
 
 
@@ -647,7 +741,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
 
   /** If not staff, returns a summary only.
     */
-  def loadAuthorBlocks(postId: Int) = GetAction { request =>
+  def loadAuthorBlocks(postId: Int): Action[Unit] = GetAction { request =>
     val blocks: Seq[Block] = request.dao.loadAuthorBlocks(postId)
     var json = blocksSummaryJson(blocks, request.ctime)
     if (request.user.exists(_.isStaff)) {
@@ -871,7 +965,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
   }
 
 
-  def loadGroups = AdminGetAction { request =>
+  def loadGroups: Action[Unit] = AdminGetAction { request =>
     val groups = request.dao.readOnlyTransaction { tx =>
       tx.loadGroupsAsSeq()
     }
@@ -880,10 +974,11 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
 
 
   SECURITY // don't allow if user listing disabled, & isn't staff [8FKU2A4]
-  def listAllUsers(usernamePrefix: String) = GetAction { request =>
+  def listAllUsers(usernamePrefix: String): Action[Unit] = GetAction { request =>
     // Authorization check: Is a member? Add MemberGetAction?
     request.theMember
 
+    // Also load deleted anon12345 members. Simpler, and they'll typically be very few or none. [5KKQXA4]
     val members = request.dao.loadMembersWithPrefix(usernamePrefix)
     val json = JsArray(
       members map { member =>
@@ -899,7 +994,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
   /** Listing usernames on a particular page is okay, if one may see the page
     * — however, listing all usernames for the whole site, isn't always okay. [8FKU2A4]
     */
-  def listUsernames(pageId: PageId, prefix: String) = GetAction { request =>
+  def listUsernames(pageId: PageId, prefix: String): Action[Unit] = GetAction { request =>
     import request.dao
 
     val pageMeta = dao.getPageMeta(pageId) getOrElse throwIndistinguishableNotFound("EdE4Z0B8P5")
@@ -911,6 +1006,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
       dao.getAnyPrivateGroupTalkMembers(pageMeta), categoriesRootLast,
       permissions = dao.getPermsOnPages(categoriesRootLast)), "EdEZBXKSM2")
 
+    // Also load deleted anon12345 members. Simpler, and they'll typically be very few or none. [5KKQXA4]
     val names = dao.listUsernames(pageId = pageId, prefix = prefix)
     val json = JsArray(
       names map { nameAndUsername =>
@@ -925,14 +1021,11 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
 
   /** maxBytes = 3000 because the about text might be fairly long.
     */
-  def saveMemberPreferences: Action[JsValue] = PostJsonAction(RateLimits.ConfigUser,
+  def saveAboutMemberPrefs: Action[JsValue] = PostJsonAction(RateLimits.ConfigUser,
         maxBytes = 3000) { request =>
-    val prefs = userPrefsFromJson(request.body)
-    val staffOrSelf = request.theUser.isStaff || request.theUserId == prefs.userId
-    throwForbiddenIf(!staffOrSelf, "DwE15KFE5", "Not your preferences")
-    throwForbiddenIf(prefs.userId < LowestTalkToMemberId,
-      "TyE2GKVQ", "Cannot configure preferences for this user, it's a built-in user")
-    request.dao.saveMemberPreferences(prefs, request.who)
+    val prefs = aboutMemberPrefsFromJson(request.body)
+    throwUnlessMayEditPrefs(prefs.userId, request.theRequester)
+    request.dao.saveAboutMemberPrefs(prefs, request.who)
     Ok
   }
 
@@ -940,11 +1033,28 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
   def saveGroupPreferences: Action[JsValue] = PostJsonAction(RateLimits.ConfigUser,
         maxBytes = 3000) { request =>
     import request.{dao, theRequester => requester}
-    val prefs = groupPrefsFromJson(request.body)
+    val prefs = aboutGroupPrefsFromJson(request.body)
     if (!requester.isAdmin)
       throwForbidden("EdE5PYKW0", "Only admins may change group prefs, right now")
-    dao.saveGroupPreferences(prefs, request.who)
+    dao.saveAboutGroupPrefs(prefs, request.who)
     Ok
+  }
+
+
+  def saveMemberPrivacyPrefs: Action[JsValue] = PostJsonAction(RateLimits.ConfigUser,
+        maxBytes = 100) { request =>
+    val prefs = memberPrivacyPrefsFromJson(request.body)
+    throwUnlessMayEditPrefs(prefs.userId, request.theRequester)
+    request.dao.saveMemberPrivacyPrefs(prefs, request.who)
+    Ok
+  }
+
+
+  private def throwUnlessMayEditPrefs(userId: UserId, requester: User) {
+    val staffOrSelf = requester.isStaff || requester.id == userId
+    throwForbiddenIf(!staffOrSelf, "TyE5KKQSFW0", "May not edit other people's preferences")
+    throwForbiddenIf(userId < LowestTalkToMemberId,
+      "TyE2GKVQ", "Cannot configure preferences for this user, it's a built-in user")
   }
 
 
@@ -1067,7 +1177,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
 
 
 
-  private def userPrefsFromJson(json: JsValue): MemberPreferences = {
+  private def aboutMemberPrefsFromJson(json: JsValue): AboutMemberPrefs = {
     val username = (json \ "username").as[String]
     if (username.length < MinUsernameLength)
       throwBadReq("DwE44KUY0", "Username too short")
@@ -1079,7 +1189,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
     if (about.exists(_.length > 1500))
       throwForbidden("EdE2QRRD40", "Too long about text, max is 1500 chars")  // db: max = 2000
 
-    MemberPreferences(
+    AboutMemberPrefs(
       userId = (json \ "userId").as[UserId],
       fullName = (json \ "fullName").asOptStringNoneIfBlank,
       username = username,
@@ -1093,17 +1203,25 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
   }
 
 
-  private def groupPrefsFromJson(json: JsValue): GroupPreferences = {
+  private def aboutGroupPrefsFromJson(json: JsValue): AboutGroupPrefs = {
     val username = (json \ "username").as[String]
     if (username.length < MinUsernameLength)
       throwBadReq("EdE2QDP04", "Username too short")
 
-    GroupPreferences(
+    AboutGroupPrefs(
       groupId = (json \ "userId").as[UserId],
       fullName = (json \ "fullName").asOptStringNoneIfBlank,
       username = username,
       summaryEmailIntervalMins = (json \ "summaryEmailIntervalMins").asOpt[Int],
       summaryEmailIfActive = (json \ "summaryEmailIfActive").asOpt[Boolean])
+  }
+
+
+  private def memberPrivacyPrefsFromJson(json: JsValue): MemberPrivacyPrefs = {
+    val anySeeActivityInt = (json \ "seeActivityMinTrustLevel").asOpt[Int]
+    MemberPrivacyPrefs(
+      userId = (json \ "userId").as[UserId],
+      seeActivityMinTrustLevel = anySeeActivityInt.flatMap(TrustLevel.fromInt))
   }
 
 }

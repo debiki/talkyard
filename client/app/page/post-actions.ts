@@ -440,7 +440,7 @@ const MoreVotesDropdownModal = createComponent({
     const votes = myPageData.votes[post.nr] || [];
     const isOwnPage = store_thisIsMyPage(store);
     const isStaffFullMemberOrOwnPage: boolean =
-      isStaff(me) || me.trustLevel >= TrustLevel.Member || isOwnPage;
+      isStaff(me) || me.trustLevel >= TrustLevel.FullMember || isOwnPage;
     const isStaffOrCoreMember: boolean =
         isStaff(me) || me.trustLevel >= TrustLevel.CoreMember;
 

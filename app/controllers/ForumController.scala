@@ -267,36 +267,6 @@ class ForumController @Inject()(cc: ControllerComponents, edContext: EdContext)
   }
 
 
-  def listTopicsByUser(userId: UserId): Action[Unit] = GetAction { request =>
-    import request.{dao, requester}
-
-    val isStaff = requester.exists(_.isStaff)
-    val isStaffOrSelf = isStaff || requester.exists(_.id == userId)
-    val user = dao.getTheUser(userId)
-
-    throwForbiddenIf(user.isGone && !isStaff,
-      "TyE7UKWDP2", "User deactivated or deleted, cannot list topics")
-
-    val topicsInclForbidden = dao.loadPagesByUser(
-      userId, isStaffOrSelf = isStaffOrSelf, limit = 200)
-    val topics = topicsInclForbidden filter { page: PagePathAndMeta =>
-      dao.maySeePageUseCache(page.meta, requester, maySeeUnlisted = isStaffOrSelf)._1
-    }
-    makeTopicsResponse(topics, dao)
-  }
-
-
-  private def makeTopicsResponse(topics: Seq[PagePathAndMeta], dao: SiteDao): Result = {
-    val pageStuffById = dao.getPageStuffById(topics.map(_.pageId))
-    val users = dao.getUsersAsSeq(pageStuffById.values.flatMap(_.userIds))
-    val topicsJson: Seq[JsObject] = topics.map(topicToJson(_, pageStuffById))
-    val json = Json.obj(
-      "topics" -> topicsJson,
-      "users" -> users.map(JsUser))
-    OkSafeJson(json)
-  }
-
-
   def listCategories(forumId: PageId): Action[Unit] = GetAction { request =>
     unused("EsE4KFC02")
     SECURITY; TESTS_MISSING  // securified
@@ -360,6 +330,17 @@ object ForumController {
     val topicsNoAboutCategoryPage = recentTopics.filter(_.pageRole != PageRole.AboutCategory)
     val recentTopicsJson = topicsNoAboutCategoryPage.map(topicToJson(_, pageStuffById))
     ReactJson.makeCategoryJson(category, isDefault, recentTopicsJson)
+  }
+
+
+  def makeTopicsResponse(topics: Seq[PagePathAndMeta], dao: SiteDao): Result = {
+    val pageStuffById = dao.getPageStuffById(topics.map(_.pageId))
+    val users = dao.getUsersAsSeq(pageStuffById.values.flatMap(_.userIds))
+    val topicsJson: Seq[JsObject] = topics.map(topicToJson(_, pageStuffById))
+    val json = Json.obj(
+      "topics" -> topicsJson,
+      "users" -> users.map(JsUser))
+    OkSafeJson(json)
   }
 
 

@@ -188,16 +188,16 @@ class DaoAppSuite(
 
 
   def updateMemberPreferences(dao: SiteDao, memberId: UserId,
-        fn: Function1[MemberPreferences, MemberPreferences]) {
+        fn: Function1[AboutMemberPrefs, AboutMemberPrefs]) {
     val member = dao.loadTheMemberInclDetailsById(memberId)
-    dao.saveMemberPreferences(fn(member.preferences), Who(memberId, browserIdData))
+    dao.saveAboutMemberPrefs(fn(member.preferences), Who(memberId, browserIdData))
   }
 
 
   def updateGroupPreferences(dao: SiteDao, groupId: UserId, byWho: Who,
-        fn: Function1[GroupPreferences, GroupPreferences]) {
+        fn: Function1[AboutGroupPrefs, AboutGroupPrefs]) {
     val group = dao.loadTheGroupInclDetailsById(groupId)
-    dao.saveGroupPreferences(fn(group.preferences), byWho)
+    dao.saveAboutGroupPrefs(fn(group.preferences), byWho)
   }
 
 

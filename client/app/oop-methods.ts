@@ -393,8 +393,8 @@ export function trustLevel_toString(trustLevel: TrustLevel): string {
   switch (trustLevel) {
     case TrustLevel.New: level = "New"; break;
     case TrustLevel.Basic: level = "Basic"; break;
-    case TrustLevel.Member: level = "Full"; break;
-    case TrustLevel.Helper: level = "Trusted"; break;
+    case TrustLevel.FullMember: level = "Full"; break;
+    case TrustLevel.Trusted: level = "Trusted"; break;
     case TrustLevel.Regular: level = "Regular"; break;
     case TrustLevel.CoreMember: level = "Core"; break;
     default:

@@ -104,6 +104,8 @@ POST  /-/complete-review-task   controllers.ModerationController.completeReviewT
 GET   /-/users/                 controllers.UserController.viewUserPage(whatever = "")
 GET   /-/users/*whatever        controllers.UserController.viewUserPage(whatever)
 GET   /-/load-my-page-data      controllers.UserController.loadMyPageData(pageId)
+GET   /-/list-topics-by-user    controllers.UserController.listTopicsByUser(userId: Int)
+GET   /-/list-posts             controllers.UserController.listPostsByUser(authorId: Int)
 POST  /-/track-reading          controllers.UserController.trackReadingProgress
 POST  /-/track-reading-text     controllers.UserController.trackReadingProgressText
 GET   /-/load-notifications     controllers.UserController.loadNotifications(userId: Int, upToWhenMs: Long)
@@ -112,8 +114,9 @@ POST  /-/set-page-notf-level    controllers.UserController.savePageNotfLevel
 GET   /-/load-groups            controllers.UserController.loadGroups()
 GET   /-/list-all-users         controllers.UserController.listAllUsers(usernamePrefix)
 GET   /-/list-usernames         controllers.UserController.listUsernames(pageId, prefix)
-POST  /-/save-member-preferences controllers.UserController.saveMemberPreferences
-POST  /-/save-group-preferences controllers.UserController.saveGroupPreferences
+POST  /-/save-about-member-prefs controllers.UserController.saveAboutMemberPrefs
+POST  /-/save-about-group-prefs controllers.UserController.saveGroupPreferences
+POST  /-/save-privacy-prefs     controllers.UserController.saveMemberPrivacyPrefs
 POST  /-/save-guest             controllers.UserController.saveGuest
 POST  /-/delete-user            controllers.UserController.deleteUser
 # Currently ignores group inheritance of settings. [2WHK7PU0]
@@ -155,7 +158,6 @@ POST  /-/create-embedded-comments-site  controllers.EmbeddedTopicsController.cre
 POST  /-/create-forum           controllers.ForumController.createForum
 GET   /-/list-forums            controllers.ForumController.listForums
 GET   /-/list-topics            controllers.ForumController.listTopics(categoryId: Int)
-GET   /-/list-topics-by-user    controllers.ForumController.listTopicsByUser(userId: Int)
 GET   /-/list-categories        controllers.ForumController.listCategories(forumId)
 GET   /-/list-categories-topics controllers.ForumController.listCategoriesAndTopics(forumId)
 POST  /-/save-category          controllers.ForumController.saveCategory
@@ -262,7 +264,6 @@ GET   /-/list-sites              controllers.SuperAdminController.listSites
 POST  /-/update-sites            controllers.SuperAdminController.updateSites
 
 GET   /-/load-post              controllers.ViewPageController.loadPost(pageId: String, postNr: Int)
-GET   /-/list-posts             controllers.ViewPageController.listPosts(authorId: Int)
 
 # Don't change the URL on the next line. The /-/assets/<version-number>/ is
 # updated by the deployment script (asset fingerprinting).

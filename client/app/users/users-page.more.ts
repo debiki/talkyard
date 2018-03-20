@@ -172,15 +172,14 @@ const UserPageComponent = createReactClass(<any> {
 
     const imStaff = isStaff(me);
     const userGone = user_isGone(user);
-    const userGoneNotStaff = userGone && !imStaff;
 
     const showPrivateStuff = imStaff || (!userGone && me.isAuthenticated && me.id === user.id);
     const linkStart = UsersRoot + usernameOrId + '/';
 
-    const activityNavItem = userGoneNotStaff || user.isGroup ? null :
+    const activityNavItem = user.isGroup ? null :
       LiNavLink({ to: linkStart + 'activity', className: 'e_UP_ActivityB' }, "Activity");
 
-    const summaryNavItem = userGoneNotStaff || user.isGroup ? null :
+    const summaryNavItem = user.isGroup ? null :
       LiNavLink({ to: linkStart + 'summary', className: 'e_UP_SummaryB' }, "Summary");
 
     const notificationsNavItem = !showPrivateStuff || user.isGroup ? null :
@@ -194,7 +193,7 @@ const UserPageComponent = createReactClass(<any> {
 
     const childProps = {
       store: store,
-      me: me, // try to remove, incl already in `store`
+      me: me, // CLEAN_UP try to remove, incl already in `store`
       user: user,
       match: this.props.match,
       stats: this.state.stats,
@@ -203,7 +202,7 @@ const UserPageComponent = createReactClass(<any> {
 
     const u = UsersRootAndIdParamSlash;
 
-    const childRoutes = userGoneNotStaff ? null : Switch({},
+    const childRoutes = Switch({},
       Route({ path: u + 'activity', exact: true, render: ({ match }) => {
         const hash = this.props.location.hash;
         return Redirect({ to: UsersRoot + match.params.usernameOrId + '/activity/posts' + hash });

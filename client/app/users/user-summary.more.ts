@@ -29,6 +29,9 @@ export const UserSummary = createFactory({
 
   render: function() {
     const stats: UserStats = this.props.stats;
+    if (!stats)
+      return r.p({}, "This user's statistics is not publicly visible.");
+
     return (
      r.div({ className: 's_UP_Stats' },
        r.h2({}, "Statistics"),

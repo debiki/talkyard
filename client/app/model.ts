@@ -37,6 +37,13 @@ type DateMs = number;
 
 type HttpRequest = XMLHttpRequest
 
+interface CheckboxEvent {
+  target: {
+    checked: boolean;
+  }
+}
+
+
 // Send back IgnoreThisError to the caller from an error callback, and the caller won't
 // continue with its default error handling — it'll ignore the error.
 // Send back undefined or anything else to the caller, and the error will be considered.
@@ -799,6 +806,7 @@ interface MemberInclDetails extends MemberOrGroupInclDetails {
   about?: string;
   country: string;
   url: string;
+  seeActivityMinTrustLevel?: TrustLevel;
   avatarUrl?: string;
   mediumAvatarUrl?: string;
   isAdmin: boolean;
@@ -843,8 +851,8 @@ enum TrustLevel {
   Stranger = 0,
   New = 1,
   Basic = 2,
-  Member = 3,   // RENAME to FullMember
-  Helper = 4,
+  FullMember = 3,
+  Trusted = 4,
   Regular = 5,
   CoreMember = 6,
 }

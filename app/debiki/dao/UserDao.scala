@@ -1084,8 +1084,22 @@ trait UserDao {
   }
 
 
-  def saveMemberPreferences(preferences: MemberPreferences, byWho: Who) {
-    // Similar to saveGroupPreferences below. (0QE15TW93)
+  def saveMemberPrivacyPrefs(preferences: MemberPrivacyPrefs, byWho: Who) {
+    readWriteTransaction { tx =>
+      val memberBefore = tx.loadTheMemberInclDetails(preferences.userId)
+      val me = tx.loadTheMember(byWho.id)
+      require(me.isStaff || me.id == memberBefore.id, "TyE2GKKW4")
+      val memberAfter = memberBefore.copyWithNewPrivacyPrefs(preferences)
+      tx.updateMemberInclDetails(memberAfter)
+
+      // Privacy preferences aren't cached, currently need not:
+      //removeUserFromMemCache(memberAfter.id)
+    }
+  }
+
+
+  def saveAboutMemberPrefs(preferences: AboutMemberPrefs, byWho: Who) {
+    // Similar to saveAboutGroupPrefs below. (0QE15TW93)
     SECURITY // should create audit log entry. Should allow staff to change usernames.
     BUG // the lost update bug (if staff + user henself changes the user's prefs at the same time)
 
@@ -1147,7 +1161,7 @@ trait UserDao {
       if (user.primaryEmailAddress != preferences.emailAddress)
         throwForbidden("DwE44ELK9", "Shouldn't modify one's email here")
 
-      val userAfter = user.copyWithNewPreferences(preferences)
+      val userAfter = user.copyWithNewAboutPrefs(preferences)
       try transaction.updateMemberInclDetails(userAfter)
       catch {
         case _: DuplicateUsernameException =>
@@ -1172,8 +1186,8 @@ trait UserDao {
   }
 
 
-  def saveGroupPreferences(preferences: GroupPreferences, byWho: Who): Unit = {
-    // Similar to saveMemberPreferences above. (0QE15TW93)
+  def saveAboutGroupPrefs(preferences: AboutGroupPrefs, byWho: Who): Unit = {
+    // Similar to saveAboutMemberPrefs above. (0QE15TW93)
     SECURITY // should create audit log entry. Should allow staff to change usernames.
     BUG // the lost update bug (if staff + user henself changes the user's prefs at the same time)
 
@@ -1184,7 +1198,15 @@ trait UserDao {
       val me = transaction.loadTheMember(byWho.id)
       require(me.isStaff, "EdE5LKWV0")
 
-      val groupAfter = group.copyWithNewPreferences(preferences)
+      val groupAfter = group.copyWithNewAboutPrefs(preferences)
+
+      if (groupAfter.theUsername != group.theUsername) {
+        unimplemented("Changing a group's username", "TyE2KBFU50")
+        // Need to: transaction.updateUsernameUsage(usageStopped) — stop using current
+        // And: transaction.insertUsernameUsage(UsernameUsage(
+        // See saveAboutMemberPrefs.
+      }
+
       try transaction.updateGroup(groupAfter)
       catch {
         case _: DuplicateUsernameException =>
@@ -1288,6 +1310,7 @@ trait UserDao {
         approvedById = memberBefore.approvedById,
         primaryEmailAddress = anonEmail,
         emailNotfPrefs = EmailNotfPrefs.DontReceive,
+        seeActivityMinTrustLevel = memberBefore.seeActivityMinTrustLevel,
         suspendedAt = memberBefore.suspendedAt,
         suspendedTill = memberBefore.suspendedTill,
         suspendedById = memberBefore.suspendedById,

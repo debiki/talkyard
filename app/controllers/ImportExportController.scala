@@ -243,7 +243,7 @@ class ImportExportController @Inject()(cc: ControllerComponents, edContext: EdCo
 
     HACK // not inserting groups, only updating summary email interval. [7FKB4Q1]
     // And in the wrong transaction :-/
-    newDao.saveGroupPreferences(GroupPreferences(
+    newDao.saveAboutGroupPrefs(AboutGroupPrefs(
       groupId = Group.EveryoneId,
       fullName = Some("Everyone"),
       username = "everyone",
@@ -373,6 +373,7 @@ class ImportExportController @Inject()(cc: ControllerComponents, edContext: EdCo
         country = readOptString(jsObj, "country"),
         website = readOptString(jsObj, "website"),
         about = readOptString(jsObj, "about"),
+        seeActivityMinTrustLevel = readOptInt(jsObj, "seeActivityMinTrustLevel").flatMap(TrustLevel.fromInt),
         tinyAvatar = None, // [readlater]
         smallAvatar = None, // [readlater]
         mediumAvatar = None, // [readlater]

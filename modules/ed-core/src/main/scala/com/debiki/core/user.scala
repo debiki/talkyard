@@ -563,6 +563,7 @@ case class MemberInclDetails(
   country: Option[String] = None,
   website: Option[String] = None,
   about: Option[String] = None,
+  seeActivityMinTrustLevel: Option[TrustLevel] = None,
   tinyAvatar: Option[UploadRef] = None,
   smallAvatar: Option[UploadRef] = None,
   mediumAvatar: Option[UploadRef] = None,
@@ -670,7 +671,7 @@ case class MemberInclDetails(
   }
 
 
-  def preferences = MemberPreferences(
+  def preferences = AboutMemberPrefs(
     userId = id,
     fullName = fullName,
     username = username,
@@ -683,7 +684,7 @@ case class MemberInclDetails(
     emailForEveryNewPost = emailForEveryNewPost)
 
 
-  def copyWithNewPreferences(preferences: MemberPreferences): MemberInclDetails = {
+  def copyWithNewAboutPrefs(preferences: AboutMemberPrefs): MemberInclDetails = {
     val newEmailAddress =
       if (isEmailLocalPartHidden(preferences.emailAddress)) this.primaryEmailAddress
       else preferences.emailAddress
@@ -696,6 +697,12 @@ case class MemberInclDetails(
       about = preferences.about,
       website = preferences.url,
       emailForEveryNewPost = preferences.emailForEveryNewPost)
+  }
+
+
+  def copyWithNewPrivacyPrefs(preferences: MemberPrivacyPrefs): MemberInclDetails = {
+    copy(
+      seeActivityMinTrustLevel = preferences.seeActivityMinTrustLevel)
   }
 
 
@@ -727,7 +734,7 @@ case class MemberInclDetails(
 
 
 
-case class MemberPreferences(
+case class AboutMemberPrefs(
   userId: UserId,
   fullName: Option[String],
   username: String,
@@ -755,7 +762,7 @@ case class MemberPreferences(
 
 
 
-case class GroupPreferences(
+case class AboutGroupPrefs(
   groupId: UserId,
   fullName: Option[String],
   username: String,
@@ -766,6 +773,13 @@ case class GroupPreferences(
   require(groupId >= User.LowestNonGuestId, "DwE56KX2")
 
 }
+
+
+
+case class MemberPrivacyPrefs(
+  userId: UserId,
+  seeActivityMinTrustLevel: Option[TrustLevel])
+
 
 
 case class UserEmailAddress(
@@ -851,15 +865,15 @@ case class Group(
   override def anyName: Option[String] = Some(name)  // [50UKQV1]
   override def anyUsername: Option[String] = Some(theUsername)
 
-  def preferences: GroupPreferences =
-    GroupPreferences(
+  def preferences: AboutGroupPrefs =
+    AboutGroupPrefs(
       groupId = id,
       fullName = anyName,
       username = theUsername,
       summaryEmailIntervalMins = summaryEmailIntervalMins,
       summaryEmailIfActive = summaryEmailIfActive)
 
-  def copyWithNewPreferences(preferences: GroupPreferences): Group =
+  def copyWithNewAboutPrefs(preferences: AboutGroupPrefs): Group =
     copy(
       name = preferences.fullName getOrDie "EdE46KWFTAR1", // currently always Some, see [50UKQV1]
       theUsername = preferences.username,

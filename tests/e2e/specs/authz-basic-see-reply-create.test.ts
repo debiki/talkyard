@@ -96,7 +96,7 @@ describe("authz basic see reply create:", () => {
     forum.members.modya.trustLevel = c.TestTrustLevel.CoreMember;
     forum.members.maja.trustLevel = c.TestTrustLevel.New;
     forum.members.maria.trustLevel = c.TestTrustLevel.Basic;
-    forum.members.michael.trustLevel = c.TestTrustLevel.Member;
+    forum.members.michael.trustLevel = c.TestTrustLevel.FullMember;
     // Trillian, Regina, Corax = already trusted, regular, core-member, respectively, by default.
 
     // Owen has been added already.

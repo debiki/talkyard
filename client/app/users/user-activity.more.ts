@@ -31,13 +31,27 @@ export const UsersActivity = createFactory({
   displayName: 'UsersActivity',
 
   render: function() {
+    const user: MemberInclDetails = this.props.user;
+    const me: Myself = this.props.store.me;
+    const isStaffOrSelf = isStaff(me) || user.id === me.id;
+    const hiddenForMe = user.seeActivityMinTrustLevel > me.trustLevel && !isStaffOrSelf;
+
+    const hiddenForSomeText = !isStaffOrSelf ? null : (
+        user.seeActivityMinTrustLevel >= TrustLevel.CoreMember ?
+          "Only staff and trusted core members, can see this." : (
+            user.seeActivityMinTrustLevel >= TrustLevel.FullMember ?
+              "Only people who have been active members for a while can see this." : null));
+
+    const hiddenForSomeElem = hiddenForSomeText ?
+        r.p({ className: 's_UP_Act_Hdn' }, hiddenForSomeText) : null;
+
     const childProps = {
       store: this.props.store,
       user: this.props.user,
       reloadUser: this.props.loadCompleteUser,
     };
 
-    const childRoute = Switch({},
+    const childRoute = hiddenForMe ? null : Switch({},
       Route({ path: '(.*)/posts', exact: true, render: () => UsersPosts(childProps) }),
       Route({ path: '(.*)/topics', exact: true, render: () => UsersTopics(childProps) }));
       // (.*)/mentions? Flarum includes mentions *of* the user, but wouldn't it make more sense
@@ -59,6 +73,7 @@ export const UsersActivity = createFactory({
               //LiNavLink({ to: uap + 'likes-given' }, "Likes Given"),
               //LiNavLink({ to: uap + 'likes-received' }, "Likes Received"))),
           r.div({ className: 's_UP_Act_List' },
+            hiddenForSomeElem,
             childRoute))));
   }
 });
