@@ -22,7 +22,7 @@ import debiki.EdHttp._
 import ed.server.liftweb
 import java.{lang => jl}
 import play.api._
-import play.api.libs.json.JsValue
+import play.api.libs.json.{Json, JsValue}
 import play.api.mvc._
 
 
@@ -77,8 +77,10 @@ object Utils extends Results with http.ContentTypes {
    * Debiki's Javascript strips the ")]}'," prefix  [5LKW02D4]
    * before parsing the JSON.
    */
-  def OkSafeJson(json: JsValue): Result =
-    Ok(safeJsonPrefix + json.toString) as JSON
+  def OkSafeJson(json: JsValue, pretty: Boolean = false): Result = {
+    val jsonString = if (pretty) Json.prettyPrint(json) else Json.stringify(json)
+    Ok(safeJsonPrefix + jsonString) as JSON
+  }
 
 
   /**

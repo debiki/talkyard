@@ -1180,6 +1180,8 @@ case class UserStats(
   userId: UserId,
   // SHOULD update based on browser activity
   lastSeenAt: When = When.fromMillis(0),
+  // Later: lastSeenAtIp, lastBrowserIdCookie, lastBrowserFingerprint?
+  // Then also include that lastX stuff in the download-my-personal-data response [6LKKEZW2].
   lastPostedAt: Option[When] = None,
   lastEmailedAt: Option[When] = None,
   lastSummaryEmailAt: Option[When] = None, // RENAME to lastSummaryAt, & db field too

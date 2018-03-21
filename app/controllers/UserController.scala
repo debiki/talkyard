@@ -331,7 +331,14 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
 
 
   def listPostsByUser(authorId: UserId): Action[Unit] = GetAction { request: GetRequest =>
+    listPostsImpl(authorId, all = false, request)
+  }
+
+
+  private def listPostsImpl(authorId: UserId, all: Boolean, request: GetRequest): mvc.Result = {
     import request.{dao, user => caller}
+
+    request.context
 
     val callerIsStaff = caller.exists(_.isStaff)
     val callerIsStaffOrAuthor = callerIsStaff || caller.exists(_.id == authorId)
@@ -339,8 +346,12 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
 
     throwForbiddenIfActivityPrivate(authorId, caller, dao)
 
+    // For now. LATER: if really many posts, generate an archive in the background.
+    // And if !all, and > 100 posts, add a load-more button.
+    val limit = all ? 9999 | 100
+
     val postsInclForbidden = dao.readOnlyTransaction { transaction =>
-      transaction.loadPostsByAuthorSkipTitles(authorId, limit = 999, OrderBy.MostRecentFirst)
+      transaction.loadPostsByAuthorSkipTitles(authorId, limit = limit, OrderBy.MostRecentFirst)
     }
     val pageIdsInclForbidden = postsInclForbidden.map(_.pageId).toSet
     val pageMetaById = dao.getPageMetasAsMap(pageIdsInclForbidden)
@@ -380,6 +391,84 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
   }
 
 
+  def downloadUsersContent(authorId: UserId): Action[Unit] = GetActionRateLimited(
+        RateLimits.DownloadOwnContentArchive) { request: GetRequest =>
+    // These responses can be huge; don't prettify the json.
+    listPostsImpl(authorId, all = true, request)
+  }
+
+
+  def downloadPersonalData(userId: UserId): Action[Unit] = GetActionRateLimited(
+        RateLimits.DownloaPersonalData) { request: GetRequest =>
+      import request.{dao, theRequester => requester}
+    throwForbiddenIf(userId != requester.id && !requester.isAdmin,
+      "TyE2PKAQX8", "Cannot download someone else's data")
+
+    val result = dao.readOnlyTransaction { tx =>
+      val member: MemberInclDetails = tx.loadTheMemberInclDetails(userId)
+
+      val recentAuditLogEntries: Seq[AuditLogEntry] =
+        tx.loadAuditLogEntriesRecentFirst(userId, tyype = None, limit = 10)
+      val browserIdData = recentAuditLogEntries.headOption.map(_.browserIdData)
+
+      val otherEmailAddresses =
+        tx.loadUserEmailAddresses(userId).filterNot(_.emailAddress == member.primaryEmailAddress)
+      val otherEmailsJson = JsArray(otherEmailAddresses.map(ea => JsString(ea.emailAddress)))
+
+      val identities: Seq[Identity] = tx.loadIdentities(userId)
+      val identitiesJson = JsArray(identities map {
+        case oauthId: OpenAuthIdentity =>
+          val details: OpenAuthDetails = oauthId.openAuthDetails
+          Json.obj(
+            "providerId" -> details.providerId,
+            "providerKey" -> details.providerKey,
+            "firstName" -> JsStringOrNull(details.firstName),
+            "lastName" -> JsStringOrNull(details.lastName),
+            "fullName" -> JsStringOrNull(details.fullName),
+            "emailAddress" -> JsStringOrNull(details.email),
+            "avatarUrl" -> JsStringOrNull(details.avatarUrl))
+        case openidId: IdentityOpenId =>
+          val details: OpenIdDetails = openidId.openIdDetails
+          Json.obj(
+            "oidEndpoint" -> details.oidEndpoint,
+            "oidRealm" -> details.oidRealm,
+            "oidClaimedId" -> details.oidClaimedId,
+            "oidOpLocalId" -> details.oidOpLocalId,
+            "firstName" -> details.firstName,
+            "emailAddress" -> JsStringOrNull(details.email),
+            "country" -> details.country)
+        case emailIdty: IdentityEmailId =>
+          // Cannot happen. Aren't stored in the Identities table. Not interesting anyway:
+          // it's just the email address, which is already included in the response.
+          die("TyE26UKVW4")
+      })
+
+      Json.obj(
+        "fullName" -> JsStringOrNull(member.fullName),
+        "username" -> JsString(member.username),
+        "createdAt" -> JsString(toIso8601Day(member.createdAt)),
+        "primaryEmailAddress" -> JsString(member.primaryEmailAddress),
+        "otherEmailAddresses" -> otherEmailsJson,
+        "country" -> JsStringOrNull(member.country),
+        "website" -> JsStringOrNull(member.website),
+        "about" -> JsStringOrNull(member.about),
+        // Incl in Uploads links archieve instead?
+        "avatarImageUrl" -> JsStringOrNull(member.mediumAvatar.map(request.cdnOrSiteOrigin + _.url)),
+        "trustLevel" -> JsString(member.effectiveTrustLevel.toString),
+        // Hmm this is a bit weird. The current request might have a different cookie, fingerprint
+        // and ip, but we don't notice and instead reply with maybe a bit old data.  [6LKKEZW2]
+        // I suppose that's the correct thing to do, because the old stuff is what's in the database.
+        "browserIdCookie" -> JsStringOrNull(browserIdData.map(_.idCookie)),
+        "browserFingerprint" -> JsNumberOrNull(browserIdData.map(_.fingerprint)),
+        "browserIpAddress" -> JsStringOrNull(browserIdData.map(_.ip)),
+        "identities" -> identitiesJson)
+    }
+
+    // These responses are fairly brief; ok to prettify the json.
+    OkSafeJson(result, pretty = true)
+  }
+
+
   private def throwForbiddenIfActivityPrivate(userId: UserId, requester: Option[User], dao: SiteDao) {
     throwForbiddenIf(!maySeeActivity(userId, requester, dao),
       "TyE4JKKQX3", "Not allowed to list activity for this user")
@@ -387,7 +476,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
 
 
   private def maySeeActivity(userId: UserId, requester: Option[User], dao: SiteDao): Boolean = {
-    if (!User.isMember(userId))
+    if (!User.isMember(userId) || requester.exists(_.isStaff))
       return true
 
     val memberInclDetails = dao.loadTheMemberInclDetailsById(userId)

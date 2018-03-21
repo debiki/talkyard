@@ -106,6 +106,8 @@ GET   /-/users/*whatever        controllers.UserController.viewUserPage(whatever
 GET   /-/load-my-page-data      controllers.UserController.loadMyPageData(pageId)
 GET   /-/list-topics-by-user    controllers.UserController.listTopicsByUser(userId: Int)
 GET   /-/list-posts             controllers.UserController.listPostsByUser(authorId: Int)
+GET   /-/download-my-content    controllers.UserController.downloadUsersContent(authorId: Int)
+GET   /-/download-personal-data controllers.UserController.downloadPersonalData(userId: Int)
 POST  /-/track-reading          controllers.UserController.trackReadingProgress
 POST  /-/track-reading-text     controllers.UserController.trackReadingProgressText
 GET   /-/load-notifications     controllers.UserController.loadNotifications(userId: Int, upToWhenMs: Long)

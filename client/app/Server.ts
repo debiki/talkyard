@@ -1100,6 +1100,15 @@ export function loadPostsByAuthor(authorId: UserId, success: (response) => void)
 }
 
 
+export function makeDownloadMyContentUrl(authorId: UserId) {
+  return `/-/download-my-content?authorId=${authorId}`;
+}
+
+export function makeDownloadPersonalDataUrl(authorId: UserId) {
+  return `/-/download-personal-data?userId=${authorId}`;
+}
+
+
 export function flagPost(postNr: string, flagType: string, reason: string, success: () => void) {
   postJsonSuccess('/-/flag', (storePatch: StorePatch) => {
     ReactActions.patchTheStore(storePatch);

@@ -84,7 +84,7 @@ case class AuditLogEntry(
   uploadFileName: Option[String] = None,
   sizeBytes: Option[Int] = None,
   targetUniquePostId: Option[PostId] = None,
-  targetSiteId: Option[SiteId] = None, // ought to rename to otherSiteId, rename db column too
+  targetSiteId: Option[SiteId] = None, // CLEAN_UP ought to RENAME to otherSiteId, rename db column too
   targetPageId: Option[PageId] = None,
   targetPostNr: Option[PostNr] = None,
   targetUserId: Option[UserId] = None,

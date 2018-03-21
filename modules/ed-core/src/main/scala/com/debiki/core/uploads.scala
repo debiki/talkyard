@@ -25,10 +25,13 @@ package com.debiki.core
   * to 33 chars). 'x/y/zwq...abc' is the file's "hash path" — because it's a hash, with
   * slashes inserted so that it's a path — this avoids us placing all files in the exact
   * same directory. Some file system don't want super many files in just one directory.
+  *
+  * @param baseUrl e.g. '/-/u/'
+  * @param hashPath e.g. '1/o/cy/wddssa4xpzugiaego7seuyurxvgef5.jpg'
   */
 case class UploadRef(baseUrl: String, hashPath: String) {
 
-  def url = baseUrl + hashPath
+  def url: String = baseUrl + hashPath
 
 }
 

@@ -529,6 +529,16 @@ export const Account = createFactory({
     });
   },
 
+  downloadMyContent: function() {
+    const user: MemberInclDetails = this.props.user;
+    window.open(Server.makeDownloadMyContentUrl(user.id), '_blank');
+  },
+
+  downloadPersonalData: function() {
+    const user: MemberInclDetails = this.props.user;
+    window.open(Server.makeDownloadPersonalDataUrl(user.id), '_blank');
+  },
+
   deleteUser: function() {
     const me: Myself = this.props.store.me;
     const user: MemberInclDetails = this.props.user;
@@ -640,6 +650,18 @@ export const Account = createFactory({
             // r.div({}, Button({}, "Remove")))  — fix later
         }));
 
+    const downloadOwnContent = rFragment({},
+      r.h3({}, "Your content"),
+
+      Button({ onClick: this.downloadMyContent }, "Download posts"),
+      r.p({ className: 'help-block' },
+        "Creates a JSON file with a copy of topics and comments you've posted."),
+
+      Button({ onClick: this.downloadPersonalData }, "Download personal data"),
+      r.p({ className: 'help-block' },
+        "Creates a JSON file with a copy of your personal data, e.g. your name " +
+        "(if you specified a name) and email address."));
+
     // Later:
     //const deactivateButton = user.deletedAt ? null : (
     //  Button({}, user.deactivatedAt ? "Activate" : "Deactivate"));
@@ -666,6 +688,7 @@ export const Account = createFactory({
         r.h3({}, "Login methods"),
         loginsList,
         // Button({}, "Add login method")  — fix later
+        downloadOwnContent,
         dangerZone,
       ));
   }

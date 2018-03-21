@@ -174,6 +174,29 @@ object RateLimits {
   }
 
 
+  /** No reason to do this more than once ... per month? Year? Lifetime? And can be resource heavy,
+    * so set low limits.
+    */
+  object DownloadOwnContentArchive extends RateLimits {
+    val key = "DCA"
+    val what = "downloaded your content too many times"
+    def maxPerFifteenSeconds = 2
+    def maxPerFifteenMinutes = 4
+    def maxPerDay = 6
+    def maxPerDayNewUser = 6
+  }
+
+
+  object DownloaPersonalData extends RateLimits {
+    val key = "DPD"
+    val what = "downloaded your personal data many times"
+    def maxPerFifteenSeconds = 3
+    def maxPerFifteenMinutes = 10
+    def maxPerDay = 20
+    def maxPerDayNewUser = 10
+  }
+
+
   /** Not sure what limits to use. */
   object ConfirmEmailAddress extends RateLimits {
     val key = "CfEA"

@@ -24,8 +24,8 @@ import play.api.libs.json.JsValue
 package object controllers {
 
   // Move it to here soon ... No, move it to io.efdi.server.http package?
-  def OkSafeJson(json: JsValue) =
-    Utils.OkSafeJson(json)
+  def OkSafeJson(json: JsValue, pretty: Boolean = false) =
+    Utils.OkSafeJson(json, pretty)
 
 
   /** Better fail fast with a full page error message, if assets have not yet been

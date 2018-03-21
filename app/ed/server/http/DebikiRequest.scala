@@ -132,30 +132,33 @@ abstract class DebikiRequest[A] {
   /** The scheme, host and port specified in the request. */
   def origin: String = s"$scheme://$host"
 
-  def scheme = if (request.secure) "https" else "http"
+  def cdnOrSiteOrigin: String =
+    globals.anyCdnOrigin.getOrElse(globals.schemeColonSlashSlash + host)
 
-  def host = request.host
-  def hostname = request.host.span(_ != ':')._1
+  def scheme: String = if (request.secure) "https" else "http"
 
-  def colonPort = request.host.dropWhile(_ != ':')
+  def host: String = request.host
+  def hostname: String = request.host.span(_ != ':')._1
 
-  def uri = request.uri
+  def colonPort: String = request.host.dropWhile(_ != ':')
 
-  def queryString = request.queryString
+  def uri: String = request.uri
 
-  def rawQueryString = request.rawQueryString
+  def queryString: Map[String, Seq[String]] = request.queryString
 
-  def body = request.body
+  def rawQueryString: String = request.rawQueryString
 
-  def headers = request.headers
+  def body: A = request.body
 
-  def cookies = request.cookies
+  def headers: Headers = request.headers
 
-  def isAjax = EdHttp.isAjax(request)
+  def cookies: Cookies = request.cookies
 
-  def isHttpPostRequest = request.method == "POST"
+  def isAjax: Boolean = EdHttp.isAjax(request)
 
-  def httpVersion = request.version
+  def isHttpPostRequest: Boolean = request.method == "POST"
+
+  def httpVersion: String = request.version
 
 
   def parseThePageQuery(): PageQuery =
