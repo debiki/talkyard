@@ -238,7 +238,6 @@ interface TalkyardTranslations {
     MoreVotes: string;
     LikeThis: string;
     LinkToPost: string;
-    More: string;
     Report: string;
     ReportThisPost: string;
     Admin: string;

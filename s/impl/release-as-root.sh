@@ -69,13 +69,15 @@ s/d-gulp release
 find public/res/ -type f -name '*\.js' -not -name '*\.min\.js' -not -name 'ed-comments\.js' -not -name 'zxcvbn\.js' | xargs rm
 find public/res/ -type f -name '*\.css' -not -name '*\.min\.css' | xargs rm
 # COULD add tests that verifies the wrong css & js haven't been deleted?
-# One at a time, or out-of-memory:
 
+# Test and build prod dist of the Play app. Do this one at a time, or out-of-memory:
 s/d-cli clean compile
 s/d-cli test dist
 
 s/d kill web app
 s/d down
+
+# Build app image that uses the production version of the app, built with 'dist' above:
 docker/build-app-prod.sh
 
 
