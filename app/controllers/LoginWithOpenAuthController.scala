@@ -525,7 +525,7 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
         }
 
       val result = try {
-        val loginGrant = dao.createIdentityUserAndLogin(userData)
+        val loginGrant = dao.createIdentityUserAndLogin(userData, request.theBrowserIdData)
         val newMember = loginGrant.user
         dieIf(newMember.emailVerifiedAt != emailVerifiedAt, "EdE2WEP03")
         if (emailAddress.nonEmpty && emailVerifiedAt.isEmpty) {

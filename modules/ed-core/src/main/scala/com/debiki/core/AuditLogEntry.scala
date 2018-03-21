@@ -31,6 +31,7 @@ case class BrowserLocation(
 
 sealed abstract class AuditLogEntryType(protected val IntVal: Int) { def toInt: Int = IntVal }
 object AuditLogEntryType {
+  // Let 1-999 be about content?
   case object CreateSite extends AuditLogEntryType(1)
   case object ThisSiteCreated extends AuditLogEntryType(2)
   case object CreateForum extends AuditLogEntryType(12)
@@ -44,8 +45,17 @@ object AuditLogEntryType {
   case object DeletePage extends AuditLogEntryType(9)
   case object UndeletePage extends AuditLogEntryType(10)
 
-  case object DeactivateUser extends AuditLogEntryType(101)
-  case object DeleteUser extends AuditLogEntryType(102)
+  // Let 1001-1999 be about people?
+  case object CreateUser extends AuditLogEntryType(1001)
+  // later ----
+  case object ApproveUser extends AuditLogEntryType(1002)
+  case object SuspendUser extends AuditLogEntryType(1003)
+  case object UnsuspendUser extends AuditLogEntryType(1004)
+  // Block, unblock.
+  // Edit profile. etc.
+  //-----------
+  case object DeactivateUser extends AuditLogEntryType(1998)
+  case object DeleteUser extends AuditLogEntryType(1999)
 
   def fromInt(value: Int): Option[AuditLogEntryType] = Some(value match {
     case AuditLogEntryType.CreateSite.IntVal => AuditLogEntryType.CreateSite
@@ -60,6 +70,10 @@ object AuditLogEntryType {
     case AuditLogEntryType.UploadFile.IntVal => AuditLogEntryType.UploadFile
     case AuditLogEntryType.DeletePage.IntVal => AuditLogEntryType.DeletePage
     case AuditLogEntryType.UndeletePage.IntVal => AuditLogEntryType.UndeletePage
+    case AuditLogEntryType.CreateUser.IntVal => AuditLogEntryType.CreateUser
+    case AuditLogEntryType.ApproveUser.IntVal => AuditLogEntryType.ApproveUser
+    case AuditLogEntryType.SuspendUser.IntVal => AuditLogEntryType.SuspendUser
+    case AuditLogEntryType.UnsuspendUser.IntVal => AuditLogEntryType.UnsuspendUser
     case AuditLogEntryType.DeactivateUser.IntVal => AuditLogEntryType.DeactivateUser
     case AuditLogEntryType.DeleteUser.IntVal => AuditLogEntryType.DeleteUser
     case _ => return None

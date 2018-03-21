@@ -91,7 +91,8 @@ class InviteController @Inject()(cc: ControllerComponents, edContext: EdContext)
 
 
   def acceptInvite(secretKey: String) = GetActionAllowAnyone { request =>
-    val (newUser, invite, alreadyAccepted) = request.dao.acceptInviteCreateUser(secretKey)
+    val (newUser, invite, alreadyAccepted) = request.dao.acceptInviteCreateUser(
+      secretKey, request.theBrowserIdData)
     request.dao.pubSub.userIsActive(request.siteId, newUser.briefUser, request.theBrowserIdData)
     val (_, _, sidAndXsrfCookies) = createSessionIdAndXsrfToken(request.siteId, newUser.id)
     val newSessionCookies = sidAndXsrfCookies

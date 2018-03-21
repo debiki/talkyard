@@ -145,7 +145,7 @@ class LoginWithPasswordController @Inject()(cc: ControllerComponents, edContext:
         }
 
       val loginCookies: List[Cookie] = try {
-        val newMember = dao.createPasswordUserCheckPasswordStrong(userData)
+        val newMember = dao.createPasswordUserCheckPasswordStrong(userData, request.theBrowserIdData)
         if (newMember.email.nonEmpty) {
           sendEmailAddressVerificationEmail(newMember, anyReturnToUrl, request.host, request.dao)
         }

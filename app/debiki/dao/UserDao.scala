@@ -61,9 +61,10 @@ trait UserDao {
 
   /** Returns: (CompleteUser, Invite, hasBeenAcceptedAlready: Boolean)
     */
-  def acceptInviteCreateUser(secretKey: String): (MemberInclDetails, Invite, Boolean) = {
-    readWriteTransaction { transaction =>
-      var invite = transaction.loadInvite(secretKey) getOrElse throwForbidden(
+  def acceptInviteCreateUser(secretKey: String, browserIdData: BrowserIdData)
+        : (MemberInclDetails, Invite, Boolean) = {
+    readWriteTransaction { tx =>
+      var invite = tx.loadInvite(secretKey) getOrElse throwForbidden(
         "DwE6FKQ2", "Bad invite key")
 
       invite.acceptedAt foreach { acceptedAt =>
@@ -78,32 +79,33 @@ trait UserDao {
         throwForbidden("DwE0FKW2", "You have joined the site already, but this link has expired")
       }
 
-      if (transaction.loadMemberByPrimaryEmailOrUsername(invite.emailAddress).isDefined)
+      if (tx.loadMemberByPrimaryEmailOrUsername(invite.emailAddress).isDefined)
         throwForbidden("DwE8KFG4", o"""You have joined this site already, so this
              join-site invitation link does nothing. Thanks for clicking it anyway""")
 
-      val userId = transaction.nextMemberId
-      var newUser = invite.makeUser(userId, transaction.now.toJavaDate)
-      val inviter = transaction.loadUser(invite.createdById) getOrDie "DwE5FKG4"
+      val userId = tx.nextMemberId
+      var newUser = invite.makeUser(userId, tx.now.toJavaDate)
+      val inviter = tx.loadUser(invite.createdById) getOrDie "DwE5FKG4"
       if (inviter.isStaff) {
         newUser = newUser.copy(
           isApproved = Some(true),
-          approvedAt = Some(transaction.now.toJavaDate),
+          approvedAt = Some(tx.now.toJavaDate),
           approvedById = Some(invite.createdById))
       }
 
-      invite = invite.copy(acceptedAt = Some(transaction.now.toJavaDate), userId = Some(userId))
+      invite = invite.copy(acceptedAt = Some(tx.now.toJavaDate), userId = Some(userId))
 
       // COULD loop and append 1, 2, 3, ... until there's no username clash.
-      transaction.deferConstraints()
-      transaction.insertMember(newUser)
-      transaction.insertUserEmailAddress(newUser.primaryEmailInfo getOrDie "EdE3PDKR20")
-      transaction.insertUsernameUsage(UsernameUsage(
-        newUser.usernameLowercase, inUseFrom = transaction.now, userId = newUser.id))
-      transaction.upsertUserStats(UserStats.forNewUser(
-        newUser.id, firstSeenAt = transaction.now, emailedAt = Some(invite.createdWhen)))
-      joinGloballyPinnedChats(newUser.briefUser, transaction)
-      transaction.updateInvite(invite)
+      tx.deferConstraints()
+      tx.insertMember(newUser)
+      tx.insertUserEmailAddress(newUser.primaryEmailInfo getOrDie "EdE3PDKR20")
+      tx.insertUsernameUsage(UsernameUsage(
+        newUser.usernameLowercase, inUseFrom = tx.now, userId = newUser.id))
+      tx.upsertUserStats(UserStats.forNewUser(
+        newUser.id, firstSeenAt = tx.now, emailedAt = Some(invite.createdWhen)))
+      joinGloballyPinnedChats(newUser.briefUser, tx)
+      tx.updateInvite(invite)
+      tx.insertAuditLogEntry(makeCreateUserAuditEntry(newUser, browserIdData, tx.now))
       (newUser, invite, false)
     }
   }
@@ -351,22 +353,24 @@ trait UserDao {
   }
 
 
-  def createIdentityUserAndLogin(newUserData: NewUserData): MemberLoginGrant = {
-    val loginGrant = readWriteTransaction { transaction =>
-      val userId = transaction.nextMemberId
-      val user: MemberInclDetails = newUserData.makeUser(userId, transaction.now.toJavaDate)
-      val identityId = transaction.nextIdentityId
+  def createIdentityUserAndLogin(newUserData: NewUserData, browserIdData: BrowserIdData)
+        : MemberLoginGrant = {
+    val loginGrant = readWriteTransaction { tx =>
+      val userId = tx.nextMemberId
+      val user: MemberInclDetails = newUserData.makeUser(userId, tx.now.toJavaDate)
+      val identityId = tx.nextIdentityId
       val identity = newUserData.makeIdentity(userId = userId, identityId = identityId)
-      ensureSiteActiveOrThrow(user, transaction)
-      transaction.deferConstraints()
-      transaction.insertMember(user)
-      user.primaryEmailInfo.foreach(transaction.insertUserEmailAddress)
-      transaction.insertUsernameUsage(UsernameUsage(
-        usernameLowercase = user.usernameLowercase, inUseFrom = transaction.now, userId = user.id))
-      transaction.upsertUserStats(UserStats.forNewUser(
-        user.id, firstSeenAt = transaction.now, emailedAt = None))
-      transaction.insertIdentity(identity)
-      joinGloballyPinnedChats(user.briefUser, transaction)
+      ensureSiteActiveOrThrow(user, tx)
+      tx.deferConstraints()
+      tx.insertMember(user)
+      user.primaryEmailInfo.foreach(tx.insertUserEmailAddress)
+      tx.insertUsernameUsage(UsernameUsage(
+        usernameLowercase = user.usernameLowercase, inUseFrom = tx.now, userId = user.id))
+      tx.upsertUserStats(UserStats.forNewUser(
+        user.id, firstSeenAt = tx.now, emailedAt = None))
+      tx.insertIdentity(identity)
+      joinGloballyPinnedChats(user.briefUser, tx)
+      tx.insertAuditLogEntry(makeCreateUserAuditEntry(user, browserIdData, tx.now))
       MemberLoginGrant(Some(identity), user.briefUser, isNewIdentity = true, isNewMember = true)
     }
     memCache.fireUserCreated(loginGrant.user)
@@ -395,27 +399,42 @@ trait UserDao {
   }
 
 
-  def createPasswordUserCheckPasswordStrong(userData: NewPasswordUserData): Member = {
+  def createPasswordUserCheckPasswordStrong(
+        userData: NewPasswordUserData, browserIdData: BrowserIdData): Member = {
     security.throwErrorIfPasswordTooWeak(
       password = userData.password, username = userData.username,
       fullName = userData.name, email = userData.email)
-    val user = readWriteTransaction { transaction =>
+    val user = readWriteTransaction { tx =>
       val now = userData.createdAt
-      val userId = transaction.nextMemberId
+      val userId = tx.nextMemberId
       val user = userData.makeUser(userId)
-      ensureSiteActiveOrThrow(user, transaction)
-      transaction.deferConstraints()
-      transaction.insertMember(user)
-      user.primaryEmailInfo.foreach(transaction.insertUserEmailAddress)
-      transaction.insertUsernameUsage(UsernameUsage(
+      ensureSiteActiveOrThrow(user, tx)
+      tx.deferConstraints()
+      tx.insertMember(user)
+      user.primaryEmailInfo.foreach(tx.insertUserEmailAddress)
+      tx.insertUsernameUsage(UsernameUsage(
         usernameLowercase = user.usernameLowercase, inUseFrom = now, userId = user.id))
-      transaction.upsertUserStats(UserStats.forNewUser(
+      tx.upsertUserStats(UserStats.forNewUser(
         user.id, firstSeenAt = userData.firstSeenAt.getOrElse(now), emailedAt = None))
-      joinGloballyPinnedChats(user.briefUser, transaction)
+      joinGloballyPinnedChats(user.briefUser, tx)
+      tx.insertAuditLogEntry(makeCreateUserAuditEntry(user, browserIdData, tx.now))
       user.briefUser
     }
     memCache.fireUserCreated(user)
     user
+  }
+
+
+  private def makeCreateUserAuditEntry(member: MemberInclDetails, browserIdData: BrowserIdData,
+        now: When): AuditLogEntry = {
+    AuditLogEntry(
+      siteId = siteId,
+      id = AuditLogEntry.UnassignedId,
+      didWhat = AuditLogEntryType.CreateUser,
+      doerId = member.id,
+      doneAt = now.toJavaDate,
+      browserIdData = browserIdData,
+      browserLocation = None)
   }
 
 
