@@ -261,10 +261,10 @@ function pagesFor(browser) {
     createSite: {
       fillInFieldsAndSubmit: function(data) {
         if (data.embeddingUrl) {
-          browser.setValue('#e_EmbeddingUrl', data.embeddingUrl);
+          browser.waitAndSetValue('#e_EmbeddingUrl', data.embeddingUrl);
         }
         else {
-          browser.setValue('#dwLocalHostname', data.localHostname);
+          browser.waitAndSetValue('#dwLocalHostname', data.localHostname);
         }
         browser.click('#e2eNext3');
         browser.setValue('#e2eOrgName', data.orgName || data.localHostname);

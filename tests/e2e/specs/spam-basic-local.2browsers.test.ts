@@ -65,7 +65,8 @@ describe("spam test, no external services:", () => {
 
   it("Owen and Mallory go to the homepage and log in", () => {
     everyone.go(idAddress.origin);
-    everyone.assertPageTitleMatches(forumTitle);
+    browserA.assertPageTitleMatches(forumTitle);
+    browserB.assertPageTitleMatches(forumTitle);
     owensBrowser.complex.loginWithPasswordViaTopbar(owen);
     owensBrowser.disableRateLimits();
     mallorysBrowser.complex.loginWithPasswordViaTopbar(mallory);

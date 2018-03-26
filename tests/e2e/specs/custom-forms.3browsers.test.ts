@@ -118,7 +118,9 @@ describe("private chat", function() {
 
   it("Everyone goes to the form page", function() {
     everyone.go(formPageUrl);
-    everyone.assertPageTitleMatches(formPageTitle);
+    browserA.assertPageTitleMatches(formPageTitle);
+    browserB.assertPageTitleMatches(formPageTitle);
+    browserC.assertPageTitleMatches(formPageTitle);
     everyone.assertPageBodyMatches(formPageIntroText);
   });
 

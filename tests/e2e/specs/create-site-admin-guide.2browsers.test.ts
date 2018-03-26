@@ -171,7 +171,8 @@ describe("create site, follow the admin guide", function() {
 
   it("Now both Owen and Maria see all changes Owen did", function() {
     maria.refresh();
-    everyone.assertPageTitleMatches(editedForumTitle);
+    maria.assertPageTitleMatches(editedForumTitle);
+    owen.assertPageTitleMatches(editedForumTitle);
     // ...
   });
 

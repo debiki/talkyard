@@ -546,7 +546,7 @@ gulp.task('watch', ['default'], function() {
   gulp.watch('tests/security/**/*.ts', ['build-security-tests']).on('change', logChangeFn('security test files'));
 });
 
-gulp.task('default', ['compileConcatAllScripts', 'compile-stylus', 'build-e2e', 'build-security-tests'], function () {
+gulp.task('default', ['compileConcatAllScripts', 'compile-stylus', 'buildTranslations', 'build-e2e', 'build-security-tests'], function () {
 });
 
 

@@ -43,7 +43,9 @@ describe("settings-login-to-read", function() {
 
   it("Owen, Maria and Michael sees the forum, when not logged in", function() {
     everyone.go(idAddress.origin);
-    everyone.assertPageTitleMatches(forumTitle);
+    browserA.assertPageTitleMatches(forumTitle);
+    browserB.assertPageTitleMatches(forumTitle);
+    browserC.assertPageTitleMatches(forumTitle);
   });
 
   it("Owen logs in to admin area", function() {

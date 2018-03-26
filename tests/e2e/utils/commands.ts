@@ -156,7 +156,11 @@ function addCommandsToBrowser(browser) {
     }
     var elemIdFound;
     browser.waitUntil(() => {
-      var elems = browser.elements(selector).value;
+      var elemsWrap = browser.elements(selector);
+      if (!elemsWrap.value) {
+        die("No value. Many browsers specified? Like 'everyone.sth(..)'? Not implemented. [TyE5KJ7W1]");
+      }
+      var elems = elemsWrap.value;
       for (var i = 0; i < elems.length; ++i) {
         var elem = elems[i];
         var text = browser.elementIdText(elem.ELEMENT).value;
@@ -400,12 +404,14 @@ function addCommandsToBrowser(browser) {
 
   browser.addCommand('assertPageTitleMatches', function(regex) {
     browser.waitForVisible('h1.dw-p-ttl');
-    browser.assertTextMatches('h1.dw-p-ttl', regex);
+    browser.waitUntilTextMatches('h1.dw-p-ttl', regex);
+    //browser.assertTextMatches('h1.dw-p-ttl', regex);
   });
 
 
   browser.addCommand('assertPageBodyMatches', function(regex) {
     browser.waitForVisible('.esOrigPost');
+    //browser.waitUntilTextMatches('.esOrigPost', regex);
     browser.assertTextMatches('.esOrigPost', regex);
   });
 

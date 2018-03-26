@@ -1,5 +1,5 @@
 @**
- * Copyright (c) 2014 Kaj Magnus Lindberg
+ * Copyright (c) 2014, 2018 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -29,8 +29,9 @@
   <link rel="stylesheet" href="@asset("fontello/css/fontello-embedded.css")"/>
   <link rel="stylesheet" href="@asset(s"styles-bundle.${tpi.minMaxCss}")"/>
   @tpi.debikiScriptsInHead(isInLoginWindow = true)
-  <script src="@asset(s"slim-bundle.${tpi.minMaxJs}")"></script>
-  <script src="@asset(s"more-bundle.${tpi.minMaxJs}")"></script>
+  <script src="@tpi.assetUrl(s"translations/${tpi.languageCode}/i18n.${tpi.minMaxJs}")"></script>
+  <script src="@tpi.assetUrl(s"slim-bundle.${tpi.minMaxJs}")"></script>
+  <script src="@tpi.assetUrl(s"more-bundle.${tpi.minMaxJs}")"></script>
 </head>
 <body>
   <!-- views/login/popupMain.scala.html -->

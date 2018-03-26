@@ -48,20 +48,22 @@ class CreateSiteController @Inject()(cc: ControllerComponents, edContext: EdCont
   private val MinLocalHostnameLength = 6
 
 
-  def showPage(isTest: String) = GetAction { request: GetRequest =>
+  def showPage(isTest: String): Action[Unit] = GetAction { request: GetRequest =>
     val isTestBool = Try(isTest.toBoolean).toOption getOrElse throwBadArgument("EsE5JUM2", "isTest")
     throwIfMayNotCreateSite(request, isTestBool)
 
-    val numSites = globals.systemDao.countSites(isTestBool, request.theBrowserIdData)
-    if (numSites.byYou >= globals.config.createSite.maxSitesPerPerson)
-      throwForbidden("EsE7KU20W", "You have created too many forums already, sorry.")
+    if (!hasOkForbiddenPassword(request)) {
+      val numSites = globals.systemDao.countSites(isTestBool, request.theBrowserIdData)
+      if (numSites.byYou >= globals.config.createSite.maxSitesPerPerson)
+        throwForbidden("EsE7KU20W", "You have created too many forums already, sorry.")
 
-    if (numSites.total >= globals.config.createSite.maxSitesTotal) {
-      globals.config.createSite.tooManyTryLaterPagePath match {
-        case None =>
-          throwForbidden("EsE8VK2F4", "People have created too many forums already, sorry.")
-        case Some(path) =>
-          throwTemporaryRedirect(path)
+      if (numSites.total >= globals.config.createSite.maxSitesTotal) {
+        globals.config.createSite.tooManyTryLaterPagePath match {
+          case None =>
+            throwForbidden("EsE8VK2F4", "People have created too many forums already, sorry.")
+          case Some(path) =>
+            throwTemporaryRedirect(path)
+        }
       }
     }
 

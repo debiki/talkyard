@@ -12,7 +12,6 @@ import logAndDie = require('../utils/log-and-die');
 declare var browser: any;
 declare var browserA: any;
 declare var browserB: any;
-declare var browserC: any;
 
 var everyone;
 var owen;
@@ -43,7 +42,8 @@ describe("private chat", function() {
 
   it("Owen and Michael go to the homepage", function() {
     everyone.go(idAddress.origin);
-    everyone.assertPageTitleMatches(forumTitle);
+    browserA.assertPageTitleMatches(forumTitle);
+    browserB.assertPageTitleMatches(forumTitle);
     // There'll be lots of login attempts.
     everyone.disableRateLimits();
   });

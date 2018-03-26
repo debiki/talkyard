@@ -60,7 +60,8 @@ describe("basic publ search:", () => {
 
   it("Owen and Maria go to the homepage and log in", () => {
     everyone.go(idAddress.origin);
-    everyone.assertPageTitleMatches(forumTitle);
+    browserA.assertPageTitleMatches(forumTitle);
+    browserB.assertPageTitleMatches(forumTitle);
     owen.complex.loginWithPasswordViaTopbar(owen);
     maria.complex.loginWithPasswordViaTopbar(maria);
     // Maria will search a lot.
