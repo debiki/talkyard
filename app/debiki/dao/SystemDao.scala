@@ -363,6 +363,22 @@ class SystemDao(
     sitePageIdToRefresh.foreach(refreshPageInMemCache)
   }
 
+
+  // ----- Old stuff deletion
+
+  def deletePersonalDataFromOldAuditLogEntries() {
+    readWriteTransaction { tx =>
+      tx.deletePersonalDataFromOldAuditLogEntries()
+    }
+  }
+
+  def deleteOldUnusedUploads()  {
+    readWriteTransaction { tx =>
+      tx.deleteOldUnusedUploads()
+    }
+  }
+
+
   // ----- Testing
 
   def emptyDatabase() {

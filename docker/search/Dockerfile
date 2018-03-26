@@ -4,6 +4,7 @@
 FROM docker.elastic.co/elasticsearch/elasticsearch-oss:6.1.0
 
 COPY elasticsearch.yml /usr/share/elasticsearch/config/elasticsearch.yml
+COPY log4j2.properties /usr/share/elasticsearch/config/log4j2.properties
 
 # For troubleshooting. Oops, maybe rpm not apt?
 # RUN apt-get install -y net-tools tree

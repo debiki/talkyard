@@ -926,9 +926,21 @@ guest
 mod
 moderator
 
+enable
+enabled
+disable
+disabled
+active
+activated
+inactive
+deactivate
+deactivated
+deleted
+
 support
 help
 search
+find
 admin
 chat
 chatroom
@@ -947,8 +959,11 @@ fucking
 motherfucker
 motherfucking
 dick
+vagina
 ass
+asshole
 asshoole
+anus
 fart
 sperm
 poop

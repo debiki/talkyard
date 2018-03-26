@@ -29,7 +29,7 @@ import play.api.libs.json.Json
 import play.api.libs.ws.{WSClient, WSResponse}
 import redis.RedisClient
 import scala.collection.mutable
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration._
 import ReactJson.JsUser
 
@@ -48,7 +48,7 @@ case class NewPageMessage(
   pageRole: PageRole,
   notifications: Notifications) extends Message {
 
-  def toJson = JsNull
+  def toJson: JsValue = JsNull
 }
 
 
@@ -58,7 +58,7 @@ case class StorePatchMessage(
   json: JsValue,
   notifications: Notifications) extends Message {
 
-  def toJson = JsNull
+  def toJson: JsValue = JsNull
 }
 
 
@@ -79,7 +79,7 @@ object PubSub {
     */
   def startNewActor(globals: Globals, nginxHost: String)
         : (PubSubApi, StrangerCounterApi) = {
-    implicit val execCtx = globals.executionContext
+    implicit val execCtx: ExecutionContext = globals.executionContext
     val actorRef = globals.actorSystem.actorOf(Props(
       new PubSubActor(nginxHost, globals)), name = s"PubSub-$testInstanceCounter")
     globals.actorSystem.scheduler.schedule(60 seconds, 10 seconds, actorRef, DeleteInactiveSubscriptions)

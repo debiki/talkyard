@@ -147,7 +147,7 @@ class DaoAppSuite(
       name = Some(s"Admin $password"), username = s"admin_$password",
       email = s"admin-$password@x.co", password = s"public-$password",
       createdAt = theCreatedAt,
-      isAdmin = true, isOwner = isOwner).get)
+      isAdmin = true, isOwner = isOwner).get, browserIdData)
     if (emailVerified) {
       dao.verifyPrimaryEmailAddress(adm.id, theCreatedAt.toJavaDate)
     }
@@ -161,7 +161,7 @@ class DaoAppSuite(
     val mod = dao.createPasswordUserCheckPasswordStrong(NewPasswordUserData.create(
       name = Some(s"Mod $password"), username = s"mod_$password", email = s"mod-$password@x.co",
       password = s"public-$password", createdAt = theCreatedAt,
-      isAdmin = false, isModerator = true, isOwner = false).get)
+      isAdmin = false, isModerator = true, isOwner = false).get, browserIdData)
     if (emailVerified) {
       dao.verifyPrimaryEmailAddress(mod.id, theCreatedAt.toJavaDate)
     }
@@ -179,7 +179,8 @@ class DaoAppSuite(
     val member = dao.createPasswordUserCheckPasswordStrong(NewPasswordUserData.create(
       name = Some(s"User $password"), username = s"user_$password", email = s"user-$password@x.co",
       password = s"public-$password", createdAt = theCreatedAt,
-      isAdmin = false, isOwner = false, trustLevel = trustLevel, threatLevel = threatLevel).get)
+      isAdmin = false, isOwner = false, trustLevel = trustLevel, threatLevel = threatLevel).get,
+      browserIdData)
     if (emailVerified) {
       dao.verifyPrimaryEmailAddress(member.id, theCreatedAt.toJavaDate)
     }

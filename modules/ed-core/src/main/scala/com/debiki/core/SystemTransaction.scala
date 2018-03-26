@@ -92,6 +92,11 @@ trait SystemTransaction {
   def loadStuffToSpamCheck(limit: Int): StuffToSpamCheck
   def deleteFromSpamCheckQueue(siteId: SiteId, postId: PostId, postRevNr: Int)
 
+  // ----- Old stuff deletion
+
+  def deletePersonalDataFromOldAuditLogEntries()
+  def deleteOldUnusedUploads() { /* ... later ... */ }
+
   // ----- Testing
 
   /** Deletes all data from the database. For example, for a RDBMS,

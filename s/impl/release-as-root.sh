@@ -45,7 +45,15 @@ function die_if_in_script {
 s/d kill web app
 s/d down
 
-if [ -n "`docker ps -q`" ]; then
+# Any unexpected containers up and running might cause problems.
+
+function containers_running_test() {
+  # 'tail -n +2' skips the column titles row. We exclude any '*registry*' container,
+  # because it's fine to run a local Docker registry, if testing images on localhost.
+  docker ps | tail -n +2 | grep -v registry
+}
+
+if [ -n "`containers_running_test`" ]; then
   echo
   echo "Docker containers are running, PLEASE STOP THEM, thanks. Look:"
   echo
@@ -158,9 +166,11 @@ $test_containers kill web app certgen
 $test_containers down
 
 # If any Docker container is running now, something is amiss.
-if [ -n "`docker ps -q`" ]; then
+if [ -n "`containers_running_test`" ]; then
   echo
-  echo "Some Docker stuff is still running. Why? Weird. Aborting."
+  echo "Some Docker stuff is still running. Why? Weird. Aborting. Look:"
+  echo
+  docker ps
   echo
   die_if_in_script
 fi

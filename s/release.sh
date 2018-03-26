@@ -128,12 +128,8 @@ echo 'Buid completed.'
 # Publish images to Docker repo
 # ----------------------
 
-echo 'Tag and publish to Docker? Press Enter to continue'
-
+echo "Tag images with debiki/talkyard-*:$version_tag? Press Enter (or CTRL+C to exit)"
 read -s -p ''
-
-
-echo "Publishing to debiki/talkyard-*:$version_tag..."
 
 sudo docker tag debiki/talkyard-app debiki/talkyard-app:$version_tag
 sudo docker tag debiki/talkyard-web debiki/talkyard-web:$version_tag
@@ -141,6 +137,12 @@ sudo docker tag debiki/talkyard-rdb debiki/talkyard-rdb:$version_tag
 sudo docker tag debiki/talkyard-cache debiki/talkyard-cache:$version_tag
 sudo docker tag debiki/talkyard-search debiki/talkyard-search:$version_tag
 sudo docker tag debiki/talkyard-certgen debiki/talkyard-certgen:$version_tag
+
+
+echo 'Done. Publish to the official Docker image registry? Press Enter'
+read -s -p ''
+
+echo "Publishing to debiki/talkyard-*:$version_tag..."
 
 sudo docker push debiki/talkyard-app:$version_tag
 sudo docker push debiki/talkyard-web:$version_tag
@@ -152,6 +154,8 @@ sudo docker push debiki/talkyard-certgen:$version_tag
 
 # Bump version number
 # ----------------------
+
+echo "Publishing version tag $version_tag to GitHub, bumping version number..."
 
 echo $version_tag >> modules/ed-versions/version-tags.log
 pushd .
@@ -166,6 +170,7 @@ git tag $version_tag
 git push origin $version_tag
 s/bump-versions.sh
 
-# no: Custom Git log message
-# todo: bump patch number in version.txt, add -SNAPSHOT
+echo "Done. Bye."
+
+
 # vim: et ts=2 sw=2 tw=0 list

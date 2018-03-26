@@ -48,6 +48,7 @@ import scala.util.matching.Regex
 import Globals._
 import ed.server.EdContext
 import ed.server.http.GetRequest
+import ed.server.jobs.OldStuffDeleter
 import play.api.mvc.RequestHeader
 
 
@@ -219,7 +220,7 @@ class Globals(
   def systemDao: SystemDao = state.systemDao  // [rename] to newSystemDao()?
 
 
-  def siteDao(siteId: SiteId): SiteDao =  // [rename] to newSiteDao?
+  def siteDao(siteId: SiteId): SiteDao =  // RENAME [rename] to newSiteDao?
     state.siteDaoFactory.newSiteDao(siteId)
 
 
@@ -656,6 +657,7 @@ class Globals(
       shutdownActorAndWait(state.renderContentActorRef)
       shutdownActorAndWait(state.indexerActorRef)
       shutdownActorAndWait(state.spamCheckActorRef)
+      shutdownActorAndWait(state.oldStuffDeleterActorRef)
       state.elasticSearchClient.close()
       state.redisClient.quit()
       state.dbDaoFactory.db.readOnlyDataSource.asInstanceOf[HikariDataSource].close()
@@ -832,6 +834,10 @@ class Globals(
       applicationVersion, edContext.textAndHtmlMaker)
 
     spamChecker.start()
+
+    val oldStuffDeleterActorRef: Option[ActorRef] =
+      if (isTestDisableBackgroundJobs) None
+      else Some(OldStuffDeleter.startNewActor(outer))
 
     def systemDao: SystemDao = new SystemDao(dbDaoFactory, cache, outer) // RENAME to newSystemDao()?
 

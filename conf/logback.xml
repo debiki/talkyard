@@ -1,5 +1,6 @@
 <configuration>
 
+  <!-- Generates colored log level names. -->
   <conversionRule conversionWord="coloredLevel" converterClass="play.api.libs.logback.ColoredLevel" />
 
   <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
@@ -8,8 +9,13 @@
     </encoder>
   </appender>
 
-  <appender name="FILE" class="ch.qos.logback.core.FileAppender">
+  <!-- https://logback.qos.ch/manual/appenders.html#TimeBasedRollingPolicy   -->
+  <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
     <file>/var/log/talkyard/talkyard-app.log</file>
+    <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+      <fileNamePattern>/var/log/talkyard/talkyard-app.%d{yyyy-ww-dd-HH}.log</fileNamePattern>
+    </rollingPolicy>
+    <maxHistory>2</maxHistory>
     <encoder class="ch.qos.logback.core.encoder.LayoutWrappingEncoder">
       <layout class="ed.stackdriver.StackdriverLayout" />
     </encoder>

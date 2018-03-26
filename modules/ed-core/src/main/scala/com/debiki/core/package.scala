@@ -122,6 +122,8 @@ package object core {
     def plusHours(hours: Int) = new When(unixMillis + hours * OneHourInMillis)
     def minusDays(days: Int) = new When(unixMillis - days * OneDayInMillis)
     def plusDays(days: Int) = new When(unixMillis + days * OneDayInMillis)
+    def minusMonths(months: Int) = new When(unixMillis - months * OneDayInMillis * 365 / 12)
+    def minusYears(years: Int) = new When(unixMillis - years * OneDayInMillis * 365)
 
     /** Unix millis can safely be cast to a Double: (but perhaps not back again?)
       * 100 years * 365 * 24 * 3600 * 1000 = 3153600000000 = 13 digits, and doubles in Java

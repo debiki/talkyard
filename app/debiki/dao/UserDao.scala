@@ -1122,8 +1122,6 @@ trait UserDao {
     SECURITY // should create audit log entry. Should allow staff to change usernames.
     BUG // the lost update bug (if staff + user henself changes the user's prefs at the same time)
 
-    throwForbiddenIfBadNames(preferences)
-
     readWriteTransaction { transaction =>
       val user = transaction.loadTheMemberInclDetails(preferences.userId)
       val me = transaction.loadTheMember(byWho.id)
@@ -1136,8 +1134,14 @@ trait UserDao {
         throwForbidden("EsE7YKF24", o"""Currently only staff may choose be notified about
           every new post""")
 
+      if (user.fullName != preferences.fullName) {
+        throwForbiddenIfBadFullName(preferences.fullName)
+      }
+
       // Don't let people change their usernames too often.
       if (user.username != preferences.username) {
+        throwForbiddenIfBadUsername(preferences.username)
+
         val usersOldUsernames: Seq[UsernameUsage] = transaction.loadUsersOldUsernames(user.id)
         val previousUsages = transaction.loadUsernameUsages(preferences.username)
 
@@ -1210,8 +1214,6 @@ trait UserDao {
     SECURITY // should create audit log entry. Should allow staff to change usernames.
     BUG // the lost update bug (if staff + user henself changes the user's prefs at the same time)
 
-    throwForbiddenIfBadNames(preferences)
-
     readWriteTransaction { transaction =>
       val group = transaction.loadTheGroupInclDetails(preferences.groupId)
       val me = transaction.loadTheMember(byWho.id)
@@ -1219,7 +1221,12 @@ trait UserDao {
 
       val groupAfter = group.copyWithNewAboutPrefs(preferences)
 
+      if (groupAfter.name != group.name) {
+        throwForbiddenIfBadFullName(Some(groupAfter.name))
+      }
+
       if (groupAfter.theUsername != group.theUsername) {
+        throwForbiddenIfBadUsername(preferences.username)
         unimplemented("Changing a group's username", "TyE2KBFU50")
         // Need to: transaction.updateUsernameUsage(usageStopped) — stop using current
         // And: transaction.insertUsernameUsage(UsernameUsage(
@@ -1249,14 +1256,19 @@ trait UserDao {
 
   /** Should do the same tests as [5LKKWA10].
     */
-  private def throwForbiddenIfBadNames(
-        preferences: { def username: String; def fullName: Option[String] }) {
-    throwForbiddenIf(Validation.checkName(preferences.fullName).isBad,
-      "TyE5KKWDR1", s"Weird name, not allowed: ${preferences.fullName}")
-    throwForbiddenIf(Validation.checkUsername(preferences.username).isBad,
-      "TyE4KUK02", s"Invalid username: ${preferences.username}")
-    throwForbiddenIf(ReservedNames.isUsernameReserved(preferences.username),
-      "TyE5K24ZQ1", s"Username is reserved: '${preferences.username}'; pick another username")
+  private def throwForbiddenIfBadFullName(fullName: Option[String]) {
+    throwForbiddenIf(Validation.checkName(fullName).isBad,
+      "TyE5KKWDR1", s"Weird name, not allowed: $fullName")
+  }
+
+
+  /** Should do the same tests as [5LKKWA10].
+    */
+  private def throwForbiddenIfBadUsername(username: String) {
+    throwForbiddenIf(Validation.checkUsername(username).isBad,
+      "TyE4KUK02", s"Invalid username: $username")
+    throwForbiddenIf(ReservedNames.isUsernameReserved(username),
+      "TyE5K24ZQ1", s"Username is reserved: '$username'; pick another username")
   }
 
 
