@@ -407,9 +407,20 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
     val result = dao.readOnlyTransaction { tx =>
       val member: MemberInclDetails = tx.loadTheMemberInclDetails(userId)
 
-      val recentAuditLogEntries: Seq[AuditLogEntry] =
-        tx.loadAuditLogEntriesRecentFirst(userId, tyype = None, limit = 10)
-      val browserIdData = recentAuditLogEntries.headOption.map(_.browserIdData)
+      // Later: Include current ip and cookie etc, if starts remembering for each request [6LKKEZW2]
+      // (It'd be found in anyStats below, not in the audit log.)
+      val auditLogEntries: Seq[AuditLogEntry] =
+        tx.loadAuditLogEntriesRecentFirst(userId, tyype = None, limit = 999, inclForgotten = false)
+      val uniqueBrowserIdData = auditLogEntries.map(_.browserIdData).distinct
+      val browserIdDataJson = uniqueBrowserIdData map { (browserIdData: BrowserIdData) =>
+        Json.obj(
+          "cookie" -> JsString(browserIdData.idCookie),
+          // "fingerprint" -> JsNumber(browserIdData.fingerprint),  // currently always zero
+          "ip" -> JsString(browserIdData.ip))
+      }
+
+      val anyStats: Option[UserStats] = tx.loadUserStats(userId)
+      val statsJson = anyStats.map(makeUserStatsJson(_, isStaffOrSelf = true)) getOrElse JsNull
 
       val otherEmailAddresses =
         tx.loadUserEmailAddresses(userId).filterNot(_.emailAddress == member.primaryEmailAddress)
@@ -455,13 +466,9 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
         // Incl in Uploads links archieve instead?
         "avatarImageUrl" -> JsStringOrNull(member.mediumAvatar.map(request.cdnOrSiteOrigin + _.url)),
         "trustLevel" -> JsString(member.effectiveTrustLevel.toString),
-        // Hmm this is a bit weird. The current request might have a different cookie, fingerprint
-        // and ip, but we don't notice and instead reply with maybe a bit old data.  [6LKKEZW2]
-        // I suppose that's the correct thing to do, because the old stuff is what's in the database.
-        "browserIdCookie" -> JsStringOrNull(browserIdData.map(_.idCookie)),
-        "browserFingerprint" -> JsNumberOrNull(browserIdData.map(_.fingerprint)),
-        "browserIpAddress" -> JsStringOrNull(browserIdData.map(_.ip)),
-        "identities" -> identitiesJson)
+        "identities" -> identitiesJson,
+        "statistics" -> statsJson,
+        "browserIdDataRecentFirst" -> browserIdDataJson)
     }
 
     // These responses are fairly brief; ok to prettify the json.
