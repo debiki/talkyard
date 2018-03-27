@@ -124,11 +124,11 @@ class SpamChecker(
   appVersion: String,
   textAndHtmlMaker: TextAndHtmlMaker) {
 
-  private implicit val execCtx = executionContext
+  private implicit val execCtx: ExecutionContext = executionContext
 
   /*
-  val request: dispatch.Req = dispatch.url("http://api.hostip.info/country.php").GET
-  ... http://ipinfo.io/developers
+  val request: dispatch.Req = dispatch.url("https://api.hostip.info/country.php").GET
+  ... https://ipinfo.io/developers
   */
 
   private val TimeoutMs = 5000
@@ -153,9 +153,9 @@ class SpamChecker(
 
   // Break up the string so if someone copy-pastes this code snippet into ED,
   // it won't be reported as spam.
-  val EdSpamMagicText = "__ed_spam" + "_test_123__"
+  val EdSpamMagicText: PageId = "__ed_spam" + "_test_123__"
 
-  // All types: http://blog.akismet.com/2012/06/19/pro-tip-tell-us-your-comment_type/
+  // All types: https://blog.akismet.com/2012/06/19/pro-tip-tell-us-your-comment_type/
   object AkismetSpamType {
     val Comment = "comment"
     val Pingback = "pingback"
@@ -168,7 +168,7 @@ class SpamChecker(
   }
 
   val GoogleApiKeyName = "talkyard.googleApiKey"
-  val anyGoogleApiKey = playConf.getString(GoogleApiKeyName)
+  val anyGoogleApiKey: Option[String] = playConf.getString(GoogleApiKeyName)
 
 
   def start() {
@@ -327,24 +327,11 @@ class SpamChecker(
       if (request.ip.startsWith("[") || request.ip.contains(":")) ""
       else  "&ip=" + encode(request.ip)
     val encodedEmail = encode(email)
-    // StopForumSpam has a self signed https cert, and Java then dies with a
-    // java.security.cert.CertificateException. So use http for now — later, add the self
-    // signed cert to the Java cert store?
-    // See: https://www.playframework.com/documentation/2.4.x/WSQuickStart
-    // Or just wait for a while:
-    //   "I've got the .com and .org certs now and will get them plumbed in shortly."
-    // (the forum thread above, June 2015)
-    // Hmm supposedly already https:
-    //  "it took some time but the site, including the API, is now available with fully signed SSL"
-    //   http://www.stopforumspam.com/forum/viewtopic.php?id=6345
-    // a few days ago. I'm still getting a cert error though. Works in Chrome, not Java,
-    // I suppose Java's cert store is old and out of date somehow?
-    // Use http for now:
-    wsClient.url(s"http://www.stopforumspam.com/api?email=$encodedEmail$anyIpParam&f=json").get()
+    wsClient.url(s"https://www.stopforumspam.com/api?email=$encodedEmail$anyIpParam&f=json").get()
       .map(handleStopForumSpamResponse)
       .recover({
         case ex: Exception =>
-          p.Logger.warn(s"Error querying api.stopforumspam.org [DwE2PWC7]", ex)
+          p.Logger.warn(s"Error querying api.stopforumspam.com [DwE2PWC7]", ex)
           None
       })
   }
@@ -465,7 +452,7 @@ class SpamChecker(
           // Still, a friendly message makes sense, because in some rare cases a good
           // site might have been compromised and the link poster has good intentions.
           val prettyEvilStuff = evilUrlsAndVerdics.map(urlAndVerdict => {
-            // This results in e.g.:  "malware: http://evil.kingdom/malware"
+            // This results in e.g.:  "malware: https://evil.kingdom/malware"
             urlAndVerdict._2 + ": " + urlAndVerdict._1
           }).mkString("\n")
           Some(i"""
@@ -479,13 +466,13 @@ class SpamChecker(
             |above), or might contain harmful programs (any "unwanted:" rows above).
             |
             |Read more here:
-            |http://www.antiphishing.org/ — for phishing warnings
-            |http://www.stopbadware.org/ — for malware warnings
+            |https://www.antiphishing.org/ — for phishing warnings
+            |https://www.stopbadware.org/ — for malware warnings
             |https://www.google.com/about/company/unwanted-software-policy.html
             |                           — for unwanted software warnings
             |
             |This advisory was provided by Google.
-            |See: http://code.google.com/apis/safebrowsing/safebrowsing_faq.html#whyAdvisory
+            |See: https://code.google.com/apis/safebrowsing/safebrowsing_faq.html#whyAdvisory
             |
             |Google works to provide the most accurate and up-to-date phishing, malware,
             |and unwanted software information. However, Google cannot guarantee that
@@ -509,7 +496,7 @@ class SpamChecker(
     scala> java.net.InetAddress.getAllByName("dbltest.com.dbl.spamhaus.org");   <-- then works
     res9: Array[java.net.InetAddress] = Array(dbltest.com.dbl.spamhaus.org/127.0.1.2)
     asked here:
-    http://stackoverflow.com/questions/32983129/why-does-inetaddress-getallbyname-fail-once-then-succeed
+    https://stackoverflow.com/questions/32983129/why-does-inetaddress-getallbyname-fail-once-then-succeed
     */
 
     // Consider this spam if there's any link with a raw ip address.
@@ -572,7 +559,7 @@ class SpamChecker(
 
 
   def checkViaAkismet(requestBody: String): Future[Option[String]] = {
-    return successful(None)
+    return successful(None)   // [reenable-akismet]
     val promise = Promise[Boolean]()
     akismetKeyIsValidPromise.future onComplete {
       case Success(true) =>
@@ -634,15 +621,15 @@ class SpamChecker(
 
     val body = new StringBuilder()
 
-    // Documentation: http://akismet.com/development/api/#comment-check
+    // Documentation: https://akismet.com/development/api/#comment-check
 
     // (required) The front page or home URL of the instance making the request.
     // For a blog or wiki this would be the front page. Note: Must be
     // a full URI, including http://.
-    body.append("blog=" + encode("http://localhost")) // debikiRequest.origin))
+    body.append("blog=" + encode("http://localhost")) // debikiRequest.origin)) [reenable-akismet] weird
 
     // (required) IP address of the comment submitter.
-    body.append("&user_ip=" + encode("1.22.26.83"))//debikiRequest.ip))
+    body.append("&user_ip=" + encode("1.22.26.83"))//debikiRequest.ip))  [reenable-akismet] weird ip
 
     // (required) User agent string of the web browser submitting the comment - typically
     // the HTTP_USER_AGENT cgi variable. Not to be confused with the user agent

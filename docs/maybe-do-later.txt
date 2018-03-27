@@ -3,3 +3,7 @@
 [no-email]:
 Let people create accounts without specifying any email address. Like at Reddit.
 
+
+[reenable-akismet]:
+For some reason I disabled Akismet (why? when refactoring to save time?). Enable it again.
+

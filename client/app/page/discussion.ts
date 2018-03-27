@@ -703,7 +703,8 @@ const RootPostAndComments = createComponent({
         // [plugin] [utx] ----------------------------
         let pickNextTaskStuff;
         if (page.pageRole === PageRole.UsabilityTesting && me.id === child.authorId &&
-            me.id !== rootPost.authorId) {
+            me.id !== rootPost.authorId &&
+            child.postType !== PostType.BottomComment /* [2GYKFS4] */) {
           pickNextTaskStuff = debiki2.help.HelpMessageBox({ className: 's_UtxNextTask', message: {
             id: 'EdH5P0WF2', version: 1, alwaysShow: true, content: r.div({},
               r.h1({ className: 's_UtxHelp_HaveAsked_Title' }, "Done"),
@@ -742,9 +743,9 @@ const RootPostAndComments = createComponent({
 
     // Disable chat comments for now, they make people confused, and  [8KB42]
     // it'd be hard & take long to make them simpler to understand.
-    let hasChat = false; // hasChatSection(page.pageRole);
+    // let hasChat = false; hasChatSection(page.pageRole);
 
-    let flatComments = []; /*
+    /*let flatComments = [];
     if (hasChat) _.each(page.postsByNr, (child: Post, childId) => {
       if (!child || child.postType !== PostType.Flat)
         return null;
@@ -916,19 +917,19 @@ const SquashedThreads = createComponent({
   render: function() {
     const store: Store = this.props.store;
     const page: Page = store.currentPage;
-    var postsByNr: { [postNr: number]: Post; } = page.postsByNr;
-    var post: Post = postsByNr[this.props.postId];
-    var parentPost: Post = postsByNr[post.parentNr];
+    const postsByNr: { [postNr: number]: Post; } = page.postsByNr;
+    const post: Post = postsByNr[this.props.postId];
+    const parentPost: Post = postsByNr[post.parentNr];
 
-    var arrows = debiki2.renderer.drawArrowsFromParent(
+    const arrows = debiki2.renderer.drawArrowsFromParent(
       postsByNr, parentPost, this.props.depth, this.props.index,
       page.horizontalLayout, this.props.rootPostId, !!post.branchSideways);
 
-    var baseElem = r[this.props.elemType];
-    var depthClass = ' dw-depth-' + this.props.depth;
-    var indentationDepthClass = ' dw-id' + this.props.indentationDepth;
-    var is2dColumnClass = this.props.is2dTreeColumn ? ' dw-2dcol' : '';
-    var postNrDebug = debiki.debug ? '  #' + post.nr : '';
+    const baseElem = r[this.props.elemType];
+    const depthClass = ' dw-depth-' + this.props.depth;
+    const indentationDepthClass = ' dw-id' + this.props.indentationDepth;
+    const is2dColumnClass = this.props.is2dTreeColumn ? ' dw-2dcol' : '';
+    const postNrDebug = debiki.debug ? '  #' + post.nr : '';
 
     return (
       baseElem({ className: 'dw-t dw-ts-squashed' + depthClass + indentationDepthClass +
@@ -940,11 +941,11 @@ const SquashedThreads = createComponent({
 });
 
 
-var Thread = createComponent({
+const Thread = createComponent({
   displayName: 'Thread',
 
   shouldComponentUpdate: function(nextProps, nextState) {
-    var should = !nextProps.quickUpdate || !!nextProps.postsToUpdate[this.props.postId];
+    const should = !nextProps.quickUpdate || !!nextProps.postsToUpdate[this.props.postId];
     return should;
   },
 
@@ -955,31 +956,31 @@ var Thread = createComponent({
   render: function() {
     const store: Store = this.props.store;
     const page: Page = store.currentPage;
-    var postsByNr: { [postNr: number]: Post; } = page.postsByNr;
-    var post: Post = postsByNr[this.props.postId];
+    const postsByNr: { [postNr: number]: Post; } = page.postsByNr;
+    const post: Post = postsByNr[this.props.postId];
     if (!post) {
       // This tree has been deleted.
       return null;
     }
 
-    var parentPost = postsByNr[post.parentNr];
-    var deeper = this.props.depth + 1;
-    var isFlat = this.props.isFlat;
-    var isMindMap = page.pageRole === PageRole.MindMap;
-    var thisAndSiblingsSideways = this.props.is2dTreeColumn && isMindMap;
+    const parentPost = postsByNr[post.parentNr];
+    const deeper = this.props.depth + 1;
+    const isFlat = this.props.isFlat;
+    const isMindMap = page.pageRole === PageRole.MindMap;
+    const thisAndSiblingsSideways = this.props.is2dTreeColumn && isMindMap;
 
     // Draw arrows, but not to multireplies, because we don't know if they reply to `post`
     // or to other posts deeper in the thread.
-    var arrows;
+    let arrows;
     if (!post.multireplyPostNrs.length && !isFlat) {
       arrows = debiki2.renderer.drawArrowsFromParent(
         postsByNr, parentPost, this.props.depth, this.props.index,
         page.horizontalLayout, this.props.rootPostId, thisAndSiblingsSideways);
     }
 
-    var numDeletedChildren = 0;
-    for (var i = 0; i < post.childIdsSorted.length; ++i) {
-      var childId = post.childIdsSorted[i];
+    let numDeletedChildren = 0;
+    for (let i = 0; i < post.childIdsSorted.length; ++i) {
+      const childId = post.childIdsSorted[i];
       if (!postsByNr[childId]) {
         numDeletedChildren += 1;
       }
@@ -994,12 +995,12 @@ var Thread = createComponent({
         debiki2.renderer.drawHorizontalArrowFromRootPost(post);
     }
 
-    var isSquashingChildren = false;
+    let isSquashingChildren = false;
 
-    var children = [];
+    let children = [];
     if (!post.isTreeCollapsed && !post.isTreeDeleted && !isFlat) {
       children = post.childIdsSorted.map((childId, childIndex) => {
-        var child = postsByNr[childId];
+        const child = postsByNr[childId];
         if (!child)
           return null; // deleted
         if (isSquashingChildren && child.squash)
@@ -1008,9 +1009,9 @@ var Thread = createComponent({
           return null;
         isSquashingChildren = false;
 
-        var childIndentationDepth = this.props.indentationDepth;
+        let childIndentationDepth = this.props.indentationDepth;
         // All children except for the last one are indented.
-        var isIndented = childIndex < post.childIdsSorted.length - 1 - numDeletedChildren;
+        let isIndented = childIndex < post.childIdsSorted.length - 1 - numDeletedChildren;
         if (!page.horizontalLayout && this.props.depth === 1) {
           // Replies to article replies are always indented, even the last child.
           isIndented = true;
@@ -1021,7 +1022,7 @@ var Thread = createComponent({
         if (childrenSideways) {
           childIndentationDepth = 0;
         }
-        var threadProps = _.clone(this.props);
+        const threadProps = _.clone(this.props);
         threadProps.elemType = childrenSideways ? 'div' : 'li';
         threadProps.postId = childId;
         threadProps.index = childIndex;
@@ -1029,7 +1030,7 @@ var Thread = createComponent({
         threadProps.indentationDepth = childIndentationDepth;
         threadProps.is2dTreeColumn = childrenSideways;
         threadProps.key = childId;
-        var thread;
+        let thread;
         if (child.squash) {
           isSquashingChildren = true;
           thread = SquashedThreads(threadProps);
@@ -1046,41 +1047,41 @@ var Thread = createComponent({
       });
     }
 
-    var actions = isCollapsed(post) || post_shallRenderAsHidden(post)
+    const actions = isCollapsed(post) || post_shallRenderAsHidden(post)
       ? null
       : PostActions({ store, post, onClick: this.onAnyActionClick });
 
-    var renderCollapsed = (post.isTreeCollapsed || post.isPostCollapsed) &&
+    const renderCollapsed = (post.isTreeCollapsed || post.isPostCollapsed) &&
         // Don't collapse threads in the sidebar; there, comments are abbreviated
         // and rendered in a flat list.
         !this.props.abbreviate;
 
-    var anyWrongWarning = this.props.abbreviate ? null : makeWrongWarning(post);
+    const anyWrongWarning = this.props.abbreviate ? null : makeWrongWarning(post);
 
-    var showAvatar = !renderCollapsed && this.props.depth === 1 && !this.props.is2dTreeColumn;
-    var avatarClass = showAvatar ? ' ed-w-avtr' : '';
-    var anyAvatar = !showAvatar ? null :
+    const showAvatar = !renderCollapsed && this.props.depth === 1 && !this.props.is2dTreeColumn;
+    const avatarClass = showAvatar ? ' ed-w-avtr' : '';
+    const anyAvatar = !showAvatar ? null :
         avatar.Avatar({ user: store_getAuthorOrMissing(store, post) });
 
-    var postProps = _.clone(this.props);
+    const postProps = _.clone(this.props);
     postProps.post = post;
     postProps.index = this.props.index;
     //postProps.onMouseEnter = this.onPostMouseEnter; -- but there's no onPostMouseEnter?
     postProps.ref = 'post';
     postProps.renderCollapsed = renderCollapsed;
 
-    var baseElem = r[this.props.elemType];
-    var depthClass = '';
-    var indentationDepthClass = '';
+    const baseElem = r[this.props.elemType];
+    let depthClass = '';
+    let indentationDepthClass = '';
     if (!isFlat) {
       depthClass = ' dw-depth-' + this.props.depth;
       indentationDepthClass = ' dw-id' + this.props.indentationDepth;
     }
-    var is2dColumnClass = this.props.is2dTreeColumn ? ' dw-2dcol' : '';
-    var multireplyClass = post.multireplyPostNrs.length ? ' dw-mr' : '';
-    var collapsedClass = renderCollapsed ? ' dw-zd' : '';
+    const is2dColumnClass = this.props.is2dTreeColumn ? ' dw-2dcol' : '';
+    const multireplyClass = post.multireplyPostNrs.length ? ' dw-mr' : '';
+    const collapsedClass = renderCollapsed ? ' dw-zd' : '';
 
-    var branchSidewaysClass = horizontalCss(childrenSideways);
+    const branchSidewaysClass = horizontalCss(childrenSideways);
 
     return (
       baseElem({ className: 'dw-t' + depthClass + indentationDepthClass + multireplyClass +
@@ -1119,7 +1120,7 @@ function makeWrongWarning(post: Post) {
 }
 
 
-export var Post = createComponent({
+export const Post = createComponent({
   displayName: 'Post',
 
   onUncollapseClick: function(event) {
@@ -1158,21 +1159,21 @@ export var Post = createComponent({
   render: function() {
     const store: Store = this.props.store;
     const page: Page = store.currentPage;
-    var post: Post = this.props.post;
-    var me: Myself = store.me;
+    const post: Post = this.props.post;
+    const me: Myself = store.me;
     if (!post)
       return r.p({}, '(Post missing [DwE4UPK7])');
 
-    var pendingApprovalElem;
-    var headerElem;
-    var bodyElem;
-    var clickToExpand;
-    var clickCover;
-    var extraClasses = this.props.className || '';
-    var isFlat = this.props.isFlat;
+    let pendingApprovalElem;
+    let headerElem;
+    let bodyElem;
+    let clickToExpand;
+    let clickCover;
+    let extraClasses = this.props.className || '';
+    const isFlat = this.props.isFlat;
 
     if (post.isTreeDeleted || post.isPostDeleted) {
-      var what = post.isTreeDeleted ? 'Thread' : 'Comment';
+      const what = post.isTreeDeleted ? 'Thread' : 'Comment';
       headerElem = r.div({ className: 'dw-p-hd' }, what, ' deleted');
       extraClasses += ' dw-p-dl';
     }
@@ -1181,20 +1182,20 @@ export var Post = createComponent({
         post.isTreeCollapsed !== 'Truncated') {
       // COULD remove this way of collapsing comments, which doesn't show the first line?
       // Currently inactive, this is dead code (!== 'Truncated' is always false).
-      var text = this.props.is2dTreeColumn ? '' : (
+      let text = this.props.is2dTreeColumn ? '' : (
           post.isTreeCollapsed ? t.d.ClickSeeMoreComments : t.d.ClickSeeThisComment);
       if (debiki.debug) text +='  #' + this.props.postId;
-      var iconClass = this.props.is2dTreeColumn ? 'icon-right-open' : 'icon-down-open';
+      const iconClass = this.props.is2dTreeColumn ? 'icon-right-open' : 'icon-down-open';
       bodyElem =
           r.span({}, text, r.span({ className: 'dw-a-clps ' + iconClass }));
       extraClasses += ' dw-zd clearfix';
     }
     else if (!post.isApproved && !post.sanitizedHtml) {
       // (Dupl code, for anyAvatar [503KP25])
-      var showAvatar = this.props.depth > 1 || this.props.is2dTreeColumn;
-      var author: BriefUser = this.props.author || // author specified here: [4WKA8YB]
+      const showAvatar = this.props.depth > 1 || this.props.is2dTreeColumn;
+      const author: BriefUser = this.props.author || // author specified here: [4WKA8YB]
           store_getAuthorOrMissing(store, post);
-      var anyAvatar = !showAvatar ? null : avatar.Avatar({ tiny: true, user: author });
+      const anyAvatar = !showAvatar ? null : avatar.Avatar({ tiny: true, user: author });
       headerElem =
           r.div({ className: 'dw-p-hd' },
             anyAvatar,
@@ -1207,7 +1208,7 @@ export var Post = createComponent({
         pendingApprovalElem = r.div({ className: 'dw-p-pending-mod',
             onClick: this.onUncollapseClick }, t.d.CmtBelowPendAppr(isMine));
       }
-      var headerProps = _.clone(this.props);
+      const headerProps = _.clone(this.props);
       headerProps.onMarkClick = this.onMarkClick;
       // For mind maps, each node is part of the article/page (rather than a comment) so skip author.
       headerElem = page.pageRole === PageRole.MindMap ? null : PostHeader(headerProps);
@@ -1223,7 +1224,7 @@ export var Post = createComponent({
     // For non-multireplies, we never show "In response to" for the very first reply (index 0),
     // instead we draw an arrow. For flat replies, show "In response to" inside the header instead,
     // that looks better (see PostHeader).
-    var replyReceivers;
+    let replyReceivers;
     if (!this.props.abbreviate && !isFlat && (
           this.props.index > 0 || post.multireplyPostNrs.length)) {
       replyReceivers = ReplyReceivers({ store: store, post: post });
@@ -1248,7 +1249,7 @@ export var Post = createComponent({
     if (post_shallRenderAsHidden(post))
       extraClasses += ' s_P-Hdn';
 
-    var unwantedCross;
+    let unwantedCross;
     if (post.numUnwantedVotes) {
       extraClasses += ' dw-unwanted dw-unwanted-' + post.numUnwantedVotes;
       // Sync the max limit with CSS in client/app/.debiki-play.styl. [4KEF28]
@@ -1258,7 +1259,7 @@ export var Post = createComponent({
       unwantedCross = r.div({ className: 'dw-unwanted-cross' });
     }
 
-    var id = this.props.abbreviate ? undefined : 'post-' + post.nr;
+    const id = this.props.abbreviate ? undefined : 'post-' + post.nr;
 
     return (
       r.div({ className: 'dw-p ' + extraClasses, id: id,
@@ -1275,34 +1276,34 @@ export var Post = createComponent({
 
 
 
-var ReplyReceivers = createComponent({
+const ReplyReceivers = createComponent({
   displayName: 'ReplyReceivers',
 
   render: function() {
     const store: Store = this.props.store;
     const page: Page = store.currentPage;
-    var multireplyClass = ' dw-mrrs'; // mrrs = multi reply receivers
-    var thisPost: Post = this.props.post;
-    var repliedToPostIds = thisPost.multireplyPostNrs;
+    let multireplyClass = ' dw-mrrs'; // mrrs = multi reply receivers
+    const thisPost: Post = this.props.post;
+    let repliedToPostIds = thisPost.multireplyPostNrs;
     if (!repliedToPostIds || !repliedToPostIds.length) {
       multireplyClass = '';
       repliedToPostIds = [thisPost.parentNr];
     }
-    var receivers = [];
-    for (var index = 0; index < repliedToPostIds.length; ++index) {
-      var repliedToId = repliedToPostIds[index];
+    const receivers = [];
+    for (let index = 0; index < repliedToPostIds.length; ++index) {
+      const repliedToId = repliedToPostIds[index];
       if (repliedToId === NoPostId) {
         // This was a reply to the whole page, happens if one clicks the "Add comment"
         // button in the chat section, and then replies to someone too.
         continue;
       }
-      var post = page.postsByNr[repliedToId];
+      const post = page.postsByNr[repliedToId];
       if (!post) {
         receivers.push(r.i({ key: repliedToId }, 'Unknown [DwE4KFYW2]'));
         continue;
       }
-      var author = store_getAuthorOrMissing(store, post);
-      var link =
+      const author = store_getAuthorOrMissing(store, post);
+      let link =
         r.a({ href: '#post-' + post.nr, className: 'dw-rr', key: post.nr,
             onMouseEnter: () => highlightPost(post.nr, true),
             onMouseLeave: () => highlightPost(post.nr, false),
@@ -1316,7 +1317,7 @@ var ReplyReceivers = createComponent({
       }
       receivers.push(link);
     }
-    var elem = this.props.comma ? 'span' : 'div';
+    const elem = this.props.comma ? 'span' : 'div';
     return (
       r[elem]({ className: 'dw-rrs' + multireplyClass }, // rrs = reply receivers
         this.props.comma ? t.d.dashInReplyTo : t.d.InReplyTo, receivers, ':'));
@@ -1325,7 +1326,7 @@ var ReplyReceivers = createComponent({
 
 
 
-export var PostHeader = createComponent({
+export const PostHeader = createComponent({
   displayName: 'PostHeader',
 
   onUserClick: function(event: Event) {
@@ -1365,22 +1366,22 @@ export var PostHeader = createComponent({
       return r.span({ className: 'dw-a-clps icon-up-open', onClick: this.onCollapseClick });
     }
 
-    var linkFn = abbreviate ? 'span' : 'a';
+    const linkFn = abbreviate ? 'span' : 'a';
 
-    var anySolutionIcon = page.pageRole === PageRole.Question &&
+    const anySolutionIcon = page.pageRole === PageRole.Question &&
         post.uniqueId === page.pageAnswerPostUniqueId
       ? r.span({ className: 'esH_solution icon-ok-circled', title: t.Solution })
       : null;
 
     // (Dupl code, for anyAvatar [503KP25])
-    var author: BriefUser = this.props.author || // author specified here: [4WKA8YB]
+    const author: BriefUser = this.props.author || // author specified here: [4WKA8YB]
         store_getAuthorOrMissing(store, post);
-    var showAvatar = this.props.depth > 1 || this.props.is2dTreeColumn;
-    var anyAvatar = !showAvatar ? null : avatar.Avatar({ tiny: true, user: author });
+    const showAvatar = this.props.depth > 1 || this.props.is2dTreeColumn;
+    const anyAvatar = !showAvatar ? null : avatar.Avatar({ tiny: true, user: author });
 
-    var editInfo = null;
+    let editInfo = null;
     if (post.lastApprovedEditAtMs) {
-      var editedAt = prettyLetterTimeAgo(post.lastApprovedEditAtMs);
+      const editedAt = prettyLetterTimeAgo(post.lastApprovedEditAtMs);
       //var byVariousPeople = post.numEditors > 1 ? ' by various people' : null;
       editInfo =
           r.span({ onClick: this.showEditHistory, className: 'esP_viewHist icon-edit',
