@@ -122,11 +122,11 @@ class SiteDao(
     if (theSite().status == SiteStatus.NoAdmin) {
       dieIf(!user.isOwner, "EsE6YK20")
       dieIf(!user.isAdmin, "EsE2KU80")
-      uncacheSite()
+      uncacheSiteFromMemCache()
     }
   }
 
-  private def uncacheSite() {
+  private def uncacheSiteFromMemCache() {
     val thisSite = memCache.lookup[Site](thisSiteCacheKey)
     memCache.remove(thisSiteCacheKey)
     thisSite.foreach(SystemDao.removeCanonicalHostCacheEntries(_, memCache))
@@ -212,12 +212,14 @@ class SiteDao(
     */
   def theSiteName(): String = theSiteNameAndOrigin()._1
 
+  def theSiteOrigin(): String = theSiteNameAndOrigin()._2
+
   def theSiteNameAndOrigin(): (String, String) = {
     val site = theSite()
-    val anyPrettyHostname = site.canonicalHost.map(_.hostname)
-    val anyPrettyOrigin = site.canonicalHost.map(globals.schemeColonSlashSlash + _.hostname)
-    val siteNameOrHostname = anyPrettyHostname getOrElse site.name
-    val origin = anyPrettyOrigin getOrElse globals.siteByIdOrigin(siteId)
+    val anyHostname = site.canonicalHost.map(_.hostname)
+    val anyOrigin = anyHostname.map(globals.schemeColonSlashSlash + _ + globals.colonPort)
+    val siteNameOrHostname = anyHostname getOrElse site.name
+    val origin = anyOrigin getOrElse globals.siteByIdOrigin(siteId)
     (siteNameOrHostname, origin)
   }
 
@@ -241,6 +243,25 @@ class SiteDao(
     Some(site)
   }
 
+  def forAllSiteOrigins(fn: (String) => Unit) {
+    var remainingOrigins = loadOrigins()
+    while (remainingOrigins.nonEmpty) {
+      remainingOrigins foreach fn
+      // Maybe another hostname was just added?
+      val originsAfter = loadOrigins()
+      remainingOrigins = remainingOrigins -- originsAfter
+    }
+  }
+
+  private def loadOrigins(): Set[String] = {
+    val site = loadSiteNoCache() getOrElse {
+      return  Set.empty
+    }
+    site.hosts.map(host => {
+      globals.schemeColonSlashSlash + host.hostname + globals.colonPort
+    }) toSet
+  }
+
   def ensureSiteActiveOrThrow(newMember: MemberInclDetails, transaction: SiteTransaction) {
     // The throwForbidden exceptions can be triggered for example if someone starts signing up,
     // then the site gets deleted, and then the person clicks the submit button in
@@ -256,7 +277,7 @@ class SiteDao(
         BUG; RACE // if reloaded before transaction committed, old state will be reinserted
         // into the cache. Have the caller call uncacheSite() instead? But how ensure it'll
         // remember to do that??
-        uncacheSite()
+        uncacheSiteFromMemCache()
       case SiteStatus.Active =>
         // Fine.
       case SiteStatus.ReadAndCleanOnly =>
@@ -275,7 +296,7 @@ class SiteDao(
 
   def updateSite(changedSite: Site) {
     readWriteTransaction(_.updateSite(changedSite))
-    uncacheSite()
+    uncacheSiteFromMemCache()
   }
 
   def listHostnames(): Seq[SiteHostInclDetails] = {
@@ -283,28 +304,28 @@ class SiteDao(
   }
 
   def changeSiteHostname(newHostname: String) {
-    readWriteTransaction { transaction =>
-      val hostsNewestFirst = transaction.loadHostsInclDetails().sortBy(-_.addedAt.millis)
+    readWriteTransaction { tx =>
+      val hostsNewestFirst = tx.loadHostsInclDetails().sortBy(-_.addedAt.millis)
       if (hostsNewestFirst.length > SoftMaxOldHostnames) {
         val hostNr2 = hostsNewestFirst(1)
         if (globals.now().daysSince(hostNr2.addedAt) < WaitUntilAnotherHostnameInterval) {
           throwForbidden("EdE3KYP2", "You've changed hostname too many times and too often")
         }
       }
-      transaction.changeCanonicalHostRoleToExtra()
-      try transaction.insertSiteHost(SiteHost(newHostname, SiteHost.RoleCanonical))
+      tx.changeCanonicalHostRoleToExtra()
+      try tx.insertSiteHost(SiteHost(newHostname, SiteHost.RoleCanonical))
       catch {
         case _: DuplicateHostnameException =>
           throwForbidden("EdE7FKW20", s"There's already a site with hostname '$newHostname'")
       }
-      uncacheSite()
     }
+    uncacheSiteFromMemCache()
   }
 
   def changeExtraHostsRole(newRole: SiteHost.Role) {
     readWriteTransaction { transaction =>
       transaction.changeExtraHostsRole(newRole)
-      uncacheSite()
+      uncacheSiteFromMemCache()
     }
   }
 

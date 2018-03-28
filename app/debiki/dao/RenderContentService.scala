@@ -143,7 +143,7 @@ class RenderContentActor(
 
     // Remove cached whole-page-html, so we'll generate a new page with the new content. [7UWS21]
     dao.removeFromMemCache(
-      RenderedPageHtmlDao.renderedPageKey(sitePageId))
+      RenderedPageHtmlDao.renderedPageKey(sitePageId, dao.theSiteOrigin()))
   }
 
 

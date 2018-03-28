@@ -33,6 +33,7 @@ case class PageStuff(
   pageRole: PageRole,
   title: String,
   bodyExcerpt: Option[String],
+  // Need not cache these urls per server origin? [5JKWBP2]
   bodyImageUrls: immutable.Seq[String],
   popularRepliesImageUrls: immutable.Seq[String],
   authorUserId: UserId,

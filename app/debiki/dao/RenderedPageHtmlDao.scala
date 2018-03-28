@@ -29,8 +29,18 @@ import ed.server.RenderedPage
 
 object RenderedPageHtmlDao {
 
-  def renderedPageKey(sitePageId: SitePageId) =
-    MemCacheKey(sitePageId.siteId, s"${sitePageId.pageId}|PageHtml")
+  /** The server origin is included in the inline javascript — needed
+    * when rendering server side.
+    * (Hmm, it isn't ever included in generated html links? If it is, should cache
+    * PageStuff by origin too [5JKWBP2], and the html in the database, page_html3.)
+    *
+    * The same page might be requested via different origins, if one moves a site
+    * to a new address: some browser will continue using the old address, whilst the move
+    * is in progress. (And if not cached, then that'd open for a DoS attack they could do.)
+    * And also when testing on localhost. Or accessing via https://site-X.basedomain.com.
+    */
+  def renderedPageKey(sitePageId: SitePageId, origin: String) =
+    MemCacheKey(sitePageId.siteId, s"${sitePageId.pageId}|$origin|PageHtml")
 
 }
 
@@ -38,10 +48,8 @@ object RenderedPageHtmlDao {
 trait RenderedPageHtmlDao {
   self: SiteDao =>
 
-  import context.globals
 
-
-  memCache.onPageCreated { page =>
+  memCache.onPageCreated { _ =>
     uncacheForums(this.siteId)
   }
 
@@ -84,20 +92,6 @@ trait RenderedPageHtmlDao {
     useMemCache &= pageReq.pageRoot.contains(PageParts.BodyNr)
     useMemCache &= !pageReq.debugStats
     useMemCache &= !pageReq.bypassCache
-    if (globals.isProd) {
-      // The request.host will be included in the generated html, and if it doesn't match
-      // the correct hostname + port then don't cache the html, because if e.g. the port is
-      // wrong, WebSocket or cookie domains will be wrong, thing's won't work, later
-      // when loading the page via the correct hostname + port (because wrong host in cache).
-      // (Reasons for "wrong" hostname & port include: testing on localhost, or calling the Play
-      // app directly via its own port and cURL, rather than accessing via Nginx port 80/443.)
-      useMemCache &= pageReq.host == pageReq.canonicalHostname + globals.colonPort
-    }
-    else {
-      // Caching different hostname is ok, but caching the wrong port is annoying because
-      // then Nginx+Nchan work and I have to restart the Play server to empty the cache.
-      useMemCache &= pageReq.colonPort == globals.colonPort
-    }
 
     // When paginating forum topics in a non-Javascript client, we cannot use the cache.
     useMemCache &= pageReq.parsePageQuery().isEmpty
@@ -105,7 +99,7 @@ trait RenderedPageHtmlDao {
     if (!useMemCache)
       return loadPageFromDatabaseAndRender(pageReq)
 
-    val key = renderedPageKey(pageReq.theSitePageId)
+    val key = renderedPageKey(pageReq.theSitePageId, pageReq.origin)
     memCache.lookup(key, orCacheAndReturn = {
       if (pageReq.thePageRole == PageRole.Forum) {
         rememberForum(pageReq.thePageId)
@@ -176,7 +170,9 @@ trait RenderedPageHtmlDao {
 
 
   private def uncacheRenderedPage(sitePageId: SitePageId) {
-    memCache.remove(renderedPageKey(sitePageId))
+    forAllSiteOrigins { origin =>
+      memCache.remove(renderedPageKey(sitePageId, origin))
+    }
 
     // Don't remove the cached contents, because it takes long to regenerate. [6KP368]
     // Instead, send old stale cached content html to the browsers,
@@ -206,10 +202,12 @@ trait RenderedPageHtmlDao {
     */
   private def uncacheForums(siteId: SiteId) {
     val forumIds = memCache.lookup[List[String]](forumsKey(siteId)) getOrElse Nil
-    for (forumId <- forumIds) {
-      memCache.remove(renderedPageKey(SitePageId(siteId, forumId)))
+    forAllSiteOrigins { origin =>
+      forumIds foreach { forumId =>
+        memCache.remove(renderedPageKey(SitePageId(siteId, forumId), origin))
+      }
+      // Don't remove any cached content, see comment above. [6KP368]
     }
-    // Don't remove any cached content, see comment above. [6KP368]
   }
 
 
