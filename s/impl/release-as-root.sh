@@ -100,6 +100,7 @@ s/d-gulp build-e2e
 # Use the -no-limits.yml file, because we'll run performance tests.
 export VERSION_TAG=latest
 export POSTGRES_PASSWORD=public
+export DOCKER_REPOSITORY=debiki
 test_containers='docker-compose -p edt -f modules/ed-prod-one-test/docker-compose.yml -f modules/ed-prod-one-test/debug.yml -f modules/ed-prod-one-test-override.yml -f docker-compose-no-limits.yml'
 $test_containers down
 rm -fr modules/ed-prod-one-test/data
