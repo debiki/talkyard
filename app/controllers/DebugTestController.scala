@@ -32,7 +32,6 @@ import org.slf4j.Marker
 import play.api.libs.json._
 import play.{api => p}
 import play.api.mvc.{Action, ControllerComponents}
-import play.api.mvc.BodyParsers.parse.empty
 import redis.RedisClient
 import scala.concurrent.duration._
 import scala.concurrent.{Await, Future}
@@ -71,7 +70,7 @@ class DebugTestController @Inject()(cc: ControllerComponents, edContext: EdConte
 
 
   SECURITY; COULD // allow only if a Ops team password header? is included? For now, superadmins only.
-  def showMetrics = SuperAdminGetAction { _ =>
+  def showMetrics: Action[Unit] = SuperAdminGetAction { _ =>
     val osMXBean = ManagementFactory.getOperatingSystemMXBean
     val systemLoad = osMXBean.getSystemLoadAverage
     val runtime = Runtime.getRuntime
@@ -107,21 +106,16 @@ class DebugTestController @Inject()(cc: ControllerComponents, edContext: EdConte
   }
 
 
-  SECURITY; COULD // make this accessible only for admins + if ok forbidden-password specified.
-  def showBuildInfo = GetAction { _ =>
+  SECURITY; COULD // make this accessible only for superadmins + if ok forbidden-password specified.
+  def showBuildInfo: Action[Unit] = GetAction { _ =>
     import generatedcode.BuildInfo
     val infoTextBuilder = StringBuilder.newBuilder
       .append("Build info:")
       .append("\n")
       .append("\ndocker tag: ").append(BuildInfo.dockerTag)
       .append("\napp version: ").append(BuildInfo.version)
-      .append("\nbuilt at: ").append(BuildInfo.builtAtString)
-      .append("\n")
       .append("\ngit revision: ").append(BuildInfo.gitRevision)
       .append("\ngit branch: ").append(BuildInfo.gitBranch)
-      .append("\ngit status: ========================================\n")
-      .append(BuildInfo.gitStatus)
-      .append("\n====================================================\n")
       .append("\nscala version: ").append(BuildInfo.scalaVersion)
       .append("\nsbt version: ").append(BuildInfo.sbtVersion)
     Ok(infoTextBuilder.toString) as TEXT
@@ -129,19 +123,19 @@ class DebugTestController @Inject()(cc: ControllerComponents, edContext: EdConte
 
 
   /** For performance tests. */
-  def pingExceptionAction: Action[Unit] = ExceptionAction(empty) { _ =>
+  def pingExceptionAction: Action[Unit] = ExceptionAction(cc.parsers.empty) { _ =>
     Ok("exception-action-pong")
   }
 
 
   /** For performance tests. */
-  def pingApiAction = GetAction { _ =>
+  def pingApiAction: Action[Unit] = GetAction { _ =>
     Ok("session-action-pong")
   }
 
 
   /** For performance tests. */
-  def pingCache = GetAction { _ =>
+  def pingCache: Action[Unit] = GetAction { _ =>
     val redis: RedisClient = globals.redisClient
     val futureGetResult = redis.get("missing_value")
     Await.result(futureGetResult, 5 seconds)
@@ -150,17 +144,17 @@ class DebugTestController @Inject()(cc: ControllerComponents, edContext: EdConte
 
 
   /** For load balancers (and performance tests too) */
-  def pingDatabaseAndCache = GetAction { request =>
+  def pingDatabaseAndCache: Action[Unit] = GetAction { request =>
     throwForbidden("EdE2wKFUG8", "Not impl")
-    request.dao.readOnlyTransaction { transaction =>
-      // transaction.pingDatabase()
+    request.dao.readOnlyTransaction { _ =>
+      // tx.pingDatabase()
       // ping Redis too
     }
     Ok("pong, from Play, Postgres and Redis")
   }
 
 
-  def origin = GetAction { request =>
+  def origin: Action[Unit] = GetAction { request =>
     val canonicalHost = request.dao.theSite().canonicalHost
     val response =
       s"""Globals.secure: ${globals.secure}
@@ -187,7 +181,7 @@ class DebugTestController @Inject()(cc: ControllerComponents, edContext: EdConte
   }
 
 
-  def areScriptsReady: Action[Unit] = ExceptionAction(empty) { _ =>
+  def areScriptsReady: Action[Unit] = ExceptionAction(cc.parsers.empty) { _ =>
     val numEnginesCreated = context.nashorn.numEnginesCreated
     val numMissing = ReactRenderer.MinNumEngines - numEnginesCreated
     if (numMissing > 0)
@@ -208,7 +202,7 @@ class DebugTestController @Inject()(cc: ControllerComponents, edContext: EdConte
   }
 
 
-  def createDeadlock: Action[Unit] = ExceptionAction(empty) { _ =>
+  def createDeadlock: Action[Unit] = ExceptionAction(cc.parsers.empty) { _ =>
     throwForbiddenIf(globals.isProd, "DwE5K7G4", "You didn't say the magic word")
     debiki.DeadlockDetector.createDebugTestDeadlock()
     Ok("Deadlock created, current time: " + toIso8601(new ju.Date)) as TEXT
@@ -216,7 +210,7 @@ class DebugTestController @Inject()(cc: ControllerComponents, edContext: EdConte
 
 
   def showLastE2eTestEmailSent(siteId: SiteId, sentTo: String): Action[Unit] =
-        ExceptionAction.async(empty) { request =>
+        ExceptionAction.async(cc.parsers.empty) { request =>
     SECURITY // COULD add and check an e2e password. Or rate limits.
 
     if (!Email.isE2eTestEmailAddress(sentTo))
@@ -271,7 +265,7 @@ class DebugTestController @Inject()(cc: ControllerComponents, edContext: EdConte
   }
 
 
-  def showPagePopularityStats(pageId: PageId) = AdminGetAction { request =>
+  def showPagePopularityStats(pageId: PageId): Action[Unit] = AdminGetAction { request =>
     val (scoreInDb, scoreNow, statsNow) = request.dao.readOnlyTransaction { tx =>
       val scoreInDb = tx.loadPagePopularityScore(pageId)
       val pageParts = PagePartsDao(pageId, tx)
@@ -298,7 +292,7 @@ class DebugTestController @Inject()(cc: ControllerComponents, edContext: EdConte
   }
 
 
-  def showPubSubSubscribers(siteId: Option[SiteId]) = AsyncAdminGetAction { request =>
+  def showPubSubSubscribers(siteId: Option[SiteId]): Action[Unit] = AsyncAdminGetAction { request =>
     globals.pubSub.debugGetSubscribers(siteId getOrElse request.siteId) map { pubSubState =>
       Ok(i"""
         |Subscribers by site and user id
@@ -313,7 +307,7 @@ class DebugTestController @Inject()(cc: ControllerComponents, edContext: EdConte
   }
 
 
-  def logFunnyLogMessages = AdminGetAction { _ =>
+  def logFunnyLogMessages: Action[Unit] = AdminGetAction { _ =>
     import org.slf4j.Logger
     import org.slf4j.LoggerFactory
     val logger: Logger = LoggerFactory.getLogger("application")

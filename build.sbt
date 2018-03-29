@@ -140,7 +140,9 @@ def mainSettings = List(
   //  play.routes.compiler.InjectedRoutesGenerator,
 
   buildInfoPackage := "generatedcode",
-  buildInfoOptions += BuildInfoOption.BuildTime,
+  // Don't include the build time — because then Play Framework will reload, whenever [7UJ2Z5]
+  // anything in public/ changes. E.g. fixing a typo in a Javascript comment.
+  // buildInfoOptions += BuildInfoOption.BuildTime,
   buildInfoKeys := Seq[BuildInfoKey](
     name,
     version,
@@ -155,10 +157,12 @@ def mainSettings = List(
     },
     BuildInfoKey.action("gitBranch") {
       "git rev-parse --abbrev-ref HEAD".!!.trim
-    },
-    BuildInfoKey.action("gitStatus") {
-      "git status".!!.trim
     }),
+    // Don't include, because then Play recompiles and reloads, whenever any [7UJ2Z5]
+    // Git file status changes.
+    //BuildInfoKey.action("gitStatus") {
+    //  "git status".!!.trim
+    //}),
 
   // Disable ScalaDoc generation, it breaks seemingly because I'm compiling some Javascript
   // files to Java, and ScalaDoc complains the generated classes don't exist and breaks
