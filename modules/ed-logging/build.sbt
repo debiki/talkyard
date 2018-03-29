@@ -23,9 +23,4 @@ libraryDependencies ++= Seq(
 
 scalacOptions += "-deprecation"
 
-// See: https://groups.google.com/forum/?fromgroups=#!topic/simple-build-tool/bkF1IDZj4L0
-ideaPackagePrefix := None
-
-// Makes `dependency-graph` work.
-net.virtualvoid.sbt.graph.DependencyGraphSettings.graphSettings
 

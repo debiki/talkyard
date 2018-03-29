@@ -15,10 +15,9 @@
   * along with this program.  If not, see <http://www.gnu.org/licenses/>.
   */
 
-import play.sbt.PlayImport.PlayKeys
-import sbtbuildinfo.{BuildInfoKey, BuildInfoKeys, BuildInfoOption, BuildInfoPlugin}
-
-//net.virtualvoid.sbt.graph.DependencyGraphSettings.graphSettings
+import scala.sys.process._  // "shell command".!! = execute the command, return result
+// Imported automatically, but incl here anyway so can click and open in the IDE:
+import _root_.sbtbuildinfo.BuildInfoPlugin.autoImport._
 
 
 val versionFileContents = {
@@ -28,6 +27,7 @@ val versionFileContents = {
 }
 
 val appName = "talkyard-server"
+
 val appVersion = {
   // Change from WIP (work-in-progress) to SNAPSHOT, suitable for the Java/Scala world.
   versionFileContents.replaceAllLiterally("WIP", "SNAPSHOT")
@@ -35,21 +35,18 @@ val appVersion = {
 
 // Stuff shared between <repo-root>/app/ and <repo-root>/modules/ed-dao-rdb.
 lazy val edCore =
-  (project in file("modules/ed-core"))
-    //.settings(name := "ed-core")
+  project in file("modules/ed-core")
 
 // ed = EffectiveDiscussions, dao = Database Access Object, rdb = Relational DataBase (PostgreSQL)
 lazy val edDaoRdb =
   (project in file("modules/ed-dao-rdb"))
-    //.settings(name := "ed-dao-rdb")
     .dependsOn(edCore)
 
 // In dev mode, dynamically compiled classes are not available when Logback starts,  [7SBMAQ2P]
 // unless they're compiled first, in a separate step in another project. So place the Logback
 // stuff (custom Logback layout) in this separate project — and you need to do publish-local in it.
 lazy val edLogging =
-  (project in file("modules/ed-logging"))
-    //.settings(name += "ed-logging")
+  project in file("modules/ed-logging")
 
 
 val appDependencies = Seq(
@@ -142,9 +139,9 @@ def mainSettings = List(
   //play.sbt.routes.RoutesCompiler.autoImport.routesGenerator :=
   //  play.routes.compiler.InjectedRoutesGenerator,
 
-  BuildInfoKeys.buildInfoPackage := "generatedcode",
-  BuildInfoKeys.buildInfoOptions += BuildInfoOption.BuildTime,
-  BuildInfoKeys.buildInfoKeys := Seq[BuildInfoKey](
+  buildInfoPackage := "generatedcode",
+  buildInfoOptions += BuildInfoOption.BuildTime,
+  buildInfoKeys := Seq[BuildInfoKey](
     name,
     version,
     scalaVersion,
@@ -162,20 +159,6 @@ def mainSettings = List(
     BuildInfoKey.action("gitStatus") {
       "git status".!!.trim
     }),
-
-  // Prevent Play from recompiling and restarting, whenever anything changes inside public/:
-  // (Those files are served directly by Nginx, so Play can ignore them. I didn't find
-  // any way to configure Play to both serve those files, and also avoid recompiling
-  // all Scala files whenever any of them changes — that's why they're served by Nginx instead.
-  // See:
-  // - https://github.com/playframework/playframework/issues/7799
-  // - https://github.com/playframework/playframework/issues/2905 )
-  //
-  // Not needed:
-  // watchSources := (watchSources.value --- baseDirectory.value / "public" ** "*").get,
-  //
-  PlayKeys.playMonitoredFiles := (PlayKeys.playMonitoredFiles.value
-    --- baseDirectory.value / "public" ** "*").get,
 
   // Disable ScalaDoc generation, it breaks seemingly because I'm compiling some Javascript
   // files to Java, and ScalaDoc complains the generated classes don't exist and breaks
