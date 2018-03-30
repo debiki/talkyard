@@ -33,7 +33,7 @@ const owens2ndPostComment = 'owens2ndPostComment';
 
 
 // Gatsby uses React.js and does history.push + unmounts & remounts React components,
-// to navigate to a new page. This spec ensures the EffectiveDiscussions embedded
+// to navigate to a new page. This spec ensures the Talkyard embedded
 // comments plugin handles these un- & re-mounts well, i.e. always shows the correct comments.
 //
 describe("embedded comments, Gatsby blog and un/re-mmounting comments", () => {

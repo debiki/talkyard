@@ -197,11 +197,11 @@ class SafeActions(val globals: Globals, val security: EdSecurity, parsers: PlayB
   private val BadAppSecretError = {
     Results.InternalServerError(i"""500 Internal Server Error
       |
-      |Admin: Please edit the '${Globals.AppSecretConfValName}' config value, in file /opt/ed/conf/app/play.conf.
+      |Admin: Please edit the '${Globals.AppSecretConfValName}' config value, in file /opt/talkyard/conf/app/play.conf.
       |
       |It's still set to "${Globals.AppSecretDefVal}".
       |
-      |Replace it with about 80 random characters. Then, in /opt/ed/, do:  docker-compose restart app
+      |Replace it with about 80 random characters. Then, in /opt/talkyard/, do:  docker-compose restart app
       |and wait ten? twenty? seconds, then reload this page. [EdEDEFAPPSECRET]
       |""")
   }

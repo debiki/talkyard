@@ -67,7 +67,7 @@ class StackdriverLayout extends LayoutBase[ILoggingEvent] {
 
     /*
     var totalJson = Json.obj(
-      "logName" -> "projects/ed/logs/theLog",
+      "logName" -> "projects/talkyard/logs/theLog",
       // I don't know what this is. "resource" -> Json.obj(
       // "type" -> "ed-app")),
 

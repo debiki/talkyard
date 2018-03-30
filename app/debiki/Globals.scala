@@ -383,8 +383,8 @@ class Globals(
     def portParam = colonPortParam drop 1
     dieIf(colonPortParam.nonEmpty && colonPortParam != colonPort,
       "EdE47SK2", o"""Bad port: $portParam. You're accessing the server via non-standard
-        port $portParam, but then you need to add config value `ed.port=$portParam`,
-        in file /opt/ed/conf/app/play.conf,
+        port $portParam, but then you need to add config value `talkyard.port=$portParam`,
+        in file /opt/talkyard/conf/app/play.conf,
         otherwise I won't know for sure which port to include in URLs I generate.""")
     s"$scheme://$hostname$colonPort"
   }
