@@ -328,13 +328,9 @@ class ViewPageController @Inject()(cc: ControllerComponents, edContext: EdContex
       dao = dao,
       request = request.request)
 
-    doRenderPage(pageRequest)
-  }
+    val renderedPage = dao.renderPageMaybeUseCache(pageRequest)
 
-
-  private def doRenderPage(request: PageGetRequest): Future[Result] = {
-    val renderedPage = request.dao.renderPageMaybeUseCache(request)
-    addVolatileJsonAndPreventClickjacking(renderedPage, request)
+    addVolatileJsonAndPreventClickjacking(renderedPage, pageRequest)
   }
 
 }

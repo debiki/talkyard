@@ -243,16 +243,6 @@ class SiteDao(
     Some(site)
   }
 
-  def forAllSiteOrigins(fn: (String) => Unit) {
-    var remainingOrigins = loadOrigins()
-    while (remainingOrigins.nonEmpty) {
-      remainingOrigins foreach fn
-      // Maybe another hostname was just added?
-      val originsAfter = loadOrigins()
-      remainingOrigins = remainingOrigins -- originsAfter
-    }
-  }
-
   private def loadOrigins(): Set[String] = {
     val site = loadSiteNoCache() getOrElse {
       return  Set.empty

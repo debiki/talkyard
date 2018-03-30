@@ -20,11 +20,13 @@ package debiki.dao
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki._
-import debiki.EdHttp.{throwNotFound, throwInternalError}
+import debiki.EdHttp.{throwInternalError, throwNotFound}
 import ed.server.http.PageRequest
 import play.{api => p}
 import RenderedPageHtmlDao._
 import ed.server.RenderedPage
+import java.{util => ju}
+import scala.collection.mutable
 
 
 object RenderedPageHtmlDao {
@@ -39,7 +41,7 @@ object RenderedPageHtmlDao {
     * is in progress. (And if not cached, then that'd open for a DoS attack they could do.)
     * And also when testing on localhost. Or accessing via https://site-X.basedomain.com.
     */
-  def renderedPageKey(sitePageId: SitePageId, origin: String) =
+  private def renderedPageKey(sitePageId: SitePageId, origin: String) =
     MemCacheKey(sitePageId.siteId, s"${sitePageId.pageId}|$origin|PageHtml")
 
 }
@@ -54,7 +56,7 @@ trait RenderedPageHtmlDao {
   }
 
   memCache.onPageSaved { sitePageId =>
-    uncacheRenderedPage(sitePageId)
+    uncacheAndRerenderPage(sitePageId)
     uncacheForums(sitePageId.siteId)
   }
 
@@ -101,6 +103,28 @@ trait RenderedPageHtmlDao {
 
     val key = renderedPageKey(pageReq.theSitePageId, pageReq.origin)
     memCache.lookup(key, orCacheAndReturn = {
+      // Remember the server's origin, so we'll be able to delete pages cached with this origin.
+
+      // Could CLEAN_UP this later. Break out reusable fn? place in class MemCache?  [5KDKW2A]
+      val originsKey = s"$siteId|origins"
+      memCache.cache.asMap().merge(
+        originsKey,
+        MemCacheValueIgnoreVersion(Set(pageReq.origin)),
+        new ju.function.BiFunction[DaoMemCacheAnyItem, DaoMemCacheAnyItem, DaoMemCacheAnyItem] () {
+          def apply(oldValue: DaoMemCacheAnyItem, newValue: DaoMemCacheAnyItem): DaoMemCacheAnyItem = {
+            val oldSet = oldValue.value.asInstanceOf[Set[String]]
+            val newSet = newValue.value.asInstanceOf[Set[String]]
+            if (oldSet == newSet) {
+              oldValue
+            }
+            else {
+              val origins = oldSet.toBuffer
+              newSet.foreach(origins.append(_))
+              MemCacheValueIgnoreVersion(origins.toSet)
+            }
+          }
+        })
+
       if (pageReq.thePageRole == PageRole.Forum) {
         rememberForum(pageReq.thePageId)
       }
@@ -151,6 +175,7 @@ trait RenderedPageHtmlDao {
 
 
   private def rememberForum(forumPageId: PageId) {
+    // COULD Use ConcurrentMap.merge(k, v, remappingFunction) instead? Maybe break out fn? [5KDKW2A]
     var done = false
     do {
       val key = this.forumsKey(siteId)
@@ -169,12 +194,23 @@ trait RenderedPageHtmlDao {
   }
 
 
-  private def uncacheRenderedPage(sitePageId: SitePageId) {
-    forAllSiteOrigins { origin =>
+  private def forAllAccessedOrigins(fn: (String) => Unit): Unit = {
+    var origins = memCache.lookup[Set[String]](MemCacheKey(siteId, "origins")) getOrElse Set.empty
+    origins foreach fn
+  }
+
+
+  def removePageFromMemCache(sitePageId: SitePageId) {
+    forAllAccessedOrigins { origin =>
       memCache.remove(renderedPageKey(sitePageId, origin))
     }
+  }
 
-    // Don't remove the cached contents, because it takes long to regenerate. [6KP368]
+
+  private def uncacheAndRerenderPage(sitePageId: SitePageId) {
+    removePageFromMemCache(sitePageId)
+
+    // Don't remove the database-cached rendered html, because it takes long to regenerate. [6KP368]
     // Instead, send old stale cached content html to the browsers,
     // and they'll make it up-to-date when they render the React json client side
     // (we do send up-to-date json, always). — After a short while, some background
@@ -202,11 +238,11 @@ trait RenderedPageHtmlDao {
     */
   private def uncacheForums(siteId: SiteId) {
     val forumIds = memCache.lookup[List[String]](forumsKey(siteId)) getOrElse Nil
-    forAllSiteOrigins { origin =>
+    forAllAccessedOrigins { origin =>
       forumIds foreach { forumId =>
         memCache.remove(renderedPageKey(SitePageId(siteId, forumId), origin))
       }
-      // Don't remove any cached content, see comment above. [6KP368]
+      // Don't remove any database-cached html, see comment above. [6KP368]
     }
   }
 
