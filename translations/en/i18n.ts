@@ -20,6 +20,8 @@ var t_en: TalkyardTranslations = t = {
 
   Active: "Active",
   Activity: "Activity",
+  Add: "Add",
+  AddingDots: "Adding ...",
   Admin: "Admin",
   Away: "Away",
   BlogN: "Blog",
@@ -27,6 +29,8 @@ var t_en: TalkyardTranslations = t = {
   Cancel: "Cancel",
   Categories: "Categories",
   Category: "Category",
+  Continue: "Continue",
+  ChangeDots: "Change ...",
   ChatN: "Chat",
   Close: "Close",
   closed: "closed",
@@ -34,19 +38,22 @@ var t_en: TalkyardTranslations = t = {
   Delete: "Delete",
   Discussion: "Discussion",
   EditV: "Edit",
+  EmailAddress: "Email address",
   Forum: "Forum",
   Hide: "Hide",
   Idea: "Idea",
   Loading: "Loading...",
   LoadMore: "Load more ...",
-  Login: "Login",
+  LogIn: "Log in",
   LoggedInAs: "Logged in as ",
   LogOut: "Log out",
   MessageN: "Message",
   MoreDots: "More...",
   Move: "Move",
+  Name: "Name",
   None: "None",
   NotImplemented: "(Not implemented)",
+  NotYet: "Not yet",
   NoTopics: "No topics.",
   Okay: "Okay",
   OkayDots: "Okay ...",
@@ -55,19 +62,51 @@ var t_en: TalkyardTranslations = t = {
   Problem: "Problem",
   Question: "Question",
   Recent: "Recent",
+  Remove: "Remove",
   Reopen: "Reopen",
   ReplyV: "Reply",
   Replies: "Replies",
   Save: "Save",
   SavingDots: "Saving ...",
+  SavedDot: "Saved.",
   Solution: "Solution",
+  Summary: "Summary",
   Submit: "Submit",
   Topics: "Topics",
   TopicType: "Topic type",
   UploadingDots: "Uploading...",
+  Username: "Username",
   Users: "Users",
+  Welcome: "Welcome",
   Wiki: "Wiki",
   you: "you",
+
+  // Trust levels.
+  Guest:  "Guest",
+  NewMember: "New member",
+  BasicMember: "Basic member",
+  FullMember: "Full member",
+  TrustedMember: "Trusted member",
+  RegularMember: "Regular member",
+  CoreMember: "Core member",
+
+  // Periods.
+  PastDay: "Past Day",
+  PastWeek: "Past Week",
+  PastMonth: "Past Month",
+  PastQuarter: "Past Quarter",
+  PastYear: "Past Year",
+  AllTime: "All Time",
+
+
+  // Notification levels.
+  nl: {
+    WatchingAll: "Watching All",
+    WatchingFirst: "Watching First",
+    Tracking: "Tracking",
+    Normal: "Normal",
+    Muted: "Muted",
+  },
 
 
   // Forum intro text
@@ -462,6 +501,217 @@ var t_en: TalkyardTranslations = t = {
   },
 
 
+  // User's profile page
+
+  upp: {
+    // ----- Links
+
+    Notifications: "Notifications",
+    Preferences: "Preferences",
+    Invites: "Invites",
+    About: "About",
+    Privacy: "Privacy",
+    Account: "Account",
+
+    // ----- Overview stats
+
+    JoinedC: "Joined: ",
+    PostsMadeC: "Posts made: ",
+    LastPostC: "Last post: ",
+    LastSeenC: "Last seen: ",
+    TrustLevelC: "Trust level: ",
+
+    // ----- Action buttons
+
+    SendMsg: "Send Message",
+
+    // ----- Profile pic
+
+    UploadPhoto: "Upload photo",
+    ChangePhoto: "Change photo",
+    ImgTooSmall: "Image too small: should be at least 100 x 100",
+
+    // ----- User status
+
+    IsBanned: "This user is banned",
+    IsSuspended: (dateUtc: string) => `This user is suspended until ${dateUtc} UTC`,
+    ReasonC: "Reason: ",
+
+    DeactOrDeld: "Has been deactivated or deleted.",
+    isGroup: " (a group)",
+    isGuest: " — a guest user, could be anyone",
+    isMod: " – moderator",
+    isAdmin: " – administrator",
+    you: "(you)",
+
+    // ----- Notifications page
+
+    NoNotfs: "No notifications",
+    NotfsToYouC: "Notifications to you:",
+    NotfsToOtherC: (name: string) => `Notifications to ${name}:`,
+
+    // ----- Invites page
+
+    InvitesIntro: "Here you can invite people to join this site. ",
+    InvitesListedBelow: "Invites that you have already sent are listed below.",
+    NoInvites: "You have not invited anyone yet.",
+
+    InvitedEmail: "Invited email",
+    WhoAccepted: "Member who accepted",
+    InvAccepted: "Invitation accepted",
+    InvSent: "Invitation sent",
+
+    SendAnInv: "Send an Invite",
+    SendInv: "Send Invite",
+    SendInvExpl:
+        "We'll send your friend a brief email, and he or she then clicks a link " +
+        "to join immediately, no login required. " +
+        "He or she will become a normal member, not a moderator or admin.",
+    EnterEmail: "Enter email",
+    InvDone: "Done. I'll send him/her an email.",
+    InvErrJoinedAlready: "He or she has joined this site already",
+    InvErrYouInvAlready: "You have invited him or her already",
+
+    // ----- Preferences, About
+
+    AboutYou: "About you",
+    WebLink: "Any website or page of yours.",
+
+    NotShownCannotChange: "Not shown publicly. Cannot be changed.",
+
+    // The full name or alias:
+    NameOpt: "Name (optional)",
+
+    NotShown: "Not shown publicly.",
+
+    // The username:
+    MayChangeFewTimes: "You may change it only a few times.",
+    notSpecified: "(not specified)",
+    ChangeUsername_1: "You may change your username only a few times.",
+    ChangeUsername_2: "Changing it too often can make others confused — " +
+        "they won't know how to @mention you.",
+
+    NotfAboutAll: "Be notified about every new post (unless you mute the topic or category)",
+
+    ActivitySummaryEmails: "Activity summary emails",
+
+    EmailSummariesToGroup:
+        "When members of this group don't visit here, then, by default, email them " +
+        "summaries of popular topics and other stuff.",
+    EmailSummariesToMe:
+        "When I don't visit here, email me " +
+        "summaries of popular topics and other stuff.",
+
+    AlsoIfTheyVisit: "Email them also if they visit here regularly.",
+    AlsoIfIVisit: "Email me also if I visit here regularly.",
+
+    HowOftenWeSend: "How often shall we send these emails?",
+    HowOftenYouWant: "How often do you want these emails?",
+
+    // ----- Preferences, Privacy
+
+    HideActivityStrangers_1: "Hide your recent activity for strangers and new members?",
+    HideActivityStrangers_2: "(But not for those who have been active members for a while.)",
+    HideActivityAll_1: "Hide your recent activity for everyone?",
+    HideActivityAll_2: "(Except for staff and trusted core members.)",
+
+    // ----- Preferences, Account
+
+    // About email address:
+    EmailAddresses: "Email addresses",
+    PrimaryDot: "Primary. ",
+    VerifeidDot: "Verified. ",
+    ForLoginWithDot: (provider: string) => `For login with ${provider}. `,
+    MakePrimary: "Make Primary",
+    AddEmail: "Add email address",
+    TypeNewEmailC: "Type a new email address:",
+    MaxEmailsInfo: (numMax: number) => `(You cannot add more than ${numMax} addresses.)`,
+    EmailAdded_1: "Added. We've sent you a verification email — ",
+    EmailAdded_2: "check your email inbox.",
+
+    EmailStatusExpl:
+        "('Primary' means you can login via this address, and we send notifications to it. " +
+        "'Verified' means you clicked a verification link in an address verification email.)",
+
+    // Logins:
+    LoginMethods: "Login methods",
+    commaAs: ", as: ",
+
+    // One's data:
+    YourContent: "Your content",
+    DownloadPosts: "Download posts",
+    DownloadPostsHelp: "Creates a JSON file with a copy of topics and comments you've posted.",
+    DownloadPersData: "Download personal data",
+    DownloadPersDataHelp: "Creates a JSON file with a copy of your personal data, e.g. your name " +
+        "(if you specified a name) and email address.",
+
+
+    // Delete account:
+    DangerZone: "Danger zone",
+    DeleteAccount: "Delete account",
+    DeleteYourAccountQ:
+        "Delete your account? We'll remove your name, forget your email address, password and " +
+        "any online identities (like Facebook or Twitter login). " +
+        "You won't be able to login again. This cannot be undone.",
+    DeleteUserQ:
+        "Delete this user? We'll remove the name, forget the email address, password and " +
+        "online identities (like Facebook or Twitter login). " +
+        "The user won't be able to login again. This cannot be undone.",
+    YesDelete: "Yes, delete",
+  },
+
+
+  // Create user dialog
+
+  cud: {
+    CreateUser: "Create User",
+    CreateAccount: "Create Account",
+    EmailPriv: "Email: (will be kept private)",
+    EmailOptPriv: "Email: (optional, will be kept private)",
+    EmailVerifBy_1: "Your email has been verified by ",
+    EmailVerifBy_2: ".",
+    Username: "Username: (unique and short)",
+    FullName: "Full name: (optional)",
+
+    DoneLoggedIn: "Account created. You have been logged in.",  // COULD say if verif email sent too?
+    AlmostDone:
+        "Almost done! You just need to confirm your email address. We have " +
+        "sent an email to you. Please click the link in the email to activate " +
+        "your account. You can close this page.",
+  },
+
+
+  // Accept terms and privacy policy?
+
+  terms: {
+    TermsAndPrivacy: "Terms and Privacy",
+
+    Accept_1: "Do you accept our ",
+    TermsOfService: "Terms of Service",
+    TermsOfUse: "Terms of Use",
+    Accept_2: " and ",
+    PrivPol: "Privacy Policy",
+    Accept_3_User: "?",
+    Accept_3_Owner: " for site owners?",
+
+    YesAccept: "Yes I accept",
+  },
+
+
+  // Password input
+
+  pwd: {
+    PasswordC: "Password:",
+    StrengthC: "Strength: ",
+    FairlyWeak: "Fairly weak.",
+    toShort: "too short",
+    TooShortMin10: "Too short. Should be at least 10 characters",
+    PlzInclDigit: "Please include a digit or special character",
+    TooWeak123abc: "Too weak. Don't use passwords like '12345' or 'abcde'.",
+    AvoidInclC: "Avoid including (parts of) your name or email in the password: ",
+  },
+
+
   // Login dialog
 
   ld: {
@@ -480,15 +730,15 @@ var t_en: TalkyardTranslations = t = {
     LogInWithPwd: "Log in with Password",
     CreateAdmAcct: "Create admin account:",
     AuthRequired: "Authentication required to access this site",
-    LoginToLike: "Log in to Like this post",
-    LoginToSubmit: "Log in and submit",
-    LoginToComment: "Log in to write a comment",
-    LoginToCreateTopic: "Log in to create topic",
+    LogInToLike: "Log in to Like this post",
+    LogInToSubmit: "Log in and submit",
+    LogInToComment: "Log in to write a comment",
+    LogInToCreateTopic: "Log in to create topic",
 
     AlreadyHaveAcctQ: "Already have an account? ",
-    LoginInstead_1: "",
-    LoginInstead_2: "Log in",   // "Log in" (this is a button)
-    LoginInstead_3: " instead", // "instead"
+    LogInInstead_1: "",
+    LogInInstead_2: "Log in",   // "Log in" (this is a button)
+    LogInInstead_3: " instead", // "instead"
 
     NewUserQ: "New user? ",
     SignUpInstead_1: "",

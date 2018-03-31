@@ -56,7 +56,7 @@ export const UserInvites = createFactory({
     const store: Store = this.props.store;
     this.setState({ invites: null });
     let me: Myself = store.me;
-    var maySeeInvites = me.id === userId || isStaff(me);
+    const maySeeInvites = me.id === userId || isStaff(me);
     if (!maySeeInvites)
       return;
 
@@ -68,7 +68,7 @@ export const UserInvites = createFactory({
   },
 
   addInvite: function(invite: Invite) {
-    var invites = this.state.invites;
+    const invites = this.state.invites;
     invites.unshift(invite);
     this.setState({
       invites: invites
@@ -76,33 +76,34 @@ export const UserInvites = createFactory({
   },
 
   render: function() {
-    let store: Store = this.props.store;
-    var me: Myself = store.me;
-    var user: MemberInclDetails = this.props.user;
+    const store: Store = this.props.store;
+    const me: Myself = store.me;
+    const user: MemberInclDetails = this.props.user;
 
     if (isGuest(me))
-      return r.p({}, "You are logge in as a guest. They may not see invites.");
+      return r.p({}, "You are logged in as a guest. They may not see invites.");
 
     if (!isMember(me))
-      return r.p({}, "You are not logge in.");
+      return r.p({}, "You are not logged in.");
 
     if (this.state.errorMessage)
       return r.p({}, this.state.errorMessage);
 
     if (!this.state.invites)
-      return r.p({}, "Loading...");
+      return r.p({}, t.LoadingDots);
 
-    var inviteButton;
-    var mayInvite = maySendInvites(user);
-    var introText: any = r.p({}, "Here you can invite people to join this site. " + (
+    let inviteButton;
+    const mayInvite = maySendInvites(user);
+    let introText: any = r.p({}, t.upp.InvitesIntro + (
         this.state.invites.length
-            ? "Invites that you have already sent are listed below."
-            : "You have not invited anyone yet."));
+            ? t.upp.InvitesListedBelow
+            : t.upp.NoInvites));
     if (user.id === me.id && mayInvite.yes) {
       inviteButton =
-          Button({ onClick: () => openInviteSomeoneDialog(this.addInvite) }, "Send an Invite");
+          Button({ onClick: () => openInviteSomeoneDialog(this.addInvite) }, t.upp.SendAnInv);
     }
     else {
+      // (This is for staff, need not translate. [5JKBWS2])
       introText = "Here you can see any invites sent by " + user.username + ".";
       if (mayInvite.no) {
         introText += " He or she may not send any invites though, because: " +
@@ -121,8 +122,8 @@ export const UserInvites = createFactory({
           inviteButton));
 
     // REFACTOR COULD break out rendering code to separate module — also used in admin. [8HRAE3V]
-    var now = Date.now();
-    var inviteRows = this.state.invites.map(function(invite) {
+    const now = Date.now();
+    const inviteRows = this.state.invites.map(function(invite) {
       return InviteRow({ invite: invite, store: store, now: now,
           // Invited-email + inviter-id is unique. [5GPJ4A0]
           key: invite.invitedEmailAddress + ' ' + invite.createdById });
@@ -136,10 +137,10 @@ export const UserInvites = createFactory({
         r.table({ className: 'dw-invites-table' },
           r.thead({},
             r.tr({},
-              r.th({}, "Invited email"),
-              r.th({}, "Member who accepted"),
-              r.th({}, "Invitation accepted"),
-              r.th({}, "Invitation sent"))),
+              r.th({}, t.upp.InvitedEmail),
+              r.th({}, t.upp.WhoAccepted),
+              r.th({}, t.upp.InvAccepted),
+              r.th({}, t.upp.InvSent))),
             // Later on: Seen, Topics Viewed, Posts Read, Read Time, Days Visited, Trust Level, Threat Level
           r.tbody({ className: 's_InvsL'},
             inviteRows))));
@@ -148,25 +149,25 @@ export const UserInvites = createFactory({
 
 
 // REFACTOR COULD break out to separate module, because also used in the admin area. [8HRAE3V]
-export var InviteRow = createComponent({
+export const InviteRow = createComponent({
   onInvitedUserClick: function(event) {
     event.preventDefault();
-    var invite: Invite = this.props.invite;
+    const invite: Invite = this.props.invite;
     pagedialogs.getAboutUserDialog().openForUserIdOrUsername(invite.userId, event.target);
   },
 
   onInviterClick: function(event) {
     event.preventDefault();
-    var invite: Invite = this.props.invite;
+    const invite: Invite = this.props.invite;
     pagedialogs.getAboutUserDialog().openForUserIdOrUsername(invite.createdById, event.target);
   },
 
   render: function() {
     let store = this.props.store;
-    var invite: Invite = this.props.invite;
-    var invitedEmail;
-    var invitedUser;
-    var acceptedAt = "Not yet";
+    const invite: Invite = this.props.invite;
+    let invitedEmail;
+    let invitedUser;
+    let acceptedAt = t.NotYet;
     if (invite.userId) {
       let user: BriefUser = store_getUserOrMissing(store, invite.userId);
       invitedUser = UserName({ user: user, makeLink: true, onClick: this.onInvitedUserClick });
@@ -194,7 +195,7 @@ export var InviteRow = createComponent({
 });
 
 
-var inviteSomeoneDialog;
+let inviteSomeoneDialog;
 
 export function openInviteSomeoneDialog(addInvite) {
   if (!inviteSomeoneDialog) {
@@ -204,7 +205,7 @@ export function openInviteSomeoneDialog(addInvite) {
 }
 
 
-var InviteDialog = createComponent({  // COULD break out to debiki2.invite module [8HRAE3V]
+const InviteDialog = createComponent({  // COULD break out to debiki2.invite module [8HRAE3V]
   getInitialState: function() {
     return { isOpen: false };
   },
@@ -223,17 +224,17 @@ var InviteDialog = createComponent({  // COULD break out to debiki2.invite modul
   },
 
   sendInvite: function() {
-    var emailAddress = this.refs.emailInput.getValue();
+    const emailAddress = this.refs.emailInput.getValue();
     Server.sendInvite(emailAddress, (invite: Invite) => {
       this.state.addInvite(invite);
       this.close();
-      util.openDefaultStupidDialog({ body: "Done. I'll send him/her an email." });
+      util.openDefaultStupidDialog({ body: t.upp.InvDone });
     }, (failedRequest: HttpRequest) => {
       if (hasErrorCode(failedRequest, '_EsE403IUAM_')) {
-        this.setState({ error: "He or she has joined this site already" });
+        this.setState({ error: t.upp.InvErrJoinedAlready });
       }
       else if (hasErrorCode(failedRequest, '_EsE403IAAC0_')) {
-        this.setState({ error: "You have invited him or her already" });
+        this.setState({ error: t.upp.InvErrYouInvAlready });
       }
       else {
         return undefined;
@@ -244,20 +245,18 @@ var InviteDialog = createComponent({  // COULD break out to debiki2.invite modul
   },
 
   render: function() {
-    var props = _.assign({}, this.props);
-    props.title = "Send an Invite";
+    const props: any = _.assign({}, this.props);
+    props.title = t.upp.SendAnInv;
     return (
       Modal({ show: this.state.isOpen, onHide: this.close, dialogClassName: 'esUsrDlg' },
         ModalBody({},
-          r.p({}, "We'll send your friend a brief email, and he or she then clicks a link " +
-              "to join immediately, no login required. " +
-              "He or she will become a normal member, not a moderator or admin."),
-          EmailInput({ label: "Email Address", placeholder: "Enter email",
+          r.p({}, t.upp.SendInvExpl),
+          EmailInput({ label: t.EmailAddress, placeholder: t.upp.EnterEmail,
               ref: 'emailInput', error: this.state.error, onChangeValueOk: this.onEmailChanged })),
         ModalFooter({},
           PrimaryButton({ onClick: this.sendInvite, disabled: !this.state.maySubmit },
-            "Send Invite"),
-          Button({ onClick: this.close }, "Cancel"))));
+            t.upp.SendInv),
+          Button({ onClick: this.close }, t.Cancel))));
   }
 });
 

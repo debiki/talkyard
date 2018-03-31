@@ -126,7 +126,7 @@ const CreateUserDialog = createClassAndFactory({
     return (
       Modal({ show: this.state.isOpen, onHide: this.close, keyboard: false,
           dialogClassName: 'esCreateUserDlg' },
-        ModalHeader({}, ModalTitle({}, "Create User")),
+        ModalHeader({}, ModalTitle({}, t.cud.CreateUser)),
         ModalBody({}, CreateUserDialogContent(childProps))));
   }
 });
@@ -233,6 +233,7 @@ export var CreateUserDialogContent = createClassAndFactory({
     if (hasErrorCode(failedRequest, '_EsE403WEA_')) {
       this.setState({ theWrongEmailAddress: this.state.userData.email });
       util.openDefaultStupidDialog({
+        // (This is for admins, don't translate. [5JKBWS2])
         body: "Wrong email address. Please use the email address you specified in the config file.",
       });
       return IgnoreThisError;
@@ -246,22 +247,23 @@ export var CreateUserDialogContent = createClassAndFactory({
     const hasEmailAddressAlready = props.email && props.email.length;
 
     const emailHelp = props.providerId && hasEmailAddressAlready ?
-        "Your email has been verified by " + props.providerId + "." : null;
+        t.cud.EmailVerifBy_1 + props.providerId + t.cud.EmailVerifBy_2 : null;
 
     // Undefined —> use the default, which is True.  ... but for now, always require email [0KPS2J]
-    const emailOptional = ''; // store.settings.requireVerifiedEmail === false ? "optional, " : '';
+    const emailOptional = false; // store.settings.requireVerifiedEmail === false;
 
     const emailInput =
-        EmailInput({ label: `Email: (${emailOptional}will be kept private)`, id: 'e2eEmail',
+        EmailInput({ label: emailOptional ? t.cud.EmailOptPriv : t.cud.EmailPriv, id: 'e2eEmail',
           onChangeValueOk: (value, isOk) => this.setEmailOk(value, isOk), tabIndex: 1,
           // If email already provided by e.g. Google, don't let the user change it.
           disabled: hasEmailAddressAlready, defaultValue: props.email, help: emailHelp,
           required: true, // [0KPS2J] store.settings.requireVerifiedEmail !== false,
           error: this.state.userData.email !== this.state.theWrongEmailAddress ?
+              // (This is for admins, don't translate. [5JKBWS2])
               null : "Use the email address you specified in the config file." });
 
     const usernameInput =
-        util.UsernameInput({ label: "Username: (unique and short)", id: 'e2eUsername', tabIndex: 2,
+        util.UsernameInput({ label: t.cud.Username, id: 'e2eUsername', tabIndex: 2,
           onChangeValueOk: (value, isOk) => this.updateValueOk('username', value, isOk)
         });
 
@@ -271,7 +273,7 @@ export var CreateUserDialogContent = createClassAndFactory({
         : null;
 
     const fullNameInput =
-      FullNameInput({ label: "Full name: (optional)", ref: 'fullName',
+      FullNameInput({ label: t.cud.FullName, ref: 'fullName',
         id: 'e2eFullName', defaultValue: props.name, tabIndex: 2,
         onChangeValueOk: (value, isOk) => this.updateValueOk('fullName', value, isOk) });
 
@@ -286,7 +288,7 @@ export var CreateUserDialogContent = createClassAndFactory({
         fullNameInput,
         passwordInput,
         PrimaryButton({ onClick: this.doCreateUser, disabled: disableSubmit, id: 'e2eSubmit',
-            tabIndex: 2 }, "Create Account")));
+            tabIndex: 2 }, t.cud.CreateAccount)));
   }
 });
 
@@ -350,12 +352,8 @@ const AcceptTermsDialog = createComponent({
   },
   render: function () {
     const isOwner = this.state.isOwner;
-    // We're providing a Software-as-a-Service to website owners, so 'Service' is a better word?
-    // However, non-website owners, merely 'Use' the website, it's not a SaaS provided to them.
-    const serviceOrUse = isOwner ? "Service" : "Use";
     const accepts = this.state.accepts;
     const store = this.state.store;
-    const forSiteOwners = isOwner ? " for site owners?" : '?';
     const termsUrl = isOwner ?
         store.siteOwnerTermsUrl || '/-/terms-for-site-owners': '/-/terms-of-use';
     const privacyUrl = isOwner ?
@@ -363,20 +361,24 @@ const AcceptTermsDialog = createComponent({
     return (
       // Don't set onHide — shouldn't be closeable by clicking outside, only by choosing Yes.
       Modal({ show: this.state.isOpen },
-        ModalHeader({}, ModalTitle({}, "Terms and Privacy")),
+        ModalHeader({}, ModalTitle({}, t.terms.TermsAndPrivacy)),
         ModalBody({}, r.p({},
-            "Do you accept our ",
-            r.a({ href: termsUrl, target: '_blank', id: 'e_TermsL' }, "Terms of " + serviceOrUse),
-            " and ",
-            r.a({ href: privacyUrl, target: '_blank', id: 'e_PrivacyL' }, "Privacy Policy"),
-            forSiteOwners),
+            t.terms.Accept_1,
+            r.a({ href: termsUrl, target: '_blank', id: 'e_TermsL' },
+              // We're providing a Software-as-a-Service to site owners — "Service" is a better word?
+              // However, ordinary users merely use the website — then use the word "Use"?
+              isOwner ? t.terms.TermsOfService : t.terms.TermsOfUse),
+            t.terms.Accept_2,
+            r.a({ href: privacyUrl, target: '_blank', id: 'e_PrivacyL' }, t.terms.PrivPol),
+            isOwner ?
+                t.terms.Accept_3_Owner : t.terms.Accept_3_User),
           Input({ type: 'checkbox', className: 's_TermsD_CB' + (accepts ? ' s_TermsD_CB-Accepts' : ''),
-            label: "Yes I accept", checked: accepts,
+            label: t.terms.YesAccept, checked: accepts,
             onChange: (event) => this.setState({ accepts: event.target.checked }) })),
         ModalFooter({},
           Button({ onClick: this.close, id: 'e_TermsD_B',
               className: accepts ? 'btn-primary' : '' },
-            accepts ? "Continue" : "Cancel"))));
+            accepts ? t.Continue : t.Cancel))));
   }
 });
 
@@ -399,18 +401,14 @@ const CreateUserResultDialog = createComponent({
   },
   render: function () {
     const id = this.state.isLoggedIn ? 'te_WelcomeLoggedIn' : 'e2eNeedVerifyEmailDialog';
-    const text = this.state.isLoggedIn
-      ? "Account created. You have been logged in."  // COULD say if verif email sent too?
-      : "Almost done! You just need to confirm your email address. We have " +
-        "sent an email to you. Please click the link in the email to activate " +
-        "your account. You can close this page.";
+    const text = this.state.isLoggedIn ? t.cud.DoneLoggedIn : t.cud.AlmostDone;
     // Don't show a close-dialog button if there nothing on the page, after dialog closed.
     const footer = eds.isInLoginPopup ? null :
         ModalFooter({},
-          PrimaryButton({ onClick: this.close }, "Okay"));
+          PrimaryButton({ onClick: this.close }, t.Okay));
     return (
       Modal({ show: this.state.isOpen, onHide: this.close, id },
-        ModalHeader({}, ModalTitle({}, "Welcome")),
+        ModalHeader({}, ModalTitle({}, t.Welcome)),
         ModalBody({}, r.p({}, text)),
         footer));
   }

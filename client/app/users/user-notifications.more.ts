@@ -72,16 +72,15 @@ export const UserNotifications = createFactory({
           _.isString(this.state.error) ? this.state.error : "Error [EsE7YKW2]."));
 
     if (!this.state.notfs)
-      return r.p({}, "Loading...");
+      return r.p({}, t.Loading);
 
     const user: MemberInclDetails = this.props.user;
     const store: Store = this.props.store;
     const me: Myself = store.me;
     const isMe = user.id === me.id;
-    const toWho = isMe ? "you" : user.username || user.fullName;
 
     const anyNoNotfsMessage = this.state.notfs.length ? null :
-        r.p({ className: 'e_UP_Notfs_None' }, "No notifications");
+        r.p({ className: 'e_UP_Notfs_None' }, t.upp.NoNotfs);
 
     const notfsElems = this.state.notfs.map((notf: Notification) =>
         r.li({ key: notf.id },
@@ -90,7 +89,7 @@ export const UserNotifications = createFactory({
 
     return (
       r.div({},
-        r.p({}, "Notifications to " + toWho + ":"),
+        r.p({}, isMe ? t.upp.NotfsToYouC : t.upp.NotfsToOtherC(user.username || user.fullName)),
         anyNoNotfsMessage,
         r.ol({ className: 'esNotfs' },
           notfsElems)));

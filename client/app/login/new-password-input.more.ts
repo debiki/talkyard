@@ -35,7 +35,7 @@ export var NewPasswordInput = createClassAndFactory({
   getInitialState: function() {
     return {
       zxcvbnLoaded: false,
-      passwordWeakReason: 'too short',
+      passwordWeakReason: t.pwd.toShort,
       passwordCrackTimeText: 'instant',
       password: '',
       passwordLength: 0,
@@ -86,16 +86,13 @@ export var NewPasswordInput = createClassAndFactory({
     // Don't blindly trust zxcvbn — do some basic tests of our own as well.
     var problem = null;
     if (password.length < 10) {
-      problem = 'Too short. Should be at least 10 characters';
+      problem = t.pwd.TooShortMin10;
     }
     else if (!password.match(/[0-9!@#$%^&*()_\-+`'"=\.,;:{}[\]\\]+/)) {
-      problem = 'Please include a digit or special character';
+      problem = t.pwd.PlzInclDigit;
     }
     else if (passwordStrength.score < MinPasswordStrength) {
-      problem = 'Too weak';
-      if (password.length >= 6) {
-        problem += ". Don't use passwords like '12345' or 'abcde'."
-      }
+      problem = t.pwd.TooWeak123abc;
     }
     this.setState({
       passwordWeakReason: problem,
@@ -126,7 +123,7 @@ export var NewPasswordInput = createClassAndFactory({
         // Unfortunately it seems we cannot force people to choose strong passwords,
         // seems they'll just feel annoyed and quit. So this tips will have to do.
         makeItStrongerSuggestion = r.b({ className: 's_Pw_StrongerTips' },
-            "Fairly weak.");
+            t.pwd.FairlyWeak);
       }
 
       if (strength < MinPasswordStrength) {
@@ -147,7 +144,7 @@ export var NewPasswordInput = createClassAndFactory({
       });
       if (badWord) {
         badWordWarning = r.div({ className: 's_Pw_BadWordTips' },
-          `Avoid including (parts of) your name or email in the password: "${badWord}"`);
+          t.pwd.AvoidInclC + badWord);
       }
 
       // 100 computers in the message below? Well, zxcvbn assumes 10ms per guess and 100 cores.
@@ -165,7 +162,7 @@ export var NewPasswordInput = createClassAndFactory({
       strengthPercent = 10;
     }
     var strengthIndicator = r.div({ className: 's_Pw_Strength ' + weakClass },
-      r.span({className: 's_Pw_Strength_Lbl' }, "Strength: ",
+      r.span({className: 's_Pw_Strength_Lbl' }, t.pwd.StrengthC,
         r.div({ className: 's_Pw_Strength_Border' },
           r.div({ className: 's_Pw_Strength_Fill', style: { width: strengthPercent + '%' }}))));
 
@@ -175,7 +172,7 @@ export var NewPasswordInput = createClassAndFactory({
 
     return (
       r.div({ className: 'form-group s_Pw' + (passwordWarning ? ' has-error' : '') },
-        Input({ type: 'password', label: "Password:", name: 'newPassword', ref: 'passwordInput',
+        Input({ type: 'password', label: t.pwd.PasswordC, name: 'newPassword', ref: 'passwordInput',
             id: 'e2ePassword', onChange: this.checkPasswordStrength, help: passwordHelp,
             tabIndex: this.props.tabIndex,
             onFocus: () => this.setState({ showErrors: true} )})));

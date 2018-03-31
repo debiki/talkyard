@@ -3,9 +3,11 @@
 
 interface TalkyardTranslations {
 
-  // Single or a few words, alphabetically
+  // Common words / phrases, to reuse everywhere. Sorted alphabetically.
   Active: string;
   Activity: string;
+  Add: string;
+  AddingDots: string;
   Admin: string;
   Away: string;
   BlogN: string;
@@ -13,6 +15,8 @@ interface TalkyardTranslations {
   Cancel: string;
   Categories: string;
   Category: string;
+  Continue: string;
+  ChangeDots: string;
   ChatN: string;
   Close: string;
   closed: string;
@@ -20,19 +24,22 @@ interface TalkyardTranslations {
   Delete: string;
   Discussion: string;
   EditV: string;
+  EmailAddress: string;
   Forum: string;
   Hide: string;
   Idea: string;
   Loading: string;
   LoadMore: string;
-  Login: string;
+  LogIn: string;
   LoggedInAs: string;
   LogOut: string;
   MessageN: string;
   MoreDots: string;
   Move: string;
+  Name: string;
   None: string;
   NotImplemented: string;
+  NotYet: string;
   NoTopics: string;
   Okay: string;
   OkayDots: string;
@@ -41,21 +48,54 @@ interface TalkyardTranslations {
   Problem: string;
   Question: string;
   Recent: string;
+  Remove: string;
   Reopen: string;
   ReplyV: string;
   Replies: string;
   Save: string;
   SavingDots: string;
+  SavedDot: string;
   Solution: string;
+  Summary: string;
   Submit: string;
   Topics: string;
   TopicType: string;
   UploadingDots: string;
+  Username: string;
   Users: string;
+  Welcome: string;
   Wiki: string;
   you: string;
 
-  // fi = forum intro text
+  // Trust levels.
+  Guest: string;
+  NewMember: string;
+  BasicMember: string;
+  FullMember: string;
+  TrustedMember: string;
+  RegularMember: string;
+  CoreMember: string;
+
+  // Time periods.
+  PastDay: string;
+  PastWeek: string;
+  PastMonth: string;
+  PastQuarter: string;
+  PastYear: string;
+  AllTime: string;
+
+
+  // Notification levels.
+  nl: {
+    WatchingAll: string;
+    WatchingFirst: string;
+    Tracking: string;
+    Normal: string;
+    Muted: string;
+  }
+
+
+  // Forum intro text
   fi: {
     Edit: string;
     Hide_1: string;
@@ -64,7 +104,7 @@ interface TalkyardTranslations {
   },
 
 
-  // fb = forum buttons
+  // Forum buttons
   fb: {
     TopicList: string;
     AllCats: string;
@@ -97,7 +137,7 @@ interface TalkyardTranslations {
   },
 
 
-  // ft = forum topic list
+  // Forum topics
   ft: {
     ExplIcons: string;
     IconExplanation: string;
@@ -148,7 +188,7 @@ interface TalkyardTranslations {
   },
 
 
-  // Forum categories list
+  // Forum categories
   fc: {
     RecentTopicsWaiting: string;
     RecentTopicsInclDel: string;
@@ -407,6 +447,192 @@ interface TalkyardTranslations {
   },
 
 
+  // User's profile page
+  upp: {
+    // ----- Links
+
+    Notifications: string;
+    Preferences: string;
+    Invites: string;
+    About: string;
+    Privacy: string;
+    Account: string;
+
+    // ----- Overview stats
+
+    JoinedC: string;
+    PostsMadeC: string;
+    LastPostC: string;
+    LastSeenC: string;
+    TrustLevelC: string;
+
+    // ----- Action buttons
+
+    SendMsg: string;
+
+    // ----- Profile pic
+
+    UploadPhoto: string;
+    ChangePhoto: string;
+    ImgTooSmall: string;
+
+    // ----- User status
+
+    IsBanned: string;
+    IsSuspended: (dateUtc: string) => string;
+    ReasonC: string;
+
+    DeactOrDeld: string;
+    isGroup: string;
+    isGuest: string;
+    isMod: string;
+    isAdmin: string;
+    you: string;
+
+    // ----- Notifications page
+
+    NoNotfs: string;
+    NotfsToYouC: string;
+    NotfsToOtherC: (name: string) => string;
+
+    // ----- Invites page
+
+    InvitesIntro: string;
+    InvitesListedBelow: string;
+    NoInvites: string;
+
+    InvitedEmail: string;
+    WhoAccepted: string;
+    InvAccepted: string;
+    InvSent: string;
+
+    SendAnInv: string;
+    SendInv: string;
+    SendInvExpl: string;
+    EnterEmail: string;
+    InvDone: string;
+    InvErrJoinedAlready: string;
+    InvErrYouInvAlready: string;
+
+    // ----- Preferences, About
+
+    AboutYou: string;
+    WebLink: string;
+
+    NotShownCannotChange: string;
+
+    // The full name or alias:
+    NameOpt: string;
+
+    NotShown: string;
+
+    // The username:
+    MayChangeFewTimes: string;
+    notSpecified: string;
+    ChangeUsername_1: string;
+    ChangeUsername_2: string;
+
+    NotfAboutAll: string;
+
+    ActivitySummaryEmails: string;
+
+    EmailSummariesToGroup: string;
+    EmailSummariesToMe: string;
+
+    AlsoIfTheyVisit: string;
+    AlsoIfIVisit: string;
+
+    HowOftenWeSend: string;
+    HowOftenYouWant: string;
+
+    // ----- Preferences, Privacy
+
+    HideActivityStrangers_1: string;
+    HideActivityStrangers_2: string;
+    HideActivityAll_1: string;
+    HideActivityAll_2: string;
+
+    // ----- Preferences, Account
+
+    // About email address:
+    EmailAddresses: string;
+    PrimaryDot: string;
+    VerifeidDot: string;
+    ForLoginWithDot: (provider: string) => string;
+    MakePrimary: string;
+    AddEmail: string;
+    TypeNewEmailC: string;
+    MaxEmailsInfo: (numMax: number) => string;
+    EmailAdded_1: string;
+    EmailAdded_2: string;
+
+    EmailStatusExpl: string;
+
+    // Logins:
+    LoginMethods: string;
+    commaAs: string;
+
+    // One's data:
+    YourContent: string;
+    DownloadPosts: string;
+    DownloadPostsHelp: string;
+    DownloadPersData: string;
+    DownloadPersDataHelp: string;
+
+    // Delete account:
+    DangerZone: string;
+    DeleteAccount: string;
+    DeleteYourAccountQ: string;
+    DeleteUserQ: string;
+    YesDelete: string;
+  },
+
+
+  // Create user dialog
+  cud: {
+    CreateUser: string;
+    CreateAccount: string;
+    EmailPriv: string;
+    EmailOptPriv: string;
+    EmailVerifBy_1: string;
+    EmailVerifBy_2: string;
+    Username: string;
+    FullName: string;
+
+    DoneLoggedIn: string;
+    AlmostDone: string;
+  },
+
+
+  // Accept terms and privacy policy
+  terms: {
+    TermsAndPrivacy: string;
+
+    Accept_1: string;
+    TermsOfService: string;
+    TermsOfUse: string;
+    Accept_2: string;
+    PrivPol: string;
+    Accept_3_User: string;
+    Accept_3_Owner: string;
+
+    YesAccept: string;
+  },
+
+
+  // Password input
+  pwd: {
+    PasswordC: string;
+    StrengthC: string;
+    FairlyWeak: string;
+    toShort: string;
+    TooShortMin10: string;
+    PlzInclDigit: string;
+    TooWeak123abc: string;
+    AvoidInclC: string;
+  },
+
+
   // Login dialog
   ld: {
     NotFoundOrPrivate: string;
@@ -423,15 +649,15 @@ interface TalkyardTranslations {
     LogInWithPwd: string;
     CreateAdmAcct: string;
     AuthRequired: string;
-    LoginToLike: string;
-    LoginToSubmit: string;
-    LoginToComment: string;
-    LoginToCreateTopic: string;
+    LogInToLike: string;
+    LogInToSubmit: string;
+    LogInToComment: string;
+    LogInToCreateTopic: string;
 
     AlreadyHaveAcctQ: string;
-    LoginInstead_1: string;
-    LoginInstead_2: string;
-    LoginInstead_3: string;
+    LogInInstead_1: string;
+    LogInInstead_2: string;
+    LogInInstead_3: string;
 
     NewUserQ: string;
     SignUpInstead_1: string;
@@ -462,7 +688,6 @@ interface TalkyardTranslations {
 
 
   // Editor
-
   e: {
     WritingSomethingWarning: string;
     UploadMaxOneFile: string;
@@ -511,7 +736,7 @@ interface TalkyardTranslations {
     Save: string;
     edits: string;
 
-    PostReply: "Post reply",
+    PostReply: string;
 
     Post: string;
     comment: string;

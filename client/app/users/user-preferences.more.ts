@@ -43,9 +43,15 @@ export const UserPreferences = createFactory({
     const emailsLoginsPath = prefsPathSlash + accountPathSeg;
     const user: User = this.props.user;
     const location = this.props.location;
+    const store: Store = this.props.store;
+    const me: Myself = store.me;
+
+    const mayViewPrefs = isStaff(me) || (me.isAuthenticated && me.id === user.id);
+    if (!mayViewPrefs)
+      return null;
 
     const childProps = {
-      store: this.props.store,
+      store,
       user,
       reloadUser: this.props.reloadUser,
       emailsLoginsPath,
@@ -68,11 +74,11 @@ export const UserPreferences = createFactory({
         r.div({ style: { display: 'table-row' }},
           r.div({ className: 's_UP_Act_Nav' },
             r.ul({ className: 'dw-sub-nav nav nav-pills nav-stacked' },
-              LiNavLink({ to: aboutPath, className: 's_UP_Prf_Nav_AbtL' }, "About"),
+              LiNavLink({ to: aboutPath, className: 's_UP_Prf_Nav_AbtL' }, t.upp.About),
               isGuest || isBuiltInUser ? null : LiNavLink({
-                  to: privacyPath, className: 's_UP_Prf_Nav_AbtL' }, "Privacy"),
+                  to: privacyPath, className: 's_UP_Prf_Nav_AbtL' }, t.upp.Privacy),
               isGuest || isBuiltInUser ? null : LiNavLink({
-                  to: emailsLoginsPath, className: 's_UP_Prf_Nav_EmLgL' }, "Account"))),
+                  to: emailsLoginsPath, className: 's_UP_Prf_Nav_EmLgL' }, t.upp.Account))),
          r.div({ className: 's_UP_Act_List' },
            childRoute))));
   }
@@ -89,13 +95,9 @@ export const AboutUser = createFactory({
     const user: MemberInclDetails = this.props.user;
     const isSystemUser = user.id === SystemUserId;
 
-    const mayViewPrefs = isStaff(me) || (me.isAuthenticated && me.id === user.id);
-
-    if (!mayViewPrefs)
-      return r.p({}, "Forbidden");
-
     let anyNotYourPrefsInfo;
     if (me.id !== user.id && !isSystemUser) {
+      // (This is for admins, don't translate. [5JKBWS2])
       const prefsAndCanBecause = " preferences. You can do that, because you're an administrator.";
       anyNotYourPrefsInfo = user.isGroup
         ? r.p({}, "You are editing a ", r.b({}, "group's"), prefsAndCanBecause)
@@ -142,26 +144,26 @@ const AboutGuest = createComponent({
     // Dupl Saving... code [7UKBQT2
     let savingInfo = null;
     if (this.state.savingStatus === 'Saving') {
-      savingInfo = r.i({}, " Saving...");
+      savingInfo = r.i({}, ' ' + t.SavingDots);
     }
     else if (this.state.savingStatus === 'Saved') {
-      savingInfo = r.i({}, " Saved.");
+      savingInfo = r.i({}, ' ' + t.SavedDot);
     }
 
     return (
       r.form({ role: 'form', onSubmit: this.savePrefs },
 
         r.div({ className: 'form-group' },
-          r.label({ htmlFor: 'fullName' }, "Name"),
+          r.label({ htmlFor: 'fullName' }, t.Name),
           r.input({ className: 'form-control', id: 'fullName', defaultValue: guest.fullName,
               onChange: (event) => { this._fullName = event.target.value }, required: true })),
 
         r.div({ className: 'form-group' },
-          r.label({}, "Email address"),
+          r.label({}, t.EmailAddress),
           r.div({}, r.samp({}, guest.email)),
-          r.p({ className: 'help-block' }, "Not shown publicly. Cannot be changed.")),
+          r.p({ className: 'help-block' }, t.upp.NotShownCannotChange)),
 
-        InputTypeSubmit({ id: 'e2eUP_Prefs_SaveB', value: "Save" }),
+        InputTypeSubmit({ id: 'e2eUP_Prefs_SaveB', value: t.Save }),
         savingInfo));
   }
 });
@@ -204,9 +206,8 @@ const AboutMember = createComponent({
   tryChangeUsername: function() {
       util.openDefaultStupidDialog({
         body: r.div({},
-          r.p({}, "You may change your username only a few times."),
-          r.p({}, "Changing it too often can make others confused — " +
-                    "they won't know how to @mention you.")) });
+          r.p({}, t.upp.ChangeUsername_1),
+          r.p({}, t.upp.ChangeUsername_2)) });
       this.setState({ showUsernameInput: true });
   },
 
@@ -262,7 +263,7 @@ const AboutMember = createComponent({
     const store: Store = this.props.store;
     const me: Myself = store.me;
     const user: MemberInclDetails = this.props.user;
-    const username = user.username || '(not specified)';
+    const username = user.username || t.upp.notSpecified;
 
     // These ids = hardcoded users & groups, e.g. System and Everyone.
     const isBuiltInUser = user.id < LowestAuthenticatedUserId;
@@ -271,28 +272,28 @@ const AboutMember = createComponent({
     // Dupl Saving... code [7UKBQT2]
     let savingInfo = null;
     if (this.state.savingStatus === 'Saving') {
-      savingInfo = r.i({}, ' Saving...');
+      savingInfo = r.i({}, ' ' + t.SavingDots);
     }
     else if (this.state.savingStatus === 'Saved') {
-      savingInfo = r.i({}, ' Saved.');
+      savingInfo = r.i({}, ' ' + t.SavedDot);
     }
 
     let usernameStuff;
     if (!this.state.showUsernameInput) {
       usernameStuff =
         r.div({ className: 'form-group' },
-          r.label({}, 'Username'),
+          r.label({}, t.Username),
           r.div({},
             r.samp({}, username),
             isBuiltInUser ? null : r.button({ className: 'btn btn-default s_UP_Prefs_ChangeUNB',
-              onClick: this.tryChangeUsername }, "Change ...")));
+              onClick: this.tryChangeUsername }, t.ChangeDots)));
     }
     else {
       usernameStuff =
-        util.UsernameInput({ label: "Username", defaultValue: username, className: 's_UP_Prefs_UN',
+        util.UsernameInput({ label: t.Username, defaultValue: username, className: 's_UP_Prefs_UN',
             onChangeValueOk: (value, isOk) => this.updateUsernameOk(value, isOk),
             help: r.b({ className: 's_UP_Prefs_UN_Help' },
-              "You may change it only a few times.") });
+              t.upp.MayChangeFewTimes) });
     }
 
     const sendSummaryEmails = this.state.sendSummaryEmails;
@@ -307,20 +308,19 @@ const AboutMember = createComponent({
         me.isAdmin && user.summaryEmailIfActive !== user.summaryEmailIfActiveOwn ?
           inherited : '';
 
-    const summariesText = " summaries of popular topics and other stuff.";
     const activitySummaryDescr = user.isGroup
-        ? "When members of this group don't visit here, then, by default, email them" + summariesText
-        : "When I don't visit here, email me" + summariesText;
+        ? t.upp.EmailSummariesToGroup
+        : t.upp.EmailSummariesToMe;
 
-    const emailIfVisitRegularly = (user.isGroup ? "Email them also if they" : "Email me also if I") +
-        " visit here regularly.";
+    const emailIfVisitRegularly = user.isGroup
+        ? t.upp.AlsoIfTheyVisit
+        : t.upp.AlsoIfIVisit;
 
     // Summary emails can be configured for groups (in particular, the Everyone group = default settings).
     // But not for the System user.
-    const howOftenSend = user.isGroup ? "How often shall we send" : "How often do you want";
     const activitySummaryStuff = isSystemUser ? null :
       r.div({ className: 'form-group', style: { margin: '22px 0 25px' } },
-        r.label({}, "Activity summary emails"),  // more like a mini title
+        r.label({}, t.upp.ActivitySummaryEmails),  // more like a mini title
         r.div({ className: 'checkbox' },  // [7PK4WY1]
           r.label({},
             r.input({ type: 'checkbox', id: 'sendSummaryEmails',
@@ -332,7 +332,8 @@ const AboutMember = createComponent({
               checked: this.state.summaryEmailIfActive, disabled: !sendSummaryEmails,
               onChange: (event) => this.setState({ summaryEmailIfActive: event.target.checked })}),
             emailIfVisitRegularly + summaryIfActiveInherited)),
-        r.p({ style: { marginBottom: 5 } }, howOftenSend + " these emails?"),
+        r.p({ style: { marginBottom: 5 } },
+          user.isGroup ? t.upp.HowOftenWeSend : t.upp.HowOftenYouWant),
         ActivitySummaryEmailsIntervalDropdown({ onSelect: (frequencyMins) => {
           this.setState({ summaryEmailIntervalMins: frequencyMins });
         }, intervalMins: this.state.summaryEmailIntervalMins, disabled: !sendSummaryEmails }));
@@ -341,24 +342,24 @@ const AboutMember = createComponent({
     return (
       r.form({ role: 'form', onSubmit: this.savePrefs },
 
-        util.FullNameInput({ label: "Name (optional)", defaultValue: user.fullName,
+        util.FullNameInput({ label: t.upp.NameOpt, defaultValue: user.fullName,
             className: 'e_UP_Prefs_FN', disabled: isBuiltInUser,
             onChangeValueOk: (newName, isOk) => this.updateFullNameOk(newName, isOk) }),
 
         usernameStuff,
 
         isBuiltInUser ? null : r.div({ className: 'form-group' },
-          r.label({}, "Email address"),
+          r.label({}, t.EmailAddress),
           r.div({},
             r.samp({}, user.email),
             NavLink({ to: this.props.emailsLoginsPath,
-                className: 'btn s_UP_Prefs_ChangeEmailB' }, "Change ...")),
-          r.p({ className: 'help-block' }, "Not shown publicly.")),
+                className: 'btn s_UP_Prefs_ChangeEmailB' }, t.ChangeDots)),
+          r.p({ className: 'help-block' }, t.upp.NotShown)),
 
         activitySummaryStuff,
 
         isBuiltInUser ? null : r.div({ className: 'form-group' },
-          r.label({ htmlFor: 't_UP_AboutMe' }, "About you"),
+          r.label({ htmlFor: 't_UP_AboutMe' }, t.upp.AboutYou),
           r.textarea({ className: 'form-control', id: 't_UP_Prefs_AboutMeTA',
               onChange: (event) => { this._about = event.target.value },
               defaultValue: user.about || '' })),
@@ -369,7 +370,7 @@ const AboutMember = createComponent({
           r.input({ className: 'form-control', id: 'url',
               onChange: (event) => { this._url = event.target.value },
               defaultValue: user.url }),
-          r.p({ className: 'help-block' }, 'Any website or page of yours.')),
+          r.p({ className: 'help-block' }, t.upp.WebLink)),
 
         // Later: + Location
 
@@ -380,10 +381,10 @@ const AboutMember = createComponent({
               r.input({ type: 'checkbox', id: 'emailForEveryNewPost',
                 onChange: (event) => { this._emailForEveryNewPost = event.target.checked },
                 defaultChecked: user.emailForEveryNewPost }),
-              "Be notified about every new post (unless you mute the topic or category)")))),
+              t.upp.NotfAboutAll)))),
 
         isSystemUser ? null :
-          InputTypeSubmit({ id: 'e2eUP_Prefs_SaveB', value: "Save", disabled: this.badPrefs() }),
+          InputTypeSubmit({ id: 'e2eUP_Prefs_SaveB', value: t.Save, disabled: this.badPrefs() }),
 
         savingInfo));
 
@@ -434,23 +435,22 @@ export const Privacy = createFactory({
     const me: Myself = this.props.store.me;
     const user: MemberInclDetails = this.props.user;
     const isMe = me.id === user.id;
-    const your = isMe ? "your" : "this user's";
 
     // Dupl Saving... code [7UKBQT2]
     let savingInfo = null;
     if (this.state.savingStatus === 'Saving') {
-      savingInfo = r.i({}, " Saving ...");
+      savingInfo = r.i({}, ' ' + t.SavingDots);
     }
     else if (this.state.savingStatus === 'Saved') {
-      savingInfo = r.i({}, " Saved.");
+      savingInfo = r.i({}, ' ' + t.SavedDot);
     }
 
     return (
       r.form({ role: 'form', onSubmit: this.savePrivacyPrefs },
         Input({ type: 'checkbox', className: '',
             label: rFragment({},
-              `Hide ${your} recent activity for strangers and new members?`, r.br(),
-              "(But not for those who have been active members for a while.)"),
+              t.upp.HideActivityStrangers_1, r.br(),
+              t.upp.HideActivityStrangers_2),
             checked: state.hideActivityForStrangers,
             onChange: (event: CheckboxEvent) => this.setState({
               hideActivityForStrangers: event.target.checked,
@@ -459,15 +459,15 @@ export const Privacy = createFactory({
 
         Input({ type: 'checkbox', className: '',
             label: rFragment({},
-              `Hide ${your} recent activity for everyone?`, r.br(),
-              "(Except for staff and trusted core members.)"),
+              t.upp.HideActivityAll_1, r.br(),
+              t.upp.HideActivityAll_2,),
             checked: state.hideActivityForAll,
             onChange: (event: CheckboxEvent) => this.setState({
               hideActivityForStrangers: event.target.checked || state.hideActivityForStrangers,
               hideActivityForAll: event.target.checked,
             }) }),
 
-        InputTypeSubmit({ id: '', style: { marginTop: '11px' }, value: "Save" }),
+        InputTypeSubmit({ id: '', style: { marginTop: '11px' }, value: t.Save }),
         savingInfo));
   }
 });
@@ -545,15 +545,9 @@ export const Account = createFactory({
     const isMe = me.id === user.id;
     util.openDefaultStupidDialog({
       dialogClassName: '',
-      body: (isMe
-        ? "Delete your account? We'll remove your name, forget your email address, password and " +
-          "any online identities (like Facebook or Twitter login). " +
-          "You won't be able to login again. This cannot be undone."
-        : "Delete this user? We'll remove the name, forget the email address, password and " +
-          "online identities (like Facebook or Twitter login). " +
-          "The user won't be able to login again. This cannot be undone."),
-      primaryButtonTitle: "Cancel",
-      secondaryButonTitle: "Yes, delete",
+      body: isMe ? t.upp.DeleteYourAccountQ : t.upp.DeleteUserQ,
+      primaryButtonTitle: t.Cancel,
+      secondaryButonTitle: t.upp.YesDelete,
       onCloseOk: (number) => {
         if (!number || number === 1) {
           // Click outside dialog, or on primary button = cancel, do nothing.
@@ -570,10 +564,9 @@ export const Account = createFactory({
     const me: Myself = this.props.store.me;
     const user: MemberInclDetails = this.props.user;
     const isMe = me.id === user.id;
-    const youOrHen = isMe ? "you" : "the user";
 
     if (!this.state.emailAddresses)
-      return r.p({}, "Loading ...");
+      return r.p({}, t.Loading);
 
     const emailAddrs: UserEmailAddress[] = this.state.emailAddresses;
     const loginMethods: UserLoginMethods[] = this.state.loginMethods;
@@ -585,7 +578,7 @@ export const Account = createFactory({
           let isVerifeid = false;
 
           if (addr.verifiedAt) {
-            status += "Verified. ";
+            status += t.upp.VerifiedDot;
             isVerifeid = true;
           }
 
@@ -593,13 +586,13 @@ export const Account = createFactory({
           _.each(loginMethods, (method: UserLoginMethods) => {
             if (method.email === addr.emailAddress) {
               isLoginMethod = true;
-              status += `For login with ${method.provider}. `;
+              status += t.upp.ForLoginWithDot(method.provider);
             }
           });
 
           const isPrimary = user.email === addr.emailAddress;
           if (isPrimary) {
-            status += "Primary. ";
+            status += t.upp.PrimaryDot;
           }
 
           return r.li({ className: 's_UP_EmLg_EmL_It',  key: addr.emailAddress },
@@ -608,59 +601,56 @@ export const Account = createFactory({
             r.div({},
               isPrimary || isLoginMethod ? null :
                 Button({ onClick: () => this.removeEmailAddress(addr.emailAddress),
-                    className: 'e_RemoveEmB' }, "Remove"),
+                    className: 'e_RemoveEmB' }, t.Remove),
               isPrimary || !isVerifeid ? null :
                 Button({ onClick: () => this.setPrimary(addr.emailAddress),
-                    className: 'e_MakeEmPrimaryB' }, "Make Primary")));
+                    className: 'e_MakeEmPrimaryB' }, t.upp.MakePrimary)));
         }));
 
     // Don't show the Add button again after one email added. Then it's harder to see
     // the "check your inbox" message.
     const showAddEmailInputButton = this.state.doneAddingEmail ? null : (
         emailAddrs.length >= MaxEmailsPerUser
-          ? r.span({}, `(You cannot add more than ${MaxEmailsPerUser} addresses.)`)
+          ? r.span({}, t.upp.MaxEmailsInfo(MaxEmailsPerUser))
           : (this.state.showAddEmailInput || this.state.isAddingEmail
               ? null
               : Button({ onClick: () => this.setState({ showAddEmailInput: true }),
                     className: 'e_AddEmail' },
-                  "Add email address")));
+                  t.upp.AddEmail)));
 
     const addEmailInput = !this.state.showAddEmailInput ? null :
       r.div({},
-        EmailInput({ label: "Type a new email address:", placeholder: "your.email@example.com",
+        EmailInput({ label: t.upp.TypeNewEmailC, placeholder: "your.email@example.com",
           className: 'e_NewEmail',
           onChangeValueOk: (value, ok) => this.setState({ newEmailAddr: value, emailOk: ok }) }),
         PrimaryButton({ onClick: this.doAddEmail, disabled: !this.state.emailOk, className: 'e_SaveEmB' },
-          "Add"));
+          t.Add));
 
     const isAddingEmailInfo = !this.state.isAddingEmail ? null :
-      r.div({}, "Adding...");
+      r.div({}, t.AddingDots);
 
     const doneAddingEmailInfo = !this.state.doneAddingEmail ? null :
-      r.div({ className: 's_UP_EmLg_EmAdded' }, "Added. We've sent you a verification email — ",
-          r.b({}, "check your email inbox", '.'));
+      r.div({ className: 's_UP_EmLg_EmAdded' },
+        t.upp.EmailAdded_1, r.b({}, t.upp.EmailAdded_2));
 
     const loginsList =
       r.ul({ className: 's_UP_EmLg_LgL' },
         loginMethods.map((method) => {
           return r.li({ className: 's_UP_EmLg_LgL_It', key: `${method.provider}:${method.email}` },
             r.span({ className: 's_UP_EmLg_LgL_It_How' }, method.provider),
-            ", as: ",
+            t.upp.commaAs,
             r.span({ className: 's_UP_EmLg_LgL_It_Id' }, method.email))
             // r.div({}, Button({}, "Remove")))  — fix later
         }));
 
     const downloadOwnContent = rFragment({},
-      r.h3({}, "Your content"),
+      r.h3({}, t.upp.YourContent),
 
-      Button({ onClick: this.downloadMyContent }, "Download posts"),
-      r.p({ className: 'help-block' },
-        "Creates a JSON file with a copy of topics and comments you've posted."),
+      Button({ onClick: this.downloadMyContent }, t.upp.DownloadPosts),
+      r.p({ className: 'help-block' }, t.upp.DownloadPostsHelp),
 
-      Button({ onClick: this.downloadPersonalData }, "Download personal data"),
-      r.p({ className: 'help-block' },
-        "Creates a JSON file with a copy of your personal data, e.g. your name " +
-        "(if you specified a name) and email address."));
+      Button({ onClick: this.downloadPersonalData }, t.upp.DownloadPersData),
+      r.p({ className: 'help-block' }, t.upp.DownloadPersDataHelp));
 
     // Later:
     //const deactivateButton = user.deletedAt ? null : (
@@ -669,15 +659,13 @@ export const Account = createFactory({
 
     const dangerZone = user.deletedAt || !me.isAdmin ? null : (
       rFragment({},
-        r.h3({ style: { marginBottom: '1.3em' }}, "Danger zone"),
-        Button({ onClick: this.deleteUser }, "Delete account")));
+        r.h3({ style: { marginBottom: '1.3em' }}, t.upp.DangerZone),
+        Button({ onClick: this.deleteUser }, t.upp.DeleteAccount)));
 
     return (
       r.div({ className: 's_UP_EmLg' },
-        r.h3({}, "Email addresses"),
-        r.p({ className: 's_UP_EmLg_StatusExpl' },
-          `('Primary' means ${youOrHen} can login via this address, and we send notifications to it.` +
-          ` 'Verified' means ${youOrHen} clicked a verification link in an address verification email.)`),
+        r.h3({}, t.upp.EmailAddresses),
+        r.p({ className: 's_UP_EmLg_StatusExpl' }, t.upp.EmailStatusExpl),
         emailAddressesList,
         r.br(),
         showAddEmailInputButton,
@@ -685,7 +673,7 @@ export const Account = createFactory({
         isAddingEmailInfo,
         doneAddingEmailInfo,
 
-        r.h3({}, "Login methods"),
+        r.h3({}, t.upp.LoginMethods),
         loginsList,
         // Button({}, "Add login method")  — fix later
         downloadOwnContent,

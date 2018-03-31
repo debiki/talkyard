@@ -168,7 +168,7 @@ const UserPageComponent = createReactClass(<any> {
     // Wait until url updated to show username, instead of id, to avoid mounting & unmounting
     // sub comoponents, which could result in duplicated load-data requests.  (5GKWS20)
     if (!user || !me || (user.username && parseInt(usernameOrId)))
-      return r.p({ className: 'container' }, 'Loading...');
+      return r.p({ className: 'container' }, t.Loading);
 
     const imStaff = isStaff(me);
     const userGone = user_isGone(user);
@@ -177,19 +177,19 @@ const UserPageComponent = createReactClass(<any> {
     const linkStart = UsersRoot + usernameOrId + '/';
 
     const activityNavItem = user.isGroup ? null :
-      LiNavLink({ to: linkStart + 'activity', className: 'e_UP_ActivityB' }, "Activity");
+      LiNavLink({ to: linkStart + 'activity', className: 'e_UP_ActivityB' }, t.Activity);
 
     const summaryNavItem = user.isGroup ? null :
-      LiNavLink({ to: linkStart + 'summary', className: 'e_UP_SummaryB' }, "Summary");
+      LiNavLink({ to: linkStart + 'summary', className: 'e_UP_SummaryB' }, t.Summary);
 
     const notificationsNavItem = !showPrivateStuff || user.isGroup ? null :
-      LiNavLink({ to: linkStart + 'notifications', className: 'e_UP_NotfsB' }, "Notifications");
+      LiNavLink({ to: linkStart + 'notifications', className: 'e_UP_NotfsB' }, t.upp.Notifications);
 
     const preferencesNavItem = !showPrivateStuff ? null :
-      LiNavLink({ to: linkStart + 'preferences', id: 'e2eUP_PrefsB' }, "Preferences");
+      LiNavLink({ to: linkStart + 'preferences', id: 'e2eUP_PrefsB' }, t.upp.Preferences);
 
     const invitesNavItem = !showPrivateStuff || !maySendInvites(user).value ? null :
-      LiNavLink({ to: linkStart + 'invites', id: 'e2eUP_InvitesB' }, "Invites");
+      LiNavLink({ to: linkStart + 'invites', id: 'e2eUP_InvitesB' }, t.upp.Invites);
 
     const childProps = {
       store: store,
@@ -260,7 +260,7 @@ const AvatarAboutAndButtons = createComponent({
       FileAPI.filterFiles(files, (file, info) => {
         if( /^image/.test(file.type) ){
           const largeEnough = info.width >= 100 && info.height >= 100;
-          dieIf(!largeEnough, "Image too small: should be at least 100 x 100 [EsE8PYM21]");
+          dieIf(!largeEnough, t.upp.ImgTooSmall + ' [EsE8PYM21]');
         }
         else {
           die("Not an image [EsE5GPU3]");
@@ -282,7 +282,7 @@ const AvatarAboutAndButtons = createComponent({
           fileprogress: (event, file, xhr, options) => {
             if (!this.state.isUploadingProfilePic) {
               this.setState({ isUploadingProfilePic: true });
-              pagedialogs.getProgressBarDialog().open("Uploading...", () => {
+              pagedialogs.getProgressBarDialog().open(t.UploadingDots, () => {
                 this.setState({ uploadCancelled: true });
                 xhr.abort("Intentionally cancelled [EsM2FL54]");
               });
@@ -322,46 +322,46 @@ const AvatarAboutAndButtons = createComponent({
     const isGone = user_isGone(user);
     let suspendedInfo;
     if (user.suspendedAtEpoch) {
-      const whatAndUntilWhen = (<number | string> user.suspendedTillEpoch) === 'Forever'
-          ? 'banned'
-          : 'suspended until ' + moment(user.suspendedTillEpoch).format('YYYY-MM-DD HH:mm') + ' UTC';
+      const thisUserIsWhat = (<number | string> user.suspendedTillEpoch) === 'Forever'
+          ? t.upp.IsBanned
+          : t.upp.IsSuspended(moment(user.suspendedTillEpoch).format('YYYY-MM-DD HH:mm'));
       suspendedInfo = r.div({},
-          'This user is ' + whatAndUntilWhen, r.br(),
-          'Reason: ' + user.suspendedReason);
+        thisUserIsWhat, r.br(),
+        t.upp.ReasonC + user.suspendedReason);
     }
 
     const deletedInfo = !isGone ? null :
-      r.p({}, "Has been deactivated or deleted.");
+      r.p({}, t.upp.DeactOrDeld);
 
     const isMe = me.id === user.id;
 
     let isAGroup;
     if (user.isGroup) {
-      isAGroup = " (a group)";
+      isAGroup = t.upp.isGroup;
     }
 
     let isWhatInfo = null;
     if (isGuest(user)) {
-      isWhatInfo = ' — a guest user, could be anyone';
+      isWhatInfo = t.upp.isGuest;
     }
     if (user.isModerator) {
-      isWhatInfo = ' – moderator';
+      isWhatInfo = t.upp.isMod;
     }
     if (user.isAdmin) {
-      isWhatInfo = ' – administrator';
+      isWhatInfo = t.upp.isAdmin;
     }
     if (isWhatInfo) {
       isWhatInfo = r.span({ className: 'dw-is-what' }, isWhatInfo);
     }
 
     const thatIsYou = !isMe ? null :
-      r.span({ className: 'esProfile_isYou' }, "(you)");
+      r.span({ className: 'esProfile_isYou' }, t.upp.you);
 
     const avatar = user.mediumAvatarUrl
         ? r.img({ src: user.mediumAvatarUrl })
         : debiki2.avatar.Avatar({ user: user, large: true, ignoreClicks: true });
 
-    const uploadAvatarBtnText = user.mediumAvatarUrl ? "Change photo" : "Upload photo";
+    const uploadAvatarBtnText = user.mediumAvatarUrl ? t.upp.ChangePhoto : t.upp.UploadPhoto;
     const avatarMissingClass = user.mediumAvatarUrl ? '' : ' esMedAvtr-missing';
 
     const anyUploadPhotoBtn = isGone || isGuest(user) || !isMe && !isStaff(me) ? null :
@@ -381,7 +381,7 @@ const AvatarAboutAndButtons = createComponent({
 
     const sendMessageButton = !me_maySendDirectMessageTo(me, user) ? null :
         PrimaryButton({ onClick: this.sendMessage, className: 's_UP_SendMsgB' },
-          "Send Message");
+          t.upp.SendMsg);
 
     // COULD prefix everything inside with s_UP_Ab(out) instead of just s_UP.
     return r.div({ className: 's_UP_Ab dw-user-bar clearfix' },
@@ -402,15 +402,15 @@ const AvatarAboutAndButtons = createComponent({
           deletedInfo)),
         !stats ? null : r.div({ className: 's_UP_Ab_Stats' },
           r.div({ className: 's_UP_Ab_Stats_Stat' },
-            "Joined: " + moment(stats.firstSeenAt).fromNow()),
+            t.upp.JoinedC + moment(stats.firstSeenAt).fromNow()),
           r.div({ className: 's_UP_Ab_Stats_Stat' },user.isGroup ? null :
-            "Posts made: " + userStats_totalNumPosts(stats)),
+            t.upp.PostsMadeC + userStats_totalNumPosts(stats)),
           !stats.lastPostedAt ? null : r.div({ className: 's_UP_Ab_Stats_Stat' },
-            "Last post: " + moment(stats.lastPostedAt).fromNow()),
+            t.upp.LastPostC + moment(stats.lastPostedAt).fromNow()),
           r.div({ className: 's_UP_Ab_Stats_Stat' },
-            "Last seen: " + moment(stats.lastSeenAt).fromNow()),
+            t.upp.LastSeenC + moment(stats.lastSeenAt).fromNow()),
           r.div({ className: 's_UP_Ab_Stats_Stat' },
-            "Trust level: " + trustLevel_toString(user.effectiveTrustLevel))));
+            t.upp.TrustLevelC + trustLevel_toString(user.effectiveTrustLevel))));
   }
 });
 

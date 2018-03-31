@@ -98,11 +98,11 @@ export function siteStatusToString(siteStatus: SiteStatus): string {
 
 export function notfLevel_title(notfLevel: NotfLevel): string {
   switch (notfLevel) {
-    case NotfLevel.WatchingAll: return "Watching Alll";
-    case NotfLevel.WatchingFirst: return "Watching First";
-    case NotfLevel.Tracking: return "Tracking";
-    case NotfLevel.Normal: return "Normal";
-    case NotfLevel.Muted: return "Muted";
+    case NotfLevel.WatchingAll: return t.nl.WatchingAll;
+    case NotfLevel.WatchingFirst: return t.nl.WatchingFirst;
+    case NotfLevel.Tracking: return t.nl.Tracking;
+    case NotfLevel.Normal: return t.nl.Normal;
+    case NotfLevel.Muted: return t.nl.Muted;
     default: return "?";
   }
 }
@@ -373,12 +373,12 @@ export function category_iconClass(category: Category | CategoryId, store: Store
 
 export function topPeriod_toString(period: TopTopicsPeriod): string {
   switch (period) {
-    case TopTopicsPeriod.Day: return "Past Day";
-    case TopTopicsPeriod.Week: return "Past Week";
-    case TopTopicsPeriod.Month: return "Past Month";
-    case TopTopicsPeriod.Quarter: return "Past Quarter";
-    case TopTopicsPeriod.Year: return "Past Year";
-    case TopTopicsPeriod.All: return "All Time";
+    case TopTopicsPeriod.Day: return t.PastDay;
+    case TopTopicsPeriod.Week: return t.PastWeek;
+    case TopTopicsPeriod.Month: return t.PastMonth;
+    case TopTopicsPeriod.Quarter: return t.PastQuarter;
+    case TopTopicsPeriod.Year: return t.PastYear;
+    case TopTopicsPeriod.All: return t.AllTime;
     default: return '' + period;
   }
 }
@@ -389,22 +389,21 @@ export function topPeriod_toString(period: TopTopicsPeriod): string {
 //----------------------------------
 
 export function trustLevel_toString(trustLevel: TrustLevel): string {
-  let level;
   switch (trustLevel) {
-    case TrustLevel.New: level = "New"; break;
-    case TrustLevel.Basic: level = "Basic"; break;
-    case TrustLevel.FullMember: level = "Full"; break;
-    case TrustLevel.Trusted: level = "Trusted"; break;
-    case TrustLevel.Regular: level = "Regular"; break;
-    case TrustLevel.CoreMember: level = "Core"; break;
+    case TrustLevel.New: return t.NewMember;
+    case TrustLevel.Basic: return t.BasicMember;
+    case TrustLevel.FullMember: return t.FullMember;
+    case TrustLevel.Trusted: return t.FullMember;
+    case TrustLevel.Regular: return t.RegularMember;
+    case TrustLevel.CoreMember: return t.CoreMember;
     default:
       // Guests have no trust level.
-      return "Guest";
+      return t.Guest;
   }
-  return level + " member";
 }
 
 export function threatLevel_toString(threatLevel: ThreatLevel): string {
+  // (This is for admins, don't translate. [5JKBWS2])
   switch (threatLevel) {
     case ThreatLevel.HopefullySafe: return "Allow";
     case ThreatLevel.MildThreat: return "Review after";

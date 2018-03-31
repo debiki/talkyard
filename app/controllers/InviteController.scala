@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2015 Kaj Magnus Lindberg (born 1979)
+ * Copyright (c) 2015 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -90,7 +90,7 @@ class InviteController @Inject()(cc: ControllerComponents, edContext: EdContext)
   }
 
 
-  def acceptInvite(secretKey: String) = GetActionAllowAnyone { request =>
+  def acceptInvite(secretKey: String): Action[Unit] = GetActionAllowAnyone { request =>
     val (newUser, invite, alreadyAccepted) = request.dao.acceptInviteCreateUser(
       secretKey, request.theBrowserIdData)
     request.dao.pubSub.userIsActive(request.siteId, newUser.briefUser, request.theBrowserIdData)
@@ -113,7 +113,7 @@ class InviteController @Inject()(cc: ControllerComponents, edContext: EdContext)
   }
 
 
-  def loadInvites(sentById: UserId) = GetAction { request =>
+  def loadInvites(sentById: UserId): Action[Unit] = GetAction { request =>
     val isAdminOrSelf = request.theUser.isAdmin || request.theUserId == sentById
     if (!request.theUser.isStaff && request.theUserId != sentById)
       throwForbidden("DwE403INV0", "Any invites are private")
@@ -125,7 +125,7 @@ class InviteController @Inject()(cc: ControllerComponents, edContext: EdContext)
   }
 
 
-  def loadAllInvites = StaffGetAction { request =>
+  def loadAllInvites: Action[Unit] = StaffGetAction { request =>
     val isAdmin = request.theUser.isAdmin
     val invites = request.dao.readOnlyTransaction { transaction =>
       transaction.loadAllInvites(limit = 100)
@@ -171,7 +171,7 @@ class InviteController @Inject()(cc: ControllerComponents, edContext: EdContext)
       sendTo = invite.emailAddress,
       toUserId = None,
       subject = s"Invitation to $siteHostname",
-      bodyHtmlText = (emailId) => emailBody)
+      bodyHtmlText = (_) => emailBody)
   }
 
 
@@ -195,7 +195,7 @@ class InviteController @Inject()(cc: ControllerComponents, edContext: EdContext)
       sendTo = inviter.email,
       toUserId = Some(inviter.id),
       subject = s"[$siteHostname] Your invitation for ${newUser.primaryEmailAddress} to join was accepted",
-      bodyHtmlText = (emailId) => views.html.invite.inviteAcceptedEmail(
+      bodyHtmlText = (_) => views.html.invite.inviteAcceptedEmail(
         siteHostname = siteHostname, invitedEmailAddress = newUser.primaryEmailAddress).body)
   }
 }

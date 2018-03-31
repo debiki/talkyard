@@ -192,7 +192,7 @@ const LoginDialog = createClassAndFactory({
         title = t.ld.AuthRequired;
         break;
       case LoginReason.LoginToLike:
-        title = t.ld.LoginToLike;
+        title = t.ld.LogInToLike;
         break;
       default:
         title = this.state.isSignUp ? t.ld.CreateAcconut : t.ld.LogIn;
@@ -320,10 +320,10 @@ export const LoginDialogContent = createClassAndFactory({
       switchToOtherDialogInstead =
         r.div({ className: 'form-group esLD_Switch' },
           "(", r.i({}, t.ld.AlreadyHaveAcctQ,
-            t.ld.LoginInstead_1,
+            t.ld.LogInInstead_1,
             r.a({ className: 'esLD_Switch_L', onClick: this.props.switchBetweenLoginAndSignUp },
-              t.ld.LoginInstead_2),
-            t.ld.LoginInstead_3), " )");
+              t.ld.LogInInstead_2),
+            t.ld.LogInInstead_3), " )");
     }
     else if (store.siteStatus > SiteStatus.Active) {
       // Right now, don't allow creation of new accounts, for deactivated sites. Later, though,
@@ -521,10 +521,10 @@ const PasswordLoginDialogContent = createClassAndFactory({
  */
 function loginToWhat(loginReason: string): string {
   switch (loginReason) {
-    case 'LoginToSubmit': return t.ld.LoginToSubmit;
-    case 'LoginToComment': return t.ld.LoginToComment;
-    case 'LoginToCreateTopic': return t.ld.LoginToCreateTopic;
-    default: return "";
+    case 'LoginToSubmit': return t.ld.LogInToSubmit;
+    case 'LoginToComment': return t.ld.LogInToComment;
+    case 'LoginToCreateTopic': return t.ld.LogInToCreateTopic;
+    default: return t.ld.LogIn;
   }
 }
 

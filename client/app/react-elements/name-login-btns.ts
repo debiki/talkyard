@@ -77,7 +77,7 @@ export const NameLoginBtns = createComponent({
       loginBtnElem =
           r.span({ className: 'dw-a-login btn btn-primary ' + disabled,
               onClick: disabled ? null : this.onLoginClick, id: this.props.id },
-            this.props.title || t.Login);
+            this.props.title || t.LogIn);
     }
 
     return (
