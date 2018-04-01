@@ -14,7 +14,7 @@
 
 var t: TalkyardTranslations;
 
-var t_en: TalkyardTranslations = t = {
+var t_sv: TalkyardTranslations = t = {
 
   // A single or a few words, sorted alphabetically, to reuse everywhere.
 
@@ -40,10 +40,10 @@ var t_en: TalkyardTranslations = t = {
   EditV: "Edit",
   EmailAddress: "Email address",
   Forum: "Forum",
-  Hide: "Hide",
-  Idea: "Idea",
-  Loading: "Loading...",
-  LoadMore: "Load more ...",
+  Hide: "Göm",
+  Idea: "Idé",
+  Loading: "Laddar...",
+  LoadMore: "Mer ...",
   LogIn: "Log in",
   LoggedInAs: "Logged in as ",
   LogOut: "Log out",
@@ -60,14 +60,14 @@ var t_en: TalkyardTranslations = t = {
   Online: "Online",
   PreviewV: "Preview",
   Problem: "Problem",
-  Question: "Question",
+  Question: "Fråga",
   Recent: "Recent",
-  Remove: "Remove",
-  Reopen: "Reopen",
-  ReplyV: "Reply",
+  Remove: "Ta bort",
+  Reopen: "Öppna",
+  ReplyV: "Svara",
   Replies: "Replies",
-  Save: "Save",
-  SavingDots: "Saving ...",
+  Save: "Spara",
+  SavingDots: "Sparar ...",
   SavedDot: "Saved.",
   Solution: "Solution",
   Summary: "Summary",
@@ -123,24 +123,24 @@ var t_en: TalkyardTranslations = t = {
 
   fb: {
 
-    TopicList: "Topic list",
+    TopicList: "Ämneslista",
 
     // Select category dropdown
 
-    AllCats: "All categories",
+    AllCats: "Alla kategorier",
 
     // Topic sort order
 
-    Active: "Active",
-    ActiveTopics: "Active topics",
-    ActiveDescr: "Shows recently active topics first",
+    Active: "Aktiva",
+    ActiveTopics: "Aktiva ämnen",
+    ActiveDescr: "Visar nyligen aktiva samtalsämnen först",
 
-    New: "New",
-    NewTopics: "New topics",
-    NewDescr: "Shows newest topics first",
+    New: "Nya",
+    NewTopics: "Nya ämnen",
+    NewDescr: "Visar nyligen skapade ämnen först",
 
-    Top: "Top",
-    TopTopics: "Popular topics",
+    Top: "Topp",
+    TopTopics: "Populara ämnen",
     TopDescr: "Shows popular topics first",
 
     // Topic filter dropdown
