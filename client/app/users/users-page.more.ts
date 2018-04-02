@@ -323,8 +323,8 @@ const AvatarAboutAndButtons = createComponent({
     let suspendedInfo;
     if (user.suspendedAtEpoch) {
       const thisUserIsWhat = (<number | string> user.suspendedTillEpoch) === 'Forever'
-          ? t.upp.IsBanned
-          : t.upp.IsSuspended(moment(user.suspendedTillEpoch).format('YYYY-MM-DD HH:mm'));
+          ? t.upp.UserBanned
+          : t.upp.UserSuspended(moment(user.suspendedTillEpoch).format('YYYY-MM-DD HH:mm'));
       suspendedInfo = r.div({},
         thisUserIsWhat, r.br(),
         t.upp.ReasonC + user.suspendedReason);

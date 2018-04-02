@@ -478,8 +478,8 @@ interface TalkyardTranslations {
 
     // ----- User status
 
-    IsBanned: string;
-    IsSuspended: (dateUtc: string) => string;
+    UserBanned: string;
+    UserSuspended: (dateUtc: string) => string;
     ReasonC: string;
 
     DeactOrDeld: string;

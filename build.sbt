@@ -71,7 +71,7 @@ val appDependencies = Seq(
   "org.elasticsearch.client" % "transport" % "6.2.3",
   // ElasticSearch needs log4j
   "log4j" % "log4j" % "1.2.17",
-  "org.apache.commons" % "commons-email" % "1.4",
+  "org.apache.commons" % "commons-email" % "1.5",
   "com.google.guava" % "guava" % "24.1-jre",
   "org.jsoup" % "jsoup" % "1.11.2",
   // Fluentd better understands json logs.
@@ -98,8 +98,8 @@ val appDependencies = Seq(
   //              why-do-i-need-jsr305-to-use-guava-in-scala
   "com.google.code.findbugs" % "jsr305" % "1.3.9" % "provided",
   "org.mockito" % "mockito-all" % "1.9.0" % "test", // I use Mockito with Specs2...
-  "org.scalatest" %% "scalatest" % "3.0.1" % "test", // but prefer ScalaTest
-  "org.scalatestplus.play" %% "scalatestplus-play" % "3.1.0" % Test)
+  "org.scalatest" %% "scalatest" % "3.0.5" % "test", // but prefer ScalaTest
+  "org.scalatestplus.play" %% "scalatestplus-play" % "3.1.2" % Test)
 
 
 val main = (project in file("."))

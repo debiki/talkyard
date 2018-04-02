@@ -144,7 +144,7 @@ export var NewPasswordInput = createClassAndFactory({
       });
       if (badWord) {
         badWordWarning = r.div({ className: 's_Pw_BadWordTips' },
-          t.pwd.AvoidInclC + badWord);
+          t.pwd.AvoidInclC + ` "${badWord}"`);
       }
 
       // 100 computers in the message below? Well, zxcvbn assumes 10ms per guess and 100 cores.

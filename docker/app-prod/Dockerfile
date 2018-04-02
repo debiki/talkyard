@@ -1,4 +1,4 @@
-FROM openjdk:8u92-jre-alpine
+FROM openjdk:8u151-jre-alpine3.7
 
 # SECURITY SHOULD not be root (in Docker container)
 #RUN groupadd -r play && useradd -r -g play play

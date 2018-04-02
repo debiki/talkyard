@@ -12,7 +12,7 @@ scalaVersion := "2.12.3"
 resolvers += "Scala-Tools Maven2 Repository" at "http://scala-tools.org/repo-releases"
 
 libraryDependencies ++= Seq(
-  "org.apache.commons" % "commons-lang3" % "3.5",
+  "org.apache.commons" % "commons-lang3" % "3.7",
   "com.typesafe.play" %% "play-json" % "2.6.9",
   // https://mvnrepository.com/artifact/ch.qos.logback/logback-classic
   "ch.qos.logback" % "logback-classic" % "1.2.2",

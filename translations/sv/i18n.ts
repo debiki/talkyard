@@ -533,8 +533,8 @@ var t_sv: TalkyardTranslations = t = {
 
     // ----- User status
 
-    IsBanned: "This user is banned",
-    IsSuspended: (dateUtc: string) => `This user is suspended until ${dateUtc} UTC`,
+    UserBanned: "This user is banned",
+    UserSuspended: (dateUtc: string) => `This user is suspended until ${dateUtc} UTC`,
     ReasonC: "Reason: ",
 
     DeactOrDeld: "Has been deactivated or deleted.",
@@ -708,7 +708,7 @@ var t_sv: TalkyardTranslations = t = {
     TooShortMin10: "Too short. Should be at least 10 characters",
     PlzInclDigit: "Please include a digit or special character",
     TooWeak123abc: "Too weak. Don't use passwords like '12345' or 'abcde'.",
-    AvoidInclC: "Avoid including (parts of) your name or email in the password: ",
+    AvoidInclC: "Avoid including (parts of) your name or email in the password:",
   },
 
 

@@ -1,4 +1,4 @@
-FROM openjdk:8u92-jdk-alpine
+FROM openjdk:8u151-jdk-alpine3.7
 
 RUN apk add --no-cache \
   # Required:
