@@ -26,13 +26,14 @@
 # OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 # SUCH DAMAGE.
 
+# Based on:
+# https://raw.githubusercontent.com/nginxinc/docker-nginx/master/mainline/alpine/Dockerfile
+
 # In the distant future: Maybe switch to https://github.com/envoyproxy/envoy ?  & Zipkin tracing
 
-FROM alpine:3.5
+FROM alpine:3.7
 
-# MAINTAINER NGINX Docker Maintainers "docker-maint@nginx.com"
-
-ENV NGINX_VERSION 1.13.7
+ENV NGINX_VERSION 1.13.10
 
 # Do this first, because we need 'make' early, and also it's boring to wait for Nginx
 # to download.
@@ -55,14 +56,13 @@ RUN \
 		# some graphics lib, needed for ? http_image_filter_module ?
 		# gd-dev \
 		# geoip-dev \
-		perl-dev \
-    # Don't include this in the 'apk add' step above, because then libgcc would get
-    # uninstalled a bit below by 'apk del .build-deps'.
-    && apk add --no-cache \
-		# /opt/luajit/lib/libluajit-5.1.so.2 needs shared lib libgcc_s.so.1
-		libgcc \
-	&& curl -fSL http://nginx.org/download/nginx-$NGINX_VERSION.tar.gz -o nginx.tar.gz \
-	&& curl -fSL http://nginx.org/download/nginx-$NGINX_VERSION.tar.gz.asc  -o nginx.tar.gz.asc
+		# Don't include this in the 'apk add' step above, because then libgcc would get
+		# uninstalled a bit below by 'apk del .build-deps'.
+		&& apk add --no-cache \
+			# /opt/luajit/lib/libluajit-5.1.so.2 needs shared lib libgcc_s.so.1
+			libgcc \
+	&& curl -fSL https://nginx.org/download/nginx-$NGINX_VERSION.tar.gz -o nginx.tar.gz \
+	&& curl -fSL https://nginx.org/download/nginx-$NGINX_VERSION.tar.gz.asc  -o nginx.tar.gz.asc
 
 ENV GPG_KEYS B0F4253373F8F6F510D42178520A9993A1C052F8
 ENV CONFIG "\
@@ -105,7 +105,6 @@ ENV CONFIG "\
 	# --with-http_xslt_module=dynamic \
 	# --with-http_image_filter_module=dynamic \
 	# --with-http_geoip_module=dynamic \
-	# --with-http_perl_module=dynamic \
 	--with-threads \
 	--with-stream \
 	--with-stream_ssl_module \
@@ -121,6 +120,8 @@ ENV CONFIG "\
 	# asynchronous file I/O (AIO) on FreeBSD and Linux
 	--with-file-aio \
 	--with-http_v2_module \
+	\
+	# Disable stuff, and add Lua:
 	# won't ever need to show any auto index? If adding it back, add 'autoindex off' here: [5KUP293]
 	--without-http_autoindex_module \
 	# skip server-side-includes module
@@ -159,7 +160,7 @@ RUN \
 	done; \
 	test -z "$found" && echo >&2 "error: failed to fetch GPG key $GPG_KEYS" && exit 1; \
 	gpg --batch --verify nginx.tar.gz.asc nginx.tar.gz \
-	&& rm -r "$GNUPGHOME" nginx.tar.gz.asc \
+	&& rm -rf "$GNUPGHOME" nginx.tar.gz.asc \
 	&& mkdir -p /usr/src \
 	&& tar -zxC /usr/src -f nginx.tar.gz \
 	&& rm nginx.tar.gz \
@@ -170,12 +171,16 @@ RUN \
 	# && mv objs/ngx_http_xslt_filter_module.so objs/ngx_http_xslt_filter_module-debug.so \
 	# && mv objs/ngx_http_image_filter_module.so objs/ngx_http_image_filter_module-debug.so \
 	# && mv objs/ngx_http_geoip_module.so objs/ngx_http_geoip_module-debug.so \
-	# && mv objs/ngx_http_perl_module.so objs/ngx_http_perl_module-debug.so \
 	# && mv objs/ngx_stream_geoip_module.so objs/ngx_stream_geoip_module-debug.so \
 	&& ./configure $CONFIG \
 	&& make -j$(getconf _NPROCESSORS_ONLN) \
 	&& make install \
 	&& rm -rf /etc/nginx/html/ \
+	# Skip creating & copying to /etc/nginx/conf.d/ and /usr/share/nginx/html/.
+	# && mkdir /etc/nginx/conf.d/ \
+	# && mkdir -p /usr/share/nginx/html/ \
+	# && install -m644 html/index.html /usr/share/nginx/html/ \
+	# && install -m644 html/50x.html /usr/share/nginx/html/ \
 	# apparently this stuff is installed by default, but we don't use it.
 	&& rm -f /etc/nginx/fastcgi* \
              /etc/nginx/koi-* \
@@ -184,20 +189,17 @@ RUN \
              /etc/nginx/win-utf \
 	&& mkdir /etc/nginx/sites-available \
 	         /etc/nginx/sites-enabled \
-	# && mkdir -p /usr/share/nginx/html/ \
-	# && install -m644 html/index.html /usr/share/nginx/html/ \
-	# && install -m644 html/50x.html /usr/share/nginx/html/ \
 	&& install -m755 objs/nginx-debug /usr/sbin/nginx-debug \
 	# && install -m755 objs/ngx_http_xslt_filter_module-debug.so /usr/lib/nginx/modules/ngx_http_xslt_filter_module-debug.so \
 	# && install -m755 objs/ngx_http_image_filter_module-debug.so /usr/lib/nginx/modules/ngx_http_image_filter_module-debug.so \
 	# && install -m755 objs/ngx_http_geoip_module-debug.so /usr/lib/nginx/modules/ngx_http_geoip_module-debug.so \
-	# && install -m755 objs/ngx_http_perl_module-debug.so /usr/lib/nginx/modules/ngx_http_perl_module-debug.so \
 	# && install -m755 objs/ngx_stream_geoip_module-debug.so /usr/lib/nginx/modules/ngx_stream_geoip_module-debug.so \
 	# && ln -s ../../usr/lib/nginx/modules /etc/nginx/modules \
 	&& strip /usr/sbin/nginx* \
 	# All modules above commented out.
 	# && strip /usr/lib/nginx/modules/*.so \
 	&& rm -rf /usr/src/nginx-$NGINX_VERSION \
+	\
 	# Bring in gettext so we can get `envsubst`, then throw
 	# the rest away. To do this, we need to install `gettext`
 	# then move `envsubst` out of the way so `gettext` can
@@ -215,6 +217,10 @@ RUN \
 	&& apk del .build-deps \
 	&& apk del .gettext \
 	&& mv /tmp/envsubst /usr/local/bin/ \
+	\
+	# Bring in tzdata so users could set the timezones through the environment
+	# variables
+	&& apk add --no-cache tzdata \
 	\
 	# forward request and error logs to docker log collector
 	&& ln -sf /dev/stdout /var/log/nginx/access.log \

@@ -53,27 +53,27 @@ val appDependencies = Seq(
   play.sbt.PlayImport.ws,
   // Gzip filter.
   play.sbt.Play.autoImport.filters,
-  "com.typesafe.play" %% "play-json" % "2.6.8",
+  "com.typesafe.play" %% "play-json" % "2.6.9",
   // OpenAuth and OpenID etc Authentication.
-  "com.mohiva" %% "play-silhouette" % "5.0.0",
-  "com.mohiva" %% "play-silhouette-crypto-jca" % "5.0.0",
+  "com.mohiva" %% "play-silhouette" % "5.0.3",
+  "com.mohiva" %% "play-silhouette-crypto-jca" % "5.0.3",
   // ? "com.mohiva" %% "play-silhouette-password-bcrypt" % "4.0.0",
   // PostgreSQL JDBC client driver
   // see: http://mvnrepository.com/artifact/org.postgresql/postgresql/
-  "org.postgresql" % "postgresql" % "9.4.1208",  // there's no 9.5 right now
+  "org.postgresql" % "postgresql" % "42.2.2",
   // HikariCP — "A solid high-performance JDBC connection pool at last"
-  "com.zaxxer" % "HikariCP" % "2.5.1",
+  "com.zaxxer" % "HikariCP" % "2.7.8",
   // We use both an in-the-JVM-memory cache, and Redis:
-  "com.github.ben-manes.caffeine" % "caffeine" % "2.2.6",
+  "com.github.ben-manes.caffeine" % "caffeine" % "2.6.2",
   "com.github.etaty" %% "rediscala" % "1.8.0",
   // Search engine, in https://mvnrepository.com.
-  "org.elasticsearch" % "elasticsearch" % "6.1.0",
-  "org.elasticsearch.client" % "transport" % "6.1.0",
+  "org.elasticsearch" % "elasticsearch" % "6.2.3",
+  "org.elasticsearch.client" % "transport" % "6.2.3",
   // ElasticSearch needs log4j
   "log4j" % "log4j" % "1.2.17",
   "org.apache.commons" % "commons-email" % "1.4",
-  "com.google.guava" % "guava" % "19.0",
-  "org.jsoup" % "jsoup" % "1.9.2",
+  "com.google.guava" % "guava" % "24.1-jre",
+  "org.jsoup" % "jsoup" % "1.11.2",
   // Fluentd better understands json logs.
   // https://mvnrepository.com/artifact/ch.qos.logback/logback-classic
   "ch.qos.logback" % "logback-classic" % "1.2.2",
@@ -85,7 +85,7 @@ val appDependencies = Seq(
   "community.ed" %% "ed-logging" % "0.0.2",
   // java.nio.file.Files.probeContentType doesn't work in Alpine Linux + JRE 8, so use
   // Tika instead. It'll be useful anyway later if indexing PDF or MS Word docs.
-  "org.apache.tika" % "tika-core" % "1.13",
+  "org.apache.tika" % "tika-core" % "1.17",
   "io.dropwizard.metrics" % "metrics-core" % "3.2.2",
   "nl.grons" %% "metrics-scala" % "3.5.9_a2.4",
   // JSR 305 is requried by Guava, at build time only (so specify "provided"

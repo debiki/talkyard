@@ -1,7 +1,7 @@
 # Use the -oss (open-source) configuration — it doesn't include X-Pack,
 # and therefore doesn't print any verbose "license expired" warnings
 # every minute.
-FROM docker.elastic.co/elasticsearch/elasticsearch-oss:6.1.0
+FROM docker.elastic.co/elasticsearch/elasticsearch-oss:6.2.3
 
 COPY elasticsearch.yml /usr/share/elasticsearch/config/elasticsearch.yml
 COPY log4j2.properties /usr/share/elasticsearch/config/log4j2.properties

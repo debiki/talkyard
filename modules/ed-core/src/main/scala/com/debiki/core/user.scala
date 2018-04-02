@@ -17,6 +17,7 @@
 
 package com.debiki.core
 
+import com.google.{common => guava}
 import java.net.InetAddress
 import java.{net => jn, util => ju}
 import org.scalactic.{ErrorMessage, Or}
@@ -1161,7 +1162,7 @@ case class BrowserIdData(ip: String, idCookie: String, fingerprint: Int) {
   require(ip.nonEmpty, "DwE6G9F0")
   require(idCookie.nonEmpty, "DwE3GJ79")
 
-  def inetAddress: InetAddress = com.google.common.net.InetAddresses.forString(ip)
+  def inetAddress: InetAddress = guava.net.InetAddresses.forString(ip)
 
 }
 
