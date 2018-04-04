@@ -114,7 +114,7 @@ trait RenderedPageHtmlDao {
           def apply(oldValue: DaoMemCacheAnyItem, newValue: DaoMemCacheAnyItem): DaoMemCacheAnyItem = {
             val oldSet = oldValue.value.asInstanceOf[Set[String]]
             val newSet = newValue.value.asInstanceOf[Set[String]]
-            if (oldSet == newSet) {
+            if (newSet subsetOf oldSet) {
               oldValue
             }
             else {

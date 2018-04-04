@@ -99,7 +99,7 @@ export const PageWithStateComponent = createReactClass(<any> {
       rememberScrollPosition(store.currentPageId);
     }
 
-    ReactActions.maybeLoadAndShowNewPage(store, this.props.history, location, nextUrlPath);
+    ReactActions.maybeLoadAndShowNewPage(store, this.props.history, location, nextProps.location);
   },
 
 

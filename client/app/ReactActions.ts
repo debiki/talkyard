@@ -427,8 +427,8 @@ export function loadAndShowPost(postNr: PostNr, showChildrenToo?: boolean, callb
  * If #post-X is specified in the URL, ensures all posts leading up to
  * and including X have been loaded. Then scrolls to X.
  */
-export function loadAndScrollToAnyUrlAnchorPost() {
-  const anchorPostNr = anyAnchorPostNr();
+export function loadAndScrollToAnyUrlAnchorPost(newHash?: string) {
+  const anchorPostNr = anyAnchorPostNr(newHash);
   if (!anchorPostNr) {
     // No #post-X in the URL.
     return;
@@ -444,14 +444,15 @@ export function loadAndScrollToAnyUrlAnchorPost() {
 }
 
 
-export function anyAnchorPostNr(): number {
+export function anyAnchorPostNr(hash?: string): number {
   // AngularJS (I think it is) somehow inserts a '/' at the start of the hash. I'd
   // guess it's Angular's router that messes with the hash. I don't want the '/' but
   // don't know how to get rid of it, so simply ignore it.
-  const hashIsPostId = /#post-\d+/.test(location.hash);
-  const hashIsSlashPostId = /#\/post-\d+/.test(location.hash);
-  if (hashIsPostId) return parseInt(location.hash.substr(6, 999));
-  if (hashIsSlashPostId) return parseInt(location.hash.substr(7, 999));
+  const theHash = firstDefinedOf(hash, location.hash);
+  const hashIsPostId = /#post-\d+/.test(theHash);
+  const hashIsSlashPostId = /#\/post-\d+/.test(theHash);
+  if (hashIsPostId) return parseInt(theHash.substr(6, 999));
+  if (hashIsSlashPostId) return parseInt(theHash.substr(7, 999));
   return undefined;
 }
 
@@ -592,11 +593,13 @@ export function patchTheStore(storePatch: StorePatch) {
 
 
 export function maybeLoadAndShowNewPage(store: Store,
-        history, location: Location, newUrlPath?: string) {
+        history, location: Location, newLocation?: Location) {
 
   // No router, so no history or location, if in embedded discussion.
   if (store.isInEmbeddedCommentsIframe)
     return;
+
+  let newUrlPath = newLocation ? newLocation.pathname : undefined;
 
   // If navigating within a mounted component. Maybe new query string?
   if (location.pathname === newUrlPath)
@@ -612,12 +615,16 @@ export function maybeLoadAndShowNewPage(store: Store,
   // the correct page path, say '/forum/'. (4WKBT80)
 
   let hasPageAlready = false;
+  let isThisPage = false;
+  let gotNewHash = false;
 
   _.each(store.pagesById, (page: Page) => {
+    if (isThisPage) return; // break loop
+
     const storePagePath = page.pagePath.value;
 
     // Is this page in the store the one we're navigating to?
-    let isThisPage = storePagePath === newUrlPath;
+    isThisPage = storePagePath === newUrlPath;
 
     // Maybe the url path is wrong? Case 3 above (4WKBT80): test '/-pageid' urls.
     if (!isThisPage) {
@@ -639,8 +646,13 @@ export function maybeLoadAndShowNewPage(store: Store,
         // render 'page'. Or we clicked a '/-pageid#post-nr' link, to '/the-current-page'.
         // Need not do anything more here, except for maybe change from '/-pageid#post-nr'
         // back to '/the-current-page' + '#post-nr':
-        if (newUrlPath !== page.pagePath.value && !newPathIsToThatForum) {
-          history.replace(page.pagePath.value + location.search + location.hash);
+        const search = (newLocation ? newLocation.search : null) || location.search;
+        const hash = (newLocation ? newLocation.hash : null) || location.hash;
+        const gotNewSearch = search !== location.search;
+        gotNewHash = hash !== location.hash;
+        const somethingChanged = newUrlPath !== page.pagePath.value || gotNewSearch || gotNewHash;
+        if (somethingChanged && !newPathIsToThatForum) {
+          history.replace(page.pagePath.value + search + hash);
         }
       }
       else {
@@ -661,6 +673,9 @@ export function maybeLoadAndShowNewPage(store: Store,
 
   if (!hasPageAlready) {
     loadAndShowNewPage(newUrlPath, history);
+  }
+  else if (isThisPage && gotNewHash) {
+    ReactActions.loadAndScrollToAnyUrlAnchorPost(newLocation.hash);
   }
 }
 

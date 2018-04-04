@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014-2017 Kaj Magnus Lindberg
+ * Copyright (c) 2014-2017 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -39,109 +39,105 @@ export const MyMenuContent = createFactory({
   },
 
   render: function() {
-    var menuContent;
+    let menuContent;
+    const store: Store = this.props.store;
+    const me: Myself = store.me;
 
+    // ------- Staff link, notfs, help
 
-      var store: Store = this.props.store;
-      var me: Myself = store.me;
+    const urgentReviewTasks = makeNotfIcon('reviewUrgent', me.numUrgentReviewTasks);
+    const otherReviewTasks = makeNotfIcon('reviewOther', me.numOtherReviewTasks);
+    const adminMenuItem = !isStaff(me) ? null :
+      MenuItemLink({ to: linkToAdminPage(me), className: 'esMyMenu_admin' },
+        r.span({ className: 'icon-settings' }, t.Admin));
+    const reviewMenuItem = !urgentReviewTasks && !otherReviewTasks ? null :
+      MenuItemLink({ to: linkToReviewPage(), id: 'e2eMM_Review' },
+        t.mm.NeedsReview, urgentReviewTasks, otherReviewTasks);
 
-      // ------- Staff link, notfs, help
+    const adminHelpLink = !isStaff(me) ? null :
+      MenuItemLink({ to: externalLinkToAdminHelp(), target: '_blank',
+          className: 'esMyMenu_adminHelp' },
+        r.span({}, me.isAdmin ? t.mm.AdminHelp : t.mm.StaffHelp,
+          r.span({ className: 'icon-link-ext' })));
 
-      var urgentReviewTasks = makeNotfIcon('reviewUrgent', me.numUrgentReviewTasks);
-      var otherReviewTasks = makeNotfIcon('reviewOther', me.numOtherReviewTasks);
-      var adminMenuItem = !isStaff(me) ? null :
-        MenuItemLink({ to: linkToAdminPage(me), className: 'esMyMenu_admin' },
-          r.span({ className: 'icon-settings' }, t.Admin));
-      var reviewMenuItem = !urgentReviewTasks && !otherReviewTasks ? null :
-        MenuItemLink({ to: linkToReviewPage(), id: 'e2eMM_Review' },
-          t.mm.NeedsReview, urgentReviewTasks, otherReviewTasks);
+    // ------- Personal notf icons
 
-      var adminHelpLink = !isStaff(me) ? null :
-        MenuItemLink({ to: externalLinkToAdminHelp(), target: '_blank',
-            className: 'esMyMenu_adminHelp' },
-          r.span({}, me.isAdmin ? t.mm.AdminHelp : t.mm.StaffHelp,
-            r.span({ className: 'icon-link-ext' })));
+    const notfsDivider = me.notifications.length ? MenuItemDivider() : null;
+    const notfsElems = me.notifications.map((notf: Notification) =>
+        MenuItemLink({ key: notf.id, to: linkToNotificationSource(notf),
+            className: notf.seen ? '' : 'esNotf-unseen' },
+          notification.Notification({ notification: notf })));
+    if (me.thereAreMoreUnseenNotfs) {
+      notfsElems.push(
+          MenuItemLink({ key: 'More', to: linkToUsersNotfs(me.id) },
+            t.mm.MoreNotfs));
+    }
 
-      // ------- Personal notf icons
+    // ------- Stop impersonating
 
-      var notfsDivider = me.notifications.length ? MenuItemDivider() : null;
-      var notfsElems = me.notifications.map((notf: Notification) =>
-          MenuItemLink({ key: notf.id, to: linkToNotificationSource(notf),
-              className: notf.seen ? '' : 'esNotf-unseen' },
-            notification.Notification({ notification: notf })));
-      if (me.thereAreMoreUnseenNotfs) {
-        notfsElems.push(
-            MenuItemLink({ key: 'More', to: linkToUsersNotfs(me.id) },
-              t.mm.MoreNotfs));
-      }
+    let isViewingAsHint;
+    let stopImpersonatingMenuItem;
+    let notYourMenuHint;
+    let impersonationStuffDivider;
+    let viewAsOtherItem;
 
-      // ------- Stop impersonating
-
-      let isViewingAsHint;
-      let stopImpersonatingMenuItem;
-      let notYourMenuHint;
-      let impersonationStuffDivider;
-      let viewAsOtherItem;
-
-      if (store.isImpersonating) {
-        isViewingAsHint = store.isViewingAs
-            ? "You're viewing this site as someone else."
-            : "You're impersonating another user.";
-        isViewingAsHint = r.p({ className: 's_MM_ImpInfo' }, isViewingAsHint);
-        stopImpersonatingMenuItem = !store.isImpersonating ? null :
-            MenuItem({ onClick: Server.stopImpersonatingReloadPage, className: 's_MM_StopImpB' },
-              store.isViewingAs ? "Stop viewing as other" : "Stop impersonating");
-        if (me.isLoggedIn) {
-          notYourMenuHint = r.div({className: 's_MM_ImpNotYour'},
-            "The menu items below are for that other user.");
-          impersonationStuffDivider = MenuItemDivider();
-        }
-      }
-      else if (isStaff(me)) {
-        viewAsOtherItem =
-            MenuItem({ onClick: this.viewAsOther, className: 's_MM_ViewAsB' },
-              "View this site as ...");
-      }
-
-      // ------- The current user
-
-      let viewProfileMenuItem;
-      let logoutMenuItem;
-      let myStuffDivider;
-      let unhideHelpMenuItem;
+    if (store.isImpersonating) {
+      isViewingAsHint = store.isViewingAs
+          ? "You're viewing this site as someone else."
+          : "You're impersonating another user.";
+      isViewingAsHint = r.p({ className: 's_MM_ImpInfo' }, isViewingAsHint);
+      stopImpersonatingMenuItem = !store.isImpersonating ? null :
+          MenuItem({ onClick: Server.stopImpersonatingReloadPage, className: 's_MM_StopImpB' },
+            store.isViewingAs ? "Stop viewing as other" : "Stop impersonating");
       if (me.isLoggedIn) {
-        viewProfileMenuItem =
-            MenuItemLink({ to: linkToMyProfilePage(store), id: 'e2eMM_Profile' },
-              t.mm.ViewProfile);
-        logoutMenuItem =
-            MenuItem({ onClick: this.onLogoutClick, id: 'e2eMM_Logout' }, t.mm.LogOut);
-        myStuffDivider = MenuItemDivider();
-        unhideHelpMenuItem =
-          MenuItem({ onClick: ReactActions.showHelpMessagesAgain },
-            r.span({ className: 'icon-help' }, t.mm.UnhideHelp))
+        notYourMenuHint = r.div({className: 's_MM_ImpNotYour'},
+          "The menu items below are for that other user.");
+        impersonationStuffDivider = MenuItemDivider();
       }
+    }
+    else if (isStaff(me)) {
+      viewAsOtherItem =
+          MenuItem({ onClick: this.viewAsOther, className: 's_MM_ViewAsB' },
+            "View this site as ...");
+    }
 
-      // ------- The menu
+    // ------- The current user
 
-      menuContent =
-        r.ul({ className: 'dropdown-menu' },
-          isViewingAsHint,
-          stopImpersonatingMenuItem,
-          notYourMenuHint,
-          impersonationStuffDivider,
-          adminMenuItem,
-          adminHelpLink,
-          reviewMenuItem,
-          (adminMenuItem || reviewMenuItem) ? MenuItemDivider() : null,
-          viewProfileMenuItem,
-          viewAsOtherItem,
-          logoutMenuItem,
-          notfsDivider,
-          notfsElems,
-          myStuffDivider,
-          unhideHelpMenuItem);
+    let viewProfileMenuItem;
+    let logoutMenuItem;
+    let myStuffDivider;
+    let unhideHelpMenuItem;
+    if (me.isLoggedIn) {
+      viewProfileMenuItem =
+          MenuItemLink({ to: linkToMyProfilePage(store), id: 'e2eMM_Profile' },
+            t.mm.ViewProfile);
+      logoutMenuItem =
+          MenuItem({ onClick: this.onLogoutClick, id: 'e2eMM_Logout' }, t.mm.LogOut);
+      myStuffDivider = MenuItemDivider();
+      unhideHelpMenuItem =
+        MenuItem({ onClick: ReactActions.showHelpMessagesAgain },
+          r.span({ className: 'icon-help' }, t.mm.UnhideHelp))
+    }
 
+    // ------- The menu
 
+    menuContent =
+      r.ul({ className: 'dropdown-menu' },
+        isViewingAsHint,
+        stopImpersonatingMenuItem,
+        notYourMenuHint,
+        impersonationStuffDivider,
+        adminMenuItem,
+        adminHelpLink,
+        reviewMenuItem,
+        (adminMenuItem || reviewMenuItem) ? MenuItemDivider() : null,
+        viewProfileMenuItem,
+        viewAsOtherItem,
+        logoutMenuItem,
+        notfsDivider,
+        notfsElems,
+        myStuffDivider,
+        unhideHelpMenuItem);
 
     return menuContent;
   }
@@ -150,8 +146,8 @@ export const MyMenuContent = createFactory({
 
 function makeNotfIcon(type: string, number: number) {
   if (!number) return null;
-  var numMax99 = Math.min(99, number);
-  var wideClass = number >= 10 ? ' esNotfIcon-wide' : '';
+  const numMax99 = Math.min(99, number);
+  const wideClass = number >= 10 ? ' esNotfIcon-wide' : '';
   return r.div({ className: 'esNotfIcon esNotfIcon-' + type + wideClass}, numMax99);
 }
 
