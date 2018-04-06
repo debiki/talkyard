@@ -141,6 +141,7 @@ object SiteStatus {
   */
 case class Site(
   id: SiteId,
+  pubId: PublSiteId,
   status: SiteStatus,
   name: String,
   createdAt: When,

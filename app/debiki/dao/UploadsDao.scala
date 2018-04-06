@@ -192,6 +192,17 @@ trait UploadsDao {
   }
 
 
+  def fileHasBeenUploaded(hashPath: String): Boolean = {
+    readOnlyTransaction { tx =>
+      COULD_OPTIMIZE // (not important) needn't find all site ids, can just check this.siteId.
+      CLEAN_UP // stop passing around globals.config.uploadsUrlPath everywhere,
+      // just let it be /-/u/, not configurable.
+      val siteIds = tx.loadSiteIdsUsingUpload(UploadRef(globals.config.uploadsUrlPath, hashPath))
+      siteIds contains this.siteId
+    }
+  }
+
+
   def simplifySuffix(dotSuffix: String): String = {
     dotSuffix match {
       case ".jpeg" => ".jpg"

@@ -135,7 +135,7 @@ class ImportExportController @Inject()(cc: ControllerComponents, edContext: EdCo
           throwBadRequest("EsE6UJM2", s"Invalid json: ${ex.getMessage}")
       }
 
-    val siteToSave =
+    val siteToSave: Site =
       try readSiteMeta(siteMetaJson)
       catch {
         case ex: IllegalArgumentException =>
@@ -226,6 +226,7 @@ class ImportExportController @Inject()(cc: ControllerComponents, edContext: EdCo
     // `transaction.continueWithSiteId(zzz)`?
     val siteToSave = siteData.site
     val site = globals.systemDao.createSite(
+      siteToSave.pubId,
       siteToSave.name,
       siteToSave.status,
       siteToSave.canonicalHost.getOrDie("EsE2FUPFY7").hostname,
@@ -327,6 +328,7 @@ class ImportExportController @Inject()(cc: ControllerComponents, edContext: EdCo
 
     Site(
       id = NoSiteId,
+      pubId = readOptString(jsObject, "pubId") getOrElse nextRandomString().take(NewPublSiteIdLength),
       status = siteStatus,
       name = name,
       createdAt = When.fromMillis(createdAtMs),

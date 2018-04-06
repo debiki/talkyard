@@ -163,10 +163,10 @@ class LoginWithPasswordController @Inject()(cc: ControllerComponents, edContext:
         }
       }
       catch {
-        case DbDao.DuplicateUsername =>
+        case _: DbDao.DuplicateUsername =>
           throwForbidden(
             "DwE65EF0", "Username already taken, please try again with another username")
-        case DbDao.DuplicateUserEmail =>
+        case _: DbDao.DuplicateUserEmail =>
           // Send account reminder email. But don't otherwise indicate that the account exists,
           // so no email addresses are leaked.
           sendYouAlreadyHaveAnAccountWithThatAddressEmail(

@@ -284,11 +284,6 @@ class SiteDao(
     }
   }
 
-  def updateSite(changedSite: Site) {
-    readWriteTransaction(_.updateSite(changedSite))
-    uncacheSiteFromMemCache()
-  }
-
   def listHostnames(): Seq[SiteHostInclDetails] = {
     readOnlyTransaction(_.loadHostsInclDetails())
   }

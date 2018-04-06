@@ -63,6 +63,11 @@ class SystemDao(
     globals.siteDao(siteId).getSite()
   }
 
+  def getSiteByPublId(publSiteId: PublSiteId): Option[Site] = {
+    COULD_OPTIMIZE // For now
+    loadSites().find(_.pubId == publSiteId)
+  }
+
   def loadSites(): Seq[Site] =
     readOnlyTransaction(_.loadSites())
 
@@ -81,7 +86,8 @@ class SystemDao(
 
   private def createFirstSite(): Site = {
     readWriteTransaction { sysTx =>
-      val firstSite = sysTx.createSite(Some(FirstSiteId), name = "Main Site", SiteStatus.NoAdmin,
+      val firstSite = sysTx.createSite(Some(FirstSiteId),
+        pubId = nextRandomString().take(NewPublSiteIdLength), name = "Main Site", SiteStatus.NoAdmin,
         creatorIp = "0.0.0.0",
         quotaLimitMegabytes = None, maxSitesPerIp = 9999, maxSitesTotal = 9999,
         isTestSiteOkayToDelete = false, pricePlan = "-", createdAt = sysTx.now)
@@ -104,6 +110,7 @@ class SystemDao(
 
 
   def createSite(
+    pubId: PublSiteId,
     name: String,
     status: SiteStatus,
     hostname: String,
@@ -148,7 +155,7 @@ class SystemDao(
         }
       }
 
-      val newSite = sysTx.createSite(id = None, name = name, status,
+      val newSite = sysTx.createSite(id = None, pubId = pubId, name = name, status,
         creatorIp = browserIdData.ip,
         quotaLimitMegabytes = config.createSite.quotaLimitMegabytes,
         maxSitesPerIp = maxSitesPerIp, maxSitesTotal = maxSitesTotal,

@@ -214,8 +214,11 @@ POST  /-/start-private-group-talk controllers.GroupTalkController.sendMessage
 POST  /-/upload-public-file     controllers.UploadsController.uploadPublicFile
 POST  /-/upload-avatar          controllers.UploadsController.uploadAvatar(userId: Int)
 POST  /-/remove-avatar          controllers.UploadsController.removeAvatar
+GET   /-/auth-upload/:publSiteId/*hashPath controllers.UploadsController.authUpload(publSiteId, hashPath)
+
+# CLEAN_UP remove, hardcode path in Globals instead?
 GET   /-/u/*relativePath        controllers.UploadsController.servePublicFile(relativePath)
-GET   /-/uploads/public/*relativePath controllers.UploadsController.servePublicFileLong(relativePath)
+#GET   /-/uploads/public/*relativePath controllers.UploadsController.servePublicFileLong(relativePath)
 
 # Merge with CloseCollapseController into PostController?
 # POST  /-/pin-at-position      controllers.PinController.pinAtPosition

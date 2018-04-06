@@ -187,8 +187,9 @@ object ReactJson {
       "dbgSrc" -> "ESJ",
       "appVersion" -> globals.applicationVersion,
       "now" -> JsNumber(globals.now().millis),
-      "siteId" -> JsNumber(pageReq.siteId),
-      "siteStatus" -> pageReq.dao.theSite().status.toInt,
+      "pubSiteId" -> JsString(site.pubId),
+      "siteId" -> JsNumber(site.id),  // LATER remove in Prod mode [5UKFBQW2]
+      "siteStatus" -> site.status.toInt,
       "siteOwnerTermsUrl" -> JsStringOrNull(globals.siteOwnerTermsUrl),
       "siteOwnerPrivacyUrl" -> JsStringOrNull(globals.siteOwnerPrivacyUrl),
       "isFirstSiteAdminEmailMissing" -> isFirstSiteAdminEmailMissing,
@@ -404,11 +405,14 @@ object ReactJson {
       "horizontalLayout" -> JsBoolean(horizontalLayout),
       "is2dTreeDefault" -> JsBoolean(is2dTreeDefault))
 
+    val site = dao.theSite()
+
     val jsonObj = Json.obj(
       "dbgSrc" -> "PTJ",
       "appVersion" -> globals.applicationVersion,
-      "siteId" -> JsNumber(dao.siteId),
-      "siteStatus" -> dao.theSite().status.toInt,
+      "pubSiteId" -> JsString(site.pubId),
+      "siteId" -> JsNumber(site.id), // LATER remove in Prod mode [5UKFBQW2]
+      "siteStatus" -> site.status.toInt,
       // CLEAN_UP Later: move these two userMustBe... to settings {} too.
       "userMustBeAuthenticated" -> JsBoolean(siteSettings.userMustBeAuthenticated),
       "userMustBeApproved" -> JsBoolean(siteSettings.userMustBeApproved),
@@ -541,11 +545,13 @@ object ReactJson {
     val globals = request.context.globals
     val requester = request.requester
     val siteSettings = dao.getWholeSiteSettings()
+    val site = request.dao.theSite()
     var result = Json.obj(
       "dbgSrc" -> "SPJ",
       "appVersion" -> globals.applicationVersion,
-      "siteId" -> JsNumber(dao.siteId),
-      "siteStatus" -> request.dao.theSite().status.toInt,
+      "pubSiteId" -> JsString(site.pubId),
+      "siteId" -> JsNumber(site.id), // LATER remove in Prod mode [5UKFBQW2]
+      "siteStatus" -> site.status.toInt,
       // CLEAN_UP remove these two; they should-instead-be/are-already included in settings: {...}.
       "userMustBeAuthenticated" -> JsBoolean(siteSettings.userMustBeAuthenticated),
       "userMustBeApproved" -> JsBoolean(siteSettings.userMustBeApproved),

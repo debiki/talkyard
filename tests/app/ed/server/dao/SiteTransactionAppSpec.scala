@@ -64,6 +64,32 @@ class SiteTransactionAppSpec extends DaoAppSuite {
     }
 
 
+    // Some of these could be moved to elsewhere? Or the wrapping test could be renamed.
+
+    "find users by username prefix" in {
+      dao.readWriteTransaction { tx =>
+        info("no members")
+        tx.loadMembersWithPrefix("zzz") mustBe Nil
+
+        info("all members")
+        var allMembers = tx.loadMembersWithPrefix("")
+        allMembers.length mustBe 2
+        allMembers = tx.loadMembersWithPrefix("t")
+        allMembers.length mustBe 2
+        allMembers = tx.loadMembersWithPrefix("txt_")
+        allMembers.length mustBe 2
+
+        info("specific member")
+        var admin = tx.loadMembersWithPrefix("txt_a")
+        admin.length mustBe 1
+        admin.head.username mustBe Some("txt_adm")
+        admin = tx.loadMembersWithPrefix("txt_adm")
+        admin.length mustBe 1
+        admin.head.username mustBe Some("txt_adm")
+      }
+    }
+
+
     "load and save alt page ids" - {
       "save alt page ids" in {
         dao.readWriteTransaction { tx =>

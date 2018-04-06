@@ -27,8 +27,8 @@ import java.{io => jio}
 import javax.inject.Inject
 import play.api._
 import play.api.libs.Files
-import play.api.libs.json.{JsString, Json}
-import play.api.mvc.{Action, ControllerComponents, MaxSizeExceeded, MultipartFormData}
+import play.api.libs.json.{JsString, JsValue, Json}
+import play.api.mvc._
 
 
 /** Uploads files and serves uploaded files.
@@ -89,7 +89,7 @@ class UploadsController @Inject()(cc: ControllerComponents, edContext: EdContext
   }
 
 
-  def removeAvatar = PostJsonAction(RateLimits.UploadFile, maxBytes = 200) { request =>
+  def removeAvatar: Action[JsValue] = PostJsonAction(RateLimits.UploadFile, maxBytes = 200) { request =>
     request.dao.setUserAvatar(request.theUserId, tinyAvatar = None, smallAvatar = None,
       mediumAvatar = None, request.theBrowserIdData)
     Ok
@@ -99,7 +99,8 @@ class UploadsController @Inject()(cc: ControllerComponents, edContext: EdContext
   /** (Theoretically it's possible that the user uploads 3 completely different images,
     * for the tiny, small and medium avatars. Oh well.)
     */
-  def uploadAvatar(userId: UserId) =
+  def uploadAvatar(userId: UserId)
+        : Action[Either[MaxSizeExceeded, MultipartFormData[Files.TemporaryFile]]] =
         PostFilesAction(RateLimits.UploadFile, maxBytes = MaxAvatarUploadSizeBytes) { request =>
 
     if (!request.theUser.isAuthenticated)
@@ -181,13 +182,31 @@ class UploadsController @Inject()(cc: ControllerComponents, edContext: EdContext
   }
 
 
+  def authUpload(publSiteId: String, hashPath: String) = ExceptionAction { (request: mvc.Request[_]) =>
+    val site = context.globals.systemDao.getSiteByPublId(publSiteId) getOrElse {
+      throwNotFound("TyE2PKJ40", s"No site with publ id '$publSiteId'")
+    }
+    val siteDao: debiki.dao.SiteDao = context.globals.siteDao(site.id)
+    val hashPathNoSlash = hashPath drop 1 // otherwise starts with slash
+    val hasBeenUplToSite = siteDao.fileHasBeenUploaded(hashPathNoSlash)
+    if (!hasBeenUplToSite)
+      throwNotFound("TyE404NUPL", "File not found")
+
+    Ok
+  }
+
+
   /** These files are to be cached by a CDN, or nginx could be configured to serve them
     * directly from the file system (bypassing Play), so don't bother about trying
     * to optimize this.
     */
   def servePublicFile(relativePath: String) = ExceptionAction { (request: mvc.Request[_]) =>
-    servePublicFileImpl(relativePath, request)
+    die("TyE4GKQR20", "Talk with Nginx instead")
+    // previously: servePublicFileImpl(relativePath, request)
   }
+
+  /* Right now uploads are served directly by Nginx.
+     But keep the handlers below, for now — maybe want Play ot serve files again, in the future?
 
   def servePublicFileLong(relativePath: String) = ExceptionAction { (request: mvc.Request[_]) =>
     servePublicFileImpl(relativePath, request)
@@ -212,7 +231,7 @@ class UploadsController @Inject()(cc: ControllerComponents, edContext: EdContext
       case _: jio.FileNotFoundException =>
         NotFoundResult("DwE404FNF0", "File not found")
     }
-  }
+  } */
 
 }
 

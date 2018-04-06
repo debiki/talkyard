@@ -463,15 +463,28 @@ class Globals(
     if (defaultSiteHostname.contains(hostname))
       return defaultSiteIdAndHostname
 
-    // If the hostname is like "site-123.example.com" then we'll just lookup id 123.
+    // If the hostname is like "site-123.example.com" then we'll just lookup site id 123.
+    // Or if the id is long, like "site-aabbcc112233.ex.com" then we'll lookup by publ id aabb...33.
     val SiteByIdRegex = siteByIdHostnameRegex // uppercase, otherwise Scala won't "de-structure".
     hostname match {
       case SiteByIdRegex(siteIdString: String) =>
-        val siteId = siteIdString.toIntOrThrow("EdE5PJW2", s"Bad site id: $siteIdString")
-        systemDao.getSite(siteId) match {
+        val anySite =
+          if (siteIdString.length >= MinPublSiteIdLength) {
+            systemDao.getSiteByPublId(siteIdString)
+          }
+          else {
+            SECURITY; PRIVACY // LATER, don't allow lookup by direct id, in prod mode,  [5UKFBQW2]
+            // because that'd let people find and crawl all sites hosted by this server
+            // (by crawling site-1, site-2, ...). And the server owners might not like that.
+            // (Access by publ site ids is ok though: they are long random strings, not sequential ids.)
+            // throwForbiddenIf(isProd, "TyE4HJWQ10", "Looking up sites by private ID is not allowed")
+            val siteId = siteIdString.toIntOrThrow("EdE5PJW2", s"Bad site id: $siteIdString")
+            systemDao.getSite(siteId)
+          }
+        anySite match {
           case None =>
-            throwNotFound("DwE72SF6", s"No site with id $siteId")
-          case Some(site) =>
+            throwNotFound("DwE72SF6", s"No site with id $siteIdString")
+          case Some(site: Site) =>
             COULD // link to canonical host if (site.hosts.exists(_.role == SiteHost.RoleCanonical))
             // Let the config file hostname have precedence over the database.
             if (site.id == FirstSiteId && defaultSiteHostname.isDefined)

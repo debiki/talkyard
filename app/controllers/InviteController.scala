@@ -82,7 +82,7 @@ class InviteController @Inject()(cc: ControllerComponents, edContext: EdContext)
       request.dao.insertInvite(invite)
     }
     catch {
-      case DbDao.DuplicateUserEmail =>
+      case _: DbDao.DuplicateUserEmail =>
         // This is a very rare race condition.
         throwForbidden("DwE403JIU3", "You just invited him or her")
     }

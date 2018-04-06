@@ -82,6 +82,7 @@ class SuperAdminController @Inject()(cc: ControllerComponents, edContext: EdCont
   private def siteToJson(site: Site) = {
     Json.obj(
       "id" -> site.id,
+      "pubId" -> site.pubId,
       "status" -> site.status.toInt,
       "canonicalHostname" -> JsStringOrNull(site.canonicalHost.map(_.hostname)),
       "name" -> site.name,

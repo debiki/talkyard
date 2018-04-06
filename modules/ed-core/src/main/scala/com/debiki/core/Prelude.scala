@@ -356,7 +356,7 @@ object Prelude {
   }
 
 
-  /** This 130 bits string will be almost 26 chars, since each char in a 32 chars
+  /** Generates a 130 bit string, almost 26 chars long since each char in a 32 chars
     * alphabet has 5 bits (but we use 36 chars here).
     * Wikipedia says: "128-bit keys are commonly used and considered very strong".
     * Here: http://en.wikipedia.org/wiki/Key_(cryptography)

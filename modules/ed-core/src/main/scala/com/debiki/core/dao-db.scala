@@ -62,8 +62,8 @@ object DbDao {
   case class EmailAddressChangedException(email: Email, user: User)
     extends QuickException
 
-  case object DuplicateUsername extends RuntimeException("Duplicate username")
-  case object DuplicateUserEmail extends RuntimeException("Duplicate user email")
+  case class DuplicateUsername(username: String) extends RuntimeException(s"Duplicate username: $username")
+  case class DuplicateUserEmail(addr: String) extends RuntimeException(s"Duplicate user email: $addr")
   case object DuplicateGuest extends RuntimeException("Duplicate guest")
 
   object IdentityNotFoundException extends QuickMessageException("Identity not found")

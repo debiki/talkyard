@@ -39,7 +39,8 @@ trait SystemTransaction {
     * Throws TooManySitesCreatedException if you've created too many websites already
     * (from the same IP or email address).
     */
-  def createSite(id: Option[SiteId], name: String, status: SiteStatus, creatorIp: String,
+  def createSite(id: Option[SiteId], pubId: PublSiteId,
+    name: String, status: SiteStatus, creatorIp: String,
     quotaLimitMegabytes: Option[Int], maxSitesPerIp: Int, maxSitesTotal: Int,
     isTestSiteOkayToDelete: Boolean, pricePlan: PricePlan, createdAt: When): Site
 

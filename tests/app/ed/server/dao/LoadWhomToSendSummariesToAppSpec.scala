@@ -85,7 +85,7 @@ class LoadWhomToSendSummariesToAppSpec extends DaoAppSuite {
   }
 
   "prepare: create users" in {
-    admin = createPasswordOwner(s"txt_adm", dao, createdAt = Some(createdAt))
+    admin = createPasswordOwner(s"smr_adm", dao, createdAt = Some(createdAt))
     ownerSite2 = createPasswordOwner("site2_owner", daoSite2, createdAt = Some(createdAt))
   }
 

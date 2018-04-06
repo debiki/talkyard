@@ -544,10 +544,10 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
         }
       }
       catch {
-        case DbDao.DuplicateUsername =>
+        case _: DbDao.DuplicateUsername =>
           throwForbidden(
               "DwE6D3G8", "Username already taken, please try again with another username")
-        case DbDao.DuplicateUserEmail =>
+        case _: DbDao.DuplicateUserEmail =>
           // BUG SHOULD support many users per email address, if mayPostBeforeEmailVerified.
           if (emailVerifiedAt.isDefined) {
             // The user has been authenticated, so it's okay to tell him/her about the email address.
