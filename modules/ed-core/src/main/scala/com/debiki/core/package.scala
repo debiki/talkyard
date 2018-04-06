@@ -48,9 +48,6 @@ package object core {
   val NoCategoryId = 0
 
   type PublSiteId = String
-  val NewPublSiteIdLength = 10
-  val MinPublSiteIdLength = 8
-  require(NewPublSiteIdLength >= MinPublSiteIdLength)
 
   type SiteId = Int
   val NoSiteId = 0

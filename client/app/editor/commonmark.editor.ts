@@ -49,8 +49,12 @@ function markdownToUnsafeHtml(commonmarkSource, hostAndPort) {
   const md = window['markdownit']({ html: true, linkify: true, breaks: true });
   md.use(d.i.MentionsMarkdownItPlugin());
   md.use(d.i.oneboxMarkdownItPlugin);
-  ed.editor.CdnLinkifyer.replaceLinks(md);
-  const htmlTextUnsafe = md.render(commonmarkSource);
+  // SKIP client side? Only do when saving server side. So uploads won't get sent to the CDN,
+  // unless one saves on's post & actually starts using the uploaded file.
+  ed.editor.CdnLinkifyer.replaceLinks(md);  // broken? ... Shouldn't do here anyway?  [5UKBWQ2]
+  let htmlTextUnsafe = md.render(commonmarkSource);
+  htmlTextUnsafe = htmlTextUnsafe.replace(
+      /\/-\/u\//g, `/-/u/${eds.pubSiteId}/`); // ... instead, for now. [7UKWQ24]
   return htmlTextUnsafe;
 }
 

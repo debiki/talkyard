@@ -182,15 +182,23 @@ class UploadsController @Inject()(cc: ControllerComponents, edContext: EdContext
   }
 
 
-  def authUpload(publSiteId: String, hashPath: String) = ExceptionAction { (request: mvc.Request[_]) =>
+  def authUpload(publSiteId: String, hashPath: String) = ExceptionAction { request: mvc.Request[_] =>
     val site = context.globals.systemDao.getSiteByPublId(publSiteId) getOrElse {
       throwNotFound("TyE2PKJ40", s"No site with publ id '$publSiteId'")
     }
     val siteDao: debiki.dao.SiteDao = context.globals.siteDao(site.id)
     val hashPathNoSlash = hashPath drop 1 // otherwise starts with slash
+    BUG; PRIVACY // for site owners. Won't find files until a post linking to them has been *saved*
+    // — but whilst composing the post, the file will be 404 Not Found, so preview = broken.
+    // The fix: Remember per site which files have been uploaded? (Not just *referenced*.)
+    // And if some staff member deleted it.
+    // For now, just comment this out (accessible via /-/u/hash-path anyway).
+    // When fixing this, also fix [5UKFBQW2]?
+    /*
     val hasBeenUplToSite = siteDao.fileHasBeenUploaded(hashPathNoSlash)
     if (!hasBeenUplToSite)
       throwNotFound("TyE404NUPL", "File not found")
+      */
 
     Ok
   }

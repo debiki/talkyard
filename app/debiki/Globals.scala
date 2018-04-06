@@ -444,6 +444,7 @@ class Globals(
     // Play supports one HTTP and one HTTPS port only, so it makes little sense
     // to include any port number when looking up a site.
     val hostname = if (host contains ':') host.span(_ != ':')._1 else host
+
     def defaultSiteIdAndHostname = {
       val hostname = defaultSiteHostname getOrElse throwForbidden(
         "EsE5UYK2", o"""No site hostname configured (config value: $DefaultSiteHostnameConfValName)""")
@@ -451,12 +452,12 @@ class Globals(
         val site = systemDao.getSite(defaultSiteId).getOrDie(
           "EdEDEFSITEID", o"""There's no site with id $defaultSiteId, which is the configured
             default site id (config value: $DefaultSiteIdConfValName)""")
-        SiteBrief(defaultSiteId, hostname, site.status)
+        SiteBrief(defaultSiteId, site.pubId, hostname, site.status)
       }
       else {
         // Lazy-create the very first site, with id 1, if doesn't yet exist.
         val firstSite = systemDao.getOrCreateFirstSite()
-        SiteBrief(FirstSiteId, hostname, firstSite.status)
+        SiteBrief(FirstSiteId, firstSite.pubId, hostname, firstSite.status)
       }
     }
 
@@ -469,7 +470,7 @@ class Globals(
     hostname match {
       case SiteByIdRegex(siteIdString: String) =>
         val anySite =
-          if (siteIdString.length >= MinPublSiteIdLength) {
+          if (siteIdString.length >= Site.MinPublSiteIdLength) {
             systemDao.getSiteByPublId(siteIdString)
           }
           else {
@@ -880,7 +881,7 @@ class Config(conf: play.api.Configuration) {
   }
 
   object createSite {
-    val path = Config.CreateSitePath
+    private def path = Config.CreateSitePath
     REFACTOR; RENAME // to ...tooManyTryLaterUrl
     val tooManyTryLaterPagePath: Option[String] = conf.getString(s"$path.tooManyTryLaterPagePath")
     val maxSitesPerPerson: Int = conf.getInt(s"$path.maxSitesPerIp") getOrElse 10
@@ -891,7 +892,7 @@ class Config(conf: play.api.Configuration) {
   }
 
   object superAdmin {
-    val path = Config.SuperAdminPath
+    private def path = Config.SuperAdminPath
     val hostname: Option[String] = conf.getString(s"$path.hostname")
     val siteIdString: Option[String] = conf.getString(s"$path.siteId")
     val emailAddresses: immutable.Seq[String] =

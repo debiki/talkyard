@@ -373,7 +373,7 @@ class ReactRenderer(globals: Globals) extends com.debiki.core.CommonMarkRenderer
         |    // Each language file creates a 't_(lang-code)' global variable, e.g. 't_en' for English.
         |    // And they all set a global 'var t' to themselves. Update 't' here; it gets used
         |    // during rendering.
-        |    var langCode = initialState.settings.languageCode || '${AllSettings.Default.languageCode}';
+        |    var langCode = theStore.settings.languageCode || '${AllSettings.Default.languageCode}';
         |    t = global['t_' + langCode];
         |    return debiki2.renderTitleBodyCommentsToString();
         |  }
@@ -500,7 +500,7 @@ object ReactRenderer {
     |  md = markdownit({ html: true, linkify: true, breaks: true });
     |  md.use(debiki.internal.MentionsMarkdownItPlugin());
     |  md.use(debiki.internal.oneboxMarkdownItPlugin);
-    |  ed.editor.CdnLinkifyer.replaceLinks(md);
+    |  ed.editor.CdnLinkifyer.replaceLinks(md);  // what? broken? BUG SHOULD FIX  [5UKBWQ2]
     |}
     |catch (e) {
     |  printStackTrace(e);
@@ -513,6 +513,7 @@ object ReactRenderer {
     |    debiki.uploadsUrlPrefix = uploadsUrlPrefix;
     |    debiki.internal.oneboxMarkdownItPlugin.instantRenderer = instantOneboxRenderer;
     |    var unsafeHtml = md.render(source);
+    |    unsafeHtml = unsafeHtml.replace(/\/-\/u\//g, '/-/u/' + theStore.pubSiteId + '/');  // for now, [7UKWQ24]
     |    var allowClassAndIdAttr = allowClassIdDataAttrs;
     |    var allowDataAttr = allowClassIdDataAttrs;
     |    return googleCajaSanitizeHtml(unsafeHtml, allowClassAndIdAttr, allowDataAttr, followLinks);
@@ -608,18 +609,18 @@ object ReactRenderer {
     |
     |debiki2.ReactStore = {
     |  allData: function() {
-    |    return initialState;
+    |    return theStore;
     |  },
     |  getUser: function() {
-    |    return initialState.me;
+    |    return theStore.me;
     |  },
     |  getPageTitle: function() { // dupl code [5GYK2]
-    |    var titlePost = initialState.currentPage.postsByNr[TitleNr];
+    |    var titlePost = theStore.currentPage.postsByNr[TitleNr];
     |    return titlePost ? titlePost.sanitizedHtml : "(no title)";
     |  }
     |};
     |
-    |var initialState = {};
+    |var theStore = {};
     |
     |function setInitialStateJson(jsonString) {
     |  var s = JSON.parse(jsonString);
@@ -634,7 +635,7 @@ object ReactRenderer {
     |    postNrsAutoReadNow: [],
     |    marksByPostId: {},
     |  };
-    |  initialState = s;
+    |  theStore = s;
     |}
     |"""
 

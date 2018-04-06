@@ -32,9 +32,13 @@ object Site {
   val GenerateTestSiteMagicId: SiteId = -1
   val MaxTestSiteId: SiteId = -2
 
+  val MinPublSiteIdLength = 8
+  val NewPublSiteIdLength = 10
+  require(NewPublSiteIdLength >= MinPublSiteIdLength)
 
   val Ipv4AnyPortRegex: Regex = """(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})(:\d+)?""".r
 
+  def newPublId(): PublSiteId = nextRandomString() take NewPublSiteIdLength
 
   /** Must be a valid host name, not too long or too short (less than 6 chars),
     * no '.' and no leading or trailing '-'. See test suite in SiteCreatorSpec.
@@ -53,7 +57,7 @@ object Site {
 /**
   * @param hostname — doesn't include any port number.
   */
-case class SiteBrief(id: SiteId, hostname: String, status: SiteStatus)
+case class SiteBrief(id: SiteId, pubId: PublSiteId, hostname: String, status: SiteStatus)
 
 
 
@@ -155,7 +159,7 @@ case class Site(
   def theCanonicalHost: SiteHost = canonicalHost getOrDie "EsE7YKF2"
 
   def brief =
-    SiteBrief(id, canonicalHost.getOrDie("EsE2GUY5").hostname, status)
+    SiteBrief(id, pubId, canonicalHost.getOrDie("EsE2GUY5").hostname, status)
 }
 
 

@@ -64,8 +64,10 @@ class SystemDao(
   }
 
   def getSiteByPublId(publSiteId: PublSiteId): Option[Site] = {
-    COULD_OPTIMIZE // For now
-    loadSites().find(_.pubId == publSiteId)
+    COULD_OPTIMIZE // but for now:   (and optimize this too at the same time: [4GUKW27])
+    loadSites().find(_.pubId == publSiteId) map { site =>
+      SiteDao.maybeCopyWithDefaultHostname(site, globals)
+    }
   }
 
   def loadSites(): Seq[Site] =
@@ -87,7 +89,7 @@ class SystemDao(
   private def createFirstSite(): Site = {
     readWriteTransaction { sysTx =>
       val firstSite = sysTx.createSite(Some(FirstSiteId),
-        pubId = nextRandomString().take(NewPublSiteIdLength), name = "Main Site", SiteStatus.NoAdmin,
+        pubId = Site.newPublId(), name = "Main Site", SiteStatus.NoAdmin,
         creatorIp = "0.0.0.0",
         quotaLimitMegabytes = None, maxSitesPerIp = 9999, maxSitesTotal = 9999,
         isTestSiteOkayToDelete = false, pricePlan = "-", createdAt = sysTx.now)

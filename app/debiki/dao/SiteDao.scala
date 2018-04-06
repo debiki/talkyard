@@ -230,17 +230,9 @@ class SiteDao(
   }
 
   private def loadSiteNoCache(): Option[Site] = {
-    var site = readOnlyTransaction(_.loadSite()) getOrElse {
-      return None
+    readOnlyTransaction(_.loadSite()) map { site =>
+      maybeCopyWithDefaultHostname(site, globals)
     }
-    if (siteId == FirstSiteId && site.canonicalHost.isEmpty) {
-      // No hostname specified in the database. Fallback to the config file.
-      val hostname = globals.defaultSiteHostname.getOrDie(
-        "EsE5GKU2", s"No ${Globals.DefaultSiteHostnameConfValName} specified")
-      val canonicalHost = SiteHost(hostname, SiteHost.RoleCanonical)
-      site = site.copy(hosts = canonicalHost :: site.hosts)
-    }
-    Some(site)
   }
 
   private def loadOrigins(): Set[String] = {
@@ -392,6 +384,20 @@ object SiteDao {
     lock.synchronized {
       block
     }
+  }
+
+
+  /** When accessing the default site, the hostname might have been specified
+    * in the config file only, that is, globals.defaultSiteHostname.
+    */
+  def maybeCopyWithDefaultHostname(site: Site, globals: debiki.Globals): Site = {
+    if (site.id != globals.defaultSiteId || site.canonicalHost.nonEmpty)
+      return site
+
+    val defaultHostname = globals.defaultSiteHostname.getOrDie(
+      "TyE5GKU2S7", s"No ${Globals.DefaultSiteHostnameConfValName} specified")
+    val canonicalHost = SiteHost(defaultHostname, SiteHost.RoleCanonical)
+    site.copy(hosts = canonicalHost :: site.hosts)
   }
 
 }

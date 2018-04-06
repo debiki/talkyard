@@ -166,7 +166,8 @@ if (_showAdmGuide || (!_narrow && _cbOpen === 'true' &&
 @* EffectiveDiscussions Static data = 'eds', is included in the initial response from the server.
  Add an entry in server-vars.d.ts whenever adding sth here. [5JWKA27] *@
 var eds = {
-  siteId: @siteId,
+  pubSiteId: '@tpi.pubSiteId',
+  siteId: @siteId,@* LATER remove in Prod mode [5UKFBQW2] *@
   currentVersion: '@tpi.currentVersionString',
   cachedVersion: '@tpi.cachedVersionString',
   secure: @{globals.secure},

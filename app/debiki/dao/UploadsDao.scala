@@ -194,7 +194,7 @@ trait UploadsDao {
 
   def fileHasBeenUploaded(hashPath: String): Boolean = {
     readOnlyTransaction { tx =>
-      COULD_OPTIMIZE // (not important) needn't find all site ids, can just check this.siteId.
+      COULD_OPTIMIZE // (not important) needn't find all site ids, can just check this.siteId. [4GUKW27]
       CLEAN_UP // stop passing around globals.config.uploadsUrlPath everywhere,
       // just let it be /-/u/, not configurable.
       val siteIds = tx.loadSiteIdsUsingUpload(UploadRef(globals.config.uploadsUrlPath, hashPath))

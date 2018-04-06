@@ -620,7 +620,7 @@ var t_sv: TalkyardTranslations = t = {
     // About email address:
     EmailAddresses: "Email addresses",
     PrimaryDot: "Primary. ",
-    VerifeidDot: "Verified. ",
+    VerifiedDot: "Verified. ",
     ForLoginWithDot: (provider: string) => `For login with ${provider}. `,
     MakePrimary: "Make Primary",
     AddEmail: "Add email address",

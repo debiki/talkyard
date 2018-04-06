@@ -90,7 +90,7 @@ export const UserInvites = createFactory({
       return r.p({}, this.state.errorMessage);
 
     if (!this.state.invites)
-      return r.p({}, t.LoadingDots);
+      return r.p({}, t.Loading);
 
     let inviteButton;
     const mayInvite = maySendInvites(user);

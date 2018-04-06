@@ -40,7 +40,7 @@ abstract class DebikiRequest[A] {
   private def security = dao.context.security
   private def globals = dao.context.globals
 
-  def siteIdAndCanonicalHostname: SiteBrief
+  def siteIdAndCanonicalHostname: SiteBrief ; CLEAN_UP ; RENAME // to 'site'? such a weird name
   def sid: SidStatus
   def xsrfToken: XsrfOk
   def browserId: BrowserId

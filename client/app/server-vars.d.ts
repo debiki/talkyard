@@ -3,7 +3,8 @@
 // The variables declared here are initialized in a certain <head><script>.  [5JWKA27]
 
 declare namespace eds {
-  const siteId: number;
+  const pubSiteId: string;
+  const siteId: number;  // only in Dev mode
   const secure: boolean;
   const isDev: boolean;
 

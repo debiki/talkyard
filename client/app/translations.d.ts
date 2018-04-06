@@ -557,7 +557,7 @@ interface TalkyardTranslations {
     // About email address:
     EmailAddresses: string;
     PrimaryDot: string;
-    VerifeidDot: string;
+    VerifiedDot: string;
     ForLoginWithDot: (provider: string) => string;
     MakePrimary: string;
     AddEmail: string;

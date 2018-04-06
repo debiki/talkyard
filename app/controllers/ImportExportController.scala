@@ -328,7 +328,7 @@ class ImportExportController @Inject()(cc: ControllerComponents, edContext: EdCo
 
     Site(
       id = NoSiteId,
-      pubId = readOptString(jsObject, "pubId") getOrElse nextRandomString().take(NewPublSiteIdLength),
+      pubId = readOptString(jsObject, "pubId") getOrElse Site.newPublId(),
       status = siteStatus,
       name = name,
       createdAt = When.fromMillis(createdAtMs),
