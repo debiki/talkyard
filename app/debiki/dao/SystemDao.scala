@@ -96,9 +96,12 @@ class SystemDao(
   }
 
   private def createFirstSite(): Site = {
+    val pubId =
+      if (globals.isOrWasTest) Site.FirstSiteTestPublicId
+      else Site.newPublId()
     readWriteTransaction { sysTx =>
       val firstSite = sysTx.createSite(Some(FirstSiteId),
-        pubId = Site.newPublId(), name = "Main Site", SiteStatus.NoAdmin,
+        pubId = pubId, name = "Main Site", SiteStatus.NoAdmin,
         creatorIp = "0.0.0.0",
         quotaLimitMegabytes = None, maxSitesPerIp = 9999, maxSitesTotal = 9999,
         isTestSiteOkayToDelete = false, pricePlan = "-", createdAt = sysTx.now)
@@ -149,7 +152,7 @@ class SystemDao(
       config.createSite.maxSitesTotal + 5
     }
 
-    readWriteTransaction { sysTx =>
+    try readWriteTransaction { sysTx =>
       if (deleteOldSite) {
         dieUnless(SiteHost.isE2eTestHostname(hostname), "EdE7PK5W8")
         dieUnless(SiteHost.isE2eTestHostname(name), "EdE50K5W4")
@@ -234,6 +237,11 @@ class SystemDao(
         targetSiteId = createdFromSiteId))
 
       newSite.copy(hosts = List(newSiteHost))
+    }
+    catch {
+      case ex @ DbDao.SiteAlreadyExistsException(site) =>
+        play.api.Logger.error(s"Cannot create site, dupl key error [TyE4ZKTP01]: $site")
+        throw ex
     }
   }
 

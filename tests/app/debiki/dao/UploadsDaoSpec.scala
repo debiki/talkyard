@@ -71,6 +71,80 @@ class UploadsDaoSpec extends FreeSpec with MustMatchers {
       UploadsDao.makeHashPath(3999, "abczzwwqq", ".tgz") mustBe "0/a/bc/zzwwqq.tgz"
       UploadsDao.makeHashPath(4000, "abczzwwqq", ".tgz") mustBe "1/a/bc/zzwwqq.tgz"
     }
+
+    "find upload refs in html" in {
+      val pubSiteIdOne = "doomdog"
+      val pubSiteIdTwo = "killycat"
+
+      val pathNoSite  = s"/-/u/0/1/23/456789012345678901234567890123.jpg"
+
+      val uploadUrlPath  = s"/-/u/$pubSiteIdOne/0/1/23/456789012345678901234567890123.jpg"
+      val uploadUrlPath2 = s"/-/u/$pubSiteIdOne/0/2/22/222222222222222222222222222222.jpg"
+      val uploadUrlPath3 = s"/-/u/$pubSiteIdOne/0/3/33/333333333333333333333333333333.jpg"
+      val uploadUrlPath4 = s"/-/u/$pubSiteIdOne/0/4/44/444444444444444444444444444444.jpg"
+
+      val uploadUrlPathSiteTwo = s"/-/u/$pubSiteIdTwo/0/9/99/999999999999999999999999999999.jpg"
+
+      // Here, '/0/' should be *two* digits.
+      val badPathTooFewChars = s"/-/u/$pubSiteIdOne/1/4/0/444444444444444444444444444444.jpg"
+
+      // Between 22 and 444... there should be a slash.
+      val badPathSlashMissing = s"/-/u/$pubSiteIdOne/0/1/22444444444444444444444444444444.jpg"
+
+      def mkRef(hashPath: String) = UploadRef(
+        ed.server.UploadsUrlBasePath, hashPath
+            .replaceAllLiterally(s"/-/u/$pubSiteIdOne/", "")
+            .replaceAllLiterally(s"/-/u/$pubSiteIdTwo/", "")
+            .replaceAllLiterally("/-/u/", ""))
+
+      UploadsDao.findUploadRefsInText("", "pubsiteid") mustBe Set.empty
+      UploadsDao.findUploadRefsInText("nothing\nhere\nbye", "pubsiteid") mustBe Set.empty
+
+      UploadsDao.findUploadRefsInText(
+        s"not a link: $uploadUrlPath", pubSiteIdOne) mustBe Set.empty
+
+      UploadsDao.findUploadRefsInText(
+        s"<img src='$uploadUrlPath'>", pubSiteIdOne) mustBe Set(mkRef(uploadUrlPath))
+
+      // Text before and after.
+      UploadsDao.findUploadRefsInText(
+        s"hi\nthere<img src='$uploadUrlPath'>good\nbye", pubSiteIdOne) mustBe Set(mkRef(uploadUrlPath))
+
+      UploadsDao.findUploadRefsInText(
+        s"""double quotes: <img src="$uploadUrlPath">""", pubSiteIdOne) mustBe Set(mkRef(uploadUrlPath))
+
+      UploadsDao.findUploadRefsInText(
+        s"""link: <a href="$uploadUrlPath">text</a>""", pubSiteIdOne) mustBe Set(mkRef(uploadUrlPath))
+
+      // Many refs, different tags
+      UploadsDao.findUploadRefsInText(i"""
+         |<a href="$uploadUrlPath2">text</a>
+         |<img src="$uploadUrlPath3">
+         |<video src="$uploadUrlPath4">
+         |$uploadUrlPath  -- not a ref, just text
+         |""", pubSiteIdOne) mustBe Set(
+            mkRef(uploadUrlPath2), mkRef(uploadUrlPath3), mkRef(uploadUrlPath4))
+
+      // Wrong site id
+      UploadsDao.findUploadRefsInText(
+        s"<img src='$uploadUrlPath'>", "wrongid") mustBe Set.empty
+
+      // Wrong site id, and correct id too
+      UploadsDao.findUploadRefsInText(i"""
+        |<a href="$uploadUrlPath">text</a>
+        |<a href="$uploadUrlPathSiteTwo">text</a>
+        |""", pubSiteIdTwo) mustBe Set(mkRef(uploadUrlPathSiteTwo))
+
+      // No site id
+      UploadsDao.findUploadRefsInText(
+        s"<img src='$pathNoSite'>", "whateverid") mustBe Set(mkRef(pathNoSite))
+
+      // Bad paths:
+      UploadsDao.findUploadRefsInText(
+        s"<a href='$badPathTooFewChars'>text</a>", pubSiteIdOne) mustBe Set.empty
+      UploadsDao.findUploadRefsInText(
+        s"<a href='$badPathSlashMissing'>text</a>", pubSiteIdOne) mustBe Set.empty
+    }
   }
 
 }
@@ -85,7 +159,8 @@ class UploadsDaoAppSpec extends DaoAppSuite(disableScripts = false) {
     val file = new jio.File(s"$tempFileDir/$fileName")
     val raf = new RandomAccessFile(file, "rw")
     raf.setLength(sizeBytes)
-    val ref = UploadRef(globals.config.uploadsUrlPath, UploadsDao.makeHashPath(file, ".jpg"))
+    TESTS_MISSING // add: s"${Site.FirstSiteTestPublicId}/"
+    val ref = UploadRef("/-/u/", UploadsDao.makeHashPath(file, ".jpg"))
     FileNameRef(fileName, file, ref)
   }
 
@@ -316,7 +391,7 @@ class UploadsDaoAppSpec extends DaoAppSuite(disableScripts = false) {
 
       info("create site 2")
       val site2 = globals.systemDao.createSite(
-        "site-two-name", status = SiteStatus.Active, hostname = "site-two",
+        pubId = "dummy56205", name = "site-two-name", status = SiteStatus.Active, hostname = "site-two",
         embeddingSiteUrl = None, organizationName = "Test Org Name", creatorId = user.id,
         browserIdData, isTestSiteOkayToDelete = true, skipMaxSitesCheck = true,
         deleteOldSite = false, pricePlan = "Unknown", createdFromSiteId = None)

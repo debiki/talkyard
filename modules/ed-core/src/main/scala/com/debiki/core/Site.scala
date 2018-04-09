@@ -29,6 +29,9 @@ object Site {
     */
   val FirstSiteId: SiteId = 1
 
+  /** So test suites know which id to use. */
+  val FirstSiteTestPublicId = "firstsite"
+
   val GenerateTestSiteMagicId: SiteId = -1
   val MaxTestSiteId: SiteId = -2
 

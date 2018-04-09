@@ -45,7 +45,7 @@ abstract class DbDaoFactory {  CLEAN_UP; // Delete this class? And rename DbDao2
 
 object DbDao {
 
-  case class SiteAlreadyExistsException(name: String) extends QuickException
+  case class SiteAlreadyExistsException(newSite: Site) extends QuickException
 
   case class TooManySitesCreatedByYouException(ip: String) extends QuickException {
     override def getMessage = "Website creation limit exceeded"

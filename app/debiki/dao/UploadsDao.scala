@@ -22,6 +22,7 @@ import com.debiki.core.Prelude._
 import com.google.{common => guava}
 import debiki.Globals
 import debiki.EdHttp._
+import ed.server.UploadsUrlBasePath
 import java.{io => jio, lang => jl, util => ju}
 import java.awt.image.BufferedImage
 import java.nio.{file => jf}
@@ -30,6 +31,7 @@ import debiki.ImageUtils
 import org.jsoup.Jsoup
 import play.{api => p}
 import UploadsDao._
+import com.google.common.io.BaseEncoding
 import scala.collection.mutable.ArrayBuffer
 import scala.util.matching.Regex
 
@@ -40,7 +42,6 @@ trait UploadsDao {
   self: SiteDao =>
 
   import context.globals
-  private def uploadsUrlPath = globals.config.uploadsUrlPath
 
   /** Returns the hash-path-suffix to the file after it has been copied into the uploads
     * directory, or CDN. E.g. returns "x/y/zwq...abc.jpg" where "xyzwq...abc" is the hash.
@@ -147,7 +148,7 @@ trait UploadsDao {
     // delete the metadata entries later. [9YMU2Y])
     readWriteTransaction { transaction =>
       // The file will be accessible on localhost, it hasn't yet been moved to e.g. any CDN.
-      val uploadRef = UploadRef(uploadsUrlPath, hashPathSuffix)
+      val uploadRef = UploadRef(UploadsUrlBasePath, hashPathSuffix)
       transaction.insertUploadedFileMeta(uploadRef, sizeBytes, mimeType, dimensions)
       insertAuditLogEntry(AuditLogEntry(
         siteId = siteId,
@@ -187,16 +188,14 @@ trait UploadsDao {
     // COULD wrap in try...finally, so will be deleted for sure.
     tempCompressedFile.foreach(_.delete)
 
-    UploadRef(uploadsUrlPath, hashPathSuffix)
+    UploadRef(UploadsUrlBasePath, hashPathSuffix)
   }
 
 
   def fileHasBeenUploaded(hashPath: String): Boolean = {
     readOnlyTransaction { tx =>
       COULD_OPTIMIZE // (not important) needn't find all site ids, can just check this.siteId. [4GUKW27]
-      CLEAN_UP // stop passing around globals.config.uploadsUrlPath everywhere,
-      // just let it be /-/u/, not configurable.
-      val siteIds = tx.loadSiteIdsUsingUpload(UploadRef(globals.config.uploadsUrlPath, hashPath))
+      val siteIds = tx.loadSiteIdsUsingUpload(UploadRef(UploadsUrlBasePath, hashPath))
       siteIds contains this.siteId
     }
   }
@@ -212,14 +211,14 @@ trait UploadsDao {
 
   def findUploadRefsInPost(post: Post): Set[UploadRef] = {
     val approvedRefs = post.approvedHtmlSanitized.map(
-      h => findUploadRefsInText(h, uploadsUrlPath, thePubSiteId())) getOrElse Set.empty
+      h => findUploadRefsInText(h, thePubSiteId())) getOrElse Set.empty
     val currentRefs =
       if (post.nr == PageParts.TitleNr) Nil
       else {
         val htmlString = context.nashorn.renderAndSanitizeCommonMark(
           post.currentSource, pubSiteId = thePubSiteId(),
           allowClassIdDataAttrs = false, followLinks = false)
-        findUploadRefsInText(htmlString, uploadsUrlPath, thePubSiteId())
+        findUploadRefsInText(htmlString, thePubSiteId())
       }
     approvedRefs ++ currentRefs
   }
@@ -282,7 +281,7 @@ object UploadsDao {
 
   val MaxSuffixLength = 12
 
-  val base32lowercaseEncoder = guava.io.BaseEncoding.base32().lowerCase()
+  val base32lowercaseEncoder: BaseEncoding = guava.io.BaseEncoding.base32().lowerCase()
 
   /** We don't need all 51.2 base32 sha256 chars (51 results in rather long file names).
     * SHA-1 is 32 chars in base32 — let's keep 33 chars so people won't mistake this
@@ -292,18 +291,18 @@ object UploadsDao {
   val HashLength = 33
 
   // Later: make configurable in the admin section. But there should be some fix upper limits?
-  val MaxBytesPerDayMember = 8*Megabytes
-  val MaxBytesPerDayStaff = 999*Megabytes
-  val MaxBytesPerWeekMember = 20*Megabytes
-  val MaxBytesPerWeekStaff = 999*Megabytes
+  val MaxBytesPerDayMember: Int = 8*Megabytes
+  val MaxBytesPerDayStaff: Int = 999*Megabytes
+  val MaxBytesPerWeekMember: Int = 20*Megabytes
+  val MaxBytesPerWeekStaff: Int = 999*Megabytes
 
   val MaxUploadsLastWeek = 700
 
-  val MaxAvatarTinySizeBytes = 2*1000
-  val MaxAvatarSmallSizeBytes = 5*1000
-  val MaxAvatarMediumSizeBytes = 100*1000
+  val MaxAvatarTinySizeBytes: Int = 2*1000
+  val MaxAvatarSmallSizeBytes: Int = 5*1000
+  val MaxAvatarMediumSizeBytes: Int = 100*1000
 
-  val MaxSkipImageCompressionBytes = 5 * 1000
+  val MaxSkipImageCompressionBytes: Int = 5 * 1000
 
 
   // Later: Delete this in July 2016? And:
@@ -311,10 +310,10 @@ object UploadsDao {
   //   (that's ok, not many people use this right now).
   // - remove this regex from the psql function `is_valid_hash_path(varchar)`
   // - optionally, recalculate disk quotas (since files deleted)
-  val OldHashPathSuffixRegex = """^[a-z0-9]/[a-z0-9]/[a-z0-9]+\.[a-z0-9]+$""".r
+  val OldHashPathSuffixRegex: Regex = """^[a-z0-9]/[a-z0-9]/[a-z0-9]+\.[a-z0-9]+$""".r
 
   // CLEAN_UP remove video/ later, currently no longer added.
-  val HashPathSuffixRegex =
+  val HashPathSuffixRegex: Regex =
     """^(video/)?[0-9][0-9]?/[a-z0-9]/[a-z0-9]{2}/[a-z0-9]+\.[a-z0-9]+$""".r
 
   val HlsVideoMediaSegmentsSuffix = ".m3u8"
@@ -364,8 +363,7 @@ object UploadsDao {
   }
 
 
-  private def findUploadRefsInText(html: String, uploadsUrlPath: String, pubSiteId: String)
-        : Set[UploadRef] = {
+  def findUploadRefsInText(html: String, pubSiteId: String): Set[UploadRef] = {
     // COULD reuse TextAndHtml — it also finds links
     TESTS_MISSING
     val document = Jsoup.parse(html)
@@ -404,17 +402,17 @@ object UploadsDao {
       // consider any upload with the specified location as being referenced.
       // (Otherwise refs might be overlooked, if adding/removing a CDN origin,
       // or moving the server to a new address.)
-      if (urlPath startsWith uploadsUrlPath) {
-        val maybeSiteIdHashPathSuffix = urlPath drop uploadsUrlPath.length
+      if (urlPath startsWith UploadsUrlBasePath) {
+        val maybeSiteIdHashPathSuffix = urlPath drop UploadsUrlBasePath.length
         // The publ site id is only maybe included — require an exact match, so one site
         // cannot reference an upload at *another* site and prevent it from getting deleted.
-        TESTS_MISSING // add tests both with and without pub site id, check ref count = ok.
+        val oldMatch = OldHashPathSuffixRegex.matches(maybeSiteIdHashPathSuffix)
         val hashPathSuffix = maybeSiteIdHashPathSuffix.replaceAllLiterally(pubSiteId + '/', "")
-        if (OldHashPathSuffixRegex.matches(hashPathSuffix) ||
-            HashPathSuffixRegex.matches(hashPathSuffix)) {
+        val newMatch = HashPathSuffixRegex.matches(hashPathSuffix)
+        if (oldMatch || newMatch) {
           // Don't add any hostname, because files stored locally are accessible from any hostname
           // that maps to this server — only the file content hash matters.
-          references.append(UploadRef(uploadsUrlPath, hashPathSuffix))
+          references.append(UploadRef(UploadsUrlBasePath, hashPathSuffix))
         }
       }
     }

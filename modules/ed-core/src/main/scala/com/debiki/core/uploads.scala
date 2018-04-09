@@ -20,16 +20,20 @@ package com.debiki.core
 
 
 /** An uploaded file is located at the baseUrlHostAndPath + hashPath,
-  * e.g.  some-cdn.com/some/path/x/y/zwq...abc.jpg
+  * e.g.  some-cdn.com/some/path/0/x/yz/wq...abc.jpg
   * where xyzwq...abc (note: no slashes) is the file's hash (sha-256, base32, truncated
-  * to 33 chars). 'x/y/zwq...abc' is the file's "hash path" — because it's a hash, with
+  * to 33 chars). '0/x/yz/wq...abc' is the file's "hash path" — because it's a hash, with
   * slashes inserted so that it's a path — this avoids us placing all files in the exact
   * same directory. Some file system don't want super many files in just one directory.
+  * The digit (0 in the example above) indicates the file size, see UploadsDao.sizeKiloBase4.
   *
   * @param baseUrl e.g. '/-/u/'
   * @param hashPath e.g. '1/o/cy/wddssa4xpzugiaego7seuyurxvgef5.jpg'
   */
-case class UploadRef(baseUrl: String, hashPath: String) {
+case class UploadRef(
+  // CLEAN_UP remove baseUrl [2KGLCQ4] ?  what did I think? ?? ...
+  // Maybe some "weird"? CDNs require serving uploads from "weird" paths instead of /-/u/(site-id)/... ?
+  baseUrl: String, hashPath: String) {
 
   def url: String = baseUrl + hashPath
 

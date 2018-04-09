@@ -35,7 +35,8 @@ class CreateSiteDaoAppSpec extends DaoAppSuite(maxSitesTotal = Some(75)) {
     val theHostname = hostname getOrElse s"$theLocalHostname.example.com"
     val theIdCookie = if (browserIdCookie eq null) s"$thePrefix-cookie" else browserIdCookie
     val theIp = if (ip eq null) s"$prefix.0.0.$number" else ip
-    globals.systemDao.createSite(name = theLocalHostname, status = SiteStatus.Active, hostname = theHostname,
+    globals.systemDao.createSite(pubId = s"createsitepubid-$thePrefix",
+      name = theLocalHostname, status = SiteStatus.Active, hostname = theHostname,
       embeddingSiteUrl = None, organizationName = s"Org Name $thePrefix", creatorId = user.id,
       BrowserIdData(ip = theIp, idCookie = theIdCookie, fingerprint = theFingerprint),
       isTestSiteOkayToDelete = isTestSite, skipMaxSitesCheck = false,
