@@ -31,6 +31,7 @@ import ed.server.auth.MayMaybe
 import ed.server.pop.PagePopularityDao
 import ed.server.pubsub.{PubSubApi, StrangerCounterApi}
 import ed.server.summaryemails.SummaryEmailsDao
+import talkyard.server.PostRenderer
 
 
 
@@ -103,8 +104,9 @@ class SiteDao(
   protected lazy val searchEngine = new SearchEngine(siteId, elasticSearchClient)
 
   def globals: debiki.Globals = context.globals
-  def nashorn: ReactRenderer = context.nashorn
-  def textAndHtmlMaker: TextAndHtmlMaker = new TextAndHtmlMaker(nashorn)
+  def jsonMaker = new JsonMaker(this)
+  def textAndHtmlMaker = new TextAndHtmlMaker(this.thePubSiteId(), context.nashorn)
+
   import context.security.throwIndistinguishableNotFound
 
   def memCache_test: MemCache = {
@@ -114,8 +116,6 @@ class SiteDao(
 
 
   private def dbDao2: DbDao2 = dbDaoFactory.newDbDao2()
-
-  def commonmarkRenderer: ReactRenderer = context.nashorn
 
 
   memCache.onUserCreated { user =>
@@ -207,6 +207,9 @@ class SiteDao(
   // ----- Site
 
   def theSite(): Site = getSite().getOrDie("DwE5CB50", s"Site $siteId not found")
+
+  def thePubSiteId(): PublSiteId =
+    theSite().pubId
 
   /** Uses the hostname, if no name available. Well currently always uses the hostname.
     */

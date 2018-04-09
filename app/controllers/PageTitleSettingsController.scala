@@ -22,7 +22,7 @@ import com.debiki.core.Prelude._
 import com.debiki.core.PageParts.MaxTitleLength
 import debiki._
 import debiki.EdHttp._
-import debiki.ReactJson.JsStringOrNull
+import debiki.JsX.JsStringOrNull
 import ed.server.{EdContext, EdController}
 import ed.server.http._
 import javax.inject.Inject
@@ -39,6 +39,7 @@ class PageTitleSettingsController @Inject()(cc: ControllerComponents, edContext:
 
   def editTitleSaveSettings: Action[JsValue] = PostJsonAction(RateLimits.EditPost, maxBytes = 2000) {
         request: JsonPostRequest =>
+    import request.dao
 
     val pageId = (request.body \ "pageId").as[PageId]
     val newTitle = (request.body \ "newTitle").as[String].trim
@@ -130,7 +131,7 @@ class PageTitleSettingsController @Inject()(cc: ControllerComponents, edContext:
     // but the page will still be in an okay state afterwards.
 
     // Update page title.
-    val newTextAndHtml = textAndHtmlMaker.forTitle(newTitle)
+    val newTextAndHtml = dao.textAndHtmlMaker.forTitle(newTitle)
 
     request.dao.editPostIfAuth(pageId = pageId, postNr = PageParts.TitleNr,
       request.who, request.spamRelatedStuff, newTextAndHtml)
@@ -191,12 +192,12 @@ class PageTitleSettingsController @Inject()(cc: ControllerComponents, edContext:
       idsToRefresh.foreach(request.dao.refreshPageInMemCache)
     }
 
-    val (_, newAncestorsJson) = ReactJson.makeForumIdAndAncestorsJson(newMeta, request.dao)
+    val (_, newAncestorsJson) = dao.jsonMaker.makeForumIdAndAncestorsJson(newMeta)
 
     // The browser will update the title and the url path in the address bar.
     OkSafeJson(Json.obj(
-      "newTitlePost" -> ReactJson.postToJson2(postNr = PageParts.TitleNr, pageId = pageId,
-          request.dao, includeUnapproved = true, nashorn = context.nashorn),
+      "newTitlePost" -> dao.jsonMaker.postToJson2(postNr = PageParts.TitleNr, pageId = pageId,
+          includeUnapproved = true),
       "newAncestorsRootFirst" -> newAncestorsJson,
       "newUrlPath" -> JsStringOrNull(newPath.map(_.value))))
   }

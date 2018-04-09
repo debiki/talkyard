@@ -19,7 +19,6 @@ package debiki
 
 import com.debiki.core._
 import com.debiki.core.Prelude._
-import com.debiki.core.CommonMarkRenderer
 import org.scalactic.{ErrorMessage, Or}
 import play.api.libs.json.JsArray
 import scala.collection.immutable
@@ -74,7 +73,7 @@ object TextAndHtmlMaker {
 
 /** Thread safe.
   */
-class TextAndHtmlMaker(nashorn: ReactRenderer) {
+class TextAndHtmlMaker(pubSiteId: PublSiteId, nashorn: ReactRenderer) {
 
   private class TextAndHtmlImpl(
     val text: String,
@@ -87,7 +86,8 @@ class TextAndHtmlMaker(nashorn: ReactRenderer) {
     val allowClassIdDataAttrs: Boolean) extends TextAndHtml {
 
     def append(text: String): TextAndHtml = {
-      append(new TextAndHtmlMaker(nashorn).apply(text, isTitle = isTitle, followLinks = followLinks,
+      append(new TextAndHtmlMaker(pubSiteId, nashorn).apply(
+        text, isTitle = isTitle, followLinks = followLinks,
         allowClassIdDataAttrs = allowClassIdDataAttrs))
     }
 
@@ -150,7 +150,8 @@ class TextAndHtmlMaker(nashorn: ReactRenderer) {
     }
     else {
       val safeHtml = nashorn.renderAndSanitizeCommonMark(
-        text, allowClassIdDataAttrs = allowClassIdDataAttrs, followLinks = followLinks)
+        text, pubSiteId = pubSiteId,
+        allowClassIdDataAttrs = allowClassIdDataAttrs, followLinks = followLinks)
       val links = findLinks(safeHtml)
       var linkDomains = Set[String]()
       var linkAddresses = Vector[String]()

@@ -128,7 +128,7 @@ class EdContext(
   // Hide so fewer parts of the app get access to Play's internal stuff.
   private val controllerComponents: ControllerComponents) {
 
-  val textAndHtmlMaker = new TextAndHtmlMaker(nashorn)
+  val postRenderer = new talkyard.server.PostRenderer(nashorn)
 
   implicit def executionContext: ExecutionContext = controllerComponents.executionContext
   def mimeTypes: FileMimeTypes = controllerComponents.fileMimeTypes

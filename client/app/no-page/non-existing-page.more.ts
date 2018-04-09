@@ -339,27 +339,28 @@ export var CreateForumPanel = createComponent({
       // topic-list-excerpts-and-thumbnails.jpg: 1112 pixels  * 0.6295 = 700
       // topic-list-news-feed.jpg: 810 pixels                 * 0.6295 = 510
 
+      const prefix = `${eds.cdnOriginOrEmpty}/-/img/create-site/`;
       switch (style) {
         case TopicListLayout.TitleOnly:
-          topicListPreviewImgSrc = '/-/img/create-site/topic-list-titles-only.jpg';
+          topicListPreviewImgSrc = prefix + 'topic-list-titles-only.jpg';
           imgWidth = 621;
           break;
         case TopicListLayout.TitleExcerptSameLine:
-          topicListPreviewImgSrc = '/-/img/create-site/topic-list-title-excerpt-same-line.jpg';
+          topicListPreviewImgSrc = prefix + 'topic-list-title-excerpt-same-line.jpg';
           imgWidth = 664;
           break;
         case TopicListLayout.ExcerptBelowTitle:
-          topicListPreviewImgSrc = '/-/img/create-site/topic-list-excerpt-below-title.jpg';
+          topicListPreviewImgSrc = prefix + 'topic-list-excerpt-below-title.jpg';
           imgWidth = 700;
           break;
         //case TopicListLayout.ThumbnailLeft:
           // Not implemented.
         case TopicListLayout.ThumbnailsBelowTitle:
-          topicListPreviewImgSrc = '/-/img/create-site/topic-list-excerpts-and-thumbnails.jpg';
+          topicListPreviewImgSrc = prefix + 'topic-list-excerpts-and-thumbnails.jpg';
           imgWidth = 700;
           break;
         case TopicListLayout.NewsFeed:
-          topicListPreviewImgSrc = '/-/img/create-site/topic-list-news-feed.jpg';
+          topicListPreviewImgSrc = prefix + 'topic-list-news-feed.jpg';
           imgWidth = 510;
           break;
       }

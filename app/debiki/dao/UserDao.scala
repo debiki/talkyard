@@ -19,14 +19,15 @@ package debiki.dao
 
 import com.debiki.core._
 import debiki.EdHttp.{throwForbidden, throwForbiddenIf}
-import ed.server.security.{SidStatus, BrowserId, ReservedNames}
+import debiki.JsX
+import debiki.JsonMaker.NotfsAndCounts
+import ed.server.security.{BrowserId, ReservedNames, SidStatus}
 import java.{util => ju}
 import play.api.libs.json.JsArray
 import play.{api => p}
 import scala.collection.{immutable, mutable}
 import Prelude._
 import EmailNotfPrefs.EmailNotfPrefs
-import debiki.ReactJson.NotfsAndCounts
 import scala.collection.mutable.ArrayBuffer
 
 
@@ -968,7 +969,7 @@ trait UserDao {
           throwForbidden("EsE5Y5IKF0", "May not list other users' notifications")
       }
       SECURITY; SHOULD // filter out priv msg notf, unless isMe or isAdmin.
-      debiki.ReactJson.loadNotifications(userId, transaction, unseenFirst = false, limit = 100,
+      debiki.JsonMaker.loadNotifications(userId, transaction, unseenFirst = false, limit = 100,
         upToWhen = None) // later: Some(upToWhenDate), and change to limit = 50 above?
     }
   }
@@ -1413,7 +1414,7 @@ trait UserDao {
         }
         UsersOnlineStuff(
           users,
-          usersJson = JsArray(users.map(debiki.ReactJson.JsUser)),
+          usersJson = JsArray(users.map(JsX.JsUser)),
           numStrangers = numStrangers)
       }
     })

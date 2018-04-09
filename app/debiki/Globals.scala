@@ -643,7 +643,7 @@ class Globals(
     // (Takes 2? 5? seconds.)
     edContext.nashorn.startCreatingRenderEngines(
       secure = secure,
-      cdnUploadsUrlPrefix = config.cdn.uploadsUrlPrefix,
+      cdnOrigin = config.cdn.origin,
       isTestSoDisableScripts = isTestDisableScripts)
 
     if (!isTestDisableBackgroundJobs) {
@@ -845,7 +845,7 @@ class Globals(
 
     val spamChecker = new SpamChecker(
       executionContext, appLoaderContext.initialConfiguration, wsClient,
-      applicationVersion, edContext.textAndHtmlMaker)
+      applicationVersion, new TextAndHtmlMaker("dummysiteid", edContext.nashorn))
 
     spamChecker.start()
 
@@ -873,10 +873,15 @@ class Config(conf: play.api.Configuration) {
   val cnameTargetHost: Option[String] =
     conf.getString(Config.CnameTargetHostConfValName).noneIfBlank
 
+  CLEAN_UP; REMOVE // this + the routes file entry [2KGLCQ4], use UploadsUrlBasePath instead only.
   val uploadsUrlPath: String = controllers.routes.UploadsController.servePublicFile("").url
+  require(uploadsUrlPath == ed.server.UploadsUrlBasePath, "TyE2UKDU0")
 
   object cdn {
-    val origin: Option[String] = conf.getString(CdnOriginConfValName).noneIfBlank
+    /** No trailing slash. */
+    val origin: Option[String] =
+      conf.getString(CdnOriginConfValName).map(_.dropRightWhile(_ == '/')).noneIfBlank
+
     def uploadsUrlPrefix: Option[String] = origin.map(_ + uploadsUrlPath)
   }
 

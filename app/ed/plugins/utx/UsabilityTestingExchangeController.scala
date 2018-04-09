@@ -36,6 +36,7 @@ class UsabilityTestingExchangeController @Inject()(cc: ControllerComponents, edC
 
   def handleUsabilityTestingForm: Action[JsValue] = PostJsonAction(
         RateLimits.PostReply, maxBytes = MaxPostSize) { request =>
+    import request.dao
 
     val pageTypeIdString = (request.body \ "pageTypeId").as[String]
     val pageTypeId = pageTypeIdString.toIntOption.getOrThrowBadArgument("EsE6JFU02", "pageTypeId")
@@ -62,8 +63,8 @@ class UsabilityTestingExchangeController @Inject()(cc: ControllerComponents, edC
        |$instructions
        """
 
-    val titleTextAndHtml = textAndHtmlMaker.forTitle(titleText)
-    val bodyTextAndHtml = textAndHtmlMaker.forBodyOrCommentAsPlainTextWithLinks(bodyText)
+    val titleTextAndHtml = dao.textAndHtmlMaker.forTitle(titleText)
+    val bodyTextAndHtml = dao.textAndHtmlMaker.forBodyOrCommentAsPlainTextWithLinks(bodyText)
 
     val categorySlug = (request.body \ "categorySlug").as[String]
     val category = request.dao.loadCategoryBySlug(categorySlug).getOrThrowBadArgument(

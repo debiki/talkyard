@@ -67,7 +67,7 @@ abstract class OneboxEngine(globals: Globals, val nashorn: ReactRenderer) {
     */
   protected def alreadySanitized = false
 
-  // (?:...) is a non-capturing group.
+  // (?:...) is a non-capturing group.  (for local dev search: /-/u/ below.)
   val uploadsLinkRegex =
     """=['"](?:(?:(?:https?:)?//[^/]+)?/-/(?:u|uploads/public)/)([a-zA-Z0-9/\._-]+)['"]""".r
 

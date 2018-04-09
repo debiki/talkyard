@@ -20,7 +20,7 @@ package ed.server.jobs
 import akka.actor.{Actor, ActorRef, Props}
 import com.debiki.core._
 import com.debiki.core.Prelude._
-import debiki.{DatabaseUtils, Globals, ReactJson, ReactRenderer}
+import debiki.{DatabaseUtils, Globals}
 import play.{api => p}
 import scala.concurrent.duration._
 import OldStuffDeleter._

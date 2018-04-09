@@ -4954,7 +4954,7 @@ function googleCajaSanitizeHtml(htmlTextUnsafe, allowClassAndIdAttr,
   };
 
   if (!followLinks) {
-    var siteId = debiki2.ReactStore.allData().siteId;
+    //var siteId = debiki2.ReactStore.allData().siteId;
     //if (siteId === 98) {  // doesn't work, site id not updated when just rendering markdown.
                             // instead, always rel=follow StackExchange links, for now.
       // This is the insightful.demo.talkyard.io site — so make links to StackExchange rel=follow,
@@ -4964,6 +4964,7 @@ function googleCajaSanitizeHtml(htmlTextUnsafe, allowClassAndIdAttr,
       sanitizeHtmlConfig.transformTags = {
         'a': function(tagName, attribs) {
           var newAttribs = _.clone(attribs);
+          // SHOULD add a 'rel=follow links to domains: ...' config value instead of this: [relfollow]
           if (/^https:\/\/[^/.#?]+\.stackexchange\.com\/.*/.test(attribs.href) ||
               /^https:\/\/stackoverflow\.com\/.*/.test(attribs.href)) {
             // Allow StackExchange and StackOverflow rel=follow links, fine.

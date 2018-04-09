@@ -20,7 +20,7 @@ package controllers
 import com.debiki.core._
 import debiki.SiteTpi
 import debiki.EdHttp._
-import debiki.ReactJson._
+import debiki.JsX._
 import ed.server.{EdContext, EdController}
 import javax.inject.Inject
 import play.{api => p}

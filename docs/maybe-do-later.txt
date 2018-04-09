@@ -8,6 +8,16 @@ Let people create accounts without specifying any email address. Like at Reddit.
 For some reason I disabled Akismet (why? when refactoring to save time?). Enable it again.
 
 
+[relfollow]:
+Add a 'rel=follow links to domains: ...' config value,
+so peope can follow links to their own domains.
+Domains where rel=nofollow should not be added to links.
+Will be applied to sub domains too, e.g. if you type `ex.com`, `sub.ex.com` will also
+have rel=nofollow removed.
+You should add the address of this forum, and your main website (if any),
+so search engines like Google, Bing, Yandex, Baidu will find all content.
+
+
 Performance tests:
  "Capture a timeline trace of your site to help diagnose performance issues."
  https://github.com/GoogleChrome/puppeteer

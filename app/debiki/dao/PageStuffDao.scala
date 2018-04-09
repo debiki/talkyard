@@ -138,7 +138,7 @@ trait PageStuffDao {
       val anyAuthor = usersById.get(pageMeta.authorId)
       val popularPostsBestFirst = popularPosts.getOrElse(pageId, Nil)
       val popularImageUrls: immutable.Seq[String] = popularPostsBestFirst flatMap { post =>
-        post.approvedHtmlSanitized.flatMap(ReactJson.findImageUrls(_).headOption) take 5
+        post.approvedHtmlSanitized.flatMap(JsonMaker.findImageUrls(_).headOption) take 5
       }
       // For pinned topics: The excerpt is only shown in forum topic lists for pinned topics,
       // and should be the first paragraph only.
@@ -146,7 +146,7 @@ trait PageStuffDao {
       // [7PKY2X0]
       val anyExcerpt: Option[PostExcerpt] = anyBody.flatMap(_.approvedHtmlSanitized map { html =>
         val length = pageMeta.isPinned ? ExcerptLength | StartLength
-        ReactJson.htmlToExcerpt(html, length, firstParagraphOnly = pageMeta.isPinned)
+        JsonMaker.htmlToExcerpt(html, length, firstParagraphOnly = pageMeta.isPinned)
       })
 
       val summary = PageStuff(

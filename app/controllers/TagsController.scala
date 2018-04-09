@@ -18,7 +18,7 @@
 package controllers
 
 import com.debiki.core._
-import debiki.{RateLimits, ReactJson, SiteTpi}
+import debiki.{JsonMaker, RateLimits, SiteTpi}
 import debiki.EdHttp._
 import ed.server.{EdContext, EdController}
 import play.api.libs.json._
@@ -53,7 +53,7 @@ class TagsController @Inject()(cc: ControllerComponents, edContext: EdContext)
   def loadTagsAndStats = GetAction { request =>
     val tagsAndStats = request.dao.loadTagsAndStats()
     val isStaff = request.isStaff
-    OkSafeJson(ReactJson.makeTagsStuffPatch(Json.obj(
+    OkSafeJson(JsonMaker.makeTagsStuffPatch(Json.obj(
       "tagsAndStats" -> JsArray(tagsAndStats.map(tagAndStats => {
         Json.obj(
           "label" -> tagAndStats.label,
@@ -68,7 +68,7 @@ class TagsController @Inject()(cc: ControllerComponents, edContext: EdContext)
 
   def loadMyTagNotfLevels = GetAction { request =>
     val notfLevelsByTagLabel = request.dao.loadTagNotfLevels(request.theUserId, request.who)
-    OkSafeJson(ReactJson.makeTagsStuffPatch(Json.obj(
+    OkSafeJson(JsonMaker.makeTagsStuffPatch(Json.obj(
       "myTagNotfLevels" -> JsObject(notfLevelsByTagLabel.toSeq.map({ labelAndLevel =>
         labelAndLevel._1 -> JsNumber(labelAndLevel._2.toInt)
       }))), globals.applicationVersion))

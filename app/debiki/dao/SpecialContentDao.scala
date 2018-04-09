@@ -82,7 +82,7 @@ trait SpecialContentDao {
     val pageId = s"$rootPageId$contentId"
 
     val approvedHtmlSanitized =
-      commonmarkRenderer.renderAndSanitizeCommonMark(newSource,
+      context.nashorn.renderAndSanitizeCommonMark(newSource, pubSiteId = thePubSiteId(),
         allowClassIdDataAttrs = false, followLinks = false)
 
     readWriteTransaction { transaction =>
@@ -179,7 +179,7 @@ trait SpecialContentDao {
     val shortName = self.loadWholeSiteSettings(transaction).orgShortName
     var text = source.replaceAllLiterally("%{company_short_name}", shortName)
     val nodeSeq = context.nashorn.renderAndSanitizeCommonMark(
-      text, allowClassIdDataAttrs = false, followLinks = false)
+      text, pubSiteId = thePubSiteId(), allowClassIdDataAttrs = false, followLinks = false)
     nodeSeq.toString
   }
 

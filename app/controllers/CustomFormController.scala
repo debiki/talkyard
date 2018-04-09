@@ -39,14 +39,14 @@ class CustomFormController @Inject()(cc: ControllerComponents, edContext: EdCont
 
   def handleJsonReply: Action[JsValue] = PostJsonAction(
         RateLimits.PostReply, maxBytes = MaxPostSize) { request =>
+    import request.dao
 
     val pageId = (request.body \ "pageId").as[PageId]
     val formInputs = (request.body \ "formInputs").as[JsArray]
-    val textAndHtml = textAndHtmlMaker.withCompletedFormData(formInputs) getOrIfBad { errorMessage =>
+    val textAndHtml = dao.textAndHtmlMaker.withCompletedFormData(formInputs) getOrIfBad { errorMessage =>
       throwBadRequest("EsE7YK4W0", s"Bad form inputs JSON: $errorMessage")
     }
 
-    val dao = request.dao
     val pageMeta = dao.getPageMeta(pageId) getOrElse
       throwIndistinguishableNotFound("EdE2WK0F")
 
@@ -68,14 +68,15 @@ class CustomFormController @Inject()(cc: ControllerComponents, edContext: EdCont
 
   def handleNewTopic: Action[JsValue] = PostJsonAction(
         RateLimits.PostReply, maxBytes = MaxPostSize) { request =>
+    import request.dao
 
     val pageTypeIdString = (request.body \ "pageTypeId").as[String]
     val pageTypeId = pageTypeIdString.toIntOption.getOrThrowBadArgument("EsE6JFU02", "pageTypeId")
     val pageType = PageRole.fromInt(pageTypeId).getOrThrowBadArgument("EsE39PK01", "pageTypeId")
     val titleText = (request.body \ "newTopicTitle").as[String]
     val bodyText = (request.body \ "newTopicBody").as[String]
-    val titleTextAndHtml = textAndHtmlMaker.forTitle(titleText)
-    val bodyTextAndHtml = textAndHtmlMaker.forBodyOrCommentAsPlainTextWithLinks(bodyText)
+    val titleTextAndHtml = dao.textAndHtmlMaker.forTitle(titleText)
+    val bodyTextAndHtml = dao.textAndHtmlMaker.forBodyOrCommentAsPlainTextWithLinks(bodyText)
 
     // BUG (need not fix now) if there are many sub communities with the same category slug. [4GWRQA28]
     val categorySlug = (request.body \ "categorySlug").as[String]

@@ -21,7 +21,7 @@ import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki._
 import debiki.EdHttp._
-import debiki.ReactJson.JsLongOrNull
+import debiki.JsX.JsLongOrNull
 import ed.server.{EdContext, EdController}
 import ed.server.auth.Authz
 import ed.server.http._
@@ -55,10 +55,10 @@ class PageController @Inject()(cc: ControllerComponents, edContext: EdContext)
     val bodyText = (body \ "pageBody").as[String]
     val showId = (body \ "showId").asOpt[Boolean].getOrElse(true)
 
-    val bodyTextAndHtml = textAndHtmlMaker.forBodyOrComment(bodyText,
+    val bodyTextAndHtml = dao.textAndHtmlMaker.forBodyOrComment(bodyText,
       allowClassIdDataAttrs = true, followLinks = pageRole.shallFollowLinks)
 
-    val titleTextAndHtml = textAndHtmlMaker.forTitle(titleText)
+    val titleTextAndHtml = dao.textAndHtmlMaker.forTitle(titleText)
 
     if (!requester.isStaff) {
       // Showing id —> page slug cannot be mistaken for forum sort order [5AQXJ2].

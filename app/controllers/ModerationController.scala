@@ -18,8 +18,8 @@
 package controllers
 
 import com.debiki.core._
-import debiki.ReactJson
-import debiki.ReactJson.JsUser
+import debiki.JsonMaker
+import debiki.JsX.JsUser
 import debiki.EdHttp._
 import ed.server.{EdContext, EdController}
 import javax.inject.Inject
@@ -52,7 +52,7 @@ class ModerationController @Inject()(cc: ControllerComponents, edContext: EdCont
       olderOrEqualTo = globals.now().toJavaDate, limit = 100)
     OkSafeJson(
       Json.obj(
-        "reviewTasks" -> JsArray(reviewStuff.map(ReactJson.reviewStufToJson(_, usersById))),
+        "reviewTasks" -> JsArray(reviewStuff.map(JsonMaker.reviewStufToJson(_, usersById))),
         "users" -> usersById.values.map(JsUser)))
   }
 

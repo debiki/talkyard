@@ -70,7 +70,7 @@ trait RenderedPageHtmlDao {
       val anyPageRoot = pageRequest.pageRoot
 
       val renderResult: PageToJsonResult =
-        ReactJson.pageToJson(pageRequest.thePageId, this, anyPageRoot, anyPageQuery)
+        jsonMaker.pageToJson(pageRequest.thePageId, anyPageRoot, anyPageQuery)
 
       val (cachedHtml, cachedVersion) =
         renderContent(pageRequest.thePageId, renderResult.version, renderResult.jsonString)
@@ -103,8 +103,7 @@ trait RenderedPageHtmlDao {
 
     val key = renderedPageKey(pageReq.theSitePageId, pageReq.origin)
     memCache.lookup(key, orCacheAndReturn = {
-      // Remember the server's origin, so we'll be able to delete pages cached with this origin.
-
+      // Remember the server's origin, so we'll be able to uncache pages cached with this origin.
       // Could CLEAN_UP this later. Break out reusable fn? place in class MemCache?  [5KDKW2A]
       val originsKey = s"$siteId|origins"
       memCache.cache.asMap().merge(

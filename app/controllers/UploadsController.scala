@@ -177,16 +177,18 @@ class UploadsController @Inject()(cc: ControllerComponents, edContext: EdContext
 
     // Use OkSafeJson?
     Ok(Json.obj(
-      "avatarUrl" -> JsString(smallAvatarRef.url),
-      "mediumAvatarUrl" -> JsString(mediumAvatarRef.url))) as JSON
+      "avatarSmallHashPath" -> JsString(smallAvatarRef.hashPath),
+      "avatarMediumHashPath" -> JsString(mediumAvatarRef.hashPath),
+      "avatarUrl" -> JsString(smallAvatarRef.url),                  // remove [4GKWDU20]
+      "mediumAvatarUrl" -> JsString(mediumAvatarRef.url))) as JSON  // remove [4GKWDU20]
   }
 
 
   def authUpload(publSiteId: String, hashPath: String) = ExceptionAction { request: mvc.Request[_] =>
-    val site = context.globals.systemDao.getSiteByPublId(publSiteId) getOrElse {
+    val siteId = context.globals.systemDao.getSiteIdByPublId(publSiteId) getOrElse {
       throwNotFound("TyE2PKJ40", s"No site with publ id '$publSiteId'")
     }
-    val siteDao: debiki.dao.SiteDao = context.globals.siteDao(site.id)
+    val siteDao: debiki.dao.SiteDao = context.globals.siteDao(siteId)
     val hashPathNoSlash = hashPath drop 1 // otherwise starts with slash
     BUG; PRIVACY // for site owners. Won't find files until a post linking to them has been *saved*
     // — but whilst composing the post, the file will be 404 Not Found, so preview = broken.

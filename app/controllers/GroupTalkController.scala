@@ -39,6 +39,7 @@ class GroupTalkController @Inject()(cc: ControllerComponents, edContext: EdConte
 
   def sendMessage: Action[JsValue] = PostJsonAction(RateLimits.PostReply, maxBytes = MaxPostSize) {
         request: JsonPostRequest =>
+    import request.dao
     val body = request.body
     val title = (body \ "title").as[String].trim
     val text = (body \ "text").as[String].trim
@@ -65,11 +66,11 @@ class GroupTalkController @Inject()(cc: ControllerComponents, edContext: EdConte
 
     // Don't follow links inside a chat; chats don't work well with search engines anyway, and
     // higher risk people say/write/link-to weird things, because chats = chatty = less moderated.
-    val bodyTextAndHtml = textAndHtmlMaker.forBodyOrComment(text,
+    val bodyTextAndHtml = dao.textAndHtmlMaker.forBodyOrComment(text,
       allowClassIdDataAttrs = true, followLinks = false)
-    val titleTextAndHtml = textAndHtmlMaker.forTitle(title)
+    val titleTextAndHtml = dao.textAndHtmlMaker.forTitle(title)
 
-    val pagePath = request.dao.startGroupTalk(
+    val pagePath = dao.startGroupTalk(
       titleTextAndHtml, bodyTextAndHtml, pageRole, toUserIds, sentByWho = request.who,
       request.spamRelatedStuff)
 

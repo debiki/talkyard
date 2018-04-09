@@ -22,7 +22,7 @@ import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki._
 import debiki.EdHttp._
-import debiki.ReactJson._
+import debiki.JsX._
 import ed.server.http._
 import play.api.libs.json._
 import play.api.mvc._
@@ -106,7 +106,7 @@ class ForumController @Inject()(cc: ControllerComponents, edContext: EdContext)
     val catPerms = allPerms.filter(_.onCategoryId.contains(categoryId))
     OkSafeJson(Json.obj(
       "category" -> catJson,
-      "permissions" -> catPerms.map(ReactJson.permissionToJson),
+      "permissions" -> catPerms.map(JsonMaker.permissionToJson),
       "groups" -> groups.map(groupToJson)))
   }
 
@@ -206,13 +206,13 @@ class ForumController @Inject()(cc: ControllerComponents, edContext: EdContext)
 
     val callersGroupIds = request.authzContext.groupIds
     val callersNewPerms = permsWithIds.filter(callersGroupIds contains _.forPeopleId)
-    val mkJson = ReactJson.makeCategoriesJson _
+    val mkJson = dao.jsonMaker.makeCategoriesJson _
 
     OkSafeJson(Json.obj(
       // 2 dupl lines [7UXAI1]
-      "publicCategories" -> mkJson(category.id, dao.getForumPublicAuthzContext(), dao),
-      "restrictedCategories" -> mkJson(category.id, dao.getForumAuthzContext(requester), dao),
-      "myNewPermissions" -> JsArray(callersNewPerms map ReactJson.permissionToJson),
+      "publicCategories" -> mkJson(category.id, dao.getForumPublicAuthzContext()),
+      "restrictedCategories" -> mkJson(category.id, dao.getForumAuthzContext(requester)),
+      "myNewPermissions" -> JsArray(callersNewPerms map JsonMaker.permissionToJson),
       "newCategoryId" -> category.id,
       "newCategorySlug" -> category.slug))
   }
@@ -232,8 +232,8 @@ class ForumController @Inject()(cc: ControllerComponents, edContext: EdContext)
     import request.{dao, requester}
     val categoryId = (request.body \ "categoryId").as[CategoryId]
     request.dao.deleteUndeleteCategory(categoryId, delete = delete, request.who)
-    val patch = ReactJson.makeCategoriesStorePatch(
-      categoryId, dao.getForumAuthzContext(requester), request.dao)
+    val patch = dao.jsonMaker.makeCategoriesStorePatch(
+      categoryId, dao.getForumAuthzContext(requester))
     OkSafeJson(patch)
   }
 
@@ -329,7 +329,7 @@ object ForumController {
     require(recentTopics.isEmpty || pageStuffById.nonEmpty, "DwE8QKU2")
     val topicsNoAboutCategoryPage = recentTopics.filter(_.pageRole != PageRole.AboutCategory)
     val recentTopicsJson = topicsNoAboutCategoryPage.map(topicToJson(_, pageStuffById))
-    ReactJson.makeCategoryJson(category, isDefault, recentTopicsJson)
+    JsonMaker.makeCategoryJson(category, isDefault, recentTopicsJson)
   }
 
 
@@ -392,7 +392,8 @@ object ForumController {
       "fullName" -> group.name)
       // "grantsTrustLevel" -> group.grantsTrustLevel)
     group.tinyAvatar foreach { uploadRef =>
-      json += "avatarUrl" -> JsString(uploadRef.url)
+      json += "avatarTinyHashPath" -> JsString(uploadRef.hashPath)
+      json += "avatarUrl" -> JsString(uploadRef.url)   // remove [4GKWDU20]
     }
     json
   }

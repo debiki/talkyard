@@ -214,9 +214,10 @@ POST  /-/start-private-group-talk controllers.GroupTalkController.sendMessage
 POST  /-/upload-public-file     controllers.UploadsController.uploadPublicFile
 POST  /-/upload-avatar          controllers.UploadsController.uploadAvatar(userId: Int)
 POST  /-/remove-avatar          controllers.UploadsController.removeAvatar
+# CLEAN_UP RENAME to auth-download? or auth-upload-download?
 GET   /-/auth-upload/:publSiteId/*hashPath controllers.UploadsController.authUpload(publSiteId, hashPath)
 
-# CLEAN_UP remove, hardcode path in Globals instead?
+# CLEAN_UP remove, hardcode path in Globals instead?  [2KGLCQ4]
 GET   /-/u/*relativePath        controllers.UploadsController.servePublicFile(relativePath)
 #GET   /-/uploads/public/*relativePath controllers.UploadsController.servePublicFileLong(relativePath)
 
@@ -247,7 +248,7 @@ GET  /-/log-funny-messages      controllers.DebugTestController.logFunnyLogMessa
 GET  /-/page-top-score          controllers.DebugTestController.showPagePopularityStats(pageId)
 GET  /-/pubsub-state            controllers.DebugTestController.showPubSubSubscribers(siteId: Option[Int])
 
-GET   /-/site/:siteId/*file     controllers.SiteAssetBundlesController.customAsset(siteId: Int, file)
+GET   /-/site/:pubSiteId/*file  controllers.SiteAssetBundlesController.customAsset(pubSiteId, file)
 GET   /-/site/*file             controllers.SiteAssetBundlesController.at(file)
 
 GET   /-/tags                   controllers.TagsController.redirect

@@ -21,7 +21,7 @@ import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki._
 import debiki.EdHttp._
-import debiki.ReactJson.JsStringOrNull
+import debiki.JsX.JsStringOrNull
 import ed.server.http._
 import ed.server.{EdContext, EdController}
 import ed.server.auth.Authz
@@ -40,8 +40,8 @@ class EditController @Inject()(cc: ControllerComponents, edContext: EdContext)
   import context.security.{throwNoUnless, throwIndistinguishableNotFound}
   def execCtx: ExecutionContext = context.executionContext
 
-  def loadDraftAndGuidelines(writingWhat: String, categoryId: Option[Int], pageRole: String) =
-        GetAction { request =>
+  def loadDraftAndGuidelines(writingWhat: String, categoryId: Option[Int], pageRole: String)
+        : Action[Unit] = GetAction { request =>
 
     val writeWhat = writingWhat.toIntOption.flatMap(WriteWhat.fromInt) getOrElse throwBadArgument(
       "DwE4P6CK0", "writingWhat")
@@ -81,7 +81,7 @@ class EditController @Inject()(cc: ControllerComponents, edContext: EdContext)
   /** Sends back a post's current CommonMark source to the browser.
     * SHOULD change to pageId + postId (not postNr)  [idnotnr]
     */
-  def loadCurrentText(pageId: String, postNr: Int) = GetAction { request =>
+  def loadCurrentText(pageId: String, postNr: Int): Action[Unit] = GetAction { request =>
     import request.dao
 
     val pageMeta = dao.getPageMeta(pageId) getOrElse throwIndistinguishableNotFound("EdE4JBR01")
@@ -103,7 +103,7 @@ class EditController @Inject()(cc: ControllerComponents, edContext: EdContext)
 
   /** Edits posts.
     */
-  def edit = PostJsonAction(RateLimits.EditPost, maxBytes = MaxPostSize) {
+  def edit: Action[JsValue] = PostJsonAction(RateLimits.EditPost, maxBytes = MaxPostSize) {
         request: JsonPostRequest =>
     import request.dao
     val pageId = (request.body \ "pageId").as[PageId]
@@ -128,7 +128,7 @@ class EditController @Inject()(cc: ControllerComponents, edContext: EdContext)
       inCategoriesRootLast = categoriesRootLast,
       permissions = dao.getPermsOnPages(categoriesRootLast)), "EdE4JBTYE8")
 
-    val newTextAndHtml = textAndHtmlMaker.forBodyOrComment(
+    val newTextAndHtml = dao.textAndHtmlMaker.forBodyOrComment(
       newText,
       allowClassIdDataAttrs = postNr == PageParts.BodyNr,
       // When follow links? Previously:
@@ -140,8 +140,8 @@ class EditController @Inject()(cc: ControllerComponents, edContext: EdContext)
     request.dao.editPostIfAuth(pageId = pageId, postNr = postNr, request.who,
       request.spamRelatedStuff, newTextAndHtml)
 
-    OkSafeJson(ReactJson.postToJson2(postNr = postNr, pageId = pageId,
-      request.dao, includeUnapproved = true, nashorn = context.nashorn))
+    OkSafeJson(dao.jsonMaker.postToJson2(postNr = postNr, pageId = pageId,
+      includeUnapproved = true))
   }
 
 
@@ -160,7 +160,7 @@ class EditController @Inject()(cc: ControllerComponents, edContext: EdContext)
   }
 
 
-  def loadPostRevisions(postId: PostId, revisionNr: String) = GetAction { request =>
+  def loadPostRevisions(postId: PostId, revisionNr: String): Action[Unit] = GetAction { request =>
     val revisionNrInt =
       if (revisionNr == "LastRevision") PostRevision.LastRevisionMagicNr
       else revisionNr.toIntOption getOrElse throwBadRequest("EdE8UFMW2", "Bad revision nr")
@@ -169,13 +169,13 @@ class EditController @Inject()(cc: ControllerComponents, edContext: EdContext)
           userId = request.user.map(_.id))
     val revisionsJson = revisionsRecentFirst map { revision =>
       val isStaffOrComposer = request.isStaff || request.theUserId == revision.composedById
-      ReactJson.postRevisionToJson(revision, usersById, maySeeHidden = isStaffOrComposer)
+      JsonMaker.postRevisionToJson(revision, usersById, maySeeHidden = isStaffOrComposer)
     }
     OkSafeJson(JsArray(revisionsJson))
   }
 
 
-  def changePostType = PostJsonAction(RateLimits.EditPost, maxBytes = 300) { request =>
+  def changePostType: Action[JsValue] = PostJsonAction(RateLimits.EditPost, maxBytes = 300) { request =>
     val pageId = (request.body \ "pageId").as[PageId]
     val postNr = (request.body \ "postNr").as[PostNr]
     val newTypeInt = (request.body \ "newType").as[Int]
@@ -188,7 +188,7 @@ class EditController @Inject()(cc: ControllerComponents, edContext: EdContext)
 
 
   // Staff only, *for now*.
-  def editPostSettings = StaffPostJsonAction(maxBytes = 300) { request =>
+  def editPostSettings: Action[JsValue] = StaffPostJsonAction(maxBytes = 300) { request =>
     val postId = (request.body \ "postId").as[PostId]
     val branchSideways = (request.body \ "branchSideways").asOpt[Byte]
     val patch = request.dao.editPostSettings(postId, branchSideways, request.who)
@@ -196,7 +196,8 @@ class EditController @Inject()(cc: ControllerComponents, edContext: EdContext)
   }
 
 
-  def deletePost = PostJsonAction(RateLimits.DeletePost, maxBytes = 5000) { request =>
+  def deletePost: Action[JsValue] = PostJsonAction(RateLimits.DeletePost, maxBytes = 5000) { request =>
+    import request.dao
     val pageId = (request.body \ "pageId").as[PageId]
     val postNr = (request.body \ "postNr").as[PostNr]
     val repliesToo = (request.body \ "repliesToo").asOpt[Boolean] getOrElse false
@@ -205,14 +206,14 @@ class EditController @Inject()(cc: ControllerComponents, edContext: EdContext)
       if (repliesToo) PostStatusAction.DeleteTree
       else PostStatusAction.DeletePost(clearFlags = false)
 
-    request.dao.changePostStatus(postNr, pageId = pageId, action, userId = request.theUserId)
+    dao.changePostStatus(postNr, pageId = pageId, action, userId = request.theUserId)
 
-    OkSafeJson(ReactJson.postToJson2(postNr = postNr, pageId = pageId, // COULD: don't include post in reply? It'd be annoying if other unrelated changes were loaded just because the post was toggled open? [5GKU0234]
-      request.dao, includeUnapproved = request.theUser.isStaff, nashorn = context.nashorn))
+    OkSafeJson(dao.jsonMaker.postToJson2(postNr = postNr, pageId = pageId, // COULD: don't include post in reply? It'd be annoying if other unrelated changes were loaded just because the post was toggled open? [5GKU0234]
+      includeUnapproved = request.theUser.isStaff))
   }
 
 
-  def movePost = StaffPostJsonAction(maxBytes = 300) { request =>
+  def movePost: Action[JsValue] = StaffPostJsonAction(maxBytes = 300) { request =>
     val pageId = (request.body \ "pageId").as[PageId]   // apparently not used
     val postId = (request.body \ "postId").as[PostId]   // id not nr
     val newHost = (request.body \ "newHost").asOpt[String] // ignore for now though

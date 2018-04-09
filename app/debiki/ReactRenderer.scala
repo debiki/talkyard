@@ -38,7 +38,7 @@ case class PasswordStrength(
   score: Int) {
 
   /** zxcvbn score 4 is the highest score, see https://github.com/dropbox/zxcvbn. */
-  def isStrongEnough = score >= 4
+  //def isStrongEnough = score >= 4
 }
 
 
@@ -58,7 +58,7 @@ case class PasswordStrength(
   * threads, and it doesn't make sense to create engines for that many threads.
   */
 // RENAME to Nashorn? Because does lots of things, doesn't just render React stuff.
-class ReactRenderer(globals: Globals) extends com.debiki.core.CommonMarkRenderer {
+class ReactRenderer(globals: Globals) {
 
   private val logger = play.api.Logger
 
@@ -76,7 +76,7 @@ class ReactRenderer(globals: Globals) extends com.debiki.core.CommonMarkRenderer
   @volatile private var firstCreateEngineError: Option[Throwable] = None
 
   private var secure = true
-  private var cdnUploadsUrlPrefix = ""
+  private var cdnOrigin: Option[String] = None
   private var isTestSoDisableScripts = false
 
   private var oneboxes: Option[Onebox] = None
@@ -106,10 +106,10 @@ class ReactRenderer(globals: Globals) extends com.debiki.core.CommonMarkRenderer
     * the Scala code called from my Nashorn JS, perhaps I need to somehow use a custom
     * classloader here?
     */
-  def startCreatingRenderEngines(secure: Boolean, cdnUploadsUrlPrefix: Option[String],
+  def startCreatingRenderEngines(secure: Boolean, cdnOrigin: Option[String],
         isTestSoDisableScripts: Boolean) {
     this.secure = secure
-    this.cdnUploadsUrlPrefix = cdnUploadsUrlPrefix getOrElse ""
+    this.cdnOrigin = cdnOrigin
     this.isTestSoDisableScripts = isTestSoDisableScripts
     if (isTestSoDisableScripts)
       return
@@ -216,11 +216,19 @@ class ReactRenderer(globals: Globals) extends com.debiki.core.CommonMarkRenderer
   }
 
 
-  override def renderAndSanitizeCommonMark(commonMarkSource: String,
+  def renderAndSanitizeCommonMark(commonMarkSource: String, pubSiteId: PublSiteId,
         allowClassIdDataAttrs: Boolean, followLinks: Boolean): String = {
     if (isTestSoDisableScripts)
       return "Scripts disabled [EsM5GY52]"
+
+    // Won't work in embedded comments pages, if there's no cdn? because then no origin
+    // included —> the embedd*ing* server's address used instead, but that's the wrong server.
+    // But on non-embedded pages, use local upload links? So will work also if moves
+    // server to other address?
+    BUG; SHOULD // use special page type for embedded comments? And on those pages always incl origin?
+    val uploadsUrlPrefix = cdnOrigin.getOrElse("") + ed.server.UploadsUrlBasePath + pubSiteId + '/'
     val oneboxRenderer = new InstantOneboxRendererForNashorn(oneboxes getOrDie "EdE2WUHP6")
+
     val resultNoOneboxes = withJavascriptEngine(engine => {
       // The onebox renderer needs a Javascript engine to sanitize html (via Caja JsHtmlSanitizer)
       // and we'll reuse `engine` so we won't have to create any additional engine.
@@ -228,10 +236,11 @@ class ReactRenderer(globals: Globals) extends com.debiki.core.CommonMarkRenderer
       val safeHtml = engine.invokeFunction("renderAndSanitizeCommonMark", commonMarkSource,
           true.asInstanceOf[Object], // allowClassIdDataAttrs.asInstanceOf[Object],
           followLinks.asInstanceOf[Object],
-          oneboxRenderer, cdnUploadsUrlPrefix)
+          oneboxRenderer, uploadsUrlPrefix)
       oneboxRenderer.javascriptEngine = None
       safeHtml.asInstanceOf[String]
     })
+
     // Before commenting in: Make all render functions async so we won't block when downloading.
     //oneboxRenderer.waitForDownloadsToFinish()
     val resultWithOneboxes = oneboxRenderer.replacePlaceholders(resultNoOneboxes)
@@ -239,7 +248,7 @@ class ReactRenderer(globals: Globals) extends com.debiki.core.CommonMarkRenderer
   }
 
 
-  override def sanitizeHtml(text: String, followLinks: Boolean): String = {
+  def sanitizeHtml(text: String, followLinks: Boolean): String = {
     sanitizeHtmlReuseEngine(text, followLinks, None)
   }
 
@@ -264,7 +273,7 @@ class ReactRenderer(globals: Globals) extends com.debiki.core.CommonMarkRenderer
   }
 
 
-  override def slugifyTitle(title: String): String = {
+  def slugifyTitle(title: String): String = {
     if (isTestSoDisableScripts)
       return "scripts-disabled-EsM28WXP45"
     withJavascriptEngine(engine => {
@@ -500,28 +509,29 @@ object ReactRenderer {
     |  md = markdownit({ html: true, linkify: true, breaks: true });
     |  md.use(debiki.internal.MentionsMarkdownItPlugin());
     |  md.use(debiki.internal.oneboxMarkdownItPlugin);
-    |  ed.editor.CdnLinkifyer.replaceLinks(md);  // what? broken? BUG SHOULD FIX  [5UKBWQ2]
+    |  ed.editor.CdnLinkifyer.replaceLinks(md);
     |}
     |catch (e) {
+    |  console.error("Error creating CommonMark renderer: [DwE5kFEM9]");
     |  printStackTrace(e);
-    |  console.error("Error creating CommonMark renderer [DwE5kFEM9]");
     |}
     |
     |function renderAndSanitizeCommonMark(source, allowClassIdDataAttrs, followLinks,
     |       instantOneboxRenderer, uploadsUrlPrefix) {
     |  try {
-    |    debiki.uploadsUrlPrefix = uploadsUrlPrefix;
+    |    theStore = null; // don's use here, might not have been inited
+    |    eds.uploadsUrlPrefix = uploadsUrlPrefix;
     |    debiki.internal.oneboxMarkdownItPlugin.instantRenderer = instantOneboxRenderer;
     |    var unsafeHtml = md.render(source);
-    |    unsafeHtml = unsafeHtml.replace(/\/-\/u\//g, '/-/u/' + theStore.pubSiteId + '/');  // for now, [7UKWQ24]
     |    var allowClassAndIdAttr = allowClassIdDataAttrs;
     |    var allowDataAttr = allowClassIdDataAttrs;
     |    return googleCajaSanitizeHtml(unsafeHtml, allowClassAndIdAttr, allowDataAttr, followLinks);
     |  }
     |  catch (e) {
+    |    console.error("Error in renderAndSanitizeCommonMark: [TyERNDRCM02]");
     |    printStackTrace(e);
     |  }
-    |  return "Error rendering CommonMark on server [DwE4XMYD8]";
+    |  return "Error rendering CommonMark on server [TyERNDRCM02]";
     |}
     |
     |// (Don't name this function 'sanitizeHtml' because it'd then get overwritten by

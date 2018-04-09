@@ -70,7 +70,7 @@ class ViewPageController @Inject()(cc: ControllerComponents, edContext: EdContex
       throwIndistinguishableNotFound(debugCode)
     }
 
-    val json = ReactJson.makeStorePatchForPostNr(pageId, postNr, dao, showHidden = true) getOrElse {
+    val json = dao.jsonMaker.makeStorePatchForPostNr(pageId, postNr, showHidden = true) getOrElse {
       throwNotFound("EdE6PK4SI2", s"Post ${PagePostNr(pageId, postNr)} not found")
     }
     OkSafeJson(json)
@@ -187,7 +187,7 @@ class ViewPageController @Inject()(cc: ControllerComponents, edContext: EdContex
     // Any stuff, like unapproved comments, only the current user may see.
     COULD_OPTIMIZE // this loads some here unneeded data about the current user.
     val anyUserSpecificDataJson: Option[JsObject] =
-      ReactJson.userDataJson(pageRequest, renderedPage.unapprovedPostAuthorIds)
+      dao.jsonMaker.userDataJson(pageRequest, renderedPage.unapprovedPostAuthorIds)
 
     Future.successful(
       OkSafeJson(
@@ -284,7 +284,7 @@ class ViewPageController @Inject()(cc: ControllerComponents, edContext: EdContex
       // Show a create-something-here page (see TemplateRenderer).
       val pageRequest = makeEmptyPageRequest(
           request, pageId = EmptyPageId, showId = false, pageRole = PageRole.WebPage, globals.now())
-      val json = ReactJson.emptySiteJson(pageRequest).toString()
+      val json = dao.jsonMaker.emptySiteJson(pageRequest).toString()
       val html = views.html.specialpages.createSomethingHerePage(SiteTpi(pageRequest, Some(json))).body
       val renderedPage = RenderedPage(html, "NoJson-2WBKCG7", unapprovedPostAuthorIds = Set.empty)
       return addVolatileJsonAndPreventClickjacking(renderedPage, pageRequest)
@@ -363,9 +363,9 @@ object ViewPageController {
     val anyUserSpecificDataJson: Option[JsValue] =
       request match {
         case pageRequest: PageRequest[_] =>
-          ReactJson.userDataJson(pageRequest, unapprovedPostAuthorIds)
+          dao.jsonMaker.userDataJson(pageRequest, unapprovedPostAuthorIds)
         case _: DebikiRequest[_] =>
-          Some(ReactJson.userNoPageToJson(request))
+          Some(dao.jsonMaker.userNoPageToJson(request))
       }
 
     val volatileJson = Json.obj(

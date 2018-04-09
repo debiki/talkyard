@@ -154,7 +154,7 @@ trait PagesDao {
     require(pinOrder.isDefined == pinWhere.isDefined, "Ese5MJK2")
 
     val pageSlug = anySlug.getOrElse({
-        commonmarkRenderer.slugifyTitle(titleSource)
+        context.nashorn.slugifyTitle(titleSource)
     }).take(PagePath.MaxSlugLength).dropRightWhile(_ == '-').dropWhile(_ == '-')
 
     COULD // try to move this authz + review-reason check to ed.server.auth.Authz?

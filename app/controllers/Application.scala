@@ -72,7 +72,7 @@ class Application @Inject()(cc: ControllerComponents, edContext: EdContext)
     }
 
     // If some posts got hidden, then rerender them as hidden, so the flagger sees they got hidden.
-    val json = ReactJson.makeStorePatchForPosts(
+    val json = dao.jsonMaker.makeStorePatchForPosts(
       postsHidden.map(_.id).toSet, showHidden = false, dao)
     OkSafeJson(json)
   }

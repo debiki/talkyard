@@ -22,7 +22,7 @@ import com.debiki.core.Prelude._
 import collection.immutable
 import debiki._
 import debiki.EdHttp._
-import debiki.ReactJson.JsUser
+import debiki.JsX.JsUser
 import ed.server.{EdContext, EdController}
 import ed.server.auth.Authz
 import ed.server.http._
@@ -93,8 +93,8 @@ class VoteController @Inject()(cc: ControllerComponents, edContext: EdContext)
         voterId = request.theUser.id, voterIp = request.ip, postNrsRead)
     }
 
-    val json = ReactJson.postToJson2(postNr = postNr, pageId = pageId, request.dao,
-      includeUnapproved = false, showHidden = true, nashorn = context.nashorn)
+    val json = dao.jsonMaker.postToJson2(postNr = postNr, pageId = pageId,
+      includeUnapproved = false, showHidden = true)
     OkSafeJson(json)
   }
 

@@ -20,7 +20,7 @@ var pluginId = 'Onebox';
 
 
 /**
- * Converts a paragraph consisting of an unindened link to e.g. a YouTube snippet
+ * Converts a paragraph consisting of an unindented link to e.g. a YouTube snippet
  * or a Wikipedia article excerpt, depending on the link.
  * Differs from Discourse's onebox in that links have to be in separate paragraphs.
  */

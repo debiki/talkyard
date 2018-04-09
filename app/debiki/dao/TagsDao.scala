@@ -20,7 +20,6 @@ package debiki.dao
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki.EdHttp.{throwForbidden, throwForbiddenIf}
-import debiki.ReactJson
 import ed.server.notf.NotificationGenerator
 import ed.server.pubsub.StorePatchMessage
 import play.api.libs.json.JsValue
@@ -105,7 +104,7 @@ trait TagsDao {
 
     refreshPageInMemCache(post.pageId)
 
-    val storePatch = ReactJson.makeStorePatch(post, postAuthor, this, showHidden = true)
+    val storePatch = jsonMaker.makeStorePatch(post, postAuthor, showHidden = true)
     pubSub.publish(
       StorePatchMessage(siteId, pageId, storePatch, notifications), byId = postAuthor.id)
     storePatch

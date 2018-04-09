@@ -57,8 +57,8 @@ class EmbeddedTopicsController @Inject()(cc: ControllerComponents, edContext: Ed
         val pageRequest = ViewPageController.makeEmptyPageRequest(request, EmptyPageId, showId = true,
             PageRole.EmbeddedComments, globals.now())
         val categoryId = dao.getDefaultCategoryId()
-        val jsonStuff = ReactJson.pageThatDoesNotExistsToJson(
-          dao, PageRole.EmbeddedComments, Some(categoryId))
+        val jsonStuff = dao.jsonMaker.pageThatDoesNotExistsToJson(
+          PageRole.EmbeddedComments, Some(categoryId))
         // Don't render server side, render client side only. Search engines shouldn't see it anyway,
         // because it doesn't exist.
         // So skip: ReactRenderer.renderPage(jsonStuff.jsonString)

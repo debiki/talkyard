@@ -22,7 +22,7 @@ import com.debiki.core.Prelude._
 import com.google.{common => guava}
 import debiki.Globals
 import debiki.EdHttp._
-import java.{io => jio, util => ju, lang => jl}
+import java.{io => jio, lang => jl, util => ju}
 import java.awt.image.BufferedImage
 import java.nio.{file => jf}
 import java.nio.file.{attribute => jfa}
@@ -30,9 +30,8 @@ import debiki.ImageUtils
 import org.jsoup.Jsoup
 import play.{api => p}
 import UploadsDao._
-
-
 import scala.collection.mutable.ArrayBuffer
+import scala.util.matching.Regex
 
 
 /** Moves temp files into the uploads directory and adds metadata about the uploaded files.
@@ -213,9 +212,15 @@ trait UploadsDao {
 
   def findUploadRefsInPost(post: Post): Set[UploadRef] = {
     val approvedRefs = post.approvedHtmlSanitized.map(
-      h => findUploadRefsInText(h, uploadsUrlPath)) getOrElse Set.empty
-    val currentRefs = findUploadRefsInText(
-      post.currentHtmlSanitizedToFindLinks(context.nashorn), uploadsUrlPath)
+      h => findUploadRefsInText(h, uploadsUrlPath, thePubSiteId())) getOrElse Set.empty
+    val currentRefs =
+      if (post.nr == PageParts.TitleNr) Nil
+      else {
+        val htmlString = context.nashorn.renderAndSanitizeCommonMark(
+          post.currentSource, pubSiteId = thePubSiteId(),
+          allowClassIdDataAttrs = false, followLinks = false)
+        findUploadRefsInText(htmlString, uploadsUrlPath, thePubSiteId())
+      }
     approvedRefs ++ currentRefs
   }
 
@@ -308,7 +313,7 @@ object UploadsDao {
   // - optionally, recalculate disk quotas (since files deleted)
   val OldHashPathSuffixRegex = """^[a-z0-9]/[a-z0-9]/[a-z0-9]+\.[a-z0-9]+$""".r
 
-  @deprecated("now", "removed video/ prefix")
+  // CLEAN_UP remove video/ later, currently no longer added.
   val HashPathSuffixRegex =
     """^(video/)?[0-9][0-9]?/[a-z0-9]/[a-z0-9]{2}/[a-z0-9]+\.[a-z0-9]+$""".r
 
@@ -359,7 +364,8 @@ object UploadsDao {
   }
 
 
-  private def findUploadRefsInText(html: String, uploadsUrlPath: String): Set[UploadRef] = {
+  private def findUploadRefsInText(html: String, uploadsUrlPath: String, pubSiteId: String)
+        : Set[UploadRef] = {
     // COULD reuse TextAndHtml — it also finds links
     TESTS_MISSING
     val document = Jsoup.parse(html)
@@ -394,8 +400,16 @@ object UploadsDao {
           }
         }
 
+      // Don't care about the port and hostname. Instead, if the url path matches, then
+      // consider any upload with the specified location as being referenced.
+      // (Otherwise refs might be overlooked, if adding/removing a CDN origin,
+      // or moving the server to a new address.)
       if (urlPath startsWith uploadsUrlPath) {
-        val hashPathSuffix = urlPath drop uploadsUrlPath.length
+        val maybeSiteIdHashPathSuffix = urlPath drop uploadsUrlPath.length
+        // The publ site id is only maybe included — require an exact match, so one site
+        // cannot reference an upload at *another* site and prevent it from getting deleted.
+        TESTS_MISSING // add tests both with and without pub site id, check ref count = ok.
+        val hashPathSuffix = maybeSiteIdHashPathSuffix.replaceAllLiterally(pubSiteId + '/', "")
         if (OldHashPathSuffixRegex.matches(hashPathSuffix) ||
             HashPathSuffixRegex.matches(hashPathSuffix)) {
           // Don't add any hostname, because files stored locally are accessible from any hostname
@@ -403,14 +417,6 @@ object UploadsDao {
           references.append(UploadRef(uploadsUrlPath, hashPathSuffix))
         }
       }
-      /* Later, if serving uploads via a CDN:
-      else if (urlPath starts with cdn-hostname) {
-        if (HashPathSuffixRegex matches hashPathSuffix) {
-          ...
-          val baseUrl = url.getHost + "/"
-          ...
-        }
-      }*/
     }
 
     references.toSet

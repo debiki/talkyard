@@ -19,7 +19,6 @@ package com.debiki.core
 
 import com.debiki.core.Prelude._
 import java.{util => ju}
-import org.scalactic.{Good, Bad}
 
 import scala.collection.immutable
 import PostStatusBits._
@@ -364,40 +363,10 @@ case class Post(
     else Some(currentSource)
   }
 
-  def currentHtmlSanitized(commonMarkRenderer: CommonMarkRenderer, pageRole: PageRole): String = {
-    if (isCurrentVersionApproved && approvedHtmlSanitized.isDefined) {
-      return approvedHtmlSanitized.get
-    }
 
-    val isBody = nr == PageParts.BodyNr
-    val followLinks = isBody && pageRole.shallFollowLinks
-    if (nr == PageParts.TitleNr) {
-      commonMarkRenderer.sanitizeHtml(currentSource, followLinks)
-    }
-    else if (tyype == PostType.CompletedForm) {
-      CompletedFormRenderer.renderJsonToSafeHtml(currentSource) getMakeGood { errorMessage =>
-        val unsafeText = s"Error rendering source to html: $errorMessage [EsE7Y4KW8]"
-        org.owasp.encoder.Encode.forHtmlContent(unsafeText)
-      }
-    }
-    else {
-      commonMarkRenderer.renderAndSanitizeCommonMark(currentSource,
-        allowClassIdDataAttrs = isBody, followLinks = followLinks)
-    }
-  }
+  def numEditsToReview: Int = currentRevisionNr - approvedRevisionNr.getOrElse(0)
 
-  /** Renders the current markup just in order to let the caller find <a href=...> links
-    * and other links.
-    */
-  def currentHtmlSanitizedToFindLinks(commonMarkRenderer: CommonMarkRenderer): String = {
-    if (nr == PageParts.TitleNr) ""
-    else commonMarkRenderer.renderAndSanitizeCommonMark(currentSource,
-      allowClassIdDataAttrs = false, followLinks = false)
-  }
-
-  def numEditsToReview = currentRevisionNr - approvedRevisionNr.getOrElse(0)
-
-  def numFlags = numPendingFlags + numHandledFlags
+  def numFlags: Int = numPendingFlags + numHandledFlags
 
 
   /** The lower bound of an 80% confidence interval for the number of people that like this post.

@@ -21,7 +21,7 @@ import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki._
 import debiki.EdHttp._
-import debiki.ReactJson.{DateEpochOrNull, JsNumberOrNull, JsUser}
+import debiki.JsX.{DateEpochOrNull, JsNumberOrNull, JsUser}
 import debiki.dao.SiteDao
 import ed.server._
 import javax.inject.Inject

@@ -24,7 +24,8 @@ import ed.server.http._
 import ed.server.{EdContext, EdController}
 import javax.inject.Inject
 import play.api._
-import play.api.mvc.ControllerComponents
+import play.api.libs.json.JsValue
+import play.api.mvc.{Action, ControllerComponents}
 
 
 /** Closes and collapses trees and posts.
@@ -33,38 +34,43 @@ class CloseCollapseController @Inject()(cc: ControllerComponents, edContext: EdC
   extends EdController(cc, edContext) {
 
 
-  def hidePost = PostJsonAction(RateLimits.CloseCollapsePost, maxBytes = 100) { apiReq =>
+  def hidePost: Action[JsValue] = PostJsonAction(RateLimits.CloseCollapsePost, maxBytes = 100) { apiReq =>
     val hide = (apiReq.body \ "hide").as[Boolean]
     changeStatus(apiReq, if (hide) PostStatusAction.HidePost else PostStatusAction.UnhidePost)
   }
 
 
-  def collapsePost = PostJsonAction(RateLimits.CloseCollapsePost, maxBytes = 100) { apiReq =>
+  def collapsePost: Action[JsValue] = PostJsonAction(RateLimits.CloseCollapsePost, maxBytes = 100) {
+        apiReq =>
     changeStatus(apiReq, PostStatusAction.CollapsePost)
   }
 
 
-  def collapseTree = PostJsonAction(RateLimits.CloseCollapsePost, maxBytes = 100) { apiReq =>
+  def collapseTree: Action[JsValue] = PostJsonAction(RateLimits.CloseCollapsePost, maxBytes = 100) {
+        apiReq =>
     changeStatus(apiReq, PostStatusAction.CollapseTree)
   }
 
 
-  def closeTree = PostJsonAction(RateLimits.CloseCollapsePost, maxBytes = 100) { apiReq =>
+  def closeTree: Action[JsValue] = PostJsonAction(RateLimits.CloseCollapsePost, maxBytes = 100) {
+        apiReq =>
     changeStatus(apiReq, PostStatusAction.CloseTree)
   }
 
 
   private def changeStatus(apiReq: JsonPostRequest, action: PostStatusAction): mvc.Result = {
+    import apiReq.dao
+
     if (!apiReq.user_!.isAdmin)
       throwForbidden("DwE95Xf2", "Insufficient permissions to change post or thread status")
 
     val pageId = (apiReq.body \ "pageId").as[PageId]
     val postNr = (apiReq.body \ "postNr").as[PostNr]
 
-    apiReq.dao.changePostStatus(postNr, pageId = pageId, action, userId = apiReq.theUserId)
+    dao.changePostStatus(postNr, pageId = pageId, action, userId = apiReq.theUserId)
 
-    OkSafeJson(ReactJson.postToJson2(postNr = postNr, pageId = pageId, // COULD stop including post in reply? It'd be annoying if other unrelated changes were loaded just because the post was toggled open?
-      apiReq.dao, includeUnapproved = true, nashorn = context.nashorn))
+    OkSafeJson(dao.jsonMaker.postToJson2(postNr, pageId = pageId, // COULD stop including post in reply? It'd be annoying if other unrelated changes were loaded just because the post was toggled open?
+      includeUnapproved = true))
   }
 
 }

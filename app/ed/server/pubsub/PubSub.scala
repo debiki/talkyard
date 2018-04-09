@@ -22,7 +22,8 @@ import akka.pattern.ask
 import com.debiki.core.Prelude._
 import com.debiki.core._
 import debiki.dao.RedisCache
-import debiki.{Globals, ReactJson}
+import debiki.{Globals, JsonMaker}
+import debiki.JsX.JsUser
 import play.api.libs.json.{JsNull, JsValue}
 import play.{api => p}
 import play.api.libs.json.Json
@@ -31,7 +32,6 @@ import redis.RedisClient
 import scala.collection.mutable
 import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration._
-import ReactJson.JsUser
 
 
 sealed trait Message {
@@ -318,7 +318,7 @@ class PubSubActor(val nginxHost: String, val globals: Globals) extends Actor {
     notfsReceiverIsOnline foreach { notf =>
       COULD_OPTIMIZE // later: do only 1 call to siteDao, for all notfs.
       val notfsJson = siteDao.readOnlyTransaction { transaction =>
-        ReactJson.notificationsToJson(Seq(notf), transaction).notfsJson
+        JsonMaker.notificationsToJson(Seq(notf), transaction).notfsJson
       }
       sendPublishRequest(message.siteId, Set(notf.toUserId), "notifications", notfsJson)
     }

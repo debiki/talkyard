@@ -22,7 +22,7 @@ import debiki.EdHttp._
 import ed.server.{EdContext, EdController}
 import ed.server.http._
 import javax.inject.Inject
-import play.api.mvc.ControllerComponents
+import play.api.mvc.{Action, ControllerComponents}
 import scala.util.matching.Regex
 import SiteAssetBundlesController._
 
@@ -30,7 +30,7 @@ import SiteAssetBundlesController._
 /**
  * Bundles and serves site specific assets.
  *
- * The assets are served from e.g.: `server/-/site/styles.<version>.css`
+ * The assets are served from e.g.: `server/-/site/PUB_SITE_ID/styles.<version>.css`
  * where `<version>` is a URL safe SHA1 hash of the asset bundle text.
  * (So whenever the bundle contents changes, the URL also changes — and
  * we can ask the browser to cache forever. This is asset versioning.)
@@ -49,12 +49,17 @@ class SiteAssetBundlesController @Inject()(cc: ControllerComponents, edContext: 
    * - Sets no cookies, since the intention is that the response be cached
    * by proxy servers.
    */
+  // ?? not in use ?? I changed to 'customAsset' and added a site id param?
+  CLEAN_UP; REMOVE // ?
   def at(file: String) = GetAction { request =>
     customAssetImpl(siteId = request.siteId, fileName = file, request)
   }
 
 
-  def customAsset(siteId: SiteId, fileName: String) = GetAction { request =>
+  def customAsset(pubSiteId: PublSiteId, fileName: String): Action[Unit] = GetAction { request =>
+    val siteId = globals.systemDao.getSiteIdByPublId(pubSiteId) getOrElse {
+      throwNotFound("TyE2PKH8", s"No site with publ id $pubSiteId")
+    }
     customAssetImpl(siteId = siteId, fileName = fileName, request)
   }
 

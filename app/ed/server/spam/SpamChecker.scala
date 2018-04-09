@@ -266,6 +266,7 @@ class SpamChecker(
       return Future.successful(None)
     }
 
+    COULD_OPTIMIZE // ? reuse post.approvedHtmlSanitized, if based on currentSource
     val textAndHtml = textAndHtmlMaker.forBodyOrComment(post.currentSource)
 
     val spamTestFutures =

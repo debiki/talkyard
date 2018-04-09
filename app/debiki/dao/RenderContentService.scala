@@ -20,7 +20,7 @@ package debiki.dao
 import akka.actor.{Actor, ActorRef, Props}
 import com.debiki.core._
 import com.debiki.core.Prelude._
-import debiki.{DatabaseUtils, Globals, ReactJson, ReactRenderer}
+import debiki.{DatabaseUtils, Globals, ReactRenderer}
 import play.{api => p}
 import scala.concurrent.duration._
 import RenderContentService._
@@ -124,7 +124,7 @@ class RenderContentActor(
     // COULD add Metrics that times this.
     p.Logger.debug(s"Background rendering ${sitePageId.toPrettyString} [DwM7KGE2]")
     val dao = globals.siteDao(sitePageId.siteId)
-    val toJsonResult = ReactJson.pageToJson(sitePageId.pageId, dao)
+    val toJsonResult = dao.jsonMaker.pageToJson(sitePageId.pageId)
     val html = nashorn.renderPage(toJsonResult.jsonString) getOrElse {
       p.Logger.error(s"Error rendering ${sitePageId.toPrettyString} [DwE5KJG2]")
       return

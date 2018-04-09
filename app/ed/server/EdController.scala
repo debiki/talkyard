@@ -20,7 +20,6 @@ class EdController(cc: ControllerComponents, val context: EdContext)
   import context.globals
   import context.plainApiActions._
 
-  def textAndHtmlMaker: TextAndHtmlMaker = context.textAndHtmlMaker
   implicit val executionContext: ExecutionContext = context.executionContext
 
   def AsyncGetAction(f: GetRequest => Future[Result]): mvc.Action[Unit] =

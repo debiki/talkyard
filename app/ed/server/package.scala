@@ -25,6 +25,8 @@ package object server {
 
   val Whatever = "*"
 
+  val UploadsUrlBasePath = "/-/u/"
+
 
   /** @param html Html for the whole page.
     * @param unapprovedPostAuthorIds Ids of authors who have posted stuff that hasn't yet been

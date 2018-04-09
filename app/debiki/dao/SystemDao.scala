@@ -64,10 +64,19 @@ class SystemDao(
   }
 
   def getSiteByPublId(publSiteId: PublSiteId): Option[Site] = {
-    COULD_OPTIMIZE // but for now:   (and optimize this too at the same time: [4GUKW27])
-    loadSites().find(_.pubId == publSiteId) map { site =>
-      SiteDao.maybeCopyWithDefaultHostname(site, globals)
-    }
+    getSiteIdByPublId(publSiteId).flatMap(getSite)
+  }
+
+  def getSiteIdByPublId(pubSiteId: PublSiteId): Option[SiteId] = {
+    // The publ and private ids never change; no need to ever uncache this.
+    memCache.lookup(
+      MemCacheKeyAnySite(s"$pubSiteId|pubSiteId"),
+      orCacheAndReturn = {
+        COULD_OPTIMIZE // don't load *all* sites here.  (And optimize this too: [4GUKW27])
+        loadSites().find(_.pubId == pubSiteId) map { site =>
+          site.id
+        }
+      })
   }
 
   def loadSites(): Seq[Site] =

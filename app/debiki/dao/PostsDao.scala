@@ -34,6 +34,7 @@ import PostsDao._
 import ed.server.auth.Authz
 import org.scalactic.{Bad, Good, One, Or}
 import math.max
+import talkyard.server.{IfCached, PostRendererSettings}
 
 
 case class InsertPostResult(storePatchJson: JsObject, post: Post, reviewTask: Option[ReviewTask])
@@ -84,7 +85,7 @@ trait PostsDao {
 
     refreshPageInMemCache(pageId)
 
-    val storePatchJson = ReactJson.makeStorePatch(newPost, author, this, showHidden = true)
+    val storePatchJson = jsonMaker.makeStorePatch(newPost, author, showHidden = true)
     pubSub.publish(StorePatchMessage(siteId, pageId, storePatchJson, notifications),
       byId = author.id)
 
@@ -415,7 +416,7 @@ trait PostsDao {
 
     refreshPageInMemCache(pageId)
 
-    val storePatchJson = ReactJson.makeStorePatch(post, author, this, showHidden = true)
+    val storePatchJson = jsonMaker.makeStorePatch(post, author, showHidden = true)
     pubSub.publish(StorePatchMessage(siteId, pageId, storePatchJson, notifications),
       byId = author.id)
 
@@ -729,7 +730,7 @@ trait PostsDao {
         else {
           val category = transaction.loadCategory(page.meta.categoryId getOrDie "DwE2PKF0")
                 .getOrDie("EdE8ULK4E")
-          val excerpt = ReactJson.htmlToExcerpt(
+          val excerpt = JsonMaker.htmlToExcerpt(
             newTextAndHtml.safeHtml, Category.DescriptionExcerptLength,
             firstParagraphOnly = true)
           Some(category.copy(description = Some(excerpt.text)))
@@ -939,8 +940,8 @@ trait PostsDao {
       insertAuditLogEntry(auditLogEntry, transaction)
 
       COULD_OPTIMIZE // try not to load the whole page in makeStorePatch2
-      (postAfter, ReactJson.makeStorePatch2(postId, postAfter.pageId,
-          appVersion = globals.applicationVersion, nashorn, transaction))
+      (postAfter, jsonMaker.makeStorePatch2(postId, postAfter.pageId,
+          appVersion = globals.applicationVersion, transaction))
     }
     refreshPageInMemCache(post.pageId)
     patch
@@ -1167,6 +1168,10 @@ trait PostsDao {
 
     // ------ The post
 
+    val renderSettings = PostRendererSettings(pageMeta.pageRole, thePubSiteId())
+    val approvedHtmlSanitized = context.postRenderer.renderAndSanitize(postBefore, renderSettings,
+      IfCached.Die("TyE2BKYUF4"))
+
     // Later: update lastApprovedEditAt, lastApprovedEditById and numDistinctEditors too,
     // or remove them.
     val postAfter = postBefore.copy(
@@ -1176,8 +1181,7 @@ trait PostsDao {
       approvedAt = Some(transaction.now.toJavaDate),
       approvedById = Some(approverId),
       approvedSource = Some(postBefore.currentSource),
-      approvedHtmlSanitized = Some(postBefore.currentHtmlSanitized(
-        commonmarkRenderer, pageMeta.pageRole)),
+      approvedHtmlSanitized = Some(approvedHtmlSanitized),
       currentSourcePatch = None,
       // SPAM RACE COULD unhide only if rev nr that got hidden <= rev that was reviewed. [6GKC3U]
       bodyHiddenAt = None,
@@ -1268,6 +1272,10 @@ trait PostsDao {
 
       // ----- A post
 
+      val renderSettings = PostRendererSettings(pageMeta.pageRole, thePubSiteId())
+      val approvedHtmlSanitized = context.postRenderer.renderAndSanitize(post, renderSettings,
+        IfCached.Die("TyE2PKL99"))
+
       // Don't need to update lastApprovedEditAt, because this post has been invisible until now.
       // Don't set safeRevisionNr, because this approval hasn't been reviewed by a human.
       val postAfter = post.copy(
@@ -1275,8 +1283,7 @@ trait PostsDao {
         approvedAt = Some(transaction.now.toJavaDate),
         approvedById = Some(SystemUserId),
         approvedSource = Some(post.currentSource),
-        approvedHtmlSanitized = Some(post.currentHtmlSanitized(
-          commonmarkRenderer, pageMeta.pageRole)),
+        approvedHtmlSanitized = Some(approvedHtmlSanitized),
         currentSourcePatch = None)
 
       transaction.updatePost(postAfter)
@@ -1544,8 +1551,8 @@ trait PostsDao {
         toPage, postAfter, skipMentions = true)
       SHOULD // transaction.saveDeleteNotifications(notfs) — but would cause unique key errors
 
-      val patch = ReactJson.makeStorePatch2(postAfter.id, toPage.id,
-        appVersion = globals.applicationVersion, nashorn, transaction)
+      val patch = jsonMaker.makeStorePatch2(postAfter.id, toPage.id,
+        appVersion = globals.applicationVersion, transaction)
       (postAfter, patch)
     }
 

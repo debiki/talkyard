@@ -29,9 +29,19 @@ import play.api.libs.json._
 import scala.collection.{immutable, mutable}
 import scala.collection.mutable.ArrayBuffer
 import scala.math.BigDecimal.decimal
+import talkyard.server.{IfCached, PostRenderer, PostRendererSettings}
+import JsonMaker._
+import JsX._
 
 
 case class PostExcerpt(text: String, firstImageUrls: immutable.Seq[String])
+
+
+private case class RendererWithSettings(renderer: PostRenderer, settings: PostRendererSettings) {
+  def renderAndSanitize(post: Post, ifCached: IfCached): String = {
+    renderer.renderAndSanitize(post, settings, ifCached)
+  }
+}
 
 
 class HowRenderPostInPage(
@@ -63,34 +73,9 @@ object FindHeadTagsResult {
 // REFACTOR COULD split into one class JsonDao, which accesses the database and is a Dao trait?
 // + a class JsonMaker or EdJson that doesn't do any db calls or anything like that.
 //
-object ReactJson {
+class JsonMaker(dao: SiteDao) {
 
-  /** If there are more than this many visible replies, we'll summarize the page, otherwise
-    * it'll take a bit long to render in the browser, especially on mobiles.
-    */
-  val SummarizeNumRepliesVisibleLimit = 80
-
-  /** If we're summarizing a page, we'll show the first replies to each comment non-summarized.
-    * But the rest will be summarized.
-    */
-  val SummarizeSiblingIndexLimit = 5
-
-  val SummarizeAllDepthLimit = 5
-
-  /** If we're summarizing a page, we'll squash the last replies to a comment into one
-    * single "Click to show more comments..." html elem.
-    */
-  val SquashSiblingIndexLimit = 8
-
-  /** Like a tweet :-)  */
-  val PostSummaryLength = 140
-
-  /** Posts shorter than this won't be summarized if they're one single paragraph only,
-    * because the "Click to show..." text would then make the summarized post as large
-    * as the non-summarized version.
-    */
-  val SummarizePostLengthLimit: Int =
-    PostSummaryLength + 80 // one line is roughly 80 chars
+  private def pubSiteId = dao.thePubSiteId()
 
 
   /** Returns (json, page-version, page-title, ids-of-authors-of-not-yet-approved-posts)
@@ -98,69 +83,17 @@ object ReactJson {
     */
   def pageToJson(
         pageId: PageId,
-        dao: SiteDao,
         anyPageRoot: Option[PostNr] = None,
         anyPageQuery: Option[PageQuery] = None): PageToJsonResult = {
     dao.readOnlyTransaction(
-      pageThatExistsToJsonImpl(pageId, dao, _, anyPageRoot, anyPageQuery))
-  }
-
-
-  def makeSettingsVisibleClientSideJson(settings: EffectiveSettings): JsObject = {
-    // Only include settings that differ from the default.
-    var json = Json.obj()
-    val D = AllSettings.Default
-    if (settings.languageCode != D.languageCode)
-      json += "languageCode" -> JsString(settings.languageCode)
-    if (settings.inviteOnly != D.inviteOnly)
-      json += "inviteOnly" -> JsBoolean(settings.inviteOnly)
-    if (settings.allowSignup != D.allowSignup)
-      json += "allowSignup" -> JsBoolean(settings.allowSignup)
-    if (settings.allowLocalSignup != D.allowLocalSignup)
-      json += "allowLocalSignup" -> JsBoolean(settings.allowLocalSignup)
-    if (settings.isGuestLoginAllowed != D.allowGuestLogin)
-      json += "allowGuestLogin" -> JsBoolean(settings.isGuestLoginAllowed)
-    if (settings.requireVerifiedEmail != D.requireVerifiedEmail)
-      json += "requireVerifiedEmail" -> JsBoolean(settings.requireVerifiedEmail)
-    if (settings.mayComposeBeforeSignup != D.mayComposeBeforeSignup)
-      json += "mayComposeBeforeSignup" -> JsBoolean(settings.mayComposeBeforeSignup)
-    if (settings.mayPostBeforeEmailVerified != D.mayPostBeforeEmailVerified)
-      json += "mayPostBeforeEmailVerified" -> JsBoolean(settings.mayPostBeforeEmailVerified)
-    if (settings.doubleTypeEmailAddress != D.doubleTypeEmailAddress)
-      json += "doubleTypeEmailAddress" -> JsBoolean(settings.doubleTypeEmailAddress)
-    if (settings.doubleTypePassword != D.doubleTypePassword)
-      json += "doubleTypePassword" -> JsBoolean(settings.doubleTypePassword)
-    if (settings.begForEmailAddress != D.begForEmailAddress)
-      json += "begForEmailAddress" -> JsBoolean(settings.begForEmailAddress)
-    if (settings.showSubCommunities != D.showSubCommunities)
-      json += "showSubCommunities" -> JsBoolean(settings.showSubCommunities)
-    if (settings.showExperimental != D.showExperimental)
-      json += "showExperimental" -> JsBoolean(settings.showExperimental)
-    if (settings.forumMainView != D.forumMainView)
-      json += "forumMainView" -> JsString(settings.forumMainView)
-    if (settings.forumTopicsSortButtons != D.forumTopicsSortButtons)
-      json += "forumTopicsSortButtons" -> JsString(settings.forumTopicsSortButtons)
-    if (settings.forumCategoryLinks != D.forumCategoryLinks)
-      json += "forumCategoryLinks" -> JsString(settings.forumCategoryLinks)
-    if (settings.forumTopicsLayout != D.forumTopicsLayout)
-      json += "forumTopicsLayout" -> JsNumber(settings.forumTopicsLayout.toInt)
-    if (settings.forumCategoriesLayout != D.forumCategoriesLayout)
-      json += "forumCategoriesLayout" -> JsNumber(settings.forumCategoriesLayout.toInt)
-    if (settings.showCategories != D.showCategories)
-      json += "showCategories" -> JsBoolean(settings.showCategories)
-    if (settings.showTopicFilterButton != D.showTopicFilterButton)
-      json += "showTopicFilterButton" -> JsBoolean(settings.showTopicFilterButton)
-    if (settings.showTopicTypes != D.showTopicTypes)
-      json += "showTopicTypes" -> JsBoolean(settings.showTopicTypes)
-    if (settings.selectTopicType != D.selectTopicType)
-      json += "selectTopicType" -> JsBoolean(settings.selectTopicType)
-    json
+      pageThatExistsToJsonImpl(pageId, _, anyPageRoot, anyPageQuery))
   }
 
 
   /** When a site has just been created, and has no contents.
     */
   def emptySiteJson(pageReq: PageRequest[_]): JsObject = {
+    require(pageReq.dao == dao, "TyE4GKWQ10")
     require(!pageReq.pageExists, "DwE7KEG2")
     require(pageReq.pagePath.value == HomepageUrlPath, "DwE8UPY4")
     val globals = pageReq.context.globals
@@ -200,7 +133,7 @@ object ReactJson {
       "isInEmbeddedCommentsIframe" -> JsBoolean(false),
       "publicCategories" -> JsArray(),
       "topics" -> JsNull,
-      "me" -> noUserSpecificData(pageReq.dao, everyonesPerms),
+      "me" -> noUserSpecificData(everyonesPerms),
       "rootPostId" -> JsNumber(PageParts.BodyNr),
       "usersByIdBrief" -> JsObject(Nil),
       "siteSections" -> JsArray(),
@@ -212,13 +145,12 @@ object ReactJson {
 
   private def pageThatExistsToJsonImpl(
     pageId: PageId,
-    dao: SiteDao,
     transaction: SiteTransaction,
     anyPageRoot: Option[PostNr],
     anyPageQuery: Option[PageQuery]): PageToJsonResult = {
 
     val page = PageDao(pageId, transaction)
-    pageToJsonImpl(pageId, dao, page, transaction, anyPageRoot, anyPageQuery)
+    pageToJsonImpl(pageId, page, transaction, anyPageRoot, anyPageQuery)
   }
 
 
@@ -227,20 +159,18 @@ object ReactJson {
     * navigating to a wiki page that has not yet been created.
     */
   def pageThatDoesNotExistsToJson(
-    dao: SiteDao,
     pageRole: PageRole,
     anyCategoryId: Option[CategoryId]): PageToJsonResult = {
 
     dao.readOnlyTransaction { tx =>
       val page = NonExistingPage(dao.siteId, pageRole, anyCategoryId, dao.context.globals.now())
-      pageToJsonImpl(EmptyPageId, dao, page, tx, anyPageRoot = None, anyPageQuery = None)
+      pageToJsonImpl(EmptyPageId, page, tx, anyPageRoot = None, anyPageQuery = None)
     }
   }
 
 
   private def pageToJsonImpl(
         pageId: PageId,
-        dao: SiteDao,
         page: Page,
         transaction: SiteTransaction,
         anyPageRoot: Option[PostNr],
@@ -308,7 +238,7 @@ object ReactJson {
         numPostsRepliesSection += 1
       val tags = tagsByPostId(post.id)
       post.nr.toString -> postToJsonImpl(post, page, tags, includeUnapproved = false,
-        showHidden = false, dao.nashorn)
+        showHidden = false)
     }
 
     // Topic members (e.g. chat channel members) join/leave infrequently, so better cache them
@@ -332,9 +262,9 @@ object ReactJson {
       Post.sortPostsBestFirst(topLevelComments).map(reply => JsNumber(reply.nr))
 
     val (anyForumId: Option[PageId], ancestorsJsonRootFirst: Seq[JsObject]) =
-      makeForumIdAndAncestorsJson(page.meta, dao)
+      makeForumIdAndAncestorsJson(page.meta)
 
-    val categories = page.meta.categoryId.map(makeCategoriesJson(_, authzCtx, dao)) getOrElse JsArray()
+    val categories = page.meta.categoryId.map(makeCategoriesJson(_, authzCtx)) getOrElse JsArray()
     val siteSettings = dao.getWholeSiteSettings()
 
     val anyLatestTopics: JsValue =
@@ -421,10 +351,10 @@ object ReactJson {
       "isInEmbeddedCommentsIframe" -> JsBoolean(page.role == PageRole.EmbeddedComments),
       "publicCategories" -> categories,
       "topics" -> anyLatestTopics,
-      "me" -> noUserSpecificData(dao, authzCtx.permissions),
+      "me" -> noUserSpecificData(authzCtx.permissions),
       "rootPostId" -> JsNumber(BigDecimal(anyPageRoot getOrElse PageParts.BodyNr)),
       "usersByIdBrief" -> usersByIdJson,
-      "siteSections" -> makeSiteSectionsJson(dao),
+      "siteSections" -> makeSiteSectionsJson(),
       "socialLinksHtml" -> JsString(socialLinksHtml),
       "currentPageId" -> pageId,
       "pagesById" -> Json.obj(pageId -> pageJsonObj))
@@ -443,9 +373,681 @@ object ReactJson {
   }
 
 
+  def makeStrangersWatcbarJson(): JsValue = {
+    val watchbar = dao.getStrangersWatchbar()
+    val watchbarWithTitles = dao.fillInWatchbarTitlesEtc(watchbar)
+    watchbarWithTitles.toJsonWithTitles
+  }
+
+
+  def makeSpecialPageJson(request: DebikiRequest[_], inclCategoriesJson: Boolean): JsObject = {
+    require(request.dao == dao, "TyE4JKTWQ0")
+    val globals = request.context.globals
+    val requester = request.requester
+    val siteSettings = dao.getWholeSiteSettings()
+    val site = request.dao.theSite()
+    var result = Json.obj(
+      "dbgSrc" -> "SPJ",
+      "appVersion" -> globals.applicationVersion,
+      "pubSiteId" -> JsString(site.pubId),
+      "siteId" -> JsNumber(site.id), // LATER remove in Prod mode [5UKFBQW2]
+      "siteStatus" -> site.status.toInt,
+      // CLEAN_UP remove these two; they should-instead-be/are-already included in settings: {...}.
+      "userMustBeAuthenticated" -> JsBoolean(siteSettings.userMustBeAuthenticated),
+      "userMustBeApproved" -> JsBoolean(siteSettings.userMustBeApproved),
+      "settings" -> makeSettingsVisibleClientSideJson(siteSettings),
+      "me" -> noUserSpecificData(dao.getPermsForEveryone()),
+      "rootPostId" -> JsNumber(PageParts.BodyNr),
+      "maxUploadSizeBytes" -> globals.maxUploadSizeBytes,
+      "siteSections" -> makeSiteSectionsJson(),
+      "usersByIdBrief" -> Json.obj(),
+      "strangersWatchbar" -> makeStrangersWatcbarJson(),
+      "pagesById" -> Json.obj(),
+      "publicCategories" -> JsArray())
+
+    result
+  }
+
+
+  /** Returns (any-forum-id, json-for-ancestor-forum-and-categories-forum-first).
+    */
+  def makeForumIdAndAncestorsJson(pageMeta: PageMeta)
+        : (Option[PageId], Seq[JsObject]) = {
+    val categoryId = pageMeta.categoryId getOrElse {
+      return (None, Nil)
+    }
+    val categoriesRootFirst = dao.loadAncestorCategoriesRootLast(categoryId).reverse
+    if (categoriesRootFirst.isEmpty) {
+      return (None, Nil)
+    }
+    val forumPageId = categoriesRootFirst.head.sectionPageId
+    dao.getPagePath(forumPageId) match {
+      case None => (None, Nil)
+      case Some(forumPath) =>
+        val jsonRootFirst = categoriesRootFirst.map(makeForumOrCategoryJson(forumPath, _))
+        (Some(forumPageId), jsonRootFirst)
+    }
+  }
+
+
+  def makeSiteSectionsJson(): JsValue = {
+    SECURITY; SHOULD // not show any hidden/private site sections. Currently harmless though:
+    // there can be only 1 section and it always has the same id. (unless adds more manually via SQL)
+    val sectionPageIds = dao.loadSectionPageIdsAsSeq()
+    val jsonObjs = for {
+      pageId <- sectionPageIds
+      // (We're not in a transaction, the page might be gone [transaction])
+      metaAndPath <- dao.getPagePathAndMeta(pageId)
+    } yield {
+      Json.obj(
+        "pageId" -> metaAndPath.pageId,
+        "path" -> metaAndPath.path.value,
+        "pageRole" -> metaAndPath.pageRole.toInt)
+    }
+    JsArray(jsonObjs)
+  }
+
+
+  def postToJson2(postNr: PostNr, pageId: PageId,
+        includeUnapproved: Boolean = false, showHidden: Boolean = false): JsObject =
+    postToJson(postNr, pageId, includeUnapproved = includeUnapproved,
+      showHidden = showHidden)._1
+
+
+  def postToJson(postNr: PostNr, pageId: PageId, includeUnapproved: Boolean = false,
+        showHidden: Boolean = false): (JsObject, PageVersion) = {
+    dao.readOnlyTransaction { transaction =>
+      // COULD optimize: don't load the whole page, load only postNr and the author and last editor.
+      val page = PageDao(pageId, transaction)
+      val post = page.parts.thePostByNr(postNr)
+      val tags = transaction.loadTagsForPost(post.id)
+      val json = postToJsonImpl(post, page, tags,
+        includeUnapproved = includeUnapproved, showHidden = showHidden)
+      (json, page.version)
+    }
+  }
+
+
+  ANNOYING ; COULD ; REFACTOR // postToJsonImpl's dependency on Page & a transaction is annoying.
+  // Could create a StuffNeededToRenderPost class instead? and make some things, like
+  // depth & siblings, optional, and then just exlude them from the resulting json, and
+  // merge-update the post client side instead.
+
+  /** Private, so it cannot be called outside a transaction.
+    */
+  private def postToJsonImpl(post: Post, page: Page, tags: Set[TagLabel],
+        includeUnapproved: Boolean, showHidden: Boolean): JsObject = {
+
+    val depth = page.parts.depthOf(post.nr)
+
+    // Find out if we should summarize post, or squash it and its subsequent siblings.
+    // This is simple but a bit too stupid? COULD come up with a better algorithm (better
+    // in the sense that it better avoids summarizing or squashing interesting stuff).
+    // (Note: We'll probably have to do this server side in order to do it well, because
+    // only server side all information is available, e.g. how trustworthy certain users
+    // are or if they are trolls. Cannot include that in JSON sent to the browser, privacy issue.)
+    val (summarize, jsSummary, squash) =
+      if (page.parts.numRepliesVisible < SummarizeNumRepliesVisibleLimit) {
+        (false, JsNull, false)
+      }
+      else {
+        val (siblingIndex, hasNonDeletedSuccessorSiblingTrees) = page.parts.siblingIndexOf(post)
+        val squashTime = siblingIndex > SquashSiblingIndexLimit / math.max(depth, 1)
+        // Don't squash a single comment with no replies – summarize it instead.
+        val squash = squashTime && (hasNonDeletedSuccessorSiblingTrees ||
+          page.parts.hasNonDeletedSuccessor(post.nr))
+        var summarize = !squash && (squashTime || siblingIndex > SummarizeSiblingIndexLimit ||
+          depth >= SummarizeAllDepthLimit)
+        val summary: JsValue =
+          if (summarize) post.approvedHtmlSanitized match {
+            case None =>
+              JsString("(Not approved [DwE4FGEU7])")
+            case Some(html) =>
+              // Include only the first paragraph or header.
+              val ToTextResult(text, isSingleParagraph) =
+                htmlToTextWithNewlines(html, firstLineOnly = true)
+              if (isSingleParagraph && text.length <= SummarizePostLengthLimit) {
+                // There's just one short paragraph. Don't summarize.
+                summarize = false
+                JsNull
+              }
+              else {
+                JsString(text.take(PostSummaryLength))
+              }
+          }
+          else JsNull
+        (summarize, summary, squash)
+      }
+
+    val childrenSorted = page.parts.childrenBestFirstOf(post.nr)
+
+    val howRender = new HowRenderPostInPage(summarize = summarize, jsSummary = jsSummary,
+        squash = squash, childrenSorted = childrenSorted)
+
+    val renderer = RendererWithSettings(
+      dao.context.postRenderer, PostRendererSettings(page.role, pubSiteId))
+
+    postToJsonNoDbAccess(post, showHidden = showHidden, includeUnapproved = includeUnapproved,
+      pageRole = page.role, tags = tags, howRender, renderer)
+  }
+
+
+  def postToJsonOutsidePage(post: Post, pageRole: PageRole, showHidden: Boolean, includeUnapproved: Boolean,
+        tags: Set[TagLabel]): JsObject = {
+    val renderer = RendererWithSettings(dao.context.postRenderer, PostRendererSettings(pageRole, pubSiteId))
+    postToJsonNoDbAccess(post, showHidden = showHidden, includeUnapproved = includeUnapproved,
+      pageRole, tags = tags, new HowRenderPostInPage(false, JsNull, false, Nil), renderer)
+  }
+
+
+  def noUserSpecificData(everyonesPerms: Seq[PermsOnPages]): JsObject = {
+    require(everyonesPerms.forall(_.forPeopleId == Group.EveryoneId), "EdE2WBG08")
+
+    // Somewhat dupl code. (2WB4G7)
+    Json.obj(
+      "dbgSrc" -> "2FBS6Z8",
+      "trustLevel" -> TrustLevel.StrangerDummyLevel,
+      "notifications" -> JsArray(),
+      "watchbar" -> makeStrangersWatcbarJson(),
+      "myDataByPageId" -> JsObject(Nil),
+      "marksByPostId" -> JsObject(Nil),
+      "closedHelpMessages" -> JsObject(Nil),
+      "permsOnPages" -> permsOnPagesToJson(everyonesPerms, excludeEveryone = false))
+  }
+
+
+  RENAME // this function (i.e. userDataJson) so it won't come as a
+  // surprise that it updates the watchbar! But to what? Or reanme the class too? Or break out?
+  def userDataJson(pageRequest: PageRequest[_], unapprovedPostAuthorIds: Set[UserId])
+        : Option[JsObject] = {
+    require(pageRequest.dao == dao, "TyE4GKVRY3")
+    val user = pageRequest.user getOrElse {
+      return None
+    }
+
+    val permissions = pageRequest.authzContext.permissions
+
+    var watchbar: BareWatchbar = dao.getOrCreateWatchbar(user.id)
+    if (pageRequest.pageExists) {
+      // (See comment above about ought-to-rename this whole function / stuff.)
+      RACE // if the user opens a page, and someone adds her to a chat at the same time.
+      watchbar.tryAddRecentTopicMarkSeen(pageRequest.thePageMeta) match {
+        case None => // watchbar wasn't modified
+        case Some(modifiedWatchbar) =>
+          watchbar = modifiedWatchbar
+          dao.saveWatchbar(user.id, watchbar)
+          dao.pubSub.userWatchesPages(pageRequest.siteId, user.id, watchbar.watchedPageIds) ;RACE
+      }
+    }
+    val watchbarWithTitles = dao.fillInWatchbarTitlesEtc(watchbar)
+    val (restrCategories, restrTopics, users) = listRestrictedCategoriesAndTopics(pageRequest)
+    dao.readOnlyTransaction { transaction =>
+      Some(userDataJsonImpl(user, pageRequest.pageId, watchbarWithTitles, restrCategories,
+        restrictedTopics = restrTopics, restrictedTopicsUsers = users, permissions, unapprovedPostAuthorIds,
+        transaction))
+    }
+  }
+
+
+  def userNoPageToJson(request: DebikiRequest[_]): JsValue = {
+    import request.authzContext
+    require(request.dao == dao, "TyE4JK5WS2")
+    val user = request.user getOrElse {
+      return JsNull
+    }
+    val permissions = authzContext.permissions
+    val watchbar = dao.getOrCreateWatchbar(user.id)
+    val watchbarWithTitles = dao.fillInWatchbarTitlesEtc(watchbar)
+    val restrictedCategories = JsArray()
+    request.dao.readOnlyTransaction(userDataJsonImpl(user, anyPageId = None, watchbarWithTitles,
+      restrictedCategories, restrictedTopics = Nil, restrictedTopicsUsers = Nil,
+      permissions, unapprovedPostAuthorIds = Set.empty, _))
+  }
+
+
+  private def userDataJsonImpl(user: User, anyPageId: Option[PageId],
+        watchbar: WatchbarWithTitles, restrictedCategories: JsArray,
+        restrictedTopics: Seq[JsValue], restrictedTopicsUsers: Seq[JsObject],
+        permissions: Seq[PermsOnPages], unapprovedPostAuthorIds: Set[UserId],
+        transaction: SiteTransaction): JsObject = {
+
+    val reviewTasksAndCounts =
+      if (user.isStaff) transaction.loadReviewTaskCounts(user.isAdmin)
+      else ReviewTaskCounts(0, 0)
+
+    val notfsAndCounts = loadNotifications(user.id, transaction, unseenFirst = true, limit = 20)
+
+    val (rolePageSettings, votes, unapprovedPosts, unapprovedAuthors) =
+      anyPageId map { pageId =>
+        val rolePageSettings = user.anyMemberId.map({ userId =>
+          val anySettings = transaction.loadUserPageSettings(userId, pageId = pageId)
+          rolePageSettingsToJson(anySettings getOrElse UserPageSettings.Default)
+        }) getOrElse JsEmptyObj
+        val votes = votesJson(user.id, pageId, transaction)
+        // + flags, interesting for staff, & so people won't attempt to flag twice [7KW20WY1]
+        val (postsJson, postAuthorsJson) =
+          unapprovedPostsAndAuthorsJson(user, pageId, unapprovedPostAuthorIds, transaction)
+        (rolePageSettings, votes, postsJson, postAuthorsJson)
+      } getOrElse (JsEmptyObj, JsEmptyObj, JsEmptyObj, JsArray())
+
+    val threatLevel = user match {
+      case member: Member => member.threatLevel
+      case _ =>
+        COULD // load or get-from-cache IP bans ("blocks") for this guest and derive the
+        // correct threat level. However, for now, since this is for the brower only, this'll do:
+        ThreatLevel.HopefullySafe
+    }
+
+    val anyReadingProgress = anyPageId.flatMap(transaction.loadReadProgress(user.id, _))
+    val anyReadingProgressJson = anyReadingProgress.map(makeReadingProgressJson).getOrElse(JsNull)
+
+    val userDataByPageId = anyPageId match {
+      case None => Json.obj()
+      case Some(pageId) =>
+        Json.obj(pageId ->
+          Json.obj(
+            "rolePageSettings" -> rolePageSettings,
+            "readingProgress" -> anyReadingProgressJson,
+            "votes" -> votes,
+            // later: "flags" -> JsArray(...) [7KW20WY1]
+            "unapprovedPosts" -> unapprovedPosts,
+            "unapprovedPostAuthors" -> unapprovedAuthors,  // should remove [5WKW219] + search for elsewhere
+            "postNrsAutoReadLongAgo" -> JsArray(Nil),      // should remove
+            "postNrsAutoReadNow" -> JsArray(Nil),
+            "marksByPostId" -> JsObject(Nil)))
+    }
+
+    // Somewhat dupl code, (2WB4G7) and [B28JG4].
+    var json = Json.obj(
+      "dbgSrc" -> "4JKW7A0",
+      "id" -> JsNumber(user.id),
+      "userId" -> JsNumber(user.id), // try to remove, use 'id' instead
+      "username" -> JsStringOrNull(user.anyUsername),
+      "fullName" -> JsStringOrNull(user.anyName),
+      "isLoggedIn" -> JsBoolean(true),
+      "isAdmin" -> JsBoolean(user.isAdmin),
+      "isModerator" -> JsBoolean(user.isModerator),
+      "isDeactivated" -> JsBoolean(user.isDeactivated),
+      "isDeleted" -> JsBoolean(user.isDeleted),
+      "avatarSmallHashPath" -> JsStringOrNull(user.smallAvatar.map(_.hashPath)),
+      "avatarUrl" -> JsUploadUrlOrNull(user.smallAvatar),  // remove [4GKWDU20]
+      "isEmailKnown" -> JsBoolean(user.email.nonEmpty),
+      "isAuthenticated" -> JsBoolean(user.isAuthenticated),
+      "trustLevel" -> JsNumber(user.effectiveTrustLevel.toInt),
+      "threatLevel" -> JsNumber(threatLevel.toInt),
+
+      "numUrgentReviewTasks" -> reviewTasksAndCounts.numUrgent,
+      "numOtherReviewTasks" -> reviewTasksAndCounts.numOther,
+
+      "numTalkToMeNotfs" -> notfsAndCounts.numTalkToMe,
+      "numTalkToOthersNotfs" -> notfsAndCounts.numTalkToOthers,
+      "numOtherNotfs" -> notfsAndCounts.numOther,
+      "thereAreMoreUnseenNotfs" -> notfsAndCounts.thereAreMoreUnseen,
+      "notifications" -> notfsAndCounts.notfsJson,
+
+      "watchbar" -> watchbar.toJsonWithTitles,
+
+      // The Everyone group's permissions are included in the generic no-user json already;
+      // don't include it here again. [8JUYW4B]
+      "permsOnPages" -> permsOnPagesToJson(permissions, excludeEveryone = true),
+
+      "restrictedTopics" -> restrictedTopics,
+      "restrictedTopicsUsers" -> restrictedTopicsUsers,
+      "restrictedCategories" -> restrictedCategories,
+      "closedHelpMessages" -> JsObject(Nil),
+      "myDataByPageId" -> userDataByPageId,
+      "marksByPostId" -> JsObject(Nil))
+
+    if (user.isAdmin) {
+      val siteSettings = transaction.loadSiteSettings()
+      json += "isEmbeddedCommentsSite" -> JsBoolean(siteSettings.exists(_.allowEmbeddingFrom.nonEmpty))
+    }
+
+    json
+  }
+
+
+  private def listRestrictedCategoriesJson(categoryId: CategoryId,
+        authzCtx: ForumAuthzContext): JsArray = {
+    val (categories, defaultCategoryId) =
+      dao.listAllMaySeeCategories(categoryId, authzCtx)  // oops, also includes publ cats [4KQSEF08]
+
+    // A tiny bit dupl code [5YK03W5]
+    JsArray(categories.filterNot(_.isRoot) map { category =>
+      makeCategoryJson(category, defaultCategoryId.contains(category.id))
+    })
+  }
+
+
+  COULD ; REFACTOR // move to CategoriesDao? and change from param PageRequest to
+  // user + pageMeta?
+  def listRestrictedCategoriesAndTopics(request: PageRequest[_])
+        : (JsArray, Seq[JsValue], Seq[JsObject]) = {
+    // OLD: Currently there're only 2 types of "personal" topics: unlisted, & staff-only.
+    // DON'T: if (!request.isStaff)
+      //return (JsArray(), Nil)
+
+    require(request.dao == dao, "TyE5JKWC3")
+    val authzCtx = request.authzContext
+    val siteSettings = dao.getWholeSiteSettings()
+
+    val categoryId = request.thePageMeta.categoryId getOrElse {
+      // Not a forum topic. Could instead show an option to add the page to the / a forum?
+      return (JsArray(), Nil, Nil)
+    }
+
+    // SHOULD avoid starting a new transaction, so can remove workaround [7YKG25P].
+    // (request.dao might start a new transaction)
+    val categoriesJson = listRestrictedCategoriesJson(categoryId, authzCtx)
+
+    val (topics: Seq[PagePathAndMeta], pageStuffById) =
+      if (request.thePageRole != PageRole.Forum) {
+        // Then won't list topics; no need to load any.
+        (Nil, Map[PageId, PageStuff]())
+      }
+      else {
+        val orderOffset = PageQuery(PageOrderOffset.ByBumpTime(None), PageFilter.ShowAll,
+          includeAboutCategoryPages = siteSettings.showCategories)
+        // SHOULD avoid starting a new transaction, so can remove workaround [7YKG25P].
+        // (We're passing dao to ForumController below.)
+        val topics = dao.listMaySeeTopicsInclPinned(
+          categoryId, orderOffset,
+          includeDescendantCategories = true,
+          authzCtx,
+          limit = ForumController.NumTopicsToList)
+        val pageStuffById = dao.getPageStuffById(topics.map(_.pageId))
+        (topics, pageStuffById)
+      }
+
+    val userIds = mutable.Set[UserId]()
+    topics.foreach(_.meta.addUserIdsTo(userIds))
+    val users = dao.getUsersAsSeq(userIds)
+
+    (categoriesJson,
+      topics.map(ForumController.topicToJson(_, pageStuffById)),
+      users.map(JsUser))
+  }
+
+
+  private def unapprovedPostsAndAuthorsJson(user: User, pageId: PageId,
+        unapprovedPostAuthorIds: Set[UserId], transaction: SiteTransaction): (
+          JsObject /* why object? try to change to JsArray instead */, JsArray) = {
+
+    var posts: Seq[Post] =
+      if (unapprovedPostAuthorIds.isEmpty) {
+        // This is usually the case, and lets us avoid a db query.
+        Nil
+      }
+      else if (user.isStaff) {
+        transaction.loadAllUnapprovedPosts(pageId, limit = 999)
+      }
+      else if (unapprovedPostAuthorIds.contains(user.id)) {
+        transaction.loadUnapprovedPosts(pageId, by = user.id, limit = 999)
+      }
+      else {
+        Nil
+      }
+
+    COULD // load form replies also if user is page author?
+    if (user.isAdmin) {
+      posts ++= transaction.loadCompletedForms(pageId, limit = 999)
+    }
+
+    if (posts.isEmpty)
+      return (JsObject(Nil), JsArray())
+
+    val tagsByPostId = transaction.loadTagsByPostId(posts.map(_.id))
+    val pageMeta = transaction.loadThePageMeta(pageId)
+
+    val postIdsAndJson: Seq[(String, JsValue)] = posts.map { post =>
+      val tags = tagsByPostId(post.id)
+      val renderer = RendererWithSettings(
+        dao.context.postRenderer, PostRendererSettings(pageMeta.pageRole, pubSiteId))
+      post.nr.toString ->
+        postToJsonNoDbAccess(post, showHidden = true, includeUnapproved = true,
+          pageMeta.pageRole, tags = tags, new HowRenderPostInPage(false, JsNull, false,
+            // Cannot currently reply to unapproved posts, so no children. [8PA2WFM]
+            Nil), renderer)
+    }
+
+    val authors = transaction.loadUsers(posts.map(_.createdById).toSet)
+    val authorsJson = JsArray(authors map JsUser)
+    (JsObject(postIdsAndJson), authorsJson)
+  }
+
+
+  def makeCategoriesStorePatch(categoryId: CategoryId, authzCtx: ForumAuthzContext)
+        : JsValue = {
+    // 2 dupl lines [7UXAI1]
+    val restrCategoriesJson = makeCategoriesJson(categoryId, authzCtx)
+    val publCategoriesJson = makeCategoriesJson(categoryId, dao.getForumPublicAuthzContext())
+    Json.obj(
+      "appVersion" -> dao.globals.applicationVersion,
+      "restrictedCategories" -> restrCategoriesJson,
+      "publicCategories" -> publCategoriesJson)
+  }
+
+
+  def makeCategoriesJson(categoryId: CategoryId, authzCtx: ForumAuthzContext)
+        : JsArray = {
+    val (categories, defaultCategoryId) = dao.listAllMaySeeCategories(categoryId, authzCtx)
+    // A tiny bit dupl code [5YK03W5]
+    val categoriesJson = JsArray(categories.filterNot(_.isRoot) map { category =>
+      makeCategoryJson(category, defaultCategoryId.contains(category.id))
+    })
+    categoriesJson
+  }
+
+
+  def makeStorePatchForPostNr(pageId: PageId, postNr: PostNr, showHidden: Boolean): Option[JsValue] = {
+    val post = dao.loadPost(pageId, postNr) getOrElse {
+      return None
+    }
+    val author = dao.getUser(post.createdById) getOrElse {
+      // User was just deleted? Race condition.
+      UnknownUser
+    }
+    Some(makeStorePatch(post, author, showHidden = showHidden))
+  }
+
+
+  def makeStorePatchForPosts(postIds: Set[PostId], showHidden: Boolean, dao: SiteDao)
+  : JsValue = {
+    dao.readOnlyTransaction { tx =>
+      makeStorePatchForPosts(postIds, showHidden, dao.context.postRenderer,
+        tx, appVersion = dao.globals.applicationVersion)
+    }
+  }
+
+
+  def makeStorePatchForPosts(postIds: Set[PostId], showHidden: Boolean,
+    postRenderer: PostRenderer, transaction: SiteTransaction, appVersion: String): JsValue = {
+    val posts = transaction.loadPostsByUniqueId(postIds).values
+    val tagsByPostId = transaction.loadTagsByPostId(postIds)
+    val pageIds = posts.map(_.pageId).toSet
+    val pageIdVersions = transaction.loadPageMetas(pageIds).map(_.idVersion)
+    val authorIds = posts.map(_.createdById).toSet
+    val authors = transaction.loadUsers(authorIds)
+    makeStorePatch3(pageIdVersions, posts, tagsByPostId, authors, appVersion = appVersion)(
+      transaction)
+  }
+
+
+  def makeStorePatch(post: Post, author: User, showHidden: Boolean): JsObject = {
+    // Warning: some similar code below [89fKF2]
+    require(post.createdById == author.id, "EsE5PKY2")
+    val (postJson, pageVersion) = postToJson(
+      post.nr, pageId = post.pageId, includeUnapproved = true, showHidden = showHidden)
+    makeStorePatch(PageIdVersion(post.pageId, pageVersion), appVersion = dao.globals.applicationVersion,
+      posts = Seq(postJson), users = Seq(JsUser(author)))
+  }
+
+
+  @deprecated("now", "use makeStorePatchForPosts instead")
+  def makeStorePatch2(postId: PostId, pageId: PageId, appVersion: String,
+        transaction: SiteTransaction): JsValue = {
+    // Warning: some similar code above [89fKF2]
+    // Load the page so we'll get a version that includes postId, in case it was just added.
+    val page = PageDao(pageId, transaction)
+    val post = page.parts.postById(postId) getOrDie "EsE8YKPW2"
+    dieIf(post.pageId != pageId, "EdE4FK0Q2W", o"""Wrong page id: $pageId, was post $postId
+        just moved to page ${post.pageId} instead? Site: ${transaction.siteId}""")
+    val tags = transaction.loadTagsForPost(post.id)
+    val author = transaction.loadTheUser(post.createdById)
+    require(post.createdById == author.id, "EsE4JHKX1")
+    val postJson = postToJsonImpl(post, page, tags, includeUnapproved = true, showHidden = true)
+    makeStorePatch(PageIdVersion(post.pageId, page.version), appVersion = appVersion,
+      posts = Seq(postJson), users = Seq(JsUser(author)))
+  }
+
+
+  def makeStorePatch(pageIdVersion: PageIdVersion, appVersion: String, posts: Seq[JsObject] = Nil,
+    users: Seq[JsObject] = Nil): JsObject = {
+    require(posts.isEmpty || users.nonEmpty, "Posts but no authors [EsE4YK7W2]")
+    Json.obj(
+      "appVersion" -> appVersion,
+      "pageVersionsByPageId" -> Json.obj(pageIdVersion.pageId -> pageIdVersion.version),
+      "usersBrief" -> users,
+      "postsByPageId" -> Json.obj(pageIdVersion.pageId -> posts))
+  }
+
+
+  ANNOYING // needs a transaction, because postToJsonImpl needs one. Try to remove
+  private def makeStorePatch3(pageIdVersions: Iterable[PageIdVersion], posts: Iterable[Post],
+    tagsByPostId: Map[PostId, Set[String]], users: Iterable[User], appVersion: String)(
+    transaction: SiteTransaction): JsValue = {
+    require(posts.isEmpty || users.nonEmpty, "Posts but no authors [EsE4YK7W2]")
+    val pageVersionsByPageIdJson =
+      JsObject(pageIdVersions.toSeq.map(p => p.pageId -> JsNumber(p.version)))
+    val postsByPageId: Map[PageId, Iterable[Post]] = posts.groupBy(_.pageId)
+    val postsByPageIdJson = JsObject(
+      postsByPageId.toSeq.map(pageIdPosts => {
+        val pageId = pageIdPosts._1
+        val posts = pageIdPosts._2
+        val page = PageDao(pageId, transaction)
+        val postsJson = posts map { p =>
+          postToJsonImpl(p, page, tagsByPostId.getOrElse(p.id, Set.empty),
+            includeUnapproved = false, showHidden = false)
+        }
+        pageId -> JsArray(postsJson.toSeq)
+      }))
+    Json.obj(
+      "appVersion" -> appVersion,
+      "pageVersionsByPageId" -> pageVersionsByPageIdJson,
+      "usersBrief" -> users.map(JsUser),
+      "postsByPageId" -> postsByPageIdJson)
+  }
+
+}
+
+
+
+object JsonMaker {
+
+  /** If there are more than this many visible replies, we'll summarize the page, otherwise
+    * it'll take a bit long to render in the browser, especially on mobiles.
+    */
+  private val SummarizeNumRepliesVisibleLimit = 80
+
+  /** If we're summarizing a page, we'll show the first replies to each comment non-summarized.
+    * But the rest will be summarized.
+    */
+  private val SummarizeSiblingIndexLimit = 5
+
+  private val SummarizeAllDepthLimit = 5
+
+  /** If we're summarizing a page, we'll squash the last replies to a comment into one
+    * single "Click to show more comments..." html elem.
+    */
+  private val SquashSiblingIndexLimit = 8
+
+  /** Like a tweet :-)  */
+  private val PostSummaryLength = 140
+
+  /** Posts shorter than this won't be summarized if they're one single paragraph only,
+    * because the "Click to show..." text would then make the summarized post as large
+    * as the non-summarized version.
+    */
+  private val SummarizePostLengthLimit: Int =
+    PostSummaryLength + 80 // one line is roughly 80 chars
+
+
+  private def makeSettingsVisibleClientSideJson(settings: EffectiveSettings): JsObject = {
+    // Only include settings that differ from the default.
+    var json = Json.obj()
+    val D = AllSettings.Default
+    if (settings.languageCode != D.languageCode)
+      json += "languageCode" -> JsString(settings.languageCode)
+    if (settings.inviteOnly != D.inviteOnly)
+      json += "inviteOnly" -> JsBoolean(settings.inviteOnly)
+    if (settings.allowSignup != D.allowSignup)
+      json += "allowSignup" -> JsBoolean(settings.allowSignup)
+    if (settings.allowLocalSignup != D.allowLocalSignup)
+      json += "allowLocalSignup" -> JsBoolean(settings.allowLocalSignup)
+    if (settings.isGuestLoginAllowed != D.allowGuestLogin)
+      json += "allowGuestLogin" -> JsBoolean(settings.isGuestLoginAllowed)
+    if (settings.requireVerifiedEmail != D.requireVerifiedEmail)
+      json += "requireVerifiedEmail" -> JsBoolean(settings.requireVerifiedEmail)
+    if (settings.mayComposeBeforeSignup != D.mayComposeBeforeSignup)
+      json += "mayComposeBeforeSignup" -> JsBoolean(settings.mayComposeBeforeSignup)
+    if (settings.mayPostBeforeEmailVerified != D.mayPostBeforeEmailVerified)
+      json += "mayPostBeforeEmailVerified" -> JsBoolean(settings.mayPostBeforeEmailVerified)
+    if (settings.doubleTypeEmailAddress != D.doubleTypeEmailAddress)
+      json += "doubleTypeEmailAddress" -> JsBoolean(settings.doubleTypeEmailAddress)
+    if (settings.doubleTypePassword != D.doubleTypePassword)
+      json += "doubleTypePassword" -> JsBoolean(settings.doubleTypePassword)
+    if (settings.begForEmailAddress != D.begForEmailAddress)
+      json += "begForEmailAddress" -> JsBoolean(settings.begForEmailAddress)
+    if (settings.showSubCommunities != D.showSubCommunities)
+      json += "showSubCommunities" -> JsBoolean(settings.showSubCommunities)
+    if (settings.showExperimental != D.showExperimental)
+      json += "showExperimental" -> JsBoolean(settings.showExperimental)
+    if (settings.forumMainView != D.forumMainView)
+      json += "forumMainView" -> JsString(settings.forumMainView)
+    if (settings.forumTopicsSortButtons != D.forumTopicsSortButtons)
+      json += "forumTopicsSortButtons" -> JsString(settings.forumTopicsSortButtons)
+    if (settings.forumCategoryLinks != D.forumCategoryLinks)
+      json += "forumCategoryLinks" -> JsString(settings.forumCategoryLinks)
+    if (settings.forumTopicsLayout != D.forumTopicsLayout)
+      json += "forumTopicsLayout" -> JsNumber(settings.forumTopicsLayout.toInt)
+    if (settings.forumCategoriesLayout != D.forumCategoriesLayout)
+      json += "forumCategoriesLayout" -> JsNumber(settings.forumCategoriesLayout.toInt)
+    if (settings.showCategories != D.showCategories)
+      json += "showCategories" -> JsBoolean(settings.showCategories)
+    if (settings.showTopicFilterButton != D.showTopicFilterButton)
+      json += "showTopicFilterButton" -> JsBoolean(settings.showTopicFilterButton)
+    if (settings.showTopicTypes != D.showTopicTypes)
+      json += "showTopicTypes" -> JsBoolean(settings.showTopicTypes)
+    if (settings.selectTopicType != D.selectTopicType)
+      json += "selectTopicType" -> JsBoolean(settings.selectTopicType)
+    json
+  }
+
+
+  /** Returns the URL path, category id and title for a forum or category.  [6FK02QFV]
+    */
+  private def makeForumOrCategoryJson(forumPath: PagePath, category: Category): JsObject = {
+    val forumPathSlash = forumPath.value.endsWith("/") ? forumPath.value | forumPath.value + "/"
+    val (name, path) =
+      if (category.isRoot)
+        ("Home", s"${forumPathSlash}latest")   // [i18n]
+      else
+        (category.name, s"${forumPathSlash}latest/${category.slug}")
+    var result = Json.obj(
+      "categoryId" -> category.id,
+      "title" -> name,
+      "path" -> path,
+      "unlisted" -> category.unlisted)
+    if (category.isDeleted) {
+      result += "isDeleted" -> JsTrue
+    }
+    result
+  }
+
+
   /** Returns (tags-result, source-without-tags).
     */
-  def findHeadTags(postSource: String): FindHeadTagsResult = {
+  private def findHeadTags(postSource: String): FindHeadTagsResult = {
     if (postSource.trim.isEmpty)
       return FindHeadTagsResult.None
 
@@ -533,446 +1135,104 @@ object ReactJson {
   }
 
 
-  def makeStrangersWatcbarJson(dao: SiteDao): JsValue = {
-    val watchbar = dao.getStrangersWatchbar()
-    val watchbarWithTitles = dao.fillInWatchbarTitlesEtc(watchbar)
-    watchbarWithTitles.toJsonWithTitles
+  case class NotfsAndCounts(
+    numTalkToMe: Int,
+    numTalkToOthers: Int,
+    numOther: Int,
+    thereAreMoreUnseen: Boolean,
+    notfsJson: JsArray)
+
+
+  def loadNotifications(userId: UserId, transaction: SiteTransaction, unseenFirst: Boolean,
+    limit: Int, upToWhen: Option[ju.Date] = None): NotfsAndCounts = {
+    val notfs = transaction.loadNotificationsForRole(userId, limit, unseenFirst, upToWhen)
+    notificationsToJson(notfs, transaction)
   }
 
 
-  def makeSpecialPageJson(request: DebikiRequest[_], inclCategoriesJson: Boolean): JsObject = {
-    val dao = request.dao
-    val globals = request.context.globals
-    val requester = request.requester
-    val siteSettings = dao.getWholeSiteSettings()
-    val site = request.dao.theSite()
-    var result = Json.obj(
-      "dbgSrc" -> "SPJ",
-      "appVersion" -> globals.applicationVersion,
-      "pubSiteId" -> JsString(site.pubId),
-      "siteId" -> JsNumber(site.id), // LATER remove in Prod mode [5UKFBQW2]
-      "siteStatus" -> site.status.toInt,
-      // CLEAN_UP remove these two; they should-instead-be/are-already included in settings: {...}.
-      "userMustBeAuthenticated" -> JsBoolean(siteSettings.userMustBeAuthenticated),
-      "userMustBeApproved" -> JsBoolean(siteSettings.userMustBeApproved),
-      "settings" -> makeSettingsVisibleClientSideJson(siteSettings),
-      "me" -> noUserSpecificData(dao, dao.getPermsForEveryone()),
-      "rootPostId" -> JsNumber(PageParts.BodyNr),
-      "maxUploadSizeBytes" -> globals.maxUploadSizeBytes,
-      "siteSections" -> makeSiteSectionsJson(dao),
-      "usersByIdBrief" -> Json.obj(),
-      "strangersWatchbar" -> makeStrangersWatcbarJson(dao),
-      "pagesById" -> Json.obj(),
-      "publicCategories" -> JsArray())
+  def notificationsToJson(notfs: Seq[Notification], transaction: SiteTransaction)
+  : NotfsAndCounts = {
+    val userIds = ArrayBuffer[UserId]()
+    var numTalkToMe = 0
+    var numTalkToOthers = 0
+    var numOther = 0
 
-    result
+    val postIds: Seq[PostId] = notfs flatMap {
+      case notf: Notification.NewPost => Some(notf.uniquePostId)
+      case _ => None
+    }
+    val postsById = transaction.loadPostsByUniqueId(postIds)
+
+    val pageIds = postsById.values.map(_.pageId)
+    val pageTitlesById = transaction.loadTitlesPreferApproved(pageIds)
+
+    notfs.foreach {
+      case notf: Notification.NewPost =>
+        userIds.append(notf.byUserId)
+        import NotificationType._
+        if (notf.seenAt.isEmpty) notf.tyype match {
+          case DirectReply | Mention | Message =>
+            numTalkToMe += 1
+          case NewPost =>
+            numTalkToOthers += 1
+          case PostTagged =>
+            numOther += 1
+        }
+      case _ => ()
+    }
+
+    // Unseen notfs are sorted first, so if the last one is unseen, there might be more unseen.
+    val thereAreMoreUnseen = notfs.lastOption.exists(_.seenAt.isEmpty)
+
+    val usersById = transaction.loadUsersAsMap(userIds)
+
+    NotfsAndCounts(
+      numTalkToMe = numTalkToMe,
+      numTalkToOthers = numTalkToOthers,
+      numOther = numOther,
+      thereAreMoreUnseen = thereAreMoreUnseen,
+      notfsJson = JsArray(notfs.flatMap(
+        makeNotificationsJson(_, pageTitlesById, postsById, usersById))))
   }
 
 
-  /** Returns (any-forum-id, json-for-ancestor-forum-and-categories-forum-first).
-    */
-  def makeForumIdAndAncestorsJson(pageMeta: PageMeta, dao: SiteDao)
-        : (Option[PageId], Seq[JsObject]) = {
-    val categoryId = pageMeta.categoryId getOrElse {
-      return (None, Nil)
-    }
-    val categoriesRootFirst = dao.loadAncestorCategoriesRootLast(categoryId).reverse
-    if (categoriesRootFirst.isEmpty) {
-      return (None, Nil)
-    }
-    val forumPageId = categoriesRootFirst.head.sectionPageId
-    dao.getPagePath(forumPageId) match {
-      case None => (None, Nil)
-      case Some(forumPath) =>
-        val jsonRootFirst = categoriesRootFirst.map(makeForumOrCategoryJson(forumPath, _))
-        (Some(forumPageId), jsonRootFirst)
-    }
+  private def makeNotificationsJson(notf: Notification, pageTitlesById: Map[PageId, String],
+    postsById: Map[PostId, Post], usersById: Map[UserId, User]): Option[JsObject] = {
+    Some(notf match {
+      case notf: Notification.NewPost =>
+        val post = postsById.getOrElse(notf.uniquePostId, {
+          return None
+        })
+        val title = pageTitlesById.get(post.pageId)
+        // COULD include number recipients for this notf, so the user will know if this is
+        // for him/her only, or for other people too. [4Y2KF8S]
+        Json.obj(
+          "id" -> notf.id,
+          "type" -> notf.tyype.toInt,
+          "createdAtMs" -> notf.createdAt.getTime,
+          "pageId" -> post.pageId,
+          "pageTitle" -> JsStringOrNull(title),
+          "postNr" -> post.nr,
+          "byUser" -> JsUserOrNull(usersById.get(notf.byUserId)),
+          "seen" -> notf.seenAt.nonEmpty)
+    })
   }
 
 
-  def makeSiteSectionsJson(dao: SiteDao): JsValue = {
-    SECURITY; SHOULD // not show any hidden/private site sections. Currently harmless though:
-    // there can be only 1 section and it always has the same id. (unless adds more manually via SQL)
-    val sectionPageIds = dao.loadSectionPageIdsAsSeq()
-    val jsonObjs = for {
-      pageId <- sectionPageIds
-      // (We're not in a transaction, the page might be gone [transaction])
-      metaAndPath <- dao.getPagePathAndMeta(pageId)
-    } yield {
-      Json.obj(
-        "pageId" -> metaAndPath.pageId,
-        "path" -> metaAndPath.path.value,
-        "pageRole" -> metaAndPath.pageRole.toInt)
+  private def votesJson(userId: UserId, pageId: PageId, transaction: SiteTransaction): JsObject = {
+    val actions = transaction.loadActionsByUserOnPage(userId, pageId)
+    // COULD load flags too, at least if user is staff [7KW20WY1]
+    val votes = actions.filter(_.isInstanceOf[PostVote]).asInstanceOf[immutable.Seq[PostVote]]
+    val userVotesMap = UserPostVotes.makeMap(votes)
+    val votesByPostId = userVotesMap map { case (postNr, postVotes) =>
+      var voteStrs = Vector[String]()
+      if (postVotes.votedLike) voteStrs = voteStrs :+ "VoteLike"
+      if (postVotes.votedWrong) voteStrs = voteStrs :+ "VoteWrong"
+      if (postVotes.votedBury) voteStrs = voteStrs :+ "VoteBury"
+      if (postVotes.votedUnwanted) voteStrs = voteStrs :+ "VoteUnwanted"
+      postNr.toString -> Json.toJson(voteStrs)
     }
-    JsArray(jsonObjs)
-  }
-
-
-  /** Returns the URL path, category id and title for a forum or category.  [6FK02QFV]
-    */
-  private def makeForumOrCategoryJson(forumPath: PagePath, category: Category): JsObject = {
-    val forumPathSlash = forumPath.value.endsWith("/") ? forumPath.value | forumPath.value + "/"
-    val (name, path) =
-      if (category.isRoot)
-        ("Home", s"${forumPathSlash}latest")   // [i18n]
-      else
-        (category.name, s"${forumPathSlash}latest/${category.slug}")
-    var result = Json.obj(
-      "categoryId" -> category.id,
-      "title" -> name,
-      "path" -> path,
-      "unlisted" -> category.unlisted)
-    if (category.isDeleted) {
-      result += "isDeleted" -> JsTrue
-    }
-    result
-  }
-
-
-  def postToJson2(postNr: PostNr, pageId: PageId, dao: SiteDao, includeUnapproved: Boolean = false,
-        showHidden: Boolean = false, nashorn: ReactRenderer): JsObject =
-    postToJson(postNr, pageId, dao, includeUnapproved = includeUnapproved,
-      showHidden = showHidden, nashorn)._1
-
-
-  def postToJson(postNr: PostNr, pageId: PageId, dao: SiteDao, includeUnapproved: Boolean = false,
-        showHidden: Boolean = false, nashorn: ReactRenderer): (JsObject, PageVersion) = {
-    dao.readOnlyTransaction { transaction =>
-      // COULD optimize: don't load the whole page, load only postNr and the author and last editor.
-      val page = PageDao(pageId, transaction)
-      val post = page.parts.thePostByNr(postNr)
-      val tags = transaction.loadTagsForPost(post.id)
-      val json = postToJsonImpl(post, page, tags,
-        includeUnapproved = includeUnapproved, showHidden = showHidden, nashorn)
-      (json, page.version)
-    }
-  }
-
-
-  ANNOYING ; COULD ; REFACTOR // postToJsonImpl's dependency on Page & a transaction is annoying.
-  // Could create a StuffNeededToRenderPost class instead? and make some things, like
-  // depth & siblings, optional, and then just exlude them from the resulting json, and
-  // merge-update the post client side instead.
-
-  /** Private, so it cannot be called outside a transaction.
-    */
-  private def postToJsonImpl(post: Post, page: Page, tags: Set[TagLabel],
-        includeUnapproved: Boolean, showHidden: Boolean, nashorn: ReactRenderer): JsObject = {
-
-    val depth = page.parts.depthOf(post.nr)
-
-    // Find out if we should summarize post, or squash it and its subsequent siblings.
-    // This is simple but a bit too stupid? COULD come up with a better algorithm (better
-    // in the sense that it better avoids summarizing or squashing interesting stuff).
-    // (Note: We'll probably have to do this server side in order to do it well, because
-    // only server side all information is available, e.g. how trustworthy certain users
-    // are or if they are trolls. Cannot include that in JSON sent to the browser, privacy issue.)
-    val (summarize, jsSummary, squash) =
-      if (page.parts.numRepliesVisible < SummarizeNumRepliesVisibleLimit) {
-        (false, JsNull, false)
-      }
-      else {
-        val (siblingIndex, hasNonDeletedSuccessorSiblingTrees) = page.parts.siblingIndexOf(post)
-        val squashTime = siblingIndex > SquashSiblingIndexLimit / math.max(depth, 1)
-        // Don't squash a single comment with no replies – summarize it instead.
-        val squash = squashTime && (hasNonDeletedSuccessorSiblingTrees ||
-          page.parts.hasNonDeletedSuccessor(post.nr))
-        var summarize = !squash && (squashTime || siblingIndex > SummarizeSiblingIndexLimit ||
-          depth >= SummarizeAllDepthLimit)
-        val summary: JsValue =
-          if (summarize) post.approvedHtmlSanitized match {
-            case None =>
-              JsString("(Not approved [DwE4FGEU7])")
-            case Some(html) =>
-              // Include only the first paragraph or header.
-              val ToTextResult(text, isSingleParagraph) =
-                htmlToTextWithNewlines(html, firstLineOnly = true)
-              if (isSingleParagraph && text.length <= SummarizePostLengthLimit) {
-                // There's just one short paragraph. Don't summarize.
-                summarize = false
-                JsNull
-              }
-              else {
-                JsString(text.take(PostSummaryLength))
-              }
-          }
-          else JsNull
-        (summarize, summary, squash)
-      }
-
-    val childrenSorted = page.parts.childrenBestFirstOf(post.nr)
-
-    val howRender = new HowRenderPostInPage(summarize = summarize, jsSummary = jsSummary,
-        squash = squash, childrenSorted = childrenSorted)
-
-    postToJsonNoDbAccess(post, showHidden = showHidden, includeUnapproved = includeUnapproved,
-      pageRole = page.role, tags = tags, howRender, nashorn)
-  }
-
-
-  def postToJsonOutsidePage(post: Post, pageRole: PageRole, showHidden: Boolean, includeUnapproved: Boolean,
-        tags: Set[TagLabel], nashorn: ReactRenderer): JsObject = {
-    postToJsonNoDbAccess(post, showHidden = showHidden, includeUnapproved = includeUnapproved,
-      pageRole, tags = tags, new HowRenderPostInPage(false, JsNull, false, Nil), nashorn)
-  }
-
-
-  private def postToJsonNoDbAccess(post: Post, showHidden: Boolean, includeUnapproved: Boolean,
-        pageRole: PageRole, tags: Set[TagLabel], inPageInfo: HowRenderPostInPage,
-        nashorn: ReactRenderer): JsObject = {
-
-    import inPageInfo._
-    val postType: Option[Int] = if (post.tyype == PostType.Normal) None else Some(post.tyype.toInt)
-
-    val (anySanitizedHtml: Option[String], isApproved: Boolean) =
-      if (post.isBodyHidden && !showHidden)
-        (None, post.approvedAt.isDefined)
-      else if (includeUnapproved)
-        (Some(post.currentHtmlSanitized(nashorn, pageRole)),
-          post.isCurrentVersionApproved)
-      else
-        (post.approvedHtmlSanitized, post.approvedAt.isDefined)
-
-    // For now, ignore ninja edits of the very first revision, because otherwise if
-    // clicking to view the edit history, it'll be empty.
-    val lastApprovedEditAtNoNinja =
-      if (post.approvedRevisionNr.contains(FirstRevisionNr)) None
-      else post.lastApprovedEditAt
-
-    var fields = Vector(
-      "uniqueId" -> JsNumber(post.id),
-      "nr" -> JsNumber(post.nr),
-      "parentNr" -> post.parentNr.map(JsNumber(_)).getOrElse(JsNull),
-      "multireplyPostNrs" -> JsArray(post.multireplyPostNrs.toSeq.map(JsNumber(_))),
-      "postType" -> JsNumberOrNull(postType),
-      "authorId" -> JsNumber(post.createdById),
-      "createdAtMs" -> JsDateMs(post.createdAt),
-      "lastApprovedEditAtMs" -> JsDateMsOrNull(lastApprovedEditAtNoNinja),
-      "numEditors" -> JsNumber(post.numDistinctEditors),
-      "numLikeVotes" -> JsNumber(post.numLikeVotes),
-      "numWrongVotes" -> JsNumber(post.numWrongVotes),
-      "numBuryVotes" -> JsNumber(post.numBuryVotes),
-      "numUnwantedVotes" -> JsNumber(post.numUnwantedVotes),
-      "numPendingEditSuggestions" -> JsNumber(post.numPendingEditSuggestions),
-      "summarize" -> JsBoolean(summarize),
-      "summary" -> jsSummary,
-      "squash" -> JsBoolean(squash),
-      "isTreeDeleted" -> JsBoolean(post.deletedStatus.isTreeDeleted),
-      "isPostDeleted" -> JsBoolean(post.deletedStatus.isPostDeleted),
-      "isTreeCollapsed" -> (
-        if (summarize) JsString("Truncated")
-        else JsBoolean(!squash && post.collapsedStatus.isTreeCollapsed)),
-      "isPostCollapsed" -> JsBoolean(!summarize && !squash && post.collapsedStatus.isPostCollapsed),
-      "isTreeClosed" -> JsBoolean(post.closedStatus.isTreeClosed),
-      "isApproved" -> JsBoolean(isApproved),
-      "pinnedPosition" -> JsNumberOrNull(post.pinnedPosition),
-      "branchSideways" -> JsNumberOrNull(post.branchSideways.map(_.toInt)),
-      "likeScore" -> JsNumber(decimal(post.likeScore)),
-      "childIdsSorted" -> JsArray(childrenSorted.map(reply => JsNumber(reply.nr))),
-      "sanitizedHtml" -> JsStringOrNull(anySanitizedHtml),
-      "tags" -> JsArray(tags.toSeq.map(JsString)))
-
-    if (post.isBodyHidden) fields :+= "isBodyHidden" -> JsTrue
-    if (post.isTitle) fields :+= "unsafeSource" -> JsStringOrNull(post.approvedSource)
-
-    JsObject(fields)
-  }
-
-
-  def postRevisionToJson(revision: PostRevision, usersById: Map[UserId, User],
-        maySeeHidden: Boolean): JsValue = {
-    val source =
-      if (revision.isHidden && !maySeeHidden) JsNull
-      else JsString(revision.fullSource.getOrDie("DwE7GUY2"))
-    val composer = usersById.get(revision.composedById)
-    val approver = revision.approvedById.flatMap(usersById.get)
-    val hider = revision.hiddenById.flatMap(usersById.get)
-    Json.obj(
-      "revisionNr" -> revision.revisionNr,
-      "previousNr" -> JsNumberOrNull(revision.previousNr),
-      "fullSource" -> source,
-      "composedAtMs" -> revision.composedAt,
-      "composedBy" -> JsUserOrNull(composer),
-      "approvedAtMs" -> JsDateMsOrNull(revision.approvedAt),
-      "approvedBy" -> JsUserOrNull(approver),
-      "hiddenAtMs" -> JsDateMsOrNull(revision.hiddenAt),
-      "hiddenBy" -> JsUserOrNull(hider))
-  }
-
-
-  /** Creates a dummy root post, needed when rendering React elements. */
-  def embeddedCommentsDummyRootPost(topLevelComments: immutable.Seq[Post]): JsObject = Json.obj(
-    "nr" -> JsNumber(PageParts.BodyNr),
-    "isApproved" -> JsTrue,
-    // COULD link to embedding article, change text to: "Discussion of the text at https://...."
-    "sanitizedHtml" -> JsString("(Embedded comments dummy root post [EdM2PWKV06]"),
-    "childIdsSorted" ->
-      JsArray(Post.sortPostsBestFirst(topLevelComments).map(reply => JsNumber(reply.nr))))
-
-
-  def noUserSpecificData(dao: SiteDao, everyonesPerms: Seq[PermsOnPages]): JsObject = {
-    require(everyonesPerms.forall(_.forPeopleId == Group.EveryoneId), "EdE2WBG08")
-
-    // Somewhat dupl code. (2WB4G7)
-    Json.obj(
-      "dbgSrc" -> "2FBS6Z8",
-      "trustLevel" -> TrustLevel.StrangerDummyLevel,
-      "notifications" -> JsArray(),
-      "watchbar" -> makeStrangersWatcbarJson(dao),
-      "myDataByPageId" -> JsObject(Nil),
-      "marksByPostId" -> JsObject(Nil),
-      "closedHelpMessages" -> JsObject(Nil),
-      "permsOnPages" -> permsOnPagesToJson(everyonesPerms, excludeEveryone = false))
-  }
-
-
-  RENAME // this function (i.e. userDataJson) so it won't come as a
-  // surprise that it updates the watchbar! But to what? Or reanme the class too? Or break out?
-  def userDataJson(pageRequest: PageRequest[_], unapprovedPostAuthorIds: Set[UserId])
-        : Option[JsObject] = {
-    val user = pageRequest.user getOrElse {
-      return None
-    }
-
-    val dao = pageRequest.dao
-    val permissions = pageRequest.authzContext.permissions
-
-    var watchbar: BareWatchbar = dao.getOrCreateWatchbar(user.id)
-    if (pageRequest.pageExists) {
-      // (See comment above about ought-to-rename this whole function / stuff.)
-      RACE // if the user opens a page, and someone adds her to a chat at the same time.
-      watchbar.tryAddRecentTopicMarkSeen(pageRequest.thePageMeta) match {
-        case None => // watchbar wasn't modified
-        case Some(modifiedWatchbar) =>
-          watchbar = modifiedWatchbar
-          dao.saveWatchbar(user.id, watchbar)
-          dao.pubSub.userWatchesPages(pageRequest.siteId, user.id, watchbar.watchedPageIds) ;RACE
-      }
-    }
-    val watchbarWithTitles = dao.fillInWatchbarTitlesEtc(watchbar)
-    val (restrCategories, restrTopics, users) = listRestrictedCategoriesAndTopics(pageRequest)
-    dao.readOnlyTransaction { transaction =>
-      Some(userDataJsonImpl(user, pageRequest.pageId, watchbarWithTitles, restrCategories,
-        restrictedTopics = restrTopics, restrictedTopicsUsers = users, permissions, unapprovedPostAuthorIds,
-        pageRequest.dao.nashorn, transaction))
-    }
-  }
-
-
-  def userNoPageToJson(request: DebikiRequest[_]): JsValue = {
-    import request.authzContext
-    val dao = request.dao
-    val user = request.user getOrElse {
-      return JsNull
-    }
-    val permissions = authzContext.permissions
-    val watchbar = dao.getOrCreateWatchbar(user.id)
-    val watchbarWithTitles = dao.fillInWatchbarTitlesEtc(watchbar)
-    val restrictedCategories = JsArray()
-    request.dao.readOnlyTransaction(userDataJsonImpl(user, anyPageId = None, watchbarWithTitles,
-      restrictedCategories, restrictedTopics = Nil, restrictedTopicsUsers = Nil,
-      permissions, unapprovedPostAuthorIds = Set.empty, request.dao.nashorn, _))
-  }
-
-
-  private def userDataJsonImpl(user: User, anyPageId: Option[PageId],
-        watchbar: WatchbarWithTitles, restrictedCategories: JsArray,
-        restrictedTopics: Seq[JsValue], restrictedTopicsUsers: Seq[JsObject],
-        permissions: Seq[PermsOnPages], unapprovedPostAuthorIds: Set[UserId],
-        nashorn: ReactRenderer, transaction: SiteTransaction): JsObject = {
-
-    val reviewTasksAndCounts =
-      if (user.isStaff) transaction.loadReviewTaskCounts(user.isAdmin)
-      else ReviewTaskCounts(0, 0)
-
-    val notfsAndCounts = loadNotifications(user.id, transaction, unseenFirst = true, limit = 20)
-
-    val (rolePageSettings, votes, unapprovedPosts, unapprovedAuthors) =
-      anyPageId map { pageId =>
-        val rolePageSettings = user.anyMemberId.map({ userId =>
-          val anySettings = transaction.loadUserPageSettings(userId, pageId = pageId)
-          rolePageSettingsToJson(anySettings getOrElse UserPageSettings.Default)
-        }) getOrElse JsEmptyObj
-        val votes = votesJson(user.id, pageId, transaction)
-        // + flags, interesting for staff, & so people won't attempt to flag twice [7KW20WY1]
-        val (postsJson, postAuthorsJson) =
-          unapprovedPostsAndAuthorsJson(user, pageId, unapprovedPostAuthorIds, nashorn, transaction)
-        (rolePageSettings, votes, postsJson, postAuthorsJson)
-      } getOrElse (JsEmptyObj, JsEmptyObj, JsEmptyObj, JsArray())
-
-    val threatLevel = user match {
-      case member: Member => member.threatLevel
-      case _ =>
-        COULD // load or get-from-cache IP bans ("blocks") for this guest and derive the
-        // correct threat level. However, for now, since this is for the brower only, this'll do:
-        ThreatLevel.HopefullySafe
-    }
-
-    val anyReadingProgress = anyPageId.flatMap(transaction.loadReadProgress(user.id, _))
-    val anyReadingProgressJson = anyReadingProgress.map(makeReadingProgressJson).getOrElse(JsNull)
-
-    val userDataByPageId = anyPageId match {
-      case None => Json.obj()
-      case Some(pageId) =>
-        Json.obj(pageId ->
-          Json.obj(
-            "rolePageSettings" -> rolePageSettings,
-            "readingProgress" -> anyReadingProgressJson,
-            "votes" -> votes,
-            // later: "flags" -> JsArray(...) [7KW20WY1]
-            "unapprovedPosts" -> unapprovedPosts,
-            "unapprovedPostAuthors" -> unapprovedAuthors,  // should remove [5WKW219] + search for elsewhere
-            "postNrsAutoReadLongAgo" -> JsArray(Nil),      // should remove
-            "postNrsAutoReadNow" -> JsArray(Nil),
-            "marksByPostId" -> JsObject(Nil)))
-    }
-
-    // Somewhat dupl code, (2WB4G7) and [B28JG4].
-    var json = Json.obj(
-      "dbgSrc" -> "4JKW7A0",
-      "id" -> JsNumber(user.id),
-      "userId" -> JsNumber(user.id), // try to remove, use 'id' instead
-      "username" -> JsStringOrNull(user.anyUsername),
-      "fullName" -> JsStringOrNull(user.anyName),
-      "isLoggedIn" -> JsBoolean(true),
-      "isAdmin" -> JsBoolean(user.isAdmin),
-      "isModerator" -> JsBoolean(user.isModerator),
-      "isDeactivated" -> JsBoolean(user.isDeactivated),
-      "isDeleted" -> JsBoolean(user.isDeleted),
-      "avatarUrl" -> JsUploadUrlOrNull(user.smallAvatar),
-      "isEmailKnown" -> JsBoolean(user.email.nonEmpty),
-      "isAuthenticated" -> JsBoolean(user.isAuthenticated),
-      "trustLevel" -> JsNumber(user.effectiveTrustLevel.toInt),
-      "threatLevel" -> JsNumber(threatLevel.toInt),
-
-      "numUrgentReviewTasks" -> reviewTasksAndCounts.numUrgent,
-      "numOtherReviewTasks" -> reviewTasksAndCounts.numOther,
-
-      "numTalkToMeNotfs" -> notfsAndCounts.numTalkToMe,
-      "numTalkToOthersNotfs" -> notfsAndCounts.numTalkToOthers,
-      "numOtherNotfs" -> notfsAndCounts.numOther,
-      "thereAreMoreUnseenNotfs" -> notfsAndCounts.thereAreMoreUnseen,
-      "notifications" -> notfsAndCounts.notfsJson,
-
-      "watchbar" -> watchbar.toJsonWithTitles,
-
-      // The Everyone group's permissions are included in the generic no-user json already;
-      // don't include it here again. [8JUYW4B]
-      "permsOnPages" -> permsOnPagesToJson(permissions, excludeEveryone = true),
-
-      "restrictedTopics" -> restrictedTopics,
-      "restrictedTopicsUsers" -> restrictedTopicsUsers,
-      "restrictedCategories" -> restrictedCategories,
-      "closedHelpMessages" -> JsObject(Nil),
-      "myDataByPageId" -> userDataByPageId,
-      "marksByPostId" -> JsObject(Nil))
-
-    if (user.isAdmin) {
-      val siteSettings = transaction.loadSiteSettings()
-      json += "isEmbeddedCommentsSite" -> JsBoolean(siteSettings.exists(_.allowEmbeddingFrom.nonEmpty))
-    }
-
-    json
+    JsObject(votesByPostId.toSeq)
   }
 
 
@@ -1043,243 +1303,12 @@ object ReactJson {
   }
 
 
-  private def listRestrictedCategoriesJson(categoryId: CategoryId, dao: SiteDao,
-        authzCtx: ForumAuthzContext): JsArray = {
-    val (categories, defaultCategoryId) =
-      dao.listAllMaySeeCategories(categoryId, authzCtx)  // oops, also includes publ cats [4KQSEF08]
-
-    // A tiny bit dupl code [5YK03W5]
-    JsArray(categories.filterNot(_.isRoot) map { category =>
-      makeCategoryJson(category, defaultCategoryId.contains(category.id))
-    })
-  }
-
-
-  COULD ; REFACTOR // move to CategoriesDao? and change from param PageRequest to
-  // user + pageMeta?
-  def listRestrictedCategoriesAndTopics(request: PageRequest[_])
-        : (JsArray, Seq[JsValue], Seq[JsObject]) = {
-    // OLD: Currently there're only 2 types of "personal" topics: unlisted, & staff-only.
-    // DON'T: if (!request.isStaff)
-      //return (JsArray(), Nil)
-
-    val dao = request.dao
-    val authzCtx = request.authzContext
-    val siteSettings = dao.getWholeSiteSettings()
-
-    val categoryId = request.thePageMeta.categoryId getOrElse {
-      // Not a forum topic. Could instead show an option to add the page to the / a forum?
-      return (JsArray(), Nil, Nil)
-    }
-
-    // SHOULD avoid starting a new transaction, so can remove workaround [7YKG25P].
-    // (request.dao might start a new transaction)
-    val categoriesJson = listRestrictedCategoriesJson(categoryId, dao, authzCtx)
-
-    val (topics: Seq[PagePathAndMeta], pageStuffById) =
-      if (request.thePageRole != PageRole.Forum) {
-        // Then won't list topics; no need to load any.
-        (Nil, Map[PageId, PageStuff]())
-      }
-      else {
-        val orderOffset = PageQuery(PageOrderOffset.ByBumpTime(None), PageFilter.ShowAll,
-          includeAboutCategoryPages = siteSettings.showCategories)
-        // SHOULD avoid starting a new transaction, so can remove workaround [7YKG25P].
-        // (We're passing dao to ForumController below.)
-        val topics = dao.listMaySeeTopicsInclPinned(
-          categoryId, orderOffset,
-          includeDescendantCategories = true,
-          authzCtx,
-          limit = ForumController.NumTopicsToList)
-        val pageStuffById = dao.getPageStuffById(topics.map(_.pageId))
-        (topics, pageStuffById)
-      }
-
-    val userIds = mutable.Set[UserId]()
-    topics.foreach(_.meta.addUserIdsTo(userIds))
-    val users = dao.getUsersAsSeq(userIds)
-
-    (categoriesJson,
-      topics.map(ForumController.topicToJson(_, pageStuffById)),
-      users.map(JsUser))
-  }
-
-
-  case class NotfsAndCounts(
-    numTalkToMe: Int,
-    numTalkToOthers: Int,
-    numOther: Int,
-    thereAreMoreUnseen: Boolean,
-    notfsJson: JsArray)
-
-
-  def loadNotifications(userId: UserId, transaction: SiteTransaction, unseenFirst: Boolean,
-        limit: Int, upToWhen: Option[ju.Date] = None): NotfsAndCounts = {
-    val notfs = transaction.loadNotificationsForRole(userId, limit, unseenFirst, upToWhen)
-    notificationsToJson(notfs, transaction)
-  }
-
-
-  def notificationsToJson(notfs: Seq[Notification], transaction: SiteTransaction)
-        : NotfsAndCounts = {
-    val userIds = ArrayBuffer[UserId]()
-    var numTalkToMe = 0
-    var numTalkToOthers = 0
-    var numOther = 0
-
-    val postIds: Seq[PostId] = notfs flatMap {
-      case notf: Notification.NewPost => Some(notf.uniquePostId)
-      case _ => None
-    }
-    val postsById = transaction.loadPostsByUniqueId(postIds)
-
-    val pageIds = postsById.values.map(_.pageId)
-    val pageTitlesById = transaction.loadTitlesPreferApproved(pageIds)
-
-    notfs.foreach {
-      case notf: Notification.NewPost =>
-        userIds.append(notf.byUserId)
-        import NotificationType._
-        if (notf.seenAt.isEmpty) notf.tyype match {
-          case DirectReply | Mention | Message =>
-            numTalkToMe += 1
-          case NewPost =>
-            numTalkToOthers += 1
-          case PostTagged =>
-            numOther += 1
-        }
-      case _ => ()
-    }
-
-    // Unseen notfs are sorted first, so if the last one is unseen, there might be more unseen.
-    val thereAreMoreUnseen = notfs.lastOption.exists(_.seenAt.isEmpty)
-
-    val usersById = transaction.loadUsersAsMap(userIds)
-
-    NotfsAndCounts(
-      numTalkToMe = numTalkToMe,
-      numTalkToOthers = numTalkToOthers,
-      numOther = numOther,
-      thereAreMoreUnseen = thereAreMoreUnseen,
-      notfsJson = JsArray(notfs.flatMap(
-        makeNotificationsJson(_, pageTitlesById, postsById, usersById))))
-  }
-
-
-  private def makeNotificationsJson(notf: Notification, pageTitlesById: Map[PageId, String],
-        postsById: Map[PostId, Post], usersById: Map[UserId, User]): Option[JsObject] = {
-    Some(notf match {
-      case notf: Notification.NewPost =>
-        val post = postsById.getOrElse(notf.uniquePostId, {
-          return None
-        })
-        val title = pageTitlesById.get(post.pageId)
-        // COULD include number recipients for this notf, so the user will know if this is
-        // for him/her only, or for other people too. [4Y2KF8S]
-        Json.obj(
-          "id" -> notf.id,
-          "type" -> notf.tyype.toInt,
-          "createdAtMs" -> notf.createdAt.getTime,
-          "pageId" -> post.pageId,
-          "pageTitle" -> JsStringOrNull(title),
-          "postNr" -> post.nr,
-          "byUser" -> JsUserOrNull(usersById.get(notf.byUserId)),
-          "seen" -> notf.seenAt.nonEmpty)
-    })
-  }
-
-
-  private def votesJson(userId: UserId, pageId: PageId, transaction: SiteTransaction): JsObject = {
-    val actions = transaction.loadActionsByUserOnPage(userId, pageId)
-    // COULD load flags too, at least if user is staff [7KW20WY1]
-    val votes = actions.filter(_.isInstanceOf[PostVote]).asInstanceOf[immutable.Seq[PostVote]]
-    val userVotesMap = UserPostVotes.makeMap(votes)
-    val votesByPostId = userVotesMap map { case (postNr, postVotes) =>
-      var voteStrs = Vector[String]()
-      if (postVotes.votedLike) voteStrs = voteStrs :+ "VoteLike"
-      if (postVotes.votedWrong) voteStrs = voteStrs :+ "VoteWrong"
-      if (postVotes.votedBury) voteStrs = voteStrs :+ "VoteBury"
-      if (postVotes.votedUnwanted) voteStrs = voteStrs :+ "VoteUnwanted"
-      postNr.toString -> Json.toJson(voteStrs)
-    }
-    JsObject(votesByPostId.toSeq)
-  }
-
-
-  private def unapprovedPostsAndAuthorsJson(user: User, pageId: PageId,
-        unapprovedPostAuthorIds: Set[UserId], nashorn: ReactRenderer, transaction: SiteTransaction): (
-          JsObject /* why object? try to change to JsArray instead */, JsArray) = {
-
-    var posts: Seq[Post] =
-      if (unapprovedPostAuthorIds.isEmpty) {
-        // This is usually the case, and lets us avoid a db query.
-        Nil
-      }
-      else if (user.isStaff) {
-        transaction.loadAllUnapprovedPosts(pageId, limit = 999)
-      }
-      else if (unapprovedPostAuthorIds.contains(user.id)) {
-        transaction.loadUnapprovedPosts(pageId, by = user.id, limit = 999)
-      }
-      else {
-        Nil
-      }
-
-    COULD // load form replies also if user is page author?
-    if (user.isAdmin) {
-      posts ++= transaction.loadCompletedForms(pageId, limit = 999)
-    }
-
-    if (posts.isEmpty)
-      return (JsObject(Nil), JsArray())
-
-    val tagsByPostId = transaction.loadTagsByPostId(posts.map(_.id))
-    val pageMeta = transaction.loadThePageMeta(pageId)
-
-    val postIdsAndJson: Seq[(String, JsValue)] = posts.map { post =>
-      val tags = tagsByPostId(post.id)
-      post.nr.toString ->
-        postToJsonNoDbAccess(post, showHidden = true, includeUnapproved = true,
-          pageMeta.pageRole, tags = tags, new HowRenderPostInPage(false, JsNull, false,
-            // Cannot currently reply to unapproved posts, so no children. [8PA2WFM]
-            Nil), nashorn)
-    }
-
-    val authors = transaction.loadUsers(posts.map(_.createdById).toSet)
-    val authorsJson = JsArray(authors map JsUser)
-    (JsObject(postIdsAndJson), authorsJson)
-  }
-
-
   def makeReadingProgressJson(readingProgress: ReadingProgress): JsValue = {
     Json.obj(
       "lastViewedPostNr" -> readingProgress.lastViewedPostNr,
       // When including these, remove [5WKW219].
       "lastPostNrsReadRecentFirstBase64" -> "",
       "lowPostNrsReadBase64" -> "")
-  }
-
-
-  def makeCategoriesStorePatch(categoryId: CategoryId, authzCtx: ForumAuthzContext, dao: SiteDao)
-        : JsValue = {
-    // 2 dupl lines [7UXAI1]
-    val restrCategoriesJson = makeCategoriesJson(categoryId, authzCtx, dao)
-    val publCategoriesJson = makeCategoriesJson(categoryId, dao.getForumPublicAuthzContext(), dao)
-    Json.obj(
-      "appVersion" -> dao.globals.applicationVersion,
-      "restrictedCategories" -> restrCategoriesJson,
-      "publicCategories" -> publCategoriesJson)
-  }
-
-
-  def makeCategoriesJson(categoryId: CategoryId, authzCtx: ForumAuthzContext, dao: SiteDao)
-        : JsArray = {
-    val (categories, defaultCategoryId) = dao.listAllMaySeeCategories(categoryId, authzCtx)
-    // A tiny bit dupl code [5YK03W5]
-    val categoriesJson = JsArray(categories.filterNot(_.isRoot) map { category =>
-      makeCategoryJson(category, defaultCategoryId.contains(category.id))
-    })
-    categoriesJson
   }
 
 
@@ -1348,6 +1377,103 @@ object ReactJson {
       "post" -> anyPost,
       "flags" -> stuff.flags.map(JsFlag))
   }
+
+
+  private def postToJsonNoDbAccess(post: Post, showHidden: Boolean, includeUnapproved: Boolean,
+    pageRole: PageRole, tags: Set[TagLabel], inPageInfo: HowRenderPostInPage,
+    renderer: RendererWithSettings): JsObject = {
+
+    import inPageInfo._
+    val postType: Option[Int] = if (post.tyype == PostType.Normal) None else Some(post.tyype.toInt)
+
+    val (anySanitizedHtml: Option[String], isApproved: Boolean) =
+      if (post.isBodyHidden && !showHidden) {
+        (None, post.approvedAt.isDefined)
+      }
+      else if (includeUnapproved) {
+        val htmlString = renderer.renderAndSanitize(post, IfCached.Use)
+        (Some(htmlString), post.isCurrentVersionApproved)
+      }
+      else {
+        (post.approvedHtmlSanitized, post.approvedAt.isDefined)
+      }
+
+    // For now, ignore ninja edits of the very first revision, because otherwise if
+    // clicking to view the edit history, it'll be empty.
+    val lastApprovedEditAtNoNinja =
+    if (post.approvedRevisionNr.contains(FirstRevisionNr)) None
+    else post.lastApprovedEditAt
+
+    var fields = Vector(
+      "uniqueId" -> JsNumber(post.id),
+      "nr" -> JsNumber(post.nr),
+      "parentNr" -> post.parentNr.map(JsNumber(_)).getOrElse(JsNull),
+      "multireplyPostNrs" -> JsArray(post.multireplyPostNrs.toSeq.map(JsNumber(_))),
+      "postType" -> JsNumberOrNull(postType),
+      "authorId" -> JsNumber(post.createdById),
+      "createdAtMs" -> JsDateMs(post.createdAt),
+      "lastApprovedEditAtMs" -> JsDateMsOrNull(lastApprovedEditAtNoNinja),
+      "numEditors" -> JsNumber(post.numDistinctEditors),
+      "numLikeVotes" -> JsNumber(post.numLikeVotes),
+      "numWrongVotes" -> JsNumber(post.numWrongVotes),
+      "numBuryVotes" -> JsNumber(post.numBuryVotes),
+      "numUnwantedVotes" -> JsNumber(post.numUnwantedVotes),
+      "numPendingEditSuggestions" -> JsNumber(post.numPendingEditSuggestions),
+      "summarize" -> JsBoolean(summarize),
+      "summary" -> jsSummary,
+      "squash" -> JsBoolean(squash),
+      "isTreeDeleted" -> JsBoolean(post.deletedStatus.isTreeDeleted),
+      "isPostDeleted" -> JsBoolean(post.deletedStatus.isPostDeleted),
+      "isTreeCollapsed" -> (
+        if (summarize) JsString("Truncated")
+        else JsBoolean(!squash && post.collapsedStatus.isTreeCollapsed)),
+      "isPostCollapsed" -> JsBoolean(!summarize && !squash && post.collapsedStatus.isPostCollapsed),
+      "isTreeClosed" -> JsBoolean(post.closedStatus.isTreeClosed),
+      "isApproved" -> JsBoolean(isApproved),
+      "pinnedPosition" -> JsNumberOrNull(post.pinnedPosition),
+      "branchSideways" -> JsNumberOrNull(post.branchSideways.map(_.toInt)),
+      "likeScore" -> JsNumber(decimal(post.likeScore)),
+      "childIdsSorted" -> JsArray(childrenSorted.map(reply => JsNumber(reply.nr))),
+      "sanitizedHtml" -> JsStringOrNull(anySanitizedHtml),
+      "tags" -> JsArray(tags.toSeq.map(JsString)))
+
+    if (post.isBodyHidden) fields :+= "isBodyHidden" -> JsTrue
+    if (post.isTitle) fields :+= "unsafeSource" -> JsStringOrNull(post.approvedSource)
+
+    JsObject(fields)
+  }
+
+
+  def postRevisionToJson(revision: PostRevision, usersById: Map[UserId, User],
+    maySeeHidden: Boolean): JsValue = {
+    val source =
+      if (revision.isHidden && !maySeeHidden) JsNull
+      else JsString(revision.fullSource.getOrDie("DwE7GUY2"))
+    val composer = usersById.get(revision.composedById)
+    val approver = revision.approvedById.flatMap(usersById.get)
+    val hider = revision.hiddenById.flatMap(usersById.get)
+    Json.obj(
+      "revisionNr" -> revision.revisionNr,
+      "previousNr" -> JsNumberOrNull(revision.previousNr),
+      "fullSource" -> source,
+      "composedAtMs" -> revision.composedAt,
+      "composedBy" -> JsUserOrNull(composer),
+      "approvedAtMs" -> JsDateMsOrNull(revision.approvedAt),
+      "approvedBy" -> JsUserOrNull(approver),
+      "hiddenAtMs" -> JsDateMsOrNull(revision.hiddenAt),
+      "hiddenBy" -> JsUserOrNull(hider))
+  }
+
+
+  /** Creates a dummy root post, needed when rendering React elements. */
+  def embeddedCommentsDummyRootPost(topLevelComments: immutable.Seq[Post]): JsObject =
+    Json.obj(
+      "nr" -> JsNumber(PageParts.BodyNr),
+      "isApproved" -> JsTrue,
+      // COULD link to embedding article, change text to: "Discussion of the text at https://...."
+      "sanitizedHtml" -> JsString("(Embedded comments dummy root post [EdM2PWKV06]"),
+      "childIdsSorted" ->
+        JsArray(Post.sortPostsBestFirst(topLevelComments).map(reply => JsNumber(reply.nr))))
 
 
   case class ToTextResult(text: String, isSingleParagraph: Boolean)
@@ -1484,107 +1610,6 @@ object ReactJson {
   }
 
 
-  def makeStorePatchForPostNr(pageId: PageId, postNr: PostNr, dao: SiteDao, showHidden: Boolean)
-        : Option[JsValue] = {
-    val post = dao.loadPost(pageId, postNr) getOrElse {
-      return None
-    }
-    val author = dao.getUser(post.createdById) getOrElse {
-      // User was just deleted? Race condition.
-      UnknownUser
-    }
-    Some(makeStorePatch(post, author, dao, showHidden = showHidden))
-  }
-
-
-  def makeStorePatchForPosts(postIds: Set[PostId], showHidden: Boolean, dao: SiteDao)
-        : JsValue = {
-    dao.readOnlyTransaction { tx =>
-      makeStorePatchForPosts(postIds, showHidden, dao.nashorn,
-        tx, appVersion = dao.globals.applicationVersion)
-    }
-  }
-
-
-  def makeStorePatchForPosts(postIds: Set[PostId], showHidden: Boolean,
-        nashorn: ReactRenderer, transaction: SiteTransaction, appVersion: String): JsValue = {
-    val posts = transaction.loadPostsByUniqueId(postIds).values
-    val tagsByPostId = transaction.loadTagsByPostId(postIds)
-    val pageIds = posts.map(_.pageId).toSet
-    val pageIdVersions = transaction.loadPageMetas(pageIds).map(_.idVersion)
-    val authorIds = posts.map(_.createdById).toSet
-    val authors = transaction.loadUsers(authorIds)
-    makeStorePatch3(pageIdVersions, posts, tagsByPostId, authors, appVersion = appVersion)(
-      nashorn, transaction)
-  }
-
-
-  def makeStorePatch(post: Post, author: User, dao: SiteDao, showHidden: Boolean): JsObject = {
-    // Warning: some similar code below [89fKF2]
-    require(post.createdById == author.id, "EsE5PKY2")
-    val (postJson, pageVersion) = postToJson(
-      post.nr, pageId = post.pageId, dao, includeUnapproved = true, showHidden = showHidden, dao.nashorn)
-    makeStorePatch(PageIdVersion(post.pageId, pageVersion), appVersion = dao.globals.applicationVersion,
-      posts = Seq(postJson), users = Seq(JsUser(author)))
-  }
-
-
-  @deprecated("now", "use makeStorePatchForPosts instead")
-  def makeStorePatch2(postId: PostId, pageId: PageId, appVersion: String, nashorn: ReactRenderer,
-        transaction: SiteTransaction): JsValue = {
-    // Warning: some similar code above [89fKF2]
-    // Load the page so we'll get a version that includes postId, in case it was just added.
-    val page = PageDao(pageId, transaction)
-    val post = page.parts.postById(postId) getOrDie "EsE8YKPW2"
-    dieIf(post.pageId != pageId, "EdE4FK0Q2W", o"""Wrong page id: $pageId, was post $postId
-        just moved to page ${post.pageId} instead? Site: ${transaction.siteId}""")
-    val tags = transaction.loadTagsForPost(post.id)
-    val author = transaction.loadTheUser(post.createdById)
-    require(post.createdById == author.id, "EsE4JHKX1")
-    val postJson = postToJsonImpl(post, page, tags, includeUnapproved = true, showHidden = true, nashorn)
-    makeStorePatch(PageIdVersion(post.pageId, page.version), appVersion = appVersion,
-      posts = Seq(postJson), users = Seq(JsUser(author)))
-  }
-
-
-  def makeStorePatch(pageIdVersion: PageIdVersion, appVersion: String, posts: Seq[JsObject] = Nil,
-        users: Seq[JsObject] = Nil): JsObject = {
-    require(posts.isEmpty || users.nonEmpty, "Posts but no authors [EsE4YK7W2]")
-    Json.obj(
-      "appVersion" -> appVersion,
-      "pageVersionsByPageId" -> Json.obj(pageIdVersion.pageId -> pageIdVersion.version),
-      "usersBrief" -> users,
-      "postsByPageId" -> Json.obj(pageIdVersion.pageId -> posts))
-  }
-
-
-  ANNOYING // needs a transaction, because postToJsonImpl needs one. Try to remove
-  private def makeStorePatch3(pageIdVersions: Iterable[PageIdVersion], posts: Iterable[Post],
-        tagsByPostId: Map[PostId, Set[String]], users: Iterable[User], appVersion: String)(
-        nashorn: ReactRenderer, transaction: SiteTransaction): JsValue = {
-    require(posts.isEmpty || users.nonEmpty, "Posts but no authors [EsE4YK7W2]")
-    val pageVersionsByPageIdJson =
-      JsObject(pageIdVersions.toSeq.map(p => p.pageId -> JsNumber(p.version)))
-    val postsByPageId: Map[PageId, Iterable[Post]] = posts.groupBy(_.pageId)
-    val postsByPageIdJson = JsObject(
-      postsByPageId.toSeq.map(pageIdPosts => {
-        val pageId = pageIdPosts._1
-        val posts = pageIdPosts._2
-        val page = PageDao(pageId, transaction)
-        val postsJson = posts map { p =>
-          postToJsonImpl(p, page, tagsByPostId.getOrElse(p.id, Set.empty),
-            includeUnapproved = false, showHidden = false, nashorn)
-        }
-        pageId -> JsArray(postsJson.toSeq)
-      }))
-    Json.obj(
-      "appVersion" -> appVersion,
-      "pageVersionsByPageId" -> pageVersionsByPageIdJson,
-      "usersBrief" -> users.map(JsUser),
-      "postsByPageId" -> postsByPageIdJson)
-  }
-
-
   def makeTagsStuffPatch(json: JsObject, appVersion: String): JsValue = {
     makeStorePatch(Json.obj("tagsStuff" -> json), appVersion = appVersion)
   }
@@ -1594,6 +1619,12 @@ object ReactJson {
     json + ("appVersion" -> JsString(appVersion))
   }
 
+}
+
+
+
+
+object JsX {
 
   def JsUserOrNull(user: Option[User]): JsValue =
     user.map(JsUser).getOrElse(JsNull)
@@ -1604,7 +1635,8 @@ object ReactJson {
       "username" -> JsStringOrNull(user.anyUsername),
       "fullName" -> JsStringOrNull(user.anyName))
     user.tinyAvatar foreach { uploadRef =>
-      json += "avatarUrl" -> JsString(uploadRef.url)
+      json += "avatarUrl" -> JsString(uploadRef.url)    // remove [4GKWDU20]
+      json += "avatarTinyHashPath" -> JsString(uploadRef.hashPath)
     }
     if (user.isGuest) {
       json += "isGuest" -> JsTrue

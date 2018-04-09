@@ -23,7 +23,7 @@ import com.debiki.core.User.{MinUsernameLength, isGuestId}
 import debiki._
 import debiki.dao.SiteDao
 import debiki.EdHttp._
-import debiki.ReactJson._
+import debiki.JsX._
 import ed.server.http._
 import java.{util => ju}
 import play.api.mvc
@@ -201,8 +201,10 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
       "url" -> JsStringOrNull(user.website),
       "about" -> JsStringOrNull(user.about),
       "seeActivityMinTrustLevel" -> JsNumberOrNull(user.seeActivityMinTrustLevel.map(_.toInt)),
-      "avatarUrl" -> JsUploadUrlOrNull(user.smallAvatar),
-      "mediumAvatarUrl" -> JsUploadUrlOrNull(user.mediumAvatar),
+      "avatarSmallHashPath" -> JsStringOrNull(user.smallAvatar.map(_.hashPath)),
+      "avatarMediumHashPath" -> JsStringOrNull(user.mediumAvatar.map(_.hashPath)),
+      "avatarUrl" -> JsUploadUrlOrNull(user.smallAvatar),          // remove [4GKWDU20]
+      "mediumAvatarUrl" -> JsUploadUrlOrNull(user.mediumAvatar),   // remove [4GKWDU20]
       "suspendedTillEpoch" -> DateEpochOrNull(user.suspendedTill),
       "effectiveTrustLevel" -> user.effectiveTrustLevel.toInt)
 
@@ -370,8 +372,8 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
     val postsJson = posts flatMap { post =>
       val pageMeta = pageMetaById.get(post.pageId) getOrDie "EdE2KW07E"
       val tags = tagsByPostId.getOrElse(post.id, Set.empty)
-      var postJson = ReactJson.postToJsonOutsidePage(post, pageMeta.pageRole,
-        showHidden = true, includeUnapproved = callerIsStaffOrAuthor, tags, nashorn = context.nashorn)
+      var postJson = dao.jsonMaker.postToJsonOutsidePage(post, pageMeta.pageRole,
+        showHidden = true, includeUnapproved = callerIsStaffOrAuthor, tags)
 
       pageStuffById.get(post.pageId) map { pageStuff =>
         postJson += "pageId" -> JsString(post.pageId)
@@ -386,7 +388,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
     }
 
     OkSafeJson(Json.obj(
-      "author" -> ReactJson.JsUser(author),
+      "author" -> JsX.JsUser(author),
       "posts" -> JsArray(postsJson)))
   }
 
@@ -908,20 +910,21 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
 
 
   private def loadMyPageDataImpl(request: ApiRequest[_], pageId: PageId): JsValue = {
+    import request.dao
     val pageMeta = request.dao.getPageMeta(pageId) getOrElse {
       // Might be an embedded comment page, not yet created because no comments posted.
       // Or we might be in the signup-to-become-owner step, when creating a new site.
-      return ReactJson.userNoPageToJson(request)
+      return dao.jsonMaker.userNoPageToJson(request)
     }
 
     val pagePath = request.dao.getPagePath(pageId) getOrElse {
       // The page was apparently deleted some microseconds ago.
-      return ReactJson.userNoPageToJson(request)
+      return dao.jsonMaker.userNoPageToJson(request)
     }
 
     val (maySee, _) = request.dao.maySeePageUseCache(pageMeta, request.user)
     if (!maySee)
-      return ReactJson.userNoPageToJson(request)
+      return dao.jsonMaker.userNoPageToJson(request)
 
     val pageRequest = new PageRequest(
       request.siteIdAndCanonicalHostname,
@@ -940,12 +943,12 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
     val json =
       if (pageRequest.user.isDefined) {
         val renderedPage = request.dao.renderPageMaybeUseCache(pageRequest)
-        ReactJson.userDataJson(pageRequest, renderedPage.unapprovedPostAuthorIds).getOrDie(
+        dao.jsonMaker.userDataJson(pageRequest, renderedPage.unapprovedPostAuthorIds).getOrDie(
           "EdE4ZBXKG")
       }
       else {
         val everyonesPerms = request.dao.getPermsForEveryone()
-        ReactJson.noUserSpecificData(request.dao, everyonesPerms)
+        dao.jsonMaker.noUserSpecificData(everyonesPerms)
       }
 
     json

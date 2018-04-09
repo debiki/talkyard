@@ -201,7 +201,7 @@ class SiteTpi protected (
       }
       val fileName = assetBundleFileName(nameNoSuffix, version, suffix)
       <link rel="stylesheet" href={
-        cdnOrServerOrigin + routes.SiteAssetBundlesController.customAsset(siteId, fileName).url
+        cdnOrServerOrigin + routes.SiteAssetBundlesController.customAsset(pubSiteId, fileName).url
       }/>
     }
     catch {
@@ -224,13 +224,13 @@ class SiteTpi protected (
     }
     val fileName = assetBundleFileName("scripts", version, "js")
     <script src={
-      cdnOrServerOrigin + routes.SiteAssetBundlesController.customAsset(siteId, fileName).url
+      cdnOrServerOrigin + routes.SiteAssetBundlesController.customAsset(pubSiteId, fileName).url
     }></script>
   }
 
   /** The initial data in the React-Flux model, a.k.a. store. */
   def reactStoreSafeJsonString: String =
-    json getOrElse ReactJson.makeSpecialPageJson(debikiRequest,
+    json getOrElse debikiRequest.dao.jsonMaker.makeSpecialPageJson(debikiRequest,
       // The admin app is its own single-page-app and doesn't need the categories. [6TKQ20]
       inclCategoriesJson = !isAdminArea).toString()
 
@@ -241,7 +241,7 @@ class SiteTpi protected (
     cdnOrServerOrigin + routes.Assets.at(path = "/public/res", "")
 
   def uploadsUrlPrefix: String =
-    cdnOrServerOrigin + routes.UploadsController.servePublicFile("")
+    cdnOrServerOrigin + ed.server.UploadsUrlBasePath + pubSiteId + '/'
 
   /** Even if there's no CDN, we use the full server address so works also in
     * embedded comments iframes.
@@ -249,6 +249,8 @@ class SiteTpi protected (
   def cdnOrServerOrigin: String =
     globals.anyCdnOrigin.getOrElse(globals.schemeColonSlashSlash + serverAddress)
 
+  def cdnOrigin: Option[String] =
+    globals.anyCdnOrigin
 
   def serverAddress: String = debikiRequest.request.host
 
