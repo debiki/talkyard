@@ -46,7 +46,7 @@ class SpecialContentController @Inject()(cc: ControllerComponents, edContext: Ed
       throwForbidden("DwE55RK0", "Please login as admin")
 
     val pageId = s"$rootPageId$contentId"
-    val anyContent = request.dao.loadSpecialContentPage(pageId, replaceNamesApplyMarkup = false)
+    val anyContent = request.dao.loadSpecialContentPage(pageId)
     val defaultContent = SpecialContentPages.lookup(contentId) getOrElse throwBadReq(
       "DwE77GHE0", s"Bad content id: `$contentId'")
 

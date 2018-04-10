@@ -22,6 +22,7 @@ import com.debiki.core.Prelude._
 import debiki._
 import debiki.EdHttp._
 import SpecialContentPages._
+import org.owasp.encoder.Encode
 
 
 /** Loads special content pages, e.g. a page with a user-content-license text
@@ -43,7 +44,7 @@ trait SpecialContentDao {
   // override def loadSpecialContentPage(...) ...
 
 
-  def loadSpecialContentPage(pageId: PageId, replaceNamesApplyMarkup: Boolean): Option[Content] = {
+  def loadSpecialContentPage(pageId: PageId): Option[Content] = {
     readOnlyTransaction { transaction =>
       transaction.loadPost(pageId, PageParts.BodyNr) map { bodyPost =>
         // Return None so the caller fallbacks to the default content, if we are
@@ -51,14 +52,8 @@ trait SpecialContentDao {
         if (bodyPost.currentSource == SpecialContentPages.UseDefaultContentMark)
           return None
 
-        val source =
-          if (replaceNamesApplyMarkup)
-            doReplaceNamesApplyMarkup(bodyPost.currentSource, transaction)
-          else
-            bodyPost.currentSource
-
         // Special content pages are always auto approved, it's ok to use `currentSource`.
-        Content(text = source)
+        Content(text = bodyPost.currentSource)
       }
     }
   }
@@ -81,9 +76,8 @@ trait SpecialContentDao {
 
     val pageId = s"$rootPageId$contentId"
 
-    val approvedHtmlSanitized =
-      context.nashorn.renderAndSanitizeCommonMark(newSource, pubSiteId = thePubSiteId(),
-        allowClassIdDataAttrs = false, followLinks = false)
+    // This is currently either Javascript or CSS. Show it verbatim.
+    val approvedHtmlSanitized = s"<pre>${Encode.forHtmlContent(newSource)}</pre>"
 
     readWriteTransaction { transaction =>
       // BUG: Race condition, lost update bug -- but it's mostly harmless,
@@ -172,15 +166,6 @@ trait SpecialContentDao {
     else {
       memCache.firePageSaved(SitePageId(siteId = siteId, pageId = oldPost.pageId))
     }
-  }
-
-
-  private def doReplaceNamesApplyMarkup(source: String, transaction: SiteTransaction): String = {
-    val shortName = self.loadWholeSiteSettings(transaction).orgShortName
-    var text = source.replaceAllLiterally("%{company_short_name}", shortName)
-    val nodeSeq = context.nashorn.renderAndSanitizeCommonMark(
-      text, pubSiteId = thePubSiteId(), allowClassIdDataAttrs = false, followLinks = false)
-    nodeSeq.toString
   }
 
 
