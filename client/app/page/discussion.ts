@@ -888,7 +888,7 @@ export const MetaPost = createComponent({
     const store: Store = this.props.store;
     const post: Post = this.props.post;
     const doer: BriefUser = store_getAuthorOrMissing(store, post);
-    const doersAvatar = avatar.Avatar({ user: doer, tiny: true });
+    const doersAvatar = avatar.Avatar({ user: doer });
     const when = timeAgo(post.createdAtMs, 's_MP_At');
     // This results in e.g.:  [avatar-img] @admin_alice closed this 3 hours ago
     return (
@@ -1061,7 +1061,7 @@ const Thread = createComponent({
     const showAvatar = !renderCollapsed && this.props.depth === 1 && !this.props.is2dTreeColumn;
     const avatarClass = showAvatar ? ' ed-w-avtr' : '';
     const anyAvatar = !showAvatar ? null :
-        avatar.Avatar({ user: store_getAuthorOrMissing(store, post) });
+        avatar.Avatar({ user: store_getAuthorOrMissing(store, post), size: AvatarSize.Small });
 
     const postProps = _.clone(this.props);
     postProps.post = post;
@@ -1195,7 +1195,7 @@ export const Post = createComponent({
       const showAvatar = this.props.depth > 1 || this.props.is2dTreeColumn;
       const author: BriefUser = this.props.author || // author specified here: [4WKA8YB]
           store_getAuthorOrMissing(store, post);
-      const anyAvatar = !showAvatar ? null : avatar.Avatar({ tiny: true, user: author });
+      const anyAvatar = !showAvatar ? null : avatar.Avatar({ user: author });
       headerElem =
           r.div({ className: 'dw-p-hd' },
             anyAvatar,
@@ -1377,7 +1377,7 @@ export const PostHeader = createComponent({
     const author: BriefUser = this.props.author || // author specified here: [4WKA8YB]
         store_getAuthorOrMissing(store, post);
     const showAvatar = this.props.depth > 1 || this.props.is2dTreeColumn;
-    const anyAvatar = !showAvatar ? null : avatar.Avatar({ tiny: true, user: author });
+    const anyAvatar = !showAvatar ? null : avatar.Avatar({ user: author });
 
     let editInfo = null;
     if (post.lastApprovedEditAtMs) {

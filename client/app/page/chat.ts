@@ -205,7 +205,7 @@ const ChatMessage = createComponent({
     //  r.button({ className: 'esC_M_MoreB icon-ellipsis', key: 'm' }, "more"));
     return (
       r.div({ className: 'esC_M', id: 'post-' + post.nr },
-        avatar.Avatar({ user: author }),
+        avatar.Avatar({ user: author, size: AvatarSize.Small }),
         PostHeader(headerProps),
         PostBody({ store: store, post: post })));
   }

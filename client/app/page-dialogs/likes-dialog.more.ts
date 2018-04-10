@@ -97,7 +97,7 @@ const VotesDialog = createComponent({
       content = r.div({},
           r.p({ className: 's_VotesD_Title' }, numVoters + people + didWhat + " this post:"),
           r.div({ className: 's_VotesD_Voters' },
-            voters.map(voter => avatar.Avatar({ user: voter }))));
+            voters.map(voter => avatar.Avatar({ user: voter, size: AvatarSize.Small }))));
     }
 
     return (

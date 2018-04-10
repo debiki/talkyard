@@ -107,7 +107,7 @@ class ForumController @Inject()(cc: ControllerComponents, edContext: EdContext)
     OkSafeJson(Json.obj(
       "category" -> catJson,
       "permissions" -> catPerms.map(JsonMaker.permissionToJson),
-      "groups" -> groups.map(groupToJson)))
+      "groups" -> groups.map(JsGroup)))
   }
 
 
@@ -381,21 +381,6 @@ object ForumController {
       "frozenAtMs" -> dateOrNull(topic.meta.frozenAt),
       "hiddenAtMs" -> JsWhenMsOrNull(topic.meta.hiddenAt),
       "deletedAtMs" -> JsDateMsOrNull(topic.meta.deletedAt))
-  }
-
-
-  REFACTOR // Move to ... JsonMaker? later when has been created.
-  def groupToJson(group: Group): JsObject = {
-    var json = Json.obj(
-      "id" -> group.id,
-      "username" -> group.theUsername,
-      "fullName" -> group.name)
-      // "grantsTrustLevel" -> group.grantsTrustLevel)
-    group.tinyAvatar foreach { uploadRef =>
-      json += "avatarTinyHashPath" -> JsString(uploadRef.hashPath)
-      json += "avatarUrl" -> JsString(uploadRef.url)   // remove [4GKWDU20]
-    }
-    json
   }
 
 }

@@ -44,7 +44,7 @@ export function me_toBriefUser(me: Myself): BriefUser {
     isModerator: me.isModerator,
     isGuest: me.id && me.id <= MaxGuestId,
     isEmailUnknown: undefined, // ?
-    avatarUrl: me.avatarUrl,
+    avatarSmallHashPath: me.avatarSmallHashPath,
   }
 }
 

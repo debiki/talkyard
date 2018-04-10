@@ -203,8 +203,6 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
       "seeActivityMinTrustLevel" -> JsNumberOrNull(user.seeActivityMinTrustLevel.map(_.toInt)),
       "avatarSmallHashPath" -> JsStringOrNull(user.smallAvatar.map(_.hashPath)),
       "avatarMediumHashPath" -> JsStringOrNull(user.mediumAvatar.map(_.hashPath)),
-      "avatarUrl" -> JsUploadUrlOrNull(user.smallAvatar),          // remove [4GKWDU20]
-      "mediumAvatarUrl" -> JsUploadUrlOrNull(user.mediumAvatar),   // remove [4GKWDU20]
       "suspendedTillEpoch" -> DateEpochOrNull(user.suspendedTill),
       "effectiveTrustLevel" -> user.effectiveTrustLevel.toInt)
 
@@ -1068,7 +1066,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
     val groups = request.dao.readOnlyTransaction { tx =>
       tx.loadGroupsAsSeq()
     }
-    OkSafeJson(JsArray(groups map ForumController.groupToJson))
+    OkSafeJson(JsArray(groups map JsGroup))
   }
 
 

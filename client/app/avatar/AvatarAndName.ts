@@ -27,7 +27,7 @@ export var AvatarAndName = createComponent({
   render: function () {
     var user: BriefUser = this.props.user;
     var avatar = this.props.hideAvatar ?
-        null : debiki2.avatar.Avatar({ user: user, tiny: true, ignoreClicks: true });
+        null : debiki2.avatar.Avatar({ user: user, ignoreClicks: true });
 
     // Dupl code, see posts.ts [88MYU2]
     var namePart1;

@@ -670,7 +670,6 @@ class JsonMaker(dao: SiteDao) {
       "isDeactivated" -> JsBoolean(user.isDeactivated),
       "isDeleted" -> JsBoolean(user.isDeleted),
       "avatarSmallHashPath" -> JsStringOrNull(user.smallAvatar.map(_.hashPath)),
-      "avatarUrl" -> JsUploadUrlOrNull(user.smallAvatar),  // remove [4GKWDU20]
       "isEmailKnown" -> JsBoolean(user.email.nonEmpty),
       "isAuthenticated" -> JsBoolean(user.isAuthenticated),
       "trustLevel" -> JsNumber(user.effectiveTrustLevel.toInt),
@@ -1635,7 +1634,6 @@ object JsX {
       "username" -> JsStringOrNull(user.anyUsername),
       "fullName" -> JsStringOrNull(user.anyName))
     user.tinyAvatar foreach { uploadRef =>
-      json += "avatarUrl" -> JsString(uploadRef.url)    // remove [4GKWDU20]
       json += "avatarTinyHashPath" -> JsString(uploadRef.hashPath)
     }
     if (user.isGuest) {
@@ -1656,6 +1654,18 @@ object JsX {
     }
     if (user.isGone) {
       json += "isGone" -> JsTrue
+    }
+    json
+  }
+
+  def JsGroup(group: Group): JsObject = {
+    var json = Json.obj(
+      "id" -> group.id,
+      "username" -> group.theUsername,
+      "fullName" -> group.name)
+      // "grantsTrustLevel" -> group.grantsTrustLevel)
+    group.tinyAvatar foreach { uploadRef =>
+      json += "avatarTinyHashPath" -> JsString(uploadRef.hashPath)
     }
     json
   }

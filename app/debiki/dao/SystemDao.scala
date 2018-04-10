@@ -74,9 +74,9 @@ class SystemDao(
       orCacheAndReturn = {
         COULD_OPTIMIZE // don't load *all* sites here.  (And optimize this too: [4GUKW27])
         loadSites().find(_.pubId == pubSiteId) map { site =>
-          site.id
+          site.id.asInstanceOf[Integer]
         }
-      })
+      }).map(_.toInt)
   }
 
   def loadSites(): Seq[Site] =

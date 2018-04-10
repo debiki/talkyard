@@ -225,7 +225,7 @@ export const TopBar = createComponent({
     }
 
     let myAvatar = !me.isLoggedIn ? null :
-        avatar.Avatar({ user: me, tiny: true, ignoreClicks: true });
+        avatar.Avatar({ user: me, ignoreClicks: true });
 
     const avatarNameDropdown = !me.isLoggedIn && !impersonatingStrangerInfo ? null :
       utils.ModalDropdownButton({

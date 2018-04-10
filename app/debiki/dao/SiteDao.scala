@@ -394,8 +394,16 @@ object SiteDao {
     * in the config file only, that is, globals.defaultSiteHostname.
     */
   def maybeCopyWithDefaultHostname(site: Site, globals: debiki.Globals): Site = {
-    if (site.id != globals.defaultSiteId || site.canonicalHost.nonEmpty)
+    if (site.canonicalHost.nonEmpty)
       return site
+
+    // If no canonical host, use site-NNN.base-domain.com:
+    // (This can happen for the very first site, with id 1, if it gets accessed after
+    // talkyard.defaultSiteId has been set to != 1.)
+    if (site.id != globals.defaultSiteId) {
+      val hostname = globals.siteByIdHostname(site.id)
+      return site.copy(hosts = SiteHost(hostname, SiteHost.RoleCanonical) :: site.hosts)
+    }
 
     val defaultHostname = globals.defaultSiteHostname.getOrDie(
       "TyE5GKU2S7", s"No ${Globals.DefaultSiteHostnameConfValName} specified")

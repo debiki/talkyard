@@ -1187,15 +1187,15 @@ const TopicRow = createComponent({
     // Avatars: Original Poster, some frequent posters, most recent poster. [7UKPF26]
     const author = store_getUserOrMissing(store, topic.authorId, 'EsE5KPF0');
     const userAvatars = [
-        avatar.Avatar({ key: 'OP', tiny: true, user: author, title: t.ft.createdTheTopic })];
+        avatar.Avatar({ key: 'OP', user: author, title: t.ft.createdTheTopic })];
     for (let i = 0; i < topic.frequentPosterIds.length; ++i) {
       const poster = store_getUserOrMissing(store, topic.frequentPosterIds[i], 'EsE2WK0F');
-      userAvatars.push(avatar.Avatar({ key: poster.id, tiny: true, user: poster,
+      userAvatars.push(avatar.Avatar({ key: poster.id, user: poster,
             title: t.ft.frequentPoster }));
     }
     if (topic.lastReplyerId) {
       const lastReplyer = store_getUserOrMissing(store, topic.lastReplyerId, 'EsE4GTZ7');
-      userAvatars.push(avatar.Avatar({ key: 'MR', tiny: true, user: lastReplyer,
+      userAvatars.push(avatar.Avatar({ key: 'MR', user: lastReplyer,
             title: t.ft.mostRecentPoster }));
     }
 

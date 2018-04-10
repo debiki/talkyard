@@ -225,7 +225,7 @@ const AboutUser = createComponent({
               target: '_blank' },
             "View Profile"),
           removeFromPageButton),
-        avatar.Avatar({ user: user, large: true, clickOpensUserProfilePage: true }),
+        avatar.Avatar({ user: user, size: AvatarSize.Medium, clickOpensUserProfilePage: true }),
         r.div({},
           r.b({}, user.username), r.br(),
           user.fullName, r.br(),

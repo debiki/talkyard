@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 Kaj Magnus Lindberg
+ * Copyright (c) 2015-2018 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -22,7 +22,7 @@
 /// <reference path="../more-bundle-not-yet-loaded.ts" />
 
 //------------------------------------------------------------------------------
-  module debiki2.avatar {
+  namespace debiki2.avatar {
 //------------------------------------------------------------------------------
 
 const NumAvatarColors = 10;
@@ -50,6 +50,10 @@ export const Avatar = createComponent({
       event.preventDefault();
       morebundle.openAboutUserDialog(this.props.user.id, event.target);
     }
+  },
+
+  tiny: function() {
+    return !this.props.size || this.props.size === AvatarSize.Tiny;
   },
 
   makeTextAvatar: function() {
@@ -85,7 +89,7 @@ export const Avatar = createComponent({
       const hue = AvatarColorHueDistance * colorIndex;
       let saturation = 58;
       let lightness = 76;
-      if (this.props.tiny) {
+      if (this.tiny()) {
         // Use a darker color, because otherwise hard to see these small avatars.
         // Reduce saturation too, or the color becomes too strong (since darker = more color here).
         lightness -= 4;
@@ -153,16 +157,33 @@ export const Avatar = createComponent({
   },
 
   render: function() {
-    const user: BriefUser = this.props.user;
-    let extraClasses = this.props.tiny ? ' esAvtr-tny' : '';
+    const user: BriefUser | MemberInclDetails = this.props.user;
+
+    // One or more of these might be undefined, even if the user has an avatar:
+    // hash paths for only *some* avatar sizes are included.
+    const medPath = (<MemberInclDetails> user).avatarMediumHashPath;
+    const smlPath = (<BriefUser> user).avatarSmallHashPath;
+    const tnyPath = (<BriefUser> user).avatarTinyHashPath;
+
+    let extraClasses = this.tiny() ? ' esAvtr-tny' : '';
     extraClasses += this.props.ignoreClicks ? ' esAv-IgnoreClicks' : '';
     let content;
     let styles;
-    if (this.props.large && user['mediumAvatarUrl']) {
-      content = r.img({ src: user['mediumAvatarUrl'] });
-    }
-    else if (user.avatarUrl) {
-      content = r.img({ src: user.avatarUrl });
+
+    const largestPicPath = medPath || smlPath || tnyPath;
+    if (largestPicPath) {
+      // If we don't know the hash path to the avatar of the requested size, then use another size.
+      let picPath;
+      if (this.props.size === AvatarSize.Medium) {
+        picPath = largestPicPath;
+      }
+      else if (this.props.size === AvatarSize.Small) {
+        picPath = smlPath || tnyPath || medPath;
+      }
+      else {
+        picPath = tnyPath || smlPath || medPath;
+      }
+      content = r.img({ src: eds.uploadsUrlPrefix + picPath });
     }
     else {
       const lettersClassesColor = this.makeTextAvatar();

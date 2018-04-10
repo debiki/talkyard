@@ -178,9 +178,7 @@ class UploadsController @Inject()(cc: ControllerComponents, edContext: EdContext
     // Use OkSafeJson?
     Ok(Json.obj(
       "avatarSmallHashPath" -> JsString(smallAvatarRef.hashPath),
-      "avatarMediumHashPath" -> JsString(mediumAvatarRef.hashPath),
-      "avatarUrl" -> JsString(smallAvatarRef.url),                  // remove [4GKWDU20]
-      "mediumAvatarUrl" -> JsString(mediumAvatarRef.url))) as JSON  // remove [4GKWDU20]
+      "avatarMediumHashPath" -> JsString(mediumAvatarRef.hashPath))) as JSON
   }
 
 

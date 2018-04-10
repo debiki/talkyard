@@ -128,7 +128,7 @@ export var Metabar = createComponent({
       var memberList = members.map((user) => {
         return (
             r.div({ className: 'esMetabar_msgMmbr', key: user.id },
-              avatar.Avatar({ user: user, tiny: true }),
+              avatar.Avatar({ user: user }),
               r.span({ className: 'esMetabar_msgMmbr_username' }, user.username)));
       });
       anyExtraMeta =

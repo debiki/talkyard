@@ -253,7 +253,7 @@ interface Myself {
   deletedAt?: number;
   username?: string;
   fullName?: string;
-  avatarUrl?: string;
+  avatarSmallHashPath?: string;
   trustLevel: TrustLevel;
   threatLevel: ThreatLevel;
   permsOnPages: PermsOnPage[];
@@ -767,9 +767,17 @@ interface BriefUser extends User {
   isModerator?: boolean;
   isGuest?: boolean;  // = !isAuthenticated
   isEmailUnknown?: boolean;
-  avatarUrl?: string;
+  avatarTinyHashPath?: string;
+  avatarSmallHashPath?: string;
   isMissing?: boolean;
   isGone?: boolean;
+}
+
+
+enum AvatarSize {
+  Tiny = 1, // the default
+  Small = 2,
+  Medium = 3,
 }
 
 
@@ -807,8 +815,7 @@ interface MemberInclDetails extends MemberOrGroupInclDetails {
   country: string;
   url: string;
   seeActivityMinTrustLevel?: TrustLevel;
-  avatarUrl?: string;
-  mediumAvatarUrl?: string;
+  avatarMediumHashPath?: string;
   isAdmin: boolean;
   isModerator: boolean;
   isApproved: boolean;
@@ -890,7 +897,7 @@ interface Group {
   username: string;
   fullName: string;
   // "grantsTrustLevel" — later
-  avatarUrl?: string;
+  avatarTinyHashPath?: string;
 }
 
 

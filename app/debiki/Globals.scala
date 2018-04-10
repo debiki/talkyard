@@ -410,7 +410,10 @@ class Globals(
   def SiteByIdHostnamePrefix = "site-"
 
   def siteByIdOrigin(siteId: SiteId): String =
-    s"$scheme://$SiteByIdHostnamePrefix$siteId.$baseDomainWithPort"
+    s"$scheme://${siteByIdHostname(siteId)}"
+
+  def siteByIdHostname(siteId: SiteId): String =
+    s"$SiteByIdHostnamePrefix$siteId.$baseDomainWithPort"
 
 
   def pubSub: PubSubApi = state.pubSub
@@ -488,7 +491,7 @@ class Globals(
           case Some(site: Site) =>
             COULD // link to canonical host if (site.hosts.exists(_.role == SiteHost.RoleCanonical))
             // Let the config file hostname have precedence over the database.
-            if (site.id == FirstSiteId && defaultSiteHostname.isDefined)
+            if (site.id == defaultSiteId && defaultSiteHostname.isDefined)
               return site.brief.copy(hostname = defaultSiteHostname.get)
             else
               return site.brief

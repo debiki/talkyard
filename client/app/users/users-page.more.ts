@@ -357,12 +357,12 @@ const AvatarAboutAndButtons = createComponent({
     const thatIsYou = !isMe ? null :
       r.span({ className: 'esProfile_isYou' }, t.upp.you);
 
-    const avatar = user.mediumAvatarUrl
-        ? r.img({ src: user.mediumAvatarUrl })
-        : debiki2.avatar.Avatar({ user: user, large: true, ignoreClicks: true });
+    const avatar = user.avatarMediumHashPath
+        ? r.img({ src: eds.uploadsUrlPrefix + user.avatarMediumHashPath })
+        : debiki2.avatar.Avatar({ user: user, size: AvatarSize.Medium, ignoreClicks: true });
 
-    const uploadAvatarBtnText = user.mediumAvatarUrl ? t.upp.ChangePhoto : t.upp.UploadPhoto;
-    const avatarMissingClass = user.mediumAvatarUrl ? '' : ' esMedAvtr-missing';
+    const uploadAvatarBtnText = user.avatarMediumHashPath ? t.upp.ChangePhoto : t.upp.UploadPhoto;
+    const avatarMissingClass = user.avatarMediumHashPath ? '' : ' esMedAvtr-missing';
 
     const anyUploadPhotoBtn = isGone || isGuest(user) || !isMe && !isStaff(me) ? null :
         r.div({},
