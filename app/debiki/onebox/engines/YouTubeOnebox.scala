@@ -28,11 +28,11 @@ import debiki.onebox._
 import java.{net => jn, util => ju}
 import scala.util.{Failure, Success, Try}
 import YouTubeOnebox._
-import debiki.{Globals, ReactRenderer}
+import debiki.{Globals, Nashorn}
 
 
 
-class YouTubeOnebox(globals: Globals, nashorn: ReactRenderer)
+class YouTubeOnebox(globals: Globals, nashorn: Nashorn)
   extends InstantOneboxEngine(globals, nashorn) {
 
   val regex = """^https?:\/\/(?:www\.)?(?:m\.)?(?:youtube\.com|youtu\.be)\/.+$""".r

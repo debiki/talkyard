@@ -19,12 +19,12 @@ package debiki.onebox.engines
 
 import com.debiki.core._
 import com.debiki.core.Prelude._
-import debiki.{Globals, ReactRenderer}
+import debiki.{Globals, Nashorn}
 import debiki.onebox._
 import scala.util.{Failure, Success, Try}
 
 
-class GiphyOnebox(globals: Globals, nashorn: ReactRenderer)
+class GiphyOnebox(globals: Globals, nashorn: Nashorn)
   extends InstantOneboxEngine(globals, nashorn) {
 
   val regex = """^(https?:)?\/\/giphy\.com\/(gifs|embed)/[a-zA-Z0-9-]*-?[a-zA-Z0-9]+(/html5)?$""".r

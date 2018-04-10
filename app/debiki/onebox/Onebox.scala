@@ -19,7 +19,7 @@ package debiki.onebox
 
 import com.debiki.core._
 import com.debiki.core.Prelude._
-import debiki.{Globals, ReactRenderer}
+import debiki.{Globals, Nashorn}
 import debiki.onebox.engines._
 import javax.{script => js}
 import scala.collection.mutable
@@ -54,7 +54,7 @@ object RenderOnboxResult {
   * @param globals
   * @param nashorn Needed for sanitizing the resulting onebox (unless alreadySanitized = true).
   */
-abstract class OneboxEngine(globals: Globals, val nashorn: ReactRenderer) {
+abstract class OneboxEngine(globals: Globals, val nashorn: Nashorn) {
 
   def regex: scala.util.matching.Regex
 
@@ -115,7 +115,7 @@ abstract class OneboxEngine(globals: Globals, val nashorn: ReactRenderer) {
 }
 
 
-abstract class InstantOneboxEngine(globals: Globals, nashorn: ReactRenderer)
+abstract class InstantOneboxEngine(globals: Globals, nashorn: Nashorn)
   extends OneboxEngine(globals, nashorn) {
 
   protected def loadAndRender(url: String): Future[String] =
@@ -140,7 +140,7 @@ abstract class InstantOneboxEngine(globals: Globals, nashorn: ReactRenderer)
   * The name comes from Google's search result box in which they sometimes show a single
   * answer directly.
   */
-class Onebox(val globals: Globals, val nashorn: ReactRenderer) {
+class Onebox(val globals: Globals, val nashorn: Nashorn) {
 
   private val logger = play.api.Logger
   private val pendingRequestsByUrl = mutable.HashMap[String, Future[String]]()
@@ -208,7 +208,7 @@ class InstantOneboxRendererForNashorn(val oneboxes: Onebox) {
   def renderAndSanitizeOnebox(unsafeUrl: String): String = {
     lazy val safeUrl = org.owasp.encoder.Encode.forHtml(unsafeUrl)
     if (!globals.isInitialized) {
-      // Also see the comment for ReactRenderer.startCreatingRenderEngines()
+      // Also see the comment for Nashorn.startCreatingRenderEngines()
       return o"""<p style="color: red; outline: 2px solid orange; padding: 1px 5px;">
            Broken onebox for: <a>$safeUrl</a>. Nashorn called out to Scala code
            that uses old stale class files and apparently the wrong classloader (?)

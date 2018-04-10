@@ -61,7 +61,7 @@ class EmbeddedTopicsController @Inject()(cc: ControllerComponents, edContext: Ed
           PageRole.EmbeddedComments, Some(categoryId))
         // Don't render server side, render client side only. Search engines shouldn't see it anyway,
         // because it doesn't exist.
-        // So skip: ReactRenderer.renderPage(jsonStuff.jsonString)
+        // So skip: Nashorn.renderPage(jsonStuff.jsonString)
         val tpi = new PageTpi(pageRequest, jsonStuff.jsonString, jsonStuff.version,
           "Dummy cached html [EdM2GRVUF05]", WrongCachedPageVersion,
           jsonStuff.pageTitle, jsonStuff.customHeadTags, anyAltPageId = discussionId,

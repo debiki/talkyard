@@ -20,7 +20,7 @@ package debiki.dao
 import akka.actor.{Actor, ActorRef, Props}
 import com.debiki.core._
 import com.debiki.core.Prelude._
-import debiki.{DatabaseUtils, Globals, ReactRenderer}
+import debiki.{DatabaseUtils, Globals, Nashorn}
 import play.{api => p}
 import scala.concurrent.duration._
 import RenderContentService._
@@ -34,7 +34,7 @@ object RenderContentService {
 
   /** PERFORMANCE COULD create one thread/actor per processor instead.
     */
-  def startNewActor(globals: Globals, nashorn: ReactRenderer): ActorRef = {
+  def startNewActor(globals: Globals, nashorn: Nashorn): ActorRef = {
     globals.actorSystem.actorOf(
       Props(new RenderContentActor(globals, nashorn)),
       name = s"RenderContentActor")
@@ -51,7 +51,7 @@ object RenderContentService {
   */
 class RenderContentActor(
   val globals: Globals,
-  val nashorn: ReactRenderer) extends Actor {
+  val nashorn: Nashorn) extends Actor {
 
   def execCtx: ExecutionContext = globals.executionContext
 

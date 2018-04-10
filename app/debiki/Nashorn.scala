@@ -26,7 +26,7 @@ import org.apache.lucene.util.IOUtils
 import play.api.Play
 import scala.concurrent.Future
 import scala.util.Try
-import ReactRenderer._
+import Nashorn._
 
 
 // COULD move elsewhere. Placed here only because the pwd strength function is
@@ -57,8 +57,7 @@ case class PasswordStrength(
   * creates new threads, or has 50 - 100 'play-akka.actor.default-dispatcher-NN'
   * threads, and it doesn't make sense to create engines for that many threads.
   */
-// RENAME to Nashorn? Because does lots of things, doesn't just render React stuff.
-class ReactRenderer(globals: Globals) {
+class Nashorn(globals: Globals) {
 
   private val logger = play.api.Logger
 
@@ -492,7 +491,7 @@ class ReactRenderer(globals: Globals) {
 
 
 
-object ReactRenderer {
+object Nashorn {
 
   /** Initializing engines takes rather long, so create only two in dev mode:
     * one for the RenderContentService background actor, and one for

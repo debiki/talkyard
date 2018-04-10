@@ -19,7 +19,7 @@ package talkyard.server
 
 import com.debiki.core._
 import com.debiki.core.Prelude.die
-import debiki.ReactRenderer
+import debiki.Nashorn
 
 
 case class PostRendererSettings(
@@ -35,7 +35,7 @@ object IfCached {
 }
 
 
-class PostRenderer(private val nashorn: ReactRenderer) {
+class PostRenderer(private val nashorn: Nashorn) {
 
 
   def renderAndSanitize(post: Post, settings: PostRendererSettings, ifCached: IfCached): String = {

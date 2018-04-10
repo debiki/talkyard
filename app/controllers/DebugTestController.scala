@@ -20,7 +20,7 @@ package controllers
 import akka.pattern.ask
 import com.debiki.core._
 import com.debiki.core.Prelude._
-import debiki.{RateLimits, ReactRenderer}
+import debiki.{RateLimits, Nashorn}
 import debiki.dao.PagePartsDao
 import debiki.EdHttp._
 import ed.server.{EdContext, EdController}
@@ -183,7 +183,7 @@ class DebugTestController @Inject()(cc: ControllerComponents, edContext: EdConte
 
   def areScriptsReady: Action[Unit] = ExceptionAction(cc.parsers.empty) { _ =>
     val numEnginesCreated = context.nashorn.numEnginesCreated
-    val numMissing = ReactRenderer.MinNumEngines - numEnginesCreated
+    val numMissing = Nashorn.MinNumEngines - numEnginesCreated
     if (numMissing > 0)
       throwServiceUnavailable("EsE7KJ0F", o"""Only $numEnginesCreated engines created thus far,
           waiting for $numMissing more engines""")

@@ -24,13 +24,13 @@ package debiki.onebox.engines
 
 import com.debiki.core._
 import com.debiki.core.Prelude._
-import debiki.{Globals, ReactRenderer}
+import debiki.{Globals, Nashorn}
 import debiki.onebox._
 import scala.util.Success
 
 
 
-class ImageOnebox(globals: Globals, nashorn: ReactRenderer)
+class ImageOnebox(globals: Globals, nashorn: Nashorn)
   extends InstantOneboxEngine(globals, nashorn) {
 
   val regex = """^(https?:)?\/\/.+\.(png|jpg|jpeg|gif|bmp|tif|tiff)(\?.*)?$""".r

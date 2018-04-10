@@ -235,7 +235,7 @@ class EdSecurity(globals: Globals) {
   def throwErrorIfPasswordTooWeak(
         password: String, username: String, fullName: Option[String], email: String) {
     /* Server side pwd check disabled
-    val passwordStrength = ReactRenderer.calcPasswordStrength(
+    val passwordStrength = Nashorn.calcPasswordStrength(
       password = password, username = username, fullName = fullName, email = email)
     if (!passwordStrength.isStrongEnough)
       throwBadReq("DwE4KFEK8", o"""Password not strong enough. Please go back and try again.

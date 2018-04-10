@@ -73,7 +73,7 @@ object TextAndHtmlMaker {
 
 /** Thread safe.
   */
-class TextAndHtmlMaker(pubSiteId: PublSiteId, nashorn: ReactRenderer) {
+class TextAndHtmlMaker(pubSiteId: PublSiteId, nashorn: Nashorn) {
 
   private class TextAndHtmlImpl(
     val text: String,

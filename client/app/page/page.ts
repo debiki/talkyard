@@ -28,7 +28,7 @@
 // Wrapping in a module causes an ArrayIndexOutOfBoundsException: null error, see:
 //  http://stackoverflow.com/questions/26189940/java-8-nashorn-arrayindexoutofboundsexception
 // The bug has supposedly been fixed in Java 8u40. Once I'm using that version,
-// remove `var exports = {};` from app/debiki/ReactRenderer.scala.
+// remove `var exports = {};` from app/debiki/Nashorn.  CLEAN_UP do this. Or done already?
 //------------------------------------------------------------------------------
    namespace debiki2 {
 //------------------------------------------------------------------------------

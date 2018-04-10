@@ -2,7 +2,7 @@ package ed.server
 
 import com.debiki.core._
 import debiki.onebox.Onebox
-import debiki.{Globals, RateLimiter, ReactRenderer, TextAndHtmlMaker}
+import debiki.{Globals, RateLimiter, Nashorn, TextAndHtmlMaker}
 import ed.server.http.{PlainApiActions, SafeActions}
 import ed.server.security.EdSecurity
 import play.{api => p}
@@ -47,7 +47,7 @@ class EdAppComponents(appLoaderContext: ApplicationLoader.Context)
   val safeActions = new SafeActions(globals, security, controllerComponents.parsers)
   val plainApiActions = new PlainApiActions(safeActions, globals, security, rateLimiter)
 
-  val nashorn = new ReactRenderer(globals)
+  val nashorn = new Nashorn(globals)
   val oneboxes = new Onebox(globals, nashorn)
   nashorn.setOneboxes(oneboxes)
 
@@ -122,7 +122,7 @@ class EdContext(
   val security: EdSecurity,
   val safeActions: SafeActions,
   val plainApiActions: PlainApiActions,
-  val nashorn: ReactRenderer,
+  val nashorn: Nashorn,
   val oneboxes: Onebox,
   val akkaStreamMaterializer: akka.stream.Materializer,
   // Hide so fewer parts of the app get access to Play's internal stuff.
