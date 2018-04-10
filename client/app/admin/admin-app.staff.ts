@@ -603,7 +603,7 @@ const EmbeddedCommentsSettings = createFactory({
             // script url defined here: [2WPGKS04]
             // this code is dupl in e2e test [2JKWTQ0].
 `<script>talkyardServerUrl='${location.origin}';</script>
-<script async defer src="${assetsOrigin()}/-/talkyard-comments${dotMin}.js"></script>
+<script async defer src="${eds.cdnOrServerOrigin}/-/talkyard-comments${dotMin}.js"></script>
 <!-- You can specify a per page discussion id on the next line, if your URLs might change. -->
 <div class="talkyard-comments" data-discussion-id="" style="margin-top: 45px;">
 <noscript>Please enable Javascript to view comments.</noscript>

@@ -90,7 +90,7 @@ MentionsMarkdownItPlugin.prototype.render = function(tokens, id, options, env) {
   // The username is [a-zA-Z_0-9] so we don't need to escape it. And besides we sanitize
   // everything later on anyway.
   var username = tokens[id].username;
-  SHOULD; BUG; // won't work in embedded comments discussions:
+  // SHOULD fix BUG: In embedded comments discussions,
   // the /-/users/ local links resolve to https://the.EMBEDDING.site/-/users/.
   // Prefix href with eds.serverOrigin, if PageRole.EmbeddedComments? But page role unknown here.
   return '<a class="esMention" href="/-/users/' + username + '">@' + username + '</a>';

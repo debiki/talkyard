@@ -1636,6 +1636,9 @@ object JsX {
     user.tinyAvatar foreach { uploadRef =>
       json += "avatarTinyHashPath" -> JsString(uploadRef.hashPath)
     }
+    user.smallAvatar foreach { uploadRef =>
+      json += "avatarSmallHashPath" -> JsString(uploadRef.hashPath)
+    }
     if (user.isGuest) {
       json += "isGuest" -> JsTrue
     }

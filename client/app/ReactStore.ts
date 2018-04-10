@@ -41,9 +41,6 @@ const htmlElem = document.getElementsByTagName('html')[0];
 declare const EventEmitter3; // don't know why, but the TypeScript defs doesn't work.
 export const ReactStore = new EventEmitter3();
 
-// Avoid a harmless "possible EventEmitter memory leak detected" warning.
-ReactStore.setMaxListeners(20);
-
 
 // First, initialize the store with page specific data only, nothing user specific,
 // because the server serves cached HTML with no user specific data. Later on,

@@ -11,6 +11,7 @@ declare namespace eds {
   const minMaxJs: boolean;
   const serverOrigin: string;
   const cdnOriginOrEmpty: string;
+  const cdnOrServerOrigin: string;
   const assetUrlPrefix: string;
   const uploadsUrlPrefix: string;
 

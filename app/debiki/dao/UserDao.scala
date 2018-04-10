@@ -996,7 +996,8 @@ trait UserDao {
     require(smallAvatar.isDefined == tinyAvatar.isDefined, "EsE9PYM2")
     require(smallAvatar.isDefined == mediumAvatar.isDefined, "EsE8YFM2")
     readWriteTransaction { transaction =>
-      setUserAvatarImpl(userId, tinyAvatar, smallAvatar, mediumAvatar, browserIdData, transaction)
+      setUserAvatarImpl(userId, tinyAvatar = tinyAvatar,
+        smallAvatar = smallAvatar, mediumAvatar = mediumAvatar, browserIdData, transaction)
     }
   }
 

@@ -177,6 +177,7 @@ var eds = {
   minMaxJs: '@minMaxJs',
   serverOrigin: '@{tpi.httpsColonOrEmpty}//@tpi.serverAddress',
   cdnOriginOrEmpty: '@{tpi.cdnOrigin getOrElse ""}',
+  cdnOrServerOrigin: '@tpi.cdnOrServerOrigin',@* for admin page embedded comments code *@
   isInLoginWindow: @isInLoginWindowBoolStr,
   isInLoginPopup: @isInLoginWindowBoolStr && _isInIframe,
   isInIframe: _isInIframe,

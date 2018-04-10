@@ -208,7 +208,6 @@ declare namespace debiki2 {
   var cloneRect;
   var cloneEventTargetRect;
 
-  function assetsOrigin(): string;
   var linkToPageId;
   var linkToPostNr;
   var linkToNotificationSource;

@@ -80,13 +80,13 @@ describe("unsubscribe", () => {
     guest.go(topicUrl);
     guest.complex.signUpAsGuestViaTopbar(guestName, guestEmail);
     guest.complex.replyToOrigPost(guestReplyText);
-    guest.topic.assertPostTextMatches(c.FirstReplyNr, guestReplyText);
+    guest.topic.waitUntilPostTextMatches(c.FirstReplyNr, guestReplyText);
   });
 
   it("Owen replies to the guest", () => {
     owen.refresh();
     owen.complex.replyToPostNr(c.FirstReplyNr, owensReplyText);
-    owen.topic.assertPostTextMatches(c.FirstReplyNr + 1, owensReplyText);
+    owen.topic.waitUntilPostTextMatches(c.FirstReplyNr + 1, owensReplyText);
   });
 
   it("... and logs out", () => {
@@ -109,7 +109,7 @@ describe("unsubscribe", () => {
 
   it("... instead hen posts another reply to Owen", () => {
     guest.complex.replyToOrigPost(guestReplyText2);
-    guest.topic.assertPostTextMatches(c.FirstReplyNr + 2, guestReplyText2);
+    guest.topic.waitUntilPostTextMatches(c.FirstReplyNr + 2, guestReplyText2);
   });
 
   it("... then hen logs out", () => {
@@ -166,7 +166,8 @@ describe("unsubscribe", () => {
     guest.complex.logInAsGuestViaTopbar(guestName, guestEmail);
     guest.complex.replyToPostNr(c.FirstReplyNr + 1, guestReplyTextAfterUnsub);
     owen.refresh();
-    everyone.topic.assertPostTextMatches(c.FirstReplyNr + 3, guestReplyTextAfterUnsub);
+    browserA.topic.waitUntilPostTextMatches(c.FirstReplyNr + 3, guestReplyTextAfterUnsub);
+    browserB.topic.waitUntilPostTextMatches(c.FirstReplyNr + 3, guestReplyTextAfterUnsub);
   });
 
   it("... who replies again to the guest", () => {
@@ -174,7 +175,8 @@ describe("unsubscribe", () => {
     owen.complex.loginWithPasswordViaTopbar(owen);
     owen.complex.replyToPostNr(c.FirstReplyNr + 3, owensReplyText2);
     guest.refresh();
-    everyone.topic.assertPostTextMatches(c.FirstReplyNr + 4, owensReplyText2);
+    browserA.topic.waitUntilPostTextMatches(c.FirstReplyNr + 4, owensReplyText2);
+    browserB.topic.waitUntilPostTextMatches(c.FirstReplyNr + 4, owensReplyText2);
   });
 
   it("Maria logs in, in the guest's browser", () => {
@@ -185,14 +187,14 @@ describe("unsubscribe", () => {
 
   it("... posts a reply and logs out", () => {
     maria.complex.replyToPostNr(c.FirstReplyNr + 4, mariasReplyText);
-    maria.topic.assertPostTextMatches(c.FirstReplyNr + 5, mariasReplyText);
+    maria.topic.waitUntilPostTextMatches(c.FirstReplyNr + 5, mariasReplyText);
     maria.topbar.clickLogout();
   });
 
   it("Owen replies to Maria", () => {
     owen.refresh();
     owen.complex.replyToPostNr(c.FirstReplyNr + 5, owensReplyText3);
-    owen.topic.assertPostTextMatches(c.FirstReplyNr + 6, owensReplyText3);
+    owen.topic.waitUntilPostTextMatches(c.FirstReplyNr + 6, owensReplyText3);
   });
 
   it("Maria gets a notf email", () => {
