@@ -48,6 +48,10 @@ var api = { config: {
 
   capabilities: [{
     browserName: settings.browserName,
+    chromeOptions: {
+      args: [
+      '--disable-notifications'],
+    },
     // For Firefox to work, you need to make http://wildcard.localhost addresses work
     // (where 'wildcard' can be anything).
     // See: <../../../docs/wildcard-dot-localhost.md>.
