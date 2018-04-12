@@ -15,6 +15,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+$tinyAvatarSize = 28px;   // [7UKWQ1] (2EPZKG0)
+$smallAvatarSize = 50px;  // [7UKWQ1]
+
 .edAvtr // avatar
   &:hover,
   &:active,
@@ -25,8 +28,8 @@
     cursor: pointer;
   img
     border-radius: 50%;
-    width: 48px;
-    height: 48px;
+    width: $smallAvatarSize;
+    height: $smallAvatarSize;
     max-width: none; // otherwise usually 100%, might make it too narrow.
     max-height: none;
     padding: 0 !important;
@@ -34,11 +37,8 @@
   float: left;
   position: absolute;
   left: -1px; // makes the avatar circle seem more aligned with the metabar (5JUWKQS0)
-  width: 48px;
-  height: 48px;
-  img
-    width: 48px;
-    height: 48px;
+  width: $smallAvatarSize;
+  height: $smallAvatarSize;
 
 .s_InIframe .edAvtr
   left: 0; // not -1, because would then be cropped by the iframe (5JUWKQS0)
@@ -47,9 +47,9 @@
 .esAvtr-ltr  // avatar with a letter, no image uploaded
   padding: 0 !important;
   font-size: 28px;
-  width: 48px;
-  height: 48px;
-  line-height: 48px;
+  width: $smallAvatarSize;
+  height: $smallAvatarSize;
+  line-height: $smallAvatarSize;
   color: white !important;
   border-radius: 50%;
   font-style: normal;
@@ -88,9 +88,9 @@
 
 .esAvtr-tny
   position: relative;
-  width: 28px;
-  height: 28px;
-  line-height: 30px;
+  width: $tinyAvatarSize;
+  height: $tinyAvatarSize;
+  line-height: 30px;  // looks better than $tinyAvatarSize = 28px  (2EPZKG0)
   margin-right: 7px;
   &.esAvtr-ltr
     font-size: 16px;
@@ -102,8 +102,8 @@
     color: hsl(0, 0%, 50%); // -tny = smaller font -> increase contrast
 
   img
-    width: 27px;
-    height: 27px;
+    width: $tinyAvatarSize;
+    height: $tinyAvatarSize;
     cursor: pointer;
 
 .dw-topic-list

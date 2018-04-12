@@ -274,8 +274,10 @@ const AvatarAboutAndButtons = createComponent({
           files: { images: files },
           imageOriginal: false,
           imageTransform: {
-            'tiny': { width: 25, height: 25, type: 'image/jpeg', quality: 0.95 },
-            'small': { width: 48, height: 48, type: 'image/jpeg', quality: 0.95 },
+            // Sync with $tinyAvatarSize and $smallAvatarSize, so the browser won't
+            // need to scale the image. [7UKWQ1]
+            'tiny': { width: 28, height: 28, type: 'image/jpeg', quality: 0.95 },
+            'small': { width: 50, height: 50, type: 'image/jpeg', quality: 0.95 },// ?? 50 ??
             'medium': { maxWidth: 350, maxHeight: 350, type: 'image/jpeg', quality: 0.8 },
           },
           // This is per file.
