@@ -84,6 +84,7 @@ class CreateSiteController @Inject()(cc: ControllerComponents, edContext: EdCont
     val anyEmbeddingSiteAddress = (request.body \ "embeddingSiteAddress").asOpt[String]
     val organizationName = (request.body \ "organizationName").as[String].trim
     val pricePlanInt = (request.body \ "pricePlan").as[Int]
+    val okForbiddenPassword = hasOkForbiddenPassword(request)
     val okE2ePassword = hasOkE2eTestPassword(request.request)
 
     val localHostname = anyLocalHostname getOrElse {
@@ -103,7 +104,7 @@ class CreateSiteController @Inject()(cc: ControllerComponents, edContext: EdCont
     if (!Site.isOkayName(localHostname))
       throwForbidden("DwE5YU70", "Bad site name")
 
-    if (localHostname.length < MinLocalHostnameLength && !hasOkForbiddenPassword(request))
+    if (localHostname.length < MinLocalHostnameLength && !okForbiddenPassword)
       // This "cannot" happen — JS makes this impossible. So need not be a user friendly message.
       throwForbidden("DwE2JYK8", "The local hostname should be at least six chars")
 
@@ -141,7 +142,8 @@ class CreateSiteController @Inject()(cc: ControllerComponents, edContext: EdCont
           embeddingSiteUrl = anyEmbeddingSiteAddress,
           creatorId = request.user.map(_.id) getOrElse UnknownUserId,
           browserIdData = request.theBrowserIdData, organizationName = organizationName,
-          isTestSiteOkayToDelete = isTestSiteOkayToDelete, skipMaxSitesCheck = okE2ePassword,
+          isTestSiteOkayToDelete = isTestSiteOkayToDelete,
+          skipMaxSitesCheck = okE2ePassword || okForbiddenPassword,
           deleteOldSite = deleteOldSite, pricePlan = pricePlan,
           createdFromSiteId = Some(request.siteId))
 
