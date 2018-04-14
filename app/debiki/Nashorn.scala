@@ -74,9 +74,9 @@ class Nashorn(globals: Globals) {
 
   @volatile private var firstCreateEngineError: Option[Throwable] = None
 
-  private var secure = true
-  private var cdnOrigin: Option[String] = None
-  private var isTestSoDisableScripts = false
+  private def secure = globals.secure
+  private def cdnOrigin: Option[String] = globals.anyCdnOrigin
+  private def isTestSoDisableScripts = globals.isTestDisableScripts
 
   private var oneboxes: Option[Onebox] = None
 
@@ -105,11 +105,7 @@ class Nashorn(globals: Globals) {
     * the Scala code called from my Nashorn JS, perhaps I need to somehow use a custom
     * classloader here?
     */
-  def startCreatingRenderEngines(secure: Boolean, cdnOrigin: Option[String],
-        isTestSoDisableScripts: Boolean) {
-    this.secure = secure
-    this.cdnOrigin = cdnOrigin
-    this.isTestSoDisableScripts = isTestSoDisableScripts
+  def startCreatingRenderEngines() {
     if (isTestSoDisableScripts)
       return
     if (!javascriptEngines.isEmpty) {
@@ -224,7 +220,7 @@ class Nashorn(globals: Globals) {
     // included —> the embedd*ing* server's address used instead, but that's the wrong server.
     // But on non-embedded pages, use local upload links? So will work also if moves
     // server to other address?
-    BUG; SHOULD // use special page type for embedded comments? And on those pages always incl origin?
+    BUG; SHOULD // use embedded comments page type? And then always incl origin? [6JKD2A]
     val uploadsUrlPrefix = cdnOrigin.getOrElse("") + ed.server.UploadsUrlBasePath + pubSiteId + '/'
     val oneboxRenderer = new InstantOneboxRendererForNashorn(oneboxes getOrDie "EdE2WUHP6")
 
@@ -518,7 +514,7 @@ object Nashorn {
     |function renderAndSanitizeCommonMark(source, allowClassIdDataAttrs, followLinks,
     |       instantOneboxRenderer, uploadsUrlPrefix) {
     |  try {
-    |    theStore = null; // don's use here, might not have been inited
+    |    theStore = null; // Fail fast. Don't use here, might not have been inited.
     |    eds.uploadsUrlPrefix = uploadsUrlPrefix;
     |    debiki.internal.oneboxMarkdownItPlugin.instantRenderer = instantOneboxRenderer;
     |    var unsafeHtml = md.render(source);

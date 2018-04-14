@@ -36,7 +36,7 @@ import play.api.mvc.Request
   * "pageParts".
   */
 class PageRequest[A](
-  val siteIdAndCanonicalHostname: SiteBrief,
+  val site: SiteBrief,
   val sid: SidStatus,
   val xsrfToken: XsrfOk,
   val browserId: BrowserId,

@@ -168,7 +168,7 @@ class ViewPageController @Inject()(cc: ControllerComponents, edContext: EdContex
     //  globals.strangerCounter.strangerSeen(request.siteId, request.theBrowserIdData)
 
     val pageRequest = new PageRequest[Unit](
-      request.siteIdAndCanonicalHostname,
+      request.site,
       sid = request.sid,
       xsrfToken = request.xsrfToken,
       browserId = request.browserId,
@@ -315,7 +315,7 @@ class ViewPageController @Inject()(cc: ControllerComponents, edContext: EdContex
       globals.strangerCounter.strangerSeen(request.siteId, request.theBrowserIdData)
 
     val pageRequest = new PageRequest[Unit](
-      request.siteIdAndCanonicalHostname,
+      request.site,
       sid = request.sid,
       xsrfToken = request.xsrfToken,
       browserId = request.browserId,
@@ -425,7 +425,7 @@ object ViewPageController {
       publishDirectly = true)
 
     new DummyPageRequest(
-      request.siteIdAndCanonicalHostname,
+      request.site,
       sid = request.sid,
       xsrfToken = request.xsrfToken,
       browserId = request.browserId,

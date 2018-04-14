@@ -77,7 +77,7 @@ class EmbeddedTopicsController @Inject()(cc: ControllerComponents, edContext: Ed
         if (pageMeta.pageRole != PageRole.EmbeddedComments)
           throwForbidden("EdE2F6UHY3", "Not an embedded comments page")
         val pageRequest = new PageRequest[Unit](
-          request.siteIdAndCanonicalHostname,
+          request.site,
           sid = request.sid,
           xsrfToken = request.xsrfToken,
           browserId = request.browserId,

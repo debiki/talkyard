@@ -925,7 +925,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
       return dao.jsonMaker.userNoPageToJson(request)
 
     val pageRequest = new PageRequest(
-      request.siteIdAndCanonicalHostname,
+      request.site,
       sid = request.sid,
       xsrfToken = request.xsrfToken,
       browserId = request.browserId,

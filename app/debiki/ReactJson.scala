@@ -1692,9 +1692,6 @@ object JsX {
       "pageId" -> flag.pageId,
       "postNr" -> flag.postNr)
 
-  def JsUploadUrlOrNull(uploadRef: Option[UploadRef]): JsValue =
-    uploadRef.map(ref => JsString(ref.url)) getOrElse JsNull
-
   def JsStringOrNull(value: Option[String]): JsValue =
     value.map(JsString).getOrElse(JsNull)
 

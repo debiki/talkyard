@@ -714,7 +714,7 @@ const MoreDropdownModal = createComponent({
 
     // ----- Move post
 
-    // UX BUG Currently doesn't work in iframes — because the copy-link dialog copies addresses
+    // UX BUG Currently doesn't work in iframes — because the copy-link dialog copies addresses  [6JKD2A]
     // with the embedding site's origin, and when pasting the link, that'll be the wrong origin.
     if (!isPageBody && isStaff(me) && !eds.isInEmbeddedCommentsIframe) {
       moreLinks.push(

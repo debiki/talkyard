@@ -210,15 +210,15 @@ trait UploadsDao {
 
 
   def findUploadRefsInPost(post: Post): Set[UploadRef] = {
+    val pubId = thePubSiteId()
     val approvedRefs = post.approvedHtmlSanitized.map(
-      h => findUploadRefsInText(h, thePubSiteId())) getOrElse Set.empty
+      h => findUploadRefsInText(h, pubId)) getOrElse Set.empty
     val currentRefs =
       if (post.nr == PageParts.TitleNr) Nil
       else {
         val htmlString = context.nashorn.renderAndSanitizeCommonMark(
-          post.currentSource, pubSiteId = thePubSiteId(),
-          allowClassIdDataAttrs = false, followLinks = false)
-        findUploadRefsInText(htmlString, thePubSiteId())
+          post.currentSource, pubSiteId = pubId, allowClassIdDataAttrs = false, followLinks = false)
+        findUploadRefsInText(htmlString, pubId)
       }
     approvedRefs ++ currentRefs
   }
@@ -398,7 +398,7 @@ object UploadsDao {
           }
         }
 
-      // Don't care about the port and hostname. Instead, if the url path matches, then
+      // Don't care about the port and hostname. Instead, if the url *path* matches, then
       // consider any upload with the specified location as being referenced.
       // (Otherwise refs might be overlooked, if adding/removing a CDN origin,
       // or moving the server to a new address.)

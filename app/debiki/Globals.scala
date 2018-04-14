@@ -481,7 +481,8 @@ class Globals(
             // because that'd let people find and crawl all sites hosted by this server
             // (by crawling site-1, site-2, ...). And the server owners might not like that.
             // (Access by publ site ids is ok though: they are long random strings, not sequential ids.)
-            // throwForbiddenIf(isProd, "TyE4HJWQ10", "Looking up sites by private ID is not allowed")
+            // throwForbiddenIf(isProd && !okForbiddenPassword,
+            //    "TyE4HJWQ10", "Looking up sites by private id is not allowed")
             val siteId = siteIdString.toIntOrThrow("EdE5PJW2", s"Bad site id: $siteIdString")
             systemDao.getSite(siteId)
           }
@@ -644,10 +645,7 @@ class Globals(
     // The render engines might be needed by some Java (Scala) evolutions.
     // Let's create them in this parallel thread rather than blocking the whole server.
     // (Takes 2? 5? seconds.)
-    edContext.nashorn.startCreatingRenderEngines(
-      secure = secure,
-      cdnOrigin = config.cdn.origin,
-      isTestSoDisableScripts = isTestDisableScripts)
+    edContext.nashorn.startCreatingRenderEngines()
 
     if (!isTestDisableBackgroundJobs) {
       actorSystem.scheduler.scheduleOnce(5 seconds, state.renderContentActorRef,

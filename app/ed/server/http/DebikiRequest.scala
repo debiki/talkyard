@@ -40,7 +40,7 @@ abstract class DebikiRequest[A] {
   private def security = dao.context.security
   private def globals = dao.context.globals
 
-  def siteIdAndCanonicalHostname: SiteBrief ; CLEAN_UP ; RENAME // to 'site'? such a weird name
+  def site: SiteBrief
   def sid: SidStatus
   def xsrfToken: XsrfOk
   def browserId: BrowserId
@@ -51,7 +51,7 @@ abstract class DebikiRequest[A] {
 
   def underlying: Request[A] = request
 
-  require(siteIdAndCanonicalHostname.id == dao.siteId, "EsE76YW2")
+  require(site.id == dao.siteId, "EsE76YW2")
   require(user.map(_.id) == sid.userId, "EsE7PUUY2")
 
   // Use instead of 'user', because 'user' is confusing when the requester asks for info
@@ -62,7 +62,7 @@ abstract class DebikiRequest[A] {
 
   def tenantId: SiteId = dao.siteId
   def siteId: SiteId = dao.siteId
-  def canonicalHostname: String = siteIdAndCanonicalHostname.hostname
+  def canonicalHostname: String = site.hostname
   def domain: String = request.domain
 
   lazy val siteSettings: EffectiveSettings = dao.getWholeSiteSettings()
