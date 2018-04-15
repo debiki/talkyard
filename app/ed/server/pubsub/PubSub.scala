@@ -95,6 +95,8 @@ class PubSubApi(private val actorRef: ActorRef) {
 
   private val timeout = 10 seconds
 
+  SHOULD; PRIVACY // change from site id to publ site id [5UKFBQW2].
+
   def userSubscribed(siteId: SiteId, user: User, browserIdData: BrowserIdData,
         watchedPageIds: Set[PageId]) {
     actorRef ! UserSubscribed(siteId, user, browserIdData, watchedPageIds)

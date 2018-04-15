@@ -25,6 +25,12 @@ import scala.collection.{mutable, immutable}
 import scala.collection.mutable.ArrayBuffer
 
 
+/** Keep, because is an good example of how to implement a Scala based migration.
+  *
+  * (Was used to migrate all posts in the Postgres database, from an old
+  * event sourcing approach to one row per post, updated in place,
+  * + an edit history table.)
+  */
 object Migration14 {
 
   var siteTransaction: SiteTransaction = null
