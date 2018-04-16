@@ -572,6 +572,7 @@ interface Page {
 interface Store {
   appVersion: string;
   now: number;
+  pubSiteId: string;
   siteStatus: SiteStatus;
   siteOwnerTermsUrl?: string;
   siteOwnerPrivacyUrl?: string;

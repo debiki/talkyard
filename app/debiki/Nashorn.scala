@@ -196,7 +196,8 @@ class Nashorn(globals: Globals) {
     val timeBefore = System.currentTimeMillis()
 
     engine.invokeFunction("setInitialStateJson", initialStateJson)
-    val pageHtml = engine.invokeFunction("renderReactServerSide").asInstanceOf[String]
+    val pageHtml = engine.invokeFunction(
+      "renderReactServerSide", cdnOrigin.getOrElse("")).asInstanceOf[String]
     if (pageHtml == ErrorRenderingReact) {
       logger.error(s"Error rendering page with React server side [DwE5KGW2]")
       return None
@@ -372,14 +373,19 @@ class Nashorn(globals: Globals) {
         |  callback();
         |}
         |
-        |function renderReactServerSide() {
+        |function renderReactServerSide(cdnOriginOrEmpty) {
         |  try {
         |    // Each language file creates a 't_(lang-code)' global variable, e.g. 't_en' for English.
         |    // And they all set a global 'var t' to themselves. Update 't' here; it gets used
         |    // during rendering.
         |    var langCode = theStore.settings.languageCode || '${AllSettings.Default.languageCode}';
         |    t = global['t_' + langCode];
-        |    return debiki2.renderTitleBodyCommentsToString();
+        |    eds.uploadsUrlPrefix =   // [7AKBQ2]
+        |       cdnOriginOrEmpty + '${ed.server.UploadsUrlBasePath}' + theStore.pubSiteId + '/';
+        |    var html = debiki2.renderTitleBodyCommentsToString();
+        |    eds.uploadsUrlPrefix = 'TyE2FWY6';
+        |    t = 'TyE5JKWQ2';
+        |    return html;
         |  }
         |  catch (e) {
         |    printStackTrace(e);
@@ -515,12 +521,16 @@ object Nashorn {
     |       instantOneboxRenderer, uploadsUrlPrefix) {
     |  try {
     |    theStore = null; // Fail fast. Don't use here, might not have been inited.
-    |    eds.uploadsUrlPrefix = uploadsUrlPrefix;
+    |    eds.uploadsUrlPrefix = uploadsUrlPrefix;  // [7AKBQ2]
     |    debiki.internal.oneboxMarkdownItPlugin.instantRenderer = instantOneboxRenderer;
     |    var unsafeHtml = md.render(source);
     |    var allowClassAndIdAttr = allowClassIdDataAttrs;
     |    var allowDataAttr = allowClassIdDataAttrs;
-    |    return googleCajaSanitizeHtml(unsafeHtml, allowClassAndIdAttr, allowDataAttr, followLinks);
+    |    var html = googleCajaSanitizeHtml(unsafeHtml, allowClassAndIdAttr, allowDataAttr, followLinks);
+    |    // Simplify detection of incorrectly using these without initialzing again:
+    |    eds.uploadsUrlPrefix = 'TyE4GKFWB0';
+    |    debiki.internal.oneboxMarkdownItPlugin.instantRenderer = 'TyE56JKW20';
+    |    return html;
     |  }
     |  catch (e) {
     |    console.error("Error in renderAndSanitizeCommonMark: [TyERNDRCM02]");

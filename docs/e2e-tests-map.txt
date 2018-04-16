@@ -329,6 +329,17 @@ restart server -
   restart everything at once -
     ... same tests as above ...
 
+# Test by disabling js, browser side?
+server side rendering -
+  topic list, discussion topic, chat:
+    avatar image links ok:
+    upload links ok:
+
+  topic list -
+    load more button works:
+    click category:
+    click tag:
+    category dropdown:
 
 Tests to create:
   Login with pwd here: /-/users/id/109/activity, no .categories bug
