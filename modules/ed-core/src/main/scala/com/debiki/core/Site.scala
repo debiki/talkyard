@@ -60,12 +60,14 @@ object Site {
 /**
   * @param hostname — doesn't include any port number.
   */
-case class SiteBrief(id: SiteId, pubId: PublSiteId, hostname: String, status: SiteStatus)
+case class SiteBrief(id: SiteId, pubId: PublSiteId, hostname: String, status: SiteStatus) {
+  def isTestSite: Boolean = id <= Site.MaxTestSiteId
+}
 
 
 
 sealed abstract class SiteStatus(val IntValue: Int) {
-  def toInt = IntValue
+  def toInt: Int = IntValue
   def mayAddAdmins: Boolean
   def mayAddModerators: Boolean
   def mayAddUsers: Boolean
@@ -160,6 +162,7 @@ case class Site(
 
   def canonicalHost: Option[SiteHost] = hosts.find(_.role == SiteHost.RoleCanonical)
   def theCanonicalHost: SiteHost = canonicalHost getOrDie "EsE7YKF2"
+  def isTestSite: Boolean = id <= MaxTestSiteId
 
   def brief =
     SiteBrief(id, pubId, canonicalHost.getOrDie("EsE2GUY5").hostname, status)
@@ -171,7 +174,7 @@ case class Site(
   * (Should be renamed to SiteHost.)
   */
 object SiteHost {
-  sealed abstract class Role(val IntVal: Int) { def toInt = IntVal }
+  sealed abstract class Role(val IntVal: Int) { def toInt: Int = IntVal }
   case object RoleCanonical extends Role(1)
   case object RoleRedirect extends Role(2)
   case object RoleLink extends Role(3)

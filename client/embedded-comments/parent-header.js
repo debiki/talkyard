@@ -49,6 +49,9 @@ debiki.internal.commentsServerOrigin =
   return origin;
 })();
 
+// Drop any trailing '/', shouldn't be included in origin. (For now, won't be any url path.)
+// This wouldn't work in IE11: `new URL(theUrl).origin`
+debiki.internal.commentsServerOrigin = debiki.internal.commentsServerOrigin.replace(/\/+\s*$/, '');
 
 // Wrap all js in this script bundle in a function, so variables and functions won't become global.
 // We'll add `})();` later in parent-footer.js.

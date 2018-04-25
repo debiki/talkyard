@@ -459,6 +459,9 @@ ReactStore.activateMyself = function(anyNewMe: Myself) {
 
   if (newMe.isAdmin) {
     $h.addClasses(htmlElem, 'dw-is-admin dw-is-staff');
+    if (eds.isTestSite && newMe.id >= LowestAuthenticatedUserId) {
+      Server.maybeLoadGlobalAdminTestScript();
+    }
   }
   if (newMe.isModerator) {
     $h.addClasses(htmlElem, 'dw-is-staff');

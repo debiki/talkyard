@@ -33,12 +33,20 @@ const r = ReactDOMFactories;
  * embedded comments, or a button to create a forum, for example.
  */
 export var NonExistingPage = createComponent({
+  displayName: 'NonExistingPage',
+
   mixins: [debiki2.StoreListenerMixin],
 
   getInitialState: function() {
     return {
       store: debiki2.ReactStore.allData(),
     };
+  },
+
+  componentDidMount: function() {
+    if (eds.isTestSite) {
+      Server.maybeLoadGlobalAdminTestScript();
+    }
   },
 
   onChange: function() {
@@ -74,6 +82,8 @@ export var NonExistingPage = createComponent({
 
 
 const SignUpAsAdmin = createComponent({
+  displayName: 'SignUpAsAdmin',
+
   render: function() {
     const store: Store = this.props.store;
     const embCmts = store.makeEmbeddedCommentsSite;
@@ -118,6 +128,8 @@ const SignUpAsAdmin = createComponent({
 
 
 const LoginToCreateSomething = createComponent({
+  displayName: 'LoginToCreateSomething',
+
   getInitialState: function() {
     return {};
   },
@@ -156,6 +168,8 @@ const LoginToCreateSomething = createComponent({
 
 
 export var EmbeddedCommentsLinks = createComponent({
+  displayName: 'EmbeddedCommentsLinks',
+
   render: function() {
     return (
       r.div({},
@@ -173,6 +187,8 @@ export var EmbeddedCommentsLinks = createComponent({
 
 
 const CreateSomethingHere = createComponent({
+  displayName: 'CreateSomethingHere',
+
   getInitialState: function() {
     return {
       createWhat: PageRole.Forum, // later: undefined — if there'll be Blog and Wiki too? [8GYK34]
@@ -244,6 +260,8 @@ const CreateSomethingHere = createComponent({
 
 
 export var CreateForumPanel = createComponent({
+  displayName: 'CreateForumPanel',
+
   getInitialState: function() {
     return {
       title: '',
@@ -369,7 +387,7 @@ export var CreateForumPanel = createComponent({
           (newStyle) => { return () => this.setState({ topicListStyle: newStyle }) };
 
       topicListStyleChoiceAndCreateButton =
-          r.div({ class: 'clearfix' },
+          r.div({ className: 'clearfix' },
             r.br(),
             r.div({ style: { float: 'left' }},
               r.p({}, r.b({}, "How shall the topic list look?")),

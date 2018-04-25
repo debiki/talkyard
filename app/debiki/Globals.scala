@@ -113,6 +113,9 @@ class Globals(
 
   val config = new Config(conf)
 
+  private def getBoolOrFalse(confValueName: String): Boolean =
+    conf.getOptional[Boolean](confValueName) getOrElse false
+
   /** Can be accessed also after the test is done and Play.maybeApplication is None.
     */
   val isDev: Boolean = appLoaderContext.environment.mode == play.api.Mode.Dev
@@ -764,6 +767,10 @@ class Globals(
   private var timeOffsetMillis: Long = 0
 
 
+  val loadGlobalAdminTestScript: Boolean = getBoolOrFalse("talkyard.loadGlobalAdminTestScript")
+  val loadGlobalAdminScript: Boolean = getBoolOrFalse("talkyard.loadGlobalAdminScript")
+  val loadGlobalStaffScript: Boolean = getBoolOrFalse("talkyard.loadGlobalStaffScript")
+  val loadGlobalAllScript: Boolean = getBoolOrFalse("talkyard.loadGlobalAllScript")
 
   /** Not needed any longer, after I ported to compile time dependency injection, with Play 2.6?
     */

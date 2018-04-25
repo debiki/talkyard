@@ -7,6 +7,8 @@ declare namespace eds {
   const siteId: number;  // only in Dev mode
   const secure: boolean;
   const isDev: boolean;
+  const isTestSite: boolean;
+  const loadGlobalAdminTestScript: boolean;
 
   const minMaxJs: boolean;
   const serverOrigin: string;

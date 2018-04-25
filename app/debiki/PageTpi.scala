@@ -67,6 +67,7 @@ class SiteTpi protected (
 
   def request: DebikiRequest[_] = debikiRequest // rename to request, later
 
+  def site: SiteBrief = debikiRequest.site
   def pubSiteId: PublSiteId = debikiRequest.site.pubId
   def siteId: SiteId = debikiRequest.siteId
   def siteSettings: EffectiveSettings = debikiRequest.siteSettings

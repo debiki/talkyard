@@ -1,26 +1,34 @@
 Talkyard
 =============================
 
+Create a community, where your users can suggest ideas and get questions answered. And have friendly open-ended discussions and chat. Place it at `community.yourwebsite.org`.
+
+People in your community need different types of discussions for different things?
+Talkyard supports all discussion types:
+
+ - Question-answers, like StackOverflow (best answers first).
+ - Team chat, like Slack.
+ - Discussing news and ideas, Reddit and Hacker news style.
+ - Solving problems, step by step: flat chronological comments (coming soon).
+
+(You configure the default topic type just once: it's a per category setting.)
+
+There's a Discourse inspired topic list.
+And Disqus like embedded comments for your blog — or your open source software API docs?
+
+Our vision is to build a tool that [people who change the world or their neighborood] can use
+to find ideas and solutions, and pick the right things to do. That's why we have
+Q&A (question-answers) and HackerNews & Reddit type topics, where good ideas and
+solutions rise to the top.
+
+<!--
 Talkyard (formerly EffectiveDiscussions) is discussion forum software, with chat and question-answers features.
 And embedded comments for static websites / blogs.
-Inspired by Discourse, Slack, StackOverflow, Reddit and Hacker News, Disqus.
+Inspired by Discourse, Slack, StackOverflow, Reddit and Hacker News, Disqus. -->
 
 Screenshots below.<br>
 See it live: https://www.talkyard.io/forum/latest<br>
-Read about it: https://www.talkyard.io/, and more demos.
-
-<!--
-Organizations often create a forum (e.g. Discourse) and a chat (Slack/Gitter/Discord),
-and use StackOverflow, and maybe Disqus for embedded comments — then they split their community.
-With Talkyard, you can gather your community in one place.<br>
-
-Talkyard gives you both traditional "flat-chat" comments (in chat topics),
-and Hacker News / Reddit style threaded comments, with improvements: you can quickly
-find the parent comment (even if it's far away), read it, and jump back and continue reading.
-And you can quickly find out which new comments were posted in a long threaded discussion,
-while you were away for lunch
-(you won't need to scan the whole page, top to bottom, to find them).
--->
+Read about it, and demo forums: https://www.talkyard.io
 
 
 ### How install?
@@ -33,7 +41,7 @@ Docker based installation. Automatic upgrades.
 One installation can host many sites.
 There's [hosting](https://www.talkyard.io/pricing), if you don't want to install it yourself.
 
-Do be prepared to report problems and missing features — this is beta software; there might be bugs.
+This is beta software; there might be bugs. You can report problems and suggest ideas here: https://www.talkyard.io/forum/latest/support
 
 
 ### Screenshots
@@ -147,7 +155,6 @@ how to use docker-compose already.
    But it's easy to miss, because after that, the server logs even more messages. You can
    continue with the next step just below anyway — just keep reloading the browser page until
    any "is starting" message disappears.
-
 
 
 1. Create a forum
@@ -371,7 +378,7 @@ License
 Currently AGPL — please let me know if you want me to change to GPL, contact info here: https://www.talkyard.io/contact
 
 
-    Copyright (c) 2010-2017  Kaj Magnus Lindberg
+    Copyright (c) 2010-2018  Kaj Magnus Lindberg
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU Affero General Public License as

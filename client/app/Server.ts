@@ -122,11 +122,23 @@ export function loadJs(src: string, success?: () => void): any {  // : Promise, 
     document.head.appendChild(scriptElem);
   });
   promise.catch(function(error) {
-    pagedialogs.getServerErrorDialog().open(
-        `Error loading script ${src}: ${error.toString()} [EdELDJSERR]`);
+    const message =`Error loading script ${src}: ${error.toString()} [EdELDJSERR]`;
+    console.error(message);
+    console.error(error);
+    pagedialogs.getServerErrorDialog().open(message);
   });
   if (success) promise.then(success);
   return promise;
+}
+
+
+let globalAdminTestScriptLoaded = false;
+
+export function maybeLoadGlobalAdminTestScript() {
+  if (!globalAdminTestScriptLoaded && eds.loadGlobalAdminTestScript) {
+    loadJs(`/-/globalAdminTestScript.js`);
+    globalAdminTestScriptLoaded = true;
+  }
 }
 
 

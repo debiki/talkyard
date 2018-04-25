@@ -132,6 +132,13 @@ class ReplyController @Inject()(cc: ControllerComponents, edContext: EdContext)
         altPageId: Option[String]): PagePath = {
     import request.{dao, requester}
 
+    // (Security, fine: I don't think we need to verify that there is actually a page at
+    // the embedding url. Theoretically it's possible for Mallory to post comments to an url,
+    // where he knows a page will get auto-published later at a certain date-time. Then,
+    // when the page gets auto-published, his possibly weird comments will be there, waiting.
+    // But he might as well write a bot that posts the comments, the moments the page gets published?
+    // The real solution to this, is instead to moderate new users' first comments, right?)
+
     val siteSettings = request.dao.getWholeSiteSettings()
     if (siteSettings.allowEmbeddingFrom.isEmpty) {
       SECURITY; SHOULD // Later, check that allowEmbeddingFrom origin matches... the referer? [4GUYQC0].

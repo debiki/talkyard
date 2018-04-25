@@ -127,6 +127,8 @@ s_PoP_Un        = perms-on-pages, username
 s_PoP_Ps        = perms-on-pages, permissions
 s_PoP_Ps_P      = perms-on-pages, single permission
 
+s_Priv          = private, should not be included in UX browser session recording (even if has said yes)
+
 -RRs            = reply receivers
 -RRs_RR         = one reply receiver in the list
 -RRs_RR_Aw      = arrow after the reply receiver's name, pointing upwarts towards the parent post

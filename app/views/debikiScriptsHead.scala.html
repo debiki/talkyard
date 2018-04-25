@@ -190,7 +190,9 @@ var eds = {
   embeddedPageId: _isInIframe ? _pageId : undefined,
   embeddedPageAltId: @Html(altPageIdOrUndefined),
   assetUrlPrefix: '@tpi.assetUrlPrefix',
-  uploadsUrlPrefix: '@tpi.uploadsUrlPrefix'
+  uploadsUrlPrefix: '@tpi.uploadsUrlPrefix',
+  isTestSite: @{ tpi.site.isTestSite.toString },
+  loadGlobalAdminTestScript: @{ tpi.globals.loadGlobalAdminTestScript.toString }
 };
 
 @* Backw compat CLEAN_UP convert old js code in these 'namespaces' to Typescript instead [4KSWPY] *@

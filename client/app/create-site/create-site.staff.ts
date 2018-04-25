@@ -48,6 +48,12 @@ const CreateSomethingComponent = createReactClass({
     };
   },
 
+  componentDidMount: function() {
+    if (location.pathname.indexOf('-test-') >= 0) {
+      Server.maybeLoadGlobalAdminTestScript();
+    }
+  },
+
   render: function() {
     // This was needed in the past. Can be simplified now, maybe this whole class can be elliminated.
     const pricePlan = this.state.pricePlan;

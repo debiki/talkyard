@@ -41,7 +41,7 @@ export function store_thisIsMyPage(store: Store): boolean {
 
 
 export function store_getAuthorOrMissing(store: Store, post: Post): BriefUser {
-  var user = store_getUserOrMissing(store, post.authorId, false);
+  const user = store_getUserOrMissing(store, post.authorId, false);
   if (user.isMissing) logError("Author " + post.authorId + " missing, page: " +
       store.currentPageId + ", post nr: " + post.nr + " [EsE6TK2R0]");
   return user;
@@ -49,7 +49,7 @@ export function store_getAuthorOrMissing(store: Store, post: Post): BriefUser {
 
 
 export function store_getUserOrMissing(store: Store, userId: UserId, errorCode2): BriefUser {
-  var user = store.usersByIdBrief[userId];
+  const user = store.usersByIdBrief[userId];
   if (!user) {
     if (errorCode2) logError("User " + userId + " missing, page: " + store.currentPageId +
         ' [EsE38GT2R-' + errorCode2 + ']');
@@ -78,10 +78,10 @@ export function store_getPageMembersList(store: Store): BriefUser[] {
 
 export function store_getUsersOnThisPage(store: Store): BriefUser[] {
   const page: Page = store.currentPage;
-  var users: BriefUser[] = [];
+  const users: BriefUser[] = [];
   _.each(page.postsByNr, (post: Post) => {
     if (_.every(users, u => u.id !== post.authorId)) {
-      var user = store_getAuthorOrMissing(store, post);
+      const user = store_getAuthorOrMissing(store, post);
       users.push(user);
     }
   });
@@ -90,11 +90,11 @@ export function store_getUsersOnThisPage(store: Store): BriefUser[] {
 
 
 export function store_getUsersOnline(store: Store): BriefUser[] {
-  var users = [];
+  const users = [];
   _.forOwn(store.userIdsOnline, (alwaysTrue, userIdString: string) => {
     let userId: UserId = parseInt(userIdString);
     dieIf(!alwaysTrue, 'EsE7YKW2');
-    var user = store_getUserOrMissing(store, userId, 'EsE5GK0Y');
+    const user = store_getUserOrMissing(store, userId, 'EsE5GK0Y');
     if (user) users.push(user);
   });
   return users;
@@ -103,10 +103,10 @@ export function store_getUsersOnline(store: Store): BriefUser[] {
 
 export function store_getUsersHere(store: Store): UsersHere {
   const page: Page = store.currentPage;
-  var isChat = page_isChatChannel(page.pageRole);
-  var users: BriefUser[];
-  var listMembers = isChat;
-  var listUsersOnPage = !listMembers && page_isDiscussion(page.pageRole);
+  const isChat = page_isChatChannel(page.pageRole);
+  let users: BriefUser[];
+  const listMembers = isChat;
+  const listUsersOnPage = !listMembers && page_isDiscussion(page.pageRole);
   if (listMembers) {
     users = store_getPageMembersList(store);
   }
@@ -116,8 +116,8 @@ export function store_getUsersHere(store: Store): UsersHere {
   else {
     users = store_getUsersOnline(store);
   }
-  var numOnline = 0;
-  var iAmHere = false;
+  let numOnline = 0;
+  let iAmHere = false;
   _.each(users, (user: BriefUser) => {
     numOnline += store_isUserOnline(store, user.id) ? 1 : 0;
     iAmHere = iAmHere || user.id === store.me.id;
@@ -214,13 +214,13 @@ export function store_getApproxPageWidth(store: Store) {   // [6KP024]
   // outerWidth supposedly doesn't force a reflow (and I've verified in Chrome Dev Tools Timeline
   // that it doesn't). So use it instead of innerWidth — they might differ perhaps 10 pixels
   // because of browser window borders (or what else? There are no window scrollbars [6GKF0WZ]).
-  var browserWidth = window.outerWidth;
-  var width = browserWidth;
+  const browserWidth = window.outerWidth;
+  let width = browserWidth;
   if (store.isWatchbarOpen) {
     width -= WatchbarWidth;
   }
   if (store.isContextbarOpen) {
-    var contextbarWidth = browserWidth * 0.25;  // 0.25 is dupl in css [5RK9W2]
+    let contextbarWidth = browserWidth * 0.25;  // 0.25 is dupl in css [5RK9W2]
     if (contextbarWidth < ContextbarMinWidth) {
       contextbarWidth = ContextbarMinWidth;
     }
