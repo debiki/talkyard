@@ -136,12 +136,20 @@ export var CreateUserDialogContent = createClassAndFactory({
   displayName: 'CreateUserDialogContent',
 
   getInitialState: function() {
+    // @ifdef DEBUG
+    dieIf(this.props.isForGuest && this.props.isForPasswordUser, 'TyE7UKWQ1');
+    dieIf(this.props.isForGuest && this.props.providerId, 'TyE7UKWQ2');
+    dieIf(this.props.isForPasswordUser && this.props.providerId, 'TyE7UKWQ3');
+    // @endif
     return {
       okayStatuses: {
-        fullName: true,
+        // Full name / alias / display name, is required, for guests.
+        fullName: !this.props.isForGuest,
+        // providerId always missing in emb cmts openauth popup?
         email: this.props.providerId && this.props.email && this.props.email.length,
-        username: false,
-        password: !this.props.createPasswordUser,
+        // Guests have no username or password.
+        username: this.props.isForGuest || false,
+        password: !this.props.isForPasswordUser,
       },
       userData: {
         fullName: this.props.name,
@@ -152,8 +160,8 @@ export var CreateUserDialogContent = createClassAndFactory({
   },
 
   updateValueOk: function(what, value, isOk) {
-    var data = this.state.userData;
-    var okayStatuses = this.state.okayStatuses;
+    const data = this.state.userData;
+    const okayStatuses = this.state.okayStatuses;
     data[what] = value;
     okayStatuses[what] = isOk;
     this.setState({ userData: data, okayStatuses: okayStatuses });
@@ -179,9 +187,13 @@ export var CreateUserDialogContent = createClassAndFactory({
         data.authDataCacheKey = this.props.authDataCacheKey;
         Server.createOauthUser(data, this.handleCreateUserResponse, this.handleErrorResponse);
       }
-      else if (this.props.createPasswordUser) {
+      else if (this.props.isForPasswordUser) {
         data.password = this.refs.password.getValue();
         Server.createPasswordUser(data, this.handleCreateUserResponse, this.handleErrorResponse);
+      }
+      else if (this.props.isForGuest) {
+        Server.loginAsGuest(
+            data.fullName, data.email, this.handleCreateUserResponse, this.handleErrorResponse);
       }
       else {
         console.error('DwE7KFEW2');
@@ -224,7 +236,15 @@ export var CreateUserDialogContent = createClassAndFactory({
     else {
       const isPage = $$byClass('dw-page').length;
       if (!isPage) console.log('should reload ... /? [DwE2KWF1]');
-      continueOnMainPageAfterHavingCreatedUser();
+
+      // We should be on some kind of a discussion page (assuming isPage is true).
+      // Continue whatever the user attempted to do, before hen was asked to sign up.
+      login.continueAfterLogin();
+
+      // If we're in a login popup, close it & let focus return to the main window.
+      if (eds.isInLoginPopup) {
+        close();
+      }
     }
     this.props.closeDialog('CloseAllLoginDialogs');
   },
@@ -245,6 +265,7 @@ export var CreateUserDialogContent = createClassAndFactory({
     const store: Store = props.store;
     const state = this.state;
     const hasEmailAddressAlready = props.email && props.email.length;
+    const isForGuest = this.props.isForGuest;
 
     const emailHelp = props.providerId && hasEmailAddressAlready ?
         t.cud.EmailVerifBy_1 + props.providerId + t.cud.EmailVerifBy_2 : null;
@@ -257,75 +278,57 @@ export var CreateUserDialogContent = createClassAndFactory({
           onChangeValueOk: (value, isOk) => this.setEmailOk(value, isOk), tabIndex: 1,
           // If email already provided by e.g. Google, don't let the user change it.
           disabled: hasEmailAddressAlready, defaultValue: props.email, help: emailHelp,
-          required: true, // [0KPS2J] store.settings.requireVerifiedEmail !== false,
+          required: !isForGuest, // [0KPS2J] store.settings.requireVerifiedEmail !== false,
           error: this.state.userData.email !== this.state.theWrongEmailAddress ?
               // (This is for admins, don't translate. [5JKBWS2])
               null : "Use the email address you specified in the config file." });
 
-    const usernameInput =
+    const usernameInputMaybe = isForGuest ? null :
         util.UsernameInput({ label: t.cud.Username, id: 'e2eUsername', tabIndex: 2,
           onChangeValueOk: (value, isOk) => this.updateValueOk('username', value, isOk)
         });
 
-    const passwordInput = props.createPasswordUser
-        ? NewPasswordInput({ newPasswordData: state.userData, ref: 'password', tabIndex: 2,
-              setPasswordOk: (isOk) => this.updateValueOk('password', 'dummy', isOk) })
-        : null;
+    const passwordInputMaybe = !props.isForPasswordUser ? null :
+        NewPasswordInput({ newPasswordData: state.userData, ref: 'password', tabIndex: 2,
+            setPasswordOk: (isOk) => this.updateValueOk('password', 'dummy', isOk) });
 
     const fullNameInput =
-      FullNameInput({ label: t.cud.FullName, ref: 'fullName',
+      FullNameInput({ label: isForGuest ? t.NameC : t.cud.FullName, ref: 'fullName',
         id: 'e2eFullName', defaultValue: props.name, tabIndex: 2,
         onChangeValueOk: (value, isOk) => this.updateValueOk('fullName', value, isOk) });
+
+    // Show an "Or create a real account with username and password" button.
+    const orCreateAccountMaybe = !isForGuest ? null :
+        r.div({ className: 's_LD_OrCreateAccount' },
+          t.cud.OrCreateAcct_1,
+          r.a({ className: 's_LD_CreateAccount', onClick: this.props.switchBetweenGuestAndPassword },
+            t.cud.OrCreateAcct_2),
+          t.cud.OrCreateAcct_3,
+          r.code({}, t.cud.OrCreateAcct_4),
+          t.cud.OrCreateAcct_5);
+
+    const orLoginAsGuestMaybe = isForGuest || this.props.loginReason === LoginReason.LoginToChat ? null :
+      r.div({}, "orLoginAsGuest");
 
     const disableSubmit = _.includes(_.values(this.state.okayStatuses), false);
 
     return (
       r.form({ className: 'esCreateUser' },
+        // When logging in as guest, the title is "Type our name:" and then better with name input first?
+        isForGuest ? fullNameInput : null,
         emailInput,
-        usernameInput,
+        usernameInputMaybe,
         // Place the full name input above the password input, because someone thought
         // the full-name-input was a password verification field.
-        fullNameInput,
-        passwordInput,
+        !isForGuest ? fullNameInput : null,
+        passwordInputMaybe,
+        orCreateAccountMaybe,
+        orLoginAsGuestMaybe,
         PrimaryButton({ onClick: this.doCreateUser, disabled: disableSubmit, id: 'e2eSubmit',
-            tabIndex: 2 }, t.cud.CreateAccount)));
+            tabIndex: 2 }, isForGuest ? t.cud.LoginAsGuest : t.cud.CreateAccount)));
   }
 });
 
-
-function continueOnMainPageAfterHavingCreatedUser() {
-  // If this is an embedded comments site, we're currently executing in
-  // a create user login popup window, not in the <iframe> on the embedding
-  // page. If so, only window.opener has loaded the code that we're
-  // about to execute.
-  var debikiInternal;
-  var d2;
-
-  // This won't work, might have been opened via other Debiki tab?
-  //    if (window.opener && window.opener['debiki']) {
-
-  if (eds.isInLoginPopup) {
-    // We're in a login popup window for an embedded comments site. Continue in the opener tab
-    // and close this popup (at the end of this function).
-    debikiInternal = window.opener['debiki'].internal;
-    d2 = window.opener['debiki2'];
-  }
-  else {
-    // We're in the correct browser tab already. This is not an embedded comments site;
-    // we're not in a popup window. So we can execute the subsequent code in this tab.
-    debikiInternal = debiki.internal;
-    d2 = debiki2;
-  }
-
-  // We should be on some kind of a discussion page.
-  // This continues e.g. whatever the user attempted to do before she was asked to login
-  // and create a user.
-  login.continueAfterLogin();
-
-  if (eds.isInLoginPopup) {
-    close();  // closes the popup window
-  }
-}
 
 
 const AcceptTermsDialog = createComponent({

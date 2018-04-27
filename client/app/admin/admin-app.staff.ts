@@ -369,9 +369,10 @@ const LoginAndSignupSettings = createFactory({
 
         Setting2(props, { type: 'checkbox', label: "Allow guest login", id: 'e2eAllowGuestsCB',
           className: 'e_A_Ss_S-AllowGuestsCB',
-          help: "Lets people post comments and create topics, without specifying any " +
-            "email address. They wouldn't be notified about replies, and " +
-            "you cannot contact them. Usually not recommended.",
+          help: "Lets people post comments and create topics, without creating real accounts " +
+            "with username and password. Instead, they just type a name and email address. " +
+            "This can be good for embedded comments sites, so people won't skip posting a comment, " +
+            "just because they think it's too cumbersome to create a real account.",
           disabled: !canEnableGuestLogin,
           getter: (s: Settings) => s.allowGuestLogin,
           update: (newSettings: Settings, target) => {

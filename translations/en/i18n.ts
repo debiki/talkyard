@@ -51,6 +51,7 @@ var t_en: TalkyardTranslations = t = {
   MoreDots: "More...",
   Move: "Move",
   Name: "Name",
+  NameC: "Name:",
   None: "None",
   NotImplemented: "(Not implemented)",
   NotYet: "Not yet",
@@ -501,6 +502,14 @@ var t_en: TalkyardTranslations = t = {
   },
 
 
+  // About user dialog
+
+  aud: {
+    ViewComments: "View other comments",
+    ThisIsGuest: "This is a guest user, could in fact be anyone.",
+  },
+
+
   // User's profile page
 
   upp: {
@@ -666,12 +675,19 @@ var t_en: TalkyardTranslations = t = {
   cud: {
     CreateUser: "Create User",
     CreateAccount: "Create Account",
+    LoginAsGuest: "Login as Guest",
     EmailPriv: "Email: (will be kept private)",
     EmailOptPriv: "Email: (optional, will be kept private)",
     EmailVerifBy_1: "Your email has been verified by ",
     EmailVerifBy_2: ".",
     Username: "Username: (unique and short)",
     FullName: "Full name: (optional)",
+
+    OrCreateAcct_1: "Or ",
+    OrCreateAcct_2: "create an account",
+    OrCreateAcct_3: " with ",
+    OrCreateAcct_4: "@username",
+    OrCreateAcct_5: " & password",
 
     DoneLoggedIn: "Account created. You have been logged in.",  // COULD say if verif email sent too?
     AlmostDone:
@@ -725,7 +741,7 @@ var t_en: TalkyardTranslations = t = {
     ElseGoToHome_2: "go to the homepage.",
 
     CreateAcconut: "Create account",
-    SignIn: "Sign in ...",
+    SignIn: "Sign in",
     LogIn: "Log in",
     LogInWithPwd: "Log in with Password",
     CreateAdmAcct: "Create admin account:",
@@ -746,7 +762,8 @@ var t_en: TalkyardTranslations = t = {
     SignUpInstead_3: " instead",
 
     OrCreateAcctHere: "Or create account here:",
-    OrFillin: "Or fill in:",
+    OrTypeName: "Or just type your name:",
+    OrFillIn: "Or fill in:",
 
     BadCreds: "Wrong username or password",
 

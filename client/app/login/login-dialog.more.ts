@@ -41,6 +41,7 @@ const EmailInput = util.EmailInput;
   'LoginToAuthenticate'
   'LoginToSubmit'
   'LoginToComment'
+  LoginReason.PostEmbeddedComment
   'LoginToLogin'
   'LoginToCreateTopic'
 */
@@ -55,7 +56,12 @@ export function loginIfNeeded(loginReason: LoginReason | string, anyReturnToUrl?
     success();
   }
   else {
-    if (loginReason === LoginReason.SignUp) {
+    // UX COULD: People with an account, are typically logged in already, and won't get to here often.
+    // Instead, most people for whom this code runs, are new users, so show the signup dialog? [7UKW42Y]
+
+    // For now though (don't want to update all e2e tests now)
+    if (loginReason === LoginReason.SignUp ||
+        loginReason === LoginReason.PostEmbeddedComment) {
       getLoginDialog().openToSignUp(loginReason, anyReturnToUrl, success);
     }
     else {
@@ -116,6 +122,16 @@ const LoginDialog = createClassAndFactory({
 
     dieIf(eds.isInIframe, 'Login dialog in iframe [EdE5KER2]');
 
+    // The login reason might be a stringified number from the url, so try to convert to enum.
+    // Some login reasons are enums, others are strings. CLEAN_UP: Change the strings to enums.
+    loginReason = _.isString(loginReason) ? parseInt(loginReason) || loginReason : loginReason;
+
+    // Default to signup, if emb cmts, because most people who aren't logged in already,
+    // are likely new visitors. [7UKW42Y]
+    if (loginReason === LoginReason.PostEmbeddedComment) {
+      isSignUp = true;
+    }
+
     // Don't allow logging in as someone else, when impersonating someone, because it's unclear
     // what should then happen: does one stop impersonating? or not?
     if (getSetCookie('esCoImp')) {
@@ -133,9 +149,17 @@ const LoginDialog = createClassAndFactory({
     }
 
     login.anyContinueAfterLoginCallback = callback;
+
+    // When logging in to an embedded comments discussion, if guest login is enabled,
+    // then assume that's what most people want to use.
+    const store: Store = this.state.store;
+    const isForGuest = isSignUp && loginReason === LoginReason.PostEmbeddedComment &&
+        store.settings.allowGuestLogin;
+
     this.setState({
         isOpen: true,
         isSignUp: isSignUp,
+        isForGuest,
         loginReason: loginReason,
         afterLoginCallback: callback,
         anyReturnToUrl: anyReturnToUrl,
@@ -151,6 +175,10 @@ const LoginDialog = createClassAndFactory({
 
   switchBetweenLoginAndSignUp: function() {
     this.setState({ isSignUp: !this.state.isSignUp });
+  },
+
+  switchBetweenGuestAndPassword: function() {
+    this.setState({ isForGuest: !this.state.isForGuest });
   },
 
   /**
@@ -198,11 +226,13 @@ const LoginDialog = createClassAndFactory({
         title = this.state.isSignUp ? t.ld.CreateAcconut : t.ld.LogIn;
     }
 
-    const content = LoginDialogContent({ isSignUp: state.isSignUp, loginReason: state.loginReason,
+    const content = LoginDialogContent({
+        isSignUp: state.isSignUp, isForGuest: state.isForGuest, loginReason: state.loginReason,
         anyReturnToUrl: state.anyReturnToUrl, afterLoginCallback: state.afterLoginCallback,
         setChildDialog: this.setChildDialog,
         childDialog: state.childDialog, close: this.close, isLoggedIn: state.isLoggedIn,
         switchBetweenLoginAndSignUp: this.switchBetweenLoginAndSignUp,
+        switchBetweenGuestAndPassword: this.switchBetweenGuestAndPassword,
         store: state.store });
 
     /* UX SHOULD show this close [x] in 'content' instead, so can be closed easily.
@@ -231,16 +261,11 @@ const LoginDialog = createClassAndFactory({
  */
 export const LoginDialogContent = createClassAndFactory({
   displayName: 'LoginDialogContent',
+
   render: function() {
     const store: Store = this.props.store;
     const loginReason = this.props.loginReason;
     const isSignUp = this.props.isSignUp;
-
-    const openChildDialog = (whichDialog) => {
-      return (clickEvent) => {
-        this.props.setChildDialog(whichDialog);
-      }
-    };
 
     const closeChildDialog = (closeAll) => {
       this.props.setChildDialog(null);
@@ -250,21 +275,7 @@ export const LoginDialogContent = createClassAndFactory({
     };
 
     const childDialogProps = _.clone(this.props);
-    childDialogProps.closeDialog = closeChildDialog;
-    childDialogProps.createPasswordUser = true;
-
-    const createChildDialog = (title, contentFactory, className?) => {
-      const header = title ? ModalHeader({ closeButton: true }, ModalTitle({}, title)) : null;
-      return (
-        Modal({ show: this.props.childDialog === contentFactory, onHide: closeChildDialog,
-            dialogClassName: className },
-          header,
-          ModalBody({}, contentFactory(childDialogProps))));
-    };
-
-    const createUserDialog = createChildDialog(null, CreateUserDialogContent, 'esCreateUserDlg');
-    const passwordLoginDialog = createChildDialog(t.ld.LogInWithPwd, PasswordLoginDialogContent);
-    var guestLoginDialog; // no. CLEAN_UP, remove: createChildDialog("Log in as Guest", GuestLoginDialogContent);
+    childDialogProps.closeDialog = closeChildDialog;  // CLEAN_UP can REMOVE?
 
     const makeOauthProps = (iconClass: string, provider: string, includeWith?: boolean) => {
       return {
@@ -296,21 +307,13 @@ export const LoginDialogContent = createClassAndFactory({
             t.ld.ElseGoToHome_1, r.a({ className: 's_LD_NotFound_HomeL', href: '/' },
               t.ld.ElseGoToHome_2)));
 
-    const typePasswordForm = isSignUp ? null :
+    const loginForm = isSignUp ? null :
         PasswordLoginDialogContent(childDialogProps);
 
+    const isForGuest = this.props.isForGuest;
+    const isForPasswordUser = !isForGuest;
     const createUserForm = !isSignUp ? null :
-        CreateUserDialogContent(childDialogProps);
-
-    var loginAsGuestButton; /* CLEAN_UP, + more login-as-guest dialogs & stuff?
-    if (loginReason !== LoginReason.BecomeAdmin && loginReason !== 'LoginAsAdmin' &&
-        loginReason !== 'LoginToAdministrate' && loginReason !== 'LoginToAuthenticate' &&
-        loginReason !== LoginReason.LoginToChat && !isSignUp &&
-        debiki2.ReactStore.isGuestLoginAllowed()) {
-      loginAsGuestButton =
-          Button({ onClick: openChildDialog(GuestLoginDialogContent),
-              className: 'esLoginDlg_guestBtn' }, "Log in as Guest");
-    } */
+        CreateUserDialogContent({ ...childDialogProps, isForPasswordUser, isForGuest });
 
     let switchToOtherDialogInstead;
     if (isForFirstOwner) {
@@ -345,8 +348,6 @@ export const LoginDialogContent = createClassAndFactory({
 
     return (
       r.div({ className: 'esLD' },
-        createUserDialog,
-        passwordLoginDialog,
         notFoundInstructions,
         becomeOwnerInstructions,
         r.p({ id: 'dw-lgi-or-login-using' }, (isSignUp ? t.ld.SignIn : t.ld.LogIn) + ' ...'),
@@ -356,15 +357,15 @@ export const LoginDialogContent = createClassAndFactory({
           OpenAuthButton(makeOauthProps('icon-twitter', 'Twitter')),
           OpenAuthButton(makeOauthProps('icon-github-circled', 'GitHub')),
           // OpenID doesn't work right now, skip for now:  icon-yahoo Yahoo!
-          loginAsGuestButton),
+          ),
 
         r.p({ id: 'dw-lgi-or-login-using' },
           isSignUp
-              ? t.ld.OrCreateAcctHere
-              : t.ld.OrFillin),
+              ? (isForGuest ? t.ld.OrTypeName : t.ld.OrCreateAcctHere)
+              : t.ld.OrFillIn),
 
         switchToOtherDialogInstead,
-        typePasswordForm,
+        loginForm,
         createUserForm));
   }
 });
@@ -422,45 +423,6 @@ function submitOpenIdLoginForm(openidIdentifier)
   form.submit()
   false */
 
-/*  CLEAN_UP REMOVE
-var GuestLoginDialogContent = createClassAndFactory({
-  displayName: 'GuestLoginDialogContent',
-  getInitialState: function() {
-    return {
-      okayStatuses: {
-        fullName: false,  // because: required
-        email: true  // because: not required
-      },
-    };
-  },
-
-  updateValueOk: function(what, value, isOk) {
-    this.state.okayStatuses[what] = isOk; // updating in place, oh well
-    this.setState(this.state);
-  },
-
-  doLogin: function() {
-    var name = this.refs.nameInput.getValue();
-    var email = this.refs.emailInput.getValue();
-    Server.loginAsGuest(name, email, () => {
-      continueAfterLoginImpl(this.props.anyReturnToUrl);
-    });
-  },
-
-  render: function() {
-    var disableSubmit = _.includes(_.values(this.state.okayStatuses), false);
-    return (
-      r.form({},
-        FullNameInput({ type: 'text', label: "Your name:", ref: 'nameInput', id: 'e2eLD_G_Name',
-            onChangeValueOk: (value, isOk) => this.updateValueOk('fullName', value, isOk) }),
-        EmailInput({ label: "Email: (optional, not shown)", ref: 'emailInput', required: false,
-            help: "If you want to be notified about replies to your comments.", id: 'e2eLD_G_Email',
-            onChangeValueOk: (value, isOk) => this.updateValueOk('email', value, isOk) }),
-        Button({ onClick: this.doLogin, disabled: disableSubmit, id: 'e2eLD_G_Submit' },
-          "Log in" + inOrderTo(this.props.loginReason)),
-        Button({ onClick: this.props.closeDialog, className: 'e_LD_G_Cancel' }, "Cancel")));
-  }
-}); */
 
 
 const PasswordLoginDialogContent = createClassAndFactory({

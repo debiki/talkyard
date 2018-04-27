@@ -136,7 +136,7 @@ let globalAdminTestScriptLoaded = false;
 
 export function maybeLoadGlobalAdminTestScript() {
   if (!globalAdminTestScriptLoaded && eds.loadGlobalAdminTestScript) {
-    loadJs(`/-/globalAdminTestScript.js`);
+    loadJs(eds.cdnOrServerOrigin + '/-/globalAdminTestScript.js');
     globalAdminTestScriptLoaded = true;
   }
 }
@@ -511,8 +511,8 @@ export function loginWithPassword(emailOrUsername: string, password: string, suc
 }
 
 
-export function loginAsGuest(name: string, email: string, success?: () => void) {
-  postJsonSuccess('/-/login-guest', success, {
+export function loginAsGuest(name: string, email: string, onDone: () => void, onError: () => void) {
+  postJsonSuccess('/-/login-guest', onDone, onError, {
     name: name,
     email: email
   });

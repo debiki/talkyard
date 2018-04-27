@@ -884,6 +884,7 @@ enum LoginReason {
   BecomeAdmin = 12, // COULD rename to BecomeOwner
   TryToAccessNotFoundPage = 14,
   SubmitEditorText = 15,
+  PostEmbeddedComment = 16,
 }
 
 

@@ -80,7 +80,6 @@ FD              = flag dialog
 esH             = help
 
 esLD            = login/signup dialog
-esLD_G          = guest login
 
 s_MB            = topic metabar (just below the Orig Post, before all replies)
 

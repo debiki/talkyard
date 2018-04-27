@@ -721,27 +721,6 @@ function pagesFor(browser) {
         dieIf(nameInHtml !== username, `Wrong username in topbar: ${nameInHtml} [EdE2WKG04]`);
       },
 
-      clickLoginAsGuest: function() {
-        api.waitAndClick('.esLoginDlg_guestBtn');
-      },
-
-      fillInGuestName: function(name: string) {
-        browser.waitAndSetValue('#e2eLD_G_Name', name);
-      },
-
-      fillInGuestEmail: function(email: string) {
-        browser.waitAndSetValue('#e2eLD_G_Email', email);
-      },
-
-      submitGuestLogin: function() {  // CLEAN_UP remove all this guest login stuff?
-        api.waitAndClick('#e2eLD_G_Submit');
-      },
-
-      clickCancelGuestLogin: function() {
-        api.waitAndClick('.e_LD_G_Cancel');
-        browser.waitUntilGone('.e_LD_G_Cancel');
-      },
-
       clickCreateAccountInstead: function() {
         api.waitAndClick('.esLD_Switch_L');
         browser.waitForVisible('.esCreateUser');

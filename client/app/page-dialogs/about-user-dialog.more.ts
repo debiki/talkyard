@@ -308,11 +308,11 @@ var AboutGuest = createComponent({
       r.div({ className: 'clearfix' },
         blockModal,
         r.div({ className: 'dw-about-user-actions' },
-          LinkButton({ href: linkToUserProfilePage(guest.id) }, "View other comments"),
+          LinkButton({ href: linkToUserProfilePage(guest.id) }, t.aud.ViewComments),
           blockButton),
         r.p({},
-          'Name: ' + guest.fullName, r.br(),
-          'This is a guest user. He or she could in fact be just anyone.'),
+          t.NameC + ' ' + guest.fullName, r.br(),
+          t.aud.ThisIsGuest),
         anyCannotBeContactedMessage,
         blockedInfo));
   }

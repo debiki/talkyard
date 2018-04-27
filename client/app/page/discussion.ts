@@ -542,6 +542,10 @@ const RootPostAndComments = createComponent({
     return { showClickReplyInstead: false };
   },
 
+  componentWillUnmount: function() {
+    this.isGone = true;
+  },
+
   loadAndShowRootPost: function(event) {
     event.preventDefault();
     const store: Store = this.props.store;
@@ -549,10 +553,18 @@ const RootPostAndComments = createComponent({
   },
 
   onAfterPageReplyClick: function(event, postType: PostType) {
-    // Some dupl code [69KFUW20]
+    // Some dupl code below. [69KFUW20]
+
     event.preventDefault();
     const eventTarget = event.target; // React.js will clear the field
-    login.loginIfNeededReturnToPost('LoginToComment', BodyNr, function() {
+
+    const store: Store = this.props.store;
+    const page: Page = store.currentPage;
+    const loginToWhat = page.pageRole === PageRole.EmbeddedComments ?
+        LoginReason.PostEmbeddedComment : 'LoginToComment';
+
+    login.loginIfNeededReturnToPost(loginToWhat, BodyNr, function() {
+      if (this.isGone) return;
       // Toggle highlighting first, because it'll be cleared later if the
       // editor is closed, and then we don't want to toggle it afterwards.
       $h.toggleClass(eventTarget, 'dw-replying');

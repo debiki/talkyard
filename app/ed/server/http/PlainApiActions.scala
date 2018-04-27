@@ -253,7 +253,7 @@ class PlainApiActions(
 
         if (anyUser.exists(_.isGuest) && !siteSettings.isGuestLoginAllowed && isXhr)
           throwForbidden("DwE7JYK4", o"""Guest access has been disabled, but you're logged in
-            as a guest. Please sign up with an email account instead""")
+            as a guest. Please sign up with a real account instead""")
       }
 
       val apiRequest = ApiRequest[A](

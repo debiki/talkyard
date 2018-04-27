@@ -32,7 +32,7 @@ export function loginIfNeededReturnToPost(
   const anchor = postNr < FirstReplyNr ? '' : (
     // We use 'comment-' for embedded comments, and they start on nr 1 = post 2. [2PAWC0]
     eds.isInEmbeddedCommentsIframe ? '#comment-' + (postNr - 1) : '#post-' + postNr);
-  loginIfNeededReturnToAnchor('LoginToEdit', anchor, success, willCompose);
+  loginIfNeededReturnToAnchor(loginReason, anchor, success, willCompose);
 }
 
 

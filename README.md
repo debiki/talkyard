@@ -1,3 +1,17 @@
+<!--
+Old GitHub one-line description:
+- Discussion forums with Question & Answers and Team Chat features. Plus embedded comments for your blog.
+
+Current:
+- Open source StackOverflow, Slack, Discourse, Reddit, Disqus hybrid — for your online community.
+
+Other alternatives?:
+- Community software, brings together the best from StackOverflow + Slack + Reddit + Discourse.
+- Online community software. Find ideas and answers together, and pick the right things
+to do, to change society, or grow your startup.
+-->
+
+
 Talkyard
 =============================
 

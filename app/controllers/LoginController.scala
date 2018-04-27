@@ -67,6 +67,7 @@ class LoginController @Inject()(cc: ControllerComponents, edContext: EdContext)
         "LoginToAdministrate"  // later: LoginReason.SuperAdminArea   xx
       }
       else { // incl if (path.startsWith("/-/users/")) {
+        // Old comment, isGuestLoginAllowed() is deleted now:
         // The loginPopup template doesn't include any React store JSON and this results
         // in a JS exception in ReactStore.isGuestLoginAllowed() when accessing
         // store.settings.allowGuestLogin.  [5KUP02]

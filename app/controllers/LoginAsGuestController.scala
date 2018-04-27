@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2012 Kaj Magnus Lindberg (born 1979)
+ * Copyright (c) 2012, 2018 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -24,11 +24,10 @@ import ed.server.spam.SpamChecker
 import ed.server._
 import javax.inject.Inject
 import play.api.mvc._
-import play.api.libs.json.{JsObject, JsValue}
-import scala.concurrent.ExecutionContext
+import play.api.libs.json._
 
 
-/** Logs in guest users.
+/** Logs in guest users, creates them first, if needed.
   */
 class LoginAsGuestController @Inject()(cc: ControllerComponents, edContext: EdContext)
   extends EdController(cc, edContext) {
@@ -67,10 +66,9 @@ class LoginAsGuestController @Inject()(cc: ControllerComponents, edContext: EdCo
 
       val (_, _, sidAndXsrfCookies) = createSessionIdAndXsrfToken(request.siteId, guestUser.id)
 
-      // Could include a <a href=last-page>Okay</a> link, see the
-      // Logout dialog below. Only needed if javascript disabled though,
-      // otherwise a javascript welcome dialog is shown instead.
-      Ok.withCookies(sidAndXsrfCookies: _*)
+      OkSafeJson(Json.obj(
+        "userCreatedAndLoggedIn" -> JsTrue,
+        "emailVerifiedAndLoggedIn" -> JsFalse)).withCookies(sidAndXsrfCookies: _*)
     }
   }
 

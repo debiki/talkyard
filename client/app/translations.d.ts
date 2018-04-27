@@ -36,7 +36,8 @@ interface TalkyardTranslations {
   MessageN: string;
   MoreDots: string;
   Move: string;
-  Name: string;
+  Name: "Name",
+  NameC: string;
   None: string;
   NotImplemented: string;
   NotYet: string;
@@ -447,6 +448,13 @@ interface TalkyardTranslations {
   },
 
 
+  // About user dialog
+  aud: {
+    ViewComments: string;
+    ThisIsGuest: string;
+  },
+
+
   // User's profile page
   upp: {
     // ----- Links
@@ -592,12 +600,19 @@ interface TalkyardTranslations {
   cud: {
     CreateUser: string;
     CreateAccount: string;
+    LoginAsGuest: string;
     EmailPriv: string;
     EmailOptPriv: string;
     EmailVerifBy_1: string;
     EmailVerifBy_2: string;
     Username: string;
     FullName: string;
+
+    OrCreateAcct_1: string,
+    OrCreateAcct_2: string,
+    OrCreateAcct_3: string,
+    OrCreateAcct_4: string,
+    OrCreateAcct_5: string,
 
     DoneLoggedIn: string;
     AlmostDone: string;
@@ -665,7 +680,8 @@ interface TalkyardTranslations {
     SignUpInstead_3: string;
 
     OrCreateAcctHere: string;
-    OrFillin: string;
+    OrTypeName: string;
+    OrFillIn: string;
 
     BadCreds: string;
 
