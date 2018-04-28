@@ -132,6 +132,16 @@ export function loadJs(src: string, success?: () => void): any {  // : Promise, 
 }
 
 
+let globalStaffScriptLoaded = false;
+
+export function maybeLoadGlobalStaffScript() {
+  if (!globalStaffScriptLoaded && eds.loadGlobalStaffScript) {
+    loadJs(eds.cdnOrServerOrigin + '/-/globalStaffScript.js');
+    globalStaffScriptLoaded = true;
+  }
+}
+
+
 let globalAdminTestScriptLoaded = false;
 
 export function maybeLoadGlobalAdminTestScript() {

@@ -18,17 +18,15 @@ Talkyard
 Create a community, where your users can suggest ideas and get questions answered. And have friendly open-ended discussions and chat. Place it at `community.yourwebsite.org`.
 
 People in your community need different types of discussions for different things?
-Talkyard supports all discussion types:
+Talkyard has:
 
  - Question-answers, like StackOverflow (best answers first).
  - Team chat, like Slack.
- - Discussing news and ideas, Reddit and Hacker news style.
+ - Discussing ideas and news, Reddit and Hacker news style.
  - Solving problems, step by step: flat chronological comments (coming soon).
+ - Embedded comments, like Disqus, for your blog, or maybe software API docs?
 
-(You configure the default topic type just once: it's a per category setting.)
-
-There's a Discourse inspired topic list.
-And Disqus like embedded comments for your blog — or your open source software API docs?
+(The staff configure the topic type just once, in a per category setting.)
 
 Our vision is to build a tool that [people who change the world or their neighborood] can use
 to find ideas and solutions, and pick the right things to do. That's why we have
@@ -40,7 +38,7 @@ Talkyard (formerly EffectiveDiscussions) is discussion forum software, with chat
 And embedded comments for static websites / blogs.
 Inspired by Discourse, Slack, StackOverflow, Reddit and Hacker News, Disqus. -->
 
-Screenshots below.<br>
+Screenshots a bit below.<br>
 See it live: https://www.talkyard.io/forum/latest<br>
 Read about it, and demo forums: https://www.talkyard.io
 
@@ -55,7 +53,8 @@ Docker based installation. Automatic upgrades.
 One installation can host many sites.
 There's [hosting](https://www.talkyard.io/pricing), if you don't want to install it yourself.
 
-This is beta software; there might be bugs. You can report problems and suggest ideas here: https://www.talkyard.io/forum/latest/support
+This is beta software; there might be bugs.
+Please do report problems and suggest ideas here: https://www.talkyard.io/forum/latest/support
 
 
 ### Screenshots

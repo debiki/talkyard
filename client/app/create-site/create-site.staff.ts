@@ -49,6 +49,7 @@ const CreateSomethingComponent = createReactClass({
   },
 
   componentDidMount: function() {
+    Server.maybeLoadGlobalStaffScript();
     if (location.pathname.indexOf('-test-') >= 0) {
       Server.maybeLoadGlobalAdminTestScript();
     }

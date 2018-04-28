@@ -466,6 +466,9 @@ ReactStore.activateMyself = function(anyNewMe: Myself) {
   if (newMe.isModerator) {
     $h.addClasses(htmlElem, 'dw-is-staff');
   }
+  if (newMe.isAdmin || newMe.isModerator) {
+    Server.maybeLoadGlobalStaffScript();
+  }
   if (newMe.isAuthenticated) {
     $h.addClasses(htmlElem, 'dw-is-authenticated');
   }

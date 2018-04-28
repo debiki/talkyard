@@ -9,6 +9,7 @@ declare namespace eds {
   const isDev: boolean;
   const isTestSite: boolean;
   const loadGlobalAdminTestScript: boolean;
+  const loadGlobalStaffScript: boolean;
 
   const minMaxJs: boolean;
   const serverOrigin: string;
