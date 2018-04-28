@@ -96,7 +96,6 @@ describe("create site, follow the admin guide", function() {
   });
 
   it("... she creates an account", function() {
-    maria.loginDialog.clickCreateAccountInstead();
     maria.loginDialog.createPasswordAccount(maria);
   });
 

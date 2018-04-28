@@ -88,6 +88,7 @@ describe("user profile access:", () => {
 
   it("... reloads the page, sees her new username", () => {
     mariasBrowser.refresh();
+    mariasBrowser.waitUntilLoadingOverlayGone();
     mariasBrowser.userProfilePage.goToPreferences();
     mariasBrowser.userProfilePage.assertUsernameIs(mariasUsername2);
   });

@@ -156,6 +156,11 @@ function pagesFor(browser) {
         });
         assert.equal(length, 1, errors);
       }
+      // Oddly enough, sometimes the overlay covers the page here, although
+      // we just waited for it to go away.  [7UKDWP2] [7JUKDQ4].
+      // Happens in FF only (May 2018) — maybe FF is so fast so the first test
+      // somehow happens before it has been created?
+      browser.waitUntilLoadingOverlayGone();
       browser.click(selector);
     },
 
@@ -195,7 +200,7 @@ function pagesFor(browser) {
       }
       browser.rememberCurrentUrl();
       //console.log(`waitAndClickLinkToNewPage ${selector} ... CLICKING`);
-      browser.click(selector);
+      browser.waitAndClick(selector);
       browser.waitForNewUrl();
       //console.log(`waitAndClickLinkToNewPage ${selector} ... New url here now.`);
     },
@@ -256,6 +261,12 @@ function pagesFor(browser) {
     assertUrlIs: function(expectedUrl) {
       let url = browser.url().value;
       assert(url === expectedUrl);
+    },
+
+    goToSearchPage: (query?: string) => {
+      const q = query ? '?q=' + query : '';
+      browser.go('/-/search' + q);
+      browser.waitForVisible('.s_SP_QueryTI');
     },
 
     createSite: {
@@ -340,10 +351,12 @@ function pagesFor(browser) {
 
       clickLogin: function() {
         api.waitAndClick('.esTopbar_logIn');
+        browser.waitUntilLoadingOverlayGone();
       },
 
       clickSignUp: function() {
         api.waitAndClick('.esTopbar_signUp');
+        browser.waitUntilLoadingOverlayGone();
       },
 
       clickLogout: function(options?: { waitForLoginButton?: boolean }) {
@@ -356,10 +369,13 @@ function pagesFor(browser) {
           browser.waitUntilModalGone();
           browser.waitForVisible('.esTopbar_logIn');
         }
+        // If on a users profile page, might start reloading something (because different user & perms).
+        browser.waitUntilLoadingOverlayGone();
       },
 
       openMyMenu: function() {
         api.waitAndClick('.esMyMenu');
+        browser.waitUntilLoadingOverlayGone();
         // Because of a bug in Chrome? Chromedriver? Selenium? Webdriver.io? wait-and-click
         // attempts to click instantly, before the show-menu anim has completed and the elem
         // has appeared. So pause for a short while. [E2EBUG]
@@ -371,6 +387,7 @@ function pagesFor(browser) {
         api.topbar.openMyMenu();
         api.waitAndClick('.esMyMenu_admin a');
         browser.waitForNewUrl();
+        browser.waitUntilLoadingOverlayGone();
       },
 
       clickGoToProfile: function() {
@@ -635,12 +652,14 @@ function pagesFor(browser) {
         }
         api.loginDialog.tryLogin(username, password);
         browser.waitUntilModalGone();
+        browser.waitUntilLoadingOverlayGone();
       },
 
       loginWithEmailAndPassword: function(emailAddress: string, password: string, badLogin) {
         api.loginDialog.tryLogin(emailAddress, password);
         if (badLogin !== 'BAD_LOGIN') {
           browser.waitUntilModalGone();
+          browser.waitUntilLoadingOverlayGone();
         }
       },
 
@@ -666,6 +685,7 @@ function pagesFor(browser) {
       },
 
       tryLogin: function(username: string, password: string) {
+        api.loginDialog.switchToLoginIfIsSignup();
         api.loginDialog.fillInUsername(username);
         api.loginDialog.fillInPassword(password);
         api.loginDialog.clickSubmit();
@@ -728,6 +748,20 @@ function pagesFor(browser) {
         browser.waitForVisible('#e2ePassword');
       },
 
+      switchToLoginIfIsSignup: function() {
+        // Switch to login form, if we're currently showing the signup form.
+        while (true) {
+          if (browser.isVisible('.esCreateUser')) {
+            browser.waitAndClick('.esLD_Switch_L');
+            browser.waitForVisible('.dw-reset-pswd');
+          }
+          else if (browser.isVisible('.dw-reset-pswd')) {
+            break;
+          }
+          browser.pause(100);
+        }
+      },
+
       createGmailAccount: function(data: { email: string, password: string, username: string },
             shallBecomeOwner?: boolean, anyWelcomeDialog?: string) {
         api.loginDialog.loginWithGmail(data);
@@ -742,6 +776,7 @@ function pagesFor(browser) {
           api.loginDialog.waitAndClickOkInWelcomeDialog();
         }
         browser.waitUntilModalGone();
+        browser.waitUntilLoadingOverlayGone();
       },
 
       loginWithGmail: function(data: { email: string, password: string }, isInPopupAlready?: boolean) {
@@ -849,6 +884,7 @@ function pagesFor(browser) {
           api.loginDialog.waitAndClickOkInWelcomeDialog();
         }
         browser.waitUntilModalGone();
+        browser.waitUntilLoadingOverlayGone();
       },
 
       loginWithFacebook: function(data: { email: string, password: string }, isInPopupAlready?: boolean) {
@@ -925,6 +961,7 @@ function pagesFor(browser) {
         browser.click('.dw-reset-pswd');
         // The login dialog should close when we click the reset-password link. [5KWE02X]
         browser.waitUntilModalGone();
+        browser.waitUntilLoadingOverlayGone();
         browser.swithToOtherTabOrWindow();
         browser.waitForVisible('#e2eRPP_emailI');
       },
@@ -1250,8 +1287,47 @@ function pagesFor(browser) {
     addUsersToPageDialog: {
       addOneUser: function(username: string) {
         api.waitAndClick('#e2eAddUsD .Select-placeholder');
-        browser.waitAndSetValue('#e2eAddUsD .Select-input > input', username);
-        browser.keys(['Return']);
+
+        // Clicking Return = complicated!  Only + \n  works in FF:
+        browser.waitAndSetValue('#e2eAddUsD .Select-input > input', username + '\n');
+
+        // Works in Chrome but not FF:
+        // browser.keys(['Return']);  — so we append \n above, work as a Return press.
+
+        /* Need to?:
+          if (browser.options.desiredCapabilities.browserName == "MicrosoftEdge")
+            element.setValue(...);
+            browser.keys("\uE007");
+          others:
+            element.setValue(`...\n`);
+        } */
+
+        // None of this works:  DELETE_LATER after year 2019?
+        /*
+        browser.keys(['Enter']);
+        browser.keys('\n');
+        browser.keys('(\ue007');
+        browser.keys('\uE006');
+        browser.actions([{
+          "type": "key",
+          //"id": "keyboard",
+          "id": "keys",
+          "actions": [
+            { "type": "keyDown", "value": "Enter" },
+            { "type": "keyUp", "value": "Enter" }
+          ]
+        }]);
+        const result = browser.elementActive();
+        const activeElement = result.value && result.value.ELEMENT;
+        if(activeElement){
+          browser.elementIdValue(activeElement, ['Return']);
+        }
+        const result = browser.elementActive();
+        const activeElement = result.value && result.value.ELEMENT;
+        if(activeElement){
+          browser.elementIdValue(activeElement, '\uE006');
+        } */
+
         // Weird. The react-select dropdown is open and needs to be closed, otherwise
         // a modal overlay hides everything? Can be closed like so:
         // No, now in rc.10 (instead of previous version, rc.3), the dropdown auto closes, after select.
@@ -1510,6 +1586,7 @@ function pagesFor(browser) {
         // The vote button appears in a modal dropdown.
         browser.waitAndClick('.esDropModal_content ' + selector);
         browser.waitUntilModalGone();
+        browser.waitUntilLoadingOverlayGone();
       },
 
       canVoteLike: function(postNr: PostNr) {
@@ -1638,15 +1715,22 @@ function pagesFor(browser) {
         //
         browser.waitForVisible(buttonSelector);
         for (let attemptNr = 1; attemptNr <= 2; ++attemptNr) {
-          while (true) {
+          for (let i = 0; i < 20; ++i) {  // because FF sometimes won't realize it's done scrolling
+          //while (true) {
             let replyButtonLocation = browser.getLocationInView(buttonSelector);
             let canScroll = browser.isVisible(api.scrollButtons.fixedBarSelector);
             if (!canScroll)
               break;
             let fixedBarLocation = browser.getLocationInView(api.scrollButtons.fixedBarSelector);
+            // fixedBarLocation gets too small in ff, resulting in `< fixedBarLocation.y` below false,
+            // so changed from `44 < ..` to `30 < ...`
+            //console.log(`clickPostActionButton: is > ${replyButtonLocation.y > 60}`);
+            //console.log(`clickPostActionButton: is < ${replyButtonLocation.y + 70 < fixedBarLocation.y}`);
             if (replyButtonLocation.y > 60 && // fixed topbar, about 40px tall
-                replyButtonLocation.y + 70 < fixedBarLocation.y)
+                replyButtonLocation.y + 30 < fixedBarLocation.y)  // button about 40 px tall, [7UKDWQ2]
+                                                             // 30 visible = enough to click in middle
               break;
+            console.log(`Scrolling into view: ${buttonSelector}`);
             browser.execute(function(selector) {
               window['debiki2'].utils.scrollIntoViewInPageColumn(
                   selector, { marginTop: 60 + 20, marginBottom: 70 + 20, duration: 200 });
@@ -1658,6 +1742,7 @@ function pagesFor(browser) {
             // -clickable exception thrown by waitAndClick, does *not* get caught by this
             // try-catch, *if* waitAndClick is added to `browser` as a command in commands.ts.
             // So I moved it to the top of this file instead. [7KSU024]
+            console.log(`clickPostActionButton: CLICK`);
             api.waitAndClick(buttonSelector);
             break;
           }
@@ -1669,6 +1754,7 @@ function pagesFor(browser) {
               throw exception;
             }
           }
+          console.log(`clickPostActionButton: attempt 2...`);
         }
       },
 
@@ -1803,14 +1889,17 @@ function pagesFor(browser) {
 
       openActivityFor: function(who: string, origin?: string) {
         browser.go((origin || '') + `/-/users/${who}/activity/posts`);
+        browser.waitUntilLoadingOverlayGone();
       },
 
       openNotfsFor: function(who: string, origin?: string) {
         browser.go((origin || '') + `/-/users/${who}/notifications`);
+        browser.waitUntilLoadingOverlayGone();
       },
 
       openPreferencesFor: function(who: string, origin?: string) {
         browser.go((origin || '') + `/-/users/${who}/preferences`);
+        browser.waitUntilLoadingOverlayGone();
       },
 
       goToPreferences: function() {
@@ -1821,6 +1910,7 @@ function pagesFor(browser) {
       clickGoToPreferences: function() {
         browser.waitAndClick('#e2eUP_PrefsB');
         browser.waitForVisible('.e_UP_Prefs_FN');
+        browser.waitUntilLoadingOverlayGone();
       },
 
       isNotfsTabVisible: function() {
@@ -1866,6 +1956,7 @@ function pagesFor(browser) {
           else {
             // ?? wait for what ??
           }
+          browser.waitUntilLoadingOverlayGone();
         },
 
         switchToTopics: function(opts: { shallFindTopics: boolean }) {
@@ -1877,6 +1968,7 @@ function pagesFor(browser) {
           else {
             // ?? wait for what ??
           }
+          browser.waitUntilLoadingOverlayGone();
         },
 
         posts: {
@@ -1950,6 +2042,7 @@ function pagesFor(browser) {
         switchToEmailsLogins: function() {
           browser.waitAndClick('.s_UP_Prf_Nav_EmLgL');
           browser.waitForVisible('.s_UP_EmLg_EmL');
+          browser.waitUntilLoadingOverlayGone();
         },
 
         switchToAbout: function() {
@@ -1979,6 +2072,7 @@ function pagesFor(browser) {
         save: function() {
           api.userProfilePage.preferences.clickSave();
           browser.waitUntilModalGone();
+          browser.waitUntilLoadingOverlayGone();
         },
 
         clickSave: function() {
@@ -2053,6 +2147,7 @@ function pagesFor(browser) {
 
       submit: function() {
         api.waitAndClick('.e_FD_SubmitB');
+        browser.waitUntilLoadingOverlayGone();
         // Don't: browser.waitUntilModalGone(), because now the stupid-dialog pop ups
         // and says "Thanks", and needs to be closed.
       },
@@ -2094,6 +2189,7 @@ function pagesFor(browser) {
       settings: {
         clickSaveAll: function() {
           api.waitAndClick('.esA_SaveBar_SaveAllB');
+          browser.waitUntilLoadingOverlayGone();
         },
 
         clickLegalNavLink: function() {
@@ -2151,6 +2247,7 @@ function pagesFor(browser) {
         approveNextWhatever: function() {
           api.waitAndClickFirst('.e_A_Rvw_AcptB');
           browser.waitUntilModalGone();
+          browser.waitUntilLoadingOverlayGone();
         },
 
         isMoreStuffToReview: function() {
@@ -2257,6 +2354,7 @@ function pagesFor(browser) {
         if (data.matchAfter !== false && data.bodyMatchAfter !== false) {
           browser.assertPageBodyMatches(data.bodyMatchAfter || data.body);
         }
+        browser.waitUntilLoadingOverlayGone();
       },
 
       editPageBody: function(newText: string) {

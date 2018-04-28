@@ -234,6 +234,7 @@ describe("new user, review, ok:", () => {
 
   it("Owen approves the guest's first two replies", () => {
     owensBrowser.refresh();
+    owensBrowser.waitUntilLoadingOverlayGone();
     owensBrowser.adminArea.review.approveNextWhatever();
     owensBrowser.adminArea.review.approveNextWhatever();
   });

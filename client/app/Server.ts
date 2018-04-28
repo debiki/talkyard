@@ -135,6 +135,7 @@ export function loadJs(src: string, success?: () => void): any {  // : Promise, 
 let globalStaffScriptLoaded = false;
 
 export function maybeLoadGlobalStaffScript() {
+  if (location.hostname.search('-test-') >= 0) return;
   if (!globalStaffScriptLoaded && eds.loadGlobalStaffScript) {
     loadJs(eds.cdnOrServerOrigin + '/-/globalStaffScript.js');
     globalStaffScriptLoaded = true;
@@ -145,6 +146,7 @@ export function maybeLoadGlobalStaffScript() {
 let globalAdminTestScriptLoaded = false;
 
 export function maybeLoadGlobalAdminTestScript() {
+  if (location.hostname.search('-test-') >= 0) return;
   if (!globalAdminTestScriptLoaded && eds.loadGlobalAdminTestScript) {
     loadJs(eds.cdnOrServerOrigin + '/-/globalAdminTestScript.js');
     globalAdminTestScriptLoaded = true;

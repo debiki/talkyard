@@ -226,6 +226,11 @@ describe("summary emails", () => {
 
   it("... but Maria enables", () => {
     owensBrowser.topbar.clickLogout();
+    // How is this possible: [7UKDWP2]
+    // FAIL: Error: Element <button class="dw-login esTopbar_logIn btn btn-primary">
+    //        is not clickable at point (996.599983215332,35) because another element
+    //        <div id="theLoadingOverlay"> obscures it
+    // — clickLogout above already waits for the loading overlay to disappear  o.O
     mariasBrowser.complex.loginWithPasswordViaTopbar(maria.username, maria.password);
     mariasBrowser.userProfilePage.openPreferencesFor(maria.username);
     mariasBrowser.userProfilePage.preferences.setSummaryEmailsEnabled(true);

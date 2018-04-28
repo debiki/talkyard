@@ -761,7 +761,7 @@ var t_sv: TalkyardTranslations = t = {
     SignUpInstead_2: "Sign up",
     SignUpInstead_3: " instead",
 
-    OrCreateAcctHere: "Or create account here:",
+    OrCreateAcctHere: "Or create account:",
     OrTypeName: "Or just type your name:",
     OrFillIn: "Or fill in:",
 

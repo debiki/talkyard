@@ -563,7 +563,7 @@ const RootPostAndComments = createComponent({
     const loginToWhat = page.pageRole === PageRole.EmbeddedComments ?
         LoginReason.PostEmbeddedComment : 'LoginToComment';
 
-    login.loginIfNeededReturnToPost(loginToWhat, BodyNr, function() {
+    login.loginIfNeededReturnToPost(loginToWhat, BodyNr, () => {
       if (this.isGone) return;
       // Toggle highlighting first, because it'll be cleared later if the
       // editor is closed, and then we don't want to toggle it afterwards.

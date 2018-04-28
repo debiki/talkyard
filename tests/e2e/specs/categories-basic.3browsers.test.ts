@@ -82,7 +82,7 @@ describe("categories", function() {
 
   it("Owen sees Marias' topic", function() {
     owen.refresh();
-    owen.waitAndClickLinkToNewPage(WastelandCategorySelector, true);
+    owen.waitAndClickLinkToNewPage(WastelandCategorySelector, true); // [7JUKDQ4]
     owen.forumTopicList.assertTopicNrVisible(2, mariasFirstTopicTitle);
   });
 

@@ -137,7 +137,6 @@ ${htmlToPaste}
     mariasBrowser.swithToOtherTabOrWindow();
     mariasBrowser.disableRateLimits();
     console.log("signs up...");
-    mariasBrowser.loginDialog.clickCreateAccountInstead();
     mariasBrowser.loginDialog.createPasswordAccount(maria, false);
     console.log("close login popup...");
     mariasBrowser.close();

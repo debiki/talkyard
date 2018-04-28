@@ -107,7 +107,7 @@ function makeWholeSpec(initFn) {
       addForumTests("3: ");
 
       it("start at search page, go to forum, test forum", () => {
-        usersBrowser.go('/-/search');
+        usersBrowser.goToSearchPage();
         usersBrowser.topbar.clickHome();
       });
       addForumTests("4: ");
@@ -145,7 +145,7 @@ function makeWholeSpec(initFn) {
       addMariasTopicTests();
 
       it("start at search page, go to forum, test forum", () => {
-        usersBrowser.go('/-/search');
+        usersBrowser.goToSearchPage();
         usersBrowser.topbar.clickBack();
       });
       addMariasTopicTests();
@@ -190,7 +190,7 @@ function makeWholeSpec(initFn) {
       addMariasProfileTets("3: ");
 
       it("start at search page, go to Maria's profile, test profile page", () => {
-        usersBrowser.go('/-/search');
+        usersBrowser.goToSearchPage();
         usersBrowser.watchbar.openIfNeeded();
         usersBrowser.watchbar.goToTopic(forum.topics.byMariaCategoryA.title);
         usersBrowser.pageTitle.openAboutAuthorDialog();  // about Maria
@@ -259,7 +259,7 @@ function makeWholeSpec(initFn) {
       addSearchPageTests(forum.topics.byMariaCategoryB.title);
 
       it("start at search page, with q=CategoryB", () => {
-        usersBrowser.go('/-/search?q=CategoryB');
+        usersBrowser.goToSearchPage('CategoryB');
       });
       addSearchPageTests('CategoryB');
 

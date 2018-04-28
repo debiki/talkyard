@@ -139,7 +139,6 @@ ${htmlToPaste}
     mariasBrowser.swithToOtherTabOrWindow();
     mariasBrowser.disableRateLimits();
     console.log("signs up...");
-    mariasBrowser.loginDialog.clickCreateAccountInstead();
     mariasBrowser.loginDialog.createPasswordAccount(maria, false, 'THERE_WILL_BE_NO_VERIFY_EMAIL_DIALOG');
     mariasBrowser.switchBackToFirstTabOrWindow();
   });

@@ -56,17 +56,9 @@ export function loginIfNeeded(loginReason: LoginReason | string, anyReturnToUrl?
     success();
   }
   else {
-    // UX COULD: People with an account, are typically logged in already, and won't get to here often.
-    // Instead, most people for whom this code runs, are new users, so show the signup dialog? [7UKW42Y]
-
-    // For now though (don't want to update all e2e tests now)
-    if (loginReason === LoginReason.SignUp ||
-        loginReason === LoginReason.PostEmbeddedComment) {
-      getLoginDialog().openToSignUp(loginReason, anyReturnToUrl, success);
-    }
-    else {
-      getLoginDialog().openToLogIn(loginReason, anyReturnToUrl, success);
-    }
+    // People with an account, are typically logged in already, and won't get to here often.
+    // Instead, most people here, are new users, so show the signup dialog.
+    getLoginDialog().openToSignUp(loginReason, anyReturnToUrl, success);
   }
 }
 
@@ -112,6 +104,7 @@ const LoginDialog = createClassAndFactory({
     this.open(false, loginReason, anyReturnToUrl, callback, preventClose);
   },
 
+  // Called from Scala template.
   openToSignUp: function(loginReason: LoginReason | string,
         anyReturnToUrl?: string, callback?: () => void, preventClose?: boolean) {
     this.open(true, loginReason, anyReturnToUrl, callback, preventClose);
@@ -125,12 +118,6 @@ const LoginDialog = createClassAndFactory({
     // The login reason might be a stringified number from the url, so try to convert to enum.
     // Some login reasons are enums, others are strings. CLEAN_UP: Change the strings to enums.
     loginReason = _.isString(loginReason) ? parseInt(loginReason) || loginReason : loginReason;
-
-    // Default to signup, if emb cmts, because most people who aren't logged in already,
-    // are likely new visitors. [7UKW42Y]
-    if (loginReason === LoginReason.PostEmbeddedComment) {
-      isSignUp = true;
-    }
 
     // Don't allow logging in as someone else, when impersonating someone, because it's unclear
     // what should then happen: does one stop impersonating? or not?

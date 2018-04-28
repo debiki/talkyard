@@ -24,9 +24,9 @@ let mariasBrowser;
 let data;
 
 
-const specifiedEmbeddingAddr =                 'e2e-test--gatsby-starter-blog.localhost';
+const specifiedEmbeddingHost =                 'e2e-test--gatsby-starter-blog.localhost';
 const commentsSiteLocalHostname = 'comments-for-e2e-test--gatsby-starter-blog-localhost';
-const blogUrl = 'localhost:8000/';
+const blogUrl = 'http://localhost:8000/';
 
 const owensHiFolksComment = 'owensHiFolksComment';
 const owens2ndPostComment = 'owens2ndPostComment';
@@ -55,7 +55,7 @@ describe("embedded comments, Gatsby blog and un/re-mmounting comments", () => {
     const localHostname     = commentsSiteLocalHostname; // specifiedEmbeddingAddr.replace(/[.:]/, '-');
     return {
       testId: testId,
-      embeddingUrl: `http://${specifiedEmbeddingAddr}/`,
+      embeddingUrl: `http://${specifiedEmbeddingHost}/`,
       origin: `http://${commentsSiteLocalHostname}.localhost`,
       orgName: "E2E Gatsby",
       fullName: owen.fullName,
@@ -97,11 +97,11 @@ describe("embedded comments, Gatsby blog and un/re-mmounting comments", () => {
   it("Changes the embedding url from e2e-test--gatsby-starter-blog, to localhost", () => {
     owensBrowser.waitForVisible('#e_AllowEmbFrom');
     const oldEmbeddingUrl = owensBrowser.getValue('#e_AllowEmbFrom');
-    assert(oldEmbeddingUrl === `http://${specifiedEmbeddingAddr}/`);
+    assert(oldEmbeddingUrl === `http://${specifiedEmbeddingHost}/`);
     // Need do this twice, maybe because the first attempt is somehow interrupted by the Save
     // button appearing.
-    owensBrowser.setValue('#e_AllowEmbFrom', `http://${blogUrl}`);
-    owensBrowser.setValue('#e_AllowEmbFrom', `http://${blogUrl}`);
+    owensBrowser.setValue('#e_AllowEmbFrom', blogUrl);
+    owensBrowser.setValue('#e_AllowEmbFrom', blogUrl);
     owensBrowser.adminArea.settings.clickSaveAll();
   });
 

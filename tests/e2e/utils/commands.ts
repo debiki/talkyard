@@ -127,6 +127,7 @@ function addCommandsToBrowser(browser) {
 
 
   browser.addCommand('waitAndSetValue', function(selector, value) {
+    browser.pause(30); // for FF else fails randomly [E2EBUG] but Chrome = fine
     browser.waitForVisible(selector);
     browser.waitForEnabled(selector);
     browser.waitUntilLoadingOverlayGone();

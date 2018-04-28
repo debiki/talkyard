@@ -168,6 +168,7 @@ describe("user profile access:", () => {
   it("Mallory logs in", () => {
     michaelsBrowser.topbar.clickLogout();
     mallorysBrowser.refresh();
+    mallorysBrowser.waitUntilLoadingOverlayGone(); // waits until profile info reloaded
     mallorysBrowser.complex.loginWithPasswordViaTopbar(mallory);
   });
 
