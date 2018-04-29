@@ -138,7 +138,7 @@ const LoginDialog = createClassAndFactory({
     login.anyContinueAfterLoginCallback = callback;
 
     // When logging in to an embedded comments discussion, if guest login is enabled,
-    // then assume that's what most people want to use.
+    // then assume that's what most people want to use. [8UKBTQ2]
     const store: Store = this.state.store;
     const isForGuest = isSignUp && loginReason === LoginReason.PostEmbeddedComment &&
         store.settings.allowGuestLogin;
@@ -229,7 +229,7 @@ const LoginDialog = createClassAndFactory({
           ModalTitle({ id: 'e2eLoginDialogTitle' }, title));
     */
 
-    const modalFooter = state.preventClose ? ModalFooter({}) :
+    const modalFooter = state.preventClose ? null :
         ModalFooter({}, Button({ onClick: this.close, id: 'e2eLD_Cancel', tabIndex: 3 }, t.Cancel));
 
     return (
@@ -449,7 +449,7 @@ const PasswordLoginDialogContent = createClassAndFactory({
         Input({ type: 'password', label: t.ld.PasswordC, ref: 'passwordInput',
             onChange: this.clearError, id: 'e2ePassword' }),
         badPasswordMessage,
-        PrimaryButton({ onClick: this.doLogin, id: 'e2eSubmit' },
+        PrimaryButton({ className: 's_LD_LoginB', onClick: this.doLogin, id: 'e2eSubmit' },
           loginToWhat(this.props.loginReason)),
         r.br(),
         r.a({ href: eds.serverOrigin + '/-/reset-password/specify-email',

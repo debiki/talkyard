@@ -43,6 +43,7 @@ export var FullNameInput = createClassAndFactory({
   render: function() {
     return (
       utils.PatternInput({ label: this.props.label, ref: 'patternInput', id: this.props.id,
+        required: this.props.required, minLength: this.props.minLength,
         className: this.props.className, placeholder: this.props.placeholder,
         help: this.props.help, tabIndex: this.props.tabIndex,
         notRegex: /^\s+$/, notMessage: "Not just spaces please",

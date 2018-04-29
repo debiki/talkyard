@@ -32,13 +32,20 @@
 .dw-login-modal
   max-width: 520px; // else like 600, too wide
 
-// On small screens like iPhone 5, make the dialog full-screen.
-@media (max-width: $veryNarrowLimit)
+
+// On small screens, like iPhone 5 and login popup windows, make the dialog full-screen.
+@media (max-width: 590px) // $veryNarrowLimit)
   .dw-login-modal
     margin: 0;
+    width: 100%;
+    height: 100%;
+    max-width: none;
+    max-height: none;
     .modal-content
-      border: none;
+      border: none !important;
       border-radius: 0;
+      height: 100%;
+
 
 .esLD
   padding-top: 4px;
@@ -115,6 +122,13 @@
   padding: 3px 6px 4px;
   margin: 0 5px 6px 4px;
   box-shadow: 3px 3px 3px rgba(0,0,0,0.29);
+
+.s_LD_LoginB
+  font-weight: bold;
+  // Make it a bit wider.
+  padding-left: 17px;
+  padding-right: 17px;
+
 
 
 // Add this class to modal dialogs that have opened modal child dialogs.

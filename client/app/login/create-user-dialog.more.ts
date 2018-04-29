@@ -272,6 +272,7 @@ export var CreateUserDialogContent = createClassAndFactory({
 
     // Undefined —> use the default, which is True.  ... but for now, always require email [0KPS2J]
     const emailOptional = false; // store.settings.requireVerifiedEmail === false;
+    const wrongAddr = this.state.theWrongEmailAddress;
 
     const emailInput =
         EmailInput({ label: emailOptional ? t.cud.EmailOptPriv : t.cud.EmailPriv, id: 'e2eEmail',
@@ -279,22 +280,25 @@ export var CreateUserDialogContent = createClassAndFactory({
           // If email already provided by e.g. Google, don't let the user change it.
           disabled: hasEmailAddressAlready, defaultValue: props.email, help: emailHelp,
           required: !isForGuest, // [0KPS2J] store.settings.requireVerifiedEmail !== false,
-          error: this.state.userData.email !== this.state.theWrongEmailAddress ?
-              // (This is for admins, don't translate. [5JKBWS2])
+          // If is first site admin signup, and the admin keeps using an email address we know is
+          // not the one in the config file, then tell hen to use the addr in the config file.
+          // (This is for admins, don't translate. [5JKBWS2])
+          error: this.state.userData.email !== wrongAddr || !wrongAddr ?
               null : "Use the email address you specified in the config file." });
 
     const usernameInputMaybe = isForGuest ? null :
-        util.UsernameInput({ label: t.cud.Username, id: 'e2eUsername', tabIndex: 2,
+        util.UsernameInput({ label: t.cud.Username, id: 'e2eUsername', tabIndex: 1,
           onChangeValueOk: (value, isOk) => this.updateValueOk('username', value, isOk)
         });
 
     const passwordInputMaybe = !props.isForPasswordUser ? null :
-        NewPasswordInput({ newPasswordData: state.userData, ref: 'password', tabIndex: 2,
+        NewPasswordInput({ newPasswordData: state.userData, ref: 'password', tabIndex: 1,
             setPasswordOk: (isOk) => this.updateValueOk('password', 'dummy', isOk) });
 
     const fullNameInput =
       FullNameInput({ label: isForGuest ? t.NameC : t.cud.FullName, ref: 'fullName',
-        id: 'e2eFullName', defaultValue: props.name, tabIndex: 2,
+        minLength: isForGuest ? 2 : undefined, // guests have no username to show instead
+        id: 'e2eFullName', defaultValue: props.name, tabIndex: 1,
         onChangeValueOk: (value, isOk) => this.updateValueOk('fullName', value, isOk) });
 
     // Show an "Or create a real account with username and password" button.
@@ -307,8 +311,12 @@ export var CreateUserDialogContent = createClassAndFactory({
           r.code({}, t.cud.OrCreateAcct_4),
           t.cud.OrCreateAcct_5);
 
-    const orLoginAsGuestMaybe = isForGuest || this.props.loginReason === LoginReason.LoginToChat ? null :
-      r.div({}, "orLoginAsGuest");
+    // For now, skip making it possible to change from create-account to login-as-guest.
+    // People wouldn't find that text & button anyway? & in embedded comments, if guest
+    // login is enabled, it's the default way to signup anyway, no need to switch. [8UKBTQ2]
+     /* const orLoginAsGuestMaybe
+          = isForGuest || this.props.loginReason === LoginReason.LoginToChat ? null :
+        r.div({},  ... switch to guest login text & button ...); */
 
     const disableSubmit = _.includes(_.values(this.state.okayStatuses), false);
 
@@ -323,7 +331,7 @@ export var CreateUserDialogContent = createClassAndFactory({
         !isForGuest ? fullNameInput : null,
         passwordInputMaybe,
         orCreateAccountMaybe,
-        orLoginAsGuestMaybe,
+        //orLoginAsGuestMaybe,
         PrimaryButton({ onClick: this.doCreateUser, disabled: disableSubmit, id: 'e2eSubmit',
             tabIndex: 2 }, isForGuest ? t.cud.LoginAsGuest : t.cud.CreateAccount)));
   }
