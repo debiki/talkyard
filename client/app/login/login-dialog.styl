@@ -45,6 +45,9 @@
       border: none !important;
       border-radius: 0;
       height: 100%;
+    .modal-body
+      // Place dialog title closer to top of window, & make narrower to avoid unneded horizontal scroll.
+      padding: 8px 5px;
 
 
 .esLD
@@ -64,6 +67,9 @@
   form
     max-width: $width;
     margin: 0 auto;
+    // If there's no footer below, with whitespace & a Cancel button, add some margin instead.
+    &:last-child
+      margin-bottom: 30px;
 
   input
     width: 300px !important;

@@ -215,7 +215,7 @@ declare namespace debiki2 {
   var linkToRedirToAboutCategoryPage;
   var linkToUserInAdminArea;
   function linkToSendMessage(idOrUsername: UserId | string): string;
-  function linkToUserProfilePage(idOrUsername: UserId | string): string;
+  function linkToUserProfilePage(idOrUsername: Myself | User | UserId | string): string;
   function linkToUsersNotfs(userIdOrUsername: UserId | string): string;
   function linkToAdminPage(me: Myself): string;
   var linkToReviewPage;

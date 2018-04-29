@@ -261,7 +261,7 @@ class Notifier(val systemDao: SystemDao, val siteDaoFactory: SiteDaoFactory)
   private def trySendToSingleUser(userId: UserId, anyUser: Option[User],
         notfs: Seq[Notification], siteDao: SiteDao): Option[String] = {
 
-    def logWarning(message: String) =
+    def logWarning(message: String): Unit =
       logger.warn(s"Skipping email to user id `$userId', site `${siteDao.siteId}': $message")
 
     val user = anyUser getOrElse {

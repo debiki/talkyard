@@ -152,6 +152,8 @@ function runAllE2eTests {
   runE2eTest s/wdio target/e2e/wdio.conf.js            --only authz-basic-see-reply-create $args
   runE2eTest s/wdio target/e2e/wdio.2chrome.conf.js    --only impersonate.2browsers $args
 
+  # There're email notfs and unsubscription tests for guests, further below, in:
+  # embedded-comments-guest-login-email-notf-unsbscribe.test
   runE2eTest s/wdio target/e2e/wdio.conf.js            --only email-notfs-discussion $args
   runE2eTest s/wdio target/e2e/wdio.2chrome.conf.js    --only unsubscribe.2browsers $args
 
@@ -197,6 +199,7 @@ function runAllE2eTests {
   # (no -old-name version, because the new name is always included in the server's genetarted html.)
   runE2eTest s/wdio target/e2e/wdio.conf.js            --only embedded-comments-discussion-id.test $args
   runE2eTest s/wdio target/e2e/wdio.conf.js            --only embedded-comments-discussion-id-old-name $args
+  runE2eTest s/wdio target/e2e/wdio.conf.js            --only embedded-comments-guest-login-email-notf-unsbscribe.test $args
   runE2eTest s/wdio target/e2e/wdio.conf.js            --only embedded-comments-all-logins.test $args
   runE2eTest s/wdio target/e2e/wdio.conf.js            --only embedded-comments-all-logins-old-name $args
   runE2eTest s/wdio target/e2e/wdio.conf.js            --only embedded-comments-edit-and-vote.test $args

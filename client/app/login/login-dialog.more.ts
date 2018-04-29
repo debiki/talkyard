@@ -107,7 +107,10 @@ const LoginDialog = createClassAndFactory({
   // Called from Scala template.
   openToSignUp: function(loginReason: LoginReason | string,
         anyReturnToUrl?: string, callback?: () => void, preventClose?: boolean) {
-    this.open(true, loginReason, anyReturnToUrl, callback, preventClose);
+    // CLEAN_UP replace openToLogIn and openToSignUp with just one open(loginReason, ..) that
+    // decides if to log in or sig up? For now:
+    const reallySignup = loginReason !== 'LoginToAdministrate';
+    this.open(reallySignup, loginReason, anyReturnToUrl, callback, preventClose);
   },
 
   open: function(isSignUp: boolean, loginReason: LoginReason | string,

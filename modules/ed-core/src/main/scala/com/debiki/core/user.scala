@@ -391,7 +391,7 @@ sealed trait User {
   def isApprovedOrStaff: Boolean = false
   def isSystemUser: Boolean = id == SystemUserId
   def isStaff: Boolean = isAdmin || isModerator || isSystemUser
-  def isHuman: Boolean = id >= LowestTalkToMemberId
+  def isHuman: Boolean = id >= LowestTalkToMemberId || id <= MaxGuestId
   def isGone: Boolean = isDeactivated || isDeleted
 
   def isStaffOrCoreMember: Boolean =

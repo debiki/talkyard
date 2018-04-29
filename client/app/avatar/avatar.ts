@@ -200,7 +200,7 @@ export const Avatar = createComponent({
 
     const elemName = this.props.ignoreClicks ? 'span' : 'a';
     const elemFn = <any> r[elemName];
-    const link = this.props.ignoreClicks ? null : linkToUserProfilePage(user.username || user.id);
+    const link = this.props.ignoreClicks ? null : linkToUserProfilePage(user);
     return (
       // [rename] edAvtr to esAvtr
       elemFn({ className: 'esAvtr edAvtr' + extraClasses, style: styles, onClick: this.onClick,

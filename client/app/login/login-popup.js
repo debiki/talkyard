@@ -23,7 +23,7 @@ d.i.createLoginPopup = function(url) {
   // Based on popupManager.createPopupOpener, from popuplib.js.
 
   var width = 550;
-  var height = 600;
+  var height = 620;
   var coordinates = popupManager.getCenteredCoords(width, height);
   var windowName = 'LoginPopup';
 

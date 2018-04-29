@@ -219,7 +219,7 @@ export function UserName(
   }
   else {
     if (props.makeLink) {
-      newProps.href = linkToUserProfilePage(user.id);
+      newProps.href = linkToUserProfilePage(user);
       // BUG [7UKWBP4] workaround: embedded comments pages rendered server side, don't know
       // that they're embedded comments pages and won't prefix links with https://comments-for-.../.
       // When rendering client side, the links will get that prefix and work fine — however,

@@ -882,6 +882,10 @@ trait UserDao {
     // attacks too simple. [8PLKW46]
     require(user.isMember, "EdE8KFUW2")
 
+    // Don't track system, superadmins, deleted users — they aren't real members.
+    if (MaxGuestId < user.id && user.id < LowestTalkToMemberId)
+      return
+
     readWriteTransaction { transaction =>
       val pageMeta = transaction.loadPageMeta(pageId) getOrDie "EdE5JKDYE"
       if (newProgress.maxPostNr + 1 > pageMeta.numPostsTotal) // post nrs start on TitleNr = 0 so add + 1

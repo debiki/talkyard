@@ -61,8 +61,14 @@ export function linkToReviewPage(): string {
 }
 
 
-export function linkToUserProfilePage(userIdOrUsername: UserId | string): string {
-  return origin + UsersRoot + userIdOrUsername;
+export function linkToUserProfilePage(user: Myself | User | UserId | string): string {
+  // If Myself specified, should be loggedin and thus have username or id.
+  // @ifdef DEBUG
+  dieIf(_.isObject(user) && !(<any> user).username && !(<any> user).id, 'TyE7UKWQT2');
+  // @endif
+
+  const idOrUsername = _.isObject(user) ? (<User> user).username || (<User> user).id : user;
+  return origin + UsersRoot + idOrUsername;
 }
 
 export function linkToUsersNotfs(userIdOrUsername: UserId | string): string {

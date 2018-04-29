@@ -327,6 +327,8 @@ export const Editor = createComponent({
   toggleWriteReplyToPost: function(postNr: number, anyPostType?: number) {
     if (this.alertBadState('WriteReply'))
       return;
+
+    // Insert postNr into the list of posts we're replying to — or remove it, if present. (I.e. toggle.)
     const postNrs = this.state.replyToPostNrs;
     const index = postNrs.indexOf(postNr);
     if (index === -1) {
@@ -336,6 +338,7 @@ export const Editor = createComponent({
     else {
       postNrs.splice(index, 1);
     }
+
     // Don't change post type from flat to something else.
     let postType = anyPostType;
     if (postNrs.length >= 2 && this.state.anyPostType === PostType.Flat) {
@@ -645,13 +648,16 @@ export const Editor = createComponent({
   },
 
   saveStuff: function() {
+    const isReplying = this.state.replyToPostNrs.length > 0;
+    const loginToWhat = eds.isInIframe && isReplying ?
+      LoginReason.PostEmbeddedComment : LoginReason.SubmitEditorText;
+
     // Email verification shouldn't be needed immediately, checked by this constraint:
     // settings3_compose_before_c. However, there's a RACE condition: a user clicks Reply,
     // starts composing without having logged in, then an admin changes the settings
     // to may-NOT-compose-before-logged-in, and then the user clicks Post Reply. Then,
     // #dummy below might get used, but won't work.
-    debiki2.login.loginIfNeededReturnToAnchor(
-        LoginReason.SubmitEditorText, '#dummy-EdE2PBBYL0', () => {
+    debiki2.login.loginIfNeededReturnToAnchor(loginToWhat, '#dummy-TyE2PBBYL0', () => {
       if (page_isPrivateGroup(this.state.newPageRole)) {
         this.startPrivateGroupTalk();
       }
@@ -1100,7 +1106,9 @@ export const Editor = createComponent({
             tabIndex: 1,
             placeholder: t.e.TypeHerePlaceholder,
             loadingComponent: () => r.span({}, t.Loading),
-            trigger: listUsernamesTrigger });
+            // Currently the server says Forbidden unless one is logged in, when listing usernames.
+            // UX COULD list usernames of users already loaded & visible anyway, if not logged in?
+            trigger: me.isLoggedIn ? listUsernamesTrigger : {} });
 
     const previewHelp =
         r.div({ className: 'dw-preview-help' },

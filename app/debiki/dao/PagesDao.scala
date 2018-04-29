@@ -273,9 +273,12 @@ trait PagesDao {
     transaction.insertPagePath(pagePath)
     transaction.insertPost(titlePost)
     transaction.insertPost(bodyPost)
-    // By default, one follows all activity on a page one has created.
-    transaction.saveUserPageSettings(
-      authorId, pageId = pageId, UserPageSettings(NotfLevel.WatchingAll))
+    // By default, one follows all activity on a page one has created — unless this is some page
+    // that gets auto created by System.
+    if (author.id != SystemUserId) {
+      transaction.saveUserPageSettings(
+        authorId, pageId = pageId, UserPageSettings(NotfLevel.WatchingAll))
+    }
     if (approvedById.isDefined) {
       updatePagePopularity(PreLoadedPageParts(pageId, Vector(titlePost, bodyPost)), transaction)
     }

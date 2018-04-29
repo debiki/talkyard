@@ -63,7 +63,7 @@ export const AdminUserPage = createFactory({
   },
 
   publicProfileLink: function() {
-    return linkToUserProfilePage(this.state.user.id);
+    return linkToUserProfilePage(this.state.user);
   },
 
   toggleIsAdmin: function() {

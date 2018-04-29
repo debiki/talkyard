@@ -311,7 +311,13 @@ trait PostsDao {
     val settings = loadWholeSiteSettings(transaction)
     val numFirstToAllow = math.min(MaxNumFirstPosts, settings.numFirstPostsToAllow)
     val numFirstToApprove = math.min(MaxNumFirstPosts, settings.numFirstPostsToApprove)
-    val numFirstToNotify = math.min(MaxNumFirstPosts, settings.numFirstPostsToReview)
+    var numFirstToNotify = math.min(MaxNumFirstPosts, settings.numFirstPostsToReview)
+
+    // Always have staff review a new guest's first two comments, at least,
+    // regardless of site settings. [4JKFWP4]
+    if (author.user.isGuest && (numFirstToApprove + numFirstToNotify) < 2) {
+      numFirstToNotify = 2 - numFirstToApprove
+    }
 
     if ((numFirstToAllow > 0 && numFirstToApprove > 0) || numFirstToNotify > 0) {
       val tasks = transaction.loadReviewTasksAboutUser(author.id, limit = MaxNumFirstPosts,

@@ -596,12 +596,21 @@ function pagesFor(browser) {
 
       createPasswordAccount: function(data: { fullName, username, email?, emailAddress?, password },
             shallBecomeOwner?: boolean, anyVerifyEmail?) {
+
+        // Switch from the guest login form to the create-real-account form, if needed.
+        browser.waitForVisible('#e2eFullName');
+        if (browser.isVisible('.s_LD_CreateAccount')) {
+          browser.waitAndClick('.s_LD_CreateAccount');
+          browser.waitForVisible('#e2ePassword');
+        }
+
         console.log('createPasswordAccount: fillInFullName...');
-        api.loginDialog.fillInFullName(data.fullName);
+        if (data.fullName) api.loginDialog.fillInFullName(data.fullName);
         console.log('fillInUsername...');
         api.loginDialog.fillInUsername(data.username);
         console.log('fillInEmail...');
-        api.loginDialog.fillInEmail(data.email || data.emailAddress);
+        const theEmail = data.email || data.emailAddress;
+        if (theEmail) api.loginDialog.fillInEmail(theEmail);
         console.log('fillInPassword...');
         api.loginDialog.fillInPassword(data.password);
         console.log('clickSubmit...');
@@ -610,7 +619,7 @@ function pagesFor(browser) {
         api.loginDialog.acceptTerms(shallBecomeOwner);
         console.log('waitForNeedVerifyEmailDialog...');
         if (anyVerifyEmail !== 'THERE_WILL_BE_NO_VERIFY_EMAIL_DIALOG') {
-        api.loginDialog.waitForNeedVerifyEmailDialog();
+          api.loginDialog.waitForNeedVerifyEmailDialog();
         }
         console.log('createPasswordAccount: done');
       },
@@ -691,15 +700,7 @@ function pagesFor(browser) {
         api.loginDialog.clickSubmit();
       },
 
-      signUpAsGuest: function(name: string, email?: string) {
-        /* Old, with the separate guest dialog:   CLEAN_UP remove this comment
-        api.loginDialog.clickLoginAsGuest();
-        api.loginDialog.fillInGuestName(name);
-        if (email) {
-          api.loginDialog.fillInGuestEmail(email);
-        }
-        api.loginDialog.submitGuestLogin();
-        */
+      signUpAsGuest: function(name: string, email?: string) { // CLEAN_UP use createPasswordAccount instead? [8JTW4]
         console.log('createPasswordAccount with no email: fillInFullName...');
         api.loginDialog.fillInFullName(name);
         console.log('fillInUsername...');
@@ -728,7 +729,7 @@ function pagesFor(browser) {
         assert(nameInHtml === username);
       },
 
-      logInAsGuest: function(name: string, email_noLongerNeeded?: string) { // CLEAN_UP repl email w pwd?
+      logInAsGuest: function(name: string, email_noLongerNeeded?: string) { // CLEAN_UP [8JTW4] is just pwd login?
         const username = name.replace(/[ '-]+/g, '_').substr(0, 20);  // dupl code (7GKRW10)
         console.log('logInAsGuest: fillInFullName...');
         api.loginDialog.fillInUsername(name);
@@ -739,6 +740,16 @@ function pagesFor(browser) {
         console.log('logInAsGuest with no email: done');
         const nameInHtml = browser.waitAndGetVisibleText('.esTopbar .esAvtrName_name');
         dieIf(nameInHtml !== username, `Wrong username in topbar: ${nameInHtml} [EdE2WKG04]`);
+      },
+
+      // For guests, there's a combined signup and login form.
+      signUpLogInAs_Real_Guest: function(name: string, email?: string) {  // RENAME remove '_Real_' [8JTW4]
+        api.loginDialog.fillInFullName(name);
+        if (email) {
+          api.loginDialog.fillInEmail(email);
+        }
+        api.loginDialog.clickSubmit();
+        api.loginDialog.acceptTerms(false);
       },
 
       clickCreateAccountInstead: function() {
@@ -1392,6 +1403,15 @@ function pagesFor(browser) {
         browser.rememberCurrentUrl();
         api.editor.save();
         browser.waitForNewUrl();
+      }
+    },
+
+
+    metabar: {
+      clickLogout: function() {
+        browser.waitAndClick('.esMetabar .dw-a-logout');
+        browser.waitUntilGone('.esMetabar .dw-a-logout');
+        browser.waitForVisible('.esMetabar');
       }
     },
 
@@ -2244,6 +2264,10 @@ function pagesFor(browser) {
       },
 
       review: {
+        waitUntilLoaded: function() {
+          browser.waitForVisible('.e_A_Rvw');
+        },
+
         approveNextWhatever: function() {
           api.waitAndClickFirst('.e_A_Rvw_AcptB');
           browser.waitUntilModalGone();
@@ -2252,6 +2276,15 @@ function pagesFor(browser) {
 
         isMoreStuffToReview: function() {
           return browser.isVisible('.e_A_Rvw_AcptB');
+        },
+
+        waitForTextToReview: function(text) {
+          browser.waitUntilTextMatches('.esReviewTask_it', text);
+        },
+
+        countThingsToReview: function(): number {
+          const elems = browser.elements('.esReviewTask_it').value;
+          return elems.length;
         },
       },
     },

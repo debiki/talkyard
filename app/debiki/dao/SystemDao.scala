@@ -208,6 +208,10 @@ class SystemDao(
 
       newSiteTx.upsertSiteSettings(SettingsToSave(
         allowEmbeddingFrom = Some(embeddingSiteUrl),
+        // Blogs barely get any comments nowadays (instead, everyone uses Facebook/Reddit/etc),
+        // so, by default, make it easy to post a blog comment: don't require people to create
+        // real accounts. Guest comments always get queued for moderation anyway. [4JKFWP4]
+        allowGuestLogin = yesIfEmbedded,
         requireVerifiedEmail = notIfEmbedded,
         mayComposeBeforeSignup = yesIfEmbedded,
         mayPostBeforeEmailVerified = yesIfEmbedded,
