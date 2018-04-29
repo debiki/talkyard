@@ -7,7 +7,7 @@ let unusualColor = logAndDie.unusualColor;
 let logUnusual = logAndDie.logUnusual, die = logAndDie.die, dieIf = logAndDie.dieIf;
 let logWarning = logAndDie.logWarning, logMessage = logAndDie.logMessage;
 
-var settings: any = {
+let settings: any = {
   host: 'localhost',
   testLocalHostnamePrefix: 'e2e-test--',
   testEmailAddressPrefix: 'e2e-test--',
@@ -19,7 +19,7 @@ var settings: any = {
 
 // ---- Analyze arguments
 
-var args: any = minimist(process.argv.slice(2));
+const args: any = minimist(process.argv.slice(2));
 _.extend(settings, args);
 
 if (settings.localHostname && !settings.localHostname.startsWith('e2e-test-')) {
@@ -58,12 +58,12 @@ if (settings.password && !settings.e2eTestPassword) {
 
 // ---- Setup secrets
 
-var secretsPath = args.secretsPath;
+const secretsPath = args.secretsPath;
 if (secretsPath) {
-  var fs = require('fs');
-  var fileText = fs.readFileSync(secretsPath, { encoding: 'utf8' });
+  const fs = require('fs');
+  const fileText = fs.readFileSync(secretsPath, { encoding: 'utf8' });
   try {
-    var secrets = JSON.parse(fileText);
+    const secrets = JSON.parse(fileText);
     settings = _.extend({}, secrets, settings); // command line stuff overrides file
     if (settings.include3rdPartyDependentTests) {
       if (!settings.gmailEmail) logWarning("No gmailEmail in " + secretsPath);

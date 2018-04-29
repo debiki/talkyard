@@ -8,12 +8,26 @@ import addCommandsToBrowser = require('./utils/commands');
 
 server.initOrDie();
 
-var specs = ['target/e2e/specs/**/*.js'];
+let specs = ['target/e2e/specs/**/*.js'];
 if (settings.only) {
   specs = ['target/e2e/specs/**/*' + settings.only + '*.js'];
 }
 
-var api = { config: {
+
+const browserNameAndOpts: any = {
+  browserName: settings.browserName
+};
+
+// If adding chromeOptions when the browserName is 'firefox', then *Chrome* will get used.
+// So don't. Webdriver.io/Selenium bug? (April 29 2018)
+if (browserNameAndOpts.browserName == 'chrome') {
+  browserNameAndOpts.chromeOptions = {
+    args: ['--disable-notifications'],
+  };
+}
+
+
+const api = { config: {
 
   // Don't want the annoying warning that 'elementIdLocationInView' will be gone soon.
   deprecationWarnings: false,
@@ -46,17 +60,12 @@ var api = { config: {
   // Sauce Labs platform configurator - a great tool to configure your capabilities:
   // https://docs.saucelabs.com/reference/platforms-configurator
 
-  capabilities: [{
-    browserName: settings.browserName,
-    chromeOptions: {
-      args: [
-      '--disable-notifications'],
-    },
+  capabilities: [
+    browserNameAndOpts
     // For Firefox to work, you need to make http://wildcard.localhost addresses work
     // (where 'wildcard' can be anything).
     // See: <../../../docs/wildcard-dot-localhost.md>.
-    // browserName: 'firefox'
-  }],
+  ],
 
   /* This error happened once:
 
@@ -172,7 +181,7 @@ var api = { config: {
         // { browserA: { browserName: ... }, browserB: { ... }}, i.e. many browsers.
         return;
       }
-      var browserNames = _.keys(capabilties);
+      const browserNames = _.keys(capabilties);
       _.each(browserNames, (browserName) => {
         console.log("Adding custom commands to '" + browserName + "' [EsM4GKT5]");
         addCommandsToBrowser(global[browserName]);
