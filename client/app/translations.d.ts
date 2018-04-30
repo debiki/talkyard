@@ -36,7 +36,7 @@ interface TalkyardTranslations {
   MessageN: string;
   MoreDots: string;
   Move: string;
-  Name: "Name",
+  Name: string;
   NameC: string;
   None: string;
   NotImplemented: string;

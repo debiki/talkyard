@@ -2537,6 +2537,7 @@ function pagesFor(browser) {
       console.log(selector + ' is checked: ' + isChecked);
       browser.pause(400);
       isChecked = browser.isSelected(selector);
+      /* maybe works better now? (many months later)
       console.log(selector + ' is checked: ' + isChecked);
       browser.pause(500);
       isChecked = browser.isSelected(selector);
@@ -2546,7 +2547,7 @@ function pagesFor(browser) {
       console.log(selector + ' is checked: ' + isChecked);
       browser.pause(700);
       isChecked = browser.isSelected(selector);
-      console.log(selector + ' is checked: ' + isChecked);
+      console.log(selector + ' is checked: ' + isChecked); */
       if (isChecked === checked)
         break;
       console.log("Checkbox refuses to change state. Clicking it again.");

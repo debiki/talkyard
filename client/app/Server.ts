@@ -135,6 +135,11 @@ export function loadJs(src: string, success?: () => void): any {  // : Promise, 
 let globalStaffScriptLoaded = false;
 
 export function maybeLoadGlobalStaffScript() {
+  // A bit hacky: e2e test site hostnames contain '-test-', and test sites people
+  // create to try out the admin features, instead starts with 'test--' [5UKF03].
+  // We don't want any global feedback widget scripts or whatever, to load for e2e tests
+  // (because the tests would break, if they clicked those widgets) — so don't load any
+  // script, for '-test-' hostnames (but do load, for 'test--' hostnames).
   if (location.hostname.search('-test-') >= 0) return;
   if (!globalStaffScriptLoaded && eds.loadGlobalStaffScript) {
     loadJs(eds.cdnOrServerOrigin + '/-/globalStaffScript.js');
@@ -146,7 +151,7 @@ export function maybeLoadGlobalStaffScript() {
 let globalAdminTestScriptLoaded = false;
 
 export function maybeLoadGlobalAdminTestScript() {
-  if (location.hostname.search('-test-') >= 0) return;
+  if (location.hostname.search('-test-') >= 0) return;  // [5UKF03]
   if (!globalAdminTestScriptLoaded && eds.loadGlobalAdminTestScript) {
     loadJs(eds.cdnOrServerOrigin + '/-/globalAdminTestScript.js');
     globalAdminTestScriptLoaded = true;

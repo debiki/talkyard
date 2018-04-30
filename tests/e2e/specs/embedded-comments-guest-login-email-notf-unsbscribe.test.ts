@@ -213,6 +213,7 @@ describe("emb cmts guest login", () => {
   });
 
   it("The guests' comments are in the review queue, although num-to-approve & -reveiw both are 0", () => {
+    // Here's the code that ensures the guests' comments get reviewed: [4JKFWP4]
     owensBrowser.adminArea.review.waitUntilLoaded();
     owensBrowser.adminArea.review.waitForTextToReview(gundesCommentOne);   // 1
     owensBrowser.adminArea.review.waitForTextToReview(gundesCommentTwo);   // 2

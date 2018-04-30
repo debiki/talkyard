@@ -148,11 +148,11 @@ const LoginDialog = createClassAndFactory({
 
     this.setState({
         isOpen: true,
-        isSignUp: isSignUp,
+        isSignUp,
         isForGuest,
-        loginReason: loginReason,
+        loginReason,
         afterLoginCallback: callback,
-        anyReturnToUrl: anyReturnToUrl,
+        anyReturnToUrl,
         preventClose: preventClose || loginReason === 'LoginToAuthenticate' ||
             loginReason === 'LoginToAdministrate',
         isLoggedIn: !!getSetCookie('dwCoSid'),

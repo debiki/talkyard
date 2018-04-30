@@ -61,8 +61,8 @@ export function linkToReviewPage(): string {
 }
 
 
-export function linkToUserProfilePage(user: Myself | User | UserId | string): string {
-  // If Myself specified, should be loggedin and thus have username or id.
+export function linkToUserProfilePage(user: Myself | User | UserId | string): UserId | string {
+  // If Myself specified, should be logged in and thus have username or id.
   // @ifdef DEBUG
   dieIf(_.isObject(user) && !(<any> user).username && !(<any> user).id, 'TyE7UKWQT2');
   // @endif

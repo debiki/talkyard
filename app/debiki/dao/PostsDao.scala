@@ -313,7 +313,7 @@ trait PostsDao {
     val numFirstToApprove = math.min(MaxNumFirstPosts, settings.numFirstPostsToApprove)
     var numFirstToNotify = math.min(MaxNumFirstPosts, settings.numFirstPostsToReview)
 
-    // Always have staff review a new guest's first two comments, at least,
+    // Always have staff review a new guest's first two comments,
     // regardless of site settings. [4JKFWP4]
     if (author.user.isGuest && (numFirstToApprove + numFirstToNotify) < 2) {
       numFirstToNotify = 2 - numFirstToApprove

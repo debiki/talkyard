@@ -75,8 +75,14 @@ class ThreatLevelsAppSpec extends ReviewStuffAppSuite("6gp4") {
           date = globals.now().toJavaDate, name = "A Guest", email = "aguest@email.co",
           "guestCookie-2480437"))
 
-        info("guests may post replies")
-        var post = reply(guest.id, "reply_63502_a").post
+        info("guests may post replies, the first 2 are always queued for review") // [4JKFWP4]
+        var post = reply(guest.id, "reply_63502_a_1").post
+        post.approvedById mustBe Some(SystemUserId)
+        checkReviewTaskGenerated(post, Seq(ReviewReason.IsByNewUser))
+        post = reply(guest.id, "reply_63502_a_2").post
+        post.approvedById mustBe Some(SystemUserId)
+        checkReviewTaskGenerated(post, Seq(ReviewReason.IsByNewUser))
+        post = reply(guest.id, "reply_63502_a_3").post
         post.approvedById mustBe Some(SystemUserId)
         checkNoReviewTask(post)
 
