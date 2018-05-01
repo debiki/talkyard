@@ -54,13 +54,19 @@ class CreateSiteController @Inject()(cc: ControllerComponents, edContext: EdCont
 
     if (!hasOkForbiddenPassword(request)) {
       val numSites = globals.systemDao.countSites(isTestBool, request.theBrowserIdData)
-      if (numSites.byYou >= globals.config.createSite.maxSitesPerPerson)
-        throwForbidden("EsE7KU20W", "You have created too many forums already, sorry.")
+      val conf = globals.config.createSite
 
-      if (numSites.total >= globals.config.createSite.maxSitesTotal) {
+      val (maxPerPerson, maxTotal, test) =
+        if (isTestBool) (conf.maxTestSitesPerPerson, conf.maxTestSitesTotal, "test")
+        else (conf.maxSitesPerPerson, conf.maxSitesTotal, "")
+
+      if (numSites.byYou >= maxPerPerson)
+        throwForbidden("EsE7KU20W", s"You have created too many $test forums already, sorry.")
+
+      if (numSites.total >= maxTotal) {
         globals.config.createSite.tooManyTryLaterPagePath match {
           case None =>
-            throwForbidden("EsE8VK2F4", "People have created too many forums already, sorry.")
+            throwForbidden("EsE8VK2F4", s"People have created too many $test forums already, sorry.")
           case Some(path) =>
             throwTemporaryRedirect(path)
         }

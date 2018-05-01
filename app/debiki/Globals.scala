@@ -895,10 +895,16 @@ class Config(conf: play.api.Configuration) {
 
   object createSite {
     private def path = Config.CreateSitePath
+
     REFACTOR; RENAME // to ...tooManyTryLaterUrl
     val tooManyTryLaterPagePath: Option[String] = conf.getString(s"$path.tooManyTryLaterPagePath")
+
     val maxSitesPerPerson: Int = conf.getInt(s"$path.maxSitesPerIp") getOrElse 10
+    val maxTestSitesPerPerson: Int = conf.getInt(s"$path.maxTestSitesPerIp") getOrElse maxSitesPerPerson * 3
+
     val maxSitesTotal: Int = conf.getInt(s"$path.maxSitesTotal") getOrElse 1000
+    val maxTestSitesTotal: Int = conf.getInt(s"$path.maxTestSitesTotal") getOrElse maxSitesTotal * 3
+
     REFACTOR; RENAME // Later: rename to ed.createSite.newSiteQuotaMBs?
     val quotaLimitMegabytes: Option[Int] =
       conf.getInt("talkyard.newSite.quotaLimitMegabytes")
