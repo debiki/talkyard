@@ -97,10 +97,14 @@ function loadCommentsCreateEditor() {
     style: {
       display: 'none',
       width: '100%',
-      // height will be set once opened.
+      // The height will be set once opened.
       left: 0,
       position: 'fixed',
-      'z-index': 1,
+      // Some websites have sidebars with z-index > 0. Try to place the editor above them,
+      // otherwise parts of the editor will be obscured by the sidebars.
+      // Bootstrap's modal's z-index is 1040 by default (at least was in the past)
+      // so stay < 1040.
+      'z-index': 1000,
       bottom: 0,
       'box-sizing': 'content-box',
       cursor: 'ns-resize',
