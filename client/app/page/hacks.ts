@@ -102,6 +102,9 @@ export function processPosts() {
   processTimeAgo();
   hideShowCollapseButtons();
   addCanScrollHintsSoon();
+  if (talkyard.postElemPostProcessor) {
+    talkyard.postElemPostProcessor('t_PageContent');
+  }
 }
 
 

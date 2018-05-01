@@ -56,7 +56,7 @@ export const ChatMessages = createComponent({
         ? ChatMessageEditor({ store: store, scrollDownToViewNewMessage: this.scrollDown })
         : JoinChatButton({});
     return (
-      r.div({ className: 'esChatPage dw-page' },
+      r.div({ className: 'esChatPage dw-page', id: 't_PageContent' },
         TitleAndLastChatMessages({ store: store, ref: 'titleAndMessages' }),
         FixedAtBottom({ ref: 'fixedAtBottom' },
           editorOrJoinButton)));

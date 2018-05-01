@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2017 Kaj Magnus Lindberg
+ * Copyright (c) 2015-2018 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -1201,6 +1201,11 @@ interface Rect {
   left: number;
   right: number;
   bottom: number;
+}
+
+
+interface TalkyardApi {  // [5ABJH72]
+  postElemPostProcessor?: (elem: any) => void;
 }
 
 // vim: et ts=2 sw=2 tw=0 fo=r list

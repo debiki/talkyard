@@ -2,6 +2,8 @@
 
 // The variables declared here are initialized in a certain <head><script>.  [5JWKA27]
 
+declare const talkyard: TalkyardApi;
+
 declare namespace eds {
   const pubSiteId: string;
   const siteId: number;  // only in Dev mode

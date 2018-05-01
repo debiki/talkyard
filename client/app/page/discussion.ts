@@ -318,7 +318,7 @@ export const TitleBodyComments = createComponent({
       r.div({ className: anyAboutCategoryClass },
         helpMessageAboveTitle,
         anyAboutCategoryTitle,
-        r.div({ className: 'debiki dw-page' },
+        r.div({ className: 'debiki dw-page', id: 't_PageContent' },
           anyTitle,
           anyPostHeader,
           helpMessageBelowTitle,

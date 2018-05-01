@@ -122,6 +122,9 @@ export const Editor = createComponent({
     if (!prevState.visible && this.state.visible) {
       this.makeSpaceAtBottomForEditor();
     }
+    if (talkyard.postElemPostProcessor && prevState.safePreviewHtml !== this.state.safePreviewHtml) {
+      talkyard.postElemPostProcessor('t_E_Preview');
+    }
   },
 
   componentWillUnmount: function() {
@@ -1153,7 +1156,7 @@ export const Editor = createComponent({
             r.div({ className: 'preview-area', style: previewStyles },
               r.div({}, t.e.PreviewC + (titleInput ? t.e.TitleExcl : '')),
               previewHelp,
-              r.div({ className: 'preview', ref: 'preview',
+              r.div({ className: 'preview', id: 't_E_Preview', ref: 'preview',
                   dangerouslySetInnerHTML: { __html: this.state.safePreviewHtml }})),
             r.div({ className: 'submit-cancel-btns' },
               PrimaryButton({ onClick: this.onSaveClick, tabIndex: 1, className: 'e2eSaveBtn' },

@@ -52,9 +52,9 @@ esCB            = context bar (the right sidebar)
 esE             = The editor, no, esE = old, now s_E:
 s_E             = The editor
 s_E_E           = The editor, in edit mode
-s_E_Prv         = The editor, in preview mode
 s_E_Max         = The editor, maximized
 s_E_Min         = The editor, minimized
+t_E_Preview     = The editor preview
 
 esEID           = Edit intro dialog
 
