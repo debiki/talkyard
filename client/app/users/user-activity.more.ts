@@ -72,7 +72,7 @@ export const UsersActivity = createFactory({
               LiNavLink({ to: uap + 'topics', className: 's_UP_Act_Nav_TopicsB' }, "Topics"))),
               //LiNavLink({ to: uap + 'likes-given' }, "Likes Given"),
               //LiNavLink({ to: uap + 'likes-received' }, "Likes Received"))),
-          r.div({ className: 's_UP_Act_List' },
+          r.div({ className: 's_UP_Act_List', id: 't_UP_Act_List' },
             hiddenForSomeElem,
             childRoute))));
   }
@@ -119,6 +119,13 @@ const UsersPosts = createFactory({
       this.setState({
         posts: response.posts,
         author: response.author,
+      }, () => {
+        // BUG but rather harmless. Runs processPosts (e.g. MathJax) also on topic titles,
+        // although that's not done in the forum topic list or full page title.
+        // Should instead iterate over all posts, give to processPosts one at a time?
+        // (Right now, MathJax would process math like `\[....\]` inside titles, here, which
+        // might look a bit funny.)
+        debiki2.page.Hacks.processPosts('t_UP_Act_List');
       });
     });
   },

@@ -39,10 +39,13 @@ case class LoginNotFoundException(siteId: SiteId, userId: UserId)
 trait UserDao {
   self: SiteDao =>
 
-  import self.context.globals
   import self.context.security
 
   def addUserStats(moreStats: UserStats)(transaction: SiteTransaction) {
+    // Exclude superadmins. Maybe should incl system? [EXCLSYS]
+    if (moreStats.userId == SystemUserId || moreStats.userId == User.SuperAdminId)
+      return
+
     val anyStats = transaction.loadUserStats(moreStats.userId)
     val stats = anyStats.getOrDie("EdE2WKZ8A4", s"No stats for user $siteId:${moreStats.userId}")
     val newStats = stats.addMoreStats(moreStats)
@@ -1413,7 +1416,10 @@ trait UserDao {
   def loadUsersOnlineStuff(): UsersOnlineStuff = {
     usersOnlineCache.get(siteId, new ju.function.Function[SiteId, UsersOnlineStuff] {
       override def apply(dummySiteId: SiteId): UsersOnlineStuff = {
-        val (userIds, numStrangers) = redisCache.loadOnlineUserIds()
+        val (userIdsInclSystem, numStrangers) = redisCache.loadOnlineUserIds()
+        // If a superadmin is visiting the site (e.g. to help fixing a config error), don't  [EXCLSYS]
+        // show hen in the online list — hen isn't a real member.
+        val userIds = userIdsInclSystem.filterNot(id => id == SystemUserId || id == User.SuperAdminId)
         val users = readOnlyTransaction { transaction =>
           transaction.loadUsers(userIds)
         }

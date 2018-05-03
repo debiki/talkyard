@@ -98,12 +98,13 @@ export function reactRouterLinkifyTopHeaderLinks() {
 }
 
 
-export function processPosts() {
-  processTimeAgo();
+export function processPosts(startElemId?: string) {
+  const startElemSelector = startElemId ? '#' + startElemId : undefined;
+  processTimeAgo(startElemSelector);
   hideShowCollapseButtons();
   addCanScrollHintsSoon();
   if (talkyard.postElemPostProcessor) {
-    talkyard.postElemPostProcessor('t_PageContent');
+    talkyard.postElemPostProcessor(startElemId || 't_PageContent');
   }
 }
 

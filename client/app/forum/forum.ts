@@ -832,6 +832,13 @@ export const TopicsList = createComponent({
     return {};
   },
 
+  componentDidMount: function() {
+    // Sometimes the relevant topics are cached / loaded already, and will be
+    // rendered directly when mounting. Then need to process time ago, here directly
+    // (rather than in ..DidUpdate(), which runs after done loading from server.)
+    processTimeAgo();
+  },
+
   componentDidUpdate: function() {
     processTimeAgo();
   },

@@ -81,6 +81,11 @@ const HostnameEditorDialog = createComponent({
           ". 2) Don't delete the old CNAME — leave it as is. Later, you can click a certain ",
           r.b({}, "Redirect old addresses"),  // dupl button name [5KFU2R0]
           " button to redirect visitors from the old address to the new."),
+        r.p({}, "If you use ", r.b({}, "CloudFlare"),
+          ", either 1) configure CloudFlare to send the traffic directly to " +
+          "Talkyard, bypassing CloudFlare, or 2) use Full SSL or Full SSL (Strict). " +
+          "But don't use Flexible SSL — that would result in a redirect loop (because Talkyard " +
+          "upgrades from http to https)."),
         r.p({}, "You cannot change address too many times or too often."),
         PatternInput({ label: "New address: (hostname)", ref: 'hostnameInput',
           className: 's_A_NewAdrD_HostnI',

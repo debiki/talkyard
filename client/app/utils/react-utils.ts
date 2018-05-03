@@ -96,7 +96,8 @@ export function processTimeAgo(selector?: string) {
 
   // First handle all long version timestamps (don't end with -ltr ("letter")).
   // Result: e.g. "5 hours ago"
-  _.each($all(selector + ' .dw-ago:not(.' + timeDoneClass + ')'), function(elem: HTMLElement) {
+  const elemsLongAgoText = $all(selector + ' .dw-ago:not(.' + timeDoneClass + ')');
+  _.each(elemsLongAgoText, function(elem: HTMLElement) {
     const isoDate = elem.textContent;
     const then = debiki2['isoDateStringToMillis'](isoDate); // typescript compilation error without []
     const timeAgoString = debiki.prettyDuration(then, now);
@@ -107,7 +108,8 @@ export function processTimeAgo(selector?: string) {
 
   // Then handle all one-letter timestamps (end with -ltr ("letter")).
   // Result: e.g. "5h" (instead of "5 hours ago").
-  _.each($all(selector + ' .dw-ago-ltr:not(.' + timeDoneClass + ')'), function(elem: HTMLElement) {
+   const elemsLetter = $all(selector + ' .dw-ago-ltr:not(.' + timeDoneClass + ')');
+  _.each(elemsLetter, function(elem: HTMLElement) {
     const isoDate = elem.textContent;
     const then = debiki2['isoDateStringToMillis'](isoDate); // typescript compilation error without []
     const durationLetter = debiki.prettyLetterDuration(then, now);

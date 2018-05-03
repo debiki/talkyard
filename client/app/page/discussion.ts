@@ -739,7 +739,9 @@ const RootPostAndComments = createComponent({
 
     // Draw a horizontal line above the first append-bottom comment, if there're normal
     // best-first-order comments above. And text that explains how this works.
-    if (firstAppendedIndex < threadedChildren.length) {
+    // After [flat-comments] added: remove pageRole != FormalMessage
+    if (firstAppendedIndex < threadedChildren.length &&
+        pageRole !== PageRole.FormalMessage && pageRole !== PageRole.EmbeddedComments) {
       const line =
         r.li({ className: 's_AppendBottomDiv', key: 'ApBtmDv' },
           r.span({},

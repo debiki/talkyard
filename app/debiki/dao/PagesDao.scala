@@ -274,7 +274,7 @@ trait PagesDao {
     transaction.insertPost(titlePost)
     transaction.insertPost(bodyPost)
     // By default, one follows all activity on a page one has created — unless this is some page
-    // that gets auto created by System.
+    // that gets auto created by System. [EXCLSYS]
     if (author.id != SystemUserId) {
       transaction.saveUserPageSettings(
         authorId, pageId = pageId, UserPageSettings(NotfLevel.WatchingAll))
