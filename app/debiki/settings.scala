@@ -23,6 +23,8 @@ import play.api.libs.json._
 import scala.collection.immutable
 import JsX._
 import debiki.EdHttp.throwBadRequest
+import scala.collection.mutable.ArrayBuffer
+import scala.util.matching.Regex
 
 
 
@@ -288,7 +290,15 @@ case class EffectiveSettings(
   def coreMemberFlagWeight: Float = firstInChain(_.coreMemberFlagWeight) getOrElse default.coreMemberFlagWeight
 
 
-  def isGuestLoginAllowed =
+  /** The allowEmbeddingFrom field, but with any url path removed (if included, iframe won't
+    * load at all in Chrome — url path not allowed? Weird, should be allowed:
+    *    https://www.w3.org/TR/CSP2/#frame_ancestors ),
+    * and http:// origins duplicated to https://, so https works too.
+    */
+  val allowEmbeddingFromBetter: String =
+    EffectiveSettings.improveAllowEmbeddingFrom(allowEmbeddingFrom)
+
+  def isGuestLoginAllowed: Boolean =
     allowGuestLogin && !userMustBeAuthenticated && !userMustBeApproved &&
       !inviteOnly && allowSignup
 
@@ -299,6 +309,34 @@ case class EffectiveSettings(
   }
 
 }
+
+
+
+object EffectiveSettings {
+  val UrlPathRegex: Regex = """^(https?:\/\/)?([^\/]+)(\/.*)?$""".r
+
+  def improveAllowEmbeddingFrom(allowEmbeddingFrom: String): String = {
+    val okSources = ArrayBuffer[String]()
+    val ancestorSourcesMaybePath = allowEmbeddingFrom.split(' ').filterNot(_.isEmpty)
+    // Exclude the url path = $3.
+    val sourcesNoPath = ancestorSourcesMaybePath.map(UrlPathRegex.replaceAllIn(_, "$1$2"))
+    sourcesNoPath foreach { source =>
+      if (!okSources.contains(source)) {
+        okSources.append(source)
+      }
+      // Add https:// if http: only...
+      if (source startsWith "http:") {
+        val sourceWithHttps = source.replaceFirst("http:", "https:")
+        if (!sourcesNoPath.exists(_.contains(sourceWithHttps)) &&
+            !okSources.exists(_.contains(sourceWithHttps))) {  // ... and not added already
+          okSources.append(sourceWithHttps)
+        }
+      }
+    }
+    okSources.mkString(" ")
+  }
+}
+
 
 
 object Settings2 {

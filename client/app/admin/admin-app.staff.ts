@@ -637,13 +637,17 @@ const EmbeddedCommentsSettings = createFactory({
 
     return (
       r.div({},
-        Setting2(props, { type: 'text', label: "Allow embedding from", id: 'e_AllowEmbFrom',
+        Setting2(props, { type: 'textarea', label: "Allow embedding from", id: 'e_AllowEmbFrom',
+          className: 's_A_Ss_AllowEmbFrom',
           help: r.span({}, "Lets another website (your website) show embedded contents. " +
-            "You can add many domains — separate them with spaces."),
+            "You can add many domains — separate them with spaces or newlines."),
           placeholder: "https://www.yourblog.com",
-          getter: (s: Settings) => s.allowEmbeddingFrom,
+          getter: (s: Settings) =>
+            // Replace spaces with newlines, otherwise hard to read.
+            _.isUndefined(s.allowEmbeddingFrom) ? undefined : s.allowEmbeddingFrom.replace(/\s+/g, '\n'),
           update: (newSettings: Settings, target) => {
-            newSettings.allowEmbeddingFrom = target.value;
+            // Change back from \n to space — browsers want spaces in allow-from.
+            newSettings.allowEmbeddingFrom = target.value.replace(/\n+/g, ' ');
           }
         }),
         anyInstructions));
