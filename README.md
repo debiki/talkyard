@@ -67,9 +67,13 @@ Chat:
 
 ![ed-e2e-chat-owen-maria](https://cloud.githubusercontent.com/assets/7477359/19674424/608c49aa-9a88-11e6-8ccd-c2e7ceebd0c2.jpg)
 
-Hacker News / Reddit style discussion:
+Question-Answers:
 
+![Q&A about how to wake up on time](https://user-images.githubusercontent.com/7477359/39368115-0549fad0-4a39-11e8-9bba-703d595d2b96.jpg)
+<!--
+Hacker News / Reddit style discussion:
 ![ed-discussion-semantics-of-upvote-2013](https://cloud.githubusercontent.com/assets/7477359/19650769/bea906aa-9a0a-11e6-8ea2-9ad771981f46.jpg)
+-->
 
 Good user experience (at least we're trying) — for example there's an admin-getting-started guide
 for you, if you create a forum:
