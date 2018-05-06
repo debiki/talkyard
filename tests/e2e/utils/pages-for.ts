@@ -69,7 +69,11 @@ function pagesFor(browser) {
 
 
     switchToEmbeddedCommentsIrame: function() {
+      // These pause() avoids: "FAIL: Error: Remote end send an unknown status code", in Chrome, [E2EBUG]
+      // here: [6UKB2FQ]
+      browser.pause(75);
       browser.frameParent();
+      browser.pause(75);
       browser.switchToFrame('iframe#ed-embedded-comments');
     },
 

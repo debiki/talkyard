@@ -186,7 +186,7 @@ describe("emb cmts guest login", () => {
   });
 
   it("A dog, named Fido, takes Gunde's laptop, logs out Gunde", () => {
-    fidosBrowser.switchToEmbeddedCommentsIrame();
+    fidosBrowser.switchToEmbeddedCommentsIrame();  // [6UKB2FQ]
     fidosBrowser.metabar.clickLogout();
   });
 
