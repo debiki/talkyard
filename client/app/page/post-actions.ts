@@ -143,12 +143,13 @@ export const PostActions = createComponent({
       if (this.isGone) return;
       // Toggle highlighting first, because it'll be cleared later if the
       // editor is closed, and then we don't want to toggle it afterwards.
-      $h.toggleClass(eventTarget, 'dw-replying');
+      const inclInReply = $h.toggleClass(eventTarget, 'dw-replying');
       if (eds.isInEmbeddedCommentsIframe) {
-        window.parent.postMessage(JSON.stringify(['editorToggleReply', post.nr]), eds.embeddingOrigin);
+        window.parent.postMessage(
+            JSON.stringify(['editorToggleReply', [post.nr, inclInReply]]), eds.embeddingOrigin);
       }
       else {
-        debiki2.editor.toggleWriteReplyToPost(post.nr, newPostType);
+        debiki2.editor.toggleWriteReplyToPost(post.nr, inclInReply, newPostType);
       }
     }, true);
   },

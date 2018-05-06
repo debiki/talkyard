@@ -314,15 +314,19 @@ export const $h = {
   },
 
 
-  toggleClass: function(elem: Element, clazz: string) {
+  // Returns true if the class was added, that is, is present afterwards.
+  //
+  toggleClass: function(elem: Element, clazz: string): boolean {
     if (!clazz) return;
     // @ifdef DEBUG
     dieIf(/#\. /.test(clazz), 'EdE5JFB8W2');
     // @endif
     if (!elem) return;
     const classes = elem.classList;
-    if (classes.contains(clazz)) classes.remove(clazz);
-    else classes.add(clazz);
+    const shallAdd = !classes.contains(clazz);
+    if (shallAdd) classes.add(clazz);
+    else classes.remove(clazz);
+    return shallAdd;
   },
 
 

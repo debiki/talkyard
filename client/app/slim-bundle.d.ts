@@ -140,7 +140,7 @@ declare namespace debiki2 {
     var SelectCategoryDropdown;
 
     // from editor-bundle-not-yet-loaded.ts:
-    function toggleWriteReplyToPost(postId: number, anyPostType?: number);
+    function toggleWriteReplyToPost(postId: number, inclInReply: boolean, anyPostType?: number);
     function openEditorToEditPost(postId: number, onDone?);
     function editNewForumPage(categoryId: number, role: PageRole);
     function openToEditChatTitleAndPurpose();
@@ -251,6 +251,9 @@ declare namespace debiki2 {
   namespace page {
     var openNotfsLevelDropdown;
     var Post;
+    namespace Hacks {
+      function processPosts(startElemId?: string);
+    }
   }
   namespace pagedialogs {
     var getServerErrorDialog;

@@ -70,8 +70,9 @@ function onMessage(event) {
     case 'editorToggleReply':
       // This message is sent from an embedded comments page to the embedded editor.
       // It opens the editor to write a reply to `postId`.
-      var postId = eventData;
-      debiki2.editor.toggleWriteReplyToPost(postId, PostType.Normal);
+      var postId = eventData[0];
+      var inclInReply = eventData[1];
+      debiki2.editor.toggleWriteReplyToPost(postId, inclInReply, PostType.Normal);
       break;
     case 'handleReplyResult':
       // This message is sent from the embedded editor <iframe> to the comments

@@ -292,7 +292,9 @@ case class EffectiveSettings(
 
   /** The allowEmbeddingFrom field, but with any url path removed (if included, iframe won't
     * load at all in Chrome — url path not allowed? Weird, should be allowed:
-    *    https://www.w3.org/TR/CSP2/#frame_ancestors ),
+    *    https://www.w3.org/TR/CSP2/#frame_ancestors, but this different docs says it's *not* allowed?:
+    *    https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy/frame-ancestors
+    *   — is CSP2 (the first link above) something newer & that supports /a/path/too/  ? )
     * and http:// origins duplicated to https://, so https works too.
     */
   val allowEmbeddingFromBetter: String =

@@ -30,9 +30,9 @@ function ensureEditorCreated(success: (editor: any) => void) {
 }
 
 
-export function toggleWriteReplyToPost(postId: number, anyPostType?: number) {
+export function toggleWriteReplyToPost(postId: number, inclInReply: boolean, anyPostType?: number) {
   ensureEditorCreated(editor => {
-    editor.toggleWriteReplyToPost(postId, anyPostType);
+    editor.toggleWriteReplyToPost(postId, inclInReply, anyPostType);
   });
 }
 

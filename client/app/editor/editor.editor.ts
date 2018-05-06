@@ -197,9 +197,9 @@ export const Editor = createComponent({
       });
     });
 
-    var inputElem = this.refs.uploadFileInput;
+    const inputElem = this.refs.uploadFileInput;
     FileAPI.event.on(inputElem, 'change', (event) => {
-      var files = FileAPI.getFiles(event);
+      const files = FileAPI.getFiles(event);
       this.uploadFiles(files);
     });
   },
@@ -225,7 +225,7 @@ export const Editor = createComponent({
           });
         }
         else {
-          var percent = event.loaded / event.total * 100;
+          const percent = event.loaded / event.total * 100;
           pagedialogs.getProgressBarDialog().setDonePercent(percent);
         }
       },
@@ -243,12 +243,12 @@ export const Editor = createComponent({
           return;
         }
         if (this.isGone) return;
-        var fileUrlPath = JSON.parse(xhr.response);
+        const fileUrlPath = JSON.parse(xhr.response);
         dieIf(!_.isString(fileUrlPath), 'DwE06MF22');
         dieIf(!_.isString(this.state.text), 'EsE5FYZ2');
-        var file = xhr.files[0];
-        var linkHtml = this.makeUploadLink(file, fileUrlPath);
-        var perhapsNewline = this.state.text.endsWith('\n') ? '' : '\n';
+        const file = xhr.files[0];
+        const linkHtml = this.makeUploadLink(file, fileUrlPath);
+        const perhapsNewline = this.state.text.endsWith('\n') ? '' : '\n';
         this.setState({
           text: this.state.text + perhapsNewline + '\n' +
             // (There's a sanitizer for this — for everything in the editor.)
@@ -304,17 +304,17 @@ export const Editor = createComponent({
     dieIf(!url.match(/^[0-9a-z/\.-]+$/),
         "Bad image relative path: " + url + " [DwE8PUMW2]");
 
-    var parts = url.split('.');
-    var suffix = parts.length > 1 ? _.last(parts) : '';
+    const parts = url.split('.');
+    const suffix = parts.length > 1 ? _.last(parts) : '';
 
     // (SVG doesn't work in old browsers, fine. tif doesn't work for me.)
-    var isImage = suffix === 'png' || suffix === 'jpg' || suffix === 'jpeg' || suffix === 'gif' ||
+    const isImage = suffix === 'png' || suffix === 'jpg' || suffix === 'jpeg' || suffix === 'gif' ||
         suffix === 'mpo' || suffix === 'bmp' || suffix === 'svg';
 
     // Only .mp4 is supported by all browsers.
-    var isVideo = suffix === 'mp4' || suffix === 'ogg' || suffix === 'webm';
+    const isVideo = suffix === 'mp4' || suffix === 'ogg' || suffix === 'webm';
 
-    var link;
+    let link;
     if (isImage) {
       link = '<img src="' + url + '"></img>';
     }
@@ -327,14 +327,27 @@ export const Editor = createComponent({
     return link;
   },
 
-  toggleWriteReplyToPost: function(postNr: number, anyPostType?: number) {
+  toggleWriteReplyToPost: function(postNr: number, inclInReply: boolean, anyPostType?: number) {
     if (this.alertBadState('WriteReply'))
       return;
 
     // Insert postNr into the list of posts we're replying to — or remove it, if present. (I.e. toggle.)
-    const postNrs = this.state.replyToPostNrs;
+    let postNrs = this.state.replyToPostNrs;
     const index = postNrs.indexOf(postNr);
-    if (index === -1) {
+    if (inclInReply && index >= 0) {
+      // Editor out of sync with reply button states: reply button wants to add,
+      // editor wants to remove the post, from the reply-to-list.
+      // Happened in embedded comments iframe because of a bug. Fixed now, but keep this
+      // anyway, in case there're other such iframe + iframe sync bugs?
+      // @ifdef DEBUG
+      console.warn("Discussion button and editor reply-list out of sync: " +
+          "inclInReply && index >= 0  [TyE5UKJWVDQ2]");
+      debugger;
+      // @endif
+      postNrs = [postNr];
+      this.showEditor();
+    }
+    else if (index === -1) {
       postNrs.push(postNr);
       this.showEditor();
     }
@@ -387,7 +400,7 @@ export const Editor = createComponent({
     // But other topics should be placed in a category.
     dieIf(role !== PageRole.PrivateChat && !categoryId, 'EsE8PE2B');
     this.showEditor();
-    var text = this.state.text || this.state.draft || '';
+    const text = this.state.text || this.state.draft || '';
     this.setState({
       anyPostType: null,
       newForumTopicCategoryId: categoryId,
@@ -445,10 +458,10 @@ export const Editor = createComponent({
   showAndFadeOutBackdrop: function() {
     // Later: Start using util.FadingBackdrop instead. [4KEF0YUU2]
     this.setState({ backdropOpacity: 0.83 });
-    var fadeBackdrop = () => {
+    const fadeBackdrop = () => {
       if (this.isGone) return;
-      var opacity = this.state.backdropOpacity;
-      var nextOpacity = opacity < 0.01 ? 0 : opacity - 0.009;
+      const opacity = this.state.backdropOpacity;
+      const nextOpacity = opacity < 0.01 ? 0 : opacity - 0.009;
       this.setState({ backdropOpacity: nextOpacity });
       if (nextOpacity) {
         setTimeout(fadeBackdrop, 16);
@@ -503,9 +516,9 @@ export const Editor = createComponent({
   loadGuidelines: function(writingWhat: WritingWhat, categoryId?: number, pageRole?: PageRole) {
     const store: Store = ReactStore.allData();
     const page: Page = store.currentPage;
-    var theCategoryId = categoryId || page.categoryId;
-    var thePageRole = pageRole || page.pageRole;
-    var currentGuidelines = this.state.guidelines;
+    const theCategoryId = categoryId || page.categoryId;
+    const thePageRole = pageRole || page.pageRole;
+    const currentGuidelines = this.state.guidelines;
     if (currentGuidelines &&
         currentGuidelines.categoryId === theCategoryId &&
         currentGuidelines.pageRole === thePageRole &&
@@ -518,9 +531,9 @@ export const Editor = createComponent({
         this.setState({ guidelines: null });
         return;
       }
-      var guidelinesHash = hashStringToNumber(guidelinesSafeHtml);
-      var hiddenGuidelinesHashes = getFromLocalStorage('dwHiddenGuidelinesHashes') || {};
-      var isHidden = hiddenGuidelinesHashes[guidelinesHash];
+      const guidelinesHash = hashStringToNumber(guidelinesSafeHtml);
+      const hiddenGuidelinesHashes = getFromLocalStorage('dwHiddenGuidelinesHashes') || {};
+      const isHidden = hiddenGuidelinesHashes[guidelinesHash];
       this.setState({
         guidelines: {
           writingWhat: writingWhat,
@@ -537,20 +550,20 @@ export const Editor = createComponent({
   // So, if the guidelines get changed, they'll be shown again (good). COULD delete old hashes if
   // we end up storing > 100? hashes?
   hideGuidelines: function() {
-    var guidelines = this.state.guidelines;
+    const guidelines = this.state.guidelines;
     guidelines.hidden = true;
     this.setState({
       guidelines: guidelines,
       showGuidelinesInModal: false,
     });
-    var hash = hashStringToNumber(guidelines.safeHtml);
-    var hiddenGuidelinesHashes = getFromLocalStorage('dwHiddenGuidelinesHashes') || {};
+    const hash = hashStringToNumber(guidelines.safeHtml);
+    const hiddenGuidelinesHashes = getFromLocalStorage('dwHiddenGuidelinesHashes') || {};
     hiddenGuidelinesHashes[hash] = true;
     putInLocalStorage('dwHiddenGuidelinesHashes', hiddenGuidelinesHashes);
   },
 
   showGuidelines: function() {
-    var guidelines = this.state.guidelines;
+    const guidelines = this.state.guidelines;
     guidelines.hidden = false;
     this.setState({ guidelines: guidelines });
     // Leave hidden on page reload? I.e. don't update localStorage.
@@ -563,7 +576,7 @@ export const Editor = createComponent({
       return;
 
     // If the guidelines are visible, we don't need no modal.
-    var rect = this.refs.guidelines.getBoundingClientRect();
+    const rect = this.refs.guidelines.getBoundingClientRect();
     if (rect.top >= 0)
       return;
 
@@ -578,14 +591,14 @@ export const Editor = createComponent({
 
   isTitleOk: function() {
     // For now
-    var title = this.state.title ? this.state.title.trim() : null;
+    const title = this.state.title ? this.state.title.trim() : null;
     if (!title) return false;
     return true;
   },
 
   onTextEdited: function(event) {
     utils.PageUnloadAlerter.addReplaceWarning(WritingSomethingWarningKey, t.e.WritingSomethingWarning);
-    var newText = event.target.value;
+    const newText = event.target.value;
     this.setState({ text: newText });
     this.updatePreview();
   },
@@ -607,7 +620,7 @@ export const Editor = createComponent({
 
   isTextOk: function() {
     // For now
-    var text = this.state.text ? this.state.text.trim() : null;
+    const text = this.state.text ? this.state.text.trim() : null;
     if (!text) return false;
     return true;
   },
@@ -616,12 +629,12 @@ export const Editor = createComponent({
     if (this.isGone) return;
 
     // (COULD verify still edits same post/thing, or not needed?)
-    var isEditingBody = this.state.editingPostId === BodyNr;
-    var sanitizerOpts = {
+    const isEditingBody = this.state.editingPostId === BodyNr;
+    const sanitizerOpts = {
       allowClassAndIdAttr: true, // or only if isEditingBody?
       allowDataAttr: isEditingBody
     };
-    var htmlText = markdownToSafeHtml(this.state.text, window.location.host, sanitizerOpts);
+    const htmlText = markdownToSafeHtml(this.state.text, window.location.host, sanitizerOpts);
     this.setState({
       safePreviewHtml: htmlText
     }, anyCallback);
@@ -720,7 +733,7 @@ export const Editor = createComponent({
 
   startPrivateGroupTalk: function() {
     this.throwIfBadTitleOrText(t.e.PleaseWriteMsgTitle, t.e.PleaseWriteMsg);
-    var state = this.state;
+    const state = this.state;
     Server.startPrivateGroupTalk(state.title, state.text, this.state.newPageRole,
         state.messageToUserIds, (pageId: PageId) => {
       this.clearTextAndClose();
@@ -729,7 +742,7 @@ export const Editor = createComponent({
   },
 
   throwIfBadTitleOrText: function(titleErrorMessage, textErrorMessage) {
-    var errors = '';
+    let errors = '';
     if (titleErrorMessage && isBlank(this.state.title)) {
       errors += titleErrorMessage;
       this.setState({ showTitleErrors: true });
@@ -833,7 +846,7 @@ export const Editor = createComponent({
   },
 
   clearTextAndClose: function() {
-    this.setState({ text: '', draft: null });
+    this.setState({ text: '', draft: null, replyToPostNrs: [], anyPostType: undefined });
     this.closeEditor();
   },
 
@@ -843,46 +856,46 @@ export const Editor = createComponent({
   },
 
   makeTextBold: function() {
-    var newText = wrapSelectedText(this.refs.rtaTextarea.textareaRef, t.e.exBold, '**');
+    const newText = wrapSelectedText(this.refs.rtaTextarea.textareaRef, t.e.exBold, '**');
     this.setState({ text: newText });
     this.updatePreview();
   },
 
   makeTextItalic: function() {
-    var newText = wrapSelectedText(this.refs.rtaTextarea.textareaRef, t.e.exEmph, '*');
+    const newText = wrapSelectedText(this.refs.rtaTextarea.textareaRef, t.e.exEmph, '*');
     this.setState({ text: newText });
     this.updatePreview();
   },
 
   markupAsCode: function() {
-    var newText = wrapSelectedText(this.refs.rtaTextarea.textareaRef, t.e.exPre, '`');
+    const newText = wrapSelectedText(this.refs.rtaTextarea.textareaRef, t.e.exPre, '`');
     this.setState({ text: newText });
     this.updatePreview();
   },
 
   quoteText: function() {
-    var newText = wrapSelectedText(this.refs.rtaTextarea.textareaRef, t.e.exQuoted, '> ', null, '\n\n');
+    const newText = wrapSelectedText(this.refs.rtaTextarea.textareaRef, t.e.exQuoted, '> ', null, '\n\n');
     this.setState({ text: newText });
     this.updatePreview();
   },
 
   addHeading: function() {
-    var newText = wrapSelectedText(this.refs.rtaTextarea.textareaRef, t.e.ExHeading, '### ', null, '\n\n');
+    const newText = wrapSelectedText(this.refs.rtaTextarea.textareaRef, t.e.ExHeading, '### ', null, '\n\n');
     this.setState({ text: newText });
     this.updatePreview();
   },
 
   render: function() {
-    var state = this.state;
-    var store: Store = state.store;
+    const state = this.state;
+    const store: Store = state.store;
     const page: Page = store.currentPage;
-    var me: Myself = store.me;
+    const me: Myself = store.me;
     let settings: SettingsVisibleClientSide = store.settings;
-    var isPrivateGroup = page_isPrivateGroup(this.state.newPageRole);
+    const isPrivateGroup = page_isPrivateGroup(this.state.newPageRole);
 
-    var guidelines = state.guidelines;
-    var guidelinesElem;
-    var showGuidelinesBtn;
+    const guidelines = state.guidelines;
+    let guidelinesElem;
+    let showGuidelinesBtn;
     if (guidelines && guidelines.safeHtml) {
       if (guidelines.hidden) {
         showGuidelinesBtn =
@@ -901,20 +914,20 @@ export const Editor = createComponent({
       }
     }
 
-    var guidelinesModal = GuidelinesModal({ guidelines: guidelines,
+    const guidelinesModal = GuidelinesModal({ guidelines: guidelines,
         isOpen: this.state.showGuidelinesInModal, close: this.hideGuidelines });
 
     // Sometimes it's hard to notice that the editor opens. But by making everything very dark,
     // except for the editor, people will see it for sure. We'll make everything dark only for
     // a short while.
-    var anyBackdrop = this.state.backdropOpacity < 0.01 ? null :
+    const anyBackdrop = this.state.backdropOpacity < 0.01 ? null :
         r.div({ className: 'esEdtr_backdrop', style: { opacity: this.state.backdropOpacity }});
 
-    var titleInput;
-    var pageRoleDropdown;
-    var categoriesDropdown;
+    let titleInput;
+    let pageRoleDropdown;
+    let categoriesDropdown;
     if (this.state.newForumTopicCategoryId || isPrivateGroup) {
-      var titleErrorClass = this.state.showTitleErrors && !this.isTitleOk() ? ' esError' : '';
+      const titleErrorClass = this.state.showTitleErrors && !this.isTitleOk() ? ' esError' : '';
       titleInput =
           r.input({ className: 'title-input esEdtr_titleEtc_title form-control' + titleErrorClass,
               type: 'text', ref: 'titleInput', tabIndex: 1, onChange: this.onTitleEdited,

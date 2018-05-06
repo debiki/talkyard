@@ -567,12 +567,13 @@ const RootPostAndComments = createComponent({
       if (this.isGone) return;
       // Toggle highlighting first, because it'll be cleared later if the
       // editor is closed, and then we don't want to toggle it afterwards.
-      $h.toggleClass(eventTarget, 'dw-replying');
+      const inclInReply = $h.toggleClass(eventTarget, 'dw-replying');
       if (eds.isInEmbeddedCommentsIframe) {
-        window.parent.postMessage(JSON.stringify(['editorToggleReply', BodyNr]), eds.embeddingOrigin);
+        window.parent.postMessage(
+            JSON.stringify(['editorToggleReply', [BodyNr, inclInReply]]), eds.embeddingOrigin);
       }
       else {
-        editor.toggleWriteReplyToPost(BodyNr, postType);
+        editor.toggleWriteReplyToPost(BodyNr, inclInReply, postType);
       }
     });
   },
