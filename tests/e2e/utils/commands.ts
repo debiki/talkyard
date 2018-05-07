@@ -5,6 +5,7 @@ import settings = require('./settings');
 var logMessage = logMessageModule.logMessage;
 var logWarning = logMessageModule.logWarning;
 var die = logMessageModule.die;
+var dieIf = logMessageModule.dieIf;
 
 
 function count(elems): number {
@@ -185,16 +186,28 @@ function addCommandsToBrowser(browser) {
 
 
   browser.addCommand('origin', function(selector, value) {
-    var url = browser.url();
-    var matches = url.value.match(/(https?:\/\/[^\/]+)\//);
-    return matches[1];
+    return findOrigin(browser);
   });
+
+  function findOrigin(browser): string {
+    const url = browser.url();
+    const matches = url.value.match(/(https?:\/\/[^\/]+)\//);
+    if (!matches) {
+      throw Error('NoOrigin');
+    }
+    return matches[1];
+  }
 
 
   browser.addCommand('go', function(url) {
     if (url[0] === '/') {
       // Local url, need to add origin.
-      url = browser.origin() + url;
+      try { url = findOrigin(browser) + url; }
+      catch (ex) {
+        dieIf(ex.message === 'NoOrigin',
+            `When opening the first page: ${url}, you need to specify the server origin [TyE7UKHW2]`);
+        throw ex;
+      }
     }
     logMessage("Go: " + url);
     browser.url(url);

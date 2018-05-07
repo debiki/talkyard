@@ -76,7 +76,7 @@ export const UserPreferences = createFactory({
             r.ul({ className: 'dw-sub-nav nav nav-pills nav-stacked' },
               LiNavLink({ to: aboutPath, className: 's_UP_Prf_Nav_AbtL' }, t.upp.About),
               isGuest || isBuiltInUser ? null : LiNavLink({
-                  to: privacyPath, className: 's_UP_Prf_Nav_AbtL' }, t.upp.Privacy),
+                  to: privacyPath, className: 'e_UP_Prf_Nav_PrivL' }, t.upp.Privacy),
               isGuest || isBuiltInUser ? null : LiNavLink({
                   to: emailsLoginsPath, className: 's_UP_Prf_Nav_EmLgL' }, t.upp.Account))),
          r.div({ className: 's_UP_Act_List' },
@@ -434,7 +434,6 @@ export const Privacy = createFactory({
     const state = this.state;
     const me: Myself = this.props.store.me;
     const user: MemberInclDetails = this.props.user;
-    const isMe = me.id === user.id;
 
     // Dupl Saving... code [7UKBQT2]
     let savingInfo = null;
@@ -442,12 +441,12 @@ export const Privacy = createFactory({
       savingInfo = r.i({}, ' ' + t.SavingDots);
     }
     else if (this.state.savingStatus === 'Saved') {
-      savingInfo = r.i({}, ' ' + t.SavedDot);
+      savingInfo = r.i({ className: 'e_Saved' }, ' ' + t.SavedDot);
     }
 
     return (
       r.form({ role: 'form', onSubmit: this.savePrivacyPrefs },
-        Input({ type: 'checkbox', className: '',
+        Input({ type: 'checkbox', className: 'e_HideActivityStrangersCB',
             label: rFragment({},
               t.upp.HideActivityStrangers_1, r.br(),
               t.upp.HideActivityStrangers_2),
@@ -457,7 +456,7 @@ export const Privacy = createFactory({
               hideActivityForAll: false,
             }) }),
 
-        Input({ type: 'checkbox', className: '',
+        Input({ type: 'checkbox', className: 'e_HideActivityAllCB',
             label: rFragment({},
               t.upp.HideActivityAll_1, r.br(),
               t.upp.HideActivityAll_2,),
@@ -467,7 +466,7 @@ export const Privacy = createFactory({
               hideActivityForAll: event.target.checked,
             }) }),
 
-        InputTypeSubmit({ id: '', style: { marginTop: '11px' }, value: t.Save }),
+        InputTypeSubmit({ className: 'e_SavePrivacy', style: { marginTop: '11px' }, value: t.Save }),
         savingInfo));
   }
 });

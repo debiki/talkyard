@@ -336,15 +336,15 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
 
 
   private def listPostsImpl(authorId: UserId, all: Boolean, request: GetRequest): mvc.Result = {
-    import request.{dao, user => caller}
+    import request.{dao, requester}
 
     request.context
 
-    val callerIsStaff = caller.exists(_.isStaff)
-    val callerIsStaffOrAuthor = callerIsStaff || caller.exists(_.id == authorId)
+    val requesterIsStaff = requester.exists(_.isStaff)
+    val requesterIsStaffOrAuthor = requesterIsStaff || requester.exists(_.id == authorId)
     val author = dao.getUser(authorId) getOrElse throwNotFound("EdE2FWKA9", "Author not found")
 
-    throwForbiddenIfActivityPrivate(authorId, caller, dao)
+    throwForbiddenIfActivityPrivate(authorId, requester, dao)
 
     // For now. LATER: if really many posts, generate an archive in the background.
     // And if !all, and > 100 posts, add a load-more button.
@@ -359,8 +359,8 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
     val posts = for {
       post <- postsInclForbidden
       pageMeta <- pageMetaById.get(post.pageId)
-      if dao.maySeePostUseCache(post, pageMeta, caller,
-        maySeeUnlistedPages = callerIsStaffOrAuthor)._1
+      if dao.maySeePostUseCache(post, pageMeta, requester,
+        maySeeUnlistedPages = requesterIsStaffOrAuthor)._1
     } yield post
 
     val pageIds = posts.map(_.pageId).distinct
@@ -371,13 +371,13 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
       val pageMeta = pageMetaById.get(post.pageId) getOrDie "EdE2KW07E"
       val tags = tagsByPostId.getOrElse(post.id, Set.empty)
       var postJson = dao.jsonMaker.postToJsonOutsidePage(post, pageMeta.pageRole,
-        showHidden = true, includeUnapproved = callerIsStaffOrAuthor, tags)
+        showHidden = true, includeUnapproved = requesterIsStaffOrAuthor, tags)
 
       pageStuffById.get(post.pageId) map { pageStuff =>
         postJson += "pageId" -> JsString(post.pageId)
         postJson += "pageTitle" -> JsString(pageStuff.title)
         postJson += "pageRole" -> JsNumber(pageStuff.pageRole.toInt)
-        if (callerIsStaff && (post.numPendingFlags > 0 || post.numHandledFlags > 0)) {
+        if (requesterIsStaff && (post.numPendingFlags > 0 || post.numHandledFlags > 0)) {
           postJson += "numPendingFlags" -> JsNumber(post.numPendingFlags)
           postJson += "numHandledFlags" -> JsNumber(post.numHandledFlags)
         }
@@ -483,7 +483,12 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
 
 
   private def maySeeActivity(userId: UserId, requester: Option[User], dao: SiteDao): Boolean = {
-    if (!User.isMember(userId) || requester.exists(_.isStaff))
+    // Guests cannot hide their activity. One needs to create a real account.
+    if (!User.isMember(userId))
+      return true
+
+    // Staff and the user henself can view hens activity.
+    if (requester.exists(r => r.isStaff || r.id == userId))
       return true
 
     val memberInclDetails = dao.loadTheMemberInclDetailsById(userId)

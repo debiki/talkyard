@@ -45,6 +45,11 @@ export const UsersActivity = createFactory({
     const hiddenForSomeElem = hiddenForSomeText ?
         r.p({ className: 's_UP_Act_Hdn' }, hiddenForSomeText) : null;
 
+    // Instead of "No posts" or "No topics", write "Nothing to show" — because maybe
+    // there *are* posts and topics, it's just that the activity is hidden.
+    const nothingToShow = !hiddenForMe ? null :
+      r.p({ className: 'e_NothingToShow' }, "Nothing to show");
+
     const childProps = {
       store: this.props.store,
       user: this.props.user,
@@ -74,6 +79,7 @@ export const UsersActivity = createFactory({
               //LiNavLink({ to: uap + 'likes-received' }, "Likes Received"))),
           r.div({ className: 's_UP_Act_List', id: 't_UP_Act_List' },
             hiddenForSomeElem,
+            nothingToShow,
             childRoute))));
   }
 });
@@ -122,6 +128,7 @@ const UsersPosts = createFactory({
       }, () => {
         // BUG but rather harmless. Runs processPosts (e.g. MathJax) also on topic titles,
         // although that's not done in the forum topic list or full page title.
+        // BUG (but not really my bug): MathJax also runs on topics in the watchbar.
         // Should instead iterate over all posts, give to processPosts one at a time?
         // (Right now, MathJax would process math like `\[....\]` inside titles, here, which
         // might look a bit funny.)
@@ -140,7 +147,7 @@ const UsersPosts = createFactory({
 
     if (_.isEmpty(posts))
       return (
-        r.p({}, "No posts."));
+        r.p({ className: 'e_NoPosts' }, "No posts."));
 
     let postElems = posts.map((post: PostWithPage) => {
       return (
@@ -206,6 +213,10 @@ const UsersTopics = createFactory({
     if (!_.isArray(topics))
       return (
         r.p({}, "Loading ..."));
+
+    if (_.isEmpty(topics))
+      return (
+        r.p({ className: 'e_NoTopics' }, "No topics."));
 
     let topicsElems = forum.TopicsList({
       topics: this.state.topics,

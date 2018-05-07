@@ -304,7 +304,8 @@ var SearchPageContentComponent = createReactClass(<any> {
 
 // COULD:
 // - search in titles only
-// - search by user
+// - search by user, but then, consider hens privacy seeActivityMinTrustLevel setting,
+//    and add e2e test here: [6UKDSQ29].
 function AdvancedSearchPanel(props: {
       store: Store,
       query: SearchQuery,

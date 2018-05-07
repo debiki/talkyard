@@ -293,7 +293,7 @@ describe("user profile access:", () => {
     posts.assertExactly(numPublicPostsByMaria + 2); // 2 = unlisted + private
   });
 
-  it("... Modya sees Maria's topics, incl the unlisted, but not the private message", () => {
+  it("... and her topics, incl the unlisted, and the private message", () => {
     mariasBrowser.userProfilePage.activity.switchToTopics({ shallFindTopics: true });
     let topics = mariasBrowser.userProfilePage.activity.topics;
     topics.waitForTopicTitlesVisible();

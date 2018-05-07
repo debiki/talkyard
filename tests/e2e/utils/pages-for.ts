@@ -1926,6 +1926,12 @@ function pagesFor(browser) {
         browser.waitUntilLoadingOverlayGone();
       },
 
+      goToActivity: function() {
+        browser.waitAndClick('.e_UP_ActivityB');
+        browser.waitForVisible('.s_UP_Act_List');
+        browser.waitUntilLoadingOverlayGone();
+      },
+
       goToPreferences: function() {
         api.userProfilePage.clickGoToPreferences();
       },
@@ -1971,32 +1977,46 @@ function pagesFor(browser) {
       },
 
       activity: {
-        switchToPosts: function(opts: { shallFindPosts: boolean }) {
+        switchToPosts: function(opts: { shallFindPosts: boolean | 'NoSinceActivityHidden' }) {
           browser.waitAndClick('.s_UP_Act_Nav_PostsB');
-          browser.waitForVisible('.s_UP_Act_Ps');
-          if (opts.shallFindPosts) {
+          if (opts.shallFindPosts === 'NoSinceActivityHidden') {
+            api.userProfilePage.activity.posts.waitForNothingToShow();
+          }
+          else if (opts.shallFindPosts) {
+            browser.waitForVisible('.s_UP_Act_Ps');
             browser.waitForVisible('.s_UP_Act_Ps_P');
           }
           else {
-            // ?? wait for what ??
+            api.userProfilePage.activity.posts.waitForNoPosts();
           }
           browser.waitUntilLoadingOverlayGone();
         },
 
-        switchToTopics: function(opts: { shallFindTopics: boolean }) {
+        switchToTopics: function(opts: { shallFindTopics: boolean | 'NoSinceActivityHidden' }) {
           browser.waitAndClick('.s_UP_Act_Nav_TopicsB');
           browser.waitForVisible('.s_UP_Act_Ts');
-          if (opts.shallFindTopics) {
+          if (opts.shallFindTopics === 'NoSinceActivityHidden') {
+            api.userProfilePage.activity.topics.waitForNothingToShow();
+          }
+          else if (opts.shallFindTopics) {
             browser.waitForVisible('.e2eTopicTitle');
           }
           else {
-            // ?? wait for what ??
+            api.userProfilePage.activity.topics.waitForNoTopics();
           }
           browser.waitUntilLoadingOverlayGone();
         },
 
         posts: {
           postSelector: '.s_UP_Act_Ps_P .dw-p-bd',
+
+          waitForNothingToShow: function() {
+            browser.waitForVisible('.s_UP_Act_List .e_NothingToShow');
+          },
+
+          waitForNoPosts: function() {
+            browser.waitForVisible('.e_NoPosts');
+          },
 
           assertExactly: function(num: number) {
             browser.assertExactly(num, api.userProfilePage.activity.posts.postSelector);
@@ -2021,11 +2041,19 @@ function pagesFor(browser) {
         topics: {
           topicsSelector: '.s_UP_Act_Ts .e2eTopicTitle',
 
+          waitForNothingToShow: function() {
+            browser.waitForVisible('.s_UP_Act_List .e_NothingToShow');
+          },
+
+          waitForNoTopics: function() {
+            browser.waitForVisible('.e_NoTopics');
+          },
+
           assertExactly: function(num: number) {
             browser.assertExactly(num, api.userProfilePage.activity.topics.topicsSelector);
           },
 
-          waitForTopicTitlesVisible: function(title: string) {
+          waitForTopicTitlesVisible: function() {
             browser.waitForVisible(api.userProfilePage.activity.topics.topicsSelector);
           },
 
@@ -2074,6 +2102,11 @@ function pagesFor(browser) {
           browser.waitForVisible('.e_UP_Prefs_FN');
         },
 
+        switchToPrivacy: function() {
+          browser.waitAndClick('.e_UP_Prf_Nav_PrivL');
+          browser.waitForVisible('.e_HideActivityAllCB');
+        },
+
         // ---- Should be wrapped in `about { .. }`:
 
         setFullName: function(fullName: string) {
@@ -2104,6 +2137,22 @@ function pagesFor(browser) {
         },
 
         // ---- /END should be wrapped in `about { .. }`.
+
+        privacy: {
+          setHideActivityForStrangers: function(enabled: boolean) {
+            setCheckbox('.e_HideActivityStrangersCB input', enabled);
+          },
+
+          setHideActivityForAll: function(enabled: boolean) {
+            setCheckbox('.e_HideActivityAllCB input', enabled);
+          },
+
+          savePrivacySettings: function() {
+            dieIf(browser.isVisible('.e_Saved'), 'TyE6UKHRQP4'); // unimplemented
+            browser.waitAndClick('.e_SavePrivacy');
+            browser.waitForVisible('.e_Saved');
+          },
+        },
 
         emailsLogins: {
           getEmailAddress: function() {
