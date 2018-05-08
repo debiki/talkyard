@@ -82,6 +82,7 @@ ENV CONFIG "\
 	--user=nginx \
 	--group=nginx \
 	--with-http_ssl_module \
+	# maybe remove? Using the Forwarded headers instead. [7UKHWTD42]
 	--with-http_realip_module \
 	# adds text before and after a response
 	# --with-http_addition_module \

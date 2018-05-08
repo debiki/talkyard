@@ -450,9 +450,14 @@ class EdSecurity(globals: Globals) {
     */
   def realOrFakeIpOf(request: play.api.mvc.Request[_]): String = {
     val fakeIpQueryParam = request.queryString.get("fakeIp").flatMap(_.headOption)
-    val fakeIp = fakeIpQueryParam.orElse(
-      request.cookies.get("dwCoFakeIp").map(_.value))  getOrElse {
-      return request.headers.get("X-Real-IP") getOrElse request.remoteAddress
+    val anyFakeIp = fakeIpQueryParam.orElse(request.cookies.get("dwCoFakeIp").map(_.value))
+    val fakeIp = anyFakeIp getOrElse {
+      // Don't use the X-Real-IP header, because proxies and routers cannot append
+      // to this header, making it a bit harder to troubleshoot? And Play Framework
+      // prefers using the Forwarded and X-Forwarded-For headers.
+      // This will be the ip from the last untrusted proxy / client from the  [7UKHWTD42]
+      // Forwarded-Headers or the X-Forwarded-*-Headers:
+      return request.remoteAddress
     }
 
     if (globals.isProd) {
