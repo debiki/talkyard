@@ -31,7 +31,7 @@ import debiki.EdHttp._
 import ed.server._
 import ed.server.http._
 import javax.inject.Inject
-import org.scalactic.{Bad, Good}
+import org.scalactic.{Bad, ErrorMessage, Good, Or}
 import play.api.libs.json._
 import play.{api => p}
 import play.api.mvc._
@@ -162,14 +162,10 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
       return loginViaLoginOrigin(providerName, request.underlying)
     }
     val provider: SocialProvider with CommonSocialProfileBuilder = providerName match {
-      case FacebookProvider.ID =>
-        facebookProvider(request.underlying)
-      case GoogleProvider.ID =>
-        googleProvider(request.underlying)
-      case TwitterProvider.ID =>
-        twitterProvider(request.underlying)
-      case GitHubProvider.ID =>
-        githubProvider(request.underlying)
+      case FacebookProvider.ID => facebookProvider()
+      case GoogleProvider.ID => googleProvider()
+      case TwitterProvider.ID => twitterProvider()
+      case GitHubProvider.ID => githubProvider()
       case x =>
         return Future.successful(Results.Forbidden(s"Bad provider: `$providerName' [DwE2F0D6]"))
     }
@@ -652,68 +648,29 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
       silhouette.api.util.Clock())
 
 
-  private def googleProvider(request: Request[Unit])
-        : GoogleProvider with CommonSocialProfileBuilder = {
-    def getGoogle(confValName: String) = getConfValOrThrowDisabled(confValName, "Google")
-    new GoogleProvider(HttpLayer, socialStateHandler, OAuth2Settings(
-      authorizationURL = globals.conf.getString("silhouette.google.authorizationURL"),
-      accessTokenURL = getGoogle("silhouette.google.accessTokenURL"),
-      redirectURL = buildRedirectUrl(request, "google"),
-      clientID = getGoogle("silhouette.google.clientID"),
-      clientSecret = getGoogle("silhouette.google.clientSecret"),
-      scope = globals.conf.getString("silhouette.google.scope")))
-  }
+  private def googleProvider(): GoogleProvider with CommonSocialProfileBuilder =
+    new GoogleProvider(HttpLayer, socialStateHandler,
+      getOrThrowDisabled(globals.config.socialLogin.googleOAuthSettings))
 
 
-  private def facebookProvider(request: Request[Unit])
-        : FacebookProvider with CommonSocialProfileBuilder = {
-    def getFacebook(confValName: String) = getConfValOrThrowDisabled(confValName, "Facebook")
-    new FacebookProvider(HttpLayer, socialStateHandler, OAuth2Settings(
-      authorizationURL = globals.conf.getString("silhouette.facebook.authorizationURL"),
-      accessTokenURL = getFacebook("silhouette.facebook.accessTokenURL"),
-      redirectURL = buildRedirectUrl(request, "facebook"),
-      clientID = getFacebook("silhouette.facebook.clientID"),
-      clientSecret = getFacebook("silhouette.facebook.clientSecret"),
-      scope = globals.conf.getString("silhouette.facebook.scope")))
-  }
+  private def facebookProvider(): FacebookProvider with CommonSocialProfileBuilder =
+    new FacebookProvider(HttpLayer, socialStateHandler,
+      getOrThrowDisabled(globals.config.socialLogin.facebookOAuthSettings))
 
-
-  private def twitterProvider(request: Request[Unit])
-        : TwitterProvider with CommonSocialProfileBuilder = {
-    def getTwitter(confValName: String) = getConfValOrThrowDisabled(confValName, "Twitter")
-    val settings = OAuth1Settings(
-      requestTokenURL = getTwitter("silhouette.twitter.requestTokenURL"),
-      accessTokenURL = getTwitter("silhouette.twitter.accessTokenURL"),
-      authorizationURL = getTwitter("silhouette.twitter.authorizationURL"),
-      callbackURL = buildRedirectUrl(request, "twitter").get,
-      consumerKey = getTwitter("silhouette.twitter.consumerKey"),
-      consumerSecret = getTwitter("silhouette.twitter.consumerSecret"))
+  private def twitterProvider(): TwitterProvider with CommonSocialProfileBuilder = {
+    val settings = getOrThrowDisabled(globals.config.socialLogin.twitterOAuthSettings)
     new TwitterProvider(
       HttpLayer, new PlayOAuth1Service(settings), OAuth1TokenSecretProvider, settings)
   }
 
-
-  private def githubProvider(request: Request[Unit])
-        : GitHubProvider with CommonSocialProfileBuilder = {
-    def getGitHub(confValName: String) = getConfValOrThrowDisabled(confValName, "GitHub")
-    new GitHubProvider(HttpLayer, socialStateHandler, OAuth2Settings(
-      authorizationURL = globals.conf.getString("silhouette.github.authorizationURL"),
-      accessTokenURL = getGitHub("silhouette.github.accessTokenURL"),
-      redirectURL = buildRedirectUrl(request, "github"),
-      clientID = getGitHub("silhouette.github.clientID"),
-      clientSecret = getGitHub("silhouette.github.clientSecret"),
-      scope = globals.conf.getString("silhouette.github.scope")))
-  }
+  private def githubProvider(): GitHubProvider with CommonSocialProfileBuilder =
+    new GitHubProvider(HttpLayer, socialStateHandler,
+      getOrThrowDisabled(globals.config.socialLogin.githubOAuthSettings))
 
 
-  private def getConfValOrThrowDisabled(confValName: String, providerName: String): String = {
-    globals.conf.getString(confValName) getOrElse throwForbidden(
-      "EsE5YFK02", s"Login via $providerName not possible: Config value missing: $confValName")
-  }
-
-  private def buildRedirectUrl(request: Request[_], provider: String): Option[String] = {
-      Some(
-        originOf(request) + routes.LoginWithOpenAuthController.finishAuthentication(provider).url)
+  private def getOrThrowDisabled[A](anySettings: A Or ErrorMessage): A = anySettings match {
+    case Good(settings) => settings
+    case Bad(errorMessage) => throwForbidden("EsE5YFK02", errorMessage)
   }
 
 }
