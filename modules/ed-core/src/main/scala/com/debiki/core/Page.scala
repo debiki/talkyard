@@ -508,9 +508,9 @@ object PageRole {
 }
 
 
-sealed abstract class CategoriesLayout(val IntVal: Int) { def toInt = IntVal }
+sealed abstract class CategoriesLayout(val IntVal: Int) { def toInt: Int = IntVal }
 object CategoriesLayout {
-  val Default = new CategoriesLayout(0) {}
+  val Default: CategoriesLayout = new CategoriesLayout(0) {}
 
   def fromInt(value: Int): Option[CategoriesLayout] = Some(value match {
     case Default.IntVal => Default
@@ -519,7 +519,7 @@ object CategoriesLayout {
 }
 
 
-sealed abstract class TopicListLayout(val IntVal: Int) { def toInt = IntVal }
+sealed abstract class TopicListLayout(val IntVal: Int) { def toInt: Int = IntVal }
 object TopicListLayout {
   object Default extends TopicListLayout(0)
   object TitleOnly extends TopicListLayout(1)

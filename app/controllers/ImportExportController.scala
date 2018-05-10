@@ -142,7 +142,7 @@ class ImportExportController @Inject()(cc: ControllerComponents, edContext: EdCo
           throwBadRequest("EsE6UJM2", s"Invalid 'site' object json: ${ex.getMessage}")
       }
 
-    val settings = Settings2.settingsToSaveFromJson(settingsJson)
+    val settings = Settings2.settingsToSaveFromJson(settingsJson, globals.config)
 
     HACK // just loading Everyone's summary email interval. [7FKB4Q1]
     var summaryEmailIntervalMins = SummaryEmails.DoNotSend

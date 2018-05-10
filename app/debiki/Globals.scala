@@ -933,7 +933,7 @@ class Config(conf: play.api.Configuration) {
         redirectURL = makeRedirectUrl("google"),
         clientID = getGoogle("silhouette.google.clientID"),
         clientSecret = getGoogle("silhouette.google.clientSecret"),
-        scope = conf.getString("silhouette.google.scope")
+        scope = conf.getString("silhouette.google.scope"))
     }
 
     val facebookOAuthSettings: OAuth2Settings Or ErrorMessage = goodOrError {
@@ -944,18 +944,18 @@ class Config(conf: play.api.Configuration) {
         redirectURL = makeRedirectUrl("facebook"),
         clientID = getFacebook("silhouette.facebook.clientID"),
         clientSecret = getFacebook("silhouette.facebook.clientSecret"),
-        scope = conf.getString("silhouette.facebook.scope")
+        scope = conf.getString("silhouette.facebook.scope"))
     }
 
     val twitterOAuthSettings: OAuth1Settings Or ErrorMessage = goodOrError {
       def getTwitter(confValName: String) = getConfValOrThrowDisabled(confValName, "Twitter")
-      val settings = OAuth1Settings(
+      OAuth1Settings(
         requestTokenURL = getTwitter("silhouette.twitter.requestTokenURL"),
         accessTokenURL = getTwitter("silhouette.twitter.accessTokenURL"),
         authorizationURL = getTwitter("silhouette.twitter.authorizationURL"),
         callbackURL = makeRedirectUrl("twitter").get,
         consumerKey = getTwitter("silhouette.twitter.consumerKey"),
-        consumerSecret = getTwitter("silhouette.twitter.consumerSecret")
+        consumerSecret = getTwitter("silhouette.twitter.consumerSecret"))
     }
 
     val githubOAuthSettings: OAuth2Settings Or ErrorMessage = goodOrError {

@@ -211,6 +211,7 @@ const SettingsPanel = createFactory({
           LiNavLink({ to: sr + 'login', id: 'e2eAA_Ss_LoginL' }, "Signup and Login"),
           LiNavLink({ to: sr + 'moderation', id: 'e2eAA_Ss_ModL'  }, "Moderation"),
           LiNavLink({ to: sr + 'spam-flags', id: 'e2eAA_Ss_SpamFlagsL'  }, "Spam & flags"),
+          LiNavLink({ to: sr + 'features', id: 'e_A_Ss_Features' }, "Features"),
           LiNavLink({ to: sr + 'embedded-comments', id: 'e2eAA_Ss_EmbCmtsL' }, "Embedded Comments"),
           LiNavLink({ to: sr + 'language', id: 'e_AA_Ss_Lang' }, "Language"),
           LiNavLink({ to: sr + 'advanced', id: 'e2eAA_Ss_AdvancedL' }, "Advanced")),
@@ -220,6 +221,7 @@ const SettingsPanel = createFactory({
             Route({ path: sr + 'login', render: () => LoginAndSignupSettings(ps) }),
             Route({ path: sr + 'moderation', render: () => ModerationSettings(ps) }),
             Route({ path: sr + 'spam-flags', render: () => SpamFlagsSettings(ps) }),
+            Route({ path: sr + 'features', render: () => FeatureSettings(ps) }),
             Route({ path: sr + 'embedded-comments', render: () => EmbeddedCommentsSettings(ps) }), // [8UP4QX0]
             Route({ path: sr + 'language', render: () => LanguageSettings(ps) }),
             Route({ path: sr + 'advanced', render: () => AdvancedSettings(ps) })))));
@@ -239,6 +241,7 @@ const LoginAndSignupSettings = createFactory({
     const valueOf = (getter: (s: Settings) => any) =>
       firstDefinedOf(getter(editedSettings), getter(currentSettings));
 
+    const allowSignup = valueOf(s => s.allowSignup);
     const requireVerifiedEmail = valueOf(s => s.requireVerifiedEmail);
     const mayComposeBeforeSignup = valueOf(s => s.mayComposeBeforeSignup);
 
@@ -248,6 +251,33 @@ const LoginAndSignupSettings = createFactory({
 
     return (
       r.div({},
+        Setting2(props, { type: 'checkbox', label: "Allow signup", id: 'e_AllowSignup',
+          help: r.span({}, "Uncheck to prevent people from creating new accounts."),
+          getter: (s: Settings) => s.allowSignup,
+          update: (newSettings: Settings, target) => {
+            newSettings.allowSignup = target.checked;
+            // Other signup settings have no effect, if new signups are prevented.
+            // But, instead of setting all those other settings to false, or disabling them
+            // — hide them. Then 1) the admins won't need to wonder what it means, that
+            // one of those settings is checked, but disabled. And 2) won't have all their
+            // current signup settings auto-changed to false, and forget to reenable some of
+            // them later when allowing signup again.
+          }
+        }),
+
+        /*
+        !allowSignup ? null : Setting2(props, {
+          type: 'checkbox', label: "Invite only", id: 'e_InviteOnly',
+          help: r.span({}, "No one may join, unless they're invited by staff " +
+            "(to invite someone, click Users above, then Invite)."),
+          getter: (s: Settings) => s.inviteOnly,
+          update: (newSettings: Settings, target) => {
+            newSettings.inviteOnly = target.checked;
+            }
+          }
+          ... later ... and enable  (6KWU20) above.
+        }), */
+
         Setting2(props, { type: 'checkbox', label: "Login required", id: 'e2eLoginRequiredCB',
           className: 'e_A_Ss_S-LoginRequiredCB',
           help: r.span({}, "Require authentication to read content. Users must then login " +
@@ -276,7 +306,8 @@ const LoginAndSignupSettings = createFactory({
           }
         }),
 
-        Setting2(props, { type: 'checkbox', label: "Require verified email",
+        !allowSignup ? null : Setting2(props, {
+          type: 'checkbox', label: "Require verified email",
           className: 'e_A_Ss_S-RequireVerifiedEmailCB',
           help: "New users must specify an email address, and click an email verification link " +
               "(unless verified already via e.g. Gmail or Facebook). Recommended, because you'll " +
@@ -296,7 +327,7 @@ const LoginAndSignupSettings = createFactory({
           }
         }),
 
-        Setting2(props, { type: 'checkbox', label: "May compose before sign up",
+        !allowSignup ? null : Setting2(props, { type: 'checkbox', label: "May compose before signup",
           className: 'e_A_Ss_S-MayComposeBeforeSignup',
           help: "People may start writing posts before they have signed up. When they try to " +
               "submit their post, they are asked to sign up. Good, because might result in more " +
@@ -332,42 +363,20 @@ const LoginAndSignupSettings = createFactory({
 
         doubleTypeEmailAddress: Option[Boolean]
         doubleTypePassword: Option[Boolean]
-        begForEmailAddress
+        begForEmailAddress */
 
-        Setting2(props, { type: 'checkbox', label: "Invite only",
-         className: 'e_A_Ss_S-InviteOnlyCB',
-         help: "People can join only after having been invited by other members or staff",
-          ... later ... and enable  (6KWU20) above.
-        });
-
-        Setting2(props, { type: 'checkbox', label: "Allow new registrations",
-          className: 'e_A_Ss_S-AllowSignupCB',
-          help: "Uncheck to prevent people from creating new accounts and join this site.",
-          getter: (s: Settings) => s.allowSignup,
-          update: (newSettings: Settings, target) => {
-            newSettings.allowSignup = target.checked;
-            if (!target.checked) {
-              if (valueOf(s => s.allowLocalSignup)) {
-                newSettings.allowLocalSignup = false;
-              }
-              if (valueOf(s => s.allowGuestLogin)) {
-                newSettings.allowGuestLogin = false;
-              }
-            }
-          }
-        }),
-
-        Setting2(props, { type: 'checkbox', label: "Allow local registrations",
+        !allowSignup ? null : Setting2(props, { type: 'checkbox', label: "Allow creating local accounts",
           className: 'e_A_Ss_S-AllowLoalSignupCB',
-          help: "Uncheck to prevent people from createing email + password accounts at this site.",
+          help: "Uncheck to prevent people from creating email + password accounts at this site.",
           disabled: !valueOf(s => s.allowSignup),
           getter: (s: Settings) => s.allowLocalSignup,
           update: (newSettings: Settings, target) => {
             newSettings.allowLocalSignup = target.checked;
           }
-        }), */
+        }),
 
-        Setting2(props, { type: 'checkbox', label: "Allow guest login", id: 'e2eAllowGuestsCB',
+        !allowSignup ? null : Setting2(props, {
+          type: 'checkbox', label: "Allow guest login", id: 'e2eAllowGuestsCB',
           className: 'e_A_Ss_S-AllowGuestsCB',
           help: "Lets people post comments and create topics, without creating real accounts " +
             "with username and password. Instead, they just type a name and email address. " +
@@ -378,7 +387,76 @@ const LoginAndSignupSettings = createFactory({
           update: (newSettings: Settings, target) => {
             newSettings.allowGuestLogin = target.checked;
           }
-        })));
+        }),
+
+        // ---- OpenAuth login
+
+        !allowSignup ? null : Setting2(props, {
+          type: 'checkbox', label: "Enable Google signup", id: 'e_EnableGoogleLogin',
+          className: 'e_A_Ss_S-EnableGoogleCB',
+          help: "Lets people sign up and login with their Gmail account.",
+          disabled: !valueOf(s => s.allowSignup),
+          getter: (s: Settings) => s.enableGoogleLogin,
+          update: (newSettings: Settings, target) => {
+            newSettings.enableGoogleLogin = target.checked;
+          }
+        }),
+
+        !allowSignup ? null : Setting2(props, {
+          type: 'checkbox', label: "Enable Facebook signup",
+          className: 'e_A_Ss_S-EnableFacebookCB',
+          help: "Lets people sign up and login with their Facebook account.",
+          disabled: !valueOf(s => s.allowSignup),
+          getter: (s: Settings) => s.enableFacebookLogin,
+          update: (newSettings: Settings, target) => {
+            newSettings.enableFacebookLogin = target.checked;
+          }
+        }),
+
+        !allowSignup ? null : Setting2(props, {
+          type: 'checkbox', label: "Enable Twitter signup",
+          className: 'e_A_Ss_S-EnableTwitterCB',
+          help: "Lets people sign up and login with their Twitter account.",
+          disabled: !valueOf(s => s.allowSignup),
+          getter: (s: Settings) => s.enableTwitterLogin,
+          update: (newSettings: Settings, target) => {
+            newSettings.enableTwitterLogin = target.checked;
+          }
+        }),
+
+        !allowSignup ? null : Setting2(props, {
+          type: 'checkbox', label: "Enable GitHub signup",
+          className: 'e_A_Ss_S-EnableGitHubCB',
+          help: "Lets people sign up and login with their GitHub account.",
+          disabled: !valueOf(s => s.allowSignup),
+          getter: (s: Settings) => s.enableGitHubLogin,
+          update: (newSettings: Settings, target) => {
+            newSettings.enableGitHubLogin = target.checked;
+          }
+        }),
+
+        // ---- Email domain blacklist
+
+        !allowSignup ? null : Setting2(props, {
+          type: 'textarea', label: "Email domain blacklist", id: 'e_EmailBlacklist',
+          help: "People may not sign up with emails from these domains. One domain per row. " +
+          "Lines starting with '#' are ignored (so you can add comments).",
+          getter: (s: Settings) => s.emailDomainBlacklist,
+          update: (newSettings: Settings, target) => {
+            newSettings.emailDomainBlacklist = target.value;
+          }
+        }),
+
+        !allowSignup ? null : Setting2(props, {
+          type: 'textarea', label: "Email domain whitelist", id: 'e_EmailWhitelist',
+          help: "People may only sign up with emails from these domains. One domain per row. " +
+            "Lines starting with '#' are ignored (so you can add comments).",
+          getter: (s: Settings) => s.emailDomainWhitelist,
+          update: (newSettings: Settings, target) => {
+            newSettings.emailDomainWhitelist = target.value;
+          }
+        }),
+        ));
   }
 });
 
@@ -534,7 +612,7 @@ const SpamFlagsSettings = createFactory({
           }
         }),
 
-        Setting2(props, { type: 'checkbox', min: 0, max: LargeNumber, indent: true,
+        Setting2(props, { type: 'checkbox', indent: true,
           label: "Notify staff if new user blocked",
           help:
             "Shall an email be sent to staff, if a new users get blocked? So staff can have " +
@@ -575,6 +653,59 @@ const SpamFlagsSettings = createFactory({
             newSettings.coreMemberFlagWeight = num;
           }
         })
+      ));
+  }
+});
+
+
+
+const FeatureSettings = createFactory({
+  displayName: 'FeatureSettings',
+
+  render: function() {
+    const props = this.props;
+    const currentSettings: Settings = props.currentSettings;
+    const editedSettings: Settings = props.editedSettings;
+
+    return (
+      r.div({},
+        Setting2(props, { type: 'checkbox', indent: true,
+          label: "Enable chat",
+          help: "Lets people create and join chat topics, and shows joined chats in the left sidebar. " +
+            "If everyone uses another team chat tool already, like Slack, " +
+            "then you might want to disable chat, here.",
+          getter: (s: Settings) => s.enableChat,
+          update: (newSettings: Settings, target) => {
+            newSettings.enableChat = target.checked;
+          }
+        }),
+
+        Setting2(props, { type: 'checkbox', indent: true,
+          label: "Enable direct messages",
+          help: "Lets people send direct messages to each other, and shows one's direct message " +
+            "topics in the left sidebar. " +
+            "If everyone uses another direct messaging tool already, like Slack, " +
+            "then you might want to disable this, here.",
+          getter: (s: Settings) => s.enableDirectMessages,
+          update: (newSettings: Settings, target) => {
+            newSettings.enableDirectMessages = target.checked;
+          }
+        }),
+
+        Setting2(props, {
+          type: 'checkbox', label: "Enable sub communities",
+          help: rFragment({},
+            "Lets admins create sub communities. You probably don't want this. " +
+            "A sub community is a separate forum with its own categories and topic lists. " +
+            "A bit like a subreddit, if you know about the website called Reddit. " +
+            "Also lets site members search for and join sub communities. ",
+            r.i({}, "Reload"), " this page, open the left sidebar and look in the upper ",
+            "left corner, to see the sub communities section, if you enable this."),
+          getter: (s: Settings) => s.showSubCommunities,
+          update: (newSettings: Settings, target) => {
+            newSettings.showSubCommunities = target.checked;
+          }
+        }),
       ));
   }
 });
@@ -638,7 +769,6 @@ const EmbeddedCommentsSettings = createFactory({
     return (
       r.div({},
         Setting2(props, { type: 'textarea', label: "Allow embedding from", id: 'e_AllowEmbFrom',
-          className: 's_A_Ss_AllowEmbFrom',
           help: r.span({}, "Lets another website (your website) show embedded contents. " +
             "You can add many domains — separate them with spaces or newlines."),
           placeholder: "https://www.yourblog.com",
@@ -784,18 +914,6 @@ const AdvancedSettings = createFactory({
           getter: (s: Settings) => s.googleUniversalAnalyticsTrackingId,
           update: (newSettings: Settings, target) => {
             newSettings.googleUniversalAnalyticsTrackingId = target.value;
-          }
-        }),
-
-        Setting2(props, {
-          type: 'checkbox', label: "Enable sub communities",
-          help: "Lets admins create sub communities. A sub community is a separate forum with " +
-            "its own categories and topic lists. A bit like a subreddit, if you know " +
-            "about the website called Reddit. " +
-            "Also lets site members search for and join sub communities of their choice.",
-          getter: (s: Settings) => s.showSubCommunities,
-          update: (newSettings: Settings, target) => {
-            newSettings.showSubCommunities = target.checked;
           }
         }),
 
@@ -1006,7 +1124,45 @@ const CustomizeBasicPanel = createFactory({
           update: (newSettings: Settings, target) => {
             newSettings.selectTopicType = target.checked;
           }
-        })));
+        }),
+
+        Setting2(props, { type: 'checkbox', label: "Sidebar open by default",
+          help: "Uncheck to hide the left sidebar for new users. They'll then need to open it " +
+            "themselves. (The right hand sidebar is always closed, by default.)",
+          getter: (s: Settings) => s.watchbarStartsOpen,
+          update: (newSettings: Settings, target) => {
+            newSettings.watchbarStartsOpen = target.checked;
+          }
+        }),
+
+        Setting2(props, { type: 'number', min: 1, max: 3, label: "Author name style",
+          help: rFragment({},
+            "How to display post author names. One of these numbers:",
+            r.br(),
+            "1: Username only, example: ",
+            r.span({ className: 'esP_By_F', style: { marginLeft: '8px' } }, "jane"),
+            r.br(),
+            "2: Username, then any full name: ",
+            r.span({},
+              r.span({ className: 'esP_By_F', style: { marginLeft: '8px' } }, "jane"),
+              r.span({ className: 'esP_By_U' }, " Jane Doe")),
+            r.br(),
+            "3: Full name, then username: ",
+            r.span({},
+              r.span({ className: 'esP_By_F', style: { marginLeft: '8px' } }, "Jane Doe"), " ",
+              r.span({ className: 'esP_By_U' },
+                r.span({ className: 'esP_By_U_at'}, '@'), "jane"))),
+          getter: (s: Settings) => s.showAuthorHow,
+          update: (newSettings: Settings, target) => {
+            let num = parseInt(target.value);
+            if (_.isNaN(num)) num = 3;
+            if (num > 10) num = num % 10; // pick the last digit = the one the user just typed
+            if (num < 1) num = 1;
+            if (num > 3) num = 3;
+            newSettings.showAuthorHow = num;
+          }
+        }),
+      ));
   }
 });
 
@@ -1080,6 +1236,8 @@ const CustomizeHtmlPanel = createFactory({
 
         // Skip for now; don't want to clarify for people how this works. Needs a <script> too :-P
         // But enable on www.talkyard.io — it already uses this.
+        // CLEAN_UP REMOVE this, no longer in use on www.talkyard.io either, right?
+        /*
         Setting2(props, { type: 'textarea', label: "Social links HTML",
           help: "Google+, Facebook, Twitter like and share buttons. Don't forget " +
             "to include a script too, e.g. in the <i>Scripts HTML</i> config value. " +
@@ -1089,7 +1247,8 @@ const CustomizeHtmlPanel = createFactory({
           update: (newSettings: Settings, target) => {
             newSettings.socialLinksHtml= target.value;
           }
-        })));
+        })*/
+        ));
   }
 });
 
@@ -1147,6 +1306,7 @@ function Setting2(panelProps, props, anyChildren?) {
   props.value = firstDefinedOf(editedValue, currentValue);
   props.className = props.className || '';
   props.className += ' s_A_Ss_S';
+  if (props.type === 'textarea') props.className += ' s_A_Ss_S-Textarea';
   props.wrapperClassName = 'col-sm-9 esAdmin_settings_setting';
 
   if (isDefined2(editedValue)) props.wrapperClassName += ' esAdmin_settings_setting-unsaved';

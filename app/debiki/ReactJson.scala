@@ -129,7 +129,7 @@ class JsonMaker(dao: SiteDao) {
       "makeEmbeddedCommentsSite" -> siteSettings.allowEmbeddingFrom.nonEmpty,
       "userMustBeAuthenticated" -> JsBoolean(siteSettings.userMustBeAuthenticated),
       "userMustBeApproved" -> JsBoolean(siteSettings.userMustBeApproved),
-      "settings" -> makeSettingsVisibleClientSideJson(siteSettings),
+      "settings" -> makeSettingsVisibleClientSideJson(siteSettings, globals.config),
       "isInEmbeddedCommentsIframe" -> JsBoolean(false),
       "publicCategories" -> JsArray(),
       "topics" -> JsNull,
@@ -346,7 +346,7 @@ class JsonMaker(dao: SiteDao) {
       // CLEAN_UP Later: move these two userMustBe... to settings {} too.
       "userMustBeAuthenticated" -> JsBoolean(siteSettings.userMustBeAuthenticated),
       "userMustBeApproved" -> JsBoolean(siteSettings.userMustBeApproved),
-      "settings" -> makeSettingsVisibleClientSideJson(siteSettings),
+      "settings" -> makeSettingsVisibleClientSideJson(siteSettings, globals.config),
       "maxUploadSizeBytes" -> globals.maxUploadSizeBytes,
       "isInEmbeddedCommentsIframe" -> JsBoolean(page.role == PageRole.EmbeddedComments),
       "publicCategories" -> categories,
@@ -395,7 +395,7 @@ class JsonMaker(dao: SiteDao) {
       // CLEAN_UP remove these two; they should-instead-be/are-already included in settings: {...}.
       "userMustBeAuthenticated" -> JsBoolean(siteSettings.userMustBeAuthenticated),
       "userMustBeApproved" -> JsBoolean(siteSettings.userMustBeApproved),
-      "settings" -> makeSettingsVisibleClientSideJson(siteSettings),
+      "settings" -> makeSettingsVisibleClientSideJson(siteSettings, globals.config),
       "me" -> noUserSpecificData(dao.getPermsForEveryone()),
       "rootPostId" -> JsNumber(PageParts.BodyNr),
       "maxUploadSizeBytes" -> globals.maxUploadSizeBytes,
@@ -971,10 +971,18 @@ object JsonMaker {
     PostSummaryLength + 80 // one line is roughly 80 chars
 
 
-  private def makeSettingsVisibleClientSideJson(settings: EffectiveSettings): JsObject = {
+  private def makeSettingsVisibleClientSideJson(settings: EffectiveSettings, conf: Config): JsObject = {
     // Only include settings that differ from the default.
-    var json = Json.obj()
-    val D = AllSettings.Default
+
+    var json = Json.obj(
+      // The defaults depend on if these login methods are defined in the config files,
+      // so need to always include, client side (client side, default values = unknown).
+      "enableGoogleLogin" -> settings.enableGoogleLogin,
+      "enableFacebookLogin" -> settings.enableFacebookLogin,
+      "enableTwitterLogin" -> settings.enableTwitterLogin,
+      "enableGitHubLogin" -> settings.enableGitHubLogin)
+
+    val D = AllSettings.makeDefault(conf)
     if (settings.languageCode != D.languageCode)
       json += "languageCode" -> JsString(settings.languageCode)
     if (settings.inviteOnly != D.inviteOnly)
@@ -997,6 +1005,10 @@ object JsonMaker {
       json += "doubleTypePassword" -> JsBoolean(settings.doubleTypePassword)
     if (settings.begForEmailAddress != D.begForEmailAddress)
       json += "begForEmailAddress" -> JsBoolean(settings.begForEmailAddress)
+    if (settings.enableChat != D.enableChat)
+      json += "enableChat" -> JsBoolean(settings.enableChat)
+    if (settings.enableDirectMessages != D.enableDirectMessages)
+      json += "enableDirectMessages" -> JsBoolean(settings.enableDirectMessages)
     if (settings.showSubCommunities != D.showSubCommunities)
       json += "showSubCommunities" -> JsBoolean(settings.showSubCommunities)
     if (settings.showExperimental != D.showExperimental)
@@ -1019,6 +1031,10 @@ object JsonMaker {
       json += "showTopicTypes" -> JsBoolean(settings.showTopicTypes)
     if (settings.selectTopicType != D.selectTopicType)
       json += "selectTopicType" -> JsBoolean(settings.selectTopicType)
+    if (settings.showAuthorHow != D.showAuthorHow)
+      json += "showAuthorHow" -> JsNumber(settings.showAuthorHow.toInt)
+    if (settings.watchbarStartsOpen != D.watchbarStartsOpen)
+      json += "watchbarStartsOpen" -> JsBoolean(settings.watchbarStartsOpen)
     json
   }
 

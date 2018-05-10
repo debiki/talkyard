@@ -410,6 +410,12 @@ enum CategoriesLayout {
 }
 
 
+enum ShowAuthorHow {
+  UsernameOnly = 1,
+  UsernameThenFullName = 2,
+  FullNameThenUsername = 3,
+}
+
 
 interface Topic {
   pageId: string;
@@ -628,10 +634,16 @@ interface SettingsVisibleClientSide {
   allowSignup?: boolean;                // default: true
   allowLocalSignup?: boolean;           // default: true
   allowGuestLogin?: boolean;            // default: false
+  enableGoogleLogin: boolean;           // default: depends on config file
+  enableFacebookLogin: boolean;         // default: depends on config file
+  enableTwitterLogin: boolean;          // default: depends on config file
+  enableGitHubLogin: boolean;           // default: depends on config file
   requireVerifiedEmail?: boolean;       // default: true
   mayComposeBeforeSignup?: boolean;     // default: false
   doubleTypeEmailAddress?: boolean;     // default: false
   doubleTypePassword?: boolean;         // default: false
+  enableChat?: boolean;                 // default: true
+  enableDirectMessages?: boolean;       // default: true
   showSubCommunities?: boolean;         // default: false
   forumMainView?: string;               // default: 'latest'
   forumTopicsSortButtons?: string;      // default: 'latest|top'
@@ -642,7 +654,9 @@ interface SettingsVisibleClientSide {
   showCategories?: boolean;             // default: true
   showTopicFilterButton?: boolean;      // default: true
   showTopicTypes?: boolean;             // default: true
+  showAuthorHow: ShowAuthorHow;         // default: FullNameThenUsername
   selectTopicType?: boolean;            // default: true
+  watchbarStartsOpen?: boolean;         // default: true
   showSocialButtons?: boolean;          // default: undefined —> false
   facebookAppId?: string;               // default: undefined —> no FB insight statistics
 }
@@ -1083,7 +1097,13 @@ interface Settings {
   allowSignup: boolean;
   allowLocalSignup: boolean;
   allowGuestLogin: boolean;
+  enableGoogleLogin: boolean;
+  enableFacebookLogin: boolean;
+  enableTwitterLogin: boolean;
+  enableGitHubLogin: boolean;
   requireVerifiedEmail: boolean;
+  emailDomainBlacklist: string;
+  emailDomainWhitelist: string;
   mayComposeBeforeSignup: boolean;
   mayPostBeforeEmailVerified: boolean;
   doubleTypeEmailAddress: boolean;
@@ -1107,6 +1127,8 @@ interface Settings {
   showTopicFilterButton: boolean;
   showTopicTypes: boolean;
   selectTopicType: boolean;
+  watchbarStartsOpen: boolean;
+  showAuthorHow: ShowAuthorHow;
 
   // Spam
   numFlagsToHidePost: number;
@@ -1116,6 +1138,10 @@ interface Settings {
   notifyModsIfUserBlocked: boolean;
   regularMemberFlagWeight: number;
   coreMemberFlagWeight: number;
+
+  enableChat: boolean;
+  enableDirectMessages: boolean;
+  showSubCommunities: boolean;
 
   horizontalComments: boolean;
 
@@ -1137,8 +1163,6 @@ interface Settings {
 
   languageCode: string;
   googleUniversalAnalyticsTrackingId: string;
-
-  showSubCommunities: boolean;
 
   showExperimental: boolean;
   allowEmbeddingFrom: string;

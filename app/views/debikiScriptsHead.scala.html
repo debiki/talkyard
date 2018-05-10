@@ -145,8 +145,18 @@ iPad pro = 1366 wide; then, always watchbar = OK *@
 var edAlwaysWatchbar = !_infoPage && window.innerWidth > 1350;
 
 var _wbOpen = _getLocal('isWatchbarOpen');
-if (!_embCmts) if ((!_narrow && _wbOpen !== 'false' && location.search.search('&hideWatchbar') === -1 && (
+var _showWb = false;
+if (_embCmts) {
+  @* Don't show the watchbar in the embedded comments iframe. *@
+}
+else if (_store.settings.watchbarStartsOpen === false) {
+  _showWb = _wbOpen === 'true';
+}
+else if ((!_narrow && _wbOpen !== 'false' && location.search.search('&hideWatchbar') === -1 && (
     !_infoPage || _wbOpen === 'true')) || edAlwaysWatchbar) {
+  _showWb = true;
+}
+if (_showWb) {
   _doc.className += ' es-watchbar-open';
   _store.isWatchbarOpen = true;
 }
