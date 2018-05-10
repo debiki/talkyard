@@ -102,59 +102,60 @@ how to use docker-compose already.
 
 1. Clone this repository, `cd` into it. Then update submodules:
 
-        git clone https://github.com/debiki/talkyard.git talkyard
-        cd talkyard
-        git submodule update --init
+       git clone https://github.com/debiki/talkyard.git talkyard
+       cd talkyard
+       git submodule update --init
 
 1. Append some settings to the system config so that ElasticSearch will work:
    (run this as one single command, not one line at a time)
 
-        sudo tee -a /etc/sysctl.conf <<EOF
+       sudo tee -a /etc/sysctl.conf <<EOF
 
-        ###################################################################
-        # Talkyard settings
-        #
-        # Up the max backlog queue size (num connections per port), default = 128
-        net.core.somaxconn=8192
-        # ElasticSearch requires (at least) this, default = 65530
-        # Docs: https://www.kernel.org/doc/Documentation/sysctl/vm.txt
-        vm.max_map_count=262144
-        EOF
+       ###################################################################
+       # Talkyard settings
+       #
+       # Up the max backlog queue size (num connections per port), default = 128
+       net.core.somaxconn=8192
+       # ElasticSearch requires (at least) this, default = 65530
+       # Docs: https://www.kernel.org/doc/Documentation/sysctl/vm.txt
+       vm.max_map_count=262144
+       EOF
 
     Reload the system config:
 
-        sudo sysctl --system
+       sudo sysctl --system
 
-1. Compile and SBT `publish-local` a logging library.
+1. Compile and SBT `publishLocal` a logging library. (Search for `[7SBMAQ2P]` in this Git repo, to find out why.)
 
-        sudo s/d-cli
-        project ed-logging
-        publish-local
-        # then CTRL+D to exit
+       sudo s/d-cli
+       project edLogging
+       publishLocal
+       # then CTRL+D to exit
 
 
 1. Build and start all Docker containers: (this will take a while: some Docker images will be downloaded and built)
 
-        sudo docker-compose up -d
+       sudo s/d up -d   # s/d = shortcut for docker-compose, so long to type.
+                        # The 's' means "scripts" and 'd' means "docker-compose".
 
-        # And tail the logs:
-        sudo docker-compose logs -f
+       # And tail the logs:
+       sudo s/d logs -f
 
-  This log message might take 10 - 20 minutes: (lots of stuff is being downloaded — we'll try to
-  include all that in the Docker image directly instead, later)
+   This log message might take 10 - 20 minutes: (lots of stuff is being downloaded — we'll try to
+   include all that in the Docker image directly instead, later)
 
-        Loading project definition from /opt/talkyard/app/project
+       Loading project definition from /opt/talkyard/app/project
 
    Wait until this appears in the logs:
 
-        app_1     |
-        app_1     | --- (Running the application, auto-reloading is enabled) ---
-        app_1     |
-        app_1     | [info] p.c.s.NettyServer - Listening for HTTP on /0:0:0:0:0:0:0:0:9000
-        app_1     | [info] p.c.s.NettyServer - Listening for HTTPS on /0:0:0:0:0:0:0:0:9443
-        app_1     |
-        app_1     | (Server started, use Ctrl+D to stop and go back to the console...)
-        app_1     |
+       app_1     |
+       app_1     | --- (Running the application, auto-reloading is enabled) ---
+       app_1     |
+       app_1     | [info] p.c.s.NettyServer - Listening for HTTP on /0:0:0:0:0:0:0:0:9000
+       app_1     | [info] p.c.s.NettyServer - Listening for HTTPS on /0:0:0:0:0:0:0:0:9443
+       app_1     |
+       app_1     | (Server started, use Ctrl+D to stop and go back to the console...)
+       app_1     |
 
 
 1. Compile all Scala files, start the server, as follows:
@@ -167,7 +168,7 @@ how to use docker-compose already.
 
    Eventually, when done compiling, Play Framework will start. Then this message will get logged:
 
-        app_1  | [info] application - Starting... [EsM200HELLO]
+       app_1  | [info] application - Starting... [EsM200HELLO]
 
    But it's easy to miss, because after that, the server logs even more messages. You can
    continue with the next step just below anyway — just keep reloading the browser page until
@@ -189,6 +190,9 @@ how to use docker-compose already.
    the email — it's written to the log files, in development mode. Copy the
    confirmation link from the `<a href=...>` and paste it in the browser's address bar.
 
+You can shutdown everything like so: `sudo s/d-killdown`, and if Play Framework runs out of memory
+(it'll do, if it recompiles Scala files and reloads the app many many times),
+you can restart it like so: `sudo s/d-restart-web-app`.
 
 Troubleshooting
 -----------------------------
