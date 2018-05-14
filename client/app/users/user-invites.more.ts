@@ -163,14 +163,14 @@ export const InviteRow = createComponent({
   },
 
   render: function() {
-    let store = this.props.store;
+    const store = this.props.store;
     const invite: Invite = this.props.invite;
     let invitedEmail;
     let invitedUser;
     let acceptedAt = t.NotYet;
     if (invite.userId) {
-      let user: BriefUser = store_getUserOrMissing(store, invite.userId);
-      invitedUser = UserName({ user: user, makeLink: true, onClick: this.onInvitedUserClick });
+      const user: BriefUser = store_getUserOrMissing(store, invite.userId);
+      invitedUser = UserName({ user, store, makeLink: true, onClick: this.onInvitedUserClick });
       invitedEmail = r.samp({}, invite.invitedEmailAddress);
       acceptedAt = moment(invite.acceptedAtEpoch).from(this.props.now);
     }
@@ -181,7 +181,7 @@ export const InviteRow = createComponent({
     let sentBy;
     if (this.props.showSender) {
       let sender: BriefUser = store_getUserOrMissing(store, invite.createdById);
-      sentBy = r.td({}, UserName({ user: sender, makeLink: true, onClick: this.onInviterClick }));
+      sentBy = r.td({}, UserName({ user: sender, store, makeLink: true, onClick: this.onInviterClick }));
     }
 
     return (

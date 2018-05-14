@@ -912,7 +912,7 @@ export const MetaPost = createComponent({
       // But then need to know what kind of action was done.
       r.div({ className: 's_MP', id: `post-${post.nr}` },
         doersAvatar,
-        UserName({ user: doer, makeLink: true, onClick: this.showAboutUser, avoidFullName: true }),
+        UserName({ user: doer, store, makeLink: true, onClick: this.showAboutUser, avoidFullName: true }),
         r.span({ className: 's_MP_Text', dangerouslySetInnerHTML: { __html: post.sanitizedHtml }}),
         ' ',
         when,
@@ -1363,9 +1363,9 @@ export const PostHeader = createComponent({
   render: function() {
     const store: Store = this.props.store;
     const page: Page = store.currentPage;
-    let me: Myself = store.me;
-    let post: Post = this.props.post;
-    let abbreviate = this.props.abbreviate;
+    const me: Myself = store.me;
+    const post: Post = this.props.post;
+    const abbreviate = this.props.abbreviate;
     if (!post)
       return r.p({}, '(Post missing [DwE7IKW2])');
 
@@ -1426,17 +1426,17 @@ export const PostHeader = createComponent({
           r.span({ className: 'dw-p-mark icon-bookmark' + starClass }));
     } */
 
-    let unreadMark = !me.isLoggedIn || me_hasRead(me, post) ? null :
+    const unreadMark = !me.isLoggedIn || me_hasRead(me, post) ? null :
         r.span({ className: 's_P_H_Unr icon-circle' });
 
-    let isPageBody = post.nr === BodyNr;
-    let by = isPageBody ? t.d.By : '';
-    let isBodyPostClass = isPageBody ? ' dw-ar-p-hd' : '';
+    const isPageBody = post.nr === BodyNr;
+    const by = isPageBody ? t.d.By : '';
+    const isBodyPostClass = isPageBody ? ' dw-ar-p-hd' : '';
 
-    let is2dColumn = page.horizontalLayout && this.props.depth === 1;
-    let collapseIcon = is2dColumn ? 'icon-left-open' : 'icon-up-open';
-    let isFlat = this.props.isFlat;
-    let toggleCollapsedButton =
+    const is2dColumn = page.horizontalLayout && this.props.depth === 1;
+    const collapseIcon = is2dColumn ? 'icon-left-open' : 'icon-up-open';
+    const isFlat = this.props.isFlat;
+    const toggleCollapsedButton =
         is2dColumn || abbreviate || post.isTreeCollapsed || isPageBody || isFlat
           ? null
           : r.span({ className: 'dw-a-clps ' + collapseIcon, onClick: this.onCollapseClick });
@@ -1445,10 +1445,10 @@ export const PostHeader = createComponent({
     // rather than above the header — that looks better.
     let inReplyTo;
     if (!abbreviate && isFlat && (post.parentNr || post.multireplyPostNrs.length)) {
-      inReplyTo = ReplyReceivers({ store: store, post: post, comma: true });
+      inReplyTo = ReplyReceivers({ store, post, comma: true });
     }
 
-    let timeClass = 'esP_H_At';
+    const timeClass = 'esP_H_At';
 
     return (
         r.div({ className: 'dw-p-hd' + isBodyPostClass },
@@ -1457,7 +1457,7 @@ export const PostHeader = createComponent({
           anySolutionIcon,
           anyAvatar,
           by,
-          UserName({ user: author, makeLink: !abbreviate,
+          UserName({ user: author, store, makeLink: !abbreviate,
               onClick: abbreviate ? undefined : this.onUserClick }),
           // COULD add "Posted on ..." tooltip.
           this.props.exactTime ?

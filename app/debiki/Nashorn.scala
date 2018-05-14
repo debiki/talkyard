@@ -363,6 +363,8 @@ class Nashorn(globals: Globals) {
     // load React components from `window['component-name']`.
     scriptBuilder.append("var global = window = this;")
 
+    val languageCode = AllSettings.makeDefault(globals.config).languageCode
+
     scriptBuilder.append(i"""
         |$DummyConsoleLogFunctions
         |${serverSideDebikiModule(secure)}
@@ -378,7 +380,7 @@ class Nashorn(globals: Globals) {
         |    // Each language file creates a 't_(lang-code)' global variable, e.g. 't_en' for English.
         |    // And they all set a global 'var t' to themselves. Update 't' here; it gets used
         |    // during rendering.
-        |    var langCode = theStore.settings.languageCode || '${AllSettings.Default.languageCode}';
+        |    var langCode = theStore.settings.languageCode || '$languageCode';
         |    t = global['t_' + langCode];
         |    eds.uploadsUrlPrefix =   // [7AKBQ2]
         |       cdnOriginOrEmpty + '${ed.server.UploadsUrlBasePath}' + theStore.pubSiteId + '/';

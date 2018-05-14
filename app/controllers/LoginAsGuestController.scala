@@ -42,14 +42,15 @@ class LoginAsGuestController @Inject()(cc: ControllerComponents, edContext: EdCo
     val email = (json \ "email").as[String].trim
 
     val settings = request.dao.getWholeSiteSettings()
-    if (!settings.isGuestLoginAllowed)
-      throwForbidden("DwE4K5FW2", "Guest login disabled; you cannot login as guest here")
-    if (User nameIsWeird name)
-      throwForbidden("DwE82CW19", "Weird name. Please specify a name with no weird characters")
-    if (name.isEmpty)
-      throwForbidden("DwE872Y90", "Please fill in your name")
-    if (email.nonEmpty && User.emailIsWeird(email))
-      throwForbidden("DwE04HK83", "Weird email. Please use a real email address")
+
+    throwForbiddenIf(!settings.allowSignup, "TyE0SIGNUP03", "Creation of new accounts is disabled")
+    throwForbiddenIf(!settings.isGuestLoginAllowed,
+      "TyE4K5FW2", "Guest login disabled; you cannot login as guest here")
+
+    throwForbiddenIf(User nameIsWeird name, "TyE82CW19", "Weird name. Please use no weird characters")
+    throwForbiddenIf(name.isEmpty, "TyE872Y90", "Please fill in your name")
+    throwForbiddenIf(email.nonEmpty && User.emailIsWeird(email),
+      "TyE04HK83", "Weird email. Please use a real email address")
 
     globals.spamChecker.detectRegistrationSpam(request, name = name, email = email) map {
         isSpamReason =>

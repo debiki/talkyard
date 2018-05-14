@@ -111,6 +111,10 @@ class LoginWithPasswordController @Inject()(cc: ControllerComponents, edContext:
     val dao = daoFor(request.request)
     val siteSettings = dao.getWholeSiteSettings()
 
+    throwForbiddenIf(!siteSettings.allowSignup, "TyE0SIGNUP01", "Creation of new accounts is disabled")
+    throwForbiddenIf(!siteSettings.allowLocalSignup,
+      "TyE0LCALSIGNUP", "Creation of local password accounts has been disabled")
+
     val becomeOwner = LoginController.shallBecomeOwner(request, emailAddress)
     val requireVerifiedEmail = becomeOwner || siteSettings.requireVerifiedEmail
     val mayPostBeforeEmailVerified = !becomeOwner && siteSettings.mayPostBeforeEmailVerified

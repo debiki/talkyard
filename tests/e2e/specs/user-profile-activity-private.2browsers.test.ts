@@ -69,17 +69,6 @@ describe("user profile access:", () => {
     strangersBrowser = owensBrowser;
   });
 
-  /*
-  // ----- Maria posts stuff
-
-  it("Member Maria logs in", () => {
-    mariasBrowser.go(idAddress.origin + '/' + forum.topics.byMichaelCategoryA.slug);
-    mariasBrowser.complex.loginWithPasswordViaTopbar(maria);
-  });
-
-  it("... and replies to Michael", () => {
-    mariasBrowser.complex.replyToOrigPost(mariasReply);
-  }); */
 
   // ----- Everyone sees Maria's stuff
 

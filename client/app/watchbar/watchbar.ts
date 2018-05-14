@@ -71,13 +71,16 @@ export const Watchbar = createComponent({
 
   render: function() {
     const store: Store = this.state.store;
+    const settings: SettingsVisibleClientSide = store.settings;
     const me = store.me;
 
     const showSubCommunities = store.settings.showSubCommunities;
     const communities = showSubCommunities ? SubCommunities({ store: store }) : null;
     const recentTopicsAndNotfs = RecentTopicsAndNotfs({ store: store, showSubCommunities });
-    const chatChannels = ChatChannels({ store: store });
-    const directMessages = me.isLoggedIn ? DirectMessages({ store: store }) : null;
+    const chatChannels = settings.enableChat !== false ? ChatChannels({ store: store }) : null;
+    const directMessages =
+        me.isLoggedIn && settings.enableDirectMessages !== false ?
+          DirectMessages({ store: store }) : null;
 
     return (
       r.div({ className: 'esWB', ref: 'watchbar' },

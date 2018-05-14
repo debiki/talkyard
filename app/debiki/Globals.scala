@@ -920,5 +920,71 @@ class Config(conf: play.api.Configuration) {
         case Some(emails) => emails.split(',').map(_.trim).toVector
       }
   }
+
+
+  object socialLogin {
+    import com.mohiva.play.silhouette.impl.providers.{OAuth1Settings, OAuth2Settings}
+
+    val googleOAuthSettings: OAuth2Settings Or ErrorMessage = goodOrError {
+      def getGoogle(confValName: String) = getConfValOrThrowDisabled(confValName, "Google")
+      OAuth2Settings(
+        authorizationURL = conf.getString("silhouette.google.authorizationURL"),
+        accessTokenURL = getGoogle("silhouette.google.accessTokenURL"),
+        redirectURL = makeRedirectUrl("google"),
+        clientID = getGoogle("silhouette.google.clientID"),
+        clientSecret = getGoogle("silhouette.google.clientSecret"),
+        scope = conf.getString("silhouette.google.scope"))
+    }
+
+    val facebookOAuthSettings: OAuth2Settings Or ErrorMessage = goodOrError {
+      def getFacebook(confValName: String) = getConfValOrThrowDisabled(confValName, "Facebook")
+      OAuth2Settings(
+        authorizationURL = conf.getString("silhouette.facebook.authorizationURL"),
+        accessTokenURL = getFacebook("silhouette.facebook.accessTokenURL"),
+        redirectURL = makeRedirectUrl("facebook"),
+        clientID = getFacebook("silhouette.facebook.clientID"),
+        clientSecret = getFacebook("silhouette.facebook.clientSecret"),
+        scope = conf.getString("silhouette.facebook.scope"))
+    }
+
+    val twitterOAuthSettings: OAuth1Settings Or ErrorMessage = goodOrError {
+      def getTwitter(confValName: String) = getConfValOrThrowDisabled(confValName, "Twitter")
+      OAuth1Settings(
+        requestTokenURL = getTwitter("silhouette.twitter.requestTokenURL"),
+        accessTokenURL = getTwitter("silhouette.twitter.accessTokenURL"),
+        authorizationURL = getTwitter("silhouette.twitter.authorizationURL"),
+        callbackURL = makeRedirectUrl("twitter").get,
+        consumerKey = getTwitter("silhouette.twitter.consumerKey"),
+        consumerSecret = getTwitter("silhouette.twitter.consumerSecret"))
+    }
+
+    val githubOAuthSettings: OAuth2Settings Or ErrorMessage = goodOrError {
+      def getGitHub(confValName: String) = getConfValOrThrowDisabled(confValName, "GitHub")
+      OAuth2Settings(
+        authorizationURL = conf.getString("silhouette.github.authorizationURL"),
+        accessTokenURL = getGitHub("silhouette.github.accessTokenURL"),
+        redirectURL = makeRedirectUrl("github"),
+        clientID = getGitHub("silhouette.github.clientID"),
+        clientSecret = getGitHub("silhouette.github.clientSecret"),
+        scope = conf.getString("silhouette.github.scope"))
+    }
+
+    private def goodOrError[A](block: => A): A Or ErrorMessage =
+      try Good(block)
+      catch {
+        case ex: QuickMessageException => Bad(ex.message)
+      }
+
+    private def getConfValOrThrowDisabled(confValName: String, providerName: String): String =
+      conf.getString(confValName) getOrElse {
+        throw new QuickMessageException(
+          s"Login via $providerName not possible: Config value missing: $confValName [TyE0SOCIALCONF")
+      }
+
+    private def makeRedirectUrl(provider: String): Option[String] =
+      // A relative path which will be resolved against the current request's host.
+      Some(controllers.routes.LoginWithOpenAuthController.finishAuthentication(provider).url)
+
+  }
 }
 

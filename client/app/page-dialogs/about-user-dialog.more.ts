@@ -205,10 +205,10 @@ const AboutUser = createComponent({
 
     const afterClick = this.props.close;
 
-    const sendMessageButton = !me_maySendDirectMessageTo(me, user) ? null :
+    const sendMessageButton = !store_maySendDirectMessageTo(store, user) ? null :
         PrimaryLinkButton({ href: linkToSendMessage(user.id), id: 'e2eUD_MessageB', afterClick,
             target: '_blank' },
-          "Send Message");
+          t.SendMsg);
 
     const userIsPageMember = page_isGroupTalk(page.pageRole) &&
         _.includes(page.pageMemberIds, user.id);

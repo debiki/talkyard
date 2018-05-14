@@ -15,13 +15,25 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *@
 
-@(pageTitle: Option[String], description: Option[String])
+@(pageTitle: Option[String], description: Option[String], faviconUrl: String)
+
+@import com.debiki.core.Prelude._
 
 @if(pageTitle.nonEmpty) {
 <title>@{pageTitle.get}</title>
 }
 @if(description.nonEmpty) {
 <meta name="description" content="@{description.get}">
+}
+
+@faviconType = @{
+  val suffix = faviconUrl.takeRightWhile(_ != '.')
+  // If too long, probably there is no real suffix. Then assume it's an icon? 'jpeg' = 4 chars.
+  if (suffix == "ico" || suffix.length > 4) "image/x-icon"
+  else "image/" + suffix
+}
+@if(faviconUrl.nonEmpty) {
+<link rel="icon" type="@faviconType" href="@faviconUrl">
 }
 
 @* Some other viewport values, and the absence of a value,

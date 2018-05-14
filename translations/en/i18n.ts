@@ -44,7 +44,7 @@ var t_en: TalkyardTranslations = t = {
   Idea: "Idea",
   Loading: "Loading...",
   LoadMore: "Load more ...",
-  LogIn: "Log in",
+  LogIn: "Log In",
   LoggedInAs: "Logged in as ",
   LogOut: "Log out",
   MessageN: "Message",
@@ -70,6 +70,8 @@ var t_en: TalkyardTranslations = t = {
   Save: "Save",
   SavingDots: "Saving ...",
   SavedDot: "Saved.",
+  SendMsg: "Send Message",
+  SignUp: "Sign Up",
   Solution: "Solution",
   Summary: "Summary",
   Submit: "Submit",
@@ -531,8 +533,6 @@ var t_en: TalkyardTranslations = t = {
     TrustLevelC: "Trust level: ",
 
     // ----- Action buttons
-
-    SendMsg: "Send Message",
 
     // ----- Profile pic
 

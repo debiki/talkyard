@@ -290,10 +290,19 @@ links -
 site settings:
   login -
     login required:  settings-login-to-read.3browsers.test.ts
+    invites only:
     approve users:
     allow signup:
     allow local signup:
     guest login allowed:
+    disable gmail -
+      button gone:
+      cannot disable if admin uses gmail henself:
+    disable facebook -
+      button gone:
+      cannot disable if admin uses fb login henself:
+    disable github:
+    disable twitter:
   moderation -
     num to review,
     num to approve,

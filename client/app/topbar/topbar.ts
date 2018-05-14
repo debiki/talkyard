@@ -250,16 +250,16 @@ export const TopBar = createComponent({
 
     // Don't show Log In on info pages, like a custom HTML homepage or About pages — that
     // has so far only made people confused.
-    const hideLogInAndSignUp =
-        me.isLoggedIn || page_isInfoPage(pageRole) || impersonatingStrangerInfo;
+    const hideLogInAndSignUp = me.isLoggedIn || page_isInfoPage(pageRole) || impersonatingStrangerInfo;
+    const hideSignup = store.settings.allowSignup === false;
 
-    const signupButton = hideLogInAndSignUp ? null :
+    const signupButton = hideLogInAndSignUp || hideSignup ? null :
       PrimaryButton({ className: 'dw-login esTopbar_signUp', onClick: this.onSignUpClick },
-        r.span({}, "Sign Up"));
+        r.span({}, t.SignUp));
 
     const loginButton = hideLogInAndSignUp ? null :
         PrimaryButton({ className: 'dw-login esTopbar_logIn', onClick: this.onLoginClick },
-            r.span({ className: 'icon-user' }, 'Log In'));
+            r.span({ className: 'icon-user' }, t.LogIn));
 
     // ------- Tools button
     // Placed here so it'll be available also when one has scrolled down a bit.

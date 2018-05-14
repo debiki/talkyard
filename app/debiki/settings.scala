@@ -38,7 +38,13 @@ trait AllSettings {
   def allowSignup: Boolean
   def allowLocalSignup: Boolean
   def allowGuestLogin: Boolean
+  def enableGoogleLogin: Boolean
+  def enableFacebookLogin: Boolean
+  def enableTwitterLogin: Boolean
+  def enableGitHubLogin: Boolean
   def requireVerifiedEmail: Boolean
+  def emailDomainBlacklist: String
+  def emailDomainWhitelist: String
   def mayComposeBeforeSignup: Boolean
   def mayPostBeforeEmailVerified: Boolean
 
@@ -65,9 +71,12 @@ trait AllSettings {
   def showTopicFilterButton: Boolean
   def showTopicTypes: Boolean
   def selectTopicType: Boolean
+  def showAuthorHow: ShowAuthorHow
+  def watchbarStartsOpen: Boolean
   def numFirstPostsToReview: Int
   def numFirstPostsToApprove: Int
   def numFirstPostsToAllow: Int
+  def faviconUrl: String
   def headStylesHtml: String
   def headScriptsHtml: String
   def endOfBodyHtml: String
@@ -83,7 +92,17 @@ trait AllSettings {
   def contentLicense: ContentLicense
   def languageCode: String
   def googleUniversalAnalyticsTrackingId: String
-  def showSubCommunities: Boolean
+
+  /** There will (maybe) later be allow-chat and allow-direct-messages *group permissions* too.
+    * So, if direct messages and chat are enabled, still maybe not everyone will be
+    * allowed to post direct messages, or create chat channels. For example, if a site
+    * is primarily intended for question-answers, and one doesn't want new users to start direct-
+    * messaging others or chatting.
+    */
+  def enableChat: Boolean
+  def enableDirectMessages: Boolean
+
+  def showSubCommunities: Boolean  // RENAME to enableSubCommunities? Why "show"?
   def showExperimental: Boolean
   def allowEmbeddingFrom: String
   def htmlTagCssClasses: String
@@ -100,14 +119,21 @@ trait AllSettings {
 
   def toJson: JsObject = Settings2.settingsToJson(toEditedSettings)
 
-  def toEditedSettings = EditedSettings(
+  // Pretend all settings have been edited, so they all will be included in the json.
+  private def toEditedSettings = EditedSettings(
     userMustBeAuthenticated = Some(self.userMustBeAuthenticated),
     userMustBeApproved = Some(self.userMustBeApproved),
     inviteOnly = Some(self.inviteOnly),
     allowSignup = Some(self.allowSignup),
     allowLocalSignup = Some(self.allowLocalSignup),
     allowGuestLogin = Some(self.allowGuestLogin),
+    enableGoogleLogin = Some(self.enableGoogleLogin),
+    enableFacebookLogin = Some(self.enableFacebookLogin),
+    enableTwitterLogin = Some(self.enableTwitterLogin),
+    enableGitHubLogin = Some(self.enableGitHubLogin),
     requireVerifiedEmail = Some(self.requireVerifiedEmail),
+    emailDomainBlacklist = Some(self.emailDomainBlacklist),
+    emailDomainWhitelist = Some(self.emailDomainWhitelist),
     mayComposeBeforeSignup = Some(self.mayComposeBeforeSignup),
     mayPostBeforeEmailVerified = Some(self.mayPostBeforeEmailVerified),
     doubleTypeEmailAddress = Some(self.doubleTypeEmailAddress),
@@ -122,9 +148,12 @@ trait AllSettings {
     showTopicFilterButton = Some(self.showTopicFilterButton),
     showTopicTypes = Some(self.showTopicTypes),
     selectTopicType = Some(self.selectTopicType),
+    showAuthorHow = Some(self.showAuthorHow),
+    watchbarStartsOpen = Some(self.watchbarStartsOpen),
     numFirstPostsToReview = Some(self.numFirstPostsToReview),
     numFirstPostsToApprove = Some(self.numFirstPostsToApprove),
     numFirstPostsToAllow = Some(self.numFirstPostsToAllow),
+    faviconUrl = Some(self.faviconUrl),
     headStylesHtml = Some(self.headStylesHtml),
     headScriptsHtml = Some(self.headScriptsHtml),
     endOfBodyHtml = Some(self.endOfBodyHtml),
@@ -140,6 +169,8 @@ trait AllSettings {
     contentLicense = Some(self.contentLicense),
     languageCode = Some(self.languageCode),
     googleUniversalAnalyticsTrackingId = Some(self.googleUniversalAnalyticsTrackingId),
+    enableChat = Some(self.enableChat),
+    enableDirectMessages = Some(self.enableDirectMessages),
     showSubCommunities = Some(self.showSubCommunities),
     showExperimental = Some(self.showExperimental),
     allowEmbeddingFrom = Some(self.allowEmbeddingFrom),
@@ -162,14 +193,20 @@ object AllSettings {
     */
   val PostRecentlyCreatedLimitMs: Int = 5 * 3600 * 1000
 
-  val Default = new AllSettings {  // [8L4KWU02]
+  def makeDefault(conf: Config): AllSettings = new AllSettings {  // [8L4KWU02]
     val userMustBeAuthenticated = false
     val userMustBeApproved = false
     val inviteOnly = false
     val allowSignup = true
     val allowLocalSignup = true
     val allowGuestLogin = false
+    val enableGoogleLogin: Boolean = conf.socialLogin.googleOAuthSettings.isGood
+    val enableFacebookLogin: Boolean = conf.socialLogin.facebookOAuthSettings.isGood
+    val enableTwitterLogin: Boolean = conf.socialLogin.twitterOAuthSettings.isGood
+    val enableGitHubLogin: Boolean = conf.socialLogin.githubOAuthSettings.isGood
     val requireVerifiedEmail = true
+    val emailDomainBlacklist = ""
+    val emailDomainWhitelist = ""
     val mayComposeBeforeSignup = false
     val mayPostBeforeEmailVerified = false
     val doubleTypeEmailAddress = false
@@ -178,15 +215,18 @@ object AllSettings {
     val forumMainView = "latest"
     val forumTopicsSortButtons = "latest|top"
     val forumCategoryLinks = "categories"
-    val forumTopicsLayout = TopicListLayout.Default
-    val forumCategoriesLayout = CategoriesLayout.Default
+    val forumTopicsLayout: TopicListLayout = TopicListLayout.Default
+    val forumCategoriesLayout: CategoriesLayout = CategoriesLayout.Default
     val showCategories = true
     val showTopicFilterButton = true
     val showTopicTypes = true
     val selectTopicType = true
+    val showAuthorHow: ShowAuthorHow = ShowAuthorHow.FullNameThenUsername
+    val watchbarStartsOpen = true
     val numFirstPostsToReview = 1
     val numFirstPostsToApprove = 0
     val numFirstPostsToAllow = 0
+    val faviconUrl = ""
     val headStylesHtml = ""
     val headScriptsHtml = ""
     val endOfBodyHtml = ""
@@ -202,21 +242,23 @@ object AllSettings {
     val orgDomain = ""
     val orgFullName = ""
     val orgShortName = ""
-    val contribAgreement = ContribAgreement.CcBy3And4
-    val contentLicense = ContentLicense.CcBySa4
+    val contribAgreement: ContribAgreement = ContribAgreement.CcBy3And4
+    val contentLicense: ContentLicense = ContentLicense.CcBySa4
     val languageCode = "en"
     val googleUniversalAnalyticsTrackingId = ""
+    val enableChat = true
+    val enableDirectMessages = true
     val showSubCommunities = false
     val showExperimental = false
     val allowEmbeddingFrom = ""
     val htmlTagCssClasses = ""
-    def numFlagsToHidePost = 3
-    def cooldownMinutesAfterFlaggedHidden = 10
-    def numFlagsToBlockNewUser = 3
-    def numFlaggersToBlockNewUser = 3
-    def notifyModsIfUserBlocked = true
-    def regularMemberFlagWeight = 1.5f
-    def coreMemberFlagWeight = 2.0f
+    val numFlagsToHidePost = 3
+    val cooldownMinutesAfterFlaggedHidden = 10
+    val numFlagsToBlockNewUser = 3
+    val numFlaggersToBlockNewUser = 3
+    val notifyModsIfUserBlocked = true
+    val regularMemberFlagWeight = 1.5f
+    val coreMemberFlagWeight = 2.0f
   }
 }
 
@@ -241,7 +283,13 @@ case class EffectiveSettings(
   def allowSignup: Boolean = firstInChain(_.allowSignup) getOrElse default.allowSignup
   def allowLocalSignup: Boolean = firstInChain(_.allowLocalSignup) getOrElse default.allowLocalSignup
   def allowGuestLogin: Boolean = firstInChain(_.allowGuestLogin) getOrElse default.allowGuestLogin
+  def enableGoogleLogin: Boolean = firstInChain(_.enableGoogleLogin) getOrElse default.enableGoogleLogin
+  def enableFacebookLogin: Boolean = firstInChain(_.enableFacebookLogin) getOrElse default.enableFacebookLogin
+  def enableTwitterLogin: Boolean = firstInChain(_.enableTwitterLogin) getOrElse default.enableTwitterLogin
+  def enableGitHubLogin: Boolean = firstInChain(_.enableGitHubLogin) getOrElse default.enableGitHubLogin
   def requireVerifiedEmail: Boolean = firstInChain(_.requireVerifiedEmail) getOrElse default.requireVerifiedEmail
+  def emailDomainBlacklist: String = firstInChain(_.emailDomainBlacklist) getOrElse default.emailDomainBlacklist
+  def emailDomainWhitelist: String = firstInChain(_.emailDomainWhitelist) getOrElse default.emailDomainWhitelist
   def mayComposeBeforeSignup: Boolean = firstInChain(_.mayComposeBeforeSignup) getOrElse default.mayComposeBeforeSignup
   def mayPostBeforeEmailVerified: Boolean = firstInChain(_.mayPostBeforeEmailVerified) getOrElse default.mayPostBeforeEmailVerified
   def doubleTypeEmailAddress: Boolean = firstInChain(_.doubleTypeEmailAddress) getOrElse default.doubleTypeEmailAddress
@@ -256,9 +304,12 @@ case class EffectiveSettings(
   def showTopicFilterButton: Boolean = firstInChain(_.showTopicFilterButton) getOrElse default.showTopicFilterButton
   def showTopicTypes: Boolean = firstInChain(_.showTopicTypes) getOrElse default.showTopicTypes
   def selectTopicType: Boolean = firstInChain(_.selectTopicType) getOrElse default.selectTopicType
+  def showAuthorHow: ShowAuthorHow = firstInChain(_.showAuthorHow) getOrElse default.showAuthorHow
+  def watchbarStartsOpen: Boolean = firstInChain(_.watchbarStartsOpen) getOrElse default.watchbarStartsOpen
   def numFirstPostsToReview: Int = firstInChain(_.numFirstPostsToReview) getOrElse default.numFirstPostsToReview
   def numFirstPostsToApprove: Int = firstInChain(_.numFirstPostsToApprove) getOrElse default.numFirstPostsToApprove
   def numFirstPostsToAllow: Int = firstInChain(_.numFirstPostsToAllow) getOrElse default.numFirstPostsToAllow
+  def faviconUrl: String = firstInChain(_.faviconUrl) getOrElse default.faviconUrl
   def headStylesHtml: String = firstInChain(_.headStylesHtml) getOrElse default.headStylesHtml
   def headScriptsHtml: String = firstInChain(_.headScriptsHtml) getOrElse default.headScriptsHtml
   def endOfBodyHtml: String = firstInChain(_.endOfBodyHtml) getOrElse default.endOfBodyHtml
@@ -274,6 +325,8 @@ case class EffectiveSettings(
   def contentLicense: ContentLicense = firstInChain(_.contentLicense) getOrElse default.contentLicense
   def languageCode: String = firstInChain(_.languageCode) getOrElse default.languageCode
   def googleUniversalAnalyticsTrackingId: String = firstInChain(_.googleUniversalAnalyticsTrackingId) getOrElse default.googleUniversalAnalyticsTrackingId
+  def enableChat: Boolean = firstInChain(_.enableChat) getOrElse default.enableChat
+  def enableDirectMessages: Boolean = firstInChain(_.enableDirectMessages) getOrElse default.enableDirectMessages
   def showSubCommunities: Boolean = firstInChain(_.showSubCommunities) getOrElse default.showSubCommunities
   def showExperimental: Boolean = firstInChain(_.showExperimental) getOrElse default.showExperimental
   def allowEmbeddingFrom: String = firstInChain(_.allowEmbeddingFrom) getOrElse default.allowEmbeddingFrom
@@ -352,7 +405,13 @@ object Settings2 {
       "allowSignup" -> JsBooleanOrNull(s.allowSignup),
       "allowLocalSignup" -> JsBooleanOrNull(s.allowLocalSignup),
       "allowGuestLogin" -> JsBooleanOrNull(s.allowGuestLogin),
+      "enableGoogleLogin" -> JsBooleanOrNull(s.enableGoogleLogin),
+      "enableFacebookLogin" -> JsBooleanOrNull(s.enableFacebookLogin),
+      "enableTwitterLogin" -> JsBooleanOrNull(s.enableTwitterLogin),
+      "enableGitHubLogin" -> JsBooleanOrNull(s.enableGitHubLogin),
       "requireVerifiedEmail" -> JsBooleanOrNull(s.requireVerifiedEmail),
+      "emailDomainBlacklist" -> JsStringOrNull(s.emailDomainBlacklist),
+      "emailDomainWhitelist" -> JsStringOrNull(s.emailDomainWhitelist),
       "mayComposeBeforeSignup" -> JsBooleanOrNull(s.mayComposeBeforeSignup),
       "mayPostBeforeEmailVerified" -> JsBooleanOrNull(s.mayPostBeforeEmailVerified),
       "doubleTypeEmailAddress" -> JsBooleanOrNull(s.doubleTypeEmailAddress),
@@ -367,9 +426,12 @@ object Settings2 {
       "showTopicFilterButton" -> JsBooleanOrNull(s.showTopicFilterButton),
       "showTopicTypes" -> JsBooleanOrNull(s.showTopicTypes),
       "selectTopicType" -> JsBooleanOrNull(s.selectTopicType),
+      "showAuthorHow" -> JsNumberOrNull(s.showAuthorHow.map(_.toInt)),
+      "watchbarStartsOpen" -> JsBooleanOrNull(s.watchbarStartsOpen),
       "numFirstPostsToReview" -> JsNumberOrNull(s.numFirstPostsToReview),
       "numFirstPostsToApprove" -> JsNumberOrNull(s.numFirstPostsToApprove),
       "numFirstPostsToAllow" -> JsNumberOrNull(s.numFirstPostsToAllow),
+      "faviconUrl" -> JsStringOrNull(s.faviconUrl),
       "headStylesHtml" -> JsStringOrNull(s.headStylesHtml),
       "headScriptsHtml" -> JsStringOrNull(s.headScriptsHtml),
       "endOfBodyHtml" -> JsStringOrNull(s.endOfBodyHtml),
@@ -385,6 +447,8 @@ object Settings2 {
       "contentLicense" -> JsNumberOrNull(s.contentLicense.map(_.toInt)),
       "languageCode" -> JsStringOrNull(s.languageCode),
       "googleUniversalAnalyticsTrackingId" -> JsStringOrNull(s.googleUniversalAnalyticsTrackingId),
+      "enableChat" -> JsBooleanOrNull(s.enableChat),
+      "enableDirectMessages" -> JsBooleanOrNull(s.enableDirectMessages),
       "showSubCommunities" -> JsBooleanOrNull(s.showSubCommunities),
       "showExperimental" -> JsBooleanOrNull(s.showExperimental),
       "allowEmbeddingFrom" -> JsStringOrNull(s.allowEmbeddingFrom),
@@ -399,16 +463,22 @@ object Settings2 {
   }
 
 
-  def d = AllSettings.Default
-
-  def settingsToSaveFromJson(json: JsValue) = SettingsToSave(
+  def settingsToSaveFromJson(json: JsValue, conf: Config): SettingsToSave = {
+    val d = AllSettings.makeDefault(conf)
+    SettingsToSave(
     userMustBeAuthenticated = anyBool(json, "userMustBeAuthenticated", d.userMustBeAuthenticated),
     userMustBeApproved = anyBool(json, "userMustBeApproved", d.userMustBeApproved),
     inviteOnly = anyBool(json, "inviteOnly", d.inviteOnly),
     allowSignup = anyBool(json, "allowSignup", d.allowSignup),
     allowLocalSignup = anyBool(json, "allowLocalSignup", d.allowLocalSignup),
     allowGuestLogin = anyBool(json, "allowGuestLogin", d.allowGuestLogin),
+    enableGoogleLogin = anyBool(json, "enableGoogleLogin", d.enableGoogleLogin),
+    enableFacebookLogin = anyBool(json, "enableFacebookLogin", d.enableFacebookLogin),
+    enableTwitterLogin = anyBool(json, "enableTwitterLogin", d.enableTwitterLogin),
+    enableGitHubLogin = anyBool(json, "enableGitHubLogin", d.enableGitHubLogin),
     requireVerifiedEmail = anyBool(json, "requireVerifiedEmail", d.requireVerifiedEmail),
+    emailDomainBlacklist = anyString(json, "emailDomainBlacklist", d.emailDomainBlacklist),
+    emailDomainWhitelist = anyString(json, "emailDomainWhitelist", d.emailDomainWhitelist),
     mayComposeBeforeSignup = anyBool(json, "mayComposeBeforeSignup", d.mayComposeBeforeSignup),
     mayPostBeforeEmailVerified = anyBool(json, "mayPostBeforeEmailVerified", d.mayPostBeforeEmailVerified),
     doubleTypeEmailAddress = anyBool(json, "doubleTypeEmailAddress", d.doubleTypeEmailAddress),
@@ -423,9 +493,12 @@ object Settings2 {
     showTopicFilterButton = anyBool(json, "showTopicFilterButton", d.showTopicFilterButton),
     showTopicTypes = anyBool(json, "showTopicTypes", d.showTopicTypes),
     selectTopicType = anyBool(json, "selectTopicType", d.selectTopicType),
+    showAuthorHow = anyInt(json, "showAuthorHow", d.showAuthorHow.toInt).map(_.flatMap(ShowAuthorHow.fromInt)),
+    watchbarStartsOpen = anyBool(json, "watchbarStartsOpen", d.watchbarStartsOpen),
     numFirstPostsToReview = anyInt(json, "numFirstPostsToReview", d.numFirstPostsToReview),
     numFirstPostsToApprove = anyInt(json, "numFirstPostsToApprove", d.numFirstPostsToApprove),
     numFirstPostsToAllow = anyInt(json, "numFirstPostsToAllow", d.numFirstPostsToAllow),
+    faviconUrl = anyString(json, "faviconUrl", d.faviconUrl),
     headStylesHtml = anyString(json, "headStylesHtml", d.headStylesHtml),
     headScriptsHtml = anyString(json, "headScriptsHtml", d.headScriptsHtml),
     endOfBodyHtml = anyString(json, "endOfBodyHtml", d.endOfBodyHtml),
@@ -445,6 +518,8 @@ object Settings2 {
     languageCode = anyString(json, "languageCode", d.languageCode),
     googleUniversalAnalyticsTrackingId =
       anyString(json, "googleUniversalAnalyticsTrackingId", d.googleUniversalAnalyticsTrackingId),
+    enableChat = anyBool(json, "enableChat", d.enableChat),
+    enableDirectMessages = anyBool(json, "enableDirectMessages", d.enableDirectMessages),
     showSubCommunities = anyBool(json, "showSubCommunities", d.showSubCommunities),
     showExperimental = anyBool(json, "showExperimental", d.showExperimental),
     allowEmbeddingFrom = anyString(json, "allowEmbeddingFrom", d.allowEmbeddingFrom),
@@ -456,6 +531,7 @@ object Settings2 {
     notifyModsIfUserBlocked = anyBool(json, "notifyModsIfUserBlocked", d.notifyModsIfUserBlocked  ),
     regularMemberFlagWeight = anyFloat(json, "regularMemberFlagWeight", d.regularMemberFlagWeight  ),
     coreMemberFlagWeight = anyFloat(json, "coreMemberFlagWeight", d.coreMemberFlagWeight))
+  }
 
 
   private def anyString(json: JsValue, field: String, default: String): Option[Option[String]] =

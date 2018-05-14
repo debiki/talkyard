@@ -60,8 +60,10 @@ class InviteController @Inject()(cc: ControllerComponents, edContext: EdContext)
     // Is toEmailAddress already a member or already invited?
     request.dao.readOnlyTransaction { transaction =>
       val alreadyExistingUser = transaction.loadMemberByPrimaryEmailOrUsername(toEmailAddress)
-      if (alreadyExistingUser.nonEmpty)
+      if (alreadyExistingUser.nonEmpty) {
+        // Maybe check if email verified? [5UKHWQ2]
         throwForbidden("_EsE403IUAM_", "That person has joined this site already")
+      }
 
       val invites = transaction.loadInvites(createdById = request.theUserId)
       for (invite <- invites if invite.emailAddress == toEmailAddress) {

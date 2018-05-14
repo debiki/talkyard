@@ -336,6 +336,21 @@ package object core {
   }
 
 
+  sealed abstract class ShowAuthorHow(val IntVal: Int) { def toInt: Int = IntVal }
+  object ShowAuthorHow {
+    object UsernameOnly extends ShowAuthorHow(1)
+    object UsernameThenFullName extends ShowAuthorHow(2)
+    object FullNameThenUsername extends ShowAuthorHow(3)
+
+    def fromInt(value: Int): Option[ShowAuthorHow] = Some(value match {
+      case UsernameOnly.IntVal => UsernameOnly
+      case UsernameThenFullName.IntVal => UsernameThenFullName
+      case FullNameThenUsername.IntVal => FullNameThenUsername
+      case _ => return None
+    })
+  }
+
+
   /** Spam related request stuff, e.g. referer and user agent.
     */
   case class SpamRelReqStuff(

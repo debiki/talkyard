@@ -185,7 +185,7 @@ const ReviewTask = createComponent({
     let rejectButton;
     if (this.state.completed || reviewTask.completedAtMs) {
       const taskDoneBy: BriefUser | null = store.usersByIdBrief[reviewTask.completedById];
-      const doneByInfo = !taskDoneBy ? null : r.span({}, " by ", UserName({ user: taskDoneBy }));
+      const doneByInfo = !taskDoneBy ? null : r.span({}, " by ", UserName({ user: taskDoneBy, store }));
       taskDoneInfo = r.span({}, " Has been reviewed", doneByInfo);
     }
     else if (reviewTask.invalidatedAtMs) {
@@ -227,13 +227,13 @@ const ReviewTask = createComponent({
     const author = store.usersByIdBrief[post.createdById] || {};
     const writtenByInfo =
         r.div({ className: 's_RT_WrittenBy' },
-          "Written by: ", UserName({ user: author }));
+          "Written by: ", UserName({ user: author, store }));
 
     const lastApprovedEditBy = !post.lastApprovedEditById ? null :
         store.usersByIdBrief[post.lastApprovedEditById] || {};
     const lastApprovedEditInfo = !lastApprovedEditBy ? null :
         r.div({ className: 's_RT_LastAprEditBy' },
-          "Last approved edit by: ", UserName({ user: lastApprovedEditBy }));
+          "Last approved edit by: ", UserName({ user: lastApprovedEditBy, store }));
 
     // Minor BUG: This duplicates all flags for this post, for each review task. But
     // there's one review task per flag.
@@ -258,7 +258,7 @@ const ReviewTask = createComponent({
               const flagDummyId = `${flag.flaggedAt}|${flag.flaggerId}`; // [2PKRW08]
               return (
                 r.li({ className: 's_RT_Flags_Flag' + oldFlagClass, key: flagDummyId },
-                  UserName({ user: flagger }),
+                  UserName({ user: flagger, store }),
                   " reason: ",
                   reason,
                   ", on ",

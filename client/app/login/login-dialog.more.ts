@@ -140,9 +140,12 @@ const LoginDialog = createClassAndFactory({
 
     login.anyContinueAfterLoginCallback = callback;
 
+    const store: Store = this.state.store;
+    if (store.settings.allowSignup === false)
+      isSignUp = false;
+
     // When logging in to an embedded comments discussion, if guest login is enabled,
     // then assume that's what most people want to use. [8UKBTQ2]
-    const store: Store = this.state.store;
     const isForGuest = isSignUp && loginReason === LoginReason.PostEmbeddedComment &&
         store.settings.allowGuestLogin;
 
@@ -256,6 +259,7 @@ export const LoginDialogContent = createClassAndFactory({
     const store: Store = this.props.store;
     const loginReason = this.props.loginReason;
     const isSignUp = this.props.isSignUp;
+    const settings: SettingsVisibleClientSide = store.settings;
 
     const closeChildDialog = (closeAll) => {
       this.props.setChildDialog(null);
@@ -302,7 +306,7 @@ export const LoginDialogContent = createClassAndFactory({
 
     const isForGuest = this.props.isForGuest;
     const isForPasswordUser = !isForGuest;
-    const createUserForm = !isSignUp ? null :
+    const createUserForm = !isSignUp || settings.allowLocalSignup === false ? null :
         CreateUserDialogContent({ ...childDialogProps, isForPasswordUser, isForGuest });
 
     let switchToOtherDialogInstead;
@@ -324,6 +328,9 @@ export const LoginDialogContent = createClassAndFactory({
       // BUG currently no store data is included on /-/login, so even if siteStatus > Active,
       // the "Create account" link inserted below (in `else`) will be added, nevertheless.
     }
+    else if (settings.allowSignup === false) {
+      // Then don't show any switch-to-signup button.
+    }
     else {
       // The login dialog opens not only via the Log In button, but also if one clicks
       // e.g. Create Topic. So it's important to be able to switch to sign-up.
@@ -336,16 +343,17 @@ export const LoginDialogContent = createClassAndFactory({
           t.ld.SignUpInstead_3), " )");
     }
 
+    const ss = store.settings;
     return (
       r.div({ className: 'esLD' },
         notFoundInstructions,
         becomeOwnerInstructions,
         r.p({ id: 'dw-lgi-or-login-using' }, (isSignUp ? t.ld.SignIn : t.ld.LogIn) + ' ...'),
         r.div({ id: 'dw-lgi-other-sites' },
-          OpenAuthButton(makeOauthProps('icon-google', 'Google', true)),
-          OpenAuthButton(makeOauthProps('icon-facebook', 'Facebook')),
-          OpenAuthButton(makeOauthProps('icon-twitter', 'Twitter')),
-          OpenAuthButton(makeOauthProps('icon-github-circled', 'GitHub')),
+          ss.enableGoogleLogin ? OpenAuthButton(makeOauthProps('icon-google', 'Google', true)) : null,
+          ss.enableFacebookLogin ? OpenAuthButton(makeOauthProps('icon-facebook', 'Facebook')) : null,
+          ss.enableTwitterLogin ? OpenAuthButton(makeOauthProps('icon-twitter', 'Twitter')) : null,
+          ss.enableGitHubLogin ? OpenAuthButton(makeOauthProps('icon-github-circled', 'GitHub')) : null,
           // OpenID doesn't work right now, skip for now:  icon-yahoo Yahoo!
           ),
 
