@@ -211,7 +211,7 @@ export function UserName(props: {
     const skipName =
         !user.fullName || (props.avoidFullName && user.username) || user.username == user.fullName;
     const fullName = skipName ? undefined :
-      r.span({ className: 'esP_By_U' + guestClass }, user.fullName + guestMark);
+        r.span({ className: 'esP_By_U' + guestClass }, user.fullName + guestMark);
     namePartOne = username;
     namePartTwo = fullName;
   }

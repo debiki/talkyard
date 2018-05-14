@@ -28,7 +28,8 @@
 
 @faviconType = @{
   val suffix = faviconUrl.takeRightWhile(_ != '.')
-  if (suffix == "ico") "image/x-icon"
+  // If too long, probably there is no real suffix. Then assume it's an icon? 'jpeg' = 4 chars.
+  if (suffix == "ico" || suffix.length > 4) "image/x-icon"
   else "image/" + suffix
 }
 @if(faviconUrl.nonEmpty) {

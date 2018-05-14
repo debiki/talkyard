@@ -252,7 +252,7 @@ const LoginAndSignupSettings = createFactory({
     return (
       r.div({},
         Setting2(props, { type: 'checkbox', label: "Allow signup", id: 'e_AllowSignup',
-          help: r.span({}, "Uncheck to prevent people from creating new accounts."),
+          help: "Uncheck to prevent people from creating new accounts.",
           getter: (s: Settings) => s.allowSignup,
           update: (newSettings: Settings, target) => {
             newSettings.allowSignup = target.checked;
@@ -395,7 +395,6 @@ const LoginAndSignupSettings = createFactory({
           type: 'checkbox', label: "Enable Google signup", id: 'e_EnableGoogleLogin',
           className: 'e_A_Ss_S-EnableGoogleCB',
           help: "Lets people sign up and login with their Gmail account.",
-          disabled: !valueOf(s => s.allowSignup),
           getter: (s: Settings) => s.enableGoogleLogin,
           update: (newSettings: Settings, target) => {
             newSettings.enableGoogleLogin = target.checked;
@@ -406,7 +405,6 @@ const LoginAndSignupSettings = createFactory({
           type: 'checkbox', label: "Enable Facebook signup",
           className: 'e_A_Ss_S-EnableFacebookCB',
           help: "Lets people sign up and login with their Facebook account.",
-          disabled: !valueOf(s => s.allowSignup),
           getter: (s: Settings) => s.enableFacebookLogin,
           update: (newSettings: Settings, target) => {
             newSettings.enableFacebookLogin = target.checked;
@@ -417,7 +415,6 @@ const LoginAndSignupSettings = createFactory({
           type: 'checkbox', label: "Enable Twitter signup",
           className: 'e_A_Ss_S-EnableTwitterCB',
           help: "Lets people sign up and login with their Twitter account.",
-          disabled: !valueOf(s => s.allowSignup),
           getter: (s: Settings) => s.enableTwitterLogin,
           update: (newSettings: Settings, target) => {
             newSettings.enableTwitterLogin = target.checked;
@@ -428,7 +425,6 @@ const LoginAndSignupSettings = createFactory({
           type: 'checkbox', label: "Enable GitHub signup",
           className: 'e_A_Ss_S-EnableGitHubCB',
           help: "Lets people sign up and login with their GitHub account.",
-          disabled: !valueOf(s => s.allowSignup),
           getter: (s: Settings) => s.enableGitHubLogin,
           update: (newSettings: Settings, target) => {
             newSettings.enableGitHubLogin = target.checked;
@@ -671,7 +667,7 @@ const FeatureSettings = createFactory({
 
     return (
       r.div({},
-        Setting2(props, { type: 'checkbox', indent: true,
+        Setting2(props, { type: 'checkbox',
           label: "Enable chat",
           help: "Lets people create and join chat topics, and shows joined chats in the left sidebar. " +
             "If everyone uses another team chat tool already, like Slack, " +
@@ -682,20 +678,20 @@ const FeatureSettings = createFactory({
           }
         }),
 
-        Setting2(props, { type: 'checkbox', indent: true,
+        Setting2(props, { type: 'checkbox',
           label: "Enable direct messages",
           help: "Lets people send direct messages to each other, and shows one's direct message " +
             "topics in the left sidebar. " +
             "If everyone uses another direct messaging tool already, like Slack, " +
-            "then you might want to disable this, here.",
+            "then you might want to disable direct messages here.",
           getter: (s: Settings) => s.enableDirectMessages,
           update: (newSettings: Settings, target) => {
             newSettings.enableDirectMessages = target.checked;
           }
         }),
 
-        Setting2(props, {
-          type: 'checkbox', label: "Enable sub communities",
+        Setting2(props, { type: 'checkbox',
+          label: "Enable sub communities",
           help: rFragment({},
             "Lets admins create sub communities. You probably don't want this. " +
             "A sub community is a separate forum with its own categories and topic lists. " +
@@ -1179,7 +1175,7 @@ const CustomizeBasicPanel = createFactory({
           update: (newSettings: Settings, target) => {
             let num = parseInt(target.value);
             if (_.isNaN(num)) num = 3;
-            if (num > 10) num = num % 10; // pick the last digit = the one the user just typed
+            if (num >= 10) num = num % 10; // pick the last digit = the one the user just typed
             if (num < 1) num = 1;
             if (num > 3) num = 3;
             newSettings.showAuthorHow = num;
