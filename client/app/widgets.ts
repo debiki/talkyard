@@ -16,6 +16,7 @@
  */
 
 /// <reference path="prelude.ts" />
+/// <reference path="links.ts" />
 
 //------------------------------------------------------------------------------
    namespace debiki2 {
@@ -178,22 +179,60 @@ export function MenuItemDivider() {
 }
 
 
-export function UserName(
-    props: { user: BriefUser, makeLink?: boolean, onClick?: any, avoidFullName?: boolean }) {
+export function UserName(props: {
+    user: BriefUser, store: Store, makeLink?: boolean, onClick?: any, avoidFullName?: boolean }) {
   // Some dupl code, see discussion.ts, edit-history-dialog.ts & avatar.ts [88MYU2]
   const user = props.user;
+  const showHow: ShowAuthorHow = props.store.settings.showAuthorHow;
+
+  // (All StackExchange demo sites use ShowAuthorHow.FullNameThenUsername, so
+  // only used in that if branch, below.)
   const isStackExchangeUser = user.username && user.username.search('__sx_') === 0; // [2QWGRC8P]
 
   const guestClass = user_isGuest(user) ? ' esP_By_F-G' : '';
-  const guestMark = user_isGuest(user) ? '? ' : '';
-  let fullName: any = !user.fullName || (props.avoidFullName && user.username) ? undefined :
-    r.span({ className: 'esP_By_F' + guestClass }, user.fullName + ' ' + guestMark);
-  const username = !user.username || isStackExchangeUser ? null :
-    r.span({ className: 'esP_By_U' },
-      r.span({ className: 'esP_By_U_at' }, '@'), user.username);
+  const guestMark = user_isGuest(user) ? ' ?' : '';
 
-  if (!fullName && !username) {
-    fullName = "(Unknown author)";
+  let namePartOne;
+  let namePartTwo;
+
+  if (showHow === ShowAuthorHow.UsernameOnly) {
+    // CLEAN_UP rename these CSS classes from ...By_F to By_1 and By_2 for part 1 (bold font)
+    // and 2 (normal font) instead?
+    // But for now, use By_F for the *username* just because it's bold, and By_U for the full name,
+    // because it's thin.
+    const username = !user.username ? null : r.span({className: 'esP_By_F'}, user.username);
+    const fullName = username ? null :
+        r.span({ className: 'esP_By_U' + guestClass }, user.fullName + guestMark);
+    namePartOne = username;
+    namePartTwo = fullName;
+  }
+  else if (showHow === ShowAuthorHow.UsernameThenFullName) {
+    const username = !user.username ? null : r.span({className: 'esP_By_F'}, user.username + ' ');
+    const skipName =
+        !user.fullName || (props.avoidFullName && user.username) || user.username == user.fullName;
+    const fullName = skipName ? undefined :
+      r.span({ className: 'esP_By_U' + guestClass }, user.fullName + guestMark);
+    namePartOne = username;
+    namePartTwo = fullName;
+  }
+  else {
+    // @ifdef DEBUG
+    dieIf(showHow && showHow !== ShowAuthorHow.FullNameThenUsername, 'TyEE4KGUDQ2');
+    // @endif
+
+    const fullName: any = !user.fullName || (props.avoidFullName && user.username) ? undefined :
+      r.span({ className: 'esP_By_F' + guestClass }, user.fullName + guestMark + ' ');
+
+    const username = !user.username || isStackExchangeUser ? null :
+      r.span({ className: 'esP_By_U' },
+        r.span({ className: 'esP_By_U_at' }, '@'), user.username);
+
+    namePartOne = fullName;
+    namePartTwo = username;
+  }
+
+  if (!namePartOne && !namePartTwo) {
+    namePartOne = "(Unknown author)";
   }
 
   const linkFn = <any>(props.makeLink ? r.a : r.span);
@@ -236,7 +275,7 @@ export function UserName(
     }
   }
 
-  let result = linkFn(newProps, fullName, username);
+  let result = linkFn(newProps, namePartOne, namePartTwo);
   if (bugWrapInDiv) {
     // React 16.2 removes span but keeps div.
     result = r.div({ style: { display: 'inline' }}, result);

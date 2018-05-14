@@ -23,36 +23,37 @@
 //------------------------------------------------------------------------------
 
 
-export var AvatarAndName = createComponent({
-  render: function () {
-    var user: BriefUser = this.props.user;
-    var avatar = this.props.hideAvatar ?
-        null : debiki2.avatar.Avatar({ user: user, ignoreClicks: true });
+export var AvatarAndName = function(
+    props: { user, hideAvatar?: boolean, ignoreClicks?: boolean }) {
 
-    // Dupl code, see posts.ts [88MYU2]
-    var namePart1;
-    var namePart2;
-    if (user.fullName && user.username) {
-      namePart1 = r.span({ className: 'esAvtrName_username' }, user.username);
-      namePart2 = r.span({ className: 'esAvtrName_fullName' }, ' (' + user.fullName + ')');
-    }
-    else if (user.fullName) {
-      namePart1 = r.span({ className: 'esAvtrName_fullName' }, user.fullName);
-      namePart2 = r.span({ className: 'esAvtrName_isGuest' }, user.isEmailUnknown ? '??' : '?');
-    }
-    else if (user.username) {
-      namePart1 = r.span({ className: 'esAvtrName_username' }, user.username);
-    }
-    else {
-      namePart1 = r.span({ className: 'esAvtrName' }, '(Unknown author)');
-    }
-    var onClick = this.props.ignoreClicks ?
-        null : (event) => morebundle.openAboutUserDialog(user.id, event.target);
-    return (
-        r.span({ className: 'esAvtrName', onClick: onClick },
-          avatar, namePart1, namePart2));
+  const user: BriefUser = props.user;
+  const avatar = props.hideAvatar ?
+      null : debiki2.avatar.Avatar({ user: user, ignoreClicks: true });
+
+  // Dupl code, see posts.ts [88MYU2]
+  let namePart1;
+  let namePart2;
+  if (user.fullName && user.username) {
+    namePart1 = r.span({ className: 'esAvtrName_username' }, user.username);
+    namePart2 = r.span({ className: 'esAvtrName_fullName' }, ' (' + user.fullName + ')');
   }
-});
+  else if (user.fullName) {
+    namePart1 = r.span({ className: 'esAvtrName_fullName' }, user.fullName);
+    namePart2 = r.span({ className: 'esAvtrName_isGuest' }, user.isEmailUnknown ? '??' : '?');
+  }
+  else if (user.username) {
+    namePart1 = r.span({ className: 'esAvtrName_username' }, user.username);
+  }
+  else {
+    namePart1 = r.span({ className: 'esAvtrName' }, '(Unknown author)');
+  }
+  const onClick = props.ignoreClicks ?
+      null : (event) => morebundle.openAboutUserDialog(user.id, event.target);
+  return (
+      r.span({ className: 'esAvtrName', onClick: onClick },
+        avatar, namePart1, namePart2));
+
+};
 
 
 //------------------------------------------------------------------------------

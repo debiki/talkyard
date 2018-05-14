@@ -413,7 +413,7 @@ enum CategoriesLayout {
 enum ShowAuthorHow {
   UsernameOnly = 1,
   UsernameThenFullName = 2,
-  FullNameThenUsername = 3,
+  FullNameThenUsername = 3,  // the default
 }
 
 
