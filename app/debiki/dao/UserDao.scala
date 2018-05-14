@@ -83,6 +83,9 @@ trait UserDao {
         throwForbidden("DwE0FKW2", "You have joined the site already, but this link has expired")
       }
 
+      SECURITY // Rather harmless. What if Mallory signed up with the same email, but it's not his email?
+      // He couldn't verify the email address, but can block the real user from accepting
+      // the invite? [5UKHWQ2])
       if (tx.loadMemberByPrimaryEmailOrUsername(invite.emailAddress).isDefined)
         throwForbidden("DwE8KFG4", o"""You have joined this site already, so this
              join-site invitation link does nothing. Thanks for clicking it anyway""")

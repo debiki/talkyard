@@ -56,6 +56,8 @@ interface TalkyardTranslations {
   Save: string;
   SavingDots: string;
   SavedDot: string;
+  SendMsg: string;
+  SignUp: string;
   Solution: string;
   Summary: string;
   Submit: string;
@@ -475,8 +477,6 @@ interface TalkyardTranslations {
     TrustLevelC: string;
 
     // ----- Action buttons
-
-    SendMsg: string;
 
     // ----- Profile pic
 

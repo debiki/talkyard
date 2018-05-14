@@ -318,6 +318,7 @@ const AvatarAboutAndButtons = createComponent({
   },
 
   render: function() {
+    const store: Store = this.props.store;
     const user: MemberInclDetails = this.props.user;
     const stats: UserStats = this.props.stats;
     const me: Myself = this.props.me;
@@ -381,9 +382,9 @@ const AvatarAboutAndButtons = createComponent({
         LinkButton({ href: linkToUserInAdminArea(user.id), className: 's_UP_AdminB' },
           "View in Admin Area");
 
-    const sendMessageButton = !me_maySendDirectMessageTo(me, user) ? null :
+    const sendMessageButton = !store_maySendDirectMessageTo(store, user) ? null :
         PrimaryButton({ onClick: this.sendMessage, className: 's_UP_SendMsgB' },
-          t.upp.SendMsg);
+          t.SendMsg);
 
     // COULD prefix everything inside with s_UP_Ab(out) instead of just s_UP.
     return r.div({ className: 's_UP_Ab dw-user-bar clearfix' },

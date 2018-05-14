@@ -1145,6 +1145,7 @@ interface Settings {
 
   horizontalComments: boolean;
 
+  faviconUrl: string;
   headStylesHtml: string;
   headScriptsHtml: string;
   endOfBodyHtml: string;

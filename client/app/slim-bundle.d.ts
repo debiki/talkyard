@@ -192,7 +192,7 @@ declare namespace debiki2 {
   var threatLevel_toString;
   var isGuest;
   var user_isGuest;
-  var me_maySendDirectMessageTo;
+  function store_maySendDirectMessageTo(store: Store, user: MemberInclDetails): boolean;
   var page_isGroupTalk;
   let store_getUserOrMissing;
   var store_thisIsMyPage;

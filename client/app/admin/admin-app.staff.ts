@@ -437,6 +437,8 @@ const LoginAndSignupSettings = createFactory({
 
         // ---- Email domain blacklist
 
+        /* Not impl server side. And UX? Should whitelist domains be shown client side?
+
         !allowSignup ? null : Setting2(props, {
           type: 'textarea', label: "Email domain blacklist", id: 'e_EmailBlacklist',
           help: "People may not sign up with emails from these domains. One domain per row. " +
@@ -455,7 +457,7 @@ const LoginAndSignupSettings = createFactory({
           update: (newSettings: Settings, target) => {
             newSettings.emailDomainWhitelist = target.value;
           }
-        }),
+        }),  */
         ));
   }
 });
@@ -1070,9 +1072,30 @@ const CustomizeBasicPanel = createFactory({
   displayName: 'CustomizeBasicPanel',
 
   render: function() {
-    let props = this.props;
+    const props = this.props;
+    const currentSettings: Settings = props.currentSettings;
+    const editedSettings: Settings = props.editedSettings;
+
+    const valueOf = (getter: (s: Settings) => any) =>
+      firstDefinedOf(getter(editedSettings), getter(currentSettings));
+
+    const faviconUrl = valueOf(s => s.faviconUrl);
+
     return (
       r.div({},
+        Setting2(props, { type: 'text', label: "Favicon URL",
+          placeholder: "https://example.com/your/favicon.ico",
+          help: rFragment({},
+            "Web browsers show the favicon in browser tabs, bookmarks, navigation history, etc.", r.br(),
+            "Your icon: ",
+            !faviconUrl ? "(none)" :
+                r.img({ src: faviconUrl, style: { display: 'inline-block', margin: '5px 0 0 12px' }})),
+          getter: (s: Settings) => s.faviconUrl,
+          update: (newSettings: Settings, target) => {
+            newSettings.faviconUrl = target.value;
+          }
+        }),
+
         Setting2(props, { type: 'text', label: "Forum main view",
           className: 'e_A_Ss_S-ForumMainViewTI',
           help: "Set to 'categories' to show all categories on the homepage, instead " +

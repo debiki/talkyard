@@ -108,7 +108,7 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
     }
 
 
-  def startAuthentication(provider: String, returnToUrl: String) =
+  def startAuthentication(provider: String, returnToUrl: String): Action[Unit] =
         AsyncGetActionIsLogin { request =>
     startAuthenticationImpl(provider, returnToUrl, request)
   }
@@ -142,7 +142,7 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
   }
 
 
-  def finishAuthentication(provider: String) = AsyncGetActionIsLogin { request =>
+  def finishAuthentication(provider: String): Action[Unit] = AsyncGetActionIsLogin { request =>
     authenticate(provider, request)
   }
 
@@ -161,11 +161,20 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
       // and login from there.
       return loginViaLoginOrigin(providerName, request.underlying)
     }
+    def settings = request.siteSettings
     val provider: SocialProvider with CommonSocialProfileBuilder = providerName match {
-      case FacebookProvider.ID => facebookProvider()
-      case GoogleProvider.ID => googleProvider()
-      case TwitterProvider.ID => twitterProvider()
-      case GitHubProvider.ID => githubProvider()
+      case FacebookProvider.ID =>
+        throwForbiddenIf(!settings.enableFacebookLogin, "TyE0FBLOGIN", "Facebook login disabled")
+        facebookProvider()
+      case GoogleProvider.ID =>
+        throwForbiddenIf(!settings.enableGoogleLogin, "TyE0GOOGLOGIN", "Google login disabled")
+        googleProvider()
+      case TwitterProvider.ID =>
+        throwForbiddenIf(!settings.enableTwitterLogin, "TyE0TWTTRLOGIN", "Twitter login disabled")
+        twitterProvider()
+      case GitHubProvider.ID =>
+        throwForbiddenIf(!settings.enableGitHubLogin, "TyE0GITHLOGIN", "GitHub login disabled")
+        githubProvider()
       case x =>
         return Future.successful(Results.Forbidden(s"Bad provider: `$providerName' [DwE2F0D6]"))
     }
@@ -333,7 +342,10 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
                 // the old one just because they have the same email address.
               }
             case None =>
-              if (mayCreateNewUser) {
+              if (!dao.getWholeSiteSettings().allowSignup) {
+                throwForbidden("TyE0SIGNUP02", "Creation of new accounts is disabled")
+              }
+              else if (mayCreateNewUser) {
                 showCreateUserDialog(request, oauthDetails)
               }
               else {
@@ -587,7 +599,7 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
     * OAuth 1 and 2 providers supposedly have been configured to use.
     */
   def loginThenReturnToOriginalSite(provider: String, returnToOrigin: String, xsrfToken: String)
-        = AsyncGetActionIsLogin { request =>
+        : Action[Unit] = AsyncGetActionIsLogin { request =>
     // The actual redirection back to the returnToOrigin happens in handleAuthenticationData()
     // — it checks the value of the return-to-origin cookie.
     if (anyLoginOrigin.map(_ == originOf(request)) != Some(true))
@@ -603,7 +615,7 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
   }
 
 
-  def continueAtOriginalSite(oauthDetailsCacheKey: String, xsrfToken: String) =
+  def continueAtOriginalSite(oauthDetailsCacheKey: String, xsrfToken: String): Action[Unit] =
         GetActionIsLogin { request =>
     val anyXsrfTokenInSession = request.cookies.get(ReturnToSiteXsrfTokenCookieName)
     anyXsrfTokenInSession match {

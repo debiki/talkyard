@@ -96,7 +96,8 @@ class SiteTpi protected (
     val theDescription =
       if (anyCustomMetaTags.includesDescription) None
       else anyCurrentPageMeta.map(_.htmlHeadDescription)
-    xml.Unparsed(views.html.debikiMeta(thePageTitle, description = theDescription).body)
+    xml.Unparsed(views.html.debikiMeta(
+      thePageTitle, description = theDescription, faviconUrl = siteSettings.faviconUrl).body)
   }
 
 

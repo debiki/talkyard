@@ -69,19 +69,20 @@ export var PageRoleDropdown = createComponent({
   },
 
   render: function() {
-    var props = this.props;
-    var state = this.state;
-    var pageRole = props.pageRole;
-    var complicated = props.complicated;
-    var store: Store = this.props.store;
-    var me: Myself = store.me;
-    var showAllOptions = state.showAllOptions;
+    const props = this.props;
+    const state = this.state;
+    const pageRole = props.pageRole;
+    const complicated = props.complicated;
+    const store: Store = this.props.store;
+    const settings: SettingsVisibleClientSide = store.settings;
+    const me: Myself = store.me;
+    const showAllOptions = state.showAllOptions;
 
-    var dropdownButton =
+    const dropdownButton =
       Button({ onClick: this.open, ref: 'dropdownButton', className: 'esTopicType_dropdown' },
         pageRole_toIconString(pageRole), ' ', r.span({ className: 'caret' }));
 
-    var discussionOption =
+    const discussionOption =
       ExplainingListItem({ onSelect: this.onSelect,
         activeEventKey: pageRole, eventKey: PageRole.Discussion,
         title: PageRole_Discussion_IconString,
@@ -89,56 +90,58 @@ export var PageRoleDropdown = createComponent({
 
     // HACK bjj... wants only Discussion & MindMap. Later, COULD add a show-only-these-
     // topic-types category & site setting, instead of hardcoding one site settings here.
-    var isBjjNotStaff = eds.siteId === 12 && !isStaff(me);
+    const isBjjNotStaff = eds.siteId === 12 && !isStaff(me);
 
-    var questionOption = isBjjNotStaff ? null :
+    const questionOption = isBjjNotStaff ? null :
       ExplainingListItem({ onSelect: this.onSelect, id: 'e2eTTD_QuestionO',
         activeEventKey: pageRole, eventKey: PageRole.Question,
         title: PageRole_Question_IconString,
         text: r.span({}, t.pt.QuestionExpl) });
 
-    var problemOption = isBjjNotStaff ? null :
+    const problemOption = isBjjNotStaff ? null :
       ExplainingListItem({ onSelect: this.onSelect, id: 'e2eTTD_ProblemO',
         activeEventKey: pageRole, eventKey: PageRole.Problem,
         title: PageRole_Problem_IconString,
         text: t.pt.ProblExpl });
 
-    var ideaOption = isBjjNotStaff ? null :
+    const ideaOption = isBjjNotStaff ? null :
       ExplainingListItem({ onSelect: this.onSelect, id: 'e2eTTD_IdeaO',
         activeEventKey: pageRole, eventKey: PageRole.Idea,
         title: PageRole_Idea_IconString,
         text: t.pt.IdeaExpl });
 
-    var chatOption = user_isGuest(me) || isBjjNotStaff ? null :
+    const chatOption =
+      user_isGuest(me) || isBjjNotStaff || settings.enableChat === false ? null :
       ExplainingListItem({ onSelect: this.onSelect, id: 'e2eTTD_OpenChatO',
         activeEventKey: pageRole, eventKey: PageRole.OpenChat,
         title: PageRole_OpenChat_IconString,
         text: t.pt.ChatExpl });
 
-    var privateChatOption = !isStaff(me) || props.hideStaffOnly ? null :
+    const privateChatOption =
+      !isStaff(me) || props.hideStaffOnly || settings.enableChat === false ? null :
       ExplainingListItem({ onSelect: this.onSelect, id: 'e2eTTD_PrivChatO',
         activeEventKey: pageRole, eventKey: PageRole.PrivateChat,
         title: PageRole_PrivateChat_IconString,
         text: t.pt.PrivChatExpl });
 
     /*
-    var wikiMindMap = user_isGuest(me) || !complicated ? false :   [NOMINDMAPS]
+    const wikiMindMap = user_isGuest(me) || !complicated ? false :   [NOMINDMAPS]
       ExplainingListItem({ onSelect: this.onSelect, id: 'e2eTTD_MindMapO',
         activeEventKey: pageRole, eventKey: PageRole.MindMap,
         title: PageRole_MindMap_IconString,
         text: "Comments laid out in a mind map tree." }); */
 
-    var showMore = !isStaff(me) || props.hideStaffOnly || showAllOptions ? null :
+    const showMore = !isStaff(me) || props.hideStaffOnly || showAllOptions ? null :
       ExplainingListItem({ onClick: this.showAllOptions,
         title: r.span({ className: 'esPageRole_showMore' }, t.MoreDots) });
 
-    var staffOnlyDivider = !isStaff(me) || props.hideStaffOnly ? null :
+    const staffOnlyDivider = !isStaff(me) || props.hideStaffOnly ? null :
         r.div({ className: 'esDropModal_header' }, "Only staff can create these:");
 
-    var adminOnlyDivider;
-    var webPageOption;
-    var formOption;
-    var customHtmlPageOption;
+    let adminOnlyDivider;
+    let webPageOption;
+    let formOption;
+    let customHtmlPageOption;
     if (me.isAdmin && showAllOptions) {
       adminOnlyDivider = r.div({ className: 'esDropModal_header' }, "Only for admins:");
 
@@ -163,7 +166,7 @@ export var PageRoleDropdown = createComponent({
       }
     }
 
-    var dropdownModal =
+    const dropdownModal =
       DropdownModal({ show: state.open, onHide: this.close, showCloseButton: true,
           atRect: this.state.buttonRect, windowWidth: this.state.windowWidth,
           ref: 'dropdownModal' },

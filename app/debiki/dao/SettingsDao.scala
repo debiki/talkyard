@@ -47,23 +47,48 @@ trait SettingsDao {
   }
 
 
-  def saveSiteSettings(settingsToSave: SettingsToSave) {
+  def saveSiteSettings(settingsToSave: SettingsToSave, byWho: Who) {
     // COULD test here that settings are valid? No inconsistencies?
 
-    readWriteTransaction { transaction =>
-      val oldSettings = loadWholeSiteSettings(transaction)
-      transaction.upsertSiteSettings(settingsToSave)
-      val newSettings = loadWholeSiteSettings(transaction)
+    readWriteTransaction { tx =>
+      val oldSettings = loadWholeSiteSettings(tx)
+      tx.upsertSiteSettings(settingsToSave)
+      val newSettings = loadWholeSiteSettings(tx)
       newSettings.findAnyError foreach { error =>
         // This'll rollback the transaction.
         throwForbidden("EsE40GY28", s"Bad settings: $error")
       }
 
+      lazy val identities = tx.loadIdentities(byWho.id)
+
+      def turnsOff(getEnabled: EffectiveSettings => Boolean) =
+        !getEnabled(newSettings) && getEnabled(oldSettings)
+
+      def throwIfLogsInWith(loginMethodName: String) {
+        if (identities.exists(_.loginMethodName.toLowerCase contains loginMethodName.toLowerCase))
+          throwForbidden("TyE5UKDWSQ2", o"""Currently you cannot disable login with $loginMethodName
+            — you use it yourself to login""")
+      }
+
+      import com.mohiva.play.silhouette.impl.providers
+      if (turnsOff(_.enableGoogleLogin)) throwIfLogsInWith(providers.oauth2.GoogleProvider.ID)
+      if (turnsOff(_.enableFacebookLogin)) throwIfLogsInWith(providers.oauth2.FacebookProvider.ID)
+      if (turnsOff(_.enableTwitterLogin)) throwIfLogsInWith(providers.oauth1.TwitterProvider.ID)
+      if (turnsOff(_.enableGitHubLogin)) throwIfLogsInWith(providers.oauth2.GitHubProvider.ID)
+
+      tx.insertAuditLogEntry(AuditLogEntry(
+        siteId = siteId,
+        id = AuditLogEntry.UnassignedId,
+        didWhat = AuditLogEntryType.SaveSiteSettings,
+        doerId = byWho.id,
+        doneAt = tx.now.toJavaDate,
+        browserIdData = byWho.browserIdData))
+
       // If the language was changed, all cached page html in the database needs
       // to be rerendered, so button titles etc are shown in the new langage.
       SECURITY // DoS attack by evil admin: rerendering everything = expensive. SHOULD add rate limits.
       if (oldSettings.languageCode != newSettings.languageCode) {
-        transaction.bumpSiteVersion()
+        tx.bumpSiteVersion()
       }
 
       memCache.clearSingleSite(siteId)

@@ -57,6 +57,10 @@ object AuditLogEntryType {
   case object DeactivateUser extends AuditLogEntryType(1998)
   case object DeleteUser extends AuditLogEntryType(1999)
 
+  // Let 2001-2999 be admin & staff actions?
+  case object SaveSiteSettings extends AuditLogEntryType(2001)
+
+
   def fromInt(value: Int): Option[AuditLogEntryType] = Some(value match {
     case AuditLogEntryType.CreateSite.IntVal => AuditLogEntryType.CreateSite
     case AuditLogEntryType.ThisSiteCreated.IntVal => AuditLogEntryType.ThisSiteCreated
