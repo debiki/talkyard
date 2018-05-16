@@ -204,6 +204,9 @@ describe("emb cmts guest login", () => {
   });
 
   it("... and posts one more comment: a clever and funny joke, this time", () => {
+    fidosBrowser.pause(1500);  // [E2EBUG] otherwise the editor iframe replies-to and the
+    // comments iframe reply button states, get out of sync. Why? A race?: one iframe maybe
+    // runs a login callback before the other, and the post-reply click happens in between?
     fidosBrowser.complex.replyToEmbeddingBlogPost(theCleverAndFunnyJoke);
   });
 
