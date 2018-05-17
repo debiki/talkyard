@@ -1200,7 +1200,9 @@ const TopicRow = createComponent({
       userAvatars.push(avatar.Avatar({ key: poster.id, user: poster,
             title: t.ft.frequentPoster }));
     }
-    if (topic.lastReplyerId) {
+    // Don't show last replyer, if same as topic author, and no other avatar is shown.
+    const lastReplyerIsOp = topic.lastReplyerId === topic.authorId;
+    if (topic.lastReplyerId && !(lastReplyerIsOp && userAvatars.length === 1)) {
       const lastReplyer = store_getUserOrMissing(store, topic.lastReplyerId, 'EsE4GTZ7');
       userAvatars.push(avatar.Avatar({ key: 'MR', user: lastReplyer,
             title: t.ft.mostRecentPoster }));
