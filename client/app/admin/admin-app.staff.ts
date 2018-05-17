@@ -237,6 +237,7 @@ const LoginAndSignupSettings = createFactory({
     const props = this.props;
     const currentSettings: Settings = props.currentSettings;
     const editedSettings: Settings = props.editedSettings;
+    const defaultSettings: Settings = props.defaultSettings;
 
     const valueOf = (getter: (s: Settings) => any) =>
       firstDefinedOf(getter(editedSettings), getter(currentSettings));
@@ -248,6 +249,10 @@ const LoginAndSignupSettings = createFactory({
     const canEnableGuestLogin =
       !valueOf(s => s.userMustBeApproved) && !valueOf(s => s.userMustBeAuthenticated) &&
         valueOf(s => s.allowSignup) && !requireVerifiedEmail;  // && !invite-only (6KWU20)
+
+    const missingServerSiteHint = (isConfiguredOnServer: boolean) => isConfiguredOnServer ? '' :
+        " Cannot be enabled, because has not been configured server side, " +
+        "in /opt/talkyard/conf/app/play.conf.";
 
     return (
       r.div({},
@@ -394,7 +399,9 @@ const LoginAndSignupSettings = createFactory({
         !allowSignup ? null : Setting2(props, {
           type: 'checkbox', label: "Enable Google signup", id: 'e_EnableGoogleLogin',
           className: 'e_A_Ss_S-EnableGoogleCB',
-          help: "Lets people sign up and login with their Gmail account.",
+          help: "Lets people sign up and login with their Gmail account." +
+              missingServerSiteHint(defaultSettings.enableGoogleLogin),
+          mustBeConfiguredOnServer: true,
           getter: (s: Settings) => s.enableGoogleLogin,
           update: (newSettings: Settings, target) => {
             newSettings.enableGoogleLogin = target.checked;
@@ -404,7 +411,9 @@ const LoginAndSignupSettings = createFactory({
         !allowSignup ? null : Setting2(props, {
           type: 'checkbox', label: "Enable Facebook signup",
           className: 'e_A_Ss_S-EnableFacebookCB',
-          help: "Lets people sign up and login with their Facebook account.",
+          help: "Lets people sign up and login with their Facebook account." +
+              missingServerSiteHint(defaultSettings.enableFacebookLogin),
+          mustBeConfiguredOnServer: true,
           getter: (s: Settings) => s.enableFacebookLogin,
           update: (newSettings: Settings, target) => {
             newSettings.enableFacebookLogin = target.checked;
@@ -414,7 +423,9 @@ const LoginAndSignupSettings = createFactory({
         !allowSignup ? null : Setting2(props, {
           type: 'checkbox', label: "Enable Twitter signup",
           className: 'e_A_Ss_S-EnableTwitterCB',
-          help: "Lets people sign up and login with their Twitter account.",
+          help: "Lets people sign up and login with their Twitter account." +
+              missingServerSiteHint(defaultSettings.enableTwitterLogin),
+          mustBeConfiguredOnServer: true,
           getter: (s: Settings) => s.enableTwitterLogin,
           update: (newSettings: Settings, target) => {
             newSettings.enableTwitterLogin = target.checked;
@@ -424,7 +435,9 @@ const LoginAndSignupSettings = createFactory({
         !allowSignup ? null : Setting2(props, {
           type: 'checkbox', label: "Enable GitHub signup",
           className: 'e_A_Ss_S-EnableGitHubCB',
-          help: "Lets people sign up and login with their GitHub account.",
+          help: "Lets people sign up and login with their GitHub account." +
+              missingServerSiteHint(defaultSettings.enableGitHubLogin),
+          mustBeConfiguredOnServer: true,
           getter: (s: Settings) => s.enableGitHubLogin,
           update: (newSettings: Settings, target) => {
             newSettings.enableGitHubLogin = target.checked;
@@ -1306,8 +1319,22 @@ function Setting2(panelProps, props, anyChildren?) {
   const currentSettings = panelProps.currentSettings;
   const defaultSettings = panelProps.defaultSettings;
 
-  const editedValue = props.getter(editedSettings);
-  const currentValue = props.getter(currentSettings);
+  let editedValue = props.getter(editedSettings);
+  let currentValue = props.getter(currentSettings);
+  const defaultValue = props.getter(defaultSettings);
+
+  let disabled = props.disabled;
+
+  // If the setting has been removed (= disabled) server side, or never added,
+  // show it as disabled here client side too.
+  const isMissingOnServer = props.mustBeConfiguredOnServer && !defaultValue;
+  if (isMissingOnServer) {
+    editedValue = undefined;
+    currentValue = defaultValue;
+    disabled = true;
+  }
+
+  const effectiveValue = firstDefinedOf(editedValue, currentValue);
 
   dieIf(props.onChange, 'EsE3GUK02');
   dieIf(props.value, 'EsE6JY2F4');
@@ -1319,9 +1346,6 @@ function Setting2(panelProps, props, anyChildren?) {
     dieIf(!props.update, 'EsE22PYK5');
   }
 
-  const valueOf = (getter: (s: Settings) => any) =>
-    firstDefinedOf(getter(editedSettings), getter(currentSettings));
-
   props.value = firstDefinedOf(editedValue, currentValue);
   props.className = props.className || '';
   props.className += ' s_A_Ss_S';
@@ -1329,7 +1353,7 @@ function Setting2(panelProps, props, anyChildren?) {
   props.wrapperClassName = 'col-sm-9 esAdmin_settings_setting';
 
   if (isDefined2(editedValue)) props.wrapperClassName += ' esAdmin_settings_setting-unsaved';
-  if (props.disabled) props.wrapperClassName += ' disabled';
+  if (disabled) props.wrapperClassName += ' disabled';
 
   if (props.type === 'checkbox') {
     props.labelFirst = true;
@@ -1341,7 +1365,7 @@ function Setting2(panelProps, props, anyChildren?) {
     props.labelClassName = 'col-sm-3';
   }
 
-  props.onChange = (event) => {
+  if (!disabled) props.onChange = (event) => {
     // A bit dupl code. [7UKWBP32]
     const newSettings = _.clone(editedSettings);
     props.update(newSettings, event.target);
@@ -1357,7 +1381,7 @@ function Setting2(panelProps, props, anyChildren?) {
   let undoChangesButton;
   if (isDefined2(editedValue)) {
     undoChangesButton = Button({ className: 'col-sm-offset-3 esAdmin_settings_setting_btn',
-      disabled: props.disabled, onClick: props.undo || (() => {
+      disabled, onClick: props.undo || (() => {
         event.target[field] = currentValue;
         props.onChange(event);
       })}, "Undo changes");
@@ -1365,10 +1389,9 @@ function Setting2(panelProps, props, anyChildren?) {
 
   // Show the Reset button only if there's no Undo button — both at the same time looks confusing.
   let resetToDefaultButton;
-  const defaultValue = props.getter(defaultSettings);
-  if (!undoChangesButton && valueOf(props.getter) !== defaultValue && props.canReset !== false) {
+  if (!undoChangesButton && effectiveValue !== defaultValue && props.canReset !== false) {
     resetToDefaultButton = Button({ className: 'col-sm-offset-3 esAdmin_settings_setting_btn',
-      disabled: props.disabled, onClick: props.reset || (() => {
+      disabled, onClick: props.reset || (() => {
         event.target[field] = defaultValue;
         props.onChange(event);
       })}, "Reset to default");

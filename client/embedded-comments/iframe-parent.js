@@ -1,5 +1,5 @@
-/* Makes Debiki work in a child iframe.
- * Copyright (c) 2013-2014, 2017 Kaj Magnus Lindberg
+/*
+ * Copyright (c) 2013-2014, 2017-2018 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -14,8 +14,13 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-var console = window.console || { log: function() {}};
-console.log("iframe-parent: start");
+
+// Default to logging debug messages, for now, because people send screenshots of the
+// console when sth is amiss, and nice to get the log messages then.
+var debugLog = window.talkyardDebug === false || window.talkyardDebug === 0 || !window.console ?
+    function() {} : window.console.log;
+
+debugLog("iframe-parent: start (disable logging by setting talkyardDebug = false)");
 
 var d = { i: debiki.internal };
 var serverOrigin = d.i.commentsServerOrigin;
@@ -32,7 +37,7 @@ addEventListener('message', onMessage, false);
 
 
 function loadCommentsCreateEditor() {
-  console.log("iframe-parent: loadCommentsCreateEditor()");
+  debugLog("iframe-parent: loadCommentsCreateEditor()");
   // Create <iframe>s for embedded comments and an embedded editor.
   // Show a "Loading comments..." message until comments loaded.
   // For now, choose the first .talkyard-comments only, because
@@ -44,7 +49,7 @@ function loadCommentsCreateEditor() {
   if (!commentsElems.length)
     return;
   var commentsElem = commentsElems[0];
-  console.log("iframe-parent: found commentsElem");
+  debugLog("iframe-parent: found commentsElem");
 
   var embeddingUrl = window.location.origin + window.location.pathname + window.location.search;
   var embeddingUrlParam = 'embeddingUrl=' + embeddingUrl;
@@ -52,7 +57,7 @@ function loadCommentsCreateEditor() {
   var discussionId = commentsElem.getAttribute('data-discussion-id');
   if (/[#?& \t\n]/.test(discussionId)) {
     var errorMessage = "Bad discussion id: " + discussionId + ' [EdE8UKWB4]';
-    console.log(errorMessage);
+    debugLog(errorMessage);
     throw Error(errorMessage);
   }
   var discussionIdParam = discussionId ? 'discussionId=' + discussionId + '&' : '';
@@ -83,7 +88,7 @@ function loadCommentsCreateEditor() {
   });
 
   Bliss.start(commentsIframe, commentsElem);
-  console.log("iframe-parent: inserted commentsIframe");
+  debugLog("iframe-parent: inserted commentsIframe");
 
   var loadingCommentsElem = Bliss.create('p', {
     id: 'ed-loading-comments',
@@ -118,7 +123,7 @@ function loadCommentsCreateEditor() {
   });
 
   Bliss.inside(editorWrapper, document.body);
-  console.log("iframe-parent: inserted editorWrapper");
+  debugLog("iframe-parent: inserted editorWrapper");
 
   var editorIframeUrl = serverOrigin + '/-/embedded-editor?' + allUrlParams;
   editorIframe = Bliss.create('iframe', {
@@ -137,7 +142,7 @@ function loadCommentsCreateEditor() {
   });
 
   Bliss.inside(editorIframe, editorWrapper);
-  console.log("iframe-parent: inserted editorIframe");
+  debugLog("iframe-parent: inserted editorIframe");
 
   findCommentToScrollTo();
   makeEditorResizable();
@@ -145,7 +150,7 @@ function loadCommentsCreateEditor() {
 
 
 function removeCommentsAndEditor() {
-  console.log("iframe-parent: removeCommentsAndEditor()");
+  debugLog("iframe-parent: removeCommentsAndEditor()");
   if (commentsIframe) {
     commentsIframe.remove();
     commentsIframe = null;
@@ -230,7 +235,7 @@ function onMessage(event) {
 
   switch (eventName) {
     case 'iframeInited':
-      console.log("iframe-parent: got 'iframeInited' message");
+      debugLog("iframe-parent: got 'iframeInited' message");
       iframe = findIframeThatSent(event);
       if (iframe === commentsIframe) {
         // If we want to scroll to & highlight a post: The post is inside the iframe and we don't
