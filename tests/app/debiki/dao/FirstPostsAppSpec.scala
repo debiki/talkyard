@@ -47,7 +47,7 @@ class FirstPostsAppSpec extends ReviewStuffAppSuite("4fy2") {
           orgFullName = Some(Some("Test Org Name")),
           numFirstPostsToAllow = Some(Some(1)),
           numFirstPostsToApprove = Some(Some(1)),
-          numFirstPostsToReview = Some(Some(0))))
+          numFirstPostsToReview = Some(Some(0))), Who.System)
       }
 
       "PostsDao will, with approve = 1 and allow = undef, 1, 2" - {
@@ -70,7 +70,7 @@ class FirstPostsAppSpec extends ReviewStuffAppSuite("4fy2") {
           }.getMessage must include("_EsE6YKF2_")
 
           info("accept one more when allow = 2")
-          dao.saveSiteSettings(SettingsToSave(numFirstPostsToAllow = Some(Some(2))))
+          dao.saveSiteSettings(SettingsToSave(numFirstPostsToAllow = Some(Some(2))), Who.System)
           val secondReplyResult = reply(member.id, "reply_863439_d")
           secondReplyResult.post.isSomeVersionApproved mustBe false
 
@@ -101,7 +101,7 @@ class FirstPostsAppSpec extends ReviewStuffAppSuite("4fy2") {
           info("allow, if approve bumped to 3 (2 + 1 approved by admin & system = 3 in total)")
           dao.saveSiteSettings(SettingsToSave(
             numFirstPostsToApprove = Some(Some(3)),
-            numFirstPostsToAllow = Some(Some(3))))
+            numFirstPostsToAllow = Some(Some(3))), Who.System)
           val fourthReplyResult = reply(member.id, "reply_863439_g")
           fourthReplyResult.post.approvedById mustBe Some(SystemUserId)
           checkNoReviewTask(fourthReplyResult.post)
@@ -109,7 +109,7 @@ class FirstPostsAppSpec extends ReviewStuffAppSuite("4fy2") {
           info("allow but not approve, if Approve & Approve bumped to 5")
           dao.saveSiteSettings(SettingsToSave(
             numFirstPostsToAllow = Some(Some(5)),
-            numFirstPostsToApprove = Some(Some(5))))
+            numFirstPostsToApprove = Some(Some(5))), Who.System)
           val fifthReplyResult = reply(member.id, "reply_863439_h")
           fifthReplyResult.post.isSomeVersionApproved mustBe false
           checkReviewTaskGenerated(fifthReplyResult.post, reviewReasons)
@@ -128,7 +128,7 @@ class FirstPostsAppSpec extends ReviewStuffAppSuite("4fy2") {
         dao.saveSiteSettings(SettingsToSave(
           numFirstPostsToAllow = Some(Some(5)),
           numFirstPostsToApprove = Some(Some(3)),
-          numFirstPostsToReview = Some(Some(0))))
+          numFirstPostsToReview = Some(Some(0))), Who.System)
       }
 
       "PostsDao will, with allow = 5, approve = 3:" - {
@@ -210,7 +210,7 @@ class FirstPostsAppSpec extends ReviewStuffAppSuite("4fy2") {
           info("still allow, after Approve & Allow disabled")
           dao.saveSiteSettings(SettingsToSave(
             numFirstPostsToAllow = Some(Some(0)),
-            numFirstPostsToApprove = Some(Some(0))))
+            numFirstPostsToApprove = Some(Some(0))), Who.System)
           val eightReplyResult = reply(member.id, "reply_77025_k")
           checkNoReviewTask(eightReplyResult.post)
         }
@@ -222,7 +222,7 @@ class FirstPostsAppSpec extends ReviewStuffAppSuite("4fy2") {
         dao.saveSiteSettings(SettingsToSave(
           numFirstPostsToAllow = Some(Some(0)),
           numFirstPostsToApprove = Some(Some(0)),
-          numFirstPostsToReview = Some(Some(2))))
+          numFirstPostsToReview = Some(Some(2))), Who.System)
       }
 
       "PostsDao will, with allow = 0, approve = 0, notify = 2:" - {
@@ -258,7 +258,7 @@ class FirstPostsAppSpec extends ReviewStuffAppSuite("4fy2") {
         dao.saveSiteSettings(SettingsToSave(
           numFirstPostsToAllow = Some(Some(3)),
           numFirstPostsToApprove = Some(Some(1)),
-          numFirstPostsToReview = Some(Some(1))))
+          numFirstPostsToReview = Some(Some(1))), Who.System)
       }
 
       "PostsDao can combine Allow and Notify" - {
@@ -306,7 +306,7 @@ class FirstPostsAppSpec extends ReviewStuffAppSuite("4fy2") {
         dao.saveSiteSettings(SettingsToSave(
           numFirstPostsToAllow = Some(Some(2)),
           numFirstPostsToApprove = Some(Some(1)),
-          numFirstPostsToReview = Some(Some(1))))
+          numFirstPostsToReview = Some(Some(1))), Who.System)
       }
 
       "PostsDao" - {
@@ -371,7 +371,7 @@ class FirstPostsAppSpec extends ReviewStuffAppSuite("4fy2") {
         dao.saveSiteSettings(SettingsToSave(
           numFirstPostsToAllow = Some(Some(2)),
           numFirstPostsToApprove = Some(Some(1)),
-          numFirstPostsToReview = Some(Some(1))))
+          numFirstPostsToReview = Some(Some(1))), Who.System)
       }
 
       "PagesDao" - {

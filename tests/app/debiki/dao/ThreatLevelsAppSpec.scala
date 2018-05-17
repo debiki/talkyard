@@ -29,7 +29,7 @@ class ThreatLevelsAppSpec extends ReviewStuffAppSuite("6gp4") {
           orgFullName = Some(Some("Test Org Name")),
           numFirstPostsToAllow = Some(Some(0)),
           numFirstPostsToApprove = Some(Some(0)),
-          numFirstPostsToReview = Some(Some(0))))
+          numFirstPostsToReview = Some(Some(0))), Who.System)
       }
 
       "create page" in {
