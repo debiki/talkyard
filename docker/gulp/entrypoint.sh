@@ -15,7 +15,8 @@ if [ $? -eq 1 -a $file_owner_id -ne 0 ] ; then
   # $? -eq 1 means that the last command failed, that is, user 'owner' not yet created.
   # So create it:
   # (--home-dir needs to be specified, because `npm install` and `bower install` write to
-  #   cache dirs in the home dir.
+  # cache dirs in the home dir, and it's nice to have those dirs below a dir mounted on the
+  # Docker host, so they'll persist across container recreations. [NODEHOME])
   useradd --home-dir /opt/debiki/server/docker/gulp-home --uid $file_owner_id owner
 fi
 
@@ -42,7 +43,8 @@ else
   # We're root (user id 0), both on the Docker host and here in the container.
   # `exec su ...` is the only way I've found that makes Yarn and Gulp respond to CTRL-C,
   # so using `su` here although we're root already.
+  # Specify HOME so files that Node.js caches will persist across container recreations. [NODEHOME])
   set -x
-  exec su -c "$*" root
+  exec su -c "HOME=/opt/debiki/server/docker/gulp-home $*" root
 fi
 

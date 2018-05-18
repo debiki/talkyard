@@ -5,19 +5,22 @@
 
 cd /opt/talkyard/app
 
-# Create user 'owner' with the same id as the person who runs docker, so that file
-# 'gulp build' creates will be owned by that person (otherwise they'll be owned by root
-# on the host machine. Which makes them invisible & unusable, on the host machine).
+# Create user 'owner' with the same id as the person who runs docker, so that files
+# sbt and Ivy creates/downloads, will be owned by hen. Otherwise they'll be owned by root
+# on the host machine. Which makes them invisible & unusable, on the host machine.
 # But skip this if we're root already (perhaps we're root in a virtual machine).
 file_owner_id=`ls -adn | awk '{ print $3 }'`
 id -u owner >> /dev/null 2>&1
 if [ $? -eq 1 -a $file_owner_id -ne 0 ] ; then
   # $? -eq 1 means that the last command failed, that is, user 'owner' not yet created.
   # So create it:
-  # We map /home/owner/.ivy and .m2 to the host user's .ivy and .m2 (in the Dockerfile).
+  # We map /home/owner/.ivy and .sbt to the host user's .ivy and .sbt, in docker-compose.yml. [SBTHOME]
   # -D = don't assign password (would block Docker waiting for input).
   echo "Creating user 'owner' with id $file_owner_id..."
   adduser -u $file_owner_id -h /home/owner/ -D owner   # [5RZ4HA9]
+else
+  # Below this dir, sbt and Ivy will cache their files. [SBTHOME]
+  mkdir -p /home/owner/
 fi
 
 
@@ -51,7 +54,10 @@ else
   # We're root (user id 0), both on the Docker host and here in the container.
   # `exec su ...` is the only way I've found that makes Yarn and Gulp respond to CTRL-C,
   # so using `su` here although we're root already.
+  # Set HOME to /home/owner so sbt and Ivy will cache things there [SBTHOME] — that dir
+  # is mounted on the host; will persist across container recreations.
+  # Otherwise /root/.ivy2 and /root/.sbt would get used, and disappear with the contaner.
   set -x
-  exec su -c "$*" root
+  exec su -c "HOME=/home/owner _JAVA_OPTIONS='-Duser.home=/home/owner' $*" root
 fi
 

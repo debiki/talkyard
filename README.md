@@ -93,7 +93,15 @@ Getting Started
 You need about 4 GB RAM for the development environment (whereas the production environment needs about 2 GB).
 And a somewhat fast internet connection — you'll be downloading perhaps 0.5 (?) GB Docker images.
 
-Install Docker-Compose, version 1.7.0+: https://docs.docker.com/compose/install/
+Install Docker-Compose, version 1.7.0+: https://docs.docker.com/compose/install/,
+or simply, on Linux: (maybe a 'sudo' is missing on the 1st line?)
+
+```
+wget -qO- https://get.docker.com/ | sh
+sudo curl -L https://github.com/docker/compose/releases/download/1.21.2/docker-compose-$(uname -s)-$(uname -m) -o /usr/local/bin/docker-compose
+sudo chmod +x /usr/local/bin/docker-compose
+docker-compose --version  # should print "docker-compose version ... build ..."
+```
 
 Read [A brief intro to Docker-Compose](docs/intro-to-docker-compose.md) — unless you know
 how to use docker-compose already.

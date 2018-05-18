@@ -46,9 +46,14 @@ ENTRYPOINT ["/docker-entrypoint.sh"]
 # Overriden in docker-compose.yml
 ENV PLAY_HEAP_MEMORY_MB 1048
 
+# Set Java's user.home to /home/owner so sbt and Ivy will cache downloads there. [SBTHOME]
+# Although user.home is set in entrypoint.sh, apparently that setting gets lost here —
+# sbt and Ivy download things to /root/.sbt and /root/.ivy2 if running as root inside a vm.
+# Maybe because of 'exec'?
 CMD cd /opt/talkyard/app/ && exec /opt/typesafe-activator/bin/activator \
   -mem $PLAY_HEAP_MEMORY_MB \
   -jvm-debug 9999 \
+  -Duser.home=/home/owner \
    # see [30PUK42] in app-prod/Dockerfile
   -Djava.security.egd=file:/dev/./urandom \
   -Dcom.sun.management.jmxremote.port=3333 \

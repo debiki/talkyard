@@ -28,7 +28,7 @@ services:
       - ./:/opt/talkyard/app/
       - ./docker/data/uploads/:/opt/talkyard/uploads/
       - ./docker/data/app-logs/:/var/log/talkyard/
-      # Without this it takes forever to start because sbt would always download all dependencies.
+      # Without this, takes forever to start: sbt would always download all dependencies. [SBTHOME]
       - $HOME/.ivy2/:/home/owner/.ivy2/
       - $HOME/.sbt/:/home/owner/.sbt/
     ports:
@@ -126,7 +126,7 @@ services:
     build: docker/gulp/
     image: debiki/talkyard-gulp
     volumes:
-      - ./:/opt/debiki/server/
+      - ./:/opt/debiki/server/   # [NODEHOME]
     command: ['yarn install && gulp watch']
 
   certgen:
