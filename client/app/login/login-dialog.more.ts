@@ -344,20 +344,40 @@ export const LoginDialogContent = createClassAndFactory({
     }
 
     const ss = store.settings;
+
+    let maybeWithBef = true;
+    const withBefGoogle = maybeWithBef && ss.enableGoogleLogin;
+    if (withBefGoogle) maybeWithBef = false;
+    const withBefFacebook = maybeWithBef && ss.enableFacebookLogin;
+    if (withBefFacebook) maybeWithBef = false;
+    const withBefTwitter = maybeWithBef && ss.enableTwitterLogin;
+    if (withBefTwitter) maybeWithBef = false;
+    const withBefGitHub = maybeWithBef && ss.enableGitHubLogin;
+    if (withBefGitHub) maybeWithBef = false;
+
+    const anyOpenAuth = ss.enableGoogleLogin || ss.enableFacebookLogin ||
+        ss.enableTwitterLogin || ss.enableGitHubLogin;
+
+    const spaceDots = anyOpenAuth ? ' ...' : '';
+
     return (
       r.div({ className: 'esLD' },
         notFoundInstructions,
         becomeOwnerInstructions,
-        r.p({ id: 'dw-lgi-or-login-using' }, (isSignUp ? t.ld.SignIn : t.ld.LogIn) + ' ...'),
+        r.p({ id: 'dw-lgi-or-login-using' }, (isSignUp ? t.ld.SignUp : t.ld.LogIn) + spaceDots),
         r.div({ id: 'dw-lgi-other-sites' },
-          ss.enableGoogleLogin ? OpenAuthButton(makeOauthProps('icon-google', 'Google', true)) : null,
-          ss.enableFacebookLogin ? OpenAuthButton(makeOauthProps('icon-facebook', 'Facebook')) : null,
-          ss.enableTwitterLogin ? OpenAuthButton(makeOauthProps('icon-twitter', 'Twitter')) : null,
-          ss.enableGitHubLogin ? OpenAuthButton(makeOauthProps('icon-github-circled', 'GitHub')) : null,
+          !ss.enableGoogleLogin ? null :
+              OpenAuthButton(makeOauthProps('icon-google', 'Google', withBefGoogle)),
+          !ss.enableFacebookLogin ? null :
+              OpenAuthButton(makeOauthProps('icon-facebook', 'Facebook', withBefFacebook)),
+          !ss.enableTwitterLogin ? null :
+              OpenAuthButton(makeOauthProps('icon-twitter', 'Twitter', withBefTwitter)),
+          !ss.enableGitHubLogin ? null :
+              OpenAuthButton(makeOauthProps('icon-github-circled', 'GitHub', withBefGitHub)),
           // OpenID doesn't work right now, skip for now:  icon-yahoo Yahoo!
           ),
 
-        r.p({ id: 'dw-lgi-or-login-using' },
+        !anyOpenAuth ? null : r.p({ id: 'dw-lgi-or-login-using' },
           isSignUp
               ? (isForGuest ? t.ld.OrTypeName : t.ld.OrCreateAcctHere)
               : t.ld.OrFillIn),
@@ -398,7 +418,7 @@ const OpenAuthButton = createClassAndFactory({
   render: function() {
     return (
       Button({ id: this.props.id, className: this.props.iconClass, onClick: this.onClick },
-        (this.props.inclWith ? "with " : "") + this.props.provider ));
+        (this.props.inclWith ? t.ld.with_ : '') + this.props.provider));
   }
 });
 

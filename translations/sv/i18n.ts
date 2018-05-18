@@ -741,8 +741,9 @@ var t_sv: TalkyardTranslations = t = {
     ElseGoToHome_2: "go to the homepage.",
 
     CreateAcconut: "Create account",
-    SignIn: "Sign in",
+    SignUp: "Sign up",
     LogIn: "Log in",
+    with_: "with ",
     LogInWithPwd: "Log in with Password",
     CreateAdmAcct: "Create admin account:",
     AuthRequired: "Authentication required to access this site",

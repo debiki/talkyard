@@ -659,8 +659,9 @@ interface TalkyardTranslations {
     ElseGoToHome_2: string;
 
     CreateAcconut: string;
-    SignIn: string;
+    SignUp: string;
     LogIn: string;
+    with_: string;
     LogInWithPwd: string;
     CreateAdmAcct: string;
     AuthRequired: string;
