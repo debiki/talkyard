@@ -149,6 +149,7 @@ case class NewPasswordUserData(
   isAdmin: Boolean,
   isOwner: Boolean,
   isModerator: Boolean = false,
+  emailVerifiedAt: Option[When] = None,
   trustLevel: TrustLevel = TrustLevel.NewMember,
   threatLevel: ThreatLevel = ThreatLevel.HopefullySafe) {
 
@@ -165,7 +166,7 @@ case class NewPasswordUserData(
     approvedById = None,
     primaryEmailAddress = email,
     emailNotfPrefs = EmailNotfPrefs.Receive,
-    emailVerifiedAt = None,
+    emailVerifiedAt = emailVerifiedAt.map(_.toJavaDate),
     // Initially, when the forum / comments site is tiny, it's good to be notified
     // about everything. (isOwner —> it's the very first user, so the site is empty.) [7LERTA1]
     emailForEveryNewPost = isOwner,
@@ -189,6 +190,7 @@ object NewPasswordUserData {
   def create(name: Option[String], username: String, email: String, password: String,
         createdAt: When,
         isAdmin: Boolean, isOwner: Boolean, isModerator: Boolean = false,
+        emailVerifiedAt: Option[When] = None,
         trustLevel: TrustLevel = TrustLevel.NewMember,
         threatLevel: ThreatLevel = ThreatLevel.HopefullySafe)
         : NewPasswordUserData Or ErrorMessage = {
@@ -203,6 +205,7 @@ object NewPasswordUserData {
         password = okPassword, createdAt = createdAt,
         firstSeenAt = Some(createdAt),  // for now
         isAdmin = isAdmin, isOwner = isOwner, isModerator = isModerator,
+        emailVerifiedAt = emailVerifiedAt,
         trustLevel, threatLevel)
     }
   }

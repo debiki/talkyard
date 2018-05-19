@@ -116,7 +116,17 @@ class LoginWithPasswordController @Inject()(cc: ControllerComponents, edContext:
       "TyE0LCALSIGNUP", "Creation of local password accounts has been disabled")
 
     val becomeOwner = LoginController.shallBecomeOwner(request, emailAddress)
-    val requireVerifiedEmail = becomeOwner || siteSettings.requireVerifiedEmail
+
+    // If the server was just installed, and this is the first site being created, then the admin's
+    // email address was specified in the config file, in the talkyard.becomeOwnerEmailAddress conf val,
+    // and the current user, is the person that installs the software, probably root on the host OS.
+    // Let's assume hens email is correct (after all, hen typed it twice — also in the signup
+    // dialog in the browser), and send no verification email because at this point
+    // no email server has been configured (see the installation instructions in
+    // modules/ed-prod-one-test/README.md).
+    val isServerInstaller = request.siteId == FirstSiteId && becomeOwner
+    val requireVerifiedEmail = (becomeOwner || siteSettings.requireVerifiedEmail) && !isServerInstaller
+
     val mayPostBeforeEmailVerified = !becomeOwner && siteSettings.mayPostBeforeEmailVerified
 
     // Some dupl code. [2FKD05]
@@ -139,10 +149,21 @@ class LoginWithPasswordController @Inject()(cc: ControllerComponents, edContext:
 
       // Password strength tested in createPasswordUserCheckPasswordStrong() below.
 
+      val now = globals.now()
+      val emailVerifiedAt =
+        if (isServerInstaller && emailAddress.nonEmpty) {
+          // Then email settings probably not yet configured, cannot send verification email.
+          // The address has been typed manually twice already — let's assume it's correct
+          // (for now at least).
+          Some(now)
+        }
+        else None
+
       val userData =  // [5LKKWA10]
         NewPasswordUserData.create(name = fullName, email = emailAddress, username = username,
-            password = password, createdAt = globals.now(),
-            isAdmin = becomeOwner, isOwner = becomeOwner) match {
+            password = password, createdAt = now,
+            isAdmin = becomeOwner, isOwner = becomeOwner,
+            emailVerifiedAt = emailVerifiedAt) match {
           case Good(data) => data
           case Bad(errorMessage) =>
             throwUnprocessableEntity("DwE805T4", s"$errorMessage, please try again.")
@@ -150,10 +171,10 @@ class LoginWithPasswordController @Inject()(cc: ControllerComponents, edContext:
 
       val loginCookies: List[Cookie] = try {
         val newMember = dao.createPasswordUserCheckPasswordStrong(userData, request.theBrowserIdData)
-        if (newMember.email.nonEmpty) {
+        if (newMember.email.nonEmpty && !isServerInstaller) {
           sendEmailAddressVerificationEmail(newMember, anyReturnToUrl, request.host, request.dao)
         }
-        if (newMember.email.nonEmpty && !mayPostBeforeEmailVerified) {
+        if (newMember.email.nonEmpty && !mayPostBeforeEmailVerified && !isServerInstaller) {
           TESTS_MISSING // no e2e tests for this
           // Apparently the staff wants to know that all email addresses actually work.
           // (But if no address specifeid — then, just below, we'll log the user in directly.)
@@ -180,7 +201,7 @@ class LoginWithPasswordController @Inject()(cc: ControllerComponents, edContext:
 
       OkSafeJson(Json.obj(
         "userCreatedAndLoggedIn" -> JsBoolean(loginCookies.nonEmpty),
-        "emailVerifiedAndLoggedIn" -> JsBoolean(false)))
+        "emailVerifiedAndLoggedIn" -> JsBoolean(emailVerifiedAt.isDefined)))
           .withCookies(loginCookies: _*)
     }
   }

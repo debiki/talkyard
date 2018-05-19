@@ -95,6 +95,7 @@ class SystemDao(
     }
   }
 
+
   private def createFirstSite(): Site = {
     val pubId =
       if (globals.isOrWasTest) Site.FirstSiteTestPublicId
@@ -109,6 +110,8 @@ class SystemDao(
       dieIf(firstSite.id != FirstSiteId, "EdE2AE6U0")
       val siteTx = sysTx.siteTransaction(FirstSiteId)
 
+      // Keep this in sync with createSite(). (5DWSR42)
+
       siteTx.upsertSiteSettings(SettingsToSave(
         orgFullName = Some(Some("Unnamed Organization"))))
 
@@ -117,6 +120,11 @@ class SystemDao(
       CreateSiteDao.createSystemUser(siteTx)
       CreateSiteDao.createUnknownUser(siteTx)
       CreateSiteDao.createDefaultGroupsAndPermissions(siteTx)
+
+      // Clear the Redis cache for this site, (2PKF05Y), in case we're developing
+      // on localhost and there's old stuff in the Redis dev server.
+      val redisCache = new RedisCache(FirstSiteId, globals.redisClient, globals.now)
+      redisCache.clearThisSite()
 
       firstSite
     }
@@ -169,19 +177,20 @@ class SystemDao(
         }
       }
 
+      // Keep all this in sync with createFirstSite(). (5DWSR42)
+
       val newSite = sysTx.createSite(id = None, pubId = pubId, name = name, status,
         creatorIp = browserIdData.ip,
         quotaLimitMegabytes = config.createSite.quotaLimitMegabytes,
         maxSitesPerIp = maxSitesPerIp, maxSitesTotal = maxSitesTotal,
         isTestSiteOkayToDelete = isTestSiteOkayToDelete, pricePlan = pricePlan, sysTx.now)
 
-      if (deleteOldSite) {
-        // Delete Redis stuff even if no site found (2PKF05Y), because sometimes, when developing,
-        // I've imported a SQL dump, resulting in most sites disappearing from the database, but
-        // not from the Redis cache. So even if 'anyDeletedSite' is None, might still need to:
-        val redisCache = new RedisCache(newSite.id, globals.redisClient, globals.now)
-        redisCache.clearThisSite()
-      }
+      // Delete Redis stuff even if no site found (2PKF05Y), because sometimes, when developing
+      // one empties the SQL database or imports a dump, resulting in most sites disappearing
+      // from the database, but not from the Redis cache. So even if 'anyDeletedSite' is None,
+      // might still need to:
+      val redisCache = new RedisCache(newSite.id, globals.redisClient, globals.now)
+      redisCache.clearThisSite()
 
       createdFromSiteId foreach { oldSiteId =>
         val oldSiteTx = sysTx.siteTransaction(oldSiteId)

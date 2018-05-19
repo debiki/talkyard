@@ -1399,7 +1399,7 @@ function Setting2(panelProps, props, anyChildren?) {
 
   return (
     r.div({},
-      Input(props, anyChildren),
+      Input({ ...props, disabled }, anyChildren),
       resetToDefaultButton,
       undoChangesButton));
 }

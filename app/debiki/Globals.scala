@@ -388,7 +388,9 @@ class Globals(
       "EdE47SK2", o"""Bad port: $portParam. You're accessing the server via non-standard
         port $portParam, but then you need to add config value `talkyard.port=$portParam`,
         in file /opt/talkyard/conf/app/play.conf,
-        otherwise I won't know for sure which port to include in URLs I generate.""")
+        otherwise I won't know for sure which port to include in URLs I generate.
+        Also restart the app server for the new config to take effect:
+        sudo docker-compose restart web app""")
     s"$scheme://$hostname$colonPort"
   }
   def originOf(request: p.mvc.Request[_]): String = s"$scheme://${request.host}"
