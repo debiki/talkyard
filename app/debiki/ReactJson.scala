@@ -129,7 +129,7 @@ class JsonMaker(dao: SiteDao) {
       "makeEmbeddedCommentsSite" -> siteSettings.allowEmbeddingFrom.nonEmpty,
       "userMustBeAuthenticated" -> JsBoolean(siteSettings.userMustBeAuthenticated),
       "userMustBeApproved" -> JsBoolean(siteSettings.userMustBeApproved),
-      "settings" -> makeSettingsVisibleClientSideJson(siteSettings, globals.config),
+      "settings" -> makeSettingsVisibleClientSideJson(siteSettings, globals),
       "isInEmbeddedCommentsIframe" -> JsBoolean(false),
       "publicCategories" -> JsArray(),
       "topics" -> JsNull,
@@ -346,7 +346,7 @@ class JsonMaker(dao: SiteDao) {
       // CLEAN_UP Later: move these two userMustBe... to settings {} too.
       "userMustBeAuthenticated" -> JsBoolean(siteSettings.userMustBeAuthenticated),
       "userMustBeApproved" -> JsBoolean(siteSettings.userMustBeApproved),
-      "settings" -> makeSettingsVisibleClientSideJson(siteSettings, globals.config),
+      "settings" -> makeSettingsVisibleClientSideJson(siteSettings, globals),
       "maxUploadSizeBytes" -> globals.maxUploadSizeBytes,
       "isInEmbeddedCommentsIframe" -> JsBoolean(page.role == PageRole.EmbeddedComments),
       "publicCategories" -> categories,
@@ -395,7 +395,7 @@ class JsonMaker(dao: SiteDao) {
       // CLEAN_UP remove these two; they should-instead-be/are-already included in settings: {...}.
       "userMustBeAuthenticated" -> JsBoolean(siteSettings.userMustBeAuthenticated),
       "userMustBeApproved" -> JsBoolean(siteSettings.userMustBeApproved),
-      "settings" -> makeSettingsVisibleClientSideJson(siteSettings, globals.config),
+      "settings" -> makeSettingsVisibleClientSideJson(siteSettings, globals),
       "me" -> noUserSpecificData(dao.getPermsForEveryone()),
       "rootPostId" -> JsNumber(PageParts.BodyNr),
       "maxUploadSizeBytes" -> globals.maxUploadSizeBytes,
@@ -971,7 +971,7 @@ object JsonMaker {
     PostSummaryLength + 80 // one line is roughly 80 chars
 
 
-  private def makeSettingsVisibleClientSideJson(settings: EffectiveSettings, conf: Config): JsObject = {
+  private def makeSettingsVisibleClientSideJson(settings: EffectiveSettings, globals: Globals): JsObject = {
     // Only include settings that differ from the default.
 
     var json = Json.obj(
@@ -982,7 +982,7 @@ object JsonMaker {
       "enableTwitterLogin" -> settings.enableTwitterLogin,
       "enableGitHubLogin" -> settings.enableGitHubLogin)
 
-    val D = AllSettings.makeDefault(conf)
+    val D = AllSettings.makeDefault(globals)
     if (settings.languageCode != D.languageCode)
       json += "languageCode" -> JsString(settings.languageCode)
     if (settings.inviteOnly != D.inviteOnly)

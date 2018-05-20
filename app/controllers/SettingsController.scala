@@ -61,7 +61,7 @@ class SettingsController @Inject()(cc: ControllerComponents, edContext: EdContex
 
   def saveSiteSettings: Action[JsValue] = AdminPostJsonAction(maxBytes = 10*1000) {
         request: JsonPostRequest =>
-    val settingsToSave = debiki.Settings2.settingsToSaveFromJson(request.body, globals.config)
+    val settingsToSave = debiki.Settings2.settingsToSaveFromJson(request.body, globals)
     throwForbiddenIf(settingsToSave.orgFullName.exists(_.isEmptyOrContainsBlank),
       "EdE5KP8R2", "Cannot clear the organization name")
     request.dao.saveSiteSettings(settingsToSave, request.who)

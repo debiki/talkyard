@@ -193,17 +193,17 @@ object AllSettings {
     */
   val PostRecentlyCreatedLimitMs: Int = 5 * 3600 * 1000
 
-  def makeDefault(conf: Config): AllSettings = new AllSettings {  // [8L4KWU02]
+  def makeDefault(globals: Globals): AllSettings = new AllSettings {  // [8L4KWU02]
     val userMustBeAuthenticated = false
     val userMustBeApproved = false
     val inviteOnly = false
     val allowSignup = true
     val allowLocalSignup = true
     val allowGuestLogin = false
-    val enableGoogleLogin: Boolean = conf.socialLogin.googleOAuthSettings.isGood
-    val enableFacebookLogin: Boolean = conf.socialLogin.facebookOAuthSettings.isGood
-    val enableTwitterLogin: Boolean = conf.socialLogin.twitterOAuthSettings.isGood
-    val enableGitHubLogin: Boolean = conf.socialLogin.githubOAuthSettings.isGood
+    val enableGoogleLogin: Boolean = globals.socialLogin.googleOAuthSettings.isGood
+    val enableFacebookLogin: Boolean = globals.socialLogin.facebookOAuthSettings.isGood
+    val enableTwitterLogin: Boolean = globals.socialLogin.twitterOAuthSettings.isGood
+    val enableGitHubLogin: Boolean = globals.socialLogin.githubOAuthSettings.isGood
     val requireVerifiedEmail = true
     val emailDomainBlacklist = ""
     val emailDomainWhitelist = ""
@@ -463,8 +463,8 @@ object Settings2 {
   }
 
 
-  def settingsToSaveFromJson(json: JsValue, conf: Config): SettingsToSave = {
-    val d = AllSettings.makeDefault(conf)
+  def settingsToSaveFromJson(json: JsValue, globals: Globals): SettingsToSave = {
+    val d = AllSettings.makeDefault(globals)
     SettingsToSave(
     userMustBeAuthenticated = anyBool(json, "userMustBeAuthenticated", d.userMustBeAuthenticated),
     userMustBeApproved = anyBool(json, "userMustBeApproved", d.userMustBeApproved),

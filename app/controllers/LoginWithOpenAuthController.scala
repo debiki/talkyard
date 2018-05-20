@@ -70,9 +70,6 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
     IsInLoginWindowCookieName, IsInLoginPopupCookieName, MayCreateUserCookieName,
     AuthStateCookieName).map(DiscardingSecureCookie)
 
-  private val LoginOriginConfValName = "talkyard.loginOrigin"
-  private var configErrorMessage: Option[String] = None
-
   def conf: Configuration = globals.rawConf
 
   private val cache = caffeine.cache.Caffeine.newBuilder()
@@ -85,28 +82,6 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
     .expireAfterWrite(65, java.util.concurrent.TimeUnit.MINUTES)
     .build().asInstanceOf[caffeine.cache.Cache[String, OpenAuthDetails]]
 
-  lazy val anyLoginOrigin: Option[String] =
-    if (globals.isOrWasTest) {
-      // The base domain should have been automatically configured with the test server's
-      // listen port.
-      Some(s"${globals.scheme}://${globals.baseDomainWithPort}")
-    }
-    else {
-      val anyOrigin = conf.getString(LoginOriginConfValName) orElse {
-        globals.defaultSiteHostname map { hostname =>
-          s"${globals.scheme}://$hostname${globals.colonPort}"
-        }
-      }
-      anyOrigin foreach { origin =>
-        if (globals.secure && !origin.startsWith("https:")) {
-          configErrorMessage =
-            Some(s"Config value '$LoginOriginConfValName' does not start with 'https:'")
-          p.Logger.error(s"Disabling OAuth: ${configErrorMessage.get}. It is: '$origin' [DwE6KW5]")
-        }
-      }
-      anyOrigin
-    }
-
 
   def startAuthentication(provider: String, returnToUrl: String): Action[Unit] =
         AsyncGetActionIsLogin { request =>
@@ -116,7 +91,7 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
 
   def startAuthenticationImpl(provider: String, returnToUrl: String, request: GetRequest)
         : Future[Result] = {
-    configErrorMessage foreach { message =>
+    globals.loginOriginConfigErrorMessage foreach { message =>
       throwInternalError("DwE5WKU3", message)
     }
     var futureResult = authenticate(provider, request)
@@ -155,7 +130,7 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
     */
   private def authenticate(providerName: String, request: GetRequest): Future[Result] = {
 
-    if (anyLoginOrigin.map(_ == originOf(request)).contains(false)) {
+    if (globals.anyLoginOrigin.map(_ == originOf(request)).contains(false)) {
       // OAuth providers have been configured to send authentication data to another
       // origin (namely anyLoginOrigin.get); we need to redirect to that origin
       // and login from there.
@@ -584,7 +559,7 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
   private def loginViaLoginOrigin(providerName: String, request: Request[Unit]): Future[Result] = {
     val xsrfToken = nextRandomString()
     val loginEndpoint =
-      anyLoginOrigin.getOrDie("DwE830bF1") +
+      globals.anyLoginOrigin.getOrDie("DwE830bF1") +
         routes.LoginWithOpenAuthController.loginThenReturnToOriginalSite(
           providerName, returnToOrigin = originOf(request), xsrfToken)
     Future.successful(Redirect(loginEndpoint).withCookies(
@@ -602,9 +577,9 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
         : Action[Unit] = AsyncGetActionIsLogin { request =>
     // The actual redirection back to the returnToOrigin happens in handleAuthenticationData()
     // — it checks the value of the return-to-origin cookie.
-    if (anyLoginOrigin.map(_ == originOf(request)) != Some(true))
+    if (globals.anyLoginOrigin.map(_ == originOf(request)) != Some(true))
       throwForbidden(
-        "DwE50U2", s"You need to login via the login origin, which is: `$anyLoginOrigin'")
+        "DwE50U2", s"You need to login via the login origin, which is: `${globals.anyLoginOrigin}'")
 
     val futureResponse = authenticate(provider, request)
     futureResponse map { response =>
@@ -662,22 +637,22 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
 
   private def googleProvider(): GoogleProvider with CommonSocialProfileBuilder =
     new GoogleProvider(HttpLayer, socialStateHandler,
-      getOrThrowDisabled(globals.config.socialLogin.googleOAuthSettings))
+      getOrThrowDisabled(globals.socialLogin.googleOAuthSettings))
 
 
   private def facebookProvider(): FacebookProvider with CommonSocialProfileBuilder =
     new FacebookProvider(HttpLayer, socialStateHandler,
-      getOrThrowDisabled(globals.config.socialLogin.facebookOAuthSettings))
+      getOrThrowDisabled(globals.socialLogin.facebookOAuthSettings))
 
   private def twitterProvider(): TwitterProvider with CommonSocialProfileBuilder = {
-    val settings = getOrThrowDisabled(globals.config.socialLogin.twitterOAuthSettings)
+    val settings = getOrThrowDisabled(globals.socialLogin.twitterOAuthSettings)
     new TwitterProvider(
       HttpLayer, new PlayOAuth1Service(settings), OAuth1TokenSecretProvider, settings)
   }
 
   private def githubProvider(): GitHubProvider with CommonSocialProfileBuilder =
     new GitHubProvider(HttpLayer, socialStateHandler,
-      getOrThrowDisabled(globals.config.socialLogin.githubOAuthSettings))
+      getOrThrowDisabled(globals.socialLogin.githubOAuthSettings))
 
 
   private def getOrThrowDisabled[A](anySettings: A Or ErrorMessage): A = anySettings match {

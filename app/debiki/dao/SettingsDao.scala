@@ -43,7 +43,7 @@ trait SettingsDao {
 
   def loadWholeSiteSettings(transaction: SiteTransaction): EffectiveSettings = {
     val editedSettings = transaction.loadSiteSettings()
-    EffectiveSettings(editedSettings.toVector, AllSettings.makeDefault(globals.config))
+    EffectiveSettings(editedSettings.toVector, AllSettings.makeDefault(globals))
   }
 
 

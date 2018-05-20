@@ -41,8 +41,7 @@ import scala.util.Try
 
 /** Intended for troubleshooting, via the browser, and helps running End-to-End tests.
   */
-class DebugTestController @Inject()(cc: ControllerComponents, edContext: EdContext,
-  loginWithOpenAuthController: LoginWithOpenAuthController)
+class DebugTestController @Inject()(cc: ControllerComponents, edContext: EdContext)
   extends EdController(cc, edContext) {
 
   import context.globals
@@ -169,7 +168,7 @@ class DebugTestController @Inject()(cc: ControllerComponents, edContext: EdConte
          |Default site hostname: ${globals.defaultSiteHostname}
          |Default site id: ${globals.defaultSiteId}
          |
-         |OAuth login origin: ${loginWithOpenAuthController.anyLoginOrigin}
+         |OAuth login origin: ${globals.anyLoginOrigin}
          |
          |Request host: ${request.host}
          |Request secure: ${request.request.secure}

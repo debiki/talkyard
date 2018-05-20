@@ -363,7 +363,7 @@ class Nashorn(globals: Globals) {
     // load React components from `window['component-name']`.
     scriptBuilder.append("var global = window = this;")
 
-    val languageCode = AllSettings.makeDefault(globals.config).languageCode
+    val languageCode = AllSettings.makeDefault(globals).languageCode
 
     scriptBuilder.append(i"""
         |$DummyConsoleLogFunctions
