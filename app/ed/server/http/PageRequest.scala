@@ -39,7 +39,7 @@ class PageRequest[A](
   val site: SiteBrief,
   val sid: SidStatus,
   val xsrfToken: XsrfOk,
-  val browserId: BrowserId,
+  val browserId: Option[BrowserId],
   val user: Option[User],
   val pageExists: Boolean,
   /** Ids of groups to which the requester belongs. */
@@ -57,7 +57,7 @@ class PageRequest[A](
   require(!pageExists || pageMeta.isDefined)
 
   pageMeta foreach { meta =>
-    require(Some(meta.pageId) == pagePath.pageId)
+    require(pagePath.pageId contains meta.pageId)
   }
 
 
@@ -99,7 +99,7 @@ class PageRequest[A](
 
   def thePageRole : PageRole = thePageMeta.pageRole
 
-  def thePageMeta = pageMeta getOrElse throwNotFound(
+  def thePageMeta: PageMeta = pageMeta getOrElse throwNotFound(
     "DwE3ES58", s"No page meta found, page id: $pageId")
 
 
@@ -121,7 +121,7 @@ class PageRequest[A](
   /** If we should include comment vote and read count statistics in the html.
     */
   def debugStats: Boolean =
-    request.queryString.getEmptyAsNone("debugStats") == Some("true")
+    request.queryString.getEmptyAsNone("debugStats").contains("true")
 
 
   /** In Prod mode only staff can bypass the cache, otherwise it'd be a bit too easy
@@ -129,7 +129,7 @@ class PageRequest[A](
     */
   def bypassCache: Boolean =
     (!Globals.isProd || user.exists(_.isStaff)) &&
-      request.queryString.getEmptyAsNone("bypassCache") == Some("true")
+      request.queryString.getEmptyAsNone("bypassCache").contains("true")
 
 }
 
@@ -142,7 +142,7 @@ class DummyPageRequest[A](
   siteIdAndCanonicalHostname: SiteBrief,
   sid: SidStatus,
   xsrfToken: XsrfOk,
-  browserId: BrowserId,
+  browserId: Option[BrowserId],
   user: Option[User],
   pageExists: Boolean,
   pagePath: PagePath,

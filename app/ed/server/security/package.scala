@@ -85,7 +85,7 @@ object EdSecurity {
     */
   val XsrfCookieName = "XSRF-TOKEN"
 
-  val BrowserIdCookieName = "dwCoBrId"
+  private val BrowserIdCookieName = "dwCoBrId"
 }
 
 
@@ -137,7 +137,7 @@ class EdSecurity(globals: Globals) {
             (XsrfOk(""), Nil)
           }
           else {
-            val newXsrfOk = createXsrfToken()
+            val newXsrfOk = createXsrfToken()  // [privacy-badger] doesn't like?
             val cookie = urlEncodeCookie(XsrfCookieName, newXsrfOk.value)
             (newXsrfOk, List(cookie))
           }
@@ -357,7 +357,7 @@ class EdSecurity(globals: Globals) {
   def DiscardingSecureCookie(name: String) =
     DiscardingCookie(name, secure = globals.secure)
 
-  def DiscardingSessionCookie = DiscardingSecureCookie("dwCoSid")
+  def DiscardingSessionCookie: DiscardingCookie = DiscardingSecureCookie("dwCoSid")
 
   // Two comments on the encoding of the cookie value:
   // 1. If the cookie contains various special characters
@@ -386,18 +386,30 @@ class EdSecurity(globals: Globals) {
     httpOnly = false)
 
 
-  /** Extracts the browser id cookie from the request, or creates it if absent.
+  /** Extracts any browser id cookie from the request, or creates it if absent
+    * and is a POST request.
     */
-  def getBrowserIdCreateIfNeeded(request: Request[_]): (BrowserId, List[Cookie]) = {
-    val anyBrowserIdCookieValue = request.cookies.get(BrowserIdCookieName).map(_.value)
-    if (anyBrowserIdCookieValue.isDefined)
-      (BrowserId(anyBrowserIdCookieValue.get, isNew = false), Nil)
-    else
+  def getBrowserIdMaybeCreate(request: Request[_]): (Option[BrowserId], List[Cookie]) = {
+    val anyBrowserIdCookieValue = getAnyBrowserIdCookieValue(request)
+    if (anyBrowserIdCookieValue.isDefined) {
+      (Some(BrowserId(anyBrowserIdCookieValue.get, isNew = false)), Nil)
+    }
+    else if (request.method == "GET" || request.method == "OPTIONS" || request.method == "HEAD") {
+      // Probably harmless, don't need to remember the browser.
+      (None, Nil)
+    }
+    else {
+      // This request tries to do something (POST request). Try to remember the browser, so
+      // can maybe block or rate limit it, if needed. And maybe detect astroturfing.
       createBrowserIdCookie()
+    }
   }
 
+  def getAnyBrowserIdCookieValue(request: Request[_]): Option[String] =
+    request.cookies.get(BrowserIdCookieName).map(_.value)
 
-  private def createBrowserIdCookie(): (BrowserId, List[Cookie]) = {
+
+  private def createBrowserIdCookie(): (Some[BrowserId], List[Cookie]) = {
     val unixTimeSeconds = globals.now().seconds
     // Let's separate the timestamp from the random stuff by adding an a-z letter.
     val randomString = nextRandomAzLetter() + nextRandomString() take 7
@@ -410,10 +422,10 @@ class EdSecurity(globals: Globals) {
     val newCookie = SecureCookie(
       name = BrowserIdCookieName,
       value = cookieValue,
-      maxAgeSeconds = Some(3600 * 24 * 365 * 20),
+      maxAgeSeconds = Some(3600 * 24 * 365 * 5),
       httpOnly = true)
 
-    (BrowserId(cookieValue, isNew = true), newCookie :: Nil)
+    (Some(BrowserId(cookieValue, isNew = true)), List(newCookie))
   }
 
 

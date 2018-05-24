@@ -93,7 +93,7 @@ class DaoAppSuite(
   }
 
 
-  def browserIdData = BrowserIdData("1.2.3.4", idCookie = "dummy_id_cookie", fingerprint = 334455)
+  def browserIdData = BrowserIdData("1.2.3.4", idCookie = Some("dummy_id_cookie"), fingerprint = 334455)
   def dummySpamRelReqStuff = SpamRelReqStuff(userAgent = None, referer = None, uri = "/dummy")
 
 

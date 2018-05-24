@@ -263,26 +263,27 @@ trait UserDao {
 
       val ipBlock = Block(
         threatLevel = threatLevel,
-        ip = Some(browserIdData.inetAddress),
-        // Hmm. Why cookie id too? The cookie is added below too (6PKU02Q), isn't that enough.
-        browserIdCookie = Some(browserIdData.idCookie),
+        ip = Some(browserIdData.inetAddress),  // include ip
+        browserIdCookie = None,                // skip cookie
         blockedById = blockerId,
         blockedAt = transaction.now.toJavaDate,
         blockedTill = ipBlockedTill)
 
-      val browserIdCookieBlock = Block(
-        threatLevel = threatLevel,
-        ip = None,
-        browserIdCookie = Some(browserIdData.idCookie),
-        blockedById = blockerId,
-        blockedAt = transaction.now.toJavaDate,
-        blockedTill = cookieBlockedTill)
+      val browserIdCookieBlock = browserIdData.idCookie map { idCookie =>
+        Block(
+          threatLevel = threatLevel,
+          ip = None,                        // skip ip
+          browserIdCookie = Some(idCookie), // include cookie
+          blockedById = blockerId,
+          blockedAt = transaction.now.toJavaDate,
+          blockedTill = cookieBlockedTill)
+      }
 
       // COULD catch dupl key error when inserting IP block, and update it instead, if new
       // threat level is *worse* [6YF42]. Aand continue anyway with inserting browser id
       // cookie block.
       transaction.insertBlock(ipBlock)
-      transaction.insertBlock(browserIdCookieBlock) // (6PKU02Q)
+      browserIdCookieBlock foreach transaction.insertBlock
 
       // Also set the user's threat level, if the new level is worse.
       transaction.loadGuest(guestId) foreach { guest =>
@@ -300,7 +301,7 @@ trait UserDao {
         throwForbidden("DwE5FK83", "Cannot unblock guest: No audit log entry, IP unknown")
       }
       transaction.unblockIp(auditLogEntry.browserIdData.inetAddress)
-      transaction.unblockBrowser(auditLogEntry.browserIdData.idCookie)
+      auditLogEntry.browserIdData.idCookie foreach transaction.unblockBrowser
       transaction.loadGuest(auditLogEntry.doerId) foreach { guest =>
         if (guest.lockedThreatLevel.isDefined) {
           transaction.updateGuest(guest.copy(lockedThreatLevel = None))
@@ -321,7 +322,7 @@ trait UserDao {
   }
 
 
-  def loadBlocks(ip: String, browserIdCookie: String): immutable.Seq[Block] = {
+  def loadBlocks(ip: String, browserIdCookie: Option[String]): immutable.Seq[Block] = {
     readOnlyTransactionNotSerializable { transaction =>
       transaction.loadBlocks(ip = ip, browserIdCookie = browserIdCookie)
     }
@@ -1295,8 +1296,8 @@ trait UserDao {
   }
 
 
-  def perhapsBlockGuest(request: play.api.mvc.Request[_], sidStatus: SidStatus,
-        browserId: BrowserId) {
+  def perhapsBlockRequest(request: play.api.mvc.Request[_], sidStatus: SidStatus,
+        browserId: Option[BrowserId]) {
     if (request.method == "GET")
       return
 
@@ -1314,8 +1315,8 @@ trait UserDao {
     // COULD cache blocks, but not really needed since this is for post requests only.
     val blocks = loadBlocks(
       ip = request.remoteAddress,
-      // COULD pass None not ""?
-      browserIdCookie = if (browserId.isNew) "-" else browserId.cookieValue)
+      // If the cookie is new, that browser won't have been blocked yet.
+      browserIdCookie = if (browserId.exists(_.isNew)) None else browserId.map(_.cookieValue))
 
     for (block <- blocks) {
       if (block.isActiveAt(globals.now()) && block.threatLevel == ThreatLevel.SevereThreat)

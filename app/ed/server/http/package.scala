@@ -26,7 +26,7 @@ import play.api.mvc._
 
 package object http {
 
-  def OkSafeJson(json: JsValue) =
+  def OkSafeJson(json: JsValue): Result =
     _root_.controllers.Utils.OkSafeJson(json)
 
 
@@ -34,7 +34,7 @@ package object http {
     site: SiteBrief,
     sid: SidStatus,
     xsrfToken: XsrfOk,
-    browserId: BrowserId,
+    browserId: Option[BrowserId],
     user: Option[User],
     dao: SiteDao,
     request: Request[A]) extends DebikiRequest[A] {

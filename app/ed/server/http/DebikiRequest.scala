@@ -43,7 +43,7 @@ abstract class DebikiRequest[A] {
   def site: SiteBrief
   def sid: SidStatus
   def xsrfToken: XsrfOk
-  def browserId: BrowserId
+  def browserId: Option[BrowserId]
   def user: Option[User] // REFACTOR RENAME to 'requester' (and remove 'def requester' below)
                         // COULD? add a 'Stranger extends User' and use instead of None ?
   def dao: SiteDao
@@ -76,10 +76,8 @@ abstract class DebikiRequest[A] {
 
   lazy val authzContext: ForumAuthzContext = dao.getForumAuthzContext(requester)
 
-  def theBrowserIdData = BrowserIdData(ip = ip, idCookie = browserId.cookieValue,
+  def theBrowserIdData = BrowserIdData(ip = ip, idCookie = browserId.map(_.cookieValue),
     fingerprint = 0) // skip for now
-
-  def browserIdIsNew: Boolean = browserId.isNew
 
   def spamRelatedStuff = SpamRelReqStuff(
     userAgent = headers.get("User-Agent"),

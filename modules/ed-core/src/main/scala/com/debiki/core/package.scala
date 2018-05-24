@@ -211,7 +211,7 @@ package object core {
 
   case class Who(id: UserId, browserIdData: BrowserIdData) {
     def ip: String = browserIdData.ip
-    def idCookie: String = browserIdData.idCookie
+    def idCookie: Option[String] = browserIdData.idCookie
     def browserFingerprint: Int = browserIdData.fingerprint
     def isGuest: Boolean = User.isGuestId(id)
   }

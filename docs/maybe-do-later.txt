@@ -1,4 +1,10 @@
 
+[privacy-badger]:
+Privacy Badger doesn't like transient session cookies, currently.
+(See https://github.com/EFForg/privacybadger/issues/2003#issuecomment-391745819  bullet point 3. )
+So maybe change from csrf Double Submit Cookie, to Encrypted Token Pattern?
+https://www.owasp.org/index.php/Cross-Site_Request_Forgery_(CSRF)_Prevention_Cheat_Sheet#Encrypted_Token_Patternp
+
 
 [no-email]:
 Let people create accounts without specifying any email address. Like at Reddit.

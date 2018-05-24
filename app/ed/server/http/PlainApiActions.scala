@@ -105,7 +105,7 @@ class PlainApiActions(
         if (actualSidStatus.isOk) (actualSidStatus, false)
         else (SidAbsent, true)
 
-      val (browserId, moreNewCookies) = security.getBrowserIdCreateIfNeeded(request)
+      val (browserId, newBrowserIdCookie) = security.getBrowserIdMaybeCreate(request) // [5JKWQ21]
 
       // Parts of `block` might be executed asynchronously. However any LoginNotFoundException
       // should happen before the async parts, because access control should be done
@@ -129,17 +129,18 @@ class PlainApiActions(
         }
 
       val resultOkSid =
-        if (newCookies.isEmpty && moreNewCookies.isEmpty && !deleteSidCookie) {
+        if (newCookies.isEmpty && newBrowserIdCookie.isEmpty && !deleteSidCookie) {
           resultOldCookies
         }
         else {
           resultOldCookies map { result =>
             var resultWithCookies = result
-              .withCookies(newCookies ::: moreNewCookies: _*)
+              .withCookies(newCookies ::: newBrowserIdCookie: _*)
               .withHeaders(safeActions.MakeInternetExplorerSaveIframeCookiesHeader)
             if (deleteSidCookie) {
               resultWithCookies =
-                resultWithCookies.discardingCookies(DiscardingSecureCookie(EdSecurity.SessionIdCookieName))
+                resultWithCookies.discardingCookies(
+                  DiscardingSecureCookie(EdSecurity.SessionIdCookieName))
             }
             resultWithCookies
           }
@@ -150,11 +151,11 @@ class PlainApiActions(
 
 
     def runBlockIfAuthOk[A](request: Request[A], site: SiteBrief, sidStatus: SidStatus,
-          xsrfOk: XsrfOk, browserId: BrowserId, block: ApiRequest[A] => Future[Result])
+          xsrfOk: XsrfOk, browserId: Option[BrowserId], block: ApiRequest[A] => Future[Result])
           : Future[Result] = {
 
       val dao = globals.siteDao(site.id)
-      dao.perhapsBlockGuest(request, sidStatus, browserId)
+      dao.perhapsBlockRequest(request, sidStatus, browserId)
 
       var anyUser = dao.getUserBySessionId(sidStatus)
       var logoutBecauseSuspended = false

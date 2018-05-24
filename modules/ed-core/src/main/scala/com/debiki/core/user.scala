@@ -951,10 +951,14 @@ case class GuestLoginAttempt(
   email: String = "",
   guestCookie: String) { // COULD rename to browserIdCookie
 
-  require(ip == ip.trim, "DwE4KWF0")
-  require(name == name.trim && name.trim.nonEmpty, "DwE6FKW3")
-  require(email == email.trim, "DwE83WK2")
-  require(guestCookie == guestCookie.trim && guestCookie.nonEmpty && guestCookie != "-", "DwE0FYF8")
+  require(ip == ip.trim, "TyEBDGSTIP")
+  require(name == name.trim, "TyEBDGSTN1")
+  require(name.trim.nonEmpty, "TyEBDGSTN2")
+  require(email == email.trim, "TyEBDGSTEM1")
+  require(email.count(_ == '@') == 1, "TyEBDGSTEM2")
+  require(guestCookie == guestCookie.trim, "TyEBDGSTCO1")
+  require(guestCookie.nonEmpty, "TyEBDGSTCO2")
+  require(guestCookie != "-", "TyEBDGSTCO3")
 }
 
 case class GuestLoginResult(guest: Guest, isNewUser: Boolean)
@@ -1161,9 +1165,9 @@ class BlockedTillMap(
 
 
 
-case class BrowserIdData(ip: String, idCookie: String, fingerprint: Int) {
-  require(ip.nonEmpty, "DwE6G9F0")
-  require(idCookie.nonEmpty, "DwE3GJ79")
+case class BrowserIdData(ip: String, idCookie: Option[String], fingerprint: Int) {
+  require(ip.nonEmpty, "TyE6G9F0")
+  require(!idCookie.exists(_.isEmpty), "TyE3GJ79")
 
   def inetAddress: InetAddress = guava.net.InetAddresses.forString(ip)
 
@@ -1171,7 +1175,7 @@ case class BrowserIdData(ip: String, idCookie: String, fingerprint: Int) {
 
 object BrowserIdData {
   val NoFingerprint = 0
-  val System = BrowserIdData("127.0.0.1", "_system_", NoFingerprint)
+  val System = BrowserIdData("127.0.0.1", None, NoFingerprint)
 }
 
 

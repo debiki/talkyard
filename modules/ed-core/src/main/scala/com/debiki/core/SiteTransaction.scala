@@ -581,7 +581,7 @@ trait SiteTransaction {
   def loadAuditLogEntriesRecentFirst(userId: UserId, tyype: Option[AuditLogEntryType], limit: Int,
         inclForgotten: Boolean): immutable.Seq[AuditLogEntry]
 
-  def loadBlocks(ip: String, browserIdCookie: String): immutable.Seq[Block]
+  def loadBlocks(ip: String, browserIdCookie: Option[String]): immutable.Seq[Block]
   def insertBlock(block: Block)
   def unblockIp(ip: InetAddress)
   def unblockBrowser(browserIdCookie: String)

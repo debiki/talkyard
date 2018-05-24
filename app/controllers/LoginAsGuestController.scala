@@ -33,7 +33,7 @@ class LoginAsGuestController @Inject()(cc: ControllerComponents, edContext: EdCo
   extends EdController(cc, edContext) {
 
   import context.globals
-  import context.security.createSessionIdAndXsrfToken
+  import context.security
 
 
   def loginGuest: Action[JsValue] = AsyncPostJsonAction(RateLimits.Login, maxBytes = 1000) { request =>
@@ -52,6 +52,10 @@ class LoginAsGuestController @Inject()(cc: ControllerComponents, edContext: EdCo
     throwForbiddenIf(email.nonEmpty && User.emailIsWeird(email),
       "TyE04HK83", "Weird email. Please use a real email address")
 
+    // A browser id should be set, at the start of all POST requests. [5JKWQ21]
+    val theBrowserId: String = request.theBrowserIdData.idCookie getOrElse throwForbidden(
+      "TyE0BRIDGST", "Browser id missing when logging in as guest")
+
     globals.spamChecker.detectRegistrationSpam(request, name = name, email = email) map {
         isSpamReason =>
       SpamChecker.throwForbiddenIfSpam(isSpamReason, "EdE5KJU3_")
@@ -61,11 +65,11 @@ class LoginAsGuestController @Inject()(cc: ControllerComponents, edContext: EdCo
         date = globals.now().toJavaDate,
         name = name,
         email = email,
-        guestCookie = request.theBrowserIdData.idCookie)
+        guestCookie = theBrowserId)
 
       val guestUser = request.dao.loginAsGuest(loginAttempt)
 
-      val (_, _, sidAndXsrfCookies) = createSessionIdAndXsrfToken(request.siteId, guestUser.id)
+      val (_, _, sidAndXsrfCookies) = security.createSessionIdAndXsrfToken(request.siteId, guestUser.id)
 
       OkSafeJson(Json.obj(
         "userCreatedAndLoggedIn" -> JsTrue,

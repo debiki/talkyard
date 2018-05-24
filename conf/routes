@@ -2,8 +2,12 @@
 # This file defines all application routes (Higher priority routes first)
 # ~~~~
 
-# In Global.scala, routing is intercepted, and editPost/createPage/etc
-# are called, based on the query string (e.g. ?edit=... or ?create-page).
+# Only POST.
+# Don't use PUT, DELETE or PATCH. Use POST only. That's simpler — one won't
+# need to wonder, which method to use. Also, using only POST, encourages descriptive
+# url paths, like '/delete-comment' instead of just /comment (and method DELETE)
+# which is helpful when understanding what the url path does, and someone else
+# didn't tell you which method hen had in mind.
 
 # API calls
 # Would be nice to change to <path>?login-simple / ?logout / etcetera,

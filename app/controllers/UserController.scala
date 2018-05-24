@@ -414,7 +414,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
       val uniqueBrowserIdData = auditLogEntries.map(_.browserIdData).distinct
       val browserIdDataJson = uniqueBrowserIdData map { (browserIdData: BrowserIdData) =>
         Json.obj(
-          "cookie" -> JsString(browserIdData.idCookie),
+          "cookie" -> JsStringOrNull(browserIdData.idCookie),
           // "fingerprint" -> JsNumber(browserIdData.fingerprint),  // currently always zero
           "ip" -> JsString(browserIdData.ip))
       }

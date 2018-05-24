@@ -38,7 +38,7 @@ class CreateSiteDaoAppSpec extends DaoAppSuite(maxSitesTotal = Some(75)) {
     globals.systemDao.createSite(pubId = s"createsitepubid-$thePrefix",
       name = theLocalHostname, status = SiteStatus.Active, hostname = theHostname,
       embeddingSiteUrl = None, organizationName = s"Org Name $thePrefix", creatorId = user.id,
-      BrowserIdData(ip = theIp, idCookie = theIdCookie, fingerprint = theFingerprint),
+      BrowserIdData(ip = theIp, idCookie = Some(theIdCookie), fingerprint = theFingerprint),
       isTestSiteOkayToDelete = isTestSite, skipMaxSitesCheck = false,
       deleteOldSite = false, pricePlan = "Unknown", createdFromSiteId = Some(FirstSiteId))
   }
