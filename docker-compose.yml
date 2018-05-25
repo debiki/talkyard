@@ -40,7 +40,7 @@ services:
       - search
       - rdb
     environment:
-      PLAY_HEAP_MEMORY_MB: 2500
+      PLAY_HEAP_MEMORY_MB: 2800
       HOSTNAME: "localhost"
       CREATE_SITE_HOSTNAME: "localhost"
       BECOME_OWNER_EMAIL_ADDRESS: "admin@example.com"
@@ -70,7 +70,7 @@ services:
       - '9200:9200'
       - '9300:9300'
     environment:
-      ES_JAVA_OPTS: '-Xms512m -Xmx512m'
+      ES_JAVA_OPTS: '-Xms384m -Xmx384m'
 
   rdb:
     build: docker/rdb/

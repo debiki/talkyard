@@ -42,51 +42,104 @@ object Mailer {
     */
   def startNewActor(actorSystem: ActorSystem, daoFactory: SiteDaoFactory, config: p.Configuration,
         now: () => When): ActorRef = {
+
+    // ----- Read in config
+
     val anySmtpServerName = config.getString("talkyard.smtp.host").orElse(
       config.getString("talkyard.smtp.server")).noneIfBlank // old deprecated name
+
     val anySmtpPort = config.getInt("talkyard.smtp.port")
-    val anySmtpSslPort = config.getInt("talkyard.smtp.sslPort")
+    val anySmtpTlsPort = config.getInt("talkyard.smtp.tlsPort") orElse {
+      // Depreacted name, because SSL is insecure and in fact disabled. [NOSSL]
+      config.getInt("talkyard.smtp.sslPort")
+    }
     val anySmtpUserName = config.getString("talkyard.smtp.user").noneIfBlank
     val anySmtpPassword = config.getString("talkyard.smtp.password").noneIfBlank
-    val anyUseSslOrTls = config.getBoolean("talkyard.smtp.useSslOrTls")
     val anyFromAddress = config.getString("talkyard.smtp.fromAddress").noneIfBlank
+    val anyBounceAddress = config.getString("talkyard.smtp.bounceAddress").noneIfBlank
+    val debug = config.getBoolean("talkyard.smtp.debug") getOrElse false
+
+    // About STARTTLS and TLS/SSL and ports 25, 587, 465:
+    // https://www.fastmail.com/help/technical/ssltlsstarttls.html
+    // Current situation:
+    // - STARTTLS on port 587 seems to be recommended (no SSL disallowed).
+    // - But lots people connect via TLS/SSL on 465 so all servers supports that too.
+    // - And outgoing port 25 often blocked, because of hacked servers that send spam.
+
+    // This will use & require STARTTLS = starts in unencrypted plaintext on the smtp port
+    // (typically 587, or, in the past, 25) and upgrades to tls.
+    val requireStartTls = config.getBoolean("talkyard.smtp.requireStartTls") getOrElse false
+
+    // This with instead start with TLS directly on the tls/ssl port (typically 465).
+    // And maybe try using STARTTLS.
+    val useTls = config.getBoolean("talkyard.smtp.useTls") orElse {
+      // Deprecated name, because SSL is insecure and in fact disabled. [NOSSL]
+      config.getBoolean("talkyard.smtp.useSslOrTls")
+    } getOrElse true
+
+    val enableStartTls =
+      config.getBoolean("talkyard.smtp.enableStartTls").getOrElse(useTls || requireStartTls)
+
+    val checkServerIdentity = config.getBoolean("talkyard.smtp.checkServerIdentity").getOrElse(
+      useTls || requireStartTls)
+
+    // ----- Config makes sense?
+
+    var errorMessage = ""
+    if (anySmtpServerName.isEmpty) errorMessage += " No talkyard.smtp.host configured."
+    if (anySmtpUserName.isEmpty) errorMessage += " No talkyard.smtp.user configured."
+    if (anySmtpPassword.isEmpty) errorMessage += " No talkyard.smtp.password configured."
+    if (anyFromAddress.isEmpty) errorMessage += " No talkyard.smtp.fromAddress configured."
+
+    if (anySmtpPort.isEmpty) {
+      if (requireStartTls) {
+        errorMessage += " talkyard.smtp.requireStartTls=true but no talkyard.smtp.port configured."
+      }
+      else if (!useTls) {
+        errorMessage += " No talkyard.smtp.port configured."
+      }
+      else {
+        // Then TLS and the TLS port is enough? Checked for just below.
+      }
+    }
+
+    if (useTls && anySmtpTlsPort.isEmpty) {
+      errorMessage += " No talkyard.smtp.tlsPort configured."
+    }
+
+    // ----- Create email actor
 
     val actorRef =
-        (anySmtpServerName, anySmtpPort, anySmtpSslPort, anySmtpUserName, anySmtpPassword, anyFromAddress) match {
-      case (Some(serverName), Some(port), Some(sslPort), Some(userName), Some(password), Some(fromAddress)) =>
-        val useSslOrTls = anyUseSslOrTls getOrElse {
-          p.Logger.info(o"""Email config value ed.smtp.useSslOrTls not configured,
-            defaulting to true.""")
-          true
-        }
+      if (errorMessage.nonEmpty) {
+        p.Logger.info(s"I won't send emails, because: $errorMessage [TyEEMAILCONF]")
+        actorSystem.actorOf(
+          Props(new Mailer(
+            daoFactory, now, serverName = "", port = None,
+            tlsPort = None, useTls = false, requireStartTls = false,
+            checkServerIdentity = false,
+            userName = "", password = "", fromAddress = "", debug = debug,
+            bounceAddress = None, broken = true)),
+          name = s"BrokenMailerActor-$testInstanceCounter")
+      }
+      else {
         actorSystem.actorOf(
           Props(new Mailer(
             daoFactory,
             now,
-            serverName = serverName,
-            port = port,
-            sslPort = sslPort,
-            useSslOrTls = useSslOrTls,
-            userName = userName,
-            password = password,
-            fromAddress = fromAddress,
+            serverName = anySmtpServerName getOrDie "TyE3KPD78",
+            port = anySmtpPort,
+            tlsPort = anySmtpTlsPort,
+            useTls = useTls,
+            requireStartTls = requireStartTls,
+            checkServerIdentity = checkServerIdentity,
+            userName = anySmtpUserName getOrDie "TyE6KTQ20",
+            password = anySmtpPassword getOrDie "TyE8UKTQ2",
+            fromAddress = anyFromAddress getOrDie "TyE2QKJ93",
+            debug = debug,
+            bounceAddress = anyBounceAddress,
             broken = false)),
           name = s"MailerActor-$testInstanceCounter")
-      case _ =>
-        var message = "I won't send emails, because:"
-        if (anySmtpServerName.isEmpty) message += " No ed.smtp.host configured."
-        if (anySmtpPort.isEmpty) message += " No ed.smtp.port configured."
-        if (anySmtpSslPort.isEmpty) message += " No ed.smtp.sslPort configured."
-        if (anySmtpUserName.isEmpty) message += " No ed.smtp.user configured."
-        if (anySmtpPassword.isEmpty) message += " No ed.smtp.password configured."
-        if (anyFromAddress.isEmpty) message += " No ed.smtp.fromAddress configured."
-        p.Logger.info(message)
-        actorSystem.actorOf(
-          Props(new Mailer(
-            daoFactory, now, serverName = "", port = -1, sslPort = -1, useSslOrTls = false,
-            userName = "", password = "", fromAddress = "", broken = true)),
-          name = s"BrokenMailerActor-$testInstanceCounter")
-    }
+      }
 
     testInstanceCounter += 1
     actorRef
@@ -111,16 +164,23 @@ class Mailer(
   val daoFactory: SiteDaoFactory,
   val now: () => When,
   val serverName: String,
-  val port: Int,
-  val sslPort: Int,
-  val useSslOrTls: Boolean,
+  val port: Option[Int],
+  val tlsPort: Option[Int],
+  val useTls: Boolean,
+  val requireStartTls: Boolean,
+  val checkServerIdentity: Boolean,
   val userName: String,
   val password: String,
   val fromAddress: String,
+  val bounceAddress: Option[String],
+  val debug: Boolean,
   val broken: Boolean) extends Actor {
 
+  require(useTls || !requireStartTls, "requireTls is true but useSslOrTls is false [TyEREQTLS0TLS]")
+  require(useTls || !checkServerIdentity,
+    "checkServerIdentity is true but useSslOrTls is false [TyECHECKID0TLS]")
 
-  val logger = play.api.Logger("app.mailer")
+  private val logger = play.api.Logger("app.mailer")
 
   private val e2eTestEmails = mutable.HashMap[String, Promise[Vector[Email]]]()
 
@@ -197,14 +257,24 @@ class Mailer(
 
   private def makeApacheCommonsEmail(email: Email): acm.HtmlEmail = {
     val apacheCommonsEmail = new acm.HtmlEmail()
+    apacheCommonsEmail.setDebug(debug)
     apacheCommonsEmail.setHostName(serverName)
-    apacheCommonsEmail.setSmtpPort(port)
-    apacheCommonsEmail.setSslSmtpPort(sslPort.toString)
+    port foreach apacheCommonsEmail.setSmtpPort
+    tlsPort foreach (p => apacheCommonsEmail.setSslSmtpPort(p.toString))
     apacheCommonsEmail.setAuthenticator(new acm.DefaultAuthenticator(userName, password))
-    apacheCommonsEmail.setSSLOnConnect(useSslOrTls)
+
+    // Apache Commons Email will try both TLS and SSL, although the function is named 'setSSL...'?
+    // And since we've disabled SSL, TLS should get used? [NOSSL]
+    apacheCommonsEmail.setSSLOnConnect(useTls)
+
+    apacheCommonsEmail.setStartTLSEnabled(useTls || requireStartTls)
+    apacheCommonsEmail.setStartTLSRequired(requireStartTls)
+
+    apacheCommonsEmail.setSSLCheckServerIdentity(checkServerIdentity)
 
     apacheCommonsEmail.addTo(email.sentTo)
     apacheCommonsEmail.setFrom(fromAddress)
+    bounceAddress foreach apacheCommonsEmail.setBounceAddress
 
     apacheCommonsEmail.setSubject(email.subject)
     apacheCommonsEmail.setHtmlMsg(email.bodyHtmlText)

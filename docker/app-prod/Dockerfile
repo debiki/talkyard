@@ -31,15 +31,18 @@ ENV CONFIG_FILE /opt/talkyard/app/conf/app-prod.conf
 
 WORKDIR /opt/talkyard/app
 
-# this —> "Bad root server path: /opt/talkyard/app/-jvm-debug 9999", no idea why...
-CMD ["/opt/talkyard/app/bin/talkyard-server", \
-  "-jvm-debug 9999", \
-  "-Dcom.sun.management.jmxremote.port=3333", \
-  "-Dcom.sun.management.jmxremote.ssl=false", \
-  "-Dcom.sun.management.jmxremote.authenticate=false", \
-  "-Dhttp.port=9000", \
-  "-Dhttps.port=9443", \
-  "-Dconfig.file=$CONFIG_FILE"]
+# # this —> "Bad root server path: /opt/talkyard/app/-jvm-debug 9999", no idea why...
+# CMD ["/opt/talkyard/app/bin/talkyard-server", \
+#   "-jvm-debug 9999", \
+#   "-Dcom.sun.management.jmxremote.port=3333", \
+#   "-Dcom.sun.management.jmxremote.ssl=false", \
+#   "-Dcom.sun.management.jmxremote.authenticate=false", \
+#   "-Dhttp.port=9000", \
+#   "-Dhttps.port=9443", \
+#   # SSL has security flaws. Use TLS instead. [NOSSL]
+#   -Ddeployment.security.SSLv2Hello=false \
+#   -Ddeployment.security.SSLv3=false \
+#   "-Dconfig.file=$CONFIG_FILE"]
 
 # ...but this identical command works fine:
 # the PID file might not get deleted if we shutdown during startup, see Globals.scala [65YKFU02]
@@ -52,6 +55,14 @@ CMD rm -f /opt/talkyard/app/RUNNING_PID && exec /opt/talkyard/app/bin/talkyard-s
   -Dcom.sun.management.jmxremote.authenticate=false \
   -Dhttp.port=9000 \
   -Dhttps.port=9443 \
+  #
+  # SSL has security flaws. Use TLS. [NOSSL] COULD LATER 2020?: TLSv1=false (even later: TLSv1.1=false)
+  # About the flags: https://superuser.com/a/770465/95772
+  # and: https://blogs.oracle.com/java-platform-group/jdk-8-will-use-tls-12-as-default
+  # and: https://stackoverflow.com/questions/32912175/disabling-tls1
+  -Ddeployment.security.SSLv2Hello=false \
+  -Ddeployment.security.SSLv3=false \
+  #
   # It's ok to use urandom, see:   [30PUK42]
   # - http://www.2uo.de/myths-about-urandom/
   # - http://sockpuppet.org/blog/2014/02/25/safely-generate-random-numbers/
@@ -61,6 +72,7 @@ CMD rm -f /opt/talkyard/app/RUNNING_PID && exec /opt/talkyard/app/bin/talkyard-s
   # and we need it, because otherwise the server might block up to 30 minutes
   # when running scrypt the first time, waiting for "enough entropy".
   -Djava.security.egd=file:/dev/./urandom \
+  #
   -Dconfig.file=${CONFIG_FILE}
 
 # and?

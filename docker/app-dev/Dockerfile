@@ -61,6 +61,9 @@ CMD cd /opt/talkyard/app/ && exec /opt/typesafe-activator/bin/activator \
   -Dcom.sun.management.jmxremote.authenticate=false \
   -Dhttp.port=9000 \
   -Dhttps.port=9443 \
+  # SSL has security flaws. Use TLS instead. [NOSSL]
+  -Ddeployment.security.SSLv2Hello=false \
+  -Ddeployment.security.SSLv3=false \
   -Dconfig.file=/opt/talkyard/app/conf/app-dev.conf \
   run
 

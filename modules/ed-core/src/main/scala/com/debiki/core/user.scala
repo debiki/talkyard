@@ -955,7 +955,7 @@ case class GuestLoginAttempt(
   require(name == name.trim, "TyEBDGSTN1")
   require(name.trim.nonEmpty, "TyEBDGSTN2")
   require(email == email.trim, "TyEBDGSTEM1")
-  require(email.count(_ == '@') == 1, "TyEBDGSTEM2")
+  require(email.isEmpty || email.count(_ == '@') == 1, s"Bad email: $email [TyEBDGSTEM2]")
   require(guestCookie == guestCookie.trim, "TyEBDGSTCO1")
   require(guestCookie.nonEmpty, "TyEBDGSTCO2")
   require(guestCookie != "-", "TyEBDGSTCO3")
@@ -1129,7 +1129,7 @@ case class Block(
   blockedAt: ju.Date,
   blockedTill: Option[ju.Date]) {
 
-  require(browserIdCookie.isDefined, "EdE5KGU8") // change to String then, not Option[String]?
+  require(browserIdCookie.isDefined || ip.isDefined, "TyE5KGU83")
   require(blockedTill.isEmpty || blockedTill.get.getTime >= blockedAt.getTime, "EdE2KWC8")
   require(!browserIdCookie.exists(_.trim.isEmpty), "EdE4FUK7")
 
