@@ -181,6 +181,7 @@ export function EmbeddingAddressInput(props) {
       placeholder: 'https://your.website.com',
       help: props.help || "The address of your blog / website where you're adding the comments.",
       ref: 'embeddingOrigin',
+      trim: true,
       regex: /\S/, message: "Address required",
       regexTwo: /^https?:\/\/[^/]+/, messageTwo: "Should be http(s)://something...",
       notRegex: /\S\s\S/, notMessage: "No spaces please",

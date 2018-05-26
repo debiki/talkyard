@@ -54,6 +54,7 @@ export const UsernameInput = createClassAndFactory({
         required: true,
         disabled: this.props.disabled,
         addonBefore: '@', // [7RFWUQ2]
+        trim: true,
         minLength: 3, maxLength,
         notRegex: / /, notMessage: "No spaces please",
         notRegexTwo: /-/, notMessageTwo: "No hypens (-) please",

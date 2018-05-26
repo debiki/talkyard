@@ -41,22 +41,28 @@ export const PatternInput = createClassAndFactory({
   },
 
   onChange: function(event) {
-    const anyError = this.findAnyError(event.target.value);
-    this.setState({ value: event.target.value, hasError: !!anyError });
+    // (If should trim value, don't trim the value displayed in the input —
+    // feels as if the keyboard is broken, if typing a space and nothing happens.
+    // Just trim the leading & trailing spaces, in the value that actually gets used.)
+    const valueNotTrimmed = event.target.value;
+    const valueMaybeTrimmed = this.props.trim ? valueNotTrimmed.trim() : valueNotTrimmed;
+    const anyError = this.findAnyError(valueMaybeTrimmed);
+    this.setState({ value: valueNotTrimmed, hasError: !!anyError });
     const onChangeValuOk = this.props.onChangeValueOk || this.props.onChange;
     if (onChangeValuOk) {
-      onChangeValuOk(event.target.value, !anyError);
+      onChangeValuOk(valueMaybeTrimmed, !anyError);
     }
   },
 
   componentDidUpdate: function() {
-    const hasError = !!this.findAnyError(this.state.value);
+    const valueMaybeTrimmed = this.props.trim ? this.state.value.trim() : this.state.value;
+    const hasError = !!this.findAnyError(valueMaybeTrimmed);
     if (hasError !== this.state.hasError) {
       this.setState({ hasError: hasError });
       // We got new props (perhaps this.props.error?) and now we're okay or broken, instead.
       const onChangeValuOk = this.props.onChangeValueOk || this.props.onChange;
       if (onChangeValuOk) {
-        onChangeValuOk(this.state.value, !hasError);
+        onChangeValuOk(valueMaybeTrimmed, !hasError);
       }
     }
   },
@@ -135,7 +141,7 @@ export const PatternInput = createClassAndFactory({
   render: function() {
     let anyError;
     if (this.state.showErrors || this.props.error) {
-      anyError = this.findAnyError(this.state.value);
+      anyError = this.findAnyError(this.props.trim ? this.state.value.trim() : this.state.value);
       if (anyError && _.isString(anyError)) {
         anyError = r.b({ style: { color: 'red' }}, anyError);
       }

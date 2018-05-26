@@ -90,6 +90,7 @@ const HostnameEditorDialog = createComponent({
         PatternInput({ label: "New address: (hostname)", ref: 'hostnameInput',
           className: 's_A_NewAdrD_HostnI',
           placeholder: 'forum.example.com',
+          trim: true,
           notRegex: /\s/, notMessage: "No spaces please",
           notRegexTwo: /^https?:/, notMessageTwo: "Don't include http://",
           notRegexThree: /[:!@\/\?\#]/, notMessageThree: "No chars like: : @ / ! ? #",
