@@ -916,7 +916,7 @@ class Globals(
     val siteDaoFactory = new SiteDaoFactory(
       edContext, dbDaoFactory, redisClient, cache, usersOnlineCache, elasticSearchClient, config)
 
-    val mailerActorRef: ActorRef = Mailer.startNewActor(actorSystem, siteDaoFactory, conf, now)
+    val mailerActorRef: ActorRef = Mailer.startNewActor(actorSystem, siteDaoFactory, conf, now, isProd)
 
     val notifierActorRef: Option[ActorRef] =
       if (isTestDisableBackgroundJobs) None

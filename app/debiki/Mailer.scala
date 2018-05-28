@@ -41,7 +41,7 @@ object Mailer {
     * (Also se Notifier.scala)
     */
   def startNewActor(actorSystem: ActorSystem, daoFactory: SiteDaoFactory, config: p.Configuration,
-        now: () => When): ActorRef = {
+        now: () => When, isProd: Boolean): ActorRef = {
 
     // ----- Read in config
 
@@ -71,17 +71,12 @@ object Mailer {
     val requireStartTls = config.getBoolean("talkyard.smtp.requireStartTls") getOrElse false
 
     // This with instead start with TLS directly on the tls/ssl port (typically 465).
-    // And maybe try using STARTTLS.
-    val useTls = config.getBoolean("talkyard.smtp.useTls") orElse {
+    val connectWithTls = config.getBoolean("talkyard.smtp.connectWithTls") orElse {
       // Deprecated name, because SSL is insecure and in fact disabled. [NOSSL]
       config.getBoolean("talkyard.smtp.useSslOrTls")
-    } getOrElse true
+    } getOrElse !requireStartTls
 
-    val enableStartTls =
-      config.getBoolean("talkyard.smtp.enableStartTls").getOrElse(useTls || requireStartTls)
-
-    val checkServerIdentity = config.getBoolean("talkyard.smtp.checkServerIdentity").getOrElse(
-      useTls || requireStartTls)
+    val checkServerIdentity = config.getBoolean("talkyard.smtp.checkServerIdentity").getOrElse(true)
 
     // ----- Config makes sense?
 
@@ -93,18 +88,17 @@ object Mailer {
 
     if (anySmtpPort.isEmpty) {
       if (requireStartTls) {
-        errorMessage += " talkyard.smtp.requireStartTls=true but no talkyard.smtp.port configured."
+        errorMessage += " No talkyard.smtp.port configured, although talkyard.smtp.requireStartTls=true."
       }
-      else if (!useTls) {
+      else if (!connectWithTls) {
         errorMessage += " No talkyard.smtp.port configured."
       }
-      else {
-        // Then TLS and the TLS port is enough? Checked for just below.
+      else if (anySmtpTlsPort.isEmpty) {
+        errorMessage += " No talkyard.smtp.port or talkyard.smtp.tlsPort configured."
       }
-    }
-
-    if (useTls && anySmtpTlsPort.isEmpty) {
-      errorMessage += " No talkyard.smtp.tlsPort configured."
+      else {
+        // Fine, use TLS on port 465 typically, but not STARTTLS.
+      }
     }
 
     // ----- Create email actor
@@ -115,10 +109,10 @@ object Mailer {
         actorSystem.actorOf(
           Props(new Mailer(
             daoFactory, now, serverName = "", port = None,
-            tlsPort = None, useTls = false, requireStartTls = false,
+            tlsPort = None, connectWithTls = false, requireStartTls = false,
             checkServerIdentity = false,
             userName = "", password = "", fromAddress = "", debug = debug,
-            bounceAddress = None, broken = true)),
+            bounceAddress = None, broken = true, isProd = isProd)),
           name = s"BrokenMailerActor-$testInstanceCounter")
       }
       else {
@@ -129,7 +123,7 @@ object Mailer {
             serverName = anySmtpServerName getOrDie "TyE3KPD78",
             port = anySmtpPort,
             tlsPort = anySmtpTlsPort,
-            useTls = useTls,
+            connectWithTls = connectWithTls,
             requireStartTls = requireStartTls,
             checkServerIdentity = checkServerIdentity,
             userName = anySmtpUserName getOrDie "TyE6KTQ20",
@@ -137,7 +131,8 @@ object Mailer {
             fromAddress = anyFromAddress getOrDie "TyE2QKJ93",
             debug = debug,
             bounceAddress = anyBounceAddress,
-            broken = false)),
+            broken = false,
+            isProd = isProd)),
           name = s"MailerActor-$testInstanceCounter")
       }
 
@@ -166,7 +161,7 @@ class Mailer(
   val serverName: String,
   val port: Option[Int],
   val tlsPort: Option[Int],
-  val useTls: Boolean,
+  val connectWithTls: Boolean,
   val requireStartTls: Boolean,
   val checkServerIdentity: Boolean,
   val userName: String,
@@ -174,11 +169,14 @@ class Mailer(
   val fromAddress: String,
   val bounceAddress: Option[String],
   val debug: Boolean,
-  val broken: Boolean) extends Actor {
+  val broken: Boolean,
+  val isProd: Boolean) extends Actor {
 
-  require(useTls || !requireStartTls, "requireTls is true but useSslOrTls is false [TyEREQTLS0TLS]")
-  require(useTls || !checkServerIdentity,
+  /*
+  require(connectWithTls || !requireStartTls, "requireTls is true but useSslOrTls is false [TyEREQTLS0TLS]")
+  require(connectWithTls || !checkServerIdentity,
     "checkServerIdentity is true but useSslOrTls is false [TyECHECKID0TLS]")
+    */
 
   private val logger = play.api.Logger("app.mailer")
 
@@ -217,11 +215,15 @@ class Mailer(
 
     // I often use @example.com, or simply @ex.com, when posting test comments
     // — don't send those emails, to keep down the bounce rate.
-    if (broken || emailToSend.sentTo.endsWith("example.com") ||
-        emailToSend.sentTo.endsWith("ex.com") ||
-        emailToSend.sentTo.endsWith("x.co")) {
+    val isTestAddress =
+      emailToSend.sentTo.endsWith("example.com") ||
+      emailToSend.sentTo.endsWith("ex.com") ||
+      emailToSend.sentTo.endsWith("x.co")
+    if (broken || isTestAddress) {
       fakeSendAndRememberForE2eTests(emailToSend, tenantDao)
-      return
+      if (broken || isProd)
+        return
+      // Else: Apparently a dev/test mail server has been configured.
     }
 
     logger.debug(s"Sending email: $emailToSend")
@@ -265,9 +267,10 @@ class Mailer(
 
     // Apache Commons Email will try both TLS and SSL, although the function is named 'setSSL...'?
     // And since we've disabled SSL, TLS should get used? [NOSSL]
-    apacheCommonsEmail.setSSLOnConnect(useTls)
+    // Let STARTTLS have priority, "require" sounds as if it has precedence?
+    apacheCommonsEmail.setSSLOnConnect(!requireStartTls && connectWithTls)
 
-    apacheCommonsEmail.setStartTLSEnabled(useTls || requireStartTls)
+    apacheCommonsEmail.setStartTLSEnabled(true)
     apacheCommonsEmail.setStartTLSRequired(requireStartTls)
 
     apacheCommonsEmail.setSSLCheckServerIdentity(checkServerIdentity)
@@ -287,7 +290,7 @@ class Mailer(
     */
   def fakeSendAndRememberForE2eTests(email: Email, siteDao: SiteDao) {
     play.api.Logger.debug(i"""
-      |Fake-sending email (only logging it to the console): [EsM6LK4J2]
+      |Fake-sending email: [TyM123FAKEMAIL]
       |————————————————————————————————————————————————————————————
       |$email
       |————————————————————————————————————————————————————————————
