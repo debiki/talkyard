@@ -75,6 +75,7 @@ case class NonExistingPage(
   override val siteId: SiteId,
   pageRole: PageRole,
   anyCategoryId: Option[CategoryId],
+  embeddingUrl: String,
   now: When) extends Page {
 
   override def id: PageId = EmptyPageId
@@ -86,6 +87,7 @@ case class NonExistingPage(
     creationDati = now.toJavaDate,
     numPostsTotal = 0,
     categoryId = anyCategoryId,
+    embeddingUrl = Some(embeddingUrl),
     publishDirectly = true)
 
   override def thePath: PagePath = PagePath(siteId, "/", Some(EmptyPageId), showId = true, pageSlug = "")

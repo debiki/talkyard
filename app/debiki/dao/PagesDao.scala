@@ -196,6 +196,8 @@ trait PagesDao {
     }
 
     val folder = anyFolder getOrElse "/"
+    SECURITY // Maybe page id shouldn't be public? [rand-page-id] To prevent people from
+    // discovering all pages. E.g. iterating through all discussions, in a public blog.
     val pageId = transaction.nextPageId()
     val siteId = transaction.siteId // [5GKEPMW2] remove this row later
     val pagePath = PagePath(siteId, folder = folder, pageId = Some(pageId),
@@ -233,7 +235,7 @@ trait PagesDao {
       numPostsTotal = 2, // title & body
       layout = layout,
       pinOrder = pinOrder, pinWhere = pinWhere,
-      categoryId = anyCategoryId, url = None, publishDirectly = true,
+      categoryId = anyCategoryId, embeddingUrl = None, publishDirectly = true,
       hidden = approvedById.isEmpty) // [7AWU2R0]
 
     val reviewTask = if (reviewReasons.isEmpty) None

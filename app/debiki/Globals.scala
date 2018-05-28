@@ -193,7 +193,7 @@ class Globals(
   val mostMetrics = new MostMetrics(metricRegistry)
 
 
-  val applicationVersion = "0.00.47"  // later, read from some build config file
+  val applicationVersion = "0.00.49"  // later, read from some build config file
 
   def applicationSecret: String = _appSecret
 

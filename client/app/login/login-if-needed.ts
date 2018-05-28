@@ -37,7 +37,7 @@ export function loginIfNeededReturnToPost(
 
 
 export function loginIfNeededReturnToAnchor(
-      loginReason: LoginReason | string, anchor: string, success: () => void, willCompose?: boolean) {
+      loginReason: LoginReason | string, anchor: string, success?: () => void, willCompose?: boolean) {
   const returnToUrl = makeReturnToPageHashForVerifEmail(anchor);
   success = success || function() {};
   if (ReactStore.getMe().isLoggedIn || (willCompose && ReactStore.mayComposeBeforeSignup())) {
@@ -65,7 +65,7 @@ export function loginIfNeededReturnToAnchor(
         console.log("Logged in (login-if-needed.ts, isInIframe)");
         clearInterval(checkLoggedInHandle);
         checkLoggedInHandle = null;
-        !success || success();  // [4PKGTEW20]
+        success();  // [4PKGTEW20]
       }
     }, 1000);
     // If the user hasn't logged in within 8 minutes, skip the after-login stuff. The user

@@ -616,6 +616,12 @@ const RootPostAndComments = createComponent({
         r.div({ className: 'esPendingApproval' },
           page.pageDeletedAtMs ? t.d.PageDeleted : t.d.TextPendingApproval);
 
+    const deletedCross = !page.pageDeletedAtMs ? null :
+        r.div({ className: 's_Pg_DdX' });
+    const deletedText = !page.pageDeletedAtMs ? null :
+        r.div({ className: 's_Pg_DdInf' },
+          (pageRole === PageRole.EmbeddedComments ? "Discussion" : "Page") + " deleted.");
+
     let body = null;
     if (pageRole !== PageRole.EmbeddedComments) {  // maybed hide via CSS instead? [7SFAUM2]
       let bodyContent;
@@ -852,9 +858,11 @@ const RootPostAndComments = createComponent({
     return (
       r.div({ className: threadClass },
         deletedOrUnapprovedMessage,
+        deletedCross,
         body,
         solvedBy,
         socialButtons,
+        deletedText,
         postActions,
         r.div({ style: { clear: 'both' }}),
         debiki2.page.Metabar(),
@@ -865,7 +873,8 @@ const RootPostAndComments = createComponent({
           r.ol({ className: 'dw-res dw-singlereplies' },
             threadedChildren)),
         origPostReplyButton,
-        chatSection));
+        chatSection,
+        deletedText));
   },
 });
 

@@ -596,7 +596,7 @@ export function maybeLoadAndShowNewPage(store: Store,
         history, location: Location, newLocation?: Location) {
 
   // No router, so no history or location, if in embedded discussion.
-  if (store.isInEmbeddedCommentsIframe)
+  if (eds.isInEmbeddedCommentsIframe)
     return;
 
   let newUrlPath = newLocation ? newLocation.pathname : undefined;

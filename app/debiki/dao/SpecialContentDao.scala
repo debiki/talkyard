@@ -110,7 +110,7 @@ trait SpecialContentDao {
     val pageMeta = PageMeta.forNewPage(pageId, PageRole.SpecialContent, authorId,
       transaction.now.toJavaDate,
       numPostsTotal = 1, // no title post, only body
-      categoryId = None, url = None, publishDirectly = true)
+      categoryId = None, embeddingUrl = None, publishDirectly = true)
 
     val uniqueId = transaction.nextPostId()
 

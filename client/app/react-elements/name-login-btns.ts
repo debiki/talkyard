@@ -45,7 +45,7 @@ export const NameLoginBtns = createComponent({
   },
 
   onLoginClick: function() {
-    morebundle.openLoginDialog(this.props.purpose || 'LoginToLogin');
+    login.loginIfNeededReturnToAnchor(this.props.purpose || 'LoginToLogin', '');
   },
 
   onLogoutClick: function() {

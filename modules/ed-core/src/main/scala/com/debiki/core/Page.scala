@@ -100,7 +100,7 @@ object PageMeta {
         pinOrder: Option[Int] = None,
         pinWhere: Option[PinPageWhere] = None,
         categoryId: Option[CategoryId] = None,
-        url: Option[String] = None,
+        embeddingUrl: Option[String] = None,
         hidden: Boolean = false,
         publishDirectly: Boolean = false): PageMeta = {
     var result = PageMeta(
@@ -112,7 +112,7 @@ object PageMeta {
       updatedAt = creationDati,
       publishedAt = if (publishDirectly) Some(creationDati) else None,
       categoryId = categoryId,
-      embeddingPageUrl = url,
+      embeddingPageUrl = embeddingUrl,
       authorId = authorId,
       layout = layout getOrElse TopicListLayout.Default,
       pinOrder = pinOrder,

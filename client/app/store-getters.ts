@@ -194,7 +194,7 @@ export function store_shallShowPageToolsButton(store: Store) {
 
 export function store_canPinPage(store: Store) {
   const page: Page = store.currentPage;
-  return page.categoryId && page.pageRole !== PageRole.Forum;
+  return page.categoryId && page.pageRole !== PageRole.Forum && !page.pageDeletedAtMs;
 }
 
 

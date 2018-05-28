@@ -106,6 +106,8 @@ esT             = a thread (i.e. a comment thread: a post and descendant replies
 
 esSA            = Super Admin area
 
+s_Pg_DdX        = Page deleted cross (a cross across the whole page)
+
 esP             = a post
 esP_Z           = collapse thread button (Z = fold = collapse. Placed inside the post.)
 

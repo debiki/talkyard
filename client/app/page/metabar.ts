@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014 Kaj Magnus Lindberg
+ * Copyright (c) 2014-2018 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -46,6 +46,8 @@ export function openNotfsLevelDropdown(openButton, subject: NotfSubject, current
  * message members (if is a private message page), summarize replies button, etc.
  */
 export var Metabar = createComponent({
+  displayName: 'Metabar',
+
   getInitialState: function() {
     return {
       store: debiki2.ReactStore.allData(),
@@ -97,20 +99,20 @@ export var Metabar = createComponent({
     const me: Myself = store.me;
     const myPageData: MyPageData = me.myCurrentPageData;
 
-    var notfLevelElem = me.isAuthenticated && !ui.showDetails
+    const notfLevelElem = me.isAuthenticated && !ui.showDetails
       ? r.span({ className: 'dw-page-notf-level', onClick: this.onToggleDetailsClick },
           'Notifications: ' + notfLevel_title(myPageData.rolePageSettings.notfLevel))
       : null;
 
-    var toggleDetailsBtn = !me.isLoggedIn ? null :
+    const toggleDetailsBtn = !me.isLoggedIn ? null :
         r.button({ className: 'dw-cmts-tlbr-open', onClick: this.onToggleDetailsClick },
-          r.span({ className: (ui.showDetails ? 'icon-up-open' : 'icon-down-open') }))
+          r.span({ className: (ui.showDetails ? 'icon-up-open' : 'icon-down-open') }));
 
-    // Login is via a "Login to Reply" button above the metabar instead.
-    var nameLoginBtns = !me.isLoggedIn || !store.isInEmbeddedCommentsIframe ? null :
+    // If not in emb cmts, then login btns in topbar, need not show here too.
+    const nameLoginBtns = page.pageRole !== PageRole.EmbeddedComments ? null :
         r.li({}, reactelements.NameLoginBtns({}));
 
-    var summaryElem =
+    const summaryElem =
       r.div({ className: 'dw-cmts-tlbr-head' },
           r.ul({ className: 'dw-cmts-tlbr-summary' },
               r.li({ className: 'dw-cmts-count' }, page.numPostsRepliesSection + " replies"),
@@ -118,14 +120,14 @@ export var Metabar = createComponent({
               r.li({}, notfLevelElem)),
           toggleDetailsBtn);
 
-    var detailsElem = ui.showDetails
+    const detailsElem = ui.showDetails
       ? MetabarDetails({ store: store })
       : null;
 
-    var anyExtraMeta;
+    let anyExtraMeta;
     if (page.pageRole === PageRole.FormalMessage) {
-      var members = store_getPageMembersList(store);
-      var memberList = members.map((user) => {
+      const members = store_getPageMembersList(store);
+      const memberList = members.map((user) => {
         return (
             r.div({ className: 'esMetabar_msgMmbr', key: user.id },
               avatar.Avatar({ user: user }),
@@ -140,15 +142,15 @@ export var Metabar = createComponent({
 
     // ----- Summarize replies section
 
-    var summarizeStuff;
+    let summarizeStuff;
     if (page.numPostsRepliesSection >= 10) {
-      var doneSummarizing = !_.isNumber(this.state.numRepliesSummarized) ? null :
+      const doneSummarizing = !_.isNumber(this.state.numRepliesSummarized) ? null :
           r.span({ style: { marginLeft: '1em' }},
           // Only visiblie replies are summarized, so the count might be confusingly low,
           // if we don't clarify that only visible replies get summarized.
           `Done. Summarized ${this.state.numRepliesSummarized} replies, ` +
             `of the ${this.state.numRepliesVisible} replies previously shown.`);
-      var minutes = estimateReadingTimeMinutesSkipOrigPost(<Post[]> _.values(page.postsByNr));
+      const minutes = estimateReadingTimeMinutesSkipOrigPost(<Post[]> _.values(page.postsByNr));
       if (minutes >= 10 || page.numPostsRepliesSection >= 20) {
         summarizeStuff =
           r.div({ className: 'esMetabar_summarize' },
@@ -196,7 +198,9 @@ const MetabarDetails = createComponent({
 
 
 // some dupl code [6KUW24]
-var NotfsLevelDropdownModal = createComponent({
+const NotfsLevelDropdownModal = createComponent({
+  displayName: 'NotfsLevelDropdownModal',
+
   mixins: [StoreListenerMixin],
 
   getInitialState: function () {
@@ -212,7 +216,7 @@ var NotfsLevelDropdownModal = createComponent({
 
   // dupl code [6KUW24]
   openAtForSubject: function(at, subject: NotfSubject, currentLevel: NotfLevel) {
-    var rect = at.getBoundingClientRect();
+    const rect = at.getBoundingClientRect();
     this.setState({
       isOpen: true,
       atX: rect.left,
@@ -227,7 +231,7 @@ var NotfsLevelDropdownModal = createComponent({
   },
 
   setNotfLevel: function(newLevel) {
-    var subject: NotfSubject = this.state.subject;
+    const subject: NotfSubject = this.state.subject;
     if (subject.pageId) {
       ReactActions.setPageNoftLevel(newLevel);
     }
@@ -241,18 +245,17 @@ var NotfsLevelDropdownModal = createComponent({
   },
 
   render: function() {
-    var state = this.state;
-    var store: Store = this.state.store;
-    var me: Myself = store.me;
-    var subject: NotfSubject = this.state.subject;
-    var currentLevel: NotfLevel = this.state.currentLevel || NotfLevel.Normal;
-    var watchingAllListItem;
-    var watchingFirstListItem;
-    var mutedListItem;
+    const state = this.state;
+    const store: Store = this.state.store;
+    const subject: NotfSubject = this.state.subject;
+    const currentLevel: NotfLevel = this.state.currentLevel || NotfLevel.Normal;
+    let watchingAllListItem;
+    let watchingFirstListItem;
+    let mutedListItem;
 
     if (state.isOpen) {
       dieIf(!subject.pageId && !subject.tagLabel, 'EsE4GK02');
-      var watchingAllText = subject.tagLabel
+      const watchingAllText = subject.tagLabel
         ? "You'll be notified of new topics with this tag, and every post in those topics"
         : "You'll be notified of all new replies in this topic.";
 
@@ -302,22 +305,22 @@ var NotfsLevelDropdownModal = createComponent({
 function estimateReadingTimeMinutesSkipOrigPost(posts: Post[]): number {
   // People read 200 English words per minute, with 60% reading comprehension.
   // But 60% is rather low. Let's improve that, and assume a few distractions –> 120? wpm instead.
-  var wordsPerMinute = 120;
+  const wordsPerMinute = 120;
   // Google "average word length" –> "English, French, Spanish and German are approximately
   // 5.10, 5.13, 5.22 and 6.26" (www.puchu.net/doc/Average_Word_Length),
   // Russian: 5.3 (http://arxiv.org/pdf/1208.6109.pdf)
   //    — so let's use 5.2.
   // But what about Chinese and Japanese?
-  var averageWordLength = 5.2;
+  const averageWordLength = 5.2;
   // % html chars varies between 60% and 95% ? fairly much depending on how many <a href=...>
   // there are in comparison to the amount of visible text.
-  var removeHtml = 0.8; // guessing that 20% chars is html tags and classes and href=...
-  var numChars = _.sumBy(posts, (post: Post) => {
+  const removeHtml = 0.8; // guessing that 20% chars is html tags and classes and href=...
+  const numChars = _.sumBy(posts, (post: Post) => {
     // Exclude the original post.
     if (post.nr === BodyNr || post.nr === TitleNr) return 0;
     return post.sanitizedHtml ? post.sanitizedHtml.length : 0
   });
-  var numWords = numChars * removeHtml / averageWordLength;
+  const numWords = numChars * removeHtml / averageWordLength;
   return numWords / wordsPerMinute;
 }
 

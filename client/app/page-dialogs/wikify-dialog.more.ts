@@ -39,7 +39,9 @@ export function openWikifyDialog(post: Post) {
 }
 
 
-var WikifyDialog = createComponent({
+const WikifyDialog = createComponent({
+  displayName: 'WikifyDialog',
+
   getInitialState: function () {
     return {
       isOpen: false,
@@ -69,16 +71,16 @@ var WikifyDialog = createComponent({
   },
 
   render: function () {
-    var title;
-    var content;
-    var post: Post = this.state.post;
-    var isWiki = isWikiPost(post);
+    let title;
+    let content;
+    const post: Post = this.state.post;
+    const isWiki = isWikiPost(post);
     if (!this.state.isOpen) {
       // Nothing.
     }
     else if (isWiki) {
       title = "Cancel Wiki status?";
-      var whichPeople = post.postType === PostType.StaffWiki ? "staff" : "community";
+      const whichPeople = post.postType === PostType.StaffWiki ? "staff" : "community";
       content =
         r.div({},
           r.p({}, "This post is a wiki editable by " + whichPeople +
@@ -93,18 +95,15 @@ var WikifyDialog = createComponent({
       title = "Change to Wiki?";
       content =
         r.div({},
-          r.p({}, "Change this post to a Wiki post so many people can edit it? " +
-            "Usually you do *not* want to do this, because then " +
-            "the author of this post will no longer get any like votes for this post."),
+          r.p({}, "Change this post to a Wiki post so many people can edit it? "
+            /* excl this — too much text to read, and maybe Like votes aren't so important.
+            "(The post author will then get no credits for Like votes, for this post.)" */),
           r.div({ className: 'dw-wikify-btns' },
             Button({ onClick: this.changeToStaffWiki,
-                help: "All staff members will be able to edit this post." },
+                help: "Staff members will be able to edit this post." },
               "Change to Staff Wiki"),
             Button({ onClick: this.changeToCommunityWiki,
-                help: "All community members will be able to edit this post, " +
-                  "except for fairly new users and those who seem a bit risky " +
-                  "(not yet implemented though). " +
-                  "Guest users may not edit it." },
+                help: "Community members who may edit wikis, will be able to edit this post." },
                 "Change to Community Wiki")));
     }
 

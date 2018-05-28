@@ -152,9 +152,9 @@ declare namespace debiki2 {
     var anyContinueAfterLoginCallback;
     function continueAfterLogin(anyReturnToUrl?: string);
     function loginIfNeededReturnToAnchor(
-        loginReason: LoginReason | string, anchor: string, success: () => void, willCompose?: boolean);
+        loginReason: LoginReason | string, anchor: string, success?: () => void, willCompose?: boolean);
     function loginIfNeededReturnToPost(
-        loginReason: LoginReason | string, postNr: PostNr, success: () => void, willCompose?: boolean);
+        loginReason: LoginReason | string, postNr: PostNr, success?: () => void, willCompose?: boolean);
   }
 
   function reactGetRefRect(ref): Rect;
@@ -201,9 +201,9 @@ declare namespace debiki2 {
   var maySendInvites;
   var isMember;
   var userId_isGuest;
-  var store_canDeletePage;
-  var store_canUndeletePage;
-  function store_canPinPage(store: Store);
+  function store_canDeletePage(store: Store): boolean;
+  function store_canUndeletePage(store: Store): boolean;
+  function store_canPinPage(store: Store): boolean;
   var siteStatusToString;
   var cloneRect;
   var cloneEventTargetRect;

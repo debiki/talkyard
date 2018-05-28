@@ -590,7 +590,6 @@ interface Store {
   settings: SettingsVisibleClientSide;
   hideForumIntro?: boolean;
   maxUploadSizeBytes: number;
-  isInEmbeddedCommentsIframe: boolean;
   currentCategories: Category[];
   publicCategories: Category[];
   newCategorySlug: string; // for temporarily highlighting a newly created category

@@ -130,7 +130,6 @@ class JsonMaker(dao: SiteDao) {
       "userMustBeAuthenticated" -> JsBoolean(siteSettings.userMustBeAuthenticated),
       "userMustBeApproved" -> JsBoolean(siteSettings.userMustBeApproved),
       "settings" -> makeSettingsVisibleClientSideJson(siteSettings, globals),
-      "isInEmbeddedCommentsIframe" -> JsBoolean(false),
       "publicCategories" -> JsArray(),
       "topics" -> JsNull,
       "me" -> noUserSpecificData(everyonesPerms),
@@ -158,13 +157,9 @@ class JsonMaker(dao: SiteDao) {
     * embedded comments page has not yet been created. Or if constructing a wiki, and
     * navigating to a wiki page that has not yet been created.
     */
-  def pageThatDoesNotExistsToJson(
-    pageRole: PageRole,
-    anyCategoryId: Option[CategoryId]): PageToJsonResult = {
-
+  def pageThatDoesNotExistsToJson(dummyPage: NonExistingPage): PageToJsonResult = {
     dao.readOnlyTransaction { tx =>
-      val page = NonExistingPage(dao.siteId, pageRole, anyCategoryId, dao.context.globals.now())
-      pageToJsonImpl(EmptyPageId, page, tx, anyPageRoot = None, anyPageQuery = None)
+      pageToJsonImpl(EmptyPageId, dummyPage, tx, anyPageRoot = None, anyPageQuery = None)
     }
   }
 
@@ -348,7 +343,6 @@ class JsonMaker(dao: SiteDao) {
       "userMustBeApproved" -> JsBoolean(siteSettings.userMustBeApproved),
       "settings" -> makeSettingsVisibleClientSideJson(siteSettings, globals),
       "maxUploadSizeBytes" -> globals.maxUploadSizeBytes,
-      "isInEmbeddedCommentsIframe" -> JsBoolean(page.role == PageRole.EmbeddedComments),
       "publicCategories" -> categories,
       "topics" -> anyLatestTopics,
       "me" -> noUserSpecificData(authzCtx.permissions),

@@ -30,8 +30,11 @@
 
 
 export function startRemainingReactRoots() {
-  const isEmbeddedComments: boolean = eds.isInEmbeddedCommentsIframe;
-  if (!isEmbeddedComments) {
+  if (eds.isInEmbeddedCommentsIframe) {
+    // Skip sidebars, when inside an iframe — they'd become sidebars inside the iframe, which
+    // would look weird, + the watchbar doesn't make sense, would try to navigate inside the iframe.
+  }
+  else {
     const topbarElem = document.getElementById('theTopbar');
     if (topbarElem)
       ReactDOM.render(

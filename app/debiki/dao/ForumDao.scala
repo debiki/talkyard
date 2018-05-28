@@ -133,10 +133,6 @@ trait ForumDao {
     val defaultCategoryId = rootCategoryId + 2
     val bySystem = Who(SystemUserId, byWho.browserIdData)
 
-    var anySupportCategoryId: Option[CategoryId] = None
-    var anyIdeasCategoryId: Option[CategoryId] = None
-    var uncategorizedCategoryId: CategoryId = -1
-
     // Create forum root category.
     transaction.insertCategoryMarkSectionPageStale(Category(
       id = rootCategoryId,
@@ -172,11 +168,64 @@ trait ForumDao {
         makeStaffCategoryPerms(staffCategoryId)),
       bySystem)(transaction)
 
+    if (options.isForEmbeddedComments)
+      createEmbeddedCommentsCategory(forumPageId, rootCategoryId, defaultCategoryId,
+        staffCategoryId, options, bySystem, transaction)
+    else
+      createForumCategories(forumPageId, rootCategoryId, defaultCategoryId,
+        staffCategoryId, options, bySystem, transaction)
+  }
+
+
+  private def createEmbeddedCommentsCategory(
+    forumPageId: PageId, rootCategoryId: CategoryId, defaultCategoryId: CategoryId,
+    staffCategoryId: CategoryId, options: CreateForumOptions,
+    bySystem: Who, tx: SiteTransaction): CreateForumResult = {
+
+    dieIf(!options.isForEmbeddedComments, "TyE7HQT42")
+
+    createCategoryImpl(
+      CategoryToSave(
+        anyId = Some(defaultCategoryId),
+        sectionPageId = forumPageId,
+        parentId = rootCategoryId,
+        shallBeDefaultCategory = true,
+        name = EmbCommentsCategoryName,
+        slug = EmbCommentsCategorySlug,
+        position = DefaultCategoryPosition,
+        description = "Embedded comments for your blog or articles.",
+        newTopicTypes = immutable.Seq(PageRole.Discussion),
+        // Strangers may not list all topics, maybe blog owner wants to keep some of them private?
+        // SECURITY [rand-page-id]
+        unlisted = true,
+        includeInSummaries = IncludeInSummaries.NoExclude,
+        isCreatingNewForum = true),
+      immutable.Seq[PermsOnPages](
+        makeEveryonesDefaultCategoryPerms(defaultCategoryId),
+        makeStaffCategoryPerms(defaultCategoryId)),
+      bySystem)(tx)
+
+    CreateForumResult(null, defaultCategoryId = defaultCategoryId,
+      staffCategoryId = staffCategoryId)
+  }
+
+
+  private def createForumCategories(
+    forumPageId: PageId, rootCategoryId: CategoryId, defaultCategoryId: CategoryId,
+    staffCategoryId: CategoryId, options: CreateForumOptions,
+    bySystem: Who, transaction: SiteTransaction): CreateForumResult = {
+
+    dieIf(options.isForEmbeddedComments, "TyE2PKQ9")
+
     var nextCategoryId = defaultCategoryId
     def getAndBumpCategoryId() = {
       nextCategoryId += 1
       nextCategoryId - 1
     }
+
+    var anySupportCategoryId: Option[CategoryId] = None
+    var anyIdeasCategoryId: Option[CategoryId] = None
+    var uncategorizedCategoryId: CategoryId = -1
 
     if (options.createSupportCategory) {
       val categoryId = getAndBumpCategoryId()
@@ -224,7 +273,7 @@ trait ForumDao {
         bySystem)(transaction)
     }
 
-    // Always create the Uncategorized category.
+    // Create the Uncategorized category.
     uncategorizedCategoryId = getAndBumpCategoryId()
     createCategoryImpl(
         CategoryToSave(
@@ -246,7 +295,7 @@ trait ForumDao {
         bySystem)(transaction)
 
     // Create forum welcome topic.
-    if (!isForEmbCmts) createPageImpl(
+    createPageImpl(
       PageRole.Discussion, PageStatus.Published,
       anyCategoryId = Some(uncategorizedCategoryId),
       anyFolder = None, anySlug = Some("welcome"), showId = true,
@@ -261,7 +310,7 @@ trait ForumDao {
       transaction)
 
     // Create staff chat
-    if (!isForEmbCmts) createPageImpl(
+    createPageImpl(
       PageRole.OpenChat, PageStatus.Published,
       anyCategoryId = Some(staffCategoryId),
       anyFolder = None, anySlug = Some("staff-chat"), showId = true,
@@ -345,15 +394,6 @@ trait ForumDao {
       staffCategoryId = staffCategoryId)
   }
 
-
-  private val RootCategoryName = "(Root Category)"  // In Typescript test code too [7UKPX5]
-  private val RootCategorySlug = "(root-category)"  //
-
-  private val UncategorizedCategoryName = "Uncategorized"
-  private val UncategorizedCategorySlug = "uncategorized"
-
-  private val DefaultCategoryPosition = 1000
-
 }
 
 
@@ -361,6 +401,17 @@ object ForumDao {
 
   private val WelcomeToForumTopicPinOrder = 5
   val AboutCategoryTopicPinOrder = 10
+
+  private val RootCategoryName = "(Root Category)"  // In Typescript test code too [7UKPX5]
+  private val RootCategorySlug = "(root-category)"  //
+
+  private val UncategorizedCategoryName = "Uncategorized"
+  private val UncategorizedCategorySlug = "uncategorized"
+
+  private val EmbCommentsCategoryName = "Blog Comments"
+  private val EmbCommentsCategorySlug = "blog-comments"
+
+  private val DefaultCategoryPosition = 1000
 
 
   private val ForumIntroText: CommonMarkSourceAndHtml = {

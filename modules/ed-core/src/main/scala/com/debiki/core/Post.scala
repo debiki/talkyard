@@ -167,6 +167,13 @@ object PostType {
 
   /** E.g. "Topic closed" or "Topic reopened" or "Nnn joined the chat".
     * Doesn't increment the reply count. */
+  // COULD use separate db table: MetaPosts, so gets own seqence nrs & cannot bug-incr reply count,
+  // & also can have a MetaPost.type field, e.g.  1 = delete topic, 2 = restore, 3 = close etc
+  // so the software understands if 2 meta messages cancel each other (e.g. Delete & Restore
+  // 5 seconds apart = don't show them).
+  // If migrating to separate table, just delete all current MetaMessages, don't write any
+  // compl script to move to the new format.
+  // Or ... better? Just add another field to posts3: meta_post_type?
   case object MetaMessage extends PostType(31) { override def placeLast = true }
 
   // Later:

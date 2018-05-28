@@ -157,7 +157,17 @@ export const ForumComponent = createReactClass(<any> {
 
   render: function() {
     const store: Store = this.state.store;
-    const forumPath = store.currentPage.pagePath.value;
+    const page: Page = store.currentPage;
+
+    if (page.pageRole !== PageRole.Forum) {
+      // We're navigating from a discussion topic to the forum page (= topic list page).
+      // The url was just updated to show the addr of the forum page, but we're not yet
+      // done updating React's state: `page` is still the discussion topic. Wait
+      // until `page` becomes the forum page.
+      return r.div({ className: 'container dw-forum' }, t.Loading + ' [TyM2EPKB04]');
+    }
+
+    const forumPath = page.pagePath.value;
 
     // This is done this way because of how React-Router v3 was working. It was simpler
     // do do this than to totally-rewrite. Maybe refactor-&-simplify some day?

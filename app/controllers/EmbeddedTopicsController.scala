@@ -21,7 +21,7 @@ import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki._
 import debiki.EdHttp._
-import debiki.dao.SiteDao
+import debiki.dao.{NonExistingPage, SiteDao}
 import ed.server.{EdContext, EdController, RenderedPage}
 import ed.server.http._
 import javax.inject.Inject
@@ -35,6 +35,7 @@ class EmbeddedTopicsController @Inject()(cc: ControllerComponents, edContext: Ed
   extends EdController(cc, edContext) {
 
   import context.globals
+  import context.security
 
 
   def createEmbeddedCommentsForum: Action[JsValue] = AdminPostJsonAction(maxBytes = 200) { request =>
@@ -57,8 +58,16 @@ class EmbeddedTopicsController @Inject()(cc: ControllerComponents, edContext: Ed
         val pageRequest = ViewPageController.makeEmptyPageRequest(request, EmptyPageId, showId = true,
             PageRole.EmbeddedComments, globals.now())
         val categoryId = dao.getDefaultCategoryId()
-        val jsonStuff = dao.jsonMaker.pageThatDoesNotExistsToJson(
-          PageRole.EmbeddedComments, Some(categoryId))
+
+        val dummyPage = NonExistingPage(
+          dao.siteId, PageRole.EmbeddedComments, Some(categoryId), embeddingUrl, globals.now())
+
+        val (maySee, debugCode) = dao.maySeePageUseCache(dummyPage.meta, request.requester)
+        if (!maySee)
+          security.throwIndistinguishableNotFound(debugCode)
+
+        val jsonStuff = dao.jsonMaker.pageThatDoesNotExistsToJson(dummyPage)
+
         // Don't render server side, render client side only. Search engines shouldn't see it anyway,
         // because it doesn't exist.
         // So skip: Nashorn.renderPage(jsonStuff.jsonString)
@@ -67,15 +76,21 @@ class EmbeddedTopicsController @Inject()(cc: ControllerComponents, edContext: Ed
           jsonStuff.pageTitle, jsonStuff.customHeadTags, anyAltPageId = discussionId,
           anyEmbeddingUrl = Some(embeddingUrl))
         val htmlString = views.html.templates.page(tpi).body
+
         (RenderedPage(htmlString, "NoJson-1WB4Z6", unapprovedPostAuthorIds = Set.empty), pageRequest)
+
       case Some(realId) =>
         val pageMeta = dao.getThePageMeta(realId)
-        val pagePath = PagePath(siteId = request.siteId, folder = "/", pageId = Some(realId),
-          showId = true, pageSlug = "")
-        SECURITY; COULD // do the standard auth stuff here, but not needed right now since we
-        // proceed only if is embedded comments page. So, right now all such pages are public.
         if (pageMeta.pageRole != PageRole.EmbeddedComments)
           throwForbidden("EdE2F6UHY3", "Not an embedded comments page")
+
+        val (maySee, debugCode) = dao.maySeePageUseCache(pageMeta, request.requester)
+        if (!maySee)
+          security.throwIndistinguishableNotFound(debugCode)
+
+        val pagePath = PagePath(siteId = request.siteId, folder = "/", pageId = Some(realId),
+          showId = true, pageSlug = "")
+
         val pageRequest = new PageRequest[Unit](
           request.site,
           sid = request.sid,

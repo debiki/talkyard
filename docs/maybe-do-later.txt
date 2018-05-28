@@ -29,6 +29,12 @@ You should add the address of this forum, and your main website (if any),
 so search engines like Google, Bing, Yandex, Baidu will find all content.
 
 
+[rand-page-id], [rand-user-id]:
+Let outwardly visible page and user ids, be random numbers, to prevent
+discovery of pages & people by iterating through all ids in the url.
+64 bit random ids? or 32 bits + stricter rate limiting?
+
+
 Performance tests:
  "Capture a timeline trace of your site to help diagnose performance issues."
  https://github.com/GoogleChrome/puppeteer
