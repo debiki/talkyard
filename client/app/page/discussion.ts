@@ -747,12 +747,13 @@ const RootPostAndComments = createComponent({
     // Draw a horizontal line above the first append-bottom comment, if there're normal
     // best-first-order comments above. And text that explains how this works.
     // After [flat-comments] added: remove pageRole != FormalMessage
-    /* Remove for now — makes people confused. They don't need to understand how this works, anyway?
-       CSS commented out too (search for s_AppendBottomDiv).
+    // Only show a thin line, for now? The text makes people confused & didn't look nice enough?
+    // They don't need to understand how this works, anyway?
     if (firstAppendedIndex < threadedChildren.length &&
         pageRole !== PageRole.FormalMessage && pageRole !== PageRole.EmbeddedComments) {
       const line =
-        r.li({ className: 's_AppendBottomDiv', key: 'ApBtmDv' },
+        r.li({ className: 's_AppendBottomDiv', key: 'ApBtmDv' });
+          /* Don't forget the CSS [5KDWUR].
           r.span({},
             r.span({ className: 's_AppendBottomDiv_Ar-Up' }, '➜'),
             t.d.AboveBestFirst),
@@ -761,8 +762,9 @@ const RootPostAndComments = createComponent({
             r.span({ style: { whiteSpace: 'nowrap' }},
               r.span({ className: 's_AppendBottomDiv_Ar-Down' }, '➜'),
               t.d.BelowCmtsEvents)));  // needn't mention "chronologically"?
+              */
       threadedChildren.splice(firstAppendedIndex, 0, line);
-    } */
+    }
 
     // Disable chat comments for now, they make people confused, and  [8KB42]
     // it'd be hard & take long to make them simpler to understand.

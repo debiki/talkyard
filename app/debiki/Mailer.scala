@@ -62,12 +62,12 @@ object Mailer {
     // About STARTTLS and TLS/SSL and ports 25, 587, 465:
     // https://www.fastmail.com/help/technical/ssltlsstarttls.html
     // Current situation:
-    // - STARTTLS on port 587 seems to be recommended (no SSL disallowed).
-    // - But lots people connect via TLS/SSL on 465 so all servers supports that too.
+    // - STARTTLS on port 587 seems to be recommended (with plaintext to TLS upgrade required).
+    // - But many clients connect via TLS/SSL directly, on port 465, so all servers support that too.
     // - And outgoing port 25 often blocked, because of hacked servers that send spam.
 
     // This will use & require STARTTLS = starts in unencrypted plaintext on the smtp port
-    // (typically 587, or, in the past, 25) and upgrades to tls.
+    // (typically 587, or, in the past, 25) and upgrades to TLS.
     val requireStartTls = config.getBoolean("talkyard.smtp.requireStartTls") getOrElse false
 
     val enableStartTls = config.getBoolean("talkyard.smtp.enableStartTls") getOrElse true
@@ -111,7 +111,9 @@ object Mailer {
 
     val actorRef =
       if (errorMessage.nonEmpty) {
-        p.Logger.info(s"I won't send emails, because: $errorMessage [TyEEMAILCONF]")
+        val logMessage = s"I won't send emails, because: $errorMessage [TyEEMAILCONF]"
+        if (isProd) p.Logger.error(logMessage)
+        else p.Logger.info(logMessage)
         actorSystem.actorOf(
           Props(new Mailer(
             daoFactory, now, serverName = "", port = None,
@@ -122,6 +124,17 @@ object Mailer {
           name = s"BrokenMailerActor-$testInstanceCounter")
       }
       else {
+        val serverName = anySmtpServerName getOrDie "TyE3KPD78"
+        val userName = anySmtpUserName getOrDie "TyE6KTQ20"
+        val fromAddress = anyFromAddress getOrDie "TyE2QKJ93"
+        p.Logger.info(o"""Will use email server: $serverName as user $userName,
+            smtp port: $anySmtpPort,
+            smtp tls port: $anySmtpTlsPort,
+            require STARTTLS: $requireStartTls,
+            enable STARTTLS: $enableStartTls,
+            connect with TLS: $connectWithTls,
+            check server identity: $checkServerIdentity,
+            from addr: $fromAddress [TyMEMAILCONF]""")
         actorSystem.actorOf(
           Props(new Mailer(
             daoFactory,
@@ -133,9 +146,9 @@ object Mailer {
             enableStartTls = enableStartTls,
             requireStartTls = requireStartTls,
             checkServerIdentity = checkServerIdentity,
-            userName = anySmtpUserName getOrDie "TyE6KTQ20",
+            userName = userName,
             password = anySmtpPassword getOrDie "TyE8UKTQ2",
-            fromAddress = anyFromAddress getOrDie "TyE2QKJ93",
+            fromAddress = fromAddress,
             debug = debug,
             bounceAddress = anyBounceAddress,
             broken = false,
@@ -180,19 +193,13 @@ class Mailer(
   val broken: Boolean,
   val isProd: Boolean) extends Actor {
 
-  /*
-  require(connectWithTls || !requireStartTls, "requireTls is true but useSslOrTls is false [TyEREQTLS0TLS]")
-  require(connectWithTls || !checkServerIdentity,
-    "checkServerIdentity is true but useSslOrTls is false [TyECHECKID0TLS]")
-    */
-
   private val logger = play.api.Logger("app.mailer")
 
   private val e2eTestEmails = mutable.HashMap[String, Promise[Vector[Email]]]()
 
   /**
-   * Accepts an (Email, tenant-id), and then sends that email on behalf of
-   * the tenant. The caller should already have saved the email to the
+   * Accepts an (Email, site-id), and then sends that email on behalf of
+   * the site. The caller should already have saved the email to the
    * database (because Mailer doesn't know exactly how to save it, e.g.
    * if any other tables should also be updated).
    */
@@ -219,7 +226,7 @@ class Mailer(
 
   private def sendEmail(emailToSend: Email, siteId: SiteId) {
 
-    val tenantDao = daoFactory.newSiteDao(siteId)
+    val siteDao = daoFactory.newSiteDao(siteId)
 
     // I often use @example.com, or simply @ex.com, when posting test comments
     // — don't send those emails, to keep down the bounce rate.
@@ -227,17 +234,41 @@ class Mailer(
       emailToSend.sentTo.endsWith("example.com") ||
       emailToSend.sentTo.endsWith("ex.com") ||
       emailToSend.sentTo.endsWith("x.co")
-    if (broken || isTestAddress) {
-      fakeSendAndRememberForE2eTests(emailToSend, tenantDao)
-      if (broken || isProd)
-        return
-      // Else: Apparently a dev/test mail server has been configured.
+
+    val isE2eAddress = Email.isE2eTestEmailAddress(emailToSend.sentTo)
+
+    // Table about when to log email to console but not send it (fake send),
+    // and when to send for real (real send), and when to remember it for the e2e tests:
+    // (for the two if blocks just below)
+    //
+    // rs = real send
+    // fs = fake send
+    // e2e = add to e2e sent emails list
+    //
+    // test-works  = test mode, connected to test smtp server (that doesn't send emails for real)
+    // test-broken = test mode, email config broken, not connected to smtp server
+    // dev-works   = like test-works, but dev mode
+    // dev-broken  = like test-broken, but dev mode
+    // prod-works  = prod mode, connected to real email server that emails to real people
+    // prod-broken = prod mode, email not configured (yet)
+    //
+    //             test-works  test-broken   dev-works  dev-broken   prod-works  prod-broken
+    // normal addr rs          fs            rs         fs           rs          fs
+    // test addr   rs          fs            rs         fs           fs          fs
+    // e2e addr    rs e2e      fs e2e        rs e2e     fs e2e       fs e2e      fs e2e
+
+    if (isE2eAddress)
+      rememberE2eTestEmail(emailToSend, siteDao)
+
+    if (broken || (isProd && (isTestAddress || isE2eAddress))) {
+      fakeSend(emailToSend, siteDao)
+      return
     }
 
     logger.debug(s"Sending email: $emailToSend")
 
     // Reload the user and his/her email address in case it's been changed recently.
-    val address = emailToSend.toUserId.flatMap(tenantDao.getUser).map(_.email) getOrElse
+    val address = emailToSend.toUserId.flatMap(siteDao.getUser).map(_.email) getOrElse
       emailToSend.sentTo
 
     val emailWithAddress = emailToSend.copy(
@@ -258,7 +289,7 @@ class Mailer(
           badEmail
       }
 
-    tenantDao.updateSentEmail(emailAfter)
+    siteDao.updateSentEmail(emailAfter)
   }
 
 
@@ -270,9 +301,9 @@ class Mailer(
     tlsPort foreach (p => apacheCommonsEmail.setSslSmtpPort(p.toString))
     apacheCommonsEmail.setAuthenticator(new acm.DefaultAuthenticator(userName, password))
 
-    // Apache Commons Email will try both TLS and SSL, although the function is named 'setSSL...'?
-    // And since we've disabled SSL, TLS should get used? [NOSSL]
-    // Let STARTTLS have priority, "require" sounds as if it has precedence?
+    // 1. Apache Commons Email uses "SSL" in the name, although smtp servers accept
+    // TLS and we use TLS only (we've disabled SSL [NOSSL]).
+    // 2. If STARTTLS also configured, let it have priority? "Require" sounds important?
     apacheCommonsEmail.setSSLOnConnect(!requireStartTls && connectWithTls)
 
     apacheCommonsEmail.setStartTLSEnabled(requireStartTls || enableStartTls)
@@ -293,18 +324,15 @@ class Mailer(
   /** Updates the database so it looks as if the email has been sent, plus makes the
     * email accessible to end-to-end tests.
     */
-  def fakeSendAndRememberForE2eTests(email: Email, siteDao: SiteDao) {
+  def fakeSend(email: Email, siteDao: SiteDao) {
     play.api.Logger.debug(i"""
-      |Fake-sending email: [TyM123FAKEMAIL]
+      |Fake-sending email, logging to console only: [TyM123FAKEMAIL]
       |————————————————————————————————————————————————————————————
       |$email
       |————————————————————————————————————————————————————————————
       |""")
     val emailSent = email.copy(sentOn = Some(now().toJavaDate))
     siteDao.updateSentEmail(emailSent)
-    if (Email.isE2eTestEmailAddress(email.sentTo)) {
-      rememberE2eTestEmail(email, siteDao)
-    }
   }
 
 

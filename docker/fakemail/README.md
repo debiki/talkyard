@@ -7,5 +7,5 @@ openssl req -new -x509 -sha256 -key server.key -out server.crt -days 3650
 
 The cert, `fakemail-publ-test-self-signed.crt`, is placed here:
 `../app-dev/fakemail-publ-test-self-signed.crt`, so it can be copied
-into the Java dev Docker image, and added to Java's cert store [26UKWD2].
+into the app-dev Docker image, and added to the Java cert store [26UKWD2].
 

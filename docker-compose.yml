@@ -39,7 +39,7 @@ services:
       - cache
       - search
       - rdb
-      #- fakemail
+      - fakemail
     environment:
       PLAY_HEAP_MEMORY_MB: 2800
       HOSTNAME: "localhost"
@@ -120,13 +120,6 @@ services:
       - web:test-site-3.web
     # Don't want this container to start at all by default.
     command: 'exit 0'
-
-  #fakemail: — works, but lacks TLS or STARTTLS
-  #  image: djfarrelly/maildev
-  #  ports:
-  #   - '1080:80'  # developer web interface
-  #   - '1025:25'  # smtp: plain text and STARTTLS upgrade to tls
-  #   # But no TLS/SSL port 465?
 
   fakemail:
     build: docker/fakemail/mailslurper
