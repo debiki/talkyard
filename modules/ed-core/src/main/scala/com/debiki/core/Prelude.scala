@@ -61,6 +61,25 @@ object Prelude {
     }
   }
 
+
+  def stringifyExceptionAndCauses(ex: Exception): String = {
+    var message = ex.getMessage
+    if (message eq null) message = "(No exception message)"
+    var currentCause = ex.getCause
+    val seenCauses = mutable.ArrayBuffer[Object]()
+    var count = 0
+    while ((currentCause ne null) && !seenCauses.exists(_ eq currentCause) &&
+        // Extra safety, in case 'eq' above won't work:
+        count < 20) {
+      message += "\nCaused by: " + currentCause.getMessage
+      count += 1
+      seenCauses.append(currentCause)
+      currentCause = currentCause.getCause
+    }
+    message
+  }
+
+
   /** Converts from a perhaps-{@code null} reference to an {@code Option}.
    */
   def ?[A <: AnyRef](x: A): Option[A] = if (x eq null) None else Some(x)

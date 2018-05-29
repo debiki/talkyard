@@ -37,6 +37,14 @@ EXPOSE 9000 9443 9999 3333
 RUN mkdir -p /opt/talkyard/uploads/ && \
     chmod -R ugo+rw /opt/talkyard/uploads/
 
+# Add a self signed dummy cert for the dummy SMTP server (the 'fakemail' Docker container),
+# so one can test connecting to it with TLS and see if the TLS conf vals work. [26UKWD2]
+# ("changeit" = default keystore password)
+COPY fakemail-publ-test-self-signed.crt /smtp-server.crt
+RUN cd $JAVA_HOME/jre/lib/security && \
+    keytool -keystore cacerts -storepass changeit -noprompt -trustcacerts \
+        -importcert -alias ldapcert -file /smtp-server.crt
+
 WORKDIR /opt/talkyard/app/
 
 COPY entrypoint.sh /docker-entrypoint.sh

@@ -70,13 +70,16 @@ object Mailer {
     // (typically 587, or, in the past, 25) and upgrades to tls.
     val requireStartTls = config.getBoolean("talkyard.smtp.requireStartTls") getOrElse false
 
+    val enableStartTls = config.getBoolean("talkyard.smtp.enableStartTls") getOrElse true
+
     // This with instead start with TLS directly on the tls/ssl port (typically 465).
     val connectWithTls = config.getBoolean("talkyard.smtp.connectWithTls") orElse {
       // Deprecated name, because SSL is insecure and in fact disabled. [NOSSL]
       config.getBoolean("talkyard.smtp.useSslOrTls")
     } getOrElse !requireStartTls
 
-    val checkServerIdentity = config.getBoolean("talkyard.smtp.checkServerIdentity").getOrElse(true)
+    val checkServerIdentity =
+      config.getBoolean("talkyard.smtp.checkServerIdentity").getOrElse(enableStartTls || connectWithTls)
 
     // ----- Config makes sense?
 
@@ -85,6 +88,9 @@ object Mailer {
     if (anySmtpUserName.isEmpty) errorMessage += " No talkyard.smtp.user configured."
     if (anySmtpPassword.isEmpty) errorMessage += " No talkyard.smtp.password configured."
     if (anyFromAddress.isEmpty) errorMessage += " No talkyard.smtp.fromAddress configured."
+
+    if (requireStartTls && !enableStartTls)
+      errorMessage += " talkyard.smtp.requireStartTls is true but enableStartTls is false."
 
     if (anySmtpPort.isEmpty) {
       if (requireStartTls) {
@@ -109,7 +115,7 @@ object Mailer {
         actorSystem.actorOf(
           Props(new Mailer(
             daoFactory, now, serverName = "", port = None,
-            tlsPort = None, connectWithTls = false, requireStartTls = false,
+            tlsPort = None, connectWithTls = false, enableStartTls = false, requireStartTls = false,
             checkServerIdentity = false,
             userName = "", password = "", fromAddress = "", debug = debug,
             bounceAddress = None, broken = true, isProd = isProd)),
@@ -124,6 +130,7 @@ object Mailer {
             port = anySmtpPort,
             tlsPort = anySmtpTlsPort,
             connectWithTls = connectWithTls,
+            enableStartTls = enableStartTls,
             requireStartTls = requireStartTls,
             checkServerIdentity = checkServerIdentity,
             userName = anySmtpUserName getOrDie "TyE6KTQ20",
@@ -162,6 +169,7 @@ class Mailer(
   val port: Option[Int],
   val tlsPort: Option[Int],
   val connectWithTls: Boolean,
+  val enableStartTls: Boolean,
   val requireStartTls: Boolean,
   val checkServerIdentity: Boolean,
   val userName: String,
@@ -244,10 +252,7 @@ class Mailer(
       }
       catch {
         case ex: acm.EmailException =>
-          var message = ex.getMessage
-          if (ex.getCause ne null) {
-            message += "\nCaused by: " + ex.getCause.getMessage
-          }
+          var message = stringifyExceptionAndCauses(ex)
           val badEmail = emailWithAddress.copy(failureText = Some(message))
           logger.warn(s"Error sending email [EdESEME001]: $badEmail")
           badEmail
@@ -270,7 +275,7 @@ class Mailer(
     // Let STARTTLS have priority, "require" sounds as if it has precedence?
     apacheCommonsEmail.setSSLOnConnect(!requireStartTls && connectWithTls)
 
-    apacheCommonsEmail.setStartTLSEnabled(true)
+    apacheCommonsEmail.setStartTLSEnabled(requireStartTls || enableStartTls)
     apacheCommonsEmail.setStartTLSRequired(requireStartTls)
 
     apacheCommonsEmail.setSSLCheckServerIdentity(checkServerIdentity)
