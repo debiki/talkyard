@@ -28,6 +28,15 @@ function runE2eTest {
   echo "Next test: $cmd"
   # Sometimes, randomly?, there's some weird port conflict causing this to fail & hang forever.
   # So timeout after 3 minutes. The slow tests take about one minute.
+  # Also, kill any wdio things that have failed to stop, and might block a/the port.
+  wdio_ps=$( ps aux | grep node | egrep 'wdio(.[0-9a-z]+)?.conf.js' | grep -- '--only' )
+  if [ -n "$wdio_ps" ] ; then
+    # Column 2 is the process id.
+    wdio_ps_ids=$( echo "$wdio_ps" | awk '{ print $2 }' | tr '\n' ' ' )
+    echo "Killing old wdio processes, ids: $wdio_ps_ids commands:"
+    echo "$wdio_ps"
+    kill $wdio_ps_ids
+  fi
   timeout --foreground 180 $cmd
   if [ $? -ne 0 ]; then
     log_message "Failed: $cmd" >> $failfile
