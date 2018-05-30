@@ -39,9 +39,11 @@ WORKDIR /opt/talkyard/app
 #   "-Dcom.sun.management.jmxremote.authenticate=false", \
 #   "-Dhttp.port=9000", \
 #   "-Dhttps.port=9443", \
-#   # SSL has security flaws. Use TLS instead. [NOSSL]
+#   # SSL has security flaws. Use TLS instead. [NOSSL] [PROTOCONF]
 #   -Ddeployment.security.SSLv2Hello=false \
 #   -Ddeployment.security.SSLv3=false \
+#   -Dhttps.protocols=TLSv1.1,TLSv1.2 \
+#   -Djdk.tls.client.protocols=TLSv1.1,TLSv1.2 \
 #   "-Dconfig.file=$CONFIG_FILE"]
 
 # ...but this identical command works fine:
@@ -62,6 +64,15 @@ CMD rm -f /opt/talkyard/app/RUNNING_PID && exec /opt/talkyard/app/bin/talkyard-s
   # and: https://stackoverflow.com/questions/32912175/disabling-tls1
   -Ddeployment.security.SSLv2Hello=false \
   -Ddeployment.security.SSLv3=false \
+  # From https://superuser.com/a/928498/95772:
+  # (Enable TLSv1.3 later, when no longer draft. Email protocol config elsewhere: [PROTOCONF])
+  -Dhttps.protocols=TLSv1.1,TLSv1.2 \
+  # Not sure what this (below) is.
+  # "specific SunJSSE protocols" — https://docs.oracle.com/javase/8/docs/technotes/guides/security/jsse/JSSERefGuide.html#InstallationAndCustomization
+  # and "Controls the underlying platform TLS implementation" – https://blogs.oracle.com/java-platform-group/diagnosing-tls,-ssl,-and-https
+  # = what ??? TLS isn't a "specific SunJSSE protocol", weird.
+  # Anyway, maybe makes *something* use only TLS 1.1 and 1.2 (not SSL), so let's do it:
+  -Djdk.tls.client.protocols=TLSv1.1,TLSv1.2 \
   #
   # It's ok to use urandom, see:   [30PUK42]
   # - http://www.2uo.de/myths-about-urandom/

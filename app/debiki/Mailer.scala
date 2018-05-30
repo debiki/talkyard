@@ -81,6 +81,9 @@ object Mailer {
     val checkServerIdentity =
       config.getBoolean("talkyard.smtp.checkServerIdentity").getOrElse(enableStartTls || connectWithTls)
 
+    val insecureTrustAllHosts = false
+      config.getBoolean("talkyard.smtp.insecureTrustAllHosts").getOrElse(false)
+
     // ----- Config makes sense?
 
     var errorMessage = ""
@@ -118,7 +121,7 @@ object Mailer {
           Props(new Mailer(
             daoFactory, now, serverName = "", port = None,
             tlsPort = None, connectWithTls = false, enableStartTls = false, requireStartTls = false,
-            checkServerIdentity = false,
+            checkServerIdentity = false, insecureTrustAllHosts = false,
             userName = "", password = "", fromAddress = "", debug = debug,
             bounceAddress = None, broken = true, isProd = isProd)),
           name = s"BrokenMailerActor-$testInstanceCounter")
@@ -134,6 +137,7 @@ object Mailer {
             enable STARTTLS: $enableStartTls,
             connect with TLS: $connectWithTls,
             check server identity: $checkServerIdentity,
+            insecureTrustAllHosts: $insecureTrustAllHosts,
             from addr: $fromAddress [TyMEMAILCONF]""")
         actorSystem.actorOf(
           Props(new Mailer(
@@ -146,6 +150,7 @@ object Mailer {
             enableStartTls = enableStartTls,
             requireStartTls = requireStartTls,
             checkServerIdentity = checkServerIdentity,
+            insecureTrustAllHosts = insecureTrustAllHosts,
             userName = userName,
             password = anySmtpPassword getOrDie "TyE8UKTQ2",
             fromAddress = fromAddress,
@@ -185,6 +190,7 @@ class Mailer(
   val enableStartTls: Boolean,
   val requireStartTls: Boolean,
   val checkServerIdentity: Boolean,
+  val insecureTrustAllHosts: Boolean,
   val userName: String,
   val password: String,
   val fromAddress: String,
@@ -297,9 +303,12 @@ class Mailer(
     val apacheCommonsEmail = new acm.HtmlEmail()
     apacheCommonsEmail.setDebug(debug)
     apacheCommonsEmail.setHostName(serverName)
+    apacheCommonsEmail.setCharset("utf8")
+
+    apacheCommonsEmail.setAuthenticator(new acm.DefaultAuthenticator(userName, password))
+
     port foreach apacheCommonsEmail.setSmtpPort
     tlsPort foreach (p => apacheCommonsEmail.setSslSmtpPort(p.toString))
-    apacheCommonsEmail.setAuthenticator(new acm.DefaultAuthenticator(userName, password))
 
     // 1. Apache Commons Email uses "SSL" in the name, although smtp servers accept
     // TLS and we use TLS only (we've disabled SSL [NOSSL]).
@@ -307,6 +316,9 @@ class Mailer(
     apacheCommonsEmail.setSSLOnConnect(!requireStartTls && connectWithTls)
 
     apacheCommonsEmail.setStartTLSEnabled(requireStartTls || enableStartTls)
+
+    // If the smtp server doesn't support STARTTLS, or STARTTLS fails, the connection fails
+    // (the email won't get sent).
     apacheCommonsEmail.setStartTLSRequired(requireStartTls)
 
     apacheCommonsEmail.setSSLCheckServerIdentity(checkServerIdentity)
@@ -317,6 +329,24 @@ class Mailer(
 
     apacheCommonsEmail.setSubject(email.subject)
     apacheCommonsEmail.setHtmlMsg(email.bodyHtmlText)
+
+    // This applies all props set above; calling more setNnn(..) below, in most cases will do nothing?
+    // (but some setNnn() still works – look at the getMailSession() and buildMimeMessage() source)
+    val session = apacheCommonsEmail.getMailSession
+
+    // From https://stackoverflow.com/a/47720397/694469:
+    // and https://github.com/square/okhttp/blob/6c3a1607b06cf129c017aa28e6aa3baee1a66745/okhttp/src/main/java/okhttp3/TlsVersion.java#L26:
+    SECURITY; DO_AFTER // year 2020: Enable TLSv1.3? TLSv1.3 is still a draft, now 2018. [PROTOCONF]
+    // Space separated list of protocols, says
+    //   https://javaee.github.io/javamail/docs/api/com/sun/mail/smtp/package-summary.html
+    session.getProperties.put("mail.smtp.ssl.protocols", "TLSv1.1 TLSv1.2")
+
+    // This accepts self signed smtp server certs?? Could be useful during testing and development.
+    // (Without: The TLS cert needs to be valid or added to the Java cert store, like here: [26UKWD2])
+    if (insecureTrustAllHosts) {
+      session.getProperties.put("mail.smtp.ssl.trust", "*")
+    }
+
     apacheCommonsEmail
   }
 
