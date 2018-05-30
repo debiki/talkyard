@@ -4,12 +4,12 @@
 //------------------------------------------------------------------------------
 
 export function loginIfNeededReturnToPost(
-      loginReason: LoginReason | string, postNr: PostNr, success: () => void, willCompose?: boolean) {
+      loginReason: LoginReason | string, postNr: PostNr, success?: () => void, willCompose?: boolean) {
 }
 
 
 export function loginIfNeededReturnToAnchor(
-      loginReason: LoginReason | string, anchor: string, success: () => void, willCompose?: boolean) {
+      loginReason: LoginReason | string, anchor: string, success?: () => void, willCompose?: boolean) {
 }
 
 
