@@ -155,16 +155,20 @@ sudo docker push debiki/talkyard-certgen:$version_tag
 # Bump version number
 # ----------------------
 
-echo "Publishing version tag $version_tag to GitHub, bumping version number..."
+echo "Publishing version tag $version_tag to GitHub..."
 
-echo $version_tag >> modules/ed-versions/version-tags.log
 pushd .
 cd modules/ed-versions/
+git fetch
 git checkout master
+git merge --ff-only origin master
+echo $version_tag >> version-tags.log
 git add version-tags.log
 git commit -m "Add $version_tag."
 git push origin master
 popd
+
+echo "Bumping version number..."
 
 git tag $version_tag
 git push origin $version_tag
