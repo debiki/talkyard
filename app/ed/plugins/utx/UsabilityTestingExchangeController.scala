@@ -151,6 +151,7 @@ class UsabilityTestingExchangeController @Inject()(cc: ControllerComponents, edC
       val authorId = topic.meta.authorId
       val authorCredits: Float = creditsByUserId.getOrElse(authorId, 0f)
       val feedbacks: Seq[Post] = feedbackByPageId.getOrElse(topic.pageId, Nil).filter(_.isOrigPostReply)
+      //System.out.println(s"Topic ${topic.pageId}, num feedbacks: ${feedbacks.length}, author $authorId with credits: $authorCredits")
       var creditsConsumedByAuthor = 0f
       var numFeedbackPostsToAuthor = 0 // nice to see if debugging
       // Tiny bug: here we have in effect sorted the feedback posts by when the *topic* was created
@@ -176,18 +177,35 @@ class UsabilityTestingExchangeController @Inject()(cc: ControllerComponents, edC
         // — this makes it better to give feedback-of-length-2000 to three different people,
         // rather than writing a 10 000 chars essay to one single person.
         val credits = 1000f * math.max(0f, math.log(feedbackLength / 1000f + 0.999f).toFloat)
+        //System.out.println(s"Topic ${topic.pageId}: feedbackLength: $feedbackLength = $credits credits")
         creditsConsumedByAuthor += credits
         numFeedbackPostsToAuthor += 1
         val testersCredits: Float = creditsByUserId.getOrElse(feedback.createdById, 0f)
         creditsByUserId(feedback.createdById) = testersCredits + credits
       }
-      val newAuthorCredits = math.max(0, authorCredits - creditsConsumedByAuthor)
+      // No?
+      //val newAuthorCredits = math.max(0, authorCredits - creditsConsumedByAuthor)
+      // because then the author's negative credits gets reset to 0, even if hen got lots
+      // of feedback after his/her topic. And hen will get + credits for feedback hen gave, later.
+      // Instead:
+      val newAuthorCredits = authorCredits - creditsConsumedByAuthor
+
+      //System.out.println(s"Topic ${topic.pageId}: author $authorId credits -= $creditsConsumedByAuthor —> = $newAuthorCredits")
       creditsByUserId(authorId) = newAuthorCredits
     }
 
     val allFeedback = feedbackByPageId.values.flatten.filter(_.isOrigPostReply)
 
-    val userIdsSortedByCreditsDesc = creditsByUserId.toVector.sortBy(-_._2).map(_._1)
+    // Don't give more feedback to people who have gotten fairly much more feedback
+    // than what they have given.
+    val okUserIdsAndCredits = creditsByUserId.toVector.filter(_._2 > -1500)
+
+    // Iterate through all people who have given feedback, ordered by most feedback given minus gotten,
+    // first. And select for feedback, the first such person, who has asked for help
+    // unless the requester has helped hen already. (Usually simply the first person.)
+    // If hen has created many topics, select among the still active ones, the topic with the
+    // fewest number of replies.
+    val userIdsSortedByCreditsDesc = okUserIdsAndCredits.sortBy(-_._2).map(_._1)
     for (userId <- userIdsSortedByCreditsDesc ; if userId != theRequester.id) {
       val topicsByUser = usabilityTestingTopics.filter(_.meta.authorId == userId)
       val openTopics = topicsByUser.filter(_.meta.closedAt.isEmpty)

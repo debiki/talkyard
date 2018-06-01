@@ -81,8 +81,8 @@ object Mailer {
     val checkServerIdentity =
       config.getBoolean("talkyard.smtp.checkServerIdentity").getOrElse(enableStartTls || connectWithTls)
 
-    val insecureTrustAllHosts = false
-      config.getBoolean("talkyard.smtp.insecureTrustAllHosts").getOrElse(false)
+    val insecureTrustAllHosts =
+      config.getBoolean("talkyard.smtp.insecureTrustAllHosts") getOrElse false
 
     // ----- Config makes sense?
 

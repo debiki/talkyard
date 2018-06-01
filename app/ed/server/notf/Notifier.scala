@@ -193,9 +193,10 @@ class Notifier(val systemDao: SystemDao, val siteDaoFactory: SiteDaoFactory)
           |
           |<p>Kind regards.</p>
           |
-          |<p>(PS. Want a forum / chat / community for your website?
-          |Check out <a href="https://www.talkyard.io">Talkyard</a><br>
-          |-- the open source discussion platform powering Usability Testing Exchange.)
+          |<p>(PS. Want a community for your own website? Where people can get questions answered,
+          |suggest ideas, and give feedback to you?
+          |Check out <b><a href="https://www.talkyard.io?ref=utxWelcEmail">Talkyard</a></b><br>
+          |-- the open source software that powers Usability Testing Exchange.)
           |</p>
           |""")
       dao.readWriteTransaction { tx =>
@@ -344,12 +345,12 @@ class Notifier(val systemDao: SystemDao, val siteDaoFactory: SiteDaoFactory)
           Kind regards,<br/>
           { makeBoringLink(siteName, url = origin) }
         </p>
-        <p style='font-size: 85%; opacity: 0.68; margin-top: 2em;'>
+        <p style='font-size: 92%; opacity: 0.65; margin-top: 2em;'>
           { makeUnderlinedLink("Unsubscribe", url = unsubscriptionUrl) }
         </p>
-        <p style='font-size: 85%; opacity: 0.68;'>
+        <p style='font-size: 92%; opacity: 0.77; margin-top: 1.5em;'>
           Powered by {
-            makeBoringLink("Talkyard", url = "https://www.talkyard.io") }
+            makeUnderlinedLink("Talkyard", url = "https://www.talkyard.io") }
         </p>
       </div>.toString
 
