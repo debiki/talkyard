@@ -36,6 +36,7 @@ trait SiteTransaction {
   /** Continues using the same connection. */
   def asSystem: SystemTransaction
 
+  @deprecated("now", "Use Globals.now() instead, so auto tests can fast forward time")
   def now: When
 
   def deferConstraints()
@@ -546,7 +547,7 @@ trait SiteTransaction {
   def loadReviewTasksAboutPostIds(postIds: Iterable[PostId]): immutable.Seq[ReviewTask]
   def loadReviewTaskCounts(isAdmin: Boolean): ReviewTaskCounts
   def loadPendingPostReviewTask(postId: PostId): Option[ReviewTask]
-  def loadPendingPostReviewTask(postId: PostId, taskCreatedById: UserId): Option[ReviewTask]
+  def loadUndecidedPostReviewTask(postId: PostId, taskCreatedById: UserId): Option[ReviewTask]
 
   def nextNotificationId(): NotificationId
   def saveDeleteNotifications(notifications: Notifications)

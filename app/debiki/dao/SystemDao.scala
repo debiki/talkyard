@@ -403,7 +403,7 @@ class SystemDao(
   }
 
 
-  // ----- Old stuff deletion
+  // ----- The janitor actor
 
   def deletePersonalDataFromOldAuditLogEntries() {
     readWriteTransaction { tx =>
@@ -414,6 +414,18 @@ class SystemDao(
   def deleteOldUnusedUploads()  {
     readWriteTransaction { tx =>
       tx.deleteOldUnusedUploads()
+    }
+  }
+
+  def executePendingReviewTasks()  {
+    val taskIdsBySite: Map[SiteId, immutable.Seq[ReviewTaskId]] = readOnlyTransaction { tx =>
+      tx.loadReviewTaskIdsToExecute()
+    }
+    taskIdsBySite foreach { case (siteId, taskIds) =>
+      val siteDao = globals.siteDao(siteId)
+      taskIds foreach { taskId =>
+        siteDao.carryOutReviewDecision(taskId)
+      }
     }
   }
 

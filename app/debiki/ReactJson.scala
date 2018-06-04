@@ -1350,7 +1350,6 @@ object JsonMaker {
 
 
   def reviewStufToJson(stuff: ReviewStuff, usersById: Map[UserId, User]): JsValue = {
-    // Also see nowadays no-longer-in-use ModerationController.makeJsonSinglePost.
     val anyPost = stuff.post match {
       case None => JsNull
       case Some(post) =>
@@ -1380,7 +1379,8 @@ object JsonMaker {
       "completedAtMs" -> JsDateMsOrNull(stuff.completedAt),
       "completedById" -> JsNumberOrNull(stuff.completedBy.map(_.id)),
       "invalidatedAt" -> JsDateMsOrNull(stuff.invalidatedAt),
-      "resolution" -> JsNumberOrNull(stuff.resolution.map(_.toInt)),
+      "decidedAtMs" -> JsWhenMsOrNull(stuff.decidedAt),
+      "decision" -> JsNumberOrNull(stuff.decision.map(_.toInt)),
       "pageId" -> JsStringOrNull(stuff.pageId),
       "pageTitle" -> JsStringOrNull(stuff.pageTitle),
       "post" -> anyPost,

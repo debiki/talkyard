@@ -37,15 +37,14 @@ case class ReviewStuff(
   completedAt: Option[ju.Date],
   completedBy: Option[User],
   invalidatedAt: Option[ju.Date],
-  resolution: Option[ReviewTaskResolution],
+  decidedAt: Option[When],
+  decision: Option[ReviewDecision],
   maybeBadUser: User, // remove? or change to a list, the most recent editors?
   pageId: Option[PageId],
   pageTitle: Option[String],
   post: Option[Post],
-  flags: Seq[PostFlag]) {
+  flags: Seq[PostFlag])
 
-  resolution.foreach(ReviewTaskResolution.requireIsValid)
-}
 
 
 
@@ -53,29 +52,116 @@ trait ReviewsDao {
   self: SiteDao =>
 
 
-  def completeReviewTask(taskId: ReviewTaskId, completedById: UserId, anyRevNr: Option[Int],
-        action: ReviewAction, browserIdData: BrowserIdData) {
-    readWriteTransaction { transaction =>
-      val task = transaction.loadReviewTask(taskId) getOrElse {
-        throwNotFound("EsE8YM42", s"Review task not found, id $taskId")
-      }
-      if (task.doneOrGone)
-        throwForbidden("EsE2PUM4", o"""Review task already completed, or cannot be completed
-            e.g. because the-thing-to-review was deleted""")
-      val completedTask = task.copy(completedAt = Some(transaction.now.toJavaDate),
-        completedById = Some(completedById), completedAtRevNr = anyRevNr,
-        resolution = Some(ReviewTaskResolution.Fine)) // hmm, need some Rejected btn too (!)
-      transaction.upsertReviewTask(completedTask)
+  def makeReviewDecision(taskId: ReviewTaskId, requester: Who, anyRevNr: Option[Int],
+        decision: ReviewDecision) {
+    readWriteTransaction { tx =>
+      val task = tx.loadReviewTask(taskId) getOrElse
+        throwNotFound("EsE7YMKR25", s"Review task not found, id $taskId")
+
+      // The post might have been moved to a different page, so reload it.
+      val anyPost = task.postId.flatMap(tx.loadPost)
+      val pageId = anyPost.map(_.pageId)
+
+      throwForbiddenIf(task.completedAt.isDefined,
+        "EsE2PUM4", "Review task already completed")
+      throwForbiddenIf(task.invalidatedAt.isDefined,
+        "EsE2PUM5", "Review task cannot be completed, e.g. because the-thing-to-review was deleted")
+
+      val taskWithDecision = task.copy(
+        decidedAt = Some(globals.now().toJavaDate),
+        decision = Some(decision),
+        completedById = Some(requester.id),
+        completedAtRevNr = anyRevNr)
+
+      val auditLogEntry = AuditLogEntry(
+        siteId = siteId,
+        id = AuditLogEntry.UnassignedId,
+        didWhat = AuditLogEntryType.MakeReviewDecision,
+        doerId = requester.id,
+        doneAt = globals.now().toJavaDate,
+        browserIdData = requester.browserIdData,
+        pageId = pageId,
+        uniquePostId = task.postId,
+        postNr = task.postNr)
+        // COULD add audit log fields: review decision & task id?
+
+      tx.upsertReviewTask(taskWithDecision)
+      tx.insertAuditLogEntry(auditLogEntry)
+    }
+  }
+
+
+  def tryUndoReviewDecision(reviewTaskId: ReviewTaskId, requester: Who): Boolean = {
+    readWriteTransaction { tx =>
+      val task = tx.loadReviewTask(reviewTaskId) getOrElse
+        throwNotFound("TyE48YM4X7", s"Review task not found, id $reviewTaskId")
+
+      if (task.completedAt.isDefined)
+        return false
+
+      throwBadRequestIf(task.decidedAt.isEmpty,
+        "TyE5GKQRT2", s"Review action not decided. Task id $reviewTaskId")
+
+      // The post might have been moved to a different page, so reload it.
+      val anyPost = task.postId.flatMap(tx.loadPost)
+      val pageId = anyPost.map(_.pageId)
+
+      val taskUndone = task.copy(
+        decidedAt = None,
+        completedById = None,
+        completedAtRevNr = None,
+        decision = None)
+
+      val auditLogEntry = AuditLogEntry(
+        siteId = siteId,
+        id = AuditLogEntry.UnassignedId,
+        didWhat = AuditLogEntryType.UndoReviewDecision,
+        doerId = requester.id,
+        doneAt = globals.now().toJavaDate,
+        browserIdData = requester.browserIdData,
+        pageId = pageId,
+        uniquePostId = task.postId,
+        postNr = task.postNr)
+        // COULD add audit log fields: review decision & task id?
+
+      tx.upsertReviewTask(taskUndone)
+      tx.insertAuditLogEntry(auditLogEntry)
+      true
+    }
+  }
+
+
+  def carryOutReviewDecision(taskId: ReviewTaskId) {
+    readWriteTransaction { tx =>
+      val anyTask = tx.loadReviewTask(taskId)
+      siteId
+      taskId
+      val zzz = s"Review task not found, site $siteId, task $taskId"
+      val task = anyTask.get //OrDie("EsE8YM42", s"Review task not found, site $siteId, task $taskId")
+
+      // Only one thread completes review tasks, so shouldn't be any races. [5YMBWQT]
+      dieIf(task.completedAt.isDefined, "TyE2A2PUM6", "Review task already completed")
+      dieIf(task.invalidatedAt.isDefined, "TyE5J2PUM7", "Review task invalidated")
+      val decision = task.decision getOrDie "TyE4ZK5QL"
+      val completedById = task.completedById getOrDie "TyE2A2PUM01"
+      dieIf(task.completedAtRevNr.isEmpty, "TyE2A2PUM02")
+
+      val completedTask = task.copy(completedAt = Some(globals.now().toJavaDate))
+      tx.upsertReviewTask(completedTask)
 
       dieIf(task.postNr.isEmpty, "Only posts can be reviewed right now [EsE7YGK29]")
 
       task.postNr foreach { postNr =>
-        val post = transaction.loadPost(task.postId getOrDie "EsE5YGK02") getOrElse {
+        val post = tx.loadPost(task.postId getOrDie "EsE5YGK02") getOrElse {
           // Deleted? Ignore it then.
           return
         }
-        action match {
-          case ReviewAction.Accept =>
+        // We're in a background thread and have forgotten the browser id data.
+        // Could to load it from an earlier audit log entry, ... but maybe it's been deleted?
+        // For now:
+        val browserIdData = BrowserIdData.Forgotten
+        decision match {
+          case ReviewDecision.Accept =>
             if (post.isCurrentVersionApproved) {
               // The System user has apparently approved the post already.
               // However, it might have been hidden a tiny bit later, after some  external services
@@ -84,7 +170,7 @@ trait ReviewsDao {
                 // SPAM RACE COULD unhide only if rev nr that got hidden <=
                 // rev that was reviewed. [6GKC3U]
                 changePostStatusImpl(postNr = post.nr, pageId = post.pageId,
-                    PostStatusAction.UnhidePost, userId = completedById, transaction)
+                    PostStatusAction.UnhidePost, userId = completedById, tx)
               }
             }
             else {
@@ -92,19 +178,19 @@ trait ReviewsDao {
                 // This is for a new page. Approve the *title* here, and the *body* just below.
                 dieIf(!task.postNr.contains(PageParts.BodyNr), "EsE5TK0I2")
                 approvePostImpl(post.pageId, PageParts.TitleNr, approverId = completedById,
-                  transaction)
+                  tx)
               }
-              approvePostImpl(post.pageId, post.nr, approverId = completedById, transaction)
-              perhapsCascadeApproval(post.createdById)(transaction)
+              approvePostImpl(post.pageId, post.nr, approverId = completedById, tx)
+              perhapsCascadeApproval(post.createdById)(tx)
             }
-          case ReviewAction.DeletePostOrPage =>
+          case ReviewDecision.DeletePostOrPage =>
             if (task.isForBothTitleAndBody) {
               deletePagesImpl(Seq(task.pageId getOrDie "EsE4K85R2"), deleterId = completedById,
-                  browserIdData)(transaction)
+                  browserIdData)(tx)
             }
             else {
               deletePostImpl(post.pageId, postNr = post.nr, deletedById = completedById,
-                browserIdData, transaction)
+                browserIdData, tx)
             }
         }
       }
@@ -137,7 +223,7 @@ trait ReviewsDao {
       var postIdsApproved = Set[PostId]()
       var numHarmful = 0
       tasks foreach { task =>
-        if (task.resolution.exists(_.isFine)) {
+        if (task.decision.exists(_.isFine)) {
           if (task.postId.isDefined) {
             postIdsApproved += task.postId getOrDie "EdE7KW02Y"
           }
@@ -146,7 +232,7 @@ trait ReviewsDao {
             // reviewed (not yet implemented though). Ignore.
           }
         }
-        else if (task.resolution.exists(_.isHarmful)) {
+        else if (task.decision.exists(_.isRejectionBadUser)) {
           numHarmful += 1
         }
       }
@@ -233,7 +319,8 @@ trait ReviewsDao {
           completedAt = task.completedAt,
           completedBy = task.completedById.flatMap(usersById.get),
           invalidatedAt = task.invalidatedAt,
-          resolution = task.resolution,
+          decidedAt = When.fromOptDate(task.decidedAt),
+          decision = task.decision,
           maybeBadUser = usersById.get(task.maybeBadUserId) getOrDie "EdE2KU8B",
           pageId = task.pageId,
           pageTitle = anyPageTitle,

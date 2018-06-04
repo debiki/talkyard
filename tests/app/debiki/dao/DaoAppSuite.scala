@@ -45,6 +45,7 @@ object DaoAppSuite {
 class DaoAppSuite(
   val disableScripts: Boolean = true,
   val disableBackgroundJobs: Boolean = true,
+  val butEnableJanitor: Boolean = false,
   val maxSitesTotal: Option[Int] = None,
   val startTime: When = When.fromMillis(10 * 1000 + OneAndZeros1157DaysInMillis))
   extends FreeSpec with MustMatchers with BaseOneAppPerSuite with FakeApplicationFactory {
@@ -84,7 +85,8 @@ class DaoAppSuite(
     var configMap = Map[String, String](
       "isTestShallEmptyDatabase" -> "true",
       "isTestDisableScripts" -> (disableScripts ? "true" | "false"),
-      "isTestDisableBackgroundJobs" -> (disableBackgroundJobs ? "true" | "false"))
+      "isTestDisableBackgroundJobs" -> (disableBackgroundJobs ? "true" | "false"),
+      "isTestEnableJanitor" -> (butEnableJanitor ? "true" | "false"))
     import debiki.Config.CreateSitePath
     maxSitesTotal foreach { max =>
       configMap = configMap.updated(s"$CreateSitePath.maxSitesTotal", max.toString)

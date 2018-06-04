@@ -48,7 +48,7 @@ import scala.util.matching.Regex
 import Globals._
 import ed.server.EdContext
 import ed.server.http.GetRequest
-import ed.server.jobs.OldStuffDeleter
+import ed.server.jobs.Janitor
 import play.api.mvc.RequestHeader
 
 
@@ -134,12 +134,15 @@ class Globals(
     disable
   }
 
-  def isTestDisableBackgroundJobs: Boolean = isOrWasTest && {
-    val disable = conf.getBoolean("isTestDisableBackgroundJobs").getOrElse(false)
-    if (disable) {
-      p.Logger.info("Is test with background jobs disabled. [EsM6JY0K2]")
+  lazy val (isTestDisableBackgroundJobs, isTestEnableJanitor): (Boolean, Boolean) =
+      if (!isOrWasTest) (false, false) else {
+    val disableJobs = conf.getBoolean("isTestDisableBackgroundJobs").getOrElse(false)
+    val butEnableJanitor = conf.getBoolean("isTestEnableJanitor").getOrElse(false)
+    if (disableJobs) {
+      val butJanitor = if (butEnableJanitor) ", except for the Janitor" else ", incl the Janitor"
+      p.Logger.info(s"Is test with background jobs disabled$butJanitor. [EsM6JY0K2]")
     }
-    disable
+    (disableJobs, butEnableJanitor)
   }
 
   def isInitialized: Boolean = (_state ne null) && _state.isGood
@@ -770,7 +773,7 @@ class Globals(
       shutdownActorAndWait(state.renderContentActorRef)
       shutdownActorAndWait(state.indexerActorRef)
       shutdownActorAndWait(state.spamCheckActorRef)
-      shutdownActorAndWait(state.oldStuffDeleterActorRef)
+      shutdownActorAndWait(state.janitorActorRef)
       state.elasticSearchClient.close()
       state.redisClient.quit()
       state.dbDaoFactory.db.readOnlyDataSource.asInstanceOf[HikariDataSource].close()
@@ -952,9 +955,9 @@ class Globals(
 
     spamChecker.start()
 
-    val oldStuffDeleterActorRef: Option[ActorRef] =
-      if (isTestDisableBackgroundJobs) None
-      else Some(OldStuffDeleter.startNewActor(outer))
+    val janitorActorRef: Option[ActorRef] =
+      if (isTestDisableBackgroundJobs && !isTestEnableJanitor) None
+      else Some(Janitor.startNewActor(outer))
 
     def systemDao: SystemDao = new SystemDao(dbDaoFactory, cache, outer) // RENAME to newSystemDao()?
 

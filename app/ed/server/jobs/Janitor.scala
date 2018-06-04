@@ -23,30 +23,51 @@ import com.debiki.core.Prelude._
 import debiki.{DatabaseUtils, Globals}
 import play.{api => p}
 import scala.concurrent.duration._
-import OldStuffDeleter._
+import Janitor._
 import scala.concurrent.ExecutionContext
 
 
 
-/** Deletes old data, e.g. uploads no longer in use, and ip addresses and other
+/** Runs various background tasks:
+  *
+  * - Deletes old data, e.g. uploads no longer in use, and ip addresses and other
   * a bit personal data from the audit log.
+  *
+  * - Carries out review decisions [5YMBWQT] — they're delayed maybe 10 seconds,
+  * so the staff can click Undo, if they accidentally clicked the wrong button. [REVIEWUNDO]
+  *
+  * These things are done by a single actor / background thread, to reduce the risk
+  * for database serialization problems (if different threads happen to update the same
+  * parts of the database, in a fine & okay way, but that happen to cause serialization
+  * errors and rollbacks. This is not the same thing as database deadlocks = bugs (usually).)
   */
-object OldStuffDeleter {
+object Janitor {
 
   def startNewActor(globals: Globals): ActorRef = {
     implicit val execCtx: ExecutionContext = globals.executionContext
+    import globals.isOrWasTest
+
     val actorRef = globals.actorSystem.actorOf(
-      Props(new OldStuffDeleterActor(globals)), name = "OldStuffDeleterActor")
-    globals.actorSystem.scheduler.schedule(60 seconds, 10 seconds, actorRef, DeleteOldStuff)
+      Props(new JanitorActor(globals)), name = "JanitorActor")
+
+    globals.actorSystem.scheduler.schedule(
+      isOrWasTest ? 2.seconds | 60.seconds,
+      isOrWasTest ? 100.millis | 10.seconds, actorRef, DeleteOldStuff)
+
+    globals.actorSystem.scheduler.schedule(
+      isOrWasTest ? 2.seconds | 13.seconds,
+      isOrWasTest ? 100.millis | 3.seconds, actorRef, ExecuteReviewTasks)
+
     actorRef
   }
 
   object DeleteOldStuff
+  object ExecuteReviewTasks
 }
 
 
 
-class OldStuffDeleterActor(val globals: Globals) extends Actor {
+class JanitorActor(val globals: Globals) extends Actor {
 
   def execCtx: ExecutionContext = globals.executionContext
 
@@ -57,8 +78,15 @@ class OldStuffDeleterActor(val globals: Globals) extends Actor {
         case ex: java.sql.SQLException if DatabaseUtils.isConnectionClosed(ex) =>
           p.Logger.warn("Cannot delete old stuff, database connection closed [TyE2FKQS4]")
         case throwable: Throwable =>
-          if (!globals.isOrWasTest)
-            p.Logger.error("Error deleting old stuff [TyE52QBU04]", throwable)
+          p.Logger.error("Error deleting old stuff [TyE52QBU04]", throwable)
+      }
+    case ExecuteReviewTasks =>
+      try executePendingReviewTasks()
+      catch {
+        case ex: java.sql.SQLException if DatabaseUtils.isConnectionClosed(ex) =>
+          p.Logger.warn("Cannot exec review tasks, database connection closed [TyE2FKQS5]")
+        case throwable: Throwable =>
+          p.Logger.error("Error executing review tasks [TyE52QBU05]", throwable)
       }
   }
 
@@ -67,6 +95,12 @@ class OldStuffDeleterActor(val globals: Globals) extends Actor {
     val dao = globals.systemDao
     dao.deletePersonalDataFromOldAuditLogEntries()
     dao.deleteOldUnusedUploads()
+  }
+
+
+  private def executePendingReviewTasks() {
+    val dao = globals.systemDao
+    dao.executePendingReviewTasks()
   }
 
 }

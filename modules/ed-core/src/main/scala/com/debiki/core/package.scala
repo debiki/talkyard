@@ -238,6 +238,7 @@ package object core {
   val HomepageUrlPath = "/"
   val EmptyPageId = "0"  // a.k.a. NoPageId
 
+  val MillisPerSecond: Int = 1000
   val OneMinuteInMillis: Long = 60 * 1000
   val OneHourInMillis: Long = 3600 * 1000
   val MillisPerDay: Long = 24 * OneHourInMillis
@@ -246,23 +247,23 @@ package object core {
   val OneMonthInMillis: Long = 365 * MillisPerDay / 12  // divides evenly
 
   val Megabyte: Int = 1000 * 1000
-  val Megabytes = Megabyte
+  val Megabytes: Int = Megabyte
 
-  def MaxTestSiteId = Site.MaxTestSiteId
-  def FirstSiteId = Site.FirstSiteId
+  def MaxTestSiteId: SiteId = Site.MaxTestSiteId
+  def FirstSiteId: SiteId = Site.FirstSiteId
   val NoUserId = 0
-  def SystemUserId = User.SystemUserId
+  def SystemUserId: UserId = User.SystemUserId
   def SystemSpamStuff = SpamRelReqStuff(userAgent = None, referer = None, uri = "/dummy")
-  def SystemUserFullName = User.SystemUserFullName
-  def SystemUserUsername = User.SystemUserUsername
-  def UnknownUserId = User.UnknownUserId
-  def UnknownUserName = User.UnknownUserName
-  def UnknownUserGuestCookie = User.UnknownUserGuestCookie
-  def MaxGuestId = User.MaxGuestId
-  def LowestNonGuestId = User.LowestNonGuestId
-  def LowestTalkToMemberId = User.LowestTalkToMemberId
+  def SystemUserFullName: String = User.SystemUserFullName
+  def SystemUserUsername: String = User.SystemUserUsername
+  def UnknownUserId: UserId = User.UnknownUserId
+  def UnknownUserName: String = User.UnknownUserName
+  def UnknownUserGuestCookie: String = User.UnknownUserGuestCookie
+  def MaxGuestId: UserId = User.MaxGuestId
+  def LowestNonGuestId: UserId = User.LowestNonGuestId
+  def LowestTalkToMemberId: UserId = User.LowestTalkToMemberId
 
-  val FirstRevisionNr = PostRevision.FirstRevisionNr
+  val FirstRevisionNr: Int = PostRevision.FirstRevisionNr
 
   case class SiteUserId(siteId: SiteId, userId: UserId)
   case class SitePageVersion(siteVersion: SiteVersion, pageVersion: PageVersion)

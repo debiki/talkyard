@@ -33,7 +33,8 @@ type IpAddress = String;
 type EmailId = String;
 type AuditLogEntryId = number;
 type TagLabel = string;
-type DateMs = number;
+type DateMs = number;  // use When instead? sounds better since using When server side too
+type WhenMs = number;
 
 type HttpRequest = XMLHttpRequest
 
@@ -83,7 +84,8 @@ interface ReviewTask {
   completedAtMs?: number;
   completedById?: UserId;
   invalidatedAtMs?: number;
-  //resolution?: ?;
+  decidedAtMs?: WhenMs;
+  decision?: ReviewDecision;
   pageId?: string;
   pageTitle?: string;
   post?: PostToReview;
@@ -110,9 +112,12 @@ interface PostToReview {
 }
 
 
-enum ReviewAction {
-  Accept = 1,
-  DeletePostOrPage = 2,
+enum ReviewDecision {
+  // 1nnn = Accept.
+  Accept = 1001,
+  // 3nnn = Request changes.
+  // 5nnn = Reject.
+  DeletePostOrPage = 5001,
 }
 
 

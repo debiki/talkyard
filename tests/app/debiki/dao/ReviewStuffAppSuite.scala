@@ -23,9 +23,9 @@ import org.scalatest._
 
 
 class ReviewStuffAppSuite(randomString: String)
-  extends DaoAppSuite(disableScripts = true, disableBackgroundJobs = true) {
+  extends DaoAppSuite(disableScripts = true, disableBackgroundJobs = true, butEnableJanitor = true) {
 
-  def r = randomString
+  private def r = randomString
   var nameCounter = 0
 
   class NestedPostsSuite extends FreeSpec with MustMatchers with BeforeAndAfterAll {
@@ -39,9 +39,11 @@ class ReviewStuffAppSuite(randomString: String)
       dao.createForum("Forum", s"/forum-$nextNameNr-$r/", isForEmbCmts = false,
         Who(theAdmin.id, browserIdData)).defaultCategoryId
 
-    def nextNameNr = { nameCounter += 1; nameCounter }
+    def whoAdmin: Who = Who(theAdmin.id, browserIdData)
 
-    def newAdminAndPage() = {
+    def nextNameNr: Int = { nameCounter += 1; nameCounter }
+
+    def newAdminAndPage() {
       thePageId = dao.createPage(PageRole.Discussion, PageStatus.Published,
         anyCategoryId = Some(categoryId), anyFolder = Some("/"), anySlug = Some(""),
         titleTextAndHtml = textAndHtmlMaker.testTitle("title_62952 $r"),
@@ -65,9 +67,30 @@ class ReviewStuffAppSuite(randomString: String)
         Who(memberId, browserIdData), dummySpamRelReqStuff)
     }
 
-    def approve(reviewTask: ReviewTask): Unit = {
-      dao.completeReviewTask(reviewTask.id, theAdmin.id, anyRevNr = Some(FirstRevisionNr),
-        ReviewAction.Accept, browserIdData)
+    def approveButUndo(reviewTask: ReviewTask) {
+      dao.makeReviewDecision(reviewTask.id, whoAdmin, anyRevNr = Some(FirstRevisionNr),
+        ReviewDecision.Accept)
+      val wasUndone = dao.tryUndoReviewDecision(reviewTask.id, whoAdmin)
+      dieUnless(wasUndone, "TyE4KDWS0")
+    }
+
+    def approve(reviewTask: ReviewTask) {
+      dao.makeReviewDecision(reviewTask.id, whoAdmin, anyRevNr = Some(FirstRevisionNr),
+        ReviewDecision.Accept)
+      // Wait until the Janitor has carried out the decision. [5YMBWQT]
+      globals.testFastForwardTimeMillis((ReviewDecision.UndoTimoutSeconds + 1) * MillisPerSecond)
+      var delay = 100
+      var total = 0
+      while (true) {
+        val task = dao.readOnlyTransaction(_.loadReviewTask(reviewTask.id)).get
+        if (task.completedAt.isDefined)
+          return
+        dieIf(total > 20, "TyE4UKGWT20", "The Janitor isn't working? Or did you pause, in the debugger?")
+        System.out.println(s"Waitig for the Janitor to carry out review decision ${reviewTask.id}...")
+        Thread.sleep(delay)
+        total += delay
+        delay = (delay * 1.5).toInt
+      }
     }
 
     def checkReviewTaskGenerated(post: Post, reasons: Seq[ReviewReason]) {

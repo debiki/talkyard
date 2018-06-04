@@ -74,7 +74,7 @@ object PostRevision {
   /** Every 25th revision contains the full source. */
   val SaveFullSourceInterval = 25
 
-  val LastRevisionMagicNr = Int.MaxValue
+  val LastRevisionMagicNr: Int = Int.MaxValue
 
 
   def createFor(post: Post, previousRevision: Option[PostRevision]): PostRevision = {

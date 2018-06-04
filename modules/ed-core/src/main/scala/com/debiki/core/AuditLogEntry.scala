@@ -59,27 +59,32 @@ object AuditLogEntryType {
 
   // Let 2001-2999 be admin & staff actions?
   case object SaveSiteSettings extends AuditLogEntryType(2001)
+  case object MakeReviewDecision extends AuditLogEntryType(2002)
+  case object UndoReviewDecision extends AuditLogEntryType(2003)
 
 
   def fromInt(value: Int): Option[AuditLogEntryType] = Some(value match {
-    case AuditLogEntryType.CreateSite.IntVal => AuditLogEntryType.CreateSite
-    case AuditLogEntryType.ThisSiteCreated.IntVal => AuditLogEntryType.ThisSiteCreated
-    case AuditLogEntryType.CreateForum.IntVal => AuditLogEntryType.CreateForum
-    case AuditLogEntryType.NewPage.IntVal => AuditLogEntryType.NewPage
-    case AuditLogEntryType.NewReply.IntVal => AuditLogEntryType.NewReply
-    case AuditLogEntryType.NewChatMessage.IntVal => AuditLogEntryType.NewChatMessage
-    case AuditLogEntryType.EditPost.IntVal => AuditLogEntryType.EditPost
-    case AuditLogEntryType.ChangePostSettings.IntVal => AuditLogEntryType.ChangePostSettings
-    case AuditLogEntryType.MovePost.IntVal => AuditLogEntryType.MovePost
-    case AuditLogEntryType.UploadFile.IntVal => AuditLogEntryType.UploadFile
-    case AuditLogEntryType.DeletePage.IntVal => AuditLogEntryType.DeletePage
-    case AuditLogEntryType.UndeletePage.IntVal => AuditLogEntryType.UndeletePage
-    case AuditLogEntryType.CreateUser.IntVal => AuditLogEntryType.CreateUser
-    case AuditLogEntryType.ApproveUser.IntVal => AuditLogEntryType.ApproveUser
-    case AuditLogEntryType.SuspendUser.IntVal => AuditLogEntryType.SuspendUser
-    case AuditLogEntryType.UnsuspendUser.IntVal => AuditLogEntryType.UnsuspendUser
-    case AuditLogEntryType.DeactivateUser.IntVal => AuditLogEntryType.DeactivateUser
-    case AuditLogEntryType.DeleteUser.IntVal => AuditLogEntryType.DeleteUser
+    case CreateSite.IntVal => CreateSite
+    case ThisSiteCreated.IntVal => ThisSiteCreated
+    case CreateForum.IntVal => CreateForum
+    case NewPage.IntVal => NewPage
+    case NewReply.IntVal => NewReply
+    case NewChatMessage.IntVal => NewChatMessage
+    case EditPost.IntVal => EditPost
+    case ChangePostSettings.IntVal => ChangePostSettings
+    case MovePost.IntVal => MovePost
+    case UploadFile.IntVal => UploadFile
+    case DeletePage.IntVal => DeletePage
+    case UndeletePage.IntVal => UndeletePage
+    case CreateUser.IntVal => CreateUser
+    case ApproveUser.IntVal => ApproveUser
+    case SuspendUser.IntVal => SuspendUser
+    case UnsuspendUser.IntVal => UnsuspendUser
+    case DeactivateUser.IntVal => DeactivateUser
+    case DeleteUser.IntVal => DeleteUser
+    case SaveSiteSettings.IntVal => SaveSiteSettings
+    case MakeReviewDecision.IntVal => MakeReviewDecision
+    case UndoReviewDecision.IntVal => UndoReviewDecision
     case _ => return None
   })
 }

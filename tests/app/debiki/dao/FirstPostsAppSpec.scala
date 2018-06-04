@@ -82,10 +82,19 @@ class FirstPostsAppSpec extends ReviewStuffAppSuite("4fy2") {
             reply(member.id, "reply_863439_e")
           }.getMessage must include("_EsE6YKF2_")
 
-          info("approve the very first post...")
+          info("approve — but undo the approval ...")
+          approveButUndo(firstReplyResult.reviewTask.get)
+          var firstReply2 = dao.loadPost(thePageId, firstReplyResult.post.nr).get
+          firstReply2.approvedById mustBe None
+
+          info("approve the very first post (this waits until undo timeout has elapsed)...")
           approve(firstReplyResult.reviewTask.get)
-          val firstReply2 = dao.loadPost(thePageId, firstReplyResult.post.nr).get
+          firstReply2 = dao.loadPost(thePageId, firstReplyResult.post.nr).get
           firstReply2.approvedById mustBe Some(theAdmin.id)
+
+          info("cannot undo approval any longer (because the undo timeout has elapsed)...")
+          val wasUndone = dao.tryUndoReviewDecision(firstReplyResult.reviewTask.get.id, whoAdmin)
+          wasUndone mustBe false
 
           info("...and then also auto-approve all early posts")
           val secondReply2 = dao.loadPost(thePageId, secondReplyResult.post.nr).get

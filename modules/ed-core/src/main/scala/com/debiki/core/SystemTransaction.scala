@@ -93,10 +93,14 @@ trait SystemTransaction {
   def loadStuffToSpamCheck(limit: Int): StuffToSpamCheck
   def deleteFromSpamCheckQueue(siteId: SiteId, postId: PostId, postRevNr: Int)
 
-  // ----- Old stuff deletion
+  // ----- The janitor: Old stuff deletion
 
   def deletePersonalDataFromOldAuditLogEntries()
   def deleteOldUnusedUploads() { /* ... later ... */ }
+
+  // ----- The janitor: Review decisions
+
+  def loadReviewTaskIdsToExecute(): Map[SiteId, immutable.Seq[ReviewTaskId]]
 
   // ----- Testing
 

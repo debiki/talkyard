@@ -47,7 +47,7 @@ class ModerationController @Inject()(cc: ControllerComponents, edContext: EdCont
   val PostTextLengthLimit = 500
 
 
-  def loadReviewTasks = StaffGetAction { request =>
+  def loadReviewTasks: Action[Unit] = StaffGetAction { request =>
     val (reviewStuff, usersById) = request.dao.loadReviewStuff(
       olderOrEqualTo = globals.now().toJavaDate, limit = 100)
     OkSafeJson(
@@ -57,151 +57,44 @@ class ModerationController @Inject()(cc: ControllerComponents, edContext: EdCont
   }
 
 
-  def completeReviewTask: Action[JsValue] = StaffPostJsonAction(maxBytes = 100) { request =>
+  def makeReviewDecision: Action[JsValue] = StaffPostJsonAction(maxBytes = 100) { request =>
     val taskId = (request.body \ "taskId").as[ReviewTaskId]
     val anyRevNr = (request.body \ "revisionNr").asOpt[Int]
-    val actionInt = (request.body \ "action").as[Int]
-    val action = ReviewAction.fromInt(actionInt) getOrElse throwBadArgument("EsE5GYK2", "action")
-    request.dao.completeReviewTask(taskId, completedById = request.theUserId, anyRevNr = anyRevNr,
-      action, request.theBrowserIdData)
+    val decisionInt = (request.body \ "decision").as[Int]
+    val decision = ReviewDecision.fromInt(decisionInt) getOrElse throwBadArgument("EsE5GYK2", "decision")
+    request.dao.makeReviewDecision(taskId, request.who, anyRevNr = anyRevNr, decision)
     Ok
+  }
+
+
+  def tryUndoReviewDecision: Action[JsValue] = StaffPostJsonAction(maxBytes = 100) { request =>
+    val taskId = (request.body \ "taskId").as[ReviewTaskId]
+    val couldBeUndone = request.dao.tryUndoReviewDecision(taskId, request.who)
+    OkSafeJson(Json.obj("couldBeUndone" -> couldBeUndone))
   }
 
 
   /*
-  def approve = StaffPostJsonAction(maxBytes = 5000) { request =>
-    SECU RITY ; COULD // restrict approval of edits of any homepage or about page to admins only.
-    val PagePostNr(pageId, postNr) = parseBody(request)
-    request.dao.approvePost(pageId, postNr = postNr, approverId = request.theUserId)
-    Ok
-  }
-
-
-  def hideNewPostSendPm = StaffPostJsonAction(maxBytes = 5000) { apiReq =>
-    ???
-  }
-
-
-  def hideFlaggedPostSendPm = StaffPostJsonAction(maxBytes = 5000) { request =>
-    val PagePostNr(pageId, postNr) = parseBody(request)
+  def hideNewPostSendPm
+  def hideFlaggedPostSendPm =
     ??? // request.dao.hidePostClearFlag(pageId, postId = postId, hiddenById = request.theUserId)
-    Ok
-  }
-
-
-  def deletePost = StaffPostJsonAction(maxBytes = 5000) { request =>
-    val PagePostNr(pageId, postNr) = parseBody(request)
+  def deletePost
     request.dao.deletePost(pageId, postNr = postNr, deletedById = request.theUserId,
         request.theBrowserIdData)
-    Ok
-  }
 
-
-  def deleteFlaggedPost = StaffPostJsonAction(maxBytes = 5000) { request =>
+  def deleteFlaggedPost
     // COULD add a specific method deleteFlaggedPost, that also ... marks the flags as accepted?
     // Like Discourse does it. For now:
     val PagePostNr(pageId, postNr) = parseBody(request)
     request.dao.deletePost(pageId, postNr = postNr, deletedById = request.theUserId,
         request.theBrowserIdData)
-    Ok
-  }
 
-
-  def clearFlags = StaffPostJsonAction(maxBytes = 5000) { request =>
-    val PagePostNr(pageId, postNr) = parseBody(request)
+  def clearFlags =
     request.dao.clearFlags(pageId, postNr = postNr, clearedById = request.theUserId)
-    Ok
-  }
 
-
-  def rejectEdits = StaffPostJsonAction(maxBytes = 5000) { request =>
-    val PagePostNr(pageId, postNr) = parseBody(request)
+  def rejectEdits =
     ??? // request.dao.rejectEdits(pageId, postId = postId, rejectedById = request.theUserId)
-    Ok
-  }
-
-
-  private def parseBody(request: JsonPostRequest): PagePostNr = {
-    val pageId = (request.body \ "pageId").as[PageId]
-    val postNr = (request.body \ "postNr").as[PostNr]
-    PagePostNr(pageId, postNr)
-  }
-
-
-  private def makeJsonSinglePost(post: Post, thingsToReview: ThingsToReview): JsValue = {
-    //val pageMeta = thingsToReview.thePage(post.pageId)
-    val author = thingsToReview.theUser(post.createdById)
-    val flags = thingsToReview.theFlagsFor(post.nr)
-
-    val pageName = "SHOULD load page name"
-    var data = immutable.HashMap[String, JsValue](
-      "id" -> JsNumber(post.nr),
-      "pageId" -> JsString(post.pageId),
-      "pageName" -> JsString(pageName),
-      "type" -> JsString("Post"),
-      "userId" -> JsString(post.createdById.toString),  // User2
-      "userDisplayName" -> JsString(author.displayName),
-      "cdati" -> JsString(toIso8601T(post.createdAt)))
-
-    post.approvedSource foreach { text =>
-      data += "approvedText" -> JsString(text take PostTextLengthLimit)
-    }
-    post.unapprovedSource foreach { text =>
-      data += "unapprovedText" -> JsString(text take PostTextLengthLimit)
-    }
-
-    post.deletedAt foreach { date =>
-      // COULD use deletedStatus instead
-      data += "postDeletedAt" -> JsString(toIso8601T(date))
-    }
-
-    post.hiddenAt foreach { date =>
-      data += "postHiddenAt" -> JsString(toIso8601T(date))
-    }
-
-    val status =
-      if (post.deletedStatus.isDeleted) "Deleted"
-      else if (post.isHidden) "Hidden"
-      // else if (post.currentVersionPrelApproved) {
-      //  if (post.someVersionPermanentlyApproved) "EditsPrelApproved"  // TODO remove JS
-      //  else "NewPrelApproved"
-      // }
-      else if (post.isCurrentVersionApproved) "Approved"
-      //else if (post.currentVersionRejected) {
-      //  if (post.someVersionPermanentlyApproved) "EditsRejected"   // TODO when use this?
-      //  else "Rejected"
-      //}
-      //else if (post.someVersionPermanentlyApproved) "NewEdits"
-      else "New"
-
-    data += "status" -> JsString(status)
-
-    if (post.numEditsToReview > 0) {
-      data += "numEditsToReview" -> JsNumber(post.numEditsToReview)
-    }
-    if (post.numPendingEditSuggestions > 0) {
-      data += "numPendingEditSuggestions" -> JsNumber(post.numPendingEditSuggestions)
-    }
-    if (post.numFlags > 0) {
-      data += "numPendingFlags" -> JsNumber(post.numPendingFlags)
-      data += "numHandledFlags" -> JsNumber(post.numHandledFlags)
-    }
-
-    if (post.numPendingFlags > 0) {
-      val jsFlags = flags map { flag => // .filter(_.deletedAt.isEmpty) // TODO add deletedAt
-        val flagger = thingsToReview.theUser(flag.flaggerId)
-        val flaggerName = flagger.usernameOrGuestName
-        Json.obj(
-          "flaggerId" -> flag.flaggerId,
-          "flaggerDisplayName" -> flaggerName,
-          "flagType" -> flag.flagType.toString)
-          // "flagReason" -> ?
-      }
-      data += "pendingFlags" -> JsArray(jsFlags)
-    }
-
-    toJson(data)
-  }*/
+  */
 
 }
 

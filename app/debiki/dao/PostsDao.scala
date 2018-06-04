@@ -299,8 +299,8 @@ trait PostsDao {
       val tasks = transaction.loadReviewTasksAboutUser(author.id, limit = MaxNumFirstPosts,
         OrderBy.MostRecentFirst)
       val numLoaded = tasks.length
-      val numPending = tasks.count(_.resolution.isEmpty)
-      val numRejected = tasks.count(_.resolution.exists(_.isHarmful))
+      val numPending = tasks.count(_.decision.isEmpty)
+      val numRejected = tasks.count(_.decision.exists(_.isRejectionBadUser))
       if (numLoaded >= 2 && numRejected > (numLoaded / 2)) // for now
         throwForbidden("EsE7YKG2", "Too many rejected comments or edits or something")
       if (numPending > 5) // for now
@@ -322,7 +322,7 @@ trait PostsDao {
     if ((numFirstToAllow > 0 && numFirstToApprove > 0) || numFirstToNotify > 0) {
       val tasks = transaction.loadReviewTasksAboutUser(author.id, limit = MaxNumFirstPosts,
         OrderBy.OldestFirst)
-      val numApproved = tasks.count(_.resolution.exists(_.isFine))
+      val numApproved = tasks.count(_.decision.exists(_.isFine))
       val numLoaded = tasks.length
 
       if (numApproved < numFirstToApprove) {
@@ -1671,13 +1671,13 @@ trait PostsDao {
       tasks = tasks.filter(_.reasons.contains(ReviewReason.PostFlagged))
 
       // If lots of flags are incorrect, then don't censor the user, at this time.
-      val numResolvedFine = tasks.count(_.resolution.exists(_.isFine))
-      val numResolvedBad = tasks.count(_.resolution.exists(!_.isFine))
+      val numResolvedFine = tasks.count(_.decision.exists(_.isFine))
+      val numResolvedBad = tasks.count(_.decision.exists(_.isRejectionBadUser))
       if (numResolvedFine >= math.max(1, numResolvedBad))
         return Nil
 
       // If there are too few flags, or too few distinct human flaggers, don't censor the user.
-      val maybeBadTasks = tasks.filter(!_.resolution.exists(_.isFine))
+      val maybeBadTasks = tasks.filter(!_.decision.exists(_.isFine))
       val manyFlags = maybeBadTasks.size >= settings.numFlagsToBlockNewUser
       val flaggersMaybeInclSystem = maybeBadTasks.map(_.createdById).toSet
       val numFlaggersExclSystem = (flaggersMaybeInclSystem - SystemUserId).size
@@ -1716,7 +1716,7 @@ trait PostsDao {
       val postToHide = postToMaybeHide filter { post =>
         // This is O(n^2), so keep numThings small (6WKUT02), like <= 100.
         val anyReviewTask = tasks.find(_.postId.contains(post.id))
-        !anyReviewTask.exists(_.resolution.exists(_.isFine))
+        !anyReviewTask.exists(_.decision.exists(_.isFine))
       }
 
       val postToHideByPage = postToHide.groupBy(_.pageId)
@@ -1892,7 +1892,7 @@ object PostsDao {
   private val OneHourMs = SixMinutesMs * 10
   private val OneDayMs = OneHourMs * 24
 
-  val HardMaxNinjaEditWindowMs = OneDayMs
+  val HardMaxNinjaEditWindowMs: Int = OneDayMs
 
   /** For non-discussion pages, uses a long ninja edit window.
     */
@@ -1909,10 +1909,10 @@ object PostsDao {
 
   def makeReviewTask(createdById: UserId, post: Post, reasons: immutable.Seq[ReviewReason],
         transaction: SiteTransaction): ReviewTask = {
-    val oldReviewTask = transaction.loadPendingPostReviewTask(post.id,
+    val pendingTask = transaction.loadUndecidedPostReviewTask(post.id,
       taskCreatedById = createdById)
     val newTask = ReviewTask(
-      id = oldReviewTask.map(_.id).getOrElse(transaction.nextReviewTaskId()),
+      id = pendingTask.map(_.id).getOrElse(transaction.nextReviewTaskId()),
       reasons = reasons,
       createdById = createdById,
       createdAt = transaction.now.toJavaDate,
@@ -1920,7 +1920,7 @@ object PostsDao {
       maybeBadUserId = post.createdById,
       postId = Some(post.id),
       postNr = Some(post.nr))
-    newTask.mergeWithAny(oldReviewTask)
+    newTask.mergeWithAny(pendingTask)
   }
 
 }

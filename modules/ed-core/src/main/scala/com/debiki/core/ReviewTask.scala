@@ -24,14 +24,31 @@ import scala.collection.immutable
 
 case class ReviewTaskCounts(numUrgent: Int, numOther: Int)
 
-sealed abstract class ReviewAction(val IntVal: Int) { def toInt = IntVal }
-object ReviewAction {
-  case object Accept extends ReviewAction(1)
-  case object DeletePostOrPage extends ReviewAction(2)
 
-  def fromInt(value: Int): Option[ReviewAction] = Some(value match {
-    case ReviewAction.Accept.IntVal => ReviewAction.Accept
-    case ReviewAction.DeletePostOrPage.IntVal => ReviewAction.DeletePostOrPage
+sealed abstract class ReviewDecision(val IntVal: Int) {
+  def toInt: Int = IntVal
+  def isFine: Boolean = IntVal <= ReviewDecision.LastAcceptId
+  def isRejectionBadUser: Boolean = IntVal >= ReviewDecision.FirstBadId
+}
+
+
+object ReviewDecision {
+  val UndoTimoutSeconds = 15
+
+  // 1nnn = Accept
+  case object Accept extends ReviewDecision(1001)
+  private val LastAcceptId = 1999
+
+  // 3nnn = Request changes.
+  // ... later ...
+
+  // 5nnn = Reject.
+  private val FirstBadId = 5000
+  case object DeletePostOrPage extends ReviewDecision(5001)
+
+  def fromInt(value: Int): Option[ReviewDecision] = Some(value match {
+    case ReviewDecision.Accept.IntVal => ReviewDecision.Accept
+    case ReviewDecision.DeletePostOrPage.IntVal => ReviewDecision.DeletePostOrPage
     case _ => return None
   })
 }
@@ -44,6 +61,14 @@ object ReviewAction {
   *   flag the spam post — then three review tasks might get created: one with causedById =
   *   the system user, with review-reason = spam-detected. And one for each flagger; these
   *   tasks will have review reason = post-was-flagged-as-spamm.
+  * @param decidedAt When an admin makse a review decision, the review task isn't
+  *   completed immediately. Instead, it's scheduled to happen maybe 10 seconds into the future.
+  *   And if the admin clicks an Undo button, before these 10 seconds have elapsed,
+  *   then the review decision gets cancelled.
+  *   (Review decisions generally cannot be undone, [REVIEWUNDO]
+  *   because after they've been made, additional posts by the same author, might
+  *   get auto approved, and/or other people might reply to the approved posts, and it's
+  *   not obvious what a one-click Undo would do to all those auto-approved posts and replies.)
   * @param completedById The staff user that had a look at this review task and e.g. deleted
   *   a spam comment, or dismissed the review task if the comment was ok.
   * @param invalidatedAt If there is e.g. a review task about a comment, but the comment gets
@@ -63,36 +88,42 @@ case class ReviewTask(
   createdAt: ju.Date,
   createdAtRevNr: Option[Int] = None,
   moreReasonsAt: Option[ju.Date] = None,
+  decidedAt: Option[ju.Date] = None,
   completedAt: Option[ju.Date] = None,
   completedAtRevNr: Option[Int] = None,
   completedById: Option[UserId] = None,
   invalidatedAt: Option[ju.Date] = None,
-  resolution: Option[ReviewTaskResolution] = None,
+  decision: Option[ReviewDecision] = None,
   // COULD change to a Set[UserId] and include editors too, hmm. [6KW02QS]  Or just the author +
   // the 10? most recent editors, or the 10 most recent editors (not the author) for wiki posts.
   // Or the ones who edited the post, since it was last reviewed & any flags disagreed with?
   maybeBadUserId: UserId,
+  // Only if is for both title and body (cannot currently be moved to different page).
   pageId: Option[PageId] = None,
   postId: Option[PostId] = None,
   postNr: Option[PostNr] = None) {
 
   require(reasons.nonEmpty, "EsE3FK21")
   require(!moreReasonsAt.exists(_.getTime < createdAt.getTime), "EsE7UGYP2")
+  require(!decidedAt.exists(_.getTime < createdAt.getTime), "TyE6UHQ21")
   require(!completedAt.exists(_.getTime < createdAt.getTime), "EsE0YUL72")
   require(!invalidatedAt.exists(_.getTime < createdAt.getTime), "EsE5GKP2")
   require(completedAt.isEmpty || invalidatedAt.isEmpty, "EsE2FPW1")
-  require(completedAt.isEmpty || resolution.isDefined, "EsE0YUM4")
+  require((decidedAt.isEmpty && completedAt.isEmpty) || decision.isDefined, "EsE0YUM4")
   require(!completedAtRevNr.exists(_ < FirstRevisionNr), "EsE1WL43")
   require(!postId.exists(_ <= 0), "EsE3GUL80")
+  // pageId defined = is for title & body.
+  require(pageId.isEmpty || (postId.isDefined && postNr.is(PageParts.BodyNr)), "EsE6JUM12")
   require(postId.isDefined == postNr.isDefined, "EsE6JUM13")
   require(postId.isDefined == createdAtRevNr.isDefined, "EsE5PUY0")
-  require(postId.isEmpty || completedAt.isDefined == completedAtRevNr.isDefined, "EsE4PU2")
-  resolution.foreach(ReviewTaskResolution.requireIsValid)
+  require(postId.isEmpty || (
+      decidedAt.isDefined || completedAt.isDefined) == completedAtRevNr.isDefined, "EsE4PU2")
 
 
-  def doneOrGone = completedAt.isDefined || invalidatedAt.isDefined
+  /** If the review decision has been carried out, or if the review task became obsolete. */
+  def doneOrGone: Boolean = completedAt.isDefined || invalidatedAt.isDefined
 
-  def isForBothTitleAndBody = pageId.isDefined
+  def isForBothTitleAndBody: Boolean = pageId.isDefined
 
   def mergeWithAny(anyOldTask: Option[ReviewTask]): ReviewTask = {
     val oldTask = anyOldTask getOrElse {
@@ -120,6 +151,7 @@ case class ReviewTask(
 
 
 
+/* Keep for a while, mentioned in ReviewReason. [L4KDUQF2]
 object ReviewTaskResolution {
 
   val Fine = new ReviewTaskResolution(1)
@@ -144,9 +176,9 @@ object ReviewTaskResolution {
 class ReviewTaskResolution(val value: Int) extends AnyVal {
   import ReviewTaskResolution._
 
-  def toInt = value
+  def toInt: Int = value
 
-  def isFine = (value & Fine.value) != 0
-  def isHarmful = (value & Harmful.value) != 0
+  def isFine: Boolean = (value & Fine.value) != 0
+  def isHarmful: Boolean = (value & Harmful.value) != 0
 
-}
+} */

@@ -491,13 +491,14 @@ export function loadReviewTasks(success: (tasks: ReviewTask[]) => void) {
 }
 
 
-export function completeReviewTask(id: number, revisionNr: number, action: ReviewAction,
+export function makeReviewDecision(taskId: number, revisionNr: number, decision: ReviewDecision,
       success: () => void) {
-  postJsonSuccess('/-/complete-review-task', success, {
-    taskId: id,
-    revisionNr: revisionNr,
-    action: action,
-  });
+  postJsonSuccess('/-/make-review-decision', success, { taskId, revisionNr, decision });
+}
+
+
+export function undoReviewTask(taskId: number, success: () => void) {
+  postJsonSuccess('/-/undo-review-task', success, { taskId });
 }
 
 

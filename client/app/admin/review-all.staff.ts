@@ -153,10 +153,16 @@ const ReviewTask = createComponent({
     return [what, whys];
   },
 
-  completeReviewTask: function(action: ReviewAction) {
+  makeReviewDecision: function(action: ReviewDecision) {
     const revisionNr = (this.props.reviewTask.post || {}).currRevNr;
-    Server.completeReviewTask(this.props.reviewTask.id, revisionNr, action, () => {
+    Server.makeReviewDecision(this.props.reviewTask.id, revisionNr, action, () => {
       this.setState({ completed: true });
+    });
+  },
+
+  undoReviewTask: function() {
+    Server.undoReviewTask(this.props.reviewTask.id, () => {
+      this.setState({ completed: false });
     });
   },
 
@@ -175,18 +181,21 @@ const ReviewTask = createComponent({
     const openPostButton =
         r.a({ href: linkToPost, className: 's_A_Rvw_ViewB' }, `Go to ${postOrPage}`);
 
-    // For now:
-    const complete = (action) => {
-      return () => this.completeReviewTask(action);
+    const decideTo = (action) => {
+      return () => this.makeReviewDecision(action);
     };
 
     let taskDoneInfo;
+    let undoDecisionButton;
     let acceptButton;
     let rejectButton;
     if (this.state.completed || reviewTask.completedAtMs) {
       const taskDoneBy: BriefUser | null = store.usersByIdBrief[reviewTask.completedById];
       const doneByInfo = !taskDoneBy ? null : r.span({}, " by ", UserName({ user: taskDoneBy, store }));
       taskDoneInfo = r.span({}, " Has been reviewed", doneByInfo);
+      undoDecisionButton =
+          Button({ onClick: this.undoReviewTask,
+              className: 'e_A_Rvw_UndoB' }, "Undo");
     }
     else if (reviewTask.invalidatedAtMs) {
       // Hmm could improve on this somehow.
@@ -195,10 +204,10 @@ const ReviewTask = createComponent({
     else {
       const acceptText = post.approvedRevNr !== post.currRevNr ? "Approve" : "Looks fine";
       acceptButton =
-          Button({ onClick: complete(ReviewAction.Accept),
+          Button({ onClick: decideTo(ReviewDecision.Accept),
               className: 'e_A_Rvw_AcptB' }, acceptText);
       rejectButton =
-          Button({ onClick: complete(ReviewAction.DeletePostOrPage),
+          Button({ onClick: decideTo(ReviewDecision.DeletePostOrPage),
               className: 'e_A_Rvw_RjctB' }, "Delete");
     }
 
@@ -291,6 +300,7 @@ const ReviewTask = createComponent({
         r.div({ className: 'esReviewTask_btns' },
           openPostButton,
           taskDoneInfo,
+          undoDecisionButton,
           acceptButton,
           rejectButton)));
 
