@@ -273,6 +273,7 @@ package object core {
     def role: PageRole
   }
 
+
   /** If the up-to-date data hash and the cached hash, or the app version, are different,
     * the page should be re-rendered. Sometimes however, the hash is not available,
     * and then we'll compare siteVersion, pageVersion, appVersion instead. This might
@@ -286,11 +287,62 @@ package object core {
     siteVersion: SiteVersion,
     pageVersion: PageVersion,
     appVersion: String,
-    reactStoreJsonHash: String) {
+    renderParams: PageRenderParams,
+    reactStoreJsonHash: String,
+    reactStoreJson: String) {
 
     /** Interpreted by the computer (startup.js looks for the '|'). */
     def computerString =
       s"site: $siteVersion, page: $pageVersion | app: $appVersion, hash: $reactStoreJsonHash"
+  }
+
+
+  /** Params that influence how a page gets rendered.
+    *
+    * @param widthLayout — the HTML strucure, and maybe avatar and image urls, are different,
+    * for tiny mobile screens, and laptop screens. So, need to render separately, for mobile and laptop.
+    * @param isEmbedded — in embedded discussions, links need to include the server origin, otherwise
+    * they'll resolve relative the embedd*ing* page. However, non-embedded pages, then
+    * nice with relative links? Saves a bit bandwidth.
+    * Also, in embedded discussions, no page title shown. But when viewing the comments at
+    * the embedded Talkyard site, then page title & body should be shown: a link to
+    * the embedding page (= the blog post). [5UKWSP4]
+    * @param origin — 1) the server origin is included in the inline javascript tags
+    * so needs to be incl in the cache key.
+    * 2) In rare cases, the Talkyard server is accessible via different addresses. Could be
+    * when developing on localhost: localhost:8080, say. Or temporarily when moving from one hostname,
+    * to another (e.g. custom domain). Then, in some links/whatever, the origin is included,
+    * so good to cache per origin. Also if accessing via https://site-NNNN.basedomain.com.
+    * @param anyCdnOrigin — Uploads and images should use the cdn origin. Should rerender cached
+    * html if the cdn origin changes.
+    * @param anyPageRoot — if rendering only parts of a page
+    * @param anyPageQuery — if rendering a topic list page, which topics to include (useful if
+    * Javascript diabled, and one wants to list topics on topic list page 2, 3, 4 ...)
+    */
+  case class PageRenderParams(
+    widthLayout: WidthLayout,
+    isEmbedded: Boolean,
+    origin: String,
+    anyCdnOrigin: Option[String],
+    anyPageRoot: Option[PostNr],
+    anyPageQuery: Option[PageQuery]) {
+
+    def thePageRoot: PostNr = anyPageRoot getOrElse PageParts.BodyNr
+  }
+
+
+  sealed abstract class WidthLayout(val IntVal: Int) { def toInt: Int = IntVal }
+
+  object WidthLayout {
+    case object Tiny extends WidthLayout(1)   // typically, mobile phones, or tablets with sidebars open
+    // Could: Small = 2                       // tablets, or small laptops with sidebar open
+    case object Medium extends WidthLayout(3) // laptops
+    // Could: Wide = 4                        // maybe 27'' and wider
+
+    def fromInt(int: Int): WidthLayout = {
+      if (int >= 3) WidthLayout.Medium
+      else WidthLayout.Tiny
+    }
   }
 
 
@@ -312,8 +364,9 @@ package object core {
   }
 
 
-  val WrongCachedPageVersion = CachedPageVersion(siteVersion = -1, pageVersion = -1,
-    appVersion = "wrong", reactStoreJsonHash = "wrong")
+  val WrongCachedPageVersion = CachedPageVersion(siteVersion = -1, pageVersion = -1, appVersion = "wrong",
+    PageRenderParams(WidthLayout.Tiny, isEmbedded = false, "https://example.com", None, None, None),
+    reactStoreJsonHash = "wrong", reactStoreJson = "dummy")
 
 
   case class TagAndStats(

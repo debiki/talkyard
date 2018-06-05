@@ -152,6 +152,20 @@ abstract class DebikiRequest[A] {
 
   def cookies: Cookies = request.cookies
 
+  /** This might classify a bit too many devices as mobile. That's pretty harmless — the mobile
+    * layout looks okay also on tablets I think. However, accidentally using the wide screen layout,
+    * on tiny phones — that looks bad and text columns might become really narrow, hard to read.
+    *
+    * Do not use any crazy regexs like https://stackoverflow.com/a/11381730/694469
+    * — that wouldn't be future compatible? New devices might be default broken, would need
+    * to constantly update the regex?
+    */
+  def isMobile: Boolean = {
+    val ua = request.headers.get("User-Agent")
+    if (ua contains "iPad") false
+    else ua contains "Mobile"
+  }
+
   def isAjax: Boolean = EdHttp.isAjax(request)
 
   def isHttpPostRequest: Boolean = request.method == "POST"
@@ -164,6 +178,8 @@ abstract class DebikiRequest[A] {
       "DwE2KTES7", "No sort-order-offset specified")
 
 
+  /** If listing topics, the page query tells which topics to find. (E.g. for the forum topic list.)
+    */
   def parsePageQuery(): Option[PageQuery] = {
     val sortOrderStr = queryString.getFirst("sortOrder") getOrElse { return None }
     def anyDateOffset = queryString.getLong("olderThan") map (new ju.Date(_))

@@ -81,12 +81,9 @@ class JsonMaker(dao: SiteDao) {
   /** Returns (json, page-version, page-title, ids-of-authors-of-not-yet-approved-posts)
     * only with contents everyone may see.
     */
-  def pageToJson(
-        pageId: PageId,
-        anyPageRoot: Option[PostNr] = None,
-        anyPageQuery: Option[PageQuery] = None): PageToJsonResult = {
+  def pageToJson(pageId: PageId, pageRenderParams: PageRenderParams): PageToJsonResult = {
     dao.readOnlyTransaction(
-      pageThatExistsToJsonImpl(pageId, _, anyPageRoot, anyPageQuery))
+      pageThatExistsToJsonImpl(pageId, pageRenderParams, _))
   }
 
 
@@ -118,6 +115,10 @@ class JsonMaker(dao: SiteDao) {
 
     Json.obj(
       "dbgSrc" -> "ESJ",
+      "widthLayout" -> (if (pageReq.isMobile) WidthLayout.Tiny else WidthLayout.Medium).toInt,
+      "isEmbedded" -> false,
+      "origin" -> pageReq.origin,
+      "anyCdnOrigin" -> JsStringOrNull(globals.anyCdnOrigin),
       "appVersion" -> globals.applicationVersion,
       "now" -> JsNumber(globals.now().millis),
       "pubSiteId" -> JsString(site.pubId),
@@ -142,14 +143,10 @@ class JsonMaker(dao: SiteDao) {
   }
 
 
-  private def pageThatExistsToJsonImpl(
-    pageId: PageId,
-    transaction: SiteTransaction,
-    anyPageRoot: Option[PostNr],
-    anyPageQuery: Option[PageQuery]): PageToJsonResult = {
-
-    val page = PageDao(pageId, transaction)
-    pageToJsonImpl(pageId, page, transaction, anyPageRoot, anyPageQuery)
+  private def pageThatExistsToJsonImpl(pageId: PageId, pageRenderParams: PageRenderParams,
+        tx: SiteTransaction): PageToJsonResult = {
+    val page = PageDao(pageId, tx)
+    pageToJsonImpl(page, pageRenderParams, tx)
   }
 
 
@@ -157,19 +154,17 @@ class JsonMaker(dao: SiteDao) {
     * embedded comments page has not yet been created. Or if constructing a wiki, and
     * navigating to a wiki page that has not yet been created.
     */
-  def pageThatDoesNotExistsToJson(dummyPage: NonExistingPage): PageToJsonResult = {
+  def pageThatDoesNotExistsToJson(dummyPage: NonExistingPage, renderParams: PageRenderParams)
+        : PageToJsonResult = {
+    require(dummyPage.id == EmptyPageId, "TyE5UKBQ2")
     dao.readOnlyTransaction { tx =>
-      pageToJsonImpl(EmptyPageId, dummyPage, tx, anyPageRoot = None, anyPageQuery = None)
+      pageToJsonImpl(dummyPage, renderParams, tx)
     }
   }
 
 
-  private def pageToJsonImpl(
-        pageId: PageId,
-        page: Page,
-        transaction: SiteTransaction,
-        anyPageRoot: Option[PostNr],
-        anyPageQuery: Option[PageQuery]): PageToJsonResult = {
+  private def pageToJsonImpl(page: Page, renderParams: PageRenderParams, transaction: SiteTransaction)
+        : PageToJsonResult = {
 
     // The json constructed here will be cached & sent to "everyone", so in this function
     // we always specify !isStaff and the requester must be a stranger (user = None):
@@ -238,7 +233,7 @@ class JsonMaker(dao: SiteDao) {
 
     // Topic members (e.g. chat channel members) join/leave infrequently, so better cache them
     // than to lookup them each request.
-    val pageMemberIds = transaction.loadMessageMembers(pageId)
+    val pageMemberIds = transaction.loadMessageMembers(page.id)
 
     val userIdsToLoad = mutable.Set[UserId]()
     userIdsToLoad ++= pageMemberIds
@@ -266,7 +261,7 @@ class JsonMaker(dao: SiteDao) {
       if (page.role == PageRole.Forum) {
         val rootCategoryId = page.meta.categoryId.getOrDie(
           "DwE7KYP2", s"Forum page '${page.id}', site '${transaction.siteId}', has no category id")
-        val orderOffset = anyPageQuery.getOrElse(
+        val orderOffset = renderParams.anyPageQuery.getOrElse(
           PageQuery(PageOrderOffset.ByBumpTime(None), PageFilter.ShowAll,
               includeAboutCategoryPages = siteSettings.showCategories))
         val authzCtx = dao.getForumAuthzContext(user = None)
@@ -296,7 +291,7 @@ class JsonMaker(dao: SiteDao) {
     val is2dTreeDefault = false // pageSettings.horizontalComments
 
     val pageJsonObj = Json.obj(
-      "pageId" -> pageId,
+      "pageId" -> page.id,
       "pageVersion" -> page.meta.version,
       "pageMemberIds" -> pageMemberIds,
       "forumId" -> JsStringOrNull(anyForumId),
@@ -334,6 +329,12 @@ class JsonMaker(dao: SiteDao) {
 
     val jsonObj = Json.obj(
       "dbgSrc" -> "PTJ",
+      // These render params need to be known client side, so the page can be rendered in exactly
+      // the same way, client side. Otherwise React can mess up the html structure, & things = broken.
+      "widthLayout" -> renderParams.widthLayout.toInt,
+      "isEmbedded" -> renderParams.isEmbedded,
+      "origin" -> renderParams.origin,
+      "anyCdnOrigin" -> JsStringOrNull(renderParams.anyCdnOrigin),
       "appVersion" -> globals.applicationVersion,
       "pubSiteId" -> JsString(site.pubId),
       "siteId" -> JsNumber(site.id), // LATER remove in Prod mode [5UKFBQW2]
@@ -346,19 +347,22 @@ class JsonMaker(dao: SiteDao) {
       "publicCategories" -> categories,
       "topics" -> anyLatestTopics,
       "me" -> noUserSpecificData(authzCtx.permissions),
-      "rootPostId" -> JsNumber(BigDecimal(anyPageRoot getOrElse PageParts.BodyNr)),
+      "rootPostId" -> JsNumber(BigDecimal(renderParams.thePageRoot)),  // ? why BigDecimal ?
       "usersByIdBrief" -> usersByIdJson,
       "siteSections" -> makeSiteSectionsJson(),
       "socialLinksHtml" -> JsString(socialLinksHtml),
-      "currentPageId" -> pageId,
-      "pagesById" -> Json.obj(pageId -> pageJsonObj))
+      "currentPageId" -> page.id,
+      "pagesById" -> Json.obj(page.id -> pageJsonObj))
 
     val jsonString = jsonObj.toString()
+
     val version = CachedPageVersion(
       siteVersion = transaction.loadSiteVersion(),
       pageVersion = page.version,
       appVersion = globals.applicationVersion,
-      reactStoreJsonHash = hashSha1Base64UrlSafe(jsonString))
+      renderParams = renderParams,
+      reactStoreJsonHash = hashSha1Base64UrlSafe(jsonString),
+      reactStoreJson = jsonString)
 
     val unapprovedPosts = posts.filter(!_.isSomeVersionApproved)
     val unapprovedPostAuthorIds = unapprovedPosts.map(_.createdById).toSet
@@ -382,6 +386,10 @@ class JsonMaker(dao: SiteDao) {
     val site = request.dao.theSite()
     var result = Json.obj(
       "dbgSrc" -> "SPJ",
+      "widthLayout" -> (if (request.isMobile) WidthLayout.Tiny else WidthLayout.Medium).toInt,
+      "isEmbedded" -> false,
+      "origin" -> request.origin,
+      "anyCdnOrigin" -> JsStringOrNull(globals.anyCdnOrigin),
       "appVersion" -> globals.applicationVersion,
       "pubSiteId" -> JsString(site.pubId),
       "siteId" -> JsNumber(site.id), // LATER remove in Prod mode [5UKFBQW2]

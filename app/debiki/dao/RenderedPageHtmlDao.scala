@@ -31,19 +31,15 @@ import scala.collection.mutable
 
 object RenderedPageHtmlDao {
 
-  /** The server origin is included in the inline javascript — needed
-    * when rendering server side.
-    * (Hmm, it isn't ever included in generated html links? If it is, should cache
-    * PageStuff by origin too [5JKWBP2], and the html in the database, page_html3.)
-    *
-    * The same page might be requested via different origins, if one moves a site
-    * to a new address: some browser will continue using the old address, whilst the move
-    * is in progress. (And if not cached, then that'd open for a DoS attack they could do.)
-    * And also when testing on localhost. Or accessing via https://site-X.basedomain.com.
-    */
-  private def renderedPageKey(sitePageId: SitePageId, origin: String) =
-    MemCacheKey(sitePageId.siteId, s"${sitePageId.pageId}|$origin|PageHtml")
-
+  private def renderedPageKey(sitePageId: SitePageId, pageRenderParams: PageRenderParams) = {
+    val pageId =sitePageId.pageId
+    val mobile = if (pageRenderParams.widthLayout == WidthLayout.Tiny) "tny" else "med"
+    val embedded = if (pageRenderParams.isEmbedded) "emb" else ""
+    val origin = pageRenderParams.origin
+    val cdnOrigin = pageRenderParams.anyCdnOrigin getOrElse "" // could skip, change requires restart
+    // Skip page query and page root. Won't cache, if they're not default, anyway. [5V7ZTL2]
+    MemCacheKey(sitePageId.siteId, s"$pageId|$mobile|$embedded|$origin|$cdnOrigin|PageHtml")
+  }
 }
 
 
@@ -61,19 +57,17 @@ trait RenderedPageHtmlDao {
   }
 
 
-  private def loadPageFromDatabaseAndRender(pageRequest: PageRequest[_]): RenderedPage = {
+  private def loadPageFromDatabaseAndRender(pageRequest: PageRequest[_], renderParams: PageRenderParams)
+        : RenderedPage = {
     if (!pageRequest.pageExists)
       throwNotFound("EdE00404", "Page not found")
 
     globals.mostMetrics.getRenderPageTimer(pageRequest.pageRole).time {
-      val anyPageQuery = pageRequest.parsePageQuery()
-      val anyPageRoot = pageRequest.pageRoot
-
       val renderResult: PageToJsonResult =
-        jsonMaker.pageToJson(pageRequest.thePageId, anyPageRoot, anyPageQuery)
+        jsonMaker.pageToJson(pageRequest.thePageId, renderParams)
 
       val (cachedHtml, cachedVersion) =
-        renderContent(pageRequest.thePageId, renderResult.version, renderResult.jsonString)
+        renderContent(pageRequest.thePageId, renderParams, renderResult.version, renderResult.jsonString)
 
       val tpi = new PageTpi(pageRequest, renderResult.jsonString, renderResult.version,
         cachedHtml, cachedVersion, renderResult.pageTitle, renderResult.customHeadTags,
@@ -86,29 +80,41 @@ trait RenderedPageHtmlDao {
   }
 
 
-  def renderPageMaybeUseCache(pageReq: PageRequest[_]): RenderedPage = {
+  def renderPageMaybeUseCache(pageRequest: PageRequest[_]): RenderedPage = {
     // Bypass the cache if the page doesn't yet exist (it's being created),
     // because in the past there was some error because non-existing pages
     // had no ids (so feels safer to bypass).
-    var useMemCache = pageReq.pageExists
-    useMemCache &= pageReq.pageRoot.contains(PageParts.BodyNr)
-    useMemCache &= !pageReq.debugStats
-    useMemCache &= !pageReq.bypassCache
+    var useMemCache = pageRequest.pageExists
+    useMemCache &= !pageRequest.debugStats
+    useMemCache &= !pageRequest.bypassCache
 
-    // When paginating forum topics in a non-Javascript client, we cannot use the cache.
-    useMemCache &= pageReq.parsePageQuery().isEmpty
+    // When paginating forum topics in a non-Javascript client, we cannot use the cache. [5V7ZTL2]
+    useMemCache &= pageRequest.parsePageQuery().isEmpty
+
+    // If rendering the page starting at certain reply (instead of the orig post),
+    // don't use the mem cache (which post to use as the root isn't incl in the cache key). [5V7ZTL2]
+    useMemCache &= pageRequest.pageRoot.contains(PageParts.BodyNr)
+
+    val renderParams = PageRenderParams(
+      widthLayout = if (pageRequest.isMobile) WidthLayout.Tiny else WidthLayout.Medium,
+      isEmbedded = pageRequest.embeddingUrl.nonEmpty,
+      origin = pageRequest.origin,
+      anyCdnOrigin = globals.anyCdnOrigin,
+      anyPageRoot = pageRequest.pageRoot,
+      anyPageQuery = pageRequest.parsePageQuery())
 
     if (!useMemCache)
-      return loadPageFromDatabaseAndRender(pageReq)
+      return loadPageFromDatabaseAndRender(pageRequest, renderParams)
 
-    val key = renderedPageKey(pageReq.theSitePageId, pageReq.origin)
+    val key = renderedPageKey(pageRequest.theSitePageId, renderParams)
+
     memCache.lookup(key, orCacheAndReturn = {
       // Remember the server's origin, so we'll be able to uncache pages cached with this origin.
       // Could CLEAN_UP this later. Break out reusable fn? place in class MemCache?  [5KDKW2A]
       val originsKey = s"$siteId|origins"
       memCache.cache.asMap().merge(
         originsKey,
-        MemCacheValueIgnoreVersion(Set(pageReq.origin)),
+        MemCacheValueIgnoreVersion(Set(renderParams.origin)),
         new ju.function.BiFunction[DaoMemCacheAnyItem, DaoMemCacheAnyItem, DaoMemCacheAnyItem] () {
           def apply(oldValue: DaoMemCacheAnyItem, newValue: DaoMemCacheAnyItem): DaoMemCacheAnyItem = {
             val oldSet = oldValue.value.asInstanceOf[Set[String]]
@@ -124,23 +130,27 @@ trait RenderedPageHtmlDao {
           }
         })
 
-      if (pageReq.thePageRole == PageRole.Forum) {
-        rememberForum(pageReq.thePageId)
+      if (pageRequest.thePageRole == PageRole.Forum) {
+        rememberForum(pageRequest.thePageId)
       }
+
       // Here we might load and mem-cache actually stale html from the database. But if
       // loading stale html, we also enqueue the page to be rerendered in the background,
       // and once it's been rerendered, we update this mem cache. [7UWS21]
-      Some(loadPageFromDatabaseAndRender(pageReq))
-    }, metric = globals.mostMetrics.renderPageCacheMetrics) getOrDie "DwE93IB7"
+      Some(loadPageFromDatabaseAndRender(pageRequest, renderParams))
+    },
+      metric = globals.mostMetrics.renderPageCacheMetrics) getOrDie "DwE93IB7"
   }
 
 
-  private def renderContent(pageId: PageId, currentJsonVersion: CachedPageVersion,
-        reactStore: String): (String, CachedPageVersion) = {
+  private def renderContent(pageId: PageId, renderParams: PageRenderParams,
+        currentJsonVersion: CachedPageVersion, reactStore: String): (String, CachedPageVersion) = {
     // COULD reuse the caller's transaction, but the caller currently uses > 1  :-(
     // Or could even do this outside any transaction.
-    readOnlyTransaction { transaction =>
-      transaction.loadCachedPageContentHtml(pageId) foreach { case (cachedHtml, cachedHtmlVersion) =>
+
+    readOnlyTransaction { tx =>
+      tx.loadCachedPageContentHtml(pageId, renderParams) foreach { case (cachedHtml, cachedHtmlVersion) =>
+
         // Here we can compare hash sums of the up-to-date data and the data that was
         // used to generate the cached page. We ignore page version and site version.
         // Hash sums are always correct, so we'll never rerender unless we actually need to.
@@ -165,10 +175,10 @@ trait RenderedPageHtmlDao {
     val newHtml = context.nashorn.renderPage(reactStore) getOrElse throwInternalError(
       "DwE500RNDR", "Error rendering page")
 
-    readWriteTransaction { transaction =>
-      transaction.saveCachedPageContentHtmlPerhapsBreakTransaction(
-        pageId, currentJsonVersion, newHtml)
+    readWriteTransaction { tx =>
+      tx.upsertCachedPageContentHtml(pageId, currentJsonVersion, newHtml)
     }
+
     (newHtml, currentJsonVersion)
   }
 
@@ -201,7 +211,7 @@ trait RenderedPageHtmlDao {
 
   def removePageFromMemCache(sitePageId: SitePageId) {
     forAllAccessedOrigins { origin =>
-      memCache.remove(renderedPageKey(sitePageId, origin))
+      removePageFromMemCacheForOrigin(origin, sitePageId)
     }
   }
 
@@ -239,12 +249,39 @@ trait RenderedPageHtmlDao {
     val forumIds = memCache.lookup[List[String]](forumsKey(siteId)) getOrElse Nil
     forAllAccessedOrigins { origin =>
       forumIds foreach { forumId =>
-        memCache.remove(renderedPageKey(SitePageId(siteId, forumId), origin))
+        removePageFromMemCacheForOrigin(origin, SitePageId(siteId, forumId))
       }
       // Don't remove any database-cached html, see comment above. [6KP368]
     }
   }
 
+
+  def removePageFromMemCacheForOrigin(origin: String, sitePageId: SitePageId): Unit = {
+    // Try uncache, for all combinations of embedded = true/false and page widths = tiny/medium
+    // — we don't remember which requests we've gotten and what we've cached.
+
+    // A bit dupl code. [2FKBJAL3]
+    var renderParams = PageRenderParams(
+      widthLayout = WidthLayout.Tiny,
+      isEmbedded = false,
+      origin = origin,
+      // Changing cdn origin requires restart, then mem cache disappears. So ok reuse anyCdnOrigin here.
+      anyCdnOrigin = globals.anyCdnOrigin,
+      // Requests with custom page root or page query, aren't cached. [5V7ZTL2]
+      anyPageRoot = None,
+      anyPageQuery = None)
+
+    memCache.remove(renderedPageKey(sitePageId, renderParams))
+
+    renderParams = renderParams.copy(isEmbedded = true)
+    memCache.remove(renderedPageKey(sitePageId, renderParams))
+
+    renderParams = renderParams.copy(widthLayout = WidthLayout.Medium, isEmbedded = false)
+    memCache.remove(renderedPageKey(sitePageId, renderParams))
+
+    renderParams = renderParams.copy(isEmbedded = true)
+    memCache.remove(renderedPageKey(sitePageId, renderParams))
+  }
 
   private def forumsKey(siteId: SiteId) =
     MemCacheKey(siteId, "|ForumIds") // "|" is required by a debug check function

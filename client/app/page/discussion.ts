@@ -280,11 +280,13 @@ export const TitleBodyComments = createComponent({
     let anyTitle = null;
     let pageRole: PageRole = page.pageRole;
     if (pageRole === PageRole.CustomHtmlPage ||
-        pageRole === PageRole.EmbeddedComments ||  // maybe hide via css instead? [7SFAUM2]
+        (pageRole === PageRole.EmbeddedComments && store.isEmbedded) ||
         store.rootPostId !== BodyNr) {
       // Show no title for the homepage — it should have its own custom HTML with
       // a title and other things.
-      // Embedded comment pages have no title, only comments.
+      // Embedded comment pages: Show comments only (no title or orig post needed,
+      // because there's a blog post instead). Unless we're staff (probably) and viewing
+      // directly over at the Talkyard site (!store.isEmbedde). [5UKWSP4]
       // And show no title if we're showing a comment not the article as the root post.
     }
     else {
@@ -296,7 +298,7 @@ export const TitleBodyComments = createComponent({
     if (pageRole === PageRole.CustomHtmlPage || pageRole === PageRole.Forum ||
         pageRole === PageRole.About || pageRole === PageRole.WebPage ||
         pageRole === PageRole.SpecialContent || pageRole === PageRole.Blog ||
-        pageRole === PageRole.EmbeddedComments ||  // maybe hide via css instead [7SFAUM2]
+        (pageRole === PageRole.EmbeddedComments && store.isEmbedded) ||
         store.rootPostId !== BodyNr) {
       // Show no author name or social links for these generic pages.
       // And show nothing if we're showing a comment not the article as the root post.
@@ -623,7 +625,7 @@ const RootPostAndComments = createComponent({
           (pageRole === PageRole.EmbeddedComments ? "Discussion" : "Page") + " deleted.");
 
     let body = null;
-    if (pageRole !== PageRole.EmbeddedComments) {  // maybed hide via CSS instead? [7SFAUM2]
+    if (pageRole !== PageRole.EmbeddedComments || !store.isEmbedded) {
       let bodyContent;
       if (post_shallRenderAsHidden(rootPost)) {
         bodyContent = (

@@ -85,7 +85,7 @@ class ReviewStuffAppSuite(randomString: String)
         val task = dao.readOnlyTransaction(_.loadReviewTask(reviewTask.id)).get
         if (task.completedAt.isDefined)
           return
-        dieIf(total > 20, "TyE4UKGWT20", "The Janitor isn't working? Or did you pause, in the debugger?")
+        dieIf(total > 5000, "TyE4UKGWT20", "The Janitor isn't working? Or you debug paused?")
         System.out.println(s"Waitig for the Janitor to carry out review decision ${reviewTask.id}...")
         Thread.sleep(delay)
         total += delay

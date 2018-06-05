@@ -92,7 +92,7 @@ MentionsMarkdownItPlugin.prototype.render = function(tokens, id, options, env) {
   var username = tokens[id].username;
   // SHOULD fix BUG: In embedded comments discussions,
   // the /-/users/ local links resolve to https://the.EMBEDDING.site/-/users/.
-  // Prefix href with eds.serverOrigin, if PageRole.EmbeddedComments? But page role unknown here.
+  // Prefix href with eds.serverOrigin, if PageRole.EmbeddedComments? But page role unknown here. [3KDW2A]
   return '<a class="esMention" href="/-/users/' + username + '">@' + username + '</a>';
 };
 

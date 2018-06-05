@@ -209,7 +209,8 @@ export function store_canPinPage(store: Store) {
 //
 export function store_getApproxPageWidth(store: Store) {   // [6KP024]
   if (isServerSide())
-    return ServerSideWindowWidth;
+    return store.widthLayout === WidthLayout.Medium ?
+        ServerSideWindowWidthLaptop : ServerSideWindowWidthMobile;
 
   // outerWidth supposedly doesn't force a reflow (and I've verified in Chrome Dev Tools Timeline
   // that it doesn't). So use it instead of innerWidth — they might differ perhaps 10 pixels

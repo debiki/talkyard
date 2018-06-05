@@ -89,7 +89,7 @@ class RenderContentActor(
           p.Logger.debug("Tests done, server gone. Stopping background rendering pages. [EsM5KG3]")
         }
         else {
-          context.system.scheduler.scheduleOnce(333 millis, self, RegenerateStaleHtml)(execCtx)
+          context.system.scheduler.scheduleOnce(100 millis, self, RegenerateStaleHtml)(execCtx)
         }
       }
   }
@@ -123,23 +123,49 @@ class RenderContentActor(
   private def doRerenderContentHtmlUpdateCache(sitePageId: SitePageId) {
     // COULD add Metrics that times this.
     p.Logger.debug(s"Background rendering ${sitePageId.toPrettyString} [DwM7KGE2]")
+
     val dao = globals.siteDao(sitePageId.siteId)
-    val toJsonResult = dao.jsonMaker.pageToJson(sitePageId.pageId)
-    val html = nashorn.renderPage(toJsonResult.jsonString) getOrElse {
+    val isEmbedded = dao.getPageMeta(sitePageId.pageId).exists(_.pageRole == PageRole.EmbeddedComments)
+
+    // ----- Render for tiny width
+
+    // A bit dupl code. [2FKBJAL3]
+    var renderParams = PageRenderParams(
+      widthLayout = WidthLayout.Tiny,
+      isEmbedded = isEmbedded,
+      origin = dao.theSiteOrigin(),
+      // Changing cdn origin requires restart, then mem cache disappears. So ok reuse anyCdnOrigin here.
+      anyCdnOrigin = globals.anyCdnOrigin,
+      // Requests with custom page root or page query, aren't cached. [5V7ZTL2]
+      anyPageRoot = None,
+      anyPageQuery = None)
+
+    var toJsonResult = dao.jsonMaker.pageToJson(sitePageId.pageId, renderParams)
+    var newHtml = nashorn.renderPage(toJsonResult.jsonString) getOrElse {
       p.Logger.error(s"Error rendering ${sitePageId.toPrettyString} [DwE5KJG2]")
       return
     }
 
-    val wasSaved = dao.readWriteTransaction { transaction =>
-      transaction.saveCachedPageContentHtmlPerhapsBreakTransaction(
-        sitePageId.pageId, toJsonResult.version, html)
+    dao.readWriteTransaction { tx =>
+      tx.upsertCachedPageContentHtml(sitePageId.pageId, toJsonResult.version, newHtml)
     }
 
-    var message = s"...Done background rendering ${sitePageId.toPrettyString}. [DwM2YGH9]"
-    if (!wasSaved) {
-      message += " Couldn't save it though — something else saved it first."
+    p.Logger.debug(s"Done background rendering ${sitePageId.toPrettyString}, tiny width. [TyMBGRTINY]")
+
+    // ----- Render for medium width
+
+    renderParams = renderParams.copy(widthLayout = WidthLayout.Medium)
+    toJsonResult = dao.jsonMaker.pageToJson(sitePageId.pageId, renderParams)
+    newHtml = nashorn.renderPage(toJsonResult.jsonString) getOrElse {
+      p.Logger.error(s"Error rendering ${sitePageId.toPrettyString} [DwE5KJG2]")
+      return
     }
-    p.Logger.debug(message)
+
+    dao.readWriteTransaction { tx =>
+      tx.upsertCachedPageContentHtml(sitePageId.pageId, toJsonResult.version, newHtml)
+    }
+
+    p.Logger.debug(s"Done background rendering ${sitePageId.toPrettyString}, medium width. [TyMBGRMEDM]")
 
     // Remove cached whole-page-html, so we'll generate a new page with the new content. [7UWS21]
     dao.removePageFromMemCache(sitePageId)

@@ -66,7 +66,15 @@ class EmbeddedTopicsController @Inject()(cc: ControllerComponents, edContext: Ed
         if (!maySee)
           security.throwIndistinguishableNotFound(debugCode)
 
-        val jsonStuff = dao.jsonMaker.pageThatDoesNotExistsToJson(dummyPage)
+        val pageRenderParams = PageRenderParams(
+          widthLayout = if (request.isMobile) WidthLayout.Tiny else WidthLayout.Medium,
+          isEmbedded = true,
+          origin = request.origin,
+          anyCdnOrigin = globals.anyCdnOrigin,
+          anyPageRoot = None,
+          anyPageQuery = None)
+
+        val jsonStuff = dao.jsonMaker.pageThatDoesNotExistsToJson(dummyPage, pageRenderParams)
 
         // Don't render server side, render client side only. Search engines shouldn't see it anyway,
         // because it doesn't exist.
@@ -104,6 +112,7 @@ class EmbeddedTopicsController @Inject()(cc: ControllerComponents, edContext: Ed
           altPageId = discussionId,
           dao = dao,
           request = request.request)
+
         (request.dao.renderPageMaybeUseCache(pageRequest), pageRequest)
     }
 

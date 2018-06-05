@@ -581,6 +581,10 @@ interface Page {
 
 
 interface Store {
+  widthLayout: WidthLayout;
+  isEmbedded: boolean;
+  origin: string;
+  anyCdnOrigin?: string;
   appVersion: string;
   now: number;
   pubSiteId: string;
@@ -663,6 +667,12 @@ interface SettingsVisibleClientSide {
   watchbarStartsOpen?: boolean;         // default: true
   showSocialButtons?: boolean;          // default: undefined —> false
   facebookAppId?: string;               // default: undefined —> no FB insight statistics
+}
+
+
+enum WidthLayout {
+  Tiny = 1,
+  Medium = 3,
 }
 
 

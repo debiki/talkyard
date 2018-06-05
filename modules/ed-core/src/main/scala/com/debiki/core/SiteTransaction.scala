@@ -246,10 +246,9 @@ trait SiteTransaction {
 
   def markPagesWithUserAvatarAsStale(userId: UserId)
   def markSectionPageContentHtmlAsStale(categoryId: CategoryId)
-  def loadCachedPageContentHtml(pageId: PageId): Option[(String, CachedPageVersion)]
-  // (Could move this one to a transactionless Dao interface?)
-  def saveCachedPageContentHtmlPerhapsBreakTransaction(
-    pageId: PageId, version: CachedPageVersion, html: String): Boolean
+  def loadCachedPageContentHtml(pageId: PageId, renderParams: PageRenderParams)
+        : Option[(String, CachedPageVersion)]
+  def upsertCachedPageContentHtml(pageId: PageId, version: CachedPageVersion, html: String)
 
 
   def insertAltPageId(altPageId: AltPageId, realPageId: PageId)

@@ -28,6 +28,7 @@
 // This results in a '' origin also for embedded comments pages — which means
 // the links won't work, client side: they'll link to https://embedding-site/...
 // instead of https://comments-for-.../.  More details here: [7UKWBP4].
+// ?? seems to work now (June 4 -18) ?? did I fix this?  This broken though: [3KDW2A]
 const origin = eds.isInEmbeddedCommentsIframe ? eds.serverOrigin : '';
 
 
