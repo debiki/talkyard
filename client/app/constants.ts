@@ -96,4 +96,7 @@ const ServerSideWindowWidthMobile = 500;
 const ServerSideWindowWidthLaptop = 1200;
 
 
+const OriginRegex = /^https?:\/\/[^/]+/i;  // CLEAN_UP this regex not in use everywhere, some dupl regexs
+
+
 // vim: fdm=marker et ts=2 sw=2 tw=0 fo=r list

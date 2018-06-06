@@ -103,6 +103,7 @@ export function processPosts(startElemId?: string) {
   processTimeAgo(startElemSelector);
   hideShowCollapseButtons();
   addCanScrollHintsSoon();
+  makeMentionsInEmbeddedCommentsPointToTalkyardServer();
   if (talkyard.postElemPostProcessor) {
     talkyard.postElemPostProcessor(startElemId || 't_PageContent');
   }
@@ -151,6 +152,35 @@ function addCanScrollHintsImpl() {
 }
 
 export const addCanScrollHintsSoon = _.debounce(addCanScrollHintsImpl, 1100);
+
+
+function makeMentionsInEmbeddedCommentsPointToTalkyardServer() {
+  // If not an embedded comments page, relative user profile links in mentions, work fine
+  // — need do nothing. However, in embedded comments pages, relative links would
+  // resolve to (non existing) pages on the embedding server.
+  // Make them point to the Talkyard server instead.
+  //
+  // (This could alternatively be done, by including the Takyard server origin, when
+  // rendering the comments from Markdown to HTML. But this approach (below) is simpler,
+  // and works also if the Talkyard server moves to a new address (won't need
+  // to rerender all comments and pages).)
+
+  if (!eds.isInEmbeddedCommentsIframe)
+    return;
+
+  const mentions = debiki2.$all('.dw-p-bd .esMention[href]:not([href^="http"])');
+  for (let i = 0; i < mentions.length; ++i) {
+    const mention = mentions[i];
+    const href = mention.getAttribute('href');
+    if (href.indexOf(eds.serverOrigin) === 0) {
+      // Skip, already processed.
+    }
+    else {
+      const hrefNoOrigin = href.replace(OriginRegex, '');
+      mention.setAttribute('href', eds.serverOrigin + hrefNoOrigin);
+    }
+  }
+}
 
 
 //------------------------------------------------------------------------------
