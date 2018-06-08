@@ -240,9 +240,9 @@ class Globals(
 
   def endToEndTestMailer: ActorRef = state.mailerActorRef
 
-  def renderPageContentInBackground(sitePageId: SitePageId) {
+  def renderPageContentInBackground(sitePageId: SitePageId, customParams: Option[PageRenderParams]) {
     if (!isTestDisableBackgroundJobs) {
-      state.renderContentActorRef ! sitePageId
+      state.renderContentActorRef ! (sitePageId, customParams)
     }
   }
 
@@ -385,7 +385,7 @@ class Globals(
       }
       else {
         die("EdEBADCDNORIG", o"""In the config file, $CdnOriginConfValName is not http(s)
-            but something else weird.""".stripMargin)
+            but something else weird.""")
       }
     })
 
@@ -705,7 +705,7 @@ class Globals(
         val readWriteDataSource = Debiki.createPostgresHikariDataSource(readOnly = false, conf, isOrWasTest)
         val rdb = new Rdb(readOnlyDataSource, readWriteDataSource)
         val dbDaoFactory = new RdbDaoFactory(
-          rdb, ScalaBasedMigrations, getCurrentTime = now, isOrWasTest)
+          rdb, ScalaBasedMigrations, getCurrentTime = now, cdnOrigin = anyCdnOrigin, isOrWasTest)
 
         // Create any missing database tables before `new State`, otherwise State
         // creates background threads that might attempt to access the tables.

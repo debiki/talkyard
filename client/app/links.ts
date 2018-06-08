@@ -28,8 +28,21 @@
 // This results in a '' origin also for embedded comments pages — which means
 // the links won't work, client side: they'll link to https://embedding-site/...
 // instead of https://comments-for-.../.  More details here: [7UKWBP4].
-// ?? seems to work now (June 4 -18) ?? did I fix this?  This broken though: [3KDW2A]
-const origin = eds.isInEmbeddedCommentsIframe ? eds.serverOrigin : '';
+// ?? seems to work now (June 4 -18) ?? did I fix this?
+// CLEAN_UP: pass the store to all the link fns in this file, C-lang-like obj oriented style?
+// Instead of accessing it globally. And remove this origin and if-if-if:
+let origin;  // [EMBCMTSORIG]
+if ((<any> window).theStore) {
+  const store: Store = (<any> window).theStore; // [4AGLH2]
+  if (store.isEmbedded) {
+    // Need to use absolute links, otherwise will resolve relative the embedding server's origin.
+    origin = store.origin;  // [5ULKWLQ0]
+  }
+}
+if (!origin) {
+  console.log("Dead code? no? [AJ4KUFP0]");
+  origin = eds.isInEmbeddedCommentsIframe ? eds.serverOrigin : '';
+}
 
 
 export function linkToPageId(pageId: PageId): string {

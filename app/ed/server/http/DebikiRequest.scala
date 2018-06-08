@@ -155,15 +155,18 @@ abstract class DebikiRequest[A] {
   /** This might classify a bit too many devices as mobile. That's pretty harmless — the mobile
     * layout looks okay also on tablets I think. However, accidentally using the wide screen layout,
     * on tiny phones — that looks bad and text columns might become really narrow, hard to read.
+    * The iPad is simple & safe to identify though so let's take it into account.
     *
     * Do not use any crazy regexs like https://stackoverflow.com/a/11381730/694469
     * — that wouldn't be future compatible? New devices might be default broken, would need
     * to constantly update the regex?
     */
   def isMobile: Boolean = {
-    val ua = request.headers.get("User-Agent")
-    if (ua contains "iPad") false
-    else ua contains "Mobile"
+    val ua = request.headers.get("User-Agent") getOrElse {
+      // Only hackers at their laptops do weird things like removing this header?
+      return false
+    }
+    ua.contains("Mobile") && !ua.contains("iPad")
   }
 
   def isAjax: Boolean = EdHttp.isAjax(request)

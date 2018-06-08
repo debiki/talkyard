@@ -52,7 +52,7 @@ class HowRenderPostInPage(
 
 
 case class PageToJsonResult(
-  jsonString: String,
+  reactStoreJsonString: String,
   version: CachedPageVersion,
   pageTitle: Option[String],
   customHeadTags: FindHeadTagsResult,
@@ -117,7 +117,7 @@ class JsonMaker(dao: SiteDao) {
       "dbgSrc" -> "ESJ",
       "widthLayout" -> (if (pageReq.isMobile) WidthLayout.Tiny else WidthLayout.Medium).toInt,
       "isEmbedded" -> false,
-      "origin" -> pageReq.origin,
+      "origin" -> "",
       "anyCdnOrigin" -> JsStringOrNull(globals.anyCdnOrigin),
       "appVersion" -> globals.applicationVersion,
       "now" -> JsNumber(globals.now().millis),
@@ -333,7 +333,9 @@ class JsonMaker(dao: SiteDao) {
       // the same way, client side. Otherwise React can mess up the html structure, & things = broken.
       "widthLayout" -> renderParams.widthLayout.toInt,
       "isEmbedded" -> renderParams.isEmbedded,
-      "origin" -> renderParams.origin,
+      // For embedded comments pages, relative links don't work — then need to include
+      // the Talkyard server origin in the links. [REMOTEORIGIN]
+      "origin" -> renderParams.remoteOriginOrEmpty,
       "anyCdnOrigin" -> JsStringOrNull(renderParams.anyCdnOrigin),
       "appVersion" -> globals.applicationVersion,
       "pubSiteId" -> JsString(site.pubId),
@@ -354,20 +356,19 @@ class JsonMaker(dao: SiteDao) {
       "currentPageId" -> page.id,
       "pagesById" -> Json.obj(page.id -> pageJsonObj))
 
-    val jsonString = jsonObj.toString()
+    val reactStoreJsonString = jsonObj.toString()
 
     val version = CachedPageVersion(
       siteVersion = transaction.loadSiteVersion(),
       pageVersion = page.version,
       appVersion = globals.applicationVersion,
       renderParams = renderParams,
-      reactStoreJsonHash = hashSha1Base64UrlSafe(jsonString),
-      reactStoreJson = jsonString)
+      reactStoreJsonHash = hashSha1Base64UrlSafe(reactStoreJsonString))
 
     val unapprovedPosts = posts.filter(!_.isSomeVersionApproved)
     val unapprovedPostAuthorIds = unapprovedPosts.map(_.createdById).toSet
 
-    PageToJsonResult(jsonString, version, pageTitle, headTags, unapprovedPostAuthorIds)
+    PageToJsonResult(reactStoreJsonString, version, pageTitle, headTags, unapprovedPostAuthorIds)
   }
 
 
@@ -388,7 +389,7 @@ class JsonMaker(dao: SiteDao) {
       "dbgSrc" -> "SPJ",
       "widthLayout" -> (if (request.isMobile) WidthLayout.Tiny else WidthLayout.Medium).toInt,
       "isEmbedded" -> false,
-      "origin" -> request.origin,
+      "origin" -> "",
       "anyCdnOrigin" -> JsStringOrNull(globals.anyCdnOrigin),
       "appVersion" -> globals.applicationVersion,
       "pubSiteId" -> JsString(site.pubId),

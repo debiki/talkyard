@@ -182,7 +182,7 @@ class ViewPageController @Inject()(cc: ControllerComponents, edContext: EdContex
       request = request.request)
 
     // Json for strangers and the publicly visible parts of the page.
-    val renderedPage = request.dao.renderPageMaybeUseCache(pageRequest)
+    val renderedPage = request.dao.renderPageMaybeUseMemCache(pageRequest)
 
     // Any stuff, like unapproved comments, only the current user may see.
     COULD_OPTIMIZE // this loads some here unneeded data about the current user.
@@ -328,7 +328,7 @@ class ViewPageController @Inject()(cc: ControllerComponents, edContext: EdContex
       dao = dao,
       request = request.request)
 
-    val renderedPage = dao.renderPageMaybeUseCache(pageRequest)
+    val renderedPage = dao.renderPageMaybeUseMemCache(pageRequest)
 
     addVolatileJsonAndPreventClickjacking(renderedPage, pageRequest)
   }

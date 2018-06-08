@@ -35,8 +35,10 @@ object RenderedPageHtmlDao {
     val pageId =sitePageId.pageId
     val mobile = if (pageRenderParams.widthLayout == WidthLayout.Tiny) "tny" else "med"
     val embedded = if (pageRenderParams.isEmbedded) "emb" else ""
+    // Here the origin matters (don't use .remoteOriginOrEmpty) because it's used
+    // in inline scripts. [INLTAGORIG]
     val origin = pageRenderParams.origin
-    val cdnOrigin = pageRenderParams.anyCdnOrigin getOrElse "" // could skip, change requires restart
+    val cdnOrigin = pageRenderParams.cdnOriginOrEmpty // could skip, change requires restart
     // Skip page query and page root. Won't cache, if they're not default, anyway. [5V7ZTL2]
     MemCacheKey(sitePageId.siteId, s"$pageId|$mobile|$embedded|$origin|$cdnOrigin|PageHtml")
   }
@@ -63,24 +65,28 @@ trait RenderedPageHtmlDao {
       throwNotFound("EdE00404", "Page not found")
 
     globals.mostMetrics.getRenderPageTimer(pageRequest.pageRole).time {
-      val renderResult: PageToJsonResult =
+      val jsonResult: PageToJsonResult =
         jsonMaker.pageToJson(pageRequest.thePageId, renderParams)
 
-      val (cachedHtml, cachedVersion) =
-        renderContent(pageRequest.thePageId, renderParams, renderResult.version, renderResult.jsonString)
+      // This is the html for the topic and replies, i.e. the main content / interesting thing.
+      val (cachedHtmlContent, cachedVersion) =
+        renderContentMaybeUseDatabaseCache(
+            pageRequest.thePageId, renderParams, jsonResult.version, jsonResult.reactStoreJsonString)
 
-      val tpi = new PageTpi(pageRequest, renderResult.jsonString, renderResult.version,
-        cachedHtml, cachedVersion, renderResult.pageTitle, renderResult.customHeadTags,
+      val tpi = new PageTpi(pageRequest, jsonResult.reactStoreJsonString, jsonResult.version,
+        cachedHtmlContent, cachedVersion, jsonResult.pageTitle, jsonResult.customHeadTags,
         anyAltPageId = pageRequest.altPageId, anyEmbeddingUrl = pageRequest.embeddingUrl)
 
+      // This is the html for the whole page: <html>, <head>, <body>, and <script>s,
+      // and the html content.
       val pageHtml: String = views.html.templates.page(tpi).body
 
-      RenderedPage(pageHtml, renderResult.jsonString, renderResult.unapprovedPostAuthorIds)
+      RenderedPage(pageHtml, jsonResult.reactStoreJsonString, jsonResult.unapprovedPostAuthorIds)
     }
   }
 
 
-  def renderPageMaybeUseCache(pageRequest: PageRequest[_]): RenderedPage = {
+  def renderPageMaybeUseMemCache(pageRequest: PageRequest[_]): RenderedPage = {
     // Bypass the cache if the page doesn't yet exist (it's being created),
     // because in the past there was some error because non-existing pages
     // had no ids (so feels safer to bypass).
@@ -143,8 +149,9 @@ trait RenderedPageHtmlDao {
   }
 
 
-  private def renderContent(pageId: PageId, renderParams: PageRenderParams,
-        currentJsonVersion: CachedPageVersion, reactStore: String): (String, CachedPageVersion) = {
+  private def renderContentMaybeUseDatabaseCache(pageId: PageId, renderParams: PageRenderParams,
+        currentReactStoreJsonVersion: CachedPageVersion, currentReactStoreJsonString: String)
+        : (String, CachedPageVersion) = {
     // COULD reuse the caller's transaction, but the caller currently uses > 1  :-(
     // Or could even do this outside any transaction.
 
@@ -154,8 +161,8 @@ trait RenderedPageHtmlDao {
         // Here we can compare hash sums of the up-to-date data and the data that was
         // used to generate the cached page. We ignore page version and site version.
         // Hash sums are always correct, so we'll never rerender unless we actually need to.
-        if (cachedHtmlVersion.appVersion != currentJsonVersion.appVersion ||
-            cachedHtmlVersion.reactStoreJsonHash != currentJsonVersion.reactStoreJsonHash) {
+        if (cachedHtmlVersion.appVersion != currentReactStoreJsonVersion.appVersion ||
+            cachedHtmlVersion.reactStoreJsonHash != currentReactStoreJsonVersion.reactStoreJsonHash) {
           // The browser will make cachedhtml up-to-date by running React.js with up-to-date
           // json, so it's okay to return cachedHtml. However, we'd rather send up-to-date
           // html, and this page is being accessed, so regenerate html. [4KGJW2]
@@ -163,7 +170,7 @@ trait RenderedPageHtmlDao {
                sending rerender-in-background message [DwE5KGF2]""")
           // COULD wait 150 ms for the background thread to finish rendering the page?
           // Then timeout and return the old cached page.
-          globals.renderPageContentInBackground(SitePageId(siteId, pageId))
+          globals.renderPageContentInBackground(SitePageId(siteId, pageId), Some(renderParams))
         }
         return (cachedHtml, cachedHtmlVersion)
       }
@@ -172,14 +179,15 @@ trait RenderedPageHtmlDao {
     // Now we'll have to render the page contents [5KWC58], so we have some html to send back
     // to the client, in case the client is a search engine bot — I suppose those
     // aren't happy with only up-to-date json (but no html) + running React.js.
-    val newHtml = context.nashorn.renderPage(reactStore) getOrElse throwInternalError(
-      "DwE500RNDR", "Error rendering page")
+    val newHtml = context.nashorn.renderPage(currentReactStoreJsonString) getOrElse throwInternalError(
+      "TyE500RNDR", "Error rendering page")
 
     readWriteTransaction { tx =>
-      tx.upsertCachedPageContentHtml(pageId, currentJsonVersion, newHtml)
+      tx.upsertCachedPageContentHtml(
+          pageId, currentReactStoreJsonVersion, currentReactStoreJsonString, newHtml)
     }
 
-    (newHtml, currentJsonVersion)
+    (newHtml, currentReactStoreJsonVersion)
   }
 
 
@@ -228,7 +236,7 @@ trait RenderedPageHtmlDao {
     // So don't:
     //    removeFromCache(contentKey(sitePageId))
     // Instead:
-    globals.renderPageContentInBackground(sitePageId)
+    globals.renderPageContentInBackground(sitePageId, customParams = None)
 
     // BUG race condition: What if anotoher thread started rendering a page
     // just before the invokation of this function, and is finished

@@ -79,7 +79,8 @@ trait SystemTransaction {
 
   // ----- Pages
 
-  def loadCachedPageVersion(sitePageId: SitePageId): Option[(CachedPageVersion, SitePageVersion)]
+  def loadCachedPageVersion(sitePageId: SitePageId, renderParams: PageRenderParams):
+    Option[(CachedPageVersion, SitePageVersion)]
   def loadPageIdsToRerender(limit: Int): Seq[PageIdToRerender]
 
   // ----- Indexing

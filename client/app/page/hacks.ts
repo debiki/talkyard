@@ -156,7 +156,7 @@ export const addCanScrollHintsSoon = _.debounce(addCanScrollHintsImpl, 1100);
 
 function makeMentionsInEmbeddedCommentsPointToTalkyardServer() {
   // If not an embedded comments page, relative user profile links in mentions, work fine
-  // — need do nothing. However, in embedded comments pages, relative links would
+  // — need do nothing. However, in embedded comments pages, relative links would  [6JKD2A]
   // resolve to (non existing) pages on the embedding server.
   // Make them point to the Talkyard server instead.
   //

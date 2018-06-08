@@ -174,14 +174,15 @@ const Page = createComponent({
   checkSizeChangeLayout: function() {
     // Dupl code [5KFEWR7]
     if (this.isGone) return;
-    var isWide = this.isPageWide();
+    const isWide = this.isPageWide();
     if (isWide !== this.state.useWideLayout) {
       this.setState({ useWideLayout: isWide });
     }
   },
 
   isPageWide: function(): boolean {
-    return store_getApproxPageWidth(this.props) > UseWidePageLayoutMinWidth;
+    const store: Store = this.props.store;
+    return store_getApproxPageWidth(store) > UseWidePageLayoutMinWidth;
   },
 
   render: function() {
@@ -228,13 +229,19 @@ export function renderTitleBodyCommentsToString() {
         Router({ location: path },
           rFragment({},
             Route({ render: debiki2.topbar.TopBar }),
-            debiki2.page.ScrollButtons(),
-            null,
+            null, // would be ScrollButtons, and its render() returns null initially
+            null, // would be ExtReactRootNavComponent, and its render() returns null
             forumRoute)));
   }
   else {
-    // For some reason this works fine, although is a bit different from the client side html [7UKTWR].
-    return ReactDOMServer.renderToString(Page({ store }));
+    // Sync with client side rendering code. [7UKTWR]
+    return ReactDOMServer.renderToString(
+        Router({},
+          rFragment({},
+            Route({ render: debiki2.topbar.TopBar }),
+            null, // would be ScrollButtons, and its render() returns null initially
+            null, // would be ExtReactRootNavComponent, and its render() returns null
+            Page({ store }))));
   }
 }
 

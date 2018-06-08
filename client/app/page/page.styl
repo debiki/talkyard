@@ -144,8 +144,6 @@ html:not(.es-watchbar-open)
 // Page width & padding
 //==============================
 
-$newsFeedWidth = 850px;
-
 .esScrollBtns_fixedBar,
 #esPageColumn
   .container
@@ -167,15 +165,7 @@ html.s_PT-7  // forum
     setContainerMaxWidth(1110px);
   // 6 = TopicListLayout = news feed: title & excerpt shown full width, so don't be too wide
   &.s_PL-6
-    setContainerMaxWidth($newsFeedWidth);
-
-// With Javascript disabled, pages are directly from the server and thus always for mobile
-// phones = narrow layout = news feed topic list. So restrict the width.
-// But skip for page type 1 = custom html — should have been be edited to look fine in all resolutions.
-html:not(.js):not(.s_PT-1)   // :not(aaa, bbb) —> Stylus bug, inserts next line after aaa
-  #esPageColumn
-    .container
-      max-width: $newsFeedWidth;
+    setContainerMaxWidth(850px);
 
 #topbar > .container,
 #dwPosts > .container,

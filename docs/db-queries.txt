@@ -1,0 +1,17 @@
+
+
+-- See cached page html:
+select
+ site_id,
+ page_id,
+ width_layout,
+ is_embedded,
+ origin,
+ cdn_origin,
+ site_version,
+ page_version,
+ app_version,
+ react_store_json_hash,
+ updated_at
+ from page_html3 where site_id = 3 and page_id = '72';
+

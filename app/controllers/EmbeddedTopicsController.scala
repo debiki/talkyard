@@ -78,8 +78,8 @@ class EmbeddedTopicsController @Inject()(cc: ControllerComponents, edContext: Ed
 
         // Don't render server side, render client side only. Search engines shouldn't see it anyway,
         // because it doesn't exist.
-        // So skip: Nashorn.renderPage(jsonStuff.jsonString)
-        val tpi = new PageTpi(pageRequest, jsonStuff.jsonString, jsonStuff.version,
+        // So skip: Nashorn.renderPage(jsonStuff.reactStoreJsonString)
+        val tpi = new PageTpi(pageRequest, jsonStuff.reactStoreJsonString, jsonStuff.version,
           "Dummy cached html [EdM2GRVUF05]", WrongCachedPageVersion,
           jsonStuff.pageTitle, jsonStuff.customHeadTags, anyAltPageId = discussionId,
           anyEmbeddingUrl = Some(embeddingUrl))
@@ -113,7 +113,7 @@ class EmbeddedTopicsController @Inject()(cc: ControllerComponents, edContext: Ed
           dao = dao,
           request = request.request)
 
-        (request.dao.renderPageMaybeUseCache(pageRequest), pageRequest)
+        (request.dao.renderPageMaybeUseMemCache(pageRequest), pageRequest)
     }
 
     ViewPageController.addVolatileJsonAndPreventClickjacking(renderedPage, pageRequest)

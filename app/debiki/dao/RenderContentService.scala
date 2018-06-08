@@ -28,7 +28,7 @@ import scala.concurrent.ExecutionContext
 
 
 /** Renders page contents using React.js and Nashorn. Is done in background threads
-  * because rendering large pages might take many seconds.
+  * because rendering large pages might take a while.
   */
 object RenderContentService {
 
@@ -55,18 +55,12 @@ class RenderContentActor(
 
   def execCtx: ExecutionContext = globals.executionContext
 
+
   override def receive: Receive = {
-    case sitePageId: SitePageId =>
+    case (sitePageId: SitePageId, customParams: Option[PageRenderParams]) =>
       // The page has been modified, or accessed and was out-of-date. [4KGJW2]
-      // There might be many threads and servers that re-render this page.
       try {
-        if (isStillOutOfDate(sitePageId)) {
-          rerenderContentHtmlUpdateCache(sitePageId)
-        }
-        else {
-          p.Logger.debug(o"""Page ${sitePageId.pageId} site ${sitePageId.siteId}
-             is up-to-date, ignoring re-render message. [DwE4KPL8]""")
-        }
+        rerenderContentHtmlUpdateCache(sitePageId, customParams)
       }
       catch {
         case ex: java.sql.SQLException if DatabaseUtils.isConnectionClosed(ex) =>
@@ -95,22 +89,11 @@ class RenderContentActor(
   }
 
 
-  private def isStillOutOfDate(sitePageId: SitePageId): Boolean = {
-    val (cachedHtmlVersion, currentPageVersion) =
-      globals.systemDao.loadCachedPageVersion(sitePageId) getOrElse {
-        return true
-      }
-    // We don't have any hash of any up-to-date data for this page, so we cannot use
-    // cachedVersion.reactStoreJsonHash. Instead, compare site and page version numbers.
-    // (We might re-render a little bit too often.)
-    cachedHtmlVersion.siteVersion != currentPageVersion.siteVersion ||
-      cachedHtmlVersion.pageVersion != currentPageVersion.pageVersion ||
-      cachedHtmlVersion.appVersion != globals.applicationVersion
-  }
-
-
-  private def rerenderContentHtmlUpdateCache(sitePageId: SitePageId) {
-    try doRerenderContentHtmlUpdateCache(sitePageId)
+  private def rerenderContentHtmlUpdateCache(sitePageId: SitePageId,
+        customParams: Option[PageRenderParams]) {
+    try {
+      renderImpl(sitePageId, customParams)
+    }
     catch {
       case ex: java.sql.SQLException if DatabaseUtils.isConnectionClosed(ex) =>
         p.Logger.warn("Cannot render page, database connection closed [DwE5YJK1]")
@@ -120,17 +103,26 @@ class RenderContentActor(
   }
 
 
-  private def doRerenderContentHtmlUpdateCache(sitePageId: SitePageId) {
+  private def renderImpl(sitePageId: SitePageId, anyCustomParams: Option[PageRenderParams]) {
+
     // COULD add Metrics that times this.
-    p.Logger.debug(s"Background rendering ${sitePageId.toPrettyString} [DwM7KGE2]")
 
     val dao = globals.siteDao(sitePageId.siteId)
+    p.Logger.debug(s"Background rendering ${sitePageId.toPrettyString} ... [TyMBGRSTART]")
+
+    // If we got custom params, probably no need to also rerender for default params.
+    anyCustomParams foreach { customParams =>
+      renderIfNeeded(sitePageId, customParams, dao, isCustom = true)
+      return
+    }
+
     val isEmbedded = dao.getPageMeta(sitePageId.pageId).exists(_.pageRole == PageRole.EmbeddedComments)
 
-    // ----- Render for tiny width
-
+    // Render for tiny width
     // A bit dupl code. [2FKBJAL3]
-    var renderParams = PageRenderParams(
+    // These render params must match the load-pages-to-rerender query [RERENDERQ], otherwise
+    // the query will continue saying the page should be rerendered, forever.
+    val renderParams = PageRenderParams(
       widthLayout = WidthLayout.Tiny,
       isEmbedded = isEmbedded,
       origin = dao.theSiteOrigin(),
@@ -140,42 +132,71 @@ class RenderContentActor(
       anyPageRoot = None,
       anyPageQuery = None)
 
-    var toJsonResult = dao.jsonMaker.pageToJson(sitePageId.pageId, renderParams)
-    var newHtml = nashorn.renderPage(toJsonResult.jsonString) getOrElse {
-      p.Logger.error(s"Error rendering ${sitePageId.toPrettyString} [DwE5KJG2]")
-      return
-    }
+    renderIfNeeded(sitePageId, renderParams, dao, isCustom = false)
 
-    dao.readWriteTransaction { tx =>
-      tx.upsertCachedPageContentHtml(sitePageId.pageId, toJsonResult.version, newHtml)
-    }
+    // Render for medium width.
+    val mediumParams = renderParams.copy(widthLayout = WidthLayout.Medium)
+    renderIfNeeded(sitePageId, mediumParams, dao, isCustom = false)
 
-    p.Logger.debug(s"Done background rendering ${sitePageId.toPrettyString}, tiny width. [TyMBGRTINY]")
-
-    // ----- Render for medium width
-
-    renderParams = renderParams.copy(widthLayout = WidthLayout.Medium)
-    toJsonResult = dao.jsonMaker.pageToJson(sitePageId.pageId, renderParams)
-    newHtml = nashorn.renderPage(toJsonResult.jsonString) getOrElse {
-      p.Logger.error(s"Error rendering ${sitePageId.toPrettyString} [DwE5KJG2]")
-      return
-    }
-
-    dao.readWriteTransaction { tx =>
-      tx.upsertCachedPageContentHtml(sitePageId.pageId, toJsonResult.version, newHtml)
-    }
-
-    p.Logger.debug(s"Done background rendering ${sitePageId.toPrettyString}, medium width. [TyMBGRMEDM]")
-
-    // Remove cached whole-page-html, so we'll generate a new page with the new content. [7UWS21]
+    // Remove cached whole-page-html, so we'll generate a new page (<html><head> etc) that
+    // includes the new content we generated above. [7UWS21]
     dao.removePageFromMemCache(sitePageId)
+  }
+
+
+  private def renderIfNeeded(sitePageId: SitePageId, renderParams: PageRenderParams, dao: SiteDao,
+      isCustom: Boolean) {
+
+    // ----- Is still out-of-date?
+
+    // There might be many threads and servers that re-render this page, so although it was
+    // out of date a short while ago, now, fractions of a second later, maybe it's been
+    // rerendered already.
+
+    val cachedAndCurrentVersions = globals.systemDao.loadCachedPageVersion(sitePageId, renderParams)
+
+    val isOutOfDate = cachedAndCurrentVersions match {
+      case None => true
+      case Some((cachedHtmlVersion, currentPageVersion)) =>
+        // We don't have any hash of any up-to-date data for this page, so we cannot use
+        // cachedVersion.reactStoreJsonHash. Instead, compare site and page version numbers.
+        // (We might re-render a little bit too often.)
+        cachedHtmlVersion.siteVersion != currentPageVersion.siteVersion ||
+        cachedHtmlVersion.pageVersion != currentPageVersion.pageVersion ||
+        cachedHtmlVersion.appVersion != globals.applicationVersion
+    }
+
+    if (!isOutOfDate) {
+      p.Logger.debug(o"""Page ${sitePageId.pageId} site ${sitePageId.siteId}
+             is up-to-date, ignoring re-render message. [DwE4KPL8]""")
+      return
+    }
+
+    // ----- Do render page
+
+    val toJsonResult = dao.jsonMaker.pageToJson(sitePageId.pageId, renderParams)
+    val newHtml = nashorn.renderPage(toJsonResult.reactStoreJsonString) getOrElse {
+      p.Logger.error(s"Error rendering ${sitePageId.toPrettyString} [TyEBGRERR]")
+      return
+    }
+
+    dao.readWriteTransaction { tx =>
+      tx.upsertCachedPageContentHtml(
+        sitePageId.pageId, toJsonResult.version, toJsonResult.reactStoreJsonString, newHtml)
+    }
+
+    val whichPage = sitePageId.toPrettyString
+    val width = (if (renderParams.widthLayout == WidthLayout.Tiny) "tiny" else "medium") + " width"
+    val embedded = if (renderParams.isEmbedded) ", embedded" else ""
+    val custom = if (isCustom) ", custom" else ""
+    p.Logger.debug(o"""Background rendered $whichPage, $width$embedded$custom [TyMBGRDONE]""")
   }
 
 
   private def findAndUpdateOneOutOfDatePage() {
     val pageIdsToRerender = globals.systemDao.loadPageIdsToRerender(1)
     for (toRerender <- pageIdsToRerender) {
-      rerenderContentHtmlUpdateCache(toRerender.sitePageId)
+      rerenderContentHtmlUpdateCache(toRerender.sitePageId, customParams = None)
     }
   }
 

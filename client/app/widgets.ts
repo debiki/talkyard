@@ -259,7 +259,9 @@ export function UserName(props: {
   else {
     if (props.makeLink) {
       newProps.href = linkToUserProfilePage(user);
-      // BUG [7UKWBP4] workaround: embedded comments pages rendered server side, don't know
+      // BUG [7UKWBP4] workaround: embedded comments pages rendered server side, don't know  FIXED NOW?
+      // CLEAN_UP remove this bug workaround. Fixed, because now caching pages per origin,
+      // and using in links.ts  [5ULKWLQ0].
       // that they're embedded comments pages and won't prefix links with https://comments-for-.../.
       // When rendering client side, the links will get that prefix and work fine — however,
       // React decides to keep the server side link instead of the client side link,

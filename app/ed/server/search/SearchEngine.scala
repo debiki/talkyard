@@ -206,7 +206,7 @@ class SearchEngine(
     var authorIds = Set[String]()
 
     val jsonAndElasticSearchHits = for (hit: SearchHit <- response.getHits.getHits) yield {
-      val jsonString = hit.getSourceAsString
+      val reactStoreJsonString = hit.getSourceAsString
       val json = play.api.libs.json.Json.parse(jsonString)
       val pageId = (json \ PageIdField).as[PageId]
       val authorId = (json \ UserIdField).as[String]

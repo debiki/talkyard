@@ -288,8 +288,7 @@ package object core {
     pageVersion: PageVersion,
     appVersion: String,
     renderParams: PageRenderParams,
-    reactStoreJsonHash: String,
-    reactStoreJson: String) {
+    reactStoreJsonHash: String) {
 
     /** Interpreted by the computer (startup.js looks for the '|'). */
     def computerString =
@@ -307,12 +306,15 @@ package object core {
     * Also, in embedded discussions, no page title shown. But when viewing the comments at
     * the embedded Talkyard site, then page title & body should be shown: a link to
     * the embedding page (= the blog post). [5UKWSP4]
-    * @param origin — 1) the server origin is included in the inline javascript tags
-    * so needs to be incl in the cache key.
+    * @param origin — 1) the server origin is included in the inline javascript tags  [INLTAGORIG]
+    * so needs to be incl in the cache key — for the in-memory cached html pages,
+    * but *not* for the page content html in the database (no inline tags there).
     * 2) In rare cases, the Talkyard server is accessible via different addresses. Could be
     * when developing on localhost: localhost:8080, say. Or temporarily when moving from one hostname,
-    * to another (e.g. custom domain). Then, in some links/whatever, the origin is included,
-    * so good to cache per origin. Also if accessing via https://site-NNNN.basedomain.com.
+    * to another (e.g. custom domain). Then, in embedded comment page links, the origin is included,
+    * so good to cache those per origin.
+    * Also if accessing via https://site-NNNN.basedomain.com (what? which links?)
+    *
     * @param anyCdnOrigin — Uploads and images should use the cdn origin. Should rerender cached
     * html if the cdn origin changes.
     * @param anyPageRoot — if rendering only parts of a page
@@ -328,6 +330,8 @@ package object core {
     anyPageQuery: Option[PageQuery]) {
 
     def thePageRoot: PostNr = anyPageRoot getOrElse PageParts.BodyNr
+    def remoteOriginOrEmpty: String = if (isEmbedded) origin else ""  // [REMOTEORIGIN]
+    def cdnOriginOrEmpty: String = anyCdnOrigin getOrElse ""
   }
 
 
@@ -366,7 +370,7 @@ package object core {
 
   val WrongCachedPageVersion = CachedPageVersion(siteVersion = -1, pageVersion = -1, appVersion = "wrong",
     PageRenderParams(WidthLayout.Tiny, isEmbedded = false, "https://example.com", None, None, None),
-    reactStoreJsonHash = "wrong", reactStoreJson = "dummy")
+    reactStoreJsonHash = "wrong")
 
 
   case class TagAndStats(

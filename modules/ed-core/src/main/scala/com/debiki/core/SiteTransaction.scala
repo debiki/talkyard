@@ -248,7 +248,8 @@ trait SiteTransaction {
   def markSectionPageContentHtmlAsStale(categoryId: CategoryId)
   def loadCachedPageContentHtml(pageId: PageId, renderParams: PageRenderParams)
         : Option[(String, CachedPageVersion)]
-  def upsertCachedPageContentHtml(pageId: PageId, version: CachedPageVersion, html: String)
+  def upsertCachedPageContentHtml(
+        pageId: PageId, version: CachedPageVersion, reactStorejsonString: String, html: String)
 
 
   def insertAltPageId(altPageId: AltPageId, realPageId: PageId)

@@ -21,11 +21,20 @@ $gotoButtonSidePaddingNarrow = 3px;
 
 $titleOwnLineMaxWidth = 1230px;
 
-html:not(.dw-react-started)
+html.js:not(.dw-react-started)
   .esTopbar_ancestors,
   // Avoid flash-of-login-button when already logged in.
   .esTopbar_right
     visibility: hidden;  // display:none not good, because then other elems too close
+
+// Currently doesn't work without js
+html:not(.js)
+  .esOpenPagebarBtn,
+  .esOpenWatchbarBtn,
+  .esTopbar_right
+    display: none;
+  .esTopbar
+    padding: 20px 0 0;
 
 .esTopbarWrap
   z-index: 3;

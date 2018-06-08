@@ -189,7 +189,7 @@ var eds = {
   volatileDataFromServer: _volatileData,
   isDev: @{ if (globals.isDev) "true" else "false" },
   minMaxJs: '@minMaxJs',
-  serverOrigin: '@{tpi.httpsColonOrEmpty}//@tpi.serverAddress',
+  serverOrigin: '@{tpi.httpsColonOrEmpty}//@tpi.serverAddress',@* [INLTAGORIG] *@
   cdnOriginOrEmpty: '@{tpi.cdnOrigin getOrElse ""}',
   cdnOrServerOrigin: '@tpi.cdnOrServerOrigin',@* for admin page embedded comments code *@
   isInLoginWindow: @isInLoginWindowBoolStr,

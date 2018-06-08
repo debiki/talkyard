@@ -945,7 +945,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
 
     val json =
       if (pageRequest.user.isDefined) {
-        val renderedPage = request.dao.renderPageMaybeUseCache(pageRequest)
+        val renderedPage = request.dao.renderPageMaybeUseMemCache(pageRequest)
         dao.jsonMaker.userDataJson(pageRequest, renderedPage.unapprovedPostAuthorIds).getOrDie(
           "EdE4ZBXKG")
       }

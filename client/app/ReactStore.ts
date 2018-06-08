@@ -47,7 +47,7 @@ export const ReactStore = new EventEmitter3();
 // we'll insert user specific data into the store, and re-render. See
 // ReactStore.activateMyself().
 const store: Store = eds.pageDataFromServer;
-window['theStore'] = store; // simplifies inspection in Dev Tools
+window['theStore'] = store; // simplifies inspection in Dev Tools — and hacky hack :-P  [4AGLH2]
 
 store.postsToUpdate = {};
 

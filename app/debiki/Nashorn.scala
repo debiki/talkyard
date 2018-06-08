@@ -221,7 +221,7 @@ class Nashorn(globals: Globals) {
     // included —> the embedd*ing* server's address used instead, but that's the wrong server.
     // But on non-embedded pages, use local upload links? So will work also if moves
     // server to other address?
-    BUG; SHOULD // use embedded comments page type? And then always incl origin? [6JKD2A]
+    BUG; SHOULD // use embedded comments page type? And then always incl origin? [6JKD2A] ok hack for now.
     val uploadsUrlPrefix = cdnOrigin.getOrElse("") + ed.server.UploadsUrlBasePath + pubSiteId + '/'
     val oneboxRenderer = new InstantOneboxRendererForNashorn(oneboxes getOrDie "EdE2WUHP6")
 
@@ -637,7 +637,7 @@ object Nashorn {
     |  }
     |};
     |
-    |var theStore = {};
+    |var theStore = {}; // Hack. Used here and there directly [4AGLH2], works fine ... and fragile?
     |
     |function setInitialStateJson(jsonString) {
     |  var s = JSON.parse(jsonString);
