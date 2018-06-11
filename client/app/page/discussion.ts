@@ -902,7 +902,8 @@ export const MetaPost = createComponent({
   displayName: 'MetaPost',
 
   showAboutUser: function(event: Event) {
-    // Dupl code [1FVBP4E]
+    // Dupl code [1FVBP4E]  — but post needed, so can lookup more by the same author,
+    // by looking at hens ip & cookies.
     morebundle.openAboutUserDialogForAuthor(this.props.post, event.target);
     event.preventDefault();
     event.stopPropagation();

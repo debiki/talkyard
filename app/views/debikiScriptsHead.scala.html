@@ -19,6 +19,7 @@
   // CLEAN_UP remove anyPageRole, they're in the store json already, don't dupl!
   anyPageRole: Option[com.debiki.core.PageRole],
   isInLoginWindow: Boolean,
+  isAdminApp: Boolean,
   reactStoreSafeJsonString: String, minMaxJs: String, minMaxCss: String)
 
 @import tpi.globals
@@ -196,6 +197,7 @@ var eds = {
   isInLoginPopup: @isInLoginWindowBoolStr && _isInIframe,
   isInIframe: _isInIframe,
   isInEmbeddedCommentsIframe: _embCmts,
+  isInAdminArea: @{ if (isAdminApp) "true" else "false" },
   embeddingOrigin: @Html(embeddingOriginOrUndefined),
   embeddingUrl: @Html(embeddingUrlOrUndefined),
   embeddedPageId: _isInIframe ? _pageId : undefined,

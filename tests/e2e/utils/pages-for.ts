@@ -2,6 +2,7 @@ import _ = require('lodash');
 import assert = require('assert');
 import logAndDie = require('./log-and-die');
 import settings = require('./settings');
+import server = require('./server');
 import c = require('../test-constants');
 let logUnusual = logAndDie.logUnusual, die = logAndDie.die, dieIf = logAndDie.dieIf;
 let logError = logAndDie.logError;
@@ -2321,14 +2322,26 @@ function pagesFor(browser) {
           browser.waitForVisible('.e_A_Rvw');
         },
 
+        waitForServerToCarryOutDecisions: function() {
+          // Make the server believe we've waited for the review timeout seconds.
+          server.playTimeSeconds(c.ReviewDecisionUndoTimoutSeconds + 10);
+          // Then wait for the server to actually do something.
+          do {
+            browser.pause(c.JanitorThreadIntervalMs + 200);
+            browser.refresh();
+          }
+          while (browser.isVisible('.e_A_Rvw_Tsk_UndoB'));
+          browser.waitUntilLoadingOverlayGone();
+        },
+
         approveNextWhatever: function() {
-          api.waitAndClickFirst('.e_A_Rvw_AcptB');
+          api.waitAndClickFirst('.e_A_Rvw_Tsk_AcptB');
           browser.waitUntilModalGone();
           browser.waitUntilLoadingOverlayGone();
         },
 
         isMoreStuffToReview: function() {
-          return browser.isVisible('.e_A_Rvw_AcptB');
+          return browser.isVisible('.e_A_Rvw_Tsk_AcptB');
         },
 
         waitForTextToReview: function(text) {

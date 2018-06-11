@@ -33,7 +33,7 @@ sealed abstract class ReviewDecision(val IntVal: Int) {
 
 
 object ReviewDecision {
-  val UndoTimoutSeconds = 15
+  val UndoTimoutSeconds = 15 // sync with Typescript [2PUKQB0]
 
   // 1nnn = Accept
   case object Accept extends ReviewDecision(1001)

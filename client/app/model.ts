@@ -78,12 +78,12 @@ interface ReviewTask {
   id: number;
   //causedBy: BriefUser;
   reasonsLong: number;
-  createdAtMs: number;
+  createdAtMs: WhenMs;
   createdById: UserId;
-  moreReasonsAtMs?: number;
-  completedAtMs?: number;
+  moreReasonsAtMs?: WhenMs;
+  completedAtMs?: WhenMs;
   completedById?: UserId;
-  invalidatedAtMs?: number;
+  invalidatedAtMs?: WhenMs;
   decidedAtMs?: WhenMs;
   decision?: ReviewDecision;
   pageId?: string;
@@ -586,7 +586,9 @@ interface Store {
   origin: string;
   anyCdnOrigin?: string;
   appVersion: string;
-  now: number;
+  // Might be anything, in test suites that mess with time & the universe.
+  now: WhenMs; // deprecated? use nowMs instead?
+  nowMs: WhenMs;
   pubSiteId: string;
   siteStatus: SiteStatus;
   siteOwnerTermsUrl?: string;

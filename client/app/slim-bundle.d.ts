@@ -42,6 +42,8 @@ declare const LowestAuthenticatedUserId;
 declare const MaxGuestId;
 declare const UnknownUserId;
 
+declare const ReviewDecisionUndoTimoutSeconds;
+
 declare function makeNoPageData(): MyPageData;
 declare function makeAutoPage(): any;
 
@@ -181,7 +183,7 @@ declare namespace debiki2 {
   function uppercaseFirst(text: string): string;
   function firstDefinedOf(x, y, z?): any;
   function isNullOrUndefined(x): boolean;
-  function isDefined2(x): boolean;
+  function isDefined2(x): boolean;  // = !_.isUndefined
   function nonEmpty(x): boolean;
   function isBlank(x: string): boolean;
 
@@ -192,6 +194,7 @@ declare namespace debiki2 {
   var threatLevel_toString;
   var isGuest;
   var user_isGuest;
+  function store_nowMs(store: Store): WhenMs;
   function store_maySendDirectMessageTo(store: Store, user: MemberInclDetails): boolean;
   var page_isGroupTalk;
   let store_getUserOrMissing;

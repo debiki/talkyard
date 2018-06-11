@@ -497,8 +497,8 @@ export function makeReviewDecision(taskId: number, revisionNr: number, decision:
 }
 
 
-export function undoReviewTask(taskId: number, success: () => void) {
-  postJsonSuccess('/-/undo-review-task', success, { taskId });
+export function undoReviewDecision(taskId: number, success: (couldBeUndone: boolean) => void) {
+  postJsonSuccess('/-/undo-review-decision', (response) => success(response.couldBeUndone), { taskId });
 }
 
 

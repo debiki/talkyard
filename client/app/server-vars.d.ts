@@ -29,6 +29,7 @@ declare namespace eds {
   const isInLoginWindow: boolean;
   const isInLoginPopup: boolean;
   const isInIframe: boolean;
+  const isInAdminArea: boolean;
 
   // For embedded comments.
   const isInEmbeddedCommentsIframe: boolean;

@@ -52,5 +52,7 @@ export = {
   StaffId: 17,
   ModeratorsId: 18,
   AdminsId: 19,
+  ReviewDecisionUndoTimoutSeconds: 15, // sync with Scala and React component [2PUKQB0]
+  JanitorThreadIntervalMs: 100,  // [2YPBJ6L]
 };
 

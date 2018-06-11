@@ -215,6 +215,7 @@ describe("new member, allow, approve:", () => {
 
   it("... approves Maja's first reply", () => {
     owensBrowser.adminArea.review.approveNextWhatever();
+    owensBrowser.adminArea.review.waitForServerToCarryOutDecisions();
   });
 
   it("Then Michael sees that reply, but not any others", () => {
@@ -244,6 +245,7 @@ describe("new member, allow, approve:", () => {
 
   it("Owen approves another reply, the approval cascades...", () => {
     owensBrowser.adminArea.review.approveNextWhatever();
+    owensBrowser.adminArea.review.waitForServerToCarryOutDecisions();
   });
 
   it("So now Michael sees all Maja's replies", () => {

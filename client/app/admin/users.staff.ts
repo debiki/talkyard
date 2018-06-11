@@ -123,10 +123,9 @@ export const InvitedUsersPanel = createFactory({
     }
     else {
       introText = "People who have been invited to this site:";
-      listOfInvites = invites.map((invite: Invite) => users.InviteRow(
-          { invite: invite, store: store, showSender: true,
-            // Invited-email + inviter-id is unique. [5GPJ4A0]
-            key: invite.invitedEmailAddress + ' ' + invite.createdById }));
+      const nowMs = Date.now();
+      listOfInvites = invites.map((invite: Invite) => users.InviteRowWithKey(
+          { invite, store, nowMs, showSender: true }));
     }
 
     // Could break out rendering code to separate module — also used in user profile. [8HRAE3V]

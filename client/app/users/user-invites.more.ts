@@ -122,11 +122,9 @@ export const UserInvites = createFactory({
           inviteButton));
 
     // REFACTOR COULD break out rendering code to separate module — also used in admin. [8HRAE3V]
-    const now = Date.now();
-    const inviteRows = this.state.invites.map(function(invite) {
-      return InviteRow({ invite: invite, store: store, now: now,
-          // Invited-email + inviter-id is unique. [5GPJ4A0]
-          key: invite.invitedEmailAddress + ' ' + invite.createdById });
+    const nowMs: WhenMs = Date.now();
+    const inviteRows = this.state.invites.map(function(invite: Invite) {
+      return InviteRowWithKey({ invite, store, nowMs });
     });
 
     return (
@@ -149,50 +147,39 @@ export const UserInvites = createFactory({
 
 
 // REFACTOR COULD break out to separate module, because also used in the admin area. [8HRAE3V]
-export const InviteRow = createComponent({
-  onInvitedUserClick: function(event) {
-    event.preventDefault();
-    const invite: Invite = this.props.invite;
-    pagedialogs.getAboutUserDialog().openForUserIdOrUsername(invite.userId, event.target);
-  },
-
-  onInviterClick: function(event) {
-    event.preventDefault();
-    const invite: Invite = this.props.invite;
-    pagedialogs.getAboutUserDialog().openForUserIdOrUsername(invite.createdById, event.target);
-  },
-
-  render: function() {
-    const store = this.props.store;
-    const invite: Invite = this.props.invite;
+export function InviteRowWithKey(props: { store: Store, invite: Invite, nowMs: WhenMs, showSender? }) {
+    const store: Store = props.store;
+    const invite: Invite = props.invite;
     let invitedEmail;
     let invitedUser;
     let acceptedAt = t.NotYet;
     if (invite.userId) {
       const user: BriefUser = store_getUserOrMissing(store, invite.userId);
-      invitedUser = UserName({ user, store, makeLink: true, onClick: this.onInvitedUserClick });
+      invitedUser = UserName({ user, store, makeLink: true });
       invitedEmail = r.samp({}, invite.invitedEmailAddress);
-      acceptedAt = moment(invite.acceptedAtEpoch).from(this.props.now);
+      acceptedAt = moment(invite.acceptedAtEpoch).from(props.nowMs);
     }
     else {
       invitedEmail = invite.invitedEmailAddress;
     }
 
     let sentBy;
-    if (this.props.showSender) {
+    if (props.showSender) {
       let sender: BriefUser = store_getUserOrMissing(store, invite.createdById);
-      sentBy = r.td({}, UserName({ user: sender, store, makeLink: true, onClick: this.onInviterClick }));
+      sentBy = r.td({}, UserName({ user: sender, store, makeLink: true }));
     }
 
+    // Invited-email + inviter-id is unique. [5GPJ4A0]
+    const key = invite.invitedEmailAddress + ' ' + invite.createdById;
+
     return (
-      r.tr({},
+      r.tr({ key },
         r.td({}, invitedEmail),
         r.td({}, invitedUser),
         r.td({}, acceptedAt),
-        r.td({}, moment(invite.createdAtEpoch).from(this.props.now)),
+        r.td({}, moment(invite.createdAtEpoch).from(props.nowMs)),
         sentBy));
-  }
-});
+}
 
 
 let inviteSomeoneDialog;
@@ -206,6 +193,8 @@ export function openInviteSomeoneDialog(addInvite) {
 
 
 const InviteDialog = createComponent({  // COULD break out to debiki2.invite module [8HRAE3V]
+  displayName: 'InviteDialog',
+
   getInitialState: function() {
     return { isOpen: false };
   },

@@ -104,8 +104,8 @@ const AboutUserDialog = createComponent({
       Server.loadAuthorBlockedInfo(this.state.post.uniqueId, (blocks: Blocks) => {
         if (this.isGone) return;
         // These two are only included in the response for staff.
-        var ipBlock;
-        var browserBlock;
+        let ipBlock;
+        let browserBlock;
         _.each(blocks.blocks, (block: Block) => {
           if (block.ip) {
             ipBlock = block;

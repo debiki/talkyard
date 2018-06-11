@@ -53,7 +53,13 @@ export const ReviewAllPanelComponent = createReactClass(<any> {
     Server.loadReviewTasks(reviewTasks => {
       promise.then(() => {
         if (this.isGone) return;
-        this.setState({ reviewTasks: reviewTasks, store: ReactStore.allData() });
+        const store = ReactStore.allData();
+        this.setState({
+          reviewTasks,
+          store,
+          nowMs: store_nowMs(store),
+        });
+        setTimeout(this.countdownUndoTimeout, 1000);
       });
     });
   },
@@ -62,14 +68,20 @@ export const ReviewAllPanelComponent = createReactClass(<any> {
     this.isGone = true;
   },
 
+  countdownUndoTimeout: function() {
+    if (this.isGone) return;
+    this.setState({ nowMs: store_nowMs(this.state.store) });
+    setTimeout(this.countdownUndoTimeout, 1000);
+  },
+
   render: function() {
     if (!this.state)
       return r.p({}, 'Loading...');
 
     const store = this.state.store;
-    const now = Date.now();
+
     const elems = this.state.reviewTasks.map((reviewTask: ReviewTask) => {
-      return ReviewTask({ reviewTask: reviewTask, now: now, key: reviewTask.id, store });
+      return ReviewTask({ reviewTask, key: reviewTask.id, store, nowMs: this.state.nowMs });
     });
 
     if (!elems.length)
@@ -91,6 +103,10 @@ const ReviewTask = createComponent({
 
   getInitialState: function() {
     return {};
+  },
+
+  componentWillUnmount: function() {
+    this.isGone = true;
   },
 
   // Returns [string, string[]]
@@ -153,16 +169,34 @@ const ReviewTask = createComponent({
     return [what, whys];
   },
 
-  makeReviewDecision: function(action: ReviewDecision) {
+  makeReviewDecision: function(decision: ReviewDecision) {
     const revisionNr = (this.props.reviewTask.post || {}).currRevNr;
-    Server.makeReviewDecision(this.props.reviewTask.id, revisionNr, action, () => {
-      this.setState({ completed: true });
+    Server.makeReviewDecision(this.props.reviewTask.id, revisionNr, decision, () => {
+      if (this.isGone) return;
+      this.setState({
+        justDecided: decision,
+        justDecidedAtMs: store_nowMs(this.props.store),
+        couldBeUndone: undefined,
+      });
     });
   },
 
-  undoReviewTask: function() {
-    Server.undoReviewTask(this.props.reviewTask.id, () => {
-      this.setState({ completed: false });
+  undoReviewDecision: function() {
+    // TESTS_MISSING  [4JKWWD4]
+    Server.undoReviewDecision(this.props.reviewTask.id, (couldBeUndone: boolean) => {
+      if (this.isGone) return;
+      if (couldBeUndone) {
+        this.setState({
+          justDecided: null,
+          justDecidedAtMs: null,
+          couldBeUndone: true,
+        });
+      }
+      else {
+        this.setState({
+          couldBeUndone: false,
+        });
+      }
     });
   },
 
@@ -179,7 +213,8 @@ const ReviewTask = createComponent({
     const linkToPost = '/-'+ post.pageId + (post.nr >= FirstReplyNr ? '#post-'+ post.nr : '');
     const postOrPage = reviewTask.pageId ? "page" : "post";
     const openPostButton =
-        r.a({ href: linkToPost, className: 's_A_Rvw_ViewB' }, `Go to ${postOrPage}`);
+        r.a({ href: linkToPost, className: 's_A_Rvw_Tsk_ViewB', target: '_blank' },
+          `Go to ${postOrPage}`);
 
     const decideTo = (action) => {
       return () => this.makeReviewDecision(action);
@@ -187,15 +222,34 @@ const ReviewTask = createComponent({
 
     let taskDoneInfo;
     let undoDecisionButton;
+    let gotUndoneInfo;
     let acceptButton;
     let rejectButton;
-    if (this.state.completed || reviewTask.completedAtMs) {
+
+    if (this.state.justDecidedAtMs || reviewTask.decidedAtMs || reviewTask.completedAtMs) {
       const taskDoneBy: BriefUser | null = store.usersByIdBrief[reviewTask.completedById];
       const doneByInfo = !taskDoneBy ? null : r.span({}, " by ", UserName({ user: taskDoneBy, store }));
-      taskDoneInfo = r.span({}, " Has been reviewed", doneByInfo);
+      let whatWasDone: string;
+      switch (reviewTask.decision || this.state.justDecided) {
+        case ReviewDecision.Accept: whatWasDone = " Accepted"; break;
+        case ReviewDecision.DeletePostOrPage: whatWasDone = " Deleted"; break;
+      }
+      taskDoneInfo = r.span({ className: 'e_A_Rvw_Tsk_DoneInfo' }, whatWasDone, doneByInfo);
+    }
+
+    if (_.isBoolean(this.state.couldBeUndone)) {
+      const className = this.state.couldBeUndone ? 'e_A_Rvw_Tsk_Undone' : 'e_A_Rvw_Tsk_NotUndone';
+      gotUndoneInfo = r.span({ className }, this.state.couldBeUndone ?
+        " — last review decision was undone." : " — could NOT be undone: Changes already made");
+    }
+    else if (!reviewTask.completedAtMs && (this.state.justDecidedAtMs || reviewTask.decidedAtMs)) {
       undoDecisionButton =
-          Button({ onClick: this.undoReviewTask,
-              className: 'e_A_Rvw_UndoB' }, "Undo");
+          UndoReviewDecisionButton({ justDecidedAtMs: this.state.justDecidedAtMs,
+              reviewTask, nowMs: this.props.nowMs, undoReviewDecision: this.undoReviewDecision });
+    }
+
+    if (reviewTask.completedAtMs || reviewTask.decidedAtMs || this.state.justDecidedAtMs) {
+      // Show no decision buttons. (Only maybe an Undo button, see above.)
     }
     else if (reviewTask.invalidatedAtMs) {
       // Hmm could improve on this somehow.
@@ -205,10 +259,10 @@ const ReviewTask = createComponent({
       const acceptText = post.approvedRevNr !== post.currRevNr ? "Approve" : "Looks fine";
       acceptButton =
           Button({ onClick: decideTo(ReviewDecision.Accept),
-              className: 'e_A_Rvw_AcptB' }, acceptText);
+              className: 'e_A_Rvw_Tsk_AcptB' }, acceptText);
       rejectButton =
           Button({ onClick: decideTo(ReviewDecision.DeletePostOrPage),
-              className: 'e_A_Rvw_RjctB' }, "Delete");
+              className: 'e_A_Rvw_Tsk_RjctB' }, "Delete");
     }
 
 
@@ -300,9 +354,10 @@ const ReviewTask = createComponent({
         r.div({ className: 'esReviewTask_btns' },
           openPostButton,
           taskDoneInfo,
-          undoDecisionButton,
           acceptButton,
-          rejectButton)));
+          rejectButton,
+          undoDecisionButton,
+          gotUndoneInfo )));
 
     /* Later, something like?:
 
@@ -325,6 +380,19 @@ const ReviewTask = createComponent({
   }
 });
 
+
+function UndoReviewDecisionButton(props: { justDecidedAtMs?: WhenMs, nowMs: WhenMs,
+      undoReviewDecision, reviewTask: ReviewTask }) {
+  const decidedAtMs = props.reviewTask.decidedAtMs || props.justDecidedAtMs;
+  const deadlineMs = decidedAtMs + ReviewDecisionUndoTimoutSeconds * 1000;
+  const millisLeft = props.reviewTask.completedAtMs ? 0 : (deadlineMs - props.nowMs);
+  const secondsLeft = millisLeft / 1000;
+  if (secondsLeft <= 0)
+    return r.span({ className: 'e_A_Rvw_Tsk_NoUndo' }, " — done");
+
+  return Button({ onClick: props.undoReviewDecision, className: 'e_A_Rvw_Tsk_UndoB' },
+    `Undo (${ Math.floor(secondsLeft) })`);
+}
 
 
 // COULD move to some debiki-common.js or debiki-utils.js?

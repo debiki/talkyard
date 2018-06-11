@@ -174,6 +174,14 @@ export function settings_selectTopicType(settings: SettingsVisibleClientSide, me
 // Store
 //----------------------------------
 
+const pageLoadedAtMsBrowserTime = Date.now();
+
+export function store_nowMs(store: Store): WhenMs {
+  const millisElapsed = Date.now() - pageLoadedAtMsBrowserTime;
+  return store.nowMs + millisElapsed;
+}
+
+
 export function store_isPageDeleted(store: Store): boolean {
   const page: Page = store.currentPage;
   return !!page.pageDeletedAtMs || _.some(page.ancestorsRootFirst, a => a.isDeleted);

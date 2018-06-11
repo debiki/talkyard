@@ -139,13 +139,14 @@ class SiteTpi protected (
 
   def debikiStyles = xml.Unparsed(views.html.debikiStyles(this).body)
 
-  def debikiScriptsInHead(isInLoginWindow: Boolean = false) = xml.Unparsed(
+  def debikiScriptsInHead(isInLoginWindow: Boolean = false, isAdminApp: Boolean = false) = xml.Unparsed(
     views.html.debikiScriptsHead(
       this, // Could remove all params below, use 'this' instead in the template.
       siteId = siteId,
       anyPageRole = anyCurrentPageRole,
       reactStoreSafeJsonString = reactStoreSafeJsonString,
       isInLoginWindow = isInLoginWindow,
+      isAdminApp = isAdminApp,
       minMaxJs = minMaxJs,
       minMaxCss = minMaxCss).body)
 

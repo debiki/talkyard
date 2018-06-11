@@ -50,6 +50,8 @@ object Janitor {
     val actorRef = globals.actorSystem.actorOf(
       Props(new JanitorActor(globals)), name = "JanitorActor")
 
+    // Sync the is-test intervals below (100.millis currently) with the test suites. [2YPBJ6L]
+
     globals.actorSystem.scheduler.schedule(
       isOrWasTest ? 2.seconds | 60.seconds,
       isOrWasTest ? 100.millis | 10.seconds, actorRef, DeleteOldStuff)

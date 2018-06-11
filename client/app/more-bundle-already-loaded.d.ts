@@ -125,7 +125,7 @@ declare namespace debiki2.forum {
 
 declare namespace debiki2.users {
   function usersRoute();
-  var InviteRow;
+  function InviteRowWithKey(props: { store: Store, invite: Invite, nowMs: WhenMs, showSender? });
   function openInviteSomeoneDialog(addInvite);
 }
 

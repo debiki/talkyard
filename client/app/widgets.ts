@@ -99,14 +99,16 @@ function makeWidget(what, spaceWidgetClasses: string, extraProps?) {
       delete newProps.primary;
     }
 
-    // Make link buttons navigate whithin the single-page-app, no page reloads. Even if they're
-    // in a different React root. But skip the admin app — it's its own SPA. [6TKQ20]
-    // COULD use Link also in /-/admin sometimes, see  (5JKSW20).
+    // Make link buttons navigate within the single-page-app, no page reloads. Even if they're
+    // in a different React root. The admin app is it's own SPA [6TKQ20] so, when in the admin area,
+    // links to user profiles and discussions, are external. And vice versa.
     const afterClick = newProps.afterClick;
-    const isExternal = newProps.ext || eds.isInEmbeddedCommentsIframe;
+    let isExternal = newProps.ext || eds.isInEmbeddedCommentsIframe;
+    const linksToAdminArea = newProps.href && newProps.href.search('/-/admin/') === 0; // dupl (5JKSW20)
+    isExternal = isExternal || eds.isInAdminArea !== linksToAdminArea;
     delete newProps.afterClick;
     delete newProps.ext;
-    if (what === r.a && !isExternal && !newProps.onClick && newProps.href.search('/-/admin/') === -1) {
+    if (what === r.a && !isExternal && !newProps.onClick) {
       newProps.onClick = function(event) {
         event.preventDefault(); // avoids full page reload
         debiki2.page['Hacks'].navigateTo(newProps.href);
@@ -153,12 +155,11 @@ export function MenuItemLink(props, ...children) {
 
   // If we're in the admin area, use <a href> because then the destinations are in another
   // single-page-app. And if we're in the forum app, use Link, for instant
-  // within-the-SPA navigation.  (5JKSW20)
-  const isInAdminArea = location.pathname.search('/-/admin/') === 0;
-  const isToAdminArea = props.to.search('/-/admin/') === 0;
-  const useSpaLink = isInAdminArea === isToAdminArea;
+  // within-the-SPA navigation.  A bit dupl, see (5JKSW20)
+  const linksToAdminArea = props.to.search('/-/admin/') === 0;
+  const useSpaLink = eds.isInAdminArea === linksToAdminArea;
 
-  // useSpaLink —> create a Link({ to: ... }).
+  // useSpaLink —> create a Link({ to: ... })  (spa link = single page app link)
   // Otherwise, create a r.a({ href: ... }).
 
   const linkFn = useSpaLink ? Link : r.a;
@@ -272,8 +273,18 @@ export function UserName(props: {
         bugWrapInDiv = true;
       }
     }
-    if (props.onClick) {
+
+    // Can disable onClick by specifying null? because null = defined.
+    if (isDefined2(props.onClick)) {
       newProps.onClick = props.onClick;
+    }
+    else {
+      newProps.onClick = (event: Event) => {
+        // Dupl code [1FVBP4E]  —  can remove elsewhere?
+        morebundle.openAboutUserDialog(user, event.target);
+        event.preventDefault();
+        event.stopPropagation();
+      };
     }
   }
 

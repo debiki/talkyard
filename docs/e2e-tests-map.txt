@@ -312,6 +312,7 @@ admin -
   delete flagged:   — also see (6JS3)
   clear flag:   — also see (6JS3)
   approve stuff:  (2WY0)
+  undoReviewDecision: [4JKWWD4]
   ... lots of stuff ...
 
 superadmin -

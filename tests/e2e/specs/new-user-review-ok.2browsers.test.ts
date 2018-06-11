@@ -161,6 +161,10 @@ describe("new user, review, ok:", () => {
     owensBrowser.adminArea.review.approveNextWhatever();
   });
 
+  it("... the server carries out the review decisions", () => {
+    owensBrowser.adminArea.review.waitForServerToCarryOutDecisions();
+  });
+
   it("... now there's nothing more to review", () => {
     assert(!owensBrowser.adminArea.review.isMoreStuffToReview());
     owensBrowser.refresh();
@@ -237,6 +241,7 @@ describe("new user, review, ok:", () => {
     owensBrowser.waitUntilLoadingOverlayGone();
     owensBrowser.adminArea.review.approveNextWhatever();
     owensBrowser.adminArea.review.approveNextWhatever();
+    owensBrowser.adminArea.review.waitForServerToCarryOutDecisions();
   });
 
   it("... then Owen is done", () => {
