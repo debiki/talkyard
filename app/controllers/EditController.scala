@@ -160,7 +160,8 @@ class EditController @Inject()(cc: ControllerComponents, edContext: EdContext)
   }
 
 
-  def loadPostRevisions(postId: PostId, revisionNr: String): Action[Unit] = GetAction { request =>
+  def loadPostRevisions(postId: PostId, revisionNr: String): Action[Unit] =
+        GetActionRateLimited(RateLimits.ExpensiveGetRequest) { request =>
     val revisionNrInt =
       if (revisionNr == "LastRevision") PostRevision.LastRevisionMagicNr
       else revisionNr.toIntOption getOrElse throwBadRequest("EdE8UFMW2", "Bad revision nr")
@@ -168,7 +169,7 @@ class EditController @Inject()(cc: ControllerComponents, edContext: EdContext)
       request.dao.loadSomeRevisionsRecentFirst(postId, revisionNrInt, atLeast = 5,
           userId = request.user.map(_.id))
     val revisionsJson = revisionsRecentFirst map { revision =>
-      val isStaffOrComposer = request.isStaff || request.theUserId == revision.composedById
+      val isStaffOrComposer = request.isStaff || request.user.map(_.id).contains(revision.composedById)
       JsonMaker.postRevisionToJson(revision, usersById, maySeeHidden = isStaffOrComposer)
     }
     OkSafeJson(JsArray(revisionsJson))

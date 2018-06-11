@@ -150,7 +150,8 @@ const CreateWebsiteComponent = createFactory({
               style: { display: state.showRemaining ? 'block' : 'none' },
               help: "The name of your organization, if any. Otherwise, you " +
                 "can use your own name. Will be used in your Terms of Use " +
-                "and Privacy Policy documents.",
+                "and Privacy Policy documents. " +
+                "— You can change the name later (in your site's admin settings).",
               ref: 'organizationName', id: 'e2eOrgName',
               regex: /\S/, message: "Name required",
               onChangeValueOk: (value, isOk) => this.reportOkay('orgName', isOk) }),

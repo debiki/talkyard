@@ -1373,7 +1373,7 @@ export const PostHeader = createComponent({
   },
 
   showEditHistory: function() {
-    debiki2.edithistory.getEditHistoryDialog().open(this.props.post.uniqueId);
+    morebundle.openEditHistoryDialog(this.props.post.uniqueId);
   },
 
   render: function() {

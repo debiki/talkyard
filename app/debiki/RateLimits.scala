@@ -123,7 +123,7 @@ object RateLimits {
   object ExpensiveGetRequest extends RateLimits {
     val key = "ExRq"
     val what = "sent too many complicated HTTP GET requests"
-    def maxPerFifteenSeconds = 30
+    def maxPerFifteenSeconds = 20
     def maxPerFifteenMinutes = 60 * 10
     def maxPerDay = Unlimited
     def maxPerDayNewUser = Unlimited

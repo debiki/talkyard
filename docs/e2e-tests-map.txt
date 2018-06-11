@@ -12,7 +12,6 @@ might be listed at many places in the tree, if it tests different things.
 Run all tests in different resolutions? Desktop, laptop, tablet, mobile.
 
 full text search (broken?)
-get-edit-history = broken, Cannot read property 'getEditHistoryDialog' of undefined
 
 create site & forum -
   create:  create-site-all-logins
@@ -184,9 +183,6 @@ topics -
     cycle done/pending:
   report:
 
-posts -
-  move on same page:
-  move to new page:
 
 editor -
   maximize editor:
@@ -217,6 +213,9 @@ discussion -
   live updates:  (4FE2)
 
 post -
+  move on same page:
+  move to new page:
+  view edit history:
   votes -
     cast all types:      votes-and-best-first.test.ts
     like –> sort order:  votes-and-best-first.test.ts

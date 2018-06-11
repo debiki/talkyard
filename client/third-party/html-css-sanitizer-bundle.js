@@ -4907,7 +4907,7 @@ function googleCajaSanitizeHtml(htmlTextUnsafe, allowClassAndIdAttr,
       'nl', 'li', 'b', 'i', 'u', 'strong', 'em', 'strike', 'code', 'hr', 'br', 'div',
       'table', 'thead', 'caption', 'tbody', 'tr', 'th', 'td', 'pre',
       // Why not included by default?
-      'span', 'small', 'pre', 'code', 'var', 'samp', 'kbd',
+      'span', 'small', 'pre', 'code', 'var', 'samp', 'kbd', 'sup', 'sub',
       // Custom HTML pages
       'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
       // HTML5
