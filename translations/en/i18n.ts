@@ -151,7 +151,7 @@ var t_en: TalkyardTranslations = t = {
     AllTopics: "All topics",
 
     ShowAllTopics: "Show all topics",
-    ShowAllTopicsDescr: "Doesn't show deleted topics though",
+    ShowAllTopicsDescr: "Not deleted topics though",
 
     OnlyWaiting: "Only waiting",
     OnlyWaitingDescr_1: "Shows only questions ",

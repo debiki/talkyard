@@ -39,13 +39,13 @@ function assertPublicTopicsVisible(browser) {
   process.stdout.write('\n');
 }
 
-function assertRestrictedTopicsVisible(browser) {
+function assertRestrictedTopicsVisible(browser, showDeleted: boolean) {
   logAndAssertVisible(browser, forum.topics.byMariaUnlistedCat.title);
   logAndAssertVisible(browser, forum.topics.byMariaStaffOnlyCat.title);
-  logAndAssertVisible(browser, forum.topics.byMariaDeletedCat.title);
+  logAndAssertVisible(browser, forum.topics.byMariaDeletedCat.title, showDeleted);
   logAndAssertVisible(browser, forum.topics.aboutUnlistedCategory.title);
   logAndAssertVisible(browser, forum.topics.aboutStaffOnlyCategory.title);
-  logAndAssertVisible(browser, forum.topics.aboutDeletedCategory.title);
+  logAndAssertVisible(browser, forum.topics.aboutDeletedCategory.title, showDeleted);
   process.stdout.write('\n');
 }
 
@@ -90,14 +90,19 @@ describe("view as stranger:", () => {
   });
 
   it("... and also topics from restricted categories", () => {
-    assertRestrictedTopicsVisible(owensBrowser);
+    assertRestrictedTopicsVisible(owensBrowser, false);
+  });
+
+  it("He shows deleted topics", () => {
+    owensBrowser.forumButtons.listDeletedTopics();
+    assertRestrictedTopicsVisible(owensBrowser, true);
   });
 
 
   // ------ View as stranger
 
   it("Owen clicks View As Stranger ...", () => {
-    owensBrowser.topbar.viewAsStranger();
+    owensBrowser.topbar.viewAsStranger();  // stranger attempts to list deleted topics [4UKDWT20]
   });
 
   it("... and no longer sees the restricted topics", () => {
@@ -127,7 +132,8 @@ describe("view as stranger:", () => {
 
   it("... now he sees restricted topics again", () => {
     owensBrowser.forumTopicList.waitForTopics();
-    assertRestrictedTopicsVisible(owensBrowser);
+    // The filter got reset to show-all, rather than show-deleted.
+    assertRestrictedTopicsVisible(owensBrowser, false);
   });
 
   it("... and public topics too, of course", () => {

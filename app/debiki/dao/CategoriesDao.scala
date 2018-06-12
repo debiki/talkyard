@@ -109,13 +109,13 @@ trait CategoriesDao {
     * Sorts by Category.position (which doesn't make much sense if there are sub categories).
     * Returns (categories, default-category-id).
     */
-  def listMaySeeSectionCategories(pageId: PageId, authzCtx: ForumAuthzContext)
+  def listMaySeeSectionCategories(pageId: PageId, includeDelted: Boolean, authzCtx: ForumAuthzContext)
         : (Seq[Category], CategoryId) = {
     // A bit dupl code (7UKWTW1)
     loadRootCategory(pageId) match {
       case Some(rootCategory) =>
         val categories = listDescendantMaySeeCategories(rootCategory.id, includeRoot = false,
-          authzCtx).sortBy(_.position)
+          includeDelted = includeDelted, authzCtx).sortBy(_.position)
         (categories, rootCategory.defaultCategoryId getOrDie "EsE4GK02")
       case None =>
         (Nil, NoCategoryId)
@@ -142,7 +142,7 @@ trait CategoriesDao {
     // A bit dupl code (7UKWTW1)
     val rootCategory = loadRootCategory(categoryId) getOrDie "TyEPKDRW0"
     val categories = listDescendantMaySeeCategories(rootCategory.id, includeRoot = false,
-      authzCtx).sortBy(_.position)
+      includeDelted = authzCtx.isStaff, authzCtx).sortBy(_.position)
     (categories, Some(rootCategory.defaultCategoryId getOrDie "TyE5JKF2"))
   }
 
@@ -150,9 +150,10 @@ trait CategoriesDao {
   /** List all categories in the sub tree with categoryId as root.
     */
   private def listDescendantMaySeeCategories(categoryId: CategoryId, includeRoot: Boolean,
-        authzCtx: ForumAuthzContext): Seq[Category] = {
+        includeDelted: Boolean, authzCtx: ForumAuthzContext): Seq[Category] = {
     val categories = ArrayBuffer[Category]()
-    appendMaySeeCategoriesInTree(categoryId, includeRoot, authzCtx, categories)
+    appendMaySeeCategoriesInTree(categoryId, includeRoot = includeRoot, includeDelted = includeDelted,
+      authzCtx, categories)
     categories.to[immutable.Seq]
   }
 
@@ -174,9 +175,10 @@ trait CategoriesDao {
       if (includeDescendants) {
         // (Include the start ("root") category because it might not be the root of the
         // whole section (e.g. the whole forum) but only the root of a sub section (e.g.
-        // a category in the forum). The top root shouldn't contain any pages, but subtree roots
-        // usually contain pages. )
-        listDescendantMaySeeCategories(categoryId, includeRoot = true, authzCtx).map(_.id)
+        // a category in the forum, wich has sub categories). The top root shouldn't
+        // contain any pages, but subtree roots usually contain pages.)
+        listDescendantMaySeeCategories(categoryId, includeRoot = true,
+            includeDelted = pageQuery.pageFilter.includeDeleted, authzCtx).map(_.id)
       }
       else {
         SECURITY // double-think-through this:
@@ -186,7 +188,7 @@ trait CategoriesDao {
       }
 
     val okCategoryIds =
-      if (pageQuery.pageFilter != PageFilter.ForActivitySummaryEmail)
+      if (pageQuery.pageFilter.filterType != PageFilterType.ForActivitySummaryEmail)
         maySeeCategoryIds
       else
         maySeeCategoryIds filter { id =>
@@ -329,7 +331,7 @@ trait CategoriesDao {
 
 
   private def appendMaySeeCategoriesInTree(rootCategoryId: CategoryId, includeRoot: Boolean,
-      authzCtx: ForumAuthzContext, categoryList: ArrayBuffer[Category]) {
+      includeDelted: Boolean, authzCtx: ForumAuthzContext, categoryList: ArrayBuffer[Category]) {
 
     if (categoryList.exists(_.id == rootCategoryId)) {
       // COULD log cycle error
@@ -350,6 +352,9 @@ trait CategoriesDao {
         return
     }
 
+    if (!includeDelted && startCategory.isDeleted)
+      return
+
     COULD // add a seeUnlisted permission? If in a cat, a certain group should see unlisted topics.
     val onlyForStaff = startCategory.unlisted || startCategory.isDeleted  // [5JKWT42]
     if (onlyForStaff && !authzCtx.isStaff)
@@ -362,7 +367,7 @@ trait CategoriesDao {
       return
     })
     for (childCategory <- childCategories) {
-      appendMaySeeCategoriesInTree(childCategory.id, includeRoot = true,
+      appendMaySeeCategoriesInTree(childCategory.id, includeRoot = true, includeDelted = includeDelted,
         authzCtx, categoryList)
     }
   }

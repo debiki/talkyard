@@ -728,6 +728,7 @@ export function savePageNoftLevel(newNotfLevel) {
 
 
 export function loadMyself(callback: (user: any) => void) {
+  // SHOULD incl sort order & topic filter in the url params. [2KBLJ80]
   get(`/-/load-my-page-data?pageId=${getPageId()}`, callback);
 }
 

@@ -99,7 +99,7 @@ trait SummaryEmailsDao {
           else if (millisSinceLast > OneDayInMillis) TopTopicsPeriod.Week
           else TopTopicsPeriod.Day
         val pageQuery = PageQuery(PageOrderOffset.ByScoreAndBumpTime(offset = None, period),
-          PageFilter.ForActivitySummaryEmail,
+          PageFilter(PageFilterType.ForActivitySummaryEmail, includeDeleted = false),
           // About-category pages can be interesting? E.g. new category created & everyone clicks Like.
           includeAboutCategoryPages = settings.showCategories)
 

@@ -264,9 +264,7 @@ class JsonMaker(dao: SiteDao) {
       if (page.role == PageRole.Forum) {
         val rootCategoryId = page.meta.categoryId.getOrDie(
           "DwE7KYP2", s"Forum page '${page.id}', site '${transaction.siteId}', has no category id")
-        val orderOffset = renderParams.anyPageQuery.getOrElse(
-          PageQuery(PageOrderOffset.ByBumpTime(None), PageFilter.ShowAll,
-              includeAboutCategoryPages = siteSettings.showCategories))
+        val orderOffset = renderParams.anyPageQuery getOrElse defaultPageQuery(siteSettings)
         val authzCtx = dao.getForumAuthzContext(user = None)
         val topics = dao.listMaySeeTopicsInclPinned(rootCategoryId, orderOffset,
           includeDescendantCategories = true,
@@ -753,12 +751,13 @@ class JsonMaker(dao: SiteDao) {
         (Nil, Map[PageId, PageStuff]())
       }
       else {
-        val orderOffset = PageQuery(PageOrderOffset.ByBumpTime(None), PageFilter.ShowAll,
-          includeAboutCategoryPages = siteSettings.showCategories)
+        // BUG (minor): To include restricted categories & topics, sorted in the correct order, need
+        // to know topic sort order & topic filter — but that's not incl in the url params. [2KBLJ80]
+        val pageQuery = request.parsePageQuery() getOrElse defaultPageQuery(siteSettings)
         // SHOULD avoid starting a new transaction, so can remove workaround [7YKG25P].
         // (We're passing dao to ForumController below.)
         val topics = dao.listMaySeeTopicsInclPinned(
-          categoryId, orderOffset,
+          categoryId, pageQuery,
           includeDescendantCategories = true,
           authzCtx,
           limit = ForumController.NumTopicsToList)
@@ -774,6 +773,13 @@ class JsonMaker(dao: SiteDao) {
       topics.map(ForumController.topicToJson(_, pageStuffById)),
       users.map(JsUser))
   }
+
+
+  private def defaultPageQuery(siteSettings: EffectiveSettings) =
+    PageQuery(
+      PageOrderOffset.ByBumpTime(None),
+      PageFilter(PageFilterType.AllTopics, includeDeleted = false),
+      includeAboutCategoryPages = siteSettings.showCategories)
 
 
   private def unapprovedPostsAndAuthorsJson(user: User, pageId: PageId,

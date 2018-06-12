@@ -141,7 +141,7 @@ class Notifier(val systemDao: SystemDao, val siteDaoFactory: SiteDaoFactory)
           Seq(UtxTestQueueCategoryId),
           PageQuery(
             PageOrderOffset.ByCreatedAt(Some(aDayAgo.toJavaDate)),
-            PageFilter.ShowWaiting,
+            PageFilter(PageFilterType.WaitingTopics, includeDeleted = false),
             includeAboutCategoryPages = false),
           limit = 100)
       val createdByUserIds = topics.map(_.meta.authorId).toSet

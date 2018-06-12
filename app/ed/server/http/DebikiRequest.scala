@@ -211,8 +211,9 @@ abstract class DebikiRequest[A] {
       case x => throwBadReq("DwE05YE2", s"Bad sort order: `$x'")
     }
 
-    val filter = parsePageFilter()
-    Some(PageQuery(orderOffset, filter,
+    val pageFilter = parsePageFilter()
+
+    Some(PageQuery(orderOffset, pageFilter,
       // Later: Let user preferences override, if is staff. [8WK4SD7]
       includeAboutCategoryPages = siteSettings.showCategories))
   }
@@ -220,14 +221,18 @@ abstract class DebikiRequest[A] {
 
   def parsePageFilter(): PageFilter =
     queryString.getFirst("filter") match {
-      case None => PageFilter.ShowAll
-      case Some("ShowAll") => PageFilter.ShowAll
-      case Some("ShowWaiting") => PageFilter.ShowWaiting
+      case None | Some("ShowAll") =>
+        PageFilter(PageFilterType.AllTopics, includeDeleted = false)
+      case Some("ShowWaiting") =>
+        PageFilter(PageFilterType.WaitingTopics, includeDeleted = false)
       case Some("ShowDeleted") =>
-        if (!isStaff)
-          throwForbidden("EsE5YKP3", "Only staff may list deleted topics")
-        PageFilter.ShowDeleted
-      case Some(x) => throwBadRequest("DwE5KGP8", s"Bad topic filter: $x")
+        // Non staff members may not list deleted topics. Could throw an error if !isStaff,
+        // but that'd break the end-to-end-tests [4UKDWT20]. The list-deleted-topics option is
+        // hidden for non-staff people anyway, in the UI. [2UFKBJ73]
+        // Or maybe set incl-deleted = true anyway, and let people list their own deleted topics?
+        PageFilter(PageFilterType.AllTopics, includeDeleted = isStaff)
+      case Some(x) =>
+        throwBadRequest("DwE5KGP8", s"Bad topic filter: $x")
     }
 
 

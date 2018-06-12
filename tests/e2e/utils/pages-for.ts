@@ -1121,6 +1121,12 @@ function pagesFor(browser) {
         browser.waitForVisible('#e2eViewCategoriesB');
         assert(!browser.isVisible('#e2eCreateSth'));
       },
+
+      listDeletedTopics: function() {
+        browser.waitAndClick('.esForum_filterBtn');
+        browser.waitAndClick('.s_F_BB_TF_Dd');
+        browser.forumTopicList.waitForTopics();
+      },
     },
 
 

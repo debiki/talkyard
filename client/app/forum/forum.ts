@@ -551,8 +551,8 @@ const ForumButtons = createComponent({
       die('EsE4JK85');
     }
 
-    const showDeletedFilterItem = !isStaff(me) || !showFilterButton ? null :
-      ExplainingListItem({ onSelect: this.setTopicFilter,
+    const showDeletedFilterItem = !isStaff(me) || !showFilterButton ? null :   // [2UFKBJ73]
+      ExplainingListItem({ onSelect: this.setTopicFilter, className: 's_F_BB_TF_Dd',
         activeEventKey: topicFilterValue, eventKey: FilterShowDeleted,
         title: makeTopicFilterText(FilterShowDeleted),
         text: t.fb.ShowDeletedDescr });
@@ -562,11 +562,11 @@ const ForumButtons = createComponent({
           title: rFragment({},
             makeTopicFilterText(topicFilterValue) + ' ', r.span({ className: 'caret' })) },
         r.ul({},
-          ExplainingListItem({ onSelect: this.setTopicFilter,
+          ExplainingListItem({ onSelect: this.setTopicFilter, className: 's_F_BB_TF_All',
               activeEventKey: topicFilterValue, eventKey: FilterShowAll,
               title: t.fb.ShowAllTopics,
               text: t.fb.ShowAllTopicsDescr }),
-          ExplainingListItem({ onSelect: this.setTopicFilter,
+          ExplainingListItem({ onSelect: this.setTopicFilter, className: 's_F_BB_TF_Wait',
               activeEventKey: topicFilterValue, eventKey: FilterShowWaiting,
               title: makeTopicFilterText(FilterShowWaiting),
               text: r.span({},
@@ -683,8 +683,11 @@ const LoadAndListTopics = createFactory({
     if (!store.topics || this.props.topicsInStoreMightBeOld)
       return false;
 
+    const topicFilter = this.props.queryParams.filter;
+
     // The server includes topics for the active-topics sort order, all categories.
     return this.props.sortOrderRoute === RoutePathLatest &&
+        (!topicFilter || topicFilter === FilterShowAll) &&
         !this.props.match.params.categorySlug;
   },
 
@@ -953,6 +956,7 @@ export const TopicsList = createComponent({
     }
 
     const deletedClass = !activeCategory.isDeleted ? '' : ' s_F_Ts-CatDd';
+    const anyDeletedCross = !activeCategory.isDeleted ? null : r.div({ className: 's_Pg_DdX' });
     const categoryDeletedInfo = !activeCategory.isDeleted ? null :
       r.p({ className: 'icon-trash s_F_CatDdInfo' },
         t.ft.CatHasBeenDeleted);
@@ -990,7 +994,8 @@ export const TopicsList = createComponent({
       r.div({},
         categoryDeletedInfo,
         topTopicsPeriodButton,
-        topicsTable || topicRows,
+        r.div({ style: { position: 'relative' }}, anyDeletedCross,
+          topicsTable || topicRows),
         loadMoreTopicsBtn));
   }
 });

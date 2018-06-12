@@ -258,9 +258,19 @@ class ForumController @Inject()(cc: ControllerComponents, edContext: EdContext)
     SECURITY; TESTS_MISSING  // securified
     import request.{dao, requester}
     val authzCtx = dao.getForumAuthzContext(requester)
-    val pageQuery: PageQuery = request.parseThePageQuery()
-    throwForbiddenIf(pageQuery.pageFilter.includesDeleted && !request.isStaff, "EdE5FKZX2",
+    var pageQuery: PageQuery = request.parseThePageQuery()
+    throwForbiddenIf(pageQuery.pageFilter.includeDeleted && !request.isStaff, "EdE5FKZX2",
       "Only staff can list deleted pages")
+
+    // If category deleted, load deleted topics too. Otherwise rather confusing, if one
+    // navigates to the deleted category, and sees its name, but no topics.
+    val showDeletedTopicsAnyway = dao.loadCategory(categoryId) exists { case (category, _) =>
+      category.isDeleted
+    }
+    if (showDeletedTopicsAnyway) {
+      pageQuery = pageQuery.copy(pageFilter = pageQuery.pageFilter.copy(includeDeleted = true))
+    }
+
     val topics = dao.listMaySeeTopicsInclPinned(categoryId, pageQuery,
       includeDescendantCategories = true, authzCtx, limit = NumTopicsToList)
     makeTopicsResponse(topics, dao)
@@ -273,7 +283,7 @@ class ForumController @Inject()(cc: ControllerComponents, edContext: EdContext)
     import request.{dao, requester}
     val authzCtx = dao.getForumAuthzContext(requester)
     val (categories, defaultCategoryId) = request.dao.listMaySeeSectionCategories(forumId,
-      authzCtx)
+      includeDelted = true, authzCtx)
     val json = JsArray(categories.map({ category =>
       categoryToJson(category, category.id == defaultCategoryId, recentTopics = Nil,
           pageStuffById = Map.empty)
@@ -287,15 +297,16 @@ class ForumController @Inject()(cc: ControllerComponents, edContext: EdContext)
     import request.{dao, requester}
     val authzCtx = dao.getForumAuthzContext(requester)
 
-    val (categories, defaultCategoryId) = dao.listMaySeeSectionCategories(forumId,
-      authzCtx)
+    val pageQuery = PageQuery(
+      PageOrderOffset.ByBumpTime(None), request.parsePageFilter(), includeAboutCategoryPages = false)
+
+    val (categories, defaultCategoryId) = dao.listMaySeeSectionCategories(
+      forumId, includeDelted = pageQuery.pageFilter.includeDeleted, authzCtx)
 
     val recentTopicsByCategoryId =
       mutable.Map[CategoryId, Seq[PagePathAndMeta]]()
 
     val pageIds = ArrayBuffer[PageId]()
-    val pageQuery = PageQuery(
-      PageOrderOffset.ByBumpTime(None), request.parsePageFilter(), includeAboutCategoryPages = false)
 
     for (category <- categories) {
       val recentTopics = dao.listMaySeeTopicsInclPinned(category.id, pageQuery,

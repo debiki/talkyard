@@ -59,8 +59,8 @@ export var ExplainingListItem = createComponent({
   },
 
   render: function() {
-    var entry: ExplainingTitleText = this.props;
-    var activeClass =
+    const entry: ExplainingTitleText = this.props;
+    const activeClass =
         this.props.active || _.isUndefined(this.props.active) && (
           this.props.onSelect && this.props.activeEventKey === this.props.eventKey) ?
         ' active' : '';

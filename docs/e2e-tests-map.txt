@@ -111,7 +111,8 @@ forum -
     all categories:
     only one category:
     show waiting:
-    show deleted:
+    show deleted -
+      not/staff: authz-view-as-stranger.test.ts
   popular topics -
     all categories:
     only one category:

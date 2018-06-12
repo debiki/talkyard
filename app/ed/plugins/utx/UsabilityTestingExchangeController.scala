@@ -130,7 +130,8 @@ class UsabilityTestingExchangeController @Inject()(cc: ControllerComponents, edC
     val authzCtx = dao.getForumAuthzContext(Some(theRequester))
     // (Don't include deleted topics, to mitigate the below DoS attack. Ban people who post stuff
     // that the staff then deletes.)
-    val pageQuery = PageQuery(PageOrderOffset.ByCreatedAt(None), PageFilter.ShowAll,
+    val pageQuery = PageQuery(PageOrderOffset.ByCreatedAt(None),
+      PageFilter(PageFilterType.AllTopics, includeDeleted = false),
       includeAboutCategoryPages = false)
     val topicsWithAboutPage = dao.loadMaySeePagesInCategory(
       category.id, includeDescendants = false, authzCtx,

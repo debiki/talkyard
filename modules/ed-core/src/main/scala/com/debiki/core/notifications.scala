@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2014 Kaj Magnus Lindberg (born 1979)
+ * Copyright (C) 2014 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -18,7 +18,6 @@
 package com.debiki.core
 
 import java.{util => ju}
-import Prelude._
 
 
 /** Notifications about e.g. new replies, @mentions, someone liked your post.
@@ -35,7 +34,7 @@ object Notifications {
 
 
 
-sealed abstract class NotificationType(val IntValue: Int) { def toInt = IntValue }
+sealed abstract class NotificationType(val IntValue: Int) { def toInt: Int = IntValue }
 
 object NotificationType {
   case object DirectReply extends NotificationType(1)
@@ -84,7 +83,7 @@ object Notification {
     emailId: Option[EmailId] = None,
     emailStatus: NotfEmailStatus = NotfEmailStatus.Undecided,
     seenAt: Option[ju.Date] = None) extends Notification {
-    override def tyype = notfType
+    override def tyype: NotificationType = notfType
   }
 
   /*
@@ -114,7 +113,7 @@ object NotificationToDelete {
 }
 
 
-sealed abstract class NotfEmailStatus(val IntValue: Int ) { def toInt = IntValue }
+sealed abstract class NotfEmailStatus(val IntValue: Int ) { def toInt: Int = IntValue }
 object NotfEmailStatus {
 
   /** This notification has not yet been processed; we have yet to decide if to send an email. */
@@ -139,7 +138,7 @@ object NotfEmailStatus {
 
 
 sealed abstract class NotfLevel(val IntVal: Int) {
-  def toInt = IntVal
+  def toInt: Int = IntVal
 }
 
 

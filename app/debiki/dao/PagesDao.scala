@@ -181,17 +181,18 @@ trait PagesDao {
     }
     else {
       anyCategoryId foreach { categoryId =>
-          val category = transaction.loadCategory(categoryId) getOrElse throwNotFound(
-            "DwE4KGP8", s"Category not found, id: $categoryId")
-          if (category.isRoot)
-            throwForbidden("DwE5GJU0", o"""The root category cannot have any child pages;
-              use the Uncategorized category instead""")
-          if (category.isLocked)
-            throwForbidden("DwE4KFW2", "Category locked")
-          if (category.isFrozen)
-            throwForbidden("DwE1QXF2", "Category frozen")
-          if (category.isDeleted)
-            throwForbidden("DwE6GPY2", "Category deleted")
+        val category = transaction.loadCategory(categoryId) getOrElse throwNotFound(
+          "DwE4KGP8", s"Category not found, id: $categoryId")
+        def whichCategory = s"The '${category.name}' category"
+        if (category.isRoot)
+          throwForbidden("DwE5GJU0", o"""The root category cannot have any child pages;
+            use the Uncategorized category instead""")
+        if (category.isLocked)
+          throwForbidden("DwE4KFW2", s"$whichCategory is locked")
+        if (category.isFrozen)
+          throwForbidden("DwE1QXF2", s"$whichCategory is frozen")
+        if (category.isDeleted)
+          throwForbidden("DwE6GPY2", s"$whichCategory is deleted")
       }
     }
 

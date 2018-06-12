@@ -630,14 +630,15 @@ object PageOrderOffset {
     extends PageOrderOffset
 }
 
-sealed abstract class PageFilter { def includesDeleted = false }
-object PageFilter {
-  case object ShowAll extends PageFilter
-  case object ForActivitySummaryEmail extends PageFilter
-  case object ShowWaiting extends PageFilter
-  case object ShowDeleted extends PageFilter {
-    override def includesDeleted = true
-  }
+case class PageFilter(
+  filterType: PageFilterType,
+  includeDeleted: Boolean)
+
+sealed abstract class PageFilterType
+object PageFilterType {
+  case object AllTopics extends PageFilterType
+  case object WaitingTopics extends PageFilterType
+  case object ForActivitySummaryEmail extends PageFilterType
 }
 
 
