@@ -233,6 +233,11 @@ export function renderTitleBodyCommentsToString() {
             null, // would be ExtReactRootNavComponent, and its render() returns null
             forumRoute)));
   }
+  else if (store.isEmbedded && page.pageRole === PageRole.EmbeddedComments) {
+    // Then we don't include any top bar or scroll buttons [1FBZQ4]
+    return ReactDOMServer.renderToString(
+        Page({ store }));
+  }
   else {
     // Sync with client side rendering code. [7UKTWR]
     return ReactDOMServer.renderToString(

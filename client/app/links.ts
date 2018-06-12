@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016 Kaj Magnus Lindberg
+ * Copyright (c) 2016-2018 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -25,40 +25,30 @@
    namespace debiki2 {
 //------------------------------------------------------------------------------
 
-// This results in a '' origin also for embedded comments pages — which means
-// the links won't work, client side: they'll link to https://embedding-site/...
-// instead of https://comments-for-.../.  More details here: [7UKWBP4].
-// ?? seems to work now (June 4 -18) ?? did I fix this?
-// CLEAN_UP: pass the store to all the link fns in this file, C-lang-like obj oriented style?
-// Instead of accessing it globally. And remove this origin and if-if-if:
-let origin;  // [EMBCMTSORIG]
-if ((<any> window).theStore) {
-  const store: Store = (<any> window).theStore; // [4AGLH2]
-  if (store.isEmbedded) {
-    // Need to use absolute links, otherwise will resolve relative the embedding server's origin.
-    origin = store.origin;  // [5ULKWLQ0]
-  }
-}
-if (!origin) {
-  console.log("Dead code? no? [AJ4KUFP0]");
-  origin = eds.isInEmbeddedCommentsIframe ? eds.serverOrigin : '';
+// In embedded comments, need incl the Talkyard server url, otherwise links will [EMBCMTSORIG]
+// resolve to the embeddING server.
+// Hack. Currently there's always exactly one store, and it always has remoteOriginOrEmpty set.
+function origin(): string {
+  // This needs to happen in a function, so gets reevaluated server side, where the same script
+  // engine gets reused, for rendering pages at different sites, different origins.
+  return (<any> window).theStore.remoteOriginOrEmpty;  // [ONESTORE]
 }
 
 
 export function linkToPageId(pageId: PageId): string {
-  return origin + '/-' + pageId;
+  return origin() + '/-' + pageId;
 }
 
 
 export function linkToPostNr(pageId: PageId, postNr: PostNr): string {
-  return linkToPageId(pageId) + '#post-' + postNr;
+  return origin() + linkToPageId(pageId) + '#post-' + postNr;
 }
 
 
 export function linkToAdminPage(me: Myself): string {
   // By default, redirects to path not available to non-admins. So send non-admins to reviews section.
   const morePath = me.isAdmin ? '' : 'review/all';
-  return origin + '/-/admin/' + morePath;
+  return origin() + '/-/admin/' + morePath;
 }
 
 export function linkToAdminPageAdvancedSettings(hostname?: string): string {
@@ -67,11 +57,11 @@ export function linkToAdminPageAdvancedSettings(hostname?: string): string {
 }
 
 export function linkToUserInAdminArea(userId: UserId): string {
-  return '/-/admin/users/id/' + userId;
+  return origin() + '/-/admin/users/id/' + userId;
 }
 
 export function linkToReviewPage(): string {
-  return '/-/admin/review/all';
+  return origin() + '/-/admin/review/all';
 }
 
 
@@ -82,7 +72,7 @@ export function linkToUserProfilePage(user: Myself | User | UserId | string): Us
   // @endif
 
   const idOrUsername = _.isObject(user) ? (<User> user).username || (<User> user).id : user;
-  return origin + UsersRoot + idOrUsername;
+  return origin() + UsersRoot + idOrUsername;
 }
 
 export function linkToUsersNotfs(userIdOrUsername: UserId | string): string {
@@ -98,13 +88,13 @@ export function linkToInvitesFromUser(userId: UserId): string {
 }
 
 export function linkToMyProfilePage(store: Store): string {
-  return origin + UsersRoot + store.me.id;
+  return origin() + UsersRoot + store.me.id;
 }
 
 
 export function linkToNotificationSource(notf: Notification): string {
   if (notf.pageId && notf.postNr) {
-    return '/-' + notf.pageId + '#post-' + notf.postNr;
+    return origin() + '/-' + notf.pageId + '#post-' + notf.postNr;
   }
   else {
     die("Unknown notification type [EsE5GUKW2]")
@@ -113,16 +103,16 @@ export function linkToNotificationSource(notf: Notification): string {
 
 
 export function linkToRedirToAboutCategoryPage(categoryId: CategoryId): string {
-  return '/-/redir-to-about?categoryId=' + categoryId;
+  return origin() + '/-/redir-to-about?categoryId=' + categoryId;
 }
 
 
 export function linkToTermsOfUse(): string {
-  return '/-/terms-of-use';
+  return origin() + '/-/terms-of-use';
 }
 
 export function linkToAboutPage(): string {
-  return '/about';
+  return origin() + '/about';
 }
 
 

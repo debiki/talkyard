@@ -241,8 +241,6 @@ export function UserName(props: {
     className: 'dw-p-by esP_By',
   };
 
-  let bugWrapInDiv = false;
-
   // Talkyard demo hack: usernames that starts with '__sx_' are of the form    [2QWGRC8P]
   // '__sx_[subdomain]_[user-id]' where [subdomain] is a StackExchange subdomain, and
   // [user-id] is a StackExchange user id. In this way, we can link & attribute comments
@@ -259,19 +257,10 @@ export function UserName(props: {
   }
   else {
     if (props.makeLink) {
+      // This will incl the Talkyard server origin, if we're in an embedded comments discussion
+      // — otherwise, would link to the embedding server, totally wrong.  [EMBCMTSORIG]
+      // (Previously, there was such a bug.)
       newProps.href = linkToUserProfilePage(user);
-      // BUG [7UKWBP4] workaround: embedded comments pages rendered server side, don't know  FIXED NOW?
-      // CLEAN_UP remove this bug workaround. Fixed, because now caching pages per origin,
-      // and using in links.ts  [5ULKWLQ0].
-      // that they're embedded comments pages and won't prefix links with https://comments-for-.../.
-      // When rendering client side, the links will get that prefix and work fine — however,
-      // React decides to keep the server side link instead of the client side link,
-      // when matching the server side html with the client side html.
-      // The real fix is to include the comments-for-... origin server side too, but for now,
-      // add a key prop so React understands it shouldn't reuse the server side link.
-      if (eds.isInEmbeddedCommentsIframe) {
-        bugWrapInDiv = true;
-      }
     }
 
     // Can disable onClick by specifying null? because null = defined.
@@ -288,12 +277,7 @@ export function UserName(props: {
     }
   }
 
-  let result = linkFn(newProps, namePartOne, namePartTwo);
-  if (bugWrapInDiv) {
-    // React 16.2 removes span but keeps div.
-    result = r.div({ style: { display: 'inline' }}, result);
-  }
-  return result;
+  return linkFn(newProps, namePartOne, namePartTwo);
 }
 
 //------------------------------------------------------------------------------

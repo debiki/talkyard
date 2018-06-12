@@ -583,7 +583,7 @@ interface Page {
 interface Store {
   widthLayout: WidthLayout;
   isEmbedded: boolean;
-  origin: string;
+  remoteOriginOrEmpty: string;
   anyCdnOrigin?: string;
   appVersion: string;
   // Might be anything, in test suites that mess with time & the universe.

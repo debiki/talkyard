@@ -183,21 +183,20 @@ class Nashorn(globals: Globals) {
   }
 
 
-  def renderPage(initialStateJson: String): Option[String] = {
+  def renderPage(reactStoreJsonString: String): Option[String] = {
     if (isTestSoDisableScripts)
       return Some("Scripts disabled [EsM6YKW2]")
     withJavascriptEngine(engine => {
-      renderPageImpl(engine, initialStateJson)
+      renderPageImpl(engine, reactStoreJsonString)
     })
   }
 
 
-  private def renderPageImpl[R](engine: js.Invocable, initialStateJson: String): Option[String] = {
+  private def renderPageImpl[R](engine: js.Invocable, reactStoreJsonString: String): Option[String] = {
     val timeBefore = System.currentTimeMillis()
 
-    engine.invokeFunction("setInitialStateJson", initialStateJson)
     val pageHtml = engine.invokeFunction(
-      "renderReactServerSide", cdnOrigin.getOrElse("")).asInstanceOf[String]
+      "renderReactServerSide", reactStoreJsonString, cdnOrigin.getOrElse("")).asInstanceOf[String]
     if (pageHtml == ErrorRenderingReact) {
       logger.error(s"Error rendering page with React server side [DwE5KGW2]")
       return None
@@ -353,44 +352,95 @@ class Nashorn(globals: Globals) {
     def threadName = java.lang.Thread.currentThread.getName
     logger.debug(s"Initializing Nashorn engine, thread id: $threadId, name: $threadName...")
 
+    val languageCode = AllSettings.makeDefault(globals).languageCode
+
     // Pass 'null' so that a class loader that finds the Nashorn extension will be used.
     // Otherwise the Nashorn engine won't be found and `newEngine` will be null.
     // See: https://github.com/playframework/playframework/issues/2532
     val newEngine = new js.ScriptEngineManager(null).getEngineByName("nashorn")
     val scriptBuilder = new StringBuilder
 
-    // React expects `window` or `global` to exist, and my React code sometimes
-    // load React components from `window['component-name']`.
-    scriptBuilder.append("var global = window = this;")
-
-    val languageCode = AllSettings.makeDefault(globals).languageCode
-
     scriptBuilder.append(i"""
+        |// React expects `window` or `global` to exist, and my React code sometimes
+        |// load React components from `window['component-name']`.
+        |var global = window = this;
+        |
         |$DummyConsoleLogFunctions
-        |${serverSideDebikiModule(secure)}
-        |$ServerSideReactStore
+        |
+        |// Needs serverOrigin   <— NO, fixed now (right?). [EMBLINKSOK] CLEAN_UP
+        |// and isInEmbeddedCommentsIframe, so can generate working links
+        |// also for embedded comments pages.
+        |//
+        |var eds = {
+        |  secure: $secure
+        |};
+        |// CLEAN_UP remove debiki.v0 & .internal [4KSWPY]
+        |var debiki = {
+        |  v0: { util: {} },
+        |  internal: {},
+        |};
+        |
+        |var debiki2 = debiki2 || {};
+        |var theStore; // Hack. Used here and there directly [4AGLH2], works fine ... and fragile?
+        |
+        |/**
+        | * A React store for server side rendering. No event related functions; no events happen
+        | * when rendering server side.
+        | */
+        |debiki2.ReactStore = {
+        |  allData: function() {
+        |    return theStore;
+        |  },
+        |  getUser: function() {
+        |    return theStore.me;
+        |  },
+        |  getPageTitle: function() { // dupl code [5GYK2]
+        |    var titlePost = theStore.currentPage.postsByNr[TitleNr];
+        |    return titlePost ? titlePost.sanitizedHtml : "(no title)";
+        |  }
+        |};
         |
         |// React-Router calls setTimeout(), but it's not available in Nashorn.
         |function setTimeout(callback) {
         |  callback();
         |}
         |
-        |function renderReactServerSide(cdnOriginOrEmpty) {
+        |function renderReactServerSide(reactStoreJsonString, cdnOriginOrEmpty) {
         |  try {
+        |    theStore = JSON.parse(reactStoreJsonString);
+        |    theStore.currentPage = theStore.pagesById[theStore.currentPageId];
+        |
+        |    // Fill in no-page-data to avoid null errors. Dupl code. [4FBR20]
+        |    theStore.me.myCurrentPageData = {
+        |      rolePageSettings: { notfLevel: NotfLevel.Normal },
+        |      votes: {},
+        |      unapprovedPosts: {},
+        |      unapprovedPostAuthors: [],
+        |      postNrsAutoReadLongAgo: [],
+        |      postNrsAutoReadNow: [],
+        |      marksByPostId: {},
+        |    };
+        |
         |    // Each language file creates a 't_(lang-code)' global variable, e.g. 't_en' for English.
-        |    // And they all set a global 'var t' to themselves. Update 't' here; it gets used
-        |    // during rendering.
+        |    // And they all set a global 'var t' to themselves (t = declared by those files).
         |    var langCode = theStore.settings.languageCode || '$languageCode';
         |    t = global['t_' + langCode];
+        |
         |    eds.uploadsUrlPrefix =   // [7AKBQ2]
         |       cdnOriginOrEmpty + '${ed.server.UploadsUrlBasePath}' + theStore.pubSiteId + '/';
+        |
         |    var html = debiki2.renderTitleBodyCommentsToString();
-        |    eds.uploadsUrlPrefix = 'TyE2FWY6';
-        |    t = 'TyE5JKWQ2';
         |    return html;
         |  }
         |  catch (e) {
         |    printStackTrace(e);
+        |  }
+        |  finally {
+        |    // Reset things to error codes, to fail fast, if attmepts to access these,
+        |    // when using this same Nashorn engine to render Markdown to HTML.
+        |    eds.uploadsUrlPrefix = 'TyEBADACCESSUPL';
+        |    t = 'TyEBADACCESSLANG';
+        |    theStore = 'TyEBADACCESSSTORE';
         |  }
         |  return '$ErrorRenderingReact';
         |}
@@ -597,62 +647,6 @@ object Nashorn {
     |  console.error('Stack trace: ' + exception.stack);
     |  console.error('Exception as is: ' + exception);
     |  console.error('Exception as JSON: ' + JSON.stringify(exception));
-    |}
-    |"""
-
-
-  // CLEAN_UP remove debiki.v0 & .internal [4KSWPY]
-  // Needs serverOrigin and isInEmbeddedCommentsIframe, so can generate working links  [7UKWBP4]
-  // also for embedded comments pages.
-  private def serverSideDebikiModule(secure: Boolean) = i"""
-    |var eds = {
-    |  secure: $secure
-    |};
-    |var debiki = {
-    |  v0: { util: {} },
-    |  internal: {},
-    |};
-    |"""
-
-
-  /** A React store from which the React components can get their initial state,
-    * when they're being rendered server side.
-    *
-    * Doesn't provide any event related functions because non events happen when
-    * rendering server side.
-    */
-  private val ServerSideReactStore = i"""
-    |var debiki2 = debiki2 || {};
-    |
-    |debiki2.ReactStore = {
-    |  allData: function() {
-    |    return theStore;
-    |  },
-    |  getUser: function() {
-    |    return theStore.me;
-    |  },
-    |  getPageTitle: function() { // dupl code [5GYK2]
-    |    var titlePost = theStore.currentPage.postsByNr[TitleNr];
-    |    return titlePost ? titlePost.sanitizedHtml : "(no title)";
-    |  }
-    |};
-    |
-    |var theStore = {}; // Hack. Used here and there directly [4AGLH2], works fine ... and fragile?
-    |
-    |function setInitialStateJson(jsonString) {
-    |  var s = JSON.parse(jsonString);
-    |  s.currentPage = s.pagesById[s.currentPageId];
-    |  // Fill in no-page-data to avoid null errors. Dupl code. [4FBR20]
-    |  s.me.myCurrentPageData = {
-    |    rolePageSettings: { notfLevel: NotfLevel.Normal },
-    |    votes: {},
-    |    unapprovedPosts: {},
-    |    unapprovedPostAuthors: [],
-    |    postNrsAutoReadLongAgo: [],
-    |    postNrsAutoReadNow: [],
-    |    marksByPostId: {},
-    |  };
-    |  theStore = s;
     |}
     |"""
 

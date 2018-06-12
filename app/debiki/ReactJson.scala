@@ -119,7 +119,7 @@ class JsonMaker(dao: SiteDao) {
       "dbgSrc" -> "ESJ",
       "widthLayout" -> (if (pageReq.isMobile) WidthLayout.Tiny else WidthLayout.Medium).toInt,
       "isEmbedded" -> false,
-      "origin" -> "",
+      "remoteOriginOrEmpty" -> "",
       "anyCdnOrigin" -> JsStringOrNull(globals.anyCdnOrigin),
       "appVersion" -> globals.applicationVersion,
       "now" -> nowMs, // deprecated? Use .nowMs instead?
@@ -336,7 +336,7 @@ class JsonMaker(dao: SiteDao) {
       "isEmbedded" -> renderParams.isEmbedded,
       // For embedded comments pages, relative links don't work — then need to include
       // the Talkyard server origin in the links. [REMOTEORIGIN]
-      "origin" -> renderParams.remoteOriginOrEmpty,
+      "remoteOriginOrEmpty" -> renderParams.remoteOriginOrEmpty,
       "anyCdnOrigin" -> JsStringOrNull(renderParams.anyCdnOrigin),
       "appVersion" -> globals.applicationVersion,
       "nowMs" -> JsNumber(globals.now().millis),
@@ -391,7 +391,7 @@ class JsonMaker(dao: SiteDao) {
       "dbgSrc" -> "SPJ",
       "widthLayout" -> (if (request.isMobile) WidthLayout.Tiny else WidthLayout.Medium).toInt,
       "isEmbedded" -> false,
-      "origin" -> "",
+      "remoteOriginOrEmpty" -> "",
       "anyCdnOrigin" -> JsStringOrNull(globals.anyCdnOrigin),
       "appVersion" -> globals.applicationVersion,
       "nowMs" -> JsNumber(globals.now().millis),
