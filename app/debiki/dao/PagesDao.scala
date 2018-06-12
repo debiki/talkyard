@@ -400,8 +400,10 @@ trait PagesDao {
       if (!user.isStaff && user.id != oldMeta.authorId)
         throwForbidden("DwE2GKU4", "Only staff and the topic author can unaccept the answer")
 
+      // Dupl line. [4UKP58B]
       val newMeta = oldMeta.copy(answeredAt = None, answerPostUniqueId = None, closedAt = None,
         version = oldMeta.version + 1)
+
       transaction.updatePageMeta(newMeta, oldMeta = oldMeta, markSectionPageStale = true)
       // (COULD update audit log)
     }

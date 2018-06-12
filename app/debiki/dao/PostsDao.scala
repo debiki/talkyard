@@ -39,6 +39,8 @@ import talkyard.server.{IfCached, PostRendererSettings}
 
 case class InsertPostResult(storePatchJson: JsObject, post: Post, reviewTask: Option[ReviewTask])
 
+case class ChangePostStatusResult(answerGotDeleted: Boolean)
+
 
 /** Loads and saves pages and page parts (e.g. posts and patches).
   *
@@ -1014,13 +1016,14 @@ trait PostsDao {
   }
 
 
-  def changePostStatus(postNr: PostNr, pageId: PageId, action: PostStatusAction, userId: UserId) {
+  def changePostStatus(postNr: PostNr, pageId: PageId, action: PostStatusAction, userId: UserId)
+        : ChangePostStatusResult = {
     readWriteTransaction(changePostStatusImpl(postNr, pageId = pageId, action, userId = userId, _))
   }
 
 
   def changePostStatusImpl(postNr: PostNr, pageId: PageId, action: PostStatusAction,
-        userId: UserId, transaction: SiteTransaction) {
+        userId: UserId, transaction: SiteTransaction): ChangePostStatusResult =  {
     import com.debiki.core.{PostStatusAction => PSA}
 
     val page = PageDao(pageId, transaction)
@@ -1088,14 +1091,19 @@ trait PostsDao {
     updateNumVisible(postBefore, postAfter = postAfter)
     SHOULD // delete any review tasks.
 
+    val postsDeletedIds = ArrayBuffer[PostId]()
+
     transaction.updatePost(postAfter)
     if (postBefore.isDeleted != postAfter.isDeleted) {
       transaction.indexPostsSoon(postAfter)
+      if (postAfter.isDeleted) {
+        postsDeletedIds.append(postAfter.id)
+      }
     }
 
     // Update any indirectly affected posts, e.g. subsequent comments in the same
     // thread that are being deleted recursively.
-    for (successor <- page.parts.descendantsOf(postNr)) {
+    for (successor: Post <- page.parts.descendantsOf(postNr)) {
       val anyUpdatedSuccessor: Option[Post] = action match {
         case PSA.CloseTree =>
           if (successor.closedStatus.areAncestorsClosed) None
@@ -1110,6 +1118,7 @@ trait PostsDao {
         case PSA.DeletePost(clearFlags) =>
           None
         case PSA.DeleteTree =>
+          postsDeletedIds.append(successor.id)
           if (successor.deletedStatus.areAncestorsDeleted) None
           else Some(successor.copyWithNewStatus(
             transaction.now.toJavaDate, userId, ancestorsDeleted = true))
@@ -1131,6 +1140,19 @@ trait PostsDao {
     val oldMeta = page.meta
     var newMeta = oldMeta.copy(version = oldMeta.version + 1)
     var markSectionPageStale = false
+    var answerGotDeleted = false
+
+    // If a question's answer got deleted, change question status to unsolved, and reopen it. [2JPKBW0]
+    newMeta.answerPostUniqueId foreach { answerPostId =>
+      if (postsDeletedIds contains answerPostId) {
+        // Dupl line. [4UKP58B]
+        newMeta = newMeta.copy(answeredAt = None, answerPostUniqueId = None, closedAt = None)
+        // Need change from the Solved icon: ✓  to a question mark: (?) icon, in the topic list:
+        markSectionPageStale = true
+        answerGotDeleted = true
+      }
+    }
+
     // COULD update database to fix this. (Previously, chat pages didn't count num-chat-messages.)
     val isChatWithWrongReplyCount =
       page.role.isChat && oldMeta.numRepliesVisible == 0 && numVisibleRepliesGone > 0
@@ -1154,6 +1176,8 @@ trait PostsDao {
 
 
     refreshPageInMemCache(pageId)
+
+    ChangePostStatusResult(answerGotDeleted = answerGotDeleted)
   }
 
 

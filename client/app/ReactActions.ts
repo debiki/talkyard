@@ -239,9 +239,14 @@ export function acceptAnswer(postId: number) {
 
 export function unacceptAnswer() {
   Server.unacceptAnswer(() => {
-    ReactDispatcher.handleViewAction({
-      actionType: actionTypes.UnacceptAnswer,
-    });
+    unacceptAnswerClientSideOnly();
+  });
+}
+
+
+export function unacceptAnswerClientSideOnly() {
+  ReactDispatcher.handleViewAction({
+    actionType: actionTypes.UnacceptAnswer,
   });
 }
 
@@ -306,12 +311,16 @@ export function setPostHidden(postNr: number, hide: boolean, success?: () => voi
 
 
 export function deletePost(postNr: number, repliesToo: boolean, success: () => void) {
-  Server.deletePostInPage(postNr, repliesToo, (deletedPost) => {
+  Server.deletePostInPage(postNr, repliesToo, (response: { deletedPost, answerGotDeleted }) => {
     success();
     ReactDispatcher.handleViewAction({
       actionType: actionTypes.UpdatePost,
-      post: deletedPost
+      post: response.deletedPost
     });
+    if (response.answerGotDeleted) {
+      // Already done server side. [2JPKBW0]
+      unacceptAnswerClientSideOnly();
+    }
   });
 }
 

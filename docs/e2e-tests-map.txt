@@ -177,6 +177,8 @@ topics -
     cannot answer others:  page-type-question-closed.2browsers.test.ts
     click-scroll to answer:
     clear answer:  page-type-question-closed.2browsers.test.ts
+    delete the answer post, question becomes unsolved: [2JPKBW0]
+    move answer post to other page —> question unsolved: BUG?
   implement idea:
     cycle planned/done/pending:
   to-do:

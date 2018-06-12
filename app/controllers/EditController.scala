@@ -207,10 +207,15 @@ class EditController @Inject()(cc: ControllerComponents, edContext: EdContext)
       if (repliesToo) PostStatusAction.DeleteTree
       else PostStatusAction.DeletePost(clearFlags = false)
 
-    dao.changePostStatus(postNr, pageId = pageId, action, userId = request.theUserId)
+    val result = dao.changePostStatus(postNr, pageId = pageId, action, userId = request.theUserId)
 
-    OkSafeJson(dao.jsonMaker.postToJson2(postNr = postNr, pageId = pageId, // COULD: don't include post in reply? It'd be annoying if other unrelated changes were loaded just because the post was toggled open? [5GKU0234]
-      includeUnapproved = request.theUser.isStaff))
+    OkSafeJson(Json.obj(
+      "answerGotDeleted" -> result.answerGotDeleted,
+      "deletedPost" ->
+        // COULD: don't include post in reply? It'd be annoying if other unrelated changes
+        // were loaded just because the post was toggled open? [5GKU0234]
+        dao.jsonMaker.postToJson2(
+          postNr = postNr, pageId = pageId, includeUnapproved = request.theUser.isStaff)))
   }
 
 
