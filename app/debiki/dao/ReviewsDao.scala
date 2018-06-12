@@ -132,12 +132,12 @@ trait ReviewsDao {
 
 
   def carryOutReviewDecision(taskId: ReviewTaskId) {
+    val pageIdsToRefresh = mutable.Set[PageId]()
+
     readWriteTransaction { tx =>
       val anyTask = tx.loadReviewTask(taskId)
-      siteId
-      taskId
-      val zzz = s"Review task not found, site $siteId, task $taskId"
-      val task = anyTask.get //OrDie("EsE8YM42", s"Review task not found, site $siteId, task $taskId")
+      val task = anyTask.getOrDie("EsE8YM42", s"Review task not found, site $siteId, task $taskId")
+      task.pageId.map(pageIdsToRefresh.add)
 
       // Only one thread completes review tasks, so shouldn't be any races. [5YMBWQT]
       dieIf(task.completedAt.isDefined, "TyE2A2PUM6", "Review task already completed")
@@ -156,6 +156,9 @@ trait ReviewsDao {
           // Deleted? Ignore it then.
           return
         }
+
+        pageIdsToRefresh.add(post.pageId)
+
         // We're in a background thread and have forgotten the browser id data.
         // Could to load it from an earlier audit log entry, ... but maybe it's been deleted?
         // For now:
@@ -181,12 +184,12 @@ trait ReviewsDao {
                   tx)
               }
               approvePostImpl(post.pageId, post.nr, approverId = completedById, tx)
-              perhapsCascadeApproval(post.createdById)(tx)
+              perhapsCascadeApproval(post.createdById, pageIdsToRefresh)(tx)
             }
           case ReviewDecision.DeletePostOrPage =>
             if (task.isForBothTitleAndBody) {
-              deletePagesImpl(Seq(task.pageId getOrDie "EsE4K85R2"), deleterId = completedById,
-                  browserIdData)(tx)
+              val pageId = task.pageId getOrDie "TyE4K85R2"
+              deletePagesImpl(Seq(pageId), deleterId = completedById, browserIdData)(tx)
             }
             else {
               deletePostImpl(post.pageId, postNr = post.nr, deletedById = completedById,
@@ -195,6 +198,8 @@ trait ReviewsDao {
         }
       }
     }
+
+    refreshPagesInAnyCache(pageIdsToRefresh)
   }
 
 
@@ -202,8 +207,8 @@ trait ReviewsDao {
     * this method auto-approves all remaining first review tasks — because now we trust
     * the user that much.
     */
-  private def perhapsCascadeApproval(userId: UserId)(transaction: SiteTransaction) {
-    var pageIdsToRefresh = mutable.Set[PageId]()
+  private def perhapsCascadeApproval(userId: UserId, pageIdsToRefresh: mutable.Set[PageId])(
+        transaction: SiteTransaction) {
     val settings = loadWholeSiteSettings(transaction)
     val numFirstToAllow = math.min(MaxNumFirstPosts, settings.numFirstPostsToAllow)
     val numFirstToApprove = math.min(MaxNumFirstPosts, settings.numFirstPostsToApprove)
@@ -260,7 +265,6 @@ trait ReviewsDao {
         }
       }
     }
-    refreshPagesInAnyCache(pageIdsToRefresh)
   }
 
 

@@ -27,7 +27,7 @@ import debiki.EdHttp._
 import ed.server.auth.{Authz, ForumAuthzContext}
 import ed.server.notf.NotificationGenerator
 import java.{util => ju}
-import scala.collection.immutable
+import scala.collection.{immutable, mutable}
 import math.max
 import org.owasp.encoder.Encode
 
@@ -335,17 +335,19 @@ trait PagesDao {
       case None => "unpinned this topic"
       case Some(_) => "pinned this topic"
     }
-    val (oldMeta, newMeta) = readWriteTransaction { transaction =>
-      val oldMeta = transaction.loadThePageMeta(pageId)
+
+    val (oldMeta, newMeta) = readWriteTransaction { tx =>
+      val oldMeta = tx.loadThePageMeta(pageId)
       val newMeta = oldMeta.copy(pinWhere = pinWhere, pinOrder = pinOrder,
         version = oldMeta.version + 1, numPostsTotal = oldMeta.numPostsTotal + 1)
 
-      transaction.updatePageMeta(newMeta, oldMeta = oldMeta, markSectionPageStale = true)
+      tx.updatePageMeta(newMeta, oldMeta = oldMeta, markSectionPageStale = true)
       // (COULD update audit log)
-      addMetaMessage(requester, didWhat, pageId, transaction)
+      addMetaMessage(requester, didWhat, pageId, tx)
 
       (oldMeta, newMeta)
     }
+
     if (newMeta.isChatPinnedGlobally != oldMeta.isChatPinnedGlobally) {
       // When a chat gets un/pinned globally, need rerender watchbar, affects all pages. [0GPHSR4]
       emptyCache()
@@ -486,10 +488,10 @@ trait PagesDao {
   def ifAuthTogglePageClosed(pageId: PageId, userId: UserId, browserIdData: BrowserIdData)
         : Option[ju.Date] = {
     val now = globals.now()
-    val newClosedAt = readWriteTransaction { transaction =>
-      val user = transaction.loadTheUser(userId)
-      val oldMeta = transaction.loadThePageMeta(pageId)
-      throwIfMayNotSeePage(oldMeta, Some(user))(transaction)
+    val newClosedAt = readWriteTransaction { tx =>
+      val user = tx.loadTheUser(userId)
+      val oldMeta = tx.loadThePageMeta(pageId)
+      throwIfMayNotSeePage(oldMeta, Some(user))(tx)
 
       if (!oldMeta.pageRole.canClose)
         throwBadRequest("DwE4PKF7", s"Cannot close pages of type ${oldMeta.pageRole}")
@@ -506,9 +508,9 @@ trait PagesDao {
         version = oldMeta.version + 1,
         numPostsTotal = oldMeta.numPostsTotal + 1)
 
-      transaction.updatePageMeta(newMeta, oldMeta = oldMeta, markSectionPageStale = true)
+      tx.updatePageMeta(newMeta, oldMeta = oldMeta, markSectionPageStale = true)
       // Update audit log
-      addMetaMessage(user, s" $didWhat this topic", pageId, transaction)
+      addMetaMessage(user, s" $didWhat this topic", pageId, tx)
 
       newClosedAt
     }
@@ -519,59 +521,58 @@ trait PagesDao {
 
   def deletePagesIfAuth(pageIds: Seq[PageId], deleterId: UserId, browserIdData: BrowserIdData,
         undelete: Boolean) {
-    readWriteTransaction { transaction =>
+    readWriteTransaction { tx =>
       // SHOULD LATER: [4GWRQA28] If is sub community (= forum page), delete the root category too,
       // so all topics in the sub community will get deleted.
       // And remove the sub community from the watchbar's Communities section.
       // (And if undeleting the sub community, undelete the root category too.)
-      deletePagesImpl(pageIds, deleterId, browserIdData, undelete = undelete)(transaction)
+      deletePagesImpl(pageIds, deleterId, browserIdData, undelete = undelete)(tx)
     }
+    refreshPagesInAnyCache(pageIds.toSet)
   }
 
 
   def deletePagesImpl(pageIds: Seq[PageId], deleterId: UserId, browserIdData: BrowserIdData,
-        undelete: Boolean = false)(transaction: SiteTransaction) {
+        undelete: Boolean = false)(tx: SiteTransaction) {
 
-      val deleter = transaction.loadTheUser(deleterId)
-      if (!deleter.isStaff)
-        throwForbidden("EsE7YKP424_", "Only staff may (un)delete pages")
+    val deleter = tx.loadTheUser(deleterId)
+    if (!deleter.isStaff)
+      throwForbidden("EsE7YKP424_", "Only staff may (un)delete pages")
 
-      for (pageId <- pageIds ; pageMeta <- transaction.loadPageMeta(pageId)) {
-        if ((pageMeta.pageRole.isSection || pageMeta.pageRole == PageRole.CustomHtmlPage) &&
-            !deleter.isAdmin)
-          throwForbidden("EsE5GKF23_", "Only admin may (un)delete sections and HTML pages")
+    for (pageId <- pageIds ; pageMeta <- tx.loadPageMeta(pageId)) {
+      if ((pageMeta.pageRole.isSection || pageMeta.pageRole == PageRole.CustomHtmlPage) &&
+          !deleter.isAdmin)
+        throwForbidden("EsE5GKF23_", "Only admin may (un)delete sections and HTML pages")
 
-        val baseAuditEntry = AuditLogEntry(
-          siteId = siteId,
-          id = AuditLogEntry.UnassignedId,
-          didWhat = AuditLogEntryType.DeletePage,
-          doerId = deleterId,
-          doneAt = transaction.now.toJavaDate,
-          browserIdData = browserIdData,
-          pageId = Some(pageId),
-          pageRole = Some(pageMeta.pageRole))
+      val baseAuditEntry = AuditLogEntry(
+        siteId = siteId,
+        id = AuditLogEntry.UnassignedId,
+        didWhat = AuditLogEntryType.DeletePage,
+        doerId = deleterId,
+        doneAt = tx.now.toJavaDate,
+        browserIdData = browserIdData,
+        pageId = Some(pageId),
+        pageRole = Some(pageMeta.pageRole))
 
-        var (newMeta, auditLogEntry) =
-          if (undelete) {
-            (pageMeta.copy(deletedAt = None, version = pageMeta.version + 1),
-              baseAuditEntry.copy(didWhat = AuditLogEntryType.UndeletePage))
-          }
-          else {
-            (pageMeta.copy(deletedAt = Some(transaction.now.toJavaDate),
-              version = pageMeta.version + 1), baseAuditEntry)
-          }
-        newMeta = newMeta.copy(numPostsTotal = newMeta.numPostsTotal + 1)
+      var (newMeta, auditLogEntry) =
+        if (undelete) {
+          (pageMeta.copy(deletedAt = None, version = pageMeta.version + 1),
+            baseAuditEntry.copy(didWhat = AuditLogEntryType.UndeletePage))
+        }
+        else {
+          (pageMeta.copy(deletedAt = Some(tx.now.toJavaDate),
+            version = pageMeta.version + 1), baseAuditEntry)
+        }
+      newMeta = newMeta.copy(numPostsTotal = newMeta.numPostsTotal + 1)
 
-        transaction.updatePageMeta(newMeta, oldMeta = pageMeta, markSectionPageStale = true)
-        transaction.insertAuditLogEntry(auditLogEntry)
-        transaction.indexAllPostsOnPage(pageId)
-        // (Keep in top-topics table, so staff can list popular-but-deleted topics.)
+      tx.updatePageMeta(newMeta, oldMeta = pageMeta, markSectionPageStale = true)
+      tx.insertAuditLogEntry(auditLogEntry)
+      tx.indexAllPostsOnPage(pageId)
+      // (Keep in top-topics table, so staff can list popular-but-deleted topics.)
 
-        val un = undelete ? "un" | ""
-        addMetaMessage(deleter, s" ${un}deleted this topic", pageId, transaction)
-      }
-
-    pageIds foreach refreshPageInMemCache
+      val un = undelete ? "un" | ""
+      addMetaMessage(deleter, s" ${un}deleted this topic", pageId, tx)
+    }
   }
 
 

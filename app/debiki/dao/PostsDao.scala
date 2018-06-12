@@ -1018,7 +1018,10 @@ trait PostsDao {
 
   def changePostStatus(postNr: PostNr, pageId: PageId, action: PostStatusAction, userId: UserId)
         : ChangePostStatusResult = {
-    readWriteTransaction(changePostStatusImpl(postNr, pageId = pageId, action, userId = userId, _))
+    val result = readWriteTransaction(
+      changePostStatusImpl(postNr, pageId = pageId, action, userId = userId, _))
+    refreshPageInMemCache(pageId)
+    result
   }
 
 
@@ -1172,10 +1175,9 @@ trait PostsDao {
 
     transaction.updatePageMeta(newMeta, oldMeta = oldMeta, markSectionPageStale)
 
-      // In the future: if is a forum topic, and we're restoring the OP, then bump the topic.
+    // In the future: if is a forum topic, and we're restoring the OP, then bump the topic.
 
-
-    refreshPageInMemCache(pageId)
+    BUG // should sometimes remove forum topic list from mem cache?
 
     ChangePostStatusResult(answerGotDeleted = answerGotDeleted)
   }
@@ -1368,9 +1370,11 @@ trait PostsDao {
 
   def deletePostImpl(pageId: PageId, postNr: PostNr, deletedById: UserId,
         browserIdData: BrowserIdData, transaction: SiteTransaction) {
-    changePostStatusImpl(pageId = pageId, postNr = postNr,
+    val result = changePostStatusImpl(pageId = pageId, postNr = postNr,
       action = PostStatusAction.DeletePost(clearFlags = false), userId = deletedById,
       transaction = transaction)
+    refreshPageInMemCache(pageId)
+    result
   }
 
 
@@ -1470,7 +1474,7 @@ trait PostsDao {
 
     val now = globals.now()
 
-    val (postAfter, storePatch) = readWriteTransaction { transaction =>
+    val (postBefore, postAfter, storePatch) = readWriteTransaction { transaction =>
       val mover = transaction.loadTheMember(moverId)
       if (!mover.isStaff)
         throwForbidden("EsE6YKG2_", "Only staff may move posts")
@@ -1583,10 +1587,14 @@ trait PostsDao {
 
       val patch = jsonMaker.makeStorePatch2(postAfter.id, toPage.id,
         appVersion = globals.applicationVersion, transaction)
-      (postAfter, patch)
+      (postToMove, postAfter, patch)
     }
 
-    refreshPageInMemCache(newParent.pageId)
+    refreshPageInMemCache(postBefore.pageId)
+    if (postBefore.pageId != postAfter.pageId) {
+      refreshPageInMemCache(postAfter.pageId)
+    }
+
     (postAfter, storePatch)
   }
 

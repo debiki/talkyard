@@ -162,8 +162,7 @@ trait ForumDao {
         description = "Private category for staff discussions.",
         newTopicTypes = immutable.Seq(PageRole.Discussion),
         unlisted = false,
-        includeInSummaries = IncludeInSummaries.Default,
-        isCreatingNewForum = true),
+        includeInSummaries = IncludeInSummaries.Default),
       immutable.Seq[PermsOnPages](
         makeStaffCategoryPerms(staffCategoryId)),
       bySystem)(transaction)
@@ -198,8 +197,7 @@ trait ForumDao {
         // Strangers may not list all topics, maybe blog owner wants to keep some of them private?
         // SECURITY [rand-page-id]
         unlisted = true,
-        includeInSummaries = IncludeInSummaries.NoExclude,
-        isCreatingNewForum = true),
+        includeInSummaries = IncludeInSummaries.NoExclude),
       immutable.Seq[PermsOnPages](
         makeEveryonesDefaultCategoryPerms(defaultCategoryId),
         makeStaffCategoryPerms(defaultCategoryId)),
@@ -242,8 +240,7 @@ trait ForumDao {
           description = "Here you can ask questions and report problems.",
           newTopicTypes = immutable.Seq(PageRole.Question),
           unlisted = false,
-          includeInSummaries = IncludeInSummaries.Default,
-          isCreatingNewForum = true),
+          includeInSummaries = IncludeInSummaries.Default),
         immutable.Seq[PermsOnPages](
           makeEveryonesDefaultCategoryPerms(categoryId),
           makeStaffCategoryPerms(categoryId)),
@@ -265,8 +262,7 @@ trait ForumDao {
           description = "Here you can suggest new ideas.",
           newTopicTypes = immutable.Seq(PageRole.Idea),
           unlisted = false,
-          includeInSummaries = IncludeInSummaries.Default,
-          isCreatingNewForum = true),
+          includeInSummaries = IncludeInSummaries.Default),
         immutable.Seq[PermsOnPages](
           makeEveryonesDefaultCategoryPerms(categoryId),
           makeStaffCategoryPerms(categoryId)),
@@ -287,8 +283,7 @@ trait ForumDao {
           description = "For topics that don't fit in other categories.",
           newTopicTypes = immutable.Seq(PageRole.Discussion),
           unlisted = false,
-          includeInSummaries = IncludeInSummaries.Default,
-          isCreatingNewForum = true),
+          includeInSummaries = IncludeInSummaries.Default),
         immutable.Seq[PermsOnPages](
           makeEveryonesDefaultCategoryPerms(uncategorizedCategoryId),
           makeStaffCategoryPerms(uncategorizedCategoryId)),

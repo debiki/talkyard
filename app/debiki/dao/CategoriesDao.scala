@@ -44,8 +44,7 @@ case class CategoryToSave(
   unlisted: Boolean,
   includeInSummaries: IncludeInSummaries,
   description: String,
-  anyId: Option[CategoryId] = None, // Some() if editing, < 0 if creating COULD change from Option[CategoryId] to CategoryId
-  isCreatingNewForum: Boolean = false) {
+  anyId: Option[CategoryId] = None) { // Some() if editing, < 0 if creating COULD change from Option[CategoryId] to CategoryId
 
   require(anyId isNot NoCategoryId, "EdE5LKAW0")
   def isNewCategory: Boolean = anyId.exists(_ < 0)
@@ -443,9 +442,12 @@ trait CategoriesDao {
 
   def createCategory(newCategoryData: CategoryToSave, permissions: immutable.Seq[PermsOnPages],
         byWho: Who): CreateCategoryResult = {
-    readWriteTransaction { transaction =>
-      createCategoryImpl(newCategoryData, permissions, byWho)(transaction)
+    val result = readWriteTransaction { tx =>
+      createCategoryImpl(newCategoryData, permissions, byWho)(tx)
     }
+    // Refresh the forum topic list page; it has cached the category list (in JSON in the cached HTML).
+    refreshPageInMemCache(result.category.sectionPageId)
+    result
   }
 
 
@@ -498,12 +500,6 @@ trait CategoriesDao {
     val permsWithId = addRemovePermsOnCategory(categoryId, permsWithCatId)(transaction)._1
 
     // COULD create audit log entry
-
-    // The forum needs to be refreshed because it has cached the category list
-    // (in JSON in the cached HTML).
-    if (!newCategoryData.isCreatingNewForum) {
-      refreshPageInMemCache(category.sectionPageId)
-    }
 
     CreateCategoryResult(category, aboutPagePath, permsWithId)
   }
