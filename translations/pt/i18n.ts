@@ -230,7 +230,7 @@ var t_en: TalkyardTranslations = t = {
   // Forum categories list
 
   fc: {
-    RecentTopicsWaiting: "Recent topics (those waiting)",
+    RecentTopicsWaiting: "Tópicos recents (those waiting)",
     RecentTopicsInclDel: "Recent topics (including deleted)",
     RecentTopics: "Recent topics",
     _replies: " replies",
@@ -242,22 +242,22 @@ var t_en: TalkyardTranslations = t = {
   // Watchbar (the sidebar to the left)
 
   wb: {
-    AddCommunity: "Add ...",
-    RecentlyViewed: "Recently viewed",
-    JoinedChats: "Joined Chats",
-    ChatChannels: "Chat Channels",
-    CreateChat: "Create chat channel",
-    DirectMsgs: "Direct Messages",
+    AddCommunity: "Adicionar ...",
+    RecentlyViewed: "Visualizada recentemente",
+    JoinedChats: "Chats associados",
+    ChatChannels: "Canais de chat",
+    CreateChat: "Criar canal de chat",
+    DirectMsgs: "Mensagens Diretas",
 
     // The click-topic dropdown menu:
-    TopicActions: "Topic actions",
-    ViewPeopleHere: "View people here",
-    ViewAddRemoveMembers: "View / add / remove members",
-    ViewChatMembers: "View chat members",
-    EditChat: "Edit chat title and purpose",
-    LeaveThisChat: "Leave this chat",
-    LeaveThisCommunity: "Leave this community",
-    JoinThisCommunity: "Join this community",
+    TopicActions: "Ações do tópico",
+    ViewPeopleHere: "Visualizar pessoas aqui",
+    ViewAddRemoveMembers: "Visualizar / adicionar / remover membros",
+    ViewChatMembers: "Visualizar membros do chat",
+    EditChat: "Editar título e propósito do chat",
+    LeaveThisChat: "Desassociar-se deste chat",
+    LeaveThisCommunity: "Desassociar-se desta comunidade",
+    JoinThisCommunity: "Associar-se a esta comunidade",
   },
 
 
