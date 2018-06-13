@@ -186,7 +186,7 @@ var t_en: TalkyardTranslations = t = {
     ExplIdea: "Uma ideia / sugestão.",
     ExplProblem: "Um problema.",
     ExplPlanned: "Algo que estamos planejando fazer ou consertar.",
-    ExplDone: "Algo que já foi feito ou consertado.",
+    ExplDone: "Algo que já foi concluído ou consertado.",
     ExplClosed: "Tópico fechado.",
     ExplPinned: "Tópico sempre listados primeiro (talvez somente em sua própria categoria).",
 
@@ -210,7 +210,7 @@ var t_en: TalkyardTranslations = t = {
     inC: "em: ",
 
     TitleFixed: "Consertado",
-    TitleDone: "Feito",
+    TitleDone: "Concluído",
     TitleStarted: "Iniciamos",
     TitleStartedFixing: "Começamos a consertar",
     TitleUnsolved: "É um problema não resolvido",
@@ -307,98 +307,98 @@ var t_en: TalkyardTranslations = t = {
   // Discussion / non-chat page
 
   d: {
-    ThisFormClosed_1: "This form has been ",
-    ThisFormClosed_2: "closed; you can no longer fill it in and post it.",
+    ThisFormClosed_1: "Este formulário foi foi ",
+    ThisFormClosed_2: "fechado; você não pode mais preenchê-lo e enviá-lo.",
 
-    ThisTopicClosed_1: "This topic has been ",
+    ThisTopicClosed_1: "Este tópico foi ",
     // ... "closed" ...
-    ThisTopicClosed_2: ". You can still post comments, " +
-          "but that won't make this topic bump to the top of the latest-topics list.",
+    ThisTopicClosed_2: ". Você ainda pode postar comentários, " +
+          "mas isso não fará com que esse tópico seja alçado ao topo da lista dos últimos tópicos.",
 
-    ThisQuestSloved_1: "This is a question and it has been ",
-    ThisQuestSloved_2: "answered.",
+    ThisQuestSloved_1: "isto é uma pergunta e foi ",
+    ThisQuestSloved_2: "respondida.",
 
-    ThisQuestWaiting_1: "This is a ",
-    ThisQuestWaiting_2: "question, waiting for an ",
-    ThisQuestWaiting_3: "answer.",
+    ThisQuestWaiting_1: "Isto é uma ",
+    ThisQuestWaiting_2: "pergunta, aguardando uma ",
+    ThisQuestWaiting_3: "resposta.",
 
-    ThisProblSolved_1: "This is a problem and it has been ",
-    ThisProblSolved_2: " solved.",
+    ThisProblSolved_1: "Isto é um problema e foi ",
+    ThisProblSolved_2: " resolvido.",
 
-    ThisProblStarted_1: "This is a problem. We have ",
-    ThisProblStarted_2: " started fixing it, but it's not yet ",
-    ThisProblStarted_3: " done.",
+    ThisProblStarted_1: "Isto é um problema. Nós ",
+    ThisProblStarted_2: " começamos a corrigir, mas ainda não foi ",
+    ThisProblStarted_3: " concluído.",
 
-    ThisProblPlanned_1: "This is a problem. We ",
-    ThisProblPlanned_2: " plan to fix it, but it's not yet ",
-    ThisProblPlanned_3: " started, not yet ",
-    ThisProblPlanned_4: " done.",
+    ThisProblPlanned_1: "Isto é um problema. Nós ",
+	ThisProblPlanned_2: " planejamos consertá-lo, mas ainda não ",
+    ThisProblPlanned_3: " começamos, ainda não está ",
+    ThisProblPlanned_4: " conclúido.",
 
-    ThisProblemNew_1: "This is a ",
-    ThisProblemNew_2: " problem. It's not yet ",
-    ThisProblemNew_3: " solved.",
+    ThisProblemNew_1: "Isto é um ",
+    ThisProblemNew_2: " problema. Ainda não está ",
+    ThisProblemNew_3: " resolvido.",
 
-    ThisIdeaDone_1: "This has been ",
-    ThisIdeaDone_2: " implemented.",
+    ThisIdeaDone_1: "Isto foi ",
+    ThisIdeaDone_2: " implementado.",
 
-    ThisIdeaStarted_1: "We have ",
-    ThisIdeaStarted_2: " started implementing this. But it's not yet ",
-    ThisIdeaStarted_3: " done.",
+    ThisIdeaStarted_1: "Nós ",
+    ThisIdeaStarted_2: " começamos a implementar. Mas ainda não está ",
+    ThisIdeaStarted_3: " concluído.",
 
-    ThisIdeaPlanned_1: "We ",
-    ThisIdeaPlanned_2: " plan to implement this. But it's not yet ",
-    ThisIdeaPlanned_3: " started, not yet ",
-    ThisIdeaPlanned_4: " done.",
+    ThisIdeaPlanned_1: "Nós ",
+    ThisIdeaPlanned_2: " planejamos implementar. Mas ainda não ",
+    ThisIdeaPlanned_3: " começamos, ainda não está ",
+    ThisIdeaPlanned_4: " concluído.",
 
-    ThisIdeaNew_1: "This is an ",
-    ThisIdeaNew_2: " idea, not yet ",
-    ThisIdeaNew_3: " planned, not ",
-    ThisIdeaNew_4: " started, not ",
-    ThisIdeaNew_5: " done.",
+    ThisIdeaNew_1: "Isto é uma ",
+    ThisIdeaNew_2: " ideia, ainda não ",
+    ThisIdeaNew_3: " planejada, não ",
+    ThisIdeaNew_4: " iniciada, não ",
+    ThisIdeaNew_5: " concluída.",
 
-    ThisPageDeleted: "This page has been deleted",
-    CatDeldPageToo: "Category deleted, so this page was deleted too",
+    ThisPageDeleted: "Esta página foi deletada",
+    CatDeldPageToo: "Categoria deletada; esta página foi deletada também",
 
-    AboutCat: "About category:",
+    AboutCat: "Sobre a categoria:",
 
-    PageDeleted: "(Page deleted)",
-    TitlePendAppr: "(Title pending approval)",
-    TextPendingApproval: "(Text pending approval)",
+    PageDeleted: "(Página deletada)",
+    TitlePendAppr: "(Titulo pendente de aprovação)",
+    TextPendingApproval: "(Texto pendente de aprovação)",
 
-    TooltipQuestClosedNoAnsw: "This question has been closed without any accepted answer.",
-    TooltipTopicClosed: "This topic is closed.",
+    TooltipQuestClosedNoAnsw: "Esta questão foi fechada sem respostas aceitas.",
+    TooltipTopicClosed: "Este tópico está fechado.",
 
-    TooltipQuestSolved: "This is a solved question",
-    TooltipQuestUnsolved: "This is an unsolved question",
+    TooltipQuestSolved: "Isto é uma pergunta respondida",
+    TooltipQuestUnsolved: "Isto é uma pergunta não respondida",
 
-    TooltipProblFixed: "This has been fixed",
-    TooltipDone: "This has been done",
-    ClickStatusNew: "Click to change status to new",
+    TooltipProblFixed: "Isto foi consertado",
+    TooltipDone: "Isto foi concluído",
+    ClickStatusNew: "Clique para mudar o status para novo",
 
-    TooltipFixing: "We're currently fixing this",
-    TooltipImplementing: "We're currently implementing this",
-    ClickStatusDone: "Click to mark as done",
+    TooltipFixing: "No momento estamos consertando isto",
+    TooltipImplementing: "No momento estamos implementando isto",
+    ClickStatusDone: "Clique para marcar como concluído",
 
-    TooltipProblPlanned: "We're planning to fix this",
-    TooltipIdeaPlanned: "We're planning to implement this",
-    ClickStatusStarted: "Click to mark as started",
+    TooltipProblPlanned: "Estamos planejando consertar isto",
+    TooltipIdeaPlanned: "Estamos planejando implementar isto",
+    ClickStatusStarted: "Clique para marcar como iniciado",
 
-    TooltipUnsProbl: "This is an unsolved problem",
-    TooltipIdea: "This is an idea",
-    ClickStatusPlanned: "Click to change status to planned",
+    TooltipUnsProbl: "Isto é um problema não resolvido",
+    TooltipIdea: "Isto é uma ideia",
+    ClickStatusPlanned: "Clique para mudar o status para planejado",
 
-    TooltipPersMsg: "Personal message",
-    TooltipChat: "# means Chat Channel",
-    TooltipPrivChat: "This is a private chat channel",
+    TooltipPersMsg: "Mensagem pessoal",
+    TooltipChat: "# significa Canal de Chat",
+    TooltipPrivChat: "Isto é um canal de chat privado",
 
-    TooltipPinnedGlob: "\nPinned globally.",
-    TooltipPinnedCat: "\nPinned in this category.",
+    TooltipPinnedGlob: "\Fixado globalmente.",
+    TooltipPinnedCat: "\nFixado nesta categoria.",
 
-    SolvedClickView_1: "Solved in post #",
-    SolvedClickView_2: ", click to view",
+    SolvedClickView_1: "Resolvido no post #",
+    SolvedClickView_2: ", clique para visualizar",
 
-    AboveBestFirst: "Above: Replies, best first.",
-    BelowCmtsEvents: "Below: Comments and events.",
+    AboveBestFirst: "Acima: Respostas, as melhores aparecem primeiro.",
+    BelowCmtsEvents: "Abaixo: Comentários e eventos.",
 
     BottomCmtExpl_1: "You're adding a comment that will stay at the bottom of the page. " +
         "It won't rise to the top even if it gets upvotes.",
