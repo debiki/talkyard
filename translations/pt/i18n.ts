@@ -148,29 +148,29 @@ var t_en: TalkyardTranslations = t = {
 
     // Topic filter dropdown
 
-    AllTopics: "All topics",
+    AllTopics: "Todos os tópicos",
 
-    ShowAllTopics: "Show all topics",
-    ShowAllTopicsDescr: "Doesn't show deleted topics though",
+    ShowAllTopics: "Mostrar todos os tópicos",
+    ShowAllTopicsDescr: "Não mostra tópicos deletados",
 
-    OnlyWaiting: "Only waiting",
-    OnlyWaitingDescr_1: "Shows only questions ",
-    OnlyWaitingDescr_2: "waiting ",
-    OnlyWaitingDescr_3: "for a solution, plus ideas and problems not yet handled",
+    OnlyWaiting: "Somente aguardando",
+    OnlyWaitingDescr_1: "Mostra somente perguntas ",
+    OnlyWaitingDescr_2: "aguardando ",
+    OnlyWaitingDescr_3: "por uma solução, além de ideias e problemas ainda não tratados",
 
-    ShowDeleted: "Show deleted",
-    ShowDeletedDescr: "Shows all topics, including deleted topics",
+    ShowDeleted: "Mostrar deletados",
+    ShowDeletedDescr: "Mostrar todos os tópicos, incluindo deletados",
 
     // Rightmost buttons
 
-    EditCat: "Edit Category",
-    CreateCat: "Create Category",
-    CreateTopic: "Create Topic",
-    PostIdea: "Post an Idea",
-    AskQuestion: "Ask a Question",
-    ReportProblem: "Report a Problem",
-    CreateMindMap: "Create Mind Map",
-    CreatePage: "Create Page",
+    EditCat: "Editar Categoria",
+    CreateCat: "Criar Categoria",
+    CreateTopic: "Criar Tópico",
+    PostIdea: "Postar uma Ideia",
+    AskQuestion: "Fazer uma Pergunta",
+    ReportProblem: "Reportar um Problema",
+    CreateMindMap: "Criar Mapa Menal",
+    CreatePage: "Criar Página",
 
   },
 
