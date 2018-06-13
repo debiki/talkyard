@@ -85,40 +85,40 @@ var t_en: TalkyardTranslations = t = {
   you: "você",
 
   // Trust levels.
-  Guest:  "Guest",
-  NewMember: "New member",
-  BasicMember: "Basic member",
-  FullMember: "Full member",
-  TrustedMember: "Trusted member",
-  RegularMember: "Regular member",
-  CoreMember: "Core member",
+  Guest:  "Convidado",
+  NewMember: "Novo membro",
+  BasicMember: "Membro básico",
+  FullMember: "Membro completo",
+  TrustedMember: "Membro confiável",
+  RegularMember: "Membro comum",
+  CoreMember: "Membro do núcleo",
 
   // Periods.
-  PastDay: "Past Day",
-  PastWeek: "Past Week",
-  PastMonth: "Past Month",
-  PastQuarter: "Past Quarter",
-  PastYear: "Past Year",
-  AllTime: "All Time",
+  PastDay: "Último dia",
+  PastWeek: "Semana Passada",
+  PastMonth: "Mês Passado",
+  PastQuarter: "Trimestre Passado",
+  PastYear: "Ano Passado",
+  AllTime: "Todos os Períodos",
 
 
   // Notification levels.
   nl: {
-    WatchingAll: "Watching All",
-    WatchingFirst: "Watching First",
-    Tracking: "Tracking",
+    WatchingAll: "Observando Tudo",
+    WatchingFirst: "Observando o Primeiro",
+    Tracking: "Rastreando",
     Normal: "Normal",
-    Muted: "Muted",
+    Muted: "Mudo",
   },
 
 
   // Forum intro text
 
   fi: {
-    Edit: "Edit",
-    Hide_1: "Hide",
-    Hide_2: ", click ",
-    Hide_3: " to reopen",
+    Edit: "Editar",
+    Hide_1: "Ocultar",
+    Hide_2: ", clique ",
+    Hide_3: " para reabrir",
   },
 
 
@@ -126,25 +126,25 @@ var t_en: TalkyardTranslations = t = {
 
   fb: {
 
-    TopicList: "Topic list",
+    TopicList: "Lista de tópicos",
 
     // Select category dropdown
 
-    AllCats: "All categories",
+    AllCats: "Todas as categorias",
 
     // Topic sort order
 
-    Active: "Active",
-    ActiveTopics: "Active topics",
-    ActiveDescr: "Shows recently active topics first",
+    Active: "Ativo",
+    ActiveTopics: "Tópicos ativos",
+    ActiveDescr: "Mostra tópicos mais recentemente ativos primeiro",
 
-    New: "New",
-    NewTopics: "New topics",
-    NewDescr: "Shows newest topics first",
+    New: "Novo",
+    NewTopics: "Novos tópicos",
+    NewDescr: "Mostra tópicos mais novos primeiro",
 
-    Top: "Top",
-    TopTopics: "Popular topics",
-    TopDescr: "Shows popular topics first",
+    Top: "Topo",
+    TopTopics: "Tópicos populares",
+    TopDescr: "Mostra tópicos mais populares primeiro",
 
     // Topic filter dropdown
 
