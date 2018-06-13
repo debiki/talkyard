@@ -264,43 +264,43 @@ var t_en: TalkyardTranslations = t = {
   // Contextbar (the sidebar to the right), code currently in sidebar.ts (not renamed yet)
 
   cb: {
-    RecentComments: "Recent comments in this topic:",
-    NoComments: "No comments.",
+    RecentComments: "Comentários recentes neste tópico: ",
+    NoComments: "Nenhum comentário.",
 
-    YourBookmarks: "Your bookmarks:",
+    YourBookmarks: "Seus favoritos:",
 
-    UsersOnline: "Users online:",
-    UsersOnlineForum: "Users online in this forum:",
-    UsersInThisChat: "Users in this chat:",
-    UsersInThisTopic: "Users in this topic:",
+    UsersOnline: "Usuários online:",
+    UsersOnlineForum: "Usuários online neste fórum:",
+    UsersInThisChat: "Usuários neste chat:",
+    UsersInThisTopic: "Usuários neste tópico:",
 
-    GettingStartedGuide: "Getting Started Guide",
-    AdminGuide: "Admin Guide",
-    Guide: "Guide",
+    GettingStartedGuide: "Guia de Introdução",
+    AdminGuide: "Guia do Administrador",
+    Guide: "Guia",
 
-    AddPeople: "Add more people",
+    AddPeople: "Adicionar mais pessoas",
 
-    thatsYou: "that's you",
-    YouAnd: "You, and ",
-    OnlyYou: "Only you, it seems",
+    thatsYou: "é você",
+    YouAnd: "Você, e ",
+    OnlyYou: "Só você, parece",
     NumStrangers: (numStrangers: number) => {
-      const people = numStrangers === 1 ? " person" : " people";
-      const have = numStrangers === 1 ? "has" : "have";
-      return numStrangers + people + " who " + have + " not logged in";
+	  const people = numStrangers === 1 ? "pessoa" : "pessoas";
+	  const loggedIn = numStrangers === 1 ? "logou" : "logaram";
+      return `${numStrangers} ${people} que não se ${loggedIn}`;
     },
 
-    RepliesToTheLeft: "The replies to the left are sorted by ",
-    bestFirst: "best-first.",
-    ButBelow: "But below ",
-    insteadBy: " the same replies are instead sorted by ",
-    newestFirst: "newest-first.",
+    RepliesToTheLeft: "As respostas à esquerda são ordenadas por ",
+    bestFirst: "melhores primeiro.",
+    ButBelow: "Mas abaixo ",
+    insteadBy: " as mesmas respostas são ordenadas por ",
+    newestFirst: "mais recentes primeiro.",
 
-    SoIfLeave: "So if you leave, and come back here later, below you'll find ",
-    allNewReplies: "all new replies.",
-    Click: "Click",
-    aReplyToReadIt: " a reply below to read it — because only an excerpt is shown, below.",
+    SoIfLeave: "Então se você sair, e voltar aqui mais tarde, você vai encontrar abaixo ",
+    allNewReplies: "todas as respostas mais recentes.",
+    Click: "Clique",
+    aReplyToReadIt: " em uma resposta abaixo para ler — porque só um trecho é exibido abaixo.",
 
-    CloseShortcutS: "Close (keyboard shortcut: S)",
+    CloseShortcutS: "Fechar (atalho do teclado: S)",
   },
 
 
