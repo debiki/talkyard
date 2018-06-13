@@ -400,52 +400,52 @@ var t_en: TalkyardTranslations = t = {
     AboveBestFirst: "Acima: Respostas, as melhores aparecem primeiro.",
     BelowCmtsEvents: "Abaixo: Comentários e eventos.",
 
-    BottomCmtExpl_1: "You're adding a comment that will stay at the bottom of the page. " +
-        "It won't rise to the top even if it gets upvotes.",
-    BottomCmtExpl_2: "This is useful for status messages, e.g. to clarify why you close/reopen " +
-        "a topic. Or for suggesting changes to the original post.",
-    BottomCmtExpl_3: "To reply to someone, click Reply instead.",
+    BottomCmtExpl_1: "Você está adicionando um comentário que vai ficar no final da página. " +
+        "Ele não vai subir ao topo mesmo que obtenha votos.",
+    BottomCmtExpl_2: "Isto é útil para mensagens de status, por exemplo para esclarecer por que você está fechando/reabrindo " +
+        "um tópico. Ou para sugerir mudançås no post original.",
+    BottomCmtExpl_3: "Em vez disso, para responder par alguém, clique em Responder.",
 
-    AddComment: "Add comment",
-    AddBottomComment: "Add bottom comment",
+    AddComment: "Adicionar comentário",
+    AddBottomComment: "Adicionar comentário no final",
 
-    PostHiddenClickShow: "Post hidden; click to show",
-    ClickSeeMoreRepls: "Click to show more replies",
-    ClickSeeMoreComments: "Click to show more comments",
-    ClickSeeThisComment: "Click to show this comment",
-    clickToShow: "click to show",
+    PostHiddenClickShow: "Post ocultado; clique para mostrar",
+    ClickSeeMoreRepls: "Clique para mostrar mais respostas",
+    ClickSeeMoreComments: "Clique para mostrar mais comentários",
+    ClickSeeThisComment: "Clique para mostrar este comentário",
+    clickToShow: "clique para mostrar",
 
-    ManyDisagree: "Many disagree with this:",
-    SomeDisagree: "Some disagree with this:",
+    ManyDisagree: "Muitos discordam disso:",
+    SomeDisagree: "Alguns discordam disso:",
 
-    CmtPendAppr: "Comment pending approval, posted ",
-    CmtBelowPendAppr: (isYour) => (isYour ? "Your" : "The") + " comment below is pending approval.",
+    CmtPendAppr: "Comentário pendente de aprovação, postado ",
+    CmtBelowPendAppr: (isYour) => (isYour ? "Seu" : "O") + " comentário abaixo está pendente de aprovação.",
 
-    _and: " and",
+    _and: " e",
 
-    dashInReplyTo: "— in reply to",
-    InReplyTo: "In reply to",
+    dashInReplyTo: "— em resposta a",
+    InReplyTo: "Em resposta a",
 
-    ClickViewEdits: "Click to view old edits",
+    ClickViewEdits: "Clique para visualizar edições antigas",
 
-    By: "By ", // ... someones name
+    By: "Por ", // ... someones name
   },
 
   // Post actions
 
   pa: {
-    ReplyToOp: "Reply to the Original Post",
+    ReplyToOp: "Responder ao Post Original",
 
-    CloseOwnQuestionTooltip: "Close this question if you don't need an answer any more.",
-    CloseOthersQuestionTooltip: "Close this question if it doesn't need an answer, e.g. if " +
-        "it is off-topic or already answered in another topic.",
-    CloseToDoTooltip: "Close this To-Do if it does not need to be done or fixed.",
-    CloseTopicTooltip: "Close this topic if it needs no further consideration.",
+    CloseOwnQuestionTooltip: "Feche esta pergunta se você não precisa mais de uma resposta.",
+    CloseOthersQuestionTooltip: "Feche esta pergunta se você não precisa de uma resposta, por exemplo, se " +
+        "é uma pergunta não-relacionada ou já respondida em outro tópico.",
+    CloseToDoTooltip: "Feche esta tarefa se ela não precisar ser concluída ou consertada.",
+    CloseTopicTooltip: "Feche este tópico se ele não precisa mais de consideração.",
 
-    AcceptBtnExpl: "Accept this as the answer to the question or problem",
-    SolutionQ: "Solution?",
-    ClickUnaccept: "Click to un-accept this answer",
-    PostAccepted: "This post has been accepted as the answer",
+    AcceptBtnExpl: "Aceitar isto como a resposta para a pergunta ou problema",
+    SolutionQ: "Solução?",
+    ClickUnaccept: "Clique para desafazer a aceitação desta resposta",
+    PostAccepted: "Este post foi aceitado como resposta",
 
     NumLikes: (num: number) => num === 1 ? "1 Like" : num + " Likes",
     NumDisagree: (num: number) => num + " Disagree",
