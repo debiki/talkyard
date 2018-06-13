@@ -1,0 +1,5 @@
+#!/bin/bash
+
+s/d kill web app
+exec s/d-cli
+

@@ -60,9 +60,20 @@ debiki.prettyDuration = function(then, now) {  // i18n
 debiki.currentYear = new Date().getUTCFullYear();
 
 debiki.prettyLetterDuration = function(then, now) {  // i18n
-  var thenMillis = then.getTime ? then.getTime() : then;
-  var nowMillis = now.getTime ? now.getTime() : now;
-  var diff = nowMillis - thenMillis;
+  var diff;
+  var isTimeSpan = !!now;
+  if (isTimeSpan) {
+    var thenMillis = then.getTime ? then.getTime() : then;
+    var nowMillis = now.getTime ? now.getTime() : now;
+    diff = nowMillis - thenMillis;
+  }
+  else {
+    // @ifdef DEBUG
+    d.u.dieIf(!_.isNumber(then), 'TyE2BKAQP3');
+    // @endif
+    diff = then;
+  }
+
   var second = 1000;
   var minute = second * 60;
   var hour = second * 3600;
@@ -71,9 +82,10 @@ debiki.prettyLetterDuration = function(then, now) {  // i18n
   var month = year / 12;
   // Don't use 'm' for months, because it's used for 'minutes' already. Also, dates and
   // years like "Jan 4, 2015" are more user friendly than 17m (months)?
-  if (diff > month) {
+  if (diff > month && isTimeSpan) {
     return monthDayYear(then);
   }
+  if (diff >= 2 * month) return trunc(diff / month) + "mon";
   // Skip "w" (weeks), it makes me confused.
   if (diff >= 2 * day) return trunc(diff / day) + "d";
   // "90 minutes ago" is ok, but "105 minutes ago" — then "2 hours" sounds better I think.

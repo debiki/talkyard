@@ -426,7 +426,7 @@ export const TopBar = createComponent({
 
 
 const MyMenuContentComponent = createFactory({   // dupl code [4WKBTP0]
-  componentWillMount: function() {
+  componentDidMount: function() {
     Server.loadMoreScriptsBundle(() => {
       this.setState({ moreScriptsLoaded: true });
     });

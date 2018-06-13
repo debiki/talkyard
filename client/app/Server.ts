@@ -597,7 +597,7 @@ export function loadUserAnyDetails(userIdOrUsername: UserId | string,
 }
 
 
-export function listCompleteUsers(whichUsers, success: (users: MemberInclDetails[]) => void) {
+export function listCompleteUsers(whichUsers, success: (users: MemberInclDetailsWithStats[]) => void) {
   get(`/-/list-complete-users?whichUsers=${whichUsers}`, response => {
     success(response.users);
   });
@@ -611,10 +611,18 @@ export function loadEmailAddressesAndLoginMethods(userId: UserId, success) {
 }
 
 
-export function sendAddressVerifEmailAgain(success) {
-  postJsonSuccess('/-/send-addr-verif-email-again', success, {});
+export function resendOwnerEmailAddrVerifEmail(success) {
+  postJsonSuccess('/-/resend-owner-email-addr-verif-email', success, {});
 }
 
+
+// Maybe initiated by staff, on behalf of another user — so could be any id and address.
+//
+export function resendEmailAddrVerifEmail(userId: UserId, emailAddress: string) {
+  postJsonSuccess('/-/resend-email-addr-verif-email', () => {
+    util.openDefaultStupidDialog({ body: "Email sent" });
+  }, { userId, emailAddress });
+}
 
 export function addEmailAddresses(userId: UserId, emailAddress: string, success) {
   postJsonSuccess('/-/add-email-address', success, { userId, emailAddress });
@@ -651,6 +659,11 @@ export function loadAllInvites(success: (invites: Invite[]) => void) {
     ReactActions.patchTheStore({ usersBrief: response.users });
     success(response.invites);
   });
+}
+
+
+export function editMember(userId: UserId, doWhat: EditMemberAction, success: () => void) {
+  postJsonSuccess('/-/edit-member', success, { userId: userId, doWhat: doWhat });
 }
 
 

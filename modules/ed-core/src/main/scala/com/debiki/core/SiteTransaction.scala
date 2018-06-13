@@ -414,9 +414,8 @@ trait SiteTransaction {
   def loadMembersWithPrefix(usernamePrefix: String): immutable.Seq[Member]
 
   def loadUsers(): immutable.Seq[User]
-  def loadMembersInclDetails(
-    onlyApproved: Boolean = false,
-    onlyPendingApproval: Boolean = false): immutable.Seq[MemberInclDetails]
+  def loadMembersInclDetailsAndStats(peopleQuery: PeopleQuery)
+    : immutable.Seq[(MemberInclDetails, Option[UserStats])]
 
   def loadMembersInclDetailsById(userIds: Iterable[UserId]): immutable.Seq[MemberInclDetails] =
     loadMembersAndGroupsInclDetailsById(userIds) map {

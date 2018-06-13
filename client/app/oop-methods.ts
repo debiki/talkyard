@@ -133,6 +133,22 @@ export function me_hasRead(me: Myself, post: Post) {
 // Users
 //----------------------------------
 
+
+export function user_isSuspended(user: MemberInclDetails, nowMs: WhenMs): boolean {
+  return user.suspendedTillEpoch && ((user.suspendedTillEpoch * 1000) > nowMs);
+}
+
+
+export function user_threatLevel(user: MemberInclDetails): ThreatLevel {
+  return user.lockedThreatLevel || user.threatLevel;
+}
+
+
+export function user_trustLevel(user: MemberInclDetails): TrustLevel {
+  return user.lockedTrustLevel || user.trustLevel;
+}
+
+
 export function user_isGone(user: Myself | BriefUser | MemberInclDetails | UserAnyDetails): boolean {
   // These two casts work for UserAnyDetails too.
   const membInclDetails = <Myself | MemberInclDetails> user;
@@ -393,7 +409,7 @@ export function trustLevel_toString(trustLevel: TrustLevel): string {
     case TrustLevel.New: return t.NewMember;
     case TrustLevel.Basic: return t.BasicMember;
     case TrustLevel.FullMember: return t.FullMember;
-    case TrustLevel.Trusted: return t.FullMember;
+    case TrustLevel.Trusted: return t.TrustedMember;
     case TrustLevel.Regular: return t.RegularMember;
     case TrustLevel.CoreMember: return t.CoreMember;
     default:

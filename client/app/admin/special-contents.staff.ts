@@ -27,7 +27,7 @@ const PageUnloadAlerter = utils.PageUnloadAlerter;
 
 
 export var SpecialContent = createComponent({
-  componentWillMount: function() {
+  componentDidMount: function() {
     Server.loadSpecialContent(this.props.rootPageId, this.props.contentId, content => {
       this.setState({
         content: content,

@@ -277,6 +277,8 @@ export function UserName(props: {
     }
   }
 
+  // Later: If including is-admin/moderator info, need to uncache pages where name shown. [5KSIQ24]
+
   return linkFn(newProps, namePartOne, namePartTwo);
 }
 

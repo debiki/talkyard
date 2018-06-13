@@ -63,7 +63,7 @@ const TagsAppComponent = createReactClass(<any> {
 const AllTagsPanel = createFactory({
   displayName:  'AllTagsPanel',
 
-  componentWillMount: function() {
+  componentDidMount: function() {
     Server.loadTagsAndStats();
     Server.loadMyTagNotfLevels();
   },

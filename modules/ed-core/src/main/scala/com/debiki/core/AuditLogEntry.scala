@@ -54,8 +54,10 @@ object AuditLogEntryType {
   // Block, unblock.
   // Edit profile. etc.
   //-----------
-  case object DeactivateUser extends AuditLogEntryType(1998)
+  case object DeactivateUser extends AuditLogEntryType(1997)
+  case object ReactivateUser extends AuditLogEntryType(1998)
   case object DeleteUser extends AuditLogEntryType(1999)
+  // (Cannot undelete.)
 
   // Let 2001-2999 be admin & staff actions?
   case object SaveSiteSettings extends AuditLogEntryType(2001)
@@ -81,6 +83,7 @@ object AuditLogEntryType {
     case SuspendUser.IntVal => SuspendUser
     case UnsuspendUser.IntVal => UnsuspendUser
     case DeactivateUser.IntVal => DeactivateUser
+    case ReactivateUser.IntVal => ReactivateUser
     case DeleteUser.IntVal => DeleteUser
     case SaveSiteSettings.IntVal => SaveSiteSettings
     case MakeReviewDecision.IntVal => MakeReviewDecision

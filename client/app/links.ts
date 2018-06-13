@@ -56,7 +56,12 @@ export function linkToAdminPageAdvancedSettings(hostname?: string): string {
   return origin + '/-/admin/settings/advanced';
 }
 
-export function linkToUserInAdminArea(userId: UserId): string {
+export function linkToUserInAdminArea(user: Myself | MemberInclDetails | User | UserId): string {
+  // If Myself specified, should be logged in and thus have username or id. (2UBASP5)
+  // @ifdef DEBUG
+  dieIf(_.isObject(user) && !(<any> user).id, 'TyE4KPWQT5');
+  // @endif
+  const userId = _.isObject(user) ? (<User> user).id : user;
   return origin() + '/-/admin/users/id/' + userId;
 }
 
@@ -65,12 +70,11 @@ export function linkToReviewPage(): string {
 }
 
 
-export function linkToUserProfilePage(user: Myself | User | UserId | string): UserId | string {
-  // If Myself specified, should be logged in and thus have username or id.
+export function linkToUserProfilePage(user: Myself | MemberInclDetails | User | UserId | string): string {
+  // If Myself specified, should be logged in and thus have username or id. (2UBASP5)
   // @ifdef DEBUG
   dieIf(_.isObject(user) && !(<any> user).username && !(<any> user).id, 'TyE7UKWQT2');
   // @endif
-
   const idOrUsername = _.isObject(user) ? (<User> user).username || (<User> user).id : user;
   return origin() + UsersRoot + idOrUsername;
 }
@@ -85,6 +89,10 @@ export function linkToSendMessage(userIdOrUsername: UserId | string): string {
 
 export function linkToInvitesFromUser(userId: UserId): string {
   return linkToUserProfilePage(userId) + '/invites';
+}
+
+export function linkToUsersEmailAddrs(userIdOrUsername: UserId | string): string {
+  return linkToUserProfilePage(userIdOrUsername) + '/preferences/account';
 }
 
 export function linkToMyProfilePage(store: Store): string {

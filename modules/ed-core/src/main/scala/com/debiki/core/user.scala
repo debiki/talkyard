@@ -20,7 +20,7 @@ package com.debiki.core
 import com.google.{common => guava}
 import java.net.InetAddress
 import java.{net => jn, util => ju}
-import org.scalactic.{ErrorMessage, Or}
+import org.scalactic.{Bad, ErrorMessage, Good, Or}
 import scala.collection.{immutable, mutable}
 import EmailNotfPrefs.EmailNotfPrefs
 import Prelude._
@@ -466,7 +466,7 @@ case class Member(
   email: String,  // COULD RENAME to primaryEmailAddr
   emailNotfPrefs: EmailNotfPrefs,
   emailVerifiedAt: Option[ju.Date] = None,
-  passwordHash: Option[String] = None,
+  passwordHash: Option[String] = None,  // OPTIMIZE no need to always load? Move to MemberInclDetails?
   tinyAvatar: Option[UploadRef] = None,
   smallAvatar: Option[UploadRef] = None,
   isApproved: Option[Boolean],
@@ -555,8 +555,8 @@ case class MemberInclDetails(
   username: String,
   createdAt: ju.Date,
   isApproved: Option[Boolean],
-  approvedAt: Option[ju.Date],
-  approvedById: Option[UserId],
+  approvedAt: Option[ju.Date],    // RENAME to reviewedAt
+  approvedById: Option[UserId],   // RENAME to reviewedById
   primaryEmailAddress: String,
   emailNotfPrefs: EmailNotfPrefs,
   emailVerifiedAt: Option[ju.Date] = None,
@@ -734,6 +734,43 @@ case class MemberInclDetails(
     isOwner = isOwner,
     isDeactivated = deactivatedAt.isDefined,
     isDeleted = deletedAt.isDefined)
+
+}
+
+
+
+sealed abstract class EditMemberAction(val IntVal: Int) { def toInt: Int = IntVal }
+
+object EditMemberAction {
+  case object SetEmailVerified extends EditMemberAction(1)
+  case object SetEmailUnverified extends EditMemberAction(2)
+
+  case object SetApproved extends EditMemberAction(3)
+  case object SetUnapproved extends EditMemberAction(4)
+  case object ClearApproved extends EditMemberAction(5)
+
+  case object SetIsAdmin extends EditMemberAction(6)
+  case object SetNotAdmin extends EditMemberAction(7)
+
+  case object SetIsModerator extends EditMemberAction(8)
+  case object SetNotModerator extends EditMemberAction(9)
+
+  def fromInt(value: Int): Option[EditMemberAction] = Some(value match {
+    case SetEmailVerified.IntVal => SetEmailVerified
+    case SetEmailUnverified.IntVal => SetEmailUnverified
+
+    case SetApproved.IntVal => SetApproved
+    case SetUnapproved.IntVal => SetUnapproved
+    case ClearApproved.IntVal => ClearApproved
+
+    case SetIsAdmin.IntVal => SetIsAdmin
+    case SetNotAdmin.IntVal => SetNotAdmin
+
+    case SetIsModerator.IntVal => SetIsModerator
+    case SetNotModerator.IntVal => SetNotModerator
+
+    case _ => return None
+  })
 }
 
 
@@ -1370,4 +1407,29 @@ case class VisitTrust(
 
 object VisitTrust {
   val UnknownMember = VisitTrust(0, TrustLevel.NewMember.toInt)
+}
+
+
+
+case class PeopleQuery(  // also see PageQuery
+  orderOffset: PeopleOrderOffset,
+  peopleFilter: PeopleFilter)
+
+/** How to sort users and groups, when loading from the database, and any pagination offset.
+  */
+sealed abstract class PeopleOrderOffset
+object PeopleOrderOffset {
+  case object BySignedUpAtDesc extends PeopleOrderOffset
+  case object ByUsername extends PeopleOrderOffset
+}
+
+case class PeopleFilter(
+  onlyWithVerifiedEmail: Boolean = false,
+  onlyApproved: Boolean = false,
+  onlyPendingApproval: Boolean = false,
+  onlyStaff: Boolean = false,
+  onlySuspended: Boolean = false,
+  //onlySilenced: Boolean = false,
+  onlyThreats: Boolean = false) {
+  forbid(onlyApproved && onlyPendingApproval, "TyEZKJ3BG59")
 }

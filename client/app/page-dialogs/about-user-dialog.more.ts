@@ -210,6 +210,18 @@ const AboutUser = createComponent({
             target: '_blank' },
           t.SendMsg);
 
+    // If in the admin area, typically wants to view the user in the admin area.
+    // When not in the admin area, rarely wants to jump directly to the admin area, so skip button?
+    const viewInAdminAreaButton = !eds.isInAdminArea ? null :
+      LinkButton({ href: linkToUserInAdminArea(user), afterClick,
+          target: '_blank' },
+        "View in Admin Area");
+
+    const viewProfileButton =
+        LinkButton({ href: linkToUserProfilePage(user), id: 'e2eUD_ProfileB', afterClick,
+              target: '_blank' },
+          "View Profile");
+
     const userIsPageMember = page_isGroupTalk(page.pageRole) &&
         _.includes(page.pageMemberIds, user.id);
     const removeFromPageButton = userIsPageMember &&
@@ -221,9 +233,8 @@ const AboutUser = createComponent({
       r.div({},
         r.div({ className: 'dw-about-user-actions' },
           sendMessageButton,
-          LinkButton({ href: linkToUserProfilePage(user), id: 'e2eUD_ProfileB', afterClick,
-              target: '_blank' },
-            "View Profile"),
+          viewInAdminAreaButton,
+          viewProfileButton,
           removeFromPageButton),
         avatar.Avatar({ user: user, origins: store,
             size: AvatarSize.Medium, clickOpensUserProfilePage: true }),

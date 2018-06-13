@@ -27,7 +27,7 @@
 GET   /-/login                  controllers.LoginController.showLoginPage(as: Option[String], to: Option[String])
 GET   /-/login-popup            controllers.LoginController.showLoginPopup(mode, returnToUrl)
 POST  /-/logout                 controllers.LoginController.logout(currentUrlPath: Option[String])
-POST  /-/send-addr-verif-email-again  controllers.LoginController.sendSiteOwnerAddrVerifEmailAgain
+POST  /-/resend-owner-email-addr-verif-email controllers.LoginController.resendSiteOwnerAddrVerifEmail
 
 POST  /-/login-guest            controllers.LoginAsGuestController.loginGuest
 POST  /-/login-password         controllers.LoginWithPasswordController.login
@@ -121,6 +121,7 @@ POST  /-/delete-user            controllers.UserController.deleteUser
 # Currently ignores group inheritance of settings. [2WHK7PU0]
 GET   /-/list-complete-users    controllers.UserController.listCompleteUsers(whichUsers)
 GET   /-/load-user-any-details  controllers.UserController.loadUserAnyDetails(who)
+POST  /-/edit-member            controllers.UserController.editMember
 POST  /-/approve-reject-user    controllers.UserController.approveRejectUser
 POST  /-/set-is-admin-or-moderator controllers.UserController.setIsAdminOrModerator
 POST  /-/lock-trust-level       controllers.UserController.lockTrustLevel
@@ -139,6 +140,7 @@ POST  /-/set-primary-email-address controllers.UserController.setPrimaryEmailAdd
 POST  /-/add-email-address      controllers.UserController.addUserEmail
 POST  /-/remove-email-address   controllers.UserController.removeUserEmail
 GET   /-/confirm-email-address  controllers.UserController.confirmOneMoreEmailAddress(confirmationEmailId)
+POST  /-/resend-email-addr-verif-email controllers.UserController.resendEmailAddrVerifEmail
 
 GET   /-/unsubscribe            controllers.UnsubscriptionController.showForm(emailId)
 POST  /-/unsubscribe            controllers.UnsubscriptionController.handleForm(emailId)

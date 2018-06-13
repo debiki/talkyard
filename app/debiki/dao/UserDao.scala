@@ -28,6 +28,7 @@ import play.{api => p}
 import scala.collection.{immutable, mutable}
 import Prelude._
 import EmailNotfPrefs.EmailNotfPrefs
+import org.scalactic.{Bad, ErrorMessage, Good, Or}
 import scala.collection.mutable.ArrayBuffer
 
 
@@ -118,16 +119,122 @@ trait UserDao {
   }
 
 
+  def editMember(memberId: UserId, doWhat: EditMemberAction, byWho: Who) {
+    val now = globals.now()
+
+    TESTS_MISSING
+
+    readWriteTransaction { tx =>
+      val memberBefore = tx.loadTheMemberInclDetails(memberId)
+      val memberAfter = copyEditMember(memberBefore, doWhat, byWho, now) getOrIfBad { errorMessage =>
+        throwForbidden("TyE4KBRW2", errorMessage)
+      }
+
+      // Sometimes need to do some more things. [2BRUI8]
+      doWhat match {
+        case EditMemberAction.SetEmailVerified | EditMemberAction.SetEmailUnverified =>
+          val userEmailAddrs = tx.loadUserEmailAddresses(memberId)
+          val addr = userEmailAddrs.find(_.emailAddress == memberBefore.primaryEmailAddress) getOrDie(
+              "TyE2FKJ6W", s"s$siteId: No primary email addr, user id $memberId")
+          val addrUpdated = addr.copy(
+            verifiedAt = if (doWhat == EditMemberAction.SetEmailVerified) Some(now) else None)
+          tx.updateUserEmailAddress(addrUpdated)
+        case _ =>
+          // Noop.
+      }
+
+      /*val auditLogEntry = AuditLogEntry(
+        siteId = siteId,
+        id = AuditLogEntry.UnassignedId,
+        didWhat = AuditLogEntryType.   ... what? new AuditLogEntryType enums, or one single EditUser enum,
+                                              with an int val = the EditMemberAction int val ?
+        doerId = byWho.id,
+        doneAt = now.toJavaDate,
+        browserIdData = byWho.browserIdData,
+        browserLocation = None)*/
+
+      tx.updateMemberInclDetails(memberAfter)
+      //tx.insertAuditLogEntry(auditLogEntry)
+    }
+
+    // Later: If is-admin/moderator is visible somehow next to the user's name/avatar, then need to
+    // uncache pages where hens name appears (if admin/moderator status got changed). [5KSIQ24]
+
+    removeUserFromMemCache(memberId)
+  }
+
+
+  /** Don't place this fn in class Member, because if invoked without also doing
+    * the other things in editMember() above [2BRUI8], the database will be left in an
+    * inconsistent state. So, this fn should be accessible only to editMember() above.
+    */
+  private def copyEditMember(member: MemberInclDetails, doWhat: EditMemberAction, byWho: Who, now: When)
+        : MemberInclDetails Or ErrorMessage = {
+    import EditMemberAction._
+    def someNow = Some(now.toJavaDate)
+    def someById = Some(byWho.id)
+
+    def checkNotPromotingOrDemotingOneself() {
+      // Bad idea to let people accidentally click "Revoke admin" on their profile, and lose access?
+      if (member.id == byWho.id)
+        throw new QuickMessageException("Cannot change one's own is-admin / moderator status")
+    }
+
+    def checkNotPromotingSuspended() {
+      if (member.isSuspendedAt(now.toJavaDate))
+        throw new QuickMessageException("Cannot promote suspended users to admin or moderator")
+    }
+
+    try Good(doWhat match {
+      case SetEmailVerified =>
+        if (member.primaryEmailAddress.isEmpty)
+          return Bad("Cannot set primary email addr to verified: No primary email addr specified")
+        member.copy(emailVerifiedAt = someNow)
+      case SetEmailUnverified =>
+        member.copy(emailVerifiedAt = None)
+      case SetApproved =>
+        member.copy(isApproved = Some(true), approvedAt = someNow, approvedById = someById)
+      case SetUnapproved =>
+        member.copy(isApproved = Some(false), approvedAt = someNow, approvedById = someById)
+      case ClearApproved =>
+        member.copy(isApproved = None, approvedAt = None, approvedById = None)
+      case SetIsAdmin =>
+        checkNotPromotingSuspended()
+        checkNotPromotingOrDemotingOneself()
+        if (member.isModerator) return Bad("Cannot be both moderator and admin at the same time")
+        member.copy(isAdmin = true)
+      case SetNotAdmin =>
+        checkNotPromotingOrDemotingOneself()
+        member.copy(isAdmin = false)
+      case SetIsModerator =>
+        checkNotPromotingSuspended()
+        checkNotPromotingOrDemotingOneself()
+        if (member.isAdmin) return Bad("Cannot be both moderator and admin at the same time")
+        member.copy(isModerator = true)
+      case SetNotModerator =>
+        checkNotPromotingOrDemotingOneself()
+        member.copy(isModerator = false)
+    })
+    catch {
+      case ex: QuickMessageException =>
+        Bad(ex.message)
+    }
+  }
+
+
+  CLEAN_UP // use editMember() instead
   def approveUser(userId: UserId, approverId: UserId) {
     approveRejectUndoUser(userId, approverId = approverId, isapproved = Some(true))
   }
 
 
+  CLEAN_UP // use editMember() instead
   def rejectUser(userId: UserId, approverId: UserId) {
     approveRejectUndoUser(userId, approverId = approverId, isapproved = Some(false))
   }
 
 
+  CLEAN_UP // use editMember() instead
   def undoApproveOrRejectUser(userId: UserId, approverId: UserId) {
     approveRejectUndoUser(userId, approverId = approverId, isapproved = None)
   }
@@ -147,6 +254,7 @@ trait UserDao {
   }
 
 
+  CLEAN_UP // use editMember() instead
   def setStaffFlags(userId: UserId, isAdmin: Option[Boolean] = None,
         isModerator: Option[Boolean] = None, changedById: UserId) {
     require(isAdmin.isDefined != isModerator.isDefined, "DwE4KEP20")
@@ -206,14 +314,17 @@ trait UserDao {
 
   def suspendUser(userId: UserId, numDays: Int, reason: String, suspendedById: UserId) {
     require(numDays >= 1, "DwE4PKF8")
+    val cappedDays = math.min(numDays, 365 * 110)
+    val now = globals.now()
+
     readWriteTransaction { transaction =>
       var user = transaction.loadTheMemberInclDetails(userId)
       if (user.isAdmin)
         throwForbidden("DwE4KEF24", "Cannot suspend admins")
 
-      val suspendedTill = new ju.Date(transaction.now.millis + numDays * MillisPerDay)
+      val suspendedTill = new ju.Date(now.millis + cappedDays * MillisPerDay)
       user = user.copy(
-        suspendedAt = Some(transaction.now.toJavaDate),
+        suspendedAt = Some(now.toJavaDate),
         suspendedTill = Some(suspendedTill),
         suspendedById = Some(suspendedById),
         suspendedReason = Some(reason.trim))
@@ -551,13 +662,6 @@ trait UserDao {
       usersFound.appendAll(moreUsers)
     }
     usersFound.toVector
-  }
-
-
-  def loadCompleteUsers(onlyThosePendingApproval: Boolean): immutable.Seq[MemberInclDetails] = {
-    readOnlyTransaction { transaction =>
-      transaction.loadMembersInclDetails(onlyPendingApproval = onlyThosePendingApproval)
-    }
   }
 
 
@@ -986,6 +1090,7 @@ trait UserDao {
   }
 
 
+  REFACTOR; CLEAN_UP // Delete, break out fn instead. [4KDPREU2]
   def verifyPrimaryEmailAddress(userId: UserId, verifiedAt: ju.Date) {
     readWriteTransaction { transaction =>
       var user = transaction.loadTheMemberInclDetails(userId)

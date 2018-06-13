@@ -57,7 +57,7 @@ object TrustLevel {
 
 
 sealed abstract class ThreatLevel(val IntVal: Int) {
-  def toInt = IntVal
+  def toInt: Int = IntVal
   def isSevereOrWorse = false
 }
 

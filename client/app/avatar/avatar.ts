@@ -199,6 +199,9 @@ export const Avatar = createComponent({
       title += ' — ' + this.props.title;
     }
 
+    // Later: If including some is-admin/moderator symbol, then need to uncache pages
+    // where this avatar is shown. [5KSIQ24]
+
     const elemName = this.props.ignoreClicks ? 'span' : 'a';
     const elemFn = <any> r[elemName];
     const link = this.props.ignoreClicks ? null : linkToUserProfilePage(user);

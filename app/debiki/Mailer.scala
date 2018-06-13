@@ -171,6 +171,7 @@ object Mailer {
 }
 
 
+// Wow. $DoS
 
 /** Sends emails via SMTP. Does not handle any incoming mail. If broken, however,
   * then only logs emails to the console. It'll be broken e.g. if you run on localhost

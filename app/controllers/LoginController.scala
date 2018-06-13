@@ -38,7 +38,7 @@ class LoginController @Inject()(cc: ControllerComponents, edContext: EdContext)
   import context.security.DiscardingSessionCookie
 
 
-  def showLoginPage(as: Option[String], to: Option[String]) = GetActionIsLogin { apiReq =>
+  def showLoginPage(as: Option[String], to: Option[String]): Action[Unit] = GetActionIsLogin { apiReq =>
     // `thenGoTo` must be an URL relative the same origin.
     val path = to getOrElse "/"
     val badNextUrl = path.contains("//") || path.contains(':') || path.contains("..") ||
@@ -90,7 +90,7 @@ class LoginController @Inject()(cc: ControllerComponents, edContext: EdContext)
     * iframes — only the iframe would be disabled by the modal dialog, but not
     * the rest of the page.
     */
-  def showLoginPopup(mode: String, returnToUrl: String) = GetActionAllowAnyone { request =>
+  def showLoginPopup(mode: String, returnToUrl: String): Action[Unit] = GetActionAllowAnyone { request =>
     Ok(views.html.login.loginPopup(
       SiteTpi(request),
       mode = mode,
@@ -102,7 +102,7 @@ class LoginController @Inject()(cc: ControllerComponents, edContext: EdContext)
   /** Clears login related cookies and OpenID and OpenAuth stuff, unsubscribes
     * from any event channel.
     */
-  def logout(currentUrlPath: Option[String]) = GetActionAllowAnyone { request =>
+  def logout(currentUrlPath: Option[String]): Action[Unit] = GetActionAllowAnyone { request =>
     doLogout(request, redirectIfMayNotSeeUrlPath = currentUrlPath)
   }
 
@@ -130,7 +130,7 @@ class LoginController @Inject()(cc: ControllerComponents, edContext: EdContext)
   }
 
 
-  def sendSiteOwnerAddrVerifEmailAgain: Action[Unit] =
+  def resendSiteOwnerAddrVerifEmail: Action[Unit] =
         GetActionRateLimited(RateLimits.Login, allowAnyone = true) { request =>
     val siteOwner = request.dao.loadSiteOwner() getOrElse {
       throwNotFound("EdE85FJKY0" , "No owner")

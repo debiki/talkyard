@@ -172,16 +172,23 @@ object Prelude {
   def throwIllegalArgument(errorCode: String, problem: => String = null) =
     illArgErr(errorCode, problem)
 
+  @deprecated("now", "use throwIllegalArgument() instead")
   def illArgErr(errorCode: String, problem: => String = null) =
     throw new IllegalArgumentException(formatErrorMessage(errorCode, problem))
 
+  def forbid(condition: Boolean, message: => String): Unit =
+    require(!condition, message)
+
+  @deprecated("now", "use forbid() instead")
   def illArgIf(condition: Boolean, errorCode: String, problem: => String = null) =
     if (condition) illArgErr(errorCode, problem)
 
+  @deprecated("now", "use forbid() instead")
   def illArgErrIf(condition: Boolean, errorCode: String, problem: => String) =
     if (condition) illArgErr(errorCode, problem)
 
   // COULD remove
+  @deprecated("now", "use forbid() instead")
   def illArgErrIf3(condition: Boolean, errorCode: String, problem: => String) =
     if (condition) illArgErr(errorCode, problem)
 

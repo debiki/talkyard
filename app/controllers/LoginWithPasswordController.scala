@@ -236,6 +236,10 @@ class LoginWithPasswordController @Inject()(cc: ControllerComponents, edContext:
 
 
   private def finishEmailAddressVerification(emailId: String, request: ApiRequest[_]): UserId = {
+
+    REFACTOR // A bit dupl code. [4KDPREU2]  looks 100% fine to break out fn, & place in UserDao.
+    // and delete dao.verifyPrimaryEmailAddres().
+
     SECURITY // don't let the same email verif url be used more than once?
     val email = request.dao.loadEmailById(emailId) getOrElse {
       throwForbidden("DwE7GJP03", "Link expired? Bad email id; email not found.")
@@ -289,6 +293,7 @@ object LoginWithPasswordController {
     val returnToUrlEscapedHash = returnToUrl.replaceAllLiterally("#", "__dwHash__")
     val emailId = Email.generateRandomId()
 
+    // A bit dupl code. [4CUJQT4]
     val safeEmailAddrVerifUrl =
       globals.originOf(host) +
         routes.LoginWithPasswordController.confirmEmailAddressAndLogin(

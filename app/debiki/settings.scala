@@ -31,8 +31,11 @@ import scala.util.matching.Regex
 trait AllSettings {
   self =>
 
-  def userMustBeAuthenticated: Boolean
-  def userMustBeApproved: Boolean
+  def userMustBeAuthenticated: Boolean  ; RENAME // to mustBeAuthenticatedToRead ?
+  def userMustBeApproved: Boolean       ; RENAME // to mustBeApprovedToContribute?
+              // Need to change how it works too: in the db, set mustBeAuthenticatedToRead = true
+              // if must-be-approved = true.
+
   // def approveInvitesHow: HowApproveInvites.BeforeTheyAreSent/AfterSignup/AlwaysAllow
   def inviteOnly: Boolean
   def allowSignup: Boolean

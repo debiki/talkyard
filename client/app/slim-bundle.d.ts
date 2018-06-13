@@ -180,6 +180,10 @@ declare namespace debiki2 {
   var page_isPrivateGroup: any;
   var page_isPrivateGroup: any;
   function pageRole_iconClass(pageRole: PageRole): string;
+
+  function user_isSuspended(user: MemberInclDetails, nowMs: WhenMs): boolean;
+  function user_threatLevel(user: MemberInclDetails): ThreatLevel;
+  function user_trustLevel(user: MemberInclDetails): TrustLevel;
   function user_isGone(user: Myself | BriefUser | MemberInclDetails | UserAnyDetails): boolean;
 
   function uppercaseFirst(text: string): string;
@@ -217,10 +221,14 @@ declare namespace debiki2 {
   function linkToNotificationSource(notf: Notification): string;
   function linkToAdminPageAdvancedSettings(hostname?: string): string;
   function linkToRedirToAboutCategoryPage(categoryId: CategoryId): string;
-  function linkToUserInAdminArea(userId: UserId): string;
+  function linkToUserInAdminArea(user: Myself | MemberInclDetails | User | UserId): string;
   function linkToSendMessage(idOrUsername: UserId | string): string;
+  function linkToUserInAdminArea(userId: UserId): string;
   function linkToUserProfilePage(idOrUsername: Myself | User | UserId | string): string;
   function linkToUsersNotfs(userIdOrUsername: UserId | string): string;
+  function linkToSendMessage(userIdOrUsername: UserId | string): string;
+  function linkToInvitesFromUser(userId: UserId): string;
+  function linkToUsersEmailAddrs(userIdOrUsername: UserId | string): string;
   function linkToAdminPage(me: Myself): string;
   function linkToReviewPage(): string;
   function externalLinkToAdminHelp(): string;

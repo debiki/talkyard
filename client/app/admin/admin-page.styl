@@ -150,8 +150,8 @@
   .dw-sub-nav
     margin-top: 14px;
 
-.dw-admin-panel
-  margin-top: 10px;
+.s_A_Us
+  margin: 21px 0 30px;
 
 .dw-users-to-review
   .btn
@@ -194,11 +194,48 @@
   display: none
 
 
+// Users
+//--------------------------------------------
+
+.s_A_Us
+  // Otherwise, when editing & reloading user, the page is briefly empty (only the text Loading...)
+  // which makes the browser y-scroll reset to 0, annoying.
+  min-height: 550px;
+
+.s_A_Us_UsL_U_Modif
+  color: hsl(0, 0%, 37%);
+  margin-left: 0.6ex;
+
+
+// A single user
+//--------------------------------------------
+
+$rowBorder = 1px solid hsl(0, 0%, 90%);
+
+.esA_Us_U_Rows
+  clear: both;
+  padding: 15px 0;
+
+.esA_Us_U_Rows_Row
+  display: flex;        // this...
+  align-items: center;  // ...makes row items vertically aligned
+  padding: 11px 0 11px 5px;
+  border-top: $rowBorder;
+
+.esA_Us_U_Rows_Row:last-child
+  border-bottom: $rowBorder;
+
+.s_A_Us_U_Rows_Row_EmlManage
+  margin: 5px 0 0 1em;
+  display: inline-block;
+  text-decoration: underline;
+
+
 // Invites
 //--------------------------------------------
 
-.s_AA_Us_Inv_SendB
-  margin-top: 6px;
+//.s_AA_Us_Inv_SendB
+//  margin-top: 6px;
 
 
 // Settins and Special Content tabs

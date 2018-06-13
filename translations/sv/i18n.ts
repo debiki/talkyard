@@ -630,6 +630,7 @@ var t_sv: TalkyardTranslations = t = {
     EmailAddresses: "Email addresses",
     PrimaryDot: "Primary. ",
     VerifiedDot: "Verified. ",
+    NotVerifiedDot: "Not verified. ",
     ForLoginWithDot: (provider: string) => `For login with ${provider}. `,
     MakePrimary: "Make Primary",
     AddEmail: "Add email address",
@@ -637,6 +638,7 @@ var t_sv: TalkyardTranslations = t = {
     MaxEmailsInfo: (numMax: number) => `(You cannot add more than ${numMax} addresses.)`,
     EmailAdded_1: "Added. We've sent you a verification email — ",
     EmailAdded_2: "check your email inbox.",
+    SendVerifEmail: "Send verification email",
 
     EmailStatusExpl:
         "('Primary' means you can login via this address, and we send notifications to it. " +

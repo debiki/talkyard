@@ -477,7 +477,9 @@ export const Account = createFactory({
   displayName: 'Account',
 
   getInitialState: function() {
-    return {};
+    return {
+      verifEmailsSent: {},
+    };
   },
 
   componentDidMount: function() {
@@ -510,6 +512,13 @@ export const Account = createFactory({
       this.setState({ isAddingEmail: false, doneAddingEmail: true });
       this.setState(response);
     });
+  },
+
+  resendEmailAddrVerifEmail: function(emailAddress: string) {
+    const user: MemberInclDetails = this.props.user;
+    Server.resendEmailAddrVerifEmail(user.id, emailAddress);
+    this.state.verifEmailsSent[emailAddress] = true; // modifying in place, oh well [redux]
+    this.setState({ verifEmailsSent: this.state.verifEmailsSent });
   },
 
   removeEmailAddress: function(emailAddress: string) {
@@ -574,11 +583,14 @@ export const Account = createFactory({
       r.ul({ className: 's_UP_EmLg_EmL' },
         emailAddrs.map((addr) => {
           let status = '';
-          let isVerifeid = false;
+          let isVerified = false;
 
           if (addr.verifiedAt) {
             status += t.upp.VerifiedDot;
-            isVerifeid = true;
+            isVerified = true;
+          }
+          else {
+            status += t.upp.NotVerifiedDot;
           }
 
           let isLoginMethod = false;
@@ -598,10 +610,14 @@ export const Account = createFactory({
             r.div({ className: 's_UP_EmLg_EmL_It_Em' }, addr.emailAddress),
             r.div({}, status),
             r.div({},
+              isVerified ? null : (
+                  this.state.verifEmailsSent[addr.emailAddress] ? "Sent. " :
+                Button({ onClick: () => this.resendEmailAddrVerifEmail(addr.emailAddress),
+                    className: 'e_SendVerifEmB' }, t.upp.SendVerifEmail)),
               isPrimary || isLoginMethod ? null :
                 Button({ onClick: () => this.removeEmailAddress(addr.emailAddress),
                     className: 'e_RemoveEmB' }, t.Remove),
-              isPrimary || !isVerifeid ? null :
+              isPrimary || !isVerified ? null :
                 Button({ onClick: () => this.setPrimary(addr.emailAddress),
                     className: 'e_MakeEmPrimaryB' }, t.upp.MakePrimary)));
         }));

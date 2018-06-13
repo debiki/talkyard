@@ -50,26 +50,50 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
 
 
   def listCompleteUsers(whichUsers: String): Action[Unit] = StaffGetAction { request =>
-    var onlyApproved = false
-    var onlyPendingApproval = false
+    val settings = request.dao.getWholeSiteSettings()
+    var orderOffset: PeopleOrderOffset = PeopleOrderOffset.BySignedUpAtDesc
+    var peopleFilter = PeopleFilter()
+
     whichUsers match {
-      case "ActiveUsers" =>
-        onlyApproved = request.dao.getWholeSiteSettings().userMustBeApproved
+      case "EnabledUsers" =>
+        peopleFilter = peopleFilter.copy(
+          onlyWithVerifiedEmail = settings.requireVerifiedEmail,
+          onlyApproved = settings.userMustBeApproved)
+      case "WaitingUsers" =>
+        peopleFilter = peopleFilter.copy(
+          // Don't ask staff to approve people who haven't yet verified their email address.
+          onlyWithVerifiedEmail = settings.requireVerifiedEmail,
+          onlyPendingApproval = true)
       case "NewUsers" =>
-        onlyPendingApproval = true
+        // Show everyone, sorted by most recent signups first. This is the default sort order.
+      case "StaffUsers" =>
+        peopleFilter = peopleFilter.copy(onlyStaff = true)
+      case "SuspendedUsers" =>
+        peopleFilter = peopleFilter.copy(onlySuspended = true)
+      /*case "SilencedUsers" =>
+        peopleFilter = peopleFilter.copy(onlySilenced = true) */
+      case "ThreatUsers" =>
+        peopleFilter = peopleFilter.copy(onlyThreats = true)
+      case x =>
+        throwBadArgument("TyE2KBWT58", "whichUsers", x)
     }
+
+    val peopleQuery = PeopleQuery(orderOffset, peopleFilter)
+
     request.dao.readOnlyTransaction { transaction =>
       // Ok to load also deactivated users — the requester is staff.
-      val usersPendingApproval = transaction.loadMembersInclDetails(
-        onlyApproved = onlyApproved,
-        onlyPendingApproval = onlyPendingApproval)
-      val approverIds = usersPendingApproval.flatMap(_.approvedById)
-      val suspenderIds = usersPendingApproval.flatMap(_.suspendedById)
+      val membersAndStats = transaction.loadMembersInclDetailsAndStats(peopleQuery)
+      val members = membersAndStats.map(_._1)
+      val approverIds = members.flatMap(_.approvedById)
+      val suspenderIds = members.flatMap(_.suspendedById)
       val usersById = transaction.loadMembersAsMap(approverIds ++ suspenderIds)
       COULD // later load all groups too, for each user. Not needed now though. [2WHK7PU0]
-      val usersJson = JsArray(usersPendingApproval.map(
-        jsonForMemberInclDetails(_, usersById, groups = Nil, callerIsAdmin = request.theUser.isAdmin,
-          callerIsStaff = true)))
+      val usersJson = JsArray(membersAndStats.map(memberAndStats => {
+        val member: MemberInclDetails = memberAndStats._1
+        val anyStats: Option[UserStats] = memberAndStats._2
+        jsonForMemberInclDetails(member, usersById, groups = Nil, callerIsAdmin = request.theUser.isAdmin,
+          callerIsStaff = true, anyStats = anyStats)
+      }))
       OkSafeJson(Json.toJson(Map("users" -> usersJson)))
     }
   }
@@ -186,7 +210,8 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
 
   private def jsonForMemberInclDetails(user: MemberInclDetails, usersById: Map[UserId, Member],
       groups: immutable.Seq[Group],
-      callerIsAdmin: Boolean, callerIsStaff: Boolean = false, callerIsUserHerself: Boolean = false)
+      callerIsAdmin: Boolean, callerIsStaff: Boolean = false, callerIsUserHerself: Boolean = false,
+      anyStats: Option[UserStats] = None)
         : JsObject = {
     var userJson = Json.obj(
       "id" -> user.id,
@@ -213,6 +238,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
         else hideEmailLocalPart(user.primaryEmailAddress)
 
       userJson += "email" -> JsString(safeEmail)
+      userJson += "emailVerifiedAtMs" -> JsDateMsOrNull(user.emailVerifiedAt)
       userJson += "emailForEveryNewPost" -> JsBoolean(user.emailForEveryNewPost)
       userJson += "summaryEmailIntervalMinsOwn" -> JsNumberOrNull(user.summaryEmailIntervalMins)
       userJson += "summaryEmailIntervalMins" ->
@@ -221,7 +247,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
       userJson += "summaryEmailIfActive" ->
           JsBooleanOrNull(user.effectiveSummaryEmailIfActive(groups))
       userJson += "isApproved" -> JsBooleanOrNull(user.isApproved)
-      userJson += "approvedAtEpoch" -> DateEpochOrNull(user.approvedAt)
+      userJson += "approvedAtMs" -> JsDateMsOrNull(user.approvedAt)
       userJson += "approvedById" -> JsNumberOrNull(user.approvedById)
       userJson += "approvedByName" -> JsStringOrNull(anyApprover.flatMap(_.fullName))
       userJson += "approvedByUsername" -> JsStringOrNull(anyApprover.flatMap(_.username))
@@ -237,7 +263,12 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
       userJson += "lockedTrustLevel" -> JsNumberOrNull(user.lockedTrustLevel.map(_.toInt))
       userJson += "threatLevel" -> JsNumber(user.threatLevel.toInt)
       userJson += "lockedThreatLevel" -> JsNumberOrNull(user.lockedThreatLevel.map(_.toInt))
+
+      anyStats foreach { stats =>
+        userJson += "anyUserStats" -> makeUserStatsJson(stats, isStaffOrSelf = true)
+      }
     }
+
     userJson
   }
 
@@ -610,26 +641,57 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
     }
 
     BUG; RACE // If the server crashes / gets shut down, the email won't get sent.
-    // Instead, add it to some emails-to-send queue. In the same transaction, as above.
+    // Instead, add it to some emails-to-send queue. In the same transaction, as above. [EMAILTX]
 
-    val email = createNewEmailAddrVerifEmailDontSend(member, request, emailAddress)
+    val email = createEmailAddrVerifEmailDontSend(member, request, emailAddress, isNewAddr = true)
     globals.sendEmail(email, dao.siteId)
 
     loadUserEmailsLoginsImpl(userId, request)
   }
 
 
-  private def createNewEmailAddrVerifEmailDontSend(user: MemberInclDetails, request: DebikiRequest[_],
-        newEmailAddress: String): Email = {
+  def resendEmailAddrVerifEmail: Action[JsValue] = PostJsonAction(
+        RateLimits.ConfirmEmailAddress, maxBytes = 300) { request =>
+
+    import request.{dao, body, theRequester => requester}
+
+    TESTS_MISSING
+
+    val userId = (body \ "userId").as[UserId]
+    val emailAddress = (body \ "emailAddress").as[String]
+
+    throwForbiddenIf(requester.id != userId && !requester.isAdmin,
+      "TyE2PYBW0", "You may not send verification emails for someone else")
+    throwForbiddenIf(userId < LowestTalkToMemberId,
+      "TyE5GUK10", "Cannot send email address verification email to built-in user")
+
+    val member: MemberInclDetails = dao.readWriteTransaction { tx =>
+      val userEmailAddrs = tx.loadUserEmailAddresses(userId)
+      throwForbiddenUnless(userEmailAddrs.exists(_.emailAddress == emailAddress),
+        "TyE6UKBQ2", "The user doesn't have that email address")
+      tx.loadTheMemberInclDetails(userId)
+    }
+
+    val email = createEmailAddrVerifEmailDontSend(member, request, emailAddress, isNewAddr = false)
+
+    BUG; RACE // If the server crashes here, the email won't get sent. [EMAILTX]
+    globals.sendEmail(email, dao.siteId)
+
+    loadUserEmailsLoginsImpl(userId, request)
+  }
+
+
+
+  private def createEmailAddrVerifEmailDontSend(user: MemberInclDetails, request: DebikiRequest[_],
+        newEmailAddress: String, isNewAddr: Boolean): Email = {
 
     import context.globals, request.dao
     val (siteName, origin) = dao.theSiteNameAndOrigin()
     val host = request.host
 
-    val returnToUrl = s"$host/-/users/${user.username}/preferences/account"  // [4JKT28TS]
-
     val emailId = Email.generateRandomId()
 
+    // A bit dupl code. Break out simplifying fn? Or reuse the other fn? [4CUJQT4]
     val safeEmailAddrVerifUrl =
       globals.originOf(host) +
         routes.UserController.confirmOneMoreEmailAddress(
@@ -647,6 +709,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
           siteAddress = host,
           username = user.username,
           emailAddress = newEmailAddress,
+          isNewAddr = isNewAddr,
           safeVerificationUrl = safeEmailAddrVerifUrl,
           expirationTimeInHours = 1,
           globals).body)
@@ -658,26 +721,52 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
 
   def confirmOneMoreEmailAddress(confirmationEmailId: String): Action[Unit] = GetAction { request =>
     import request.{dao, requester}
+
+    // A bit dupl code. [4KDPREU2] Break out verifyEmailAddr() fn, place in UserDao.
+
     val email = dao.loadEmailById(confirmationEmailId) getOrElse {
       throwForbidden("EdE1WRB20", "Link expired? Or bad email id.")
     }
 
     val toUserId = email.toUserId getOrElse throwForbidden(
       "EdE1FKDP0", "Wrong email type: No user id")
-    throwForbiddenIf(requester.map(_.id) isSomethingButNot toUserId,
-      "EdE7UKTQ1", "You're logged in as a the wrong user")
 
-    val member: MemberInclDetails = dao.readWriteTransaction { tx =>
-      val member = dao.loadTheMemberInclDetailsById(toUserId)
+    // If, when logged in as X, one can verify the email for another account Y,
+    // then, likely one will afterwards incorrectly believe that one is logged in as Y,
+    // and maybe do something that only Y would do but not X. So say Forbidden.
+    throwForbiddenIf(requester.map(_.id) isSomethingButNot toUserId,
+      "TyE8KTQ1", "You're logged in as a the wrong user. Log out and click the verification link again.")
+
+    val now = globals.now()
+
+    val (member: MemberInclDetails, verifiedPrimary) = dao.readWriteTransaction { tx =>
+      var member = dao.loadTheMemberInclDetailsById(toUserId)
       val userEmailAddrs = tx.loadUserEmailAddresses(toUserId)
       val userEmailAddr = userEmailAddrs.find(_.emailAddress == email.sentTo) getOrElse {
         // This might happen if a user removes hens address, and clicks the verif link afterwards?
         throwForbidden("EdE1WKBPE", "Not your email address, did you remove it?")
       }
-      val addrVerified = userEmailAddr.copy(verifiedAt = Some(tx.now))
+
+      val addrVerified = userEmailAddr.copy(verifiedAt = Some(now))
       tx.updateUserEmailAddress(addrVerified)
-      member
+
+      // Admins can mark someone's email as not-verified, and sen another verif email.
+      // So, although the user already has an account, we might now be verifying the primary email.
+      val verifiedPrimary =
+        member.primaryEmailAddress == userEmailAddr.emailAddress && member.emailVerifiedAt.isEmpty
+
+      if (verifiedPrimary) {
+        member = member.copy(emailVerifiedAt = Some(now.toJavaDate))
+        tx.updateMemberInclDetails(member)
+        // Now, with the primary email verified, can start sending summary emails.
+        tx.reconsiderSendingSummaryEmailsTo(member.id)
+      }
+
+      (member, verifiedPrimary)
     }
+
+    if (verifiedPrimary)
+      dao.removeUserFromMemCache(member.id)
 
     // What do now? Let's redirect to the user's email list.
     // But maybe the user is not currently logged in? I don't think hen should get logged in
@@ -720,6 +809,16 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
   }
 
 
+  def editMember: Action[JsValue] = StaffPostJsonAction(maxBytes = 500) { request =>
+    val memberId = (request.body \ "userId").as[UserId]
+    val doWhatInt = (request.body \ "doWhat").as[Int]
+    val doWhat = EditMemberAction.fromInt(doWhatInt).getOrThrowBadArgument("TyE4BKQR28", "doWhat")
+    request.dao.editMember(memberId, doWhat, request.who)
+    Ok
+  }
+
+
+  // Merge w editUser?
   def approveRejectUser: Action[JsValue] = StaffPostJsonAction(maxBytes = 100) { request =>
     val userId = (request.body \ "userId").as[UserId]
     val doWhat = (request.body \ "doWhat").as[String]
@@ -735,6 +834,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
   }
 
 
+  // Merge w editUser?
   def setIsAdminOrModerator: Action[JsValue] = AdminPostJsonAction(maxBytes = 100) { request =>
     val userId = (request.body \ "userId").as[UserId]
     val doWhat = (request.body \ "doWhat").as[String]

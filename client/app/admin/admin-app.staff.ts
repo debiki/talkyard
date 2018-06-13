@@ -74,10 +74,21 @@ const AdminAppComponent = createReactClass(<any> {
     });
   },
 
+  componentDidMount: function() {
+    this.loadAllSettingsIfNeeded();
+  },
+
+  componentWillUnmount: function() {
+    this.isGone = true;
+  },
+
   loadAllSettingsIfNeeded: function() {
-    if (this.state.currentSettings)
+    if (this.state.currentSettings || this.isLoading)
       return;
+    this.isLoading = true;
     Server.loadSiteSettings(currentAndDefaultSettings => {
+      if (this.isGone) return;
+      this.isLoading = false;
       this.setState({
         defaultSettings: currentAndDefaultSettings.defaultSettings,
         currentSettings: currentAndDefaultSettings.effectiveSettings,
@@ -122,7 +133,11 @@ const AdminAppComponent = createReactClass(<any> {
 
   saveSettings: function() {
     Server.saveSiteSettings(this.state.editedSettings, (result) => {
-      this.setState({ currentSettings: result.effectiveSettings, editedSettings: {} });
+      if (this.isGone) return;
+      this.setState({
+        currentSettings: result.effectiveSettings,
+        editedSettings: {},
+      });
     });
   },
 
@@ -134,7 +149,10 @@ const AdminAppComponent = createReactClass(<any> {
     const store: Store = this.state.store;
     const me = store.me;
     if (!me)
-      return r.p({}, 'Not logged in');
+      return r.p({}, "Not logged in");
+
+    if (!this.state.currentSettings)
+      return r.p({}, "Loading ...");
 
     const ar = AdminRoot;
 
@@ -301,12 +319,15 @@ const LoginAndSignupSettings = createFactory({
 
         Setting2(props, { type: 'checkbox', label: "Approve users", id: 'e2eApproveUsersCB',
           className: 'e_A_Ss_S-ApproveUsersCB',
-          help: "New users need to be approved by staff before they can access the site.",
+          help: "New users need to be approved by staff before they can do anything more " +
+              "than just reading.",
           getter: (s: Settings) => s.userMustBeApproved,
           update: (newSettings: Settings, target) => {
             newSettings.userMustBeApproved = target.checked;
             if (target.checked && valueOf(s => s.allowGuestLogin)) {
               newSettings.allowGuestLogin = false;
+              // Don't set userMustBeAuthenticated to true: it's fine to *not* require auth
+              // to *read* content, and *do* require auth and approval to contribute content.
             }
           }
         }),

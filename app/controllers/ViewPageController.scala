@@ -44,6 +44,7 @@ class ViewPageController @Inject()(cc: ControllerComponents, edContext: EdContex
 
   import context.security.throwIndistinguishableNotFound
   import context.globals
+  import context.security
 
 
 
@@ -124,7 +125,7 @@ class ViewPageController @Inject()(cc: ControllerComponents, edContext: EdContex
     // If the URL needs to be corrected, the client can do that via the browser history api,
     // so don't throw any redirect or sth like that.
     val specifiedPagePath: PagePath = PagePath.fromUrlPath(request.siteId, request.request.path) match {
-      case PagePath.Parsed.Good(path) => path
+      case PagePath.Parsed.Good(goodPath) => goodPath
       case PagePath.Parsed.Corrected(correctedPath) =>
         // For now
         return Future.successful(makeProblemJsonResult(BAD_REQUEST, "Unimplemented [EdE6GJHML2]"))
@@ -258,20 +259,30 @@ class ViewPageController @Inject()(cc: ControllerComponents, edContext: EdContex
       }
 
       if (siteSettings.userMustBeApproved && !user.exists(_.isApprovedOrStaff)) {
-        val message = request.theUser match {
-          case _: Guest => "Guest login not allowed"
+        var logout = false
+        val (message, code) = request.theUser match {
+          case _: Guest => ("Guest login not allowed", "TyE0GUESTS")
           case member: Member =>
             member.isApproved match {
               case None =>
-                o"""Your account has not yet been approved. Please wait until
-                  someone in our staff has approved it."""
+                // Logout, because maybe there're other people who use the same computer,
+                // but different accounts? A bit annoying if they'd all had to wait until this
+                // user gets approved. Also, could be a security issue, to be unable to logout.
+                UX; COULD // show a logout button, instead of always logging out. (4GPKB2)
+                logout = true
+                (o"""Your account has not yet been approved. Please wait until
+                  someone in our staff has approved it.""", "TyMAPPRPEND")
               case Some(false) =>
-                "You may not access this site, sorry. There is no point in trying again."
+                // Log out, so can try again as another user. (4GPKB2)
+                logout = true
+                ("You may not access this site with this account, sorry.", "TyMNOACCESS")
               case Some(true) =>
                 die("DwE7KEWK2", "Both not approved and approved")
             }
         }
-        throwForbidden("DwE403KGW0", message)
+        var forbidden = ForbiddenResult(s"TyM0APPR-$code", message)
+        if (logout) forbidden = forbidden.discardingCookies(security.DiscardingSessionCookie)
+        return Future.successful(forbidden)
       }
     }
 

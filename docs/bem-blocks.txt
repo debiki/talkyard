@@ -37,7 +37,11 @@ esA_Ss          = Admin Area, settings
 esA_Ss_S        = Admin Area, a single setting
 esA_Rvw         = Admin Area, Review section
 esA_Rvw_Task    = Admin Area, Review section, a review task
+s_A_Us          = Admin area, Users section
 s_A_Us_Inv      = Admin area, Users section, Invites
+
+s_A_Us_UsL      = Admin area, users section, users list
+s_A_Us_UsL_U_Modif  = a specific user row, modifier (like "— admin")
 
 esA_Us_U        = Admin Area, a single user
 

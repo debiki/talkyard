@@ -1,5 +1,5 @@
-@(siteAddress: String, username: String, emailAddress: String, safeVerificationUrl: String,
-    expirationTimeInHours: Int, globals: debiki.Globals)
+@(siteAddress: String, username: String, emailAddress: String, isNewAddr: Boolean,
+    safeVerificationUrl: String, expirationTimeInHours: Int, globals: debiki.Globals)
 
 @origin = @{
   globals.originOf(siteAddress)
@@ -22,7 +22,11 @@
   like "alice-is-so-stupid-123.example.com" and specifies Alice's address as the owner's address?
   Solution?: If there's a create-site domain, then always include a "Report this" link,
   so the website or user can be investigated and maybe removed. *@
-To finish adding@* [B4FR20L_] *@ email address @emailAddress to user @username at @grayBoringLink(siteAddress),
+@if(isNewAddr) {
+  To finish adding@* [B4FR20L_] *@ email address @emailAddress to
+}else{
+  To verify email address @emailAddress for
+} user @username at @grayBoringLink(siteAddress),
 please click <a href="@Html(safeVerificationUrl)">this link</a>.
 </p>
 

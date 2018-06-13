@@ -57,7 +57,13 @@ export function startMainReactRoot(reactRenderMethodName: 'render' | 'hydrate') 
   const adminAppElem = document.getElementById('dw-react-admin-app');
   if (adminAppElem) {
     ReactDOM.render(
-        Router({}, admin.routes()), adminAppElem);
+        Router({},
+          rFragment({},
+            // (The admin app already includes the topbar.)
+            admin.routes(),
+            // Make LinkButton work also in the admin app:
+            Route({ component: debiki2.page.Hacks.ExtReactRootNavComponent }))),
+      adminAppElem);
     return;
   }
 

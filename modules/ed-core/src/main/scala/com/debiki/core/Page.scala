@@ -608,7 +608,7 @@ object PinPageWhere {
 
 
 
-case class PageQuery(
+case class PageQuery(  // also see PeopleQuery
   orderOffset: PageOrderOffset,
   pageFilter: PageFilter,
   includeAboutCategoryPages: Boolean)

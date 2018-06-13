@@ -842,6 +842,7 @@ interface MemberInclDetails extends MemberOrGroupInclDetails {
   createdAtEpoch: number;  // change to millis
   fullName: string;
   email: string;
+  emailVerifiedAtMs?: WhenMs;
   emailForEveryNewPost: boolean;
   about?: string;
   country: string;
@@ -851,11 +852,11 @@ interface MemberInclDetails extends MemberOrGroupInclDetails {
   isAdmin: boolean;
   isModerator: boolean;
   isApproved: boolean;
-  approvedAtEpoch: number;  // change to millis
-  approvedById: number;
-  approvedByName: string;
-  approvedByUsername: string;
-  suspendedAtEpoch?: number;  // change to millis
+  approvedAtMs: number;        // RENAME to reviewedAtMs
+  approvedById: number;        // RENAME to reviewedById
+  approvedByName: string;      // REMOVE (lookup via id instead)
+  approvedByUsername: string;  // REMOVE
+  suspendedAtEpoch?: number;   // change to mins? ms?
   suspendedTillEpoch?: number;
   suspendedById?: number;
   suspendedByUsername?: string;
@@ -868,6 +869,27 @@ interface MemberInclDetails extends MemberOrGroupInclDetails {
   lockedThreatLevel?: ThreatLevel;
   deactivatedAt?: number;
   deletedAt?: number;
+}
+
+interface MemberInclDetailsWithStats extends MemberInclDetails {
+  // Mabye some old accounts lack stats?
+  anyUserStats?: UserStats;
+}
+
+
+enum EditMemberAction {
+  SetEmailVerified = 1,
+  SetEmailUnverified = 2,
+
+  SetApproved = 3,
+  SetUnapproved = 4,
+  ClearApproved = 5,
+
+  SetIsAdmin = 6,
+  SetNotAdmin = 7,
+
+  SetIsModerator = 8,
+  SetNotModerator = 9,
 }
 
 

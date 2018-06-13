@@ -43,7 +43,7 @@ const AdminAppComponent = createReactClass(<any> {
     };
   },
 
-  componentWillMount: function() {
+  componentDidMount: function() {
     Server.listSites();
   },
 

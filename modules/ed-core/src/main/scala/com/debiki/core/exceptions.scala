@@ -37,7 +37,7 @@ class QuickException extends Exception {
 class QuickMessageException(val message: String)
   extends QuickException {
 
-  override def getMessage = message
+  override def getMessage: String = message
 
 }
 

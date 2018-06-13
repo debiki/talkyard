@@ -24,13 +24,14 @@
 
 const r = ReactDOMFactories;
 const Modal = rb.Modal;
+const ModalHeader = rb.ModalHeader;
 const ModalTitle = rb.ModalTitle;
 const ModalBody = rb.ModalBody;
 const ModalFooter = rb.ModalFooter;
 
 
-export const AdminUserPage = createFactory({
-  displayName: 'AdminUserPage',
+export const UserProfileAdminView = createFactory({
+  displayName: 'UserProfileAdminView',
 
   getInitialState: function() {
     return {
@@ -38,7 +39,7 @@ export const AdminUserPage = createFactory({
     };
   },
 
-  componentWillMount: function(nextProps) {
+  componentDidMount: function(nextProps) {
     this.loadCompleteUser();
   },
 
@@ -66,14 +67,23 @@ export const AdminUserPage = createFactory({
     return linkToUserProfilePage(this.state.user);
   },
 
-  toggleIsAdmin: function() {
+  editMember: function(doWhat: EditMemberAction) {
+    Server.editMember(this.state.user.id, doWhat, this.loadCompleteUser);
+  },
+
+  resendEmailAddrVerifEmail: function() {
+    const user: MemberInclDetails = this.state.user;
+    Server.resendEmailAddrVerifEmail(user.id, user.email);
+  },
+
+  toggleIsAdmin: function() {  // merge?
     const doWhat = this.state.user.isAdmin ? 'RevokeAdmin' : 'GrantAdmin';
     Server.setIsAdminOrModerator(this.state.user.id, doWhat, () => {
       this.loadCompleteUser();
     });
   },
 
-  toggleIsModerator: function() {
+  toggleIsModerator: function() {  // merge?
     const doWhat = this.state.user.isModerator ? 'RevokeModerator' : 'GrantModerator';
     Server.setIsAdminOrModerator(this.state.user.id, doWhat, () => {
       this.loadCompleteUser();
@@ -91,7 +101,8 @@ export const AdminUserPage = createFactory({
   },
 
   render: function() {
-    let store: Store = this.props.store;
+    const store: Store = this.props.store;
+    const settings: Settings = this.props.settings;
     const user: MemberInclDetails = this.state.user;
     const me: Myself = store.me;
     if (!user)
@@ -101,27 +112,102 @@ export const AdminUserPage = createFactory({
         ExtLinkButton({ href: this.publicProfileLink(), id: 'e2eA_Us_U_ShowPublProfB' },
           "Show Public Profile");
 
-    let usernameAndFullName = user.username;
+    let usernameAndFullName: string = user.username;
     if (user.fullName) {
       usernameAndFullName += ' (' + user.fullName + ')';
     }
 
-    const thatIsYou = user.id === me.id ? " — that's you" : null;
+    const thatIsYou = user.id === me.id ? " — that's you" : '';
+
+    const makeRow = (what: string, value, controls, alsoForGroups?: boolean) => {
+      if (!alsoForGroups && user.isGroup) return null;
+      return r.div({ className: 'esA_Us_U_Rows_Row' },
+        r.div({ className: 'col-sm-2' }, r.b({}, what)),
+        r.div({ className: 'col-sm-3' }, prettify(value)),
+        r.div({ className: 'col-sm-6' }, controls));
+    };
+
+    // ----- Enabled?
+
+    let enabled = true;
+    let whyNotEnabled = '';
+
+    if (settings.requireVerifiedEmail && !user.emailVerifiedAtMs) {
+      enabled = false;
+      whyNotEnabled += " Hasn't clicked email verification link.";
+    }
+    else if (settings.userMustBeApproved) {
+      if (!user.approvedAtMs) {
+        enabled = false;
+        whyNotEnabled += " Waiting for you to approve him/her.";
+      }
+      else if (!user.isApproved) {
+        enabled = false;
+        whyNotEnabled += " Was not approved to join.";
+      }
+    }
+
+    if ((<number | string> user.suspendedTillEpoch) === 'Forever') {
+      enabled = false;
+      whyNotEnabled += " User banned.";
+    }
+
+    // ----- /Enabled?
+
+    const makeEditMemberFn = (action: EditMemberAction) => {
+      return () => this.editMember(action);
+    };
+
+    const emailAddrAndResendVerifEmailButton = makeRow(
+        "Email: ",
+        user.email + (user.emailVerifiedAtMs ? '' : " — not verified"),
+        rFragment({},
+
+          user.emailVerifiedAtMs ? null :
+              Button({ onClick: this.resendEmailAddrVerifEmail }, "Send verification email"),
+
+          Button({ onClick: makeEditMemberFn(user.emailVerifiedAtMs ?
+                EditMemberAction.SetEmailUnverified : EditMemberAction.SetEmailVerified), },
+            user.emailVerifiedAtMs ?
+                "Set to Not verified" : "Set to Verified"),
+          /* This sounds complicated. Maybe better skip? Also, fairly obvious anyway?
+          And actually *incorrect*, if the site conf val email-verif-required = false.
+          user.emailVerifiedAtMs ?
+              r.span({ style: { marginLeft: '1em' }},
+                "(will then need to re-verify his/her email) ") : null, */
+          r.a({ className: 's_A_Us_U_Rows_Row_EmlManage', href: linkToUsersEmailAddrs(user.username) },
+            "Manage ...")));
+
+    const isApprovedRow = user.isGroup || !settings.userMustBeApproved ? null : makeRow(
+        "Approved: ",
+        user.isApproved,
+        Button({
+            onClick: makeEditMemberFn(user.isApproved ?
+                EditMemberAction.SetApproved : EditMemberAction.SetUnapproved) },
+          user.isApproved ? "Unapprove" : "Approve"));
+
 
     const suspendedText = user.suspendedTillEpoch
         ? 'from ' + moment(user.suspendedAtEpoch).format('YYYY-MM-DD') +
             ' to ' + moment(user.suspendedTillEpoch).format('YYYY-MM-DD HH:mm') +
             ', reason: ' + user.suspendedReason
-        : 'no';
+        : "No";
 
+    let whyCannotSuspend;
+    if (thatIsYou) {
+      whyCannotSuspend = r.span({}, "(you cannot suspend yourself)");
+    }
+    else if (user.isAdmin) {
+      whyCannotSuspend = r.span({}, "(cannot suspend admins)");
+    }
     let suspendButton;
     let userSuspendedNow = user.suspendedTillEpoch && Date.now() <= user.suspendedTillEpoch;
-    if (user.isAdmin || thatIsYou) {
-      // Cannot suspend admins or oneself.
-    }
-    else if (userSuspendedNow) {
+    if (userSuspendedNow) {
       suspendButton =
           Button({ onClick: this.unsuspendUser }, 'Unsuspend');
+    }
+    else if (whyCannotSuspend) {
+      suspendButton = whyCannotSuspend;
     }
     else {
       suspendButton =
@@ -133,14 +219,11 @@ export const AdminUserPage = createFactory({
     let toggleModeratorButton;
     if (me.isAdmin && !thatIsYou && !userSuspendedNow && !user.isGroup) {
       toggleAdminButton = Button({ onClick: this.toggleIsAdmin },
-          user.isAdmin ? 'Revoke Admin' : 'Grant Admin');
-      toggleModeratorButton = Button({ onClick: this.toggleIsModerator },
-          user.isModerator ? 'Revoke Moderator' : 'Grant Moderator');
+          user.isAdmin ? "Revoke Admin" : "Grant Admin");
+      // Need to first revoke is-admin, before can change to moderator.
+      toggleModeratorButton = user.isAdmin ? null : Button({ onClick: this.toggleIsModerator },
+          user.isModerator ? "Revoke Moderator" : "Grant Moderator");
     }
-
-    const moderatorInfo = user.isAdmin || user.isGroup
-        ? null  // then moderator settings have no effect
-        : r.p({}, 'Moderator: ' + user.isModerator, ' ', toggleModeratorButton);
 
     const trustLevelText = user.isGroup ? null : (user.lockedTrustLevel
         ? "Locked at: " + trustLevel_toString(user.lockedTrustLevel) + ", " +
@@ -162,23 +245,30 @@ export const AdminUserPage = createFactory({
         Button({ onClick: () => Server.impersonateGoToHomepage(user.id),
             id: 'e2eA_Us_U_ImpersonateB' }, "Impersonate");
 
-    return (
-      r.div({},
-        r.div({ className: 'pull-right' },
-          showPublProfileButton),
+    return rFragment({},
+      r.div({ className: 'pull-right' },
+        showPublProfileButton),
 
-        r.p({}, "Username: " + usernameAndFullName, thatIsYou),
-        r.p({}, "Email: " + user.email),
+      r.div({ className: 'esA_Us_U_Rows'},
+        makeRow("Username: ", usernameAndFullName + thatIsYou, null),
         user.isGroup ? r.p({}, "Is a group.") : null,
-        user.isGroup ? null : r.p({}, "Admin: " + user.isAdmin, ' ', toggleAdminButton),
-        moderatorInfo,
-        user.isGroup ? null : r.p({}, "Suspended: " + suspendedText, ' ', suspendButton),
-        user.isGroup ? null : r.p({}, "Trust level: " + trustLevelText, ' ', trustButton),
-        user.isGroup ? null : r.p({}, "Threat level: " + threatLevelText, ' ', threatButton),
-        impersonateButton));
+        makeRow("Enabled: ", prettify(enabled) + '.' + whyNotEnabled, null),
+        emailAddrAndResendVerifEmailButton,
+        isApprovedRow,
+        makeRow("Admin: ", user.isAdmin, toggleAdminButton),
+        makeRow("Moderator: ", user.isModerator, toggleModeratorButton),
+        makeRow("Suspended: ", suspendedText, suspendButton),
+        makeRow("Trust level: ", trustLevelText, trustButton),
+        makeRow("Threat level: ", threatLevelText, threatButton)),
+
+      impersonateButton);
   }
 });
 
+
+function prettify(value): string {
+  return value === true ? "Yes" : (value === false ? "No" : value);
+}
 
 let suspendUserDialog;
 
@@ -229,7 +319,8 @@ const SuspendDialog = createComponent({
   render: function() {
     return (
       Modal({ show: this.state.isOpen, onHide: this.close },
-        ModalTitle({}, "Suspend User"),
+        ModalHeader({},
+          ModalTitle({}, "Suspend User")),
         ModalBody({},
           Input({ type: 'number', label: 'Suspend for how many days?', ref: 'daysInput' }),
           Input({ type: 'text', label: 'Why suspend this user?',
@@ -282,10 +373,13 @@ const MemberTrustLevelDialog = createComponent({
 
     const user: MemberInclDetails = this.state.user;
 
-    const trustLevelText = user.lockedTrustLevel
+    const currentTrustLevelText = r.p({}, user.lockedTrustLevel
       ? "Trust level locked at: " + trustLevel_toString(user.lockedTrustLevel) +
           ", would otherwise have been: " + trustLevel_toString(user.trustLevel)
-      : "Current trust level: " + trustLevel_toString(user.trustLevel);
+      : "Current trust level: " + trustLevel_toString(user.trustLevel));
+
+    const changeTo = user.lockedThreatLevel ? null :
+      r.p({}, "Change to:");
 
     const actionContent = user.lockedTrustLevel
       ? Button({ onClick: () => this.lockTrustLevelAt(null),
@@ -312,9 +406,11 @@ const MemberTrustLevelDialog = createComponent({
 
     return (
       Modal({ show: this.state.isOpen, onHide: this.close },
-        ModalTitle({}, "Change trust level"),
+        ModalHeader({},
+          ModalTitle({}, "Change trust level")),
         ModalBody({},
-          r.div({}, trustLevelText),
+          currentTrustLevelText,
+          changeTo,
           actionContent),
         ModalFooter({},
           Button({ onClick: this.close }, "Cancel"))));
@@ -361,15 +457,15 @@ const MemberThreatLevelDialog = createComponent({
 
     const user: MemberInclDetails = this.state.user;
 
-    const threatLevelText = user.lockedThreatLevel
+    const currentThreatLevelText = r.p({}, user.lockedThreatLevel
       ? "Threat level locked at: " + threatLevel_toString(user.lockedThreatLevel) +
           ", would otherwise have been: " + threatLevel_toString(user.threatLevel)
-      : "Current threat level: " + threatLevel_toString(user.threatLevel);
+      : "Current threat level: " + threatLevel_toString(user.threatLevel));
 
     const actionContent = user.lockedThreatLevel
         ? r.div({},
-            Button({ onClick: () => this.lockThreatLevelAt(null) }),
-              "Unlock",
+            Button({ onClick: () => this.lockThreatLevelAt(null) },
+              "Unlock"),
             r.div({ className: 'help-block' },
               "Clears the manually assigned threat level."))
         : r.div({},
@@ -387,9 +483,10 @@ const MemberThreatLevelDialog = createComponent({
 
     return (
       Modal({ show: this.state.isOpen, onHide: this.close },
-        ModalTitle({}, "Change threat level"),
+        ModalHeader({},
+          ModalTitle({}, "Change threat level")),
         ModalBody({},
-          r.div({}, threatLevelText),
+          currentThreatLevelText,
           actionContent),
         ModalFooter({},
           Button({ onClick: this.close }, "Cancel"))));

@@ -136,7 +136,7 @@ const LoginToCreateSomething = createComponent({
   },
 
   sendEmailAgain: function() {
-    Server.sendAddressVerifEmailAgain(() => {
+    Server.resendOwnerEmailAddrVerifEmail(() => {
       util.openDefaultStupidDialog({
         body: "Email sent (unless your email address has been verified already)" });
       this.setState({ emailSentAgain: true });

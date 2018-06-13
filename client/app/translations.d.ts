@@ -566,6 +566,7 @@ interface TalkyardTranslations {
     EmailAddresses: string;
     PrimaryDot: string;
     VerifiedDot: string;
+    NotVerifiedDot: string;
     ForLoginWithDot: (provider: string) => string;
     MakePrimary: string;
     AddEmail: string;
@@ -573,6 +574,7 @@ interface TalkyardTranslations {
     MaxEmailsInfo: (numMax: number) => string;
     EmailAdded_1: string;
     EmailAdded_2: string;
+    SendVerifEmail: string;
 
     EmailStatusExpl: string;
 
