@@ -448,67 +448,68 @@ var t_en: TalkyardTranslations = t = {
     PostAccepted: "Este post foi aceitado como resposta",
 
     NumLikes: (num: number) => num === 1 ? "1 Like" : num + " Likes",
-    NumDisagree: (num: number) => num + " Disagree",
-    NumBury: (num: number) => num === 1 ? "1 Bury" : num + " Burys",
-    NumUnwanted: (num: number) => num === 1 ? "1 Unwanted" : num + " Unwanteds",
+    NumDisagree: (num: number) => num === 1 ? num + `1 Discorda` : `${num} Discordam`,
+    NumBury: (num: number) => num === 1 ? `1 Enterra` : `${num} Enterras`,
 
-    MoreVotes: "More votes...",
-    LikeThis: "Like this",
-    LinkToPost: "Link to this post",
-    Report: "Report",
-    ReportThisPost: "Report this post",
-    Admin: "Admin",
+    NumUnwanted: (num: number) => num === 1 ? "1 Indesejado" : `${num} Indesejados`,
 
-    Disagree: "Disagree",
-    DisagreeExpl: "Click here to disagree with this post, or to warn others about factual errors.",
-    Bury: "Bury",
-    BuryExpl: "Click to sort other posts before this post. Only the forum staff can see your vote.",
-    Unwanted: "Unwanted",
-    UnwantedExpl: "If you do not want this post on this website. This would reduce the trust I have " +
-            "in the post author. Only the forum staff can see your vote.",
+    MoreVotes: "Mais votos...",
+    LikeThis: "Curtir isso",
+    LinkToPost: "Link para este post",
+    Report: "Denunciar",
+    ReportThisPost: "Denunciar este post",
+    Admin: "Administrador",
 
-    AddTags: "Add/remove tags",
-    UnWikify: "Un-Wikify",
-    Wikify: "Wikify",
-    PinDeleteEtc: "Pin / Delete / Category ...",
+    Disagree: "Discordar",
+    DisagreeExpl: "Clique aqui para discordar deste post, ou para avisar outras pessoas sobre erros factuais.",
+    Bury: "Enterrar",
+    BuryExpl: "Clique aqui para posicionar outros posts antes deste post. Só o staff do fórum pode ver seu voto.",
+    Unwanted: "Indesejado",
+    UnwantedExpl: "Se você não quer este post neste site. Isso vai diminuir a confiança que eu tenho no autor do post" +
+            "Só o staff do fórum pode ver seu voto.",
+
+    AddTags: "Adicionar/remover marcadores",
+    UnWikify: "Desfazer Wikificação",
+    Wikify: "Wikificar",
+    PinDeleteEtc: "Fixar / Deletar / Categoria ...",
   },
 
 
   // Chat
 
   c: {
-    About_1: "This is the ",
-    About_2: " chat channel, created by ",
-    ScrollUpViewComments: "Scroll up to view older comments",
-    Purpose: "Purpose:",
-    edit: "edit",
-    'delete': "delete",
-    MessageDeleted: "(Message deleted)",
-    JoinThisChat: "Join this chat",
-    PostMessage: "Post message",
-    AdvancedEditor: "Advanced editor",
-    TypeHere: "Type here. You can use Markdown and HTML.",
+    About_1: "Este é o canal de chat",
+    About_2: " , criado por ",
+    ScrollUpViewComments: "Role para cima para ver comentários anteriores",
+    Purpose: "Propósito:",
+    edit: "editar",
+    'delete': "deletar",
+    MessageDeleted: "(Mensagem deletada)",
+    JoinThisChat: "Associar-se a este chat",
+    PostMessage: "Postar mensagem",
+    AdvancedEditor: "Editor avançado",
+    TypeHere: "Digite aqui. Você pode usar Markdown and HTML.",
   },
 
 
   // My Menu
 
   mm: {
-    NeedsReview: "Needs review ",
-    AdminHelp: "Admin help ",
-    StaffHelp: "Staff help ",
-    MoreNotfs: "View more notifications...",
-    ViewProfile: "View/edit your profile",
-    LogOut: "Log out",
-    UnhideHelp: "Unhide help messages",
+    NeedsReview: "Precisa de revisão ",
+    AdminHelp: "Ajuda do administrador ",
+    StaffHelp: "Ajuda do staff ",
+    MoreNotfs: "Ver mais notificações...",
+    ViewProfile: "Visualizar/editar seu perfil",
+    LogOut: "Encerrar sessão",
+    UnhideHelp: "Revelar mensagens de ajuda",
   },
 
 
   // About user dialog
 
   aud: {
-    ViewComments: "View other comments",
-    ThisIsGuest: "This is a guest user, could in fact be anyone.",
+    ViewComments: "Visualizar outros comentários",
+    ThisIsGuest: "Este é um usuário convidado; na realidade, pode ser qualquer pessoa.",
   },
 
 
@@ -517,81 +518,81 @@ var t_en: TalkyardTranslations = t = {
   upp: {
     // ----- Links
 
-    Notifications: "Notifications",
-    Preferences: "Preferences",
-    Invites: "Invites",
-    About: "About",
-    Privacy: "Privacy",
-    Account: "Account",
+    Notifications: "Notificações",
+    Preferences: "Preferências",
+    Invites: "Convites",
+    About: "Sobre",
+    Privacy: "Privacidade",
+    Account: "Conta",
 
     // ----- Overview stats
 
-    JoinedC: "Joined: ",
-    PostsMadeC: "Posts made: ",
-    LastPostC: "Last post: ",
-    LastSeenC: "Last seen: ",
-    TrustLevelC: "Trust level: ",
+    JoinedC: "Associados: ",
+    PostsMadeC: "Posts feitos: ",
+    LastPostC: "Último post: ",
+    LastSeenC: "Visto por último em: ",
+    TrustLevelC: "Nível de confiança: ",
 
     // ----- Action buttons
 
     // ----- Profile pic
 
-    UploadPhoto: "Upload photo",
-    ChangePhoto: "Change photo",
-    ImgTooSmall: "Image too small: should be at least 100 x 100",
+    UploadPhoto: "Fazer upload de foto",
+    ChangePhoto: "Mudar foto",
+    ImgTooSmall: "Imagem pequena demais: deve ser 100 x 100",
 
     // ----- User status
 
-    UserBanned: "This user is banned",
-    UserSuspended: (dateUtc: string) => `This user is suspended until ${dateUtc} UTC`,
-    ReasonC: "Reason: ",
+    UserBanned: "Este usuário foi banido",
+    UserSuspended: (dateUtc: string) => `Este usuário foi suspenso até ${dateUtc} UTC`,
+    ReasonC: "Motivo: ",
 
-    DeactOrDeld: "Has been deactivated or deleted.",
-    isGroup: " (a group)",
-    isGuest: " — a guest user, could be anyone",
-    isMod: " – moderator",
-    isAdmin: " – administrator",
-    you: "(you)",
+    DeactOrDeld: "Foi desativado ou deletado.",
+    isGroup: " (um gruop)",
+    isGuest: " — um usuário convidado, pode ser qualquer pessoa",
+    isMod: " – moderador",
+    isAdmin: " – administrador",
+    you: "(você)",
 
     // ----- Notifications page
 
-    NoNotfs: "No notifications",
-    NotfsToYouC: "Notifications to you:",
-    NotfsToOtherC: (name: string) => `Notifications to ${name}:`,
+    NoNotfs: "Nenhuma notificação",
+    NotfsToYouC: "Notificação para você:",
+    NotfsToOtherC: (name: string) => `Notificação para ${name}:`,
 
     // ----- Invites page
 
-    InvitesIntro: "Here you can invite people to join this site. ",
-    InvitesListedBelow: "Invites that you have already sent are listed below.",
-    NoInvites: "You have not invited anyone yet.",
+    InvitesIntro: "Aqui você pode convidar pessoas para se associar a este site. ",
+    InvitesListedBelow: "Convites que você já enviou são listados abaixo..",
+    NoInvites: "Você não citou ninguém ainda.",
 
-    InvitedEmail: "Invited email",
-    WhoAccepted: "Member who accepted",
-    InvAccepted: "Invitation accepted",
-    InvSent: "Invitation sent",
+    InvitedEmail: "Email do convidado",
+    WhoAccepted: "Membro que aceitou",
+    InvAccepted: "Convite aceito",
+    InvSent: "Convite enviado",
 
-    SendAnInv: "Send an Invite",
-    SendInv: "Send Invite",
+    SendAnInv: "Enviar um Convite",
+    SendInv: "Enviar Convite",
     SendInvExpl:
-        "We'll send your friend a brief email, and he or she then clicks a link " +
-        "to join immediately, no login required. " +
-        "He or she will become a normal member, not a moderator or admin.",
-    EnterEmail: "Enter email",
-    InvDone: "Done. I'll send him/her an email.",
-    InvErrJoinedAlready: "He or she has joined this site already",
-    InvErrYouInvAlready: "You have invited him or her already",
+        "Vamos enviar um email curto para seu amigo, e a pessoa deve então clicar em um link " +
+        "para se associar imediatamente, sem necessidade de login. " +
+        "A pessoa vai se tornar um membro comum, não um moderador ou administrador.",
+    EnterEmail: "Digite o email",
+    InvDone: "Concluído. Enviando um email para a pessoa.",
+    InvErrJoinedAlready: "A pessoa já se associou a este site",
+    InvErrYouInvAlready: "Você já convidou a pessoa",
 
     // ----- Preferences, About
 
-    AboutYou: "About you",
-    WebLink: "Any website or page of yours.",
+    AboutYou: "Sobre você",
+    WebLink: "Qualquer site ou página sua.",
 
-    NotShownCannotChange: "Not shown publicly. Cannot be changed.",
+    NotShownCannotChange: "Não mostrado publicamente. Não pode ser mudado.",
 
     // The full name or alias:
-    NameOpt: "Name (optional)",
+    NameOpt: "Nome (opcional)",
 
-    NotShown: "Not shown publicly.",
+    NotShown: "Não mostrado publicamente.",
 
     // The username:
     MayChangeFewTimes: "You may change it only a few times.",
