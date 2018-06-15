@@ -108,7 +108,7 @@ var t_en: TalkyardTranslations = t = {
     WatchingFirst: "Observando o Primeiro",
     Tracking: "Rastreando",
     Normal: "Normal",
-    Muted: "Mudo",
+    Muted: "Silenciado",
   },
 
 
@@ -595,28 +595,28 @@ var t_en: TalkyardTranslations = t = {
     NotShown: "Não mostrado publicamente.",
 
     // The username:
-    MayChangeFewTimes: "You may change it only a few times.",
-    notSpecified: "(not specified)",
-    ChangeUsername_1: "You may change your username only a few times.",
-    ChangeUsername_2: "Changing it too often can make others confused — " +
-        "they won't know how to @mention you.",
+    MayChangeFewTimes: "Você só pode mudá-lo algumas vezes.",
+    notSpecified: "(não especificado)",
+    ChangeUsername_1: "Você só pode mudar seu nome de usuário algumas vezes.",
+    ChangeUsername_2: "Mudá-lo frequentemente pode deixar outras pessoas confusas — " +
+        "eles não vão saber como @mencionar você.",
 
-    NotfAboutAll: "Be notified about every new post (unless you mute the topic or category)",
+    NotfAboutAll: "Seja notificado de qualquer novo post (exceto se você silenciar o tópico ou categoria)",
 
-    ActivitySummaryEmails: "Activity summary emails",
+    ActivitySummaryEmails: "Emails com resumo de atividades",
 
     EmailSummariesToGroup:
-        "When members of this group don't visit here, then, by default, email them " +
-        "summaries of popular topics and other stuff.",
+        "Quando membros deste grupo não fizerem uma visita por aqui, então, por padrão, envie email para eles " +
+        "com resumos de tópicos populares e outras coisas.",
     EmailSummariesToMe:
-        "When I don't visit here, email me " +
-        "summaries of popular topics and other stuff.",
+        "Quando não fizer uma visita por aqui, me envie email com " +
+        "resumos de tópicos populares e outras coisas.",
 
-    AlsoIfTheyVisit: "Email them also if they visit here regularly.",
-    AlsoIfIVisit: "Email me also if I visit here regularly.",
+    AlsoIfTheyVisit: "Envie emails para eles também se eles fizerem visitas por aqui regularmente.",
+    AlsoIfIVisit: "Envie emails para mim também se eu fizer visitas por aqui regularmente.",
 
-    HowOftenWeSend: "How often shall we send these emails?",
-    HowOftenYouWant: "How often do you want these emails?",
+    HowOftenWeSend: "Com que frequência devemos enviar estes emails?",
+    HowOftenYouWant: "Com que frequência você quer receber estes emails?",
 
     // ----- Preferences, Privacy
 
