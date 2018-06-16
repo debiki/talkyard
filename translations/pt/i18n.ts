@@ -674,118 +674,118 @@ var t_en: TalkyardTranslations = t = {
   // Create user dialog
 
   cud: {
-    CreateUser: "Create User",
-    CreateAccount: "Create Account",
-    LoginAsGuest: "Login as Guest",
-    EmailPriv: "Email: (will be kept private)",
-    EmailOptPriv: "Email: (optional, will be kept private)",
-    EmailVerifBy_1: "Your email has been verified by ",
+    CreateUser: "Criar Usuário",
+    CreateAccount: "Criar Conta",
+    LoginAsGuest: "Fazer login como convidado",
+    EmailPriv: "Email: (será mantido privado)",
+    EmailOptPriv: "Email: (opcional, será mantido privado)",
+    EmailVerifBy_1: "Seu email foi verificado por ",
     EmailVerifBy_2: ".",
-    Username: "Username: (unique and short)",
-    FullName: "Full name: (optional)",
+    Username: "Nome de usuário: (único e curto)",
+    FullName: "Nome completo: (opcional)",
 
-    OrCreateAcct_1: "Or ",
-    OrCreateAcct_2: "create an account",
-    OrCreateAcct_3: " with ",
-    OrCreateAcct_4: "@username",
-    OrCreateAcct_5: " & password",
+    OrCreateAcct_1: "Ou ",
+    OrCreateAcct_2: "crie uma conta",
+    OrCreateAcct_3: " com ",
+    OrCreateAcct_4: "@nomedeusuario",
+    OrCreateAcct_5: " & senha",
 
-    DoneLoggedIn: "Account created. You have been logged in.",  // COULD say if verif email sent too?
+    DoneLoggedIn: "Conta criada. Você está logado.",  // COULD say if verif email sent too?
     AlmostDone:
-        "Almost done! You just need to confirm your email address. We have " +
-        "sent an email to you. Please click the link in the email to activate " +
-        "your account. You can close this page.",
+        "Quase concluído! VOcê só precisa confirmar seu endereço de email. Enviamos " +
+        "um email para você. Por favor, clique no link no email para ativar " +
+        "sua conta. Você pode fechar esta página.",
   },
 
 
   // Accept terms and privacy policy?
 
   terms: {
-    TermsAndPrivacy: "Terms and Privacy",
+    TermsAndPrivacy: "Termos e Privacidade",
 
-    Accept_1: "Do you accept our ",
-    TermsOfService: "Terms of Service",
-    TermsOfUse: "Terms of Use",
-    Accept_2: " and ",
-    PrivPol: "Privacy Policy",
+    Accept_1: "Você aceita nossos ",
+    TermsOfService: "Termos de Serviço",
+    TermsOfUse: "Termos de Uso",
+    Accept_2: " e ",
+    PrivPol: "Política de Privacidade",
     Accept_3_User: "?",
-    Accept_3_Owner: " for site owners?",
+    Accept_3_Owner: " para dono de sites?",
 
-    YesAccept: "Yes I accept",
+    YesAccept: "Sim eu acieto",
   },
 
 
   // Password input
 
   pwd: {
-    PasswordC: "Password:",
-    StrengthC: "Strength: ",
-    FairlyWeak: "Fairly weak.",
-    toShort: "too short",
-    TooShortMin10: "Too short. Should be at least 10 characters",
-    PlzInclDigit: "Please include a digit or special character",
-    TooWeak123abc: "Too weak. Don't use passwords like '12345' or 'abcde'.",
-    AvoidInclC: "Avoid including (parts of) your name or email in the password:",
+    PasswordC: "Senha:",
+    StrengthC: "Força: ",
+    FairlyWeak: "Bem fraca.",
+    toShort: "muit curta",
+    TooShortMin10: "Muito curta. Tem que ter pelo menos 10 caracteres",
+    PlzInclDigit: "Por favor, inclua um dígito ou caractere especial",
+    TooWeak123abc: "Muito fraca. Não use senhas como '12345' ou 'abcde'.",
+    AvoidInclC: "Evite incluir (partes de) seu nome ou email na senha:",
   },
 
 
   // Login dialog
 
   ld: {
-    NotFoundOrPrivate: "Page not found, or Access Denied.",
-    IsImpersonating: "You're impersonating someone, who might not have access to all parts " +
-        "of this website.",
+    NotFoundOrPrivate: "Página não encontrada, ou Acesso Negado.",
+    IsImpersonating: "Vocês está personificando alguém, que pode não ter acesso a todas as partes " +
+        "deste site.",
 
-    IfYouThinkExistsThen: "If you think the page exists, log in as someone who may access it. ",
-    LoggedInAlready: "(You are logged in already, but perhaps it's the wrong account?) ",
-    ElseGoToHome_1: "Otherwise, you can ",
-    ElseGoToHome_2: "go to the homepage.",
+    IfYouThinkExistsThen: "Se você acha que a página existe, faça login como alguém que tenha acesso a ela. ",
+    LoggedInAlready: "(Você já está logado, mas talvez esta é a conta errada?) ",
+    ElseGoToHome_1: "Como alternativa, você pode ",
+    ElseGoToHome_2: "ir à página inicial.",
 
-    CreateAcconut: "Create account",
-    SignUp: "Sign up",
-    LogIn: "Log in",
-    with_: "with ",
-    LogInWithPwd: "Log in with Password",
-    CreateAdmAcct: "Create admin account:",
-    AuthRequired: "Authentication required to access this site",
-    LogInToLike: "Log in to Like this post",
-    LogInToSubmit: "Log in and submit",
-    LogInToComment: "Log in to write a comment",
-    LogInToCreateTopic: "Log in to create topic",
+    CreateAcconut: "Criar conta",
+    SignUp: "Cadastrar-se",
+    LogIn: "Fazer login",
+    with_: "com ",
+    LogInWithPwd: "Login com Senha",
+    CreateAdmAcct: "Criar conta de administrador:",
+    AuthRequired: "Autenticação obrigatória para acessar este site",
+    LogInToLike: "Faça login para Curtir este post",
+    LogInToSubmit: "Faça login para enviar",
+    LogInToComment: "Faça login para escrever um comentário",
+    LogInToCreateTopic: "Faça login para criar um tópico",
 
-    AlreadyHaveAcctQ: "Already have an account? ",
+    AlreadyHaveAcctQ: "Já tem uma conta? ",
     LogInInstead_1: "",
-    LogInInstead_2: "Log in",   // "Log in" (this is a button)
-    LogInInstead_3: " instead", // "instead"
+    LogInInstead_2: "Fazer login",   // "Log in" (this is a button)
+    LogInInstead_3: " em vez disso", // "instead"
 
-    NewUserQ: "New user? ",
+    NewUserQ: "Novo usuário? ",
     SignUpInstead_1: "",
-    SignUpInstead_2: "Sign up",
-    SignUpInstead_3: " instead",
+    SignUpInstead_2: "Cadastre-se",
+    SignUpInstead_3: " em vez disso",
 
-    OrCreateAcctHere: "Or create account:",
-    OrTypeName: "Or type your name:",
-    OrFillIn: "Or fill in:",
+    OrCreateAcctHere: "Ou crei uma conta:",
+    OrTypeName: "Ou digite seu nome:",
+    OrFillIn: "Ou preencha:",
 
-    BadCreds: "Wrong username or password",
+    BadCreds: "Nome de usuário ou senha incorretos",
 
-    UsernameOrEmailC: "Username or email:",
-    PasswordC: "Password:",
-    ForgotPwd: "Did you forget your password?",
+    UsernameOrEmailC: "Nome de usuário ou email:",
+    PasswordC: "Senha:",
+    ForgotPwd: "Esqueceu sua senha?",
   },
 
 
   // Flag dialog
 
   fd: {
-    PleaseTellConcerned: "Please tell us what you are concerned about.",
-    ThanksHaveReported: "Thanks. You have reported it. The forum staff will take a look.",
-    ReportComment: "Report Comment",
+    PleaseTellConcerned: "Por favor informe o que perturba você.",
+    ThanksHaveReported: "Obrigado. Você denunciou isto. O staff do fórum vai examinar.",
+    ReportComment: "Reportar Comentário",
     // Different reasons one can choose among when reporting a comment:
-    OptPersonalData: "This post contains personal data, for example someones' real name.",
-    OptOffensive: "This post contains offensive or abusive content.",
-    OptSpam: "This post is an unwanted advertisement.",
-    OptOther: "Notify staff about this post for some other reason.",
+    OptPersonalData: "Este post contém dados pessoais, por exemplo o nome real de alguém.",
+    OptOffensive: "Este post contém conteúdo ofensivo ou abusivo.",
+    OptSpam: "Este post é uma propaganda indesejada.",
+    OptOther: "Notificar staff sobre este post por uma outra razão.",
   },
 
 
