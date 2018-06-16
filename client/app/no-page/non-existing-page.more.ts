@@ -269,7 +269,7 @@ export var CreateForumPanel = createComponent({
       useCategories: true,
       createSupportCategory: true,
       createIdeasCategory: true,
-      createExampleTopics: true,
+      createSampleTopics: true,
       topicListStyle: TopicListLayout.ExcerptBelowTitle,
       nextChoice: 1,
     };

@@ -51,7 +51,7 @@ class ForumController @Inject()(cc: ControllerComponents, edContext: EdContext)
     val createSupportCategory = no getOrElse (body \ "createSupportCategory").as[Boolean]
     val createIdeasCategory = no getOrElse (body \ "createIdeasCategory").as[Boolean]
 
-    val createExampleTopics = (body \ "createExampleTopics").as[Boolean]
+    val createSampleTopics = (body \ "createSampleTopics").as[Boolean]
 
     val topicListStyleInt = (body \ "topicListStyle").as[Int]
     val topicListStyle = TopicListLayout.fromInt(topicListStyleInt) getOrElse throwBadRequest(
@@ -64,7 +64,7 @@ class ForumController @Inject()(cc: ControllerComponents, edContext: EdContext)
       useCategories = useCategories,
       createSupportCategory = createSupportCategory,
       createIdeasCategory = createIdeasCategory,
-      createExampleTopics = createExampleTopics,
+      createSampleTopics = createSampleTopics,
       topicListStyle = topicListStyle)
 
     val result = request.dao.createForum(options, request.who)

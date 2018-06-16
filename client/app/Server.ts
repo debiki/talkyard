@@ -802,7 +802,7 @@ export function loadAuthorBlockedInfo(postId: number, success: (response: Blocks
 
 
 export function createForum(options: { title, folder, useCategories, createSupportCategory,
-      createIdeasCategory, createExampleTopics, topicListStyle }, success: (urlPath: string) => void) {
+      createIdeasCategory, createSampleTopics, topicListStyle }, success: (urlPath: string) => void) {
   postJsonSuccess('/-/create-forum', success, options);
 }
 

@@ -31,7 +31,7 @@ case class CreateForumOptions(
   useCategories: Boolean,
   createSupportCategory: Boolean,
   createIdeasCategory: Boolean,
-  createExampleTopics: Boolean,
+  createSampleTopics: Boolean,
   topicListStyle: TopicListLayout)
 
 
@@ -55,7 +55,7 @@ trait ForumDao {
       useCategories = !isForEmbCmts,
       createSupportCategory = false,
       createIdeasCategory = false,
-      createExampleTopics = !isForEmbCmts,
+      createSampleTopics = !isForEmbCmts,
       topicListStyle = TopicListLayout.TitleExcerptSameLine), byWho)
   }
 
@@ -320,14 +320,14 @@ trait ForumDao {
       transaction)
 
     // Create example threaded discussion.
-    if (options.createExampleTopics) createPageImpl(
+    if (options.createSampleTopics) createPageImpl(
       PageRole.Discussion, PageStatus.Published,
       anyCategoryId = Some(uncategorizedCategoryId),
       anyFolder = None, anySlug = Some("example-discussion"), showId = true,
-      titleSource = ExampleThreadedDiscussionTitle,
-      titleHtmlSanitized = ExampleThreadedDiscussionTitle,
-      bodySource = ExampleThreadedDiscussionText,
-      bodyHtmlSanitized = s"<p>$ExampleThreadedDiscussionText</p>",
+      titleSource = SampleThreadedDiscussionTitle,
+      titleHtmlSanitized = SampleThreadedDiscussionTitle,
+      bodySource = SampleThreadedDiscussionText,
+      bodyHtmlSanitized = s"<p>$SampleThreadedDiscussionText</p>",
       pinOrder = None,
       pinWhere = None,
       bySystem,
@@ -335,14 +335,14 @@ trait ForumDao {
       transaction)
 
     // Create example problem.
-    if (options.createExampleTopics) createPageImpl(
+    if (options.createSampleTopics) createPageImpl(
       PageRole.Problem, PageStatus.Published,
       anyCategoryId = anySupportCategoryId orElse Some(uncategorizedCategoryId),
       anyFolder = None, anySlug = Some("example-problem"), showId = true,
-      titleSource = ExampleProblemTitle,
-      titleHtmlSanitized = ExampleProblemTitle,
-      bodySource = ExampleProblemText.source,
-      bodyHtmlSanitized = ExampleProblemText.html,
+      titleSource = SampleProblemTitle,
+      titleHtmlSanitized = SampleProblemTitle,
+      bodySource = SampleProblemText.source,
+      bodyHtmlSanitized = SampleProblemText.html,
       pinOrder = None,
       pinWhere = None,
       bySystem,
@@ -350,35 +350,35 @@ trait ForumDao {
       transaction)
 
     // Create example question.
-    if (options.createExampleTopics) {
+    if (options.createSampleTopics) {
       val questionPagePath = createPageImpl(
         PageRole.Question, PageStatus.Published,
         anyCategoryId = anySupportCategoryId orElse Some(uncategorizedCategoryId),
         anyFolder = None, anySlug = Some("example-question"), showId = true,
-        titleSource = ExampleQuestionTitle,
-        titleHtmlSanitized = ExampleQuestionTitle,
-        bodySource = ExampleQuestionText.source,
-        bodyHtmlSanitized = ExampleQuestionText.html,
+        titleSource = SampleQuestionTitle,
+        titleHtmlSanitized = SampleQuestionTitle,
+        bodySource = SampleQuestionText.source,
+        bodyHtmlSanitized = SampleQuestionText.html,
         pinOrder = None,
         pinWhere = None,
         bySystem,
         spamRelReqStuff = None,
         transaction)._1
-      insertReplyImpl(textAndHtmlMaker.wrapInParagraph(ExampleAnswerText, isTitle = false),
+      insertReplyImpl(textAndHtmlMaker.wrapInParagraph(SampleAnswerText, isTitle = false),
         questionPagePath.thePageId, replyToPostNrs = Set(PageParts.BodyNr), PostType.Normal,
         bySystem, SystemSpamStuff, globals.now(), SystemUserId, transaction, skipNotifications = true)
     }
 
     // Create example idea.
-    if (options.createExampleTopics) createPageImpl(
+    if (options.createSampleTopics) createPageImpl(
       PageRole.Idea, PageStatus.Published,
       anyCategoryId = anyIdeasCategoryId orElse anySupportCategoryId orElse Some(
         uncategorizedCategoryId),
       anyFolder = None, anySlug = Some("example-idea"), showId = true,
-      titleSource = ExampleIdeaTitle,
-      titleHtmlSanitized = ExampleIdeaTitle,
-      bodySource = ExampleIdeaText.source,
-      bodyHtmlSanitized = ExampleIdeaText.html,
+      titleSource = SampleIdeaTitle,
+      titleHtmlSanitized = SampleIdeaTitle,
+      bodySource = SampleIdeaText.source,
+      bodyHtmlSanitized = SampleIdeaText.html,
       pinOrder = None,
       pinWhere = None,
       bySystem,
@@ -459,13 +459,13 @@ object ForumDao {
   private val StaffChatTopicTitle = "Staff chat"
   private val StaffChatTopicText = "This is a private chat for staff."
 
-  private val ExampleThreadedDiscussionTitle = "Example discussion"
-  private val ExampleThreadedDiscussionText =
+  private val SampleThreadedDiscussionTitle = "Sample discussion"
+  private val SampleThreadedDiscussionText =
     o"""This is an open ended discussion. Good comments rise to the top, and people can click
        Disagree to show that they disagree about something."""
 
-  private val ExampleProblemTitle = "Example problem"
-  private val ExampleProblemText = {
+  private val SampleProblemTitle = "Sample problem"
+  private val SampleProblemText = {
     val para1 = o"""If you get a report about something being broken, and you need to fix it,
       you can change the topic type to Problem (like this topic) — click the pencil to the
       right of the title."""
@@ -495,8 +495,8 @@ object ForumDao {
         """)
   }
 
-  private val ExampleIdeaTitle = "Example idea"
-  private val ExampleIdeaText = {
+  private val SampleIdeaTitle = "Sample idea"
+  private val SampleIdeaText = {
     val para1 = o"""This is an example idea. Click the idea icon to the left of the title
       (i.e. <span class="icon-idea"></span>)
       to change status from New Idea, to Planned-to-do, to Doing-now, to Done."""
@@ -518,8 +518,8 @@ object ForumDao {
         """)
   }
 
-  private val ExampleQuestionTitle = "Example question"
-  private val ExampleQuestionText = {
+  private val SampleQuestionTitle = "Sample question"
+  private val SampleQuestionText = {
     val para1 = o"""This is an example question. Click "Solution" below to accept an answer.
       In the topic list, everyone sees that this is a question, and if it's new
       (the <span class="icon-help-circled"></span> icon), or if it's been answered (
@@ -545,15 +545,15 @@ object ForumDao {
         """)
   }
 
-  private val ExampleAnswerText = o"""Example answer. The one who posted the question,
+  private val SampleAnswerText = o"""Sample answer. The one who posted the question,
     and the staff (you?), can click Solution below, to accept this answer and mark
     the question as solved."""
 
   // SHOULD separate layout: chat/flat/threaded/2d, from
   // topic type: idea/question/discussion/wiki/etc ?
   //
-  //val ExampleFlatDiscussionTopicTitle = "Example discussion, flat"
-  //val ExampleFlatDiscussionTopicText =
+  //val SampleFlatDiscussionTopicTitle = "Sample discussion, flat"
+  //val SampleFlatDiscussionTopicText =
   // "If you prefer flat (not threaded) discussions, instead of threaded discussions,
   // you can edit the category and change the default topic type from Discussion to Chat."
 

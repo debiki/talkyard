@@ -116,7 +116,7 @@ const CreateForumDialog = createFactory({
       useCategories: true,
       createSupportCategory: false,
       createIdeasCategory: false,
-      createExampleTopics: false,
+      createSampleTopics: false,
       topicListStyle: TopicListLayout.ExcerptBelowTitle,
     }, () => {
       location.assign(newForumPath);
