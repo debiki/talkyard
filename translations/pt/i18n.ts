@@ -620,54 +620,54 @@ var t_en: TalkyardTranslations = t = {
 
     // ----- Preferences, Privacy
 
-    HideActivityStrangers_1: "Hide your recent activity for strangers and new members?",
-    HideActivityStrangers_2: "(But not for those who have been active members for a while.)",
-    HideActivityAll_1: "Hide your recent activity for everyone?",
-    HideActivityAll_2: "(Except for staff and trusted core members.)",
+    HideActivityStrangers_1: "Ocultar sua atividade recente para estranhos e membros novos?",
+    HideActivityStrangers_2: "(Mas não para aqueles que não foram membros ativos por um tempo.)",
+    HideActivityAll_1: "Ocultar sua atividade recente para todo mundo?",
+    HideActivityAll_2: "(Exceto para staff e membros do núcleo e confiáveis.)",
 
     // ----- Preferences, Account
 
     // About email address:
-    EmailAddresses: "Email addresses",
-    PrimaryDot: "Primary. ",
-    VerifiedDot: "Verified. ",
-    ForLoginWithDot: (provider: string) => `For login with ${provider}. `,
-    MakePrimary: "Make Primary",
-    AddEmail: "Add email address",
-    TypeNewEmailC: "Type a new email address:",
-    MaxEmailsInfo: (numMax: number) => `(You cannot add more than ${numMax} addresses.)`,
-    EmailAdded_1: "Added. We've sent you a verification email — ",
-    EmailAdded_2: "check your email inbox.",
+    EmailAddresses: "Endereços de email",
+    PrimaryDot: "Primário. ",
+    VerifiedDot: "Verificado. ",
+    ForLoginWithDot: (provider: string) => `Para login com ${provider}. `,
+    MakePrimary: "Tornar Primário",
+    AddEmail: "Adicione endereço de email",
+    TypeNewEmailC: "Digite um novo endereço de email:",
+    MaxEmailsInfo: (numMax: number) => `(Você não pode adicionar mais do que ${numMax} endereços.)`,
+    EmailAdded_1: "Adicionado. Acabamos de enviar um email de verificação — ",
+    EmailAdded_2: "cheque sua caixa de entrada de email.",
 
     EmailStatusExpl:
-        "('Primary' means you can login via this address, and we send notifications to it. " +
-        "'Verified' means you clicked a verification link in an address verification email.)",
+        "('Primário' significa que você pode fazer login usando este endereço, e que nós enviamos notificações para ele. " +
+        "'Verificado' significa que você clicou no link de verificação em um email de verificação.)",
 
     // Logins:
-    LoginMethods: "Login methods",
-    commaAs: ", as: ",
+    LoginMethods: "Métodos de login",
+    commaAs: ", como: ",
 
     // One's data:
-    YourContent: "Your content",
-    DownloadPosts: "Download posts",
-    DownloadPostsHelp: "Creates a JSON file with a copy of topics and comments you've posted.",
-    DownloadPersData: "Download personal data",
-    DownloadPersDataHelp: "Creates a JSON file with a copy of your personal data, e.g. your name " +
-        "(if you specified a name) and email address.",
+    YourContent: "Seu conteúdo",
+    DownloadPosts: "Fazer download de posts",
+    DownloadPostsHelp: "Cria um arquivo JSON com uma cópia de tópicos e comentários que você postou.",
+    DownloadPersData: "Fazer download de dados pessoais",
+    DownloadPersDataHelp: "Cria um arquivo JSON com uma cópia dos seus dados pessoais, por exemplo seu nome, " +
+        "(se você especificou um nome) e endereço de email.",
 
 
     // Delete account:
-    DangerZone: "Danger zone",
-    DeleteAccount: "Delete account",
+    DangerZone: "Zona de perigo",
+    DeleteAccount: "Deletar conta",
     DeleteYourAccountQ:
-        "Delete your account? We'll remove your name, forget your email address, password and " +
-        "any online identities (like Facebook or Twitter login). " +
-        "You won't be able to login again. This cannot be undone.",
+        "Deletar sua conta? Vamos remover seu nome, esquecer seu endereço de email, senha e " +
+        "quaisquer identidades online (como o login do Facebook ou do Twitter). " +
+        "Você não vai poder mais fazer login novamente. Esta operação não pode ser desfeita.",
     DeleteUserQ:
-        "Delete this user? We'll remove the name, forget the email address, password and " +
-        "online identities (like Facebook or Twitter login). " +
-        "The user won't be able to login again. This cannot be undone.",
-    YesDelete: "Yes, delete",
+		"Deletar este usuário? Vamos remover o nome, esquecer o endereço de email, senha e " +
+		"quaisquer identidades online (como o login do Facebook ou do Twitter). " +
+		"Este usuário não vai poder mais fazer login novamente. Esta operação não pode ser desfeita.",
+    YesDelete: "Sim, deletar",
   },
 
 
