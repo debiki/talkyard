@@ -67,6 +67,11 @@ class SiteTpi protected (
 
   def request: DebikiRequest[_] = debikiRequest // rename to request, later
 
+  def anyTestNowMs: Option[UnixMillis] = {
+    if (globals.mayFastForwardTime) Some(globals.now().millis)
+    else None
+  }
+
   def site: SiteBrief = debikiRequest.site
   def pubSiteId: PublSiteId = debikiRequest.site.pubId
   def siteId: SiteId = debikiRequest.siteId
@@ -152,7 +157,7 @@ class SiteTpi protected (
 
   def debikiScriptsEndOfBody(loadStaffBundle: Boolean = false): Unparsed =
     debikiScriptsEndOfBodyCustomStartupCode(
-      "debiki.internal.startDiscussionPage();", loadStaffBundle = loadStaffBundle)
+      "debiki.internal.renderPageInBrowser();", loadStaffBundle = loadStaffBundle)
 
   def debikiScriptsEndOfBodyNoStartupCode =
     debikiScriptsEndOfBodyCustomStartupCode("")

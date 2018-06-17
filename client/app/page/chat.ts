@@ -135,7 +135,7 @@ const TitleAndLastChatMessages = createComponent({
     const thisIsTheWhat =
         r.p({},
           t.c.About_1 + ReactStore.getPageTitle() + t.c.About_2,
-          avatar.AvatarAndName({ user: origPostAuthor, hideAvatar: true }),
+          avatar.AvatarAndName({ user: origPostAuthor, origins: store, hideAvatar: true }),
           ", ", timeExact(originalPost.createdAtMs));
 
     let perhapsHidden;
@@ -205,7 +205,7 @@ const ChatMessage = createComponent({
     //  r.button({ className: 'esC_M_MoreB icon-ellipsis', key: 'm' }, "more"));
     return (
       r.div({ className: 'esC_M', id: 'post-' + post.nr },
-        avatar.Avatar({ user: author, size: AvatarSize.Small }),
+        avatar.Avatar({ user: author, origins: store, size: AvatarSize.Small }),
         PostHeader(headerProps),
         PostBody({ store: store, post: post })));
   }

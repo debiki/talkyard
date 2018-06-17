@@ -114,7 +114,10 @@ export var Sidebar = createComponent({  // RENAME to ContextBar
 
   showRecent: function() {
     this.setState({ commentsType: 'Recent' });
-    setTimeout(() => processTimeAgo('.esCtxbar_list'));
+    setTimeout(() => {
+      if (this.isGone) return;
+      processTimeAgo('.esCtxbar_list')
+    });
   },
 
   /*
@@ -143,6 +146,7 @@ export var Sidebar = createComponent({  // RENAME to ContextBar
   loadAdminGuide: function() {
     if (!this.state || !this.state.adminGuide) {
       staffbundle.loadAdminGuide(adminGuide => {
+        if (this.isGone) return;
         this.setState({ adminGuide: adminGuide });
       });
     }
@@ -161,6 +165,7 @@ export var Sidebar = createComponent({  // RENAME to ContextBar
   },
 
   componentWillUnmount: function() {
+    this.isGone = true;
     keymaster.unbind('s', 'all');
   },
 
@@ -626,7 +631,7 @@ function makeUsersContent(store: Store, users: BriefUser[], myId: UserId,
     return (
         r.div({ key: user.id, className: 'esPresence esPresence-' + presenceClass,
             onClick: (event) => morebundle.openAboutUserDialog(user.id, event.target) },
-          avatar.AvatarAndName({ user: user, ignoreClicks: true }),
+          avatar.AvatarAndName({ user, origins: store, ignoreClicks: true }),
           thatsYou,
           r.span({ className: 'esPresence_icon', title: presenceTitle })));
   });

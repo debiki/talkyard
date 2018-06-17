@@ -28,6 +28,8 @@
    namespace debiki2 {
 //------------------------------------------------------------------------------
 
+// REFACTOR rename this file to render-page-in-browser.ts? and combine with start-page.ts? [7VUBWR45]
+
 
 export function startRemainingReactRoots() {
   if (eds.isInEmbeddedCommentsIframe) {
@@ -46,7 +48,7 @@ export function startRemainingReactRoots() {
 }
 
 
-export function startMainReactRoot() {
+export function startMainReactRoot(reactRenderMethodName: 'render' | 'hydrate') {
   // /-/admin/*
   // app/views/adminPage.scala.html
   // <div id="esPageColumn">
@@ -111,16 +113,16 @@ export function startMainReactRoot() {
 
   const pageElem = document.getElementById('dwPosts');
 
+  const renderOrHydrate = ReactDOM[reactRenderMethodName];
+
   if (location.pathname === '/-/embedded-comments') {
     // No router needed; cannot jump between topics in the emb comments iframe. [1FBZQ4]
     // Topbar and scroll buttons also not needed.
-    ReactDOM.render(PageWithState(), pageElem);  // later:  .hydrate
+    renderOrHydrate(PageWithState(), pageElem);
   }
   else {
     // Compare with [2FKB5P].
-    // Nothing below path /-/ is rendered server side (as of now), so then don't try to reuse any html.
-    const skipHydrate = true; // location.pathname.search('/-/') === 0;
-    const renderOrHydrate = skipHydrate ? ReactDOM.render : ReactDOM.hydrate;
+
     const isEmbCmts: boolean = eds.isInEmbeddedCommentsIframe;  // [EMBLINKSOK] always false?
 
     // A route for about-user pages and the staff area.

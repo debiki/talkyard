@@ -16,29 +16,29 @@
  */
 
 /// <reference path="prelude.ts" />
+/// <reference path="init-all-react-roots.ts" />
 
+const d = { i: debiki.internal };
 
-var d = { i: debiki.internal, u: debiki.v0.util };
-
-var scriptLoadDoneCallbacks = [];
+const scriptLoadDoneCallbacks = [];
 debiki.scriptLoad = {  // RENAME to ed.whenStarted(...) ?
   done: function(callback) {
     scriptLoadDoneCallbacks.push(callback);
   }
 };
 
-var allPostsNotTitleSelector = '.debiki .dw-p:not(.dw-p-ttl)';
+const allPostsNotTitleSelector = '.debiki .dw-p:not(.dw-p-ttl)';
 
 
 function handleLoginInOtherBrowserTab() {
-  var currentUser = debiki2.ReactStore.getMe();
-  var sessionId = getSetCookie('dwCoSid');
+  const currentUser = debiki2.ReactStore.getMe();
+  const sessionId = getSetCookie('dwCoSid');
   if (currentUser.isLoggedIn) {
     if (sessionId) {
       // Session id example: (parts: hash, user id, name, login time, random value)
       // 'Y1pBlH7vY4JW9A.11.Magnus.1316266102779.15gl0p4xf7'
-      var parts = sessionId.split('.');
-      var newUserIdString = parts[1];
+      const parts = sessionId.split('.');
+      const newUserIdString = parts[1];
       if (currentUser.userId !== parseInt(newUserIdString)) {
         // We've logged in as another user in another browser tab.
         debiki2.ReactActions.loadMyself();
@@ -72,15 +72,15 @@ function registerEventHandlersFireLoginOut() {
  * Returns the layout type in use: 'OneColumnLayout' or 'TreeLayout'.
  */
 function chooseInitialLayout() {
-  var queryString = window.location.search;
-  var shallEnable2d = queryString.search('2d=true') !== -1;
-  var shallDisable2d = queryString.search('2d=false') !== -1 ||
+  const queryString = window.location.search;
+  const shallEnable2d = queryString.search('2d=true') !== -1;
+  const shallDisable2d = queryString.search('2d=false') !== -1 ||
       // use window.outerWidth — it doesn't force a layout reflow (and it's fine that it might
       // be a bit inexact because of browser window borders).
       Math.max(window.outerWidth, window.outerHeight) < 1000;
   const store: Store = debiki2.ReactStore.allData();
   const page: Page = store.currentPage;
-  var is2dEnabled = page.horizontalLayout;
+  const is2dEnabled = page.horizontalLayout;
   if (is2dEnabled && shallDisable2d) {
     disableHzComments();
     return 'OneColumnLayout';
@@ -90,7 +90,7 @@ function chooseInitialLayout() {
     return 'TreeLayout';
   }
 
-  var htmlElemClasses = document.documentElement.classList;
+  const htmlElemClasses = document.documentElement.classList;
 
   function disableHzComments(){
     htmlElemClasses.remove('dw-hz');
@@ -119,57 +119,96 @@ function chooseInitialLayout() {
 }
 
 
+// REFACTOR rename this file to render-page-in-browser.ts? [7VUBWR45]
 
 /**
  * Renders the page, step by step, to reduce page loading time. (When the
  * first step is done, the user should conceive the page as mostly loaded.)
  */
-function renderDiscussionPage() {
+function renderPageInBrowser() {
   debiki2.ReactStore.initialize();
-  var _2dLayout = chooseInitialLayout() === 'TreeLayout';
+  const _2dLayout = chooseInitialLayout() === 'TreeLayout';
   if (_2dLayout) {
     debiki2.utils.onMouseDetected(debiki2.Server.load2dScriptsBundleStart2dStuff);
   }
 
-  // CLEAN_UP remove this? React 16 no longer uses these checksums, right?
-  // Make it possible to test React.js performance in the browser.
-  if (location.search.indexOf('breakReactChecksums=true') !== -1) {
-    var reactRoots = debiki2.$bySelector('[data-react-checksum]');
-    _.each(reactRoots, function(root) {
-      root.setAttribute('data-react-checksum', 'wrong-checksum-EdMRERNDR1');
-    });
-    console.log("I've altered the React.js checksums, everything will be rerendered. [EdMRERNDR2]");
+  // Later, when having tested for a bit, use 'hydrate' by default.
+  // ReactDOM.hydrate() reuses server generated html, whereas render() ignores it, rerenders everything.
+  let reactRenderMethod: 'render' | 'hydrate' = 'render';
+
+  // @ifdef DEBUG
+  reactRenderMethod = 'hydrate';
+  let isServerHtmlStale = false;
+  let htmlBefore;
+  let htmlAfter;
+  // @endif
+
+  console.log("Cached html version: <" + eds.cachedVersion +
+      ">, current: <" + eds.currentVersion + "> [TyMPAGEVER]");
+
+  const store: Store = debiki2.ReactStore.allData();
+  if (store.currentPage && store.currentPage.pageRole === PageRole.Forum) {
+    // Maybe there's a topic list offset, or non-default different sort order, so we cannot
+    // reuse the html from the server. [7TMW4ZJ5]
+    reactRenderMethod = 'render';
+  }
+  else if (location.pathname.search('/-/') === 0) {
+    // This isn't rendered server side, so there's no html to reuse.
+    reactRenderMethod = 'render';
+  }
+  else if (eds.currentVersion.split('|')[1] !== eds.cachedVersion.split('|')[1]) {
+    console.log("Cached React store json and html is stale. I will rerender. [TyMRERENDER]");
+    reactRenderMethod = 'render';
+    // @ifdef DEBUG
+    isServerHtmlStale = true;
+    htmlBefore = document.getElementById('dwPosts').innerHTML;
+    // @endif
   }
 
-  var timeBefore = performance.now();
+  if (location.search.indexOf('&hydrate=false') >= 0) {
+    console.log("Will use ReactDOM.render, because '&hydrate=false'. [TyMFORCRNDR]");
+    reactRenderMethod = 'render';
+  }
 
-  debiki2.startMainReactRoot();
+  if (location.search.indexOf('&hydrate=true') >= 0) {
+    console.log("Will use ReactDOM.hydrate, because '&hydrate=true'. [TyMFORCHYDR]");
+    reactRenderMethod = 'hydrate';
+  }
 
-  var timeAfterBodyComments = performance.now();
+  const timeBefore = performance.now();
 
-  var posts = debiki2.$bySelector(allPostsNotTitleSelector);
-  var numPosts = posts.length;
-  var timeBeforeTimeAgo = performance.now();
+  debiki2.startMainReactRoot(reactRenderMethod);
+
+  const timeAfterPageContent = performance.now();
+
+  // @ifdef DEBUG
+  if (isServerHtmlStale) {
+    htmlAfter = document.getElementById('dwPosts').innerHTML;
+    (<any> window).isServerHtmlStale = true;
+    (<any> window).htmlFromServer = htmlBefore;
+    (<any> window).htmlAfterReact = htmlAfter;
+    console.log("*** React store checksum mismatch. *** Compare window.htmlFromServer " +
+        "with htmlAfterReact to find out what the problem (if any) maybe is.")
+  }
+  // @endif
+
+  const posts = debiki2.$bySelector(allPostsNotTitleSelector);
+  const numPosts = posts.length;
+  const timeBeforeTimeAgo = performance.now();
   // Only process the header right now if there are many posts.
   debiki2.processTimeAgo(numPosts > 20 ? '.dw-ar-p-hd' : '');
-  var timeAfterTimeAgo = performance.now();
+  const timeAfterTimeAgo = performance.now();
 
   debiki2.ReactStore.activateVolatileData();
-  var timeAfterUserData = performance.now();
+  const timeAfterUserData = performance.now();
 
   debiki2.startRemainingReactRoots();
-  var timeAfterRemainingRoots = performance.now();
+  const timeAfterRemainingRoots = performance.now();
 
-  console.log("Millis to render page: " + (timeAfterBodyComments - timeBefore) +
+  console.log(`Millis to ReactDOM.${reactRenderMethod} page: ${timeAfterPageContent - timeBefore}` +
     ", time-ago: " + (timeAfterTimeAgo - timeBeforeTimeAgo) +
     ", user data: " + (timeAfterUserData - timeAfterTimeAgo) +
-    ", remaining roots: " + (timeAfterRemainingRoots - timeAfterUserData) + " [DwM2F51]");
-  console.log("Cached html version: <" + eds.cachedVersion +
-      ">, current: <" + eds.currentVersion + "> [DwM4KGE8]");
-  if (eds.currentVersion.split('|')[1] !== eds.cachedVersion.split('|')[1]) {
-    console.log("Cached html is stale. React.js might have logged a " +
-        "'checksum was invalid' warning above (in dev builds) [DwM5KJG4]");
-  }
+    ", remaining roots: " + (timeAfterRemainingRoots - timeAfterUserData) + " [TyMRNDRPERF]");
 
   document.documentElement.classList.add(ReactStartedClass);
 
@@ -178,7 +217,7 @@ function renderDiscussionPage() {
   setTimeout(runNextStep, 60);
 
 
-  var steps = [];
+  const steps = [];
 
   steps.push(function() {
     registerEventHandlersFireLoginOut();
@@ -217,8 +256,8 @@ function renderDiscussionPage() {
 }
 
 
-d.i.startDiscussionPage = function() {
-  Bliss.ready().then(renderDiscussionPage);
+d.i.renderPageInBrowser = function() {
+  Bliss.ready().then(renderPageInBrowser);
 };
 
 

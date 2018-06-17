@@ -204,7 +204,8 @@ const Page = createComponent({
 });
 
 
-export function renderTitleBodyCommentsToString() {
+// REFACTOR break out to new file render-page-server-side.ts? [7VUBWR45]
+export function renderPageServerSideToString() {
   debiki2.avatar.resetAvatars();
 
   // Comment in the next line to skip React server side and debug in browser only.

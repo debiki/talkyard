@@ -425,7 +425,6 @@ ReactStore.activateMyself = function(anyNewMe: Myself) {
   // [redux] Modifying state in-place, shouldn't do? But works fine.
 
   store.userSpecificDataAdded = true;
-  store.now = new Date().getTime();
 
   setTimeout(function() {
     $h.addClasses(htmlElem, 'e2eMyDataAdded');
@@ -677,7 +676,6 @@ export function clonePost(postNr: number): Post {
 
 
 function updatePost(post: Post, pageId: PageId, isCollapsing?: boolean) {
-  store.now = new Date().getTime();
   const page: Page = store.currentPage;
 
   if (page.pageId !== pageId) {

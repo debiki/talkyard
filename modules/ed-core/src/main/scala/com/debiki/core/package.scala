@@ -298,6 +298,8 @@ package object core {
 
   /** Params that influence how a page gets rendered.
     *
+    * COULD incl forum topic list sort order too, and discussion topic comments sort order.  [7TMW4ZJ5]
+    *
     * @param widthLayout — the HTML strucure, and maybe avatar and image urls, are different,
     * for tiny mobile screens, and laptop screens. So, need to render separately, for mobile and laptop.
     * @param isEmbedded — in embedded discussions, links need to include the server origin, otherwise
@@ -334,6 +336,9 @@ package object core {
     def cdnOriginOrEmpty: String = anyCdnOrigin getOrElse ""
   }
 
+  case class PageRenderParamsAndHash(
+    pageRenderParams: PageRenderParams,
+    reactStoreJsonHash: String)
 
   sealed abstract class WidthLayout(val IntVal: Int) { def toInt: Int = IntVal }
 

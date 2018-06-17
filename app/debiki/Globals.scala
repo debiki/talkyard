@@ -196,7 +196,8 @@ class Globals(
   val mostMetrics = new MostMetrics(metricRegistry)
 
 
-  val applicationVersion = "0.00.49"  // later, read from some build config file
+  // Could rename to "rendererVersion".
+  val applicationVersion = "0.00.50"  // later, read from some build config file
 
   def applicationSecret: String = _appSecret
 
@@ -240,7 +241,8 @@ class Globals(
 
   def endToEndTestMailer: ActorRef = state.mailerActorRef
 
-  def renderPageContentInBackground(sitePageId: SitePageId, customParams: Option[PageRenderParams]) {
+  def renderPageContentInBackground(
+        sitePageId: SitePageId, customParams: Option[PageRenderParamsAndHash]) {
     if (!isTestDisableBackgroundJobs) {
       state.renderContentActorRef ! (sitePageId, customParams)
     }

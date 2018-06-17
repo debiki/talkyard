@@ -155,7 +155,7 @@ const UsersPosts = createFactory({
           Link({ to: linkToPostNr(post.pageId, post.nr),
               className: 's_UP_Act_Ps_P_Link ' + pageRole_iconClass(post.pageRole) },
             post.pageTitle),
-          avatar.Avatar({ user: author, size: AvatarSize.Small }),
+          avatar.Avatar({ user: author, origins: store, size: AvatarSize.Small }),
           Post({ post, store, author }))); // author: [4WKA8YB]
     });
 

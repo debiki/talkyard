@@ -10,6 +10,7 @@ declare namespace eds {
   const secure: boolean;
   const isDev: boolean;
   const isTestSite: boolean;
+  const testNowMs: WhenMs | undefined;
   const loadGlobalAdminTestScript: boolean;
   const loadGlobalStaffScript: boolean;
 
@@ -18,7 +19,12 @@ declare namespace eds {
   const cdnOriginOrEmpty: string;
   const cdnOrServerOrigin: string;
   const assetUrlPrefix: string;
-  const uploadsUrlPrefix: string;
+
+  // To be used only when rendering commonmark to html. (But when running React,
+  // the store Origin fields should be used instead. There is, hovewer,
+  // no store, when rendering commonmark to html, so then currently we use this.)
+  // CLEAN_UP COULD send the upl prefix to replaceLinks(md) instead, so won't need this here? [5YKF02]
+  const uploadsUrlPrefixCommonmark: string;
 
   const currentVersion: string;
   const cachedVersion: string;

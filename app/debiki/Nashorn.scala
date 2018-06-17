@@ -426,19 +426,18 @@ class Nashorn(globals: Globals) {
         |    var langCode = theStore.settings.languageCode || '$languageCode';
         |    t = global['t_' + langCode];
         |
-        |    eds.uploadsUrlPrefix =   // [7AKBQ2]
-        |       cdnOriginOrEmpty + '${ed.server.UploadsUrlBasePath}' + theStore.pubSiteId + '/';
+        |    // The React store should be used instead, when running React.
+        |    eds.uploadsUrlPrefixCommonmark = 'TyEFORCOMMONMARK';  // [7AKBQ2]
         |
-        |    var html = debiki2.renderTitleBodyCommentsToString();
+        |    var html = debiki2.renderPageServerSideToString();
         |    return html;
         |  }
         |  catch (e) {
         |    printStackTrace(e);
         |  }
         |  finally {
-        |    // Reset things to error codes, to fail fast, if attmepts to access these,
+        |    // Reset things to error codes, to fail fast, if attempts to access these,
         |    // when using this same Nashorn engine to render Markdown to HTML.
-        |    eds.uploadsUrlPrefix = 'TyEBADACCESSUPL';
         |    t = 'TyEBADACCESSLANG';
         |    theStore = 'TyEBADACCESSSTORE';
         |  }
@@ -570,17 +569,17 @@ object Nashorn {
     |}
     |
     |function renderAndSanitizeCommonMark(source, allowClassIdDataAttrs, followLinks,
-    |       instantOneboxRenderer, uploadsUrlPrefix) {
+    |       instantOneboxRenderer, uploadsUrlPrefixCommonmark) {
     |  try {
     |    theStore = null; // Fail fast. Don't use here, might not have been inited.
-    |    eds.uploadsUrlPrefix = uploadsUrlPrefix;  // [7AKBQ2]
+    |    eds.uploadsUrlPrefixCommonmark = uploadsUrlPrefixCommonmark;  // [7AKBQ2]
     |    debiki.internal.oneboxMarkdownItPlugin.instantRenderer = instantOneboxRenderer;
     |    var unsafeHtml = md.render(source);
     |    var allowClassAndIdAttr = allowClassIdDataAttrs;
     |    var allowDataAttr = allowClassIdDataAttrs;
     |    var html = googleCajaSanitizeHtml(unsafeHtml, allowClassAndIdAttr, allowDataAttr, followLinks);
     |    // Simplify detection of incorrectly using these without initialzing again:
-    |    eds.uploadsUrlPrefix = 'TyE4GKFWB0';
+    |    eds.uploadsUrlPrefixCommonmark = 'TyE4GKFWB0';
     |    debiki.internal.oneboxMarkdownItPlugin.instantRenderer = 'TyE56JKW20';
     |    return html;
     |  }

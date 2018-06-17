@@ -32,9 +32,9 @@ import scala.collection.mutable
 object RenderedPageHtmlDao {
 
   private def renderedPageKey(sitePageId: SitePageId, pageRenderParams: PageRenderParams) = {
-    val pageId =sitePageId.pageId
+    val pageId = sitePageId.pageId
     val mobile = if (pageRenderParams.widthLayout == WidthLayout.Tiny) "tny" else "med"
-    val embedded = if (pageRenderParams.isEmbedded) "emb" else ""
+    val embedded = if (pageRenderParams.isEmbedded) "emb" else "dir"
     // Here the origin matters (don't use .remoteOriginOrEmpty) because it's used
     // in inline scripts. [INLTAGORIG]
     val origin = pageRenderParams.origin
@@ -48,6 +48,7 @@ object RenderedPageHtmlDao {
 trait RenderedPageHtmlDao {
   self: SiteDao =>
 
+  import play.api.Logger
 
   memCache.onPageCreated { _ =>
     uncacheForums(this.siteId)
@@ -62,16 +63,17 @@ trait RenderedPageHtmlDao {
   private def loadPageFromDatabaseAndRender(pageRequest: PageRequest[_], renderParams: PageRenderParams)
         : RenderedPage = {
     if (!pageRequest.pageExists)
-      throwNotFound("EdE00404", "Page not found")
+      throwNotFound("TyE00404", "Page not found")
+
+    val pageId = pageRequest.thePageId
 
     globals.mostMetrics.getRenderPageTimer(pageRequest.pageRole).time {
-      val jsonResult: PageToJsonResult =
-        jsonMaker.pageToJson(pageRequest.thePageId, renderParams)
+      val jsonResult: PageToJsonResult = jsonMaker.pageToJson(pageId, renderParams)
 
       // This is the html for the topic and replies, i.e. the main content / interesting thing.
       val (cachedHtmlContent, cachedVersion) =
         renderContentMaybeUseDatabaseCache(
-            pageRequest.thePageId, renderParams, jsonResult.version, jsonResult.reactStoreJsonString)
+            pageId, renderParams, jsonResult.version, jsonResult.reactStoreJsonString)
 
       val tpi = new PageTpi(pageRequest, jsonResult.reactStoreJsonString, jsonResult.version,
         cachedHtmlContent, cachedVersion, jsonResult.pageTitle, jsonResult.customHeadTags,
@@ -113,8 +115,13 @@ trait RenderedPageHtmlDao {
       return loadPageFromDatabaseAndRender(pageRequest, renderParams)
 
     val key = renderedPageKey(pageRequest.theSitePageId, renderParams)
+    val result = memCache.lookup(key,
+      ifFound = {
+        Logger.trace(s"s$siteId: Page found in mem cache: $key")
+      },
+      orCacheAndReturn = {
+      Logger.trace(s"s$siteId: Page not in mem cache: $key")
 
-    memCache.lookup(key, orCacheAndReturn = {
       // Remember the server's origin, so we'll be able to uncache pages cached with this origin.
       // Could CLEAN_UP this later. Break out reusable fn? place in class MemCache?  [5KDKW2A]
       val originsKey = s"$siteId|origins"
@@ -129,6 +136,7 @@ trait RenderedPageHtmlDao {
               oldValue
             }
             else {
+              Logger.trace(s"s$siteId: Mem-Remembering origin: ${ newSet -- oldSet }")
               val origins = oldSet.toBuffer
               newSet.foreach(origins.append(_))
               MemCacheValueIgnoreVersion(origins.toSet)
@@ -137,6 +145,7 @@ trait RenderedPageHtmlDao {
         })
 
       if (pageRequest.thePageRole == PageRole.Forum) {
+        Logger.trace(s"s$siteId: Mem-Remembering forum: ${pageRequest.thePageId}")
         rememberForum(pageRequest.thePageId)
       }
 
@@ -146,6 +155,8 @@ trait RenderedPageHtmlDao {
       Some(loadPageFromDatabaseAndRender(pageRequest, renderParams))
     },
       metric = globals.mostMetrics.renderPageCacheMetrics) getOrDie "DwE93IB7"
+
+    result
   }
 
 
@@ -158,6 +169,10 @@ trait RenderedPageHtmlDao {
     readOnlyTransaction { tx =>
       tx.loadCachedPageContentHtml(pageId, renderParams) foreach { case (cachedHtml, cachedHtmlVersion) =>
 
+        def versionsString = o"""render params: $renderParams,
+          db cache version: ${cachedHtmlVersion.computerString}
+          current version: ${currentReactStoreJsonVersion.computerString}"""
+
         // Here we can compare hash sums of the up-to-date data and the data that was
         // used to generate the cached page. We ignore page version and site version.
         // Hash sums are always correct, so we'll never rerender unless we actually need to.
@@ -166,15 +181,23 @@ trait RenderedPageHtmlDao {
           // The browser will make cachedhtml up-to-date by running React.js with up-to-date
           // json, so it's okay to return cachedHtml. However, we'd rather send up-to-date
           // html, and this page is being accessed, so regenerate html. [4KGJW2]
-          p.Logger.debug(o"""Page $pageId site $siteId is accessed and out-of-date,
-               sending rerender-in-background message [DwE5KGF2]""")
+          p.Logger.debug(o"""s$siteId: Page $pageId requested, db cache stale,
+               will rerender soon, $versionsString [TyMRENDRSOON]""")
           // COULD wait 150 ms for the background thread to finish rendering the page?
           // Then timeout and return the old cached page.
-          globals.renderPageContentInBackground(SitePageId(siteId, pageId), Some(renderParams))
+          globals.renderPageContentInBackground(SitePageId(siteId, pageId), Some(
+              PageRenderParamsAndHash(renderParams, currentReactStoreJsonVersion.reactStoreJsonHash)))
+        }
+        else {
+          p.Logger.trace(o"""s$siteId: Page found in db cache, reusing: $pageId,
+              $versionsString [TyMREUSEDB]""")
         }
         return (cachedHtml, cachedHtmlVersion)
       }
     }
+
+    p.Logger.trace(o"""s$siteId: Page not in db cache: $pageId, rendering now..., version:
+        ${currentReactStoreJsonVersion.computerString} [TyMRENDRNOW]""")
 
     // Now we'll have to render the page contents [5KWC58], so we have some html to send back
     // to the client, in case the client is a search engine bot — I suppose those
@@ -217,7 +240,16 @@ trait RenderedPageHtmlDao {
   }
 
 
-  def removePageFromMemCache(sitePageId: SitePageId) {
+  def removePageFromMemCache(sitePageId: SitePageId, pageRenderParams: Option[PageRenderParams] = None) {
+    pageRenderParams foreach { params =>
+      Logger.trace(s"Removing mem-cached page: ${sitePageId.toPrettyString}, $params [TyMMW20ZF4]...")
+      memCache.remove(renderedPageKey(sitePageId, params))
+      return
+    }
+
+    Logger.trace(
+        s"Removing mem-cached page: ${sitePageId.toPrettyString}, all param combos [TyMJW2F72]...")
+
     forAllAccessedOrigins { origin =>
       removePageFromMemCacheForOrigin(origin, sitePageId)
     }
@@ -235,7 +267,7 @@ trait RenderedPageHtmlDao {
     // the browsers will get up-to-date html again.
     // So don't:
     //    removeFromCache(contentKey(sitePageId))
-    // Instead:
+    // Instead:  [7BWTWR2]
     globals.renderPageContentInBackground(sitePageId, customParams = None)
 
     // BUG race condition: What if anotoher thread started rendering a page
@@ -257,14 +289,16 @@ trait RenderedPageHtmlDao {
     val forumIds = memCache.lookup[List[String]](forumsKey(siteId)) getOrElse Nil
     forAllAccessedOrigins { origin =>
       forumIds foreach { forumId =>
-        removePageFromMemCacheForOrigin(origin, SitePageId(siteId, forumId))
+        val sitePageId = SitePageId(siteId, forumId)
+        Logger.trace(s"Removing mem-cached forum page: ${sitePageId.toPrettyString}...")
+        removePageFromMemCacheForOrigin(origin, sitePageId)
       }
       // Don't remove any database-cached html, see comment above. [6KP368]
     }
   }
 
 
-  def removePageFromMemCacheForOrigin(origin: String, sitePageId: SitePageId): Unit = {
+  private def removePageFromMemCacheForOrigin(origin: String, sitePageId: SitePageId) {
     // Try uncache, for all combinations of embedded = true/false and page widths = tiny/medium
     // — we don't remember which requests we've gotten and what we've cached.
 

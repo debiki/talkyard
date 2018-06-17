@@ -57,10 +57,14 @@ class RenderContentActor(
 
 
   override def receive: Receive = {
-    case (sitePageId: SitePageId, customParams: Option[PageRenderParams]) =>
+    // SECURITY DoS attack: Want to enqueue this case last-in-first-out, per page & params, so won't
+    // rerender the page more than once, even if is in the queue many times (with different hashes).
+    // Can that be done with Akka actors in some simple way?
+    case (sitePageId: SitePageId, customParamsAndHash: Option[PageRenderParamsAndHash]) =>
       // The page has been modified, or accessed and was out-of-date. [4KGJW2]
+      // Or edited, and uncached, and now being rerendered (no render params). [7BWTWR2]
       try {
-        rerenderContentHtmlUpdateCache(sitePageId, customParams)
+        rerenderContentHtmlUpdateCache(sitePageId, customParamsAndHash)
       }
       catch {
         case ex: java.sql.SQLException if DatabaseUtils.isConnectionClosed(ex) =>
@@ -90,9 +94,9 @@ class RenderContentActor(
 
 
   private def rerenderContentHtmlUpdateCache(sitePageId: SitePageId,
-        customParams: Option[PageRenderParams]) {
+        customParamsAndHash: Option[PageRenderParamsAndHash]) {
     try {
-      renderImpl(sitePageId, customParams)
+      renderImpl(sitePageId, customParamsAndHash)
     }
     catch {
       case ex: java.sql.SQLException if DatabaseUtils.isConnectionClosed(ex) =>
@@ -103,16 +107,17 @@ class RenderContentActor(
   }
 
 
-  private def renderImpl(sitePageId: SitePageId, anyCustomParams: Option[PageRenderParams]) {
+  private def renderImpl(sitePageId: SitePageId, anyCustomParams: Option[PageRenderParamsAndHash]) {
 
     // COULD add Metrics that times this.
 
     val dao = globals.siteDao(sitePageId.siteId)
-    p.Logger.debug(s"Background rendering ${sitePageId.toPrettyString} ... [TyMBGRSTART]")
+    p.Logger.debug(s"Background rendering ${sitePageId.toPrettyString}, $anyCustomParams... [TyMBGRSTART]")
 
-    // If we got custom params, probably no need to also rerender for default params.
-    anyCustomParams foreach { customParams =>
-      renderIfNeeded(sitePageId, customParams, dao, isCustom = true)
+    // If we got custom params, rerender only for those params (maybe other param combos = up-to-date).
+    anyCustomParams foreach { paramsHash =>
+      renderIfNeeded(sitePageId, paramsHash.pageRenderParams, dao, Some(paramsHash.reactStoreJsonHash))
+      dao.removePageFromMemCache(sitePageId, Some(paramsHash.pageRenderParams))
       return
     }
 
@@ -132,11 +137,11 @@ class RenderContentActor(
       anyPageRoot = None,
       anyPageQuery = None)
 
-    renderIfNeeded(sitePageId, renderParams, dao, isCustom = false)
+    renderIfNeeded(sitePageId, renderParams, dao, freshStoreJsonHash = None)
 
     // Render for medium width.
     val mediumParams = renderParams.copy(widthLayout = WidthLayout.Medium)
-    renderIfNeeded(sitePageId, mediumParams, dao, isCustom = false)
+    renderIfNeeded(sitePageId, mediumParams, dao, freshStoreJsonHash = None)
 
     // Remove cached whole-page-html, so we'll generate a new page (<html><head> etc) that
     // includes the new content we generated above. [7UWS21]
@@ -145,7 +150,7 @@ class RenderContentActor(
 
 
   private def renderIfNeeded(sitePageId: SitePageId, renderParams: PageRenderParams, dao: SiteDao,
-      isCustom: Boolean) {
+      freshStoreJsonHash: Option[String]) {
 
     // ----- Is still out-of-date?
 
@@ -163,7 +168,8 @@ class RenderContentActor(
         // (We might re-render a little bit too often.)
         cachedHtmlVersion.siteVersion != currentPageVersion.siteVersion ||
         cachedHtmlVersion.pageVersion != currentPageVersion.pageVersion ||
-        cachedHtmlVersion.appVersion != globals.applicationVersion
+        cachedHtmlVersion.appVersion != globals.applicationVersion ||
+        freshStoreJsonHash.isSomethingButNot(cachedHtmlVersion.reactStoreJsonHash)
     }
 
     if (!isOutOfDate) {
@@ -188,7 +194,7 @@ class RenderContentActor(
     val whichPage = sitePageId.toPrettyString
     val width = (if (renderParams.widthLayout == WidthLayout.Tiny) "tiny" else "medium") + " width"
     val embedded = if (renderParams.isEmbedded) ", embedded" else ""
-    val custom = if (isCustom) ", custom" else ""
+    val custom = if (freshStoreJsonHash.isDefined) ", custom" else ""
     p.Logger.debug(o"""Background rendered $whichPage, $width$embedded$custom [TyMBGRDONE]""")
   }
 
@@ -196,7 +202,7 @@ class RenderContentActor(
   private def findAndUpdateOneOutOfDatePage() {
     val pageIdsToRerender = globals.systemDao.loadPageIdsToRerender(1)
     for (toRerender <- pageIdsToRerender) {
-      rerenderContentHtmlUpdateCache(toRerender.sitePageId, customParams = None)
+      rerenderContentHtmlUpdateCache(toRerender.sitePageId, customParamsAndHash = None)
     }
   }
 

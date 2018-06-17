@@ -183,7 +183,8 @@ export const Avatar = createComponent({
       else {
         picPath = tnyPath || smlPath || medPath;
       }
-      content = r.img({ src: eds.uploadsUrlPrefix + picPath });
+      const origins: Origins = this.props.origins;
+      content = r.img({ src: linkToUpload(origins, picPath) });
     }
     else {
       const lettersClassesColor = this.makeTextAvatar();
@@ -203,8 +204,8 @@ export const Avatar = createComponent({
     const link = this.props.ignoreClicks ? null : linkToUserProfilePage(user);
     return (
       // [rename] edAvtr to esAvtr
-      elemFn({ className: 'esAvtr edAvtr' + extraClasses, style: styles, onClick: this.onClick,
-          href: link, title: title }, content));
+      elemFn({ className: 'esAvtr edAvtr' + extraClasses, href: link, title: title,
+          style: styles, onClick: this.onClick }, content));
   }
 });
 

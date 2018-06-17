@@ -891,7 +891,7 @@ export const TopicsList = createComponent({
 
     const topicElems = topics.map((topic: Topic) => {
       return TopicRow({
-          store, topic, categories: store.currentCategories, activeCategory, now: store.now, orderOffset,
+          store, topic, categories: store.currentCategories, activeCategory, orderOffset,
           key: topic.pageId, sortOrderRoute: this.props.sortOrderRoute,
           inTable: useTable, forumPath: this.props.forumPath });
     });
@@ -1209,17 +1209,17 @@ const TopicRow = createComponent({
     // Avatars: Original Poster, some frequent posters, most recent poster. [7UKPF26]
     const author = store_getUserOrMissing(store, topic.authorId, 'EsE5KPF0');
     const userAvatars = [
-        avatar.Avatar({ key: 'OP', user: author, title: t.ft.createdTheTopic })];
+        avatar.Avatar({ key: 'OP', user: author, origins: store, title: t.ft.createdTheTopic })];
     for (let i = 0; i < topic.frequentPosterIds.length; ++i) {
       const poster = store_getUserOrMissing(store, topic.frequentPosterIds[i], 'EsE2WK0F');
-      userAvatars.push(avatar.Avatar({ key: poster.id, user: poster,
+      userAvatars.push(avatar.Avatar({ key: poster.id, user: poster, origins: store,
             title: t.ft.frequentPoster }));
     }
     // Don't show last replyer, if same as topic author, and no other avatar is shown.
     const lastReplyerIsOp = topic.lastReplyerId === topic.authorId;
     if (topic.lastReplyerId && !(lastReplyerIsOp && userAvatars.length === 1)) {
       const lastReplyer = store_getUserOrMissing(store, topic.lastReplyerId, 'EsE4GTZ7');
-      userAvatars.push(avatar.Avatar({ key: 'MR', user: lastReplyer,
+      userAvatars.push(avatar.Avatar({ key: 'MR', user: lastReplyer, origins: store,
             title: t.ft.mostRecentPoster }));
     }
 

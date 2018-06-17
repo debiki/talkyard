@@ -24,11 +24,11 @@
 
 
 export var AvatarAndName = function(
-    props: { user, hideAvatar?: boolean, ignoreClicks?: boolean }) {
+    props: { user: BriefUser, origins: Origins, hideAvatar?: boolean, ignoreClicks?: boolean }) {
 
   const user: BriefUser = props.user;
   const avatar = props.hideAvatar ?
-      null : debiki2.avatar.Avatar({ user: user, ignoreClicks: true });
+      null : debiki2.avatar.Avatar({ user, origins: props.origins, ignoreClicks: true });
 
   // Dupl code, see posts.ts [88MYU2]
   let namePart1;

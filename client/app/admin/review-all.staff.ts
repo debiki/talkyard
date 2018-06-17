@@ -57,7 +57,7 @@ export const ReviewAllPanelComponent = createReactClass(<any> {
         this.setState({
           reviewTasks,
           store,
-          nowMs: store_nowMs(store),
+          nowMs: getNowMs(),
         });
         setTimeout(this.countdownUndoTimeout, 1000);
       });
@@ -70,7 +70,7 @@ export const ReviewAllPanelComponent = createReactClass(<any> {
 
   countdownUndoTimeout: function() {
     if (this.isGone) return;
-    this.setState({ nowMs: store_nowMs(this.state.store) });
+    this.setState({ nowMs: getNowMs() });
     setTimeout(this.countdownUndoTimeout, 1000);
   },
 
@@ -175,7 +175,7 @@ const ReviewTask = createComponent({
       if (this.isGone) return;
       this.setState({
         justDecided: decision,
-        justDecidedAtMs: store_nowMs(this.props.store),
+        justDecidedAtMs: getNowMs(),
         couldBeUndone: undefined,
       });
     });

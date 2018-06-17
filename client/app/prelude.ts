@@ -78,6 +78,18 @@ function doNextFrameOrNow(something: () => void) {
    namespace debiki2 {
 //------------------------------------------------------------------------------
 
+const pageLoadedAtMsBrowserTime = Date.now();
+
+// Test suites play with time.
+export function getNowMs(): WhenMs {
+  if (!eds.testNowMs)
+    return Date.now();
+
+  const millisElapsed = Date.now() - pageLoadedAtMsBrowserTime;
+  return eds.testNowMs + millisElapsed;
+}
+
+
 
 // If in an embedded comments iframe.
 export let iframeOffsetWinSize: { top: number, height: number } | undefined;

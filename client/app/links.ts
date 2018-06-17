@@ -116,6 +116,16 @@ export function linkToAboutPage(): string {
 }
 
 
+export function linkToUpload(origins: Origins, uploadsPath: string): string {
+  // If there's a CDN, always access uploaded pics via the CDN. Or,
+  // if we're in an embedded comments discussion, access the pics via the Talkyard
+  // server's origin = the remote origin. Otherwise, no origin needed (empty string).
+  const origin = origins.anyCdnOrigin || origins.remoteOriginOrEmpty;
+  const uploadsUrlBasePath = '/-/u/';
+  return origin + uploadsUrlBasePath + origins.pubSiteId + '/' + uploadsPath;
+}
+
+
 export function rememberBackUrl(url: string) {
   // Skip API pages — those are the ones we're returning *from*. (Don't require === 0 match;
   // there might be a hostname. Matching anywhere is ok, because the prefix is '/-/' and

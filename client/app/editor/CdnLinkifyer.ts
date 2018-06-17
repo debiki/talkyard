@@ -34,7 +34,7 @@ var uploadsRegexInTag = /(\<[^\<\>]+\s[a-z]+=['"])\/-\/(u|uploads\/public)\/([a-
 
 
 export function replaceLinks(md: any) {
-  // (Don't exit here if !eds.uploadsUrlPrefix, because it changes "suddenly"
+  // (Don't exit here if !eds.uploadsUrlPrefixCommonmark, because it changes "suddenly"
   // when rendering server side. [5YKF02])
 
   // (There's always a rules.image.)
@@ -62,18 +62,20 @@ function defaultInlineRule(tokens, idx, options, env, self) {
 
 function makeMarkdownUrlReplacerRule(attrName: string, defaultRule) {
   return function(tokens, idx, options, env, self) {
-    // (Don't test this earlier, because eds.uploadsUrlPrefix changes "suddenly"
+    // (Don't test this earlier, because eds.uploadsUrlPrefixCommonmark changes "suddenly"
     // when rendering server side. [5YKF02])
-    if (!eds.uploadsUrlPrefix)
+    // Later: What? How could there ever *not* be any uploads url prefix? This is probably an old
+    // if-test, before site pub-id incl in the uploads url path? Always false now? Can be removed?
+    if (!eds.uploadsUrlPrefixCommonmark)
       return defaultRule(tokens, idx, options, env, self);
 
-    var token = tokens[idx];
-    var attrIndex = token.attrIndex(attrName);
+    const token = tokens[idx];
+    const attrIndex = token.attrIndex(attrName);
     if (attrIndex !== -1) {
-      var attrNameValue = token.attrs[attrIndex];
-      var matches = attrNameValue[1].match(uploadsLinkRegex);
+      const attrNameValue = token.attrs[attrIndex];
+      const matches = attrNameValue[1].match(uploadsLinkRegex);
       if (matches) {
-        attrNameValue[1] = eds.uploadsUrlPrefix + matches[2];
+        attrNameValue[1] = eds.uploadsUrlPrefixCommonmark + matches[2];
       }
     }
     return defaultRule(tokens, idx, options, env, self);
@@ -83,15 +85,15 @@ function makeMarkdownUrlReplacerRule(attrName: string, defaultRule) {
 
 function makeHtmlUrlReplacerRule(md, defaultInlineRule) {
   return function(tokens, idx, options, env, self) {
-    // (Don't test this earlier, because eds.uploadsUrlPrefix changes "suddenly"
+    // (Don't test this earlier, because eds.uploadsUrlPrefixCommonmark changes "suddenly"
     // when rendering server side. [5YKF02])
-    if (!eds.uploadsUrlPrefix)
+    if (!eds.uploadsUrlPrefixCommonmark)
       return defaultInlineRule(tokens, idx, options, env, self);
 
     // Inside an html tag, replace any /-/u/... (uploads) match with the CDN address.
-    var token = tokens[idx];
-    var content = token.content;
-    token.content = content.replace(uploadsRegexInTag, '$1' + eds.uploadsUrlPrefix + '$3');
+    const token = tokens[idx];
+    const content = token.content;
+    token.content = content.replace(uploadsRegexInTag, '$1' + eds.uploadsUrlPrefixCommonmark + '$3');
     return defaultInlineRule(tokens, idx, options, env, self);
   };
 }

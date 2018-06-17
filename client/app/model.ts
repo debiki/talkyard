@@ -580,16 +580,17 @@ interface Page {
 }
 
 
-interface Store {
-  widthLayout: WidthLayout;
-  isEmbedded: boolean;
+interface Origins {
   remoteOriginOrEmpty: string;
   anyCdnOrigin?: string;
-  appVersion: string;
-  // Might be anything, in test suites that mess with time & the universe.
-  now: WhenMs; // deprecated? use nowMs instead?
-  nowMs: WhenMs;
   pubSiteId: string;
+}
+
+
+interface Store extends Origins {
+  widthLayout: WidthLayout;
+  isEmbedded: boolean;
+  appVersion: string;
   siteStatus: SiteStatus;
   siteOwnerTermsUrl?: string;
   siteOwnerPrivacyUrl?: string;

@@ -113,8 +113,6 @@ class JsonMaker(dao: SiteDao) {
       "topLevelCommentIdsSorted" -> JsArray(),
       "horizontalLayout" -> JsBoolean(false))
 
-    val nowMs = JsNumber(globals.now().millis)
-
     Json.obj(
       "dbgSrc" -> "ESJ",
       "widthLayout" -> (if (pageReq.isMobile) WidthLayout.Tiny else WidthLayout.Medium).toInt,
@@ -122,8 +120,6 @@ class JsonMaker(dao: SiteDao) {
       "remoteOriginOrEmpty" -> "",
       "anyCdnOrigin" -> JsStringOrNull(globals.anyCdnOrigin),
       "appVersion" -> globals.applicationVersion,
-      "now" -> nowMs, // deprecated? Use .nowMs instead?
-      "nowMs" -> nowMs,
       "pubSiteId" -> JsString(site.pubId),
       "siteId" -> JsNumber(site.id),  // LATER remove in Prod mode [5UKFBQW2]
       "siteStatus" -> site.status.toInt,
@@ -339,7 +335,6 @@ class JsonMaker(dao: SiteDao) {
       "remoteOriginOrEmpty" -> renderParams.remoteOriginOrEmpty,
       "anyCdnOrigin" -> JsStringOrNull(renderParams.anyCdnOrigin),
       "appVersion" -> globals.applicationVersion,
-      "nowMs" -> JsNumber(globals.now().millis),
       "pubSiteId" -> JsString(site.pubId),
       "siteId" -> JsNumber(site.id), // LATER remove in Prod mode [5UKFBQW2]
       "siteStatus" -> site.status.toInt,
@@ -394,7 +389,6 @@ class JsonMaker(dao: SiteDao) {
       "remoteOriginOrEmpty" -> "",
       "anyCdnOrigin" -> JsStringOrNull(globals.anyCdnOrigin),
       "appVersion" -> globals.applicationVersion,
-      "nowMs" -> JsNumber(globals.now().millis),
       "pubSiteId" -> JsString(site.pubId),
       "siteId" -> JsNumber(site.id), // LATER remove in Prod mode [5UKFBQW2]
       "siteStatus" -> site.status.toInt,

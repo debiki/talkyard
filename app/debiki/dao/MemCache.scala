@@ -24,6 +24,7 @@ import nl.grons.metrics.scala.Meter
 import java.{util => ju}
 import scala.reflect.ClassTag
 import MemCache._
+import play.{api => p}
 
 
 
@@ -117,6 +118,7 @@ class MemCache(val siteId: SiteId, val cache: DaoMemCache, mostMetrics: MostMetr
    */
   def lookup[A](
         key: MemCacheKey,
+        ifFound: => Unit = {},
         orCacheAndReturn: => Option[A] = null,
         metric: CacheMetric = null,
         ignoreSiteCacheVersion: Boolean = false)(
@@ -184,6 +186,7 @@ class MemCache(val siteId: SiteId, val cache: DaoMemCache, mostMetrics: MostMetr
 
   def put(key: MemCacheKey, value: DaoMemCacheAnyItem) {
     cache.put(key.toString, value)
+    p.Logger.trace(s"s${key.siteId}: Mem cache: Inserting: ${key.rest} ")
   }
 
 
@@ -192,7 +195,11 @@ class MemCache(val siteId: SiteId, val cache: DaoMemCache, mostMetrics: MostMetr
       override def apply(dummy: String): DaoMemCacheAnyItem = value
     }
     val itemInCacheAfter = cache.get(key.toString, javaFn)
-    itemInCacheAfter eq value
+    val wasInserted = itemInCacheAfter eq value
+    if (wasInserted) {
+      p.Logger.trace(s"s${key.siteId}: Mem cache: Inserted, was absent: ${key.rest} ")
+    }
+    wasInserted
   }
 
 
@@ -200,21 +207,25 @@ class MemCache(val siteId: SiteId, val cache: DaoMemCache, mostMetrics: MostMetr
     */
   def replace(key: MemCacheKey, oldValue: DaoMemCacheAnyItem, newValue: DaoMemCacheAnyItem)
         : Boolean = {
+    p.Logger.trace(s"s${key.siteId}: Mem cache: Replacing: ${key.rest} ")
     cache.asMap().replace(key.toString, oldValue, newValue)
   }
 
 
   def remove(key: MemCacheKey) {
+    p.Logger.trace(s"s${key.siteId}: Mem cache: Removing: ${key.rest}")
     cache.invalidate(key.toString)
   }
 
 
   def clearAllSites() {
+    p.Logger.trace("Emptying the whole mem cache.")
     cache.invalidateAll()
   }
 
 
   def clearSingleSite(siteId: SiteId) {
+    p.Logger.trace(s"s$siteId: Emptying mem cache.")
     val siteCacheVersion = siteCacheVersionNow(siteId)
     val nextVersion = siteCacheVersion + 1  // BUG Race condition.
     cache.put(siteCacheVersionKey(siteId), MemCacheItem(nextVersion, -1))

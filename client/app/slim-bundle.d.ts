@@ -89,6 +89,8 @@ declare const ServerSideWindowWidth;
 
 declare namespace debiki2 {
 
+  function getNowMs(): WhenMs;
+
   let iframeOffsetWinSize;
 
   function $first(selector: string): HTMLElement;
@@ -194,7 +196,6 @@ declare namespace debiki2 {
   var threatLevel_toString;
   var isGuest;
   var user_isGuest;
-  function store_nowMs(store: Store): WhenMs;
   function store_maySendDirectMessageTo(store: Store, user: MemberInclDetails): boolean;
   var page_isGroupTalk;
   let store_getUserOrMissing;
@@ -211,19 +212,20 @@ declare namespace debiki2 {
   var cloneRect;
   var cloneEventTargetRect;
 
-  var linkToPageId;
-  var linkToPostNr;
-  var linkToNotificationSource;
-  var linkToAdminPageAdvancedSettings;
-  var linkToRedirToAboutCategoryPage;
-  var linkToUserInAdminArea;
+  function linkToPageId(pageId: PageId): string;
+  function linkToPostNr(pageId: PageId, postNr: PostNr): string;
+  function linkToNotificationSource(notf: Notification): string;
+  function linkToAdminPageAdvancedSettings(hostname?: string): string;
+  function linkToRedirToAboutCategoryPage(categoryId: CategoryId): string;
+  function linkToUserInAdminArea(userId: UserId): string;
   function linkToSendMessage(idOrUsername: UserId | string): string;
   function linkToUserProfilePage(idOrUsername: Myself | User | UserId | string): string;
   function linkToUsersNotfs(userIdOrUsername: UserId | string): string;
   function linkToAdminPage(me: Myself): string;
-  var linkToReviewPage;
-  var externalLinkToAdminHelp;
-  var linkToMyProfilePage;
+  function linkToReviewPage(): string;
+  function externalLinkToAdminHelp(): string;
+  function linkToMyProfilePage(store: Store): string;
+  function linkToUpload(origins: Origins, uploadsPath: string): string;
 
   var anyForbiddenPassword;
 

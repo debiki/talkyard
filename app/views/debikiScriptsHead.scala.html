@@ -42,6 +42,13 @@
   if (isInLoginWindow) "true" else "false"
 }
 
+@testNowMs = @{
+  tpi.anyTestNowMs match {
+    case None => "undefined"
+    case Some(nowMs) => nowMs
+  }
+}
+
 <script id="theVolatileJson" type="application/json">
 @* Here we place quickly changing data and user specific data. Note that
 this tag is placed before #thePageJson below, so if e.g. a comment contains
@@ -189,6 +196,7 @@ var eds = {
   pageDataFromServer: _store,
   volatileDataFromServer: _volatileData,
   isDev: @{ if (globals.isDev) "true" else "false" },
+  testNowMs: @testNowMs,
   minMaxJs: '@minMaxJs',
   serverOrigin: '@{tpi.httpsColonOrEmpty}//@tpi.serverAddress',@* [INLTAGORIG] *@
   cdnOriginOrEmpty: '@{tpi.cdnOrigin getOrElse ""}',
@@ -203,7 +211,7 @@ var eds = {
   embeddedPageId: _isInIframe ? _pageId : undefined,
   embeddedPageAltId: @Html(altPageIdOrUndefined),
   assetUrlPrefix: '@tpi.assetUrlPrefix',
-  uploadsUrlPrefix: '@tpi.uploadsUrlPrefix',
+  uploadsUrlPrefixCommonmark: '@tpi.uploadsUrlPrefix',
   isTestSite: @{ tpi.site.isTestSite.toString },
   loadGlobalAdminTestScript: @{ tpi.globals.loadGlobalAdminTestScript.toString },
   loadGlobalStaffScript: @{ tpi.globals.loadGlobalStaffScript.toString }

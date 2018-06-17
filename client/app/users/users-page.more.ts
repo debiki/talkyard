@@ -361,8 +361,9 @@ const AvatarAboutAndButtons = createComponent({
       r.span({ className: 'esProfile_isYou' }, t.upp.you);
 
     const avatar = user.avatarMediumHashPath
-        ? r.img({ src: eds.uploadsUrlPrefix + user.avatarMediumHashPath })
-        : debiki2.avatar.Avatar({ user: user, size: AvatarSize.Medium, ignoreClicks: true });
+        ? r.img({ src: linkToUpload(store, user.avatarMediumHashPath) })
+        : debiki2.avatar.Avatar({ user: user, origins: store,
+              size: AvatarSize.Medium, ignoreClicks: true });
 
     const uploadAvatarBtnText = user.avatarMediumHashPath ? t.upp.ChangePhoto : t.upp.UploadPhoto;
     const avatarMissingClass = user.avatarMediumHashPath ? '' : ' esMedAvtr-missing';
