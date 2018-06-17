@@ -223,19 +223,19 @@ var t_en: TalkyardTranslations = t = {
     TitleInfoPage: "Uma página de informação",
     TitleDiscussion: "Uma discussão",
     IsPinnedGlobally: "\nFoi fixado, por isso é listado primeiro.",
-    IsPinnedInCat: "\Foi fixado nesta categoria, por isso é listado primeiro, nesta categoria.",
+    IsPinnedInCat: "\nFoi fixado nesta categoria, por isso é listado primeiro, nesta categoria.",
   },
 
 
   // Forum categories list
 
   fc: {
-    RecentTopicsWaiting: "Tópicos recents (those waiting)",
-    RecentTopicsInclDel: "Recent topics (including deleted)",
-    RecentTopics: "Recent topics",
-    _replies: " replies",
-    _deleted: " (deleted)",
-    _defCat: " (default category)",
+    RecentTopicsWaiting: "Tópicos recentes (os que estão aguardando)",
+    RecentTopicsInclDel: "Tópicos recentes (incluindo deletados)",
+    RecentTopics: "Tópicos recentes",
+    _replies: " respostas",
+    _deleted: " (deletado)",
+    _defCat: " (categoria padrão)",
   },
 
 
@@ -447,8 +447,8 @@ var t_en: TalkyardTranslations = t = {
     ClickUnaccept: "Clique para desafazer a aceitação desta resposta",
     PostAccepted: "Este post foi aceitado como resposta",
 
-    NumLikes: (num: number) => num === 1 ? "1 Like" : num + " Likes",
-    NumDisagree: (num: number) => num === 1 ? num + `1 Discorda` : `${num} Discordam`,
+    NumLikes: (num: number) => num === 1 ? "1 Curte" : num + " Curtem",
+    NumDisagree: (num: number) => num === 1 ? "1 Discorda" : `${num} Discordam`,
     NumBury: (num: number) => num === 1 ? `1 Enterra` : `${num} Enterras`,
 
     NumUnwanted: (num: number) => num === 1 ? "1 Indesejado" : `${num} Indesejados`,
@@ -488,7 +488,7 @@ var t_en: TalkyardTranslations = t = {
     JoinThisChat: "Associar-se a este chat",
     PostMessage: "Postar mensagem",
     AdvancedEditor: "Editor avançado",
-    TypeHere: "Digite aqui. Você pode usar Markdown and HTML.",
+    TypeHere: "Digite aqui. Você pode usar Markdown e HTML.",
   },
 
 
