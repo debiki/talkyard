@@ -85,6 +85,29 @@ Users online:
 ![ed-online-users](https://cloud.githubusercontent.com/assets/7477359/19680424/f0353f86-9aa5-11e6-84d9-94d46f228b93.jpg)
 
 
+
+Contributing
+-----------------------------
+
+Want to contribute? Feel free to say hello in [our community](https://www.talkyard.io/forum/),
+or maybe open an issue or a PR (pull request) here at GitHub.
+
+You need to read and agree to our [Contributor License Agreement](./docs/CLA-v1.txt). You do that by
+reading it (please do — there's a human friendly intro) and appending a single line
+paragraph with your real name (no pseudonyms) and the following text, to all your commit messages:
+
+> I, Your Full Name \<your@<i></i>email.address\>, agree to the Contributor License Agreement, docs/CLA-v1.txt.
+
+Please squash your commits to just one (unless you're doing something complicated that's easier
+to review, in separate commits).
+
+Can be a good idea if you ask us what is currently being worked on, so you won't
+accidentally re-implement something that's already been done or started. Because people
+(e.g. I) might be working in their own work-in-progress topic branches that you
+don't know about.
+
+
+
 Getting Started
 -----------------------------
 
@@ -202,10 +225,13 @@ You can shutdown everything like so: `sudo s/d-killdown`, and if Play Framework 
 (it'll do, if it recompiles Scala files and reloads the app many many times),
 you can restart it like so: `sudo s/d-restart-web-app`.
 
+
+
 Troubleshooting
 -----------------------------
 
 See [tips.mnd](./docs/tips.md).
+
 
 
 Tests
@@ -260,34 +286,6 @@ Technology
 - Server: Scala and Play Framework. Nginx, Nchan, some Lua. React.js in Java's Nashorn Javascript engine.
 - Databases: PostgreSQL, Redis, ElasticSearch.
 
-
-Contributing
------------------------------
-
-If you'd like to contribute, read more
-[at the end of this page](https://www.talkyard.io/dev/-81n25/technical-information) about contributing.
-
-In the future, I suppose there will be a Contributor License Agreement (CLA), similar to
-[Google's CLA](https://developers.google.com/open-source/cla/individual) — you'd open
-source your code and grant me a copyrigt license.
-
-### Hen and henbirds
-
-Source code comments should be concise, but writing "he or she" everywhere, when referring
-to e.g. a user, becomes a bit verbose (because "he or she" is three words). However, there's
-a short Swedish word that means "he or she", namely "hen". Let's start using it in English too.
-
-So: "hen" = either "he or she", or "him or her", depending on context.
-And "hens" = "his or her", and "hen's" = "he or she is".
-
-If you need to refer to many hen = many-he-or-she, write "people". "Hens" however
-means "his or her", just like "its" means, well, "its" (but not "things").
-
-What about the bird previously called "hen"? Let's call it "henbird" instead.
-
-So, hereafter, the word "hen" means "he or she". And the henbird, which I cannot
-remember having mentioned or even thought about the past year, no longer gets
-to occupy the short and useful word "hen".
 
 
 Directories
@@ -349,7 +347,8 @@ This project looks like so:
      +-conf/      <-- Default config files that assume everything
                       is installed on localohost, and dev mode
 
-Naming style
+
+Naming style and a new word
 -----------------------------
 
 ### CSS classes and ids
@@ -366,6 +365,25 @@ lowercase letters).
 
 For stuff with otherwise no class or id, and that should be clicked in end-to-end tests,
 we use classes only, and the prefix `e_` (instead of `s_` or `t_`).
+
+### Hen and henbirds
+
+Source code comments should be concise, but writing "he or she" everywhere, when referring
+to e.g. a user, becomes a bit verbose (because "he or she" is three words). There's
+a short Swedish word that means "he or she", namely "hen". Let's start using it in English.
+
+So: "hen" = either "he or she", or "him or her", depending on context.
+And "hens" = "his or her", and "hen's" = "he or she is".
+
+To refer to many hen = many-he-or-she, write "people". "Hens" however
+means "his or her", just like "its" means, well, "its" (but not "things").
+
+What about the bird previously called "hen"? Let's call it "henbird" instead.
+
+So, hereafter, the word "hen" means "he or she". And the henbird, which I cannot
+remember having mentioned or even thought about the past year, no longer gets
+to occupy the short and useful word "hen".
+
 
 
 Custom third party builds
@@ -384,6 +402,7 @@ and the other (gulp-lodash-custom) analyzes all .js files, I guess that'd slow d
 rather much + won't immediately work with Typescript?
 
 
+
 Old Code
 -----------------------------
 
@@ -391,6 +410,7 @@ In January 2015 I squashed all old 4300+ commits into one single commit,
 because in the past I did some mistakes, so it feels better to start over again
 from commit number 1. The old commit history is available here:
 https://github.com/debiki/debiki-server-old
+
 
 
 Credits
@@ -401,13 +421,14 @@ its database structure, HTTP requests, and avatar pixel width. Discourse is
 forum software.
 
 
+
 License
 -----------------------------
 
 Currently AGPL — please let me know if you want me to change to GPL, contact info here: https://www.talkyard.io/contact
 
 
-    Copyright (c) 2010-2018  Kaj Magnus Lindberg
+    Copyright (c) 2010-2018  Kaj Magnus Lindberg and Debiki AB
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU Affero General Public License as
