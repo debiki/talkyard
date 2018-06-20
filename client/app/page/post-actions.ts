@@ -199,7 +199,7 @@ export const PostActions = createComponent({
     const isPageBody = post.nr === BodyNr;
     const votes = myPageData.votes[post.nr] || [];
     const isStaffOrOwnPage: boolean = isStaff(me) || isOwnPage;
-    const isEmbeddedOrigPost = isPageBody && eds.isInEmbeddedCommentsIframe;
+    const isEmbeddedOrigPost = isPageBody && store.isEmbedded;
 
     const deletedOrCollapsed = post_isDeletedOrCollapsed(post);
 
@@ -351,7 +351,7 @@ export const PostActions = createComponent({
     }
 
     const adminLink = !me.isAdmin || !isEmbeddedOrigPost ? null :
-      r.a({ className: 'dw-a dw-a-admin icon-link-ext', href: eds.serverOrigin + linkToReviewPage(),
+      r.a({ className: 'dw-a dw-a-admin icon-link-ext', href: linkToReviewPage(),
         target: '_blank' }, t.pa.Admin);
 
     return (
@@ -696,7 +696,7 @@ const MoreDropdownModal = createComponent({
 
     // ----- Tags
 
-    if ((isStaff(me) || isOwnPost) && !eds.isInEmbeddedCommentsIframe) {
+    if ((isStaff(me) || isOwnPost) && !store.isEmbedded) {
       moreLinks.push(
         r.a({ className: 'dw-a icon-plus', onClick: this.openTagsDialog, key: 'ts' },
           t.pa.AddTags));
@@ -724,7 +724,7 @@ const MoreDropdownModal = createComponent({
 
     // UX BUG Currently doesn't work in iframes — because the copy-link dialog copies addresses  [6JKD2A]
     // with the embedding site's origin, and when pasting the link, that'll be the wrong origin.
-    if (!isPageBody && isStaff(me) && !eds.isInEmbeddedCommentsIframe) {
+    if (!isPageBody && isStaff(me) && !store.isEmbedded) {
       moreLinks.push(
         r.a({ className: 'dw-a icon-paper-plane-empty', onClick: this.onMoveClick, key: 'mp' },
           t.Move));

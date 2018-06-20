@@ -194,7 +194,16 @@ export function store_shallShowPageToolsButton(store: Store) {
 
 export function store_canPinPage(store: Store) {
   const page: Page = store.currentPage;
-  return page.categoryId && page.pageRole !== PageRole.Forum && !page.pageDeletedAtMs;
+  return (page.categoryId
+      && page.pageRole !== PageRole.SpecialContent
+      && page.pageRole !== PageRole.EmbeddedComments
+      && page.pageRole !== PageRole.Blog
+      && page.pageRole !== PageRole.Forum
+      && page.pageRole !== PageRole.FormalMessage
+      && page.pageRole !== PageRole.PrivateChat
+      && page.pageRole !== PageRole.Critique
+      && page.pageRole !== PageRole.UsabilityTesting
+      && !page.pageDeletedAtMs);
 }
 
 

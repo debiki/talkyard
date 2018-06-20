@@ -15,7 +15,11 @@ declare namespace eds {
   const loadGlobalStaffScript: boolean;
 
   const minMaxJs: boolean;
-  const serverOrigin: string;
+
+  // This field exists, but don't declare it, shouldn't be used at any more places. Use origin()
+  // in links.ts instead.
+  // const debugOrigin: string;
+
   const cdnOriginOrEmpty: string;
   const cdnOrServerOrigin: string;
   const assetUrlPrefix: string;

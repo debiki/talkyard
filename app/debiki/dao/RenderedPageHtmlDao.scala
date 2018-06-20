@@ -36,9 +36,10 @@ object RenderedPageHtmlDao {
     val mobile = if (pageRenderParams.widthLayout == WidthLayout.Tiny) "tny" else "med"
     val embedded = if (pageRenderParams.isEmbedded) "emb" else "dir"
     // Here the origin matters (don't use .remoteOriginOrEmpty) because it's used
-    // in inline scripts. [INLTAGORIG]
+    // in inline scripts [INLTAGORIG]. A change doesn't require a server restart (e.g. one might
+    // might move one's site to a custom domain, at runtime), so need to incl in the key.
     val origin = pageRenderParams.origin
-    val cdnOrigin = pageRenderParams.cdnOriginOrEmpty // could skip, change requires restart
+    val cdnOrigin = pageRenderParams.cdnOriginOrEmpty // could skip, change requires restart —> cache gone
     // Skip page query and page root. Won't cache, if they're not default, anyway. [5V7ZTL2]
     MemCacheKey(sitePageId.siteId, s"$pageId|$mobile|$embedded|$origin|$cdnOrigin|PageHtml")
   }

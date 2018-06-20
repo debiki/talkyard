@@ -50,8 +50,14 @@ debiki2.ifEventOnNotThen('click', 'a.esMention', '', function(linkElem, event) {
 d.u.addZoomOrResizeListener(debiki2.page.Hacks.addCanScrollHintsSoon);
 
 
-debiki2.dieIf(location.port && eds.serverOrigin.indexOf(':' + location.port) === -1,
-  "Wrong port or origin? The server thinks its origin is " + eds.serverOrigin +
+// Example: If running the Takyard server in a Vagrant VM, and accessing it on the host
+// at localhost:8080 — then, by default, the Talkyard server generates e.g. email
+// verification links pointing to port 80, the default HTTP port. However, when on the host
+// port 8080 is in used (and mapped by Vagrant to 80 in the VM) — these port 80 server
+// generated links won't work, and those who try out the server in Vagrant will get confused.
+// So add a warning:
+debiki2.dieIf(location.port && eds.debugOrigin.indexOf(':' + location.port) === -1,
+  "Wrong port or origin? The server thinks its origin is " + eds.debugOrigin +
   " and it'll use that address when sending POST requests and loading scripts. " +
   "But you're accessing the server via " + location.host + ". [EsE7YGK2]");
 

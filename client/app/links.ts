@@ -28,7 +28,7 @@
 // In embedded comments, need incl the Talkyard server url, otherwise links will [EMBCMTSORIG]
 // resolve to the embeddING server.
 // Hack. Currently there's always exactly one store, and it always has remoteOriginOrEmpty set.
-function origin(): string {
+export function origin(): string {
   // This needs to happen in a function, so gets reevaluated server side, where the same script
   // engine gets reused, for rendering pages at different sites, different origins.
   return (<any> window).theStore.remoteOriginOrEmpty;  // [ONESTORE]
@@ -112,6 +112,11 @@ export function linkToNotificationSource(notf: Notification): string {
 
 export function linkToRedirToAboutCategoryPage(categoryId: CategoryId): string {
   return origin() + '/-/redir-to-about?categoryId=' + categoryId;
+}
+
+
+export function linkToResetPassword(): string {
+  return origin() + '/-/reset-password/specify-email';
 }
 
 

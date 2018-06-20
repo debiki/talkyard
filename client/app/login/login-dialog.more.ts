@@ -398,7 +398,7 @@ const OpenAuthButton = createClassAndFactory({
     // (This parameter tells the server to set a certain cookie. Setting it here
     // instead has no effect, don't know why.)
     const mayNotCreateUser = props.loginReason === 'LoginToAdministrate' ? 'mayNotCreateUser&' : '';
-    const url = eds.serverOrigin +
+    const url = origin() +
         '/-/login-openauth/' + props.provider.toLowerCase() +
         '?' + mayNotCreateUser +
         (eds.isInLoginWindow ? '' : 'isInLoginPopup&') +
@@ -429,7 +429,7 @@ const OpenAuthButton = createClassAndFactory({
  * /
 function submitOpenIdLoginForm(openidIdentifier)
   form = $("""
-    <form action="#{eds.serverOrigin}/-/api/login-openid" method="POST">
+    <form action="#{eds.ser x verOrigin}/-/api/login-openid" method="POST">
       <input type="text" name="openid_identifier" value="#openidIdentifier">
     </form>
     """)
@@ -483,7 +483,7 @@ const PasswordLoginDialogContent = createClassAndFactory({
         PrimaryButton({ className: 's_LD_LoginB', onClick: this.doLogin, id: 'e2eSubmit' },
           loginToWhat(this.props.loginReason)),
         r.br(),
-        r.a({ href: eds.serverOrigin + '/-/reset-password/specify-email',
+        r.a({ href: linkToResetPassword(),
             // Once the password has been reset, the user will be logged in automatically. Then
             // it's confusing if this dialog is still open, so close it on click. [5KWE02X]
             // UX COULD show reset-pwd input in a dialog directly here instead, don't want it

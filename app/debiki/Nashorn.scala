@@ -367,10 +367,6 @@ class Nashorn(globals: Globals) {
         |
         |$DummyConsoleLogFunctions
         |
-        |// Needs serverOrigin   <— NO, fixed now (right?). [EMBLINKSOK] CLEAN_UP
-        |// and isInEmbeddedCommentsIframe, so can generate working links
-        |// also for embedded comments pages.
-        |//
         |var eds = {
         |  secure: $secure
         |};

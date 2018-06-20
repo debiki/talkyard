@@ -15,6 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+/// <reference path="../links.ts" />
 
 //------------------------------------------------------------------------------
    module debiki2.login {
@@ -55,7 +56,7 @@ export function loginIfNeededReturnToAnchor(
     // Need to open the popup here immediately, before loading any scripts, because if
     // not done immediately after mouse click, the popup gets blocked (in Chrome at least).
     // And when opening in a popup, we don't need any more scripts here in the main win anyway.
-    const url = eds.serverOrigin + '/-/login-popup?mode=' + loginReason +
+    const url = origin() + '/-/login-popup?mode=' + loginReason +
       '&isInLoginPopup&returnToUrl=' + returnToUrl;
     d.i.createLoginPopup(url);
 

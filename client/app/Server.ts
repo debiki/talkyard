@@ -16,6 +16,7 @@
  */
 
 /// <reference path="model.ts" />
+/// <reference path="links.ts" />
 /// <reference path="ServerApi.ts" />
 
 // Ought to include, but then `debiki2.createComponent` gets placed too late —> JS breaks:
@@ -28,9 +29,6 @@
 //------------------------------------------------------------------------------
 
 const d: any = { i: debiki.internal };
-
-// In embedded comments <iframes>, we cannot use relative paths.
-const origin = eds.serverOrigin;
 
 const BadNameOrPasswordErrorCode = 'EsE403BPWD';
 
@@ -52,7 +50,7 @@ interface RequestData {
 
 
 function postJson(urlPath: string, requestData: RequestData) {
-  let url = appendE2eAndForbiddenPassword(origin + urlPath);
+  let url = appendE2eAndForbiddenPassword(origin() + urlPath);
   if (requestData.showLoadingOverlay !== false) {
     showLoadingOverlay();
   }
@@ -232,7 +230,7 @@ function get(uri: string, options, success?: (response, xhr?: XMLHttpRequest) =>
   }
   headers['X-Requested-With'] = 'XMLHttpRequest';
 
-  const promiseWithXhr = <any> Bliss.fetch(origin + uri, {  // hack [7FKRPQ2T0]
+  const promiseWithXhr = <any> Bliss.fetch(origin() + uri, {  // hack [7FKRPQ2T0]
     method: 'GET',
     headers: headers,
     timeout: options.timeout,

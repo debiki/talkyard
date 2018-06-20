@@ -172,12 +172,12 @@ function makeMentionsInEmbeddedCommentsPointToTalkyardServer() {
   for (let i = 0; i < mentions.length; ++i) {
     const mention = mentions[i];
     const href = mention.getAttribute('href');
-    if (href.indexOf(eds.serverOrigin) === 0) {
+    if (href.indexOf(origin()) === 0) {
       // Skip, already processed.
     }
     else {
       const hrefNoOrigin = href.replace(OriginRegex, '');
-      mention.setAttribute('href', eds.serverOrigin + hrefNoOrigin);
+      mention.setAttribute('href', origin() + hrefNoOrigin);
     }
   }
 }

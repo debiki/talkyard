@@ -238,9 +238,10 @@ const ReviewTask = createComponent({
     }
 
     if (_.isBoolean(this.state.couldBeUndone)) {
-      const className = this.state.couldBeUndone ? 'e_A_Rvw_Tsk_Undone' : 'e_A_Rvw_Tsk_NotUndone';
+      const className = 's_A_Rvw_Tsk_UndoneInf ' + (
+          this.state.couldBeUndone ? 'e_A_Rvw_Tsk_Undone' : 'e_A_Rvw_Tsk_NotUndone');
       gotUndoneInfo = r.span({ className }, this.state.couldBeUndone ?
-        " — last review decision was undone." : " — could NOT be undone: Changes already made");
+        " Undone." : " Could NOT be undone: Changes already made");
     }
     else if (!reviewTask.completedAtMs && (this.state.justDecidedAtMs || reviewTask.decidedAtMs)) {
       undoDecisionButton =

@@ -216,6 +216,7 @@ declare namespace debiki2 {
   var cloneRect;
   var cloneEventTargetRect;
 
+  function origin(): string;
   function linkToPageId(pageId: PageId): string;
   function linkToPostNr(pageId: PageId, postNr: PostNr): string;
   function linkToNotificationSource(notf: Notification): string;
@@ -234,6 +235,7 @@ declare namespace debiki2 {
   function externalLinkToAdminHelp(): string;
   function linkToMyProfilePage(store: Store): string;
   function linkToUpload(origins: Origins, uploadsPath: string): string;
+  function linkToResetPassword(): string;
 
   var anyForbiddenPassword;
 

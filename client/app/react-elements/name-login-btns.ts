@@ -58,7 +58,7 @@ export const NameLoginBtns = createComponent({
 
     let userNameElem = null;
     let logoutBtnElem = null;
-    const target = eds.isInEmbeddedCommentsIframe ? '_blank' : undefined;
+    const target = store.isEmbedded ? '_blank' : undefined;
     if (me.isLoggedIn) {
       userNameElem =
           r.span({ className: 'dw-u-info' },

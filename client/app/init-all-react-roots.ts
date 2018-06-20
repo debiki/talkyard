@@ -129,7 +129,7 @@ export function startMainReactRoot(reactRenderMethodName: 'render' | 'hydrate') 
   else {
     // Compare with [2FKB5P].
 
-    const isEmbCmts: boolean = eds.isInEmbeddedCommentsIframe;  // [EMBLINKSOK] always false?
+    const isEmbCmts: boolean = eds.isInEmbeddedCommentsIframe;  // CLEAN_UP always false?
 
     // A route for about-user pages and the staff area.
     const sectionsAndPages = [
