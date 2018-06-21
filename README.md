@@ -92,11 +92,11 @@ Contributing
 Want to contribute? Feel free to say hello in [our community](https://www.talkyard.io/forum/),
 or maybe open an issue or a PR (pull request) here at GitHub.
 
-You need to read and agree to our [Contributor License Agreement](./docs/CLA-v1.txt). You do that by
+You need to read and agree to our [Contributor License Agreement](./docs/CLA-v2.txt). You do that by
 reading it (please do — there's a human friendly intro) and appending a single line
 paragraph with your real name (no pseudonyms) and the following text, to all your commit messages:
 
-> I, Your Full Name \<your@<i></i>email.address\>, agree to the Contributor License Agreement, docs/CLA-v1.txt.
+> I, Your Full Name \<your@<i></i>email.address\>, agree to the Contributor License Agreement, docs/CLA-v2.txt.
 
 Please squash your commits to just one (unless you're doing something complicated that's easier
 to review, in separate commits).
