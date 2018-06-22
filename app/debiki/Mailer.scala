@@ -171,7 +171,6 @@ object Mailer {
 }
 
 
-// Wow. $DoS
 
 /** Sends emails via SMTP. Does not handle any incoming mail. If broken, however,
   * then only logs emails to the console. It'll be broken e.g. if you run on localhost
@@ -204,6 +203,18 @@ class Mailer(
 
   private val e2eTestEmails = mutable.HashMap[String, Promise[Vector[Email]]]()
 
+  // Rate limit outgoing emails, to prevent Denial-of-Money attacks. SECURITY FIXED
+  // For example Amazon SES charges $0.10 per 1000 emails, and someone writing a script
+  // that clicks a send-email-verification-email-again every second, from 100 different
+  // computers — that'd cost almost $1k per day.
+  // A more realistic for-now limit could be 10k emails per day = $1 = $30 per month,
+  // and for now, just a quick fix: The server gets upgraded once a month? Every 2nd month?
+  // So just set an upper limit at 100k emails ~= $10  (100k = really a lot, right)
+  SHOULD // use RateLimiter instead, and rate limit per site (and also across all sites, like now).
+         // Will need to add a new RateLimiter fn, for calling internally.
+  private var numEmailsSent = 0
+  private val MaxEmails = 100 * 1000
+
   /**
    * Accepts an (Email, site-id), and then sends that email on behalf of
    * the site. The caller should already have saved the email to the
@@ -212,7 +223,22 @@ class Mailer(
    */
   def receive: PartialFunction[Any, Unit] = {
     case (email: Email, siteId: SiteId) =>
-      sendEmail(email, siteId)
+      if (numEmailsSent > MaxEmails) {
+        logger.error(o"""Has sent more than $MaxEmails emails, not sending more emails. Restart
+            server to reset counter. (This protects against money-DoS attacks) [TyETOOMANYEMLS],
+            not sending: $email""")
+      }
+      else {
+        if (numEmailsSent > MaxEmails / 2) {
+          logger.warn(o"""Soon reaching the max emails money attack limit:
+              $numEmailsSent / $MaxEmails [TyMMANYEMLS]""")
+        }
+        else if (numEmailsSent % 100 == 0) {
+          logger.info(s"Has sent $numEmailsSent emails since server started. [TyMNUMEMLS]")
+        }
+        sendEmail(email, siteId)
+        numEmailsSent += 1
+      }
     case ("GetEndToEndTestEmail", siteIdColonEmailAddress: String) =>
       e2eTestEmails.get(siteIdColonEmailAddress) match {
         case Some(promise) =>
