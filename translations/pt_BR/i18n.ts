@@ -14,7 +14,7 @@
 
 var t: TalkyardTranslations;
 
-var t_en: TalkyardTranslations = t = {
+var t_pt_BR: TalkyardTranslations = t = {
 
   // A single or a few words, sorted alphabetically, to reuse everywhere.
 
@@ -264,7 +264,7 @@ var t_en: TalkyardTranslations = t = {
   // Contextbar (the sidebar to the right), code currently in sidebar.ts (not renamed yet)
 
   cb: {
-    RecentComments: "Comentários recentes neste tópico: ",
+    RecentComments: "Comentários recentes neste tópico:",
     NoComments: "Nenhum comentário.",
 
     YourBookmarks: "Seus favoritos:",
@@ -391,7 +391,7 @@ var t_en: TalkyardTranslations = t = {
     TooltipChat: "# significa Canal de Chat",
     TooltipPrivChat: "Isto é um canal de chat privado",
 
-    TooltipPinnedGlob: "\Fixado globalmente.",
+    TooltipPinnedGlob: "\nFixado globalmente.",
     TooltipPinnedCat: "\nFixado nesta categoria.",
 
     SolvedClickView_1: "Resolvido no post #",
@@ -478,8 +478,8 @@ var t_en: TalkyardTranslations = t = {
   // Chat
 
   c: {
-    About_1: "Este é o canal de chat",
-    About_2: " , criado por ",
+    About_1: "Este é o canal de chat ",
+    About_2: ", criado por ",
     ScrollUpViewComments: "Role para cima para ver comentários anteriores",
     Purpose: "Propósito:",
     edit: "editar",
@@ -539,7 +539,7 @@ var t_en: TalkyardTranslations = t = {
 
     UploadPhoto: "Fazer upload de foto",
     ChangePhoto: "Mudar foto",
-    ImgTooSmall: "Imagem pequena demais: deve ser 100 x 100",
+    ImgTooSmall: "Imagem pequena demais: deve ser >= 100 x 100",
 
     // ----- User status
 

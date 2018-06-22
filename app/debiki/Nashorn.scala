@@ -414,6 +414,7 @@ class Nashorn(globals: Globals) {
       // Sync with the languages in the /translations/ dir, and the admin UI language selector. [5JUKQR2]
       addTranslation("en_US")
       addTranslation("sv_SE")
+      addTranslation("pt_BR")
 
       // Add render page code.
       val rendererScript = loadFileAsString(s"/public/res/server-bundle$min.js", isTranslation = false)

@@ -815,6 +815,8 @@ const LanguageSettings = createFactory({
       value: 'en_US', label: "English"
     }, {
       value: 'sv_SE', label: "Swedish"
+    }, {
+      value: 'pt_BR', label: "Portuguese (Brazilian)"
     }];
 
     const selectedLangCode = firstDefinedOf(editedSettings.languageCode, currentSettings.languageCode);
