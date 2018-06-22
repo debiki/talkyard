@@ -41,7 +41,7 @@ export function linkToPageId(pageId: PageId): string {
 
 
 export function linkToPostNr(pageId: PageId, postNr: PostNr): string {
-  return origin() + linkToPageId(pageId) + '#post-' + postNr;
+  return linkToPageId(pageId) + '#post-' + postNr;
 }
 
 

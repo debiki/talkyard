@@ -35,7 +35,7 @@ case class ReviewStuff(
   createdBy: User,
   moreReasonsAt: Option[ju.Date],
   completedAt: Option[ju.Date],
-  completedBy: Option[User],
+  decidedBy: Option[User],
   invalidatedAt: Option[ju.Date],
   decidedAt: Option[When],
   decision: Option[ReviewDecision],
@@ -70,8 +70,8 @@ trait ReviewsDao {
       val taskWithDecision = task.copy(
         decidedAt = Some(globals.now().toJavaDate),
         decision = Some(decision),
-        completedById = Some(requester.id),
-        completedAtRevNr = anyRevNr)
+        decidedById = Some(requester.id),
+        decidedAtRevNr = anyRevNr)
 
       val auditLogEntry = AuditLogEntry(
         siteId = siteId,
@@ -83,7 +83,7 @@ trait ReviewsDao {
         pageId = pageId,
         uniquePostId = task.postId,
         postNr = task.postNr)
-        // COULD add audit log fields: review decision & task id?
+        // COULD add audit log fields: review decision & task id? (4UWSQ1)
 
       tx.upsertReviewTask(taskWithDecision)
       tx.insertAuditLogEntry(auditLogEntry)
@@ -99,6 +99,9 @@ trait ReviewsDao {
       if (task.completedAt.isDefined)
         return false
 
+      // Don't: if (task-invalidated) return false — instead, undo anyway: maybe later some day,
+      // tasks can become active again. Then better have this task in an undone state.
+
       throwBadRequestIf(task.decidedAt.isEmpty,
         "TyE5GKQRT2", s"Review action not decided. Task id $reviewTaskId")
 
@@ -108,8 +111,8 @@ trait ReviewsDao {
 
       val taskUndone = task.copy(
         decidedAt = None,
-        completedById = None,
-        completedAtRevNr = None,
+        decidedById = None,
+        decidedAtRevNr = None,
         decision = None)
 
       val auditLogEntry = AuditLogEntry(
@@ -122,7 +125,7 @@ trait ReviewsDao {
         pageId = pageId,
         uniquePostId = task.postId,
         postNr = task.postNr)
-        // COULD add audit log fields: review decision & task id?
+        // COULD add audit log fields: review decision & task id? (4UWSQ1)
 
       tx.upsertReviewTask(taskUndone)
       tx.insertAuditLogEntry(auditLogEntry)
@@ -136,15 +139,23 @@ trait ReviewsDao {
 
     readWriteTransaction { tx =>
       val anyTask = tx.loadReviewTask(taskId)
-      val task = anyTask.getOrDie("EsE8YM42", s"Review task not found, site $siteId, task $taskId")
+      val task = anyTask.getOrDie("EsE8YM42", s"s$siteId: Review task $taskId not found")
       task.pageId.map(pageIdsToRefresh.add)
+
+      if (task.invalidatedAt.isDefined) {
+        // This should happen if many users flag a post, and one or different moderators click Delete,
+        // for each flag. Then many delete decisions get enqueued, for the same post
+        // — and when the first delete decision gets carried out, the other review tasks
+        // become invalidated (because now the post is gone). [2MFFKR0]
+        // That's fine, just do nothing.
+        return
+      }
 
       // Only one thread completes review tasks, so shouldn't be any races. [5YMBWQT]
       dieIf(task.completedAt.isDefined, "TyE2A2PUM6", "Review task already completed")
-      dieIf(task.invalidatedAt.isDefined, "TyE5J2PUM7", "Review task invalidated")
       val decision = task.decision getOrDie "TyE4ZK5QL"
-      val completedById = task.completedById getOrDie "TyE2A2PUM01"
-      dieIf(task.completedAtRevNr.isEmpty, "TyE2A2PUM02")
+      val decidedById = task.decidedById getOrDie "TyE2A2PUM01"
+      dieIf(task.decidedAtRevNr.isEmpty, "TyE2A2PUM02")
 
       val completedTask = task.copy(completedAt = Some(globals.now().toJavaDate))
       tx.upsertReviewTask(completedTask)
@@ -284,7 +295,7 @@ trait ReviewsDao {
     val userIds = mutable.Set[UserId]()
     reviewTasks foreach { task =>
       userIds.add(task.createdById)
-      task.completedById.foreach(userIds.add)
+      task.decidedById.foreach(userIds.add)
       userIds.add(task.maybeBadUserId)
     }
     postsById.values foreach { post =>
@@ -321,7 +332,7 @@ trait ReviewsDao {
           createdAt = task.createdAt,
           moreReasonsAt = task.moreReasonsAt,
           completedAt = task.completedAt,
-          completedBy = task.completedById.flatMap(usersById.get),
+          decidedBy = task.decidedById.flatMap(usersById.get),
           invalidatedAt = task.invalidatedAt,
           decidedAt = When.fromOptDate(task.decidedAt),
           decision = task.decision,

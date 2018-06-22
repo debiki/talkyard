@@ -122,8 +122,6 @@ POST  /-/delete-user            controllers.UserController.deleteUser
 GET   /-/list-complete-users    controllers.UserController.listCompleteUsers(whichUsers)
 GET   /-/load-user-any-details  controllers.UserController.loadUserAnyDetails(who)
 POST  /-/edit-member            controllers.UserController.editMember
-POST  /-/approve-reject-user    controllers.UserController.approveRejectUser
-POST  /-/set-is-admin-or-moderator controllers.UserController.setIsAdminOrModerator
 POST  /-/lock-trust-level       controllers.UserController.lockTrustLevel
 POST  /-/unlock-trust-level     controllers.UserController.unlockTrustLevel
 POST  /-/lock-threat-level      controllers.UserController.lockThreatLevel

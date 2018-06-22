@@ -69,7 +69,7 @@ object ReviewDecision {
   *   because after they've been made, additional posts by the same author, might
   *   get auto approved, and/or other people might reply to the approved posts, and it's
   *   not obvious what a one-click Undo would do to all those auto-approved posts and replies.)
-  * @param completedById The staff user that had a look at this review task and e.g. deleted
+  * @param decidedById The staff user that had a look at this review task and e.g. deleted
   *   a spam comment, or dismissed the review task if the comment was ok.
   * @param invalidatedAt If there is e.g. a review task about a comment, but the comment gets
   *   deleted, then the review task becomes invalid. Perhaps just delete the review task instead?
@@ -90,8 +90,8 @@ case class ReviewTask(
   moreReasonsAt: Option[ju.Date] = None,
   decidedAt: Option[ju.Date] = None,
   completedAt: Option[ju.Date] = None,
-  completedAtRevNr: Option[Int] = None,
-  completedById: Option[UserId] = None,
+  decidedAtRevNr: Option[Int] = None,
+  decidedById: Option[UserId] = None,
   invalidatedAt: Option[ju.Date] = None,
   decision: Option[ReviewDecision] = None,
   // COULD change to a Set[UserId] and include editors too, hmm. [6KW02QS]  Or just the author +
@@ -110,14 +110,14 @@ case class ReviewTask(
   require(!invalidatedAt.exists(_.getTime < createdAt.getTime), "EsE5GKP2")
   require(completedAt.isEmpty || invalidatedAt.isEmpty, "EsE2FPW1")
   require((decidedAt.isEmpty && completedAt.isEmpty) || decision.isDefined, "EsE0YUM4")
-  require(!completedAtRevNr.exists(_ < FirstRevisionNr), "EsE1WL43")
+  require(!decidedAtRevNr.exists(_ < FirstRevisionNr), "EsE1WL43")
   require(!postId.exists(_ <= 0), "EsE3GUL80")
   // pageId defined = is for title & body.
   require(pageId.isEmpty || (postId.isDefined && postNr.is(PageParts.BodyNr)), "EsE6JUM12")
   require(postId.isDefined == postNr.isDefined, "EsE6JUM13")
   require(postId.isDefined == createdAtRevNr.isDefined, "EsE5PUY0")
   require(postId.isEmpty || (
-      decidedAt.isDefined || completedAt.isDefined) == completedAtRevNr.isDefined, "EsE4PU2")
+      decidedAt.isDefined || completedAt.isDefined) == decidedAtRevNr.isDefined, "EsE4PU2")
 
 
   /** If the review decision has been carried out, or if the review task became obsolete. */

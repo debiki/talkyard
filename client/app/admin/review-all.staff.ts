@@ -227,7 +227,7 @@ const ReviewTask = createComponent({
     let rejectButton;
 
     if (this.state.justDecidedAtMs || reviewTask.decidedAtMs || reviewTask.completedAtMs) {
-      const taskDoneBy: BriefUser | null = store.usersByIdBrief[reviewTask.completedById];
+      const taskDoneBy: BriefUser | null = store.usersByIdBrief[reviewTask.decidedById];
       const doneByInfo = !taskDoneBy ? null : r.span({}, " by ", UserName({ user: taskDoneBy, store }));
       let whatWasDone: string;
       switch (reviewTask.decision || this.state.justDecided) {
@@ -268,7 +268,7 @@ const ReviewTask = createComponent({
 
 
     let safeHtml: string;
-    if (0 && post.currRevNr === post.approvedRevNr) {
+    if (0 && post.currRevNr === post.approvedRevNr) {  // what? why 0, = disables approvedHtmlSanitized?
       safeHtml = post.approvedHtmlSanitized;
     }
     else {

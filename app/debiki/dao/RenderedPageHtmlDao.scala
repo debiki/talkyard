@@ -57,7 +57,7 @@ trait RenderedPageHtmlDao {
 
   memCache.onPageSaved { sitePageId =>
     uncacheAndRerenderPage(sitePageId)
-    uncacheForums(sitePageId.siteId)
+    uncacheForums(sitePageId.siteId)   // [2F5HZM7]
   }
 
 

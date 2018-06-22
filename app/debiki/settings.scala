@@ -33,8 +33,8 @@ trait AllSettings {
 
   def userMustBeAuthenticated: Boolean  ; RENAME // to mustBeAuthenticatedToRead ?
   def userMustBeApproved: Boolean       ; RENAME // to mustBeApprovedToContribute?
-              // Need to change how it works too: in the db, set mustBeAuthenticatedToRead = true
-              // if must-be-approved = true.
+      // Need to change how it works too: in the db, set mustBeAuthenticatedToRead = true  [2KZMQ5]
+      // if must-be-approved = true.
 
   // def approveInvitesHow: HowApproveInvites.BeforeTheyAreSent/AfterSignup/AlwaysAllow
   def inviteOnly: Boolean

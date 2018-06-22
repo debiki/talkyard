@@ -59,6 +59,9 @@ debiki.prettyDuration = function(then, now) {  // i18n
 
 debiki.currentYear = new Date().getUTCFullYear();
 
+// prettyLetterDuration(then, now) = time from then up until now, e.g. Monday to Friday —> '5d'.
+// prettyLetterDuration(duration) = duration millis converted to a pretty letter, e.g 3600*1000 = '1h'.
+//
 debiki.prettyLetterDuration = function(then, now) {  // i18n
   var diff;
   var isTimeSpan = !!now;

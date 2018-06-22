@@ -1367,7 +1367,7 @@ object JsonMaker {
     val anyPost = stuff.post match {
       case None => JsNull
       case Some(post) =>
-        Json.obj(
+        Json.obj(  // typescript interface PostToReview
           "pageId" -> post.pageId,
           "nr" -> post.nr,
           "uniqueId" -> post.id,
@@ -1382,16 +1382,17 @@ object JsonMaker {
           "lastApprovedById" -> JsNull,
           "bodyHiddenAtMs" -> JsDateMsOrNull(post.bodyHiddenAt),
           "bodyHiddenById" -> JsNumberOrNull(post.bodyHiddenById),
-          "bodyHiddenReason" -> JsStringOrNull(post.bodyHiddenReason))
+          "bodyHiddenReason" -> JsStringOrNull(post.bodyHiddenReason),
+          "deletedAtMs" -> JsDateMsOrNull(post.deletedAt))
     }
-    Json.obj(
+    Json.obj(  // typescript interface ReviewTask
       "id" -> stuff.id,
       "reasonsLong" -> ReviewReason.toLong(stuff.reasons),
       "createdAtMs" -> stuff.createdAt.getTime,
       "createdById" -> stuff.createdBy.id,
       "moreReasonsAtMs" -> JsDateMsOrNull(stuff.moreReasonsAt),
       "completedAtMs" -> JsDateMsOrNull(stuff.completedAt),
-      "completedById" -> JsNumberOrNull(stuff.completedBy.map(_.id)),
+      "decidedById" -> JsNumberOrNull(stuff.decidedBy.map(_.id)),
       "invalidatedAt" -> JsDateMsOrNull(stuff.invalidatedAt),
       "decidedAtMs" -> JsWhenMsOrNull(stuff.decidedAt),
       "decision" -> JsNumberOrNull(stuff.decision.map(_.toInt)),

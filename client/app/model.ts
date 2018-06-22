@@ -81,11 +81,11 @@ interface ReviewTask {
   createdAtMs: WhenMs;
   createdById: UserId;
   moreReasonsAtMs?: WhenMs;
-  completedAtMs?: WhenMs;
-  completedById?: UserId;
-  invalidatedAtMs?: WhenMs;
+  decidedById?: UserId;
   decidedAtMs?: WhenMs;
   decision?: ReviewDecision;
+  completedAtMs?: WhenMs;
+  invalidatedAtMs?: WhenMs;
   pageId?: string;
   pageTitle?: string;
   post?: PostToReview;
@@ -109,6 +109,7 @@ interface PostToReview {
   bodyHiddenAtMs?: number;
   bodyHiddenById?: UserId;
   bodyHiddenReason?: string;
+  deletedAtMs?: WhenMs;
 }
 
 

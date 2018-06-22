@@ -157,12 +157,12 @@ function renderPageInBrowser() {
     reactRenderMethod = 'render';
   }
   else if (eds.currentVersion.split('|')[1] !== eds.cachedVersion.split('|')[1]) {
-    console.log("Cached React store json and html is stale. I will rerender. [TyMRERENDER]");
-    reactRenderMethod = 'render';
     // @ifdef DEBUG
     isServerHtmlStale = true;
     htmlBefore = document.getElementById('dwPosts').innerHTML;
     // @endif
+    console.log("Cached React store json and html is stale. I will rerender. [TyMRERENDER]");
+    reactRenderMethod = 'render';
   }
 
   if (location.search.indexOf('&hydrate=false') >= 0) {

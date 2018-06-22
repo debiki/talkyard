@@ -20,7 +20,7 @@ package com.debiki.core
 import com.google.{common => guava}
 import java.net.InetAddress
 import java.{net => jn, util => ju}
-import org.scalactic.{Bad, ErrorMessage, Good, Or}
+import org.scalactic.{ErrorMessage, Or}
 import scala.collection.{immutable, mutable}
 import EmailNotfPrefs.EmailNotfPrefs
 import Prelude._
@@ -29,7 +29,7 @@ import java.util.Date
 
 
 
-sealed abstract class Presence(val IntVal: Int) { def toInt = IntVal }
+sealed abstract class Presence(val IntVal: Int) { def toInt: Int = IntVal }
 object Presence {
   case object Active extends Presence(1)
   case object Away extends Presence(2)

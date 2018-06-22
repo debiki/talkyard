@@ -320,7 +320,7 @@ const LoginAndSignupSettings = createFactory({
         Setting2(props, { type: 'checkbox', label: "Approve users", id: 'e2eApproveUsersCB',
           className: 'e_A_Ss_S-ApproveUsersCB',
           help: "New users need to be approved by staff before they can do anything more " +
-              "than just reading.",
+              "than just reading.",  // docs BUG: currently won't get access at all [2KZMQ5]
           getter: (s: Settings) => s.userMustBeApproved,
           update: (newSettings: Settings, target) => {
             newSettings.userMustBeApproved = target.checked;

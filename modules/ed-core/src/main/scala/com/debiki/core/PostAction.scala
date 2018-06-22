@@ -61,6 +61,11 @@ object PostStatusAction {
   case object CollapseTree extends PostStatusAction
   case class DeletePost(clearFlags: Boolean) extends PostStatusAction
   case object DeleteTree extends PostStatusAction
+  // UndeletePost
+  // UndeleteTree? [5EFAWQ2] — but what about individually deleted posts in the tree? Well, there's
+  // Post.deletedStatus: DeletedStatus, which tells if the post was deleted explicitly,
+  // or implicitly because an ancestor got tree-deleted.  UndoTree = undeletes the post selected,
+  // + all descendants that got tree-deleted.
 }
 
 

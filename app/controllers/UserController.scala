@@ -665,7 +665,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
     throwForbiddenIf(userId < LowestTalkToMemberId,
       "TyE5GUK10", "Cannot send email address verification email to built-in user")
 
-    val member: MemberInclDetails = dao.readWriteTransaction { tx =>
+    val member: MemberInclDetails = dao.readOnlyTransaction { tx =>
       val userEmailAddrs = tx.loadUserEmailAddresses(userId)
       throwForbiddenUnless(userEmailAddrs.exists(_.emailAddress == emailAddress),
         "TyE6UKBQ2", "The user doesn't have that email address")
@@ -750,8 +750,8 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
       val addrVerified = userEmailAddr.copy(verifiedAt = Some(now))
       tx.updateUserEmailAddress(addrVerified)
 
-      // Admins can mark someone's email as not-verified, and sen another verif email.
-      // So, although the user already has an account, we might now be verifying the primary email.
+      // Admins can mark someone's primary email as *not* verified, and send another verif email.
+      // So, although the user already has an account, we might be verifying the primary email again.
       val verifiedPrimary =
         member.primaryEmailAddress == userEmailAddr.emailAddress && member.emailVerifiedAt.isEmpty
 
@@ -814,42 +814,6 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
     val doWhatInt = (request.body \ "doWhat").as[Int]
     val doWhat = EditMemberAction.fromInt(doWhatInt).getOrThrowBadArgument("TyE4BKQR28", "doWhat")
     request.dao.editMember(memberId, doWhat, request.who)
-    Ok
-  }
-
-
-  // Merge w editUser?
-  def approveRejectUser: Action[JsValue] = StaffPostJsonAction(maxBytes = 100) { request =>
-    val userId = (request.body \ "userId").as[UserId]
-    val doWhat = (request.body \ "doWhat").as[String]
-    doWhat match {
-      case "Approve" =>
-        request.dao.approveUser(userId, approverId = request.theUserId)
-      case "Reject" =>
-        request.dao.rejectUser(userId, approverId = request.theUserId)
-      case "Undo" =>
-        request.dao.undoApproveOrRejectUser(userId, approverId = request.theUserId)
-    }
-    Ok
-  }
-
-
-  // Merge w editUser?
-  def setIsAdminOrModerator: Action[JsValue] = AdminPostJsonAction(maxBytes = 100) { request =>
-    val userId = (request.body \ "userId").as[UserId]
-    val doWhat = (request.body \ "doWhat").as[String]
-    doWhat match {
-      case "GrantAdmin" =>
-        request.dao.setStaffFlags(userId, isAdmin = Some(true), changedById = request.theUserId)
-      case "RevokeAdmin" =>
-        request.dao.setStaffFlags(userId, isAdmin = Some(false), changedById = request.theUserId)
-      case "GrantModerator" =>
-        request.dao.setStaffFlags(userId, isModerator = Some(true), changedById = request.theUserId)
-      case "RevokeModerator" =>
-        request.dao.setStaffFlags(userId, isModerator = Some(false), changedById = request.theUserId)
-      case _ =>
-        throwBadReq("DwE2KGF8", "Bad 'doWhat'")
-    }
     Ok
   }
 

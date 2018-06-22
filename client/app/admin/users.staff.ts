@@ -72,21 +72,17 @@ export const UsersTab = createFactory({
 });
 
 
-export const EnabledUsersPanel = createFactory({
-  displayName: 'EnabledUsersPanel',
-  render: function() {
-    return UserList({ whichUsers: 'EnabledUsers', intro: r.p({},
-      "Enabled user accounts: (sorted by sign-up date, recent first)") });
-  }
-});
+function EnabledUsersPanel(props) {
+  return UserList({ whichUsers: 'EnabledUsers',
+      intro: r.p({},
+        "Enabled user accounts: (sorted by sign-up date, recent first)") });
+}
 
-export const WaitingUsersPanel = createFactory({
-  displayName: 'WaitingUsersPanel',
-  render: function() {
-    return UserList({ whichUsers: 'WaitingUsers', intro: r.p({},
+function WaitingUsersPanel(props) {
+  return UserList({ whichUsers: 'WaitingUsers',
+      intro: r.p({},
         "Users who have signed up to join this site, and are waiting for you to approve them:") });
-  }
-});
+}
 
 function NewUsersPanel(props) {
   return UserList({ whichUsers: 'NewUsers',
@@ -108,21 +104,21 @@ function SuspendedUsersPanel(props) {
 
 /*function SilencedUsersPanel(props) {
   return UserList({ whichUsers: 'SilencedUsers',
-    intro: r.p({},
-      "These users can login, but cannot do anything except for reading, and replying to " +
-      "direct messages from staff (so you can talk with them about why they got silenced)") });
+      intro: r.p({},
+        "These users can login, but cannot do anything except for reading, and replying to " +
+        "direct messages from staff (so you can talk with them about why they got silenced)") });
 }*/
 
 function ThreatsUsersPanel(props) {
   return UserList({ whichUsers: 'ThreatUsers',
-    intro: r.p({},
-      r.b({}, "Mild"), " threat users: You'll be notified about all their posts.", r.br(),
-      r.b({}, "Moderate"), " threat users: Their posts won't be visible until " +
-        "the posts have been approved by staff.") });
+      intro: r.p({},
+        r.b({}, "Mild"), " threat users: You'll be notified about all their posts.", r.br(),
+        r.b({}, "Moderate"), " threat users: Their posts won't be visible until " +
+          "the posts have been approved by staff.") });
 }
 
 
-export const InvitedUsersPanel = createFactory({
+const InvitedUsersPanel = createFactory({
   displayName: 'InvitedUsersPanel',
 
   getInitialState: function() {
@@ -256,25 +252,28 @@ const UserRow = createFactory({
   },
 
   approveUser: function() {
-    Server.approveRejectUser(this.props.user, 'Approve', () => {
+    const user: MemberInclDetailsWithStats = this.props.user;
+    Server.editMember(user.id, EditMemberAction.SetApproved, () => {
       this.setState({ wasJustApproved: true });
     });
   },
 
   rejectUser: function() {
-    Server.approveRejectUser(this.props.user, 'Reject', () => {
+    const user: MemberInclDetailsWithStats = this.props.user;
+    Server.editMember(user.id, EditMemberAction.SetUnapproved, () => {
       this.setState({ wasJustRejected: true });
     });
   },
 
   undoApproveOrReject: function() {
-    Server.approveRejectUser(this.props.user, 'Undo', () => {
+    const user: MemberInclDetailsWithStats = this.props.user;
+    Server.editMember(user.id, EditMemberAction.ClearApproved, () => {
       this.setState({ wasJustRejected: false, wasJustApproved: false });
     });
   },
 
   render: function() {
-    const user: MemberInclDetailsWithStats= this.props.user;
+    const user: MemberInclDetailsWithStats = this.props.user;
     const nowMs: WhenMs = this.props.now;
 
     let actions;
@@ -312,11 +311,13 @@ const UserRow = createFactory({
     const isDeleted = !!user.deletedAt;
 
     const modifiers = rFragment({},
+        user.isApproved !== false ? null :
+            r.span({ className: 's_A_Us_UsL_U_Modif' }, " — rejected"),
         !isStaff(user) ? null :
             r.span({ className: 's_A_Us_UsL_U_Modif' }, user.isAdmin ? " — admin" : " — moderator"),
         !threatLevel || threatLevel < ThreatLevel.MildThreat ? null :
             r.span({ className: 's_A_Us_UsL_U_Modif' },
-              user.threatLevel === ThreatLevel.MildThreat ? " — mild threat" : " — moderate threat"),
+              threatLevel === ThreatLevel.MildThreat ? " — mild threat" : " — moderate threat"),
         !user_isSuspended(user, nowMs) ? null :
             r.span({ className: 's_A_Us_UsL_U_Modif' }, " — suspended"),
         !isDeactivated || isDeleted ? null :
@@ -324,7 +325,7 @@ const UserRow = createFactory({
         !isDeleted ? null :
           r.span({ className: 's_A_Us_UsL_U_Modif' }, " — deleted"));
 
-    const notVerified = !user.email || user.emailVerifiedAtMs ? null :
+    const emailNotVerified = !user.email || user.emailVerifiedAtMs ? null :
       r.span({ className: 's_A_Us_UsL_U_Modif' }, " — not verified");
 
     let lastSeen;
@@ -347,7 +348,7 @@ const UserRow = createFactory({
     return (
       r.tr({},
         r.td({}, Link({ to: linkToUserInAdminArea(user.id) }, usernameElem, fullNameElem), modifiers),
-        r.td({}, user.email, notVerified),
+        r.td({}, user.email, emailNotVerified),
         actionsCell,
         r.td({}, lastSeen),
         r.td({}, topicsViewed),

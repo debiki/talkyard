@@ -52,6 +52,7 @@ export const UserProfileAdminView = createFactory({
   },
 
   loadCompleteUser: function() {
+    if (this.isGone) return;
     this.setState({ user: null });
     const params = this.props.match.params;
     Server.loadUserAnyDetails(params.userId, (user: MemberInclDetails, stats: UserStats) => {
@@ -76,24 +77,21 @@ export const UserProfileAdminView = createFactory({
     Server.resendEmailAddrVerifEmail(user.id, user.email);
   },
 
-  toggleIsAdmin: function() {  // merge?
-    const doWhat = this.state.user.isAdmin ? 'RevokeAdmin' : 'GrantAdmin';
-    Server.setIsAdminOrModerator(this.state.user.id, doWhat, () => {
-      this.loadCompleteUser();
-    });
+  toggleIsAdmin: function() {
+    const user: MemberInclDetails = this.state.user;
+    const doWhat = user.isAdmin ? EditMemberAction.SetNotAdmin : EditMemberAction.SetIsAdmin;
+    Server.editMember(user.id, doWhat, this.loadCompleteUser);
   },
 
-  toggleIsModerator: function() {  // merge?
-    const doWhat = this.state.user.isModerator ? 'RevokeModerator' : 'GrantModerator';
-    Server.setIsAdminOrModerator(this.state.user.id, doWhat, () => {
-      this.loadCompleteUser();
-    });
+  toggleIsModerator: function() {
+    const user: MemberInclDetails = this.state.user;
+    const doWhat = user.isModerator ? EditMemberAction.SetNotModerator : EditMemberAction.SetIsModerator;
+    Server.editMember(user.id, doWhat, this.loadCompleteUser);
   },
 
   unsuspendUser: function() {
-    Server.unsuspendUser(this.state.user.id, () => {
-      this.loadCompleteUser();
-    });
+    const user: MemberInclDetails = this.state.user;
+    Server.unsuspendUser(user.id, this.loadCompleteUser);
   },
 
   reloadUser: function() {
@@ -106,11 +104,11 @@ export const UserProfileAdminView = createFactory({
     const user: MemberInclDetails = this.state.user;
     const me: Myself = store.me;
     if (!user)
-      return r.p({}, 'Loading...');
+      return r.p({}, "Loading...");
 
     const showPublProfileButton =
         ExtLinkButton({ href: this.publicProfileLink(), id: 'e2eA_Us_U_ShowPublProfB' },
-          "Show Public Profile");
+          "View Public Profile");
 
     let usernameAndFullName: string = user.username;
     if (user.fullName) {
@@ -180,17 +178,18 @@ export const UserProfileAdminView = createFactory({
 
     const isApprovedRow = user.isGroup || !settings.userMustBeApproved ? null : makeRow(
         "Approved: ",
-        user.isApproved,
-        Button({
-            onClick: makeEditMemberFn(user.isApproved ?
-                EditMemberAction.SetApproved : EditMemberAction.SetUnapproved) },
-          user.isApproved ? "Unapprove" : "Approve"));
+        user.approvedAtMs ? (user.isApproved ? "Yes" : "No, rejected") : "Undecided",
+        user.approvedAtMs
+            ? Button({ onClick: makeEditMemberFn(EditMemberAction.ClearApproved) }, "Undo")
+            : rFragment({},
+                Button({ onClick: makeEditMemberFn(EditMemberAction.SetApproved) }, "Approve"),
+                Button({ onClick: makeEditMemberFn(EditMemberAction.SetUnapproved) }, "Reject")));
 
 
     const suspendedText = user.suspendedTillEpoch
-        ? 'from ' + moment(user.suspendedAtEpoch).format('YYYY-MM-DD') +
-            ' to ' + moment(user.suspendedTillEpoch).format('YYYY-MM-DD HH:mm') +
-            ', reason: ' + user.suspendedReason
+        ? "from " + moment(user.suspendedAtEpoch).format('YYYY-MM-DD') +
+            " to " + moment(user.suspendedTillEpoch).format('YYYY-MM-DD HH:mm') +
+            ", reason: " + user.suspendedReason
         : "No";
 
     let whyCannotSuspend;
@@ -204,7 +203,7 @@ export const UserProfileAdminView = createFactory({
     let userSuspendedNow = user.suspendedTillEpoch && Date.now() <= user.suspendedTillEpoch;
     if (userSuspendedNow) {
       suspendButton =
-          Button({ onClick: this.unsuspendUser }, 'Unsuspend');
+          Button({ onClick: this.unsuspendUser }, "Unsuspend");
     }
     else if (whyCannotSuspend) {
       suspendButton = whyCannotSuspend;
@@ -298,7 +297,7 @@ const SuspendDialog = createComponent({
   doSuspend: function() {
     const numDays = parseInt(this.refs.daysInput.getValue());
     if (isNaN(numDays)) {
-      alert('Please enter a number');
+      alert("Please enter a number");
       return;
     }
     const reason = this.refs.reasonInput.getValue();
@@ -322,14 +321,14 @@ const SuspendDialog = createComponent({
         ModalHeader({},
           ModalTitle({}, "Suspend User")),
         ModalBody({},
-          Input({ type: 'number', label: 'Suspend for how many days?', ref: 'daysInput' }),
-          Input({ type: 'text', label: 'Why suspend this user?',
+          Input({ type: 'number', label: "Suspend for how many days?", ref: 'daysInput' }),
+          Input({ type: 'text', label: "Why suspend this user?",
               help: "This will be visible to everyone, " +
               "on the user's public profile, and shown to the user when s/he tries to login. " +
               "Keep it short.", ref: 'reasonInput' })),
         ModalFooter({},
-          Button({ onClick: this.doSuspend }, 'Suspend'),
-          Button({ onClick: this.close }, 'Cancel'))));
+          Button({ onClick: this.doSuspend }, "Suspend"),
+          Button({ onClick: this.close }, "Cancel"))));
   }
 });
 

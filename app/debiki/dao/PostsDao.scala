@@ -1148,11 +1148,11 @@ trait PostsDao {
     // If a question's answer got deleted, change question status to unsolved, and reopen it. [2JPKBW0]
     newMeta.answerPostUniqueId foreach { answerPostId =>
       if (postsDeletedIds contains answerPostId) {
+        answerGotDeleted = true
         // Dupl line. [4UKP58B]
         newMeta = newMeta.copy(answeredAt = None, answerPostUniqueId = None, closedAt = None)
         // Need change from the Solved icon: ✓  to a question mark: (?) icon, in the topic list:
         markSectionPageStale = true
-        answerGotDeleted = true
       }
     }
 

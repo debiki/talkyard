@@ -665,19 +665,6 @@ export function editMember(userId: UserId, doWhat: EditMemberAction, success: ()
 }
 
 
-export function setIsAdminOrModerator(userId: UserId, doWhat: string, success: () => void) {
-  postJsonSuccess('/-/set-is-admin-or-moderator', success, { userId: userId, doWhat: doWhat });
-}
-
-
-export function approveRejectUser(user: MemberInclDetails, doWhat: string, success: () => void) {
-  postJsonSuccess( '/-/approve-reject-user', success, {
-    userId: user.id,
-    doWhat: doWhat
-  });
-}
-
-
 export function suspendUser(userId: UserId, numDays: number, reason: string, success: () => void) {
   postJsonSuccess('/-/suspend-user', success, {
     userId: userId,

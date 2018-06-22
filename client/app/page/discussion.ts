@@ -285,7 +285,7 @@ export const TitleBodyComments = createComponent({
       // Show no title for the homepage — it should have its own custom HTML with
       // a title and other things.
       // Embedded comment pages: Show comments only (no title or orig post needed,
-      // because there's a blog post instead). Unless we're staff (probably) and viewing
+      // because there's a blog post instead). Unless we're viewing the comments page
       // directly over at the Talkyard site (!store.isEmbedde). [5UKWSP4]
       // And show no title if we're showing a comment not the article as the root post.
     }

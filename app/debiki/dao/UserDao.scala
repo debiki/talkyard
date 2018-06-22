@@ -143,7 +143,7 @@ trait UserDao {
           // Noop.
       }
 
-      /*val auditLogEntry = AuditLogEntry(
+      SHOULD /* val auditLogEntry = AuditLogEntry(
         siteId = siteId,
         id = AuditLogEntry.UnassignedId,
         didWhat = AuditLogEntryType.   ... what? new AuditLogEntryType enums, or one single EditUser enum,
@@ -201,16 +201,14 @@ trait UserDao {
       case SetIsAdmin =>
         checkNotPromotingSuspended()
         checkNotPromotingOrDemotingOneself()
-        if (member.isModerator) return Bad("Cannot be both moderator and admin at the same time")
-        member.copy(isAdmin = true)
+        member.copy(isAdmin = true, isModerator = false)
       case SetNotAdmin =>
         checkNotPromotingOrDemotingOneself()
         member.copy(isAdmin = false)
       case SetIsModerator =>
         checkNotPromotingSuspended()
         checkNotPromotingOrDemotingOneself()
-        if (member.isAdmin) return Bad("Cannot be both moderator and admin at the same time")
-        member.copy(isModerator = true)
+        member.copy(isModerator = true, isAdmin = false)
       case SetNotModerator =>
         checkNotPromotingOrDemotingOneself()
         member.copy(isModerator = false)
@@ -219,67 +217,6 @@ trait UserDao {
       case ex: QuickMessageException =>
         Bad(ex.message)
     }
-  }
-
-
-  CLEAN_UP // use editMember() instead
-  def approveUser(userId: UserId, approverId: UserId) {
-    approveRejectUndoUser(userId, approverId = approverId, isapproved = Some(true))
-  }
-
-
-  CLEAN_UP // use editMember() instead
-  def rejectUser(userId: UserId, approverId: UserId) {
-    approveRejectUndoUser(userId, approverId = approverId, isapproved = Some(false))
-  }
-
-
-  CLEAN_UP // use editMember() instead
-  def undoApproveOrRejectUser(userId: UserId, approverId: UserId) {
-    approveRejectUndoUser(userId, approverId = approverId, isapproved = None)
-  }
-
-
-  private def approveRejectUndoUser(userId: UserId, approverId: UserId,
-        isapproved: Option[Boolean]) {
-    readWriteTransaction { transaction =>
-      var user = transaction.loadTheMemberInclDetails(userId)
-      user = user.copy(
-        isApproved = isapproved,
-        approvedAt = Some(transaction.now.toJavaDate),
-        approvedById = Some(approverId))
-      transaction.updateMemberInclDetails(user)
-    }
-    removeUserFromMemCache(userId)
-  }
-
-
-  CLEAN_UP // use editMember() instead
-  def setStaffFlags(userId: UserId, isAdmin: Option[Boolean] = None,
-        isModerator: Option[Boolean] = None, changedById: UserId) {
-    require(isAdmin.isDefined != isModerator.isDefined, "DwE4KEP20")
-    if (userId == changedById)
-      throwForbidden("DwE4KEF2", "Cannot change one's own is-admin and is-moderator state")
-
-    readWriteTransaction { transaction =>
-      var user = transaction.loadTheMemberInclDetails(userId)
-
-      if (user.isSuspendedAt(transaction.now.toJavaDate) && (
-          isAdmin.contains(true) || isModerator.contains(true)))
-        throwForbidden("DwE2KEP8", "User is suspended")
-
-      if (isAdmin.contains(true) && user.isModerator ||
-          isModerator.contains(true) && user.isAdmin ||
-          isAdmin.contains(true) && isModerator.contains(true))
-        throwForbidden("EdE4PJ8SY0", "Cannot be both admin and moderator at the same time")
-
-      user = user.copy(
-        isAdmin = isAdmin.getOrElse(user.isAdmin),
-        isModerator = isModerator.getOrElse(user.isModerator))
-      // COULD update audit log.
-      transaction.updateMemberInclDetails(user)
-    }
-    removeUserFromMemCache(userId)
   }
 
 

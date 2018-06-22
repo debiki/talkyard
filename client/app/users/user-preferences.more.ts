@@ -611,7 +611,7 @@ export const Account = createFactory({
             r.div({}, status),
             r.div({},
               isVerified ? null : (
-                  this.state.verifEmailsSent[addr.emailAddress] ? "Sent. " :
+                  this.state.verifEmailsSent[addr.emailAddress] ? "Verification email sent. " :
                 Button({ onClick: () => this.resendEmailAddrVerifEmail(addr.emailAddress),
                     className: 'e_SendVerifEmB' }, t.upp.SendVerifEmail)),
               isPrimary || isLoginMethod ? null :
