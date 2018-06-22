@@ -14,7 +14,7 @@
 
 var t: TalkyardTranslations;
 
-var t_en: TalkyardTranslations = t = {
+var t_en_US: TalkyardTranslations = t = {
 
   // A single or a few words, sorted alphabetically, to reuse everywhere.
 

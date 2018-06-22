@@ -379,9 +379,11 @@ class Nashorn(globals: Globals) {
         |  try {
         |    // Each language file creates a 't_(lang-code)' global variable, e.g. 't_en' for English.
         |    // And they all set a global 'var t' to themselves. Update 't' here; it gets used
-        |    // during rendering.
+        |    // during rendering. If language missing (maybe after renaming a code, e.g. 'en' —> 'en_US'
+        |    // which I actually just did CLEAN_UP migrate 'en' to 'en_US' in the database [5KBKEWQ2]),
+        |    // fallback to English.
         |    var langCode = theStore.settings.languageCode || '$languageCode';
-        |    t = global['t_' + langCode];
+        |    t = global['t_' + langCode] || t_en_US;
         |    eds.uploadsUrlPrefix =   // [7AKBQ2]
         |       cdnOriginOrEmpty + '${ed.server.UploadsUrlBasePath}' + theStore.pubSiteId + '/';
         |    var html = debiki2.renderTitleBodyCommentsToString();
@@ -410,8 +412,8 @@ class Nashorn(globals: Globals) {
       }
 
       // Sync with the languages in the /translations/ dir, and the admin UI language selector. [5JUKQR2]
-      addTranslation("en")
-      addTranslation("sv")
+      addTranslation("en_US")
+      addTranslation("sv_SE")
 
       // Add render page code.
       val rendererScript = loadFileAsString(s"/public/res/server-bundle$min.js", isTranslation = false)

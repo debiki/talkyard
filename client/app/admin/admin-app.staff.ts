@@ -811,9 +811,10 @@ const LanguageSettings = createFactory({
 
     // Sync this list with the language files in /translations/ and the server scripts bundle. [5JUKQR2].
     const languageOptions = [{
-      value: 'en', label: "English"
+      // Don't mention this is en-US, people might then want -GB too and -AU (for the UK and Australia)?
+      value: 'en_US', label: "English"
     }, {
-      value: 'sv', label: "Swedish"
+      value: 'sv_SE', label: "Swedish"
     }];
 
     const selectedLangCode = firstDefinedOf(editedSettings.languageCode, currentSettings.languageCode);
@@ -840,7 +841,7 @@ const LanguageSettings = createFactory({
                   setLangCode(langCodeAndName.value);
                 } }),
             rb.HelpBlock({}, "The language for the user interface, e.g. button titles. " +
-              "(But the admin area — where you are now — is always in English though.)"))),
+              "(But the admin area — where you are now — is always in English.)"))),
       ));
   }
 });

@@ -92,6 +92,8 @@ Contributing
 Want to contribute? Feel free to say hello in [our community](https://www.talkyard.io/forum/),
 or maybe open an issue or a PR (pull request) here at GitHub.
 
+Here's how to translate to a new language: [i18n-README](translations/i18n-README.md) (step 1 and 2 only).
+
 You need to read and agree to our [Contributor License Agreement](./docs/CLA-v1.txt). You do that by
 reading it (please do — there's a human friendly intro) and appending a single line
 paragraph with your real name (no pseudonyms) and the following text, to all your commit messages:
