@@ -604,9 +604,14 @@ export function patchTheStore(storePatch: StorePatch) {
 export function maybeLoadAndShowNewPage(store: Store,
         history, location: Location, newLocation?: Location) {
 
-  // No router, so no history or location, if in embedded discussion.
-  if (eds.isInEmbeddedCommentsIframe)
+  // No router, so no history or location, if in embedded comments discussion.
+  if (!history || !location) {
+    // @ifdef DEBUG
+    dieIf(!store.isEmbedded, 'TyE5HKW2RK');
+    dieIf(window.location.pathname !== '/-/embedded-comments', 'TyE2KREP0'); // [1FBZQ4]
+    // @endif
     return;
+  }
 
   let newUrlPath = newLocation ? newLocation.pathname : undefined;
 

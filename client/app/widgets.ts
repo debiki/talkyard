@@ -103,7 +103,12 @@ function makeWidget(what, spaceWidgetClasses: string, extraProps?) {
     // in a different React root. The admin app is it's own SPA [6TKQ20] so, when in the admin area,
     // links to user profiles and discussions, are external. And vice versa.
     const afterClick = newProps.afterClick;
-    let isExternal = newProps.ext || eds.isInEmbeddedCommentsIframe;   // CLEAN_UP remove isInEmbeddedCommentsIframe? not set server side, works anyway, so cannot be needed?
+
+    let isExternal = newProps.ext || eds.isInEmbeddedCommentsIframe;   // CLEAN_UP remove isInEmbeddedCommentsIframe? not set server side, works anyway, so cannot be needed? [2KBFU4]
+    // @ifdef DEBUG
+    dieIf(isServerSide() && eds.isInEmbeddedCommentsIframe, 'TyE2KWT05');
+    // @endif
+
     const linksToAdminArea = newProps.href && newProps.href.search('/-/admin/') === 0; // dupl (5JKSW20)
     isExternal = isExternal || eds.isInAdminArea !== linksToAdminArea;
     delete newProps.afterClick;

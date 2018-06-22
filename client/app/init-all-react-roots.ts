@@ -31,23 +31,6 @@
 // REFACTOR rename this file to render-page-in-browser.ts? and combine with start-page.ts? [7VUBWR45]
 
 
-export function startRemainingReactRoots() {
-  if (eds.isInEmbeddedCommentsIframe) {
-    // Skip sidebars, when inside an iframe — they'd become sidebars inside the iframe, which
-    // would look weird, + the watchbar doesn't make sense, would try to navigate inside the iframe.
-  }
-  else {
-    const topbarElem = document.getElementById('theTopbar');
-    if (topbarElem)
-      ReactDOM.render(
-          topbar.TopBar({}), topbarElem);
-
-    createSidebar();
-    watchbar.createWatchbar();
-  }
-}
-
-
 export function startMainReactRoot(reactRenderMethodName: 'render' | 'hydrate') {
   // /-/admin/*
   // app/views/adminPage.scala.html
@@ -129,7 +112,10 @@ export function startMainReactRoot(reactRenderMethodName: 'render' | 'hydrate') 
   else {
     // Compare with [2FKB5P].
 
-    const isEmbCmts: boolean = eds.isInEmbeddedCommentsIframe;  // CLEAN_UP always false?
+    const isEmbCmts: boolean = eds.isInEmbeddedCommentsIframe; // CLEAN_UP always false? remove DO_AFTER 2018-09-01? [2KBFU4]
+    // @ifdef DEBUG
+    dieIf(isEmbCmts, 'TyE2RKBP3');
+    // @endif
 
     // A route for about-user pages and the staff area.
     const sectionsAndPages = [

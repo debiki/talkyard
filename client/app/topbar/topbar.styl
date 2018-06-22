@@ -395,14 +395,9 @@ html.es-watchbar-open
 .esMyMenu_adminHelp
   max-width: 200px;
 
-.esTopbar,
-#theTopbar
+.esTopbar
   position: relative;
   z-index: 5;
-
-html:not(.dw-react-started):not(.es-forum)  // (skip forum because it renders the topbar itself)
-  #theTopbar
-    min-height: 52px; // avoids height changes when filled with contents
 
 // Place the title on a separate line, if narrow screen, so the open-watchbar btn won't
 // push it to the right.

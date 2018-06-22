@@ -202,8 +202,15 @@ function renderPageInBrowser() {
   debiki2.ReactStore.activateVolatileData();
   const timeAfterUserData = performance.now();
 
-  debiki2.startRemainingReactRoots();
-  const timeAfterRemainingRoots = performance.now();
+  // Skip sidebars, when (rendering as if we were) inside an iframe — they'd become sidebars
+  // inside the iframe, which would look weird, + the watchbar doesn't make sense;
+  // it'd try to navigate inside the iframe.
+  let timeAfterRemainingRoots = NaN;
+  if (!store.isEmbedded) {
+    debiki2.createSidebar();
+    debiki2.watchbar.createWatchbar();
+    timeAfterRemainingRoots = performance.now();
+  }
 
   console.log(`Millis to ReactDOM.${reactRenderMethod} page: ${timeAfterPageContent - timeBefore}` +
     ", time-ago: " + (timeAfterTimeAgo - timeBeforeTimeAgo) +
