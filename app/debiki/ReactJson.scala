@@ -135,6 +135,7 @@ class JsonMaker(dao: SiteDao) {
       "me" -> noUserSpecificData(everyonesPerms),
       "rootPostId" -> JsNumber(PageParts.BodyNr),
       "usersByIdBrief" -> JsObject(Nil),
+      "pageMetaBriefById" -> JsObject(Nil),
       "siteSections" -> JsArray(),
       "socialLinksHtml" -> JsNull,
       "currentPageId" -> pageId,
@@ -348,6 +349,7 @@ class JsonMaker(dao: SiteDao) {
       "me" -> noUserSpecificData(authzCtx.permissions),
       "rootPostId" -> JsNumber(BigDecimal(renderParams.thePageRoot)),  // ? why BigDecimal ?
       "usersByIdBrief" -> usersByIdJson,
+      "pageMetaBriefById" -> JsObject(Nil),
       "siteSections" -> makeSiteSectionsJson(),
       "socialLinksHtml" -> JsString(socialLinksHtml),
       "currentPageId" -> page.id,
@@ -401,6 +403,7 @@ class JsonMaker(dao: SiteDao) {
       "maxUploadSizeBytes" -> globals.maxUploadSizeBytes,
       "siteSections" -> makeSiteSectionsJson(),
       "usersByIdBrief" -> Json.obj(),
+      "pageMetaBriefById" -> JsObject(Nil),
       "strangersWatchbar" -> makeStrangersWatcbarJson(),
       "pagesById" -> Json.obj(),
       "publicCategories" -> JsArray())
@@ -1363,7 +1366,7 @@ object JsonMaker {
   }
 
 
-  def reviewStufToJson(stuff: ReviewStuff, usersById: Map[UserId, User]): JsValue = {
+  def reviewStufToJson(stuff: ReviewStuff): JsValue = {
     val anyPost = stuff.post match {
       case None => JsNull
       case Some(post) =>
@@ -1706,6 +1709,22 @@ object JsX {
       "folder" -> pagePath.folder,
       "showId" -> pagePath.showId,
       "slug" -> pagePath.pageSlug)
+
+  def JsPageMetaBrief(meta: PageMeta): JsValue =  // Typescript interface PageMetaBrief
+    Json.obj(
+      "pageId" -> meta.pageId,
+      "createdAtMs" -> JsDateMs(meta.createdAt),
+      "createdById" -> meta.authorId,
+      "lastReplyAtMs" -> JsDateMsOrNull(meta.lastReplyAt),
+      "lastReplyById" -> JsNumberOrNull(meta.lastReplyById),
+      "pageRole" -> meta.pageRole.toInt,
+      "categoryId" -> JsNumberOrNull(meta.categoryId),
+      "embeddingPageUrl" -> JsStringOrNull(meta.embeddingPageUrl),
+      "closedAtMs" -> JsDateMsOrNull(meta.closedAt),
+      "lockedAtMs" -> JsDateMsOrNull(meta.lockedAt),
+      "frozenAtMs" -> JsDateMsOrNull(meta.frozenAt),
+      "hiddenAtMs" -> JsWhenMsOrNull(meta.hiddenAt),
+      "deletedAtMs" -> JsDateMsOrNull(meta.deletedAt))
 
   def JsFlag(flag: PostFlag): JsValue =
     Json.obj(

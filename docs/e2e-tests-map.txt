@@ -316,6 +316,20 @@ admin -
   approve stuff:  (2WY0)
   undoReviewDecision: [4JKWWD4]
   ... lots of stuff ...
+  reviews - [2VSP5Q8]
+    delete page for review task -
+      gets invalidated:
+      restore page, active again:
+    delete post for review task -
+      gets invalidated:
+      restore page, active again:
+    delete ancestor post for review task -
+      task gets invalidated:
+      undelete ancestor, active again:
+    delete review task post -
+      task gets invalidated:
+      then delete & restore ancestor post tree: task not reactivated
+      then delete & restore page: task not reactivated
 
 superadmin -
   ... lots of stuff ...

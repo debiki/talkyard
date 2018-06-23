@@ -526,14 +526,15 @@ trait PagesDao {
       // so all topics in the sub community will get deleted.
       // And remove the sub community from the watchbar's Communities section.
       // (And if undeleting the sub community, undelete the root category too.)
-      deletePagesImpl(pageIds, deleterId, browserIdData, undelete = undelete)(tx)
+      deletePagesImpl(pageIds, deleterId, browserIdData, doingReviewTask = None,
+          undelete = undelete)(tx)
     }
     refreshPagesInAnyCache(pageIds.toSet)
   }
 
 
   def deletePagesImpl(pageIds: Seq[PageId], deleterId: UserId, browserIdData: BrowserIdData,
-        undelete: Boolean = false)(tx: SiteTransaction) {
+        doingReviewTask: Option[ReviewTask], undelete: Boolean = false)(tx: SiteTransaction) {
 
     val deleter = tx.loadTheUser(deleterId)
     if (!deleter.isStaff)
@@ -564,6 +565,15 @@ trait PagesDao {
             version = pageMeta.version + 1), baseAuditEntry)
         }
       newMeta = newMeta.copy(numPostsTotal = newMeta.numPostsTotal + 1)
+
+      // Invalidate, or re-activate, review tasks whose posts now get deleted / undeleted.
+      // Also done here: [4JKAM7] when deleting posts.
+      if (!undelete) {
+        invalidateReviewTasksForPageId(pageId, doingReviewTask,tx)
+      }
+      else {
+        reactivateReviewTasksForPageId(pageId, doingReviewTask, tx)
+      }
 
       tx.updatePageMeta(newMeta, oldMeta = pageMeta, markSectionPageStale = true)
       tx.insertAuditLogEntry(auditLogEntry)

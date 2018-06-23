@@ -285,7 +285,14 @@ const ReviewTask = createComponent({
     const anyDot = whys.length === 1 ? '.' : '';
     const manyWhysClass = whys.length > 1 ? ' esReviewTask-manyWhys' : '';
 
-    const itHasBeenHidden = !post.bodyHiddenAtMs ? null :
+    const itHasBeenDeleted = !post.deletedAtMs ? null :
+      "It has been deleted. ";
+
+    const pageMeta: PageMetaBrief = store.pageMetaBriefById[post.pageId] || {};
+    const pageHasBeenDeleted = !pageMeta.deletedAtMs ? null :
+      "The page has been deleted. ";
+
+    const itHasBeenHidden = !post.bodyHiddenAtMs || itHasBeenDeleted || pageHasBeenDeleted ? null :
       "It has been hidden; only staff can see it. ";
 
     const author = store.usersByIdBrief[post.createdById] || {};
@@ -344,7 +351,9 @@ const ReviewTask = createComponent({
             whys.map((why) => r.li({ key: why }, why))),
           anyDot),
         r.div({},
+          itHasBeenDeleted,
           itHasBeenHidden,
+          pageHasBeenDeleted,
           writtenByInfo,
           lastApprovedEditInfo,
           flaggedByInfo,

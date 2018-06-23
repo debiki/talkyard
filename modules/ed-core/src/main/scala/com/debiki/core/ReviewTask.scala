@@ -103,6 +103,11 @@ case class ReviewTask(
   postId: Option[PostId] = None,
   postNr: Option[PostNr] = None) {
 
+  // Don't test:
+  // - invalidatedAt >= moreReasonsAt — because if a post got deleted, and afterwards a staff
+  //   member flags it (they can see deleted posts) — then, a review reason gets added
+  //   to the review task, when it is already invalidated.
+
   require(reasons.nonEmpty, "EsE3FK21")
   require(!moreReasonsAt.exists(_.getTime < createdAt.getTime), "EsE7UGYP2")
   require(!decidedAt.exists(_.getTime < createdAt.getTime), "TyE6UHQ21")

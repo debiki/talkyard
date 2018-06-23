@@ -581,6 +581,23 @@ interface Page {
 }
 
 
+interface PageMetaBrief {
+  pageId: PageId;
+  createdAtMs: WhenMs;
+  createdById: UserId;
+  lastReplyAtMs?: WhenMs;
+  lastReplyById?: UserId;
+  pageRole: PageRole;
+  categoryId: CategoryId;
+  embeddingPageUrl?: string;
+  closedAtMs?: WhenMs;
+  lockedAtMs?: WhenMs;
+  frozenAtMs?: WhenMs;
+  hiddenAtMs?: WhenMs;
+  deletedAtMs?: WhenMs;
+}
+
+
 interface Origins {
   remoteOriginOrEmpty: string;
   anyCdnOrigin?: string;
@@ -615,6 +632,7 @@ interface Store extends Origins {
   isViewingAs?: boolean;
   rootPostId: number;
   usersByIdBrief: { [userId: number]: BriefUser };
+  pageMetaBriefById: { [pageId: string]: PageMetaBrief };
   isWatchbarOpen: boolean;
   isContextbarOpen: boolean;
   shallSidebarsOverlayPage?: boolean;
@@ -1104,6 +1122,7 @@ interface StorePatch {
   // rename to postAuthorsBrief? So one sees they can be ignored if the posts are
   // ignored (because the page version is too old).
   usersBrief?: BriefUser[];
+  pageMetasBrief?: PageMetaBrief[];
   superadmin?: SuperAdminStuff;
   me?: Myself;
   tagsStuff?: TagsStuff;

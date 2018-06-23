@@ -24,6 +24,7 @@ import debiki.EdHttp._
 import java.{util => ju}
 import scala.collection.mutable.ArrayBuffer
 import scala.collection.{mutable, immutable}
+import play.{api => p}
 
 
 /** Review stuff: a ReviewTask and the users and posts it refers to.
@@ -143,11 +144,11 @@ trait ReviewsDao {
       task.pageId.map(pageIdsToRefresh.add)
 
       if (task.invalidatedAt.isDefined) {
-        // This should happen if many users flag a post, and one or different moderators click Delete,
+        // This can happen if many users flag a post, and one or different moderators click Delete,
         // for each flag. Then many delete decisions get enqueued, for the same post
         // — and when the first delete decision gets carried out, the other review tasks
         // become invalidated (because now the post is gone). [2MFFKR0]
-        // That's fine, just do nothing.
+        // That's fine, just do nothing. (2KYF5A)
         return
       }
 
@@ -164,9 +165,13 @@ trait ReviewsDao {
 
       task.postNr foreach { postNr =>
         val post = tx.loadPost(task.postId getOrDie "EsE5YGK02") getOrElse {
-          // Deleted? Ignore it then.
+          p.Logger.warn(s"s$siteId: Review task $taskId: Post ${task.postId} gone, why? [TyE5KQIBQ2]")
           return
         }
+
+        // Currently review tasks don't always get invalidated, when posts and pages get deleted. (2KYF5A)
+        if (post.deletedAt.isDefined)
+          return
 
         pageIdsToRefresh.add(post.pageId)
 
@@ -184,27 +189,27 @@ trait ReviewsDao {
                 // SPAM RACE COULD unhide only if rev nr that got hidden <=
                 // rev that was reviewed. [6GKC3U]
                 changePostStatusImpl(postNr = post.nr, pageId = post.pageId,
-                    PostStatusAction.UnhidePost, userId = completedById, tx)
+                    PostStatusAction.UnhidePost, userId = decidedById, doingReviewTask = Some(task), tx)
               }
             }
             else {
               if (task.isForBothTitleAndBody) {
                 // This is for a new page. Approve the *title* here, and the *body* just below.
                 dieIf(!task.postNr.contains(PageParts.BodyNr), "EsE5TK0I2")
-                approvePostImpl(post.pageId, PageParts.TitleNr, approverId = completedById,
-                  tx)
+                approvePostImpl(post.pageId, PageParts.TitleNr, approverId = decidedById, tx)
               }
-              approvePostImpl(post.pageId, post.nr, approverId = completedById, tx)
+              approvePostImpl(post.pageId, post.nr, approverId = decidedById, tx)
               perhapsCascadeApproval(post.createdById, pageIdsToRefresh)(tx)
             }
           case ReviewDecision.DeletePostOrPage =>
             if (task.isForBothTitleAndBody) {
               val pageId = task.pageId getOrDie "TyE4K85R2"
-              deletePagesImpl(Seq(pageId), deleterId = completedById, browserIdData)(tx)
+              deletePagesImpl(Seq(pageId), deleterId = decidedById,
+                  browserIdData, doingReviewTask = Some(task))(tx)
             }
             else {
-              deletePostImpl(post.pageId, postNr = post.nr, deletedById = completedById,
-                browserIdData, tx)
+              deletePostImpl(post.pageId, postNr = post.nr, deletedById = decidedById,
+                  doingReviewTask = Some(task), browserIdData, tx)
             }
         }
       }
@@ -279,14 +284,65 @@ trait ReviewsDao {
   }
 
 
-  def loadReviewStuff(olderOrEqualTo: ju.Date, limit: Int): (Seq[ReviewStuff], Map[UserId, User]) =
+  def invalidateReviewTasksForPosts(posts: Iterable[Post], doingReviewTask: Option[ReviewTask],
+        tx: SiteTransaction) {
+    invalidatedReviewTasksImpl(posts, shallBeInvalidated = true, doingReviewTask, tx)
+  }
+
+
+  def reactivateReviewTasksForPosts(posts: Iterable[Post], doingReviewTask: Option[ReviewTask],
+         tx: SiteTransaction) {
+    invalidatedReviewTasksImpl(posts, shallBeInvalidated = false, doingReviewTask, tx)
+  }
+
+
+  def invalidateReviewTasksForPageId(pageId: PageId, doingReviewTask: Option[ReviewTask],
+         tx: SiteTransaction) {
+    val posts = tx.loadPostsOnPage(pageId)
+    invalidatedReviewTasksImpl(posts, shallBeInvalidated = true, doingReviewTask, tx)
+  }
+
+
+  def reactivateReviewTasksForPageId(pageId: PageId, doingReviewTask: Option[ReviewTask],
+         tx: SiteTransaction) {
+    val posts = tx.loadPostsOnPage(pageId)
+    invalidatedReviewTasksImpl(posts, shallBeInvalidated = false, doingReviewTask, tx)
+  }
+
+
+  private def invalidatedReviewTasksImpl(posts: Iterable[Post], shallBeInvalidated: Boolean,
+        doingReviewTask: Option[ReviewTask], tx: SiteTransaction) {
+    TESTS_MISSING // for all 4 fns that call this fn  [2VSP5Q8]
+
+    val now = globals.now().toJavaDate
+    val tasksLoaded = tx.loadReviewTasksAboutPostIds(posts.map(_.id))
+
+    val tasksToUpdate = tasksLoaded filter { task =>
+      doingReviewTask.forall(_.id != task.id) && // the doingReviewTask is updated elsewhere
+        task.completedAt.isEmpty &&
+        task.invalidatedAt.isDefined != shallBeInvalidated
+    }
+
+    unimplementedIf(!shallBeInvalidated && tasksToUpdate.nonEmpty,
+        "Re-activating review tasks [TyE2KDFY3]")
+
+    val tasksAfter = tasksToUpdate.map { task =>
+      task.copy(invalidatedAt = if (shallBeInvalidated) Some(now) else None)
+    }
+
+    tasksAfter.foreach(tx.upsertReviewTask)
+  }
+
+
+  def loadReviewStuff(olderOrEqualTo: ju.Date, limit: Int)
+        : (Seq[ReviewStuff], Map[UserId, User], Map[PageId, PageMeta]) =
     readOnlyTransaction { transaction =>
       loadStuffImpl(olderOrEqualTo, limit, transaction)
     }
 
 
   private def loadStuffImpl(olderOrEqualTo: ju.Date, limit: Int, transaction: SiteTransaction)
-        : (Seq[ReviewStuff], Map[UserId, User]) = {
+        : (Seq[ReviewStuff], Map[UserId, User], Map[PageId, PageMeta]) = {
     val reviewTasks = transaction.loadReviewTasks(olderOrEqualTo, limit)
 
     val postIds = reviewTasks.flatMap(_.postId).toSet
@@ -314,6 +370,7 @@ trait ReviewsDao {
 
     val pageIds = postsById.values.map(_.pageId)
     val titlesByPageId = transaction.loadTitlesPreferApproved(pageIds)
+    val pageMetaById = transaction.loadPageMetasAsMap(pageIds)
 
     val result = ArrayBuffer[ReviewStuff]()
     for (task <- reviewTasks) {
@@ -342,7 +399,7 @@ trait ReviewsDao {
           post = anyPost,
           flags = flags))
     }
-    (result.toSeq, usersById)
+    (result.toSeq, usersById, pageMetaById)
   }
 
 }

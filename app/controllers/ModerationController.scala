@@ -19,7 +19,7 @@ package controllers
 
 import com.debiki.core._
 import debiki.JsonMaker
-import debiki.JsX.JsUser
+import debiki.JsX.{JsUser, JsPageMetaBrief}
 import debiki.EdHttp._
 import ed.server.{EdContext, EdController}
 import javax.inject.Inject
@@ -48,12 +48,13 @@ class ModerationController @Inject()(cc: ControllerComponents, edContext: EdCont
 
 
   def loadReviewTasks: Action[Unit] = StaffGetAction { request =>
-    val (reviewStuff, usersById) = request.dao.loadReviewStuff(
+    val (reviewStuff, usersById, pageMetaById) = request.dao.loadReviewStuff(
       olderOrEqualTo = globals.now().toJavaDate, limit = 100)
     OkSafeJson(
       Json.obj(
-        "reviewTasks" -> JsArray(reviewStuff.map(JsonMaker.reviewStufToJson(_, usersById))),
-        "users" -> usersById.values.map(JsUser)))
+        "reviewTasks" -> JsArray(reviewStuff.map(JsonMaker.reviewStufToJson)),
+        "users" -> usersById.values.map(JsUser),
+        "pageMetasBrief" -> pageMetaById.values.map(JsPageMetaBrief)))
   }
 
 

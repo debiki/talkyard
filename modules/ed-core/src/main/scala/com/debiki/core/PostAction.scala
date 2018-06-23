@@ -52,17 +52,18 @@ object PostFlagType {
 }
 
 
-sealed abstract class PostStatusAction
+sealed abstract class PostStatusAction(val affectsSuccessors: Boolean)
 object PostStatusAction {
-  case object HidePost extends PostStatusAction
-  case object UnhidePost extends PostStatusAction
-  case object CloseTree extends PostStatusAction
-  case object CollapsePost extends PostStatusAction
-  case object CollapseTree extends PostStatusAction
-  case class DeletePost(clearFlags: Boolean) extends PostStatusAction
-  case object DeleteTree extends PostStatusAction
-  // UndeletePost
-  // UndeleteTree? [5EFAWQ2] — but what about individually deleted posts in the tree? Well, there's
+  case object HidePost extends PostStatusAction(affectsSuccessors = false)
+  case object UnhidePost extends PostStatusAction(affectsSuccessors = false)
+  case object CloseTree extends PostStatusAction(affectsSuccessors = true)
+  case object CollapsePost extends PostStatusAction(affectsSuccessors = false)
+  case object CollapseTree extends PostStatusAction(affectsSuccessors = true)
+  case class DeletePost(clearFlags: Boolean) extends PostStatusAction(affectsSuccessors = false)
+  case object DeleteTree extends PostStatusAction(affectsSuccessors = true)
+  // UndeletePost extends PostStatusAction(affectsSuccessors = false)
+  // UndeleteTree extends PostStatusAction(affectsSuccessors = true)?
+  //  — but what about individually deleted posts in the tree? Well, there's
   // Post.deletedStatus: DeletedStatus, which tells if the post was deleted explicitly,
   // or implicitly because an ancestor got tree-deleted.  UndoTree = undeletes the post selected,
   // + all descendants that got tree-deleted.

@@ -1163,6 +1163,10 @@ function patchTheStore(storePatch: StorePatch) {
     store.usersByIdBrief[user.id] = user;
   });
 
+  _.each(storePatch.pageMetasBrief || [], (pageMeta: PageMetaBrief) => {
+    store.pageMetaBriefById[pageMeta.pageId] = pageMeta;
+  });
+
   const currentPage: Page = store.currentPage;
 
   // If we just posted the very first reply on an embedded discussion, a page for the discussion
