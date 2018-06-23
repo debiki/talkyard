@@ -1386,7 +1386,8 @@ object JsonMaker {
           "bodyHiddenAtMs" -> JsDateMsOrNull(post.bodyHiddenAt),
           "bodyHiddenById" -> JsNumberOrNull(post.bodyHiddenById),
           "bodyHiddenReason" -> JsStringOrNull(post.bodyHiddenReason),
-          "deletedAtMs" -> JsDateMsOrNull(post.deletedAt))
+          "deletedAtMs" -> JsDateMsOrNull(post.deletedAt),
+          "deletedById" -> JsNumberOrNull(post.deletedById))
     }
     Json.obj(  // typescript interface ReviewTask
       "id" -> stuff.id,

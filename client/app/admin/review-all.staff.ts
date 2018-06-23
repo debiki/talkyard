@@ -220,13 +220,32 @@ const ReviewTask = createComponent({
       return () => this.makeReviewDecision(action);
     };
 
+    let taskInvalidatedInfo;
     let taskDoneInfo;
     let undoDecisionButton;
     let gotUndoneInfo;
     let acceptButton;
     let rejectButton;
 
-    if (this.state.justDecidedAtMs || reviewTask.decidedAtMs || reviewTask.completedAtMs) {
+    const deletedBy = !post.deletedById ? null : store_getUserOrMissing(store, post.deletedById);
+    const itHasBeenDeleted = !post.deletedAtMs ? null :
+      r.span({}, "It was deleted by ", UserName({ store, user: deletedBy, avoidFullName: true }), ". ");
+
+    // (Currently, name of anyone who deleted the page, isn't available: deletedById not saved
+    // in page meta. Only in audit log. Hmm.)
+    const pageMeta: PageMetaBrief = store.pageMetaBriefById[post.pageId];
+    const pageHasBeenDeleted = !pageMeta || !pageMeta.deletedAtMs ? null :
+      r.span({}, "The page has been deleted. ");
+
+    const isInvalidated =
+        !reviewTask.completedAtMs && (
+          itHasBeenDeleted || pageHasBeenDeleted || reviewTask.invalidatedAtMs);
+
+    if (isInvalidated) {
+      taskInvalidatedInfo =
+          r.span({ className: 'e_A_Rvw_Tsk_DoneInfo' }, itHasBeenDeleted, pageHasBeenDeleted);
+    }
+    else if (this.state.justDecidedAtMs || reviewTask.decidedAtMs || reviewTask.completedAtMs) {
       const taskDoneBy: BriefUser | null = store.usersByIdBrief[reviewTask.decidedById];
       const doneByInfo = !taskDoneBy ? null : r.span({}, " by ", UserName({ user: taskDoneBy, store }));
       let whatWasDone: string;
@@ -244,17 +263,17 @@ const ReviewTask = createComponent({
         " Undone." : " Could NOT be undone: Changes already made");
     }
     else if (!reviewTask.completedAtMs && (this.state.justDecidedAtMs || reviewTask.decidedAtMs)) {
+      // Show undo button also if task invalidated. Example: Page deleted —> a post review task
+      // gets invalidated. Can make sense to undo a review decision about that post,
+      // so that the review task is back again, if the page gets restored.
       undoDecisionButton =
           UndoReviewDecisionButton({ justDecidedAtMs: this.state.justDecidedAtMs,
               reviewTask, nowMs: this.props.nowMs, undoReviewDecision: this.undoReviewDecision });
     }
 
-    if (reviewTask.completedAtMs || reviewTask.decidedAtMs || this.state.justDecidedAtMs) {
+    if (reviewTask.completedAtMs || reviewTask.decidedAtMs || this.state.justDecidedAtMs
+          || isInvalidated) {
       // Show no decision buttons. (Only maybe an Undo button, see above.)
-    }
-    else if (reviewTask.invalidatedAtMs) {
-      // Hmm could improve on this somehow.
-      acceptButton = r.span({}, " Invalidated, perhaps the post was deleted?");
     }
     else {
       const acceptText = post.approvedRevNr !== post.currRevNr ? "Approve" : "Looks fine";
@@ -285,14 +304,7 @@ const ReviewTask = createComponent({
     const anyDot = whys.length === 1 ? '.' : '';
     const manyWhysClass = whys.length > 1 ? ' esReviewTask-manyWhys' : '';
 
-    const itHasBeenDeleted = !post.deletedAtMs ? null :
-      "It has been deleted. ";
-
-    const pageMeta: PageMetaBrief = store.pageMetaBriefById[post.pageId] || {};
-    const pageHasBeenDeleted = !pageMeta.deletedAtMs ? null :
-      "The page has been deleted. ";
-
-    const itHasBeenHidden = !post.bodyHiddenAtMs || itHasBeenDeleted || pageHasBeenDeleted ? null :
+    const itHasBeenHidden = !post.bodyHiddenAtMs || isInvalidated ? null :
       "It has been hidden; only staff can see it. ";
 
     const author = store.usersByIdBrief[post.createdById] || {};
@@ -351,18 +363,19 @@ const ReviewTask = createComponent({
             whys.map((why) => r.li({ key: why }, why))),
           anyDot),
         r.div({},
-          itHasBeenDeleted,
-          itHasBeenHidden,
-          pageHasBeenDeleted,
           writtenByInfo,
           lastApprovedEditInfo,
           flaggedByInfo,
+          itHasBeenHidden,
+          itHasBeenDeleted,
+          pageHasBeenDeleted,
           hereIsThePost,
           r.div({ className: 'esReviewTask_it' },
             anyPageTitleToReview,
             r.div({ dangerouslySetInnerHTML: { __html: safeHtml }}))),
         r.div({ className: 'esReviewTask_btns' },
           openPostButton,
+          taskInvalidatedInfo,
           taskDoneInfo,
           acceptButton,
           rejectButton,

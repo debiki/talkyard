@@ -292,6 +292,7 @@ trait ReviewsDao {
 
   def reactivateReviewTasksForPosts(posts: Iterable[Post], doingReviewTask: Option[ReviewTask],
          tx: SiteTransaction) {
+    untestedIf(posts.nonEmpty, "TyE2KIFW4", "Reactivating review tasks for undeleted posts") // [2VSP5Q8]
     invalidatedReviewTasksImpl(posts, shallBeInvalidated = false, doingReviewTask, tx)
   }
 
@@ -314,17 +315,23 @@ trait ReviewsDao {
         doingReviewTask: Option[ReviewTask], tx: SiteTransaction) {
     TESTS_MISSING // for all 4 fns that call this fn  [2VSP5Q8]
 
+    // If bug then:
+    // If somehow some day a review task doesn't get properly invalidated, and
+    // it also cannot be decided & completed: Fix the bug, & delete that row from the database,
+    // maybe even delete all review tasks, they are relatively unimportant, & no incoming keys.
+
     val now = globals.now().toJavaDate
     val tasksLoaded = tx.loadReviewTasksAboutPostIds(posts.map(_.id))
+    def isReactivating = !shallBeInvalidated  // easier to read
 
-    val tasksToUpdate = tasksLoaded filter { task =>
-      doingReviewTask.forall(_.id != task.id) && // the doingReviewTask is updated elsewhere
-        task.completedAt.isEmpty &&
-        task.invalidatedAt.isDefined != shallBeInvalidated
+    val tasksToUpdate = tasksLoaded filterNot { task =>
+      def anyPostForThisTask = task.postId.flatMap(taskPostId => posts.find(_.id == taskPostId))
+      def postDeleted = anyPostForThisTask.exists(_.isDeleted)
+      (task.completedAt.isDefined
+        || task.invalidatedAt.isDefined == shallBeInvalidated  // already correct status
+        || doingReviewTask.exists(_.id == task.id)  // this task gets updated by some ancestor caller
+        || (isReactivating && postDeleted))  // if post gone, don't reactivate this task
     }
-
-    unimplementedIf(!shallBeInvalidated && tasksToUpdate.nonEmpty,
-        "Re-activating review tasks [TyE2KDFY3]")
 
     val tasksAfter = tasksToUpdate.map { task =>
       task.copy(invalidatedAt = if (shallBeInvalidated) Some(now) else None)

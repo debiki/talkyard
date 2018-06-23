@@ -1116,9 +1116,9 @@ trait PostsDao {
         case PSA.DeleteTree =>
           if (successor.deletedStatus.areAncestorsDeleted) None
           else {
-            val successorDeletd = successor.copyWithNewStatus(now, userId, ancestorsDeleted = true)
-            postsDeleted.append(successorDeletd)
-            Some(successorDeletd)
+            val successorDeleted = successor.copyWithNewStatus(now, userId, ancestorsDeleted = true)
+            postsDeleted.append(successorDeleted)
+            Some(successorDeleted)
           }
         case x =>
           die("TyE2KBIF5", "Unexpected PostAction: " + x)
