@@ -80,7 +80,7 @@ class RateLimiter(globals: Globals, security: EdSecurity) {
 
     var timestampsHolder: TimestampsHolder =
       timestampsCache.get(key, new java.util.function.Function[String, TimestampsHolder] {
-        override def apply(key: String) = makeCacheItem(key, rateLimits)
+        override def apply(key: String): TimestampsHolder = makeCacheItem(key, rateLimits)
       })
 
 

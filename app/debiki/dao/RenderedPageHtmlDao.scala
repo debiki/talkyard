@@ -104,6 +104,7 @@ trait RenderedPageHtmlDao {
     // don't use the mem cache (which post to use as the root isn't incl in the cache key). [5V7ZTL2]
     useMemCache &= pageRequest.pageRoot.contains(PageParts.BodyNr)
 
+
     val renderParams = PageRenderParams(
       widthLayout = if (pageRequest.isMobile) WidthLayout.Tiny else WidthLayout.Medium,
       isEmbedded = pageRequest.embeddingUrl.nonEmpty,
@@ -112,8 +113,13 @@ trait RenderedPageHtmlDao {
       anyPageRoot = pageRequest.pageRoot,
       anyPageQuery = pageRequest.parsePageQuery())
 
-    if (!useMemCache)
+    if (!useMemCache) {
+      // Bypassing the cache is rather expensive.
+      context.rateLimiter.rateLimit(RateLimits.ViewPageNoCache, pageRequest)
       return loadPageFromDatabaseAndRender(pageRequest, renderParams)
+    }
+
+    context.rateLimiter.rateLimit(RateLimits.ViewPage, pageRequest)
 
     val key = renderedPageKey(pageRequest.theSitePageId, renderParams)
     val result = memCache.lookup(key,

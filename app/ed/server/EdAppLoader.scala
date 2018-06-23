@@ -134,6 +134,8 @@ class EdContext(
 
   val postRenderer = new talkyard.server.PostRenderer(nashorn)
 
+  def rateLimiter: RateLimiter = plainApiActions.rateLimiter
+
   implicit def executionContext: ExecutionContext = controllerComponents.executionContext
   def mimeTypes: FileMimeTypes = controllerComponents.fileMimeTypes
 

@@ -35,18 +35,18 @@ abstract class RateLimits {
   assert(maxPerFifteenMinutes >= maxPerFifteenSeconds || maxPerFifteenSeconds == Unlimited)
 
 
-  def isUnlimited(isNewUser: Boolean) =
+  def isUnlimited(isNewUser: Boolean): Boolean =
     maxPerFifteenSeconds == Unlimited &&
       maxPerFifteenMinutes == Unlimited &&
       (if (isNewUser) maxPerDayNewUser == Unlimited else maxPerDay == Unlimited)
 
 
-  def noRequestsAllowed(isNewUser: Boolean) =
+  def noRequestsAllowed(isNewUser: Boolean): Boolean =
     maxPerFifteenSeconds == 0 || maxPerFifteenMinutes == 0 ||
       (if (isNewUser) maxPerDayNewUser == 0 else maxPerDay == 0)
 
 
-  def numRequestsToRemember(isNewUser: Boolean) = {
+  def numRequestsToRemember(isNewUser: Boolean): Int = {
     if (isNewUser && maxPerDayNewUser != Unlimited) {
       maxPerDayNewUser
     }
@@ -84,7 +84,7 @@ abstract class RateLimits {
 
 
 object RateLimits {
-  val Unlimited = Int.MaxValue
+  val Unlimited: Int = Int.MaxValue
 
   // COULD add more types of limits, these: (supported by Discourse as of Feb 2015)
   // - unique posts mins 5
@@ -102,10 +102,10 @@ object RateLimits {
   object NoRateLimits extends RateLimits {
     val key = "dummy"
     val what = "dummy"
-    def maxPerFifteenSeconds = Unlimited
-    def maxPerFifteenMinutes = Unlimited
-    def maxPerDay = Unlimited
-    def maxPerDayNewUser = Unlimited
+    def maxPerFifteenSeconds: Int = Unlimited
+    def maxPerFifteenMinutes: Int = Unlimited
+    def maxPerDay: Int = Unlimited
+    def maxPerDayNewUser: Int = Unlimited
   }
 
 
@@ -120,13 +120,34 @@ object RateLimits {
   }
 
 
+  object ViewPage extends RateLimits {
+    val key = "VP"
+    val what = "viewed pages too quickly"
+    def maxPerFifteenSeconds = 40             // 160/min
+    def maxPerFifteenMinutes: Int = 60 * 15   //  60/min
+    def maxPerDay: Int = Unlimited
+    def maxPerDayNewUser: Int = Unlimited
+  }
+
+
+  // This can be rather expensive? Needs to load page content from the db, maybe run React.js.
+  object ViewPageNoCache extends RateLimits {
+    val key = "VPNC"
+    val what = "viewed uncacheable pages too quickly"
+    def maxPerFifteenSeconds = 6              // 24/min
+    def maxPerFifteenMinutes: Int = 8 * 15    //  8/min
+    def maxPerDay: Int = Unlimited
+    def maxPerDayNewUser: Int = Unlimited
+  }
+
+
   object ExpensiveGetRequest extends RateLimits {
     val key = "ExRq"
     val what = "sent too many complicated HTTP GET requests"
     def maxPerFifteenSeconds = 20
-    def maxPerFifteenMinutes = 60 * 10
-    def maxPerDay = Unlimited
-    def maxPerDayNewUser = Unlimited
+    def maxPerFifteenMinutes: Int = 60 * 10
+    def maxPerDay: Int = Unlimited
+    def maxPerDayNewUser: Int = Unlimited
   }
 
 
@@ -137,9 +158,9 @@ object RateLimits {
     val key = "TRA"
     val what = "sent too many I've-read-this-and-that messages"
     def maxPerFifteenSeconds: Int = (15f / IntervalSeconds * MaxReadersPerIp * BurstFactor).toInt
-    def maxPerFifteenMinutes = Unlimited
-    def maxPerDay = Unlimited
-    def maxPerDayNewUser = Unlimited
+    def maxPerFifteenMinutes: Int = Unlimited
+    def maxPerDay: Int = Unlimited
+    def maxPerDayNewUser: Int = Unlimited
   }
 
 
@@ -158,9 +179,9 @@ object RateLimits {
     val key = "Lgi"
     val what = "logged in too many times"
     def maxPerFifteenSeconds = 5
-    def maxPerFifteenMinutes = Unlimited
-    def maxPerDay = Unlimited
-    def maxPerDayNewUser = Unlimited
+    def maxPerFifteenMinutes: Int = Unlimited
+    def maxPerDay: Int = Unlimited
+    def maxPerDayNewUser: Int = Unlimited
   }
 
 
@@ -170,7 +191,7 @@ object RateLimits {
     def maxPerFifteenSeconds = 3
     def maxPerFifteenMinutes = 10
     def maxPerDay = 50
-    def maxPerDayNewUser = Unlimited
+    def maxPerDayNewUser: Int = Unlimited
   }
 
 
@@ -204,7 +225,7 @@ object RateLimits {
     def maxPerFifteenSeconds = 5
     def maxPerFifteenMinutes = 10
     def maxPerDay = 50
-    def maxPerDayNewUser = Unlimited
+    def maxPerDayNewUser: Int = Unlimited
   }
 
 
@@ -215,7 +236,7 @@ object RateLimits {
     def maxPerFifteenSeconds = 5
     def maxPerFifteenMinutes = 10
     def maxPerDay = 50
-    def maxPerDayNewUser = Unlimited
+    def maxPerDayNewUser: Int = Unlimited
   }
 
 
@@ -223,10 +244,10 @@ object RateLimits {
   object SendInvite extends RateLimits {
     val key = "SeIn"
     val what = "sent too many invites"
-    def maxPerFifteenSeconds = Unlimited
-    def maxPerFifteenMinutes = Unlimited
+    def maxPerFifteenSeconds: Int = Unlimited
+    def maxPerFifteenMinutes: Int = Unlimited
     def maxPerDay = 10
-    def maxPerDayNewUser = Unlimited
+    def maxPerDayNewUser: Int = Unlimited
   }
 
 
@@ -236,7 +257,7 @@ object RateLimits {
     def maxPerFifteenSeconds = 2
     def maxPerFifteenMinutes = 7
     def maxPerDay = 12
-    def maxPerDayNewUser = Unlimited
+    def maxPerDayNewUser: Int = Unlimited
   }
 
 
@@ -246,7 +267,7 @@ object RateLimits {
     def maxPerFifteenSeconds = 3
     def maxPerFifteenMinutes = 10
     def maxPerDay = 30
-    def maxPerDayNewUser = Unlimited
+    def maxPerDayNewUser: Int = Unlimited
   }
 
 
@@ -256,7 +277,7 @@ object RateLimits {
     def maxPerFifteenSeconds = 5
     def maxPerFifteenMinutes = 10
     def maxPerDay = 20
-    def maxPerDayNewUser = Unlimited
+    def maxPerDayNewUser: Int = Unlimited
   }
 
 
@@ -265,8 +286,8 @@ object RateLimits {
     val what = "configured your settings too many times"
     def maxPerFifteenSeconds = 5
     def maxPerFifteenMinutes = 50
-    def maxPerDay = Unlimited
-    def maxPerDayNewUser = Unlimited
+    def maxPerDay: Int = Unlimited
+    def maxPerDayNewUser: Int = Unlimited
   }
 
 
@@ -274,9 +295,9 @@ object RateLimits {
     val key = "JoSt"
     val what = "joined too many times"
     def maxPerFifteenSeconds = 5
-    def maxPerFifteenMinutes = 15 * 3
-    def maxPerDay = 24 * 10
-    def maxPerDayNewUser = Unlimited
+    def maxPerFifteenMinutes: Int = 15 * 3
+    def maxPerDay: Int = 24 * 10
+    def maxPerDayNewUser: Int = Unlimited
   }
 
 
@@ -321,9 +342,9 @@ object RateLimits {
     val key = "MvPg"
     val what = "moved/renamed too many pages"
     def maxPerFifteenSeconds = 6
-    def maxPerFifteenMinutes = Unlimited
-    def maxPerDay = Unlimited
-    def maxPerDayNewUser = Unlimited
+    def maxPerFifteenMinutes: Int = Unlimited
+    def maxPerDay: Int = Unlimited
+    def maxPerDayNewUser: Int = Unlimited
   }
 
 
@@ -342,8 +363,8 @@ object RateLimits {
     val key = "PoRe"
     val what = "posted too many replies"
     def maxPerFifteenSeconds = 3
-    def maxPerFifteenMinutes = Unlimited
-    def maxPerDay = Unlimited
+    def maxPerFifteenMinutes: Int = Unlimited
+    def maxPerDay: Int = Unlimited
     def maxPerDayNewUser = 10
   }
 
@@ -352,9 +373,9 @@ object RateLimits {
     val key = "NnSn"
     val what = "marked too many notifications as seen"
     def maxPerFifteenSeconds = 30
-    def maxPerFifteenMinutes = 60 * 5
-    def maxPerDay = Unlimited
-    def maxPerDayNewUser = Unlimited
+    def maxPerFifteenMinutes: Int = 60 * 5
+    def maxPerDay: Int = Unlimited
+    def maxPerDayNewUser: Int = Unlimited
   }
 
 
@@ -366,9 +387,9 @@ object RateLimits {
     val key = "RtPs"
     val what = "voted on too many posts"
     def maxPerFifteenSeconds = 8
-    def maxPerFifteenMinutes = Unlimited
+    def maxPerFifteenMinutes: Int = Unlimited
     def maxPerDay = 50
-    def maxPerDayNewUser = Unlimited
+    def maxPerDayNewUser: Int = Unlimited
   }
 
 
@@ -380,9 +401,9 @@ object RateLimits {
     val key = "EdPo"
     val what = "edited too many posts"
     def maxPerFifteenSeconds = 5
-    def maxPerFifteenMinutes = Unlimited
+    def maxPerFifteenMinutes: Int = Unlimited
     def maxPerDay = 30
-    def maxPerDayNewUser = Unlimited
+    def maxPerDayNewUser: Int = Unlimited
   }
 
 
@@ -390,9 +411,9 @@ object RateLimits {
     val key = "LdOb"
     val what = "loaded too many oneboxes"
     def maxPerFifteenSeconds = 10
-    def maxPerFifteenMinutes = Unlimited
-    def maxPerDay = Unlimited
-    def maxPerDayNewUser = Unlimited
+    def maxPerFifteenMinutes: Int = Unlimited
+    def maxPerDay: Int = Unlimited
+    def maxPerDayNewUser: Int = Unlimited
   }
 
 
@@ -400,9 +421,9 @@ object RateLimits {
     val key = "PiPo"
     val what = "pinned too many posts"
     def maxPerFifteenSeconds = 5
-    def maxPerFifteenMinutes = Unlimited
-    def maxPerDay = Unlimited
-    def maxPerDayNewUser = Unlimited
+    def maxPerFifteenMinutes: Int = Unlimited
+    def maxPerDay: Int = Unlimited
+    def maxPerDayNewUser: Int = Unlimited
   }
 
 
@@ -410,9 +431,9 @@ object RateLimits {
     val key = "ClPo"
     val what = "closed or collapsed too many posts"
     def maxPerFifteenSeconds = 5
-    def maxPerFifteenMinutes = Unlimited
-    def maxPerDay = Unlimited
-    def maxPerDayNewUser = Unlimited
+    def maxPerFifteenMinutes: Int = Unlimited
+    def maxPerDay: Int = Unlimited
+    def maxPerDayNewUser: Int = Unlimited
   }
 
 
@@ -423,20 +444,20 @@ object RateLimits {
   object FlagPost extends RateLimits {
     val key = "FlPo"
     val what = "flagged too many posts"
-    def maxPerFifteenSeconds = Unlimited
-    def maxPerFifteenMinutes = Unlimited
+    def maxPerFifteenSeconds: Int = Unlimited
+    def maxPerFifteenMinutes: Int = Unlimited
     def maxPerDay = 20
-    def maxPerDayNewUser = Unlimited
+    def maxPerDayNewUser: Int = Unlimited
   }
 
 
   object DeletePost extends RateLimits {
     val key = "DlPo"
     val what = "deleted too many posts"
-    def maxPerFifteenSeconds = Unlimited
-    def maxPerFifteenMinutes = Unlimited
+    def maxPerFifteenSeconds: Int = Unlimited
+    def maxPerFifteenMinutes: Int = Unlimited
     def maxPerDay = 20
-    def maxPerDayNewUser = Unlimited
+    def maxPerDayNewUser: Int = Unlimited
   }
 
 
@@ -446,7 +467,7 @@ object RateLimits {
     def maxPerFifteenSeconds = 4
     def maxPerFifteenMinutes = 24
     def maxPerDay = 34
-    def maxPerDayNewUser = Unlimited
+    def maxPerDayNewUser: Int = Unlimited
   }
 
 
@@ -454,9 +475,9 @@ object RateLimits {
     val key = "FTS"
     val what = "searched too much"
     def maxPerFifteenSeconds = 10
-    def maxPerFifteenMinutes = Unlimited
-    def maxPerDay = Unlimited
-    def maxPerDayNewUser = Unlimited
+    def maxPerFifteenMinutes: Int = Unlimited
+    def maxPerDay: Int = Unlimited
+    def maxPerDayNewUser: Int = Unlimited
   }
 }
 
