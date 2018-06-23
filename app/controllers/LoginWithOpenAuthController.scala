@@ -456,7 +456,7 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
              rather long (many minutes) with submitting the dialog.
              Or if the server was just restarted. Please try to sign up again.""")
       case _ =>
-        assErr("DwE2GVM0")
+        die("TyE2GVM0")
     }
 
     val emailVerifiedAt = oauthDetails.email match {

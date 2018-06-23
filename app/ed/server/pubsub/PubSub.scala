@@ -205,7 +205,7 @@ class PubSubActor(val nginxHost: String, val globals: Globals) extends Actor {
   }
 
 
-  def dontRestartIfException(message: Any): Unit = try message match {
+  private def dontRestartIfException(message: Any): Unit = try message match {
     case UserWatchesPages(siteId, userId, pageIds) =>
       val user = globals.siteDao(siteId).getUser(userId) getOrElse { return }
       updateWatchedPages(siteId, userId, pageIds)
@@ -244,7 +244,7 @@ class PubSubActor(val nginxHost: String, val globals: Globals) extends Actor {
     case ex: Exception =>
       // Akka would otherwise discard this actor and create another one, but then
       // its state (which is probably fine) gets lost.
-      play.api.Logger.error("Error in PubSub actor, not killing it though", ex)
+      p.Logger.error("Error in PubSub actor [TyE6RP42]", ex)
   }
 
 

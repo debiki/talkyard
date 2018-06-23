@@ -109,8 +109,8 @@ case class PagePath(  // COULD move to debate.scala.  Rename to RequestPath?
 
   def value: String =
     if (showId) {
-      val id = pageId.getOrElse(assErr( //Break out GuidLookup so cannot happen?
-        "DwE23r124", "ID unknown."))
+      val id = pageId.getOrDie( //Break out GuidLookup so cannot happen?
+        "DwE23r124", "ID unknown.")
       if (pageSlug.isEmpty) s"$folder-$id"
       else s"$folder-$id/$pageSlug"
     } else {
@@ -318,8 +318,7 @@ object PagePath {
     folder match {
       case _BadTrailingSlashRegex() =>
         // Drop the trailing slash, to find the correct path.
-        assErrIf3(pageIdSlug.nonEmpty,
-          "DwE9020R3", "Page slug not empty: "+ pageIdSlug)
+        dieIf(pageIdSlug.nonEmpty, "DwE9020R3", "Page slug not empty: "+ pageIdSlug)
         val folderAndPageIdName = path.dropRight(1)
         return Parsed.Corrected(folderAndPageIdName)
       case _BadHyphenRegex() =>

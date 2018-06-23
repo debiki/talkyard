@@ -1402,7 +1402,7 @@ trait PostsDao {
         numRowsDeleted = deleteVoteByCookie()
       }
       if (numRowsDeleted > 1) {
-        assErr("DwE8GCH0", o"""Too many votes deleted, page `$pageId' post `$postId',
+        die("TyE8GCH0", o"""Too many votes deleted, page `$pageId' post `$postId',
           user: $userIdData, vote type: $voteType""")
       }
       */

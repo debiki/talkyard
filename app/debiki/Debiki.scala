@@ -30,7 +30,7 @@ object Debiki {
         : HikariDataSource = {
 
     def configStr(path: String): String =
-      conf.getString(path) getOrElse runErr("TyE93KI2", "Config value missing: "+ path)
+      conf.getString(path).getOrDie("TyE93KI2", "Config value missing: "+ path)
 
     // I've hardcoded credentials to the test database here, so that it
     // cannot possibly happen, that you accidentally connect to the prod

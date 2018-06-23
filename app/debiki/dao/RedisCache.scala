@@ -38,7 +38,7 @@ object RedisCache {
 
   // Sometimes the request takes long, perhaps because of a Java GC pause? Or because of
   // some page being swapped to disk?
-  val DefaultTimeout: FiniteDuration = 20 seconds
+  val DefaultTimeout: FiniteDuration = 10 seconds
 }
 
 
@@ -51,7 +51,7 @@ class RedisCache(val siteId: SiteId, private val redis: RedisClient, private val
     val anyString: Option[ByteString] =
       try Await.result(futureString, DefaultTimeout)
       catch {
-        case _: TimeoutException => die("EsE5GK2F9", "Redis timeout")
+        case _: TimeoutException => die("TyZ4BKW2F", "Redis timeout")
       }
     anyString.map(s => BareWatchbar.fromCompactString(s.utf8String))
   }
@@ -89,7 +89,10 @@ class RedisCache(val siteId: SiteId, private val redis: RedisClient, private val
   def isUserActive(userId: UserId): Boolean = {
     // There's no z-is-member, so use zscore, it's O(1).
     val anyScoreFuture: Future[Option[Double]] = redis.zscore(usersOnlineKey(siteId), userId)
-    val anyScore = Await.result(anyScoreFuture, DefaultTimeout)
+    val anyScore = try Await.result(anyScoreFuture, DefaultTimeout)
+      catch {
+        case _: TimeoutException => die("TyE5GK2F9", "Redis timeout")
+      }
     anyScore.isDefined
   }
 

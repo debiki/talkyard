@@ -111,7 +111,7 @@ object SearchEngineIndexer {
     val green = response.getStatus == h.ClusterHealthStatus.GREEN
     val yellow = response.getStatus == h.ClusterHealthStatus.YELLOW
     if (!green && !yellow) {
-      runErr("DwE74b0f3", s"Bad ElasticSearch status: ${response.getStatus}")
+      die("TyE74b0f3", s"Bad ElasticSearch status: ${response.getStatus}")
     }
     */
   }

@@ -175,7 +175,7 @@ class RateLimiter(globals: Globals, security: EdSecurity) {
       }
       index += 1
     }
-    alwaysAssert(indexOfOldestTimestamp < timestamps.length, "DwE2QJK4")
+    dieUnless(indexOfOldestTimestamp < timestamps.length, "DwE2QJK4")
     timestamps(indexOfOldestTimestamp) = now
     timestamps
   }

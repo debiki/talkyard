@@ -215,13 +215,18 @@ class Mailer(
   private var numEmailsSent = 0
   private val MaxEmails = 100 * 1000
 
+
+  def receive: PartialFunction[Any, Unit] = {
+    case x => dontRestartIfException(x)
+  }
+
   /**
    * Accepts an (Email, site-id), and then sends that email on behalf of
    * the site. The caller should already have saved the email to the
    * database (because Mailer doesn't know exactly how to save it, e.g.
    * if any other tables should also be updated).
    */
-  def receive: PartialFunction[Any, Unit] = {
+  private def dontRestartIfException(message: Any): Unit = try message match {
     case (email: Email, siteId: SiteId) =>
       if (numEmailsSent > MaxEmails) {
         logger.error(o"""Has sent more than $MaxEmails emails, not sending more emails. Restart
@@ -254,6 +259,12 @@ class Mailer(
     /*
     case Bounce/Rejection/Complaint/Other =>
      */
+  }
+  catch {
+    case ex: Exception =>
+      // Akka would otherwise discard this actor and create another one, but then
+      // its state, incl num emails sent counter, gets lost.
+      p.Logger.error("Error in Mailer actor [TyE2RDH4F]", ex)
   }
 
 

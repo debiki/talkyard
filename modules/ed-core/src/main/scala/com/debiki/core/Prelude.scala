@@ -111,7 +111,7 @@ object Prelude {
   def unimplemented(what: String) = throw new UOE("Not implemented: "+ what)
   def unimplemented(what: String, errorCode: String) =
     throw new UOE("Not implemented: "+ what +" [error "+ errorCode +"]")
-  def unimplementedIf(condition: Boolean, what: String) =
+  def unimplementedIf(condition: Boolean, what: String): Unit =
     if (condition) unimplemented(what)
 
   /** Useful code but currently not in use. Abort, so I'll notice, and test it again before
@@ -123,20 +123,17 @@ object Prelude {
   def untested(errorCode: String, what: => String = "") =
     throw new UOE(s"Not tested: $what [$errorCode]")
 
-  def untestedIf(condition: Boolean, errorCode: String, what: => String = "") =
+  def untestedIf(condition: Boolean, errorCode: String, what: => String = ""): Unit =
     if (condition) untested(errorCode, what)
 
   def throwNoSuchElem(errorCode: String, message: => String) =
     throw new NoSuchElementException(s"$message [error $errorCode]")
 
-  def runErr(errorCode: String, problem: => String) =
-    throw new RuntimeException(problem +" [error "+ errorCode +"]")
-
-  def runErrIf3(condition: Boolean, errorCode: String, problem: => String) =
-    if (condition) runErr(problem, errorCode)
-
-  def die(errorCode: String, problem: => String = null, cause: => Throwable = null) =
-    throw new AssertionError(formatErrorMessage(errorCode, problem), cause)
+  def die(errorCode: String, problem: => String = null, cause: => Throwable = null): Nothing = {
+    // Don't throw AssertionError — that makes things like Akka's actor system shutdown
+    // and the server becomes a zombie server (half dead).
+    throw new RuntimeException(formatErrorMessage(errorCode, problem), cause)
+  }
 
   def requireIf(condition: Boolean, test: => Boolean, message: => String) {
     if (condition) {
@@ -144,55 +141,40 @@ object Prelude {
     }
   }
 
-  /** Assertion errors do not require a problem description. */
-  def assErr(errorCode: String, problem: => String = null) =
-    throw new AssertionError(formatErrorMessage(errorCode, problem))
 
   private def formatErrorMessage(errorCode: String, details: String) =
       (if ((details eq null) || details.isEmpty) "" else details + " ") + s"[$errorCode]"
 
-  // delete
-  def assErrIf3(condition: Boolean, errorCode: String,
-        problem: => String = null) =
-    assErrIf(condition, errorCode, problem)
+  def dieIf(condition: Boolean, errorCode: String, problem: => String = null): Unit =
+    if (condition) die(errorCode, problem)
 
-  def assErrIf(condition: Boolean, errorCode: String,
-       problem: => String = null) =
-    dieIf(condition, errorCode, problem)
+  def dieUnless(condition: Boolean, errorCode: String, problem: => String = null): Unit =
+    if (!condition) die(errorCode, problem)
 
-  def dieIf(condition: Boolean, errorCode: String, problem: => String = null) =
-    if (condition) assErr(errorCode, problem)
-
-  def dieUnless(condition: Boolean, errorCode: String, problem: => String = null) =
-    if (!condition) assErr(errorCode, problem)
-
-  def alwaysAssert(condition: Boolean, errorCode: String, problem: => String = null) =
-    if (!condition) assErr(errorCode, problem)
-
-  def throwIllegalArgument(errorCode: String, problem: => String = null) =
+  def throwIllegalArgument(errorCode: String, problem: => String = null): Nothing =
     illArgErr(errorCode, problem)
 
   @deprecated("now", "use throwIllegalArgument() instead")
-  def illArgErr(errorCode: String, problem: => String = null) =
+  def illArgErr(errorCode: String, problem: => String = null): Nothing =
     throw new IllegalArgumentException(formatErrorMessage(errorCode, problem))
 
   def forbid(condition: Boolean, message: => String): Unit =
     require(!condition, message)
 
   @deprecated("now", "use forbid() instead")
-  def illArgIf(condition: Boolean, errorCode: String, problem: => String = null) =
+  def illArgIf(condition: Boolean, errorCode: String, problem: => String = null): Unit =
     if (condition) illArgErr(errorCode, problem)
 
   @deprecated("now", "use forbid() instead")
-  def illArgErrIf(condition: Boolean, errorCode: String, problem: => String) =
+  def illArgErrIf(condition: Boolean, errorCode: String, problem: => String): Unit =
     if (condition) illArgErr(errorCode, problem)
 
   // COULD remove
   @deprecated("now", "use forbid() instead")
-  def illArgErrIf3(condition: Boolean, errorCode: String, problem: => String) =
+  def illArgErrIf3(condition: Boolean, errorCode: String, problem: => String): Unit =
     if (condition) illArgErr(errorCode, problem)
 
-  def throwBadDatabaseData(errorCode: String, problem: => String) =
+  def throwBadDatabaseData(errorCode: String, problem: => String): Nothing =
     throw new BadDatabaseDataException(formatErrorMessage(errorCode, problem))
 
   class BadDatabaseDataException(message: String) extends RuntimeException(message)

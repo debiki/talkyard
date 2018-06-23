@@ -263,7 +263,7 @@ class LoginWithPasswordController @Inject()(cc: ControllerComponents, edContext:
     }
 
     val roleId = email.toUserId getOrElse {
-      assErr("DwE8XK5", "Email was not sent to a role")
+      die("TyE8XK5", "Email was not sent to a role")
     }
 
     request.dao.verifyPrimaryEmailAddress(roleId, request.ctime)

@@ -37,6 +37,10 @@ class EdAppComponents(appLoaderContext: ApplicationLoader.Context)
   with AhcWSComponents
   with _root_.controllers.AssetsComponents {
 
+  actorSystem registerOnTermination {
+    p.Logger.info("Akka actor system has shut down. [TyMACTRSGONE]")
+  }
+
   // Could instead extend HttpFiltersComponents, but it adds a weird localhost-only filter.
   SECURITY // it adds some maybe-useful security related filters too, investigate if should use them.
   override def httpFilters: Seq[EssentialFilter] = Seq(EdFilters.makeGzipFilter(materializer))
