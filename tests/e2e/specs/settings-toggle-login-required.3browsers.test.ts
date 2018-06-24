@@ -23,7 +23,7 @@ var idAddress;
 var forumTitle = "Login to Read Forum";
 
 
-describe("settings-login-to-read", function() {
+describe("settings-toggle-login-required [TyT4GKBW20]", function() {
 
   it("initialize people", function() {
     browser.perhapsDebugBefore();

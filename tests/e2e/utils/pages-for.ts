@@ -224,6 +224,14 @@ function pagesFor(browser) {
     },
 
 
+    assertPageHtmlSourceMatches_1: function(toMatch) {
+      // _1 = only for 1 browser
+      const source = browser.getSource();
+      let regex = _.isString(toMatch) ? new RegExp(toMatch) : toMatch;
+      assert(regex.test(source), "Page source does match " + regex);
+    },
+
+
     assertPageHtmlSourceDoesNotMatch: function(toMatch) {
       let resultsByBrowser = byBrowser(browser.getSource());
       let regex = _.isString(toMatch) ? new RegExp(toMatch) : toMatch;
@@ -2258,12 +2266,12 @@ function pagesFor(browser) {
         browser.waitForNewUrl();
       },
 
-      goToLoginSettings: function(siteIdOrigin) {
-        browser.go(siteIdOrigin + '/-/admin/settings/login');
+      goToLoginSettings: function(origin?: string) {
+        browser.go((origin || '') + '/-/admin/settings/login');
       },
 
-      goToUsers: function(siteIdOrigin) {
-        browser.go(siteIdOrigin + '/-/admin/users');
+      goToUsersEnabled: function(origin?: string) {
+        browser.go((origin || '') + '/-/admin/users');
       },
 
       settings: {
@@ -2317,10 +2325,87 @@ function pagesFor(browser) {
             setCheckbox('#e2eLoginRequiredCB', isRequired);
           },
 
+          setApproveUsers: function(isRequired: boolean) {
+            setCheckbox('#e_ApproveUsersCB', isRequired);
+          },
+
           clickAllowGuestLogin: function() {
             api.waitAndClick('#e2eAllowGuestsCB');
           },
         },
+      },
+
+      users: {
+        usernameSelector: '.dw-username',
+
+        waitForLoaded: function() {
+          browser.waitForVisible('.e_AdminUsersList');
+        },
+
+        assertUserListEmpty: function(member: Member) {
+          api.adminArea.users.waitForLoaded();
+          assert(browser.isVisible('.e_NoSuchUsers'));
+        },
+
+        assertUserListed: function(member: Member) {
+          api.adminArea.users.waitForLoaded();
+          browser.assertAnyTextMatches(api.adminArea.users.usernameSelector, member.username);
+        },
+
+        assertUserAbsent: function(member: Member) {
+          api.adminArea.users.waitForLoaded();
+          browser.assertNoTextMatches(api.adminArea.users.usernameSelector, member.username);
+        },
+
+        asserExactlyNumUsers: function(num: number) {
+          api.adminArea.users.waitForLoaded();
+          browser.assertExactly(num, api.adminArea.users.usernameSelector);
+        },
+
+        // Works only if exactly 1 user listed.
+        assertEmailVerified_1_user: function(member: Member, verified: boolean) {
+          // for now:  --
+          api.adminArea.users.assertUserListed(member);
+          // later, check the relevant user row.
+          // ------------
+          if (verified) {
+            assert(!browser.isVisible('.e_EmNotVerfd'));
+          }
+          else {
+            assert(browser.isVisible('.e_EmNotVerfd'));
+          }
+        },
+
+        switchToWaiting: function() {
+          browser.waitAndClick('.e_WaitingUsB');
+          browser.waitForVisible('.e_WaitingUsersIntro');
+          api.adminArea.users.waitForLoaded();
+        },
+
+        switchToNew: function() {
+          browser.waitAndClick('.e_NewUsB');
+          browser.waitForVisible('.e_NewUsersIntro');
+          api.adminArea.users.waitForLoaded();
+        },
+
+        waiting: {
+          undoSelector: '.e_UndoApprRjctB',
+
+          approveFirstListedUser: function() {
+            browser.waitAndClickFirst('.e_ApproveUserB');
+            browser.waitForVisible(api.adminArea.users.waiting.undoSelector);
+          },
+
+          rejectFirstListedUser: function() {
+            browser.waitAndClickFirst('.e_RejectUserB');
+            browser.waitForVisible(api.adminArea.users.waiting.undoSelector);
+          },
+
+          undoApproveOrReject: function() {
+            browser.waitAndClickFirst(api.adminArea.users.waiting.undoSelector);
+            browser.waitUntilGone(api.adminArea.users.waiting.undoSelector);
+          },
+        }
       },
 
       review: {

@@ -127,7 +127,7 @@ describe("user profile change email:", () => {
 
   it("Maria gets an address verification email, she remembers the link", () => {
     mariasEmailVerifLink = server.waitAndGetVerifyAnotherEmailAddressLinkEmailedTo(
-        siteId, mariasAddress2);
+        siteId, mariasAddress2, browser);
   });
 
   it("Mallory adds the same address", () => {

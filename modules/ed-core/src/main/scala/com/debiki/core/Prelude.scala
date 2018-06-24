@@ -106,11 +106,11 @@ object Prelude {
   def unsupported = throw new UOE
   def unsupported(what: String) = throw new UOE(what)
   def unsupported(what: String, errorCode: String) =
-    throw new UOE(what +" [error "+ errorCode +"]")
+    throw new UOE(s"$what [$errorCode]")
   def unimplemented = throw new UOE("Not implemented")
   def unimplemented(what: String) = throw new UOE("Not implemented: "+ what)
   def unimplemented(what: String, errorCode: String) =
-    throw new UOE("Not implemented: "+ what +" [error "+ errorCode +"]")
+    throw new UOE(s"Not implemented: $what [$errorCode]")
   def unimplementedIf(condition: Boolean, what: String): Unit =
     if (condition) unimplemented(what)
 
@@ -127,7 +127,7 @@ object Prelude {
     if (condition) untested(errorCode, what)
 
   def throwNoSuchElem(errorCode: String, message: => String) =
-    throw new NoSuchElementException(s"$message [error $errorCode]")
+    throw new NoSuchElementException(s"$message [$errorCode]")
 
   def die(errorCode: String, problem: => String = null, cause: => Throwable = null): Nothing = {
     // Don't throw AssertionError — that makes things like Akka's actor system shutdown

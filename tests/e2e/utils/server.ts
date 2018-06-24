@@ -172,8 +172,9 @@ function getLastVerifyEmailAddressLinkEmailedTo(siteId: SiteId, emailAddress: st
 }
 
 
+// Note: *another* email address, not for the initial signup.
 function waitAndGetVerifyAnotherEmailAddressLinkEmailedTo(siteId: SiteId, emailAddress: string,
-      browser?): string {
+      browser): string {
   waitUntilLastEmailMatches(
     siteId, emailAddress, ["To finish adding", /* [B4FR20L_] */ emailAddress], browser);
   const email = getLastEmailSenTo(siteId, emailAddress, browser);

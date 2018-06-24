@@ -275,12 +275,12 @@ class ViewPageController @Inject()(cc: ControllerComponents, edContext: EdContex
               case Some(false) =>
                 // Log out, so can try again as another user. (4GPKB2)
                 logout = true
-                ("You may not access this site with this account, sorry.", "TyMNOACCESS")
+                ("You may not access this site with this account, sorry.", "TyMNOACCESS_")
               case Some(true) =>
                 die("DwE7KEWK2", "Both not approved and approved")
             }
         }
-        var forbidden = ForbiddenResult(s"TyM0APPR-$code", message)
+        var forbidden = ForbiddenResult(s"TyM0APPR_-$code", message)
         if (logout) forbidden = forbidden.discardingCookies(security.DiscardingSessionCookie)
         return Future.successful(forbidden)
       }

@@ -54,7 +54,7 @@ describe("impersonate", () => {
   });
 
   it("Owen logs in to the admin area", () => {
-    owen.adminArea.goToUsers(idAddress.origin);
+    owen.adminArea.goToUsersEnabled(idAddress.origin);
     owen.loginDialog.loginWithPassword(owen);
   });
 

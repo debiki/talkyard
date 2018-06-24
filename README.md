@@ -348,7 +348,7 @@ This project looks like so:
                       is installed on localohost, and dev mode
 
 
-Naming style and a new word
+Naming style, tags and a new word
 -----------------------------
 
 ### CSS classes and ids
@@ -365,6 +365,55 @@ lowercase letters).
 
 For stuff with otherwise no class or id, and that should be clicked in end-to-end tests,
 we use classes only, and the prefix `e_` (instead of `s_` or `t_`).
+
+
+### Single and double quotes
+
+In Typescript (and any Javascript), use single quotes for strings the computer cares about,
+like CSS classes or ids, e.g. `className: 's_P'` or `reactRenderMethod = 'hydrate'`,
+or React component display names.
+For texts that humans read, instead use double quotes, like: `Button({ ...}, "Undo")`.
+When doing this, you can be fairly certain that if you edit a single quote string,
+without knowing what you're doing, something will break.
+Whilst if you edit a double quoted string and fix e.g. a spelling errors: the computer
+won't care, but humans like it.
+
+
+### Tag the code
+
+Some parts of a software system, knows how other parts of the software system works,
+sometimes in not-obvious ways. Make such otherwise hidden duplicated knowledge visible,
+by tagging the code with tags like: `[1ABCDE2]`.
+Example: `// Also done here: [4JKAM7] when deleting pages.`.
+Just type a number, random uppercase letters, and another number, to create a tag.
+And copy-paste it to where the related code is.
+
+
+### Message codes and magic underscores
+
+Log messages, and plain text messages sent back to the browser, start with `TyM` if it's
+an info message, and `TyE` if it's an error. Like, `"Server starting... [TyMHELLO]"` (a log message).
+
+These messsage codes helps you instantly find the relevat source code, if there's
+an error message anywhere. Otherwise, it can be terribly annoying,
+when the browser says "Not found", and you have no idea where that message comes from.
+For example, Nginx didn't find a location handler? Or a user is missing? Or a page? Or a post?
+Or a client side route is missing? Or the hostname is wrong? Or ...?
+And you search for "Not found" and find 1 000 matches.
+Now, instead, you'll see `"Not found [TyE123ABC]"` — and you then search for "TyE123ABC"
+and find the relevant source code snipped.
+
+Some message codes sent to the browser are checked for in end to end tests. They shall
+have an underscore `_` at the *end* (because it's called *end* to *end* tests). So, if you see a
+message code like: `"TyM0APPR_"` and you change it, you need to search for it
+everywhere and update some end-to-end tests too.
+
+Some message codes are checked for by production code Typescript, i.e. *front*end code.
+They shall have a `_` at the beginnign (front) of the error code, and here's how they can be used
+client side: `if (hasErrorCode(failedRequest, '_EsE403IUAM_'))`. — So, those two `_` tells you
+that that error code is used both in the real frontend Typescript code, and in end-to-end-tests
+(hmm there's no such e2e test though, but ought to be).
+
 
 ### Hen and henbirds
 

@@ -149,6 +149,8 @@ function runAllE2eTests {
   runE2eTest s/wdio target/e2e/wdio.3chrome.conf.js    --only private-chat.3browsers $args
 
   runE2eTest s/wdio target/e2e/wdio.3chrome.conf.js    --only settings-toggle-login-required.3browsers $args
+  runE2eTest s/wdio target/e2e/wdio.2chrome.conf.js    --only settings-approve-members.2browsers $args
+
   runE2eTest s/wdio target/e2e/wdio.2chrome.conf.js    --only password-login-reset.2browsers $args
   runE2eTest s/wdio target/e2e/wdio.conf.js            --only user-profile-access $args
   runE2eTest s/wdio target/e2e/wdio.conf.js            --only user-profile-change-username $args

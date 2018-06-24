@@ -37,7 +37,7 @@ let topics = {
 let appendedText = " - appended text";
 
 
-describe("new member, allow, approve:", () => {
+describe("new member, allow, approve posts:", () => {  // RENAME ths file to 'new-member-posts...'
 
   it("initialize people", () => {
     browser.perhapsDebugBefore();

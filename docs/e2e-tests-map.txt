@@ -291,9 +291,9 @@ links -
 
 site settings:
   login -
-    login required:  settings-login-to-read.3browsers.test.ts
+    login required:  settings-toggle-login-required.3browsers.test.ts  [TyT4GKBW20]
     invites only:
-    approve users:
+    approve members: settings-approve-members.2browsers.test.ts  [TyT2HUWX8]
     allow signup:
     allow local signup:
     guest login allowed:
@@ -313,10 +313,18 @@ site settings:
 admin -
   delete flagged:   — also see (6JS3)
   clear flag:   — also see (6JS3)
-  approve stuff:  (2WY0)
+  approve posts:  (2WY0)
   undoReviewDecision: [4JKWWD4]
   ... lots of stuff ...
   reviews - [2VSP5Q8]
+    reject-delete post -
+      other review task get invalidated:
+      undelete post, other tasks reactivated:
+    reject-delete page -
+      other review task same page get invalidated:
+      delete one post on the deleted page:
+      undelete page, other tasks reactivated:
+      the deleted post's task not reactivated:
     delete page for review task -
       gets invalidated:
       restore page, active again:

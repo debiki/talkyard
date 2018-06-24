@@ -46,16 +46,16 @@ export const UsersTab = createFactory({
       r.div({},
         r.div({ className: 'dw-sub-nav' },
           r.ul({ className: 'nav nav-pills' },
-            LiNavLink({ to: bp + 'enabled' }, "Enabled"),
-            showWaiting ? LiNavLink({ to: bp + 'waiting' }, "Waiting") : null,
-            LiNavLink({ to: bp + 'new' }, "New"),
-            LiNavLink({ to: bp + 'staff' }, "Staff"),
-            LiNavLink({ to: bp + 'suspended' }, "Suspended"),
+            LiNavLink({ to: bp + 'enabled', className: 'e_EnabledUsB' }, "Enabled"),
+            showWaiting ? LiNavLink({ to: bp + 'waiting', className: 'e_WaitingUsB' }, "Waiting") : null,
+            LiNavLink({ to: bp + 'new', className: 'e_NewUsB' }, "New"),
+            LiNavLink({ to: bp + 'staff', className: 'e_StaffUsB' }, "Staff"),
+            LiNavLink({ to: bp + 'suspended', className: 'e_SuspendedUsB' }, "Suspended"),
             //LiNavLink({ to: bp + 'silenced' }, "Silenced"), — not yet impl
             // The internal name, "Threats", would sound a bit worrisome? "Under surveillance"
             // or just "Watching" sounds better?
-            LiNavLink({ to: bp + 'watching' }, "Watching"),
-            LiNavLink({ to: bp + 'invited' }, "Invite"))),
+            LiNavLink({ to: bp + 'watching', className: 'e_WatchingUsB' }, "Watching"),
+            LiNavLink({ to: bp + 'invited', className: 'e_InvitedUsB' }, "Invite"))),
         r.div({ className: 's_A_Us' },
           Switch({},
             Route({ path: bp + 'enabled', render: () => EnabledUsersPanel(childProps) }),
@@ -80,13 +80,13 @@ function EnabledUsersPanel(props) {
 
 function WaitingUsersPanel(props) {
   return UserList({ whichUsers: 'WaitingUsers',
-      intro: r.p({},
+      intro: r.p({ className: 'e_WaitingUsersIntro' },
         "Users who have signed up to join this site, and are waiting for you to approve them:") });
 }
 
 function NewUsersPanel(props) {
   return UserList({ whichUsers: 'NewUsers',
-      intro: r.p({},
+      intro: r.p({ className: 'e_NewUsersIntro' },
         "Users who signed up recently:") });
 }
 
@@ -208,7 +208,7 @@ const UserList = createFactory({
 
   render: function() {
     if (!this.state || !this.state.users)
-      return r.p({}, 'Loading...');
+      return r.p({}, "Loading...");
 
     const now = new Date().getTime();
     let userRows = this.state.users.map((user: MemberInclDetailsWithStats) => {
@@ -216,7 +216,7 @@ const UserList = createFactory({
     });
 
     if (!this.state.users.length)
-      userRows = r.tr({}, r.td({}, "No such users."));
+      userRows = r.tr({}, r.td({ className: 'e_NoSuchUsers' }, "No such users."));
 
     const actionHeader = this.props.whichUsers === 'WaitingUsers'
         ? r.th({}, "Actions")
@@ -224,7 +224,7 @@ const UserList = createFactory({
 
     return (r.div({},
       r.div({ className: 'esAdminSectionIntro' }, this.props.intro),
-      r.div({ className: 'dw-users-to-review' },
+      r.div({ className: 'dw-users-to-review e_AdminUsersList' },
         r.table({ className: 'table' },
           r.thead({},
             r.tr({},
@@ -280,20 +280,15 @@ const UserRow = createFactory({
     if (this.props.whichUsers !== 'WaitingUsers') {
       // Don't show any actions.
     }
-    else if (this.state.wasJustApproved) {
-      actions = r.span({},
-        'Approved.',
-         Button({ onClick: this.undoApproveOrReject }, 'Undo'));
-    }
-    else if (this.state.wasJustRejected) {
-      actions = r.span({},
-        'Rejected.',
-         Button({ onClick: this.undoApproveOrReject }, 'Undo'));
+    else if (this.state.wasJustApproved || this.state.wasJustRejected) {
+      actions = rFragment({},
+        this.state.wasJustApproved ? "Approved. " : "Rejected. ",
+        Button({ onClick: this.undoApproveOrReject, className: 'e_UndoApprRjctB' }, "Undo"));
     }
     else {
-      actions = r.span({},
-          Button({ onClick: this.approveUser }, 'Approve'),
-          Button({ onClick: this.rejectUser }, 'Reject'));
+      actions = rFragment({},
+          Button({ onClick: this.approveUser, className: 'e_ApproveUserB' }, "Approve"),
+          Button({ onClick: this.rejectUser, className: 'e_RejectUserB'  }, "Reject"));
     }
 
     const actionsCell = actions
@@ -326,7 +321,7 @@ const UserRow = createFactory({
           r.span({ className: 's_A_Us_UsL_U_Modif' }, " — deleted"));
 
     const emailNotVerified = !user.email || user.emailVerifiedAtMs ? null :
-      r.span({ className: 's_A_Us_UsL_U_Modif' }, " — not verified");
+      r.span({ className: 's_A_Us_UsL_U_Modif e_EmNotVerfd' }, " — not verified");
 
     let lastSeen;
     let topicsViewed;

@@ -309,7 +309,7 @@ class Mailer(
       return
     }
 
-    logger.debug(s"Sending email: $emailToSend")
+    logger.debug(s"s$siteId: Sending email [TyMEMLSENDNG]: $emailToSend")
 
     // Reload the user and his/her email address in case it's been changed recently.
     val address = emailToSend.toUserId.flatMap(siteDao.getUser).map(_.email) getOrElse
@@ -322,14 +322,14 @@ class Mailer(
       try {
         apacheCommonsEmail.send()
         // Nowadays not using Amazon's SES api, so no provider email id is available.
-        logger.trace("Email sent [EdM72JHB4]: "+ emailWithAddress)
+        logger.trace(s"s$siteId: Email sent [TyMEMLSENT]: "+ emailWithAddress)
         emailWithAddress
       }
       catch {
         case ex: acm.EmailException =>
           var message = stringifyExceptionAndCauses(ex)
           val badEmail = emailWithAddress.copy(failureText = Some(message))
-          logger.warn(s"Error sending email [EdESEME001]: $badEmail")
+          logger.warn(s"s$siteId: Error sending email [TyEEMLERR]: $badEmail")
           badEmail
       }
 

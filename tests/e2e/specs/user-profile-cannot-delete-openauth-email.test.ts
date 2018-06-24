@@ -67,7 +67,8 @@ describe("user profile cannot delete openauth email:", () => {
   let email2VerifLink;
 
   it("... hen gets an address verification email", () => {
-    email2VerifLink = server.waitAndGetVerifyAnotherEmailAddressLinkEmailedTo(siteId, emailAddress2);
+    email2VerifLink = server.waitAndGetVerifyAnotherEmailAddressLinkEmailedTo(
+        siteId, emailAddress2, browser);
   });
 
   it("... and clicks the verif link", () => {
@@ -87,7 +88,8 @@ describe("user profile cannot delete openauth email:", () => {
   });
 
   it("... clicks an address verification link", () => {
-    const url = server.waitAndGetVerifyAnotherEmailAddressLinkEmailedTo(siteId, emailAddress3);
+    const url = server.waitAndGetVerifyAnotherEmailAddressLinkEmailedTo(
+        siteId, emailAddress3, browser);
     gmailUsersBrowser.go(url);
   });
 
