@@ -75,12 +75,20 @@ const HostnameEditorDialog = createComponent({
     const content =
       r.div({},
         // see https://meta.discourse.org/t/change-the-domain-name-or-rename-my-discourse/16098
-        r.p({}, "If you choose a domain that ends with anything else than talkyard.net: " +
-          "1) You need to add a CNAME entry to your domain name server that points to ",
-          r.b({}, r.samp({}, "c1.talkyard.net")),
-          ". 2) Don't delete the old CNAME — leave it as is. Later, you can click a certain ",
-          r.b({}, "Redirect old addresses"),  // dupl button name [5KFU2R0]
-          " button to redirect visitors from the old address to the new."),
+        r.p({}, "If you choose a domain that ends with something else than talkyard.net:"),
+        r.ul({},
+          r.li({},
+            "You need to add a CNAME entry to your domain name server that points to ",
+            // Make the talkyard.net domain & the @talkyard.io email addr below configurable? [CONFADDRS]
+            r.b({}, r.samp({}, "c1.talkyard.net"))),
+          r.li({},
+            "Don't delete the old CNAME — leave it as is. Later, you can click a certain ",
+            r.b({}, "Redirect old addresses"),  // dupl button name [5KFU2R0]
+            " button to redirect visitors from the old address to the new."),
+          r.li({},
+            "But before you redirect to the new address, email ", r.b({}, "support@talkyard.io"),
+            " and say that you need a Let'sEncrypt https cert for your new custom domain " +
+            "(this hasn't been automated yet).")),
         r.p({}, "If you use ", r.b({}, "CloudFlare"),
           ", either 1) configure CloudFlare to send the traffic directly to " +
           "Talkyard, bypassing CloudFlare, or 2) use Full SSL or Full SSL (Strict). " +

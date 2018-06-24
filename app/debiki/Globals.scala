@@ -250,6 +250,10 @@ class Globals(
 
   def spamChecker: SpamChecker = state.spamChecker
 
+  /* Add configurable support email address?  [CONFADDRS]
+  val supportEmailAddress: Option[String] =
+    conf.getString("talkyard.supportEmailAddress").noneIfBlank */
+
   val securityComplaintsEmailAddress: Option[String] =
     conf.getString("talkyard.securityComplaintsEmailAddress").noneIfBlank
 
@@ -418,7 +422,7 @@ class Globals(
     if (isOrWasTest) "localhost"
     else conf.getString("talkyard.baseDomain").noneIfBlank getOrElse "localhost"
 
-  val baseDomainWithPort: String =
+  val baseDomainWithPort: String =  // [CONFADDRS]
     if (secure && port == 443) baseDomainNoPort
     else if (!secure && port == 80) baseDomainNoPort
     else s"$baseDomainNoPort:$port"
