@@ -284,8 +284,8 @@ var t_pt_BR: TalkyardTranslations = t = {
     YouAnd: "Você, e ",
     OnlyYou: "Só você, parece",
     NumStrangers: (numStrangers: number) => {
-	  const people = numStrangers === 1 ? "pessoa" : "pessoas";
-	  const loggedIn = numStrangers === 1 ? "logou" : "logaram";
+    const people = numStrangers === 1 ? "pessoa" : "pessoas";
+    const loggedIn = numStrangers === 1 ? "logou" : "logaram";
       return `${numStrangers} ${people} que não se ${loggedIn}`;
     },
 
@@ -330,7 +330,7 @@ var t_pt_BR: TalkyardTranslations = t = {
     ThisProblStarted_3: " concluído.",
 
     ThisProblPlanned_1: "Isto é um problema. Nós ",
-	ThisProblPlanned_2: " planejamos consertá-lo, mas ainda não ",
+    ThisProblPlanned_2: " planejamos consertá-lo, mas ainda não ",
     ThisProblPlanned_3: " começamos, ainda não está ",
     ThisProblPlanned_4: " conclúido.",
 
@@ -631,6 +631,7 @@ var t_pt_BR: TalkyardTranslations = t = {
     EmailAddresses: "Endereços de email",
     PrimaryDot: "Primário. ",
     VerifiedDot: "Verificado. ",
+    NotVerifiedDot: "Não verificado. ",  // was [google-translate]
     ForLoginWithDot: (provider: string) => `Para login com ${provider}. `,
     MakePrimary: "Tornar Primário",
     AddEmail: "Adicione endereço de email",

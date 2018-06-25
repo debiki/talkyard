@@ -115,3 +115,11 @@ To add a new language:
 
     5. Build and deploy a new server version.
 
+    6. Later, when adding new per language values, they'll be missing in the new language, nn_NN.
+       Then, see if Google Translate can do a seemingly ok translation (e.g. translate back
+       to English, see if still means the same thing) if so, add the translation and mark
+       with `[google-translate]` in a comment on the same line. Maybe every 3rd? 6th? month?,
+       ask people who speak the relevant language, if those new translations are ok or not,
+       and update & fix. If you feel rather unsure about if the Google Translate result is okay,
+       add the text in English instead.
+
