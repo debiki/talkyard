@@ -417,10 +417,13 @@ class Nashorn(globals: Globals) {
         |      marksByPostId: {},
         |    };
         |
-        |    // Each language file creates a 't_(lang-code)' global variable, e.g. 't_en' for English.
-        |    // And they all set a global 'var t' to themselves (t = declared by those files).
+        |    // Each language file creates a 't_(lang-code)' global variable, e.g. 't_en_US' for English.
+        |    // And they all set a global 'var t' to themselves (t is declared in those files).
+        |    // Update 't' here; it gets used during rendering. If language missing (maybe after
+        |    // renaming a code, e.g. 'en' —> 'en_US'), fallback to English.
+        |    // Which I actually just did CLEAN_UP migrate 'en' to 'en_US' in the database [5KBKEWQ2]),
         |    var langCode = theStore.settings.languageCode || '$languageCode';
-        |    t = global['t_' + langCode];
+        |    t = global['t_' + langCode] || t_en_US;
         |
         |    // The React store should be used instead, when running React.
         |    eds.uploadsUrlPrefixCommonmark = 'TyEFORCOMMONMARK';  // [7AKBQ2]
@@ -455,8 +458,9 @@ class Nashorn(globals: Globals) {
       }
 
       // Sync with the languages in the /translations/ dir, and the admin UI language selector. [5JUKQR2]
-      addTranslation("en")
-      addTranslation("sv")
+      addTranslation("en_US")
+      addTranslation("sv_SE")
+      addTranslation("pt_BR")
 
       // Add render page code.
       val rendererScript = loadFileAsString(s"/public/res/server-bundle$min.js", isTranslation = false)

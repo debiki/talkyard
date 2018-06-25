@@ -92,6 +92,8 @@ Contributing
 Want to contribute? Feel free to say hello in [our community](https://www.talkyard.io/forum/),
 or maybe open an issue or a PR (pull request) here at GitHub.
 
+Here's how to translate to a new language: [i18n-README](translations/i18n-README.md) (step 1 and 2 only).
+
 You need to read and agree to our [Contributor License Agreement](./docs/CLA-v2.txt). You do that by
 reading it (please do — there's a human friendly intro) and appending a single line
 paragraph with your real name (no pseudonyms) and the following text, to all your commit messages:
@@ -99,10 +101,10 @@ paragraph with your real name (no pseudonyms) and the following text, to all you
 > I, Your Full Name \<your@<i></i>email.address\>, agree to the Contributor License Agreement, docs/CLA-v2.txt.
 
 Please squash your commits to just one (unless you're doing something complicated that's easier
-to review, in separate commits).
+to review in separate commits).
 
 Can be a good idea if you ask us what is currently being worked on, so you won't
-accidentally re-implement something that's already been done or started. Because people
+accidentally re-implement something that's already been done or started. People
 (e.g. I) might be working in their own work-in-progress topic branches that you
 don't know about.
 

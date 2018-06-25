@@ -77,7 +77,11 @@ class SiteTpi protected (
   def siteId: SiteId = debikiRequest.siteId
   def siteSettings: EffectiveSettings = debikiRequest.siteSettings
 
-  def languageCode: String = siteSettings.languageCode
+  def languageCode: String = {
+    val code = siteSettings.languageCode
+    if (code == "en") "en_US"  // [5KBKEWQ2]
+    else code
+  }
 
   def isLoggedIn: Boolean = debikiRequest.user isDefined
   def isOwner: Boolean = debikiRequest.user.exists(_.isOwner)
