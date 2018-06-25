@@ -24,6 +24,20 @@ import Prelude._
 
 class PreludeTest extends Specification {
 
+  "isAlphaUnderscoreOnly" should {
+    "'': yes" in { "".isAlphaUnderscoreOnly must_== true }
+    "'a': yes" in { "a".isAlphaUnderscoreOnly must_== true }
+    "'_': yes" in { "_".isAlphaUnderscoreOnly must_== true }
+    "'A': yes" in { "A".isAlphaUnderscoreOnly must_== true }
+    "'a_A': yes" in { "a_A".isAlphaUnderscoreOnly must_== true }
+    "' ': no" in {  " ".isAlphaUnderscoreOnly must_== false }
+    "'\\n': no" in {  "\n".isAlphaUnderscoreOnly must_== false }
+    "'\\t': no" in {  "\t".isAlphaUnderscoreOnly must_== false }
+    "'5': no" in { "5".isAlphaUnderscoreOnly must_== false }
+    "'å': no" in { "å".isAlphaUnderscoreOnly must_== false }
+    "'a_A2': yes" in { "a_A2".isAlphaUnderscoreOnly must_== false }
+  }
+
   "stripStartEndBlanks" should {
     "convert '' to ''" in { stripStartEndBlanks("") must_== "" }
     "convert ' ' to ''" in { stripStartEndBlanks(" ") must_== "" }

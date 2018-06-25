@@ -30,9 +30,10 @@ class ReviewTasksAppSpec extends DaoAppSuite {
     "find no tasks when there are none" in {
       globals.systemDao.getOrCreateFirstSite()
       val dao = globals.siteDao(Site.FirstSiteId)
-      val (stuff, usersById) = dao.loadReviewStuff(olderOrEqualTo = now, limit = 999)
+      val (stuff, usersById, pageMetaById) = dao.loadReviewStuff(olderOrEqualTo = now, limit = 999)
       stuff.length mustBe 0
       usersById.size mustBe 0
+      pageMetaById.size mustBe 0
 
       val counts = dao.readOnlyTransaction(_.loadReviewTaskCounts(isAdmin = true))
       counts.numUrgent mustBe 0
@@ -75,10 +76,13 @@ class ReviewTasksAppSpec extends DaoAppSuite {
         counts = transaction.loadReviewTaskCounts(isAdmin = true)
         counts.numUrgent mustBe 1
         counts.numOther mustBe 1 // was 0, now 1
+
+        TESTS_MISSING // add task with decidedBy user, verify hen loaded — usersById then mustBe 4 below.
       }
 
       info("find the tasks")
-      val (stuff, usersById) = dao.loadReviewStuff(olderOrEqualTo = new ju.Date(), limit = 999)
+      val (stuff, usersById, pageMetaById) =
+        dao.loadReviewStuff(olderOrEqualTo = new ju.Date(), limit = 999)
       stuff.length mustBe 2
       // (Most recent first.)
       stuff.head.createdBy.id mustBe createdByUser2.id
@@ -87,6 +91,11 @@ class ReviewTasksAppSpec extends DaoAppSuite {
       stuff.last.createdBy.id mustBe createdByUser.id
       stuff.last.reasons mustBe urgentReasons
       stuff.last.maybeBadUser.id mustBe maybeBadUser.id
+      usersById.size mustBe 3
+      usersById.get(createdByUser.id) mustBe defined
+      usersById.get(createdByUser2.id) mustBe defined
+      usersById.get(maybeBadUser.id) mustBe defined
+      pageMetaById.size mustBe 0
     }
 
     "update tasks, complete, delete, etc, etc" in {

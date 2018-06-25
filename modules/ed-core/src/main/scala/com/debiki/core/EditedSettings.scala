@@ -18,7 +18,7 @@
 package com.debiki.core
 
 import EditedSettings._
-import Prelude.unimplemented
+import Prelude._
 
 
 sealed abstract class ContribAgreement(protected val IntVal: Int) { def toInt = IntVal }
@@ -277,6 +277,10 @@ case class SettingsToSave(
   notifyModsIfUserBlocked: Option[Option[Boolean]] = None,
   regularMemberFlagWeight: Option[Option[Float]] = None,
   coreMemberFlagWeight: Option[Option[Float]] = None) {
+
+  // The language code must be like en_US.
+  require(languageCode.forall(_.forall(_.isAlphaUnderscoreOnly)), "Weird lang code [TyE2WKBYF]")
+  require(languageCode.forall(_.forall(_.length < 10)), "Too long language code [TyE2WKBP5]")
 
   if (contribAgreement.contains(Some(ContribAgreement.UseOnThisSiteOnly)) &&
       contentLicense.isDefined) {

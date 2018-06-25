@@ -660,7 +660,7 @@ interface Store extends Origins {
 
 // Default settings: [8L4KWU02]
 interface SettingsVisibleClientSide {
-  languageCode?: string;                // default: 'en'
+  languageCode?: string;                // default: 'en_US'
   inviteOnly?: boolean;                 // default: false
   allowSignup?: boolean;                // default: true
   allowLocalSignup?: boolean;           // default: true

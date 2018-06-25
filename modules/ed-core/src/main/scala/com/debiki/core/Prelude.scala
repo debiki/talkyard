@@ -199,10 +199,10 @@ object Prelude {
   private val ValidHostAndPortRegexStr =
     """(([a-zA-Z]|[a-zA-Z][a-zA-Z0-9\-]*[a-zA-Z0-9])\.)*([A-Za-z]|[A-Za-z][A-Za-z0-9\-]*[A-Za-z0-9])(:\d+)?"""
 
-  private val _ValidHostAndPortRegex = s"""^$ValidHostAndPortRegexStr$$""".r
+  private val ValidHostAndPortRegex = s"""^$ValidHostAndPortRegexStr$$""".r
 
-  def isValidHostAndPort(hostAndPort: String) =
-    _ValidHostAndPortRegex.pattern.matcher(hostAndPort).matches
+  def isValidHostAndPort(hostAndPort: String): Boolean =
+    ValidHostAndPortRegex.pattern.matcher(hostAndPort).matches
 
 
   /**
@@ -519,16 +519,19 @@ object Prelude {
       underlying.isEmpty || underlying.get.trim.isEmpty
   }
 
+
+  private val AlphaUnderscoreRegex = "^[a-zA-Z_]*$".r
+
   /**
    * Pimps `String` with `matches(regex): Boolean` and `misses(regex)`
    * and `dropRightWhile(Char => Boolean)` and `takeRightWhile`.
    */
-  implicit def stringToRichString(s: String) = new RichString(s)
+  implicit def stringToRichString(s: String): RichString = new RichString(s)
 
   class RichString(underlying: String) {
 
-    def matches(regex: Regex) = regex.pattern.matcher(underlying).matches
-    def misses(regex: Regex) = !matches(regex)
+    def matches(regex: Regex): Boolean = regex.pattern.matcher(underlying).matches
+    def misses(regex: Regex): Boolean = !matches(regex)
 
     def dropRightWhile(f: Char => Boolean): String = {
       val keepIx = underlying.lastIndexWhere(!f(_))
@@ -560,6 +563,9 @@ object Prelude {
       if (trimmed.isEmpty) None
       else Some(trimmed)
     }
+
+    def isAlphaUnderscoreOnly: Boolean =
+      AlphaUnderscoreRegex.pattern.matcher(underlying).matches
   }
 
 

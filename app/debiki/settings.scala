@@ -247,7 +247,7 @@ object AllSettings {
     val orgShortName = ""
     val contribAgreement: ContribAgreement = ContribAgreement.CcBy3And4
     val contentLicense: ContentLicense = ContentLicense.CcBySa4
-    val languageCode = "en"
+    val languageCode = "en_US"
     val googleUniversalAnalyticsTrackingId = ""
     val enableChat = true
     val enableDirectMessages = true

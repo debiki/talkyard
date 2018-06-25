@@ -419,9 +419,8 @@ class Nashorn(globals: Globals) {
         |
         |    // Each language file creates a 't_(lang-code)' global variable, e.g. 't_en_US' for English.
         |    // And they all set a global 'var t' to themselves (t is declared in those files).
-        |    // Update 't' here; it gets used during rendering. If language missing (maybe after
-        |    // renaming a code, e.g. 'en' —> 'en_US'), fallback to English.
-        |    // Which I actually just did CLEAN_UP migrate 'en' to 'en_US' in the database [5KBKEWQ2]),
+        |    // Update 't' here; it gets used during rendering. If language missing (that'd be a bug),
+        |    // fallback to English.
         |    var langCode = theStore.settings.languageCode || '$languageCode';
         |    t = global['t_' + langCode] || t_en_US;
         |
