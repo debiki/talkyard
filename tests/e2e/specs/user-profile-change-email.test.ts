@@ -146,6 +146,8 @@ describe("user profile change email:", () => {
 
   it("Maria clicks the email verif link", () => {
     mariasBrowser.go(mariasEmailVerifLink);
+    mariasBrowser.hasVerifiedEmailPage.waitUntilLoaded({ needToLogin: false });
+    mariasBrowser.hasVerifiedEmailPage.goToProfile();
   });
 
   it("... now she can set the new address as her primary", () => {

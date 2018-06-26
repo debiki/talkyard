@@ -52,6 +52,7 @@ export const UsersTab = createFactory({
             LiNavLink({ to: bp + 'staff', className: 'e_StaffUsB' }, "Staff"),
             LiNavLink({ to: bp + 'suspended', className: 'e_SuspendedUsB' }, "Suspended"),
             //LiNavLink({ to: bp + 'silenced' }, "Silenced"), — not yet impl
+            //Or: Stopped? = Banned or Suspended or Silenced or Shadowbanned
             // The internal name, "Threats", would sound a bit worrisome? "Under surveillance"
             // or just "Watching" sounds better?
             LiNavLink({ to: bp + 'watching', className: 'e_WatchingUsB' }, "Watching"),
@@ -74,7 +75,7 @@ export const UsersTab = createFactory({
 
 function EnabledUsersPanel(props) {
   return UserList({ whichUsers: 'EnabledUsers',
-      intro: r.p({},
+      intro: r.p({ className: 'e_EnabledUsersIntro' },
         "Enabled user accounts: (sorted by sign-up date, recent first)") });
 }
 
@@ -92,13 +93,13 @@ function NewUsersPanel(props) {
 
 function StaffUsersPanel(props) {
   return UserList({ whichUsers: 'StaffUsers',
-      intro: r.p({},
+      intro: r.p({ className: 'e_StaffUsersIntro' },
         "Administrators and moderators:") });
 }
 
 function SuspendedUsersPanel(props) {
   return UserList({ whichUsers: 'SuspendedUsers',
-      intro: r.p({},
+      intro: r.p({ className: 'e_SuspendedUsersIntro' },
         "These users are suspended; they cannot login:") });
 }
 
@@ -111,7 +112,7 @@ function SuspendedUsersPanel(props) {
 
 function ThreatsUsersPanel(props) {
   return UserList({ whichUsers: 'ThreatUsers',
-      intro: r.p({},
+      intro: r.p({ className: 'e_ThreatsUsersIntro' },
         r.b({}, "Mild"), " threat users: You'll be notified about all their posts.", r.br(),
         r.b({}, "Moderate"), " threat users: Their posts won't be visible until " +
           "the posts have been approved by staff.") });
@@ -155,15 +156,16 @@ const InvitedUsersPanel = createFactory({
     if (!_.isArray(invites)) {
       introText = "Loading ...";
     }
-    else if (_.isEmpty(invites)) {
-      introText = "No invites sent.";
-    }
     else {
-      introText = "People who have been invited to this site:";
+      introText = _.isEmpty(invites) ?
+          "No invites sent." : "People who have been invited to this site:";
       const nowMs = Date.now();
       listOfInvites = invites.map((invite: Invite) => users.InviteRowWithKey(
           { invite, store, nowMs, showSender: true }));
     }
+
+    const tableBodyIfLoaded = !listOfInvites ? null :
+      r.tbody({ className: 's_InvsL'}, listOfInvites);
 
     // Could break out rendering code to separate module — also used in user profile. [8HRAE3V]
     return (
@@ -180,8 +182,7 @@ const InvitedUsersPanel = createFactory({
               r.th({}, "Invitation accepted"),
               r.th({}, "Invitation sent"),
               r.th({}, "Sent by"))),
-          r.tbody({ className: 's_InvsL'},
-            listOfInvites))));
+          tableBodyIfLoaded)));
   }
 });
 

@@ -42,7 +42,7 @@ export function getPageToolsDialog() {
 }
 
 
-var PageToolsDialog = createComponent({
+const PageToolsDialog = createComponent({
   getInitialState: function () {
     return {
       isOpen: false,
@@ -58,9 +58,9 @@ var PageToolsDialog = createComponent({
     this.setState({ isOpen: false });
   },
 
-  selectPosts: function() {
+  //selectPosts: function() {
     // page.openSelectPostsDialog();
-  },
+  //},
 
   unpinPage: function() {
     ReactActions.unpinPage(this.close);
@@ -79,16 +79,16 @@ var PageToolsDialog = createComponent({
   render: function () {
     const store: Store = this.state.store;
     const page: Page = store.currentPage;
-    var childProps = {
+    const childProps = {
       store: store,
       closeAllDialogs: this.close
     };
 
-    var selectPostsButton; // = !store_canSelectPosts(store) ? null :
+    //let selectPostsButton = !store_canSelectPosts(store) ? null :
       //Button({ onClick: this.selectPosts }, "Select posts");
 
-    var pinPageButton;
-    var pinPageDialog;
+    let pinPageButton;
+    let pinPageDialog;
     if (store_canPinPage(store)) {
       pinPageDialog = PinPageDialog(_.assign({ ref: 'pinPageDialog' }, childProps));
       pinPageButton =
@@ -96,17 +96,17 @@ var PageToolsDialog = createComponent({
             page.pinWhere ? "Edit Pin" : "Pin Topic");
     }
 
-    var unpinPageButton = (!store_canPinPage(store) || !page.pinWhere) ? null :
-      Button({ onClick: this.unpinPage }, "Unpin Topic");
+    const unpinPageButton = (!store_canPinPage(store) || !page.pinWhere) ? null :
+      Button({ onClick: this.unpinPage, className: 'e_PinPg'  }, "Unpin Topic");
 
-    var deletePageButton = !store_canDeletePage(store) ?  null :
-      Button({ onClick: this.deletePage }, "Delete Topic");
+    const deletePageButton = !store_canDeletePage(store) ?  null :
+      Button({ onClick: this.deletePage, className: 'e_DelPg' }, "Delete Topic");
 
-    var undeletePageButton = !store_canUndeletePage(store) ?  null :
-      Button({ onClick: this.undeletePage }, "Restore Topic");
+    const undeletePageButton = !store_canUndeletePage(store) ?  null :
+      Button({ onClick: this.undeletePage, className: 'e_RstrPg' }, "Restore Topic");
 
-    var buttons = r.div({},
-      selectPostsButton,
+    const buttons = r.div({},
+      //selectPostsButton,
       pinPageButton,
       unpinPageButton,
       deletePageButton,
@@ -117,7 +117,7 @@ var PageToolsDialog = createComponent({
         pinPageDialog,
         ModalHeader({}, ModalTitle({}, "Do what?")),
         ModalBody({}, buttons),
-        ModalFooter({}, Button({ onClick: this.close }, 'Close'))));
+        ModalFooter({}, Button({ onClick: this.close }, "Close"))));
   }
 });
 
@@ -184,8 +184,8 @@ const PinPageDialog = createComponent({
               help: "Sort order if many topics are pinned, 1 is first.",
               defaultValue: store.pinOrder || DefaultPinOrder })),
         ModalFooter({},
-          Button({ onClick: this.doPin }, store.pinWhere ? 'Save' : 'Pin'),
-          Button({ onClick: this.close }, 'Cancel'))));
+          Button({ onClick: this.doPin }, store.pinWhere ? "Save" : "Pin"),
+          Button({ onClick: this.close }, "Cancel"))));
   }
 });
 

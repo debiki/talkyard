@@ -200,6 +200,11 @@ describe("settings-approve-members [TyT2HUWX8]", function() {
     owensBrowser.adminArea.settings.clickSaveAll();
   });
 
+  it("... the Waiting tab disappears", function() {
+    owensBrowser.adminArea.goToUsersEnabled();
+    assert(!owensBrowser.adminArea.users.isWaitingTabVisible());
+  });
+
   it("... now anyone can access the site", function() {
     strangersBrowser.refresh();
     strangersBrowser.assertPageTitleMatches(forumTitle);

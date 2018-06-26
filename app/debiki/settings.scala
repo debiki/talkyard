@@ -345,6 +345,7 @@ case class EffectiveSettings(
   def regularMemberFlagWeight: Float = firstInChain(_.regularMemberFlagWeight) getOrElse default.regularMemberFlagWeight
   def coreMemberFlagWeight: Float = firstInChain(_.coreMemberFlagWeight) getOrElse default.coreMemberFlagWeight
 
+  def loginRequired: Boolean = userMustBeAuthenticated || userMustBeApproved // [2KZMQ5]
 
   /** The allowEmbeddingFrom field, but with any url path removed (if included, iframe won't
     * load at all in Chrome — url path not allowed? Weird, should be allowed:

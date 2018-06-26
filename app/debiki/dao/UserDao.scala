@@ -546,7 +546,7 @@ trait UserDao {
           case None => "forever"
           case Some(date) => "until " + toIso8601(date)
         }
-        throwForbidden("DwE403SP0", o"""Account suspended $forHowLong,
+        throwForbidden("TyEUSRSSPNDD_", o"""Account suspended $forHowLong,
             reason: ${user.suspendedReason getOrElse "?"}""")
       }
       loginGrant

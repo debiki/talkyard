@@ -110,13 +110,6 @@ export const UserProfileAdminView = createFactory({
         ExtLinkButton({ href: this.publicProfileLink(), id: 'e2eA_Us_U_ShowPublProfB' },
           "View Public Profile");
 
-    let usernameAndFullName: string = user.username;
-    if (user.fullName) {
-      usernameAndFullName += ' (' + user.fullName + ')';
-    }
-
-    const thatIsYou = user.id === me.id ? " — that's you" : '';
-
     const makeRow = (what: string, value, controls, alsoForGroups?: boolean) => {
       if (!alsoForGroups && user.isGroup) return null;
       return r.div({ className: 'esA_Us_U_Rows_Row' },
@@ -125,34 +118,55 @@ export const UserProfileAdminView = createFactory({
         r.div({ className: 'col-sm-6' }, controls));
     };
 
+    const thatIsYou = user.id === me.id ? " — that's you" : '';
+
+    const usernameAndFullName = rFragment({},
+      r.span({ className: 'e_A_Us_U_Username' }, user.username),
+      user.fullName ? r.span({}, ' (' + user.fullName + ')') : null,
+      thatIsYou);
+
     // ----- Enabled?
 
     let enabled = true;
-    let whyNotEnabled = '';
+    let notEnabledBecauseEmailUnverified;
+    let notEnabledBecauseWaitingToBeApproved;
+    let notEnabledBecauseRejected;
+    let notEnabledBecauseBanned;
 
     if (settings.requireVerifiedEmail && !user.emailVerifiedAtMs) {
       enabled = false;
-      whyNotEnabled += " Hasn't clicked email verification link.";
+      notEnabledBecauseEmailUnverified =
+          r.span({ className: 'e_Enabled-No_EmNotVer' }, " Hasn't clicked email verification link.");
     }
     else if (settings.userMustBeApproved) {
       if (!user.approvedAtMs) {
         enabled = false;
-        whyNotEnabled += " Waiting for you to approve him/her.";
+        notEnabledBecauseWaitingToBeApproved =
+            r.span({ className: 'e_Enabled-No_WaitingAppr' }, " Waiting for you to approve him/her.");
       }
       else if (!user.isApproved) {
         enabled = false;
-        whyNotEnabled += " Was not approved to join.";
+        notEnabledBecauseRejected =
+            r.span({ className: 'e_Enabled-No_Rjctd' }, " Was not approved to join.");
       }
     }
 
     if ((<number | string> user.suspendedTillEpoch) === 'Forever') {
       enabled = false;
-      whyNotEnabled += " User banned.";
+      notEnabledBecauseBanned =
+          r.span({ className: 'e_Banned' }, " User banned.");
     }
+
+    const enabledInfo = rFragment({},
+       r.span({ className: enabled ? 'e_Enabled-Yes' : 'e_Enabled-No' }, prettify(enabled) + '.'),
+      notEnabledBecauseEmailUnverified,
+      notEnabledBecauseWaitingToBeApproved,
+      notEnabledBecauseRejected,
+      notEnabledBecauseBanned);
 
     // ----- /Enabled?
 
-    const makeEditMemberFn = (action: EditMemberAction) => {
+    const makeEditFn = (action: EditMemberAction) => {
       return () => this.editMember(action);
     };
 
@@ -162,10 +176,12 @@ export const UserProfileAdminView = createFactory({
         rFragment({},
 
           user.emailVerifiedAtMs ? null :
-              Button({ onClick: this.resendEmailAddrVerifEmail }, "Send verification email"),
+              Button({ onClick: this.resendEmailAddrVerifEmail, className: 's_SendEmVerifEmB' },
+                "Send verification email"),
 
-          Button({ onClick: makeEditMemberFn(user.emailVerifiedAtMs ?
-                EditMemberAction.SetEmailUnverified : EditMemberAction.SetEmailVerified), },
+          Button({ onClick: makeEditFn(user.emailVerifiedAtMs ?
+                EditMemberAction.SetEmailUnverified : EditMemberAction.SetEmailVerified),
+                className: user.emailVerifiedAtMs ? 'e_SetEmNotVerifB' : 'e_SetEmVerifB' },
             user.emailVerifiedAtMs ?
                 "Set to Not verified" : "Set to Verified"),
           /* This sounds complicated. Maybe better skip? Also, fairly obvious anyway?
@@ -176,14 +192,22 @@ export const UserProfileAdminView = createFactory({
           r.a({ className: 's_A_Us_U_Rows_Row_EmlManage', href: linkToUsersEmailAddrs(user.username) },
             "Manage ...")));
 
-    const isApprovedRow = user.isGroup || !settings.userMustBeApproved ? null : makeRow(
+    const isApprovedRow = user.isGroup || !settings.userMustBeApproved ?
+                              r.span({ className: 'e_Appr_Info-Absent' }) : makeRow(
         "Approved: ",
-        user.approvedAtMs ? (user.isApproved ? "Yes" : "No, rejected") : "Undecided",
+        user.approvedAtMs ? (
+            user.isApproved
+              ? r.span({ className: 'e_Appr_Yes' }, "Yes")
+              : r.span({ className: 'e_Appr_No' }, "No, rejected"))
+          : r.span({ className: 'e_Appr_Undecided' }, "Undecided"),
         user.approvedAtMs
-            ? Button({ onClick: makeEditMemberFn(EditMemberAction.ClearApproved) }, "Undo")
+            ? Button({ onClick: makeEditFn(EditMemberAction.ClearApproved), className: 'e_Appr_UndoB' },
+                "Undo")
             : rFragment({},
-                Button({ onClick: makeEditMemberFn(EditMemberAction.SetApproved) }, "Approve"),
-                Button({ onClick: makeEditMemberFn(EditMemberAction.SetUnapproved) }, "Reject")));
+                Button({ onClick: makeEditFn(EditMemberAction.SetApproved), className: 'e_Appr_ApprB' },
+                  "Approve"),
+                Button({ onClick: makeEditFn(EditMemberAction.SetUnapproved), className: 'e_Appr_RejB' },
+                  "Reject")));
 
 
     const suspendedText = user.suspendedTillEpoch
@@ -203,42 +227,61 @@ export const UserProfileAdminView = createFactory({
     let userSuspendedNow = user.suspendedTillEpoch && Date.now() <= user.suspendedTillEpoch;
     if (userSuspendedNow) {
       suspendButton =
-          Button({ onClick: this.unsuspendUser }, "Unsuspend");
+          Button({ onClick: this.unsuspendUser, className: 'e_Unuspend' }, "Unsuspend");
     }
     else if (whyCannotSuspend) {
       suspendButton = whyCannotSuspend;
     }
     else {
       suspendButton =
-          Button({ onClick: () => openSuspendUserDialog(user, this.loadCompleteUser) },
+          Button({ onClick: () => openSuspendUserDialog(user, this.loadCompleteUser),
+              className: 'e_Suspend' },
             "Suspend");
     }
+
+    const isAdminText =
+        r.span({ className: user.isAdmin ? 'e_Adm-Yes' : 'e_Adm-No' },
+          prettify(user.isAdmin));
+
+    const isModeratorText =
+        r.span({ className: user.isModerator ? 'e_Mod-Yes' : 'e_Mod-No' },
+            prettify(user.isModerator));
 
     let toggleAdminButton;
     let toggleModeratorButton;
     if (me.isAdmin && !thatIsYou && !userSuspendedNow && !user.isGroup) {
-      toggleAdminButton = Button({ onClick: this.toggleIsAdmin },
-          user.isAdmin ? "Revoke Admin" : "Grant Admin");
+      toggleAdminButton =
+          Button({ onClick: this.toggleIsAdmin, className: 'e_ToggleAdminB' },
+            user.isAdmin ? "Revoke Admin" : "Grant Admin");
       // Need to first revoke is-admin, before can change to moderator.
-      toggleModeratorButton = user.isAdmin ? null : Button({ onClick: this.toggleIsModerator },
-          user.isModerator ? "Revoke Moderator" : "Grant Moderator");
+      toggleModeratorButton = user.isAdmin ? null :
+          Button({ onClick: this.toggleIsModerator, className: 'e_ToggleModB' },
+            user.isModerator ? "Revoke Moderator" : "Grant Moderator");
     }
 
-    const trustLevelText = user.isGroup ? null : (user.lockedTrustLevel
-        ? "Locked at: " + trustLevel_toString(user.lockedTrustLevel) + ", " +
-            "would otherwise have been: " + trustLevel_toString(user.trustLevel)
-        : trustLevel_toString(user.trustLevel));
+    const trustLevelText = user.isGroup ? null : (
+        user.lockedTrustLevel
+        ? r.span({ className: 'e_TrustLvlIsLkd' },
+            "Locked at: " + trustLevel_toString(user.lockedTrustLevel) + ", " +
+            "would otherwise have been: " + trustLevel_toString(user.trustLevel))
+        : r.span({ className: 'e_TrustLvlNotLkd' },
+            trustLevel_toString(user.trustLevel)));
 
     const trustButton = user.isGroup ? null :
-        Button({ onClick: () => openTrustLevelDialog(user, this.reloadUser) }, "Change");
+        Button({ onClick: () => openTrustLevelDialog(user, this.reloadUser),
+            className: 'e_TrustLvlB' }, "Change");
 
-    const threatLevelText = user.isGroup ? null : (user.lockedThreatLevel
-        ? "Locked at: " + threatLevel_toString(user.lockedThreatLevel) +
-            ", would otherwise have been: " + threatLevel_toString(user.threatLevel)
-        : threatLevel_toString(user.threatLevel));
+    const threatLevelText = user.isGroup ? null : (
+        user.lockedThreatLevel
+        ? r.span({ className: 'e_ThreatLvlIsLkd' },
+            "Locked at: " + threatLevel_toString(user.lockedThreatLevel) +
+            ", would otherwise have been: " + threatLevel_toString(user.threatLevel))
+        : r.span({ className: 'e_ThreatLvlNotLkd' },
+            threatLevel_toString(user.threatLevel)));
 
     const threatButton = user.isGroup ? null :
-        Button({ onClick: () => openThreatLevelDialog(user, this.reloadUser) }, "Change");
+        Button({ onClick: () => openThreatLevelDialog(user, this.reloadUser),
+            className: 'e_ThreatLvlB' }, "Change");
 
     const impersonateButton = !me.isAdmin ? null :
         Button({ onClick: () => Server.impersonateGoToHomepage(user.id),
@@ -249,13 +292,13 @@ export const UserProfileAdminView = createFactory({
         showPublProfileButton),
 
       r.div({ className: 'esA_Us_U_Rows'},
-        makeRow("Username: ", usernameAndFullName + thatIsYou, null),
+        makeRow("Username: ", usernameAndFullName, null),
         user.isGroup ? r.p({}, "Is a group.") : null,
-        makeRow("Enabled: ", prettify(enabled) + '.' + whyNotEnabled, null),
+        makeRow("Enabled: ", enabledInfo, null),
         emailAddrAndResendVerifEmailButton,
         isApprovedRow,
-        makeRow("Admin: ", user.isAdmin, toggleAdminButton),
-        makeRow("Moderator: ", user.isModerator, toggleModeratorButton),
+        makeRow("Admin: ", isAdminText, toggleAdminButton),
+        makeRow("Moderator: ", isModeratorText, toggleModeratorButton),
         makeRow("Suspended: ", suspendedText, suspendButton),
         makeRow("Trust level: ", trustLevelText, trustButton),
         makeRow("Threat level: ", threatLevelText, threatButton)),
@@ -265,7 +308,7 @@ export const UserProfileAdminView = createFactory({
 });
 
 
-function prettify(value): string {
+function prettify(value) {
   return value === true ? "Yes" : (value === false ? "No" : value);
 }
 
@@ -321,13 +364,14 @@ const SuspendDialog = createComponent({
         ModalHeader({},
           ModalTitle({}, "Suspend User")),
         ModalBody({},
-          Input({ type: 'number', label: "Suspend for how many days?", ref: 'daysInput' }),
-          Input({ type: 'text', label: "Why suspend this user?",
+          Input({ type: 'number', label: "Suspend for how many days?", ref: 'daysInput',
+              className: 'e_SuspDays' }),
+          Input({ type: 'text', label: "Why suspend this user?", className: 'e_SuspReason',
               help: "This will be visible to everyone, " +
               "on the user's public profile, and shown to the user when s/he tries to login. " +
               "Keep it short.", ref: 'reasonInput' })),
         ModalFooter({},
-          Button({ onClick: this.doSuspend }, "Suspend"),
+          Button({ onClick: this.doSuspend, className: 'e_DoSuspendB' }, "Suspend"),
           Button({ onClick: this.close }, "Cancel"))));
   }
 });
@@ -463,18 +507,20 @@ const MemberThreatLevelDialog = createComponent({
 
     const actionContent = user.lockedThreatLevel
         ? r.div({},
-            Button({ onClick: () => this.lockThreatLevelAt(null) },
+            Button({ onClick: () => this.lockThreatLevelAt(null), className: 'e_UnlockThreatB' },
               "Unlock"),
             r.div({ className: 'help-block' },
               "Clears the manually assigned threat level."))
         : r.div({},
-            Button({ onClick: () => this.lockThreatLevelAt(ThreatLevel.MildThreat) },
-                "Mild threat"),
+            Button({ onClick: () => this.lockThreatLevelAt(ThreatLevel.MildThreat),
+                className: 'e_MildThreatB' },
+              "Mild threat"),
             r.div({ className: 'help-block' },
               "Marks this user as a mild threat, which means all comments s/he post " +
               "will be added to the review list. But they'll be shown directly to other " +
               "users."),
-            Button({ onClick: () => this.lockThreatLevelAt(ThreatLevel.ModerateThreat) },
+            Button({ onClick: () => this.lockThreatLevelAt(ThreatLevel.ModerateThreat),
+                className: 'e_ModerateThreatB' },
               "Moderate threat"),
             r.div({ className: 'help-block' },
               "Marks this user as a moderate threat, which means that all comments " +

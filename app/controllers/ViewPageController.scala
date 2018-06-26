@@ -271,7 +271,7 @@ class ViewPageController @Inject()(cc: ControllerComponents, edContext: EdContex
                 UX; COULD // show a logout button, instead of always logging out. (4GPKB2)
                 logout = true
                 (o"""Your account has not yet been approved. Please wait until
-                  someone in our staff has approved it.""", "TyMAPPRPEND")
+                  someone in our staff has approved it.""", "TyMAPPRPEND_")
               case Some(false) =>
                 // Log out, so can try again as another user. (4GPKB2)
                 logout = true

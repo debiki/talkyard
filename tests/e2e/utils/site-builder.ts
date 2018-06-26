@@ -142,19 +142,21 @@ function buildSite(site?: SiteData) {
     },
 
 
-    addEmptyForum: function(opts: { title: string, introText?: string }): EmptyTestForum {
+    addEmptyForum: function(opts: { title: string, introText?: string, members?: string[] })
+          : EmptyTestForum {
+      const members = opts.members || ['mons', 'modya', 'regina', 'corax', 'maria', 'michael', 'mallory'];
       let forum = {
         siteData: site,
         forumPage: null,
         members: {
           owen: site.members[0],
-          mons: make.memberModeratorMons(),
-          modya: make.memberModeratorModya(),
-          regina: make.memberRegina(),
-          corax: make.memberCorax(),
-          maria: make.memberMaria(),
-          michael: make.memberMichael(),
-          mallory: make.memberMallory(),
+          mons: _.includes(members, 'mons') ? make.memberModeratorMons() : undefined,
+          modya: _.includes(members, 'modya') ? make.memberModeratorModya() : undefined,
+          regina: _.includes(members, 'regina') ? make.memberRegina() : undefined,
+          corax: _.includes(members, 'corax') ? make.memberCorax() : undefined,
+          maria: _.includes(members, 'maria') ? make.memberMaria() : undefined,
+          michael: _.includes(members, 'michael') ? make.memberMichael() : undefined,
+          mallory: _.includes(members, 'mallory') ? make.memberMallory() : undefined,
         },
         guests: {
           gunnar: make.guestGunnar(),
@@ -163,18 +165,18 @@ function buildSite(site?: SiteData) {
         categories: <any> {},
       };
 
-      site.members.push(forum.members.mons);
-      site.members.push(forum.members.modya);
-      site.members.push(forum.members.corax);
-      site.members.push(forum.members.regina);
-      site.members.push(forum.members.maria);
-      site.members.push(forum.members.michael);
-      site.members.push(forum.members.mallory);
+      if (forum.members.mons) site.members.push(forum.members.mons);
+      if (forum.members.modya) site.members.push(forum.members.modya);
+      if (forum.members.corax) site.members.push(forum.members.corax);
+      if (forum.members.regina) site.members.push(forum.members.regina);
+      if (forum.members.maria) site.members.push(forum.members.maria);
+      if (forum.members.michael) site.members.push(forum.members.michael);
+      if (forum.members.mallory) site.members.push(forum.members.mallory);
       site.guests.push(forum.guests.gunnar);
 
       _.each(site.members, (m: Member) => m.trustLevel = c.TestTrustLevel.Basic);
-      forum.members.corax.trustLevel = c.TestTrustLevel.CoreMember;
-      forum.members.regina.trustLevel = c.TestTrustLevel.Regular;
+      if (forum.members.corax) forum.members.corax.trustLevel = c.TestTrustLevel.CoreMember;
+      if (forum.members.regina) forum.members.regina.trustLevel = c.TestTrustLevel.Regular;
 
       const rootCategoryId = 1;
       const defaultCategoryId = 2;
@@ -202,7 +204,8 @@ function buildSite(site?: SiteData) {
     },
 
 
-    addLargeForum: function(opts: { title: string, introText?: string }): LargeTestForum {
+    addLargeForum: function(opts: { title: string, introText?: string, members?: string[] })
+          : LargeTestForum {
       const forum: LargeTestForum = <LargeTestForum> api.addEmptyForum(opts);
       const forumPage: PageJustAdded = forum.forumPage;
       const categoryBId = 3;

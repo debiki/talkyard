@@ -52,7 +52,7 @@ abstract class DebikiRequest[A] {
   def underlying: Request[A] = request
 
   require(site.id == dao.siteId, "EsE76YW2")
-  require(user.map(_.id) == sid.userId, "EsE7PUUY2")
+  require(user.forall(_.id == sid.userId.getOrDie("TyE2KWQP4")), "TyE7PUUY2")
 
   // Use instead of 'user', because 'user' is confusing when the requester asks for info
   // about another user — then, does 'user' refer to the requester or that other user?
@@ -105,7 +105,7 @@ abstract class DebikiRequest[A] {
   }
 
   def user_! : User =
-    user getOrElse throwForbidden("DwE5PK2W0", "Not logged in")
+    user getOrElse throwForbidden("TyE0LGDIN_", "Not logged in")
 
   def theMember: Member = theUser match {
     case m: Member => m

@@ -73,6 +73,8 @@ describe("user profile cannot delete openauth email:", () => {
 
   it("... and clicks the verif link", () => {
     gmailUsersBrowser.go(email2VerifLink);
+    gmailUsersBrowser.hasVerifiedEmailPage.waitUntilLoaded({ needToLogin: false });
+    gmailUsersBrowser.hasVerifiedEmailPage.goToProfile();
   });
 
   it("... sets the new address as hens primary", () => {
@@ -91,11 +93,13 @@ describe("user profile cannot delete openauth email:", () => {
     const url = server.waitAndGetVerifyAnotherEmailAddressLinkEmailedTo(
         siteId, emailAddress3, browser);
     gmailUsersBrowser.go(url);
+    gmailUsersBrowser.hasVerifiedEmailPage.waitUntilLoaded({ needToLogin: false });
+    gmailUsersBrowser.hasVerifiedEmailPage.goToProfile();
   });
 
   it("... makes it the primary email", () => {
     // No. 1 = the gmail address, no. 2 = address 2, no. 3 = address 3.
-    browser.waitAndClick('.s_UP_EmLg_EmL_It:last-child .e_MakeEmPrimaryB');
+    gmailUsersBrowser.waitAndClick('.s_UP_EmLg_EmL_It:last-child .e_MakeEmPrimaryB');
   });
 
   it("Now hen can remove address no. 2", () => {

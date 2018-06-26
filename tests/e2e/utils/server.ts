@@ -173,10 +173,13 @@ function getLastVerifyEmailAddressLinkEmailedTo(siteId: SiteId, emailAddress: st
 
 
 // Note: *another* email address, not for the initial signup.
-function waitAndGetVerifyAnotherEmailAddressLinkEmailedTo(siteId: SiteId, emailAddress: string,
-      browser): string {
+function waitAndGetVerifyAnotherEmailAddressLinkEmailedTo(siteId: SiteId, emailAddress: string, browser,
+     options?: { isOldAddr: boolean }): string {
+  const textToMatch = options && options.isOldAddr
+      ? "To verify email"   // [4GKQM2_]
+      : "To finish adding"; // [B4FR20L_]
   waitUntilLastEmailMatches(
-    siteId, emailAddress, ["To finish adding", /* [B4FR20L_] */ emailAddress], browser);
+    siteId, emailAddress, [textToMatch, emailAddress], browser);
   const email = getLastEmailSenTo(siteId, emailAddress, browser);
   return utils.findFirstLinkToUrlIn('https?://.*/-/confirm-email-address', email.bodyHtmlText);
 }

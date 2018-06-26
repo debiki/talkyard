@@ -65,16 +65,15 @@ object EdHttp {
   private def R = Results
 
   def BadReqResult(errCode: String, message: String): Result =
-    R.BadRequest("400 Bad Request\n"+ message +" [error "+ errCode +"]")
+    R.BadRequest(s"400 Bad Request\n$message [$errCode]")
 
   // There's currently no WWW-Authenticate header
   // field in the response though!
   def UnauthorizedResult(errCode: String, message: String): Result =
-    R.Unauthorized("401 Unauthorized\n"+ message +" [error "+ errCode +"]")
+    R.Unauthorized(s"401 Unauthorized\n$message [$errCode]")
 
   def ForbiddenResult(errCode: String, message: String): Result =
-    R.Forbidden("403 Forbidden\n"+ message +" [error "+ errCode +"]").withHeaders(
-      "X-Error-Code" -> errCode)
+    R.Forbidden(s"403 Forbidden\n$message [$errCode]").withHeaders("X-Error-Code" -> errCode)
     /* Doesn't work, the Som(reason) is ignored: (could fix later in Play 2.5 when Iterates = gone)
     Result(
       ResponseHeader(404, Map.empty, Some(s"Forbidden!!zz $errCode")),
@@ -84,7 +83,7 @@ object EdHttp {
     R.NotImplemented(s"501 Not Implemented\n$message [$errorCode]")
 
   def NotFoundResult(errCode: String, message: String): Result =
-    R.NotFound("404 Not Found\n"+ message +" [error "+ errCode +"]")
+    R.NotFound(s"404 Not Found\n$message [$errCode]")
 
   def ServiceUnavailableResult(errorCode: String, message: String): Result =
     R.ServiceUnavailable(s"503 Service Unavailable\n$message [$errorCode] [EsE5GK0Y2]")
@@ -93,15 +92,13 @@ object EdHttp {
     R.MethodNotAllowed("405 Method Not Allowed\nTry POST or GET instead please [DwE7KEF2]")
 
   def EntityTooLargeResult(errCode: String, message: String): Result =
-    R.EntityTooLarge("413 Request Entity Too Large\n"+
-       message +" [error "+ errCode +"]")
+    R.EntityTooLarge(s"413 Request Entity Too Large\n$message [$errCode]")
 
   def UnprocessableEntityResult(errCode: String, message: String): Result =
-    R.UnprocessableEntity("422 Unprocessable Entity\n"+ message +" [error "+ errCode +"]")
+    R.UnprocessableEntity(s"422 Unprocessable Entity\n$message [$errCode]")
 
   def InternalErrorResult(errCode: String, message: String): Result =
-    R.InternalServerError(
-      "500 Internal Server Error\n"+ message +" [error "+ errCode +"]")
+    R.InternalServerError(s"500 Internal Server Error\n$message [$errCode]")
 
   def InternalErrorResult2(message: String): Result =
     R.InternalServerError("500 Internal Server Error\n"+ message)
@@ -205,7 +202,7 @@ object EdHttp {
     * vote twice on another comment.
     */
   def throwConflict(errCode: String, message: String) =
-    throw ResultException(R.Conflict(s"409 Conflict\n$message [error $errCode]"))
+    throw ResultException(R.Conflict(s"409 Conflict\n$message [$errCode]"))
 
   def logAndThrowInternalError(errCode: String, message: String = "")
         (implicit logger: play.api.Logger) = {

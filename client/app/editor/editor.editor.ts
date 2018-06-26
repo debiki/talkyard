@@ -1174,7 +1174,7 @@ export const Editor = createComponent({
             r.div({ className: 'submit-cancel-btns' },
               PrimaryButton({ onClick: this.onSaveClick, tabIndex: 1, className: 'e2eSaveBtn' },
                 saveButtonTitle),
-              Button({ onClick: this.onCancelClick, tabIndex: 1, className: 'e2eCancelBtn' },
+              Button({ onClick: this.onCancelClick, tabIndex: 1, className: 'e_EdCancelB' },
                 cancelButtonTitle),
               Button({ onClick: this.cycleMaxHorizBack, className: 'esEdtr_cycleMaxHzBtn',
                   tabIndex: 4 }, maximizeAndHorizSplitBtnTitle),

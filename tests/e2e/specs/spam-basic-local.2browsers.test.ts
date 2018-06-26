@@ -89,7 +89,7 @@ describe("spam test, no external services:", () => {
         http://www.example.com/link-10`);
     mallorysBrowser.editor.save();
     mallorysBrowser.serverErrorDialog.waitAndAssertTextMatches(/links.*EdE4KFY2_/);
-    mallorysBrowser.serverErrorDialog.clickClose();
+    mallorysBrowser.serverErrorDialog.close();
   });
 
   it("Mallory posts a topic with a few links only, that's OK", () => {
@@ -144,7 +144,7 @@ describe("spam test, no external services:", () => {
 
   it("... but is rejected", () => {
     mallorysBrowser.serverErrorDialog.waitAndAssertTextMatches(/spam.*EdE7KVF2_/);
-    mallorysBrowser.serverErrorDialog.clickClose();
+    mallorysBrowser.serverErrorDialog.close();
     strangersBrowser.loginDialog.clickCancel();
   });
 

@@ -83,7 +83,7 @@ class LoginWithPasswordController @Inject()(cc: ControllerComponents, edContext:
         case DbDao.BadPasswordException => deny()
         case DbDao.IdentityNotFoundException => deny()
         case DbDao.EmailNotVerifiedException =>
-          throwForbidden("DwE4UBM2", o"""You have not yet confirmed your email address.
+          throwForbidden("TyEEML0VERIF_", o"""You have not yet confirmed your email address.
             Please check your email inbox — you should find an email from us with a
             verification link; please click it.""")
       }

@@ -48,6 +48,7 @@ interface SiteData {
     allowSignup?: boolean;
     // allowLocalSignup?: boolean;
     allowGuestLogin?: boolean,
+    userMustBeAuthenticated?: boolean;
     requireVerifiedEmail?: boolean;
     emailDomainBlacklist?: string;
     emailDomainWhitelist?: string;

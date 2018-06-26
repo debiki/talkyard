@@ -1,0 +1,63 @@
+
+
+
+How use Talkyard as a blog: how to prevent users from creating new topics, only letting them comment on existing topics created by admins.
+(1 person asked)
+Ans: click the category, then security settings.
+
+Hmm maybe the edit category button = hidden, if categories disabled?
+Then one cannot edit security settings o.O
+
+
+
+Running Talkyard on a server together with other software.
+(1 person asked)
+Short answer: Add a reverse proxy.
+Long answer: https://www.talkyard.io/-71/self-hosted-installation-docker-containers-guidance
+Compare with:
+https://meta.discourse.org/t/running-other-websites-on-the-same-machine-as-discourse/17247
+https://www.digitalocean.com/community/tutorials/how-to-install-discourse-behind-nginx-on-ubuntu-14-04
+https://www.digitalocean.com/community/tutorials/how-to-set-up-nginx-with-http-2-support-on-ubuntu-16-04
+
+
+
+How export JSON & uploads from a Talkyard server, and import to another server?
+(1 person asked)
+Ans: Not yet implemented.
+Some work has been done: ImportExportController can import JSON and is used by the test suites.
+However, needs to be able to import more "detailed" things, & more types of objs, & also export.
+
+
+
+How import Disqus comments? How import WordPress comments?
+(1 + 1 person asked)
+Ans: Not yet possible. Planning to support.
+
+
+
+
+Can admin view direct messages?
+Ans: Yes.
+If someone for example posts illegal content via direct messages, or spam or toxic messages,
+then admins need to be able to investigate.
+
+
+Rich text editor? Emojis?
+Ans: Yes, soon (maybe August 2018). I'm thinking about using ProseMirror. Emojis: will have to wait a bit more. Meanwhile, use `:-)` :- )
+
+How do I do a manual backup?
+For the SaaS hosted version: You'll be able to export your community in JSON, see below.
+For self hosted version, you can export JSON, and also do a full database backup:
+`cd /opt/talkyard ;  .... `
+
+How do I configure automatic backups?
+Backups happen daily, for the SaaS hosted version, and also if you install yourself and
+follow the instructions (a cron job runs the backup script daily).
+
+Can one export the community in JSON?
+Ans: Not yet. There'll be a button that forum owners can click, to export their community
+in a `.tar.gz` zip file (?), and therein, there'll be a JSON file with all topics, comments, and users.
+Plus all uploaded files, e.g. images.
+
+(Details: Probably one will be able to export a .tar.gz file, which includes a JSON file with all topics & comments & users etcetera, and all uploaded files (images etcetera). I've started a little bit: The end-to-end tests import JSON files to create test communities.)
+

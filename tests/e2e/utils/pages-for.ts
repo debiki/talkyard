@@ -271,6 +271,14 @@ function pagesFor(browser) {
       });
     },
 
+    assertMayNotLoginBecauseNotYetApproved: function() {
+      browser.assertPageHtmlSourceMatches_1('TyM0APPR_-TyMAPPRPEND_');
+    },
+
+    assertMayNotLoginBecauseRejected: function() {
+      browser.assertPageHtmlSourceMatches_1('TyM0APPR_-TyMNOACCESS_');
+    },
+
     assertUrlIs: function(expectedUrl) {
       let url = browser.url().value;
       assert(url === expectedUrl);
@@ -280,6 +288,23 @@ function pagesFor(browser) {
       const q = query ? '?q=' + query : '';
       browser.go('/-/search' + q);
       browser.waitForVisible('.s_SP_QueryTI');
+    },
+
+    dismissAnyAlert: (): boolean => {
+      for (let i = 0; i < 20; ++i) {
+        if (i % 10 === 0) console.log("Waiting for alert to dismiss ...");
+        try {
+          browser.alertDismiss();
+          console.log("Dismissed.");
+          return true;
+        }
+        catch (e) {
+          // Wait for alert, up to 20*50 = 1 000 ms.
+          browser.pause(50);
+        }
+      }
+      console.log("No alert found.");
+      return false;
     },
 
     createSite: {
@@ -469,7 +494,17 @@ function pagesFor(browser) {
           browser.waitForNewUrl();
           browser.waitForVisible('.e_A_Rvw');
         },
-      }
+      },
+
+      pageTools: {
+        deletePage: () => {
+          browser.waitAndClick('.dw-a-tools');
+          browser.waitUntilDoesNotMove('.e_DelPg');
+          browser.waitAndClick('.e_DelPg');
+          browser.waitUntilModalGone();
+          browser.waitForVisible('.s_Pg_DdInf');
+        },
+      },
     },
 
 
@@ -667,12 +702,18 @@ function pagesFor(browser) {
         browser.waitForVisible('.esLoginDlg_badPwd');
       },
 
-      loginWithPassword: function(username, password?: string) {
+      loginWithPassword: function(username, password?, opts?: { resultInError?: boolean }) {
+        if (!opts && password && _.isObject(password)) {
+          opts = <any> password;
+          password = null;
+        }
         if (_.isObject(username)) {
           password = username.password;
           username = username.username;
         }
         api.loginDialog.tryLogin(username, password);
+        if (opts && opts.resultInError)
+          return;
         browser.waitUntilModalGone();
         browser.waitUntilLoadingOverlayGone();
       },
@@ -711,6 +752,14 @@ function pagesFor(browser) {
         api.loginDialog.fillInUsername(username);
         api.loginDialog.fillInPassword(password);
         api.loginDialog.clickSubmit();
+      },
+
+      waitForEmailUnverifiedError: function() {
+        browser.waitUntilTextMatches('.modal-body', 'TyEEML0VERIF_');
+      },
+
+      waitForAccountSuspendedError: function() {
+        browser.waitUntilTextMatches('.modal-body', 'TyEUSRSSPNDD_');
       },
 
       signUpAsGuest: function(name: string, email?: string) { // CLEAN_UP use createPasswordAccount instead? [8JTW4]
@@ -1405,7 +1454,7 @@ function pagesFor(browser) {
       },
 
       cancel: function() {
-        browser.click('#debiki-editor-controller .e2eCancelBtn');
+        browser.click('#debiki-editor-controller .e_EdCancelB');
         api.helpDialog.waitForThenClose();
       },
 
@@ -2175,6 +2224,10 @@ function pagesFor(browser) {
             return browser.getText('.s_UP_EmLg_EmL_It_Em');
           },
 
+          isEmailAddressListed: function(addr: string) {
+            return browser.debug();
+          },
+
           addEmailAddress: function(address) {
             const emailsLogins = api.userProfilePage.preferences.emailsLogins;
             emailsLogins.clickAddEmailAddress();
@@ -2220,6 +2273,24 @@ function pagesFor(browser) {
             browser.waitAndClick('.e_MakeEmPrimaryB');
           }
         }
+      }
+    },
+
+
+    hasVerifiedEmailPage: {
+      waitUntilLoaded: function(opts: { needToLogin: boolean }) {
+        browser.waitForVisible('.e_HasVerifiedEmail');
+        browser.waitForVisible('.e_ViewProfileL');
+        browser.waitForVisible('.e_HomepageL');
+        assert(opts.needToLogin === browser.isVisible('.e_NeedToLogin'));
+      },
+
+      goToHomepage: function() {
+        browser.waitAndClick('.e_HomepageL');
+      },
+
+      goToProfile: function() {
+        browser.waitAndClick('.e_ViewProfileL');
       }
     },
 
@@ -2272,6 +2343,11 @@ function pagesFor(browser) {
 
       goToUsersEnabled: function(origin?: string) {
         browser.go((origin || '') + '/-/admin/users');
+      },
+
+      goToReview: function(origin?: string) {
+        browser.go((origin || '') + '/-/admin/review/all');
+        api.adminArea.review.waitUntilLoaded();
       },
 
       settings: {
@@ -2335,11 +2411,168 @@ function pagesFor(browser) {
         },
       },
 
+      user: {
+        enabledSelector: '.e_Enabled-Yes',
+        disabledSelector: '.e_Enabled-No',
+        disabledBecauseEmailUnverified: '.e_Enabled-No_EmNotVer',
+        disabledBecauseWaitingForApproval: '.e_Enabled-No_WaitingAppr',
+        setEmailVerifiedButtonSelector: '.e_SetEmVerifB',
+        setEmailNotVerifiedButtonSelector: '.e_SetEmNotVerifB',
+        sendEmVerEmButtonSelector: '.s_SendEmVerifEmB',
+
+        waitForLoaded: function() {
+          browser.waitForVisible('.esA_Us_U_Rows');
+        },
+
+        assertEnabled: function() {
+          api.adminArea.user.waitForLoaded();
+          assert(browser.isVisible(api.adminArea.user.enabledSelector));
+        },
+
+        assertEmailVerified: function() {
+          assert(browser.isVisible(api.adminArea.user.setEmailNotVerifiedButtonSelector));
+        },
+
+        assertEmailNotVerified: function() {
+          assert(browser.isVisible(api.adminArea.user.setEmailVerifiedButtonSelector));
+        },
+
+        setEmailToVerified: function(verified: boolean) {
+          const u = api.adminArea.user;
+          browser.waitAndClick(
+              verified ? u.setEmailVerifiedButtonSelector : u.setEmailNotVerifiedButtonSelector);
+          // Wait for the request to complete — then, the opposite buttons will be shown:
+          browser.waitForVisible(
+              verified ? u.setEmailNotVerifiedButtonSelector : u.setEmailVerifiedButtonSelector);
+        },
+
+        resendEmailVerifEmail: function () {
+          browser.waitAndClick(api.adminArea.user.sendEmVerEmButtonSelector);
+        },
+
+        assertDisabledBecauseNotYetApproved: function() {
+          api.adminArea.user.waitForLoaded();
+          assert(browser.isVisible(api.adminArea.user.disabledSelector));
+          assert(browser.isVisible(api.adminArea.user.disabledBecauseWaitingForApproval));
+          // If email not verified, wouldn't be considered waiting.
+          assert(!browser.isVisible(api.adminArea.user.disabledBecauseEmailUnverified));
+        },
+
+        assertDisabledBecauseEmailNotVerified: function() {
+          api.adminArea.user.waitForLoaded();
+          assert(browser.isVisible(api.adminArea.user.disabledSelector));
+          assert(browser.isVisible(api.adminArea.user.disabledBecauseEmailUnverified));
+          // Isn't considered waiting, until after email approved.
+          assert(!browser.isVisible(api.adminArea.user.disabledBecauseWaitingForApproval));
+        },
+
+        assertApprovedInfoAbsent: function() {
+          api.adminArea.user.waitForLoaded();
+          assert(browser.isExisting('.e_Appr_Info-Absent'));
+        },
+
+        assertApproved: function() {
+          api.adminArea.user.waitForLoaded();
+          assert(browser.isVisible('.e_Appr_Yes'));
+        },
+
+        assertRejected: function() {
+          api.adminArea.user.waitForLoaded();
+          assert(browser.isVisible('.e_Appr_No'));
+        },
+
+        assertWaitingForApproval: function() {
+          api.adminArea.user.waitForLoaded();
+          assert(browser.isVisible('.e_Appr_Undecided'));
+        },
+
+        approveUser: function() {
+          browser.waitAndClick('.e_Appr_ApprB');
+          browser.waitForVisible('.e_Appr_Yes');
+        },
+
+        rejectUser: function() {
+          browser.waitAndClick('.e_Appr_RejB');
+          browser.waitForVisible('.e_Appr_No');
+        },
+
+        undoApproveOrReject: function() {
+          browser.waitAndClick('.e_Appr_UndoB');
+          browser.waitForVisible('.e_Appr_Undecided');
+        },
+
+        suspendUser: function(opts: { days: number, reason: string } = { days: 10, reason: "reason" }) {
+          browser.waitAndClick('.e_Suspend');
+          browser.waitUntilDoesNotMove('.e_SuspDays');
+          browser.waitAndSetValue('.e_SuspDays input', opts.days);
+          browser.waitAndSetValue('.e_SuspReason input', opts.reason);
+          browser.waitAndClick('.e_DoSuspendB');
+          browser.waitForVisible('.e_Unuspend');
+        },
+
+        unsuspendUser: function() {
+          browser.waitAndClick('.e_Unuspend');
+          browser.waitForVisible('.e_Suspend');
+        },
+
+        markAsMildThreat: function() {
+          browser.waitAndClick('.e_ThreatLvlB');
+          browser.waitAndClick('.e_MildThreatB');
+          browser.waitForVisible('.e_ThreatLvlIsLkd');
+        },
+
+        markAsModerateThreat: function() {
+          browser.waitAndClick('.e_ThreatLvlB');
+          browser.waitAndClick('.e_ModerateThreatB');
+          browser.waitForVisible('.e_ThreatLvlIsLkd');
+        },
+
+        unlockThreatLevel: function() {
+          browser.waitAndClick('.e_ThreatLvlB');
+          browser.waitAndClick('.e_UnlockThreatB');
+          browser.waitForVisible('.e_ThreatLvlNotLkd');
+        },
+
+        grantAdmin: function() {
+          browser.waitForVisible('.e_Adm-No');
+          browser.waitAndClick('.e_ToggleAdminB');
+          browser.waitForVisible('.e_Adm-Yes');
+        },
+
+        revokeAdmin: function() {
+          browser.waitForVisible('.e_Adm-Yes');
+          browser.waitAndClick('.e_ToggleAdminB');
+          browser.waitForVisible('.e_Adm-No');
+        },
+
+        grantModerator: function() {
+          browser.waitForVisible('.e_Mod-No');
+          browser.waitAndClick('.e_ToggleModB');
+          browser.waitForVisible('.e_Mod-Yes');
+        },
+
+        revokeModerator: function() {
+          browser.waitForVisible('.e_Mod-Yes');
+          browser.waitAndClick('.e_ToggleModB');
+          browser.waitForVisible('.e_Mod-No');
+        },
+      },
+
       users: {
         usernameSelector: '.dw-username',
+        enabledUsersTabSelector: '.e_EnabledUsB',
+        waitingUsersTabSelector: '.e_WaitingUsB',
 
         waitForLoaded: function() {
           browser.waitForVisible('.e_AdminUsersList');
+        },
+
+        goToUser: function(user: string | Member) {
+          const username = _.isString(user) ? user : user.username;
+          browser.rememberCurrentUrl();
+          browser.waitForThenClickText(api.adminArea.users.usernameSelector, username);
+          browser.waitForNewUrl();
+          browser.waitAndAssertVisibleTextMatches('.e_A_Us_U_Username', username);
         },
 
         assertUserListEmpty: function(member: Member) {
@@ -2376,16 +2609,51 @@ function pagesFor(browser) {
           }
         },
 
+        switchToEnabled: function() {
+          browser.waitAndClick(api.adminArea.users.enabledUsersTabSelector);
+          browser.waitForVisible('.e_EnabledUsersIntro');
+          api.adminArea.users.waitForLoaded();
+        },
+
         switchToWaiting: function() {
-          browser.waitAndClick('.e_WaitingUsB');
+          browser.waitAndClick(api.adminArea.users.waitingUsersTabSelector);
           browser.waitForVisible('.e_WaitingUsersIntro');
           api.adminArea.users.waitForLoaded();
+        },
+
+        isWaitingTabVisible: function() {
+          browser.waitForVisible(api.adminArea.users.enabledUsersTabSelector);
+          return browser.isVisible(api.adminArea.users.waitingUsersTabSelector);
         },
 
         switchToNew: function() {
           browser.waitAndClick('.e_NewUsB');
           browser.waitForVisible('.e_NewUsersIntro');
           api.adminArea.users.waitForLoaded();
+        },
+
+        switchToStaff: function() {
+          browser.waitAndClick('.e_StaffUsB');
+          browser.waitForVisible('.e_StaffUsersIntro');
+          api.adminArea.users.waitForLoaded();
+        },
+
+        switchToSuspended: function() {
+          browser.waitAndClick('.e_SuspendedUsB');
+          browser.waitForVisible('.e_SuspendedUsersIntro');
+          api.adminArea.users.waitForLoaded();
+        },
+
+        switchToWatching: function() {
+          browser.waitAndClick('.e_WatchingUsB');
+          browser.waitForVisible('.e_ThreatsUsersIntro');
+          api.adminArea.users.waitForLoaded();
+        },
+
+        switchToInvite: function() {
+          browser.waitAndClick('.e_InvitedUsB');
+          // When this elem visible, any invited-users-data has also been loaded.
+          browser.waitForVisible('.s_InvsL');
         },
 
         waiting: {
@@ -2447,17 +2715,36 @@ function pagesFor(browser) {
     },
 
     serverErrorDialog: {
+      waitForJustGotSuspendedError: function() {
+        browser.waitUntilTextMatches('.modal-body', 'TyESUSPENDED_|TyE0LGDIN_');
+      },
+
+      dismissReloadPageAlert: function() {
+        // Seems this alert appears only in a visible browser (not in an invisible headless browser).
+        for (let i = 0; i < 10; ++i) {
+          // Clicking anywhere triggers an alert about reloading the page, although has started
+          // writing — because was logged out by the server (e.g. because user suspended)
+          // and then som js tries to reload.
+          browser.click('.modal-body');
+          const gotDismissed = browser.dismissAnyAlert();
+          if (gotDismissed) {
+            console.log("Dismissed got-logged-out but-had-started-writing related alert.");
+            return;
+          }
+        }
+        console.log("Didn't get any got-logged-out but-had-started-writing related alert.");
+      },
+
       waitAndAssertTextMatches: function(regex) {
         browser.waitAndAssertVisibleTextMatches('.modal-dialog.dw-server-error', regex);
       },
 
-      // remove, use close() instead
-      clickClose: function() {
+      clickCloseThenDontWait: function() {
         api.serverErrorDialog.close();
       },
 
       close: function() {
-        browser.click('.e_SED_CloseB');
+        browser.waitAndClick('.e_SED_CloseB');
         browser.waitUntilGone('.modal-dialog.dw-server-error');
       }
     },
@@ -2470,11 +2757,15 @@ function pagesFor(browser) {
     },
 
     complex: {
-      loginWithPasswordViaTopbar: function(username, password?: string) {
+      loginWithPasswordViaTopbar: function(username, password?: string, opts?: { resultInError?: boolean }) {
+        if (!opts && password && _.isObject(password)) {
+          opts = <any> password;
+          password = null;
+        }
         api.topbar.clickLogin();
-        var credentials = _.isObject(username) ?  // already { username, password } object
+        const credentials = _.isObject(username) ?  // already { username, password } object
             username : { username: username, password: password };
-        api.loginDialog.loginWithPassword(credentials);
+        api.loginDialog.loginWithPassword(credentials, opts || {});
       },
 
       signUpAsMemberViaTopbar: function(
@@ -2528,7 +2819,7 @@ function pagesFor(browser) {
 
       createAndSaveTopic: function(data: { title: string, body: string, type?: PageRole,
             matchAfter?: boolean, titleMatchAfter?: String | boolean,
-            bodyMatchAfter?: String | boolean }) {
+            bodyMatchAfter?: String | boolean, resultInError?: boolean }) {
         api.forumButtons.clickCreateTopic();
         api.editor.editTitle(data.title);
         api.editor.editText(data.body);
@@ -2537,12 +2828,14 @@ function pagesFor(browser) {
         }
         browser.rememberCurrentUrl();
         api.editor.save();
-        browser.waitForNewUrl();
-        if (data.matchAfter !== false && data.titleMatchAfter !== false) {
-          browser.assertPageTitleMatches(data.titleMatchAfter || data.title);
-        }
-        if (data.matchAfter !== false && data.bodyMatchAfter !== false) {
-          browser.assertPageBodyMatches(data.bodyMatchAfter || data.body);
+        if (!data.resultInError) {
+          browser.waitForNewUrl();
+          if (data.matchAfter !== false && data.titleMatchAfter !== false) {
+            browser.assertPageTitleMatches(data.titleMatchAfter || data.title);
+          }
+          if (data.matchAfter !== false && data.bodyMatchAfter !== false) {
+            browser.assertPageBodyMatches(data.bodyMatchAfter || data.body);
+          }
         }
         browser.waitUntilLoadingOverlayGone();
       },

@@ -639,6 +639,7 @@ var t_pt_BR: TalkyardTranslations = t = {
     MaxEmailsInfo: (numMax: number) => `(Você não pode adicionar mais do que ${numMax} endereços.)`,
     EmailAdded_1: "Adicionado. Acabamos de enviar um email de verificação — ",
     EmailAdded_2: "cheque sua caixa de entrada de email.",
+    SendVerifEmail: "Enviar email de verificação",  // [google-translate]
 
     EmailStatusExpl:
         "('Primário' significa que você pode fazer login usando este endereço, e que nós enviamos notificações para ele. " +

@@ -157,12 +157,17 @@ class PlainApiActions(
       val dao = globals.siteDao(site.id)
       dao.perhapsBlockRequest(request, sidStatus, browserId)
 
-      var anyUser = dao.getUserBySessionId(sidStatus)
-      var logoutBecauseSuspended = false
-      if (anyUser.exists(_.isSuspendedAt(new ju.Date))) {
-        anyUser = None
-        logoutBecauseSuspended = true
-      }
+      val anyUserMaybeSuspended = dao.getUserBySessionId(sidStatus)
+      val isSuspended = anyUserMaybeSuspended.exists(_.isSuspendedAt(new ju.Date))
+
+      if (isSuspended && request.method != "GET")
+        return Future.successful(
+            ForbiddenResult("TyESUSPENDED_", "Your account has been suspended")
+              .discardingCookies(DiscardingSessionCookie))
+
+      val anyUser =
+        if (isSuspended) None
+        else dao.getUserBySessionId(sidStatus)
 
       // Re the !superAdminOnly test: Do allow access for superadmin endpoints,
       // so they can reactivate this site, in case this site is the superadmin site itself.
@@ -294,9 +299,9 @@ class PlainApiActions(
             s"API request exception: ${classNameOf(exception)} [DwE4P7], $requestUriAndIp")
       }
 
-      if (logoutBecauseSuspended) {
-        // We won't get here if e.g. a 403 Forbidden exception was thrown because 'user' was
-        // set to None. How solve that?
+      if (isSuspended) {
+        // BUG: (old? can still happen?) We won't get here if e.g. a 403 Forbidden exception
+        // was thrown because 'anyUser' was set to None. How solve that?
         result = result.map(_.discardingCookies(DiscardingSessionCookie))
       }
       result

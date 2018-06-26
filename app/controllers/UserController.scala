@@ -719,7 +719,8 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
   }
 
 
-  def confirmOneMoreEmailAddress(confirmationEmailId: String): Action[Unit] = GetAction { request =>
+  def confirmOneMoreEmailAddress(confirmationEmailId: String): Action[Unit] =
+        GetActionAllowAnyoneRateLimited(RateLimits.ConfirmEmailAddress) { request =>
     import request.{dao, requester}
 
     // A bit dupl code. [4KDPREU2] Break out verifyEmailAddr() fn, place in UserDao.
@@ -772,8 +773,14 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
     // But maybe the user is not currently logged in? I don't think hen should get logged in
     // just by clicking the link. Maybe this isn't supposed to be an email address hen wants
     // to be able to login with.
+
+    val needsToLogin = requester.isEmpty && dao.getWholeSiteSettings().loginRequired
+
     val emailsPath = requester.isDefined ? "/preferences/account" | ""  // [4JKT28TS]
-    TemporaryRedirect(s"/-/users/${member.username}$emailsPath")
+    Ok(views.html.emailVerified(
+        SiteTpi(request),
+        userProfileUrl = s"/-/users/${member.username}$emailsPath",
+        needsToLogin = needsToLogin))
   }
 
 
