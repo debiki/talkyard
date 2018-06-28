@@ -24,8 +24,8 @@ import debiki.EdHttp._
 import ed.server.{EdContext, EdController}
 import ed.server.http._
 import javax.inject.Inject
-import play.api.libs.json.{JsString, Json}
-import play.api.mvc.ControllerComponents
+import play.api.libs.json.{JsString, JsValue, Json}
+import play.api.mvc.{Action, ControllerComponents}
 
 
 
@@ -41,7 +41,8 @@ class SpecialContentController @Inject()(cc: ControllerComponents, edContext: Ed
     * special-content text, then a default content license is returned if you request
     * the contentId = "_tou_content_license" special content (but now year 2016 I just removed it).
     */
-  def loadContent(rootPageId: PageId, contentId: PageId) = GetAction { request: GetRequest =>
+  def loadContent(rootPageId: PageId, contentId: PageId): Action[Unit] = GetAction {
+        request: GetRequest =>
     if (!request.theUser.isAdmin)
       throwForbidden("DwE55RK0", "Please login as admin")
 
@@ -68,14 +69,8 @@ class SpecialContentController @Inject()(cc: ControllerComponents, edContext: Ed
   }
 
 
-  /**
-    * Expected JOSN format, illustrated in Yaml:
-    *   rootPageId
-    *   contentId
-    *   useDefaultText: Boolean
-    *   anyCustomText
-    */
-  def saveContent = AdminPostJsonAction(maxBytes = MaxPostSize) { request: JsonPostRequest =>
+  def saveContent: Action[JsValue] = AdminPostJsonAction(maxBytes = MaxPostSizeJsCss) {
+        request: JsonPostRequest =>
     val rootPageId = (request.body \ "rootPageId").as[PageId]
     val contentId = (request.body \ "contentId").as[PageId]
     val useDefaultText = (request.body \ "useDefaultText").as[Boolean]

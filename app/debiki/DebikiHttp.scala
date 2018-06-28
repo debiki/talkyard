@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2012 Kaj Magnus Lindberg (born 1979)
+ * Copyright (c) 2012, 2018 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -44,9 +44,13 @@ object EdHttp {
   // (The www.debiki.se homepage is 20 kb, and homepage.css 80 kb,
   // but it includes Twitter Bootstrap.)
 
+  // 300 kb Javascript or CSS isn't totally crazy? If someone copy-pastes e.g. Prism.js,
+  // unminified, to debug, that can be ~ 200 kb.
+  val MaxPostSizeJsCss = 300 * 1000
+
   val MaxPostSize = 100 * 1000
   val MaxPostSizeForAuUsers = 30 * 1000
-  val MaxPostSizeForUnauUsers = 10 * 1000
+  val MaxPostSizeForUnauUsers = 15 * 1000
   val MaxDetailsSize =  20 * 1000
 
 
