@@ -37,7 +37,9 @@ login -
     forgot email address:
   providers -
     google:
+      - create-site-all-logins.test.ts  TyT5KBWAZ2
     facebook:
+      - create-site-all-logins.test.ts  TyT5KBWAZ2
     github:
     twitter:
   password user logs in via -
@@ -227,7 +229,8 @@ post -
     unwanted –> karma:
     see who voted:
   delete:
-  flag:   — also see (6JS3)
+  flag -   — also see (6JS3)
+    cannot flag delted post:
   view author -
     click opens dialog:
     mentions click opens dialog:
@@ -291,9 +294,13 @@ links -
 
 site settings:
   login -
-    login required:  settings-toggle-login-required.3browsers.test.ts  [TyT4GKBW20]
+    login required:
+      - settings-toggle-login-required.3browsers.test.ts  [TyT4GKBW20]
+      - admin-user-approve-reject.2browsers.test.ts [TyT5KHEWQ2]
     invites only:
-    approve members: settings-approve-members.2browsers.test.ts  [TyT2HUWX8] + admin-user-page.2browsers.test.ts [TyT5KHEWQ2]
+    approve members:
+      - settings-approve-members.2browsers.test.ts  [TyT2HUWX8]
+      - admin-user-approve-reject.2browsers.test.ts [TyT5KHEWQ2]
     allow signup:
     allow local signup:
     guest login allowed:
@@ -311,39 +318,46 @@ site settings:
     num to allow:
 
 admin -
-  user page: [TyT5KHEWQ2]
+  user page:
+    - admin-user-approve-reject.2browsers.test.ts  [TyT5KHEWQ2]
+    - admin-user-staff-trust.2browsers.test.ts  [TyT2GKFI594]
+    - admin-user-suspend.2browsers.test.ts  [TyT5GKQSG2]
+    - admin-user-threat-mild.2browsers.test.ts  [TyT2WKBG4Z]
+    - admin-user-threat-moderate.2browsers.test.ts  [TyT5KHFIQ20]
   reviews - [TyT5DKW7U]
     delete flagged:   — also see (6JS3)
     clear flag:   — also see (6JS3)
     approve posts:  (2WY0)
+      - admin-user-threat-mild.2browsers.test.ts  [TyT2WKBG4Z]
+      - admin-user-threat-moderate.2browsers.test.ts  [TyT5KHFIQ20]
     undoReviewDecision: [4JKWWD4]
     ... lots of stuff ...
-  more review things: - [2VSP5Q8]
-    See how Discourse does this.
-    bad user?
-    reject-delete post -
-      other review task for that post get invalidated:
-      undelete post, other tasks + orig task too, no? reactivated:
-    reject-delete page -
-      other review task same page get invalidated:
-      delete one post on the deleted page:
-      undelete page, other tasks reactivated:
-      the deleted post's task not reactivated:  ?? or maybe don't delete review tasks, if deleting post?
-                    what if Mallory posts bad stuff, gets flagged, deleted the flagged post?
-                    and then staff wouldn't get notified, because deleted?
-    delete page for review task -
-      gets invalidated:  — no, not?  keep active, so staff notices the user is maybe bad?
-      restore page, active again:
-    delete post for review task -
-      gets invalidated:  — no.
-      restore page, active again:
-    delete ancestor post for review task -
-      task gets invalidated:
-      undelete ancestor, active again:
-    delete review task post -
-      task gets invalidated:
-      then delete & restore ancestor post tree: task not reactivated
-      then delete & restore page: task not reactivated
+    invalitading review tasks - [2VSP5Q8]
+      See how Discourse does this.
+      bad user?
+      reject-delete post -
+        other review task for that post get invalidated:
+        undelete post, other un-decided tasks then reactivated:
+      reject-delete page -
+        other review task same page get invalidated:
+        delete one post on the deleted page:
+        undelete page, other tasks reactivated:
+        the deleted post's task not reactivated:  ?? or maybe don't delete review tasks, if deleting post?
+                      what if Mallory posts bad stuff, gets flagged, deleted the flagged post?
+                      and then staff wouldn't get notified, because deleted?
+      delete page for review task -
+        gets invalidated:  — no, not?  keep active, so staff notices the user is maybe bad?
+        restore page, active again:
+      delete post for review task -
+        gets invalidated:  — no.
+        restore page, active again:
+      delete ancestor post for review task -
+        task gets invalidated:
+        undelete ancestor, active again:
+      delete review task post -
+        task gets invalidated:
+        then delete & restore ancestor post tree: task not reactivated
+        then delete & restore page: task not reactivated
 
 superadmin -
   ... lots of stuff ...

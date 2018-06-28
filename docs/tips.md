@@ -8,6 +8,10 @@ Login as root to a running container, without knowing the root password:
     # or with docker (not docker-compose):
     docker exec -u 0 -it container_name bash
 
+Free up disk space, by deleting old images:
+
+    docker image prune  # optionally, add:  --all
+
 
 ### ElasticSearch stuff:
 

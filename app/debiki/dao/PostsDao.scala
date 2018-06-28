@@ -1646,6 +1646,9 @@ trait PostsDao {
         inCategoriesRootLast = categories,
         permissions = transaction.loadPermsOnPages()), "EdEZBXKSM2")
 
+      dieIf(postBefore.isDeleted, "TyE2FKG69")
+      dieIf(pageMeta.isDeleted, "TyE4FKBFA2")
+
       val newNumFlags = postBefore.numPendingFlags + 1
       var postAfter = postBefore.copy(numPendingFlags = newNumFlags)
 

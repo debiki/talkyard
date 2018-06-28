@@ -110,6 +110,15 @@ function pagesFor(browser) {
     },
 
 
+    playTimeSeconds: function(seconds: number) {
+      browser.execute(function (seconds) {
+        console.log("Playing time, seconds: " + seconds);
+        window['debiki2'].testExtraMillis = window['debiki2'].testExtraMillis + seconds * 1000;
+        console.log("Time now: " + window['debiki2'].testExtraMillis);
+      }, seconds);
+    },
+
+
     waitForMyDataAdded: function() {
       browser.waitForVisible('.e2eMyDataAdded');
     },
@@ -135,23 +144,29 @@ function pagesFor(browser) {
     // Anyway, when placed here, exceptions work as they should.
     //
     waitAndClick: function(selector) {
-      api._waitAndClickImpl(selector, true);
+      api._waitAndClickImpl(selector, {});
     },
 
 
     waitAndClickFirst: function(selector) {
-      api._waitAndClickImpl(selector, false);
+      api._waitAndClickImpl(selector, { clickFirst: true });
     },
 
 
-    _waitAndClickImpl: function(selector, mustBeExactlyOne) {
+    waitAndClickLast: function(selector) {
+      browser.debug();
+      //api._waitAndClickImpl(selector, false);
+    },
+
+
+    _waitAndClickImpl: function(selector, opts: { clickFirst?: boolean } = {}) {
       api._waitForClickable(selector);
-      if (!selector.startsWith('#') && mustBeExactlyOne) {
-        var errors = '';
-        var length = 1;
-        var byBrowserResults = byBrowser(browser.elements(selector));
+      if (!selector.startsWith('#') && !opts.clickFirst) {
+        let errors = '';
+        let length = 1;
+        const byBrowserResults = byBrowser(browser.elements(selector));
         _.forOwn(byBrowserResults, (result, browserName) => {
-          var elems = result.value;
+          const elems = result.value;
           if (elems.length !== 1) {
             length = elems.length;
             errors += browserNamePrefix(browserName) + "Bad num elems to click: " +
@@ -379,8 +394,20 @@ function pagesFor(browser) {
         browser.assertTextMatches('.esMyMenu .esAvtrName_name', username);
       },
 
-      assertNeedsReviewVisible: function() {
-        assert(browser.isVisible('.esNotfIcon-reviewOther'));
+      waitForNumPendingUrgentReviews: function(numUrgent: number) {
+        browser.waitUntilTextMatches('.esNotfIcon-reviewUrgent', '^' + numUrgent + '$');
+      },
+
+      waitForNumPendingOtherReviews: function(numOther: number) {
+        browser.waitUntilTextMatches('.esNotfIcon-reviewOther', '^' + numOther + '$');
+      },
+
+      isNeedsReviewUrgetnVisible: function() {
+        return browser.isVisible('.esNotfIcon-reviewUrgent');
+      },
+
+      isNeedsReviewOtherVisible: function() {
+        return browser.isVisible('.esNotfIcon-reviewOther');
       },
 
       getMyUsername: function() {
@@ -1695,6 +1722,15 @@ function pagesFor(browser) {
         api.waitAndClick('.icon-flag');  // for now, later: e_...
       },
 
+      deletePost: function(postNr: PostNr) {
+        api.topic.clickMoreForPostNr(postNr);
+        api.waitAndClick('.dw-a-delete');
+        api.waitAndClick('.dw-delete-post-dialog .e_YesDel');
+        browser.waitUntilGone('.dw-delete-post-dialog');
+        browser.waitUntilLoadingOverlayGone();
+        browser.waitForVisible(`#post-${postNr}.dw-p-dl`);
+      },
+
       canSelectAnswer: function() {
         return browser.isVisible('.dw-a-solve');
       },
@@ -1790,7 +1826,7 @@ function pagesFor(browser) {
             api.topic._isBodyVisible(postNr);
       },
 
-      clickPostActionButton: function(buttonSelector: string) {   // RENAME to scrollAndClick?
+      clickPostActionButton: function(buttonSelector: string, opts: { clickFirst?: boolean } = {}) {   // RENAME to api.scrollAndClick?
         // If the button is close to the bottom of the window, the fixed bottom bar might
         // be above it; then, if it's below the [Scroll][Back] buttons, it won't be clickable.
         // Or the button might be below the lower window edge.
@@ -1804,20 +1840,59 @@ function pagesFor(browser) {
         browser.waitForVisible(buttonSelector);
         for (let attemptNr = 1; attemptNr <= 2; ++attemptNr) {
           for (let i = 0; i < 20; ++i) {  // because FF sometimes won't realize it's done scrolling
-          //while (true) {
-            let replyButtonLocation = browser.getLocationInView(buttonSelector);
-            let canScroll = browser.isVisible(api.scrollButtons.fixedBarSelector);
+            const buttonLocation = browser.getLocationInView(buttonSelector);
+
+            // If is array, could use [0] — but apparently the button locations are returned
+            // in random order, with incorrect positions that never change regardless of how
+            // one scrolls, and is sometimes 0 = obviously wrong. So, don't try to
+            // pick [0] to click the first = topmost elem.
+            // Chrome? Chromedriver? Webdriver? Selenium? buggy (as of June 29 2018).
+            dieIf(_.isArray(buttonLocation) && !opts.clickFirst, 'TyEISARRAYBKF');
+            if (opts.clickFirst)
+              break; // cannot scroll, see above. Currently the tests don't need to scroll (good luck)
+
+            // E.g. the admin area, /-/admin.
+            const isOnAutoPage = browser.url().value.indexOf('/-/') >= 0;
+
+            // ? Why did I add this can-scroll test ? Maybe, if can *not* scroll, this loop never got
+            // happy with the current scroll position (0, 0?) and continued trying-to-scroll forever?
+            let hasScrollBtns = browser.isVisible(api.scrollButtons.fixedBarSelector);
+            // If in admin area or user's profile, there're no scroll buttons, but can maybe
+            // scroll anyway.
+            const canScroll = hasScrollBtns || isOnAutoPage;
             if (!canScroll)
               break;
-            let fixedBarLocation = browser.getLocationInView(api.scrollButtons.fixedBarSelector);
+
+            let bottomY: number;
+            if (hasScrollBtns) {
+              bottomY = browser.getLocationInView(api.scrollButtons.fixedBarSelector).y;
+            }
+            else {
+              // browser.windowHandleSize().value.height;  = (sometimes) too tall size
+              const result = browser.execute(function() {
+                return window['debiki2'].$$bySelector('#esPageColumn')[0].getBoundingClientRect().height;
+              });
+              dieIf(!result, "Error getting page height, result: " + JSON.stringify(result));
+              bottomY = parseInt(result.value);
+              dieIf(_.isNaN(bottomY), "Page height result is NaN: " + JSON.stringify(result));
+            }
+
+            console.log(`bottomY: ${bottomY}`);
+            console.log(`buttonLocation: ${JSON.stringify(buttonLocation)}`);
+            console.log(`buttonLocation.y+30 =  ${buttonLocation.y + 30}`);
+
             // fixedBarLocation gets too small in ff, resulting in `< fixedBarLocation.y` below false,
             // so changed from `44 < ..` to `30 < ...`
-            //console.log(`clickPostActionButton: is > ${replyButtonLocation.y > 60}`);
-            //console.log(`clickPostActionButton: is < ${replyButtonLocation.y + 70 < fixedBarLocation.y}`);
-            if (replyButtonLocation.y > 60 && // fixed topbar, about 40px tall
-                replyButtonLocation.y + 30 < fixedBarLocation.y)  // button about 40 px tall, [7UKDWQ2]
-                                                             // 30 visible = enough to click in middle
+            //console.log(`clickPostActionButton: is > ${buttonLocation.y > 60}`);
+            //console.log(`clickPostActionButton: is < ${buttonLocation.y + 70 < fixedBarLocation.y}`);
+            const topY = isOnAutoPage
+                ? 100 // fixed topbar, some float drop —> 90 px tall
+                : 60; // fixed topbar, about 40px tall
+            if (buttonLocation.y > topY &&
+                buttonLocation.y + 30 < bottomY)  // scroll button about 40 px tall, [7UKDWQ2]
+                                                  // 30 visible = enough to click in middle
               break;
+
             console.log(`Scrolling into view: ${buttonSelector}`);
             browser.execute(function(selector) {
               window['debiki2'].utils.scrollIntoViewInPageColumn(
@@ -1830,8 +1905,8 @@ function pagesFor(browser) {
             // -clickable exception thrown by waitAndClick, does *not* get caught by this
             // try-catch, *if* waitAndClick is added to `browser` as a command in commands.ts.
             // So I moved it to the top of this file instead. [7KSU024]
-            console.log(`clickPostActionButton: CLICK`);
-            api.waitAndClick(buttonSelector);
+            console.log(`clickPostActionButton: CLICK ${buttonSelector} [TyME2ECLICK]`);
+            api._waitAndClickImpl(buttonSelector, opts);
             break;
           }
           catch (exception) {
@@ -2224,8 +2299,11 @@ function pagesFor(browser) {
             return browser.getText('.s_UP_EmLg_EmL_It_Em');
           },
 
-          isEmailAddressListed: function(addr: string) {
-            return browser.debug();
+          waitUntilEmailAddressListed: function(addrRegexStr: string,
+                  opts: { shallBeVerified?: boolean } = {}) {
+            const verified = opts.shallBeVerified ? '.e_EmVerfd' : (
+              opts.shallBeVerified === false ? '.e_EmNotVerfd' : '');
+            browser.waitUntilTextMatches('.s_UP_EmLg_EmL_It_Em' + verified, addrRegexStr);
           },
 
           addEmailAddress: function(address) {
@@ -2681,22 +2759,52 @@ function pagesFor(browser) {
           browser.waitForVisible('.e_A_Rvw');
         },
 
-        waitForServerToCarryOutDecisions: function() {
-          // Make the server believe we've waited for the review timeout seconds.
+        waitForServerToCarryOutDecisions: function(pageId?: PageId, postNr?: PostNr) {
+          const pagePostSelector = pageId && _.isNumber(postNr) ?
+              '.e_Pg-Id-' + pageId + '.e_P-Nr-' + postNr : undefined;
+
+          // Make the server and browser believe we've waited for the review timeout seconds.
           server.playTimeSeconds(c.ReviewDecisionUndoTimoutSeconds + 10);
+          browser.playTimeSeconds(c.ReviewDecisionUndoTimoutSeconds + 10);
+
           // Then wait for the server to actually do something.
           do {
             browser.pause(c.JanitorThreadIntervalMs + 200);
-            browser.refresh();
           }
-          while (browser.isVisible('.e_A_Rvw_Tsk_UndoB'));
+          while (
+            // These UI will reload the task list and auto-update itself [2WBKG7E], when
+            // the review decisions have been carried out server side. Then these disappear:
+            !pagePostSelector
+              ? browser.isVisible('.e_A_Rvw_Tsk_UndoB')
+              : (
+                // If we have a specific post in mind, then not only the Undo, but also
+                // any Accept or Delete buttons elsewhere, for the same post, should
+                // disappear when the server is done.
+                browser.isVisible(pagePostSelector + ' .e_A_Rvw_Tsk_UndoB') ||
+                browser.isVisible(pagePostSelector + ' .e_A_Rvw_Tsk_AcptB') ||
+                browser.isVisible(pagePostSelector + ' .e_A_Rvw_Tsk_RjctB')));
           browser.waitUntilLoadingOverlayGone();
         },
 
-        approveNextWhatever: function() {
-          api.waitAndClickFirst('.e_A_Rvw_Tsk_AcptB');
+        approvePostForMostRecentTask: function() {
+          api.topic.clickPostActionButton('.e_A_Rvw_Tsk_AcptB', { clickFirst: true });
           browser.waitUntilModalGone();
           browser.waitUntilLoadingOverlayGone();
+        },
+
+        rejectDeleteTaskIndex: (index: number) => {
+          api.topic.clickPostActionButton(`.e_RT-Ix-${index} .e_A_Rvw_Tsk_RjctB`);
+          browser.waitUntilModalGone();
+          browser.waitUntilLoadingOverlayGone();
+        },
+
+        countReviewTasksFor: function(pageId, postNr, opts: { waiting: boolean }): number {
+          const pageIdPostNrSelector = '.e_Pg-Id-' + pageId + '.e_P-Nr-' + postNr;
+          const waitingSelector = opts.waiting ? '.e_Wtng' : '.e_NotWtng';
+          const selector = '.esReviewTask' + pageIdPostNrSelector + waitingSelector;
+          const elems = browser.elements(selector).value;
+          console.log(`Counted to ${elems.length} of these: ${selector}`);
+          return elems.length;
         },
 
         isMoreStuffToReview: function() {

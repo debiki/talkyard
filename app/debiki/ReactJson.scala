@@ -214,7 +214,7 @@ class JsonMaker(dao: SiteDao) {
       // been changed to/from Form.) [5GDK02]
       post.tyype != PostType.CompletedForm &&
       post.tyype != PostType.Flat && ( // flat comments disabled [8KB42]
-      !post.deletedStatus.isDeleted || (
+      !post.deletedStatus.isDeleted || post.isOrigPost || post.isTitle || (
         post.deletedStatus.onlyThisDeleted && pageParts.hasNonDeletedSuccessor(post.nr)))
     }
 
@@ -227,8 +227,8 @@ class JsonMaker(dao: SiteDao) {
       else if (!post.isOrigPost && !post.isTitle)
         numPostsRepliesSection += 1
       val tags = tagsByPostId(post.id)
-      post.nr.toString -> postToJsonImpl(post, page, tags, includeUnapproved = false,
-        showHidden = false)
+      post.nr.toString ->
+          postToJsonImpl(post, page, tags, includeUnapproved = false, showHidden = false)//ok
     }
 
     // Topic members (e.g. chat channel members) join/leave infrequently, so better cache them
@@ -1415,7 +1415,7 @@ object JsonMaker {
     val postType: Option[Int] = if (post.tyype == PostType.Normal) None else Some(post.tyype.toInt)
 
     val (anySanitizedHtml: Option[String], isApproved: Boolean) =
-      if (post.isBodyHidden && !showHidden) {
+      if ((post.isBodyHidden || post.isDeleted) && !showHidden) {
         (None, post.approvedAt.isDefined)
       }
       else if (includeUnapproved) {

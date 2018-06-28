@@ -52,16 +52,31 @@ export const ReviewAllPanelComponent = createReactClass(<any> {
     let promise: Promise<void> = Server.loadEditorAndMoreBundlesGetDeferred();
     Server.loadReviewTasks(reviewTasks => {
       promise.then(() => {
-        if (this.isGone) return;
-        const store = ReactStore.allData();
-        this.setState({
-          reviewTasks,
-          store,
-          nowMs: getNowMs(),
-        });
-        setTimeout(this.countdownUndoTimeout, 1000);
+        this.updateTaskList(reviewTasks);
       });
     });
+    // Don't reload tasks too frequently — don't want to accidentally DoS attack the server :-/
+    let debounceMs = 2500;
+    // @ifdef DEBUG
+    // Speedup for e2e tests.
+    debounceMs = 500;
+    // @endif
+    this.reloadTaskListDebounced = _.debounce(this.reloadTaskListDebounced, debounceMs);
+  },
+
+  reloadTaskListDebounced: function() {
+    Server.loadReviewTasks(this.updateTaskList)
+  },
+
+  updateTaskList: function(reviewTasks) {
+    if (this.isGone) return;
+    const store = ReactStore.allData();
+    this.setState({
+      reviewTasks,
+      store,
+      nowMs: getNowMs(),
+    });
+    setTimeout(this.countdownUndoTimeout, 1000);
   },
 
   componentWillUnmount: function() {
@@ -70,7 +85,25 @@ export const ReviewAllPanelComponent = createReactClass(<any> {
 
   countdownUndoTimeout: function() {
     if (this.isGone) return;
-    this.setState({ nowMs: getNowMs() });
+    const nowMs = getNowMs();
+    const tasks: ReviewTask[] = this.state.reviewTasks;
+    const anyJustCompleted = _.some(tasks, (task: ReviewTask) => {
+      if (task.completedAtMs || task.invalidatedAtMs || !task.decidedAtMs)
+        return false;
+      if (task.decidedAtMs + ReviewDecisionUndoTimoutSeconds * 1000 < nowMs) {
+        // This task was just carried out by the server. Then its status, and maybe also the
+        // status of *other* tasks, has changed — so reload all tasks.
+        // (How can other tasks be affected? Example: If the review decision was to delete
+        // a whole page, review tasks for other posts on the page, then get invalidated.)
+        return true;
+      }
+    });
+
+    if (anyJustCompleted) {
+      this.reloadTaskListDebounced();  // [2WBKG7E]
+    }
+
+    this.setState({ nowMs });
     setTimeout(this.countdownUndoTimeout, 1000);
   },
 
@@ -80,8 +113,9 @@ export const ReviewAllPanelComponent = createReactClass(<any> {
 
     const store = this.state.store;
 
-    const elems = this.state.reviewTasks.map((reviewTask: ReviewTask) => {
-      return ReviewTask({ reviewTask, key: reviewTask.id, store, nowMs: this.state.nowMs });
+    const elems = this.state.reviewTasks.map((reviewTask: ReviewTask, index: number) => {
+      return ReviewTask({ reviewTask, key: reviewTask.id, updateTaskList: this.updateTaskList,
+          store, nowMs: this.state.nowMs, taskIndex: index });
     });
 
     if (!elems.length)
@@ -171,19 +205,22 @@ const ReviewTask = createComponent({
 
   makeReviewDecision: function(decision: ReviewDecision) {
     const revisionNr = (this.props.reviewTask.post || {}).currRevNr;
-    Server.makeReviewDecision(this.props.reviewTask.id, revisionNr, decision, () => {
+    Server.makeReviewDecision(this.props.reviewTask.id, revisionNr, decision, this.props.updateTaskList);
+    /*
+          (alreadyDecided?: { decision: ReviewDecision, decidedAtMs: WhenMs }) => {
       if (this.isGone) return;
       this.setState({
-        justDecided: decision,
-        justDecidedAtMs: getNowMs(),
+        justDecided: decision,        CLEAN_UP remove this field
+        justDecidedAtMs: getNowMs(),  CLEAN_UP remove this field
         couldBeUndone: undefined,
       });
-    });
+    }); */
   },
 
   undoReviewDecision: function() {
     // TESTS_MISSING  [4JKWWD4]
-    Server.undoReviewDecision(this.props.reviewTask.id, (couldBeUndone: boolean) => {
+    // oops, upd task list instead?  Undo —> re-activates other tasks, same post
+    Server.undoReviewDecision(this.props.reviewTask.id, this.props.updateTaskList); /*(couldBeUndone: boolean) => {
       if (this.isGone) return;
       if (couldBeUndone) {
         this.setState({
@@ -197,7 +234,7 @@ const ReviewTask = createComponent({
           couldBeUndone: false,
         });
       }
-    });
+    }); */
   },
 
   render: function() {
@@ -256,16 +293,17 @@ const ReviewTask = createComponent({
       taskDoneInfo = r.span({ className: 'e_A_Rvw_Tsk_DoneInfo' }, whatWasDone, doneByInfo);
     }
 
-    if (_.isBoolean(this.state.couldBeUndone)) {
+    if (reviewTask.invalidatedAtMs) {
+      // Show no undo info or button — that't be confusing, when, for example, the post, or
+      // the whole page, has been deleted (and therefore this task got invalidated).
+    }
+    else if (_.isBoolean(this.state.couldBeUndone)) {
       const className = 's_A_Rvw_Tsk_UndoneInf ' + (
           this.state.couldBeUndone ? 'e_A_Rvw_Tsk_Undone' : 'e_A_Rvw_Tsk_NotUndone');
       gotUndoneInfo = r.span({ className }, this.state.couldBeUndone ?
         " Undone." : " Could NOT be undone: Changes already made");
     }
     else if (!reviewTask.completedAtMs && (this.state.justDecidedAtMs || reviewTask.decidedAtMs)) {
-      // Show undo button also if task invalidated. Example: Page deleted —> a post review task
-      // gets invalidated. Can make sense to undo a review decision about that post,
-      // so that the review task is back again, if the page gets restored.
       undoDecisionButton =
           UndoReviewDecisionButton({ justDecidedAtMs: this.state.justDecidedAtMs,
               reviewTask, nowMs: this.props.nowMs, undoReviewDecision: this.undoReviewDecision });
@@ -273,7 +311,7 @@ const ReviewTask = createComponent({
 
     if (reviewTask.completedAtMs || reviewTask.decidedAtMs || this.state.justDecidedAtMs
           || isInvalidated) {
-      // Show no decision buttons. (Only maybe an Undo button, see above.)
+      // Show no decision buttons. (But maybe an Undo button, see above.)
     }
     else {
       const acceptText = post.approvedRevNr !== post.currRevNr ? "Approve" : "Looks fine";
@@ -355,8 +393,15 @@ const ReviewTask = createComponent({
     const anyPageTitleToReview = !reviewTask.pageId ? null :
       r.div({ className: 'esRT_TitleToReview' }, reviewTask.pageTitle);
 
+    // For end-to-end tests.
+    const isWaitingClass = acceptButton || rejectButton ? ' e_Wtng' : ' e_NotWtng';
+    const pageIdPostNrIndexClass =
+      ' e_Pg-Id-' + post.pageId +
+      ' e_P-Nr-' + post.nr +
+      ' e_RT-Ix-' + (this.props.taskIndex + 1); // let's start at 1? Simpler when writing e2e code?
+
     return (
-      r.div({ className: 'esReviewTask' + manyWhysClass },
+      r.div({ className: 'esReviewTask' + pageIdPostNrIndexClass + manyWhysClass + isWaitingClass },
         r.div({},
           r.span({ className: 'esReviewTask_what' }, what),
           r.ul({ className: 'esReviewTask_whys' },

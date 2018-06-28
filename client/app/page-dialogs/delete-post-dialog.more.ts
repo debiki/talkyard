@@ -88,7 +88,7 @@ const DeletePostDialog = createComponent({
         ModalHeader({}, ModalTitle({}, title)),
         content ? ModalBody({}, content) : null,
         ModalFooter({},
-          Button({ onClick: this.doDelete, bsStyle: 'primary' }, "Yes delete it"),
+          Button({ onClick: this.doDelete, bsStyle: 'primary', className: 'e_YesDel' }, "Yes delete it"),
           Button({ onClick: this.close }, "Cancel"))));
   }
 });

@@ -79,6 +79,7 @@ function doNextFrameOrNow(something: () => void) {
 //------------------------------------------------------------------------------
 
 const pageLoadedAtMsBrowserTime = Date.now();
+export let testExtraMillis = 0;
 
 // Test suites play with time.
 export function getNowMs(): WhenMs {
@@ -86,7 +87,7 @@ export function getNowMs(): WhenMs {
     return Date.now();
 
   const millisElapsed = Date.now() - pageLoadedAtMsBrowserTime;
-  return eds.testNowMs + millisElapsed;
+  return eds.testNowMs + millisElapsed + testExtraMillis;
 }
 
 

@@ -482,24 +482,31 @@ export function saveSpecialContent(specialContent: SpecialContent, success: () =
 
 
 export function loadReviewTasks(success: (tasks: ReviewTask[]) => void) {
-  get('/-/load-review-tasks', response => {
-    ReactActions.patchTheStore({
-      usersBrief: response.users,
-      pageMetasBrief: response.pageMetasBrief,
-    });
-    success(response.reviewTasks);
-  });
+  get('/-/load-review-tasks', response => handleReviewTasksResponse(response, success));
 }
 
 
 export function makeReviewDecision(taskId: number, revisionNr: number, decision: ReviewDecision,
-      success: () => void) {
-  postJsonSuccess('/-/make-review-decision', success, { taskId, revisionNr, decision });
+      success: (tasks: ReviewTask[]) => void) {
+  postJsonSuccess('/-/make-review-decision',
+        response => handleReviewTasksResponse(response, success),
+        { taskId, revisionNr, decision });
 }
 
 
-export function undoReviewDecision(taskId: number, success: (couldBeUndone: boolean) => void) {
-  postJsonSuccess('/-/undo-review-decision', (response) => success(response.couldBeUndone), { taskId });
+export function undoReviewDecision(taskId: number, success: (tasks: ReviewTask[]) => void) {
+  postJsonSuccess('/-/undo-review-decision',
+      response => handleReviewTasksResponse(response, success),
+      { taskId });
+}
+
+
+function handleReviewTasksResponse(response, success) {
+  ReactActions.patchTheStore({
+    usersBrief: response.users,
+    pageMetasBrief: response.pageMetasBrief,
+  });
+  success(response.reviewTasks);
 }
 
 

@@ -154,11 +154,11 @@ describe("new user, review, ok:", () => {
   });
 
   it("... reviews Maja's first reply, it looks ok", () => {
-    owensBrowser.adminArea.review.approveNextWhatever();
+    owensBrowser.adminArea.review.approvePostForMostRecentTask();
   });
 
   it("... and reviews Maja's second reply, also ok", () => {
-    owensBrowser.adminArea.review.approveNextWhatever();
+    owensBrowser.adminArea.review.approvePostForMostRecentTask();
   });
 
   it("... the server carries out the review decisions", () => {
@@ -239,8 +239,8 @@ describe("new user, review, ok:", () => {
   it("Owen approves the guest's first two replies", () => {
     owensBrowser.refresh();
     owensBrowser.waitUntilLoadingOverlayGone();
-    owensBrowser.adminArea.review.approveNextWhatever();
-    owensBrowser.adminArea.review.approveNextWhatever();
+    owensBrowser.adminArea.review.approvePostForMostRecentTask();
+    owensBrowser.adminArea.review.approvePostForMostRecentTask();
     owensBrowser.adminArea.review.waitForServerToCarryOutDecisions();
   });
 
@@ -256,10 +256,6 @@ describe("new user, review, ok:", () => {
     strangersBrowser.topic.assertPostNotPendingApproval(6);
     strangersBrowser.topic.assertPostNotPendingApproval(7);
     strangersBrowser.topic.assertPostNotPendingApproval(8);
-  });
-
-  it("Done", () => {
-    everyone.perhapsDebug();
   });
 
 });

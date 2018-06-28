@@ -201,15 +201,20 @@ export const PostActions = createComponent({
     const isStaffOrOwnPage: boolean = isStaff(me) || isOwnPage;
     const isEmbeddedOrigPost = isPageBody && store.isEmbedded;
 
-    const deletedOrCollapsed = post_isDeletedOrCollapsed(post);
+    const isDeleted = post_isDeleted(post);
+    const isCollapsed = post_isCollapsed(post);
 
-    // For now. Later, add e.g. Undelete or View Deleted actions.
+    const deletedOrCollapsed = isDeleted || isCollapsed;
+
     // (Do return a <div> so there'll be some whitespace below for arrows to any replies.)
-    if (deletedOrCollapsed)
+    if (post_shallRenderAsDeleted(post) || isCollapsed)
       return r.div({ className: 'dw-p-as dw-as' });
 
     let acceptAnswerButton;
-    if (isStaffOrOwnPage && isQuestion && !page.pageAnsweredAtMs && !page.pageClosedAtMs &&
+    if (deletedOrCollapsed) {
+      // Show no accept-as-answer button.
+    }
+    else if (isStaffOrOwnPage && isQuestion && !page.pageAnsweredAtMs && !page.pageClosedAtMs &&
         !isPageBody && post.isApproved) {
       acceptAnswerButton = r.a({ className: 'dw-a dw-a-solve icon-ok-circled-empty',
           onClick: this.onAcceptAnswerClick, title: t.pa.AcceptBtnExpl }, t.pa.SolutionQ);
@@ -236,7 +241,7 @@ export const PostActions = createComponent({
     // answered/fixed, the way to reopen it is to click the answered/fixed icon, to
     // mark it as not-answered/not-fixed again.)
     let closeReopenButton;
-    const canCloseOrReopen = !isDone && !isAnswered && page_canBeClosed(page.pageRole);
+    const canCloseOrReopen = !isDone && !isAnswered && page_canToggleClosed(page);
     if (isPageBody && canCloseOrReopen && isStaffOrOwnPage) {
       let closeReopenTitle = t.Reopen;
       let closeReopenIcon = 'icon-circle-empty';
@@ -320,7 +325,7 @@ export const PostActions = createComponent({
         r.a({ className: 'dw-a dw-a-edit icon-edit', title: t.EditV,
               onClick: this.onEditClick });
 
-    const link = deletedOrCollapsed ? null :
+    const link =
         r.a({ className: 'dw-a dw-a-link icon-link', title: t.pa.LinkToPost,
               onClick: this.onLinkClick });
 
@@ -335,7 +340,7 @@ export const PostActions = createComponent({
         r.span({className: 'dropdown navbar-right', onClick: this.openMoreDropdown},
           r.a({className: 'dw-a dw-a-more icon-menu', title: t.MoreDots}));
     }
-    else if (!isOwnPost) {
+    else if (!isOwnPost && !deletedOrCollapsed) {
       flagBtn =
         r.a({ className: 'dw-a dw-a-flag icon-flag',
             onClick: (event) => flagPost(post, cloneEventTargetRect(event)),
@@ -641,6 +646,8 @@ const MoreDropdownModal = createComponent({
     const me: Myself = store.me;
     const post: Post = this.state.post;
     const isPageBody = post.nr === BodyNr;
+    const isPostDeleted = post_isDeleted(post);
+    const isPageDeleted = page.pageDeletedAtMs;
 
     const moreLinks = [];
     const isOwnPost = post.authorId === me.id;
@@ -648,7 +655,7 @@ const MoreDropdownModal = createComponent({
 
     // ----- Report
 
-    moreLinks.push(
+    if (!isPostDeleted) moreLinks.push(
       r.a({ className: 'dw-a dw-a-flag icon-flag', onClick: this.onFlagClick, key: 'rp' },
         t.pa.Report));
 
@@ -704,11 +711,15 @@ const MoreDropdownModal = createComponent({
 
     // ----- Delete
 
-    if (!isPageBody && (isStaff(me) || isOwnPost)) {
+    if (!isPageBody && (isStaff(me) || isOwnPost) && !isPostDeleted) {
       moreLinks.push(
         r.a({ className: 'dw-a dw-a-delete icon-trash', onClick: this.onDeleteClick, key: 'dl' },
           t.Delete));
     }
+
+    // ----- Unelete
+
+    // Later, [UNDELPOST]
 
     // ----- Post settings
 

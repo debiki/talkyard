@@ -126,6 +126,7 @@ s_P_H_Bm        = bookmark
 s_P_H_Unr       = unread mark
 esP_B           = post body (the actual text)
 s_P-Hdn         = post, hidden
+s_P-Dd          = post, deleted
 
 esPA            = post actions (actually located outside the post (esP) there fore esPA not esP_A)
 
@@ -142,7 +143,7 @@ s_Priv          = private, should not be included in UX browser session recordin
 -RRs_RR         = one reply receiver in the list
 -RRs_RR_Aw      = arrow after the reply receiver's name, pointing upwarts towards the parent post
 
-esRT            = review task
+esRT            = review task  (rename  e_A_Rvw_Tsk_UndoB  —>  e_RT_UndoB  etc)
 
 esRPP           = reset password page
 

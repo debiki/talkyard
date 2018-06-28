@@ -115,7 +115,7 @@ describe("impersonate", () => {
   });
 
   it("... the system thinks he should review the topic he created as Maria", () => {
-    owen.topbar.assertNeedsReviewVisible();
+    assert(owen.topbar.isNeedsReviewOtherVisible());
   });
 
   it("... he goes to the homepage, he's still Owen", () => {
@@ -129,7 +129,7 @@ describe("impersonate", () => {
     owen.topbar.waitForVisible();
     owen.topbar.assertMyUsernameMatches(owen.username);
     // Just check the needs-review notf icon hasn't disappeared:
-    owen.topbar.assertNeedsReviewVisible();
+    assert(owen.topbar.isNeedsReviewOtherVisible());
   });
 
   it("Maria is still logged in", () => {

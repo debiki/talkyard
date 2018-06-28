@@ -97,7 +97,7 @@ describe("admin-user-threat-mild [TyT2WKBG4Z]", function() {
   });
 
   it("... Owen accepts it", function() {
-    owensBrowser.adminArea.review.approveNextWhatever();
+    owensBrowser.adminArea.review.approvePostForMostRecentTask();
     owensBrowser.adminArea.review.waitForServerToCarryOutDecisions();
     assert(!owensBrowser.adminArea.review.isMoreStuffToReview());
   });

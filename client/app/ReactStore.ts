@@ -734,7 +734,7 @@ function updatePost(post: Post, pageId: PageId, isCollapsing?: boolean) {
   setTimeout(() => {
     debiki2.page.Hacks.processPosts();
     if (!oldVersion && post.authorId === store.me.id) {
-      // Show the user his/her new post.
+      // Show the user his/her new post.   — Hmm, this just scrolls to it? it's loaded already, always?
       ReactActions.loadAndShowPost(post.nr);
     }
   }, 1);
@@ -1228,7 +1228,6 @@ function patchTheStore(storePatch: StorePatch) {
   _.each(store.pagesById, patchPage);
 
   function patchPage(page: Page) {
-    // UNTESTED
     const storePatchPageVersion = storePatch.pageVersionsByPageId[page.pageId];
     if (!storePatchPageVersion || storePatchPageVersion < page.pageVersion) {
       // These changes are old, might be out-of-date, ignore.
@@ -1237,7 +1236,7 @@ function patchTheStore(storePatch: StorePatch) {
       return;
     }
     else if (storePatchPageVersion === page.pageVersion) {
-      // We might be loading the text of a hidden/unapproved comment, in order to show it.
+      // We might be loading the text of a hidden/unapproved/deleted comment, in order to show it.
       // So although store & patch page versions are the same, proceed with updating
       // any posts below.
     }

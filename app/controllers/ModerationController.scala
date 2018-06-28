@@ -19,11 +19,13 @@ package controllers
 
 import com.debiki.core._
 import debiki.JsonMaker
-import debiki.JsX.{JsUser, JsPageMetaBrief}
+import debiki.JsX.{JsPageMetaBrief, JsUser}
 import debiki.EdHttp._
+import ed.server.http.{ApiRequest, GetRequest}
 import ed.server.{EdContext, EdController}
 import javax.inject.Inject
 import play.api.libs.json._
+import play.api.mvc
 import play.api.mvc.{Action, ControllerComponents}
 
 
@@ -48,6 +50,11 @@ class ModerationController @Inject()(cc: ControllerComponents, edContext: EdCont
 
 
   def loadReviewTasks: Action[Unit] = StaffGetAction { request =>
+    loadReviewTasksdReplyJson(request)
+  }
+
+
+  private def loadReviewTasksdReplyJson(request: ApiRequest[_]): mvc.Result = {
     val (reviewStuff, usersById, pageMetaById) = request.dao.loadReviewStuff(
       olderOrEqualTo = globals.now().toJavaDate, limit = 100)
     OkSafeJson(
@@ -64,14 +71,15 @@ class ModerationController @Inject()(cc: ControllerComponents, edContext: EdCont
     val decisionInt = (request.body \ "decision").as[Int]
     val decision = ReviewDecision.fromInt(decisionInt) getOrElse throwBadArgument("EsE5GYK2", "decision")
     request.dao.makeReviewDecision(taskId, request.who, anyRevNr = anyRevNr, decision)
-    Ok
+    loadReviewTasksdReplyJson(request)
   }
 
 
   def tryUndoReviewDecision: Action[JsValue] = StaffPostJsonAction(maxBytes = 100) { request =>
     val taskId = (request.body \ "taskId").as[ReviewTaskId]
     val couldBeUndone = request.dao.tryUndoReviewDecision(taskId, request.who)
-    OkSafeJson(Json.obj("couldBeUndone" -> couldBeUndone))
+    // OkSafeJson(Json.obj("couldBeUndone" -> couldBeUndone))
+    loadReviewTasksdReplyJson(request)
   }
 
 

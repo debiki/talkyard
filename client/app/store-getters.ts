@@ -144,7 +144,7 @@ export function store_canDeletePage(store: Store): boolean {
 
 export function store_canUndeletePage(store: Store): boolean {
   const page: Page = store.currentPage;
-  return page.pageDeletedAtMs && isStaff(store.me);
+  return !!page.pageDeletedAtMs && isStaff(store.me);
 }
 
 

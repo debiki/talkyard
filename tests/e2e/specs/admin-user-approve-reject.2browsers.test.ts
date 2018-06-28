@@ -334,24 +334,25 @@ describe("admin-user-page-approve-reject [TyT5KHEWQ2]", function() {
   });
 
   it("... now she can login again", function() {
-    owensBrowser.debug();
     mariasBrowser.hasVerifiedEmailPage.goToHomepage();
-    owensBrowser.debug();
     mariasBrowser.loginDialog.loginWithPassword(maria);
     mariasBrowser.assertPageTitleMatches(forumTitle);
   });
 
   it("... and Owen sees her account is enabled again", function() {
-    owensBrowser.debug();
     owensBrowser.refresh();
     owensBrowser.adminArea.user.assertEnabled();
     owensBrowser.adminArea.user.assertEmailVerified();
   });
 
   it("The Manage... go-to-emails link works", function() {
-    owensBrowser.debug(); // untested, below
     owensBrowser.waitAndClick('.s_A_Us_U_Rows_Row_EmlManage');
-    owensBrowser.userProfilePage.preferences.emailsLogins.isEmailAddressListed(maria.emailAddress);
+    owensBrowser.waitForVisible('.s_UP_EmLg');
+  });
+
+  it("... and Marias address appears, status verified", function() {
+    owensBrowser.userProfilePage.preferences.emailsLogins.waitUntilEmailAddressListed(
+        maria.emailAddress, { shallBeVerified: true });
   });
 
 });

@@ -71,9 +71,12 @@ export function page_mayChangeRole(pageRole: PageRole): boolean {
 }
 
 
-export function page_canBeClosed(pageRole: PageRole) {
-  // Lock private message pages instead so no new replies can be added.
-  return !debiki2.page_isPrivateGroup(pageRole);
+export function page_canToggleClosed(page: Page) {
+  // Lock private message pages instead, so no new replies can be added.
+  return !page.pageLockedAtMs
+      && !page.pageFrozenAtMs
+      && !page.pageDeletedAtMs
+      && !debiki2.page_isPrivateGroup(page.pageRole);
 }
 
 

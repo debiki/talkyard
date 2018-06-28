@@ -671,5 +671,7 @@ package object core {
   def DISCUSSION_QUALITY = () // Stuff to do to improve the quality of the discussions
   def UNPOLITE = ()       // Vuln that lets a user be unpolite to someone else
 
+  def I18N = ()           // Translation missing
+
 }
 

@@ -370,8 +370,9 @@ trait PagesDao {
         throwForbidden("DwE8JGY3", "Only staff and the topic author can accept an answer")
 
       val post = transaction.loadThePost(postUniqueId)
-      if (post.pageId != pageId)
-        throwBadReq("DwE5G2Y2", "That post is placed on another page, page id: " + post.pageId)
+      throwBadRequestIf(post.isDeleted, "TyE4BQR20", "That post has been deleted, cannot mark as answer")
+      throwBadRequestIf(post.pageId != pageId,
+          "DwE5G2Y2", "That post is placed on another page, page id: " + post.pageId)
 
       // Pages are probably closed for good reasons, e.g. off-topic, and then it gives
       // the wrong impression if the author can still select an answer. It would seem as
@@ -493,8 +494,11 @@ trait PagesDao {
       val oldMeta = tx.loadThePageMeta(pageId)
       throwIfMayNotSeePage(oldMeta, Some(user))(tx)
 
-      if (!oldMeta.pageRole.canClose)
-        throwBadRequest("DwE4PKF7", s"Cannot close pages of type ${oldMeta.pageRole}")
+      throwBadRequestIf(oldMeta.isDeleted,
+          "TyE0CLSPGDLD", s"Cannot close or reopen deleted pages")
+
+      throwBadRequestIf(!oldMeta.pageRole.canClose,
+          "DwE4PKF7", s"Cannot close pages of type ${oldMeta.pageRole}")
 
       if (!user.isStaff && user.id != oldMeta.authorId)
         throwForbidden("DwE5JPK7", "Only staff and the topic author can toggle it closed")

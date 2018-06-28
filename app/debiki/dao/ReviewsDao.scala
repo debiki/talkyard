@@ -59,14 +59,21 @@ trait ReviewsDao {
       val task = tx.loadReviewTask(taskId) getOrElse
         throwNotFound("EsE7YMKR25", s"Review task not found, id $taskId")
 
+      // Another staff member might have completed this task already, or maybe the current
+      // admin has the review page open in different tabs, and somehow clicks the same buttons
+      // many times. The staff's user interface will get updated: we send back an up-to-date
+      // review task list.
+      if (task.doneOrGone)
+        return
+
       // The post might have been moved to a different page, so reload it.
       val anyPost = task.postId.flatMap(tx.loadPost)
       val pageId = anyPost.map(_.pageId)
 
       throwForbiddenIf(task.completedAt.isDefined,
-        "EsE2PUM4", "Review task already completed")
+        "TyEREVCOMPL", "Review task already completed")
       throwForbiddenIf(task.invalidatedAt.isDefined,
-        "EsE2PUM5", "Review task cannot be completed, e.g. because the-thing-to-review was deleted")
+        "TyEREVINVLD", "Review task cannot be completed, e.g. because the-thing-to-review was deleted")
 
       val taskWithDecision = task.copy(
         decidedAt = Some(globals.now().toJavaDate),

@@ -145,12 +145,8 @@ export function isTalkToOthersNotification(notf: Notification): boolean {
 
 
 
-export function isCollapsed(post) {
-  return post.isTreeCollapsed || post.isPostCollapsed;
-}
 
-
-export function isDeleted(post) {
+export function isDeleted(post) {   // dupl code [2PKQSB5]
   return !post || post.isTreeDeleted || post.isPostDeleted;
 }
 

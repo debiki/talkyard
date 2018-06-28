@@ -142,7 +142,7 @@ function addCommandsToBrowser(browser) {
 
 
   browser.addCommand('waitForThenClickText', function(selector, regex) {
-    var elemId = browser.waitAndGetElemIdWithText(selector, regex);
+    const elemId = browser.waitAndGetElemIdWithText(selector, regex);
     browser.elementIdClick(elemId);
   });
 
@@ -156,17 +156,17 @@ function addCommandsToBrowser(browser) {
     if (_.isString(regex)) {
       regex = new RegExp(regex);
     }
-    var elemIdFound;
+    let elemIdFound;
     browser.waitUntil(() => {
-      var elemsWrap = browser.elements(selector);
+      const elemsWrap = browser.elements(selector);
       if (!elemsWrap.value) {
         die("No value. Many browsers specified? Like 'everyone.sth(..)'? Not implemented. [TyE5KJ7W1]");
       }
-      var elems = elemsWrap.value;
-      for (var i = 0; i < elems.length; ++i) {
-        var elem = elems[i];
-        var text = browser.elementIdText(elem.ELEMENT).value;
-        var matches = regex.test(text);
+      const elems = elemsWrap.value;
+      for (let i = 0; i < elems.length; ++i) {
+        const elem = elems[i];
+        const text = browser.elementIdText(elem.ELEMENT).value;
+        const matches = regex.test(text);
         if (matches) {
           elemIdFound = elem.ELEMENT;
           return true;

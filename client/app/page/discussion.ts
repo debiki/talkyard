@@ -607,6 +607,7 @@ const RootPostAndComments = createComponent({
     const postIdAttr = 'post-' + rootPost.nr;
     let postClass = 'dw-p';
     if (post_shallRenderAsHidden(rootPost)) postClass += ' s_P-Hdn';
+    if (post_isDeleted(rootPost)) postClass += ' s_P-Dd';
     let postBodyClass = 'dw-p-bd';
     if (isBody) {
       threadClass += ' dw-ar-t';
@@ -614,7 +615,7 @@ const RootPostAndComments = createComponent({
       postBodyClass += ' dw-ar-p-bd';
     }
 
-    const deletedOrUnapprovedMessage = rootPost.isApproved ? false :
+    const notYetApprovedMaybeDeletedInfo = rootPost.isApproved ? false :
         r.div({ className: 'esPendingApproval' },
           page.pageDeletedAtMs ? t.d.PageDeleted : t.d.TextPendingApproval);
 
@@ -622,15 +623,19 @@ const RootPostAndComments = createComponent({
         r.div({ className: 's_Pg_DdX' });
     const deletedText = !page.pageDeletedAtMs ? null :
         r.div({ className: 's_Pg_DdInf' },
-          (pageRole === PageRole.EmbeddedComments ? "Discussion" : "Page") + " deleted.");
+          (pageRole === PageRole.EmbeddedComments ? "Discussion" : "Page") + " deleted."); // I18N
 
     let body = null;
     if (pageRole !== PageRole.EmbeddedComments || !store.isEmbedded) {
       let bodyContent;
-      if (post_shallRenderAsHidden(rootPost)) {
+      if (post_shallRenderAsDeleted(rootPost) || post_shallRenderAsHidden(rootPost)) {
+        const isDeleted = post_isDeleted(rootPost);
+        const onClick = !isDeleted || isStaff(me) ? this.loadAndShowRootPost : undefined;
         bodyContent = (
-            r.div({ className: 'dw-p-bd-blk esOrigPost', onClick: this.loadAndShowRootPost },
-              t.d.PostHiddenClickShow));
+            r.div({ className: 'dw-p-bd-blk esOrigPost', onClick },
+              isDeleted
+                ? (isStaff(me) ? "Post deleted, click to show" : "Post deleted")  // I18N
+                : t.d.PostHiddenClickShow));
       }
       else {
         bodyContent = (
@@ -863,7 +868,7 @@ const RootPostAndComments = createComponent({
 
     return (
       r.div({ className: threadClass },
-        deletedOrUnapprovedMessage,
+        notYetApprovedMaybeDeletedInfo,
         deletedCross,
         body,
         solvedBy,
@@ -1077,7 +1082,7 @@ const Thread = createComponent({
       });
     }
 
-    const actions = isCollapsed(post) || post_shallRenderAsHidden(post)
+    const actions = post_isCollapsed(post) || post_shallRenderAsHidden(post)
       ? null
       : PostActions({ store, post, onClick: this.onAnyActionClick });
 
@@ -1193,7 +1198,7 @@ export const Post = createComponent({
     const post: Post = this.props.post;
     const me: Myself = store.me;
     if (!post)
-      return r.p({}, '(Post missing [DwE4UPK7])');
+      return r.p({}, '(Post missing [TyE0POST])');
 
     let pendingApprovalElem;
     let headerElem;
@@ -1203,9 +1208,9 @@ export const Post = createComponent({
     let extraClasses = this.props.className || '';
     const isFlat = this.props.isFlat;
 
-    if (post.isTreeDeleted || post.isPostDeleted) {
-      const what = post.isTreeDeleted ? 'Thread' : 'Comment';
-      headerElem = r.div({ className: 'dw-p-hd' }, what, ' deleted');
+    if (post_isDeleted(post)) {
+      const what = post.isTreeDeleted ? "Thread" : "Comment";           // I18N
+      headerElem = r.div({ className: 'dw-p-hd' }, what, " deleted");   // I18N
       extraClasses += ' dw-p-dl';
     }
     else if (this.props.renderCollapsed &&

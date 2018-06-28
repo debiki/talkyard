@@ -606,8 +606,10 @@ export const Account = createFactory({
             status += t.upp.PrimaryDot;
           }
 
+          const testClasses = isVerified ? ' e_EmVerfd' : ' e_EmNotVerfd';
+
           return r.li({ className: 's_UP_EmLg_EmL_It',  key: addr.emailAddress },
-            r.div({ className: 's_UP_EmLg_EmL_It_Em' }, addr.emailAddress),
+            r.div({ className: 's_UP_EmLg_EmL_It_Em' + testClasses }, addr.emailAddress),
             r.div({}, status),
             r.div({},
               isVerified ? null : (

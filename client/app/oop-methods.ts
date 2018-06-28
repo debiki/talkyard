@@ -107,8 +107,20 @@ export function notfLevel_title(notfLevel: NotfLevel): string {
   }
 }
 
+export function post_isDeleted(post: Post): boolean {   // dupl code [2PKQSB5]
+  return post.isPostDeleted || post.isTreeDeleted;
+}
+
+export function post_isCollapsed(post) {
+  return post.isTreeCollapsed || post.isPostCollapsed;
+}
+
 export function post_isDeletedOrCollapsed(post: Post): boolean {
-  return post.isPostDeleted || post.isTreeDeleted || post.isPostCollapsed || post.isTreeCollapsed;
+  return post_isDeleted(post) || post_isCollapsed(post);
+}
+
+export function post_shallRenderAsDeleted(post: Post): boolean {
+  return post_isDeleted(post) && _.isEmpty(post.sanitizedHtml);
 }
 
 export function post_shallRenderAsHidden(post: Post): boolean {

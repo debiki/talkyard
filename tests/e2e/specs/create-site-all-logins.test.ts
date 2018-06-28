@@ -17,7 +17,7 @@ const newMembersEmail = 'e2e-test--mia@example.com';
 const newMembersTopicTitle = 'newMembersTopicTitle';
 const newMembersTopicText = 'newMembersTopicText';
 
-describe('/-/create-site  @createsite', () => {
+describe('/-/create-site  @createsite  TyT5KBWAZ2', () => {
 
   function createPasswordTestData() {
     const testId = utils.generateTestId();
