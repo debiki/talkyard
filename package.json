@@ -51,7 +51,7 @@
     "del": "^2.0.2",
     "es6-promise": "^4.0.5",
     "event-stream": "^3.1.1",
-    "gulp": "^3.6.0",
+    "gulp": "^3.9.1",
     "gulp-clean-css": "^2.3.2",
     "gulp-concat": "^2.2.0",
     "gulp-gzip": "^1.2.0",

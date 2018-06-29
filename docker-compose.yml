@@ -105,7 +105,7 @@ services:
     build: docker/gulp/
     image: debiki/talkyard-test
     volumes:
-      - ./:/opt/debiki/server/
+      - ./:/opt/talkyard/server/
     ports:
       # This is for debugging tests running in Node.js in this container, and started
       # via `node --debug-brk --inspect=9229`. [8EA02R4]
@@ -139,7 +139,7 @@ services:
     build: docker/gulp/
     image: debiki/talkyard-gulp
     volumes:
-      - ./:/opt/debiki/server/   # [NODEHOME]
+      - ./:/opt/talkyard/server/   # [NODEHOME]
     command: ['yarn install && gulp watch']
 
   certgen:

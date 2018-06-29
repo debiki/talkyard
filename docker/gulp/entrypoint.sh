@@ -3,7 +3,7 @@
 # *** Dupl code *** see app-dev/entrypoint.sh too [7GY8F2]
 # (Cannot fix, Docker doesn't support symlinks in build dirs.)
 
-cd /opt/debiki/server
+cd /opt/talkyard/server
 
 # Create user 'owner' with the same id as the person who runs docker, so that file
 # 'gulp build' creates will be owned by that person (otherwise they'll be owned by root
@@ -17,7 +17,9 @@ if [ $? -eq 1 -a $file_owner_id -ne 0 ] ; then
   # (--home-dir needs to be specified, because `npm install` and `bower install` write to
   # cache dirs in the home dir, and it's nice to have those dirs below a dir mounted on the
   # Docker host, so they'll persist across container recreations. [NODEHOME])
-  useradd --home-dir /opt/debiki/server/docker/gulp-home --uid $file_owner_id owner
+  # -D = don't assign password (would block Docker waiting for input).
+  echo "Creating user 'owner' with id $file_owner_id..."
+  adduser -u $file_owner_id -h /opt/talkyard/server/docker/gulp-home -D owner   # [5RZ4HA9]
 fi
 
 if [ -z "$*" ] ; then
@@ -45,6 +47,6 @@ else
   # so using `su` here although we're root already.
   # Specify HOME so files that Node.js caches will persist across container recreations. [NODEHOME])
   set -x
-  exec su -c "HOME=/opt/debiki/server/docker/gulp-home $*" root
+  exec su -c "HOME=/opt/talkyard/server/docker/gulp-home $*" root
 fi
 

@@ -3,7 +3,7 @@
 
 # Maybe Nginx with Lua HTTP handlers that calls out to Bash & certbot?
 
-FROM alpine:3.6
+FROM alpine:3.7
 
 # Stay alive forever.
 CMD ["tail", "-f", "/dev/null"]
