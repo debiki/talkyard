@@ -38,7 +38,7 @@ function getPageId(): PageId {
 }
 
 interface OngoingRequest {
-  abort(message?: string);
+  abort();
 }
 
 interface RequestData {
@@ -214,20 +214,23 @@ function postJsonSuccess(urlPath, success: (response: any) => void, data: any, e
 
 export const testGet = get;
 
-function get(uri: string, options, success?: (response, xhr?: XMLHttpRequest) => void,
-      error?: () => void): OngoingRequest {
-  let dataType;
-  let headers = {};
-  if (_.isFunction(options)) {
-    error = <any> success;
-    success = <any> options;
-    options = {};
-  }
-  else {
-    if (!options) options = {};
-    dataType = options.dataType;
-    headers = options.headers || {};
-  }
+type GetSuccessFn = (response, xhr?: XMLHttpRequest) => void;
+type GetErrorFn = (errorDetails: string) => void;
+
+interface GetOptions {
+  dataType?: string;
+  headers?: { [headerName: string]: string }
+  timeout?: number;
+  suppressErrorDialog?: boolean;
+}
+
+
+function get(uri: string, successFn: GetSuccessFn, errorFn?: GetErrorFn, options?: GetOptions)
+    : OngoingRequest {
+
+  options = options || {};
+  const headers = options.headers || {};
+
   headers['X-Requested-With'] = 'XMLHttpRequest';
 
   const promiseWithXhr = <any> Bliss.fetch(origin() + uri, {  // hack [7FKRPQ2T0]
@@ -237,33 +240,34 @@ function get(uri: string, options, success?: (response, xhr?: XMLHttpRequest) =>
   });
   promiseWithXhr.then(xhr => {
     let response = xhr.response;
-    if (dataType !== 'html') {
+    if (options.dataType !== 'html') {
       // Then it's json, what else could it be? Remove any AngularJS safe json prefix. [5LKW02D4]
       response = xhr.response.replace(/^\)]}',\n/, '');
       response = JSON.parse(response);
     }
-    success(response, xhr);
+    successFn(response, xhr);
   }).catch(errorObj => {
     const errorAsJson = JSON.stringify(errorObj);
-    const details = errorObj.xhr ? errorObj.xhr.responseText : errorObj.stack;
-    if (options.suppressErrorDialog) {
-      console.log(`As expected, error calling ${uri}: ${errorAsJson}, details: ${details}`);
-    }
-    else {
-      console.error(`Error calling ${uri}: ${errorAsJson}, details: ${details}`);
+    const details: string = errorObj.xhr ? errorObj.xhr.responseText : errorObj.stack;
+    console.error(`Error calling ${uri}: ${errorAsJson}, details: ${details}`);
+    if (!options.suppressErrorDialog) {
+      const errorDialog = pagedialogs.getServerErrorDialog();
       if (errorObj.xhr) {
-        pagedialogs.getServerErrorDialog().open(errorObj.xhr);
+        errorDialog.open(errorObj.xhr);
       }
       else {
-        pagedialogs.getServerErrorDialog().openForBrowserError(
-          errorObj.stack || 'Unknown error [EdEUNK2]');
+        errorDialog.openForBrowserError(errorObj.stack || 'Unknown error [EdEUNK2]');
       }
     }
-    error && error();
+    if (errorFn) {
+      errorFn(details);
+    }
   });
 
   return {
     abort: function() {
+      // Unlike with jQuery, this abort() won't trigger the promise's error handler above,
+      // i.e. won't call `catch(...)` above.
       promiseWithXhr.xhr.abort();
     }
   }
@@ -436,7 +440,7 @@ interface LoadSettingsResult {
 
 
 export function loadSiteSettings(success: (s: LoadSettingsResult) => void) {
-  get('/-/load-site-settings', {}, success);
+  get('/-/load-site-settings', success);
 }
 
 
@@ -906,13 +910,15 @@ export function loadOneboxSafeHtml(url: string, success: (safeHtml: string) => v
     return;
   }
   const encodedUrl = encodeURIComponent(url);
-  get('/-/onebox?url=' + encodedUrl, { dataType: 'html', suppressErrorDialog: true },
-        (response: string) => {
+  get('/-/onebox?url=' + encodedUrl, (response: string) => {
     cachedOneboxHtml[url] = response;
     success(response);
   }, function() {
     // Pass null to tell the editor to show no onebox (it should show the link instead).
     success(null);
+  }, {
+    dataType: 'html',
+    suppressErrorDialog: true,
   });
 }
 
@@ -1360,73 +1366,118 @@ export function trackReadingProgress(lastViewedPostNr: PostNr, secondsReading: n
 }
 
 
-let longPollingState = {
-  ongoingRequest: null,
-  lastModified: null,
-  lastEtag: null,
-};
+interface OngoingRequestWithNr extends OngoingRequest {
+  reqNr?: number;
+}
+
+interface LongPollingState {
+  ongoingRequest?: OngoingRequestWithNr;
+  lastModified?;
+  lastEtag?;
+  nextReqNr: number;
+}
+
+const longPollingState: LongPollingState = { nextReqNr: 1 };
+const LongPollingSeconds = 30;
 
 
 /**
  * Built for talking with Nginx and nchan, see: https://github.com/slact/nchan#long-polling
  */
-export function sendLongPollingRequest(userId: UserId, success: (event: any) => void,
-      error: () => void) {
-  dieIf(longPollingState.ongoingRequest, "Already long-polling the server [EsE7KYUX2]");
-  console.debug(`Sending long polling request, ${eds.siteId}:${userId} [EdDPS_BRWSRPOLL]`);
-  const options: any = {
+export function sendLongPollingRequest(userId: UserId, successFn: (response) => void,
+      errorFn: () => void, abortedFn: () => void) {
+
+  if (longPollingState.ongoingRequest) {
+    die(`Already long polling, request nr ${longPollingState.ongoingRequest.reqNr} [TyELPRDUPL]`);
+  }
+
+  // This is an easy-to-guess channel id, but in order to subscribe, the session cookie
+  // must also be included in the request. So this should be safe.
+  // The site id is included, because users at different sites can have the same id. [7YGK082]
+  const channelId = eds.siteId + '-' + userId;
+
+  // For debugging.
+  const reqNr = longPollingState.nextReqNr;
+  longPollingState.nextReqNr = reqNr + 1;
+
+  console.debug(`Sending long polling request ${reqNr}, channel ${channelId} [TyMLPRSEND]`);
+
+  const options: GetOptions = {
     dataType: 'json',
     // Firefox always calls the error callback if a long polling request is ongoing when
     // navigating away / closing the tab. So the dialog would be visible for 0.1 confusing seconds.
+    // 2018-06-30: Or was this in fact jQuery that called error(), when FF called abort()?
     suppressErrorDialog: true,
   };
+
+  // The below headers make Nchan return the next message in the channel's message queue,
+  // or, if queue empty, Nchan waits with replying, until a message arrives. Our very first
+  // request, though, will lack headers — then Nchan returns the oldest message in the queue.
   if (longPollingState.lastEtag) {
     options.headers = {
       'If-Modified-Since': longPollingState.lastModified,
       'If-None-Match': longPollingState.lastEtag,
     };
   }
-  // This is an easy-to-guess channel id, but in order to subscribe, the session cookie
-  // must also be included in the request. So this should be safe.
-  // The site id is included, because users at different sites can have the same id. [7YGK082]
-  const channelId = eds.siteId + '-' + userId;
-  let abortedBecauseNoData = false;
+
+  let requestDone = false;
+
   longPollingState.ongoingRequest =
-      get('/-/pubsub/subscribe/' + channelId, options, (response, xhr) => {
-        console.debug(`Got long polling response [EdDPS_BRWSRRESP]: ${ JSON.stringify(response) }`);
+      get('/-/pubsub/subscribe/' + channelId, (response, xhr) => {
+        console.debug(`Long polling request ${reqNr} response [TyMLPRRESP]: ${JSON.stringify(response)}`);
         longPollingState.ongoingRequest = null;
         longPollingState.lastModified = xhr.getResponseHeader('Last-Modified');
         longPollingState.lastEtag = xhr.getResponseHeader('Etag');
-        success(response);
+        requestDone = true;
+        successFn(response);
       }, () => {
+        console.warn(`Long polling request ${reqNr} error [TyELPRERR]`);
         longPollingState.ongoingRequest = null;
-        if (abortedBecauseNoData) {
-          // Don't update last-modified and etag.
-          success(null);
-        }
-        else {
-          console.debug(`Got long polling error response [EdDPS_BRWSRERR]`);
-          error();
-        }
-      });
+        requestDone = true;
+        errorFn();
+      }, options);
 
-  // Cancel and restart the request after half a minute.
+  longPollingState.ongoingRequest.reqNr = reqNr;
+
+  // Cancel and send a new request after half a minute.
+
+  // Otherwise firewalls and other infrastructure might think the request is broken,
+  // since no data gets sent. Then they might kill it, sometimes (I think) without
+  // this browser or Talkyard server getting a chance to notice this — so we'd think
+  // the request was alive, but in fact it had been silently terminated, and we
+  // wouldn't get any more notifications.
+
+  // And don't update last-modified and etag, since when cancelling, we don't get any
+  // more recent data from the server.
+
   const currentRequest = longPollingState.ongoingRequest;
+
   setTimeout(function () {
-    abortedBecauseNoData = true;
+    if (requestDone)
+      return;
+    console.debug(`Aborting long polling request ${reqNr} after ${LongPollingSeconds}s [TyMLPRABRT1]`);
     currentRequest.abort();
-  }, 30 * 1000);
+    // Unless a new request has been started, reset the state.
+    if (currentRequest === longPollingState.ongoingRequest) {
+      longPollingState.ongoingRequest = null;
+    }
+    // This will start a new polling request.
+    abortedFn();
+  },
+    LongPollingSeconds * 1000);
 }
 
 
-export function isLongPollingServerNow(): boolean {
+export function isLongPollingNow(): boolean {
   return !!longPollingState.ongoingRequest;
 }
 
 
 export function cancelAnyLongPollingRequest() {
   if (longPollingState.ongoingRequest) {
-    longPollingState.ongoingRequest.abort("Intentionally cancelled [EsM2UZKW4]");
+    const reqNr = longPollingState.ongoingRequest.reqNr;
+    console.debug(`Aborting long polling request ${reqNr} [TyMLPRABRT2]`);
+    longPollingState.ongoingRequest.abort();
     longPollingState.ongoingRequest = null;
   }
 }

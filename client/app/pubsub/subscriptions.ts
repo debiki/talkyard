@@ -22,49 +22,72 @@
    module debiki2.pubsub {
 //------------------------------------------------------------------------------
 
-/**
- * Deletes any old event subscription and creates a new for this page and user.
- */
-export function subscribeToServerEvents(doNothingIfAlreadyPolling?) {
-  if (Server.isLongPollingServerNow() && doNothingIfAlreadyPolling)
-    return;
+const RetryAfterMsDefault = 4000;
+const GiveUpAtMs = 60 * 1000;
+let retryAfterMs = RetryAfterMsDefault;
 
+
+/**
+ * Deletes any old event subscription and creates a new for the current user.
+ */
+export function subscribeToServerEvents() {
   Server.cancelAnyLongPollingRequest();
 
-  var me = ReactStore.getMe();
+  // If not logged in, don't ask for any events — if everyone did that, that could put the server
+  // under an a bit high load? and not much interesting to be notified about anyway, when not logged in.
+  const me = ReactStore.getMe();
   if (!me || !me.id)
     return;
 
-  Server.sendLongPollingRequest(me.id, event => {
-    // Continue polling. Todo: specify params so won't get the very first event always only
+  Server.sendLongPollingRequest(me.id, (response) => {
+    console.debug("Long polling request done, sending another...");
     subscribeToServerEvents();
 
-    if (!event) return; // request probably cancelled
-    dieIf(!event.type, 'EsE2WCX59');
-    dieIf(!event.data, 'EsE4YKP02');
+    // Reset backoff, since all seems fine.
+    retryAfterMs = RetryAfterMsDefault;
 
-    switch (event.type) {
-      case "storePatch":
-        ReactActions.patchTheStore(event.data);
+    dieIf(!response.type, 'TyE2WCX59');
+    dieIf(!response.data, 'TyE4YKP02');
+
+    switch (response.type) {
+      case 'storePatch':
+        ReactActions.patchTheStore(response.data);
         break;
-      case "notifications":
-        ReactActions.addNotifications(event.data);
+      case 'notifications':
+        ReactActions.addNotifications(response.data);
         break;
-      case "presence":
-        ReactActions.updateUserPresence(event.data.user, event.data.presence);
+      case 'presence':
+        ReactActions.updateUserPresence(response.data.user, response.data.presence);
         break;
       default:
-        die("Unknown event type [EsE7YKF4]: " + event.type +
-            "\n\nThe response body:\n\n" + JSON.stringify(event));
+        die("Unknown response type [TyE7YKF4]: " + response.type +
+            "\n\nThe response body:\n\n" + JSON.stringify(response));
     }
   }, () => {
-    // Error. Subscribe again, after ... a few second? So won't start logging 9^99 error
-    // messages in case the error happens forever.
-    // BUG this might result in many parallel subscription attempts. Avoid that.
-    // And use exponential backoff.
-    setTimeout(() => {
-      subscribeToServerEvents(true);
-    }, 5*1000);
+    // Error. Don't retry immediately — that could result in super many error log messages,
+    // if the problem persists. Also, do a little bit exponential backoff.
+    retryAfterMs = Math.min(retryAfterMs * 1.3, 20*1000);
+    if (retryAfterMs > GiveUpAtMs) {
+      console.error("Long polling broken, maybe events lost, giving up.");
+      // UX COULD show this in a non-modal message instead?
+      pagedialogs.getServerErrorDialog().openForBrowserError(
+          "Cannot talk with the server. Reload page to retry. [TyMLPRRLD]");
+    }
+    else {
+      console.warn(`Long polling error, will retry after ${Math.floor(retryAfterMs / 1000)} seconds...`);
+      setTimeout(() => {
+        if (!Server.isLongPollingNow()) {
+          subscribeToServerEvents();
+        }
+      }, retryAfterMs);
+    }
+  }, () => {
+    console.debug("Long polling aborted, will send a new if needed [TyMLPRMBYE]");
+    // No error until cancelled intentionally, so all fine then, we can reset the backoff?
+    retryAfterMs = RetryAfterMsDefault;
+    if (!Server.isLongPollingNow()) {
+      subscribeToServerEvents();
+    }
   });
 }
 
