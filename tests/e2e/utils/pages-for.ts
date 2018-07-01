@@ -110,7 +110,7 @@ function pagesFor(browser) {
     },
 
 
-    playTimeSeconds: function(seconds: number) {
+    playTimeSeconds: function(seconds: number) {  // [4WKBISQ2]
       browser.execute(function (seconds) {
         console.log("Playing time, seconds: " + seconds);
         window['debiki2'].testExtraMillis = window['debiki2'].testExtraMillis + seconds * 1000;
@@ -322,6 +322,16 @@ function pagesFor(browser) {
       return false;
     },
 
+    countLongPollingsDone: () => {
+      const result = browser.execute(function() {
+        return window['debiki2'].Server.testGetLongPollingNr();
+      });
+      dieIf(!result, "Error getting long polling count, result: " + JSON.stringify(result));
+      const count = parseInt(result.value);
+      dieIf(_.isNaN(count), "Long polling count is weird: " + JSON.stringify(result));
+      return count;
+    },
+
     createSite: {
       fillInFieldsAndSubmit: function(data) {
         if (data.embeddingUrl) {
@@ -479,6 +489,7 @@ function pagesFor(browser) {
         api.waitAndClick('.esTB_SearchBtn');
         browser.waitAndSetValue('.esTB_SearchD input[name="q"]', phrase);
         browser.click('.e_SearchB');
+        api.searchResultsPage.waitForResults(phrase);
       },
 
       assertNotfToMe: function() {

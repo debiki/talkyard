@@ -54,5 +54,6 @@ export = {
   AdminsId: 19,
   ReviewDecisionUndoTimoutSeconds: 15, // sync with Scala and React component [2PUKQB0]
   JanitorThreadIntervalMs: 100,  // [2YPBJ6L]
+  MagicTimeoutPollMs: 500,  // [4GKB93RA]
 };
 

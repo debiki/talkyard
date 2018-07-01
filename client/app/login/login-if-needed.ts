@@ -74,6 +74,7 @@ export function loginIfNeededReturnToAnchor(
     // tab instead, when so much time has passed, and just gets confused if something then auto-
     // happens here? (So don't call `success()`.)
     setTimeout(function() {
+      // TESTS_MISSING
       if (!checkLoggedInHandle) return;
       clearInterval(checkLoggedInHandle);
       checkLoggedInHandle = null;

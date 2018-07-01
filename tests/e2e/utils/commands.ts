@@ -350,8 +350,6 @@ function addCommandsToBrowser(browser) {
 
   // n starts on 1 not 0.
   browser.addCommand('assertNthTextMatches', function(selector, n, regex, regex2) {
-    console.log('browser.pause(500); // for now');
-    browser.pause(500); // for now
     if (_.isString(regex)) {
       regex = new RegExp(regex);
     }
@@ -359,12 +357,12 @@ function addCommandsToBrowser(browser) {
       regex2 = new RegExp(regex2);
     }
     assert(n >= 1, "n starts on 1, change from 0 to 1 please");
-    var items = browser.elements(selector).value;
+    const items = browser.elements(selector).value;
     assert(items.length >= n, "Only " + items.length + " elems found, there's no elem no " + n);
-    var response = browser.elementIdText(items[n - 1].ELEMENT);
+    const response = browser.elementIdText(items[n - 1].ELEMENT);
     assert(isResponseOk(response), "Bad response._status: " + response._status +
         ", state: " + response.state);
-    var text = response.value;
+    const text = response.value;
     assert(regex.test(text), "Elem " + n + " selected by '" + selector + "' doesn't match " +
         regex.toString() + ", actual text: '" + text + "'");
     // COULD use 'arguments' & a loop instead

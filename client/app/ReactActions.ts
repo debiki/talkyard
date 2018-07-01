@@ -114,6 +114,9 @@ export function logoutClientSideOnly() {
     // Tell the editor iframe that we've logged out.
     window.parent.postMessage(JSON.stringify(['logoutClientSideOnly', null]), eds.embeddingOrigin);
   }
+  // Abort any long polling request, so we won't receive data, for this user, after we've
+  // logged out: (not really needed, because we reload() below)
+  Server.abortAnyLongPollingRequest();
   // Quick fix that reloads the admin page (if one views it) so the login dialog appears:
   location.reload();
 }

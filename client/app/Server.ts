@@ -1381,11 +1381,18 @@ const longPollingState: LongPollingState = { nextReqNr: 1 };
 const LongPollingSeconds = 30;
 
 
+// For end-to-end tests, so they can verify that new long polling requests seem to
+// get sent.
+export function testGetLongPollingNr() {
+  return longPollingState.nextReqNr - 1;
+}
+
+
 /**
  * Built for talking with Nginx and nchan, see: https://github.com/slact/nchan#long-polling
  */
 export function sendLongPollingRequest(userId: UserId, successFn: (response) => void,
-      errorFn: () => void, abortedFn: () => void) {
+      errorFn: () => void, resendIfNeeded: () => void) {
 
   if (longPollingState.ongoingRequest) {
     die(`Already long polling, request nr ${longPollingState.ongoingRequest.reqNr} [TyELPRDUPL]`);
@@ -1452,7 +1459,7 @@ export function sendLongPollingRequest(userId: UserId, successFn: (response) => 
 
   const currentRequest = longPollingState.ongoingRequest;
 
-  setTimeout(function () {
+  magicTimeout(LongPollingSeconds * 1000, function () {
     if (requestDone)
       return;
     console.debug(`Aborting long polling request ${reqNr} after ${LongPollingSeconds}s [TyMLPRABRT1]`);
@@ -1461,10 +1468,8 @@ export function sendLongPollingRequest(userId: UserId, successFn: (response) => 
     if (currentRequest === longPollingState.ongoingRequest) {
       longPollingState.ongoingRequest = null;
     }
-    // This will start a new polling request.
-    abortedFn();
-  },
-    LongPollingSeconds * 1000);
+    resendIfNeeded();
+  });
 }
 
 
@@ -1473,7 +1478,7 @@ export function isLongPollingNow(): boolean {
 }
 
 
-export function cancelAnyLongPollingRequest() {
+export function abortAnyLongPollingRequest() {
   if (longPollingState.ongoingRequest) {
     const reqNr = longPollingState.ongoingRequest.reqNr;
     console.debug(`Aborting long polling request ${reqNr} [TyMLPRABRT2]`);

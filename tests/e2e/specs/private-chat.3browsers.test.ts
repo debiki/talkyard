@@ -111,9 +111,16 @@ describe("private chat", function() {
     everyone.chat.waitForNumMessages(3);
   });
 
+  // 1 minute passes (so new long pollling requests gets sent)   // break out fn? [4KWBFG5]
+  // TESTS_MISSING
+  // ... everyone says sth, everyone sees
+  // + eveeryone sees 3 members in the chat ...
+
   it("Maria leaves the chat", function() {
     maria.watchbar.clickLeaveChat();
   });
+
+  // ... and the others see now she's offline  TESTS_MISSING
 
   it("... and thereafter no longer sees the chat page", function() {
     // For now. Should probably redirect to / instead, after refresh? COULD

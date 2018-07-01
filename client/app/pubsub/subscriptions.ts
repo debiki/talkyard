@@ -31,7 +31,7 @@ let retryAfterMs = RetryAfterMsDefault;
  * Deletes any old event subscription and creates a new for the current user.
  */
 export function subscribeToServerEvents() {
-  Server.cancelAnyLongPollingRequest();
+  Server.abortAnyLongPollingRequest();
 
   // If not logged in, don't ask for any events — if everyone did that, that could put the server
   // under an a bit high load? and not much interesting to be notified about anyway, when not logged in.

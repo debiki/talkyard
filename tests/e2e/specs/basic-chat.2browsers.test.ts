@@ -23,7 +23,7 @@ describe('chat', function() {
 
   it('create site with two members', function() {
     browser.perhapsDebugBefore();
-    everyone = browser;
+    everyone = _.assign(browser, pagesFor(browser));
     owen = _.assign(browserA, pagesFor(browserA), make.memberOwenOwner());
     maria = _.assign(browserB, pagesFor(browserB), make.memberMaria());
 
@@ -31,6 +31,8 @@ describe('chat', function() {
     site.members.push(make.memberMaria());
     const idAddress = server.importSiteData(site);
     everyone.go(idAddress.origin);
+    maria.disableRateLimits();
+    owen.disableRateLimits();
   });
 
   it("Owen logs in, creates a chat topic", function() {
@@ -81,19 +83,46 @@ describe('chat', function() {
     maria.assertNthTextMatches('.esC_M', 3, /is your name/);
   });
 
-  /* For demos:
-  it("Maria replies", function() {
-    maria.disableRateLimits();
+  it("A minute elapses, ... the browsers re-send long polling requests", function() { // break out fn? [4KWBFG5]
+    const mariaReqNrBefore = maria.countLongPollingsDone();
+    const owenReqNrBefore = owen.countLongPollingsDone();
+
+    // This'll make the browsers send 2 new long polling requests.
+    everyone.playTimeSeconds(60);
+    everyone.pause(c.MagicTimeoutPollMs + 100);  // ... nr 1 gets sent here
+    everyone.playTimeSeconds(60);
+    everyone.pause(c.MagicTimeoutPollMs + 100);  // ... nr 2
+
+    const mariaReqNrAfter = maria.countLongPollingsDone();
+    const owenReqNrAfter = owen.countLongPollingsDone();
+
+    console.log(`Maria's um long pollings after: ${mariaReqNrAfter}, before: ${mariaReqNrBefore}`);
+    console.log(`Owen's um long pollings after: ${owenReqNrAfter}, before: ${owenReqNrBefore}`);
+
+    assert.ok(mariaReqNrAfter > mariaReqNrBefore,
+        `Maria's browser: Long polling didn't happen? Req nr after: ${mariaReqNrAfter}, ` +
+        `before: ${mariaReqNrBefore} [TyE4WKBZW1]`);
+    assert.ok(owenReqNrAfter > owenReqNrBefore,
+        `Owen's browser: Long polling didn't happen? Req nr after: ${owenReqNrAfter}, ` +
+        `before: ${owenReqNrBefore} [TyE4WKBZW2]`);
+  });
+
+  it("Maria replies, and Owen posts anothe message", function() {
     maria.chat.addChatMessage("What?");
     //maria.pause(3500);
     maria.chat.addChatMessage("Why, yes.");
-  });
-
-  it("Owen posts another chat message", function() {
-    owen.disableRateLimits();
     owen.chat.addChatMessage("Can I call you Maria then?");
   });
 
+  it("Owen sees Maria's last chat message — live updates still work, after many minutes", function() {
+    owen.assertNthTextMatches('.esC_M', 4, /Why, yes/);
+  });
+
+  it("Maria sees Owen's", function() {
+    maria.assertNthTextMatches('.esC_M', 5, /Can I call you Maria/);
+  });
+
+  /* For demos:
   it("Maria replies", function() {
     //maria.pause(5000);
     maria.chat.addChatMessage("Yes, sure");
@@ -105,8 +134,5 @@ describe('chat', function() {
     maria.chat.addChatMessage("You too");
   }); */
 
-  it("Done?", function() {
-    everyone.perhapsDebug();
-  });
 });
 
