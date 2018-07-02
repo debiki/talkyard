@@ -154,6 +154,7 @@ function runAllE2eTests {
   runE2eTest s/wdio target/e2e/wdio.2chrome.conf.js    --only admin-user-staff-trust.2browsers $args
   runE2eTest s/wdio target/e2e/wdio.2chrome.conf.js    --only admin-user-suspend-etc.2browsers $args
   runE2eTest s/wdio target/e2e/wdio.2chrome.conf.js    --only admin-review-invalidate-for-reply.2browsers $args
+  runE2eTest s/wdio target/e2e/wdio.2chrome.conf.js    --only admin-review-invalidate-page-deld.2browsers $args
 
   runE2eTest s/wdio target/e2e/wdio.2chrome.conf.js    --only password-login-reset.2browsers $args
   runE2eTest s/wdio target/e2e/wdio.conf.js            --only user-profile-access $args

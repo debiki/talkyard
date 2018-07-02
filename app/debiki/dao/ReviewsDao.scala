@@ -348,19 +348,20 @@ trait ReviewsDao {
   }
 
 
-  def loadReviewStuff(olderOrEqualTo: ju.Date, limit: Int)
-        : (Seq[ReviewStuff], Map[UserId, User], Map[PageId, PageMeta]) =
+  def loadReviewStuff(olderOrEqualTo: ju.Date, limit: Int, requester: User)
+        : (Seq[ReviewStuff], ReviewTaskCounts, Map[UserId, User], Map[PageId, PageMeta]) =
     readOnlyTransaction { transaction =>
-      loadStuffImpl(olderOrEqualTo, limit, transaction)
+      loadStuffImpl(olderOrEqualTo, limit, requester, transaction)
     }
 
 
-  private def loadStuffImpl(olderOrEqualTo: ju.Date, limit: Int, transaction: SiteTransaction)
-        : (Seq[ReviewStuff], Map[UserId, User], Map[PageId, PageMeta]) = {
-    val reviewTasks = transaction.loadReviewTasks(olderOrEqualTo, limit)
+  private def loadStuffImpl(olderOrEqualTo: ju.Date, limit: Int, requester: User, tx: SiteTransaction)
+        : (Seq[ReviewStuff], ReviewTaskCounts, Map[UserId, User], Map[PageId, PageMeta]) = {
+    val reviewTasks = tx.loadReviewTasks(olderOrEqualTo, limit)
+    val taskCounts = tx.loadReviewTaskCounts(requester.isAdmin)
 
     val postIds = reviewTasks.flatMap(_.postId).toSet
-    val postsById = transaction.loadPostsByUniqueId(postIds)
+    val postsById = tx.loadPostsByUniqueId(postIds)
 
     val userIds = mutable.Set[UserId]()
     reviewTasks foreach { task =>
@@ -374,17 +375,17 @@ trait ReviewsDao {
       post.lastApprovedEditById.foreach(userIds.add)
     }
 
-    val flags: Seq[PostFlag] = transaction.loadFlagsFor(postsById.values.map(_.pagePostNr))
+    val flags: Seq[PostFlag] = tx.loadFlagsFor(postsById.values.map(_.pagePostNr))
     val flagsByPostId: Map[PostId, Seq[PostFlag]] = flags.groupBy(_.uniqueId)
     flags foreach { flag =>
       userIds.add(flag.flaggerId)
     }
 
-    val usersById = transaction.loadUsersAsMap(userIds)
+    val usersById = tx.loadUsersAsMap(userIds)
 
     val pageIds = postsById.values.map(_.pageId)
-    val titlesByPageId = transaction.loadTitlesPreferApproved(pageIds)
-    val pageMetaById = transaction.loadPageMetasAsMap(pageIds)
+    val titlesByPageId = tx.loadTitlesPreferApproved(pageIds)
+    val pageMetaById = tx.loadPageMetasAsMap(pageIds)
 
     val result = ArrayBuffer[ReviewStuff]()
     for (task <- reviewTasks) {
@@ -413,7 +414,7 @@ trait ReviewsDao {
           post = anyPost,
           flags = flags))
     }
-    (result.toSeq, usersById, pageMetaById)
+    (result.toSeq, taskCounts, usersById, pageMetaById)
   }
 
 }

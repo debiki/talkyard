@@ -388,3 +388,7 @@ interface LargeTestForum extends EmptyTestForum {
   },
 }
 
+
+// Right now, constraints like >= 1 aren't supported in Typescript, but this works, and, in test
+// cases, probably won't ever need larger numbers?
+type IntAtLeastOne = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 | 17 | 18 | 19;

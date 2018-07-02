@@ -572,12 +572,20 @@ trait PagesDao {
 
       // Invalidate, or re-activate, review tasks whose posts now get deleted / undeleted.
       // Also done here: [4JKAM7] when deleting posts.
+      // Actually, maybe better to *not* invalidate review tasks now when the page gets
+      // deleted? Can be good to be able to review flagged posts and misbehavior.
+      // Example: Mallory creates a topic and says things that make people angry. Then,
+      // when some people have replied, he deletes the page? Or maybe a staff or core memeber
+      // does, because the whole page is off-topic with angry comments. Now, it'd be silly
+      // if all review tags for the flags casted on Mallory's comments, disappeared.
+      // So don't:   [5RW2GR8]  CLEAN_UP maybe remove doingReviewTask param + fns below, aren't needed?
+      /*
       if (!undelete) {
         invalidateReviewTasksForPageId(pageId, doingReviewTask,tx)
       }
       else {
         reactivateReviewTasksForPageId(pageId, doingReviewTask, tx)
-      }
+      } */
 
       tx.updatePageMeta(newMeta, oldMeta = pageMeta, markSectionPageStale = true)
       tx.insertAuditLogEntry(auditLogEntry)

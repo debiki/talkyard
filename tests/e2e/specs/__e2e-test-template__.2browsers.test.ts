@@ -41,7 +41,7 @@ let siteIdAddress: IdAddress;
 let forumTitle = "Some E2E Test";
 
 
-describe("some-e2e-test [TyT1234ABC]", function() {
+describe("some-e2e-test [TyT1234ABC]", () => {
 
   it("import a site", () => {
     browser.perhapsDebugBefore();
@@ -77,14 +77,17 @@ describe("some-e2e-test [TyT1234ABC]", function() {
     strangersBrowser = othersBrowser;
   });
 
-  it("Owen logs in to admin area, ... ", function() {
+  it("Owen logs in to admin area, ... ", () => {
     owensBrowser.adminArea.goToUsersEnabled(siteIdAddress.origin);
     owensBrowser.loginDialog.loginWithPassword(owen);
   });
 
-  it("Maria logs in", function() {
+  it("Maria logs in", () => {
     mariasBrowser.go(siteIdAddress.origin + '/' + forum.topics.byMichaelCategoryA.slug);
     mariasBrowser.complex.loginWithPasswordViaTopbar(maria);
+
+    // And if needed:
+    //someone's-Browser.disableRateLimits();
   });
 
   // ...

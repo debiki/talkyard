@@ -131,6 +131,7 @@ describe("admin-review-invalidate-tasks-reply [TyT6KWB42A]", function() {
   });
 
   it("... the server carries out this decision", function() {
+    owensBrowser.adminArea.review.playTimePastUndo();
     owensBrowser.adminArea.review.waitForServerToCarryOutDecisions(
         forum.topics.byMichaelCategoryA.id, angryReplyTwoNr);
   });
@@ -149,7 +150,6 @@ describe("admin-review-invalidate-tasks-reply [TyT6KWB42A]", function() {
   });
 
   it("Topbar review counts are correct", function() {
-    owensBrowser.refresh();
     owensBrowser.topbar.waitForNumPendingUrgentReviews(3); // 2 + 1 = maria's + michael's remaining flags
     owensBrowser.topbar.waitForNumPendingOtherReviews(1);  // because reply posted by new user = Mallory
   });
@@ -166,6 +166,7 @@ describe("admin-review-invalidate-tasks-reply [TyT6KWB42A]", function() {
   });
 
   it("... the server carries out the decisions", function() {
+    owensBrowser.adminArea.review.playTimePastUndo();
     owensBrowser.adminArea.review.waitForServerToCarryOutDecisions(
         forum.topics.byMichaelCategoryA.id, angryReplyOneNr);
   });
@@ -187,7 +188,6 @@ describe("admin-review-invalidate-tasks-reply [TyT6KWB42A]", function() {
   });
 
   it("Needs-to-review counts are correct", function() {
-    owensBrowser.refresh();
     owensBrowser.topbar.waitForNumPendingUrgentReviews(1); // Maria flagged post nr 3
     assert(!owensBrowser.topbar.isNeedsReviewOtherVisible());
   });
@@ -200,7 +200,7 @@ describe("admin-review-invalidate-tasks-reply [TyT6KWB42A]", function() {
   it("Now there're no need-to-review notfs in his my-menu in the topbar", function() {
     owensBrowser.refresh();
     owensBrowser.topbar.waitForVisible();
-    assert(!owensBrowser.topbar.isNeedsReviewUrgetnVisible());
+    assert(!owensBrowser.topbar.isNeedsReviewUrgentVisible());
     assert(!owensBrowser.topbar.isNeedsReviewOtherVisible());
   });
 
@@ -219,6 +219,12 @@ describe("admin-review-invalidate-tasks-reply [TyT6KWB42A]", function() {
   });
 
   it("... he deletes it by rejecting the review task instead", function() {
+  });
+
+  it("Owen also un-deletes Mallory's first reply", function() {
+  });
+
+  it("... its review task then reappears, except for the one whose Delete btn clicked", function() {
   });  */
 
 });

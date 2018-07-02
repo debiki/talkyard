@@ -295,6 +295,10 @@ interface Myself {
 }
 
 
+type MyselfPatch = Partial<Myself>;
+
+
+
 interface PermsOnPage {
   id: PermissionId;
   forPeopleId: UserId;
@@ -1125,7 +1129,7 @@ interface StorePatch {
   usersBrief?: BriefUser[];
   pageMetasBrief?: PageMetaBrief[];
   superadmin?: SuperAdminStuff;
-  me?: Myself;
+  me?: MyselfPatch;
   tagsStuff?: TagsStuff;
 
   // If doing something resulted in a new page being created, and we should continue on that page.

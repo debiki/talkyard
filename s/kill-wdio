@@ -1,0 +1,14 @@
+#!/bin/bash
+# Sometimes wdio becomes half dead, with ports still open. Then:
+# awk $2 = the 2nd column = the process id.
+
+wdio_pids="$(ps aux | grep wdio | egrep -v 'grep wdio|kill-wdio' | awk '{ print $2 }')"
+
+if [ -n "$wdio_pids" ]; then
+  echo "Killing wdio:"
+  echo kill $wdio_pids
+  kill $wdio_pids
+else
+  echo "No wdio to kill."
+fi
+

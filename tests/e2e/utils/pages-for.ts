@@ -404,15 +404,17 @@ function pagesFor(browser) {
         browser.assertTextMatches('.esMyMenu .esAvtrName_name', username);
       },
 
-      waitForNumPendingUrgentReviews: function(numUrgent: number) {
+      waitForNumPendingUrgentReviews: function(numUrgent: IntAtLeastOne) {
+        assert(numUrgent >= 1, "Zero tasks won't ever become visible [TyE5GKRBQQ2]");
         browser.waitUntilTextMatches('.esNotfIcon-reviewUrgent', '^' + numUrgent + '$');
       },
 
-      waitForNumPendingOtherReviews: function(numOther: number) {
+      waitForNumPendingOtherReviews: function(numOther: IntAtLeastOne) {
+        assert(numOther >= 1, "Zero tasks won't ever become visible [TyE2WKBPJR3]");
         browser.waitUntilTextMatches('.esNotfIcon-reviewOther', '^' + numOther + '$');
       },
 
-      isNeedsReviewUrgetnVisible: function() {
+      isNeedsReviewUrgentVisible: function() {
         return browser.isVisible('.esNotfIcon-reviewUrgent');
       },
 
@@ -541,6 +543,14 @@ function pagesFor(browser) {
           browser.waitAndClick('.e_DelPg');
           browser.waitUntilModalGone();
           browser.waitForVisible('.s_Pg_DdInf');
+        },
+
+        restorePage: () => {
+          browser.waitAndClick('.dw-a-tools');
+          browser.waitUntilDoesNotMove('.e_RstrPg');
+          browser.waitAndClick('.e_RstrPg');
+          browser.waitUntilModalGone();
+          browser.waitUntilGone('.s_Pg_DdInf');
         },
       },
     },
@@ -1523,26 +1533,32 @@ function pagesFor(browser) {
 
 
     topic: {
+      postBodySelector: (postNr: PostNr) => `#post-${postNr} .dw-p-bd`,
+
       clickHomeNavLink: function() {
         browser.click("a=Home");
       },
 
-      assertPagePendingApprovalBodyHidden: function() {
+      waitForLoaded: function() {
         browser.waitForVisible('.dw-ar-t');
+      },
+
+      assertPagePendingApprovalBodyHidden: function() {
+        api.topic.waitForLoaded();
         assert(api.topic._isTitlePendingApprovalVisible());
         assert(api.topic._isOrigPostPendingApprovalVisible());
         assert(!api.topic._isOrigPostBodyVisible());
       },
 
       assertPagePendingApprovalBodyVisible: function() {
-        browser.waitForVisible('.dw-ar-t');
+        api.topic.waitForLoaded();
         assert(api.topic._isTitlePendingApprovalVisible());
         assert(api.topic._isOrigPostPendingApprovalVisible());
         assert(api.topic._isOrigPostBodyVisible());
       },
 
       assertPageNotPendingApproval: function() {
-        browser.waitForVisible('.dw-ar-t');
+        api.topic.waitForLoaded();
         assert(!api.topic._isOrigPostPendingApprovalVisible());
         assert(api.topic._isOrigPostBodyVisible());
       },
@@ -1552,19 +1568,23 @@ function pagesFor(browser) {
       },
 
       postNrContains: function(postNr: PostNr, selector: string) {
-        return browser.isExisting(`#post-${postNr} .dw-p-bd ${selector}`);
+        return browser.isExisting(api.topic.postBodySelector(postNr) + ' ' + selector);
       },
 
       postNrContainsVisible: function(postNr: PostNr, selector: string) {
-        return browser.isVisible(`#post-${postNr} .dw-p-bd ${selector}`);
+        return browser.isVisible(api.topic.postBodySelector(postNr) + ' ' + selector);
       },
 
       assertPostTextMatches: function(postNr: PostNr, text: string) {
-        browser.assertTextMatches(`#post-${postNr} .dw-p-bd`, text)
+        browser.assertTextMatches(api.topic.postBodySelector(postNr), text)
       },
 
       waitUntilPostTextMatches: function(postNr: PostNr, text: string) {
-        browser.waitUntilTextMatches(`#post-${postNr} .dw-p-bd`, text);
+        browser.waitUntilTextMatches(api.topic.postBodySelector(postNr), text);
+      },
+
+      waitUntilTitleMatches: function(text: string) {
+        api.topic.waitUntilPostTextMatches(c.TitleNr, text);
       },
 
       assertMetaPostTextMatches: function(postNr: PostNr, text: string) {
@@ -2767,38 +2787,57 @@ function pagesFor(browser) {
 
       review: {
         waitUntilLoaded: function() {
-          browser.waitForVisible('.e_A_Rvw');
+          browser.waitForVisible('.e_A_Rvw, .esLD');
+        },
+
+        playTimePastUndo: function() {
+          // Make the server and browser believe we've waited for the review timeout seconds.
+          server.playTimeSeconds(c.ReviewDecisionUndoTimoutSeconds + 10);
+          api.playTimeSeconds(c.ReviewDecisionUndoTimoutSeconds + 10);
         },
 
         waitForServerToCarryOutDecisions: function(pageId?: PageId, postNr?: PostNr) {
-          const pagePostSelector = pageId && _.isNumber(postNr) ?
-              '.e_Pg-Id-' + pageId + '.e_P-Nr-' + postNr : undefined;
-
-          // Make the server and browser believe we've waited for the review timeout seconds.
-          server.playTimeSeconds(c.ReviewDecisionUndoTimoutSeconds + 10);
-          browser.playTimeSeconds(c.ReviewDecisionUndoTimoutSeconds + 10);
-
           // Then wait for the server to actually do something.
-          do {
+          // The UI will reload the task list and auto-update itself [2WBKG7E], when
+          // the review decisions have been carried out server side. Then the buttons
+          // tested for below, hide.
+          while (true) {
             browser.pause(c.JanitorThreadIntervalMs + 200);
-          }
-          while (
-            // These UI will reload the task list and auto-update itself [2WBKG7E], when
-            // the review decisions have been carried out server side. Then these disappear:
-            !pagePostSelector
-              ? browser.isVisible('.e_A_Rvw_Tsk_UndoB')
-              : (
-                // If we have a specific post in mind, then not only the Undo, but also
-                // any Accept or Delete buttons elsewhere, for the same post, should
-                // disappear when the server is done.
+            if (!pageId) {
+              if (!browser.isVisible('.e_A_Rvw_Tsk_UndoB'))
+                break;
+            }
+            else {
+              // If we have a specific post in mind, then not only the Undo, but also
+              // any Accept or Delete buttons elsewhere, for the same post, should
+              // disappear, when the server is done.
+              assert(_.isNumber(postNr));
+              const pagePostSelector = '.e_Pg-Id-' + pageId + '.e_P-Nr-' + postNr;
+              const anyButtonsVisible = (
                 browser.isVisible(pagePostSelector + ' .e_A_Rvw_Tsk_UndoB') ||
                 browser.isVisible(pagePostSelector + ' .e_A_Rvw_Tsk_AcptB') ||
-                browser.isVisible(pagePostSelector + ' .e_A_Rvw_Tsk_RjctB')));
+                browser.isVisible(pagePostSelector + ' .e_A_Rvw_Tsk_RjctB'));
+              if (!anyButtonsVisible)
+                break;
+            }
+          }
           browser.waitUntilLoadingOverlayGone();
+        },
+
+        goToPostForTaskIndex: function(index: number) {
+          die("Won't work, opens in new tab [TyE5NA2953");
+          api.topic.clickPostActionButton(`.e_RT-Ix-${index} .s_A_Rvw_Tsk_ViewB`);
+          api.topic.waitForLoaded();
         },
 
         approvePostForMostRecentTask: function() {
           api.topic.clickPostActionButton('.e_A_Rvw_Tsk_AcptB', { clickFirst: true });
+          browser.waitUntilModalGone();
+          browser.waitUntilLoadingOverlayGone();
+        },
+
+        approvePostForTaskIndex: (index: number) => {
+          api.topic.clickPostActionButton(`.e_RT-Ix-${index} .e_A_Rvw_Tsk_AcptB`);
           browser.waitUntilModalGone();
           browser.waitUntilLoadingOverlayGone();
         },

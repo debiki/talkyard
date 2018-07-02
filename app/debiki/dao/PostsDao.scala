@@ -1154,7 +1154,7 @@ trait PostsDao {
     dieIf(postsDeleted.nonEmpty && postsUndeleted.nonEmpty, "TyE2WKBG5")
 
     // Invalidate, or re-activate, review tasks whose posts get deleted / undeleted.
-    // Also done here: [4JKAM7] when deleting pages.
+    // See here: [4JKAM7] for when deleting pages.
     invalidateReviewTasksForPosts(postsDeleted, doingReviewTask, tx)
     reactivateReviewTasksForPosts(postsUndeleted, doingReviewTask, tx)
 

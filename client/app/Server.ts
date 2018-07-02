@@ -506,9 +506,15 @@ export function undoReviewDecision(taskId: number, success: (tasks: ReviewTask[]
 
 
 function handleReviewTasksResponse(response, success) {
+  const counts = response.reviewTaskCounts;
+  const myselfPatch: MyselfPatch = {
+    numUrgentReviewTasks: counts.numUrgent,
+    numOtherReviewTasks: counts.numOther,
+  };
   ReactActions.patchTheStore({
     usersBrief: response.users,
     pageMetasBrief: response.pageMetasBrief,
+    me: myselfPatch,
   });
   success(response.reviewTasks);
 }

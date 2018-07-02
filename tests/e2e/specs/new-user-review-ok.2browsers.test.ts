@@ -162,6 +162,7 @@ describe("new user, review, ok:", () => {
   });
 
   it("... the server carries out the review decisions", () => {
+    owensBrowser.adminArea.review.playTimePastUndo();
     owensBrowser.adminArea.review.waitForServerToCarryOutDecisions();
   });
 
@@ -241,6 +242,7 @@ describe("new user, review, ok:", () => {
     owensBrowser.waitUntilLoadingOverlayGone();
     owensBrowser.adminArea.review.approvePostForMostRecentTask();
     owensBrowser.adminArea.review.approvePostForMostRecentTask();
+    owensBrowser.adminArea.review.playTimePastUndo();
     owensBrowser.adminArea.review.waitForServerToCarryOutDecisions();
   });
 

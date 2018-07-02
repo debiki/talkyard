@@ -332,12 +332,10 @@ admin -
       - admin-user-threat-moderate.2browsers.test.ts  [TyT5KHFIQ20]
     undoReviewDecision: [4JKWWD4]
     ... lots of stuff ...
-    invalitading review tasks - [2VSP5Q8]
-      See how Discourse does this.
-      bad user?
+    bad user auto-banned:
+    invalidating review tasks - [2VSP5Q8]
       reject-delete post -
-        other review task for that post get invalidated:
-        undelete post, other un-decided tasks then reactivated:
+       - admin-review-invalidate-for-reply.2browsers.test.ts  TyT6KWB42A
       reject-delete page -
         other review task same page get invalidated:
         delete one post on the deleted page:
@@ -346,7 +344,7 @@ admin -
                       what if Mallory posts bad stuff, gets flagged, deleted the flagged post?
                       and then staff wouldn't get notified, because deleted?
       delete page for review task -
-        gets invalidated:  — no, not?  keep active, so staff notices the user is maybe bad?
+        gets invalidated:  — no, not?  keep active, so staff notices the user is maybe bad? Yes keep.
         restore page, active again:
       delete post for review task -
         gets invalidated:  — no.

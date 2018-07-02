@@ -111,6 +111,7 @@ describe("admin-user-threat-moderate [TyT5KHFIQ20]", function() {
 
   it("... Owen accepts it", function() {
     owensBrowser.adminArea.review.approvePostForMostRecentTask();
+    owensBrowser.adminArea.review.playTimePastUndo();
     owensBrowser.adminArea.review.waitForServerToCarryOutDecisions();
     assert(!owensBrowser.adminArea.review.isMoreStuffToReview());
   });

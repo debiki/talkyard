@@ -215,6 +215,7 @@ describe("new member, allow, approve posts:", () => {  // RENAME ths file to 'ne
 
   it("... approves Maja's first reply", () => {
     owensBrowser.adminArea.review.approvePostForMostRecentTask();
+    owensBrowser.adminArea.review.playTimePastUndo();
     owensBrowser.adminArea.review.waitForServerToCarryOutDecisions();
   });
 
@@ -245,6 +246,7 @@ describe("new member, allow, approve posts:", () => {  // RENAME ths file to 'ne
 
   it("Owen approves another reply, the approval cascades...", () => {
     owensBrowser.adminArea.review.approvePostForMostRecentTask();
+    owensBrowser.adminArea.review.playTimePastUndo();
     owensBrowser.adminArea.review.waitForServerToCarryOutDecisions();
   });
 

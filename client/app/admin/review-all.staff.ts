@@ -274,13 +274,16 @@ const ReviewTask = createComponent({
     const pageHasBeenDeleted = !pageMeta || !pageMeta.deletedAtMs ? null :
       r.span({}, "The page has been deleted. ");
 
+    // Skip pageHasBeenDeleted — let's review those posts anyway? So staff get more chances
+    // to block bad users early. [5RW2GR8]
     const isInvalidated =
         !reviewTask.completedAtMs && (
-          itHasBeenDeleted || pageHasBeenDeleted || reviewTask.invalidatedAtMs);
+          itHasBeenDeleted || reviewTask.invalidatedAtMs);
 
     if (isInvalidated) {
       taskInvalidatedInfo =
-          r.span({ className: 'e_A_Rvw_Tsk_DoneInfo' }, itHasBeenDeleted, pageHasBeenDeleted);
+          r.span({ className: 'e_A_Rvw_Tsk_DoneInfo' }, itHasBeenDeleted);
+             // pageHasBeenDeleted);  [5RW2GR8]
     }
     else if (this.state.justDecidedAtMs || reviewTask.decidedAtMs || reviewTask.completedAtMs) {
       const taskDoneBy: BriefUser | null = store.usersByIdBrief[reviewTask.decidedById];
@@ -388,7 +391,8 @@ const ReviewTask = createComponent({
             })));
     }
 
-    const hereIsThePost = whys.length > 1 || flaggedByInfo ? "Here it is:" : '';
+    const hereIsThePost = pageHasBeenDeleted ? "Here is the post:" : (
+        whys.length > 1 || flaggedByInfo ? "Here it is:" : '');
 
     const anyPageTitleToReview = !reviewTask.pageId ? null :
       r.div({ className: 'esRT_TitleToReview' }, reviewTask.pageTitle);
