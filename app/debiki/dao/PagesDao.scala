@@ -544,7 +544,12 @@ trait PagesDao {
     if (!deleter.isStaff)
       throwForbidden("EsE7YKP424_", "Only staff may (un)delete pages")
 
-    for (pageId <- pageIds ; pageMeta <- tx.loadPageMeta(pageId)) {
+    for {
+      pageId <- pageIds
+      pageMeta <- tx.loadPageMeta(pageId)
+      // Hmm but trying to delete a deleted *post*, throws an error. [5WKQRH2]
+      if pageMeta.isDeleted == undelete
+    } {
       if ((pageMeta.pageRole.isSection || pageMeta.pageRole == PageRole.CustomHtmlPage) &&
           !deleter.isAdmin)
         throwForbidden("EsE5GKF23_", "Only admin may (un)delete sections and HTML pages")

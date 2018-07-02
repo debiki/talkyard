@@ -201,8 +201,13 @@ const UserList = createFactory({
     }
   },
 
+  componentWillUnmount: function() {
+    this.isGOne = true;
+  },
+
   loadUsers: function(prevProps) {
     Server.listCompleteUsers(this.props.whichUsers, users => {
+      if (this.isGOne) return;
       this.setState({ users });
     });
   },

@@ -1047,8 +1047,10 @@ trait PostsDao {
 
     val isChangingDeletePostToDeleteTree =
       postBefore.deletedStatus.onlyThisDeleted && action == PSA.DeleteTree
-    if (postBefore.isDeleted && !isChangingDeletePostToDeleteTree)
+    if (postBefore.isDeleted && !isChangingDeletePostToDeleteTree) {
+      // Hmm but trying to delete a deleted *page*, does nothing, instead of throwing an error. [5WKQRH2]
       throwForbidden("DwE5GUK5", "This post has already been deleted")
+    }
 
     var numVisibleRepliesGone = 0
     var numVisibleRepliesBack = 0
@@ -1155,8 +1157,15 @@ trait PostsDao {
 
     // Invalidate, or re-activate, review tasks whose posts get deleted / undeleted.
     // See here: [4JKAM7] for when deleting pages.
-    invalidateReviewTasksForPosts(postsDeleted, doingReviewTask, tx)
-    reactivateReviewTasksForPosts(postsUndeleted, doingReviewTask, tx)
+    // Or no? What if Mallory posts and angry comment, then people get upset, reply and flag it?
+    // Then Mallory deletes his comment. Now, better if the review tasks for those flags, are
+    // still available for the staff, so they can review Mallory's deleted post.
+    // So, don't do this for other posts than the one being explicitly reviewed and deleted:
+    doingReviewTask foreach { task =>
+      val taskPostId = task.postId getOrDie "TyE6KWA2C"
+      invalidateReviewTasksForPosts(postsDeleted.filter(_.id == taskPostId), doingReviewTask, tx)
+      reactivateReviewTasksForPosts(postsUndeleted.filter(_.id == taskPostId), doingReviewTask, tx)
+    }
 
     // COULD update database to fix this. (Previously, chat pages didn't count num-chat-messages.)
     val isChatWithWrongReplyCount =

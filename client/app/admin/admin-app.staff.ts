@@ -17,7 +17,6 @@
 
 /// <reference path="../slim-bundle.d.ts" />
 /// <reference path="../more-bundle-already-loaded.d.ts" />
-/// <reference path="review.staff.ts" />
 /// <reference path="review-all.staff.ts" />
 /// <reference path="review-posts.staff.ts" />
 /// <reference path="users.staff.ts" />
@@ -189,7 +188,7 @@ const AdminAppComponent = createReactClass(<any> {
         Route({ path: ar + 'settings', render: () => SettingsPanel(childProps) }),
         Route({ path: ar + 'users', render: () => UsersTab(childProps) }),
         Route({ path: ar + 'customize', render: () => CustomizePanel(childProps) }),
-        Route({ path: ar + 'review', render: () => ReviewPanel(childProps) }));
+        Route({ path: ar + 'review', render: () => ReviewAllPanel() }));
 
     return (
       r.div({ className: 'esAdminArea' },

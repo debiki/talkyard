@@ -2869,6 +2869,10 @@ function pagesFor(browser) {
           const elems = browser.elements('.esReviewTask_it').value;
           return elems.length;
         },
+
+        isTasksPostDeleted: function(taskIndex: number): boolean {
+          return browser.isVisible(`.e_RT-Ix-${taskIndex}.e_P-Dd`);
+        }
       },
     },
 

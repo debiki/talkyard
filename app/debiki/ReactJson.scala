@@ -1397,7 +1397,7 @@ object JsonMaker {
       "moreReasonsAtMs" -> JsDateMsOrNull(stuff.moreReasonsAt),
       "completedAtMs" -> JsDateMsOrNull(stuff.completedAt),
       "decidedById" -> JsNumberOrNull(stuff.decidedBy.map(_.id)),
-      "invalidatedAt" -> JsDateMsOrNull(stuff.invalidatedAt),
+      "invalidatedAtMs" -> JsDateMsOrNull(stuff.invalidatedAt),
       "decidedAtMs" -> JsWhenMsOrNull(stuff.decidedAt),
       "decision" -> JsNumberOrNull(stuff.decision.map(_.toInt)),
       "pageId" -> JsStringOrNull(stuff.pageId),

@@ -41,7 +41,7 @@ const LowestAuthenticatedUserId = 100;   // also in scala  [8PWK1Q2W]
 const MaxGuestId = -2;
 const UnknownUserId = -3;
 
-const ReviewDecisionUndoTimoutSeconds = 15; // sync with Scala and test code [2PUKQB0]
+const ReviewDecisionUndoTimoutSeconds = 12; // sync with Scala and test code [2PUKQB0]
 
 const ManualReadMark = 1;
 const YellowStarMark = 2;

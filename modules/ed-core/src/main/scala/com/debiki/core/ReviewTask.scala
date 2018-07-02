@@ -33,7 +33,11 @@ sealed abstract class ReviewDecision(val IntVal: Int) {
 
 
 object ReviewDecision {
-  val UndoTimoutSeconds = 15 // sync with Typescript [2PUKQB0]
+
+  /* This undo is if one accidentally clicked the wrong button — one should notice that
+   * in a few seconds, so 12 is fairly much?
+   */
+  val UndoTimoutSeconds = 12 // sync with Typescript [2PUKQB0]
 
   // 1nnn = Accept
   case object Accept extends ReviewDecision(1001)

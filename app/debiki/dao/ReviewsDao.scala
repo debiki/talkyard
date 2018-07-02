@@ -299,10 +299,16 @@ trait ReviewsDao {
 
   def reactivateReviewTasksForPosts(posts: Iterable[Post], doingReviewTask: Option[ReviewTask],
          tx: SiteTransaction) {
+    TESTS_MISSING // for all 4 fns that call this fn  [UNDELPOST]
     untestedIf(posts.nonEmpty, "TyE2KIFW4", "Reactivating review tasks for undeleted posts") // [2VSP5Q8]
     invalidatedReviewTasksImpl(posts, shallBeInvalidated = false, doingReviewTask, tx)
   }
 
+
+  CLEAN_UP; DO_AFTER /* 2018-10-01P  [5RW2GR8]  After rethinking reviews, maybe better to never
+  invalidate any reveiw tasks, when a page / post gets deleted, via *not* the review interface?
+  So staff will see everything that gets flagged — even if someone deleted it first
+  for whatever reason.
 
   def invalidateReviewTasksForPageId(pageId: PageId, doingReviewTask: Option[ReviewTask],
          tx: SiteTransaction) {
@@ -315,12 +321,11 @@ trait ReviewsDao {
          tx: SiteTransaction) {
     val posts = tx.loadPostsOnPage(pageId)
     invalidatedReviewTasksImpl(posts, shallBeInvalidated = false, doingReviewTask, tx)
-  }
+  } */
 
 
   private def invalidatedReviewTasksImpl(posts: Iterable[Post], shallBeInvalidated: Boolean,
         doingReviewTask: Option[ReviewTask], tx: SiteTransaction) {
-    TESTS_MISSING // for all 4 fns that call this fn  [2VSP5Q8]
 
     // If bug then:
     // If somehow some day a review task doesn't get properly invalidated, and

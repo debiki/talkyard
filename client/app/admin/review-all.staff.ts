@@ -17,6 +17,8 @@
 
 /// <reference path="../slim-bundle.d.ts" />
 /// <reference path="../editor-bundle-already-loaded.d.ts" />
+/// <reference path="oop-method.staff.ts" />
+
 
 //------------------------------------------------------------------------------
    namespace debiki2.admin {
@@ -45,8 +47,16 @@ const ReviewReasons = {
 };
 
 
-export const ReviewAllPanelComponent = createReactClass(<any> {
-  displayName: 'ReviewAllPanelComponent',
+export const ReviewAllPanel = createFactory({
+  displayName: 'ReviewAllPanel',
+
+  getInitialState: function() {
+    return {
+      // UX COULD change to false — but then e2e tests break.
+      hideComplTasks: false,
+      store: debiki2.ReactStore.allData(),
+    };
+  },
 
   componentDidMount: function() {
     let promise: Promise<void> = Server.loadEditorAndMoreBundlesGetDeferred();
@@ -70,10 +80,8 @@ export const ReviewAllPanelComponent = createReactClass(<any> {
 
   updateTaskList: function(reviewTasks) {
     if (this.isGone) return;
-    const store = ReactStore.allData();
     this.setState({
       reviewTasks,
-      store,
       nowMs: getNowMs(),
     });
     setTimeout(this.countdownUndoTimeout, 1000);
@@ -108,21 +116,29 @@ export const ReviewAllPanelComponent = createReactClass(<any> {
   },
 
   render: function() {
-    if (!this.state)
-      return r.p({}, 'Loading...');
+    if (!this.state.reviewTasks)
+      return r.p({}, "Loading...");
 
-    const store = this.state.store;
+    const store: Store = this.state.store;
 
-    const elems = this.state.reviewTasks.map((reviewTask: ReviewTask, index: number) => {
+    let elems = this.state.reviewTasks.map((reviewTask: ReviewTask, index: number) => {
+      if (this.state.hideComplTasks && reviewTask_doneOrGone(reviewTask))
+        return null;
       return ReviewTask({ reviewTask, key: reviewTask.id, updateTaskList: this.updateTaskList,
           store, nowMs: this.state.nowMs, taskIndex: index });
     });
 
-    if (!elems.length)
-      return r.p({ className: 'esAdminSectionIntro' }, "No comments or replies to review.");
+    if (!_.some(elems, x => x))  // maybe null items, see above
+      elems = r.p({ className: 'esAdminSectionIntro' }, "No comments or replies to review.");
+
+    const hideComplTasks =
+      Input({ type: 'checkbox', checked: this.state.hideComplTasks,
+        onChange: (event) => this.setState({ hideComplTasks: event.target.checked }),
+        label: "Hide completed review tasks" });
 
     return (
       r.div({ className: 'e_A_Rvw' },
+        hideComplTasks,
         elems));
   }
 });
@@ -274,16 +290,15 @@ const ReviewTask = createComponent({
     const pageHasBeenDeleted = !pageMeta || !pageMeta.deletedAtMs ? null :
       r.span({}, "The page has been deleted. ");
 
-    // Skip pageHasBeenDeleted — let's review those posts anyway? So staff get more chances
-    // to block bad users early. [5RW2GR8]
-    const isInvalidated =
-        !reviewTask.completedAtMs && (
-          itHasBeenDeleted || reviewTask.invalidatedAtMs);
+    // Skip pageHasBeenDeleted and itHasBeenDeleted — let's review those posts anyway?
+    // So staff get more chances to block bad users early. [5RW2GR8]
+    const isInvalidated = !reviewTask.completedAtMs && reviewTask.invalidatedAtMs;
 
     if (isInvalidated) {
       taskInvalidatedInfo =
-          r.span({ className: 'e_A_Rvw_Tsk_DoneInfo' }, itHasBeenDeleted);
-             // pageHasBeenDeleted);  [5RW2GR8]
+          r.span({ className: 'e_A_Rvw_Tsk_DoneInfo' },
+            itHasBeenDeleted || "Invalidated [TyM5WKBAX2]");
+            // pageHasBeenDeleted);  [5RW2GR8]
     }
     else if (this.state.justDecidedAtMs || reviewTask.decidedAtMs || reviewTask.completedAtMs) {
       const taskDoneBy: BriefUser | null = store.usersByIdBrief[reviewTask.decidedById];
@@ -317,13 +332,15 @@ const ReviewTask = createComponent({
       // Show no decision buttons. (But maybe an Undo button, see above.)
     }
     else {
+      // UX should maybe be an undelete button? And a ban-bad-user button?
       const acceptText = post.approvedRevNr !== post.currRevNr ? "Approve" : "Looks fine";
-      acceptButton =
+      acceptButton = itHasBeenDeleted ? null : // won't undelete it
           Button({ onClick: decideTo(ReviewDecision.Accept),
               className: 'e_A_Rvw_Tsk_AcptB' }, acceptText);
       rejectButton =
           Button({ onClick: decideTo(ReviewDecision.DeletePostOrPage),
-              className: 'e_A_Rvw_Tsk_RjctB' }, "Delete");
+              className: 'e_A_Rvw_Tsk_RjctB' },
+            itHasBeenDeleted ? "Do nothing (already deleted)" : "Delete");
     }
 
 
@@ -399,13 +416,15 @@ const ReviewTask = createComponent({
 
     // For end-to-end tests.
     const isWaitingClass = acceptButton || rejectButton ? ' e_Wtng' : ' e_NotWtng';
+    const isDeletedClass = itHasBeenDeleted ? ' e_P-Dd' : '';
     const pageIdPostNrIndexClass =
       ' e_Pg-Id-' + post.pageId +
       ' e_P-Nr-' + post.nr +
       ' e_RT-Ix-' + (this.props.taskIndex + 1); // let's start at 1? Simpler when writing e2e code?
+    const e2eClasses = pageIdPostNrIndexClass + isDeletedClass + isWaitingClass;
 
     return (
-      r.div({ className: 'esReviewTask' + pageIdPostNrIndexClass + manyWhysClass + isWaitingClass },
+      r.div({ className: 'esReviewTask' + manyWhysClass + e2eClasses },
         r.div({},
           r.span({ className: 'esReviewTask_what' }, what),
           r.ul({ className: 'esReviewTask_whys' },

@@ -197,16 +197,37 @@ describe("admin-review-invalidate-tasks-reply [TyT6KWB42A]", function() {
     owensBrowser.topic.deletePost(angryReplyThreeNr);
   });
 
-  it("Now there're no need-to-review notfs in his my-menu in the topbar", function() {
-    owensBrowser.refresh();
+  it("Now there's a 'Keep deleted' button in the Review section, for that post", function() {
+    owensBrowser.adminArea.goToReview();
+    assert(owensBrowser.adminArea.review.isTasksPostDeleted(angryReplyThreeNr));
+    const count = owensBrowser.adminArea.review.countReviewTasksFor;
+    assert(count(forum.topics.byMichaelCategoryA.id, angryReplyThreeNr, { waiting: true }) === 1);
+    assert(count(forum.topics.byMichaelCategoryA.id, angryReplyThreeNr, { waiting: false }) === 0);
+  });
+
+  it("... and still a reveiw task for that post", function() {
     owensBrowser.topbar.waitForVisible();
-    assert(!owensBrowser.topbar.isNeedsReviewUrgentVisible());
+    owensBrowser.topbar.waitForNumPendingUrgentReviews(1); // Maria flagged post nr 3
     assert(!owensBrowser.topbar.isNeedsReviewOtherVisible());
   });
 
-  it("... and no waiting review tasks on the Reviews page", function() {
-    owensBrowser.adminArea.goToReview();
+  it("Owen deletes it", function() {
+    owensBrowser.adminArea.review.rejectDeleteTaskIndex(3);  // task 3 is for post 3
+  });
+
+  it("... the server carries out the decisions", function() {
+    owensBrowser.adminArea.review.playTimePastUndo();
+    owensBrowser.adminArea.review.waitForServerToCarryOutDecisions(
+      forum.topics.byMichaelCategoryA.id, angryReplyThreeNr);
+  });
+
+  it("Thereafter, there're no more review tasks waiting", function() {
     assert(!owensBrowser.adminArea.review.isMoreStuffToReview());
+  });
+
+  it("... and the MyMenu needs-review icons are gone", function() {
+    assert(!owensBrowser.topbar.isNeedsReviewUrgentVisible());
+    assert(!owensBrowser.topbar.isNeedsReviewOtherVisible());
   });
 
   /* TESTS_MISSING   [UNDELPOST]
