@@ -37,7 +37,7 @@
     "react-bootstrap": "^0.31.5",
     "react-dom": "^16.4",
     "react-dom-factories": "^1.0.2",
-    "react-router-dom": "^4.2.2",
+    "react-router-dom": "^4.3.1",
     "react-select": "1.0.0-rc.10",
     "react-transition-group": "1.x",
     "zxcvbn": "^4.4.2"

@@ -54,7 +54,6 @@ export const ReviewAllPanel = createFactory({
     return {
       // UX COULD change to false — but then e2e tests break.
       hideComplTasks: false,
-      store: debiki2.ReactStore.allData(),
     };
   },
 
@@ -79,7 +78,11 @@ export const ReviewAllPanel = createFactory({
   },
 
   updateTaskList: function(reviewTasks) {
-    if (this.isGone) return;
+    if (this.isGone) {
+      // This previously happneed because of a component-unmount bug [5QKBRQ],
+      // resulting in the task list not updating itself properly (one would need to reload the page).
+      return;
+    }
     this.setState({
       reviewTasks,
       nowMs: getNowMs(),
@@ -88,6 +91,7 @@ export const ReviewAllPanel = createFactory({
   },
 
   componentWillUnmount: function() {
+    console.debug("Unmounting ReviewAllPanel [TyD4WKBQ]"); // [5QKBRQ]
     this.isGone = true;
   },
 
@@ -119,7 +123,7 @@ export const ReviewAllPanel = createFactory({
     if (!this.state.reviewTasks)
       return r.p({}, "Loading...");
 
-    const store: Store = this.state.store;
+    const store: Store = this.props.store;
 
     let elems = this.state.reviewTasks.map((reviewTask: ReviewTask, index: number) => {
       if (this.state.hideComplTasks && reviewTask_doneOrGone(reviewTask))
@@ -132,7 +136,7 @@ export const ReviewAllPanel = createFactory({
       elems = r.p({ className: 'esAdminSectionIntro' }, "No comments or replies to review.");
 
     const hideComplTasks =
-      Input({ type: 'checkbox', checked: this.state.hideComplTasks,
+      Input({ type: 'checkbox', checked: this.state.hideComplTasks, style: { marginTop: 22 },
         onChange: (event) => this.setState({ hideComplTasks: event.target.checked }),
         label: "Hide completed review tasks" });
 

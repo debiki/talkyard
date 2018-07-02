@@ -387,6 +387,8 @@ Some parts of a software system, knows how other parts of the software system wo
 sometimes in not-obvious ways. Make such otherwise hidden duplicated knowledge visible,
 by tagging the code with tags like: `[1ABCDE2]`.
 Example: `// Also done here: [4JKAM7] when deleting pages.`.
+Or there are bug workarounds (for 3rd party libs) in one location, for a bug that happens somewhere else,
+and an end-to-end test that got affected, example: `[5QKBRQ]`. Tag those three places with the same tag.
 Just type a number, random uppercase letters, and another number, to create a tag.
 And copy-paste it to where the related code is.
 

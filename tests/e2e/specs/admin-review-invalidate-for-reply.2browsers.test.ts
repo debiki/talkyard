@@ -166,7 +166,16 @@ describe("admin-review-invalidate-tasks-reply [TyT6KWB42A]", function() {
   });
 
   it("... the server carries out the decisions", function() {
+    // Because of a React-Router? bug, now worked around [5QKBRQ], the ui failed to auto update
+    // completely here, and the test blocked & failed here.  ... but ... see below
     owensBrowser.adminArea.review.playTimePastUndo();
+
+    // [E2EBUG] this problem: [5QKBRQ] happens here, despite the workaround, not sure how that's
+    // possible. Hasn't happened in real life though (after the workaround). Anyway, refreshing
+    // the page here, updates the UI and then all is fine.
+    owensBrowser.refresh();
+    owensBrowser.adminArea.review.waitUntilLoaded();
+
     owensBrowser.adminArea.review.waitForServerToCarryOutDecisions(
         forum.topics.byMichaelCategoryA.id, angryReplyOneNr);
   });

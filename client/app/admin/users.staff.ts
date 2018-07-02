@@ -135,7 +135,7 @@ const InvitedUsersPanel = createFactory({
   },
 
   componentWillUnmount: function() {
-    this.isGOne = true;
+    this.isGone = true;
   },
 
   sendInvites: function() {
@@ -202,12 +202,13 @@ const UserList = createFactory({
   },
 
   componentWillUnmount: function() {
-    this.isGOne = true;
+    console.log("Unmounting UserList [TyD4FKQW2]") // [5QKBRQ]
+    this.isGone = true;
   },
 
   loadUsers: function(prevProps) {
     Server.listCompleteUsers(this.props.whichUsers, users => {
-      if (this.isGOne) return;
+      if (this.isGone) return;
       this.setState({ users });
     });
   },

@@ -75,6 +75,13 @@ const AdminAppComponent = createReactClass(<any> {
 
   componentDidMount: function() {
     this.loadAllSettingsIfNeeded();
+    // Because of some React 16.4? React-Router 4.3.1? bug, the very first time this component
+    // rerenders itself, the Switch(..) router contents get rerendered — if it's located in
+    // *another file* than this file (weird!). Work around this, by triggering a rerender directly.
+    // Otherwise, if it suddenly unmounts, some Review page buttons fail to update properly [5QKBRQ].
+    // Didn't happened, with Chrome Dev Tools' React.js plugin installed — so, to reproduce,
+    // open an incognito browser window (then, dev tools React plugin shouldn't load).
+    setTimeout(() => this.setState({}), 600);
   },
 
   componentWillUnmount: function() {
@@ -188,19 +195,19 @@ const AdminAppComponent = createReactClass(<any> {
         Route({ path: ar + 'settings', render: () => SettingsPanel(childProps) }),
         Route({ path: ar + 'users', render: () => UsersTab(childProps) }),
         Route({ path: ar + 'customize', render: () => CustomizePanel(childProps) }),
-        Route({ path: ar + 'review', render: () => ReviewAllPanel() }));
+        Route({ path: ar + 'review', render: () => ReviewAllPanel(childProps) }));
 
     return (
       r.div({ className: 'esAdminArea' },
         topbar.TopBar({ customTitle: "Admin Area", showBackToSite: true, extraMargin: true }),
         r.div({ className: 'container' },
-        r.ul({ className: 'dw-main-nav nav nav-pills' },
-          settings,
-          LiNavLink({ to: ar + 'users' }, "Users"),
-          customize,
-          LiNavLink({ to: ar + 'review' }, "Review")),
-        childRoutes,
-        saveBar)));
+          r.ul({ className: 'dw-main-nav nav nav-pills' },
+            settings,
+            LiNavLink({ to: ar + 'users' }, "Users"),
+            customize,
+            LiNavLink({ to: ar + 'review' }, "Review")),
+          childRoutes,
+          saveBar)));
   }
 });
 

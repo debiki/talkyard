@@ -1908,10 +1908,6 @@ function pagesFor(browser) {
               dieIf(_.isNaN(bottomY), "Page height result is NaN: " + JSON.stringify(result));
             }
 
-            console.log(`bottomY: ${bottomY}`);
-            console.log(`buttonLocation: ${JSON.stringify(buttonLocation)}`);
-            console.log(`buttonLocation.y+30 =  ${buttonLocation.y + 30}`);
-
             // fixedBarLocation gets too small in ff, resulting in `< fixedBarLocation.y` below false,
             // so changed from `44 < ..` to `30 < ...`
             //console.log(`clickPostActionButton: is > ${buttonLocation.y > 60}`);
@@ -1924,7 +1920,9 @@ function pagesFor(browser) {
                                                   // 30 visible = enough to click in middle
               break;
 
-            console.log(`Scrolling into view: ${buttonSelector}`);
+            console.log(`Scrolling into view: ${buttonSelector}, topY = ${topY}, ` +
+                `buttonLocation.y = ${buttonLocation.y}, +30 = ${buttonLocation.y + 30}, ` +
+                `bottomY: ${bottomY}`);
             browser.execute(function(selector) {
               window['debiki2'].utils.scrollIntoViewInPageColumn(
                   selector, { marginTop: 60 + 20, marginBottom: 70 + 20, duration: 200 });
@@ -2456,6 +2454,10 @@ function pagesFor(browser) {
 
       goToReview: function(origin?: string) {
         browser.go((origin || '') + '/-/admin/review/all');
+        api.adminArea.review.waitUntilLoaded();
+        // Because of React? bug workaround, everything might unmoent for a moment.
+        // Wait for it to reappear. [5QKBRQ]
+        browser.pause(600 + 50);
         api.adminArea.review.waitUntilLoaded();
       },
 

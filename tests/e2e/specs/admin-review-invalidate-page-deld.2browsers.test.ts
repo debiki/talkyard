@@ -145,7 +145,7 @@ describe("admin-review-invalidate-page-deld [TyT5FKBSQ]", () => {
   // task 5 = for reply 1, because first post
 
   it("Owen accepts friendly reply 4", () => {
-    owensBrowser.back();
+    owensBrowser.adminArea.goToReview();
     owensBrowser.adminArea.review.approvePostForTaskIndex(1);
   });
 

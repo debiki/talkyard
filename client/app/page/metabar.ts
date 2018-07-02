@@ -268,7 +268,7 @@ const NotfsLevelDropdownModal = createComponent({
       watchingFirstListItem = !subject.tagLabel ? null :
         ExplainingListItem({
           active: currentLevel === NotfLevel.WatchingFirst,
-          title: r.span({className: ''}, "Watching First"),
+          title: r.span({className: ''}, "Watching First"),  // I18N + elsewhere
           text: "You'll be notified of new topics with this tag",
           onSelect: () => this.setNotfLevel(NotfLevel.WatchingFirst) });
       mutedListItem =
