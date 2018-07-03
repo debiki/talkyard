@@ -2455,7 +2455,7 @@ function pagesFor(browser) {
       goToReview: function(origin?: string) {
         browser.go((origin || '') + '/-/admin/review/all');
         api.adminArea.review.waitUntilLoaded();
-        // Because of React? bug workaround, everything might unmoent for a moment.
+        // Because of React? bug workaround, everything might unmount for a moment.
         // Wait for it to reappear. [5QKBRQ]
         browser.pause(600 + 50);
         api.adminArea.review.waitUntilLoaded();

@@ -108,7 +108,7 @@ export function magicTimeout(millis: number, callback: () => void) {
   if (isServerSide()) return;
   const doAtMs = getNowMs() + millis;
   pendingMagicTimeouts.push({ doAtMs, callback });
-  pendingMagicTimeouts.sort((a, b) => a.doAtMs - b.doAtMs)
+  pendingMagicTimeouts.sort((a, b) => a.doAtMs - b.doAtMs);
 }
 
 interface DoWhenAndCallack {
@@ -141,13 +141,13 @@ export let magicIntervalHandle;
 if (!isServerSide()) {
   // @ifdef DEBUG
   /* causes errors in some Chrome social_NotificationsOgbUi thing:
-  const setTimeoutorig = window.setTimeout;
+  const setTimeoutOrig = window.setTimeout;
   window.setTimeout = <any> function(fn, timeout, args?: any[]) {
     if (timeout > 3000) {
       // Can place a breakpoint here, to find things maybe currently not being e2e tested.
       console.debug(`setTimeout called with mills = ${timeout}, use magicTimeout instead [TyM2WKPH]`);
     }
-    setTimeoutorig(fn, timeout, args);
+    setTimeoutOrig(fn, timeout, args);
   };
   */
   // @endif

@@ -81,7 +81,7 @@ class ModerationController @Inject()(cc: ControllerComponents, edContext: EdCont
   def tryUndoReviewDecision: Action[JsValue] = StaffPostJsonAction(maxBytes = 100) { request =>
     val taskId = (request.body \ "taskId").as[ReviewTaskId]
     val couldBeUndone = request.dao.tryUndoReviewDecision(taskId, request.who)
-    // OkSafeJson(Json.obj("couldBeUndone" -> couldBeUndone))
+    // OkSafeJson(Json.obj("couldBeUndone" -> couldBeUndone))  CLEAN_UP remove couldBeUndone in client/app/ too.
     loadReviewTasksdReplyJson(request)
   }
 

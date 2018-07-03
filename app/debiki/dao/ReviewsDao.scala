@@ -60,20 +60,13 @@ trait ReviewsDao {
         throwNotFound("EsE7YMKR25", s"Review task not found, id $taskId")
 
       // Another staff member might have completed this task already, or maybe the current
-      // admin has the review page open in different tabs, and somehow clicks the same buttons
-      // many times. The staff's user interface will get updated: we send back an up-to-date
-      // review task list.
+      // has, but in a different browser tab.
       if (task.doneOrGone)
         return
 
       // The post might have been moved to a different page, so reload it.
       val anyPost = task.postId.flatMap(tx.loadPost)
       val pageId = anyPost.map(_.pageId)
-
-      throwForbiddenIf(task.completedAt.isDefined,
-        "TyEREVCOMPL", "Review task already completed")
-      throwForbiddenIf(task.invalidatedAt.isDefined,
-        "TyEREVINVLD", "Review task cannot be completed, e.g. because the-thing-to-review was deleted")
 
       val taskWithDecision = task.copy(
         decidedAt = Some(globals.now().toJavaDate),
@@ -299,13 +292,13 @@ trait ReviewsDao {
 
   def reactivateReviewTasksForPosts(posts: Iterable[Post], doingReviewTask: Option[ReviewTask],
          tx: SiteTransaction) {
-    TESTS_MISSING // for all 4 fns that call this fn  [UNDELPOST]
+    TESTS_MISSING // [UNDELPOST]
     untestedIf(posts.nonEmpty, "TyE2KIFW4", "Reactivating review tasks for undeleted posts") // [2VSP5Q8]
     invalidatedReviewTasksImpl(posts, shallBeInvalidated = false, doingReviewTask, tx)
   }
 
 
-  CLEAN_UP; DO_AFTER /* 2018-10-01P  [5RW2GR8]  After rethinking reviews, maybe better to never
+  CLEAN_UP; DO_AFTER /* 2018-10-01  [5RW2GR8]  After rethinking reviews, maybe better to never
   invalidate any reveiw tasks, when a page / post gets deleted, via *not* the review interface?
   So staff will see everything that gets flagged — even if someone deleted it first
   for whatever reason.

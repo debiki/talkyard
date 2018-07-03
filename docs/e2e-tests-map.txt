@@ -381,6 +381,11 @@ restart server -
   restart everything at once -
     ... same tests as above ...
 
+live notifications -
+  works after many long-polls:
+    - basic-chat.2browsers.test.ts  [8T5WKBQT]
+  works after disconnection:    [5YVBAR2]
+
 # Test by disabling js, browser side?
 server side rendering -
   topic list, discussion topic, chat:

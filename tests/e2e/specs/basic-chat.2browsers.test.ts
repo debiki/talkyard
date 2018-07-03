@@ -83,7 +83,7 @@ describe('chat', function() {
     maria.assertNthTextMatches('.esC_M', 3, /is your name/);
   });
 
-  it("A minute elapses, ... the browsers re-send long polling requests", function() { // break out fn? [4KWBFG5]
+  it("A minute elapses, ... the browsers re-send long polling requests", function() { // break out fn? [4KWBFG5]  [8T5WKBQT]
     const mariaReqNrBefore = maria.countLongPollingsDone();
     const owenReqNrBefore = owen.countLongPollingsDone();
 
@@ -96,8 +96,8 @@ describe('chat', function() {
     const mariaReqNrAfter = maria.countLongPollingsDone();
     const owenReqNrAfter = owen.countLongPollingsDone();
 
-    console.log(`Maria's um long pollings after: ${mariaReqNrAfter}, before: ${mariaReqNrBefore}`);
-    console.log(`Owen's um long pollings after: ${owenReqNrAfter}, before: ${owenReqNrBefore}`);
+    console.log(`Maria's num long pollings after: ${mariaReqNrAfter}, before: ${mariaReqNrBefore}`);
+    console.log(`Owen's num long pollings after: ${owenReqNrAfter}, before: ${owenReqNrBefore}`);
 
     assert.ok(mariaReqNrAfter > mariaReqNrBefore,
         `Maria's browser: Long polling didn't happen? Req nr after: ${mariaReqNrAfter}, ` +
@@ -107,7 +107,7 @@ describe('chat', function() {
         `before: ${owenReqNrBefore} [TyE4WKBZW2]`);
   });
 
-  it("Maria replies, and Owen posts anothe message", function() {
+  it("Maria replies, and Owen posts another message", function() {
     maria.chat.addChatMessage("What?");
     //maria.pause(3500);
     maria.chat.addChatMessage("Why, yes.");

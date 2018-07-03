@@ -228,7 +228,7 @@ class JsonMaker(dao: SiteDao) {
         numPostsRepliesSection += 1
       val tags = tagsByPostId(post.id)
       post.nr.toString ->
-          postToJsonImpl(post, page, tags, includeUnapproved = false, showHidden = false)//ok
+          postToJsonImpl(post, page, tags, includeUnapproved = false, showHidden = false)
     }
 
     // Topic members (e.g. chat channel members) join/leave infrequently, so better cache them

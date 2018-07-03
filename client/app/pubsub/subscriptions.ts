@@ -65,9 +65,13 @@ export function subscribeToServerEvents() {
     }
   }, () => {
     // Error. Don't retry immediately — that could result in super many error log messages,
-    // if the problem persists. Also, do a little bit exponential backoff.
-    retryAfterMs = Math.min(retryAfterMs * 1.3, 20*1000);
+    // if the problem persists. Also, do a little bit exponential backoff, and eventually
+    // give up, if the geometric sum retryAfterMs * 1.3^x eventually exceeds GiveUpAtMs.
+    retryAfterMs = retryAfterMs * 1.3;
     if (retryAfterMs > GiveUpAtMs) {
+      // TESTS_MISSING how make Nginx "break" so all requests fail? If a script temporarily  [5YVBAR2]
+      // does 'docker-compose kill web' and then 'start web' — then, other e2e tests won't be
+      // able to run in parallel with this, hmm.
       console.error("Long polling broken, maybe events lost, giving up.");
       // UX COULD show this in a non-modal message instead?
       pagedialogs.getServerErrorDialog().openForBrowserError(
@@ -83,7 +87,7 @@ export function subscribeToServerEvents() {
     }
   }, () => {
     console.debug("Long polling aborted, will send a new if needed [TyMLPRMBYE]");
-    // No error until cancelled intentionally, so all fine then, we can reset the backoff?
+    // No error has happened — we aborted the request intentionally. All fine then? Reset the backoff:
     retryAfterMs = RetryAfterMsDefault;
     if (!Server.isLongPollingNow()) {
       subscribeToServerEvents();

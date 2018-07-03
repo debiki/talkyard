@@ -79,7 +79,7 @@ export const ReviewAllPanel = createFactory({
 
   updateTaskList: function(reviewTasks) {
     if (this.isGone) {
-      // This previously happneed because of a component-unmount bug [5QKBRQ],
+      // This previously happened because of a component-unmount bug [5QKBRQ],
       // resulting in the task list not updating itself properly (one would need to reload the page).
       return;
     }
@@ -107,6 +107,9 @@ export const ReviewAllPanel = createFactory({
         // status of *other* tasks, has changed — so reload all tasks.
         // (How can other tasks be affected? Example: If the review decision was to delete
         // a whole page, review tasks for other posts on the page, then get invalidated.)
+        // Maybe we'll reload all tasks too soon? Before the server is done? Then the
+        // server should reply with the not-yet-completed tasks, resulting in us
+        // reloading again, after the debounce delay.
         return true;
       }
     });
@@ -232,14 +235,13 @@ const ReviewTask = createComponent({
       this.setState({
         justDecided: decision,        CLEAN_UP remove this field
         justDecidedAtMs: getNowMs(),  CLEAN_UP remove this field
-        couldBeUndone: undefined,
+        couldBeUndone: undefined,     CLEAN_UP remove this field
       });
     }); */
   },
 
   undoReviewDecision: function() {
     // TESTS_MISSING  [4JKWWD4]
-    // oops, upd task list instead?  Undo —> re-activates other tasks, same post
     Server.undoReviewDecision(this.props.reviewTask.id, this.props.updateTaskList); /*(couldBeUndone: boolean) => {
       if (this.isGone) return;
       if (couldBeUndone) {
@@ -318,13 +320,13 @@ const ReviewTask = createComponent({
     if (reviewTask.invalidatedAtMs) {
       // Show no undo info or button — that't be confusing, when, for example, the post, or
       // the whole page, has been deleted (and therefore this task got invalidated).
-    }
-    else if (_.isBoolean(this.state.couldBeUndone)) {
+    }/*
+    else if (_.isBoolean(this.state.couldBeUndone)) {  CLEAN_UP remove this if-else
       const className = 's_A_Rvw_Tsk_UndoneInf ' + (
           this.state.couldBeUndone ? 'e_A_Rvw_Tsk_Undone' : 'e_A_Rvw_Tsk_NotUndone');
       gotUndoneInfo = r.span({ className }, this.state.couldBeUndone ?
         " Undone." : " Could NOT be undone: Changes already made");
-    }
+    }*/
     else if (!reviewTask.completedAtMs && (this.state.justDecidedAtMs || reviewTask.decidedAtMs)) {
       undoDecisionButton =
           UndoReviewDecisionButton({ justDecidedAtMs: this.state.justDecidedAtMs,
@@ -412,6 +414,8 @@ const ReviewTask = createComponent({
             })));
     }
 
+    // (If pageHasBeenDeleted, then sth like "Page deleted" is shown just above hereIsThePost
+    // — then, don't use the word "it", because would be unclear if referred to the page, or the post.)
     const hereIsThePost = pageHasBeenDeleted ? "Here is the post:" : (
         whys.length > 1 || flaggedByInfo ? "Here it is:" : '');
 

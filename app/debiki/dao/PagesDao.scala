@@ -582,8 +582,9 @@ trait PagesDao {
       // Example: Mallory creates a topic and says things that make people angry. Then,
       // when some people have replied, he deletes the page? Or maybe a staff or core memeber
       // does, because the whole page is off-topic with angry comments. Now, it'd be silly
-      // if all review tags for the flags casted on Mallory's comments, disappeared.
+      // if all review tasks for the flags casted on Mallory's comments, disappeared.
       // So don't:   [5RW2GR8]  CLEAN_UP maybe remove doingReviewTask param + fns below, aren't needed?
+      //                          but leave the comment & thoughts above.
       /*
       if (!undelete) {
         invalidateReviewTasksForPageId(pageId, doingReviewTask,tx)

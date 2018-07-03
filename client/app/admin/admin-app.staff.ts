@@ -76,7 +76,7 @@ const AdminAppComponent = createReactClass(<any> {
   componentDidMount: function() {
     this.loadAllSettingsIfNeeded();
     // Because of some React 16.4? React-Router 4.3.1? bug, the very first time this component
-    // rerenders itself, the Switch(..) router contents get rerendered — if it's located in
+    // rerenders itself, the Switch(..) router contents get unmounted & remounted — if it's located in
     // *another file* than this file (weird!). Work around this, by triggering a rerender directly.
     // Otherwise, if it suddenly unmounts, some Review page buttons fail to update properly [5QKBRQ].
     // Didn't happened, with Chrome Dev Tools' React.js plugin installed — so, to reproduce,

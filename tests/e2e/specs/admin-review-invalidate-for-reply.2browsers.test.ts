@@ -216,6 +216,7 @@ describe("admin-review-invalidate-tasks-reply [TyT6KWB42A]", function() {
 
   it("... and still a reveiw task for that post", function() {
     owensBrowser.topbar.waitForVisible();
+    // UX SHOULD not show as Urgent. It's been deleted, not urgent any longer. [5WKBQRS0]
     owensBrowser.topbar.waitForNumPendingUrgentReviews(1); // Maria flagged post nr 3
     assert(!owensBrowser.topbar.isNeedsReviewOtherVisible());
   });

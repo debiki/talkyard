@@ -167,7 +167,7 @@ class PlainApiActions(
 
       val anyUser =
         if (isSuspended) None
-        else dao.getUserBySessionId(sidStatus)
+        else anyUserMaybeSuspended
 
       // Re the !superAdminOnly test: Do allow access for superadmin endpoints,
       // so they can reactivate this site, in case this site is the superadmin site itself.
