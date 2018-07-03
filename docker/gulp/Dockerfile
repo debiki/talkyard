@@ -24,7 +24,9 @@ ENV NODE_VERSION 10.5.0
 
 RUN  apk add --no-cache \
         libstdc++ \
-    && apk add --no-cache --virtual .build-deps \
+    # No, let's keep Python etc — needed later below, for node-gyp (KEEPDEPS)
+    # && apk add --no-cache --virtual .build-deps \
+    && apk add --no-cache \
         binutils-gold \
         curl \
         g++ \
@@ -59,14 +61,15 @@ RUN  apk add --no-cache \
     && ./configure \
     && make -j$(getconf _NPROCESSORS_ONLN) \
     && make install \
-    && apk del .build-deps \
+    # && apk del .build-deps \  # no, keep Python etc (KEEPDEPS)
     && cd .. \
     && rm -Rf "node-v$NODE_VERSION" \
     && rm "node-v$NODE_VERSION.tar.xz" SHASUMS256.txt.asc SHASUMS256.txt
 
 ENV YARN_VERSION 1.7.0
 
-RUN apk add --no-cache --virtual .build-deps-yarn curl gnupg tar \
+#RUN apk add --no-cache --virtual .build-deps-yarn curl gnupg tar \  # (KEEPDEPS). curl = can debug, nice
+RUN apk add --no-cache curl gnupg tar \
   && for key in \
     6A010C5166006599AA17F08146C2130DFD2497F5 \
   ; do \
@@ -81,23 +84,14 @@ RUN apk add --no-cache --virtual .build-deps-yarn curl gnupg tar \
   && tar -xzf yarn-v$YARN_VERSION.tar.gz -C /opt/ \
   && ln -s /opt/yarn-v$YARN_VERSION/bin/yarn /usr/local/bin/yarn \
   && ln -s /opt/yarn-v$YARN_VERSION/bin/yarnpkg /usr/local/bin/yarnpkg \
-  && rm yarn-v$YARN_VERSION.tar.gz.asc yarn-v$YARN_VERSION.tar.gz \
-  && apk del .build-deps-yarn
-
-CMD [ "node" ]
+  && rm yarn-v$YARN_VERSION.tar.gz.asc yarn-v$YARN_VERSION.tar.gz
+  # && apk del .build-deps-yarn  # no, don't (KEEPDEPS)
 #-----------------------------------------------------------------------------
 
 
-# COULD edit above commands and have them *not* uninstall g++, python etc afterwards.
-# It's this that deletes them afterwards:
-#    --no-cache --virtual .build-deps   ...  && apk del .build-deps
-# Read more e.g. here: https://github.com/mhart/alpine-node/issues/47#issuecomment-244631616
-#
-RUN apk add --no-cache bash tree curl net-tools \
- # Python and g++ etc needed to build some node-gyp (don't want it but Yarn/npm/whatever insists)
- python make gcc g++ \
- # Needed by gulpfile.js
- git
+# Git is needed by gulpfile.js. The others are nice for troubleshooting, e.g. Tape security tests
+# that send http requests — then curl is nice to have, so can replay the requests manually in Bash.
+RUN apk add --no-cache bash tree curl net-tools git
 
 # If this error happens:
 # gulp[33]: ../src/node_contextify.cc:629:static void node::contextify::ContextifyScript::New(const v8::FunctionCallbackInfo<v8::Value>&): Assertion `args[1]->IsString()' failed.
@@ -106,10 +100,10 @@ RUN apk add --no-cache bash tree curl net-tools \
 # More here: https://github.com/gulpjs/gulp/issues/2162  (happened for me with Ubuntu Linux)
 
 
-
 WORKDIR /opt/talkyard/server/
 
-RUN yarn global add gulp
+RUN yarn global add gulp \
+ && yarn global add gulp-cli
 
 COPY entrypoint.sh /docker-entrypoint.sh
 RUN  chmod ugo+x   /docker-entrypoint.sh
@@ -119,5 +113,5 @@ ENTRYPOINT ["/docker-entrypoint.sh"]
 EXPOSE 9229
 
 
-CMD ["echo 'Specify a command in docker-compose.yml or on the command line instead' && exit 0"]
+CMD ["echo 'Specify a command in docker-compose.yml or on the command line instead. Bye.' && exit 0"]
 
