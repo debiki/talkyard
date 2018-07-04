@@ -30,11 +30,17 @@ class ReviewTasksAppSpec extends DaoAppSuite {
     "find no tasks when there are none" in {
       globals.systemDao.getOrCreateFirstSite()
       val dao = globals.siteDao(Site.FirstSiteId)
-      val (stuff, usersById, pageMetaById) = dao.loadReviewStuff(olderOrEqualTo = now, limit = 999)
+      val (stuff, taskCounts, usersById, pageMetaById) = dao.loadReviewStuff(
+          olderOrEqualTo = now, limit = 999, forWho = Who.System)
       stuff.length mustBe 0
+
+      taskCounts.numUrgent mustBe 0
+      taskCounts.numOther mustBe 0
+
       usersById.size mustBe 0
       pageMetaById.size mustBe 0
 
+      // (Already done via loadReviewStuff() above, well, again, then, here.)
       val counts = dao.readOnlyTransaction(_.loadReviewTaskCounts(isAdmin = true))
       counts.numUrgent mustBe 0
       counts.numOther mustBe 0
@@ -81,8 +87,10 @@ class ReviewTasksAppSpec extends DaoAppSuite {
       }
 
       info("find the tasks")
-      val (stuff, usersById, pageMetaById) =
-        dao.loadReviewStuff(olderOrEqualTo = new ju.Date(), limit = 999)
+      val (stuff, taskCounts, usersById, pageMetaById) =
+        dao.loadReviewStuff(olderOrEqualTo = new ju.Date(), limit = 999, forWho = Who.System)
+      taskCounts.numUrgent mustBe 1
+      taskCounts.numOther mustBe 1
       stuff.length mustBe 2
       // (Most recent first.)
       stuff.head.createdBy.id mustBe createdByUser2.id

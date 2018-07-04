@@ -33,7 +33,7 @@ const mariasReplyOrig = 'mariasReplyOrig';
 const mariasReplyEdited = 'mariasReplyEdited';
 const mariasReplyNotThreat = 'mariasReplyNotThreat';
 
-describe("admin-user-threat-moderate [TyT5KHFIQ20]", function() {
+describe("admin-user-threat-moderate [TyT5KHFIQ20]", () => {
 
   it("import a site", () => {
     browser.perhapsDebugBefore();
@@ -53,7 +53,7 @@ describe("admin-user-threat-moderate [TyT5KHFIQ20]", function() {
     strangersBrowser = othersBrowser;
   });
 
-  it("Owen logs in to admin area, views Maria's profile", function() {
+  it("Owen logs in to admin area, views Maria's profile", () => {
     owensBrowser.adminArea.goToUsersEnabled(siteIdAddress.origin);
     owensBrowser.loginDialog.loginWithPassword(owen);
     owensBrowser.adminArea.users.waitForLoaded();
@@ -62,36 +62,36 @@ describe("admin-user-threat-moderate [TyT5KHFIQ20]", function() {
     mariasPageUrl = owensBrowser.url().value;
   });
 
-  it("Maria logs in", function() {
+  it("Maria logs in", () => {
     mariasBrowser.go(siteIdAddress.origin + '/' + forum.topics.byMichaelCategoryA.slug);
     mariasBrowser.complex.loginWithPasswordViaTopbar(maria);
   });
 
 
-  it("Owen marks Maria as moderate threat", function() {
+  it("Owen marks Maria as moderate threat", () => {
     owensBrowser.adminArea.user.markAsModerateThreat();
   });
 
-  it("... she appears in the Watching list", function() {
+  it("... she appears in the Watching list", () => {
     owensBrowser.adminArea.users.switchToWatching();
     owensBrowser.adminArea.users.assertUserListed(maria);
     owensBrowser.adminArea.users.asserExactlyNumUsers(1);
   });
 
-  it("Maria can post a comment", function() {
+  it("Maria can post a comment", () => {
     mariasBrowser.complex.replyToOrigPost(mariasReplyOrig);
   });
 
-  it("... she sees a notice that it's awaiting moderation", function() {
+  it("... she sees a notice that it's awaiting moderation", () => {
     mariasBrowser.topic.waitUntilPostTextMatches(c.FirstReplyNr, mariasReplyOrig);
     mariasBrowser.topic.assertPostNeedsApprovalBodyVisible(c.FirstReplyNr);
   });
 
-  it("She can edit the comment (although awaiting moderation)", function() {
+  it("She can edit the comment (although awaiting moderation)", () => {
     mariasBrowser.complex.editPostNr(c.FirstReplyNr, mariasReplyEdited);
   });
 
-  it("A stranger won't see it", function() {
+  it("A stranger won't see it", () => {
     mariasBrowser.topic.waitUntilPostTextMatches(c.FirstReplyNr, mariasReplyEdited);
     mariasBrowser.topbar.clickLogout();
     strangersBrowser.refresh();
@@ -99,62 +99,62 @@ describe("admin-user-threat-moderate [TyT5KHFIQ20]", function() {
     strangersBrowser.topic.assertPostNeedsApprovalBodyHidden(c.FirstReplyNr);
   });
 
-  it("The comment appears in Owen's review list", function() {
+  it("The comment appears in Owen's review list", () => {
     owensBrowser.adminArea.goToReview();
     assert(owensBrowser.adminArea.review.isMoreStuffToReview());
   });
 
-  it("Michael has *not* been notified about the reply — because not yet approved", function() {
+  it("Michael (page author) does *not* get notified about the reply — its' not yet approved", () => {
     assert(server.countLastEmailsSentTo(
         siteIdAddress.id, forum.members.michael.emailAddress) === 0);
   });
 
-  it("... Owen accepts it", function() {
+  it("Owen accepts the reply", () => {
     owensBrowser.adminArea.review.approvePostForMostRecentTask();
     owensBrowser.adminArea.review.playTimePastUndo();
     owensBrowser.adminArea.review.waitForServerToCarryOutDecisions();
     assert(!owensBrowser.adminArea.review.isMoreStuffToReview());
   });
 
-  it("Now the stranger sees it", function() {
+  it("... Now the stranger sees it", () => {
     strangersBrowser.topic.refreshUntilPostNotPendingApproval(c.FirstReplyNr);
     strangersBrowser.topic.assertPostTextMatches(c.FirstReplyNr, mariasReplyEdited);
   });
 
-  it("Michael, the page author, gets a reply notification email", function() {
+  it("... and Michael, the page author, now gets a reply notification email", () => {
     server.waitUntilLastEmailMatches(
         siteIdAddress.id, forum.members.michael.emailAddress, mariasReplyEdited, browser);
     assert(server.countLastEmailsSentTo(
         siteIdAddress.id, forum.members.michael.emailAddress) === 1);
   });
 
-  it("Owen un-marks Maria: no longer a threat", function() {
+  it("Owen un-marks Maria: no longer a threat", () => {
     owensBrowser.go(mariasPageUrl);
     owensBrowser.adminArea.user.unlockThreatLevel();
   });
 
-  it("... she disappears from the Watching list", function() {
+  it("... she disappears from the Watching list", () => {
     owensBrowser.adminArea.users.switchToWatching();
     owensBrowser.adminArea.users.assertUserListEmpty();
   });
 
-  it("... Maria can post a comment", function() {
+  it("... Maria can post a comment", () => {
     mariasBrowser.complex.loginWithPasswordViaTopbar(maria);
     mariasBrowser.complex.replyToOrigPost(mariasReplyNotThreat);
   });
 
-  it("... it does not appear in the review list; Maria is no longer a threat", function() {
+  it("... it does not appear in the review list; Maria is no longer a threat", () => {
     owensBrowser.adminArea.goToReview();
     assert(!owensBrowser.adminArea.review.isMoreStuffToReview());
   });
 
-  it("... the stranger sees it directly", function() {
+  it("... the stranger sees it directly", () => {
     mariasBrowser.topbar.clickLogout();
     strangersBrowser.refresh();
     strangersBrowser.topic.waitUntilPostTextMatches(c.FirstReplyNr + 1, mariasReplyNotThreat);
   });
 
-  it("... and Michael directly gets a reply notification email", function() {
+  it("... and Michael directly gets a reply notification email", () => {
     server.waitUntilLastEmailMatches(
         siteIdAddress.id, forum.members.michael.emailAddress, mariasReplyNotThreat, browser);
     assert(server.countLastEmailsSentTo(

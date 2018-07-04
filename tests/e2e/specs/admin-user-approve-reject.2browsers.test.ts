@@ -29,7 +29,7 @@ let michaelsPageUrl: string;
 let mariaPageUrl: string;
 
 
-describe("admin-user-page-approve-reject [TyT5KHEWQ2]", function() {
+describe("admin-user-approve-reject [TyT5KHEWQ2]", function() {
 
   it("initialize people", function() {
     browser.perhapsDebugBefore();
@@ -148,6 +148,7 @@ describe("admin-user-page-approve-reject [TyT5KHEWQ2]", function() {
   it("... not in the Enabled lists", function() {
     owensBrowser.adminArea.users.switchToEnabled();
     owensBrowser.adminArea.users.assertUserAbsent(maria);
+    owensBrowser.adminArea.users.asserExactlyNumUsers(2);  // michael, owen
   });
 
   it("... her admin page says *not* enabled: email not verified (and not yet approved)", function() {
@@ -176,6 +177,7 @@ describe("admin-user-page-approve-reject [TyT5KHEWQ2]", function() {
   it("... doesn't appear in the Enabled list", function() {
     owensBrowser.adminArea.goToUsersEnabled();
     owensBrowser.adminArea.users.assertUserAbsent(maria);
+    owensBrowser.adminArea.users.asserExactlyNumUsers(2);  // michael, owen
   });
 
   it("... but yes in the Waiting list, email verified", function() {
@@ -197,11 +199,12 @@ describe("admin-user-page-approve-reject [TyT5KHEWQ2]", function() {
   it("... and in the Enabled list, but not the Waiting list", function() {
     owensBrowser.adminArea.goToUsersEnabled();
     owensBrowser.adminArea.users.assertUserListed(maria);
+    owensBrowser.adminArea.users.asserExactlyNumUsers(3);  // maria, michael, owen
     owensBrowser.adminArea.users.switchToWaiting();
     owensBrowser.adminArea.users.assertUserListEmpty();
   });
 
-  it("... she can login (and logs out again)", function() {
+  it("... she can login (and first logs out again)", function() {
     mariasBrowser.go(siteIdAddress.origin);
     mariasBrowser.topbar.clickLogout({ waitForLoginButton: false });
     mariasBrowser.loginDialog.loginWithPassword(maria);
@@ -288,7 +291,7 @@ describe("admin-user-page-approve-reject [TyT5KHEWQ2]", function() {
     assert(!owensBrowser.adminArea.users.isWaitingTabVisible());
   });
 
-  it("... but yes in the New list, email unverified", function() {
+  it("... Maria appears in the New list, email unverified", function() {
     owensBrowser.adminArea.users.switchToNew();
     owensBrowser.adminArea.users.assertUserListed(maria);
     owensBrowser.adminArea.users.assertEmailVerified_1_user(maria, false);
@@ -320,7 +323,7 @@ describe("admin-user-page-approve-reject [TyT5KHEWQ2]", function() {
     owensBrowser.adminArea.user.resendEmailVerifEmail();
   });
 
-  it("... Maria cannot login, because em not verified", function() {
+  it("... Maria cannot login, because email not verified", function() {
     mariasBrowser.refresh();
     mariasBrowser.loginDialog.tryLogin(maria.username, maria.password);
     mariasBrowser.loginDialog.waitForEmailUnverifiedError();

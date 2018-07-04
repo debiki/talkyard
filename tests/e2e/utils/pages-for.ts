@@ -2592,7 +2592,7 @@ function pagesFor(browser) {
           assert(browser.isVisible('.e_Appr_No'));
         },
 
-        assertWaitingForApproval: function() {
+        assertWaitingForApproval: function() {   // RENAME to  assertApprovalUndecided
           api.adminArea.user.waitForLoaded();
           assert(browser.isVisible('.e_Appr_Undecided'));
         },
@@ -2612,7 +2612,7 @@ function pagesFor(browser) {
           browser.waitForVisible('.e_Appr_Undecided');
         },
 
-        suspendUser: function(opts: { days: number, reason: string } = { days: 10, reason: "reason" }) {
+        suspendUser: function(opts: { days: number, reason: string } = { days: 10, reason: "Because." }) {
           browser.waitAndClick('.e_Suspend');
           browser.waitUntilDoesNotMove('.e_SuspDays');
           browser.waitAndSetValue('.e_SuspDays input', opts.days);
@@ -2901,10 +2901,6 @@ function pagesFor(browser) {
 
       waitAndAssertTextMatches: function(regex) {
         browser.waitAndAssertVisibleTextMatches('.modal-dialog.dw-server-error', regex);
-      },
-
-      clickCloseThenDontWait: function() {
-        api.serverErrorDialog.close();
       },
 
       close: function() {

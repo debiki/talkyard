@@ -34,7 +34,7 @@ let michaelsPageUrl: string;
 const michaelsEditedTextOne = 'michaelsEditedTextOne';
 const michaelsEditedTextTwo = 'michaelsEditedTextTwo';
 
-describe("admin-user-staff-trust [TyT2GKFI594]", function() {
+describe("admin-user-staff [TyT2GKFI594]", function() {
 
   it("import a site", () => {
     browser.perhapsDebugBefore();
@@ -75,7 +75,6 @@ describe("admin-user-staff-trust [TyT2GKFI594]", function() {
     owensBrowser.adminArea.users.assertUserListed(owen);
     owensBrowser.adminArea.users.assertUserListed(michael);
     owensBrowser.adminArea.users.asserExactlyNumUsers(2);
-    //Selector '.dw-username' matches 4 elems, but there should be exactly 2
   });
 
   it("Michael logs in", function() {

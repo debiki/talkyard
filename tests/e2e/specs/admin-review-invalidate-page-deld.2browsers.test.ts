@@ -21,14 +21,6 @@ let staffsBrowser;
 let othersBrowser;
 let owen: Member;
 let owensBrowser;
-let mons: Member;
-let monsBrowser;
-let modya: Member;
-let modyasBrowser;
-let corax: Member;
-let coraxBrowser;
-let regina: Member;
-let reginasBrowser;
 let maria: Member;
 let mariasBrowser;
 let michael: Member;
@@ -68,15 +60,7 @@ describe("admin-review-invalidate-page-deld [TyT5FKBSQ]", () => {
 
     owen = forum.members.owen;
     owensBrowser = staffsBrowser;
-    mons = forum.members.mons;
-    monsBrowser = staffsBrowser;
-    modya = forum.members.modya;
-    modyasBrowser = staffsBrowser;
-    corax = forum.members.corax;
-    coraxBrowser = staffsBrowser;
 
-    regina = forum.members.regina;
-    reginasBrowser = othersBrowser;
     maria = forum.members.maria;
     mariasBrowser = othersBrowser;
     michael = forum.members.michael;
@@ -86,7 +70,7 @@ describe("admin-review-invalidate-page-deld [TyT5FKBSQ]", () => {
     strangersBrowser = othersBrowser;
   });
 
-  it("Mallory posts two really angry, and two fairly friendly, replies", () => {
+  it("Mallory posts two really angry, and two kind and friendly, replies", () => {
     mallorysBrowser.go(discussionPageUrl);
     mallorysBrowser.disableRateLimits();
     mallorysBrowser.complex.loginWithPasswordViaTopbar(mallory);
@@ -96,7 +80,7 @@ describe("admin-review-invalidate-page-deld [TyT5FKBSQ]", () => {
     mallorysBrowser.complex.replyToOrigPost(friendlyReplyFour);
   });
 
-  it("Maria reads the angry replies, sees red and flags everything", () => {
+  it("Maria reads the first angry reply, sees red and flags everything", () => {
     mallorysBrowser.topbar.clickLogout();
     mariasBrowser.complex.loginWithPasswordViaTopbar(maria);
     mariasBrowser.complex.flagPost(angryReplyOneNr, 'Inapt');
@@ -105,22 +89,19 @@ describe("admin-review-invalidate-page-deld [TyT5FKBSQ]", () => {
     mariasBrowser.complex.flagPost(friendlyReplyFourNr, 'Inapt');
   });
 
-  it("Owen arrives, sees there're 4 high priority things to review", () => {
+  it("Owen arrives", () => {
     owensBrowser.adminArea.goToReview(siteIdAddress.origin);
-  });
-
-  it("2 Owen arrives, sees there're 4 high priority things to review", () => {
     owensBrowser.loginDialog.loginWithPassword(owen);
   });
 
-  it("... sees there're 4 high priority things to review", () => {
+  it("... sees there're 4 urgent things to review", () => {
     owensBrowser.topbar.waitForNumPendingUrgentReviews(4); // 4 = Maria's flags
-    owensBrowser.topbar.waitForNumPendingOtherReviews(1);  // because reply posted by new user = Mallory
+    owensBrowser.topbar.waitForNumPendingOtherReviews(1);  // because reply posted by new user, Mallory
   });
 
   it("The number of tasks per post are correct", () => {
     const count = owensBrowser.adminArea.review.countReviewTasksFor;
-    // 2 tasks for reply one (1 flag + 1, new users' first post)
+    // 2 tasks for reply one: 1 flag + 1 new users' first post.
     assert(count(forum.topics.byMichaelCategoryA.id, angryReplyOneNr, { waiting: true }) === 2);
     // 1 task for each one of reply two, three, four.
     assert(count(forum.topics.byMichaelCategoryA.id, angryReplyTwoNr, { waiting: true }) === 1);
@@ -144,7 +125,7 @@ describe("admin-review-invalidate-page-deld [TyT5FKBSQ]", () => {
   // task 4 = for reply 1, Maria flagged angryReplyOne
   // task 5 = for reply 1, because first post
 
-  it("Owen accepts friendly reply 4", () => {
+  it("Owen accepts friendly reply 4 (review tasks don't disappear when page deleted)", () => {
     owensBrowser.adminArea.goToReview();
     owensBrowser.adminArea.review.approvePostForTaskIndex(1);
   });
@@ -169,8 +150,8 @@ describe("admin-review-invalidate-page-deld [TyT5FKBSQ]", () => {
   });
 
   it("Topbar review counts are: 2 urgent, 0 other", () => {
-    owensBrowser.topbar.waitForNumPendingUrgentReviews(2);     // maria's flags for reply 2 and 3
-    assert(!owensBrowser.topbar.isNeedsReviewOtherVisible());  // mallory's new-user-reply got deleted
+    owensBrowser.topbar.waitForNumPendingUrgentReviews(2);     // Maria's flags for reply 2 and 3
+    assert(!owensBrowser.topbar.isNeedsReviewOtherVisible());  // Mallory's new-user-reply got deleted
   });
 
   it("Owen un-deletes the page", () => {
@@ -186,6 +167,8 @@ describe("admin-review-invalidate-page-deld [TyT5FKBSQ]", () => {
     const count = owensBrowser.adminArea.review.countReviewTasksFor;
     assert(count(forum.topics.byMichaelCategoryA.id, angryReplyOneNr, { waiting: true }) === 0);
     assert(count(forum.topics.byMichaelCategoryA.id, angryReplyOneNr, { waiting: false }) === 2);
+    assert(count(forum.topics.byMichaelCategoryA.id, angryReplyTwoNr, { waiting: true }) === 1);
+    assert(count(forum.topics.byMichaelCategoryA.id, friendlyReplyThreeNr, { waiting: true }) === 1);
     assert(count(forum.topics.byMichaelCategoryA.id, friendlyReplyFourNr, { waiting: true }) === 0);
     assert(count(forum.topics.byMichaelCategoryA.id, friendlyReplyFourNr, { waiting: false }) === 1);
   });

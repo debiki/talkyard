@@ -346,10 +346,11 @@ trait ReviewsDao {
   }
 
 
-  def loadReviewStuff(olderOrEqualTo: ju.Date, limit: Int, requester: User)
+  def loadReviewStuff(olderOrEqualTo: ju.Date, limit: Int, forWho: Who)
         : (Seq[ReviewStuff], ReviewTaskCounts, Map[UserId, User], Map[PageId, PageMeta]) =
-    readOnlyTransaction { transaction =>
-      loadStuffImpl(olderOrEqualTo, limit, requester, transaction)
+    readOnlyTransaction { tx =>
+      val requester = tx.loadTheUser(forWho.id)
+      loadStuffImpl(olderOrEqualTo, limit, requester, tx)
     }
 
 

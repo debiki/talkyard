@@ -384,7 +384,13 @@ restart server -
 live notifications -
   works after many long-polls:
     - basic-chat.2browsers.test.ts  [8T5WKBQT]
-  works after disconnection:    [5YVBAR2]
+  works after disconnection: |   [5YVBAR2]
+    There's: browser.setNetworkConnection(); see http://webdriver.io/api/mobile/setNetworkConnection.html
+    and ChromeDriver set_network_conditions, seems more flexible: https://stackoverflow.com/a/46672769/694469
+    And can patch: var orig = xhr.method; xhr.method = function(){ ... else return orig.apply(this, arguments); };
+       — just call onerror in the patch?
+    Larger patch example: https://codepen.io/mouseroot/pen/GgKezz?editors=1111
+
 
 # Test by disabling js, browser side?
 server side rendering -

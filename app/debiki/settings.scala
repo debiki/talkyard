@@ -31,8 +31,8 @@ import scala.util.matching.Regex
 trait AllSettings {
   self =>
 
-  def userMustBeAuthenticated: Boolean  ; RENAME // to mustBeAuthenticatedToRead ?
-  def userMustBeApproved: Boolean       ; RENAME // to mustBeApprovedToContribute?
+  def userMustBeAuthenticated: Boolean  ; RENAME // to mustLoginToRead ?
+  def userMustBeApproved: Boolean       ; RENAME // to mustLoginToContribute?
       // Need to change how it works too: in the db, set mustBeAuthenticatedToRead = true  [2KZMQ5]
       // if must-be-approved = true.
 
@@ -345,7 +345,7 @@ case class EffectiveSettings(
   def regularMemberFlagWeight: Float = firstInChain(_.regularMemberFlagWeight) getOrElse default.regularMemberFlagWeight
   def coreMemberFlagWeight: Float = firstInChain(_.coreMemberFlagWeight) getOrElse default.coreMemberFlagWeight
 
-  def loginRequired: Boolean = userMustBeAuthenticated || userMustBeApproved // [2KZMQ5]
+  def loginRequired: Boolean = userMustBeAuthenticated || userMustBeApproved // [2KZMQ5] and then remove, use only userMustBeAuthenticated but rename to mustLoginToRead
 
   /** The allowEmbeddingFrom field, but with any url path removed (if included, iframe won't
     * load at all in Chrome — url path not allowed? Weird, should be allowed:

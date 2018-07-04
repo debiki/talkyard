@@ -21,14 +21,6 @@ let staffsBrowser;
 let othersBrowser;
 let owen: Member;
 let owensBrowser;
-let mons: Member;
-let monsBrowser;
-let modya: Member;
-let modyasBrowser;
-let corax: Member;
-let coraxBrowser;
-let regina: Member;
-let reginasBrowser;
 let maria: Member;
 let mariasBrowser;
 let michael: Member;
@@ -50,7 +42,7 @@ const angryReplyTwoNr = c.FirstReplyNr + 1;
 const angryReplyThree = 'angryReplyThree';
 const angryReplyThreeNr = c.FirstReplyNr + 2;
 
-describe("admin-review-invalidate-tasks-reply [TyT6KWB42A]", function() {
+describe("admin-review-invalidate-for-reply [TyT6KWB42A]", () => {
 
   it("import a site", () => {
     browser.perhapsDebugBefore();
@@ -66,15 +58,7 @@ describe("admin-review-invalidate-tasks-reply [TyT6KWB42A]", function() {
 
     owen = forum.members.owen;
     owensBrowser = staffsBrowser;
-    mons = forum.members.mons;
-    monsBrowser = staffsBrowser;
-    modya = forum.members.modya;
-    modyasBrowser = staffsBrowser;
-    corax = forum.members.corax;
-    coraxBrowser = staffsBrowser;
 
-    regina = forum.members.regina;
-    reginasBrowser = othersBrowser;
     maria = forum.members.maria;
     mariasBrowser = othersBrowser;
     michael = forum.members.michael;
@@ -84,7 +68,7 @@ describe("admin-review-invalidate-tasks-reply [TyT6KWB42A]", function() {
     strangersBrowser = othersBrowser;
   });
 
-  it("Mallory posts three very angry replies", function() {
+  it("Mallory posts three very angry replies", () => {
     mallorysBrowser.go(discussionPageUrl);
     mallorysBrowser.complex.loginWithPasswordViaTopbar(mallory);
     mallorysBrowser.complex.replyToOrigPost(angryReplyOne);
@@ -92,7 +76,7 @@ describe("admin-review-invalidate-tasks-reply [TyT6KWB42A]", function() {
     mallorysBrowser.complex.replyToOrigPost(angryReplyThree);
   });
 
-  it("Maria flags all of them", function() {
+  it("Maria flags all of them", () => {
     mallorysBrowser.topbar.clickLogout();
     mariasBrowser.complex.loginWithPasswordViaTopbar(maria);
     mariasBrowser.complex.flagPost(angryReplyOneNr, 'Inapt');
@@ -100,21 +84,21 @@ describe("admin-review-invalidate-tasks-reply [TyT6KWB42A]", function() {
     mariasBrowser.complex.flagPost(angryReplyThreeNr, 'Inapt')
   });
 
-  it("Michael flags the two first too", function() {
+  it("Michael flags the two first too", () => {
     mariasBrowser.topbar.clickLogout();
     michaelsBrowser.complex.loginWithPasswordViaTopbar(michael);
     michaelsBrowser.complex.flagPost(angryReplyOneNr, 'Inapt');
     michaelsBrowser.complex.flagPost(angryReplyTwoNr, 'Inapt');
   });
 
-  it("Owen arrives, sees there're 5 high priority things to review", function() {
+  it("Owen arrives, sees there're 5 high priority things to review", () => {
     owensBrowser.go(siteIdAddress.origin);
     owensBrowser.complex.loginWithPasswordViaTopbar(owen);
     owensBrowser.topbar.waitForNumPendingUrgentReviews(5); // 3 + 2 = maria's + michael's
     owensBrowser.topbar.waitForNumPendingOtherReviews(1);  // because reply posted by new user = Mallory
   });
 
-  it("The number of tasks per post are correct", function() {
+  it("The number of tasks per post are correct", () => {
     owensBrowser.adminArea.goToReview();
     const count = owensBrowser.adminArea.review.countReviewTasksFor;
     // 3 tasks for reply one (2 flags + 1, new users' first post)
@@ -125,47 +109,46 @@ describe("admin-review-invalidate-tasks-reply [TyT6KWB42A]", function() {
     assert(count(forum.topics.byMichaelCategoryA.id, angryReplyThreeNr, { waiting: true }) === 1);
   });
 
-  it("Owen reject-delete's Mallory's reply nr 2", function() {
+  it("Owen reject-delete's Mallory's reply nr 2", () => {
     // Post 2 flagged last, so is at the top.
     owensBrowser.adminArea.review.rejectDeleteTaskIndex(1);
   });
 
-  it("... the server carries out this decision", function() {
+  it("... the server carries out this decision", () => {
     owensBrowser.adminArea.review.playTimePastUndo();
     owensBrowser.adminArea.review.waitForServerToCarryOutDecisions(
         forum.topics.byMichaelCategoryA.id, angryReplyTwoNr);
   });
 
-  it("... then all review tasks for post 2 disappear", function() {
+  it("... then all review tasks for post 2 disappear", () => {
     const count = owensBrowser.adminArea.review.countReviewTasksFor;
-    assert(count(forum.topics.byMichaelCategoryA.id, angryReplyOneNr, { waiting: true }) === 3);
+    assert(count(forum.topics.byMichaelCategoryA.id, angryReplyTwoNr, { waiting: true }) === 0);
     assert(count(forum.topics.byMichaelCategoryA.id, angryReplyTwoNr, { waiting: false }) === 2);
-    assert(count(forum.topics.byMichaelCategoryA.id, angryReplyThreeNr, { waiting: true }) === 1);
   });
 
-  it("... the others tasks aren't affected", function() {
+  it("... the others tasks aren't affected", () => {
     const count = owensBrowser.adminArea.review.countReviewTasksFor;
     assert(count(forum.topics.byMichaelCategoryA.id, angryReplyOneNr, { waiting: true }) === 3);
     assert(count(forum.topics.byMichaelCategoryA.id, angryReplyThreeNr, { waiting: true }) === 1);
   });
 
-  it("Topbar review counts are correct", function() {
+  it("Topbar review counts are correct", () => {
     owensBrowser.topbar.waitForNumPendingUrgentReviews(3); // 2 + 1 = maria's + michael's remaining flags
     owensBrowser.topbar.waitForNumPendingOtherReviews(1);  // because reply posted by new user = Mallory
   });
 
-  it("Owen reject-deletes 2 tasks (out of 3) for post 1", function() {
-    // task 1 = for post 2, its last flag          <— rejected already
-    // task 2 = for post 1, its last flag          <— **click Delete**
-    // task 3 = for post 3, its first flag
-    // task 4 = for post 2, its first flag         <— rejected already
-    // task 5 = for post 1, new user's first post  <— will get invalidated, since post deleted
+  it("Owen reject-deletes 2 tasks (out of 3) for post 1", () => {
+    // task 1 = for post 2, its last flag, Michael <— rejected already
+    // task 2 = for post 1, its last flag, Michael <— **click Delete**
+    // task 3 = for post 3, its first flag, Maria
+    // task 4 = for post 2, its first flag, Maria  <— rejected already
+    // task 5 = for post 1, its first flag, Maria  <— will get invalidated, since post deleted
     // task 6 = for post 1, new user's first post  <— **click Delete**
     owensBrowser.adminArea.review.rejectDeleteTaskIndex(2);
     owensBrowser.adminArea.review.rejectDeleteTaskIndex(6);
   });
 
-  it("... the server carries out the decisions", function() {
+  it("... the server carries out the decisions", () => {
     // Because of a React-Router? bug, now worked around [5QKBRQ], the ui failed to auto update
     // completely here, and the test blocked & failed here.  ... but ... see below
     owensBrowser.adminArea.review.playTimePastUndo();
@@ -180,33 +163,31 @@ describe("admin-review-invalidate-tasks-reply [TyT6KWB42A]", function() {
         forum.topics.byMichaelCategoryA.id, angryReplyOneNr);
   });
 
-  it("... then all review tasks for post 1 disappear", function() {
+  it("... then all review tasks for post 1 disappear", () => {
     const count = owensBrowser.adminArea.review.countReviewTasksFor;
     assert(count(forum.topics.byMichaelCategoryA.id, angryReplyOneNr, { waiting: true }) === 0);
     assert(count(forum.topics.byMichaelCategoryA.id, angryReplyOneNr, { waiting: false }) === 3);
   });
 
-  it("So now only a task for angry-reply-three remains", function() {
+  it("So now only a task for angry-reply-three remains", () => {
     const count = owensBrowser.adminArea.review.countReviewTasksFor;
-    assert(count(forum.topics.byMichaelCategoryA.id, angryReplyOneNr, { waiting: true }) === 0);
     assert(count(forum.topics.byMichaelCategoryA.id, angryReplyTwoNr, { waiting: true }) === 0);
-    assert(count(forum.topics.byMichaelCategoryA.id, angryReplyThreeNr, { waiting: true }) === 1);
-    assert(count(forum.topics.byMichaelCategoryA.id, angryReplyOneNr, { waiting: false }) === 3);
     assert(count(forum.topics.byMichaelCategoryA.id, angryReplyTwoNr, { waiting: false }) === 2);
+    assert(count(forum.topics.byMichaelCategoryA.id, angryReplyThreeNr, { waiting: true }) === 1);
     assert(count(forum.topics.byMichaelCategoryA.id, angryReplyThreeNr, { waiting: false }) === 0);
   });
 
-  it("Needs-to-review counts are correct", function() {
-    owensBrowser.topbar.waitForNumPendingUrgentReviews(1); // Maria flagged post nr 3
+  it("Needs-to-review counts are correct", () => {
+    owensBrowser.topbar.waitForNumPendingUrgentReviews(1); // Maria flagged angryReplyThree
     assert(!owensBrowser.topbar.isNeedsReviewOtherVisible());
   });
 
-  it("Owen deletes Mallory's post nr 3 by visiting it directly", function() {
+  it("Owen deletes Mallory's angryReplyThree by visiting it directly", () => {
     owensBrowser.go(discussionPageUrl);
     owensBrowser.topic.deletePost(angryReplyThreeNr);
   });
 
-  it("Now there's a 'Keep deleted' button in the Review section, for that post", function() {
+  it("Now there's a 'Keep deleted' button in the Review section, for that post", () => {
     owensBrowser.adminArea.goToReview();
     assert(owensBrowser.adminArea.review.isTasksPostDeleted(angryReplyThreeNr));
     const count = owensBrowser.adminArea.review.countReviewTasksFor;
@@ -214,48 +195,48 @@ describe("admin-review-invalidate-tasks-reply [TyT6KWB42A]", function() {
     assert(count(forum.topics.byMichaelCategoryA.id, angryReplyThreeNr, { waiting: false }) === 0);
   });
 
-  it("... and still a reveiw task for that post", function() {
+  it("... and still a topbar review icon for that post", () => {
     owensBrowser.topbar.waitForVisible();
     // UX SHOULD not show as Urgent. It's been deleted, not urgent any longer. [5WKBQRS0]
     owensBrowser.topbar.waitForNumPendingUrgentReviews(1); // Maria flagged post nr 3
     assert(!owensBrowser.topbar.isNeedsReviewOtherVisible());
   });
 
-  it("Owen deletes it", function() {
+  it("Owen klicks 'Keep deleted'", () => {
     owensBrowser.adminArea.review.rejectDeleteTaskIndex(3);  // task 3 is for post 3
   });
 
-  it("... the server carries out the decisions", function() {
+  it("... the server carries out the decisions", () => {
     owensBrowser.adminArea.review.playTimePastUndo();
     owensBrowser.adminArea.review.waitForServerToCarryOutDecisions(
-      forum.topics.byMichaelCategoryA.id, angryReplyThreeNr);
+        forum.topics.byMichaelCategoryA.id, angryReplyThreeNr);
   });
 
-  it("Thereafter, there're no more review tasks waiting", function() {
+  it("Thereafter, there're no more review tasks waiting", () => {
     assert(!owensBrowser.adminArea.review.isMoreStuffToReview());
   });
 
-  it("... and the MyMenu needs-review icons are gone", function() {
+  it("... and the topbar needs-review icons are gone", () => {
     assert(!owensBrowser.topbar.isNeedsReviewUrgentVisible());
     assert(!owensBrowser.topbar.isNeedsReviewOtherVisible());
   });
 
   /* TESTS_MISSING   [UNDELPOST]
-  it("Owen undeletes Mallory's post nr 3", function() {
+  it("Owen undeletes Mallory's post nr 3", () => {
     owensBrowser.go(discussionPageUrl);
     owensBrowser.topic.undeletePost(angryReplyThreeNr);
   });
 
-  it("... its review task then reappears", function() {
+  it("... its review task then reappears", () => {
   });
 
-  it("... he deletes it by rejecting the review task instead", function() {
+  it("... he deletes it by rejecting the review task instead", () => {
   });
 
-  it("Owen also un-deletes Mallory's first reply", function() {
+  it("Owen also un-deletes Mallory's first reply", () => {
   });
 
-  it("... its review task then reappears, except for the one whose Delete btn clicked", function() {
+  it("... its review task then reappears, except for the one whose Delete btn clicked", () => {
   });  */
 
 });

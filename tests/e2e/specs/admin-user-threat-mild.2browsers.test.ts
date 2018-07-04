@@ -91,12 +91,12 @@ describe("admin-user-threat-mild [TyT2WKBG4Z]", function() {
     strangersBrowser.topic.waitUntilPostTextMatches(c.FirstReplyNr, mariasReplyMildThreat);
   });
 
-  it("... and Michael directly gets a reply notification email", function() {
+  it("... and Michael (the topic author) directly gets a reply notification email", function() {
     server.waitUntilLastEmailMatches(
         siteIdAddress.id, forum.members.michael.emailAddress, mariasReplyMildThreat, browser);
   });
 
-  it("... Owen accepts it", function() {
+  it("... Owen approves the reply", function() {
     owensBrowser.adminArea.review.approvePostForMostRecentTask();
     owensBrowser.adminArea.review.playTimePastUndo();
     owensBrowser.adminArea.review.waitForServerToCarryOutDecisions();
