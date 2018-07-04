@@ -73,15 +73,17 @@ class LoginWithPasswordController @Inject()(cc: ControllerComponents, edContext:
       password = password)
 
     // The browser checks for 'EsE403BPWD' so don't change it.
-    def deny() = throwForbidden("EsE403BPWD", "Bad username or password")
+    def deny(debugCode: String) = throwForbidden(
+      "_TyE403BPWD" + (if (globals.isProd) "" else s"-$debugCode"), "Bad username or password")
 
     // WOULD have `tryLogin` return a LoginResult and stop using exceptions!
     val loginGrant: MemberLoginGrant =
       try dao.tryLoginAsMember(loginAttempt)
       catch {
-        case DbDao.NoMemberWithThatEmailException => deny()
-        case DbDao.BadPasswordException => deny()
-        case DbDao.IdentityNotFoundException => deny()
+        case DbDao.NoSuchEmailOrUsernameException => deny("NO_MEM_W_EML")
+        case DbDao.BadPasswordException => deny("BAD_PWD")
+        case DbDao.IdentityNotFoundException => deny("IDTY_0_FOUND")
+        case DbDao.UserDeletedException => deny("USR_DELD")
         case DbDao.EmailNotVerifiedException =>
           throwForbidden("TyEEML0VERIF_", o"""You have not yet confirmed your email address.
             Please check your email inbox — you should find an email from us with a

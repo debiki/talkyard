@@ -118,14 +118,14 @@ class UserStatsAppSpec extends DaoAppSuite() {
     }
 
     "... logs out, last-seen stats get updated" in {
-      playTime(1000)
+      playTimeMillis(1000)
       dao.logout(member1.id)
       val stats = loadUserStats(member1.id)(dao)
       stats mustBe initialStats.copy(lastSeenAt = currentTime)
     }
 
     "... logs in, stats get updated" in {
-      playTime(1000)
+      playTimeMillis(1000)
       dao.verifyPrimaryEmailAddress(member1.id, globals.now().toJavaDate)
       val loginGrant = dao.tryLoginAsMember(PasswordLoginAttempt(
         ip = "1.2.3.4", globals.now().toJavaDate, member1.email, "public-us_mb1"))
@@ -134,7 +134,7 @@ class UserStatsAppSpec extends DaoAppSuite() {
     }
 
     "... posts a topic, stats get updated" in {
-      playTime(1000)
+      playTimeMillis(1000)
       createPage(PageRole.Discussion,
         textAndHtmlMaker.testTitle("topic"),
         textAndHtmlMaker.testBody("topic text"),
@@ -148,7 +148,7 @@ class UserStatsAppSpec extends DaoAppSuite() {
     }
 
     "... posts a discourse reply, stats get updated" in {
-      playTime(1000)
+      playTimeMillis(1000)
       reply(member1.id, noRepliesTopicId, s"A reply")(dao)
       val correctStats = currentStats.copy(
         lastSeenAt = currentTime,
@@ -160,7 +160,7 @@ class UserStatsAppSpec extends DaoAppSuite() {
     }
 
     "... posts a chat message, stats get updated" in {
-      playTime(1000)
+      playTimeMillis(1000)
       dao.addUsersToPage(Set(member1.id), addMessagesChatTopicId, byWho = ownerWho)
       chat(member1.id, addMessagesChatTopicId, "Chat chat")(dao)
       val correctStats = currentStats.copy(
@@ -173,7 +173,7 @@ class UserStatsAppSpec extends DaoAppSuite() {
     }
 
     "... gets an email, last-emailed-at gets updated" in {
-      playTime(1000)
+      playTimeMillis(1000)
       val email = Email(EmailType.Notification, createdAt = globals.now(),
         sendTo = member1.email, toUserId = Some(member1.id),
         subject = "Dummy email", bodyHtmlText = (emailId: String) => "Text text")
@@ -190,7 +190,7 @@ class UserStatsAppSpec extends DaoAppSuite() {
     }
 
     "... looks at a discourse topic, but doesn't read it" in {
-      playTime(1200)
+      playTimeMillis(1200)
       dao.trackReadingProgressPerhapsPromote(member1, noRepliesTopicId, ReadingProgress(
         firstVisitedAt = globals.now(),
         lastVisitedAt = globals.now(),
@@ -205,7 +205,7 @@ class UserStatsAppSpec extends DaoAppSuite() {
     }
 
     "... reads the orig post" in {
-      playTime(1000)
+      playTimeMillis(1000)
       dao.trackReadingProgressPerhapsPromote(member1, noRepliesTopicId, ReadingProgress(
         firstVisitedAt = globals.now(),
         lastVisitedAt = globals.now(),
@@ -224,7 +224,7 @@ class UserStatsAppSpec extends DaoAppSuite() {
     }
 
     "... reads a discourse topic, with replies, now replies-read gets updated" in {
-      playTime(1000)
+      playTimeMillis(1000)
       dao.trackReadingProgressPerhapsPromote(member1, withRepliesTopicId, ReadingProgress(
         firstVisitedAt = globals.now() minusMillis 400,
         lastVisitedAt = globals.now() minusMillis 200,
@@ -244,7 +244,7 @@ class UserStatsAppSpec extends DaoAppSuite() {
     }
 
     "... views even more replies" in {
-      playTime(1000)
+      playTimeMillis(1000)
       dao.trackReadingProgressPerhapsPromote(member1, withRepliesTopicId, ReadingProgress(
         firstVisitedAt = globals.now() minusMillis 400,
         lastVisitedAt = globals.now(),
@@ -263,7 +263,7 @@ class UserStatsAppSpec extends DaoAppSuite() {
     }
 
     "... views a chat topic, low post nrs only, stats gets updated" in {
-      playTime(1000)
+      playTimeMillis(1000)
       dao.trackReadingProgressPerhapsPromote(member1, withMessagesChatTopicId, ReadingProgress(
         firstVisitedAt = globals.now() minusMillis 500,
         lastVisitedAt = globals.now(),
@@ -283,7 +283,7 @@ class UserStatsAppSpec extends DaoAppSuite() {
     }
 
     "... reads a bit more in the same a chat topic, still low post nrs" in {
-      playTime(1000)
+      playTimeMillis(1000)
       dao.trackReadingProgressPerhapsPromote(member1, withMessagesChatTopicId, ReadingProgress(
         firstVisitedAt = globals.now() minusMillis 500,
         lastVisitedAt = globals.now(),
@@ -305,7 +305,7 @@ class UserStatsAppSpec extends DaoAppSuite() {
     }
 
     "... views a chat topic with 2 messages, cannot read more than 2" in {
-      playTime(1000)
+      playTimeMillis(1000)
       val exception = intercept[Exception] {
         dao.trackReadingProgressPerhapsPromote(member1, twoMessagesChatTopicId, ReadingProgress(
           firstVisitedAt = globals.now(),
@@ -320,7 +320,7 @@ class UserStatsAppSpec extends DaoAppSuite() {
     }
 
     "... but can read 2" in {
-      playTime(1000)
+      playTimeMillis(1000)
       dao.trackReadingProgressPerhapsPromote(member1, twoMessagesChatTopicId, ReadingProgress(
         firstVisitedAt = globals.now() minusMillis 500,
         lastVisitedAt = globals.now(),

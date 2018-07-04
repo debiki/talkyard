@@ -216,7 +216,7 @@ class SummaryEmailsAppSpec extends DaoAppSuite(
     }
 
     "after 23 hours, still no summaries sent" in {
-      playTime(23 * OneHourInMillis)
+      playTimeMillis(23 * OneHourInMillis)
       makeSummary(adm.id) mustBe empty
       makeSummary(mia.id) mustBe empty
       makeSummary(mod.id) mustBe empty
@@ -234,7 +234,7 @@ class SummaryEmailsAppSpec extends DaoAppSuite(
       }
 
       "Adm gets summary email with Mia's page" in {
-        playTime(2 * OneHourInMillis)
+        playTimeMillis(2 * OneHourInMillis)
         val summary = makeSummary(adm.id).get
         summary.topTopics.size mustBe 1
         summary.topTopics.head.meta.authorId mustBe mia.id
@@ -261,13 +261,13 @@ class SummaryEmailsAppSpec extends DaoAppSuite(
     }
 
     "After 6 days, still no summary to Mod & Max" in {
-      playTime(5 * OneDayInMillis)  // 25 hours + 5 days < 7 days
+      playTimeMillis(5 * OneDayInMillis)  // 25 hours + 5 days < 7 days
       makeSummary(mod.id) mustBe empty
       makeSummary(max.id) mustBe empty
     }
 
     "After 7 days, Mod get summaries: both Adm's and Mia's pages" in {
-      playTime(1 * OneDayInMillis)  // 25 hours + 5 + 1 > 7 days
+      playTimeMillis(1 * OneDayInMillis)  // 25 hours + 5 + 1 > 7 days
       val summary = makeSummary(mod.id).get
       summary.topTopics.size mustBe 2
       val metas = summary.topTopics.map(_.meta)
@@ -305,7 +305,7 @@ class SummaryEmailsAppSpec extends DaoAppSuite(
     }
 
     "not even after one month" in {
-      playTime(32 * OneDayInMillis)
+      playTimeMillis(32 * OneDayInMillis)
       makeSummary(adm.id) mustBe empty
       makeSummary(mia.id) mustBe empty
       makeSummary(mod.id) mustBe empty
@@ -323,7 +323,7 @@ class SummaryEmailsAppSpec extends DaoAppSuite(
     }
 
     "Mod reads it, but Max reads another page instead" in {
-      playTime(OneHourInMillis)
+      playTimeMillis(OneHourInMillis)
       dao.readWriteTransaction { tx =>
         // Mod reads the new page.
         tx.upsertReadProgress(mod.id, pageId = page3IdByMia, ReadingProgress(
@@ -353,7 +353,7 @@ class SummaryEmailsAppSpec extends DaoAppSuite(
     }
 
     "A week elapses" in {
-      playTime(7 * OneDayInMillis + OneHourInMillis)
+      playTimeMillis(7 * OneDayInMillis + OneHourInMillis)
     }
 
     "Mod gets no summary, because he has read the page" in {
@@ -374,7 +374,7 @@ class SummaryEmailsAppSpec extends DaoAppSuite(
     }
 
     "nothing more happens" in {
-      playTime(32 * OneDayInMillis)
+      playTimeMillis(32 * OneDayInMillis)
       makeSummary(adm.id) mustBe empty
       makeSummary(mia.id) mustBe empty
       makeSummary(mod.id) mustBe empty
@@ -392,7 +392,7 @@ class SummaryEmailsAppSpec extends DaoAppSuite(
     }
 
     "A week elapses" in {
-      playTime(7 * OneDayInMillis)
+      playTimeMillis(7 * OneDayInMillis)
     }
 
     "Mia & Mod visits the website" in {
@@ -402,7 +402,7 @@ class SummaryEmailsAppSpec extends DaoAppSuite(
         dao.addUserStats(UserStats(
           mod.id, lastSeenAt = currentTime, numDaysVisited = 1, numSecondsReading = 100))(tx)
       }
-      playTime(OneHourInMillis)
+      playTimeMillis(OneHourInMillis)
     }
 
     "Mod gets a summary; he wants summaries, also if active at the website" in {
@@ -424,9 +424,9 @@ class SummaryEmailsAppSpec extends DaoAppSuite(
     }
 
     "a day later, Mia gets a summary (because now no longer has visited 'recently')" in {
-      playTime(22 * OneHourInMillis)  // 1 + 22 = 23 < 24
+      playTimeMillis(22 * OneHourInMillis)  // 1 + 22 = 23 < 24
       makeSummary(mia.id) mustBe empty
-      playTime(2 * OneHourInMillis) // 1 + 22 + 2 > 24, so time for summary, again
+      playTimeMillis(2 * OneHourInMillis) // 1 + 22 + 2 > 24, so time for summary, again
       val summary = makeSummary(mia.id).get
       summary.topTopics.size mustBe 1
       summary.topTopics.head.meta.authorId mustBe adm.id
@@ -434,7 +434,7 @@ class SummaryEmailsAppSpec extends DaoAppSuite(
     }
 
     "nothing more happens" in {
-      playTime(32 * OneDayInMillis)
+      playTimeMillis(32 * OneDayInMillis)
       makeSummary(adm.id) mustBe empty
       makeSummary(mia.id) mustBe empty
       makeSummary(mod.id) mustBe empty
@@ -452,7 +452,7 @@ class SummaryEmailsAppSpec extends DaoAppSuite(
     }
 
     "everyone gets a summary (and let's send them all at the same time)" in {
-      playTime(7 * OneDayInMillis + OneHourInMillis)
+      playTimeMillis(7 * OneDayInMillis + OneHourInMillis)
       makeSummary(mia.id) mustBe defined
       makeSummary(mod.id) mustBe defined
       makeSummary(max.id) mustBe defined
@@ -466,7 +466,7 @@ class SummaryEmailsAppSpec extends DaoAppSuite(
     }
 
     "one hour elapses" in {
-      playTime(OneHourInMillis)
+      playTimeMillis(OneHourInMillis)
     }
 
     "Mia, Mod & Max get no new summary directly, because they got one, an hour ago" in {
@@ -476,14 +476,14 @@ class SummaryEmailsAppSpec extends DaoAppSuite(
     }
 
     "after almost a day, still no summaries sent" in {
-      playTime(22 * OneHourInMillis) // 1 + 22 < 24
+      playTimeMillis(22 * OneHourInMillis) // 1 + 22 < 24
       makeSummary(mia.id) mustBe empty
       makeSummary(mod.id) mustBe empty
       makeSummary(max.id) mustBe empty
     }
 
     "after a day, Mia gets a summary (she wants daily)" in {
-      playTime(2 * OneHourInMillis)  // 1 + 22 + 2 > 24
+      playTimeMillis(2 * OneHourInMillis)  // 1 + 22 + 2 > 24
       val summary = makeSummary(mia.id).get
       summary.topTopics.size mustBe 1
       summary.topTopics.head.meta.authorId mustBe adm.id
@@ -496,13 +496,13 @@ class SummaryEmailsAppSpec extends DaoAppSuite(
     }
 
     "after almost a week, still no summaries" in {
-      playTime(5 * OneDayInMillis)  // 6 days and 1 hour
+      playTimeMillis(5 * OneDayInMillis)  // 6 days and 1 hour
       makeSummary(mod.id) mustBe empty
       makeSummary(max.id) mustBe empty
     }
 
     "after a week, Mod & Max get their summaries too" in {
-      playTime(OneDayInMillis)  // 7 days and 1 hour
+      playTimeMillis(OneDayInMillis)  // 7 days and 1 hour
       val summaries = makeSummaries(immutable.Seq(mod.id, max.id))
       summaries foreach { summary =>
         summary.topTopics.size mustBe 1
@@ -512,7 +512,7 @@ class SummaryEmailsAppSpec extends DaoAppSuite(
     }
 
     "nothing more happens" in {
-      playTime(32 * OneDayInMillis)
+      playTimeMillis(32 * OneDayInMillis)
       makeSummary(adm.id) mustBe empty
       makeSummary(mia.id) mustBe empty
       makeSummary(mod.id) mustBe empty
@@ -534,7 +534,7 @@ class SummaryEmailsAppSpec extends DaoAppSuite(
     }
 
     "a week elapses" in {
-      playTime(7 * OneDayInMillis + OneHourInMillis)
+      playTimeMillis(7 * OneDayInMillis + OneHourInMillis)
     }
 
     "Mod gets a summary with both pages (hen's a moderator)" in {
@@ -564,7 +564,7 @@ class SummaryEmailsAppSpec extends DaoAppSuite(
     }
 
     "a month elapses" in {
-      playTime(31 * OneDayInMillis + OneHourInMillis)
+      playTimeMillis(31 * OneDayInMillis + OneHourInMillis)
     }
 
     "No one gets any summary" in {
@@ -578,7 +578,7 @@ class SummaryEmailsAppSpec extends DaoAppSuite(
 
   "summaries aren't sent immediately when new topic created [3RGKW8O1]" - {
     "lots of time elapses, so now time for everyone to get a summary" in {
-      playTime(2 * OneMonthInMillis)
+      playTimeMillis(2 * OneMonthInMillis)
     }
 
     "Adm creates a topic" in {
@@ -601,7 +601,7 @@ class SummaryEmailsAppSpec extends DaoAppSuite(
       val twoHours = 2 * OneHourInMillis
 
       "almost a day / divisor elapses, no summaries sent" in {
-        playTime(dayDivDivisor)
+        playTimeMillis(dayDivDivisor)
         makeSummary(mia.id) mustBe empty
         makeSummary(mod.id) mustBe empty
         makeSummary(max.id) mustBe empty
@@ -609,7 +609,7 @@ class SummaryEmailsAppSpec extends DaoAppSuite(
       }
 
       "one hour more than day/divisor elapses" in {
-        playTime(twoHours)
+        playTimeMillis(twoHours)
       }
 
       "now Mia gets a summary email (her summary interval = one day)" in {
@@ -626,7 +626,7 @@ class SummaryEmailsAppSpec extends DaoAppSuite(
       }
 
       "almost a week/divisor elapses" in {
-        playTime(OneWeekInMillis / SummaryEmailsDao.MinTopicAgeDivisor
+        playTimeMillis(OneWeekInMillis / SummaryEmailsDao.MinTopicAgeDivisor
             - dayDivDivisor - twoHours - OneHourInMillis)
       }
 
@@ -638,7 +638,7 @@ class SummaryEmailsAppSpec extends DaoAppSuite(
       }
 
       "some hours time than week/divisor elapses" in {
-        playTime(2 * OneHourInMillis)
+        playTimeMillis(2 * OneHourInMillis)
       }
 
       "now Mod & Max get a summary email (their summary interval = one week)" in {
@@ -651,7 +651,7 @@ class SummaryEmailsAppSpec extends DaoAppSuite(
       }
 
       "lots of time elapses, no summaries sent" in {
-        playTime(OneMonthInMillis)
+        playTimeMillis(OneMonthInMillis)
         makeSummary(adm.id) mustBe empty
         makeSummary(mia.id) mustBe empty
         makeSummary(mod.id) mustBe empty
@@ -684,9 +684,9 @@ class SummaryEmailsAppSpec extends DaoAppSuite(
 
     "Topics that didn't fit in the summary, won't be sent later (we don't want stale summaries)" in {
       makeSummary(ign.id) mustBe empty
-      playTime(OneWeekInMillis + OneDayInMillis)
+      playTimeMillis(OneWeekInMillis + OneDayInMillis)
       makeSummary(ign.id) mustBe empty
-      playTime(OneMonthInMillis)
+      playTimeMillis(OneMonthInMillis)
       makeSummary(ign.id) mustBe empty
     }
 
@@ -697,7 +697,7 @@ class SummaryEmailsAppSpec extends DaoAppSuite(
     }
 
     "after a week, Mia & Ign get a summary" in {
-      playTime(7 * OneDayInMillis + OneHourInMillis)
+      playTimeMillis(7 * OneDayInMillis + OneHourInMillis)
       val summaries = makeSummaries(immutable.Seq(mia.id, ign.id))
       summaries foreach { summary =>
         summary.topTopics.size mustBe 1
@@ -725,7 +725,7 @@ class SummaryEmailsAppSpec extends DaoAppSuite(
     }
 
     "after a week, Max gets a summary, with the new topic, plus the old he didn't get before" in {
-      playTime(7 * OneDayInMillis + OneHourInMillis)
+      playTimeMillis(7 * OneDayInMillis + OneHourInMillis)
       val summary = makeSummary(max.id).get
       summary.topTopics.size mustBe 2
       summary.topTopics.map(_.meta.authorId).toSet mustBe Set(adm.id)
@@ -775,13 +775,13 @@ class SummaryEmailsAppSpec extends DaoAppSuite(
     }
 
     "almost a day elapses, nothing happens" in {
-      playTime(23 * OneHourInMillis)
+      playTimeMillis(23 * OneHourInMillis)
       makeSummary(mod.id) mustBe empty
       makeSummary(defa.id) mustBe empty
     }
 
     "after a day, Mod and Defa get a summary, because default settings = send summaries" in {
-      playTime(2 * OneHourInMillis)
+      playTimeMillis(2 * OneHourInMillis)
       val summaries = makeSummaries(immutable.Seq(mod.id, defa.id))
       summaries foreach { summary =>
         summary.topTopics.size mustBe 1
@@ -791,7 +791,7 @@ class SummaryEmailsAppSpec extends DaoAppSuite(
     }
 
     "after a week, Max and Mia too" in {
-      playTime((7 - 1) * OneDayInMillis)
+      playTimeMillis((7 - 1) * OneDayInMillis)
       val summaries = makeSummaries(immutable.Seq(max.id, mia.id))
       summaries foreach { summary =>
         summary.topTopics.size mustBe 1
@@ -812,7 +812,7 @@ class SummaryEmailsAppSpec extends DaoAppSuite(
       }
 
       "half a day later, Defa visits the site (but doesn't read the new topic)" in {
-        playTime(12 * OneHourInMillis)
+        playTimeMillis(12 * OneHourInMillis)
         dao.readWriteTransaction { tx =>
           dao.addUserStats(UserStats(
             defa.id, lastSeenAt = currentTime, numDaysVisited = 1, numSecondsReading = 600))(tx)
@@ -820,7 +820,7 @@ class SummaryEmailsAppSpec extends DaoAppSuite(
       }
 
       "Defa won't get a summary, because was active" in {
-        playTime(13 * OneHourInMillis)
+        playTimeMillis(13 * OneHourInMillis)
         makeSummary(defa.id) mustBe empty
       }
 
@@ -832,7 +832,7 @@ class SummaryEmailsAppSpec extends DaoAppSuite(
       }
 
       "the others get summaries as usual" in {
-        playTime(OneWeekInMillis)
+        playTimeMillis(OneWeekInMillis)
         val summaries = makeSummaries(immutable.Seq(max.id, mia.id))
         summaries foreach { summary =>
           summary.topTopics.size mustBe 1
@@ -868,7 +868,7 @@ class SummaryEmailsAppSpec extends DaoAppSuite(
     }
 
     "a week elapses" in {
-      playTime(7 * OneDayInMillis + OneHourInMillis)
+      playTimeMillis(7 * OneDayInMillis + OneHourInMillis)
     }
 
     "but now Mod and Defa got no summaries" in {
@@ -892,7 +892,7 @@ class SummaryEmailsAppSpec extends DaoAppSuite(
 
   "nothing more happens" - {
     "nothing" in {
-      playTime(32 * OneDayInMillis)
+      playTimeMillis(32 * OneDayInMillis)
       makeSummary(adm.id) mustBe empty
       makeSummary(mia.id) mustBe empty
       makeSummary(mod.id) mustBe empty
@@ -901,7 +901,7 @@ class SummaryEmailsAppSpec extends DaoAppSuite(
     }
 
     "really really nothing" in {
-      playTime(64 * OneDayInMillis)
+      playTimeMillis(64 * OneDayInMillis)
       makeSummary(adm.id) mustBe empty
       makeSummary(mia.id) mustBe empty
       makeSummary(mod.id) mustBe empty

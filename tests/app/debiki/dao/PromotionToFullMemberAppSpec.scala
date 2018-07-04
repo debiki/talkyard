@@ -90,7 +90,7 @@ class PromotionToFullMemberAppSpec extends DaoAppSuite() {
     }
 
     "a member reads a bit more, almost gets promoted" in {
-      playTime(1000)
+      playTimeMillis(1000)
       dao.trackReadingProgressPerhapsPromote(member1, pageIds(2), ReadingProgress(
         firstVisitedAt = currentTime.minusSeconds(1),
         lastVisitedAt = currentTime,
@@ -121,7 +121,7 @@ class PromotionToFullMemberAppSpec extends DaoAppSuite() {
     }
 
     "reads a tiny bit more, finally gets promoted to Basic" in {
-      playTime(1000)
+      playTimeMillis(1000)
       dao.trackReadingProgressPerhapsPromote(member1, pageIds(4), ReadingProgress(
         firstVisitedAt = currentTime.minusSeconds(1),
         lastVisitedAt = currentTime,

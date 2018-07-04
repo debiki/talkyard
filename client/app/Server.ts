@@ -30,7 +30,7 @@
 
 const d: any = { i: debiki.internal };
 
-const BadNameOrPasswordErrorCode = 'EsE403BPWD';
+const BadNameOrPasswordErrorCode = '_TyE403BPWD';
 
 function getPageId(): PageId {
   return eds.embeddedPageId || // [4HKW28]
@@ -789,7 +789,7 @@ export function saveMemberPrivacyPrefs(prefs, success: () => void) {
 }
 
 
-export function deleteUser(userId, success: () => void) {
+export function deleteUser(userId, success: (anonUsername: string) => void) {
   postJsonSuccess(`/-/delete-user`, success, { userId });
 }
 

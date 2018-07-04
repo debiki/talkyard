@@ -43,7 +43,7 @@ class LoginAppSpec extends DaoAppSuite() {
     }
 
     "non-existing members cannot login" in {
-      intercept[DbDao.NoMemberWithThatEmailException.type] {
+      intercept[DbDao.NoSuchEmailOrUsernameException.type] {
         dao.tryLoginAsMember(PasswordLoginAttempt(
           ip = "1.2.3.4", globals.now().toJavaDate, "the-wrong-email@x.co", "pwd"))
       }
@@ -69,10 +69,66 @@ class LoginAppSpec extends DaoAppSuite() {
       }
     }
 
-    "can login with the correct password" in {
-      val loginGrant = dao.tryLoginAsMember(PasswordLoginAttempt(
-        ip = "1.2.3.4", globals.now().toJavaDate, member1.email, Member1Password))
-      loginGrant.user.id mustBe member1.id
+    "can login with the correct password" - {
+      "via email" in {
+        val loginGrant = dao.tryLoginAsMember(PasswordLoginAttempt(
+          ip = "1.2.3.4", globals.now().toJavaDate, member1.email, Member1Password))
+        loginGrant.user.id mustBe member1.id
+      }
+      "and via username" in {
+        val loginGrant = dao.tryLoginAsMember(PasswordLoginAttempt(
+          ip = "1.2.3.4", globals.now().toJavaDate, member1.theUsername, Member1Password))
+        loginGrant.user.id mustBe member1.id
+      }
+    }
+
+    "cannot login after account deleted" - {
+      var anonNNN: MemberInclDetails = null
+
+      "mem cache says user *not* deleted" in {
+        val user = dao.getTheUser(member1.id)
+        user.isDeleted mustBe false
+      }
+
+      "delete user" in {  // EdT5WKBWQ2
+        // Pretend the username was in use for a while, because different constraints require this.
+        // If was never in use — then better delete it from the database instead.
+        playTimeSeconds(30)
+        anonNNN = dao.deleteUser(member1.id, Who.System)
+      }
+
+      "mem cache now says user *is* deleted" in {
+        val user = dao.getTheUser(member1.id)
+        user.isDeleted mustBe true
+      }
+
+      "now cannot login with the old email addr" in {
+        intercept[DbDao.NoSuchEmailOrUsernameException.type] {
+          dao.tryLoginAsMember(PasswordLoginAttempt(
+            ip = "1.2.3.4", globals.now().toJavaDate, member1.email, "whatever_password"))
+        }
+      }
+
+      "or the old username" in {
+        intercept[DbDao.NoSuchEmailOrUsernameException.type] {
+          dao.tryLoginAsMember(PasswordLoginAttempt(
+            ip = "1.2.3.4", globals.now().toJavaDate, member1.theUsername, "whatever_password"))
+        }
+      }
+
+      "and also cannot login with the new anonNNN username" in {
+        intercept[DbDao.UserDeletedException.type] {
+          dao.tryLoginAsMember(PasswordLoginAttempt(
+            ip = "1.2.3.4", globals.now().toJavaDate, anonNNN.username, "whatever_password"))
+        }
+      }
+
+      "or anonNNN email" in {
+        intercept[DbDao.UserDeletedException.type] {
+          dao.tryLoginAsMember(PasswordLoginAttempt(
+            ip = "1.2.3.4", globals.now().toJavaDate, anonNNN.primaryEmailAddress, "whatever_password"))
+        }
+      }
     }
 
   }

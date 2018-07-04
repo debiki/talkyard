@@ -1252,8 +1252,9 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
     val userId = (request.body \ "userId").as[UserId]
     throwForbiddenIf(userId != requester.id && !requester.isAdmin,
       "TyE7UBQP21", "Cannot delete other user")
-    dao.deleteUser(userId, request.who)
-    Ok
+    val anonNNN = dao.deleteUser(userId, request.who)
+    OkSafeJson(JsString(anonNNN.username))
+        .discardingCookies(context.security.DiscardingSessionCookie)
   }
 
 

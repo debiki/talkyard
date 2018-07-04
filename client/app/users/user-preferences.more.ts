@@ -562,7 +562,12 @@ export const Account = createFactory({
         }
         else {
           dieIf(number !== 2, 'TyE6UKBA');
-          Server.deleteUser(user.id, this.props.reloadUser);
+          Server.deleteUser(user.id, anonUsername => {
+            // If deleted oneself, navigate outside React-Router, so the page will reload
+            // and the browser forgets all in-mem things about the current user.
+            const loc = isMe ? window.location : this.props.location;
+            loc.assign(UsersRoot + anonUsername)
+          });
         }
       },
     });
@@ -674,7 +679,7 @@ export const Account = createFactory({
     //  Button({}, user.deactivatedAt ? "Activate" : "Deactivate"));
     // + hide Delete button, until deactivated (unless is admin).
 
-    const dangerZone = user.deletedAt || !me.isAdmin ? null : (
+    const dangerZone = user.deletedAt || (me.id !== user.id && !me.isAdmin) ? null : (
       rFragment({},
         r.h3({ style: { marginBottom: '1.3em' }}, t.upp.DangerZone),
         Button({ onClick: this.deleteUser }, t.upp.DeleteAccount)));

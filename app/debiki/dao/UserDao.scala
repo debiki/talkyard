@@ -1368,7 +1368,12 @@ trait UserDao {
   }
 
 
-  def deleteUser(userId: UserId, byWho: Who) {
+  /** Returns the anonymized member.
+    *
+    * Tested here:
+    * - EdT5WKBWQ2
+    */
+  def deleteUser(userId: UserId, byWho: Who): MemberInclDetails = {
     readWriteTransaction { tx =>
       tx.deferConstraints()
 
@@ -1384,6 +1389,8 @@ trait UserDao {
 
       // Load member after having forgotten avatar images (above).
       val memberBefore = tx.loadTheMemberInclDetails(userId)
+
+      throwForbiddenIf(memberBefore.isDeleted, "TyE0ALRDYDLD", "User already deleted")
 
       // This resets the not-mentioned-here fields to default values.
       val memberDeleted = MemberInclDetails(
@@ -1455,6 +1462,8 @@ trait UserDao {
       // Clear the page cache, by clearing all caches.  [2WBU0R1]
       emptyCacheImpl(tx)
       removeUserFromMemCache(userId)
+
+      memberDeleted
     }
   }
 

@@ -108,7 +108,9 @@ class DaoAppSuite(
     globals.testSetTime(when)
   }
 
-  def playTime(millis: Long) {
+  def playTimeSeconds(seconds: Long): Unit = playTimeMillis(seconds * 1000)
+
+  def playTimeMillis(millis: Long) {
     _currentTime = _currentTime plusMillis millis
     globals.testSetTime(_currentTime)
   }

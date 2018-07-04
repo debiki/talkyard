@@ -178,7 +178,7 @@ class MovePostsAppSpec extends DaoAppSuite(disableScripts = true, disableBackgro
         Who(SystemUserId, browserIdData = browserIdData), dummySpamRelReqStuff).post
 
       // Create after page 2 so becomes the most recent one.
-      playTime(1000)
+      playTimeMillis(1000)
       val post = reply(theModerator.id, thePageId, "A post.")(dao)
 
       val fromPageMetaBefore = dao.readOnlyTransaction(_.loadThePageMeta(thePageId))

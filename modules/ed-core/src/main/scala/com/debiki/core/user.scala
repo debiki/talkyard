@@ -846,11 +846,11 @@ case class UsernameUsage(
   userId: UserId,
   firstMentionAt: Option[When] = None) {
 
-  require(usernameLowercase == usernameLowercase.toLowerCase, "EdE6LKW28")
-  require(!inUseTo.exists(_.unixMillis <= inUseFrom.unixMillis), "EdE7WKL42")
-  require(!firstMentionAt.exists(_.unixMillis < inUseFrom.unixMillis), "EdE2WKZ0A")
+  require(usernameLowercase == usernameLowercase.toLowerCase, "TyE6LKW28")
+  require(inUseTo.forall(inUseFrom.unixMillis < _.unixMillis), "TyE7WKL42")
+  require(firstMentionAt.forall(inUseFrom.unixMillis <= _.unixMillis), "TyE2WKZ0A")
   inUseTo foreach { toWhen =>
-    require(!firstMentionAt.exists(_.unixMillis > toWhen.unixMillis), "EdE7KG0S3")
+    require(firstMentionAt.forall(_.unixMillis <= toWhen.unixMillis), "TyE7KG0S3")
   }
 }
 

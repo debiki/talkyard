@@ -158,6 +158,14 @@ class PlainApiActions(
       dao.perhapsBlockRequest(request, sidStatus, browserId)
 
       val anyUserMaybeSuspended = dao.getUserBySessionId(sidStatus)
+
+      // Maybe the user was logged in in two different browsers, and deleted hens account
+      // in one browser and got logged out there, only.
+      if (anyUserMaybeSuspended.exists(_.isDeleted))
+        return Future.successful(
+          ForbiddenResult("TyEUSRDLD", "That account has been deleted")
+            .discardingCookies(DiscardingSessionCookie))
+
       val isSuspended = anyUserMaybeSuspended.exists(_.isSuspendedAt(new ju.Date))
 
       if (isSuspended && request.method != "GET")
