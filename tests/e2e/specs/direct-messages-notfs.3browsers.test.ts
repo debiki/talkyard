@@ -38,7 +38,6 @@ let siteId;
 describe("private chat", () => {
 
   it("initialize people", () => {
-    browser.perhapsDebugBefore();
     everyone = _.assign(browser, pagesFor(browser));
     owen = _.assign(browserA, pagesFor(browserA), make.memberOwenOwner());
     michael = _.assign(browserB, pagesFor(browserB), make.memberMichael());

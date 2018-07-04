@@ -47,7 +47,6 @@ const friendlyReplyFourNr = c.FirstReplyNr + 3;
 describe("admin-review-invalidate-page-deld [TyT5FKBSQ]", () => {
 
   it("import a site", () => {
-    browser.perhapsDebugBefore();
     forum = buildSite().addLargeForum({ title: forumTitle, members: null /* default = everyone */ });
     siteIdAddress = server.importSiteData(forum.siteData);
     discussionPageUrl = siteIdAddress.origin + '/' + forum.topics.byMichaelCategoryA.slug;

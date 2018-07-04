@@ -40,8 +40,6 @@ let appendedText = " - appended text";
 describe("new member, allow, approve posts:", () => {  // RENAME ths file to 'new-member-posts...'
 
   it("initialize people", () => {
-    browser.perhapsDebugBefore();
-
     everyone = _.assign(browser, pagesFor(browser));
     owensBrowser = _.assign(browserA, pagesFor(browserA));
     majasBrowser = _.assign(browserB, pagesFor(browserB));
@@ -308,11 +306,6 @@ describe("new member, allow, approve posts:", () => {  // RENAME ths file to 'ne
     strangersBrowser.forumTopicList.assertNumVisible(2);
     strangersBrowser.forumTopicList.assertTopicVisible(topics.oldTopicTitle);
     strangersBrowser.forumTopicList.assertTopicVisible(topics.majasTopicTitle);
-  });
-
-
-  it("Done", () => {
-    everyone.perhapsDebug();
   });
 
 });

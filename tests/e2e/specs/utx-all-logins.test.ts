@@ -60,7 +60,6 @@ describe("usability testing exchange, all logins:", () => {
     return;
 
   it("import a site", () => {
-    browser.perhapsDebugBefore();
     const builder = buildSite();
     forum = builder.addEmptyForum({ title: forumTitle });
 

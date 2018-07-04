@@ -40,7 +40,6 @@ const owensCommentText = 'owensCommentText';
 describe("embedded comments, new site", () => {
 
   it("initialize people", () => {
-    browser.perhapsDebugBefore();
     everyonesBrowsers = _.assign(browser, pagesFor(browser));
 
     owensBrowser = _.assign(browserA, pagesFor(browserA));
@@ -76,7 +75,6 @@ describe("embedded comments, new site", () => {
   }
 
   it('Owen creates an embedded comments site as a Password user  @login @password', () => {
-    owensBrowser.perhapsDebugBefore();
     data = createPasswordTestData();
     owensBrowser.go(utils.makeCreateEmbeddedSiteWithFakeIpUrl());
     owensBrowser.disableRateLimits();
@@ -200,11 +198,6 @@ ${htmlToPaste}
   function isReplyButtonVisible(browser) {
     return browser.isVisible('.dw-a-reply');
   }
-
-
-  it("Done", () => {
-    everyonesBrowsers.perhapsDebug();
-  });
 
 });
 

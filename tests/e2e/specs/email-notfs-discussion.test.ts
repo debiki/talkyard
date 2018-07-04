@@ -57,7 +57,6 @@ const trilliansTopicBody = "trilliansTopicBody mentions @maria and @maja";
 describe("email notfs discs", () => {
 
   it("initialize people", () => {
-    browser.perhapsDebugBefore();
     everyonesBrowsers = _.assign(browser, pagesFor(browser));
     owensBrowser = everyonesBrowsers;
     modyasBrowser = owensBrowser;
@@ -220,10 +219,6 @@ describe("email notfs discs", () => {
   });
 
   it("Trillian gets notified", () => {
-  });
-
-  it("Done", () => {
-    everyonesBrowsers.perhapsDebug();
   });
 
 });

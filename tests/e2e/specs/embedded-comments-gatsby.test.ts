@@ -39,7 +39,6 @@ const owens2ndPostComment = 'owens2ndPostComment';
 describe("embedded comments, Gatsby blog and un/re-mmounting comments", () => {
 
   it("initialize people", () => {
-    browser.perhapsDebugBefore();
     everyonesBrowsers = _.assign(browser, pagesFor(browser));
 
     owensBrowser = _.assign(browser, pagesFor(browser));
@@ -71,7 +70,6 @@ describe("embedded comments, Gatsby blog and un/re-mmounting comments", () => {
   });
 
   it('Owen creates an embedded comments site as a Password user  @login @password', () => {
-    owensBrowser.perhapsDebugBefore();
     data = createPasswordTestData();
     owensBrowser.go(utils.makeCreateEmbeddedSiteWithFakeIpUrl());
     owensBrowser.disableRateLimits();

@@ -45,7 +45,6 @@ const angryReplyThreeNr = c.FirstReplyNr + 2;
 describe("admin-review-invalidate-for-reply [TyT6KWB42A]", () => {
 
   it("import a site", () => {
-    browser.perhapsDebugBefore();
     forum = buildSite().addLargeForum({ title: forumTitle, members: null /* default = everyone */ });
     siteIdAddress = server.importSiteData(forum.siteData);
     discussionPageUrl = siteIdAddress.origin + '/' + forum.topics.byMichaelCategoryA.slug;

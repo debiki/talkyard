@@ -62,7 +62,6 @@ let lastTopicMichaelUrl: string;
 describe("summary emails", () => {
 
   it("initialize people", () => {
-    browser.perhapsDebugBefore();
     everyonesBrowsers = _.assign(browser, pagesFor(browser));
 
     trilliansBrowser = _.assign(browserA, pagesFor(browserA));
@@ -339,11 +338,6 @@ describe("summary emails", () => {
     server.waitUntilLastEmailMatches(siteId, maria.emailAddress, topicFiveMariaMonthUrl, browser);
     // The very last one:
     server.waitUntilLastEmailMatches(siteId, michael.emailAddress, lastTopicMichaelUrl, browser);
-  });
-
-
-  it("Done", () => {
-    everyonesBrowsers.perhapsDebug();
   });
 
 });

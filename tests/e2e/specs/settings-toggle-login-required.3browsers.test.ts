@@ -26,7 +26,6 @@ var forumTitle = "Login to Read Forum";
 describe("settings-toggle-login-required [TyT4GKBW20]", function() {
 
   it("initialize people", function() {
-    browser.perhapsDebugBefore();
     everyone = _.assign(browser, pagesFor(browser));
     owen = _.assign(browserA, pagesFor(browserA), make.memberOwenOwner());
     michael = _.assign(browserB, pagesFor(browserB), make.memberMichael());
@@ -105,10 +104,6 @@ describe("settings-toggle-login-required [TyT4GKBW20]", function() {
   it("And Maria too", function() {
     maria.refresh();
     maria.assertPageTitleMatches(forumTitle);
-  });
-
-  it("Done", function() {
-    everyone.perhapsDebug();
   });
 
 });

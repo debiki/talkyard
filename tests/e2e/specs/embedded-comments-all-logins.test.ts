@@ -43,7 +43,6 @@ describe("emb cmts all logins", () => {
   }
 
   it("initialize people", () => {
-    browser.perhapsDebugBefore();
     everyonesBrowsers = _.assign(browser, pagesFor(browser));
     majasBrowser = everyonesBrowsers;
     michaelsBrowser = everyonesBrowsers;

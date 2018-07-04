@@ -37,7 +37,6 @@ const michaelsEditedTextTwo = 'michaelsEditedTextTwo';
 describe("admin-user-staff [TyT2GKFI594]", function() {
 
   it("import a site", () => {
-    browser.perhapsDebugBefore();
     forum = buildSite().addLargeForum({ title: forumTitle, members: ['maria', 'michael'] });
     siteIdAddress = server.importSiteData(forum.siteData);
   });

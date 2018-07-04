@@ -24,7 +24,6 @@ var forumTitle = "Reset Pwd Test Forum";
 describe("private chat", function() {
 
   it("initialize people", function() {
-    browser.perhapsDebugBefore();
     everyone = _.assign(browser, pagesFor(browser));
     owen = _.assign(browserA, pagesFor(browserA), make.memberOwenOwner());
     michael = _.assign(browserB, pagesFor(browserB), make.memberMichael());
@@ -128,10 +127,6 @@ describe("private chat", function() {
 
   it("... but with his own, when he remembers it", function() {
     owen.loginDialog.loginWithPassword(owen.username, owen.password);
-  });
-
-  it("Done", function() {
-    everyone.perhapsDebug();
   });
 
 });

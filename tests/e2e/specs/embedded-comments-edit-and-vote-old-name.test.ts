@@ -33,7 +33,6 @@ const pageUrl = embeddingOrigin + '/' + pageSlug;
 describe("emb cmts edit and vote", () => {
 
   it("initialize people", () => {
-    browser.perhapsDebugBefore();
     everyonesBrowsers = _.assign(browser, pagesFor(browser));
     majasBrowser = everyonesBrowsers;
     michaelsBrowser = everyonesBrowsers;

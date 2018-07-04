@@ -36,8 +36,7 @@ const mariasTopicText = "mariasTopicText";
 describe("create site, follow the admin guide", function() {
 
   it("initialize people", function() {
-    browser.perhapsDebugBefore();
-    everyone = _.assign(browser, pagesFor(everyone));
+    everyone = _.assign(browser, pagesFor(browser));
     owen = _.assign(browserA, pagesFor(browserA), make.memberOwenOwner());
     // Use an unique address so won't run into max-sites-per-email limit.
     owen.emailAddress = "e2e-test--owen-" + testId + "@example.com";

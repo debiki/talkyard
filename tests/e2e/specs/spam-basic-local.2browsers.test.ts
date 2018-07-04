@@ -37,7 +37,6 @@ let post3Selector = '#post-3';
 describe("spam test, no external services:", () => {
 
   it("initialize people", () => {
-    browser.perhapsDebugBefore();
     everyone = _.assign(browser, pagesFor(browser));
     owen = make.memberOwenOwner();
     owensBrowser = _.assign(browserA, pagesFor(browserA));
@@ -146,10 +145,6 @@ describe("spam test, no external services:", () => {
     mallorysBrowser.serverErrorDialog.waitAndAssertTextMatches(/spam.*EdE7KVF2_/);
     mallorysBrowser.serverErrorDialog.close();
     strangersBrowser.loginDialog.clickCancel();
-  });
-
-  it("Done", () => {
-    everyone.perhapsDebug();
   });
 
 });

@@ -32,7 +32,6 @@ let mariaPageUrl: string;
 describe("admin-user-approve-reject [TyT5KHEWQ2]", function() {
 
   it("initialize people", function() {
-    browser.perhapsDebugBefore();
     everyone = _.assign(browser, pagesFor(browser));
     owen = make.memberOwenOwner();
     owensBrowser = _.assign(browserA, pagesFor(browserA));

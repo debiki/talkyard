@@ -43,7 +43,6 @@ let videoYouTubeOnebox =
 describe("editor onebox:", () => {
 
   it("initialize people", () => {
-    browser.perhapsDebugBefore();
     browser = _.assign(browser, pagesFor(browser));
     everyone = browser;
     owen = make.memberOwenOwner();
@@ -175,10 +174,6 @@ describe("editor onebox:", () => {
     assert(!mariasBrowser.topic.postNrContains(7, dotOneboxClass));
     assert(mariasBrowser.topic.postNrContains(7, `a[href="${videoYouTubeUrlInvalidId}"]`));
     mariasBrowser.topic.assertPostTextMatches(7, "Plain text");
-  });
-
-  it("Done", () => {
-    everyone.perhapsDebug();
   });
 
 });

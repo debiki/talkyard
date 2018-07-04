@@ -44,8 +44,6 @@ let topics = {
 describe("spam test, no external services:", () => {
 
   it("initialize people", () => {
-    browser.perhapsDebugBefore();
-
     everyone = _.assign(browser, pagesFor(browser));
     guestsBrowser = _.assign(browserA, pagesFor(browserA));
     owensBrowser =  _.assign(browserB, pagesFor(browserB));
@@ -262,10 +260,6 @@ describe("spam test, no external services:", () => {
   });
 
   it("... and not the new ones pending review", () => {
-  });
-
-  it("Done", () => {
-    everyone.perhapsDebug();
   });
 
 });

@@ -28,7 +28,6 @@ var DefaultCategorySelector = 'a*=Uncategorized';
 describe("categories", function() {
 
   it("initialize people", function() {
-    browser.perhapsDebugBefore();
     everyone = browser;
     owen = _.assign(browserA, pagesFor(browserA), make.memberOwenOwner());
     mons = _.assign(browserB, pagesFor(browserB), make.memberModeratorMons());
@@ -208,10 +207,6 @@ describe("categories", function() {
   // Owen deletes the category? How prevent mod Mons from seeing the stuff therein?
   // Two levels of delete? One for normal members, but visible to staff? One that leaves
   // the deleted page visible to admins only?
-
-  it("Done", function() {
-    everyone.perhapsDebug();
-  });
 
 });
 

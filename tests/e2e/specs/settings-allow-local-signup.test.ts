@@ -25,7 +25,6 @@ let forumTitle = "(Dis)Allow Signup Forum";
 describe("(dis)allow local signup:", () => {
 
   it("initialize people", () => {
-    browser.perhapsDebugBefore();
     browser = _.assign(browser, pagesFor(browser));
     everyone = browser;
     owen = make.memberOwenOwner();
@@ -64,12 +63,6 @@ describe("(dis)allow local signup:", () => {
   });
 
   it("An invite sent a while ago, by Maria, no longer works", () => {
-  });
-
-
-
-  it("Done", () => {
-    everyone.perhapsDebug();
   });
 
 });

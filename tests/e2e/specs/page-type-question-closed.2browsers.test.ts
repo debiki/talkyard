@@ -34,7 +34,6 @@ let mariasTopicUrl: string;
 describe("Page type question", () => {
 
   it("Initialize people", () => {
-    browser.perhapsDebugBefore();
     everyonesBrowsers = _.assign(browser, pagesFor(browser));
     mariasBrowser = _.assign(browserA, pagesFor(browserA));
     strangersBrowser = _.assign(browserB, pagesFor(browserB));
@@ -160,10 +159,6 @@ describe("Page type question", () => {
         case 7:  assert(id === 'post-7');  break; // the topic-reopened event
       }
     }
-  });
-
-  it("Done", () => {
-    everyonesBrowsers.perhapsDebug();
   });
 
 });

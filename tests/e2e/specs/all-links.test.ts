@@ -1,16 +1,15 @@
 /// <reference path="../test-types.ts"/>
 
+import * as _ from 'lodash';
 import server = require('../utils/server');
 import assert = require('assert');
 import utils = require('../utils/utils');
-import pages = require('../utils/pages');
+import pagesFor = require('../utils/pages-for');
 import settings = require('../utils/settings');
 import make = require('../utils/make');
 import logAndDie = require('../utils/log-and-die');
 import c = require('../test-constants');
-var logUnusual = logAndDie.logUnusual, die = logAndDie.die, dieIf = logAndDie.dieIf;
-var logMessage = logAndDie.logMessage;
-var SystemUserId = 1;  // [commonjs]
+const SystemUserId = 1;  // [commonjs]
 
 declare var browser: any;
 
@@ -19,6 +18,7 @@ describe('all links', function() {
 
 
   it('create site with all links', function() {
+    browser = _.assign(browser, pagesFor(browser));
     let site: SiteData = make.emptySiteOwnedByOwen();
     site.members.push(make.memberAdminAdam());
     site.members.push(make.memberAdminAlice());
@@ -127,8 +127,6 @@ describe('all links', function() {
     var idAddress = server.importSiteData(site);
     browser.go(idAddress.origin);
     // browser.assertTextMatches('body', /login as admin to create something/);
-
-    browser.perhapsDebug();
   });
 
   describe("click all stuff on the forum page", function() {

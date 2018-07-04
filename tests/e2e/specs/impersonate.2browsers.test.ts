@@ -33,7 +33,6 @@ var origPostReplyText = "Orig post reply text";
 describe("impersonate", () => {
 
   it("initialize people", () => {
-    browser.perhapsDebugBefore();
     everyone = _.assign(browser, pagesFor(browser));
     owen = _.assign(browserA, pagesFor(browserA), make.memberOwenOwner());
     maria = _.assign(browserB, pagesFor(browserB), make.memberMaria());
@@ -172,10 +171,6 @@ describe("impersonate", () => {
 
   it("... she contacts the tax agency and tells them about this", () => {
     // to-do, later
-  });
-
-  it("Done", () => {
-    everyone.perhapsDebug();
   });
 
 });

@@ -37,7 +37,6 @@ const pageCccSlug = 'emb-cmts-ccc.html';
 describe("emb cmts discussion-id", () => {
 
   it("initialize people", () => {
-    browser.perhapsDebugBefore();
     everyonesBrowsers = _.assign(browser, pagesFor(browser));
     mariasBrowser = everyonesBrowsers;
     maria = make.memberMaria();

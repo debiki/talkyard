@@ -38,8 +38,6 @@ let topics = {
 describe("new user, review, ok:", () => {
 
   it("initialize people", () => {
-    browser.perhapsDebugBefore();
-
     everyone = _.assign(browser, pagesFor(browser));
     owensBrowser = _.assign(browserA, pagesFor(browserA));
     majasBrowser = _.assign(browserB, pagesFor(browserB));

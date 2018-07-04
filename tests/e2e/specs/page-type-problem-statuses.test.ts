@@ -37,7 +37,6 @@ const bottomCommentTwoText = 'bottomCommentTwoText';
 describe("Page statuses and bottom comments", () => {
 
   it("Initialize people", () => {
-    browser.perhapsDebugBefore();
     everyonesBrowsers = _.assign(browser, pagesFor(browser));
     strangersBrowser = everyonesBrowsers;
     mariasBrowser = everyonesBrowsers;
@@ -96,10 +95,6 @@ describe("Page statuses and bottom comments", () => {
     mariasBrowser.topic.assertMetaPostTextMatches(3, 'marked this topic as Started');
     mariasBrowser.topic.assertMetaPostTextMatches(4, 'marked this topic as Done');
     mariasBrowser.topic.assertMetaPostTextMatches(5, 'marked this topic as New');
-  });
-
-  it("Done", () => {
-    everyonesBrowsers.perhapsDebug();
   });
 
 });

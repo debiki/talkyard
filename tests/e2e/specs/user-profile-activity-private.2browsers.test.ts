@@ -38,7 +38,6 @@ let oneOfMariasTopicTitles: string;
 describe("user profile access:", () => {
 
   it("import a site", () => {
-    browser.perhapsDebugBefore();
     forum = buildSite().addLargeForum({ title: forumTitle });
 
     // Make Michael a full member so he can see activity that strangers may not see.

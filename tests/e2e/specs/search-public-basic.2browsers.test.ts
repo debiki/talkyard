@@ -40,7 +40,6 @@ let xyzTitle = "xyz_title";
 describe("basic publ search:", () => {
 
   it("initialize people", () => {
-    browser.perhapsDebugBefore();
     everyone = _.assign(browser, pagesFor(browser));
     owen = _.assign(browserA, pagesFor(browserA), make.memberOwenOwner());
     maria = _.assign(browserB, pagesFor(browserB), make.memberMaria());
@@ -211,10 +210,6 @@ describe("basic publ search:", () => {
   it(`... but doesn't find 'non_existing_text'`, () => {
     guest.searchResultsPage.searchForWaitForResults('non_existing_text');
     guest.searchResultsPage.assertPhraseNotFound('non_existing_text');
-  });
-
-  it("Done", () => {
-    everyone.perhapsDebug();
   });
 
 });

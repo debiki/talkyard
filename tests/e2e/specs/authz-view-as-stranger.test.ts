@@ -63,7 +63,6 @@ function assertRestrictedTopicsAbsent(browser) {
 describe("view as stranger:", () => {
 
   it("import a site", () => {
-    browser.perhapsDebugBefore();
     forum = buildSite().addLargeForum({ title: forumTitle });
     idAddress = server.importSiteData(forum.siteData);
   });
@@ -143,10 +142,6 @@ describe("view as stranger:", () => {
   it("... and he also sees the staff-only page", () => {
     owensBrowser.go('/' + forum.topics.byMariaStaffOnlyCat.slug);
     owensBrowser.assertPageTitleMatches(forum.topics.byMariaStaffOnlyCat.title);
-  });
-
-  it("Done", () => {
-    everyone.perhapsDebug();
   });
 
 });

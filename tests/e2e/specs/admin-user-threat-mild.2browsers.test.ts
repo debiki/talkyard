@@ -35,7 +35,6 @@ const mariasReplyNotThreat = 'mariasReplyNotThreat';
 describe("admin-user-threat-mild [TyT2WKBG4Z]", function() {
 
   it("import a site", () => {
-    browser.perhapsDebugBefore();
     forum = buildSite().addLargeForum({ title: forumTitle });
     siteIdAddress = server.importSiteData(forum.siteData);
   });

@@ -44,7 +44,6 @@ describe('/-/create-site  @createsite  TyT5KBWAZ2', () => {
   it('can create a new site as a Password user  @login @password', () => {
     // Something timed out in here, twice. [E2EBUG]
     // Break up into smaller steps then? To find out what.
-    browser.perhapsDebugBefore();
     const data = createPasswordTestData();
     browser.go(utils.makeCreateSiteWithFakeIpUrl());
     browser.disableRateLimits();
@@ -169,10 +168,6 @@ describe('/-/create-site  @createsite  TyT5KBWAZ2', () => {
     pages.loginDialog.createFacebookAccount(data, true);
     pages.createSomething.createForum("Facebook Forum Title");
   }
-
-  it("Done.", () => {
-    browser.perhapsDebug();
-  });
 
 });
 

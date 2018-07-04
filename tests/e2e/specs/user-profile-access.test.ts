@@ -47,7 +47,6 @@ let numPublicPostsByMaria = 5;  // 4 topic original-posts, and her reply to Mich
 describe("user profile access:", () => {
 
   it("import a site", () => {
-    browser.perhapsDebugBefore();
     forum = buildSite().addLargeForum({ title: forumTitle });
     idAddress = server.importSiteData(forum.siteData);
   });

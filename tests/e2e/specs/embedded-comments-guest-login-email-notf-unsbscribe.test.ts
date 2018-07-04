@@ -41,7 +41,6 @@ const pageUrl = embeddingOrigin + '/' + pageSlug;
 describe("emb cmts guest login", () => {
 
   it("initialize people", () => {
-    browser.perhapsDebugBefore();
     everyonesBrowsers = _.assign(browser, pagesFor(browser));
     guestsBrowser = everyonesBrowsers;
     fidosBrowser = everyonesBrowsers;

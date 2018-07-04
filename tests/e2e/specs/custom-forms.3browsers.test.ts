@@ -85,7 +85,6 @@ let mariaInputText1 = "Maria text input 1";
 describe("private chat", function() {
 
   it("initialize people", function() {
-    browser.perhapsDebugBefore();
     everyone = _.assign(browser, pagesFor(browser));
     owen = _.assign(browserA, pagesFor(browserA), make.memberOwenOwner());
     mons = _.assign(browserB, pagesFor(browserB), make.memberModeratorMons());
@@ -262,10 +261,6 @@ describe("private chat", function() {
   });
 
   it("... but not on the old page (only on the new, where it was submitted)", function() {
-  });
-
-  it("Done", function() {
-    everyone.perhapsDebug();
   });
 
 });

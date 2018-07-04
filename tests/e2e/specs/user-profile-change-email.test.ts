@@ -43,8 +43,6 @@ const mariasTopicABody = 'mariasTopicABody';
 describe("user profile change email:", () => {
 
   it("import a site, init people", () => {
-    browser.perhapsDebugBefore();
-
     everyonesBrowser = _.assign(browser, pagesFor(browser));
     mariasBrowser = _.assign(browserA, pagesFor(browserA));
     michaelsBrowser = _.assign(browserB, pagesFor(browserB));

@@ -35,7 +35,6 @@ let forumTitle = "UTX Test Forum";
 describe("usability testing exchange:", () => {
 
   it("import a site", () => {
-    browser.perhapsDebugBefore();
     idAddress = server.importSiteData(forum.siteData);
   });
 

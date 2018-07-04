@@ -25,7 +25,6 @@ let forumTitle = "(Dis)Allow Signup Forum";
 describe("(dis)allow signup:", () => {
 
   it("initialize people", () => {
-    browser.perhapsDebugBefore();
     browser = _.assign(browser, pagesFor(browser));
     everyone = browser;
     owen = make.memberOwenOwner();
@@ -84,11 +83,6 @@ describe("(dis)allow signup:", () => {
   it("?? But an old invite sent long a go, by a non-admin, doesn't work", () => {
     // ...
   }); */
-
-
-  it("Done", () => {
-    everyone.perhapsDebug();
-  });
 
 });
 

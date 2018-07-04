@@ -32,8 +32,6 @@ describe("user profile cannot delete openauth email:", () => {
     return;
 
   it("import a site, init people", () => {
-    browser.perhapsDebugBefore();
-
     everyonesBrowser = _.assign(browser, pagesFor(browser));
     gmailUsersBrowser = everyonesBrowser;
 

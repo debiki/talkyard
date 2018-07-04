@@ -22,7 +22,6 @@ let maria;
 describe('chat', function() {
 
   it('create site with two members', function() {
-    browser.perhapsDebugBefore();
     everyone = _.assign(browser, pagesFor(browser));
     owen = _.assign(browserA, pagesFor(browserA), make.memberOwenOwner());
     maria = _.assign(browserB, pagesFor(browserB), make.memberMaria());

@@ -34,7 +34,6 @@ const mariasTopicBody = 'mariasTopicBody';
 describe("admin-user-suspend [TyT5GKQSG2]", function() {
 
   it("import a site", () => {
-    browser.perhapsDebugBefore();
     forum = buildSite().addLargeForum({ title: forumTitle });
     siteIdAddress = server.importSiteData(forum.siteData);
   });

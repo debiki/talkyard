@@ -1,10 +1,8 @@
 declare const global: any;
 
-import _ = require('lodash');
 import progressReporter = require('./wdio-progress-reporter');
 import settings = require('./utils/settings');
 import server = require('./utils/server');
-import addCommandsToBrowser = require('./utils/commands');
 
 server.initOrDie();
 
@@ -173,6 +171,14 @@ const api = { config: {
   // Gets executed before test execution begins. At this point you can access to all global
   // variables like `browser`. It is the perfect place to define custom commands.
   before: function (capabilties, specs) {
+    if (settings.debugBefore) {
+      console.log("*** Paused, just before starting test. Now you can connect a debugger. ***");
+      global.browser.debug();
+    }
+
+    /* Not using Webdriver.io's add-commands system any longer, because the IDE is then
+    unable to understand where those commands are defined; it cannot navigate to them quickly.
+    Keep this anyway? so can see how can do maybe other things with the browser(s):
     addCommandsToBrowser(global['browser']);
     if (_.isObject(capabilties)) {
       if (capabilties['browserName']) {
@@ -186,7 +192,7 @@ const api = { config: {
         console.log("Adding custom commands to '" + browserName + "' [EsM4GKT5]");
         addCommandsToBrowser(global[browserName]);
       });
-    }
+    } */
   },
 
   // Hook that gets executed before the suite starts
@@ -226,8 +232,9 @@ const api = { config: {
   // Gets executed after all tests are done. You still have access to all global variables from
   // the test.
   after: function (capabilties, specs) {
-    console.log("Done.");
+    console.log("*** Done ***");
     if (settings.debugAfterwards) {
+      console.log("*** Paused, just before exiting test. Now you can connect a debugger. ***");
       global.browser.debug();
     }
   },

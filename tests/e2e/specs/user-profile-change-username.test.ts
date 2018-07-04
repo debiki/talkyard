@@ -35,7 +35,6 @@ let mariasUsername5 = "maria5";
 describe("user profile access:", () => {
 
   it("import a site", () => {
-    browser.perhapsDebugBefore();
     forum = buildSite().addLargeForum({ title: forumTitle });
     idAddress = server.importSiteData(forum.siteData);
   });
@@ -159,11 +158,6 @@ describe("user profile access:", () => {
 
   // COULD check forum topic list name too, but it's only shown when hovering the user avatar
   // — how does one check on-hover tooltips? Skip for now.
-
-
-  it("Done", () => {
-    everyone.perhapsDebug();
-  });
 
 });
 

@@ -29,7 +29,6 @@ const forumTitle = "Approve Members Forum";
 describe("settings-approve-members [TyT2HUWX8]", function() {
 
   it("initialize people", function() {
-    browser.perhapsDebugBefore();
     everyone = _.assign(browser, pagesFor(browser));
     owen = make.memberOwenOwner();
     owensBrowser = _.assign(browserA, pagesFor(browserA));

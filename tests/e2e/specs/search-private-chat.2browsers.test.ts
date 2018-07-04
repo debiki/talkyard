@@ -46,7 +46,6 @@ let michaelsSecondMessage = "Well yea. Bye for now then!";
 describe("priv chat", () => {
 
   it("initialize people", () => {
-    browser.perhapsDebugBefore();
     everyone = _.assign(browser, pagesFor(browser));
     owen = make.memberOwenOwner();
     alice = make.memberAdminAlice();
@@ -223,11 +222,6 @@ describe("priv chat", () => {
   it("... and cannot access it via direct link", () => {
     mallorysBrowser.go(topicUrl);
     mallorysBrowser.assertNotFoundError();
-  });
-
-
-  it("Done", () => {
-    everyone.perhapsDebug();
   });
 
 });

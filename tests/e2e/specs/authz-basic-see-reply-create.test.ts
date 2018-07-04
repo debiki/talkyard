@@ -63,8 +63,6 @@ let michaelsTopicUrl: string;
 describe("authz basic see reply create:", () => {
 
   it("import a site", () => {
-    browser.perhapsDebugBefore();
-
     // Later: break out 'PermTestForum' ...? if needed.
     siteBuilder = makeSiteOwnedByOwenBuilder();
     siteBuilder.theSite.settings.allowGuestLogin = true;
@@ -563,11 +561,6 @@ describe("authz basic see reply create:", () => {
   // ------- Mons (trust level = New, but is moderator)
 
   // ...
-
-
-  it("Done", () => {
-    everyone.perhapsDebug();
-  });
 
 });
 

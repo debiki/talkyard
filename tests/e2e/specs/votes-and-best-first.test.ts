@@ -65,7 +65,6 @@ const postNrAA = 7;
 describe("votes and best first", () => {
 
   it("import a site", () => {
-    browser.perhapsDebugBefore();
     forum = buildSite().addLargeForum({ title: "Votes Forum" });
     const siteData: SiteData = forum.siteData;
 
@@ -114,7 +113,6 @@ describe("votes and best first", () => {
   });
 
   it("initialize people", () => {
-    browser.perhapsDebugBefore();
     everyonesBrowsers = _.assign(browser, pagesFor(browser));
 
     owensBrowser = everyonesBrowsers;
@@ -315,11 +313,6 @@ describe("votes and best first", () => {
     assert(els[3].getAttribute('id') === `post-${postNrXX}`);
     assert(els[4].getAttribute('id') === `post-${postNrYY}`);
     assert(els[5].getAttribute('id') === `post-${postNrZZ}`); // Bury vote
-  });
-
-
-  it("Done", () => {
-    everyonesBrowsers.perhapsDebug();
   });
 
 });

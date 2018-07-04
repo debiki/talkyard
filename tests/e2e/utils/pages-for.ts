@@ -4,9 +4,9 @@ import logAndDie = require('./log-and-die');
 import settings = require('./settings');
 import server = require('./server');
 import c = require('../test-constants');
-let logUnusual = logAndDie.logUnusual, die = logAndDie.die, dieIf = logAndDie.dieIf;
-let logError = logAndDie.logError;
-let logMessage = logAndDie.logMessage;
+const logUnusual = logAndDie.logUnusual, die = logAndDie.die, dieIf = logAndDie.dieIf;
+const logError = logAndDie.logError;
+const logMessage = logAndDie.logMessage;
 
 // Brekpoint debug help counters, use like so:  if (++ca == 1) debugger;
 let ca = 0;
@@ -44,12 +44,72 @@ function browserNamePrefix(browserName): string { // dupl code [4GK0D8G2]
   return browserName + ': ';
 }
 
+function allBrowserValues(result) {
+  const resultByBrowser = byBrowser(result);
+  return _.values(resultByBrowser);
+}
+
+function isResponseOk(response): boolean {
+  // Previously, .status === 0' worked, but now .status instead a function that seems to
+  // return the object itself (weird). Use '._status' instead + check '.state' too  :-P
+  // Now, Selenium 6.7, .state is undefined, remove it too.
+  return response._status === 0;
+}
+
 
 // There might be many browsers, when using Webdriver.io's multiremote testing, so
 // `browser` is an argument.
 //
 function pagesFor(browser) {
+  const origWaitForVisible = browser.waitForVisible;
+  const origWaitForEnabled = browser.waitForEnabled;
+  const origWaitForText = browser.waitForText;
+  const origWaitForExist = browser.waitForExist;
+
   const api = {
+
+    origin: function() {
+      return api._findOrigin();
+    },
+
+
+    _findOrigin: function(): string {
+      const url = browser.url().value;
+      const matches = url.match(/(https?:\/\/[^\/]+)\//);
+      if (!matches) {
+        throw Error('NoOrigin');
+      }
+      return matches[1];
+    },
+
+
+    go: function(url) {
+      if (url[0] === '/') {
+        // Local url, need to add origin.
+        try { url = api._findOrigin() + url; }
+        catch (ex) {
+          dieIf(ex.message === 'NoOrigin',
+              `When opening the first page: ${url}, you need to specify the server origin [TyE7UKHW2]`);
+          throw ex;
+        }
+      }
+      logMessage("Go: " + url);
+      browser.url(url);
+    },
+
+
+    goAndWaitForNewUrl: function(url) {
+      logMessage("Go: " + url);
+      api.rememberCurrentUrl();
+      browser.url(url);
+      api.waitForNewUrl();
+    },
+
+
+    disableRateLimits: function() {
+      browser.setCookie({ name: 'esCoE2eTestPassword', value: settings.e2eTestPassword });
+    },
+
 
     getSiteId: function(): string {
       const result = browser.execute(function() {
@@ -61,9 +121,80 @@ function pagesFor(browser) {
     },
 
 
+    swithToOtherTabOrWindow: function() {
+      for (let i = 0; i < 3; ++i) {
+        logMessage("Waiting for other window to open, to prevent weird Selenium errors...");
+        browser.pause(1500);
+        if (browser.getTabIds().length > 1)
+          break;
+      }
+      const ids = browser.getTabIds();
+      const currentId = browser.getCurrentTabId();
+      for (let i = 0; i < ids.length; ++i) {
+        const id = ids[i];
+        if (id !== currentId) {
+          logMessage("Calling browser.switchTab(id), id = " + id);
+          browser.switchTab(id);
+          return;
+        }
+      }
+      // Might be a login popup that got auto closed? [3GRQU5]
+      logMessage("Didn't find any other window to switch to. [EdM2WPDL0]");
+    },
+
+
+    switchBackToFirstTabOrWindow: function() {
+      // If no id specified, will switch to the first tab.
+      browser.pause(500);
+      let ids = browser.getTabIds();
+      if (ids.length > 1) {
+        // I've tested "everything else", nothing works.
+        logMessage("Waiting for any OAuth loging popup to auto close, to prevent weird " +
+            "invalid window ID errors");
+        browser.pause(2000);
+      }
+      ids = browser.getTabIds();
+      if (ids.length > 1) {
+        // So far all other tabs have been closed when we run this function. So > 1 tab = not tested,
+        // so warn about that:
+        logMessage("Which tab is the first one? Switching to [0]. All tab ids: " + JSON.stringify(ids));
+      }
+      try {
+        logMessage("Now switching to tab ids[0] = " + ids[0]);
+        browser.switchTab(ids[0]);
+      }
+      catch (dummy) {
+        // Probably a tab just got closed? Google and Facebook auto closes login popup tabs, [3GRQU5]
+        // if one is logged in already at their websites. Try again.
+        logMessage(`Error switching to tab [0]: ${dummy.toString()}.\nTrying again... [EdM1WKY5F]`);
+        browser.pause(2500);
+        const idsAgain = browser.getTabIds();
+        browser.switchTab(idsAgain[0]);
+      }
+    },
+
+
+    _currentUrl: '',
+
+    rememberCurrentUrl: function() {
+      // Weird, url() returns:
+      // {"state":"success","sessionId":"..","hCode":...,"value":"http://server/path","class":"org.openqa.selenium.remote.Response","status":0}
+      // is that a bug?
+      api._currentUrl = browser.url().value;
+    },
+
+    waitForNewUrl: function() {
+      assert(!!api._currentUrl, "Please call browser.rememberCurrentUrl() first [EsE7JYK24]");
+      while (api._currentUrl === browser.url().value) {
+        browser.pause(250);
+      }
+    },
+
+
+
     switchToFrame: function(selector) {
       console.log(`switching to frame ${selector}...`);
-      browser.waitForExist(selector);
+      api.waitForExist(selector);
       const iframe = browser.element(selector).value;
       browser.frame(iframe);
     },
@@ -75,13 +206,13 @@ function pagesFor(browser) {
       browser.pause(75);
       browser.frameParent();
       browser.pause(75);
-      browser.switchToFrame('iframe#ed-embedded-comments');
+      api.switchToFrame('iframe#ed-embedded-comments');
     },
 
 
     switchToEmbeddedEditorIrame: function() {
       browser.frameParent();
-      browser.switchToFrame('iframe#ed-embedded-editor');
+      api.switchToFrame('iframe#ed-embedded-editor');
     },
 
 
@@ -105,8 +236,8 @@ function pagesFor(browser) {
     //    (because the elem is visible already).
     toGoogleAndBack: function() {
       let url = browser.url().value;
-      browser.go('http://www.google.com');
-      browser.go(url);
+      api.go('http://www.google.com');
+      api.go(url);
     },
 
 
@@ -120,7 +251,7 @@ function pagesFor(browser) {
 
 
     waitForMyDataAdded: function() {
-      browser.waitForVisible('.e2eMyDataAdded');
+      api.waitForVisible('.e2eMyDataAdded');
     },
 
 
@@ -138,28 +269,40 @@ function pagesFor(browser) {
     },
 
 
-    // Placed here, because if placed in commands.ts, exception(s) cannot be caught, [7KSU024]
-    // — seems like some weird Chrome - ChromeDriver - Selenium - Fibers - Webdriver.io thing,
-    // probably Chrome? because everything was working until I upgraded Chrome & ChromeDriver.
-    // Anyway, when placed here, exceptions work as they should.
-    //
-    waitAndClick: function(selector) {
+    // Make `api.waitForVisible()` work in this file — I'd forget to do: `browser.waitForVisible()`.
+    waitForVisible: function(selector: string, timeoutMillis?: number) {
+      origWaitForVisible.apply(browser, arguments);
+    },
+
+    waitForEnabled: function(selector: string, timeoutMillis?: number) {
+      origWaitForEnabled.apply(browser, arguments);
+    },
+
+    waitForText: function(selector: string) {
+      origWaitForText.apply(browser, arguments);
+    },
+
+    waitForExist: function(selector: string) {
+      origWaitForExist.apply(browser, arguments);
+    },
+
+    waitAndClick: function(selector: string) {
       api._waitAndClickImpl(selector, {});
     },
 
 
-    waitAndClickFirst: function(selector) {
+    waitAndClickFirst: function(selector: string) {
       api._waitAndClickImpl(selector, { clickFirst: true });
     },
 
 
-    waitAndClickLast: function(selector) {
-      browser.debug();
+    waitAndClickLast: function(selector: string) {
+      die("waitAndClickLast unimpl");
       //api._waitAndClickImpl(selector, false);
     },
 
 
-    _waitAndClickImpl: function(selector, opts: { clickFirst?: boolean } = {}) {
+    _waitAndClickImpl: function(selector: string, opts: { clickFirst?: boolean } = {}) {
       api._waitForClickable(selector);
       if (!selector.startsWith('#') && !opts.clickFirst) {
         let errors = '';
@@ -180,7 +323,7 @@ function pagesFor(browser) {
       // we just waited for it to go away.  [7UKDWP2] [7JUKDQ4].
       // Happens in FF only (May 2018) — maybe FF is so fast so the first test
       // somehow happens before it has been created?
-      browser.waitUntilLoadingOverlayGone();
+      api.waitUntilLoadingOverlayGone();
       browser.click(selector);
     },
 
@@ -190,9 +333,9 @@ function pagesFor(browser) {
       // just fine when run in a *visible* browser. Meaning, it's very hard to fix any race
       // conditions, because only fails when I cannot see. So for now, pause(100).
       browser.pause(100);
-      browser.waitForVisible(selector);
-      browser.waitForEnabled(selector);
-      browser.waitUntilLoadingOverlayGone();
+      api.waitForVisible(selector);
+      api.waitForEnabled(selector);
+      api.waitUntilLoadingOverlayGone();
     },
 
 
@@ -201,9 +344,9 @@ function pagesFor(browser) {
       let delay = 30;
       //let count = 0;
       //console.log(`waitAndClickLinkToNewPage ${selector} ...`);
-      browser.waitUntilLoadingOverlayGone();
+      api.waitUntilLoadingOverlayGone();
       while (true) {
-        browser.waitForMyDataAdded();
+        api.waitForMyDataAdded();
         browser.pause(delay);
         //console.log(`waitAndClickLinkToNewPage ${selector} testing:`);
         if (browser.isVisible(selector) && browser.isEnabled(selector)) {
@@ -218,11 +361,261 @@ function pagesFor(browser) {
           delay *= 1.67;
         }
       }
-      browser.rememberCurrentUrl();
-      //console.log(`waitAndClickLinkToNewPage ${selector} ... CLICKING`);
-      browser.waitAndClick(selector);
-      browser.waitForNewUrl();
-      //console.log(`waitAndClickLinkToNewPage ${selector} ... New url here now.`);
+      api.rememberCurrentUrl();
+      api.waitAndClick(selector);
+      api.waitForNewUrl();
+    },
+
+
+    waitUntilGone: function(what) {
+      browser.waitUntil(function () {
+        const resultsByBrowser = browser.isVisible(what);
+        const values = allBrowserValues(resultsByBrowser);
+        return _.every(values, x => !x );
+      });
+    },
+
+    refreshUntilGone: function(what) {
+      while (true) {
+        let resultsByBrowser = browser.isVisible(what);
+        let isVisibleValues = allBrowserValues(resultsByBrowser);
+        let goneEverywhere = !_.some(isVisibleValues);
+        if (goneEverywhere) break;
+        browser.refresh();
+        browser.pause(250);
+      }
+    },
+
+    waitUntilLoadingOverlayGone: function() {
+      api.waitUntilGone('#theLoadingOverlay');
+    },
+
+    waitUntilModalGone: function() {
+      browser.waitUntil(function () {
+        // Check for the modal backdrop (it makes the stuff not in the dialog darker).
+        let resultsByBrowser = browser.isVisible('.modal-backdrop');
+        let values = allBrowserValues(resultsByBrowser);
+        let anyVisible = _.some(values, x => x);
+        if (anyVisible)
+          return false;
+        // Check for the block containing the modal itself.
+        // This sometimes fails, if waitUntilModalGone() is done in 'everyonesBrowser'.  [4JBKF20]
+        // I suppose in one browser, the modal is present, but in another, it's gone... somehow
+        // resulting in Selenium failing with a """ERROR: stale element reference: element
+        // is not attached to the page document""" error.
+        resultsByBrowser = browser.isVisible('.fade.modal');
+        values = allBrowserValues(resultsByBrowser);
+        anyVisible = _.some(values, x => x);
+        return !anyVisible;
+      });
+    },
+
+    waitForAtLeast: function(num, selector) {
+      browser.waitUntil(function () {
+        const elemsList = allBrowserValues(browser.elements(selector));
+        return _.every(elemsList, (elems) => {
+          return count(elems) >= num;
+        });
+      });
+    },
+
+    waitForAtMost: function(num, selector) {
+      browser.waitUntil(function () {
+        const elems = browser.elements(selector);
+        return count(elems) <= num;
+      });
+    },
+
+    assertExactly: function(num, selector) {
+      let errorString = '';
+      let resultsByBrowser = byBrowser(browser.elements(selector));
+      _.forOwn(resultsByBrowser, (result, browserName) => {
+        if (result.value.length !== num) {
+          errorString +=browserNamePrefix(browserName) + "Selector '" + selector + "' matches " +
+              result.value.length + " elems, but there should be exactly " + num + "\n";
+        }
+      });
+      assert.ok(!errorString, errorString);
+    },
+
+
+    waitAndSetValue: function(selector, value) {
+      browser.pause(30); // for FF else fails randomly [E2EBUG] but Chrome = fine
+      api.waitForVisible(selector);
+      api.waitForEnabled(selector);
+      api.waitUntilLoadingOverlayGone();
+      browser.setValue(selector, value);
+    },
+
+
+    waitAndSetValueForId: function(id, value) {
+      api.waitAndSetValue('#' + id, value);
+    },
+
+
+    waitForThenClickText: function(selector, regex) {
+      const elemId = api.waitAndGetElemIdWithText(selector, regex);
+      browser.elementIdClick(elemId);
+    },
+
+
+    waitUntilTextMatches: function(selector, regex) {
+      api.waitAndGetElemIdWithText(selector, regex);
+    },
+
+
+    waitAndAssertVisibleTextMatches: function(selector, regex) {
+      if (_.isString(regex)) regex = new RegExp(regex);
+      const text = api.waitAndGetVisibleText(selector);
+      assert(regex.test(text), "'Elem selected by " + selector + "' didn't match " + regex.toString() +
+          ", actual text: '" + text + "'");
+    },
+
+
+    waitAndGetElemIdWithText: function(selector, regex) {
+      if (_.isString(regex)) {
+        regex = new RegExp(regex);
+      }
+      let elemIdFound;
+      browser.waitUntil(() => {
+        const elemsWrap = browser.elements(selector);
+        if (!elemsWrap.value) {
+          die("No value. Many browsers specified? Like 'everyone.sth(..)'? Not implemented. [TyE5KJ7W1]");
+        }
+        const elems = elemsWrap.value;
+        for (let i = 0; i < elems.length; ++i) {
+          const elem = elems[i];
+          const text = browser.elementIdText(elem.ELEMENT).value;
+          const matches = regex.test(text);
+          if (matches) {
+            elemIdFound = elem.ELEMENT;
+            return true;
+          }
+        }
+        return false;
+      });
+      return elemIdFound;
+    },
+
+
+    waitAndGetVisibleText: function(selector) {
+      api.waitForVisible(selector);
+      api.waitForText(selector);
+      return browser.getText(selector);
+    },
+
+
+    assertTextMatches: function(selector, regex, regex2?) {
+      api._assertOneOrAnyTextMatches(false, selector, regex, regex2);
+    },
+
+
+    assertAnyTextMatches: function(selector, regex, regex2?, fast?) {
+      api._assertOneOrAnyTextMatches(true, selector, regex, regex2, fast);
+    },
+
+
+    // n starts on 1 not 0.
+    assertNthTextMatches: function(selector, n, regex, regex2?) {
+      if (_.isString(regex)) {
+        regex = new RegExp(regex);
+      }
+      if (_.isString(regex2)) {
+        regex2 = new RegExp(regex2);
+      }
+      assert(n >= 1, "n starts on 1, change from 0 to 1 please");
+      const items = browser.elements(selector).value;
+      assert(items.length >= n, "Only " + items.length + " elems found, there's no elem no " + n);
+      const response = browser.elementIdText(items[n - 1].ELEMENT);
+      assert(isResponseOk(response), "Bad response._status: " + response._status +
+          ", state: " + response.state);
+      const text = response.value;
+      assert(regex.test(text), "Elem " + n + " selected by '" + selector + "' doesn't match " +
+          regex.toString() + ", actual text: '" + text + "'");
+      // COULD use 'arguments' & a loop instead
+      if (regex2) {
+        assert(regex2.test(text), "Elem " + n + " selected by '" + selector + "' doesn't match " +
+            regex2.toString() + ", actual text: '" + text + "'");
+      }
+    },
+
+
+    assertNoTextMatches: function(selector, regex) {
+      api._assertAnyOrNoneMatches(selector, false, regex);
+    },
+
+
+    _assertOneOrAnyTextMatches: function(many, selector, regex, regex2?, fast?) {
+      process.stdout.write('■');
+      if (fast === 'FAST') {
+        // This works with only one browser at a time, so only use if FAST, or tests will break.
+        api._assertAnyOrNoneMatches(selector, true, regex, regex2);
+        process.stdout.write('F ');
+        return;
+      }
+      // With Chrome 60, this is suddenly *super slow* and the authz-view-as-stranger   [CHROME_60_BUG] because of (24DKR0)?
+      // test takes 4 minutes and times out. Instead, use assertAnyOrNoneMatches (just above).
+      if (_.isString(regex)) {
+        regex = new RegExp(regex);
+      }
+      if (_.isString(regex2)) {
+        regex2 = new RegExp(regex2);
+      }
+      // Log a friendly error, if the selector is absent — that'd be a test suite bug.
+      // Without this assert...isVisible, Webdriver just prints "Error" and one won't know
+      // what the problem is.
+      assert(browser.isVisible(selector), `No text matches: ${selector} [EdE1WBPGY93]`);  // this could be the very-slow-thing (24DKR0) COULD_OPTIMIZE
+      const textByBrowserName = byBrowser(browser.getText(selector));  // SLOW !!
+      _.forOwn(textByBrowserName, function(text, browserName) {
+        const whichBrowser = isTheOnly(browserName) ? '' : ", browser: " + browserName;
+        if (!many) {
+          assert(!_.isArray(text), "Broken e2e test. Select only 1 elem please [EsE4KF0W2]");
+        }
+        assert(regex.test(text), "Elem selected by '" + selector + "' didn't match " +
+            regex.toString() + ", actual text: '" + text + whichBrowser);
+        // COULD use 'arguments' & a loop instead
+        if (regex2) {
+          assert(regex2.test(text), "Elem selected by '" + selector + "' didn't match " +
+              regex2.toString() + ", actual text: '" + text + whichBrowser);
+        }
+      });
+      process.stdout.write('S ');
+    },
+
+
+    _assertAnyOrNoneMatches: function(selector: string, shallMatch: boolean, regex, regex2?) {
+      if (_.isString(regex)) {
+        regex = new RegExp(regex);
+      }
+      if (_.isString(regex2)) {
+        assert(shallMatch, `two regexps only supported if shallMatch = true`);
+        regex2 = new RegExp(regex2);
+      }
+      const elems = browser.elements(selector).value;
+      // If many browsers, we got back {browserName: ...., otherBrowserName: ...} instead.
+      assert(elems, `assertAnyOrNoneMatches with many browsers at a time not implemented [EdE4KHA2QU]`);
+      assert(!shallMatch || elems.length, `No elems found matching ` + selector);
+      for (let i = 0; i < elems.length; ++i) {
+        const elem = elems[i];
+        const isVisible = browser.elementIdDisplayed(elem.ELEMENT);
+        if (!isVisible)
+          continue;
+        const text = browser.elementIdText(elem.ELEMENT).value;
+        const matchesRegex1 = regex.test(text);
+        if (matchesRegex1) {
+          assert(shallMatch, `Elem found matching '${selector}' and regex: ${regex.toString()}`);
+          if (!regex2)
+            return;
+        }
+        if (regex2) {
+          assert(shallMatch, 'EdE2FKT0QRA');
+          const matchesRegex2 = regex2.test(text);
+          if (matchesRegex2 && matchesRegex1)
+            return;
+        }
+      }
+      assert(!shallMatch, `${elems.length} elems matches '${selector}', but none of them is visible and ` +
+          `matches regex: ` + regex.toString() + (!regex2 ? '' : ` and regex2: ` + regex2.toString()));
     },
 
 
@@ -236,6 +629,20 @@ function pagesFor(browser) {
         delay *= 1.67;
         browser.pause(delay);
       }
+    },
+
+
+    assertPageTitleMatches: function(regex) {
+      api.waitForVisible('h1.dw-p-ttl');
+      api.waitUntilTextMatches('h1.dw-p-ttl', regex);
+      //api.assertTextMatches('h1.dw-p-ttl', regex);
+    },
+
+
+    assertPageBodyMatches: function(regex) {
+      api.waitForVisible('.esOrigPost');
+      //api.waitUntilTextMatches('.esOrigPost', regex);
+      api.assertTextMatches('.esOrigPost', regex);
     },
 
 
@@ -255,14 +662,15 @@ function pagesFor(browser) {
       });
     },
 
-    pageNotFoundOrAccessDenied: /Page not found, or Access Denied/,
+
+    _pageNotFoundOrAccessDenied: /Page not found, or Access Denied/,
 
     // Also see browser.pageTitle.assertPageHidden().  Dupl code [05PKWQ2A]
     assertWholePageHidden: function() {
       let resultsByBrowser = byBrowser(browser.getSource());
       _.forOwn(resultsByBrowser, (text, browserName) => {
         if (settings.prod) {
-          assert(api.pageNotFoundOrAccessDenied.test(text),
+          assert(api._pageNotFoundOrAccessDenied.test(text),
               browserNamePrefix(browserName) + "Page not hidden (no not-found or access-denied)");
         }
         else {
@@ -271,12 +679,13 @@ function pagesFor(browser) {
       });
     },
 
-    // Also see browser.pageTitle.assertPageHidden().  Dupl code [05PKWQ2A]
+
+    // Also see api.pageTitle.assertPageHidden().  Dupl code [05PKWQ2A]
     assertMayNotSeePage: function() {
       let resultsByBrowser = byBrowser(browser.getSource());
       _.forOwn(resultsByBrowser, (text, browserName) => {
         if (settings.prod) {
-          assert(api.pageNotFoundOrAccessDenied.test(text),
+          assert(api._pageNotFoundOrAccessDenied.test(text),
               browserNamePrefix(browserName) + "Page not hidden (no not-found or access-denied)");
         }
         else {
@@ -286,13 +695,30 @@ function pagesFor(browser) {
       });
     },
 
+
     assertMayNotLoginBecauseNotYetApproved: function() {
-      browser.assertPageHtmlSourceMatches_1('TyM0APPR_-TyMAPPRPEND_');
+      api.assertPageHtmlSourceMatches_1('TyM0APPR_-TyMAPPRPEND_');
     },
 
+
     assertMayNotLoginBecauseRejected: function() {
-      browser.assertPageHtmlSourceMatches_1('TyM0APPR_-TyMNOACCESS_');
+      api.assertPageHtmlSourceMatches_1('TyM0APPR_-TyMNOACCESS_');
     },
+
+
+    assertNotFoundError: function() {
+      for (let i = 0; i < 20; ++i) {
+        let source = browser.getSource();
+        let is404 = /404 Not Found[\s\S]+EsE404[\s\S].*/.test(source);
+        if (!is404) {
+          browser.pause(250);
+          continue;
+        }
+        return;
+      }
+      die('EdE5FKW2', "404 Not Found never appears");
+    },
+
 
     assertUrlIs: function(expectedUrl) {
       let url = browser.url().value;
@@ -301,8 +727,8 @@ function pagesFor(browser) {
 
     goToSearchPage: (query?: string) => {
       const q = query ? '?q=' + query : '';
-      browser.go('/-/search' + q);
-      browser.waitForVisible('.s_SP_QueryTI');
+      api.go('/-/search' + q);
+      api.waitForVisible('.s_SP_QueryTI');
     },
 
     dismissAnyAlert: (): boolean => {
@@ -335,16 +761,16 @@ function pagesFor(browser) {
     createSite: {
       fillInFieldsAndSubmit: function(data) {
         if (data.embeddingUrl) {
-          browser.waitAndSetValue('#e_EmbeddingUrl', data.embeddingUrl);
+          api.waitAndSetValue('#e_EmbeddingUrl', data.embeddingUrl);
         }
         else {
-          browser.waitAndSetValue('#dwLocalHostname', data.localHostname);
+          api.waitAndSetValue('#dwLocalHostname', data.localHostname);
         }
         browser.click('#e2eNext3');
         browser.setValue('#e2eOrgName', data.orgName || data.localHostname);
         browser.click('input[type=submit]');
-        browser.waitForVisible('#e2eLogin');
-        assert.equal(data.origin, browser.origin());
+        api.waitForVisible('#e2eLogin');
+        assert.equal(data.origin, api.origin());
       }
     },
 
@@ -355,7 +781,7 @@ function pagesFor(browser) {
         // api.waitAndClick('#e2eCreateForum');
         browser.pause(200); // [e2erace] otherwise it won't find the next input, in the
                             // create-site-all-logins @facebook test
-        browser.waitAndSetValue('input[type="text"]', forumTitle);
+        api.waitAndSetValue('input[type="text"]', forumTitle);
         // Click Next, Next ... to accept all default choices.
         api.waitAndClick('.e_Next');
         browser.pause(200); // Wait for next button
@@ -366,7 +792,7 @@ function pagesFor(browser) {
         api.waitAndClick('.e_Next');
         browser.pause(200);
         api.waitAndClick('#e2eDoCreateForum');
-        var actualTitle = browser.waitAndGetVisibleText('h1.dw-p-ttl');
+        const actualTitle = api.waitAndGetVisibleText('h1.dw-p-ttl');
         assert.equal(actualTitle, forumTitle);
       },
     },
@@ -374,20 +800,20 @@ function pagesFor(browser) {
 
     topbar: {
       waitForVisible: function() {
-        browser.waitForVisible('.esMyMenu');
+        api.waitForVisible('.esMyMenu');
       },
 
       clickBack: function() {
-        browser.rememberCurrentUrl();
-        browser.waitAndClick('.esTopbar_custom_backToSite');
-        browser.waitForNewUrl();
+        api.rememberCurrentUrl();
+        api.waitAndClick('.esTopbar_custom_backToSite');
+        api.waitForNewUrl();
       },
 
       clickHome: function() {
         if (browser.isVisible('.esLegal_home_link')) {
-          browser.rememberCurrentUrl();
+          api.rememberCurrentUrl();
           browser.click('.esLegal_home_link')
-          browser.waitForNewUrl();
+          api.waitForNewUrl();
         }
         else {
           api.topbar.clickAncestor("Home");
@@ -395,23 +821,23 @@ function pagesFor(browser) {
       },
 
       clickAncestor: function(categoryName: string) {
-        browser.rememberCurrentUrl();
-        browser.waitForThenClickText('.esTopbar_ancestors_link', categoryName);
-        browser.waitForNewUrl();
+        api.rememberCurrentUrl();
+        api.waitForThenClickText('.esTopbar_ancestors_link', categoryName);
+        api.waitForNewUrl();
       },
 
       assertMyUsernameMatches: function(username: string) {
-        browser.assertTextMatches('.esMyMenu .esAvtrName_name', username);
+        api.assertTextMatches('.esMyMenu .esAvtrName_name', username);
       },
 
       waitForNumPendingUrgentReviews: function(numUrgent: IntAtLeastOne) {
         assert(numUrgent >= 1, "Zero tasks won't ever become visible [TyE5GKRBQQ2]");
-        browser.waitUntilTextMatches('.esNotfIcon-reviewUrgent', '^' + numUrgent + '$');
+        api.waitUntilTextMatches('.esNotfIcon-reviewUrgent', '^' + numUrgent + '$');
       },
 
       waitForNumPendingOtherReviews: function(numOther: IntAtLeastOne) {
         assert(numOther >= 1, "Zero tasks won't ever become visible [TyE2WKBPJR3]");
-        browser.waitUntilTextMatches('.esNotfIcon-reviewOther', '^' + numOther + '$');
+        api.waitUntilTextMatches('.esNotfIcon-reviewOther', '^' + numOther + '$');
       },
 
       isNeedsReviewUrgentVisible: function() {
@@ -428,12 +854,12 @@ function pagesFor(browser) {
 
       clickLogin: function() {
         api.waitAndClick('.esTopbar_logIn');
-        browser.waitUntilLoadingOverlayGone();
+        api.waitUntilLoadingOverlayGone();
       },
 
       clickSignUp: function() {
         api.waitAndClick('.esTopbar_signUp');
-        browser.waitUntilLoadingOverlayGone();
+        api.waitUntilLoadingOverlayGone();
       },
 
       clickLogout: function(options?: { waitForLoginButton?: boolean }) {
@@ -443,16 +869,16 @@ function pagesFor(browser) {
         if (options.waitForLoginButton !== false) {
           // Then a login dialog will probably have opened now in full screen, with a modal
           // backdrop, so don't wait for any backdrop to disappear.
-          browser.waitUntilModalGone();
-          browser.waitForVisible('.esTopbar_logIn');
+          api.waitUntilModalGone();
+          api.waitForVisible('.esTopbar_logIn');
         }
         // If on a users profile page, might start reloading something (because different user & perms).
-        browser.waitUntilLoadingOverlayGone();
+        api.waitUntilLoadingOverlayGone();
       },
 
       openMyMenu: function() {
         api.waitAndClick('.esMyMenu');
-        browser.waitUntilLoadingOverlayGone();
+        api.waitUntilLoadingOverlayGone();
         // Because of a bug in Chrome? Chromedriver? Selenium? Webdriver.io? wait-and-click
         // attempts to click instantly, before the show-menu anim has completed and the elem
         // has appeared. So pause for a short while. [E2EBUG]
@@ -460,19 +886,19 @@ function pagesFor(browser) {
       },
 
       clickGoToAdmin: function() {
-        browser.rememberCurrentUrl();
+        api.rememberCurrentUrl();
         api.topbar.openMyMenu();
         api.waitAndClick('.esMyMenu_admin a');
-        browser.waitForNewUrl();
-        browser.waitUntilLoadingOverlayGone();
+        api.waitForNewUrl();
+        api.waitUntilLoadingOverlayGone();
       },
 
       clickGoToProfile: function() {
-        browser.rememberCurrentUrl();
+        api.rememberCurrentUrl();
         api.topbar.openMyMenu();
         api.waitAndClick('#e2eMM_Profile');
-        browser.waitForNewUrl();
-        browser.waitForVisible(api.userProfilePage.avatarAboutButtonsSelector);
+        api.waitForNewUrl();
+        api.waitForVisible(api.userProfilePage.avatarAboutButtonsSelector);
       },
 
       clickStopImpersonating: function() {
@@ -480,7 +906,7 @@ function pagesFor(browser) {
         let newName;
         api.topbar.openMyMenu();
         api.waitAndClick('.s_MM_StopImpB');
-        browser.waitForVisible(api.userProfilePage.avatarAboutButtonsSelector);
+        api.waitForVisible(api.userProfilePage.avatarAboutButtonsSelector);
         do {
           newName = api.topbar.getMyUsername();
         }
@@ -489,7 +915,7 @@ function pagesFor(browser) {
 
       searchFor: function(phrase: string) {
         api.waitAndClick('.esTB_SearchBtn');
-        browser.waitAndSetValue('.esTB_SearchD input[name="q"]', phrase);
+        api.waitAndSetValue('.esTB_SearchD input[name="q"]', phrase);
         browser.click('.e_SearchB');
         api.searchResultsPage.waitForResults(phrase);
       },
@@ -500,10 +926,10 @@ function pagesFor(browser) {
 
       openNotfToMe: function(options?: { waitForNewUrl?: boolean }) {
         api.topbar.openMyMenu();
-        browser.rememberCurrentUrl();
+        api.rememberCurrentUrl();
         api.waitAndClickFirst('.esMyMenu .dropdown-menu .esNotf-toMe');
         if (options && options.waitForNewUrl !== false) {
-          browser.waitForNewUrl();
+          api.waitForNewUrl();
         }
       },
 
@@ -528,29 +954,29 @@ function pagesFor(browser) {
 
       myMenu: {
         goToAdminReview: function() {
-          browser.rememberCurrentUrl();
+          api.rememberCurrentUrl();
           api.topbar.openMyMenu();
           api.waitAndClick('#e2eMM_Review');
-          browser.waitForNewUrl();
-          browser.waitForVisible('.e_A_Rvw');
+          api.waitForNewUrl();
+          api.waitForVisible('.e_A_Rvw');
         },
       },
 
       pageTools: {
         deletePage: () => {
-          browser.waitAndClick('.dw-a-tools');
-          browser.waitUntilDoesNotMove('.e_DelPg');
-          browser.waitAndClick('.e_DelPg');
-          browser.waitUntilModalGone();
-          browser.waitForVisible('.s_Pg_DdInf');
+          api.waitAndClick('.dw-a-tools');
+          api.waitUntilDoesNotMove('.e_DelPg');
+          api.waitAndClick('.e_DelPg');
+          api.waitUntilModalGone();
+          api.waitForVisible('.s_Pg_DdInf');
         },
 
         restorePage: () => {
-          browser.waitAndClick('.dw-a-tools');
-          browser.waitUntilDoesNotMove('.e_RstrPg');
-          browser.waitAndClick('.e_RstrPg');
-          browser.waitUntilModalGone();
-          browser.waitUntilGone('.s_Pg_DdInf');
+          api.waitAndClick('.dw-a-tools');
+          api.waitUntilDoesNotMove('.e_RstrPg');
+          api.waitAndClick('.e_RstrPg');
+          api.waitUntilModalGone();
+          api.waitUntilGone('.s_Pg_DdInf');
         },
       },
     },
@@ -561,7 +987,7 @@ function pagesFor(browser) {
 
       open: function() {
         api.waitAndClick('.esOpenWatchbarBtn');
-        browser.waitForVisible('#esWatchbarColumn');
+        api.waitForVisible('#esWatchbarColumn');
       },
 
       openIfNeeded: function() {
@@ -571,33 +997,33 @@ function pagesFor(browser) {
       },
 
       close: function() {
-        browser.waitForVisible('.esWB_CloseB');
+        api.waitForVisible('.esWB_CloseB');
         browser.click('.esWB_CloseB');
-        browser.waitUntilGone('#esWatchbarColumn');
+        api.waitUntilGone('#esWatchbarColumn');
       },
 
       assertTopicVisible: function(title: string) {
-        browser.waitForVisible(api.watchbar.titleSelector);
-        browser.assertAnyTextMatches(api.watchbar.titleSelector, title);
+        api.waitForVisible(api.watchbar.titleSelector);
+        api.assertAnyTextMatches(api.watchbar.titleSelector, title);
       },
 
       assertTopicAbsent: function(title: string) {
-        browser.waitForVisible(api.watchbar.titleSelector);
-        browser.assertNoTextMatches(api.watchbar.titleSelector, title);
+        api.waitForVisible(api.watchbar.titleSelector);
+        api.assertNoTextMatches(api.watchbar.titleSelector, title);
       },
 
       asserExactlyNumTopics: function(num: number) {
         if (num > 0) {
-          browser.waitForVisible(api.watchbar.titleSelector);
+          api.waitForVisible(api.watchbar.titleSelector);
         }
-        browser.assertExactly(num, api.watchbar.titleSelector);
+        api.assertExactly(num, api.watchbar.titleSelector);
       },
 
       goToTopic: function(title: string) {
-        browser.rememberCurrentUrl();
-        browser.waitForThenClickText(api.watchbar.titleSelector, title);
-        browser.waitForNewUrl();
-        browser.assertPageTitleMatches(title);
+        api.rememberCurrentUrl();
+        api.waitForThenClickText(api.watchbar.titleSelector, title);
+        api.waitForNewUrl();
+        api.assertPageTitleMatches(title);
       },
 
       clickCreateChat: function() {
@@ -606,44 +1032,44 @@ function pagesFor(browser) {
 
       clickCreateChatWaitForEditor: function() {
         api.waitAndClick('#e2eCreateChatB');
-        browser.waitForVisible('.esEdtr_titleEtc');
+        api.waitForVisible('.esEdtr_titleEtc');
       },
 
       clickViewPeople: function() {
         api.waitAndClick('.esWB_T-Current .esWB_T_Link');
         api.waitAndClick('#e2eWB_ViewPeopleB');
-        browser.waitUntilModalGone();
-        browser.waitForVisible('.esCtxbar_list_title');
+        api.waitUntilModalGone();
+        api.waitForVisible('.esCtxbar_list_title');
       },
 
       clickLeaveChat: function() {
         api.waitAndClick('.esWB_T-Current .esWB_T_Link');
         api.waitAndClick('#e2eWB_LeaveB');
-        browser.waitUntilModalGone();
-        browser.waitForVisible('#theJoinChatB');
+        api.waitUntilModalGone();
+        api.waitForVisible('#theJoinChatB');
       },
     },
 
 
     contextbar: {
       close: function() {
-        browser.waitForVisible('.esCtxbar_close');
+        api.waitForVisible('.esCtxbar_close');
         browser.click('.esCtxbar_close');
-        browser.waitUntilGone('#esThisbarColumn');
+        api.waitUntilGone('#esThisbarColumn');
       },
 
       clickAddPeople: function() {
         api.waitAndClick('#e2eCB_AddPeopleB');
-        browser.waitForVisible('#e2eAddUsD');
+        api.waitForVisible('#e2eAddUsD');
       },
 
       clickUser: function(username: string) {
-        browser.waitForThenClickText('.esCtxbar_list .esAvtrName_username', username);
+        api.waitForThenClickText('.esCtxbar_list .esAvtrName_username', username);
       },
 
       assertUserPresent: function(username: string) {
-        browser.waitForVisible('.esCtxbar_onlineCol');
-        browser.waitForVisible('.esCtxbar_list .esAvtrName_username');
+        api.waitForVisible('.esCtxbar_onlineCol');
+        api.waitForVisible('.esCtxbar_list .esAvtrName_username');
         var elems = browser.elements('.esCtxbar_list .esAvtrName_username').value;
         var usernamesPresent = elems.map((elem) => {
           return browser.elementIdText(elem.ELEMENT).value;
@@ -674,8 +1100,8 @@ function pagesFor(browser) {
       },
 
       waitAssertFullScreen: function() {
-        browser.waitForVisible('.dw-login-modal');
-        browser.waitForVisible('.esLD');
+        api.waitForVisible('.dw-login-modal');
+        api.waitForVisible('.esLD');
         // Forum not shown.
         assert(!browser.isVisible('.dw-forum'));
         assert(!browser.isVisible('.dw-forum-actionbar'));
@@ -694,10 +1120,10 @@ function pagesFor(browser) {
             shallBecomeOwner?: boolean, anyVerifyEmail?) {
 
         // Switch from the guest login form to the create-real-account form, if needed.
-        browser.waitForVisible('#e2eFullName');
+        api.waitForVisible('#e2eFullName');
         if (browser.isVisible('.s_LD_CreateAccount')) {
-          browser.waitAndClick('.s_LD_CreateAccount');
-          browser.waitForVisible('#e2ePassword');
+          api.waitAndClick('.s_LD_CreateAccount');
+          api.waitForVisible('#e2ePassword');
         }
 
         console.log('createPasswordAccount: fillInFullName...');
@@ -721,33 +1147,33 @@ function pagesFor(browser) {
       },
 
       fillInFullName: function(fullName) {
-        browser.waitAndSetValue('#e2eFullName', fullName);
+        api.waitAndSetValue('#e2eFullName', fullName);
       },
 
       fillInUsername: function(username) {
-        browser.waitAndSetValue('#e2eUsername', username);
+        api.waitAndSetValue('#e2eUsername', username);
       },
 
       fillInEmail: function(emailAddress) {
-        browser.waitAndSetValue('#e2eEmail', emailAddress);
+        api.waitAndSetValue('#e2eEmail', emailAddress);
       },
 
       waitForNeedVerifyEmailDialog: function() {
-        browser.waitForVisible('#e2eNeedVerifyEmailDialog');
+        api.waitForVisible('#e2eNeedVerifyEmailDialog');
       },
 
       waitForAndCloseWelcomeLoggedInDialog: function() {
-        browser.waitForVisible('#te_WelcomeLoggedIn');
-        browser.waitAndClick('#te_WelcomeLoggedIn button');
-        browser.waitUntilModalGone();
+        api.waitForVisible('#te_WelcomeLoggedIn');
+        api.waitAndClick('#te_WelcomeLoggedIn button');
+        api.waitUntilModalGone();
       },
 
       fillInPassword: function(password) {
-        browser.waitAndSetValue('#e2ePassword', password);
+        api.waitAndSetValue('#e2ePassword', password);
       },
 
       waitForBadLoginMessage: function() {
-        browser.waitForVisible('.esLoginDlg_badPwd');
+        api.waitForVisible('.esLoginDlg_badPwd');
       },
 
       loginWithPassword: function(username, password?, opts?: { resultInError?: boolean }) {
@@ -762,22 +1188,22 @@ function pagesFor(browser) {
         api.loginDialog.tryLogin(username, password);
         if (opts && opts.resultInError)
           return;
-        browser.waitUntilModalGone();
-        browser.waitUntilLoadingOverlayGone();
+        api.waitUntilModalGone();
+        api.waitUntilLoadingOverlayGone();
       },
 
       loginWithEmailAndPassword: function(emailAddress: string, password: string, badLogin) {
         api.loginDialog.tryLogin(emailAddress, password);
         if (badLogin !== 'BAD_LOGIN') {
-          browser.waitUntilModalGone();
-          browser.waitUntilLoadingOverlayGone();
+          api.waitUntilModalGone();
+          api.waitUntilLoadingOverlayGone();
         }
       },
 
       // Embedded discussions do all logins in popups.
       loginWithPasswordInPopup: function(username, password?: string) {
-        browser.swithToOtherTabOrWindow();
-        browser.disableRateLimits();
+        api.swithToOtherTabOrWindow();
+        api.disableRateLimits();
         if (_.isObject(username)) {
           password = username.password;
           username = username.username;
@@ -787,12 +1213,12 @@ function pagesFor(browser) {
         browser.waitUntil(function () {
           return browser.getTabIds().length === 1;
         });
-        browser.switchBackToFirstTabOrWindow();
+        api.switchBackToFirstTabOrWindow();
       },
 
       loginButBadPassword: function(username: string, password: string) {
         api.loginDialog.tryLogin(username, password);
-        browser.waitForVisible('.esLoginDlg_badPwd');
+        api.waitForVisible('.esLoginDlg_badPwd');
       },
 
       tryLogin: function(username: string, password: string) {
@@ -803,11 +1229,11 @@ function pagesFor(browser) {
       },
 
       waitForEmailUnverifiedError: function() {
-        browser.waitUntilTextMatches('.modal-body', 'TyEEML0VERIF_');
+        api.waitUntilTextMatches('.modal-body', 'TyEEML0VERIF_');
       },
 
       waitForAccountSuspendedError: function() {
-        browser.waitUntilTextMatches('.modal-body', 'TyEUSRSSPNDD_');
+        api.waitUntilTextMatches('.modal-body', 'TyEUSRSSPNDD_');
       },
 
       signUpAsGuest: function(name: string, email?: string) { // CLEAN_UP use createPasswordAccount instead? [8JTW4]
@@ -834,7 +1260,7 @@ function pagesFor(browser) {
         api.loginDialog.waitForAndCloseWelcomeLoggedInDialog();
         console.log('createPasswordAccount with no email: done');
         // Took forever: waitAndGetVisibleText, [CHROME_60_BUG]?
-        browser.waitForVisible('.esTopbar .esAvtrName_name');
+        api.waitForVisible('.esTopbar .esAvtrName_name');
         const nameInHtml = browser.getText('.esTopbar .esAvtrName_name');
         assert(nameInHtml === username);
       },
@@ -848,7 +1274,7 @@ function pagesFor(browser) {
         console.log('clickSubmit...');
         api.loginDialog.clickSubmit();
         console.log('logInAsGuest with no email: done');
-        const nameInHtml = browser.waitAndGetVisibleText('.esTopbar .esAvtrName_name');
+        const nameInHtml = api.waitAndGetVisibleText('.esTopbar .esAvtrName_name');
         dieIf(nameInHtml !== username, `Wrong username in topbar: ${nameInHtml} [EdE2WKG04]`);
       },
 
@@ -864,17 +1290,17 @@ function pagesFor(browser) {
 
       clickCreateAccountInstead: function() {
         api.waitAndClick('.esLD_Switch_L');
-        browser.waitForVisible('.esCreateUser');
-        browser.waitForVisible('#e2eUsername');
-        browser.waitForVisible('#e2ePassword');
+        api.waitForVisible('.esCreateUser');
+        api.waitForVisible('#e2eUsername');
+        api.waitForVisible('#e2ePassword');
       },
 
       switchToLoginIfIsSignup: function() {
         // Switch to login form, if we're currently showing the signup form.
         while (true) {
           if (browser.isVisible('.esCreateUser')) {
-            browser.waitAndClick('.esLD_Switch_L');
-            browser.waitForVisible('.dw-reset-pswd');
+            api.waitAndClick('.esLD_Switch_L');
+            api.waitForVisible('.dw-reset-pswd');
           }
           else if (browser.isVisible('.dw-reset-pswd')) {
             break;
@@ -890,14 +1316,14 @@ function pagesFor(browser) {
         // to choose a username.
         // Not just #e2eUsername, then might try to fill in the username in the create-password-
         // user fields which are still visible for a short moment. Dupl code (2QPKW02)
-        browser.waitAndSetValue('.esCreateUserDlg #e2eUsername', data.username);
+        api.waitAndSetValue('.esCreateUserDlg #e2eUsername', data.username);
         api.loginDialog.clickSubmit();
         api.loginDialog.acceptTerms(shallBecomeOwner);
         if (anyWelcomeDialog !== 'THERE_WILL_BE_NO_WELCOME_DIALOG') {
           api.loginDialog.waitAndClickOkInWelcomeDialog();
         }
-        browser.waitUntilModalGone();
-        browser.waitUntilLoadingOverlayGone();
+        api.waitUntilModalGone();
+        api.waitUntilLoadingOverlayGone();
       },
 
       loginWithGmail: function(data: { email: string, password: string }, isInPopupAlready?: boolean) {
@@ -907,7 +1333,7 @@ function pagesFor(browser) {
 
         // Switch to a login popup window that got opened, for Google:
         if (!isInPopupAlready)
-          browser.swithToOtherTabOrWindow();
+          api.swithToOtherTabOrWindow();
 
         const emailInputSelector = 'input[type="email"]';
         const emailNext = '#identifierNext';
@@ -919,7 +1345,7 @@ function pagesFor(browser) {
         // to find out what'll happen.
         while (true) {
           if (api.loginDialog.loginPopupClosedBecauseAlreadyLoggedIn()) {
-            browser.switchBackToFirstTabOrWindow();
+            api.switchBackToFirstTabOrWindow();
             return;
           }
           try {
@@ -939,7 +1365,7 @@ function pagesFor(browser) {
           try {
             browser.pause(250);
             console.log(`typing Gmail email: ${data.email}...`);
-            browser.waitAndSetValue(emailInputSelector, data.email);
+            api.waitAndSetValue(emailInputSelector, data.email);
             break;
           }
           catch (dummy) {
@@ -951,16 +1377,16 @@ function pagesFor(browser) {
         browser.pause(500);
         if (browser.isExisting(emailNext)) {
           console.log(`clicking ${emailNext}...`);
-          browser.waitAndClick(emailNext);
+          api.waitAndClick(emailNext);
         }
 
         // Google does something weird here too, hmm.
-        browser.waitForVisible(passwordInputSelector, data.password);
+        api.waitForVisible(passwordInputSelector);
         while (true) {
           try {
             browser.pause(250);
             console.log("typing Gmail password...");
-            browser.waitAndSetValue(passwordInputSelector, data.password);
+            api.waitAndSetValue(passwordInputSelector, data.password);
             break;
           }
           catch (dummy) {
@@ -976,17 +1402,17 @@ function pagesFor(browser) {
         browser.pause(500);
         if (browser.isExisting(passwordNext)) {
           console.log(`clicking ${passwordNext}...`);
-          browser.waitAndClick(passwordNext);
+          api.waitAndClick(passwordNext);
         }
 
         /*
         browser.click('#signIn');
-        browser.waitForEnabled('#submit_approve_access');
+        api.waitForEnabled('#submit_approve_access');
         browser.click('#submit_approve_access'); */
 
         if (!isInPopupAlready) {
           console.log("switching back to first tab...");
-          browser.switchBackToFirstTabOrWindow();
+          api.switchBackToFirstTabOrWindow();
         }
       },
 
@@ -998,14 +1424,14 @@ function pagesFor(browser) {
         // Not just #e2eUsername, then might try to fill in the username in the create-password-
         // user fields which are still visible for a short moment. Dupl code (2QPKW02)
         console.log("typing Facebook user's new username...");
-        browser.waitAndSetValue('.esCreateUserDlg #e2eUsername', data.username);
+        api.waitAndSetValue('.esCreateUserDlg #e2eUsername', data.username);
         api.loginDialog.clickSubmit();
         api.loginDialog.acceptTerms(shallBecomeOwner);
         if (anyWelcomeDialog !== 'THERE_WILL_BE_NO_WELCOME_DIALOG') {
           api.loginDialog.waitAndClickOkInWelcomeDialog();
         }
-        browser.waitUntilModalGone();
-        browser.waitUntilLoadingOverlayGone();
+        api.waitUntilModalGone();
+        api.waitUntilLoadingOverlayGone();
       },
 
       loginWithFacebook: function(data: { email: string, password: string }, isInPopupAlready?: boolean) {
@@ -1015,13 +1441,13 @@ function pagesFor(browser) {
 
         // In Facebook's login popup window:
         if (!isInPopupAlready)
-          browser.swithToOtherTabOrWindow();
+          api.swithToOtherTabOrWindow();
 
         // We'll get logged in immediately, if we're already logged in to Facebook. Wait for
         // a short while to find out what'll happen.
         while (true) {
           if (api.loginDialog.loginPopupClosedBecauseAlreadyLoggedIn()) {
-            browser.switchBackToFirstTabOrWindow();
+            api.switchBackToFirstTabOrWindow();
             return;
           }
           try {
@@ -1036,9 +1462,9 @@ function pagesFor(browser) {
 
         console.log("typing Facebook user's email and password...");
         browser.pause(340); // so less risk Facebook think this is a computer?
-        browser.waitAndSetValue('#email', data.email);
+        api.waitAndSetValue('#email', data.email);
         browser.pause(380);
-        browser.waitAndSetValue('#pass', data.password);
+        api.waitAndSetValue('#pass', data.password);
         browser.pause(280);
 
         // Facebook recently changed from <input> to <button>. So just find anything with type=submit.
@@ -1052,7 +1478,7 @@ function pagesFor(browser) {
 
         if (!isInPopupAlready) {
           console.log("switching back to first tab...");
-          browser.switchBackToFirstTabOrWindow();
+          api.switchBackToFirstTabOrWindow();
         }
       },
 
@@ -1081,10 +1507,10 @@ function pagesFor(browser) {
       clickResetPasswordCloseDialogSwitchTab: function() {
         browser.click('.dw-reset-pswd');
         // The login dialog should close when we click the reset-password link. [5KWE02X]
-        browser.waitUntilModalGone();
-        browser.waitUntilLoadingOverlayGone();
-        browser.swithToOtherTabOrWindow();
-        browser.waitForVisible('#e2eRPP_emailI');
+        api.waitUntilModalGone();
+        api.waitUntilLoadingOverlayGone();
+        api.swithToOtherTabOrWindow();
+        api.waitForVisible('#e2eRPP_emailI');
       },
 
       clickSubmit: function() {
@@ -1092,13 +1518,13 @@ function pagesFor(browser) {
       },
 
       clickCancel: function() {
-        browser.waitAndClick('#e2eLD_Cancel');
-        browser.waitUntilModalGone();
+        api.waitAndClick('#e2eLD_Cancel');
+        api.waitUntilModalGone();
       },
 
       acceptTerms: function(isForSiteOwner?: boolean) {
-        browser.waitForVisible('#e_TermsL');
-        browser.waitForVisible('#e_PrivacyL');
+        api.waitForVisible('#e_TermsL');
+        api.waitForVisible('#e_PrivacyL');
         const termsLinkHtml = browser.getHTML('#e_TermsL');
         const privacyLinkHtml = browser.getHTML('#e_PrivacyL');
         if (isForSiteOwner) {
@@ -1110,7 +1536,7 @@ function pagesFor(browser) {
           assert(privacyLinkHtml.indexOf('/-/privacy-policy') >= 0);
         }
         setCheckbox('.s_TermsD_CB input', true);
-        browser.waitAndClick('#e_TermsD_B');
+        api.waitAndClick('#e_TermsD_B');
       },
 
       reopenToClearAnyError: function() {
@@ -1122,7 +1548,7 @@ function pagesFor(browser) {
 
     resetPasswordPage: {
       fillInAccountOwnerEmailAddress: function(emailAddress: string) {
-        browser.waitAndSetValue('#e2eRPP_emailI', emailAddress);
+        api.waitAndSetValue('#e2eRPP_emailI', emailAddress);
       },
 
       clickSubmit: function() {
@@ -1137,7 +1563,7 @@ function pagesFor(browser) {
       },
 
       editTitle: function(title: string) {
-        browser.waitAndSetValue('#e2eTitleInput', title);
+        api.waitAndSetValue('#e2eTitleInput', title);
       },
 
       save: function() {
@@ -1146,21 +1572,21 @@ function pagesFor(browser) {
       },
 
       waitForVisible: function() {
-        browser.waitForVisible('.dw-p-ttl h1');
+        api.waitForVisible('.dw-p-ttl h1');
       },
 
       openAboutAuthorDialog: function() {
         const selector = '.dw-ar-p-hd .esP_By';
-        browser.waitForVisible(selector);
+        api.waitForVisible(selector);
         api.topic.clickPostActionButton(selector);
-        browser.waitForVisible('.esUsrDlg');
+        api.waitForVisible('.esUsrDlg');
       },
 
       assertMatches: function(regex) {
-        browser.assertPageTitleMatches(regex);
+        api.assertPageTitleMatches(regex);
       },
 
-      // Also see browser.assertWholePageHidden().
+      // Also see api.assertWholePageHidden().
       assertPageHidden: function() {
         api.pageTitle.waitForVisible();
         assert(browser.isVisible('.dw-p-ttl .icon-eye-off'));
@@ -1177,9 +1603,9 @@ function pagesFor(browser) {
 
       changeStatusToPlanned: function() {
         const selector = '.icon-idea.dw-clickable';
-        browser.waitForVisible(selector);
+        api.waitForVisible(selector);
         api.topic.clickPostActionButton(selector);
-        browser.waitForVisible('.icon-check-dashed.dw-clickable');
+        api.waitForVisible('.icon-check-dashed.dw-clickable');
       },
     },
 
@@ -1188,13 +1614,13 @@ function pagesFor(browser) {
       clickEditIntroText: function() {
         api.waitAndClick('.esForumIntro_edit');
         api.waitAndClick('#e2eEID_EditIntroB');
-        browser.waitUntilModalGone();
+        api.waitUntilModalGone();
       },
 
       clickRemoveIntroText: function() {
         api.waitAndClick('.esForumIntro_edit');
         api.waitAndClick('#e2eEID_RemoveIntroB');
-        browser.waitUntilModalGone();
+        api.waitUntilModalGone();
       },
 
       clickViewCategories: function() {
@@ -1223,14 +1649,14 @@ function pagesFor(browser) {
 
       assertNoCreateTopicButton: function() {
         // Wait until the button bar has loaded.
-        browser.waitForVisible('#e2eViewCategoriesB');
+        api.waitForVisible('#e2eViewCategoriesB');
         assert(!browser.isVisible('#e2eCreateSth'));
       },
 
       listDeletedTopics: function() {
-        browser.waitAndClick('.esForum_filterBtn');
-        browser.waitAndClick('.s_F_BB_TF_Dd');
-        browser.forumTopicList.waitForTopics();
+        api.waitAndClick('.esForum_filterBtn');
+        api.waitAndClick('.s_F_BB_TF_Dd');
+        api.forumTopicList.waitForTopics();
       },
     },
 
@@ -1240,36 +1666,36 @@ function pagesFor(browser) {
       hiddenTopicTitleSelector: '.e2eTopicTitle a.icon-eye-off',
 
       waitUntilKnowsIsEmpty: function() {
-        browser.waitForVisible('#e2eF_NoTopics');
+        api.waitForVisible('#e2eF_NoTopics');
       },
 
       waitForTopics: function() {
-        browser.waitForVisible('.e2eF_T');
+        api.waitForVisible('.e2eF_T');
       },
 
       clickViewLatest: function() {
         api.waitAndClick('#e2eSortLatestB');
-        browser.waitUntilGone('.s_F_SI_TopB');
+        api.waitUntilGone('.s_F_SI_TopB');
       },
 
       clickViewTop: function() {
         api.waitAndClick('#e2eSortTopB');
-        browser.waitForVisible('.s_F_SI_TopB');
+        api.waitForVisible('.s_F_SI_TopB');
       },
 
       openAboutUserDialogForUsername: function(username: string) {
-        browser.waitAndClickFirst(`.edAvtr[title^="${username}"]`);
+        api.waitAndClickFirst(`.edAvtr[title^="${username}"]`);
       },
 
       goToTopic: function(title: string) {
-        browser.rememberCurrentUrl();
-        browser.waitForThenClickText(api.forumTopicList.titleSelector, title);
-        browser.waitForNewUrl();
-        browser.assertPageTitleMatches(title);
+        api.rememberCurrentUrl();
+        api.waitForThenClickText(api.forumTopicList.titleSelector, title);
+        api.waitForNewUrl();
+        api.assertPageTitleMatches(title);
       },
 
       assertNumVisible: function(howMany: number) {
-        browser.assertExactly(howMany, '.e2eTopicTitle');
+        api.assertExactly(howMany, '.e2eTopicTitle');
       },
 
       assertTopicTitlesAreAndOrder: function(titles: string[]) {
@@ -1289,21 +1715,21 @@ function pagesFor(browser) {
       },
 
       assertTopicVisible: function(title) {
-        browser.assertAnyTextMatches(api.forumTopicList.titleSelector, title, null, 'FAST');
-        browser.assertNoTextMatches(api.forumTopicList.hiddenTopicTitleSelector, title);
+        api.assertAnyTextMatches(api.forumTopicList.titleSelector, title, null, 'FAST');
+        api.assertNoTextMatches(api.forumTopicList.hiddenTopicTitleSelector, title);
       },
 
       assertTopicNrVisible: function(nr: number, title: string) {
-        browser.assertNthTextMatches(api.forumTopicList.titleSelector, nr, title);
-        browser.assertNoTextMatches(api.forumTopicList.hiddenTopicTitleSelector, title);
+        api.assertNthTextMatches(api.forumTopicList.titleSelector, nr, title);
+        api.assertNoTextMatches(api.forumTopicList.hiddenTopicTitleSelector, title);
       },
 
       assertTopicNotVisible: function(title) {
-        browser.assertNoTextMatches(api.forumTopicList.titleSelector, title);
+        api.assertNoTextMatches(api.forumTopicList.titleSelector, title);
       },
 
       assertTopicVisibleAsHidden: function(title) {
-        browser.assertAnyTextMatches(api.forumTopicList.hiddenTopicTitleSelector, title);
+        api.assertAnyTextMatches(api.forumTopicList.hiddenTopicTitleSelector, title);
       },
     },
 
@@ -1312,7 +1738,7 @@ function pagesFor(browser) {
       categoryNameSelector: '.esForum_cats_cat .forum-title',
 
       waitForCategories: function() {
-        browser.waitForVisible('.s_F_Cs');
+        api.waitForVisible('.s_F_Cs');
       },
 
       numCategoriesVisible: function(): number {
@@ -1324,65 +1750,58 @@ function pagesFor(browser) {
       },
 
       openCategory: function(categoryName: string) {
-        browser.rememberCurrentUrl();
-        browser.waitForThenClickText(api.forumCategoryList.categoryNameSelector, categoryName);
-        browser.waitForNewUrl();
-        browser.waitForVisible('.esForum_catsDrop');
-        browser.assertTextMatches('.esForum_catsDrop', categoryName);
+        api.rememberCurrentUrl();
+        api.waitForThenClickText(api.forumCategoryList.categoryNameSelector, categoryName);
+        api.waitForNewUrl();
+        api.waitForVisible('.esForum_catsDrop');
+        api.assertTextMatches('.esForum_catsDrop', categoryName);
       },
 
       assertCategoryNotFoundOrMayNotAccess: function() {
-        browser.assertAnyTextMatches('.dw-forum', 'EdE0CAT');
+        api.assertAnyTextMatches('.dw-forum', 'EdE0CAT');
       }
     },
 
 
     categoryDialog: {
       fillInFields: function(data) {
-        browser.waitAndSetValue('#e2eCatNameI', data.name);
+        api.waitAndSetValue('#e2eCatNameI', data.name);
         if (data.setAsDefault) {
           api.waitAndClick('#e2eSetDefCat');
         }
-        /*
-         browser.waitAndSetValue('#e2eUsername', data.username);
-         browser.waitAndSetValue('#e2eEmail', data.email);
-         browser.waitAndSetValue('#e2ePassword', data.password);
-         api.waitAndClick('#e2eSubmit');
-         browser.waitForVisible('#e2eNeedVerifyEmailDialog');
-         */
       },
 
       submit: function() {
         api.waitAndClick('#e2eSaveCatB');
-        browser.waitUntilModalGone();
-        browser.waitUntilLoadingOverlayGone();
+        api.waitUntilModalGone();
+        api.waitUntilLoadingOverlayGone();
       },
 
       setUnlisted: function(unlisted: boolean) {
         // for now, ignore 'unlisted == true/false'
-        browser.waitAndClick('#e2eShowUnlistedCB');
-        browser.waitAndClick('#e2eUnlistedCB');
+        api.waitAndClick('#e2eShowUnlistedCB');
+        api.waitAndClick('#e2eUnlistedCB');
       },
 
       openSecurityTab: function() {
-        browser.waitAndClick('#t_CD_Tabs-tab-2');
-        browser.waitForVisible('.s_CD_Sec_AddB');
+        api.waitAndClick('#t_CD_Tabs-tab-2');
+        api.waitForVisible('.s_CD_Sec_AddB');
       },
 
       securityTab: {
         setMayCreate: function(groupId: UserId, may: boolean) {
           // For now, just click once
-          browser.waitAndClick(`.s_PoP-Grp-${groupId} .s_PoP_Ps_P_CrPg input`);
+          api.waitAndClick(`.s_PoP-Grp-${groupId} .s_PoP_Ps_P_CrPg input`);
         },
 
         setMayReply: function(groupId: UserId, may: boolean) {
           // For now, just click once
-          browser.waitAndClick(`.s_PoP-Grp-${groupId} .s_PoP_Ps_P_Re input`);
+          api.waitAndClick(`.s_PoP-Grp-${groupId} .s_PoP_Ps_P_Re input`);
         },
 
         setMaySee: function(groupId: UserId, may: boolean) {
           // For now, just click once
-          browser.waitAndClick(`.s_PoP-Grp-${groupId} .s_PoP_Ps_P_See input`);
+          api.waitAndClick(`.s_PoP-Grp-${groupId} .s_PoP_Ps_P_See input`);
         },
       }
     },
@@ -1390,22 +1809,22 @@ function pagesFor(browser) {
 
     aboutUserDialog: {
       clickSendMessage: function() {
-        browser.rememberCurrentUrl();
+        api.rememberCurrentUrl();
         api.waitAndClick('#e2eUD_MessageB');
-        browser.waitForNewUrl();
+        api.waitForNewUrl();
       },
 
       clickViewProfile: function() {
-        browser.rememberCurrentUrl();
+        api.rememberCurrentUrl();
         api.waitAndClick('#e2eUD_ProfileB');
-        browser.waitForNewUrl();
+        api.waitForNewUrl();
       },
 
       clickRemoveFromPage: function() {
         api.waitAndClick('#e2eUD_RemoveB');
         // Later: browser.waitUntilModalGone();
         // But for now:  [5FKE0WY2]
-        browser.waitForVisible('.esStupidDlg');
+        api.waitForVisible('.esStupidDlg');
         browser.refresh();
       },
     },
@@ -1416,10 +1835,10 @@ function pagesFor(browser) {
         api.waitAndClick('#e2eAddUsD .Select-placeholder');
 
         // Clicking Return = complicated!  Only + \n  works in FF:
-        browser.waitAndSetValue('#e2eAddUsD .Select-input > input', username + '\n');
+        api.waitAndSetValue('#e2eAddUsD .Select-input > input', username + '\n');
 
         // Works in Chrome but not FF:
-        // browser.keys(['Return']);  — so we append \n above, work as a Return press.
+        // api.keys(['Return']);  — so we append \n above, work as a Return press.
 
         /* Need to?:
           if (browser.options.desiredCapabilities.browserName == "MicrosoftEdge")
@@ -1465,7 +1884,7 @@ function pagesFor(browser) {
         browser.click('#e2eAddUsD_SubmitB');
         // Later: browser.waitUntilModalGone();
         // But for now:  [5FKE0WY2]
-        browser.waitForVisible('.esStupidDlg');
+        api.waitForVisible('.esStupidDlg');
         browser.refresh();
       }
     },
@@ -1473,11 +1892,11 @@ function pagesFor(browser) {
 
     editor: {
       editTitle: function(title) {
-        browser.waitAndSetValue('.esEdtr_titleEtc_title', title);
+        api.waitAndSetValue('.esEdtr_titleEtc_title', title);
       },
 
       editText: function(text) {
-        browser.waitAndSetValue('.esEdtr_textarea', text);
+        api.waitAndSetValue('.esEdtr_textarea', text);
       },
 
       setTopicType: function(type: PageRole) {
@@ -1498,7 +1917,7 @@ function pagesFor(browser) {
           api.waitAndClick('.esPageRole_showMore');
         }
         api.waitAndClick(optionId);
-        browser.waitUntilModalGone();
+        api.waitUntilModalGone();
       },
 
       cancel: function() {
@@ -1508,7 +1927,7 @@ function pagesFor(browser) {
 
       save: function() {
         api.editor.clickSave();
-        browser.waitUntilLoadingOverlayGone();
+        api.waitUntilLoadingOverlayGone();
       },
 
       clickSave: function() {
@@ -1516,18 +1935,18 @@ function pagesFor(browser) {
       },
 
       saveWaitForNewPage: function() {
-        browser.rememberCurrentUrl();
+        api.rememberCurrentUrl();
         api.editor.save();
-        browser.waitForNewUrl();
+        api.waitForNewUrl();
       }
     },
 
 
     metabar: {
       clickLogout: function() {
-        browser.waitAndClick('.esMetabar .dw-a-logout');
-        browser.waitUntilGone('.esMetabar .dw-a-logout');
-        browser.waitForVisible('.esMetabar');
+        api.waitAndClick('.esMetabar .dw-a-logout');
+        api.waitUntilGone('.esMetabar .dw-a-logout');
+        api.waitForVisible('.esMetabar');
       }
     },
 
@@ -1540,7 +1959,7 @@ function pagesFor(browser) {
       },
 
       waitForLoaded: function() {
-        browser.waitForVisible('.dw-ar-t');
+        api.waitForVisible('.dw-ar-t');
       },
 
       assertPagePendingApprovalBodyHidden: function() {
@@ -1564,7 +1983,7 @@ function pagesFor(browser) {
       },
 
       waitForPostNrVisible: function(postNr) {
-        browser.waitForVisible('#post-' + postNr);
+        api.waitForVisible('#post-' + postNr);
       },
 
       postNrContains: function(postNr: PostNr, selector: string) {
@@ -1576,11 +1995,11 @@ function pagesFor(browser) {
       },
 
       assertPostTextMatches: function(postNr: PostNr, text: string) {
-        browser.assertTextMatches(api.topic.postBodySelector(postNr), text)
+        api.assertTextMatches(api.topic.postBodySelector(postNr), text)
       },
 
       waitUntilPostTextMatches: function(postNr: PostNr, text: string) {
-        browser.waitUntilTextMatches(api.topic.postBodySelector(postNr), text);
+        api.waitUntilTextMatches(api.topic.postBodySelector(postNr), text);
       },
 
       waitUntilTitleMatches: function(text: string) {
@@ -1588,7 +2007,7 @@ function pagesFor(browser) {
       },
 
       assertMetaPostTextMatches: function(postNr: PostNr, text: string) {
-        browser.assertTextMatches(`#post-${postNr} .s_MP_Text`, text)
+        api.assertTextMatches(`#post-${postNr} .s_MP_Text`, text)
       },
 
       topLevelReplySelector: '.dw-depth-1 > .dw-p',
@@ -1599,38 +2018,38 @@ function pagesFor(browser) {
       addBottomCommentSelector: '.s_APAs_ACBB',
 
       waitForReplyButtonAssertCommentsVisible: function() {
-        browser.waitForVisible(api.topic.anyReplyButtonSelector);
+        api.waitForVisible(api.topic.anyReplyButtonSelector);
         assert(browser.isVisible(api.topic.anyCommentSelector));
       },
 
       waitForReplyButtonAssertNoComments: function() {
-        browser.waitForVisible(api.topic.anyReplyButtonSelector);
+        api.waitForVisible(api.topic.anyReplyButtonSelector);
         assert(!browser.isVisible(api.topic.anyCommentSelector));
       },
 
       assertNumRepliesVisible: function(num: number) {
-        browser.waitForMyDataAdded();
-        browser.assertExactly(num, api.topic.replySelector);
+        api.waitForMyDataAdded();
+        api.assertExactly(num, api.topic.replySelector);
       },
 
       assertNumOrigPostRepliesVisible: function(num: number) {
-        browser.waitForMyDataAdded();
-        browser.assertExactly(num, api.topic.topLevelReplySelector);
+        api.waitForMyDataAdded();
+        api.assertExactly(num, api.topic.topLevelReplySelector);
       },
 
       assertNoReplyMatches: function(text) {
-        browser.waitForMyDataAdded();
-        browser.assertNoTextMatches(api.topic.allRepliesTextSelector, text);
+        api.waitForMyDataAdded();
+        api.assertNoTextMatches(api.topic.allRepliesTextSelector, text);
       },
 
       assertSomeReplyMatches: function(text) {
-        browser.waitForMyDataAdded();
-        browser.assertTextMatches(api.topic.allRepliesTextSelector, text);
+        api.waitForMyDataAdded();
+        api.assertTextMatches(api.topic.allRepliesTextSelector, text);
       },
 
       assertNoAuthorMissing: function() {
         // There's this error code if a post author isn't included on the page.
-        browser.topic.assertNoReplyMatches("EsE4FK07_");
+        api.topic.assertNoReplyMatches("EsE4FK07_");
       },
 
       getTopicAuthorUsernameInclAt: function(): string {
@@ -1658,7 +2077,7 @@ function pagesFor(browser) {
         browser.pause(150);
         if (browser.isVisible('.e_HelpOk')) {
           api.waitAndClick('.e_HelpOk');
-          browser.waitUntilModalGone();
+          api.waitUntilModalGone();
         }
       },
 
@@ -1730,9 +2149,9 @@ function pagesFor(browser) {
       _toggleMoreVote: function(postNr: PostNr, selector: string) {
         api.topic.clickMoreVotesForPostNr(postNr);
         // The vote button appears in a modal dropdown.
-        browser.waitAndClick('.esDropModal_content ' + selector);
-        browser.waitUntilModalGone();
-        browser.waitUntilLoadingOverlayGone();
+        api.waitAndClick('.esDropModal_content ' + selector);
+        api.waitUntilModalGone();
+        api.waitUntilLoadingOverlayGone();
       },
 
       canVoteLike: function(postNr: PostNr) {
@@ -1742,7 +2161,7 @@ function pagesFor(browser) {
 
       canVoteUnwanted: function(postNr: PostNr) {
         api.topic.clickMoreVotesForPostNr(postNr);
-        browser.waitForVisible('.esDropModal_content .dw-a-like');
+        api.waitForVisible('.esDropModal_content .dw-a-like');
         const canVote = browser.isVisible('.esDropModal_content .dw-a-unwanted');
         assert(false); // how close modal? to do... later when needed
         return canVote;
@@ -1757,9 +2176,9 @@ function pagesFor(browser) {
         api.topic.clickMoreForPostNr(postNr);
         api.waitAndClick('.dw-a-delete');
         api.waitAndClick('.dw-delete-post-dialog .e_YesDel');
-        browser.waitUntilGone('.dw-delete-post-dialog');
-        browser.waitUntilLoadingOverlayGone();
-        browser.waitForVisible(`#post-${postNr}.dw-p-dl`);
+        api.waitUntilGone('.dw-delete-post-dialog');
+        api.waitUntilLoadingOverlayGone();
+        api.waitForVisible(`#post-${postNr}.dw-p-dl`);
       },
 
       canSelectAnswer: function() {
@@ -1769,13 +2188,13 @@ function pagesFor(browser) {
       selectPostNrAsAnswer: function(postNr) {
         assert(!browser.isVisible(api.topic._makeUnsolveSelector(postNr)));
         api.topic.clickPostActionButton(api.topic._makeSolveSelector(postNr));
-        browser.waitForVisible(api.topic._makeUnsolveSelector(postNr));
+        api.waitForVisible(api.topic._makeUnsolveSelector(postNr));
       },
 
       unselectPostNrAsAnswer: function(postNr) {
         assert(!browser.isVisible(api.topic._makeSolveSelector(postNr)));
         api.topic.clickPostActionButton(api.topic._makeUnsolveSelector(postNr));
-        browser.waitForVisible(api.topic._makeSolveSelector(postNr));
+        api.waitForVisible(api.topic._makeSolveSelector(postNr));
       },
 
       _makeSolveSelector(postNr) {
@@ -1787,13 +2206,13 @@ function pagesFor(browser) {
       },
 
       closeTopic: function() {
-        browser.waitAndClick(api.topic._closeButtonSelector);
-        browser.waitForVisible(api.topic._reopenButtonSelector);
+        api.waitAndClick(api.topic._closeButtonSelector);
+        api.waitForVisible(api.topic._reopenButtonSelector);
       },
 
       reopenTopic: function() {
-        browser.waitAndClick(api.topic._reopenButtonSelector);
-        browser.waitForVisible(api.topic._closeButtonSelector);
+        api.waitAndClick(api.topic._reopenButtonSelector);
+        api.waitForVisible(api.topic._closeButtonSelector);
       },
 
       _closeButtonSelector: '.dw-ar-t > .esPA > .dw-a-close.icon-block',
@@ -1868,7 +2287,7 @@ function pagesFor(browser) {
         // and then we won't scroll down — but then just before `browser.waitAndClick`
         // they appear, so the click fails. That's why we try once more.
         //
-        browser.waitForVisible(buttonSelector);
+        api.waitForVisible(buttonSelector);
         for (let attemptNr = 1; attemptNr <= 2; ++attemptNr) {
           for (let i = 0; i < 20; ++i) {  // because FF sometimes won't realize it's done scrolling
             const buttonLocation = browser.getLocationInView(buttonSelector);
@@ -1930,10 +2349,6 @@ function pagesFor(browser) {
             browser.pause(200 + 50);
           }
           try {
-            // Now suddenly, after I upgraded to a newer Chrome version?, an elem-is-not-
-            // -clickable exception thrown by waitAndClick, does *not* get caught by this
-            // try-catch, *if* waitAndClick is added to `browser` as a command in commands.ts.
-            // So I moved it to the top of this file instead. [7KSU024]
             console.log(`clickPostActionButton: CLICK ${buttonSelector} [TyME2ECLICK]`);
             api._waitAndClickImpl(buttonSelector, opts);
             break;
@@ -1982,14 +2397,14 @@ function pagesFor(browser) {
 
     chat: {
       addChatMessage: function(text: string) {
-        browser.waitAndSetValue('.esC_Edtr_textarea', text);
+        api.waitAndSetValue('.esC_Edtr_textarea', text);
         api.waitAndClick('.esC_Edtr_SaveB');
-        browser.waitUntilLoadingOverlayGone();
+        api.waitUntilLoadingOverlayGone();
         // could verify visible
       },
 
       waitForNumMessages: function(howMany: number) {
-        browser.waitForAtLeast(howMany, '.esC_M');
+        api.waitForAtLeast(howMany, '.esC_M');
       }
     },
 
@@ -1997,12 +2412,12 @@ function pagesFor(browser) {
     customForm: {
       submit: function() {
         browser.click('form input[type="submit"]');
-        browser.waitAndAssertVisibleTextMatches('.esFormThanks', "Thank you");
+        api.waitAndAssertVisibleTextMatches('.esFormThanks', "Thank you");
       },
 
       assertNumSubmissionVisible: function(num: number) {
-        browser.waitForMyDataAdded();
-        browser.assertExactly(num, '.dw-p-flat');
+        api.waitForMyDataAdded();
+        api.assertExactly(num, '.dw-p-flat');
       },
     },
 
@@ -2022,8 +2437,8 @@ function pagesFor(browser) {
         api.searchResultsPage.waitForResults(phrase);
         // oops, search-search-loop needed ...
         // for now:
-        browser.waitForAtLeast(numPages, '.esSERP_Hit_PageTitle');
-        browser.assertExactly(numPages, '.esSERP_Hit_PageTitle');
+        api.waitForAtLeast(numPages, '.esSERP_Hit_PageTitle');
+        api.assertExactly(numPages, '.esSERP_Hit_PageTitle');
       },
 
       searchForWaitForResults: function(phrase: string) {
@@ -2036,7 +2451,7 @@ function pagesFor(browser) {
       searchForUntilNumPagesFound: function(phrase: string, numResultsToFind: number) {
         while (true) {
           api.searchResultsPage.searchForWaitForResults(phrase);
-          var numFound = api.searchResultsPage.countNumPagesFound_1();
+          const numFound = api.searchResultsPage.countNumPagesFound_1();
           if (numFound >= numResultsToFind) {
             assert(numFound === numResultsToFind);
             break;
@@ -2052,7 +2467,7 @@ function pagesFor(browser) {
       waitForResults: function(phrase: string) {
         // Later, check Nginx $request_id to find out if the page has been refreshed
         // unique request identifier generated from 16 random bytes, in hexadecimal (1.11.0).
-        browser.waitUntilTextMatches('#e2eSERP_SearchedFor', phrase);
+        api.waitUntilTextMatches('#e2eSERP_SearchedFor', phrase);
       },
 
       countNumPagesFound_1: function(): number {
@@ -2060,14 +2475,14 @@ function pagesFor(browser) {
       },
 
       goToSearchResult: function(linkText?: string) {
-        browser.rememberCurrentUrl();
+        api.rememberCurrentUrl();
         if (!linkText) {
           api.waitAndClick('.esSERP_Hit_PageTitle a');
         }
         else {
-          browser.waitForThenClickText('.esSERP_Hit_PageTitle a', linkText);
+          api.waitForThenClickText('.esSERP_Hit_PageTitle a', linkText);
         }
-        browser.waitForNewUrl();
+        api.waitForNewUrl();
       },
     },
 
@@ -2076,28 +2491,28 @@ function pagesFor(browser) {
       avatarAboutButtonsSelector: '.s_UP_AvtrAboutBtns',
 
       waitForName: function() {
-        browser.waitForVisible('.esUP_Un');
+        api.waitForVisible('.esUP_Un');
       },
 
       openActivityFor: function(who: string, origin?: string) {
-        browser.go((origin || '') + `/-/users/${who}/activity/posts`);
-        browser.waitUntilLoadingOverlayGone();
+        api.go((origin || '') + `/-/users/${who}/activity/posts`);
+        api.waitUntilLoadingOverlayGone();
       },
 
       openNotfsFor: function(who: string, origin?: string) {
-        browser.go((origin || '') + `/-/users/${who}/notifications`);
-        browser.waitUntilLoadingOverlayGone();
+        api.go((origin || '') + `/-/users/${who}/notifications`);
+        api.waitUntilLoadingOverlayGone();
       },
 
       openPreferencesFor: function(who: string, origin?: string) {
-        browser.go((origin || '') + `/-/users/${who}/preferences`);
-        browser.waitUntilLoadingOverlayGone();
+        api.go((origin || '') + `/-/users/${who}/preferences`);
+        api.waitUntilLoadingOverlayGone();
       },
 
       goToActivity: function() {
-        browser.waitAndClick('.e_UP_ActivityB');
-        browser.waitForVisible('.s_UP_Act_List');
-        browser.waitUntilLoadingOverlayGone();
+        api.waitAndClick('.e_UP_ActivityB');
+        api.waitForVisible('.s_UP_Act_List');
+        api.waitUntilLoadingOverlayGone();
       },
 
       goToPreferences: function() {
@@ -2106,38 +2521,38 @@ function pagesFor(browser) {
 
       // rename
       clickGoToPreferences: function() {
-        browser.waitAndClick('#e2eUP_PrefsB');
-        browser.waitForVisible('.e_UP_Prefs_FN');
-        browser.waitUntilLoadingOverlayGone();
+        api.waitAndClick('#e2eUP_PrefsB');
+        api.waitForVisible('.e_UP_Prefs_FN');
+        api.waitUntilLoadingOverlayGone();
       },
 
       isNotfsTabVisible: function() {
         // The activity tab is always visible, if the notfs tab can possibly be visible.
-        browser.waitForVisible('.e_UP_ActivityB');
+        api.waitForVisible('.e_UP_ActivityB');
         return browser.isVisible('.e_UP_NotfsB');
       },
 
       isPrefsTabVisible: function() {
         // The activity tab is always visible, if the preferences tab can possibly be visible.
-        browser.waitForVisible('.e_UP_ActivityB');
+        api.waitForVisible('.e_UP_ActivityB');
         return browser.isVisible('#e2eUP_PrefsB');
       },
 
       assertIsMyProfile: function() {
-        browser.waitForVisible('.esUP_Un');
+        api.waitForVisible('.esUP_Un');
         assert(browser.isVisible('.esProfile_isYou'));
       },
 
       assertUsernameIs: function(username: string) {
-        browser.assertTextMatches('.esUP_Un', username);
+        api.assertTextMatches('.esUP_Un', username);
       },
 
       assertFullNameIs: function(name: string) {
-        browser.assertTextMatches('.esUP_FN', name);
+        api.assertTextMatches('.esUP_FN', name);
       },
 
       assertFullNameIsNot: function(name: string) {
-        browser.assertNoTextMatches('.esUP_FN', name);
+        api.assertNoTextMatches('.esUP_FN', name);
       },
 
       clickSendMessage: function() {
@@ -2146,63 +2561,63 @@ function pagesFor(browser) {
 
       activity: {
         switchToPosts: function(opts: { shallFindPosts: boolean | 'NoSinceActivityHidden' }) {
-          browser.waitAndClick('.s_UP_Act_Nav_PostsB');
+          api.waitAndClick('.s_UP_Act_Nav_PostsB');
           if (opts.shallFindPosts === 'NoSinceActivityHidden') {
             api.userProfilePage.activity.posts.waitForNothingToShow();
           }
           else if (opts.shallFindPosts) {
-            browser.waitForVisible('.s_UP_Act_Ps');
-            browser.waitForVisible('.s_UP_Act_Ps_P');
+            api.waitForVisible('.s_UP_Act_Ps');
+            api.waitForVisible('.s_UP_Act_Ps_P');
           }
           else {
             api.userProfilePage.activity.posts.waitForNoPosts();
           }
-          browser.waitUntilLoadingOverlayGone();
+          api.waitUntilLoadingOverlayGone();
         },
 
         switchToTopics: function(opts: { shallFindTopics: boolean | 'NoSinceActivityHidden' }) {
-          browser.waitAndClick('.s_UP_Act_Nav_TopicsB');
-          browser.waitForVisible('.s_UP_Act_Ts');
+          api.waitAndClick('.s_UP_Act_Nav_TopicsB');
+          api.waitForVisible('.s_UP_Act_Ts');
           if (opts.shallFindTopics === 'NoSinceActivityHidden') {
             api.userProfilePage.activity.topics.waitForNothingToShow();
           }
           else if (opts.shallFindTopics) {
-            browser.waitForVisible('.e2eTopicTitle');
+            api.waitForVisible('.e2eTopicTitle');
           }
           else {
             api.userProfilePage.activity.topics.waitForNoTopics();
           }
-          browser.waitUntilLoadingOverlayGone();
+          api.waitUntilLoadingOverlayGone();
         },
 
         posts: {
           postSelector: '.s_UP_Act_Ps_P .dw-p-bd',
 
           waitForNothingToShow: function() {
-            browser.waitForVisible('.s_UP_Act_List .e_NothingToShow');
+            api.waitForVisible('.s_UP_Act_List .e_NothingToShow');
           },
 
           waitForNoPosts: function() {
-            browser.waitForVisible('.e_NoPosts');
+            api.waitForVisible('.e_NoPosts');
           },
 
           assertExactly: function(num: number) {
-            browser.assertExactly(num, api.userProfilePage.activity.posts.postSelector);
+            api.assertExactly(num, api.userProfilePage.activity.posts.postSelector);
           },
 
           // Do this separately, because can take rather long (suprisingly?).
           waitForPostTextsVisible: function() {
-            browser.waitForVisible(api.userProfilePage.activity.posts.postSelector);
+            api.waitForVisible(api.userProfilePage.activity.posts.postSelector);
           },
 
           assertPostTextVisible: function(postText: string) {
             let selector = api.userProfilePage.activity.posts.postSelector;
-            browser.assertAnyTextMatches(selector, postText, null, 'FAST');
+            api.assertAnyTextMatches(selector, postText, null, 'FAST');
           },
 
           assertPostTextAbsent: function(postText: string) {
             let selector = api.userProfilePage.activity.posts.postSelector;
-            browser.assertNoTextMatches(selector, postText);
+            api.assertNoTextMatches(selector, postText);
           },
         },
 
@@ -2210,84 +2625,84 @@ function pagesFor(browser) {
           topicsSelector: '.s_UP_Act_Ts .e2eTopicTitle',
 
           waitForNothingToShow: function() {
-            browser.waitForVisible('.s_UP_Act_List .e_NothingToShow');
+            api.waitForVisible('.s_UP_Act_List .e_NothingToShow');
           },
 
           waitForNoTopics: function() {
-            browser.waitForVisible('.e_NoTopics');
+            api.waitForVisible('.e_NoTopics');
           },
 
           assertExactly: function(num: number) {
-            browser.assertExactly(num, api.userProfilePage.activity.topics.topicsSelector);
+            api.assertExactly(num, api.userProfilePage.activity.topics.topicsSelector);
           },
 
           waitForTopicTitlesVisible: function() {
-            browser.waitForVisible(api.userProfilePage.activity.topics.topicsSelector);
+            api.waitForVisible(api.userProfilePage.activity.topics.topicsSelector);
           },
 
           assertTopicTitleVisible: function(title: string) {
             let selector = api.userProfilePage.activity.topics.topicsSelector;
-            browser.assertAnyTextMatches(selector, title, null, 'FAST');
+            api.assertAnyTextMatches(selector, title, null, 'FAST');
           },
 
           assertTopicTitleAbsent: function(title: string) {
             let selector = api.userProfilePage.activity.topics.topicsSelector;
-            browser.assertNoTextMatches(selector, title);
+            api.assertNoTextMatches(selector, title);
           },
         }
       },
 
       notfs: {
         waitUntilKnowsIsEmpty: function() {
-          browser.waitForVisible('.e_UP_Notfs_None');
+          api.waitForVisible('.e_UP_Notfs_None');
         },
 
         waitUntilSeesNotfs: function() {
-          browser.waitForVisible('.esUP .esNotfs li a');
+          api.waitForVisible('.esUP .esNotfs li a');
         },
 
         openPageNotfWithText: function(text) {
-          browser.rememberCurrentUrl();
-          browser.waitForThenClickText('.esNotf_page', text);
-          browser.waitForNewUrl();
+          api.rememberCurrentUrl();
+          api.waitForThenClickText('.esNotf_page', text);
+          api.waitForNewUrl();
         },
 
         assertMayNotSeeNotfs: function() {
-          browser.waitForVisible('.e_UP_Notfs_Err');
+          api.waitForVisible('.e_UP_Notfs_Err');
           browser.assertTextMatches('.e_UP_Notfs_Err', 'EdE7WK2L_');
         }
       },
 
       preferences: {
         switchToEmailsLogins: function() {
-          browser.waitAndClick('.s_UP_Prf_Nav_EmLgL');
-          browser.waitForVisible('.s_UP_EmLg_EmL');
-          browser.waitUntilLoadingOverlayGone();
+          api.waitAndClick('.s_UP_Prf_Nav_EmLgL');
+          api.waitForVisible('.s_UP_EmLg_EmL');
+          api.waitUntilLoadingOverlayGone();
         },
 
         switchToAbout: function() {
-          browser.waitAndClick('.s_UP_Prf_Nav_AbtL');
-          browser.waitForVisible('.e_UP_Prefs_FN');
+          api.waitAndClick('.s_UP_Prf_Nav_AbtL');
+          api.waitForVisible('.e_UP_Prefs_FN');
         },
 
         switchToPrivacy: function() {
-          browser.waitAndClick('.e_UP_Prf_Nav_PrivL');
-          browser.waitForVisible('.e_HideActivityAllCB');
+          api.waitAndClick('.e_UP_Prf_Nav_PrivL');
+          api.waitForVisible('.e_HideActivityAllCB');
         },
 
         // ---- Should be wrapped in `about { .. }`:
 
         setFullName: function(fullName: string) {
-          browser.waitAndSetValue('.e_UP_Prefs_FN input', fullName);
+          api.waitAndSetValue('.e_UP_Prefs_FN input', fullName);
         },
 
         startChangingUsername: function(username: string) {
-          browser.waitAndClick('.s_UP_Prefs_ChangeUNB');
+          api.waitAndClick('.s_UP_Prefs_ChangeUNB');
           api.stupidDialog.close();
         },
 
         setUsername: function(username: string) {
-          browser.waitAndSetValue('.s_UP_Prefs_UN input', username);
+          api.waitAndSetValue('.s_UP_Prefs_UN input', username);
         },
 
         setSummaryEmailsEnabled: function(enabled: boolean) {
@@ -2296,12 +2711,12 @@ function pagesFor(browser) {
 
         save: function() {
           api.userProfilePage.preferences.clickSave();
-          browser.waitUntilModalGone();
-          browser.waitUntilLoadingOverlayGone();
+          api.waitUntilModalGone();
+          api.waitUntilLoadingOverlayGone();
         },
 
         clickSave: function() {
-          browser.waitAndClick('#e2eUP_Prefs_SaveB');
+          api.waitAndClick('#e2eUP_Prefs_SaveB');
         },
 
         // ---- /END should be wrapped in `about { .. }`.
@@ -2317,14 +2732,14 @@ function pagesFor(browser) {
 
           savePrivacySettings: function() {
             dieIf(browser.isVisible('.e_Saved'), 'TyE6UKHRQP4'); // unimplemented
-            browser.waitAndClick('.e_SavePrivacy');
-            browser.waitForVisible('.e_Saved');
+            api.waitAndClick('.e_SavePrivacy');
+            api.waitForVisible('.e_Saved');
           },
         },
 
         emailsLogins: {
           getEmailAddress: function() {
-            browser.waitForVisible('.s_UP_EmLg_EmL_It_Em');
+            api.waitForVisible('.s_UP_EmLg_EmL_It_Em');
             return browser.getText('.s_UP_EmLg_EmL_It_Em');
           },
 
@@ -2332,7 +2747,7 @@ function pagesFor(browser) {
                   opts: { shallBeVerified?: boolean } = {}) {
             const verified = opts.shallBeVerified ? '.e_EmVerfd' : (
               opts.shallBeVerified === false ? '.e_EmNotVerfd' : '');
-            browser.waitUntilTextMatches('.s_UP_EmLg_EmL_It_Em' + verified, addrRegexStr);
+            api.waitUntilTextMatches('.s_UP_EmLg_EmL_It_Em' + verified, addrRegexStr);
           },
 
           addEmailAddress: function(address) {
@@ -2343,27 +2758,27 @@ function pagesFor(browser) {
           },
 
           clickAddEmailAddress: function() {
-            browser.waitAndClick('.e_AddEmail');
-            browser.waitForVisible('.e_NewEmail input');
+            api.waitAndClick('.e_AddEmail');
+            api.waitForVisible('.e_NewEmail input');
           },
 
           typeNewEmailAddress: function(emailAddress) {
-            browser.waitAndSetValue('.e_NewEmail input', emailAddress);
+            api.waitAndSetValue('.e_NewEmail input', emailAddress);
           },
 
           saveNewEmailAddress: function() {
-            browser.waitAndClick('.e_SaveEmB');
-            browser.waitForVisible('.s_UP_EmLg_EmAdded');
+            api.waitAndClick('.e_SaveEmB');
+            api.waitForVisible('.s_UP_EmLg_EmAdded');
           },
 
           canRemoveEmailAddress: function() {
-            browser.waitForVisible('.e_AddEmail');
+            api.waitForVisible('.e_AddEmail');
             // Now any remove button should have appeared.
             return browser.isVisible('.e_RemoveEmB');
           },
 
           removeOneEmailAddress: function() {
-            browser.waitAndClick('.e_RemoveEmB');
+            api.waitAndClick('.e_RemoveEmB');
             while (browser.isVisible('.e_RemoveEmB')) {
               browser.pause(200);
             }
@@ -2371,13 +2786,13 @@ function pagesFor(browser) {
 
           canMakeOtherEmailPrimary: function() {
             // Only call this function if another email has been added (then there's a Remove button).
-            browser.waitForVisible('.e_RemoveEmB');
+            api.waitForVisible('.e_RemoveEmB');
             // Now the make-primary button would also have appeared, if it's here.
             return browser.isVisible('.e_MakeEmPrimaryB');
           },
 
           makeOtherEmailPrimary: function() {
-            browser.waitAndClick('.e_MakeEmPrimaryB');
+            api.waitAndClick('.e_MakeEmPrimaryB');
           }
         }
       }
@@ -2386,25 +2801,25 @@ function pagesFor(browser) {
 
     hasVerifiedEmailPage: {
       waitUntilLoaded: function(opts: { needToLogin: boolean }) {
-        browser.waitForVisible('.e_HasVerifiedEmail');
-        browser.waitForVisible('.e_ViewProfileL');
-        browser.waitForVisible('.e_HomepageL');
+        api.waitForVisible('.e_HasVerifiedEmail');
+        api.waitForVisible('.e_ViewProfileL');
+        api.waitForVisible('.e_HomepageL');
         assert(opts.needToLogin === browser.isVisible('.e_NeedToLogin'));
       },
 
       goToHomepage: function() {
-        browser.waitAndClick('.e_HomepageL');
+        api.waitAndClick('.e_HomepageL');
       },
 
       goToProfile: function() {
-        browser.waitAndClick('.e_ViewProfileL');
+        api.waitAndClick('.e_ViewProfileL');
       }
     },
 
 
     flagDialog: {
       waitUntilFadedIn: function() {
-        browser.waitUntilDoesNotMove('.e_FD_InaptRB');
+        api.waitUntilDoesNotMove('.e_FD_InaptRB');
       },
 
       clickInappropriate: function() {
@@ -2413,8 +2828,8 @@ function pagesFor(browser) {
 
       submit: function() {
         api.waitAndClick('.e_FD_SubmitB');
-        browser.waitUntilLoadingOverlayGone();
-        // Don't: browser.waitUntilModalGone(), because now the stupid-dialog pop ups
+        api.waitUntilLoadingOverlayGone();
+        // Don't: api.waitUntilModalGone(), because now the stupid-dialog pop ups
         // and says "Thanks", and needs to be closed.
       },
     },
@@ -2427,33 +2842,33 @@ function pagesFor(browser) {
 
       close: function() {
         api.stupidDialog.clickClose();
-        browser.waitUntilModalGone();
+        api.waitUntilModalGone();
       },
     },
 
 
     adminArea: {
       waitAssertVisible: function() {
-        browser.waitForVisible('h1.esTopbar_custom_title');
-        browser.assertTextMatches('h1', "Admin Area");
+        api.waitForVisible('h1.esTopbar_custom_title');
+        api.assertTextMatches('h1', "Admin Area");
       },
 
       clickLeaveAdminArea: function() {
-        browser.rememberCurrentUrl();
+        api.rememberCurrentUrl();
         api.waitAndClick('.esTopbar_custom_backToSite');
-        browser.waitForNewUrl();
+        api.waitForNewUrl();
       },
 
       goToLoginSettings: function(origin?: string) {
-        browser.go((origin || '') + '/-/admin/settings/login');
+        api.go((origin || '') + '/-/admin/settings/login');
       },
 
       goToUsersEnabled: function(origin?: string) {
-        browser.go((origin || '') + '/-/admin/users');
+        api.go((origin || '') + '/-/admin/users');
       },
 
       goToReview: function(origin?: string) {
-        browser.go((origin || '') + '/-/admin/review/all');
+        api.go((origin || '') + '/-/admin/review/all');
         api.adminArea.review.waitUntilLoaded();
         // Because of React? bug workaround, everything might unmount for a moment.
         // Wait for it to reappear. [5QKBRQ]
@@ -2464,17 +2879,17 @@ function pagesFor(browser) {
       settings: {
         clickSaveAll: function() {
           api.waitAndClick('.esA_SaveBar_SaveAllB');
-          browser.waitUntilLoadingOverlayGone();
+          api.waitUntilLoadingOverlayGone();
         },
 
         clickLegalNavLink: function() {
           api.waitAndClick('#e2eAA_Ss_LegalL');
-          browser.waitForVisible('#e2eAA_Ss_OrgNameTI');
+          api.waitForVisible('#e2eAA_Ss_OrgNameTI');
         },
 
         clickLoginNavLink: function() {
           api.waitAndClick('#e2eAA_Ss_LoginL');
-          browser.waitForVisible('#e2eLoginRequiredCB');
+          api.waitForVisible('#e2eLoginRequiredCB');
         },
 
         clickModerationNavLink: function() {
@@ -2495,11 +2910,11 @@ function pagesFor(browser) {
 
         legal: {
           editOrgName: function(newName: string) {
-            browser.waitAndSetValue('#e2eAA_Ss_OrgNameTI', newName);
+            api.waitAndSetValue('#e2eAA_Ss_OrgNameTI', newName);
           },
 
           editOrgNameShort: function(newName: string) {
-            browser.waitAndSetValue('#e2eAA_Ss_OrgNameShortTI', newName);
+            api.waitAndSetValue('#e2eAA_Ss_OrgNameShortTI', newName);
           },
         },
 
@@ -2532,7 +2947,7 @@ function pagesFor(browser) {
         sendEmVerEmButtonSelector: '.s_SendEmVerifEmB',
 
         waitForLoaded: function() {
-          browser.waitForVisible('.esA_Us_U_Rows');
+          api.waitForVisible('.esA_Us_U_Rows');
         },
 
         assertEnabled: function() {
@@ -2550,15 +2965,15 @@ function pagesFor(browser) {
 
         setEmailToVerified: function(verified: boolean) {
           const u = api.adminArea.user;
-          browser.waitAndClick(
+          api.waitAndClick(
               verified ? u.setEmailVerifiedButtonSelector : u.setEmailNotVerifiedButtonSelector);
           // Wait for the request to complete — then, the opposite buttons will be shown:
-          browser.waitForVisible(
+          api.waitForVisible(
               verified ? u.setEmailNotVerifiedButtonSelector : u.setEmailVerifiedButtonSelector);
         },
 
         resendEmailVerifEmail: function () {
-          browser.waitAndClick(api.adminArea.user.sendEmVerEmButtonSelector);
+          api.waitAndClick(api.adminArea.user.sendEmVerEmButtonSelector);
         },
 
         assertDisabledBecauseNotYetApproved: function() {
@@ -2598,74 +3013,74 @@ function pagesFor(browser) {
         },
 
         approveUser: function() {
-          browser.waitAndClick('.e_Appr_ApprB');
-          browser.waitForVisible('.e_Appr_Yes');
+          api.waitAndClick('.e_Appr_ApprB');
+          api.waitForVisible('.e_Appr_Yes');
         },
 
         rejectUser: function() {
-          browser.waitAndClick('.e_Appr_RejB');
-          browser.waitForVisible('.e_Appr_No');
+          api.waitAndClick('.e_Appr_RejB');
+          api.waitForVisible('.e_Appr_No');
         },
 
         undoApproveOrReject: function() {
-          browser.waitAndClick('.e_Appr_UndoB');
-          browser.waitForVisible('.e_Appr_Undecided');
+          api.waitAndClick('.e_Appr_UndoB');
+          api.waitForVisible('.e_Appr_Undecided');
         },
 
         suspendUser: function(opts: { days: number, reason: string } = { days: 10, reason: "Because." }) {
-          browser.waitAndClick('.e_Suspend');
-          browser.waitUntilDoesNotMove('.e_SuspDays');
-          browser.waitAndSetValue('.e_SuspDays input', opts.days);
-          browser.waitAndSetValue('.e_SuspReason input', opts.reason);
-          browser.waitAndClick('.e_DoSuspendB');
-          browser.waitForVisible('.e_Unuspend');
+          api.waitAndClick('.e_Suspend');
+          api.waitUntilDoesNotMove('.e_SuspDays');
+          api.waitAndSetValue('.e_SuspDays input', opts.days);
+          api.waitAndSetValue('.e_SuspReason input', opts.reason);
+          api.waitAndClick('.e_DoSuspendB');
+          api.waitForVisible('.e_Unuspend');
         },
 
         unsuspendUser: function() {
-          browser.waitAndClick('.e_Unuspend');
-          browser.waitForVisible('.e_Suspend');
+          api.waitAndClick('.e_Unuspend');
+          api.waitForVisible('.e_Suspend');
         },
 
         markAsMildThreat: function() {
-          browser.waitAndClick('.e_ThreatLvlB');
-          browser.waitAndClick('.e_MildThreatB');
-          browser.waitForVisible('.e_ThreatLvlIsLkd');
+          api.waitAndClick('.e_ThreatLvlB');
+          api.waitAndClick('.e_MildThreatB');
+          api.waitForVisible('.e_ThreatLvlIsLkd');
         },
 
         markAsModerateThreat: function() {
-          browser.waitAndClick('.e_ThreatLvlB');
-          browser.waitAndClick('.e_ModerateThreatB');
-          browser.waitForVisible('.e_ThreatLvlIsLkd');
+          api.waitAndClick('.e_ThreatLvlB');
+          api.waitAndClick('.e_ModerateThreatB');
+          api.waitForVisible('.e_ThreatLvlIsLkd');
         },
 
         unlockThreatLevel: function() {
-          browser.waitAndClick('.e_ThreatLvlB');
-          browser.waitAndClick('.e_UnlockThreatB');
-          browser.waitForVisible('.e_ThreatLvlNotLkd');
+          api.waitAndClick('.e_ThreatLvlB');
+          api.waitAndClick('.e_UnlockThreatB');
+          api.waitForVisible('.e_ThreatLvlNotLkd');
         },
 
         grantAdmin: function() {
-          browser.waitForVisible('.e_Adm-No');
-          browser.waitAndClick('.e_ToggleAdminB');
-          browser.waitForVisible('.e_Adm-Yes');
+          api.waitForVisible('.e_Adm-No');
+          api.waitAndClick('.e_ToggleAdminB');
+          api.waitForVisible('.e_Adm-Yes');
         },
 
         revokeAdmin: function() {
-          browser.waitForVisible('.e_Adm-Yes');
-          browser.waitAndClick('.e_ToggleAdminB');
-          browser.waitForVisible('.e_Adm-No');
+          api.waitForVisible('.e_Adm-Yes');
+          api.waitAndClick('.e_ToggleAdminB');
+          api.waitForVisible('.e_Adm-No');
         },
 
         grantModerator: function() {
-          browser.waitForVisible('.e_Mod-No');
-          browser.waitAndClick('.e_ToggleModB');
-          browser.waitForVisible('.e_Mod-Yes');
+          api.waitForVisible('.e_Mod-No');
+          api.waitAndClick('.e_ToggleModB');
+          api.waitForVisible('.e_Mod-Yes');
         },
 
         revokeModerator: function() {
-          browser.waitForVisible('.e_Mod-Yes');
-          browser.waitAndClick('.e_ToggleModB');
-          browser.waitForVisible('.e_Mod-No');
+          api.waitForVisible('.e_Mod-Yes');
+          api.waitAndClick('.e_ToggleModB');
+          api.waitForVisible('.e_Mod-No');
         },
       },
 
@@ -2675,15 +3090,15 @@ function pagesFor(browser) {
         waitingUsersTabSelector: '.e_WaitingUsB',
 
         waitForLoaded: function() {
-          browser.waitForVisible('.e_AdminUsersList');
+          api.waitForVisible('.e_AdminUsersList');
         },
 
         goToUser: function(user: string | Member) {
           const username = _.isString(user) ? user : user.username;
-          browser.rememberCurrentUrl();
-          browser.waitForThenClickText(api.adminArea.users.usernameSelector, username);
-          browser.waitForNewUrl();
-          browser.waitAndAssertVisibleTextMatches('.e_A_Us_U_Username', username);
+          api.rememberCurrentUrl();
+          api.waitForThenClickText(api.adminArea.users.usernameSelector, username);
+          api.waitForNewUrl();
+          api.waitAndAssertVisibleTextMatches('.e_A_Us_U_Username', username);
         },
 
         assertUserListEmpty: function(member: Member) {
@@ -2693,17 +3108,17 @@ function pagesFor(browser) {
 
         assertUserListed: function(member: Member) {
           api.adminArea.users.waitForLoaded();
-          browser.assertAnyTextMatches(api.adminArea.users.usernameSelector, member.username);
+          api.assertAnyTextMatches(api.adminArea.users.usernameSelector, member.username);
         },
 
         assertUserAbsent: function(member: Member) {
           api.adminArea.users.waitForLoaded();
-          browser.assertNoTextMatches(api.adminArea.users.usernameSelector, member.username);
+          api.assertNoTextMatches(api.adminArea.users.usernameSelector, member.username);
         },
 
         asserExactlyNumUsers: function(num: number) {
           api.adminArea.users.waitForLoaded();
-          browser.assertExactly(num, api.adminArea.users.usernameSelector);
+          api.assertExactly(num, api.adminArea.users.usernameSelector);
         },
 
         // Works only if exactly 1 user listed.
@@ -2721,75 +3136,75 @@ function pagesFor(browser) {
         },
 
         switchToEnabled: function() {
-          browser.waitAndClick(api.adminArea.users.enabledUsersTabSelector);
-          browser.waitForVisible('.e_EnabledUsersIntro');
+          api.waitAndClick(api.adminArea.users.enabledUsersTabSelector);
+          api.waitForVisible('.e_EnabledUsersIntro');
           api.adminArea.users.waitForLoaded();
         },
 
         switchToWaiting: function() {
-          browser.waitAndClick(api.adminArea.users.waitingUsersTabSelector);
-          browser.waitForVisible('.e_WaitingUsersIntro');
+          api.waitAndClick(api.adminArea.users.waitingUsersTabSelector);
+          api.waitForVisible('.e_WaitingUsersIntro');
           api.adminArea.users.waitForLoaded();
         },
 
         isWaitingTabVisible: function() {
-          browser.waitForVisible(api.adminArea.users.enabledUsersTabSelector);
+          api.waitForVisible(api.adminArea.users.enabledUsersTabSelector);
           return browser.isVisible(api.adminArea.users.waitingUsersTabSelector);
         },
 
         switchToNew: function() {
-          browser.waitAndClick('.e_NewUsB');
-          browser.waitForVisible('.e_NewUsersIntro');
+          api.waitAndClick('.e_NewUsB');
+          api.waitForVisible('.e_NewUsersIntro');
           api.adminArea.users.waitForLoaded();
         },
 
         switchToStaff: function() {
-          browser.waitAndClick('.e_StaffUsB');
-          browser.waitForVisible('.e_StaffUsersIntro');
+          api.waitAndClick('.e_StaffUsB');
+          api.waitForVisible('.e_StaffUsersIntro');
           api.adminArea.users.waitForLoaded();
         },
 
         switchToSuspended: function() {
-          browser.waitAndClick('.e_SuspendedUsB');
-          browser.waitForVisible('.e_SuspendedUsersIntro');
+          api.waitAndClick('.e_SuspendedUsB');
+          api.waitForVisible('.e_SuspendedUsersIntro');
           api.adminArea.users.waitForLoaded();
         },
 
         switchToWatching: function() {
-          browser.waitAndClick('.e_WatchingUsB');
-          browser.waitForVisible('.e_ThreatsUsersIntro');
+          api.waitAndClick('.e_WatchingUsB');
+          api.waitForVisible('.e_ThreatsUsersIntro');
           api.adminArea.users.waitForLoaded();
         },
 
         switchToInvite: function() {
-          browser.waitAndClick('.e_InvitedUsB');
+          api.waitAndClick('.e_InvitedUsB');
           // When this elem visible, any invited-users-data has also been loaded.
-          browser.waitForVisible('.s_InvsL');
+          api.waitForVisible('.s_InvsL');
         },
 
         waiting: {
           undoSelector: '.e_UndoApprRjctB',
 
           approveFirstListedUser: function() {
-            browser.waitAndClickFirst('.e_ApproveUserB');
-            browser.waitForVisible(api.adminArea.users.waiting.undoSelector);
+            api.waitAndClickFirst('.e_ApproveUserB');
+            api.waitForVisible(api.adminArea.users.waiting.undoSelector);
           },
 
           rejectFirstListedUser: function() {
-            browser.waitAndClickFirst('.e_RejectUserB');
-            browser.waitForVisible(api.adminArea.users.waiting.undoSelector);
+            api.waitAndClickFirst('.e_RejectUserB');
+            api.waitForVisible(api.adminArea.users.waiting.undoSelector);
           },
 
           undoApproveOrReject: function() {
-            browser.waitAndClickFirst(api.adminArea.users.waiting.undoSelector);
-            browser.waitUntilGone(api.adminArea.users.waiting.undoSelector);
+            api.waitAndClickFirst(api.adminArea.users.waiting.undoSelector);
+            api.waitUntilGone(api.adminArea.users.waiting.undoSelector);
           },
         }
       },
 
       review: {
         waitUntilLoaded: function() {
-          browser.waitForVisible('.e_A_Rvw, .esLD');
+          api.waitForVisible('.e_A_Rvw, .esLD');
         },
 
         playTimePastUndo: function() {
@@ -2823,7 +3238,7 @@ function pagesFor(browser) {
                 break;
             }
           }
-          browser.waitUntilLoadingOverlayGone();
+          api.waitUntilLoadingOverlayGone();
         },
 
         goToPostForTaskIndex: function(index: number) {
@@ -2834,20 +3249,20 @@ function pagesFor(browser) {
 
         approvePostForMostRecentTask: function() {
           api.topic.clickPostActionButton('.e_A_Rvw_Tsk_AcptB', { clickFirst: true });
-          browser.waitUntilModalGone();
-          browser.waitUntilLoadingOverlayGone();
+          api.waitUntilModalGone();
+          api.waitUntilLoadingOverlayGone();
         },
 
         approvePostForTaskIndex: (index: number) => {
           api.topic.clickPostActionButton(`.e_RT-Ix-${index} .e_A_Rvw_Tsk_AcptB`);
-          browser.waitUntilModalGone();
-          browser.waitUntilLoadingOverlayGone();
+          api.waitUntilModalGone();
+          api.waitUntilLoadingOverlayGone();
         },
 
         rejectDeleteTaskIndex: (index: number) => {
           api.topic.clickPostActionButton(`.e_RT-Ix-${index} .e_A_Rvw_Tsk_RjctB`);
-          browser.waitUntilModalGone();
-          browser.waitUntilLoadingOverlayGone();
+          api.waitUntilModalGone();
+          api.waitUntilLoadingOverlayGone();
         },
 
         countReviewTasksFor: function(pageId, postNr, opts: { waiting: boolean }): number {
@@ -2864,7 +3279,7 @@ function pagesFor(browser) {
         },
 
         waitForTextToReview: function(text) {
-          browser.waitUntilTextMatches('.esReviewTask_it', text);
+          api.waitUntilTextMatches('.esReviewTask_it', text);
         },
 
         countThingsToReview: function(): number {
@@ -2880,7 +3295,7 @@ function pagesFor(browser) {
 
     serverErrorDialog: {
       waitForJustGotSuspendedError: function() {
-        browser.waitUntilTextMatches('.modal-body', 'TyESUSPENDED_|TyE0LGDIN_');
+        api.waitUntilTextMatches('.modal-body', 'TyESUSPENDED_|TyE0LGDIN_');
       },
 
       dismissReloadPageAlert: function() {
@@ -2890,7 +3305,7 @@ function pagesFor(browser) {
           // writing — because was logged out by the server (e.g. because user suspended)
           // and then som js tries to reload.
           browser.click('.modal-body');
-          const gotDismissed = browser.dismissAnyAlert();
+          const gotDismissed = api.dismissAnyAlert();
           if (gotDismissed) {
             console.log("Dismissed got-logged-out but-had-started-writing related alert.");
             return;
@@ -2900,19 +3315,19 @@ function pagesFor(browser) {
       },
 
       waitAndAssertTextMatches: function(regex) {
-        browser.waitAndAssertVisibleTextMatches('.modal-dialog.dw-server-error', regex);
+        api.waitAndAssertVisibleTextMatches('.modal-dialog.dw-server-error', regex);
       },
 
       close: function() {
-        browser.waitAndClick('.e_SED_CloseB');
-        browser.waitUntilGone('.modal-dialog.dw-server-error');
+        api.waitAndClick('.e_SED_CloseB');
+        api.waitUntilGone('.modal-dialog.dw-server-error');
       }
     },
 
     helpDialog: {
       waitForThenClose: function() {
         api.waitAndClick('.esHelpDlg .btn-primary');
-        browser.waitUntilModalGone();
+        api.waitUntilModalGone();
       },
     },
 
@@ -2939,7 +3354,7 @@ function pagesFor(browser) {
       },
 
       signUpAsGuestViaTopbar: function(nameOrObj, email?: string) {
-        browser.disableRateLimits();
+        api.disableRateLimits();
         api.topbar.clickSignUp();
         let name = nameOrObj;
         if (_.isObject(nameOrObj)) {
@@ -2951,7 +3366,7 @@ function pagesFor(browser) {
       },
 
       signUpAsGmailUserViaTopbar: function({ username }) {
-        browser.disableRateLimits();
+        api.disableRateLimits();
         api.topbar.clickSignUp();
         api.loginDialog.createGmailAccount({
             email: settings.gmailEmail, password: settings.gmailPassword, username });
@@ -2986,32 +3401,32 @@ function pagesFor(browser) {
         if (data.type) {
           api.editor.setTopicType(data.type);
         }
-        browser.rememberCurrentUrl();
+        api.rememberCurrentUrl();
         api.editor.save();
         if (!data.resultInError) {
-          browser.waitForNewUrl();
+          api.waitForNewUrl();
           if (data.matchAfter !== false && data.titleMatchAfter !== false) {
-            browser.assertPageTitleMatches(data.titleMatchAfter || data.title);
+            api.assertPageTitleMatches(data.titleMatchAfter || data.title);
           }
           if (data.matchAfter !== false && data.bodyMatchAfter !== false) {
-            browser.assertPageBodyMatches(data.bodyMatchAfter || data.body);
+            api.assertPageBodyMatches(data.bodyMatchAfter || data.body);
           }
         }
-        browser.waitUntilLoadingOverlayGone();
+        api.waitUntilLoadingOverlayGone();
       },
 
       editPageBody: function(newText: string) {
         api.topic.clickEditOrigPost();
         api.editor.editText(newText);
         api.editor.save();
-        browser.assertPageBodyMatches(newText);
+        api.assertPageBodyMatches(newText);
       },
 
       editPostNr: function(postNr: PostNr, newText: string) {
         api.topic.clickEditoPostNr(postNr);
         api.editor.editText(newText);
         api.editor.save();
-        browser.topic.assertPostTextMatches(postNr, newText);
+        api.topic.assertPostTextMatches(postNr, newText);
       },
 
       replyToOrigPost: function(text: string, whichButton?: string) {
@@ -3021,12 +3436,12 @@ function pagesFor(browser) {
       },
 
       replyToEmbeddingBlogPost: function(text: string) {
-        browser.switchToEmbeddedCommentsIrame();
+        api.switchToEmbeddedCommentsIrame();
         api.topic.clickReplyToEmbeddingBlogPost();
-        browser.switchToEmbeddedEditorIrame();
+        api.switchToEmbeddedEditorIrame();
         api.editor.editText(text);
         api.editor.save();
-        browser.switchToEmbeddedCommentsIrame();
+        api.switchToEmbeddedCommentsIrame();
       },
 
       addBottomComment: function(text: string) {
@@ -3047,7 +3462,7 @@ function pagesFor(browser) {
         for (let clickAttempt = 0; true; ++clickAttempt) {
           api.topic.clickReplyToPostNr(postNr);
           try {
-            browser.waitForVisible('.esEdtr_textarea', 5000);
+            api.waitForVisible('.esEdtr_textarea', 5000);
             break;
           }
           catch (ignore) {
@@ -3093,10 +3508,10 @@ function pagesFor(browser) {
         if (data.public_ === false) {
           api.editor.setTopicType(c.TestPageRole.PrivateChat);
         }
-        browser.rememberCurrentUrl();
+        api.rememberCurrentUrl();
         api.editor.save();
-        browser.waitForNewUrl();
-        browser.assertPageTitleMatches(data.name);
+        api.waitForNewUrl();
+        api.assertPageTitleMatches(data.name);
       },
 
       addPeopleToPageViaContextbar(usernames: string[]) {
@@ -3125,7 +3540,7 @@ function pagesFor(browser) {
     //   #sendSummaryEmails is checked: false      browser, no real mouse interactions possible)
     // So need to loop, ... until it stops undoing the click? Really weird.
     //
-    browser.waitForVisible(selector);
+    api.waitForVisible(selector);
     let bugRetry = 0;
     const maxBugRetry = 2;
     for (; bugRetry <= maxBugRetry; ++bugRetry) {

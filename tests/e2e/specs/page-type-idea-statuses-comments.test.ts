@@ -37,7 +37,6 @@ const bottomCommentTwoText = 'bottomCommentTwoText';
 describe("Page statuses and bottom comments", () => {
 
   it("Initialize people", () => {
-    browser.perhapsDebugBefore();
     everyonesBrowsers = _.assign(browser, pagesFor(browser));
     strangersBrowser = everyonesBrowsers;
     mariasBrowser = everyonesBrowsers;
@@ -162,10 +161,6 @@ describe("Page statuses and bottom comments", () => {
     assert(owensBrowser.pageTitle.canBumpPageStatus());
     owensBrowser.waitAndClick('.dw-p-ttl .icon-check-dashed.dw-clickable');
     owensBrowser.waitForVisible('.dw-p-ttl .icon-check-empty.dw-clickable');
-  });
-
-  it("Done", () => {
-    everyonesBrowsers.perhapsDebug();
   });
 
 });

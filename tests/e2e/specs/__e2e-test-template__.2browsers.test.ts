@@ -44,7 +44,6 @@ let forumTitle = "Some E2E Test";
 describe("some-e2e-test [TyT1234ABC]", () => {
 
   it("import a site", () => {
-    browser.perhapsDebugBefore();
     forum = buildSite().addLargeForum({
       title: forumTitle,
       members: undefined, // default = everyone

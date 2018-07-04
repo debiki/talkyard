@@ -25,7 +25,6 @@ describe(testName, () => {
 
   it("create site", () => {
     browser = _.assign(browser, pagesFor(browser));
-    browser.perhapsDebugBefore();
     let site: SiteData = make.forumOwnedByOwen('oauth-login', { title: "OAuth Login Forum" });
     idAddress = server.importSiteData(site);
   });

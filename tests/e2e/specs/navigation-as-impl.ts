@@ -59,7 +59,6 @@ function makeWholeSpec(initFn) {
   describe("Navigation as Someone:", () => {
 
     it("import a site", () => {
-      browser.perhapsDebugBefore();
       idAddress = server.importSiteData(forum.siteData);
     });
 

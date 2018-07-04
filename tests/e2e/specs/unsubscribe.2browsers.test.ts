@@ -45,7 +45,6 @@ let mariasReplyText = "Maria's reply.";
 describe("unsubscribe", () => {
 
   it("initialize people", () => {
-    browser.perhapsDebugBefore();
     everyone = _.assign(browser, pagesFor(browser));
     owen = _.assign(browserA, pagesFor(browserA), make.memberOwenOwner());
     maria = _.assign(browserB, pagesFor(browserB), make.memberMaria());
@@ -215,10 +214,6 @@ describe("unsubscribe", () => {
   it("The guest also gets no more emails", () => {
     let url = server.getLastUnsubscriptionLinkEmailedTo(idAddress.id, guestEmail, guest);
     assert(url === guestsUnsubscribeLink, "The guest got a *new* unsubscription email");
-  });
-
-  it("Done", () => {
-    everyone.perhapsDebug();
   });
 
 });
