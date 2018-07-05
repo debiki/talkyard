@@ -55,6 +55,7 @@ class RenderContentActor(
 
   def execCtx: ExecutionContext = globals.executionContext
 
+  var avgMillisToBackgroundRender: Double = 50
 
   override def receive: Receive = {
     // COULD SECURITY DoS attack: Want to enqueue this case last-in-first-out, per page & params, so won't
@@ -74,7 +75,16 @@ class RenderContentActor(
           p.Logger.error("Error rendering one got-message-about page [DwE5KGP0]", throwable)
       }
     case RegenerateStaleHtml =>
-      try findAndUpdateOneOutOfDatePage()
+      try {
+        val nanosBeore = System.nanoTime()
+
+        findAndUpdateOneOutOfDatePage()
+
+        val nanosAfter = System.nanoTime()
+        val millisElapsedNow: Double = math.max(0, (nanosAfter - nanosBeore) / 1000 / 1000).toDouble
+        val difference = millisElapsedNow - avgMillisToBackgroundRender
+        avgMillisToBackgroundRender = avgMillisToBackgroundRender + difference * 0.15d
+      }
       catch {
         case ex: java.sql.SQLException if DatabaseUtils.isConnectionClosed(ex) =>
           p.Logger.warn("Cannot render out-of-date page, database connection closed [DwE8GK7W]")
@@ -88,8 +98,12 @@ class RenderContentActor(
         }
         else {
           // Typically takes 5 - 50 millis to render a page (my core i7 laptop, released 2015).
-          // Sleeping for 100 ms is fairly much, shouldn't put the server under high load.
-          context.system.scheduler.scheduleOnce(100 millis, self, RegenerateStaleHtml)(execCtx)
+          // However, a Google Compute Engine 2 vCPU VPS spiked the CPU to 80-90%, when
+          // waiting 100ms between each page. Anyway, let's try to not use more than 50% of
+          // the CPU by waiting with the next page, for as long as it took to render
+          // the last pages, on average?
+          val millisToPause = math.max(50, avgMillisToBackgroundRender.toLong)
+          context.system.scheduler.scheduleOnce(millisToPause millis, self, RegenerateStaleHtml)(execCtx)
         }
       }
   }
