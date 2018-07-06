@@ -120,7 +120,10 @@ describe("private chat", function() {
     browserA.assertPageTitleMatches(formPageTitle);
     browserB.assertPageTitleMatches(formPageTitle);
     browserC.assertPageTitleMatches(formPageTitle);
-    everyone.assertPageBodyMatches(formPageIntroText);
+    browserA.assertPageBodyMatches(formPageIntroText);
+    browserB.assertPageBodyMatches(formPageIntroText);
+    browserC.assertPageBodyMatches(formPageIntroText);
+    //everyone.assertPageBodyMatches(formPageIntroText);
   });
 
   it("Stranger A fills it in and sumbits", function() {

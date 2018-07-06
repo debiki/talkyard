@@ -1288,9 +1288,9 @@ export function createPage(data, success: (newPageId: string) => void) {
 
 
 export function loadPageJson(path: string, success: (response) => void) {
-  console.log(`Loading page: ${path}`);
+  console.log(`Loading page: ${path} [TyMLDPG]`);
   get(path + '?json', response => {
-    console.log(`Done loading ${path}, now updating store...`);
+    console.log(`Done loading ${path}, updating store...`);
     success(response);
     console.log(`Done updating store.`);
   });

@@ -167,6 +167,7 @@ describe("new user, review, ok:", () => {
   it("... now there's nothing more to review", () => {
     assert(!owensBrowser.adminArea.review.isMoreStuffToReview());
     owensBrowser.refresh();
+    owensBrowser.adminArea.goToReview(); // avoid mysterious unmount [5QKBRQ].
     assert(!owensBrowser.adminArea.review.isMoreStuffToReview());
   });
 
@@ -214,6 +215,7 @@ describe("new user, review, ok:", () => {
 
   it("The admin doesn't need to review", () => {
     owensBrowser.refresh();
+    owensBrowser.adminArea.goToReview(); // avoid mysterious unmount [5QKBRQ].
     assert(!owensBrowser.adminArea.review.isMoreStuffToReview());
   });
 
@@ -237,6 +239,7 @@ describe("new user, review, ok:", () => {
 
   it("Owen approves the guest's first two replies", () => {
     owensBrowser.refresh();
+    owensBrowser.adminArea.goToReview(); // avoid mysterious unmount [5QKBRQ].
     owensBrowser.waitUntilLoadingOverlayGone();
     owensBrowser.adminArea.review.approvePostForMostRecentTask();
     owensBrowser.adminArea.review.approvePostForMostRecentTask();
@@ -245,8 +248,6 @@ describe("new user, review, ok:", () => {
   });
 
   it("... then Owen is done", () => {
-    assert(!owensBrowser.adminArea.review.isMoreStuffToReview());
-    owensBrowser.refresh();
     assert(!owensBrowser.adminArea.review.isMoreStuffToReview());
   });
 

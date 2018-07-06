@@ -112,7 +112,9 @@ describe("priv chat", () => {
   });
 
   it("... they see each other's messages", () => {
-    everyone.chat.waitForNumMessages(4);
+    //everyone.chat.waitForNumMessages(4);
+    browserA.chat.waitForNumMessages(4);
+    browserB.chat.waitForNumMessages(4);
   });
 
   it("Michael can find the topic by searching", () => {

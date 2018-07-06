@@ -53,11 +53,15 @@ describe("private chat", function() {
   });
 
   it("... and can logout", function() {
-    everyone.topbar.clickLogout();
+    //everyone.topbar.clickLogout(); [EVRYBUG]
+    browserA.topbar.clickLogout();
+    browserB.topbar.clickLogout();
   });
 
   it("... but cannot login with the wrong password (they forgot the real ones)", function() {
-    everyone.topbar.clickLogin();
+    //everyone.topbar.clickLogin(); [EVRYBUG]
+    browserA.topbar.clickLogin();
+    browserB.topbar.clickLogin();
     owen.loginDialog.loginButBadPassword(owen.username, 'wrong-password');
     michael.loginDialog.loginButBadPassword(michael.username, 'even-more-wrong');
   });

@@ -160,6 +160,17 @@ To debug in node.js:
     s/wdio target/e2e/wdio.3chrome.conf.js -d --only 'categories.3browsers'
 
 
+### Bug
+
+\[E2EBUG] \[EVRYBUG] Happened in: tests/e2e/specs/private-chat.3browsers.test.ts  (search for "//everyone")
+
+```
+//everyone.waitForAtLeast(1, 'body');  // this, then refresh(), then getHTML('body' or whatever)
+                     —>  "Error: stale element reference: element is not attached to the page document"
+//browser.waitUntil(() => true);   // ok
+//browser.elements('body')  // <— apparently this is makes refresh break  (if everyone === browser)
+```
+
 ### Decisions
 
 Webdriver.io is used because:

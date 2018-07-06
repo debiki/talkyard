@@ -107,7 +107,10 @@ describe("private chat", function() {
     owen.chat.addChatMessage("I'm Owen.");
     maria.chat.addChatMessage("I'm Maria.");
     michael.chat.addChatMessage("I'm Michael.");
-    everyone.chat.waitForNumMessages(3);
+    //everyone.chat.waitForNumMessages(3); [EVRYBUG]
+    browserA.chat.waitForNumMessages(3);
+    browserB.chat.waitForNumMessages(3);
+    browserC.chat.waitForNumMessages(3);
   });
 
   // 1 minute passes (so new long pollling requests gets sent)   // break out fn? [4KWBFG5]

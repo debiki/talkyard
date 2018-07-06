@@ -89,8 +89,7 @@ describe("admin-review-invalidate-page-deld [TyT5FKBSQ]", () => {
   });
 
   it("Owen arrives", () => {
-    owensBrowser.adminArea.goToReview(siteIdAddress.origin);
-    owensBrowser.loginDialog.loginWithPassword(owen);
+    owensBrowser.adminArea.goToReview(siteIdAddress.origin, { loginAs: owen });
   });
 
   it("... sees there're 4 urgent things to review", () => {

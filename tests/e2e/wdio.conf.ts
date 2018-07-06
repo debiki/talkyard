@@ -32,6 +32,8 @@ const api = { config: {
 
   debug: settings.debug,
 
+  maxInstances: settings.debug ? 1 : (settings.parallel || 1),
+
   // ==================
   // Specify Test Files
   // ==================
@@ -82,7 +84,7 @@ const api = { config: {
   // Define all options that are relevant for the WebdriverIO instance here
 
   // Level of logging verbosity: silent | verbose | command | data | result | error
-  logLevel: 'error',
+  logLevel: settings.logLevel || 'error',
 
   // Enables colors for log output.
   coloredLogs: true,

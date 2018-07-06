@@ -7,9 +7,11 @@
 declare const it: any;
 declare const describe: any;
 
+type LogLevel = 'silent' | 'verbose' | 'command' | 'data' | 'result' | 'error';
 
 interface TestSettings {
   debug: boolean;
+  parallel?: number;
   prod: boolean;
   secure: boolean;
   host: string;
@@ -24,6 +26,7 @@ interface TestSettings {
   newSiteDomain: string;
   bail?: number;
   waitforTimeout: number;
+  logLevel: LogLevel;
   debugBefore: boolean;
   debugAfterwards: boolean;
   include3rdPartyDependentTests?: boolean;

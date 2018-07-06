@@ -154,10 +154,15 @@ describe("unsubscribe", () => {
   it("They both unsubscribe", () => {
     owen.rememberCurrentUrl();
     guest.rememberCurrentUrl();
-    everyone.waitAndClick('input[type="submit"]');
-    owen.waitForNewUrl();
-    guest.waitForNewUrl();
-    everyone.waitForVisible('#e2eBeenUnsubscribed');
+    //everyone.waitAndClick('input[type="submit"]');  [EVRYBUG]
+    //  —> "TypeError: Cannot read property 'promise' of undefined"
+    // in webdriverio/build/lib/multibrowser.js
+    browserA.waitAndClick('input[type="submit"]');
+    browserB.waitAndClick('input[type="submit"]');
+    browserA.waitForNewUrl();
+    browserB.waitForNewUrl();
+    browserA.waitForVisible('#e2eBeenUnsubscribed');
+    browserB.waitForVisible('#e2eBeenUnsubscribed');
   });
 
   it("The guest replies again to Owen", () => {

@@ -959,6 +959,13 @@ function pagesFor(browser) {
           api.waitAndClick('#e2eMM_Review');
           api.waitForNewUrl();
           api.waitForVisible('.e_A_Rvw');
+
+          // Top tab pane unmount bug workaround, for e2e tests. [5QKBRQ].
+          // Going to the Settings tab, makes the Review tab pane unmount, and after that,
+          // it won't surprise-unmount ever again (until page reload).
+          api.waitAndClick('.e_StngsB');
+          api.waitAndClick('.e_RvwB');
+          api.adminArea.review.waitUntilLoaded();
         },
       },
 
@@ -2867,12 +2874,16 @@ function pagesFor(browser) {
         api.go((origin || '') + '/-/admin/users');
       },
 
-      goToReview: function(origin?: string) {
-        api.go((origin || '') + '/-/admin/review/all');
-        api.adminArea.review.waitUntilLoaded();
-        // Because of React? bug workaround, everything might unmount for a moment.
-        // Wait for it to reappear. [5QKBRQ]
-        browser.pause(600 + 50);
+      goToReview: function(origin?: string, opts: { loginAs? } = {}) {
+        // Top tab pane mysteriously unmounting bug workaround, for e2e tests. [5QKBRQ].
+        api.adminArea.goToLoginSettings(origin);
+        if (opts.loginAs) {
+          browser.loginDialog.loginWithPassword(opts.loginAs);
+        }
+        api.waitAndClick('.e_RvwB');
+        // Don't, this'll result in the review pane unmounting and state lost:
+        // api.go((origin || '') + '/-/admin/review/all');
+
         api.adminArea.review.waitUntilLoaded();
       },
 
