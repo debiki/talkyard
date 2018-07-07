@@ -93,7 +93,7 @@ class FirstPostsAppSpec extends ReviewStuffAppSuite("4fy2") {
           firstReply2.approvedById mustBe Some(theAdmin.id)
 
           info("cannot undo approval any longer (because the undo timeout has elapsed)...")
-          val wasUndone = dao.tryUndoReviewDecision(firstReplyResult.reviewTask.get.id, whoAdmin)
+          val wasUndone = dao.tryUndoReviewDecisionIfAuthz(firstReplyResult.reviewTask.get.id, whoAdmin)
           wasUndone mustBe false
 
           info("...and then also auto-approve all early posts")

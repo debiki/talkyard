@@ -958,7 +958,7 @@ function pagesFor(browser) {
           api.topbar.openMyMenu();
           api.waitAndClick('#e2eMM_Review');
           api.waitForNewUrl();
-          api.waitForVisible('.e_A_Rvw');
+          api.waitForVisible('.s_A_Rvw');
 
           // Top tab pane unmount bug workaround, for e2e tests. [5QKBRQ].
           // Going to the Settings tab, makes the Review tab pane unmount, and after that,
@@ -3215,7 +3215,7 @@ function pagesFor(browser) {
 
       review: {
         waitUntilLoaded: function() {
-          api.waitForVisible('.e_A_Rvw, .esLD');
+          api.waitForVisible('.s_A_Rvw, .esLD');
         },
 
         playTimePastUndo: function() {
@@ -3232,7 +3232,7 @@ function pagesFor(browser) {
           while (true) {
             browser.pause(c.JanitorThreadIntervalMs + 200);
             if (!pageId) {
-              if (!browser.isVisible('.e_A_Rvw_Tsk_UndoB'))
+              if (!browser.isVisible('.s_A_Rvw_Tsk_UndoB'))
                 break;
             }
             else {
@@ -3242,7 +3242,7 @@ function pagesFor(browser) {
               assert(_.isNumber(postNr));
               const pagePostSelector = '.e_Pg-Id-' + pageId + '.e_P-Nr-' + postNr;
               const anyButtonsVisible = (
-                browser.isVisible(pagePostSelector + ' .e_A_Rvw_Tsk_UndoB') ||
+                browser.isVisible(pagePostSelector + ' .s_A_Rvw_Tsk_UndoB') ||
                 browser.isVisible(pagePostSelector + ' .e_A_Rvw_Tsk_AcptB') ||
                 browser.isVisible(pagePostSelector + ' .e_A_Rvw_Tsk_RjctB'));
               if (!anyButtonsVisible)

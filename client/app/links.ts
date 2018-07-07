@@ -16,7 +16,9 @@
  */
 
 // In this file: Constructs links, e.g. to a user's profile page.
-// Usage: MenuItemLink({ href: linkToCurrentUserProfilePage(store) }, "View your profile")
+//
+// Usage example: MenuItemLink({ to: linkToUserProfilePage(user) }, "View your profile")
+
 
 /// <reference path="prelude.ts"/>
 /// <reference path="utils/utils.ts"/>
@@ -45,10 +47,8 @@ export function linkToPostNr(pageId: PageId, postNr: PostNr): string {
 }
 
 
-export function linkToAdminPage(me: Myself): string {
-  // By default, redirects to path not available to non-admins. So send non-admins to reviews section.
-  const morePath = me.isAdmin ? '' : 'review/all';
-  return origin() + '/-/admin/' + morePath;
+export function linkToAdminPage(): string {
+  return origin() + '/-/admin/';
 }
 
 export function linkToAdminPageAdvancedSettings(hostname?: string): string {

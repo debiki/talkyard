@@ -356,6 +356,8 @@ admin -
         task gets invalidated:
         then delete & restore ancestor post tree: task not reactivated
         then delete & restore page: task not reactivated
+    review tasks and authz -
+      mods won't see other's private topics:  test missing, see [5FSLW20]
 
 superadmin -
   ... lots of stuff ...

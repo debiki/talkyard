@@ -230,7 +230,7 @@ declare namespace debiki2 {
   function linkToSendMessage(userIdOrUsername: UserId | string): string;
   function linkToInvitesFromUser(userId: UserId): string;
   function linkToUsersEmailAddrs(userIdOrUsername: UserId | string): string;
-  function linkToAdminPage(me: Myself): string;
+  function linkToAdminPage(): string;
   function linkToReviewPage(): string;
   function externalLinkToAdminHelp(): string;
   function linkToMyProfilePage(store: Store): string;

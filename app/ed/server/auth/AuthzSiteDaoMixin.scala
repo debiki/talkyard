@@ -18,6 +18,7 @@
 package ed.server.auth
 
 import com.debiki.core._
+import com.debiki.core.Prelude._
 import debiki.dao.SiteDao
 import ed.server.auth.MayMaybe.{NoMayNot, NoNotFound, Yes}
 import ed.server.http._
@@ -53,6 +54,12 @@ trait AuthzSiteDaoMixin {
   def maySeePageUseCache(pageMeta: PageMeta, user: Option[User], maySeeUnlisted: Boolean = true)
         : (Boolean, String) = {
     maySeePageImpl(pageMeta, user, anyTransaction = None, maySeeUnlisted = maySeeUnlisted)
+  }
+
+  def maySeePageUseCacheAndAuthzCtx(pageMeta: PageMeta, authzContext: AuthzContext,
+        maySeeUnlisted: Boolean = true): (Boolean, String) = {
+    maySeePageWhenAuthContext(pageMeta, authzContext, anyTransaction = None,
+        maySeeUnlisted = maySeeUnlisted)
   }
 
 
@@ -104,6 +111,27 @@ trait AuthzSiteDaoMixin {
     if (user.exists(_.isAdmin))
       return (true, "")
 
+    val groupIds: immutable.Seq[UserId] =
+      anyTransaction.map(_.loadGroupIds(user)) getOrElse {
+        getGroupIds(user)
+      }
+
+    // Even if we load all perms here, we only use the ones for groupIds later. [7RBBRY2].
+    val permissions = anyTransaction.map(_.loadPermsOnPages()) getOrElse {
+      getPermsForPeople(groupIds)
+    }
+
+    val authContext = ForumAuthzContext(user, groupIds, permissions)
+    maySeePageWhenAuthContext(pageMeta, authContext, anyTransaction, maySeeUnlisted = maySeeUnlisted)
+  }
+
+
+  private def maySeePageWhenAuthContext(pageMeta: PageMeta, authzContext: AuthzContext,
+        anyTransaction: Option[SiteTransaction], maySeeUnlisted: Boolean = true)
+        : (Boolean, String) = {
+    if (authzContext.requester.exists(_.isAdmin))
+      return (true, "")
+
     // Here we load some stuff that might not be needed, e.g. we don't need to load all page
     // members, if we may not see the page anyway because of in which category it's placed.
     // But almost always we need both, anyway, so that's okay, performance wise. And
@@ -122,17 +150,8 @@ trait AuthzSiteDaoMixin {
         getAnyPrivateGroupTalkMembers(pageMeta)
       }
 
-    val groupIds: immutable.Seq[UserId] =
-      anyTransaction.map(_.loadGroupIds(user)) getOrElse {
-        getGroupIds(user)
-      }
-
-    val permissions = anyTransaction.map(_.loadPermsOnPages()) getOrElse {
-      getPermsOnPages(categories)
-    }
-
-    Authz.maySeePage(pageMeta, user, groupIds, memberIds, categories, permissions,
-        maySeeUnlisted) match {
+    Authz.maySeePage(pageMeta, authzContext.requester, authzContext.groupIds, memberIds,
+        categories, authzContext.permissions, maySeeUnlisted) match {
       case Yes => (true, "")
       case mayNot: NoMayNot => (false, mayNot.code)
       case mayNot: NoNotFound => (false, mayNot.debugCode)
@@ -192,6 +211,7 @@ trait AuthzSiteDaoMixin {
       return (false, "7URAZ8S-Post-Not-Found")
     }
 
+    // Staff may see all posts, if they may see the page. [5I8QS2A]
     def isStaffOrAuthor =
       user.exists(_.isStaff) || user.exists(_.id == post.createdById)
 
@@ -201,6 +221,19 @@ trait AuthzSiteDaoMixin {
     // Later: else if is meta discussion ... [METADISC]
 
     (true, "")
+  }
+
+
+  def throwIfMayNotSeeReviewTaskUseCache(task: ReviewTask, forWho: Who) {
+    TESTS_MISSING // add security test, not e2e test?
+    val postId = task.postId getOrElse { return }
+    val post = loadPostByUniqueId(postId) getOrDie "TyE5WKBGP"  // there's a foreign key
+    val requester = getTheUser(forWho.id)
+    val (may, debugCode) =
+      maySeePostImpl(post.pageId, postNr = -1, Some(requester), anyPost = Some(post),
+        anyTransaction = None)
+    if (!may)
+      throwIndistinguishableNotFound(s"TyEM0REVTSK-$debugCode")
   }
 
 

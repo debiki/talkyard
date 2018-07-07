@@ -53,11 +53,13 @@ trait ReviewsDao {
   self: SiteDao =>
 
 
-  def makeReviewDecision(taskId: ReviewTaskId, requester: Who, anyRevNr: Option[Int],
+  def makeReviewDecisionIfAuthz(taskId: ReviewTaskId, requester: Who, anyRevNr: Option[Int],
         decision: ReviewDecision) {
     readWriteTransaction { tx =>
       val task = tx.loadReviewTask(taskId) getOrElse
         throwNotFound("EsE7YMKR25", s"Review task not found, id $taskId")
+
+      throwIfMayNotSeeReviewTaskUseCache(task, requester)
 
       // Another staff member might have completed this task already, or maybe the current
       // has, but in a different browser tab.
@@ -92,10 +94,12 @@ trait ReviewsDao {
   }
 
 
-  def tryUndoReviewDecision(reviewTaskId: ReviewTaskId, requester: Who): Boolean = {
+  def tryUndoReviewDecisionIfAuthz(reviewTaskId: ReviewTaskId, requester: Who): Boolean = {
     readWriteTransaction { tx =>
       val task = tx.loadReviewTask(reviewTaskId) getOrElse
         throwNotFound("TyE48YM4X7", s"Review task not found, id $reviewTaskId")
+
+      throwIfMayNotSeeReviewTaskUseCache(task, requester)
 
       if (task.completedAt.isDefined)
         return false
@@ -356,11 +360,47 @@ trait ReviewsDao {
 
   private def loadStuffImpl(olderOrEqualTo: ju.Date, limit: Int, requester: User, tx: SiteTransaction)
         : (Seq[ReviewStuff], ReviewTaskCounts, Map[UserId, User], Map[PageId, PageMeta]) = {
-    val reviewTasks = tx.loadReviewTasks(olderOrEqualTo, limit)
+    val reviewTasksMaybeNotSee = tx.loadReviewTasks(olderOrEqualTo, limit)
     val taskCounts = tx.loadReviewTaskCounts(requester.isAdmin)
 
-    val postIds = reviewTasks.flatMap(_.postId).toSet
+    val postIds = reviewTasksMaybeNotSee.flatMap(_.postId).toSet
     val postsById = tx.loadPostsByUniqueId(postIds)
+
+    val pageIds = postsById.values.map(_.pageId)
+    val pageMetaById = tx.loadPageMetasAsMap(pageIds)
+    val forbiddenPageIds = mutable.Set[PageId]()
+
+    // ----- May see review task & page? [5FSLW20]  TESTS_MISSING
+
+    // Might as well use the cache here (5DE4A28), why not? Otherwise, if listing
+    // many tasks, this filter step would maybe take a little bit rather long?
+
+    val reviewTasks = if (requester.isAdmin) reviewTasksMaybeNotSee else {
+      val authzContext = getForumAuthzContext(Some(requester)) // (5DE4A28)
+
+      for (pageMeta <- pageMetaById.values) {
+        val (maySee, debugCode) = maySeePageUseCacheAndAuthzCtx(pageMeta, authzContext) // (5DE4A28)
+        if (!maySee) {
+          forbiddenPageIds.add(pageMeta.pageId)
+        }
+      }
+
+      // Staff may see all posts on a page they may see [5I8QS2A], so we check page
+      // access only (not for each posts).
+      reviewTasksMaybeNotSee filter { task =>
+        task.postId match {
+          case None => true
+          case Some(postId) =>
+            postsById.get(postId) match {
+              case None => false
+              case Some(post) =>
+                !forbiddenPageIds.contains(post.pageId)
+            }
+        }
+      }
+    }
+
+    // -----  Load related things: flags, users, pages
 
     val userIds = mutable.Set[UserId]()
     reviewTasks foreach { task =>
@@ -382,9 +422,9 @@ trait ReviewsDao {
 
     val usersById = tx.loadUsersAsMap(userIds)
 
-    val pageIds = postsById.values.map(_.pageId)
     val titlesByPageId = tx.loadTitlesPreferApproved(pageIds)
-    val pageMetaById = tx.loadPageMetasAsMap(pageIds)
+
+    // -----  Construct a ReviewStuff list
 
     val result = ArrayBuffer[ReviewStuff]()
     for (task <- reviewTasks) {

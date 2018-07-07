@@ -48,7 +48,7 @@ export const MyMenuContent = createFactory({
     const urgentReviewTasks = makeNotfIcon('reviewUrgent', me.numUrgentReviewTasks);
     const otherReviewTasks = makeNotfIcon('reviewOther', me.numOtherReviewTasks);
     const adminMenuItem = !isStaff(me) ? null :
-      MenuItemLink({ to: linkToAdminPage(me), className: 'esMyMenu_admin' },
+      MenuItemLink({ to: linkToAdminPage(), className: 'esMyMenu_admin' },
         r.span({ className: 'icon-settings' }, t.Admin));
     const reviewMenuItem = !urgentReviewTasks && !otherReviewTasks ? null :
       MenuItemLink({ to: linkToReviewPage(), id: 'e2eMM_Review' },

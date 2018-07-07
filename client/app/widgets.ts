@@ -162,13 +162,14 @@ export function MenuItemLink(props, ...children) {
   // single-page-app. And if we're in the forum app, use Link, for instant
   // within-the-SPA navigation.  A bit dupl, see (5JKSW20)
   const linksToAdminArea = props.to.search('/-/admin/') === 0;
-  const useSpaLink = eds.isInAdminArea === linksToAdminArea;
+  const isExternal = props.to.search('//') >= 0;  // e.g. https://  or  //hostname/...
+  const useSinglePageAppLink = !isExternal && eds.isInAdminArea === linksToAdminArea;
 
-  // useSpaLink —> create a Link({ to: ... })  (spa link = single page app link)
-  // Otherwise, create a r.a({ href: ... }).
+  // If useSinglePageAppLink, create a Link({ to: ... }),
+  // otherwise, create a r.a({ href: ... }):
 
-  const linkFn = useSpaLink ? Link : r.a;
-  const addrAttr = useSpaLink ? 'to' : 'href';
+  const linkFn = useSinglePageAppLink ? Link : r.a;
+  const addrAttr = useSinglePageAppLink ? 'to' : 'href';
 
   const linkProps = { role: 'button', tabIndex: props.tabIndex || -1,
     target: props.target, id: props.id };

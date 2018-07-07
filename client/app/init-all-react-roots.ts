@@ -43,7 +43,7 @@ export function startMainReactRoot(reactRenderMethodName: 'render' | 'hydrate') 
         Router({},
           rFragment({},
             // (The admin app already includes the topbar.)
-            admin.routes(),
+            admin.staffRoutes(),
             // Make LinkButton work also in the admin app:
             Route({ component: debiki2.page.Hacks.ExtReactRootNavComponent }))),
       adminAppElem);

@@ -1877,6 +1877,10 @@ trait PostsDao {
     readOnlyTransaction(_.loadPost(pageId, postNr))
 
 
+  def loadPostByUniqueId(postId: PostId): Option[Post] =
+    readOnlyTransaction(_.loadPostsByUniqueId(Vector(postId))).values.headOption
+
+
   /** Finds all of postNrs. If any single one (or more) is missing, returns Error. */
   def loadPostsAllOrError(pageId: PageId, postNrs: Iterable[PostNr])
         : immutable.Seq[Post] Or One[PostNr] =

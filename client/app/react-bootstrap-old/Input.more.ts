@@ -42,6 +42,11 @@ export const Input = createComponent({
   // @endif
 
   render: function() {
+    // Styles ignored — is not obvious on which elem they should be placed? Better use CSS classes?
+    // @ifdef DEBUG
+    dieIf(this.props.style, 'TyE4KKWBG20');
+    // @endif
+
     const props = this.props;
     const childProps: any = {
       ref: 'theInput',

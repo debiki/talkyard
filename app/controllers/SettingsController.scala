@@ -36,7 +36,10 @@ class SettingsController @Inject()(cc: ControllerComponents, edContext: EdContex
 
   import context.globals
 
-  def loadSiteSettings: Action[Unit] = AdminGetAction { request: GetRequest =>
+  /** Later, maybe don't show all settings to moderators, in case there'll be
+    * some private settings, later on. (Currently, there aren't.) [5KBRQT2]
+    */
+  def loadSiteSettings: Action[Unit] = StaffGetAction { request: GetRequest =>
     loadSiteSettingsImpl(request)
   }
 
@@ -59,6 +62,8 @@ class SettingsController @Inject()(cc: ControllerComponents, edContext: EdContex
   }
 
 
+  /** Moderators may not change any settings.
+    */
   def saveSiteSettings: Action[JsValue] = AdminPostJsonAction(maxBytes = 10*1000) {
         request: JsonPostRequest =>
     val settingsToSave = debiki.Settings2.settingsToSaveFromJson(request.body, globals)

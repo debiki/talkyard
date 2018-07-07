@@ -103,7 +103,7 @@ function _unencodeHtmlContent(escapedHtml) {
 
 var _store = JSON.parse(_unencodeHtmlContent(document.getElementById('thePageJson').text));
 var _volatileData = JSON.parse(_unencodeHtmlContent(document.getElementById('theVolatileJson').text));
-var _me = _volatileData.me || _store.me || {};
+var _me = _volatileData.me || _store.me || {};@* also used when constructing routes [7UKWBA2] *@
 
 @* [4GKRW02] *@
 var _pageId = _store.currentPageId;

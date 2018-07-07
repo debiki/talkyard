@@ -68,14 +68,14 @@ class ReviewStuffAppSuite(randomString: String)
     }
 
     def approveButUndo(reviewTask: ReviewTask) {
-      dao.makeReviewDecision(reviewTask.id, whoAdmin, anyRevNr = Some(FirstRevisionNr),
+      dao.makeReviewDecisionIfAuthz(reviewTask.id, whoAdmin, anyRevNr = Some(FirstRevisionNr),
         ReviewDecision.Accept)
-      val wasUndone = dao.tryUndoReviewDecision(reviewTask.id, whoAdmin)
+      val wasUndone = dao.tryUndoReviewDecisionIfAuthz(reviewTask.id, whoAdmin)
       dieUnless(wasUndone, "TyE4KDWS0")
     }
 
     def approve(reviewTask: ReviewTask) {
-      dao.makeReviewDecision(reviewTask.id, whoAdmin, anyRevNr = Some(FirstRevisionNr),
+      dao.makeReviewDecisionIfAuthz(reviewTask.id, whoAdmin, anyRevNr = Some(FirstRevisionNr),
         ReviewDecision.Accept)
       // Wait until the Janitor has carried out the decision. [5YMBWQT]
       globals.testFastForwardTimeMillis((ReviewDecision.UndoTimoutSeconds + 1) * MillisPerSecond)

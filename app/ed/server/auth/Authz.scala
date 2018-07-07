@@ -385,7 +385,7 @@ object Authz {
       }
     }
 
-    val relevantPermissions = permissions filter { permission =>
+    val relevantPermissions = permissions filter { permission =>  // [7RBBRY2]
       groupIds.contains(permission.forPeopleId)
     }
 

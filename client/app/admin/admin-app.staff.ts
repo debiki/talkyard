@@ -23,6 +23,9 @@
 /// <reference path="users-one.staff.ts" />
 /// <reference path="hostname-editor.staff.ts" />
 
+declare const _me: Myself;  // [7UKWBA2]
+
+
 //------------------------------------------------------------------------------
    namespace debiki2.admin {
 //------------------------------------------------------------------------------
@@ -35,10 +38,15 @@ const PageUnloadAlerter = utils.PageUnloadAlerter;
 
 const AdminRoot = '/-/admin/';
 
-export function routes() {
+export function staffRoutes() {
+  // Only admins may currently access the settings tab. Moderators are instead supposed to review.
+  // (Moderators actually do load the settings though [5KBRQT2].)
+  // If may load the admin page, then logged in for sure, either admin or moderator.
+  const isAdmin = _me && _me.isAdmin;
+  const section = isAdmin ? 'settings' : 'review/all';   // [8ABKS2]
   return Switch({},
-    Redirect({ from: AdminRoot, to: AdminRoot + 'settings', exact: true }),
-    Route({ path: AdminRoot, component: AdminAppComponent }));
+      Redirect({ from: AdminRoot, to: AdminRoot + section, exact: true }),
+      Route({ path: AdminRoot, component: AdminAppComponent }));
 }
 
 
@@ -224,6 +232,14 @@ const AdminAppComponent = createReactClass(<any> {
 
 
 
+function OnlyForAdmins() {
+  return r.p({},
+      "Only for admins. You can review other people's posts, though, ",
+      r.a({ href: linkToAdminPage() }, " go here."));
+}
+
+
+
 const SettingsPanel = createFactory({
   displayName: 'SettingsPanel',
 
@@ -235,6 +251,12 @@ const SettingsPanel = createFactory({
     const props = this.props;
     if (!props.currentSettings)
       return r.p({}, 'Loading...');
+
+    const store: Store = this.props.store;
+    const me: Myself = store.me;
+
+    if (!me.isAdmin)
+      return OnlyForAdmins();
 
     const sr = AdminRoot + 'settings/';
     const ps = this.props;
@@ -1098,6 +1120,12 @@ const CustomizePanel = createFactory({
     let props = this.props;
     if (!props.currentSettings)
       return r.p({}, "Loading...");
+
+    const store: Store = this.props.store;
+    const me: Myself = store.me;
+
+    if (!me.isAdmin)
+      return OnlyForAdmins();
 
     const childProps = this.props;
     const bp = AdminRoot + 'customize/'; // base path

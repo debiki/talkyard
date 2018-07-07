@@ -139,12 +139,12 @@ export const ReviewAllPanel = createFactory({
       elems = r.p({ className: 'esAdminSectionIntro' }, "No comments or replies to review.");
 
     const hideComplTasks =
-      Input({ type: 'checkbox', checked: this.state.hideComplTasks, style: { marginTop: 22 },
+      Input({ type: 'checkbox', checked: this.state.hideComplTasks,
         onChange: (event) => this.setState({ hideComplTasks: event.target.checked }),
         label: "Hide completed review tasks" });
 
     return (
-      r.div({ className: 'e_A_Rvw' },
+      r.div({ className: 's_A_Rvw' },
         hideComplTasks,
         elems));
   }
@@ -489,7 +489,7 @@ function UndoReviewDecisionButton(props: { justDecidedAtMs?: WhenMs, nowMs: When
   if (secondsLeft <= 0)
     return r.span({ className: 'e_A_Rvw_Tsk_NoUndo' }, " — done");
 
-  return Button({ onClick: props.undoReviewDecision, className: 'e_A_Rvw_Tsk_UndoB' },
+  return Button({ onClick: props.undoReviewDecision, className: 's_A_Rvw_Tsk_UndoB' },
     `Undo (${ Math.floor(secondsLeft) })`);
 }
 
