@@ -1015,6 +1015,8 @@ object JsonMaker {
       json += "doubleTypeEmailAddress" -> JsBoolean(settings.doubleTypeEmailAddress)
     if (settings.doubleTypePassword != D.doubleTypePassword)
       json += "doubleTypePassword" -> JsBoolean(settings.doubleTypePassword)
+    if (settings.minPasswordLength != AllSettings.MinPasswordLengthHardcodedDefault)
+      json += "minPasswordLength" -> JsNumber(settings.minPasswordLength)
     if (settings.begForEmailAddress != D.begForEmailAddress)
       json += "begForEmailAddress" -> JsBoolean(settings.begForEmailAddress)
     if (settings.enableChat != D.enableChat)

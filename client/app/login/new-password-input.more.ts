@@ -27,11 +27,11 @@ const r = ReactDOMFactories;
 // zxcvbn's strongest level is 4, but that makes people confused: they are often
 // unable to come up with strong password.
 // In fact, level 2 is too high for many people.
-var MinPasswordStrength = 1;
-var BadPasswordStrength = 3;
+const MinPasswordStrength = 1;
+const BadPasswordStrength = 3;
 
 
-export var NewPasswordInput = createClassAndFactory({
+export const NewPasswordInput = createFactory({
   getInitialState: function() {
     return {
       zxcvbnLoaded: false,
@@ -66,17 +66,17 @@ export var NewPasswordInput = createClassAndFactory({
     if (!this.state.zxcvbnLoaded)
       return;
 
-    var data = this.props.newPasswordData;
-    var password: string = this.getValue();
-    var forbiddenWords: string[] = [data.username, 'debiki'];
-    var allEmailParts = (data.email || '').split(/[@\._-]+/);
-    var allNameParts = (data.fullName || '').split(/\s+/);
+    const data = this.props.newPasswordData;
+    const password: string = this.getValue();
+    let forbiddenWords: string[] = [data.username, 'debiki', 'talkyard'];
+    const allEmailParts = (data.email || '').split(/[@\._-]+/);
+    const allNameParts = (data.fullName || '').split(/\s+/);
     forbiddenWords = forbiddenWords.concat(allEmailParts).concat(allNameParts);
     forbiddenWords = _.filter(forbiddenWords, w => w.length >= 2);
-    var passwordStrength = window['zxcvbn'](password, forbiddenWords);
+    const passwordStrength = window['zxcvbn'](password, forbiddenWords);
 
-    var crackTimeSecs = passwordStrength.crack_times_seconds.offline_fast_hashing_1e10_per_second;
-    var crackTimeText = passwordStrength.crack_times_display.offline_fast_hashing_1e10_per_second;
+    const crackTimeSecs = passwordStrength.crack_times_seconds.offline_fast_hashing_1e10_per_second;
+    const crackTimeText = passwordStrength.crack_times_display.offline_fast_hashing_1e10_per_second;
 
     console.debug(
         'Password entropy: ' + passwordStrength.entropy +
@@ -84,9 +84,10 @@ export var NewPasswordInput = createClassAndFactory({
         ', score: ' + passwordStrength.score);
 
     // Don't blindly trust zxcvbn — do some basic tests of our own as well.
-    var problem = null;
-    if (password.length < 10) {
-      problem = t.pwd.TooShortMin10;
+    let problem = null;
+    const minLength = this.props.minLength || 10;  // 10 = AllSettings.MinPasswordLengthHardcodedDefault
+    if (password.length < minLength) {
+      problem = t.pwd.TooShort(minLength);
     }
     else if (!password.match(/[0-9!@#$%^&*()_\-+`'"=\.,;:{}[\]\\]+/)) {
       problem = t.pwd.PlzInclDigit;
@@ -107,13 +108,13 @@ export var NewPasswordInput = createClassAndFactory({
   },
 
   render: function() {
-    var passwordWarning;
-    var makeItStrongerSuggestion;
-    var tooWeakReason = this.state.passwordWeakReason;
-    var badWordWarning;
-    var strength: number = this.state.passwordStrength;
-    var weakClass = '';
-    var length: number = this.state.passwordLength;
+    let passwordWarning;
+    let makeItStrongerSuggestion;
+    const tooWeakReason = this.state.passwordWeakReason;
+    let badWordWarning;
+    const strength: number = this.state.passwordStrength;
+    let weakClass = '';
+    const length: number = this.state.passwordLength;
 
     if (this.state.showErrors && length > 0) {
       if (tooWeakReason) {
@@ -138,8 +139,8 @@ export var NewPasswordInput = createClassAndFactory({
 
       // People sometimes include their username or full name in their password, or
       // the other way around. Then show a warning.
-      let pwdLowercase = this.state.password.toLowerCase();
-      let badWord = _.find(this.state.forbiddenWords, (word: string) => {
+      const pwdLowercase = this.state.password.toLowerCase();
+      const badWord = _.find(this.state.forbiddenWords, (word: string) => {
         return pwdLowercase.indexOf(word.toLowerCase()) !== -1;
       });
       if (badWord) {
@@ -156,17 +157,17 @@ export var NewPasswordInput = createClassAndFactory({
     }
 
     // Strength 4 is max.
-    var strengthPercent = 25 * strength;
+    let strengthPercent = 25 * strength;
     if (!strengthPercent && length > 0) {
       // Show some progress, since something has been typed.
       strengthPercent = 10;
     }
-    var strengthIndicator = r.div({ className: 's_Pw_Strength ' + weakClass },
+    const strengthIndicator = r.div({ className: 's_Pw_Strength ' + weakClass },
       r.span({className: 's_Pw_Strength_Lbl' }, t.pwd.StrengthC,
         r.div({ className: 's_Pw_Strength_Border' },
           r.div({ className: 's_Pw_Strength_Fill', style: { width: strengthPercent + '%' }}))));
 
-    var passwordHelp = r.div({},
+    const passwordHelp = r.div({},
       strengthIndicator,
       passwordWarning, makeItStrongerSuggestion, badWordWarning);
 

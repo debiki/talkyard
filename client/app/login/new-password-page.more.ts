@@ -27,9 +27,9 @@ const r = ReactDOMFactories;
 
 
 export function renderNewPasswordPage(secretKey: string) {
-  const data = window['newPasswordData'];
-  data.xsrfToken = getSetCookie('XSRF-TOKEN');
-  ReactDOM.render(NewPasswordPage(data),
+  const props = window['newPasswordData'];
+  props.xsrfToken = getSetCookie('XSRF-TOKEN');
+  ReactDOM.render(NewPasswordPage(props),
       document.getElementById('dw-react-new-password'));
 }
 
@@ -55,7 +55,8 @@ const NewPasswordPage = createClassAndFactory({
         Input({ type: 'hidden', name: 'dw-fi-xsrf', value: this.props.xsrfToken }),
         Input({ type: 'hidden', name: 'emailId', value: this.props.resetPasswordEmailId }),
         oldPasswordInput,
-        NewPasswordInput({ newPasswordData: this.props, setPasswordOk: this.setPasswordOk }),
+        NewPasswordInput({ newPasswordData: this.props, minLength: this.props.minLength,
+            setPasswordOk: this.setPasswordOk }),
         InputTypeSubmit({ disabled: !this.state.passwordOk, value: "Submit",
             id: 'e2eSubmit' })));
   }

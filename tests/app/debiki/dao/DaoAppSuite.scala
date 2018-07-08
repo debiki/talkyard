@@ -47,6 +47,7 @@ class DaoAppSuite(
   val disableBackgroundJobs: Boolean = true,
   val butEnableJanitor: Boolean = false,
   val maxSitesTotal: Option[Int] = None,
+  val minPasswordLength: Option[Int] = None,
   val startTime: When = When.fromMillis(10 * 1000 + OneAndZeros1157DaysInMillis))
   extends FreeSpec with MustMatchers with BaseOneAppPerSuite with FakeApplicationFactory {
 
@@ -91,6 +92,9 @@ class DaoAppSuite(
     maxSitesTotal foreach { max =>
       configMap = configMap.updated(s"$CreateSitePath.maxSitesTotal", max.toString)
     }
+    minPasswordLength foreach { min =>
+      configMap = configMap.updated("talkyard.minPasswordLength", min.toString)
+    }
     Configuration.from(configMap)
   }
 
@@ -127,10 +131,10 @@ class DaoAppSuite(
   }
 
 
-  def createPasswordOwner(password: String, dao: SiteDao,
+  def createPasswordOwner(username: String, dao: SiteDao,
         createdAt: Option[When] = None, firstSeenAt: Option[When] = None,
         emailVerified: Boolean = false): Member = {
-    createPasswordAdminOrOwner(password: String, dao: SiteDao, createdAt = createdAt,
+    createPasswordAdminOrOwner(username, dao, createdAt = createdAt,
         firstSeenAt = firstSeenAt, isOwner = true, emailVerified = emailVerified)
   }
 
@@ -147,9 +151,10 @@ class DaoAppSuite(
       createdAt: Option[When], firstSeenAt: Option[When] = None, emailVerified: Boolean = false)
       : Member = {
     val theCreatedAt = createdAt.getOrElse(globals.now())
+    val password = s"public-${username take 2}-x-${username drop 2}"
     val adm = dao.createPasswordUserCheckPasswordStrong(NewPasswordUserData.create(
       name = Some(s"Admin $username"), username = username,
-      email = s"$username@x.co", password = s"public-$username",
+      email = s"$username@x.co", password = password,
       createdAt = theCreatedAt,
       isAdmin = true, isOwner = isOwner).get, browserIdData)
     if (emailVerified) {

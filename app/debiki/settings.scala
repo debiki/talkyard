@@ -59,6 +59,9 @@ trait AllSettings {
   /** See 'doubleTypeEmailAddress' above. Also not yet implemented. */
   def doubleTypePassword: Boolean
 
+  /** Cannot edit (right now at least), except for via server conf val. */
+  def minPasswordLength: Int
+
   /** When someone signs up, if hen doesn't specify an email address, tell hen that then we
     * cannot send hen notifications about new replies. And show buttons:
     *  [Specify email address] [No, skip]
@@ -141,6 +144,7 @@ trait AllSettings {
     mayPostBeforeEmailVerified = Some(self.mayPostBeforeEmailVerified),
     doubleTypeEmailAddress = Some(self.doubleTypeEmailAddress),
     doubleTypePassword = Some(self.doubleTypePassword),
+    minPasswordLength = Some(self.minPasswordLength),
     begForEmailAddress = Some(self.begForEmailAddress),
     forumMainView = Some(self.forumMainView),
     forumTopicsSortButtons = Some(self.forumTopicsSortButtons),
@@ -196,6 +200,8 @@ object AllSettings {
     */
   val PostRecentlyCreatedLimitMs: Int = 5 * 3600 * 1000
 
+  val MinPasswordLengthHardcodedDefault = 10
+
   def makeDefault(globals: Globals): AllSettings = new AllSettings {  // [8L4KWU02]
     val userMustBeAuthenticated = false
     val userMustBeApproved = false
@@ -214,6 +220,7 @@ object AllSettings {
     val mayPostBeforeEmailVerified = false
     val doubleTypeEmailAddress = false
     val doubleTypePassword = false
+    val minPasswordLength: Int = globals.minPasswordLengthAllSites
     val begForEmailAddress = false
     val forumMainView = "latest"
     val forumTopicsSortButtons = "latest|top"
@@ -271,7 +278,7 @@ case class EffectiveSettings(
   default: AllSettings)
   extends AllSettings {
 
-  def firstInChain[V](getField: (EditedSettings) => Option[V]): Option[V] = {
+  def firstInChain[V](getField: EditedSettings => Option[V]): Option[V] = {
     for (editedSettings <- editedSettingsChain) {
       val anyValue = getField(editedSettings)
       if (anyValue.isDefined)
@@ -297,6 +304,7 @@ case class EffectiveSettings(
   def mayPostBeforeEmailVerified: Boolean = firstInChain(_.mayPostBeforeEmailVerified) getOrElse default.mayPostBeforeEmailVerified
   def doubleTypeEmailAddress: Boolean = firstInChain(_.doubleTypeEmailAddress) getOrElse default.doubleTypeEmailAddress
   def doubleTypePassword: Boolean = firstInChain(_.doubleTypePassword) getOrElse default.doubleTypePassword
+  def minPasswordLength: Int = default.minPasswordLength // cannot change per site, right now
   def begForEmailAddress: Boolean = firstInChain(_.begForEmailAddress) getOrElse default.begForEmailAddress
   def forumMainView: String = firstInChain(_.forumMainView) getOrElse default.forumMainView
   def forumTopicsSortButtons: String = firstInChain(_.forumTopicsSortButtons) getOrElse default.forumTopicsSortButtons
@@ -420,6 +428,7 @@ object Settings2 {
       "mayPostBeforeEmailVerified" -> JsBooleanOrNull(s.mayPostBeforeEmailVerified),
       "doubleTypeEmailAddress" -> JsBooleanOrNull(s.doubleTypeEmailAddress),
       "doubleTypePassword" -> JsBooleanOrNull(s.doubleTypePassword),
+      "minPasswordLength" -> JsNumberOrNull(s.minPasswordLength),
       "begForEmailAddress" -> JsBooleanOrNull(s.begForEmailAddress),
       "forumMainView" -> JsStringOrNull(s.forumMainView),
       "forumTopicsSortButtons" -> JsStringOrNull(s.forumTopicsSortButtons),
@@ -487,6 +496,7 @@ object Settings2 {
     mayPostBeforeEmailVerified = anyBool(json, "mayPostBeforeEmailVerified", d.mayPostBeforeEmailVerified),
     doubleTypeEmailAddress = anyBool(json, "doubleTypeEmailAddress", d.doubleTypeEmailAddress),
     doubleTypePassword = anyBool(json, "doubleTypePassword", d.doubleTypePassword),
+    minPasswordLength = None, // cannot edit right now
     begForEmailAddress = anyBool(json, "begForEmailAddress", d.begForEmailAddress),
     forumMainView = anyString(json, "forumMainView", d.forumMainView),
     forumTopicsSortButtons = anyString(json, "forumTopicsSortButtons", d.forumTopicsSortButtons),

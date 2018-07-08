@@ -457,9 +457,10 @@ trait UserDao {
 
   def createPasswordUserCheckPasswordStrong(
         userData: NewPasswordUserData, browserIdData: BrowserIdData): Member = {
-    security.throwErrorIfPasswordTooWeak(
+    security.throwErrorIfPasswordBad(
       password = userData.password, username = userData.username,
-      fullName = userData.name, email = userData.email)
+      fullName = userData.name, email = userData.email,
+      minPasswordLength = globals.minPasswordLengthAllSites)
     val user = readWriteTransaction { tx =>
       val now = userData.createdAt
       val userId = tx.nextMemberId
@@ -498,9 +499,10 @@ trait UserDao {
     val newPasswordSaltHash = DbDao.saltAndHashPassword(newPassword)
     readWriteTransaction { transaction =>
       var user = transaction.loadTheMemberInclDetails(userId)
-      security.throwErrorIfPasswordTooWeak(
+      security.throwErrorIfPasswordBad(
         password = newPassword, username = user.username,
-        fullName = user.fullName, email = user.primaryEmailAddress)
+        fullName = user.fullName, email = user.primaryEmailAddress,
+        minPasswordLength = globals.minPasswordLengthAllSites)
       user = user.copy(passwordHash = Some(newPasswordSaltHash))
       transaction.updateMemberInclDetails(user)
     }

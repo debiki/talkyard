@@ -723,7 +723,7 @@ var t_en_US: TalkyardTranslations = t = {
     StrengthC: "Strength: ",
     FairlyWeak: "Fairly weak.",
     toShort: "too short",
-    TooShortMin10: "Too short. Should be at least 10 characters",
+    TooShort: (minLength: number) => `Too short. Should be at least ${minLength} characters`,
     PlzInclDigit: "Please include a digit or special character",
     TooWeak123abc: "Too weak. Don't use passwords like '12345' or 'abcde'.",
     AvoidInclC: "Avoid including (parts of) your name or email in the password:",

@@ -643,7 +643,7 @@ interface TalkyardTranslations {
     StrengthC: string;
     FairlyWeak: string;
     toShort: string;
-    TooShortMin10: string;
+    TooShort: (minLength: number) => string;
     PlzInclDigit: string;
     TooWeak123abc: string;
     AvoidInclC: string;

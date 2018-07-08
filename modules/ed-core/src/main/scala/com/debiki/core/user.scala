@@ -180,7 +180,7 @@ case class NewPasswordUserData(
   Validation.checkName(name)
   Validation.checkUsername(username)
   Validation.checkEmail(email)
-  Validation.checkPassword(password)
+  // Password: See security.throwErrorIfPasswordTooWeak, instead.
 
   require(!firstSeenAt.exists(_.isBefore(createdAt)), "EdE2WVKF063")
 }
@@ -198,11 +198,11 @@ object NewPasswordUserData {
       okName <- Validation.checkName(name)
       okUsername <- Validation.checkUsername(username)
       okEmail <- Validation.checkEmail(email)
-      okPassword <- Validation.checkPassword(password)
+      // Password: See security.throwErrorIfPasswordTooWeak, instead.
     }
     yield {
       NewPasswordUserData(name = okName, username = okUsername, email = okEmail,
-        password = okPassword, createdAt = createdAt,
+        password = password, createdAt = createdAt,
         firstSeenAt = Some(createdAt),  // for now
         isAdmin = isAdmin, isOwner = isOwner, isModerator = isModerator,
         emailVerifiedAt = emailVerifiedAt,

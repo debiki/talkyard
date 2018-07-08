@@ -232,9 +232,37 @@ class EdSecurity(globals: Globals) {
   val AngularJsXsrfHeaderName = "X-XSRF-TOKEN"
 
 
-  def throwErrorIfPasswordTooWeak(
-        password: String, username: String, fullName: Option[String], email: String) {
-    /* Server side pwd check disabled
+  def throwErrorIfPasswordBad(
+        password: String, username: String, fullName: Option[String], email: String,
+        minPasswordLength: Int) {
+
+    // The below checks aren't important; this is already done client side via zxcvbn.
+    // Here, just quick double checks. (Only maybe reserved-words isn't totally done
+    // by zxcvbn?)
+
+    if (password.length < minPasswordLength)
+      throwBadReq("TyE5WKBTU2", "Password too short [TyEPWDMIN_]")
+
+    if (ReservedNames.isReservedWord(password))
+      throwBadReq("TyE3WKB10", "Password too common, is in a reserved words list [TyEPWDCMN]")
+
+    val lowercasePwd = password.toLowerCase
+
+    if (lowercasePwd.indexOf(username.toLowerCase) >= 0)
+      throwBadReq("TyE3WKB10", "Password includes username [TyEPWDUSN]")
+
+    // Client side, zxcvbn does a better check.
+    if (fullName.isDefined && lowercasePwd.indexOf(fullName.get.toLowerCase) >= 0)
+      throwBadReq("TyE3WKB10", "Password includes full name [TyEPWDFLN]")
+
+    if (lowercasePwd.indexOf(email.toLowerCase) >= 0)
+      throwBadReq("TyE3WKB10", "Password includes email [TyEPWDEML]")
+
+    // If it's too long, then it's not a password? It's some other weird thing, perhaps bad?
+    if (password.length > 80)
+      throwBadReq("Password too long (80 chars max) [TyEPWDMAX]")
+
+    /* Server side pwd check disabled  CLEAN_UP remove
     val passwordStrength = Nashorn.calcPasswordStrength(
       password = password, username = username, fullName = fullName, email = email)
     if (!passwordStrength.isStrongEnough)

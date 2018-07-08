@@ -21,7 +21,7 @@ import EditedSettings._
 import Prelude._
 
 
-sealed abstract class ContribAgreement(protected val IntVal: Int) { def toInt = IntVal }
+sealed abstract class ContribAgreement(protected val IntVal: Int) { def toInt: Int = IntVal }
 object ContribAgreement {
   case object CcBy3And4 extends ContribAgreement(10)
   case object CcBySa3And4 extends ContribAgreement(40)
@@ -38,7 +38,7 @@ object ContribAgreement {
 }
 
 
-sealed abstract class ContentLicense(protected val IntVal: Int) { def toInt = IntVal }
+sealed abstract class ContentLicense(protected val IntVal: Int) { def toInt: Int = IntVal }
 object ContentLicense {
   case object CcBy4 extends ContentLicense(10)
   case object CcBySa4 extends ContentLicense(40)
@@ -76,6 +76,7 @@ case class EditedSettings(
   mayPostBeforeEmailVerified: Option[Boolean],
   doubleTypeEmailAddress: Option[Boolean],
   doubleTypePassword: Option[Boolean],
+  minPasswordLength: Option[Int],
   begForEmailAddress: Option[Boolean],
   forumMainView: Option[String],
   forumTopicsSortButtons: Option[String],
@@ -161,6 +162,7 @@ object EditedSettings {
     mayPostBeforeEmailVerified = None,
     doubleTypeEmailAddress = None,
     doubleTypePassword = None,
+    minPasswordLength = None,
     begForEmailAddress = None,
     forumMainView = None,
     forumTopicsSortButtons = None,
@@ -233,6 +235,7 @@ case class SettingsToSave(
   mayPostBeforeEmailVerified: Option[Option[Boolean]] = None,
   doubleTypeEmailAddress: Option[Option[Boolean]] = None,
   doubleTypePassword: Option[Option[Boolean]] = None,
+  minPasswordLength: Option[Option[Int]] = None,
   begForEmailAddress: Option[Option[Boolean]] = None,
   forumMainView: Option[Option[String]] = None,
   forumTopicsSortButtons: Option[Option[String]] = None,

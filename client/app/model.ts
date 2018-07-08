@@ -680,6 +680,7 @@ interface SettingsVisibleClientSide {
   mayComposeBeforeSignup?: boolean;     // default: false
   doubleTypeEmailAddress?: boolean;     // default: false
   doubleTypePassword?: boolean;         // default: false
+  minPasswordLength?: number;           // default: 10
   enableChat?: boolean;                 // default: true
   enableDirectMessages?: boolean;       // default: true
   showSubCommunities?: boolean;         // default: false

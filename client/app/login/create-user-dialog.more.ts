@@ -293,6 +293,7 @@ export var CreateUserDialogContent = createClassAndFactory({
 
     const passwordInputMaybe = !props.isForPasswordUser ? null :
         NewPasswordInput({ newPasswordData: state.userData, ref: 'password', tabIndex: 1,
+            minLength: store.settings.minPasswordLength,
             setPasswordOk: (isOk) => this.updateValueOk('password', 'dummy', isOk) });
 
     const fullNameInput =

@@ -724,7 +724,7 @@ var t_pt_BR: TalkyardTranslations = t = {
     StrengthC: "Força: ",
     FairlyWeak: "Bem fraca.",
     toShort: "muit curta",
-    TooShortMin10: "Muito curta. Tem que ter pelo menos 10 caracteres",
+    TooShort: (minLength: number) => `Muito curta. Tem que ter pelo menos ${minLength} caracteres`,
     PlzInclDigit: "Por favor, inclua um dígito ou caractere especial",
     TooWeak123abc: "Muito fraca. Não use senhas como '12345' ou 'abcde'.",
     AvoidInclC: "Evite incluir (partes de) seu nome ou email na senha:",

@@ -221,6 +221,21 @@ class Globals(
     */
   val forbiddenPassword: Option[String] = conf.getString("talkyard.forbiddenPassword").noneIfBlank
 
+  /** Maybe later, let individual sites require longer passwords. This conf val will then be the
+    * minimum length, for all sites. (So server admins can require a min length they're ok with.)
+    * 8 = rather low, but zxcvbn helpfully blocks really bad 8 char passwords like "password".
+    * 10 = can be good passwords.
+    */
+  val minPasswordLengthAllSites: Int =
+    conf.getInt("talkyard.minPasswordLength") match {
+      case None =>
+        AllSettings.MinPasswordLengthHardcodedDefault
+      case Some(length) =>
+        dieIf(length < 8, "TyE2WKG7",
+          "I refuse to start: Min password length is less than 8 chars; that's too easy to crack. Bye.")
+        length
+    }
+
   val mayFastForwardTime: Boolean =
     if (!isProd) true
     else conf.getBoolean("talkyard.mayFastForwardTime") getOrElse false
