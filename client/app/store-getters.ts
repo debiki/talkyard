@@ -162,8 +162,15 @@ export function store_getCurrOrDefaultCat(store: Store): Category {
   if (currCat)
     return currCat;
 
-  // Apparently we're showing all categories, haven't selected any specific category.
-  return _.find(store.currentCategories, (c: Category) => c.isDefaultCategory);
+  // Apparently we're not currently placed in any particular category, or site section.
+  // Happens for example if we're currently reading in a direct message topic
+  // — direct messages aren't placed in any category or site section.
+  // So, pick a default category, preferably from the current site section's category list,
+  // or if no current site secton, then from all site sections and categories.
+  // UX: The caller COULD show a dropdown? so the user notices there's a choice here? rather
+  // than just picking the default category in a random site section. [4GWRQA28]
+  const categories = store.currentCategories.length ? store.currentCategories : store.allCategoriesHacky;
+  return _.find(categories, (c: Category) => c.isDefaultCategory);
 }
 
 

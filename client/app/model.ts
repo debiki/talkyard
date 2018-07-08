@@ -626,6 +626,9 @@ interface Store extends Origins {
   hideForumIntro?: boolean;
   maxUploadSizeBytes: number;
   currentCategories: Category[];
+  // For all site sections, loaded lazily, and updated in a hacky way, for now, so have a look,
+  // and refactor (?), before using it for anything more.
+  allCategoriesHacky?: Category[];
   publicCategories: Category[];
   newCategorySlug: string; // for temporarily highlighting a newly created category
   topics?: Topic[];
@@ -1291,6 +1294,21 @@ interface Rect {
   right: number;
   bottom: number;
 }
+
+
+
+// ----- Server responses
+
+
+interface LoadCategoryResponse {
+  category: Category;
+  permissions: PermsOnPage[];
+  groups: Group[];
+}
+
+
+
+// ----- Public API
 
 
 interface TalkyardApi {  // [5ABJH72]

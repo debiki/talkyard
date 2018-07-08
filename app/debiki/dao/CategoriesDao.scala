@@ -27,6 +27,11 @@ import scala.collection.{immutable, mutable}
 import scala.collection.mutable.ArrayBuffer
 
 
+case class SectionCategories(
+  sectionPageId: PageId,
+  categories: immutable.Seq[Category],
+  defaultCategoryId: CategoryId)
+
 
 
 /** @param shallBeDefaultCategory — if set, the root category's default category id will be
@@ -91,7 +96,9 @@ trait CategoriesDao {
   private var rootCategories: Seq[Category] = _
 
 
-  /** BUG [4GWRQA28] For now, if many sub communities: Returns a random default category.
+  /** BUG [4GWRQA28] For now, if many sub communities: Returns a random default category
+    * (currently only used when creating embedded comments — and using both emb comments
+    * & sub communities = no one does, right now. So this is not urgent.)
     */
   def getDefaultCategoryId(): CategoryId = {
     COULD_OPTIMIZE // remember default category, refresh when saving a root category?
@@ -105,30 +112,47 @@ trait CategoriesDao {
 
 
   /** List categories in the site section (forum/blog/whatever) at page pageId.
-    * Sorts by Category.position (which doesn't make much sense if there are sub categories).
-    * Returns (categories, default-category-id).
+    * Sorts by Category.position (hmm doesn't make much sense if there are sub categories [subcats]).
     */
-  def listMaySeeSectionCategories(pageId: PageId, includeDelted: Boolean, authzCtx: ForumAuthzContext)
-        : (Seq[Category], CategoryId) = {
+  def listMaySeeCategoriesInSection(sectionPageId: PageId, includeDeleted: Boolean,
+        authzCtx: ForumAuthzContext): Option[SectionCategories] = {
     // A bit dupl code (7UKWTW1)
-    loadRootCategory(pageId) match {
-      case Some(rootCategory) =>
-        val categories = listDescendantMaySeeCategories(rootCategory.id, includeRoot = false,
-          includeDelted = includeDelted, authzCtx).sortBy(_.position)
-        (categories, rootCategory.defaultCategoryId getOrDie "EsE4GK02")
-      case None =>
-        (Nil, NoCategoryId)
+    loadRootCategoryForSectionPageId(sectionPageId) map { rootCategory =>
+      val categories = listDescendantMaySeeCategories(rootCategory.id, includeRoot = false,
+        includeDeleted = includeDeleted, authzCtx).sortBy(_.position)
+      SectionCategories(
+        sectionPageId = rootCategory.sectionPageId,
+        categories = categories,
+        defaultCategoryId = rootCategory.defaultCategoryId getOrDie "TyE6KAW21")
     }
   }
 
 
-  /** OLD: Sometimes the section page id is undefined — for example, when talking with someone
-    * in a personal chat. That chat topic isn't placed in any section (e.g. blog or forum).
-    * NO???: Then we want to list all categories, not just all categories in some (undefined) section.
-    *
-    * Returns (categories, default-category-id). (There can be only 1 default category per sub community.)
+  def listMaySeeCategoriesAllSections(includeDeleted: Boolean, authzCtx: ForumAuthzContext)
+        : Seq[SectionCategories] = {
+    if (rootCategories eq null) {
+      loadBuildRememberCategoryMaps()
+      dieIf(rootCategories eq null, "EsE4KG0W2")
+    }
+
+    val result = ArrayBuffer[SectionCategories]()
+
+    for (rootCategory <- rootCategories) {
+      val categories = listDescendantMaySeeCategories(rootCategory.id, includeRoot = false,
+        includeDeleted = includeDeleted, authzCtx).sortBy(_.position)
+      result.append(SectionCategories(
+        sectionPageId = rootCategory.sectionPageId,
+        categories = categories,
+        defaultCategoryId = rootCategory.defaultCategoryId getOrDie "TyEWKB201"))
+    }
+
+    result
+  }
+
+
+  /** Returns (categories, default-category-id). (There can be only 1 default category per sub community.)
     */
-  def listAllMaySeeCategories(categoryId: CategoryId, authzCtx: ForumAuthzContext)
+  def listMaySeeCategoriesInSameSectionAs(categoryId: CategoryId, authzCtx: ForumAuthzContext)
         : (Seq[Category], Option[CategoryId]) = {
     if (rootCategories eq null) {
       loadBuildRememberCategoryMaps()
@@ -139,9 +163,9 @@ trait CategoriesDao {
       return (Nil, None)
 
     // A bit dupl code (7UKWTW1)
-    val rootCategory = loadRootCategory(categoryId) getOrDie "TyEPKDRW0"
+    val rootCategory = loadRootCategoryForCategoryid(categoryId) getOrDie "TyEPKDRW0"
     val categories = listDescendantMaySeeCategories(rootCategory.id, includeRoot = false,
-      includeDelted = authzCtx.isStaff, authzCtx).sortBy(_.position)
+      includeDeleted = authzCtx.isStaff, authzCtx).sortBy(_.position)
     (categories, Some(rootCategory.defaultCategoryId getOrDie "TyE5JKF2"))
   }
 
@@ -149,9 +173,9 @@ trait CategoriesDao {
   /** List all categories in the sub tree with categoryId as root.
     */
   private def listDescendantMaySeeCategories(categoryId: CategoryId, includeRoot: Boolean,
-        includeDelted: Boolean, authzCtx: ForumAuthzContext): Seq[Category] = {
+        includeDeleted: Boolean, authzCtx: ForumAuthzContext): immutable.Seq[Category] = {
     val categories = ArrayBuffer[Category]()
-    appendMaySeeCategoriesInTree(categoryId, includeRoot = includeRoot, includeDelted = includeDelted,
+    appendMaySeeCategoriesInTree(categoryId, includeRoot = includeRoot, includeDeleted = includeDeleted,
       authzCtx, categories)
     categories.to[immutable.Seq]
   }
@@ -177,7 +201,7 @@ trait CategoriesDao {
         // a category in the forum, wich has sub categories). The top root shouldn't
         // contain any pages, but subtree roots usually contain pages.)
         listDescendantMaySeeCategories(categoryId, includeRoot = true,
-            includeDelted = pageQuery.pageFilter.includeDeleted, authzCtx).map(_.id)
+            includeDeleted = pageQuery.pageFilter.includeDeleted, authzCtx).map(_.id)
       }
       else {
         SECURITY // double-think-through this:
@@ -297,16 +321,16 @@ trait CategoriesDao {
     loadCategory(id) getOrElse throwNotFound("DwE8YUF0", s"No category with id $id")
 
 
-  def loadRootCategory(categoryId: CategoryId): Option[Category] =
+  private def loadRootCategoryForCategoryid(categoryId: CategoryId): Option[Category] =
     loadAncestorCategoriesRootLast(categoryId).lastOption
 
 
   def loadSectionPageId(categoryId: CategoryId): Option[PageId] =
-    loadRootCategory(categoryId).map(_.sectionPageId)
+    loadRootCategoryForCategoryid(categoryId).map(_.sectionPageId)
 
 
   def loadTheSectionPageId(categoryId: CategoryId): PageId =
-    loadRootCategory(categoryId).map(_.sectionPageId) getOrDie "DwE804K2"
+    loadRootCategoryForCategoryid(categoryId).map(_.sectionPageId) getOrDie "DwE804K2"
 
   def loadSectionPageIdsAsSeq(): Seq[PageId] = {
     loadBuildRememberCategoryMaps()
@@ -319,10 +343,10 @@ trait CategoriesDao {
   }
 
 
-  private def loadRootCategory(pageId: PageId): Option[Category] = {
+  private def loadRootCategoryForSectionPageId(sectionPageId: PageId): Option[Category] = {
     val categoriesById = loadBuildRememberCategoryMaps()._1
     for ((_, category) <- categoriesById) {
-      if (category.sectionPageId == pageId && category.parentId.isEmpty)
+      if (category.sectionPageId == sectionPageId && category.parentId.isEmpty)
         return Some(category)
     }
     None
@@ -330,7 +354,7 @@ trait CategoriesDao {
 
 
   private def appendMaySeeCategoriesInTree(rootCategoryId: CategoryId, includeRoot: Boolean,
-      includeDelted: Boolean, authzCtx: ForumAuthzContext, categoryList: ArrayBuffer[Category]) {
+      includeDeleted: Boolean, authzCtx: ForumAuthzContext, categoryList: ArrayBuffer[Category]) {
 
     if (categoryList.exists(_.id == rootCategoryId)) {
       // COULD log cycle error
@@ -351,7 +375,7 @@ trait CategoriesDao {
         return
     }
 
-    if (!includeDelted && startCategory.isDeleted)
+    if (!includeDeleted && startCategory.isDeleted)
       return
 
     COULD // add a seeUnlisted permission? If in a cat, a certain group should see unlisted topics.
@@ -366,7 +390,7 @@ trait CategoriesDao {
       return
     })
     for (childCategory <- childCategories) {
-      appendMaySeeCategoriesInTree(childCategory.id, includeRoot = true, includeDelted = includeDelted,
+      appendMaySeeCategoriesInTree(childCategory.id, includeRoot = true, includeDeleted = includeDeleted,
         authzCtx, categoryList)
     }
   }

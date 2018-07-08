@@ -73,16 +73,15 @@ const EditCategoryDialog = createClassAndFactory({
       isEditing: !!categoryId,
     });
     if (categoryId) {
-      Server.loadCategory(categoryId, (category: Category, permissions: PermsOnPage[],
-          groups: Group[]) => {
+      Server.loadCategory(categoryId, (response: LoadCategoryResponse) => {
         this.setState({
           isLoading: false,
           isCreatingNewCategory: false,
-          originalSlug: category.slug,
-          category: category,
-          permissions: permissions,
-          groups: groups,
-          canChangeDefault: !category.isDefaultCategory || false,
+          originalSlug: response.category.slug,
+          category: response.category,
+          permissions: response.permissions,
+          groups: response.groups,
+          canChangeDefault: !response.category.isDefaultCategory || false,
         });
       });
     }

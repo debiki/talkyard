@@ -1,3 +1,7 @@
+When doing these things, search for the tag too e.g. "[subcats]".
+
+[subcats]
+Implement sub categories.
 
 [privacy-badger]:
 Privacy Badger doesn't like transient session cookies, currently.
@@ -34,6 +38,10 @@ Let outwardly visible page and user ids, be random numbers, to prevent
 discovery of pages & people by iterating through all ids in the url.
 64 bit random ids? or 32 bits + stricter rate limiting?
 
+
+[subcomms]
+Improve sub communities, e.g. selecting a category across all sub communities,
+not only the current one.
 
 Performance tests:
  "Capture a timeline trace of your site to help diagnose performance issues."

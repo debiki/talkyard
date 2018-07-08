@@ -22,9 +22,8 @@ import akka.stream.ActorMaterializer
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import controllers.{LoginController, routes}
-import ed.server.http.DebikiRequest
 import java.{net => jn}
-import play.api.libs.json.JsLookupResult
+import play.api.libs.json.{JsLookupResult, JsValue}
 import play.{api => p}
 import play.api.mvc._
 import scala.concurrent.Await
@@ -46,12 +45,12 @@ object EdHttp {
 
   // 300 kb Javascript or CSS isn't totally crazy? If someone copy-pastes e.g. Prism.js,
   // unminified, to debug, that can be ~ 200 kb.
-  val MaxPostSizeJsCss = 300 * 1000
+  val MaxPostSizeJsCss: Int = 300 * 1000
 
-  val MaxPostSize = 100 * 1000
-  val MaxPostSizeForAuUsers = 30 * 1000
-  val MaxPostSizeForUnauUsers = 15 * 1000
-  val MaxDetailsSize =  20 * 1000
+  val MaxPostSize: Int = 100 * 1000
+  val MaxPostSizeForAuUsers: Int = 30 * 1000
+  val MaxPostSizeForUnauUsers: Int = 15 * 1000
+  val MaxDetailsSize: Int =  20 * 1000
 
 
   // ----- Content type matchers
@@ -149,9 +148,12 @@ object EdHttp {
     // So, right now, don't:
     //   p.http.Status.MOVED_PERMANENTLY
 
-  def throwBadRequest(errCode: String, message: String = "") = throwBadReq(errCode, message)
+  def throwOkSafeJson(json: JsValue) =
+    throw ResultException(controllers.OkSafeJson(json))
 
-  def throwBadRequestIf(condition: Boolean, errCode: String, message: => String = "") =
+  def throwBadRequest(errCode: String, message: String = ""): Nothing = throwBadReq(errCode, message)
+
+  def throwBadRequestIf(condition: Boolean, errCode: String, message: => String = ""): Unit =
     if (condition) throwBadRequest(errCode, message)
 
   def throwBadReq(errCode: String, message: String = "") =
@@ -160,14 +162,14 @@ object EdHttp {
   def throwUnprocessableEntity(errCode: String, message: String = "") =
     throw ResultException(UnprocessableEntityResult(errCode, message))
 
-  def throwBadArgument(errCode: String, parameterName: String, problem: String = "") =
+  def throwBadArgument(errCode: String, parameterName: String, problem: String = ""): Nothing =
     throwBadReq(errCode, "Bad `"+ parameterName +"` value" + (
       if (problem.nonEmpty) ": " + problem else ""))
 
-  def throwBadConfigFile(errCode: String, message: String) =
+  def throwBadConfigFile(errCode: String, message: String): Nothing =
     throwNotFound(errCode, message)
 
-  def throwParamMissing(errCode: String, paramName: String) =
+  def throwParamMissing(errCode: String, paramName: String): Nothing =
     throwBadReq(errCode, "Parameter missing: "+ paramName)
 
   // There's currently no WWW-Authenticate header
@@ -190,16 +192,16 @@ object EdHttp {
   def throwServiceUnavailable(errorCode: String, message: String = "") =
     throw ResultException(ServiceUnavailableResult(errorCode, message))
 
-  def throwNotFound(errCode: String, message: String = "") =
+  def throwNotFound(errCode: String, message: String = ""): Nothing =
     throw ResultException(NotFoundResult(errCode, message))
 
-  def throwEntityTooLargeIf(condition: Boolean, errCode: String, message: String) =
+  def throwEntityTooLargeIf(condition: Boolean, errCode: String, message: String): Unit =
     if (condition) throwEntityTooLarge(errCode, message)
 
-  def throwEntityTooLarge(errCode: String, message: String) =
+  def throwEntityTooLarge(errCode: String, message: String): Nothing =
     throw ResultException(EntityTooLargeResult(errCode, message))
 
-  def throwTooManyRequests(message: String) =
+  def throwTooManyRequests(message: String): Nothing =
     throw ResultException(R.TooManyRequest(message))
 
   /** Happens e.g. if the user attempts to upvote his/her own comment or
@@ -209,19 +211,19 @@ object EdHttp {
     throw ResultException(R.Conflict(s"409 Conflict\n$message [$errCode]"))
 
   def logAndThrowInternalError(errCode: String, message: String = "")
-        (implicit logger: play.api.Logger) = {
+        (implicit logger: play.api.Logger): Nothing = {
     logger.error("Internal error: "+ message +" ["+ errCode +"]")
     throwInternalError(errCode, message)
   }
 
   def logAndThrowForbidden(errCode: String, message: String = "")
-        (implicit logger: play.api.Logger) = {
+        (implicit logger: play.api.Logger): Nothing = {
     logger.warn("Forbidden: "+ message +" ["+ errCode +"]")
     throwForbidden(errCode, message)
   }
 
   def logAndThrowBadReq(errCode: String, message: String = "")
-        (implicit logger: play.api.Logger) = {
+        (implicit logger: play.api.Logger): Nothing = {
     logger.warn("Bad request: "+ message +" ["+ errCode +"]")
     throwBadReq(errCode, message)
   }
@@ -268,7 +270,7 @@ object EdHttp {
   def urlDecodeCookie(name: String, request: Request[_]): Option[String] =
     request.cookies.get(name).map(cookie => urlDecode(cookie.value))
 
-  def urlEncode(in: String) = {
+  def urlEncode(in: String): String = {
     // java.net.URLEncoder unfortunately converts ' ' to '+', so change '+' to
     // a percent encoded ' ', because the browsers seem to decode '+' to '+'
     // not ' '. And they should do so, i.e. decode '+' to '+', here is
@@ -284,14 +286,14 @@ object EdHttp {
     jn.URLEncoder.encode(in, "UTF-8").replaceAll("\\+", "%20")
   }
 
-  def urlDecode(in : String) = jn.URLDecoder.decode(in, "UTF-8")
+  def urlDecode(in : String): String = jn.URLDecoder.decode(in, "UTF-8")
 
   /**
    * Converts dangerous characters (w.r.t. xss attacks) to "~".
    * Perhaps converts a few safe characters as well.
    * COULD simply URL encode instead?!
    */
-  def convertEvil(value: String) =  // XSS test that implementation is ok
+  def convertEvil(value: String): String =  // XSS test that implementation is ok
     value.replaceAll("""<>\(\)\[\]\{\}"!#\$\%\^\&\*\+=,;:/\?""", "~")
   //value.filter(c => """<>()[]{}"!#$%^&*+=,;:/?""".count(_ == c) == 0)
   // but these are okay:  `’'-@._
@@ -343,8 +345,8 @@ object EdHttp {
 
 
 
-  def isAjax(request: Request[_]) =
-    request.headers.get("X-Requested-With") == Some("XMLHttpRequest")
+  def isAjax(request: Request[_]): Boolean =
+    request.headers.get("X-Requested-With").contains("XMLHttpRequest")
 
 
 

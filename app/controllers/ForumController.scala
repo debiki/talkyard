@@ -95,9 +95,8 @@ class ForumController @Inject()(cc: ControllerComponents, edContext: EdContext)
   }
 
 
-  def loadCategory(id: String): Action[Unit] = AdminGetAction { request =>
+  def loadCategoryToEdit(categoryId: CategoryId): Action[Unit] = AdminGetAction { request =>
     import request.dao
-    val categoryId = Try(id.toInt) getOrElse throwBadRequest("DwE6PU1", "Invalid category id")
     val (category, isDefault) = dao.loadTheCategory(categoryId)
     val catJson = categoryToJson(category, isDefault, recentTopics = Nil, pageStuffById = Map.empty)
     val (allPerms, groups) = dao.readOnlyTransaction { tx =>
@@ -277,15 +276,16 @@ class ForumController @Inject()(cc: ControllerComponents, edContext: EdContext)
   }
 
 
-  def listCategories(forumId: PageId): Action[Unit] = GetAction { request =>
-    unused("EsE4KFC02")
-    SECURITY; TESTS_MISSING  // securified
+  def listCategoriesAllSections(): Action[Unit] = GetAction { request =>
+    TESTS_MISSING  // [5FSLW20]
     import request.{dao, requester}
     val authzCtx = dao.getForumAuthzContext(requester)
-    val (categories, defaultCategoryId) = request.dao.listMaySeeSectionCategories(forumId,
-      includeDelted = true, authzCtx)
-    val json = JsArray(categories.map({ category =>
-      categoryToJson(category, category.id == defaultCategoryId, recentTopics = Nil,
+    val sectionCategoriesList =
+      request.dao.listMaySeeCategoriesAllSections(includeDeleted = false, authzCtx)
+    val allCategories = sectionCategoriesList.flatMap(_.categories)
+    val defaultCategoryIds = sectionCategoriesList.map(_.defaultCategoryId).toSet
+    val json = JsArray(allCategories.map({ category =>
+      categoryToJson(category, defaultCategoryIds.contains(category.id), recentTopics = Nil,
           pageStuffById = Map.empty)
     }))
     OkSafeJson(json)
@@ -293,15 +293,17 @@ class ForumController @Inject()(cc: ControllerComponents, edContext: EdContext)
 
 
   def listCategoriesAndTopics(forumId: PageId): Action[Unit] = GetAction { request =>
-    SECURITY; TESTS_MISSING // securified
+    TESTS_MISSING
     import request.{dao, requester}
     val authzCtx = dao.getForumAuthzContext(requester)
 
     val pageQuery = PageQuery(
       PageOrderOffset.ByBumpTime(None), request.parsePageFilter(), includeAboutCategoryPages = false)
 
-    val (categories, defaultCategoryId) = dao.listMaySeeSectionCategories(
-      forumId, includeDelted = pageQuery.pageFilter.includeDeleted, authzCtx)
+    val SectionCategories(_, categories, defaultCategoryId) = dao.listMaySeeCategoriesInSection(
+        forumId, includeDeleted = pageQuery.pageFilter.includeDeleted, authzCtx) getOrElse {
+      throwOkSafeJson(JsArray())
+    }
 
     val recentTopicsByCategoryId =
       mutable.Map[CategoryId, Seq[PagePathAndMeta]]()

@@ -1269,11 +1269,13 @@ export function undeleteCategory(categoryId: number, success: (StorePatch: any) 
 }
 
 
-export function loadCategory(id: number,
-      success: (category: Category, permissions: PermsOnPage[], groups: Group[]) => void) {
-  get('/-/load-category?id=' + id, response => {
-    success(response.category, response.permissions, response.groups);
-  });
+export function loadCategory(id: number, success: (response: LoadCategoryResponse) => void) {
+  get('/-/load-category?id=' + id, success);
+}
+
+
+export function listCategoriesAllSections(success: (response: Category[]) => void)  {
+  get('/-/list-categories-all-sections', success);
 }
 
 

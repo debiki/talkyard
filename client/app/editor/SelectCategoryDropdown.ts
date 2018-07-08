@@ -61,27 +61,32 @@ export const SelectCategoryDropdown = createClassAndFactory({
   },
 
   render: function() {
-    var props = this.props;
-    var state = this.state;
-    var store: Store = props.store;
-    var selectedCategory: Category =
-      _.find(store.currentCategories, c => c.id === props.selectedCategoryId);
+    const props = this.props;
+    const store: Store = props.store;
+
+    // UX COULD let user click a checkbox, to show categories from all site sections, even if by
+    // default showing only categories from any current site section. [subcomms]
+    const categoriesToList: Category[] = store.currentCategories.length ?
+        store.currentCategories : store.allCategoriesHacky;
+
+    const selectedCategory: Category =
+      _.find(categoriesToList, c => c.id === props.selectedCategoryId);
 
     dieIf(!selectedCategory && props.selectedCategoryId, "Selected category missing [EdE5YFK24]");
     const categoryName = selectedCategory ? selectedCategory.name : "Select category...";
 
-    var dropdownButton =
+    const dropdownButton =
       Button({ onClick: this.open, ref: 'dropdownButton' },
         categoryName + ' ', r.span({ className: 'caret' }));
 
-    var categoryListItems = store.currentCategories.map((category: Category) => {
+    const categoryListItems = categoriesToList.map((category: Category) => {
       return ExplainingListItem({ onSelect: this.onCategorySelected,
         activeEventKey: props.selectedCategoryId, eventKey: category.id, key: category.id,
         title: category.name, text: category.description });
     });
 
-    var dropdownModal =
-      DropdownModal({ show: state.open, onHide: this.close, showCloseButton: true,
+    const dropdownModal =
+      DropdownModal({ show: this.state.open, onHide: this.close, showCloseButton: true,
           atRect: this.state.buttonRect, windowWidth: this.state.windowWidth },
         r.div({ className: 'esDropModal_header' }, "Select category:"),
         r.ul({},

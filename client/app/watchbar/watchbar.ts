@@ -180,20 +180,22 @@ const ChatChannels = createComponent({
   displayName: 'ChatChannels',
 
   componentWillUnmount: function() {
-    this.isUnmounted = true;
-  },
-
-  componentWillMount: function() {
-    delete this.isUnmounted;
+    this.isGone = true;
   },
 
   createChatChannel: function() {
     morebundle.loginIfNeeded(LoginReason.LoginToChat, location.toString(), () => {
-      if (this.isUnmounted) return;
-      const store: Store = this.props.store;
-      const category = store_getCurrOrDefaultCat(store);
-      dieIf(!category, 'EsE4KPE02');
-      editor.editNewForumPage(category.id, PageRole.OpenChat);
+      if (this.isGone) return;
+      Server.listCategoriesAllSections((categories: Category[]) => {
+        if (this.isGone) return;
+        const store: Store = this.props.store;
+        // TESTS_MISSING [5WKBQRSB] create channel, when in direct msg topic: not in any site section.
+        // HACK works fine now, don't want to rerender anything so updating in place = doesn't matter.
+        store.allCategoriesHacky = categories;
+        const category = store_getCurrOrDefaultCat(store);
+        dieIf(!category, 'EsE4KPE02');
+        editor.editNewForumPage(category.id, PageRole.OpenChat);
+      });
     });
   },
 

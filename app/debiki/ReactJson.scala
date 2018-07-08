@@ -114,7 +114,7 @@ class JsonMaker(dao: SiteDao) {
       "horizontalLayout" -> JsBoolean(false))
 
     Json.obj(
-      "dbgSrc" -> "ESJ",
+      "dbgSrc" -> "EmptySiteJ",
       "widthLayout" -> (if (pageReq.isMobile) WidthLayout.Tiny else WidthLayout.Medium).toInt,
       "isEmbedded" -> false,
       "remoteOriginOrEmpty" -> "",
@@ -326,7 +326,7 @@ class JsonMaker(dao: SiteDao) {
     val site = dao.theSite()
 
     val jsonObj = Json.obj(
-      "dbgSrc" -> "PTJ",
+      "dbgSrc" -> "PgToJ",
       // These render params need to be known client side, so the page can be rendered in exactly
       // the same way, client side. Otherwise React can mess up the html structure, & things = broken.
       "widthLayout" -> renderParams.widthLayout.toInt,
@@ -385,7 +385,7 @@ class JsonMaker(dao: SiteDao) {
     val siteSettings = dao.getWholeSiteSettings()
     val site = request.dao.theSite()
     var result = Json.obj(
-      "dbgSrc" -> "SPJ",
+      "dbgSrc" -> "SpecPgJ",
       "widthLayout" -> (if (request.isMobile) WidthLayout.Tiny else WidthLayout.Medium).toInt,
       "isEmbedded" -> false,
       "remoteOriginOrEmpty" -> "",
@@ -713,7 +713,7 @@ class JsonMaker(dao: SiteDao) {
   private def listRestrictedCategoriesJson(categoryId: CategoryId,
         authzCtx: ForumAuthzContext): JsArray = {
     val (categories, defaultCategoryId) =
-      dao.listAllMaySeeCategories(categoryId, authzCtx)  // oops, also includes publ cats [4KQSEF08]
+      dao.listMaySeeCategoriesInSameSectionAs(categoryId, authzCtx)  // oops, also includes publ cats [4KQSEF08]
 
     // A tiny bit dupl code [5YK03W5]
     JsArray(categories.filterNot(_.isRoot) map { category =>
@@ -841,7 +841,7 @@ class JsonMaker(dao: SiteDao) {
 
   def makeCategoriesJson(categoryId: CategoryId, authzCtx: ForumAuthzContext)
         : JsArray = {
-    val (categories, defaultCategoryId) = dao.listAllMaySeeCategories(categoryId, authzCtx)
+    val (categories, defaultCategoryId) = dao.listMaySeeCategoriesInSameSectionAs(categoryId, authzCtx)
     // A tiny bit dupl code [5YK03W5]
     val categoriesJson = JsArray(categories.filterNot(_.isRoot) map { category =>
       makeCategoryJson(category, defaultCategoryId.contains(category.id))

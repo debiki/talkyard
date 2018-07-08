@@ -11,7 +11,11 @@ might be listed at many places in the tree, if it tests different things.
 
 Run all tests in different resolutions? Desktop, laptop, tablet, mobile.
 
-full text search (broken?)
+I'm planning to implement the text on lines with "NEXT" soon (probably because
+someone reproted a bug & it got fixed, better avoid regressions.)
+
+
+full text search:
 
 create site & forum -
   create:  create-site-all-logins
@@ -246,6 +250,7 @@ chat -
   private chat:             ==
   shows last 50 messages:
   pin globally —> appears in watchbar:  (6KWQ2)
+  create, when in no site section:  - [5WKBQRSB]  NEXT
 
 uploads -  (7KFC2)
   upload profile pic:  (8PK2)
@@ -357,7 +362,16 @@ admin -
         then delete & restore ancestor post tree: task not reactivated
         then delete & restore page: task not reactivated
     review tasks and authz -
-      mods won't see other's private topics:  test missing, see [5FSLW20]
+      mods won't see other's private topics:  - [5FSLW20]
+
+moderators:
+  profile says is moderator:
+  can go to staff section:
+  can list users:
+  can approve new site members:
+  can suspend & silence & watch users:
+  can approve comments:
+  won't see direct message comments:  - [5FSLW20]  NEXT
 
 superadmin -
   ... lots of stuff ...

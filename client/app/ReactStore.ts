@@ -517,7 +517,7 @@ ReactStore.activateMyself = function(anyNewMe: Myself) {
     });
   }
 
-  // Absent on about-user pages.
+  // Absent on about-user pages. CLEAN_UP no it's always present? Need not test for that.
   if (store.currentCategories) {
     addRestrictedCategories(store.me.restrictedCategories, store.currentCategories);
   }
