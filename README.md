@@ -45,7 +45,8 @@ Read about it, and demo forums: https://www.talkyard.io
 
 ### How install?
 
-_This_ repository is for writing Talkyard source code.
+_This_ repository is for writing Talkyard source code, and building Docker images (docker build
+files are in <code>./docker/<i>image-name</i>/</code>).
 To _install_ Talkyard, instead go to: https://github.com/debiki/talkyard-prod-one
 ("-prod-one" means "production installation on one server").
 

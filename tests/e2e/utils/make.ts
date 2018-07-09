@@ -72,8 +72,8 @@ const make = {
       createdAtMs: DefaultCreatedAtMs,
       emailAddress: "e2e-test--owen-owner@example.com",
       emailVerifiedAtMs: DefaultCreatedAtMs,
-      passwordHash: "cleartext:publicow23",
-      password: "publicow23",
+      passwordHash: "cleartext:publ-ow020",
+      password: "publ-ow020",
       isOwner: true,
       isAdmin: true,
     };
@@ -87,8 +87,8 @@ const make = {
       createdAtMs: DefaultCreatedAtMs,
       emailAddress: "e2e-test--admin-adam@example.com",
       emailVerifiedAtMs: DefaultCreatedAtMs,
-      passwordHash: "cleartext:publicad23",
-      password: "publicad23",
+      passwordHash: "cleartext:publ-ad020",
+      password: "publ-ad020",
       isAdmin: true,
     };
   },
@@ -101,8 +101,8 @@ const make = {
       createdAtMs: DefaultCreatedAtMs,
       emailAddress: "e2e-test--admin-alice@example.com",
       emailVerifiedAtMs: DefaultCreatedAtMs,
-      passwordHash: "cleartext:publical23",
-      password: "publical23",
+      passwordHash: "cleartext:publ-al020",
+      password: "publ-al020",
       isAdmin: true,
     };
   },
@@ -115,8 +115,8 @@ const make = {
       createdAtMs: DefaultCreatedAtMs,
       emailAddress: "e2e-test--mod-modya@example.com",
       emailVerifiedAtMs: DefaultCreatedAtMs,
-      passwordHash: "cleartext:publicmo23",
-      password: "publicmo23",
+      passwordHash: "cleartext:publ-mo020",
+      password: "publ-mo020",
       isModerator: true,
     };
   },
@@ -129,8 +129,8 @@ const make = {
       createdAtMs: DefaultCreatedAtMs,
       emailAddress: "e2e-test--mod-mons@example.com",
       emailVerifiedAtMs: DefaultCreatedAtMs,
-      passwordHash: "cleartext:publicmo23",
-      password: "publicmo23",
+      passwordHash: "cleartext:publ-mo020",
+      password: "publ-mo020",
       isModerator: true,
     };
   },
@@ -143,8 +143,8 @@ const make = {
       createdAtMs: DefaultCreatedAtMs,
       emailAddress: "e2e-test--maja@example.com",
       emailVerifiedAtMs: DefaultCreatedAtMs,
-      passwordHash: "cleartext:publicma23",
-      password: "publicma23",
+      passwordHash: "cleartext:publ-ma020",
+      password: "publ-ma020",
     };
   },
 
@@ -156,8 +156,8 @@ const make = {
       createdAtMs: DefaultCreatedAtMs,
       emailAddress: "e2e-test--maria@example.com",
       emailVerifiedAtMs: DefaultCreatedAtMs,
-      passwordHash: "cleartext:publicma23",
-      password: "publicma23",
+      passwordHash: "cleartext:publ-ma020",
+      password: "publ-ma020",
     };
   },
 
@@ -169,8 +169,8 @@ const make = {
       createdAtMs: DefaultCreatedAtMs,
       emailAddress: "e2e-test--michael@example.com",
       emailVerifiedAtMs: DefaultCreatedAtMs,
-      passwordHash: "cleartext:publicmi23",
-      password: "publicmi23",
+      passwordHash: "cleartext:publ-mi020",
+      password: "publ-mi020",
     };
   },
 
@@ -182,8 +182,8 @@ const make = {
       createdAtMs: DefaultCreatedAtMs,
       emailAddress: "e2e-test--trillian@example.com",
       emailVerifiedAtMs: DefaultCreatedAtMs,
-      passwordHash: "cleartext:publictr23",
-      password: "publictr23",
+      passwordHash: "cleartext:publ-tr020",
+      password: "publ-tr020",
       trustLevel: c.TestTrustLevel.Trusted,
     };
   },
@@ -196,8 +196,8 @@ const make = {
       createdAtMs: DefaultCreatedAtMs,
       emailAddress: "e2e-test--regina@example.com",
       emailVerifiedAtMs: DefaultCreatedAtMs,
-      passwordHash: "cleartext:publicre23",
-      password: "publicre23",
+      passwordHash: "cleartext:publ-re020",
+      password: "publ-re020",
       trustLevel: c.TestTrustLevel.Regular,
     };
   },
@@ -210,8 +210,8 @@ const make = {
       createdAtMs: DefaultCreatedAtMs,
       emailAddress: "e2e-test--corax@example.com",
       emailVerifiedAtMs: DefaultCreatedAtMs,
-      passwordHash: "cleartext:publicco23",
-      password: "publicco23",
+      passwordHash: "cleartext:publ-co020",
+      password: "publ-co020",
       trustLevel: c.TestTrustLevel.CoreMember,
     };
   },
@@ -224,8 +224,8 @@ const make = {
       createdAtMs: DefaultCreatedAtMs,
       emailAddress: "e2e-test--mallory@example.com",
       emailVerifiedAtMs: DefaultCreatedAtMs,
-      passwordHash: "cleartext:publicma23",
-      password: "publicma23",
+      passwordHash: "cleartext:publ-ma020",
+      password: "publ-ma020",
     };
   },
 

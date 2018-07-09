@@ -234,20 +234,28 @@ class EdSecurity(globals: Globals) {
 
   def throwErrorIfPasswordBad(
         password: String, username: String, fullName: Option[String], email: String,
-        minPasswordLength: Int) {
+        minPasswordLength: Int, isForStaff: Boolean) {
 
     // The below checks aren't important; this is already done client side via zxcvbn.
     // Here, just quick double checks. (Only maybe reserved-words isn't totally done
     // by zxcvbn?)
 
-    if (password.length < minPasswordLength)
-      throwBadReq("TyE5WKBTU2", "Password too short [TyEPWDMIN_]")
+    val minLength = if (isForStaff) math.max(10, minPasswordLength) else minPasswordLength
+    if (password.length < minLength) {
+      val becauseStaff = if (isForStaff) "— you're part of the staff here" else ""
+      throwBadReq(
+        "TyE5WKBTU2", s"Password too short, should be min $minLength chars $becauseStaff [TyEPWDMIN_]")
+    }
 
-    if (ReservedNames.isReservedWord(password))
-      throwBadReq("TyE3WKB10", "Password too common, is in a reserved words list [TyEPWDCMN]")
+    def fairlyMuchLongerThan(word: String) =
+      (password.length - word.length) >= (if (isForStaff) 6 else 4)
+
+    ReservedNames.includesReservedWord(password) foreach { theWord =>
+      throwBadRequestIf(!fairlyMuchLongerThan(theWord),
+          "TyE3WKB10", s"Password too simple, includes a reserved word: $theWord [TyEPWDSMPL]")
+    }
 
     val lowercasePwd = password.toLowerCase
-    def fairlyMuchLongerThan(word: String) = (password.length - word.length) >= 4
 
     if (lowercasePwd.indexOf(username.toLowerCase) >= 0 && !fairlyMuchLongerThan(username))
       throwBadReq("TyE3WKB10", "Password includes username [TyEPWDUSN]")

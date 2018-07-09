@@ -156,6 +156,8 @@ case class NewPasswordUserData(
   val passwordHash: String =
     DbDao.saltAndHashPassword(password)
 
+  def isStaff: Boolean = isAdmin || isModerator || isOwner
+
   def makeUser(userId: UserId) = MemberInclDetails(
     id = userId,
     fullName = name,
@@ -609,7 +611,7 @@ case class MemberInclDetails(
   require(!deactivatedAt.exists(_.isBefore(createdWhen)), "TyE2GKDU0")
   require(!deletedAt.exists(_.isBefore(createdWhen)), "TyE1PUF054")
 
-  def isStaff: Boolean = isAdmin || isModerator
+  def isStaff: Boolean = isAdmin || isModerator || isOwner
   def isApprovedOrStaff: Boolean = approvedAt.isDefined || isStaff
 
   def isGuest: Boolean = User.isGuestId(id)

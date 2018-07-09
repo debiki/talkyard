@@ -32,7 +32,11 @@ object ReservedNames {
     */
   def isSubdomainReserved(subdomain: String): Boolean = isWhateverReserved(subdomain)
 
-  def isReservedWord(word: String): Boolean = allNames contains word
+  def includesReservedWord(word: String): Option[String] = {
+    val wordlowercase = word.toLowerCase
+    val matches = allNames.filter(n => wordlowercase.contains(n))
+    matches.reduceLeftOption((a, b) => if (a.length > b.length) a else b)
+  }
 
   def isUsernameReserved(username: String): Boolean =   // [2PGKR8ML]
     if (username.startsWith("__sx_") && // [2QWGRC8P]

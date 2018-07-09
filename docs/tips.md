@@ -12,6 +12,8 @@ Free up disk space, by deleting old images:
 
     docker image prune  # optionally, add:  --all
 
+How to push images to a local repo, to test in Vagrant: see [testing-images-in-vagrant.md](./testing-images-in-vagrant.md).
+
 
 ### ElasticSearch stuff:
 

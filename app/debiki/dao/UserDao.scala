@@ -460,7 +460,8 @@ trait UserDao {
     security.throwErrorIfPasswordBad(
       password = userData.password, username = userData.username,
       fullName = userData.name, email = userData.email,
-      minPasswordLength = globals.minPasswordLengthAllSites)
+      minPasswordLength = globals.minPasswordLengthAllSites,
+      isForStaff = userData.isStaff)
     val user = readWriteTransaction { tx =>
       val now = userData.createdAt
       val userId = tx.nextMemberId
@@ -502,7 +503,7 @@ trait UserDao {
       security.throwErrorIfPasswordBad(
         password = newPassword, username = user.username,
         fullName = user.fullName, email = user.primaryEmailAddress,
-        minPasswordLength = globals.minPasswordLengthAllSites)
+        minPasswordLength = globals.minPasswordLengthAllSites, isForStaff = user.isStaff)
       user = user.copy(passwordHash = Some(newPasswordSaltHash))
       transaction.updateMemberInclDetails(user)
     }

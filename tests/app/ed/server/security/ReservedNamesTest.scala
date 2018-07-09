@@ -33,6 +33,17 @@ class ReservedNamesTest extends FreeSpec with MustMatchers {
       ReservedNames.isUsernameReserved("nice_name") mustBe false
     }
 
+    "finds longest reserved word in string" in {
+      ReservedNames.includesReservedWord("The admin is not a kitten") mustBe Some("admin")
+      ReservedNames.includesReservedWord("HmmWhateverHmm") mustBe Some("whatever")
+      ReservedNames.includesReservedWord("123 cgi-bin") mustBe Some("cgi-bin") // not "cgi"
+      ReservedNames.includesReservedWord("123 cgi-b") mustBe Some("cgi")
+      ReservedNames.includesReservedWord("123 comments") mustBe Some("comments")
+      ReservedNames.includesReservedWord("123 comment") mustBe Some("comment")
+      ReservedNames.includesReservedWord("123 comment configuration") mustBe Some("configuration")
+      ReservedNames.includesReservedWord("123") mustBe None
+    }
+
     "disallow reserved names" in {
       // One per line:
       ReservedNames.isUsernameReserved("admin") mustBe true
