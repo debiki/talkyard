@@ -141,7 +141,8 @@ function runAllE2eTests {
   runE2eTest s/wdio target/e2e/wdio.conf.js            --only editor-onebox $args
 
   runE2eTest s/wdio target/e2e/wdio.3chrome.conf.js    --only direct-messages-notfs.3browsers $args
-  runE2eTest s/wdio target/e2e/wdio.2chrome.conf.js    --only basic-chat.2browsers $args
+  runE2eTest s/wdio target/e2e/wdio.2chrome.conf.js    --only chat-basic.2browsers $args
+  runE2eTest s/wdio target/e2e/wdio.2chrome.conf.js    --only chat-create-from-direct-message.2browsers $args
 
   runE2eTest s/wdio target/e2e/wdio.3chrome.conf.js    --only categories-basic.3browsers $args
   #runE2eTest s/wdio target/e2e/wdio.2chrome.conf.js    --only categories-delete.2browsers $args
@@ -157,6 +158,7 @@ function runAllE2eTests {
   runE2eTest s/wdio target/e2e/wdio.2chrome.conf.js    --only admin-user-suspend.2browsers $args
   runE2eTest s/wdio target/e2e/wdio.2chrome.conf.js    --only admin-review-invalidate-for-reply.2browsers $args
   runE2eTest s/wdio target/e2e/wdio.2chrome.conf.js    --only admin-review-invalidate-page-deld.2browsers $args
+  runE2eTest s/wdio target/e2e/wdio.2chrome.conf.js    --only mod-review.2browsers $args
 
   runE2eTest s/wdio target/e2e/wdio.2chrome.conf.js    --only password-login-reset.2browsers $args
   runE2eTest s/wdio target/e2e/wdio.conf.js            --only user-profile-access $args

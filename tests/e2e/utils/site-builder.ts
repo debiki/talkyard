@@ -142,6 +142,11 @@ function buildSite(site?: SiteData) {
     },
 
 
+    addPost: function(testPostData: NewTestPost) {
+      site.posts.push(make.post(testPostData));
+    },
+
+
     addEmptyForum: function(opts: { title: string, introText?: string, members?: string[] })
           : EmptyTestForum {
       const members = opts.members || ['mons', 'modya', 'regina', 'corax', 'maria', 'michael', 'mallory'];

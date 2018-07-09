@@ -247,15 +247,17 @@ class EdSecurity(globals: Globals) {
       throwBadReq("TyE3WKB10", "Password too common, is in a reserved words list [TyEPWDCMN]")
 
     val lowercasePwd = password.toLowerCase
+    def fairlyMuchLongerThan(word: String) = (password.length - word.length) >= 4
 
-    if (lowercasePwd.indexOf(username.toLowerCase) >= 0)
+    if (lowercasePwd.indexOf(username.toLowerCase) >= 0 && !fairlyMuchLongerThan(username))
       throwBadReq("TyE3WKB10", "Password includes username [TyEPWDUSN]")
 
     // Client side, zxcvbn does a better check.
-    if (fullName.isDefined && lowercasePwd.indexOf(fullName.get.toLowerCase) >= 0)
+    if (fullName.isDefined && lowercasePwd.indexOf(fullName.get.toLowerCase) >= 0
+        && !fairlyMuchLongerThan(fullName.get))
       throwBadReq("TyE3WKB10", "Password includes full name [TyEPWDFLN]")
 
-    if (lowercasePwd.indexOf(email.toLowerCase) >= 0)
+    if (lowercasePwd.indexOf(email.toLowerCase) >= 0 && !fairlyMuchLongerThan(email))
       throwBadReq("TyE3WKB10", "Password includes email [TyEPWDEML]")
 
     // If it's too long, then it's not a password? It's some other weird thing, perhaps bad?

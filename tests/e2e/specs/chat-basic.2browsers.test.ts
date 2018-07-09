@@ -42,7 +42,7 @@ describe('chat', function() {
     owen.rememberCurrentUrl();
     owen.waitAndClick('.e2eSaveBtn');
     owen.waitForNewUrl();
-    owen.waitAndClick('#theJoinChatB');
+    owen.chat.joinChat();
   });
 
   it("Owen writes a chat message", function() {
@@ -58,7 +58,7 @@ describe('chat', function() {
   });
 
   it("Maria joins the chat topic", function() {
-    maria.waitAndClick('#theJoinChatB');
+    maria.chat.joinChat();
     maria.loginDialog.loginWithPassword(maria);
   });
 

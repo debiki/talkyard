@@ -72,8 +72,8 @@ const make = {
       createdAtMs: DefaultCreatedAtMs,
       emailAddress: "e2e-test--owen-owner@example.com",
       emailVerifiedAtMs: DefaultCreatedAtMs,
-      passwordHash: "cleartext:publicOwen123",
-      password: "publicOwen123",
+      passwordHash: "cleartext:publicow23",
+      password: "publicow23",
       isOwner: true,
       isAdmin: true,
     };
@@ -87,8 +87,8 @@ const make = {
       createdAtMs: DefaultCreatedAtMs,
       emailAddress: "e2e-test--admin-adam@example.com",
       emailVerifiedAtMs: DefaultCreatedAtMs,
-      passwordHash: "cleartext:publicAdam123",
-      password: "publicAdam123",
+      passwordHash: "cleartext:publicad23",
+      password: "publicad23",
       isAdmin: true,
     };
   },
@@ -101,8 +101,8 @@ const make = {
       createdAtMs: DefaultCreatedAtMs,
       emailAddress: "e2e-test--admin-alice@example.com",
       emailVerifiedAtMs: DefaultCreatedAtMs,
-      passwordHash: "cleartext:publicAlice123",
-      password: "publicAlice123",
+      passwordHash: "cleartext:publical23",
+      password: "publical23",
       isAdmin: true,
     };
   },
@@ -115,8 +115,8 @@ const make = {
       createdAtMs: DefaultCreatedAtMs,
       emailAddress: "e2e-test--mod-modya@example.com",
       emailVerifiedAtMs: DefaultCreatedAtMs,
-      passwordHash: "cleartext:publicModya123",
-      password: "publicModya123",
+      passwordHash: "cleartext:publicmo23",
+      password: "publicmo23",
       isModerator: true,
     };
   },
@@ -129,8 +129,8 @@ const make = {
       createdAtMs: DefaultCreatedAtMs,
       emailAddress: "e2e-test--mod-mons@example.com",
       emailVerifiedAtMs: DefaultCreatedAtMs,
-      passwordHash: "cleartext:publicMons123",
-      password: "publicMons123",
+      passwordHash: "cleartext:publicmo23",
+      password: "publicmo23",
       isModerator: true,
     };
   },
@@ -143,8 +143,8 @@ const make = {
       createdAtMs: DefaultCreatedAtMs,
       emailAddress: "e2e-test--maja@example.com",
       emailVerifiedAtMs: DefaultCreatedAtMs,
-      passwordHash: "cleartext:publicMaja123",
-      password: "publicMaja123",
+      passwordHash: "cleartext:publicma23",
+      password: "publicma23",
     };
   },
 
@@ -156,8 +156,8 @@ const make = {
       createdAtMs: DefaultCreatedAtMs,
       emailAddress: "e2e-test--maria@example.com",
       emailVerifiedAtMs: DefaultCreatedAtMs,
-      passwordHash: "cleartext:publicMaria123",
-      password: "publicMaria123",
+      passwordHash: "cleartext:publicma23",
+      password: "publicma23",
     };
   },
 
@@ -169,8 +169,8 @@ const make = {
       createdAtMs: DefaultCreatedAtMs,
       emailAddress: "e2e-test--michael@example.com",
       emailVerifiedAtMs: DefaultCreatedAtMs,
-      passwordHash: "cleartext:publicMichael123",
-      password: "publicMichael123",
+      passwordHash: "cleartext:publicmi23",
+      password: "publicmi23",
     };
   },
 
@@ -182,8 +182,8 @@ const make = {
       createdAtMs: DefaultCreatedAtMs,
       emailAddress: "e2e-test--trillian@example.com",
       emailVerifiedAtMs: DefaultCreatedAtMs,
-      passwordHash: "cleartext:publicTrillian123",
-      password: "publicTrillian123",
+      passwordHash: "cleartext:publictr23",
+      password: "publictr23",
       trustLevel: c.TestTrustLevel.Trusted,
     };
   },
@@ -196,8 +196,8 @@ const make = {
       createdAtMs: DefaultCreatedAtMs,
       emailAddress: "e2e-test--regina@example.com",
       emailVerifiedAtMs: DefaultCreatedAtMs,
-      passwordHash: "cleartext:publicRegina123",
-      password: "publicRegina123",
+      passwordHash: "cleartext:publicre23",
+      password: "publicre23",
       trustLevel: c.TestTrustLevel.Regular,
     };
   },
@@ -210,8 +210,8 @@ const make = {
       createdAtMs: DefaultCreatedAtMs,
       emailAddress: "e2e-test--corax@example.com",
       emailVerifiedAtMs: DefaultCreatedAtMs,
-      passwordHash: "cleartext:publicCorax123",
-      password: "publicCorax123",
+      passwordHash: "cleartext:publicco23",
+      password: "publicco23",
       trustLevel: c.TestTrustLevel.CoreMember,
     };
   },
@@ -224,8 +224,8 @@ const make = {
       createdAtMs: DefaultCreatedAtMs,
       emailAddress: "e2e-test--mallory@example.com",
       emailVerifiedAtMs: DefaultCreatedAtMs,
-      passwordHash: "cleartext:publicMallory123",
-      password: "publicMallory123",
+      passwordHash: "cleartext:publicma23",
+      password: "publicma23",
     };
   },
 
@@ -325,6 +325,7 @@ const make = {
       approvedHtmlSanitized = values.nr === 0 ?
           values.approvedSource : `<p>${values.approvedSource}</p>`;
     }
+    const authorId = values.authorId || values.page.authorId;
     return {
       id: values.id || getAndBumpNextPostId(),
       pageId: values.page.id,
@@ -332,10 +333,10 @@ const make = {
       parentNr: values.parentNr,
       multireply: undefined,
       createdAtMs: values.page.createdAtMs,
-      createdById: values.page.authorId,
+      createdById: authorId,
       currRevStartedAtMs: values.page.createdAtMs,
       currRevLastEditedAtMs: undefined,
-      currRevById: values.page.authorId,
+      currRevById: authorId,
       lastApprovedEditAtMs: undefined,
       lastApprovedEditById: undefined,
       numDistinctEditors: 1,

@@ -196,7 +196,7 @@ describe("emb cmts guest login", () => {
     fidosBrowser.editor.save();
     fidosBrowser.swithToOtherTabOrWindow();
     fidosBrowser.loginDialog.createPasswordAccount({
-        username: 'woff', password: 'public-woff-woff-woff', email: 'e2e-test--woff@example.com' },
+        username: 'woff', password: 'public-waff-waff-waff', email: 'e2e-test--woff@example.com' },
         false,
         'THERE_WILL_BE_NO_VERIFY_EMAIL_DIALOG');
     fidosBrowser.switchBackToFirstTabOrWindow();

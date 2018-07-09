@@ -123,19 +123,20 @@ describe("admin-review-invalidate-page-deld [TyT5FKBSQ]", () => {
   // task 4 = for reply 1, Maria flagged angryReplyOne
   // task 5 = for reply 1, because first post
 
-  it("Owen accepts friendly reply 4 (review tasks don't disappear when page deleted)", () => {
+  it("Owen reject-deletes angry reply 1 (review tasks don't disappear when page deleted)", () => {
     owensBrowser.adminArea.goToReview();
-    owensBrowser.adminArea.review.approvePostForTaskIndex(1);
+    owensBrowser.adminArea.review.rejectDeleteTaskIndex(4);
   });
 
-  it("... and reject-deletes angry reply 1", () => {
-    owensBrowser.adminArea.review.rejectDeleteTaskIndex(4);
+  it("... and accepts friendly reply 4", () => {
+    owensBrowser.adminArea.review.approvePostForTaskIndex(1);
   });
 
   it("... the server carries out the decisions", () => {
     owensBrowser.adminArea.review.playTimePastUndo();
     const wait = owensBrowser.adminArea.review.waitForServerToCarryOutDecisions;
     wait(forum.topics.byMichaelCategoryA.id, friendlyReplyFourNr);
+    owensBrowser.refresh(); // unmount bug workaround [5QKBRQ].
     wait(forum.topics.byMichaelCategoryA.id, angryReplyOneNr);
   });
 

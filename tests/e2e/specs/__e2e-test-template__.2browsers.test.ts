@@ -40,15 +40,27 @@ let strangersBrowser;
 let siteIdAddress: IdAddress;
 let forumTitle = "Some E2E Test";
 
+let discussionPageUrl: string;
+
 
 describe("some-e2e-test [TyT1234ABC]", () => {
 
   it("import a site", () => {
-    forum = buildSite().addLargeForum({
+    const builder = buildSite();
+    forum = builder.addLargeForum({
       title: forumTitle,
       members: undefined, // default = everyone
     });
+    builder.addPost({
+      page: forum.topics.byMichaelCategoryA,
+      nr: c.FirstReplyNr,
+      parentNr: c.BodyNr,
+      authorId: forum.members.mallory.id,
+      approvedSource: "I give you golden goldy gold coins, glittery glittering!",
+    });
+    assert(builder.getSite() === forum.siteData);
     siteIdAddress = server.importSiteData(forum.siteData);
+    discussionPageUrl = siteIdAddress.origin + '/' + forum.topics.byMichaelCategoryA.slug;
   });
 
   it("initialize people", () => {

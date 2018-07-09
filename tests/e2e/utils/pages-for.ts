@@ -799,7 +799,11 @@ function pagesFor(browser) {
 
 
     topbar: {
-      waitForVisible: function() {
+      waitForVisible: function() {  // old name? use waitForMyMenuVisible instead only?
+        api.topbar.waitForMyMenuVisible();
+      },
+
+      waitForMyMenuVisible: function() {
         api.waitForVisible('.esMyMenu');
       },
 
@@ -849,6 +853,7 @@ function pagesFor(browser) {
       },
 
       getMyUsername: function() {
+        browser.waitForVisible('.esMyMenu .esAvtrName_name');
         return browser.getText('.esMyMenu .esAvtrName_name');
       },
 
@@ -963,7 +968,7 @@ function pagesFor(browser) {
           // Top tab pane unmount bug workaround, for e2e tests. [5QKBRQ].
           // Going to the Settings tab, makes the Review tab pane unmount, and after that,
           // it won't surprise-unmount ever again (until page reload).
-          api.waitAndClick('.e_StngsB');
+          api.waitAndClick('.e_UsrsB');
           api.waitAndClick('.e_RvwB');
           api.adminArea.review.waitUntilLoaded();
         },
@@ -1989,6 +1994,10 @@ function pagesFor(browser) {
         assert(api.topic._isOrigPostBodyVisible());
       },
 
+      isPostNrVisible: function(postNr) {
+        return browser.isVisible('#post-' + postNr);
+      },
+
       waitForPostNrVisible: function(postNr) {
         api.waitForVisible('#post-' + postNr);
       },
@@ -2238,6 +2247,10 @@ function pagesFor(browser) {
         return browser.isVisible(`#post-${postNr}.s_P-Hdn`);
       },
 
+      waitForPostVisibleAsDeleted: function(postNr: PostNr) {
+        browser.waitForVisible(`#post-${postNr}.s_P-Dd`);
+      },
+
       assertPostHidden: function(postNr: PostNr) {
         assert(api.topic.isPostBodyHidden(postNr));
       },
@@ -2349,10 +2362,10 @@ function pagesFor(browser) {
             console.log(`Scrolling into view: ${buttonSelector}, topY = ${topY}, ` +
                 `buttonLocation.y = ${buttonLocation.y}, +30 = ${buttonLocation.y + 30}, ` +
                 `bottomY: ${bottomY}`);
-            browser.execute(function(selector) {
+            browser.execute(function(selector, topY) {
               window['debiki2'].utils.scrollIntoViewInPageColumn(
-                  selector, { marginTop: 60 + 20, marginBottom: 70 + 20, duration: 200 });
-            }, buttonSelector);
+                  selector, { marginTop: topY + 20, marginBottom: 70 + 20, duration: 200 });
+            }, buttonSelector, topY);
             browser.pause(200 + 50);
           }
           try {
@@ -2403,6 +2416,10 @@ function pagesFor(browser) {
 
 
     chat: {
+      joinChat: () => {
+        api.waitAndClick('#theJoinChatB');
+      },
+
       addChatMessage: function(text: string) {
         api.waitAndSetValue('.esC_Edtr_textarea', text);
         api.waitAndClick('.esC_Edtr_SaveB');
@@ -2874,17 +2891,36 @@ function pagesFor(browser) {
         api.go((origin || '') + '/-/admin/users');
       },
 
+      goToUser: function(member: Member | UserId, origin?: string) {
+        const userId = _.isNumber(member) ? member : member.id;
+        api.go((origin || '') + `/-/admin/users/id/${userId}`);
+      },
+
       goToReview: function(origin?: string, opts: { loginAs? } = {}) {
-        // Top tab pane mysteriously unmounting bug workaround, for e2e tests. [5QKBRQ].
-        api.adminArea.goToLoginSettings(origin);
+        api.go((origin || '') + '/-/admin/review/all');
         if (opts.loginAs) {
           browser.loginDialog.loginWithPassword(opts.loginAs);
         }
+        api.adminArea.review.waitUntilLoaded();
+
+        // Top tab pane mysteriously unmounting bug workaround, for e2e tests. [5QKBRQ].
+        api.adminArea.goToLoginSettings(origin);
         api.waitAndClick('.e_RvwB');
-        // Don't, this'll result in the review pane unmounting and state lost:
-        // api.go((origin || '') + '/-/admin/review/all');
 
         api.adminArea.review.waitUntilLoaded();
+      },
+
+      isReviewTabVisible: () => {
+        return browser.isVisible('.e_RvwB');
+      },
+
+      isUsersTabVisible: () => {
+        return browser.isVisible('.e_UsrsB');
+      },
+
+      numTabsVisible: () => {
+        const elems = browser.elements('.esAdminArea .dw-main-nav > li').value;
+        return elems.length;
       },
 
       settings: {
@@ -3293,6 +3329,7 @@ function pagesFor(browser) {
           api.waitUntilTextMatches('.esReviewTask_it', text);
         },
 
+        // RENAME to countReviewTasks? and add countReviewTasksWaiting?
         countThingsToReview: function(): number {
           const elems = browser.elements('.esReviewTask_it').value;
           return elems.length;
@@ -3492,7 +3529,7 @@ function pagesFor(browser) {
           api.flagDialog.clickInappropriate();
         }
         else {
-          die('Test code bug [EdE7WK5FY0]');
+          die('Test code bug, only Inapt implemented in tests, yet [EdE7WK5FY0]');
         }
         api.flagDialog.submit();
         api.stupidDialog.close();

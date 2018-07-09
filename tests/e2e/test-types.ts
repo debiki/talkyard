@@ -261,6 +261,7 @@ interface NewTestPost {
   id?: number;
   // Not just page id, because needs author, creation date, etc.
   page: Page | PageJustAdded;
+  authorId?: UserId; // if absent, will be the page author
   nr: number;
   parentNr?: number;
   approvedSource: string;
@@ -348,14 +349,14 @@ interface EmptyTestForum {
   siteData: SiteData;
   forumPage: any;
   members: {
-    owen: any;
-    mons: any;
-    modya: any;
-    corax: any;
-    regina: any;
-    maria: any;
-    michael: any;
-    mallory: any;
+    owen?: Member;
+    mons?: Member;
+    modya?: Member;
+    corax?: Member;
+    regina?: Member;
+    maria?: Member;
+    michael?: Member;
+    mallory?: Member;
   },
   guests: {
     gunnar: any;

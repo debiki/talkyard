@@ -185,7 +185,7 @@ const AdminAppComponent = createReactClass(<any> {
         LiNavLink({ to: ar + 'settings', className: 'e_StngsB' }, "Settings") : null;
 
     const customize = me.isAdmin ?
-        LiNavLink({ to: ar + 'customize' }, "Look and feel") : null;
+        LiNavLink({ to: ar + 'customize', className: 'e_LnFB' }, "Look and feel") : null;
 
     const saveBar = _.isEmpty(this.state.editedSettings) ? null :
       r.div({ className: 'esA_SaveBar' },
@@ -222,7 +222,7 @@ const AdminAppComponent = createReactClass(<any> {
         r.div({ className: 'container' },
           r.ul({ className: 'dw-main-nav nav nav-pills' },
             settings,
-            LiNavLink({ to: ar + 'users' }, "Users"),
+            LiNavLink({ to: ar + 'users', className: 'e_UsrsB' }, "Users"),
             customize,
             LiNavLink({ to: ar + 'review', className: 'e_RvwB' }, "Review")),
           childRoutes,
