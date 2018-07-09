@@ -396,6 +396,23 @@ export function category_iconClass(category: Category | CategoryId, store: Store
 }
 
 
+// Page
+//----------------------------------
+
+export function page_mostRecentPostNr(page: Page): number {
+  // BUG not urgent. COULD incl the max post nr in Page, so even if not yet loaded,
+  // we'll know its nr, and can load and scroll to it, from loadAndScrollToAnyUrlAnchorPost().
+  let maxNr = -1;
+  _.values(page.postsByNr).forEach((post: Post) => {
+    maxNr = Math.max(post.nr, maxNr);
+  });
+  // @ifdef DEBUG
+  dieIf(maxNr < TitleNr, 'TyE5FKBQATS');
+  // @endif
+  return maxNr;
+}
+
+
 // Forum buttons
 //----------------------------------
 

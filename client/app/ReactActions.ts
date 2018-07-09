@@ -440,11 +440,21 @@ export function loadAndShowPost(postNr: PostNr, showChildrenToo?: boolean, callb
  * and including X have been loaded. Then scrolls to X.
  */
 export function loadAndScrollToAnyUrlAnchorPost(newHash?: string) {
-  const anchorPostNr = anyAnchorPostNr(newHash);
-  if (!anchorPostNr) {
+  const magicAnchor = anyMagicAnchor(newHash);
+  let anchorPostNr = anyAnchorPostNr(newHash);   // [7WKBQ28]
+
+  if (!anchorPostNr && !magicAnchor) {
     // No #post-X in the URL.
     return;
   }
+
+  if (magicAnchor) {
+    // Lookup most recent post nr. Is this a HACK? To access the store here?
+    const store: Store = ReactStore.allData();
+    if (!store.currentPage) return;
+    anchorPostNr = page_mostRecentPostNr(store.currentPage);
+  }
+
   const postElem = $byId('post-' + anchorPostNr);
   if (!postElem) {
     loadAndShowPost(anchorPostNr, undefined, () => markAnyNotificationAsSeen(anchorPostNr));
@@ -453,6 +463,13 @@ export function loadAndScrollToAnyUrlAnchorPost(newHash?: string) {
     debiki.internal.showAndHighlightPost(postElem);
     markAnyNotificationAsSeen(anchorPostNr);
   }
+}
+
+
+function anyMagicAnchor(hash?: string): MagicAnchor {
+  const theHash = firstDefinedOf(hash, location.hash);
+  if (theHash === '#scrollToLatest') return MagicAnchor.ScrollToLatest;
+  return undefined;
 }
 
 

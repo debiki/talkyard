@@ -51,6 +51,10 @@ interface CheckboxEvent {
 type ErrorPolicy = number | void;
 
 
+enum MagicAnchor {
+  ScrollToLatest = 1,
+}
+
 
 interface PostToModerate {
   pageId: string;

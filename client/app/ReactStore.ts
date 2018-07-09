@@ -526,7 +526,7 @@ ReactStore.activateMyself = function(anyNewMe: Myself) {
   if (readingProgress && readingProgress.lastViewedPostNr &&
       readingProgress.lastViewedPostNr >= FirstReplyNr) {
     if (ReactActions.anyAnchorPostNr()) {
-      // Then other code scrolls to the anchored post instead.
+      // Then other code [7WKBQ28] scrolls to the anchored post instead.
     }
     else setTimeout(function() {
       // Don't do this directly, because this (sometimes?/always?) forces a reflow during

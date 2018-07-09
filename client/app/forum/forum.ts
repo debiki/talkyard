@@ -1237,8 +1237,12 @@ const TopicRow = createComponent({
     }
 
     const orderOffset: OrderOffset = this.props.orderOffset;
-    const activeAt = prettyLetterTimeAgo(orderOffset.sortOrder === TopicSortOrder.CreatedAt ?
-        topic.createdAtMs : topic.bumpedAtMs || topic.createdAtMs);
+
+    const activeAt = Link({ to: topic.url + '#scrollToLatest' },
+        prettyLetterTimeAgo(
+          orderOffset.sortOrder === TopicSortOrder.CreatedAt
+            ? topic.createdAtMs
+            : topic.bumpedAtMs || topic.createdAtMs));
 
     // We use a table layout, only for wide screens, because table columns = spacy.
     if (this.props.inTable) return (
