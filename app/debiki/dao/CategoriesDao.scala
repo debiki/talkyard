@@ -132,7 +132,7 @@ trait CategoriesDao {
         : Seq[SectionCategories] = {
     if (rootCategories eq null) {
       loadBuildRememberCategoryMaps()
-      dieIf(rootCategories eq null, "EsE4KG0W2")
+      dieIf(rootCategories eq null, "TyE5PB20A")
     }
 
     val result = ArrayBuffer[SectionCategories]()
@@ -163,7 +163,7 @@ trait CategoriesDao {
       return (Nil, None)
 
     // A bit dupl code (7UKWTW1)
-    val rootCategory = loadRootCategoryForCategoryid(categoryId) getOrDie "TyEPKDRW0"
+    val rootCategory = loadRootCategoryForCategoryId(categoryId) getOrDie "TyEPKDRW0"
     val categories = listDescendantMaySeeCategories(rootCategory.id, includeRoot = false,
       includeDeleted = authzCtx.isStaff, authzCtx).sortBy(_.position)
     (categories, Some(rootCategory.defaultCategoryId getOrDie "TyE5JKF2"))
@@ -321,16 +321,16 @@ trait CategoriesDao {
     loadCategory(id) getOrElse throwNotFound("DwE8YUF0", s"No category with id $id")
 
 
-  private def loadRootCategoryForCategoryid(categoryId: CategoryId): Option[Category] =
+  private def loadRootCategoryForCategoryId(categoryId: CategoryId): Option[Category] =
     loadAncestorCategoriesRootLast(categoryId).lastOption
 
 
   def loadSectionPageId(categoryId: CategoryId): Option[PageId] =
-    loadRootCategoryForCategoryid(categoryId).map(_.sectionPageId)
+    loadRootCategoryForCategoryId(categoryId).map(_.sectionPageId)
 
 
   def loadTheSectionPageId(categoryId: CategoryId): PageId =
-    loadRootCategoryForCategoryid(categoryId).map(_.sectionPageId) getOrDie "DwE804K2"
+    loadRootCategoryForCategoryId(categoryId).map(_.sectionPageId) getOrDie "DwE804K2"
 
   def loadSectionPageIdsAsSeq(): Seq[PageId] = {
     loadBuildRememberCategoryMaps()

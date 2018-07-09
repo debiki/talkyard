@@ -614,7 +614,7 @@ class JsonMaker(dao: SiteDao) {
         permissions: Seq[PermsOnPages], unapprovedPostAuthorIds: Set[UserId],
         transaction: SiteTransaction): JsObject = {
 
-    // Bug: If !isAdmin, might count review tasks one cannot see, later on the review page. [5FSLW20]
+    // Bug: If !isAdmin, might count [review tasks one cannot see on the review page]. [5FSLW20]
     val reviewTasksAndCounts =
       if (user.isStaff) transaction.loadReviewTaskCounts(user.isAdmin)
       else ReviewTaskCounts(0, 0)

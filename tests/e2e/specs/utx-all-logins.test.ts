@@ -46,7 +46,7 @@ const passwordUsersInstrs2 = 'passwordUsersInstrs2';
 const passwordUsersFeedbackToGmail = 'passwordUsersFeedbackToGmail';
 const passwordUser = {
   email: 'pascal@paris.fr',
-  password: 'publicpa23',
+  password: 'publ-pa020',
   username: 'pascal',
   fullName: '',
 };

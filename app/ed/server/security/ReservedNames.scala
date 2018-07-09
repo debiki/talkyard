@@ -32,9 +32,10 @@ object ReservedNames {
     */
   def isSubdomainReserved(subdomain: String): Boolean = isWhateverReserved(subdomain)
 
-  def includesReservedWord(word: String): Option[String] = {
-    val wordlowercase = word.toLowerCase
-    val matches = allNames.filter(n => wordlowercase.contains(n))
+  /** Finds the longest reserved word in 'text'. */
+  def includesReservedWord(text: String): Option[String] = {
+    val textLowercase = text.toLowerCase
+    val matches = allNames.filter(n => textLowercase.contains(n))
     matches.reduceLeftOption((a, b) => if (a.length > b.length) a else b)
   }
 

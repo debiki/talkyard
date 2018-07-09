@@ -103,7 +103,7 @@ class ForumController @Inject()(cc: ControllerComponents, edContext: EdContext)
       (tx.loadPermsOnPages(), tx.loadGroupsAsSeq())
     }
     val catPerms = allPerms.filter(_.onCategoryId.contains(categoryId))
-    OkSafeJson(Json.obj(
+    OkSafeJson(Json.obj(  // Typescript: LoadCategoryResponse
       "category" -> catJson,
       "permissions" -> catPerms.map(JsonMaker.permissionToJson),
       "groups" -> groups.map(JsGroup)))
@@ -276,8 +276,8 @@ class ForumController @Inject()(cc: ControllerComponents, edContext: EdContext)
   }
 
 
-  def listCategoriesAllSections(): Action[Unit] = GetAction { request =>
-    TESTS_MISSING  // [5FSLW20]
+  def listCategoriesAllSections(): Action[Unit] = GetActionRateLimited() { request =>
+    // Tested here: TyT5WKB2QR0
     import request.{dao, requester}
     val authzCtx = dao.getForumAuthzContext(requester)
     val sectionCategoriesList =

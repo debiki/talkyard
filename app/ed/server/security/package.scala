@@ -231,39 +231,40 @@ class EdSecurity(globals: Globals) {
    */
   val AngularJsXsrfHeaderName = "X-XSRF-TOKEN"
 
+  private val MinOwnerPasswordLength = 10
 
   def throwErrorIfPasswordBad(
         password: String, username: String, fullName: Option[String], email: String,
-        minPasswordLength: Int, isForStaff: Boolean) {
+        minPasswordLength: Int, isForOwner: Boolean) {
 
-    // The below checks aren't important; this is already done client side via zxcvbn.
+    // **The below checks aren't so important** — this is already done client side via zxcvbn.
     // Here, just quick double checks. (Only maybe reserved-words isn't totally done
     // by zxcvbn?)
 
-    val minLength = if (isForStaff) math.max(10, minPasswordLength) else minPasswordLength
-    if (password.length < minLength) {
-      val becauseStaff = if (isForStaff) "— you're part of the staff here" else ""
-      throwBadReq(
-        "TyE5WKBTU2", s"Password too short, should be min $minLength chars $becauseStaff [TyEPWDMIN_]")
-    }
+    throwBadRequestIf(password.length < minPasswordLength,
+        "TyE5WKBTU2", s"Password too short, should be $minPasswordLength chars [TyEPWDMIN_]")
+
+    throwBadRequestIf(isForOwner && password.length < MinOwnerPasswordLength,
+        "TyE5WKBTU3", o"""Password too short, should be min $MinOwnerPasswordLength chars
+        for you, because you're the community owner. (And at least $minPasswordLength for others.)""")
 
     def fairlyMuchLongerThan(word: String) =
-      (password.length - word.length) >= (if (isForStaff) 6 else 4)
+      (password.length - word.length) >= (if (isForOwner) 6 else 4)
 
     ReservedNames.includesReservedWord(password) foreach { theWord =>
       throwBadRequestIf(!fairlyMuchLongerThan(theWord),
-          "TyE3WKB10", s"Password too simple, includes a reserved word: $theWord [TyEPWDSMPL]")
+          "TyE3WKB10", s"Password too simple, includes a reserved word: '$theWord' [TyEPWDSMPL]")
     }
 
     val lowercasePwd = password.toLowerCase
 
     if (lowercasePwd.indexOf(username.toLowerCase) >= 0 && !fairlyMuchLongerThan(username))
-      throwBadReq("TyE3WKB10", "Password includes username [TyEPWDUSN]")
+      throwBadReq("TyE3WKB10", s"The password includes your username: '$username' [TyEPWDUSN]")
 
     // Client side, zxcvbn does a better check.
     if (fullName.isDefined && lowercasePwd.indexOf(fullName.get.toLowerCase) >= 0
         && !fairlyMuchLongerThan(fullName.get))
-      throwBadReq("TyE3WKB10", "Password includes full name [TyEPWDFLN]")
+      throwBadReq("TyE3WKB10", "The password includes your name [TyEPWDFLN]")
 
     if (lowercasePwd.indexOf(email.toLowerCase) >= 0 && !fairlyMuchLongerThan(email))
       throwBadReq("TyE3WKB10", "Password includes email [TyEPWDEML]")

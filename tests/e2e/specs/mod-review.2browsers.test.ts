@@ -45,7 +45,7 @@ const mallorysMessageTitle = "Want money? Get $90 for free";
 const mallorysMessageText = "You'll get $90 for free! If you send $99 to me: mallory@clever.ideas";
 
 
-describe("admin-review-invalidate-for-reply [TyT6KWB42A]", () => {
+describe("mod-review  TyT5WB2R0", () => {
 
   it("import a site", () => {
     const builder = buildSite();
@@ -89,7 +89,7 @@ describe("admin-review-invalidate-for-reply [TyT6KWB42A]", () => {
   it("Mallory has posted 2 spammy replies. He now sends a spammy message to Michael", () => {
     mallorysBrowser.go(discussionPageUrl);
     mallorysBrowser.complex.loginWithPasswordViaTopbar(mallory);
-    mallorysBrowser.complex.sendMessageToPageAuthor(mallorysMessageTitle, mallorysMessageText)
+    mallorysBrowser.complex.sendMessageToPageAuthor(mallorysMessageTitle, mallorysMessageText);
     directMessageUrl = mallorysBrowser.url().value;
   });
 
@@ -132,7 +132,7 @@ describe("admin-review-invalidate-for-reply [TyT6KWB42A]", () => {
     assert(!mariasBrowser.topbar.isNeedsReviewOtherVisible());
   });
 
-  it("She cannot access the direct message (only admins can)", () => {
+  it("She cannot access the direct message (only admins can)  TyT6KRBEQ2", () => {
     mariasBrowser.go(directMessageUrl);
     mariasBrowser.assertMayNotSeePage();
   });
@@ -149,18 +149,18 @@ describe("admin-review-invalidate-for-reply [TyT6KWB42A]", () => {
     assert(mariasBrowser.adminArea.numTabsVisible() === 2);
   });
 
-  it("There're two tasks for Mallory's replies One and Two", () => {
+  it("There's a review task for each one of Mallory's replies One and Two", () => {
     const count = mariasBrowser.adminArea.review.countReviewTasksFor;
     assert(count(forum.topics.byMichaelCategoryA.id, angryReplyOneNr, { waiting: true }) === 1);
     assert(count(forum.topics.byMichaelCategoryA.id, angryReplyTwoNr, { waiting: true }) === 1);
   });
 
-  it("... but not the direct message flagged post — only admins can see other's direct messages", () => {
+  it("... but she cannot see Mallory's flagged direct message  TyT6KRBEQ2", () => {
     const num = mariasBrowser.adminArea.review.countThingsToReview();
     assert(num === 2, `Found ${num} things to review`);
   });
 
-  it("Maria reject-delete's Mallory's reply nr 2", () => {
+  it("Maria reject-delete's Mallory's reply nr 2  TyT4WKBDTQ", () => {
     // Post 2 flagged last, so is at the top.
     mariasBrowser.adminArea.review.rejectDeleteTaskIndex(1);
   });
@@ -181,7 +181,7 @@ describe("admin-review-invalidate-for-reply [TyT6KWB42A]", () => {
     const count = mariasBrowser.adminArea.review.countReviewTasksFor;
     assert(count(forum.topics.byMichaelCategoryA.id, angryReplyOneNr, { waiting: true }) === 1);
     const num = mariasBrowser.adminArea.review.countThingsToReview();       // = 2
-    //const num = mariasBrowser.adminArea.review.countReviewTasksWaiting(); // = 1
+    //const num = mariasBrowser.adminArea.review.countReviewTasksWaiting(); // = 1 <— better? later.
     assert(num === 2, `Found ${num} things to review`);
   });
 
@@ -192,6 +192,8 @@ describe("admin-review-invalidate-for-reply [TyT6KWB42A]", () => {
     assert(count(forum.topics.byMichaelCategoryA.id, angryReplyOneNr, { waiting: false }) === 0);
     assert(count(forum.topics.byMichaelCategoryA.id, angryReplyTwoNr, { waiting: true }) === 0);
     assert(count(forum.topics.byMichaelCategoryA.id, angryReplyTwoNr, { waiting: false }) === 1);
+    // Could check that the flagged direct message appears.
+    // Well, Owen clicks it below, so ... it's there, otherwise later test fails (4WBKSD21).
   });
 
   it("Owen rejects Mallory's private message", () => {
@@ -216,7 +218,7 @@ describe("admin-review-invalidate-for-reply [TyT6KWB42A]", () => {
 
   it("... and Mallory's priv message got deleted", () => {
     michaelsBrowser.go(directMessageUrl);
-    michaelsBrowser.topic.waitForPostVisibleAsDeleted(c.BodyNr);
+    michaelsBrowser.topic.waitForPostVisibleAsDeleted(c.BodyNr);  // (4WBKSD21)
   });
 
 });

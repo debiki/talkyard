@@ -41,7 +41,7 @@ const chatPurpose = 'chatPurpose';
 const michaelsChatMessage = "Hello @maria who do you want to chat with, and which year";
 
 
-describe("admin-review-invalidate-for-reply [TyT6KWB42A]", () => {
+describe("chat-create-from-direct-message  TyT5FKB2A", () => {
 
   it("import a site", () => {
     const builder = buildSite();
@@ -72,6 +72,8 @@ describe("admin-review-invalidate-for-reply [TyT6KWB42A]", () => {
   it("Michael gets a notf", () => {
     michaelsBrowser.topbar.waitForMyMenuVisible();
     michaelsBrowser.topbar.openNotfToMe();
+    michaelsBrowser.topic.waitForPostNrVisible(c.BodyNr);
+    michaelsBrowser.topic.assertPostTextMatches(c.BodyNr, mariasMessageText);
   });
 
   it("He creates a chat — works, although he isn't currently in any site section [4GWRQA28]", () => {

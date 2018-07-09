@@ -370,7 +370,7 @@ trait ReviewsDao {
     val pageMetaById = tx.loadPageMetasAsMap(pageIds)
     val forbiddenPageIds = mutable.Set[PageId]()
 
-    // ----- May see review task & page? [5FSLW20]  TESTS_MISSING
+    // ----- May see review task & page?  [TyT5WB2R0] [5FSLW20]
 
     // Might as well use the cache here (5DE4A28), why not? Otherwise, if listing
     // many tasks, this filter step would maybe take a little bit rather long?
@@ -385,8 +385,7 @@ trait ReviewsDao {
         }
       }
 
-      // Staff may see all posts on a page they may see [5I8QS2A], so we check page
-      // access only (not for each posts).
+      // Staff may see all posts on a page they may see [5I8QS2A], so we check page access only.
       reviewTasksMaybeNotSee filter { task =>
         task.postId match {
           case None => true

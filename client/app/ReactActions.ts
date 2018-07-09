@@ -448,7 +448,7 @@ export function loadAndScrollToAnyUrlAnchorPost(newHash?: string) {
     return;
   }
 
-  if (magicAnchor) {
+  if (magicAnchor === MagicAnchor.ScrollToLatest) {
     // Lookup most recent post nr. Is this a HACK? To access the store here?
     const store: Store = ReactStore.allData();
     if (!store.currentPage) return;

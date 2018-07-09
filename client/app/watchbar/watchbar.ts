@@ -189,7 +189,7 @@ const ChatChannels = createComponent({
       Server.listCategoriesAllSections((categories: Category[]) => {
         if (this.isGone) return;
         const store: Store = this.props.store;
-        // Maybe we're not in any site section, so could show a pic-category dialog first. [4GWRQA28]
+        // Maybe we're not in any site section, so could show a pick-category dialog first. [4GWRQA28]
         // HACK works fine now, don't want to rerender anything so updating in place = doesn't matter.
         store.allCategoriesHacky = categories;
         const category = store_getCurrOrDefaultCat(store);

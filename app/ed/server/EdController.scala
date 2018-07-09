@@ -47,8 +47,8 @@ class EdController(cc: ControllerComponents, val context: EdContext)
   def GetActionIsLogin(f: GetRequest => Result): Action[Unit] =
     PlainApiAction(cc.parsers.empty, NoRateLimits, isLogin = true)(f)
 
-  def GetActionRateLimited(rateLimits: RateLimits, allowAnyone: Boolean = false)(
-        f: GetRequest => Result): Action[Unit] =
+  def GetActionRateLimited(rateLimits: RateLimits = RateLimits.ExpensiveGetRequest,
+        allowAnyone: Boolean = false)(f: GetRequest => Result): Action[Unit] =
     PlainApiAction(cc.parsers.empty, rateLimits, allowAnyone = allowAnyone)(f)
 
   def StaffGetAction(f: GetRequest => Result): Action[Unit] =

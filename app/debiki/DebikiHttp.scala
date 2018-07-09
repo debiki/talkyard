@@ -148,15 +148,16 @@ object EdHttp {
     // So, right now, don't:
     //   p.http.Status.MOVED_PERMANENTLY
 
-  def throwOkSafeJson(json: JsValue) =
+  def throwOkSafeJson(json: JsValue): Nothing =
     throw ResultException(controllers.OkSafeJson(json))
 
-  def throwBadRequest(errCode: String, message: String = ""): Nothing = throwBadReq(errCode, message)
+  def throwBadRequest(errCode: String, message: String = ""): Nothing =
+    throwBadReq(errCode, message)
 
   def throwBadRequestIf(condition: Boolean, errCode: String, message: => String = ""): Unit =
     if (condition) throwBadRequest(errCode, message)
 
-  def throwBadReq(errCode: String, message: String = "") =
+  def throwBadReq(errCode: String, message: String = ""): Nothing =
     throw ResultException(BadReqResult(errCode, message))
 
   def throwUnprocessableEntity(errCode: String, message: String = "") =

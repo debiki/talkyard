@@ -250,7 +250,8 @@ chat -
   private chat:             ==
   shows last 50 messages:
   pin globally —> appears in watchbar:  (6KWQ2)
-  create, when in no site section:  - [5WKBQRSB]  NEXT
+  create, when in no site section:
+    - chat-create-from-direct-message.2browsers.test.ts  TyT5FKB2A
 
 uploads -  (7KFC2)
   upload profile pic:  (8PK2)
@@ -362,16 +363,19 @@ admin -
         then delete & restore ancestor post tree: task not reactivated
         then delete & restore page: task not reactivated
     review tasks and authz -
-      mods won't see other's private topics:  - [5FSLW20]
+      mods won't see other's flagged direct message posts:
+        - mod-review.2browsers.test.ts  TyT6KRBEQ2
 
 moderators:
   profile says is moderator:
-  can go to staff section:
   can list users:
   can approve new site members:
   can suspend & silence & watch users:
+  can reject comments:
+    - mod-review.2browsers.test.ts  TyT4WKBDTQ
   can approve comments:
-  won't see direct message comments:  - [5FSLW20]  NEXT
+  cannot read others' direct messages:
+    - mod-review.2browsers.test.ts  TyT6KRBEQ2
 
 superadmin -
   ... lots of stuff ...

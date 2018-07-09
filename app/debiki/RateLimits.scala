@@ -99,6 +99,7 @@ object RateLimits {
   //    http://meta.stackexchange.com/questions/164899/the-complete-rate-limiting-guide
 
 
+  // There're rate limits in Nginx, see docker/web/server-limits.conf.
   object NoRateLimits extends RateLimits {
     val key = "dummy"
     val what = "dummy"
@@ -144,8 +145,8 @@ object RateLimits {
   object ExpensiveGetRequest extends RateLimits {
     val key = "ExRq"
     val what = "sent too many complicated HTTP GET requests"
-    def maxPerFifteenSeconds = 20
-    def maxPerFifteenMinutes: Int = 60 * 10
+    def maxPerFifteenSeconds = 20             //  80/min
+    def maxPerFifteenMinutes: Int = 30 * 15   //  30/min
     def maxPerDay: Int = Unlimited
     def maxPerDayNewUser: Int = Unlimited
   }
@@ -190,7 +191,7 @@ object RateLimits {
     val what = "signed up too many times"
     def maxPerFifteenSeconds = 3
     def maxPerFifteenMinutes = 10
-    def maxPerDay = 50
+    def maxPerDay = 25
     def maxPerDayNewUser: Int = Unlimited
   }
 
@@ -240,11 +241,11 @@ object RateLimits {
   }
 
 
-  /** Discourse defaults to max 10 invites per day, let's just copy that. */
+  /** Discourse defaults to max 10 invites per day. */
   object SendInvite extends RateLimits {
     val key = "SeIn"
     val what = "sent too many invites"
-    def maxPerFifteenSeconds: Int = Unlimited
+    def maxPerFifteenSeconds: Int = 4
     def maxPerFifteenMinutes: Int = Unlimited
     def maxPerDay = 10
     def maxPerDayNewUser: Int = Unlimited
@@ -444,7 +445,7 @@ object RateLimits {
   object FlagPost extends RateLimits {
     val key = "FlPo"
     val what = "flagged too many posts"
-    def maxPerFifteenSeconds: Int = Unlimited
+    def maxPerFifteenSeconds: Int = 10
     def maxPerFifteenMinutes: Int = Unlimited
     def maxPerDay = 20
     def maxPerDayNewUser: Int = Unlimited
@@ -454,7 +455,7 @@ object RateLimits {
   object DeletePost extends RateLimits {
     val key = "DlPo"
     val what = "deleted too many posts"
-    def maxPerFifteenSeconds: Int = Unlimited
+    def maxPerFifteenSeconds: Int = 10
     def maxPerFifteenMinutes: Int = Unlimited
     def maxPerDay = 20
     def maxPerDayNewUser: Int = Unlimited
