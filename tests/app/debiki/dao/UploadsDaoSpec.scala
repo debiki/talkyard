@@ -195,7 +195,7 @@ class UploadsDaoAppSpec extends DaoAppSuite(disableScripts = false) {
       var resourceUsage: ResourceUse = null
 
       info("create owner")
-      val magic = "55jmu2456"
+      val magic = "55jmu24560"
       val user = dao.createPasswordUserCheckPasswordStrong(NewPasswordUserData.create(
         name = Some(s"User $magic"), username = s"user_$magic", email = s"user-$magic@x.co",
         password = magic, createdAt = globals.now(), isAdmin = true, isOwner = true).get,
@@ -280,7 +280,7 @@ class UploadsDaoAppSpec extends DaoAppSuite(disableScripts = false) {
       var resourceUsage: ResourceUse = null
 
       info("create user")
-      val magic = "7gmyk253"
+      val magic = "7gmyk25300"
       val user = dao.createPasswordUserCheckPasswordStrong(NewPasswordUserData.create(
         name = Some(s"User $magic"), username = s"user_$magic", email = s"user-$magic@x.co",
         password = magic, createdAt = globals.now(), isAdmin = true, isOwner = false).get,
@@ -338,7 +338,7 @@ class UploadsDaoAppSpec extends DaoAppSuite(disableScripts = false) {
       var resourceUsage: ResourceUse = null
 
       info("create user")
-      val magic = "6j35mk21"
+      val magic = "6j35mk2100"
       val user = dao.createPasswordUserCheckPasswordStrong(NewPasswordUserData.create(
         name = Some(s"User $magic"), username = s"user_$magic", email = s"user-$magic@x.co",
         password = magic, createdAt = globals.now(), isAdmin = true, isOwner = false).get,
@@ -470,7 +470,7 @@ class UploadsDaoAppSpec extends DaoAppSuite(disableScripts = false) {
       var resourceUsage: ResourceUse = null
 
       info("create user")
-      val magic = "7mpfku23"
+      val magic = "7mpfku2300"
       val user = dao.createPasswordUserCheckPasswordStrong(NewPasswordUserData.create(
         name = Some(s"User $magic"), username = s"user_$magic", email = s"user-$magic@x.co",
         password = magic, createdAt = globals.now(), isAdmin = false, isOwner = false).get,
