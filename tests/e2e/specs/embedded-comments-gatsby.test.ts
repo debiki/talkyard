@@ -76,7 +76,7 @@ describe("embedded comments, Gatsby blog and un/re-mmounting comments", () => {
     owensBrowser.createSite.fillInFieldsAndSubmit(data);
     // New site; disable rate limits here too.
     owensBrowser.disableRateLimits();
-    owensBrowser.click('#e2eLogin');
+    owensBrowser.createSite.clickOwnerSignupButton();
     owensBrowser.loginDialog.createPasswordAccount(data, true);
     const siteId = owensBrowser.getSiteId();
     const email = server.getLastEmailSenTo(siteId, data.email, owensBrowser);

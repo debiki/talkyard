@@ -769,8 +769,12 @@ function pagesFor(browser) {
         browser.click('#e2eNext3');
         browser.setValue('#e2eOrgName', data.orgName || data.localHostname);
         browser.click('input[type=submit]');
-        api.waitForVisible('#e2eLogin');
+        api.waitForVisible('#t_OwnerSignupB');
         assert.equal(data.origin, api.origin());
+      },
+
+      clickOwnerSignupButton: () => {
+        api.waitAndClick('#t_OwnerSignupB');
       }
     },
 
@@ -963,13 +967,6 @@ function pagesFor(browser) {
           api.topbar.openMyMenu();
           api.waitAndClick('#e2eMM_Review');
           api.waitForNewUrl();
-          api.waitForVisible('.s_A_Rvw');
-
-          // Top tab pane unmount bug workaround, for e2e tests. [5QKBRQ].
-          // Going to the Settings tab, makes the Review tab pane unmount, and after that,
-          // it won't surprise-unmount ever again (until page reload).
-          api.waitAndClick('.e_UsrsB');
-          api.waitAndClick('.e_RvwB');
           api.adminArea.review.waitUntilLoaded();
         },
       },
@@ -1548,7 +1545,7 @@ function pagesFor(browser) {
           assert(privacyLinkHtml.indexOf('/-/privacy-policy') >= 0);
         }
         setCheckbox('.s_TermsD_CB input', true);
-        api.waitAndClick('#e_TermsD_B');
+        api.waitAndClick('.s_TermsD_B');
       },
 
       reopenToClearAnyError: function() {
@@ -2902,12 +2899,6 @@ function pagesFor(browser) {
           browser.loginDialog.loginWithPassword(opts.loginAs);
         }
         api.adminArea.review.waitUntilLoaded();
-
-        // Top tab pane mysteriously unmounting bug workaround, for e2e tests. [5QKBRQ].
-        api.adminArea.goToLoginSettings(origin);
-        api.waitAndClick('.e_RvwB');
-
-        api.adminArea.review.waitUntilLoaded();
       },
 
       isReviewTabVisible: () => {
@@ -3252,6 +3243,14 @@ function pagesFor(browser) {
       review: {
         waitUntilLoaded: function() {
           api.waitForVisible('.s_A_Rvw, .esLD');
+          if (!browser.isVisible('.esLD')) {
+            // Top tab pane unmount bug workaround, for e2e tests. [5QKBRQ].
+            // Going to the Settings tab, makes the Review tab pane unmount, and after that,
+            // it won't surprise-unmount ever again (until page reload).
+            api.waitAndClick('.e_UsrsB');
+            api.waitAndClick('.e_RvwB');
+            api.waitForVisible('.s_A_Rvw');
+          }
         },
 
         playTimePastUndo: function() {

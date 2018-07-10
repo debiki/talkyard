@@ -50,7 +50,7 @@ describe('/-/create-site  @createsite  TyT5KBWAZ2', () => {
     pages.createSite.fillInFieldsAndSubmit(data);
     // New site; disable rate limits here too.
     browser.disableRateLimits();
-    browser.click('#e2eLogin');
+    pages.createSite.clickOwnerSignupButton();
     pages.loginDialog.createPasswordAccount(data, true);
     const siteId = pages.getSiteId();
     const email = server.getLastEmailSenTo(siteId, data.email, browser);
@@ -137,7 +137,7 @@ describe('/-/create-site  @createsite  TyT5KBWAZ2', () => {
     browser.go(utils.makeCreateSiteWithFakeIpUrl());
     browser.disableRateLimits(); // there're signup rate limits
     pages.createSite.fillInFieldsAndSubmit(data);
-    browser.click('#e2eLogin');
+    pages.createSite.clickOwnerSignupButton();
     pages.loginDialog.createGmailAccount(data, true);
     pages.createSomething.createForum("Gmail Forum Title");
   }
@@ -164,7 +164,7 @@ describe('/-/create-site  @createsite  TyT5KBWAZ2', () => {
     browser.go(utils.makeCreateSiteWithFakeIpUrl());
     browser.disableRateLimits(); // there're signup rate limits
     pages.createSite.fillInFieldsAndSubmit(data);
-    browser.click('#e2eLogin');
+    pages.createSite.clickOwnerSignupButton();
     pages.loginDialog.createFacebookAccount(data, true);
     pages.createSomething.createForum("Facebook Forum Title");
   }

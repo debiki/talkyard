@@ -1,4 +1,6 @@
 #!/bin/bash
 
+# Prefix with: DEBUG=selenium-standalone:* to tell Selenium to debug log more.
+
 node_modules/selenium-standalone/bin/selenium-standalone start $@
 

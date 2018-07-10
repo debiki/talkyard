@@ -36,6 +36,10 @@ settings.debug = args.debug || args.d || settings.debugBefore || settings.debugA
 const parallelStr = args.parallel || args.p;
 if (parallelStr) settings.parallel = parseInt(parallelStr);
 
+if (args.v || args.verbose) {
+  settings.logLevel = 'verbose';
+}
+
 // (The default 10 seconds timeout is not enough. When a fresh Docker JVM & Play Framework
 // container is started for the very first time, it's rather slow — it takes 5-10 seconds
 // for Nashorn to compile all JS,/ that could be why. Or some other Java JIT compilation?

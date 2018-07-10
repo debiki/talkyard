@@ -374,23 +374,27 @@ const AcceptTermsDialog = createComponent({
       // Don't set onHide — shouldn't be closeable by clicking outside, only by choosing Yes.
       Modal({ show: this.state.isOpen },
         ModalHeader({}, ModalTitle({}, t.terms.TermsAndPrivacy)),
-        ModalBody({}, r.p({},
-            t.terms.Accept_1,
-            r.a({ href: termsUrl, target: '_blank', id: 'e_TermsL' },
-              // We're providing a Software-as-a-Service to site owners — "Service" is a better word?
-              // However, ordinary users merely use the website — then use the word "Use"?
-              isOwner ? t.terms.TermsOfService : t.terms.TermsOfUse),
-            t.terms.Accept_2,
-            r.a({ href: privacyUrl, target: '_blank', id: 'e_PrivacyL' }, t.terms.PrivPol),
-            isOwner ?
-                t.terms.Accept_3_Owner : t.terms.Accept_3_User),
-          Input({ type: 'checkbox', className: 's_TermsD_CB' + (accepts ? ' s_TermsD_CB-Accepts' : ''),
-            label: t.terms.YesAccept, checked: accepts,
-            onChange: (event) => this.setState({ accepts: event.target.checked }) })),
-        ModalFooter({},
-          Button({ onClick: this.close, id: 'e_TermsD_B',
-              className: accepts ? 'btn-primary' : '' },
-            accepts ? t.Continue : t.Cancel))));
+        ModalBody({},
+          // Use a <form>, so Enter key clicks the Continue button.
+          r.form({ className: 'clearfix' },
+            r.p({},
+              t.terms.Accept_1,
+              r.a({ href: termsUrl, target: '_blank', id: 'e_TermsL' },
+                // We're providing a Software-as-a-Service to site owners — "Service" is a better word?
+                // However, ordinary users merely use the website — then use the word "Use"?
+                isOwner ? t.terms.TermsOfService : t.terms.TermsOfUse),
+              t.terms.Accept_2,
+              r.a({ href: privacyUrl, target: '_blank', id: 'e_PrivacyL' }, t.terms.PrivPol),
+              isOwner ?
+                  t.terms.Accept_3_Owner : t.terms.Accept_3_User),
+
+            Input({ type: 'checkbox', className: 's_TermsD_CB' + (accepts ? ' s_TermsD_CB-Accepts' : ''),
+              label: t.terms.YesAccept, checked: accepts,
+              onChange: (event) => this.setState({ accepts: event.target.checked }) }),
+
+            // Keep inside the <form>, so Enter works. (Don't add a ModalFooter)
+            Button({ onClick: this.close, className: 's_TermsD_B' + (accepts ? ' btn-primary' : '') },
+              accepts ? t.Continue : t.Cancel)))));
   }
 });
 

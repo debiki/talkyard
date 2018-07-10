@@ -60,7 +60,7 @@ describe("create site, follow the admin guide", function() {
     console.log("Fills in fields and submits");
     owen.createSite.fillInFieldsAndSubmit(newSiteData);
     console.log("Clicks login");
-    owen.click('#e2eLogin');
+    owen.createSite.clickOwnerSignupButton();
     owen.disableRateLimits();
     console.log("Creates password account");
     owen.loginDialog.createPasswordAccount(owen);

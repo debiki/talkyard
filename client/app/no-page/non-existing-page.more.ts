@@ -102,7 +102,7 @@ const SignUpAsAdmin = createComponent({
       : null;
 
     const loginBtn =
-        PrimaryButton({ id: 'e2eLogin', disabled: !!anyEmailProblem,
+        PrimaryButton({ id: 't_OwnerSignupB', disabled: !!anyEmailProblem,
             onClick: () => login.getLoginDialog().openToSignUp(LoginReason.BecomeAdmin) },
           "Continue");
 
