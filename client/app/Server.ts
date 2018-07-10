@@ -1443,8 +1443,12 @@ export function sendLongPollingRequest(userId: UserId, successFn: (response) => 
 
   let requestDone = false;
 
+  // We incl the req nr in the URL, for debugging, so knows which lines in
+  // chrome://net-internals/#events and in the Nginx logs are for which request in the browser.
+  const pollUrl = `/-/pubsub/subscribe/${channelId}?reqNr=${reqNr}`;
+
   longPollingState.ongoingRequest =
-      get('/-/pubsub/subscribe/' + channelId, (response, xhr) => {
+      get(pollUrl, (response, xhr) => {
         console.debug(`Long polling request ${reqNr} response [TyMLPRRESP]: ${JSON.stringify(response)}`);
         longPollingState.ongoingRequest = null;
         longPollingState.lastModified = xhr.getResponseHeader('Last-Modified');
