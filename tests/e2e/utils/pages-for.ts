@@ -3242,15 +3242,15 @@ function pagesFor(browser) {
 
       review: {
         waitUntilLoaded: function() {
-          api.waitForVisible('.s_A_Rvw, .esLD');
-          if (!browser.isVisible('.esLD')) {
-            // Top tab pane unmount bug workaround, for e2e tests. [5QKBRQ].
-            // Going to the Settings tab, makes the Review tab pane unmount, and after that,
-            // it won't surprise-unmount ever again (until page reload).
-            api.waitAndClick('.e_UsrsB');
-            api.waitAndClick('.e_RvwB');
-            api.waitForVisible('.s_A_Rvw');
-          }
+          api.waitForVisible('.s_A_Rvw');
+          //----
+          // Top tab pane unmount bug workaround, for e2e tests. [5QKBRQ].  [E2EBUG]
+          // Going to the Settings tab, makes the Review tab pane unmount, and after that,
+          // it won't surprise-unmount ever again (until page reload).
+          api.waitAndClick('.e_UsrsB');
+          api.waitAndClick('.e_RvwB');
+          api.waitForVisible('.s_A_Rvw');
+          //----
         },
 
         playTimePastUndo: function() {
@@ -3283,6 +3283,11 @@ function pagesFor(browser) {
               if (!anyButtonsVisible)
                 break;
             }
+            //----
+            // Top tab pane unmount bug workaround. [5QKBRQ].  [E2EBUG]
+            browser.refresh();
+            api.adminArea.review.waitUntilLoaded();
+            //----
           }
           api.waitUntilLoadingOverlayGone();
         },
