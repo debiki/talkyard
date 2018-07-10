@@ -52,7 +52,6 @@ var t_pt_BR: TalkyardTranslations = t = {
   Move: "Mover",
   Name: "Nomear",
   NameC: "Nome:",
-  None: "Nenhum",
   NotImplemented: "(Não implementado)",
   NotYet: "Ainda não",
   NoTopics: "Nenhum tópico.",
@@ -248,6 +247,8 @@ var t_pt_BR: TalkyardTranslations = t = {
     ChatChannels: "Canais de chat",
     CreateChat: "Criar canal de chat",
     DirectMsgs: "Mensagens Diretas",
+    NoChats: "Nenhum",     // meaning: "No chat messages"
+    NoDirMsgs: "Nenhuma",  // meaning: "No direct messages"
 
     // The click-topic dropdown menu:
     TopicActions: "Ações do tópico",

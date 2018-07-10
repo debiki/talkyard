@@ -204,7 +204,7 @@ const ChatChannels = createComponent({
     const topics: WatchbarTopic[] = store.me.watchbar[WatchbarSection.ChatChannels];
     let topicElems;
     if (_.isEmpty(topics)) {
-      topicElems = NoTopics();
+      topicElems = NoTopics({}, t.wb.NoChats);
     }
     else {
       topicElems = topics.map((topic: WatchbarTopic) =>
@@ -231,7 +231,7 @@ const DirectMessages = createComponent({
     const topics: WatchbarTopic[] = store.me.watchbar[WatchbarSection.DirectMessages];
     let topicElems;
     if (_.isEmpty(topics)) {
-      topicElems = NoTopics();
+      topicElems = NoTopics({}, t.wb.NoDirMsgs);
     }
     else {
       topicElems = topics.map((topic: WatchbarTopic) =>
@@ -361,11 +361,11 @@ const SingleTopic = createComponent({
 });
 
 
-const NoTopics = function() {
+const NoTopics = function(noProps, text) {
   return (
     r.li({ className: 'esWB_LI esWB_T-None' },
       r.span({ className: 'esWB_T_Link' },
-        r.i({ className: 'esWB_T_None' }, t.None ))));
+        r.i({ className: 'esWB_T_None' }, text ))));
 };
 
 

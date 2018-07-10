@@ -38,7 +38,6 @@ interface TalkyardTranslations {
   Move: string;
   Name: string;
   NameC: string;
-  None: string;
   NotImplemented: string;
   NotYet: string;
   NoTopics: string;
@@ -210,6 +209,11 @@ interface TalkyardTranslations {
     ChatChannels: string;
     CreateChat: string;
     DirectMsgs: string;
+    NoChats: string;
+    NoDirMsgs: string;
+
+    // The click-topic dropdown menu:
+    TopicActions: string;
     ViewPeopleHere: string;
     ViewAddRemoveMembers: string;
     ViewChatMembers: string;
@@ -217,7 +221,6 @@ interface TalkyardTranslations {
     LeaveThisChat: string;
     LeaveThisCommunity: string;
     JoinThisCommunity: string;
-    TopicActions: string;
   },
 
 

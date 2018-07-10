@@ -52,7 +52,6 @@ var t_sv_SE: TalkyardTranslations = t = {
   Move: "Move",
   Name: "Name",
   NameC: "Name:",
-  None: "None",
   NotImplemented: "(Not implemented)",
   NotYet: "Not yet",
   NoTopics: "No topics.",
@@ -248,6 +247,8 @@ var t_sv_SE: TalkyardTranslations = t = {
     ChatChannels: "Chat Channels",
     CreateChat: "Create chat channel",
     DirectMsgs: "Direct Messages",
+    NoChats: "None",    // meaning: "No chat messages"
+    NoDirMsgs: "None",  // meaning: "No direct messages"
 
     // The click-topic dropdown menu:
     TopicActions: "Topic actions",
