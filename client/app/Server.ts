@@ -1430,8 +1430,14 @@ export function sendLongPollingRequest(userId: UserId, successFn: (response) => 
   // request, though, will lack headers — then Nchan returns the oldest message in the queue.
   if (longPollingState.lastEtag) {
     options.headers = {
+      // Should *not* be quoted, see:
+      // https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/If-Modified-Since
       'If-Modified-Since': longPollingState.lastModified,
-      'If-None-Match': longPollingState.lastEtag,
+      // *Should* be quoted, see:
+      // https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/If-None-Match
+      // """a string of ASCII characters placed between double quotes (Like "675af34563dc-tr34")"""
+      // Not sure if Nchan always includes quotes in the response (it *should*), so remove & add-back '"'.
+      'If-None-Match': `"${longPollingState.lastEtag.replace(/"/g, '')}"`,
     };
   }
 
@@ -1442,6 +1448,8 @@ export function sendLongPollingRequest(userId: UserId, successFn: (response) => 
         console.debug(`Long polling request ${reqNr} response [TyMLPRRESP]: ${JSON.stringify(response)}`);
         longPollingState.ongoingRequest = null;
         longPollingState.lastModified = xhr.getResponseHeader('Last-Modified');
+        // (In case evil proxy servers remove the Etag header from the response, there's
+        // a workaround, see the Nchan docs:  nchan_subscriber_message_id_custom_etag_header)
         longPollingState.lastEtag = xhr.getResponseHeader('Etag');
         requestDone = true;
         successFn(response);
