@@ -10,6 +10,9 @@ fi
 
 my_username=$(whoami)
 
+push_to_repo=`sed -nr 's/DOCKER_PUSH_TO_REPOSITORY= *([^ \t\r\n#]*/\1/p' .env`
+push_to_tag=`sed -nr 's/DOCKER_PUSH_TO_TAG= *([^ \t\r\n#]*/\1/p' .env`
+
 
 # This'll make us call `exit 1` if there's an error, and we're running all this via a script.
 is_in_script=true
@@ -82,7 +85,9 @@ fi
 # ----------------------
 
 version="`cat version.txt`"
-version_tag="$version-`git rev-parse --short HEAD`"  # also in Build.scala and gulpfile.js [8GKB4W2]
+if [ "$version" != 'latest' ]; then
+  version_tag="$version-`git rev-parse --short HEAD`"  # also in Build.scala and gulpfile.js [8GKB4W2]
+fi
 echo "Building and releasing $version_tag"
 
 # COULD: verify version nr changed since last time
@@ -128,32 +133,52 @@ echo 'Buid completed.'
 # Publish images to Docker repo
 # ----------------------
 
-echo "Tag images with debiki/talkyard-*:$version_tag? Press Enter (or CTRL+C to exit)"
+the_tag="$version_tag"
+
+# Can set $push_to_tag = 'latest' when running a test repo on localhost.
+if [ -n "$push_to_tag" ]; then
+  the_tag="$push_to_tag"
+fi
+
+echo "Tag images with $push_to_repo/talkyard-*:$the_tag? Press Enter (or CTRL+C to exit)"
 read -s -p ''
 
-sudo docker tag debiki/talkyard-app debiki/talkyard-app:$version_tag
-sudo docker tag debiki/talkyard-web debiki/talkyard-web:$version_tag
-sudo docker tag debiki/talkyard-rdb debiki/talkyard-rdb:$version_tag
-sudo docker tag debiki/talkyard-cache debiki/talkyard-cache:$version_tag
-sudo docker tag debiki/talkyard-search debiki/talkyard-search:$version_tag
-sudo docker tag debiki/talkyard-certgen debiki/talkyard-certgen:$version_tag
+# The images we built have the 'latest' tag.
+sudo docker tag debiki/talkyard-web:latest     $push_to_repo/talkyard-web:$the_tag
+sudo docker tag debiki/talkyard-app:latest     $push_to_repo/talkyard-app:$the_tag
+sudo docker tag debiki/talkyard-rdb:latest     $push_to_repo/talkyard-rdb:$the_tag
+sudo docker tag debiki/talkyard-cache:latest   $push_to_repo/talkyard-cache:$the_tag
+sudo docker tag debiki/talkyard-search:latest  $push_to_repo/talkyard-search:$the_tag
+sudo docker tag debiki/talkyard-certgen:latest $push_to_repo/talkyard-certgen:$the_tag
 
 
-echo 'Done. Publish to the official Docker image registry? Press Enter'
+echo "Done. Push to the '$push_to_repo' Docker image registry, tag '$the_tag'? Press Enter"
 read -s -p ''
 
-echo "Publishing to debiki/talkyard-*:$version_tag..."
+echo "Pushing to $push_to_repo/talkyard-*:$the_tag..."
 
-sudo docker push debiki/talkyard-app:$version_tag
-sudo docker push debiki/talkyard-web:$version_tag
-sudo docker push debiki/talkyard-rdb:$version_tag
-sudo docker push debiki/talkyard-cache:$version_tag
-sudo docker push debiki/talkyard-search:$version_tag
-sudo docker push debiki/talkyard-certgen:$version_tag
+# When the first part of the tag is a hostname and port, Docker interprets this as the
+# location of a registry, when pushing. So, if $push_to_repo is 'localhost:5000',
+# Docker will push to your repo presumably running on localhost at port 5000.
+# (See: https://docs.docker.com/registry/deploying/#copy-an-image-from-docker-hub-to-your-registry)
+sudo docker push $push_to_repo/talkyard-web:$the_tag
+sudo docker push $push_to_repo/talkyard-app:$the_tag
+sudo docker push $push_to_repo/talkyard-rdb:$the_tag
+sudo docker push $push_to_repo/talkyard-cache:$the_tag
+sudo docker push $push_to_repo/talkyard-search:$the_tag
+sudo docker push $push_to_repo/talkyard-certgen:$the_tag
+
+echo "Done pushing to repo: $push_to_repo, tag: $the_tag"
 
 
 # Bump version number
 # ----------------------
+
+if [ -n "$push_to_tag" ]; then
+  echo "Not bumping and publishing any version tag to GitHub — because this is a test build?"
+  exit
+fi
+
 
 echo "Publishing version tag $version_tag to GitHub..."
 
