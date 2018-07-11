@@ -1410,6 +1410,12 @@ export function testGetLongPollingNr() {
 
 /**
  * Built for talking with Nginx and nchan, see: https://github.com/slact/nchan#long-polling
+ *
+ * COULD use this instead?:  https://www.npmjs.com/package/nchan  it supports WebSocket.
+ * this file:  https://github.com/slact/nchan.js/blob/master/NchanSubscriber.js
+ *
+ * COULD How avoid "nchan client prematurely closed connection" info message in the Nginx logs?
+ * I asked: https://github.com/slact/nchan/issues/466
  */
 export function sendLongPollingRequest(userId: UserId, successFn: (response) => void,
       errorFn: () => void, resendIfNeeded: () => void) {
