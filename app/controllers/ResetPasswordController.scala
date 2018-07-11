@@ -44,7 +44,7 @@ class ResetPasswordController @Inject()(cc: ControllerComponents, edContext: EdC
   }
 
 
-  def showResetPasswordPage = GetActionAllowAnyone { request =>
+  def showResetPasswordPage: Action[Unit] = GetActionAllowAnyone { request =>
     Ok(views.html.resetpassword.specifyEmailAddress(
       SiteTpi(request), xsrfToken = request.xsrfToken.value))
   }
@@ -56,20 +56,21 @@ class ResetPasswordController @Inject()(cc: ControllerComponents, edContext: EdC
     val emailOrUsername = request.body.getOrThrowBadReq("email") // WOULD rename 'email' param
     val anyUser = request.dao.loadMemberByEmailOrUsername(emailOrUsername)
     val isEmailAddress = emailOrUsername contains "@"
+    val siteId = request.dao.siteId
 
     anyUser match {
       case Some(user) =>
         dieIf(user.email != emailOrUsername && user.theUsername != emailOrUsername, "DwE0F21")
-        user.passwordHash match {
-          case Some(_) =>
-            Logger.info(s"Sending password reset email to: $emailOrUsername")
-            sendResetPasswordEmailTo(user, request)
-          case None =>
-            Logger.info(s"Sending no-password-to-reset email to: $emailOrUsername")
-            sendNoPasswordToResetEmail(user, emailOrUsername, request)
+        if (user.passwordHash.isDefined) {
+          Logger.info(s"s$siteId: Sending password reset email to: $emailOrUsername")
+          sendChangePasswordEmailTo(user, request, isCreating = false)
+        }
+        else {
+          Logger.info(s"s$siteId: Sending create password email to: $emailOrUsername")
+          sendChangePasswordEmailTo(user, request, isCreating = true)
         }
       case None =>
-        Logger.info(o"""Not sending password reset email to non-existing
+        Logger.info(o"""s$siteId: Not sending password reset email to non-existing
              user or email address: $emailOrUsername""")
         if (isEmailAddress) {
           // Don't tell the user that this email address doesn't exist; that'd be a
@@ -85,43 +86,23 @@ class ResetPasswordController @Inject()(cc: ControllerComponents, edContext: EdC
   }
 
 
-  private def sendResetPasswordEmailTo(user: Member, request: ApiRequest[_]) {
+  private def sendChangePasswordEmailTo(user: Member, request: ApiRequest[_], isCreating: Boolean) {
     import request.dao
+
+    val subject = if (isCreating) "Choose a Password" else "Reset Password"  // I18N
 
     val email = Email(
       EmailType.ResetPassword,
       createdAt = globals.now(),
       sendTo = user.email,
       toUserId = Some(user.id),
-      subject = s"[${dao.theSiteName()}] Reset Password",
+      subject = s"[${dao.theSiteName()}] $subject",
       bodyHtmlText = (emailId: String) => {
         views.html.resetpassword.resetPasswordEmail(
           userName = user.theUsername,
           emailId = emailId,
           siteAddress = request.host,
           expirationTimeInHours = MaxResetPasswordEmailAgeInHours,
-          globals = globals).body
-      })
-    dao.saveUnsentEmail(email)
-    globals.sendEmail(email, dao.siteId)
-  }
-
-
-  private def sendNoPasswordToResetEmail(
-        user: Member, emailAddress: String, request: ApiRequest[_]) {
-    import request.dao
-
-    val email = Email(
-      EmailType.Notification,
-      createdAt = globals.now(),
-      sendTo = emailAddress,
-      toUserId = Some(user.id),
-      subject = s"[${dao.theSiteName()}] There is no password to reset",
-      bodyHtmlText = (_) => {
-        views.html.resetpassword.noPasswordToResetEmail(
-          userName = user.theUsername,
-          emailAddress = emailAddress,
-          siteAddress = request.host,
           globals = globals).body
       })
     dao.saveUnsentEmail(email)

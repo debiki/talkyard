@@ -121,12 +121,12 @@ class PageTitleSettingsController @Inject()(cc: ControllerComponents, edContext:
     if (editsHtmlStuff && !request.theMember.isStaff)
       throwForbidden("EdE4WU8F2", "You may not edit CSS classes or HTML tags")
 
-    // Race condition below: First title committed, then page settings. If the server crashes in
+    RACE; BUG // minor, below: First title committed, then page settings. If the server crashes in
     // between, only the title will be changed — that's fairly okay I think; ignore for now.
     // Also, if two separate requests, then one might edit the title, the other the slug, with
     // weird results. Totally unlikely to happen. Ignore for now.
     //
-    // And the lost update bug, when changing path and meta, if two people call this endpoint at
+    BUG // minor. The lost update bug, when changing path and meta, if two people call this endpoint at
     // exactly the same time. Ignore for now, it's just that all changes won't be saved,
     // but the page will still be in an okay state afterwards.
 

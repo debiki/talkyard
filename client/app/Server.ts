@@ -31,6 +31,7 @@
 const d: any = { i: debiki.internal };
 
 const BadNameOrPasswordErrorCode = '_TyE403BPWD';
+const NoPasswordErrorCode = '_TyMCHOOSEPWD';
 
 function getPageId(): PageId {
   return eds.embeddedPageId || // [4HKW28]
@@ -533,11 +534,17 @@ export function createPasswordUser(data, success: (response) => void,
 
 
 export function loginWithPassword(emailOrUsername: string, password: string, success: () => void,
-    denied: () => void) {
+      onDenied: () => void, onPasswordMissing: () => void) {
   function onError(xhr?: XMLHttpRequest) {
-    if (xhr && xhr.responseText.indexOf(BadNameOrPasswordErrorCode) >= 0) {
-      denied();
-      return IgnoreThisError;
+    if (xhr) {
+      if (xhr.responseText.indexOf(BadNameOrPasswordErrorCode) >= 0) {
+        onDenied();
+        return IgnoreThisError;
+      }
+      if (xhr.responseText.indexOf(NoPasswordErrorCode) >= 0) {
+        onPasswordMissing();
+        return IgnoreThisError;
+      }
     }
   }
   postJsonSuccess('/-/login-password', success, onError, {
@@ -622,7 +629,10 @@ export function listCompleteUsers(whichUsers, success: (users: MemberInclDetails
 }
 
 
-export function loadEmailAddressesAndLoginMethods(userId: UserId, success) {
+type UserAcctRespHandler = (response: UserAccountResponse) => void;
+
+
+export function loadEmailAddressesAndLoginMethods(userId: UserId, success: UserAcctRespHandler) {
   get(`/-/load-email-addrs-login-methods?userId=${userId}`, response => {
     success(response);
   });
@@ -637,22 +647,24 @@ export function resendOwnerEmailAddrVerifEmail(success) {
 // Maybe initiated by staff, on behalf of another user — so could be any id and address.
 //
 export function resendEmailAddrVerifEmail(userId: UserId, emailAddress: string) {
-  postJsonSuccess('/-/resend-email-addr-verif-email', () => {
+  postJsonSuccess('/-/resend-email-addr-verif-email', (response: UserAccountResponse) => {
     util.openDefaultStupidDialog({ body: "Email sent" });
   }, { userId, emailAddress });
 }
 
-export function addEmailAddresses(userId: UserId, emailAddress: string, success) {
+export function addEmailAddresses(userId: UserId, emailAddress: string, success: UserAcctRespHandler) {
   postJsonSuccess('/-/add-email-address', success, { userId, emailAddress });
 }
 
 
-export function removeEmailAddresses(userId: UserId, emailAddress: string, success) {
+export function removeEmailAddresses(userId: UserId, emailAddress: string,
+      success: UserAcctRespHandler) {
  postJsonSuccess('/-/remove-email-address', success, { userId, emailAddress });
 }
 
 
-export function setPrimaryEmailAddresses(userId: UserId, emailAddress: string, success) {
+export function setPrimaryEmailAddresses(userId: UserId, emailAddress: string,
+      success: UserAcctRespHandler) {
   postJsonSuccess('/-/set-primary-email-address', success, { userId, emailAddress });
 }
 

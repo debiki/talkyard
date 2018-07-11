@@ -250,7 +250,10 @@ trait UserDao {
 
 
   def suspendUser(userId: UserId, numDays: Int, reason: String, suspendedById: UserId) {
+    // If later on banning, by setting numDays = none, then look at [4ELBAUPW2], seems
+    // it won't notice someone is suspended, unless there's an end date.
     require(numDays >= 1, "DwE4PKF8")
+
     val cappedDays = math.min(numDays, 365 * 110)
     val now = globals.now()
 
@@ -534,14 +537,17 @@ trait UserDao {
     // + prevent submitting username, client side.
 
     val settings = getWholeSiteSettings()
-    val loginGrant = readWriteTransaction { transaction =>
-      val loginGrant = transaction.tryLoginAsMember(
+    val loginGrant = readWriteTransaction { tx =>
+      val loginGrant = tx.tryLoginAsMember(
           loginAttempt, requireVerifiedEmail = settings.requireVerifiedEmail)
-      addUserStats(UserStats(loginGrant.user.id, lastSeenAt = transaction.now))(transaction)
+
+      addUserStats(UserStats(loginGrant.user.id, lastSeenAt = tx.now))(tx)
+
+      // What? isSuspendedAt checks only suspendedTill ? what about suspendedAt? [4ELBAUPW2]
       if (!loginGrant.user.isSuspendedAt(loginAttempt.date))
         return loginGrant
 
-      val user = transaction.loadMemberInclDetails(loginGrant.user.id) getOrElse throwForbidden(
+      val user = tx.loadMemberInclDetails(loginGrant.user.id) getOrElse throwForbidden(
         "DwE05KW2", "User not found, id: " + loginGrant.user.id)
       // Still suspended?
       if (user.suspendedAt.isDefined) {
@@ -552,6 +558,8 @@ trait UserDao {
         throwForbidden("TyEUSRSSPNDD_", o"""Account suspended $forHowLong,
             reason: ${user.suspendedReason getOrElse "?"}""")
       }
+
+      // Not suspended, is past end date.
       loginGrant
     }
 
@@ -693,30 +701,6 @@ trait UserDao {
     readOnlyTransaction { transaction =>
       // Don't need to cache this? Only called when logging in.
       transaction.loadMemberByPrimaryEmailOrUsername(emailOrUsername)
-    }
-  }
-
-
-  def loadUserAndAnyIdentity(userId: UserId): Option[(Option[Identity], User)] = {
-    loadIdtyDetailsAndUser(userId) match {
-      case Some((identity, user)) => Some((Some(identity), user))
-      case None =>
-        // No OAuth or OpenID identity, try load password user:
-        getUser(userId) match {
-          case Some(user) =>
-            Some((None, user))
-          case None =>
-            None
-        }
-    }
-  }
-
-
-  private def loadIdtyDetailsAndUser(userId: UserId): Option[(Identity, User)] = {
-    // Don't cache this, because this function is rarely called
-    // — currently only when creating new website.
-    readOnlyTransaction { transaction =>
-      transaction.loadIdtyDetailsAndUser(userId)
     }
   }
 

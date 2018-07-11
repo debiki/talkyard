@@ -315,10 +315,10 @@ trait SiteTransaction {
 
   def nextIdentityId: IdentityId
   def insertIdentity(Identity: Identity)
+  def loadIdentities(userId: UserId): immutable.Seq[Identity]
+  def loadOpenAuthIdentity(key: OpenAuthProviderIdKey): Option[OpenAuthIdentity]
+  def loadOpenIdIdentity(openIdDetails: OpenIdDetails): Option[IdentityOpenId]
   def deleteAllUsersIdentities(userId: UserId)
-  def loadIdtyDetailsAndUser(userId: UserId): Option[(Identity, User)]
-  def loadIdentities(userId: UserId): Seq[Identity] =
-    loadIdtyDetailsAndUser(userId).map(_._1).toVector // for now
 
   def nextMemberId: UserId
   def insertMember(user: MemberInclDetails)

@@ -172,7 +172,7 @@ class PubSubActor(val nginxHost: String, val globals: Globals) extends Actor {
   def wsClient: WSClient = globals.wsClient
   def redisClient: RedisClient = globals.redisClient
 
-  private implicit val execCtx = globals.executionContext
+  private implicit val execCtx: ExecutionContext = globals.executionContext
 
   /** Tells when subscriber subscribed. Subscribers are sorted by perhaps-inactive first.
     * We'll push messages only to users who have subscribed (i.e. are online and have

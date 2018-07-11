@@ -617,6 +617,9 @@ trait PostsDao {
       // so won't create too many revs quickly because 2 edits.
       BUG // COULD compare version number: kills the lost update bug.
 
+      UX; COULD // if edits title, add a meta message: "Alice changed the title from ... to ..."
+      // GitHub does that, and it's quite nice & helpful I think, to see that the topic got renamed.
+
       // If we've saved an old revision already, and 1) there hasn't been any more discussion
       // in this sub thread since the current revision was started, and 2) the current revision
       // hasn't been flagged, — then don't save a new revision. It's rather uninteresting

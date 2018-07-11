@@ -1312,6 +1312,24 @@ interface LoadCategoryResponse {
 }
 
 
+interface UserAccountResponse {
+  emailAddresses: UserAccountEmailAddr[];
+  loginMethods: UserAccountLoginMethod[];
+}
+
+interface UserAccountEmailAddr {
+  emailAddress: string;
+  addedAt: WhenMs;
+  verifiedAt?: WhenMs;
+}
+
+interface UserAccountLoginMethod {
+  loginType: string;
+  provider: string;
+  email?: string;
+}
+
+
 
 // ----- Public API
 

@@ -314,7 +314,7 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
                   "\n\n")
                 // If the user does *not* own the email address, s/he would be able to
                 // impersonate another user, when his/her new account gets associated with
-                // the old one just because they have the same email address.
+                // the old one just because they both claim to use the same email address.
               }
             case None =>
               if (!dao.getWholeSiteSettings().allowSignup) {

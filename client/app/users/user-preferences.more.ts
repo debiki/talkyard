@@ -500,7 +500,7 @@ export const Account = createFactory({
   },
 
   loadEmailsLogins: function(userId: UserId) {
-    Server.loadEmailAddressesAndLoginMethods(userId, response => {
+    Server.loadEmailAddressesAndLoginMethods(userId, (response: UserAccountResponse) => {
       this.setState(response);
     });
   },
@@ -508,7 +508,7 @@ export const Account = createFactory({
   doAddEmail: function() {
     this.setState({ showAddEmailInput: false, isAddingEmail: true });
     const user: MemberInclDetails = this.props.user;
-    Server.addEmailAddresses(user.id, this.state.newEmailAddr, response => {
+    Server.addEmailAddresses(user.id, this.state.newEmailAddr, (response: UserAccountResponse) => {
       this.setState({ isAddingEmail: false, doneAddingEmail: true });
       this.setState(response);
     });
@@ -523,7 +523,7 @@ export const Account = createFactory({
 
   removeEmailAddress: function(emailAddress: string) {
     const user: MemberInclDetails = this.props.user;
-    Server.removeEmailAddresses(user.id, emailAddress, response => {
+    Server.removeEmailAddresses(user.id, emailAddress, (response: UserAccountResponse) => {
       // Remove the check-your-inbox message, in case the user remoed the email just added.
       this.setState({ doneAddingEmail: undefined, ...response });
     });
@@ -531,7 +531,7 @@ export const Account = createFactory({
 
   setPrimary: function(emailAddress: string) {
     const user: MemberInclDetails = this.props.user;
-    Server.setPrimaryEmailAddresses(user.id, emailAddress, response => {
+    Server.setPrimaryEmailAddresses(user.id, emailAddress, (response: UserAccountResponse) => {
       this.setState(response);
       this.props.reloadUser();
     });
