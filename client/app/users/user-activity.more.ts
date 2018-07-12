@@ -38,9 +38,9 @@ export const UsersActivity = createFactory({
 
     const hiddenForSomeText = !isStaffOrSelf ? null : (
         user.seeActivityMinTrustLevel >= TrustLevel.CoreMember ?
-          "Only staff and trusted core members, can see this." : (
+          t.upp.OnlyStaffCanSee : (
             user.seeActivityMinTrustLevel >= TrustLevel.FullMember ?
-              "Only people who have been active members for a while can see this." : null));
+              t.upp.OnlyMbrsCanSee : null));
 
     const hiddenForSomeElem = hiddenForSomeText ?
         r.p({ className: 's_UP_Act_Hdn' }, hiddenForSomeText) : null;
@@ -48,7 +48,7 @@ export const UsersActivity = createFactory({
     // Instead of "No posts" or "No topics", write "Nothing to show" — because maybe
     // there *are* posts and topics, it's just that the activity is hidden.
     const nothingToShow = !hiddenForMe ? null :
-      r.p({ className: 'e_NothingToShow' }, "Nothing to show");
+      r.p({ className: 'e_NothingToShow' }, t.upp.Nothing);
 
     const childProps = {
       store: this.props.store,
@@ -73,8 +73,10 @@ export const UsersActivity = createFactory({
         r.div({ style: { display: 'table-row' }},
           r.div({ className: 's_UP_Act_Nav' },
             r.ul({ className: 'dw-sub-nav nav-stacked nav nav-pills' },
-              LiNavLink({ to: uap + 'posts', className: 's_UP_Act_Nav_PostsB' }, "Posts"),
-              LiNavLink({ to: uap + 'topics', className: 's_UP_Act_Nav_TopicsB' }, "Topics"))),
+              LiNavLink({ to: uap + 'posts', className: 's_UP_Act_Nav_PostsB' },
+                t.upp.Posts),
+              LiNavLink({ to: uap + 'topics', className: 's_UP_Act_Nav_TopicsB' },
+                t.upp.Topics))),
               //LiNavLink({ to: uap + 'likes-given' }, "Likes Given"),
               //LiNavLink({ to: uap + 'likes-received' }, "Likes Received"))),
           r.div({ className: 's_UP_Act_List', id: 't_UP_Act_List' },
@@ -143,11 +145,11 @@ const UsersPosts = createFactory({
     let author: BriefUser = this.state.author;
     if (!_.isArray(posts))
       return (
-        r.p({}, "Loading ..."));
+        r.p({}, t.Loading));
 
     if (_.isEmpty(posts))
       return (
-        r.p({ className: 'e_NoPosts' }, "No posts."));
+        r.p({ className: 'e_NoPosts' }, t.upp.NoPosts));
 
     let postElems = posts.map((post: PostWithPage) => {
       return (
@@ -212,11 +214,11 @@ const UsersTopics = createFactory({
     let topics: Topic[] = this.state.topics;
     if (!_.isArray(topics))
       return (
-        r.p({}, "Loading ..."));
+        r.p({}, t.Loading));
 
     if (_.isEmpty(topics))
       return (
-        r.p({ className: 'e_NoTopics' }, "No topics."));
+        r.p({ className: 'e_NoTopics' }, t.upp.NoTopics));
 
     let topicsElems = forum.TopicsList({
       topics: this.state.topics,
@@ -240,7 +242,7 @@ const UsersTopics = createFactory({
 export let LikesGivenComponent = createReactClass(<any> {
   render: function() {
     return (
-      r.p({}, "Not yet implemented 4"));
+      r.p({}, "Not impl 4"));
   }
 });
 
@@ -249,7 +251,7 @@ export let LikesGivenComponent = createReactClass(<any> {
 export let LikesReceivedComponent = createReactClass(<any> {
   render: function() {
     return (
-      r.p({}, "Not yet implemented 5"));
+      r.p({}, "Not impl 5"));
   }
 });
 

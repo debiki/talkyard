@@ -183,7 +183,7 @@ const UserPageComponent = createReactClass(<any> {
       LiNavLink({ to: linkStart + 'summary', className: 'e_UP_SummaryB' }, t.Summary);
 
     const notificationsNavItem = !showPrivateStuff || user.isGroup ? null :
-      LiNavLink({ to: linkStart + 'notifications', className: 'e_UP_NotfsB' }, t.upp.Notifications);
+      LiNavLink({ to: linkStart + 'notifications', className: 'e_UP_NotfsB' }, t.Notifications);
 
     const preferencesNavItem = !showPrivateStuff ? null :
       LiNavLink({ to: linkStart + 'preferences', id: 'e2eUP_PrefsB' }, t.upp.Preferences);

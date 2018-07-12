@@ -112,9 +112,9 @@ const ShareDialog = createComponent({
       content =
         r.div({ className: 's_ShareD' },
           r.div({ className: 's_ShareD_Title' },
-            this.state.copied ? "Copied." : (
-              this.state.copied === false ? "Hit CTRL+C to copy." : // UX What to say, if is mobile?
-                  "Click to copy link.")),
+            this.state.copied ? t.sd.Copied : (
+              this.state.copied === false ? t.sd.CtrlCToCopy : // UX What to say, if is mobile?
+                  t.sd.ClickToCopy)),
           r.input({ className: 's_ShareD_Link', value: url, ref: 'linkInput', readOnly: true,
               onClick: this.selectTryCopy }),
           r.div({ className: 's_ShareD_Social' },

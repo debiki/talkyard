@@ -70,8 +70,7 @@ export var HelpMessageBox = createComponent({
     // Wait a short while with opening this, so one first sees the effect of clicking Close.
     if (this.props.showUnhideTips !== false) setTimeout(
           () => morebundle.openHelpDialogUnlessHidden({
-      content: r.span({}, "You can show help messages again, if you are logged in, by " +
-        "clicking your name and then ", r.b({}, "Unhide help messages"), "."),
+      content: r.span({}, t.help.YouCanShowAgain_1, r.b({}, t.help.YouCanShowAgain_2), '.'),
       id: '5YK7EW3',
     }), 550);
   },
@@ -87,7 +86,7 @@ export var HelpMessageBox = createComponent({
     var okayButton = this.props.message.alwaysShow
         ? null
         : r.a({ className: okayIcon + ' dw-hide', onClick: this.hideThisHelp },
-            this.props.message.okayText || "Hide");
+            this.props.message.okayText || t.Hide);
 
     var className = this.props.className || this.props.message.className || '';
     var largeClass = this.props.large ? ' dwHelp-large' : '';

@@ -63,13 +63,13 @@ const AboutUserDialog = createComponent({
     this._openAndLoadUser({ user: null, post: post }, post.authorId, at);
   },
 
-  openForUserIdOrUsername: function(idOrUsername: number | string, at) {
-    this._openAndLoadUser({ user: null, post: null }, idOrUsername, at);
+  openForUserIdOrUsername: function(idOrUsername: number | string, at, extraInfo?: string) {
+    this._openAndLoadUser({ user: null, post: null, extraInfo }, idOrUsername, at);
   },
 
-  openForUser: function(user: BriefUser, at) {
+  openForUser: function(user: BriefUser, at, extraInfo?: string) {
     // Some code below thinks this is a CompleteUser but a BriefUser is all that's needed.
-    this._openAndLoadUser({ user: user, post: null }, user.id, at);
+    this._openAndLoadUser({ user: user, post: null, extraInfo }, user.id, at);
   },
 
   _openAndLoadUser: function(newState, idOrUsername: number | string, at) {
@@ -138,12 +138,13 @@ const AboutUserDialog = createComponent({
         reload: this.reload,
         post: this.state.post,
         user: user,
+        extraInfo: this.state.extraInfo,
         blocks: this.state.blocks,
         close: this.close,
       }, this.props);
 
       if (!user) {
-        content = r.p({}, 'Loading...');
+        content = r.p({}, t.Loading);
       }
       else if (isGuest(user)) {
         content = AboutGuest(childProps);
@@ -153,7 +154,7 @@ const AboutUserDialog = createComponent({
       }
 
       content = r.div({}, ModalBody({}, content),
-        ModalFooter({}, Button({ onClick: this.close }, 'Close')));
+        ModalFooter({}, Button({ onClick: this.close }, t.Close)));
     }
 
     return (
@@ -194,14 +195,14 @@ const AboutUser = createComponent({
 
     let isStaffInfo = null;
     if (user.isModerator) {
-      isStaffInfo = "Is moderator.";
+      isStaffInfo = t.aud.IsMod;
     }
     if (user.isAdmin) {
-      isStaffInfo = "Is administrator.";
+      isStaffInfo = t.aud.IsAdm;
     }
 
     const isGoneInfo = !user_isGone(user) ? null :
-      r.p({}, "Is deactivated or deleted.");
+      r.p({}, t.aud.IsDeld);
 
     const afterClick = this.props.close;
 
@@ -215,19 +216,22 @@ const AboutUser = createComponent({
     const viewInAdminAreaButton = !eds.isInAdminArea ? null :
       LinkButton({ href: linkToUserInAdminArea(user), afterClick,
           target: '_blank' },
-        "View in Admin Area");
+        t.aud.ViewInAdm);
 
     const viewProfileButton =
         LinkButton({ href: linkToUserProfilePage(user), id: 'e2eUD_ProfileB', afterClick,
               target: '_blank' },
-          "View Profile");
+          t.aud.ViewProfl);
 
     const userIsPageMember = page_isGroupTalk(page.pageRole) &&
         _.includes(page.pageMemberIds, user.id);
     const removeFromPageButton = userIsPageMember &&
         (isStaff(me) || store_thisIsMyPage(store)) && !userIsMe
-      ? Button({ onClick: this.removeFromPage, id: 'e2eUD_RemoveB' }, "Remove from topic")
+      ? Button({ onClick: this.removeFromPage, id: 'e2eUD_RemoveB' }, t.aud.RmFromTpc)
       : null;
+
+    const extraInfoNewline =
+        this.props.extraInfo ? r.i({}, this.props.extraInfo, r.br()) : null;
 
     return (
       r.div({},
@@ -239,6 +243,7 @@ const AboutUser = createComponent({
         avatar.Avatar({ user: user, origins: store,
             size: AvatarSize.Medium, clickOpensUserProfilePage: true }),
         r.div({},
+          extraInfoNewline,
           r.b({}, user.username), r.br(),
           user.fullName, r.br(),
           isStaffInfo,
@@ -247,7 +252,7 @@ const AboutUser = createComponent({
 });
 
 
-var AboutGuest = createComponent({
+const AboutGuest = createComponent({
   displayName: 'AboutGuest',
 
   getInitialState: function() {
@@ -269,25 +274,25 @@ var AboutGuest = createComponent({
   },
 
   render: function() {
-    var store: Store = this.props.store;
-    var me: Myself = store.me;
-    var guest: Guest = this.props.user;
-    var blocks: Blocks = this.props.blocks;
-    let post: Post = this.props.post;
-    var postId = post ? post.uniqueId : null;
+    const store: Store = this.props.store;
+    const me: Myself = store.me;
+    const guest: Guest = this.props.user;
+    const blocks: Blocks = this.props.blocks;
+    const post: Post = this.props.post;
+    const postId = post ? post.uniqueId : null;
 
-    var blockButton;
-    var blockModal;
+    let blockButton;
+    let blockModal;
     // SECURITY (minor) SHOULD show the below Block button also in the forum topic list. (Might need
     // to lookup posts, to find ip number(s) to block?)  [5JKURQ0]
     if (isStaff(me) && postId) {
       if (blocks.isBlocked) {
-        blockButton =
-          Button({ title: 'Let this guest post comments again', onClick: this.unblockGuest },
-            'Unblock');
+        blockButton =  // (skip i18n, is for staff)
+          Button({ title: "Let this guest post comments again", onClick: this.unblockGuest },
+            "Unblock");
       }
       else {
-        blockButton =
+        blockButton =  // (skip i18n, is for staff)
             Button({ title: "Prevent this guest from posting more comments",
                 onClick: this.openBlockGuestModal }, "Block or surveil");
       }
@@ -295,14 +300,15 @@ var AboutGuest = createComponent({
           show: this.state.isBlockGuestModalOpen, close: this.closeBlockGuestModal });
     }
 
-    var blockedInfo;
+    // Skip i18n; this is for staff.
+    let blockedInfo;
     if (blocks.isBlocked) {
-      var text = 'This guest is blocked ';
+      let text = "This guest is blocked ";
       if (blocks.blockedForever) {
-        text += 'forever';
+        text += "forever";
       }
       else {
-        text += 'until ' + moment(blocks.blockedTillMs).format('YYYY-MM-DD HH:mm');
+        text += "until " + moment(blocks.blockedTillMs).format('YYYY-MM-DD HH:mm');
       }
       blockedInfo =
         r.p({ className: 'dw-guest-blocked' },
@@ -312,8 +318,8 @@ var AboutGuest = createComponent({
               threatLevel_toString(blocks.browserBlock.threatLevel), r.br());
     }
 
-    var anyCannotBeContactedMessage = guest.isEmailUnknown
-        ? r.p({}, "Email address unknown — this guest won't be notified about replies.")
+    const anyCannotBeContactedMessage = guest.isEmailUnknown
+        ? r.p({}, t.aud.EmAdrUnkn)
         : null;
 
     return (
@@ -336,7 +342,7 @@ const BlockGuestDialog = createComponent({
 
   setThreatLevel: function(threatLevel: ThreatLevel) {
     // Too many conf values = just bad.
-    var numDays = 0; // hardcoded server side instead
+    const numDays = 0; // hardcoded server side instead
     /*
     var numDays = parseInt(this.refs.daysInput.getValue());
     if (isNaN(numDays)) {
@@ -355,6 +361,8 @@ const BlockGuestDialog = createComponent({
   },
 
   render: function() {
+    // Skip i18n; this is for staff.
+
     return (
       Modal({ show: this.props.show, onHide: this.props.close },
         ModalHeader({}, ModalTitle({}, "Block or surveil guest")),
@@ -385,7 +393,7 @@ const BlockGuestDialog = createComponent({
               help: "This will be visible to everyone. Keep it short.", ref: 'reasonInput' })),
              */ ),
       ModalFooter({},
-          Button({ onClick: this.props.close }, 'Cancel'))));
+          Button({ onClick: this.props.close }, "Cancel"))));
   }
 });
 

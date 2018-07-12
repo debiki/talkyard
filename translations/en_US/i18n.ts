@@ -23,13 +23,16 @@ var t_en_US: TalkyardTranslations = t = {
   Add: "Add",
   AddingDots: "Adding ...",
   Admin: "Admin",
+  AdvSearch: "Advanced search",
   Away: "Away",
+  Back: "Back",
   BlogN: "Blog",
   Bookmarks: "Bookmarks",
   Cancel: "Cancel",
   Categories: "Categories",
   Category: "Category",
   Continue: "Continue",
+  ClickToShow: "Click to show",
   ChangeDots: "Change ...",
   ChatN: "Chat",
   Close: "Close",
@@ -41,6 +44,7 @@ var t_en_US: TalkyardTranslations = t = {
   EmailAddress: "Email address",
   Forum: "Forum",
   Hide: "Hide",
+  Home: "Home",
   Idea: "Idea",
   Loading: "Loading...",
   LoadMore: "Load more ...",
@@ -52,6 +56,7 @@ var t_en_US: TalkyardTranslations = t = {
   Move: "Move",
   Name: "Name",
   NameC: "Name:",
+  Notifications: "Notifications",
   NotImplemented: "(Not implemented)",
   NotYet: "Not yet",
   NoTopics: "No topics.",
@@ -66,14 +71,17 @@ var t_en_US: TalkyardTranslations = t = {
   Reopen: "Reopen",
   ReplyV: "Reply",
   Replies: "Replies",
+  replies: "replies",
   Save: "Save",
   SavingDots: "Saving ...",
   SavedDot: "Saved.",
+  Search: "Search",
   SendMsg: "Send Message",
   SignUp: "Sign Up",
   Solution: "Solution",
   Summary: "Summary",
   Submit: "Submit",
+  Tools: "Tools",
   Topics: "Topics",
   TopicType: "Topic type",
   UploadingDots: "Uploading...",
@@ -81,6 +89,7 @@ var t_en_US: TalkyardTranslations = t = {
   Users: "Users",
   Welcome: "Welcome",
   Wiki: "Wiki",
+  You: "You",
   you: "you",
 
   // Trust levels.
@@ -100,14 +109,47 @@ var t_en_US: TalkyardTranslations = t = {
   PastYear: "Past Year",
   AllTime: "All Time",
 
+  // Time ago letters.
+  // English examples: "3d" in forum topic list means 3 days ago. "5h" is 5 hours.
+  monthsLtr: "mon",  // months
+  daysLtr: "d",      // days
+  hoursLtr: "h",     // hours
+  minsLtr: "m",      // minutes
+  secsLtr: "s",      // seconds
+
+  // Time ago, long text versions.
+  daysAgo: (numDays: number) =>
+    numDays === 1 ? "1 day ago" : `${numDays} days ago`,
+
+  hoursAgo: (numHours: number) =>
+    numHours === 1 ? "1 hour ago" : `${numHours} hours ago`,
+
+  minutesAgo: (numMins: number) =>
+    numMins === 1 ? "1 minute ago" : `${numMins} minutes ago`,
+
+  secondsAgo: (numSecs: number) =>
+    numSecs === 1 ? "1 second ago" : `${numSecs} seconds ago`,
+
 
   // Notification levels.
   nl: {
     WatchingAll: "Watching All",
+    WatchingAllTag: "You'll be notified of new topics with this tag, and every post in those topics",
+    WatchingAllTopic: "You'll be notified of all new replies in this topic.",
+
+    // One will be notified about the *first* post in a new topic, only. That is, the Original Post
+    // (that's what the first post is called, in a discussion forum topic).
     WatchingFirst: "Watching First",
+    WatchingFirstTag: "You'll be notified of new topics with this tag",
+
     Tracking: "Tracking",
+
     Normal: "Normal",
+    NormalTopic_1: "You'll be notified if someone replies to you or mentions your ",
+    NormalTopic_2: "@name",
+
     Muted: "Muted",
+    MutedTopic: "No notifications about this topic.",
   },
 
 
@@ -202,6 +244,8 @@ var t_en_US: TalkyardTranslations = t = {
     LastReplyOn: "\nLast reply on ",
     EditedOn: "\nEdited on ",
 
+    // These are shown as mouse-hover tooltips, or mobile-phone-touch-tips, over the user
+    // avatar icons, in the forum topic list.
     createdTheTopic: "created the topic",
     frequentPoster: "frequent poster",
     mostRecentPoster: "most recent poster",
@@ -238,6 +282,37 @@ var t_en_US: TalkyardTranslations = t = {
   },
 
 
+  // Topbar
+
+  // Shown at the top of the page. Includes login and signup buttons, or one's username menu.
+
+  tb: {
+
+    // Opens the right hand sidebar and litst the most recent posts in the current topic.
+    RecentPosts: "Recent posts",
+
+    // Open right-hand-sidebar button tooltip, if mouse-hovering online-user-count.
+    NumOnlChat: " online in this chat",    // example: "5 online in this chat"
+    NumOnlForum: " online in this forum",
+
+    // Open left-sidebar button title.
+    WatchbBtn: "Your topics",
+
+    // Tooltip, shown if mouse-hovering the open-left-sidebar button.
+    WatchbToolt: "Your recent topics, joined chats, direct messages",
+
+    // Title shown on user profile pages.
+    AbtUsr: "About User",
+
+    // Shortcuts to leave the user profile page, or staff area, and go back to the discussion topics.
+    BackFromUsr: "Back from user profile",
+    BackFromAdm: "Back from admin area",
+
+    // Title shown on full text search page.
+    SearchPg: "Search Page",
+  },
+
+
   // Watchbar (the sidebar to the left)
 
   wb: {
@@ -262,7 +337,7 @@ var t_en_US: TalkyardTranslations = t = {
   },
 
 
-  // Contextbar (the sidebar to the right), code currently in sidebar.ts (not renamed yet)
+  // Contextbar (the sidebar to the right)
 
   cb: {
     RecentComments: "Recent comments in this topic:",
@@ -279,16 +354,29 @@ var t_en_US: TalkyardTranslations = t = {
     AdminGuide: "Admin Guide",
     Guide: "Guide",
 
+    // How to hide the sidebar.
+    CloseShortcutS: "Close (keyboard shortcut: S)",
+
+    // ----- Online users list / Users in current topic
+
     AddPeople: "Add more people",
 
+    // Shown next to one's own username, in a list of users.
     thatsYou: "that's you",
-    YouAnd: "You, and ",
+
+    // Info about which people are online.
+    // Example, in English: "Online users: You, and 5 people who have not logged in"
     OnlyYou: "Only you, it seems",
+    YouAnd: "You, and ",
     NumStrangers: (numStrangers: number) => {
       const people = numStrangers === 1 ? " person" : " people";
       const have = numStrangers === 1 ? "has" : "have";
       return numStrangers + people + " who " + have + " not logged in";
     },
+
+    // ----- Recent comments list
+
+    // This explains how the Recent tab in the sidebar works.
 
     RepliesToTheLeft: "The replies to the left are sorted by ",
     bestFirst: "best-first.",
@@ -300,23 +388,26 @@ var t_en_US: TalkyardTranslations = t = {
     allNewReplies: "all new replies.",
     Click: "Click",
     aReplyToReadIt: " a reply below to read it — because only an excerpt is shown, below.",
-
-    CloseShortcutS: "Close (keyboard shortcut: S)",
   },
 
 
   // Discussion / non-chat page
 
   d: {
+    // These texts are split into parts 1,2 or 1,2,3 ec, because in between the texts,
+    // icons are shown, to help people understand what those icons mean.
+
     ThisFormClosed_1: "This form has been ",
+    // A Topic-has-been-Closed icon shown here, between text parts 1 (just above) and 2 (below).
     ThisFormClosed_2: "closed; you can no longer fill it in and post it.",
 
     ThisTopicClosed_1: "This topic has been ",
-    // ... "closed" ...
+    // A Topic-has-been-Closed icon, + the text "closed", shown here.
     ThisTopicClosed_2: ". You can still post comments, " +
           "but that won't make this topic bump to the top of the latest-topics list.",
 
     ThisQuestSloved_1: "This is a question and it has been ",
+    // A  Topic-has-been-Answered icon shown here.
     ThisQuestSloved_2: "answered.",
 
     ThisQuestWaiting_1: "This is a ",
@@ -362,9 +453,13 @@ var t_en_US: TalkyardTranslations = t = {
 
     AboutCat: "About category:",
 
-    PageDeleted: "(Page deleted)",
-    TitlePendAppr: "(Title pending approval)",
-    TextPendingApproval: "(Text pending approval)",
+    ThreadDeld: "Thread deleted",
+    CmntDeld: "Comment deleted",
+    PostDeld: "Post deleted",
+    DiscDeld: "Discussion deleted",
+    PageDeld: "Page deleted",
+    TitlePendAppr: "Title pending approval",
+    TextPendingApproval: "Text pending approval",
 
     TooltipQuestClosedNoAnsw: "This question has been closed without any accepted answer.",
     TooltipTopicClosed: "This topic is closed.",
@@ -432,6 +527,30 @@ var t_en_US: TalkyardTranslations = t = {
     By: "By ", // ... someones name
   },
 
+
+  // Metabar
+
+  // Shown between the original post and all replies.
+
+  mb: {
+    NotfsAbtThisC: "Notifications about this topic:",
+
+    // If is a direct message topic, members listed below this text.
+    Msg: "Message",
+
+    SmrzRepls: "Summarize Replies",
+
+    // Don't bother about being correct with "1 reply", "2,3,4 replies".
+    // Just write "replies" always instead? (also if only one)
+
+    EstTime: (numReplies: number, minutes: number) =>
+        `There are ${numReplies} replies. Estimated reading time: ${minutes} minutes`,
+
+    DoneSummarizing: (numSummarized: number, numShownBefore: number) =>
+        `Done. Summarized ${numSummarized} replies, of the ${numShownBefore} replies previously shown.`,
+  },
+
+
   // Post actions
 
   pa: {
@@ -475,6 +594,15 @@ var t_en_US: TalkyardTranslations = t = {
   },
 
 
+  // Share dialog
+
+  sd: {
+    Copied: "Copied.",
+    CtrlCToCopy: "Hit CTRL+C to copy.",
+    ClickToCopy: "Click to copy link.",
+  },
+
+
   // Chat
 
   c: {
@@ -508,8 +636,15 @@ var t_en_US: TalkyardTranslations = t = {
   // About user dialog
 
   aud: {
-    ViewComments: "View other comments",
+    IsMod: "Is moderator.",
+    IsAdm: "Is administrator.",
+    IsDeld: "Is deactivated or deleted.",
     ThisIsGuest: "This is a guest user, could in fact be anyone.",
+    ViewInAdm: "View in Admin Area",
+    ViewProfl: "View Profile",
+    ViewComments: "View other comments",
+    RmFromTpc: "Remove from topic",
+    EmAdrUnkn: "Email address unknown — this guest won't be notified about replies.",
   },
 
 
@@ -518,7 +653,6 @@ var t_en_US: TalkyardTranslations = t = {
   upp: {
     // ----- Links
 
-    Notifications: "Notifications",
     Preferences: "Preferences",
     Invites: "Invites",
     About: "About",
@@ -540,6 +674,16 @@ var t_en_US: TalkyardTranslations = t = {
     UploadPhoto: "Upload photo",
     ChangePhoto: "Change photo",
     ImgTooSmall: "Image too small: should be at least 100 x 100",
+
+    // ----- Activity
+
+    OnlyStaffCanSee: "Only staff and trusted core members, can see this.",
+    OnlyMbrsCanSee: "Only people who have been active members for a while can see this.",
+    Nothing: "Nothing to show",
+    Posts: "Posts",
+    NoPosts: "No posts.",
+    Topics: "Topics",
+    NoTopics: "No topics.",
 
     // ----- User status
 
@@ -711,7 +855,13 @@ var t_en_US: TalkyardTranslations = t = {
     Accept_2: " and ",
     PrivPol: "Privacy Policy",
     Accept_3_User: "?",
-    Accept_3_Owner: " for site owners?",
+    Accept_3_Owner: " for site owners?",  // (see just below)
+
+    // About "for site owners?" above:
+    // That's if someone creates his/her own community, via this software provided as
+    // Software-as-a-Service hosting. Then, there is / will-be a bit different
+    // Terms-of-Service to agree with, since being a community maintainer/owner, is different
+    // (more responsibility) than just signing up to post comments.
 
     YesAccept: "Yes I accept",
   },
@@ -735,6 +885,14 @@ var t_en_US: TalkyardTranslations = t = {
 
   ld: {
     NotFoundOrPrivate: "Page not found, or Access Denied.",
+
+    // This is if you're admin, and click the Impersonate button to become someone else
+    // (maybe to troubleshoot problems with his/her account s/he has asked for help about),
+    // and then you, being that other user, somehow happen to open a login dialog
+    // (maybe because of navigating to a different part of the site that the user being
+    // impersonated cannot access) — then, that error message is shown: You're not allowed
+    // to login as *someone else* to access that part of the community, until you've first
+    // stopped impersonating the first user. (Otherwise, everything gets too complicated.)
     IsImpersonating: "You're impersonating someone, who might not have access to all parts " +
         "of this website.",
 
@@ -774,6 +932,9 @@ var t_en_US: TalkyardTranslations = t = {
     UsernameOrEmailC: "Username or email:",
     PasswordC: "Password:",
     ForgotPwd: "Did you forget your password?",
+
+    NoPwd: "You have not yet chosen a password.",
+    CreatePwd: "Create password",
   },
 
 
@@ -788,6 +949,14 @@ var t_en_US: TalkyardTranslations = t = {
     OptOffensive: "This post contains offensive or abusive content.",
     OptSpam: "This post is an unwanted advertisement.",
     OptOther: "Notify staff about this post for some other reason.",
+  },
+
+
+  // Help message dialog
+  help: {
+    YouCanShowAgain_1: "You can show help messages again, if you are logged in, by " +
+        "clicking your name and then ",
+    YouCanShowAgain_2: "Unhide help messages",
   },
 
 
@@ -911,6 +1080,11 @@ var t_en_US: TalkyardTranslations = t = {
     Form: "Form",
   },
 
+
+  // Search dialogs and the search page.
+  s: {
+    TxtToFind: "Text to search for",
+  }
 
 };
 

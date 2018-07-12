@@ -194,7 +194,7 @@ export const TopBar = createComponent({
       ancestorCategories =
         r.ol({ className: 'esTopbar_ancestors' },
           r.li({},
-            Link({ className: 'esTopbar_ancestors_link btn', to: homePath }, "Home")));
+            Link({ className: 'esTopbar_ancestors_link btn', to: homePath }, t.Home)));
     }
     else {
       // This isn't a private-message topic, and still it isn't placed in any section,
@@ -218,7 +218,7 @@ export const TopBar = createComponent({
       isImpersonatingClass = ' s_MMB-IsImp';
       if (!me.isLoggedIn) {
         isImpersonatingClass += ' s_MMB-IsImp-Stranger';
-        impersonatingStrangerInfo = "Viewing as stranger";
+        impersonatingStrangerInfo = "Viewing as stranger"; // (no i18n, is for staff)
         // SECURITY COULD add a logout button, so won't need to first click stop-viewing-as,
         // and then also click Logout. 2 steps = a bit risky, 1 step = simpler, safer.
       }
@@ -239,7 +239,7 @@ export const TopBar = createComponent({
             impersonatingStrangerInfo,
             myAvatar,
             r.span({ className: 'esAvtrName_name' }, me.username || me.fullName), // if screen wide
-            r.span({ className: 'esAvtrName_you' }, "You"), // if screen narrow
+            r.span({ className: 'esAvtrName_you' }, t.You), // if screen narrow
             talkToMeNotfs,
             talkToOthersNotfs,
             otherNotfs) },
@@ -267,7 +267,7 @@ export const TopBar = createComponent({
     // (Is it ok to call another React component from here? I.e. the page tools dialog.)
     const toolsButton = !isStaff(me) || !store_shallShowPageToolsButton(store) ? null :
         Button({ className: 'dw-a-tools', onClick: this.showTools },
-          r.a({ className: 'icon-wrench' }, "Tools"));
+          r.a({ className: 'icon-wrench' }, t.Tools));
 
     // ------- Search button
 
@@ -295,12 +295,12 @@ export const TopBar = createComponent({
     if (this.props.location) {
       const path: string = this.props.location.pathname;
       if (path.search(UsersRoot) === 0) {
-        customTitle = "About User";
-        backToSiteButton = "Back from user profile";
+        customTitle = t.tb.AbtUsr;
+        backToSiteButton = t.tb.BackFromUsr;
       }
       else if (path.search(SearchRootPath) === 0) {
-        customTitle = "Search Page";
-        backToSiteButton = "Back";
+        customTitle = t.tb.SearchPg;
+        backToSiteButton = t.Back;
       }
     }
 
@@ -310,7 +310,7 @@ export const TopBar = createComponent({
 
     if (this.props.showBackToSite || backToSiteButton) {
       backToSiteButton = r.a({ className: 'esTopbar_custom_backToSite btn icon-reply',
-          onClick: goBackToSite }, backToSiteButton || "Back from admin area");
+          onClick: goBackToSite }, backToSiteButton || t.tb.BackFromAdm);
       extraMargin = true;
     }
 
@@ -337,7 +337,7 @@ export const TopBar = createComponent({
       // COULD show click-to-see-recent-comments tips, if the user doesn't seem to know about that.
       // For now, show this dummy text, because otherwise people get confused when the
       // "X users online" text disappears:
-      contextbarTipsDetailed = "Recent posts";
+      contextbarTipsDetailed = t.tb.RecentPosts;
       contextbarTipsBrief = r.span({}, '0', r.span({ className: 'icon-comment-empty' }));
     }
     else {
@@ -346,8 +346,8 @@ export const TopBar = createComponent({
       because then people get confused when inside the contextbar they see: sth like '1 user, you'
       although when collapsed, says '0 users'. So for now: */
       const numOthers = usersHere.numOnline;
-      const inThisWhat = usersHere.areChatChannelMembers ? "chat"  : "forum";
-      contextbarTipsDetailed = numOthers + " online in this " + inThisWhat;
+      const isChat = usersHere.areChatChannelMembers;
+      contextbarTipsDetailed = numOthers + (isChat ? t.tb.NumOnlChat : t.tb.NumOnlForum);
       contextbarTipsBrief = r.span({}, '' + numOthers, r.span({ className: 'icon-user' }));
     }
     const contextbarTips = !contextbarTipsDetailed ? null :
@@ -364,7 +364,7 @@ export const TopBar = createComponent({
 
     const openWatchbarButton = hideSidebarBtns ? null :
         Button({ className: 'esOpenWatchbarBtn', onClick: ReactActions.openWatchbar,
-            title: "Your recent topics, joined chats, direct messages" },
+            title: t.tb.WatchbToolt },
           r.span({ className: 'icon-right-open' }),
           // An eye icon makes sense? because the first list is "Recently *viewed*".
           // And one kind of uses that whole sidebar to *watch* / get-updated-about topics
@@ -376,7 +376,7 @@ export const TopBar = createComponent({
           // (Better give it a label, then easier for people to remember what it does.)
           r.span({ className: 'esOpenWatchbarBtn_text' }, "Activity"));
           */
-          r.span({ className: 'esOpenWatchbarBtn_text' }, "Your topics"));
+          r.span({ className: 'esOpenWatchbarBtn_text' }, t.tb.WatchbBtn));
 
 
     // ------- The result
@@ -434,7 +434,7 @@ const MyMenuContentComponent = createFactory({   // dupl code [4WKBTP0]
 
   render: function() {
     if (!this.state)
-      return r.p({}, "Loading...");
+      return r.p({}, t.Loading);
 
     // Lazy loaded.
     return debiki2.topbar['MyMenuContent']({ store: this.props.store });
@@ -477,13 +477,13 @@ const SearchForm = createComponent({
     return (
         r.form({ className: 'esTB_SearchD', ref: 'form',
             method: 'get', acceptCharset: 'UTF-8', action: searchEndpoint },
-          (<any> r.input)({ type: 'text', tabIndex: '1', placeholder: "Text to search for",  // [TYPEERROR]
+          (<any> r.input)({ type: 'text', tabIndex: '1', placeholder: t.s.TxtToFind,  // [TYPEERROR]
               ref: 'input', name: 'q',
               value: this.state.queryInputText, onChange: this.onQueryChange }),
-          PrimaryLinkButton({ href: searchUrl, className: 'e_SearchB', afterClick }, "Search"),
+          PrimaryLinkButton({ href: searchUrl, className: 'e_SearchB', afterClick }, t.Search),
           r.div({},
             r.a({ className: 'esTB_SearchD_AdvL', href: searchUrlAdvanced },
-              "Advanced search"))));
+              t.AdvSearch))));
   }
 });
 

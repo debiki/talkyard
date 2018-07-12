@@ -28,13 +28,13 @@
 //========================
 
 
-export function openAboutUserDialog(who: number | string | BriefUser, at) {
+export function openAboutUserDialog(who: number | string | BriefUser, at, extraInfo?: string) {
   Server.loadMoreScriptsBundle(() => {
     if (_.isString(who) || _.isNumber(who)) {
-      debiki2.pagedialogs.getAboutUserDialog().openForUserIdOrUsername(who, at);
+      debiki2.pagedialogs.getAboutUserDialog().openForUserIdOrUsername(who, at, extraInfo);
     }
     else {
-      debiki2.pagedialogs.getAboutUserDialog().openForUser(who, at);
+      debiki2.pagedialogs.getAboutUserDialog().openForUser(who, at, extraInfo);
     }
   });
 }

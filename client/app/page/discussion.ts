@@ -362,7 +362,7 @@ export const Title = createComponent({
 
     const deletedOrUnapprovedInfo = titlePost.isApproved ? false :
         r.span({ className: 'esPendingApproval' },
-          page.pageDeletedAtMs ? t.d.PageDeleted : t.d.TitlePendAppr);
+          '(' + page.pageDeletedAtMs ? t.d.PageDeld : t.d.TitlePendAppr + ')');
 
     // Insert the title as plain text (don't interpret any html tags — that'd let Mallory mess up
     // the formatting, even if sanitized).
@@ -617,13 +617,13 @@ const RootPostAndComments = createComponent({
 
     const notYetApprovedMaybeDeletedInfo = rootPost.isApproved ? false :
         r.div({ className: 'esPendingApproval' },
-          page.pageDeletedAtMs ? t.d.PageDeleted : t.d.TextPendingApproval);
+          '(' + page.pageDeletedAtMs ? t.d.PageDeld : t.d.TextPendingApproval + ')');
 
     const deletedCross = !page.pageDeletedAtMs ? null :
         r.div({ className: 's_Pg_DdX' });
     const deletedText = !page.pageDeletedAtMs ? null :
         r.div({ className: 's_Pg_DdInf' },
-          (pageRole === PageRole.EmbeddedComments ? "Discussion" : "Page") + " deleted."); // I18N
+          pageRole === PageRole.EmbeddedComments ? t.d.DiscDeld : t.d.PageDeld);
 
     let body = null;
     if (pageRole !== PageRole.EmbeddedComments || !store.isEmbedded) {
@@ -634,7 +634,7 @@ const RootPostAndComments = createComponent({
         bodyContent = (
             r.div({ className: 'dw-p-bd-blk esOrigPost', onClick },
               isDeleted
-                ? (isStaff(me) ? "Post deleted, click to show" : "Post deleted")  // I18N
+                ? (t.d.PostDeld + (isStaff(me) ? '. ' + t.ClickToShow : ''))
                 : t.d.PostHiddenClickShow));
       }
       else {
@@ -1209,8 +1209,7 @@ export const Post = createComponent({
     const isFlat = this.props.isFlat;
 
     if (post_isDeleted(post)) {
-      const what = post.isTreeDeleted ? "Thread" : "Comment";           // I18N
-      headerElem = r.div({ className: 'dw-p-hd' }, what, " deleted");   // I18N
+      headerElem = r.div({ className: 'dw-p-hd' }, post.isTreeDeleted ? t.d.ThreadDeld : t.d.CmntDeld);
       extraClasses += ' dw-p-dl';
     }
     else if (this.props.renderCollapsed &&

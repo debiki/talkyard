@@ -1,5 +1,5 @@
 /* Miscellaneous stuff. Why is there both debiki-utils.js and -utils-browser.js?
- * Copyright (C) 2010-2012 Kaj Magnus Lindberg (born 1979)
+ * Copyright (C) 2010-2018 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -47,13 +47,10 @@ debiki.prettyDuration = function(then, now) {  // i18n
   // I prefer `30 hours ago' to `1 day ago', but `2 days ago' to `50 hours ago'.
   // Skip weeks, because prettyLetterDuration() skips weeks.
   // if (diff > 2 * week) return trunc(diff / week) +" weeks ago";
-  if (diff >= 40 * hour) return round(diff / day) +" days ago";
-  if (diff >= 100 * minute) return round(diff / hour) +" hours ago";
-  if (diff > 2 * minute) return trunc(diff / minute) +" minutes ago";
-  if (diff > 1 * minute) return "1 minute ago";
-  if (diff > 2 * second) return trunc(diff / second) +" seconds ago";
-  if (diff > 1 * second) return "1 second ago";
-  return "0 seconds ago";
+  if (diff >= 40 * hour) return t.daysAgo(round(diff / day));
+  if (diff >= 100 * minute) return t.hoursAgo(round(diff / hour));
+  if (diff >= minute) return t.minutesAgo(trunc(diff / minute));
+  return t.secondsAgo(trunc(diff / second));
 };
 
 
@@ -88,13 +85,13 @@ debiki.prettyLetterDuration = function(then, now) {  // i18n
   if (diff > month && isTimeSpan) {
     return monthDayYear(then);
   }
-  if (diff >= 2 * month) return trunc(diff / month) + "mon";
+  if (diff >= 2 * month) return trunc(diff / month) + t.monthsLtr;
   // Skip "w" (weeks), it makes me confused.
-  if (diff >= 2 * day) return trunc(diff / day) + "d";
+  if (diff >= 2 * day) return trunc(diff / day) + t.daysLtr;
   // "90 minutes ago" is ok, but "105 minutes ago" — then "2 hours" sounds better I think.
-  if (diff >= 100 * minute) return trunc(Math.max(2, diff / hour)) + "h";
-  if (diff >= minute) return trunc(diff / minute) + "m";
-  return trunc(diff / second) + "s";
+  if (diff >= 100 * minute) return trunc(Math.max(2, diff / hour)) + t.hoursLtr;
+  if (diff >= minute) return trunc(diff / minute) + t.minsLtr;
+  return trunc(diff / second) + t.secsLtr;
 };
 
 
@@ -116,7 +113,7 @@ d.u.die = function(message) {
 d.u.die2 = function(errorCode, message) {
   var mess2 = message ? message +' ' : '';
   var err2 = errorCode ? ' '+ errorCode : '';
-  throw new Error(mess2 + '[error'+ err2 +']');
+  throw new Error(mess2 + '['+ err2 +']');
 };
 
 

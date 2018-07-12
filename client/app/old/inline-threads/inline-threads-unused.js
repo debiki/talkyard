@@ -76,7 +76,7 @@ function $placeInlineMarks() {
     var arrow = $parentThread.filter('.dw-hz').length ?
         'ui-icon-arrow-1-e' : 'ui-icon-arrow-1-s';
     // COULD: When possible to mark a text range: Underline matched text?
-    // COULD add i18n, here and in $(mark) below.
+    // COULD add i1 8n, here and in $(mark) below.
     var mark =
         '<a id="dw-i-m_'+ this.id +'" class="dw-i-m-start ui-icon '+
         arrow +'" href="#'+ this.id +'" title="Contextual comment" />';

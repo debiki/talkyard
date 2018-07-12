@@ -9,12 +9,15 @@ interface TalkyardTranslations {
   Add: string;
   AddingDots: string;
   Admin: string;
+  AdvSearch: string;
   Away: string;
+  Back: string;
   BlogN: string;
   Bookmarks: string;
   Cancel: string;
   Categories: string;
   Category: string;
+  ClickToShow: string;
   Continue: string;
   ChangeDots: string;
   ChatN: string;
@@ -27,6 +30,7 @@ interface TalkyardTranslations {
   EmailAddress: string;
   Forum: string;
   Hide: string;
+  Home: string;
   Idea: string;
   Loading: string;
   LoadMore: string;
@@ -38,6 +42,7 @@ interface TalkyardTranslations {
   Move: string;
   Name: string;
   NameC: string;
+  Notifications: string;
   NotImplemented: string;
   NotYet: string;
   NoTopics: string;
@@ -52,14 +57,17 @@ interface TalkyardTranslations {
   Reopen: string;
   ReplyV: string;
   Replies: string;
+  replies: string;
   Save: string;
   SavingDots: string;
   SavedDot: string;
+  Search: string;
   SendMsg: string;
   SignUp: string;
   Solution: string;
   Summary: string;
   Submit: string;
+  Tools: string;
   Topics: string;
   TopicType: string;
   UploadingDots: string;
@@ -67,6 +75,7 @@ interface TalkyardTranslations {
   Users: string;
   Welcome: string;
   Wiki: string;
+  You: string;
   you: string;
 
   // Trust levels.
@@ -86,14 +95,32 @@ interface TalkyardTranslations {
   PastYear: string;
   AllTime: string;
 
+  // Time ago.
+  daysAgo: (numDays: number) => string;
+  hoursAgo: (numHoursAgo: number) => string;
+  minutesAgo: (numMins: number) => string;
+  secondsAgo: (numSecs: number) => string;
+
+  // Time letters.
+  monthsLtr: string;
+  daysLtr: string;
+  hoursLtr: string;
+  minsLtr: string;
+  secsLtr: string;
 
   // Notification levels.
   nl: {
     WatchingAll: string;
+    WatchingAllTag: string;
+    WatchingAllTopic: string;
     WatchingFirst: string;
+    WatchingFirstTag: string;
     Tracking: string;
     Normal: string;
+    NormalTopic_1: string;
+    NormalTopic_2: string;
     Muted: string;
+    MutedTopic: string;
   }
 
 
@@ -201,6 +228,20 @@ interface TalkyardTranslations {
   },
 
 
+  // Topbar
+  tb: {
+    RecentPosts: string;
+    NumOnlChat: string;
+    NumOnlForum: string;
+    WatchbBtn: string;
+    WatchbToolt: string;
+    AbtUsr: string;
+    BackFromUsr: string;
+    BackFromAdm: string;
+    SearchPg: string;
+  },
+
+
   // Watchbar
   wb: {
     AddCommunity: string;
@@ -240,11 +281,13 @@ interface TalkyardTranslations {
     AdminGuide: string;
     Guide: string;
 
+    CloseShortcutS: string;
+
     AddPeople: string;
 
     thatsYou: string;
-    YouAnd: string;
     OnlyYou: string;
+    YouAnd: string;
     NumStrangers: (numStrangers: number) => string;
 
     RepliesToTheLeft: string;
@@ -257,8 +300,16 @@ interface TalkyardTranslations {
     allNewReplies: string;
     Click: string;
     aReplyToReadIt: string;
+  },
 
-    CloseShortcutS: string;
+
+  // Metabar
+  mb: {
+    NotfsAbtThisC: string;
+    Msg: string;
+    SmrzRepls: string;
+    EstTime: (numReplies: number, minutes: number) => string;
+    DoneSummarizing: (numSummarized: number, numShownBefore: number) => string;
   },
 
 
@@ -301,6 +352,12 @@ interface TalkyardTranslations {
     PinDeleteEtc: string;
   },
 
+  // Share dialog
+  sd: {
+    Copied: string;
+    CtrlCToCopy: string;
+    ClickToCopy: string;
+  },
 
   // Discussion / non-chat page
   d: {
@@ -356,7 +413,11 @@ interface TalkyardTranslations {
 
     AboutCat: string;
 
-    PageDeleted: string;
+    ThreadDeld: string;
+    CmntDeld: string;
+    PostDeld: string;
+    DiscDeld: string;
+    PageDeld: string;
     TitlePendAppr: string;
     TextPendingApproval: string;
 
@@ -455,8 +516,15 @@ interface TalkyardTranslations {
 
   // About user dialog
   aud: {
-    ViewComments: string;
+    IsMod: string;
+    IsAdm: string;
+    IsDeld: string;
     ThisIsGuest: string;
+    ViewInAdm: string;
+    ViewProfl: string;
+    ViewComments: string;
+    RmFromTpc: string;
+    EmAdrUnkn: string;
   },
 
 
@@ -464,7 +532,6 @@ interface TalkyardTranslations {
   upp: {
     // ----- Links
 
-    Notifications: string;
     Preferences: string;
     Invites: string;
     About: string;
@@ -486,6 +553,16 @@ interface TalkyardTranslations {
     UploadPhoto: string;
     ChangePhoto: string;
     ImgTooSmall: string;
+
+    // ----- Activity
+
+    OnlyStaffCanSee: string;
+    OnlyMbrsCanSee: string;
+    Nothing: string;
+    Posts: string;
+    NoPosts: string;
+    Topics: string;
+    NoTopics: string;
 
     // ----- User status
 
@@ -694,6 +771,9 @@ interface TalkyardTranslations {
     UsernameOrEmailC: string;
     PasswordC: string;
     ForgotPwd: string;
+
+    NoPwd: string;
+    CreatePwd: string;
   },
 
 
@@ -706,6 +786,13 @@ interface TalkyardTranslations {
     OptOffensive: string;
     OptSpam: string;
     OptOther: string;
+  },
+
+
+  // Help message dialog
+  help: {
+    YouCanShowAgain_1: string;
+    YouCanShowAgain_2: string;
   },
 
 
@@ -825,6 +912,12 @@ interface TalkyardTranslations {
     PrivChat: string;
     Form: string;
   },
+
+
+  // Search dialogs and the search page.
+  s: {
+    TxtToFind: string;
+  }
 }
 
 

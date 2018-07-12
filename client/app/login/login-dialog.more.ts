@@ -463,13 +463,14 @@ const PasswordLoginDialogContent = createClassAndFactory({
     }, () => {
       // This account has no password associated with it. [5WJBNR2]
       util.openDefaultStupidDialog({
-        body: "You have not yet chosen a password.",  // I18N
+        body: t.ld.NoPwd,
         dialogClassName: 'e_NoPwD',
         small: true,
-        closeButtonTitle: "Create password",          // I18N
+        closeButtonTitle: t.ld.CreatePwd,
         onCloseOk: (whichButton) => {
-          if (whichButton === 1) // primary button
+          if (whichButton === 1) { // primary button
             window.open(linkToResetPassword(), '_blank');
+          }
         }
       });
       this.refs.passwordInput.getInputDOMNode().focus();

@@ -175,7 +175,7 @@ function $showInlineActionMenu(event) {
   };
 
   // Open a menu, with Edit, Reply and Cancel buttons. CSS: '-i' means inline.
-  $menu = $(  // COULD add i18n
+  $menu = $(  // COULD add i1 8n
       '<ul class="dw-as-inline">' +
         '<li><a class="dw-a-edit-i">Improve</a></li>' +
         // Disable inline replies for now, until I've made them work better,

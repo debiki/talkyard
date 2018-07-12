@@ -33,6 +33,7 @@ const ExplainingListItem = util.ExplainingListItem;
 
 let notfsLevelDropdownModal;
 
+// CLEAN_UP move to separate file [5WKBQAA0]
 export function openNotfsLevelDropdown(openButton, subject: NotfSubject, currentLevel: NotfLevel) {
   if (!notfsLevelDropdownModal) {
     notfsLevelDropdownModal = ReactDOM.render(NotfsLevelDropdownModal(), utils.makeMountNode());
@@ -101,7 +102,7 @@ export var Metabar = createComponent({
 
     const notfLevelElem = me.isAuthenticated && !ui.showDetails
       ? r.span({ className: 'dw-page-notf-level', onClick: this.onToggleDetailsClick },
-          'Notifications: ' + notfLevel_title(myPageData.rolePageSettings.notfLevel))
+          t.Notifications + ': ' + notfLevel_title(myPageData.rolePageSettings.notfLevel))
       : null;
 
     const toggleDetailsBtn = !me.isLoggedIn ? null :
@@ -115,7 +116,7 @@ export var Metabar = createComponent({
     const summaryElem =
       r.div({ className: 'dw-cmts-tlbr-head' },
           r.ul({ className: 'dw-cmts-tlbr-summary' },
-              r.li({ className: 'dw-cmts-count' }, page.numPostsRepliesSection + " replies"),
+              r.li({ className: 'dw-cmts-count' }, page.numPostsRepliesSection + ' ' + t.replies),
               nameLoginBtns,
               r.li({}, notfLevelElem)),
           toggleDetailsBtn);
@@ -135,7 +136,7 @@ export var Metabar = createComponent({
       });
       anyExtraMeta =
           r.div({ className: 'esMetabar_extra' },
-            r.div({ className: 'icon-mail' }, "Message"),
+            r.div({ className: 'icon-mail' }, t.mb.Msg),
             r.div({ className: 'esMetabar_msgMmbrs' },
               memberList));
     }
@@ -148,15 +149,13 @@ export var Metabar = createComponent({
           r.span({ style: { marginLeft: '1em' }},
           // Only visiblie replies are summarized, so the count might be confusingly low,
           // if we don't clarify that only visible replies get summarized.
-          `Done. Summarized ${this.state.numRepliesSummarized} replies, ` +
-            `of the ${this.state.numRepliesVisible} replies previously shown.`);
+          t.mb.DoneSummarizing(this.state.numRepliesSummarized, this.state.numRepliesVisible));
       const minutes = estimateReadingTimeMinutesSkipOrigPost(<Post[]> _.values(page.postsByNr));
       if (minutes >= 10 || page.numPostsRepliesSection >= 20) {
         summarizeStuff =
           r.div({ className: 'esMetabar_summarize' },
-            r.p({}, "There are " + page.numPostsRepliesSection + " replies. " +
-              "Estimated reading time: " + Math.ceil(minutes) + " minutes"),
-            Button({ onClick: this.summarizeReplies }, "Summarize Replies"), doneSummarizing);
+            r.p({}, t.mb.EstTime(page.numPostsRepliesSection, Math.ceil(minutes))),
+            Button({ onClick: this.summarizeReplies }, t.mb.SmrzRepls), doneSummarizing);
       }
     }
 
@@ -184,7 +183,7 @@ const MetabarDetails = createComponent({
 
     const notificationsElem = !userAuthenticated ? null :
       r.div({},
-        r.div({ className: 'esMB_Dtls_Ntfs_Lbl' }, "Notifications about this topic:"),
+        r.div({ className: 'esMB_Dtls_Ntfs_Lbl' }, t.mb.NotfsAbtThisC),
         Button({ id: '7bw3gz5', className: 'dw-notf-level', onClick: event => {
               openNotfsLevelDropdown(event.target, { pageId: store.currentPageId }, notfLevel)
             }},
@@ -198,6 +197,7 @@ const MetabarDetails = createComponent({
 
 
 // some dupl code [6KUW24]
+// CLEAN_UP move to separate file [5WKBQAA0]
 const NotfsLevelDropdownModal = createComponent({
   displayName: 'NotfsLevelDropdownModal',
 
@@ -255,27 +255,24 @@ const NotfsLevelDropdownModal = createComponent({
 
     if (state.isOpen) {
       dieIf(!subject.pageId && !subject.tagLabel, 'EsE4GK02');
-      const watchingAllText = subject.tagLabel
-        ? "You'll be notified of new topics with this tag, and every post in those topics"
-        : "You'll be notified of all new replies in this topic.";
 
       watchingAllListItem = !subject.pageId ? null :
         ExplainingListItem({
           active: currentLevel === NotfLevel.WatchingAll,
-          title: r.span({ className: '' }, "Watching All"),
-          text: watchingAllText,
+          title: r.span({ className: '' }, t.nl.WatchingAll),
+          text: subject.tagLabel ? t.nl.WatchingAllTag : t.nl.WatchingAllTopic,
           onSelect: () => this.setNotfLevel(NotfLevel.WatchingAll) });
       watchingFirstListItem = !subject.tagLabel ? null :
         ExplainingListItem({
           active: currentLevel === NotfLevel.WatchingFirst,
-          title: r.span({className: ''}, "Watching First"),  // I18N + elsewhere
-          text: "You'll be notified of new topics with this tag",
+          title: r.span({className: ''}, t.nl.WatchingFirst),
+          text: t.nl.WatchingFirstTag,
           onSelect: () => this.setNotfLevel(NotfLevel.WatchingFirst) });
       mutedListItem =
         ExplainingListItem({
           active: currentLevel === NotfLevel.Muted,
-          title: r.span({ className: '' }, "Muted"),
-          text: "No notifications at all about this topic.",
+          title: r.span({ className: '' }, t.nl.Muted),
+          text: t.nl.MutedTopic,
           onSelect: () => this.setNotfLevel(NotfLevel.Muted) });
     }
 
@@ -287,15 +284,14 @@ const NotfsLevelDropdownModal = createComponent({
         /*
         ExplainingListItem({
           active: currentLevel === NotfLevel.Tracking,
-          title: r.span({ className: '' }, "Tracking"),
-          text: r.span({}, "??"),
+          title: r.span({ className: '' }, t.nl.Tracking),
+          text: r.span({}, t.nl.TrackingTopic),
           onSelect: () => this.setNotfLevel(NotfLevel.Tracking) }),
           */
         ExplainingListItem({
           active: currentLevel === NotfLevel.Normal,
-          title: r.span({ className: '' }, "Normal"),
-          text: r.span({}, "You'll be notified if someone replies to you or mentions your ",
-              r.samp({}, "@name"), "."),
+          title: r.span({ className: '' }, t.nl.Normal),
+          text: r.span({}, t.nl.NormalTopic_1, r.samp({}, t.nl.NormalTopic_2), '.'),
           onSelect: () => this.setNotfLevel(NotfLevel.Normal) }),
         mutedListItem));
   }
