@@ -156,8 +156,8 @@ export function user_threatLevel(user: MemberInclDetails): ThreatLevel {
 }
 
 
-export function user_trustLevel(user: MemberInclDetails): TrustLevel {
-  return user.lockedTrustLevel || user.trustLevel;
+export function user_trustLevel(user: MemberInclDetails | Myself): TrustLevel {
+  return (<MemberInclDetails> user).effectiveTrustLevel || user.lockedTrustLevel || user.trustLevel;
 }
 
 

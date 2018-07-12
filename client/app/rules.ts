@@ -98,9 +98,11 @@ export function me_isStranger(me: Myself): boolean {
 }
 
 
-export function maySendInvites(user: Myself | MemberInclDetails): MayMayNot {
-  // Currently only admins may send invites.
-  if (!user.isAdmin || user.isGroup) return mayMayNot(false, "is not admin");
+export function user_maySendInvites(user: Myself | MemberInclDetails): MayMayNot {
+  // Currently only staff and core members may send invites. [5WBJAF2]
+  if (!user_isStaffOrCoreMember(user) || user.isGroup) {
+    return mayMayNot(false, "is not staff or core member");
+  }
   return mayIndeed();
 }
 
@@ -128,8 +130,12 @@ export function isMember(user: Myself | MemberInclDetails): boolean {
   return member;
 }
 
-export function isStaff(user: Myself | MemberInclDetails) {
+export function isStaff(user: Myself | BriefUser | MemberInclDetails) {
   return user.isAdmin || user.isModerator;
+}
+
+export function user_isStaffOrCoreMember(user: Myself | MemberInclDetails): boolean {
+  return isStaff(user) || user_trustLevel(user) >= TrustLevel.CoreMember;
 }
 
 

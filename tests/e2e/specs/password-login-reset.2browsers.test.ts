@@ -13,15 +13,15 @@ declare var browser: any;
 declare var browserA: any;
 declare var browserB: any;
 
-var everyone;
-var owen;
-var michael;
+let everyone;
+let owen;
+let michael;
 
-var idAddress;
-var forumTitle = "Reset Pwd Test Forum";
+let idAddress;
+const forumTitle = "Reset Pwd Test Forum";
 
 
-describe("private chat", function() {
+describe("password-login-reset  TyT5KAES20W", function() {
 
   it("initialize people", function() {
     everyone = _.assign(browser, pagesFor(browser));
@@ -30,7 +30,7 @@ describe("private chat", function() {
   });
 
   it("import a site", function() {
-    var site: SiteData = make.forumOwnedByOwen('reset-pwd', { title: forumTitle });
+    const site: SiteData = make.forumOwnedByOwen('reset-pwd', { title: forumTitle });
     site.settings.allowGuestLogin = true;
     site.settings.requireVerifiedEmail = false;
     site.members.push(make.memberMichael());
@@ -83,17 +83,13 @@ describe("private chat", function() {
 
   it("Michael resets his password", function() {
     michael.loginDialog.clickResetPasswordCloseDialogSwitchTab();
-    michael.resetPasswordPage.fillInAccountOwnerEmailAddress(michael.emailAddress);
-    michael.rememberCurrentUrl();
-    michael.resetPasswordPage.clickSubmit();
-    michael.waitForNewUrl();
-    michael.waitForVisible('#e2eRPP_ResetEmailSent');
+    michael.resetPasswordPage.submitAccountOwnerEmailAddress(michael.emailAddress);
   });
 
-  var resetPwdPageLink;
+  let resetPwdPageLink;
 
   it("... he gets a reset-pwd email with a choose-new-password page link", function() {
-    var email = server.getLastEmailSenTo(idAddress.id, michael.emailAddress, michael);
+    const email = server.getLastEmailSenTo(idAddress.id, michael.emailAddress, michael);
     resetPwdPageLink = utils.findFirstLinkToUrlIn(
       idAddress.origin + '/-/reset-password/choose-password/', email.bodyHtmlText);
   });
@@ -104,13 +100,10 @@ describe("private chat", function() {
     michael.waitForNewUrl();
   });
 
-  var newPassword = "new_password";
+  const newPassword = "new_password";
 
   it("... types a new password", function() {
-    michael.waitAndSetValue('#e2ePassword', newPassword);
-    michael.waitAndClick('#e2eSubmit');
-    // (stays at the same url)
-    michael.waitForVisible("#e2eRPP_PasswordChanged");
+    michael.chooseNewPasswordPage.typeAndSaveNewPassword(newPassword);
   });
 
   it("... he can login with the new password", function() {

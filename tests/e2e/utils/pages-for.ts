@@ -286,8 +286,8 @@ function pagesFor(browser) {
       origWaitForExist.apply(browser, arguments);
     },
 
-    waitAndClick: function(selector: string) {
-      api._waitAndClickImpl(selector, {});
+    waitAndClick: function(selector: string, opts: { maybeMoves?: boolean, clickFirst?: boolean } = {}) {
+      api._waitAndClickImpl(selector, opts);
     },
 
 
@@ -302,8 +302,8 @@ function pagesFor(browser) {
     },
 
 
-    _waitAndClickImpl: function(selector: string, opts: { clickFirst?: boolean } = {}) {
-      api._waitForClickable(selector);
+    _waitAndClickImpl: function(selector: string, opts: { clickFirst?: boolean, maybeMoves?: boolean } = {}) {
+      api._waitForClickable(selector, opts);
       if (!selector.startsWith('#') && !opts.clickFirst) {
         let errors = '';
         let length = 1;
@@ -328,7 +328,7 @@ function pagesFor(browser) {
     },
 
 
-    _waitForClickable: function(selector) {
+    _waitForClickable: function(selector, opts: { maybeMoves?: boolean } = {}) {
       // Without pause(..), the tests often break when run in an *invisible* browser, but works
       // just fine when run in a *visible* browser. Meaning, it's very hard to fix any race
       // conditions, because only fails when I cannot see. So for now, pause(100).
@@ -336,6 +336,9 @@ function pagesFor(browser) {
       api.waitForVisible(selector);
       api.waitForEnabled(selector);
       api.waitUntilLoadingOverlayGone();
+      if (opts.maybeMoves) {
+        api.waitUntilDoesNotMove(selector);
+      }
     },
 
 
@@ -439,11 +442,15 @@ function pagesFor(browser) {
     },
 
 
-    waitAndSetValue: function(selector, value) {
+    waitAndSetValue: (selector: string, value: string | number, opts: { maybeMoves?: true } = {}) => {
       browser.pause(30); // for FF else fails randomly [E2EBUG] but Chrome = fine
+                          // (maybe add waitUntilDoesNotMove ?)
       api.waitForVisible(selector);
       api.waitForEnabled(selector);
       api.waitUntilLoadingOverlayGone();
+      if (opts.maybeMoves) {
+        api.waitUntilDoesNotMove(selector);
+      }
       browser.setValue(selector, value);
     },
 
@@ -525,7 +532,7 @@ function pagesFor(browser) {
       }
       assert(n >= 1, "n starts on 1, change from 0 to 1 please");
       const items = browser.elements(selector).value;
-      assert(items.length >= n, "Only " + items.length + " elems found, there's no elem no " + n);
+      assert(items.length >= n, `Elem ${n} missing: Only ${items.length} elems match: ${selector}`);
       const response = browser.elementIdText(items[n - 1].ELEMENT);
       assert(isResponseOk(response), "Bad response._status: " + response._status +
           ", state: " + response.state);
@@ -879,10 +886,14 @@ function pagesFor(browser) {
           // Then a login dialog will probably have opened now in full screen, with a modal
           // backdrop, so don't wait for any backdrop to disappear.
           api.waitUntilModalGone();
-          api.waitForVisible('.esTopbar_logIn');
+          api.topbar.waitUntilLoginButtonVisible();
         }
         // If on a users profile page, might start reloading something (because different user & perms).
         api.waitUntilLoadingOverlayGone();
+      },
+
+      waitUntilLoginButtonVisible: function() {
+        api.waitForVisible('.esTopbar_logIn');
       },
 
       openMyMenu: function() {
@@ -1245,6 +1256,14 @@ function pagesFor(browser) {
         api.waitUntilTextMatches('.modal-body', 'TyEUSRSSPNDD_');
       },
 
+      waitForNotCreatedPasswordDialog: () => {
+        api.waitForVisible('.e_NoPwD');
+      },
+
+      clickCreatePasswordButton: () => {
+        api.waitAndClick('.e_NoPwD button');
+      },
+
       signUpAsGuest: function(name: string, email?: string) { // CLEAN_UP use createPasswordAccount instead? [8JTW4]
         console.log('createPasswordAccount with no email: fillInFullName...');
         api.loginDialog.fillInFullName(name);
@@ -1556,12 +1575,42 @@ function pagesFor(browser) {
 
 
     resetPasswordPage: {
+      submitAccountOwnerEmailAddress: function(emailAddress: string) {
+        api.resetPasswordPage.fillInAccountOwnerEmailAddress(emailAddress);
+        api.rememberCurrentUrl();
+        api.resetPasswordPage.clickSubmit();
+        api.waitForNewUrl();
+        api.waitForVisible('#e2eRPP_ResetEmailSent');
+      },
+
       fillInAccountOwnerEmailAddress: function(emailAddress: string) {
         api.waitAndSetValue('#e2eRPP_emailI', emailAddress);
       },
 
       clickSubmit: function() {
         api.waitAndClick('#e2eRPP_SubmitB');
+      },
+    },
+
+
+    chooseNewPasswordPage: {
+      typeAndSaveNewPassword: (password: string) => {
+        api.chooseNewPasswordPage.typeNewPassword(password);
+        api.chooseNewPasswordPage.submit();
+        api.chooseNewPasswordPage.waitUntilPasswordChanged();
+      },
+
+      typeNewPassword: (password: string) => {
+        api.waitAndSetValue('#e2ePassword', password);
+      },
+
+      submit: () => {
+        api.waitAndClick('#e2eSubmit');
+      },
+
+      waitUntilPasswordChanged: () => {
+        // Stays at the same url.
+        api.waitForVisible("#e2eRPP_PasswordChanged");
       },
     },
 
@@ -2547,15 +2596,28 @@ function pagesFor(browser) {
         api.waitUntilLoadingOverlayGone();
       },
 
-      isNotfsTabVisible: function() {
+      switchToInvites: () => {
+        api.waitAndClick('.e_InvTabB');
+        api.invitedUsersList.waitUntilLoaded();
+      },
+
+      waitForTabsVisible: () => {
         // The activity tab is always visible, if the notfs tab can possibly be visible.
         api.waitForVisible('.e_UP_ActivityB');
+      },
+
+      isInvitesTabVisible: () => {
+        api.userProfilePage.waitForTabsVisible();
+        return browser.isVisible('.e_InvTabB');
+      },
+
+      isNotfsTabVisible: function() {
+        api.userProfilePage.waitForTabsVisible();
         return browser.isVisible('.e_UP_NotfsB');
       },
 
       isPrefsTabVisible: function() {
-        // The activity tab is always visible, if the preferences tab can possibly be visible.
-        api.waitForVisible('.e_UP_ActivityB');
+        api.userProfilePage.waitForTabsVisible();
         return browser.isVisible('#e2eUP_PrefsB');
       },
 
@@ -2691,6 +2753,12 @@ function pagesFor(browser) {
         assertMayNotSeeNotfs: function() {
           api.waitForVisible('.e_UP_Notfs_Err');
           browser.assertTextMatches('.e_UP_Notfs_Err', 'EdE7WK2L_');
+        }
+      },
+
+      invites: {
+        clickSendInvite: () => {
+          api.waitAndClick('.e_SndInvB');
         }
       },
 
@@ -2891,6 +2959,14 @@ function pagesFor(browser) {
       goToUser: function(member: Member | UserId, origin?: string) {
         const userId = _.isNumber(member) ? member : member.id;
         api.go((origin || '') + `/-/admin/users/id/${userId}`);
+      },
+
+      goToUsersInvited: (origin?: string, opts: { loginAs? } = {}) => {
+        api.go((origin || '') + '/-/admin/users/invited');
+        if (opts.loginAs) {
+          browser.loginDialog.loginWithPassword(opts.loginAs);
+        }
+        api.adminArea.users.invites.waitUntilLoaded();
       },
 
       goToReview: function(origin?: string, opts: { loginAs? } = {}) {
@@ -3214,10 +3290,9 @@ function pagesFor(browser) {
           api.adminArea.users.waitForLoaded();
         },
 
-        switchToInvite: function() {
+        switchToInvites: function() {
           api.waitAndClick('.e_InvitedUsB');
-          // When this elem visible, any invited-users-data has also been loaded.
-          api.waitForVisible('.s_InvsL');
+          api.adminArea.users.invites.waitUntilLoaded();
         },
 
         waiting: {
@@ -3236,6 +3311,17 @@ function pagesFor(browser) {
           undoApproveOrReject: function() {
             api.waitAndClickFirst(api.adminArea.users.waiting.undoSelector);
             api.waitUntilGone(api.adminArea.users.waiting.undoSelector);
+          },
+        },
+
+        invites: {
+          waitUntilLoaded: () => {
+            // When this elem present, any invited-users-data has also been loaded.
+            api.waitForExist('.s_InvsL');
+          },
+
+          clickSendInvite: () => {
+            api.waitAndClick('.s_AA_Us_Inv_SendB');
           },
         }
       },
@@ -3344,6 +3430,55 @@ function pagesFor(browser) {
         }
       },
     },
+
+
+    inviteDialog: {
+      waitUntilLoaded: () => {
+        api.waitForVisible('.s_InvD');
+      },
+
+      typeAndSubmitInvite: (emailAddress: string) => {
+        api.waitAndSetValue('.s_InvD input', emailAddress, { maybeMoves: true });
+        api.waitAndClick('.s_InvD .btn-primary');
+        api.waitAndClick('.s_InvSentD .e_SD_CloseB', { maybeMoves: true });
+      },
+
+    },
+
+
+    invitedUsersList: {
+      invitedUserSelector: '.e_Inv_U',
+
+      waitUntilLoaded: () => {
+        // When this elem present, any invited-users-data has also been loaded.
+        api.waitForExist('.s_InvsL');
+      },
+
+      assertHasAcceptedInvite: (username: string) => {
+        api.assertAnyTextMatches(api.invitedUsersList.invitedUserSelector, username);
+      },
+
+      assertHasNotAcceptedInvite: (username: string) => {
+        api.assertNoTextMatches(api.invitedUsersList.invitedUserSelector, username);
+      },
+
+      waitAssertInviteRowPresent: (index: number, opts: {
+            email: string, acceptedByUsername?: string, sentByUsername?: string }) => {
+        api.waitForAtLeast(index, '.s_InvsL_It');
+        api.assertNthTextMatches('.e_Inv_Em', index, opts.email);
+        if (opts.acceptedByUsername) {
+          api.assertNthTextMatches('.e_Inv_U', index, opts.acceptedByUsername);
+        }
+        if (opts.sentByUsername) {
+          api.assertNthTextMatches('.e_Inv_SentByU', index, opts.sentByUsername);
+        }
+      },
+
+      countNumInvited: () => {
+        return browser.elements('.s_InvsL_It').value.length;
+      },
+    },
+
 
     serverErrorDialog: {
       waitForJustGotSuspendedError: function() {

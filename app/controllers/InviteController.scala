@@ -48,14 +48,15 @@ class InviteController @Inject()(cc: ControllerComponents, edContext: EdContext)
 
   def sendInvite: Action[JsValue] = PostJsonAction(RateLimits.SendInvite, maxBytes = 200) {
         request =>
+    import request.{dao, theRequester => requester}
     val toEmailAddress = (request.body \ "toEmailAddress").as[String].trim
 
-    if (!isValidNonLocalEmailAddress(toEmailAddress))
-      throwForbidden("DwE47YK2", "Bad email address")
+    throwForbiddenIf(!isValidNonLocalEmailAddress(toEmailAddress),
+      "DwE47YK2", "Bad email address")
 
-    // Right now there are no trust levels, so allow only admins to send invites.
-    if (!request.theUser.isAdmin)
-      throwForbidden("DwE403INA0", "Currently only admins may send invites")
+    // Right now, only for staff and core members. [5WBJAF2]
+    throwForbiddenIf(!requester.isStaffOrCoreMember,
+       "TyE403INA0", "Currently only staff and core members may send invites")
 
     // Is toEmailAddress already a member or already invited?
     request.dao.readOnlyTransaction { transaction =>

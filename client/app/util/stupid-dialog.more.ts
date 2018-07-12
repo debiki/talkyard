@@ -101,7 +101,7 @@ export const StupidDialog = createComponent({
             onClick: makeCloseFn(2), className: 'e_SD_SecB' },
           stuff.secondaryButonTitle)));
     let result;
-    const className = 'esStupidDlg ' + (stuff.small ? ' esStupidDlg-Small' : '') +
+    const className = 'esStupidDlg ' + (stuff.small ? 'esStupidDlg-Small ' : '') +
             (stuff.dialogClassName || '');
 
     // CLEAN_UP, SMALLER_BUNDLE: use the same type of dialog for both non-iframe and iframe.

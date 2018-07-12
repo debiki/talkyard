@@ -18,6 +18,7 @@ L  = list
 It = list item
 D  = dialog
 CB = checkbox
+U  = user
 Example: s_Whatever_SaveB = save button. Or s_SomethingElse_EmT = email addresses table.
 
 
@@ -87,6 +88,8 @@ FD              = flag dialog
 
 esH             = help
 
+s_InvD          = invites dialog
+
 esLD            = login/signup dialog
 
 s_MB            = topic metabar (just below the Orig Post, before all replies)
@@ -99,6 +102,8 @@ s_MP            = meta message post, about the topic, e.g. "Nnn closed this topi
 s_NP            = No page, i.e. login-&-create-something-here stuff
 
 Nrw             = narrow
+
+  U             = user
 
 esUD            = About user dialog
 

@@ -265,7 +265,8 @@ interface Myself {
   username?: string;
   fullName?: string;
   avatarSmallHashPath?: string;
-  trustLevel: TrustLevel;
+  lockedTrustLevel?: TrustLevel; // currently not set server side, hmm try make consistent [5ZKGJA2]
+  trustLevel: TrustLevel;      // inconsistency: named effectiveTrustLevel in MemberInclDetails  [5ZKGJA2]
   threatLevel: ThreatLevel;
   permsOnPages: PermsOnPage[];
 
@@ -893,10 +894,10 @@ interface MemberInclDetails extends MemberOrGroupInclDetails {
   suspendedById?: number;
   suspendedByUsername?: string;
   suspendedReason?: string;
-  effectiveTrustLevel: TrustLevel;
+  effectiveTrustLevel: TrustLevel;  // inconsistency: Not used for Myself [5ZKGJA2]
   // Only included if caller is staff:
   trustLevel?: TrustLevel;
-  lockedTrustLevel?: TrustLevel;
+  lockedTrustLevel?: TrustLevel;  // not set for Myself [5ZKGJA2]
   threatLevel?: ThreatLevel;
   lockedThreatLevel?: ThreatLevel;
   deactivatedAt?: number;

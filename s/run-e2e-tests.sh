@@ -194,6 +194,15 @@ function runAllE2eTests {
 
   runE2eTest s/wdio target/e2e/wdio.2chrome.conf.js    --only summary-emails.2browsers $args
 
+  runE2eTest s/wdio target/e2e/wdio.2chrome.conf.js    --only invites-by-adm-click-email-set-pwd-link.2browsers $args
+  runE2eTest s/wdio target/e2e/wdio.2chrome.conf.js    --only invites-by-mod-try-signup-after.2browsers $args
+  runE2eTest s/wdio target/e2e/wdio.2chrome.conf.js    --only invites-by-core-try-login-after.2browsers $args
+
+
+  # wip:
+  # settings-allow-local-signup
+  # settings-allow-signup
+
 
   # Usability Testing Exchange
   # ------------
@@ -286,10 +295,6 @@ function runAllE2eTests {
     echo "Stopped the http server for the Gatsby blog, old ed-comments 0.4.4, pid $server_port_8000_pid2."
   fi
   #------------------------------------------------------------
-
-  # wip:
-  # settings-allow-local-signup
-  # settings-allow-signup
 }
 
 

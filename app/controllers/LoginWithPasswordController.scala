@@ -86,7 +86,8 @@ class LoginWithPasswordController @Inject()(cc: ControllerComponents, edContext:
         case DbDao.UserDeletedException => deny("USR_DELD")
         case DbDao.MemberHasNoPasswordException =>
           // This'll open a dialog that tells the user to choose a password. [5WJBNR2]
-          throwForbidden("_TyMCHOOSEPWD", o"""You haven't choosen a password yet""")
+          // (The message text "You haven't ..." will actually get ignored.)
+          throwForbidden("_TyMCHOOSEPWD", "You haven't choosen a password yet")
         case DbDao.EmailNotVerifiedException =>
           throwForbidden("TyEEML0VERIF_", o"""You have not yet confirmed your email address.
             Please check your email inbox — you should find an email from us with a

@@ -544,6 +544,7 @@ trait UserDao {
       addUserStats(UserStats(loginGrant.user.id, lastSeenAt = tx.now))(tx)
 
       // What? isSuspendedAt checks only suspendedTill ? what about suspendedAt? [4ELBAUPW2]
+      // (Fine for now, maybe need to fix later though)
       if (!loginGrant.user.isSuspendedAt(loginAttempt.date))
         return loginGrant
 

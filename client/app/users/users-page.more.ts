@@ -162,7 +162,7 @@ const UserPageComponent = createReactClass(<any> {
   render: function() {
     const store: Store = this.state.store;
     const me: Myself = store.me;
-    const user: UserAnyDetails = this.state.user;
+    const user: MemberInclDetails = this.state.user;  // UserAnyDetails = better class?
     const usernameOrId = this.props.match.params.usernameOrId;
 
     // Wait until url updated to show username, instead of id, to avoid mounting & unmounting
@@ -188,8 +188,8 @@ const UserPageComponent = createReactClass(<any> {
     const preferencesNavItem = !showPrivateStuff ? null :
       LiNavLink({ to: linkStart + 'preferences', id: 'e2eUP_PrefsB' }, t.upp.Preferences);
 
-    const invitesNavItem = !showPrivateStuff || !maySendInvites(user).value ? null :
-      LiNavLink({ to: linkStart + 'invites', id: 'e2eUP_InvitesB' }, t.upp.Invites);
+    const invitesNavItem = !showPrivateStuff || !user_maySendInvites(user).value ? null :
+      LiNavLink({ to: linkStart + 'invites', className: 'e_InvTabB' }, t.upp.Invites);
 
     const childProps = {
       store: store,

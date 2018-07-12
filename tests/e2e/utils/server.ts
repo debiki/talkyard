@@ -172,7 +172,7 @@ function getLastVerifyEmailAddressLinkEmailedTo(siteId: SiteId, emailAddress: st
 }
 
 
-// Note: *another* email address, not for the initial signup.
+// Note: for *an additional* email address, not for the initial signup.
 function waitAndGetVerifyAnotherEmailAddressLinkEmailedTo(siteId: SiteId, emailAddress: string, browser,
      options?: { isOldAddr: boolean }): string {
   const textToMatch = options && options.isOldAddr
@@ -182,6 +182,39 @@ function waitAndGetVerifyAnotherEmailAddressLinkEmailedTo(siteId: SiteId, emailA
     siteId, emailAddress, [textToMatch, emailAddress], browser);
   const email = getLastEmailSenTo(siteId, emailAddress, browser);
   return utils.findFirstLinkToUrlIn('https?://.*/-/confirm-email-address', email.bodyHtmlText);
+}
+
+
+function waitAndGetInviteLinkEmailedTo(siteId: SiteId, emailAddress: string, browser): string {
+  const textToMatch = "invites you to join"; // [5FJBAW2_]
+  waitUntilLastEmailMatches(siteId, emailAddress, [textToMatch], browser);
+  const email = getLastEmailSenTo(siteId, emailAddress, browser);
+  return utils.findFirstLinkToUrlIn('https?://.*/-/accept-invite', email.bodyHtmlText);
+}
+
+
+function waitAndGetThanksForAcceptingInviteEmailResetPasswordLink(siteId, emailAddress, browser) {
+  const textToMatch = "thanks for accepting the invitation"; // [5FJB2AZY_]
+  waitUntilLastEmailMatches(siteId, emailAddress, [textToMatch], browser);
+  const email = getLastEmailSenTo(siteId, emailAddress, browser);
+  return utils.findFirstLinkToUrlIn('https?://.*/-/reset-password', email.bodyHtmlText);
+}
+
+
+function waitForAlreadyHaveAccountEmailGetResetPasswordLink(
+      siteId: SiteId, emailAddress: string, browser): string {
+  const textToMatch = "you already have such an account"; // [2WABJDD4_]
+  waitUntilLastEmailMatches(siteId, emailAddress, [textToMatch], browser);
+  const email = getLastEmailSenTo(siteId, emailAddress, browser);
+  return utils.findFirstLinkToUrlIn('https?://.*/-/reset-password', email.bodyHtmlText);
+}
+
+
+function waitAndGetResetPasswordLinkEmailedTo(siteId: SiteId, emailAddress: string, browser): string {
+  const textToMatch = 'reset-password';  // in the url
+  waitUntilLastEmailMatches(siteId, emailAddress, [textToMatch], browser);
+  const email = getLastEmailSenTo(siteId, emailAddress, browser);
+  return utils.findFirstLinkToUrlIn('https?://.*/-/reset-password', email.bodyHtmlText);
 }
 
 
@@ -269,6 +302,10 @@ export = {
   countLastEmailsSentTo,
   getLastVerifyEmailAddressLinkEmailedTo,
   waitAndGetVerifyAnotherEmailAddressLinkEmailedTo,
+  waitAndGetInviteLinkEmailedTo,
+  waitAndGetThanksForAcceptingInviteEmailResetPasswordLink,
+  waitForAlreadyHaveAccountEmailGetResetPasswordLink,
+  waitAndGetResetPasswordLinkEmailedTo,
   getLastUnsubscriptionLinkEmailedTo,
   getAnyUnsubscriptionLinkEmailedTo,
   waitForUnsubscriptionLinkEmailedTo,

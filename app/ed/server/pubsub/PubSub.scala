@@ -263,7 +263,7 @@ class PubSubActor(val nginxHost: String, val globals: Globals) extends Actor {
 
   private def addOrUpdateSubscriber(siteId: SiteId, user: User, watchedPageIds: Set[PageId])
         : Option[Set[PageId]] = {
-    traceLog(siteId, s"Adding/updating subscriber ${prettyUser(user)}")
+    traceLog(siteId, s"Adding/updating subscriber ${prettyUser(user)} [TyDADUPSUBSC]")
     val subscribersById = subscribersByIdForSite(siteId)
     // Remove and reinsert, so inactive users will be the first ones found when iterating.
     val oldEntry = subscribersById.remove(user.id)
@@ -274,7 +274,7 @@ class PubSubActor(val nginxHost: String, val globals: Globals) extends Actor {
 
   private def removeSubscriber(siteId: SiteId, user: User): Set[PageId] = {
     // COULD tell Nchan about this too
-    traceLog(siteId, s"Removing subscriber ${prettyUser(user)}")
+    traceLog(siteId, s"Removing subscriber ${prettyUser(user)} [TyDRMSUBSC]")
     val oldEntry = subscribersByIdForSite(siteId).remove(user.id)
     oldEntry.map(_.watchingPageIds) getOrElse Set.empty
   }
@@ -307,7 +307,7 @@ class PubSubActor(val nginxHost: String, val globals: Globals) extends Actor {
     val userAndWhenById = subscribersByIdForSite(siteId)
     val toUserIds = userAndWhenById.values.map(_.user.id).toSet - user.id
 
-    traceLog(siteId, s"Pupl presence ${prettyUser(user)}: $presence")
+    traceLog(siteId, s"Pupl presence ${prettyUser(user)}: $presence [TyDPRESCNS]")
 
     sendPublishRequest(siteId, toUserIds, "presence", Json.obj(
       "user" -> JsUser(user),
@@ -328,7 +328,7 @@ class PubSubActor(val nginxHost: String, val globals: Globals) extends Actor {
         JsonMaker.notificationsToJson(Seq(notf), transaction).notfsJson
       }
 
-      def lazyMessage = s"Publ notifications to $lazyPrettyUser"
+      def lazyMessage = s"Publ notifications to $lazyPrettyUser [TyDPUBLNTFS]"
       def lazyPrettyUser = anyPrettyUser(siteDao.getUser(notf.toUserId), notf.toUserId)
       traceLog(message.siteId, lazyMessage)
 
@@ -341,7 +341,7 @@ class PubSubActor(val nginxHost: String, val globals: Globals) extends Actor {
           patchMessage.siteId, pageId = patchMessage.toUsersViewingPage).filter(_ != byId)
         userIds.foreach(siteDao.markPageAsUnreadInWatchbar(_, patchMessage.toUsersViewingPage))
 
-        def lazyMessage = s"Publ storePatch to $lazyPrettyUsers"
+        def lazyMessage = s"Publ storePatch to ${lazyPrettyUsers.mkString(", ")} [TyDPUBLPTCH]"
         def lazyPrettyUsers: Iterable[String] = userIds.map(id => anyPrettyUser(siteDao.getUser(id), id))
         traceLog(message.siteId, lazyMessage)
 
@@ -358,9 +358,9 @@ class PubSubActor(val nginxHost: String, val globals: Globals) extends Actor {
     val pageIdsAdded = newPageIds -- oldPageIds
     val pageIdsRemoved = oldPageIds -- newPageIds
 
-    def lazyMessage = s"$lazyPrettyUser starts watching pages: $pageIdsAdded, stopped: $pageIdsRemoved"
     def lazyPrettyUser: String = anyPrettyUser(globals.siteDao(siteId).getUser(userId), userId)
-    traceLog(siteId, lazyMessage)
+    traceLog(siteId,
+        s"$lazyPrettyUser starts watching pages: $pageIdsAdded, stopped: $pageIdsRemoved [TyDWTCHPGS]")
 
     pageIdsRemoved foreach { pageId =>
       val watcherIds = watcherIdsByPageId.getOrElse(pageId, mutable.Set.empty)
@@ -432,7 +432,7 @@ class PubSubActor(val nginxHost: String, val globals: Globals) extends Actor {
         if (now.millisSince(userWhenPages.when) < DeleteAfterInactiveMillis) false
         else {
           val user = userWhenPages.user
-          traceLog(siteId, s"Unsubscribing inactive ${prettyUser(user)} [EdDPS_UNSUBINACTV]")
+          traceLog(siteId, s"Unsubscribing inactive ${prettyUser(user)} [TyDUNSUBINACTV]")
           updateWatcherIdsByPageId(
               siteId, user.id, oldPageIds = userWhenPages.watchingPageIds, newPageIds = Set.empty)
           true

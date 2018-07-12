@@ -93,14 +93,15 @@ export const UserInvites = createFactory({
       return r.p({}, t.Loading);
 
     let inviteButton;
-    const mayInvite = maySendInvites(user);
+    const mayInvite = user_maySendInvites(user);
     let introText: any = r.p({}, t.upp.InvitesIntro + (
         this.state.invites.length
             ? t.upp.InvitesListedBelow
             : t.upp.NoInvites));
     if (user.id === me.id && mayInvite.yes) {
       inviteButton =
-          Button({ onClick: () => openInviteSomeoneDialog(this.addInvite) }, t.upp.SendAnInv);
+          Button({ className: 'e_SndInvB', onClick: () => openInviteSomeoneDialog(this.addInvite) },
+            t.upp.SendAnInv);
     }
     else {
       // (This is for staff, need not translate. [5JKBWS2])
@@ -114,12 +115,6 @@ export const UserInvites = createFactory({
       }
       introText = r.p({}, introText);
     }
-
-    if (!this.state.invites.length)
-      return (
-        r.div({},
-          introText,
-          inviteButton));
 
     // REFACTOR COULD break out rendering code to separate module — also used in admin. [8HRAE3V]
     const nowMs: WhenMs = Date.now();
@@ -166,18 +161,18 @@ export function InviteRowWithKey(props: { store: Store, invite: Invite, nowMs: W
     let sentBy;
     if (props.showSender) {
       let sender: BriefUser = store_getUserOrMissing(store, invite.createdById);
-      sentBy = r.td({}, UserName({ user: sender, store, makeLink: true }));
+      sentBy = r.td({ className: 'e_Inv_SentByU' }, UserName({ user: sender, store, makeLink: true }));
     }
 
     // Invited-email + inviter-id is unique. [5GPJ4A0]
     const key = invite.invitedEmailAddress + ' ' + invite.createdById;
 
     return (
-      r.tr({ key },
-        r.td({}, invitedEmail),
-        r.td({}, invitedUser),
-        r.td({}, acceptedAt),
-        r.td({}, moment(invite.createdAtEpoch).from(props.nowMs)),
+      r.tr({ key, className: 's_InvsL_It' },
+        r.td({ className: 'e_Inv_Em' }, invitedEmail),
+        r.td({ className: 'e_Inv_U' }, invitedUser),
+        r.td({ className: 'e_Inv_AcptAt' }, acceptedAt),
+        r.td({ className: 'e_Inv_CrtdAt' }, moment(invite.createdAtEpoch).from(props.nowMs)),
         sentBy));
 }
 
@@ -217,7 +212,7 @@ const InviteDialog = createComponent({  // COULD break out to debiki2.invite mod
     Server.sendInvite(emailAddress, (invite: Invite) => {
       this.state.addInvite(invite);
       this.close();
-      util.openDefaultStupidDialog({ body: t.upp.InvDone });
+      util.openDefaultStupidDialog({ body: t.upp.InvDone, dialogClassName: 's_InvSentD' });
     }, (failedRequest: HttpRequest) => {
       if (hasErrorCode(failedRequest, '_EsE403IUAM_')) {
         this.setState({ error: t.upp.InvErrJoinedAlready });
@@ -237,7 +232,7 @@ const InviteDialog = createComponent({  // COULD break out to debiki2.invite mod
     const props: any = _.assign({}, this.props);
     props.title = t.upp.SendAnInv;
     return (
-      Modal({ show: this.state.isOpen, onHide: this.close, dialogClassName: 'esUsrDlg' },
+      Modal({ show: this.state.isOpen, onHide: this.close, dialogClassName: 's_InvD' },
         ModalBody({},
           r.p({}, t.upp.SendInvExpl),
           EmailInput({ label: t.EmailAddress, placeholder: t.upp.EnterEmail,

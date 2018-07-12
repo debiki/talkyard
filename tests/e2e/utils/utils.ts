@@ -46,11 +46,13 @@ const utils = {
   },
 
   _findFirstLinkToUrlImpl: function(url: string, text: string, mustMatch: boolean): string {
-    const regexString = utils.regexEscapeSlashes(url) + '[^"]*';
+    // Make sure ends with ", otherwise might find: <a href="..">http://this..instead..of..the..href</a>.
+    // This:  (?: ...)  is a non-capture group, so the trailing " won't be incl in the match.
+    const regexString = '(' + utils.regexEscapeSlashes(url) + '[^"\']*)(?:["\'])';
     const matches = text.match(new RegExp(regexString));
     dieIf(mustMatch && !matches,
         `No link matching /${regexString}/ found in email [EsE5GPYK2], text: ${text}`);
-    return matches ? matches[0] : undefined;
+    return matches ? matches[1] : undefined;
   }
 };
 

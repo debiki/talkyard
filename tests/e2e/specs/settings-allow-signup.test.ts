@@ -76,7 +76,7 @@ describe("(dis)allow signup:", () => {
     // ...
   });
 
-  it("?? Michael got an invite. He can accept it", () => {
+  it("?? Michael got an invite from Owen. He can accept it", () => {
     // ...
   });
 

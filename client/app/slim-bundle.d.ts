@@ -183,7 +183,7 @@ declare namespace debiki2 {
 
   function user_isSuspended(user: MemberInclDetails, nowMs: WhenMs): boolean;
   function user_threatLevel(user: MemberInclDetails): ThreatLevel;
-  function user_trustLevel(user: MemberInclDetails): TrustLevel;
+  function user_trustLevel(user: Myself | MemberInclDetails): TrustLevel;
   function user_isGone(user: Myself | BriefUser | MemberInclDetails | UserAnyDetails): boolean;
 
   function uppercaseFirst(text: string): string;
@@ -206,7 +206,7 @@ declare namespace debiki2 {
   var store_thisIsMyPage;
   var hasErrorCode;
   var page_mayChangeRole;
-  var maySendInvites;
+  var user_maySendInvites;
   var isMember;
   var userId_isGuest;
   function store_canDeletePage(store: Store): boolean;
