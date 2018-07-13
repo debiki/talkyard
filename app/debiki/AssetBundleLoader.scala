@@ -75,7 +75,12 @@ case class AssetBundleLoader(bundleNameNoSuffix: String,  bundleSuffix: String, 
       return DatabaseBundleData("", Nil, Nil, Nil)
     }
 
-    val bundleText = assetsPost.currentSource
+    val bundleTextMaybeUseDefault = assetsPost.currentSource
+
+    // The default text for assets bundles, is nothing.
+    val bundleText =
+      if (bundleTextMaybeUseDefault == SpecialContentPages.UseDefaultContentMark) ""
+      else bundleTextMaybeUseDefault
 
     // Old comment:
     //   Find ids of config pagses, and assets included in the bundle.
