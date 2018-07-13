@@ -4935,6 +4935,8 @@ function googleCajaSanitizeHtml(htmlTextUnsafe, allowClassAndIdAttr,
         // skip?: formtarget
       textarea: ['name'],
       button: ['type'],
+      th: ['rowspan', 'colspan'],  // what about:  'abbr', 'scope', 'sorted', 'headers',
+      td: ['rowspan', 'colspan'],
       // All elems:
       // Don't allow style=.., because of clickjacking. (Caja seems to remove
       // Javascript from inside CSS (e.g. url(javascript:...)) and position:fixed, however
