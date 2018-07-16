@@ -267,6 +267,9 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
           // via this Google email address instead of via Twitter.
           // Or perhaps 4) signed up via a Facebook account that uses a Google address
           // like user@whatever.com (but not gmail.com).
+
+          // Save canonical email? [canonical-email]
+
           oauthDetails.email.flatMap(dao.loadMemberByEmailOrUsername) match {
             case Some(user) =>
               if (providerHasVerifiedEmail(oauthDetails)) {
@@ -486,8 +489,10 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
     else if (emailAddress.isEmpty) {
       throwUnprocessableEntity("EdE8JUK02", "Email address missing")
     }
-    else if (!isValidNonLocalEmailAddress(emailAddress))
-      throwUnprocessableEntity("EdE7MNH0R1", "Bad email address")
+
+    anyEmailAddressError(emailAddress) foreach { errMsg =>
+      throwUnprocessableEntity("TyEBADEMLADR_-OAU", s"Bad email address: $errMsg")
+    }
 
     if (ed.server.security.ReservedNames.isUsernameReserved(username)) // [5LKKWA10]
       throwForbidden("EdE4SWWB9", s"Username is reserved: '$username'; choose another username")

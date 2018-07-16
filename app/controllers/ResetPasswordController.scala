@@ -58,6 +58,10 @@ class ResetPasswordController @Inject()(cc: ControllerComponents, edContext: EdC
     val isEmailAddress = emailOrUsername contains "@"
     val siteId = request.dao.siteId
 
+    SECURITY; COULD // rate limit # pwd reset emails sent to the same address, per day.
+    // (Currently only rate limiting ip addr, see above.)
+    READ // http://www.troyhunt.com/2012/05/everything-you-ever-wanted-to-know.html  [ext-5KWBZU03]
+
     anyUser match {
       case Some(user) =>
         dieIf(user.email != emailOrUsername && user.theUsername != emailOrUsername, "DwE0F21")

@@ -1353,8 +1353,9 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
 
   private def aboutMemberPrefsFromJson(json: JsValue): AboutMemberPrefs = {
     val username = (json \ "username").as[String]
-    if (username.length < MinUsernameLength)
-      throwBadReq("DwE44KUY0", "Username too short")
+    Validation.checkUsername(username) badMap { errorMessage =>
+      throwBadReq("TyE44KUY0", s"Bad username: $errorMessage")
+    }
 
     SECURITY // add checks for other lengts too, to avoid database constraint exceptions.
               // See if I've added all db constraints also.

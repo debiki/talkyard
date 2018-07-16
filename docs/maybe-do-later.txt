@@ -46,3 +46,45 @@ not only the current one.
 Performance tests:
  "Capture a timeline trace of your site to help diagnose performance issues."
  https://github.com/GoogleChrome/puppeteer
+
+
+[canonical-username]
+[CANONUN] [5WKB23Z]
+Rename theUsername to exactUsername? — it'll be how the username is displayed,
+e.g. `jane_doe` or `jane.doe`, and always possible to login with that exact username.
+Add canonicalUsername, which is: lowercase, and /[._-]+/ changed to '_'
+so there's nothing but: [a-z0-9_]+ left.
+By default, one can type whatever [_.-] when logging in, and it'll be first checked against
+the exact username, and then [_.-]+ changed to '_' and compared with the canonical username.
+And won't be able to create new accounts that have the same canonical useranme, as an already existing.
+So logging in as Jane Doe works with: 'jane.doe', 'jane-doe', 'jane_doe'. And also for mentions,
+so all these work: `@jane.doe @jane-doe @jane_doe` — it'll be the same person.
+However, `jan.edoe` is someone else. That canonical username is different ('_' in a different place).
+
+[username-starts-with-_] ?
+https://github.com/discourse/discourse/commit/262f561a877e0296d7ca7f6ec9f27edd0d30ca8e
+https://github.com/discourse/discourse/commit/90351348ec3c0b1872aa680c0c9ddd5271e3740b
+https://meta.discourse.org/t/usernames-with-periods-are-changed-to-underscore/17168/8  . –> _
+
+
+[canonical-email]
+Avoid accidentally splitting an account into two, because sometimes '.' sometimes no '.'
+when logging in with Gmail. Also, @gmail.com and @googlemail.com are the same.
+https://support.google.com/mail/answer/10313?hl=en
+Real life example of this happening:
+https://meta.discourse.org/t/discourse-creates-new-users-if-dots-are-present-absent-in-google-email-address-when-logging-in-using-google/66151
+Good approach?: https://stackoverflow.com/a/51344711/694469
+
+Add canonical email? [canonical-email] So  dotty.addr.ess@googlemail also
+saved as  dottyaddress@gmail.com, and if logs in with or without dots,
+we'll know it's the same person? However, if types  some.name+tags@gmail.com,
+then one *intentionally* added +something, and then treat as separate addr?
+so can create different accounts for testing. (Spam detection could just
+be aware that x+something and x+something2 and x+... are all the same accounts.)
+If not, then sometimes people sign up manually, say, without dots. And then,
+later, the community adds Gmail OpenAuth, and the same person signs in
+with Google, and Google sends the addr via OpenAuth *with* dots, and this would
+result in two different accounts for the same person, and confusion ("Where are
+all my old posts?").
+
+

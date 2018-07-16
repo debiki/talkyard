@@ -143,8 +143,11 @@ class LoginWithPasswordController @Inject()(cc: ControllerComponents, edContext:
     else if (emailAddress.isEmpty) {
       throwUnprocessableEntity("EdE1GUR0", "Email address missing")
     }
-    else if (!isValidNonLocalEmailAddress(emailAddress))
-      throwUnprocessableEntity("EdE80KFP2", "Bad email address")
+    else {
+      anyEmailAddressError(emailAddress) foreach { errMsg =>
+        throwUnprocessableEntity("TyEBADEMLADR_-PWD", s"Bad email address: $errMsg")
+      }
+    }
 
     if (ed.server.security.ReservedNames.isUsernameReserved(username))  // [5LKKWA10]
       throwForbidden("EdE5PKW01", s"Username is reserved: '$username'; choose another username")

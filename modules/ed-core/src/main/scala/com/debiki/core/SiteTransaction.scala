@@ -36,7 +36,7 @@ trait SiteTransaction {
   /** Continues using the same connection. */
   def asSystem: SystemTransaction
 
-  @deprecated("now", "Use Globals.now() instead, so auto tests can fast forward time")
+  @deprecated("now", "Use Globals.now() instead, so auto tests can fast forward time") // no? nowadays now gets set to Globals.now
   def now: When
 
   def deferConstraints()
@@ -372,6 +372,7 @@ trait SiteTransaction {
   def updateUsernameUsage(usage: UsernameUsage)
   def loadUsersOldUsernames(userId: UserId): Seq[UsernameUsage]
   def loadUsernameUsages(username: String): Seq[UsernameUsage]
+  def isUsernameInUse(username: String): Boolean = loadUsernameUsages(username).nonEmpty
 
   def loadUser(userId: UserId): Option[User]
   def loadTheUser(userId: UserId): User =

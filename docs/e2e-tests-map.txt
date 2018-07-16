@@ -104,6 +104,8 @@ invites -
     - invites-by-core-try-login-after.2browsers.test.ts  TyT2WKF5PF30
   don't become staff:
     - invites-by-mod-try-signup-after.2browsers.test.ts  TyT4WK0AQ2
+  don't result in forbidden usernames:
+    - invites-werd-email-addrs.2browsers.test.ts  TyT7KBAJ2AD4
   expires:
 
 

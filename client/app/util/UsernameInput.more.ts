@@ -59,14 +59,24 @@ export const UsernameInput = createClassAndFactory({
         notRegex: / /, notMessage: "No spaces please",
         notRegexTwo: /-/, notMessageTwo: "No hypens (-) please",
         notRegexThree: /@/, notMessageThree: "Don't include the @",
-        notRegexFour: /[^a-zA-Z0-9_]/,
-        notMessageFour: "Only letters a-z A-Z and 0-9 and _",
+
+        regexFour: /^[a-zA-Z0-9_].*[a-zA-Z0-9]$/,
+        // '_' also ok as 1st char, but needn't tell them about that?
+        messageFour: "Start and end with a letter or a digit",
+
+        // At this time, don't mention that '.' and '-' are also allowed — better if people only
+        // use '_', until canonical usernames has been implemented (so they won't need to remember
+        // which one of [_.-] to use — always '_' instead, for now).  [CANONUN]
+        // Actually, because of: [UNPUNCT], currently cannot change *to* a username with [.-], only '_'.
+        notRegexFour: /[^a-zA-Z0-9_.-]/,
+        notMessageFour: "Only letters (a-z, A-Z) and numbers, and _ (underscore)",
+
         onChange: (value, ok) => {
           this.setState({ username: value });
           this.props.onChangeValueOk(value, ok);
         },
         onBlur: this.props.onBlur,
-        value: username,
+        defaultValue: this.props.defaultValue,
         help: r.span({}, "Your ", r.code({}, "@username"), ", unique and short", extraHelp) }));
   }
 });

@@ -24,7 +24,7 @@
 const r = ReactDOMFactories;
 
 
-export const PatternInput = createClassAndFactory({
+export const PatternInput = createClassAndFactory({  // I18N search for all usages, I've forgotten e.g. UsernameInput
   getInitialState: function() {
     return {
       showErrors: (this.props || <any> {}).showErrors,

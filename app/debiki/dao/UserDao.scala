@@ -18,7 +18,7 @@
 package debiki.dao
 
 import com.debiki.core._
-import debiki.EdHttp.{throwForbidden, throwForbiddenIf}
+import debiki.EdHttp.{throwForbidden, throwForbiddenIf, throwBadRequest}
 import debiki.JsX
 import debiki.JsonMaker.NotfsAndCounts
 import ed.server.security.{BrowserId, ReservedNames, SidStatus}
@@ -92,7 +92,23 @@ trait UserDao {
              join-site invitation link does nothing. Thanks for clicking it anyway""")
 
       val userId = tx.nextMemberId
-      var newUser = invite.makeUser(userId, tx.now.toJavaDate)
+      val emailAddrBeforeAt = invite.emailAddress.split("@").headOption.getOrDie(
+        "TyE500IIEA5", "Invalid invite email address")
+
+      val username = User.makeOkayUsername(emailAddrBeforeAt, tx.isUsernameInUse) getOrElse {
+        // This means couldn't generate a username. That'd be impossibly bad luck, since we
+        // try with random numbers of size up to 10^19 many times.
+        throwBadRequest("TyEBADLUCK", o"""Couldn't generate a unique username. Reload the page
+            to try again, and I wish you good luck""")
+      }
+
+      dieIfBad(Validation.checkUsername(username),
+        "TyE4WKBA2", errMsg => s"I generated an invalid username given '$emailAddrBeforeAt': $errMsg")
+
+      p.Logger.debug(
+        s"s$siteId: Creating invited user @$username, email addr: ${invite.emailAddress} [TyD6KWA02]")
+
+      var newUser = invite.makeUser(userId, username = username, tx.now.toJavaDate)
       val inviter = tx.loadUser(invite.createdById) getOrDie "DwE5FKG4"
       if (inviter.isStaff) {
         newUser = newUser.copy(
@@ -108,7 +124,8 @@ trait UserDao {
       tx.insertMember(newUser)
       tx.insertUserEmailAddress(newUser.primaryEmailInfo getOrDie "EdE3PDKR20")
       tx.insertUsernameUsage(UsernameUsage(
-        newUser.usernameLowercase, inUseFrom = tx.now, userId = newUser.id))
+        newUser.usernameLowercase,  // [CANONUN]
+        inUseFrom = tx.now, userId = newUser.id))
       tx.upsertUserStats(UserStats.forNewUser(
         newUser.id, firstSeenAt = tx.now, emailedAt = Some(invite.createdWhen)))
       joinGloballyPinnedChats(newUser.briefUser, tx)
@@ -424,7 +441,8 @@ trait UserDao {
       tx.insertMember(user)
       user.primaryEmailInfo.foreach(tx.insertUserEmailAddress)
       tx.insertUsernameUsage(UsernameUsage(
-        usernameLowercase = user.usernameLowercase, inUseFrom = tx.now, userId = user.id))
+        usernameLowercase = user.usernameLowercase, // [CANONUN]
+        inUseFrom = tx.now, userId = user.id))
       tx.upsertUserStats(UserStats.forNewUser(
         user.id, firstSeenAt = tx.now, emailedAt = None))
       tx.insertIdentity(identity)
@@ -474,7 +492,8 @@ trait UserDao {
       tx.insertMember(user)
       user.primaryEmailInfo.foreach(tx.insertUserEmailAddress)
       tx.insertUsernameUsage(UsernameUsage(
-        usernameLowercase = user.usernameLowercase, inUseFrom = now, userId = user.id))
+        usernameLowercase = user.usernameLowercase, // [CANONUN]
+        inUseFrom = now, userId = user.id))
       tx.upsertUserStats(UserStats.forNewUser(
         user.id, firstSeenAt = userData.firstSeenAt.getOrElse(now), emailedAt = None))
       joinGloballyPinnedChats(user.briefUser, tx)
@@ -1186,6 +1205,8 @@ trait UserDao {
         throwForbiddenIfBadUsername(preferences.username)
 
         val usersOldUsernames: Seq[UsernameUsage] = transaction.loadUsersOldUsernames(user.id)
+
+        // [CANONUN] load both exact & canonical username, any match —> not allowed (unless one's own).
         val previousUsages = transaction.loadUsernameUsages(preferences.username)
 
         // For now: (later, could allow, if never mentioned, after a grace period. Docs [8KFUT20])
@@ -1216,7 +1237,7 @@ trait UserDao {
         }
 
         transaction.insertUsernameUsage(UsernameUsage(
-          usernameLowercase = preferences.username.toLowerCase,
+          usernameLowercase = preferences.username.toLowerCase, // [CANONUN]
           inUseFrom = transaction.now,
           inUseTo = None,
           userId = user.id,
@@ -1272,7 +1293,7 @@ trait UserDao {
         throwForbiddenIfBadUsername(preferences.username)
         unimplemented("Changing a group's username", "TyE2KBFU50")
         // Need to: transaction.updateUsernameUsage(usageStopped) — stop using current
-        // And: transaction.insertUsernameUsage(UsernameUsage(
+        // And: transaction.insertUsernameUsage(UsernameUsage(   [CANONUN]
         // See saveAboutMemberPrefs.
       }
 
@@ -1439,6 +1460,9 @@ trait UserDao {
         val usageStopped = usage.copy(inUseTo = Some(tx.now))
         tx.updateUsernameUsage(usageStopped)
       }
+
+      // The anonNNN name is canonical already, else change the code above.
+      //dieIf(User.makeUsernameCanonical(anonUsername) != anonUsername, "TyE5WKB023")  [CANONUN]
       tx.insertUsernameUsage(UsernameUsage(
         anonUsername, inUseFrom = tx.now, userId = userId))
 

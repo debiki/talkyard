@@ -44,7 +44,10 @@ function MentionsMarkdownItPlugin() {
   // function. It sends only '@...' to parse, not any [a-z] before the '@'.
   // So skip the char before the '@', and fetch and check it inside parse()
   // instead.
-  plugin.mentionsRegex = /^@[a-zA-Z][a-zA-Z_0-9]+/;
+  // [.-] are allowed inside the username only (not as first or last chars). [UNPUNCT] [UNAMECHARS]
+  // None of [_.-] allowed as last char.  Currently min length is 3, but later
+  // there'll be a site config value that lets one change to 2? So allow 2 here.
+  plugin.mentionsRegex = /^@[a-zA-Z0-9_][a-zA-Z0-9_.-]*[a-zA-Z0-9]/;
   plugin.whitespaceRegex = /\s/;
   plugin.id = 'MentionsMarkdownItPlugin';
   return plugin;

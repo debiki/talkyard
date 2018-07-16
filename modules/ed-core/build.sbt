@@ -13,6 +13,7 @@ libraryDependencies ++= Seq(
   "com.google.guava" % "guava" % "24.1-jre",
   "commons-codec" % "commons-codec" % "1.11",
   "commons-validator" % "commons-validator" % "1.6",
+  "org.apache.commons" % "commons-email" % "1.5",  // also in server. Needed here for validation only
   "nu.validator.htmlparser" % "htmlparser" % "1.4",
   "org.owasp.encoder" % "encoder" % "1.2.1",
   "com.typesafe.play" %% "play-json" % "2.6.9",

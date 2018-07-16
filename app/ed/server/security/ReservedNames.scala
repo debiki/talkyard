@@ -52,11 +52,11 @@ object ReservedNames {
     * "database" of usernames = ed25519 public keys (Scuttlebutt identities).
     */
   private def isWhateverReserved(whatever: String): Boolean =
-    allNames.contains(whatever) || EndsWithUnderscoreNumberRegex.matches(whatever) ||
-      StartsWithNumberRegex.matches(whatever) || whatever.contains("@")
+    allNames.contains(whatever) || whatever.contains("@")
 
-  /** I'm reserving all usernames like "whatever_123" for usage with global identities  [7FLA3G0L]
-    * where 123 is a public key in base 10 or 16.
+  /** **NO, cancelled. See the last paragraph below.**
+    * I'm reserving all usernames like "whatever_123" for usage with global identities  [7FLA3G0L]
+    * where 123 is a public key in base 10 or 16 or 32.
     * For example, if there're two identities on planet Earth with public key 23456785384306...
     * and 2309284833237..., they can have the same username, and will get the suffixes 234 and 230,
     * respectively. So, their usernames would be: @same_username_234 and @same_username_230
@@ -64,10 +64,15 @@ object ReservedNames {
     * an ed25519 key pair.)
     *
     * '_' isn't allowed in domain names currently anyway.
+    *
+    * NO remove this. Use a magic char to show that the rest of the username is a globally
+    * unique identity? This is how Scuttlebut stores username links:
+    *   "@hxGxqPrplLjRG2vtjQL87abX4QKqeLgCwQpS730nNwE=.ed25519"
+    * So better if e.g.:  "alice_@123abc=.ed25519" is Alice's local + globally unique username,
+    * rather than just "alice_123abc".
     */
-  private val EndsWithUnderscoreNumberRegex = ".+_[0-9a-f]*$".r
+  //private val EndsWithUnderscoreNumberRegex = ".+_[0-9a-f]*$".r
 
-  private val StartsWithNumberRegex = "^[0-9].*".r
 
   private val allNames: Set[String] =
     LongListOfNames.toLowerCase.lines

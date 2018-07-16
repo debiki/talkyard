@@ -263,7 +263,8 @@ class ImportExportController @Inject()(cc: ControllerComponents, edContext: EdCo
         // [readlater] export & import username usages & emails, later. For now, create new here.
         user.primaryEmailInfo.foreach(transaction.insertUserEmailAddress)
         transaction.insertUsernameUsage(UsernameUsage(
-          usernameLowercase = user.usernameLowercase, inUseFrom = transaction.now, userId = user.id))
+          usernameLowercase = user.usernameLowercase, // [CANONUN]
+          inUseFrom = transaction.now, userId = user.id))
         // [readlater] export & import UserStats. For now, create new "empty" here.
         transaction.upsertUserStats(UserStats.forNewUser(user.id, firstSeenAt = transaction.now,
           emailedAt = None))

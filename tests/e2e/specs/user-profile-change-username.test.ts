@@ -27,6 +27,7 @@ let idAddress: IdAddress;
 let forumTitle = "Change Username Test Forum";
 
 let mariasUsername2 = "maria2";
+//let mariasUsername2b = "maria_2";
 let mariasUsername3 = "maria3";
 let mariasUsername4 = "maria4";
 let mariasUsername5 = "maria5";
@@ -56,6 +57,7 @@ describe("user profile access:", () => {
   it("Member Maria logs in", () => {
     mariasBrowser.go(idAddress.origin);
     mariasBrowser.complex.loginWithPasswordViaTopbar(maria);
+    mariasBrowser.disableRateLimits();
   });
 
   it("... and goes to her profile, preferences", () => {
@@ -73,6 +75,22 @@ describe("user profile access:", () => {
   });
 
   it("... results in an error", () => {
+    mariasBrowser.serverErrorDialog.waitAndAssertTextMatches('EdE5D0Y29_');
+    mariasBrowser.serverErrorDialog.close();
+  });
+
+  // Comment out? Add back later, when: [CANONUN]
+  // ------ Underscore ignored, when checking if already taken
+
+  it("She changes to Mic_hael, but still not available", () => {
+    const firstPart = 'mic';
+    const secondPart = 'hael';
+    assert(michael.username === firstPart + secondPart);
+    mariasBrowser.userProfilePage.preferences.setUsername(firstPart + '_' + secondPart);
+    mariasBrowser.userProfilePage.preferences.clickSave();
+  });
+
+  it("... results in an error, because '_' is ignored, when comparing names", () => {
     mariasBrowser.serverErrorDialog.waitAndAssertTextMatches('EdE5D0Y29_');
     mariasBrowser.serverErrorDialog.close();
   });
@@ -126,6 +144,24 @@ describe("user profile access:", () => {
     mariasBrowser.userProfilePage.waitForName();
     mariasBrowser.userProfilePage.assertUsernameIs(mariasUsername2);
   });
+
+
+  /* Comment out? Add back later, when: [CANONUN]
+  // ------ Variations like 'jane_doe' and 'jane.doe' are considered the same
+
+  it("She can also make small _ . - tweaks, e.g. change to: " + mariasUsername2b, () => {
+    mariasBrowser.debug();
+    mariasBrowser.userProfilePage.preferences.startChangingUsername();
+    mariasBrowser.userProfilePage.preferences.setUsername(mariasUsername2b);
+    mariasBrowser.userProfilePage.preferences.save();
+  });
+
+  it("She reloads the page, sees her username is now " + mariasUsername2b, () => {
+    mariasBrowser.refresh();
+    mariasBrowser.debug();
+    mariasBrowser.userProfilePage.waitForName();
+    mariasBrowser.userProfilePage.assertUsernameIs(mariasUsername2b);
+  });  */
 
   it("She visits a topic of hers, her username has been updated", () => {
     mariasBrowser.go('/' + forum.topics.byMariaCategoryA.slug);

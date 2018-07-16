@@ -51,8 +51,9 @@ class InviteController @Inject()(cc: ControllerComponents, edContext: EdContext)
     import request.{dao, theRequester => requester}
     val toEmailAddress = (request.body \ "toEmailAddress").as[String].trim
 
-    throwForbiddenIf(!isValidNonLocalEmailAddress(toEmailAddress),
-      "DwE47YK2", "Bad email address")
+    anyEmailAddressError(toEmailAddress) foreach { errMsg =>
+      throwUnprocessableEntity("TyEBADEMLADR_-INV", s"Bad email address: $errMsg")
+    }
 
     // Right now, only for staff and core members. [5WBJAF2]
     throwForbiddenIf(!requester.isStaffOrCoreMember,

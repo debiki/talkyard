@@ -20,7 +20,7 @@ package com.debiki
 import com.debiki.core.Prelude._
 import java.{util => ju}
 import org.apache.commons.validator.routines.EmailValidator
-import org.scalactic.{Bad, Good, Or}
+import org.scalactic.{Bad, ErrorMessage, Good, Or}
 import scala.collection.immutable
 import scala.collection.mutable.ArrayBuffer
 
@@ -592,9 +592,26 @@ package object core {
   def isBlank(char: Char): Boolean = char <= ' '
 
 
-  def isValidNonLocalEmailAddress(address: String): Boolean =
-    EmailValidator.getInstance(/* allowLocal = */ false).isValid(address)
+  /** Tests if is valid non local address, and that Apache Commons Email accepts it. */
+  def anyEmailAddressError(address: String): Option[ErrorMessage] = {
+    // Try to construct an email first, because results in a somewhat friendly error message,
+    // rather than just a true/false from EmailValidator.isValid().
+    try {
+      val apacheCommonsEmail = new org.apache.commons.mail.HtmlEmail()
+      apacheCommonsEmail.setCharset("utf8")
+      apacheCommonsEmail.addTo(address)
+    }
+    catch {
+      case ex: Exception =>
+        return Some(ex.getMessage)
+    }
 
+    val seemsValid = EmailValidator.getInstance(/* allowLocal = */ false).isValid(address)
+    if (!seemsValid)
+      return Some("EmailValidator says the email address is not valid")
+
+    None
+  }
 
   implicit class GetOrBadMap[G, B](val underlying: Or[G, B]) {
     def getOrIfBad(fn: B => Nothing): G = underlying.badMap(fn).get
@@ -672,6 +689,7 @@ package object core {
   def UNPOLITE = ()       // Vuln that lets a user be unpolite to someone else
 
   def I18N = ()           // Translation missing
+  def READ = ()           // Something that could be good to read, before continuing coding.
 
 }
 

@@ -41,7 +41,8 @@ object CreateSiteDao {  RENAME // but to what. & move, but to where?
       isAdmin = true)
     transaction.insertMember(systemUser)
     transaction.insertUsernameUsage(UsernameUsage(
-      systemUser.usernameLowercase, inUseFrom = transaction.now, userId = systemUser.id))
+      systemUser.usernameLowercase,  // [CANONUN]
+      inUseFrom = transaction.now, userId = systemUser.id))
     transaction.upsertUserStats(UserStats.forNewUser(
       SystemUserId, firstSeenAt = transaction.now, emailedAt = None))
   }
@@ -94,7 +95,8 @@ object CreateSiteDao {  RENAME // but to what. & move, but to where?
   private def insertGroupAndUsernameUsage(group: Group, tx: SiteTransaction) {
     tx.insertGroup(group)
     tx.insertUsernameUsage(UsernameUsage(
-      usernameLowercase = group.theUsername.toLowerCase, tx.now, userId = group.id))
+      usernameLowercase = group.theUsername.toLowerCase,  // [CANONUN]
+      tx.now, userId = group.id))
   }
 
 }

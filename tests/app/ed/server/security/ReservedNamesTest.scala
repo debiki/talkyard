@@ -62,20 +62,20 @@ class ReservedNamesTest extends FreeSpec with MustMatchers {
       ReservedNames.isUsernameReserved("hen") mustBe true
     }
 
-    "disallow names that start with numers" in {
-      ReservedNames.isUsernameReserved("123whatever") mustBe true
-      ReservedNames.isUsernameReserved("4whatever") mustBe true
+    "allow names that start with numers" in {
+      ReservedNames.isUsernameReserved("123whatever") mustBe false
+      ReservedNames.isUsernameReserved("4whatever") mustBe false
       ReservedNames.isUsernameReserved("not_a_number") mustBe false
     }
 
-    "disallow whatever_123 names" in {
+    "allow whatever_123 names" in {
       ReservedNames.isUsernameReserved("fine123") mustBe false
       ReservedNames.isUsernameReserved("whatever_xzy") mustBe false
       ReservedNames.isUsernameReserved("whatever_123_xzy") mustBe false
-      ReservedNames.isUsernameReserved("whatever_") mustBe true
-      ReservedNames.isUsernameReserved("whatever_1") mustBe true
-      ReservedNames.isUsernameReserved("whatever_123") mustBe true
-      ReservedNames.isUsernameReserved("whatever_xyz_123") mustBe true
+      ReservedNames.isUsernameReserved("whatever_") mustBe false
+      ReservedNames.isUsernameReserved("whatever_1") mustBe false
+      ReservedNames.isUsernameReserved("whatever_123") mustBe false
+      ReservedNames.isUsernameReserved("whatever_xyz_123") mustBe false
     }
 
   }

@@ -25,6 +25,7 @@ import scala.collection.{immutable, mutable}
 import EmailNotfPrefs.EmailNotfPrefs
 import Prelude._
 import User._
+import java.text.Normalizer
 import java.util.Date
 
 
@@ -64,22 +65,10 @@ case class Invite(
   COULD; REFACTOR // createdAt to ... what? and createdWhen to createdAt. Or change datatype.
   def createdWhen: When = When.fromDate(createdAt)
 
-  /** Suggests a username based on the email address, namely the text before the '@'.
-    * Padded with "_" if too short.
-    */
-  private def deriveUsername: String = {
-    var username = emailAddress.split("@").headOption.getOrDie(
-      "DwE500IIEA5", "Invalid invite email address")
-    while (username.length < MinUsernameLength) {
-      username += "_"
-    }
-    username
-  }
-
-  def makeUser(userId: UserId, currentTime: ju.Date) = MemberInclDetails(
+  def makeUser(userId: UserId, username: String, currentTime: ju.Date) = MemberInclDetails(
     id = userId,
     fullName = None,
-    username = deriveUsername,
+    username = username,
     createdAt = currentTime,
     isApproved = None,
     approvedAt = None,
@@ -131,9 +120,9 @@ sealed abstract class NewUserData {
 
   def makeIdentity(userId: UserId, identityId: IdentityId): Identity
 
-  Validation.checkName(name)
-  Validation.checkUsername(username)
-  Validation.checkEmail(email)
+  dieIfBad(Validation.checkName(name), "TyE5WKBA7EW", identity)
+  dieIfBad(Validation.checkUsername(username), "TyE2AKB6W", identity)
+  dieIfBad(Validation.checkEmail(email), "TyE2WKBPE7", identity)
 
 }
 
@@ -177,9 +166,10 @@ case class NewPasswordUserData(
     trustLevel = trustLevel,
     threatLevel = threatLevel)
 
-  Validation.checkName(name)
-  Validation.checkUsername(username)
-  Validation.checkEmail(email)
+
+  dieIfBad(Validation.checkName(name), "TyE6KWB2A1", identity)
+  dieIfBad(Validation.checkUsername(username), "TyE5FKA2K0", identity)
+  dieIfBad(Validation.checkEmail(email), "TyE4WKBJ7Z", identity)
   // Password: See security.throwErrorIfPasswordTooWeak, instead.
 
   require(!firstSeenAt.exists(_.isBefore(createdAt)), "EdE2WVKF063")
@@ -315,7 +305,8 @@ case object User {
   def isOkayGuestId(id: UserId): Boolean =
     id == UnknownUserId || id <= MaxCustomGuestId
 
-  val MinUsernameLength = 3
+  val MinUsernameLength = 3  // must be < 9, search for usages to see why
+  val MaxUsernameLength = 20
 
 
   /**
@@ -372,6 +363,82 @@ case object User {
   def isSuspendedAt(now: ju.Date, suspendedTill: Option[ju.Date]): Boolean =
     suspendedTill.exists(now.getTime <= _.getTime)
 
+
+  //def makeUsernameCanonical(username: String): String =  // [CANONUN]
+  //  username.toLowerCase.replaceAll("[_.+-]+", "_").replaceAll("[^a-z0-9_]", "")
+
+
+  /** Comes up with a username that contains only valid characters, and is not already in use.
+    * Does things like pads with numbers if too short, and, if already taken, appends
+    * numbers to make it unique. And changes åäö to aao and replaces Unicode
+    * like Chinese and Arabic characters with 'zzz' — allowing Unicode usernames = dangerous,
+    * would make homoglyph/homograph attacks possible (pretending to be someone else, like,
+    * user 'tové' pretends to be 'tove').
+    */
+  def makeOkayUsername(somethingMaybeWeird: String, isUsernameInUse: String => Boolean)
+        : Option[String] = {
+
+    // 1. Remove diacritics.
+    // Changes e.g. éåä to eaa. Example:
+    // From: "Tĥïŝ ĩš â fůňķŷ Šťŕĭńġ 2dot..2dash--2underscore__ arabic:العربية chinese:汉语 漢語 !?#+,*"
+    // To: "This is a funky String 2dot..2dash--2underscore__ arabic:العربية chinese:汉语 漢語 !?#+,*"
+    val usernameNoDiacritics =
+      Normalizer.normalize(somethingMaybeWeird, Normalizer.Form.NFD)
+        .replaceAll("\\p{InCombiningDiacriticalMarks}+", "")
+
+    // 2. Replace Unicode (non-ASCII) chars with 'z'.
+    // People will better notice that some chars couldn't be represented in ASCII, if they're
+    // replaced with something instead of just removed? Let's pick 'z' ('zz...' is better than 'xx..').
+    // Then the above example string becomes:
+    //  "This is a funky String 2dot..2dash--2underscore__ arabic:zzzzzzz chinese:zz zz !?#+,*"
+    val usernameAscii = usernameNoDiacritics.replaceAll("[^\\p{ASCII}]", "z")
+
+    // Replace punctuation with '_'. [UNPUNCT]
+    // The example string becomes: (note: drops trailing '_')
+    //  "This_is_a_funky_String_2dot_2dash_2underscore_arabiczzzzzzz_chinesezz_zz"
+    val usernameOkChars = usernameAscii
+      .replaceAll("[\t\n\r _~.–,—/\\\\+-]+", "_")  // the two first – and — are: en and em dashes.
+      .replaceAll("[^a-zA-Z0-9_]", "")
+      .dropWhile(!charIsAzOrNum(_))      // drops anything but  a-z  A-Z  0-9, for now. [UNPUNCT]
+      .dropRightWhile(!charIsAzOrNum(_)) //
+
+    // For now, don't allow numeric usernames. That wouldn't be a name would it?
+    // Maybe if someone chooses hens name to be '2010' or '1945', people will believe it's
+    // a date instead? Not good for usability? Let's prefix 'n', could mean "numeric name".
+    val usernameOkFirst =
+      if (usernameOkChars.forall(charIsNum)) 'n' + usernameOkChars
+      else usernameOkChars
+
+    val usernameOkCharsLen =
+      (if (usernameOkFirst.length >= User.MinUsernameLength) usernameOkFirst
+      else (usernameOkFirst + "23456789") take User.MinUsernameLength) take User.MaxUsernameLength
+
+    var nextToTry = usernameOkCharsLen
+    val numCharsFree = User.MaxUsernameLength - usernameOkCharsLen.length
+
+    // Until = up to length - 1, so won't drop all chars here: (5WKBA2)
+    for (i <- 1 until User.MaxUsernameLength) {
+      val isInUse = isUsernameInUse(nextToTry)
+      if (!isInUse)
+        return Some(nextToTry)
+
+      // Append i random numbers to make the username unique. Repeat with i, i+1, i+2 chars,
+      // until we find one. However, what if usernameOkCharsLen is already almost max-chars long?
+      // Then remove chars at the end, repl with random numbers, until we find something unique.
+      val wantsNumRandom = i
+      val baseName =
+        if (wantsNumRandom <= numCharsFree) usernameOkCharsLen
+        else {
+          val numMissing = wantsNumRandom - numCharsFree
+          val usernameShorter = usernameOkCharsLen dropRight numMissing  // (5WKBA2)
+          dieIf(usernameShorter.isEmpty, "TyE5KAW20")
+          usernameShorter
+        }
+      nextToTry = baseName + nextRandomLong().toString.take(wantsNumRandom)
+    }
+
+    None
+  }
 }
 
 
@@ -625,6 +692,7 @@ case class MemberInclDetails(
   def effectiveThreatLevel: ThreatLevel = lockedThreatLevel getOrElse threatLevel
 
   def usernameLowercase: String = username.toLowerCase
+  //def canonicalUsername: String = User.makeUsernameCanonical(username)  // [CANONUN]
 
   def createdWhen: When = When.fromDate(createdAt)
 
@@ -829,7 +897,7 @@ case class UserEmailAddress(
   addedAt: When,
   verifiedAt: Option[When]) {
 
-  require(isValidNonLocalEmailAddress(emailAddress), "EdE4JUKS0")
+  anyEmailAddressError(emailAddress) foreach { die("EdE4JUKS0", _) }
 
   // Cannot add this test, because OpenAuth emails are verified maybe 100 ms before the user gets
   // created. Could fix that, update timestamps in db, then add constraint? [5GKRWZI]
@@ -902,6 +970,8 @@ case class Group(
   override def effectiveTrustLevel: TrustLevel = grantsTrustLevel getOrElse TrustLevel.NewMember
 
   override def usernameOrGuestName: String = theUsername
+
+  //def canonicalUsername: String = User.makeUsernameCanonical(theUsername)
 
   override def anyName: Option[String] = Some(name)  // [50UKQV1]
   override def anyUsername: Option[String] = Some(theUsername)

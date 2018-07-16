@@ -24,18 +24,36 @@ import Prelude._
 
 class PreludeTest extends Specification {
 
-  "isAlphaUnderscoreOnly" should {
-    "'': yes" in { "".isAlphaUnderscoreOnly must_== true }
-    "'a': yes" in { "a".isAlphaUnderscoreOnly must_== true }
-    "'_': yes" in { "_".isAlphaUnderscoreOnly must_== true }
-    "'A': yes" in { "A".isAlphaUnderscoreOnly must_== true }
-    "'a_A': yes" in { "a_A".isAlphaUnderscoreOnly must_== true }
-    "' ': no" in {  " ".isAlphaUnderscoreOnly must_== false }
-    "'\\n': no" in {  "\n".isAlphaUnderscoreOnly must_== false }
-    "'\\t': no" in {  "\t".isAlphaUnderscoreOnly must_== false }
-    "'5': no" in { "5".isAlphaUnderscoreOnly must_== false }
-    "'å': no" in { "å".isAlphaUnderscoreOnly must_== false }
-    "'a_A2': yes" in { "a_A2".isAlphaUnderscoreOnly must_== false }
+  "isAToZUnderscoreOnly" should {
+    "'': yes" in { "".isAToZUnderscoreOnly must_== true }
+    "'a': yes" in { "a".isAToZUnderscoreOnly must_== true }
+    "'_': yes" in { "_".isAToZUnderscoreOnly must_== true }
+    "'A': yes" in { "A".isAToZUnderscoreOnly must_== true }
+    "'a_A': yes" in { "a_A".isAToZUnderscoreOnly must_== true }
+    "' ': no" in {  " ".isAToZUnderscoreOnly must_== false }
+    "'\\n': no" in {  "\n".isAToZUnderscoreOnly must_== false }
+    "'\\t': no" in {  "\t".isAToZUnderscoreOnly must_== false }
+    "'5': no" in { "5".isAToZUnderscoreOnly must_== false }
+    "'å': no" in { "å".isAToZUnderscoreOnly must_== false }
+    "'a_A2': no" in { "a_A2".isAToZUnderscoreOnly must_== false }
+    "''': no" in { "'".isAToZUnderscoreOnly must_== false }
+  }
+
+  "charIsAzOrNum" should {
+    "a: yes" in { charIsAzOrNum('a') must_=== true }
+    "b: yes" in { charIsAzOrNum('b') must_=== true }
+    "z: yes" in { charIsAzOrNum('z') must_=== true }
+    "A: yes" in { charIsAzOrNum('A') must_=== true }
+    "Y: yes" in { charIsAzOrNum('Y') must_=== true }
+    "Z: yes" in { charIsAzOrNum('Z') must_=== true }
+    "0: yes" in { charIsAzOrNum('0') must_=== true }
+    "1: yes" in { charIsAzOrNum('1') must_=== true }
+    "8: yes" in { charIsAzOrNum('8') must_=== true }
+    "9: yes" in { charIsAzOrNum('9') must_=== true }
+    "-: no" in { charIsAzOrNum('-') must_=== false }
+    "#: no" in { charIsAzOrNum('#') must_=== false }
+    val weird = "^! -—/\\+.-?!.åäöé,?&#:العربية :汉语 漢語"
+    (weird + ": no") in { weird.exists(charIsAzOrNum) must_=== false }
   }
 
   "stripStartEndBlanks" should {

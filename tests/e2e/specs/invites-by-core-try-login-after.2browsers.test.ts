@@ -29,7 +29,7 @@ let siteIdAddress: IdAddress;
 let forumTitle = "Some E2E Test";
 
 const janesEmailAddress = 'e2e-test--jane@example.com';
-const janesUsername = 'e2e-test--jane';
+const janesUsername = 'e2e_test_jane';
 const janesPassword = 'publ-ja020';
 
 

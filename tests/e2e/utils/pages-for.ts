@@ -3438,11 +3438,18 @@ function pagesFor(browser) {
       },
 
       typeAndSubmitInvite: (emailAddress: string) => {
-        api.waitAndSetValue('.s_InvD input', emailAddress, { maybeMoves: true });
-        api.waitAndClick('.s_InvD .btn-primary');
+        api.inviteDialog.typeInvite(emailAddress);
+        api.inviteDialog.clickSubmit();
         api.waitAndClick('.s_InvSentD .e_SD_CloseB', { maybeMoves: true });
       },
 
+      typeInvite: (emailAddress: string) => {
+        api.waitAndSetValue('.s_InvD input', emailAddress, { maybeMoves: true });
+      },
+
+      clickSubmit: () => {
+        api.waitAndClick('.s_InvD .btn-primary');
+      },
     },
 
 
@@ -3503,6 +3510,10 @@ function pagesFor(browser) {
 
       waitAndAssertTextMatches: function(regex) {
         api.waitAndAssertVisibleTextMatches('.modal-dialog.dw-server-error', regex);
+      },
+
+      waitForBadEmailAddressError: function() {
+        api.waitUntilTextMatches('.modal-body', 'TyEBADEMLADR_');
       },
 
       close: function() {

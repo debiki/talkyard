@@ -241,7 +241,9 @@ class Mailer(
         else if (numEmailsSent % 100 == 0) {
           logger.info(s"Has sent $numEmailsSent emails since server started. [TyMNUMEMLS]")
         }
+
         sendEmail(email, siteId)
+
         numEmailsSent += 1
       }
     case ("GetEndToEndTestEmail", siteIdColonEmailAddress: String) =>

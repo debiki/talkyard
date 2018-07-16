@@ -26,14 +26,17 @@ object Validation {
 
   private val EmailOkCharsRegex = """\S+@\S+\.\S+$""".r
 
+  // Later, also allow [.-] — not now though [UNPUNCT], first implement canonical usernames?[CANONUN]
+  // Not allowing [.-] here means people cannot change *to* such usernames, but existing
+  // ones = fine.
   private val UsernameOkCharsRegex = "[A-Za-z0-9_]*".r
-  private val UsernameOkFirstCharRegex = "[A-Za-z0-9]".r
 
   // Right now only '_' is allowed, but include '.' and '-' too in case later on Talkyard will,
   // just like Discourse, allow those chars too.
   private val TwoSpecialCharsRegex = ".*[_.-]{2}.*".r
 
 
+  // CLEAN_UP don't return the name — looks as if it's maybe getting changed
   def checkName(name: Option[String]): Option[String] Or ErrorMessage = {
     if (name.map(_.trim) != name)
       return Bad("Name starts or ends with blanks")
@@ -44,7 +47,7 @@ object Validation {
     Good(name)
   }
 
-
+  // CLEAN_UP don't return the email — looks as if it's maybe getting changed
   def checkEmail(email: String): String Or ErrorMessage = {
     if (!email.isEmpty && EmailOkCharsRegex.unapplySeq(email).isEmpty)
       return Bad("Invalid email address")
@@ -63,24 +66,35 @@ object Validation {
 
   val TooShortErrorMessage = "The username is too short; it must be at least 3 characters"
   val TooLongErrorMessage = "The username is too long; it must be at most 20 characters"
+  // Because of [UNPUNCT], currently cannot change *to* a username with [.-], only '_' allowed.
+  // However some usernames already contain '.' (that's fine).
   val BadCharsErrorMessage = "The username must use characters a-z, A-Z, 0-9 and _ only"
   val TwoSpecialCharsErrorMessage = "The username has two special chars in a row"
-  val BadFirstCharErrorMessage = "The username's first character must be one of a-z, A-Z, 0-9"
+  val BadFirstCharErrorMessage = "The username's first character must be one of a-z, A-Z, 0-9 _"
+  val BadLastCharErrorMessage = "The username's last character must be one of a-z, A-Z, 0-9"
+  def justWeird(username: String) = s"The username is weird: '$username' [TyE2LKB57A]"
 
   /** Allows only usernames like '123_some_username', 3 - 20 chars.
     */
+  // CLEAN_UP don't return the username — looks as if it's maybe getting changed
   def checkUsername(username: String): String Or ErrorMessage = {  CLEAN_UP // merge with ReservedNames [2PGKR8ML]
-    // WOULD add unit tests
+    // Tested in ValidationTest.
     // Also see [2WJBG04]
 
     if (StackExchangeUsernameRegex.matches(username))  // [2QWGRC8P]
       return Good(username) ; SECURITY ; COULD // require that site id is 92 or 98 (the two demo forums)
 
-    if (username.length < 3)
+    if (username.length < User.MinUsernameLength)
       return Bad(TooShortErrorMessage)
 
-    if (username.length > 20)
+    if (username.length > User.MaxUsernameLength)
       return Bad(TooLongErrorMessage)
+
+    if (!charIsAzNumOrUnderscore(username.head))
+      return Bad(BadFirstCharErrorMessage)
+
+    if (!charIsAzOrNum(username.last))
+      return Bad(BadLastCharErrorMessage)
 
     if (UsernameOkCharsRegex.unapplySeq(username).isEmpty)
       return Bad(BadCharsErrorMessage)
@@ -88,8 +102,9 @@ object Validation {
     if (TwoSpecialCharsRegex.matches(username))
       return Bad(TwoSpecialCharsErrorMessage)
 
-    if (UsernameOkFirstCharRegex.unapplySeq(username.charAt(0)).isEmpty)
-      return Bad(BadFirstCharErrorMessage)
+    // If the username needs to be changed somehow, to become okay — then reject it.
+    if (User.makeOkayUsername(username, _ => false) isNot username)
+      return Bad(justWeird(username))
 
     Good(username)
   }

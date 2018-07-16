@@ -28,7 +28,7 @@ let siteIdAddress: IdAddress;
 let forumTitle = "Some E2E Test";
 
 const janesEmailAddress = 'e2e-test--jane@example.com';
-const janesUsername = 'e2e-test--jane';
+const janesUsername = 'e2e_test_jane';
 const janesTopicData = { title: "Hello I'm Jane", body: "Where am I?" };
 const janesTopicData2 = { title: "I'm Jane", body: "I said I'll be back. Now I am back." };
 const janesPassword = 'publ-ja020';

@@ -20,6 +20,7 @@ package com.debiki.core
 import java.{util => ju}
 import java.{security => js}
 import org.apache.commons.codec.{binary => acb}
+import org.scalactic.{ErrorMessage, Or}
 import scala.collection.mutable
 import scala.util.Try
 import scala.util.matching.Regex
@@ -150,6 +151,10 @@ object Prelude {
 
   def dieUnless(condition: Boolean, errorCode: String, problem: => String = null): Unit =
     if (!condition) die(errorCode, problem)
+
+  def dieIfBad[A](value: A Or ErrorMessage, errorCode: String, mkMessage: ErrorMessage => String = null)
+        : Unit =
+    if (value.isBad) die(errorCode, if (mkMessage ne null) mkMessage(value.swap.get) else null)
 
   def throwIllegalArgument(errorCode: String, problem: => String = null): Nothing =
     illArgErr(errorCode, problem)
@@ -520,7 +525,7 @@ object Prelude {
   }
 
 
-  private val AlphaUnderscoreRegex = "^[a-zA-Z_]*$".r
+  private val AToZUnderscoreRegex = "^[a-zA-Z_]*$".r
 
   /**
    * Pimps `String` with `matches(regex): Boolean` and `misses(regex)`
@@ -564,10 +569,18 @@ object Prelude {
       else Some(trimmed)
     }
 
-    def isAlphaUnderscoreOnly: Boolean =
-      AlphaUnderscoreRegex.pattern.matcher(underlying).matches
+    def isAToZUnderscoreOnly: Boolean =
+      AToZUnderscoreRegex.pattern.matcher(underlying).matches
+
   }
 
+  def charIsAzNumOrUnderscore(c: Char): Boolean =
+    charIsAzOrNum(c) || c == '_'
+
+  def charIsAzOrNum(c: Char): Boolean =
+    (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || charIsNum(c)
+
+  def charIsNum(c: Char): Boolean = c >= '0' && c <= '9'
 
   /**
    * It's impossible to place breakpoints in Specs test suites, so

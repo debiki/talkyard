@@ -282,7 +282,7 @@ case class SettingsToSave(
   coreMemberFlagWeight: Option[Option[Float]] = None) {
 
   // The language code must be like en_US.
-  require(languageCode.forall(_.forall(_.isAlphaUnderscoreOnly)), "Weird lang code [TyE2WKBYF]")
+  require(languageCode.forall(_.forall(_.isAToZUnderscoreOnly)), "Weird lang code [TyE2WKBYF]")
   require(languageCode.forall(_.forall(_.length < 10)), "Too long language code [TyE2WKBP5]")
 
   if (contribAgreement.contains(Some(ContribAgreement.UseOnThisSiteOnly)) &&
