@@ -22,7 +22,7 @@ import debiki.dao._
 import java.{util => ju}
 
 
-class NotfsAppSpec extends DaoAppSuite() {
+class NotfsAppSpec extends DaoAppSuite(disableScripts = false) {
   var dao: SiteDao = _
 
   var createForumResult: CreateForumResult = _
@@ -38,6 +38,8 @@ class NotfsAppSpec extends DaoAppSuite() {
   var member5NotInAnyChat: Member = _
   var member6NotInAnyChat: Member = _
   var member7NotInAnyChat: Member = _
+  var member8Dot: Member = _
+  var member9Dash: Member = _
   var memberNeverMentioned: Member = _
 
   var withRepliesTopicId: PageId = _
@@ -59,6 +61,17 @@ class NotfsAppSpec extends DaoAppSuite() {
   }
 
 
+  def edit(post: Post, editorId: UserId, newText: String)(dao: SiteDao) : Unit =
+    super.edit(post, editorId, newText, skipNashorn = false)(dao)
+
+  def chat(memberId: UserId, pageId: PageId, text: String)(dao: SiteDao): Post =
+    super.chat(memberId, pageId, text, skipNashorn = false)(dao)
+
+  def reply(memberId: UserId, pageId: PageId, text: String, parentNr: Option[PostNr])(
+        dao: SiteDao): Post =
+    super.reply(memberId, pageId, text, parentNr = parentNr, skipNashorn = false)(dao)
+
+
   "NotificationGenerator can create and remove notifications" - {
     val now = new ju.Date()
 
@@ -78,6 +91,8 @@ class NotfsAppSpec extends DaoAppSuite() {
       member5NotInAnyChat = createPasswordUser("ntf_0cht5", dao)
       member6NotInAnyChat = createPasswordUser("ntf_0cht6", dao)
       member7NotInAnyChat = createPasswordUser("ntf_0cht7", dao)
+      member8Dot = createPasswordUser("ntf.mem8", dao)
+      member9Dash = createPasswordUser("ntf-mem9", dao)
       memberNeverMentioned = createPasswordUser("ntf_wrng", dao)
 
       // Disable notfs about everything to the owner, other notfs counts will be wrong.
@@ -94,7 +109,7 @@ class NotfsAppSpec extends DaoAppSuite() {
         textAndHtmlMaker.testTitle("withRepliesTopicId"),
         textAndHtmlMaker.testBody("withRepliesTopicId bd"),
         owner.id, browserIdData, dao, Some(categoryId))
-      reply(moderator.id, withRepliesTopicId, s"Reply 1 (post nr 2) by mod")(dao)
+      reply(moderator.id, withRepliesTopicId, s"Reply 1 (post nr 2) by mod", parentNr = None)(dao)
       expectedTotalNumNotfs += 1
 
       // The rest of the tests don't expect Owner to be notified about everything.
@@ -208,9 +223,9 @@ class NotfsAppSpec extends DaoAppSuite() {
         countTotalNumNotfs() mustBe expectedTotalNumNotfs
         listUsersNotifiedAbout(chatPost.id) mustBe Set(member5NotInAnyChat.id)
 
-        info("append to message & mention someone else")
+        info("append to message, mention same person again, plus someone else")
         val samePost = chat(member1.id, chatTopicManyJoinedId,
-            s"Hi @${member5NotInAnyChat.theUsername} @${member6NotInAnyChat.theUsername}")(dao)
+            s"Hi again @${member5NotInAnyChat.theUsername}, + @${member6NotInAnyChat.theUsername}")(dao)
         samePost.id mustBe chatPost.id
         expectedTotalNumNotfs += 1
         countTotalNumNotfs() mustBe expectedTotalNumNotfs
@@ -358,9 +373,24 @@ class NotfsAppSpec extends DaoAppSuite() {
             member1.id, member2.id, member3.id, owner.id)  // not member4
       }
 
-      "in a non-chat discussion" in {
-        // then what?
+      "mention with dot in username, in a discourse topic" in {
+        val replyToDotName: Post = reply(
+            owner.id, withRepliesTopicId, s"Hmm @${member8Dot.theUsername} hi!",
+            parentNr = Some(PageParts.BodyNr))(dao)
+        expectedTotalNumNotfs += 1
+        countTotalNumNotfs() mustBe expectedTotalNumNotfs
+        listUsersNotifiedAbout(replyToDotName.id) mustBe Set(member8Dot.id)
       }
+
+      "mention with dash in username, in a discourse topic" in {
+        val replyToDashName: Post = reply(
+          owner.id, withRepliesTopicId, s"Hi @${member9Dash.theUsername} wow!",
+          parentNr = Some(PageParts.BodyNr))(dao)
+        expectedTotalNumNotfs += 1
+        countTotalNumNotfs() mustBe expectedTotalNumNotfs
+        listUsersNotifiedAbout(replyToDashName.id) mustBe Set(member9Dash.id)
+      }
+
     }
   }
 }

@@ -44,7 +44,7 @@ import org.owasp.encoder.Encode
 trait PagesDao {
   self: SiteDao =>
 
-  import context.globals
+  import context.{globals, nashorn}
 
   def loadPagesByUser(userId: UserId, isStaffOrSelf: Boolean, limit: Int): Seq[PagePathAndMeta] = {
     readOnlyTransaction(_.loadPagesByUser(userId, isStaffOrSelf = isStaffOrSelf, limit))
@@ -82,17 +82,19 @@ trait PagesDao {
 
     quickCheckIfSpamThenThrow(byWho, bodyTextAndHtml, spamRelReqStuff)
 
-    val pagePath = readWriteTransaction { transaction =>
+    val pagePath = readWriteTransaction { tx =>
       val (pagePath, bodyPost) = createPageImpl(pageRole, pageStatus, anyCategoryId,
         anyFolder = anyFolder, anySlug = anySlug, showId = showId,
         titleSource = titleTextAndHtml.text, titleHtmlSanitized = titleTextAndHtml.safeHtml,
         bodySource = bodyTextAndHtml.text, bodyHtmlSanitized = bodyTextAndHtml.safeHtml,
         pinOrder = None, pinWhere = None, byWho, Some(spamRelReqStuff),
-        transaction, altPageId = altPageId, embeddingUrl = embeddingUrl)
+        tx, altPageId = altPageId, embeddingUrl = embeddingUrl)
 
-      val notifications = NotificationGenerator(transaction)
-        .generateForNewPost(PageDao(pagePath.pageId getOrDie "DwE5KWI2", transaction), bodyPost)
-      transaction.saveDeleteNotifications(notifications)
+      val thePageId = pagePath.pageId getOrDie "DwE5KWI2"
+
+      val notifications = NotificationGenerator(tx, nashorn)
+        .generateForNewPost(PageDao(thePageId, tx), bodyPost, Some(bodyTextAndHtml))
+      tx.saveDeleteNotifications(notifications)
       pagePath
     }
 

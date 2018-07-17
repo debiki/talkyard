@@ -83,7 +83,7 @@ trait MessagesDao {
           Notifications.None
         }
         else {
-          NotificationGenerator(transaction).generateForMessage(
+          NotificationGenerator(transaction, context.nashorn).generateForMessage(
             sender.user, bodyPost, toUserIds)
         }
 

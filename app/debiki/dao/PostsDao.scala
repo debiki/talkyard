@@ -52,7 +52,7 @@ case class ChangePostStatusResult(answerGotDeleted: Boolean)
 trait PostsDao {
   self: SiteDao =>
 
-  import context.globals
+  import context.{globals, nashorn}
 
   // 3 minutes
   val LastChatMessageRecentMs: UnixMillis = 3 * 60 * 1000
@@ -240,7 +240,8 @@ trait PostsDao {
 
     val notifications =
       if (skipNotifications) Notifications.None
-      else NotificationGenerator(transaction).generateForNewPost(page, newPost)
+      else NotificationGenerator(transaction, nashorn).generateForNewPost(
+        page, newPost, Some(textAndHtml))
     transaction.saveDeleteNotifications(notifications)
 
     (newPost, author, notifications, anyReviewTask)
@@ -433,18 +434,18 @@ trait PostsDao {
 
 
   private def createNewChatMessage(page: PageDao, textAndHtml: TextAndHtml, who: Who,
-      spamRelReqStuff: SpamRelReqStuff, transaction: SiteTransaction): (Post, Notifications) = {
+      spamRelReqStuff: SpamRelReqStuff, tx: SiteTransaction): (Post, Notifications) = {
 
     // Note: Farily similar to insertReply() a bit above. [4UYKF21]
     val authorId = who.id
 
-    val uniqueId = transaction.nextPostId()
+    val uniqueId = tx.nextPostId()
     val postNr = page.parts.highestReplyNr.map(_ + 1) getOrElse PageParts.FirstReplyNr
     if (!page.role.isChat)
       throwForbidden("EsE6JU04", s"Page '${page.id}' is not a chat page")
 
     // This is better than some database foreign key error.
-    transaction.loadUser(authorId) getOrElse throwNotFound("EsE2YG8", "Bad user")
+    tx.loadUser(authorId) getOrElse throwNotFound("EsE2YG8", "Bad user")
 
     val newPost = Post.create(
       uniqueId = uniqueId,
@@ -453,7 +454,7 @@ trait PostsDao {
       parent = None,
       multireplyPostNrs = Set.empty,
       postType = PostType.ChatMessage,
-      createdAt = transaction.now.toJavaDate,
+      createdAt = tx.now.toJavaDate,
       createdById = authorId,
       source = textAndHtml.text,
       htmlSanitized = textAndHtml.safeHtml,
@@ -466,13 +467,13 @@ trait PostsDao {
 
     val oldMeta = page.meta
     val newMeta = oldMeta.copy(
-      bumpedAt = page.isClosed ? oldMeta.bumpedAt | Some(transaction.now.toJavaDate),
+      bumpedAt = page.isClosed ? oldMeta.bumpedAt | Some(tx.now.toJavaDate),
       // Chat messages are always visible, so increment all num-replies counters.
       numRepliesVisible = oldMeta.numRepliesVisible + 1,
       numRepliesTotal = oldMeta.numRepliesTotal + 1,
       numPostsTotal = oldMeta.numPostsTotal + 1,
       //numOrigPostRepliesVisible <— leave as is — chat messages aren't orig post replies.
-      lastReplyAt = Some(transaction.now.toJavaDate),
+      lastReplyAt = Some(tx.now.toJavaDate),
       lastReplyById = Some(authorId),
       frequentPosterIds = newFrequentPosterIds,
       version = oldMeta.version + 1)
@@ -487,7 +488,7 @@ trait PostsDao {
       id = AuditLogEntry.UnassignedId,
       didWhat = AuditLogEntryType.NewChatMessage,
       doerId = authorId,
-      doneAt = transaction.now.toJavaDate,
+      doneAt = tx.now.toJavaDate,
       browserIdData = who.browserIdData,
       pageId = Some(page.id),
       uniquePostId = Some(newPost.id),
@@ -498,35 +499,35 @@ trait PostsDao {
 
     val userStats = UserStats(
       authorId,
-      lastSeenAt = transaction.now,
-      lastPostedAt = Some(transaction.now),
-      firstChatMessageAt = Some(transaction.now),
+      lastSeenAt = tx.now,
+      lastPostedAt = Some(tx.now),
+      firstChatMessageAt = Some(tx.now),
       numChatMessagesPosted = 1)
 
-    addUserStats(userStats)(transaction)
-    transaction.insertPost(newPost)
-    transaction.indexPostsSoon(newPost)
-    transaction.spamCheckPostsSoon(who, spamRelReqStuff, newPost)
-    transaction.updatePageMeta(newMeta, oldMeta = oldMeta, markSectionPageStale = true)
-    updatePagePopularity(page.parts, transaction)
+    addUserStats(userStats)(tx)
+    tx.insertPost(newPost)
+    tx.indexPostsSoon(newPost)
+    tx.spamCheckPostsSoon(who, spamRelReqStuff, newPost)
+    tx.updatePageMeta(newMeta, oldMeta = oldMeta, markSectionPageStale = true)
+    updatePagePopularity(page.parts, tx)
     uploadRefs foreach { uploadRef =>
-      transaction.insertUploadedFileReference(newPost.id, uploadRef, authorId)
+      tx.insertUploadedFileReference(newPost.id, uploadRef, authorId)
     }
-    insertAuditLogEntry(auditLogEntry, transaction)
+    insertAuditLogEntry(auditLogEntry, tx)
 
     // generate json? load all page members?
     // send the post + json back to the caller?
     // & publish [pubsub]
 
-    val notfs = NotificationGenerator(transaction).generateForNewPost(page, newPost)
-    transaction.saveDeleteNotifications(notfs)
+    val notfs = NotificationGenerator(tx, nashorn).generateForNewPost(page, newPost, Some(textAndHtml))
+    tx.saveDeleteNotifications(notfs)
 
     (newPost, notfs)
   }
 
 
   private def appendToLastChatMessage(lastPost: Post, textAndHtml: TextAndHtml, byWho: Who,
-        spamRelReqStuff: SpamRelReqStuff, transaction: SiteTransaction): (Post, Notifications) = {
+        spamRelReqStuff: SpamRelReqStuff, tx: SiteTransaction): (Post, Notifications) = {
 
     // Note: Farily similar to editPostIfAuth() just below. [2GLK572]
     val authorId = byWho.id
@@ -545,31 +546,33 @@ trait PostsDao {
 
     val theApprovedSource = lastPost.approvedSource.getOrDie("EsE5GYKF2")
     val theApprovedHtmlSanitized = lastPost.approvedHtmlSanitized.getOrDie("EsE2PU8")
-    val newText = textEndingWithNumNewlines(theApprovedSource, 2) + textAndHtml.text
-    val newHtml = textEndingWithNumNewlines(theApprovedHtmlSanitized, 2) + textAndHtml.safeHtml
+    val newCombinedText = textEndingWithNumNewlines(theApprovedSource, 2) + textAndHtml.text
+
+    val combinedTextAndHtml = textAndHtmlMaker.forBodyOrComment(newCombinedText, followLinks = false)
 
     val editedPost = lastPost.copy(
-      approvedSource = Some(newText),
-      approvedHtmlSanitized = Some(newHtml),
-      approvedAt = Some(transaction.now.toJavaDate),
+      approvedSource = Some(newCombinedText),
+      approvedHtmlSanitized = Some(combinedTextAndHtml.safeHtml),
+      approvedAt = Some(tx.now.toJavaDate),
       // Leave approvedById = SystemUserId and approvedRevisionNr = FirstRevisionNr unchanged.
-      currentRevLastEditedAt = Some(transaction.now.toJavaDate),
-      lastApprovedEditAt = Some(transaction.now.toJavaDate),
+      currentRevLastEditedAt = Some(tx.now.toJavaDate),
+      lastApprovedEditAt = Some(tx.now.toJavaDate),
       lastApprovedEditById = Some(authorId))
 
-    transaction.updatePost(editedPost)
-    transaction.indexPostsSoon(editedPost)
-    transaction.spamCheckPostsSoon(byWho, spamRelReqStuff, editedPost)
-    saveDeleteUploadRefs(lastPost, editedPost = editedPost, authorId, transaction)
+    tx.updatePost(editedPost)
+    tx.indexPostsSoon(editedPost)
+    tx.spamCheckPostsSoon(byWho, spamRelReqStuff, editedPost)
+    saveDeleteUploadRefs(lastPost, editedPost = editedPost, authorId, tx)
 
-    val oldMeta = transaction.loadThePageMeta(lastPost.pageId)
+    val oldMeta = tx.loadThePageMeta(lastPost.pageId)
     val newMeta = oldMeta.copy(version = oldMeta.version + 1)
-    transaction.updatePageMeta(newMeta, oldMeta = oldMeta, markSectionPageStale = true)
+    tx.updatePageMeta(newMeta, oldMeta = oldMeta, markSectionPageStale = true)
 
     // COULD create audit log entry that shows that this ip appended to the chat message.
 
-    val notfs = NotificationGenerator(transaction).generateForEdits(lastPost, editedPost)
-    transaction.saveDeleteNotifications(notfs)
+    val notfs = NotificationGenerator(tx, nashorn).generateForEdits(
+      lastPost, editedPost, Some(combinedTextAndHtml))
+    tx.saveDeleteNotifications(notfs)
 
     (editedPost, notfs)
   }
@@ -594,10 +597,10 @@ trait PostsDao {
 
     quickCheckIfSpamThenThrow(who, newTextAndHtml, spamRelReqStuff)
 
-    readWriteTransaction { transaction =>
-      val editorAndLevels = loadUserAndLevels(who, transaction)
+    readWriteTransaction { tx =>
+      val editorAndLevels = loadUserAndLevels(who, tx)
       val editor = editorAndLevels.user
-      val page = PageDao(pageId, transaction)
+      val page = PageDao(pageId, tx)
 
       val postToEdit = page.parts.postByNr(postNr) getOrElse {
         page.meta // this throws page-not-fount if the page doesn't exist
@@ -608,10 +611,10 @@ trait PostsDao {
         return
 
       dieOrThrowNoUnless(Authz.mayEditPost(
-        editorAndLevels, transaction.loadGroupIds(editor),
-        postToEdit, page.meta, transaction.loadAnyPrivateGroupTalkMembers(page.meta),
-        inCategoriesRootLast = transaction.loadCategoryPathRootLast(page.meta.categoryId),
-        permissions = transaction.loadPermsOnPages()), "EdE6JLKW2R")
+        editorAndLevels, tx.loadGroupIds(editor),
+        postToEdit, page.meta, tx.loadAnyPrivateGroupTalkMembers(page.meta),
+        inCategoriesRootLast = tx.loadCategoryPathRootLast(page.meta.categoryId),
+        permissions = tx.loadPermsOnPages()), "EdE6JLKW2R")
 
       // COULD don't allow sbd else to edit until 3 mins after last edit by sbd else?
       // so won't create too many revs quickly because 2 edits.
@@ -625,29 +628,29 @@ trait PostsDao {
       // hasn't been flagged, — then don't save a new revision. It's rather uninteresting
       // to track changes, when no discussion is happening.
       // (We avoid saving unneeded revisions, to save disk.)
-      val anyLastRevision = loadLastRevisionWithSource(postToEdit.id, transaction)
+      val anyLastRevision = loadLastRevisionWithSource(postToEdit.id, tx)
       def oldRevisionSavedAndNothingHappened = anyLastRevision match {
         case None => false
         case Some(_) =>
           // COULD: instead of comparing timestamps, flags and replies could explicitly clarify
           // which revision of postToEdit they concern.
           val currentRevStartMs = postToEdit.currentRevStaredAt.getTime
-          val flags = transaction.loadFlagsFor(immutable.Seq(PagePostNr(pageId, postNr)))
+          val flags = tx.loadFlagsFor(immutable.Seq(PagePostNr(pageId, postNr)))
           val anyNewFlag = flags.exists(_.flaggedAt.millis > currentRevStartMs)
           val successors = page.parts.descendantsOf(postNr)
           val anyNewComment = successors.exists(_.createdAt.getTime > currentRevStartMs)
         !anyNewComment && !anyNewFlag
       }
 
-      // Define new field values as if we'll approve the post, but change them below (5AKW02)
+      // Define new field values as if we'll approve the post, but change them below [5AKW02]
       // if in fact we won't approve it.
       var editsApproved = true
       var newCurrentSourcePatch: Option[String] = None
-      var newLastApprovedEditAt = Option(transaction.now.toJavaDate)
+      var newLastApprovedEditAt = Option(tx.now.toJavaDate)
       var newLastApprovedEditById = Option(editorId)
       var newApprovedSource = Option(newTextAndHtml.text)
       var newApprovedHtmlSanitized = Option(newTextAndHtml.safeHtml)
-      var newApprovedAt = Option(transaction.now.toJavaDate)
+      var newApprovedAt = Option(tx.now.toJavaDate)
 
       val newApprovedById =
         if (postToEdit.tyype == PostType.ChatMessage) {
@@ -659,14 +662,14 @@ trait PostsDao {
         }
         else {
           // For now, let people continue editing a post that has been approved already.
-          // Later, could avoid approving, if user threat level >= mild threat,
+          SECURITY // Later, could avoid approving, if user threat level >= mild threat,
           // or if some not-yet-created site config settings are strict?
           // Would then need to create a new revision.
           if (postToEdit.isCurrentVersionApproved) {
             Some(SystemUserId)
           }
           else {
-            // Don't auto-approve these edits. (5AKW02)
+            // Don't auto-approve these edits. [5AKW02]
             editsApproved = false
             newCurrentSourcePatch = Some(makePatch(
               from = postToEdit.approvedSource.getOrElse(""), to = newTextAndHtml.text))
@@ -682,13 +685,13 @@ trait PostsDao {
       val isInNinjaEditWindow = {
         val ninjaWindowMs = ninjaEditWindowMsFor(page.role)
         val ninjaEditEndMs = postToEdit.currentRevStaredAt.getTime + ninjaWindowMs
-        transaction.now.millis < ninjaEditEndMs
+        tx.now.millis < ninjaEditEndMs
       }
 
       val isNinjaEdit = {
         val sameAuthor = postToEdit.currentRevisionById == editorId
         val ninjaHardEndMs = postToEdit.currentRevStaredAt.getTime + HardMaxNinjaEditWindowMs
-        val isInHardWindow = transaction.now.millis < ninjaHardEndMs
+        val isInHardWindow = tx.now.millis < ninjaHardEndMs
         sameAuthor && isInHardWindow && (isInNinjaEditWindow || oldRevisionSavedAndNothingHappened)
       }
 
@@ -699,7 +702,7 @@ trait PostsDao {
         }
         else {
           val revision = PostRevision.createFor(postToEdit, previousRevision = anyLastRevision)
-          (Some(revision), transaction.now.toJavaDate, postToEdit.currentRevisionNr + 1,
+          (Some(revision), tx.now.toJavaDate, postToEdit.currentRevisionNr + 1,
             Some(postToEdit.currentRevisionNr))
         }
 
@@ -710,7 +713,7 @@ trait PostsDao {
 
       var editedPost = postToEdit.copy(
         currentRevStaredAt = newStartedAt,
-        currentRevLastEditedAt = Some(transaction.now.toJavaDate),
+        currentRevLastEditedAt = Some(tx.now.toJavaDate),
         currentRevisionById = editorId,
         currentSourcePatch = newCurrentSourcePatch,
         currentRevisionNr = newRevisionNr,
@@ -739,7 +742,7 @@ trait PostsDao {
           None
         }
         else {
-          val category = transaction.loadCategory(page.meta.categoryId getOrDie "DwE2PKF0")
+          val category = tx.loadCategory(page.meta.categoryId getOrDie "DwE2PKF0")
                 .getOrDie("EdE8ULK4E")
           val excerpt = JsonMaker.htmlToExcerpt(
             newTextAndHtml.safeHtml, Category.DescriptionExcerptLength,
@@ -747,7 +750,7 @@ trait PostsDao {
           Some(category.copy(description = Some(excerpt.text)))
         }
 
-      val postRecentlyCreated = transaction.now.millis - postToEdit.createdAt.getTime <=
+      val postRecentlyCreated = tx.now.millis - postToEdit.createdAt.getTime <=
           AllSettings.PostRecentlyCreatedLimitMs
 
       val reviewTask: Option[ReviewTask] =
@@ -769,7 +772,7 @@ trait PostsDao {
         else {
           // Later, COULD specify editor id instead, as ReviewTask.maybeBadUserId [6KW02QS]
           Some(makeReviewTask(SystemUserId, editedPost, immutable.Seq(ReviewReason.LateEdit),
-            transaction))
+            tx))
         }
 
       val auditLogEntry = AuditLogEntry(
@@ -777,30 +780,31 @@ trait PostsDao {
         id = AuditLogEntry.UnassignedId,
         didWhat = AuditLogEntryType.EditPost,
         doerId = editorId,
-        doneAt = transaction.now.toJavaDate,
+        doneAt = tx.now.toJavaDate,
         browserIdData = who.browserIdData,
         pageId = Some(pageId),
         uniquePostId = Some(postToEdit.id),
         postNr = Some(postNr),
         targetUserId = Some(postToEdit.createdById))
 
-      transaction.updatePost(editedPost)
-      transaction.indexPostsSoon(editedPost)
-      transaction.spamCheckPostsSoon(who, spamRelReqStuff, editedPost)
-      newRevision.foreach(transaction.insertPostRevision)
-      saveDeleteUploadRefs(postToEdit, editedPost = editedPost, editorId, transaction)
+      tx.updatePost(editedPost)
+      tx.indexPostsSoon(editedPost)
+      tx.spamCheckPostsSoon(who, spamRelReqStuff, editedPost)
+      newRevision.foreach(tx.insertPostRevision)
+      saveDeleteUploadRefs(postToEdit, editedPost = editedPost, editorId, tx)
 
-      insertAuditLogEntry(auditLogEntry, transaction)
-      anyEditedCategory.foreach(transaction.updateCategoryMarkSectionPageStale)
-      reviewTask.foreach(transaction.upsertReviewTask)
+      insertAuditLogEntry(auditLogEntry, tx)
+      anyEditedCategory.foreach(tx.updateCategoryMarkSectionPageStale)
+      reviewTask.foreach(tx.upsertReviewTask)
 
       if (!postToEdit.isSomeVersionApproved && editedPost.isSomeVersionApproved) {
         unimplemented("Updating visible post counts when post approved via an edit", "DwE5WE28")
       }
 
       if (editedPost.isCurrentVersionApproved) {
-        val notfs = NotificationGenerator(transaction).generateForEdits(postToEdit, editedPost)
-        transaction.saveDeleteNotifications(notfs)
+        val notfs = NotificationGenerator(tx, nashorn).generateForEdits(
+          postToEdit, editedPost, Some(newTextAndHtml))
+        tx.saveDeleteNotifications(notfs)
       }
 
       val oldMeta = page.meta
@@ -810,10 +814,10 @@ trait PostsDao {
       // (This is how Discourse works and people seems to like it. However,
       // COULD add a don't-bump option for minor edits.)
       if (postNr == PageParts.BodyNr && editedPost.isCurrentVersionApproved && !page.isClosed) {
-        newMeta = newMeta.copy(bumpedAt = Some(transaction.now.toJavaDate))
+        newMeta = newMeta.copy(bumpedAt = Some(tx.now.toJavaDate))
         makesSectionPageHtmlStale = true
       }
-      transaction.updatePageMeta(newMeta, oldMeta = oldMeta, makesSectionPageHtmlStale)
+      tx.updatePageMeta(newMeta, oldMeta = oldMeta, makesSectionPageHtmlStale)
     }
 
     refreshPageInMemCache(pageId)
@@ -1197,16 +1201,15 @@ trait PostsDao {
   }
 
 
-  def approvePostImpl(pageId: PageId, postNr: PostNr, approverId: UserId,
-        transaction: SiteTransaction) {
+  def approvePostImpl(pageId: PageId, postNr: PostNr, approverId: UserId, tx: SiteTransaction) {
 
-    val page = PageDao(pageId, transaction)
+    val page = PageDao(pageId, tx)
     val pageMeta = page.meta
     val postBefore = page.parts.thePostByNr(postNr)
     if (postBefore.isCurrentVersionApproved)
       throwForbidden("DwE4GYUR2", s"Post nr ${postBefore.nr} already approved")
 
-    val approver = transaction.loadTheUser(approverId)
+    val approver = tx.loadTheUser(approverId)
 
     // For now. Later, let core members approve posts too.
     if (!approver.isStaff)
@@ -1215,7 +1218,7 @@ trait PostsDao {
     // ------ The post
 
     val renderSettings = PostRendererSettings(pageMeta.pageRole, thePubSiteId())
-    val approvedHtmlSanitized = context.postRenderer.renderAndSanitize(postBefore, renderSettings,
+    val approvedHtmlSanitized = context.postRenderer.renderAndSanitize(postBefore, renderSettings, // OPTIMIZE
       IfCached.Die("TyE2BKYUF4"))
 
     // Later: update lastApprovedEditAt, lastApprovedEditById and numDistinctEditors too,
@@ -1224,7 +1227,7 @@ trait PostsDao {
       safeRevisionNr =
         approver.isHuman ? Option(postBefore.currentRevisionNr) | postBefore.safeRevisionNr,
       approvedRevisionNr = Some(postBefore.currentRevisionNr),
-      approvedAt = Some(transaction.now.toJavaDate),
+      approvedAt = Some(tx.now.toJavaDate),
       approvedById = Some(approverId),
       approvedSource = Some(postBefore.currentSource),
       approvedHtmlSanitized = Some(approvedHtmlSanitized),
@@ -1233,8 +1236,8 @@ trait PostsDao {
       bodyHiddenAt = None,
       bodyHiddenById = None,
       bodyHiddenReason = None)
-    transaction.updatePost(postAfter)
-    transaction.indexPostsSoon(postAfter)
+    tx.updatePost(postAfter)
+    tx.indexPostsSoon(postAfter)
 
     SHOULD // delete any review tasks.
 
@@ -1263,7 +1266,7 @@ trait PostsDao {
       val (numNewReplies, numNewOrigPostReplies, newLastReplyAt, newLastReplyById) =
         if (isApprovingNewPost && postAfter.isReply)
           (1, postAfter.isOrigPostReply ? 1 | 0,
-            Some(transaction.now.toJavaDate), Some(postAfter.createdById))
+            Some(tx.now.toJavaDate), Some(postAfter.createdById))
         else
           (0, 0, pageMeta.lastReplyAt, pageMeta.lastReplyById)
 
@@ -1273,11 +1276,11 @@ trait PostsDao {
         lastReplyAt = newLastReplyAt,
         lastReplyById = newLastReplyById,
         hiddenAt = newHiddenAt,
-        bumpedAt = pageMeta.isClosed ? pageMeta.bumpedAt | Some(transaction.now.toJavaDate))
+        bumpedAt = pageMeta.isClosed ? pageMeta.bumpedAt | Some(tx.now.toJavaDate))
       makesSectionPageHtmlStale = true
     }
-    transaction.updatePageMeta(newMeta, oldMeta = pageMeta, makesSectionPageHtmlStale)
-    updatePagePopularity(page.parts, transaction)
+    tx.updatePageMeta(newMeta, oldMeta = pageMeta, makesSectionPageHtmlStale)
+    updatePagePopularity(page.parts, tx)
 
     // ------ Notifications
 
@@ -1287,24 +1290,24 @@ trait PostsDao {
         Notifications.None
       }
       else if (isApprovingNewPost) {
-        NotificationGenerator(transaction).generateForNewPost(page, postAfter)
+        NotificationGenerator(tx, nashorn).generateForNewPost(page, postAfter, None)
       }
       else {
-        NotificationGenerator(transaction).generateForEdits(postBefore, postAfter)
+        NotificationGenerator(tx, nashorn).generateForEdits(postBefore, postAfter, None)
       }
-    transaction.saveDeleteNotifications(notifications)
+    tx.saveDeleteNotifications(notifications)
 
     refreshPagesInAnyCache(Set[PageId](pageId))
   }
 
 
   def autoApprovePendingEarlyPosts(pageId: PageId, posts: Iterable[Post])(
-        transaction: SiteTransaction) {
+        tx: SiteTransaction) {
 
     if (posts.isEmpty) return
     require(posts.forall(_.pageId == pageId), "EdE2AX5N6")
 
-    val page = PageDao(pageId, transaction)
+    val page = PageDao(pageId, tx)
     val pageMeta = page.meta
 
     var numNewVisibleReplies = 0
@@ -1319,27 +1322,27 @@ trait PostsDao {
       // ----- A post
 
       val renderSettings = PostRendererSettings(pageMeta.pageRole, thePubSiteId())
-      val approvedHtmlSanitized = context.postRenderer.renderAndSanitize(post, renderSettings,
+      val approvedHtmlSanitized = context.postRenderer.renderAndSanitize(post, renderSettings,  // OPTIMIZE
         IfCached.Die("TyE2PKL99"))
 
       // Don't need to update lastApprovedEditAt, because this post has been invisible until now.
       // Don't set safeRevisionNr, because this approval hasn't been reviewed by a human.
       val postAfter = post.copy(
         approvedRevisionNr = Some(post.currentRevisionNr),
-        approvedAt = Some(transaction.now.toJavaDate),
+        approvedAt = Some(tx.now.toJavaDate),
         approvedById = Some(SystemUserId),
         approvedSource = Some(post.currentSource),
         approvedHtmlSanitized = Some(approvedHtmlSanitized),
         currentSourcePatch = None)
 
-      transaction.updatePost(postAfter)
-      transaction.indexPostsSoon(postAfter)
+      tx.updatePost(postAfter)
+      tx.indexPostsSoon(postAfter)
 
       // ------ Notifications
 
       if (!post.isTitle) {
-        val notfs = NotificationGenerator(transaction).generateForNewPost(page, postAfter)
-        transaction.saveDeleteNotifications(notfs)
+        val notfs = NotificationGenerator(tx, nashorn).generateForNewPost(page, postAfter, None)
+        tx.saveDeleteNotifications(notfs)
       }
     }
 
@@ -1358,7 +1361,7 @@ trait PostsDao {
       }
       else {
         val newLastReply = Some(posts.maxBy(_.createdAt.getTime))
-        (Some(transaction.now.toJavaDate), newLastReply.map(_.createdById))
+        (Some(tx.now.toJavaDate), newLastReply.map(_.createdById))
       }
 
     val newMeta = pageMeta.copy(
@@ -1366,12 +1369,12 @@ trait PostsDao {
       numOrigPostRepliesVisible = pageMeta.numOrigPostRepliesVisible + numNewVisibleOpReplies,
       lastReplyAt = newLastReplyAt,
       lastReplyById = newLastReplyById,
-      bumpedAt = pageMeta.isClosed ? pageMeta.bumpedAt | Some(transaction.now.toJavaDate),
+      bumpedAt = pageMeta.isClosed ? pageMeta.bumpedAt | Some(tx.now.toJavaDate),
       hiddenAt = newHiddenAt,
       version = pageMeta.version + 1)
 
-    transaction.updatePageMeta(newMeta, oldMeta = pageMeta, markSectionPageStale = true)
-    updatePagePopularity(page.parts, transaction)
+    tx.updatePageMeta(newMeta, oldMeta = pageMeta, markSectionPageStale = true)
+    updatePagePopularity(page.parts, tx)
   }
 
 
@@ -1489,16 +1492,16 @@ trait PostsDao {
 
     val now = globals.now()
 
-    val (postBefore, postAfter, storePatch) = readWriteTransaction { transaction =>
-      val mover = transaction.loadTheMember(moverId)
+    val (postBefore, postAfter, storePatch) = readWriteTransaction { tx =>
+      val mover = tx.loadTheMember(moverId)
       if (!mover.isStaff)
         throwForbidden("EsE6YKG2_", "Only staff may move posts")
 
-      val postToMove = transaction.loadThePost(whichPost.postId)
+      val postToMove = tx.loadThePost(whichPost.postId)
       if (postToMove.nr == PageParts.TitleNr || postToMove.nr == PageParts.BodyNr)
         throwForbidden("EsE7YKG25_", "Cannot move page title or body")
 
-      val newParentPost = transaction.loadPost(newParent) getOrElse throwForbidden(
+      val newParentPost = tx.loadPost(newParent) getOrElse throwForbidden(
         "EsE7YKG42_", "New parent post not found")
 
       dieIf(postToMove.collapsedStatus.isCollapsed, "EsE5KGV4", "Unimpl")
@@ -1508,8 +1511,8 @@ trait PostsDao {
       dieIf(newParentPost.closedStatus.isClosed, "EsE2GLK83", "Unimpl")
       dieIf(newParentPost.deletedStatus.isDeleted, "EsE8KFG1", "Unimpl")
 
-      val fromPage = PageDao(postToMove.pageId, transaction)
-      val toPage = PageDao(newParent.pageId, transaction)
+      val fromPage = PageDao(postToMove.pageId, tx)
+      val toPage = PageDao(newParent.pageId, tx)
 
       // Don't create cycles.
       if (newParentPost.pageId == postToMove.pageId) {
@@ -1536,14 +1539,14 @@ trait PostsDao {
       val postAfter =
         if (postToMove.pageId == newParentPost.pageId) {
           val postAfter = postToMove.copy(parentNr = Some(newParentPost.nr))
-          transaction.updatePost(postAfter)
+          tx.updatePost(postAfter)
           // (Need not reindex.)
-          transaction.insertAuditLogEntry(moveTreeAuditEntry)
+          tx.insertAuditLogEntry(moveTreeAuditEntry)
           postAfter
         }
         else {
-          transaction.deferConstraints()
-          transaction.startAuditLogBatch()
+          tx.deferConstraints()
+          tx.startAuditLogBatch()
 
           val descendants = fromPage.parts.descendantsOf(postToMove.nr)
           val newNrsMap = mutable.HashMap[PostNr, PostNr]()
@@ -1585,23 +1588,23 @@ trait PostsDao {
               // particular post on the target page)
           }
 
-          postsAfter foreach transaction.updatePost
-          transaction.indexPostsSoon(postsAfter: _*)
-          auditEntries foreach transaction.insertAuditLogEntry
-          transaction.movePostsReadStats(fromPage.id, toPage.id, Map(newNrsMap.toSeq: _*))
+          postsAfter foreach tx.updatePost
+          tx.indexPostsSoon(postsAfter: _*)
+          auditEntries foreach tx.insertAuditLogEntry
+          tx.movePostsReadStats(fromPage.id, toPage.id, Map(newNrsMap.toSeq: _*))
           // Mark both fromPage and toPage sections as stale, in case they're different forums.
-          refreshPageMetaBumpVersion(fromPage.id, markSectionPageStale = true, transaction)
-          refreshPageMetaBumpVersion(toPage.id, markSectionPageStale = true, transaction)
+          refreshPageMetaBumpVersion(fromPage.id, markSectionPageStale = true, tx)
+          refreshPageMetaBumpVersion(toPage.id, markSectionPageStale = true, tx)
 
           postAfter
         }
 
-      val notfs = NotificationGenerator(transaction).generateForNewPost(
-        toPage, postAfter, skipMentions = true)
-      SHOULD // transaction.saveDeleteNotifications(notfs) — but would cause unique key errors
+      val notfs = NotificationGenerator(tx, nashorn).generateForNewPost(
+        toPage, postAfter, anyNewTextAndHtml = None, skipMentions = true)
+      SHOULD // tx.saveDeleteNotifications(notfs) — but would cause unique key errors
 
       val patch = jsonMaker.makeStorePatch2(postAfter.id, toPage.id,
-        appVersion = globals.applicationVersion, transaction)
+        appVersion = globals.applicationVersion, tx)
       (postToMove, postAfter, patch)
     }
 

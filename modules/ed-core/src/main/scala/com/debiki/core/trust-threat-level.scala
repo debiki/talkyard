@@ -56,28 +56,28 @@ object TrustLevel {
 
 
 
-sealed abstract class ThreatLevel(val IntVal: Int) {
+sealed abstract class ThreatLevel(val IntVal: Int, val isThreat: Boolean) {
   def toInt: Int = IntVal
   def isSevereOrWorse = false
 }
 
 object ThreatLevel {
 
-  case object SuperSafe extends ThreatLevel(1)
+  case object SuperSafe extends ThreatLevel(1, isThreat = false)
 
-  case object SeemsSafe extends ThreatLevel(2)
+  case object SeemsSafe extends ThreatLevel(2, isThreat = false)
 
   /** The default. */
-  case object HopefullySafe extends ThreatLevel(3)
+  case object HopefullySafe extends ThreatLevel(3, isThreat = false)
 
   /** All comments will be published directly, but also added to the moderation queue for review. */
-  case object MildThreat extends ThreatLevel(4)
+  case object MildThreat extends ThreatLevel(4, isThreat = true)
 
   /** Comments won't be published until they've been approved by a moderator. */
-  case object ModerateThreat extends ThreatLevel(5)
+  case object ModerateThreat extends ThreatLevel(5, isThreat = true)
 
   /** May not post any comments at all. */
-  case object SevereThreat extends ThreatLevel(6) {
+  case object SevereThreat extends ThreatLevel(6, isThreat = true) {
     override def isSevereOrWorse = true
   }
 

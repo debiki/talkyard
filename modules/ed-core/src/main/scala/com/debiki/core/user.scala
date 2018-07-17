@@ -367,6 +367,13 @@ case object User {
   //def makeUsernameCanonical(username: String): String =  // [CANONUN]
   //  username.toLowerCase.replaceAll("[_.+-]+", "_").replaceAll("[^a-z0-9_]", "")
 
+  // The two first – and — are: en and em dashes.
+  // Incl '_' so '____' gets replaced with '_'.
+  private val ReplSpecialsWithUnderscoreRegex =
+    "[\t\n\r_~/–,—\\\\ +.-]+".r
+
+  private val ReplSpecialsWithUnderscoreKeepDotDashRegex =
+    "[\t\n\r_~/–,—\\\\ +]+".r
 
   /** Comes up with a username that contains only valid characters, and is not already in use.
     * Does things like pads with numbers if too short, and, if already taken, appends
@@ -375,8 +382,11 @@ case object User {
     * would make homoglyph/homograph attacks possible (pretending to be someone else, like,
     * user 'tové' pretends to be 'tove').
     */
-  def makeOkayUsername(somethingMaybeWeird: String, isUsernameInUse: String => Boolean)
-        : Option[String] = {
+  def makeOkayUsername(somethingMaybeWeird: String, allowDotDash: Boolean,
+        isUsernameInUse: String => Boolean): Option[String] = {
+
+    if (somethingMaybeWeird.isEmpty)
+      return None
 
     // 1. Remove diacritics.
     // Changes e.g. éåä to eaa. Example:
@@ -393,12 +403,20 @@ case object User {
     //  "This is a funky String 2dot..2dash--2underscore__ arabic:zzzzzzz chinese:zz zz !?#+,*"
     val usernameAscii = usernameNoDiacritics.replaceAll("[^\\p{ASCII}]", "z")
 
+    val replWithUnderscoreRegex = allowDotDash ?
+      ReplSpecialsWithUnderscoreKeepDotDashRegex | ReplSpecialsWithUnderscoreRegex
+
+    import com.debiki.core.Validation.UsernameBadCharsRegex
+
     // Replace punctuation with '_'. [UNPUNCT]
     // The example string becomes: (note: drops trailing '_')
     //  "This_is_a_funky_String_2dot_2dash_2underscore_arabiczzzzzzz_chinesezz_zz"
-    val usernameOkChars = usernameAscii
-      .replaceAll("[\t\n\r _~.–,—/\\\\+-]+", "_")  // the two first – and — are: en and em dashes.
-      .replaceAll("[^a-zA-Z0-9_]", "")
+    val usernameOkCharsNotTrimmed =
+      UsernameBadCharsRegex.replaceAllIn(
+        replWithUnderscoreRegex.replaceAllIn(
+          usernameAscii, "_"), "")
+
+    val usernameOkChars = usernameOkCharsNotTrimmed
       .dropWhile(!charIsAzOrNum(_))      // drops anything but  a-z  A-Z  0-9, for now. [UNPUNCT]
       .dropRightWhile(!charIsAzOrNum(_)) //
 
@@ -564,6 +582,10 @@ case class Member(
 
   override def isApprovedOrStaff: Boolean = isApproved.contains(true) || isStaff
 
+  def isStaffOrMinTrustNotThreat(trustLevel: TrustLevel): Boolean =  // dupl code [5WKABY0]
+    isStaff || (
+      effectiveTrustLevel.toInt >= trustLevel.toInt && !effectiveThreatLevel.isThreat)
+
   override def canPromoteToBasicMember: Boolean =
     // If trust level locked, promoting the this.trustLevel has no effect — but we'll still
     // do it, so we know what it would have been, had it not been locked.
@@ -691,9 +713,9 @@ case class MemberInclDetails(
   def effectiveTrustLevel: TrustLevel = lockedTrustLevel getOrElse trustLevel
   def effectiveThreatLevel: ThreatLevel = lockedThreatLevel getOrElse threatLevel
 
-  def isTrustedNotThreat: Boolean  =
-    effectiveTrustLevel.toInt >= TrustLevel.TrustedMember.toInt &&
-    effectiveThreatLevel.toInt <= ThreatLevel.HopefullySafe.toInt  // [5WKABY0]
+  def isStaffOrMinTrustNotThreat(trustLevel: TrustLevel): Boolean =  // dupl code [5WKABY0]
+    isStaff || (
+      effectiveTrustLevel.toInt >= trustLevel.toInt && !effectiveThreatLevel.isThreat)
 
   def usernameLowercase: String = username.toLowerCase
   //def canonicalUsername: String = User.makeUsernameCanonical(username)  // [CANONUN]

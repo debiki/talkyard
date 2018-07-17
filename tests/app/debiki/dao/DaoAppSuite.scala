@@ -251,23 +251,31 @@ class DaoAppSuite(
   }
 
 
-  def reply(memberId: UserId, pageId: PageId, text: String, parentNr: Option[PostNr] = None)(
-        dao: SiteDao): Post = {
-    dao.insertReply(textAndHtmlMaker.testBody(text), pageId,
+  def reply(memberId: UserId, pageId: PageId, text: String, parentNr: Option[PostNr] = None,
+        skipNashorn: Boolean = true)(dao: SiteDao): Post = {
+    val textAndHtml =
+      if (skipNashorn) textAndHtmlMaker.testBody(text)
+      else textAndHtmlMaker.forBodyOrComment(text)
+    dao.insertReply(textAndHtml, pageId,
       replyToPostNrs = Set(parentNr getOrElse PageParts.BodyNr), PostType.Normal,
       Who(memberId, browserIdData), dummySpamRelReqStuff).post
   }
 
 
-  def chat(memberId: UserId, pageId: PageId, text: String)(dao: SiteDao): Post = {
-    dao.insertChatMessage(textAndHtmlMaker.testBody(text), pageId,
-      Who(memberId, browserIdData), dummySpamRelReqStuff).post
+  def chat(memberId: UserId, pageId: PageId, text: String, skipNashorn: Boolean = true)(dao: SiteDao): Post = {
+    val textAndHtml =
+      if (skipNashorn) textAndHtmlMaker.testBody(text)
+      else textAndHtmlMaker.forBodyOrComment(text)
+    dao.insertChatMessage(textAndHtml, pageId, Who(memberId, browserIdData), dummySpamRelReqStuff).post
   }
 
 
-  def edit(post: Post, editorId: UserId, newText: String)(dao: SiteDao) {
+  def edit(post: Post, editorId: UserId, newText: String, skipNashorn: Boolean = true)(dao: SiteDao) {
+    val textAndHtml =
+      if (skipNashorn) textAndHtmlMaker.testBody(newText)
+      else textAndHtmlMaker.forBodyOrComment(newText)
     dao.editPostIfAuth(post.pageId, post.nr, Who(editorId, browserIdData), dummySpamRelReqStuff,
-        textAndHtmlMaker.testBody(newText))
+        textAndHtml)
   }
 
 

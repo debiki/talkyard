@@ -36,6 +36,8 @@ sealed trait TextAndHtml {
 
   def safeHtml: String
 
+  def usernameMentions: Set[String]
+
   def links: immutable.Seq[String]
 
   /** Domain names used in links. Check against a domain block list.
@@ -78,6 +80,7 @@ class TextAndHtmlMaker(pubSiteId: PublSiteId, nashorn: Nashorn) {
   private class TextAndHtmlImpl(
     val text: String,
     val safeHtml: String,
+    val usernameMentions: Set[String],
     val links: immutable.Seq[String],
     val linkDomains: immutable.Set[String],
     val linkAddresses: immutable.Seq[String],
@@ -96,6 +99,7 @@ class TextAndHtmlMaker(pubSiteId: PublSiteId, nashorn: Nashorn) {
       new TextAndHtmlImpl(
         text + "\n" + more.text,
         safeHtml + "\n" + more.safeHtml,
+        usernameMentions = usernameMentions ++ more.usernameMentions,
         (links.toSet ++ more.links.toSet).to[immutable.Seq],
         linkDomains ++ more.linkDomains,
         (linkAddresses.toSet ++ more.linkAddresses.toSet).to[immutable.Seq],
@@ -109,6 +113,9 @@ class TextAndHtmlMaker(pubSiteId: PublSiteId, nashorn: Nashorn) {
   def withCompletedFormData(formInputs: String): TextAndHtml Or ErrorMessage = {
     CompletedFormRenderer.renderJsonToSafeHtml(formInputs) map { htmlString =>
       new TextAndHtmlImpl(text = formInputs.toString, safeHtml = htmlString,
+          // Don't let people @mention anyone when submitting forms?  (5LKATS0)
+          // @mentions are only for members who post comments & topics to each other, right.
+          usernameMentions = Set.empty,
           Nil, Set.empty, Nil, false, false, false)
     }
   }
@@ -117,6 +124,7 @@ class TextAndHtmlMaker(pubSiteId: PublSiteId, nashorn: Nashorn) {
   def withCompletedFormData(formInputs: JsArray): TextAndHtml Or ErrorMessage = {
     CompletedFormRenderer.renderJsonToSafeHtml(formInputs) map { htmlString =>
       new TextAndHtmlImpl(text = formInputs.toString, safeHtml = htmlString,
+          usernameMentions = Set.empty, // (5LKATS0)
           Nil, Set.empty, Nil, false, false, false)
     }
   }
@@ -144,15 +152,16 @@ class TextAndHtmlMaker(pubSiteId: PublSiteId, nashorn: Nashorn) {
     TESTS_MISSING
     if (isTitle) {
       val safeHtml = nashorn.sanitizeHtml(text, followLinks = false)
-      new TextAndHtmlImpl(text, safeHtml, links = Nil, linkDomains = Set.empty,
+      new TextAndHtmlImpl(text, safeHtml, links = Nil, usernameMentions = Set.empty,
+        linkDomains = Set.empty,
         linkAddresses = Nil, isTitle = true, followLinks = followLinks,
         allowClassIdDataAttrs = allowClassIdDataAttrs)
     }
     else {
-      val safeHtml = nashorn.renderAndSanitizeCommonMark(
+      val renderResult = nashorn.renderAndSanitizeCommonMark(
         text, pubSiteId = pubSiteId,
         allowClassIdDataAttrs = allowClassIdDataAttrs, followLinks = followLinks)
-      val links = findLinks(safeHtml)
+      val links = findLinks(renderResult.safeHtml)
       var linkDomains = Set[String]()
       var linkAddresses = Vector[String]()
       links foreach { link =>
@@ -181,7 +190,8 @@ class TextAndHtmlMaker(pubSiteId: PublSiteId, nashorn: Nashorn) {
             // ignore, the href isn't a valid link, it seems
         }
       }
-      new TextAndHtmlImpl(text, safeHtml, links = links, linkDomains = linkDomains,
+      new TextAndHtmlImpl(text, renderResult.safeHtml, usernameMentions = renderResult.mentions,
+        links = links, linkDomains = linkDomains,
         linkAddresses = linkAddresses, isTitle = false, followLinks = followLinks,
         allowClassIdDataAttrs = allowClassIdDataAttrs)
     }
@@ -194,8 +204,8 @@ class TextAndHtmlMaker(pubSiteId: PublSiteId, nashorn: Nashorn) {
     */
   def test(text: String, isTitle: Boolean): TextAndHtml = {
     dieIf(Globals.isProd, "EsE7GPM2")
-    new TextAndHtmlImpl(text, text, links = Nil, linkDomains = Set.empty,
-      linkAddresses = Nil, isTitle = isTitle, followLinks = false,
+    new TextAndHtmlImpl(text, text, links = Nil, usernameMentions = Set.empty,
+      linkDomains = Set.empty, linkAddresses = Nil, isTitle = isTitle, followLinks = false,
       allowClassIdDataAttrs = false)
   }
 
@@ -203,7 +213,8 @@ class TextAndHtmlMaker(pubSiteId: PublSiteId, nashorn: Nashorn) {
   def testBody(text: String): TextAndHtml = test(text, isTitle = false)
 
   def wrapInParagraph(text: String, isTitle: Boolean): TextAndHtml = {
-    new TextAndHtmlImpl(text, s"<p>$text</p>", links = Nil, linkDomains = Set.empty,
+    new TextAndHtmlImpl(text, s"<p>$text</p>", usernameMentions = Set.empty,
+      links = Nil, linkDomains = Set.empty,
       linkAddresses = Nil, isTitle = isTitle, followLinks = false,
       allowClassIdDataAttrs = false)
   }

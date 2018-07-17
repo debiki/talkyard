@@ -79,7 +79,10 @@ describe("user profile access:", () => {
     mariasBrowser.serverErrorDialog.close();
   });
 
-  // Comment out? Add back later, when: [CANONUN]
+  /* Comment out? Add back later, when: [CANONUN]  and 'michael' –> 'michael.lastname',
+       & Maria changes to 'michael-lastname', 'michael_lastname' and 'michaellastname'  — not allowed.
+       but micha_ellastname = ok.
+
   // ------ Underscore ignored, when checking if already taken
 
   it("She changes to Mic_hael, but still not available", () => {
@@ -93,7 +96,7 @@ describe("user profile access:", () => {
   it("... results in an error, because '_' is ignored, when comparing names", () => {
     mariasBrowser.serverErrorDialog.waitAndAssertTextMatches('EdE5D0Y29_');
     mariasBrowser.serverErrorDialog.close();
-  });
+  }); */
 
 
   // ------ Can change username

@@ -53,21 +53,24 @@ class ValidationTest extends FreeSpec with MustMatchers {
     }
 
     "reject non-ASCII characters" in {
-      Validation.checkUsername("månsson").swap.get mustBe Validation.BadCharsErrorMessage
-      Validation.checkUsername("arabicالعربيةtext").swap.get mustBe Validation.BadCharsErrorMessage
-      Validation.checkUsername("chinese汉语chars").swap.get mustBe Validation.BadCharsErrorMessage
+      Validation.checkUsername("månsson").swap.get mustBe Validation.badCharsErrorMessage("å")
+      Validation.checkUsername("arabicالعربيةtext").swap.get must include(Validation.badCharsErrorMessage(""))
+      Validation.checkUsername("chinese汉语chars").swap.get must include(Validation.badCharsErrorMessage(""))
     }
 
     "reject usernames with weird chars" in {
       Validation.checkUsername("!?!").isBad mustBe true
       Validation.checkUsername("bryan!hi").isBad mustBe true
-      Validation.checkUsername("bryan!hi").swap.get mustBe Validation.BadCharsErrorMessage
-      Validation.checkUsername("space cat").swap.get mustBe Validation.BadCharsErrorMessage
-      Validation.checkUsername("tilde~cat").swap.get mustBe Validation.BadCharsErrorMessage
-      // Because of [UNPUNCT], currently won't allow [.-]. Later on, [.-] yes probably.
-      Validation.checkUsername("dotty.cat").swap.get mustBe Validation.BadCharsErrorMessage
-      Validation.checkUsername("flashy-dash").swap.get mustBe Validation.BadCharsErrorMessage
-      Validation.checkUsername("plussy+pushy").swap.get mustBe Validation.BadCharsErrorMessage
+      Validation.checkUsername("bryan!hi").swap.get mustBe Validation.badCharsErrorMessage("!")
+      Validation.checkUsername("space cat").swap.get mustBe Validation.badCharsErrorMessage(" ")
+      Validation.checkUsername("tilde~cat").swap.get mustBe Validation.badCharsErrorMessage("~")
+      Validation.checkUsername("plussy+pushy").swap.get mustBe Validation.badCharsErrorMessage("+")
+    }
+
+    "but dots and dashes are okay" in {
+      Validation.checkUsername("dotty.cat").isGood mustBe true
+      Validation.checkUsername("flashy-dash").isGood mustBe true
+      Validation.checkUsername("so.do.ty-flash-fa-st").isGood mustBe true
     }
 
     "reject usernames that start with bad first char" in {

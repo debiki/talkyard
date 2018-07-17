@@ -27,6 +27,8 @@ import play.api.Play
 import scala.concurrent.Future
 import scala.util.Try
 import Nashorn._
+import jdk.nashorn.api.scripting.ScriptObjectMirror
+import scala.collection.mutable.ArrayBuffer
 
 
 // COULD move elsewhere. Placed here only because the pwd strength function is
@@ -40,6 +42,9 @@ case class PasswordStrength(
   /** zxcvbn score 4 is the highest score, see https://github.com/dropbox/zxcvbn. */
   //def isStrongEnough = score >= 4
 }
+
+
+case class RenderCommonmarkResult(safeHtml: String, mentions: Set[String])
 
 
 /**
@@ -212,9 +217,9 @@ class Nashorn(globals: Globals) {
 
 
   def renderAndSanitizeCommonMark(commonMarkSource: String, pubSiteId: PublSiteId,
-        allowClassIdDataAttrs: Boolean, followLinks: Boolean): String = {
+        allowClassIdDataAttrs: Boolean, followLinks: Boolean): RenderCommonmarkResult = {
     if (isTestSoDisableScripts)
-      return "Scripts disabled [EsM5GY52]"
+      return RenderCommonmarkResult("Scripts disabled [EsM5GY52]", Set.empty)
 
     // Won't work in embedded comments pages, if there's no cdn? because then no origin
     // included —> the embedd*ing* server's address used instead, but that's the wrong server.
@@ -224,22 +229,50 @@ class Nashorn(globals: Globals) {
     val uploadsUrlPrefix = cdnOrigin.getOrElse("") + ed.server.UploadsUrlBasePath + pubSiteId + '/'
     val oneboxRenderer = new InstantOneboxRendererForNashorn(oneboxes getOrDie "EdE2WUHP6")
 
-    val resultNoOneboxes = withJavascriptEngine(engine => {
+    val (safeHtmlNoOneboxes, mentions) = withJavascriptEngine(engine => {
       // The onebox renderer needs a Javascript engine to sanitize html (via Caja JsHtmlSanitizer)
       // and we'll reuse `engine` so we won't have to create any additional engine.
       oneboxRenderer.javascriptEngine = Some(engine)
-      val safeHtml = engine.invokeFunction("renderAndSanitizeCommonMark", commonMarkSource,
+      val resultObj: Object = engine.invokeFunction("renderAndSanitizeCommonMark", commonMarkSource,
           true.asInstanceOf[Object], // allowClassIdDataAttrs.asInstanceOf[Object],
           followLinks.asInstanceOf[Object],
           oneboxRenderer, uploadsUrlPrefix)
       oneboxRenderer.javascriptEngine = None
-      safeHtml.asInstanceOf[String]
+
+      dieIf(!resultObj.isInstanceOf[ScriptObjectMirror],
+          "TyERCMR01", s"Bad class: ${classNameOf(resultObj)}")
+      val result = resultObj.asInstanceOf[ScriptObjectMirror]
+
+      dieIf(!result.isArray, "TyERCMR02", "Not an array")
+      dieIf(!result.hasSlot(0), "TyERCMR03A", "No slot 0")
+      dieIf(!result.hasSlot(1), "TyERCMR03B", "No slot 1")
+      dieIf(result.hasSlot(2), "TyERCMR03C", "Has slot 2")
+
+      val elem0 = result.getSlot(0)
+      dieIf(!elem0.isInstanceOf[String], "TyERCMR04", s"Bad safeHtml class: ${classNameOf(elem0)}")
+      val safeHtml = elem0.asInstanceOf[String]
+
+      val elem1 = result.getSlot(1)
+      dieIf(!elem1.isInstanceOf[ScriptObjectMirror],
+          "TyERCMR05", s"Bad mentionsArray class: ${classNameOf(elem1)}")
+      val mentionsArrayMirror = elem1.asInstanceOf[ScriptObjectMirror]
+
+      val mentions = ArrayBuffer[String]()
+      var nextSlotIx = 0
+      while (mentionsArrayMirror.hasSlot(nextSlotIx)) {
+        val elem = mentionsArrayMirror.getSlot(nextSlotIx)
+        dieIf(!elem.isInstanceOf[String], "TyERCMR06", s"Bad mention class: ${classNameOf(elem)}")
+        mentions.append(elem.asInstanceOf[String])
+        nextSlotIx += 1
+      }
+
+      (safeHtml, mentions.toSet)
     })
 
     // Before commenting in: Make all render functions async so we won't block when downloading.
     //oneboxRenderer.waitForDownloadsToFinish()
-    val resultWithOneboxes = oneboxRenderer.replacePlaceholders(resultNoOneboxes)
-    resultWithOneboxes
+    val safeHtmlWithOneboxes = oneboxRenderer.replacePlaceholders(safeHtmlNoOneboxes)
+    RenderCommonmarkResult(safeHtmlWithOneboxes, mentions)
   }
 
 
@@ -510,7 +543,7 @@ class Nashorn(globals: Globals) {
     val javascriptStream = getClass.getResourceAsStream(path)
     if (javascriptStream eq null) {
       if (isTranslation) {
-        val message = s"Language file not found: $path, 'gulp buildTranslations' not run or isn't done?"
+        val message = s"Language file not found: $path, 'gulp minifyTranslations' not run or isn't done?"
         logger.error(message + " [TyE47UKDW2]")
         throw new DebikiException("TyE47UKDW3", message)
       }
@@ -573,14 +606,17 @@ object Nashorn {
     |    theStore = null; // Fail fast. Don't use here, might not have been inited.
     |    eds.uploadsUrlPrefixCommonmark = uploadsUrlPrefixCommonmark;  // [7AKBQ2]
     |    debiki.internal.oneboxMarkdownItPlugin.instantRenderer = instantOneboxRenderer;
+    |    debiki.mentionsServerHelp = [];
     |    var unsafeHtml = md.render(source);
+    |    var mentionsThisTime = debiki.mentionsServerHelp;
+    |    delete debiki.mentionsServerHelp;
     |    var allowClassAndIdAttr = allowClassIdDataAttrs;
     |    var allowDataAttr = allowClassIdDataAttrs;
     |    var html = googleCajaSanitizeHtml(unsafeHtml, allowClassAndIdAttr, allowDataAttr, followLinks);
     |    // Simplify detection of incorrectly using these without initialzing again:
     |    eds.uploadsUrlPrefixCommonmark = 'TyE4GKFWB0';
     |    debiki.internal.oneboxMarkdownItPlugin.instantRenderer = 'TyE56JKW20';
-    |    return html;
+    |    return [html, mentionsThisTime];
     |  }
     |  catch (e) {
     |    console.error("Error in renderAndSanitizeCommonMark: [TyERNDRCM02]");

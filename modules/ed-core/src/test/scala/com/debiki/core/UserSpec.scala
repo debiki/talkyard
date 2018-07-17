@@ -64,79 +64,88 @@ class UserSpec extends FreeSpec with MustMatchers {
     }*/
 
     "derive usernames from email addresses" - {
-      val derive = User.makeOkayUsername _
+      def derive(text: String ) =
+        User.makeOkayUsername(text, allowDotDash = false, _ => false)
 
       "simple cases" in {
-        derive("abcd", _ => false).get mustBe "abcd"
-        derive("abc", _ => false).get mustBe "abc"
+        derive("abcd").get mustBe "abcd"
+        derive("abc").get mustBe "abc"
       }
 
       "pad with digits if too short" in {
         User.MinUsernameLength mustBe 3
-        derive("ab", _ => false).get mustBe "ab2"
-        derive("a", _ => false).get mustBe "a23"
+        derive("ab").get mustBe "ab2"
+        derive("a").get mustBe "a23"
+        derive("") mustBe None
       }
 
       "prefixes with 'n' if is digits-only" in {
-        derive("1234", _ => false).get mustBe "n1234"
-        derive("9", _ => false).get mustBe "n92"   // also right pads with digits 23456... up to min len
-        derive("89", _ => false).get mustBe "n89"
-        derive("22x33", _ => false).get mustBe "22x33"
-        derive("x2233", _ => false).get mustBe "x2233"
-        derive("2233x", _ => false).get mustBe "2233x"
-        derive("2233", _ => false).get mustBe "n2233"
+        derive("1234").get mustBe "n1234"
+        derive("9").get mustBe "n92"   // also right pads with digits 23456... up to min len
+        derive("89").get mustBe "n89"
+        derive("22x33").get mustBe "22x33"
+        derive("x2233").get mustBe "x2233"
+        derive("2233x").get mustBe "2233x"
+        derive("2233").get mustBe "n2233"
       }
 
       "drop chars if too long" in {
-        val result = derive("a234567890a234567890a23", _ => false).get
+        val result = derive("a234567890a234567890a23").get
         result mustBe "a234567890a234567890"
         result.length mustBe User.MaxUsernameLength
       }
 
       "prefixes with 'z' before trims to length" in {
-        val result = derive("12345678901234567890123", _ => false).get
+        val result = derive("12345678901234567890123").get
         result mustBe "n1234567890123456789"
         result.length mustBe User.MaxUsernameLength
       }
 
       "UPPERcase is okay" in {
-        derive("ABC", _ => false).get mustBe "ABC"
-        derive("AAbbCC", _ => false).get mustBe "AAbbCC"
-        derive("A_b_C", _ => false).get mustBe "A_b_C"
+        derive("ABC").get mustBe "ABC"
+        derive("AAbbCC").get mustBe "AAbbCC"
+        derive("A_b_C").get mustBe "A_b_C"
       }
 
       "remove diacritics: e.g. éåäö —> eaao" in {
-        derive("éåäö", _ => false).get mustBe "eaao"
-        derive("fůňķŷ_Šťŕĭńġ", _ => false).get mustBe "funky_String"
+        derive("éåäö").get mustBe "eaao"
+        derive("fůňķŷ_Šťŕĭńġ").get mustBe "funky_String"
       }
 
       "replace Unicode chars with z, e.g. Arabic and Chinese" in {
-        derive("arabicالعربية done", _ => false).get mustBe "arabiczzzzzzz_done"
-        derive("chinese汉语done", _ => false).get mustBe "chinesezzdone"
-        derive("العربية 汉语", _ => false).get mustBe "zzzzzzz_zz"
+        derive("arabicالعربية done").get mustBe "arabiczzzzzzz_done"
+        derive("chinese汉语done").get mustBe "chinesezzdone"
+        derive("العربية 汉语").get mustBe "zzzzzzz_zz"
       }
 
       "replace dots and dashes etc with _ underscore" in {
-        derive("dot.dash-done", _ => false).get mustBe "dot_dash_done"
-        derive("space plus+done", _ => false).get mustBe "space_plus_done"
+        derive("dot.dash-done").get mustBe "dot_dash_done"
+        derive("space plus+done").get mustBe "space_plus_done"
+      }
+
+      "allows dots and dashes, if told" in {
+        User.makeOkayUsername("dot.ty", allowDotDash = true, _ => false).get mustBe "dot.ty"
+        User.makeOkayUsername("das-hy", allowDotDash = true, _ => false).get mustBe "das-hy"
+        User.makeOkayUsername("d.o.t-d-a-sh", allowDotDash = true, _ => false
+            ).get mustBe "d.o.t-d-a-sh"
       }
 
       "trim underscores" in {
-        derive("aa_bb___", _ => false).get mustBe "aa_bb"
-        derive("__aa_bb", _ => false).get mustBe "aa_bb"
-        derive("__aa_bb___", _ => false).get mustBe "aa_bb"
-        derive("+aa+bb+", _ => false).get mustBe "aa_bb"
+        derive("aa_bb___").get mustBe "aa_bb"
+        derive("__aa_bb").get mustBe "aa_bb"
+        derive("__aa_bb___").get mustBe "aa_bb"
+        derive("+aa+bb+").get mustBe "aa_bb"
       }
 
       "combine adjacent underscores" in {
-        derive("aa___b___c", _ => false).get mustBe "aa_b_c"
-        derive("++aa  + b - + . c_+--", _ => false).get mustBe "aa_b_c"
+        derive("aa___b___c").get mustBe "aa_b_c"
+        derive("++aa  + b - + . c_+--").get mustBe "aa_b_c"
       }
 
       "all at once" in {
         derive(
-          "Tĥïŝ ĩš â fůňķŷ Šťŕĭńġ 2dot..2dash--2underscore__ arabic:العربية chinese:汉语 漢語 !?#+,*",
-          _ => false).get mustBe (
+          "Tĥïŝ ĩš â fůňķŷ Šťŕĭńġ 2dot..2dash--2underscore__ arabic:العربية chinese:汉语 漢語 !?#+,*"
+          ).get mustBe (
             "This_is_a_funky_String_2dot_2dash_2underscore_arabiczzzzzzz_chinesezz_zz"
                 take User.MaxUsernameLength)
       }
@@ -144,7 +153,7 @@ class UserSpec extends FreeSpec with MustMatchers {
       def deriveFailN(username: String, failNumTimes: Int): Option[String] = {
         var i = 0
         def isInUse = (dummy: String) => { i += 1 ; i <= failNumTimes }
-        derive(username, isInUse)
+        User.makeOkayUsername(username, allowDotDash = false, isInUse)
       }
 
       "tries again if username taken" in {

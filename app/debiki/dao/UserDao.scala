@@ -95,7 +95,9 @@ trait UserDao {
       val emailAddrBeforeAt = invite.emailAddress.split("@").headOption.getOrDie(
         "TyE500IIEA5", "Invalid invite email address")
 
-      val username = User.makeOkayUsername(emailAddrBeforeAt, tx.isUsernameInUse) getOrElse {
+      // Wait with allowing [.-] until canonical usernames implemented. [CANONUN]
+      val username = User.makeOkayUsername(
+          emailAddrBeforeAt, allowDotDash = false, tx.isUsernameInUse) getOrElse {
         // This means couldn't generate a username. That'd be impossibly bad luck, since we
         // try with random numbers of size up to 10^19 many times.
         throwBadRequest("TyEBADLUCK", o"""Couldn't generate a unique username. Reload the page
@@ -1196,7 +1198,7 @@ trait UserDao {
       // Perhaps there's some security problem that would results in a non-trusted user
       // getting an email about each and every new post. So, for now:  [4WKAB02]
       SECURITY // (Later, do some security review, add more tests, and remove this restriction.)
-      if (preferences.emailForEveryNewPost && !user.isTrustedNotThreat)
+      if (preferences.emailForEveryNewPost && !user.isStaffOrMinTrustNotThreat(TrustLevel.TrustedMember))
         throwForbidden("EsE7YKF24", o"""Currently only trusted non-threat members may be notified about
           every new post""")
 

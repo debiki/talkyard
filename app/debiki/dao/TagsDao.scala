@@ -67,11 +67,11 @@ trait TagsDao {
       throwForbidden("EsE4GE8I2", s"Bad tag label: '$badLabel'")
     }
 
-    val (post, notifications, postAuthor) = readWriteTransaction { transaction =>
-      val me = transaction.loadTheUser(who.id)
-      val pageMeta = transaction.loadThePageMeta(pageId)
-      val post = transaction.loadThePost(postId)
-      val postAuthor = transaction.loadTheUser(post.createdById)
+    val (post, notifications, postAuthor) = readWriteTransaction { tx =>
+      val me = tx.loadTheUser(who.id)
+      val pageMeta = tx.loadThePageMeta(pageId)
+      val post = tx.loadThePost(postId)
+      val postAuthor = tx.loadTheUser(post.createdById)
 
       throwForbiddenIf(post.nr == PageParts.TitleNr, "EsE5JK8S4", "Cannot tag page titles")
 
@@ -82,7 +82,7 @@ trait TagsDao {
         "EsE4GKU02", o"""Wrong page id: Post $postId is located on page ${post.pageId},
             not page $pageId — perhaps it was just moved""")
 
-      val oldTags: Set[Tag] = transaction.loadTagsForPost(post.id)
+      val oldTags: Set[Tag] = tx.loadTagsForPost(post.id)
 
       val tagsToAdd = tags -- oldTags
       val tagsToRemove = oldTags -- tags
@@ -90,14 +90,14 @@ trait TagsDao {
       COULD_OPTIMIZE // return immediately if tagsToAdd.isEmpty and tagsToRemove.isEmpty.
       // (so won't reindex post)
 
-      transaction.addTagsToPost(tagsToAdd, postId, isPage = post.isOrigPost)
-      transaction.removeTagsFromPost(tagsToRemove, postId)
-      transaction.indexPostsSoon(post)
-      transaction.updatePageMeta(pageMeta.copyWithNewVersion, oldMeta = pageMeta,
+      tx.addTagsToPost(tagsToAdd, postId, isPage = post.isOrigPost)
+      tx.removeTagsFromPost(tagsToRemove, postId)
+      tx.indexPostsSoon(post)
+      tx.updatePageMeta(pageMeta.copyWithNewVersion, oldMeta = pageMeta,
           markSectionPageStale = false)
 
-      val notifications = NotificationGenerator(transaction).generateForTags(post, tagsToAdd)
-      transaction.saveDeleteNotifications(notifications)
+      val notifications = NotificationGenerator(tx, context.nashorn).generateForTags(post, tagsToAdd)
+      tx.saveDeleteNotifications(notifications)
 
       (post, notifications, postAuthor)
     }

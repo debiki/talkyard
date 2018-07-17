@@ -47,7 +47,7 @@ function MentionsMarkdownItPlugin() {
   // [.-] are allowed inside the username only (not as first or last chars). [UNPUNCT] [UNAMECHARS]
   // None of [_.-] allowed as last char.  Currently min length is 3, but later
   // there'll be a site config value that lets one change to 2? So allow 2 here.
-  plugin.mentionsRegex = /^@[a-zA-Z0-9_][a-zA-Z0-9_.-]*[a-zA-Z0-9]/;
+  plugin.mentionsRegex = /^@[a-zA-Z0-9_][a-zA-Z0-9_.-]*[a-zA-Z0-9]/;   // [4LKBG782]
   plugin.whitespaceRegex = /\s/;
   plugin.id = 'MentionsMarkdownItPlugin';
   return plugin;
@@ -93,6 +93,12 @@ MentionsMarkdownItPlugin.prototype.render = function(tokens, id, options, env) {
   // The username is [a-zA-Z_0-9] so we don't need to escape it. And besides we sanitize
   // everything later on anyway.
   var username = tokens[id].username;
+
+  // Make @mentions found available server side.
+  if (debiki.mentionsServerHelp) {
+    debiki.mentionsServerHelp.push(username);
+  }
+
   // In embedded comments discussions, the /-/users/ local links would resolve to
   // https://the.EMBEDDING.site/-/users/ — so in hack.ts [6JKD2A] they're changed
   // to point to the Talkyard server instead. (Also see: [EMBCMTSORIG])
