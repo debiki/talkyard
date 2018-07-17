@@ -17,8 +17,8 @@ declare var browserB: any;
 let forum: LargeTestForum;
 
 let everyonesBrowsers;
-let staffsBrowser;
-let othersBrowser;
+let richBrowserA;
+let richBrowserB;
 let owen: Member;
 let owensBrowser;
 let mons: Member;
@@ -65,27 +65,27 @@ describe("some-e2e-test [TyT1234ABC]", () => {
 
   it("initialize people", () => {
     everyonesBrowsers = _.assign(browser, pagesFor(browser));
-    staffsBrowser = _.assign(browserA, pagesFor(browserA));
-    othersBrowser = _.assign(browserB, pagesFor(browserB));
+    richBrowserA = _.assign(browserA, pagesFor(browserA));
+    richBrowserB = _.assign(browserB, pagesFor(browserB));
 
     owen = forum.members.owen;
-    owensBrowser = staffsBrowser;
+    owensBrowser = richBrowserA;
     mons = forum.members.mons;
-    monsBrowser = staffsBrowser;
+    monsBrowser = richBrowserA;
     modya = forum.members.modya;
-    modyasBrowser = staffsBrowser;
+    modyasBrowser = richBrowserA;
     corax = forum.members.corax;
-    coraxBrowser = staffsBrowser;
+    coraxBrowser = richBrowserA;
 
     regina = forum.members.regina;
-    reginasBrowser = othersBrowser;
+    reginasBrowser = richBrowserB;
     maria = forum.members.maria;
-    mariasBrowser = othersBrowser;
+    mariasBrowser = richBrowserB;
     michael = forum.members.michael;
-    michaelsBrowser = othersBrowser;
+    michaelsBrowser = richBrowserB;
     mallory = forum.members.mallory;
-    mallorysBrowser = othersBrowser;
-    strangersBrowser = othersBrowser;
+    mallorysBrowser = richBrowserB;
+    strangersBrowser = richBrowserB;
   });
 
   it("Owen logs in to admin area, ... ", () => {

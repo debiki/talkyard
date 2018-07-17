@@ -11,6 +11,8 @@ import logAndDie = require('../utils/log-and-die');
 import c = require('../test-constants');
 
 declare const browser: any;
+declare var browserA: any;
+declare var browserB: any;
 
 const everyoneGroup: GroupInclDetails = {
   id: c.EveryoneId,
@@ -21,7 +23,9 @@ const everyoneGroup: GroupInclDetails = {
   summaryEmailIfActive: true,
 };
 
-let everyonesBrowsers;
+let richBrowserA;
+let richBrowserB;
+
 let owen;
 let owensBrowser;
 let trillian;
@@ -54,17 +58,24 @@ const trilliansEditedOpReplyMentionsMons = "trilliansEditedOpReplyMentionsMons @
 const trilliansTopicTitle = "trilliansTopicTitle";
 const trilliansTopicBody = "trilliansTopicBody mentions @maria and @maja";
 
-describe("email notfs discs", () => {
+const majasNewTopicTitleOne = 'majasNewTopicTitleOne';
+const majasNewTopicBodyOne = 'majasNewTopicBodyOne';
+const majasNewTopicTitleTwo = 'majasNewTopicTitleTwo';
+const majasNewTopicBodyTwo = 'majasNewTopicBodyTwo';
+
+
+describe("email notfs discs TyT4FKA2EQ02", () => {
 
   it("initialize people", () => {
-    everyonesBrowsers = _.assign(browser, pagesFor(browser));
-    owensBrowser = everyonesBrowsers;
-    modyasBrowser = owensBrowser;
-    monsBrowser = owensBrowser;
-    majasBrowser = owensBrowser;
-    mariasBrowser = owensBrowser;
-    michaelsBrowser = owensBrowser;
-    trilliansBrowser = owensBrowser;
+    richBrowserA = _.assign(browserA, pagesFor(browserA));
+    richBrowserB = _.assign(browserB, pagesFor(browserB));
+    owensBrowser = richBrowserA;
+    modyasBrowser = richBrowserA;
+    monsBrowser = richBrowserA;
+    majasBrowser = richBrowserA;
+    mariasBrowser = richBrowserA;
+    michaelsBrowser = richBrowserA;
+    trilliansBrowser = richBrowserB;
 
     owen = make.memberOwenOwner();
     modya = make.memberModeratorModya();
@@ -102,6 +113,7 @@ describe("email notfs discs", () => {
   it("Maja logs in", () => {
     majasBrowser.go(mariasTopicUrl);
     majasBrowser.complex.loginWithPasswordViaTopbar(maja);
+    majasBrowser.disableRateLimits();
   });
 
   it("... and replies to Maria's topic", () => {
@@ -118,14 +130,11 @@ describe("email notfs discs", () => {
         siteId, maria.emailAddress, [mariasTopicTitle, majasOpReply], browser);
   });
 
-  it("Maja logs out", () => {
-    majasBrowser.topbar.clickLogout();
-  });
-
 
   // ------- Direct replies
 
   it("Trillian replies to Maja's reply", () => {
+    trilliansBrowser.go(mariasTopicUrl);
     trilliansBrowser.complex.loginWithPasswordViaTopbar(trillian);
     trilliansBrowser.complex.replyToPostNr(2, trilliansReplyToMaja);
   });
@@ -174,7 +183,7 @@ describe("email notfs discs", () => {
   });
 
 
-  // ------- Mentions: Edit a mention, add @username
+  // ------- Mentions: Edit a mention, add @username  TyT2WREG78
 
   it("Mons hasn't gotten any emails", () => {
     const numEmails = server.countLastEmailsSentTo(siteId, mons.emailAddress);
@@ -210,15 +219,50 @@ describe("email notfs discs", () => {
   });
 
 
-  // ------- Watching everything
+  // ------- Watching everything  TyT2AKBEF05
 
   it("Trillian edits her preferences, so she'll be notified about all new topics", () => {
+    trilliansBrowser.topbar.clickGoToProfile();
+    trilliansBrowser.userProfilePage.goToPreferences();
+    trilliansBrowser.userProfilePage.preferences.setNotfsForEachNewPost(true);
+    trilliansBrowser.userProfilePage.preferences.save();
   });
 
   it("Maja posts a new topic", () => {
+    majasBrowser.topbar.clickHome();
+    majasBrowser.forumTopicList.waitForTopics();
+    majasBrowser.complex.createAndSaveTopic({ title: majasNewTopicTitleOne, body: majasNewTopicBodyOne });
   });
 
   it("Trillian gets notified", () => {
+    server.waitUntilLastEmailMatches(
+        siteId, trillian.emailAddress, [majasNewTopicTitleOne, majasNewTopicBodyOne], browser);
+  });
+
+  it("Trillian cancels notifications about all new topics", () => {
+    trilliansBrowser.userProfilePage.preferences.setNotfsForEachNewPost(false);
+    trilliansBrowser.userProfilePage.preferences.save();
+  });
+
+  it("Maja posts a 2nd new topic", () => {
+    majasBrowser.topbar.clickHome();
+    majasBrowser.forumTopicList.waitForTopics();
+    majasBrowser.complex.createAndSaveTopic({ title: majasNewTopicTitleTwo, body: majasNewTopicBodyTwo });
+  });
+
+  it("... edit it, mentions @maria", () => {
+    majasBrowser.complex.editPageBody("@maria 123 ice cream");
+  });
+
+  it("Maria gets a notf", () => {
+    server.waitUntilLastEmailMatches(
+        siteId, maria.emailAddress, [majasNewTopicTitleTwo, "123 ice cream"], browser);
+  });
+
+  it("But Trillian wasn't notified about this new topic", () => {
+    // The last email is still about Maja's *first* new topic, not her 2nd.
+    assert(server.lastEmailMatches(
+        siteId, trillian.emailAddress, [majasNewTopicTitleOne, majasNewTopicBodyOne], browser));
   });
 
 });

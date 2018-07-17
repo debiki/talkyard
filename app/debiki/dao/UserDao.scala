@@ -1187,13 +1187,17 @@ trait UserDao {
     readWriteTransaction { transaction =>
       val user = transaction.loadTheMemberInclDetails(preferences.userId)
       val me = transaction.loadTheMember(byWho.id)
-      require(me.isStaff || me.id == user.id, "EdE2WK7G4")
 
-      // Perhaps there's some security problem that would results in a non-staff user
-      // getting an email about each and every new post. So, for now:
+      require(me.isStaff || me.id == user.id, "TyE2WK7G4")
+
+      throwForbiddenIf(user.isAdmin && !me.isAdmin,
+          "TyE2WKA75J", "Moderators may not reconfigure preferences for admins")
+
+      // Perhaps there's some security problem that would results in a non-trusted user
+      // getting an email about each and every new post. So, for now:  [4WKAB02]
       SECURITY // (Later, do some security review, add more tests, and remove this restriction.)
-      if (preferences.emailForEveryNewPost && (!user.isStaff || !me.isStaff))
-        throwForbidden("EsE7YKF24", o"""Currently only staff may choose be notified about
+      if (preferences.emailForEveryNewPost && !user.isTrustedNotThreat)
+        throwForbidden("EsE7YKF24", o"""Currently only trusted non-threat members may be notified about
           every new post""")
 
       if (user.fullName != preferences.fullName) {

@@ -216,6 +216,12 @@ editor -
   maximize editor:
   preview:
   upload things:  (7KFC2)
+  @mentions:
+    simple:
+        - email-notfs-discussion.test.ts  TyT4FKA2EQ02
+    edit, add new @username:
+        - email-notfs-discussion.test.ts  TyT2WREG78
+
   other buttons -
     ...
 
@@ -433,6 +439,9 @@ live notifications -
        — just call onerror in the patch?
     Larger patch example: https://codepen.io/mouseroot/pen/GgKezz?editors=1111
 
+email notifications:
+  watching everything:
+    - email-notfs-discussion.2browsers.test.ts  TyT2AKBEF05
 
 # Test by disabling js, browser side?
 server side rendering -

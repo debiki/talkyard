@@ -267,7 +267,7 @@ interface Myself {
   avatarSmallHashPath?: string;
   lockedTrustLevel?: TrustLevel; // currently not set server side, hmm try make consistent [5ZKGJA2]
   trustLevel: TrustLevel;      // inconsistency: named effectiveTrustLevel in MemberInclDetails  [5ZKGJA2]
-  threatLevel: ThreatLevel;
+  threatLevel: ThreatLevel;    // auto or effective? RENAME or repl w isThreat?
   permsOnPages: PermsOnPage[];
 
   numUrgentReviewTasks: number;
@@ -896,9 +896,9 @@ interface MemberInclDetails extends MemberOrGroupInclDetails {
   suspendedReason?: string;
   effectiveTrustLevel: TrustLevel;  // inconsistency: Not used for Myself [5ZKGJA2]
   // Only included if caller is staff:
-  trustLevel?: TrustLevel;
+  trustLevel?: TrustLevel;  // RENAME to autoTrustLevel? so won't use accidenally. Server side too?
   lockedTrustLevel?: TrustLevel;  // not set for Myself [5ZKGJA2]
-  threatLevel?: ThreatLevel;
+  threatLevel?: ThreatLevel;  // RENAME to autoThreatLevel?
   lockedThreatLevel?: ThreatLevel;
   deactivatedAt?: number;
   deletedAt?: number;

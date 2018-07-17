@@ -197,6 +197,7 @@ declare namespace debiki2 {
 
   var isWikiPost;
   var isStaff;
+  function user_isTrustMinNotThreat(me: MemberInclDetails | Myself, trustLevel: TrustLevel): boolean;
   var threatLevel_toString;
   var isGuest;
   var user_isGuest;

@@ -374,7 +374,8 @@ const AboutMember = createComponent({
 
         // Later: + Location
 
-        (isBuiltInUser || !isStaff(me) ? null :  // currently for staff only [EsE7YKF24]
+        // Needs to be >= trusted: [4WKAB02]
+        (isBuiltInUser || !user_isTrustMinNotThreat(me, TrustLevel.Trusted) ? null :
         r.div({ className: 'form-group' },
           r.div({ className: 'checkbox' },
             r.label({},

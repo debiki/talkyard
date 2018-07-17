@@ -827,7 +827,7 @@ function pagesFor(browser) {
       clickHome: function() {
         if (browser.isVisible('.esLegal_home_link')) {
           api.rememberCurrentUrl();
-          browser.click('.esLegal_home_link')
+          browser.click('.esLegal_home_link');
           api.waitForNewUrl();
         }
         else {
@@ -2585,7 +2585,7 @@ function pagesFor(browser) {
         api.waitUntilLoadingOverlayGone();
       },
 
-      goToPreferences: function() {
+      goToPreferences: function() {  // RENAME switchTo and goTo, for tabs, to  tabToNnn ?
         api.userProfilePage.clickGoToPreferences();
       },
 
@@ -2796,6 +2796,10 @@ function pagesFor(browser) {
 
         setSummaryEmailsEnabled: function(enabled: boolean) {
           setCheckbox('#sendSummaryEmails', enabled);
+        },
+
+        setNotfsForEachNewPost: function(enabled: boolean) {
+          setCheckbox('#emailForEveryNewPost', enabled);
         },
 
         save: function() {

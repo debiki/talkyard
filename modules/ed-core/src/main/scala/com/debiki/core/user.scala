@@ -645,9 +645,9 @@ case class MemberInclDetails(
   suspendedTill: Option[ju.Date] = None,
   suspendedById: Option[UserId] = None,
   suspendedReason: Option[String] = None,
-  trustLevel: TrustLevel = TrustLevel.NewMember,
+  trustLevel: TrustLevel = TrustLevel.NewMember,  // RENAME to autoTrustLevel?
   lockedTrustLevel: Option[TrustLevel] = None,
-  threatLevel: ThreatLevel = ThreatLevel.HopefullySafe,
+  threatLevel: ThreatLevel = ThreatLevel.HopefullySafe,  // RENAME to autoThreatLevel?
   lockedThreatLevel: Option[ThreatLevel] = None,
   deactivatedAt: Option[When] = None,
   deletedAt: Option[When] = None) extends MemberOrGroupInclDetails {
@@ -690,6 +690,10 @@ case class MemberInclDetails(
 
   def effectiveTrustLevel: TrustLevel = lockedTrustLevel getOrElse trustLevel
   def effectiveThreatLevel: ThreatLevel = lockedThreatLevel getOrElse threatLevel
+
+  def isTrustedNotThreat: Boolean  =
+    effectiveTrustLevel.toInt >= TrustLevel.TrustedMember.toInt &&
+    effectiveThreatLevel.toInt <= ThreatLevel.HopefullySafe.toInt  // [5WKABY0]
 
   def usernameLowercase: String = username.toLowerCase
   //def canonicalUsername: String = User.makeUsernameCanonical(username)  // [CANONUN]
