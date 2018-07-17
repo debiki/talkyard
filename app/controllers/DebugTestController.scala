@@ -115,6 +115,7 @@ class DebugTestController @Inject()(cc: ControllerComponents, edContext: EdConte
       .append("\napp version: ").append(BuildInfo.version)
       .append("\ngit revision: ").append(BuildInfo.gitRevision)
       .append("\ngit branch: ").append(BuildInfo.gitBranch)
+      //.append("\ngit last commit date: ").append(BuildInfo.gitLastCommitDateUtc)
       .append("\nscala version: ").append(BuildInfo.scalaVersion)
       .append("\nsbt version: ").append(BuildInfo.sbtVersion)
     Ok(infoTextBuilder.toString) as TEXT

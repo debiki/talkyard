@@ -19,7 +19,7 @@ resolvers ++= Seq(
 
 
 // Use the Play sbt plugin for Play projects
-addSbtPlugin("com.typesafe.play" % "sbt-plugin" % "2.6.12")
+addSbtPlugin("com.typesafe.play" % "sbt-plugin" % "2.6.16")    // newest, as of 18-07-17
 
 
 // Dependency tree, https://github.com/jrudolph/sbt-dependency-graph

@@ -53,39 +53,38 @@ val appDependencies = Seq(
   play.sbt.PlayImport.ws,
   // Gzip filter.
   play.sbt.Play.autoImport.filters,
-  "com.typesafe.play" %% "play-json" % "2.6.9",
+  "com.typesafe.play" %% "play-json" % "2.6.9",             // newest, as of 18-07-17
   // OpenAuth and OpenID etc Authentication.
-  "com.mohiva" %% "play-silhouette" % "5.0.3",
-  "com.mohiva" %% "play-silhouette-crypto-jca" % "5.0.3",
-  // ? "com.mohiva" %% "play-silhouette-password-bcrypt" % "4.0.0",
+  "com.mohiva" %% "play-silhouette" % "5.0.5",              // newest, as of 18-07-17
+  "com.mohiva" %% "play-silhouette-crypto-jca" % "5.0.5",   // newest, as of 18-07-17
   // PostgreSQL JDBC client driver
   // see: http://mvnrepository.com/artifact/org.postgresql/postgresql/
   "org.postgresql" % "postgresql" % "42.2.2",
   // HikariCP — "A solid high-performance JDBC connection pool at last"
-  "com.zaxxer" % "HikariCP" % "2.7.8",
+  "com.zaxxer" % "HikariCP" % "2.7.9",                      // newest 2.7 as of 18-07-17, there's 3.0.
   // We use both an in-the-JVM-memory cache, and Redis:
-  "com.github.ben-manes.caffeine" % "caffeine" % "2.6.2",
-  "com.github.etaty" %% "rediscala" % "1.8.0",
+  "com.github.ben-manes.caffeine" % "caffeine" % "2.6.2",   // newest, as of 18-07-17
+  "com.github.etaty" %% "rediscala" % "1.8.0",              // newest, as of 18-07-17
   // Search engine, in https://mvnrepository.com.
-  "org.elasticsearch" % "elasticsearch" % "6.2.3",
-  "org.elasticsearch.client" % "transport" % "6.2.3",
+  "org.elasticsearch" % "elasticsearch" % "6.2.4",          // newest 6.2 as of 18-07-17, there's 6.3.
+  "org.elasticsearch.client" % "transport" % "6.2.4",       // newest 6.2 as of 18-07-17, there's 6.3.
   // ElasticSearch needs log4j
   "log4j" % "log4j" % "1.2.17",
   "org.apache.commons" % "commons-email" % "1.5",
-  "com.google.guava" % "guava" % "24.1-jre",
-  "org.jsoup" % "jsoup" % "1.11.2",
+  "com.google.guava" % "guava" % "24.1.1-jre",              // newest 24 as of 18-07-17, there's 25
+  "org.jsoup" % "jsoup" % "1.11.3",                         // newest as of 18-07-17
   // Fluentd better understands json logs.
   // https://mvnrepository.com/artifact/ch.qos.logback/logback-classic
-  "ch.qos.logback" % "logback-classic" % "1.2.2",
+  "ch.qos.logback" % "logback-classic" % "1.2.3",           // newest as of 18-07-17
   // https://mvnrepository.com/artifact/ch.qos.logback/logback-core
-  "ch.qos.logback" % "logback-core" % "1.2.2",
+  "ch.qos.logback" % "logback-core" % "1.2.3",              // newest as of 18-07-17
   // Docs: https://github.com/logstash/logstash-logback-encoder/tree/logstash-logback-encoder-4.9
-  "net.logstash.logback" % "logstash-logback-encoder" % "4.9",
+  "net.logstash.logback" % "logstash-logback-encoder" % "4.11",  // newest 4.x as of 18-07-17, there's 5.1
   //"org.kurochan" %% "logback-stackdriver-logging" % "0.0.1",
   "community.ed" %% "ed-logging" % "0.0.2",
   // java.nio.file.Files.probeContentType doesn't work in Alpine Linux + JRE 8, so use
   // Tika instead. It'll be useful anyway later if indexing PDF or MS Word docs.
-  "org.apache.tika" % "tika-core" % "1.17",
+  "org.apache.tika" % "tika-core" % "1.18",                 // newest as of 18-07-17
   "io.dropwizard.metrics" % "metrics-core" % "3.2.2",
   "nl.grons" %% "metrics-scala" % "3.5.9_a2.4",
   // JSR 305 is requried by Guava, at build time only (so specify "provided"
@@ -97,6 +96,7 @@ val appDependencies = Seq(
   // and: http://stackoverflow.com/questions/10007994/
   //              why-do-i-need-jsr305-to-use-guava-in-scala
   "com.google.code.findbugs" % "jsr305" % "1.3.9" % "provided",
+  // CLEAN_UP remove Spec2 use only ScalaTest, need to edit some tests.
   "org.mockito" % "mockito-all" % "1.9.0" % "test", // I use Mockito with Specs2...
   "org.scalatest" %% "scalatest" % "3.0.5" % "test", // but prefer ScalaTest
   "org.scalatestplus.play" %% "scalatestplus-play" % "3.1.2" % Test)
@@ -158,6 +158,11 @@ def mainSettings = List(
     BuildInfoKey.action("gitBranch") {
       "git rev-parse --abbrev-ref HEAD".!!.trim
     }),
+    // But this results in:java.io.IOException: Cannot run program "TZ=UTC"
+    /*
+    BuildInfoKey.action("gitLastCommitDateUtc") {
+      "TZ=UTC git show --quiet --date='format-local:%Y-%m-%d %H:%M:%SZ' --format=\"%cd\"".!!.trim
+    }), */
     // Don't include, because then Play recompiles and reloads, whenever any [7UJ2Z5]
     // Git file status changes.
     //BuildInfoKey.action("gitStatus") {
