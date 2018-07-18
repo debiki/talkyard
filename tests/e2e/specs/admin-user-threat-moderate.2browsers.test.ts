@@ -31,6 +31,7 @@ let mariasPageUrl: string;
 
 const mariasReplyOrig = 'mariasReplyOrig';
 const mariasReplyEdited = 'mariasReplyEdited';
+const mariasReplyAgainEdited = 'mariasReplyAgainEdited';
 const mariasReplyNotThreat = 'mariasReplyNotThreat';
 
 describe("admin-user-threat-moderate [TyT5KHFIQ20]", () => {
@@ -104,8 +105,8 @@ describe("admin-user-threat-moderate [TyT5KHFIQ20]", () => {
   });
 
   it("Michael (page author) does *not* get notified about the reply — its' not yet approved", () => {
-    assert(server.countLastEmailsSentTo(
-        siteIdAddress.id, forum.members.michael.emailAddress) === 0);
+    assert.equal(server.countLastEmailsSentTo(
+        siteIdAddress.id, forum.members.michael.emailAddress), 0);
   });
 
   it("Owen accepts the reply", () => {
@@ -123,8 +124,41 @@ describe("admin-user-threat-moderate [TyT5KHFIQ20]", () => {
   it("... and Michael, the page author, now gets a reply notification email", () => {
     server.waitUntilLastEmailMatches(
         siteIdAddress.id, forum.members.michael.emailAddress, mariasReplyEdited, browser);
-    assert(server.countLastEmailsSentTo(
-        siteIdAddress.id, forum.members.michael.emailAddress) === 1);
+    assert.equal(server.countLastEmailsSentTo(
+        siteIdAddress.id, forum.members.michael.emailAddress), 1);
+  });
+
+  it("Maria edits the comment", () => {
+    mariasBrowser.complex.loginWithPasswordViaTopbar(maria);
+    mariasBrowser.complex.editPostNr(c.FirstReplyNr, mariasReplyAgainEdited);
+  });
+
+  it("... the edits won't get auto approved: the stranger doesn't see them  TyT7UQKBA2", () => {
+    mariasBrowser.topic.waitUntilPostTextMatches(c.FirstReplyNr, mariasReplyAgainEdited);
+    mariasBrowser.topbar.clickLogout();
+    strangersBrowser.refresh();
+    strangersBrowser.topic.waitForPostNrVisible(c.BodyNr);
+    strangersBrowser.topic.assertPostTextMatches(c.FirstReplyNr,
+        // Shouldn't be mariasReplyAgainEdited, but instead the old value, after the 1st edit:
+        mariasReplyEdited);
+  });
+
+  it("... results in a review task", () => {
+    owensBrowser.refresh();
+    owensBrowser.adminArea.review.waitUntilLoaded();
+    assert.equal(owensBrowser.adminArea.review.countReviewTasksFor(
+        forum.topics.byMichaelCategoryA.id, c.FirstReplyNr, { waiting: true }),1);
+  });
+
+  it("... Owen approves the 2nd edit", () => {
+    owensBrowser.adminArea.review.approvePostForMostRecentTask();
+    owensBrowser.adminArea.review.playTimePastUndo();
+    owensBrowser.adminArea.review.waitForServerToCarryOutDecisions();
+    assert(!owensBrowser.adminArea.review.isMoreStuffToReview());
+  });
+
+  it("... Now the stranger sees the edits", () => {
+    strangersBrowser.topic.refreshUntilPostTextMatches(c.FirstReplyNr, mariasReplyAgainEdited);
   });
 
   it("Owen un-marks Maria: no longer a threat", () => {
@@ -156,8 +190,8 @@ describe("admin-user-threat-moderate [TyT5KHFIQ20]", () => {
   it("... and Michael directly gets a reply notification email", () => {
     server.waitUntilLastEmailMatches(
         siteIdAddress.id, forum.members.michael.emailAddress, mariasReplyNotThreat, browser);
-    assert(server.countLastEmailsSentTo(
-        siteIdAddress.id, forum.members.michael.emailAddress) === 2);
+    assert.equal(server.countLastEmailsSentTo(
+        siteIdAddress.id, forum.members.michael.emailAddress), 2);
   });
 
 });

@@ -364,7 +364,7 @@ class SystemDao(
         bodyHiddenById = Some(SystemUserId),
         bodyHiddenReason = Some(s"Spam because: $isSpamReason"))
 
-      val reviewTask = PostsDao.makeReviewTask(
+      val reviewTask = PostsDao.createOrAmendOldReviewTask(
         createdById = SystemUserId, postAfter, reasons = Vector(ReviewReason.PostIsSpam),
         siteTransaction): ReviewTask
 

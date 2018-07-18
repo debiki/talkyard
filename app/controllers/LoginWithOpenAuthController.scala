@@ -489,9 +489,10 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
     else if (emailAddress.isEmpty) {
       throwUnprocessableEntity("EdE8JUK02", "Email address missing")
     }
-
-    anyEmailAddressError(emailAddress) foreach { errMsg =>
-      throwUnprocessableEntity("TyEBADEMLADR_-OAU", s"Bad email address: $errMsg")
+    else {
+      anyEmailAddressError(emailAddress) foreach { errMsg =>
+        throwUnprocessableEntity("TyEBADEMLADR_-OAU", s"Bad email address: $errMsg")
+      }
     }
 
     if (ed.server.security.ReservedNames.isUsernameReserved(username)) // [5LKKWA10]

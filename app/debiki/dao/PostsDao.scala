@@ -551,7 +551,7 @@ trait PostsDao {
     val combinedTextAndHtml = textAndHtmlMaker.forBodyOrComment(newCombinedText, followLinks = false)
 
     val editedPost = lastPost.copy(
-      approvedSource = Some(newCombinedText),
+      approvedSource = Some(combinedTextAndHtml.text),
       approvedHtmlSanitized = Some(combinedTextAndHtml.safeHtml),
       approvedAt = Some(tx.now.toJavaDate),
       // Leave approvedById = SystemUserId and approvedRevisionNr = FirstRevisionNr unchanged.
@@ -642,17 +642,7 @@ trait PostsDao {
         !anyNewComment && !anyNewFlag
       }
 
-      // Define new field values as if we'll approve the post, but change them below [5AKW02]
-      // if in fact we won't approve it.
-      var editsApproved = true
-      var newCurrentSourcePatch: Option[String] = None
-      var newLastApprovedEditAt = Option(tx.now.toJavaDate)
-      var newLastApprovedEditById = Option(editorId)
-      var newApprovedSource = Option(newTextAndHtml.text)
-      var newApprovedHtmlSanitized = Option(newTextAndHtml.safeHtml)
-      var newApprovedAt = Option(tx.now.toJavaDate)
-
-      val newApprovedById =
+      val anyNewApprovedById =
         if (postToEdit.tyype == PostType.ChatMessage) {
           // The system user auto approves all chat messages; always use SystemUserId for chat.
           Some(SystemUserId)  // [7YKU24]
@@ -661,26 +651,48 @@ trait PostsDao {
           Some(editor.id)
         }
         else {
-          // For now, let people continue editing a post that has been approved already.
-          SECURITY // Later, could avoid approving, if user threat level >= mild threat,
-          // or if some not-yet-created site config settings are strict?
-          // Would then need to create a new revision.
-          if (postToEdit.isCurrentVersionApproved) {
+          // Let people continue editing a post that has been approved already — unless
+          // they're a moderate threat. A bit further below (7ALGJ2), we'll create
+          // a review task (also for mild threat edits).
+          if (editorAndLevels.threatLevel.toInt >= ThreatLevel.ModerateThreat.toInt) {
+            None  // [TyT7UQKBA2]
+          }
+          else if (postToEdit.isCurrentVersionApproved) {
             Some(SystemUserId)
           }
           else {
-            // Don't auto-approve these edits. [5AKW02]
-            editsApproved = false
-            newCurrentSourcePatch = Some(makePatch(
-              from = postToEdit.approvedSource.getOrElse(""), to = newTextAndHtml.text))
-            newLastApprovedEditAt = postToEdit.lastApprovedEditAt
-            newLastApprovedEditById = postToEdit.lastApprovedEditById
-            newApprovedSource = postToEdit.approvedSource
-            newApprovedHtmlSanitized = postToEdit.approvedHtmlSanitized
-            newApprovedAt = postToEdit.approvedAt
-            postToEdit.approvedById
+            // Don't auto-approve these edits.
+            None
           }
         }
+
+      val (
+          editsApproved: Boolean,
+          newCurrentSourcePatch: Option[String],
+          newLastApprovedEditAt,
+          newLastApprovedEditById,
+          newApprovedSource,
+          newApprovedHtmlSanitized,
+          newApprovedAt) =
+        if (anyNewApprovedById.isDefined)
+          (true,
+          None,
+          Some(tx.now.toJavaDate),
+          Some(editorId),
+          Some(newTextAndHtml.text),
+          Some(newTextAndHtml.safeHtml),
+          Some(tx.now.toJavaDate))
+        else
+          (false,
+          // How to get from the last approved revision, to the new rev. with unapproved edits.
+          Some(makePatch(from = postToEdit.approvedSource.getOrElse(""), to = newTextAndHtml.text)),
+          // Keep the old values, for *approved-whatever* fields.
+          postToEdit.lastApprovedEditAt,
+          postToEdit.lastApprovedEditById,
+          postToEdit.approvedSource,
+          postToEdit.approvedHtmlSanitized,
+          postToEdit.approvedAt)
+
 
       val isInNinjaEditWindow = {
         val ninjaWindowMs = ninjaEditWindowMsFor(page.role)
@@ -692,9 +704,15 @@ trait PostsDao {
         val sameAuthor = postToEdit.currentRevisionById == editorId
         val ninjaHardEndMs = postToEdit.currentRevStaredAt.getTime + HardMaxNinjaEditWindowMs
         val isInHardWindow = tx.now.millis < ninjaHardEndMs
-        sameAuthor && isInHardWindow && (isInNinjaEditWindow || oldRevisionSavedAndNothingHappened)
+        // If the current version has been approved, and one does an unapproved edit — then, shouldn't
+        // ninja-save those unapproved edits in the previous already-approved revision.
+        val editsApprovedOrPostNotApproved = editsApproved || !postToEdit.isCurrentVersionApproved
+        (sameAuthor && isInHardWindow && (isInNinjaEditWindow || oldRevisionSavedAndNothingHappened)
+          && editsApprovedOrPostNotApproved)
       }
 
+      SECURITY; SHOULD // *not* be allowed to ninja-edit a posts that's been reviewed.
+      // Solution: Don't make it appear in the review tasks list, until ninja edit window has ended.
       val (newRevision: Option[PostRevision], newStartedAt, newRevisionNr, newPrevRevNr) =
         if (isNinjaEdit) {
           (None, postToEdit.currentRevStaredAt, postToEdit.currentRevisionNr,
@@ -723,7 +741,7 @@ trait PostsDao {
         approvedSource = newApprovedSource,
         approvedHtmlSanitized = newApprovedHtmlSanitized,
         approvedAt = newApprovedAt,
-        approvedById = newApprovedById,
+        approvedById = anyNewApprovedById orElse postToEdit.approvedById,
         approvedRevisionNr = newApprovedRevNr)
 
       if (editorId != editedPost.createdById) {
@@ -753,8 +771,11 @@ trait PostsDao {
       val postRecentlyCreated = tx.now.millis - postToEdit.createdAt.getTime <=
           AllSettings.PostRecentlyCreatedLimitMs
 
-      val reviewTask: Option[ReviewTask] =
-        if (postRecentlyCreated || editor.isStaff) {
+      val reviewTask: Option[ReviewTask] =    // (7ALGJ2)
+        if (editor.isStaff) {
+          None
+        }
+        else if (postRecentlyCreated && !editorAndLevels.threatLevel.isThreat) {
           // Need not review a recently created post: it's new and the edits likely
           // happened before other people read it, so they'll notice any weird things
           // later when they read it, and can flag it. This is not totally safe,
@@ -767,12 +788,27 @@ trait PostsDao {
         }
         else if (!postToEdit.isSomeVersionApproved && !editedPost.isSomeVersionApproved) {
           // Review task should already have been created.
+          val tasks = tx.loadReviewTasksAboutPostIds(Seq(editedPost.id))
+          if (tasks.isEmpty) {
+            p.Logger.warn(s"s$siteId: Post ${editedPost.id} slips past review? [TyE4WKA02]")
+          }
           None
         }
         else {
           // Later, COULD specify editor id instead, as ReviewTask.maybeBadUserId [6KW02QS]
-          Some(makeReviewTask(SystemUserId, editedPost, immutable.Seq(ReviewReason.LateEdit),
-            tx))
+          var reviewReasons = immutable.Seq[ReviewReason]()
+          if (!postRecentlyCreated) {
+            // The post was created long ago — we want to reviwe it, so people cannot edit
+            // their old posts and change to spam links, undetected.
+            reviewReasons :+= ReviewReason.LateEdit
+          }
+          if (editorAndLevels.threatLevel.isThreat) {
+            reviewReasons :+= ReviewReason.Edit
+            reviewReasons :+= ReviewReason.IsByThreatUser
+          }
+          dieIf(reviewReasons.isEmpty, "TyE5KP20")
+          Some(
+            createOrAmendOldReviewTask(SystemUserId, editedPost, reviewReasons, tx))
         }
 
       val auditLogEntry = AuditLogEntry(
@@ -801,11 +837,9 @@ trait PostsDao {
         unimplemented("Updating visible post counts when post approved via an edit", "DwE5WE28")
       }
 
-      if (editedPost.isCurrentVersionApproved) {
-        val notfs = NotificationGenerator(tx, nashorn).generateForEdits(
-          postToEdit, editedPost, Some(newTextAndHtml))
-        tx.saveDeleteNotifications(notfs)
-      }
+      val notfs = NotificationGenerator(tx, nashorn).generateForEdits(
+        postToEdit, editedPost, Some(newTextAndHtml))
+      tx.saveDeleteNotifications(notfs)
 
       val oldMeta = page.meta
       var newMeta = oldMeta.copy(version = oldMeta.version + 1)
@@ -1218,7 +1252,8 @@ trait PostsDao {
     // ------ The post
 
     val renderSettings = PostRendererSettings(pageMeta.pageRole, thePubSiteId())
-    val approvedHtmlSanitized = context.postRenderer.renderAndSanitize(postBefore, renderSettings, // OPTIMIZE
+    COULD_OPTIMIZE // reuse html rendered here, to find @mentions, pass to NotificationGenerator below. [4WKAB02]
+    val approvedHtmlSanitized = context.postRenderer.renderAndSanitize(postBefore, renderSettings,
       IfCached.Die("TyE2BKYUF4"))
 
     // Later: update lastApprovedEditAt, lastApprovedEditById and numDistinctEditors too,
@@ -1322,7 +1357,8 @@ trait PostsDao {
       // ----- A post
 
       val renderSettings = PostRendererSettings(pageMeta.pageRole, thePubSiteId())
-      val approvedHtmlSanitized = context.postRenderer.renderAndSanitize(post, renderSettings,  // OPTIMIZE
+      COULD_OPTIMIZE // reuse html rendered here, to find @mentions, pass to NotificationGenerator below. + [4WKAB02]x
+      val approvedHtmlSanitized = context.postRenderer.renderAndSanitize(post, renderSettings,
         IfCached.Die("TyE2PKL99"))
 
       // Don't need to update lastApprovedEditAt, because this post has been invisible until now.
@@ -1667,7 +1703,7 @@ trait PostsDao {
       val newNumFlags = postBefore.numPendingFlags + 1
       var postAfter = postBefore.copy(numPendingFlags = newNumFlags)
 
-      val reviewTask = makeReviewTask(flaggerId, postAfter,
+      val reviewTask = createOrAmendOldReviewTask(flaggerId, postAfter,
         immutable.Seq(ReviewReason.PostFlagged), transaction)
 
       // Hide post, update page?
@@ -1964,7 +2000,7 @@ object PostsDao {
   }
 
 
-  def makeReviewTask(createdById: UserId, post: Post, reasons: immutable.Seq[ReviewReason],
+  def createOrAmendOldReviewTask(createdById: UserId, post: Post, reasons: immutable.Seq[ReviewReason],
         transaction: SiteTransaction): ReviewTask = {
     val pendingTask = transaction.loadUndecidedPostReviewTask(post.id,
       taskCreatedById = createdById)

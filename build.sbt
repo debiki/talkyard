@@ -61,7 +61,7 @@ val appDependencies = Seq(
   // see: http://mvnrepository.com/artifact/org.postgresql/postgresql/
   "org.postgresql" % "postgresql" % "42.2.2",
   // HikariCP — "A solid high-performance JDBC connection pool at last"
-  "com.zaxxer" % "HikariCP" % "2.7.9",                      // newest 2.7 as of 18-07-17, there's 3.0.
+  "com.zaxxer" % "HikariCP" % "3.2.0",                      // newest 2.7 as of 18-07-19
   // We use both an in-the-JVM-memory cache, and Redis:
   "com.github.ben-manes.caffeine" % "caffeine" % "2.6.2",   // newest, as of 18-07-17
   "com.github.etaty" %% "rediscala" % "1.8.0",              // newest, as of 18-07-17
@@ -71,7 +71,7 @@ val appDependencies = Seq(
   // ElasticSearch needs log4j
   "log4j" % "log4j" % "1.2.17",
   "org.apache.commons" % "commons-email" % "1.5",
-  "com.google.guava" % "guava" % "24.1.1-jre",              // newest 24 as of 18-07-17, there's 25
+  "com.google.guava" % "guava" % "25.0-jre",                // newest as of 18-07-19
   "org.jsoup" % "jsoup" % "1.11.3",                         // newest as of 18-07-17
   // Fluentd better understands json logs.
   // https://mvnrepository.com/artifact/ch.qos.logback/logback-classic
@@ -84,7 +84,7 @@ val appDependencies = Seq(
   "community.ed" %% "ed-logging" % "0.0.2",
   // java.nio.file.Files.probeContentType doesn't work in Alpine Linux + JRE 8, so use
   // Tika instead. It'll be useful anyway later if indexing PDF or MS Word docs.
-  "org.apache.tika" % "tika-core" % "1.18",                 // newest as of 18-07-17
+  //"org.apache.tika" % "tika-core" % "1.18",               // newest as of 18-07-17  sync w core [5ZBW49]
   "io.dropwizard.metrics" % "metrics-core" % "3.2.2",
   "nl.grons" %% "metrics-scala" % "3.5.9_a2.4",
   // JSR 305 is requried by Guava, at build time only (so specify "provided"

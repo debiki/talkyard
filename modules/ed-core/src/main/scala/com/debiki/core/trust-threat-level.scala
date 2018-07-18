@@ -17,6 +17,7 @@
 
 package com.debiki.core
 
+import com.debiki.core.ThreatLevel.{MildThreat, SevereThreat}
 
 
 sealed abstract class TrustLevel(val IntVal: Int) { def toInt = IntVal }
@@ -56,30 +57,29 @@ object TrustLevel {
 
 
 
-sealed abstract class ThreatLevel(val IntVal: Int, val isThreat: Boolean) {
+sealed abstract class ThreatLevel(val IntVal: Int) {
   def toInt: Int = IntVal
-  def isSevereOrWorse = false
+  def isSevereOrWorse: Boolean = toInt >= SevereThreat.toInt
+  def isThreat: Boolean = toInt >= MildThreat.toInt
 }
 
 object ThreatLevel {
 
-  case object SuperSafe extends ThreatLevel(1, isThreat = false)
+  case object SuperSafe extends ThreatLevel(1)
 
-  case object SeemsSafe extends ThreatLevel(2, isThreat = false)
+  case object SeemsSafe extends ThreatLevel(2)
 
   /** The default. */
-  case object HopefullySafe extends ThreatLevel(3, isThreat = false)
+  case object HopefullySafe extends ThreatLevel(3)
 
   /** All comments will be published directly, but also added to the moderation queue for review. */
-  case object MildThreat extends ThreatLevel(4, isThreat = true)
+  case object MildThreat extends ThreatLevel(4)
 
   /** Comments won't be published until they've been approved by a moderator. */
-  case object ModerateThreat extends ThreatLevel(5, isThreat = true)
+  case object ModerateThreat extends ThreatLevel(5)
 
   /** May not post any comments at all. */
-  case object SevereThreat extends ThreatLevel(6, isThreat = true) {
-    override def isSevereOrWorse = true
-  }
+  case object SevereThreat extends ThreatLevel(6)
 
   def fromInt(value: Int): Option[ThreatLevel] = Some(value match {
     case ThreatLevel.HopefullySafe.IntVal => ThreatLevel.HopefullySafe

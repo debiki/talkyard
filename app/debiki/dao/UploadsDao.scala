@@ -209,7 +209,7 @@ trait UploadsDao {
   }
 
 
-  def findUploadRefsInPost(post: Post): Set[UploadRef] = {
+  def findUploadRefsInPost(post: Post): Set[UploadRef] = {   // find mentions at the same time? [4WKAB02]
     val pubId = thePubSiteId()
     val approvedRefs = post.approvedHtmlSanitized.map(
       h => findUploadRefsInText(h, pubId)) getOrElse Set.empty

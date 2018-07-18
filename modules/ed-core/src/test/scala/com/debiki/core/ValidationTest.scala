@@ -68,9 +68,18 @@ class ValidationTest extends FreeSpec with MustMatchers {
     }
 
     "but dots and dashes are okay" in {
-      Validation.checkUsername("dotty.cat").isGood mustBe true
+      Validation.checkUsername("dotty.kitten").isGood mustBe true
       Validation.checkUsername("flashy-dash").isGood mustBe true
       Validation.checkUsername("so.do.ty-flash-fa-st").isGood mustBe true
+    }
+
+    "unless end with file suffix, like 'something.png'" in {
+      // More exhaustive test in [5WKAJH20].
+      Validation.checkUsername("dotty.png").isGood mustBe false
+      Validation.checkUsername("dotty.jpg").isGood mustBe false
+      Validation.checkUsername("dotty.gif").isGood mustBe false
+      Validation.checkUsername("flashy.tar").isGood mustBe false
+      Validation.checkUsername("so.do.ty-flash.html").isGood mustBe false
     }
 
     "reject usernames that start with bad first char" in {
@@ -87,7 +96,7 @@ class ValidationTest extends FreeSpec with MustMatchers {
     "reject usernames that end with bad char" in {
       Validation.checkUsername("beepybird!").swap.get mustBe Validation.BadLastCharErrorMessage
       Validation.checkUsername("beepybird_").swap.get mustBe Validation.BadLastCharErrorMessage
-      Validation.checkUsername("beepybird-").swap.get mustBe Validation.BadLastCharErrorMessage
+      Validation.checkUsername("creepybird-").swap.get mustBe Validation.BadLastCharErrorMessage
       Validation.checkUsername("beepybird.").swap.get mustBe Validation.BadLastCharErrorMessage
       Validation.checkUsername("arabicالعربية").swap.get mustBe Validation.BadLastCharErrorMessage
       // Ending with a number or letter is okay.

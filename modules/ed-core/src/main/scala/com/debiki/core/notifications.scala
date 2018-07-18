@@ -26,7 +26,9 @@ import java.{util => ju}
   */
 case class Notifications(
   toCreate: Seq[Notification] = Nil,
-  toDelete: Seq[NotificationToDelete] = Nil)
+  toDelete: Seq[NotificationToDelete] = Nil) {
+  def isEmpty: Boolean = toCreate.isEmpty && toDelete.isEmpty
+}
 
 object Notifications {
   val None = Notifications(Nil, Nil)

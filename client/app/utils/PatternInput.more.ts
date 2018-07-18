@@ -24,7 +24,7 @@
 const r = ReactDOMFactories;
 
 
-export const PatternInput = createClassAndFactory({  // I18N search for all usages, I've forgotten e.g. UsernameInput
+export const PatternInput = createClassAndFactory({
   getInitialState: function() {
     return {
       showErrors: (this.props || <any> {}).showErrors,
@@ -133,7 +133,7 @@ export const PatternInput = createClassAndFactory({  // I18N search for all usag
       return t.inp.TooShort(this.props.minLength);
 
     if (this.props.maxLength && value.length > this.props.maxLength)
-      return t.inp.TooLong(this.props.minLength);
+      return t.inp.TooLong(this.props.maxLength);
 
     return null;
   },

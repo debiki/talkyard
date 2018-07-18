@@ -14,6 +14,7 @@ libraryDependencies ++= Seq(
   "commons-codec" % "commons-codec" % "1.11",
   "commons-validator" % "commons-validator" % "1.6",
   "org.apache.commons" % "commons-email" % "1.5",  // also in server. Needed here for validation only
+  "org.apache.tika" % "tika-core" % "1.18",        // for username .ext test, sync w core [5ZBW49] [5AKR20]
   "nu.validator.htmlparser" % "htmlparser" % "1.4",
   "org.owasp.encoder" % "encoder" % "1.2.1",
   "com.typesafe.play" %% "play-json" % "2.6.9",

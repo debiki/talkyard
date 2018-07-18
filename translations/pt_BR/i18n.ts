@@ -168,8 +168,9 @@ var t_pt_BR: TalkyardTranslations = t = {
 
   nl: {
     WatchingAll: "Observando Tudo",
-      // MISSING, these 2:
+    // MISSING:
     WatchingAllTag: "You'll be notified of new topics with this tag, and every post in those topics",
+    // MISSING:
     WatchingAllTopic: "You'll be notified of all new replies in this topic.",
 
     // One will be notified about the *first* post in a new topic, only. That is, the Original Post
@@ -696,7 +697,7 @@ var t_pt_BR: TalkyardTranslations = t = {
     ProgrHelp: "Go to the Progress section. Shortcut: 3",
     PgBtm: "Page bottom",
     Btm: "Bottom",
-    BotmHelp: "Go to the bottom of the page. Shortcut: 4",
+    BtmHelp: "Go to the bottom of the page. Shortcut: 4",
 
     // "Keyboard shrotcuts: ..., and B to scroll back"
     Kbd_1: ", and ",

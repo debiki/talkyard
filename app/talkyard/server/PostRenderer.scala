@@ -38,7 +38,6 @@ object IfCached {
 class PostRenderer(private val nashorn: Nashorn) {
 
 
-  // mentions?
   def renderAndSanitize(post: Post, settings: PostRendererSettings, ifCached: IfCached): String = {
     if (ifCached == IfCached.Ignore) {
     }
@@ -46,7 +45,6 @@ class PostRenderer(private val nashorn: Nashorn) {
       ifCached match {
         case IfCached.Die(errorCode) => die("TyE2KPKW3-" + errorCode)
         case _ =>
-          // @mentinos?
           return post.approvedHtmlSanitized.get
       }
     }
@@ -63,6 +61,7 @@ class PostRenderer(private val nashorn: Nashorn) {
       }
     }
     else {
+      // Reuse @mentions? [4WKAB02]
       val renderResult = nashorn.renderAndSanitizeCommonMark(
           post.currentSource, pubSiteId = settings.pubSiteId,
           allowClassIdDataAttrs = isBody, followLinks = followLinks)

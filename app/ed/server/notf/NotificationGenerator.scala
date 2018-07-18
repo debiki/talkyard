@@ -186,7 +186,6 @@ case class NotificationGenerator(transaction: SiteTransaction, nashorn: Nashorn)
 
     if (!newPost.isCurrentVersionApproved) {
       // Wait until the edits get approved and become visible.
-      UNTESTED // [5AKW02]
       return Notifications.None
     }
 
@@ -304,7 +303,7 @@ object NotificationGenerator {
   // allow *more* than the Js code. At least this should exclude email addresses.
   // (?s) makes '.' match newlines.
   private val MaybeMentionsRegex: Regex =
-    "(?s)(.*[^a-zA-Z0-9_])?@[a-zA-Z0-9_][a-zA-Z0-9_.-]*[a-zA-Z0-9].*".r  // [UNPUNCT]
+    "(?s)^(.*[^a-zA-Z0-9_])?@[a-zA-Z0-9_][a-zA-Z0-9_.-]*[a-zA-Z0-9].*".r  // [UNPUNCT]
 
 
   def findMentions(text: String, nashorn: Nashorn): Set[String] = {

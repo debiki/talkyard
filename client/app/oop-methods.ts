@@ -163,7 +163,7 @@ export function user_trustLevel(user: MemberInclDetails | Myself): TrustLevel {
 
 export function user_isTrustMinNotThreat(user: MemberInclDetails | Myself, trustLevel: TrustLevel): boolean {
   if (isStaff(user)) return true;
-  // UX check threat level too, that's done server side, not doing here can result in [5WKABY0]
+  // UX COULD check threat level too, that's done server side, not doing here can result in [5WKABY0]
   // annoying error messages (security though = server side).  Add a Myself.isThreat field?
   return user_trustLevel(user) >= trustLevel;
 }

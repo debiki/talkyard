@@ -95,7 +95,7 @@ class UserSpec extends FreeSpec with MustMatchers {
         result.length mustBe User.MaxUsernameLength
       }
 
-      "prefixes with 'z' before trims to length" in {
+      "prefixes with 'n' before trims to length, if numeric 'name'" in {
         val result = derive("12345678901234567890123").get
         result mustBe "n1234567890123456789"
         result.length mustBe User.MaxUsernameLength
@@ -130,11 +130,44 @@ class UserSpec extends FreeSpec with MustMatchers {
             ).get mustBe "d.o.t-d-a-sh"
       }
 
-      "trim underscores" in {
+      "but not two adjacent dots or two dashes" in {
+        User.makeOkayUsername("too..dotty", allowDotDash = true, _ => false).get mustBe "too_dotty"
+        User.makeOkayUsername("too--dashy", allowDotDash = true, _ => false).get mustBe "too_dashy"
+        User.makeOkayUsername("s-.o.-das-.-.hy", allowDotDash = true, _ => false).get mustBe "s_o_das_hy"
+      }
+
+      "and not starting or ending with dot or dash" in {
+        User.makeOkayUsername(".hippo.", allowDotDash = true, _ => false).get mustBe "hippo"
+        User.makeOkayUsername("-happy-", allowDotDash = true, _ => false).get mustBe "happy"
+        User.makeOkayUsername("..donky..", allowDotDash = true, _ => false).get mustBe "donky"
+        User.makeOkayUsername("--monkey--", allowDotDash = true, _ => false).get mustBe "monkey"
+        User.makeOkayUsername("-.-mu..--_.-_.cho.al-l.-.", allowDotDash = true, _ => false)
+            .get mustBe "mu_cho.al-l"
+      }
+
+      "and not .suffix that looks like file names, like '.jpg'" in {  // [5WKAJH20]
+        for (suffix <- Seq("bmp", "css", "csv", "exe", "gif", "htm", "html", "ico",
+            "js", "json", "jpg", "jpeg", "pdf", "png", "pgp", "rtf", "tar", "txt",
+            "mpeg", "mpg", "mp4", "mp4", "m4u", "ogg", "ogx", "svg", "tif", "tiff",
+            "webp", "wma", "woff", "xml", "zip")) {
+
+          User.makeOkayUsername(s"fil-en.ame.$suffix", allowDotDash = true, _ => false)
+            .get mustBe s"fil_en_ame_$suffix"
+
+          User.makeOkayUsername(s"fil-en.ame-$suffix", allowDotDash = true, _ => false)
+            .get mustBe s"fil-en.ame-$suffix"
+
+          User.makeOkayUsername(s"fil-en.ame-$suffix", allowDotDash = false, _ => false)
+            .get mustBe s"fil_en_ame_$suffix"
+        }
+      }
+
+      "trim underscores and other specials" in {
         derive("aa_bb___").get mustBe "aa_bb"
         derive("__aa_bb").get mustBe "aa_bb"
         derive("__aa_bb___").get mustBe "aa_bb"
         derive("+aa+bb+").get mustBe "aa_bb"
+        derive("..--aa+bb--..").get mustBe "aa_bb"
       }
 
       "combine adjacent underscores" in {

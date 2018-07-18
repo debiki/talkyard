@@ -30,9 +30,11 @@ let forumTitle = "Admin User Threat Mild";
 let mariasPageUrl: string;
 
 const mariasReplyMildThreat = 'mariasReplyMildThreat';
-const mariasReplyNotThreat = 'mariasReplyNotThreat';
+const mariasReplyMildEditedThreat = 'mariasReplyMildEditedThreat';
+const mariasReplyNotThreatOrig = 'mariasReplyNotThreatOrig';
+const mariasReplyNotThreatEdited = 'mariasReplyNotThreatEdited';
 
-describe("admin-user-threat-mild [TyT2WKBG4Z]", function() {
+describe("admin-user-threat-mild [TyT2WKBG4Z]", () => {
 
   it("import a site", () => {
     forum = buildSite().addLargeForum({ title: forumTitle });
@@ -49,7 +51,7 @@ describe("admin-user-threat-mild [TyT2WKBG4Z]", function() {
     strangersBrowser = othersBrowser;
   });
 
-  it("Owen logs in to admin area, views Maria's profile", function() {
+  it("Owen logs in to admin area, views Maria's profile", () => {
     owensBrowser.adminArea.goToUsersEnabled(siteIdAddress.origin);
     owensBrowser.loginDialog.loginWithPassword(owen);
     owensBrowser.adminArea.users.waitForLoaded();
@@ -58,75 +60,104 @@ describe("admin-user-threat-mild [TyT2WKBG4Z]", function() {
     mariasPageUrl = owensBrowser.url().value;
   });
 
-  it("Maria logs in", function() {
+  it("Maria logs in", () => {
     mariasBrowser.go(siteIdAddress.origin + '/' + forum.topics.byMichaelCategoryA.slug);
     mariasBrowser.complex.loginWithPasswordViaTopbar(maria);
   });
 
 
-  it("Owen marks Maria as mild threat", function() {
+  it("Owen marks Maria as mild threat", () => {
     owensBrowser.adminArea.user.markAsMildThreat();
   });
 
-  it("... she appears in the Watching list", function() {
+  it("... she appears in the Watching list", () => {
     owensBrowser.adminArea.users.switchToWatching();
     owensBrowser.adminArea.users.assertUserListed(maria);
     owensBrowser.adminArea.users.asserExactlyNumUsers(1);
   });
 
-  it("Maria can post a comment", function() {
+  it("Maria can post a comment", () => {
     mariasBrowser.complex.replyToOrigPost(mariasReplyMildThreat);
   });
 
-  it("... it appears in the review list", function() {
+  it("... it appears in the review list", () => {
     owensBrowser.adminArea.goToReview();
     assert(owensBrowser.adminArea.review.isMoreStuffToReview());
   });
 
-  it("Maria sees her reply, and strangers see it too", function() {
+  it("Maria sees her reply, and strangers see it too", () => {
     mariasBrowser.topic.waitUntilPostTextMatches(c.FirstReplyNr, mariasReplyMildThreat);
     mariasBrowser.topbar.clickLogout();
     strangersBrowser.refresh();
     strangersBrowser.topic.waitUntilPostTextMatches(c.FirstReplyNr, mariasReplyMildThreat);
   });
 
-  it("... and Michael (the topic author) directly gets a reply notification email", function() {
+  it("... and Michael (the topic author) directly gets a reply notification email", () => {
     server.waitUntilLastEmailMatches(
         siteIdAddress.id, forum.members.michael.emailAddress, mariasReplyMildThreat, browser);
   });
 
-  it("... Owen approves the reply", function() {
+  it("... Owen approves the reply", () => {
     owensBrowser.adminArea.review.approvePostForMostRecentTask();
     owensBrowser.adminArea.review.playTimePastUndo();
     owensBrowser.adminArea.review.waitForServerToCarryOutDecisions();
     assert(!owensBrowser.adminArea.review.isMoreStuffToReview());
   });
 
-  it("Owen un-marks Maria: no longer a threat", function() {
+  it("Maria edits her reply", () => {
+    mariasBrowser.complex.loginWithPasswordViaTopbar(maria);
+    mariasBrowser.complex.editPostNr(c.FirstReplyNr, mariasReplyMildEditedThreat);
+  });
+
+  it("... strangers can see the edits, before approved (because mild threat only)", () => {
+    mariasBrowser.topbar.clickLogout();
+    strangersBrowser.refresh();
+    strangersBrowser.topic.waitUntilPostTextMatches(c.FirstReplyNr, mariasReplyMildEditedThreat);
+  });
+
+  it("... results in a review task", () => {
+    owensBrowser.refresh();
+    owensBrowser.adminArea.review.waitUntilLoaded();
+    assert(owensBrowser.adminArea.review.countReviewTasksFor(
+        forum.topics.byMichaelCategoryA.id, c.FirstReplyNr, { waiting: true }) === 1);
+  });
+
+  it("... Owen approves it", () => {
+    owensBrowser.adminArea.review.approvePostForMostRecentTask();
+    owensBrowser.adminArea.review.playTimePastUndo();
+    owensBrowser.adminArea.review.waitForServerToCarryOutDecisions();
+    assert(!owensBrowser.adminArea.review.isMoreStuffToReview());
+  });
+
+  it("Owen un-marks Maria: no longer a threat", () => {
     owensBrowser.go(mariasPageUrl);
     owensBrowser.adminArea.user.unlockThreatLevel();
   });
 
-  it("... she disappears from the Watching list", function() {
+  it("... she disappears from the Watching list", () => {
     owensBrowser.adminArea.users.switchToWatching();
     owensBrowser.adminArea.users.assertUserListEmpty();
   });
 
-  it("... Maria can post a comment", function() {
+  it("... Maria can post a comment", () => {
     mariasBrowser.complex.loginWithPasswordViaTopbar(maria);
-    mariasBrowser.complex.replyToOrigPost(mariasReplyNotThreat);
+    mariasBrowser.complex.replyToOrigPost(mariasReplyNotThreatOrig);
   });
 
-  it("... it does not appear in the review list; Maria is no longer a threat", function() {
-    owensBrowser.adminArea.goToReview();
-    assert(!owensBrowser.adminArea.review.isMoreStuffToReview());
-  });
-
-  it("... and Michael as usual gets a reply notification email", function() {
+  it("... Michael as usual gets a reply notification email", () => {
     server.waitUntilLastEmailMatches(
-        siteIdAddress.id, forum.members.michael.emailAddress, mariasReplyNotThreat, browser);
+        siteIdAddress.id, forum.members.michael.emailAddress, mariasReplyNotThreatOrig, browser);
     assert(server.countLastEmailsSentTo(
         siteIdAddress.id, forum.members.michael.emailAddress) === 2);
+  });
+
+  it("Maria can edit the comment", () => {
+    mariasBrowser.complex.editPostNr(c.FirstReplyNr + 1, mariasReplyNotThreatEdited);
+  });
+
+  it("... and the post does not appear in the review list; Maria is no longer a threat", () => {
+    owensBrowser.adminArea.goToReview();
+    assert(!owensBrowser.adminArea.review.isMoreStuffToReview());
   });
 
 });

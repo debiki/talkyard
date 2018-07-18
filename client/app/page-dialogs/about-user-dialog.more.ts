@@ -86,7 +86,13 @@ const AboutUserDialog = createComponent({
   },
 
   close: function() {
-    this.setState({ isOpen: false, user: null, post: null, atRect: null, });
+    this.setState({
+      isOpen: false,
+      user: null,
+      post: null,
+      atRect: null,
+      extraInfo: null,
+    });
   },
 
   reload: function() {
@@ -231,7 +237,7 @@ const AboutUser = createComponent({
       : null;
 
     const extraInfoNewline =
-        this.props.extraInfo ? r.i({}, this.props.extraInfo, r.br()) : null;
+        this.props.extraInfo ? r.div({ className: 's_UD_ExtrInf' }, this.props.extraInfo) : null;
 
     return (
       r.div({},

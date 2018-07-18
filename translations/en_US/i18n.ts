@@ -693,7 +693,7 @@ var t_en_US: TalkyardTranslations = t = {
     ProgrHelp: "Go to the Progress section. Shortcut: 3",
     PgBtm: "Page bottom",
     Btm: "Bottom",
-    BotmHelp: "Go to the bottom of the page. Shortcut: 4",
+    BtmHelp: "Go to the bottom of the page. Shortcut: 4",
 
     // "Keyboard shrotcuts: ..., and B to scroll back"
     Kbd_1: ", and ",

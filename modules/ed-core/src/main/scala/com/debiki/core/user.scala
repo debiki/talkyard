@@ -375,6 +375,9 @@ case object User {
   private val ReplSpecialsWithUnderscoreKeepDotDashRegex =
     "[\t\n\r_~/–,—\\\\ +]+".r
 
+  private val TwoOrMoreSymbolsRegex =
+    "[^a-zA-Z0-9]{2,}".r
+
   /** Comes up with a username that contains only valid characters, and is not already in use.
     * Does things like pads with numbers if too short, and, if already taken, appends
     * numbers to make it unique. And changes åäö to aao and replaces Unicode
@@ -411,11 +414,18 @@ case object User {
     // Replace punctuation with '_'. [UNPUNCT]
     // The example string becomes: (note: drops trailing '_')
     //  "This_is_a_funky_String_2dot_2dash_2underscore_arabiczzzzzzz_chinesezz_zz"
-    val usernameOkCharsNotTrimmed =
+    var usernameOkCharsNotTrimmed =
       UsernameBadCharsRegex.replaceAllIn(
         replWithUnderscoreRegex.replaceAllIn(
           usernameAscii, "_"), "")
 
+    if (allowDotDash) {
+      // Then maybe many in a row. Replace w underscore.
+      usernameOkCharsNotTrimmed =
+        TwoOrMoreSymbolsRegex.replaceAllIn(usernameOkCharsNotTrimmed, "_")
+    }
+
+    // Later, allow starting with '_', and change here too: [ALWUNDS1]
     val usernameOkChars = usernameOkCharsNotTrimmed
       .dropWhile(!charIsAzOrNum(_))      // drops anything but  a-z  A-Z  0-9, for now. [UNPUNCT]
       .dropRightWhile(!charIsAzOrNum(_)) //
@@ -423,18 +433,30 @@ case object User {
     // For now, don't allow numeric usernames. That wouldn't be a name would it?
     // Maybe if someone chooses hens name to be '2010' or '1945', people will believe it's
     // a date instead? Not good for usability? Let's prefix 'n', could mean "numeric name".
-    val usernameOkFirst =
+    val usernameNotOnlyDigits =
       if (usernameOkChars.forall(charIsNum)) 'n' + usernameOkChars
       else usernameOkChars
 
-    val usernameOkCharsLen =
-      (if (usernameOkFirst.length >= User.MinUsernameLength) usernameOkFirst
-      else (usernameOkFirst + "23456789") take User.MinUsernameLength) take User.MaxUsernameLength
+    var usernameOkCharsLen =
+      (if (usernameNotOnlyDigits.length >= User.MinUsernameLength) usernameNotOnlyDigits
+      else (usernameNotOnlyDigits + "23456789") take User.MinUsernameLength) take User.MaxUsernameLength
+
+
+    // Not a file extension suffix? like .png or .jpg or .js?  Tested here: [5WKAJH20]
+    if (allowDotDash) {
+      val tika = new org.apache.tika.Tika()
+      val mimeType: String = tika.detect(usernameOkCharsLen)
+      // Tika doesn't detect ".woff", weird? Maybe remove in Tika 1.9? [5AKR20]
+      if (mimeType != "application/octet-stream" || usernameOkCharsLen.endsWith(".woff")) {
+        // Then replace all dots with underscore.
+        usernameOkCharsLen = ReplSpecialsWithUnderscoreRegex.replaceAllIn(usernameOkCharsLen, "_")
+      }
+    }
 
     var nextToTry = usernameOkCharsLen
     val numCharsFree = User.MaxUsernameLength - usernameOkCharsLen.length
 
-    // Until = up to length - 1, so won't drop all chars here: (5WKBA2)
+    // `until` means up to length - 1 — so won't drop all chars here: (5WKBA2)
     for (i <- 1 until User.MaxUsernameLength) {
       val isInUse = isUsernameInUse(nextToTry)
       if (!isInUse)
@@ -997,7 +1019,7 @@ case class Group(
 
   override def usernameOrGuestName: String = theUsername
 
-  //def canonicalUsername: String = User.makeUsernameCanonical(theUsername)
+  //def canonicalUsername: String = User.makeUsernameCanonical(theUsername)   [CANONUN]
 
   override def anyName: Option[String] = Some(name)  // [50UKQV1]
   override def anyUsername: Option[String] = Some(theUsername)

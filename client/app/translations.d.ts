@@ -560,7 +560,7 @@ interface TalkyardTranslations {
     ProgrHelp: string;
     PgBtm: string;
     Btm: string;
-    BotmHelp: string;
+    BtmHelp: string;
 
     Kbd_1: string;
     Kbd_2: string;

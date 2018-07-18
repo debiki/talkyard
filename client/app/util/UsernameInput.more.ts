@@ -57,12 +57,12 @@ export const UsernameInput = createClassAndFactory({
         trim: true,
         minLength: 3, maxLength,
         notRegex: / /, notMessage: t.inp.NoSpcs,               // "No spaces please"
-        notRegexTwo: /-/, notMessageTwo: t.inp.NoDash,         // "No dashes please"
+        notRegexTwo: /-/, notMessageTwo: t.inp.NoDash,         // "No dashes please" [CANONUN] allow later
         notRegexThree: /@/, notMessageThree: t.inp.DontInclAt, // "Don't include the @"
 
-        regexFour: /^[a-zA-Z0-9_].*[a-zA-Z0-9]$/,
-        // '_' also ok as 1st char, but needn't tell them about that?
-        messageFour: t.inp.StartEndLtrDgt,  // "Start and end with ..."
+        // '_' also ok as 1st char, but needn't tell them about that? Hmm no wait a bit [ALWUNDS1]
+        regexFour: /^[a-zA-Z0-9].*[a-zA-Z0-9]$/,
+        messageFour: t.inp.StartEndLtrDgt,  // "Start and end with a letter or a digit"
 
         // At this time, don't mention that '.' and '-' are also allowed — better if people only
         // use '_', until canonical usernames has been implemented (so they won't need to remember

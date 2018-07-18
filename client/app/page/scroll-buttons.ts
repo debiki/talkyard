@@ -396,7 +396,7 @@ const ScrollButtonsDropdownModal = createComponent({
           r.span({ className: 'esScrollDlg_Comments_Text' }, t.sb.Progr));
 
       const scrollToEndButton = PrimaryButton({ className: 'esScrollDlg_Down',
-          onClick: this.scrollToEnd, title: t.sb.BotmHelp,
+          onClick: this.scrollToEnd, title: t.sb.BtmHelp,
           disabled: !state.enableGotoEndBtn },
         r.span({},
           r.span({ className: 'esScrollDlg_Down_Arw' }, '➜'), isChat ? t.sb.PgBtm : t.sb.Btm));

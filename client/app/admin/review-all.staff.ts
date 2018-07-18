@@ -180,15 +180,15 @@ const ReviewTask = createComponent({
       what += "has edits waiting for approval, and ";
     }
 
-    let who;
+    let who = "TyE0REVRSN";
     if (ReviewReasons.isByNewUser(reviewTask)) {
       who = "a new user";
       if (ReviewReasons.isByThreatUser(reviewTask)) {
-        who += " that sometimes misbehaves";
+        who += " who sometimes misbehaves";
       }
     }
     else if (ReviewReasons.isByThreatUser(reviewTask)) {
-      who = "a user that sometimes misbehaves";
+      who = "a user who sometimes misbehaves";
     }
 
     if (ReviewReasons.newPost(reviewTask) && who) {
@@ -200,6 +200,7 @@ const ReviewTask = createComponent({
     }
 
     if (ReviewReasons.edit(reviewTask) && who) {
+      // "... who sometimes misbehaves" appended above already.
       whys.push("was edited by " + who);
     }
     if (ReviewReasons.lateEdit(reviewTask)) {

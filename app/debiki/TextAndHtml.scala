@@ -212,7 +212,7 @@ class TextAndHtmlMaker(pubSiteId: PublSiteId, nashorn: Nashorn) {
   def testTitle(text: String): TextAndHtml = test(text, isTitle = true)
   def testBody(text: String): TextAndHtml = test(text, isTitle = false)
 
-  def wrapInParagraph(text: String, isTitle: Boolean): TextAndHtml = {
+  def wrapInParagraphNoMentionsOrLinks(text: String, isTitle: Boolean): TextAndHtml = {
     new TextAndHtmlImpl(text, s"<p>$text</p>", usernameMentions = Set.empty,
       links = Nil, linkDomains = Set.empty,
       linkAddresses = Nil, isTitle = isTitle, followLinks = false,

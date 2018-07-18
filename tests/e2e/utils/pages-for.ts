@@ -2064,6 +2064,18 @@ function pagesFor(browser) {
         api.waitUntilTextMatches(api.topic.postBodySelector(postNr), text);
       },
 
+      refreshUntilPostTextMatches: function(postNr: PostNr, regex) {
+        if (_.isString(regex)) regex = new RegExp(regex);
+        while (true) {
+          const text = api.waitAndGetVisibleText(api.topic.postBodySelector(postNr));
+          if (text.match(regex)) {
+            break;
+          }
+          browser.pause(200);
+          browser.refresh();
+        }
+      },
+
       waitUntilTitleMatches: function(text: string) {
         api.topic.waitUntilPostTextMatches(c.TitleNr, text);
       },
@@ -3628,7 +3640,7 @@ function pagesFor(browser) {
         api.topic.clickEditoPostNr(postNr);
         api.editor.editText(newText);
         api.editor.save();
-        api.topic.assertPostTextMatches(postNr, newText);
+        api.topic.waitUntilPostTextMatches(postNr, newText);
       },
 
       replyToOrigPost: function(text: string, whichButton?: string) {
