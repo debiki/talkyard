@@ -874,9 +874,11 @@ const LanguageSettings = createFactory({
       // Don't mention this is en-US, people might then want -GB too and -AU (for the UK and Australia)?
       value: 'en_US', label: "English"
     }, {
-      value: 'sv_SE', label: "Swedish"
+      value: 'pl_PL', label: "Polish"
     }, {
       value: 'pt_BR', label: "Portuguese (Brazilian)"
+    }, {
+      value: 'sv_SE', label: "Swedish"
     }];
 
     const selectedLangCode = firstDefinedOf(editedSettings.languageCode, currentSettings.languageCode);

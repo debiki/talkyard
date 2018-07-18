@@ -4,6 +4,9 @@
 [submodule "modules/ty-media"]
 	path = modules/ty-media
 	url = ../talkyard-media
+[submodule "modules/ty-cla"]
+	path = modules/ty-cla
+	url = ../ty-cla
 [submodule "modules/definitely-typed"]
 	path = modules/definitely-typed
 	url = https://github.com/borisyankov/DefinitelyTyped.git

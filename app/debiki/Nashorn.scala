@@ -493,6 +493,7 @@ class Nashorn(globals: Globals) {
       addTranslation("en_US")
       addTranslation("sv_SE")
       addTranslation("pt_BR")
+      addTranslation("pl_PL")
 
       // Add render page code.
       val rendererScript = loadFileAsString(s"/public/res/server-bundle$min.js", isTranslation = false)
