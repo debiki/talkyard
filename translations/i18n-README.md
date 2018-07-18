@@ -43,8 +43,8 @@ To add a new language:
        console.log(result);
        ```
 
-       That'll print all translated texts, and the field names as `_fieldName_`,
-       and the underscores make Google Translate not translate the field names.
+       That'll print all translated texts, and the field names as `_fieldName_` —
+       the underscores make Google Translate not translate the field names.
 
        Copy-paste into a text editor. Select the lines up to at most 5 000 chars,
        paste into Google Translate (which has a 5 000 chars max limit), look at the result.
@@ -121,5 +121,8 @@ To add a new language:
        with `[google-translate]` in a comment on the same line. Maybe every 3rd? 6th? month?,
        ask people who speak the relevant language, if those new translations are ok or not,
        and update & fix. If you feel rather unsure about if the Google Translate result is okay,
-       add the text in English instead.
+       add the text in English instead, and append  `//   MISSING`.
+       Or use the Google Translate result, and append `//  MAYBE` — meaning, a *maybe* ok translation.
+       Later on, some day, someone who knows the language, can look at the *missing* and *maybe*
+       fields.
 

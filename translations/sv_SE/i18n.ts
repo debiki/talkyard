@@ -46,6 +46,8 @@ var t_sv_SE: TalkyardTranslations = t = {
   Hide: "Göm",
   Home: "Home",
   Idea: "Idé",
+  Join: "Joina",
+  KbdShrtcsC: "Keyboard shortcuts: ",
   Loading: "Laddar...",
   LoadMore: "Mer ...",
   LogIn: "Log In",
@@ -131,7 +133,37 @@ var t_sv_SE: TalkyardTranslations = t = {
     numSecs === 1 ? "1 second ago" : `${numSecs} seconds ago`,
 
 
+  // Input fields, e.g. email, name etc.
+
+  inp: {
+    // Email address input field:
+    EmReq: "Email required",
+    NoSpcs: "No spaces please",
+    InvldAddr: "Not a valid email address",
+    NoBadChrs: "No weird characters please",
+
+    // Full name input field:
+    NotOnlSpcs: "Not just spaces please",
+    NoAt: "No @ please",
+
+    // Username input field:
+    NoDash: "No dashes (-) please",
+    DontInclAt: "Don't include the @",
+    StartEndLtrDgt: "Start and end with a letter or a digit",
+    OnlLtrNumEtc: "Only letters (a-z, A-Z) and numbers, and _ (underscore)",
+    // This shown just below the username input:
+    UnUnqShrt_1: "Your ",
+    UnUnqShrt_2: "@username",
+    UnUnqShrt_3: ", unique and short",
+
+    // Generic messages for all input fields:
+    TooShort: (minLength: number) => `Should be at least ${minLength} characters`,
+    TooLong: (maxLength: number) => `Too long. Should be at most ${maxLength} characters`,
+  },
+
+
   // Notification levels.
+
   nl: {
     WatchingAll: "Watching All",
     WatchingAllTag: "You'll be notified of new topics with this tag, and every post in those topics",
@@ -633,6 +665,43 @@ var t_sv_SE: TalkyardTranslations = t = {
   },
 
 
+  // Scroll buttons
+
+  sb: {
+    ScrollToC: "Scroll to:",
+    Scroll: "Scroll",
+
+    // The Back button, and the letter B is a keyboard shortcut.
+    // If in your language, "Back" doesn't start with 'B', then instead
+    // set Back_1 to '' (empty text), and Back_2 to:  "Back (B)" — and "Back" (but not "B")
+    // translated to your language.
+    Back_1: "B",
+    Back_2: "ack",
+    BackExpl: "Scroll back to your previous position on this page",
+
+    // These are useful on mobile — then, no keybard with Home (= scroll to top) and End buttons.
+    // And, on a keyboard, once you get used to it, it's quite nice to click 1 to go to the
+    // top, and 2 to see the first reply, and B to go back, F forward, so on.
+    PgTop: "Page top",
+    PgTopHelp: "Go to the top of the page. Shortcut: 1 (on a keyboard)",
+    Repl: "Replies",
+    ReplHelp: "Go to the Replies section. Shortcut: 2",
+    Progr: "Progress",
+    // The Progress section is at the end of the page, and there, things like
+    // "Alice changed status to Doing" and "Alise marked this as Done" and "Topic closed by ..."
+    // are shown. (And, optionally, comments by staff or the people working with the issue.)
+    ProgrHelp: "Go to the Progress section. Shortcut: 3",
+    PgBtm: "Page bottom",
+    Btm: "Bottom",
+    BotmHelp: "Go to the bottom of the page. Shortcut: 4",
+
+    // "Keyboard shrotcuts: ..., and B to scroll back"
+    Kbd_1: ", and ",
+    // then the letter 'B' (regardless of language)
+    Kbd_2: " to scroll back",
+  },
+
+
   // About user dialog
 
   aud: {
@@ -1078,6 +1147,14 @@ var t_sv_SE: TalkyardTranslations = t = {
     About: "About",
     PrivChat: "Private Chat",
     Form: "Form",
+  },
+
+
+  // Join sub community dialog
+
+  jscd: {
+    NoMoreToJoin: "No more communities to join.",
+    SelCmty: "Select community ...",
   },
 
 

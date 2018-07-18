@@ -132,7 +132,7 @@ export function prettyBytes(num: number): string {
 var shortMonthNames = [
   "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
-// Returns e.g. "Jan 25, 2015"
+// Returns e.g. "Jan 25, 2015"  I18N
 // Better than moment.js, whose .min.js.gz is 20kb (too large for the slim-bundle.js).
 export function prettyMonthDayYear(when: number, includeCurrentYear): string {
   var date = new Date(when);

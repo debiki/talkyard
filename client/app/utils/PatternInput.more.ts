@@ -130,10 +130,10 @@ export const PatternInput = createClassAndFactory({  // I18N search for all usag
 
   checkLength: function(value: string) {
     if (this.props.minLength && value.length < this.props.minLength)
-      return 'Should be at least ' + this.props.minLength + ' characters';
+      return t.inp.TooShort(this.props.minLength);
 
     if (this.props.maxLength && value.length > this.props.maxLength)
-      return 'Too long. Should be at most ' + this.props.maxLength + ' characters';
+      return t.inp.TooLong(this.props.minLength);
 
     return null;
   },

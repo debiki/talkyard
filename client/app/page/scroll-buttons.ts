@@ -289,15 +289,15 @@ export var ScrollButtons = createClassAndFactory({
       return null;
 
     const openScrollMenuButton = Button({ className: 'esScrollBtns_menu', ref: 'scrollMenuButton',
-        onClick: this.openScrollButtonsDialog }, "Scroll");
+        onClick: this.openScrollButtonsDialog }, t.sb.Scroll);
 
     // UX: Don't show num steps one can scroll back, don't: "Back (4)" — because people
     // sometimes think 4 is a post number.
     const scrollBackButton =
         Button({ className: 'esScrollBtns_back', onClick: this.goBack,
-            title: "Scroll back to your previous position on this page",
+            title: t.sb.BackExpl,
             disabled: this.state.currentVisitedPostIndex <= 0 },
-          r.span({ className: 'esScrollBtns_back_shortcut' }, "B"), "ack");
+          r.span({ className: 'esScrollBtns_back_shortcut' }, t.sb.Back_1), t.sb.Back_2);
 
     return (
       r.div({ className: 'esScrollBtns_fixedBar' },
@@ -378,33 +378,28 @@ const ScrollButtonsDropdownModal = createComponent({
 
     let content;
     if (state.isOpen) {
-      const topHelp = "Go to the top of the page. Shortcut: 1 (on the keyboard)";
-      const repliesHelp = "Go to the start of the replies section. Shortcut: 2";
-      const commentsHelp = "Go to the start of the comments and events section. Shortcut: 3";
-      const endHelp = "Go to the bottom of the page. Shortcut: 4";
-
       const scrollToTopButton = isChat ? null :
-        PrimaryButton({ className: 'esScrollDlg_Up', onClick: this.scrollToTop, title: topHelp,
+        PrimaryButton({ className: 'esScrollDlg_Up', onClick: this.scrollToTop, title: t.sb.PgTopHelp,
             disabled: !state.enableGotoTopBtn },
           r.span({},
-            r.span({ className: 'esScrollDlg_Up_Arw' }, '➜'), "Page top"));
+            r.span({ className: 'esScrollDlg_Up_Arw' }, '➜'), t.sb.PgTop));
 
       const scrollToRepliesButton = isChat || neverHasReplies ? null :
         PrimaryButton({ className: 'esScrollDlg_Replies', onClick: this.scrollToReplies,
-            title: repliesHelp, disabled: !state.enableGotoRepliesBtn },
-          r.span({ className: 'icon-reply' }, "Replies"));
+            title: t.sb.ReplHelp, disabled: !state.enableGotoRepliesBtn },
+          r.span({ className: 'icon-reply' }, t.sb.Repl));
 
       const scrollToCommentsButton = isChat || neverHasReplies ? null :
         PrimaryButton({ className: 'esScrollDlg_Comments', onClick: this.scrollToComments,
-            title: commentsHelp, disabled: !state.enableGotoCommentsBtn },
+            title: t.sb.ProgrHelp, disabled: !state.enableGotoCommentsBtn },
           r.span({ className: 'icon-comment' }),
-          r.span({ className: 'esScrollDlg_Comments_Text' }, "Comments", r.br(), "& Events"));
+          r.span({ className: 'esScrollDlg_Comments_Text' }, t.sb.Progr));
 
       const scrollToEndButton = PrimaryButton({ className: 'esScrollDlg_Down',
-          onClick: this.scrollToEnd, title: endHelp,
+          onClick: this.scrollToEnd, title: t.sb.BotmHelp,
           disabled: !state.enableGotoEndBtn },
         r.span({},
-          r.span({ className: 'esScrollDlg_Down_Arw' }, '➜'), isChat ? "Page bottom" : "Bottom"));
+          r.span({ className: 'esScrollDlg_Down_Arw' }, '➜'), isChat ? t.sb.PgBtm : t.sb.Btm));
 
       const shortcutsArray = [];
       if (scrollToTopButton) shortcutsArray.push("1");
@@ -415,11 +410,11 @@ const ScrollButtonsDropdownModal = createComponent({
 
       content =
           r.div({},
-            r.p({ className: 'esScrollDlg_title' }, "Scroll to:"),
+            r.p({ className: 'esScrollDlg_title' }, t.sb.ScrollToC),
               scrollToTopButton, scrollToRepliesButton, scrollToCommentsButton, scrollToEndButton,
             r.p({ className: 'esScrollDlg_shortcuts' },
-              "Keyboard shortcuts: ", r.b({}, shortcutsText),
-              ", and ", r.b({}, "B"), " to scroll back"));
+              t.KbdShrtcsC, r.b({}, shortcutsText),
+              t.sb.Kbd_1, r.b({}, "B"), t.sb.Kbd_2));  // ", and B to scroll back"
     }
 
     // (allowFullWidth, because this dialog isn't tall, so will be space above/below to click

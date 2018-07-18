@@ -46,9 +46,9 @@ export var FullNameInput = createClassAndFactory({
         required: this.props.required, minLength: this.props.minLength,
         className: this.props.className, placeholder: this.props.placeholder,
         help: this.props.help, tabIndex: this.props.tabIndex,
-        notRegex: /^\s+$/, notMessage: "Not just spaces please",
-        notRegexTwo: /@/, notMessageTwo: "No @ please",
-        notRegexThree: BadSymbolsRegex, notMessageThree: "No weird characters please",
+        notRegex: /^\s+$/, notMessage: t.inp.NotOnlSpcs,
+        notRegexTwo: /@/, notMessageTwo: t.inp.NoAt,
+        notRegexThree: BadSymbolsRegex, notMessageThree: t.inp.NoBadChrs, // "No weird characters please"
         error: this.props.error,
         onChange: this.props.onChangeValueOk, disabled: this.props.disabled,
         defaultValue: this.props.defaultValue }));

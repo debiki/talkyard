@@ -41,7 +41,7 @@ export function openMovePostsDialog(store: Store, post: Post, closeCaller, at: R
 }
 
 
-var MovePostsDialog = createComponent({
+const MovePostsDialog = createComponent({
   getInitialState: function () {
     return {};
   },
@@ -75,7 +75,7 @@ var MovePostsDialog = createComponent({
       }
       else {
         // Let the user decide him/herself if s/he wants to open a new page.
-        var newPostUrl = '/-' + this.state.newPageId + '#post-' + postAfter.nr;
+        const newPostUrl = '/-' + this.state.newPageId + '#post-' + postAfter.nr;
         util.openDefaultStupidDialog({
           body: r.div({},
             "Moved. ", r.a({ href: newPostUrl }, "Click here to view it."))
@@ -91,13 +91,14 @@ var MovePostsDialog = createComponent({
   },
 
   render: function () {
-    var content = r.div({},
+    const content = r.div({},
+      // Skip i18n, this is for staff only, right?
       r.p({}, "Move post to where? Specify a new parent post, can be on a different page."),
       PatternInput({ type: 'text', label: "URL to new parent post:",
         help: r.span({}, "Tips: Click the ", r.span({ className: 'icon-link' }), " link " +
           "below the destination post, to copy its URL"),
         onChangeValueOk: (value, ok) => {
-          var matches = value.match(/((https?:\/\/)?([^/]+))?\/-([a-zA-Z0-9_]+)#post-([0-9]+)$/);
+          const matches = value.match(/((https?:\/\/)?([^/]+))?\/-([a-zA-Z0-9_]+)#post-([0-9]+)$/);
           if (!matches) {
             this.setState({ ok: false });
             return;

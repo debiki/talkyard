@@ -39,6 +39,7 @@ export function joinOrCreateSubCommunity(store: Store) {
   if (me.isAdmin) {
     util.openDefaultStupidDialog({
       dialogClassName: '',
+      // Skip i18n, is for admins only.
       body: "Join a community, or create a new community?",
       primaryButtonTitle: "Join existing",
       secondaryButonTitle: "Create new",
@@ -95,6 +96,7 @@ const CreateForumDialog = createFactory({
   open: function() {
     this.setState({
       isOpen: true,
+      // Skip i18n, is for admins only.
       newForumTitle: "New Community",
       newForumFolder: '',
     })
@@ -131,6 +133,7 @@ const CreateForumDialog = createFactory({
       // Nothing.
     }
     else {
+      // Skip i18n, this is for admins only.
       content =
         r.div({ className: 'esTsD_CreateTs' },
           Input({ type: 'text', label: "Name:", id: 'e_NewCom_NameI',
@@ -152,6 +155,7 @@ const CreateForumDialog = createFactory({
     }
 
     return (
+      // Skip i18n, this is for admins only.
       Modal({ show: this.state.isOpen, onHide: this.close },
         ModalHeader({}, ModalTitle({}, "Create Community")),
         ModalBody({}, content),
@@ -219,30 +223,30 @@ const SelectSubCommunity = createFactory({
       // Nothing.
     }
     else if (!this.state.forums) {
-      content = r.p({}, "Loading ...");
+      content = r.p({}, t.Loading);
     }
     else {
       const watchbar = store.me.watchbar;
       const options = makeLabelValues(this.state.forums, watchbar);
       if (!options.length) {
-        content = r.p({}, "No more communities to join.");
+        content = r.p({}, t.jscd.NoMoreToJoin);
       }
       else {
         content =
           r.div({ className: 'esTsD_CreateTs' },
             rb.ReactSelect({ value: this.state.selectedOption,
-              className: 'esTsD_TsS', placeholder: "Select community ...",
+              className: 'esTsD_TsS', placeholder: t.jscd.SelCmty + ' ...',  // "Select community"
               options, onChange: this.onSelectChange }));
       }
     }
 
     return (
       Modal({ show: this.state.isOpen, onHide: this.close, dialogClassName: 'esTsD' },
-        ModalHeader({}, ModalTitle({}, "Select community")),
+        ModalHeader({}, ModalTitle({}, t.jscd.SelCmty)), // "Select community"
         ModalBody({}, content),
         ModalFooter({},
-          PrimaryButton({ onClick: this.doSelect, disabled: !this.state.selectedOption }, "Join"),
-          Button({ onClick: this.close }, "Cancel"))));
+          PrimaryButton({ onClick: this.doSelect, disabled: !this.state.selectedOption }, t.Join),
+          Button({ onClick: this.close }, t.Cancel))));
   }
 });
 

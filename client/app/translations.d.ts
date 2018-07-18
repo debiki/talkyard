@@ -32,6 +32,8 @@ interface TalkyardTranslations {
   Hide: string;
   Home: string;
   Idea: string;
+  Join: string;
+  KbdShrtcsC: string;
   Loading: string;
   LoadMore: string;
   LogIn: string;
@@ -107,6 +109,34 @@ interface TalkyardTranslations {
   hoursLtr: string;
   minsLtr: string;
   secsLtr: string;
+
+
+  // Input fields, e.g. email, name etc.
+  inp: {
+    // Email address input field:
+    EmReq: string;
+    NoSpcs: string;
+    InvldAddr: string;
+    NoBadChrs: string;
+
+    // Full name input field:
+    NotOnlSpcs: string;
+    NoAt: string;
+
+    // Username input field:
+    NoDash: string;
+    DontInclAt: string;
+    StartEndLtrDgt: string;
+    OnlLtrNumEtc: string;
+    UnUnqShrt_1: string;
+    UnUnqShrt_2: string;
+    UnUnqShrt_3: string;
+
+    // Generic messages for all input fields:
+    TooShort: (minLength: number) => string;
+    TooLong: (maxLength: number) => string;
+  },
+
 
   // Notification levels.
   nl: {
@@ -514,6 +544,29 @@ interface TalkyardTranslations {
   },
 
 
+  // Scroll buttons
+  sb: {
+    ScrollToC: string;
+    Scroll: string;
+    Back_1: string;
+    Back_2: string;
+    BackExpl: string;
+
+    PgTop: string;
+    PgTopHelp: string;
+    Repl: string;
+    ReplHelp: string;
+    Progr: string;
+    ProgrHelp: string;
+    PgBtm: string;
+    Btm: string;
+    BotmHelp: string;
+
+    Kbd_1: string;
+    Kbd_2: string;
+  },
+
+
   // About user dialog
   aud: {
     IsMod: string;
@@ -911,6 +964,13 @@ interface TalkyardTranslations {
     About: string;
     PrivChat: string;
     Form: string;
+  },
+
+
+  // Join sub community dialog
+  jscd: {
+    NoMoreToJoin: string;
+    SelCmty: string;
   },
 
 

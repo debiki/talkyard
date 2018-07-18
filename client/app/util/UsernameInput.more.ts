@@ -56,20 +56,20 @@ export const UsernameInput = createClassAndFactory({
         addonBefore: '@', // [7RFWUQ2]
         trim: true,
         minLength: 3, maxLength,
-        notRegex: / /, notMessage: "No spaces please",
-        notRegexTwo: /-/, notMessageTwo: "No hypens (-) please",
-        notRegexThree: /@/, notMessageThree: "Don't include the @",
+        notRegex: / /, notMessage: t.inp.NoSpcs,               // "No spaces please"
+        notRegexTwo: /-/, notMessageTwo: t.inp.NoDash,         // "No dashes please"
+        notRegexThree: /@/, notMessageThree: t.inp.DontInclAt, // "Don't include the @"
 
         regexFour: /^[a-zA-Z0-9_].*[a-zA-Z0-9]$/,
         // '_' also ok as 1st char, but needn't tell them about that?
-        messageFour: "Start and end with a letter or a digit",
+        messageFour: t.inp.StartEndLtrDgt,  // "Start and end with ..."
 
         // At this time, don't mention that '.' and '-' are also allowed — better if people only
         // use '_', until canonical usernames has been implemented (so they won't need to remember
         // which one of [_.-] to use — always '_' instead, for now).  [CANONUN]
         // Actually, because of: [UNPUNCT], currently cannot change *to* a username with [.-], only '_'.
         notRegexFour: /[^a-zA-Z0-9_.-]/,
-        notMessageFour: "Only letters (a-z, A-Z) and numbers, and _ (underscore)",
+        notMessageFour: t.inp.OnlLtrNumEtc,  // "Only letters (a-z, A-Z) and ..."
 
         onChange: (value, ok) => {
           this.setState({ username: value });
@@ -77,7 +77,9 @@ export const UsernameInput = createClassAndFactory({
         },
         onBlur: this.props.onBlur,
         defaultValue: this.props.defaultValue,
-        help: r.span({}, "Your ", r.code({}, "@username"), ", unique and short", extraHelp) }));
+        help: r.span({},
+          // "Your @username, unique and short"
+          t.inp.UnUnqShrt_1, r.code({}, t.inp.UnUnqShrt_2), t.inp.UnUnqShrt_3, extraHelp) }));
   }
 });
 

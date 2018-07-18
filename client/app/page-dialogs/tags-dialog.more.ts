@@ -119,7 +119,7 @@ const TagsDialog = createComponent({
     }
     else {
       dieIf(!post, 'EsE4GK0IF2');
-      title = post.nr === BodyNr ? "Page tags" : "Post tags";
+      title = post.nr === BodyNr ? "Page tags" : "Post tags";   // I18N tags, here and below
       content =
         r.div({ className: 'esTsD_CreateTs' },
           rb.ReactSelect({ multi: true, value: makeLabelValues(this.state.tags),

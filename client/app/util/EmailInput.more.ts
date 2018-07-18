@@ -43,12 +43,12 @@ export var EmailInput = createClassAndFactory({
         className: this.props.className, placeholder: this.props.placeholder,
         required: this.props.required, style: this.props.style,
         help: this.props.help, tabIndex: this.props.tabIndex,
-        regex: /.+/, message: "Email required",
+        regex: /.+/, message: t.inp.EmReq, // "Email required"
         trim: true,
-        notRegex: /\s/, notMessage: "No spaces please",
-        regexTwo: /^[^@]+@[^-@\.]+\.[^@]+[^-@\.]$/, messageTwo: "Not a valid email address",
+        notRegex: /\s/, notMessage: t.inp.NoSpcs,
+        regexTwo: /^[^@]+@[^-@\.]+\.[^@]+[^-@\.]$/, messageTwo: t.inp.InvldAddr, // "Not valid addr"
         notRegexThree: /['"`\/\\\#\?\!,%\^\$\&\*\[\]\(\)\{\}\:]$/,
-            notMessageThree: "No weird characters please",
+            notMessageThree: t.inp.NoBadChrs, // "No weird characters please"
         error: this.props.error,
         onChange: this.props.onChangeValueOk, disabled: this.props.disabled,
         onBlur: this.props.onBlur,

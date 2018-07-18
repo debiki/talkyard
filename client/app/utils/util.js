@@ -34,7 +34,7 @@ function trunc(number) {
 // Returns e.g. "4 days ago" or "22 hours ago" or "3 years ago".
 // `then' and `now' can be Date:s or milliseconds.
 //
-debiki.prettyDuration = function(then, now) {  // i18n
+debiki.prettyDuration = function(then, now) {
   var thenMillis = then.getTime ? then.getTime() : then;
   var nowMillis = now.getTime ? now.getTime() : now;
   var diff = nowMillis - thenMillis;
@@ -59,7 +59,7 @@ debiki.currentYear = new Date().getUTCFullYear();
 // prettyLetterDuration(then, now) = time from then up until now, e.g. Monday to Friday —> '5d'.
 // prettyLetterDuration(duration) = duration millis converted to a pretty letter, e.g 3600*1000 = '1h'.
 //
-debiki.prettyLetterDuration = function(then, now) {  // i18n
+debiki.prettyLetterDuration = function(then, now) {
   var diff;
   var isTimeSpan = !!now;
   if (isTimeSpan) {

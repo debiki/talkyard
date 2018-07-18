@@ -349,7 +349,7 @@ export var Sidebar = createComponent({  // RENAME to ContextBar
     // If the current user is the only active user, write "you" instead of "1"
     // because it'd be so boring to see "1" online user and click the Users tab only
     // to find out that it's oneself. (Also, skip spaces around '/' if number not "you")
-    const numOnlineTextSlash = usersHere.onlyMeOnline ? "you / " : usersHere.numOnline + "/";
+    const numOnlineTextSlash = usersHere.onlyMeOnline ? t.you + ' / ' : usersHere.numOnline + "/";
 
     //var unreadBtnTitle = commentsFound ? 'Unread (' + commentsFound.unread.length + ')' : null;
     const starredBtnTitle = commentsFound ? `${t.Bookmarks} (${commentsFound.starred.length})` : null;

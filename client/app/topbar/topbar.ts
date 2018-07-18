@@ -218,7 +218,7 @@ export const TopBar = createComponent({
       isImpersonatingClass = ' s_MMB-IsImp';
       if (!me.isLoggedIn) {
         isImpersonatingClass += ' s_MMB-IsImp-Stranger';
-        impersonatingStrangerInfo = "Viewing as stranger"; // (no i18n, is for staff)
+        impersonatingStrangerInfo = "Viewing as stranger"; // (skip i18n, is for staff)
         // SECURITY COULD add a logout button, so won't need to first click stop-viewing-as,
         // and then also click Logout. 2 steps = a bit risky, 1 step = simpler, safer.
       }
