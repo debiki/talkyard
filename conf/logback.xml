@@ -14,8 +14,10 @@
     <file>/var/log/talkyard/talkyard-app.log</file>
     <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
       <fileNamePattern>/var/log/talkyard/talkyard-app.%d{yyyy-ww}.log</fileNamePattern>
+      <maxHistory>12</maxHistory>
+      <!-- Maybe otherwise a "log loop bug" could fill up the disk? -->
+      <totalSizeCap>200MB</totalSizeCap>
     </rollingPolicy>
-    <maxHistory>12</maxHistory>
     <encoder class="ch.qos.logback.core.encoder.LayoutWrappingEncoder">
       <layout class="ed.stackdriver.StackdriverLayout" />
     </encoder>
