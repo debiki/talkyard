@@ -54,7 +54,8 @@ case class NotfHtmlRenderer(siteDao: SiteDao, anyOrigin: Option[String]) {
       case Some(url) =>
         // If many different discussions (topics) on the same page, would need to include
         // discussion id too (i.e. `${pageMeta.pageId}`)
-        s"$url#comment-${post.nr - 1}"  // see [2PAWC0] for 'comment-' instead of 'post-', and for -1
+        // see [2PAWC0] for 'comment-' instead of 'post-'. The first reply will be #comment-1.
+        s"$url#comment-${post.nr - PageParts.MaxNonReplyNr}"
       case None =>
         // The page is hosted by Debiki so its url uniquely identifies the topic.
         val origin = anyOrigin getOrElse siteDao.globals.siteByIdOrigin(siteDao.siteId)

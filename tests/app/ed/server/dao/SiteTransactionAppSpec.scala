@@ -21,6 +21,7 @@ import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki._
 import debiki.dao.{CreateForumResult, DaoAppSuite, SiteDao}
+import PageParts.{TitleNr, BodyNr, FirstReplyNr}
 
 
 class SiteTransactionAppSpec extends DaoAppSuite {
@@ -276,7 +277,7 @@ class SiteTransactionAppSpec extends DaoAppSuite {
             lastViewedPostNr = 2020,
             lastReadAt = Some(When.fromMinutes(2002)),
             lastPostNrsReadRecentFirst = Vector.empty,
-            lowPostNrsRead = Set(1, 2, 3, 8),
+            lowPostNrsRead = Set(BodyNr, FirstReplyNr, FirstReplyNr + 1, 9),
             secondsReading = 203)
           transaction.upsertReadProgress(admin.id, otherPageId, progressLowNrs)
           var loadedProgress = transaction.loadReadProgress(admin.id, otherPageId)
@@ -292,7 +293,7 @@ class SiteTransactionAppSpec extends DaoAppSuite {
             lastViewedPostNr = 3020,
             lastReadAt = Some(When.fromMinutes(3002)),
             lastPostNrsReadRecentFirst = Vector(3103),
-            lowPostNrsRead = Set(1, 10, 100, 200, 300, 400, 500, 512),
+            lowPostNrsRead = Set(BodyNr, 11, 101, 201, 301, 401, 501, 513),
             secondsReading = 303)
           transaction.upsertReadProgress(admin.id, thirdPageId, progressHighNrs)
           val loadedProgress = transaction.loadReadProgress(admin.id, thirdPageId)
@@ -308,7 +309,7 @@ class SiteTransactionAppSpec extends DaoAppSuite {
             lastViewedPostNr = 4020,
             lastReadAt = Some(When.fromMinutes(4030)),
             lastPostNrsReadRecentFirst = Vector(4104),
-            lowPostNrsRead = Set(1, 2, 3, 4, 5, 6, 7, 8),
+            lowPostNrsRead = Set(2, 3, 4, 5, 6, 7, 8, 9),   // 2 == BodyNr
             secondsReading = 403)
           transaction.upsertReadProgress(admin.id, thirdPageId, progress)
           val loadedProgress = transaction.loadReadProgress(admin.id, thirdPageId)
@@ -367,82 +368,82 @@ class SiteTransactionAppSpec extends DaoAppSuite {
 
       "load and save posts read stats, for members" in {
         dao.readWriteTransaction { transaction =>
-          transaction.updatePostsReadStats(pageAId, postNrsRead = Set(1), userA.id,
+          transaction.updatePostsReadStats(pageAId, postNrsRead = Set(BodyNr), userA.id,
             readFromIp = "1.2.3.4")
-          transaction.updatePostsReadStats(pageBId, postNrsRead = Set(1,2,3,5), userA.id,
+          transaction.updatePostsReadStats(pageBId, postNrsRead = Set(BodyNr,3,4,6), userA.id,
             readFromIp = "1.2.3.4")
-          transaction.updatePostsReadStats(pageBId, postNrsRead = Set(1,5), userB.id,
+          transaction.updatePostsReadStats(pageBId, postNrsRead = Set(BodyNr,6), userB.id,
             readFromIp = "1.2.3.4")
 
           val pageAStats = transaction.loadPostsReadStats(pageAId)
-          pageAStats.readCountFor(0) mustBe 0
-          pageAStats.readCountFor(1) mustBe 1
-          pageAStats.readCountFor(2) mustBe 0
+          pageAStats.readCountFor(1) mustBe 0
+          pageAStats.readCountFor(BodyNr) mustBe 1
           pageAStats.readCountFor(3) mustBe 0
           pageAStats.readCountFor(4) mustBe 0
+          pageAStats.readCountFor(5) mustBe 0
 
           val pageBStats = transaction.loadPostsReadStats(pageBId)
-          pageBStats.readCountFor(0) mustBe 0
-          pageBStats.readCountFor(1) mustBe 2
-          pageBStats.readCountFor(2) mustBe 1
+          pageBStats.readCountFor(1) mustBe 0
+          pageBStats.readCountFor(BodyNr) mustBe 2
           pageBStats.readCountFor(3) mustBe 1
-          pageBStats.readCountFor(4) mustBe 0
-          pageBStats.readCountFor(5) mustBe 2
-          pageBStats.readCountFor(6) mustBe 0
+          pageBStats.readCountFor(4) mustBe 1
+          pageBStats.readCountFor(5) mustBe 0
+          pageBStats.readCountFor(6) mustBe 2
           pageBStats.readCountFor(7) mustBe 0
           pageBStats.readCountFor(8) mustBe 0
+          pageBStats.readCountFor(9) mustBe 0
 
           info("Handles dupl inserts: post 5 already inserted")
           transaction.updatePostsReadStats(pageBId, postNrsRead = Set(5, 7), userB.id,
             readFromIp = "1.2.3.4")
           val pageBStats2 = transaction.loadPostsReadStats(pageBId)
-          pageBStats2.readCountFor(5) mustBe 2  // wasn't incremented to 3, because is same user
-          pageBStats2.readCountFor(6) mustBe 0
-          pageBStats2.readCountFor(7) mustBe 1  // was incremented, no one had read it before
-          pageBStats2.readCountFor(8) mustBe 0
+          pageBStats2.readCountFor(6) mustBe 2  // wasn't incremented to 3, because is same user
+          pageBStats2.readCountFor(7) mustBe 0
+          pageBStats2.readCountFor(8) mustBe 1  // was incremented, no one had read it before
+          pageBStats2.readCountFor(9) mustBe 0
 
           info("Won't find non-existing pages")
           val nonExistingStats = transaction.loadPostsReadStats("9999")
-          nonExistingStats.readCountFor(0) mustBe 0
-          nonExistingStats.readCountFor(1) mustBe 0
-          nonExistingStats.readCountFor(2) mustBe 0
+          nonExistingStats.readCountFor(TitleNr) mustBe 0
+          nonExistingStats.readCountFor(BodyNr) mustBe 0
           nonExistingStats.readCountFor(3) mustBe 0
           nonExistingStats.readCountFor(4) mustBe 0
+          nonExistingStats.readCountFor(5) mustBe 0
         }
       }
 
       "load and save posts read stats, for guests" in {
         dao.readWriteTransaction { transaction =>
-          transaction.updatePostsReadStats(pageAId, postNrsRead = Set(1,3), guestA.id,
+          transaction.updatePostsReadStats(pageAId, postNrsRead = Set(BodyNr, FirstReplyNr+1), guestA.id,
             readFromIp = "2.2.2.2")
           val pageAStats = transaction.loadPostsReadStats(pageAId)
-          pageAStats.readCountFor(0) mustBe 0
-          pageAStats.readCountFor(1) mustBe 2  // userA and guestA have read it
-          pageAStats.readCountFor(2) mustBe 0
-          pageAStats.readCountFor(3) mustBe 1  // only gustA has read it
-          pageAStats.readCountFor(4) mustBe 0
+          pageAStats.readCountFor(1) mustBe 0
+          pageAStats.readCountFor(2) mustBe 2  // userA and guestA have read it  BodyNr
+          pageAStats.readCountFor(3) mustBe 0
+          pageAStats.readCountFor(4) mustBe 1  // only gustA has read it
+          pageAStats.readCountFor(5) mustBe 0
 
           info("Handles dupl guest inserts: post 3 already inserted")
           transaction.updatePostsReadStats(pageAId, postNrsRead = Set(3,4), guestA.id,
             readFromIp = "2.2.2.2")
           val pageAStats2 = transaction.loadPostsReadStats(pageAId)
-          pageAStats2.readCountFor(0) mustBe 0
-          pageAStats2.readCountFor(1) mustBe 2
-          pageAStats2.readCountFor(2) mustBe 0
-          pageAStats2.readCountFor(3) mustBe 1  // wasn't incremented, is same user
-          pageAStats2.readCountFor(4) mustBe 1
-          pageAStats2.readCountFor(5) mustBe 0
+          pageAStats2.readCountFor(TitleNr) mustBe 0
+          pageAStats2.readCountFor(BodyNr) mustBe 2
+          pageAStats2.readCountFor(FirstReplyNr) mustBe 0
+          pageAStats2.readCountFor(4) mustBe 1  // wasn't incremented, is same user
+          pageAStats2.readCountFor(5) mustBe 1
+          pageAStats2.readCountFor(6) mustBe 0
 
           info("But other guest can read that post")
           transaction.updatePostsReadStats(pageAId, postNrsRead = Set(3,5), guestB.id,
             readFromIp = "3.3.3.3")
           val pageAStats3 = transaction.loadPostsReadStats(pageAId)
-          pageAStats3.readCountFor(0) mustBe 0
-          pageAStats3.readCountFor(1) mustBe 2
-          pageAStats3.readCountFor(2) mustBe 0
-          pageAStats3.readCountFor(3) mustBe 2  // was incremented, becaues different guest
-          pageAStats3.readCountFor(4) mustBe 1
+          pageAStats3.readCountFor(TitleNr) mustBe 0
+          pageAStats3.readCountFor(BodyNr) mustBe 2
+          pageAStats3.readCountFor(FirstReplyNr) mustBe 0
+          pageAStats3.readCountFor(4) mustBe 2  // was incremented, becaues different guest
           pageAStats3.readCountFor(5) mustBe 1
+          pageAStats3.readCountFor(6) mustBe 1
         }
       }
   }

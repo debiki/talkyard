@@ -96,7 +96,7 @@ const ShareDialog = createComponent({
         // this is better: http://blog/post/123#comment-456.
         // Subtract 1 to get the comment nr — the firs reply is post 2, but comment 1.  [2PAWC0]
         // (The orig post has post nr 1.)
-        const hash = post.nr >= FirstReplyNr ? '#comment-' + (post.nr - 1) : '';
+        const hash = post.nr >= FirstReplyNr ? '#comment-' + (post.nr - 1) : ''; ///
         url = embeddingUrl.split('#')[0] + hash;
       }
       else {

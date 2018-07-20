@@ -27,15 +27,15 @@ import org.scalactic.{Bad, Good, One, Or}
 object PageParts {
 
 
-  // Letting the page body / original post be number 1 is compatible with Discourse.
-  val TitleNr = 0
-  val BodyNr = 1  // (could rename to OrigPostId)
-  val FirstReplyNr = 2  // [5FKF0F2]
+  val TitleNr = 1
+  val BodyNr = 2  // (could rename to OrigPostId)
+  val FirstReplyNr = 3  // [5FKF0F2]
+  val MaxNonReplyNr =  2 // title and body
 
-  val LowestPostNr = TitleNr
-  assert(LowestPostNr == 0)
+  val LowestPostNr: Int = TitleNr   // search for LowestPostNr usages, + those above too
+  assert(LowestPostNr == 1)
 
-  val NoNr: Int = -1
+  val NoNr: Int = 0   // ? becomes 0 ?  search for  -1
 
   val MaxTitleLength = 150
 

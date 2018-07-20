@@ -159,7 +159,7 @@ object PageMeta {
   * @param numRepliesVisible Replies that haven't been deleted or hidden, and have been approved.
   *                          Includes collapsed and closed replies.
   * @param numRepliesTotal Counts all replies, also deleted, hidden and not-yet-approved replies.
-  * @param numPostsTotal Includes all replies, and also meta message posts.
+  * @param numPostsTotal Includes all replies, and also meta message posts.   ? what about the title ?
   * @param answeredAt For questions: when a reply was accepted as the answer to the question.
   * @param answerPostUniqueId The id of the post that answers this question.
   // [befrel] @param answerPostNr

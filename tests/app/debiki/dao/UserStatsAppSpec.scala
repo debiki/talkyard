@@ -19,6 +19,7 @@ package debiki.dao
 
 import com.debiki.core._
 import java.{util => ju}
+import PageParts.{BodyNr, FirstReplyNr}
 
 
 class UserStatsAppSpec extends DaoAppSuite() {
@@ -79,9 +80,9 @@ class UserStatsAppSpec extends DaoAppSuite() {
         textAndHtmlMaker.testTitle("withRepliesTopicId"),
         textAndHtmlMaker.testBody("withRepliesTopicId bd"),
         owner.id, browserIdData, dao, Some(categoryId))
-      reply(moderator.id, withRepliesTopicId, s"Reply 1 (post nr 2)")(dao)
-      reply(moderator.id, withRepliesTopicId, s"Reply 2 (post nr 3)")(dao)
-      reply(moderator.id, withRepliesTopicId, s"Reply 3 (post nr 4)")(dao)
+      reply(moderator.id, withRepliesTopicId, s"Reply 1 (post nr 3)")(dao)
+      reply(moderator.id, withRepliesTopicId, s"Reply 2 (post nr 4)")(dao)
+      reply(moderator.id, withRepliesTopicId, s"Reply 3 (post nr 5)")(dao)
       pretendThereAreManyReplies(withRepliesTopicId)
 
       twoMessagesChatTopicId = createPage(PageRole.OpenChat,
@@ -270,7 +271,7 @@ class UserStatsAppSpec extends DaoAppSuite() {
         lastViewedPostNr = 10,
         lastReadAt = Some(globals.now()),
         lastPostNrsReadRecentFirst = Vector.empty,
-        lowPostNrsRead = Set(1 to 10: _*),
+        lowPostNrsRead = Set(PageParts.BodyNr to 11: _*),
         secondsReading = 4))
       val correctStats = currentStats.copy(
         lastSeenAt = currentTime,
@@ -296,9 +297,9 @@ class UserStatsAppSpec extends DaoAppSuite() {
       val correctStats = currentStats.copy(
         lastSeenAt = currentTime,
         numSecondsReading = 2238,  // 1238 + 1000
-        // 1..10 had been read earlier.  -1 because orig-post isn't a chat message (it instead
-        // contains the purpose of the chat).
-        numChatMessagesRead = ReadingProgress.MaxLowPostNr - 1)
+        // 2..11 had been read earlier.  -2 = MaxNonReplyNr because orig-post isn't a chat message
+        // (it instead contains the purpose of the chat).
+        numChatMessagesRead = ReadingProgress.MaxLowPostNr - PageParts.MaxNonReplyNr)
 
       currentStats = loadUserStats(member1.id)(dao)
       currentStats mustBe correctStats
@@ -310,10 +311,10 @@ class UserStatsAppSpec extends DaoAppSuite() {
         dao.trackReadingProgressPerhapsPromote(member1, twoMessagesChatTopicId, ReadingProgress(
           firstVisitedAt = globals.now(),
           lastVisitedAt = globals.now(),
-          lastViewedPostNr = 1,
+          lastViewedPostNr = PageParts.BodyNr,
           lastReadAt = Some(globals.now()),
           lastPostNrsReadRecentFirst = Vector.empty,
-          lowPostNrsRead = Set(2, 3, 4),  // nr 4 doesn't exist
+          lowPostNrsRead = Set(FirstReplyNr, FirstReplyNr + 1, FirstReplyNr + 2), // reply 3 doesn't exist
           secondsReading = 1))
       }
       exception.getMessage must include("EdE7UKW25_")
@@ -324,16 +325,17 @@ class UserStatsAppSpec extends DaoAppSuite() {
       dao.trackReadingProgressPerhapsPromote(member1, twoMessagesChatTopicId, ReadingProgress(
         firstVisitedAt = globals.now() minusMillis 500,
         lastVisitedAt = globals.now(),
-        lastViewedPostNr = 1,
+        lastViewedPostNr = BodyNr,
         lastReadAt = Some(globals.now()),
         lastPostNrsReadRecentFirst = Vector.empty,
-        lowPostNrsRead = Set(1, 2, 3),  // nr 1 = the orig post, won't count, so +2 below (not +3)
+        // The orig post, won't count, so +2 below (not +3)
+        lowPostNrsRead = Set(BodyNr, FirstReplyNr, FirstReplyNr + 1),
         secondsReading = 200))
       val correctStats = currentStats.copy(
         lastSeenAt = currentTime,
         numSecondsReading = 2438,  // 2238 + 200
         numChatTopicsEntered = 2,
-        numChatMessagesRead = ReadingProgress.MaxLowPostNr - 1 + 2)
+        numChatMessagesRead = ReadingProgress.MaxLowPostNr - BodyNr + 2)
       currentStats = loadUserStats(member1.id)(dao)
       currentStats mustBe correctStats
     }

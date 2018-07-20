@@ -630,8 +630,8 @@ trait PagesDao {
 
     // The caller must have remembered to update numPostsTotal.
     val pageMeta = tx.loadThePageMeta(pageId)
-    dieIf(pageMeta.numPostsTotal != postNr + 1, "EdE3PFK2W0", o"""pageMeta.numPostsTotal
-        is ${pageMeta.numPostsTotal} but should be = postNr + 1 = ${postNr + 1}""")
+    dieIf(pageMeta.numPostsTotal != postNr, "TyE3PFK2W0", o"""pageMeta.numPostsTotal
+        is ${pageMeta.numPostsTotal} but should be = postNr = $postNr""")
 
     tx.insertPost(metaMessage)
 

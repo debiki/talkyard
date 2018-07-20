@@ -44,7 +44,7 @@ class VoteController @Inject()(cc: ControllerComponents, edContext: EdContext)
     *   postNr: 123
     *   vote: "VoteLike"      # or "VoteWrong" or "VoteBury"
     *   action: "CreateVote"  # or "DeleteVote"
-    *   postIdsRead: [1, 9, 53, 82]
+    *   postNrsRead: [2, 9, 53, 82]
     */
   def handleVotes: Action[JsValue] = PostJsonAction(RateLimits.RatePost, maxBytes = 500) {
         request: JsonPostRequest =>
@@ -64,6 +64,8 @@ class VoteController @Inject()(cc: ControllerComponents, edContext: EdContext)
     }
 
     throwForbiddenIf(requester.isGroup, "EdE5PZWC2", "Groups may not vote")
+    throwForbiddenIf(postNr == PageParts.TitleNr, "TyE4WDK20", "Cannot vote on title")
+    throwForbiddenIf(postNrsReadSeq.contains(PageParts.TitleNr), "TyE5BKPFU0", "Title in posts read list")
 
     // Check for bad requests
     if (delete) {

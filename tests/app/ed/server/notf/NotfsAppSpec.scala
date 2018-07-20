@@ -109,7 +109,7 @@ class NotfsAppSpec extends DaoAppSuite(disableScripts = false) {
         textAndHtmlMaker.testTitle("withRepliesTopicId"),
         textAndHtmlMaker.testBody("withRepliesTopicId bd"),
         owner.id, browserIdData, dao, Some(categoryId))
-      reply(moderator.id, withRepliesTopicId, s"Reply 1 (post nr 2) by mod", parentNr = None)(dao)
+      reply(moderator.id, withRepliesTopicId, s"Reply 1 (post nr 3) by mod", parentNr = None)(dao)
       expectedTotalNumNotfs += 1
 
       // The rest of the tests don't expect Owner to be notified about everything.

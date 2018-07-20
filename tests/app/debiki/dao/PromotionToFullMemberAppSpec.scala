@@ -76,10 +76,10 @@ class PromotionToFullMemberAppSpec extends DaoAppSuite() {
       dao.trackReadingProgressPerhapsPromote(member1, pageIds(1), ReadingProgress(
         firstVisitedAt = startTime.minusSeconds(10),
         lastVisitedAt = startTime,
-        lastViewedPostNr = 1,
+        lastViewedPostNr = PageParts.BodyNr,
         lastReadAt = Some(startTime),
         lastPostNrsReadRecentFirst = Vector.empty,
-        lowPostNrsRead = Set[PostNr](1),
+        lowPostNrsRead = Set[PostNr](PageParts.BodyNr),
         secondsReading = 60))
 
       // Didn't get promoted
@@ -94,20 +94,20 @@ class PromotionToFullMemberAppSpec extends DaoAppSuite() {
       dao.trackReadingProgressPerhapsPromote(member1, pageIds(2), ReadingProgress(
         firstVisitedAt = currentTime.minusSeconds(1),
         lastVisitedAt = currentTime,
-        lastViewedPostNr = 1,
+        lastViewedPostNr = PageParts.BodyNr,
         lastReadAt = Some(currentTime),
         lastPostNrsReadRecentFirst = Vector.empty,
-        lowPostNrsRead = Set[PostNr](1 to 25: _*),  // 24 replies, 25 = the limit
+        lowPostNrsRead = Set[PostNr](PageParts.BodyNr to 26: _*),  // 24 replies, 25 = the limit
         secondsReading = 6*60))
 
       // Entering the 3rd topic, entering 4 = the limit
       dao.trackReadingProgressPerhapsPromote(member1, pageIds(3), ReadingProgress(
         firstVisitedAt = currentTime.minusSeconds(1),
         lastVisitedAt = currentTime,
-        lastViewedPostNr = 1,
+        lastViewedPostNr = PageParts.BodyNr,
         lastReadAt = Some(currentTime),
         lastPostNrsReadRecentFirst = Vector.empty,
-        lowPostNrsRead = Set[PostNr](1),
+        lowPostNrsRead = Set[PostNr](PageParts.BodyNr),
         secondsReading = 59))   // 60 + 6*60 + 59 = 7 min 59 seconds, limit = 8 minutes
 
       // Didn't get promoted now either.
@@ -125,10 +125,11 @@ class PromotionToFullMemberAppSpec extends DaoAppSuite() {
       dao.trackReadingProgressPerhapsPromote(member1, pageIds(4), ReadingProgress(
         firstVisitedAt = currentTime.minusSeconds(1),
         lastVisitedAt = currentTime,
-        lastViewedPostNr = 1,
+        lastViewedPostNr = PageParts.BodyNr,
         lastReadAt = Some(currentTime),
         lastPostNrsReadRecentFirst = Vector.empty,
-        lowPostNrsRead = Set[PostNr](1, 2), // means 1 more reply read (orig post = 1 doesn't count)
+        // This means 1 more reply read (orig post = BodyNr doesn't count).
+        lowPostNrsRead = Set[PostNr](PageParts.BodyNr, PageParts.FirstReplyNr),
         secondsReading = 1))
 
       // Did get promoted.

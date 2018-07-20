@@ -24,7 +24,8 @@ case class PostsReadStats(
   guestIpsByPostNr: Map[PostNr, Set[String]],
   roleIdsByPostNr: Map[PostNr, Set[RoleId]]) {
 
-  def readCountFor(postNr: PostNr) = {
+  def readCountFor(postNr: PostNr): Int = {
+    require(postNr >= PageParts.BodyNr, "TyE4WKAB03")
     val numGuestIps = guestIpsByPostNr.get(postNr).map(_.size) getOrElse 0
     val numRoleIds = roleIdsByPostNr.get(postNr).map(_.size) getOrElse 0
     numGuestIps + numRoleIds

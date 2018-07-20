@@ -168,7 +168,7 @@ trait AuthzSiteDaoMixin {
 
   def maySeePostUseCache(post: Post, pageMeta: PageMeta, user: Option[User],
         maySeeUnlistedPages: Boolean): (Boolean, String) = {
-    maySeePostImpl(pageId = null, postNr = -1, user, anyPost = Some(post),
+    maySeePostImpl(pageId = null, postNr = PageParts.NoNr, user, anyPost = Some(post),
       anyPageMeta = Some(pageMeta), maySeeUnlistedPages = maySeeUnlistedPages,
       anyTransaction = None)
   }
@@ -176,7 +176,7 @@ trait AuthzSiteDaoMixin {
 
   def throwIfMayNotSeePost(post: Post, author: Option[User])(transaction: SiteTransaction) {
     val (may, debugCode) =
-      maySeePostImpl(post.pageId, postNr = -1, author, anyPost = Some(post),
+      maySeePostImpl(post.pageId, postNr = PageParts.NoNr, author, anyPost = Some(post),
         anyTransaction = Some(transaction))
     if (!may)
       throwIndistinguishableNotFound(s"EdE4KFA20-$debugCode")
@@ -189,7 +189,7 @@ trait AuthzSiteDaoMixin {
         : (Boolean, String) = {
 
     require(anyPageMeta.isDefined ^ (pageId ne null), "EdE25KWU24")
-    require(anyPost.isDefined ^ (postNr >= 0), "EdE3DJ8A0")
+    require(anyPost.isDefined ^ (postNr >= PageParts.LowestPostNr), "EdE3DJ8A0")
 
     val pageMeta = anyPageMeta getOrElse {
       anyTransaction.map(_.loadPageMeta(pageId)).getOrElse(getPageMeta(pageId)) getOrElse {
@@ -230,7 +230,7 @@ trait AuthzSiteDaoMixin {
     val post = loadPostByUniqueId(postId) getOrDie "TyE5WKBGP"  // there's a foreign key
     val requester = getTheUser(forWho.id)
     val (may, debugCode) =
-      maySeePostImpl(post.pageId, postNr = -1, Some(requester), anyPost = Some(post),
+      maySeePostImpl(post.pageId, postNr = PageParts.NoNr, Some(requester), anyPost = Some(post),
         anyTransaction = None)
     if (!may)
       throwIndistinguishableNotFound(s"TyEM0REVTSK-$debugCode")

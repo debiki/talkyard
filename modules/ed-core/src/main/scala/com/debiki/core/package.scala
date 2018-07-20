@@ -37,7 +37,7 @@ package object core {
   val NoPostId = 0
 
   type PostNr = Int
-  val NoPostNr: PostNr = -1
+  val NoPostNr: PostNr = 0
 
   type PageId = String
   type AltPageId = String
@@ -475,7 +475,8 @@ package object core {
     }
     require(lowPostNrsRead.isEmpty || lowPostNrsRead.max <= MaxLowPostNr,
       s"Got max = ${lowPostNrsRead.max} [EdE2W4KA8]")
-    require(lowPostNrsRead.isEmpty || lowPostNrsRead.min >= 1, // title (nr 0) shouldn't be included
+    // The title (nr 1) shouldn't be included.
+    require(lowPostNrsRead.isEmpty || lowPostNrsRead.min >= PageParts.BodyNr,
       s"Got min = ${lowPostNrsRead.min} [EdE4GHSU2]")
 
     require(lastPostNrsReadRecentFirst.size <= MaxLastPostsToRemember, "EdE24GKF0")
@@ -528,17 +529,18 @@ package object core {
       // the BitSet, but then need to cast to $BitSet1 or $BitSet2 or $BitSetN = complicated.
       var byteIndex = 0
 
-      // -1 because the first bit is post nr 1, not 0, that is, bits 0..7 store is-read flags
-      // for posts 1..8 (not posts 0..7).
-      // The maxIndex becomes = 0 if only posts 1..8 included, and 63 if posts 504..512 included.
-      val maxIndex = (lowPostNrsRead.max - 1) / 8
+      // -2 = BodyNr because the first bit is post nr 2 = page body, not 0, that is, bits 0..7 store is-read flags
+      // for posts 2..9 (not posts 0..7) = page body (nr 2), reply 1 (nr 3) ... .
+      // The maxIndex becomes = 0 if only posts 2..9 included, and 63 if posts 505..513 included.
+      assert(PageParts.BodyNr == 2)
+      val maxIndex = (lowPostNrsRead.max - PageParts.BodyNr) / 8
 
       while (byteIndex <= maxIndex) {
         var currentByte: Int = 0 // "byte" because only using the lowest 8 bits
         var bitIndex = 0
         while (bitIndex < 8) {
-          // +1 because first post nr is 1 (orig post) not 0 (the title).
-          val postNr = byteIndex * 8 + bitIndex + 1
+          // +2 = BodyNr because first post nr is 2 (orig post) not 1 (the title).
+          val postNr = byteIndex * 8 + bitIndex + PageParts.BodyNr
           // (Could use lowPostNrsRead.iterator instead to skip all zero bits, but barely matters.)
           if (lowPostNrsRead.contains(postNr)) {
             val more: Int = 1 << bitIndex
@@ -557,7 +559,8 @@ package object core {
 
   object ReadingProgress {
     val MaxLastPostsToRemember = 100
-    val MaxLowPostNr = 512  // 8 Longs = 8 * 8 bytes * 8 bits/byte = 512 bits = post nrs 1...512
+    // 8 Longs = 8 * 8 bytes * 8 bits/byte = 512 bits = post nrs 2...513, because starts on BodyNr = 2.
+    val MaxLowPostNr = 513
 
 
     /** There's a unit test.
@@ -571,7 +574,9 @@ package object core {
         var bitIx = 0
         while (bitIx < 8) {
           val bitmask = 1 << bitIx
-          val postNr = base + bitIx + 1  // + 1 because first bit, at index 0, = post nr 1 (not 0)
+          // Add 2, that is, BodyNr, because first bit, at index 0, is for post nr 2 = page body
+          // (not 1 = the tittle or 0 = nothing).
+          val postNr = base + bitIx + PageParts.BodyNr
           val isIncluded = (byte & bitmask) != 0
           if (isIncluded) {
             postNrs append postNr
