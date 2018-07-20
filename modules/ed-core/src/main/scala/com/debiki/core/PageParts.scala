@@ -28,14 +28,18 @@ object PageParts {
 
 
   // Letting the page body / original post be number 1 is compatible with Discourse.
+  // COULD change to TitleNr = -1. That'd *reduce bug risk* because right now,
+  // client side, one always need to remember to use `if (_.isNumber(postNr))` instead of just
+  // `if (postNr)` to see if one got a post number or not. [4WKBA20]
   val TitleNr = 0
-  val BodyNr = 1  // (could rename to OrigPostId)
+
+  val BodyNr = 1
   val FirstReplyNr = 2  // [5FKF0F2]
 
-  val LowestPostNr = TitleNr
+  val LowestPostNr: Int = TitleNr   // would need to remove if does: [4WKBA20]
   assert(LowestPostNr == 0)
 
-  val NoNr: Int = -1
+  val NoNr: Int = -1   // would be good to change to 0 instead [4WKBA20]
 
   val MaxTitleLength = 150
 

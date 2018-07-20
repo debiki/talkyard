@@ -23,6 +23,7 @@ import org.apache.commons.validator.routines.EmailValidator
 import org.scalactic.{Bad, ErrorMessage, Good, Or}
 import scala.collection.immutable
 import scala.collection.mutable.ArrayBuffer
+import com.debiki.core.PageParts.BodyNr
 
 
 package object core {
@@ -37,7 +38,7 @@ package object core {
   val NoPostId = 0
 
   type PostNr = Int
-  val NoPostNr: PostNr = -1
+  val NoPostNr: PostNr = -1  // COULD change to 0, and set TitleNr = -1  [4WKBA20]
 
   type PageId = String
   type AltPageId = String
@@ -93,7 +94,7 @@ package object core {
     */
   type AnyPageRoot = Option[PostNr]
 
-  val DefaultPageRoot = Some(PageParts.BodyNr)
+  val DefaultPageRoot = Some(BodyNr)
 
   type SettingNameValue[A] = (String, Option[A])
 
@@ -331,7 +332,7 @@ package object core {
     anyPageRoot: Option[PostNr],
     anyPageQuery: Option[PageQuery]) {
 
-    def thePageRoot: PostNr = anyPageRoot getOrElse PageParts.BodyNr
+    def thePageRoot: PostNr = anyPageRoot getOrElse BodyNr
     def remoteOriginOrEmpty: String = if (isEmbedded) origin else ""  // [REMOTEORIGIN]
     def cdnOriginOrEmpty: String = anyCdnOrigin getOrElse ""
   }
@@ -475,7 +476,7 @@ package object core {
     }
     require(lowPostNrsRead.isEmpty || lowPostNrsRead.max <= MaxLowPostNr,
       s"Got max = ${lowPostNrsRead.max} [EdE2W4KA8]")
-    require(lowPostNrsRead.isEmpty || lowPostNrsRead.min >= 1, // title (nr 0) shouldn't be included
+    require(lowPostNrsRead.isEmpty || lowPostNrsRead.min >= BodyNr,// shouldn't be title
       s"Got min = ${lowPostNrsRead.min} [EdE4GHSU2]")
 
     require(lastPostNrsReadRecentFirst.size <= MaxLastPostsToRemember, "EdE24GKF0")
@@ -493,7 +494,7 @@ package object core {
 
     def numNonOrigPostsRead: Int =
       lowPostNrsRead.size + lastPostNrsReadRecentFirst.size -
-         (if (lowPostNrsRead.contains(PageParts.BodyNr)) 1 else 0)
+         (if (lowPostNrsRead.contains(BodyNr)) 1 else 0)
 
 
     def addMore(moreProgress: ReadingProgress): ReadingProgress = {
@@ -531,14 +532,15 @@ package object core {
       // -1 because the first bit is post nr 1, not 0, that is, bits 0..7 store is-read flags
       // for posts 1..8 (not posts 0..7).
       // The maxIndex becomes = 0 if only posts 1..8 included, and 63 if posts 504..512 included.
-      val maxIndex = (lowPostNrsRead.max - 1) / 8
+      assert(BodyNr == 1)
+      val maxIndex = (lowPostNrsRead.max - BodyNr) / 8
 
       while (byteIndex <= maxIndex) {
         var currentByte: Int = 0 // "byte" because only using the lowest 8 bits
         var bitIndex = 0
         while (bitIndex < 8) {
-          // +1 because first post nr is 1 (orig post) not 0 (the title).
-          val postNr = byteIndex * 8 + bitIndex + 1
+          // +1 because first post nr is 1 (orig post = BodyNr)  (skip the title).
+          val postNr = byteIndex * 8 + bitIndex + BodyNr
           // (Could use lowPostNrsRead.iterator instead to skip all zero bits, but barely matters.)
           if (lowPostNrsRead.contains(postNr)) {
             val more: Int = 1 << bitIndex
@@ -571,7 +573,7 @@ package object core {
         var bitIx = 0
         while (bitIx < 8) {
           val bitmask = 1 << bitIx
-          val postNr = base + bitIx + 1  // + 1 because first bit, at index 0, = post nr 1 (not 0)
+          val postNr = base + bitIx + BodyNr  // + 1 because first bit, at index 0, = post nr 1 (not 0)
           val isIncluded = (byte & bitmask) != 0
           if (isIncluded) {
             postNrs append postNr

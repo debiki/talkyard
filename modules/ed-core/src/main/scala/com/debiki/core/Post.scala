@@ -250,6 +250,7 @@ case class Post(
   numTimesRead: Int) {
 
   require(id >= 1, "DwE4WEKQ8")
+  require(nr == PageParts.TitleNr || nr >= PageParts.BodyNr, s"Post nr: $nr [TyE4AKB28]")
   require(!parentNr.contains(nr), "DwE5BK4")
   require(!multireplyPostNrs.contains(nr), "DwE4kWW2")
   require(multireplyPostNrs.size != 1, "DwE2KFE7") // size 1 = does not reply to many people

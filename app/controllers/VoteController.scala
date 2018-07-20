@@ -64,6 +64,9 @@ class VoteController @Inject()(cc: ControllerComponents, edContext: EdContext)
     }
 
     throwForbiddenIf(requester.isGroup, "EdE5PZWC2", "Groups may not vote")
+    throwForbiddenIf(postNr == PageParts.TitleNr, "TyE4WDK20", "Cannot vote on title")
+    throwForbiddenIf(postNrsReadSeq.exists(_.contains(PageParts.TitleNr)),
+      "TyE5BKPFU0", "Title in posts read list")
 
     // Check for bad requests
     if (delete) {
