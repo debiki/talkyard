@@ -20,8 +20,8 @@
    namespace debiki2 {
 //------------------------------------------------------------------------------
 
-var stupidLocalStorage = {};
-var stupidSessionStorage = {};
+const stupidLocalStorage = {};
+const stupidSessionStorage = {};
 
 
 export function putInLocalStorage(key, value) {
@@ -49,20 +49,36 @@ export function putInSessionStorage(key, value) {
 
 
 export function getFromLocalStorage(key) {
-  return getFromStorage(localStorage, stupidLocalStorage, key);
+  return getFromStorage(true, stupidLocalStorage, key);
 }
 
 
 export function getFromSessionStorage(key) {
-  return getFromStorage(sessionStorage, stupidSessionStorage, key);
+  return getFromStorage(false, stupidSessionStorage, key);
 }
 
 
-function getFromStorage(realStorage, stupidStorage, key) {
+export function canUseLocalStorage(): boolean {
+  try {  // [7IWD20ZQ1]
+    return !!localStorage;
+  }
+  catch (ignored) {
+  }
+  // Then return undefined, meaning false.
+}
+
+
+function getFromStorage(useLocal: boolean, stupidStorage, key) {
   // In FF, if third party cookies have been disabled, localStorage.getItem throws a security
   // error, if this code runs in an iframe. More details: [7IWD20ZQ1]
+  // In iOS and Chrome, this error is thrown:
+  //   "Failed to read the 'localStorage' property from 'Window': Access is denied for this document"
+  // if cookie access is disabled (seems to be by default on iOS).
+  // In Chrome, to make that error happen, go to:  chrome://settings/content/cookies and disable
+  // "Allow sites to save and read cookie data", and then access localStorage/ (outside a try {}).
   let value = null;
   try {
+    const realStorage = useLocal ? localStorage : sessionStorage;
     value = realStorage.getItem(key);
     value = value && JSON.parse(value);
   }
@@ -81,7 +97,7 @@ function getFromStorage(realStorage, stupidStorage, key) {
 // There's a server side version (in ../../server/) that throws a helpful error.
 export function removeFromLocalStorage(key) {
   try { localStorage.removeItem(key); }
-  catch (dumy) {}
+  catch (ignored) {}
   delete stupidLocalStorage[key];
 }
 
@@ -90,7 +106,7 @@ export function removeFromLocalStorage(key) {
 //   http://werxltd.com/wp/2010/05/13/javascript-implementation-of-javas-string-hashcode-method/
 // License: MIT apparently, see COPYING.txt.
 export function hashStringToNumber(string: string): number {  // [4KFBW2]
-  var hash = 0, i, chr, len;
+  let hash = 0, i, chr, len;
   if (string.length == 0) return hash;
   for (i = 0, len = string.length; i < len; i++) {
     chr   = string.charCodeAt(i);

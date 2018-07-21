@@ -127,7 +127,7 @@ export function start() {
 
 
 export function getPostNrsAutoReadLongAgo(): number[] {
-  if (!localStorage)
+  if (!canUseLocalStorage())
     return [];
 
   let postNrsReadByPageId = getFromLocalStorage(localStorageKey) || {};
@@ -389,7 +389,7 @@ function trackReadingActivity() {
 
 
 function rememberHasBeenRead(postNr: number) {
-  if (!localStorage)
+  if (!canUseLocalStorage())
     return;
 
   let postNrsReadByPageId = getFromLocalStorage(localStorageKey) || {};

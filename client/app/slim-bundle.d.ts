@@ -174,6 +174,7 @@ declare namespace debiki2 {
   var Server: any;
   var reactelements: any;
   var hashStringToNumber: any;
+  var canUseLocalStorage(): boolean;
   var getFromLocalStorage: any;
   var putInLocalStorage: any;
   var event_isCtrlEnter: any;

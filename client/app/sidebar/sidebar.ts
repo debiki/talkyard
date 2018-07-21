@@ -64,8 +64,8 @@ export var Sidebar = createComponent({  // RENAME to ContextBar
     // Move this elsewhere? To where?
     /*
     var showSidebar = false;
-    if (!store.horizontalLayout && localStorage) {
-      var setting = localStorage.getItem('debikiShowSidebar');
+    if (!store.horizontalLayout && canUseLocalStorage()) {
+      var setting = getFromLocalStorage('debikiShowSidebar');
       if (page.numPosts <= SidebarNumCommentsLimit) {
         // Sidebar not needed — navigating only this few comments with not sidebar, is okay.
       }
