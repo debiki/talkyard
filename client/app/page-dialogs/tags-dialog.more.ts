@@ -130,7 +130,10 @@ const TagsDialog = createComponent({
               onChangeValueOk: (value, ok) => this.setCanAddTag(ok),
               help: "Type a new tag name.",
               notRegex: /\s/, notMessage: "No spaces",
-              notRegexTwo: /[,;\|\?!\*'"]/, notMessageTwo: "No weird chars like ',;?*' please",
+              // Sync with Scala and database. [7JES4R3]
+              //notRegexTwo: /[,;\|\?!\*'"]/
+              notRegexTwo: /[!"#$%&'()*+,\/;<=>?@[\]^`{|}\\]/,
+              notMessageTwo: "No weird chars like ',&?*' please",
             }),
             Button({ onClick: this.createAndAddTag, disabled: !this.state.canAddTag },
               "Create and add tag")));

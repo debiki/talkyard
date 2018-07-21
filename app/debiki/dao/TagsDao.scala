@@ -28,9 +28,42 @@ import scala.util.matching.Regex
 
 
 object TagsDao {
+  val MinTagLength = 2
   val MaxNumTags = 200
-  val MaxTagLength = 100
-  val OkLabelRegex: Regex = """^[^\s,;|'"<>]+$""".r  // sync with SQL [7JES4R3]
+  val MaxTagLength = 30
+
+  val WhitespaceRegex: Regex = """.*[\s].*""".r
+
+  // Old, don't use for now — better be a bit restrictive, initially.
+  //val OkLabelRegex: Regex = """^[^\s,;|'"<>]+$""".r
+  //
+  // Instead:
+  //
+  // Java's  \p{Punct} chars are:  !"#$%&'()*+,-./:;<=>?@[\]^_`{|}~   = 32 chars: Discoure's plus  [_~:-]
+  // Discourse disallows:  /?#[]@!$&'()*+,;=.%\`^|{}"<>    = 28 chars
+  //
+  // I'd like to allow also though:  .  so can type version numbers
+  //
+  // &&  means should be poth \p{Punct} *and* also not one of [_~:.-], which means Punct
+  // but those allowed.
+  // See:
+  //  - https://stackoverflow.com/q/6279694/694469
+  //  - https://docs.oracle.com/javase/6/docs/api/java/util/regex/Pattern.html
+  val BadTagLabelCharsRegex: Regex = """.*[\p{Punct}&&[^_~:.-]].*""".r  // sync with SQL [7JES4R3]
+
+  def findTagLabelProblem(tagLabel: TagLabel): Option[ErrorMessageCode] = {
+    if (tagLabel.length < MinTagLength)
+      return Some(ErrorMessageCode(s"Tag label too short: '$tagLabel'", "TyEMINTAGLEN_"))
+    if (tagLabel.length > MaxTagLength)
+      return Some(ErrorMessageCode(s"Tag label too long: '$tagLabel'", "TyEMAXTAGLEN_"))
+    if (tagLabel.matches(WhitespaceRegex))
+      return Some(ErrorMessageCode(s"Bad tag label, contains whitespace: '$tagLabel'", "TyETAGBLANK_"))
+    BadTagLabelCharsRegex.findFirstIn(tagLabel) foreach { badChar =>
+      return Some(ErrorMessageCode(
+        s"Bad tag label: '$tagLabel', contains char: '$badChar'", "TyETAGPUNCT_"))
+    }
+    None
+  }
 }
 
 
@@ -46,26 +79,25 @@ trait TagsDao {
     readOnlyTransaction(_.loadTagsAndStats())
 
 
-  def loadTagsByPostId(postIds: Iterable[PostId]) =
+  def loadTagsByPostId(postIds: Iterable[PostId]): Map[PostId, Set[TagLabel]] =
     readOnlyTransaction(_.loadTagsByPostId(postIds))
 
 
-  def loadTagsForPost(postId: PostId) =
+  def loadTagsForPost(postId: PostId): Set[TagLabel] =
     loadTagsByPostId(Seq(postId)).getOrElse(postId, Set.empty)
 
 
   def addRemoveTagsIfAuth(pageId: PageId, postId: PostId, tags: Set[Tag], who: Who)
         : JsValue = {
 
-    if (tags.size > MaxNumTags) {
-      throwForbidden("EsE5KG0F3", s"Too many tags: ${tags.size}, max is $MaxNumTags")
-    }
-    tags.find(_.length > MaxTagLength) foreach { tooLongTag =>
-      throwForbidden("EsE7KPU4R2", s"Tag label too long: '$tooLongTag'")
-    }
-    tags.find(tag => !tag.matches(OkLabelRegex)) foreach { badLabel =>
-      throwForbidden("EsE4GE8I2", s"Bad tag label: '$badLabel'")
-    }
+    throwForbiddenIf(tags.size > MaxNumTags,
+      "EsE5KG0F3", s"Too many tags: ${tags.size}, max is $MaxNumTags")
+
+    tags.foreach(tagLabel => {
+      findTagLabelProblem(tagLabel) foreach { error =>
+        throwForbidden(error.code, error.message)
+      }
+    })
 
     val (post, notifications, postAuthor) = readWriteTransaction { tx =>
       val me = tx.loadTheUser(who.id)

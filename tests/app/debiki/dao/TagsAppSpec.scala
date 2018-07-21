@@ -20,6 +20,74 @@ package debiki.dao
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import java.{util => ju}
+import org.scalatest.{FreeSpec, MustMatchers}
+
+
+class TagsDaoSpec extends FreeSpec with MustMatchers {
+
+  "TagsDao can" - {
+    "findTagLabelProblem" - {
+      "ok tag name: zz,  zzz,  zzzz.... max length" in {
+        var anyProbem = TagsDao.findTagLabelProblem("zz")
+        anyProbem mustBe empty
+
+        anyProbem = TagsDao.findTagLabelProblem("zzz")
+        anyProbem mustBe empty
+
+        anyProbem = TagsDao.findTagLabelProblem("z" * TagsDao.MaxTagLength)
+        anyProbem mustBe empty
+      }
+
+      "ok tag name: all letters a-z" in {
+        val anyProbem = TagsDao.findTagLabelProblem("abcdefghijklmnopqrstuvwxyz")
+        anyProbem mustBe empty
+      }
+
+      "ok tag name: all numbes 0-9" in {
+        val anyProbem = TagsDao.findTagLabelProblem("0123456789")
+        anyProbem mustBe empty
+      }
+
+      "ok tag name: some punctuation at the end" in {
+        val anyProbem = TagsDao.findTagLabelProblem("punct_~:.-")
+        anyProbem mustBe empty
+      }
+
+      "ok tag name: some punctuation in the start" in {
+        val anyProbem = TagsDao.findTagLabelProblem("_~:.-punct")
+        anyProbem mustBe empty
+      }
+
+      "ok tag name: some punctuation in the middle" in {
+        val anyProbem = TagsDao.findTagLabelProblem("pun_~:.-nct")
+        anyProbem mustBe empty
+      }
+
+      "empty tag name" in {
+        val anyProbem = TagsDao.findTagLabelProblem("")
+        anyProbem.map(_.code) mustBe Some("TyEMINTAGLEN_")
+      }
+
+      "too long tag name" in {
+        val anyProbem = TagsDao.findTagLabelProblem("z" * (TagsDao.MaxTagLength + 1))
+        anyProbem.map(_.code) mustBe Some("TyEMAXTAGLEN_")
+      }
+
+      "whitespace" in {
+        val anyProbem = TagsDao.findTagLabelProblem("z z")
+        anyProbem.map(_.code) mustBe Some("TyETAGBLANK_")
+      }
+
+      "bad punct" in {
+        for (c <- """!"#$%&'()*+,/;<=>?@[\]^`{|}""") {
+          val anyProbem = TagsDao.findTagLabelProblem("badpunct_" + c)
+          anyProbem.map(_.message).getOrElse("") must contain(c)
+          anyProbem.map(_.code) mustBe Some("TyETAGPUNCT_")
+        }
+      }
+    }
+  }
+}
 
 
 class TagsAppSpec extends DaoAppSuite() {

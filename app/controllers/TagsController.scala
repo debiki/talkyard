@@ -23,7 +23,7 @@ import debiki.EdHttp._
 import ed.server.{EdContext, EdController}
 import play.api.libs.json._
 import javax.inject.Inject
-import play.api.mvc.ControllerComponents
+import play.api.mvc.{Action, ControllerComponents}
 
 
 class TagsController @Inject()(cc: ControllerComponents, edContext: EdContext)
@@ -31,12 +31,12 @@ class TagsController @Inject()(cc: ControllerComponents, edContext: EdContext)
 
   import context.globals
 
-  def redirect = GetAction { apiReq =>
+  def redirect: Action[Unit] = GetAction { apiReq =>
     Redirect(routes.TagsController.tagsApp("").url)
   }
 
 
-  def tagsApp(clientRoute: String) = GetAction { apiReq =>
+  def tagsApp(clientRoute: String): Action[Unit] = GetAction { apiReq =>
     _root_.controllers.dieIfAssetsMissingIfDevTest()
     val siteTpi = SiteTpi(apiReq)
     val pageBody = views.html.adminPage(siteTpi, appId = "theTagsApp").body
@@ -44,13 +44,13 @@ class TagsController @Inject()(cc: ControllerComponents, edContext: EdContext)
   }
 
 
-  def loadAllTags = GetAction { request =>
+  def loadAllTags: Action[Unit] = GetAction { request =>
     val tags = request.dao.loadAllTagsAsSet()
     OkSafeJson(JsArray(tags.toSeq.map(JsString)))
   }
 
 
-  def loadTagsAndStats = GetAction { request =>
+  def loadTagsAndStats: Action[Unit] = GetAction { request =>
     val tagsAndStats = request.dao.loadTagsAndStats()
     val isStaff = request.isStaff
     OkSafeJson(JsonMaker.makeTagsStuffPatch(Json.obj(
@@ -66,7 +66,7 @@ class TagsController @Inject()(cc: ControllerComponents, edContext: EdContext)
   }
 
 
-  def loadMyTagNotfLevels = GetAction { request =>
+  def loadMyTagNotfLevels: Action[Unit] = GetAction { request =>
     val notfLevelsByTagLabel = request.dao.loadTagNotfLevels(request.theUserId, request.who)
     OkSafeJson(JsonMaker.makeTagsStuffPatch(Json.obj(
       "myTagNotfLevels" -> JsObject(notfLevelsByTagLabel.toSeq.map({ labelAndLevel =>
@@ -75,7 +75,7 @@ class TagsController @Inject()(cc: ControllerComponents, edContext: EdContext)
   }
 
 
-  def setTagNotfLevel = PostJsonAction(RateLimits.ConfigUser, maxBytes = 500) { request =>
+  def setTagNotfLevel: Action[JsValue] = PostJsonAction(RateLimits.ConfigUser, maxBytes = 500) { request =>
     val body = request.body
     val tagLabel = (body \ "tagLabel").as[String]
     val notfLevelInt = (body \ "notfLevel").as[Int]
@@ -87,7 +87,7 @@ class TagsController @Inject()(cc: ControllerComponents, edContext: EdContext)
   }
 
 
-  def addRemoveTags = PostJsonAction(RateLimits.EditPost, maxBytes = 5000) { request =>
+  def addRemoveTags: Action[JsValue] = PostJsonAction(RateLimits.EditPost, maxBytes = 5000) { request =>
     val pageId = (request.body \ "pageId").as[PageId]
     val postId = (request.body \ "postId").as[PostId]  // yes id not nr
     val tags = (request.body \ "tags").as[Set[TagLabel]]
