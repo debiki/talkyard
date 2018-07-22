@@ -64,25 +64,25 @@ trait ForumDao {
     val titleHtmlSanitized = context.nashorn.sanitizeHtml(options.title, followLinks = false)
     val isForEmbCmts = options.isForEmbeddedComments
 
-    val result = readWriteTransaction { transaction =>
+    val result = readWriteTransaction { tx =>
 
       // The forum page points to the root category, which points back.
-      transaction.deferConstraints()
-      val creator = transaction.loadTheMember(byWho.id)
+      tx.deferConstraints()
+      val creator = tx.loadTheMember(byWho.id)
 
       AuditDao.insertAuditLogEntry(AuditLogEntry(
         siteId,
         id = AuditLogEntry.UnassignedId,
         didWhat = AuditLogEntryType.CreateForum,
         doerId = byWho.id,
-        doneAt = transaction.now.toJavaDate,
+        doneAt = tx.now.toJavaDate,
         // Incl email, so will remember forever the created-by-email, even if the user
         // changes hens email later.
         emailAddress = creator.email.trimNoneIfEmpty,
         browserIdData = byWho.browserIdData,
-        browserLocation = None), transaction)
+        browserLocation = None), tx)
 
-      val rootCategoryId = transaction.nextCategoryId()
+      val rootCategoryId = tx.nextCategoryId()
 
       // Create forum page.
       val introText = isForEmbCmts ? EmbeddedCommentsIntroText | ForumIntroText
@@ -92,12 +92,12 @@ trait ForumDao {
         titleSource = options.title, titleHtmlSanitized = titleHtmlSanitized,
         bodySource = introText.source, bodyHtmlSanitized = introText.html,
         pinOrder = None, pinWhere = None,
-        byWho, spamRelReqStuff = None, transaction, layout = Some(options.topicListStyle))
+        byWho, spamRelReqStuff = None, tx, layout = Some(options.topicListStyle))
 
       val forumPageId = forumPagePath.pageId getOrDie "DwE5KPFW2"
 
       val partialResult: CreateForumResult = createDefaultCategoriesAndTopics(
-        forumPageId, rootCategoryId, isForEmbCmts = isForEmbCmts, options, byWho, transaction)
+        forumPageId, rootCategoryId, isForEmbCmts = isForEmbCmts, options, byWho, tx)
 
       val settings =
         if (isForEmbCmts) {
@@ -113,7 +113,7 @@ trait ForumDao {
         }
         else None
 
-      settings.foreach(transaction.upsertSiteSettings)
+      settings.foreach(tx.upsertSiteSettings)
 
       partialResult.copy(pagePath = forumPagePath)
     }
@@ -126,7 +126,7 @@ trait ForumDao {
 
 
   private def createDefaultCategoriesAndTopics(forumPageId: PageId, rootCategoryId: CategoryId,
-        isForEmbCmts: Boolean, options: CreateForumOptions, byWho: Who, transaction: SiteTransaction)
+        isForEmbCmts: Boolean, options: CreateForumOptions, byWho: Who, tx: SiteTransaction)
         : CreateForumResult = {
 
     val staffCategoryId = rootCategoryId + 1
@@ -134,7 +134,7 @@ trait ForumDao {
     val bySystem = Who(SystemUserId, byWho.browserIdData)
 
     // Create forum root category.
-    transaction.insertCategoryMarkSectionPageStale(Category(
+    tx.insertCategoryMarkSectionPageStale(Category(
       id = rootCategoryId,
       sectionPageId = forumPageId,
       parentId = None,
@@ -146,8 +146,8 @@ trait ForumDao {
       newTopicTypes = Nil,
       unlisted = false,
       includeInSummaries = IncludeInSummaries.Default,
-      createdAt = transaction.now.toJavaDate,
-      updatedAt = transaction.now.toJavaDate))
+      createdAt = tx.now.toJavaDate,
+      updatedAt = tx.now.toJavaDate))
 
     // Create the Staff category.
     createCategoryImpl(
@@ -165,14 +165,14 @@ trait ForumDao {
         includeInSummaries = IncludeInSummaries.Default),
       immutable.Seq[PermsOnPages](
         makeStaffCategoryPerms(staffCategoryId)),
-      bySystem)(transaction)
+      bySystem)(tx)
 
     if (options.isForEmbeddedComments)
       createEmbeddedCommentsCategory(forumPageId, rootCategoryId, defaultCategoryId,
-        staffCategoryId, options, bySystem, transaction)
+        staffCategoryId, options, bySystem, tx)
     else
       createForumCategories(forumPageId, rootCategoryId, defaultCategoryId,
-        staffCategoryId, options, bySystem, transaction)
+        staffCategoryId, options, bySystem, tx)
   }
 
 
@@ -211,7 +211,7 @@ trait ForumDao {
   private def createForumCategories(
     forumPageId: PageId, rootCategoryId: CategoryId, defaultCategoryId: CategoryId,
     staffCategoryId: CategoryId, options: CreateForumOptions,
-    bySystem: Who, transaction: SiteTransaction): CreateForumResult = {
+    bySystem: Who, tx: SiteTransaction): CreateForumResult = {
 
     dieIf(options.isForEmbeddedComments, "TyE2PKQ9")
 
@@ -244,7 +244,7 @@ trait ForumDao {
         immutable.Seq[PermsOnPages](
           makeEveryonesDefaultCategoryPerms(categoryId),
           makeStaffCategoryPerms(categoryId)),
-        bySystem)(transaction)
+        bySystem)(tx)
     }
 
     if (options.createIdeasCategory) {
@@ -266,7 +266,7 @@ trait ForumDao {
         immutable.Seq[PermsOnPages](
           makeEveryonesDefaultCategoryPerms(categoryId),
           makeStaffCategoryPerms(categoryId)),
-        bySystem)(transaction)
+        bySystem)(tx)
     }
 
     // Create the Uncategorized category.
@@ -287,7 +287,7 @@ trait ForumDao {
         immutable.Seq[PermsOnPages](
           makeEveryonesDefaultCategoryPerms(uncategorizedCategoryId),
           makeStaffCategoryPerms(uncategorizedCategoryId)),
-        bySystem)(transaction)
+        bySystem)(tx)
 
     // Create forum welcome topic.
     createPageImpl(
@@ -302,7 +302,7 @@ trait ForumDao {
       pinWhere = Some(PinPageWhere.Globally),
       bySystem,
       spamRelReqStuff = None,
-      transaction)
+      tx)
 
     // Create staff chat
     createPageImpl(
@@ -317,7 +317,7 @@ trait ForumDao {
       pinWhere = None,
       bySystem,
       spamRelReqStuff = None,
-      transaction)
+      tx)
 
     // Create example threaded discussion.
     if (options.createSampleTopics) createPageImpl(
@@ -332,7 +332,7 @@ trait ForumDao {
       pinWhere = None,
       bySystem,
       spamRelReqStuff = None,
-      transaction)
+      tx)
 
     // Create example problem.
     if (options.createSampleTopics) createPageImpl(
@@ -347,7 +347,7 @@ trait ForumDao {
       pinWhere = None,
       bySystem,
       spamRelReqStuff = None,
-      transaction)
+      tx)
 
     // Create example question.
     if (options.createSampleTopics) {
@@ -363,10 +363,10 @@ trait ForumDao {
         pinWhere = None,
         bySystem,
         spamRelReqStuff = None,
-        transaction)._1
+        tx)._1
       insertReplyImpl(textAndHtmlMaker.wrapInParagraphNoMentionsOrLinks(SampleAnswerText, isTitle = false),
         questionPagePath.thePageId, replyToPostNrs = Set(PageParts.BodyNr), PostType.Normal,
-        bySystem, SystemSpamStuff, globals.now(), SystemUserId, transaction, skipNotifications = true)
+        bySystem, SystemSpamStuff, globals.now(), SystemUserId, tx, skipNotifications = true)
     }
 
     // Create example idea.
@@ -383,7 +383,7 @@ trait ForumDao {
       pinWhere = None,
       bySystem,
       spamRelReqStuff = None,
-      transaction)
+      tx)
 
     CreateForumResult(null, defaultCategoryId = defaultCategoryId,
       staffCategoryId = staffCategoryId)

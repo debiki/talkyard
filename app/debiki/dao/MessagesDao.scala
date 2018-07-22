@@ -55,8 +55,8 @@ trait MessagesDao {
 
     quickCheckIfSpamThenThrow(sentByWho, body, spamRelReqStuff)
 
-    val (pagePath, notfs) = readWriteTransaction { transaction =>
-      val sender = loadUserAndLevels(sentByWho, transaction)
+    val (pagePath, notfs) = readWriteTransaction { tx =>
+      val sender = loadUserAndLevels(sentByWho, tx)
 
       // 1) Don't let unpolite users start private-messaging other well behaved users.
       // But do let them talk with staff, e.g. ask "why am I not allowed to ...".
@@ -64,16 +64,16 @@ trait MessagesDao {
       // let them start sending PMs directly.
       if ((sender.threatLevel.toInt >= ThreatLevel.ModerateThreat.toInt ||
           sender.trustLevel == TrustLevel.NewMember) && !sender.isStaff) {
-        val toUsers = transaction.loadUsers(toUserIds)
+        val toUsers = tx.loadUsers(toUserIds)
         if (toUsers.exists(!_.isStaff))
           throwForbidden("EsE8GY2F4_", "You may send direct messages to staff only")
       }
 
       val (pagePath, bodyPost) = createPageImpl2(pageRole, title, body,
-        byWho = sentByWho, spamRelReqStuff = Some(spamRelReqStuff), transaction = transaction)
+        byWho = sentByWho, spamRelReqStuff = Some(spamRelReqStuff), tx = tx)
 
       (toUserIds + sentById) foreach { userId =>
-        transaction.insertMessageMember(pagePath.pageId.getOrDie("EsE6JMUY2"), userId,
+        tx.insertMessageMember(pagePath.pageId.getOrDie("EsE6JMUY2"), userId,
           addedById = sentById)
       }
 
@@ -83,11 +83,11 @@ trait MessagesDao {
           Notifications.None
         }
         else {
-          NotificationGenerator(transaction, context.nashorn).generateForMessage(
+          NotificationGenerator(tx, context.nashorn).generateForMessage(
             sender.user, bodyPost, toUserIds)
         }
 
-      transaction.saveDeleteNotifications(notifications)
+      tx.saveDeleteNotifications(notifications)
       (pagePath, notifications)
     }
 

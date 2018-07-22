@@ -113,13 +113,13 @@ trait PagesDao {
         anyFolder: Option[String] = None, anySlug: Option[String] = None, showId: Boolean = true,
         pinOrder: Option[Int] = None, pinWhere: Option[PinPageWhere] = None,
         byWho: Who, spamRelReqStuff: Option[SpamRelReqStuff],
-        transaction: SiteTransaction): (PagePath, Post) =
+        tx: SiteTransaction): (PagePath, Post) =
     createPageImpl(pageRole, pageStatus, anyCategoryId = anyCategoryId,
       anyFolder = anyFolder, anySlug = anySlug, showId = showId,
       titleSource = title.text, titleHtmlSanitized = title.safeHtml,
       bodySource = body.text, bodyHtmlSanitized = body.safeHtml,
       pinOrder = pinOrder, pinWhere = pinWhere,
-      byWho, spamRelReqStuff, transaction = transaction, layout = None)
+      byWho, spamRelReqStuff, tx = tx, layout = None)
 
 
   def createPageImpl(pageRole: PageRole, pageStatus: PageStatus,
@@ -129,18 +129,18 @@ trait PagesDao {
       bodySource: String, bodyHtmlSanitized: String,
       pinOrder: Option[Int], pinWhere: Option[PinPageWhere],
       byWho: Who, spamRelReqStuff: Option[SpamRelReqStuff],
-      transaction: SiteTransaction, hidePageBody: Boolean = false,
+      tx: SiteTransaction, hidePageBody: Boolean = false,
       layout: Option[TopicListLayout] = None,
       bodyPostType: PostType = PostType.Normal,
       altPageId: Option[AltPageId] = None, embeddingUrl: Option[String] = None): (PagePath, Post) = {
 
     val now = globals.now()
     val authorId = byWho.id
-    val authorAndLevels = loadUserAndLevels(byWho, transaction)
+    val authorAndLevels = loadUserAndLevels(byWho, tx)
     val author = authorAndLevels.user
-    val categoryPath = transaction.loadCategoryPathRootLast(anyCategoryId)
-    val groupIds = transaction.loadGroupIds(author)
-    val permissions = transaction.loadPermsOnPages()
+    val categoryPath = tx.loadCategoryPathRootLast(anyCategoryId)
+    val groupIds = tx.loadGroupIds(author)
+    val permissions = tx.loadPermsOnPages()
     val authzCtx = ForumAuthzContext(Some(author), groupIds, permissions)
 
     dieOrThrowNoUnless(Authz.mayCreatePage(  // REFACTOR COULD pass a pageAuthzCtx instead [5FLK02]
@@ -161,7 +161,7 @@ trait PagesDao {
 
     COULD // try to move this authz + review-reason check to ed.server.auth.Authz?
     val (reviewReasons: Seq[ReviewReason], shallApprove) =
-      throwOrFindReviewNewPageReasons(authorAndLevels, pageRole, transaction)
+      throwOrFindReviewNewPageReasons(authorAndLevels, pageRole, tx)
 
     val approvedById =
       if (author.isStaff) {
@@ -177,13 +177,13 @@ trait PagesDao {
       val categoryId = anyCategoryId getOrElse {
         throwForbidden("DwE4KFE0", s"Pages type $pageRole needs a root category id")
       }
-      if (transaction.loadCategory(categoryId).isDefined) {
+      if (tx.loadCategory(categoryId).isDefined) {
         throwForbidden("DwE5KPW2", s"Category already exists, id: $categoryId")
       }
     }
     else {
       anyCategoryId foreach { categoryId =>
-        val category = transaction.loadCategory(categoryId) getOrElse throwNotFound(
+        val category = tx.loadCategory(categoryId) getOrElse throwNotFound(
           "DwE4KGP8", s"Category not found, id: $categoryId")
         def whichCategory = s"The '${category.name}' category"
         if (category.isRoot)
@@ -201,12 +201,12 @@ trait PagesDao {
     val folder = anyFolder getOrElse "/"
     SECURITY // Maybe page id shouldn't be public? [rand-page-id] To prevent people from
     // discovering all pages. E.g. iterating through all discussions, in a public blog.
-    val pageId = transaction.nextPageId()
-    val siteId = transaction.siteId // [5GKEPMW2] remove this row later
+    val pageId = tx.nextPageId()
+    val siteId = tx.siteId // [5GKEPMW2] remove this row later
     val pagePath = PagePath(siteId, folder = folder, pageId = Some(pageId),
       showId = showId, pageSlug = pageSlug)
 
-    val titleUniqueId = transaction.nextPostId()
+    val titleUniqueId = tx.nextPostId()
     val bodyUniqueId = titleUniqueId + 1
 
     val titlePost = Post.createTitle(
@@ -243,7 +243,7 @@ trait PagesDao {
 
     val reviewTask = if (reviewReasons.isEmpty) None
     else Some(ReviewTask(
-      id = transaction.nextReviewTaskId(),
+      id = tx.nextReviewTaskId(),
       reasons = reviewReasons.to[immutable.Seq],
       createdById = SystemUserId,
       createdAt = now.toJavaDate,
@@ -273,36 +273,36 @@ trait PagesDao {
       numDiscourseTopicsCreated = pageRole.isChat ? 0 | 1,
       numChatTopicsCreated = pageRole.isChat ? 1 | 0)
 
-    addUserStats(stats)(transaction)
-    transaction.insertPageMetaMarkSectionPageStale(pageMeta)
-    transaction.insertPagePath(pagePath)
-    transaction.insertPost(titlePost)
-    transaction.insertPost(bodyPost)
+    addUserStats(stats)(tx)
+    tx.insertPageMetaMarkSectionPageStale(pageMeta)
+    tx.insertPagePath(pagePath)
+    tx.insertPost(titlePost)
+    tx.insertPost(bodyPost)
     // By default, one follows all activity on a page one has created — unless this is some page
     // that gets auto created by System. [EXCLSYS]
     if (author.id != SystemUserId) {
-      transaction.saveUserPageSettings(
+      tx.saveUserPageSettings(
         authorId, pageId = pageId, UserPageSettings(NotfLevel.WatchingAll))
     }
     if (approvedById.isDefined) {
-      updatePagePopularity(PreLoadedPageParts(pageId, Vector(titlePost, bodyPost)), transaction)
+      updatePagePopularity(PreLoadedPageParts(pageId, Vector(titlePost, bodyPost)), tx)
     }
     uploadPaths foreach { hashPathSuffix =>
-      transaction.insertUploadedFileReference(bodyPost.id, hashPathSuffix, authorId)
+      tx.insertUploadedFileReference(bodyPost.id, hashPathSuffix, authorId)
     }
 
-    altPageId.foreach(transaction.insertAltPageId(_, realPageId = pageId))
+    altPageId.foreach(tx.insertAltPageId(_, realPageId = pageId))
     if (altPageId != embeddingUrl) {
       // If the url already points to another embedded discussion, keep it pointing to the old one.
       // Then, seems like lower risk for some hijack-a-discussion-by-forging-the-url security issue.
-      embeddingUrl.foreach(transaction.insertAltPageIdIfFree(_, realPageId = pageId))
+      embeddingUrl.foreach(tx.insertAltPageIdIfFree(_, realPageId = pageId))
     }
 
-    reviewTask.foreach(transaction.upsertReviewTask)
-    insertAuditLogEntry(auditLogEntry, transaction)
+    reviewTask.foreach(tx.upsertReviewTask)
+    insertAuditLogEntry(auditLogEntry, tx)
 
-    transaction.indexPostsSoon(titlePost, bodyPost)
-    spamRelReqStuff.foreach(transaction.spamCheckPostsSoon(byWho, _, titlePost, bodyPost))
+    tx.indexPostsSoon(titlePost, bodyPost)
+    spamRelReqStuff.foreach(tx.spamCheckPostsSoon(byWho, _, titlePost, bodyPost))
 
     // Don't start rendering html for this page in the background. [5KWC58]
     // (Instead, when the user requests the page, we'll render it directly in
@@ -315,8 +315,8 @@ trait PagesDao {
 
 
   def throwOrFindReviewNewPageReasons(author: UserAndLevels, pageRole: PageRole,
-        transaction: SiteTransaction): (Seq[ReviewReason], Boolean) = {
-    throwOrFindReviewReasonsImpl(author, pageMeta = None, newPageRole = Some(pageRole), transaction)
+        tx: SiteTransaction): (Seq[ReviewReason], Boolean) = {
+    throwOrFindReviewReasonsImpl(author, pageMeta = None, newPageRole = Some(pageRole), tx)
   }
 
 
@@ -362,16 +362,16 @@ trait PagesDao {
 
   def ifAuthAcceptAnswer(pageId: PageId, postUniqueId: PostId, userId: UserId,
         browserIdData: BrowserIdData): Option[ju.Date] = {
-    val answeredAt = readWriteTransaction { transaction =>
-      val user = transaction.loadTheUser(userId)
-      val oldMeta = transaction.loadThePageMeta(pageId)
+    val answeredAt = readWriteTransaction { tx =>
+      val user = tx.loadTheUser(userId)
+      val oldMeta = tx.loadThePageMeta(pageId)
       if (oldMeta.pageRole != PageRole.Question)
         throwBadReq("DwE4KGP2", "This page is not a question so no answer can be selected")
 
       if (!user.isStaff && user.id != oldMeta.authorId)
         throwForbidden("DwE8JGY3", "Only staff and the topic author can accept an answer")
 
-      val post = transaction.loadThePost(postUniqueId)
+      val post = tx.loadThePost(postUniqueId)
       throwBadRequestIf(post.isDeleted, "TyE4BQR20", "That post has been deleted, cannot mark as answer")
       throwBadRequestIf(post.pageId != pageId,
           "DwE5G2Y2", "That post is placed on another page, page id: " + post.pageId)
@@ -382,13 +382,13 @@ trait PagesDao {
       if (oldMeta.closedAt.isDefined)
         throwBadReq("DwE0PG26", "This question is closed, therefore no answer can be accepted")
 
-      val answeredAt = Some(transaction.now.toJavaDate)
+      val answeredAt = Some(tx.now.toJavaDate)
       val newMeta = oldMeta.copy(
         answeredAt = answeredAt,
         answerPostUniqueId = Some(postUniqueId),
         closedAt = answeredAt,
         version = oldMeta.version + 1)
-      transaction.updatePageMeta(newMeta, oldMeta = oldMeta, markSectionPageStale = true)
+      tx.updatePageMeta(newMeta, oldMeta = oldMeta, markSectionPageStale = true)
       // (COULD update audit log)
       // (COULD wait 5 minutes (in case the answer gets un-accepted) then send email
       // to the author of the answer)
@@ -400,9 +400,9 @@ trait PagesDao {
 
 
   def ifAuthUnacceptAnswer(pageId: PageId, userId: UserId, browserIdData: BrowserIdData) {
-    readWriteTransaction { transaction =>
-      val user = transaction.loadTheUser(userId)
-      val oldMeta = transaction.loadThePageMeta(pageId)
+    readWriteTransaction { tx =>
+      val user = tx.loadTheUser(userId)
+      val oldMeta = tx.loadThePageMeta(pageId)
       if (!user.isStaff && user.id != oldMeta.authorId)
         throwForbidden("DwE2GKU4", "Only staff and the topic author can unaccept the answer")
 
@@ -410,7 +410,7 @@ trait PagesDao {
       val newMeta = oldMeta.copy(answeredAt = None, answerPostUniqueId = None, closedAt = None,
         version = oldMeta.version + 1)
 
-      transaction.updatePageMeta(newMeta, oldMeta = oldMeta, markSectionPageStale = true)
+      tx.updatePageMeta(newMeta, oldMeta = oldMeta, markSectionPageStale = true)
       // (COULD update audit log)
     }
     refreshPageInMemCache(pageId)
@@ -422,9 +422,9 @@ trait PagesDao {
   def cyclePageDoneIfAuth(pageId: PageId, userId: UserId, browserIdData: BrowserIdData)
         : PageMeta = {
     val now = globals.now()
-    val newMeta = readWriteTransaction { transaction =>
-      val user = transaction.loadTheUser(userId)
-      val oldMeta = transaction.loadThePageMeta(pageId)
+    val newMeta = readWriteTransaction { tx =>
+      val user = tx.loadTheUser(userId)
+      val oldMeta = tx.loadThePageMeta(pageId)
       if (!user.isStaff && user.id != oldMeta.authorId)
         throwForbidden("EsE4YK0W2", "Only the page author and staff may change the page status")
 
@@ -477,9 +477,9 @@ trait PagesDao {
         numPostsTotal = oldMeta.numPostsTotal + 1,
         version = oldMeta.version + 1)
 
-      transaction.updatePageMeta(newMeta, oldMeta = oldMeta, markSectionPageStale = true)
+      tx.updatePageMeta(newMeta, oldMeta = oldMeta, markSectionPageStale = true)
       // Update audit log
-      addMetaMessage(user, s" marked this topic as $newStatus", pageId, transaction)
+      addMetaMessage(user, s" marked this topic as $newStatus", pageId, tx)
 
       newMeta
     }
@@ -640,8 +640,8 @@ trait PagesDao {
 
 
   def refreshPageMetaBumpVersion(pageId: PageId, markSectionPageStale: Boolean,
-        transaction: SiteTransaction) {
-    val page = PageDao(pageId, transaction)
+        tx: SiteTransaction) {
+    val page = PageDao(pageId, tx)
     val newMeta = page.meta.copy(
       lastReplyAt = page.parts.lastVisibleReply.map(_.createdAt),
       lastReplyById = page.parts.lastVisibleReply.map(_.createdById),
@@ -661,7 +661,7 @@ trait PagesDao {
       answeredAt = page.anyAnswerPost.map(_.createdAt),
       answerPostUniqueId = page.anyAnswerPost.map(_.id),
       version = page.version + 1)
-    transaction.updatePageMeta(newMeta, oldMeta = page.meta,
+    tx.updatePageMeta(newMeta, oldMeta = page.meta,
       markSectionPageStale = markSectionPageStale)
   }
 }
