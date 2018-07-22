@@ -375,14 +375,28 @@ class SiteTransactionAppSpec extends DaoAppSuite {
             readFromIp = "1.2.3.4")
 
           val pageAStats = transaction.loadPostsReadStats(pageAId)
-          pageAStats.readCountFor(0) mustBe 0
+
+          info("May not query for negative numbers and the title — that'd always be a bug")
+          intercept[IllegalArgumentException] {
+            pageAStats.readCountFor(-2)
+          }
+          intercept[IllegalArgumentException] {
+            pageAStats.readCountFor(PageParts.TitleNr)
+          }
+          intercept[IllegalArgumentException] {
+            pageAStats.readCountFor(PageParts.NoNr)
+          }
+
+          info("Non-existing posts = never read")
+          pageAStats.readCountFor(9999) mustBe 0
+
+          info("Real posts have correct counts")
           pageAStats.readCountFor(1) mustBe 1
           pageAStats.readCountFor(2) mustBe 0
           pageAStats.readCountFor(3) mustBe 0
           pageAStats.readCountFor(4) mustBe 0
 
           val pageBStats = transaction.loadPostsReadStats(pageBId)
-          pageBStats.readCountFor(0) mustBe 0
           pageBStats.readCountFor(1) mustBe 2
           pageBStats.readCountFor(2) mustBe 1
           pageBStats.readCountFor(3) mustBe 1
@@ -403,7 +417,6 @@ class SiteTransactionAppSpec extends DaoAppSuite {
 
           info("Won't find non-existing pages")
           val nonExistingStats = transaction.loadPostsReadStats("9999")
-          nonExistingStats.readCountFor(0) mustBe 0
           nonExistingStats.readCountFor(1) mustBe 0
           nonExistingStats.readCountFor(2) mustBe 0
           nonExistingStats.readCountFor(3) mustBe 0
@@ -416,7 +429,6 @@ class SiteTransactionAppSpec extends DaoAppSuite {
           transaction.updatePostsReadStats(pageAId, postNrsRead = Set(1,3), guestA.id,
             readFromIp = "2.2.2.2")
           val pageAStats = transaction.loadPostsReadStats(pageAId)
-          pageAStats.readCountFor(0) mustBe 0
           pageAStats.readCountFor(1) mustBe 2  // userA and guestA have read it
           pageAStats.readCountFor(2) mustBe 0
           pageAStats.readCountFor(3) mustBe 1  // only gustA has read it
@@ -426,7 +438,6 @@ class SiteTransactionAppSpec extends DaoAppSuite {
           transaction.updatePostsReadStats(pageAId, postNrsRead = Set(3,4), guestA.id,
             readFromIp = "2.2.2.2")
           val pageAStats2 = transaction.loadPostsReadStats(pageAId)
-          pageAStats2.readCountFor(0) mustBe 0
           pageAStats2.readCountFor(1) mustBe 2
           pageAStats2.readCountFor(2) mustBe 0
           pageAStats2.readCountFor(3) mustBe 1  // wasn't incremented, is same user
@@ -437,7 +448,6 @@ class SiteTransactionAppSpec extends DaoAppSuite {
           transaction.updatePostsReadStats(pageAId, postNrsRead = Set(3,5), guestB.id,
             readFromIp = "3.3.3.3")
           val pageAStats3 = transaction.loadPostsReadStats(pageAId)
-          pageAStats3.readCountFor(0) mustBe 0
           pageAStats3.readCountFor(1) mustBe 2
           pageAStats3.readCountFor(2) mustBe 0
           pageAStats3.readCountFor(3) mustBe 2  // was incremented, becaues different guest

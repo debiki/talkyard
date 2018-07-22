@@ -63,10 +63,11 @@ class VoteController @Inject()(cc: ControllerComponents, edContext: EdContext)
       case _ => throwBadReq("DwE42GPJ0", s"Bad action: $actionStr")
     }
 
-    throwForbiddenIf(requester.isGroup, "EdE5PZWC2", "Groups may not vote")
-    throwForbiddenIf(postNr == PageParts.TitleNr, "TyE4WDK20", "Cannot vote on title")
-    throwForbiddenIf(postNrsReadSeq.exists(_.contains(PageParts.TitleNr)),
-      "TyE5BKPFU0", "Title in posts read list")
+    throwForbiddenIf(requester.isGroup, "TyE5PZWC2", "Groups may not vote")
+    throwForbiddenIf(postNr < PageParts.BodyNr, "TyE4WDK20", s"Bad vote-on post nr: $postNr")
+    postNrsReadSeq.foreach(_.find(_ < PageParts.BodyNr) foreach { badNr =>
+      throwForbidden("TyE5BKPFU0", s"Bad post nr read: $badNr")
+    })
 
     // Check for bad requests
     if (delete) {

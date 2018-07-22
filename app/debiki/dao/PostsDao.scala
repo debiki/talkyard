@@ -1433,6 +1433,8 @@ trait PostsDao {
 
 
   def deleteVote(pageId: PageId, postNr: PostNr, voteType: PostVoteType, voterId: UserId) {
+    require(postNr >= PageParts.BodyNr, "TyE2ABKPGN7")
+
     readWriteTransaction { tx =>
       val post = tx.loadThePost(pageId, postNr = postNr)
       val voter = tx.loadTheUser(voterId)
@@ -1464,6 +1466,8 @@ trait PostsDao {
 
   def ifAuthAddVote(pageId: PageId, postNr: PostNr, voteType: PostVoteType,
         voterId: UserId, voterIp: String, postNrsRead: Set[PostNr]) {
+    require(postNr >= PageParts.BodyNr, "TyE5WKAB20")
+
     readWriteTransaction { transaction =>
       val page = PageDao(pageId, transaction)
       val voter = transaction.loadTheUser(voterId)
@@ -1938,6 +1942,7 @@ trait PostsDao {
 
 
   private def updateVoteCounts(pageParts: PageParts, post: Post, transaction: SiteTransaction) {
+    dieIf(post.nr < PageParts.BodyNr, "TyE4WKAB02")
     val actions = transaction.loadActionsDoneToPost(post.pageId, postNr = post.nr)
     val readStats = transaction.loadPostsReadStats(post.pageId, Some(post.nr))
     val postAfter = post.copyWithUpdatedVoteAndReadCounts(actions, readStats)
