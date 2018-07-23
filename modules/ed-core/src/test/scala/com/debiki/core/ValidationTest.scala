@@ -21,7 +21,7 @@ package com.debiki.core
 import org.scalatest._
 
 
-class ValidationTest extends FreeSpec with MustMatchers {
+class ValidationTest extends FreeSpec with MustMatchers {    // TyT2AKB503
 
 
   "Validation can" - {

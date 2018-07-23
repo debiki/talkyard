@@ -278,12 +278,17 @@ function pagesFor(browser) {
       origWaitForEnabled.apply(browser, arguments);
     },
 
-    waitForText: function(selector: string) {
+    waitForText: function(selector: string, timeoutMillis?: number) {
       origWaitForText.apply(browser, arguments);
     },
 
-    waitForExist: function(selector: string) {
+    waitForExist: function(selector: string, timeoutMillis?: number) {
       origWaitForExist.apply(browser, arguments);
+    },
+
+    waitForGone: function(selector: string, timeoutMillis?: number) {
+      // True reverses, i.e. wait until not visible
+      origWaitForExist.call(browser, selector, timeoutMillis, true);
     },
 
     waitAndClick: function(selector: string, opts: { maybeMoves?: boolean, clickFirst?: boolean } = {}) {
@@ -1866,19 +1871,40 @@ function pagesFor(browser) {
 
 
     aboutUserDialog: {
-      clickSendMessage: function() {
+      waitForLoaded: () => {
+        api.waitUntilLoadingOverlayGone();
+        api.waitForEnabled('.s_UD .e_CloseB');
+        api.waitUntilDoesNotMove('.s_UD .e_CloseB');
+      },
+
+      getUsername: (): string => {
+        api.aboutUserDialog.waitForLoaded();
+        return api.waitAndGetVisibleText('.s_UD_Un');
+      },
+
+      close: () => {
+        api.aboutUserDialog.waitForLoaded();
+        api.waitAndClick('.s_UD .e_CloseB');
+        browser.waitForGone('.s_UD');
+        api.waitUntilModalGone();
+      },
+
+      clickSendMessage: () => {
+        api.aboutUserDialog.waitForLoaded();
         api.rememberCurrentUrl();
         api.waitAndClick('#e2eUD_MessageB');
         api.waitForNewUrl();
       },
 
-      clickViewProfile: function() {
+      clickViewProfile: () => {
+        api.aboutUserDialog.waitForLoaded();
         api.rememberCurrentUrl();
         api.waitAndClick('#e2eUD_ProfileB');
         api.waitForNewUrl();
       },
 
-      clickRemoveFromPage: function() {
+      clickRemoveFromPage: () => {
+        api.aboutUserDialog.waitForLoaded();
         api.waitAndClick('#e2eUD_RemoveB');
         // Later: browser.waitUntilModalGone();
         // But for now:  [5FKE0WY2]

@@ -19,6 +19,8 @@ It = list item
 D  = dialog
 CB = checkbox
 U  = user
+Un = username
+FN = full name
 Example: s_Whatever_SaveB = save button. Or s_SomethingElse_EmT = email addresses table.
 
 

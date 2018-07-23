@@ -160,11 +160,12 @@ const AboutUserDialog = createComponent({
       }
 
       content = r.div({}, ModalBody({}, content),
-        ModalFooter({}, Button({ onClick: this.close }, t.Close)));
+        ModalFooter({}, Button({ className: 'e_CloseB', onClick: this.close }, t.Close)));
     }
 
     return (
       DropdownModal({ show: this.state.isOpen, onHide: this.close,
+        dialogClassName2: 's_UD',
         atRect: this.state.atRect, windowWidth: this.state.windowWidth,
         className: 'esUsrDlg', showCloseButton: false }, content));
   }
@@ -174,21 +175,20 @@ const AboutUserDialog = createComponent({
 const AboutUser = createComponent({
   displayName: 'AboutUser',
 
-  componentWillMount: function() {
-    this.isUnmounted = false;
-  },
-
   componentWillUnmount: function() {
-    this.isUnmounted = true;
+    this.isGone = true;
   },
 
   removeFromPage: function() {
     const user: MemberInclDetails = this.props.user;
     Server.removeUsersFromPage([user.id], () => {
-      if (!this.isUnmounted) this.props.close();
+
       // [redux] send a page-members patch [5FKE0WY2]
       util.openDefaultStupidDialog({ body: "Now I've removed him/her from this topic. " +
           "Currently you need to refresh the page (hit F5) now, to see this change." })
+
+      if (this.isGone) return;
+      this.props.close();
     });
   },
 
@@ -250,8 +250,8 @@ const AboutUser = createComponent({
             size: AvatarSize.Medium, clickOpensUserProfilePage: true }),
         r.div({},
           extraInfoNewline,
-          r.b({}, user.username), r.br(),
-          user.fullName, r.br(),
+          r.b({ className: 's_UD_Un' }, user.username), r.br(),
+          r.span({ className: 's_UD_FN' }, user.fullName), r.br(),
           isStaffInfo,
           isGoneInfo)));
   }

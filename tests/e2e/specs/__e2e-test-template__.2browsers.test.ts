@@ -14,8 +14,6 @@ declare var browser: any;
 declare var browserA: any;
 declare var browserB: any;
 
-let forum: LargeTestForum;
-
 let everyonesBrowsers;
 let richBrowserA;
 let richBrowserB;
@@ -38,7 +36,9 @@ let mallorysBrowser;
 let strangersBrowser;
 
 let siteIdAddress: IdAddress;
-let forumTitle = "Some E2E Test";
+let siteId;
+
+let forum: LargeTestForum;
 
 let discussionPageUrl: string;
 
@@ -48,7 +48,7 @@ describe("some-e2e-test [TyT1234ABC]", () => {
   it("import a site", () => {
     const builder = buildSite();
     forum = builder.addLargeForum({
-      title: forumTitle,
+      title: "Some E2E Test",
       members: undefined, // default = everyone
     });
     builder.addPost({
@@ -60,6 +60,7 @@ describe("some-e2e-test [TyT1234ABC]", () => {
     });
     assert(builder.getSite() === forum.siteData);
     siteIdAddress = server.importSiteData(forum.siteData);
+    siteId = siteIdAddress.id;
     discussionPageUrl = siteIdAddress.origin + '/' + forum.topics.byMichaelCategoryA.slug;
   });
 

@@ -174,12 +174,11 @@ declare namespace debiki2 {
   var Server: any;
   var reactelements: any;
   var hashStringToNumber: any;
-  var canUseLocalStorage(): boolean;
+  function canUseLocalStorage(): boolean;
   var getFromLocalStorage: any;
   var putInLocalStorage: any;
   var event_isCtrlEnter: any;
-  var page_isPrivateGroup: any;
-  var page_isPrivateGroup: any;
+  function page_isPrivateGroup(pageRole: PageRole): boolean;
   function pageRole_iconClass(pageRole: PageRole): string;
 
   function user_isSuspended(user: MemberInclDetails, nowMs: WhenMs): boolean;

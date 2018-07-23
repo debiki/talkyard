@@ -221,7 +221,8 @@ editor -
         - email-notfs-discussion.test.ts  TyT4FKA2EQ02
     edit, add new @username:
         - email-notfs-discussion.test.ts  TyT2WREG78
-
+    unusual chars:
+        - weird-usernames.2browsers.test.ts  TyT5ABKPUW2
   other buttons -
     ...
 
@@ -263,6 +264,7 @@ post -
   view author -
     click opens dialog:
     mentions click opens dialog:
+      - weird-usernames.2browsers.test.ts  TyT2WAB5UY
     profile shown:
     ban guest:
     send message:

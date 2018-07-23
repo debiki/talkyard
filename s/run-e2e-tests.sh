@@ -199,6 +199,8 @@ function runAllE2eTests {
   runE2eTest s/wdio target/e2e/wdio.2chrome.conf.js    --only invites-by-core-try-login-after.2browsers $args
   runE2eTest s/wdio target/e2e/wdio.2chrome.conf.js    --only invites-weird-email-addrs.2browsers $args
 
+  runE2eTest s/wdio target/e2e/wdio.2chrome.conf.js    --only weird-usernames.2browsers $args
+
 
   # wip:
   # settings-allow-local-signup

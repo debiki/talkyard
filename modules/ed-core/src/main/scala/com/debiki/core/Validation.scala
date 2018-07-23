@@ -80,7 +80,9 @@ object Validation {
     */
   // CLEAN_UP don't return the username — looks as if it's maybe getting changed
   def checkUsername(username: String): String Or ErrorMessage = {  CLEAN_UP // merge with ReservedNames [2PGKR8ML]
-    // Tested in ValidationTest.
+    // Tested here:
+    // - ValidationTest  TyT2AKB503
+    // - weird-usernames.2browsers  TyT5ABKPUW2
     // Also see [2WJBG04]
 
     if (StackExchangeUsernameRegex.matches(username))  // [2QWGRC8P]
