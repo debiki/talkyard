@@ -166,7 +166,7 @@ trait PostsDao {
       htmlSanitized = textAndHtml.safeHtml,
       approvedById = approverId)
 
-    val shallBumpPage = !page.isClosed && shallApprove
+    val shallBumpPage = shallApprove
     val numNewOpRepliesVisible = (shallApprove && newPost.isOrigPostReply) ? 1 | 0
     val newFrequentPosterIds: Seq[UserId] =
       if (shallApprove)
@@ -467,7 +467,7 @@ trait PostsDao {
 
     val oldMeta = page.meta
     val newMeta = oldMeta.copy(
-      bumpedAt = page.isClosed ? oldMeta.bumpedAt | Some(tx.now.toJavaDate),
+      bumpedAt = Some(tx.now.toJavaDate),
       // Chat messages are always visible, so increment all num-replies counters.
       numRepliesVisible = oldMeta.numRepliesVisible + 1,
       numRepliesTotal = oldMeta.numRepliesTotal + 1,
@@ -844,7 +844,7 @@ trait PostsDao {
       val oldMeta = page.meta
       var newMeta = oldMeta.copy(version = oldMeta.version + 1)
       var makesSectionPageHtmlStale = false
-      // Bump the page, if the article / original post was edited.
+      // Bump the page, if the article / original post was edited, and topic not closed.
       // (This is how Discourse works and people seems to like it. However,
       // COULD add a don't-bump option for minor edits.)
       if (postNr == PageParts.BodyNr && editedPost.isCurrentVersionApproved && !page.isClosed) {

@@ -435,8 +435,7 @@ var t_sv_SE: TalkyardTranslations = t = {
 
     ThisTopicClosed_1: "This topic has been ",
     // A Topic-has-been-Closed icon, + the text "closed", shown here.
-    ThisTopicClosed_2: ". You can still post comments, " +
-          "but that won't make this topic bump to the top of the latest-topics list.",
+    ThisTopicClosed_2: ". You can still post comments.",
 
     ThisQuestSloved_1: "This is a question and it has been ",
     // A  Topic-has-been-Answered icon shown here.

@@ -439,8 +439,7 @@ var t_pt_BR: TalkyardTranslations = t = {
 
     ThisTopicClosed_1: "Este tópico foi ",
     // A Topic-has-been-Closed icon, + the text "closed", shown here.
-    ThisTopicClosed_2: ". Você ainda pode postar comentários, " +
-          "mas isso não fará com que esse tópico seja alçado ao topo da lista dos últimos tópicos.",
+    ThisTopicClosed_2: ". Você ainda pode postar comentários.",  // REVIEW removed "won't make ... bump ..."
 
     ThisQuestSloved_1: "isto é uma pergunta e foi ",
     // A  Topic-has-been-Answered icon shown here.
