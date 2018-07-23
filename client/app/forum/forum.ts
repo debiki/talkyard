@@ -703,7 +703,7 @@ const LoadAndListTopics = createFactory({
   },
 
   componentDidUpdate: function() {
-    rememberBackUrl(location.toString());
+    rememberBackUrl();
   },
 
   componentWillUnmount: function() {

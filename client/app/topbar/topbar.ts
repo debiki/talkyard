@@ -309,8 +309,8 @@ export const TopBar = createComponent({
     }
 
     if (this.props.showBackToSite || backToSiteButton) {
-      backToSiteButton = r.a({ className: 'esTopbar_custom_backToSite btn icon-reply',
-          onClick: goBackToSite }, backToSiteButton || t.tb.BackFromAdm);
+      backToSiteButton = LinkUnstyled({ className: 'esTopbar_custom_backToSite btn icon-reply',
+          href: linkBackToSite() }, backToSiteButton || t.tb.BackFromAdm);
       extraMargin = true;
     }
 

@@ -1353,7 +1353,7 @@ function showNewPage(newPage: Page, newPublicCategories: Category[], newUsers: B
   }
 
   // Make Back button work properly.
-  debiki2.rememberBackUrl(correctedUrl || location.toString());
+  debiki2.rememberBackUrl(correctedUrl);
 
   // Restart the reading progress tracker, now when on a new page.
   page.PostsReadTracker.reset();

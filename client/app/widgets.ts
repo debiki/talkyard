@@ -61,6 +61,7 @@ export function RedirAppend({ path, append }) {
 export const PrimaryButton: any = makeWidget(r.button, ' btn btn-primary');
 export const Button: any = makeWidget(r.button, ' btn btn-default');
 export const PrimaryLinkButton: any = makeWidget(r.a, ' btn btn-primary');
+export const LinkUnstyled: any = makeWidget(r.a, '');
 export const LinkButton: any = makeWidget(r.a, ' btn btn-default');  // not blue [2GKR5L0]
 export const ExtLinkButton: any = makeWidget(r.a, ' btn btn-default', { ext: true });
 export const InputTypeSubmit: any = makeWidget(r.input, ' btn btn-primary', { type: 'submit' });

@@ -139,26 +139,24 @@ export function linkToUpload(origins: Origins, uploadsPath: string): string {
 }
 
 
-export function rememberBackUrl(url: string) {
+export function rememberBackUrl(url?: string) {
+  const theUrl = url || location.pathname + location.search + location.hash;
   // Skip API pages — those are the ones we're returning *from*. (Don't require === 0 match;
   // there might be a hostname. Matching anywhere is ok, because the prefix is '/-/' and
   // that substring isn't allowed in other non-api paths.)
-  if (url.search(ApiUrlPathPrefix) >= 0) {
+  if (theUrl.search(ApiUrlPathPrefix) >= 0) {
     return;
   }
-  debiki2.putInSessionStorage('returnToSiteUrl', url);
+  debiki2.putInSessionStorage('returnToSiteUrl', theUrl);
 }
 
 
 /**
- * Navigates back to the page that the user viewed before s/he entered the admin or
+ * The page that the user viewed before s/he entered the admin or
  * about-user area, or to the homepage ('/') if there's no previous page.
  */
-export function goBackToSite() {
-  // Hmm, could inline this instead. Was more complicated in the past, when using
-  // an URL param instead of sessionStorage.
-  const previousUrl = getFromSessionStorage('returnToSiteUrl') || '/';
-  window.location.replace(previousUrl);
+export function linkBackToSite(): string {
+  return getFromSessionStorage('returnToSiteUrl') || '/';
 }
 
 
