@@ -33,7 +33,7 @@
 
 FROM alpine:3.7
 
-ENV NGINX_VERSION 1.13.10
+ENV NGINX_VERSION 1.15.2
 
 # Do this first, because we need 'make' early, and also it's boring to wait for Nginx
 # to download.
