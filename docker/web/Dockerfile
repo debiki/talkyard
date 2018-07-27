@@ -1,4 +1,4 @@
-# Parts Copyright (c) 2016, 2017 Kaj Magnus Lindberg
+# Parts Copyright (c) 2016 - 2018 Kaj Magnus Lindberg
 # License: 2-clause BSD (Kaj Magnus's changes in this file only).
 #
 # Parts Copyright (C) 2011-2016 Nginx, Inc.
@@ -256,7 +256,7 @@ COPY nginx.conf           /etc/nginx/nginx.conf.template
 
 COPY run-envsubst.sh  /etc/nginx/run-envsubst.sh
 RUN  chmod ugo+x      /etc/nginx/run-envsubst.sh
-# Sync this with the variable list in run-envsubst.sh: [0KW2UY3]
+# Sync this with the variable list in run-envsubst.sh: [0KW2UY3]  CLEANUP change prefix to TY_
 ENV \
     ED_NGX_LIMIT_CONN_PER_IP=40 \
     ED_NGX_LIMIT_CONN_PER_SERVER=10000 \
