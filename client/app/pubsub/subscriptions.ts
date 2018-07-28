@@ -17,14 +17,18 @@
 
 /// <reference path="../prelude.ts" />
 /// <reference path="../rules.ts" />
+/// <reference path="../Server.ts" />
+/// <reference path="../ReactStore.ts" />
+/// <reference path="../page-dialogs/server-error-dialog.ts" />
 
 //------------------------------------------------------------------------------
    module debiki2.pubsub {
 //------------------------------------------------------------------------------
 
 const RetryAfterMsDefault = 4000;
-const GiveUpAtMs = 60 * 1000;
+const GiveUpAfterTotalMs = 10 * 60 * 1000; // [5AR20ZJ]
 let retryAfterMs = RetryAfterMsDefault;
+let startedFailingAtMs;
 
 
 /**
@@ -45,6 +49,7 @@ export function subscribeToServerEvents() {
 
     // Reset backoff, since all seems fine.
     retryAfterMs = RetryAfterMsDefault;
+    startedFailingAtMs = undefined;
 
     dieIf(!response.type, 'TyE2WCX59');
     dieIf(!response.data, 'TyE4YKP02');
@@ -65,10 +70,14 @@ export function subscribeToServerEvents() {
     }
   }, () => {
     // Error. Don't retry immediately — that could result in super many error log messages,
-    // if the problem persists. Also, do a little bit exponential backoff, and eventually
-    // give up, if the geometric sum retryAfterMs * 1.3^x eventually exceeds GiveUpAtMs.
+    // if the problem persists. Also, do a bit exponential backoff; eventually give up.
     retryAfterMs = retryAfterMs * 1.3;
-    if (retryAfterMs > GiveUpAtMs) {
+    if (!startedFailingAtMs) {
+      startedFailingAtMs = getNowMs();
+    }
+    const totalFailTimeMs = getNowMs() - startedFailingAtMs;
+
+    if (totalFailTimeMs > GiveUpAfterTotalMs) {
       // TESTS_MISSING how make Nginx "break" so all requests fail? If a script temporarily  [5YVBAR2]
       // does 'docker-compose kill web' and then 'start web' — then, other e2e tests won't be
       // able to run in parallel with this, hmm.

@@ -244,7 +244,7 @@ class PubSubActor(val nginxHost: String, val globals: Globals) extends Actor {
     case ex: Exception =>
       // Akka would otherwise discard this actor and create another one, but then
       // its state (which is probably fine) gets lost.
-      p.Logger.error("Error in PubSub actor [TyE6RP42]", ex)
+      p.Logger.error("Error in PubSub actor [TyEPUBCATCH]", ex)
   }
 
 
@@ -402,7 +402,8 @@ class PubSubActor(val nginxHost: String, val globals: Globals) extends Actor {
         .map(handlePublishResponse)
         .recover({
           case ex: Exception =>
-            p.Logger.warn(s"s$siteId: Error publishing to browsers [EsE0KPU31]", ex)
+            p.Logger.warn(o"""s$siteId: Error Nchan-publishing to users $toUserIds [TyEPUB2BRWSR]:
+                , tyype: $tyype, json: $json""", ex)
         })
     }
   }
@@ -410,7 +411,7 @@ class PubSubActor(val nginxHost: String, val globals: Globals) extends Actor {
 
   private def handlePublishResponse(response: WSResponse) {
     if (response.status < 200 || 299 < response.status) {
-      p.Logger.warn(o"""Bad nchan status code after sending publish request [EsE9UKJ2]:
+      p.Logger.warn(o"""Bad nchan status code after sending publish request [TyENCHANSTS]:
         ${response.status} ${response.statusText} — see the nginx error log for details?
         Response body: '${response.body}""")
     }

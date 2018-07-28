@@ -10,7 +10,7 @@ local function get_used_bw(dict, key)
 end
 
 
-local function set_used_bw(dict, key, bw)
+local function set_used_bw(dict, per_what, key, bw)
     -- Ignore races. This needn't be totally exact.
     local expiration_seconds = 7 * 24 * 3600
 
@@ -18,12 +18,12 @@ local function set_used_bw(dict, key, bw)
     local ok, err, forcible = dict:set(key, bw, expiration_seconds)
 
     if not ok then
-        ngx.log(ngx.ERR, "Error adding bandwidth to  " .. key .. " [EsE5KG2W3]")
+        ngx.log(ngx.ERR, "Error adding " .. per_what .. " bandwidth to  " .. key .. " [TyELUABWTH]")
     end
 
     if forcible then
         -- COULD log this at most once per day.
-        ngx.log(ngx.WARN, "Per ip cache too small, old entry removed [EsE2PK47]")
+        ngx.log(ngx.WARN, "Per ip cache too small, old entry removed [TyWLUAIPSML]")
     end
 end
 
