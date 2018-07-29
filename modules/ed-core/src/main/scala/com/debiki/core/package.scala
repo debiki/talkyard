@@ -689,6 +689,7 @@ package object core {
                           // the developers are less short of time.
   def DISCUSSION_QUALITY = () // Stuff to do to improve the quality of the discussions
   def UNPOLITE = ()       // Vuln that lets a user be unpolite to someone else
+  def FAIR = ()           // Something to fix, to make all sites share resources in a fair way.
 
   def I18N = ()           // Translation missing
   def READ = ()           // Something that could be good to read, before continuing coding.
