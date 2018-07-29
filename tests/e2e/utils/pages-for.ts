@@ -66,6 +66,8 @@ function pagesFor(browser) {
   const origWaitForText = browser.waitForText;
   const origWaitForExist = browser.waitForExist;
 
+  const hostsVisited = {};
+
   const api = {
 
     origin: function() {
@@ -83,7 +85,9 @@ function pagesFor(browser) {
     },
 
 
-    go: function(url) {
+    go: (url, opts: { useRateLimits?: boolean } = {}) => {
+      let shallDisableRateLimits = false;
+
       if (url[0] === '/') {
         // Local url, need to add origin.
         try { url = api._findOrigin() + url; }
@@ -93,8 +97,21 @@ function pagesFor(browser) {
           throw ex;
         }
       }
-      logMessage("Go: " + url);
+      else if (!opts.useRateLimits) {
+        const parts = url.split('/');
+        const host = parts[2];
+        if (!hostsVisited[host]) {
+          shallDisableRateLimits = true;
+          hostsVisited[host] = true;
+        }
+      }
+
+      logMessage(`Go: ${url}${shallDisableRateLimits ? " & disable rate limits" : ''}`);
       browser.url(url);
+
+      if (shallDisableRateLimits) {
+        browser.disableRateLimits();
+      }
     },
 
 
@@ -308,8 +325,9 @@ function pagesFor(browser) {
 
 
     _waitAndClickImpl: function(selector: string, opts: { clickFirst?: boolean, maybeMoves?: boolean } = {}) {
+      selector = selector.trim(); // so selector[0] below, works
       api._waitForClickable(selector, opts);
-      if (!selector.startsWith('#') && !opts.clickFirst) {
+      if (selector[0] !== '#' && !opts.clickFirst) {
         let errors = '';
         let length = 1;
         const byBrowserResults = byBrowser(browser.elements(selector));
@@ -558,11 +576,11 @@ function pagesFor(browser) {
 
 
     _assertOneOrAnyTextMatches: function(many, selector, regex, regex2?, fast?) {
-      process.stdout.write('■');
+      //process.stdout.write('■');
       if (fast === 'FAST') {
         // This works with only one browser at a time, so only use if FAST, or tests will break.
         api._assertAnyOrNoneMatches(selector, true, regex, regex2);
-        process.stdout.write('F ');
+        //process.stdout.write('F ');
         return;
       }
       // With Chrome 60, this is suddenly *super slow* and the authz-view-as-stranger   [CHROME_60_BUG] because of (24DKR0)?
@@ -591,7 +609,7 @@ function pagesFor(browser) {
               regex2.toString() + ", actual text: '" + text + whichBrowser);
         }
       });
-      process.stdout.write('S ');
+      //process.stdout.write('S ');
     },
 
 

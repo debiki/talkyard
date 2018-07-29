@@ -1,6 +1,6 @@
-import settings = require('./settings');
 import { dieIf } from './log-and-die'
 
+declare const settings;
 
 
 const utils = {

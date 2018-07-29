@@ -3,7 +3,6 @@
 /// <reference path="../test-types.ts"/>
 
 import _ = require('lodash');
-import settings = require('./settings');
 import utils = require('./utils');
 import { logMessage, die, dieIf } from './log-and-die';
 
@@ -13,8 +12,10 @@ const syncRequest = require('sync-request');
 
 let xsrfTokenAndCookies;
 
+let settings;
 
-function initOrDie() {
+function initOrDie(theSettings) {
+  settings = theSettings;
   const response = syncRequest('GET', settings.mainSiteOrigin);
   dieIf(response.statusCode !== 200,
       "Error getting xsrf token and cookies from " + settings.mainSiteOrigin + " [EsE2FKE3]",

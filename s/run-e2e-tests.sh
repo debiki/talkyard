@@ -5,6 +5,36 @@ if [ `id -u` -eq 0 ]; then
   exit 1
 fi
 
+offset=0
+every=1
+
+positional_args=()
+while [[ $# -gt 0 ]]; do
+  arg_name="$1"
+  case $arg_name in
+    -o|--offset)
+    offset="$2"
+    shift  # past key
+    shift  # past value
+    ;;
+    -e|--every)
+    every="$2"
+    shift  # past key
+    shift  # past value
+    ;;
+    *)
+    # Could:
+    # positional_args+=("$1")  # add to array
+    # shift
+    # and wait until -- before passing the rest of the args to wdio.
+    # For now though:
+    break
+    ;;
+  esac
+done
+
+
+
 # If we start running the tests too early, they will need to wait for Nashorn, and might then timeout and fail.
 echo "Waiting for Nashorn to compile Javascript code..."
 until $(curl --output /dev/null --silent --head --fail http://localhost/-/are-scripts-ready); do
@@ -20,16 +50,32 @@ failfile=tests/e2e-failures.txt
 echo "" >> $failfile
 log_message "Running: $*" >> $failfile
 
+isoDate=$(date --iso-8601=seconds)
+randAlnum=$(< /dev/urandom tr -cd "[a-z0-9]" | head -c 10)
+
+testStartId="$isoDate-$randAlnum"
 
 function runE2eTest {
   site_nr=`printf '%d' $(($site_nr + 1))`
-  cmd="$@ --deleteOldSite --localHostname=e2e-test-$site_nr"
+
+  # This hostname will avoid using the same hostname, for different tests at the same time,
+  # if running many tests in parallel.
+  local_hostname="e2e-test-e$every-o$offset-s$site_nr"  # dupl (5WAKEF02)
+
+  # Later: Run only every $every test, starting at offset $offset.
+  # Then, can run many tests in parallel. For example, run this script with
+  # '-e 2 -o 0' and '-e 2 -o 1' at the same time.
+
+  # Incl $testStartId so ps-grep-kill below kills only wdio processes we start here.
+  cmd="$@ --deleteOldSite --localHostname=$local_hostname --dummy-wdio-test $testStartId"
+
   echo "—————————————————————————————————————————————————————————"
   echo "Next test: $cmd"
+
   # Sometimes, randomly?, there's some weird port conflict causing this to fail & hang forever.
   # So timeout after 3 minutes. The slow tests take about one minute.
   # Also, kill any wdio things that have failed to stop, and might block a/the port.
-  wdio_ps=$( ps aux | grep node | egrep 'wdio(.[0-9a-z]+)?.conf.js' | grep -- '--only' )
+  wdio_ps=$(ps aux | grep node | egrep 'wdio(.[0-9a-z]+)?.conf.js' | grep "wdio-test $testStartId")
   if [ -n "$wdio_ps" ] ; then
     # Column 2 is the process id.
     wdio_ps_ids=$( echo "$wdio_ps" | awk '{ print $2 }' | tr '\n' ' ' )
@@ -37,7 +83,9 @@ function runE2eTest {
     echo "$wdio_ps"
     kill $wdio_ps_ids
   fi
+
   timeout --foreground 180 $cmd
+
   if [ $? -ne 0 ]; then
     log_message "Failed: $cmd" >> $failfile
     # Try again, so some harmless race condition I haven't thought about that breaks the test,
@@ -50,7 +98,8 @@ function runE2eTest {
     echo
     sleep 7
     site_nr=`printf '%d' $(($site_nr + 1))`
-    cmd="$@ --deleteOldSite --localHostname=e2e-test-$site_nr"
+    local_hostname="e2e-test-e$every-o$offset-s$site_nr"  # dupl (5WAKEF02)
+    cmd="$@ --deleteOldSite --localHostname=$local_hostname"
     echo "Again: $cmd"
     $cmd
     if [ $? -ne 0 ]; then
@@ -63,7 +112,7 @@ function runE2eTest {
       echo "This end-to-end test failed twice: (The next line. You can copy-paste it and run it.)"
       # Later: use --localHostname=e2e-test-manual or just e2e-test, instead of -20, so won't overwrite test site nr 20.
       # (But first add a cname entry for -manual.)
-      cmd_with_debug="$cmd_with_debug --deleteOldSite --localHostname=e2e-test-20 --nt --da"
+      cmd_with_debug="$cmd_with_debug --deleteOldSite --localHostname=e2e-test-e$every-o$offset-retry --nt --da"  # dupl (5WAKEF02)
       # We cannot use "$EUID" -ne 0 to find out if the user is originally root, because
       # root first su:s to another user. Check the --is-root command line flag instead.
       if [ -z "$is_root" ]; then

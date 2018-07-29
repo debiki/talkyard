@@ -89,28 +89,31 @@ else if (settings.include3rdPartyDependentTests) {
   die("--include3rdPartyDependentTests (or -3) specified, but no --secretsPath [EsE5G5P8]");
 }
 
-/*
-console.log("==================================================");
-console.log("~~~~~~ Test settings:");
-console.log("host: " + settings.host);
-console.log("secure: " + !!settings.secure);
-console.log('derived origin: ' + settings.mainSiteOrigin);
-console.log("~~~~~~ Secrets:");
-console.log("e2eTestPassword: " + (settings.e2eTestPassword ? "(yes)" : "undefined"));
-console.log("gmailEmail: " + settings.gmailEmail);
-console.log("facebookAdminEmail: " + settings.facebookAdminEmail);
-console.log("facebookUserEmail: " + settings.facebookUserEmail);
-console.log("~~~~~~ Extra magic:");
-if (settings.debugAfterwards) {
-  console.log("You said " + unusualColor("--debugAfterwards") +
+const interesting = settings.parallel && settings.parallel > 1;
+if (interesting) {
+  console.log("==================================================");
+  console.log("~~~~~~ Test settings:");
+  console.log("host: " + settings.host);
+  console.log("secure: " + !!settings.secure);
+  console.log('derived origin: ' + settings.mainSiteOrigin);
+  console.log("~~~~~~ Parallel: ");
+  console.log(settings.parallel + " tests in parallel");
+  console.log("~~~~~~ Secrets:");
+  console.log("e2eTestPassword: " + (settings.e2eTestPassword ? "(yes)" : "undefined"));
+  console.log("gmailEmail: " + settings.gmailEmail);
+  console.log("facebookAdminEmail: " + settings.facebookAdminEmail);
+  console.log("facebookUserEmail: " + settings.facebookUserEmail);
+  console.log("~~~~~~ Extra magic:");
+  if (settings.debugAfterwards) {
+    console.log("You said " + unusualColor("--debugAfterwards") +
       ", so I will pause so you can debug, after the first test.");
-}
-if (settings.noTimeout) {
-  console.log("You said " + unusualColor("--noTimeout") +
+  }
+  if (settings.noTimeout) {
+    console.log("You said " + unusualColor("--noTimeout") +
       ", so I might wait forever for something in the browser.");
+  }
+  console.log("==================================================");
 }
-console.log("==================================================");
-*/
 
 
 export = <TestSettings> settings;
