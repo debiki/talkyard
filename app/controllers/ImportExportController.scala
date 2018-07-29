@@ -70,6 +70,11 @@ class ImportExportController @Inject()(cc: ControllerComponents, edContext: EdCo
   }
 
 
+  private val ImportLock = new Object
+  @volatile
+  private var numImporingNow = 0
+
+
   private def importSiteImpl(request: mvc.Request[JsValue], browserIdData: BrowserIdData,
         deleteOld: Boolean, isTest: Boolean): mvc.Result = {
     dieIf(deleteOld && !isTest, "EdE5FKWU02")
@@ -93,7 +98,21 @@ class ImportExportController @Inject()(cc: ControllerComponents, edContext: EdCo
       deleteOld && !siteData.site.hosts.forall(h => SiteHost.isE2eTestHostname(h.hostname)),
       "EdE7GPK4F0", s"Can only overwrite hostnames that start with ${SiteHost.E2eTestPrefix}")
 
-    val newSite = doImportSite(siteData, browserIdData, deleteOldSite = deleteOld)
+    // Don't allow more than one import at a time, because results in a
+    // "PSQLException: ERROR: could not serialize access due to concurrent update" error:
+
+    if (numImporingNow > 3)
+      throwServiceUnavailable("TyE2MNYIMPRT", s"Too many parallel imports: $numImporingNow")
+
+    val newSite = ImportLock synchronized {
+      numImporingNow += 1
+      try {
+        doImportSite(siteData, browserIdData, deleteOldSite = deleteOld)
+      }
+      finally {
+        numImporingNow -= 1
+      }
+    }
 
     Ok(Json.obj(
       "id" -> newSite.id,
@@ -204,7 +223,7 @@ class ImportExportController @Inject()(cc: ControllerComponents, edContext: EdCo
   }
 
 
-  def doImportSite(siteData: ImportSiteData, browserIdData: BrowserIdData, deleteOldSite: Boolean)
+  private def doImportSite(siteData: ImportSiteData, browserIdData: BrowserIdData, deleteOldSite: Boolean)
         : Site = {
     for (page <- siteData.pages) {
       val path = siteData.pagePaths.find(_.pageId == page.pageId)
