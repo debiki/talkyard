@@ -33,6 +33,68 @@
 
 FROM alpine:3.7
 
+
+# ----- Core dumps
+
+# Place this:  kill(getpid(), SIGSEGV);   (from: https://stackoverflow.com/a/1657244/694469 )
+# to crash and generate a core dump at some specific location.
+# (This also core dumbps, but the dump won'd be backtrace:able: `raise(SIGABRT)`)
+
+
+# For debugging core dumps
+RUN apk add --no-cache \
+  linux-headers \
+  make \
+  g++ \
+  gcc \
+  texinfo
+
+# RUN apk add --no-cache gdb  — not available, instead:
+RUN mkdir /gdb-build \
+ && cd /gdb-build \
+ && wget http://ftp.gnu.org/gnu/gdb/gdb-8.1.tar.xz \
+ && tar -xvf gdb-8.1.tar.xz
+
+RUN cd /gdb-build/gdb-8.1 \
+ && ./configure --prefix=/usr \
+ && make \
+ && make -C gdb install
+ #&& cd / \
+ # It's about 500 MB large.
+ #&& rm -rf /gdb-build \  —>
+ #    rm: can't remove '/gdb-build/gdb-8.1/gdb/build-gnulib/confdir3/confdir3/confdir3': Directory not empty
+ #     and 999 /confdir3/confdir3/confdir3/...
+ #&& touch /gdb-build-done
+
+## install ssh server support and keys
+#RUN apk add --no-cache openssh
+#RUN ssh-keygen -A
+
+# core dump debug
+#    1  ulimit -c unlimited
+#    2  cat /proc/sys/kernel/core_pattern
+#    3  echo "/tmp/cores/core.%e.%p" | tee /proc/sys/kernel/core_pattern
+#    5  sysctl -w fs.suid_dumpable=2
+#    6  sysctl -p
+#   11  apk add gdb
+#   12  apk add --no-cache make
+#   13  apk add --no-cache linux-headers
+#   14  apk add --no-cache texinfo
+#   15  apk add --no-cache gcc
+#   16  apk add --no-cache g++
+#   21  cd root/
+#   18  wget http://ftp.gnu.org/gnu/gdb/gdb-8.1.tar.xz
+#   23  tar -xvf gdb-8.1.tar.xz
+#   24  cd gdb-8.1
+#   26  ./configure --prefix=/usr
+#   27  make
+#   28  make -C gdb install
+#   29  gdb
+#   45  ls -halt /tmp/cores/
+
+# ----- /Core dumps
+
+
 ENV NGINX_VERSION 1.15.2
 
 # Do this first, because we need 'make' early, and also it's boring to wait for Nginx
@@ -239,61 +301,6 @@ RUN \
 RUN rm -fr /tmp/nginx-modules/
 
 
-# ----- Core dumps
-
-# For debugging core dumps
-RUN apk add --no-cache \
-  linux-headers \
-  make \
-  g++ \
-  gcc \
-  gfortran \
-  texinfo
-
-# RUN apk add --no-cache gdb  — not available, instead:
-RUN mkdir /gdb-build \
- && cd /gdb-build \
- && wget http://ftp.gnu.org/gnu/gdb/gdb-8.1.tar.xz \
- && tar -xvf gdb-8.1.tar.xz;
-
-RUN cd /gdb-build/gdb-8.1 \
- && ./configure --prefix=/usr \
- && make \
- && make -C gdb install \
- && cd / \
- # It's about 500 MB large.
- && rm -rf /gdb-build \
- && touch /gdb-build-done
-
-## install ssh server support and keys
-#RUN apk add --no-cache openssh
-#RUN ssh-keygen -A
-
-# core dump debug
-#    1  ulimit -c unlimited
-#    2  cat /proc/sys/kernel/core_pattern
-#    3  echo "/tmp/cores/core.%e.%p" | tee /proc/sys/kernel/core_pattern
-#    5  sysctl -w fs.suid_dumpable=2
-#    6  sysctl -p
-#   11  apk add gdb
-#   12  apk add --no-cache make
-#   13  apk add --no-cache linux-headers
-#   14  apk add --no-cache texinfo
-#   15  apk add --no-cache gcc
-#   16  apk add --no-cache g++
-#   21  cd root/
-#   18  wget http://ftp.gnu.org/gnu/gdb/gdb-8.1.tar.xz
-#   23  tar -xvf gdb-8.1.tar.xz
-#   24  cd gdb-8.1
-#   26  ./configure --prefix=/usr
-#   27  make
-#   28  make -C gdb install
-#   29  gdb
-#   45  ls -halt /tmp/cores/
-
-# ----- /Core dumps
-
-
 COPY lua-packages /opt/lua-packages/
 
 
@@ -351,5 +358,10 @@ EXPOSE 80 443
 # sysctl -p
 
 #CMD /etc/nginx/run-envsubst.sh && nginx
-CMD chmod 1777 /tmp/cores && sysctl -w fs.suid_dumpable=2 && sysctl -p && /etc/nginx/run-envsubst.sh && nginx-debug
+CMD chmod 1777 /tmp/cores \
+  && sysctl -w fs.suid_dumpable=2 \
+  && sysctl -p \
+  && /etc/nginx/run-envsubst.sh \
+  && echo "/tmp/cores/core.%e.%p" > /proc/sys/kernel/core_pattern \
+  && nginx-debug
 
