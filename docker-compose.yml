@@ -3,12 +3,15 @@ services:
   web:
     build: docker/web/
     image: debiki/talkyard-web
+    # so can specify core dump path [2AKB04]
+    privileged: true
     volumes:
       - ./docker/data/uploads/:/opt/talkyard/uploads/:ro
       - ./docker/data/letsencrypt/:/etc/letsencrypt/:ro
       # Mount the Lua scripts, rather than relying on Docker's COPY, so Nginx can
       # auto reload them after edits. (We COPY them too, so will work in Prod.)
       - ./docker/web/ed-lua/:/opt/talkyard/lua/:ro
+      - ./docker/data/nginx-core-dumps/:/tmp/cores/
     ports:
       # Don't expose port 81 (for publishing WebSocket events)  — it should be reachable only
       # from inside the Docker network.

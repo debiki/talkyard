@@ -166,6 +166,8 @@ RUN \
 	&& rm nginx.tar.gz \
 	&& cd /usr/src/nginx-$NGINX_VERSION \
 	&& ./configure $CONFIG --with-debug \
+        # for Nchan:
+        --with-cc-opt='-O0 -ggdb -fvar-tracking-assignments' \
 	&& make -j$(getconf _NPROCESSORS_ONLN) \
 	&& mv objs/nginx objs/nginx-debug \
 	# && mv objs/ngx_http_xslt_filter_module.so objs/ngx_http_xslt_filter_module-debug.so \
@@ -275,6 +277,15 @@ COPY ed-lua /opt/talkyard/lua/
 # inside the Docker network only, so that only Play Framework (located inside the network)
 # can publish events.
 EXPOSE 80 443
+
+# mkdir /tmp/cores
+# chown root:root /tmp/cores
+# chmod 1777 /tmp/cores
+# ulimit -c unlimited
+# # [2AKB04]
+# echo "/tmp/cores/core.%e.%p" | tee /proc/sys/kernel/core_pattern
+# sysctl -w fs.suid_dumpable=2
+# sysctl -p
 
 CMD /etc/nginx/run-envsubst.sh && nginx
 
