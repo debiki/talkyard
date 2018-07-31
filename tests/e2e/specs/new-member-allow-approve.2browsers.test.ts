@@ -73,8 +73,8 @@ describe("new member, allow, approve posts:", () => {  // RENAME ths file to 'ne
     });
     site.pages.push(page);
     site.pagePaths.push(make.pagePath(page.id, '/', false, 'old-topic'));
-    site.posts.push(make.post({ page: page, nr: 0, approvedSource: topics.oldTopicTitle }));
-    site.posts.push(make.post({ page: page, nr: 1, approvedSource: 'Text text text.' }));
+    site.posts.push(make.post({ page: page, nr: c.TitleNr, approvedSource: topics.oldTopicTitle }));
+    site.posts.push(make.post({ page: page, nr: c.BodyNr, approvedSource: 'Text text text.' }));
 
     idAddress = server.importSiteData(site);
   });

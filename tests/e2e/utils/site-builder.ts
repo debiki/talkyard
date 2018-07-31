@@ -46,7 +46,7 @@ function buildSite(site?: SiteData) {
         title: opts.title || "Forum Title",
         body: opts.introText || "Forum intro text.",
         categoryId: opts.rootCategoryId,
-        authorId: opts.authorId || 1,    // [commonjs] SystemUserId
+        authorId: opts.authorId || c.SystemUserId,
       });
 
       let rootCategory = make.rootCategoryWithIdFor(opts.rootCategoryId, forumPage);
@@ -99,7 +99,7 @@ function buildSite(site?: SiteData) {
         title: `About category ${opts.name}`,
         body: opts.aboutPageText,
         categoryId: category.id,
-        authorId: 1,
+        authorId: c.SystemUserId,
       });
       category.aboutPage = page;
       return <CategoryJustAdded> category;
@@ -125,7 +125,7 @@ function buildSite(site?: SiteData) {
       // Page title.
       site.posts.push(make.post({
         page: page,
-        nr: 0,
+        nr: c.TitleNr,
         approvedSource: opts.title,
         approvedHtmlSanitized: opts.title,
       }));
@@ -133,7 +133,7 @@ function buildSite(site?: SiteData) {
       // Page body.
       site.posts.push(make.post({
         page: page,
-        nr: 1,
+        nr: c.BodyNr,
         approvedSource: opts.body,
         approvedHtmlSanitized: `<p>${opts.body}</p>`,
       }));

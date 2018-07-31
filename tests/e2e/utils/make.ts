@@ -8,7 +8,6 @@ import _ = require('lodash');
 import c = require('../test-constants');
 
 const DefaultCreatedAtMs = 1449198824000;
-const SystemUserId = 1; // [commonjs]
 
 let nextPostId = 101;
 function getAndBumpNextPostId() {
@@ -322,7 +321,7 @@ const make = {
     let approvedHtmlSanitized = values.approvedHtmlSanitized;
     if (!approvedHtmlSanitized) {
       // Unless it's the title, wrap in <p>.
-      approvedHtmlSanitized = values.nr === 0 ?
+      approvedHtmlSanitized = values.nr === c.TitleNr ?
           values.approvedSource : `<p>${values.approvedSource}</p>`;
     }
     const authorId = values.authorId || values.page.authorId;
@@ -346,7 +345,7 @@ const make = {
       approvedSource: values.approvedSource,
       approvedHtmlSanitized: approvedHtmlSanitized,
       approvedAtMs: values.page.createdAtMs,
-      approvedById: SystemUserId,
+      approvedById: c.SystemUserId,
       approvedRevNr: 1,
       currRevSourcePatch: undefined,
       currRevNr: 1,
@@ -389,7 +388,7 @@ const make = {
       id: 'fmp',
       role: c.TestPageRole.Forum,
       categoryId: rootCategoryId,
-      authorId: 1,    // [commonjs] SystemUserId
+      authorId: c.SystemUserId,
     });
     site.pages.push(forumPage);
 
@@ -398,13 +397,13 @@ const make = {
     // Forum title and intro text page.
     site.posts.push(make.post({
       page: forumPage,
-      nr: 0,
+      nr: c.TitleNr,
       approvedSource: options.title || "Forum Title",
       approvedHtmlSanitized: options.title || "Forum Title",
     }));
     site.posts.push(make.post({
       page: forumPage,
-      nr: 1,
+      nr: c.BodyNr,
       approvedSource: "Forum intro text.",
       approvedHtmlSanitized: "<p>Forum intro text.</p>",
     }));

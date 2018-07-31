@@ -128,9 +128,11 @@ describe("Page statuses and bottom comments", () => {
       const elem = postElems[i];
       const id = mariasBrowser.elementIdAttribute(elem.ELEMENT, 'id').value;
       console.log('id: ' + id);
+      assert.equal(2, c.BodyNr + 1);
+      assert.equal(2, c.FirstReplyNr);
       switch (i) {
-        case 0:  assert(id === 'post-0');  break; // title
-        case 1:  assert(id === 'post-1');  break; // body
+        case c.TitleNr: assert(id === 'post-' + c.TitleNr);  break;
+        case c.BodyNr:  assert(id === 'post-' + c.BodyNr);  break;
         case 2:  assert(id === 'post-7');  break; // the orig post reply gets placed first
         case 3:  assert(id === 'post-8');  break; // orig post reply reply
         case 4:  assert(id === 'post-2');  break; // new –> planned

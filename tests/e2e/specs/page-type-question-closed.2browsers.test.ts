@@ -149,8 +149,8 @@ describe("Page type question", () => {
       const id = mariasBrowser.elementIdAttribute(elem.ELEMENT, 'id').value;
       console.log('id: ' + id);
       switch (i) {
-        case 0:  assert(id === 'post-0');  break; // title
-        case 1:  assert(id === 'post-1');  break; // body
+        case c.TitleNr:  assert(id === 'post-' + c.TitleNr);  break;
+        case c.BodyNr:  assert(id === 'post-' + c.BodyNr);  break;
         case 2:  assert(id === 'post-2');  break; // cat
         case 3:  assert(id === 'post-3');  break; // otter
         case 4:  assert(id === 'post-5');  break; // the "Good idea" reply
