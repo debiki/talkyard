@@ -62,7 +62,7 @@ class ImportExportController @Inject()(cc: ControllerComponents, edContext: EdCo
   def importTestSite: Action[JsValue] = ExceptionAction(parse.json(maxLength = MaxBytes)) {
         request =>
     globals.testResetTime()
-    val (browserId, moreNewCookies) = security.getBrowserIdMaybeCreate(request)
+    val (browserId, moreNewCookies) = security.getBrowserIdCookieMaybeCreate(request)
     val browserIdData = BrowserIdData(ip = request.remoteAddress, idCookie = browserId.map(_.cookieValue),
       fingerprint = 0)
     val response = importSiteImpl(request, browserIdData, deleteOld = true, isTest = true)

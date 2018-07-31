@@ -60,8 +60,10 @@ d.i.createLoginPopup = function(url) {
     }
   }
 
-  // This callback is called from the return_to page, or by `loginAndContinue`
-  // in debiki-login-dialog.ls in a login popup window, see [509KEF31].
+  // This callback is called from the return_to page,  ...
+  // **Old comment?: OpenID no longer in use:**
+  // """... or by `loginAndContinue`
+  // in debiki-login-dialog.ls in a login popup window, see [509KEF31]. """
   d.i.handleLoginResponse = function(result) {
     d.i.handleLoginResponse = null;
     var errorMsg;

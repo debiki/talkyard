@@ -25,6 +25,10 @@ class EdController(cc: ControllerComponents, val context: EdContext)
   def AsyncGetAction(f: GetRequest => Future[Result]): mvc.Action[Unit] =
     PlainApiAction(cc.parsers.empty, NoRateLimits).async(f)
 
+  def AsyncGetActionMaybeSkipCookies(avoidCookies: Boolean)(f: GetRequest => Future[Result])
+        : mvc.Action[Unit] =
+    PlainApiAction(cc.parsers.empty, NoRateLimits, isAvoidCookiesEndpoint = avoidCookies).async(f)
+
   def AsyncGetActionAllowAnyone(f: GetRequest => Future[Result]): mvc.Action[Unit] =
     PlainApiAction(cc.parsers.empty, NoRateLimits, allowAnyone = true).async(f)
 

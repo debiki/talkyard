@@ -48,7 +48,7 @@
  * @desc Get the value of a cookie.
  *
  * @param String name The name of the cookie.
- * @return The value of the cookie.
+ * @return The value of the cookie, or null.
  * @type String
  *
  * @name $.cookie --- no, I renamed it to getSetCookie /KajMagnus

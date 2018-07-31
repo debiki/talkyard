@@ -89,7 +89,7 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
   }
 
 
-  def startAuthenticationImpl(provider: String, returnToUrl: String, request: GetRequest)
+  private def startAuthenticationImpl(provider: String, returnToUrl: String, request: GetRequest)
         : Future[Result] = {
     globals.loginOriginConfigErrorMessage foreach { message =>
       throwInternalError("DwE5WKU3", message)
@@ -101,7 +101,7 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
           SecureCookie(name = ReturnToUrlCookieName, value = returnToUrl, httpOnly = false))
       }
     }
-    if (request.rawQueryString.contains("isInLoginPopup")) {
+    if (request.rawQueryString.contains("isInLoginPopup")) {  // ??
       futureResult = futureResult map { result =>
         result.withCookies(
           SecureCookie(name = IsInLoginPopupCookieName, value = "true", httpOnly = false))
@@ -219,14 +219,15 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
         Redirect(continueAtOriginalSiteUrl)
           .discardingCookies(DiscardingSecureCookie(ReturnToSiteCookieName))
       case None =>
-        login(request, anyOauthDetails = Some(oauthDetails))
+        tryLoginOrShowCreateUserDialog(request, anyOauthDetails = Some(oauthDetails))
     }
 
     Future.successful(result)
   }
 
 
-  private def login(request: GetRequest, oauthDetailsCacheKey: Option[String] = None,
+  private def tryLoginOrShowCreateUserDialog(
+        request: GetRequest, oauthDetailsCacheKey: Option[String] = None,
         anyOauthDetails: Option[OpenAuthDetails] = None): Result = {
 
     def cacheKey = oauthDetailsCacheKey.getOrDie("DwE90RW215")
@@ -367,8 +368,13 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
           "emailVerifiedAndLoggedIn" -> JsBoolean(member.emailVerifiedAt.isDefined)))
       }
       else {
-        val isInLoginPopup = request.cookies.get(IsInLoginPopupCookieName).nonEmpty
-        def loginPopupCallback =
+        // ?? use header instead?  Check window opener & set header if present?   [NOCOOKIES]
+        // (+ maybe return-to-url can incl &is-login-popup query param = true?
+        //  — but opener = same-origin, can access. Google Chrome 63 bug since long fixed.)
+        // What! This isn't an Ajax request, it's a page load. Need to incl is-in-popup info
+        // in the OpenAuth return-to url instead?
+        val isInLoginPopup = request.cookies.get(IsInLoginPopupCookieName).nonEmpty // query param instead?
+        def loginPopupCallback: Result =
           Ok(views.html.login.loginPopupCallback().body) as HTML
 
         request.cookies.get(ReturnToUrlCookieName) match {
@@ -380,10 +386,13 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
               loginPopupCallback
             }
             else if (isInLoginPopup) {
+              // Javascript in the popup, will call handleLoginResponse() which calls
+              // continueAfterLogin().
               loginPopupCallback
             }
             else {
-              // We're in a create site wizard; redirect to the next step in the wizard.
+              // Currently only happens in the create site wizard (right?), and this redirects to
+              // the next step in the wizard.
               Redirect(returnToUrlCookie.value)
             }
           case None =>
@@ -606,7 +615,7 @@ class LoginWithOpenAuthController @Inject()(cc: ControllerComponents, edContext:
       case None =>
         throwForbidden("DwE7GCV0", "No XSRF cookie")
     }
-    login(request, oauthDetailsCacheKey = Some(oauthDetailsCacheKey))
+    tryLoginOrShowCreateUserDialog(request, oauthDetailsCacheKey = Some(oauthDetailsCacheKey))
       .discardingCookies(DiscardingSecureCookie(ReturnToSiteXsrfTokenCookieName))
   }
 

@@ -18,10 +18,12 @@
 package controllers
 
 import com.debiki.core._
+import com.debiki.core.Prelude._
 import debiki._
 import debiki.EdHttp._
 import ed.server.spam.SpamChecker
 import ed.server._
+import ed.server.security.EdSecurity
 import javax.inject.Inject
 import play.api.mvc._
 import play.api.libs.json._
@@ -40,6 +42,8 @@ class LoginAsGuestController @Inject()(cc: ControllerComponents, edContext: EdCo
     val json = request.body.as[JsObject]
     val name = (json \ "name").as[String].trim
     val email = (json \ "email").as[String].trim
+
+    val canUseCookies = request.headers.get(EdSecurity.NoCookiesHeaderName) isNot "true"
 
     val settings = request.dao.getWholeSiteSettings()
 
@@ -69,11 +73,26 @@ class LoginAsGuestController @Inject()(cc: ControllerComponents, edContext: EdCo
 
       val guestUser = request.dao.loginAsGuest(loginAttempt)
 
-      val (_, _, sidAndXsrfCookies) = security.createSessionIdAndXsrfToken(request.siteId, guestUser.id)
+      val (sid, _, sidAndXsrfCookies) = security.createSessionIdAndXsrfToken(request.siteId, guestUser.id)
 
-      OkSafeJson(Json.obj(
+      var responseJson = Json.obj(
         "userCreatedAndLoggedIn" -> JsTrue,
-        "emailVerifiedAndLoggedIn" -> JsFalse)).withCookies(sidAndXsrfCookies: _*)
+        "emailVerifiedAndLoggedIn" -> JsFalse)
+
+      if (canUseCookies) {
+        // Don't incl session id in the json — use cookie instead, so works across page loads.
+      }
+      else {
+        // This'll work only for the current page load. And happens only for embedded comments pages,
+        // and then this is typically totally fine (people rarely post blog comments, and if they
+        // do, probably they reply to only one blog post).
+        responseJson += "currentPageSessionId" -> JsString(sid.value)  // [NOCOOKIES]
+      }
+
+      val response = OkSafeJson(responseJson)
+
+      if (canUseCookies) response.withCookies(sidAndXsrfCookies: _*)
+      else response
     }
   }
 

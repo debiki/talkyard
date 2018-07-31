@@ -29,6 +29,8 @@ import scala.concurrent.Future
 import ed.server.{EdContext, EdController, RenderedPage}
 import javax.inject.Inject
 import ViewPageController._
+import debiki.dao.UsersOnlineStuff
+import ed.server.security.EdSecurity
 
 
 
@@ -358,18 +360,24 @@ object ViewPageController {
   val frameAncestorsNone = s"$frameAncestorsSpace'none'"
 
 
-  def addVolatileJsonAndPreventClickjacking(renderedPage: RenderedPage, request: PageRequest[_])
-        : Future[Result] = {
+  def addVolatileJsonAndPreventClickjacking(renderedPage: RenderedPage, request: PageRequest[_],
+        skipUsersOnline: Boolean = false, noCookieXsrfToken: Option[String] = None): Future[Result] = {
     val pageHtml = renderedPage.html
-    addVolatileJsonAndPreventClickjacking2(pageHtml, renderedPage.unapprovedPostAuthorIds, request)
+    addVolatileJsonAndPreventClickjacking2(pageHtml, renderedPage.unapprovedPostAuthorIds, request,
+      skipUsersOnline = skipUsersOnline, noCookieXsrfToken = noCookieXsrfToken)
   }
 
 
   def addVolatileJsonAndPreventClickjacking2(pageHtmlNoVolData: String,
-        unapprovedPostAuthorIds: Set[UserId], request: DebikiRequest[_]): Future[Result] = {
+        unapprovedPostAuthorIds: Set[UserId], request: DebikiRequest[_],
+        skipUsersOnline: Boolean = false, noCookieXsrfToken: Option[String] = None): Future[Result] = {
     import request.{dao, requester}
 
-    val usersOnlineStuff = dao.loadUsersOnlineStuff() // could do asynchronously later
+    // Could do asynchronously later. COULD avoid sending back those json fields (4WAKB82)
+    // — first verify that then nothing will break though.
+    val usersOnlineStuff =
+      if (skipUsersOnline) UsersOnlineStuff(users = Nil, usersJson = JsArray(), numStrangers = 0)
+      else dao.loadUsersOnlineStuff()
 
     val anyUserSpecificDataJson: Option[JsValue] =
       request match {
@@ -379,10 +387,15 @@ object ViewPageController {
           Some(dao.jsonMaker.userNoPageToJson(request))
       }
 
-    val volatileJson = Json.obj(
-      "usersOnline" -> usersOnlineStuff.usersJson,
+    // Typescript interface VolatileDataFromServer, in model.ts.
+    var volatileJson = Json.obj(
+      "usersOnline" -> usersOnlineStuff.usersJson,  // (4WAKB82)
       "numStrangersOnline" -> usersOnlineStuff.numStrangers,
       "me" -> anyUserSpecificDataJson.getOrElse(JsNull).asInstanceOf[JsValue])
+
+    noCookieXsrfToken foreach { token =>
+      volatileJson = volatileJson + ("noCookiesXsrfToken" -> JsString(token))   // [NOCOOKIES]
+    }
 
     // Insert volatile and user specific data into the HTML.
     // The Scala templates take care to place the <script type="application/json">
@@ -403,14 +416,16 @@ object ViewPageController {
     // and "'self'", and wildcar '*'.
     def allowEmbeddingIsWeird = allowEmbeddingFrom.exists("\r\t\n,;?&#\"\\" contains _)
     if (allowEmbeddingFrom.isEmpty || allowEmbeddingIsWeird) {
-      response = response.withHeaders("X-Frame-Options" -> "DENY")  // For old browsers.
-      response = response.withHeaders(ContSecPolHeaderName -> frameAncestorsNone)
-      response = response.withHeaders(XContSecPolHeaderName -> frameAncestorsNone) // IE11
+      response = response.withHeaders(
+          "X-Frame-Options" -> "DENY",  // For old browsers.
+          ContSecPolHeaderName -> frameAncestorsNone,
+          XContSecPolHeaderName -> frameAncestorsNone) // IE11
     }
     else {
       val framePolicy = frameAncestorsSpace + allowEmbeddingFrom
-      response = response.withHeaders(ContSecPolHeaderName -> framePolicy)  // [7ACKRQ20]
-      response = response.withHeaders(XContSecPolHeaderName -> framePolicy) // IE11
+      response = response.withHeaders(
+          ContSecPolHeaderName -> framePolicy,  // [7ACKRQ20]
+          XContSecPolHeaderName -> framePolicy) // IE11
       // Also update: [4GUYQC0]
     }
 
