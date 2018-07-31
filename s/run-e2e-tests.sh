@@ -51,7 +51,7 @@ echo "" >> $failfile
 log_message "Running: $*" >> $failfile
 
 isoDate=$(date --iso-8601=seconds)
-randAlnum=$(< /dev/urandom tr -cd "[a-z0-9]" | head -c 10)
+randAlnum=$(< /dev/urandom tr -cd 'a-z0-9' | head -c 10)
 
 testStartId="$isoDate-$randAlnum"
 
