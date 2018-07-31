@@ -78,8 +78,8 @@ describe("spam test, no external services:", () => {
     });
     site.pages.push(oldPage);
     site.pagePaths.push(make.pagePath(oldPage.id, '/', false, 'old-topic'));
-    site.posts.push(make.post({ page: oldPage, nr: 0, approvedSource: topics.oldTopicTitle }));
-    site.posts.push(make.post({ page: oldPage, nr: 1, approvedSource: 'Text text text.' }));
+    site.posts.push(make.post({ page: oldPage, nr: c.TitleNr, approvedSource: topics.oldTopicTitle }));
+    site.posts.push(make.post({ page: oldPage, nr: c.BodyNr, approvedSource: 'Text text text.' }));
 
     let unrelatedPage = make.page({
       id: 'unrelpage',
@@ -89,8 +89,8 @@ describe("spam test, no external services:", () => {
     });
     site.pages.push(unrelatedPage);
     site.pagePaths.push(make.pagePath(unrelatedPage.id, '/', false, 'unrelated-topic'));
-    site.posts.push(make.post({ page: unrelatedPage, nr: 0, approvedSource: topics.unrelatedTopicTitle }));
-    site.posts.push(make.post({ page: unrelatedPage, nr: 1, approvedSource: 'Unrelated text.' }));
+    site.posts.push(make.post({ page: unrelatedPage, nr: c.TitleNr, approvedSource: topics.unrelatedTopicTitle }));
+    site.posts.push(make.post({ page: unrelatedPage, nr: c.BodyNr, approvedSource: 'Unrelated text.' }));
 
     idAddress = server.importSiteData(site);
   });

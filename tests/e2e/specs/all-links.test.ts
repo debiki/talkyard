@@ -44,14 +44,14 @@ describe('all links', function() {
 
     site.posts.push(make.post({
       page: forumPage,
-      nr: 0,
+      nr: c.TitleNr,
       approvedSource: "Forum Title",
       approvedHtmlSanitized: "Forum Title",
     }));
 
     site.posts.push(make.post({
       page: forumPage,
-      nr: 1,
+      nr: c.BodyNr,
       approvedSource: "Forum intro text.",
       approvedHtmlSanitized: "<p>Forum intro text.</p>",
     }));
@@ -94,13 +94,13 @@ describe('all links', function() {
     function addPost(data: NewTestPost) {
       site.posts.push(make.post(data));
     }
-    addPost({ page: whateverTopic, nr: 0, approvedSource: "Whatever Topic Title", });  // title
-    addPost({ page: whateverTopic, nr: 1, approvedSource: "Whatever topic text.", });  // body
-    addPost({ page: whateverTopic, nr: 11, parentNr: 1, approvedSource: "Reply 11.", });
+    addPost({ page: whateverTopic, nr: c.TitleNr, approvedSource: "Whatever Topic Title", });
+    addPost({ page: whateverTopic, nr: c.BodyNr, approvedSource: "Whatever topic text.", });
+    addPost({ page: whateverTopic, nr: 11, parentNr: c.BodyNr, approvedSource: "Reply 11.", });
     addPost({ page: whateverTopic, nr: 111, parentNr: 11, approvedSource: "Reply 111." });
-    addPost({ page: whateverTopic, nr: 12, parentNr: 1, approvedSource: "Reply 12.", });
-    addPost({ page: whateverTopic, nr: 13, parentNr: 1, approvedSource: "Reply 13.", });
-    addPost({ page: whateverTopic, nr: 14, parentNr: 1, approvedSource: "Reply 14.", });
+    addPost({ page: whateverTopic, nr: 12, parentNr: c.BodyNr, approvedSource: "Reply 12.", });
+    addPost({ page: whateverTopic, nr: 13, parentNr: c.BodyNr, approvedSource: "Reply 13.", });
+    addPost({ page: whateverTopic, nr: 14, parentNr: c.BodyNr, approvedSource: "Reply 14.", });
 
 
     var questionTopic = make.page({
@@ -115,13 +115,13 @@ describe('all links', function() {
     site.pagePaths.push({ folder: '/', pageId: questionTopic.id, showId: true,
       slug: 'question-topic-title' });
 
-    addPost({ page: questionTopic, nr: 0, approvedSource: "Question?", });  // title
-    addPost({ page: questionTopic, nr: 1, approvedSource: "Can this or what where why or no?", });
-    addPost({ page: questionTopic, nr: 11, parentNr: 1, approvedSource: "Answer 11.", });
+    addPost({ page: questionTopic, nr: c.TitleNr, approvedSource: "Question?", });
+    addPost({ page: questionTopic, nr: c.BodyNr, approvedSource: "Can this or what where why or no?", });
+    addPost({ page: questionTopic, nr: 11, parentNr: c.BodyNr, approvedSource: "Answer 11.", });
     addPost({ page: questionTopic, nr: 111, parentNr: 11, approvedSource: "Comment 111." });
-    addPost({ page: questionTopic, nr: 12, parentNr: 1, approvedSource: "Answer 12.", });
-    addPost({ page: questionTopic, nr: 13, parentNr: 1, approvedSource: "Answer 13.", });
-    addPost({ page: questionTopic, nr: 14, parentNr: 1, approvedSource: "Answer 14.", });
+    addPost({ page: questionTopic, nr: 12, parentNr: c.BodyNr, approvedSource: "Answer 12.", });
+    addPost({ page: questionTopic, nr: 13, parentNr: c.BodyNr, approvedSource: "Answer 13.", });
+    addPost({ page: questionTopic, nr: 14, parentNr: c.BodyNr, approvedSource: "Answer 14.", });
 
 
     var idAddress = server.importSiteData(site);
