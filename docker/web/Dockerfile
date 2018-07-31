@@ -165,7 +165,10 @@ RUN \
 	&& tar -zxC /usr/src -f nginx.tar.gz \
 	&& rm nginx.tar.gz \
 	&& cd /usr/src/nginx-$NGINX_VERSION \
-	&& ./configure $CONFIG --with-debug \
+	# generate a debug build, will be at /usr/sbin/nginx-debug
+	&& ./configure $CONFIG \
+	    --with-debug \
+	    --with-cc-opt='-O0 -ggdb3 -fvar-tracking-assignments' \
 	&& make -j$(getconf _NPROCESSORS_ONLN) \
 	&& mv objs/nginx objs/nginx-debug \
 	# && mv objs/ngx_http_xslt_filter_module.so objs/ngx_http_xslt_filter_module-debug.so \
@@ -173,6 +176,8 @@ RUN \
 	# && mv objs/ngx_http_geoip_module.so objs/ngx_http_geoip_module-debug.so \
 	# && mv objs/ngx_stream_geoip_module.so objs/ngx_stream_geoip_module-debug.so \
 	&& ./configure $CONFIG \
+	    # Let's incl debug symbols in prod builds too (but not -O0).  [NGXCORED]
+	    --with-cc-opt='-ggdb' \
 	&& make -j$(getconf _NPROCESSORS_ONLN) \
 	&& make install \
 	&& rm -rf /etc/nginx/html/ \
@@ -195,8 +200,11 @@ RUN \
 	# && install -m755 objs/ngx_http_geoip_module-debug.so /usr/lib/nginx/modules/ngx_http_geoip_module-debug.so \
 	# && install -m755 objs/ngx_stream_geoip_module-debug.so /usr/lib/nginx/modules/ngx_stream_geoip_module-debug.so \
 	# && ln -s ../../usr/lib/nginx/modules /etc/nginx/modules \
-	&& strip /usr/sbin/nginx* \
-	# All modules above commented out.
+	\
+	# Don't, then wouldn't be able to backtrace core dumps.  [NGXCORED]
+	#&& strip /usr/sbin/nginx* \
+	\
+	# All modules above commented out. And want to keep debug symbols, anyway.
 	# && strip /usr/lib/nginx/modules/*.so \
 	&& rm -rf /usr/src/nginx-$NGINX_VERSION \
 	\
@@ -229,11 +237,13 @@ RUN \
 
 RUN rm -fr /tmp/nginx-modules/
 
+
 COPY lua-packages /opt/lua-packages/
 
 
 # Add 'bash' so we can 'docker exec' into the container, + some tools. (wget & less already works)
-RUN apk add --no-cache bash tree curl net-tools
+# And gdb, for backtracing core dumps. [NGXCORED]
+RUN apk add --no-cache bash tree curl net-tools gdb
 
 COPY 502.html             /opt/nginx/html/502.html
 COPY 503.html             /opt/nginx/html/503.html
@@ -276,5 +286,20 @@ COPY ed-lua /opt/talkyard/lua/
 # can publish events.
 EXPOSE 80 443
 
-CMD /etc/nginx/run-envsubst.sh && nginx
+# Core dumps
+# Needs to make the container privileged. [NGXCORED]
+# Works without:  chown root:root /tmp/cores  &&  ulimit -c unlimited
+# Place this:  kill(getpid(), SIGSEGV);   (from: https://stackoverflow.com/a/1657244/694469 )
+# to crash and generate a core dump at some specific location.
+# (This also core dumbps, but cannot backtrace the dump: `raise(SIGABRT)`)
+# Inspect like so:  # gdb /usr/sbin/nginx-debug /tmp/cores/core.nginx-debug.17  # for example
+# then type `bt` or `bt f` (backtrace full).
+#
+#CMD chmod 1777 /tmp/cores \
+#  && sysctl -w fs.suid_dumpable=2 \
+#  && sysctl -p \
+#  && echo "/tmp/cores/core.%e.%p" > /proc/sys/kernel/core_pattern \
+#  && /etc/nginx/run-envsubst.sh \
+#  && nginx-debug
 
+CMD /etc/nginx/run-envsubst.sh && nginx
