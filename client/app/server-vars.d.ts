@@ -34,7 +34,7 @@ declare namespace eds {
   const cachedVersion: string;
 
   const pageDataFromServer: any;
-  const volatileDataFromServer: any;
+  const volatileDataFromServer: VolatileDataFromServer;
 
   const isInLoginWindow: boolean;
   const isInLoginPopup: boolean;

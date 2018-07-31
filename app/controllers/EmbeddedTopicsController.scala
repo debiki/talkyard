@@ -24,6 +24,7 @@ import debiki.EdHttp._
 import debiki.dao.{NonExistingPage, SiteDao}
 import ed.server.{EdContext, EdController, RenderedPage}
 import ed.server.http._
+import ed.server.security.EdSecurity
 import javax.inject.Inject
 import play.api.libs.json.JsValue
 import play.api.mvc.{Action, ControllerComponents}
@@ -46,8 +47,11 @@ class EmbeddedTopicsController @Inject()(cc: ControllerComponents, edContext: Ed
   }
 
 
-  def showTopic(embeddingUrl: String, discussionId: Option[AltPageId], edPageId: Option[PageId])
-        : Action[Unit] = AsyncGetAction { request =>
+  def showTopic(embeddingUrl: String, discussionId: Option[AltPageId], edPageId: Option[PageId],
+        avoidCookies: Option[Boolean]): Action[Unit] =
+      AsyncGetActionMaybeSkipCookies(avoidCookies = avoidCookies.isNot(false)) {
+        request =>
+
     import request.dao
 
     val anyRealPageId = getAnyRealPageId(edPageId, discussionId, embeddingUrl, dao)
@@ -116,12 +120,31 @@ class EmbeddedTopicsController @Inject()(cc: ControllerComponents, edContext: Ed
         (request.dao.renderPageMaybeUseMemCache(pageRequest), pageRequest)
     }
 
-    ViewPageController.addVolatileJsonAndPreventClickjacking(renderedPage, pageRequest)
+    // Privacy tools and settings might break cookies. If we may not use cookies,  [NOCOOKIES]
+    // then incl an xsrf token in the html instead.
+    // (Cannot use a response header for this, because client side, one cannot access
+    // the current page headers, see e.g.:  https://stackoverflow.com/a/4881836/694469 )
+    val noCookieXsrfToken: Option[String] =
+      if (avoidCookies is false) None   // ... hmm. Instead, check if has cookie already? Then use.
+                                        // else always create?
+      else Some(security.createXsrfToken().value)
+
+    val futureResponse = ViewPageController.addVolatileJsonAndPreventClickjacking(
+      renderedPage,
+      pageRequest,
+      // Users online not shown anywhere anyway, for embedded comments.
+      skipUsersOnline = true,
+      // This'll insert a noCookieXsrfToken JSON field, so the browser will remember
+      // to not use cookies.
+      noCookieXsrfToken = noCookieXsrfToken)
+
+    futureResponse
   }
 
 
   def showEmbeddedEditor(embeddingUrl: String, discussionId: Option[AltPageId],
-        edPageId: Option[PageId]): Action[Unit] = AsyncGetAction { request =>
+        edPageId: Option[PageId]): Action[Unit] = AsyncGetActionMaybeSkipCookies(avoidCookies = true) {
+        request =>
     val anyRealPageId = getAnyRealPageId(edPageId, discussionId, embeddingUrl, request.dao)
     val tpi = new EditPageTpi(request, PageRole.EmbeddedComments, anyEmbeddedPageId = anyRealPageId,
       anyAltPageId = discussionId, anyEmbeddingUrl = Some(embeddingUrl))

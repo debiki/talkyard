@@ -15,7 +15,7 @@ declare function reactCreateFactory(x);
 declare const rFragment: any;
 
 declare function doNextFrameOrNow(x);
-declare function getSetCookie(cookieName: string, value?: string, options?: any): string;
+declare function getSetCookie(cookieName: string, value?: string, options?: any): string | null;
 declare const parseQueryString: (s: string) => any;
 declare const stringifyQueryString: (s: any) => string;
 

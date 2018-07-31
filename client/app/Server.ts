@@ -33,6 +33,10 @@ const d: any = { i: debiki.internal };
 const BadNameOrPasswordErrorCode = '_TyE403BPWD';
 const NoPasswordErrorCode = '_TyMCHOOSEPWD';
 
+const XsrfTokenHeaderName = 'X-XSRF-TOKEN'; // CLEAN_UP rename to X-Ty-Xsrf-Token
+const SessionIdHeaderName = 'X-Ty-Sid';
+const NoCookiesHeaderName = 'X-Ty-NoCookies';
+
 function getPageId(): PageId {
   return eds.embeddedPageId || // [4HKW28]
       ReactStore.allData().currentPageId;
@@ -72,14 +76,19 @@ function postJson(urlPath: string, requestData: RequestData) {
     }
   }
 
+  const headers = {
+    'Content-Type': 'application/json; charset=utf-8',
+    'X-Requested-With': 'XMLHttpRequest',
+  };
+
+  headers[XsrfTokenHeaderName] = getSetCookie('XSRF-TOKEN');
+
+  addAnyNoCookieHeaders(headers);
+
   Bliss.fetch(url, {
     method: 'POST',
     data: JSON.stringify(requestData.data),
-    headers: {
-      'Content-Type': 'application/json; charset=utf-8',
-      'X-Requested-With': 'XMLHttpRequest',
-      'X-XSRF-TOKEN': getSetCookie('XSRF-TOKEN'),
-    }
+    headers,
   }).then(xhr => {
     removeTimeoutAndOverlay();
     if (requestData.success) {
@@ -271,6 +280,8 @@ function get(uri: string, successFn: GetSuccessFn, errorFn?: GetErrorFn, options
 
   headers['X-Requested-With'] = 'XMLHttpRequest';
 
+  addAnyNoCookieHeaders(headers);
+
   const promiseWithXhr = <any> Bliss.fetch(origin() + uri, {  // hack [7FKRPQ2T0]
     method: 'GET',
     headers: headers,
@@ -308,6 +319,45 @@ function get(uri: string, successFn: GetSuccessFn, errorFn?: GetErrorFn, options
       // i.e. won't call `catch(...)` above.
       promiseWithXhr.xhr.abort();
     }
+  }
+}
+
+
+/** Sends xsrf token and sid in headers, instead of cookies, because sometimes
+ * the browsers refuse to use cookies.
+ */
+function addAnyNoCookieHeaders(headers: { [headerName: string]: string }) {  // [NOCOOKIES]
+  console.log('Has window.opener: ' + !!window.opener);
+  if (window.opener) {
+    console.log('Any window.opener.eds: ' + JSON.stringify(window.opener.eds));
+  }
+
+  let noCookiesXsrfToken = eds.volatileDataFromServer.noCookiesXsrfToken;
+  let tempSid = (<any> window).tyCurrentPageSessionId;
+
+  // If we're in a login popup window, there's no xsrf token or sid in the html source for
+  // this popup win. Instead we should find an xsrf token in the parent window:
+  if (window.opener) {
+    if (!noCookiesXsrfToken && window.opener.eds) {
+      const volData: VolatileDataFromServer = window.opener.eds.volatileDataFromServer;
+      noCookiesXsrfToken = volData.noCookiesXsrfToken;
+    }
+    if (!tempSid) {
+      tempSid = window.opener.tyCurrentPageSessionId;
+    }
+  }
+
+  if (noCookiesXsrfToken) {
+    headers[NoCookiesHeaderName] = 'true';
+    if (!headers[XsrfTokenHeaderName]) {
+      // Needed also for GET requests, so the server can incl any token, if it pops up
+      // a login popup window.
+      headers[XsrfTokenHeaderName] = noCookiesXsrfToken;
+    }
+  }
+
+  if (tempSid) {
+    headers[SessionIdHeaderName] = tempSid;
   }
 }
 

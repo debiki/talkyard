@@ -15,11 +15,14 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *@
 
+@* TODO RENAME to loginPopupCallbackPage.scala.html ?  *@
+
 <!DOCTYPE html>
 <html>
 <head>
 <script type='text/javascript'>
-@* This fails in Chrome 63, although the opener's origin is the same,
+@* FIXED Chrome 64, Jan 2018. DO_AFTER 2018-08-12 remove this workaround
+This fails in Chrome 63, although the opener's origin is the same,
 because of this Chrome bug: https://bugs.chromium.org/p/chromium/issues/detail?id=796912
 - In an embedded discussion iframe,
 - click Reply or Flag, so login popup opens,

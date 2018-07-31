@@ -27,6 +27,7 @@ import play.api._
 import play.api.libs.json.{JsNull, JsString, Json}
 import play.api.mvc._
 import LoginController._
+import ed.server.security.EdSecurity
 
 
 /** Logs in and out.
@@ -84,10 +85,11 @@ class LoginController @Inject()(cc: ControllerComponents, edContext: EdContext)
   }
 
 
-  /** Opens a popup and a login dialog inside that popup. Useful when logging in
-    * in an iframe, because it's not feasible to open modal dialogs from inside
-    * iframes — only the iframe would be disabled by the modal dialog, but not
-    * the rest of the page.
+  /** For showing a login dialog inside a popup window. Used when logging in in an iframe [2ABKW24T],
+    * because it's not user friendly to open a modal login dialog inside
+    * the iframe — only the iframe content would be overlaid by the modal dialog, but
+    * the rest of the page (outside the iframe) would be active & clickable as usual,
+    * which I think would be confusing?
     */
   def showLoginPopup(mode: String, returnToUrl: String): Action[Unit] = GetActionAllowAnyone { request =>
     Ok(views.html.login.loginPopup(

@@ -30,6 +30,7 @@ import play.{api => p}
 import play.api.mvc._
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
+import EdSecurity.NoCookiesHeaderName
 
 
 /** Play Framework Actions for requests to Debiki's HTTP API.
@@ -46,17 +47,19 @@ class PlainApiActions(
   import safeActions.ExceptionAction
 
   def PlainApiAction[B](parser: BodyParser[B],
-        rateLimits: RateLimits, allowAnyone: Boolean = false, isLogin: Boolean = false) =
+        rateLimits: RateLimits, allowAnyone: Boolean = false, isLogin: Boolean = false,
+        isAvoidCookiesEndpoint: Boolean = false)
+        : ActionBuilder[ApiRequest, B] =
     PlainApiActionImpl(parser, rateLimits, adminOnly = false, staffOnly = false,
-        allowAnyone = allowAnyone, isLogin = isLogin)
+        allowAnyone = allowAnyone, isLogin = isLogin, isAvoidCookiesEndpoint = isAvoidCookiesEndpoint)
 
-  def PlainApiActionStaffOnly[B](parser: BodyParser[B]) =
+  def PlainApiActionStaffOnly[B](parser: BodyParser[B]): ActionBuilder[ApiRequest, B] =
     PlainApiActionImpl(parser, NoRateLimits, adminOnly = false, staffOnly = true)
 
-  def PlainApiActionAdminOnly[B](parser: BodyParser[B]) =
+  def PlainApiActionAdminOnly[B](parser: BodyParser[B]): ActionBuilder[ApiRequest, B] =
     PlainApiActionImpl(parser, NoRateLimits, adminOnly = true, staffOnly = false)
 
-  def PlainApiActionSuperAdminOnly[B](parser: BodyParser[B]) =
+  def PlainApiActionSuperAdminOnly[B](parser: BodyParser[B]): ActionBuilder[ApiRequest, B] =
     PlainApiActionImpl(parser, NoRateLimits, adminOnly = false, staffOnly = false,
         superAdminOnly = true)
 
@@ -74,7 +77,9 @@ class PlainApiActions(
   def PlainApiActionImpl[B](aParser: BodyParser[B],
         rateLimits: RateLimits, adminOnly: Boolean, staffOnly: Boolean,
         allowAnyone: Boolean = false,  // try to delete 'allowAnyone'? REFACTOR
-        isLogin: Boolean = false, superAdminOnly: Boolean = false) =
+        isAvoidCookiesEndpoint: Boolean = false,
+        isLogin: Boolean = false, superAdminOnly: Boolean = false)
+        : ActionBuilder[ApiRequest, B] =
       new ActionBuilder[ApiRequest, B] {
 
     override def parser: BodyParser[B] =
@@ -98,6 +103,7 @@ class PlainApiActions(
 
       val site = globals.lookupSiteOrThrow(request)
 
+//<<<<<<< 5b0c28c918f70fafea236441cfc6f28e63ec4d0b  MRGC
       request.headers.get("Authorization") match {
         case Some(authHeaderValue) =>
           invokeBlockAuthViaApiSecret(request, site, authHeaderValue, block)
@@ -157,16 +163,39 @@ class PlainApiActions(
 
     private def invokeBlockAuthViaCookie[A](request: Request[A], site: SiteBrief,
           block: ApiRequest[A] => Future[Result]): Future[Result] = {
+//======= MRGC
+      // No-cookies is is for embedded comments. In an iframe, cookies frequently get blocked  [NOCOOKIES]
+      // by Privacy Badger or iOS or no-3rd-party-cookies brower settings or whatever.
+      // Therefore, when the embedded comments iframe page loads, isAvoidCookiesEndpoint is true
+      // because we're using the embedded-comments url endpoint.
+      // And, for subsequent requests — to *other* endpoints — the browser Javascript code
+      // sets this no-cookies header, so we'll know, here, that we should avoid cookies.
+      val hasCookiesAlready = request.cookies.nonEmpty
+      val avoidCookies = isAvoidCookiesEndpoint || request.headers.get(NoCookiesHeaderName).is("true")
+      val maySetCookies = hasCookiesAlready || !avoidCookies
+//>>>>>>> Emb cmts without cookies? Wip 2.   MRGC
 
       val (actualSidStatus, xsrfOk, newCookies) =
-        security.checkSidAndXsrfToken(request, site.id, maySetCookies = true)
+        security.checkSidAndXsrfToken(request, site.id, maySetCookies = maySetCookies)
 
       // Ignore and delete any broken session id cookie.
       val (mendedSidStatus, deleteSidCookie) =
         if (actualSidStatus.isOk) (actualSidStatus, false)
         else (SidAbsent, true)
 
-      val (browserId, newBrowserIdCookie) = security.getBrowserIdMaybeCreate(request) // [5JKWQ21]
+      val (browserId, newBrowserIdCookie) =  // [5JKWQ21]
+        if (!maySetCookies) {
+          // Then use any xsrf token, if present? It stays the same at least until page reload,
+          // and has the same format as any id cookie anyway, see timeDotRandomHashHash() [2AB85F2].
+          // The token can be missing (empty) for GET requests [2WKA40].
+          if (xsrfOk.value.nonEmpty)
+            (Some(BrowserId(xsrfOk.value, isNew = false)), Nil)
+          else
+            (None, Nil)
+        }
+        else {
+          security.getBrowserIdCookieMaybeCreate(request)
+        }
 
       // Parts of `block` might be executed asynchronously. However any LoginNotFoundException
       // should happen before the async parts, because access control should be done
