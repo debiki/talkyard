@@ -80,8 +80,20 @@ class InviteController @Inject()(cc: ControllerComponents, edContext: EdContext)
       createdById = request.theUserId,
       createdAt = globals.now().toJavaDate)
 
-    val email = makeInvitationEmail(invite, request.theMember, request.host)
+    val anyProbablyUsername = request.dao.readOnlyTransaction { tx =>
+      User.makeOkayUsername(
+        invite.emailAddress.takeWhile(_ != '@'), allowDotDash = false,  // [CANONUN]
+        tx.isUsernameInUse)
+    }
+
+    val probablyUsername = anyProbablyUsername getOrElse throwForbidden(
+      "TyE3ABK5L0", s"I cannot generate a username given email address: $toEmailAddress")
+
+    val email = makeInvitationEmail(invite, request.theMember,
+      probablyUsername = probablyUsername, siteHostname = request.host)
+
     globals.sendEmail(email, request.siteId)
+
     try {
       request.dao.insertInvite(invite)
     }
@@ -165,10 +177,12 @@ class InviteController @Inject()(cc: ControllerComponents, edContext: EdContext)
   }
 
 
-  private def makeInvitationEmail(invite: Invite, inviter: Member, siteHostname: String): Email = {
+  private def makeInvitationEmail(invite: Invite, inviter: Member,
+        probablyUsername: String, siteHostname: String): Email = {
+
     val emailBody = views.html.invite.inviteEmail(
-      inviterName = inviter.usernameParensFullName,
-      siteHostname = siteHostname, secretKey = invite.secretKey, globals).body
+      inviterName = inviter.usernameParensFullName, siteHostname = siteHostname,
+      probablyUsername = probablyUsername, secretKey = invite.secretKey, globals).body
     Email(
       EmailType.Invite,
       createdAt = globals.now(),
@@ -187,7 +201,7 @@ class InviteController @Inject()(cc: ControllerComponents, edContext: EdContext)
       toUserId = Some(newUser.id),
       subject = s"[$siteHostname] Welcome! Account created",
       bodyHtmlText = (emailId) => views.html.invite.welcomeSetPasswordEmail(
-      siteHostname = siteHostname, emailId = emailId, globals).body)
+      siteHostname = siteHostname, emailId = emailId, newUser.username, globals).body)
   }
 
 

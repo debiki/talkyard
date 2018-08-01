@@ -73,6 +73,12 @@ describe("invites-by-adm-click-email-set-pwd-link  TyT45FKAZZ2", () => {
     inviteLinkJane = server.waitAndGetInviteLinkEmailedTo(siteId, janesEmailAddress, browserA);
   });
 
+  it("... the email tells her what her username will probably be", () => {
+    const { bodyHtmlText } = server.getLastEmailSenTo(siteId, janesEmailAddress, browserA);
+    console.log(bodyHtmlText);
+    assert(bodyHtmlText.search(janesUsername) >= 0);
+  });
+
   it("... clicks the link", () => {
     janesBrowser.go(inviteLinkJane);
   });
@@ -88,6 +94,14 @@ describe("invites-by-adm-click-email-set-pwd-link  TyT45FKAZZ2", () => {
   it("Jane gets a 'Thanks for accepting the invitation' email", () => {
     choosePasswordLink = server.waitAndGetThanksForAcceptingInviteEmailResetPasswordLink(
         siteId, janesEmailAddress, browserA);
+  });
+
+  it("... that email tells her what her username now is", () => {
+    const { bodyHtmlText } = server.getLastEmailSenTo(siteId, janesEmailAddress, browserA);
+    console.log(bodyHtmlText);
+    // Double check we're checking for the username in the correct email.
+    assert(bodyHtmlText.search("thanks for accepting the invitation") >= 0);  // [5FJB2AZY_]
+    assert(bodyHtmlText.search(janesUsername) >= 0);
   });
 
   it("Jane can create a topic", () => {

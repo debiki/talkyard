@@ -1,4 +1,4 @@
-@(inviterName: String, siteHostname: String, secretKey: String, globals: debiki.Globals)
+@(inviterName: String, siteHostname: String, probablyUsername: String, secretKey: String, globals: debiki.Globals)
 
 @siteUrl = @{ globals.originOf(siteHostname) }
 
@@ -13,9 +13,12 @@
 
 <p>Click the link below, if you are interested:</p>
 
-<a href="@acceptInviteUrl">@acceptInviteUrl</a>
+<p><a href="@acceptInviteUrl">@acceptInviteUrl</a></p>
 
-<p>An account will then be created for you and you will be logged in, automatically.</p>
+<p>An account will then be created for you and you will be logged in, automatically.
+Your username will be <b>@probablyUsername</b> (if available, and you can change it later).
+We will also send you a choose-password email.
+</p>
 
 <p>Kind regards</p>
 
