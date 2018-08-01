@@ -176,8 +176,8 @@ RUN \
 	# && mv objs/ngx_http_geoip_module.so objs/ngx_http_geoip_module-debug.so \
 	# && mv objs/ngx_stream_geoip_module.so objs/ngx_stream_geoip_module-debug.so \
 	&& ./configure $CONFIG \
-	    # Let's incl debug symbols in prod builds too (but not -O0).
-	    -ggdb \
+	    # Let's incl debug symbols in prod builds too (but not -O0).  [NGXCORED]
+	    --with-cc-opt='-ggdb' \
 	&& make -j$(getconf _NPROCESSORS_ONLN) \
 	&& make install \
 	&& rm -rf /etc/nginx/html/ \
@@ -201,7 +201,7 @@ RUN \
 	# && install -m755 objs/ngx_stream_geoip_module-debug.so /usr/lib/nginx/modules/ngx_stream_geoip_module-debug.so \
 	# && ln -s ../../usr/lib/nginx/modules /etc/nginx/modules \
 	\
-	# Don't, then wouldn't be able to backtrace core dumps.
+	# Don't, then wouldn't be able to backtrace core dumps.  [NGXCORED]
 	#&& strip /usr/sbin/nginx* \
 	\
 	# All modules above commented out. And want to keep debug symbols, anyway.
@@ -242,6 +242,7 @@ COPY lua-packages /opt/lua-packages/
 
 
 # Add 'bash' so we can 'docker exec' into the container, + some tools. (wget & less already works)
+# And gdb, for backtracing core dumps. [NGXCORED]
 RUN apk add --no-cache bash tree curl net-tools gdb
 
 COPY 502.html             /opt/nginx/html/502.html
@@ -286,7 +287,7 @@ COPY ed-lua /opt/talkyard/lua/
 EXPOSE 80 443
 
 # Core dumps
-# Needs to make the container privileged. [PRIVCTR]
+# Needs to make the container privileged. [NGXCORED]
 # Works without:  chown root:root /tmp/cores  &&  ulimit -c unlimited
 # Place this:  kill(getpid(), SIGSEGV);   (from: https://stackoverflow.com/a/1657244/694469 )
 # to crash and generate a core dump at some specific location.
