@@ -41,7 +41,8 @@ FROM alpine:3.7
 # (This also core dumbps, but the dump won'd be backtrace:able: `raise(SIGABRT)`)
 
 
-# For debugging core dumps
+# Install gdb, for debugging core dumps. See:
+# https://stackoverflow.com/questions/37186990/how-to-install-gdbserver-package-on-alpine-docker-image
 RUN apk add --no-cache \
   linux-headers \
   make \
