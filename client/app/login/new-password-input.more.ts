@@ -46,14 +46,14 @@ export const NewPasswordInput = createFactory({
   },
 
   componentWillMount: function() {
-     this.checkPasswordStrength = _.throttle(this.checkPasswordStrength, 250);
+     this.checkPasswordOk = _.throttle(this.checkPasswordOk, 250);
   },
 
   componentDidMount: function() {
     // The password strength test library is large, because it contains lists of all words.
     Server.loadJs(eds.assetUrlPrefix + 'zxcvbn.js', () => {
       // Check the password afterwards, in case a fast e2e test has already filled it in.
-      this.setState({ zxcvbnLoaded: true }, this.checkPasswordStrength);
+      this.setState({ zxcvbnLoaded: true }, this.checkPasswordOk);
       dieIf(!window['zxcvbn'], "Error loading the password strength script zxcvbn [EsE7YKW2]");
     });
   },
@@ -62,12 +62,18 @@ export const NewPasswordInput = createFactory({
     return this.refs.passwordInput.getValue();
   },
 
-  checkPasswordStrength: function() {
+  getValue2: function() {
+    return this.refs.passwordInput2 ? this.refs.passwordInput2.getValue() : undefined;
+  },
+
+  checkPasswordOk: function() {
     if (!this.state.zxcvbnLoaded)
       return;
 
-    const data = this.props.newPasswordData;
     const password: string = this.getValue();
+    const password2: string = this.getValue2();
+
+    const data = this.props.newPasswordData;
     let forbiddenWords: string[] = [data.username, 'debiki', 'talkyard'];
     const allEmailParts = (data.email || '').split(/[@\._-]+/);
     const allNameParts = (data.fullName || '').split(/\s+/);
@@ -85,6 +91,8 @@ export const NewPasswordInput = createFactory({
 
     // Don't blindly trust zxcvbn — do some basic tests of our own as well.
     let problem = null;
+    let passwordMismatch = true;
+    let startShowingInput2 = false;
     const minLength = this.props.minLength || 10;  // 10 = AllSettings.MinPasswordLengthHardcodedDefault
     if (password.length < minLength) {
       problem = t.pwd.TooShort(minLength);
@@ -95,16 +103,31 @@ export const NewPasswordInput = createFactory({
     else if (passwordStrength.score < MinPasswordStrength) {
       problem = t.pwd.TooWeak123abc;
     }
+    else {
+      // All fine, so time to show double-type-pwd input.
+      startShowingInput2 = true;
+      if (password === password2) {
+        passwordMismatch = false;
+      }
+    }
+
     this.setState({
       passwordWeakReason: problem,
       passwordCrackTime: crackTimeSecs,
       passwordCrackTimeText: crackTimeText,
-      password: password,
+      password,
       passwordLength: password.length,
       passwordStrength: passwordStrength.score,
-      forbiddenWords: forbiddenWords,
+      forbiddenWords,
+      passwordMismatch,
+      showInput2: startShowingInput2 || this.state.showInput2,
     });
-    this.props.setPasswordOk(!problem);
+
+    this.props.setPasswordOk(!problem && !passwordMismatch);
+  },
+
+  checkIsSame: function() {
+
   },
 
   render: function() {
@@ -171,12 +194,21 @@ export const NewPasswordInput = createFactory({
       strengthIndicator,
       passwordWarning, makeItStrongerSuggestion, badWordWarning);
 
+    const passwordHelp2 = r.div({},
+      r.span({}, "Please type the password again"),
+      !this.state.passwordMismatch ? null : r.b({}, " — it's different"));
+
     return (
       r.div({ className: 'form-group s_Pw' + (passwordWarning ? ' has-error' : '') },
         Input({ type: 'password', label: t.pwd.PasswordC, name: 'newPassword', ref: 'passwordInput',
-            id: 'e2ePassword', onChange: this.checkPasswordStrength, help: passwordHelp,
+            id: 'e2ePassword', onChange: this.checkPasswordOk, help: passwordHelp,
             tabIndex: this.props.tabIndex,
-            onFocus: () => this.setState({ showErrors: true} )})));
+            onFocus: () => this.setState({ showErrors: true } )}),
+        // Two inputs, the 2nd checks for typos.
+        !this.state.showInput2 ? null :
+          Input({ type: 'password', label: t.pwd.PasswordC, name: 'newPassword2', ref: 'passwordInput2',
+            id: 'e2ePassword2', onChange: this.checkPasswordOk, help: passwordHelp2,
+            tabIndex: this.props.tabIndex })));
   }
 });
 
