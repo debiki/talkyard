@@ -37,7 +37,7 @@ const r = ReactDOMFactories;
 const ModalDropdownButton = utils.ModalDropdownButton;
 const ExplainingListItem = util.ExplainingListItem;
 type ExplainingTitleText = util.ExplainingTitleText;
-const HelpMessageBox = debiki2.help.HelpMessageBox;
+const HelpMessageBox = help.HelpMessageBox;
 
 /** Keep in sync with app/controllers/ForumController.NumTopicsToList. */
 const NumNewTopicsPerRequest = 40;
@@ -77,9 +77,9 @@ export const ForumComponent = createReactClass(<any> {
   mixins: [StoreListenerMixin, utils.PageScrollMixin],
 
   getInitialState: function() {
-    const store: Store = debiki2.ReactStore.allData();
+    const store: Store = ReactStore.allData();
     return {
-      store: store,
+      store,
       topicsInStoreMightBeOld: false,
       useWideLayout: this.isPageWide(store),
       topPeriod: TopTopicsPeriod.Month,
@@ -88,7 +88,7 @@ export const ForumComponent = createReactClass(<any> {
 
   onChange: function() {
     this.setState({
-      store: debiki2.ReactStore.allData(),
+      store: ReactStore.allData(),
       // Now some time has passed since this page was loaded, so:
       topicsInStoreMightBeOld: true,
     });
@@ -656,26 +656,34 @@ const LoadAndListTopics = createFactory({
 
   onChange: function() {
     // REFACTOR should probably use the store, for the topic list, so need not do this.
-    const store: Store = this.props.store;
-    if (this.state.isLoading === undefined) {
-      if (!this.canUseTopicsInScriptTag())
-        return;
 
-      // We're still using a copy of the topics list in the store, so update the copy,
-      // maybe new user-specific data has been added.
-      const category: Category = this.props.activeCategory;
-      let topics;
-      if (category) {
-        topics = _.clone(store.topics);
-        topics.sort((t: Topic, t2: Topic) => topic_sortByLatestActivity(t, t2, category.id));
-      }
-      else {
-        // A restricted category, we may not see it?
-        topics = [];
-      }
-      this.setState({ topics });
-      scrollToLastPositionSoon();
+    if (this.isLoading) {
+      // This is a the-store-got-patched change event [2WKB04R]. Ignore it — we'll update
+      // in a moment, in the done-loading callback instead (4AB2D).
+      // (If we continued here, we'd call scrollToLastPositionSoon() below and might
+      // incorrectly reset the scroll position to 0.)
+      return;
     }
+
+    if (!this.canUseTopicsInScriptTag())
+      return;
+
+    const store: Store = this.props.store;
+
+    // We're still using a copy of the topics list in the store, so update the copy,
+    // maybe new user-specific data has been added.
+    const category: Category = this.props.activeCategory;
+    let topics: Topic[];
+    if (category) {
+      topics = _.clone(store.topics);
+      topics.sort((t: Topic, t2: Topic) => topic_sortByLatestActivity(t, t2, category.id));
+    }
+    else {
+      // A restricted category, we may not see it?
+      topics = [];
+    }
+    this.setState({ topics });
+    scrollToLastPositionSoon();
   },
 
   canUseTopicsInScriptTag: function() {
@@ -762,11 +770,9 @@ const LoadAndListTopics = createFactory({
       delete orderOffset.score;
     }
     const categoryId = nextProps.activeCategory.id;
-    // Don't use this.state.isLoading, because the state change doesn't happen instantly,
-    // so componentWillReceiveProps() would get called first, and it would call loadTopics again
-    // while this.state.isLoading was still false, resulting in an unneeded server request.
+
     this.isLoading = true;
-    debiki2.Server.loadForumTopics(categoryId, orderOffset, (newlyLoadedTopics: Topic[]) => {
+    Server.loadForumTopics(categoryId, orderOffset, (newlyLoadedTopics: Topic[]) => { // (4AB2D)
       if (this.isGone) return;
       let topics: any = isNewView ? [] : (this.state.topics || []);
       topics = topics.concat(newlyLoadedTopics);
@@ -1307,7 +1313,7 @@ const LoadAndListCategories = createFactory({
 
   loadCategories: function(props) {
     const store: Store = props.store;
-    debiki2.Server.loadForumCategoriesTopics(store.currentPageId, props.queryParams.filter,
+    Server.loadForumCategoriesTopics(store.currentPageId, props.queryParams.filter,
         (categories: Category[]) => {
       if (this.isGone) return;
       this.setState({ categories: categories });

@@ -863,7 +863,7 @@ export function loadForumTopics(categoryId: string, orderOffset: OrderOffset,
   const url = '/-/list-topics?categoryId=' + categoryId + '&' +
       ServerApi.makeForumTopicsQueryParams(orderOffset);
   get(url, (response: any) => {
-    ReactActions.patchTheStore({ usersBrief: response.users });
+    ReactActions.patchTheStore({ usersBrief: response.users });  // [2WKB04R]
     doneCallback(response.topics);
   });
 }
