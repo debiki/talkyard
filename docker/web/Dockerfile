@@ -33,69 +33,6 @@
 
 FROM alpine:3.7
 
-
-# ----- Core dumps
-
-# Place this:  kill(getpid(), SIGSEGV);   (from: https://stackoverflow.com/a/1657244/694469 )
-# to crash and generate a core dump at some specific location.
-# (This also core dumbps, but the dump won'd be backtrace:able: `raise(SIGABRT)`)
-
-
-# Install gdb, for debugging core dumps. See:
-# https://stackoverflow.com/questions/37186990/how-to-install-gdbserver-package-on-alpine-docker-image
-RUN apk add --no-cache \
-  linux-headers \
-  make \
-  g++ \
-  gcc \
-  texinfo
-
-# RUN apk add --no-cache gdb  — not available, instead:
-RUN mkdir /gdb-build \
- && cd /gdb-build \
- && wget http://ftp.gnu.org/gnu/gdb/gdb-8.1.tar.xz \
- && tar -xvf gdb-8.1.tar.xz
-
-RUN cd /gdb-build/gdb-8.1 \
- && ./configure --prefix=/usr \
- && make \
- && make -C gdb install
- #&& cd / \
- # It's about 500 MB large.
- #&& rm -rf /gdb-build \  —>
- #    rm: can't remove '/gdb-build/gdb-8.1/gdb/build-gnulib/confdir3/confdir3/confdir3': Directory not empty
- #     and 999 /confdir3/confdir3/confdir3/...
- #&& touch /gdb-build-done
-
-## install ssh server support and keys
-#RUN apk add --no-cache openssh
-#RUN ssh-keygen -A
-
-# core dump debug
-#    1  ulimit -c unlimited
-#    2  cat /proc/sys/kernel/core_pattern
-#    3  echo "/tmp/cores/core.%e.%p" | tee /proc/sys/kernel/core_pattern
-#    5  sysctl -w fs.suid_dumpable=2
-#    6  sysctl -p
-#   11  apk add gdb
-#   12  apk add --no-cache make
-#   13  apk add --no-cache linux-headers
-#   14  apk add --no-cache texinfo
-#   15  apk add --no-cache gcc
-#   16  apk add --no-cache g++
-#   21  cd root/
-#   18  wget http://ftp.gnu.org/gnu/gdb/gdb-8.1.tar.xz
-#   23  tar -xvf gdb-8.1.tar.xz
-#   24  cd gdb-8.1
-#   26  ./configure --prefix=/usr
-#   27  make
-#   28  make -C gdb install
-#   29  gdb
-#   45  ls -halt /tmp/cores/
-
-# ----- /Core dumps
-
-
 ENV NGINX_VERSION 1.15.2
 
 # Do this first, because we need 'make' early, and also it's boring to wait for Nginx
@@ -231,8 +168,7 @@ RUN \
 	# generate a debug build, will be at /usr/sbin/nginx-debug
 	&& ./configure $CONFIG \
 	    --with-debug \
-        # for Nchan:  -ggdb  or -g?  or -ggdb3?
-        --with-cc-opt='-O0 -ggdb -fvar-tracking-assignments' \
+	    --with-cc-opt='-O0 -ggdb3 -fvar-tracking-assignments' \
 	&& make -j$(getconf _NPROCESSORS_ONLN) \
 	&& mv objs/nginx objs/nginx-debug \
 	# && mv objs/ngx_http_xslt_filter_module.so objs/ngx_http_xslt_filter_module-debug.so \
@@ -240,6 +176,8 @@ RUN \
 	# && mv objs/ngx_http_geoip_module.so objs/ngx_http_geoip_module-debug.so \
 	# && mv objs/ngx_stream_geoip_module.so objs/ngx_stream_geoip_module-debug.so \
 	&& ./configure $CONFIG \
+	    # Let's incl debug symbols in prod builds too (but not -O0).
+	    -ggdb \
 	&& make -j$(getconf _NPROCESSORS_ONLN) \
 	&& make install \
 	&& rm -rf /etc/nginx/html/ \
@@ -263,12 +201,10 @@ RUN \
 	# && install -m755 objs/ngx_stream_geoip_module-debug.so /usr/lib/nginx/modules/ngx_stream_geoip_module-debug.so \
 	# && ln -s ../../usr/lib/nginx/modules /etc/nginx/modules \
 	\
-	# What? Strips debug symbols from nginx-debug too, right?:
+	# Don't, then wouldn't be able to backtrace core dumps.
 	#&& strip /usr/sbin/nginx* \
-	# Instead:
-	&& strip /usr/sbin/nginx \
 	\
-	# All modules above commented out.
+	# All modules above commented out. And want to keep debug symbols, anyway.
 	# && strip /usr/lib/nginx/modules/*.so \
 	&& rm -rf /usr/src/nginx-$NGINX_VERSION \
 	\
@@ -306,7 +242,7 @@ COPY lua-packages /opt/lua-packages/
 
 
 # Add 'bash' so we can 'docker exec' into the container, + some tools. (wget & less already works)
-RUN apk add --no-cache bash tree curl net-tools
+RUN apk add --no-cache bash tree curl net-tools gdb
 
 COPY 502.html             /opt/nginx/html/502.html
 COPY 503.html             /opt/nginx/html/503.html
@@ -349,20 +285,20 @@ COPY ed-lua /opt/talkyard/lua/
 # can publish events.
 EXPOSE 80 443
 
-# mkdir /tmp/cores
-# chown root:root /tmp/cores
-# chmod 1777 /tmp/cores
-# ulimit -c unlimited
-# # [2AKB04]
-# echo "/tmp/cores/core.%e.%p" | tee /proc/sys/kernel/core_pattern
-# sysctl -w fs.suid_dumpable=2
-# sysctl -p
+# Core dumps
+# Needs to make the container privileged. [PRIVCTR]
+# Works without:  chown root:root /tmp/cores  &&  ulimit -c unlimited
+# Place this:  kill(getpid(), SIGSEGV);   (from: https://stackoverflow.com/a/1657244/694469 )
+# to crash and generate a core dump at some specific location.
+# (This also core dumbps, but cannot backtrace the dump: `raise(SIGABRT)`)
+# Inspect like so:  # gdb /usr/sbin/nginx-debug /tmp/cores/core.nginx-debug.17  # for example
+# then type `bt` or `bt f` (backtrace full).
+#
+#CMD chmod 1777 /tmp/cores \
+#  && sysctl -w fs.suid_dumpable=2 \
+#  && sysctl -p \
+#  && echo "/tmp/cores/core.%e.%p" > /proc/sys/kernel/core_pattern \
+#  && /etc/nginx/run-envsubst.sh \
+#  && nginx-debug
 
-#CMD /etc/nginx/run-envsubst.sh && nginx
-CMD chmod 1777 /tmp/cores \
-  && sysctl -w fs.suid_dumpable=2 \
-  && sysctl -p \
-  && /etc/nginx/run-envsubst.sh \
-  && echo "/tmp/cores/core.%e.%p" > /proc/sys/kernel/core_pattern \
-  && nginx-debug
-
+CMD /etc/nginx/run-envsubst.sh && nginx
