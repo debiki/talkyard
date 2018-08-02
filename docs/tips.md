@@ -48,3 +48,30 @@ Reindex everything: (might take long: minutes/hours/weeks, depending on db size)
 curl -XDELETE 'http://localhost:9200/all_english_v1/'
 docker-compose restart web app
 ```
+
+
+### Nodejs
+
+If you get this error, although *not* out of disk, when running Gulp:
+
+```
+ENOSPC: no space left on device, watch '/opt/talkyard/server/client/app/page/'
+```
+
+Then, the problem is probably that Gulp needs to watch for changes in really many files,
+and we need to tell the OS to let Gulp do that, by increasing the number of allowed
+inode watchers. Append this to `/etc/sysctl.conf`: (on your host OS, not in a container)
+
+```
+###################################################################
+# Nodejs
+#
+# Nodejs might believe we're out of disk space, unless it can watch really many files:
+fs.inotify.max_user_watches=524288
+```
+
+Then reload `sysctl.conf`, like so: `sysctl --system`. (Persists across reboots.)
+
+See https://stackoverflow.com/questions/22475849/node-js-error-enospc and
+https://github.com/npm/npm/issues/1131#issuecomment-253065331
+

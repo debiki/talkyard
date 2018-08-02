@@ -167,7 +167,9 @@ RUN \
 	&& cd /usr/src/nginx-$NGINX_VERSION \
 	# generate a debug build, will be at /usr/sbin/nginx-debug
 	&& ./configure $CONFIG \
+	    # Enables debug log messages: (otherwise they won't get logged at all, never?)
 	    --with-debug \
+	    # So can backtrace core dumps: [NGXCORED]
 	    --with-cc-opt='-O0 -ggdb3 -fvar-tracking-assignments' \
 	&& make -j$(getconf _NPROCESSORS_ONLN) \
 	&& mv objs/nginx objs/nginx-debug \

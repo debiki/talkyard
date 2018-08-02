@@ -77,6 +77,31 @@ Run tests like so:
         s/wdio target/e2e/wdio.2chrome.conf.js --only 'chat.2browsers' --da --nt
 
 
+### Testing OpenAuth login
+
+Add `--3 --secretsPath=..path-to-gmail-facebook-passwords-file...` to the `wdio` command 
+or to `s/run-e2e-tests.sh`, e.g.:
+ 
+```
+s/run-e2e-tests.sh --3 --secretsPath=../e2e-secrets.json
+```
+
+`--3` means *test-third-party-things*.
+Don't add the e2e secrets file to source control.
+Have a look in `../tests/e2e/utils/settings.ts`,
+search for "secrets", to see what should be in that file (i.e. `e2e-secrets.json`).
+You'd create that file yourself, and keep it secret, don't share it with anyone.
+Other people create their own test accounts themselves instead.
+
+##### Google and Facebook break the tests
+
+Some tests test Google/Gmail and Facebook OpenAuth login. Sometimes Google and Facebook pop up
+extra dialogs asking you security questions, during the login process, and this breaks the tests.
+So, if the tests break during Gmail and Facebook login, run them manually in a visible browser
+(use `s/selenium-start` instead of `s/selenium-start-invisible`), and answer Google's and
+Facebook's extra security questions to make them happy.
+
+
 ### Browsers other than Chrome
 
 If you want to use a browser other than Chrome, then see [Making *.localhost addresses work](./wildcard-dot-localhost.md).

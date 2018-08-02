@@ -166,13 +166,13 @@ var t_en_US: TalkyardTranslations = t = {
 
   nl: {
     WatchingAll: "Watching All",
-    WatchingAllTag: "You'll be notified of new topics with this tag, and every post in those topics",
+    WatchingAllTag: "You'll be notified of new topics with this tag, and every post in those topics.",
     WatchingAllTopic: "You'll be notified of all new replies in this topic.",
 
     // One will be notified about the *first* post in a new topic, only. That is, the Original Post
     // (that's what the first post is called, in a discussion forum topic).
     WatchingFirst: "Watching First",
-    WatchingFirstTag: "You'll be notified of new topics with this tag",
+    WatchingFirstTag: "You'll be notified of new topics with this tag.",
 
     Tracking: "Tracking",
 
@@ -682,7 +682,7 @@ var t_en_US: TalkyardTranslations = t = {
     // And, on a keyboard, once you get used to it, it's quite nice to click 1 to go to the
     // top, and 2 to see the first reply, and B to go back, F forward, so on.
     PgTop: "Page top",
-    PgTopHelp: "Go to the top of the page. Shortcut: 1 (on a keyboard)",
+    PgTopHelp: "Go to the top of the page. Keyboard shortcut: 1",
     Repl: "Replies",
     ReplHelp: "Go to the Replies section. Shortcut: 2",
     Progr: "Progress",
