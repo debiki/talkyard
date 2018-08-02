@@ -289,7 +289,6 @@ COPY ed-lua /opt/talkyard/lua/
 EXPOSE 80 443
 
 # Core dumps
-# Needs to make the container privileged. [NGXCORED]
 # Works without:  chown root:root /tmp/cores  &&  ulimit -c unlimited
 # Place this:  kill(getpid(), SIGSEGV);   (from: https://stackoverflow.com/a/1657244/694469 )
 # to crash and generate a core dump at some specific location.
@@ -297,6 +296,7 @@ EXPOSE 80 443
 # Inspect like so:  # gdb /usr/sbin/nginx-debug /tmp/cores/core.nginx-debug.17  # for example
 # then type `bt` or `bt f` (backtrace full).
 #
+# Make the container privileged, in docker-compose.yml for this to work. [NGXCORED]
 #CMD chmod 1777 /tmp/cores \
 #  && sysctl -w fs.suid_dumpable=2 \
 #  && sysctl -p \

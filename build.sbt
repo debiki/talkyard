@@ -117,7 +117,7 @@ def mainSettings = List(
   name := appName,
   version := appVersion,
   libraryDependencies ++= appDependencies,
-  scalaVersion := "2.12.3",
+  scalaVersion := "2.12.4",
 
   // Place tests in ./tests/app/ instead of ./test/, because there're other tests in
   // ./tests/, namely security/ and e2e/, and having both ./test/ and ./tests/ seems confusing.

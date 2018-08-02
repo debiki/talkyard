@@ -36,12 +36,12 @@ type TagLabel = string;
 type DateMs = number;  // use When instead? sounds better since using When server side too
 type WhenMs = number;
 
-type HttpRequest = XMLHttpRequest
+type HttpRequest = XMLHttpRequest;
 
 interface CheckboxEvent {
   target: {
     checked: boolean;
-  }
+  };
 }
 
 
@@ -131,7 +131,7 @@ interface Flag {
   // COULD incl flag id = action id? or separate table for flags? [2PKRW08]
   flaggerId: number;
   flagType: FlagType;
-  flaggedAt: number,
+  flaggedAt: number;
   flagReason?: string;
   uniqueId?: PostId;
   pageId?: PageId;
@@ -390,7 +390,7 @@ interface Category {
   sectionPageId?: any; // only when saving to server?
   name: string;
   slug: string;
-  defaultTopicType: PageRole,
+  defaultTopicType: PageRole;
   newTopicTypes?: PageRole[];  // [refactor] [5YKW294] delete, use defaultTopicType instead
   position?: number;
   description: string;
@@ -524,7 +524,7 @@ enum WatchbarSection {
 interface WatchbarTopic {
   pageId: PageId;
   title: string;
-  type: PageRole,
+  type: PageRole;
   unread?: boolean;
   notfsToMe?: number;
   notfsToMany?: number;
@@ -545,7 +545,7 @@ interface VolatileDataFromServer {
 
 // An auto generated page, like a user's profile, or the search results page.
 interface AutoPage {
-  dbgSrc: string,
+  dbgSrc: string;
   ancestorsRootFirst?: Ancestor[];
   pageMemberIds: UserId[];
   postsByNr: { [postNr: number]: Post };
@@ -1081,7 +1081,7 @@ interface Blocks {
 
 
 interface Block {
-  threatLevel: ThreatLevel,
+  threatLevel: ThreatLevel;
   ip?: string;
   browserIdCookie?: string;
   blockedById: number;
@@ -1192,8 +1192,8 @@ interface Settings {
   forumMainView: string;
   forumTopicsSortButtons: string;
   forumCategoryLinks: string;
-  forumTopicsLayout: TopicListLayout
-  forumCategoriesLayout: CategoriesLayout
+  forumTopicsLayout: TopicListLayout;
+  forumCategoriesLayout: CategoriesLayout;
 
   // Simpify
   showCategories: boolean;
