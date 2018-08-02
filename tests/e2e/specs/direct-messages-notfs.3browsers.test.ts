@@ -108,9 +108,13 @@ describe("private chat", () => {
         siteId, owen.emailAddress, [messageTitle, messageText], browser);
   });
 
-  it("Maria sees the reply, replies", () => {
+  it("Maria sees the reply", () => {
+    // This fails (times out) if Nchan messed up internally, because of an Nginx worker thread crash.
     maria.topic.waitForPostNrVisible(2);
     maria.topic.assertPostTextMatches(2, owensAnswer);
+  });
+
+  it("... and replies", () => {
     maria.complex.replyToPostNr(2, mariasQuestion);
     maria.topic.waitForPostNrVisible(3);
     maria.topic.assertPostTextMatches(3, mariasQuestion);
