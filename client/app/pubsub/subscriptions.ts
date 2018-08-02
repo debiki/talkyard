@@ -26,7 +26,7 @@
 //------------------------------------------------------------------------------
 
 const RetryAfterMsDefault = 4000;
-const GiveUpAfterTotalMs = 10 * 60 * 1000; // [5AR20ZJ]
+const GiveUpAfterTotalMs = 8 * 60 * 1000; // 8 minutes [5AR20ZJ]
 let retryAfterMs = RetryAfterMsDefault;
 let startedFailingAtMs;
 

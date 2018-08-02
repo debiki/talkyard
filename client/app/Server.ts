@@ -216,7 +216,7 @@ function postJsonSuccess(urlPath, success: (response: any) => void, data: any, e
 export const testGet = get;
 
 type GetSuccessFn = (response, xhr?: XMLHttpRequest) => void;
-type GetErrorFn = (errorDetails: string) => void;
+type GetErrorFn = (errorDetails: string, status?: number) => void;
 
 interface GetOptions {
   dataType?: string;
@@ -261,7 +261,7 @@ function get(uri: string, successFn: GetSuccessFn, errorFn?: GetErrorFn, options
       }
     }
     if (errorFn) {
-      errorFn(details);
+      errorFn(details, errorObj.status);
     }
   });
 
@@ -1398,7 +1398,7 @@ interface LongPollingState {
 }
 
 const longPollingState: LongPollingState = { nextReqNr: 1 };
-const LongPollingSeconds = 30;
+const LongPollingSeconds = 30;  // should be less than the Nchan timeout [2ALJH9]
 
 
 // For end-to-end tests, so they can verify that new long polling requests seem to
@@ -1475,11 +1475,18 @@ export function sendLongPollingRequest(userId: UserId, successFn: (response) => 
         longPollingState.lastEtag = xhr.getResponseHeader('Etag');
         requestDone = true;
         successFn(response);
-      }, () => {
-        console.warn(`Long polling request ${reqNr} error [TyELPRERR]`);
+      }, (errorDetails, status?: number) => {
         longPollingState.ongoingRequest = null;
         requestDone = true;
-        errorFn();
+        if (status === 408) {
+          // Fine.
+          console.debug(`Long polling request ${reqNr} done, status 408 Timeout [TyELPRTMT]`);
+          resendIfNeeded();
+        }
+        else {
+          console.warn(`Long polling request ${reqNr} error [TyELPRERR]`);
+          errorFn();
+        }
       }, options);
 
   longPollingState.ongoingRequest.reqNr = reqNr;

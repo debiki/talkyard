@@ -22,6 +22,7 @@ services:
       - '443:443'
     depends_on:
       - app
+      #- cache [NCHANREDIS]
     environment:
       CDN_PULL_KEY: "public"
 

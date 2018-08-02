@@ -332,6 +332,8 @@ class SpamChecker(
       .map(handleStopForumSpamResponse)
       .recover({
         case ex: Exception =>
+          // COULD rate limit requests to stopforumspam, seems as if otherwise it rejects connections?
+          // Got this:  java.net.ConnectException  when running lots of e2e tests at the same time.
           p.Logger.warn(s"Error querying api.stopforumspam.com [DwE2PWC7]", ex)
           None
       })
