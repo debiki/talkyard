@@ -997,7 +997,7 @@ export const TopicsList = createComponent({
           topicElems);
 
     return (
-      r.div({},
+      r.div({ className: 'e_SrtOrdr-' + orderOffset.sortOrder },
         categoryDeletedInfo,
         topTopicsPeriodButton,
         r.div({ style: { position: 'relative' }}, anyDeletedCross,

@@ -41,6 +41,7 @@ object RenderContentService {
   }
 
   object RegenerateStaleHtml
+  object PauseThreeSeconds
 
 }
 
@@ -57,7 +58,14 @@ class RenderContentActor(
 
   var avgMillisToBackgroundRender: Double = 50
 
+  var isIdle: Boolean = true
+
+  var pauseUntilNanos: Option[Long] = None
+
   override def receive: Receive = {
+    case PauseThreeSeconds =>
+      pauseUntilNanos = Some(System.nanoTime() + 3L * 1000L * 1000L * 1000L)
+
     // COULD SECURITY DoS attack: Want to enqueue this case last-in-first-out, per page & params, so won't
     // rerender the page more than once, even if is in the queue many times (with different hashes).
     // Can that be done with Akka actors in some simple way?
@@ -75,9 +83,18 @@ class RenderContentActor(
           p.Logger.error("Error rendering one got-message-about page [DwE5KGP0]", throwable)
       }
     case RegenerateStaleHtml =>
-      try {
-        val nanosBeore = System.nanoTime()
-
+      val nanosBeore = System.nanoTime()
+      val shallPause = pauseUntilNanos exists { untilNanos =>
+        if (nanosBeore < untilNanos) true
+        else {
+          pauseUntilNanos = None
+          false
+        }
+      }
+      if (shallPause) {
+        context.system.scheduler.scheduleOnce(1 second, self, RegenerateStaleHtml)(execCtx)
+      }
+      else try {
         findAndUpdateOneOutOfDatePage()
 
         val nanosAfter = System.nanoTime()

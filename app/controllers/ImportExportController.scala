@@ -83,6 +83,9 @@ class ImportExportController @Inject()(cc: ControllerComponents, edContext: EdCo
     if (!okE2ePassword)
       throwForbidden("EsE5JKU2", "Importing sites is only allowed for e2e testing right now")
 
+    // Avoid PostgreSQL serialization errors. [one-db-writer]
+    globals.pauseAutoBackgorundRenderer3Seconds()
+
     val siteData =
       try parseSiteJson(request.body, isE2eTest = okE2ePassword)
       catch {
@@ -291,7 +294,7 @@ class ImportExportController @Inject()(cc: ControllerComponents, edContext: EdCo
       }
       siteData.pages foreach { pageMeta =>
         //val newId = transaction.nextPageId()
-        transaction.insertPageMetaMarkSectionPageStale(pageMeta)
+        transaction.insertPageMetaMarkSectionPageStale(pageMeta, isImporting = true)
       }
       siteData.pagePaths foreach { path =>
         transaction.insertPagePath(path)
@@ -441,8 +444,8 @@ class ImportExportController @Inject()(cc: ControllerComponents, edContext: EdCo
         version = readInt(jsObj, "version"),
         createdAt = readDateMs(jsObj, "createdAtMs"),
         updatedAt = readDateMs(jsObj, "updatedAtMs"),
-        publishedAt = None,
-        bumpedAt = None,
+        publishedAt = readOptDateMs(jsObj, "publishedAtMs"),
+        bumpedAt = readOptDateMs(jsObj, "bumpedAtMs"),
         lastReplyAt = None,
         lastReplyById = None,
         categoryId = readOptInt(jsObj, "categoryId"),

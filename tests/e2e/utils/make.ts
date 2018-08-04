@@ -55,6 +55,8 @@ let emptySite: SiteData = {
 
 
 const make = {
+  defaultCreatedAtMs: DefaultCreatedAtMs,
+
   emptySiteOwnedByOwen: function(): SiteData {
     const site = _.cloneDeep(emptySite);
     const owner = make.memberOwenOwner();
@@ -255,7 +257,9 @@ const make = {
       categoryId: values.categoryId,
       authorId: values.authorId,
       createdAtMs: values.createdAtMs || DefaultCreatedAtMs,
-      updatedAtMs: values.updatedAtMs || DefaultCreatedAtMs,
+      updatedAtMs: values.updatedAtMs || values.createdAtMs || DefaultCreatedAtMs,
+      publishedAtMs: values.publishedAtMs,
+      bumpedAtMs: values.bumpedAtMs,
       numChildPages: values.numChildPages,
       numRepliesVisible: values.numRepliesVisible,
       numRepliesToReview: values.numRepliesToReview,

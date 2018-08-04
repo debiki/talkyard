@@ -264,6 +264,14 @@ class Globals(
     }
   }
 
+  /** Good to stop it, when importing sites via JSON, so can avoid PostgreSQL serialization
+    * failures. Later: One single actor for all database writes? + message passing. [one-db-writer]
+    */
+  def pauseAutoBackgorundRenderer3Seconds() {
+    if (isTestDisableBackgroundJobs) return
+    state.renderContentActorRef ! RenderContentService.PauseThreeSeconds
+  }
+
   def spamChecker: SpamChecker = state.spamChecker
 
   /* Add configurable support email address?  [CONFADDRS]

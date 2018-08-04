@@ -27,6 +27,7 @@ function buildSite(site?: SiteData) {
       return site;
     },
 
+    defaultCreatedAtMs: make.defaultCreatedAtMs,
 
     addForumPageAndRootCategory: function(opts: {
       id: string,
@@ -116,6 +117,8 @@ function buildSite(site?: SiteData) {
       body: string,
       categoryId?: CategoryId,
       authorId: UserId,
+      createdAtMs?: WhenMs,
+      bumpedAtMs?: WhenMs,
     }): PageJustAdded {
       let page = make.page(opts);
       let path = make.pagePath(opts.id, opts.folder, opts.showId, opts.slug);

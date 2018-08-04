@@ -151,8 +151,10 @@ interface PageToMake {
   role: PageRole;
   categoryId?: CategoryId;
   authorId: UserId;
-  createdAtMs?: number;
-  updatedAtMs?: number;
+  createdAtMs?: WhenMs;
+  updatedAtMs?: WhenMs;
+  publishedAtMs?: WhenMs;
+  bumpedAtMs?: WhenMs;
   numChildPages?: number;
   numRepliesVisible?: number;
   numRepliesToReview?: number;

@@ -233,14 +233,63 @@ function pagesFor(browser) {
     },
 
 
+    getPageScrollY: (): number => {
+      const result = browser.execute(function() {
+        return document.getElementById('esPageColumn').scrollTop;
+      });
+      console.log(`Page scroll: ${result.value}`);
+      return parseInt(result.value);
+    },
+
+
+    scrollIntoViewInPageColumn: (selector: string) => {
+      api.waitForVisible(selector);
+      let lastScrollY = api.getPageScrollY();
+      for (let i = 0; i < 80; ++i) {   // try for 8 seconds
+        browser.execute(function(selector) {
+          window['debiki2'].utils.scrollIntoViewInPageColumn(
+            selector, { marginTop: 100, marginBottom: 100, duration: 110 });
+        }, selector);
+        browser.pause(220);
+        const curScrollY = api.getPageScrollY();
+        if (lastScrollY === curScrollY) {
+          // Done scrolling;
+          return;
+        }
+        lastScrollY = curScrollY;
+      }
+      assert.fail(`Cannot scroll to: ${selector}`);
+    },
+
+
     scrollToTop: function() {
       // I think some browsers wants to scroll <body> others want to scroll <html>, so do both.
+      // And if we're viewing a topic, need to scroll the page column insetad.  (4ABKW20)
       browser.scroll('body', 0, 0);
       browser.scroll('html', 0, 0);
+      if (browser.isVisible('#esPageColumn')) {
+        // Doesn't work: browser.scroll('#esPageColumn', 0, 0);
+        // Instead:
+        browser.execute(function() {
+          document.getElementById('esPageColumn').scrollTop = 0;
+        });
+      }
       // Apparently takes a short while for the scroll to happen. I couldn't find any getScroll
       // function to poll and test when the scrolling is done, so just do this:
       // (200 ms is too short; then sometimes the stuff at the top won't be visible, when this
       // function returns.)
+      browser.pause(500);
+    },
+
+
+    scrollToBottom: function() {
+      browser.scroll('body', 0, 999*1000);
+      browser.scroll('html', 0, 999*1000);
+      if (browser.isVisible('#esPageColumn')) {
+        browser.execute(function() {
+          document.getElementById('esPageColumn').scrollTop = 999*1000;
+        });
+      }
       browser.pause(500);
     },
 
@@ -854,7 +903,9 @@ function pagesFor(browser) {
           api.waitForNewUrl();
         }
         else {
+          api.rememberCurrentUrl();
           api.topbar.clickAncestor("Home");
+          api.waitForNewUrl();  // why not?
         }
       },
 
@@ -1754,14 +1805,28 @@ function pagesFor(browser) {
         api.waitForVisible('.e2eF_T');
       },
 
+      clickLoadMore: () => {
+        api.waitAndClick('.load-more');
+      },
+
       clickViewLatest: function() {
         api.waitAndClick('#e2eSortLatestB');
         api.waitUntilGone('.s_F_SI_TopB');
+        // Means topics loaded.
+        api.waitForVisible('.e_SrtOrdr-1'); // TopicSortOrder.BumpTime
+      },
+
+      viewNewest: function() {
+        api.forumButtons.clickViewNew();
+        api.waitUntilGone('.s_F_SI_TopB');
+        // This means topics loaded:
+        api.waitForVisible('.e_SrtOrdr-2'); // TopicSortOrder.CreatedAt
       },
 
       clickViewTop: function() {
         api.waitAndClick('#e2eSortTopB');
         api.waitForVisible('.s_F_SI_TopB');
+        api.waitForVisible('.e_SrtOrdr-3'); // TopicSortOrder.ScoreAndBumpTime
       },
 
       openAboutUserDialogForUsername: function(username: string) {

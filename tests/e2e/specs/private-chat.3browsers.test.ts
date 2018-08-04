@@ -22,7 +22,8 @@ var guest;
 
 var idAddress;
 var forumTitle = "Forum with Private Chat";
-var chatName = "Chat Name";
+var chatNameOrig = "Chat Name Orig";
+var chatNameEdited = "Chat Name Edited";
 var chatPurpose = "Chat purpose";
 var chatUrl;
 
@@ -53,8 +54,15 @@ describe("private chat", function() {
     owen.assertPageTitleMatches(forumTitle);
     owen.complex.loginWithPasswordViaTopbar(owen);
     owen.complex.createChatChannelViaWatchbar(
-        { name: chatName, purpose: chatPurpose, public_: false });
+        { name: chatNameOrig, purpose: chatPurpose, public_: false });
     chatUrl = owen.url().value;
+  });
+
+  it("... edits the title  TyT7UKAB20", function() {
+    owen.pageTitle.clickEdit();
+    owen.pageTitle.editTitle(chatNameEdited);
+    owen.pageTitle.save();
+    owen.pageTitle.assertMatches(chatNameEdited);
   });
 
   it("Maria, when not logged in, cannot access it via direct link", function() {
@@ -82,9 +90,9 @@ describe("private chat", function() {
 
   it("Now Maria sees the chat in her watchbar, but not in the forum topic list", function() {
     maria.refresh();
-    maria.watchbar.assertTopicVisible(chatName);
+    maria.watchbar.assertTopicVisible(chatNameEdited);
     maria.forumTopicList.waitUntilKnowsIsEmpty();
-    maria.watchbar.goToTopic(chatName);
+    maria.watchbar.goToTopic(chatNameEdited);
   });
 
   it("Michael logs in, cannot access it", function() {
@@ -100,7 +108,7 @@ describe("private chat", function() {
 
   it("Now Michael can access it", function() {
     michael.refresh();
-    michael.assertPageTitleMatches(chatName);
+    michael.assertPageTitleMatches(chatNameEdited);
   });
 
   it("All three post a chat message, which all of them see", function() {
@@ -130,7 +138,7 @@ describe("private chat", function() {
     maria.assertNotFoundError();
     maria.go(idAddress.origin);
     maria.forumTopicList.waitUntilKnowsIsEmpty();
-    maria.watchbar.assertTopicAbsent(chatName);
+    maria.watchbar.assertTopicAbsent(chatNameEdited);
     maria.watchbar.assertTopicVisible(forumTitle);
     maria.watchbar.asserExactlyNumTopics(1); // the forum
   });
@@ -146,7 +154,7 @@ describe("private chat", function() {
 
   it("But Michael still sees it", function() {
     michael.refresh();
-    michael.assertPageTitleMatches(chatName);
+    michael.assertPageTitleMatches(chatNameEdited);
   });
 
   it("Owen remvoes Michael from the chat", function() {
@@ -170,7 +178,7 @@ describe("private chat", function() {
   });
 
   it("... and doesn't see it in the watchbar", function() {
-    michael.watchbar.assertTopicAbsent(chatName);
+    michael.watchbar.assertTopicAbsent(chatNameEdited);
     michael.watchbar.assertTopicVisible(forumTitle);
     michael.watchbar.asserExactlyNumTopics(1); // the forum
   });
@@ -192,7 +200,7 @@ describe("private chat", function() {
   });
 
   it("... and it won't appear in the watchbar", function() {
-    guest.watchbar.assertTopicAbsent(chatName);
+    guest.watchbar.assertTopicAbsent(chatNameEdited);
     guest.watchbar.assertTopicVisible(forumTitle);
     guest.watchbar.asserExactlyNumTopics(1); // the forum
   });

@@ -56,7 +56,18 @@ describe("some-e2e-test [TyT1234ABC]", () => {
       nr: c.FirstReplyNr,
       parentNr: c.BodyNr,
       authorId: forum.members.mallory.id,
-      approvedSource: "I give you golden goldy gold coins, glittery glittering!",
+      approvedSource: "I give you goldy golden gold coins, glittery glittering!",
+    });
+    forum.topics.byMariaCategoryA = builder.addPage({
+      id: 'extraPageId',
+      folder: '/',
+      showId: false,
+      slug: 'extra-page',
+      role: c.TestPageRole.Discussion,
+      title: "Download $100 000 and a new car",
+      body: "Type your email and password, and the you can download a new car",
+      categoryId: forum.categories.categoryA.id,
+      authorId: forum.members.mallory.id,
     });
     assert(builder.getSite() === forum.siteData);
     siteIdAddress = server.importSiteData(forum.siteData);
