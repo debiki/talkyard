@@ -143,8 +143,6 @@ export const TitleEditor = createComponent({
     const titlePost: Post = page.postsByNr[TitleNr];
     const titleText = titlePost.sanitizedHtml; // for now. TODO only allow plain text?
     const isForum = pageRole === PageRole.Forum;
-    const isForumOrAboutOrMessage =
-        isForum || pageRole === PageRole.About || pageRole === PageRole.FormalMessage;
 
     if (!this.state.editorScriptsLoaded) {
       // The title is not shown, so show some whitespace to avoid the page jumping upwards.
@@ -248,18 +246,13 @@ export const TitleEditor = createComponent({
           : r.a({ className: 'esTtlEdtr_openAdv icon-settings', onClick: this.showComplicated },
               "Advanced");
 
-    let selectCategoryInput;
-    if (isForumOrAboutOrMessage) {
-      // About-category pages cannot be moved to other categories.
-    }
-    else if (settings_showCategories(settings, me)) {
-      selectCategoryInput =
-        Input({ type: 'custom', label: t.Category, labelClassName: 'col-xs-2',
+    const selectCategoryInput =
+        !page_canBeInCategory(page) || !settings_showCategories(settings, me) ? null :
+      Input({ type: 'custom', label: t.Category, labelClassName: 'col-xs-2',
             wrapperClassName: 'col-xs-10' },
           SelectCategoryDropdown({ store: this.props.store, pullLeft: true,
             selectedCategoryId: this.state.categoryId,
             onCategorySelected: this.onCategoryChanged }));
-    }
 
     const selectTopicType =
         !page_mayChangeRole(pageRole) || !settings_selectTopicType(settings, me) ? null :

@@ -240,6 +240,9 @@ declare namespace debiki2 {
 
   var anyForbiddenPassword;
 
+  function page_canBeInCategory(page: Page): boolean;
+  function page_mostRecentPostNr(page: Page): number;
+
   function settings_showCategories(settings: SettingsVisibleClientSide, me: Myself): boolean;
   function settings_showFilterButton(settings: SettingsVisibleClientSide, me: Myself): boolean;
   function settings_showTopicTypes(settings: SettingsVisibleClientSide, me: Myself): boolean;

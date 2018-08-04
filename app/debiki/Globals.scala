@@ -74,6 +74,7 @@ object Globals {
   val BecomeOwnerEmailConfValName = "talkyard.becomeOwnerEmailAddress"
   val SiteOwnerTermsUrl = "talkyard.siteOwnerTermsUrl"
   val SiteOwnerPrivacyUrl = "talkyard.siteOwnerPrivacyUrl"
+  val MaxGroupMentionNotfsConfValName = "talkyard.maxGroupMentionNotifications"
 
   def isProd: Boolean = _isProd
 
@@ -1003,6 +1004,9 @@ class Config(conf: play.api.Configuration) {
   CLEAN_UP; REMOVE // this + the routes file entry [2KGLCQ4], use UploadsUrlBasePath instead only.
   val uploadsUrlPath: String = controllers.routes.UploadsController.servePublicFile("").url
   require(uploadsUrlPath == ed.server.UploadsUrlBasePath, "TyE2UKDU0")
+
+  val maxGroupMentionNotfs: Int =
+    conf.getOptional[Int](MaxGroupMentionNotfsConfValName) getOrElse 20
 
   object cdn {
     /** No trailing slash. */

@@ -38,6 +38,8 @@ Let outwardly visible page and user ids, be random numbers, to prevent
 discovery of pages & people by iterating through all ids in the url.
 64 bit random ids? or 32 bits + stricter rate limiting?
 
+[custom-groups]
+Search for that tag.
 
 [subcomms]
 Improve sub communities, e.g. selecting a category across all sub communities,

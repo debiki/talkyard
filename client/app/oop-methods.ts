@@ -407,6 +407,19 @@ export function category_iconClass(category: Category | CategoryId, store: Store
 // Page
 //----------------------------------
 
+
+export function page_canBeInCategory(page: Page): boolean {
+  const pageRole = page.pageRole;
+  return (pageRole !== PageRole.Code
+      && pageRole !== PageRole.SpecialContent
+      && pageRole !== PageRole.Blog
+      && pageRole !== PageRole.Forum
+      && pageRole !== PageRole.About
+      && pageRole !== PageRole.FormalMessage
+      && pageRole !== PageRole.PrivateChat);
+}
+
+
 export function page_mostRecentPostNr(page: Page): number {
   // BUG not urgent. COULD incl the max post nr in Page, so even if not yet loaded,
   // we'll know its nr, and can load and scroll to it, from loadAndScrollToAnyUrlAnchorPost().

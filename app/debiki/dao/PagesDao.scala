@@ -92,8 +92,8 @@ trait PagesDao {
 
       val thePageId = pagePath.pageId getOrDie "DwE5KWI2"
 
-      val notifications = NotificationGenerator(tx, nashorn)
-        .generateForNewPost(PageDao(thePageId, tx), bodyPost, Some(bodyTextAndHtml))
+      val notifications = notfGenerator(tx).generateForNewPost(
+        PageDao(thePageId, tx), bodyPost, Some(bodyTextAndHtml))
       tx.saveDeleteNotifications(notifications)
       pagePath
     }

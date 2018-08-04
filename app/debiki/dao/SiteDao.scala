@@ -28,6 +28,7 @@ import scala.collection.mutable
 import SiteDao._
 import ed.server.EdContext
 import ed.server.auth.MayMaybe
+import ed.server.notf.NotificationGenerator
 import ed.server.pop.PagePopularityDao
 import ed.server.pubsub.{PubSubApi, StrangerCounterApi}
 import ed.server.summaryemails.SummaryEmailsDao
@@ -106,6 +107,7 @@ class SiteDao(
   def globals: debiki.Globals = context.globals
   def jsonMaker = new JsonMaker(this)
   def textAndHtmlMaker = new TextAndHtmlMaker(this.thePubSiteId(), context.nashorn)
+  def notfGenerator(tx: SiteTransaction) = NotificationGenerator(tx, context.nashorn, globals.config)
 
   import context.security.throwIndistinguishableNotFound
 

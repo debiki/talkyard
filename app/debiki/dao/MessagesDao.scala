@@ -83,8 +83,7 @@ trait MessagesDao {
           Notifications.None
         }
         else {
-          NotificationGenerator(tx, context.nashorn).generateForMessage(
-            sender.user, bodyPost, toUserIds)
+          notfGenerator(tx).generateForMessage(sender.user, bodyPost, toUserIds)
         }
 
       tx.saveDeleteNotifications(notifications)

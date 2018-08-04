@@ -53,6 +53,21 @@ object TrustLevel {
     case TrustLevel.CoreMember.IntVal => TrustLevel.CoreMember
     case _ => return None
   })
+
+  def fromBuiltInGroupId(groupId: Int): Option[TrustLevel] = Some(groupId match {
+    case Group.NewMembersId => TrustLevel.NewMember
+    case Group.BasicMembersId => TrustLevel.BasicMember
+    case Group.FullMembersId => TrustLevel.FullMember
+    case Group.TrustedMembersId => TrustLevel.TrustedMember
+    case Group.RegularMembersId => TrustLevel.RegularMember
+    case Group.CoreMembersId => TrustLevel.CoreMember
+    case _ =>
+      // Skip: Group.EveryoneId, ModeratorsId, AdminsId, because StrangerDummyLevel and
+      // moderators and admins aren't trust levels.
+      // Instead, strangers have no trust level at all. And a staff members, can have trust
+      // level just Basic or Core Member or whatever.
+      return None
+  })
 }
 
 

@@ -690,7 +690,9 @@ package object core {
   def DISCUSSION_QUALITY = () // Stuff to do to improve the quality of the discussions
   def UNPOLITE = ()       // Vuln that lets a user be unpolite to someone else
   def FAIR = ()           // Something to fix, to make all sites share resources in a fair way.
+  def QUOTA = ()          // Should keep track of resource usage
 
+  def MAKE_CONFIGURABLE = () // Should be a play.conf config value, maybe per site config value.
   def I18N = ()           // Translation missing
   def READ = ()           // Something that could be good to read, before continuing coding.
 

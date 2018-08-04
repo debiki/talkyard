@@ -240,8 +240,7 @@ trait PostsDao {
 
     val notifications =
       if (skipNotifications) Notifications.None
-      else NotificationGenerator(tx, nashorn).generateForNewPost(
-        page, newPost, Some(textAndHtml))
+      else notfGenerator(tx).generateForNewPost(page, newPost, Some(textAndHtml))
     tx.saveDeleteNotifications(notifications)
 
     (newPost, author, notifications, anyReviewTask)
@@ -519,7 +518,7 @@ trait PostsDao {
     // send the post + json back to the caller?
     // & publish [pubsub]
 
-    val notfs = NotificationGenerator(tx, nashorn).generateForNewPost(page, newPost, Some(textAndHtml))
+    val notfs = notfGenerator(tx).generateForNewPost(page, newPost, Some(textAndHtml))
     tx.saveDeleteNotifications(notfs)
 
     (newPost, notfs)
@@ -570,8 +569,7 @@ trait PostsDao {
 
     // COULD create audit log entry that shows that this ip appended to the chat message.
 
-    val notfs = NotificationGenerator(tx, nashorn).generateForEdits(
-      lastPost, editedPost, Some(combinedTextAndHtml))
+    val notfs = notfGenerator(tx).generateForEdits(lastPost, editedPost, Some(combinedTextAndHtml))
     tx.saveDeleteNotifications(notfs)
 
     (editedPost, notfs)
@@ -837,8 +835,7 @@ trait PostsDao {
         unimplemented("Updating visible post counts when post approved via an edit", "DwE5WE28")
       }
 
-      val notfs = NotificationGenerator(tx, nashorn).generateForEdits(
-        postToEdit, editedPost, Some(newTextAndHtml))
+      val notfs = notfGenerator(tx).generateForEdits(postToEdit, editedPost, Some(newTextAndHtml))
       tx.saveDeleteNotifications(notfs)
 
       val oldMeta = page.meta
@@ -1324,10 +1321,10 @@ trait PostsDao {
         Notifications.None
       }
       else if (isApprovingNewPost) {
-        NotificationGenerator(tx, nashorn).generateForNewPost(page, postAfter, None)
+        notfGenerator(tx).generateForNewPost(page, postAfter, None)
       }
       else {
-        NotificationGenerator(tx, nashorn).generateForEdits(postBefore, postAfter, None)
+        notfGenerator(tx).generateForEdits(postBefore, postAfter, None)
       }
     tx.saveDeleteNotifications(notifications)
 
@@ -1376,7 +1373,7 @@ trait PostsDao {
       // ------ Notifications
 
       if (!post.isTitle) {
-        val notfs = NotificationGenerator(tx, nashorn).generateForNewPost(page, postAfter, None)
+        val notfs = notfGenerator(tx).generateForNewPost(page, postAfter, None)
         tx.saveDeleteNotifications(notfs)
       }
     }
@@ -1638,7 +1635,7 @@ trait PostsDao {
           postAfter
         }
 
-      val notfs = NotificationGenerator(tx, nashorn).generateForNewPost(
+      val notfs = notfGenerator(tx).generateForNewPost(
         toPage, postAfter, anyNewTextAndHtml = None, skipMentions = true)
       SHOULD // tx.saveDeleteNotifications(notfs) — but would cause unique key errors
 

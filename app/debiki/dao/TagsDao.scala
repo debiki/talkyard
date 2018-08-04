@@ -96,7 +96,7 @@ trait TagsDao {
       tx.updatePageMeta(pageMeta.copyWithNewVersion, oldMeta = pageMeta,
           markSectionPageStale = false)
 
-      val notifications = NotificationGenerator(tx, context.nashorn).generateForTags(post, tagsToAdd)
+      val notifications = notfGenerator(tx).generateForTags(post, tagsToAdd)
       tx.saveDeleteNotifications(notifications)
 
       (post, notifications, postAuthor)

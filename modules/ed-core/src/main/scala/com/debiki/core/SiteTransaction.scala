@@ -411,6 +411,7 @@ trait SiteTransaction {
   }
 
   def loadMemberByPrimaryEmailOrUsername(emailOrUsername: String): Option[Member]
+  def loadMemberOrGroupByUsername(username: String): Option[User]
 
   def loadMembersWithPrefix(usernamePrefix: String): immutable.Seq[Member]
 
@@ -428,6 +429,8 @@ trait SiteTransaction {
         : immutable.Seq[MemberOrGroupInclDetails]
 
   def loadOwner(): Option[MemberInclDetails]
+
+  def loadGroupMembers(groupId: UserId): Seq[User]
 
   def insertGroup(group: Group)
   def updateGroup(group: Group)

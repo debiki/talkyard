@@ -529,6 +529,8 @@ sealed trait User {
   def anyUsername: Option[String] = None
   def usernameOrGuestName: String
 
+  def idSpaceName: String = s"$id '$usernameOrGuestName'"
+
   def toMemberOrThrow: Member = {
     this match {
       case m: Member => m
