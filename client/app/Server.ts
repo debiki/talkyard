@@ -1398,7 +1398,10 @@ interface LongPollingState {
 }
 
 const longPollingState: LongPollingState = { nextReqNr: 1 };
-const LongPollingSeconds = 30;  // should be less than the Nchan timeout [2ALJH9]
+
+// Should be less than the Nchan timeout [2ALJH9] but let's try the other way around for
+// a short while, setting it to longer (60 vs 40) maybe working around an Nginx segfault [NGXSEGFBUG].
+const LongPollingSeconds = 60;
 
 
 // For end-to-end tests, so they can verify that new long polling requests seem to

@@ -296,7 +296,7 @@ EXPOSE 80 443
 # Inspect like so:  # gdb /usr/sbin/nginx-debug /tmp/cores/core.nginx-debug.17  # for example
 # then type `bt` or `bt f` (backtrace full).
 #
-# Make the container privileged, in docker-compose.yml for this to work. [NGXCORED]
+# Make the container privileged, in docker-compose.yml for this to work. [NGXCORED] [NGXSEGFBUG]
 #CMD chmod 1777 /tmp/cores \
 #  && sysctl -w fs.suid_dumpable=2 \
 #  && sysctl -p \
