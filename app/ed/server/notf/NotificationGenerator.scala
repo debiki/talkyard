@@ -188,7 +188,7 @@ case class NotificationGenerator(tx: SiteTransaction, nashorn: Nashorn, config: 
 
         // Find ids of group members to notify.
         val maxMentions = config.maxGroupMentionNotfs
-        val groupMembers = tx.loadGroupMembers(toUserMaybeGroup.id)
+        val groupMembers = tx.loadGroupMembers(toUserMaybeGroup.id).filter(_.id != newPost.createdById)
 
         dieIf(groupMembers.exists(_.isGuest), "TyE7ABK402")
 
@@ -206,11 +206,9 @@ case class NotificationGenerator(tx: SiteTransaction, nashorn: Nashorn, config: 
         (memberIds, notfType)
       }
 
-    for (toUserId <- toUserIds ; if !sentToUserIds.contains(toUserId)) {
-      // What? Old comment?, we don't always gen notfs here?:
-      //   Always generate notifications, so they can be shown in the user's inbox.
-      //   (But later on we might or might not send any email about the notifications,
-      //   depending on the user's preferences.)
+    for (toUserId <- toUserIds ; if toUserId != SystemUserId && !sentToUserIds.contains(toUserId)) {
+      // Generate notifications, regardless of email settings, so they can be shown in the user's inbox.
+      // We won't send any *email* though, if the user has unsubscribed from such emails.
       val settings: UserPageSettings = tx.loadUserPageSettingsOrDefault(toUserId, newPost.pageId)
       if (settings.notfLevel != NotfLevel.Muted) {
         sentToUserIds += toUserId

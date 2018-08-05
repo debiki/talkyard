@@ -659,6 +659,7 @@ package object core {
     */
   def UNTESTED = ()       // If the code might not work, e.g. has never been run.
   def TESTS_MISSING = ()  // It'd be nice with unit/integration/whatever tests.
+  def FLAKY = ()          // If an e2e test has races, can fail (ought to fix ... well ... later)
   def SECURITY = ()       // Some security issue, not necessarily so very important
   def PRIVACY = ()        // Could make things a bit more private
   def BUG = ()            // Need not be a terribly important bug.

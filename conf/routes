@@ -241,6 +241,7 @@ GET  /-/origin                  controllers.DebugTestController.origin
 GET  /-/are-scripts-ready       controllers.DebugTestController.areScriptsReady
 GET  /-/create-deadlock         controllers.DebugTestController.createDeadlock
 GET  /-/last-e2e-test-email     controllers.DebugTestController.showLastE2eTestEmailSent(siteId: Int, sentTo)
+GET  /-/num-e2e-test-emails-sent controllers.DebugTestController.numE2eTestEmailSent(siteId: Int)
 GET  /-/log-funny-messages      controllers.DebugTestController.logFunnyLogMessages()
 GET  /-/page-top-score          controllers.DebugTestController.showPagePopularityStats(pageId)
 GET  /-/pubsub-state            controllers.DebugTestController.showPubSubSubscribers(siteId: Option[Int])

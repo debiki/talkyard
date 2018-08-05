@@ -265,6 +265,28 @@ class DebugTestController @Inject()(cc: ControllerComponents, edContext: EdConte
   }
 
 
+  def numE2eTestEmailSent(siteId: SiteId): Action[Unit] = ExceptionAction.async(cc.parsers.empty) {
+        request =>
+      SECURITY // COULD add and check an e2e password. Or rate limits.
+
+      if (siteId > MaxTestSiteId)
+        throwForbidden("Ty4ABKR02", "Not a test site")
+
+      val futureReply: Future[Any] =
+        globals.endToEndTestMailer.ask(
+          "NumEndToEndTestEmailsSent", siteId)(akka.util.Timeout(7 seconds))
+
+      futureReply.map(sentToAddrsUntyped => {
+        val sentToAddrs = sentToAddrsUntyped.asInstanceOf[Vector[String]]
+        dieIf(!sentToAddrs.forall(Email.isE2eTestEmailAddress), "TyE2ABK503")
+        Ok(Json.obj(
+          "num" -> sentToAddrs.length,
+          "addrsByTimeAsc" -> sentToAddrs)) as JSON
+      })
+    }
+
+
+
   def showPagePopularityStats(pageId: PageId): Action[Unit] = AdminGetAction { request =>
     val (scoreInDb, scoreNow, statsNow) = request.dao.readOnlyTransaction { tx =>
       val scoreInDb = tx.loadPagePopularityScore(pageId)

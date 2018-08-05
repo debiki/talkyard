@@ -1018,6 +1018,11 @@ function pagesFor(browser) {
         assert(browser.isVisible('.esTopbar .esNotfIcon-toMe'));
       },
 
+      waitForNumDirectNotfs: function(numNotfs: IntAtLeastOne) {
+        assert(numNotfs >= 1, "Zero notfs won't ever become visible [TyE5GKRBQQ03]");
+        api.waitUntilTextMatches('.esTopbar .esNotfIcon-toMe', '^' + numNotfs + '$');
+      },
+
       openNotfToMe: function(options?: { waitForNewUrl?: boolean }) {
         api.topbar.openMyMenu();
         api.rememberCurrentUrl();
@@ -3608,6 +3613,16 @@ function pagesFor(browser) {
 
       countNumInvited: () => {
         return browser.elements('.s_InvsL_It').value.length;
+      },
+    },
+
+
+    unsubscribePage: {
+      confirmUnsubscription: () => {
+        browser.rememberCurrentUrl();
+        browser.waitAndClick('input[type="submit"]');
+        browser.waitForNewUrl();
+        browser.waitForVisible('#e2eBeenUnsubscribed');
       },
     },
 

@@ -139,13 +139,17 @@ trait UserDao {
 
 
   def editMember(memberId: UserId, doWhat: EditMemberAction, byWho: Who) {
+    // E2e tested here: [5RBKWEF8]
     val now = globals.now()
 
-    TESTS_MISSING
-
     readWriteTransaction { tx =>
+      val byMember = tx.loadTheMember(byWho.id)
       val memberBefore = tx.loadTheMemberInclDetails(memberId)
-      val memberAfter = copyEditMember(memberBefore, doWhat, byWho, now) getOrIfBad { errorMessage =>
+
+      throwForbiddenIf(memberBefore.isAdmin && !byMember.isAdmin,
+        "TyENADM0246", "Non-admins cannot reconfigure admins")
+
+      val memberAfter = copyEditMember(memberBefore, doWhat, byMember, now) getOrIfBad { errorMessage =>
         throwForbidden("TyE4KBRW2", errorMessage)
       }
 
@@ -187,15 +191,15 @@ trait UserDao {
     * the other things in editMember() above [2BRUI8], the database will be left in an
     * inconsistent state. So, this fn should be accessible only to editMember() above.
     */
-  private def copyEditMember(member: MemberInclDetails, doWhat: EditMemberAction, byWho: Who, now: When)
-        : MemberInclDetails Or ErrorMessage = {
+  private def copyEditMember(member: MemberInclDetails, doWhat: EditMemberAction,
+        byMember: Member, now: When): MemberInclDetails Or ErrorMessage = {
     import EditMemberAction._
     def someNow = Some(now.toJavaDate)
-    def someById = Some(byWho.id)
+    def someById = Some(byMember.id)
 
     def checkNotPromotingOrDemotingOneself() {
       // Bad idea to let people accidentally click "Revoke admin" on their profile, and lose access?
-      if (member.id == byWho.id)
+      if (member.id == byMember.id)
         throw new QuickMessageException("Cannot change one's own is-admin / moderator status")
     }
 
@@ -640,6 +644,10 @@ trait UserDao {
       transaction.loadMemberInclDetails(userId)
     }
   }
+
+
+  def loadTheMemberOrGroupInclDetailsById(memberOrGroupId: UserId): MemberOrGroupInclDetails =
+    readOnlyTransaction(_.loadTheMemberOrGroupInclDetails(memberOrGroupId))
 
 
   def loadTheMemberInclDetailsById(memberId: UserId): MemberInclDetails =

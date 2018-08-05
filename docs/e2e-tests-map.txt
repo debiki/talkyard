@@ -116,6 +116,10 @@ emails -
   mention:
   watching:
   unsubscribe:
+    via email link:
+            - unsubscribe.2browsers.test.ts  TyT2ABKG4RUR
+            - group-mentions.2browsers.test.ts   TyT7AKWB2LG
+    via user profile page:
 
 getting started guide -
   guide present:
@@ -228,6 +232,8 @@ editor -
         - email-notfs-discussion.test.ts  TyT2WREG78
     unusual chars:
         - weird-usernames.2browsers.test.ts  TyT5ABKPUW2
+    group mentinos:
+        - group-mentions.2browsers  TyT4AWJL208R
   other buttons -
     ...
 
@@ -356,9 +362,9 @@ site settings:
     num to allow:
 
 admin -
-  user page:
+  user page:  [5RBKWEF8]
     - admin-user-approve-reject.2browsers.test.ts  [TyT5KHEWQ2]
-    - admin-user-staff-trust.2browsers.test.ts  [TyT2GKFI594]
+    - admin-user-staff.2browsers.test.ts  [TyT2GKFI594]
     - admin-user-suspend.2browsers.test.ts  [TyT5GKQSG2]
     - admin-user-threat-mild.2browsers.test.ts  [TyT2WKBG4Z]
     - admin-user-threat-moderate.2browsers.test.ts  [TyT5KHFIQ20]

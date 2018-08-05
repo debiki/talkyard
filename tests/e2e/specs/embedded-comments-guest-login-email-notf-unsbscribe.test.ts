@@ -141,7 +141,7 @@ describe("emb cmts guest login", () => {
   });
 
   it("... and unsubscribes", () => {
-    guestsBrowser.waitAndClick('input[type=submit]');
+    guestsBrowser.unsubscribePage.confirmUnsubscription();
   });
 
   it("Gillan posts another reply to Gunde", () => {

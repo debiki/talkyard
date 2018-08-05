@@ -166,6 +166,14 @@ function countLastEmailsSentTo(siteId: SiteId, email: string): number {
 }
 
 
+/** Counts emails sent, for a test site.
+ */
+function getEmailsSentToAddrs(siteId: SiteId): { num: number, addrsByTimeAsc: string[] } {
+  const response = getOrDie(settings.mainSiteOrigin + `/-/num-e2e-test-emails-sent?siteId=${siteId}`);
+  return JSON.parse(response.body);
+}
+
+
 function getLastVerifyEmailAddressLinkEmailedTo(siteId: SiteId, emailAddress: string,
       browser?): string {
   const email = getLastEmailSenTo(siteId, emailAddress, browser);
@@ -223,6 +231,7 @@ const unsubUrlRegexString = 'https?://[^"\']*/-/unsubscribe';
 
 function getLastUnsubscriptionLinkEmailedTo(siteId: SiteId, emailAddress: string, browser): string {
   const email = getLastEmailSenTo(siteId, emailAddress, browser);
+  console.log(email.subject + "\n\n" + email.bodyHtmlText);
   return utils.findFirstLinkToUrlIn(unsubUrlRegexString, email.bodyHtmlText);
 }
 
@@ -249,6 +258,8 @@ function waitUntilLastEmailMatches(siteId: SiteId, emailAddress: string,
         textOrTextsToMatch: string | string[], browser): string | string[] {
   const textsToMatch: string[] =
       _.isString(textOrTextsToMatch) ? [textOrTextsToMatch] : textOrTextsToMatch;
+  const startMs = Date.now();
+  let hasDebugLoggedLastEmail = false;
   const regexs = textsToMatch.map(text => new RegExp(utils.regexEscapeSlashes(text)));
   let misses: string[];
   for (let attemptNr = 1; attemptNr <= settings.waitforTimeout / 500; ++attemptNr) {
@@ -267,6 +278,17 @@ function waitUntilLastEmailMatches(siteId: SiteId, emailAddress: string,
     }
     if (!misses.length)
       return _.isString(textOrTextsToMatch) ? matchingStrings[0] : matchingStrings;
+
+    // Debug log last email if seems the test will break.
+    if (!hasDebugLoggedLastEmail && Date.now() - startMs + 1500 > settings.waitforTimeout * 1000) {
+      hasDebugLoggedLastEmail = true;
+      console.log(
+        '\n\n' +
+        "This test will fail?\n" + (!email ? `No email sent to ${emailAddress}` :
+            `Last email to ${emailAddress} is still:\n${email.subject}\n${email.bodyHtmlText}`) +
+        '\n\n');
+    }
+
     browser.pause(500 - 100);
   }
   const missesString = misses.join(', ');
@@ -301,6 +323,7 @@ export = {
   playTimeDays,
   getLastEmailSenTo,
   countLastEmailsSentTo,
+  getEmailsSentToAddrs,
   getLastVerifyEmailAddressLinkEmailedTo,
   waitAndGetVerifyAnotherEmailAddressLinkEmailedTo,
   waitAndGetInviteLinkEmailedTo,

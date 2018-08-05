@@ -125,7 +125,7 @@ describe("forum-scroll-position [TyT5ABK2WL4]", () => {
 
   it("... The scroll position didn't change, 1", () => {
     const scrollPosAfterMoreTopics = strangersBrowser.getPageScrollY();
-    assert.equal(scrollPosAtBottom, scrollPosAfterMoreTopics);
+    assert.equal(scrollPosAfterMoreTopics, scrollPosAtBottom);
   });
 
   it("Hen scrolls up to topic 1015", () => {
@@ -144,7 +144,7 @@ describe("forum-scroll-position [TyT5ABK2WL4]", () => {
     strangersBrowser.topbar.clickHome();
   });
 
-  it("... the scroll position didn't change, 2", () => {
+  it("... the scroll position didn't change, 2  — FLAKY fails 1 in 7? a race in the browser?", () => {
     strangersBrowser.waitForVisible(page1015LinkSelector);
     strangersBrowser.pause(500); // wait until has reset scroll pos
     const scrollPosAfterBack = strangersBrowser.getPageScrollY();

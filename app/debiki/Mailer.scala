@@ -25,6 +25,7 @@ import debiki.dao.SiteDao
 import debiki.dao.SiteDaoFactory
 import play.{api => p}
 import scala.collection.mutable
+import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.Promise
 
 
@@ -246,6 +247,27 @@ class Mailer(
 
         numEmailsSent += 1
       }
+
+    case ("NumEndToEndTestEmailsSent", siteId: SiteId) =>
+      val addresses = ArrayBuffer[Email]()
+      e2eTestEmails.foreach { case (siteIdColonEmailAddr: String, emailsPromise) =>
+        if (siteIdColonEmailAddr.startsWith(siteId + ":")) {
+          if (emailsPromise.isCompleted) {
+            val moreAddrs = emailsPromise.future.value.get.get
+            if (moreAddrs.exists(email => !Email.isE2eTestEmailAddress(email.sentTo))) {
+              // Someone attempts to read addresses from a non-e2e tests site? Seems suspicious.
+              // Just ignore, maybe should log sth though?
+              SECURITY; SHOULD_LOG_STH
+              sender() ! Nil
+              return
+            }
+
+            addresses.appendAll(moreAddrs) // see clean_up below
+          }
+        }
+      }
+      sender() ! addresses.sortBy(_.sentOn.map(_.getTime).getOrElse(Long.MaxValue)).map(_.sentTo).toVector
+
     case ("GetEndToEndTestEmail", siteIdColonEmailAddress: String) =>
       e2eTestEmails.get(siteIdColonEmailAddress) match {
         case Some(promise) =>

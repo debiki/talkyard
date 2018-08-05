@@ -660,7 +660,10 @@ case class Guest(
 }
 
 
-sealed trait MemberOrGroupInclDetails
+sealed trait MemberOrGroupInclDetails {
+  def seeActivityMinTrustLevel: Option[TrustLevel]
+}
+
 
 case class MemberInclDetails(
   id: UserId,
@@ -1022,6 +1025,9 @@ case class Group(
   override def usernameOrGuestName: String = theUsername
 
   //def canonicalUsername: String = User.makeUsernameCanonical(theUsername)   [CANONUN]
+
+  // Not yet incl in Group, but could be. For now, let be core members & staff only.
+  def seeActivityMinTrustLevel: Option[TrustLevel] = Some(TrustLevel.CoreMember)
 
   override def anyName: Option[String] = Some(name)  // [50UKQV1]
   override def anyUsername: Option[String] = Some(theUsername)

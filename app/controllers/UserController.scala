@@ -522,7 +522,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
     if (requester.exists(r => r.isStaff || r.id == userId))
       return true
 
-    val memberInclDetails = dao.loadTheMemberInclDetailsById(userId)
+    val memberInclDetails = dao.loadTheMemberOrGroupInclDetailsById(userId)
     memberInclDetails.seeActivityMinTrustLevel match {
       case None => true
       case Some(minLevel) =>
