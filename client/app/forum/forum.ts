@@ -68,7 +68,10 @@ function scrollToLastPositionSoon() {
   setTimeout(function() {
     $byId('esPageColumn').scrollTop = scrollToWhenCommentsLoaded || 0;
     scrollToWhenCommentsLoaded = 0;
-  });
+  },
+    // If doesn't wait some millis before resetting scroll, then, maybe 1 in 5 times, the browser
+    // somehow scrolls to scrollTop = 0 = page top (it does even *before* a 0ms timeout). TyT5WG7AB02
+    50);
 }
 
 

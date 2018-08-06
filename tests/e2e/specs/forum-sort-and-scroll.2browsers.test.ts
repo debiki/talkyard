@@ -144,11 +144,34 @@ describe("forum-sort-and-scroll [TyT5ABK2WL4]", () => {
     strangersBrowser.topbar.clickHome();
   });
 
-  it("... the scroll position didn't change, 2  — FLAKY fails 1 in 7? a race in the browser?", () => {
+  function wait5SecondsUntilHasResetScroll() {
+    let scrollPosAfterBack;
+    for (let i = 0; i < 4800; i += 400) {
+      scrollPosAfterBack = strangersBrowser.getPageScrollY();
+      // Accept small differences.
+      if (Math.abs(scrollPosAfterBack - scrollPosByActivityTopic1015) < 10) {
+        return;
+      }
+      browser.pause(400);
+    }
+    // This'll fail.
+    assert.equal(scrollPosAfterBack, scrollPosByActivityTopic1015);
+  }
+
+  it("... the scroll position didn't change, 2", () => {
     strangersBrowser.waitForVisible(page1015LinkSelector);
-    strangersBrowser.pause(500); // wait until has reset scroll pos
-    const scrollPosAfterBack = strangersBrowser.getPageScrollY();
-    assert.equal(scrollPosByActivityTopic1015, scrollPosAfterBack);
+    wait5SecondsUntilHasResetScroll();
+  });
+
+  it("Try mess up the scroll pos a few more times — there was a bug before  TyT5WG7AB02", () => {
+    for (let i = 0; i < 3; ++i) {
+      strangersBrowser.scrollIntoViewInPageColumn(page1015LinkSelector);
+      scrollPosByActivityTopic1015 = strangersBrowser.getPageScrollY();
+      strangersBrowser.forumTopicList.goToTopic('1015');
+      strangersBrowser.topbar.clickHome();
+      strangersBrowser.waitForVisible(page1015LinkSelector);
+      wait5SecondsUntilHasResetScroll();
+    }
   });
 
   it("Hen views the New topics instead of Active", () => {
