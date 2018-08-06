@@ -36,8 +36,8 @@ case class NotificationGenerator(tx: SiteTransaction, nashorn: Nashorn, config: 
   private var notfsToDelete = mutable.ArrayBuffer[NotificationToDelete]()
   private var sentToUserIds = new mutable.HashSet[UserId]()
   private var nextNotfId: Option[NotificationId] = None
-  private var anyAuthor: Option[Member] = None
-  private def author = anyAuthor getOrDie "TyE5RK2WAG8"
+  private var anyAuthor: Option[User] = None
+  private def author: User = anyAuthor getOrDie "TyE5RK2WAG8"
   private def siteId = tx.siteId
 
   private def generatedNotifications =
@@ -56,7 +56,7 @@ case class NotificationGenerator(tx: SiteTransaction, nashorn: Nashorn, config: 
       return Notifications.None
     }
 
-    anyAuthor = Some(tx.loadTheMember(newPost.createdById))
+    anyAuthor = Some(tx.loadTheUser(newPost.createdById))
 
     anyNewTextAndHtml foreach { textAndHtml =>
       require(newPost.approvedSource is textAndHtml.text,
@@ -135,7 +135,7 @@ case class NotificationGenerator(tx: SiteTransaction, nashorn: Nashorn, config: 
   /*
   def generateForDeletedPost(page: Page, post: Post, skipMentions: Boolean): Notifications = {
     dieIf(!skipMentions, "EsE6YKG567", "Unimplemented: deleting mentions")
-    anyAuthor = Some(...)
+    anyAuthor = Some(tx.loadTheUser(post.createdById))
     Notifications(
       toDelete = Seq(NotificationToDelete.NewPostToDelete(tx.siteId, post.uniqueId)))
   }*/
@@ -147,7 +147,7 @@ case class NotificationGenerator(tx: SiteTransaction, nashorn: Nashorn, config: 
   def generateForMessage(sender: User, pageBody: Post, toUserIds: Set[UserId])
         : Notifications = {
     unimplementedIf(pageBody.approvedById.isEmpty, "Unapproved private message? [EsE7MKB3]")
-    anyAuthor = Some(tx.loadTheMember(pageBody.createdById))
+    anyAuthor = Some(tx.loadTheUser(pageBody.createdById))
     tx.loadUsers(toUserIds) foreach { user =>
       makeNewPostNotf(NotificationType.Message, pageBody, user)
     }
@@ -181,8 +181,9 @@ case class NotificationGenerator(tx: SiteTransaction, nashorn: Nashorn, config: 
           "TyEBDGRPMT02", s"Weird group mention: ${toUserMaybeGroup.idSpaceName}")
 
         if (!mayMentionGroups(author)) {
-          // May still mention staff and admins, so can ask how the site works.
-          throwForbiddenIf(toUserMaybeGroup.id < Group.StaffId || Group.AdminsId < toUserMaybeGroup.id,
+          // For now, may still mention core members, staff and admins, so can ask how the site works.
+          throwForbiddenIf(
+            toUserMaybeGroup.id < Group.CoreMembersId || Group.AdminsId < toUserMaybeGroup.id,
               "TyEM0MNTNGRPS", s"You may not metion groups: ${toUserMaybeGroup.idSpaceName}")
         }
 
@@ -264,7 +265,7 @@ case class NotificationGenerator(tx: SiteTransaction, nashorn: Nashorn, config: 
       return Notifications.None
     }
 
-    anyAuthor = Some(tx.loadTheMember(newPost.createdById))
+    anyAuthor = Some(tx.loadTheUser(newPost.createdById))
 
     anyNewTextAndHtml foreach { textAndHtml =>
       require(newPost.approvedSource is textAndHtml.text,
@@ -341,7 +342,7 @@ case class NotificationGenerator(tx: SiteTransaction, nashorn: Nashorn, config: 
     val userIdsNotified = tx.listUsersNotifiedAboutPost(post.id)
     val userIdsToNotify = userIdsWatching -- userIdsNotified
     val usersToNotify = tx.loadUsers(userIdsToNotify.to[immutable.Seq])
-    anyAuthor = Some(tx.loadTheMember(post.createdById))
+    anyAuthor = Some(tx.loadTheUser(post.createdById))
     for {
       user <- usersToNotify
       if user.id != post.createdById
@@ -371,8 +372,8 @@ object NotificationGenerator {
     mentions.contains("all") || mentions.contains("channel")
 
 
-  def mayMentionGroups(member: Member): Boolean = {
-    member.isStaffOrMinTrustNotThreat(TrustLevel.FullMember)
+  def mayMentionGroups(user: User): Boolean = {
+    user.isStaffOrMinTrustNotThreat(TrustLevel.BasicMember)
   }
 
   // Keep this regex in sync with mentions-markdown-it-plugin.js, the mentionsRegex [4LKBG782].

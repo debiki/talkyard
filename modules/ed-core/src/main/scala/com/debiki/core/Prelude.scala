@@ -146,8 +146,8 @@ object Prelude {
   private def formatErrorMessage(errorCode: String, details: String) =
       (if ((details eq null) || details.isEmpty) "" else details + " ") + s"[$errorCode]"
 
-  def dieIf(condition: Boolean, errorCode: String, problem: => String = null): Unit =
-    if (condition) die(errorCode, problem)
+  def dieIf(condition: Boolean, errorCode: String, problem: => Any = null): Unit =
+    if (condition) die(errorCode, problem.toString)
 
   def dieUnless(condition: Boolean, errorCode: String, problem: => String = null): Unit =
     if (!condition) die(errorCode, problem)

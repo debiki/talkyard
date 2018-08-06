@@ -383,11 +383,11 @@ trait SiteTransaction {
     loadUser(userId).map(_.asInstanceOf[Guest])
   }
   def loadTheGuest(userId: UserId): Guest = {
-    dieIf(userId > User.MaxGuestId, "EsE6YKWU2")
+    dieIf(userId > User.MaxGuestId, "EsE6YKWU2", userId)
     loadTheUser(userId).asInstanceOf[Guest]
   }
   def loadMember(userId: UserId): Option[Member] = {
-    dieIf(userId <= User.MaxGuestId, "EsE6YKWU2")
+    dieIf(userId <= User.MaxGuestId, "EsE2A8ERB3", userId)
     loadUser(userId).map(_.toMemberOrThrow)
   }
   def loadTheMember(userId: UserId): Member = loadMember(userId).getOrDie(

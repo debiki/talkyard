@@ -513,6 +513,9 @@ sealed trait User {
   def isStaffOrFullMember: Boolean =
     isStaff || effectiveTrustLevel.toInt >= TrustLevel.FullMember.toInt
 
+  /** Guests have no trust level, so default = false */
+  def isStaffOrMinTrustNotThreat(trustLevel: TrustLevel) = false
+
   def isMember: Boolean = User.isMember(id)
   def isGuest: Boolean = User.isGuestId(id)
   def isGroup: Boolean = false
@@ -606,7 +609,7 @@ case class Member(
 
   override def isApprovedOrStaff: Boolean = isApproved.contains(true) || isStaff
 
-  def isStaffOrMinTrustNotThreat(trustLevel: TrustLevel): Boolean =  // dupl code [5WKABY0]
+  override def isStaffOrMinTrustNotThreat(trustLevel: TrustLevel): Boolean =  // dupl code [5WKABY0]
     isStaff || (
       effectiveTrustLevel.toInt >= trustLevel.toInt && !effectiveThreatLevel.isThreat)
 
