@@ -231,7 +231,6 @@ const unsubUrlRegexString = 'https?://[^"\']*/-/unsubscribe';
 
 function getLastUnsubscriptionLinkEmailedTo(siteId: SiteId, emailAddress: string, browser): string {
   const email = getLastEmailSenTo(siteId, emailAddress, browser);
-  console.log(email.subject + "\n\n" + email.bodyHtmlText);
   return utils.findFirstLinkToUrlIn(unsubUrlRegexString, email.bodyHtmlText);
 }
 
@@ -279,8 +278,8 @@ function waitUntilLastEmailMatches(siteId: SiteId, emailAddress: string,
     if (!misses.length)
       return _.isString(textOrTextsToMatch) ? matchingStrings[0] : matchingStrings;
 
-    // Debug log last email if seems the test will break.
-    if (!hasDebugLoggedLastEmail && Date.now() - startMs + 1500 > settings.waitforTimeout * 1000) {
+    // Debug log last email if seems the test will soon break (in 2 seconds).
+    if (!hasDebugLoggedLastEmail &&  startMs + settings.waitforTimeout * 1000 - 2000 < Date.now()) {
       hasDebugLoggedLastEmail = true;
       console.log(
         '\n\n' +

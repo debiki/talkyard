@@ -1014,7 +1014,7 @@ class Config(conf: play.api.Configuration) {
   require(uploadsUrlPath == ed.server.UploadsUrlBasePath, "TyE2UKDU0")
 
   val maxGroupMentionNotfs: Int =
-    conf.getOptional[Int](MaxGroupMentionNotfsConfValName) getOrElse 20
+    conf.getOptional[Int](MaxGroupMentionNotfsConfValName) getOrElse 25
 
   object cdn {
     /** No trailing slash. */

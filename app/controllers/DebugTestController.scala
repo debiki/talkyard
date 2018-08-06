@@ -277,7 +277,7 @@ class DebugTestController @Inject()(cc: ControllerComponents, edContext: EdConte
           "NumEndToEndTestEmailsSent", siteId)(akka.util.Timeout(7 seconds))
 
       futureReply.map(sentToAddrsUntyped => {
-        val sentToAddrs = sentToAddrsUntyped.asInstanceOf[Vector[String]]
+        val sentToAddrs = sentToAddrsUntyped.asInstanceOf[Seq[String]]
         dieIf(!sentToAddrs.forall(Email.isE2eTestEmailAddress), "TyE2ABK503")
         Ok(Json.obj(
           "num" -> sentToAddrs.length,

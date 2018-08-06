@@ -61,7 +61,7 @@ describe("group-mentions.2browsers  TyT4AWJL208R", () => {
     forum.siteData.members.push(trillian);
     forum.siteData.members.push(maja);
 
-    // Staff don't need high trust levels, it's enough to toggle is-moderator / -admin on.
+    // Staff don't need high trust levels, it's enough to toggle is-moderator/admin on.
     forum.members.owen.trustLevel = c.TestTrustLevel.New;
     forum.members.modya.trustLevel = c.TestTrustLevel.New;
 
@@ -122,6 +122,8 @@ describe("group-mentions.2browsers  TyT4AWJL208R", () => {
   });
 
   it("... no one gets any notf", () => {
+    const { num, addrsByTimeAsc } = server.getEmailsSentToAddrs(siteId);
+    assert.equal(num, 0, `Emails sent to: ${addrsByTimeAsc}`);
   });
 
 
@@ -187,7 +189,8 @@ describe("group-mentions.2browsers  TyT4AWJL208R", () => {
   it("... now only Modya gets a notification *via email*", () => {
     // New, and old:
     server.waitUntilLastEmailMatches(siteId, modya.emailAddress, [topicTitle, lastComment], browser);
-    server.waitUntilLastEmailMatches(siteId, mons.emailAddress, [topicTitle, mariasCommentModsModyaMons], browser);
+    server.waitUntilLastEmailMatches(siteId, mons.emailAddress, [topicTitle, mariasCommentModsModyaMons],
+        browser);
   });
 
   it("... and no one else", () => {
@@ -221,7 +224,7 @@ describe("group-mentions.2browsers  TyT4AWJL208R", () => {
     assert.equal(num, numExpectedEmailsTotal, `Emails sent to: ${addrsByTimeAsc}`);
   });
 
-  it("... as usual, Mons does get a notf via the browser's UI", () => {
+  it("... as usual, Mons gets a notf via the browser's UI", () => {
     monsBrowser.refresh();
     monsBrowser.topbar.waitForNumDirectNotfs(3);
   });
@@ -230,7 +233,7 @@ describe("group-mentions.2browsers  TyT4AWJL208R", () => {
   // ----- @core_members
 
   it("Maria mentions @core_members (which doesn't include @staff)", () => {
-    lastComment = "Hi @core_members: Corax only?";
+    lastComment = "Hi @core_members: Corax";
     numExpectedEmailsTotal += 1;
     mariasBrowser.complex.replyToOrigPost(lastComment);
   });
@@ -289,7 +292,7 @@ describe("group-mentions.2browsers  TyT4AWJL208R", () => {
 
   it("Maria mentions @full_members (which includes higher trust levels)", () => {
     lastComment = "Hi all @full_members, wow so many";
-    numExpectedEmailsTotal += 4;  // trusted members and Michael
+    numExpectedEmailsTotal += 4;  // three trusted members (Mons = no email) and Michael
     mariasBrowser.complex.replyToOrigPost(lastComment);
   });
 
@@ -300,7 +303,7 @@ describe("group-mentions.2browsers  TyT4AWJL208R", () => {
     server.waitUntilLastEmailMatches(siteId, corax.emailAddress, [topicTitle, lastComment], browser);
   });
 
-  it("... and no one else — and not Maria, because it's her mention", () => {
+  it("... and no one else — not Maria, although she's in @full_members: she's the poster", () => {
     const { num, addrsByTimeAsc } = server.getEmailsSentToAddrs(siteId);
     assert.equal(num, numExpectedEmailsTotal, `Emails sent to: ${addrsByTimeAsc}`);
   });
@@ -352,7 +355,7 @@ describe("group-mentions.2browsers  TyT4AWJL208R", () => {
     mariasBrowser.complex.replyToOrigPost(lastComment);
   });
 
-  it("... Mallory gets notified (right now, @new_members doesn't incl @basic_members ... hmm)", () => {
+  it("... Mallory gets notified", () => {
     server.waitUntilLastEmailMatches(siteId, mallory.emailAddress, [topicTitle, lastComment], browser);
   });
 
@@ -361,7 +364,7 @@ describe("group-mentions.2browsers  TyT4AWJL208R", () => {
     server.waitUntilLastEmailMatches(siteId, modya.emailAddress, [topicTitle, lastComment], browser);
   });
 
-  it("... and no one else", () => {
+  it("... and no one else (right now, @new_members doesn't incl @basic_members ... hmm)", () => {
     const { num, addrsByTimeAsc } = server.getEmailsSentToAddrs(siteId);
     assert.equal(num, numExpectedEmailsTotal, `Emails sent to: ${addrsByTimeAsc}`);
   });

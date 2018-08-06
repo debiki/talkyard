@@ -362,7 +362,8 @@ var t_en_US: TalkyardTranslations = t = {
     ViewPeopleHere: "View people here",
     ViewAddRemoveMembers: "View / add / remove members",
     ViewChatMembers: "View chat members",
-    EditChat: "Edit chat title and purpose",
+    EditChat: "Edit chat description",
+    //EditChat: "Edit chat title and purpose", // Keep, in case adds back edit-title input
     LeaveThisChat: "Leave this chat",
     LeaveThisCommunity: "Leave this community",
     JoinThisCommunity: "Join this community",

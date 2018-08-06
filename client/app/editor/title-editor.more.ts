@@ -247,7 +247,7 @@ export const TitleEditor = createComponent({
               "Advanced");
 
     const selectCategoryInput =
-        !page_canBeInCategory(page) || !settings_showCategories(settings, me) ? null :
+        !page_canChangeCategory(page) || !settings_showCategories(settings, me) ? null :
       Input({ type: 'custom', label: t.Category, labelClassName: 'col-xs-2',
             wrapperClassName: 'col-xs-10' },
           SelectCategoryDropdown({ store: this.props.store, pullLeft: true,

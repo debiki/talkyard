@@ -266,6 +266,7 @@ class Mailer(
           }
         }
       }
+      // Sort by sent-when, ascending.
       sender() ! addresses.sortBy(_.sentOn.map(_.getTime).getOrElse(Long.MaxValue)).map(_.sentTo).toVector
 
     case ("GetEndToEndTestEmail", siteIdColonEmailAddress: String) =>

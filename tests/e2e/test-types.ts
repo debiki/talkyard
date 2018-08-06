@@ -152,7 +152,7 @@ interface PageToMake {
   categoryId?: CategoryId;
   authorId: UserId;
   createdAtMs?: WhenMs;
-  updatedAtMs?: WhenMs;
+  updatedAtMs?: WhenMs;  // remove? use bumpedAtMs instead
   publishedAtMs?: WhenMs;
   bumpedAtMs?: WhenMs;
   numChildPages?: number;

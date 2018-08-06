@@ -40,7 +40,7 @@ const page1079LinkSelector = '[href^="/-1079"]';
 const page1080LinkSelector = '[href^="/-1080"]';
 const page1099LinkSelector = '[href^="/-1099"]';
 
-describe("forum-scroll-position [TyT5ABK2WL4]", () => {
+describe("forum-sort-and-scroll [TyT5ABK2WL4]", () => {
 
   it("import a site", () => {
     const builder = buildSite();
@@ -48,7 +48,7 @@ describe("forum-scroll-position [TyT5ABK2WL4]", () => {
       title: "Some E2E Test",
       members: undefined, // default = everyone
     });
-    for (let i = 1; i < 100; ++i) {
+    for (let i = 1; i <= 99; ++i) {
       const id = `${1000 + i}`;
       forum.topics.byMariaCategoryA = builder.addPage({
         id,
@@ -115,7 +115,7 @@ describe("forum-scroll-position [TyT5ABK2WL4]", () => {
     strangersBrowser.waitForVisible(page1041LinkSelector);
   });
 
-  it("... to 1079", () => {
+  it("... to 1079, because loads 40 topics at a time, by default, and no. 1040 incl again", () => {
     strangersBrowser.waitForVisible(page1079LinkSelector);
   });
 

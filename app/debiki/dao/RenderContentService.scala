@@ -58,12 +58,11 @@ class RenderContentActor(
 
   var avgMillisToBackgroundRender: Double = 50
 
-  var isIdle: Boolean = true
-
   var pauseUntilNanos: Option[Long] = None
 
   override def receive: Receive = {
     case PauseThreeSeconds =>
+      // Would be better with just [one-db-writer], then woudn't need this.
       pauseUntilNanos = Some(System.nanoTime() + 3L * 1000L * 1000L * 1000L)
 
     // COULD SECURITY DoS attack: Want to enqueue this case last-in-first-out, per page & params, so won't

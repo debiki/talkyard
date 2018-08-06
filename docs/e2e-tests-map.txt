@@ -152,11 +152,13 @@ forum -
   live updates:  (4FE2)
   load more topics, all topics listed -
     via js:
-        - forum-scroll-position.2browsers.test.ts  TyT5ABK2WL4
+        - forum-sort-and-scroll.2browsers.test.ts  TyT5ABK2WL4
     js disabled:
     'active' sort order:
-        - forum-scroll-position.2browsers.test.ts  TyT5ABK2WL4
-    'newest' sort order:
+        - forum-sort-and-scroll.2browsers.test.ts  TyT5ABK2WL4
+    'newest' and
+    'active' sort orders:
+        - forum-sort-and-scroll.2browsers.test.ts  TyT5ABK2WL4
     'newest' and a category:
     click load-more twice:
 
@@ -441,6 +443,10 @@ restart server -
     chat works:
   restart everything at once -
     ... same tests as above ...
+
+notifications:
+  mute topic:
+  mute category:
 
 live notifications -
   works after many long-polls:

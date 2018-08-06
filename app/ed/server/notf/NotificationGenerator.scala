@@ -36,6 +36,8 @@ case class NotificationGenerator(tx: SiteTransaction, nashorn: Nashorn, config: 
   private var notfsToDelete = mutable.ArrayBuffer[NotificationToDelete]()
   private var sentToUserIds = new mutable.HashSet[UserId]()
   private var nextNotfId: Option[NotificationId] = None
+  private var anyAuthor: Option[Member] = None
+  private def author = anyAuthor getOrDie "TyE5RK2WAG8"
   private def siteId = tx.siteId
 
   private def generatedNotifications =
@@ -54,6 +56,8 @@ case class NotificationGenerator(tx: SiteTransaction, nashorn: Nashorn, config: 
       return Notifications.None
     }
 
+    anyAuthor = Some(tx.loadTheMember(newPost.createdById))
+
     anyNewTextAndHtml foreach { textAndHtml =>
       require(newPost.approvedSource is textAndHtml.text,
         s"approvedSource: ${newPost.approvedSource}, textAndHtml.text: ${textAndHtml.text} [TyE3WASC2]")
@@ -68,9 +72,9 @@ case class NotificationGenerator(tx: SiteTransaction, nashorn: Nashorn, config: 
       if approverId != parentPost.createdById // the approver has already read newPost
       parentUser <- tx.loadUser(parentPost.createdById)
     } {
-      // Later, if parent post, or this post, is by a group (which currently cannot happen),
-      // then look inside the group, and prevent generating a notification to oneself,
-      // just because is group member.
+      // If the parent post is by a group (currently cannot happen), and someone in the group
+      // replies to that group, then hen might get a notf about hens own reply. Fine, not much to
+      // do about that.
       makeNewPostNotf(NotificationType.DirectReply, newPost, parentUser)
     }
 
@@ -88,7 +92,6 @@ case class NotificationGenerator(tx: SiteTransaction, nashorn: Nashorn, config: 
 
       val allMentioned = mentionsAllInChannel(mentionedUsernames)
       if (allMentioned) {
-        val author = tx.loadTheMember(newPost.createdById)
         if (mayMentionGroups(author)) {
           val moreToAdd: Set[UserId] = pageMemberIds -- mentionedUsers.map(_.id)
           mentionedUsers ++= tx.loadMembersAsMap(moreToAdd).values.toSet
@@ -100,6 +103,7 @@ case class NotificationGenerator(tx: SiteTransaction, nashorn: Nashorn, config: 
         // Right now ignore self-mentions. Later, allow? Could work like a personal to-do item?
         // Then would have to remove a db constraint. Could do later. Right now feels best
         // to keep it so it'll catch bugs.
+        // If mentioning a group that one is a member of, one shouldn't and won't be notified (5ABKRW2).
         if user.id != newPost.createdById  // poster mentions him/herself?
         if !notfCreatedAlreadyTo(user.id)
       } {
@@ -131,6 +135,7 @@ case class NotificationGenerator(tx: SiteTransaction, nashorn: Nashorn, config: 
   /*
   def generateForDeletedPost(page: Page, post: Post, skipMentions: Boolean): Notifications = {
     dieIf(!skipMentions, "EsE6YKG567", "Unimplemented: deleting mentions")
+    anyAuthor = Some(...)
     Notifications(
       toDelete = Seq(NotificationToDelete.NewPostToDelete(tx.siteId, post.uniqueId)))
   }*/
@@ -142,6 +147,7 @@ case class NotificationGenerator(tx: SiteTransaction, nashorn: Nashorn, config: 
   def generateForMessage(sender: User, pageBody: Post, toUserIds: Set[UserId])
         : Notifications = {
     unimplementedIf(pageBody.approvedById.isEmpty, "Unapproved private message? [EsE7MKB3]")
+    anyAuthor = Some(tx.loadTheMember(pageBody.createdById))
     tx.loadUsers(toUserIds) foreach { user =>
       makeNewPostNotf(NotificationType.Message, pageBody, user)
     }
@@ -165,15 +171,21 @@ case class NotificationGenerator(tx: SiteTransaction, nashorn: Nashorn, config: 
       if (!toUserMaybeGroup.isGroup) {
         (Set(toUserMaybeGroup.id), notfType)
       }
-      else if (toUserMaybeGroup.id == Group.EveryoneId) {
-        throwForbidden("TyEBDGRPMT01", "Cannot mention @everyone")
-      }
-      else if (toUserMaybeGroup.id < Group.EveryoneId || Group.AdminsId < toUserMaybeGroup.id) {
-        // Later, when there're custom groups, allow ids > AdminId here. [custom-groups]
-        throwForbidden(
-          "TyEBDGRPMT02", s"Weird group mention: ${toUserMaybeGroup.anyUsername}")
-      }
       else {
+        throwForbiddenIf(toUserMaybeGroup.id == Group.EveryoneId,
+          "TyEBDGRPMT01", s"May not mention ${toUserMaybeGroup.idSpaceName}")
+
+        // Later, when there're custom groups, allow other ids (> AdminsId). [custom-groups]
+        throwForbiddenIf(
+          toUserMaybeGroup.id < Group.EveryoneId || Group.AdminsId < toUserMaybeGroup.id,
+          "TyEBDGRPMT02", s"Weird group mention: ${toUserMaybeGroup.idSpaceName}")
+
+        if (!mayMentionGroups(author)) {
+          // May still mention staff and admins, so can ask how the site works.
+          throwForbiddenIf(toUserMaybeGroup.id < Group.StaffId || Group.AdminsId < toUserMaybeGroup.id,
+              "TyEM0MNTNGRPS", s"You may not metion groups: ${toUserMaybeGroup.idSpaceName}")
+        }
+
         // Generate a notf to the group, so will appear in its user profile.
         val groupId = toUserMaybeGroup.id
         sentToUserIds += groupId
@@ -186,7 +198,8 @@ case class NotificationGenerator(tx: SiteTransaction, nashorn: Nashorn, config: 
           byUserId = newPost.createdById,
           toUserId = groupId)
 
-        // Find ids of group members to notify.
+        // Find ids of group members to notify, and excl the sender henself:  (5ABKRW2)
+
         val maxMentions = config.maxGroupMentionNotfs
         val groupMembers = tx.loadGroupMembers(toUserMaybeGroup.id).filter(_.id != newPost.createdById)
 
@@ -196,13 +209,13 @@ case class NotificationGenerator(tx: SiteTransaction, nashorn: Nashorn, config: 
           throwForbidden("TyERECGRPMNT", o"""s$siteId: Recursive group mentions not implemented,
               but user ${group.idSpaceName} is a group."""))
 
+        UX; COULD // add text: "@the_mention (not notified: too many people in group)"; throw no error.
         throwForbiddenIf(groupMembers.size > maxMentions, "TyEMNYMBRS",
-          s"More than $maxMentions group members — cannot group-mention that many people")
+          s"${groupMembers.size} group members — but may not group-mention more than $maxMentions")
 
-        UX; COULD // instead add text: "@the_mention (not notified: too many people in the group)"
-        // and don't throw any error.
         val memberIds = groupMembers.map(_.id).toSet
-        // UX SHOULD use a group notf type instead, it'll look a bit different: less important.
+
+        // UX SHOULD use a group notf type instead, it'll look a bit different: look less important.
         (memberIds, notfType)
       }
 
@@ -251,6 +264,8 @@ case class NotificationGenerator(tx: SiteTransaction, nashorn: Nashorn, config: 
       return Notifications.None
     }
 
+    anyAuthor = Some(tx.loadTheMember(newPost.createdById))
+
     anyNewTextAndHtml foreach { textAndHtml =>
       require(newPost.approvedSource is textAndHtml.text,
         s"approvedSource: ${newPost.approvedSource}, textAndHtml.text: ${textAndHtml.text} [TyE4WKB7Z]")
@@ -271,12 +286,10 @@ case class NotificationGenerator(tx: SiteTransaction, nashorn: Nashorn, config: 
     val newMentionsIncludesAll = mentionsAllInChannel(newMentions)
     val oldMentionsIncludesAll = mentionsAllInChannel(oldMentions)
 
-    lazy val mayAddAll = {
-      val author = tx.loadTheMember(newPost.createdById)
+    lazy val mayAddGroup =
       mayMentionGroups(author)
-    }
 
-    val mentionsForAllCreated = newMentionsIncludesAll && !oldMentionsIncludesAll && mayAddAll
+    val mentionsForAllCreated = newMentionsIncludesAll && !oldMentionsIncludesAll && mayAddGroup
     val mentionsForAllDeleted = oldMentionsIncludesAll && !newMentionsIncludesAll
     dieIf(mentionsForAllCreated && mentionsForAllDeleted, "EdE2WK4Q0")
 
@@ -328,6 +341,7 @@ case class NotificationGenerator(tx: SiteTransaction, nashorn: Nashorn, config: 
     val userIdsNotified = tx.listUsersNotifiedAboutPost(post.id)
     val userIdsToNotify = userIdsWatching -- userIdsNotified
     val usersToNotify = tx.loadUsers(userIdsToNotify.to[immutable.Seq])
+    anyAuthor = Some(tx.loadTheMember(post.createdById))
     for {
       user <- usersToNotify
       if user.id != post.createdById

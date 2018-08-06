@@ -408,7 +408,7 @@ export function category_iconClass(category: Category | CategoryId, store: Store
 //----------------------------------
 
 
-export function page_canBeInCategory(page: Page): boolean {
+export function page_canChangeCategory(page: Page): boolean {
   const pageRole = page.pageRole;
   return (pageRole !== PageRole.Code
       && pageRole !== PageRole.SpecialContent

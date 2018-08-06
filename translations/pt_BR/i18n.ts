@@ -366,7 +366,8 @@ var t_pt_BR: TalkyardTranslations = t = {
     ViewPeopleHere: "Visualizar pessoas aqui",
     ViewAddRemoveMembers: "Visualizar / adicionar / remover membros",
     ViewChatMembers: "Visualizar membros do chat",
-    EditChat: "Editar título e propósito do chat",
+    EditChat: "Editar propósito do chat",            // REVIEW
+    //EditChat: "Editar título e propósito do chat", // Keep, in case adds back edit-title input
     LeaveThisChat: "Desassociar-se deste chat",
     LeaveThisCommunity: "Desassociar-se desta comunidade",
     JoinThisCommunity: "Associar-se a esta comunidade",

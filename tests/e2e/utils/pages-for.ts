@@ -245,10 +245,10 @@ function pagesFor(browser) {
     scrollIntoViewInPageColumn: (selector: string) => {
       api.waitForVisible(selector);
       let lastScrollY = api.getPageScrollY();
-      for (let i = 0; i < 80; ++i) {   // try for 8 seconds
+      for (let i = 0; i < 60; ++i) {   // try for a bit more than 10 seconds
         browser.execute(function(selector) {
           window['debiki2'].utils.scrollIntoViewInPageColumn(
-            selector, { marginTop: 100, marginBottom: 100, duration: 110 });
+            selector, { marginTop: 100, marginBottom: 100, duration: 100 });
         }, selector);
         browser.pause(220);
         const curScrollY = api.getPageScrollY();
@@ -903,9 +903,8 @@ function pagesFor(browser) {
           api.waitForNewUrl();
         }
         else {
-          api.rememberCurrentUrl();
+          // (Already waits for new url.)
           api.topbar.clickAncestor("Home");
-          api.waitForNewUrl();  // why not?
         }
       },
 
