@@ -1,8 +1,9 @@
-/// <reference path="../test-types.ts"/>
+/// <reference path="../test-types2.ts"/>
+/// <reference path="../../../to-talkyard/src/to-talkyard.d.ts" />
 
 import settings = require('./settings');
 import log = require('./log-and-die');
-declare function require(...whatever): any;
+declare function require(...whatever: any[]): any;
 
 import _ = require('lodash');
 import c = require('../test-constants');
@@ -21,11 +22,11 @@ function getAndBumpNextUserId() {
   return nextUserId - 1;
 }
 
-let localHostname = settings.localHostname || 'e2e-test-site';
+const localHostname = settings.localHostname || 'e2e-test-site';
 
-let emptySite: SiteData = {
+const emptySite: SiteData = {
   meta: {
-    id: null,
+    id: undefined,
     name: localHostname + '-' + Date.now(),
     localHostname: localHostname,
     creatorEmailAddress: "e2e-test--owner@example.com",
@@ -274,7 +275,7 @@ const make = {
       numOpUnwantedVotes: values.numOpUnwantedVotes,
       numOpRepliesVisible: values.numOpRepliesVisible,
       version: values.version || 1,
-    }
+    };
   },
 
   pagePath: function(pageId: PageId, folder: string, showId: boolean, slug?: string): PagePathWithId {
@@ -370,16 +371,16 @@ const make = {
 
   findForumPage: function(pages: Page[]): Page {
     for (let i = 0; i < pages.length; ++i) {
-      let page = pages[i];
+      const page = pages[i];
       if (page.role === c.TestPageRole.Forum)
         return page;
     }
     log.die('EdE2KW055');
   },
 
-  forumOwnedByOwen: function(name: string, options?): SiteData {
-    let site: SiteData = make.emptySiteOwnedByOwen();
-    let now = Date.now();
+  forumOwnedByOwen: function(name: string, options?: { title?: string }): SiteData {
+    const site: SiteData = make.emptySiteOwnedByOwen();
+    const now = Date.now();
     site.meta.localHostname = site.meta.localHostname || 'e2e-test-' + now;
     site.meta.name = 'e2e-test-' + name + '-' + now;
 

@@ -1,6 +1,6 @@
 // This file sends requests to the server we're testing. Doesn't start any server.
 
-/// <reference path="../test-types.ts"/>
+/// <reference path="../test-types2.ts"/>
 
 import _ = require('lodash');
 import utils = require('./utils');

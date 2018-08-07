@@ -1,1 +1,0 @@
-../../../modules/definitely-typed/types/chalk/index.d.ts

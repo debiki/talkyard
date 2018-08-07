@@ -1,9 +1,10 @@
-/// <reference path="../test-types.ts"/>
+/// <reference path="../test-types2.ts"/>
+/// <reference path="../../../to-talkyard/src/to-talkyard.d.ts" />
 
 import assert = require('assert');
 import log = require('./log-and-die');
 import make = require('./make');
-declare function require(...whatever): any;
+declare function require(...whatever: any[]): any;
 
 import _ = require('lodash');
 import c = require('../test-constants');
@@ -20,7 +21,7 @@ function buildSite(site?: SiteData) {
     site = make.emptySiteOwnedByOwen();
   }
 
-  let api = {
+  const api = {
     theSite: site,
 
     getSite: function(): SiteData {
@@ -38,7 +39,8 @@ function buildSite(site?: SiteData) {
       title?: string,
       introText?: string,
     }): PageJustAdded {
-      let forumPage = api.addPage({
+      const forumPage = api.addPage({
+        dbgSrc: 'StBldrFrm',
         id: opts.id,
         folder: opts.folder || '/',
         showId: false,
@@ -50,7 +52,7 @@ function buildSite(site?: SiteData) {
         authorId: opts.authorId || c.SystemUserId,
       });
 
-      let rootCategory = make.rootCategoryWithIdFor(opts.rootCategoryId, forumPage);
+      const rootCategory = make.rootCategoryWithIdFor(opts.rootCategoryId, forumPage);
       rootCategory.defaultCategoryId = opts.defaultCategoryId;
       site.categories.push(rootCategory);
 
@@ -92,6 +94,7 @@ function buildSite(site?: SiteData) {
       const optsWithDescr: any = _.assign({ description: opts.aboutPageText }, opts);
       const category = api.addCategoryNoAboutPage(forumPage, optsWithDescr);
       const page = api.addPage({
+        dbgSrc: 'StBldrCatWAbt',
         id: `about_cat_${opts.slug}`.substr(0, 32),
         folder: '/',
         showId: false,
@@ -107,21 +110,9 @@ function buildSite(site?: SiteData) {
     },
 
 
-    addPage: function(opts: {
-      id: string,
-      folder: string,
-      showId: boolean,
-      slug: string,
-      role: PageRole,
-      title: string,
-      body: string,
-      categoryId?: CategoryId,
-      authorId: UserId,
-      createdAtMs?: WhenMs,
-      bumpedAtMs?: WhenMs,
-    }): PageJustAdded {
-      let page = make.page(opts);
-      let path = make.pagePath(opts.id, opts.folder, opts.showId, opts.slug);
+    addPage: function(opts: PageToAdd): PageJustAdded {
+      const page = make.page(opts);
+      const path = make.pagePath(opts.id, opts.folder, opts.showId, opts.slug);
       site.pages.push(page);
       site.pagePaths.push(path);
 
@@ -153,9 +144,9 @@ function buildSite(site?: SiteData) {
     addEmptyForum: function(opts: { title: string, introText?: string, members?: string[] })
           : EmptyTestForum {
       const members = opts.members || ['mons', 'modya', 'regina', 'corax', 'maria', 'michael', 'mallory'];
-      let forum = {
+      const forum = {
         siteData: site,
-        forumPage: null,
+        forumPage: <PageToMake> undefined,
         members: {
           owen: site.members[0],
           mons: _.includes(members, 'mons') ? make.memberModeratorMons() : undefined,
@@ -287,6 +278,7 @@ function buildSite(site?: SiteData) {
       forum.topics.aboutDeletedCategory = { title: 'About category Deleted Category' };
 
       forum.topics.byMariaCategoryA = api.addPage({
+        dbgSrc: 'LgFrmTstTpcs',
         id: 'byMariaCategoryA',
         folder: '/',
         showId: false,
@@ -298,6 +290,7 @@ function buildSite(site?: SiteData) {
         authorId: forum.members.maria.id,
       });
       forum.topics.byMariaCategoryANr2 = api.addPage({
+        dbgSrc: 'LgFrmTstTpcs',
         id: 'byMariaCategoryA_2',
         folder: '/',
         showId: false,
@@ -309,6 +302,7 @@ function buildSite(site?: SiteData) {
         authorId: forum.members.maria.id,
       });
       forum.topics.byMariaCategoryANr3 = api.addPage({
+        dbgSrc: 'LgFrmTstTpcs',
         id: 'byMariaCategoryA_3',
         folder: '/',
         showId: false,
@@ -321,6 +315,7 @@ function buildSite(site?: SiteData) {
       });
 
       forum.topics.byMariaCategoryB = api.addPage({
+        dbgSrc: 'LgFrmTstTpcs',
         id: 'byMariaCategoryB',
         folder: '/',
         showId: false,
@@ -333,6 +328,7 @@ function buildSite(site?: SiteData) {
       });
 
       forum.topics.byMariaStaffOnlyCat = api.addPage({
+        dbgSrc: 'LgFrmTstTpcs',
         id: 'byMariaStaffOnlyCat',
         folder: '/',
         showId: false,
@@ -345,6 +341,7 @@ function buildSite(site?: SiteData) {
       });
 
       forum.topics.byMariaUnlistedCat = api.addPage({
+        dbgSrc: 'LgFrmTstTpcs',
         id: 'byMariaUnlistedCat',
         folder: '/',
         showId: false,
@@ -357,6 +354,7 @@ function buildSite(site?: SiteData) {
       });
 
       forum.topics.byMariaDeletedCat = api.addPage({
+        dbgSrc: 'LgFrmTstTpcs',
         id: 'byMariaDeletedCat',
         folder: '/',
         showId: false,
@@ -369,6 +367,7 @@ function buildSite(site?: SiteData) {
       });
 
       forum.topics.byMichaelCategoryA = api.addPage({
+        dbgSrc: 'LgFrmTstTpcs',
         id: 'byMichaelCategoryA',
         folder: '/',
         showId: false,
@@ -383,7 +382,7 @@ function buildSite(site?: SiteData) {
       return forum;
     },
 
-    addDefaultCatPerms: function(site, categoryId: CategoryId, startPermissionId: PermissionId) {
+    addDefaultCatPerms: (site: SiteData, categoryId: CategoryId, startPermissionId: PermissionId) => {
       site.permsOnPages.push({
         id: startPermissionId,
         forPeopleId: c.EveryoneId,

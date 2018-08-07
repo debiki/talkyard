@@ -1,11 +1,11 @@
-/// <reference path="../test-types.ts"/>
+/// <reference path="../test-types2.ts"/>
 
 import _ = require('lodash');
 import minimist = require('minimist');
 import logAndDie = require('./log-and-die');
-let unusualColor = logAndDie.unusualColor;
-let logUnusual = logAndDie.logUnusual, die = logAndDie.die, dieIf = logAndDie.dieIf;
-let logWarning = logAndDie.logWarning, logMessage = logAndDie.logMessage;
+const unusualColor = logAndDie.unusualColor;
+const logUnusual = logAndDie.logUnusual, die = logAndDie.die, dieIf = logAndDie.dieIf;
+const logWarning = logAndDie.logWarning, logMessage = logAndDie.logMessage;
 
 let settings: any = {
   host: 'localhost',
@@ -47,7 +47,7 @@ if (args.v || args.verbose) {
 // Whatever. Wait 21 seconds by default.)
 settings.waitforTimeout =
     settings.debugBefore || settings.debugAfterwards || args.noTimeout || args.nt ?
-        2147483647 : 21*1000;
+        2147483647 : 21 * 1000;
 
 settings.browserName = 'chrome';
 if (args.ff) settings.browserName = 'firefox';

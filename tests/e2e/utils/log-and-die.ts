@@ -1,14 +1,12 @@
-/// <reference path="../../../client/typedefs/chalk/index.d.ts"/>
+const chalk = require('chalk');
 
-import chalk = require('chalk');
-
-var boringColor = chalk.gray;
-var errorColor = chalk.bold.yellow.bgRed;
-var warningColor = chalk.bold.red;
-var unusualColor = chalk.black.bgGreen;
+const boringColor = chalk.gray;
+const errorColor = chalk.bold.yellow.bgRed;
+const warningColor = chalk.bold.red;
+const unusualColor = chalk.black.bgGreen;
 
 
-var api = {
+const api = {
   unusualColor: unusualColor,
 
   logMessage: function (message: string) {
