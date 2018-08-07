@@ -55,3 +55,6 @@
 [submodule "docker/fakemail/mailslurper"]
 	path = docker/fakemail/mailslurper
 	url = https://github.com/mailslurper/mailslurper.git
+[submodule "to-talkyard"]
+	path = to-talkyard
+	url = ../to-talkyard
