@@ -83,16 +83,17 @@ ${ extraHeight > 500 ? "<br><br><i>SCROLL DOWN\n:\n:\n:</i>" : ""}
 </html>`;
   }
 
+  // TESTS_MISSING  emb cmts scroll
+
   it("Maria opens a tall embedding page, does *not* scroll to comment-1", () => {
-    mariasBrowser.go(embeddingOrigin + '/' + pageTallSlug + '#comment-1');
+    mariasBrowser.go(embeddingOrigin + '/' + pageTallSlug);
   });
 
   it("... the Log In button is not visible on screen", () => {
-    // TESTS_MISSING
   });
 
   it("Maria opens tall embedding page, auto scrolls to comment-1  TyT2K4DHR49-05", () => {
-    mariasBrowser.go(embeddingOrigin + '/' + pageTallSlug + '#comment-1');
+    //mariasBrowser.go(embeddingOrigin + '/' + pageTallSlug + '#comment-1');
   });
 
   it("... now the Log In button is visible directly", () => {
@@ -100,8 +101,7 @@ ${ extraHeight > 500 ? "<br><br><i>SCROLL DOWN\n:\n:\n:</i>" : ""}
   });
 
   it("Maria clicks Log In  TyT2K4DHR49-02", () => {
-    mariasBrowser.switchToEmbeddedCommentsIrame();
-    //mariasBrowser.topic.clickReplyToEmbeddingBlogPost();
+    //mariasBrowser.switchToEmbeddedCommentsIrame();
     //mariasBrowser.loginDialog.loginWithPasswordInPopup(maria);
   });
 
@@ -112,7 +112,7 @@ ${ extraHeight > 500 ? "<br><br><i>SCROLL DOWN\n:\n:\n:</i>" : ""}
   }
 
   it("... and reads comments 1 and 2 (posts 2 and 3)", () => {
-    markCommentsRead();
+    //markCommentsRead();
   });
 
   it("She reloads the page", () => {

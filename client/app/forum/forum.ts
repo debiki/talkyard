@@ -65,13 +65,16 @@ let lastScrollYByPath = {};
 let scrollToWhenCommentsLoaded;
 
 function scrollToLastPositionSoon() {
-  setTimeout(function() {
-    $byId('esPageColumn').scrollTop = scrollToWhenCommentsLoaded || 0;
-    scrollToWhenCommentsLoaded = 0;
-  },
-    // If doesn't wait some millis before resetting scroll, then, maybe 1 in 5 times, the browser
-    // somehow scrolls to scrollTop = 0 = page top (it does even *before* a 0ms timeout). TyT5WG7AB02
-    50);
+  const resetTo = scrollToWhenCommentsLoaded || 0;
+  scrollToWhenCommentsLoaded = 0;
+  function resetScroll() {
+    $byId('esPageColumn').scrollTop = resetTo;
+  }
+  // If doesn't wait some millis before resetting scroll, then, maybe 1 in 5 times, the browser
+  // somehow scrolls to scrollTop = 0 = page top (it does even *before* a 0ms timeout). TyT5WG7AB02
+  // The browser still does — so reset twice: Once soon, looks better. And once more just in case.
+  setTimeout(resetScroll, 40);
+  setTimeout(resetScroll, 160);
 }
 
 
