@@ -293,6 +293,19 @@ chat -
   create, when in no site section:
     - chat-create-from-direct-message.2browsers.test.ts  TyT5FKB2A
 
+embedded comments:
+  post comment:
+          - "all" e2e emb cmts tests
+  click login:
+          - embedded-comments-scroll  TyT2K4DHR49-02   MISSING
+  scroll to #comment-nnn:
+          - embedded-comments-scroll  TyT2K4DHR49-05   MISSING
+  won't auto scroll to last read comment:
+  (usually the blog post more interesting? so don't auto scroll):
+          - embedded-comments-scroll  TyT2K4DHR49   MISSING
+  import with discussion id:
+          - embedded-comments-scroll  TyT2K4DHR49   MISSING
+
 uploads -  (7KFC2)
   upload profile pic:  (8PK2)
   upload jpg, png:

@@ -522,10 +522,14 @@ ReactStore.activateMyself = function(anyNewMe: Myself) {
     addRestrictedCategories(store.me.restrictedCategories, store.currentCategories);
   }
 
+  // Scroll to last reading position?
   const readingProgress = myPageData.readingProgress;
   if (readingProgress && readingProgress.lastViewedPostNr &&
       readingProgress.lastViewedPostNr >= FirstReplyNr) {
-    if (ReactActions.anyAnchorPostNr()) {
+    if (eds.isInEmbeddedCommentsIframe) {
+      // Don't scroll — usually people come back to look at the blog post, not the comments.
+    }
+    else if (ReactActions.anyAnchorPostNr()) {
       // Then other code [7WKBQ28] scrolls to the anchored post instead.
     }
     else setTimeout(function() {
