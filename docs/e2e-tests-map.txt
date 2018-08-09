@@ -28,6 +28,13 @@ create site & forum -
   not too many in total:
   reserved subdomain:
 
+move site to new hostname:
+  move to new,
+  move back:
+          - admin-move-hostname.2browsers.test.ts  TyT6FKAR20P5
+  cannot overwrite other site:
+          - admin-move-hostname.2browsers.test.ts  TyT85RRPJ28 MISSING
+
 create account -
   password:  create-site-all-logins
   google:  create-site-all-logins

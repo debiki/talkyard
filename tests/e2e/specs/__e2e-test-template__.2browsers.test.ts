@@ -58,7 +58,7 @@ describe("some-e2e-test [TyT1234ABC]", () => {
       authorId: forum.members.mallory.id,
       approvedSource: "I give you goldy golden gold coins, glittery glittering!",
     });
-    forum.topics.byMariaCategoryA = builder.addPage({
+    const newPage = builder.addPage({
       id: 'extraPageId',
       folder: '/',
       showId: false,

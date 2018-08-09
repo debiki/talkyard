@@ -212,6 +212,8 @@ function runAllE2eTests {
   runE2eTest s/wdio target/e2e/wdio.2chrome.conf.js    --only admin-review-invalidate-page-deld.2browsers $args
   runE2eTest s/wdio target/e2e/wdio.2chrome.conf.js    --only mod-review.2browsers $args
 
+  runE2eTest s/wdio target/e2e/wdio.2chrome.conf.js    --only admin-move-hostname.2browsers $args
+
   runE2eTest s/wdio target/e2e/wdio.2chrome.conf.js    --only password-login-reset.2browsers $args
   runE2eTest s/wdio target/e2e/wdio.conf.js            --only user-profile-access $args
   runE2eTest s/wdio target/e2e/wdio.conf.js            --only user-profile-change-username $args

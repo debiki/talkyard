@@ -295,10 +295,18 @@ class SiteDao(
         }
       }
       tx.changeCanonicalHostRoleToExtra()
-      try tx.insertSiteHost(SiteHost(newHostname, SiteHost.RoleCanonical))
-      catch {
-        case _: DuplicateHostnameException =>
-          throwForbidden("EdE7FKW20", s"There's already a site with hostname '$newHostname'")
+      hostsNewestFirst.find(_.hostname == newHostname) match {
+        case Some(oldSiteHost: SiteHostInclDetails) =>
+          // We're changing back to one of our old hostnames.
+          val hostAsCanonical = oldSiteHost.copy(role = SiteHost.RoleCanonical)
+          tx.updateHost(hostAsCanonical.noDetails)
+        case None =>
+          // This is a new hostname.
+          try tx.insertSiteHost(SiteHost(newHostname, SiteHost.RoleCanonical))
+          catch {
+            case _: DuplicateHostnameException =>
+              throwForbidden("TyE7FKW20", s"There's already a site with hostname '$newHostname'")
+          }
       }
     }
     uncacheSiteFromMemCache()

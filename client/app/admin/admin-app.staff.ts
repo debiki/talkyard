@@ -954,12 +954,12 @@ const AdvancedSettings = createFactory({
           location.protocol + "//", r.code({ className: 'esA_Ss_S_Hostname' }, canonicalHostname),
           r.div({ className: 'help-block' },
             "This is the address people type in the browser address bar to go to this forum."),
-          Button({ onClick: openHostnameEditor }, "Change address ...")));
+          Button({ onClick: openHostnameEditor, className: 'e_ChAdrB' }, "Change address ...")));
 
     const duplicatingHostsFormGroup = duplicateHostnames.length === 0 ? null :
       r.div({ className: 'form-group has-error' },
         r.label({ className: 'control-label col-sm-3' }, "Duplicate addresses"),
-        r.div({ className: 'col-sm-9 esA_Ss_S-Hostnames esAdmin_settings_setting' },
+        r.div({ className: 'col-sm-9 s_A_Ss_S-Hostnames s_A_Ss_S-Hostnames-Dupl esAdmin_settings_setting' },
           r.pre({}, duplicateHostnames.join('\n')),
           r.span({ className: 'help-block' },
             "This forum is still accessible at the old addresses listed above. " +
@@ -972,12 +972,13 @@ const AdvancedSettings = createFactory({
                 r.a({ href: linkToAdminPageAdvancedSettings(canonicalHostname), target: '_blank' },
                   canonicalHostname, r.span({ className: 'icon-link-ext' })),
                 ", login, and click ", r.b({}, RedirectButtonTitle))
-            : Button({ onClick: this.redirectExtraHostnames }, RedirectButtonTitle)));
+            : Button({ onClick: this.redirectExtraHostnames, className: 'e_RedirOldAddrB' },
+                RedirectButtonTitle)));
 
     const redirectingHostsFormGroup = redirectingHostnames.length === 0 ? null :
       r.div({ className: 'form-group' },
         r.label({ className: 'control-label col-sm-3' }, "Redirecting addresses"),
-        r.div({ className: 'col-sm-9 esA_Ss_S-Hostnames esAdmin_settings_setting' },
+        r.div({ className: 'col-sm-9 s_A_Ss_S-Hostnames s_A_Ss_S-Hostnames-Redr esAdmin_settings_setting' },
           r.span({ className: 'help-block' }, "These old addresses redirect to ",
             canonicalHostnameSamp, " (with status 302 Found):"),
           r.pre({}, redirectingHostnames.join('\n'))));

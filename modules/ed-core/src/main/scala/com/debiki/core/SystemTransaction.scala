@@ -50,6 +50,11 @@ trait SystemTransaction {
 
   def loadSitesWithIds(tenantIds: Seq[SiteId]): Seq[Site]
 
+  def loadSiteByName(name: String): Option[Site]
+
+  def loadSiteByHostname(hostname: String): Option[Site] =
+    lookupCanonicalHost(hostname).flatMap(canonicalHost => loadSite(canonicalHost.siteId))
+
   def loadSite(siteId: SiteId): Option[Site] =
     loadSitesWithIds(Seq(siteId)).headOption
 
@@ -62,6 +67,7 @@ trait SystemTransaction {
 
   /** Returns Some(the-deleted-site) if it existed. */
   def deleteSiteByName(name: String): Option[Site]
+  def deleteSiteById(siteId: SiteId): Boolean
 
   //def deleteSite(siteId: SiteId)
 

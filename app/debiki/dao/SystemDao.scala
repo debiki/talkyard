@@ -164,16 +164,29 @@ class SystemDao(
       if (deleteOldSite) {
         dieUnless(SiteHost.isE2eTestHostname(hostname), "EdE7PK5W8")
         dieUnless(SiteHost.isE2eTestHostname(name), "EdE50K5W4")
-        sysTx.deleteAnyHostname(hostname)
-        val anyDeletedSite = sysTx.deleteSiteByName(name)
-        forgetHostname(hostname)
-        anyDeletedSite foreach { site =>
-          dieIf(site.id > MaxTestSiteId, "EdE20PUJ6", "Trying to delete a *real* site")
-          // + also redisCache.clearThisSite() doesn't work if there are many Redis nodes [0GLKW24].
-          // This won't clear the watchbar cache: memCache.clearSingleSite(site.id)
-          // so instead:
+
+        val anySitesToDelete: Vec[Site] =
+          sysTx.loadSiteByHostname(hostname).toVector ++ sysTx.loadSiteByName(name).toVector
+
+        val anyDeletedHostnames: Seq[String] = anySitesToDelete flatMap { siteToDelete =>
+          dieIf(siteToDelete.id > MaxTestSiteId, "EdE20PUJ6", "Trying to delete a *real* site")
+          // Delete hostnames
+          val deletedHostnames = siteToDelete.hosts.map(_.hostname)
+          dieIf(!deletedHostnames.contains(hostname), "TyE4WKB0RJ7", deletedHostnames)
+          // Delete the site itslf
+          val gotDeleted = sysTx.deleteSiteById(siteToDelete.id)
+          dieIf(!gotDeleted, "TyE2ABK493U4")
+          deletedHostnames
+        }
+
+        anyDeletedHostnames foreach this.forgetHostname
+
+        // + also redisCache.clearThisSite() doesn't work if there are many Redis nodes [0GLKW24].
+        // This won't clear the watchbar cache: memCache.clearSingleSite(site.id)
+        // so instead:
+        if (anyDeletedHostnames.nonEmpty) {
           memCache.clearAllSites()
-          // Redis cache cleared below. (2PKF05Y)
+          // Redis cache cleared below, for the new site only (if overwriting old). (2PKF05Y)
         }
       }
 
@@ -231,7 +244,7 @@ class SystemDao(
       catch {
         case _: DuplicateHostnameException =>
           throwForbidden(
-            "EdE7FKW20", o"""There's already a site with hostname '${newSiteHost.hostname}'. Add
+            "TyE5AKB02ZF", o"""There's already a site with hostname '${newSiteHost.hostname}'. Add
             the URL param deleteOldSite=true to delete it (works for e2e tests only)""")
       }
 

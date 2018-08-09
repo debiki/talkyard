@@ -200,7 +200,10 @@ case class SiteHost(
 case class SiteHostInclDetails(
   hostname: String,
   role: SiteHost.Role,
-  addedAt: When)
+  addedAt: When) {
+
+  def noDetails = SiteHost(hostname, role)
+}
 
 
 /** The result of looking up a site by hostname.

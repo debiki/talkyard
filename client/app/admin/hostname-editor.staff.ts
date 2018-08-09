@@ -62,7 +62,7 @@ const HostnameEditorDialog = createComponent({
       util.openDefaultStupidDialog({
         small: true,
         body: r.span({}, "Address added. Now, go to ",
-          r.a({ href: linkToAdminPageAdvancedSettings(hostname) }, hostname),
+          r.a({ href: linkToAdminPageAdvancedSettings(hostname), className: 'e_NewSiteAddr' }, hostname),
           " and see if it works. If so, then, in the Admin Area, the Advanced section, click ",
           r.b({}, "Redirect old addresses"), "."),  // dupl button name [5KFU2R0]
       });
@@ -101,12 +101,12 @@ const HostnameEditorDialog = createComponent({
           trim: true,
           notRegex: /\s/, notMessage: "No spaces please",
           notRegexTwo: /^https?:/, notMessageTwo: "Don't include http://",
-          notRegexThree: /[:!@\/\?\#]/, notMessageThree: "No chars like: : @ / ! ? #",
+          notRegexThree: /[:!@\/\?\#_]/, notMessageThree: "No chars like: : @ / ! ? # _",
           // Later, could allow bare domains, if the user first reads a bit about
           // the problems with bare domains, + hen must type a 3 letter "password" included
           // in that info, to show that hen has really read it?
-          notRegexFour: /^[^\.]+(\.[^\.]+)?$/, notMessageFour: "Bare domains not allowed",
-          lastRegex: /^(.+\.)*[^\.]+\.[^\.]+$/, lastMessage: "Should look like: forum.example.com",
+          regexFour: /^[^\.]+\.([^\.]+\.[^\.]+.*|localhost(\..*)?)?$/, messageFour: "Bare domains not allowed",
+          lastRegex: /^(.+\.)*[^\.]+\.[^\.]{2,}$/, lastMessage: "Should look like: forum.example.com",
           error: this.state.error, onChangeValueOk: this.onHostnameChanged }));
 
     return (

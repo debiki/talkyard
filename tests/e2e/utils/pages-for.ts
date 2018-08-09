@@ -70,12 +70,16 @@ function pagesFor(browser) {
 
   const api = {
 
-    origin: function() {
+    origin: (): string => {
       return api._findOrigin();
     },
 
+    host: (): string => {
+      const origin = api.origin();
+      return origin.replace(/https?:\/\//, '');
+    },
 
-    _findOrigin: function(): string {
+    _findOrigin: (): string => {
       const url = browser.url().value;
       const matches = url.match(/(https?:\/\/[^\/]+)\//);
       if (!matches) {
@@ -3181,6 +3185,55 @@ function pagesFor(browser) {
           clickAllowGuestLogin: function() {
             api.waitAndClick('#e2eAllowGuestsCB');
           },
+        },
+
+        advanced: {
+          duplHostnamesSelector: '.s_A_Ss_S-Hostnames-Dupl pre',
+          redirHostnamesSelector: '.s_A_Ss_S-Hostnames-Redr pre',
+
+          getHostname: (): string => {
+            return api.waitAndGetVisibleText('.esA_Ss_S_Hostname');
+          },
+
+          getDuplicatingHostnames: (): string => {
+            return api.waitAndGetVisibleText(api.adminArea.settings.advanced.duplHostnamesSelector);
+          },
+
+          isDuplicatingHostnamesVisible: (): string => {
+            return browser.isVisible(api.adminArea.settings.advanced.duplHostnamesSelector);
+          },
+
+          getRedirectingHostnames: (): string => {
+            return api.waitAndGetVisibleText(api.adminArea.settings.advanced.redirHostnamesSelector);
+          },
+
+          isRedirectingHostnamesVisible: (): string => {
+            return browser.isVisible(api.adminArea.settings.advanced.redirHostnamesSelector);
+          },
+
+          clickChangeSiteAddress: () => {
+            api.waitAndClick('.e_ChAdrB');
+          },
+
+          typeNewSiteAddress: (newAddress: string) => {
+            api.waitAndSetValue('.s_A_NewAdrD_HostnI input', newAddress);
+          },
+
+          saveNewSiteAddress: () => {
+            api.waitAndClick('.s_A_NewAdrD .btn-primary');
+          },
+
+          waitForNewSiteRedirectLink: () => {
+            api.waitForVisible('.e_NewSiteAddr');
+          },
+
+          followLinkToNewSiteAddr: () => {
+            api.waitAndClick('.e_NewSiteAddr');
+          },
+
+          clickRedirectOldSiteAddresses: () => {
+            api.waitAndClick('.e_RedirOldAddrB');
+          }
         },
       },
 

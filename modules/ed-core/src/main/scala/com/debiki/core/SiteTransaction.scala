@@ -57,6 +57,7 @@ trait SiteTransaction {
 
   def loadHostsInclDetails(): Seq[SiteHostInclDetails]
   def insertSiteHost(host: SiteHost)
+  def updateHost(host: SiteHost)
   def changeCanonicalHostRoleToExtra()
   def changeExtraHostsRole(newRole: SiteHost.Role)
 
