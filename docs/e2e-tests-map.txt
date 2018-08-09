@@ -16,6 +16,11 @@ someone reproted a bug & it got fixed, better avoid regressions.)
 
 
 full text search:
+  ... lots of places ...
+  staff only page:
+    found by admins:
+            navigation-as-admin.test.ts  TyT7WAAR2J4 TyT85WABR0
+    not found by non-staff:
 
 create site & forum -
   create:  create-site-all-logins
@@ -55,6 +60,12 @@ login -
 
 different users -
   login, logout, switch user:  almost all tests
+
+navigation:
+  from anywhere, to anywhere:
+          - navigation-as-stranger.test.ts  TyT5WKAB024
+          - navigation-as-member.test.ts  TyT2ABKR593
+          - navigation-as-admin.test.ts  TyT7WAAR2J4
 
 unapproved comments -
   embedded + not-embedded -
@@ -139,6 +150,9 @@ forum -
   latest topics -
     all categories:
     only one category:
+    change category:
+            - navigation-as-impl.ts  TyT4BKAFE5GA  MISSING
+            - forum-sort-and-scroll [TyT5ABK2WL4]  MISSING
     show waiting:
     show deleted -
       not/staff: authz-view-as-stranger.test.ts

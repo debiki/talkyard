@@ -12,16 +12,26 @@ s_w-X = wraps an X, i.e., somewhere inside, there's an X. Or "'W'ith a X inside"
 
 In-the-middle or at-a-word-end abbreviations: (but not at the start of the selector)
 Em = email
-B  = button
+B  = button, e.g. ReplyB
 T  = table
 L  = list
 It = list item
-D  = dialog
+D  = dialog,  e.g. AbtUsrD
+Dd = deleted
+Dl = download
 CB = checkbox
+Pw = password, e.g. NewPwI
 U  = user
 Un = username
 FN = full name
 Example: s_Whatever_SaveB = save button. Or s_SomethingElse_EmT = email addresses table.
+
+...    = B means Button
+...WhateverI    = I means Input
+...WhateverL    = L means Link  .. No?  .. means List? see above, hmm
+...WhateverLI   = List item  — no, use "It" instead, see aboe
+...WhateverS    = S means Select (usually react-select)
+...WhateverTA   = TA means textarea  — hmm should be "Ta" instead?
 
 
 esWhatever = old (s_Whatever = new & better)
@@ -197,12 +207,4 @@ esWB_T          = watchbar topic
 p_ShareD        = share dialog, e.g. Twitter, Google etc.
 p_ShareIcon     = Twitter/FB/Google/etc icon to click & share
 
-
-...WhateverB    = B means Button
-...WhateverD    = D means Dialog
-...WhateverI    = I means Input
-...WhateverL    = L means Link
-...WhateverLI   = List item
-...WhateverS    = S means Select (usually react-select)
-...WhateverTA   = TA means textarea
 

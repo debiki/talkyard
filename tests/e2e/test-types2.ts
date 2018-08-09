@@ -348,6 +348,8 @@ interface EmptyTestForum {
   forumPage: any;
   members: {
     owen?: Member;
+    adam?: Member;
+    alice?: Member;
     mons?: Member;
     modya?: Member;
     corax?: Member;

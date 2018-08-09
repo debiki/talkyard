@@ -45,11 +45,15 @@ const NewPasswordPage = createClassAndFactory({
 
   render: function () {
     let oldPasswordInput;
-    if (!this.props.secretKey) {
+    if (!this.props.resetPasswordEmailId) {
       oldPasswordInput = r.p({}, '__ old pwd here, unimplemented [DwE4KGE30] __');
-      // label for="oldPassword">Enter your current password:</label>
+      // label for="oldPassword">Enter your current password:</label>  // I18N
       // input type="password" id="oldPassword" name="oldPassword" value="" class="form-control">
     }
+    else {
+      oldPasswordInput = r.span({ className: 'e_NoOldPwI' });
+    }
+
     return (
       r.form({ method: 'POST' },
         Input({ type: 'hidden', name: 'dw-fi-xsrf', value: this.props.xsrfToken }),
@@ -57,8 +61,8 @@ const NewPasswordPage = createClassAndFactory({
         oldPasswordInput,
         NewPasswordInput({ newPasswordData: this.props, minLength: this.props.minLength,
             setPasswordOk: this.setPasswordOk }),
-        InputTypeSubmit({ disabled: !this.state.passwordOk, value: "Submit",
-            id: 'e2eSubmit' })));
+        InputTypeSubmit({ disabled: !this.state.passwordOk, value: "Submit",  // I18N
+            className: 'e_SbmNewPwB' })));
   }
 });
 

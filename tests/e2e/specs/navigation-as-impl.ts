@@ -11,12 +11,12 @@ const logMessage = logMessageModule.logMessage;
 
 declare let browser: any;
 
-let forum;
+let forum: LargeTestForum;
 
 let usersBrowser;
-let memberName;
+let memberName: string;
 let member;
-let memberIsStaff;
+let memberIsAdmin: boolean;
 
 let idAddress: IdAddress;
 let forumTitle = "Navigation Test Forum";
@@ -53,10 +53,15 @@ function makeWholeSpec(initFn) {
   const initResult = initFn(browser);
   memberName = initResult.member;
   usersBrowser = _.assign(browser, pagesFor(browser));
-  memberIsStaff = initResult.memberIsStaff;
-  forum = buildSite().addLargeForum({ title: forumTitle });
+  memberIsAdmin = initResult.memberIsAdmin;
+  forum = buildSite().addLargeForum({
+    title: forumTitle,
+    members: ['alice', 'maria', 'michael'],
+  });
 
-  describe("Navigation as Someone:", () => {
+  const who = (memberIsAdmin ? "admin " : (memberName ? "member " : "a stranger")) + (memberName || '');
+
+  describe(`Navigation as ${who}:`, () => {
 
     it("import a site", () => {
       idAddress = server.importSiteData(forum.siteData);
@@ -111,6 +116,15 @@ function makeWholeSpec(initFn) {
       });
       addForumTests("4: ");
 
+      if (memberIsAdmin) {
+        it("start in admin area, go to forum via watchbar, test forum", () => {
+          usersBrowser.adminArea.goToLoginSettings();
+          usersBrowser.adminArea.waitAssertVisible();
+          usersBrowser.watchbar.openIfNeeded();
+          usersBrowser.watchbar.goToTopic(forumTitle);
+        });
+        addForumTests("5: ");
+      }
     });
 
     // ------- Test a topic
@@ -143,12 +157,20 @@ function makeWholeSpec(initFn) {
       });
       addMariasTopicTests();
 
-      it("start at search page, go to forum, test forum", () => {
+      it("start at search page, go back to topic, test it", () => {
         usersBrowser.goToSearchPage();
         usersBrowser.topbar.clickBack();
       });
       addMariasTopicTests();
 
+      if (memberIsAdmin) {
+        it("start in admin area, users list, go to topic", () => {
+          usersBrowser.adminArea.goToUsersEnabled();
+          usersBrowser.adminArea.users.waitForLoaded();
+          usersBrowser.watchbar.goToTopic(forum.topics.byMariaCategoryA.title);
+        });
+        addMariasTopicTests();
+      }
     });
 
 
@@ -197,6 +219,14 @@ function makeWholeSpec(initFn) {
       });
       addMariasProfileTets("4: ");
 
+      if (memberIsAdmin) {
+        it("start in admin area, about user page, go to user", () => {
+          usersBrowser.adminArea.goToUser(forum.members.maria);
+          usersBrowser.adminArea.user.waitForLoaded();
+          usersBrowser.adminArea.user.viewPublProfile();
+        });
+        addMariasProfileTets("5: ");
+      }
     });
 
 
@@ -262,6 +292,14 @@ function makeWholeSpec(initFn) {
       });
       addSearchPageTests('CategoryB');
 
+      if (memberIsAdmin) {
+        it("start in admin area, review section, search for staff-only page  TyT85WABR0", () => {
+          usersBrowser.adminArea.goToReview();
+          usersBrowser.topbar.searchFor(forum.topics.byMariaStaffOnlyCat.title);
+        });
+        addSearchPageTests(forum.topics.byMariaStaffOnlyCat.title);
+      }
+
     });
   });
 
@@ -290,7 +328,7 @@ function addForumTests(testTextPrefix) {
   }); */
 
   /*
-  TESTS_MISSING verify topic list sorted correctly. Select a category, verify filters & sorts again.
+  TESTS_MISSING  TyT4BKAFE5GA verify topic list sorted correctly. Select a category, verify filters & sorts again.
   TestForum():
   - Go to /latest. Verify sorted correctly.
   - Cat B: only topics from that cat.
@@ -327,6 +365,9 @@ function addMariasTopicTests() {
 function addMariasProfileTets(testPrefix) {
   const pfx = testPrefix;
 
+  // Maria has created a deleted, an unlisted and a staff-only topics, visible to staff only.
+  const numTopicsAndPosts = memberIsAdmin ? 4 + 3 : 4;
+
   it(pfx + "check username", () => {
     usersBrowser.userProfilePage.waitForName();
     usersBrowser.userProfilePage.assertUsernameIs('maria');
@@ -334,14 +375,14 @@ function addMariasProfileTets(testPrefix) {
 
   it(pfx + "check posts", () => {
     usersBrowser.userProfilePage.activity.posts.waitForPostTextsVisible();
-    usersBrowser.userProfilePage.activity.posts.assertExactly(4);
+    usersBrowser.userProfilePage.activity.posts.assertExactly(numTopicsAndPosts);
     usersBrowser.userProfilePage.activity.posts.assertPostTextVisible(
         forum.topics.byMariaCategoryA.body);
   });
 
   it(pfx + "check navigation to topics, & topics", () => {
     usersBrowser.userProfilePage.activity.switchToTopics({ shallFindTopics: true });
-    usersBrowser.userProfilePage.activity.topics.assertExactly(4);
+    usersBrowser.userProfilePage.activity.topics.assertExactly(numTopicsAndPosts);
     usersBrowser.userProfilePage.activity.topics.assertTopicTitleVisible(
         forum.topics.byMariaCategoryA.title);
   });

@@ -107,7 +107,7 @@ export const UserProfileAdminView = createFactory({
       return r.p({}, "Loading...");
 
     const showPublProfileButton =
-        ExtLinkButton({ href: this.publicProfileLink(), id: 'e2eA_Us_U_ShowPublProfB' },
+        ExtLinkButton({ href: this.publicProfileLink(), className: 'e_VwPblPrfB' },
           "View Public Profile");
 
     const makeRow = (what: string, value, controls, alsoForGroups?: boolean) => {

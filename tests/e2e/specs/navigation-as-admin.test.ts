@@ -4,9 +4,10 @@ import navAsSomeoneTests = require('./navigation-as-impl');
 
 declare let browser: any;
 
-navAsSomeoneTests((browser) => {    // TyT2ABKR593
+navAsSomeoneTests((browser) => {   // TyT7WAAR2J4
   return {
-    member: 'michael',
+    member: 'alice',
+    memberIsAdmin: true,
   };
 });
 

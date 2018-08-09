@@ -1672,8 +1672,12 @@ function pagesFor(browser) {
 
 
     chooseNewPasswordPage: {
-      typeAndSaveNewPassword: (password: string) => {
+      typeAndSaveNewPassword: (password: string, opts: { oldPassword?: string } = {}) => {
         api.chooseNewPasswordPage.typeNewPassword(password);
+        if (!opts.oldPassword) {
+          // This is added, to show this test that there's no type-old-password input field.
+          assert(browser.isExisting('.e_NoOldPwI'));
+        }
         api.chooseNewPasswordPage.submit();
         api.chooseNewPasswordPage.waitUntilPasswordChanged();
       },
@@ -1683,7 +1687,7 @@ function pagesFor(browser) {
       },
 
       submit: () => {
-        api.waitAndClick('#e2eSubmit');
+        api.waitAndClick('.e_SbmNewPwB');
       },
 
       waitUntilPasswordChanged: () => {
@@ -3191,6 +3195,10 @@ function pagesFor(browser) {
 
         waitForLoaded: function() {
           api.waitForVisible('.esA_Us_U_Rows');
+        },
+
+        viewPublProfile: () => {
+          api.waitAndClick('.e_VwPblPrfB');
         },
 
         assertEnabled: function() {

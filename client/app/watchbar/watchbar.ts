@@ -263,15 +263,6 @@ const SingleTopic = createComponent({
     this.refs.actionsDropdown.openDropdown();
   },
 
-  onLinkClick: function(event) {
-    if (this.props.isCurrent) return;
-    const didNavigate = page.Hacks.navigateTo(this._url);
-    if (didNavigate) {
-      event.stopPropagation();
-      event.preventDefault();
-    }
-  },
-
   editChatTitleAndPurpose: function() {
     editor.openToEditChatTitleAndPurpose();
   },
@@ -354,7 +345,7 @@ const SingleTopic = createComponent({
     // need to track num unread, + last visit date too, in the watchbar data.
     return (
         r.li({ className: 'esWB_LI esWB_T-' + flavor + moreClasses, onClick: this.onListItemClick },
-          r.a({ className: 'esWB_T_Link', href: this._url, title: tooltip, onClick: this.onLinkClick },
+          LinkUnstyled({ className: 'esWB_T_Link', href: this._url, title: tooltip },
             r.span({ className: 'esWB_T_Title' }, title)),
           topicActionsButton));
   }

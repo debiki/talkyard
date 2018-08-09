@@ -184,8 +184,9 @@ function runAllE2eTests {
 
   runE2eTest s/wdio target/e2e/wdio.2chrome.conf.js    --only forum-sort-and-scroll.2browsers $args
 
-  runE2eTest s/wdio target/e2e/wdio.conf.js            --only navigation-as-stranger $args
+  runE2eTest s/wdio target/e2e/wdio.conf.js            --only navigation-as-admin $args
   runE2eTest s/wdio target/e2e/wdio.conf.js            --only navigation-as-member $args
+  runE2eTest s/wdio target/e2e/wdio.conf.js            --only navigation-as-stranger $args
 
   runE2eTest s/wdio target/e2e/wdio.conf.js            --only votes-and-best-first $args
 

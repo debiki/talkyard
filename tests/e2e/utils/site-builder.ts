@@ -149,10 +149,13 @@ function buildSite(site?: SiteData) {
         forumPage: <PageToMake> undefined,
         members: {
           owen: site.members[0],
+          adam: _.includes(members, 'adam') ? make.memberAdminAdam() : undefined,
+          alice: _.includes(members, 'alice') ? make.memberAdminAlice() : undefined,
           mons: _.includes(members, 'mons') ? make.memberModeratorMons() : undefined,
           modya: _.includes(members, 'modya') ? make.memberModeratorModya() : undefined,
-          regina: _.includes(members, 'regina') ? make.memberRegina() : undefined,
           corax: _.includes(members, 'corax') ? make.memberCorax() : undefined,
+          regina: _.includes(members, 'regina') ? make.memberRegina() : undefined,
+          trillian: _.includes(members, 'trillian') ? make.memberTrillian() : undefined,
           maria: _.includes(members, 'maria') ? make.memberMaria() : undefined,
           michael: _.includes(members, 'michael') ? make.memberMichael() : undefined,
           mallory: _.includes(members, 'mallory') ? make.memberMallory() : undefined,
@@ -164,10 +167,13 @@ function buildSite(site?: SiteData) {
         categories: <any> {},
       };
 
+      if (forum.members.adam) site.members.push(forum.members.adam);
+      if (forum.members.alice) site.members.push(forum.members.alice);
       if (forum.members.mons) site.members.push(forum.members.mons);
       if (forum.members.modya) site.members.push(forum.members.modya);
       if (forum.members.corax) site.members.push(forum.members.corax);
       if (forum.members.regina) site.members.push(forum.members.regina);
+      if (forum.members.trillian) site.members.push(forum.members.trillian);
       if (forum.members.maria) site.members.push(forum.members.maria);
       if (forum.members.michael) site.members.push(forum.members.michael);
       if (forum.members.mallory) site.members.push(forum.members.mallory);
