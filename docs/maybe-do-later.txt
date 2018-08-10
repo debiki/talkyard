@@ -50,6 +50,13 @@ Performance tests:
  https://github.com/GoogleChrome/puppeteer
 
 
+[onesocket]
+Subscribe to live-updates via a "shared web worker" so each browser gets its own connection,
+rather than each browser tab.  See e.g.:
+https://stackoverflow.com/questions/9554896/sharing-websocket-across-browser-tabs
+websearch for e.g. "chrome all tabs share websocket"
+
+
 [canonical-username]
 [CANONUN] [5WKB23Z]
 Rename theUsername to exactUsername? — it'll be how the username is displayed,

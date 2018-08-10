@@ -249,30 +249,46 @@ RUN apk add --no-cache bash tree curl net-tools gdb
 
 COPY 502.html             /opt/nginx/html/502.html
 COPY 503.html             /opt/nginx/html/503.html
+
+# For development. Another directory gets mounted in prod, see <talkyard-prod-one>/docker-compose.yml.
 COPY sites-enabled-manual /etc/nginx/sites-enabled-manual/
+
 # old, remove once I've edited edm & edc
 COPY server-listen.conf   /etc/nginx/listen.conf
+
+# old, remove, doesn't specify backlog sice — and may do only once, so rather useless.
 COPY server-listen.conf   /etc/nginx/
+
 # old, remove once I've edited edm & edc
 COPY server-ssl.conf      /etc/nginx/ssl-hardening.conf
+
 COPY server-ssl.conf      /etc/nginx/
 COPY http-limits.conf     /etc/nginx/http-limits.conf.template
+
+# old, remove, now done in  <talkyard-prod-one>/conf/sites-enabled-manual/talkyard-servers.conf  instead.
 COPY http-redirect-to-https.conf /etc/nginx/
+
 COPY server-limits.conf   /etc/nginx/server-limits.conf.template
+
 # old, remove once I've edited edm & edc
 COPY server-locations.conf /etc/nginx/vhost.conf
-# old, too
+
+# old, too, remove, when?
 COPY server-locations.conf /etc/nginx/server.conf
+
 COPY server-locations.conf /etc/nginx/server-locations.conf.template
 COPY nginx.conf           /etc/nginx/nginx.conf.template
 
 COPY run-envsubst.sh  /etc/nginx/run-envsubst.sh
 RUN  chmod ugo+x      /etc/nginx/run-envsubst.sh
 # Sync this with the variable list in run-envsubst.sh: [0KW2UY3]  CLEANUP change prefix to TY_
+# Currently, each tab has its own websocket/long-polling connection — and if 40 connections per ip,
+# I sometimes happen to open really many tabs, and requests start failing. Set to >= 60, for now.
+# Later, just one single live-update connection per browser [onesocket].
 ENV \
-    ED_NGX_LIMIT_CONN_PER_IP=40 \
+    ED_NGX_LIMIT_CONN_PER_IP=60 \
     ED_NGX_LIMIT_CONN_PER_SERVER=10000 \
-    ED_NGX_LIMIT_REQ_PER_IP=20 \
+    ED_NGX_LIMIT_REQ_PER_IP=30 \
     ED_NGX_LIMIT_REQ_PER_IP_BURST=200 \
     ED_NGX_LIMIT_REQ_PER_SERVER=200 \
     ED_NGX_LIMIT_REQ_PER_SERVER_BURST=2000 \
@@ -292,8 +308,8 @@ EXPOSE 80 443
 # Works without:  chown root:root /tmp/cores  &&  ulimit -c unlimited
 # Place this:  kill(getpid(), SIGSEGV);   (from: https://stackoverflow.com/a/1657244/694469 )
 # to crash and generate a core dump at some specific location.
-# (This also core dumbps, but cannot backtrace the dump: `raise(SIGABRT)`)
-# Inspect like so:  # gdb /usr/sbin/nginx-debug /tmp/cores/core.nginx-debug.17  # for example
+# (This also core dumps, but cannot backtrace the dump: `raise(SIGABRT)`)
+# Inspect e.g. like so:  # gdb /usr/sbin/nginx-debug /tmp/cores/core.nginx-debug.17
 # then type `bt` or `bt f` (backtrace full).
 #
 # Make the container privileged, in docker-compose.yml for this to work. [NGXCORED] [NGXSEGFBUG]
