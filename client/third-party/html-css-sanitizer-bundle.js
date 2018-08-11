@@ -3190,6 +3190,7 @@ html4.ATTRIBS = {
   '*::translate': 0,
   'a::accesskey': 0,
   'a::coords': 0,
+  'a::download': 1,
   'a::href': 1,
   'a::hreflang': 0,
   'a::name': 7,
@@ -4911,8 +4912,10 @@ function googleCajaSanitizeHtml(htmlTextUnsafe, allowClassAndIdAttr,
       // Custom HTML pages
       'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
       // HTML5
-      'aside', 'bdi', 'details', 'figcaption', 'figure', 'mark', 'rp',
-      'rt', 'ruby', 'summary', 'time', 'wbr',
+      // (skip for now: dialog)
+      'article', 'aside', 'bdi', 'details', 'figcaption', 'figure',
+      'footer', 'header', 'main', 'mark', 'meter', 'nav', 'progress', 'rp',
+      'rt', 'ruby', 'section', 'summary', 'time', 'wbr',
       // Media
       'img', 'video', 'source', 'track',  // skip for now though: 'audio'
       // Custom forms
@@ -4923,7 +4926,7 @@ function googleCajaSanitizeHtml(htmlTextUnsafe, allowClassAndIdAttr,
     // doesn't work, not supported by sanitize-html (https://github.com/punkave/sanitize-html/issues/4)
     // Currently (Aug 30 2017) *all* data- attrs here are FB/Twitter/Google Like button stuff.
     allowedAttributes: {
-      a: ['href', 'name', 'target', 'rel'],
+      a: ['href', 'name', 'target', 'rel', 'download'],
       img: ['width', 'height', 'src'],
       video: ['width', 'height', 'src', 'controls', 'autoplay', 'loop'],
       source: ['src', 'type'],
