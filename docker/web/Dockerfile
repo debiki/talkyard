@@ -119,7 +119,9 @@ ENV CONFIG "\
 	# --with-compat \
 	# asynchronous file I/O (AIO) on FreeBSD and Linux
 	--with-file-aio \
-	--with-http_v2_module \
+	# Currently doesn't work, with Lua. Causes *runtime* errors. Comment out, so instead there'll be
+	# errors directly when people test the config via  nginx -t.
+	#--with-http_v2_module \
 	\
 	# Disable stuff, and add Lua:
 	# won't ever need to show any auto index? If adding it back, add 'autoindex off' here: [5KUP293]
