@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2017 Kaj Magnus Lindberg
+ * Copyright (c) 2014-2018 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -131,7 +131,7 @@ export function startMainReactRoot(reactRenderMethodName: 'render' | 'hydrate') 
         const forumRootSlash = section.path;
         const forumDefaultPath = forumRootSlash + (store.settings.forumMainView || RoutePathLatest);
 
-        // This redirects e.g. '/forum/' and '/forum' to '/forum/latest':
+        // This redirects e.g. '/forum/' and '/forum' to '/forum/latest':  [5ABKR02]
         sectionsAndPages.push(Redirect({ path: forumRootSlash, to: forumDefaultPath, exact: true }));
 
         const fc = forum.ForumComponent;

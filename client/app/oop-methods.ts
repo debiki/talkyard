@@ -422,7 +422,7 @@ export function page_canChangeCategory(page: Page): boolean {
 
 export function page_mostRecentPostNr(page: Page): number {
   // BUG not urgent. COULD incl the max post nr in Page, so even if not yet loaded,
-  // we'll know its nr, and can load and scroll to it, from loadAndScrollToAnyUrlAnchorPost().
+  // we'll know its nr, and can load and scroll to it, from doUrlFragmentAction().
   let maxNr = -1;
   _.values(page.postsByNr).forEach((post: Post) => {  // COULD use _.reduce instead
     maxNr = Math.max(post.nr, maxNr);

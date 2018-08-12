@@ -101,6 +101,7 @@ class EdAppComponents(appLoaderContext: ApplicationLoader.Context)
     new _root_.controllers.ForumController(cc, context),
     new _root_.controllers.PageController(cc, context),
     new _root_.controllers.ReplyController(cc, context),
+    new _root_.controllers.DraftsController(cc, context),
     new _root_.controllers.CustomFormController(cc, context),
     new ed.plugins.utx.UsabilityTestingExchangeController(cc, context),
     new _root_.controllers.VoteController(cc, context),

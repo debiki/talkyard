@@ -366,6 +366,15 @@ start with uppercase — because then it's easy to tell if we're dealing with an
 or not. For example, `FN` (full name) is an abbreviation. But `By` is not (since it continues with
 lowercase letters).
 
+Another example: `s_Dfs_Df_Ttl` — this means the title (Ttl), of a draft (Df),
+in a list of drafts (Dfs).` You'll find abbreviations like Ttl and Df, in
+[bem-blocks.txt](./docs/bem-blocks.txt).
+
+<!-- I think these short names actually improve readability, once you know what they means.
+Seeing `s_Dfs_Df_Ttl` in the source code — that's brief and quick to read, doesn't steal
+the attention from other things nearby you're probably more inteested in.
+(too chatty, skip this)  -->
+
 For stuff with otherwise no class or id, and that should be clicked in end-to-end tests,
 we use classes only, and the prefix `e_` (instead of `s_` or `t_`).
 

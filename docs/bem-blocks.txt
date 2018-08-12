@@ -14,10 +14,13 @@ In-the-middle or at-a-word-end abbreviations: (but not at the start of the selec
 Em = email
 B  = button, e.g. ReplyB
 T  = table
+Ttl = title
+Txt = text
 L  = list
 It = list item
 D  = dialog,  e.g. AbtUsrD
 Dd = deleted
+Df = draft
 Dl = download
 CB = checkbox
 Pw = password, e.g. NewPwI
@@ -66,6 +69,8 @@ s_CD            = category dialog: create/edit categories
 s_CD_Sec_PoPs   = category dialog, security tab, list of perms-on-pages
 
 esCB            = context bar (the right sidebar)
+
+s_Dfs_Df_Ttl    = the title (Ttl), of a draft (Df), in a list of drafts (Dfs).
 
 esE             = The editor, no, esE = old, now s_E:
 s_E             = The editor

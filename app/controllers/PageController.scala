@@ -54,6 +54,7 @@ class PageController @Inject()(cc: ControllerComponents, edContext: EdContext)
     val titleText = (body \ "pageTitle").as[String]
     val bodyText = (body \ "pageBody").as[String]
     val showId = (body \ "showId").asOpt[Boolean].getOrElse(true)
+    val deleteDraftNr = (body \ "deleteDraftNr").asOpt[DraftNr]
 
     val bodyTextAndHtml = dao.textAndHtmlMaker.forBodyOrComment(bodyText,
       allowClassIdDataAttrs = true, followLinks = pageRole.shallFollowLinks)
@@ -84,7 +85,8 @@ class PageController @Inject()(cc: ControllerComponents, edContext: EdContext)
       "EdE5KW20A")
 
     val pagePath = dao.createPage(pageRole, pageStatus, anyCategoryId, anyFolder,
-      anySlug, titleTextAndHtml, bodyTextAndHtml, showId, request.who, request.spamRelatedStuff)
+      anySlug, titleTextAndHtml, bodyTextAndHtml, showId, deleteDraftNr = deleteDraftNr,
+      request.who, request.spamRelatedStuff)
 
     OkSafeJson(Json.obj("newPageId" -> pagePath.pageId.getOrDie("DwE8GIK9")))
   }

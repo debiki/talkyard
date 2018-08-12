@@ -201,15 +201,20 @@ export function cloneEventTargetRect(event): Rect {
   return cloneRect(event.target.getBoundingClientRect());
 }
 
-export function event_isCtrlEnter(event) {
+export function event_isEscape(event): boolean {
+  var code = event.which || event.charCode || event.keyCode;
+  return code === KeyCodeEscape;
+}
+
+export function event_isCtrlEnter(event): boolean {
   return event.ctrlKey && event_isEnter(event);
 }
 
-export function event_isShiftEnter(event) {
+export function event_isShiftEnter(event): boolean {
   return event.shiftKey && event_isEnter(event);
 }
 
-export function event_isEnter(event) {
+export function event_isEnter(event): boolean {
   // In Chrome on Windows, Ctrl + Enter supposedly results in key code = Line Feed, not Enter.
   // Because Windows expect a line feed char apparently —
   // see: https://bugs.chromium.org/p/chromium/issues/detail?id=79407
@@ -218,8 +223,9 @@ export function event_isEnter(event) {
   return code === KeyCodeEnter || code === KeyCodeLineFeed;
 }
 
-var KeyCodeEnter = 13;
-var KeyCodeLineFeed = 10;
+const KeyCodeEnter = 13;
+const KeyCodeLineFeed = 10;
+const KeyCodeEscape = 27;
 
 
 //------------------------------------------------------------------------------

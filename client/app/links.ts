@@ -84,7 +84,7 @@ export function linkToUsersNotfs(userIdOrUsername: UserId | string): string {
 }
 
 export function linkToSendMessage(userIdOrUsername: UserId | string): string {
-  return linkToUserProfilePage(userIdOrUsername) + '/activity/posts#writeMessage';
+  return linkToUserProfilePage(userIdOrUsername) + '/activity/posts#composeDirectMessage';
 }
 
 export function linkToInvitesFromUser(userId: UserId): string {
@@ -95,8 +95,41 @@ export function linkToUsersEmailAddrs(userIdOrUsername: UserId | string): string
   return linkToUserProfilePage(userIdOrUsername) + '/preferences/account';
 }
 
+export function linkToMyDraftsEtc(store: Store): string {
+  return linkToMyProfilePage(store) + '/drafts-etc';
+}
+
 export function linkToMyProfilePage(store: Store): string {
   return origin() + UsersRoot + store.me.id;
+}
+
+
+export function linkToDraftSource(draft: Draft,
+      // CLEAN_UP incl these in `draft` instead?
+      // and rename from Draft.replyToNnn to Draft.postNr, postId, pageId, and DraftLocator.what  ?
+      // where  what: DraftForWhat ?
+      pageId?: PageId, postNr?: PostNr): string {
+  const locator = draft.forWhat;
+  const andDraftNrParam = '&draftNr=' + draft.draftNr;
+  if (locator.replyToPageId) {
+    return origin() + '/-' + locator.replyToPageId +
+        '#post-' + locator.replyToPostNr + FragActionAndReplyToPost + andDraftNrParam;
+  }
+  else if (locator.editPostId) {
+    return origin() + '/-' + pageId +
+        '#post-' + postNr + FragActionAndEditPost + andDraftNrParam;
+  }
+  else if (locator.messageToUserId) {
+    return linkToSendMessage(locator.messageToUserId) + andDraftNrParam;
+  }
+  else if (locator.newTopicCategoryId) {
+    // If [subcomms]: BUG should go to the correct sub community url path.
+    // For now, incl /latest, otherwise there'll be a redirect [5ABKR02]? so #frag-action lost.
+    return '/latest' + FragActionHashComposeTopic + andDraftNrParam;
+  }
+  else {
+    die("Unknown draft source [TyE5WADK204]")
+  }
 }
 
 

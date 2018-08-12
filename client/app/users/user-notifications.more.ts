@@ -37,7 +37,12 @@ export const UserNotifications = createFactory({
     this.loadNotifications(user.id);
   },
 
+  componentWillUnmount: function() {
+    this.isGone = true;
+  },
+
   componentWillReceiveProps: function(nextProps: any) {
+    // Dupl code, also in view drafts. [7WUBKZ0]
     const me: Myself = this.props.store.me;
     const user: MemberInclDetails = this.props.user;
     const nextLoggedInUser: Myself = nextProps.store.me;
@@ -49,6 +54,7 @@ export const UserNotifications = createFactory({
   },
 
   loadNotifications: function(userId: UserId) {
+    // Dupl code, also in view drafts. [7WUBKZ0]
     const me: Myself = this.props.store.me;
     if (me.id !== userId && !isStaff(me)) {
       this.setState({
@@ -58,6 +64,7 @@ export const UserNotifications = createFactory({
       return;
     }
     Server.loadNotifications(userId, Date.now(), (notfs: Notification[]) => {
+      if (this.isGone) return;
       this.setState({ notfs: notfs });
     }, () => {
       // Clear state.notfs, in case we're no longer allowed to view the notfs.
@@ -66,6 +73,7 @@ export const UserNotifications = createFactory({
   },
 
   render: function() {
+    // Dupl code, also in view notfs. [7WUBKZ0]
     if (this.state.error)
       return (
         r.p({ className: 'e_UP_Notfs_Err' },

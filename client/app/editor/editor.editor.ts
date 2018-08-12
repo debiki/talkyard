@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2017 Kaj Magnus Lindberg
+ * Copyright (c) 2015-2018 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -28,6 +28,18 @@ let FileAPI;
 
 let theEditor: any;
 const WritingSomethingWarningKey = 'WritingSth';
+
+enum DraftStatus {
+  NothingHappened = 1,
+  EditsUndone = 2,
+  Saved = 3,
+  Deleted = 4,
+  NeedNotSave = 4,
+  ShouldSave = 5,
+  SavingSmall = 6,
+  SavingBig = 7,
+  Deleting = 8,
+}
 
 export const ReactTextareaAutocomplete = reactCreateFactory(window['ReactTextareaAutocomplete']);
 
@@ -78,11 +90,13 @@ export const Editor = createComponent({
       store: debiki2.ReactStore.allData(),
       visible: false,
       text: '',
-      draft: '',
+      title: '',
+      draft: null,
+      draftStatus: DraftStatus.NothingHappened,
       safePreviewHtml: '',
       replyToPostNrs: [],
-      editingPostId: null,
-      editingPostUid: null,
+      editingPostId: null,   // ??? id or nr ??
+      editingPostUid: null,   // ??? id  ??
       messageToUserIds: [],
       newForumTopicCategoryId: null,
       newPageRole: null,
@@ -100,6 +114,7 @@ export const Editor = createComponent({
 
   componentWillMount: function() {
     this.updatePreview = _.debounce(this.updatePreview, 333);
+    this.saveDraftDebounced = _.debounce(this.saveDraftNow, 2022);
   },
 
   componentDidMount: function() {
@@ -254,14 +269,17 @@ export const Editor = createComponent({
             // (There's a sanitizer for this — for everything in the editor.)
           "<!-- Uploaded file name:  " + file.name + "  -->\n" +
           linkHtml,
-        });
-        // Scroll down so people will see the new line we just appended.
-        scrollToBottom(this.refs.rtaTextarea.textareaRef);
-        this.updatePreview(() => {
-          // This happens to early, not sure why. So wait for a while.
-          setTimeout(() => {
-            scrollToBottom(this.refs.preview);
-          }, 800);
+          draftStatus: DraftStatus.ShouldSave,
+        }, () => {
+          this.saveDraftDebounced();
+          // Scroll down so people will see the new line we just appended.
+          scrollToBottom(this.refs.rtaTextarea.textareaRef);
+          this.updatePreview(() => {
+            // This happens to early, not sure why. So wait for a while.
+            setTimeout(() => {
+              scrollToBottom(this.refs.preview);
+            }, 800);
+          });
         });
       },
     });
@@ -316,13 +334,16 @@ export const Editor = createComponent({
 
     let link;
     if (isImage) {
-      link = '<img src="' + url + '"></img>';
+      // <img> is a void element, shouldn't be any </img> close tag.
+      link = `<img src="${url}">`;
     }
     else if (isVideo) {
       link = '<video width="490" height="400" controls src="' + url + '"></video>';
     }
     else {
-      link = '<a href="' + url + '">' + file.name + '</a> (' + prettyBytes(file.size) + ')';
+      // Unfortunately, download="the-file-name" won't work if a cdn is in use: needs to be same origin.
+      // Can maybe add some http origin header?
+      link = `<a download="${file.name}" href="${url}">${file.name}</a> (${prettyBytes(file.size)})`;
     }
     return link;
   },
@@ -330,6 +351,8 @@ export const Editor = createComponent({
   toggleWriteReplyToPost: function(postNr: number, inclInReply: boolean, anyPostType?: number) {
     if (this.alertBadState('WriteReply'))
       return;
+
+    const store: Store = this.state.store;
 
     // Insert postNr into the list of posts we're replying to — or remove it, if present. (I.e. toggle.)
     let postNrs = this.state.replyToPostNrs;
@@ -363,30 +386,39 @@ export const Editor = createComponent({
     this.setState({
       anyPostType: postType,
       replyToPostNrs: postNrs,
-      text: this.state.text || this.state.draft || makeDefaultReplyText(this.state.store, postNrs),
+      text: this.state.text || makeDefaultReplyText(store, postNrs),
     });
     if (!postNrs.length) {
-      this.closeEditor();
+      this.saveDraftCloseEditor();
     }
+
+    const draftLocator: DraftLocator = {
+      replyToPageId: store.currentPageId,
+      replyToPostNr: postNrs[0], // for now
+    };
+
     let writingWhat = WritingWhat.ReplyToNotOriginalPost;
     if (_.isEqual([BodyNr], postNrs)) writingWhat = WritingWhat.ReplyToOriginalPost;
     else if (_.isEqual([NoPostId], postNrs)) writingWhat = WritingWhat.ChatComment;
-    this.loadGuidelines(writingWhat);
+
+    this.loadDraftAndGuidelines(draftLocator, writingWhat);
   },
 
   editPost: function(postId: number, onDone?) {
     if (this.alertBadState())
       return;
-    Server.loadCurrentPostText(postId, (text: string, postUid: number, revisionNr: number) => {
+    Server.loadTextAndDraft(postId, (response: LoadTextAndDraftResponse) => {
       if (this.isGone) return;
       this.showEditor();
+      const draft: Draft | undefined = response.draft;
       this.setState({
         anyPostType: null,
         editingPostId: postId,
-        editingPostUid: postUid,
-        editingPostRevisionNr: revisionNr,
-        text: text,
+        editingPostUid: response.postUid,
+        editingPostRevisionNr: response.currentRevisionNr,
+        text: draft ? draft.text : response.currentText,
         onDone: onDone,
+        draft,
       });
       this.updatePreview();
     });
@@ -400,34 +432,25 @@ export const Editor = createComponent({
     // But other topics should be placed in a category.
     dieIf(role !== PageRole.PrivateChat && !categoryId, 'EsE8PE2B');
     this.showEditor();
-    const text = this.state.text || this.state.draft || '';
+    const text = this.state.text || '';
+
     this.setState({
       anyPostType: null,
       newForumTopicCategoryId: categoryId,
       newPageRole: role,
       text: text
     });
-    this.loadGuidelines(WritingWhat.NewPage, categoryId, role);
+
+    const draftLocator: DraftLocator = {
+      newTopicCategoryId: categoryId,
+    };
+
+    this.loadDraftAndGuidelines(draftLocator, WritingWhat.NewPage, role);
     this.updatePreview();
   },
 
-  openToEditChatTitleAndPurpose: function() {
-    if (this.alertBadState())
-      return;
-    Server.loadCurrentPostText(BodyNr, (text: string, postUid: number, revisionNr: number) => {
-      if (this.isGone) return;
-      this.showEditor();
-      // TODO edit title too
-      this.setState({
-        anyPostType: null,
-        editingPostId: BodyNr,
-        editingPostUid: postUid,
-        editingPostRevisionNr: revisionNr,
-        text: text,
-        onDone: null,
-      });
-      this.updatePreview();
-    });
+  openToEditChatTitleAndPurpose: function() {   // RENAME to  openToEditChatPurpose only (not title)
+    this.editPost(BodyNr);
   },
 
   openToWriteChatMessage: function(text: string, onDone?) {
@@ -451,7 +474,10 @@ export const Editor = createComponent({
       text: '',
       newPageRole: PageRole.FormalMessage,
     });
-    this.loadGuidelines(WritingWhat.NewPage, null, PageRole.FormalMessage);
+    const draftLocator: DraftLocator = {
+      messageToUserId: userId,
+    };
+    this.loadDraftAndGuidelines(draftLocator, WritingWhat.NewPage, PageRole.FormalMessage);
     this.showAndFadeOutBackdrop();
   },
 
@@ -513,10 +539,11 @@ export const Editor = createComponent({
     return false;
   },
 
-  loadGuidelines: function(writingWhat: WritingWhat, categoryId?: number, pageRole?: PageRole) {
+  loadDraftAndGuidelines: function(draftLocator: DraftLocator, writingWhat: WritingWhat,
+        pageRole?: PageRole) {
     const store: Store = ReactStore.allData();
     const page: Page = store.currentPage;
-    const theCategoryId = categoryId || page.categoryId;
+    const theCategoryId = draftLocator.newTopicCategoryId || page.categoryId;
     const thePageRole = pageRole || page.pageRole;
     const currentGuidelines = this.state.guidelines;
     if (currentGuidelines &&
@@ -526,22 +553,26 @@ export const Editor = createComponent({
       return;
 
     // Currently there are no drafts, only guidelines.
-    Server.loadDraftAndGuidelines(writingWhat, theCategoryId, thePageRole, guidelinesSafeHtml => {
-      if (!guidelinesSafeHtml) {
-        this.setState({ guidelines: null });
-        return;
-      }
-      const guidelinesHash = hashStringToNumber(guidelinesSafeHtml);
-      const hiddenGuidelinesHashes = getFromLocalStorage('dwHiddenGuidelinesHashes') || {};
-      const isHidden = hiddenGuidelinesHashes[guidelinesHash];
-      this.setState({
-        guidelines: {
+    Server.loadDraftAndGuidelines(draftLocator, writingWhat, theCategoryId, thePageRole,
+        (guidelinesSafeHtml, draft?: Draft) => {
+      let guidelines = undefined;
+      if (guidelinesSafeHtml) {
+        const guidelinesHash = hashStringToNumber(guidelinesSafeHtml);
+        const hiddenGuidelinesHashes = getFromLocalStorage('dwHiddenGuidelinesHashes') || {};
+        const isHidden = hiddenGuidelinesHashes[guidelinesHash];
+        guidelines = {
           writingWhat: writingWhat,
           categoryId: theCategoryId,
           pageRole: thePageRole,
           safeHtml: guidelinesSafeHtml,
           hidden: isHidden,
-        }
+        };
+      }
+      this.setState({
+        draft,
+        text: draft ? draft.text : '',
+        title: draft ? draft.title : '',
+        guidelines,
       });
     });
   },
@@ -585,8 +616,8 @@ export const Editor = createComponent({
 
   onTitleEdited: function(event) {
     utils.PageUnloadAlerter.addReplaceWarning(WritingSomethingWarningKey, t.e.WritingSomethingWarning);
-    this.setState({ title: event.target.value });
-    this.updatePreview();
+    const title = event.target.value;
+    this._handleEditsImpl(title, this.state.text);
   },
 
   isTitleOk: function() {
@@ -598,8 +629,17 @@ export const Editor = createComponent({
 
   onTextEdited: function(event) {
     utils.PageUnloadAlerter.addReplaceWarning(WritingSomethingWarningKey, t.e.WritingSomethingWarning);
-    const newText = event.target.value;
-    this.setState({ text: newText });
+    const text = event.target.value;
+    this._handleEditsImpl(this.state.title, text);
+  },
+
+  _handleEditsImpl: function(title: string | undefined, text: string | undefined) {
+    const draft: Draft = this.state.draft;
+    const draftStatus = draft && draft.text === text && draft.title === title
+        ? DraftStatus.EditsUndone
+        : DraftStatus.ShouldSave;
+    this.setState({ title, text, draftStatus },
+        draftStatus === DraftStatus.ShouldSave ? this.saveDraftDebounced : undefined);
     this.updatePreview();
   },
 
@@ -609,12 +649,18 @@ export const Editor = createComponent({
       event.preventDefault();
       this.saveStuff();
     }
+    if (event_isEscape(event)) {
+      this.saveDraftCloseEditor();
+    }
   },
 
   onKeyPress: function(event) {
     if (event_isCtrlEnter(event)) {
       event.preventDefault();
       this.saveStuff();
+    }
+    if (event_isEscape(event)) {
+      this.saveDraftCloseEditor();
     }
   },
 
@@ -656,7 +702,100 @@ export const Editor = createComponent({
       });
     }
     this.callOnDoneCallback(false);
-    this.closeEditor();
+    this.saveDraftCloseEditor();
+  },
+
+  makeEmptyDraft: function(): Draft | undefined {
+    const locator: DraftLocator = {};
+    const store: Store = this.state.store;
+    let replyType: PostType;
+    if (this.state.editingPostUid) {
+      locator.editPostId = this.state.editingPostUid;
+    }
+    else if (this.state.replyToPostNrs && this.state.replyToPostNrs.length) {
+      locator.replyToPageId = store.currentPageId;
+      locator.replyToPostNr = this.state.replyToPostNrs[0]; // for now just pick the first one
+      replyType = PostType.Normal;
+    }
+    else if (this.state.messageToUserIds && this.state.messageToUserIds.length) {
+      locator.messageToUserId = this.state.messageToUserIds[0];  // for now
+    }
+    else if (this.state.newForumTopicCategoryId) {
+      locator.newTopicCategoryId = this.state.newForumTopicCategoryId;
+    }
+    else {
+      // Editor probably closed, state gone.
+      return;
+    }
+    const draft: Draft = {
+      byUserId: store.me.id,
+      draftNr: NoDraftNr,
+      forWhat: locator,
+      createdAt: getNowMs(),
+      newTopicType: this.state.newPageRole,
+      replyType: this.state.anyPostType || replyType,
+      title: '',
+      text: '',
+    };
+    return draft;
+  },
+
+  saveDraftNow: function(callbackThatClosesEditor) {
+    const draftStatus: DraftStatus = this.state.draftStatus;
+    if (draftStatus <= DraftStatus.NeedNotSave) {
+      // Need not save.
+      if (callbackThatClosesEditor) {
+        callbackThatClosesEditor();
+      }
+      return;
+    }
+
+    const text: string = (this.state.text || '').trim();
+    const title: string = (this.state.title || '').trim();
+    const oldDraft: Draft | undefined = this.state.draft;
+
+    // If empty. Delete any old draft.
+    if (!text.trim() && !title.trim()) {
+      if (oldDraft) {
+        console.debug("Deleting draft...");
+        this.setState({
+          // When closing editor, after having deleted text, it's totally uninteresting that the
+          // draft gets deleted? (cannot show a modal dialog about that)
+          // Otherwise, a bit useful with a non-obtrusive small info about that.
+          draftStatus: callbackThatClosesEditor ?
+              DraftStatus.NothingHappened : DraftStatus.Deleting,
+        });
+        Server.deleteDrafts([oldDraft.draftNr], () => {
+          console.debug("...Deleted draft.");
+          this.setState({
+            draft: null,
+            draftStatus: DraftStatus.Deleted,
+          });
+          if (callbackThatClosesEditor) {
+            callbackThatClosesEditor();
+          }
+        });
+      }
+      return;
+    }
+
+    const draftOldOrEmpty: Draft = oldDraft || this.makeEmptyDraft();
+    const draftToSave = { ...draftOldOrEmpty, text, title };
+    this.setState({
+      draftStatus: callbackThatClosesEditor ? DraftStatus.SavingBig : DraftStatus.SavingSmall,
+    });
+
+    console.debug(`Saving draft: ${JSON.stringify(draftToSave)}`);
+    Server.upsertDraft(draftToSave, (draftWithNr: Draft) => {
+      console.debug("...Saved draft.");
+      this.setState({
+        draft: draftWithNr,
+        draftStatus: DraftStatus.Saved,
+      });
+      if (callbackThatClosesEditor) {
+        callbackThatClosesEditor();
+      }
+    });
   },
 
   onSaveClick: function() {
@@ -695,7 +834,7 @@ export const Editor = createComponent({
 
   saveEdits: function() {
     this.throwIfBadTitleOrText(null, t.e.PleaseDontDeleteAll);
-    Server.saveEdits(this.state.editingPostId, this.state.text, () => {
+    Server.saveEdits(this.state.editingPostId, this.state.text, this.anyDraftNr(), () => {
       this.callOnDoneCallback(true);
       this.clearTextAndClose();
     });
@@ -703,7 +842,8 @@ export const Editor = createComponent({
 
   saveNewPost: function() {
     this.throwIfBadTitleOrText(null, t.e.PleaseWriteSth);
-    Server.saveReply(this.state.replyToPostNrs, this.state.text, this.state.anyPostType, () => {
+    Server.saveReply(this.state.replyToPostNrs, this.state.text,
+          this.state.anyPostType, this.anyDraftNr(), () => {
       this.callOnDoneCallback(true);
       this.clearTextAndClose();
     });
@@ -716,7 +856,8 @@ export const Editor = createComponent({
       pageRole: this.state.newPageRole,
       pageStatus: 'Published',
       pageTitle: this.state.title,
-      pageBody: this.state.text
+      pageBody: this.state.text,
+      deleteDraftNr: this.anyDraftNr(),
     };
     Server.createPage(data, (newPageId: string) => {
       this.clearTextAndClose();
@@ -725,7 +866,7 @@ export const Editor = createComponent({
   },
 
   postChatMessage: function() {
-    Server.insertChatMessage(this.state.text, () => {
+    Server.insertChatMessage(this.state.text, this.anyDraftNr(), () => {
       this.callOnDoneCallback(true);
       this.clearTextAndClose();
     });
@@ -735,10 +876,15 @@ export const Editor = createComponent({
     this.throwIfBadTitleOrText(t.e.PleaseWriteMsgTitle, t.e.PleaseWriteMsg);
     const state = this.state;
     Server.startPrivateGroupTalk(state.title, state.text, this.state.newPageRole,
-        state.messageToUserIds, (pageId: PageId) => {
+        state.messageToUserIds, this.anyDraftNr(), (pageId: PageId) => {
       this.clearTextAndClose();
       window.location.assign('/-' + pageId);
     });
+  },
+
+  anyDraftNr: function(): DraftNr | undefined {
+    const draft: Draft | undefined = this.state.draft;
+    if (draft) return draft.draftNr;
   },
 
   throwIfBadTitleOrText: function(titleErrorMessage, textErrorMessage) {
@@ -806,7 +952,11 @@ export const Editor = createComponent({
     }, 1);
   },
 
-  closeEditor: function() {
+  saveDraftCloseEditor: function() {
+    this.saveDraftNow(this._closeImpl);
+  },
+
+  _closeImpl: function() {
     utils.PageUnloadAlerter.removeWarning(WritingSomethingWarningKey);
     this.returnSpaceAtBottomForEditor();
     this.setState({
@@ -823,7 +973,7 @@ export const Editor = createComponent({
       title: '',
       showTitleErrors: false,
       showTextErrors: false,
-      draft: _.isNumber(this.state.editingPostId) ? '' : this.state.text,
+      draft: null,
       safePreviewHtml: '',
       onDone: null,
       guidelines: null,
@@ -846,8 +996,14 @@ export const Editor = createComponent({
   },
 
   clearTextAndClose: function() {
-    this.setState({ text: '', draft: null, replyToPostNrs: [], anyPostType: undefined });
-    this.closeEditor();
+    this.setState({
+      text: '',
+      draft: null,
+      draftStatus: DraftStatus.NothingHappened,
+      replyToPostNrs: [],
+      anyPostType: undefined,
+    });
+    this.saveDraftCloseEditor();
   },
 
   showEditHistory: function() {
@@ -931,6 +1087,7 @@ export const Editor = createComponent({
       titleInput =
           r.input({ className: 'title-input esEdtr_titleEtc_title form-control' + titleErrorClass,
               type: 'text', ref: 'titleInput', tabIndex: 1, onChange: this.onTitleEdited,
+              value: this.state.title,
               placeholder: t.e.TitlePlaceholder });
 
       if (this.state.newForumTopicCategoryId && !isPrivateGroup &&
@@ -1143,6 +1300,24 @@ export const Editor = createComponent({
         !this.state.showMaximized ? t.e.Maximize : (
           this.state.splitHorizontally ? t.e.ToNormal : t.e.TileHorizontally);
 
+    let draftStatusText;
+    const draft: Draft = this.state.draft;
+    const draftNr: number | string = draft ? draft.draftNr : '';
+    switch (this.state.draftStatus) {
+      case DraftStatus.NothingHappened: break;
+      case DraftStatus.EditsUndone: draftStatusText = "Unchanged."; break;
+      case DraftStatus.Saved: draftStatusText = `Draft ${draftNr} saved.`; break;
+      case DraftStatus.Deleted: draftStatusText = `Draft ${draftNr} deleted.`; break;
+      case DraftStatus.ShouldSave: draftStatusText = `Will save draft ${draftNr} ...`; break;
+      case DraftStatus.SavingSmall: draftStatusText = `Saving draft ${draftNr} ...`; break;  // I18N
+      // UX COULD show in modal dialog, and an "Ok I'll wait until you're done" button, and a Cancel button.
+      case DraftStatus.SavingBig: draftStatusText = `Saving draft ${draftNr} ...`; break;
+      case DraftStatus.Deleting: draftStatusText = `Deleting draft ${draftNr} ...`; break;
+    }
+
+    const draftStatus = !draftStatusText ? null :
+        r.span({ className: 's_E_DraftStatus' }, draftStatusText);
+
     return (
       r.div({ style: styles },
         guidelinesModal,
@@ -1155,7 +1330,7 @@ export const Editor = createComponent({
             r.div({ className: 'editor-area', style: editorStyles },
               r.div({ className: 'editor-area-after-borders' },
                 r.div({ className: 'dw-doing-what' },
-                  doingWhatInfo, showGuidelinesBtn),
+                  doingWhatInfo, showGuidelinesBtn, draftStatus),
                 r.div({ className: 'esEdtr_titleEtc' },
                   // COULD use https://github.com/marcj/css-element-queries here so that
                   // this will wrap to many lines also when screen wide but the editor is narrow.

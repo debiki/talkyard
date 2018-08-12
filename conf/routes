@@ -183,6 +183,14 @@ POST  /-/leave-page             controllers.PageController.leavePage
 POST  /-/reply                  controllers.ReplyController.handleReply
 POST  /-/chat                   controllers.ReplyController.handleChatMessage
 
+POST  /-/upsert-draft           controllers.DraftsController.upsertDraft
+#GET   /-/load-draft-for-topic   controllers.DraftsController.loadDraftForNewTopic(categoryId: Int)
+#GET   /-/load-draft-for-dir-msg controllers.DraftsController.loadDraftForDirectMessage(toUserId: Int)
+#GET   /-/load-draft-for-reply   controllers.DraftsController.loadDraftForReply(pageId, postNr: Int)
+#GET   /-/load-draft-for-edits   controllers.DraftsController.loadDraftForEdits(postId: Int)
+GET   /-/list-drafts            controllers.DraftsController.listDrafts(userId: Int)
+POST  /-/delete-drafts          controllers.DraftsController.deleteDrafts
+
 POST  /-/submit-custom-form-as-json-reply controllers.CustomFormController.handleJsonReply
 POST  /-/submit-custom-form-as-new-topic  controllers.CustomFormController.handleNewTopic
 
@@ -197,6 +205,7 @@ POST  /-/flag                   controllers.Application.flag
 GET   /-/load-draft-and-guidelines controllers.EditController.loadDraftAndGuidelines(writingWhat, categoryId: Option[Int], pageRole)
 GET   /-/edit                   controllers.EditController.loadCurrentText(pageId, postNr: Int)
 POST  /-/edit                   controllers.EditController.edit
+GET   /-/open-editor            controllers.EditController.openEditor(toEditPostId: Int, draftNr: Option[Int])
 POST  /-/edit-title-save-settings controllers.PageTitleSettingsController.editTitleSaveSettings
 GET   /-/onebox                 controllers.EditController.onebox(url)
 POST  /-/change-post-type       controllers.EditController.changePostType

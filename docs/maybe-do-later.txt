@@ -99,3 +99,32 @@ all my old posts?").
 [one-db-writer]
 Prevent all PostgreSQL serialization errors, by doing all writes from a single actor, and
 use message passing & async replies?
+
+
+[change-author]
+Make it possible to change the author of a post to someone else. Or change edited-by to another user id.
+
+[assign-posts]
+Assign topics and posts to people.
+Why assign a post? Because someone might ask a good question, in a longer discussion, and nice
+to know & remember who will try to answer it, later.
+
+[whispers]
+(Much later. Not within -18.)
+Inspired by Discourse. Read a bit more about how they do it.
+Add whisper_to_user_id  post3 column. Default is to staff.
+Already added:  drafts3.reply_whisper_to_user_id  column.
+Trusted members? (full memers?) can whisper to any group (or person?) not only to staff.
+  E.g. whisper to a group of category moderators for dealing with issues in that category.
+Or a staff member whispers to the question asker, in a support topic: the staff asks for tech
+  details; then the maybe new-member can reply, and no one else sees hens tech details.
+  (The UX would need to make it very clear that no one but staff can see the reply.)
+Staff always see all whispers.
+All whisper post nrs have negative ids? And are never incld when rendering & caching a page.
+Only loaded lazily when the current user happen to be some kind of staff (e.g. global mod,
+or spceific category moderator) or for some reason may see the whisper.
+Do not add any special post type, for whispers. The whisper_to_user_id field is enough? If adds, then, always show reply-to-op whispers as Progr type message?
+A whole topic cannot be a whisper. Instead, group direct-message the staff, or category mods.
+Don't bump page if whisper post. Do send notfs to receivers though (e.g. staff members).
+A user's first few whispers to non-staff: Maybe should never be shown, until reviewed by staff. High risk for weird messages?
+

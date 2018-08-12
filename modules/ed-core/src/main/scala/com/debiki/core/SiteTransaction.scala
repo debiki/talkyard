@@ -121,6 +121,13 @@ trait SiteTransaction {
     }): _*)
   }
 
+  def nextDraftNr(userId: UserId): DraftNr
+  def upsertDraft(draft: Draft)
+  def deleteDraft(userId: UserId, draftNr: DraftNr): Boolean
+  def loadDraftByNr(userId: UserId, draftNr: DraftNr): Option[Draft]
+  def loadDraftsByLocator(userId: UserId, draftLocator: DraftLocator): immutable.Seq[Draft]
+  def listDraftsRecentlyEditedFirst(userId: UserId): immutable.Seq[Draft]
+
   def nextPostId(): PostId
   def insertPost(newPost: Post)
   def updatePost(newPost: Post)
@@ -146,6 +153,7 @@ trait SiteTransaction {
   }
 
   // Returns recently active pages first.
+  def loadPagePostNrsByPostIds(postIds: Iterable[PostId]): Map[PostId, PagePostNr]
   def loadPageIdsUserIsMemberOf(userId: UserId, onlyPageRoles: Set[PageRole]): immutable.Seq[PageId]
   def loadReadProgress(userId: UserId, pageId: PageId): Option[ReadingProgress]
   def loadReadProgressAndIfHasSummaryEmailed(userId: UserId, pageId: PageId)

@@ -59,7 +59,8 @@ trait PostsDao {
 
 
   def insertReply(textAndHtml: TextAndHtml, pageId: PageId, replyToPostNrs: Set[PostNr],
-        postType: PostType, byWho: Who, spamRelReqStuff: SpamRelReqStuff)
+        postType: PostType, deleteDraftNr: Option[DraftNr],
+        byWho: Who, spamRelReqStuff: SpamRelReqStuff)
         : InsertPostResult = {
 
     val authorId = byWho.id
@@ -81,6 +82,7 @@ trait PostsDao {
     quickCheckIfSpamThenThrow(byWho, textAndHtml, spamRelReqStuff)
 
     val (newPost, author, notifications, anyReviewTask) = readWriteTransaction { tx =>
+      deleteDraftNr.foreach(nr => tx.deleteDraft(byWho.id, nr))
       insertReplyImpl(textAndHtml, pageId, replyToPostNrs, postType, byWho, spamRelReqStuff,
         now, authorId, tx)
     }
@@ -357,8 +359,8 @@ trait PostsDao {
     * messages in between — then we'll append this new message to the old one, instead
     * of creating a new different chat message.
     */
-  def insertChatMessage(textAndHtml: TextAndHtml, pageId: PageId, byWho: Who,
-        spamRelReqStuff: SpamRelReqStuff): InsertPostResult = {
+  def insertChatMessage(textAndHtml: TextAndHtml, pageId: PageId, deleteDraftNr: Option[DraftNr],
+        byWho: Who, spamRelReqStuff: SpamRelReqStuff): InsertPostResult = {
     val authorId = byWho.id
 
     if (textAndHtml.safeHtml.trim.isEmpty)
@@ -419,6 +421,8 @@ trait PostsDao {
           anyReviewTask.foreach(tx.upsertReviewTask)
           (post, notfs)
       }
+
+      deleteDraftNr.foreach(nr => tx.deleteDraft(byWho.id, nr))
       (post, author, notfs)
     }
 
@@ -584,8 +588,8 @@ trait PostsDao {
 
   /** Edits the post, if authorized to edit it.
     */
-  def editPostIfAuth(pageId: PageId, postNr: PostNr, who: Who, spamRelReqStuff: SpamRelReqStuff,
-        newTextAndHtml: TextAndHtml) {
+  def editPostIfAuth(pageId: PageId, postNr: PostNr, deleteDraftNr: Option[DraftNr],
+        who: Who, spamRelReqStuff: SpamRelReqStuff, newTextAndHtml: TextAndHtml) {
     val editorId = who.id
 
     // Note: Farily similar to appendChatMessageToLastMessage() just above. [2GLK572]
@@ -837,6 +841,8 @@ trait PostsDao {
 
       val notfs = notfGenerator(tx).generateForEdits(postToEdit, editedPost, Some(newTextAndHtml))
       tx.saveDeleteNotifications(notfs)
+
+      deleteDraftNr.foreach(nr => tx.deleteDraft(editorId, nr))
 
       val oldMeta = page.meta
       var newMeta = oldMeta.copy(version = oldMeta.version + 1)

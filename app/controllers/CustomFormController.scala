@@ -61,7 +61,7 @@ class CustomFormController @Inject()(cc: ControllerComponents, edContext: EdCont
       "EdE2TE4A0")
 
     request.dao.insertReply(textAndHtml, pageId, Set.empty, PostType.CompletedForm,
-        request.whoOrUnknown, request.spamRelatedStuff)
+        deleteDraftNr = None, request.whoOrUnknown, request.spamRelatedStuff)
     Ok
   }
 
@@ -85,7 +85,8 @@ class CustomFormController @Inject()(cc: ControllerComponents, edContext: EdCont
 
     val pagePath = request.dao.createPage(pageType, PageStatus.Published, Some(category.id),
       anyFolder = None, anySlug = None, titleTextAndHtml, bodyTextAndHtml,
-      showId = true, request.who, request.spamRelatedStuff)
+      showId = true, deleteDraftNr = None,
+      request.who, request.spamRelatedStuff)
 
     OkSafeJson(Json.obj("newPageId" -> pagePath.pageId.getOrDie("DwE8GIK9")))
   }

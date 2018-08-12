@@ -370,6 +370,16 @@ object RateLimits {
   }
 
 
+  object DraftSomething extends RateLimits {
+    val key = "Drft"
+    val what = "edited or deleted your drafts too quickly"
+    def maxPerFifteenSeconds = 15
+    def maxPerFifteenMinutes: Int = Unlimited
+    def maxPerDay: Int = Unlimited
+    def maxPerDayNewUser: Int = Unlimited
+  }
+
+
   object MarkNotfAsSeen extends RateLimits {
     val key = "NnSn"
     val what = "marked too many notifications as seen"

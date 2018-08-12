@@ -144,6 +144,8 @@ export const PostActions = createComponent({
       // Toggle highlighting first, because it'll be cleared later if the
       // editor is closed, and then we don't want to toggle it afterwards.
       const inclInReply = $h.toggleClass(eventTarget, 'dw-replying');
+
+      // Dupl code [5AKBR30W02]
       if (eds.isInEmbeddedCommentsIframe) {
         window.parent.postMessage(
             JSON.stringify(['editorToggleReply', [post.nr, inclInReply]]), eds.embeddingOrigin);

@@ -133,7 +133,7 @@ class PageTitleSettingsController @Inject()(cc: ControllerComponents, edContext:
     // Update page title.
     val newTextAndHtml = dao.textAndHtmlMaker.forTitle(newTitle)
 
-    request.dao.editPostIfAuth(pageId = pageId, postNr = PageParts.TitleNr,
+    request.dao.editPostIfAuth(pageId = pageId, postNr = PageParts.TitleNr, deleteDraftNr = None,
       request.who, request.spamRelatedStuff, newTextAndHtml)
 
     // Load old section page id before changing it.

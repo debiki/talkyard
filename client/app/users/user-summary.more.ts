@@ -16,6 +16,7 @@
  */
 
 /// <reference path="../slim-bundle.d.ts" />
+declare var moment: any;
 
 //------------------------------------------------------------------------------
    namespace debiki2.users {

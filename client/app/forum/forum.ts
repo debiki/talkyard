@@ -1250,7 +1250,7 @@ const TopicRow = createComponent({
 
     const orderOffset: OrderOffset = this.props.orderOffset;
 
-    const activeAt = Link({ to: topic.url + '#scrollToLatest' },
+    const activeAt = Link({ to: topic.url + '#scrollToLatestPost' },
         prettyLetterTimeAgo(
           orderOffset.sortOrder === TopicSortOrder.CreatedAt
             ? topic.createdAtMs

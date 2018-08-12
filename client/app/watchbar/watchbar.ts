@@ -263,7 +263,7 @@ const SingleTopic = createComponent({
     this.refs.actionsDropdown.openDropdown();
   },
 
-  editChatTitleAndPurpose: function() {
+  editChatTitleAndPurpose: function() {   // RENAME to editChatPurpose only
     editor.openToEditChatTitleAndPurpose();
   },
 

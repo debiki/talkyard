@@ -48,6 +48,7 @@ class GroupTalkController @Inject()(cc: ControllerComponents, edContext: EdConte
     val pageRoleInt = (body \ "pageRole").as[Int]
     val pageRole = PageRole.fromInt(pageRoleInt) getOrElse throwBadRequest(
       "EsE4KGP0W", "No page role specified")
+    val deleteDraftNr = (body \ "deleteDraftNr").asOpt[DraftNr]
 
     throwBadRequestIf(!pageRole.isPrivateGroupTalk, "EsE5PK0R", s"Not private group talk: $pageRole")
     throwBadRequestIf(request.isGuest, "EsE6PGKB2", "Guests may not send private messages")
@@ -72,7 +73,7 @@ class GroupTalkController @Inject()(cc: ControllerComponents, edContext: EdConte
 
     val pagePath = dao.startGroupTalk(
       titleTextAndHtml, bodyTextAndHtml, pageRole, toUserIds, sentByWho = request.who,
-      request.spamRelatedStuff)
+      request.spamRelatedStuff, deleteDraftNr)
 
     OkSafeJson(JsString(pagePath.pageId.getOrDie("DwE5JKY2")))
   }

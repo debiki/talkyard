@@ -229,7 +229,7 @@ function renderPageInBrowser() {
   steps.push(function() {
     registerEventHandlersFireLoginOut();
     debiki2.utils.startDetectingMouse();
-    debiki2.ReactActions.loadAndScrollToAnyUrlAnchorPost();
+    debiki2.ReactActions.doUrlFragmentAction();
   });
 
   steps.push(function() {

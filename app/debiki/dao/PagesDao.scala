@@ -53,7 +53,7 @@ trait PagesDao {
 
   def createPage(pageRole: PageRole, pageStatus: PageStatus, anyCategoryId: Option[CategoryId],
         anyFolder: Option[String], anySlug: Option[String], titleTextAndHtml: TextAndHtml,
-        bodyTextAndHtml: TextAndHtml, showId: Boolean, byWho: Who,
+        bodyTextAndHtml: TextAndHtml, showId: Boolean, deleteDraftNr: Option[DraftNr], byWho: Who,
         spamRelReqStuff: SpamRelReqStuff,
         altPageId: Option[AltPageId] = None, embeddingUrl: Option[String] = None): PagePath = {
 
@@ -95,6 +95,9 @@ trait PagesDao {
       val notifications = notfGenerator(tx).generateForNewPost(
         PageDao(thePageId, tx), bodyPost, Some(bodyTextAndHtml))
       tx.saveDeleteNotifications(notifications)
+
+      deleteDraftNr.foreach(nr => tx.deleteDraft(byWho.id, nr))
+
       pagePath
     }
 

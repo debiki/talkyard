@@ -33,6 +33,7 @@ declare const TitleNr;
 declare const BodyNr: number;
 declare const BodyNrStr: string;
 declare const FirstReplyNr;
+declare const NoDraftNr;
 
 declare let NoUserId;
 declare const SystemUserId;
@@ -177,7 +178,8 @@ declare namespace debiki2 {
   function canUseLocalStorage(): boolean;
   var getFromLocalStorage: any;
   var putInLocalStorage: any;
-  var event_isCtrlEnter: any;
+  function event_isCtrlEnter(event): boolean;
+  function event_isEscape(event): boolean;
   function page_isPrivateGroup(pageRole: PageRole): boolean;
   function pageRole_iconClass(pageRole: PageRole): string;
 
@@ -220,6 +222,7 @@ declare namespace debiki2 {
   function origin(): string;
   function linkToPageId(pageId: PageId): string;
   function linkToPostNr(pageId: PageId, postNr: PostNr): string;
+  function linkToDraftSource(draft: Draft, pageId?: PageId, postNr?: PostNr): string;
   function linkToNotificationSource(notf: Notification): string;
   function linkToAdminPageAdvancedSettings(hostname?: string): string;
   function linkToRedirToAboutCategoryPage(categoryId: CategoryId): string;
@@ -234,6 +237,7 @@ declare namespace debiki2 {
   function linkToAdminPage(): string;
   function linkToReviewPage(): string;
   function externalLinkToAdminHelp(): string;
+  function linkToMyDraftsEtc(store: Store): string;
   function linkToMyProfilePage(store: Store): string;
   function linkToUpload(origins: Origins, uploadsPath: string): string;
   function linkToResetPassword(): string;

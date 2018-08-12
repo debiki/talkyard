@@ -18,6 +18,7 @@
 type PageId = string;
 type PostId = number;
 type PostNr = number;
+type DraftNr = number;
 type PageVersion = number;
 type CategoryId = number;
 type SiteId = String;
@@ -53,6 +54,35 @@ type ErrorPolicy = number | void;
 
 enum MagicAnchor {
   ScrollToLatest = 1,
+}
+
+
+/**
+ * The URL #hash-fragment can tell us to do different things. Examples:
+ *
+ * #post-123: We'll scroll to post 123.
+ *
+ * #post-456&replyToPost&draftNr=7 — we'll scroll to post 456,
+ * open the editor to reply, and load draft nr 7.
+ *
+ * /-/users/someone#composeDirectMessage[&draftNr=234] — we go to user @someone,
+ * open the editor to write a direct message, and, if draft nr specified,
+ * we load draft nr 234.
+ */
+interface FragAction {
+  type: FragActionType;
+  postNr?: PostNr;
+  draftNr?: DraftNr;
+}
+
+
+enum FragActionType {
+  ScrollToPost = 11,
+  ScrollToLatestPost = 12,
+  ReplyToPost = 21,
+  EditPost = 22,
+  ComposeForumTopic = 31,
+  ComposeDirectMessage = 32,
 }
 
 
@@ -143,6 +173,30 @@ enum FlagType {
   Spam = 51,
   Inapt = 52,
   Other = 53,
+}
+
+
+interface DraftLocator {
+  newTopicCategoryId?: number;
+  messageToUserId?: UserId;
+  editPostId?: PostId;
+  replyToPageId?: PageId;
+  replyToPostNr?: PostNr;
+}
+
+
+interface Draft {
+  byUserId: UserId;
+  draftNr: number;
+  forWhat: DraftLocator;
+  createdAt: WhenMs;
+  lastEditedAt?: WhenMs;
+  autoPostAt?: WhenMs;
+  deletedAt?: WhenMs;
+  newTopicType?: PageRole;
+  replyType?: PostType;
+  title?: string;
+  text: string;
 }
 
 
@@ -1330,6 +1384,20 @@ interface UserAccountLoginMethod {
   email?: string;
 }
 
+
+// COULD also load info about whether the user may apply and approve the edits.
+interface LoadTextAndDraftResponse {
+  currentText: string;
+  postUid: string; // CLEAN_UP RENAME to just postId.
+  currentRevisionNr: number;
+  draft?: Draft;
+}
+
+interface ListDraftsResponse {
+  drafts: Draft[];
+  pagePostNrsByPostId: { [postId: string]: [PageId, PostNr] };
+  pageTitlesById: { [pageId: string]: string };
+}
 
 
 // ----- Public API

@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2012-2013 Kaj Magnus Lindberg (born 1979)
+ * Copyright (c) 2012-2013, 2018 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -47,6 +47,7 @@ class ReplyController @Inject()(cc: ControllerComponents, edContext: EdContext)
     val text = (body \ "text").as[String].trim
     val postType = PostType.fromInt((body \ "postType").as[Int]) getOrElse throwBadReq(
       "DwE6KG4", "Bad post type")
+    val deleteDraftNr = (body \ "deleteDraftNr").asOpt[DraftNr]
 
     throwBadRequestIf(text.isEmpty, "EdE85FK03", "Empty post")
     throwForbiddenIf(requester.isGroup, "EdE4GKRSR1", "Groups may not reply")
@@ -87,8 +88,9 @@ class ReplyController @Inject()(cc: ControllerComponents, edContext: EdContext)
 
     // For now, don't follow links in replies. COULD rel=follow if all authors + editors = trusted.
     val textAndHtml = dao.textAndHtmlMaker.forBodyOrComment(text, followLinks = false)
+
     val result = dao.insertReply(textAndHtml, pageId = pageId, replyToPostNrs,
-      postType, request.who, request.spamRelatedStuff)
+      postType, deleteDraftNr, request.who, request.spamRelatedStuff)
 
     var patchWithNewPageId: JsObject = result.storePatchJson
     if (newPagePath ne null) {
@@ -103,6 +105,8 @@ class ReplyController @Inject()(cc: ControllerComponents, edContext: EdContext)
     import request.{body, dao}
     val pageId = (body \ "pageId").as[PageId]
     val text = (body \ "text").as[String].trim
+    val deleteDraftNr = (body \ "deleteDraftNr").asOpt[DraftNr]
+
 
     throwBadRequestIf(text.isEmpty, "EsE0WQCB", "Empty chat message")
 
@@ -122,7 +126,7 @@ class ReplyController @Inject()(cc: ControllerComponents, edContext: EdContext)
     // Don't follow links in chat mesages — chats don't work with search engines anyway.
     val textAndHtml = dao.textAndHtmlMaker.forBodyOrComment(text, followLinks = false)
     val result = dao.insertChatMessage(
-      textAndHtml, pageId = pageId, request.who, request.spamRelatedStuff)
+      textAndHtml, pageId = pageId, deleteDraftNr, request.who, request.spamRelatedStuff)
 
     OkSafeJson(result.storePatchJson)
   }
@@ -161,7 +165,8 @@ class ReplyController @Inject()(cc: ControllerComponents, edContext: EdContext)
     dao.createPage(pageRole, PageStatus.Published,
       anyCategoryId = Some(categoryId), anyFolder = slug, anySlug = folder,
       titleTextAndHtml = dao.textAndHtmlMaker.forTitle(s"Comments for $embeddingUrl"),
-      bodyTextAndHtml = dao.textAndHtmlMaker.forBodyOrComment(s"Comments for: $embeddingUrl"), showId = true,
+      bodyTextAndHtml = dao.textAndHtmlMaker.forBodyOrComment(s"Comments for: $embeddingUrl"),
+      showId = true, deleteDraftNr = None,
       Who.System, request.spamRelatedStuff, altPageId = altPageId, embeddingUrl = Some(embeddingUrl))
   }
 

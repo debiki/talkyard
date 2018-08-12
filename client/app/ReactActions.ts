@@ -439,50 +439,140 @@ export function loadAndShowPost(postNr: PostNr, showChildrenToo?: boolean, callb
  * If #post-X is specified in the URL, ensures all posts leading up to
  * and including X have been loaded. Then scrolls to X.
  */
-export function loadAndScrollToAnyUrlAnchorPost(newHash?: string) {
-  const magicAnchor = anyMagicAnchor(newHash);
-  let anchorPostNr = anyAnchorPostNr(newHash);   // [7WKBQ28]
+export function doUrlFragmentAction(newHashFragment?: string) {
+  const fragAction = findUrlFragmentAction(newHashFragment);
+  if (!fragAction)
+    return;
 
-  if (!anchorPostNr && !magicAnchor) {
-    // No #post-X in the URL.
+  console.debug(`Doing url #action ${fragAction.type}...`);
+
+  const postNr: PostNr | undefined = fragAction.postNr;
+  if (!postNr) {
+    switch (fragAction.type) {
+      case FragActionType.ComposeDirectMessage:
+        // For now, instead, see [4JABRF0].
+        break;
+      case FragActionType.ComposeForumTopic:
+        Server.loadEditorAndMoreBundles(function() {
+          const categoryId = 2; // for now
+          const pageRole = PageRole.Discussion; // for now
+          debiki2.editor.editNewForumPage(categoryId, pageRole);
+        });
+        break;
+      default:
+        die('TyE5AKBR3');
+    }
+    // Don't re-do the action, if going to another page, and then back.
+    location.hash = '';
     return;
   }
 
-  if (magicAnchor === MagicAnchor.ScrollToLatest) {
-    // Lookup most recent post nr. Is this a HACK? To access the store here?
-    const store: Store = ReactStore.allData();
-    if (!store.currentPage) return;
-    anchorPostNr = page_mostRecentPostNr(store.currentPage);
-  }
-
-  const postElem = $byId('post-' + anchorPostNr);
-  if (!postElem) {
-    loadAndShowPost(anchorPostNr, undefined, () => markAnyNotificationAsSeen(anchorPostNr));
+  const postElem = $byId(`post-${postNr}`);
+  if (postElem) {
+    debiki.internal.showAndHighlightPost(postElem);
+    doAfterLoadedAnyPost();
   }
   else {
-    debiki.internal.showAndHighlightPost(postElem);
-    markAnyNotificationAsSeen(anchorPostNr);
+    // (Will highlight it, right?)
+    loadAndShowPost(postNr, undefined, doAfterLoadedAnyPost);
+  }
+
+  function doAfterLoadedAnyPost() {
+    // If going to another page, and then back — just scroll to the post, this time, but
+    // don't open the editor. (Doing that, feels unexpected and confusing, to me. If
+    // navigating away, then, probably one is done editing? Or has maybe submitted
+    // the post already.)
+    location.hash = '#post-' + postNr;
+
+    markAnyNotificationAsSeen(postNr);
+    switch (fragAction.type) {
+      case FragActionType.ReplyToPost:
+        // CLEAN_UP Dupl code [5AKBR30W02]
+        // Break out debiki2.ReactActions.editReplyTo(postNr)  action?
+        if (eds.isInEmbeddedCommentsIframe) {
+          window.parent.postMessage(
+              JSON.stringify(['editorToggleReply', [postNr, true]]), eds.embeddingOrigin);
+        }
+        else {
+          // Normal = incl in draft + url?
+          Server.loadEditorAndMoreBundles(function() {
+            debiki2.editor.toggleWriteReplyToPost(postNr, true, PostType.Normal);
+          });
+        }
+        break;
+      case FragActionType.EditPost:
+        debiki2.ReactActions.editPostWithNr(postNr);
+        break;
+      case FragActionType.ScrollToLatestPost:
+      case FragActionType.ScrollToPost:
+        // Already scrolled to it.
+        break;
+      default:
+        die('TyE2ABR67');
+    }
   }
 }
 
 
-function anyMagicAnchor(hash?: string): MagicAnchor {
-  const theHash = firstDefinedOf(hash, location.hash);
-  if (theHash === '#scrollToLatest') return MagicAnchor.ScrollToLatest;
-  return undefined;
+export function findUrlFragmentAction(hashFragment?: string): FragAction | undefined {
+  const theHashFrag = firstDefinedOf(hashFragment, location.hash);
+
+  if (theHashFrag.indexOf(FragActionHashScrollLatest) >= 0) {
+    // Lookup most recent post nr. Is this a HACK? To access the store here?
+    const store: Store = ReactStore.allData();
+    const result = !store.currentPage ? undefined : {
+      type: FragActionType.ScrollToLatestPost,
+      postNr: page_mostRecentPostNr(store.currentPage),
+    };
+    return result;
+  }
+
+  if (theHashFrag.indexOf(FragActionHashComposeTopic) >= 0)
+    return { type: FragActionType.ComposeForumTopic };
+
+  if (theHashFrag.indexOf(FragActionHashComposeMessage) >= 0)
+    return { type: FragActionType.ComposeDirectMessage };
+
+  // The rest of the actions are for a specific post.
+
+  const postNr: PostNr | undefined = findPostNrInHashFragment(theHashFrag);
+  if (!postNr)
+    return undefined;
+
+  let actionType;
+  if (theHashFrag.indexOf(FragActionAndEditPost) >= 0) {
+    actionType = FragActionType.EditPost;
+  }
+  else if (theHashFrag.indexOf(FragActionAndReplyToPost) >= 0) {
+    actionType = FragActionType.ReplyToPost;
+  }
+  else {
+    actionType = FragActionType.ScrollToPost;
+  }
+
+  const draftNr: DraftNr | undefined = findDraftNrInHashFragment(theHashFrag);
+
+  return { type: actionType, postNr, draftNr };
 }
 
 
-export function anyAnchorPostNr(hash?: string): number {
+function findPostNrInHashFragment(theHash: string): PostNr | undefined {
   // AngularJS (I think it is) somehow inserts a '/' at the start of the hash. I'd
   // guess it's Angular's router that messes with the hash. I don't want the '/' but
   // don't know how to get rid of it, so simply ignore it.
-  const theHash = firstDefinedOf(hash, location.hash);
   const hashIsPostId = /#post-\d+/.test(theHash);
   const hashIsSlashPostId = /#\/post-\d+/.test(theHash);
   if (hashIsPostId) return parseInt(theHash.substr(6, 999));
   if (hashIsSlashPostId) return parseInt(theHash.substr(7, 999));
-  return undefined;
+}
+
+
+function findDraftNrInHashFragment(hashFragment: string): DraftNr | undefined {
+  const matches = /&draftNr=(\d+)/.exec(hashFragment);
+  if (matches) {
+    const draftNrStr = matches[1];
+    return parseInt(draftNrStr);
+  }
 }
 
 
@@ -709,7 +799,7 @@ export function maybeLoadAndShowNewPage(store: Store,
     loadAndShowNewPage(newUrlPath, history);
   }
   else if (isThisPage && gotNewHash) {
-    ReactActions.loadAndScrollToAnyUrlAnchorPost(newLocation.hash);
+    ReactActions.doUrlFragmentAction(newLocation.hash);
   }
 }
 

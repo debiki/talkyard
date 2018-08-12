@@ -322,6 +322,8 @@ object EdHttp {
       case Some("") => None
       case x => x
     }
+    def asWhen: When = When.fromMillis(underlying.as[Long])
+    def asOptWhen: Option[When] = underlying.asOpt[Long].map(When.fromMillis)
   }
 
 

@@ -32,6 +32,7 @@ const TitleNr = 0;
 const BodyNr = 1;
 const BodyNrStr = '1';
 const FirstReplyNr = 2;
+const NoDraftNr = 0;
 
 let NoUserId = 0;
 const SystemUserId = 1;
@@ -100,5 +101,10 @@ const ServerSideWindowWidthLaptop = 1200;
 
 const OriginRegex = /^https?:\/\/[^/]+/i;  // CLEAN_UP this regex not in use everywhere, some dupl regexs
 
+const FragActionAndReplyToPost = '&replyToPost';
+const FragActionAndEditPost = '&editPost';
+const FragActionHashComposeTopic = '#composeForumTopic';
+const FragActionHashComposeMessage = '#composeDirectMessage';
+const FragActionHashScrollLatest = '#scrollToLatestPost';
 
 // vim: fdm=marker et ts=2 sw=2 tw=0 fo=r list

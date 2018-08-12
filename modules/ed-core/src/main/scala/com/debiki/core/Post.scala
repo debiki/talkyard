@@ -195,6 +195,56 @@ object PostType {
 }
 
 
+case class DraftLocator(
+  newTopicCategoryId: Option[CategoryId] = None,
+  messageToUserId: Option[UserId] = None,
+  editPostId: Option[PostId] = None,
+  replyToPageId: Option[PageId] = None,
+  replyToPostNr: Option[PostNr] = None) {
+
+  private def isForNumThings: Int =
+    newTopicCategoryId.oneIfDefined +
+    messageToUserId.oneIfDefined +
+    editPostId.oneIfDefined +
+    replyToPageId.oneIfDefined
+
+  require(isForNumThings == 1, s"Is for $isForNumThings things: $this [TyEBDDRFTLOC1]")
+  require(replyToPageId.isDefined == replyToPostNr.isDefined, "TyEBDDRFTLOC2")
+
+  def isNewTopic: Boolean = newTopicCategoryId.isDefined || messageToUserId.isDefined
+}
+
+
+case class Draft(
+  byUserId: UserId,
+  draftNr: DraftNr,
+  forWhat: DraftLocator,
+  createdAt: When,
+  lastEditedAt: Option[When] = None,
+  autoPostAt: Option[When] = None,
+  deletedAt: Option[When] = None,
+  newTopicType: Option[PageRole] = None,
+  replyType: Option[PostType] = None,
+  title: String,
+  text: String) {
+
+  require(draftNr >= 1 || draftNr == NoDraftNr, "TyEBDDRFT01")
+  require(lastEditedAt.isEmpty || createdAt.millis <= lastEditedAt.get.millis, "TyEBDDRFT03")
+  require(autoPostAt.isEmpty || createdAt.millis <= autoPostAt.get.millis, "TyEBDDRFT04")
+  require(deletedAt.isEmpty || createdAt.millis <= deletedAt.get.millis, "TyEBDDRFT05")
+  require(lastEditedAt.isEmpty || deletedAt.isEmpty ||
+      lastEditedAt.get.millis <= deletedAt.get.millis, "TyEBDDRFT06")
+  require(autoPostAt.isEmpty || deletedAt.isEmpty ||
+      autoPostAt.get.millis <= deletedAt.get.millis, "TyEBDDRFT07")
+  require(forWhat.isNewTopic == newTopicType.isDefined, "TyEBDDRFT08")
+  require(isReply == replyType.isDefined, "Draft replyType missing [TyEBDDRFT09]")
+
+  def isNewTopic: Boolean = forWhat.isNewTopic
+  def isReply: Boolean = forWhat.replyToPostNr.isDefined
+  def isEdit: Boolean = forWhat.editPostId.isDefined
+}
+
+
 
 /** A post is a page title, a page body or a comment.
   * For example, a forum topic title, topic text, or a reply.

@@ -372,7 +372,7 @@ const ChatMessageEditor = createComponent({
 
   saveChatMessage: function() {
     this.setState({ isSaving: true });
-    Server.insertChatMessage(this.state.text, () => {
+    Server.insertChatMessage(this.state.text, NoDraftNr, () => {
       if (this.isGone) return;
       this.setState({ text: '', isSaving: false, rows: DefaultEditorRows });
       this.props.scrollDownToViewNewMessage();

@@ -529,7 +529,7 @@ ReactStore.activateMyself = function(anyNewMe: Myself) {
     if (eds.isInEmbeddedCommentsIframe) {
       // Don't scroll — usually people come back to look at the blog post, not the comments.
     }
-    else if (ReactActions.anyAnchorPostNr()) {
+    else if (ReactActions.findUrlFragmentAction()) {
       // Then other code [7WKBQ28] scrolls to the anchored post instead.
     }
     else setTimeout(function() {
@@ -1365,10 +1365,10 @@ function showNewPage(newPage: Page, newPublicCategories: Category[], newUsers: B
   // Update any top header links so the hereaafter active one (if any) gets highlighted/underlined.
   debiki2.utils.highlightActiveLinkInHeader();
 
-  // REFACTOR Maybe combine start-page.ts, and this showNewPage(), and loadAndScrollToAnyUrlAnchorPost(),
+  // REFACTOR Maybe combine start-page.ts, and this showNewPage(), and doUrlFragmentAction(),
   // into one single file/module? because it's all do-when-showing-new-page stuff.
   // (Don't call directly — would trigger render() from inside render().
-  setTimeout(ReactActions.loadAndScrollToAnyUrlAnchorPost);
+  setTimeout(ReactActions.doUrlFragmentAction);
 
   // When done rendering, replace date ISO strings with pretty dates.
   setTimeout(debiki2.page.Hacks.processPosts);

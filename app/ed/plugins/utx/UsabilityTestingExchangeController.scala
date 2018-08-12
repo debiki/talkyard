@@ -72,7 +72,7 @@ class UsabilityTestingExchangeController @Inject()(cc: ControllerComponents, edC
 
     val pagePath = request.dao.createPage(pageType, PageStatus.Published, Some(category.id),
       anyFolder = None, anySlug = None, titleTextAndHtml, bodyTextAndHtml,
-      showId = true, request.who, request.spamRelatedStuff)
+      showId = true, deleteDraftNr = None, request.who, request.spamRelatedStuff)
 
     Ok
   }

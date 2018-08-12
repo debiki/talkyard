@@ -33,7 +33,8 @@ trait MessagesDao {
     * gets auto added to the page? [5KTE02Z]
     */
   def startGroupTalk(title: TextAndHtml, body: TextAndHtml, pageRole: PageRole,
-        toUserIds: Set[UserId], sentByWho: Who, spamRelReqStuff: SpamRelReqStuff): PagePath = {
+        toUserIds: Set[UserId], sentByWho: Who, spamRelReqStuff: SpamRelReqStuff,
+        deleteDraftNr: Option[DraftNr]): PagePath = {
 
     if (!pageRole.isPrivateGroupTalk)
       throwForbidden("EsE5FKU02", s"Not a private group talk page role: $pageRole")
@@ -85,6 +86,8 @@ trait MessagesDao {
         else {
           notfGenerator(tx).generateForMessage(sender.user, bodyPost, toUserIds)
         }
+
+      deleteDraftNr.foreach(nr => tx.deleteDraft(sentByWho.id, nr))
 
       tx.saveDeleteNotifications(notifications)
       (pagePath, notifications)
