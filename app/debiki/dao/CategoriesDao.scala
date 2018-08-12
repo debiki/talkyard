@@ -36,6 +36,10 @@ case class SectionCategories(
 
 /** @param shallBeDefaultCategory — if set, the root category's default category id will be
   *     updated to point to this category.
+  * @param createDeletedAboutTopic — creates the About Category topic in a deleted state.
+  *     Useful for embedded comments, because then it's not needed — there're no other categories
+  *     anyway. However, if the owner changes the site to a comments + also general discussion forum,
+  *     then, nice to be able to undelete the About topic, because then it becomes useful.
   */
 case class CategoryToSave(
   sectionPageId: PageId,
@@ -49,6 +53,7 @@ case class CategoryToSave(
   unlisted: Boolean,
   includeInSummaries: IncludeInSummaries,
   description: String,
+  createDeletedAboutTopic: Boolean = false,
   anyId: Option[CategoryId] = None) { // Some() if editing, < 0 if creating COULD change from Option[CategoryId] to CategoryId
 
   require(anyId isNot NoCategoryId, "EdE5LKAW0")
@@ -73,7 +78,9 @@ case class CategoryToSave(
     unlisted = unlisted,
     includeInSummaries = includeInSummaries,
     createdAt = createdAt,
-    updatedAt = createdAt)
+    updatedAt = createdAt,
+    // if createDeletedAboutTopic: then TESTS_MISSING, e2e test won't get created.
+    deletedAt = if (createDeletedAboutTopic) Some(createdAt) else None)
 
 }
 
