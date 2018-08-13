@@ -217,7 +217,7 @@ class CreateSiteController @Inject()(cc: ControllerComponents, edContext: EdCont
     }
     globals.anyCreateSiteHostname match {
       case None =>
-        throwForbidden("DwE4KEGG0", "This server is not configured to allow creation of new sites")
+        throwForbidden("DwE4KEGG0", s"This server is not configured to allow creation of new sites: config value '${Globals.CreateSiteHostnameConfValName}' missing")
       case Some(createSiteHostname) =>
         if (createSiteHostname != Whatever && createSiteHostname != request.hostname)
           throwForbidden("DwE093AQ2", "You cannot create new sites from this address")

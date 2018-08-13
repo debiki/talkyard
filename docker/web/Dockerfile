@@ -249,6 +249,14 @@ COPY lua-packages /opt/lua-packages/
 # And gdb, for backtracing core dumps. [NGXCORED]
 RUN apk add --no-cache bash tree curl net-tools gdb
 
+# Remove default files, they're very confusing, if logging in to Nginx and looking at /etc/nginx/:
+RUN rm -fr \
+  # Keep mime.types though.
+  mime.types.default \
+  nginx.conf \
+  nginx.conf.default
+
+
 COPY 502.html             /opt/nginx/html/502.html
 COPY 503.html             /opt/nginx/html/503.html
 

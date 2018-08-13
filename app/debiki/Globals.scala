@@ -76,6 +76,8 @@ object Globals {
   val SiteOwnerPrivacyUrl = "talkyard.siteOwnerPrivacyUrl"
   val MaxGroupMentionNotfsConfValName = "talkyard.maxGroupMentionNotifications"
 
+  val CreateSiteHostnameConfValName = "talkyard.createSiteHostname"
+
   def isProd: Boolean = _isProd
 
   /** One never changes from Prod to Dev or Test, or from Dev or Test to Prod, so we can safely
@@ -477,7 +479,7 @@ class Globals(
 
   /** New sites may be created only from this hostname. */
   val anyCreateSiteHostname: Option[String] =
-    conf.getString("talkyard.createSiteHostname").noneIfBlank
+    conf.getString(CreateSiteHostnameConfValName).noneIfBlank
   val anyCreateTestSiteHostname: Option[String] =
     conf.getString("talkyard.createTestSiteHostname").noneIfBlank
 
