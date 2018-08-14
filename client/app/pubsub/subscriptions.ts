@@ -19,7 +19,8 @@
 /// <reference path="../rules.ts" />
 /// <reference path="../Server.ts" />
 /// <reference path="../ReactStore.ts" />
-/// <reference path="../page-dialogs/server-error-dialog.ts" />
+//x <reference path="../page-dialogs/server-error-dialog.ts" />
+/// <reference path="../more-bundle-not-yet-loaded.ts" />
 
 //------------------------------------------------------------------------------
    module debiki2.pubsub {
@@ -82,9 +83,16 @@ export function subscribeToServerEvents() {
       // does 'docker-compose kill web' and then 'start web' — then, other e2e tests won't be
       // able to run in parallel with this, hmm.
       console.error("Long polling broken, maybe events lost, giving up.");
-      // UX COULD show this in a non-modal message instead?
-      pagedialogs.getServerErrorDialog().openForBrowserError(
-          "Cannot talk with the server. Reload page to retry. [TyMLPRRLD]");
+      // This sounds as if there's some error:
+      //pagedialogs.getServerErrorDialog().openForBrowserError(
+      //     "Cannot talk with the server. Reload page to retry. [TyMLPRRLD]");
+      // When in fact it's more likey that maybe the laptop was disconnected
+      // from the internet for a while? and all is fine?
+      util.openDefaultStupidDialog({  // import what?
+          body: "Refresh page to see any latest changes. (There was a disconnection)",  // I18N
+          primaryButtonTitle: "Refresh now",
+          secondaryButonTitle: "Cancel",
+          onCloseOk: location.reload });
     }
     else {
       console.warn(`Long polling error, will retry after ${Math.floor(retryAfterMs / 1000)} seconds...`);

@@ -648,7 +648,7 @@ export function resendOwnerEmailAddrVerifEmail(success) {
 //
 export function resendEmailAddrVerifEmail(userId: UserId, emailAddress: string) {
   postJsonSuccess('/-/resend-email-addr-verif-email', (response: UserAccountResponse) => {
-    util.openDefaultStupidDialog({ body: "Email sent" });
+    util.openDefaultStupidDialog({ body: "Email sent" });  // why accessible here?
   }, { userId, emailAddress });
 }
 
