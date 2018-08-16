@@ -38,9 +38,32 @@ export function LiNavLink(...propsAndContents) {
   return r.li({}, NavLink.apply(this, arguments));
 }
 
+/**
+ * Redirects the URL path only — preserves query string and hash fragment.
+ */
+export function RedirPath(props: { path: string, to: string, exact: boolean, strict?: boolean }) {
+  // @ifdef DEBUG
+  dieIf(props.to.indexOf('?') >= 0, 'TyE2ABKS0');
+  dieIf(props.to.indexOf('#') >= 0, 'TyE5BKRP2');
+  // @endif
+  const path = props.path;
+  const exact = props.exact;
+  const strict = props.strict;
+  return Route({ path, exact, strict, render: (routeProps) => {
+    return Redirect({
+      from: path, exact, strict,
+      to: {
+        pathname: props.to,
+        search: routeProps.location.search,
+        hash: routeProps.location.hash }});
+  }});
+}
+
+
 // Redirs to path, which should be like '/some/path/', to just '/some/path' with no trailing slash.
+// Keeps any #fragment.
 export function RedirToNoSlash({ path }) {
-  return Redirect({
+  return RedirPath({
     path: path,
     to: path.substr(0, path.length - 1),
     exact: true,  // so won't match if there's more stuff after the last '/'

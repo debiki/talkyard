@@ -124,8 +124,7 @@ export function linkToDraftSource(draft: Draft,
   }
   else if (locator.newTopicCategoryId) {
     // If [subcomms]: BUG should go to the correct sub community url path.
-    // For now, incl /latest, otherwise there'll be a redirect [5ABKR02]? so #frag-action lost.
-    return '/latest' + FragActionHashComposeTopic + andDraftNrParam;
+    return '/' + FragActionHashComposeTopic + andDraftNrParam;
   }
   else {
     die("Unknown draft source [TyE5WADK204]")

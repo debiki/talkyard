@@ -478,12 +478,7 @@ export function doUrlFragmentAction(newHashFragment?: string) {
   }
 
   function doAfterLoadedAnyPost() {
-    // If going to another page, and then back — just scroll to the post, this time, but
-    // don't open the editor. (Doing that, feels unexpected and confusing, to me. If
-    // navigating away, then, probably one is done editing? Or has maybe submitted
-    // the post already.)
-    location.hash = '#post-' + postNr;
-
+    let resetHashFrag = true;
     markAnyNotificationAsSeen(postNr);
     switch (fragAction.type) {
       case FragActionType.ReplyToPost:
@@ -506,9 +501,21 @@ export function doUrlFragmentAction(newHashFragment?: string) {
       case FragActionType.ScrollToLatestPost:
       case FragActionType.ScrollToPost:
         // Already scrolled to it.
+        // Need not update the hash fragment — it contains only #post-nnn.
+        resetHashFrag = false;
         break;
       default:
         die('TyE2ABR67');
+    }
+
+    // If going to another page, and then back — just scroll to the post, this time, but
+    // don't open the editor. (Doing that, feels unexpected and confusing, to me. If
+    // navigating away, then, probably one is done editing? Or has maybe submitted
+    // the post already.)
+    if (resetHashFrag) {
+      // Does this sometimes make the browser annyoyingly scroll-jump so this post is at
+      // the very top of the win, occluded by the topbar?
+      location.hash = '#post-' + postNr;
     }
   }
 }

@@ -131,8 +131,8 @@ export function startMainReactRoot(reactRenderMethodName: 'render' | 'hydrate') 
         const forumRootSlash = section.path;
         const forumDefaultPath = forumRootSlash + (store.settings.forumMainView || RoutePathLatest);
 
-        // This redirects e.g. '/forum/' and '/forum' to '/forum/latest':  [5ABKR02]
-        sectionsAndPages.push(Redirect({ path: forumRootSlash, to: forumDefaultPath, exact: true }));
+        // This redirects e.g. '/forum/' and '/forum' to '/forum/latest':
+        sectionsAndPages.push(RedirPath({ path: forumRootSlash, to: forumDefaultPath, exact: true }));
 
         const fc = forum.ForumComponent;
         sectionsAndPages.push(Route({ path: forumRootSlash + RoutePathLatest, component: fc }));
