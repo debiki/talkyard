@@ -261,9 +261,9 @@ trait UploadsDao {
         }
       }
 
-      // For now: (COULD make configurable in the admin section)
-      val maxBytesWeek = user.isStaff ? MaxBytesPerWeekStaff | MaxBytesPerWeekMember
-      val maxBytesDay = user.isStaff ? MaxBytesPerDayStaff | MaxBytesPerDayMember
+      val uplConf = globals.config.uploads
+      val maxBytesWeek = user.isStaff ? uplConf.maxBytesPerWeekStaff | uplConf.maxBytesPerWeekMember
+      val maxBytesDay = user.isStaff ? uplConf.maxBytesPerDayStaff | uplConf.maxBytesPerDayMember
 
       def throwIfTooMuch(actual: Int, max: Int, lastWhat: String) {
         if (actual > max)
@@ -289,12 +289,6 @@ object UploadsDao {
     * Don't change this — that would invalidate all hashes in the database.
     */
   val HashLength = 33
-
-  // Later: make configurable in the admin section. But there should be some fix upper limits?
-  val MaxBytesPerDayMember: Int = 8*Megabytes
-  val MaxBytesPerDayStaff: Int = 999*Megabytes
-  val MaxBytesPerWeekMember: Int = 20*Megabytes
-  val MaxBytesPerWeekStaff: Int = 999*Megabytes
 
   val MaxUploadsLastWeek = 700
 

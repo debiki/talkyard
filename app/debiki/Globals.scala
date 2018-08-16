@@ -1008,6 +1008,9 @@ object Config {
 
 class Config(conf: play.api.Configuration) {
 
+  private def getIntOrDefault(confName: String, default: Int): Int =
+    conf.getOptional[Int](confName) getOrElse default
+
   val cnameTargetHost: Option[String] =
     conf.getString(Config.CnameTargetHostConfValName).noneIfBlank
 
@@ -1017,6 +1020,24 @@ class Config(conf: play.api.Configuration) {
 
   val maxGroupMentionNotfs: Int =
     conf.getOptional[Int](MaxGroupMentionNotfsConfValName) getOrElse 25
+
+  object uploads {
+    private val p = "talkyard.uploads."
+    // COULD make this configurable dynamically, per site, in the admin area, per site, too.
+    // The limits below, would then be a hard max, for each site, regardless of admin area settings.
+
+    val maxBytesPerDayMember: Int =
+      getIntOrDefault(p + "maxKiloBytesPerDayMember", 8*Megabytes / 1000) * 1000
+
+    val maxBytesPerDayStaff: Int =
+      getIntOrDefault(p + "maxKiloBytesPerDayStaff", 999*Megabytes / 1000) * 1000
+
+    val maxBytesPerWeekMember: Int =
+      getIntOrDefault(p + "maxKiloBytesPerWeekMember", 20*Megabytes / 1000) * 1000
+
+    val maxBytesPerWeekStaff: Int =
+      getIntOrDefault(p + "maxKiloBytesPerWeekStaff", 999*Megabytes / 1000) * 1000
+  }
 
   object cdn {
     /** No trailing slash. */

@@ -461,9 +461,10 @@ class UploadsDaoAppSpec extends DaoAppSuite(disableScripts = false) {
 
 
     "prevent people from uploading too many large files" in {
-      val fileOne = makeRandomFile("file-one", ".jpg", UploadsDao.MaxBytesPerDayMember / 3)
-      val fileTwo = makeRandomFile("file-two", ".jpg", UploadsDao.MaxBytesPerDayMember / 3)
-      val fileThree = makeRandomFile("file-three", ".jpg", UploadsDao.MaxBytesPerDayMember / 2)
+      val uplConf = globals.config.uploads
+      val fileOne = makeRandomFile("file-one", ".jpg", uplConf.maxBytesPerDayMember / 3)
+      val fileTwo = makeRandomFile("file-two", ".jpg", uplConf.maxBytesPerDayMember / 3)
+      val fileThree = makeRandomFile("file-three", ".jpg", uplConf.maxBytesPerDayMember / 2)
       val fileTiny = makeRandomFile("file-tiny", ".jpg", 130)
 
       val dao = globals.siteDao(Site.FirstSiteId)
