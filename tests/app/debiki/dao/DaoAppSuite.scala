@@ -247,7 +247,7 @@ class DaoAppSuite(
     dao.createPage(pageRole, PageStatus.Published, anyCategoryId = anyCategoryId,
       anyFolder = Some("/"), anySlug = Some(""),
       titleTextAndHtml = titleTextAndHtml, bodyTextAndHtml = bodyTextAndHtml,
-      showId = true, Who(authorId, browserIdData), dummySpamRelReqStuff).thePageId
+      showId = true, deleteDraftNr = None, Who(authorId, browserIdData), dummySpamRelReqStuff).thePageId
   }
 
 
@@ -257,7 +257,7 @@ class DaoAppSuite(
       if (skipNashorn) textAndHtmlMaker.testBody(text)
       else textAndHtmlMaker.forBodyOrComment(text)
     dao.insertReply(textAndHtml, pageId,
-      replyToPostNrs = Set(parentNr getOrElse PageParts.BodyNr), PostType.Normal,
+      replyToPostNrs = Set(parentNr getOrElse PageParts.BodyNr), PostType.Normal, deleteDraftNr = None,
       Who(memberId, browserIdData), dummySpamRelReqStuff).post
   }
 
@@ -266,7 +266,8 @@ class DaoAppSuite(
     val textAndHtml =
       if (skipNashorn) textAndHtmlMaker.testBody(text)
       else textAndHtmlMaker.forBodyOrComment(text)
-    dao.insertChatMessage(textAndHtml, pageId, Who(memberId, browserIdData), dummySpamRelReqStuff).post
+    dao.insertChatMessage(textAndHtml, pageId, deleteDraftNr = None,
+        Who(memberId, browserIdData), dummySpamRelReqStuff).post
   }
 
 
@@ -274,8 +275,8 @@ class DaoAppSuite(
     val textAndHtml =
       if (skipNashorn) textAndHtmlMaker.testBody(newText)
       else textAndHtmlMaker.forBodyOrComment(newText)
-    dao.editPostIfAuth(post.pageId, post.nr, Who(editorId, browserIdData), dummySpamRelReqStuff,
-        textAndHtml)
+    dao.editPostIfAuth(post.pageId, post.nr, deleteDraftNr = None,
+        Who(editorId, browserIdData), dummySpamRelReqStuff, textAndHtml)
   }
 
 

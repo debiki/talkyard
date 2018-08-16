@@ -174,7 +174,7 @@ class MovePostsAppSpec extends DaoAppSuite(disableScripts = true, disableBackgro
       val pageTwoId = createPage(PageRole.Discussion, textAndHtmlMaker.testTitle("Page Two"),
         textAndHtmlMaker.testBody("Body two."), SystemUserId, browserIdData, dao)
       val postOnPageTwo = dao.insertReply(textAndHtmlMaker.testBody("Post on page 2."), pageTwoId,
-        replyToPostNrs = Set(PageParts.BodyNr), PostType.Normal,
+        replyToPostNrs = Set(PageParts.BodyNr), PostType.Normal, deleteDraftNr = None,
         Who(SystemUserId, browserIdData = browserIdData), dummySpamRelReqStuff).post
 
       // Create after page 2 so becomes the most recent one.
@@ -238,7 +238,7 @@ class MovePostsAppSpec extends DaoAppSuite(disableScripts = true, disableBackgro
       val pageTwoId = createPage(PageRole.Discussion, textAndHtmlMaker.testTitle("Page Two"),
         textAndHtmlMaker.testBody("Body two."), SystemUserId, browserIdData, dao)
       val postOnPageTwo = dao.insertReply(textAndHtmlMaker.testBody("Post on page 2."), pageTwoId,
-        replyToPostNrs = Set(PageParts.BodyNr), PostType.Normal,
+        replyToPostNrs = Set(PageParts.BodyNr), PostType.Normal, deleteDraftNr = None,
         Who(SystemUserId, browserIdData = browserIdData), dummySpamRelReqStuff).post
 
       info("can move the tree")
@@ -281,7 +281,8 @@ class MovePostsAppSpec extends DaoAppSuite(disableScripts = true, disableBackgro
 
       info("can add replies to the new page")
       val lastPostPageTwo = dao.insertReply(textAndHtmlMaker.testBody("Last post, page 2."), pageTwoId,
-        replyToPostNrs = Set(maxNewNr), PostType.Normal, Who(SystemUserId, browserIdData),
+        replyToPostNrs = Set(maxNewNr), PostType.Normal, deleteDraftNr = None,
+        Who(SystemUserId, browserIdData),
         dummySpamRelReqStuff).post
       lastPostPageTwo.nr mustBe (maxNewNr + 1)
     }
@@ -297,7 +298,7 @@ class MovePostsAppSpec extends DaoAppSuite(disableScripts = true, disableBackgro
       val pageTwoId = createPage(PageRole.Discussion, textAndHtmlMaker.testTitle("Page Two"),
         textAndHtmlMaker.testBody("Body two."), SystemUserId, browserIdData, dao)
       val postOnPageTwo = dao.insertReply(textAndHtmlMaker.testBody("Post on page 2."), pageTwoId,
-        replyToPostNrs = Set(PageParts.BodyNr), PostType.Normal,
+        replyToPostNrs = Set(PageParts.BodyNr), PostType.Normal, deleteDraftNr = None,
         Who(SystemUserId, browserIdData = browserIdData), dummySpamRelReqStuff).post
 
       val fromPageMetaBefore = dao.readOnlyTransaction(_.loadThePageMeta(thePageId))

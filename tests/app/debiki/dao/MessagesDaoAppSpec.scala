@@ -40,7 +40,7 @@ class MessagesDaoAppSpec extends DaoAppSuite(disableScripts = true, disableBackg
       val pagePath = dao.startGroupTalk(title = textAndHtmlMaker.testTitle("title_558206"),
         body = textAndHtmlMaker.testBody("message_2749"), PageRole.FormalMessage,
         toUserIds = Set(userTwo.id), sentByWho = Who(userOne.id, browserIdData),
-        dummySpamRelReqStuff)
+        dummySpamRelReqStuff, deleteDraftNr = None)
 
       dao.readOnlyTransaction { transaction =>
         val page = PageDao(pagePath.pageId getOrDie "EsE6GMUK2", transaction)
@@ -112,7 +112,7 @@ class MessagesDaoAppSpec extends DaoAppSuite(disableScripts = true, disableBackg
         val pagePath = dao.startGroupTalk(title = textAndHtmlMaker.testTitle("title_0482745"),
           body = textAndHtmlMaker.testBody("body_0482745"), PageRole.FormalMessage,
           toUserIds = Set(admin.id), sentByWho = Who(sender.id, browserIdData),
-          dummySpamRelReqStuff)
+          dummySpamRelReqStuff, deleteDraftNr = None)
 
         val pageMeta = dao.readOnlyTransaction(_.loadThePageMeta(pagePath.thePageId))
         pageMeta.pageRole mustBe PageRole.FormalMessage
@@ -133,8 +133,7 @@ class MessagesDaoAppSpec extends DaoAppSuite(disableScripts = true, disableBackg
     def sendMessageTo(toWhom: Set[UserId], fromUserId: UserId, dao: SiteDao): PagePath =
       dao.startGroupTalk(title = textAndHtmlMaker.testTitle("title_0482745"),
         body = textAndHtmlMaker.testBody("body_0482745"), PageRole.FormalMessage, toUserIds = toWhom,
-        sentByWho = Who(fromUserId, browserIdData), dummySpamRelReqStuff)
-
+        sentByWho = Who(fromUserId, browserIdData), dummySpamRelReqStuff, deleteDraftNr = None)
   }
 
 }

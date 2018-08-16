@@ -147,7 +147,7 @@ object Prelude {
       (if ((details eq null) || details.isEmpty) "" else details + " ") + s"[$errorCode]"
 
   def dieIf(condition: Boolean, errorCode: String, problem: => Any = null): Unit =
-    if (condition) die(errorCode, problem.toString)
+    if (condition) die(errorCode, if (problem != null) problem.toString else null)
 
   def dieUnless(condition: Boolean, errorCode: String, problem: => String = null): Unit =
     if (!condition) die(errorCode, problem)

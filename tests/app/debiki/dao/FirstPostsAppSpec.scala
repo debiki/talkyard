@@ -332,7 +332,7 @@ class FirstPostsAppSpec extends ReviewStuffAppSuite("4fy2") {
 
           info("insert a chat messages, it gets auto-approved")
           val firstChat = dao.insertChatMessage(textAndHtmlMaker.testBody("chat_740331_a"), chatPageId,
-            who, dummySpamRelReqStuff).post
+            deleteDraftNr = None, who, dummySpamRelReqStuff).post
           firstChat.approvedById mustBe Some(SystemUserId)
 
           info("can still insert a reply")
@@ -342,7 +342,7 @@ class FirstPostsAppSpec extends ReviewStuffAppSuite("4fy2") {
 
           info("another chat message")
           val secondChat = dao.insertChatMessage(textAndHtmlMaker.testBody("chat_740331_d"), chatPageId,
-            who, dummySpamRelReqStuff).post
+            deleteDraftNr = None, who, dummySpamRelReqStuff).post
           secondChat.approvedById mustBe Some(SystemUserId)
 
           info("can nevertheless insert reply 2")
@@ -352,7 +352,7 @@ class FirstPostsAppSpec extends ReviewStuffAppSuite("4fy2") {
 
           info("yet another chat message")
           val thirdChat = dao.insertChatMessage(textAndHtmlMaker.testBody("chat_740331_f"), chatPageId,
-            who, dummySpamRelReqStuff).post
+            deleteDraftNr = None, who, dummySpamRelReqStuff).post
           thirdChat.approvedById mustBe Some(SystemUserId)
 
           info("rejct reply 3")

@@ -21,7 +21,7 @@ package debiki.dao
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki.EdHttp.throwForbidden
-import scala.collection.immutable
+import scala.collection.{immutable, mutable}
 import SystemDao._
 import debiki.Globals
 
@@ -165,17 +165,26 @@ class SystemDao(
         dieUnless(SiteHost.isE2eTestHostname(hostname), "EdE7PK5W8")
         dieUnless(SiteHost.isE2eTestHostname(name), "EdE50K5W4")
 
-        val anySitesToDelete: Vec[Site] =
+        val anySitesToDeleteMaybeDupls: Vec[Site] =
           sysTx.loadSiteByHostname(hostname).toVector ++ sysTx.loadSiteByName(name).toVector
+
+        val anySitesToDelete = anySitesToDeleteMaybeDupls.distinct
+        val deletedAlready = mutable.HashSet[SiteId]()
 
         val anyDeletedHostnames: Seq[String] = anySitesToDelete flatMap { siteToDelete =>
           dieIf(siteToDelete.id > MaxTestSiteId, "EdE20PUJ6", "Trying to delete a *real* site")
           // Delete hostnames
           val deletedHostnames = siteToDelete.hosts.map(_.hostname)
           dieIf(!deletedHostnames.contains(hostname), "TyE4WKB0RJ7", deletedHostnames)
-          // Delete the site itslf
+
+          // Delete the site itslf. Maybe we've deleted it alread — although we do `.distinct`
+          // above, still a small small likelihood for duplicates — in case we happened
+          // to load it twice, and it was changed in between, so `.distinct` didn't "work".
           val gotDeleted = sysTx.deleteSiteById(siteToDelete.id)
-          dieIf(!gotDeleted, "TyE2ABK493U4")
+          dieIf(!gotDeleted && !deletedAlready.contains(siteToDelete.id),
+            "TyE2ABK493U4", s"Could not delete site: $siteToDelete")
+
+          deletedAlready.add(siteToDelete.id)
           deletedHostnames
         }
 

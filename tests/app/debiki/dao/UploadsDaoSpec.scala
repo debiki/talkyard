@@ -299,7 +299,7 @@ class UploadsDaoAppSpec extends DaoAppSuite(disableScripts = false) {
       val pagePath = dao.createPage(PageRole.Discussion, PageStatus.Published,
         anyCategoryId = None, anyFolder = None, anySlug = None,
         titleTextAndHtml = titleTextAndHtml, bodyTextAndHtml = bodyTextAndHtml,
-        showId = true, Who(user.id, browserIdData), dummySpamRelReqStuff)
+        showId = true, deleteDraftNr = None, Who(user.id, browserIdData), dummySpamRelReqStuff)
 
       resourceUsage = dao.loadResourceUsage()
       resourceUsage.numUploads mustBe 1
@@ -307,7 +307,8 @@ class UploadsDaoAppSpec extends DaoAppSuite(disableScripts = false) {
 
       info("edit page: add second file, more quota used")
       val newTextAndHtml = bodyTextAndHtml.append(s"\n[The moon](${moonImage.ref.url})")
-      dao.editPostIfAuth(pagePath.thePageId, PageParts.BodyNr, Who(user.id, browserIdData),
+      dao.editPostIfAuth(pagePath.thePageId, PageParts.BodyNr, deleteDraftNr = None,
+        Who(user.id, browserIdData),
         dummySpamRelReqStuff, newTextAndHtml)
 
       resourceUsage = dao.loadResourceUsage()
@@ -315,7 +316,8 @@ class UploadsDaoAppSpec extends DaoAppSuite(disableScripts = false) {
       resourceUsage.numUploadBytes mustBe (1040 + 2050)
 
       info("edit page: remove second file, quota freed")
-      dao.editPostIfAuth(pagePath.thePageId, PageParts.BodyNr, Who(user.id, browserIdData),
+      dao.editPostIfAuth(pagePath.thePageId, PageParts.BodyNr, deleteDraftNr = None,
+        Who(user.id, browserIdData),
         dummySpamRelReqStuff, bodyTextAndHtml)
 
       resourceUsage = dao.loadResourceUsage()
@@ -323,7 +325,8 @@ class UploadsDaoAppSpec extends DaoAppSuite(disableScripts = false) {
       resourceUsage.numUploadBytes mustBe 1040
 
       info("edit page: remove the first file, remaining quota freed")
-      dao.editPostIfAuth(pagePath.thePageId, PageParts.BodyNr, Who(user.id, browserIdData),
+      dao.editPostIfAuth(pagePath.thePageId, PageParts.BodyNr, deleteDraftNr = None,
+        Who(user.id, browserIdData),
         dummySpamRelReqStuff, textAndHtmlMaker.forBodyOrComment("empty"))
 
       resourceUsage = dao.loadResourceUsage()
@@ -350,7 +353,7 @@ class UploadsDaoAppSpec extends DaoAppSuite(disableScripts = false) {
       val pagePath = dao.createPage(PageRole.Discussion, PageStatus.Published,
         anyCategoryId = None, anyFolder = None, anySlug = None,
         titleTextAndHtml = titleTextAndHtml, bodyTextAndHtml = bodyTextAndHtml,
-        showId = true, Who(user.id, browserIdData), dummySpamRelReqStuff)
+        showId = true, deleteDraftNr = None, Who(user.id, browserIdData), dummySpamRelReqStuff)
 
       resourceUsage = dao.loadResourceUsage()
       resourceUsage.numUploads mustBe 0
@@ -363,7 +366,8 @@ class UploadsDaoAppSpec extends DaoAppSuite(disableScripts = false) {
       resourceUsage.numUploadBytes mustBe 1060
 
       info("edit page: remove link, quota freed")
-      dao.editPostIfAuth(pagePath.thePageId, PageParts.BodyNr, Who(user.id, browserIdData),
+      dao.editPostIfAuth(pagePath.thePageId, PageParts.BodyNr, deleteDraftNr = None,
+        Who(user.id, browserIdData),
         dummySpamRelReqStuff, textAndHtmlMaker.forBodyOrComment("empty"))
 
       resourceUsage = dao.loadResourceUsage()
@@ -430,12 +434,12 @@ class UploadsDaoAppSpec extends DaoAppSuite(disableScripts = false) {
       val pagePath1 = dao.createPage(PageRole.Discussion, PageStatus.Published,
         anyCategoryId = None, anyFolder = None, anySlug = None,
         titleTextAndHtml = titleTextAndHtml, bodyTextAndHtml = bodyTextAndHtmlSite1,
-        showId = true, Who(user.id, browserIdData), dummySpamRelReqStuff)
+        showId = true, deleteDraftNr = None, Who(user.id, browserIdData), dummySpamRelReqStuff)
 
       dao2.createPage(PageRole.Discussion, PageStatus.Published,
         anyCategoryId = None, anyFolder = None, anySlug = None,
         titleTextAndHtml = titleTextAndHtml, bodyTextAndHtml = bodyTextAndHtmlSite2,
-        showId = true, Who(user2.id, browserIdData), dummySpamRelReqStuff)
+        showId = true, deleteDraftNr = None, Who(user2.id, browserIdData), dummySpamRelReqStuff)
 
       resourceUsage = dao.loadResourceUsage()
       resourceUsage.numUploads mustBe 2
@@ -447,7 +451,8 @@ class UploadsDaoAppSpec extends DaoAppSuite(disableScripts = false) {
 
       info("edit site 1 page: remove links, remaining quota freed, site 1 only")
 
-      dao.editPostIfAuth(pagePath1.thePageId, PageParts.BodyNr, Who(user.id, browserIdData),
+      dao.editPostIfAuth(pagePath1.thePageId, PageParts.BodyNr, deleteDraftNr = None,
+        Who(user.id, browserIdData),
         dummySpamRelReqStuff, textAndHtmlMaker.forBodyOrComment("empty"))
 
       resourceUsage = dao2.loadResourceUsage()

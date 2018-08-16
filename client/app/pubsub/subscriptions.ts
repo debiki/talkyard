@@ -92,7 +92,10 @@ export function subscribeToServerEvents() {
           body: "Refresh page to see any latest changes. (There was a disconnection)",  // I18N
           primaryButtonTitle: "Refresh now",
           secondaryButonTitle: "Cancel",
-          onCloseOk: location.reload });
+          onCloseOk: function(whichButton) {
+            if (whichButton === 1)
+              window.location.reload()
+          } });
     }
     else {
       console.warn(`Long polling error, will retry after ${Math.floor(retryAfterMs / 1000)} seconds...`);

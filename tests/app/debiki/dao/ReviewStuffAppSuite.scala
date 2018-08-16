@@ -48,13 +48,14 @@ class ReviewStuffAppSuite(randomString: String)
         anyCategoryId = Some(categoryId), anyFolder = Some("/"), anySlug = Some(""),
         titleTextAndHtml = textAndHtmlMaker.testTitle("title_62952 $r"),
         bodyTextAndHtml = textAndHtmlMaker.testBody("discussion_230593 $r"),
-        showId = true, Who(theAdmin.id, browserIdData), dummySpamRelReqStuff).thePageId
+        showId = true, deleteDraftNr = None,
+        Who(theAdmin.id, browserIdData), dummySpamRelReqStuff).thePageId
     }
 
     def testAdminsRepliesApproved(adminId: UserId, pageId: PageId) {
       for (i <- 1 to 10) {
         val result = dao.insertReply(textAndHtmlMaker.testBody(s"reply_9032372 $r, i = $i"), pageId,
-          replyToPostNrs = Set(PageParts.BodyNr), PostType.Normal,
+          replyToPostNrs = Set(PageParts.BodyNr), PostType.Normal, deleteDraftNr = None,
           Who(adminId, browserIdData), dummySpamRelReqStuff)
         result.post.isCurrentVersionApproved mustBe true
         result.post.approvedById mustBe Some(adminId)
@@ -63,7 +64,7 @@ class ReviewStuffAppSuite(randomString: String)
 
     def reply(memberId: UserId, text: String): InsertPostResult = {
       dao.insertReply(textAndHtmlMaker.testBody(text), thePageId,
-        replyToPostNrs = Set(PageParts.BodyNr), PostType.Normal,
+        replyToPostNrs = Set(PageParts.BodyNr), PostType.Normal, deleteDraftNr = None,
         Who(memberId, browserIdData), dummySpamRelReqStuff)
     }
 
