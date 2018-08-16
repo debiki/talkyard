@@ -372,7 +372,7 @@ export const Editor = createComponent({
     }
     else if (index === -1) {
       postNrs.push(postNr);
-      this.showEditor();
+      this.showEditor({ scrollToShowPostNr: postNr });
     }
     else {
       postNrs.splice(index, 1);
@@ -409,7 +409,7 @@ export const Editor = createComponent({
       return;
     Server.loadTextAndDraft(postId, (response: LoadTextAndDraftResponse) => {
       if (this.isGone) return;
-      this.showEditor();
+      this.showEditor({ scrollToShowPostNr: response.postNr });
       const draft: Draft | undefined = response.draft;
       this.setState({
         anyPostType: null,
@@ -938,17 +938,23 @@ export const Editor = createComponent({
     // Else: the editor covers 100% anyway.
   },
 
-  showEditor: function() {
+  showEditor: function(opts: { scrollToShowPostNr?: PostNr } = {}) {
     this.makeSpaceAtBottomForEditor();
     this.setState({ visible: true });
     if (eds.isInEmbeddedEditor) {
       window.parent.postMessage(JSON.stringify(['showEditor', {}]), eds.embeddingOrigin);
     }
-    // After rerender, focus the input fields:
+    // After rerender, focus the input fields, and maybe need to scroll, so the post we're editing
+    // or replying to, isn't occluded by the editor (otherwise hard to know what we're editing).
     setTimeout(() => {
       if (this.isGone) return;
       this.focusInputFields();
       this.updatePreview();
+      if (opts.scrollToShowPostNr) {
+        const postElem = $byId('post-' + opts.scrollToShowPostNr);
+        // Try to not scroll so much, that's also confusing.
+        debiki.internal.showAndHighlightPost(postElem, { marginTop: 60, marginBottom: 40 });
+      }
     }, 1);
   },
 

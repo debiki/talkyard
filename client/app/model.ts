@@ -1387,8 +1387,9 @@ interface UserAccountLoginMethod {
 
 // COULD also load info about whether the user may apply and approve the edits.
 interface LoadTextAndDraftResponse {
-  currentText: string;
+  postNr: PostNr,
   postUid: string; // CLEAN_UP RENAME to just postId.
+  currentText: string;
   currentRevisionNr: number;
   draft?: Draft;
 }

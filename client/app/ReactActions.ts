@@ -467,7 +467,9 @@ export function doUrlFragmentAction(newHashFragment?: string) {
     return;
   }
 
-  const postElem = $byId(`post-${postNr}`);
+  const postAnchor = `post-${postNr}`;
+
+  const postElem = $byId(postAnchor);
   if (postElem) {
     debiki.internal.showAndHighlightPost(postElem);
     doAfterLoadedAnyPost();
@@ -515,7 +517,7 @@ export function doUrlFragmentAction(newHashFragment?: string) {
     if (resetHashFrag) {
       // Does this sometimes make the browser annyoyingly scroll-jump so this post is at
       // the very top of the win, occluded by the topbar?
-      location.hash = '#post-' + postNr;
+      location.hash = '#' + postAnchor;
     }
   }
 }

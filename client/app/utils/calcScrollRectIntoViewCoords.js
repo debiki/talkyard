@@ -27,6 +27,11 @@ d.i.calcScrollRectIntoViewCoords = function(rect, options) {
   var winHeight = window.innerHeight;
   var winWidth = window.innerWidth;
 
+  var anyEditors = debiki2.$bySelector('.s_E-E');
+  if (anyEditors && anyEditors.length) {
+    winHeight -= anyEditors[0].clientHeight;
+  }
+
   var marginRect = {
     top: rect.top - marginTop,
     bottom: rect.bottom + marginBottom,

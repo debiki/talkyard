@@ -130,7 +130,8 @@ class EditController @Inject()(cc: ControllerComponents, edContext: EdContext)
     dieIf(anyDrafts.length > 1, "TyE5ABK02I", s"Got ${anyDrafts.length} drafts")
     val anyDraft = anyDrafts.headOption
 
-    OkSafeJson(Json.obj(
+    OkSafeJson(Json.obj( // LoadTextAndDraftResponse
+      "postNr" -> post.nr,
       "postUid" -> post.id,
       "currentText" -> post.currentSource,
       "currentRevisionNr" -> post.currentRevisionNr,

@@ -139,11 +139,11 @@ function Draft(props: { draft: Draft, pageTitlesById: { [pageId: string]: string
       die('TyE24BKF0');
       // @endif
     }
-    title = props.pageTitlesById[pageId];
+    title = "Page title: " + props.pageTitlesById[pageId];  // I18N
   }
   else {
     // This draft is for a new page.
-    title = title || "(No title)";  // I18N
+    title = "Your title: " + title || "(No title)";  // I18N
 
     if (draft.forWhat.messageToUserId) {
       what = "Direct message"; // I18N
@@ -153,11 +153,16 @@ function Draft(props: { draft: Draft, pageTitlesById: { [pageId: string]: string
     }
   }
 
+  let textTruncated = text.substr(0, 350);
+  if (text.length > 350) {
+    textTruncated += ' ...';
+  }
+
   return (
     Link({ to: linkToDraftSource(draft, pageId, postNr), className: 's_Dfs_Df' },
       r.div({ className: 's_Dfs_Df_Wht' }, what ),
       r.div({ className: 's_Dfs_Df_Ttl' }, title),
-      r.div({ className: 's_Dfs_Df_Txt' }, text)));
+      r.div({ className: 's_Dfs_Df_Txt' }, textTruncated)));
 }
 
 //------------------------------------------------------------------------------
