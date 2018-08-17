@@ -254,6 +254,9 @@ function trackReadingActivity() {
         `${unreportedSecondsReading} seconds reading, these post nrs: ${unreportedPostNrsRead}`);
     // @endif
     talksWithSererAlready = true;
+    // BUG this won't retry, if there's a netw disconnection. Instead, somehow merge with
+    // the pubsub (long-polling / websocket) requests? which auto-retries, if reconnects.
+    // See subscribeToServerEvents().
     Server.trackReadingProgress(lastViewedPostNr, unreportedSecondsReading,
         unreportedPostNrsRead, () => {
       talksWithSererAlready = false;

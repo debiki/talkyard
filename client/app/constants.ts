@@ -56,6 +56,7 @@ const MaxNumFirstPosts = 10;
 const MaxEmailsPerUser = 5;  // also in scala [4GKRDF0]
 
 const IgnoreThisError: ErrorPolicy = -112233;
+const ShowNoErrorDialog: ErrorPolicy = -112234;
 
 const MagicTimeoutPollMs = 500;   // also in test [4GKB93RA]
 

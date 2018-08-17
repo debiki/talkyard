@@ -130,7 +130,7 @@ const ServerErrorDialog = createComponent({
         title = 'Error: Server not reachable';
         message = "Has the server stopped? Or did you just get disconnected " +
             "from the Internet? Or is the hostname or port number wrong, " +
-            "cross-origin request blocked? [DwE4KEF2]\n" +
+            "cross-origin request blocked? [TyE0SRVR]\n" +
             "\n" +
             "Details: " + JSON.stringify(error);
       }

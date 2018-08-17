@@ -92,13 +92,17 @@ function postJson(urlPath: string, requestData: RequestData) {
     // error: (jqXhr: any, textStatus: string, errorThrown: string) => {
     // COULD ensure all callers survive xhr == null, and call them also if !xhr,
     // but currently an unknown caller dies on null, so:
+    let perhapsIgnoreError;
     if (requestData.error && errorObj.xhr) {
-      const perhapsIgnoreError = requestData.error(errorObj.xhr);
+      perhapsIgnoreError = requestData.error(errorObj.xhr);
       if (perhapsIgnoreError === IgnoreThisError)
         return;
     }
     console.error(`Error calling ${urlPath}: ${errorAsJson}, details: ${details}`);
-    if (errorObj.xhr) {
+    if (perhapsIgnoreError === ShowNoErrorDialog) {
+      // Noop.
+    }
+    else if (errorObj.xhr) {
       pagedialogs.getServerErrorDialog().open(errorObj.xhr);
     }
     else {
@@ -112,7 +116,7 @@ function postJson(urlPath: string, requestData: RequestData) {
 // If needed later:
 // loadCss: use https://github.com/filamentgroup/loadCSS/blob/master/src/loadCSS.js
 
-export function loadJs(src: string, success?: () => void): any {  // : Promise, but compilation error
+export function loadJs(src: string, onOk?: () => void, onError?: () => void): any {  // : Promise, but compilation error
   const promise = new Promise(function (resolve, reject) {
     const scriptElem = document.createElement('script');
     scriptElem.src = src;
@@ -126,7 +130,8 @@ export function loadJs(src: string, success?: () => void): any {  // : Promise, 
     console.error(error);
     pagedialogs.getServerErrorDialog().open(message);
   });
-  if (success) promise.then(success);
+  if (onOk) promise.then(onOk);
+  if (onError) promise.catch(onError);
   return promise;
 }
 
@@ -312,11 +317,14 @@ export function loadMoreScriptsBundle(callback?) {
     !callback || setTimeout(() => moreScriptsPromise.then(callback), 0);
     return moreScriptsPromise;
   }
-  moreScriptsPromise = new Promise(function(resolve) {
+  moreScriptsPromise = new Promise(function(resolve, reject) {
     // Also: [7PLBF20]
     loadJs(eds.assetUrlPrefix + 'more-bundle.' + eds.minMaxJs, function() {
       resolve();
       !callback || setTimeout(callback, 0);
+    }, function() {
+      moreScriptsPromise = null;
+      reject();
     });
   });
   return moreScriptsPromise;
@@ -334,6 +342,8 @@ export function load2dScriptsBundleStart2dStuff() {
       debiki2.utils.onMouseDetected(d.i.makeColumnsResizable);
       // Wrap in function, because not available until funtion evaluated (because then script loaded).
       debiki.internal.initUtterscrollAndTips();
+    }, function() {
+      hasStartedLoading2dScripts = false;
     });
   });
 }
@@ -346,13 +356,16 @@ export function loadStaffScriptsBundle(callback) {
     setTimeout(() => staffScriptsPromise.then(callback), 0);
     return staffScriptsPromise;
   }
-  staffScriptsPromise = new Promise(function(resolve) {
+  staffScriptsPromise = new Promise(function(resolve, reject) {
     // The staff scripts bundle requires both more-bundle.js and editor-bundle.js (to render
     // previews of CommonMark comments [7PKEW24]). This'll load them both.
     loadEditorAndMoreBundles(() => {
       loadJs(eds.assetUrlPrefix + 'staff-bundle.' + eds.minMaxJs, function() {
         resolve();
         callback();  // setTimeout(..., 0) not needed — done by loadMoreScriptsBundle() already
+      }, function() {
+        staffScriptsPromise = null;
+        reject();
       });
     });
   });
@@ -380,13 +393,15 @@ export function loadEditorAndMoreBundlesGetDeferred(): Promise<void> {
 
   showLoadingOverlay();
   // But don't resolve the editorScriptsPromise until everything has been loaded.
-  editorScriptsPromise = new Promise(function(resolve) {
+  editorScriptsPromise = new Promise(function(resolve, reject) {
     moreScriptsLoaded.then(function() {
       editorLoaded.then(function() {
         removeLoadingOverlay();
         resolve();
-      });
-    });
+      }).catch(reject);
+    }).catch(reject);
+  }).catch(function() {
+    editorScriptsPromise = null;
   });
   return editorScriptsPromise;
 }
@@ -1401,7 +1416,10 @@ export function trackReadingProgress(lastViewedPostNr: PostNr, secondsReading: n
     }
   }
   else {
-    postJsonSuccess(url, success, data, null, { showLoadingOverlay: false });
+    postJsonSuccess(url, success, data,
+        // Don't popup any error dialog from here. If there's a network error, we'll show a
+        // "No internet" non-intrusive message instead [NOINETMSG].
+        () => ShowNoErrorDialog, { showLoadingOverlay: false });
   }
 }
 
@@ -1460,9 +1478,14 @@ export function sendLongPollingRequest(userId: UserId, successFn: (response) => 
 
   const options: GetOptions = {
     dataType: 'json',
-    // Firefox always calls the error callback if a long polling request is ongoing when
+    // Don't show any error dialog if there is a disconnection, maybe laptop goes to sleep?
+    // or server restarts? or sth. The error dialog is so distracting — and the browser
+    // resubscribes automatically in a while. Instead, we show a non-intrusive message [NOINETMSG]
+    // about that, and an error dialog not until absolutely needed.
+    //
+    // (Old?: Firefox always calls the error callback if a long polling request is ongoing when
     // navigating away / closing the tab. So the dialog would be visible for 0.1 confusing seconds.
-    // 2018-06-30: Or was this in fact jQuery that called error(), when FF called abort()?
+    // 2018-06-30: Or was this in fact jQuery that called error(), when FF called abort()? )
     suppressErrorDialog: true,
   };
 

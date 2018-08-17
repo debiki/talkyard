@@ -26,8 +26,8 @@
    module debiki2.pubsub {
 //------------------------------------------------------------------------------
 
-const RetryAfterMsDefault = 4000;
-const GiveUpAfterTotalMs = 8 * 60 * 1000; // 8 minutes [5AR20ZJ]
+const RetryAfterMsDefault = 5000;
+const GiveUpAfterTotalMs = 7 * 60 * 1000; // 7 minutes [5AR20ZJ]
 let retryAfterMs = RetryAfterMsDefault;
 let startedFailingAtMs;
 
@@ -37,6 +37,11 @@ let startedFailingAtMs;
  */
 export function subscribeToServerEvents() {
   Server.abortAnyLongPollingRequest();
+
+  // If disconnected, the "No internet" message [NOINETMSG] will reappear immediately when the
+  // netw request fails — unless if not logged in. Then won't get any live notifications anyway,
+  // so no need to constantly show the message.
+  $h.removeClasses(document.documentElement, 's_NoInet');
 
   // If not logged in, don't ask for any events — if everyone did that, that could put the server
   // under an a bit high load? and not much interesting to be notified about anyway, when not logged in.
@@ -88,7 +93,11 @@ export function subscribeToServerEvents() {
       //     "Cannot talk with the server. Reload page to retry. [TyMLPRRLD]");
       // When in fact it's more likey that maybe the laptop was disconnected
       // from the internet for a while? and all is fine?
-      util.openDefaultStupidDialog({  // import what?
+      // BUG won't work, unless the more-scripts bundle already loaded  :-P
+      // Instead, find a tiny modal dialog lib, use instead of React Bootstrap? [tiny-dialog]
+      // But ... will work in prod mode? Because then caches, no server roundtrip needed?
+      Server.loadMoreScriptsBundle(function() {
+        util.openDefaultStupidDialog({  // import what?
           body: "Refresh page to see any latest changes. (There was a disconnection)",  // I18N
           primaryButtonTitle: "Refresh now",
           secondaryButonTitle: "Cancel",
@@ -96,9 +105,11 @@ export function subscribeToServerEvents() {
             if (whichButton === 1)
               window.location.reload()
           } });
+      });
     }
     else {
-      console.warn(`Long polling error, will retry after ${Math.floor(retryAfterMs / 1000)} seconds...`);
+      $h.addClasses(document.documentElement, 's_NoInet');
+      console.warn(`Long polling error, will retry in ${Math.floor(retryAfterMs / 1000)} seconds...`);
       setTimeout(() => {
         if (!Server.isLongPollingNow()) {
           subscribeToServerEvents();
