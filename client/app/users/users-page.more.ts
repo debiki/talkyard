@@ -121,6 +121,9 @@ const UserPageComponent = createReactClass(<any> {
     if (this.nowLoading === usernameOrId) return;
     this.nowLoading = usernameOrId;
 
+    const shallComposeMessage =
+      this.props.location.hash.indexOf('#composeDirectMessage') >= 0;  // (4AR6BJ)
+
     Server.loadUserAnyDetails(usernameOrId, (user: MemberInclDetails, stats: UserStats) => {
       this.nowLoading = null;
       if (this.isGone) return;
@@ -137,10 +140,16 @@ const UserPageComponent = createReactClass(<any> {
         let pathWithUsername = UsersRoot + user.username.toLowerCase();
         if (params.section) pathWithUsername += '/' + params.section;
         if (params.subsection) pathWithUsername += '/' + params.subsection;
-        pathWithUsername += this.props.location.hash;
+
+        // No, skip any hash fragment action — so won't trigger again, if browser-navigating
+        // back. Already remembered what to do, here: (4AR6BJ).
+        // pathWithUsername += this.props.location.hash;
+
         this.props.history.replace(pathWithUsername);
       }
-      this.maybeOpenMessageEditor(user.id);
+      if (shallComposeMessage) {
+        this.maybeOpenMessageEditor(user.id);
+      }
     }, () => {
       if (this.isGone) return;
       // Error. We might not be allowed to see this user, so null it even if it was shown before.
@@ -153,13 +162,15 @@ const UserPageComponent = createReactClass(<any> {
     if (userId <= SystemUserId)
       return;
 
-    if (window.location.hash.indexOf('#composeDirectMessage') >= 0 && !this.hasOpenedEditor) {
-      this.hasOpenedEditor = true;
-      const myUserId = ReactStore.getMe().id;
-      if (userId !== myUserId) {
-        editor.openToWriteMessage(userId);
-      }
-    }
+    if (this.hasOpenedEditor)
+      return;
+
+    const myUserId = ReactStore.getMe().id;
+    if (userId === myUserId)
+      return;
+
+    this.hasOpenedEditor = true;
+    editor.openToWriteMessage(userId);
   },
 
   render: function() {

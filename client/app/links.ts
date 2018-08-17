@@ -100,7 +100,7 @@ export function linkToMyDraftsEtc(store: Store): string {
 }
 
 export function linkToMyProfilePage(store: Store): string {
-  return origin() + UsersRoot + store.me.id;
+  return origin() + UsersRoot + store.me.username;
 }
 
 

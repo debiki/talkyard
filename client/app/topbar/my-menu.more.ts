@@ -69,7 +69,7 @@ export const MyMenuContent = createFactory({
           notification.Notification({ notification: notf })));
     if (me.thereAreMoreUnseenNotfs) {
       notfsElems.push(
-          MenuItemLink({ key: 'More', to: linkToUsersNotfs(me.id) },
+          MenuItemLink({ key: 'More', to: linkToUsersNotfs(me.username) },
             t.mm.MoreNotfs));
     }
 

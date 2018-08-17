@@ -458,12 +458,12 @@ export function doUrlFragmentAction(newHashFragment?: string) {
           const pageRole = PageRole.Discussion; // for now
           debiki2.editor.editNewForumPage(categoryId, pageRole);
         });
+        // Don't re-open the editor, if going to another page, and then back.
+        location.hash = '';
         break;
       default:
         die('TyE5AKBR3');
     }
-    // Don't re-do the action, if going to another page, and then back.
-    location.hash = '';
     return;
   }
 
