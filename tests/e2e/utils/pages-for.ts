@@ -814,13 +814,25 @@ function pagesFor(browser) {
       api.waitForVisible('.s_SP_QueryTI');
     },
 
-    dismissAnyAlert: (): boolean => {
+    acceptAnyAlert: (howMany: number = 1): boolean => {
+      return api.dismissAcceptAnyAlert(howMany, true);
+    },
+
+    dismissAnyAlert: (howMany: number = 1): boolean => {
+      return api.dismissAcceptAnyAlert(howMany, false);
+    },
+
+    dismissAcceptAnyAlert: (howMany: number, accept: boolean): boolean => {
+      let numLeft = howMany;
       for (let i = 0; i < 20; ++i) {
-        if (i % 10 === 0) console.log("Waiting for alert to dismiss ...");
+        if (i % 10 === 0) console.log(`Waiting for ${howMany} alert(s) to dismiss ... [TyM74AKRWJ]`);
         try {
-          browser.alertDismiss();
-          console.log("Dismissed.");
-          return true;
+          if (accept) browser.alertAccept();
+          else browser.alertDismiss();
+          console.log(accept ? "Accepted." : "Dismissed.");
+          numLeft -= 1;
+          if (numLeft === 0)
+            return true;
         }
         catch (e) {
           // Wait for alert, up to 20*50 = 1 000 ms.
@@ -3694,7 +3706,7 @@ function pagesFor(browser) {
 
       dismissReloadPageAlert: function() {
         // Seems this alert appears only in a visible browser (not in an invisible headless browser).
-        for (let i = 0; i < 10; ++i) {
+        for (let i = 0; i < 5; ++i) {
           // Clicking anywhere triggers an alert about reloading the page, although has started
           // writing — because was logged out by the server (e.g. because user suspended)
           // and then som js tries to reload.

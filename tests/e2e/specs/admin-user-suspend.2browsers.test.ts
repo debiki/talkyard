@@ -64,6 +64,12 @@ describe("admin-user-suspend [TyT5GKQSG2]", function() {
     mariasBrowser.complex.loginWithPasswordViaTopbar(maria);
   });
 
+  it("... and starts creating a topic", function() {
+    mariasBrowser.forumButtons.clickCreateTopic();
+    mariasBrowser.editor.editTitle(mariasTopicTitle);
+    mariasBrowser.editor.editText(mariasTopicBody);
+  });
+
 
   it("Owen suspends Maria", function() {
     owensBrowser.adminArea.user.suspendUser();
@@ -76,8 +82,8 @@ describe("admin-user-suspend [TyT5GKQSG2]", function() {
   });
 
   it("... Maria now cannot create a topic", function() {
-    mariasBrowser.complex.createAndSaveTopic({
-        title: mariasTopicTitle, body: mariasTopicBody, resultInError: true });
+    mariasBrowser.editor.save();
+    mariasBrowser.waitUntilLoadingOverlayGone();
   });
 
   it("... there's a server error about suspended or not-logged-in", function() {
@@ -95,6 +101,7 @@ describe("admin-user-suspend [TyT5GKQSG2]", function() {
 
   it("... Now, she cannot login (was logged out by the server)", function() {
     mariasBrowser.refresh();
+    mariasBrowser.acceptAnyAlert(2);  // for some reason, up to 2 alerts
     mariasBrowser.complex.loginWithPasswordViaTopbar(maria, { resultInError: true });
     mariasBrowser.loginDialog.waitForAccountSuspendedError();
   });

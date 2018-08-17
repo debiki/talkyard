@@ -39,6 +39,7 @@ enum DraftStatus {
   SavingSmall = 6,
   SavingBig = 7,
   Deleting = 8,
+  CannotSave = 10,
 }
 
 export const ReactTextareaAutocomplete = reactCreateFactory(window['ReactTextareaAutocomplete']);
@@ -774,7 +775,7 @@ export const Editor = createComponent({
           if (callbackThatClosesEditor) {
             callbackThatClosesEditor();
           }
-        });
+        }, this.setCannotSaveDraft);
       }
       return;
     }
@@ -795,6 +796,13 @@ export const Editor = createComponent({
       if (callbackThatClosesEditor) {
         callbackThatClosesEditor();
       }
+    }, this.setCannotSaveDraft);
+  },
+
+  setCannotSaveDraft: function(errorStatusCode?: number) {
+    this.setState({
+      draftStatus: DraftStatus.CannotSave,
+      draftErrorStatusCode: errorStatusCode,
     });
   },
 
@@ -1307,6 +1315,7 @@ export const Editor = createComponent({
           this.state.splitHorizontally ? t.e.ToNormal : t.e.TileHorizontally);
 
     let draftStatusText;
+    let draftErrorClass = '';
     const draft: Draft = this.state.draft;
     const draftNr: number | string = draft ? draft.draftNr : '';
     switch (this.state.draftStatus) {
@@ -1319,10 +1328,18 @@ export const Editor = createComponent({
       // UX COULD show in modal dialog, and an "Ok I'll wait until you're done" button, and a Cancel button.
       case DraftStatus.SavingBig: draftStatusText = `Saving draft ${draftNr} ...`; break;
       case DraftStatus.Deleting: draftStatusText = `Deleting draft ${draftNr} ...`; break;
+      case DraftStatus.CannotSave:
+        draftErrorClass = ' s_E_DraftStatus-Error';
+        let details: string = '';
+        if (this.state.draftErrorStatusCode === 403) details = "Access denied";  // I18N
+        else if (this.state.draftErrorStatusCode) details = "Error " + this.state.draftErrorStatusCode;
+        if (!this.state.draftErrorStatusCode) details = "No internet connection";  // I18N reuse string
+        draftStatusText = "Cannot save draft: " + details;  // I18N
+        break;
     }
 
     const draftStatus = !draftStatusText ? null :
-        r.span({ className: 's_E_DraftStatus' }, draftStatusText);
+        r.span({ className: 's_E_DraftStatus' + draftErrorClass }, draftStatusText);
 
     return (
       r.div({ style: styles },

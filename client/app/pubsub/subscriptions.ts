@@ -74,7 +74,7 @@ export function subscribeToServerEvents() {
         die("Unknown response type [TyE7YKF4]: " + response.type +
             "\n\nThe response body:\n\n" + JSON.stringify(response));
     }
-  }, () => {
+  }, (errorStatusCode?: number) => {
     // Error. Don't retry immediately — that could result in super many error log messages,
     // if the problem persists. Also, do a bit exponential backoff; eventually give up.
     retryAfterMs = retryAfterMs * 1.3;
@@ -108,7 +108,10 @@ export function subscribeToServerEvents() {
       });
     }
     else {
-      $h.addClasses(document.documentElement, 's_NoInet');
+      // If the server could reply with an error code, then the internet connection works, right.
+      if (!errorStatusCode) {
+        $h.addClasses(document.documentElement, 's_NoInet');
+      }
       console.warn(`Long polling error, will retry in ${Math.floor(retryAfterMs / 1000)} seconds...`);
       setTimeout(() => {
         if (!Server.isLongPollingNow()) {

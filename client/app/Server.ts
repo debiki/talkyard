@@ -939,13 +939,19 @@ export function loadTextAndDraft(postNr: PostNr, onDone: (response: LoadTextAndD
 }
 
 
-export function upsertDraft(draft: Draft, onDone: (draftWithNr: Draft) => void) {
-  postJsonSuccess('/-/upsert-draft', onDone, draft);
+export function upsertDraft(draft: Draft, onOk: (draftWithNr: Draft) => void, onError) {
+  postJsonSuccess('/-/upsert-draft', onOk, draft, function(xhr) {
+    onError(xhr.status);
+    return ShowNoErrorDialog;
+  }, { showLoadingOverlay: false });
 }
 
 
-export function deleteDrafts(draftNrs: DraftNr[], onDone: () => void) {
-  postJsonSuccess('/-/delete-drafts', onDone, draftNrs);
+export function deleteDrafts(draftNrs: DraftNr[], onOk: () => void, onError) {
+  postJsonSuccess('/-/delete-drafts', onOk, draftNrs, function(xhr) {
+    onError(xhr.status);
+    return ShowNoErrorDialog;
+  }, { showLoadingOverlay: false });
 }
 
 
@@ -1459,7 +1465,7 @@ export function testGetLongPollingNr() {
  * I asked: https://github.com/slact/nchan/issues/466
  */
 export function sendLongPollingRequest(userId: UserId, successFn: (response) => void,
-      errorFn: () => void, resendIfNeeded: () => void) {
+      errorFn: (statusCode?: number) => void, resendIfNeeded: () => void) {
 
   if (longPollingState.ongoingRequest) {
     die(`Already long polling, request nr ${longPollingState.ongoingRequest.reqNr} [TyELPRDUPL]`);
@@ -1521,17 +1527,17 @@ export function sendLongPollingRequest(userId: UserId, successFn: (response) => 
         longPollingState.lastEtag = xhr.getResponseHeader('Etag');
         requestDone = true;
         successFn(response);
-      }, (errorDetails, status?: number) => {
+      }, (errorDetails, statusCode?: number) => {
         longPollingState.ongoingRequest = null;
         requestDone = true;
-        if (status === 408) {
+        if (statusCode === 408) {
           // Fine.
           console.debug(`Long polling request ${reqNr} done, status 408 Timeout [TyELPRTMT]`);
           resendIfNeeded();
         }
         else {
           console.warn(`Long polling request ${reqNr} error [TyELPRERR]`);
-          errorFn();
+          errorFn(statusCode);
         }
       }, options);
 
