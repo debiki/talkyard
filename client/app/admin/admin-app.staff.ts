@@ -763,6 +763,10 @@ const FeatureSettings = createFactory({
           }
         }),
 
+        /*  Not so well tested: 404 Not Found errors. Disable for now. Add e2e tests later.
+        Also need pages that shows new topics from all sub communities, and the ones one
+        has joined only.
+
         Setting2(props, { type: 'checkbox',
           label: "Enable sub communities",
           help: rFragment({},
@@ -776,7 +780,7 @@ const FeatureSettings = createFactory({
           update: (newSettings: Settings, target) => {
             newSettings.showSubCommunities = target.checked;
           }
-        }),
+        }), */
       ));
   }
 });
