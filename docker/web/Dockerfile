@@ -247,7 +247,9 @@ COPY lua-packages /opt/lua-packages/
 
 # Add 'bash' so we can 'docker exec' into the container, + some tools. (wget & less already works)
 # And gdb, for backtracing core dumps. [NGXCORED]
-RUN apk add --no-cache bash tree curl net-tools gdb
+RUN apk add --no-cache bash tree curl net-tools gdb \
+  # Telnet, nice for troubleshooting.
+  busybox-extras
 
 # Remove default files, they're very confusing, if logging in to Nginx and looking at /etc/nginx/:
 RUN rm -fr \

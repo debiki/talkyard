@@ -3,9 +3,11 @@ FROM openjdk:8u151-jre-alpine3.7
 # SECURITY SHOULD not be root (in Docker container)
 #RUN groupadd -r play && useradd -r -g play play
 
-# Nice to have: (but why telnet not found?)
+# Nice to have:
 RUN apk add --no-cache \
-  curl tree less wget net-tools bash
+  curl tree less wget net-tools bash \
+  # Telnet, nice for troubleshooting SMTP problems for example.
+  busybox-extras
 
 # Play's HTTP and HTTPS listen ports, Java debugger port, JMX port 3333.
 EXPOSE 9000 9443 9999 3333

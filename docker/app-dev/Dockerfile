@@ -4,8 +4,10 @@ RUN apk add --no-cache \
   # Required:
   # (git needed so can include Git revision in the build, and show at http://server/-/build-info.)
   curl unzip git \
-  # Nice to have: (why telnet not found?)
-  tree less wget net-tools bash
+  # Nice to have:
+  tree less wget net-tools bash \
+  # Telnet, nice for troubleshooting SMTP problems for example.
+  busybox-extras
 
 ENV ACVERSION 1.3.12
 ENV ACTIVATOR activator-$ACVERSION
