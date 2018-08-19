@@ -1826,7 +1826,22 @@ function pagesFor(browser) {
       },
 
       waitForTopics: function() {
-        api.waitForVisible('.e2eF_T');
+        // This is in some cases really slow, often makes tests/e2e/specs/navigation-as-admin.test.ts
+        // time out — unless runs selenium-standalone *with*  `-- -debug` logging. Weird. [E2EBUG]
+        // Anyway, log something, so can see if fails because this ... for no reason ... takes long.
+        process.stdout.write('\n<waitForTopics...');
+        // api.waitForVisible('.e2eF_T'); — also takes "forever", in navigation-as-admin.test.ts
+        // (only?), just like this:
+        while (true) {
+          try {
+            api.waitForVisible('.e2eF_T', 1000);
+            break;
+          }
+          catch (ignore) {
+            process.stdout.write('■');
+          }
+        }
+        process.stdout.write('/waitForTopics>');
       },
 
       clickLoadMore: () => {

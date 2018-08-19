@@ -30,6 +30,7 @@ import play.api.mvc.{Action, ControllerComponents}
 import play.api.libs.json._
 import EditController._
 import scala.concurrent.ExecutionContext
+import scala.util.Try
 
 
 /** Edits pages and posts.
@@ -40,6 +41,7 @@ class EditController @Inject()(cc: ControllerComponents, edContext: EdContext)
   import context.security.{throwNoUnless, throwIndistinguishableNotFound}
   def execCtx: ExecutionContext = context.executionContext
 
+
   def loadDraftAndGuidelines(writingWhat: String, categoryId: Option[Int], pageRole: String)
         : Action[Unit] = GetAction { request =>
     import request.{dao, queryString, theRequester => requester}
@@ -47,7 +49,7 @@ class EditController @Inject()(cc: ControllerComponents, edContext: EdContext)
     import Utils.ValidationImplicits.queryStringToValueGetter
 
     val anyDraftLocator =
-      queryString.getInt("replyToPostNr") match {
+      Try(queryString.getInt("replyToPostNr") match {
         case Some(postNr) =>
           val replyToPageId = queryString.getFirst("replyToPageId")
           Some(DraftLocator(
@@ -62,6 +64,8 @@ class EditController @Inject()(cc: ControllerComponents, edContext: EdContext)
                 DraftLocator(newTopicCategoryId = Some(catId))
               }
           }
+      }) getOrIfFailure { ex =>
+        throwBadRequest("TyE4WBKZF3", ex.getMessage)
       }
 
     val drafts = anyDraftLocator map { draftLocator =>

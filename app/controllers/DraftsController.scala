@@ -49,6 +49,10 @@ class DraftsController @Inject()(cc: ControllerComponents, edContext: EdContext)
     val locatorJson = (body \ "forWhat").asOpt[JsObject] getOrThrowBadArgument(
       "TyE4AKBP20", "No draft locator: forWhat missing")
 
+    // This currently rejects drafts for the very first comment, on an embedded comments page
+    // — because the page hasn't yet been created; there's no page id, so no locator can
+    // be constructed. COULD add an embeddingPageAltId field? as part of the locator?
+    // UX SHOULD save draft also for this 1st blog post comment.  [BLGCMNT1]
     val draftLocator = Try(
       DraftLocator(
         newTopicCategoryId = (locatorJson \ "newTopicCategoryId").asOpt[CategoryId],

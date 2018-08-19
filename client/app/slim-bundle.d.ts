@@ -212,6 +212,8 @@ declare namespace debiki2 {
   var user_maySendInvites;
   var isMember;
   var userId_isGuest;
+  function store_isNoPage(store: Store): boolean;
+  function store_isPageDeleted(store: Store): boolean;
   function store_canDeletePage(store: Store): boolean;
   function store_canUndeletePage(store: Store): boolean;
   function store_canPinPage(store: Store): boolean;

@@ -97,7 +97,7 @@ trait ForumDao {
       val forumPageId = forumPagePath.pageId getOrDie "DwE5KPFW2"
 
       val partialResult: CreateForumResult = createDefaultCategoriesAndTopics(
-        forumPageId, rootCategoryId, isForEmbCmts = isForEmbCmts, options, byWho, tx)
+        forumPageId, rootCategoryId, options, byWho, tx)
 
       val settings =
         if (isForEmbCmts) {
@@ -126,7 +126,7 @@ trait ForumDao {
 
 
   private def createDefaultCategoriesAndTopics(forumPageId: PageId, rootCategoryId: CategoryId,
-        isForEmbCmts: Boolean, options: CreateForumOptions, byWho: Who, tx: SiteTransaction)
+        options: CreateForumOptions, byWho: Who, tx: SiteTransaction)
         : CreateForumResult = {
 
     val staffCategoryId = rootCategoryId + 1

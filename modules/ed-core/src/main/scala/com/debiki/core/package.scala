@@ -242,6 +242,7 @@ package object core {
 
   val HomepageUrlPath = "/"
   val EmptyPageId = "0"  // a.k.a. NoPageId
+  val NoPageId: PageId = EmptyPageId
 
   val MillisPerSecond: Int = 1000
   val OneMinuteInMillis: Long = 60 * 1000

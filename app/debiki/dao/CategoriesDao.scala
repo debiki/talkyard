@@ -78,9 +78,7 @@ case class CategoryToSave(
     unlisted = unlisted,
     includeInSummaries = includeInSummaries,
     createdAt = createdAt,
-    updatedAt = createdAt,
-    // if createDeletedAboutTopic: then TESTS_MISSING, e2e test won't get created.
-    deletedAt = if (createDeletedAboutTopic) Some(createdAt) else None)
+    updatedAt = createdAt)
 
 }
 
@@ -518,7 +516,9 @@ trait CategoriesDao {
         bodyHtmlSanitized = bodyTextAndHtml.safeHtml,
         pinOrder = Some(ForumDao.AboutCategoryTopicPinOrder),
         pinWhere = Some(PinPageWhere.InCategory),
-        byWho, spamRelReqStuff = None, tx)
+        byWho, spamRelReqStuff = None, tx,
+        // if createDeletedAboutTopic, then TESTS_MISSING [5WAKR02], e2e test won't get created.
+        createAsDeleted = newCategoryData.createDeletedAboutTopic)
 
     if (newCategoryData.shallBeDefaultCategory) {
       setDefaultCategory(category, tx)

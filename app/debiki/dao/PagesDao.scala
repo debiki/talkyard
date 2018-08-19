@@ -135,7 +135,9 @@ trait PagesDao {
       tx: SiteTransaction, hidePageBody: Boolean = false,
       layout: Option[TopicListLayout] = None,
       bodyPostType: PostType = PostType.Normal,
-      altPageId: Option[AltPageId] = None, embeddingUrl: Option[String] = None): (PagePath, Post) = {
+      altPageId: Option[AltPageId] = None,
+      embeddingUrl: Option[String] = None,
+      createAsDeleted: Boolean = false): (PagePath, Post) = {
 
     val now = globals.now()
     val authorId = byWho.id
@@ -237,7 +239,9 @@ trait PagesDao {
 
     val uploadPaths = findUploadRefsInPost(bodyPost)
 
-    val pageMeta = PageMeta.forNewPage(pageId, pageRole, authorId, now.toJavaDate,
+    val pageMeta = PageMeta.forNewPage(pageId, pageRole, authorId,
+      creationDati = now.toJavaDate,
+      deletedAt = if (createAsDeleted) Some(now) else None,
       numPostsTotal = 2, // title & body
       layout = layout,
       pinOrder = pinOrder, pinWhere = pinWhere,

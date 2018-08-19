@@ -543,6 +543,9 @@ export const Editor = createComponent({
   loadDraftAndGuidelines: function(draftLocator: DraftLocator, writingWhat: WritingWhat,
         pageRole?: PageRole) {
     const store: Store = ReactStore.allData();
+    if (store_isNoPage(store))  // [BLGCMNT1]
+      return;
+
     const page: Page = store.currentPage;
     const theCategoryId = draftLocator.newTopicCategoryId || page.categoryId;
     const thePageRole = pageRole || page.pageRole;
@@ -741,10 +744,14 @@ export const Editor = createComponent({
     return draft;
   },
 
-  saveDraftNow: function(callbackThatClosesEditor) {
+  saveDraftNow: function(callbackThatClosesEditor: () => void | undefined) {
+    // If is first comment on an embedded comments — then, page not yet created. Then
+    // don't save draft, for now, for simplicity, since no page id. Would want to do, later. [BLGCMNT1]
+    const store: Store = this.state.store;
+    const skipDraft = store_isNoPage(store);
+
     const draftStatus: DraftStatus = this.state.draftStatus;
-    if (draftStatus <= DraftStatus.NeedNotSave) {
-      // Need not save.
+    if (skipDraft || draftStatus <= DraftStatus.NeedNotSave) {
       if (callbackThatClosesEditor) {
         callbackThatClosesEditor();
       }
@@ -1318,7 +1325,12 @@ export const Editor = createComponent({
     let draftErrorClass = '';
     const draft: Draft = this.state.draft;
     const draftNr: number | string = draft ? draft.draftNr : '';
-    switch (this.state.draftStatus) {
+
+    // We currently don't save any draft, for the 1st comment on a new blog post :-(   [BLGCMNT1]
+    // because the page doesn't yet exist; there's no page id to use in the draft locator.
+    const skipDraft = store_isNoPage(store);
+
+    if (!skipDraft) switch (this.state.draftStatus) {
       case DraftStatus.NothingHappened: break;
       case DraftStatus.EditsUndone: draftStatusText = "Unchanged."; break;
       case DraftStatus.Saved: draftStatusText = `Draft ${draftNr} saved.`; break;

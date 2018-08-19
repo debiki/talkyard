@@ -210,6 +210,11 @@ export function settings_selectTopicType(settings: SettingsVisibleClientSide, me
 // Store
 //----------------------------------
 
+export function store_isNoPage(store: Store): boolean {
+  return !store.currentPageId || store.currentPageId === EmptyPageId;
+}
+
+
 export function store_isPageDeleted(store: Store): boolean {
   const page: Page = store.currentPage;
   return !!page.pageDeletedAtMs || _.some(page.ancestorsRootFirst, a => a.isDeleted);

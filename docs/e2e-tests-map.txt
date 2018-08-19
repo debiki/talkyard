@@ -315,6 +315,7 @@ chat -
     - chat-create-from-direct-message.2browsers.test.ts  TyT5FKB2A
 
 embedded comments:
+  no about page created:  [5WAKR02]
   post comment:
           - "all" e2e emb cmts tests
   click login:
