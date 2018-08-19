@@ -106,6 +106,7 @@ export const UserProfileAdminView = createFactory({
     if (!user)
       return r.p({}, "Loading...");
 
+    const isMe = user.id === me.id;
     const showPublProfileButton =
         ExtLinkButton({ href: this.publicProfileLink(), className: 'e_VwPblPrfB' },
           "View Public Profile");
@@ -170,6 +171,16 @@ export const UserProfileAdminView = createFactory({
       return () => this.editMember(action);
     };
 
+    // Don't let staff unverify their email, and in that way prevent themselves from logging in.
+    // UX maybe there're in rare cases reasons for doing this? (rather than just a bad luck click)
+    // COULD pop up a "Do you really want to..." dialog?
+    const hideSetUnverifiedButton = isMe && user.emailVerifiedAtMs;
+
+    // Admins shouldn't be able to uanpprove themselves? That's just confusing?
+    // And to unapprove an admin, first demote hen, so is no longer admin.
+    // UX COULD write "Cannot unapprove an admin" info message?
+    const hideUnapproveButtons = user.isAdmin;
+
     const emailAddrAndResendVerifEmailButton = makeRow(
         "Email: ",
         user.email + (user.emailVerifiedAtMs ? '' : " — not verified"),
@@ -179,7 +190,8 @@ export const UserProfileAdminView = createFactory({
               Button({ onClick: this.resendEmailAddrVerifEmail, className: 's_SendEmVerifEmB' },
                 "Send verification email"),
 
-          Button({ onClick: makeEditFn(user.emailVerifiedAtMs ?
+          hideSetUnverifiedButton ? null :
+            Button({ onClick: makeEditFn(user.emailVerifiedAtMs ?
                 EditMemberAction.SetEmailUnverified : EditMemberAction.SetEmailVerified),
                 className: user.emailVerifiedAtMs ? 'e_SetEmNotVerifB' : 'e_SetEmVerifB' },
             user.emailVerifiedAtMs ?
@@ -201,13 +213,15 @@ export const UserProfileAdminView = createFactory({
               : r.span({ className: 'e_Appr_No' }, "No, rejected"))
           : r.span({ className: 'e_Appr_Undecided' }, "Undecided"),
         user.approvedAtMs
-            ? Button({ onClick: makeEditFn(EditMemberAction.ClearApproved), className: 'e_Appr_UndoB' },
-                "Undo")
+            ? (hideUnapproveButtons ? null :
+                Button({ onClick: makeEditFn(EditMemberAction.ClearApproved), className: 'e_Appr_UndoB' },
+                  "Undo"))
             : rFragment({},
                 Button({ onClick: makeEditFn(EditMemberAction.SetApproved), className: 'e_Appr_ApprB' },
                   "Approve"),
+              (hideUnapproveButtons ? null :
                 Button({ onClick: makeEditFn(EditMemberAction.SetUnapproved), className: 'e_Appr_RejB' },
-                  "Reject")));
+                  "Reject"))));
 
 
     const suspendedText = user.suspendedTillEpoch
@@ -271,6 +285,7 @@ export const UserProfileAdminView = createFactory({
         Button({ onClick: () => openTrustLevelDialog(user, this.reloadUser),
             className: 'e_TrustLvlB' }, "Change");
 
+    // UX SHOULD not be able to mark admins as threats. Is confusing, and has no effect (?) anyway.
     const threatLevelText = user.isGroup ? null : (
         user.lockedThreatLevel
         ? r.span({ className: 'e_ThreatLvlIsLkd' },
