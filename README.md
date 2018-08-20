@@ -15,23 +15,29 @@ to do, to change society, or grow your startup.
 Talkyard
 =============================
 
-Create a community, where your users can suggest ideas and get questions answered. And have friendly open-ended discussions and chat. Place it at `community.yourwebsite.org`.
+Create a place to talk, where people find answers, and you can discuss and chat. Place it at `community.yourwebsite.org`.
 
-People in your community need different types of discussions for different things?
-Talkyard has:
+<!-- People in your community need different types of discussions for different things?
+Talkyard has: -->
 
- - Question-answers, like StackOverflow (best answers first).
- - Team chat, like Slack.
- - Discussing ideas and news, Reddit and Hacker news style.
- - Solving problems, step by step: flat chronological comments (coming soon).
- - Embedded comments, like Disqus, for your blog, or maybe software API docs?
+ - **Find answers**, in Question-Answers topics, like StackOverflow.
+ - **Discuss ideas**, in Reddit and Hacker News open-ended topics.
+ - **Get work done**, in team chat, like Slack.
+ - **Solve problems** step by step, in flat by-time topics (coming soon).
+ - **Talk with your blog visitors**, in embedded comments, like Disqus.
 
-(The staff configure the topic type just once, in a per category setting.)
+<!--
+ - **Improve your API docs**, by embedding comments at the end of each docs page, to make it easy for people to ask and tell you if something is unclear.
+   -->
+
+<!-- (The staff configure the topic type just once, in a per category setting.) -->
+
+[**Support forum here**](https://www.talkyard.io/forum/latest/support), at Talkyard<i></i>.io — and report bugs there too.
 
 Our vision is to build a tool that [people who change the world or their neighborood] can use
-to find ideas and solutions, and pick the right things to do. That's why we have
-Q&A (question-answers) and HackerNews & Reddit type topics, where good ideas and
-solutions rise to the top.
+to find answers and pick the right things to do. That's why we have
+Q&A (question-answers) and HackerNews & Reddit type topics,
+where good answers and ideas rise to the top.
 
 <!--
 Talkyard (formerly EffectiveDiscussions) is discussion forum software, with chat and question-answers features.
@@ -55,43 +61,70 @@ One installation can host many sites.
 There's [hosting](https://www.talkyard.io/pricing), if you don't want to install it yourself.
 
 This is beta software; there might be bugs.
-Please do report problems and suggest ideas here: https://www.talkyard.io/forum/latest/support
 
 
 ### Screenshots
 
-Forum index:
+**Topic list:**
+
+<!--
+![topic-list-borders](https://user-images.githubusercontent.com/7477359/44306130-a3930080-a388-11e8-9cbc-e569f5ddb7a1.jpg)
+ the old demo forum looks better? so use instead.  -->
 
 ![ed-demo-forum-index](https://cloud.githubusercontent.com/assets/7477359/19650764/bb3a1450-9a0a-11e6-884d-d23c93476db3.jpg)
 
-Chat:
+<br>
+
+**Question-Answers:**
+
+
+![how-work-from-home-vpn-broken-borders](https://user-images.githubusercontent.com/7477359/44306101-0041eb80-a388-11e8-92e8-b8d417c47139.jpg)
+
+<br>
+
+**Chat:**
+
+Currently, Talkyard is a mobile friendly web app.
+Within half a year or a year (today is August 2018),
+the plan is that there'll be a white labelled mobile app.
+Meaning, people will be able to install your community, on their mobile phones,
+as a separate app with your custom icon.
+Push notifications for Android, however, initially, not for iOS
+(Apple and iOS currently cannot do PWA mobile app push notifications).
+No need to submit for review to Google Play Store or Apple App Store.
 
 ![ed-e2e-chat-owen-maria](https://cloud.githubusercontent.com/assets/7477359/19674424/608c49aa-9a88-11e6-8ccd-c2e7ceebd0c2.jpg)
 
-Question-Answers:
-
+<br>
+<!--
 ![Q&A about how to wake up on time](https://user-images.githubusercontent.com/7477359/39368115-0549fad0-4a39-11e8-9bba-703d595d2b96.jpg)
+-->
 <!--
 Hacker News / Reddit style discussion:
 ![ed-discussion-semantics-of-upvote-2013](https://cloud.githubusercontent.com/assets/7477359/19650769/bea906aa-9a0a-11e6-8ea2-9ad771981f46.jpg)
 -->
 
-Good user experience (at least we're trying) — for example there's an admin-getting-started guide
-for you, if you create a forum:
+**Admin-getting-started guide:**
 
 ![ed-admin-intro-guide](https://cloud.githubusercontent.com/assets/7477359/19679591/99a12098-9aa2-11e6-8b65-705c2548cbea.jpg)
 
-Users online:
+<br>
+
+**Users online:**
 
 ![ed-online-users](https://cloud.githubusercontent.com/assets/7477359/19680424/f0353f86-9aa5-11e6-84d9-94d46f228b93.jpg)
 
+<br>
 
 
 Contributing
 -----------------------------
 
-Want to contribute? Feel free to say hello in [our community](https://www.talkyard.io/forum/),
-or maybe open an issue or a PR (pull request) here at GitHub.
+Want to contribute? Feel free to say hello in our community: <https://www.talkyard.io/forum/>.
+Good for you if you ask the people there what is currently being worked on, so you won't
+accidentally re-implement something that's almost done already — people
+might be working in their own work-in-progress topic branches that you
+don't know about.
 
 Here's how to translate to a new language: [i18n-README](translations/i18n-README.md) (step 1 and 2 only).
 
@@ -104,10 +137,6 @@ paragraph with your real name (no pseudonyms) and the following text, to all you
 Please squash your commits to just one (unless you're doing something complicated that's easier
 to review in separate commits).
 
-Can be a good idea if you ask us what is currently being worked on, so you won't
-accidentally re-implement something that's already been done or started. People
-(e.g. I) might be working in their own work-in-progress topic branches that you
-don't know about.
 
 
 
