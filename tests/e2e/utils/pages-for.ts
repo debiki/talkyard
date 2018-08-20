@@ -1691,7 +1691,8 @@ function pagesFor(browser) {
       typeAndSaveNewPassword: (password: string, opts: { oldPassword?: string } = {}) => {
         api.chooseNewPasswordPage.typeNewPassword(password);
         if (!opts.oldPassword) {
-          // This is added, to show this test that there's no type-old-password input field.
+          // There's a <span> with the below class, just to show this test that there's
+          // no type-old-password input field.
           assert(browser.isExisting('.e_NoOldPwI'));
         }
         api.chooseNewPasswordPage.submit();

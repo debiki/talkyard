@@ -365,7 +365,7 @@ function addMariasTopicTests() {
 function addMariasProfileTets(testPrefix) {
   const pfx = testPrefix;
 
-  // Maria has created a deleted, an unlisted and a staff-only topics, visible to staff only.
+  // Maria has created 3 topics visible to staff only: a deleted, an unlisted and a staff-only topic.
   const numTopicsAndPosts = memberIsAdmin ? 4 + 3 : 4;
 
   it(pfx + "check username", () => {

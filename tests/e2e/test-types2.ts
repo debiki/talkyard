@@ -354,6 +354,7 @@ interface EmptyTestForum {
     modya?: Member;
     corax?: Member;
     regina?: Member;
+    trillian?: Member;
     maria?: Member;
     michael?: Member;
     mallory?: Member;

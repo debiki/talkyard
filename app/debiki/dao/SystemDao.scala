@@ -173,19 +173,16 @@ class SystemDao(
 
         val anyDeletedHostnames: Seq[String] = anySitesToDelete flatMap { siteToDelete =>
           dieIf(siteToDelete.id > MaxTestSiteId, "EdE20PUJ6", "Trying to delete a *real* site")
-          // Delete hostnames
-          val deletedHostnames = siteToDelete.hosts.map(_.hostname)
-          dieIf(!deletedHostnames.contains(hostname), "TyE4WKB0RJ7", deletedHostnames)
 
-          // Delete the site itslf. Maybe we've deleted it alread — although we do `.distinct`
-          // above, still a small small likelihood for duplicates — in case we happened
+          // Delete the site. Maybe we've deleted it alread — although we do `.distinct`
+          // above, there's a tiny tiny likelihood for duplicates — in case we happened
           // to load it twice, and it was changed in between, so `.distinct` didn't "work".
           val gotDeleted = sysTx.deleteSiteById(siteToDelete.id)
           dieIf(!gotDeleted && !deletedAlready.contains(siteToDelete.id),
             "TyE2ABK493U4", s"Could not delete site: $siteToDelete")
 
           deletedAlready.add(siteToDelete.id)
-          deletedHostnames
+          siteToDelete.hosts.map(_.hostname)
         }
 
         anyDeletedHostnames foreach this.forgetHostname

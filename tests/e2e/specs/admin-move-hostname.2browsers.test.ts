@@ -160,7 +160,7 @@ describe("admin-move-hostname.2browsers  TyT6FKAR20P5", () => {
     assert.equal(strangersHost, newHostname);
   });
 
-  it("Owen start changing address back to the old hostname", () => {
+  it("Owen starts changing address back to the old hostname", () => {
     owensBrowser.refresh();
     owensBrowser.adminArea.settings.advanced.clickChangeSiteAddress();
     owensBrowser.adminArea.settings.advanced.typeNewSiteAddress(origHost);

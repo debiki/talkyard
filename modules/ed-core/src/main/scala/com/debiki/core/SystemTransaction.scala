@@ -53,6 +53,7 @@ trait SystemTransaction {
   def loadSiteByName(name: String): Option[Site]
 
   def loadSiteByHostname(hostname: String): Option[Site] =
+    // This looks up the canonical hostname and site id, for `hostname`.
     lookupCanonicalHost(hostname).flatMap(canonicalHost => loadSite(canonicalHost.siteId))
 
   def loadSite(siteId: SiteId): Option[Site] =

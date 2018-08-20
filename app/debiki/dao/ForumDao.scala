@@ -197,9 +197,10 @@ trait ForumDao {
         // Strangers may not list all topics, maybe blog owner wants to keep some of them private?
         // SECURITY [rand-page-id]
         unlisted = true,
-        // The category About page is somewhat useless, because the same info is in the forum
-        // intro post anyway. And there's only one single category. So create the About topic
-        // in a deleted state — then, can be undeleted later if needed.
+        // The category About page is not needed, because the same info is in the forum
+        // intro post anyway and there's only one single category. So create the About topic
+        // in a deleted state, so it won't be shown. Can be undeleted later if one wants
+        // a "real" forum with many categories.
         createDeletedAboutTopic = true,
         includeInSummaries = IncludeInSummaries.NoExclude),
       immutable.Seq[PermsOnPages](
