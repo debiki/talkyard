@@ -133,7 +133,7 @@ class PostBitFlags(val bits: Int) extends AnyVal {
 
 
 sealed abstract class PostType(protected val IntValue: Int) {
-  def toInt = IntValue
+  def toInt: Int = IntValue
   def isWiki = false
   def placeLast = false
 }
@@ -150,6 +150,7 @@ object PostType {
   case object ChatMessage extends PostType(3)
 
   /** A Normal post but appended to the bottom of the page, not sorted best-first. */
+  // RENAME to ProgressComment? or ChronoComment?
   case object BottomComment extends PostType(4) { override def placeLast = true }
 
   CLEAN_UP // remove StaffWiki, use the permission system instead.
@@ -195,23 +196,54 @@ object PostType {
 }
 
 
+sealed abstract class DraftType (val IntVal: Int) { def toInt: Int = IntVal }
+object DraftType {
+  case object Scratch extends DraftType(1)
+  case object Topic extends DraftType(2)
+  case object DirectMessage extends DraftType(3)
+  case object Edit extends DraftType(4)
+  case object Reply extends DraftType(5)
+  // case object Whisper extends DraftType(6)
+
+  def fromInt(value: Int): Option[DraftType] = Some(value match {
+    case Topic.IntVal => Topic
+    case DirectMessage.IntVal => DirectMessage
+    case Edit.IntVal => Edit
+    case Reply.IntVal => Reply
+    // case Whisper.IntVal => Whisper
+    case _ => return None
+  })
+}
+
+
 case class DraftLocator(
-  newTopicCategoryId: Option[CategoryId] = None,
-  messageToUserId: Option[UserId] = None,
-  editPostId: Option[PostId] = None,
-  replyToPageId: Option[PageId] = None,
-  replyToPostNr: Option[PostNr] = None) {
+  draftType: DraftType,
+  categoryId: Option[CategoryId] = None,
+  toUserId: Option[UserId] = None,
+  pageId: Option[PageId] = None,
+  postNr: Option[PostNr] = None,
+  postId: Option[PostId] = None) {
 
-  private def isForNumThings: Int =
-    newTopicCategoryId.oneIfDefined +
-    messageToUserId.oneIfDefined +
-    editPostId.oneIfDefined +
-    replyToPageId.oneIfDefined
+  draftType match {
+    case DraftType.Scratch =>
+      // Allow anything. Nice to be able to load drafts with weird state, as
+      // a whatever-draft. So they won't just get lost or throw exceptions.
+    case DraftType.Topic =>
+      require(categoryId.isDefined, s"Bad new topic draft: $this [TyE4WABG701]")
+      require(postId.isEmpty && pageId.isEmpty && postNr.isEmpty && toUserId.isEmpty,
+        s"Bad new topic draft: $this [TyE4WABG702]")
+    case DraftType.DirectMessage =>
+      require(toUserId.isDefined, s"Bad direct message draft: $this [TyE6RKW201]")
+      require(categoryId.isEmpty && postId.isEmpty && pageId.isEmpty && postNr.isEmpty,
+        s"Bad direct message draft: $this [TyE6RKW202]")
+    case DraftType.Edit | DraftType.Reply =>
+      require(pageId.isDefined && postNr.isDefined && postId.isDefined,
+          s"Bad $draftType draft: $this [TyE5BKRT201]")
+      require(categoryId.isEmpty && toUserId.isEmpty,
+        s"Bad $draftType draft: $this [TyE5BKRT202]")
+  }
 
-  require(isForNumThings == 1, s"Is for $isForNumThings things: $this [TyEBDDRFTLOC1]")
-  require(replyToPageId.isDefined == replyToPostNr.isDefined, "TyEBDDRFTLOC2")
-
-  def isNewTopic: Boolean = newTopicCategoryId.isDefined || messageToUserId.isDefined
+  def isNewTopic: Boolean = draftType == DraftType.Topic || draftType == DraftType.DirectMessage
 }
 
 
@@ -221,27 +253,24 @@ case class Draft(
   forWhat: DraftLocator,
   createdAt: When,
   lastEditedAt: Option[When] = None,
-  autoPostAt: Option[When] = None,
   deletedAt: Option[When] = None,
-  newTopicType: Option[PageRole] = None,
-  replyType: Option[PostType] = None,
+  topicType: Option[PageRole] = None,
+  postType: Option[PostType] = None,
   title: String,
   text: String) {
 
   require(draftNr >= 1 || draftNr == NoDraftNr, "TyEBDDRFT01")
   require(lastEditedAt.isEmpty || createdAt.millis <= lastEditedAt.get.millis, "TyEBDDRFT03")
-  require(autoPostAt.isEmpty || createdAt.millis <= autoPostAt.get.millis, "TyEBDDRFT04")
   require(deletedAt.isEmpty || createdAt.millis <= deletedAt.get.millis, "TyEBDDRFT05")
   require(lastEditedAt.isEmpty || deletedAt.isEmpty ||
       lastEditedAt.get.millis <= deletedAt.get.millis, "TyEBDDRFT06")
-  require(autoPostAt.isEmpty || deletedAt.isEmpty ||
-      autoPostAt.get.millis <= deletedAt.get.millis, "TyEBDDRFT07")
-  require(forWhat.isNewTopic == newTopicType.isDefined, "TyEBDDRFT08")
-  require(isReply == replyType.isDefined, "Draft replyType missing [TyEBDDRFT09]")
+  require(forWhat.isNewTopic == topicType.isDefined, "TyEBDDRFT08")
+  require(!isReply || postType.isDefined, "Draft postType missing, for a reply draft [TyEBDDRFT09]")
+  require(postType.isEmpty || isReply || isEdit, "Draft postType present [TyEBDDRFT10]")
 
   def isNewTopic: Boolean = forWhat.isNewTopic
-  def isReply: Boolean = forWhat.replyToPostNr.isDefined
-  def isEdit: Boolean = forWhat.editPostId.isDefined
+  def isReply: Boolean = forWhat.draftType == DraftType.Reply
+  def isEdit: Boolean = forWhat.draftType == DraftType.Edit
 }
 
 

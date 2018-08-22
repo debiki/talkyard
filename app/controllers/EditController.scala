@@ -42,31 +42,39 @@ class EditController @Inject()(cc: ControllerComponents, edContext: EdContext)
   def execCtx: ExecutionContext = context.executionContext
 
 
-  def loadDraftAndGuidelines(writingWhat: String, categoryId: Option[Int], pageRole: String)
-        : Action[Unit] = GetAction { request =>
+  def loadDraftAndGuidelines(writingWhat: String, draftType: Int, pageRole: String,
+        categoryId: Option[Int], toUserId: Option[UserId], postId: Option[Int],
+        pageId: Option[String], postNr: Option[Int]): Action[Unit] = GetAction { request =>
+
     import request.{dao, queryString, theRequester => requester}
 
-    import Utils.ValidationImplicits.queryStringToValueGetter
+    val theDraftType = DraftType.fromInt(draftType).getOrThrowBadArgument(
+      "TyE5BKW2A0", "draftType")
 
-    val anyDraftLocator =
-      Try(queryString.getInt("replyToPostNr") match {
-        case Some(postNr) =>
-          val replyToPageId = queryString.getFirst("replyToPageId")
-          Some(DraftLocator(
-            replyToPageId = replyToPageId,
-            replyToPostNr = Some(postNr)))
-        case None =>
-          queryString.getInt("messageToUserId") match {
-            case Some(userId) =>
-              Some(DraftLocator(messageToUserId = Some(userId)))
-            case None =>
-              categoryId map { catId =>
-                DraftLocator(newTopicCategoryId = Some(catId))
-              }
-          }
-      }) getOrIfFailure { ex =>
-        throwBadRequest("TyE4WBKZF3", ex.getMessage)
-      }
+    val anyDraftLocator: Option[DraftLocator] = theDraftType match {
+      case DraftType.Scratch =>
+        None
+      case DraftType.Topic =>
+        categoryId.map(catId =>
+          DraftLocator(DraftType.Topic, categoryId = Some(catId)))
+      case DraftType.DirectMessage =>
+        toUserId.map(userId =>
+          DraftLocator(DraftType.DirectMessage, toUserId = Some(userId)))
+      case DraftType.Edit =>
+        throwBadRequest(
+          "TyE2ABKS0", s"Call ${routes.EditController.loadDraftAndText("123", 123).url} instead")
+      case DraftType.Reply =>
+        val thePageId = pageId.getOrThrowBadArgument("TyE2AKB45", "pageId")
+        val thePostNr = postNr.getOrThrowBadArgument("TyE2AKB46", "postNr")
+        val thePost = dao.loadPost(thePageId, thePostNr) getOrElse {
+          throwIndistinguishableNotFound("TyE5AKBR02")
+        }
+        Some(DraftLocator(
+          DraftType.Reply,
+          postId = Some(thePost.id),
+          pageId = pageId,
+          postNr = postNr))
+    }
 
     val drafts = anyDraftLocator map { draftLocator =>
       dao.readOnlyTransaction { tx =>
@@ -113,7 +121,7 @@ class EditController @Inject()(cc: ControllerComponents, edContext: EdContext)
   /** Sends back a post's current CommonMark source to the browser.
     * SHOULD change to pageId + postId (not postNr)  [idnotnr]
     */
-  def loadCurrentText(pageId: String, postNr: Int): Action[Unit] = GetAction { request =>
+  def loadDraftAndText(pageId: String, postNr: Int): Action[Unit] = GetAction { request =>
     import request.{dao, theRequester => requester}
 
     val pageMeta = dao.getPageMeta(pageId) getOrElse throwIndistinguishableNotFound("EdE4JBR01")
@@ -126,15 +134,21 @@ class EditController @Inject()(cc: ControllerComponents, edContext: EdContext)
       inCategoriesRootLast = categoriesRootLast,
       permissions = dao.getPermsOnPages(categoriesRootLast)), "EdEZBXKSM2")
 
+    val draftLocator = DraftLocator(
+      DraftType.Edit,
+      postId = Some(post.id),
+      pageId = Some(post.pageId),
+      postNr = Some(post.nr))
+
     val anyDrafts = dao.readOnlyTransaction { tx =>
-      tx.loadDraftsByLocator(requester.id, DraftLocator(editPostId = Some(post.id)))
+      tx.loadDraftsByLocator(requester.id, draftLocator)
     }
 
-    // There's a unique key so each person can have only one is-editing draft, per post.
-    dieIf(anyDrafts.length > 1, "TyE5ABK02I", s"Got ${anyDrafts.length} drafts")
+    // Not impossible that there're two drafts — if one has two browser tabs open at the same time,
+    // and starts editing in both, at the same time. Weird. Just pick the random first one.
     val anyDraft = anyDrafts.headOption
 
-    OkSafeJson(Json.obj( // LoadTextAndDraftResponse
+    OkSafeJson(Json.obj( // LoadDraftAndTextResponse
       "postNr" -> post.nr,
       "postUid" -> post.id,
       "currentText" -> post.currentSource,

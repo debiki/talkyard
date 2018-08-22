@@ -920,13 +920,14 @@ export function loadDraftAndGuidelines(draftLocator: DraftLocator, writingWhat: 
       success: (guidelinesSafeHtml: string, draft?: Draft) => void) {
 
   const dloc = draftLocator;
-  const pageIdParam = dloc.replyToPageId ? '&replyToPageId=' + dloc.replyToPageId : '';
-  const postNrParam = dloc.replyToPostNr ? '&replyToPostNr=' + dloc.replyToPostNr : '';
-  const messageToUserIdParam = dloc.messageToUserId ? '&messageToUserId=' + dloc.messageToUserId : '';
+  const draftTypeParam = '&draftType=' + dloc.draftType;
+  const pageIdParam = dloc.pageId ? '&pageId=' + dloc.pageId : '';
+  const postNrParam = dloc.postNr ? '&postNr=' + dloc.postNr : '';
+  const toUserIdParam = dloc.toUserId ? '&toUserId=' + dloc.toUserId : '';
   const categoryParam = categoryId ? '&categoryId=' + categoryId : '';
 
   const url = `/-/load-draft-and-guidelines?writingWhat=${writingWhat}&pageRole=${pageRole}` +
-    pageIdParam + postNrParam + messageToUserIdParam + categoryParam;
+    draftTypeParam + pageIdParam + postNrParam + toUserIdParam + categoryParam;
 
   get(url, (response) => {
     success(response.guidelinesSafeHtml, response.drafts[0]); // for now, just pick the first
@@ -934,8 +935,8 @@ export function loadDraftAndGuidelines(draftLocator: DraftLocator, writingWhat: 
 }
 
 
-export function loadTextAndDraft(postNr: PostNr, onDone: (response: LoadTextAndDraftResponse) => void) {
-  get(`/-/edit?pageId=${getPageId()}&postNr=${postNr}`, onDone);
+export function loadDraftAndText(postNr: PostNr, onDone: (response: LoadDraftAndTextResponse) => void) {
+  get(`/-/load-draft-and-text?pageId=${getPageId()}&postNr=${postNr}`, onDone);
 }
 
 

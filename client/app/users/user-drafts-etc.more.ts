@@ -119,17 +119,17 @@ function Draft(props: { draft: Draft, pageTitlesById: { [pageId: string]: string
   const text = draft.text;
   let title = draft.title;
   let what;
-  let pageId = forWhat.replyToPageId;
-  let postNr = forWhat.replyToPostNr;
+  let pageId = forWhat.pageId;
+  let postNr = forWhat.postNr;
 
-  if (forWhat.replyToPageId || forWhat.editPostId) {
+  if (forWhat.pageId || forWhat.postId) {
     // This draft is related to an already existing page and post.
     if (pageId) {
       what = "Replying"; // I18N
     }
-    else if (forWhat.editPostId) {
+    else if (forWhat.postId) {
       what = "Editing"; // I18N
-      let postId = forWhat.editPostId;
+      let postId = forWhat.postId;
       const pagePostNr = props.pagePostNrsByPostId[postId];
       pageId = pagePostNr[0];
       postNr = pagePostNr[1];
@@ -145,7 +145,7 @@ function Draft(props: { draft: Draft, pageTitlesById: { [pageId: string]: string
     // This draft is for a new page.
     title = "Your title: " + title || "(No title)";  // I18N
 
-    if (draft.forWhat.messageToUserId) {
+    if (draft.forWhat.toUserId) {
       what = "Direct message"; // I18N
     }
     else {

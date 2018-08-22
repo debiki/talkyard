@@ -49,31 +49,48 @@ class DraftsController @Inject()(cc: ControllerComponents, edContext: EdContext)
     val locatorJson = (body \ "forWhat").asOpt[JsObject] getOrThrowBadArgument(
       "TyE4AKBP20", "No draft locator: forWhat missing")
 
+    val draftNr = (body \ "draftNr").asOpt[DraftNr].getOrElse(NoDraftNr)
+    val draftTypeInt = (locatorJson \ "draftType").as[Int]
+    val draftType = DraftType.fromInt(draftTypeInt) getOrThrowBadArgument(
+      "TyE4AKBP22", s"Draft type not specified: ${locatorJson.toString}")
+
+    val pageId = (locatorJson \ "pageId").asOpt[PageId]
+    val postNr = (locatorJson \ "postNr").asOpt[PostNr]
+    val postId = (locatorJson \ "postId").asOpt[PostId] orElse {
+      if (pageId.isDefined && postNr.isDefined) {
+        // The browser currently doesn't send the post id, for new replies. [4BKG0BKR0]
+        dao.loadPost(pageId.get, postNr.get).map(_.id)
+      }
+      else {
+        None
+      }
+    }
+
     // This currently rejects drafts for the very first comment, on an embedded comments page
     // — because the page hasn't yet been created; there's no page id, so no locator can
     // be constructed. COULD add an embeddingPageAltId field? as part of the locator?
     // UX SHOULD save draft also for this 1st blog post comment.  [BLGCMNT1]
     val draftLocator = Try(
       DraftLocator(
-        newTopicCategoryId = (locatorJson \ "newTopicCategoryId").asOpt[CategoryId],
-        messageToUserId = (locatorJson \ "messageToUserId").asOpt[UserId],
-        editPostId = (locatorJson \ "editPostId").asOpt[PostId],
-        replyToPageId = (locatorJson \ "replyToPageId").asOpt[PageId],
-        replyToPostNr = (locatorJson \ "replyToPostNr").asOpt[PostNr])) getOrIfFailure { ex =>
+        draftType,
+        categoryId = (locatorJson \ "categoryId").asOpt[CategoryId],
+        toUserId = (locatorJson \ "toUserId").asOpt[UserId],
+        postId = postId,
+        pageId = pageId,
+        postNr = postNr)) getOrIfFailure { ex =>
       throwBadRequest("TyEBDDRFTLC", ex.getMessage)
     }
 
     val draft = Try(
       Draft(
         byUserId = requester.id,
-        draftNr = (body \ "draftNr").asOpt[DraftNr].getOrElse(NoDraftNr),
+        draftNr = draftNr,
         forWhat = draftLocator,
         createdAt = (body \ "createdAt").asOptWhen.getOrElse(globals.now()),
         lastEditedAt = (body \ "lastEditedAt").asOptWhen,
-        autoPostAt = (body \ "autoPostAt").asOptWhen,
         deletedAt = (body \ "deletedAt").asOptWhen,
-        newTopicType = (body \ "newTopicType").asOpt[Int].flatMap(PageRole.fromInt),
-        replyType = (body \ "replyType").asOpt[Int].flatMap(PostType.fromInt),
+        topicType = (body \ "topicType").asOpt[Int].flatMap(PageRole.fromInt),
+        postType = (body \ "postType").asOpt[Int].flatMap(PostType.fromInt),
         title = (body \ "title").asOptStringNoneIfBlank.getOrElse(""),
         text = (body \ "text").as[String].trim())) getOrIfFailure { ex =>
       throwBadRequest("TyEBDDRFTDT", ex.getMessage)
@@ -90,11 +107,11 @@ class DraftsController @Inject()(cc: ControllerComponents, edContext: EdContext)
     else if (draft.isReply) {
       // Maybe good to know, directly, if not allowed to reply to this post?
 
-      val pageMeta = dao.getThePageMeta(draftLocator.replyToPageId getOrDie "TyE2ABS049S")
+      val pageMeta = dao.getThePageMeta(draftLocator.pageId getOrDie "TyE2ABS049S")
       val categoriesRootLast = dao.loadAncestorCategoriesRootLast(pageMeta.categoryId)
-      val postType = draft.replyType getOrDie "TyER35SKS02GU"
+      val postType = draft.postType getOrDie "TyER35SKS02GU"
       val replyToPost =
-        dao.loadPost(pageMeta.pageId, draftLocator.replyToPostNr getOrDie "TyESRK0437")
+        dao.loadPost(pageMeta.pageId, draftLocator.postNr getOrDie "TyESRK0437")
           .getOrElse(throwIndistinguishableNotFound("TyE4WEB93"))
 
       throwNoUnless(Authz.mayPostReply(
@@ -106,7 +123,7 @@ class DraftsController @Inject()(cc: ControllerComponents, edContext: EdContext)
     else if (draft.isEdit) {
       // Maybe good to know, directly, if may not edit?
 
-      val post = dao.loadPostByUniqueId(draftLocator.editPostId.get) getOrElse throwIndistinguishableNotFound("TyE0DK9WRR")
+      val post = dao.loadPostByUniqueId(draftLocator.postId.get) getOrElse throwIndistinguishableNotFound("TyE0DK9WRR")
       val pageMeta = dao.getPageMeta(post.pageId) getOrElse throwIndistinguishableNotFound("TyE2AKBRE5")
       val categoriesRootLast = dao.loadAncestorCategoriesRootLast(pageMeta.categoryId)
 
@@ -132,44 +149,10 @@ class DraftsController @Inject()(cc: ControllerComponents, edContext: EdContext)
   }
 
 
-  /*
-  def loadDraftForNewTopic(categoryId: CategoryId): Action[Unit] = GetAction { request: GetRequest =>
-    loadMatchingDraftsAndRespond(
-        DraftLocator(newTopicCategoryId = Some(categoryId)), request)
-  }
-
-
-  def loadDraftForDirectMessage(toUserId: UserId): Action[Unit] = GetAction { request: GetRequest =>
-    loadMatchingDraftsAndRespond(
-        DraftLocator(messageToUserId = Some(toUserId)), request)
-  }
-
-
-  def loadDraftForReply(pageId: PageId, postNr: Int): Action[Unit] = GetAction { request: GetRequest =>
-    loadMatchingDraftsAndRespond(
-        DraftLocator(replyToPageId = Some(pageId), replyToPostNr = Some(postNr)), request)
-  }
-
-
-  def loadDraftForEdits(postId: Int): Action[Unit] = GetAction { request: GetRequest =>
-    loadMatchingDraftsAndRespond(
-        DraftLocator(editPostId = Some(postId)), request)
-  }
-
-
-  private def loadMatchingDraftsAndRespond(locator: DraftLocator, request: GetRequest): Result = {
-    import request.{dao, theRequester => requester}
-
-    val drafts = dao.readOnlyTransaction { tx =>
-      tx.loadDraftsByLocator(requester.id, locator)
-    }
-
-    OkSafeJson(Json.arr(drafts map JsX.JsDraft))
-  }*/
-
-
   def listDrafts(userId: UserId): Action[Unit] = GetAction { request: GetRequest =>
     import request.{dao, theRequester => requester}
+
+    TESTS_MISSING // [7WKABZP2]
 
     throwForbiddenIf(!requester.isAdmin && requester.id != userId,
       "TyE2RDGWA8", "May not view other's drafts")
@@ -180,9 +163,9 @@ class DraftsController @Inject()(cc: ControllerComponents, edContext: EdContext)
     val (drafts: immutable.Seq[Draft], pagePostNrsByPostId: Map[PostId, PagePostNr], pageIds) =
         dao.readOnlyTransaction { tx =>
       val ds = tx.listDraftsRecentlyEditedFirst(userId)
-      val postIds = ds.flatMap(_.forWhat.editPostId).toSet
+      val postIds = ds.flatMap(_.forWhat.postId).toSet
       val pagePostNrsByPostId = tx.loadPagePostNrsByPostIds(postIds)
-      val pageIdsToReplyTo = ds.flatMap(_.forWhat.replyToPageId).toSet
+      val pageIdsToReplyTo = ds.flatMap(_.forWhat.pageId).toSet
       val allPageIds: Set[PageId] = pageIdsToReplyTo ++ pagePostNrsByPostId.values.map(_.pageId)
       (ds, pagePostNrsByPostId, allPageIds)
     }

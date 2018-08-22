@@ -176,12 +176,22 @@ enum FlagType {
 }
 
 
+enum DraftType {
+  Scratch = 1,
+  Topic = 2,
+  DirectMessage = 3,
+  Edit = 4,
+  Reply = 5,
+}
+
+
 interface DraftLocator {
-  newTopicCategoryId?: number;
-  messageToUserId?: UserId;
-  editPostId?: PostId;
-  replyToPageId?: PageId;
-  replyToPostNr?: PostNr;
+  draftType: DraftType;
+  categoryId?: number;
+  toUserId?: UserId;
+  postId?: PostId;
+  pageId?: PageId;
+  postNr?: PostNr;
 }
 
 
@@ -191,10 +201,9 @@ interface Draft {
   forWhat: DraftLocator;
   createdAt: WhenMs;
   lastEditedAt?: WhenMs;
-  autoPostAt?: WhenMs;
   deletedAt?: WhenMs;
-  newTopicType?: PageRole;
-  replyType?: PostType;
+  topicType?: PageRole;
+  postType?: PostType;
   title?: string;
   text: string;
 }
@@ -1386,7 +1395,7 @@ interface UserAccountLoginMethod {
 
 
 // COULD also load info about whether the user may apply and approve the edits.
-interface LoadTextAndDraftResponse {
+interface LoadDraftAndTextResponse {
   postNr: PostNr,
   postUid: string; // CLEAN_UP RENAME to just postId.
   currentText: string;

@@ -111,18 +111,18 @@ export function linkToDraftSource(draft: Draft,
       pageId?: PageId, postNr?: PostNr): string {
   const locator = draft.forWhat;
   const andDraftNrParam = '&draftNr=' + draft.draftNr;
-  if (locator.replyToPageId) {
-    return origin() + '/-' + locator.replyToPageId +
-        '#post-' + locator.replyToPostNr + FragActionAndReplyToPost + andDraftNrParam;
+  if (locator.pageId) {
+    return origin() + '/-' + locator.pageId +
+        '#post-' + locator.postNr + FragActionAndReplyToPost + andDraftNrParam;
   }
-  else if (locator.editPostId) {
+  else if (locator.postId) {
     return origin() + '/-' + pageId +
         '#post-' + postNr + FragActionAndEditPost + andDraftNrParam;
   }
-  else if (locator.messageToUserId) {
-    return linkToSendMessage(locator.messageToUserId) + andDraftNrParam;
+  else if (locator.toUserId) {
+    return linkToSendMessage(locator.toUserId) + andDraftNrParam;
   }
-  else if (locator.newTopicCategoryId) {
+  else if (locator.categoryId) {
     // If [subcomms]: BUG should go to the correct sub community url path.
     return '/' + FragActionHashComposeTopic + andDraftNrParam;
   }

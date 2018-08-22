@@ -96,8 +96,8 @@ export const Editor = createComponent({
       draftStatus: DraftStatus.NothingHappened,
       safePreviewHtml: '',
       replyToPostNrs: [],
-      editingPostId: null,   // ??? id or nr ??
-      editingPostUid: null,   // ??? id  ??
+      editingPostNr: null,
+      editingPostUid: null,  // CLEAN_UP RENAME to ...PostId not ...Uid
       messageToUserIds: [],
       newForumTopicCategoryId: null,
       newPageRole: null,
@@ -394,8 +394,9 @@ export const Editor = createComponent({
     }
 
     const draftLocator: DraftLocator = {
-      replyToPageId: store.currentPageId,
-      replyToPostNr: postNrs[0], // for now
+      draftType: DraftType.Reply,
+      pageId: store.currentPageId,
+      postNr: postNrs[0], // for now
     };
 
     let writingWhat = WritingWhat.ReplyToNotOriginalPost;
@@ -405,16 +406,17 @@ export const Editor = createComponent({
     this.loadDraftAndGuidelines(draftLocator, writingWhat);
   },
 
-  editPost: function(postId: number, onDone?) {
+  editPost: function(postNr: PostNr, onDone?) {
     if (this.alertBadState())
       return;
-    Server.loadTextAndDraft(postId, (response: LoadTextAndDraftResponse) => {
+    Server.loadDraftAndText(postNr, (response: LoadDraftAndTextResponse) => {
       if (this.isGone) return;
       this.showEditor({ scrollToShowPostNr: response.postNr });
       const draft: Draft | undefined = response.draft;
+      dieIf(postNr !== response.postNr, 'TyE23GPKG4');
       this.setState({
         anyPostType: null,
-        editingPostId: postId,
+        editingPostNr: postNr,
         editingPostUid: response.postUid,
         editingPostRevisionNr: response.currentRevisionNr,
         text: draft ? draft.text : response.currentText,
@@ -443,7 +445,8 @@ export const Editor = createComponent({
     });
 
     const draftLocator: DraftLocator = {
-      newTopicCategoryId: categoryId,
+      draftType: DraftType.Topic,
+      categoryId: categoryId,
     };
 
     this.loadDraftAndGuidelines(draftLocator, WritingWhat.NewPage, role);
@@ -476,7 +479,8 @@ export const Editor = createComponent({
       newPageRole: PageRole.FormalMessage,
     });
     const draftLocator: DraftLocator = {
-      messageToUserId: userId,
+      draftType: DraftType.DirectMessage,
+      toUserId: userId,
     };
     this.loadDraftAndGuidelines(draftLocator, WritingWhat.NewPage, PageRole.FormalMessage);
     this.showAndFadeOutBackdrop();
@@ -518,7 +522,7 @@ export const Editor = createComponent({
       alert(t.e.PleaseFinishMsg);
       return true;
     }
-    if (_.isNumber(this.state.editingPostId)) {
+    if (_.isNumber(this.state.editingPostNr)) {
       alert(t.e.PleaseSaveEdits);
       // If this is an embedded editor, for an embedded comments page, that page
       // will now have highlighted some reply button to indicate a reply is
@@ -543,11 +547,11 @@ export const Editor = createComponent({
   loadDraftAndGuidelines: function(draftLocator: DraftLocator, writingWhat: WritingWhat,
         pageRole?: PageRole) {
     const store: Store = ReactStore.allData();
-    if (store_isNoPage(store))  // [BLGCMNT1]
+    if (shallSkipDraft(draftLocator, store))
       return;
 
     const page: Page = store.currentPage;
-    const theCategoryId = draftLocator.newTopicCategoryId || page.categoryId;
+    const theCategoryId = draftLocator.categoryId || page.categoryId;
     const thePageRole = pageRole || page.pageRole;
     const currentGuidelines = this.state.guidelines;
     if (currentGuidelines &&
@@ -679,7 +683,7 @@ export const Editor = createComponent({
     if (this.isGone) return;
 
     // (COULD verify still edits same post/thing, or not needed?)
-    const isEditingBody = this.state.editingPostId === BodyNr;
+    const isEditingBody = this.state.editingPostNr === BodyNr;
     const sanitizerOpts = {
       allowClassAndIdAttr: true, // or only if isEditingBody?
       allowDataAttr: isEditingBody
@@ -710,47 +714,58 @@ export const Editor = createComponent({
   },
 
   makeEmptyDraft: function(): Draft | undefined {
-    const locator: DraftLocator = {};
+    const locator: DraftLocator = { draftType: DraftType.Scratch };
     const store: Store = this.state.store;
-    let replyType: PostType;
-    if (this.state.editingPostUid) {
-      locator.editPostId = this.state.editingPostUid;
+    let postType: PostType;
+
+    if (this.state.editingPostNr) {
+      locator.draftType = DraftType.Edit;
+      locator.postId = this.state.editingPostUid;
+      locator.pageId = store.currentPageId;
+      locator.postNr = this.state.editingPostNr;
     }
     else if (this.state.replyToPostNrs && this.state.replyToPostNrs.length) {
-      locator.replyToPageId = store.currentPageId;
-      locator.replyToPostNr = this.state.replyToPostNrs[0]; // for now just pick the first one
-      replyType = PostType.Normal;
+      locator.draftType = DraftType.Reply;
+      // post id will be looked up server side. [4BKG0BKR0]
+      locator.pageId = store.currentPageId;
+      locator.postNr = this.state.replyToPostNrs[0]; // for now just pick the first one
+      postType = PostType.Normal;
     }
     else if (this.state.messageToUserIds && this.state.messageToUserIds.length) {
-      locator.messageToUserId = this.state.messageToUserIds[0];  // for now
+      locator.draftType = DraftType.DirectMessage;
+      locator.toUserId = this.state.messageToUserIds[0];  // for now
     }
     else if (this.state.newForumTopicCategoryId) {
-      locator.newTopicCategoryId = this.state.newForumTopicCategoryId;
+      locator.draftType = DraftType.Topic;
+      locator.categoryId = this.state.newForumTopicCategoryId;
     }
     else {
       // Editor probably closed, state gone.
       return;
     }
+
     const draft: Draft = {
       byUserId: store.me.id,
       draftNr: NoDraftNr,
       forWhat: locator,
       createdAt: getNowMs(),
-      newTopicType: this.state.newPageRole,
-      replyType: this.state.anyPostType || replyType,
+      topicType: this.state.newPageRole,
+      postType: this.state.anyPostType || postType,
       title: '',
       text: '',
     };
+
     return draft;
   },
 
   saveDraftNow: function(callbackThatClosesEditor: () => void | undefined) {
-    // If is first comment on an embedded comments — then, page not yet created. Then
-    // don't save draft, for now, for simplicity, since no page id. Would want to do, later. [BLGCMNT1]
     const store: Store = this.state.store;
-    const skipDraft = store_isNoPage(store);
 
+    const oldDraft: Draft | undefined = this.state.draft;
+    const draftOldOrEmpty: Draft | undefined = oldDraft || this.makeEmptyDraft();
     const draftStatus: DraftStatus = this.state.draftStatus;
+    const skipDraft = !draftOldOrEmpty || shallSkipDraft(draftOldOrEmpty.forWhat, store);
+
     if (skipDraft || draftStatus <= DraftStatus.NeedNotSave) {
       if (callbackThatClosesEditor) {
         callbackThatClosesEditor();
@@ -760,7 +775,12 @@ export const Editor = createComponent({
 
     const text: string = (this.state.text || '').trim();
     const title: string = (this.state.title || '').trim();
-    const oldDraft: Draft | undefined = this.state.draft;
+
+    // BUG the lost update bug, unlikely to happen: Might overwrite another version of this draft
+    // which might be open in another browser tab. Could have the server check if there's
+    // a newer version of the draft (saved in another browser tab) and, if so, ask if
+    // wants to overwrite or not?  [5ABRQP0]  — This happens to me sometimes actually, in Facebook,
+    // when composing replies there. Apparently FB has this same lost-updates bug in their editor.
 
     // If empty. Delete any old draft.
     if (!text.trim() && !title.trim()) {
@@ -787,7 +807,6 @@ export const Editor = createComponent({
       return;
     }
 
-    const draftOldOrEmpty: Draft = oldDraft || this.makeEmptyDraft();
     const draftToSave = { ...draftOldOrEmpty, text, title };
     this.setState({
       draftStatus: callbackThatClosesEditor ? DraftStatus.SavingBig : DraftStatus.SavingSmall,
@@ -834,7 +853,7 @@ export const Editor = createComponent({
       else if (this.state.newForumTopicCategoryId) {
         this.saveNewForumPage();
       }
-      else if (_.isNumber(this.state.editingPostId)) {
+      else if (_.isNumber(this.state.editingPostNr)) {
         this.saveEdits();
       }
       else if (this.state.isWritingChatMessage) {
@@ -849,7 +868,7 @@ export const Editor = createComponent({
 
   saveEdits: function() {
     this.throwIfBadTitleOrText(null, t.e.PleaseDontDeleteAll);
-    Server.saveEdits(this.state.editingPostId, this.state.text, this.anyDraftNr(), () => {
+    Server.saveEdits(this.state.editingPostNr, this.state.text, this.anyDraftNr(), () => {
       this.callOnDoneCallback(true);
       this.clearTextAndClose();
     });
@@ -983,7 +1002,7 @@ export const Editor = createComponent({
     this.setState({
       visible: false,
       replyToPostNrs: [],  // post nr for sure, not post id
-      editingPostId: null,
+      editingPostNr: null,
       editingPostUid: null,
       isWritingChatMessage: false,
       messageToUserIds: [],
@@ -1028,7 +1047,7 @@ export const Editor = createComponent({
   },
 
   showEditHistory: function() {
-    dieIf(!this.state.editingPostId || !this.state.editingPostUid, 'EdE5UGMY2');
+    dieIf(!this.state.editingPostNr || !this.state.editingPostUid, 'EdE5UGMY2');
     debiki2.edithistory.getEditHistoryDialog().open(this.state.editingPostUid);
   },
 
@@ -1126,7 +1145,7 @@ export const Editor = createComponent({
       }
     }
 
-    const editingPostId = this.state.editingPostId;
+    const editingPostNr = this.state.editingPostNr;
     const replyToPostNrs = this.state.replyToPostNrs;
     const isOrigPostReply = _.isEqual([BodyNr], replyToPostNrs);
     const isChatComment = replyToPostNrs.length === 1 && replyToPostNrs[0] === NoPostId;
@@ -1134,12 +1153,12 @@ export const Editor = createComponent({
     const isMindMapNode = replyToPostNrs.length === 1 && page.pageRole === PageRole.MindMap;
 
     let doingWhatInfo: any;
-    if (_.isNumber(editingPostId)) {
+    if (_.isNumber(editingPostNr)) {
       doingWhatInfo =
         r.span({},
           // "Edit post X:"
           t.e.EditPost_1,
-          r.a({ href: '#post-' + editingPostId }, t.e.EditPost_2 + editingPostId + ':'));
+          r.a({ href: '#post-' + editingPostNr }, t.e.EditPost_2 + editingPostNr + ':'));
     }
     else if (this.state.isWritingChatMessage) {
       doingWhatInfo = t.e.TypeChatMsg;
@@ -1210,7 +1229,7 @@ export const Editor = createComponent({
 
     let saveButtonTitle = t.Save;
     let cancelButtonTitle = t.Cancel;
-    if (_.isNumber(this.state.editingPostId)) {
+    if (_.isNumber(this.state.editingPostNr)) {
       saveButtonTitle = makeSaveTitle(t.e.Save, t.e.edits);
     }
     else if (replyToPostNrs.length) {
@@ -1325,10 +1344,7 @@ export const Editor = createComponent({
     let draftErrorClass = '';
     const draft: Draft = this.state.draft;
     const draftNr: number | string = draft ? draft.draftNr : '';
-
-    // We currently don't save any draft, for the 1st comment on a new blog post :-(   [BLGCMNT1]
-    // because the page doesn't yet exist; there's no page id to use in the draft locator.
-    const skipDraft = store_isNoPage(store);
+    const skipDraft = !draft || shallSkipDraft(draft.forWhat, store);
 
     if (!skipDraft) switch (this.state.draftStatus) {
       case DraftStatus.NothingHappened: break;
@@ -1495,6 +1511,13 @@ function makeDefaultReplyText(store: Store, postIds: PostId[]): string {
   return result;
 }
 
+
+
+// We currently don't save any draft, for the 1st comment on a new blog post :-(   [BLGCMNT1]
+// because the page doesn't yet exist; there's no page id to use in the draft locator.
+function shallSkipDraft(draftLocator: DraftLocator, store: Store): boolean {
+  return store_isNoPage(store) && draftLocator.draftType !== DraftType.DirectMessage;
+}
 
 const previewHelpMessage = {
   id: 'EdH7MF24',

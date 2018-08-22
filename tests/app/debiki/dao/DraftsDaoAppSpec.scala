@@ -37,6 +37,7 @@ class DraftsDaoAppSpec extends DaoAppSuite(disableScripts = true, disableBackgro
   var draftThreeOlderDirectMessage: Draft = _
   var draftThreeDeleted: Draft = _
   var draftFourNewTopic: Draft = _
+  var draftFiveForEdits: Draft = _
 
   val DraftOneText = "DraftOneText"
   val DraftTwoTitleOrig = "DraftTwoTitleOrig"
@@ -45,6 +46,7 @@ class DraftsDaoAppSpec extends DaoAppSuite(disableScripts = true, disableBackgro
   val DraftTwoTextEdited = "DraftTwoTextEdited"
   val DraftThreeText = "DraftThreeText"
   val DraftFourText = "DraftFourText"
+  val DraftFiveTextForEdits = "DraftFiveTextForEdits"
 
   lazy val now: When = globals.now()
 
@@ -73,16 +75,19 @@ class DraftsDaoAppSpec extends DaoAppSuite(disableScripts = true, disableBackgro
     }
 
     "save a draft for a reply" in {
+      val post = dao.loadPost(pageId, PageParts.BodyNr) getOrDie "TyE2ABKS40L"
       val locator = DraftLocator(
-        replyToPageId = Some(pageId),
-        replyToPostNr = Some(PageParts.BodyNr))
+        DraftType.Reply,
+        pageId = Some(pageId),
+        postNr = Some(PageParts.BodyNr),
+        postId = Some(post.id))
 
       draftOne = Draft(
         byUserId = userOne.id,
         draftNr = 1,
         createdAt = now,
         forWhat = locator,
-        replyType = Some(PostType.Normal),
+        postType = Some(PostType.Normal),
         title = "",
         text = DraftOneText)
 
@@ -111,14 +116,15 @@ class DraftsDaoAppSpec extends DaoAppSuite(disableScripts = true, disableBackgro
 
     "save another draft, for a new topic" in {
       val locator = DraftLocator(
-        newTopicCategoryId = Some(categoryId))
+        DraftType.Topic,
+        categoryId = Some(categoryId))
 
       draftTwoNewerForNewTopic = Draft(
         byUserId = userOne.id,
         draftNr = 2,
         forWhat = locator,
         createdAt = now.plusMillis(1000),  // newer
-        newTopicType = Some(PageRole.Discussion),
+        topicType = Some(PageRole.Discussion),
         title = "New topic title",
         text = DraftTwoTextOrig)
 
@@ -129,14 +135,15 @@ class DraftsDaoAppSpec extends DaoAppSuite(disableScripts = true, disableBackgro
 
     "save yet another draft, for a direct message" in {
       val locator = DraftLocator(
-        messageToUserId = Some(userTwo.id))
+        DraftType.DirectMessage,
+        toUserId = Some(userTwo.id))
 
       draftThreeOlderDirectMessage = Draft(
         byUserId = userOne.id,
         draftNr = 3,
         forWhat = locator,
         createdAt = now.minusMillis(1000),  // older
-        newTopicType = Some(PageRole.Discussion),
+        topicType = Some(PageRole.Discussion),
         title = "Direct message title",
         text = DraftThreeText)
 
@@ -264,14 +271,15 @@ class DraftsDaoAppSpec extends DaoAppSuite(disableScripts = true, disableBackgro
 
     "save a second new-topic draft" in {
       val locator = DraftLocator(
-        newTopicCategoryId = Some(categoryId))
+        DraftType.Topic,
+        categoryId = Some(categoryId))
 
       draftFourNewTopic = Draft(
         byUserId = userOne.id,
         draftNr = 4,
         forWhat = locator,
         createdAt = now.plusMillis(9000),  // newest, but older than the edits
-        newTopicType = Some(PageRole.Question),
+        topicType = Some(PageRole.Question),
         title = "Is this a good question to ask?",
         text = DraftTwoTextOrig)
 
@@ -294,6 +302,35 @@ class DraftsDaoAppSpec extends DaoAppSuite(disableScripts = true, disableBackgro
         val draftsLoaded = tx.loadDraftsByLocator(userOne.id, d4.forWhat)
         draftsLoaded.length mustBe 2
         draftsLoaded mustBe Vector(d2, d4)
+      }
+    }
+
+    "save a draft, for edits" in {
+      val post = dao.loadPost(pageId, PageParts.BodyNr) getOrDie "TyE5ABKR31"
+      val locator = DraftLocator(
+        DraftType.Edit,
+        pageId = Some(pageId),
+        postNr = Some(PageParts.BodyNr),
+        postId = Some(post.id))
+
+      draftFiveForEdits = Draft(
+        byUserId = userOne.id,
+        draftNr = 1,
+        createdAt = now,
+        forWhat = locator,
+        postType = Some(PostType.Normal),
+        title = "",
+        text = DraftFiveTextForEdits)
+
+      dao.readWriteTransaction { tx =>
+        tx.upsertDraft(draftFiveForEdits)
+      }
+    }
+
+    "finds the for-edits draft, by post locator" in {
+      val d5 = draftFiveForEdits
+      dao.readOnlyTransaction { tx =>
+        tx.loadDraftsByLocator(userOne.id, d5.forWhat) mustBe Vector(d5)
       }
     }
 

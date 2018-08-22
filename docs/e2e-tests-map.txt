@@ -455,6 +455,11 @@ moderators:
   can send and view invites:
     - invites-by-mod-try-signup-after  TyT4FGJA20M
 
+draft:
+  save:
+  load:
+  list:  [7WKABZP2]
+
 superadmin -
   ... lots of stuff ...
 
