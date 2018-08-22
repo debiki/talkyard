@@ -75,7 +75,10 @@ export function linkToUserProfilePage(user: Myself | MemberInclDetails | User | 
   // @ifdef DEBUG
   dieIf(_.isObject(user) && !(<any> user).username && !(<any> user).id, 'TyE7UKWQT2');
   // @endif
-  const idOrUsername = _.isObject(user) ? (<User> user).username || (<User> user).id : user;
+  let idOrUsername = _.isObject(user) ? (<User> user).username || (<User> user).id : user;
+  if (_.isString(idOrUsername)) {
+    idOrUsername = idOrUsername.toLowerCase();
+  }
   return origin() + UsersRoot + idOrUsername;
 }
 
@@ -100,7 +103,7 @@ export function linkToMyDraftsEtc(store: Store): string {
 }
 
 export function linkToMyProfilePage(store: Store): string {
-  return origin() + UsersRoot + store.me.username;
+  return linkToUserProfilePage(store.me.username);
 }
 
 

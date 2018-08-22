@@ -62,7 +62,8 @@ export const UserPreferences = createFactory({
           Redirect({ to: aboutPath + location.search + location.hash })}),
       Route({ path: '(.*)/about', exact: true, render: () => AboutUser(childProps) }),
       Route({ path: '(.*)/' + privacyPathSeg, exact: true, render: () => Privacy(childProps) }),
-      Route({ path: '(.*)/' + accountPathSeg, exact: true, render: () => Account(childProps) }));
+      Route({ path: '(.*)/' + accountPathSeg, exact: true, render: (ps) =>
+          Account({ ...childProps, ...ps }) }));
 
     const isGuest = user_isGuest(user);
     const isBuiltInUser = user.id < LowestAuthenticatedUserId;
@@ -566,8 +567,13 @@ export const Account = createFactory({
           Server.deleteUser(user.id, anonUsername => {
             // If deleted oneself, navigate outside React-Router, so the page will reload
             // and the browser forgets all in-mem things about the current user.
-            const loc = isMe ? window.location : this.props.location;
-            loc.assign(UsersRoot + anonUsername)
+            const newPath = UsersRoot + anonUsername;
+            if (isMe) {
+              window.location.assign(newPath);
+            }
+            else {
+              this.props.history.push(newPath);
+            }
           });
         }
       },

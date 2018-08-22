@@ -441,6 +441,10 @@ admin -
       mods won't see other's flagged direct message posts:
         - mod-review.2browsers.test.ts  TyT6KRBEQ2
 
+delete user:    NEXT was a bug, when deleted by admin
+  deletes henself:
+  deleted by admin:
+
 moderators:
   profile says is moderator:
   can list users:
@@ -456,9 +460,16 @@ moderators:
     - invites-by-mod-try-signup-after  TyT4FGJA20M
 
 draft:
-  save:
-  load:
-  list:  [7WKABZP2]
+  forall:
+    new topic:
+    direct message:
+    edits:
+    reply:
+    progress comment:
+  save,
+  load,
+  list [7WKABZP2],
+  navigate to ?draftNr:
 
 superadmin -
   ... lots of stuff ...

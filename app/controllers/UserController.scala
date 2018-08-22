@@ -1250,11 +1250,14 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
   def deleteUser: Action[JsValue] = PostJsonAction(RateLimits.CreateUser, maxBytes = 100) { request =>
     import request.{dao, theRequester => requester}
     val userId = (request.body \ "userId").as[UserId]
-    throwForbiddenIf(userId != requester.id && !requester.isAdmin,
+    val isOneself = userId == requester.id
+    throwForbiddenIf(!isOneself && !requester.isAdmin,
       "TyE7UBQP21", "Cannot delete other user")
     val anonNNN = dao.deleteUser(userId, request.who)
-    OkSafeJson(JsString(anonNNN.username))
-        .discardingCookies(context.security.DiscardingSessionCookie)
+    val response = OkSafeJson(JsString(anonNNN.username))
+    // Log the user out, if hen deleted hens own account.
+    if (isOneself) response.discardingCookies(context.security.DiscardingSessionCookie)
+    else response
   }
 
 

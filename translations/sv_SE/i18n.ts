@@ -1038,8 +1038,8 @@ var t_sv_SE: TalkyardTranslations = t = {
     PleaseFinishMsg: "Please first finish writing your message",
     PleaseSaveEdits: "Please first save your current edits",
     PleaseSaveOrCancel: "Please first either save or cancel your new topic",
-    CanContinueEditing: "You can continue editing your text, if you open the editor again. " +
-        "(But the text will currently be lost if you leave this page.)",
+    CanContinueEditing: "You can continue editing your text, if you open the editor again.",
+        //"(But the text will currently be lost if you leave this page.)",
     PleaseDontDeleteAll: "Please don't delete all text. Write something.",
     PleaseWriteSth: "Please write something.",
     PleaseWriteTitle: "Please write a topic title.",
