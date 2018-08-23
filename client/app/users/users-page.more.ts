@@ -122,7 +122,7 @@ const UserPageComponent = createReactClass(<any> {
     this.nowLoading = usernameOrId;
 
     const shallComposeMessage =
-      this.props.location.hash.indexOf('#composeDirectMessage') >= 0;  // (4AR6BJ)
+      this.props.location.hash.indexOf('#composeDirectMessage') >= 0;
 
     Server.loadUserAnyDetails(usernameOrId, (user: MemberInclDetails, stats: UserStats) => {
       this.nowLoading = null;
@@ -140,11 +140,6 @@ const UserPageComponent = createReactClass(<any> {
         let pathWithUsername = UsersRoot + user.username.toLowerCase();
         if (params.section) pathWithUsername += '/' + params.section;
         if (params.subsection) pathWithUsername += '/' + params.subsection;
-
-        // No, skip any hash fragment action — so won't trigger again, if browser-navigating
-        // back. Already remembered what to do, here: (4AR6BJ).
-        // pathWithUsername += this.props.location.hash;
-
         this.props.history.replace(pathWithUsername);
       }
       if (shallComposeMessage) {

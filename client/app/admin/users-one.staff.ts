@@ -174,11 +174,13 @@ export const UserProfileAdminView = createFactory({
     // Don't let staff unverify their email, and in that way prevent themselves from logging in.
     // UX maybe there're in rare cases reasons for doing this? (rather than just a bad luck click)
     // COULD pop up a "Do you really want to..." dialog?
+    // TESTS_MISSING [5AEWBN0]
     const hideSetUnverifiedButton = isMe && user.emailVerifiedAtMs;
 
     // Admins shouldn't be able to uanpprove themselves? That's just confusing?
     // And to unapprove an admin, first demote hen, so is no longer admin.
     // UX COULD write "Cannot unapprove an admin" info message?
+    // TESTS_MISSING [5AEWBN0]
     const hideUnapproveButtons = user.isAdmin;
 
     const emailAddrAndResendVerifEmailButton = makeRow(
@@ -194,7 +196,7 @@ export const UserProfileAdminView = createFactory({
             Button({ onClick: makeEditFn(user.emailVerifiedAtMs ?
                 EditMemberAction.SetEmailUnverified : EditMemberAction.SetEmailVerified),
                 className: user.emailVerifiedAtMs ? 'e_SetEmNotVerifB' : 'e_SetEmVerifB' },
-            user.emailVerifiedAtMs ?
+              user.emailVerifiedAtMs ?
                 "Set to Not verified" : "Set to Verified"),
           /* This sounds complicated. Maybe better skip? Also, fairly obvious anyway?
           And actually *incorrect*, if the site conf val email-verif-required = false.

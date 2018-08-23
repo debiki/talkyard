@@ -19,7 +19,6 @@
 /// <reference path="../rules.ts" />
 /// <reference path="../Server.ts" />
 /// <reference path="../ReactStore.ts" />
-//x <reference path="../page-dialogs/server-error-dialog.ts" />
 /// <reference path="../more-bundle-not-yet-loaded.ts" />
 
 //------------------------------------------------------------------------------
@@ -38,9 +37,10 @@ let startedFailingAtMs;
 export function subscribeToServerEvents() {
   Server.abortAnyLongPollingRequest();
 
-  // If disconnected, the "No internet" message [NOINETMSG] will reappear immediately when the
-  // netw request fails — unless if not logged in. Then won't get any live notifications anyway,
-  // so no need to constantly show the message.
+  // Remove the "No internet" message, in case the network works (again).
+  // If disconnected, the "No internet" message [NOINETMSG] will reappear immediately when this
+  // netw request fails (unless if not logged in — then, won't see live notifications anyway,
+  // so no need for the message).
   $h.removeClasses(document.documentElement, 's_NoInet');
 
   // If not logged in, don't ask for any events — if everyone did that, that could put the server

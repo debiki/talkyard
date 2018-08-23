@@ -93,7 +93,7 @@ object PageMeta {
         pageId: PageId,
         pageRole: PageRole,
         authorId: UserId,
-        creationDati: ju.Date,
+        creationDati: ju.Date,  // RENAME to createdAt
         numPostsTotal: Int,
         layout: Option[TopicListLayout] = None,
         plannedAt: Option[ju.Date] = None,

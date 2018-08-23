@@ -15,16 +15,17 @@ to do, to change society, or grow your startup.
 Talkyard
 =============================
 
-Create a place to talk, where people find answers, and you can discuss and chat. Place it at `community.yourwebsite.org`.
+Create a place to talk, where people find answers, and you can discuss and chat.<br>
+Place it at `community.your-website.org`.
 
 <!-- People in your community need different types of discussions for different things?
 Talkyard has: -->
 
- - **Find answers**, in Question-Answers topics, like StackOverflow.
- - **Discuss ideas**, in Reddit and Hacker News open-ended topics.
- - **Get work done**, in team chat, like Slack.
+ - **Find answers** in Question-Answers topics, like StackOverflow.
+ - **Discuss ideas** in open-ended topics, like Reddit and Hacker News.
+ - **Get work done** in team chat, like Slack.
  - **Solve problems** step by step, in flat by-time topics (coming soon).
- - **Talk with your blog visitors**, in embedded comments, like Disqus.
+ - **Talk with your blog visitors** in embedded comments, like Disqus.
 
 <!--
  - **Improve your API docs**, by embedding comments at the end of each docs page, to make it easy for people to ask and tell you if something is unclear.
@@ -89,9 +90,8 @@ Within half a year or a year (today is August 2018),
 the plan is that there'll be a white labelled mobile app.
 Meaning, people will be able to install your community, on their mobile phones,
 as a separate app with your custom icon.
-Push notifications for Android, however, initially, not for iOS
-(Apple and iOS currently cannot do PWA mobile app push notifications).
-No need to submit for review to Google Play Store or Apple App Store.
+Push notifications for Android
+(however, initially not for iPhone — iPhone currently cannot do PWA mobile app push notifications).
 
 ![ed-e2e-chat-owen-maria](https://cloud.githubusercontent.com/assets/7477359/19674424/608c49aa-9a88-11e6-8ccd-c2e7ceebd0c2.jpg)
 

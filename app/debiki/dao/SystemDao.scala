@@ -185,7 +185,7 @@ class SystemDao(
           siteToDelete.hosts.map(_.hostname)
         }
 
-        anyDeletedHostnames foreach this.forgetHostname
+        anyDeletedHostnames.toSet foreach this.forgetHostname
 
         // + also redisCache.clearThisSite() doesn't work if there are many Redis nodes [0GLKW24].
         // This won't clear the watchbar cache: memCache.clearSingleSite(site.id)

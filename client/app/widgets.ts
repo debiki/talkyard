@@ -61,7 +61,7 @@ export function RedirPath(props: { path: string, to: string, exact: boolean, str
 
 
 // Redirs to path, which should be like '/some/path/', to just '/some/path' with no trailing slash.
-// Keeps any #fragment.
+// Keeps any ?query=string&and=hash#fragment.
 export function RedirToNoSlash({ path }) {
   return RedirPath({
     path: path,

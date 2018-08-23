@@ -979,14 +979,14 @@ export const Editor = createComponent({
       window.parent.postMessage(JSON.stringify(['showEditor', {}]), eds.embeddingOrigin);
     }
     // After rerender, focus the input fields, and maybe need to scroll, so the post we're editing
-    // or replying to, isn't occluded by the editor (otherwise hard to know what we're editing).
+    // or replying to, isn't occluded by the editor (then hard to know what we're editing).
     setTimeout(() => {
       if (this.isGone) return;
       this.focusInputFields();
       this.updatePreview();
       if (opts.scrollToShowPostNr) {
         const postElem = $byId('post-' + opts.scrollToShowPostNr);
-        // Try to not scroll so much, that's also confusing.
+        // Try to not scroll so much, that's also confusing: specify fairly small margins.
         debiki.internal.showAndHighlightPost(postElem, { marginTop: 60, marginBottom: 40 });
       }
     }, 1);
@@ -1358,10 +1358,10 @@ export const Editor = createComponent({
       case DraftStatus.Deleting: draftStatusText = `Deleting draft ${draftNr} ...`; break;
       case DraftStatus.CannotSave:
         draftErrorClass = ' s_E_DraftStatus-Error';
-        let details: string = '';
+        let details: string;
         if (this.state.draftErrorStatusCode === 403) details = "Access denied";  // I18N
         else if (this.state.draftErrorStatusCode) details = "Error " + this.state.draftErrorStatusCode;
-        if (!this.state.draftErrorStatusCode) details = "No internet connection";  // I18N reuse string
+        else details = "No internet connection";  // I18N reuse string
         draftStatusText = "Cannot save draft: " + details;  // I18N
         break;
     }

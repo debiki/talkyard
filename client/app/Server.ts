@@ -38,6 +38,8 @@ function getPageId(): PageId {
       ReactStore.allData().currentPageId;
 }
 
+type ErrorStatusHandler = (errorStatusCode?: number) => void;
+
 interface OngoingRequest {
   abort();
 }
@@ -940,7 +942,8 @@ export function loadDraftAndText(postNr: PostNr, onDone: (response: LoadDraftAnd
 }
 
 
-export function upsertDraft(draft: Draft, onOk: (draftWithNr: Draft) => void, onError) {
+export function upsertDraft(draft: Draft, onOk: (draftWithNr: Draft) => void,
+      onError: ErrorStatusHandler) {
   postJsonSuccess('/-/upsert-draft', onOk, draft, function(xhr) {
     onError(xhr.status);
     return ShowNoErrorDialog;
@@ -948,7 +951,7 @@ export function upsertDraft(draft: Draft, onOk: (draftWithNr: Draft) => void, on
 }
 
 
-export function deleteDrafts(draftNrs: DraftNr[], onOk: () => void, onError) {
+export function deleteDrafts(draftNrs: DraftNr[], onOk: () => void, onError: ErrorStatusHandler) {
   postJsonSuccess('/-/delete-drafts', onOk, draftNrs, function(xhr) {
     onError(xhr.status);
     return ShowNoErrorDialog;
@@ -1466,7 +1469,7 @@ export function testGetLongPollingNr() {
  * I asked: https://github.com/slact/nchan/issues/466
  */
 export function sendLongPollingRequest(userId: UserId, successFn: (response) => void,
-      errorFn: (statusCode?: number) => void, resendIfNeeded: () => void) {
+      errorFn: ErrorStatusHandler, resendIfNeeded: () => void) {
 
   if (longPollingState.ongoingRequest) {
     die(`Already long polling, request nr ${longPollingState.ongoingRequest.reqNr} [TyELPRDUPL]`);

@@ -139,7 +139,7 @@ function Draft(props: { draft: Draft, pageTitlesById: { [pageId: string]: string
       die('TyE24BKF0');
       // @endif
     }
-    title = "Page title: " + props.pageTitlesById[pageId];  // I18N
+    title = "Topic title: " + props.pageTitlesById[pageId];  // I18N
   }
   else {
     // This draft is for a new page.

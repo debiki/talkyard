@@ -216,6 +216,8 @@ object DraftType {
 }
 
 
+/** COULD add altPageId: Set[String] for any embedding url or embedding discussion id.  [BLGCMNT1]
+  */
 case class DraftLocator(
   draftType: DraftType,
   categoryId: Option[CategoryId] = None,

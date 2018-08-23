@@ -405,6 +405,8 @@ admin -
     - admin-user-suspend.2browsers.test.ts  [TyT5GKQSG2]
     - admin-user-threat-mild.2browsers.test.ts  [TyT2WKBG4Z]
     - admin-user-threat-moderate.2browsers.test.ts  [TyT5KHFIQ20]
+  cannot bad-click break an admin, e.g. unverifying hens email or unapproving, rejecting:
+    - (missing) [5AEWBN0]
   reviews - [TyT5DKW7U]
     delete flagged:   — also see (6JS3)
     clear flag:   — also see (6JS3)

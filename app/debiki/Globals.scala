@@ -1022,18 +1022,22 @@ class Config(conf: play.api.Configuration) {
     conf.getOptional[Int](MaxGroupMentionNotfsConfValName) getOrElse 25
 
   object uploads {
+    TESTS_MISSING // test that these conf vals work properly, by running UploadsDaoSpec twice,
+    // once with default values, once with 2 x higher values (people typically want to increase,
+    // not decrease, these limits).
+
     private val p = "talkyard.uploads."
     // COULD make this configurable dynamically, per site, in the admin area, per site, too.
     // The limits below, would then be a hard max, for each site, regardless of admin area settings.
 
     val maxBytesPerDayMember: Int =
-      getIntOrDefault(p + "maxKiloBytesPerDayMember", 8*Megabytes / 1000) * 1000
+      getIntOrDefault(p + "maxKiloBytesPerDayMember", 10*Megabytes / 1000) * 1000
 
     val maxBytesPerDayStaff: Int =
       getIntOrDefault(p + "maxKiloBytesPerDayStaff", 999*Megabytes / 1000) * 1000
 
     val maxBytesPerWeekMember: Int =
-      getIntOrDefault(p + "maxKiloBytesPerWeekMember", 20*Megabytes / 1000) * 1000
+      getIntOrDefault(p + "maxKiloBytesPerWeekMember", 25*Megabytes / 1000) * 1000
 
     val maxBytesPerWeekStaff: Int =
       getIntOrDefault(p + "maxKiloBytesPerWeekStaff", 999*Megabytes / 1000) * 1000
