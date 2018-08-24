@@ -125,7 +125,8 @@ function Draft(props: { draft: Draft, pageTitlesById: { [pageId: string]: string
   if (forWhat.pageId || forWhat.postId) {
     // This draft is related to an already existing page and post.
     if (pageId) {
-      what = "Replying"; // I18N
+      if (draft.postType === PostType.ChatMessage) what = "Chatting"; // I18N
+      else what = "Replying"; // I18N
     }
     else if (forWhat.postId) {
       what = "Editing"; // I18N

@@ -29,19 +29,6 @@ let FileAPI;
 let theEditor: any;
 const WritingSomethingWarningKey = 'WritingSth';
 
-enum DraftStatus {
-  NothingHappened = 1,
-  EditsUndone = 2,
-  Saved = 3,
-  Deleted = 4,
-  NeedNotSave = 4,
-  ShouldSave = 5,
-  SavingSmall = 6,
-  SavingBig = 7,
-  Deleting = 8,
-  CannotSave = 10,
-}
-
 export const ReactTextareaAutocomplete = reactCreateFactory(window['ReactTextareaAutocomplete']);
 
 
@@ -457,14 +444,16 @@ export const Editor = createComponent({
     this.editPost(BodyNr);
   },
 
-  openToWriteChatMessage: function(text: string, onDone?) {
+  openToWriteChatMessage: function(text: string, draft: Draft | undefined, draftStatus, onDone?) {
     if (this.alertBadState())
       return;
     this.showEditor();
     this.setState({
       isWritingChatMessage: true,
       text: text || '',
-      onDone: onDone,
+      draft,
+      draftStatus,
+      onDone,
     });
     // No guidelines for chat messages, because usually a smaller "inline" editor is used instead.
   },
@@ -642,10 +631,12 @@ export const Editor = createComponent({
   },
 
   _handleEditsImpl: function(title: string | undefined, text: string | undefined) {
+    // A bit dupl code [7WKABF2]
     const draft: Draft = this.state.draft;
     const draftStatus = draft && draft.text === text && draft.title === title
         ? DraftStatus.EditsUndone
         : DraftStatus.ShouldSave;
+
     this.setState({ title, text, draftStatus },
         draftStatus === DraftStatus.ShouldSave ? this.saveDraftDebounced : undefined);
     this.updatePreview();
@@ -759,6 +750,8 @@ export const Editor = createComponent({
   },
 
   saveDraftNow: function(callbackThatClosesEditor: () => void | undefined) {
+    // TESTS_MISSING
+    // A bit dupl code [4ABKR2J0]
     const store: Store = this.state.store;
 
     const oldDraft: Draft | undefined = this.state.draft;
@@ -776,14 +769,14 @@ export const Editor = createComponent({
     const text: string = (this.state.text || '').trim();
     const title: string = (this.state.title || '').trim();
 
-    // BUG the lost update bug, unlikely to happen: Might overwrite another version of this draft
+    // BUG the lost update bug, unlikely to happen: Might overwrite other version of this draft [5KBRZ27]
     // which might be open in another browser tab. Could have the server check if there's
     // a newer version of the draft (saved in another browser tab) and, if so, ask if
     // wants to overwrite or not?  [5ABRQP0]  — This happens to me sometimes actually, in Facebook,
     // when composing replies there. Apparently FB has this same lost-updates bug in their editor.
 
     // If empty. Delete any old draft.
-    if (!text.trim() && !title.trim()) {
+    if (!text && !title) {
       if (oldDraft) {
         console.debug("Deleting draft...");
         this.setState({
@@ -826,6 +819,7 @@ export const Editor = createComponent({
   },
 
   setCannotSaveDraft: function(errorStatusCode?: number) {
+    // Dupl code [4ABKR2JZ7]
     this.setState({
       draftStatus: DraftStatus.CannotSave,
       draftErrorStatusCode: errorStatusCode,
@@ -1031,7 +1025,11 @@ export const Editor = createComponent({
 
   callOnDoneCallback: function(saved: boolean) {
     if (this.state.onDone) {
-      this.state.onDone(saved, this.state.text);
+      this.state.onDone(
+          saved, this.state.text,
+          // If the text in the editor was saved, we don't need the draft any longer.
+          saved ? null : this.state.draft,
+          saved ? DraftStatus.NothingHappened : this.state.draftStatus);
     }
   },
 
@@ -1340,34 +1338,13 @@ export const Editor = createComponent({
         !this.state.showMaximized ? t.e.Maximize : (
           this.state.splitHorizontally ? t.e.ToNormal : t.e.TileHorizontally);
 
-    let draftStatusText;
-    let draftErrorClass = '';
     const draft: Draft = this.state.draft;
-    const draftNr: number | string = draft ? draft.draftNr : '';
+    const draftNr = draft ? draft.draftNr : NoDraftNr;
     const skipDraft = !draft || shallSkipDraft(draft.forWhat, store);
 
-    if (!skipDraft) switch (this.state.draftStatus) {
-      case DraftStatus.NothingHappened: break;
-      case DraftStatus.EditsUndone: draftStatusText = "Unchanged."; break;
-      case DraftStatus.Saved: draftStatusText = `Draft ${draftNr} saved.`; break;
-      case DraftStatus.Deleted: draftStatusText = `Draft ${draftNr} deleted.`; break;
-      case DraftStatus.ShouldSave: draftStatusText = `Will save draft ${draftNr} ...`; break;
-      case DraftStatus.SavingSmall: draftStatusText = `Saving draft ${draftNr} ...`; break;  // I18N
-      // UX COULD show in modal dialog, and an "Ok I'll wait until you're done" button, and a Cancel button.
-      case DraftStatus.SavingBig: draftStatusText = `Saving draft ${draftNr} ...`; break;
-      case DraftStatus.Deleting: draftStatusText = `Deleting draft ${draftNr} ...`; break;
-      case DraftStatus.CannotSave:
-        draftErrorClass = ' s_E_DraftStatus-Error';
-        let details: string;
-        if (this.state.draftErrorStatusCode === 403) details = "Access denied";  // I18N
-        else if (this.state.draftErrorStatusCode) details = "Error " + this.state.draftErrorStatusCode;
-        else details = "No internet connection";  // I18N reuse string
-        draftStatusText = "Cannot save draft: " + details;  // I18N
-        break;
-    }
-
-    const draftStatus = !draftStatusText ? null :
-        r.span({ className: 's_E_DraftStatus' + draftErrorClass }, draftStatusText);
+    const draftStatus = skipDraft ? null :
+        DraftStatusInfo({ draftStatus: this.state.draftStatus, draftNr,
+            draftErrorStatusCode: this.state.draftErrorStatusCode });
 
     return (
       r.div({ style: styles },
@@ -1380,8 +1357,10 @@ export const Editor = createComponent({
           r.div({ id: 'editor-after-borders' },
             r.div({ className: 'editor-area', style: editorStyles },
               r.div({ className: 'editor-area-after-borders' },
-                r.div({ className: 'dw-doing-what' },
-                  doingWhatInfo, showGuidelinesBtn, draftStatus),
+                r.div({ className: 's_E_DoingRow' },
+                  r.span({ className: 's_E_DoingWhat' }, doingWhatInfo),
+                  showGuidelinesBtn,
+                  draftStatus),
                 r.div({ className: 'esEdtr_titleEtc' },
                   // COULD use https://github.com/marcj/css-element-queries here so that
                   // this will wrap to many lines also when screen wide but the editor is narrow.
@@ -1526,6 +1505,40 @@ const previewHelpMessage = {
       r.span({}, t.e.PreviewInfo,
         r.br(), t.e.CannotType)
 };
+
+
+export function DraftStatusInfo(props: { draftStatus: DraftStatus, draftNr: number,
+       draftErrorStatusCode?: number }) {
+
+  let draftStatusText;
+  let draftErrorClass = '';
+  const draftNr: number | string = props.draftNr || '';
+  const draftErrorStatusCode: number | undefined = props.draftErrorStatusCode;
+
+  switch (props.draftStatus) {
+    case DraftStatus.NothingHappened: break;
+    case DraftStatus.EditsUndone: draftStatusText = "Unchanged."; break;
+    case DraftStatus.Saved: draftStatusText = `Draft ${draftNr} saved.`; break;
+    case DraftStatus.Deleted: draftStatusText = `Draft ${draftNr} deleted.`; break;
+    case DraftStatus.ShouldSave: draftStatusText = `Will save draft ${draftNr} ...`; break;
+    case DraftStatus.SavingSmall: draftStatusText = `Saving draft ${draftNr} ...`; break;  // I18N
+    // UX COULD show in modal dialog, and an "Ok I'll wait until you're done" button, and a Cancel button.
+    case DraftStatus.SavingBig: draftStatusText = `Saving draft ${draftNr} ...`; break;
+    case DraftStatus.Deleting: draftStatusText = `Deleting draft ${draftNr} ...`; break;
+    case DraftStatus.CannotSave:
+      draftErrorClass = ' s_DraftStatus-Error';
+      let details: string;
+      if (draftErrorStatusCode === 403) details = "Access denied";  // I18N
+      else if (draftErrorStatusCode) details = "Error " + draftErrorStatusCode;
+      else details = "No internet connection";  // I18N reuse string
+      draftStatusText = "Cannot save draft: " + details;  // I18N
+      break;
+  }
+
+  return !draftStatusText ? null :
+       r.span({ className: 's_DraftStatus' + draftErrorClass }, draftStatusText);
+}
+
 
 
 //------------------------------------------------------------------------------

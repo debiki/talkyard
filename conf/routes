@@ -202,10 +202,9 @@ POST  /-/vote                   controllers.VoteController.handleVotes
 GET   /-/load-voters            controllers.VoteController.loadVoters(postId: Int, voteType: Int)
 POST  /-/flag                   controllers.Application.flag
 
-GET   /-/load-draft-and-guidelines controllers.EditController.loadDraftAndGuidelines(writingWhat, draftType: Int, pageRole, categoryId: Option[Int], toUserId: Option[Int], postId: Option[Int], pageId: Option[String], postNr: Option[Int])
+GET   /-/load-draft-and-guidelines controllers.EditController.loadDraftAndGuidelines(writingWhat: Int, draftType: Int, pageRole, categoryId: Option[Int], toUserId: Option[Int], postId: Option[Int], pageId: Option[String], postNr: Option[Int])
 GET   /-/load-draft-and-text    controllers.EditController.loadDraftAndText(pageId, postNr: Int)
 POST  /-/edit                   controllers.EditController.edit
-GET   /-/open-editor            controllers.EditController.openEditor(toEditPostId: Int, draftNr: Option[Int])
 POST  /-/edit-title-save-settings controllers.PageTitleSettingsController.editTitleSaveSettings
 GET   /-/onebox                 controllers.EditController.onebox(url)
 POST  /-/change-post-type       controllers.EditController.changePostType

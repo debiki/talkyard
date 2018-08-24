@@ -166,7 +166,7 @@ class ReplyController @Inject()(cc: ControllerComponents, edContext: EdContext)
       anyCategoryId = Some(categoryId), anyFolder = slug, anySlug = folder,
       titleTextAndHtml = dao.textAndHtmlMaker.forTitle(s"Comments for $embeddingUrl"),
       bodyTextAndHtml = dao.textAndHtmlMaker.forBodyOrComment(s"Comments for: $embeddingUrl"),
-      showId = true, deleteDraftNr = None,
+      showId = true, deleteDraftNr = None,  // later, there'll be a draft to delete? [BLGCMNT1]
       Who.System, request.spamRelatedStuff, altPageId = altPageId, embeddingUrl = Some(embeddingUrl))
   }
 

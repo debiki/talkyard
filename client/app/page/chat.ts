@@ -303,40 +303,146 @@ const JoinChatButton = createComponent({
 
 
 
+// SMALLER_BUNDLE move to editor script bundle? ... Hmm, could be inline-editor-bundle.js?
+// or editor-shell.js?
+// and the full-text-with-preview could be  advanced-editor-bundle.js?
 const ChatMessageEditor = createComponent({
   displayName: 'ChatMessageEditor',
 
   getInitialState: function() {
     return {
       text: '',
+      draft: undefined,
+      draftStatus: DraftStatus.NothingHappened,
       rows: DefaultEditorRows,
       advancedEditorInstead: false,
     };
   },
 
   componentDidMount: function() {
+    this.saveDraftDebounced = _.debounce(this.saveDraftNow, 2022);
+
+    // Load editor scripts and any draft text.
     Server.loadEditorAndMoreBundles(() => {
       if (this.isGone) return;
-      this.setState({ scriptsLoaded: true });
+
+      const store: Store = this.props.store;
+      const page: Page = store.currentPage;
+
+      const draftLocator: DraftLocator = {
+        draftType: DraftType.Reply,
+        pageId: page.pageId,
+        postNr: BodyNr,
+      };
+      Server.loadDraftAndGuidelines(draftLocator, WritingWhat.ChatComment, page.categoryId, page.pageRole,
+          (guidelinesSafeHtml, draft?: Draft) => {
+        if (this.isGone) return;
+        this.setState({
+          draft,
+          draftStatus: DraftStatus.NothingHappened,
+          text: draft ? draft.text : '',
+          scriptsLoaded: true,
+        });
+      });
     });
   },
 
   componentWillUnmount: function() {
     this.isGone = true;
+    this.saveDraftNow();
+  },
+
+  saveDraftNow: function() {
+    // TESTS_MISSING
+    // A bit dupl code [4ABKR2J0]
+    const store: Store = this.props.store;
+    const me: Myself = store.me;
+
+    const oldDraft: Draft | undefined = this.state.draft;
+    const draftStatus: DraftStatus = this.state.draftStatus;
+
+    if (draftStatus <= DraftStatus.NeedNotSave)
+      return;
+
+    const draftOldOrEmpty: Draft = oldDraft || {
+      byUserId: me.id,
+      draftNr: NoDraftNr,
+      forWhat: {
+        draftType: DraftType.Reply,
+        pageId: store.currentPageId,
+        postNr: BodyNr,
+      },
+      createdAt: getNowMs(),
+      postType: PostType.ChatMessage,
+      text: '',
+    };
+
+    const text: string = (this.state.text || '').trim();
+
+    // BUG the lost update bug, unlikely to happen: Might overwrite other version of this draft [5KBRZ27].
+
+    // If empty. Delete any old draft.
+    if (!text) {
+      if (oldDraft) {
+        console.debug("Deleting draft...");
+        this.setState({ draftStatus: DraftStatus.Deleting });
+        Server.deleteDrafts([oldDraft.draftNr], () => {
+          console.debug("...Deleted draft.");
+          this.setState({
+            draft: null,
+            draftStatus: DraftStatus.Deleted,
+          });
+        }, this.setCannotSaveDraft);
+      }
+      return;
+    }
+
+    const draftToSave = { ...draftOldOrEmpty, text, title: '' };
+    this.setState({
+      draftStatus: DraftStatus.SavingSmall,
+    });
+
+    console.debug(`Saving draft: ${JSON.stringify(draftToSave)}`);
+    Server.upsertDraft(draftToSave, (draftWithNr: Draft) => {
+      console.debug("...Saved draft.");
+      this.setState({
+        draft: draftWithNr,
+        draftStatus: DraftStatus.Saved,
+      });
+    }, this.setCannotSaveDraft);
+  },
+
+  setCannotSaveDraft: function(errorStatusCode?: number) {
+    // Dupl code [4ABKR2JZ7]
+    this.setState({
+      draftStatus: DraftStatus.CannotSave,
+      draftErrorStatusCode: errorStatusCode,
+    });
   },
 
   onTextEdited: function(event) {
     this.updateText(event.target.value);
   },
 
-  updateText: function(text) {
+  updateText: function(text, draftWithStatus?: { draft, draftStatus }) {
     // numLines won't work with wrapped lines, oh well, fix some other day.
     // COULD use https://github.com/andreypopp/react-textarea-autosize instead.
     const numLines = text.split(/\r\n|\r|\n/).length;
+
+    // A bit dupl code [7WKABF2]
+    const draft: Draft = this.state.draft;
+    const draftStatus = draft && draft.text === text
+      ? DraftStatus.EditsUndone
+      : DraftStatus.ShouldSave;
+
     this.setState({
       text: text,
+      draft: (draftWithStatus ? draftWithStatus.draft : this.state.draft),
+      draftStatus: (draftWithStatus ? draftWithStatus.draftStatus : draftStatus),
       rows: Math.max(DefaultEditorRows, Math.min(8, numLines)),
-    });
+    },
+      draftStatus === DraftStatus.ShouldSave ? this.saveDraftDebounced : undefined);
+
     // In case lines were deleted, we need to move the editor a bit downwards, so it
     // remains fixed at the bottom — because now it's smaller.
     if (this.props.refreshFixedAtBottom) {
@@ -372,9 +478,10 @@ const ChatMessageEditor = createComponent({
 
   saveChatMessage: function() {
     this.setState({ isSaving: true });
-    Server.insertChatMessage(this.state.text, NoDraftNr, () => {
+    const draft: Draft | undefined = this.state.draft;
+    Server.insertChatMessage(this.state.text, draft ? draft.draftNr : NoDraftNr, () => {
       if (this.isGone) return;
-      this.setState({ text: '', isSaving: false, rows: DefaultEditorRows });
+      this.setState({ text: '', isSaving: false, draft: null, rows: DefaultEditorRows });
       this.props.scrollDownToViewNewMessage();
       // no such fn: this.refs.textarea.focus();
       // instead, for now:
@@ -384,12 +491,14 @@ const ChatMessageEditor = createComponent({
 
   useAdvancedEditor: function() {
     this.setState({ advancedEditorInstead: true });
-    editor.openToWriteChatMessage(this.state.text, (wasSaved, text) => {
+    const state = this.state;
+    editor.openToWriteChatMessage(state.text, state.draft, state.draftStatus,
+          (wasSaved, text, draft, draftStatus) => {
       // Now the advanced editor has been closed.
       this.setState({
         advancedEditorInstead: false,
       });
-      this.updateText(wasSaved ? '' : text);
+      this.updateText(wasSaved ? '' : text, { draft, draftStatus });
       if (wasSaved) {
         this.props.scrollDownToViewNewMessage();
       }
@@ -400,9 +509,16 @@ const ChatMessageEditor = createComponent({
     if (this.state.advancedEditorInstead || !this.state.scriptsLoaded)
       return null;
 
+    const draft: Draft = this.state.draft;
+    const draftNr = draft ? draft.draftNr : NoDraftNr;
+    const draftStatus: DraftStatus = this.state.draftStatus;
+    const draftErrorStatusCode = this.state.draftErrorStatusCode;
+    const draftStatusInfo = editor['DraftStatusInfo']({ draftStatus, draftNr, draftErrorStatusCode });
+
     const disabled = this.state.isLoading || this.state.isSaving;
     const buttons =
         r.div({ className: 'esC_Edtr_Bs' },
+          draftStatusInfo,
           r.button({ className: 'esC_Edtr_SaveB btn btn-primary', onClick: this.saveChatMessage,
               disabled: disabled },
             '↵ ' + t.c.PostMessage),

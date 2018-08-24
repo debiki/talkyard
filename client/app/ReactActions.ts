@@ -440,9 +440,20 @@ export function loadAndShowPost(postNr: PostNr, showChildrenToo?: boolean, callb
  * and including X have been loaded. Then scrolls to X.
  */
 export function doUrlFragmentAction(newHashFragment?: string) {
+  // How to interpret an action, might depend on what type of page the current page is.
+  // Is this a HACK? To access the store here?
+  const store: Store = ReactStore.allData();
+  const currentPage: Page | undefined = store.currentPage;
+
   const fragAction = findUrlFragmentAction(newHashFragment);
-  if (!fragAction)
+  if (!fragAction) {
+    // The default action for chat pages, is to scroll to the end.
+    if (currentPage && page_isChatChannel(currentPage.pageRole)) {
+      // dupl code [5UKP20]
+      utils.scrollIntoViewInPageColumn('#thePageBottom');
+    }
     return;
+  }
 
   console.debug(`Doing url #action ${fragAction.type}...`);
 

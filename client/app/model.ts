@@ -176,6 +176,20 @@ enum FlagType {
 }
 
 
+enum DraftStatus {
+  NothingHappened = 1,
+  EditsUndone = 2,
+  Saved = 3,
+  Deleted = 4,
+  NeedNotSave = Deleted,
+  ShouldSave = 5,
+  SavingSmall = 6,
+  SavingBig = 7,
+  Deleting = 8,
+  CannotSave = 10,
+}
+
+
 enum DraftType {
   Scratch = 1,
   Topic = 2,

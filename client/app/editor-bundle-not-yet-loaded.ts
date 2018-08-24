@@ -58,9 +58,9 @@ export function openToEditChatTitleAndPurpose() {
 }
 
 
-export function openToWriteChatMessage(text: string, onDone) {
+export function openToWriteChatMessage(text: string, draft: Draft | undefined, draftStatus, onDone) {
   ensureEditorCreated(editor => {
-    editor.openToWriteChatMessage(text || '', onDone);
+    editor.openToWriteChatMessage(text || '', draft, draftStatus, onDone);
   });
 }
 

@@ -108,30 +108,40 @@ export function linkToMyProfilePage(store: Store): string {
 
 
 export function linkToDraftSource(draft: Draft,
-      // CLEAN_UP incl these in `draft` instead?
-      // and rename from Draft.replyToNnn to Draft.postNr, postId, pageId, and DraftLocator.what  ?
-      // where  what: DraftForWhat ?
+      // The current page id and post nr, might be different from draft.pageId and draft.postNr,
+      // if the post was moved to another page. — Maybe shoud store only draft post id,
+      // not page id & post nr?
       pageId?: PageId, postNr?: PostNr): string {
   const locator = draft.forWhat;
   const andDraftNrParam = '&draftNr=' + draft.draftNr;
+
   if (locator.pageId) {
-    return origin() + '/-' + locator.pageId +
-        '#post-' + locator.postNr + FragActionAndReplyToPost + andDraftNrParam;
+    const pageUrl = origin() + '/-' + locator.pageId;
+    let hashFragmentAction = '';
+    if (draft.postType === PostType.ChatMessage) {
+      // No fragment action needed: the chat editor is shown by default, will load the draft.
+    }
+    else {
+      hashFragmentAction = '#post-' + locator.postNr + FragActionAndReplyToPost + andDraftNrParam;
+    }
+    return pageUrl + hashFragmentAction;
   }
-  else if (locator.postId) {
+
+  if (locator.postId) {
     return origin() + '/-' + pageId +
         '#post-' + postNr + FragActionAndEditPost + andDraftNrParam;
   }
-  else if (locator.toUserId) {
+
+  if (locator.toUserId) {
     return linkToSendMessage(locator.toUserId) + andDraftNrParam;
   }
-  else if (locator.categoryId) {
+
+  if (locator.categoryId) {
     // If [subcomms]: BUG should go to the correct sub community url path.
     return '/' + FragActionHashComposeTopic + andDraftNrParam;
   }
-  else {
-    die("Unknown draft source [TyE5WADK204]")
-  }
+
+  die("Unknown draft source [TyE5WADK204]")
 }
 
 

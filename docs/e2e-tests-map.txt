@@ -472,6 +472,17 @@ draft:
   load,
   list [7WKABZP2],
   navigate to ?draftNr:
+  deleted when saving:
+  # (reply, chat message, new topic, new(private/publ chat, edits, direct message.)
+  # EditController.edit
+  # GroupTalkController.sendMessage
+  # PageController.createPage
+  # ReplyController.handleReply
+  # ReplyController.handleChatMessage
+  # ReplyController embedded comments, if fixes [BLGCMNT1]
+  # MessagesDao.startGroupTalk
+  # PagesDao.createPage
+  # PostsDao.insertReply, insertChatMessage, editPostIfAuth
 
 superadmin -
   ... lots of stuff ...

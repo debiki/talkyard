@@ -1802,8 +1802,7 @@ object JsX {
       "topicType" -> JsNumberOrNull(draft.topicType.map(_.toInt)),
       "postType" -> JsNumberOrNull(draft.postType.map(_.toInt)),
       "title" -> JsString(draft.title),
-      "text" -> JsString(draft.text),
-    )
+      "text" -> JsString(draft.text))
   }
 }
 

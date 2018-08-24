@@ -42,11 +42,11 @@ class EditController @Inject()(cc: ControllerComponents, edContext: EdContext)
   def execCtx: ExecutionContext = context.executionContext
 
 
-  def loadDraftAndGuidelines(writingWhat: String, draftType: Int, pageRole: String,
+  def loadDraftAndGuidelines(writingWhat: Int, draftType: Int, pageRole: String,
         categoryId: Option[Int], toUserId: Option[UserId], postId: Option[Int],
         pageId: Option[String], postNr: Option[Int]): Action[Unit] = GetAction { request =>
 
-    import request.{dao, queryString, theRequester => requester}
+    import request.{dao, theRequester => requester}
 
     val theDraftType = DraftType.fromInt(draftType).getOrThrowBadArgument(
       "TyE5BKW2A0", "draftType")
@@ -82,15 +82,16 @@ class EditController @Inject()(cc: ControllerComponents, edContext: EdContext)
       }
     } getOrElse Nil
 
-    val writeWhat = writingWhat.toIntOption.flatMap(WriteWhat.fromInt) getOrElse throwBadArgument(
-      "DwE4P6CK0", "writingWhat")
+    val writeWhat = WriteWhat.fromInt(writingWhat)
 
     val thePageRole = pageRole.toIntOption.flatMap(PageRole.fromInt) getOrElse throwBadArgument(
       "DwE6PYK8", "pageRole")
 
-    val guidelinesSafeHtml = writeWhat match {
+    val guidelinesSafeHtml = writeWhat flatMap {
       case WriteWhat.ChatComment =>
-        Some(ChatCommentGuidelines)
+        None
+        // This is for progress-comments / chrono-comments / bottom-comments:
+        //   Some(ChatCommentGuidelines)
       case WriteWhat.Reply =>
         if (thePageRole == PageRole.MindMap) {
           // Then we're adding a mind map node — we aren't really replying to anyone.
@@ -199,24 +200,6 @@ class EditController @Inject()(cc: ControllerComponents, edContext: EdContext)
 
     OkSafeJson(dao.jsonMaker.postToJson2(postNr = postNr, pageId = pageId,
       includeUnapproved = true))
-  }
-
-
-  def openEditor(toEditPostId: Int, draftNr: Option[Int]): Action[Unit] = GetAction { request =>
-    import request.dao
-
-    val post = dao.loadPostByUniqueId(toEditPostId) getOrElse {
-      throwIndistinguishableNotFound("TyE4RBKA01")
-    }
-    val pagePath = dao.getPagePath(post.pageId) getOrElse {
-      throwIndistinguishableNotFound("TyE4RBKA02")
-    }
-    val anyDraftNrParam = draftNr.map(nr => s"&draftNr=$nr") getOrElse ""
-
-    if (request.isAjax)
-      OkSafeJson(JsString(pagePath.value + "&editPost" + anyDraftNrParam))
-    else
-      TemporaryRedirect(pagePath.value + s"#post-${post.nr}&editPost$anyDraftNrParam")
   }
 
 

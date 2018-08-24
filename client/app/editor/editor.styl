@@ -196,8 +196,9 @@ $spacyYMinHeight = 400px;
       display: flex;
       flex-direction: column;
 
-    .dw-doing-what
-      position: relative;
+    .s_E_DoingRow
+      position: relative; // why? can remove?
+      display: flex;
       @media (min-height: $spacyYMinHeight)
         margin-bottom: 4px;
 
@@ -306,15 +307,11 @@ $spacyYMinHeight = 400px;
     vertical-align: middle;
 
 
-.s_E_DraftStatus
-  text-align: center;
-  position: absolute;
-  left: 0;
-  right: 0;
-  z-index: 1;
+.s_DraftStatus
+  margin: 0 auto;  // places it in the middle, if flex layout
   color: hsl(0, 0%, 38%);
 
-.s_E_DraftStatus-Error
+.s_DraftStatus-Error
   padding: 2px 0;
   font-weight: bold;
   color: $errorColor;
