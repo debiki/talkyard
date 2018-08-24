@@ -184,10 +184,6 @@ POST  /-/reply                  controllers.ReplyController.handleReply
 POST  /-/chat                   controllers.ReplyController.handleChatMessage
 
 POST  /-/upsert-draft           controllers.DraftsController.upsertDraft
-#GET   /-/load-draft-for-topic   controllers.DraftsController.loadDraftForNewTopic(categoryId: Int)
-#GET   /-/load-draft-for-dir-msg controllers.DraftsController.loadDraftForDirectMessage(toUserId: Int)
-#GET   /-/load-draft-for-reply   controllers.DraftsController.loadDraftForReply(pageId, postNr: Int)
-#GET   /-/load-draft-for-edits   controllers.DraftsController.loadDraftForEdits(postId: Int)
 GET   /-/list-drafts            controllers.DraftsController.listDrafts(userId: Int)
 POST  /-/delete-drafts          controllers.DraftsController.deleteDrafts
 

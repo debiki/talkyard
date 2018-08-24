@@ -42,6 +42,7 @@ class EditController @Inject()(cc: ControllerComponents, edContext: EdContext)
   def execCtx: ExecutionContext = context.executionContext
 
 
+  REFACTOR // Move to DraftController?
   def loadDraftAndGuidelines(writingWhat: Int, draftType: Int, pageRole: String,
         categoryId: Option[Int], toUserId: Option[UserId], postId: Option[Int],
         pageId: Option[String], postNr: Option[Int]): Action[Unit] = GetAction { request =>
@@ -119,6 +120,7 @@ class EditController @Inject()(cc: ControllerComponents, edContext: EdContext)
   }
 
 
+  REFACTOR // Move to DraftController?
   /** Sends back a post's current CommonMark source to the browser.
     * SHOULD change to pageId + postId (not postNr)  [idnotnr]
     */

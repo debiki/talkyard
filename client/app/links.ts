@@ -87,7 +87,7 @@ export function linkToUsersNotfs(userIdOrUsername: UserId | string): string {
 }
 
 export function linkToSendMessage(userIdOrUsername: UserId | string): string {
-  return linkToUserProfilePage(userIdOrUsername) + '/activity/posts#composeDirectMessage';
+  return linkToUserProfilePage(userIdOrUsername) + '/activity/posts' + FragActionHashComposeMessage;
 }
 
 export function linkToInvitesFromUser(userId: UserId): string {

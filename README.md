@@ -396,7 +396,7 @@ or not. For example, `FN` (full name) is an abbreviation. But `By` is not (since
 lowercase letters).
 
 Another example: `s_Dfs_Df_Ttl` — this means the title (Ttl), of a draft (Df),
-in a list of drafts (Dfs).` You'll find abbreviations like Ttl and Df, in
+in a list of drafts (Dfs).  You'll find abbreviations like Ttl and Df, in
 [bem-blocks.txt](./docs/bem-blocks.txt).
 
 <!-- I think these short names actually improve readability, once you know what they means.
