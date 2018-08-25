@@ -35,9 +35,23 @@ const TestTrustLevel = {
   CoreMember: <TrustLevel> 6,
 };
 
+const TestDraftStatus = {  // sync with real code [5ABXG20]
+  NothingHappened: 1,
+  EditsUndone: 2,
+  Saved: 3,
+  Deleted: 4,
+  NeedNotSave: 4,
+  ShouldSave: 5,
+  SavingSmall: 6,
+  SavingBig: 7,
+  Deleting: 8,
+  CannotSave: 10,
+};
+
 export = {
-  TestPageRole: TestPageRole,
-  TestTrustLevel: TestTrustLevel,
+  TestPageRole,
+  TestTrustLevel,
+  TestDraftStatus,
   TitleNr: 0,
   BodyNr: 1,
   FirstReplyNr: 2,  // [5FKF0F2]

@@ -184,6 +184,7 @@ POST  /-/reply                  controllers.ReplyController.handleReply
 POST  /-/chat                   controllers.ReplyController.handleChatMessage
 
 POST  /-/upsert-draft           controllers.DraftsController.upsertDraft
+POST  /-/upsert-draft-text      controllers.DraftsController.upsertDraftText
 GET   /-/list-drafts            controllers.DraftsController.listDrafts(userId: Int)
 POST  /-/delete-drafts          controllers.DraftsController.deleteDrafts
 

@@ -344,12 +344,30 @@ function pagesFor(browser) {
       origWaitForVisible.apply(browser, arguments);
     },
 
+    waitForNotVisible: function(selector: string, timeoutMillis?: number) {
+      // API is: browser.waitForVisible(selector[,ms][,reverse])
+      console.log(`browser.waitForVisible('${selector}', timeoutMillis || true, timeoutMillis ? true : undefined);`);
+      console.log(`BUG just waits forever [2ABKRP83]`);
+      assert(false);
+      browser.waitForVisible(selector, timeoutMillis || true, timeoutMillis ? true : undefined);
+    },
+
     waitForEnabled: function(selector: string, timeoutMillis?: number) {
       origWaitForEnabled.apply(browser, arguments);
     },
 
     waitForText: function(selector: string, timeoutMillis?: number) {
       origWaitForText.apply(browser, arguments);
+    },
+
+    waitUntilValueIs: function(selector: string, value: string) {
+      browser.waitForVisible(selector);
+      while (true) {
+        const currentValue = browser.getValue(selector);
+        if (currentValue === value)
+          break;
+        browser.pause(125);
+      }
     },
 
     waitForExist: function(selector: string, timeoutMillis?: number) {
@@ -372,11 +390,11 @@ function pagesFor(browser) {
 
 
     waitAndClickLast: function(selector: string) {
-      die("waitAndClickLast unimpl");
-      //api._waitAndClickImpl(selector, false);
+      api.waitAndClickNth(selector, -1);
     },
 
 
+    // Works with many browsers at the same time.
     _waitAndClickImpl: function(selector: string, opts: { clickFirst?: boolean, maybeMoves?: boolean } = {}) {
       selector = selector.trim(); // so selector[0] below, works
       api._waitForClickable(selector, opts);
@@ -401,6 +419,24 @@ function pagesFor(browser) {
       // somehow happens before it has been created?
       api.waitUntilLoadingOverlayGone();
       browser.click(selector);
+    },
+
+
+    // For one browser at a time only.
+    // n starts on 1 not 0. -1 clicks the last, -2 the last but one etc.
+    waitAndClickNth: function(selector, n) {
+      assert(n !== 0, "n starts on 1, change from 0 to 1 please");
+      const items = browser.elements(selector).value;
+      assert(items.length >= n, `Elem ${n} missing: Only ${items.length} elems match: ${selector}`);
+      let response;
+      if (n > 0) {
+        response = browser.elementIdClick(items[n - 1].ELEMENT);
+      }
+      else {
+        response = browser.elementIdClick(items[items.length + n].ELEMENT);
+      }
+      assert(isResponseOk(response), "Bad response._status: " + response._status +
+        ", state: " + response.state);
     },
 
 
@@ -1068,11 +1104,20 @@ function pagesFor(browser) {
 
       myMenu: {
         goToAdminReview: function() {
+          api.topbar.myMenu.goToImpl('#e2eMM_Review');
+          api.adminArea.review.waitUntilLoaded();
+        },
+
+        goToDraftsEtc: function() {
+          api.topbar.myMenu.goToImpl('.e_MyDfsB');
+          api.userProfilePage.draftsEtc.waitUntilLoaded();
+        },
+
+        goToImpl: function(selector: string) {
           api.rememberCurrentUrl();
           api.topbar.openMyMenu();
-          api.waitAndClick('#e2eMM_Review');
+          api.waitAndClick(selector);
           api.waitForNewUrl();
-          api.adminArea.review.waitUntilLoaded();
         },
       },
 
@@ -2102,8 +2147,16 @@ function pagesFor(browser) {
         api.waitAndSetValue('.esEdtr_titleEtc_title', title);
       },
 
+      getTitle: function() {
+        return browser.getText('.editor-area .esEdtr_titleEtc_title');
+      },
+
       editText: function(text) {
         api.waitAndSetValue('.esEdtr_textarea', text);
+      },
+
+      getText: function() {
+        return browser.getText('.editor-area textarea');
       },
 
       setTopicType: function(type: PageRole) {
@@ -2127,8 +2180,14 @@ function pagesFor(browser) {
         api.waitUntilModalGone();
       },
 
-      cancel: function() {
+      cancelNoHelp: function() {
         browser.click('#debiki-editor-controller .e_EdCancelB');
+        // doesn't work :-(  api.waitForNotVisible('#debiki-editor-controller');
+        // just waits forever
+      },
+
+      cancel: function() {
+        api.editor.cancelNoHelp();
         api.helpDialog.waitForThenClose();
       },
 
@@ -2145,7 +2204,23 @@ function pagesFor(browser) {
         api.rememberCurrentUrl();
         api.editor.save();
         api.waitForNewUrl();
-      }
+      },
+
+      isDraftJustSaved: function() {
+        browser.isVisible('.e_DfSts-' + c.TestDraftStatus.Saved);
+      },
+
+      waitForDraftSaved: function() {
+        api.waitForVisible('.e_DfSts-' + c.TestDraftStatus.Saved);
+      },
+
+      waitForDraftTitleToLoad: function(text: string) {
+        api.waitUntilValueIs('.editor-area .esEdtr_titleEtc_title', text);
+      },
+
+      waitForDraftTextToLoad: function(text: string) {
+        api.waitUntilValueIs('.editor-area textarea', text);
+      },
     },
 
 
@@ -2915,6 +2990,28 @@ function pagesFor(browser) {
           api.waitForVisible('.e_UP_Notfs_Err');
           browser.assertTextMatches('.e_UP_Notfs_Err', 'EdE7WK2L_');
         }
+      },
+
+      draftsEtc: {
+        waitUntilLoaded: function() {
+          browser.waitForExist('.s_Dfs');
+        },
+
+        waitUntilNumDraftsListed: function(numDrafts: number) {
+          if (numDrafts === 0) {
+            browser.waitForVisible('.e_Dfs_None');
+          }
+          else {
+            api.waitForAtLeast(numDrafts, '.s_Dfs_Df');
+            api.assertExactly(numDrafts, '.s_Dfs_Df');
+          }
+        },
+
+        openDraftIndex: function(index) {
+          api.rememberCurrentUrl();
+          api.waitAndClickNth('.s_Dfs_Df', index);
+          api.waitForNewUrl();
+        },
       },
 
       invites: {

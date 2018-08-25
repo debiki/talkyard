@@ -115,6 +115,23 @@ function postJson(urlPath: string, requestData: RequestData) {
 }
 
 
+function trySendBeacon(url, data) {
+  // sendBeacon is not supported in Safari and iOS as of Feb 2017 ... and Aug 2018.
+  let sendBeacon = navigator['sendBeacon'];
+  if (!sendBeacon) {
+    // Bad luck, likely Apple's iOS.
+    return;
+  }
+
+  // 1. Don't call variable `sendBeacon`, that results in an invalid-invokation error.
+  // 2. sendBeacon() apparently always posts text/plain;charset=UTF-8.
+  // 3. There's no way to add a xsrf header — so include a xsrf token in the request body.
+  let xsrfTokenLine = getSetCookie('XSRF-TOKEN') + '\n';  // [7GKW20TD]
+  let json = JSON.stringify(data);
+  (<any> navigator).sendBeacon(url + '-text', xsrfTokenLine + json);
+}
+
+
 // If needed later:
 // loadCss: use https://github.com/filamentgroup/loadCSS/blob/master/src/loadCSS.js
 
@@ -201,20 +218,28 @@ function showErrorIfNotComplete() {
 
 export const testPost = postJsonSuccess;
 
-/** Return Server.IgnoreThisError from error(..) to suppress a log message and error dialog. */
-function postJsonSuccess(urlPath, success: (response: any) => void, data: any, error?,
-        options?: { showLoadingOverlay?: boolean }) {
-  // Make postJsonSuccess(..., error, data) work:
+
+/** Return Server.IgnoreThisError from error(..) to suppress a log message and error dialog.
+  */
+function postJsonSuccess(urlPath, onOk: ((response: any) => void) | UseBeacon, data: any,
+        onError?, options?: { showLoadingOverlay?: boolean }) {
+  // Make postJsonSuccess(..., onError, data) work:
   if (!data || _.isFunction(data)) {
     const tmp = data;
-    data = error;
-    error = tmp;
+    data = onError;
+    onError = tmp;
   }
+
+  if (onOk === UseBeacon) {
+    trySendBeacon(urlPath, data);
+    return;
+  }
+
   options = options || {};
   postJson(urlPath, {
     data: data,
-    success: success,
-    error: error,
+    success: onOk,
+    error: onError,
     showLoadingOverlay: options.showLoadingOverlay,
   });
 }
@@ -941,8 +966,8 @@ export function loadDraftAndText(postNr: PostNr, onDone: (response: LoadDraftAnd
 }
 
 
-export function upsertDraft(draft: Draft, onOk: (draftWithNr: Draft) => void,
-      onError: ErrorStatusHandler) {
+export function upsertDraft(draft: Draft, onOk: ((draftWithNr: Draft) => void) | UseBeacon,
+      onError: ErrorStatusHandler | null) {
   postJsonSuccess('/-/upsert-draft', onOk, draft, function(xhr) {
     onError(xhr.status);
     return ShowNoErrorDialog;
@@ -950,7 +975,8 @@ export function upsertDraft(draft: Draft, onOk: (draftWithNr: Draft) => void,
 }
 
 
-export function deleteDrafts(draftNrs: DraftNr[], onOk: () => void, onError: ErrorStatusHandler) {
+export function deleteDrafts(draftNrs: DraftNr[], onOk: (() => void) | UseBeacon,
+        onError: ErrorStatusHandler) {
   postJsonSuccess('/-/delete-drafts', onOk, draftNrs, function(xhr) {
     onError(xhr.status);
     return ShowNoErrorDialog;
@@ -1411,25 +1437,10 @@ export function trackReadingProgress(lastViewedPostNr: PostNr, secondsReading: n
     secondsReading: secondsReading,
     postNrsRead: postNrsRead,
   };
-  let url = '/-/track-reading';
-  if (!success) {
-    // sendBeacon not supported in Safari and iOS as of Feb 2017.
-    let sendBeacon = navigator['sendBeacon'];
-    if (sendBeacon) {
-      // 1. Don't call variable `sendBeacon`, that results in an invalid-invokation error.
-      // 2. sendBeacon() apparently always posts text/plain;charset=UTF-8.
-      // 3. There's no way to add a xsrf header — so include a xsrf token in the request body.
-      let xsrfTokenLine = getSetCookie('XSRF-TOKEN') + '\n';  // [7GKW20TD]
-      let json = JSON.stringify(data);
-      (<any> navigator).sendBeacon(url + '-text', xsrfTokenLine + json);
-    }
-  }
-  else {
-    postJsonSuccess(url, success, data,
+  postJsonSuccess('/-/track-reading', success || UseBeacon, data,
         // Don't popup any error dialog from here. If there's a network error, we'll show a
         // "No internet" non-intrusive message instead [NOINETMSG].
         () => ShowNoErrorDialog, { showLoadingOverlay: false });
-  }
 }
 
 

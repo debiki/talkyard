@@ -63,11 +63,11 @@ export const SelectCategoryDropdown = createClassAndFactory({
   render: function() {
     const props = this.props;
     const store: Store = props.store;
+    const categories: Category[] | undefined = props.categories || store.currentCategories;
 
     // UX COULD let user click a checkbox, to show categories from all site sections, even if by
     // default showing only categories from any current site section. [subcomms]
-    const categoriesToList: Category[] = store.currentCategories.length ?
-        store.currentCategories : store.allCategoriesHacky;
+    const categoriesToList: Category[] = categories.length ? categories : store.allCategoriesHacky;
 
     const selectedCategory: Category =
       _.find(categoriesToList, c => c.id === props.selectedCategoryId);

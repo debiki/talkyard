@@ -38,6 +38,8 @@ type DateMs = number;  // use When instead? sounds better since using When serve
 type WhenMs = number;
 
 type HttpRequest = XMLHttpRequest;
+type UseBeacon = 'UseBeacon';
+
 
 interface CheckboxEvent {
   target: {
@@ -176,7 +178,7 @@ enum FlagType {
 }
 
 
-enum DraftStatus {
+enum DraftStatus {  // sync with test code [5ABXG20]
   NothingHappened = 1,
   EditsUndone = 2,
   Saved = 3,
@@ -1410,6 +1412,7 @@ interface UserAccountLoginMethod {
 
 // COULD also load info about whether the user may apply and approve the edits.
 interface LoadDraftAndTextResponse {
+  pageId: PageId,
   postNr: PostNr,
   postUid: string; // CLEAN_UP RENAME to just postId.
   currentText: string;

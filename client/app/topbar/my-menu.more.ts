@@ -113,7 +113,7 @@ export const MyMenuContent = createFactory({
           MenuItemLink({ to: linkToMyProfilePage(store), id: 'e2eMM_Profile' },
             t.mm.ViewProfile);
       viewDraftsAndBookmarks =
-          MenuItemLink({ to: linkToMyDraftsEtc(store), id: 'e_MyDrtsB' },
+          MenuItemLink({ to: linkToMyDraftsEtc(store), className: 'e_MyDfsB' },
               "Drafts, bookmarks, tasks");  // I18N
       logoutMenuItem =
           MenuItem({ onClick: this.onLogoutClick, id: 'e2eMM_Logout' }, t.mm.LogOut);

@@ -24,6 +24,7 @@ Df = draft
 Dl = download
 CB = checkbox
 Pw = password, e.g. NewPwI
+St = status or state
 U  = user
 Un = username
 FN = full name

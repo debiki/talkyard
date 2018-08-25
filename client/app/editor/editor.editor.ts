@@ -27,7 +27,6 @@ const r = ReactDOMFactories;
 let FileAPI;
 
 let theEditor: any;
-const WritingSomethingWarningKey = 'WritingSth';
 
 export const ReactTextareaAutocomplete = reactCreateFactory(window['ReactTextareaAutocomplete']);
 
@@ -111,6 +110,7 @@ export const Editor = createComponent({
     this.makeEditorResizable();
     this.initUploadFileStuff();
     this.perhapsShowGuidelineModal();
+    window.addEventListener('unload', this.saveDraftUseBeacon);
     // Don't scroll the main discussion area, when scrolling inside the editor.
     /* Oops this breaks scrolling in the editor and preview.
     $(this.refs.editor).on('scroll touchmove mousewheel', function(event) {
@@ -131,6 +131,7 @@ export const Editor = createComponent({
   },
 
   componentWillUnmount: function() {
+    window.removeEventListener('unload', this.saveDraftUseBeacon);
     this.isGone = true;
   },
 
@@ -373,11 +374,14 @@ export const Editor = createComponent({
     }
     this.setState({
       anyPostType: postType,
+      editorsCategories: store.currentCategories,
+      editorsPageId: store.currentPageId,
       replyToPostNrs: postNrs,
       text: this.state.text || makeDefaultReplyText(store, postNrs),
     });
     if (!postNrs.length) {
-      this.saveDraftCloseEditor();
+      this.saveDraftClearAndClose();
+      return;
     }
 
     const draftLocator: DraftLocator = {
@@ -399,10 +403,13 @@ export const Editor = createComponent({
     Server.loadDraftAndText(postNr, (response: LoadDraftAndTextResponse) => {
       if (this.isGone) return;
       this.showEditor({ scrollToShowPostNr: response.postNr });
+      const store: Store = this.state.store;
       const draft: Draft | undefined = response.draft;
       dieIf(postNr !== response.postNr, 'TyE23GPKG4');
       this.setState({
         anyPostType: null,
+        editorsCategories: store.currentCategories,
+        editorsPageId: response.pageId,
         editingPostNr: postNr,
         editingPostUid: response.postUid,
         editingPostRevisionNr: response.currentRevisionNr,
@@ -423,9 +430,12 @@ export const Editor = createComponent({
     dieIf(role !== PageRole.PrivateChat && !categoryId, 'EsE8PE2B');
     this.showEditor();
     const text = this.state.text || '';
+    const store: Store = this.state.store;
 
     this.setState({
       anyPostType: null,
+      editorsCategories: store.currentCategories,
+      editorsPageId: store.currentPageId,
       newForumTopicCategoryId: categoryId,
       newPageRole: role,
       text: text
@@ -447,8 +457,11 @@ export const Editor = createComponent({
   openToWriteChatMessage: function(text: string, draft: Draft | undefined, draftStatus, onDone?) {
     if (this.alertBadState())
       return;
+    const store: Store = this.state.store;
     this.showEditor();
     this.setState({
+      editorsCategories: store.currentCategories,
+      editorsPageId: store.currentPageId,
       isWritingChatMessage: true,
       text: text || '',
       draft,
@@ -462,7 +475,10 @@ export const Editor = createComponent({
     if (this.alertBadState())
       return;
     this.showEditor();
+    const store: Store = this.state.store;
     this.setState({
+      editorsCategories: store.currentCategories,
+      editorsPageId: store.currentPageId,
       messageToUserIds: [userId],
       text: '',
       newPageRole: PageRole.FormalMessage,
@@ -498,21 +514,33 @@ export const Editor = createComponent({
     })
   },
 
-  alertBadState: function(wantsToDoWhat = null) {
+  alertBadState: function(wantsToDoWhat = null): boolean {
+    // REFACTOR  we call clearIsReplyingMarks from here, so cannot return directly if allFine,
+    // which makse this unnecessarily complicated?
+
+    const store: Store = this.state.store;
+    const allFine = this.state.draftStatus <= DraftStatus.NeedNotSave &&
+        store.currentPageId === this.state.editorsPageId;
+    const maybeAlert = allFine ? (x: any) => {} : alert;
+    let seemsBad = false;
+
     if (wantsToDoWhat !== 'WriteReply' && this.state.replyToPostNrs.length > 0) {
-      alert(t.e.PleaseFinishPost);
-      return true;
+      maybeAlert(t.e.PleaseFinishPost);
+      seemsBad = true;
     }
+
     if (this.state.isWritingChatMessage) {
-      alert(t.e.PleaseFinishChatMsg);
-      return true;
+      maybeAlert(t.e.PleaseFinishChatMsg);
+      seemsBad = true;
     }
+
     if (this.state.messageToUserIds.length) {
-      alert(t.e.PleaseFinishMsg);
-      return true;
+      maybeAlert(t.e.PleaseFinishMsg);
+      seemsBad = true;
     }
+
     if (_.isNumber(this.state.editingPostNr)) {
-      alert(t.e.PleaseSaveEdits);
+      maybeAlert(t.e.PleaseSaveEdits);
       // If this is an embedded editor, for an embedded comments page, that page
       // will now have highlighted some reply button to indicate a reply is
       // being written. But that's wrong, clear those marks.
@@ -523,14 +551,16 @@ export const Editor = createComponent({
       else {
         d.i.clearIsReplyingMarks();
       }
-      return true;
+      seemsBad = true;
     }
+
     if (this.state.newPageRole) {
-      alert(t.e.PleaseSaveOrCancel);
+      maybeAlert(t.e.PleaseSaveOrCancel);
       d.i.clearIsReplyingMarks();
-      return true;
+      seemsBad = true;
     }
-    return false;
+
+    return !allFine && seemsBad;
   },
 
   loadDraftAndGuidelines: function(draftLocator: DraftLocator, writingWhat: WritingWhat,
@@ -612,7 +642,6 @@ export const Editor = createComponent({
   },
 
   onTitleEdited: function(event) {
-    utils.PageUnloadAlerter.addReplaceWarning(WritingSomethingWarningKey, t.e.WritingSomethingWarning);
     const title = event.target.value;
     this._handleEditsImpl(title, this.state.text);
   },
@@ -625,7 +654,6 @@ export const Editor = createComponent({
   },
 
   onTextEdited: function(event) {
-    utils.PageUnloadAlerter.addReplaceWarning(WritingSomethingWarningKey, t.e.WritingSomethingWarning);
     const text = event.target.value;
     this._handleEditsImpl(this.state.title, text);
   },
@@ -649,7 +677,7 @@ export const Editor = createComponent({
       this.saveStuff();
     }
     if (event_isEscape(event)) {
-      this.saveDraftCloseEditor();
+      this.saveDraftClearAndClose();
     }
   },
 
@@ -659,7 +687,7 @@ export const Editor = createComponent({
       this.saveStuff();
     }
     if (event_isEscape(event)) {
-      this.saveDraftCloseEditor();
+      this.saveDraftClearAndClose();
     }
   },
 
@@ -694,14 +722,11 @@ export const Editor = createComponent({
   },
 
   onCancelClick: function() {
-    if (utils.PageUnloadAlerter.wouldWarn(WritingSomethingWarningKey)) {
-      help.openHelpDialogUnlessHidden({
-        content: t.e.CanContinueEditing,  // [issue-62YKUw2]
-        id: '7YK35W1',
-      });
+    if (this.state.draftStatus === DraftStatus.Saved) {
+      help.openHelpDialogUnlessHidden({ content: t.e.CanContinueEditing, id: '7YK35W1' });
     }
     this.callOnDoneCallback(false);
-    this.saveDraftCloseEditor();
+    this.saveDraftClearAndClose();
   },
 
   makeEmptyDraft: function(): Draft | undefined {
@@ -711,14 +736,14 @@ export const Editor = createComponent({
 
     if (this.state.editingPostNr) {
       locator.draftType = DraftType.Edit;
+      locator.pageId = this.state.editorsPageId;
       locator.postId = this.state.editingPostUid;
-      locator.pageId = store.currentPageId;
       locator.postNr = this.state.editingPostNr;
     }
     else if (this.state.replyToPostNrs && this.state.replyToPostNrs.length) {
       locator.draftType = DraftType.Reply;
       // post id will be looked up server side. [4BKG0BKR0]
-      locator.pageId = store.currentPageId;
+      locator.pageId = this.state.editorsPageId;
       locator.postNr = this.state.replyToPostNrs[0]; // for now just pick the first one
       postType = PostType.Normal;
     }
@@ -749,7 +774,11 @@ export const Editor = createComponent({
     return draft;
   },
 
-  saveDraftNow: function(callbackThatClosesEditor: () => void | undefined) {
+  saveDraftUseBeacon: function() {
+    this.saveDraftNow(undefined, UseBeacon);
+  },
+
+  saveDraftNow: function(callbackThatClosesEditor: () => void | undefined, useBeacon?: UseBeacon) {
     // TESTS_MISSING
     // A bit dupl code [4ABKR2J0]
     const store: Store = this.state.store;
@@ -786,7 +815,7 @@ export const Editor = createComponent({
           draftStatus: callbackThatClosesEditor ?
               DraftStatus.NothingHappened : DraftStatus.Deleting,
         });
-        Server.deleteDrafts([oldDraft.draftNr], () => {
+        Server.deleteDrafts([oldDraft.draftNr], useBeacon || (() => {
           console.debug("...Deleted draft.");
           this.setState({
             draft: null,
@@ -795,7 +824,7 @@ export const Editor = createComponent({
           if (callbackThatClosesEditor) {
             callbackThatClosesEditor();
           }
-        }, this.setCannotSaveDraft);
+        }), useBeacon ? null : this.setCannotSaveDraft);
       }
       return;
     }
@@ -806,7 +835,7 @@ export const Editor = createComponent({
     });
 
     console.debug(`Saving draft: ${JSON.stringify(draftToSave)}`);
-    Server.upsertDraft(draftToSave, (draftWithNr: Draft) => {
+    Server.upsertDraft(draftToSave, useBeacon || ((draftWithNr: Draft) => {
       console.debug("...Saved draft.");
       this.setState({
         draft: draftWithNr,
@@ -815,7 +844,7 @@ export const Editor = createComponent({
       if (callbackThatClosesEditor) {
         callbackThatClosesEditor();
       }
-    }, this.setCannotSaveDraft);
+    }), useBeacon ? null : this.setCannotSaveDraft);
   },
 
   setCannotSaveDraft: function(errorStatusCode?: number) {
@@ -864,7 +893,7 @@ export const Editor = createComponent({
     this.throwIfBadTitleOrText(null, t.e.PleaseDontDeleteAll);
     Server.saveEdits(this.state.editingPostNr, this.state.text, this.anyDraftNr(), () => {
       this.callOnDoneCallback(true);
-      this.clearTextAndClose();
+      this.clearAndClose();
     });
   },
 
@@ -873,7 +902,7 @@ export const Editor = createComponent({
     Server.saveReply(this.state.replyToPostNrs, this.state.text,
           this.state.anyPostType, this.anyDraftNr(), () => {
       this.callOnDoneCallback(true);
-      this.clearTextAndClose();
+      this.clearAndClose();
     });
   },
 
@@ -888,7 +917,7 @@ export const Editor = createComponent({
       deleteDraftNr: this.anyDraftNr(),
     };
     Server.createPage(data, (newPageId: string) => {
-      this.clearTextAndClose();
+      this.clearAndClose();
       window.location.assign('/-' + newPageId);
     });
   },
@@ -896,7 +925,7 @@ export const Editor = createComponent({
   postChatMessage: function() {
     Server.insertChatMessage(this.state.text, this.anyDraftNr(), () => {
       this.callOnDoneCallback(true);
-      this.clearTextAndClose();
+      this.clearAndClose();
     });
   },
 
@@ -905,7 +934,7 @@ export const Editor = createComponent({
     const state = this.state;
     Server.startPrivateGroupTalk(state.title, state.text, this.state.newPageRole,
         state.messageToUserIds, this.anyDraftNr(), (pageId: PageId) => {
-      this.clearTextAndClose();
+      this.clearAndClose();
       window.location.assign('/-' + pageId);
     });
   },
@@ -986,16 +1015,18 @@ export const Editor = createComponent({
     }, 1);
   },
 
-  saveDraftCloseEditor: function() {
-    this.saveDraftNow(this._closeImpl);
+  saveDraftClearAndClose: function() {
+    this.saveDraftNow(this.clearAndClose);
   },
 
-  _closeImpl: function() {
-    utils.PageUnloadAlerter.removeWarning(WritingSomethingWarningKey);
+  clearAndClose: function() {
     this.returnSpaceAtBottomForEditor();
     this.setState({
       visible: false,
-      replyToPostNrs: [],  // post nr for sure, not post id
+      replyToPostNrs: [],
+      anyPostType: undefined,
+      editorsCategories: null,
+      editorsPageId: null,
       editingPostNr: null,
       editingPostUid: null,
       isWritingChatMessage: false,
@@ -1005,6 +1036,7 @@ export const Editor = createComponent({
       editingPostRevisionNr: null,
       text: '',
       title: '',
+      draftStatus: DraftStatus.NothingHappened,
       showTitleErrors: false,
       showTextErrors: false,
       draft: null,
@@ -1031,17 +1063,6 @@ export const Editor = createComponent({
           saved ? null : this.state.draft,
           saved ? DraftStatus.NothingHappened : this.state.draftStatus);
     }
-  },
-
-  clearTextAndClose: function() {
-    this.setState({
-      text: '',
-      draft: null,
-      draftStatus: DraftStatus.NothingHappened,
-      replyToPostNrs: [],
-      anyPostType: undefined,
-    });
-    this.saveDraftCloseEditor();
   },
 
   showEditHistory: function() {
@@ -1132,6 +1153,7 @@ export const Editor = createComponent({
           settings_showCategories(settings, me))
         categoriesDropdown =
           SelectCategoryDropdown({ className: 'esEdtr_titleEtc_category', store: store,
+              categories: this.state.editorsCategories,
               selectedCategoryId: this.state.newForumTopicCategoryId,
               onCategorySelected: this.changeCategory });
 
@@ -1526,7 +1548,7 @@ export function DraftStatusInfo(props: { draftStatus: DraftStatus, draftNr: numb
     case DraftStatus.SavingBig: draftStatusText = `Saving draft ${draftNr} ...`; break;
     case DraftStatus.Deleting: draftStatusText = `Deleting draft ${draftNr} ...`; break;
     case DraftStatus.CannotSave:
-      draftErrorClass = ' s_DraftStatus-Error';
+      draftErrorClass = ' s_DfSts-Err';
       let details: string;
       if (draftErrorStatusCode === 403) details = "Access denied";  // I18N
       else if (draftErrorStatusCode) details = "Error " + draftErrorStatusCode;
@@ -1536,7 +1558,7 @@ export function DraftStatusInfo(props: { draftStatus: DraftStatus, draftNr: numb
   }
 
   return !draftStatusText ? null :
-       r.span({ className: 's_DraftStatus' + draftErrorClass }, draftStatusText);
+       r.span({ className: 's_DfSts e_DfSts-' + props.draftStatus + draftErrorClass }, draftStatusText);
 }
 
 

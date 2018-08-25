@@ -152,6 +152,7 @@ class EditController @Inject()(cc: ControllerComponents, edContext: EdContext)
     val anyDraft = anyDrafts.headOption
 
     OkSafeJson(Json.obj( // LoadDraftAndTextResponse
+      "pageId" -> pageId,
       "postNr" -> post.nr,
       "postUid" -> post.id,
       "currentText" -> post.currentSource,

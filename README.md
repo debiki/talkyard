@@ -445,7 +445,7 @@ For example, Nginx didn't find a location handler? Or a user is missing? Or a pa
 Or a client side route is missing? Or the hostname is wrong? Or ...?
 And you search for "Not found" and find 1 000 matches.
 Now, instead, you'll see `"Not found [TyE123ABC]"` — and you then search for "TyE123ABC"
-and find the relevant source code snipped.
+and find the relevant source code.
 
 Some message codes sent to the browser are checked for in end to end tests. They shall
 have an underscore `_` at the *end* (because it's called *end* to *end* tests). So, if you see a

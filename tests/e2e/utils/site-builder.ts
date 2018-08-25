@@ -141,7 +141,7 @@ function buildSite(site?: SiteData) {
     },
 
 
-    addGuest: function(guest: GuestToAdd) {
+    addGuest: function(guest: any) {  // should be: GuestToAdd
       site.guests.push(guest);
     },
 

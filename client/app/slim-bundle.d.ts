@@ -59,6 +59,7 @@ declare const MaxNumFirstPosts;
 declare const MaxEmailsPerUser;
 
 declare const IgnoreThisError: number;
+declare const UseBeacon: string;
 
 
 declare const SiteStatusStrings: string[];

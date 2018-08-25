@@ -42,7 +42,22 @@ class DraftsController @Inject()(cc: ControllerComponents, edContext: EdContext)
 
   def upsertDraft: Action[JsValue] = PostJsonAction(RateLimits.DraftSomething, maxBytes = MaxPostSize) {
         request: JsonPostRequest =>
-    import request.{body, dao, theRequester => requester}
+    upsertDraftImpl(request.body, request)
+  }
+
+
+  /** In the browser, navigator.sendBeacon insists on sending plain text. So need this text handler.
+    */
+  def upsertDraftText: Action[String] = PostTextAction(
+        RateLimits.DraftSomething, maxBytes = MaxPostSize) { request =>
+    val bodyXsrfTokenRemoved = request.body.dropWhile(_ != '\n') // [7GKW20TD]
+    val json = Json.parse(bodyXsrfTokenRemoved)
+    upsertDraftImpl(json, request)
+  }
+
+
+  private def upsertDraftImpl(body: JsValue, request: ApiRequest[_]): Result = {
+    import request.{dao, theRequester => requester}
 
     throwForbiddenIf(requester.isGroup, "EdE65AFRDJ2", "Groups may not save drafts")
 
