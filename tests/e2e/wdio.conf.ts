@@ -213,8 +213,11 @@ const api = { config: {
   // },
 
   // Function to be executed before a test (in Mocha/Jasmine) or a step (in Cucumber) starts.
-  // beforeTest: function (test) {
-  // },
+  beforeTest: function (test) {
+    if (settings.debugEachStep) {
+      global.browser.debug();
+    }
+  },
 
   // Runs before a WebdriverIO command gets executed.
   // beforeCommand: function (commandName, args) {

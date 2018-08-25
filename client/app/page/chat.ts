@@ -321,6 +321,7 @@ const ChatMessageEditor = createComponent({
 
   componentDidMount: function() {
     this.saveDraftDebounced = _.debounce(this.saveDraftNow, 2022);
+    window.addEventListener('unload', this.saveDraftUseBeacon);
 
     // Load editor scripts and any draft text.
     Server.loadEditorAndMoreBundles(() => {
@@ -349,12 +350,27 @@ const ChatMessageEditor = createComponent({
 
   componentWillUnmount: function() {
     this.isGone = true;
+    window.removeEventListener('unload', this.saveDraftUseBeacon);
     this.saveDraftNow();
   },
 
-  saveDraftNow: function() {
-    // TESTS_MISSING
+  saveDraftUseBeacon: function() {
+    this.saveDraftNow(UseBeacon);
+  },
+
+  saveDraftNow: function(useBeacon?: UseBeacon) {
+    // Tested here: TyT7JKMW24
     // A bit dupl code [4ABKR2J0]
+
+    // Don't save draft from both here, and the advanced editor — then might get dupl drafts. [TyT270424]
+    if (this.state.advancedEditorInstead)
+      return;
+
+    // If we're closing the page, do try saving anyway, using becaon, because the current non-beacon
+    // request will probably be aborted by the browser (since, if beacon, the page is getting unloaded).
+    if (this.isSavingDraft && !useBeacon)
+      return;
+
     const store: Store = this.props.store;
     const me: Myself = store.me;
 
@@ -381,18 +397,20 @@ const ChatMessageEditor = createComponent({
 
     // BUG the lost update bug, unlikely to happen: Might overwrite other version of this draft [5KBRZ27].
 
+    const withBeacon = useBeacon ? ', with beacon' : '';
+
     // If empty. Delete any old draft.
     if (!text) {
       if (oldDraft) {
-        console.debug("Deleting draft...");
+        console.debug(`Deleting draft${withBeacon}...`);
         this.setState({ draftStatus: DraftStatus.Deleting });
-        Server.deleteDrafts([oldDraft.draftNr], () => {
+        Server.deleteDrafts([oldDraft.draftNr], useBeacon || (() => {
           console.debug("...Deleted draft.");
           this.setState({
             draft: null,
             draftStatus: DraftStatus.Deleted,
           });
-        }, this.setCannotSaveDraft);
+        }), useBeacon || this.setCannotSaveDraft);
       }
       return;
     }
@@ -402,14 +420,16 @@ const ChatMessageEditor = createComponent({
       draftStatus: DraftStatus.SavingSmall,
     });
 
-    console.debug(`Saving draft: ${JSON.stringify(draftToSave)}`);
-    Server.upsertDraft(draftToSave, (draftWithNr: Draft) => {
+    console.debug(`Saving draft${withBeacon}: ${JSON.stringify(draftToSave)}`);
+    this.isSavingDraft = true;
+    Server.upsertDraft(draftToSave, useBeacon || ((draftWithNr: Draft) => {
+      this.isSavingDraft = false;
       console.debug("...Saved draft.");
       this.setState({
         draft: draftWithNr,
         draftStatus: DraftStatus.Saved,
       });
-    }, this.setCannotSaveDraft);
+    }), useBeacon || this.setCannotSaveDraft);
   },
 
   setCannotSaveDraft: function(errorStatusCode?: number) {

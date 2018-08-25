@@ -967,7 +967,7 @@ export function loadDraftAndText(postNr: PostNr, onDone: (response: LoadDraftAnd
 
 
 export function upsertDraft(draft: Draft, onOk: ((draftWithNr: Draft) => void) | UseBeacon,
-      onError: ErrorStatusHandler | null) {
+      onError: ErrorStatusHandler | undefined) {
   postJsonSuccess('/-/upsert-draft', onOk, draft, function(xhr) {
     onError(xhr.status);
     return ShowNoErrorDialog;
@@ -976,7 +976,7 @@ export function upsertDraft(draft: Draft, onOk: ((draftWithNr: Draft) => void) |
 
 
 export function deleteDrafts(draftNrs: DraftNr[], onOk: (() => void) | UseBeacon,
-        onError: ErrorStatusHandler) {
+        onError: ErrorStatusHandler | undefined) {
   postJsonSuccess('/-/delete-drafts', onOk, draftNrs, function(xhr) {
     onError(xhr.status);
     return ShowNoErrorDialog;

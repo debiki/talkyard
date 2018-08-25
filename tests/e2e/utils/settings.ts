@@ -29,6 +29,7 @@ settings.scheme = settings.secure ? 'https' : 'http';
 settings.mainSiteOrigin = settings.scheme + '://' + settings.host;
 settings.newSiteDomain = settings.newSiteDomain || settings.host;
 
+settings.debugEachStep = args.debugEachStep || args.des;
 settings.debugBefore = args.debugBefore || args.db;
 settings.debugAfterwards = args.debugAfterwards || args.da;
 settings.debug = args.debug || args.d || settings.debugBefore || settings.debugAfterwards;

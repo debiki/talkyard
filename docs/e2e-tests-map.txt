@@ -313,6 +313,8 @@ chat -
   pin globally —> appears in watchbar:  (6KWQ2)
   create, when in no site section:
     - chat-create-from-direct-message.2browsers.test.ts  TyT5FKB2A
+  switch to advanced editor:
+          - drafts-chat-adv-ed.2browsers.test.ts  TyT7JKMW24
 
 embedded comments:
   no about page created:  [5WAKR02]
@@ -464,15 +466,20 @@ moderators:
 draft:
   forall:
     new topic:
+          - drafts-new-topic.2browsers.test.ts  [TyT5BR20P4]
     direct message:
     edits:
+          - drafts-new-topic.2browsers.test.ts  [TyT5BR20P4]
     reply:
     progress comment:
+    chat, and switch between advanced and inline editor:
+          - drafts-chat-adv-ed.2browsers.test.ts  TyT7JKMW24
   save,
   load,
   list [7WKABZP2],
   navigate to ?draftNr:
   deleted when saving:
+          - drafts-new-topic.2browsers.test.ts  [TyT5BR20P4]
   # (reply, chat message, new topic, new(private/publ chat, edits, direct message.)
   # EditController.edit
   # GroupTalkController.sendMessage

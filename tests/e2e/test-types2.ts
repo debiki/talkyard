@@ -20,6 +20,7 @@ interface TestSettings {
   bail?: number;
   waitforTimeout: number;
   logLevel: LogLevel;
+  debugEachStep: boolean;
   debugBefore: boolean;
   debugAfterwards: boolean;
   include3rdPartyDependentTests?: boolean;

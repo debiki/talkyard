@@ -30,16 +30,16 @@ let siteId;
 
 let forum: LargeTestForum;
 
-let discussionPageUrl: string;
+const mariasDraftTopicTitleOrig = 'mariasDraftTopicTitleOrig';
+const mariasDraftTopicTitleEditedOnce = 'mariasDraftTopicTitleEditedOnce';
+const mariasDraftTopicTitleEditedTwice = 'mariasDraftTopicTitleEditedTwice';
+const mariasDraftTopicTextOrig = 'mariasDraftTopicTextOrig';
+const mariasDraftTopicTextEditedOnce = 'mariasDraftTopicTextEditedOnce';
+const mariasDraftTopicTextEditedTwice = 'mariasDraftTopicTextEditedTwice';
 
-let mariasDraftTopicTitleOrig = 'mariasDraftTopicTitleOrig';
-let mariasDraftTopicTitleEdited = 'mariasDraftTopicTitleEdited';
-let mariasDraftTopicTextOrig = 'mariasDraftTopicTextOrig';
-let mariasDraftTopicTextEdited = 'mariasDraftTopicTextEdited';
 
 
-
-describe("drafts-new-topic [TyT5BR20P4]", () => {
+describe("drafts-new-topic  TyT5BR20P4", () => {
 
   it("import a site", () => {
     const builder = buildSite();
@@ -47,29 +47,9 @@ describe("drafts-new-topic [TyT5BR20P4]", () => {
       title: "Drafts E2E Test",
       members: ['maria', 'michael'],
     });
-    builder.addPost({
-      page: forum.topics.byMichaelCategoryA,
-      nr: c.FirstReplyNr,
-      parentNr: c.BodyNr,
-      authorId: forum.members.maria.id,
-      approvedSource: "Shall we try drafts? Can we type a draft of air?",
-    });
-    const newPage = builder.addPage({
-      id: 'openChat',
-      folder: '/',
-      showId: false,
-      slug: 'open-chat',
-      role: c.TestPageRole.OpenChat,
-      title: "Chat Test Draft Test Test, for Test Test Testing Tests",
-      body: "I will test test the tests that the test tests needs to test so they get test tested " +
-          "during the test test test testing test phase.",
-      categoryId: forum.categories.categoryA.id,
-      authorId: forum.members.maria.id,
-    });
     assert(builder.getSite() === forum.siteData);
     siteIdAddress = server.importSiteData(forum.siteData);
     siteId = siteIdAddress.id;
-    discussionPageUrl = siteIdAddress.origin + '/' + forum.topics.byMichaelCategoryA.slug;
   });
 
   it("initialize people", () => {
@@ -88,7 +68,6 @@ describe("drafts-new-topic [TyT5BR20P4]", () => {
   });
 
   it("Maria logs in", () => {
-    //mariasBrowser.go(siteIdAddress.origin + '/' + forum.topics.byMichaelCategoryA.slug);
     mariasBrowser.go(siteIdAddress.origin);
     mariasBrowser.complex.loginWithPasswordViaTopbar(maria);
   });
@@ -117,11 +96,11 @@ describe("drafts-new-topic [TyT5BR20P4]", () => {
   });
 
   it("Maria edits the topic", () => {
-    mariasBrowser.editor.editTitle(mariasDraftTopicTitleEdited);
-    mariasBrowser.editor.editText(mariasDraftTopicTextEdited);
+    mariasBrowser.editor.editTitle(mariasDraftTopicTitleEditedOnce);
+    mariasBrowser.editor.editText(mariasDraftTopicTextEditedOnce);
   });
 
-  it("... quickly closes the editor", () => {
+  it("... closes the editor — this saves a draft", () => {
     mariasBrowser.editor.cancelNoHelp();
   });
 
@@ -131,8 +110,23 @@ describe("drafts-new-topic [TyT5BR20P4]", () => {
 
   it("... the saved edits appear, when she starts typing again", () => {
     mariasBrowser.forumButtons.clickCreateTopic();
-    mariasBrowser.editor.waitForDraftTitleToLoad(mariasDraftTopicTitleEdited);
-    mariasBrowser.editor.waitForDraftTextToLoad(mariasDraftTopicTextEdited);
+    mariasBrowser.editor.waitForDraftTitleToLoad(mariasDraftTopicTitleEditedOnce);
+    mariasBrowser.editor.waitForDraftTextToLoad(mariasDraftTopicTextEditedOnce);
+  });
+
+  it("She edits again", () => {
+    mariasBrowser.editor.editTitle(mariasDraftTopicTitleEditedTwice);
+    mariasBrowser.editor.editText(mariasDraftTopicTextEditedTwice);
+  });
+
+  it("... immediately refreshes the page — this saves a draft, with a beacon", () => {
+    mariasBrowser.refresh();
+  });
+
+  it("... the saved edits appear, when she starts typing again, again", () => {
+    mariasBrowser.forumButtons.clickCreateTopic();
+    mariasBrowser.editor.waitForDraftTitleToLoad(mariasDraftTopicTitleEditedTwice);
+    mariasBrowser.editor.waitForDraftTextToLoad(mariasDraftTopicTextEditedTwice);
   });
 
   it("She goes to her list-of-drafts user profile page", () => {
@@ -149,8 +143,8 @@ describe("drafts-new-topic [TyT5BR20P4]", () => {
   });
 
   it("... the editor with the saved edits reappear", () => {
-    mariasBrowser.editor.waitForDraftTitleToLoad(mariasDraftTopicTitleEdited);
-    mariasBrowser.editor.waitForDraftTextToLoad(mariasDraftTopicTextEdited);
+    mariasBrowser.editor.waitForDraftTitleToLoad(mariasDraftTopicTitleEditedTwice);
+    mariasBrowser.editor.waitForDraftTextToLoad(mariasDraftTopicTextEditedTwice);
   });
 
   it("... she posts the new topic", () => {
@@ -158,7 +152,7 @@ describe("drafts-new-topic [TyT5BR20P4]", () => {
   });
 
   it("... and a new topic gets created", () => {
-    mariasBrowser.assertPageTitleMatches(mariasDraftTopicTitleEdited);
+    mariasBrowser.assertPageTitleMatches(mariasDraftTopicTitleEditedTwice);
   });
 
   it("She goes to the topic list", () => {

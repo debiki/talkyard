@@ -2191,6 +2191,11 @@ function pagesFor(browser) {
         api.helpDialog.waitForThenClose();
       },
 
+      switchToSimpleEditor: function() {
+        api.waitAndClick('.e_EdCancelB'); // could use different class, weird name
+        api.waitForVisible('.esC_Edtr');
+      },
+
       save: function() {
         api.editor.clickSave();
         api.waitUntilLoadingOverlayGone();
@@ -2703,15 +2708,40 @@ function pagesFor(browser) {
       },
 
       addChatMessage: function(text: string) {
+        api.chat.editChatMessage(text);
+        api.chat.submitChatMessage();
+        // could verify visible
+      },
+
+      editChatMessage: function(text: string) {
         api.waitAndSetValue('.esC_Edtr_textarea', text);
+      },
+
+      getChatInputText: function(): string {
+        browser.waitForVisible('.esC_Edtr_textarea');
+        return browser.getText('.esC_Edtr_textarea');
+      },
+
+      waitForDraftSaved: function() {
+        api.waitForVisible('.e_DfSts-' + c.TestDraftStatus.Saved);
+      },
+
+      waitForDraftChatMessageToLoad: function(text: string) {
+        api.waitUntilValueIs('.esC_Edtr textarea', text);
+      },
+
+      submitChatMessage: function() {
         api.waitAndClick('.esC_Edtr_SaveB');
         api.waitUntilLoadingOverlayGone();
-        // could verify visible
       },
 
       waitForNumMessages: function(howMany: number) {
         api.waitForAtLeast(howMany, '.esC_M');
-      }
+      },
+
+      openAdvancedEditor: function() {
+        api.waitAndClick('.esC_Edtr_AdvB');
+      },
     },
 
 

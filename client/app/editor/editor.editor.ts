@@ -131,8 +131,9 @@ export const Editor = createComponent({
   },
 
   componentWillUnmount: function() {
-    window.removeEventListener('unload', this.saveDraftUseBeacon);
     this.isGone = true;
+    window.removeEventListener('unload', this.saveDraftUseBeacon);
+    this.saveDraftNow();
   },
 
   focusInputFields: function() {
@@ -722,11 +723,20 @@ export const Editor = createComponent({
   },
 
   onCancelClick: function() {
-    if (this.state.draftStatus === DraftStatus.Saved) {
-      help.openHelpDialogUnlessHidden({ content: t.e.CanContinueEditing, id: '7YK35W1' });
-    }
     this.callOnDoneCallback(false);
-    this.saveDraftClearAndClose();
+    if (this.state.isWritingChatMessage) {
+      // We'll continue editing in the simple inline editor, and it'll save the draft —
+      // don't save here too; that could result in dupl drafts [TyT270424]. Also, no
+      // can-continue-editing tips needed, because we're just switching to the simple inline editor.
+      this.clearAndClose();
+    }
+    else {
+      // Show a can-continue-editing tips.
+      if (this.state.draftStatus === DraftStatus.Saved) {
+        help.openHelpDialogUnlessHidden({ content: t.e.CanContinueEditing, id: '7YK35W1' });
+      }
+      this.saveDraftClearAndClose();
+    }
   },
 
   makeEmptyDraft: function(): Draft | undefined {
@@ -746,6 +756,13 @@ export const Editor = createComponent({
       locator.pageId = this.state.editorsPageId;
       locator.postNr = this.state.replyToPostNrs[0]; // for now just pick the first one
       postType = PostType.Normal;
+    }
+    else if (this.state.isWritingChatMessage) {
+      locator.draftType = DraftType.Reply;
+      // post id will be looked up server side. [4BKG0BKR0]
+      locator.pageId = this.state.editorsPageId;
+      locator.postNr = BodyNr;
+      postType = PostType.ChatMessage;
     }
     else if (this.state.messageToUserIds && this.state.messageToUserIds.length) {
       locator.draftType = DraftType.DirectMessage;
@@ -781,6 +798,12 @@ export const Editor = createComponent({
   saveDraftNow: function(callbackThatClosesEditor: () => void | undefined, useBeacon?: UseBeacon) {
     // TESTS_MISSING
     // A bit dupl code [4ABKR2J0]
+
+    // If we're closing the page, do try saving anyway, using becaon, because the current non-beacon
+    // request will probably be aborted by the browser (since, if beacon, the page is getting unloaded).
+    if (this.isSavingDraft && !useBeacon)
+      return;
+
     const store: Store = this.state.store;
 
     const oldDraft: Draft | undefined = this.state.draft;
@@ -824,7 +847,7 @@ export const Editor = createComponent({
           if (callbackThatClosesEditor) {
             callbackThatClosesEditor();
           }
-        }), useBeacon ? null : this.setCannotSaveDraft);
+        }), useBeacon || this.setCannotSaveDraft);
       }
       return;
     }
@@ -835,7 +858,9 @@ export const Editor = createComponent({
     });
 
     console.debug(`Saving draft: ${JSON.stringify(draftToSave)}`);
+    this.isSavingDraft = true;
     Server.upsertDraft(draftToSave, useBeacon || ((draftWithNr: Draft) => {
+      this.isSavingDraft = false;
       console.debug("...Saved draft.");
       this.setState({
         draft: draftWithNr,
@@ -844,7 +869,7 @@ export const Editor = createComponent({
       if (callbackThatClosesEditor) {
         callbackThatClosesEditor();
       }
-    }), useBeacon ? null : this.setCannotSaveDraft);
+    }), useBeacon || this.setCannotSaveDraft);
   },
 
   setCannotSaveDraft: function(errorStatusCode?: number) {
@@ -1059,7 +1084,8 @@ export const Editor = createComponent({
     if (this.state.onDone) {
       this.state.onDone(
           saved, this.state.text,
-          // If the text in the editor was saved, we don't need the draft any longer.
+          // If the text in the editor was saved (i.e. submitted, not draft-saved), we don't
+          // need the draft any longer.
           saved ? null : this.state.draft,
           saved ? DraftStatus.NothingHappened : this.state.draftStatus);
     }
