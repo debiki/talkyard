@@ -851,7 +851,7 @@ interface TalkyardTranslations {
 
   // Editor
   e: {
-    WritingSomethingWarning: string;
+    //WritingSomethingWarning: string;
     UploadMaxOneFile: string;
     PleaseFinishPost: string;
     PleaseFinishChatMsg: string;

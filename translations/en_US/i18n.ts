@@ -1032,7 +1032,7 @@ var t_en_US: TalkyardTranslations = t = {
   // Editor
 
   e: {
-    WritingSomethingWarning: "You were writing something?",
+    //WritingSomethingWarning: "You were writing something?",
     UploadMaxOneFile: "Sorry but currently you can upload only one file at a time",
     PleaseFinishPost: "Please first finish writing your post",
     PleaseFinishChatMsg: "Please first finish writing your chat message",
