@@ -113,35 +113,35 @@ export function linkToDraftSource(draft: Draft,
       // not page id & post nr?
       pageId?: PageId, postNr?: PostNr): string {
   const locator = draft.forWhat;
-  const andDraftNrParam = '&draftNr=' + draft.draftNr;
+  const pageUrl = (): string => origin() + '/-' + (pageId || locator.pageId);
 
-  if (locator.pageId) {
-    const pageUrl = origin() + '/-' + locator.pageId;
-    let hashFragmentAction = '';
-    if (draft.postType === PostType.ChatMessage) {
-      // No fragment action needed: the chat editor is shown by default, will load the draft.
-    }
-    else {
-      hashFragmentAction = '#post-' + locator.postNr + FragActionAndReplyToPost + andDraftNrParam;
-    }
-    return pageUrl + hashFragmentAction;
+  let theLink;
+
+  switch (locator.draftType) {
+    case DraftType.Topic:
+      // Incl page url, so, in case the topic list is located at e.g. /forum/ or
+      // /sub-community/ instead of /, we'll go to the right place.
+      theLink = pageUrl() + FragActionHashComposeTopic;
+      break;
+    case DraftType.DirectMessage:
+      theLink = linkToSendMessage(locator.toUserId);
+      break;
+    case DraftType.Reply:
+      // No fragment action needed for chat messages — then the chat message input box is shown
+      // by default, and will load the draft. Do incl a '#' hash though so + &draftNr=... works.
+      const hashFragmentAction = draft.postType === PostType.ChatMessage ? '#' :
+          '#post-' + locator.postNr + FragActionAndReplyToPost;
+      theLink = pageUrl() + hashFragmentAction;
+      break;
+    case DraftType.Edit:
+      theLink = pageUrl() + '#post-' + postNr + FragActionAndEditPost;
+      break;
+    default:
+      die("Unknown draft source [TyE5WADK204]")
   }
 
-  if (locator.postId) {
-    return origin() + '/-' + pageId +
-        '#post-' + postNr + FragActionAndEditPost + andDraftNrParam;
-  }
-
-  if (locator.toUserId) {
-    return linkToSendMessage(locator.toUserId) + andDraftNrParam;
-  }
-
-  if (locator.categoryId) {
-    // If [subcomms]: BUG should go to the correct sub community url path.
-    return '/' + FragActionHashComposeTopic + andDraftNrParam;
-  }
-
-  die("Unknown draft source [TyE5WADK204]")
+  theLink += '&draftNr=' + draft.draftNr;
+  return theLink;
 }
 
 

@@ -38,22 +38,30 @@ export function LiNavLink(...propsAndContents) {
   return r.li({}, NavLink.apply(this, arguments));
 }
 
+
 /**
  * Redirects the URL path only — preserves query string and hash fragment.
  */
-export function RedirPath(props: { path: string, to: string, exact: boolean, strict?: boolean }) {
+export function RedirPath(props: RedirPathProps) {
   // @ifdef DEBUG
-  dieIf(props.to.indexOf('?') >= 0, 'TyE2ABKS0');
-  dieIf(props.to.indexOf('#') >= 0, 'TyE5BKRP2');
+  if (_.isString(props.to)) {
+    dieIf(props.to.indexOf('?') >= 0, 'TyE2ABKS0');
+    dieIf(props.to.indexOf('#') >= 0, 'TyE5BKRP2');
+  }
   // @endif
   const path = props.path;
   const exact = props.exact;
   const strict = props.strict;
   return Route({ path, exact, strict, render: (routeProps) => {
+    const newPathname = _.isFunction(props.to) ? props.to(routeProps.match.params) : props.to;
+    // @ifdef DEBUG
+    dieIf(newPathname.indexOf('?') >= 0, 'TyE5ABKR20');
+    dieIf(newPathname.indexOf('#') >= 0, 'TyE6WKBL72');
+    // @endif
     return Redirect({
       from: path, exact, strict,
       to: {
-        pathname: props.to,
+        pathname: newPathname,
         search: routeProps.location.search,
         hash: routeProps.location.hash }});
   }});

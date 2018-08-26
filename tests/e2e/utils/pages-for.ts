@@ -2147,6 +2147,11 @@ function pagesFor(browser) {
         api.waitAndSetValue('.esEdtr_titleEtc_title', title);
       },
 
+      isTitleVisible: function() {
+        browser.waitForVisible('.editor-area');
+        return browser.isVisible('.editor-area .esEdtr_titleEtc_title');
+      },
+
       getTitle: function() {
         return browser.getText('.editor-area .esEdtr_titleEtc_title');
       },

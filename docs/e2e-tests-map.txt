@@ -245,6 +245,8 @@ topics -
 
 
 editor -
+  edit post:
+          - drafts-reply-edit-dir-msg.2browsers.test.ts   TyT5A2HSL8
   maximize editor:
   preview:
   upload things:  (7KFC2)
@@ -463,23 +465,26 @@ moderators:
   can send and view invites:
     - invites-by-mod-try-signup-after  TyT4FGJA20M
 
-draft:
-  forall:
-    new topic:
-          - drafts-new-topic.2browsers.test.ts  [TyT5BR20P4]
-    direct message:
-    edits:
-          - drafts-new-topic.2browsers.test.ts  [TyT5BR20P4]
-    reply:
-    progress comment:
-    chat, and switch between advanced and inline editor:
-          - drafts-chat-adv-ed.2browsers.test.ts  TyT7JKMW24
-  save,
-  load,
-  list [7WKABZP2],
-  navigate to ?draftNr:
-  deleted when saving:
-          - drafts-new-topic.2browsers.test.ts  [TyT5BR20P4]
+draft: [7WKABZP2]
+  # Incls: save, load, list, navigate to, deleted when submitting post.
+  beacon when suddenly closing page:
+          - drafts-chat-adv-ed.2browsers.test.ts  TyT5ABKR20
+          - drafts-new-topic.2browsers.test.ts  TyT5ABKR20
+          - drafts-reply-edit-dir-msg.2browsers.test.ts  TyT5ABKR20
+
+  new topic:
+          - drafts-new-topic.2browsers.test.ts  TyT5BR20P4
+  direct message:
+          - drafts-reply-edit-dir-msg.2browsers.test.ts  TyT5ABKR20
+  edits:
+          - drafts-new-topic.2browsers.test.ts  TyT5BR20P4
+          - drafts-reply-edit-dir-msg.2browsers.test.ts  TyT5A2HSL8
+  reply:
+          - drafts-reply-edit-dir-msg.2browsers.test.ts
+  progress comment:
+          (missing)
+  chat & advanced and inline editor:
+        - drafts-chat-adv-ed.2browsers.test.ts  TyT7JKMW24
   # (reply, chat message, new topic, new(private/publ chat, edits, direct message.)
   # EditController.edit
   # GroupTalkController.sendMessage

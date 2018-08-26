@@ -29,7 +29,7 @@ export const UserDrafts = createFactory({
   displayName: 'UserDrafts',
 
   getInitialState: function() {
-    return { drafts: null, error: false };
+    return { drafts: null, error: null };
   },
 
   componentDidMount: function() {
@@ -47,8 +47,7 @@ export const UserDrafts = createFactory({
     const user: MemberInclDetails = this.props.user;
     const nextLoggedInUser: Myself = nextProps.store.me;
     const nextUser: MemberInclDetails = nextProps.user;
-    if (me.id !== nextLoggedInUser.id ||
-        user.id !== nextUser.id) {
+    if (me.id !== nextLoggedInUser.id || user.id !== nextUser.id) {
       this.listDrafts(nextUser.id);
     }
   },
@@ -66,6 +65,7 @@ export const UserDrafts = createFactory({
     Server.listDrafts(userId, (response: ListDraftsResponse) => {
       if (this.isGone) return;
       this.setState({
+        error: null,
         drafts: response.drafts,
         pageTitlesById: response.pageTitlesById,
         pagePostNrsByPostId: response.pagePostNrsByPostId,
@@ -122,35 +122,45 @@ function Draft(props: { draft: Draft, pageTitlesById: { [pageId: string]: string
   let pageId = forWhat.pageId;
   let postNr = forWhat.postNr;
 
-  if (forWhat.pageId || forWhat.postId) {
+  if (forWhat.postId) {
     // This draft is related to an already existing page and post.
-    if (pageId) {
+
+    if (forWhat.draftType === DraftType.Reply) {
       if (draft.postType === PostType.ChatMessage) what = "Chatting"; // I18N
       else what = "Replying"; // I18N
     }
-    else if (forWhat.postId) {
+    else if (forWhat.draftType === DraftType.Edit) {
       what = "Editing"; // I18N
-      let postId = forWhat.postId;
-      const pagePostNr = props.pagePostNrsByPostId[postId];
-      pageId = pagePostNr[0];
-      postNr = pagePostNr[1];
     }
     else {
       // @ifdef DEBUG
-      die('TyE24BKF0');
+      die('TyE2ABK4701');
       // @endif
+      what = `Draft type ${forWhat.draftType} [TyE5BZRJ2]`;
     }
+
+    let postId = forWhat.postId;
+    const pagePostNr = props.pagePostNrsByPostId[postId];
+    pageId = pagePostNr[0];
+    postNr = pagePostNr[1];
     title = "Topic title: " + props.pageTitlesById[pageId];  // I18N
   }
   else {
     // This draft is for a new page.
+
     title = "Your title: " + title || "(No title)";  // I18N
 
-    if (draft.forWhat.toUserId) {
+    if (draft.forWhat.draftType === DraftType.DirectMessage) {
       what = "Direct message"; // I18N
     }
-    else {
+    else if (draft.forWhat.draftType === DraftType.Topic) {
       what = "New forum topic"; // I18N
+    }
+    else {
+      // @ifdef DEBUG
+      die('TyE2ABK4702');
+      // @endif
+      what = `Draft type ${forWhat.draftType} [TyE24GKA7B]`;
     }
   }
 

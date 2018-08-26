@@ -86,6 +86,12 @@ declare const ContextbarMinWidth;
 
 declare const ServerSideWindowWidth;
 
+declare const FragActionAndReplyToPost;
+declare const FragActionAndEditPost;
+declare const FragActionHashComposeTopic;
+declare const FragActionHashComposeMessage;
+declare const FragActionHashScrollLatest;
+
 
 // In other files:
 
@@ -106,6 +112,7 @@ declare namespace debiki2 {
   const Switch: any;
   const Route: any;
   const Redirect: any;
+  function RedirPath(props: RedirPathProps);
   function RedirToNoSlash({ path: string });
   function RedirAppend({ path, append });
   var Link; // ReactRouterDOM.Link

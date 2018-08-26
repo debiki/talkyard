@@ -119,7 +119,7 @@ describe("drafts-new-topic  TyT5BR20P4", () => {
     mariasBrowser.editor.editText(mariasDraftTopicTextEditedTwice);
   });
 
-  it("... immediately refreshes the page — this saves a draft, with a beacon", () => {
+  it("... immediately refreshes the page — this saves a draft, with a beacon  TyT5ABKR20", () => {
     mariasBrowser.refresh();
   });
 

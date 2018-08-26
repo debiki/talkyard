@@ -96,13 +96,15 @@ class DraftsController @Inject()(cc: ControllerComponents, edContext: EdContext)
       throwBadRequest("TyEBDDRFTLC", ex.getMessage)
     }
 
+    val now = globals.now()
+
     val draft = Try(
       Draft(
         byUserId = requester.id,
         draftNr = draftNr,
         forWhat = draftLocator,
-        createdAt = (body \ "createdAt").asOptWhen.getOrElse(globals.now()),
-        lastEditedAt = (body \ "lastEditedAt").asOptWhen,
+        createdAt = now,
+        lastEditedAt = Some(now),
         deletedAt = (body \ "deletedAt").asOptWhen,
         topicType = (body \ "topicType").asOpt[Int].flatMap(PageRole.fromInt),
         postType = (body \ "postType").asOpt[Int].flatMap(PostType.fromInt),
@@ -167,7 +169,7 @@ class DraftsController @Inject()(cc: ControllerComponents, edContext: EdContext)
   def listDrafts(userId: UserId): Action[Unit] = GetAction { request: GetRequest =>
     import request.{dao, theRequester => requester}
 
-    TESTS_MISSING // [7WKABZP2]
+    // Tested here: [7WKABZP2]
 
     throwForbiddenIf(!requester.isAdmin && requester.id != userId,
       "TyE2RDGWA8", "May not view other's drafts")

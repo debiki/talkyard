@@ -47,10 +47,8 @@ const UsersHomeComponent = createReactClass(<any> {
     return (
         Switch({},
           Route({ path: UsersRoot, component: BadUrlComponent, exact: true }),
-          Route({ path: UsersRoot + ':usernameOrId', exact: true,
-              render: ({ match }) =>
-                Redirect({
-                  to: UsersRoot + match.params.usernameOrId + '/activity' + this.props.location.hash })}),
+          RedirPath({ path: UsersRoot + ':usernameOrId', exact: true,
+            to: (params) => UsersRoot + params.usernameOrId + '/activity' }),
           Route({ path: UsersRoot + ':usernameOrId/:section?/:subsection?',
               component: UserPageComponent })));
   }
@@ -73,6 +71,7 @@ const UserPageComponent = createReactClass(<any> {
   mixins: [debiki2.StoreListenerMixin],
 
   getInitialState: function() {
+    this.hasAutoOpenedEditorFor = {};
     return {
       store: debiki2.ReactStore.allData(),
       myId: null,
@@ -101,10 +100,10 @@ const UserPageComponent = createReactClass(<any> {
     if (this.props.location.pathname === prevProps.location.pathname)
       return;
 
-    const prevUsernameOrId: string = prevProps.match.params.usernameOrId;
-    const currentUser: MemberInclDetails = this.state.user;
-    const isSameUser = currentUser && (
-        '' + currentUser.id === prevUsernameOrId || currentUser.username === prevUsernameOrId);
+    const newUsernameOrId: string = this.props.match.params.usernameOrId;
+    const maybeOldUser: MemberInclDetails = this.state.user;
+    const isSameUser = maybeOldUser && (
+        '' + maybeOldUser.id === newUsernameOrId || maybeOldUser.username === newUsernameOrId);
     if (!isSameUser) {
       this.loadUserAnyDetails();
     }
@@ -122,7 +121,7 @@ const UserPageComponent = createReactClass(<any> {
     this.nowLoading = usernameOrId;
 
     const shallComposeMessage =
-      this.props.location.hash.indexOf('#composeDirectMessage') >= 0;
+      this.props.location.hash.indexOf(FragActionHashComposeMessage) >= 0;
 
     Server.loadUserAnyDetails(usernameOrId, (user: MemberInclDetails, stats: UserStats) => {
       this.nowLoading = null;
@@ -137,10 +136,11 @@ const UserPageComponent = createReactClass(<any> {
       const isNotLowercase = _.isString(usernameOrId) && usernameOrId !== usernameOrId.toLowerCase();
       if (user.username && (user.username.toLowerCase() !== usernameOrId || isNotLowercase) &&
           redirectToCorrectUsername !== false) {
-        let pathWithUsername = UsersRoot + user.username.toLowerCase();
-        if (params.section) pathWithUsername += '/' + params.section;
-        if (params.subsection) pathWithUsername += '/' + params.subsection;
-        this.props.history.replace(pathWithUsername);
+        let urlWithUsername = UsersRoot + user.username.toLowerCase();
+        if (params.section) urlWithUsername += '/' + params.section;
+        if (params.subsection) urlWithUsername += '/' + params.subsection;
+        urlWithUsername += this.props.location.search + this.props.location.hash;
+        this.props.history.replace(urlWithUsername);
       }
       if (shallComposeMessage) {
         this.maybeOpenMessageEditor(user.id);
@@ -157,14 +157,15 @@ const UserPageComponent = createReactClass(<any> {
     if (userId <= SystemUserId)
       return;
 
-    if (this.hasOpenedEditor)
+    // It's annoying if the editor pops up again, if browser-navigating back to this user's profile.
+    if (this.hasAutoOpenedEditorFor[userId])
       return;
 
     const myUserId = ReactStore.getMe().id;
     if (userId === myUserId)
       return;
 
-    this.hasOpenedEditor = true;
+    this.hasAutoOpenedEditorFor[userId] = true;
     editor.openToWriteMessage(userId);
   },
 

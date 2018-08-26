@@ -30,7 +30,6 @@ let siteId;
 
 let forum: LargeTestForum;
 
-let discussionPageUrl: string;
 const chatPageTitle = "Chat Test Draft Test Test, for Test Test Testing Tests";
 let chatPageUrl: string;
 
@@ -61,13 +60,6 @@ describe("drafts-chat-adv-ed  TyT7JKMW24", () => {
       title: "Drafts E2E Test",
       members: ['maria', 'michael'],
     });
-    builder.addPost({   // remove
-      page: forum.topics.byMichaelCategoryA,
-      nr: c.FirstReplyNr,
-      parentNr: c.BodyNr,
-      authorId: forum.members.maria.id,
-      approvedSource: "Shall we try drafts? Can we type a draft of air?",
-    });
     const chatPage = builder.addPage({
       id: 'openChat',
       folder: '/',
@@ -83,7 +75,6 @@ describe("drafts-chat-adv-ed  TyT7JKMW24", () => {
     assert(builder.getSite() === forum.siteData);
     siteIdAddress = server.importSiteData(forum.siteData);
     siteId = siteIdAddress.id;
-    discussionPageUrl = siteIdAddress.origin + '/' + forum.topics.byMichaelCategoryA.slug;
     chatPageUrl = siteIdAddress.origin + '/' + chatPage.slug;
   });
 
@@ -131,7 +122,7 @@ describe("drafts-chat-adv-ed  TyT7JKMW24", () => {
   });
 
 
-  // ----- Draft auto-saved with beacon, if sudden refresh
+  // ----- Draft auto-saved with beacon, if sudden refresh  TyT5ABKR20
 
   it("Maria edits the chat message", () => {
     mariasBrowser.chat.editChatMessage(mariasMessageOneEditedOnce);

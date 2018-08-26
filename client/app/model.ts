@@ -59,6 +59,14 @@ enum MagicAnchor {
 }
 
 
+interface RedirPathProps {
+  path: string;
+  to: string | ((params: { [name: string]: string }) => string);
+  exact: boolean;
+  strict?: boolean;
+}
+
+
 /**
  * The URL #hash-fragment can tell us to do different things. Examples:
  *
