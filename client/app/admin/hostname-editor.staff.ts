@@ -105,7 +105,7 @@ const HostnameEditorDialog = createComponent({
           // Later, could allow bare domains, if the user first reads a bit about
           // the problems with bare domains, + hen must type a 3 letter "password" included
           // in that info, to show that hen has really read it?
-          // COULD BUG harmlless: Need to tweak this regex, for just 'localhost' to work, in dev mode?
+          // COULD BUG harmless: Need to tweak this regex, for just 'localhost' to work, in dev mode?
           regexFour: /^[^\.]+\.([^\.]+\.[^\.]+.*|localhost(\..*)?)?$/, messageFour: "Bare domains not allowed",
           lastRegex: /^(.+\.)*[^\.]+\.[^\.]{2,}$/, lastMessage: "Should look like: forum.example.com",
           error: this.state.error, onChangeValueOk: this.onHostnameChanged }));

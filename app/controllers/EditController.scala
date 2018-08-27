@@ -57,7 +57,7 @@ class EditController @Inject()(cc: ControllerComponents, edContext: EdContext)
         None
       case DraftType.Topic =>
         categoryId.map(catId =>
-          DraftLocator(DraftType.Topic, categoryId = Some(catId)))
+          DraftLocator(DraftType.Topic, categoryId = Some(catId), pageId = pageId))
       case DraftType.DirectMessage =>
         toUserId.map(userId =>
           DraftLocator(DraftType.DirectMessage, toUserId = Some(userId)))

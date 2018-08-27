@@ -217,6 +217,18 @@ object DraftType {
 
 
 /** COULD add altPageId: Set[String] for any embedding url or embedding discussion id.  [BLGCMNT1]
+  *
+  * @param draftType
+  * @param categoryId
+  * @param toUserId
+  * @param pageId — for new topics, is the page id of the forum where the topic is to be created,
+  *   in case there're many forums (sub communities).
+  *   For replies and edits, is the page the user was at, when writing.
+  *   Maybe, however, the post being edited, or replied to, will be moved elsewhere
+  *   by staff — so postId will be used, when finding the post, later when resuming
+  *   writing.
+  * @param postNr
+  * @param postId
   */
 case class DraftLocator(
   draftType: DraftType,
@@ -231,8 +243,8 @@ case class DraftLocator(
       // Allow anything. Nice to be able to load drafts with weird state, as
       // a whatever-draft. So they won't just get lost or throw exceptions.
     case DraftType.Topic =>
-      require(categoryId.isDefined, s"Bad new topic draft: $this [TyE4WABG701]")
-      require(postId.isEmpty && pageId.isEmpty && postNr.isEmpty && toUserId.isEmpty,
+      require(categoryId.isDefined && pageId.isDefined, s"Bad new topic draft: $this [TyE4WABG701]")
+      require(postId.isEmpty && postNr.isEmpty && toUserId.isEmpty,
         s"Bad new topic draft: $this [TyE4WABG702]")
     case DraftType.DirectMessage =>
       require(toUserId.isDefined, s"Bad direct message draft: $this [TyE6RKW201]")

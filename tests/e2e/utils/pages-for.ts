@@ -563,7 +563,19 @@ function pagesFor(browser) {
       if (opts.maybeMoves) {
         api.waitUntilDoesNotMove(selector);
       }
-      browser.setValue(selector, value);
+      if (value) {
+        browser.setValue(selector, value);
+      }
+      else {
+        // This is weird, both setValue('') and clearElement() somehow bypasses all React.js
+        // events so React's state won't get updated and it's as if the edits were never made.
+        // Anyway, so far, can just do  setValue(' ') instead and since currently the relevant
+        // code (namely saving drafts, Aug -18) calls trim(), setting to ' ' is the same
+        // as clearValue or setValue('').
+        // oops this was actually in use, cannot die() here :-P
+        //die('TyE7KWBA20', "setValue('') and clearElement() don't work, use setValue(' ') instead?");
+        browser.clearElement(selector);
+      }
     },
 
 
@@ -2224,6 +2236,10 @@ function pagesFor(browser) {
         api.waitForVisible('.e_DfSts-' + c.TestDraftStatus.Saved);
       },
 
+      waitForDraftDeleted: function() {
+        api.waitForVisible('.e_DfSts-' + c.TestDraftStatus.Deleted);
+      },
+
       waitForDraftTitleToLoad: function(text: string) {
         api.waitUntilValueIs('.editor-area .esEdtr_titleEtc_title', text);
       },
@@ -2731,6 +2747,10 @@ function pagesFor(browser) {
         api.waitForVisible('.e_DfSts-' + c.TestDraftStatus.Saved);
       },
 
+      waitForDraftDeleted: function() {
+        api.waitForVisible('.e_DfSts-' + c.TestDraftStatus.Deleted);
+      },
+
       waitForDraftChatMessageToLoad: function(text: string) {
         api.waitUntilValueIs('.esC_Edtr textarea', text);
       },
@@ -2842,6 +2862,11 @@ function pagesFor(browser) {
 
       openNotfsFor: function(who: string, origin?: string) {
         api.go((origin || '') + `/-/users/${who}/notifications`);
+        api.waitUntilLoadingOverlayGone();
+      },
+
+      openDraftsEtcFor: function(who: string, origin?: string) {
+        api.go((origin || '') + `/-/users/${who}/drafts-etc`);
         api.waitUntilLoadingOverlayGone();
       },
 
@@ -3030,6 +3055,15 @@ function pagesFor(browser) {
       draftsEtc: {
         waitUntilLoaded: function() {
           browser.waitForExist('.s_Dfs');
+        },
+
+        refreshUntilNumDraftsListed: function(numDrafts: number) {
+          while (true) {
+            const elems = browser.elements('.s_Dfs_Df').value;
+            if (elems.length === numDrafts)
+              return;
+            browser.pause(125);
+          }
         },
 
         waitUntilNumDraftsListed: function(numDrafts: number) {

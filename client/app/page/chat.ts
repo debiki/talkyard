@@ -434,6 +434,7 @@ const ChatMessageEditor = createComponent({
 
   setCannotSaveDraft: function(errorStatusCode?: number) {
     // Dupl code [4ABKR2JZ7]
+    this.isSavingDraft = false;
     this.setState({
       draftStatus: DraftStatus.CannotSave,
       draftErrorStatusCode: errorStatusCode,

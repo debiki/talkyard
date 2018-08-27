@@ -46,9 +46,11 @@ if (args.v || args.verbose) {
 // for Nashorn to compile all JS,/ that could be why. Or some other Java JIT compilation?
 // Also, the email sending background threads are sometimes rather slow. [5KF0WU2T4]
 // Whatever. Wait 21 seconds by default.)
+let waitforTimeout = args.waitforTimeout || args.wft;
+if (waitforTimeout) waitforTimeout = parseInt(waitforTimeout);
 settings.waitforTimeout =
     settings.debugBefore || settings.debugAfterwards || args.noTimeout || args.nt ?
-        2147483647 : 21 * 1000;
+        2147483647 : (waitforTimeout || 21 * 1000);
 
 settings.browserName = 'chrome';
 if (args.ff) settings.browserName = 'firefox';

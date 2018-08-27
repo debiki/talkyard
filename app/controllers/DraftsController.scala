@@ -48,7 +48,7 @@ class DraftsController @Inject()(cc: ControllerComponents, edContext: EdContext)
 
   /** In the browser, navigator.sendBeacon insists on sending plain text. So need this text handler.
     */
-  def upsertDraftText: Action[String] = PostTextAction(
+  def upsertDraftBeacon: Action[String] = PostTextAction(
         RateLimits.DraftSomething, maxBytes = MaxPostSize) { request =>
     val bodyXsrfTokenRemoved = request.body.dropWhile(_ != '\n') // [7GKW20TD]
     val json = Json.parse(bodyXsrfTokenRemoved)
@@ -202,16 +202,26 @@ class DraftsController @Inject()(cc: ControllerComponents, edContext: EdContext)
 
 
   def deleteDrafts: Action[JsValue] = PostJsonAction(RateLimits.DraftSomething, maxBytes = 1000) {
-      request: JsonPostRequest =>
-    import request.{body, dao, theRequester => requester}
+        request: JsonPostRequest =>
+    deleteDraftsImpl(request.body, request)
+  }
 
+
+  def deleteDraftsBeacon: Action[String] = PostTextAction(RateLimits.DraftSomething, maxBytes = 1000) {
+        request: ApiRequest[String] =>
+    val bodyXsrfTokenRemoved = request.body.dropWhile(_ != '\n') // [7GKW20TD]
+    val json = Json.parse(bodyXsrfTokenRemoved)
+    deleteDraftsImpl(json, request)
+  }
+
+
+  private def deleteDraftsImpl(json: JsValue, request: ApiRequest[_]): Result = {
+    import request.{dao, theRequester => requester}
     val byUserId = requester.id
-    val draftNrs = body.as[Seq[DraftNr]]
-
-    val foundAndDeleted = dao.readWriteTransaction { tx =>
+    val draftNrs = json.as[Seq[DraftNr]]
+    dao.readWriteTransaction { tx =>
       draftNrs.foreach(nr => tx.deleteDraft(byUserId, nr))
     }
-
     Ok
   }
 

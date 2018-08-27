@@ -70,6 +70,11 @@ describe("admin-user-suspend [TyT5GKQSG2]", function() {
     mariasBrowser.editor.editText(mariasTopicBody);
   });
 
+  it("... a draft gets saved", function() {
+    // Wait for this, or the server error dialog pops up at the wrong time, breaking this test.
+    mariasBrowser.editor.waitForDraftSaved();
+  });
+
 
   it("Owen suspends Maria", function() {
     owensBrowser.adminArea.user.suspendUser();

@@ -444,6 +444,7 @@ export const Editor = createComponent({
 
     const draftLocator: DraftLocator = {
       draftType: DraftType.Topic,
+      pageId: store.currentPageId,
       categoryId: categoryId,
     };
 
@@ -567,7 +568,7 @@ export const Editor = createComponent({
   loadDraftAndGuidelines: function(draftLocator: DraftLocator, writingWhat: WritingWhat,
         pageRole?: PageRole) {
     const store: Store = ReactStore.allData();
-    if (shallSkipDraft(draftLocator, store))
+    if (shallSkipDraft(this.state))
       return;
 
     const page: Page = store.currentPage;
@@ -771,6 +772,8 @@ export const Editor = createComponent({
     else if (this.state.newForumTopicCategoryId) {
       locator.draftType = DraftType.Topic;
       locator.categoryId = this.state.newForumTopicCategoryId;
+      // Need to know in which forum (sub community) the new page should be placed.
+      locator.pageId = this.state.editorsPageId;
     }
     else {
       // Editor probably closed, state gone.
@@ -804,12 +807,10 @@ export const Editor = createComponent({
     if (this.isSavingDraft && !useBeacon)
       return;
 
-    const store: Store = this.state.store;
-
     const oldDraft: Draft | undefined = this.state.draft;
     const draftOldOrEmpty: Draft | undefined = oldDraft || this.makeEmptyDraft();
     const draftStatus: DraftStatus = this.state.draftStatus;
-    const skipDraft = !draftOldOrEmpty || shallSkipDraft(draftOldOrEmpty.forWhat, store);
+    const skipDraft = !draftOldOrEmpty || shallSkipDraft(this.state);
 
     if (skipDraft || draftStatus <= DraftStatus.NeedNotSave) {
       if (callbackThatClosesEditor) {
@@ -827,7 +828,7 @@ export const Editor = createComponent({
     // wants to overwrite or not?  [5ABRQP0]  — This happens to me sometimes actually, in Facebook,
     // when composing replies there. Apparently FB has this same lost-updates bug in their editor.
 
-    // If empty. Delete any old draft.
+    // Delete any old draft, if text empty.
     if (!text && !title) {
       if (oldDraft) {
         console.debug("Deleting draft...");
@@ -874,6 +875,7 @@ export const Editor = createComponent({
 
   setCannotSaveDraft: function(errorStatusCode?: number) {
     // Dupl code [4ABKR2JZ7]
+    this.isSavingDraft = false;
     this.setState({
       draftStatus: DraftStatus.CannotSave,
       draftErrorStatusCode: errorStatusCode,
@@ -1388,11 +1390,11 @@ export const Editor = createComponent({
 
     const draft: Draft = this.state.draft;
     const draftNr = draft ? draft.draftNr : NoDraftNr;
-    const skipDraft = !draft || shallSkipDraft(draft.forWhat, store);
+    const draftStatus: DraftStatus = this.state.draftStatus;
+    const skipDraft = shallSkipDraft(this.state);
 
-    const draftStatus = skipDraft ? null :
-        DraftStatusInfo({ draftStatus: this.state.draftStatus, draftNr,
-            draftErrorStatusCode: this.state.draftErrorStatusCode });
+    const draftStatusText = skipDraft ? null :
+        DraftStatusInfo({ draftStatus, draftNr, draftErrorStatusCode: this.state.draftErrorStatusCode });
 
     return (
       r.div({ style: styles },
@@ -1408,7 +1410,7 @@ export const Editor = createComponent({
                 r.div({ className: 's_E_DoingRow' },
                   r.span({ className: 's_E_DoingWhat' }, doingWhatInfo),
                   showGuidelinesBtn,
-                  draftStatus),
+                  draftStatusText),
                 r.div({ className: 'esEdtr_titleEtc' },
                   // COULD use https://github.com/marcj/css-element-queries here so that
                   // this will wrap to many lines also when screen wide but the editor is narrow.
@@ -1542,8 +1544,8 @@ function makeDefaultReplyText(store: Store, postIds: PostId[]): string {
 
 // We currently don't save any draft, for the 1st comment on a new blog post :-(   [BLGCMNT1]
 // because the page doesn't yet exist; there's no page id to use in the draft locator.
-function shallSkipDraft(draftLocator: DraftLocator, store: Store): boolean {
-  return store_isNoPage(store) && draftLocator.draftType !== DraftType.DirectMessage;
+function shallSkipDraft(props: { store: Store, messageToUserIds }): boolean {
+  return store_isNoPage(props.store) && !props.messageToUserIds.length;
 }
 
 const previewHelpMessage = {

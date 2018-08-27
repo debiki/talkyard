@@ -132,17 +132,26 @@ describe("spam test, no external services:", () => {
     mallorysBrowser.topbar.clickLogout();
   });
 
-  it("A stranger attempts to sign up with password + a spammer's email", () => {
+  it("A stranger attempts to sign up with password + a spammer's email: fills in details,", () => {
     strangersBrowser.topbar.clickSignUp();
     strangersBrowser.loginDialog.fillInUsername("stranger");
     strangersBrowser.loginDialog.fillInEmail('__ed_spam' + '_test_123__@ex.co');
     strangersBrowser.loginDialog.fillInPassword("public1234");
+  });
+
+  it("... clicks submit", () => {
     strangersBrowser.loginDialog.clickSubmit();
+  });
+
+  it("... accepts terms", () => {
     strangersBrowser.loginDialog.acceptTerms();
   });
 
   it("... but is rejected", () => {
     mallorysBrowser.serverErrorDialog.waitAndAssertTextMatches(/spam.*EdE7KVF2_/);
+  });
+
+  it("... closes the error dialog", () => {
     mallorysBrowser.serverErrorDialog.close();
     strangersBrowser.loginDialog.clickCancel();
   });

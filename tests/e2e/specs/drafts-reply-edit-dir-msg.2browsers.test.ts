@@ -38,6 +38,8 @@ const mariasReplyEditedTwice = 'mariasReplyEditedTwice';
 
 const marias2ndReplyOrig = 'marias2ndReplyOrig';
 
+const marias3rdReplyOrig = 'marias3rdReplyOrig';
+
 const mariasDirectMessageTitle = 'mariasDirectMessageTitle';
 const mariasDirectMessageText = 'mariasDirectMessageText';
 
@@ -133,16 +135,13 @@ describe("drafts-chat-adv-ed  TyT7JKMW24", () => {
   it("... so she sees them, when she clicks reply again", () => {
     mariasBrowser.topic.clickReplyToOrigPost();
     mariasBrowser.editor.waitForDraftTextToLoad(marias2ndReplyOrig);
+    mariasBrowser.editor.cancelNoHelp();
   });
 
 
   // ----- Drafts for direct messages
 
-  it("Maria closes the editor", () => {
-    mariasBrowser.editor.cancelNoHelp();
-  });
-
-  it("... and starts typing a direct message to Michael", () => {
+  it("Maria starts typing a direct message to Michael", () => {
     mariasBrowser.pageTitle.openAboutAuthorDialog();
     mariasBrowser.aboutUserDialog.clickSendMessage();
     mariasBrowser.editor.editTitle(mariasDirectMessageTitle);
@@ -160,7 +159,7 @@ describe("drafts-chat-adv-ed  TyT7JKMW24", () => {
     mariasBrowser.topbar.myMenu.goToDraftsEtc();
   });
 
-  it("... sees three drafts: the edits, the 2nd reply, and the direct message", () => {
+  it("... sees three drafts: the edits, the new reply, and the direct message", () => {
     mariasBrowser.userProfilePage.draftsEtc.waitUntilNumDraftsListed(3);
   });
 
@@ -172,8 +171,8 @@ describe("drafts-chat-adv-ed  TyT7JKMW24", () => {
   });
 
   it("Maria clicks the most recent draft: the direct message to Michael", () => {
-    settings.debugEachStep = true;
     mariasBrowser.userProfilePage.waitForName(maria.username);
+    mariasBrowser.userProfilePage.draftsEtc.waitUntilNumDraftsListed(3);
     mariasBrowser.userProfilePage.draftsEtc.openDraftIndex(1);
   });
 
@@ -198,6 +197,7 @@ describe("drafts-chat-adv-ed  TyT7JKMW24", () => {
   // ----- Open drafts via drafts list: Maria's 2nd reply
 
   it("Maria clicks the next most recent draft, for the new reply", () => {
+    mariasBrowser.userProfilePage.draftsEtc.waitUntilNumDraftsListed(2);
     mariasBrowser.userProfilePage.draftsEtc.openDraftIndex(1);
   });
 
@@ -226,6 +226,7 @@ describe("drafts-chat-adv-ed  TyT7JKMW24", () => {
   // ----- Open drafts via drafts list: Maria's edits of her already submitted 1st reply
 
   it("Maria clicks the last draft, for the edits", () => {
+    mariasBrowser.userProfilePage.draftsEtc.waitUntilNumDraftsListed(1);
     mariasBrowser.userProfilePage.draftsEtc.openDraftIndex(1);
   });
 

@@ -103,6 +103,10 @@ describe("admin-move-hostname.2browsers  TyT6FKAR20P5", () => {
     assert.equal(strangersOrigin, origOrigin);
   });
 
+  it(`Delete old site to free up hostname ${newHostname}`, () => {
+    server.deleteOldTestSite(newHostname);
+  });
+
   it("Owen changes to another hostname", () => {
     owensBrowser.adminArea.settings.advanced.clickChangeSiteAddress();
     owensBrowser.adminArea.settings.advanced.typeNewSiteAddress(newHostname);

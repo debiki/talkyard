@@ -184,7 +184,8 @@ function runAllE2eTests {
 
   runE2eTest s/wdio target/e2e/wdio.2chrome.conf.js    --only forum-sort-and-scroll.2browsers $args
 
-  runE2eTest s/wdio target/e2e/wdio.conf.js            --only navigation-as-admin $args
+  # This test is crazy-slow: a few isVisible takes 20 seconds sometimes, only this test, why?
+  runE2eTest s/wdio target/e2e/wdio.conf.js            --only navigation-as-admin --waitforTimeout=42000 $args
   runE2eTest s/wdio target/e2e/wdio.conf.js            --only navigation-as-member $args
   runE2eTest s/wdio target/e2e/wdio.conf.js            --only navigation-as-stranger $args
 
@@ -197,13 +198,14 @@ function runAllE2eTests {
   runE2eTest s/wdio target/e2e/wdio.2chrome.conf.js    --only chat-create-from-direct-message.2browsers $args
 
   runE2eTest s/wdio target/e2e/wdio.3chrome.conf.js    --only categories-basic.3browsers $args
-  #runE2eTest s/wdio target/e2e/wdio.2chrome.conf.js    --only categories-delete.2browsers $args
+  #runE2eTest s/wdio target/e2e/wdio.2chrome.conf.js   --only categories-delete.2browsers $args
 
   runE2eTest s/wdio target/e2e/wdio.3chrome.conf.js    --only private-chat.3browsers $args
 
   runE2eTest s/wdio target/e2e/wdio.2chrome.conf.js    --only drafts-new-topic.2browsers $args
   runE2eTest s/wdio target/e2e/wdio.2chrome.conf.js    --only drafts-reply-edit-dir-msg.2browsers $args
   runE2eTest s/wdio target/e2e/wdio.2chrome.conf.js    --only drafts-chat-adv-ed.2browsers $args
+  runE2eTest s/wdio target/e2e/wdio.conf.js            --only drafts-delete $args
 
   runE2eTest s/wdio target/e2e/wdio.3chrome.conf.js    --only settings-toggle-login-required.3browsers $args
   runE2eTest s/wdio target/e2e/wdio.2chrome.conf.js    --only settings-approve-members.2browsers $args

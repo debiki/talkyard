@@ -107,13 +107,13 @@ export function linkToMyProfilePage(store: Store): string {
 }
 
 
-export function linkToDraftSource(draft: Draft,
-      // The current page id and post nr, might be different from draft.pageId and draft.postNr,
-      // if the post was moved to another page. — Maybe shoud store only draft post id,
-      // not page id & post nr?
-      pageId?: PageId, postNr?: PostNr): string {
+export function linkToDraftSource(draft: Draft, pageId?: PageId, postNr?: PostNr): string {
   const locator = draft.forWhat;
-  const pageUrl = (): string => origin() + '/-' + (pageId || locator.pageId);
+
+  // The current page id and post nr, might be different from draft.pageId and draft.postNr,
+  // if the post was moved to another page. — Maybe shoud store only draft post id,
+  // not page id & post nr?
+  const maybeNewPageUrl = (): string => origin() + '/-' + (pageId || locator.pageId);
 
   let theLink;
 
@@ -121,7 +121,7 @@ export function linkToDraftSource(draft: Draft,
     case DraftType.Topic:
       // Incl page url, so, in case the topic list is located at e.g. /forum/ or
       // /sub-community/ instead of /, we'll go to the right place.
-      theLink = pageUrl() + FragActionHashComposeTopic;
+      theLink = origin() + '/-' + locator.pageId + FragActionHashComposeTopic;
       break;
     case DraftType.DirectMessage:
       theLink = linkToSendMessage(locator.toUserId);
@@ -131,10 +131,10 @@ export function linkToDraftSource(draft: Draft,
       // by default, and will load the draft. Do incl a '#' hash though so + &draftNr=... works.
       const hashFragmentAction = draft.postType === PostType.ChatMessage ? '#' :
           '#post-' + locator.postNr + FragActionAndReplyToPost;
-      theLink = pageUrl() + hashFragmentAction;
+      theLink = maybeNewPageUrl() + hashFragmentAction;
       break;
     case DraftType.Edit:
-      theLink = pageUrl() + '#post-' + postNr + FragActionAndEditPost;
+      theLink = maybeNewPageUrl() + '#post-' + postNr + FragActionAndEditPost;
       break;
     default:
       die("Unknown draft source [TyE5WADK204]")

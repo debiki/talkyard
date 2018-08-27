@@ -471,7 +471,6 @@ draft: [7WKABZP2]
           - drafts-chat-adv-ed.2browsers.test.ts  TyT5ABKR20
           - drafts-new-topic.2browsers.test.ts  TyT5ABKR20
           - drafts-reply-edit-dir-msg.2browsers.test.ts  TyT5ABKR20
-
   new topic:
           - drafts-new-topic.2browsers.test.ts  TyT5BR20P4
   direct message:
@@ -484,7 +483,10 @@ draft: [7WKABZP2]
   progress comment:
           (missing)
   chat & advanced and inline editor:
-        - drafts-chat-adv-ed.2browsers.test.ts  TyT7JKMW24
+          - drafts-chat-adv-ed.2browsers.test.ts  TyT7JKMW24
+  delete:
+          - drafts-delete.test.ts  TyT5BKRQ0
+
   # (reply, chat message, new topic, new(private/publ chat, edits, direct message.)
   # EditController.edit
   # GroupTalkController.sendMessage

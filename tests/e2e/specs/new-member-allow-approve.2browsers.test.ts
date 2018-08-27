@@ -34,7 +34,7 @@ let topics = {
   oldTopicUrl: 'old_topic',
 };
 
-let appendedText = " - appended text";
+const threeIsOkay = "Three is okay";
 
 
 describe("new member, allow, approve posts:", () => {  // RENAME ths file to 'new-member-posts...'
@@ -126,17 +126,34 @@ describe("new member, allow, approve posts:", () => {  // RENAME ths file to 'ne
     majasBrowser.topic.assertPostNeedsApprovalBodyVisible(4);
   });
 
-  it("... she can edit them (try the last one)", () => {
-    // TESTS_MISSING
+  it("... she can edit them: try the last one, nr 4", () => {
+    majasBrowser.complex.editPostNr(4, threeIsOkay);
   });
 
-  it("But now she may not post more replies, until the ones posted already gets reviewed", () => {
+  it("But now she may not post more replies, until the ones posted already gets reviewed: " +
+      "She clicks Reply", () => {
     majasBrowser.topic.clickReplyToOrigPost();
+  });
+
+  it("... writes something", () => {
     majasBrowser.editor.editText("won't be accepted");
+  });
+
+  it("... attempts to save", () => {
     majasBrowser.editor.clickSave();
+  });
+
+  it("... but the server pops up an error dialog that says she needs to wait for review", () => {
     majasBrowser.serverErrorDialog.waitAndAssertTextMatches(/approve.*EsE6YKF2_/);
+  });
+
+  it("... she closes the dialog", () => {
     majasBrowser.serverErrorDialog.close();
-    majasBrowser.editor.cancel();
+    majasBrowser.waitUntilModalGone(); // is this needed ?
+  });
+
+  it("... and closes the editor", () => {
+    majasBrowser.editor.cancelNoHelp();
   });
 
 
@@ -209,6 +226,10 @@ describe("new member, allow, approve posts:", () => {  // RENAME ths file to 'ne
 
   it("... goes to the admin area", () => {
     owensBrowser.topbar.myMenu.goToAdminReview();
+  });
+
+  it("... sees Maja's edits", () => {
+    owensBrowser.adminArea.review.waitForTextToReview(threeIsOkay);
   });
 
   it("... approves Maja's first reply", () => {
