@@ -362,7 +362,7 @@ export const Title = createComponent({
 
     const deletedOrUnapprovedInfo = titlePost.isApproved ? false :
         r.span({ className: 'esPendingApproval' },
-          '(' + page.pageDeletedAtMs ? t.d.PageDeld : t.d.TitlePendAppr + ')');
+          '(' + (page.pageDeletedAtMs ? t.d.PageDeld : t.d.TitlePendAppr) + ')');
 
     // Insert the title as plain text (don't interpret any html tags — that'd let Mallory mess up
     // the formatting, even if sanitized).
@@ -617,7 +617,7 @@ const RootPostAndComments = createComponent({
 
     const notYetApprovedMaybeDeletedInfo = rootPost.isApproved ? false :
         r.div({ className: 'esPendingApproval' },
-          '(' + page.pageDeletedAtMs ? t.d.PageDeld : t.d.TextPendingApproval + ')');
+          '(' + (page.pageDeletedAtMs ? t.d.PageDeld : t.d.TextPendingApproval) + ')');
 
     const deletedCross = !page.pageDeletedAtMs ? null :
         r.div({ className: 's_Pg_DdX' });

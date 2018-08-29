@@ -41,6 +41,7 @@ export const UserNotifications = createFactory({
     this.isGone = true;
   },
 
+  // SHOULD Switch to componentDidUpdate instead, see  users-page.more.ts  for how.
   componentWillReceiveProps: function(nextProps: any) {
     // Dupl code, also in view drafts. [7WUBKZ0]
     const me: Myself = this.props.store.me;

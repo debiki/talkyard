@@ -72,6 +72,9 @@ describe("drafts-new-topic  TyT5BR20P4", () => {
     mariasBrowser.complex.loginWithPasswordViaTopbar(maria);
   });
 
+
+  // ----- Auto save after X seconds
+
   it("... starts typing a new topic", () => {
     mariasBrowser.forumButtons.clickCreateTopic();
     mariasBrowser.editor.editTitle(mariasDraftTopicTitleOrig);
@@ -95,6 +98,9 @@ describe("drafts-new-topic  TyT5BR20P4", () => {
     mariasBrowser.editor.waitForDraftTextToLoad(mariasDraftTopicTextOrig);
   });
 
+
+  // ----- Reactjs unmount save
+
   it("Maria edits the topic", () => {
     mariasBrowser.editor.editTitle(mariasDraftTopicTitleEditedOnce);
     mariasBrowser.editor.editText(mariasDraftTopicTextEditedOnce);
@@ -114,6 +120,9 @@ describe("drafts-new-topic  TyT5BR20P4", () => {
     mariasBrowser.editor.waitForDraftTextToLoad(mariasDraftTopicTextEditedOnce);
   });
 
+
+  // ----- Beacon save
+
   it("She edits again", () => {
     mariasBrowser.editor.editTitle(mariasDraftTopicTitleEditedTwice);
     mariasBrowser.editor.editText(mariasDraftTopicTextEditedTwice);
@@ -128,6 +137,9 @@ describe("drafts-new-topic  TyT5BR20P4", () => {
     mariasBrowser.editor.waitForDraftTitleToLoad(mariasDraftTopicTitleEditedTwice);
     mariasBrowser.editor.waitForDraftTextToLoad(mariasDraftTopicTextEditedTwice);
   });
+
+
+  // ----- Reopen via drafts list
 
   it("She goes to her list-of-drafts user profile page", () => {
     mariasBrowser.editor.cancelNoHelp();
@@ -161,7 +173,7 @@ describe("drafts-new-topic  TyT5BR20P4", () => {
 
   it("... and now, when starting a topic, there's no draft text", () => {
     mariasBrowser.forumButtons.clickCreateTopic();
-    mariasBrowser.pause(500);
+    mariasBrowser.pause(500); // wait for any draft to load
     assert.equal(mariasBrowser.editor.getTitle(), '');
     assert.equal(mariasBrowser.editor.getText(), '');
   });
@@ -170,7 +182,7 @@ describe("drafts-new-topic  TyT5BR20P4", () => {
     mariasBrowser.topbar.myMenu.goToDraftsEtc();
   });
 
-  it("... now it's empty, the draft was submittted", () => {
+  it("... it's empty, the draft was submittted", () => {
     mariasBrowser.userProfilePage.draftsEtc.waitUntilNumDraftsListed(0);
   });
 

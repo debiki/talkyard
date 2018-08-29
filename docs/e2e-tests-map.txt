@@ -75,6 +75,7 @@ navigation:
           - navigation-as-admin.test.ts  TyT7WAAR2J4
 
 unapproved comments -
+          - new-member-allow-approve.2browsers.test.ts  TyT4AKBJ20
   embedded + not-embedded -
     see own, not others:
     edit own:

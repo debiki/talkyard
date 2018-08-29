@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014 Kaj Magnus Lindberg
+ * Copyright (c) 2014-2018 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -437,15 +437,16 @@ export function loadAndShowPost(postNr: PostNr, showChildrenToo?: boolean, callb
 
 /**
  * If #post-X is specified in the URL, ensures all posts leading up to
- * and including X have been loaded. Then scrolls to X.
+ * and including X have been loaded. Then scrolls to X, and maybe opens the editor
+ * to edit it or to reply (depending on other hash fragment parts).
  */
 export function doUrlFragmentAction(newHashFragment?: string) {
-  // How to interpret an action, might depend on what type of page the current page is.
+  // How we'll interpret a hash fragment action, might depend on what type of page we're at.
   // Is this a HACK? To access the store here?
   const store: Store = ReactStore.allData();
   const currentPage: Page | undefined = store.currentPage;
 
-  const fragAction = findUrlFragmentAction(newHashFragment);
+  const fragAction: FragAction = findUrlFragmentAction(newHashFragment);
   if (!fragAction) {
     // The default action for chat pages, is to scroll to the end.
     if (currentPage && page_isChatChannel(currentPage.pageRole)) {
@@ -455,25 +456,25 @@ export function doUrlFragmentAction(newHashFragment?: string) {
     return;
   }
 
+  // @ifdef DEBUG
   console.debug(`Doing url #action ${fragAction.type}...`);
+  // @endif
 
   const postNr: PostNr | undefined = fragAction.postNr;
   if (!postNr) {
     switch (fragAction.type) {
       case FragActionType.ComposeDirectMessage:
-        // For now, instead, see [4JABRF0].
+        // For now, instead handled in  maybeOpenMessageEditor() in users-page.more.ts [4JABRF0].
         break;
       case FragActionType.ComposeForumTopic:
-        Server.loadEditorAndMoreBundles(function() {
-          const categoryId = 2; // for now
-          const pageRole = PageRole.Discussion; // for now
-          debiki2.editor.editNewForumPage(categoryId, pageRole);
-        });
+        editor.editNewForumPage(fragAction.categoryId, fragAction.topicType);
         // Don't re-open the editor, if going to another page, and then back.
         location.hash = '';
         break;
       default:
+        // @ifdef DEBUG
         die('TyE5AKBR3');
+        // @endif
     }
     return;
   }
@@ -482,11 +483,12 @@ export function doUrlFragmentAction(newHashFragment?: string) {
 
   const postElem = $byId(postAnchor);
   if (postElem) {
+    // Do frag action directly — post already loaded.
     debiki.internal.showAndHighlightPost(postElem);
     doAfterLoadedAnyPost();
   }
   else {
-    // (Will highlight it, right?)
+    // Load post, then do the frag action. (loadAndShowPost() highlights it, right?)
     loadAndShowPost(postNr, undefined, doAfterLoadedAnyPost);
   }
 
@@ -526,7 +528,7 @@ export function doUrlFragmentAction(newHashFragment?: string) {
     // navigating away, then, probably one is done editing? Or has maybe submitted
     // the post already.)
     if (resetHashFrag) {
-      // Does this sometimes make the browser annyoyingly scroll-jump so this post is at
+      // Does this sometimes make the browser annoyingly scroll-jump so this post is at
       // the very top of the win, occluded by the topbar?
       location.hash = '#' + postAnchor;
     }
@@ -547,15 +549,30 @@ export function findUrlFragmentAction(hashFragment?: string): FragAction | undef
     return result;
   }
 
-  if (theHashFrag.indexOf(FragActionHashComposeTopic) >= 0)
-    return { type: FragActionType.ComposeForumTopic };
+  const draftNr = findIntInHashFrag(FragParamDraftNr, theHashFrag);
+  const topicType = findIntInHashFrag(FragParamTopicType, theHashFrag);
 
-  if (theHashFrag.indexOf(FragActionHashComposeMessage) >= 0)
-    return { type: FragActionType.ComposeDirectMessage };
+  if (theHashFrag.indexOf(FragActionHashComposeTopic) >= 0) {
+    const categoryId = findIntInHashFrag(FragParamCategoryId, theHashFrag);
+    return {
+      type: FragActionType.ComposeForumTopic,
+      draftNr,
+      categoryId,
+      topicType,
+    };
+  }
+
+  if (theHashFrag.indexOf(FragActionHashComposeMessage) >= 0) {
+    return {
+      type: FragActionType.ComposeDirectMessage,
+      topicType: PageRole.FormalMessage,
+      draftNr,
+    };
+  }
 
   // The rest of the actions are for a specific post.
 
-  const postNr: PostNr | undefined = findPostNrInHashFragment(theHashFrag);
+  const postNr: PostNr | undefined = findIntInHashFrag(FragParamPostNr, theHashFrag);
   if (!postNr)
     return undefined;
 
@@ -570,29 +587,14 @@ export function findUrlFragmentAction(hashFragment?: string): FragAction | undef
     actionType = FragActionType.ScrollToPost;
   }
 
-  const draftNr: DraftNr | undefined = findDraftNrInHashFragment(theHashFrag);
-
   return { type: actionType, postNr, draftNr };
 }
 
 
-function findPostNrInHashFragment(theHash: string): PostNr | undefined {
-  // AngularJS (I think it is) somehow inserts a '/' at the start of the hash. I'd
-  // guess it's Angular's router that messes with the hash. I don't want the '/' but
-  // don't know how to get rid of it, so simply ignore it.
-  const hashIsPostId = /#post-\d+/.test(theHash);
-  const hashIsSlashPostId = /#\/post-\d+/.test(theHash);
-  if (hashIsPostId) return parseInt(theHash.substr(6, 999));
-  if (hashIsSlashPostId) return parseInt(theHash.substr(7, 999));
-}
-
-
-function findDraftNrInHashFragment(hashFragment: string): DraftNr | undefined {
-  const matches = /&draftNr=(\d+)/.exec(hashFragment);
-  if (matches) {
-    const draftNrStr = matches[1];
-    return parseInt(draftNrStr);
-  }
+function findIntInHashFrag(valuePrefix: string, theHash: string): PostNr | undefined {
+  const index = theHash.indexOf(valuePrefix);
+  const anyInt = index >= 0 ? parseInt(theHash.substr(index + valuePrefix.length, 999)) : undefined;
+  return _.isNaN(anyInt) ? undefined : anyInt;
 }
 
 

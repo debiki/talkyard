@@ -108,7 +108,7 @@ export function subscribeToServerEvents() {
       });
     }
     else {
-      // If the server could reply with an error code, then the internet connection works, right.
+      // If the server couldn't reply with an error code, there's likely no internet connection?
       if (!errorStatusCode) {
         $h.addClasses(document.documentElement, 's_NoInet');
       }

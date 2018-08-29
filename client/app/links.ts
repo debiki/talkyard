@@ -111,17 +111,19 @@ export function linkToDraftSource(draft: Draft, pageId?: PageId, postNr?: PostNr
   const locator = draft.forWhat;
 
   // The current page id and post nr, might be different from draft.pageId and draft.postNr,
-  // if the post was moved to another page. — Maybe shoud store only draft post id,
-  // not page id & post nr?
+  // if the post was moved to another page. So better use pageId, it's up-to-date the correct
+  // page id directly from the server.
   const maybeNewPageUrl = (): string => origin() + '/-' + (pageId || locator.pageId);
 
   let theLink;
 
   switch (locator.draftType) {
     case DraftType.Topic:
-      // Incl page url, so, in case the topic list is located at e.g. /forum/ or
-      // /sub-community/ instead of /, we'll go to the right place.
+      // Incl page url, so we'll go to the right place, also if the topic list is located at e.g.
+      // /forum/  or  /sub-community/ instead of  /.
       theLink = origin() + '/-' + locator.pageId + FragActionHashComposeTopic;
+      if (draft.topicType) theLink += FragParamTopicType + draft.topicType;
+      if (locator.categoryId) theLink += FragParamCategoryId + locator.categoryId;
       break;
     case DraftType.DirectMessage:
       theLink = linkToSendMessage(locator.toUserId);
@@ -130,24 +132,24 @@ export function linkToDraftSource(draft: Draft, pageId?: PageId, postNr?: PostNr
       // No fragment action needed for chat messages — then the chat message input box is shown
       // by default, and will load the draft. Do incl a '#' hash though so + &draftNr=... works.
       const hashFragmentAction = draft.postType === PostType.ChatMessage ? '#' :
-          '#post-' + locator.postNr + FragActionAndReplyToPost;
+          FragParamPostNr + locator.postNr + FragActionAndReplyToPost;
       theLink = maybeNewPageUrl() + hashFragmentAction;
       break;
     case DraftType.Edit:
-      theLink = maybeNewPageUrl() + '#post-' + postNr + FragActionAndEditPost;
+      theLink = maybeNewPageUrl() + FragParamPostNr + postNr + FragActionAndEditPost;
       break;
     default:
-      die("Unknown draft source [TyE5WADK204]")
+      die(`Unknown draft type: ${locator.draftType} [TyE5AD2M4]`);
   }
 
-  theLink += '&draftNr=' + draft.draftNr;
+  theLink += FragParamDraftNr + draft.draftNr;
   return theLink;
 }
 
 
 export function linkToNotificationSource(notf: Notification): string {
   if (notf.pageId && notf.postNr) {
-    return origin() + '/-' + notf.pageId + '#post-' + notf.postNr;
+    return origin() + '/-' + notf.pageId + FragParamPostNr + notf.postNr;
   }
   else {
     die("Unknown notification type [EsE5GUKW2]")

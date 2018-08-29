@@ -1417,16 +1417,16 @@ object JsonMaker {
     import inPageInfo._
     val postType: Option[Int] = if (post.tyype == PostType.Normal) None else Some(post.tyype.toInt)
 
-    val (anySanitizedHtml: Option[String], isApproved: Boolean) =
+    val (anySanitizedHtml: Option[String], unsafeSource: Option[String], isApproved: Boolean) =
       if ((post.isBodyHidden || post.isDeleted) && !showHidden) {
-        (None, post.approvedAt.isDefined)
+        (None, post.approvedSource, post.approvedAt.isDefined)
       }
       else if (includeUnapproved) {
         val htmlString = renderer.renderAndSanitize(post, IfCached.Use)
-        (Some(htmlString), post.isCurrentVersionApproved)
+        (Some(htmlString), Some(post.currentSource), post.isCurrentVersionApproved)
       }
       else {
-        (post.approvedHtmlSanitized, post.approvedAt.isDefined)
+        (post.approvedHtmlSanitized, post.approvedSource, post.approvedAt.isDefined)
       }
 
     // For now, ignore ninja edits of the very first revision, because otherwise if
@@ -1469,7 +1469,7 @@ object JsonMaker {
       "tags" -> JsArray(tags.toSeq.map(JsString)))
 
     if (post.isBodyHidden) fields :+= "isBodyHidden" -> JsTrue
-    if (post.isTitle) fields :+= "unsafeSource" -> JsStringOrNull(post.approvedSource)
+    if (post.isTitle) fields :+= "unsafeSource" -> JsStringOrNull(unsafeSource)
 
     JsObject(fields)
   }

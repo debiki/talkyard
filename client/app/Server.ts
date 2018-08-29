@@ -939,7 +939,7 @@ export function listUsernames(prefix: string, pageId: PageId, success: (username
 
 
 // Currently doesn't load any draft.
-// Later: add reply-to-post-unique-id, to load the correct draft?
+// Later: add reply-to-post-unique-id, to load the correct draft?  [idnotnr]
 //
 export function loadDraftAndGuidelines(draftLocator: DraftLocator, writingWhat: WritingWhat,
       categoryId: number, pageRole: PageRole,

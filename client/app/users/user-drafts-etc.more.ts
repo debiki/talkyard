@@ -41,6 +41,7 @@ export const UserDrafts = createFactory({
     this.isGone = true;
   },
 
+  // SHOULD Switch to componentDidUpdate instead, see  users-page.more.ts  for how.
   componentWillReceiveProps: function(nextProps: any) {
     // Dupl code, also in view notfs. [7WUBKZ0]
     const me: Myself = this.props.store.me;
@@ -71,7 +72,7 @@ export const UserDrafts = createFactory({
         pagePostNrsByPostId: response.pagePostNrsByPostId,
       });
     }, () => {
-      // Clear state.notfs, in case we're no longer allowed to view the drafts.
+      // Clear state.drafts, in case we're no longer allowed to view the drafts.
       this.setState({ error: true, drafts: null });
     });
   },
@@ -80,7 +81,7 @@ export const UserDrafts = createFactory({
     // Dupl code, also in view notfs. [7WUBKZ0]
     if (this.state.error)
       return (
-        r.p({ className: 'e_UP_Notfs_Err' },
+        r.p({ className: 'e_Dfs-Err' },
           _.isString(this.state.error) ? this.state.error : "Error [EsE7YKW2]."));
 
     const drafts: Draft[] = this.state.drafts;
@@ -99,7 +100,7 @@ export const UserDrafts = createFactory({
     const draftElems = drafts.map((draft: Draft) =>
         r.li({ key: draft.draftNr },
           Draft({ draft, pageTitlesById: this.state.pageTitlesById,
-            pagePostNrsByPostId: this.state.pagePostNrsByPostId, verbose: true })));
+            pagePostNrsByPostId: this.state.pagePostNrsByPostId })));
 
     return (
       r.div({},
@@ -112,7 +113,7 @@ export const UserDrafts = createFactory({
 
 
 function Draft(props: { draft: Draft, pageTitlesById: { [pageId: string]: string },
-        pagePostNrsByPostId: { [pageId: string]: [PageId, PostNr] }, verbose: boolean }) {
+        pagePostNrsByPostId: { [postId: string]: [PageId, PostNr] } }) {
   const draft = props.draft;
   const forWhat: DraftLocator = draft.forWhat;
 
@@ -150,10 +151,10 @@ function Draft(props: { draft: Draft, pageTitlesById: { [pageId: string]: string
 
     title = "Your title: " + title || "(No title)";  // I18N
 
-    if (draft.forWhat.draftType === DraftType.DirectMessage) {
+    if (forWhat.draftType === DraftType.DirectMessage) {
       what = "Direct message"; // I18N
     }
-    else if (draft.forWhat.draftType === DraftType.Topic) {
+    else if (forWhat.draftType === DraftType.Topic) {
       what = "New forum topic"; // I18N
     }
     else {
@@ -169,6 +170,9 @@ function Draft(props: { draft: Draft, pageTitlesById: { [pageId: string]: string
     textTruncated += ' ...';
   }
 
+  // Here, for a post, pageId is accurate also if the post was moved to an new page by staff.
+  // Then, draft.pageId is the page where the draft was created — and pageId is where it's
+  // located now, and to where we should go to resume writing.
   return (
     Link({ to: linkToDraftSource(draft, pageId, postNr), className: 's_Dfs_Df' },
       r.div({ className: 's_Dfs_Df_Wht' }, what ),

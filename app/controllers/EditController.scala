@@ -43,9 +43,10 @@ class EditController @Inject()(cc: ControllerComponents, edContext: EdContext)
 
 
   REFACTOR // Move to DraftController?
-  def loadDraftAndGuidelines(writingWhat: Int, draftType: Int, pageRole: String,
-        categoryId: Option[Int], toUserId: Option[UserId], postId: Option[Int],
-        pageId: Option[String], postNr: Option[Int]): Action[Unit] = GetAction { request =>
+  def loadDraftAndGuidelines(writingWhat: Int, draftType: Int, pageRole: Int,
+        categoryId: Option[Int], toUserId: Option[UserId],
+        pageId: Option[String], postNr: Option[Int]): Action[Unit] =
+      GetActionRateLimited(RateLimits.TouchesDbGetRequest) { request =>
 
     import request.{dao, theRequester => requester}
 
@@ -85,8 +86,7 @@ class EditController @Inject()(cc: ControllerComponents, edContext: EdContext)
 
     val writeWhat = WriteWhat.fromInt(writingWhat)
 
-    val thePageRole = pageRole.toIntOption.flatMap(PageRole.fromInt) getOrElse throwBadArgument(
-      "DwE6PYK8", "pageRole")
+    val thePageRole = PageRole.fromInt(pageRole).getOrThrowBadArgument("TyE6PYK8", "pageRole")
 
     val guidelinesSafeHtml = writeWhat flatMap {
       case WriteWhat.ChatComment =>
@@ -124,7 +124,9 @@ class EditController @Inject()(cc: ControllerComponents, edContext: EdContext)
   /** Sends back a post's current CommonMark source to the browser.
     * SHOULD change to pageId + postId (not postNr)  [idnotnr]
     */
-  def loadDraftAndText(pageId: String, postNr: Int): Action[Unit] = GetAction { request =>
+  def loadDraftAndText(pageId: String, postNr: Int): Action[Unit] =
+        GetActionRateLimited(RateLimits.TouchesDbGetRequest) { request =>
+
     import request.{dao, theRequester => requester}
 
     val pageMeta = dao.getPageMeta(pageId) getOrElse throwIndistinguishableNotFound("EdE4JBR01")
@@ -148,7 +150,7 @@ class EditController @Inject()(cc: ControllerComponents, edContext: EdContext)
     }
 
     // Not impossible that there're two drafts — if one has two browser tabs open at the same time,
-    // and starts editing in both, at the same time. Weird. Just pick the random first one.
+    // and starts editing in both, at the same time. Weird. Just pick one.
     val anyDraft = anyDrafts.headOption
 
     OkSafeJson(Json.obj( // LoadDraftAndTextResponse

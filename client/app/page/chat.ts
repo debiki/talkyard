@@ -367,7 +367,7 @@ const ChatMessageEditor = createComponent({
       return;
 
     // If we're closing the page, do try saving anyway, using becaon, because the current non-beacon
-    // request will probably be aborted by the browser (since, if beacon, the page is getting unloaded).
+    // request will probably be aborted by the browser? (since, if beacon, the page is getting unloaded)
     if (this.isSavingDraft && !useBeacon)
       return;
 
@@ -404,7 +404,9 @@ const ChatMessageEditor = createComponent({
       if (oldDraft) {
         console.debug(`Deleting draft${withBeacon}...`);
         this.setState({ draftStatus: DraftStatus.Deleting });
+        this.isSavingDraft = true;
         Server.deleteDrafts([oldDraft.draftNr], useBeacon || (() => {
+          this.isSavingDraft = false;
           console.debug("...Deleted draft.");
           this.setState({
             draft: null,

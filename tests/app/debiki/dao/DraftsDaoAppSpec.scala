@@ -28,6 +28,7 @@ class DraftsDaoAppSpec extends DaoAppSuite(disableScripts = true, disableBackgro
   var userOne: User = _
   var userTwo: User = _
 
+  var forumPageId: PageId = _
   var categoryId: CategoryId = _
 
   var pageId: PageId = _
@@ -36,6 +37,8 @@ class DraftsDaoAppSpec extends DaoAppSuite(disableScripts = true, disableBackgro
   var draftTwoEdited: Draft = _
   var draftThreeOlderDirectMessage: Draft = _
   var draftThreeDeleted: Draft = _
+  var draftThreeUndeleted: Draft = _
+  var draftThreeNewest: Draft = _
   var draftFourNewTopic: Draft = _
   var draftFiveForEdits: Draft = _
 
@@ -63,9 +66,11 @@ class DraftsDaoAppSpec extends DaoAppSuite(disableScripts = true, disableBackgro
         bodyTextAndHtml = dao.textAndHtmlMaker.forBodyOrComment("Text text."),
         authorId = SystemUserId, browserIdData, dao, anyCategoryId = None)
 
-      categoryId =
+      val createForumResult =
           dao.createForum("Forum", s"/drafts-forum/", isForEmbCmts = false,
-            Who(owner.id, browserIdData)).defaultCategoryId
+            Who(owner.id, browserIdData))
+      categoryId = createForumResult.defaultCategoryId
+      forumPageId = createForumResult.pagePath.pageId.get
     }
 
     "find the first draft nr" in {
@@ -117,7 +122,8 @@ class DraftsDaoAppSpec extends DaoAppSuite(disableScripts = true, disableBackgro
     "save another draft, for a new topic" in {
       val locator = DraftLocator(
         DraftType.Topic,
-        categoryId = Some(categoryId))
+        categoryId = Some(categoryId),
+        pageId = Some(forumPageId))
 
       draftTwoNewerForNewTopic = Draft(
         byUserId = userOne.id,
@@ -216,7 +222,7 @@ class DraftsDaoAppSpec extends DaoAppSuite(disableScripts = true, disableBackgro
       }
     }
 
-    "load the deleted draft, by nr, it's now in deleted status" in {
+    "load the deleted draft, by nr, it's now in deleted status [TyT2ARDW3]" in {
       dao.readOnlyTransaction { tx =>
         draftThreeDeleted.draftNr mustBe draftThreeOlderDirectMessage.draftNr
         tx.loadDraftByNr(userOne.id, draftThreeDeleted.draftNr) mustBe Some(draftThreeDeleted)
@@ -229,9 +235,46 @@ class DraftsDaoAppSpec extends DaoAppSuite(disableScripts = true, disableBackgro
       }
     }
 
+    "can undelete a draft [TyT2ARDW3]" in {
+      draftThreeUndeleted = draftThreeDeleted.copy(deletedAt = None)
+      dao.readWriteTransaction { tx =>
+        tx.upsertDraft(draftThreeUndeleted)
+      }
+    }
+
+    "now it gets loaded by locator" in {
+      dao.readOnlyTransaction { tx =>
+        tx.loadDraftsByLocator(userOne.id, draftThreeUndeleted.forWhat) mustBe Vector(draftThreeUndeleted)
+      }
+    }
+
+    "can upsert-change editedAt" in {
+      dao.readOnlyTransaction { tx =>
+        val drafts = tx.listDraftsRecentlyEditedFirst(userOne.id)
+        drafts.length mustBe 3
+        drafts mustBe Vector(draftTwoNewerForNewTopic, draftOne, draftThreeUndeleted)
+      }
+
+      draftThreeNewest = draftThreeUndeleted.copy(createdAt = now.plusMillis(29000))  // newest
+      dao.readWriteTransaction { tx =>
+        tx.upsertDraft(draftThreeNewest)
+      }
+
+      // This is what happens in the upsert:
+      draftThreeNewest = draftThreeUndeleted.copy(lastEditedAt = Some(draftThreeNewest.createdAt))
+
+      dao.readOnlyTransaction { tx =>
+        tx.loadDraftByNr(userOne.id, draftThreeNewest.draftNr) mustBe Some(draftThreeNewest)
+
+        val drafts = tx.listDraftsRecentlyEditedFirst(userOne.id)
+        drafts.length mustBe 3
+        drafts mustBe Vector(draftThreeNewest, draftTwoNewerForNewTopic, draftOne)
+      }
+    }
+
     "hard delete a draft" in {
       dao.readWriteTransaction { tx =>
-        tx.deleteDraft(userOne.id, draftThreeOlderDirectMessage.draftNr)
+        tx.deleteDraft(userOne.id, draftThreeNewest.draftNr)
       }
     }
 
@@ -245,12 +288,16 @@ class DraftsDaoAppSpec extends DaoAppSuite(disableScripts = true, disableBackgro
 
     "can edit a draft" in {
       draftTwoEdited = draftTwoNewerForNewTopic.copy(
-        lastEditedAt = Some(now.plusMillis(12000)),
+        createdAt = now.plusMillis(12000),  // (4BKARE2)
         title = DraftTwoTitleEdited,
         text = DraftTwoTextEdited)
       dao.readWriteTransaction { tx =>
         tx.upsertDraft(draftTwoEdited)
       }
+      // This is what the db code does — the upsert works as an edit, because draft already exists.
+      draftTwoEdited = draftTwoEdited.copy(
+        createdAt = draftTwoNewerForNewTopic.createdAt,
+        lastEditedAt = Some(draftTwoEdited.createdAt))
     }
 
     "when reloading, the changes are there" in {
@@ -272,13 +319,14 @@ class DraftsDaoAppSpec extends DaoAppSuite(disableScripts = true, disableBackgro
     "save a second new-topic draft" in {
       val locator = DraftLocator(
         DraftType.Topic,
-        categoryId = Some(categoryId))
+        categoryId = Some(categoryId),
+        pageId = Some(forumPageId))
 
       draftFourNewTopic = Draft(
         byUserId = userOne.id,
         draftNr = 4,
         forWhat = locator,
-        createdAt = now.plusMillis(9000),  // newest, but older than the edits
+        createdAt = now.plusMillis(9000),  // newest, but older than the edits (4BKARE2)
         topicType = Some(PageRole.Question),
         title = "Is this a good question to ask?",
         text = DraftTwoTextOrig)
@@ -315,7 +363,7 @@ class DraftsDaoAppSpec extends DaoAppSuite(disableScripts = true, disableBackgro
 
       draftFiveForEdits = Draft(
         byUserId = userOne.id,
-        draftNr = 1,
+        draftNr = 5,
         createdAt = now,
         forWhat = locator,
         postType = Some(PostType.Normal),
@@ -327,10 +375,23 @@ class DraftsDaoAppSpec extends DaoAppSuite(disableScripts = true, disableBackgro
       }
     }
 
-    "finds the for-edits draft, by post locator" in {
-      val d5 = draftFiveForEdits
+    "finds the for-edits draft, by draft locator" in {
       dao.readOnlyTransaction { tx =>
-        tx.loadDraftsByLocator(userOne.id, d5.forWhat) mustBe Vector(d5)
+        tx.loadDraftsByLocator(userOne.id, draftFiveForEdits.forWhat) mustBe Vector(draftFiveForEdits)
+      }
+    }
+
+    "... and draft one, by locator, without also finding draft 5" in {
+      dao.readOnlyTransaction { tx =>
+        tx.loadDraftsByLocator(userOne.id, draftOne.forWhat) mustBe Vector(draftOne)
+      }
+    }
+
+    "... won't find anything, for the wrong post id (but correct page id and nr)" in {
+      dao.readOnlyTransaction { tx =>
+        val badId = Some(45678)
+        tx.loadDraftsByLocator(userOne.id, draftFiveForEdits.forWhat.copy(postId = badId)) mustBe Nil
+        tx.loadDraftsByLocator(userOne.id, draftOne.forWhat.copy(postId = badId)) mustBe Nil
       }
     }
 

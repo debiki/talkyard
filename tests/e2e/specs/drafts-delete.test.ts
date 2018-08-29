@@ -136,7 +136,7 @@ describe("drafts-delete  TyT5BKRQ0", () => {
     mariasBrowser.editor.waitForDraftTextToLoad(draftTopicTextToDelete);
   });
 
-  it("... and deletes all text", () => {
+  it("... and deletes all text, but not the title", () => {
     mariasBrowser.editor.editText('  ');
   });
 
@@ -148,7 +148,7 @@ describe("drafts-delete  TyT5BKRQ0", () => {
     mariasBrowser.forumButtons.clickCreateTopic();
   });
 
-  it("... the title is still there; the draft didn't get deleted", () => {
+  it("... the *title* is still there; the draft didn't get deleted", () => {
     mariasBrowser.editor.waitForDraftTitleToLoad(draftTopicTitleToDelete);
     mariasBrowser.editor.waitForDraftTextToLoad('');
   });
@@ -171,7 +171,7 @@ describe("drafts-delete  TyT5BKRQ0", () => {
   });
 
 
-  // ----- Delete reply draft: Quick cancel click
+  // ----- Delete reply draft: Quick cancel click = Reactjs unmount
 
   it("She opens the reply draft", () => {
     mariasBrowser.userProfilePage.draftsEtc.openDraftIndex(1);
@@ -182,11 +182,11 @@ describe("drafts-delete  TyT5BKRQ0", () => {
     mariasBrowser.editor.editText(' ');
   });
 
-  it("... closes the editor", () => {
+  it("... closes the editor — this deletes the draft, since it's now empty", () => {
     mariasBrowser.editor.cancelNoHelp();
   });
 
-  it("When she starts replying again, the text is empty", () => {
+  it("When she starts replying again, the text is empty (draft gone)", () => {
     mariasBrowser.topic.clickReplyToOrigPost();
     mariasBrowser.editor.waitForDraftTextToLoad('');
   });
@@ -199,7 +199,7 @@ describe("drafts-delete  TyT5BKRQ0", () => {
     mariasBrowser.topbar.myMenu.goToDraftsEtc();
   });
 
-  it("... it's now gone", () => {
+  it("... the draft is gone", () => {
     mariasBrowser.userProfilePage.draftsEtc.waitUntilNumDraftsListed(3 - 2);
   });
 

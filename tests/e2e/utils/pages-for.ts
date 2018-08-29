@@ -4007,6 +4007,13 @@ function pagesFor(browser) {
         api.waitUntilLoadingOverlayGone();
       },
 
+      editPageTitle: function(newTitle: string) {
+        api.pageTitle.clickEdit();
+        api.pageTitle.editTitle(newTitle);
+        api.pageTitle.save();
+        api.assertPageTitleMatches(newTitle);
+      },
+
       editPageBody: function(newText: string) {
         api.topic.clickEditOrigPost();
         api.editor.editText(newText);

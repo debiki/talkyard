@@ -101,7 +101,7 @@ export const Editor = createComponent({
 
   componentWillMount: function() {
     this.updatePreview = _.debounce(this.updatePreview, 333);
-    this.saveDraftDebounced = _.debounce(this.saveDraftNow, 2022);
+    this.saveDraftDebounced = _.debounce(this.saveDraftNow, 2022);  // [7AKBJ42]
   },
 
   componentDidMount: function() {
@@ -257,8 +257,8 @@ export const Editor = createComponent({
         this.setState({
           text: this.state.text + perhapsNewline + '\n' +
             // (There's a sanitizer for this — for everything in the editor.)
-          "<!-- Uploaded file name:  " + file.name + "  -->\n" +
-          linkHtml,
+            "<!-- Uploaded file name:  " + file.name + "  -->\n" +
+            linkHtml,
           draftStatus: DraftStatus.ShouldSave,
         }, () => {
           this.saveDraftDebounced();
@@ -406,6 +406,8 @@ export const Editor = createComponent({
       this.showEditor({ scrollToShowPostNr: response.postNr });
       const store: Store = this.state.store;
       const draft: Draft | undefined = response.draft;
+      // This can fail, if the post was moved by staff to a different page? Then it
+      // gets a new postNr. Then do what? Show a "this post was moved to: ..." dialog?
       dieIf(postNr !== response.postNr, 'TyE23GPKG4');
       this.setState({
         anyPostType: null,
@@ -773,6 +775,7 @@ export const Editor = createComponent({
       locator.draftType = DraftType.Topic;
       locator.categoryId = this.state.newForumTopicCategoryId;
       // Need to know in which forum (sub community) the new page should be placed.
+      // (Hmm or could lookup via category id?)
       locator.pageId = this.state.editorsPageId;
     }
     else {
@@ -799,7 +802,7 @@ export const Editor = createComponent({
   },
 
   saveDraftNow: function(callbackThatClosesEditor: () => void | undefined, useBeacon?: UseBeacon) {
-    // TESTS_MISSING
+    // Tested here: 7WKABZP2
     // A bit dupl code [4ABKR2J0]
 
     // If we're closing the page, do try saving anyway, using becaon, because the current non-beacon
@@ -826,20 +829,23 @@ export const Editor = createComponent({
     // which might be open in another browser tab. Could have the server check if there's
     // a newer version of the draft (saved in another browser tab) and, if so, ask if
     // wants to overwrite or not?  [5ABRQP0]  — This happens to me sometimes actually, in Facebook,
-    // when composing replies there. Apparently FB has this same lost-updates bug in their editor.
+    // when composing replies there; FB has this lost-updates bug in their editor (2018)?
 
     // Delete any old draft, if text empty.
     if (!text && !title) {
       if (oldDraft) {
         console.debug("Deleting draft...");
         this.setState({
-          // When closing editor, after having deleted text, it's totally uninteresting that the
-          // draft gets deleted? (cannot show a modal dialog about that)
-          // Otherwise, a bit useful with a non-obtrusive small info about that.
+          // When closing editor, after having deleted all text, it's rather uninteresting
+          // that the draft gets deleted — don't show a modal dialog about that.
+          // Still a bit interesting? so if editor still open, do show a small non-obtrusive
+          // info about the draft getting deleted.
           draftStatus: callbackThatClosesEditor ?
               DraftStatus.NothingHappened : DraftStatus.Deleting,
         });
+        this.isSavingDraft = true;
         Server.deleteDrafts([oldDraft.draftNr], useBeacon || (() => {
+          this.isSavingDraft = false;
           console.debug("...Deleted draft.");
           this.setState({
             draft: null,
@@ -1545,6 +1551,8 @@ function makeDefaultReplyText(store: Store, postIds: PostId[]): string {
 // We currently don't save any draft, for the 1st comment on a new blog post :-(   [BLGCMNT1]
 // because the page doesn't yet exist; there's no page id to use in the draft locator.
 function shallSkipDraft(props: { store: Store, messageToUserIds }): boolean {
+  // If is-no-page, then the page doesn't exist. However, we might be in the user
+  // profile section, writing a direct message to someone — then we do save drafts.
   return store_isNoPage(props.store) && !props.messageToUserIds.length;
 }
 
@@ -1565,23 +1573,23 @@ export function DraftStatusInfo(props: { draftStatus: DraftStatus, draftNr: numb
   const draftNr: number | string = props.draftNr || '';
   const draftErrorStatusCode: number | undefined = props.draftErrorStatusCode;
 
-  switch (props.draftStatus) {
+  switch (props.draftStatus) {  // I18N all draft statuses
     case DraftStatus.NothingHappened: break;
     case DraftStatus.EditsUndone: draftStatusText = "Unchanged."; break;
     case DraftStatus.Saved: draftStatusText = `Draft ${draftNr} saved.`; break;
     case DraftStatus.Deleted: draftStatusText = `Draft ${draftNr} deleted.`; break;
     case DraftStatus.ShouldSave: draftStatusText = `Will save draft ${draftNr} ...`; break;
-    case DraftStatus.SavingSmall: draftStatusText = `Saving draft ${draftNr} ...`; break;  // I18N
+    case DraftStatus.SavingSmall: draftStatusText = `Saving draft ${draftNr} ...`; break;
     // UX COULD show in modal dialog, and an "Ok I'll wait until you're done" button, and a Cancel button.
     case DraftStatus.SavingBig: draftStatusText = `Saving draft ${draftNr} ...`; break;
     case DraftStatus.Deleting: draftStatusText = `Deleting draft ${draftNr} ...`; break;
     case DraftStatus.CannotSave:
       draftErrorClass = ' s_DfSts-Err';
       let details: string;
-      if (draftErrorStatusCode === 403) details = "Access denied";  // I18N
+      if (draftErrorStatusCode === 403) details = "Access denied";
       else if (draftErrorStatusCode) details = "Error " + draftErrorStatusCode;
       else details = "No internet connection";  // I18N reuse string
-      draftStatusText = "Cannot save draft: " + details;  // I18N
+      draftStatusText = "Cannot save draft: " + details;
       break;
   }
 

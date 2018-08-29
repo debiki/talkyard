@@ -28,16 +28,20 @@ let forumTitle = "Flag Block Agree Forum";
 
 let topics = {
   majasTopicTitle: "Icecream?",
+  majasTopicTitleEdited: "Must yez zecream I",
   majasTopicText: "I can haz icecream?",
+  majasTopicTextEdited: "I can zumust haz eezecream",
   majasTopicUrl: '',
   oldTopicTitle: "Old Topic",
   oldTopicUrl: 'old_topic',
 };
 
+const pageTitleEdited = 'pageTitleEdited';
+const pageBodyEdited = 'pageBodyEdited';
 const threeIsOkay = "Three is okay";
 
 
-describe("new member, allow, approve posts:", () => {  // RENAME ths file to 'new-member-posts...'
+describe("new member, allow, approve posts:  TyT4AKBJ20", () => {  // RENAME ths file to 'new-member-posts...'
 
   it("initialize people", () => {
     everyone = _.assign(browser, pagesFor(browser));
@@ -100,15 +104,17 @@ describe("new member, allow, approve posts:", () => {  // RENAME ths file to 'ne
   });
 
   it("... but she can edit the text, although not yet approved", () => {
-    // TESTS_MISSING
+    majasBrowser.complex.editPageBody(topics.majasTopicTextEdited);
   });
 
   it("... and the title", () => {
-    // TESTS_MISSING
-  });
+    majasBrowser.complex.editPageTitle(topics.majasTopicTitleEdited);
+});
 
   it("... changes visible after reload", () => {
-    // TESTS_MISSING
+    majasBrowser.refresh();
+    majasBrowser.assertPageTitleMatches(topics.majasTopicTitleEdited);
+    majasBrowser.assertPageBodyMatches(topics.majasTopicTextEdited);
   });
 
   it("... she posts three replies to an old topic", () => {
@@ -128,6 +134,11 @@ describe("new member, allow, approve posts:", () => {  // RENAME ths file to 'ne
 
   it("... she can edit them: try the last one, nr 4", () => {
     majasBrowser.complex.editPostNr(4, threeIsOkay);
+  });
+
+  it("... changes visible after reload", () => {
+    majasBrowser.refresh();
+    majasBrowser.topic.waitUntilPostTextMatches(4, threeIsOkay);
   });
 
   it("But now she may not post more replies, until the ones posted already gets reviewed: " +
@@ -279,17 +290,22 @@ describe("new member, allow, approve posts:", () => {  // RENAME ths file to 'ne
     michaelsBrowser.topic.refreshUntilPostNotPendingApproval(4);
   });
 
+  it("... and Maja's edits are there", () => {
+    michaelsBrowser.topic.assertPostTextMatches(4, threeIsOkay);
+  });
+
   it("... and sees Maja's topic in the topic list", () => {
     michaelsBrowser.go('/');
     michaelsBrowser.forumTopicList.waitForTopics();
     michaelsBrowser.forumTopicList.assertNumVisible(2);
     michaelsBrowser.forumTopicList.assertTopicVisible(topics.oldTopicTitle);
-    michaelsBrowser.forumTopicList.assertTopicVisible(topics.majasTopicTitle);
+    michaelsBrowser.forumTopicList.assertTopicVisible(topics.majasTopicTitleEdited);
   });
 
   it("... and can access it", () => {
-    michaelsBrowser.forumTopicList.goToTopic(topics.majasTopicTitle);
+    michaelsBrowser.forumTopicList.goToTopic(topics.majasTopicTitleEdited);
     michaelsBrowser.topic.assertPageNotPendingApproval();
+    michaelsBrowser.assertPageBodyMatches(topics.majasTopicTextEdited);
   });
 
 
@@ -321,12 +337,16 @@ describe("new member, allow, approve posts:", () => {  // RENAME ths file to 'ne
     strangersBrowser.topic.assertPostNotPendingApproval(6);
   });
 
+  it("... incl Maja's edits to reply three", () => {
+    strangersBrowser.topic.assertPostTextMatches(4, threeIsOkay);
+  });
+
   it("... and her topic in the topc list", () => {
     strangersBrowser.go('/');
     strangersBrowser.forumTopicList.waitForTopics();
     strangersBrowser.forumTopicList.assertNumVisible(2);
     strangersBrowser.forumTopicList.assertTopicVisible(topics.oldTopicTitle);
-    strangersBrowser.forumTopicList.assertTopicVisible(topics.majasTopicTitle);
+    strangersBrowser.forumTopicList.assertTopicVisible(topics.majasTopicTitleEdited);
   });
 
 });

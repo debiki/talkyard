@@ -38,8 +38,6 @@ const mariasReplyEditedTwice = 'mariasReplyEditedTwice';
 
 const marias2ndReplyOrig = 'marias2ndReplyOrig';
 
-const marias3rdReplyOrig = 'marias3rdReplyOrig';
-
 const mariasDirectMessageTitle = 'mariasDirectMessageTitle';
 const mariasDirectMessageText = 'mariasDirectMessageText';
 
@@ -90,7 +88,7 @@ describe("drafts-chat-adv-ed  TyT7JKMW24", () => {
   });
 
 
-  // ----- Drafts for edits
+  // ----- Drafts for edits: auto save X seconds, and Reactjs unmount-save
 
   it("Maria starts editing her reply to Michael  TyT5A2HSL8", () => {
     mariasBrowser.topic.clickEditoPostNr(c.FirstReplyNr);
@@ -115,12 +113,12 @@ describe("drafts-chat-adv-ed  TyT7JKMW24", () => {
     mariasBrowser.editor.editText(mariasReplyEditedTwice);
   });
 
-  it("... and cancels", () => {
+  it("... and closes the editor, this Reactjs unmount-saves", () => {
     mariasBrowser.editor.cancelNoHelp();
   });
 
 
-  // ----- Drafts for replies
+  // ----- Drafts for replies, saved via beacon
 
   it("Maria starts typing another reply", () => {
     mariasBrowser.topic.clickReplyToOrigPost();
@@ -128,13 +126,22 @@ describe("drafts-chat-adv-ed  TyT7JKMW24", () => {
     mariasBrowser.editor.editText(marias2ndReplyOrig);
   });
 
-  it("... quickly reloads the page, the edits get beacon-saved  TyT5ABKR20", () => {
+  it("... quickly reloads the page, the reply draft gets beacon-saved  TyT5ABKR20", () => {
     mariasBrowser.refresh();
   });
 
   it("... so she sees them, when she clicks reply again", () => {
     mariasBrowser.topic.clickReplyToOrigPost();
     mariasBrowser.editor.waitForDraftTextToLoad(marias2ndReplyOrig);
+    mariasBrowser.editor.cancelNoHelp();
+  });
+
+  it("When she resumes editing her 1st reply", () => {
+    mariasBrowser.topic.clickEditoPostNr(c.FirstReplyNr);
+  });
+
+  it("... she sees those edits, not the new 2nd reply", () => {
+    mariasBrowser.editor.waitForDraftTextToLoad(mariasReplyEditedTwice);
     mariasBrowser.editor.cancelNoHelp();
   });
 
@@ -149,7 +156,7 @@ describe("drafts-chat-adv-ed  TyT7JKMW24", () => {
   });
 
 
-  // ----- Open drafts via drafts list:
+  // ----- Open drafts via drafts list ...
 
   it("Maria closes the editor", () => {
     mariasBrowser.editor.cancelNoHelp();

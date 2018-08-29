@@ -145,8 +145,18 @@ object RateLimits {
   object ExpensiveGetRequest extends RateLimits {
     val key = "ExRq"
     val what = "sent too many complicated HTTP GET requests"
-    def maxPerFifteenSeconds = 20             //  80/min
-    def maxPerFifteenMinutes: Int = 30 * 15   //  30/min
+    def maxPerFifteenSeconds = 15             //  60/min
+    def maxPerFifteenMinutes: Int = 20 * 15   //  20/min
+    def maxPerDay: Int = Unlimited
+    def maxPerDayNewUser: Int = Unlimited
+  }
+
+
+  object TouchesDbGetRequest extends RateLimits {
+    val key = "DbRq"
+    val what = "sent too many a bit complicated HTTP GET requests"
+    def maxPerFifteenSeconds = 25             //  100/min
+    def maxPerFifteenMinutes: Int = 30 * 15   //   30/min
     def maxPerDay: Int = Unlimited
     def maxPerDayNewUser: Int = Unlimited
   }
@@ -373,9 +383,10 @@ object RateLimits {
   object DraftSomething extends RateLimits {
     val key = "Drft"
     val what = "edited or deleted your drafts too quickly"
-    def maxPerFifteenSeconds = 20
+    def maxPerFifteenSeconds = 15  // 60/min = one per second, auto-saving every 2nd second [7AKBJ42]
     def maxPerFifteenMinutes: Int = Unlimited
-    def maxPerDay: Int = Unlimited
+    // 3 people at the same ip, edits constantly for 2.5 hours = 150 min, auto-saving 30 times / minute.
+    def maxPerDay: Int = 3 * 150 * 30
     def maxPerDayNewUser: Int = Unlimited
   }
 

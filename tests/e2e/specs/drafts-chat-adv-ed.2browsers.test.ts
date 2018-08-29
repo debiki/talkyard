@@ -146,7 +146,7 @@ describe("drafts-chat-adv-ed  TyT7JKMW24", () => {
   });
 
 
-  // ----- Draft auto-saved, when navigating to other page
+  // ----- Draft auto-saved on Reactjs unmount, when navigating to other page
 
   it("Now between, Michael joins the chat", () => {
     michaelsBrowser.complex.loginWithPasswordViaTopbar(michael);
@@ -195,7 +195,7 @@ describe("drafts-chat-adv-ed  TyT7JKMW24", () => {
   });
 
 
-  // ----- Switch to advanced editor, draft auto saved, submit
+  // ----- Switch to advanced editor, draft auto saved, submit in adv editor
 
   it("Michael starts typing his 2nd message", () => {
     michaelsBrowser.chat.editChatMessage(michaelsMessageTwoOrig);

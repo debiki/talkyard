@@ -222,11 +222,14 @@ object DraftType {
   * @param categoryId
   * @param toUserId
   * @param pageId — for new topics, is the page id of the forum where the topic is to be created,
-  *   in case there're many forums (sub communities).
+  *   in case there're many forums (sub communities). Hmm should lookup via category id instead,
+  *   later when/if will be possible to move categories between forums? [subcomms]
   *   For replies and edits, is the page the user was at, when writing.
   *   Maybe, however, the post being edited, or replied to, will be moved elsewhere
   *   by staff — so postId will be used, when finding the post, later when resuming
-  *   writing.
+  *   writing (rather than pageId and postNr). Still, nice to have pageId, in case staff
+  *   moves the post to a page one may not access — then, good to know on which page it was
+  *   located, originally, when starting typing the draft (so one knows what topic it concerns).
   * @param postNr
   * @param postId
   */
@@ -281,6 +284,9 @@ case class Draft(
   require(forWhat.isNewTopic == topicType.isDefined, "TyEBDDRFT08")
   require(!isReply || postType.isDefined, "Draft postType missing, for a reply draft [TyEBDDRFT09]")
   require(postType.isEmpty || isReply || isEdit, "Draft postType present [TyEBDDRFT10]")
+  require(!isReply || text.trim.nonEmpty, "Empty draft, for replying — delete instead [TyEBDDRFT11]")
+  require(!isEdit || text.trim.nonEmpty, "Empty draft, for edits — delete instead [TyEBDDRFT12]")
+  require(isNewTopic || title.isEmpty, "Non new topic draft, with a title [TyEBDDRFT13]")
 
   def isNewTopic: Boolean = forWhat.isNewTopic
   def isReply: Boolean = forWhat.draftType == DraftType.Reply

@@ -59,7 +59,9 @@ class DraftsController @Inject()(cc: ControllerComponents, edContext: EdContext)
   private def upsertDraftImpl(body: JsValue, request: ApiRequest[_]): Result = {
     import request.{dao, theRequester => requester}
 
-    throwForbiddenIf(requester.isGroup, "EdE65AFRDJ2", "Groups may not save drafts")
+    throwForbiddenIf(requester.isGroup, "TyE65AFRDJ2", "Groups may not save drafts")
+    throwForbiddenIf(0 <= requester.id && requester.id <= 9, "TyE2ABKG5",
+      "Special users may not save drafts")
 
     val locatorJson = (body \ "forWhat").asOpt[JsObject] getOrThrowBadArgument(
       "TyE4AKBP20", "No draft locator: forWhat missing")
@@ -69,12 +71,16 @@ class DraftsController @Inject()(cc: ControllerComponents, edContext: EdContext)
     val draftType = DraftType.fromInt(draftTypeInt) getOrThrowBadArgument(
       "TyE4AKBP22", s"Draft type not specified: ${locatorJson.toString}")
 
+    var anyPost: Option[Post] = None
+
     val pageId = (locatorJson \ "pageId").asOpt[PageId]
     val postNr = (locatorJson \ "postNr").asOpt[PostNr]
     val postId = (locatorJson \ "postId").asOpt[PostId] orElse {
       if (pageId.isDefined && postNr.isDefined) {
-        // The browser currently doesn't send the post id, for new replies. [4BKG0BKR0]
-        dao.loadPost(pageId.get, postNr.get).map(_.id)
+        // The browser could maybe incl the post id, for new replies, [4BKG0BKR0]
+        // so won't need to look it up here. But actually need to look it up anyway (7RWBJ3).
+        anyPost = dao.loadPost(pageId.get, postNr.get)
+        anyPost.map(_.id)
       }
       else {
         None
@@ -82,9 +88,8 @@ class DraftsController @Inject()(cc: ControllerComponents, edContext: EdContext)
     }
 
     // This currently rejects drafts for the very first comment, on an embedded comments page
-    // — because the page hasn't yet been created; there's no page id, so no locator can
-    // be constructed. COULD add an embeddingPageAltId field? as part of the locator?
-    // UX SHOULD save draft also for this 1st blog post comment.  [BLGCMNT1]
+    // — because the page hasn't yet been created, so there's no page id, so no locator can
+    // be constructed. UX SHOULD save draft also for this 1st blog post comment.  [BLGCMNT1]
     val draftLocator = Try(
       DraftLocator(
         draftType,
@@ -104,7 +109,7 @@ class DraftsController @Inject()(cc: ControllerComponents, edContext: EdContext)
         draftNr = draftNr,
         forWhat = draftLocator,
         createdAt = now,
-        lastEditedAt = Some(now),
+        lastEditedAt = None, // createdAt will be used, if overwriting [5AKJWX0]
         deletedAt = (body \ "deletedAt").asOptWhen,
         topicType = (body \ "topicType").asOpt[Int].flatMap(PageRole.fromInt),
         postType = (body \ "postType").asOpt[Int].flatMap(PostType.fromInt),
@@ -117,38 +122,37 @@ class DraftsController @Inject()(cc: ControllerComponents, edContext: EdContext)
       "TyE4RBK02R9", "Draft empty. Delete it instead")
 
     if (draft.isNewTopic) {
-      // For now, check later, when posting topic. The user can just pick another category,
+      // For now, authorize this later, when posting topic. The user can just pick another category,
       // in the categories dropdown, if current category turns out to be not allowed, when
       // trying to post.
     }
-    else if (draft.isReply) {
-      // Maybe good to know, directly, if not allowed to reply to this post?
+    else if (draft.isReply || draft.isEdit) {
+      // Maybe good to know, directly, if not allowed to reply to or edit this post?
 
-      val pageMeta = dao.getThePageMeta(draftLocator.pageId getOrDie "TyE2ABS049S")
-      val categoriesRootLast = dao.loadAncestorCategoriesRootLast(pageMeta.categoryId)
-      val postType = draft.postType getOrDie "TyER35SKS02GU"
-      val replyToPost =
-        dao.loadPost(pageMeta.pageId, draftLocator.postNr getOrDie "TyESRK0437")
-          .getOrElse(throwIndistinguishableNotFound("TyE4WEB93"))
-
-      throwNoUnless(Authz.mayPostReply(
-        request.theUserAndLevels, dao.getGroupIds(requester),
-        postType, pageMeta, Vector(replyToPost), dao.getAnyPrivateGroupTalkMembers(pageMeta),
-        inCategoriesRootLast = categoriesRootLast,
-        permissions = dao.getPermsOnPages(categoriesRootLast)), "EdEZBXK3M2")
-    }
-    else if (draft.isEdit) {
-      // Maybe good to know, directly, if may not edit?
-
-      val post = dao.loadPostByUniqueId(draftLocator.postId.get) getOrElse throwIndistinguishableNotFound("TyE0DK9WRR")
+      val post = anyPost orElse dao.loadPostByUniqueId(  // (7RWBJ3)
+        draftLocator.postId.get) getOrElse throwIndistinguishableNotFound("TyE0DK9WRR")
       val pageMeta = dao.getPageMeta(post.pageId) getOrElse throwIndistinguishableNotFound("TyE2AKBRE5")
       val categoriesRootLast = dao.loadAncestorCategoriesRootLast(pageMeta.categoryId)
 
-      throwNoUnless(Authz.mayEditPost(
-        request.theUserAndLevels, dao.getGroupIds(requester),
-        post, pageMeta, dao.getAnyPrivateGroupTalkMembers(pageMeta),
-        inCategoriesRootLast = categoriesRootLast,
-        permissions = dao.getPermsOnPages(categoriesRootLast)), "EdEZBXK3M2")
+      if (draft.isReply) {
+        val postType = draft.postType getOrDie "TyER35SKS02GU"
+        throwNoUnless(Authz.mayPostReply(
+          request.theUserAndLevels, dao.getGroupIds(requester),
+          postType, pageMeta, Vector(post), dao.getAnyPrivateGroupTalkMembers(pageMeta),
+          inCategoriesRootLast = categoriesRootLast,
+          permissions = dao.getPermsOnPages(categoriesRootLast)), "EdEZBXK3M2")
+      }
+      else {
+        throwNoUnless(Authz.mayEditPost(
+          request.theUserAndLevels, dao.getGroupIds(requester),
+          post, pageMeta, dao.getAnyPrivateGroupTalkMembers(pageMeta),
+          inCategoriesRootLast = categoriesRootLast,
+          permissions = dao.getPermsOnPages(categoriesRootLast)), "EdEZBXK3M2")
+      }
+    }
+    else {
+      // Don't think this can happen. Doesn't matter, will check authz later when
+      // submitting draft, anyway.
     }
 
     val draftWithNr = dao.readWriteTransaction { tx =>
@@ -166,7 +170,8 @@ class DraftsController @Inject()(cc: ControllerComponents, edContext: EdContext)
   }
 
 
-  def listDrafts(userId: UserId): Action[Unit] = GetAction { request: GetRequest =>
+  def listDrafts(userId: UserId): Action[Unit] = GetActionRateLimited(RateLimits.TouchesDbGetRequest) {
+        request: GetRequest =>
     import request.{dao, theRequester => requester}
 
     // Tested here: [7WKABZP2]
@@ -175,8 +180,10 @@ class DraftsController @Inject()(cc: ControllerComponents, edContext: EdContext)
       "TyE2RDGWA8", "May not view other's drafts")
 
     SHOULD; OPTIMIZE // cache per user? don't want to touch the db all the time?
-    SECURITY; COULD // rate limit? max 1 cache-miss req per 5 seconds on average?
 
+    // Load drafts.
+    // The drafts don't included the page title (that'd be dupl data) so we'll also
+    // look up the page title and incl in the response.
     val (drafts: immutable.Seq[Draft], pagePostNrsByPostId: Map[PostId, PagePostNr], pageIds) =
         dao.readOnlyTransaction { tx =>
       val ds = tx.listDraftsRecentlyEditedFirst(userId)
