@@ -3,10 +3,10 @@
 	url = ../ed-dao-rdb.git
 [submodule "modules/ty-media"]
 	path = modules/ty-media
-	url = ../talkyard-media
+	url = ../talkyard-media.git
 [submodule "modules/ty-cla"]
 	path = modules/ty-cla
-	url = ../ty-cla
+	url = ../ty-cla.git
 [submodule "modules/definitely-typed"]
 	path = modules/definitely-typed
 	url = https://github.com/borisyankov/DefinitelyTyped.git
@@ -57,4 +57,4 @@
 	url = https://github.com/mailslurper/mailslurper.git
 [submodule "to-talkyard"]
 	path = to-talkyard
-	url = ../to-talkyard
+	url = ../to-talkyard.git
