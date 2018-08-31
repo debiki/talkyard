@@ -150,7 +150,7 @@ class EditController @Inject()(cc: ControllerComponents, edContext: EdContext)
     }
 
     // Not impossible that there're two drafts — if one has two browser tabs open at the same time,
-    // and starts editing in both, at the same time. Weird. Just pick one.
+    // and starts editing in both, at the same time. Weird. Just pick one. [manydrafts]
     val anyDraft = anyDrafts.headOption
 
     OkSafeJson(Json.obj( // LoadDraftAndTextResponse

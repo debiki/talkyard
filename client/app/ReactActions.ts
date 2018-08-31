@@ -475,6 +475,7 @@ export function doUrlFragmentAction(newHashFragment?: string) {
         // @ifdef DEBUG
         die('TyE5AKBR3');
         // @endif
+        void(0); // otherwise macro transpilation error
     }
     return;
   }

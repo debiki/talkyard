@@ -135,5 +135,9 @@ so can open error dialog also if couldn't load more-bundle.js from the server.
 Or cache more-bundle.js: PWA and service worker.
 
 
+[manydrafts]
+If there're many drafts for the same thing, show them in a list and let the user choose which
+one to continue editing. (Rather than just picking a random one.)
+
 
 SECURITY Use HMAC. Not SHAX. Need not fix urgently. Prevents extension attacks

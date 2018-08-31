@@ -36,8 +36,6 @@ let topics = {
   oldTopicUrl: 'old_topic',
 };
 
-const pageTitleEdited = 'pageTitleEdited';
-const pageBodyEdited = 'pageBodyEdited';
 const threeIsOkay = "Three is okay";
 
 
