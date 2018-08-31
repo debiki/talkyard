@@ -484,7 +484,8 @@ class Globals(
     conf.getString("talkyard.createTestSiteHostname").noneIfBlank
 
   val maxUploadSizeBytes: Int =
-    conf.getInt("talkyard.uploads.maxKiloBytes").map(_ * 1000).getOrElse(3*1000*1000)
+    (conf.getInt("talkyard.uploads.maxKiloBytesPerFile") orElse
+      conf.getInt("talkyard.uploads.maxKiloBytes")).map(_ * 1000).getOrElse(3*1000*1000)
 
   val anyUploadsDir: Option[String] = {
     val value = conf.getString(LocalhostUploadsDirConfValName).noneIfBlank
