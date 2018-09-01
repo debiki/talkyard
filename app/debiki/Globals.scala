@@ -234,7 +234,7 @@ class Globals(
       case None =>
         AllSettings.MinPasswordLengthHardcodedDefault
       case Some(length) =>
-        dieIf(length < 8, "TyE2WKG7",
+        dieIf(length < AllSettings.HardMinPasswordLength, "TyE2WKG7",
           "I refuse to start: Min password length is less than 8 chars; that's too easy to crack. Bye.")
         length
     }

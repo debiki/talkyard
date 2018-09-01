@@ -241,12 +241,12 @@ class EdSecurity(globals: Globals) {
     // Here, just quick double checks. (Only maybe reserved-words isn't totally done
     // by zxcvbn?)
 
-    throwBadRequestIf(password.length < minPasswordLength,
-        "TyE5WKBTU2", s"Password too short, should be $minPasswordLength chars [TyEPWDMIN_]")
-
     throwBadRequestIf(isForOwner && password.length < MinOwnerPasswordLength,
-        "TyE5WKBTU3", o"""Password too short, should be min $MinOwnerPasswordLength chars
+        "TyEADMPWMIN_", o"""Password too short, should be min $MinOwnerPasswordLength chars
         for you, because you're the community owner. (And at least $minPasswordLength for others.)""")
+
+    throwBadRequestIf(password.length < minPasswordLength,
+      "TyEPWMIN_", s"Password too short, should be $minPasswordLength chars")
 
     def fairlyMuchLongerThan(word: String) =
       (password.length - word.length) >= (if (isForOwner) 6 else 4)

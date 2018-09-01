@@ -201,6 +201,7 @@ object AllSettings {
   val PostRecentlyCreatedLimitMs: Int = 5 * 3600 * 1000
 
   val MinPasswordLengthHardcodedDefault = 10
+  val HardMinPasswordLength = 8
 
   def makeDefault(globals: Globals): AllSettings = new AllSettings {  // [8L4KWU02]
     val userMustBeAuthenticated = false

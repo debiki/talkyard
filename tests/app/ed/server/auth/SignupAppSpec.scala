@@ -46,7 +46,7 @@ class SignupAppSpecDefaultSettings extends DaoAppSuite() {
           createdAt = globals.now(),
           isAdmin = true, isOwner = true).get, browserIdData)
       }
-      ex.getMessage must include("TyEPWDMIN_")
+      ex.getMessage must include("TyEADMPWMIN_")
 
       // Could check some more things, like not username in password.
     }
@@ -61,7 +61,20 @@ class SignupAppSpecDefaultSettings extends DaoAppSuite() {
       val ex = intercept[ResultException] {
         dao.changePasswordCheckStrongEnough(owner.id, tooShortPassword)
       }
-      ex.getMessage must include("TyEPWDMIN_")
+      ex.getMessage must include("TyEADMPWMIN_")
+    }
+
+    "other people also cannot sign up with too short passwords" in {
+      val ex = intercept[ResultException] {
+        dao.createPasswordUserCheckPasswordStrong(NewPasswordUserData.create(
+          name = Some("Mia Member"), username = "mia",
+          email = s"mia@x.co", password = tooShortPassword.take(AllSettings.HardMinPasswordLength - 1),
+          createdAt = globals.now(),
+          isAdmin = false, isOwner = false).get, browserIdData)
+      }
+      ex.getMessage must include("TyEPWMIN_")
+
+      // Could check some more things, like not username in password.
     }
 
   }
@@ -96,7 +109,7 @@ class SignupAppSpecCustomSettings extends DaoAppSuite(
           createdAt = globals.now(),
           isAdmin = true, isOwner = true).get, browserIdData)
       }
-      ex.getMessage must include("TyEPWDMIN_")
+      ex.getMessage must include("TyEADMPWMIN_")
 
       // Could check some more things, like not username in password.
     }
@@ -111,7 +124,7 @@ class SignupAppSpecCustomSettings extends DaoAppSuite(
       val ex = intercept[ResultException] {
         dao.changePasswordCheckStrongEnough(owner.id, tooShortPassword)
       }
-      ex.getMessage must include("TyEPWDMIN_")
+      ex.getMessage must include("TyEADMPWMIN_")
     }
 
   }
