@@ -67,6 +67,7 @@ case class Invite(
 
   def makeUser(userId: UserId, username: String, currentTime: ju.Date) = MemberInclDetails(
     id = userId,
+    externalId = None,
     fullName = None,
     username = username,
     createdAt = currentTime,
@@ -94,7 +95,7 @@ object Invite {
 }
 
 
-// Rename to NewMemberData?
+// Rename to NewSocialIdentityMemberData?
 sealed abstract class NewUserData {
   def name: Option[String]
   def username: String
@@ -105,6 +106,7 @@ sealed abstract class NewUserData {
 
   def makeUser(userId: UserId, createdAt: ju.Date) = MemberInclDetails(
     id = userId,
+    externalId = None,
     fullName = name,
     username = username,
     createdAt = createdAt,
@@ -127,12 +129,13 @@ sealed abstract class NewUserData {
 }
 
 
-
+// RENAME to  NewPasswordOrExternalMemberData?
 case class NewPasswordUserData(
   name: Option[String],
   username: String,
   email: String,
-  password: String,
+  password: Option[String],
+  externalId: Option[String],
   createdAt: When,
   firstSeenAt: Option[When],
   isAdmin: Boolean,
@@ -142,11 +145,12 @@ case class NewPasswordUserData(
   trustLevel: TrustLevel = TrustLevel.NewMember,
   threatLevel: ThreatLevel = ThreatLevel.HopefullySafe) {
 
-  val passwordHash: String =
-    DbDao.saltAndHashPassword(password)
+  val passwordHash: Option[String] =
+    password.map(DbDao.saltAndHashPassword)
 
   def makeUser(userId: UserId) = MemberInclDetails(
     id = userId,
+    externalId = externalId,
     fullName = name,
     username = username,
     createdAt = createdAt.toJavaDate,
@@ -159,31 +163,33 @@ case class NewPasswordUserData(
     // Initially, when the forum / comments site is tiny, it's good to be notified
     // about everything. (isOwner —> it's the very first user, so the site is empty.) [7LERTA1]
     emailForEveryNewPost = isOwner,
-    passwordHash = Some(passwordHash),
+    passwordHash = passwordHash,
     isOwner = isOwner,
     isAdmin = isAdmin,
     isModerator = isModerator,
     trustLevel = trustLevel,
     threatLevel = threatLevel)
 
-
   dieIfBad(Validation.checkName(name), "TyE6KWB2A1", identity)
   dieIfBad(Validation.checkUsername(username), "TyE5FKA2K0", identity)
   dieIfBad(Validation.checkEmail(email), "TyE4WKBJ7Z", identity)
   // Password: See security.throwErrorIfPasswordTooWeak, instead.
 
+  require(externalId.isDefined != password.isDefined, "TyE5AKBR02")
   require(!firstSeenAt.exists(_.isBefore(createdAt)), "EdE2WVKF063")
 }
 
 
 object NewPasswordUserData {
-  def create(name: Option[String], username: String, email: String, password: String,
+  def create(
+        name: Option[String], username: String, email: String,
+        password: Option[String] = None,
+        externalId: Option[String] = None,
         createdAt: When,
         isAdmin: Boolean, isOwner: Boolean, isModerator: Boolean = false,
         emailVerifiedAt: Option[When] = None,
         trustLevel: TrustLevel = TrustLevel.NewMember,
-        threatLevel: ThreatLevel = ThreatLevel.HopefullySafe)
-        : NewPasswordUserData Or ErrorMessage = {
+        threatLevel: ThreatLevel = ThreatLevel.HopefullySafe): NewPasswordUserData Or ErrorMessage = {
     for {
       okName <- Validation.checkName(name)
       okUsername <- Validation.checkUsername(username)
@@ -192,7 +198,7 @@ object NewPasswordUserData {
     }
     yield {
       NewPasswordUserData(name = okName, username = okUsername, email = okEmail,
-        password = password, createdAt = createdAt,
+        password = password, externalId = externalId, createdAt = createdAt,
         firstSeenAt = Some(createdAt),  // for now
         isAdmin = isAdmin, isOwner = isOwner, isModerator = isModerator,
         emailVerifiedAt = emailVerifiedAt,
@@ -252,18 +258,30 @@ case object User {
   val SystemUserUsername = "system"
   val SystemUserFullName = "System"
 
-  val SuperAdminId = 2
+  /** Like system, but only does things because of API requests (which the System user never does).
+    * Nice to know if something was done because of an API request (the Sysbot user),
+    * or because of Talkyard's own source code (the System user), also if the audit log
+    * has been emptied.
+    */
+  val SysbotUserId = 2
+
+  /** If a superadmin logs in and does something. */
+  val SuperAdminId = 3
+
+  /** Maintenance tasks by bot(s) that supervise all sites. */
+  // val SuperbotId = 4  ?
 
   // The real ids of deactivated and deleted users, are replaced with these ids, when rendering
   // pages, so others won't find the real ids of the deactivated/deleted accounts.
-  val DeactivatedUserId = 3
-  val DeletedUserId = 4
+  val DeactivatedUserId = 5
+  val DeletedUserId = 6
 
   // ?? If a member chooses to post anonymously:
-  // val AnonymousUserId = 7
+  // val AnonymousUserId = 9
 
   /** Cannot talk with members with lower ids (System, SuperAdmin, Deactivated, Deleted users). */
-  val LowestTalkToMemberId = 5  // change to 7 ? == AnonymousUserId (maybe 5 & 6 neded for sth else cannot-talk)
+  val LowestTalkToMemberId = Group.EveryoneId  // or 9, same as anonymous users?
+  assert(LowestTalkToMemberId == 10)
 
   /** A user that did something, e.g. voted on a comment, but was not logged in. */
   val UnknownUserId: UserId = -3
@@ -297,6 +315,7 @@ case object User {
   def isOkayUserId(id: UserId): Boolean =
     id >= LowestAuthenticatedUserId ||
       id == SystemUserId ||
+      id == SysbotUserId ||
       //id == SuperAdminId ||     later
       //id == AnonymousUserId ||  later
       id == UnknownUserId ||
@@ -621,11 +640,40 @@ case class Member(
   override def canPromoteToFullMember: Boolean =
     trustLevel == TrustLevel.BasicMember
 
+  /*  def copyWithExternalData(externalUser: ExternalUser): Member = {
+    copy(
+      externalUserId: String,
+      primaryEmailAddress: String,
+      isEmailAddressVerified: Boolean,
+      username: Option[String],
+      fullName: Option[String],
+      avatarUrl: Option[String],
+      aboutUser: Option[String],
+      isAdmin: Boolean,
+      isModerator: Boolean
+    )
+  } */
+
   require(!fullName.map(_.trim).contains(""), "DwE4GUK28")
   require(User.isOkayUserId(id), "DwE02k12R5")
   require(theUsername.length >= 2, "EsE7YKW3")
   require(!isEmailLocalPartHidden(email), "DwE6kJ23")
   require(tinyAvatar.isDefined == smallAvatar.isDefined, "EdE5YPU2")
+}
+
+
+case class ExternalUser(
+  externalId: String,
+  primaryEmailAddress: String,
+  isEmailAddressVerified: Boolean,
+  username: Option[String],
+  fullName: Option[String],
+  avatarUrl: Option[String],
+  aboutUser: Option[String],
+  isAdmin: Boolean,
+  isModerator: Boolean) {
+
+  // require ...
 }
 
 
@@ -670,6 +718,7 @@ sealed trait MemberOrGroupInclDetails {
 
 case class MemberInclDetails(
   id: UserId,
+  externalId: Option[String],
   fullName: Option[String],
   username: String,
   createdAt: ju.Date,
@@ -706,6 +755,8 @@ case class MemberInclDetails(
 
   require(User.isOkayUserId(id), "DwE077KF2")
   require(username.length >= 2, "DwE6KYU9")
+  require(externalId.forall(extId => 1 <= extId.length), "TyE5AKBR20")
+  require(externalId.forall(extId => extId.length <= 200), "TyE5AKBR21")
   require(!username.contains(isBlank _), "EdE8FKY07")
   require(!primaryEmailAddress.contains(isBlank _), "EdE6FKU02")
   require(fullName == fullName.map(_.trim), "EdE3WKD5F")
@@ -838,6 +889,24 @@ case class MemberInclDetails(
     if (this.threatLevel.toInt >= newThreatLevel.toInt) this
     else copy(threatLevel = newThreatLevel)
 
+
+  def copyWithExternalData(externalUser: ExternalUser): MemberInclDetails = {
+    unimplementedIf(primaryEmailAddress != externalUser.primaryEmailAddress,
+      "Diffferent primaryEmailAddress not yet impl [TyE2BKRP0]")
+    unimplementedIf(emailVerifiedAt.isDefined != externalUser.isEmailAddressVerified,
+      "Diffferent email verified status, then do what? [TyE5KBRH8]")
+    copy(
+      externalId = Some(externalUser.externalId),
+      primaryEmailAddress = externalUser.primaryEmailAddress,
+      //emailVerifiedAt = externalUser.isEmailAddressVerified,
+      // username: Option[String] — keep old?
+      // fullName: Option[String] — keep old? or change?
+      // avatarUrl: Option[String],
+      // aboutUser: Option[String],
+      // isAdmin: Boolean,
+      // isModerator: Boolean
+      )
+  }
 
   def briefUser = Member(
     id = id,

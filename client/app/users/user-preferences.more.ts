@@ -489,6 +489,10 @@ export const Account = createFactory({
     this.loadEmailsLogins(user.id);
   },
 
+  componentWillUnmount: function() {
+    this.isGone = true;
+  },
+
   componentWillReceiveProps: function(nextProps) {
     // a bit dupl code [5AWS2E9]
     const me: Myself = this.props.store.me;
@@ -503,6 +507,7 @@ export const Account = createFactory({
 
   loadEmailsLogins: function(userId: UserId) {
     Server.loadEmailAddressesAndLoginMethods(userId, (response: UserAccountResponse) => {
+      if (this.isGone) return;
       this.setState(response);
     });
   },
@@ -664,11 +669,14 @@ export const Account = createFactory({
 
     const loginsList =
       r.ul({ className: 's_UP_EmLg_LgL' },
-        loginMethods.map((method) => {
+        loginMethods.map((method: UserAccountLoginMethod) => {
+          const withExternalId = !method.externalId || !isStaff(me) ? null :
+              r.span({}, " external id: ", method.externalId);
           return r.li({ className: 's_UP_EmLg_LgL_It', key: `${method.provider}:${method.email}` },
             r.span({ className: 's_UP_EmLg_LgL_It_How' }, method.provider),
             t.upp.commaAs,
-            r.span({ className: 's_UP_EmLg_LgL_It_Id' }, method.email))
+            r.span({ className: 's_UP_EmLg_LgL_It_Id' }, method.email),
+            withExternalId)
             // r.div({}, Button({}, "Remove")))  — fix later
         }));
 

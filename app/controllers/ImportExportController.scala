@@ -382,6 +382,7 @@ class ImportExportController @Inject()(cc: ControllerComponents, edContext: EdCo
       passwordHash.foreach(security.throwIfBadPassword(_, isE2eTest))
       Good(MemberInclDetails(
         id = id,
+        externalId = readOptString(jsObj, "externalId"),
         username = username,
         fullName = readOptString(jsObj, "fullName"),
         createdAt = readDateMs(jsObj, "createdAtMs"),

@@ -170,7 +170,7 @@ class LoginWithPasswordController @Inject()(cc: ControllerComponents, edContext:
 
       val userData =  // [5LKKWA10]
         NewPasswordUserData.create(name = fullName, email = emailAddress, username = username,
-            password = password, createdAt = now,
+            password = Some(password), createdAt = now,
             isAdmin = becomeOwner, isOwner = becomeOwner,
             emailVerifiedAt = emailVerifiedAt) match {
           case Good(data) => data

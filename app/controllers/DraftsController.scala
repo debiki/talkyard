@@ -156,6 +156,8 @@ class DraftsController @Inject()(cc: ControllerComponents, edContext: EdContext)
     }
 
     val draftWithNr = dao.readWriteTransaction { tx =>
+      SECURITY; SHOULD // DoS: Count num old, allow max 100 new per month? and max 1 000 in total?
+      // And *5 if >= regular? // And max post length.
       val draftWithNr =
         if (draft.draftNr != NoDraftNr) draft else {
           val nr = tx.nextDraftNr(requester.id)

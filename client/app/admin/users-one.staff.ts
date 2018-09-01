@@ -17,6 +17,7 @@
 
 /// <reference path="../slim-bundle.d.ts" />
 /// <reference path="../more-bundle-already-loaded.d.ts" />
+declare var moment;
 
 //------------------------------------------------------------------------------
    namespace debiki2.admin {
@@ -39,11 +40,11 @@ export const UserProfileAdminView = createFactory({
     };
   },
 
-  componentDidMount: function(nextProps) {
+  componentDidMount: function() {
     this.loadCompleteUser();
   },
 
-  componentWillUnmount: function(nextProps) {
+  componentWillUnmount: function() {
     this.isGone = true;
   },
 
@@ -183,7 +184,7 @@ export const UserProfileAdminView = createFactory({
     // TESTS_MISSING [5AEWBN0]
     const hideUnapproveButtons = user.isAdmin;
 
-    const emailAddrAndResendVerifEmailButton = makeRow(
+    const emailAddrRow = makeRow(
         "Email: ",
         user.email + (user.emailVerifiedAtMs ? '' : " — not verified"),
         rFragment({},
@@ -205,6 +206,9 @@ export const UserProfileAdminView = createFactory({
                 "(will then need to re-verify his/her email) ") : null, */
           r.a({ className: 's_A_Us_U_Rows_Row_EmlManage', href: linkToUsersEmailAddrs(user.username) },
             "Manage ...")));
+
+    const externalIdRow = !user.externalId ? null : makeRow(
+        "External ID: ", user.externalId, null);
 
     const isApprovedRow = user.isGroup || !settings.userMustBeApproved ?
                               r.span({ className: 'e_Appr_Info-Absent' }) : makeRow(
@@ -312,7 +316,8 @@ export const UserProfileAdminView = createFactory({
         makeRow("Username: ", usernameAndFullName, null),
         user.isGroup ? r.p({}, "Is a group.") : null,
         makeRow("Enabled: ", enabledInfo, null),
-        emailAddrAndResendVerifEmailButton,
+        emailAddrRow,
+        externalIdRow,
         isApprovedRow,
         makeRow("Admin: ", isAdminText, toggleAdminButton),
         makeRow("Moderator: ", isModeratorText, toggleModeratorButton),

@@ -25,6 +25,7 @@ Dl = download
 CB = checkbox
 Pw = password, e.g. NewPwI
 St = status or state
+R = table row
 U  = user
 Un = username
 FN = full name

@@ -90,6 +90,8 @@ package object core {
 
   type AuditLogEntryId = Int
 
+  type ApiSecretNr = Int
+
   type PricePlan = String  // for now
 
   /** Where to start rendering a page. The specified post and all its successors
@@ -259,6 +261,7 @@ package object core {
   def FirstSiteId: SiteId = Site.FirstSiteId
   val NoUserId = 0
   def SystemUserId: UserId = User.SystemUserId
+  def SysbotUserId: UserId = User.SysbotUserId
   def SystemSpamStuff = SpamRelReqStuff(userAgent = None, referer = None, uri = "/dummy")
   def SystemUserFullName: String = User.SystemUserFullName
   def SystemUserUsername: String = User.SystemUserUsername
@@ -590,6 +593,43 @@ package object core {
       immutable.Set[PostNr](postNrs: _*)
     }
   }
+
+
+  /*
+  sealed abstract class ApiSecretType(val IntVal: Int) { def toInt: Int = IntVal }
+  object ApiSecretType {
+    case object BeAnyUser extends ApiSecretType(1)
+    case object ForOneUser extends ApiSecretType(2)
+    def fromInt(value: Int): Option[ApiSecretType] = Some(value match {
+      case BeAnyUser.IntVal => BeAnyUser
+      case ForOneUser.IntVal => ForOneUser
+      case _ => return None
+    })
+  }*/
+
+  /** Lets one do requests via the API.
+    *
+    * @param nr
+    * @param userId — which user this API secret is for. If None, then may specify any user id.
+    * @param createdAt
+    * @param deletedAt
+    * @param isDeleted — once set to true, never changed back to false. `deletedAt` might not`
+    *   always be accurate in case the server's clock is off.
+    * @param secretValue — don't show
+    */
+  case class ApiSecret(
+    nr: ApiSecretNr,
+    userId: Option[UserId],
+    createdAt: When,
+    deletedAt: Option[When],
+    isDeleted: Boolean,
+    secretValue: String) {
+
+    require(!isDeleted || deletedAt.isDefined, "TyE4ABKR01")
+    require(deletedAt.isEmpty || createdAt.millis <= deletedAt.get.millis, "TyE4ABKR02")
+    require(userId.forall(id => id == SysbotUserId || id >= LowestTalkToMemberId), "TyE5ABKR02")
+  }
+
 
 
   def ifThenSome[A](condition: Boolean, value: A): Option[A] =

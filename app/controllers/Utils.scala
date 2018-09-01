@@ -82,6 +82,14 @@ object Utils extends Results with http.ContentTypes {
     Ok(safeJsonPrefix + jsonString) as JSON
   }
 
+  /** Pretty prints by default, nice when troubleshooting. And doesn't incl the
+    * don't-parse-as-a-script tag — that's only meaningful for browsers?
+    */
+  def OkApiJson(json: JsValue, pretty: Boolean = true): Result = {
+    val jsonString = if (pretty) Json.prettyPrint(json) else Json.stringify(json)
+    Ok(jsonString) as JSON
+  }
+
 
   /**
    * Prefixes `<?xml version=...>` to the post data.

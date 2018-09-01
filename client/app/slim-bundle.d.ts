@@ -263,6 +263,8 @@ declare namespace debiki2 {
   function settings_selectTopicType(settings: SettingsVisibleClientSide, me: Myself): boolean;
 
 
+  function timeExact(whenMs: number, clazz?: string);
+
   namespace avatar {
     var Avatar;
   }

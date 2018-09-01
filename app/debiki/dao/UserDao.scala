@@ -482,31 +482,45 @@ trait UserDao {
   }
 
 
-  def createPasswordUserCheckPasswordStrong(
-        userData: NewPasswordUserData, browserIdData: BrowserIdData): Member = {
+  def createPasswordUserCheckPasswordStrong(userData: NewPasswordUserData, browserIdData: BrowserIdData)
+        : Member = {
     security.throwErrorIfPasswordBad(
-      password = userData.password, username = userData.username,
+      password = userData.password.getOrDie("TyE2AKB84"), username = userData.username,
       fullName = userData.name, email = userData.email,
       minPasswordLength = globals.minPasswordLengthAllSites,
       isForOwner = userData.isOwner)
     val user = readWriteTransaction { tx =>
-      val now = userData.createdAt
-      val userId = tx.nextMemberId
-      val user = userData.makeUser(userId)
-      ensureSiteActiveOrThrow(user, tx)
-      tx.deferConstraints()
-      tx.insertMember(user)
-      user.primaryEmailInfo.foreach(tx.insertUserEmailAddress)
-      tx.insertUsernameUsage(UsernameUsage(
-        usernameLowercase = user.usernameLowercase, // [CANONUN]
-        inUseFrom = now, userId = user.id))
-      tx.upsertUserStats(UserStats.forNewUser(
-        user.id, firstSeenAt = userData.firstSeenAt.getOrElse(now), emailedAt = None))
-      joinGloballyPinnedChats(user.briefUser, tx)
-      tx.insertAuditLogEntry(makeCreateUserAuditEntry(user, browserIdData, tx.now))
-      user.briefUser
+      createPasswordUserImpl(userData, browserIdData, tx).briefUser
     }
     memCache.fireUserCreated(user)
+    user
+  }
+
+
+  def createUserForExternalSsoUser(userData: NewPasswordUserData, botIdData: BrowserIdData,
+        tx: SiteTransaction): MemberInclDetails = {
+    val member = createPasswordUserImpl(userData, botIdData, tx)
+    memCache.fireUserCreated(member.briefUser)
+    member
+  }
+
+
+  private def createPasswordUserImpl(userData: NewPasswordUserData, browserIdData: BrowserIdData,
+        tx: SiteTransaction): MemberInclDetails = {
+    val now = userData.createdAt
+    val userId = tx.nextMemberId
+    val user = userData.makeUser(userId)
+    ensureSiteActiveOrThrow(user, tx)
+    tx.deferConstraints()
+    tx.insertMember(user)
+    user.primaryEmailInfo.foreach(tx.insertUserEmailAddress)
+    tx.insertUsernameUsage(UsernameUsage(
+        usernameLowercase = user.usernameLowercase, // [CANONUN]
+        inUseFrom = now, userId = user.id))
+    tx.upsertUserStats(UserStats.forNewUser(
+        user.id, firstSeenAt = userData.firstSeenAt.getOrElse(now), emailedAt = None))
+    joinGloballyPinnedChats(user.briefUser, tx)
+    tx.insertAuditLogEntry(makeCreateUserAuditEntry(user, browserIdData, tx.now))
     user
   }
 
@@ -732,6 +746,17 @@ trait UserDao {
       // Don't need to cache this? Only called when logging in.
       transaction.loadMemberByPrimaryEmailOrUsername(emailOrUsername)
     }
+  }
+
+
+  def getMemberByExternalId(externalId: String): Option[User] = {
+    COULD_OPTIMIZE // can in-mem cache
+    loadMemberInclDetailsByExternalId(externalId).map(_.briefUser)
+  }
+
+
+  def loadMemberInclDetailsByExternalId(externalId: String): Option[MemberInclDetails] = {
+    readOnlyTransaction(_.loadMemberInclDetailsByExternalId(externalId))
   }
 
 
@@ -1418,6 +1443,9 @@ trait UserDao {
       // This resets the not-mentioned-here fields to default values.
       val memberDeleted = MemberInclDetails(
         id = memberBefore.id,
+        // Reset the external id, so the external user will be able to sign up again. (Not our
+        // choice to prevent that? That'd be the external login system's responsibility, right.)
+        externalId = None,
         fullName = None,
         username = anonUsername,
         createdAt = memberBefore.createdAt,

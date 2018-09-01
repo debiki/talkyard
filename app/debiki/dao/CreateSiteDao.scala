@@ -28,6 +28,7 @@ object CreateSiteDao {  RENAME // but to what. & move, but to where?
   def createSystemUser(transaction: SiteTransaction) {
     val systemUser = MemberInclDetails(
       id = SystemUserId,
+      externalId = None,
       fullName = Some(SystemUserFullName),
       username = SystemUserUsername,
       createdAt = transaction.now.toJavaDate,

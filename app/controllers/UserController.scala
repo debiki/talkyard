@@ -213,8 +213,9 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
       callerIsAdmin: Boolean, callerIsStaff: Boolean = false, callerIsUserHerself: Boolean = false,
       anyStats: Option[UserStats] = None)
         : JsObject = {
-    var userJson = Json.obj(
+    var userJson = Json.obj(  // MemberInclDetails
       "id" -> user.id,
+      "externalId" -> JsStringOrNull(user.externalId),
       "createdAtEpoch" -> JsNumber(user.createdAt.getTime),
       "username" -> user.username,
       "fullName" -> user.fullName,
@@ -550,7 +551,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
     }
 
     val emailsJson = JsArray(emails map { userEmailAddress =>
-      Json.obj(
+      Json.obj(  // UserAccountEmailAddr
         "emailAddress" -> userEmailAddress.emailAddress,
         "addedAt" -> JsWhenMs(userEmailAddress.addedAt),
         "verifiedAt" -> JsWhenMsOrNull(userEmailAddress.verifiedAt))
@@ -567,20 +568,28 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
         case x =>
           (classNameOf(x), None)
       }
-      Json.obj(
+      Json.obj(  // UserAccountLoginMethod
         "loginType" -> classNameOf(identity),
         "provider" -> provider,
         "email" -> JsStringOrNull(email))
     })
 
     if (memberInclDetails.passwordHash.isDefined) {
-      loginMethodsJson :+= Json.obj(
+      loginMethodsJson :+= Json.obj(  // UserAccountLoginMethod
         "loginType" -> "Local",
         "provider" -> "password",
         "email" -> memberInclDetails.primaryEmailAddress)
     }
 
-    OkSafeJson(Json.obj(
+    if (memberInclDetails.externalId.isDefined) {
+      loginMethodsJson :+= Json.obj(  // UserAccountLoginMethod
+        "loginType" -> "Single Sign-On",
+        "provider" -> "external",
+        "email" -> memberInclDetails.primaryEmailAddress,
+        "externalId" -> JsStringOrNull(memberInclDetails.externalId))
+    }
+
+    OkSafeJson(Json.obj(  // UserAccountResponse
       "emailAddresses" -> emailsJson,
       "loginMethods" -> loginMethodsJson))
   }

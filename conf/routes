@@ -36,6 +36,7 @@ GET   /-/login-password-confirm-email controllers.LoginWithPasswordController.co
 #GET   /-/api/login-openid       controllers.LoginWithOpenIdController.loginGet
 #POST  /-/api/login-openid       controllers.LoginWithOpenIdController.loginPost
 #GET   /-/api/login-openid-clbk  controllers.LoginWithOpenIdController.loginCallback(returnToUrl)
+# also: /-/v0/login-sso via the API
 
 GET   /-/login-openauth/:provider controllers.LoginWithOpenAuthController.startAuthentication(provider, returnToUrl)
 GET   /-/login-auth-callback/:provider  controllers.LoginWithOpenAuthController.finishAuthentication(provider)
@@ -273,6 +274,12 @@ GET   /-/superadmin/*clientRoute controllers.SuperAdminController.superAdminApp(
 GET   /-/list-sites              controllers.SuperAdminController.listSites
 POST  /-/update-sites            controllers.SuperAdminController.updateSites
 
+GET   /-/list-api-secrets       controllers.ApiSecretsController.listApiSecrets
+POST  /-/create-api-secret      controllers.ApiSecretsController.createApiSecret
+POST  /-/delete-api-secrets     controllers.ApiSecretsController.deleteApiSecrets
+GET   /-/v0/*apiEndpoint        controllers.ApiV0Controller.getFromApi(apiEndpoint)
+POST  /-/v0/*apiEndpoint        controllers.ApiV0Controller.postToApi(apiEndpoint)
+
 GET   /-/load-post              controllers.ViewPageController.loadPost(pageId: String, postNr: Int)
 
 # Don't change the URL on the next line. The /-/assets/<version-number>/ is
@@ -295,5 +302,6 @@ GET   /favicon.ico              controllers.Assets.at(path = "/public/img", file
 
 # COULD remove? use only /-/track-reading-activity ?
 POST  /-/mark-as-seen           controllers.ViewPageController.markPageAsSeen(pageId)
+
 GET   /*path                    controllers.ViewPageController.viewPage(path)
 GET   /                         controllers.ViewPageController.viewPage(path = "")

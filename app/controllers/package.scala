@@ -19,14 +19,17 @@ import com.debiki.core.QuickMessageException
 import com.debiki.core.Prelude._
 import debiki.Globals
 import play.api.libs.json.JsValue
+import play.api.mvc.Result
 
 
 package object controllers {
 
   // Move it to here soon ... No, move it to io.efdi.server.http package?
-  def OkSafeJson(json: JsValue, pretty: Boolean = false) =
+  def OkSafeJson(json: JsValue, pretty: Boolean = false): Result =
     Utils.OkSafeJson(json, pretty)
 
+  def OkApiJson(json: JsValue, pretty: Boolean = false): Result =
+    Utils.OkApiJson(json, pretty)
 
   /** Better fail fast with a full page error message, if assets have not yet been
     * bundled by 'gulp build' — instead of returning a html page with links to

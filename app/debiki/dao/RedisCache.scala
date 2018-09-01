@@ -39,6 +39,8 @@ object RedisCache {
   // Sometimes the request takes long, perhaps because of a Java GC pause? Or because of
   // some page being swapped to disk?
   val DefaultTimeout: FiniteDuration = 10 seconds
+
+  val SingleSignOnSecretExpireSeconds = 10 * 60
 }
 
 
@@ -146,6 +148,27 @@ class RedisCache(val siteId: SiteId, private val redis: RedisClient, private val
   }
 
 
+  // SSO login
+  //-------------
+
+  def saveOneTimeSsoLoginSecret(secretValue: String, userId: UserId) {
+    val key = ssoUserBySecretKey(siteId, secretValue)
+    redis.set(key, userId, exSeconds = Some(SingleSignOnSecretExpireSeconds))
+  }
+
+  def getOneTimeSsoLoginUserIdDestroySecret(secretValue: String): Option[UserId] = {
+    val key = ssoUserBySecretKey(siteId, secretValue)
+    val futureString: Future[Option[ByteString]] = redis.get(key)
+    redis.del(key)
+    val anyString: Option[ByteString] =
+      try Await.result(futureString, DefaultTimeout)
+      catch {
+        case _: TimeoutException => die("Ty4ABKT20", "Redis timeout, for sso user id by secret")
+      }
+    anyString.map(_.utf8String.toInt)
+  }
+
+
   // Key names
   //-------------
 
@@ -161,6 +184,7 @@ class RedisCache(val siteId: SiteId, private val redis: RedisClient, private val
   private def usersOnlineKey(siteId: SiteId) = s"$siteId-uo"
   private def strangersOnlineByIpKey(siteId: SiteId) = s"$siteId-soip"
 
+  private def ssoUserBySecretKey(siteId: SiteId, secret: String) = s"$siteId-sso-$secret"
 }
 
 

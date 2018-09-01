@@ -26,7 +26,7 @@ import debiki.dao.SiteDao
 import debiki.EdHttp._
 import ed.server.EdContext
 import ed.server.auth.ForumAuthzContext
-import ed.server.security.{BrowserId, SidStatus, XsrfOk}
+import ed.server.security.{BrowserId, SidOk, SidStatus, XsrfOk}
 import java.{util => ju}
 import play.api.mvc
 import play.api.mvc._
@@ -48,6 +48,11 @@ abstract class DebikiRequest[A] {
                         // COULD? add a 'Stranger extends User' and use instead of None ?
   def dao: SiteDao
   def request: Request[A]
+
+  def isViaApiSecret: Boolean = sid match { // should be case obj AuthnMethod.ApiSecret instead? [5BKRH02]
+    case SidOk("_api_secret_", 0, _) => true
+    case _ => false
+  }
 
   def underlying: Request[A] = request
 

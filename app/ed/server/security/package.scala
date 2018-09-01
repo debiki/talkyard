@@ -38,7 +38,8 @@ case class XsrfOk(value: String) extends XsrfStatus {
 }
 
 
-
+// RENAME to AuthnMethod,
+// and AuthnMethod.ApiSecret [5BKRH02], SidOk –> SessionId, None, BadSessionIdFormat, BadSessionIdHash?
 sealed abstract class SidStatus {
   def isOk = false
   def userId: Option[UserId] = None

@@ -34,6 +34,7 @@ type IpAddress = String;
 type EmailId = String;
 type AuditLogEntryId = number;
 type TagLabel = string;
+type ApiSecretNr = number;
 type DateMs = number;  // use When instead? sounds better since using When server side too
 type WhenMs = number;
 
@@ -961,6 +962,7 @@ interface GroupInclDetails extends MemberOrGroupInclDetails {
 
 
 interface MemberInclDetails extends MemberOrGroupInclDetails {
+  externalId?: string;
   createdAtEpoch: number;  // change to millis
   fullName: string;
   email: string;
@@ -1367,6 +1369,16 @@ enum PricePlan {  // [4GKU024S]
 }
 
 
+interface ApiSecret {
+  nr: ApiSecretNr;
+  userId?: UserId;
+  createdAt: WhenMs;
+  deletedAt?: WhenMs;
+  isDeleted: boolean,
+  secretValue: string;
+}
+
+
 interface SuperAdminStuff {
   firstSiteHostname?: string;
   baseDomain: string;
@@ -1417,6 +1429,7 @@ interface UserAccountLoginMethod {
   loginType: string;
   provider: string;
   email?: string;
+  externalId?: string;
 }
 
 

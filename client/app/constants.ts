@@ -36,6 +36,7 @@ const NoDraftNr = 0;
 
 let NoUserId = 0;
 const SystemUserId = 1;
+const SysbotUserId = 2;
 const MinMemberId = SystemUserId;
 const LowestAuthenticatedUserId = 100;   // also in scala  [8PWK1Q2W]
 

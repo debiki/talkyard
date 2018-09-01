@@ -19,6 +19,7 @@
 /// <reference path="../more-bundle-already-loaded.d.ts" />
 /// <reference path="review-all.staff.ts" />
 /// <reference path="review-posts.staff.ts" />
+/// <reference path="api-panel.staff.ts" />
 /// <reference path="users.staff.ts" />
 /// <reference path="users-one.staff.ts" />
 /// <reference path="hostname-editor.staff.ts" />
@@ -181,11 +182,14 @@ const AdminAppComponent = createReactClass(<any> {
 
     const ar = AdminRoot;
 
-    const settings = me.isAdmin ?
+    const settingsLink = me.isAdmin ?
         LiNavLink({ to: ar + 'settings', className: 'e_StngsB' }, "Settings") : null;
 
-    const customize = me.isAdmin ?
+    const customizeLink = me.isAdmin ?
         LiNavLink({ to: ar + 'customize', className: 'e_LnFB' }, "Look and feel") : null;
+
+    const apiLink = me.isAdmin ?
+      LiNavLink({ to: ar + 'api', className: 'e_ApiB' }, "API") : null;
 
     const saveBar = _.isEmpty(this.state.editedSettings) ? null :
       r.div({ className: 'esA_SaveBar' },
@@ -214,6 +218,7 @@ const AdminAppComponent = createReactClass(<any> {
         Route({ path: ar + 'settings', render: () => SettingsPanel(childProps) }),
         Route({ path: ar + 'users', render: () => UsersTab(childProps) }),
         Route({ path: ar + 'customize', render: () => CustomizePanel(childProps) }),
+        Route({ path: ar + 'api', render: () => ApiPanel(childProps) }),
         Route({ path: ar + 'review', render: () => ReviewAllPanel(childProps) }));
 
     return (
@@ -221,9 +226,10 @@ const AdminAppComponent = createReactClass(<any> {
         topbar.TopBar({ customTitle: "Admin Area", showBackToSite: true, extraMargin: true }),
         r.div({ className: 'container' },
           r.ul({ className: 'dw-main-nav nav nav-pills' },
-            settings,
+            settingsLink,
             LiNavLink({ to: ar + 'users', className: 'e_UsrsB' }, "Users"),
-            customize,
+            customizeLink,
+            apiLink,
             LiNavLink({ to: ar + 'review', className: 'e_RvwB' }, "Review")),
           childRoutes,
           saveBar)));

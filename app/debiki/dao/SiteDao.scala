@@ -24,6 +24,7 @@ import debiki.EdHttp._
 import ed.server.search.SearchEngine
 import org.{elasticsearch => es}
 import redis.RedisClient
+import scala.collection.immutable
 import scala.collection.mutable
 import SiteDao._
 import ed.server.EdContext
@@ -101,7 +102,7 @@ class SiteDao(
   with AuditDao {
 
   protected lazy val memCache = new MemCache(siteId, cache, globals.mostMetrics)
-  protected lazy val redisCache = new RedisCache(siteId, redisClient, context.globals.now)
+  lazy val redisCache = new RedisCache(siteId, redisClient, context.globals.now)
   protected lazy val searchEngine = new SearchEngine(siteId, elasticSearchClient)
 
   def globals: debiki.Globals = context.globals
@@ -354,6 +355,40 @@ class SiteDao(
 
   def markNotificationAsSeen(userId: UserId, notfId: NotificationId): Unit =
     readWriteTransaction(_.markNotfAsSeenSkipEmail(userId, notfId))
+
+
+  // ----- API secrets
+
+  def listApiSecrets(limit: Int): immutable.Seq[ApiSecret] = {
+    readOnlyTransaction(_.listApiSecretsRecentlyCreatedFirst(limit))
+  }
+
+  def createApiSecret(forUserId: Option[UserId]): ApiSecret = {
+    val now = globals.now()
+    val recentSecrets = listApiSecrets(limit = 100).takeWhile(secret =>
+      now.millisSince(secret.createdAt) < 30 * OneDayInMillis)
+    // More than two *sysbot* secrets per day? Crazy.
+    require(forUserId.isEmpty, "TyE4AKBR02") // for now
+    throwForbiddenIf(recentSecrets.length > 60, "TyE5PKR2Q", "You're creating secrets too fast")
+
+    val value = nextRandomString()
+    readWriteTransaction { tx =>
+      val nr = tx.nextApiSecretNr()
+      val secret = ApiSecret(nr, userId = forUserId, createdAt = now,
+        deletedAt = None, isDeleted = false, secretValue = value)
+      tx.insertApiSecret(secret)
+      secret
+    }
+  }
+
+  def deleteApiSecrets(secretNrs: immutable.Seq[ApiSecretNr]) {
+    val now = globals.now()
+    readWriteTransaction(tx => secretNrs.foreach(tx.setApiSecretDeleted(_, now)))
+  }
+
+  def getApiSecret(secretValue: String): Option[ApiSecret] = {
+    readOnlyTransaction(_.loadApiSecretBySecretValue(secretValue))
+  }
 
 
   // ----- Emails
