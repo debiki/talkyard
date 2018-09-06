@@ -18,14 +18,19 @@
 package debiki
 
 import com.debiki.core._
-import java.{util => ju, io => jio}
-import scala.collection.JavaConversions._
-import _root_.scala.xml.{NodeSeq, Node, Elem, Text, XML, Attribute}
+import java.{io => jio, util => ju}
+import org.jsoup.Jsoup
+import scala.collection.immutable
+import _root_.scala.xml.{Attribute, Elem, Node, NodeSeq, Text, XML}
 import Prelude._
+import controllers.routes
+import debiki.dao.PageStuff
 
-/* Disabled. Uses old deleted PageParts.
 
-object AtomFeedXml {
+/**
+  * Descr of all Atom tags: https://validator.w3.org/feed/docs/atom.html
+  */
+object AtomFeedXml {   // RENAME file, and class? to AtomFeedBuilder?
 
   /**
    * See http://www.atomenabled.org/developers/syndication/.
@@ -42,9 +47,9 @@ object AtomFeedXml {
    * feedMtime: Indicates the last time the feed was modified
    * in a significant way.
    */
-  def renderFeed(hostUrl: String, feedId: String, feedTitle: String,
-                 feedUpdated: ju.Date, pathsAndPages: Seq[(PagePath, PageParts)]
-                    ): Node = {
+  def renderFeed(hostUrl: String, posts: immutable.Seq[Post], pageStuffById: Map[PageId, PageStuff]
+        ): Node = {
+
     // Based on the Atom XML shown here:
     //   http://exploring.liftweb.net/master/index-15.html#toc-Section-15.7
 
@@ -54,42 +59,42 @@ object AtomFeedXml {
     val baseUrl = hostUrl +"/"
     def urlTo(pp: PagePath) = baseUrl + pp.value.dropWhile(_ == '/')
 
-    def pageToAtom(pathAndPage: (PagePath, PageParts)): NodeSeq = {
-      val pagePath = pathAndPage._1
-      val page = pathAndPage._2
-      val pageBody = page.body.getOrElse {
-        warnDbgDie("Page "+ safed(page.guid) +
-              " lacks a root post [error DwE09k14p2]")
-        return Nil
-      }
-      val pageTitle = page.approvedTitleText getOrElse pagePath.slugOrIdOrQustnMark
-      val pageBodyAuthor =
-            pageBody.user.map(_.displayName) getOrElse "(Author name unknown)"
-      val urlToPage =  urlTo(pagePath)
+    def atomEntryFor(post: Post, page: PageStuff): NodeSeq = {
+      //val pageBodyAuthor =
+      //      pageBody.user.map(_.displayName) getOrElse "(Author name unknown)"
+      val urlToPage = hostUrl + "/-" + page.pageId  // for now
 
-      // (Should we strip any class names or ids? They make no sense in atom feeds?
+      // Convert HTML to XHTML.
+      // Atom parsers wants xml — they apparently choke on unclosed html tags.
+      // Need to add closing tags, e.g. <p>...</p>, and convert entitiest like &nbsp; to &#xa0;
+      // (&nbsp; is not valid xhtml).
+      // (Could strip tag ids and class names? They make no sense in atom feeds?
       // No CSS or JS that cares about them anyway?)
-      val rootPostHtml =
-        xml.Unparsed(pageBody.approvedHtmlSanitized getOrElse "<i>Page not yet approved</i>")
+      val jsoupDoc = Jsoup.parse(post.approvedHtmlSanitized getOrElse "<i>Text not yet approved</i>")
+      jsoupDoc.outputSettings()
+        .charset(java.nio.charset.StandardCharsets.UTF_8)
+        .syntax(org.jsoup.nodes.Document.OutputSettings.Syntax.xml)
+        .escapeMode(org.jsoup.nodes.Entities.EscapeMode.xhtml)
+      val postXhtml: String = jsoupDoc.body().html()
 
       <entry>{
         /* Identifies the entry using a universally unique and
         permanent URI. */}
-        <id>{urlToPage}</id>{
+        <id>{urlToPage + "#post-" + post.nr}</id>{
         /* Contains a human readable title for the entry. */}
-        <title>{pageTitle}</title>{
+        <title>{page.title}</title>{
         /* Indicates the last time the entry was modified in a
         significant way. This value need not change after a typo is
         fixed, only after a substantial modification.
         COULD introduce a page's updatedTime?
         */}
-        <updated>{toIso8601T(pageBody.creationDati)}</updated>{
+        <updated>{toIso8601T(post.createdAt)}</updated>{
         /* Names one author of the entry. An entry may have multiple
         authors. An entry must [sometimes] contain at least one author
         element [...] More info here:
           http://www.atomenabled.org/developers/syndication/
                                                 #recommendedEntryElements  */}
-        <author><name>{pageBodyAuthor}</name></author>{
+        {/*<author><name>{post}</name></author>*/}{
         /* The time of the initial creation or first availability
         of the entry.  -- but that shouldn't be the ctime, the page
         shouldn't be published at creation.
@@ -100,25 +105,40 @@ object AtomFeedXml {
         /* Contains or links to the complete content of the entry. */}
         <content type="xhtml">
           <div xmlns="http://www.w3.org/1999/xhtml">
-            { rootPostHtml }
+            { xml.Unparsed(postXhtml) }
           </div>
         </content>
       </entry>
     }
 
-     // Could add:
+    val feedUrl = hostUrl + routes.ApiV0Controller.getFromApi("feed")
+    val feedName = stripScheme(hostUrl)
+    val feedUpdatedAt = posts.headOption.map(_.createdAt).getOrElse(new ju.Date)
+
+     // About the tags:
+     // <category term="sports"/> — add later, for category specific feeds.
      // <link>: Identifies a related Web page
      // <author>: Names one author of the feed. A feed may have multiple
      // author elements. A feed must contain at least one author
      // element unless all of the entry elements contain at least one
      // author element.
     <feed xmlns="http://www.w3.org/2005/Atom">
-      <title>{feedTitle}</title>
-      <id>{feedId}</id>
-      <updated>{toIso8601T(feedUpdated)}</updated>
-      { pathsAndPages.flatMap(pageToAtom) }
+      <title>{feedName}</title>
+      <id>{feedUrl}</id>
+      <link href={feedUrl} rel="self" type="application/atom+xml" />
+      <updated>{toIso8601T(feedUpdatedAt)}</updated>
+      <author>
+        <name>{feedName}</name>
+      </author>
+      <generator uri="https://www.talkyard.io">Talkyard</generator>
+      {
+        posts flatMap { post =>
+          pageStuffById.get(post.pageId) map { page =>
+            atomEntryFor(post, page)
+          }
+        }
+      }
     </feed>
   }
 }
 
- */

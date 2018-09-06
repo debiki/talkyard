@@ -77,6 +77,23 @@ class Application @Inject()(cc: ControllerComponents, edContext: EdContext)
     OkSafeJson(json)
   }
 
+  /*
+  Shortcut:
+  https://server.address/-/v0/recent-posts.rss
+  https://server.address/-/v0/feed?
+      type=atom&
+      include=replies,chatMessages,topics&
+      limit=10&
+      minLikeVotes=1&
+      path=/some/category/or/page
+
+  Just going to:  https://www.talkyard.io/-/feed  = includes all new posts, type Atom, limit 10 maybe.
+
+  /directory*.atom  = new topics
+  /page/path.atom  = new replies to that page
+  /page/path.rss  = new replies to that page
+
+  */
 
   /**
    * Usage example:

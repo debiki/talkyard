@@ -95,7 +95,7 @@ trait SiteTransaction {
 
   def loadOrigPostAndLatestPosts(pageId: PageId, limit: Int): Seq[Post]
   def loadPostsOnPage(pageId: PageId, siteId: Option[SiteId] = None): immutable.Seq[Post]
-  def loadPosts(pagePostNrs: Iterable[PagePostNr]): immutable.Seq[Post]
+  def loadPosts(pagePostNrs: Iterable[PagePostNr]): immutable.Seq[Post]  // RENAME to loadPostsByPageIdPostNrs
   def loadPostsByUniqueId(postIds: Iterable[PostId]): immutable.Map[PostId, Post]
 
   def loadAllUnapprovedPosts(pageId: PageId, limit: Int): immutable.Seq[Post]
@@ -112,7 +112,7 @@ trait SiteTransaction {
   def loadApprovedOrigPostAndRepliesByPage(pageIds: Iterable[PageId]): Map[PageId, immutable.Seq[Post]]
 
   def loadPostsToReview(): immutable.Seq[Post]
-  def loadPostsByAuthorSkipTitles(userId: UserId, limit: Int, orderBy: OrderBy): immutable.Seq[Post]
+  def loadPostsSkipTitles(limit: Int, orderBy: OrderBy, byUserId: Option[UserId]): immutable.Seq[Post]
 
   def loadTitlesPreferApproved(pageIds: Iterable[PageId]): Map[PageId, String] = {
     val titlePosts = loadPosts(pageIds.map(PagePostNr(_, PageParts.TitleNr)))

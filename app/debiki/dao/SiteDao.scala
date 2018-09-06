@@ -99,6 +99,7 @@ class SiteDao(
   with WatchbarDao
   with ReviewsDao
   with SummaryEmailsDao
+  with FeedsDao
   with AuditDao {
 
   protected lazy val memCache = new MemCache(siteId, cache, globals.mostMetrics)

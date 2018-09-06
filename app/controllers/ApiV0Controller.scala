@@ -18,7 +18,7 @@
 package controllers
 
 import com.debiki.core._
-import com.debiki.core.Prelude.{nextRandomLong, nextRandomString, dieIf}
+import com.debiki.core.Prelude._
 import debiki.EdHttp._
 import debiki.RateLimits
 import ed.server.{EdContext, EdController}
@@ -28,7 +28,26 @@ import org.scalactic.{Bad, Good}
 import play.api.libs.json._
 import play.api.mvc._
 import scala.util.Try
+import Utils.OkXml
 
+// How test API?
+//  https://medium.com/javascript-scene/why-i-use-tape-instead-of-mocha-so-should-you-6aa105d8eaf4
+//  looks nice:  https://github.com/vesln/hippie
+// Markdown not Yaml?  https://apiblueprint.org/developers.html
+//
+// https://apiblueprint.org/   or Swagger?  or sth else?
+//
+// Dredd?  https://github.com/apiaryio/dredd
+//    https://dredd.readthedocs.io/en/latest/    http://dredd.org/en/latest/
+//
+// Want:
+//  - API docs that can be generated to interactive HTML, so can click-&-edit-run-examples
+//  - API docs that can be parsed into JS and auto-tested by api-e2e-test-suite
+//
+
+
+// docs how? Slate? like these use:
+// https://developers.giosg.com/http_api.html#list-external-subscriptions-for-scheduled-email-report
 
 class ApiV0Controller @Inject()(cc: ControllerComponents, edContext: EdContext)
   extends EdController(cc, edContext) {
@@ -66,6 +85,9 @@ class ApiV0Controller @Inject()(cc: ControllerComponents, edContext: EdContext)
         val thenGoTo = thenGoToUnsafe.flatMap(Prelude.stripOrigin) getOrElse "/"
         TemporaryRedirect(thenGoTo)
             .withCookies(sidAndXsrfCookies: _*)
+      case "feed" =>
+        val atomXml = dao.getAtomFeedXml()
+        OkXml(atomXml, "application/atom+xml; charset=UTF-8")
       case _ =>
         throwForbidden("TyEAPIGET404", s"No such API endpoint: $apiEndpoint")
     }

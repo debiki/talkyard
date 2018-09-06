@@ -382,8 +382,9 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
     // And if !all, and > 100 posts, add a load-more button.
     val limit = all ? 9999 | 100
 
+    // ----- Dupl code [4AKB2F0]
     val postsInclForbidden = dao.readOnlyTransaction { transaction =>
-      transaction.loadPostsByAuthorSkipTitles(authorId, limit = limit, OrderBy.MostRecentFirst)
+      transaction.loadPostsSkipTitles(limit = limit, OrderBy.MostRecentFirst, byUserId = Some(authorId))
     }
     val pageIdsInclForbidden = postsInclForbidden.map(_.pageId).toSet
     val pageMetaById = dao.getPageMetasAsMap(pageIdsInclForbidden)
@@ -397,6 +398,7 @@ class UserController @Inject()(cc: ControllerComponents, edContext: EdContext)
 
     val pageIds = posts.map(_.pageId).distinct
     val pageStuffById = dao.getPageStuffById(pageIds)
+    // ----- /Dupl code
     val tagsByPostId = dao.readOnlyTransaction(_.loadTagsByPostId(posts.map(_.id)))
 
     val postsJson = posts flatMap { post =>

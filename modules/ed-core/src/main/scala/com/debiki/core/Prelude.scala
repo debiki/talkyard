@@ -219,6 +219,9 @@ object Prelude {
     case _ => None
   }
 
+  def stripScheme(url: String): String =
+    url.replaceFirst("https://", "").replaceFirst("http://", "")
+
 
   private val StripOriginRegex = s"https?://$ValidHostAndPortRegexStr(/.*)".r
 

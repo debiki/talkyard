@@ -19,10 +19,10 @@ package debiki.dao
 
 import com.debiki.core._
 import com.debiki.core.Prelude._
-import com.debiki.core.PageParts.{TitleNr, BodyNr}
+import com.debiki.core.PageParts.{BodyNr, TitleNr}
 import debiki._
+import play.api.Logger
 import scala.collection.immutable
-import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 
 
@@ -40,9 +40,9 @@ case class PageStuff(
   lastReplyerId: Option[UserId],
   frequentPosterIds: Seq[UserId])(val pageMeta: PageMeta) extends PageTitleRole {
 
-  def role = pageRole
+  def role: PageRole = pageRole
 
-  def categoryId = pageMeta.categoryId
+  def categoryId: Option[CategoryId] = pageMeta.categoryId
 
   def userIds: immutable.Seq[UserId] = {
     var ids = frequentPosterIds.toVector :+ authorUserId
@@ -63,7 +63,7 @@ trait PageStuffDao {
   // include fairly many chars.
   val StartLength = 250
 
-  val logger = play.api.Logger
+  val logger: Logger.type = play.api.Logger
 
   memCache.onPageSaved { sitePageId =>
     memCache.remove(cacheKey(sitePageId))
@@ -118,24 +118,10 @@ trait PageStuffDao {
     val popularPosts: Map[PageId, immutable.Seq[Post]] =
       transaction.loadPopularPostsByPage(pageIds, limitPerPage = 10)
 
-    val userIdsToLoad = {
-      val pageMetas = pageMetasById.values
-      val ids = mutable.Set[UserId]()
-      ids ++= pageMetas.map(_.authorId)
-      ids ++= pageMetas.flatMap(_.lastReplyById)
-      pageMetas foreach { meta =>
-        ids ++= meta.frequentPosterIds
-      }
-      ids
-    }
-
-    val usersById = transaction.loadUsersAsMap(userIdsToLoad.toSeq)
-
     for (pageMeta <- pageMetasById.values) {
       val pageId = pageMeta.pageId
       val anyBody = titlesAndBodies.find(post => post.pageId == pageId && post.nr == BodyNr)
       val anyTitle = titlesAndBodies.find(post => post.pageId == pageId && post.nr == TitleNr)
-      val anyAuthor = usersById.get(pageMeta.authorId)
       val popularPostsBestFirst = popularPosts.getOrElse(pageId, Nil)
       val popularImageUrls: immutable.Seq[String] = popularPostsBestFirst flatMap { post =>
         post.approvedHtmlSanitized.flatMap(JsonMaker.findImageUrls(_).headOption) take 5
