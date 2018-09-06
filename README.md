@@ -15,14 +15,15 @@ to do, to change society, or grow your startup.
 Talkyard
 =============================
 
-Create a place to talk, where people find answers, and you can discuss and chat.<br>
+Create a place to talk,
+where your users find answers to their questions, and can suggest ideas.<br>
 Place it at `community.your-website.org`.
 
 <!-- People in your community need different types of discussions for different things?
 Talkyard has: -->
 
  - **Find answers** in Question-Answers topics, like StackOverflow.
- - **Discuss ideas** in open-ended topics, like Reddit and Hacker News.
+ - **Gather ideas** in open-ended topics, like at Reddit and Hacker News.
  - **Get work done** in team chat, like Slack.
  - **Solve problems** step by step, in flat by-time topics (coming soon).
  - **Talk with your blog visitors** in embedded comments, like Disqus.
