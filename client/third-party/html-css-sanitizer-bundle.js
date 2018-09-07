@@ -4928,7 +4928,7 @@ function googleCajaSanitizeHtml(htmlTextUnsafe, allowClassAndIdAttr,
     allowedAttributes: {
       a: ['href', 'name', 'target', 'rel', 'download'],
       img: ['width', 'height', 'src'],
-      video: ['width', 'height', 'src', 'controls', 'autoplay', 'loop'],
+      video: ['width', 'height', 'src', 'controls', 'autoplay', 'loop', 'muted', 'poster', 'preload'],
       source: ['src', 'type'],
       form: ['novalidate'], // *not* action= or method= though — handled by Javascript instead
       label: ['for'],

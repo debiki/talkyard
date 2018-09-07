@@ -74,7 +74,7 @@ export const Watchbar = createComponent({
     const settings: SettingsVisibleClientSide = store.settings;
     const me = store.me;
 
-    const showSubCommunities = store.settings.showSubCommunities;
+    const showSubCommunities = settings.showSubCommunities;
     const communities = showSubCommunities ? SubCommunities({ store: store }) : null;
     const recentTopicsAndNotfs = RecentTopicsAndNotfs({ store: store, showSubCommunities });
     const chatChannels = settings.enableChat !== false ? ChatChannels({ store: store }) : null;
@@ -290,6 +290,8 @@ const SingleTopic = createComponent({
 
   render: function() {
     const store: Store = this.props.store;
+    const settings: SettingsVisibleClientSide = store.settings;
+    const showSubCommunities = settings.showSubCommunities;
     const me: Myself = store.me;
     const topic: WatchbarTopic = this.props.topic;
     const flavor: string = this.props.flavor;
@@ -321,7 +323,7 @@ const SingleTopic = createComponent({
           isChat? t.wb.LeaveThisChat : t.wb.LeaveThisCommunity);
 
     // If a community is listed in the Recent section, then one hasn't joined it.
-    const joinButton = !isRecent || topic.type !== PageRole.Forum ? null  :
+    const joinButton = !showSubCommunities || !isRecent || topic.type !== PageRole.Forum ? null  :
       MenuItem({ onSelect: this.openJoinPageDialog, id: 'e_JoinB' },
         t.wb.JoinThisCommunity);
 
