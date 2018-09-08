@@ -12,6 +12,7 @@
 @import com.debiki.core.ContribAgreement
 @import com.debiki.core.ContentLicense
 
+@mustLoginToRead = @{ tpi.siteSettings.userMustBeAuthenticated }
 @companyDomain = @{ tpi.companyDomain }
 @companyFullName = @{ tpi.companyFullName orIfEmpty "Unnamed Organization" }
 @companyAbbreviation = @{
@@ -24,13 +25,27 @@
 
 @agreesToCcBy = @{ tpi.siteSettings.contribAgreement == ContribAgreement.CcBy3And4 }
 
-@views.html.templates.wrapper(tpi) {
+@*
+UX COULD incls default scripts so looks nice, if is logged in, [7WKBAY02]
+or if is a public community — then incl site specific styles?
+views.html.templates.wrapper(tpi) {
+*@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Terms of Use</title>
+</head>
+<body>
+
 <div class="container esLegal">
 
 <div class="esLegal_home">@{/*
   href="/" will be wrong if coming from the forum and it's base path isn't /, but e.g.
-  /forum/. Ignore this minor problem, for now. */}
-  <a class="esLegal_home_link" href="/">Home</a><span class="esLegal_home_arw"> →</span>
+  /forum/. Ignore this minor problem, for now.
+  UX SHOULD show this Home link, if is logged in. [7WKBAY02] Also, I18N. Solution = move to Typescript**/}
+  @if(!mustLoginToRead) {
+    <a class="esLegal_home_link" href="/">Home</a><span class="esLegal_home_arw"> →</span>
+  }
 </div>
 
 <ul class="legal nav nav-pills">
@@ -249,4 +264,6 @@ Except to the extent applicable law, if any, provides otherwise, this Agreement,
   which was in turn adapted from <a href="https://en.wordpress.com/tos/">WordPress Terms of Service</a>.
 </p>
 </div>
-}
+
+</body>
+@*}  *@

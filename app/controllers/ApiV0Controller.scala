@@ -33,7 +33,7 @@ import Utils.OkXml
 
 // LEFT TO REVIEW:
 //     da18893 Add change password link.  — broken, bug.
-//     257b02d Bugfix: Show terms and privacy, if signing up for must-login-to-read site.
+//DONE 257b02d Bugfix: Show terms and privacy, if signing up for must-login-to-read site.
 //DONE 3664a17 Bug fixes: Watchbar menu item, and auto play videos: muted attr.
 //DONE 61d653d Add an Atom feed for all new posts.
 

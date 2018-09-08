@@ -30,7 +30,10 @@ class LegalController @Inject()(cc: ControllerComponents, edContext: EdContext)
   extends EdController(cc, edContext) {
 
 
-  def viewTermsOfUsePage() = GetAction { apiReq =>
+  /** Is visible to anyone, so people can agree to the terms, before they finish creation
+    * of their accounts, also if things in the forum are only accessible to members. [7WKBAY02]
+    */
+  def viewTermsOfUsePage() = GetActionAllowAnyone { request =>
     /* Later:
     apiReq.siteSettings.termsOfUseUrl match {
       case None =>
@@ -43,14 +46,16 @@ class LegalController @Inject()(cc: ControllerComponents, edContext: EdContext)
      */
 
     // For now: (use hardcoded ToU page, no custimization)
-    Ok(views.html.legal.termsOfUse(SiteTpi(apiReq)).body) as HTML
+    Ok(views.html.legal.termsOfUse(SiteTpi(request)).body) as HTML
   }
 
 
-  def viewPrivacyPolicyPage() = GetAction { apiReq =>
+  /** Should be visible to anyone, so can read before joining. [7WKBAY02]
+    */
+  def viewPrivacyPolicyPage() = GetActionAllowAnyone { request =>
     // Later: allow overriding privacy policy, see comments in viewTermsOfUsePage() above.
     // For now:
-    Ok(views.html.legal.privacyPolicy(SiteTpi(apiReq)).body) as HTML
+    Ok(views.html.legal.privacyPolicy(SiteTpi(request)).body) as HTML
   }
 
 }

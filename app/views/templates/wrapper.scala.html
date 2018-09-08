@@ -17,6 +17,8 @@
 
 @(tpi: debiki.SiteTpi, useGoogleAnalytics: Boolean = true)(content: Html)
 
+@mustLoginToRead = @{ tpi.siteSettings.userMustBeAuthenticated }
+
 <!DOCTYPE html>
 <html class="@tpi.debikiHtmlTagClasses">
 <head>
@@ -38,15 +40,21 @@
 <div id="esPageColumn">
 <div id="esPageScrollable">
 <div id="thePageTop"></div>
+@{ /* UX; SHOULD show the header, if logged in. Solution = move this to Typescript. [7WKBAY02] */}
+@if(!mustLoginToRead) {
 <div class="esPageHeader">
 @* Auto collapse nav menu items, if narrow screen?  https://github.com/lukejacksonn/GreedyNav  *@
 @Html(tpi.siteSettings.headerHtml)
 </div>
+}
 
 @content
 
 @if(!tpi.anyCurrentPageRole.exists(_.isChat)) {
-  @Html(tpi.siteSettings.footerHtml)
+  @{ /* UX; SHOULD show footer, if logged in. Solution = move this to Typescript. [7WKBAY02] */}
+  @if(!mustLoginToRead) {
+    @Html(tpi.siteSettings.footerHtml)
+  }
 }
 
 <div id="thePageBottom"></div>

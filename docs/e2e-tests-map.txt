@@ -541,6 +541,14 @@ email notifications:
   watching everything:
     - email-notfs-discussion.2browsers.test.ts  TyT2AKBEF05
 
+terms and privacy:
+  read after have signed up:
+  read when signing up:
+    public community:
+      see top nav:
+    private community, still accessible:   [7WKBAY02]
+      no top nav:
+
 # Test by disabling js, browser side?
 server side rendering -
   topic list, discussion topic, chat:

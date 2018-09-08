@@ -436,6 +436,12 @@ class JsonMaker(dao: SiteDao) {
   def makeSiteSectionsJson(): JsValue = {
     SECURITY; SHOULD // not show any hidden/private site sections. Currently harmless though:
     // there can be only 1 section and it always has the same id. (unless adds more manually via SQL)
+    SECURITY; SHOULD // not show any section, if not logged in, and login-required-to-read.
+    /* later, something like:
+    val settings = dao.getWholeSiteSettings()
+    if (settings.userMustBeAuthenticated)
+      return JsArray() */
+
     val sectionPageIds = dao.loadSectionPageIdsAsSeq()
     val jsonObjs = for {
       pageId <- sectionPageIds
