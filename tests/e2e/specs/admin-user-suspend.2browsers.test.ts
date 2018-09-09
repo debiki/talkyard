@@ -72,7 +72,7 @@ describe("admin-user-suspend [TyT5GKQSG2]", function() {
 
   it("... a draft gets saved", function() {
     // Wait for this, or the server error dialog pops up at the wrong time, breaking this test.
-    mariasBrowser.editor.waitForDraftSaved();
+    //mariasBrowser.editor.waitForDraftSaved(); [BADDRAFT]
   });
 
 
@@ -101,7 +101,7 @@ describe("admin-user-suspend [TyT5GKQSG2]", function() {
   });
 
   it("... and cancels the editor", function() {
-    mariasBrowser.editor.cancel();
+    //mariasBrowser.editor.cancel();  // [BADDRAFT] commented out
   });
 
   it("... Now, she cannot login (was logged out by the server)", function() {
